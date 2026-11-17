@@ -14,6 +14,7 @@ import (
 
 	"qinqin/internal/ai"
 	"qinqin/internal/auth"
+	"qinqin/internal/datapkg"
 	"qinqin/internal/dict"
 	"qinqin/internal/freq"
 	"qinqin/internal/journal"
@@ -74,11 +75,13 @@ type server struct {
 	tickets *ticketStore // single-use download tickets (personal export, admin backup)
 	backups backupState  // in-flight exports, restores and server backups
 
-	restores   *restoreStore   // staged restores of personal backups
-	exportCap  int64           // largest export in bytes; 0: backup.MaxUpload (tests lower it)
-	restoreCap int64           // upload cap in bytes; 0: backup.MaxUpload (tests lower it)
-	stageDone  chan int64      // test hook: receives a user id when a stage finishes validating or restoring
-	bg         context.Context // lives as long as the server; background jobs run under it
+	restores   *restoreStore    // staged restores of personal backups
+	exportCap  int64            // largest export in bytes; 0: backup.MaxUpload (tests lower it)
+	restoreCap int64            // upload cap in bytes; 0: backup.MaxUpload (tests lower it)
+	stageDone  chan int64       // test hook: receives a user id when a stage finishes validating or restoring
+	packages   *datapkg.Builder // nil: no data packages (pack changes kick nothing)
+	downloads  downloadSlots    // running package downloads per user
+	bg         context.Context  // lives as long as the server; background jobs run under it
 }
 
 // Option configures optional parts of the server.
@@ -102,6 +105,19 @@ func WithMail(svc *mail.Service) Option { return func(s *server) { s.mail = svc 
 // WithOCR mounts the offline reader the transcribe route and the
 // capabilities use; without it offline reading is unavailable.
 func WithOCR(o journal.OCR) Option { return func(s *server) { s.ocr = o } }
+
+// WithPackages mounts the data package builder: pack installs and
+// uninstalls kick the packages they affect, and the package routes read its
+// registry.
+func WithPackages(b *datapkg.Builder) Option { return func(s *server) { s.packages = b } }
+
+// packChanged kicks the data packages of a changed pack (no-op without
+// WithPackages); it is the packs.WithOnChange hook.
+func (s *server) packChanged(typ, packID, language string) {
+	if s.packages != nil {
+		s.packages.PackChanged(typ, packID, language)
+	}
+}
 
 // New returns the root HTTP handler with all qinqin routes mounted.
 // Uploaded packs are stored under dataDir/packs/. Domain routes are
@@ -295,6 +311,13 @@ func (s *server) routes() []route {
 		{"DELETE /api/admin/packs/staged/{token}", s.handleDiscardStaged, accAdmin, nil, noTok},
 		{"DELETE /api/admin/packs/{type}/{packId}", s.handleUninstallPack, accAdmin, nil, noTok},
 		{"GET /api/sentence-packs", s.handleListSentencePacks, accPublic, nil, tokReadGlobal},
+		{"GET /api/stroke-packs", s.handleListStrokePacks, accPublic, nil, tokReadGlobal},
+		// Stroke files keep the URL of v0.3's static files (rootHandler
+		// forwards /hanzi/ here): public, and fetched without credentials by
+		// the service worker, so no token either.
+		{"GET /hanzi/{file}", s.handleStrokeFile, accPublic, nil, noTok},
+		{"GET /api/packages", s.handlePackageCatalogue, accUser, nil, tokReadGlobal},
+		{"GET /api/packages/{id}/{revision}", s.handlePackageDownload, accUser, nil, tokReadGlobal},
 		{"POST /api/admin/plugins", s.handleRegisterPlugin, accAdmin, nil, noTok},
 		{"GET /api/ai/status", s.handleAIStatus, accUser, nil, noTok},
 		{"GET /api/ai/providers", s.handleAIProviders, accUser, nil, noTok},

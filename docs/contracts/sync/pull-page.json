@@ -1,0 +1,3717 @@
+{
+ "version": 1,
+ "rule": "sync/pull-page",
+ "_doc": "One answer of GET /api/sync/pull?v=2. requested is the collection set of the round; position is first (scope set), middle, last (cursor set) or only (first and last). valid pages decode; invalid ones must be refused for the reason given. Row shapes: shapes (every key always present; library rows have deletedAt null when live, and a library tombstone is exactly libraryTombstone); typed rows decode as docs/contracts/study/rows.json. Typed rows here are copied from study/rows.json, library keys from library/rows.json shapes. Tokens are opaque: only the p2./c2. prefixes are a contract. Decoded by server/internal/sync (B2) and apps/web/src/lib/sync/pager.ts (C1).",
+ "collections": [
+  "workspaces",
+  "pluginStates",
+  "pluginData",
+  "cards",
+  "decks",
+  "deckSettings",
+  "limits",
+  "fsrsSets",
+  "fsrsActive",
+  "books",
+  "bookmarks",
+  "highlights",
+  "overlays",
+  "sentences",
+  "events"
+ ],
+ "moved": [
+  "entries",
+  "links",
+  "senses",
+  "levelMembers",
+  "dictionaries",
+  "schemes",
+  "levels"
+ ],
+ "studyCollections": [
+  "pluginStates",
+  "pluginData",
+  "cards",
+  "decks",
+  "deckSettings",
+  "limits",
+  "fsrsSets",
+  "fsrsActive"
+ ],
+ "shapes": {
+  "workspaces": [
+   "id",
+   "language",
+   "name",
+   "settings",
+   "updatedAt"
+  ],
+  "pluginStates": [
+   "pluginId",
+   "userId",
+   "enabled",
+   "order",
+   "updatedAt"
+  ],
+  "pluginData": [
+   "pluginId",
+   "key",
+   "userId",
+   "workspaceId",
+   "data",
+   "version",
+   "updatedAt",
+   "deletedAt"
+  ],
+  "books": [
+   "id",
+   "workspaceId",
+   "language",
+   "title",
+   "author",
+   "source",
+   "sourceId",
+   "sourceUrl",
+   "attribution",
+   "licenseNote",
+   "chapterCount",
+   "position",
+   "createdAt",
+   "updatedAt",
+   "deletedAt"
+  ],
+  "bookmarks": [
+   "id",
+   "bookId",
+   "position",
+   "label",
+   "createdAt",
+   "updatedAt",
+   "deletedAt"
+  ],
+  "highlights": [
+   "id",
+   "bookId",
+   "chapter",
+   "paragraph",
+   "start",
+   "end",
+   "text",
+   "color",
+   "note",
+   "createdAt",
+   "updatedAt",
+   "deletedAt"
+  ],
+  "overlays": [
+   "entryId",
+   "written",
+   "readings",
+   "updatedAt"
+  ],
+  "sentences": [
+   "id",
+   "entryId",
+   "sourcePack",
+   "userId",
+   "hanzi",
+   "pinyin",
+   "translation",
+   "updatedAt",
+   "deletedAt"
+  ],
+  "events": [
+   "id",
+   "workspaceId",
+   "device",
+   "ts",
+   "type",
+   "payload",
+   "updatedAt"
+  ],
+  "cards": "study/rows.json (strict decode)",
+  "decks": "study/rows.json (strict decode)",
+  "deckSettings": "study/rows.json (strict decode)",
+  "limits": "study/rows.json (strict decode)",
+  "fsrsSets": "study/rows.json (strict decode)",
+  "fsrsActive": "study/rows.json (strict decode)"
+ },
+ "libraryTombstone": [
+  "id",
+  "workspaceId",
+  "updatedAt",
+  "deletedAt"
+ ],
+ "restartable": [
+  "overlays",
+  "sentences"
+ ],
+ "cases": [
+  {
+   "name": "first page of a full delta round",
+   "valid": true,
+   "requested": [
+    "workspaces",
+    "pluginStates",
+    "pluginData",
+    "cards",
+    "decks",
+    "deckSettings",
+    "limits",
+    "fsrsSets",
+    "fsrsActive",
+    "books",
+    "bookmarks",
+    "highlights",
+    "overlays",
+    "sentences",
+    "events"
+   ],
+   "position": "first",
+   "page": {
+    "format": 2,
+    "instanceId": "01JD8Z3Q4M5N6P7R8S9T0V1W2X",
+    "until": "2026-11-12T10:00:00Z",
+    "scope": {
+     "workspaces": [
+      {
+       "id": 7,
+       "language": "zh"
+      },
+      {
+       "id": 9,
+       "language": "ja"
+      }
+     ],
+     "languages": [
+      "ja",
+      "zh"
+     ],
+     "catalogue": "\"k-3fa9\""
+    },
+    "restarted": [],
+    "collections": {
+     "workspaces": [
+      {
+       "id": 7,
+       "language": "zh",
+       "name": "Chinese",
+       "settings": {},
+       "updatedAt": "2026-11-01T08:00:00Z"
+      }
+     ],
+     "pluginStates": [
+      {
+       "pluginId": "qinqin-journal",
+       "userId": 1,
+       "enabled": true,
+       "order": 2,
+       "updatedAt": "2026-11-02T08:00:00Z"
+      }
+     ],
+     "pluginData": [
+      {
+       "pluginId": "qinqin-flashcards",
+       "key": "vacation:01JD0000000000000000000001",
+       "userId": 1,
+       "workspaceId": null,
+       "data": {
+        "from": "2026-12-20",
+        "to": "2026-12-27"
+       },
+       "version": 1,
+       "updatedAt": "2026-11-12T09:00:00Z",
+       "deletedAt": null
+      },
+      {
+       "pluginId": "qinqin-core",
+       "key": "lookups",
+       "userId": 1,
+       "workspaceId": 7,
+       "data": {
+        "items": []
+       },
+       "version": 4,
+       "updatedAt": "2026-11-12T09:00:00Z",
+       "deletedAt": null
+      }
+     ],
+     "cards": [],
+     "decks": [],
+     "deckSettings": [],
+     "limits": [],
+     "fsrsSets": [],
+     "fsrsActive": [],
+     "books": [],
+     "bookmarks": [],
+     "highlights": [],
+     "overlays": [],
+     "sentences": [],
+     "events": []
+    },
+    "more": true,
+    "next": "p2.eyJ1IjoxLCJzIjoiIiwibiI6Mn0",
+    "cursor": null
+   }
+  },
+  {
+   "name": "middle page: typed rows incl. a tombstone, a plugin-data tombstone",
+   "valid": true,
+   "requested": [
+    "workspaces",
+    "pluginStates",
+    "pluginData",
+    "cards",
+    "decks",
+    "deckSettings",
+    "limits",
+    "fsrsSets",
+    "fsrsActive",
+    "books",
+    "bookmarks",
+    "highlights",
+    "overlays",
+    "sentences",
+    "events"
+   ],
+   "position": "middle",
+   "page": {
+    "format": 2,
+    "instanceId": "01JD8Z3Q4M5N6P7R8S9T0V1W2X",
+    "until": "2026-11-12T10:00:00Z",
+    "scope": null,
+    "restarted": [],
+    "collections": {
+     "workspaces": [],
+     "pluginStates": [],
+     "pluginData": [
+      {
+       "pluginId": "qinqin-core",
+       "key": "known:1201",
+       "userId": 1,
+       "workspaceId": 7,
+       "data": {
+        "at": "2026-11-10T08:00:00Z"
+       },
+       "version": 2,
+       "updatedAt": "2026-11-12T09:30:00Z",
+       "deletedAt": "2026-11-12T09:30:00Z"
+      }
+     ],
+     "cards": [
+      {
+       "workspaceId": 7,
+       "id": "c-vocab-1201",
+       "kind": "vocab",
+       "entryId": 1201,
+       "written": null,
+       "entryKind": null,
+       "sentenceId": null,
+       "skipKinds": [],
+       "deckIds": [
+        "general"
+       ],
+       "createdAt": "2026-11-10T08:00:00Z",
+       "extra": {},
+       "version": 3,
+       "updatedAt": "2026-11-12T10:00:00Z",
+       "deletedAt": null
+      },
+      {
+       "workspaceId": 7,
+       "id": "c-vocab-1201",
+       "kind": "vocab",
+       "entryId": 1201,
+       "written": null,
+       "entryKind": null,
+       "sentenceId": null,
+       "skipKinds": [],
+       "deckIds": [
+        "general"
+       ],
+       "createdAt": "2026-11-10T08:00:00Z",
+       "extra": {},
+       "version": 3,
+       "updatedAt": "2026-11-12T10:00:00Z",
+       "deletedAt": "2026-11-12T10:00:00Z"
+      }
+     ],
+     "decks": [
+      {
+       "workspaceId": 7,
+       "id": "01JDECK0000000000000000001",
+       "name": "Words",
+       "createdAt": "2026-11-10T08:00:00Z",
+       "source": null,
+       "extra": {},
+       "version": 3,
+       "updatedAt": "2026-11-12T10:00:00Z",
+       "deletedAt": null
+      }
+     ],
+     "deckSettings": [],
+     "limits": [],
+     "fsrsSets": [],
+     "fsrsActive": [],
+     "books": [],
+     "bookmarks": [],
+     "highlights": [],
+     "overlays": [],
+     "sentences": [],
+     "events": []
+    },
+    "more": true,
+    "next": "p2.eyJ1IjoxLCJzIjoiIiwibiI6Mn0",
+    "cursor": null
+   }
+  },
+  {
+   "name": "last page: library rows and a library tombstone, overlays, own sentences, events; cursor set",
+   "valid": true,
+   "requested": [
+    "workspaces",
+    "pluginStates",
+    "pluginData",
+    "cards",
+    "decks",
+    "deckSettings",
+    "limits",
+    "fsrsSets",
+    "fsrsActive",
+    "books",
+    "bookmarks",
+    "highlights",
+    "overlays",
+    "sentences",
+    "events"
+   ],
+   "position": "last",
+   "page": {
+    "format": 2,
+    "instanceId": "01JD8Z3Q4M5N6P7R8S9T0V1W2X",
+    "until": "2026-11-12T10:00:00Z",
+    "scope": null,
+    "restarted": [],
+    "collections": {
+     "workspaces": [],
+     "pluginStates": [],
+     "pluginData": [],
+     "cards": [],
+     "decks": [],
+     "deckSettings": [],
+     "limits": [],
+     "fsrsSets": [],
+     "fsrsActive": [],
+     "books": [
+      {
+       "id": 31,
+       "workspaceId": 7,
+       "language": "zh",
+       "title": "故乡",
+       "author": "鲁迅",
+       "source": "gutenberg",
+       "sourceId": "25187",
+       "sourceUrl": "https://www.gutenberg.org/ebooks/25187",
+       "attribution": "Project Gutenberg",
+       "licenseNote": "Public domain in the USA.",
+       "chapterCount": 3,
+       "position": "1:4",
+       "createdAt": "2026-11-05T08:00:00Z",
+       "updatedAt": "2026-11-12T09:10:00Z",
+       "deletedAt": null
+      }
+     ],
+     "bookmarks": [
+      {
+       "id": 52,
+       "bookId": 31,
+       "position": "0:0",
+       "label": "start",
+       "createdAt": "2026-11-05T08:01:00Z",
+       "updatedAt": "2026-11-05T08:01:00Z",
+       "deletedAt": null
+      },
+      {
+       "id": 53,
+       "workspaceId": 7,
+       "updatedAt": "2026-11-12T09:20:00Z",
+       "deletedAt": "2026-11-12T09:20:00Z"
+      }
+     ],
+     "highlights": [
+      {
+       "id": 77,
+       "bookId": 31,
+       "chapter": 0,
+       "paragraph": 0,
+       "start": 0,
+       "end": 2,
+       "text": "你好",
+       "color": "yellow",
+       "note": "",
+       "createdAt": "2026-11-05T08:02:00Z",
+       "updatedAt": "2026-11-05T08:02:00Z",
+       "deletedAt": null
+      }
+     ],
+     "overlays": [
+      {
+       "entryId": 1201,
+       "written": "你好",
+       "readings": [
+        {
+         "type": "pinyin",
+         "value": "nǐ hǎo",
+         "plain": "ni3 hao3",
+         "ord": 0
+        }
+       ],
+       "updatedAt": "2026-11-12T09:40:00Z"
+      },
+      {
+       "entryId": 1202,
+       "written": "再見",
+       "readings": null,
+       "updatedAt": "2026-11-12T09:41:00Z"
+      }
+     ],
+     "sentences": [
+      {
+       "id": 9001,
+       "entryId": 1201,
+       "sourcePack": "",
+       "userId": 1,
+       "hanzi": "你好，世界。",
+       "pinyin": "nǐ hǎo, shìjiè.",
+       "translation": "Hello, world.",
+       "updatedAt": "2026-11-12T09:45:00Z",
+       "deletedAt": null
+      }
+     ],
+     "events": [
+      {
+       "id": "01JD9A0000000000000000000A",
+       "workspaceId": 7,
+       "device": "phone",
+       "ts": "2026-11-12T09:50:00Z",
+       "type": "review",
+       "payload": {
+        "cardId": "c-vocab-1201",
+        "rating": 3
+       },
+       "updatedAt": "2026-11-12T09:50:05Z"
+      }
+     ]
+    },
+    "more": false,
+    "next": null,
+    "cursor": "c2.eyJ0IjoiMjAyNi0xMS0xMlQwOTo1OTozMFoifQ"
+   }
+  },
+  {
+   "name": "a one-page round of the web's study collections with workspace=7",
+   "valid": true,
+   "requested": [
+    "pluginStates",
+    "pluginData",
+    "cards",
+    "decks",
+    "deckSettings",
+    "limits",
+    "fsrsSets",
+    "fsrsActive"
+   ],
+   "position": "only",
+   "page": {
+    "format": 2,
+    "instanceId": "01JD8Z3Q4M5N6P7R8S9T0V1W2X",
+    "until": "2026-11-12T10:00:00Z",
+    "scope": {
+     "workspaces": [
+      {
+       "id": 7,
+       "language": "zh"
+      },
+      {
+       "id": 9,
+       "language": "ja"
+      }
+     ],
+     "languages": [
+      "zh"
+     ],
+     "catalogue": "\"k-3fa9\""
+    },
+    "restarted": [],
+    "collections": {
+     "pluginStates": [],
+     "pluginData": [
+      {
+       "pluginId": "qinqin-core",
+       "key": "lookups",
+       "userId": 1,
+       "workspaceId": 7,
+       "data": {
+        "items": []
+       },
+       "version": 4,
+       "updatedAt": "2026-11-12T09:00:00Z",
+       "deletedAt": null
+      }
+     ],
+     "cards": [
+      {
+       "workspaceId": 7,
+       "id": "c-vocab-1201",
+       "kind": "vocab",
+       "entryId": 1201,
+       "written": null,
+       "entryKind": null,
+       "sentenceId": null,
+       "skipKinds": [],
+       "deckIds": [
+        "general"
+       ],
+       "createdAt": "2026-11-10T08:00:00Z",
+       "extra": {},
+       "version": 3,
+       "updatedAt": "2026-11-12T10:00:00Z",
+       "deletedAt": null
+      }
+     ],
+     "decks": [],
+     "deckSettings": [],
+     "limits": [],
+     "fsrsSets": [],
+     "fsrsActive": []
+    },
+    "more": false,
+    "next": null,
+    "cursor": "c2.eyJ0IjoiMjAyNi0xMS0xMlQwOTo1OTozMFoifQ"
+   }
+  },
+  {
+   "name": "a language was added: overlays and sentences restarted",
+   "valid": true,
+   "requested": [
+    "overlays",
+    "sentences"
+   ],
+   "position": "only",
+   "page": {
+    "format": 2,
+    "instanceId": "01JD8Z3Q4M5N6P7R8S9T0V1W2X",
+    "until": "2026-11-12T10:00:00Z",
+    "scope": {
+     "workspaces": [
+      {
+       "id": 7,
+       "language": "zh"
+      },
+      {
+       "id": 9,
+       "language": "ja"
+      }
+     ],
+     "languages": [
+      "ja",
+      "zh"
+     ],
+     "catalogue": "\"k-3fa9\""
+    },
+    "restarted": [
+     "overlays",
+     "sentences"
+    ],
+    "collections": {
+     "overlays": [
+      {
+       "entryId": 1201,
+       "written": "你好",
+       "readings": [
+        {
+         "type": "pinyin",
+         "value": "nǐ hǎo",
+         "plain": "ni3 hao3",
+         "ord": 0
+        }
+       ],
+       "updatedAt": "2026-11-12T09:40:00Z"
+      }
+     ],
+     "sentences": []
+    },
+    "more": false,
+    "next": null,
+    "cursor": "c2.eyJ0IjoiMjAyNi0xMS0xMlQwOTo1OTozMFoifQ"
+   }
+  },
+  {
+   "name": "a requested collection missing",
+   "valid": false,
+   "reason": "every requested collection key is present",
+   "requested": [
+    "workspaces",
+    "pluginStates",
+    "pluginData",
+    "cards",
+    "decks",
+    "deckSettings",
+    "limits",
+    "fsrsSets",
+    "fsrsActive",
+    "books",
+    "bookmarks",
+    "highlights",
+    "overlays",
+    "sentences",
+    "events"
+   ],
+   "page": {
+    "format": 2,
+    "instanceId": "01JD8Z3Q4M5N6P7R8S9T0V1W2X",
+    "until": "2026-11-12T10:00:00Z",
+    "scope": null,
+    "restarted": [],
+    "collections": {
+     "workspaces": [],
+     "pluginStates": [],
+     "pluginData": [
+      {
+       "pluginId": "qinqin-core",
+       "key": "known:1201",
+       "userId": 1,
+       "workspaceId": 7,
+       "data": {
+        "at": "2026-11-10T08:00:00Z"
+       },
+       "version": 2,
+       "updatedAt": "2026-11-12T09:30:00Z",
+       "deletedAt": "2026-11-12T09:30:00Z"
+      }
+     ],
+     "cards": [
+      {
+       "workspaceId": 7,
+       "id": "c-vocab-1201",
+       "kind": "vocab",
+       "entryId": 1201,
+       "written": null,
+       "entryKind": null,
+       "sentenceId": null,
+       "skipKinds": [],
+       "deckIds": [
+        "general"
+       ],
+       "createdAt": "2026-11-10T08:00:00Z",
+       "extra": {},
+       "version": 3,
+       "updatedAt": "2026-11-12T10:00:00Z",
+       "deletedAt": null
+      },
+      {
+       "workspaceId": 7,
+       "id": "c-vocab-1201",
+       "kind": "vocab",
+       "entryId": 1201,
+       "written": null,
+       "entryKind": null,
+       "sentenceId": null,
+       "skipKinds": [],
+       "deckIds": [
+        "general"
+       ],
+       "createdAt": "2026-11-10T08:00:00Z",
+       "extra": {},
+       "version": 3,
+       "updatedAt": "2026-11-12T10:00:00Z",
+       "deletedAt": "2026-11-12T10:00:00Z"
+      }
+     ],
+     "decks": [
+      {
+       "workspaceId": 7,
+       "id": "01JDECK0000000000000000001",
+       "name": "Words",
+       "createdAt": "2026-11-10T08:00:00Z",
+       "source": null,
+       "extra": {},
+       "version": 3,
+       "updatedAt": "2026-11-12T10:00:00Z",
+       "deletedAt": null
+      }
+     ],
+     "deckSettings": [],
+     "limits": [],
+     "fsrsSets": [],
+     "fsrsActive": [],
+     "books": [],
+     "bookmarks": [],
+     "highlights": [],
+     "overlays": [],
+     "sentences": []
+    },
+    "more": true,
+    "next": "p2.eyJ1IjoxLCJzIjoiIiwibiI6Mn0",
+    "cursor": null
+   }
+  },
+  {
+   "name": "a collection that was not requested",
+   "valid": false,
+   "reason": "only requested collections",
+   "requested": [
+    "pluginStates",
+    "pluginData",
+    "cards",
+    "decks",
+    "deckSettings",
+    "limits",
+    "fsrsSets",
+    "fsrsActive"
+   ],
+   "page": {
+    "format": 2,
+    "instanceId": "01JD8Z3Q4M5N6P7R8S9T0V1W2X",
+    "until": "2026-11-12T10:00:00Z",
+    "scope": {
+     "workspaces": [
+      {
+       "id": 7,
+       "language": "zh"
+      },
+      {
+       "id": 9,
+       "language": "ja"
+      }
+     ],
+     "languages": [
+      "zh"
+     ],
+     "catalogue": "\"k-3fa9\""
+    },
+    "restarted": [],
+    "collections": {
+     "pluginStates": [],
+     "pluginData": [
+      {
+       "pluginId": "qinqin-core",
+       "key": "lookups",
+       "userId": 1,
+       "workspaceId": 7,
+       "data": {
+        "items": []
+       },
+       "version": 4,
+       "updatedAt": "2026-11-12T09:00:00Z",
+       "deletedAt": null
+      }
+     ],
+     "cards": [
+      {
+       "workspaceId": 7,
+       "id": "c-vocab-1201",
+       "kind": "vocab",
+       "entryId": 1201,
+       "written": null,
+       "entryKind": null,
+       "sentenceId": null,
+       "skipKinds": [],
+       "deckIds": [
+        "general"
+       ],
+       "createdAt": "2026-11-10T08:00:00Z",
+       "extra": {},
+       "version": 3,
+       "updatedAt": "2026-11-12T10:00:00Z",
+       "deletedAt": null
+      }
+     ],
+     "decks": [],
+     "deckSettings": [],
+     "limits": [],
+     "fsrsSets": [],
+     "fsrsActive": [],
+     "events": []
+    },
+    "more": false,
+    "next": null,
+    "cursor": "c2.eyJ0IjoiMjAyNi0xMS0xMlQwOTo1OTozMFoifQ"
+   }
+  },
+  {
+   "name": "a moved lexicon collection",
+   "valid": false,
+   "reason": "only requested collections",
+   "requested": [
+    "pluginStates",
+    "pluginData",
+    "cards",
+    "decks",
+    "deckSettings",
+    "limits",
+    "fsrsSets",
+    "fsrsActive"
+   ],
+   "page": {
+    "format": 2,
+    "instanceId": "01JD8Z3Q4M5N6P7R8S9T0V1W2X",
+    "until": "2026-11-12T10:00:00Z",
+    "scope": {
+     "workspaces": [
+      {
+       "id": 7,
+       "language": "zh"
+      },
+      {
+       "id": 9,
+       "language": "ja"
+      }
+     ],
+     "languages": [
+      "zh"
+     ],
+     "catalogue": "\"k-3fa9\""
+    },
+    "restarted": [],
+    "collections": {
+     "pluginStates": [],
+     "pluginData": [
+      {
+       "pluginId": "qinqin-core",
+       "key": "lookups",
+       "userId": 1,
+       "workspaceId": 7,
+       "data": {
+        "items": []
+       },
+       "version": 4,
+       "updatedAt": "2026-11-12T09:00:00Z",
+       "deletedAt": null
+      }
+     ],
+     "cards": [
+      {
+       "workspaceId": 7,
+       "id": "c-vocab-1201",
+       "kind": "vocab",
+       "entryId": 1201,
+       "written": null,
+       "entryKind": null,
+       "sentenceId": null,
+       "skipKinds": [],
+       "deckIds": [
+        "general"
+       ],
+       "createdAt": "2026-11-10T08:00:00Z",
+       "extra": {},
+       "version": 3,
+       "updatedAt": "2026-11-12T10:00:00Z",
+       "deletedAt": null
+      }
+     ],
+     "decks": [],
+     "deckSettings": [],
+     "limits": [],
+     "fsrsSets": [],
+     "fsrsActive": [],
+     "entries": []
+    },
+    "more": false,
+    "next": null,
+    "cursor": "c2.eyJ0IjoiMjAyNi0xMS0xMlQwOTo1OTozMFoifQ"
+   }
+  },
+  {
+   "name": "a collection null",
+   "valid": false,
+   "reason": "collections are arrays",
+   "requested": [
+    "workspaces",
+    "pluginStates",
+    "pluginData",
+    "cards",
+    "decks",
+    "deckSettings",
+    "limits",
+    "fsrsSets",
+    "fsrsActive",
+    "books",
+    "bookmarks",
+    "highlights",
+    "overlays",
+    "sentences",
+    "events"
+   ],
+   "page": {
+    "format": 2,
+    "instanceId": "01JD8Z3Q4M5N6P7R8S9T0V1W2X",
+    "until": "2026-11-12T10:00:00Z",
+    "scope": null,
+    "restarted": [],
+    "collections": {
+     "workspaces": [],
+     "pluginStates": [],
+     "pluginData": [
+      {
+       "pluginId": "qinqin-core",
+       "key": "known:1201",
+       "userId": 1,
+       "workspaceId": 7,
+       "data": {
+        "at": "2026-11-10T08:00:00Z"
+       },
+       "version": 2,
+       "updatedAt": "2026-11-12T09:30:00Z",
+       "deletedAt": "2026-11-12T09:30:00Z"
+      }
+     ],
+     "cards": null,
+     "decks": [
+      {
+       "workspaceId": 7,
+       "id": "01JDECK0000000000000000001",
+       "name": "Words",
+       "createdAt": "2026-11-10T08:00:00Z",
+       "source": null,
+       "extra": {},
+       "version": 3,
+       "updatedAt": "2026-11-12T10:00:00Z",
+       "deletedAt": null
+      }
+     ],
+     "deckSettings": [],
+     "limits": [],
+     "fsrsSets": [],
+     "fsrsActive": [],
+     "books": [],
+     "bookmarks": [],
+     "highlights": [],
+     "overlays": [],
+     "sentences": [],
+     "events": []
+    },
+    "more": true,
+    "next": "p2.eyJ1IjoxLCJzIjoiIiwibiI6Mn0",
+    "cursor": null
+   }
+  },
+  {
+   "name": "more true with a cursor",
+   "valid": false,
+   "reason": "a page with more has next and no cursor",
+   "requested": [
+    "workspaces",
+    "pluginStates",
+    "pluginData",
+    "cards",
+    "decks",
+    "deckSettings",
+    "limits",
+    "fsrsSets",
+    "fsrsActive",
+    "books",
+    "bookmarks",
+    "highlights",
+    "overlays",
+    "sentences",
+    "events"
+   ],
+   "page": {
+    "format": 2,
+    "instanceId": "01JD8Z3Q4M5N6P7R8S9T0V1W2X",
+    "until": "2026-11-12T10:00:00Z",
+    "scope": null,
+    "restarted": [],
+    "collections": {
+     "workspaces": [],
+     "pluginStates": [],
+     "pluginData": [
+      {
+       "pluginId": "qinqin-core",
+       "key": "known:1201",
+       "userId": 1,
+       "workspaceId": 7,
+       "data": {
+        "at": "2026-11-10T08:00:00Z"
+       },
+       "version": 2,
+       "updatedAt": "2026-11-12T09:30:00Z",
+       "deletedAt": "2026-11-12T09:30:00Z"
+      }
+     ],
+     "cards": [
+      {
+       "workspaceId": 7,
+       "id": "c-vocab-1201",
+       "kind": "vocab",
+       "entryId": 1201,
+       "written": null,
+       "entryKind": null,
+       "sentenceId": null,
+       "skipKinds": [],
+       "deckIds": [
+        "general"
+       ],
+       "createdAt": "2026-11-10T08:00:00Z",
+       "extra": {},
+       "version": 3,
+       "updatedAt": "2026-11-12T10:00:00Z",
+       "deletedAt": null
+      },
+      {
+       "workspaceId": 7,
+       "id": "c-vocab-1201",
+       "kind": "vocab",
+       "entryId": 1201,
+       "written": null,
+       "entryKind": null,
+       "sentenceId": null,
+       "skipKinds": [],
+       "deckIds": [
+        "general"
+       ],
+       "createdAt": "2026-11-10T08:00:00Z",
+       "extra": {},
+       "version": 3,
+       "updatedAt": "2026-11-12T10:00:00Z",
+       "deletedAt": "2026-11-12T10:00:00Z"
+      }
+     ],
+     "decks": [
+      {
+       "workspaceId": 7,
+       "id": "01JDECK0000000000000000001",
+       "name": "Words",
+       "createdAt": "2026-11-10T08:00:00Z",
+       "source": null,
+       "extra": {},
+       "version": 3,
+       "updatedAt": "2026-11-12T10:00:00Z",
+       "deletedAt": null
+      }
+     ],
+     "deckSettings": [],
+     "limits": [],
+     "fsrsSets": [],
+     "fsrsActive": [],
+     "books": [],
+     "bookmarks": [],
+     "highlights": [],
+     "overlays": [],
+     "sentences": [],
+     "events": []
+    },
+    "more": true,
+    "next": "p2.eyJ1IjoxLCJzIjoiIiwibiI6Mn0",
+    "cursor": "c2.eyJ0IjoiIn0"
+   }
+  },
+  {
+   "name": "more false with next",
+   "valid": false,
+   "reason": "the last page has cursor and no next",
+   "requested": [
+    "workspaces",
+    "pluginStates",
+    "pluginData",
+    "cards",
+    "decks",
+    "deckSettings",
+    "limits",
+    "fsrsSets",
+    "fsrsActive",
+    "books",
+    "bookmarks",
+    "highlights",
+    "overlays",
+    "sentences",
+    "events"
+   ],
+   "page": {
+    "format": 2,
+    "instanceId": "01JD8Z3Q4M5N6P7R8S9T0V1W2X",
+    "until": "2026-11-12T10:00:00Z",
+    "scope": null,
+    "restarted": [],
+    "collections": {
+     "workspaces": [],
+     "pluginStates": [],
+     "pluginData": [],
+     "cards": [],
+     "decks": [],
+     "deckSettings": [],
+     "limits": [],
+     "fsrsSets": [],
+     "fsrsActive": [],
+     "books": [
+      {
+       "id": 31,
+       "workspaceId": 7,
+       "language": "zh",
+       "title": "故乡",
+       "author": "鲁迅",
+       "source": "gutenberg",
+       "sourceId": "25187",
+       "sourceUrl": "https://www.gutenberg.org/ebooks/25187",
+       "attribution": "Project Gutenberg",
+       "licenseNote": "Public domain in the USA.",
+       "chapterCount": 3,
+       "position": "1:4",
+       "createdAt": "2026-11-05T08:00:00Z",
+       "updatedAt": "2026-11-12T09:10:00Z",
+       "deletedAt": null
+      }
+     ],
+     "bookmarks": [
+      {
+       "id": 52,
+       "bookId": 31,
+       "position": "0:0",
+       "label": "start",
+       "createdAt": "2026-11-05T08:01:00Z",
+       "updatedAt": "2026-11-05T08:01:00Z",
+       "deletedAt": null
+      },
+      {
+       "id": 53,
+       "workspaceId": 7,
+       "updatedAt": "2026-11-12T09:20:00Z",
+       "deletedAt": "2026-11-12T09:20:00Z"
+      }
+     ],
+     "highlights": [
+      {
+       "id": 77,
+       "bookId": 31,
+       "chapter": 0,
+       "paragraph": 0,
+       "start": 0,
+       "end": 2,
+       "text": "你好",
+       "color": "yellow",
+       "note": "",
+       "createdAt": "2026-11-05T08:02:00Z",
+       "updatedAt": "2026-11-05T08:02:00Z",
+       "deletedAt": null
+      }
+     ],
+     "overlays": [
+      {
+       "entryId": 1201,
+       "written": "你好",
+       "readings": [
+        {
+         "type": "pinyin",
+         "value": "nǐ hǎo",
+         "plain": "ni3 hao3",
+         "ord": 0
+        }
+       ],
+       "updatedAt": "2026-11-12T09:40:00Z"
+      },
+      {
+       "entryId": 1202,
+       "written": "再見",
+       "readings": null,
+       "updatedAt": "2026-11-12T09:41:00Z"
+      }
+     ],
+     "sentences": [
+      {
+       "id": 9001,
+       "entryId": 1201,
+       "sourcePack": "",
+       "userId": 1,
+       "hanzi": "你好，世界。",
+       "pinyin": "nǐ hǎo, shìjiè.",
+       "translation": "Hello, world.",
+       "updatedAt": "2026-11-12T09:45:00Z",
+       "deletedAt": null
+      }
+     ],
+     "events": [
+      {
+       "id": "01JD9A0000000000000000000A",
+       "workspaceId": 7,
+       "device": "phone",
+       "ts": "2026-11-12T09:50:00Z",
+       "type": "review",
+       "payload": {
+        "cardId": "c-vocab-1201",
+        "rating": 3
+       },
+       "updatedAt": "2026-11-12T09:50:05Z"
+      }
+     ]
+    },
+    "more": false,
+    "next": "p2.eyJ1IjoxfQ",
+    "cursor": "c2.eyJ0IjoiMjAyNi0xMS0xMlQwOTo1OTozMFoifQ"
+   }
+  },
+  {
+   "name": "more false without a cursor",
+   "valid": false,
+   "reason": "the last page has cursor and no next",
+   "requested": [
+    "workspaces",
+    "pluginStates",
+    "pluginData",
+    "cards",
+    "decks",
+    "deckSettings",
+    "limits",
+    "fsrsSets",
+    "fsrsActive",
+    "books",
+    "bookmarks",
+    "highlights",
+    "overlays",
+    "sentences",
+    "events"
+   ],
+   "page": {
+    "format": 2,
+    "instanceId": "01JD8Z3Q4M5N6P7R8S9T0V1W2X",
+    "until": "2026-11-12T10:00:00Z",
+    "scope": null,
+    "restarted": [],
+    "collections": {
+     "workspaces": [],
+     "pluginStates": [],
+     "pluginData": [],
+     "cards": [],
+     "decks": [],
+     "deckSettings": [],
+     "limits": [],
+     "fsrsSets": [],
+     "fsrsActive": [],
+     "books": [
+      {
+       "id": 31,
+       "workspaceId": 7,
+       "language": "zh",
+       "title": "故乡",
+       "author": "鲁迅",
+       "source": "gutenberg",
+       "sourceId": "25187",
+       "sourceUrl": "https://www.gutenberg.org/ebooks/25187",
+       "attribution": "Project Gutenberg",
+       "licenseNote": "Public domain in the USA.",
+       "chapterCount": 3,
+       "position": "1:4",
+       "createdAt": "2026-11-05T08:00:00Z",
+       "updatedAt": "2026-11-12T09:10:00Z",
+       "deletedAt": null
+      }
+     ],
+     "bookmarks": [
+      {
+       "id": 52,
+       "bookId": 31,
+       "position": "0:0",
+       "label": "start",
+       "createdAt": "2026-11-05T08:01:00Z",
+       "updatedAt": "2026-11-05T08:01:00Z",
+       "deletedAt": null
+      },
+      {
+       "id": 53,
+       "workspaceId": 7,
+       "updatedAt": "2026-11-12T09:20:00Z",
+       "deletedAt": "2026-11-12T09:20:00Z"
+      }
+     ],
+     "highlights": [
+      {
+       "id": 77,
+       "bookId": 31,
+       "chapter": 0,
+       "paragraph": 0,
+       "start": 0,
+       "end": 2,
+       "text": "你好",
+       "color": "yellow",
+       "note": "",
+       "createdAt": "2026-11-05T08:02:00Z",
+       "updatedAt": "2026-11-05T08:02:00Z",
+       "deletedAt": null
+      }
+     ],
+     "overlays": [
+      {
+       "entryId": 1201,
+       "written": "你好",
+       "readings": [
+        {
+         "type": "pinyin",
+         "value": "nǐ hǎo",
+         "plain": "ni3 hao3",
+         "ord": 0
+        }
+       ],
+       "updatedAt": "2026-11-12T09:40:00Z"
+      },
+      {
+       "entryId": 1202,
+       "written": "再見",
+       "readings": null,
+       "updatedAt": "2026-11-12T09:41:00Z"
+      }
+     ],
+     "sentences": [
+      {
+       "id": 9001,
+       "entryId": 1201,
+       "sourcePack": "",
+       "userId": 1,
+       "hanzi": "你好，世界。",
+       "pinyin": "nǐ hǎo, shìjiè.",
+       "translation": "Hello, world.",
+       "updatedAt": "2026-11-12T09:45:00Z",
+       "deletedAt": null
+      }
+     ],
+     "events": [
+      {
+       "id": "01JD9A0000000000000000000A",
+       "workspaceId": 7,
+       "device": "phone",
+       "ts": "2026-11-12T09:50:00Z",
+       "type": "review",
+       "payload": {
+        "cardId": "c-vocab-1201",
+        "rating": 3
+       },
+       "updatedAt": "2026-11-12T09:50:05Z"
+      }
+     ]
+    },
+    "more": false,
+    "next": null,
+    "cursor": null
+   }
+  },
+  {
+   "name": "next without the p2. prefix",
+   "valid": false,
+   "reason": "next starts with p2.",
+   "requested": [
+    "workspaces",
+    "pluginStates",
+    "pluginData",
+    "cards",
+    "decks",
+    "deckSettings",
+    "limits",
+    "fsrsSets",
+    "fsrsActive",
+    "books",
+    "bookmarks",
+    "highlights",
+    "overlays",
+    "sentences",
+    "events"
+   ],
+   "page": {
+    "format": 2,
+    "instanceId": "01JD8Z3Q4M5N6P7R8S9T0V1W2X",
+    "until": "2026-11-12T10:00:00Z",
+    "scope": null,
+    "restarted": [],
+    "collections": {
+     "workspaces": [],
+     "pluginStates": [],
+     "pluginData": [
+      {
+       "pluginId": "qinqin-core",
+       "key": "known:1201",
+       "userId": 1,
+       "workspaceId": 7,
+       "data": {
+        "at": "2026-11-10T08:00:00Z"
+       },
+       "version": 2,
+       "updatedAt": "2026-11-12T09:30:00Z",
+       "deletedAt": "2026-11-12T09:30:00Z"
+      }
+     ],
+     "cards": [
+      {
+       "workspaceId": 7,
+       "id": "c-vocab-1201",
+       "kind": "vocab",
+       "entryId": 1201,
+       "written": null,
+       "entryKind": null,
+       "sentenceId": null,
+       "skipKinds": [],
+       "deckIds": [
+        "general"
+       ],
+       "createdAt": "2026-11-10T08:00:00Z",
+       "extra": {},
+       "version": 3,
+       "updatedAt": "2026-11-12T10:00:00Z",
+       "deletedAt": null
+      },
+      {
+       "workspaceId": 7,
+       "id": "c-vocab-1201",
+       "kind": "vocab",
+       "entryId": 1201,
+       "written": null,
+       "entryKind": null,
+       "sentenceId": null,
+       "skipKinds": [],
+       "deckIds": [
+        "general"
+       ],
+       "createdAt": "2026-11-10T08:00:00Z",
+       "extra": {},
+       "version": 3,
+       "updatedAt": "2026-11-12T10:00:00Z",
+       "deletedAt": "2026-11-12T10:00:00Z"
+      }
+     ],
+     "decks": [
+      {
+       "workspaceId": 7,
+       "id": "01JDECK0000000000000000001",
+       "name": "Words",
+       "createdAt": "2026-11-10T08:00:00Z",
+       "source": null,
+       "extra": {},
+       "version": 3,
+       "updatedAt": "2026-11-12T10:00:00Z",
+       "deletedAt": null
+      }
+     ],
+     "deckSettings": [],
+     "limits": [],
+     "fsrsSets": [],
+     "fsrsActive": [],
+     "books": [],
+     "bookmarks": [],
+     "highlights": [],
+     "overlays": [],
+     "sentences": [],
+     "events": []
+    },
+    "more": true,
+    "next": "eyJ1IjoxfQ",
+    "cursor": null
+   }
+  },
+  {
+   "name": "cursor without the c2. prefix",
+   "valid": false,
+   "reason": "cursor starts with c2.",
+   "requested": [
+    "workspaces",
+    "pluginStates",
+    "pluginData",
+    "cards",
+    "decks",
+    "deckSettings",
+    "limits",
+    "fsrsSets",
+    "fsrsActive",
+    "books",
+    "bookmarks",
+    "highlights",
+    "overlays",
+    "sentences",
+    "events"
+   ],
+   "page": {
+    "format": 2,
+    "instanceId": "01JD8Z3Q4M5N6P7R8S9T0V1W2X",
+    "until": "2026-11-12T10:00:00Z",
+    "scope": null,
+    "restarted": [],
+    "collections": {
+     "workspaces": [],
+     "pluginStates": [],
+     "pluginData": [],
+     "cards": [],
+     "decks": [],
+     "deckSettings": [],
+     "limits": [],
+     "fsrsSets": [],
+     "fsrsActive": [],
+     "books": [
+      {
+       "id": 31,
+       "workspaceId": 7,
+       "language": "zh",
+       "title": "故乡",
+       "author": "鲁迅",
+       "source": "gutenberg",
+       "sourceId": "25187",
+       "sourceUrl": "https://www.gutenberg.org/ebooks/25187",
+       "attribution": "Project Gutenberg",
+       "licenseNote": "Public domain in the USA.",
+       "chapterCount": 3,
+       "position": "1:4",
+       "createdAt": "2026-11-05T08:00:00Z",
+       "updatedAt": "2026-11-12T09:10:00Z",
+       "deletedAt": null
+      }
+     ],
+     "bookmarks": [
+      {
+       "id": 52,
+       "bookId": 31,
+       "position": "0:0",
+       "label": "start",
+       "createdAt": "2026-11-05T08:01:00Z",
+       "updatedAt": "2026-11-05T08:01:00Z",
+       "deletedAt": null
+      },
+      {
+       "id": 53,
+       "workspaceId": 7,
+       "updatedAt": "2026-11-12T09:20:00Z",
+       "deletedAt": "2026-11-12T09:20:00Z"
+      }
+     ],
+     "highlights": [
+      {
+       "id": 77,
+       "bookId": 31,
+       "chapter": 0,
+       "paragraph": 0,
+       "start": 0,
+       "end": 2,
+       "text": "你好",
+       "color": "yellow",
+       "note": "",
+       "createdAt": "2026-11-05T08:02:00Z",
+       "updatedAt": "2026-11-05T08:02:00Z",
+       "deletedAt": null
+      }
+     ],
+     "overlays": [
+      {
+       "entryId": 1201,
+       "written": "你好",
+       "readings": [
+        {
+         "type": "pinyin",
+         "value": "nǐ hǎo",
+         "plain": "ni3 hao3",
+         "ord": 0
+        }
+       ],
+       "updatedAt": "2026-11-12T09:40:00Z"
+      },
+      {
+       "entryId": 1202,
+       "written": "再見",
+       "readings": null,
+       "updatedAt": "2026-11-12T09:41:00Z"
+      }
+     ],
+     "sentences": [
+      {
+       "id": 9001,
+       "entryId": 1201,
+       "sourcePack": "",
+       "userId": 1,
+       "hanzi": "你好，世界。",
+       "pinyin": "nǐ hǎo, shìjiè.",
+       "translation": "Hello, world.",
+       "updatedAt": "2026-11-12T09:45:00Z",
+       "deletedAt": null
+      }
+     ],
+     "events": [
+      {
+       "id": "01JD9A0000000000000000000A",
+       "workspaceId": 7,
+       "device": "phone",
+       "ts": "2026-11-12T09:50:00Z",
+       "type": "review",
+       "payload": {
+        "cardId": "c-vocab-1201",
+        "rating": 3
+       },
+       "updatedAt": "2026-11-12T09:50:05Z"
+      }
+     ]
+    },
+    "more": false,
+    "next": null,
+    "cursor": "2026-11-12T09:59:30Z"
+   }
+  },
+  {
+   "name": "format 1",
+   "valid": false,
+   "reason": "format is 2",
+   "requested": [
+    "workspaces",
+    "pluginStates",
+    "pluginData",
+    "cards",
+    "decks",
+    "deckSettings",
+    "limits",
+    "fsrsSets",
+    "fsrsActive",
+    "books",
+    "bookmarks",
+    "highlights",
+    "overlays",
+    "sentences",
+    "events"
+   ],
+   "page": {
+    "format": 1,
+    "instanceId": "01JD8Z3Q4M5N6P7R8S9T0V1W2X",
+    "until": "2026-11-12T10:00:00Z",
+    "scope": null,
+    "restarted": [],
+    "collections": {
+     "workspaces": [],
+     "pluginStates": [],
+     "pluginData": [
+      {
+       "pluginId": "qinqin-core",
+       "key": "known:1201",
+       "userId": 1,
+       "workspaceId": 7,
+       "data": {
+        "at": "2026-11-10T08:00:00Z"
+       },
+       "version": 2,
+       "updatedAt": "2026-11-12T09:30:00Z",
+       "deletedAt": "2026-11-12T09:30:00Z"
+      }
+     ],
+     "cards": [
+      {
+       "workspaceId": 7,
+       "id": "c-vocab-1201",
+       "kind": "vocab",
+       "entryId": 1201,
+       "written": null,
+       "entryKind": null,
+       "sentenceId": null,
+       "skipKinds": [],
+       "deckIds": [
+        "general"
+       ],
+       "createdAt": "2026-11-10T08:00:00Z",
+       "extra": {},
+       "version": 3,
+       "updatedAt": "2026-11-12T10:00:00Z",
+       "deletedAt": null
+      },
+      {
+       "workspaceId": 7,
+       "id": "c-vocab-1201",
+       "kind": "vocab",
+       "entryId": 1201,
+       "written": null,
+       "entryKind": null,
+       "sentenceId": null,
+       "skipKinds": [],
+       "deckIds": [
+        "general"
+       ],
+       "createdAt": "2026-11-10T08:00:00Z",
+       "extra": {},
+       "version": 3,
+       "updatedAt": "2026-11-12T10:00:00Z",
+       "deletedAt": "2026-11-12T10:00:00Z"
+      }
+     ],
+     "decks": [
+      {
+       "workspaceId": 7,
+       "id": "01JDECK0000000000000000001",
+       "name": "Words",
+       "createdAt": "2026-11-10T08:00:00Z",
+       "source": null,
+       "extra": {},
+       "version": 3,
+       "updatedAt": "2026-11-12T10:00:00Z",
+       "deletedAt": null
+      }
+     ],
+     "deckSettings": [],
+     "limits": [],
+     "fsrsSets": [],
+     "fsrsActive": [],
+     "books": [],
+     "bookmarks": [],
+     "highlights": [],
+     "overlays": [],
+     "sentences": [],
+     "events": []
+    },
+    "more": true,
+    "next": "p2.eyJ1IjoxLCJzIjoiIiwibiI6Mn0",
+    "cursor": null
+   }
+  },
+  {
+   "name": "instanceId not a ULID",
+   "valid": false,
+   "reason": "instanceId is a 26-character ULID",
+   "requested": [
+    "workspaces",
+    "pluginStates",
+    "pluginData",
+    "cards",
+    "decks",
+    "deckSettings",
+    "limits",
+    "fsrsSets",
+    "fsrsActive",
+    "books",
+    "bookmarks",
+    "highlights",
+    "overlays",
+    "sentences",
+    "events"
+   ],
+   "page": {
+    "format": 2,
+    "instanceId": "server-1",
+    "until": "2026-11-12T10:00:00Z",
+    "scope": null,
+    "restarted": [],
+    "collections": {
+     "workspaces": [],
+     "pluginStates": [],
+     "pluginData": [
+      {
+       "pluginId": "qinqin-core",
+       "key": "known:1201",
+       "userId": 1,
+       "workspaceId": 7,
+       "data": {
+        "at": "2026-11-10T08:00:00Z"
+       },
+       "version": 2,
+       "updatedAt": "2026-11-12T09:30:00Z",
+       "deletedAt": "2026-11-12T09:30:00Z"
+      }
+     ],
+     "cards": [
+      {
+       "workspaceId": 7,
+       "id": "c-vocab-1201",
+       "kind": "vocab",
+       "entryId": 1201,
+       "written": null,
+       "entryKind": null,
+       "sentenceId": null,
+       "skipKinds": [],
+       "deckIds": [
+        "general"
+       ],
+       "createdAt": "2026-11-10T08:00:00Z",
+       "extra": {},
+       "version": 3,
+       "updatedAt": "2026-11-12T10:00:00Z",
+       "deletedAt": null
+      },
+      {
+       "workspaceId": 7,
+       "id": "c-vocab-1201",
+       "kind": "vocab",
+       "entryId": 1201,
+       "written": null,
+       "entryKind": null,
+       "sentenceId": null,
+       "skipKinds": [],
+       "deckIds": [
+        "general"
+       ],
+       "createdAt": "2026-11-10T08:00:00Z",
+       "extra": {},
+       "version": 3,
+       "updatedAt": "2026-11-12T10:00:00Z",
+       "deletedAt": "2026-11-12T10:00:00Z"
+      }
+     ],
+     "decks": [
+      {
+       "workspaceId": 7,
+       "id": "01JDECK0000000000000000001",
+       "name": "Words",
+       "createdAt": "2026-11-10T08:00:00Z",
+       "source": null,
+       "extra": {},
+       "version": 3,
+       "updatedAt": "2026-11-12T10:00:00Z",
+       "deletedAt": null
+      }
+     ],
+     "deckSettings": [],
+     "limits": [],
+     "fsrsSets": [],
+     "fsrsActive": [],
+     "books": [],
+     "bookmarks": [],
+     "highlights": [],
+     "overlays": [],
+     "sentences": [],
+     "events": []
+    },
+    "more": true,
+    "next": "p2.eyJ1IjoxLCJzIjoiIiwibiI6Mn0",
+    "cursor": null
+   }
+  },
+  {
+   "name": "until not RFC 3339",
+   "valid": false,
+   "reason": "until is an RFC 3339 UTC time",
+   "requested": [
+    "workspaces",
+    "pluginStates",
+    "pluginData",
+    "cards",
+    "decks",
+    "deckSettings",
+    "limits",
+    "fsrsSets",
+    "fsrsActive",
+    "books",
+    "bookmarks",
+    "highlights",
+    "overlays",
+    "sentences",
+    "events"
+   ],
+   "page": {
+    "format": 2,
+    "instanceId": "01JD8Z3Q4M5N6P7R8S9T0V1W2X",
+    "until": "2026-11-12 10:00",
+    "scope": null,
+    "restarted": [],
+    "collections": {
+     "workspaces": [],
+     "pluginStates": [],
+     "pluginData": [
+      {
+       "pluginId": "qinqin-core",
+       "key": "known:1201",
+       "userId": 1,
+       "workspaceId": 7,
+       "data": {
+        "at": "2026-11-10T08:00:00Z"
+       },
+       "version": 2,
+       "updatedAt": "2026-11-12T09:30:00Z",
+       "deletedAt": "2026-11-12T09:30:00Z"
+      }
+     ],
+     "cards": [
+      {
+       "workspaceId": 7,
+       "id": "c-vocab-1201",
+       "kind": "vocab",
+       "entryId": 1201,
+       "written": null,
+       "entryKind": null,
+       "sentenceId": null,
+       "skipKinds": [],
+       "deckIds": [
+        "general"
+       ],
+       "createdAt": "2026-11-10T08:00:00Z",
+       "extra": {},
+       "version": 3,
+       "updatedAt": "2026-11-12T10:00:00Z",
+       "deletedAt": null
+      },
+      {
+       "workspaceId": 7,
+       "id": "c-vocab-1201",
+       "kind": "vocab",
+       "entryId": 1201,
+       "written": null,
+       "entryKind": null,
+       "sentenceId": null,
+       "skipKinds": [],
+       "deckIds": [
+        "general"
+       ],
+       "createdAt": "2026-11-10T08:00:00Z",
+       "extra": {},
+       "version": 3,
+       "updatedAt": "2026-11-12T10:00:00Z",
+       "deletedAt": "2026-11-12T10:00:00Z"
+      }
+     ],
+     "decks": [
+      {
+       "workspaceId": 7,
+       "id": "01JDECK0000000000000000001",
+       "name": "Words",
+       "createdAt": "2026-11-10T08:00:00Z",
+       "source": null,
+       "extra": {},
+       "version": 3,
+       "updatedAt": "2026-11-12T10:00:00Z",
+       "deletedAt": null
+      }
+     ],
+     "deckSettings": [],
+     "limits": [],
+     "fsrsSets": [],
+     "fsrsActive": [],
+     "books": [],
+     "bookmarks": [],
+     "highlights": [],
+     "overlays": [],
+     "sentences": [],
+     "events": []
+    },
+    "more": true,
+    "next": "p2.eyJ1IjoxLCJzIjoiIiwibiI6Mn0",
+    "cursor": null
+   }
+  },
+  {
+   "name": "restarted names a workspace collection",
+   "valid": false,
+   "reason": "restarted is a subset of [overlays, sentences]",
+   "requested": [
+    "workspaces",
+    "pluginStates",
+    "pluginData",
+    "cards",
+    "decks",
+    "deckSettings",
+    "limits",
+    "fsrsSets",
+    "fsrsActive",
+    "books",
+    "bookmarks",
+    "highlights",
+    "overlays",
+    "sentences",
+    "events"
+   ],
+   "page": {
+    "format": 2,
+    "instanceId": "01JD8Z3Q4M5N6P7R8S9T0V1W2X",
+    "until": "2026-11-12T10:00:00Z",
+    "scope": null,
+    "restarted": [
+     "cards"
+    ],
+    "collections": {
+     "workspaces": [],
+     "pluginStates": [],
+     "pluginData": [
+      {
+       "pluginId": "qinqin-core",
+       "key": "known:1201",
+       "userId": 1,
+       "workspaceId": 7,
+       "data": {
+        "at": "2026-11-10T08:00:00Z"
+       },
+       "version": 2,
+       "updatedAt": "2026-11-12T09:30:00Z",
+       "deletedAt": "2026-11-12T09:30:00Z"
+      }
+     ],
+     "cards": [
+      {
+       "workspaceId": 7,
+       "id": "c-vocab-1201",
+       "kind": "vocab",
+       "entryId": 1201,
+       "written": null,
+       "entryKind": null,
+       "sentenceId": null,
+       "skipKinds": [],
+       "deckIds": [
+        "general"
+       ],
+       "createdAt": "2026-11-10T08:00:00Z",
+       "extra": {},
+       "version": 3,
+       "updatedAt": "2026-11-12T10:00:00Z",
+       "deletedAt": null
+      },
+      {
+       "workspaceId": 7,
+       "id": "c-vocab-1201",
+       "kind": "vocab",
+       "entryId": 1201,
+       "written": null,
+       "entryKind": null,
+       "sentenceId": null,
+       "skipKinds": [],
+       "deckIds": [
+        "general"
+       ],
+       "createdAt": "2026-11-10T08:00:00Z",
+       "extra": {},
+       "version": 3,
+       "updatedAt": "2026-11-12T10:00:00Z",
+       "deletedAt": "2026-11-12T10:00:00Z"
+      }
+     ],
+     "decks": [
+      {
+       "workspaceId": 7,
+       "id": "01JDECK0000000000000000001",
+       "name": "Words",
+       "createdAt": "2026-11-10T08:00:00Z",
+       "source": null,
+       "extra": {},
+       "version": 3,
+       "updatedAt": "2026-11-12T10:00:00Z",
+       "deletedAt": null
+      }
+     ],
+     "deckSettings": [],
+     "limits": [],
+     "fsrsSets": [],
+     "fsrsActive": [],
+     "books": [],
+     "bookmarks": [],
+     "highlights": [],
+     "overlays": [],
+     "sentences": [],
+     "events": []
+    },
+    "more": true,
+    "next": "p2.eyJ1IjoxLCJzIjoiIiwibiI6Mn0",
+    "cursor": null
+   }
+  },
+  {
+   "name": "restarted null",
+   "valid": false,
+   "reason": "restarted is an array",
+   "requested": [
+    "workspaces",
+    "pluginStates",
+    "pluginData",
+    "cards",
+    "decks",
+    "deckSettings",
+    "limits",
+    "fsrsSets",
+    "fsrsActive",
+    "books",
+    "bookmarks",
+    "highlights",
+    "overlays",
+    "sentences",
+    "events"
+   ],
+   "page": {
+    "format": 2,
+    "instanceId": "01JD8Z3Q4M5N6P7R8S9T0V1W2X",
+    "until": "2026-11-12T10:00:00Z",
+    "scope": null,
+    "restarted": null,
+    "collections": {
+     "workspaces": [],
+     "pluginStates": [],
+     "pluginData": [
+      {
+       "pluginId": "qinqin-core",
+       "key": "known:1201",
+       "userId": 1,
+       "workspaceId": 7,
+       "data": {
+        "at": "2026-11-10T08:00:00Z"
+       },
+       "version": 2,
+       "updatedAt": "2026-11-12T09:30:00Z",
+       "deletedAt": "2026-11-12T09:30:00Z"
+      }
+     ],
+     "cards": [
+      {
+       "workspaceId": 7,
+       "id": "c-vocab-1201",
+       "kind": "vocab",
+       "entryId": 1201,
+       "written": null,
+       "entryKind": null,
+       "sentenceId": null,
+       "skipKinds": [],
+       "deckIds": [
+        "general"
+       ],
+       "createdAt": "2026-11-10T08:00:00Z",
+       "extra": {},
+       "version": 3,
+       "updatedAt": "2026-11-12T10:00:00Z",
+       "deletedAt": null
+      },
+      {
+       "workspaceId": 7,
+       "id": "c-vocab-1201",
+       "kind": "vocab",
+       "entryId": 1201,
+       "written": null,
+       "entryKind": null,
+       "sentenceId": null,
+       "skipKinds": [],
+       "deckIds": [
+        "general"
+       ],
+       "createdAt": "2026-11-10T08:00:00Z",
+       "extra": {},
+       "version": 3,
+       "updatedAt": "2026-11-12T10:00:00Z",
+       "deletedAt": "2026-11-12T10:00:00Z"
+      }
+     ],
+     "decks": [
+      {
+       "workspaceId": 7,
+       "id": "01JDECK0000000000000000001",
+       "name": "Words",
+       "createdAt": "2026-11-10T08:00:00Z",
+       "source": null,
+       "extra": {},
+       "version": 3,
+       "updatedAt": "2026-11-12T10:00:00Z",
+       "deletedAt": null
+      }
+     ],
+     "deckSettings": [],
+     "limits": [],
+     "fsrsSets": [],
+     "fsrsActive": [],
+     "books": [],
+     "bookmarks": [],
+     "highlights": [],
+     "overlays": [],
+     "sentences": [],
+     "events": []
+    },
+    "more": true,
+    "next": "p2.eyJ1IjoxLCJzIjoiIiwibiI6Mn0",
+    "cursor": null
+   }
+  },
+  {
+   "name": "scope without catalogue",
+   "valid": false,
+   "reason": "scope has workspaces, languages, catalogue",
+   "requested": [
+    "workspaces",
+    "pluginStates",
+    "pluginData",
+    "cards",
+    "decks",
+    "deckSettings",
+    "limits",
+    "fsrsSets",
+    "fsrsActive",
+    "books",
+    "bookmarks",
+    "highlights",
+    "overlays",
+    "sentences",
+    "events"
+   ],
+   "page": {
+    "format": 2,
+    "instanceId": "01JD8Z3Q4M5N6P7R8S9T0V1W2X",
+    "until": "2026-11-12T10:00:00Z",
+    "scope": {
+     "workspaces": [
+      {
+       "id": 7,
+       "language": "zh"
+      },
+      {
+       "id": 9,
+       "language": "ja"
+      }
+     ],
+     "languages": [
+      "ja",
+      "zh"
+     ]
+    },
+    "restarted": [],
+    "collections": {
+     "workspaces": [
+      {
+       "id": 7,
+       "language": "zh",
+       "name": "Chinese",
+       "settings": {},
+       "updatedAt": "2026-11-01T08:00:00Z"
+      }
+     ],
+     "pluginStates": [
+      {
+       "pluginId": "qinqin-journal",
+       "userId": 1,
+       "enabled": true,
+       "order": 2,
+       "updatedAt": "2026-11-02T08:00:00Z"
+      }
+     ],
+     "pluginData": [
+      {
+       "pluginId": "qinqin-flashcards",
+       "key": "vacation:01JD0000000000000000000001",
+       "userId": 1,
+       "workspaceId": null,
+       "data": {
+        "from": "2026-12-20",
+        "to": "2026-12-27"
+       },
+       "version": 1,
+       "updatedAt": "2026-11-12T09:00:00Z",
+       "deletedAt": null
+      },
+      {
+       "pluginId": "qinqin-core",
+       "key": "lookups",
+       "userId": 1,
+       "workspaceId": 7,
+       "data": {
+        "items": []
+       },
+       "version": 4,
+       "updatedAt": "2026-11-12T09:00:00Z",
+       "deletedAt": null
+      }
+     ],
+     "cards": [],
+     "decks": [],
+     "deckSettings": [],
+     "limits": [],
+     "fsrsSets": [],
+     "fsrsActive": [],
+     "books": [],
+     "bookmarks": [],
+     "highlights": [],
+     "overlays": [],
+     "sentences": [],
+     "events": []
+    },
+    "more": true,
+    "next": "p2.eyJ1IjoxLCJzIjoiIiwibiI6Mn0",
+    "cursor": null
+   }
+  },
+  {
+   "name": "scope workspaces not sorted by id",
+   "valid": false,
+   "reason": "scope.workspaces sorted by id",
+   "requested": [
+    "workspaces",
+    "pluginStates",
+    "pluginData",
+    "cards",
+    "decks",
+    "deckSettings",
+    "limits",
+    "fsrsSets",
+    "fsrsActive",
+    "books",
+    "bookmarks",
+    "highlights",
+    "overlays",
+    "sentences",
+    "events"
+   ],
+   "page": {
+    "format": 2,
+    "instanceId": "01JD8Z3Q4M5N6P7R8S9T0V1W2X",
+    "until": "2026-11-12T10:00:00Z",
+    "scope": {
+     "workspaces": [
+      {
+       "id": 9,
+       "language": "ja"
+      },
+      {
+       "id": 7,
+       "language": "zh"
+      }
+     ],
+     "languages": [
+      "ja",
+      "zh"
+     ],
+     "catalogue": "\"k-3fa9\""
+    },
+    "restarted": [],
+    "collections": {
+     "workspaces": [
+      {
+       "id": 7,
+       "language": "zh",
+       "name": "Chinese",
+       "settings": {},
+       "updatedAt": "2026-11-01T08:00:00Z"
+      }
+     ],
+     "pluginStates": [
+      {
+       "pluginId": "qinqin-journal",
+       "userId": 1,
+       "enabled": true,
+       "order": 2,
+       "updatedAt": "2026-11-02T08:00:00Z"
+      }
+     ],
+     "pluginData": [
+      {
+       "pluginId": "qinqin-flashcards",
+       "key": "vacation:01JD0000000000000000000001",
+       "userId": 1,
+       "workspaceId": null,
+       "data": {
+        "from": "2026-12-20",
+        "to": "2026-12-27"
+       },
+       "version": 1,
+       "updatedAt": "2026-11-12T09:00:00Z",
+       "deletedAt": null
+      },
+      {
+       "pluginId": "qinqin-core",
+       "key": "lookups",
+       "userId": 1,
+       "workspaceId": 7,
+       "data": {
+        "items": []
+       },
+       "version": 4,
+       "updatedAt": "2026-11-12T09:00:00Z",
+       "deletedAt": null
+      }
+     ],
+     "cards": [],
+     "decks": [],
+     "deckSettings": [],
+     "limits": [],
+     "fsrsSets": [],
+     "fsrsActive": [],
+     "books": [],
+     "bookmarks": [],
+     "highlights": [],
+     "overlays": [],
+     "sentences": [],
+     "events": []
+    },
+    "more": true,
+    "next": "p2.eyJ1IjoxLCJzIjoiIiwibiI6Mn0",
+    "cursor": null
+   }
+  },
+  {
+   "name": "scope languages not sorted",
+   "valid": false,
+   "reason": "scope.languages sorted, unique",
+   "requested": [
+    "workspaces",
+    "pluginStates",
+    "pluginData",
+    "cards",
+    "decks",
+    "deckSettings",
+    "limits",
+    "fsrsSets",
+    "fsrsActive",
+    "books",
+    "bookmarks",
+    "highlights",
+    "overlays",
+    "sentences",
+    "events"
+   ],
+   "page": {
+    "format": 2,
+    "instanceId": "01JD8Z3Q4M5N6P7R8S9T0V1W2X",
+    "until": "2026-11-12T10:00:00Z",
+    "scope": {
+     "workspaces": [
+      {
+       "id": 7,
+       "language": "zh"
+      },
+      {
+       "id": 9,
+       "language": "ja"
+      }
+     ],
+     "languages": [
+      "zh",
+      "ja"
+     ],
+     "catalogue": "\"k-3fa9\""
+    },
+    "restarted": [],
+    "collections": {
+     "workspaces": [
+      {
+       "id": 7,
+       "language": "zh",
+       "name": "Chinese",
+       "settings": {},
+       "updatedAt": "2026-11-01T08:00:00Z"
+      }
+     ],
+     "pluginStates": [
+      {
+       "pluginId": "qinqin-journal",
+       "userId": 1,
+       "enabled": true,
+       "order": 2,
+       "updatedAt": "2026-11-02T08:00:00Z"
+      }
+     ],
+     "pluginData": [
+      {
+       "pluginId": "qinqin-flashcards",
+       "key": "vacation:01JD0000000000000000000001",
+       "userId": 1,
+       "workspaceId": null,
+       "data": {
+        "from": "2026-12-20",
+        "to": "2026-12-27"
+       },
+       "version": 1,
+       "updatedAt": "2026-11-12T09:00:00Z",
+       "deletedAt": null
+      },
+      {
+       "pluginId": "qinqin-core",
+       "key": "lookups",
+       "userId": 1,
+       "workspaceId": 7,
+       "data": {
+        "items": []
+       },
+       "version": 4,
+       "updatedAt": "2026-11-12T09:00:00Z",
+       "deletedAt": null
+      }
+     ],
+     "cards": [],
+     "decks": [],
+     "deckSettings": [],
+     "limits": [],
+     "fsrsSets": [],
+     "fsrsActive": [],
+     "books": [],
+     "bookmarks": [],
+     "highlights": [],
+     "overlays": [],
+     "sentences": [],
+     "events": []
+    },
+    "more": true,
+    "next": "p2.eyJ1IjoxLCJzIjoiIiwibiI6Mn0",
+    "cursor": null
+   }
+  },
+  {
+   "name": "an unknown top-level member",
+   "valid": false,
+   "reason": "unknown key",
+   "requested": [
+    "workspaces",
+    "pluginStates",
+    "pluginData",
+    "cards",
+    "decks",
+    "deckSettings",
+    "limits",
+    "fsrsSets",
+    "fsrsActive",
+    "books",
+    "bookmarks",
+    "highlights",
+    "overlays",
+    "sentences",
+    "events"
+   ],
+   "page": {
+    "format": 2,
+    "instanceId": "01JD8Z3Q4M5N6P7R8S9T0V1W2X",
+    "until": "2026-11-12T10:00:00Z",
+    "scope": null,
+    "restarted": [],
+    "collections": {
+     "workspaces": [],
+     "pluginStates": [],
+     "pluginData": [
+      {
+       "pluginId": "qinqin-core",
+       "key": "known:1201",
+       "userId": 1,
+       "workspaceId": 7,
+       "data": {
+        "at": "2026-11-10T08:00:00Z"
+       },
+       "version": 2,
+       "updatedAt": "2026-11-12T09:30:00Z",
+       "deletedAt": "2026-11-12T09:30:00Z"
+      }
+     ],
+     "cards": [
+      {
+       "workspaceId": 7,
+       "id": "c-vocab-1201",
+       "kind": "vocab",
+       "entryId": 1201,
+       "written": null,
+       "entryKind": null,
+       "sentenceId": null,
+       "skipKinds": [],
+       "deckIds": [
+        "general"
+       ],
+       "createdAt": "2026-11-10T08:00:00Z",
+       "extra": {},
+       "version": 3,
+       "updatedAt": "2026-11-12T10:00:00Z",
+       "deletedAt": null
+      },
+      {
+       "workspaceId": 7,
+       "id": "c-vocab-1201",
+       "kind": "vocab",
+       "entryId": 1201,
+       "written": null,
+       "entryKind": null,
+       "sentenceId": null,
+       "skipKinds": [],
+       "deckIds": [
+        "general"
+       ],
+       "createdAt": "2026-11-10T08:00:00Z",
+       "extra": {},
+       "version": 3,
+       "updatedAt": "2026-11-12T10:00:00Z",
+       "deletedAt": "2026-11-12T10:00:00Z"
+      }
+     ],
+     "decks": [
+      {
+       "workspaceId": 7,
+       "id": "01JDECK0000000000000000001",
+       "name": "Words",
+       "createdAt": "2026-11-10T08:00:00Z",
+       "source": null,
+       "extra": {},
+       "version": 3,
+       "updatedAt": "2026-11-12T10:00:00Z",
+       "deletedAt": null
+      }
+     ],
+     "deckSettings": [],
+     "limits": [],
+     "fsrsSets": [],
+     "fsrsActive": [],
+     "books": [],
+     "bookmarks": [],
+     "highlights": [],
+     "overlays": [],
+     "sentences": [],
+     "events": []
+    },
+    "more": true,
+    "next": "p2.eyJ1IjoxLCJzIjoiIiwibiI6Mn0",
+    "cursor": null,
+    "total": 12
+   }
+  },
+  {
+   "name": "a plugin-data row without version",
+   "valid": false,
+   "reason": "row shape",
+   "requested": [
+    "workspaces",
+    "pluginStates",
+    "pluginData",
+    "cards",
+    "decks",
+    "deckSettings",
+    "limits",
+    "fsrsSets",
+    "fsrsActive",
+    "books",
+    "bookmarks",
+    "highlights",
+    "overlays",
+    "sentences",
+    "events"
+   ],
+   "page": {
+    "format": 2,
+    "instanceId": "01JD8Z3Q4M5N6P7R8S9T0V1W2X",
+    "until": "2026-11-12T10:00:00Z",
+    "scope": {
+     "workspaces": [
+      {
+       "id": 7,
+       "language": "zh"
+      },
+      {
+       "id": 9,
+       "language": "ja"
+      }
+     ],
+     "languages": [
+      "ja",
+      "zh"
+     ],
+     "catalogue": "\"k-3fa9\""
+    },
+    "restarted": [],
+    "collections": {
+     "workspaces": [
+      {
+       "id": 7,
+       "language": "zh",
+       "name": "Chinese",
+       "settings": {},
+       "updatedAt": "2026-11-01T08:00:00Z"
+      }
+     ],
+     "pluginStates": [
+      {
+       "pluginId": "qinqin-journal",
+       "userId": 1,
+       "enabled": true,
+       "order": 2,
+       "updatedAt": "2026-11-02T08:00:00Z"
+      }
+     ],
+     "pluginData": [
+      {
+       "pluginId": "qinqin-flashcards",
+       "key": "vacation:01JD0000000000000000000001",
+       "userId": 1,
+       "workspaceId": null,
+       "data": {
+        "from": "2026-12-20",
+        "to": "2026-12-27"
+       },
+       "version": 1,
+       "updatedAt": "2026-11-12T09:00:00Z",
+       "deletedAt": null
+      },
+      {
+       "pluginId": "qinqin-core",
+       "key": "lookups",
+       "userId": 1,
+       "workspaceId": 7,
+       "data": {
+        "items": []
+       },
+       "updatedAt": "2026-11-12T09:00:00Z",
+       "deletedAt": null
+      }
+     ],
+     "cards": [],
+     "decks": [],
+     "deckSettings": [],
+     "limits": [],
+     "fsrsSets": [],
+     "fsrsActive": [],
+     "books": [],
+     "bookmarks": [],
+     "highlights": [],
+     "overlays": [],
+     "sentences": [],
+     "events": []
+    },
+    "more": true,
+    "next": "p2.eyJ1IjoxLCJzIjoiIiwibiI6Mn0",
+    "cursor": null
+   }
+  },
+  {
+   "name": "a typed card with an unknown member",
+   "valid": false,
+   "reason": "typed rows decode strictly (study/rows.json)",
+   "requested": [
+    "workspaces",
+    "pluginStates",
+    "pluginData",
+    "cards",
+    "decks",
+    "deckSettings",
+    "limits",
+    "fsrsSets",
+    "fsrsActive",
+    "books",
+    "bookmarks",
+    "highlights",
+    "overlays",
+    "sentences",
+    "events"
+   ],
+   "page": {
+    "format": 2,
+    "instanceId": "01JD8Z3Q4M5N6P7R8S9T0V1W2X",
+    "until": "2026-11-12T10:00:00Z",
+    "scope": null,
+    "restarted": [],
+    "collections": {
+     "workspaces": [],
+     "pluginStates": [],
+     "pluginData": [
+      {
+       "pluginId": "qinqin-core",
+       "key": "known:1201",
+       "userId": 1,
+       "workspaceId": 7,
+       "data": {
+        "at": "2026-11-10T08:00:00Z"
+       },
+       "version": 2,
+       "updatedAt": "2026-11-12T09:30:00Z",
+       "deletedAt": "2026-11-12T09:30:00Z"
+      }
+     ],
+     "cards": [
+      {
+       "workspaceId": 7,
+       "id": "c-vocab-1201",
+       "kind": "vocab",
+       "entryId": 1201,
+       "written": null,
+       "entryKind": null,
+       "sentenceId": null,
+       "skipKinds": [],
+       "deckIds": [
+        "general"
+       ],
+       "createdAt": "2026-11-10T08:00:00Z",
+       "extra": {},
+       "version": 3,
+       "updatedAt": "2026-11-12T10:00:00Z",
+       "deletedAt": null,
+       "due": "2026-11-13"
+      },
+      {
+       "workspaceId": 7,
+       "id": "c-vocab-1201",
+       "kind": "vocab",
+       "entryId": 1201,
+       "written": null,
+       "entryKind": null,
+       "sentenceId": null,
+       "skipKinds": [],
+       "deckIds": [
+        "general"
+       ],
+       "createdAt": "2026-11-10T08:00:00Z",
+       "extra": {},
+       "version": 3,
+       "updatedAt": "2026-11-12T10:00:00Z",
+       "deletedAt": "2026-11-12T10:00:00Z"
+      }
+     ],
+     "decks": [
+      {
+       "workspaceId": 7,
+       "id": "01JDECK0000000000000000001",
+       "name": "Words",
+       "createdAt": "2026-11-10T08:00:00Z",
+       "source": null,
+       "extra": {},
+       "version": 3,
+       "updatedAt": "2026-11-12T10:00:00Z",
+       "deletedAt": null
+      }
+     ],
+     "deckSettings": [],
+     "limits": [],
+     "fsrsSets": [],
+     "fsrsActive": [],
+     "books": [],
+     "bookmarks": [],
+     "highlights": [],
+     "overlays": [],
+     "sentences": [],
+     "events": []
+    },
+    "more": true,
+    "next": "p2.eyJ1IjoxLCJzIjoiIiwibiI6Mn0",
+    "cursor": null
+   }
+  },
+  {
+   "name": "a live book without deletedAt",
+   "valid": false,
+   "reason": "row shape",
+   "requested": [
+    "workspaces",
+    "pluginStates",
+    "pluginData",
+    "cards",
+    "decks",
+    "deckSettings",
+    "limits",
+    "fsrsSets",
+    "fsrsActive",
+    "books",
+    "bookmarks",
+    "highlights",
+    "overlays",
+    "sentences",
+    "events"
+   ],
+   "page": {
+    "format": 2,
+    "instanceId": "01JD8Z3Q4M5N6P7R8S9T0V1W2X",
+    "until": "2026-11-12T10:00:00Z",
+    "scope": null,
+    "restarted": [],
+    "collections": {
+     "workspaces": [],
+     "pluginStates": [],
+     "pluginData": [],
+     "cards": [],
+     "decks": [],
+     "deckSettings": [],
+     "limits": [],
+     "fsrsSets": [],
+     "fsrsActive": [],
+     "books": [
+      {
+       "id": 31,
+       "workspaceId": 7,
+       "language": "zh",
+       "title": "故乡",
+       "author": "鲁迅",
+       "source": "gutenberg",
+       "sourceId": "25187",
+       "sourceUrl": "https://www.gutenberg.org/ebooks/25187",
+       "attribution": "Project Gutenberg",
+       "licenseNote": "Public domain in the USA.",
+       "chapterCount": 3,
+       "position": "1:4",
+       "createdAt": "2026-11-05T08:00:00Z",
+       "updatedAt": "2026-11-12T09:10:00Z"
+      }
+     ],
+     "bookmarks": [
+      {
+       "id": 52,
+       "bookId": 31,
+       "position": "0:0",
+       "label": "start",
+       "createdAt": "2026-11-05T08:01:00Z",
+       "updatedAt": "2026-11-05T08:01:00Z",
+       "deletedAt": null
+      },
+      {
+       "id": 53,
+       "workspaceId": 7,
+       "updatedAt": "2026-11-12T09:20:00Z",
+       "deletedAt": "2026-11-12T09:20:00Z"
+      }
+     ],
+     "highlights": [
+      {
+       "id": 77,
+       "bookId": 31,
+       "chapter": 0,
+       "paragraph": 0,
+       "start": 0,
+       "end": 2,
+       "text": "你好",
+       "color": "yellow",
+       "note": "",
+       "createdAt": "2026-11-05T08:02:00Z",
+       "updatedAt": "2026-11-05T08:02:00Z",
+       "deletedAt": null
+      }
+     ],
+     "overlays": [
+      {
+       "entryId": 1201,
+       "written": "你好",
+       "readings": [
+        {
+         "type": "pinyin",
+         "value": "nǐ hǎo",
+         "plain": "ni3 hao3",
+         "ord": 0
+        }
+       ],
+       "updatedAt": "2026-11-12T09:40:00Z"
+      },
+      {
+       "entryId": 1202,
+       "written": "再見",
+       "readings": null,
+       "updatedAt": "2026-11-12T09:41:00Z"
+      }
+     ],
+     "sentences": [
+      {
+       "id": 9001,
+       "entryId": 1201,
+       "sourcePack": "",
+       "userId": 1,
+       "hanzi": "你好，世界。",
+       "pinyin": "nǐ hǎo, shìjiè.",
+       "translation": "Hello, world.",
+       "updatedAt": "2026-11-12T09:45:00Z",
+       "deletedAt": null
+      }
+     ],
+     "events": [
+      {
+       "id": "01JD9A0000000000000000000A",
+       "workspaceId": 7,
+       "device": "phone",
+       "ts": "2026-11-12T09:50:00Z",
+       "type": "review",
+       "payload": {
+        "cardId": "c-vocab-1201",
+        "rating": 3
+       },
+       "updatedAt": "2026-11-12T09:50:05Z"
+      }
+     ]
+    },
+    "more": false,
+    "next": null,
+    "cursor": "c2.eyJ0IjoiMjAyNi0xMS0xMlQwOTo1OTozMFoifQ"
+   }
+  },
+  {
+   "name": "a library tombstone with data members",
+   "valid": false,
+   "reason": "a library tombstone is exactly {id, workspaceId, updatedAt, deletedAt}",
+   "requested": [
+    "workspaces",
+    "pluginStates",
+    "pluginData",
+    "cards",
+    "decks",
+    "deckSettings",
+    "limits",
+    "fsrsSets",
+    "fsrsActive",
+    "books",
+    "bookmarks",
+    "highlights",
+    "overlays",
+    "sentences",
+    "events"
+   ],
+   "page": {
+    "format": 2,
+    "instanceId": "01JD8Z3Q4M5N6P7R8S9T0V1W2X",
+    "until": "2026-11-12T10:00:00Z",
+    "scope": null,
+    "restarted": [],
+    "collections": {
+     "workspaces": [],
+     "pluginStates": [],
+     "pluginData": [],
+     "cards": [],
+     "decks": [],
+     "deckSettings": [],
+     "limits": [],
+     "fsrsSets": [],
+     "fsrsActive": [],
+     "books": [
+      {
+       "id": 31,
+       "workspaceId": 7,
+       "language": "zh",
+       "title": "故乡",
+       "author": "鲁迅",
+       "source": "gutenberg",
+       "sourceId": "25187",
+       "sourceUrl": "https://www.gutenberg.org/ebooks/25187",
+       "attribution": "Project Gutenberg",
+       "licenseNote": "Public domain in the USA.",
+       "chapterCount": 3,
+       "position": "1:4",
+       "createdAt": "2026-11-05T08:00:00Z",
+       "updatedAt": "2026-11-12T09:10:00Z",
+       "deletedAt": null
+      }
+     ],
+     "bookmarks": [
+      {
+       "id": 52,
+       "bookId": 31,
+       "position": "0:0",
+       "label": "start",
+       "createdAt": "2026-11-05T08:01:00Z",
+       "updatedAt": "2026-11-05T08:01:00Z",
+       "deletedAt": null
+      },
+      {
+       "id": 53,
+       "workspaceId": 7,
+       "updatedAt": "2026-11-12T09:20:00Z",
+       "deletedAt": "2026-11-12T09:20:00Z",
+       "label": "start"
+      }
+     ],
+     "highlights": [
+      {
+       "id": 77,
+       "bookId": 31,
+       "chapter": 0,
+       "paragraph": 0,
+       "start": 0,
+       "end": 2,
+       "text": "你好",
+       "color": "yellow",
+       "note": "",
+       "createdAt": "2026-11-05T08:02:00Z",
+       "updatedAt": "2026-11-05T08:02:00Z",
+       "deletedAt": null
+      }
+     ],
+     "overlays": [
+      {
+       "entryId": 1201,
+       "written": "你好",
+       "readings": [
+        {
+         "type": "pinyin",
+         "value": "nǐ hǎo",
+         "plain": "ni3 hao3",
+         "ord": 0
+        }
+       ],
+       "updatedAt": "2026-11-12T09:40:00Z"
+      },
+      {
+       "entryId": 1202,
+       "written": "再見",
+       "readings": null,
+       "updatedAt": "2026-11-12T09:41:00Z"
+      }
+     ],
+     "sentences": [
+      {
+       "id": 9001,
+       "entryId": 1201,
+       "sourcePack": "",
+       "userId": 1,
+       "hanzi": "你好，世界。",
+       "pinyin": "nǐ hǎo, shìjiè.",
+       "translation": "Hello, world.",
+       "updatedAt": "2026-11-12T09:45:00Z",
+       "deletedAt": null
+      }
+     ],
+     "events": [
+      {
+       "id": "01JD9A0000000000000000000A",
+       "workspaceId": 7,
+       "device": "phone",
+       "ts": "2026-11-12T09:50:00Z",
+       "type": "review",
+       "payload": {
+        "cardId": "c-vocab-1201",
+        "rating": 3
+       },
+       "updatedAt": "2026-11-12T09:50:05Z"
+      }
+     ]
+    },
+    "more": false,
+    "next": null,
+    "cursor": "c2.eyJ0IjoiMjAyNi0xMS0xMlQwOTo1OTozMFoifQ"
+   }
+  },
+  {
+   "name": "a library tombstone without deletedAt",
+   "valid": false,
+   "reason": "a library tombstone is exactly {id, workspaceId, updatedAt, deletedAt}",
+   "requested": [
+    "workspaces",
+    "pluginStates",
+    "pluginData",
+    "cards",
+    "decks",
+    "deckSettings",
+    "limits",
+    "fsrsSets",
+    "fsrsActive",
+    "books",
+    "bookmarks",
+    "highlights",
+    "overlays",
+    "sentences",
+    "events"
+   ],
+   "page": {
+    "format": 2,
+    "instanceId": "01JD8Z3Q4M5N6P7R8S9T0V1W2X",
+    "until": "2026-11-12T10:00:00Z",
+    "scope": null,
+    "restarted": [],
+    "collections": {
+     "workspaces": [],
+     "pluginStates": [],
+     "pluginData": [],
+     "cards": [],
+     "decks": [],
+     "deckSettings": [],
+     "limits": [],
+     "fsrsSets": [],
+     "fsrsActive": [],
+     "books": [
+      {
+       "id": 31,
+       "workspaceId": 7,
+       "language": "zh",
+       "title": "故乡",
+       "author": "鲁迅",
+       "source": "gutenberg",
+       "sourceId": "25187",
+       "sourceUrl": "https://www.gutenberg.org/ebooks/25187",
+       "attribution": "Project Gutenberg",
+       "licenseNote": "Public domain in the USA.",
+       "chapterCount": 3,
+       "position": "1:4",
+       "createdAt": "2026-11-05T08:00:00Z",
+       "updatedAt": "2026-11-12T09:10:00Z",
+       "deletedAt": null
+      }
+     ],
+     "bookmarks": [
+      {
+       "id": 52,
+       "bookId": 31,
+       "position": "0:0",
+       "label": "start",
+       "createdAt": "2026-11-05T08:01:00Z",
+       "updatedAt": "2026-11-05T08:01:00Z",
+       "deletedAt": null
+      },
+      {
+       "id": 53,
+       "workspaceId": 7,
+       "updatedAt": "2026-11-12T09:20:00Z",
+       "deletedAt": null
+      }
+     ],
+     "highlights": [
+      {
+       "id": 77,
+       "bookId": 31,
+       "chapter": 0,
+       "paragraph": 0,
+       "start": 0,
+       "end": 2,
+       "text": "你好",
+       "color": "yellow",
+       "note": "",
+       "createdAt": "2026-11-05T08:02:00Z",
+       "updatedAt": "2026-11-05T08:02:00Z",
+       "deletedAt": null
+      }
+     ],
+     "overlays": [
+      {
+       "entryId": 1201,
+       "written": "你好",
+       "readings": [
+        {
+         "type": "pinyin",
+         "value": "nǐ hǎo",
+         "plain": "ni3 hao3",
+         "ord": 0
+        }
+       ],
+       "updatedAt": "2026-11-12T09:40:00Z"
+      },
+      {
+       "entryId": 1202,
+       "written": "再見",
+       "readings": null,
+       "updatedAt": "2026-11-12T09:41:00Z"
+      }
+     ],
+     "sentences": [
+      {
+       "id": 9001,
+       "entryId": 1201,
+       "sourcePack": "",
+       "userId": 1,
+       "hanzi": "你好，世界。",
+       "pinyin": "nǐ hǎo, shìjiè.",
+       "translation": "Hello, world.",
+       "updatedAt": "2026-11-12T09:45:00Z",
+       "deletedAt": null
+      }
+     ],
+     "events": [
+      {
+       "id": "01JD9A0000000000000000000A",
+       "workspaceId": 7,
+       "device": "phone",
+       "ts": "2026-11-12T09:50:00Z",
+       "type": "review",
+       "payload": {
+        "cardId": "c-vocab-1201",
+        "rating": 3
+       },
+       "updatedAt": "2026-11-12T09:50:05Z"
+      }
+     ]
+    },
+    "more": false,
+    "next": null,
+    "cursor": "c2.eyJ0IjoiMjAyNi0xMS0xMlQwOTo1OTozMFoifQ"
+   }
+  },
+  {
+   "name": "an event carrying userId",
+   "valid": false,
+   "reason": "row shape",
+   "requested": [
+    "workspaces",
+    "pluginStates",
+    "pluginData",
+    "cards",
+    "decks",
+    "deckSettings",
+    "limits",
+    "fsrsSets",
+    "fsrsActive",
+    "books",
+    "bookmarks",
+    "highlights",
+    "overlays",
+    "sentences",
+    "events"
+   ],
+   "page": {
+    "format": 2,
+    "instanceId": "01JD8Z3Q4M5N6P7R8S9T0V1W2X",
+    "until": "2026-11-12T10:00:00Z",
+    "scope": null,
+    "restarted": [],
+    "collections": {
+     "workspaces": [],
+     "pluginStates": [],
+     "pluginData": [],
+     "cards": [],
+     "decks": [],
+     "deckSettings": [],
+     "limits": [],
+     "fsrsSets": [],
+     "fsrsActive": [],
+     "books": [
+      {
+       "id": 31,
+       "workspaceId": 7,
+       "language": "zh",
+       "title": "故乡",
+       "author": "鲁迅",
+       "source": "gutenberg",
+       "sourceId": "25187",
+       "sourceUrl": "https://www.gutenberg.org/ebooks/25187",
+       "attribution": "Project Gutenberg",
+       "licenseNote": "Public domain in the USA.",
+       "chapterCount": 3,
+       "position": "1:4",
+       "createdAt": "2026-11-05T08:00:00Z",
+       "updatedAt": "2026-11-12T09:10:00Z",
+       "deletedAt": null
+      }
+     ],
+     "bookmarks": [
+      {
+       "id": 52,
+       "bookId": 31,
+       "position": "0:0",
+       "label": "start",
+       "createdAt": "2026-11-05T08:01:00Z",
+       "updatedAt": "2026-11-05T08:01:00Z",
+       "deletedAt": null
+      },
+      {
+       "id": 53,
+       "workspaceId": 7,
+       "updatedAt": "2026-11-12T09:20:00Z",
+       "deletedAt": "2026-11-12T09:20:00Z"
+      }
+     ],
+     "highlights": [
+      {
+       "id": 77,
+       "bookId": 31,
+       "chapter": 0,
+       "paragraph": 0,
+       "start": 0,
+       "end": 2,
+       "text": "你好",
+       "color": "yellow",
+       "note": "",
+       "createdAt": "2026-11-05T08:02:00Z",
+       "updatedAt": "2026-11-05T08:02:00Z",
+       "deletedAt": null
+      }
+     ],
+     "overlays": [
+      {
+       "entryId": 1201,
+       "written": "你好",
+       "readings": [
+        {
+         "type": "pinyin",
+         "value": "nǐ hǎo",
+         "plain": "ni3 hao3",
+         "ord": 0
+        }
+       ],
+       "updatedAt": "2026-11-12T09:40:00Z"
+      },
+      {
+       "entryId": 1202,
+       "written": "再見",
+       "readings": null,
+       "updatedAt": "2026-11-12T09:41:00Z"
+      }
+     ],
+     "sentences": [
+      {
+       "id": 9001,
+       "entryId": 1201,
+       "sourcePack": "",
+       "userId": 1,
+       "hanzi": "你好，世界。",
+       "pinyin": "nǐ hǎo, shìjiè.",
+       "translation": "Hello, world.",
+       "updatedAt": "2026-11-12T09:45:00Z",
+       "deletedAt": null
+      }
+     ],
+     "events": [
+      {
+       "id": "01JD9A0000000000000000000A",
+       "workspaceId": 7,
+       "device": "phone",
+       "ts": "2026-11-12T09:50:00Z",
+       "type": "review",
+       "payload": {
+        "cardId": "c-vocab-1201",
+        "rating": 3
+       },
+       "updatedAt": "2026-11-12T09:50:05Z",
+       "userId": 1
+      }
+     ]
+    },
+    "more": false,
+    "next": null,
+    "cursor": "c2.eyJ0IjoiMjAyNi0xMS0xMlQwOTo1OTozMFoifQ"
+   }
+  },
+  {
+   "name": "a lookup event",
+   "valid": false,
+   "reason": "events never carry type lookup",
+   "requested": [
+    "workspaces",
+    "pluginStates",
+    "pluginData",
+    "cards",
+    "decks",
+    "deckSettings",
+    "limits",
+    "fsrsSets",
+    "fsrsActive",
+    "books",
+    "bookmarks",
+    "highlights",
+    "overlays",
+    "sentences",
+    "events"
+   ],
+   "page": {
+    "format": 2,
+    "instanceId": "01JD8Z3Q4M5N6P7R8S9T0V1W2X",
+    "until": "2026-11-12T10:00:00Z",
+    "scope": null,
+    "restarted": [],
+    "collections": {
+     "workspaces": [],
+     "pluginStates": [],
+     "pluginData": [],
+     "cards": [],
+     "decks": [],
+     "deckSettings": [],
+     "limits": [],
+     "fsrsSets": [],
+     "fsrsActive": [],
+     "books": [
+      {
+       "id": 31,
+       "workspaceId": 7,
+       "language": "zh",
+       "title": "故乡",
+       "author": "鲁迅",
+       "source": "gutenberg",
+       "sourceId": "25187",
+       "sourceUrl": "https://www.gutenberg.org/ebooks/25187",
+       "attribution": "Project Gutenberg",
+       "licenseNote": "Public domain in the USA.",
+       "chapterCount": 3,
+       "position": "1:4",
+       "createdAt": "2026-11-05T08:00:00Z",
+       "updatedAt": "2026-11-12T09:10:00Z",
+       "deletedAt": null
+      }
+     ],
+     "bookmarks": [
+      {
+       "id": 52,
+       "bookId": 31,
+       "position": "0:0",
+       "label": "start",
+       "createdAt": "2026-11-05T08:01:00Z",
+       "updatedAt": "2026-11-05T08:01:00Z",
+       "deletedAt": null
+      },
+      {
+       "id": 53,
+       "workspaceId": 7,
+       "updatedAt": "2026-11-12T09:20:00Z",
+       "deletedAt": "2026-11-12T09:20:00Z"
+      }
+     ],
+     "highlights": [
+      {
+       "id": 77,
+       "bookId": 31,
+       "chapter": 0,
+       "paragraph": 0,
+       "start": 0,
+       "end": 2,
+       "text": "你好",
+       "color": "yellow",
+       "note": "",
+       "createdAt": "2026-11-05T08:02:00Z",
+       "updatedAt": "2026-11-05T08:02:00Z",
+       "deletedAt": null
+      }
+     ],
+     "overlays": [
+      {
+       "entryId": 1201,
+       "written": "你好",
+       "readings": [
+        {
+         "type": "pinyin",
+         "value": "nǐ hǎo",
+         "plain": "ni3 hao3",
+         "ord": 0
+        }
+       ],
+       "updatedAt": "2026-11-12T09:40:00Z"
+      },
+      {
+       "entryId": 1202,
+       "written": "再見",
+       "readings": null,
+       "updatedAt": "2026-11-12T09:41:00Z"
+      }
+     ],
+     "sentences": [
+      {
+       "id": 9001,
+       "entryId": 1201,
+       "sourcePack": "",
+       "userId": 1,
+       "hanzi": "你好，世界。",
+       "pinyin": "nǐ hǎo, shìjiè.",
+       "translation": "Hello, world.",
+       "updatedAt": "2026-11-12T09:45:00Z",
+       "deletedAt": null
+      }
+     ],
+     "events": [
+      {
+       "id": "01JD9A0000000000000000000A",
+       "workspaceId": 7,
+       "device": "phone",
+       "ts": "2026-11-12T09:50:00Z",
+       "type": "lookup",
+       "payload": {
+        "cardId": "c-vocab-1201",
+        "rating": 3
+       },
+       "updatedAt": "2026-11-12T09:50:05Z"
+      }
+     ]
+    },
+    "more": false,
+    "next": null,
+    "cursor": "c2.eyJ0IjoiMjAyNi0xMS0xMlQwOTo1OTozMFoifQ"
+   }
+  },
+  {
+   "name": "a pack sentence",
+   "valid": false,
+   "reason": "sentences are own sentences (sourcePack \"\", userId set)",
+   "requested": [
+    "workspaces",
+    "pluginStates",
+    "pluginData",
+    "cards",
+    "decks",
+    "deckSettings",
+    "limits",
+    "fsrsSets",
+    "fsrsActive",
+    "books",
+    "bookmarks",
+    "highlights",
+    "overlays",
+    "sentences",
+    "events"
+   ],
+   "page": {
+    "format": 2,
+    "instanceId": "01JD8Z3Q4M5N6P7R8S9T0V1W2X",
+    "until": "2026-11-12T10:00:00Z",
+    "scope": null,
+    "restarted": [],
+    "collections": {
+     "workspaces": [],
+     "pluginStates": [],
+     "pluginData": [],
+     "cards": [],
+     "decks": [],
+     "deckSettings": [],
+     "limits": [],
+     "fsrsSets": [],
+     "fsrsActive": [],
+     "books": [
+      {
+       "id": 31,
+       "workspaceId": 7,
+       "language": "zh",
+       "title": "故乡",
+       "author": "鲁迅",
+       "source": "gutenberg",
+       "sourceId": "25187",
+       "sourceUrl": "https://www.gutenberg.org/ebooks/25187",
+       "attribution": "Project Gutenberg",
+       "licenseNote": "Public domain in the USA.",
+       "chapterCount": 3,
+       "position": "1:4",
+       "createdAt": "2026-11-05T08:00:00Z",
+       "updatedAt": "2026-11-12T09:10:00Z",
+       "deletedAt": null
+      }
+     ],
+     "bookmarks": [
+      {
+       "id": 52,
+       "bookId": 31,
+       "position": "0:0",
+       "label": "start",
+       "createdAt": "2026-11-05T08:01:00Z",
+       "updatedAt": "2026-11-05T08:01:00Z",
+       "deletedAt": null
+      },
+      {
+       "id": 53,
+       "workspaceId": 7,
+       "updatedAt": "2026-11-12T09:20:00Z",
+       "deletedAt": "2026-11-12T09:20:00Z"
+      }
+     ],
+     "highlights": [
+      {
+       "id": 77,
+       "bookId": 31,
+       "chapter": 0,
+       "paragraph": 0,
+       "start": 0,
+       "end": 2,
+       "text": "你好",
+       "color": "yellow",
+       "note": "",
+       "createdAt": "2026-11-05T08:02:00Z",
+       "updatedAt": "2026-11-05T08:02:00Z",
+       "deletedAt": null
+      }
+     ],
+     "overlays": [
+      {
+       "entryId": 1201,
+       "written": "你好",
+       "readings": [
+        {
+         "type": "pinyin",
+         "value": "nǐ hǎo",
+         "plain": "ni3 hao3",
+         "ord": 0
+        }
+       ],
+       "updatedAt": "2026-11-12T09:40:00Z"
+      },
+      {
+       "entryId": 1202,
+       "written": "再見",
+       "readings": null,
+       "updatedAt": "2026-11-12T09:41:00Z"
+      }
+     ],
+     "sentences": [
+      {
+       "id": 9001,
+       "entryId": 1201,
+       "sourcePack": "zh-demo",
+       "userId": null,
+       "hanzi": "你好，世界。",
+       "pinyin": "nǐ hǎo, shìjiè.",
+       "translation": "Hello, world.",
+       "updatedAt": "2026-11-12T09:45:00Z",
+       "deletedAt": null
+      }
+     ],
+     "events": [
+      {
+       "id": "01JD9A0000000000000000000A",
+       "workspaceId": 7,
+       "device": "phone",
+       "ts": "2026-11-12T09:50:00Z",
+       "type": "review",
+       "payload": {
+        "cardId": "c-vocab-1201",
+        "rating": 3
+       },
+       "updatedAt": "2026-11-12T09:50:05Z"
+      }
+     ]
+    },
+    "more": false,
+    "next": null,
+    "cursor": "c2.eyJ0IjoiMjAyNi0xMS0xMlQwOTo1OTozMFoifQ"
+   }
+  }
+ ]
+}

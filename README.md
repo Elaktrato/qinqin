@@ -207,7 +207,9 @@ CI publishes `ghcr.io/elaktrato/qinqin` on pushes to `main` and on `v*` tags
 tag in `QINQIN_IMAGE` rather than `latest`, so a redeploy never changes the
 version by surprise. The published image is the full build: Tesseract OCR
 (about +193 MB) and the Kanji alive audio (about +70 MB). Self-builds can drop
-them with `--build-arg WITH_OCR=0` / `WITH_AUDIO=0`.
+them with `--build-arg WITH_OCR=0` / `WITH_AUDIO=0`. Stroke-order data ships as
+a data pack (`/opt/qinqin/strokes`, about 13 MB) instead of inside the web app,
+whose build shrank from about 50 MB to about 3 MB (the binary embeds it).
 
 **The package is private until you change it.** GitHub creates a new container
 package as private, so a `docker pull` or Portainer deployment fails with
@@ -287,9 +289,18 @@ Everything lives in `/data` (the volume):
 | `backups/` | pre-restore safety exports (`backups/pre-restore/<user id>/`) and, if you choose, CLI backups |
 | `tmp/` | staged restore uploads and database snapshots; emptied at start-up |
 | `cache/sources/` | cache of the Aozora/Gutenberg imports; safe to delete |
+| `packages/` | data packages clients download (`<id>/r<revision>.qqpkg`), built by the server from the database; not backed up, rebuilt at start when missing |
 
 The bundled packs themselves stay in the image (`/opt/qinqin/packs`,
-`/opt/qinqin/audio`).
+`/opt/qinqin/audio`, `/opt/qinqin/strokes`).
+
+`packages/` grows with the installed packs: one file per package (the lexicon of each
+language, every level, sentence, frequency, components, grammar, audio and strokes
+pack), roughly the size of the pack's data compressed (CC-CEDICT's `lexicon.zh` is
+about 15 MB, the stroke data about 13 MB), and a replaced revision is kept 7 days so
+clients can finish a download. The first start of a release with packages builds them
+in the background (about a minute for Chinese and Japanese); the app works meanwhile
+and the catalogue says `building`.
 
 ### Backup
 
@@ -373,6 +384,18 @@ backup restores on v0.4 and a v0.4 backup restores on v0.3 (that is the way back
 binary on the upgraded database is unsupported; if it happened, the flashcards rows it wrote are taken
 over at the next v0.4 start, except changes to rows v0.4 already holds). After an upgrade the log may say
 `pack <id>: stored ... differs`; run `qinqin seed` in the console to refresh.
+
+Upgrading to data packages (migration 039): at the first start the server installs
+the image's stroke-order pack (the log says `strokes: installed the bundled stroke
+data ...`), then builds the data packages into `<data>/packages` in the background;
+plan disk space for them (see Data directory). Packs installed before this release
+have no licence files stored, so their packages carry only the licence name and
+attribution until you run `qinqin seed` once (the log says `pack <id>: no licence
+texts stored; run "qinqin seed"`); the re-seed writes a new revision with the
+texts. The sync pull no longer carries dictionary data: scripts that read the
+lexicon collections (`entries`, `links`, `senses`, `levelMembers`, `dictionaries`,
+`schemes`, `levels`) from `GET /api/sync/pull` now get 400 `sync_collection_moved`
+and download the packages instead (`GET /api/packages`).
 
 ### Reverse proxy and HTTPS
 
@@ -1250,7 +1273,7 @@ password and answers the token once, `no-store`).
 
 All library and source routes need a signed-in user, and so does
 `POST /api/segment`; `GET /api/lookup`, `GET /api/segment/at`,
-`GET /api/entries/{id}`, `GET /api/search`, `GET /api/languages`, `GET /api/frequency-packs`, `GET /api/characters`, `GET /api/components`, `GET /api/component-packs`, `GET /api/audio-packs` and `GET /api/audio-packs/{id}/credits` are public. The audio routes (`/api/audio/...`) need a signed-in user.
+`GET /api/entries/{id}`, `GET /api/search`, `GET /api/languages`, `GET /api/frequency-packs`, `GET /api/characters`, `GET /api/components`, `GET /api/component-packs`, `GET /api/stroke-packs`, `GET /hanzi/U<HEX>.json`, `GET /api/audio-packs` and `GET /api/audio-packs/{id}/credits` are public. The audio routes (`/api/audio/...`) need a signed-in user.
 
 | Route | Purpose |
 |---|---|
@@ -1265,7 +1288,12 @@ All library and source routes need a signed-in user, and so does
 | `GET /api/frequency-packs` | The installed frequency packs in priority order, with `packId` (the manifest id), `license`, `attribution` and `notice` (the manifest's caveat, `""` when it has none; the Sources page lists them) |
 | `GET /api/frequency-packs/{id}/top?size=500\|1000\|2000` | Signed-in. A starter deck: `{packId, name, size, entries}` with the entry base fields (`written` = the display form, a kana row as written), the `rank` and the `gloss` (first gloss of the first sense) of each word, in rank order; computed from the installed pack (resolved once per pack content), shared data with no overlay. 404 for an unknown or uninstalled pack, 400 for another size |
 | `POST /api/entries/frequency-ranks` `{language, ids}` | Signed-in. Each entry's rank in the language's first frequency pack: `{pack: {id, packId, name, license, attribution} \| null, ranks: [{id, rank}]}` in request order, entries without data omitted; 1 to 500 ids (400 otherwise, 400 without `language`), body up to 16 KiB (413) |
-| `GET /api/sync/pull?cursor=&collections=` | Changes since the cursor (authenticated). `collections` is an optional comma-separated list of Delta collection names that limits the pull; the others come back empty and an unknown name is 400. The returned cursor is valid only for the collections requested: do not mix subset pulls with one global cursor. The Study page pulls only `pluginData` and `pluginStates` |
+| `GET /api/sync/pull?v=2&since=&collections=&workspace=&limit=&tombstones=&page=` | The paged pull (authenticated): the caller's own rows, one page of at most `limit` rows (1–2000, default 500) and 4 MiB, continued with the `next` token; the last page gives a `cursor` for `since` (`docs/contracts/sync/`). A round from no `since` ships live rows only unless `tombstones=1`. Errors are JSON (`sync_page_invalid`, `sync_collection_moved`) |
+| `GET /api/sync/pull?cursor=&collections=` | The legacy form (deprecated until v0.5.0, answers carry `Deprecation` and a `Link` to `v=2`): changes since the cursor, streamed. `collections` is an optional comma-separated list of Delta collection names that limits the pull; the others come back empty and an unknown name is 400. The lexicon collections (`entries`, `links`, `senses`, `levelMembers`, `dictionaries`, `schemes`, `levels`) moved to data packages: they stay `[]`, and naming one is 400 `sync_collection_moved`; `sentences` holds the caller's own only. The returned cursor is valid only for the collections requested: do not mix subset pulls with one global cursor. Only cached v0.3 web shells still use it |
+| `GET /api/packages?languages=` | Signed-in (tokens allowed). The data package catalogue (`docs/contracts/packages/`): the packages of the caller's workspace languages, or `languages=zh,ja` / `all`, with revision, content hash, file SHA-256, size, state, licences and sources; `ETag`/`If-None-Match`. A build error is shown to an administrator's own session only |
+| `GET /api/packages/{id}/{revision}` | Signed-in (tokens allowed). One package file (a zip with `manifest.json`, `NOTICE.md`, `LICENSES/`, `data.sqlite`); `Range`/`If-Range` resume it; served `private, no-cache` with the file's `ETag` (304 on revalidation) and `nosniff`. 404 `package_not_found`, 410 `package_revision_gone` (replaced and purged after 7 days), 429 `download_busy` with `Retry-After` (at most 2 downloads per user at a time) |
+| `GET /api/stroke-packs` | Public. The installed stroke-order packs with `packId`, `name`, `version`, `languages`, `license`, `attribution`, `notice` (the Sources page lists them) |
+| `GET /hanzi/U<HEX>.json` | Public. The stroke-order data of one character from the installed strokes pack, byte for byte (`public, max-age=86400`, `ETag`, `nosniff`); 404 when no pack has it |
 | `GET /api/characters?language=` | Public, no user data. The character universe of a language (`ja`, `zh`; another well-formed language gives an empty list, a malformed one 400): `{language, count, stale?, chars}` with compact keys per row: `i` entry id, `c` glyph, `s` strokes, `g` school grade, `f` frequency rank, `t` standard-list flag, `b` GB2312 level (1/2), `h` HK primary grade, `r` reading, `m` meaning, `v` variant forms, `k` the Kangxi radical number (1–214) of the character's radical; absent values are omitted. `stale: true` means the importers' level fields are missing (reseed). Gzip when accepted, weak `ETag` and 304 on `If-None-Match` |
 | `GET /api/components?language=` | Public, no user data. The radical and part lookup's component index: `{language, packs: [{id, license, attribution}], parts: [{c, s, n}], chars: {glyph: [part, ...]}}`, the union of the language's installed components packs (`packs` credits them) (`s` part strokes, 0 when unknown; `n` characters containing the part). A language without packs gets empty `packs`, `parts` and `chars`, a malformed one 400. Gzip, weak `ETag` and 304 as `/api/characters`; contract `docs/contracts/radicals/` |
 | `GET /api/component-packs` | Public. The installed components packs with `packId`, `name`, `version`, `language`, `license`, `attribution` and `notice` (the Sources page lists them) |
@@ -1725,8 +1753,10 @@ converted from pinned upstream files by `scripts/prepare-level-packs.mjs` and,
 for HSK, from the official syllabus by `scripts/prepare-hsk-syllabus.mjs`. See
 [docs/sources.md](docs/sources.md) for attributions, upstream links, and the
 redistribution policy. Stroke-order data (`hanzi-writer-data`, derived from the
-Make Me a Hanzi dataset) is licensed under the **Arphic Public License** and is
-credited on the app's Sources page. The Reader's script converter `opencc-js`
+Make Me a Hanzi dataset) is licensed under the **Arphic Public License**; it is the
+data pack `hanzi-writer-strokes`, built by `scripts/prepare-strokes-pack.mjs` (into
+the image, or locally into the gitignored `plugins/data-strokes/`), and credited on
+the app's Sources page. Every data package carries the licence texts of its packs. The Reader's script converter `opencc-js`
 (`MIT AND Apache-2.0`: MIT code, Apache-2.0 dictionary data from `opencc-data`) is
 bundled in the web build, credited on the Sources page, and both licence texts ship
 with the app (`/OPENCC-JS-LICENSE.TXT`, `/OPENCC-APACHE-2.0.TXT`).

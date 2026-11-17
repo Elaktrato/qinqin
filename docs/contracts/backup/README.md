@@ -63,8 +63,8 @@ A newer server must keep reading v1; an older server rejects a newer format.
 Password hash, email, sessions, personal access tokens, reset links, one-time-code challenges, TOTP secrets and recovery codes,
 AI keys and AI selection and usage, invites, the audit log, SMTP settings, QINQIN_SECRET, journal photo
 drafts, tombstoned (deleted) plugin rows and typed study rows, own sentences, the library deletion log,
-dictionary and pack content.
-A restore never changes who can sign in.
+dictionary and pack content, data packages (`<data>/packages`: shared data, rebuilt by the server, never user
+data). A restore never changes who can sign in.
 
 ## Caps (checked on the bytes read, declared sizes ignored)
 
@@ -138,9 +138,13 @@ the commit. Restore replaces; there is no merging import.
 
 `qinqin-server-<date>.tar.gz`: `qinqin.db` (VACUUM INTO snapshot), `books/`, `packs/`, `audio/`,
 `BACKUP-INFO.json` last (`format: qinqin-server-backup`, `formatVersion`, per-file SHA-256). It holds
-password hashes and sealed secrets; restoring is offline (`tar xzf` into an empty volume).
+password hashes and sealed secrets; restoring is offline (`tar xzf` into an empty volume). `<data>/packages` is
+not in it: the restored server rebuilds every package at start, to the same revisions and content hashes.
 
 ## Android (v0.4.0)
 
 Export and restore are server features; the app calls the same routes (ticket download, staged upload).
-After a restore all local data is invalid: on 401 re-login and do a full pull; workspace ids change.
+After a restore all local data is invalid: on 401 re-login and do a full paged pull (`GET /api/sync/pull?v=2`
+without `since`, `docs/contracts/sync/`); workspace ids change. Installed packages stay valid while the
+catalogue's `instanceId` is unchanged (a personal restore keeps the server); a different `instanceId` means
+discard packages too (`docs/contracts/packages/`).

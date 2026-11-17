@@ -1,0 +1,226 @@
+{
+ "version": 1,
+ "rule": "packages/schemas",
+ "_doc": "The exact schema of data.sqlite in format 1, per package type: the common statements first, then the type's tables and indexes in this order (sqlite_master of a built package holds exactly these, plus SQLite's own autoindexes). order is the row order of each table in the content hash (README.md, Versioning); it is the primary key where the table has one. qq_package holds packageKeys (grammar also levels_json); every value is TEXT (numbers in decimal, languages as a JSON array). JSON lists and objects are TEXT columns holding JSON, as on the server. Decoded by server/internal/datapkg (A5).",
+ "formatVersion": 1,
+ "common": [
+  "CREATE TABLE qq_package (key TEXT PRIMARY KEY, value TEXT NOT NULL)",
+  "CREATE TABLE qq_sources (type TEXT NOT NULL, pack_id TEXT NOT NULL, name TEXT NOT NULL, version TEXT NOT NULL, license TEXT NOT NULL, attribution TEXT NOT NULL, notice TEXT NOT NULL, license_files TEXT NOT NULL, PRIMARY KEY (type, pack_id))"
+ ],
+ "packageKeys": [
+  "id",
+  "type",
+  "formatVersion",
+  "revision",
+  "contentHash",
+  "instanceId",
+  "builtAt",
+  "languages"
+ ],
+ "extraPackageKeys": {
+  "grammar": [
+   "levels_json"
+  ]
+ },
+ "cases": [
+  {
+   "type": "lexicon",
+   "tables": [
+    {
+     "name": "entries",
+     "sql": "CREATE TABLE entries (id INTEGER PRIMARY KEY, language TEXT NOT NULL, kind TEXT NOT NULL, ext_key TEXT NOT NULL, pri INTEGER NOT NULL, uk INTEGER NOT NULL, attrs TEXT NOT NULL)",
+     "order": [
+      "id"
+     ]
+    },
+    {
+     "name": "forms",
+     "sql": "CREATE TABLE forms (entry_id INTEGER NOT NULL, ord INTEGER NOT NULL, text TEXT NOT NULL, flags TEXT NOT NULL, pri INTEGER NOT NULL)",
+     "order": [
+      "entry_id",
+      "ord",
+      "text",
+      "flags",
+      "pri"
+     ]
+    },
+    {
+     "name": "readings",
+     "sql": "CREATE TABLE readings (entry_id INTEGER NOT NULL, ord INTEGER NOT NULL, type TEXT NOT NULL, value TEXT NOT NULL, plain TEXT NOT NULL, flags TEXT NOT NULL, pri INTEGER NOT NULL)",
+     "order": [
+      "entry_id",
+      "ord",
+      "type",
+      "value",
+      "plain",
+      "flags",
+      "pri"
+     ]
+    },
+    {
+     "name": "senses",
+     "sql": "CREATE TABLE senses (entry_id INTEGER NOT NULL, dictionary_id INTEGER NOT NULL, ord INTEGER NOT NULL, pos TEXT NOT NULL, tags TEXT NOT NULL, glosses TEXT NOT NULL, xrefs TEXT NOT NULL)",
+     "order": [
+      "entry_id",
+      "dictionary_id",
+      "ord",
+      "pos",
+      "tags",
+      "glosses",
+      "xrefs"
+     ]
+    },
+    {
+     "name": "links",
+     "sql": "CREATE TABLE links (from_id INTEGER NOT NULL, to_id INTEGER NOT NULL, type TEXT NOT NULL, PRIMARY KEY (from_id, to_id, type))",
+     "order": [
+      "from_id",
+      "to_id",
+      "type"
+     ]
+    },
+    {
+     "name": "dictionaries",
+     "sql": "CREATE TABLE dictionaries (id INTEGER PRIMARY KEY, pack_id TEXT NOT NULL, name TEXT NOT NULL, version TEXT NOT NULL, language TEXT NOT NULL, license TEXT NOT NULL, attribution TEXT NOT NULL, notice TEXT NOT NULL)",
+     "order": [
+      "id"
+     ]
+    }
+   ],
+   "indexes": [
+    "CREATE INDEX forms_entry ON forms (entry_id, ord)",
+    "CREATE INDEX forms_text ON forms (text)",
+    "CREATE INDEX readings_entry ON readings (entry_id, ord)",
+    "CREATE INDEX readings_plain ON readings (plain)",
+    "CREATE INDEX senses_entry ON senses (entry_id, dictionary_id, ord)",
+    "CREATE INDEX links_to ON links (to_id, type)"
+   ]
+  },
+  {
+   "type": "levels",
+   "tables": [
+    {
+     "name": "schemes",
+     "sql": "CREATE TABLE schemes (id INTEGER PRIMARY KEY, pack_id TEXT NOT NULL, name TEXT NOT NULL, unit TEXT NOT NULL, language TEXT NOT NULL, version TEXT NOT NULL, license TEXT NOT NULL, attribution TEXT NOT NULL, notice TEXT NOT NULL)",
+     "order": [
+      "id"
+     ]
+    },
+    {
+     "name": "levels",
+     "sql": "CREATE TABLE levels (id INTEGER PRIMARY KEY, scheme_id INTEGER NOT NULL, ord INTEGER NOT NULL, name TEXT NOT NULL)",
+     "order": [
+      "id"
+     ]
+    },
+    {
+     "name": "level_members",
+     "sql": "CREATE TABLE level_members (level_id INTEGER NOT NULL, entry_id INTEGER NOT NULL, derived INTEGER NOT NULL, PRIMARY KEY (level_id, entry_id))",
+     "order": [
+      "level_id",
+      "entry_id"
+     ]
+    }
+   ],
+   "indexes": [
+    "CREATE INDEX level_members_entry ON level_members (entry_id)"
+   ]
+  },
+  {
+   "type": "sentences",
+   "tables": [
+    {
+     "name": "sentences",
+     "sql": "CREATE TABLE sentences (id INTEGER PRIMARY KEY, entry_id INTEGER NOT NULL, hanzi TEXT NOT NULL, pinyin TEXT NOT NULL, translation TEXT NOT NULL)",
+     "order": [
+      "id"
+     ]
+    }
+   ],
+   "indexes": [
+    "CREATE INDEX sentences_entry ON sentences (entry_id)"
+   ]
+  },
+  {
+   "type": "frequency",
+   "tables": [
+    {
+     "name": "frequency",
+     "sql": "CREATE TABLE frequency (term TEXT NOT NULL, reading TEXT NOT NULL, rank INTEGER NOT NULL, display TEXT NOT NULL)",
+     "order": [
+      "rank",
+      "term",
+      "reading",
+      "display"
+     ]
+    }
+   ],
+   "indexes": [
+    "CREATE INDEX frequency_term ON frequency (term, reading)"
+   ]
+  },
+  {
+   "type": "components",
+   "tables": [
+    {
+     "name": "components",
+     "sql": "CREATE TABLE components (char TEXT PRIMARY KEY, parts TEXT NOT NULL)",
+     "order": [
+      "char"
+     ]
+    },
+    {
+     "name": "component_parts",
+     "sql": "CREATE TABLE component_parts (part TEXT PRIMARY KEY, strokes INTEGER NOT NULL)",
+     "order": [
+      "part"
+     ]
+    }
+   ],
+   "indexes": []
+  },
+  {
+   "type": "audio",
+   "tables": [
+    {
+     "name": "clips",
+     "sql": "CREATE TABLE clips (id INTEGER PRIMARY KEY, kind TEXT NOT NULL, form TEXT NOT NULL, reading_key TEXT NOT NULL, sha256 TEXT NOT NULL, ext TEXT NOT NULL, bytes INTEGER NOT NULL, license TEXT NOT NULL, attribution TEXT NOT NULL, source TEXT NOT NULL)",
+     "order": [
+      "id"
+     ]
+    }
+   ],
+   "indexes": [
+    "CREATE INDEX clips_lookup ON clips (kind, form, reading_key)"
+   ]
+  },
+  {
+   "type": "grammar",
+   "tables": [
+    {
+     "name": "lessons",
+     "sql": "CREATE TABLE lessons (lesson_id TEXT PRIMARY KEY, level_id TEXT NOT NULL, ord INTEGER NOT NULL, title TEXT NOT NULL, summary TEXT NOT NULL, content TEXT NOT NULL)",
+     "order": [
+      "lesson_id"
+     ]
+    }
+   ],
+   "indexes": [
+    "CREATE INDEX lessons_level ON lessons (level_id, ord)"
+   ]
+  },
+  {
+   "type": "strokes",
+   "tables": [
+    {
+     "name": "strokes",
+     "sql": "CREATE TABLE strokes (char TEXT PRIMARY KEY, data TEXT NOT NULL)",
+     "order": [
+      "char"
+     ]
+    }
+   ],
+   "indexes": []
+  }
+ ]
+}

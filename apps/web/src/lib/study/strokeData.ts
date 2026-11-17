@@ -1,7 +1,7 @@
 /**
- * Self-hosted stroke-order data. The prebuild step copies hanzi-writer-data
- * into static/hanzi under codepoint names (U597D.json, upper-case hex), so
- * the URL is computed rather than shipped as a map.
+ * Self-hosted stroke-order data. The server serves the installed strokes
+ * package under /hanzi/ with codepoint names (U597D.json, upper-case hex), so
+ * the URL is computed rather than shipped as a map. It is not in the web bundle.
  */
 export function strokeUrl(ch: string): string {
 	const codepoint = ch.codePointAt(0);

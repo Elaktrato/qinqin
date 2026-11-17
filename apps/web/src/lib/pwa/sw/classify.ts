@@ -77,12 +77,32 @@ export function holdsLookups(url: URL): boolean {
 	return pathname.slice(CORE_DATA.length + 1).startsWith('lookup');
 }
 
+/**
+ * v2PullAllowed: a paged study pull is offline data when it is one workspace's
+ * first page (collections a subset of the study set, optionally `tombstones=1`,
+ * no `since`: a delta is not offline data) or a continuation (`page=p2.…`, the token carries its filters
+ * and the server validates them; the URL is the cache key). Nothing else.
+ */
+function v2PullAllowed(params: URLSearchParams): boolean {
+	if (params.getAll('v').join() !== '2') return false;
+	const keys = [...params.keys()];
+	if (keys.length !== new Set(keys).size) return false;
+	if (params.has('page')) return keys.length === 2 && /^p2\.[A-Za-z0-9_-]+$/.test(params.get('page') ?? '');
+	if (!keys.every((k) => ['v', 'collections', 'workspace', 'limit', 'tombstones'].includes(k))) return false;
+	if (!/^[0-9]+$/.test(params.get('workspace') ?? '')) return false;
+	if (params.has('limit') && !/^[0-9]+$/.test(params.get('limit') ?? '')) return false;
+	if (params.has('tombstones') && params.get('tombstones') !== '1') return false;
+	const list = (params.get('collections') ?? '').split(',');
+	return list.every((c) => PULL_COLLECTIONS.has(c));
+}
+
 /** True when the path and query are one of the allowlisted API reads. */
 function apiAllowed(url: URL): boolean {
 	const { pathname, searchParams } = url;
 	if (holdsLookups(url)) return false;
 	if (API_PATTERNS.some((re) => re.test(pathname))) return true;
 	if (pathname === '/api/sync/pull') {
+		if (searchParams.has('v')) return v2PullAllowed(searchParams);
 		// Without `collections` a pull is the whole dictionary delta: never stored.
 		const all = searchParams.getAll('collections');
 		if (all.length !== 1) return false;

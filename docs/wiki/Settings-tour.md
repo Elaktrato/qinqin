@@ -36,7 +36,7 @@ Profile (email, if the server asks for one), password, two-step sign-in, signed-
 
 ## Data (administrators)
 
-Install dictionary and level packs, register or remove languages ([Data and licences](Data-and-licences)).
+Install dictionary and level packs, register or remove languages ([Data and licences](Data-and-licences)). Each pack shows its data package (revision, size, state, and for administrators the error of a failed build); "Packages are being built" appears while the server builds them.
 
 ## Admin (administrators)
 

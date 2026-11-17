@@ -286,3 +286,45 @@ function typedOf(raw: LegacyRow): { collection: StudyCollection; row: StudyRow }
 	});
 	return row === null ? null : { collection: typed.collection, row };
 }
+
+/**
+ * pagedPull: the same body as the single page of a v2 round (docs/contracts/sync/):
+ * typedPull's collections, plugin rows filled out to the contract shape, the
+ * study collections the web asks for all present. Test-only.
+ */
+export function pagedPull(body: Obj): Obj {
+	return pageOf(typedPull(body));
+}
+
+/** pageOf: a body already in the migrated shape (typed collections, leftovers in pluginData) as one v2 page. */
+export function pageOf(typed: Obj): Obj {
+	const collections: Obj = {};
+	for (const name of ['pluginStates', 'pluginData', ...STUDY_COLLECTIONS]) {
+		const list = Array.isArray(typed[name]) ? (typed[name] as unknown[]) : [];
+		collections[name] =
+			name === 'pluginData'
+				? list.map((r) => ({
+						pluginId: 'qinqin-flashcards',
+						userId: 1,
+						workspaceId: null,
+						version: 1,
+						updatedAt: '2026-01-01T00:00:00Z',
+						deletedAt: null,
+						...(r as Obj)
+					}))
+				: name === 'pluginStates'
+					? list.map((r) => ({ userId: 1, enabled: true, order: 0, updatedAt: '2026-01-01T00:00:00Z', ...(r as Obj) }))
+					: list;
+	}
+	return {
+		format: 2,
+		instanceId: '01JTEST0000000000000000000',
+		until: '2026-11-17T00:00:00Z',
+		scope: { workspaces: [], languages: [], catalogue: 'c' },
+		restarted: [],
+		collections,
+		more: false,
+		next: null,
+		cursor: 'c2.test'
+	};
+}

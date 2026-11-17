@@ -64,7 +64,9 @@ func TestMigration023NeverReusesBookIds(t *testing.T) {
 	const booksQ = `SELECT id || '|' || user_id || '|' || workspace_id || '|' || language || '|' || title || '|' ||
 		author || '|' || source || '|' || source_id || '|' || source_url || '|' || attribution || '|' ||
 		license_note || '|' || chapter_count || '|' || position || '|' || created_at FROM library_books ORDER BY id`
-	const indexesQ = `SELECT name || '|' || sql FROM sqlite_master WHERE type = 'index' AND tbl_name = 'library_books' AND sql IS NOT NULL ORDER BY name`
+	// Migration 039's paging index (user_id, updated_at) is checked in migrate_039_test.go.
+	const indexesQ = `SELECT name || '|' || sql FROM sqlite_master WHERE type = 'index' AND tbl_name = 'library_books' AND sql IS NOT NULL
+		AND name <> 'idx_library_books_user_updated' ORDER BY name`
 	const childrenQ = `SELECT 'b' || id || '|' || book_id FROM library_bookmarks UNION ALL SELECT 'h' || id || '|' || book_id FROM library_highlights ORDER BY 1`
 	booksBefore := queryStrings(t, sqlDB, booksQ)
 	indexesBefore := queryStrings(t, sqlDB, indexesQ)
@@ -153,7 +155,7 @@ func TestMigration023EmptyDatabase(t *testing.T) {
 	if second := insert(); second <= first {
 		t.Errorf("book ids %d then %d after deleting all: a deleted id was reused", first, second)
 	}
-	if got := queryStrings(t, sqlDB, `SELECT name FROM sqlite_master WHERE type = 'index' AND tbl_name = 'library_books' AND sql IS NOT NULL ORDER BY name`); !reflect.DeepEqual(got, []string{"idx_library_books_source", "idx_library_books_user", "idx_library_books_workspace"}) {
+	if got := queryStrings(t, sqlDB, `SELECT name FROM sqlite_master WHERE type = 'index' AND tbl_name = 'library_books' AND sql IS NOT NULL AND name <> 'idx_library_books_user_updated' ORDER BY name`); !reflect.DeepEqual(got, []string{"idx_library_books_source", "idx_library_books_user", "idx_library_books_workspace"}) {
 		t.Errorf("indexes = %v", got)
 	}
 }

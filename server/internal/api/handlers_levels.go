@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"strconv"
 
+	"qinqin/internal/dict"
 	"qinqin/internal/levels"
 	"qinqin/internal/lexicon"
 )
@@ -81,6 +82,8 @@ func (s *server) handleUninstallScheme(w http.ResponseWriter, r *http.Request) {
 	}
 	s.packMu.Lock()
 	defer s.packMu.Unlock()
+	var packID, language string
+	s.db.QueryRowContext(r.Context(), `SELECT pack_id, language FROM schemes WHERE id = ?`, id).Scan(&packID, &language)
 	if err := levels.Uninstall(r.Context(), s.db, id); err != nil {
 		if errors.Is(err, levels.ErrNotFound) {
 			http.Error(w, "scheme not found", http.StatusNotFound)
@@ -89,6 +92,7 @@ func (s *server) handleUninstallScheme(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "internal error", http.StatusInternalServerError)
 		return
 	}
+	s.packChanged(dict.TypeLevels, packID, language)
 	w.WriteHeader(http.StatusNoContent)
 }
 

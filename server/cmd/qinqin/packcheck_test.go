@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 	"testing"
 )
@@ -74,6 +75,7 @@ func TestStalePackTermsWarnsPerDifferingPack(t *testing.T) {
 		fmt.Sprintf(`pack es-demo: stored license/attribution/notice differs from %s; run "qinqin seed" to refresh`, filepath.Join(root, "es-demo", "manifest.json")),
 		fmt.Sprintf(`pack hsk-mini: stored license/attribution/notice differs from %s; run "qinqin seed" to refresh`, filepath.Join(root, "hsk-mini", "manifest.json")),
 	}
+	sort.Strings(rec.lines) // List order (type, name); the set is what matters
 	if strings.Join(rec.lines, "\n") != strings.Join(want, "\n") {
 		t.Errorf("got\n%s\nwant\n%s", strings.Join(rec.lines, "\n"), strings.Join(want, "\n"))
 	}
@@ -172,5 +174,35 @@ func TestStalePackTermsChecksComponentsPacks(t *testing.T) {
 	warnStalePackTerms(context.Background(), sqlDB, []string{root}, rec.logf)
 	if len(rec.lines) != 1 || !strings.HasPrefix(rec.lines[0], "pack comp-x: stored license/attribution/notice differs from ") {
 		t.Errorf("got %q, want one warning for comp-x", rec.lines)
+	}
+}
+
+// A freshly seeded database has every pack's licence texts collected
+// (es-demo and the samples ship none: still collected), so nothing is said.
+func TestMissingPackTextsSilentAfterSeed(t *testing.T) {
+	sqlDB, _ := seededPacks(t)
+	var rec logRecorder
+	warnMissingPackTexts(context.Background(), sqlDB, rec.logf)
+	if len(rec.lines) != 0 {
+		t.Errorf("freshly seeded database: got %q, want no lines", rec.lines)
+	}
+}
+
+// A pack imported before texts were kept (no pack_texts rows) gets one
+// line per start, naming the pack and the fix.
+func TestMissingPackTextsWarnsOncePerPack(t *testing.T) {
+	sqlDB, _ := seededPacks(t)
+	if _, err := sqlDB.Exec(`DELETE FROM pack_texts WHERE pack_id IN ('es-demo', 'zh-mini')`); err != nil {
+		t.Fatal(err)
+	}
+	var rec logRecorder
+	warnMissingPackTexts(context.Background(), sqlDB, rec.logf)
+	want := []string{
+		`pack es-demo: no licence texts stored; run "qinqin seed"`,
+		`pack zh-mini: no licence texts stored; run "qinqin seed"`,
+	}
+	sort.Strings(rec.lines) // List order (type, name); the set is what matters
+	if strings.Join(rec.lines, "\n") != strings.Join(want, "\n") {
+		t.Errorf("lines = %q, want %q", rec.lines, want)
 	}
 }

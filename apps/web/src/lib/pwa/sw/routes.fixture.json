@@ -296,6 +296,14 @@
 		"access": "user"
 	},
 	{
+		"pattern": "GET /api/packages",
+		"access": "user"
+	},
+	{
+		"pattern": "GET /api/packages/{id}/{revision}",
+		"access": "user"
+	},
+	{
 		"pattern": "GET /api/plugins",
 		"access": "user"
 	},
@@ -336,12 +344,20 @@
 		"access": "user"
 	},
 	{
+		"pattern": "GET /api/stroke-packs",
+		"access": "public"
+	},
+	{
 		"pattern": "GET /api/sync/pull",
 		"access": "user"
 	},
 	{
 		"pattern": "GET /api/workspaces",
 		"access": "user"
+	},
+	{
+		"pattern": "GET /hanzi/{file}",
+		"access": "public"
 	},
 	{
 		"pattern": "GET /healthz",

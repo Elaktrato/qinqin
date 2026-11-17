@@ -1,0 +1,1942 @@
+{
+ "version": 1,
+ "rule": "sync/pull-rounds",
+ "_doc": "Scenarios run by server/internal/sync (B2) against one fresh database each. setup: workspaces (ref, user, language), entries (ref, language; created live), rows (ref, user, collection, workspace ref or null for user-global, entry/book ref, updatedAt (workspaces default to defaults.workspaceUpdatedAt; pluginData rows use plugin defaults.plugin and key = ref), deletedAt when the row is a tombstone — for books/bookmarks/highlights a library_deletions row instead of the row; dataString n makes pluginData data a JSON string of n 'x' characters; events carry type). The test writes rows with exactly these stamps. requests run in order with the server clock at now; query: collections (list, comma-joined), limit, workspace (a workspace ref or a literal id), since ($cursor = the cursor of the last completed round of this case), page ($next = the next token of the previous answer), tombstones (the literal value, \"1\" asks a round from no since for tombstones too); v=2 is implied. before: writes applied just before the request (op write: restamp a row's data at at; op delete: tombstone or delete-and-log at at; op insert: a new setup row). expect: status; error (the JSON error code); rows: per collection the row refs in page order (collections not listed are []); tombstones: refs that must come with deletedAt set; scope: whether scope is set (default: set on a request without page); scopeLanguages, scopeWorkspaces (refs, sorted by id); restarted (default []); catalogueChanged: scope.catalogue differs from the previous round's; keys: exactly these collection keys; more; cursorAt: the time inside the returned cursor (until - 30 s, only on the last page). more is false exactly when no row of the round remains (the server looks one row ahead), so only a round without rows ends on an empty page.",
+ "defaults": {
+  "workspaceUpdatedAt": "2026-11-12T07:00:00Z",
+  "plugin": "qinqin-core"
+ },
+ "budget": {
+  "rows": {
+   "min": 1,
+   "max": 2000,
+   "default": 500
+  },
+  "bytes": 4194304,
+  "lagSeconds": 30
+ },
+ "cases": [
+  {
+   "name": "a round from no since ships live rows only, never another user's, and ends with cursor = until - 30 s",
+   "setup": {
+    "workspaces": [
+     {
+      "ref": "z",
+      "user": "alice",
+      "language": "zh"
+     },
+     {
+      "ref": "bz",
+      "user": "bob",
+      "language": "zh"
+     }
+    ],
+    "entries": [
+     {
+      "ref": "e1",
+      "language": "zh"
+     }
+    ],
+    "rows": [
+     {
+      "ref": "s1",
+      "user": "alice",
+      "collection": "pluginStates",
+      "updatedAt": "2026-11-12T08:00:00Z"
+     },
+     {
+      "ref": "d1",
+      "user": "alice",
+      "collection": "pluginData",
+      "workspace": "z",
+      "updatedAt": "2026-11-12T08:01:00Z"
+     },
+     {
+      "ref": "d2",
+      "user": "alice",
+      "collection": "pluginData",
+      "workspace": "z",
+      "updatedAt": "2026-11-12T08:02:00Z",
+      "deletedAt": "2026-11-12T08:02:00Z"
+     },
+     {
+      "ref": "c1",
+      "user": "alice",
+      "collection": "cards",
+      "workspace": "z",
+      "entry": "e1",
+      "updatedAt": "2026-11-12T08:03:00Z"
+     },
+     {
+      "ref": "c2",
+      "user": "alice",
+      "collection": "cards",
+      "workspace": "z",
+      "entry": "e1",
+      "updatedAt": "2026-11-12T08:04:00Z",
+      "deletedAt": "2026-11-12T08:04:00Z"
+     },
+     {
+      "ref": "b1",
+      "user": "alice",
+      "collection": "books",
+      "workspace": "z",
+      "updatedAt": "2026-11-12T08:05:00Z"
+     },
+     {
+      "ref": "b2",
+      "user": "alice",
+      "collection": "books",
+      "workspace": "z",
+      "updatedAt": "2026-11-12T08:06:00Z",
+      "deletedAt": "2026-11-12T08:06:00Z"
+     },
+     {
+      "ref": "o1",
+      "user": "alice",
+      "collection": "overlays",
+      "entry": "e1",
+      "updatedAt": "2026-11-12T08:07:00Z"
+     },
+     {
+      "ref": "n1",
+      "user": "alice",
+      "collection": "sentences",
+      "entry": "e1",
+      "updatedAt": "2026-11-12T08:08:00Z"
+     },
+     {
+      "ref": "v1",
+      "user": "alice",
+      "collection": "events",
+      "workspace": "z",
+      "type": "review",
+      "updatedAt": "2026-11-12T08:09:00Z"
+     },
+     {
+      "ref": "bd1",
+      "user": "bob",
+      "collection": "pluginData",
+      "workspace": "bz",
+      "updatedAt": "2026-11-12T08:01:30Z"
+     },
+     {
+      "ref": "bc1",
+      "user": "bob",
+      "collection": "cards",
+      "workspace": "bz",
+      "entry": "e1",
+      "updatedAt": "2026-11-12T08:03:30Z"
+     },
+     {
+      "ref": "bo1",
+      "user": "bob",
+      "collection": "overlays",
+      "entry": "e1",
+      "updatedAt": "2026-11-12T08:07:30Z"
+     },
+     {
+      "ref": "bv1",
+      "user": "bob",
+      "collection": "events",
+      "workspace": "bz",
+      "type": "review",
+      "updatedAt": "2026-11-12T08:09:30Z"
+     }
+    ]
+   },
+   "requests": [
+    {
+     "as": "alice",
+     "now": "2026-11-12T10:00:00Z",
+     "query": {},
+     "expect": {
+      "status": 200,
+      "scope": true,
+      "rows": {
+       "workspaces": [
+        "z"
+       ],
+       "pluginStates": [
+        "s1"
+       ],
+       "pluginData": [
+        "d1"
+       ],
+       "cards": [
+        "c1"
+       ],
+       "books": [
+        "b1"
+       ],
+       "overlays": [
+        "o1"
+       ],
+       "sentences": [
+        "n1"
+       ],
+       "events": [
+        "v1"
+       ]
+      },
+      "more": false,
+      "cursorAt": "2026-11-12T09:59:30Z"
+     }
+    },
+    {
+     "as": "bob",
+     "now": "2026-11-12T10:00:00Z",
+     "query": {},
+     "expect": {
+      "status": 200,
+      "scope": true,
+      "rows": {
+       "workspaces": [
+        "bz"
+       ],
+       "pluginData": [
+        "bd1"
+       ],
+       "cards": [
+        "bc1"
+       ],
+       "overlays": [
+        "bo1"
+       ],
+       "events": [
+        "bv1"
+       ]
+      },
+      "more": false,
+      "cursorAt": "2026-11-12T09:59:30Z"
+     }
+    }
+   ]
+  },
+  {
+   "name": "a delta round ships changes since the cursor, tombstones included (plugin data, typed, library)",
+   "setup": {
+    "workspaces": [
+     {
+      "ref": "z",
+      "user": "alice",
+      "language": "zh"
+     }
+    ],
+    "entries": [
+     {
+      "ref": "e1",
+      "language": "zh"
+     }
+    ],
+    "rows": [
+     {
+      "ref": "d1",
+      "user": "alice",
+      "collection": "pluginData",
+      "workspace": "z",
+      "updatedAt": "2026-11-12T08:01:00Z"
+     },
+     {
+      "ref": "c1",
+      "user": "alice",
+      "collection": "cards",
+      "workspace": "z",
+      "entry": "e1",
+      "updatedAt": "2026-11-12T08:03:00Z"
+     },
+     {
+      "ref": "b1",
+      "user": "alice",
+      "collection": "books",
+      "workspace": "z",
+      "updatedAt": "2026-11-12T08:05:00Z"
+     },
+     {
+      "ref": "m1",
+      "user": "alice",
+      "collection": "bookmarks",
+      "book": "b1",
+      "updatedAt": "2026-11-12T08:05:30Z"
+     },
+     {
+      "ref": "h1",
+      "user": "alice",
+      "collection": "highlights",
+      "book": "b1",
+      "updatedAt": "2026-11-12T08:05:40Z"
+     }
+    ]
+   },
+   "requests": [
+    {
+     "as": "alice",
+     "now": "2026-11-12T09:00:00Z",
+     "query": {
+      "collections": [
+       "pluginData",
+       "cards",
+       "books",
+       "bookmarks",
+       "highlights"
+      ]
+     },
+     "expect": {
+      "status": 200,
+      "rows": {
+       "pluginData": [
+        "d1"
+       ],
+       "cards": [
+        "c1"
+       ],
+       "books": [
+        "b1"
+       ],
+       "bookmarks": [
+        "m1"
+       ],
+       "highlights": [
+        "h1"
+       ]
+      },
+      "more": false,
+      "cursorAt": "2026-11-12T08:59:30Z"
+     }
+    },
+    {
+     "before": [
+      {
+       "op": "delete",
+       "ref": "d1",
+       "at": "2026-11-12T09:10:00Z"
+      },
+      {
+       "op": "delete",
+       "ref": "c1",
+       "at": "2026-11-12T09:11:00Z"
+      },
+      {
+       "op": "delete",
+       "ref": "m1",
+       "at": "2026-11-12T09:12:00Z"
+      },
+      {
+       "op": "delete",
+       "ref": "h1",
+       "at": "2026-11-12T09:12:30Z"
+      },
+      {
+       "op": "delete",
+       "ref": "b1",
+       "at": "2026-11-12T09:13:00Z"
+      }
+     ],
+     "as": "alice",
+     "now": "2026-11-12T10:00:00Z",
+     "query": {
+      "collections": [
+       "pluginData",
+       "cards",
+       "books",
+       "bookmarks",
+       "highlights"
+      ],
+      "since": "$cursor"
+     },
+     "expect": {
+      "status": 200,
+      "rows": {
+       "pluginData": [
+        "d1"
+       ],
+       "cards": [
+        "c1"
+       ],
+       "books": [
+        "b1"
+       ],
+       "bookmarks": [
+        "m1"
+       ],
+       "highlights": [
+        "h1"
+       ]
+      },
+      "tombstones": [
+       "d1",
+       "c1",
+       "b1",
+       "m1",
+       "h1"
+      ],
+      "more": false,
+      "cursorAt": "2026-11-12T09:59:30Z"
+     }
+    }
+   ]
+  },
+  {
+   "name": "a row rewritten between pages is not in this round twice and comes next round",
+   "setup": {
+    "workspaces": [
+     {
+      "ref": "z",
+      "user": "alice",
+      "language": "zh"
+     }
+    ],
+    "rows": [
+     {
+      "ref": "d1",
+      "user": "alice",
+      "collection": "pluginData",
+      "workspace": "z",
+      "updatedAt": "2026-11-12T09:00:00Z"
+     },
+     {
+      "ref": "d2",
+      "user": "alice",
+      "collection": "pluginData",
+      "workspace": "z",
+      "updatedAt": "2026-11-12T09:01:00Z"
+     }
+    ]
+   },
+   "requests": [
+    {
+     "as": "alice",
+     "now": "2026-11-12T10:00:00Z",
+     "query": {
+      "collections": [
+       "pluginData"
+      ],
+      "limit": 1
+     },
+     "expect": {
+      "status": 200,
+      "scope": true,
+      "rows": {
+       "pluginData": [
+        "d1"
+       ]
+      },
+      "more": true
+     }
+    },
+    {
+     "before": [
+      {
+       "op": "write",
+       "ref": "d1",
+       "at": "2026-11-12T10:00:05Z"
+      }
+     ],
+     "as": "alice",
+     "now": "2026-11-12T10:00:06Z",
+     "query": {
+      "page": "$next"
+     },
+     "expect": {
+      "status": 200,
+      "scope": false,
+      "rows": {
+       "pluginData": [
+        "d2"
+       ]
+      },
+      "more": false,
+      "cursorAt": "2026-11-12T09:59:30Z"
+     }
+    },
+    {
+     "as": "alice",
+     "now": "2026-11-12T10:05:00Z",
+     "query": {
+      "collections": [
+       "pluginData"
+      ],
+      "limit": 1,
+      "since": "$cursor"
+     },
+     "expect": {
+      "status": 200,
+      "rows": {
+       "pluginData": [
+        "d1"
+       ]
+      },
+      "more": false,
+      "cursorAt": "2026-11-12T10:04:30Z"
+     }
+    }
+   ]
+  },
+  {
+   "name": "a row stamped inside the lag window but committed after the round comes next round",
+   "setup": {
+    "workspaces": [
+     {
+      "ref": "z",
+      "user": "alice",
+      "language": "zh"
+     }
+    ],
+    "rows": [
+     {
+      "ref": "d1",
+      "user": "alice",
+      "collection": "pluginData",
+      "workspace": "z",
+      "updatedAt": "2026-11-12T09:00:00Z"
+     }
+    ]
+   },
+   "requests": [
+    {
+     "as": "alice",
+     "now": "2026-11-12T10:00:00Z",
+     "query": {
+      "collections": [
+       "pluginData"
+      ]
+     },
+     "expect": {
+      "status": 200,
+      "rows": {
+       "pluginData": [
+        "d1"
+       ]
+      },
+      "more": false,
+      "cursorAt": "2026-11-12T09:59:30Z"
+     }
+    },
+    {
+     "before": [
+      {
+       "op": "insert",
+       "row": {
+        "ref": "late",
+        "user": "alice",
+        "collection": "pluginData",
+        "workspace": "z",
+        "updatedAt": "2026-11-12T09:59:50Z"
+       }
+      }
+     ],
+     "as": "alice",
+     "now": "2026-11-12T10:01:00Z",
+     "query": {
+      "collections": [
+       "pluginData"
+      ],
+      "since": "$cursor"
+     },
+     "expect": {
+      "status": 200,
+      "rows": {
+       "pluginData": [
+        "late"
+       ]
+      },
+      "more": false,
+      "cursorAt": "2026-11-12T10:00:30Z"
+     }
+    }
+   ]
+  },
+  {
+   "name": "a page boundary crosses collections in round order",
+   "setup": {
+    "workspaces": [
+     {
+      "ref": "z",
+      "user": "alice",
+      "language": "zh"
+     }
+    ],
+    "entries": [
+     {
+      "ref": "e1",
+      "language": "zh"
+     }
+    ],
+    "rows": [
+     {
+      "ref": "s1",
+      "user": "alice",
+      "collection": "pluginStates",
+      "updatedAt": "2026-11-12T09:30:00Z"
+     },
+     {
+      "ref": "d1",
+      "user": "alice",
+      "collection": "pluginData",
+      "workspace": "z",
+      "updatedAt": "2026-11-12T09:00:00Z"
+     },
+     {
+      "ref": "d2",
+      "user": "alice",
+      "collection": "pluginData",
+      "workspace": "z",
+      "updatedAt": "2026-11-12T09:01:00Z"
+     },
+     {
+      "ref": "d3",
+      "user": "alice",
+      "collection": "pluginData",
+      "workspace": "z",
+      "updatedAt": "2026-11-12T09:01:00Z"
+     },
+     {
+      "ref": "c1",
+      "user": "alice",
+      "collection": "cards",
+      "workspace": "z",
+      "entry": "e1",
+      "updatedAt": "2026-11-12T08:00:00Z"
+     }
+    ]
+   },
+   "requests": [
+    {
+     "as": "alice",
+     "now": "2026-11-12T10:00:00Z",
+     "query": {
+      "collections": [
+       "pluginStates",
+       "pluginData",
+       "cards"
+      ],
+      "limit": 3
+     },
+     "expect": {
+      "status": 200,
+      "rows": {
+       "pluginStates": [
+        "s1"
+       ],
+       "pluginData": [
+        "d1",
+        "d2"
+       ]
+      },
+      "more": true
+     }
+    },
+    {
+     "as": "alice",
+     "now": "2026-11-12T10:00:01Z",
+     "query": {
+      "page": "$next"
+     },
+     "expect": {
+      "status": 200,
+      "rows": {
+       "pluginData": [
+        "d3"
+       ],
+       "cards": [
+        "c1"
+       ]
+      },
+      "more": false,
+      "cursorAt": "2026-11-12T09:59:30Z"
+     }
+    }
+   ]
+  },
+  {
+   "name": "the byte budget: rows of 300 KiB fill a page up to 4 MiB; a row above the budget ships alone",
+   "setup": {
+    "workspaces": [
+     {
+      "ref": "z",
+      "user": "alice",
+      "language": "zh"
+     }
+    ],
+    "rows": [
+     {
+      "ref": "d01",
+      "user": "alice",
+      "collection": "pluginData",
+      "workspace": "z",
+      "updatedAt": "2026-11-12T09:01:00Z",
+      "dataString": 307200
+     },
+     {
+      "ref": "d02",
+      "user": "alice",
+      "collection": "pluginData",
+      "workspace": "z",
+      "updatedAt": "2026-11-12T09:02:00Z",
+      "dataString": 307200
+     },
+     {
+      "ref": "d03",
+      "user": "alice",
+      "collection": "pluginData",
+      "workspace": "z",
+      "updatedAt": "2026-11-12T09:03:00Z",
+      "dataString": 307200
+     },
+     {
+      "ref": "d04",
+      "user": "alice",
+      "collection": "pluginData",
+      "workspace": "z",
+      "updatedAt": "2026-11-12T09:04:00Z",
+      "dataString": 307200
+     },
+     {
+      "ref": "d05",
+      "user": "alice",
+      "collection": "pluginData",
+      "workspace": "z",
+      "updatedAt": "2026-11-12T09:05:00Z",
+      "dataString": 307200
+     },
+     {
+      "ref": "d06",
+      "user": "alice",
+      "collection": "pluginData",
+      "workspace": "z",
+      "updatedAt": "2026-11-12T09:06:00Z",
+      "dataString": 307200
+     },
+     {
+      "ref": "d07",
+      "user": "alice",
+      "collection": "pluginData",
+      "workspace": "z",
+      "updatedAt": "2026-11-12T09:07:00Z",
+      "dataString": 307200
+     },
+     {
+      "ref": "d08",
+      "user": "alice",
+      "collection": "pluginData",
+      "workspace": "z",
+      "updatedAt": "2026-11-12T09:08:00Z",
+      "dataString": 307200
+     },
+     {
+      "ref": "d09",
+      "user": "alice",
+      "collection": "pluginData",
+      "workspace": "z",
+      "updatedAt": "2026-11-12T09:09:00Z",
+      "dataString": 307200
+     },
+     {
+      "ref": "d10",
+      "user": "alice",
+      "collection": "pluginData",
+      "workspace": "z",
+      "updatedAt": "2026-11-12T09:10:00Z",
+      "dataString": 307200
+     },
+     {
+      "ref": "d11",
+      "user": "alice",
+      "collection": "pluginData",
+      "workspace": "z",
+      "updatedAt": "2026-11-12T09:11:00Z",
+      "dataString": 307200
+     },
+     {
+      "ref": "d12",
+      "user": "alice",
+      "collection": "pluginData",
+      "workspace": "z",
+      "updatedAt": "2026-11-12T09:12:00Z",
+      "dataString": 307200
+     },
+     {
+      "ref": "d13",
+      "user": "alice",
+      "collection": "pluginData",
+      "workspace": "z",
+      "updatedAt": "2026-11-12T09:13:00Z",
+      "dataString": 307200
+     },
+     {
+      "ref": "d14",
+      "user": "alice",
+      "collection": "pluginData",
+      "workspace": "z",
+      "updatedAt": "2026-11-12T09:14:00Z",
+      "dataString": 307200
+     },
+     {
+      "ref": "d15",
+      "user": "alice",
+      "collection": "pluginData",
+      "workspace": "z",
+      "updatedAt": "2026-11-12T09:15:00Z",
+      "dataString": 307200
+     },
+     {
+      "ref": "big",
+      "user": "alice",
+      "collection": "pluginData",
+      "workspace": "z",
+      "updatedAt": "2026-11-12T09:30:00Z",
+      "dataString": 5242880
+     },
+     {
+      "ref": "tail",
+      "user": "alice",
+      "collection": "pluginData",
+      "workspace": "z",
+      "updatedAt": "2026-11-12T09:31:00Z"
+     }
+    ]
+   },
+   "requests": [
+    {
+     "as": "alice",
+     "now": "2026-11-12T10:00:00Z",
+     "query": {
+      "collections": [
+       "pluginData"
+      ]
+     },
+     "expect": {
+      "status": 200,
+      "rows": {
+       "pluginData": [
+        "d01",
+        "d02",
+        "d03",
+        "d04",
+        "d05",
+        "d06",
+        "d07",
+        "d08",
+        "d09",
+        "d10",
+        "d11",
+        "d12",
+        "d13"
+       ]
+      },
+      "more": true
+     }
+    },
+    {
+     "as": "alice",
+     "now": "2026-11-12T10:00:01Z",
+     "query": {
+      "page": "$next"
+     },
+     "expect": {
+      "status": 200,
+      "rows": {
+       "pluginData": [
+        "d14",
+        "d15"
+       ]
+      },
+      "more": true
+     }
+    },
+    {
+     "as": "alice",
+     "now": "2026-11-12T10:00:02Z",
+     "query": {
+      "page": "$next"
+     },
+     "expect": {
+      "status": 200,
+      "rows": {
+       "pluginData": [
+        "big"
+       ]
+      },
+      "more": true
+     }
+    },
+    {
+     "as": "alice",
+     "now": "2026-11-12T10:00:03Z",
+     "query": {
+      "page": "$next"
+     },
+     "expect": {
+      "status": 200,
+      "rows": {
+       "pluginData": [
+        "tail"
+       ]
+      },
+      "more": false,
+      "cursorAt": "2026-11-12T09:59:30Z"
+     }
+    }
+   ]
+  },
+  {
+   "name": "workspace= narrows workspace rows to that workspace plus user-global rows, entry-bound rows to its language",
+   "setup": {
+    "workspaces": [
+     {
+      "ref": "z",
+      "user": "alice",
+      "language": "zh"
+     },
+     {
+      "ref": "j",
+      "user": "alice",
+      "language": "ja"
+     },
+     {
+      "ref": "bz",
+      "user": "bob",
+      "language": "zh"
+     }
+    ],
+    "entries": [
+     {
+      "ref": "ez",
+      "language": "zh"
+     },
+     {
+      "ref": "ej",
+      "language": "ja"
+     }
+    ],
+    "rows": [
+     {
+      "ref": "s1",
+      "user": "alice",
+      "collection": "pluginStates",
+      "updatedAt": "2026-11-12T08:00:00Z"
+     },
+     {
+      "ref": "dg",
+      "user": "alice",
+      "collection": "pluginData",
+      "workspace": null,
+      "updatedAt": "2026-11-12T08:01:00Z"
+     },
+     {
+      "ref": "dz",
+      "user": "alice",
+      "collection": "pluginData",
+      "workspace": "z",
+      "updatedAt": "2026-11-12T08:02:00Z"
+     },
+     {
+      "ref": "dj",
+      "user": "alice",
+      "collection": "pluginData",
+      "workspace": "j",
+      "updatedAt": "2026-11-12T08:03:00Z"
+     },
+     {
+      "ref": "cz",
+      "user": "alice",
+      "collection": "cards",
+      "workspace": "z",
+      "entry": "ez",
+      "updatedAt": "2026-11-12T08:04:00Z"
+     },
+     {
+      "ref": "cj",
+      "user": "alice",
+      "collection": "cards",
+      "workspace": "j",
+      "entry": "ej",
+      "updatedAt": "2026-11-12T08:05:00Z"
+     },
+     {
+      "ref": "bkz",
+      "user": "alice",
+      "collection": "books",
+      "workspace": "z",
+      "updatedAt": "2026-11-12T08:05:10Z"
+     },
+     {
+      "ref": "bkj",
+      "user": "alice",
+      "collection": "books",
+      "workspace": "j",
+      "updatedAt": "2026-11-12T08:05:20Z"
+     },
+     {
+      "ref": "mz",
+      "user": "alice",
+      "collection": "bookmarks",
+      "book": "bkz",
+      "updatedAt": "2026-11-12T08:05:30Z"
+     },
+     {
+      "ref": "mj",
+      "user": "alice",
+      "collection": "bookmarks",
+      "book": "bkj",
+      "updatedAt": "2026-11-12T08:05:40Z"
+     },
+     {
+      "ref": "oz",
+      "user": "alice",
+      "collection": "overlays",
+      "entry": "ez",
+      "updatedAt": "2026-11-12T08:06:00Z"
+     },
+     {
+      "ref": "oj",
+      "user": "alice",
+      "collection": "overlays",
+      "entry": "ej",
+      "updatedAt": "2026-11-12T08:07:00Z"
+     },
+     {
+      "ref": "nz",
+      "user": "alice",
+      "collection": "sentences",
+      "entry": "ez",
+      "updatedAt": "2026-11-12T08:08:00Z"
+     },
+     {
+      "ref": "nj",
+      "user": "alice",
+      "collection": "sentences",
+      "entry": "ej",
+      "updatedAt": "2026-11-12T08:09:00Z"
+     },
+     {
+      "ref": "vz",
+      "user": "alice",
+      "collection": "events",
+      "workspace": "z",
+      "type": "review",
+      "updatedAt": "2026-11-12T08:10:00Z"
+     },
+     {
+      "ref": "vj",
+      "user": "alice",
+      "collection": "events",
+      "workspace": "j",
+      "type": "review",
+      "updatedAt": "2026-11-12T08:11:00Z"
+     }
+    ]
+   },
+   "requests": [
+    {
+     "as": "alice",
+     "now": "2026-11-12T10:00:00Z",
+     "query": {
+      "workspace": "z"
+     },
+     "expect": {
+      "status": 200,
+      "scope": true,
+      "scopeLanguages": [
+       "zh"
+      ],
+      "scopeWorkspaces": [
+       "z",
+       "j"
+      ],
+      "rows": {
+       "workspaces": [
+        "z"
+       ],
+       "pluginStates": [
+        "s1"
+       ],
+       "pluginData": [
+        "dg",
+        "dz"
+       ],
+       "cards": [
+        "cz"
+       ],
+       "books": [
+        "bkz"
+       ],
+       "bookmarks": [
+        "mz"
+       ],
+       "overlays": [
+        "oz"
+       ],
+       "sentences": [
+        "nz"
+       ],
+       "events": [
+        "vz"
+       ]
+      },
+      "more": false,
+      "cursorAt": "2026-11-12T09:59:30Z"
+     }
+    },
+    {
+     "as": "alice",
+     "now": "2026-11-12T10:00:00Z",
+     "query": {},
+     "expect": {
+      "status": 200,
+      "scope": true,
+      "scopeLanguages": [
+       "ja",
+       "zh"
+      ],
+      "scopeWorkspaces": [
+       "z",
+       "j"
+      ],
+      "rows": {
+       "workspaces": [
+        "z",
+        "j"
+       ],
+       "pluginStates": [
+        "s1"
+       ],
+       "pluginData": [
+        "dg",
+        "dz",
+        "dj"
+       ],
+       "cards": [
+        "cz",
+        "cj"
+       ],
+       "books": [
+        "bkz",
+        "bkj"
+       ],
+       "bookmarks": [
+        "mz",
+        "mj"
+       ],
+       "overlays": [
+        "oz",
+        "oj"
+       ],
+       "sentences": [
+        "nz",
+        "nj"
+       ],
+       "events": [
+        "vz",
+        "vj"
+       ]
+      },
+      "more": false,
+      "cursorAt": "2026-11-12T09:59:30Z"
+     }
+    },
+    {
+     "as": "alice",
+     "now": "2026-11-12T10:00:00Z",
+     "query": {
+      "workspace": "bz"
+     },
+     "expect": {
+      "status": 404,
+      "error": "not_found"
+     }
+    },
+    {
+     "as": "alice",
+     "now": "2026-11-12T10:00:00Z",
+     "query": {
+      "workspace": "999999"
+     },
+     "expect": {
+      "status": 404,
+      "error": "not_found"
+     }
+    }
+   ]
+  },
+  {
+   "name": "a language added since the cursor restarts overlays and sentences from no since",
+   "setup": {
+    "workspaces": [
+     {
+      "ref": "z",
+      "user": "alice",
+      "language": "zh"
+     }
+    ],
+    "entries": [
+     {
+      "ref": "ez",
+      "language": "zh"
+     },
+     {
+      "ref": "ej",
+      "language": "ja"
+     }
+    ],
+    "rows": [
+     {
+      "ref": "oz",
+      "user": "alice",
+      "collection": "overlays",
+      "entry": "ez",
+      "updatedAt": "2026-11-12T08:00:00Z"
+     },
+     {
+      "ref": "oj",
+      "user": "alice",
+      "collection": "overlays",
+      "entry": "ej",
+      "updatedAt": "2026-11-12T08:01:00Z"
+     },
+     {
+      "ref": "nj",
+      "user": "alice",
+      "collection": "sentences",
+      "entry": "ej",
+      "updatedAt": "2026-11-12T08:02:00Z"
+     },
+     {
+      "ref": "nz",
+      "user": "alice",
+      "collection": "sentences",
+      "entry": "ez",
+      "updatedAt": "2026-11-12T08:03:00Z"
+     },
+     {
+      "ref": "nzt",
+      "user": "alice",
+      "collection": "sentences",
+      "entry": "ez",
+      "updatedAt": "2026-11-12T08:04:00Z",
+      "deletedAt": "2026-11-12T08:04:00Z"
+     }
+    ]
+   },
+   "requests": [
+    {
+     "as": "alice",
+     "now": "2026-11-12T09:00:00Z",
+     "query": {},
+     "expect": {
+      "status": 200,
+      "scope": true,
+      "scopeLanguages": [
+       "zh"
+      ],
+      "restarted": [],
+      "rows": {
+       "workspaces": [
+        "z"
+       ],
+       "overlays": [
+        "oz"
+       ],
+       "sentences": [
+        "nz"
+       ]
+      },
+      "more": false,
+      "cursorAt": "2026-11-12T08:59:30Z"
+     }
+    },
+    {
+     "before": [
+      {
+       "op": "insert",
+       "row": {
+        "ref": "j",
+        "collection": "workspaces",
+        "user": "alice",
+        "language": "ja",
+        "updatedAt": "2026-11-12T09:30:00Z"
+       }
+      }
+     ],
+     "as": "alice",
+     "now": "2026-11-12T10:00:00Z",
+     "query": {
+      "since": "$cursor"
+     },
+     "expect": {
+      "status": 200,
+      "scope": true,
+      "scopeLanguages": [
+       "ja",
+       "zh"
+      ],
+      "restarted": [
+       "overlays",
+       "sentences"
+      ],
+      "catalogueChanged": true,
+      "rows": {
+       "workspaces": [
+        "j"
+       ],
+       "overlays": [
+        "oz",
+        "oj"
+       ],
+       "sentences": [
+        "nj",
+        "nz"
+       ]
+      },
+      "more": false,
+      "cursorAt": "2026-11-12T09:59:30Z"
+     }
+    }
+   ]
+  },
+  {
+   "name": "lookup events never ship",
+   "setup": {
+    "workspaces": [
+     {
+      "ref": "z",
+      "user": "alice",
+      "language": "zh"
+     }
+    ],
+    "rows": [
+     {
+      "ref": "v1",
+      "user": "alice",
+      "collection": "events",
+      "workspace": "z",
+      "type": "review",
+      "updatedAt": "2026-11-12T08:00:00Z"
+     },
+     {
+      "ref": "v2",
+      "user": "alice",
+      "collection": "events",
+      "workspace": "z",
+      "type": "lookup",
+      "updatedAt": "2026-11-12T08:01:00Z"
+     },
+     {
+      "ref": "v3",
+      "user": "alice",
+      "collection": "events",
+      "workspace": "z",
+      "type": "read",
+      "updatedAt": "2026-11-12T08:02:00Z"
+     }
+    ]
+   },
+   "requests": [
+    {
+     "as": "alice",
+     "now": "2026-11-12T10:00:00Z",
+     "query": {
+      "collections": [
+       "events"
+      ]
+     },
+     "expect": {
+      "status": 200,
+      "rows": {
+       "events": [
+        "v1",
+        "v3"
+       ]
+      },
+      "more": false,
+      "cursorAt": "2026-11-12T09:59:30Z"
+     }
+    }
+   ]
+  },
+  {
+   "name": "another user's page token, a cursor of other filters, a repeated filter and bad parameters are 400 sync_page_invalid",
+   "setup": {
+    "workspaces": [
+     {
+      "ref": "z",
+      "user": "alice",
+      "language": "zh"
+     },
+     {
+      "ref": "bz",
+      "user": "bob",
+      "language": "zh"
+     }
+    ],
+    "rows": [
+     {
+      "ref": "d1",
+      "user": "alice",
+      "collection": "pluginData",
+      "workspace": "z",
+      "updatedAt": "2026-11-12T09:00:00Z"
+     },
+     {
+      "ref": "d2",
+      "user": "alice",
+      "collection": "pluginData",
+      "workspace": "z",
+      "updatedAt": "2026-11-12T09:01:00Z"
+     }
+    ]
+   },
+   "requests": [
+    {
+     "as": "alice",
+     "now": "2026-11-12T10:00:00Z",
+     "query": {
+      "collections": [
+       "pluginData"
+      ],
+      "limit": 1
+     },
+     "expect": {
+      "status": 200,
+      "rows": {
+       "pluginData": [
+        "d1"
+       ]
+      },
+      "more": true
+     }
+    },
+    {
+     "as": "bob",
+     "now": "2026-11-12T10:00:01Z",
+     "query": {
+      "page": "$next"
+     },
+     "expect": {
+      "status": 400,
+      "error": "sync_page_invalid"
+     }
+    },
+    {
+     "as": "alice",
+     "now": "2026-11-12T10:00:02Z",
+     "query": {
+      "page": "$next",
+      "collections": [
+       "pluginData"
+      ]
+     },
+     "expect": {
+      "status": 400,
+      "error": "sync_page_invalid"
+     }
+    },
+    {
+     "as": "alice",
+     "now": "2026-11-12T10:00:02Z",
+     "query": {
+      "page": "$next",
+      "limit": 1
+     },
+     "expect": {
+      "status": 400,
+      "error": "sync_page_invalid"
+     }
+    },
+    {
+     "as": "alice",
+     "now": "2026-11-12T10:00:03Z",
+     "query": {
+      "page": "$next"
+     },
+     "expect": {
+      "status": 200,
+      "rows": {
+       "pluginData": [
+        "d2"
+       ]
+      },
+      "more": false,
+      "cursorAt": "2026-11-12T09:59:30Z"
+     }
+    },
+    {
+     "as": "alice",
+     "now": "2026-11-12T10:01:00Z",
+     "query": {
+      "collections": [
+       "pluginData",
+       "cards"
+      ],
+      "since": "$cursor"
+     },
+     "expect": {
+      "status": 400,
+      "error": "sync_page_invalid"
+     }
+    },
+    {
+     "as": "alice",
+     "now": "2026-11-12T10:01:00Z",
+     "query": {
+      "collections": [
+       "pluginData"
+      ],
+      "workspace": "z",
+      "since": "$cursor"
+     },
+     "expect": {
+      "status": 400,
+      "error": "sync_page_invalid"
+     }
+    },
+    {
+     "as": "bob",
+     "now": "2026-11-12T10:01:00Z",
+     "query": {
+      "collections": [
+       "pluginData"
+      ],
+      "since": "$cursor"
+     },
+     "expect": {
+      "status": 400,
+      "error": "sync_page_invalid"
+     }
+    },
+    {
+     "as": "alice",
+     "now": "2026-11-12T10:01:00Z",
+     "query": {
+      "page": "p2.not-base64!"
+     },
+     "expect": {
+      "status": 400,
+      "error": "sync_page_invalid"
+     }
+    },
+    {
+     "as": "alice",
+     "now": "2026-11-12T10:01:00Z",
+     "query": {
+      "since": "2026-11-12T09:00:00Z"
+     },
+     "expect": {
+      "status": 400,
+      "error": "sync_page_invalid"
+     }
+    },
+    {
+     "as": "alice",
+     "now": "2026-11-12T10:01:00Z",
+     "query": {
+      "limit": 0
+     },
+     "expect": {
+      "status": 400,
+      "error": "sync_page_invalid"
+     }
+    },
+    {
+     "as": "alice",
+     "now": "2026-11-12T10:01:00Z",
+     "query": {
+      "limit": 2001
+     },
+     "expect": {
+      "status": 400,
+      "error": "sync_page_invalid"
+     }
+    },
+    {
+     "as": "alice",
+     "now": "2026-11-12T10:01:00Z",
+     "query": {
+      "limit": "abc"
+     },
+     "expect": {
+      "status": 400,
+      "error": "sync_page_invalid"
+     }
+    },
+    {
+     "as": "alice",
+     "now": "2026-11-12T10:01:00Z",
+     "query": {
+      "collections": [
+       "pluginData",
+       "flashcards"
+      ]
+     },
+     "expect": {
+      "status": 400,
+      "error": "sync_page_invalid"
+     }
+    },
+    {
+     "as": "alice",
+     "now": "2026-11-12T10:01:00Z",
+     "query": {
+      "limit": 2000,
+      "collections": [
+       "pluginData"
+      ]
+     },
+     "expect": {
+      "status": 200,
+      "rows": {
+       "pluginData": [
+        "d1",
+        "d2"
+       ]
+      },
+      "more": false,
+      "cursorAt": "2026-11-12T10:00:30Z"
+     }
+    }
+   ]
+  },
+  {
+   "name": "a moved lexicon collection is 400 sync_collection_moved",
+   "setup": {
+    "workspaces": [
+     {
+      "ref": "z",
+      "user": "alice",
+      "language": "zh"
+     }
+    ],
+    "rows": []
+   },
+   "requests": [
+    {
+     "as": "alice",
+     "now": "2026-11-12T10:00:00Z",
+     "query": {
+      "collections": [
+       "pluginData",
+       "entries"
+      ]
+     },
+     "expect": {
+      "status": 400,
+      "error": "sync_collection_moved"
+     }
+    },
+    {
+     "as": "alice",
+     "now": "2026-11-12T10:00:00Z",
+     "query": {
+      "collections": [
+       "levels"
+      ]
+     },
+     "expect": {
+      "status": 400,
+      "error": "sync_collection_moved"
+     }
+    }
+   ]
+  },
+  {
+   "name": "every requested key is present on every page, mostly empty",
+   "setup": {
+    "workspaces": [
+     {
+      "ref": "z",
+      "user": "alice",
+      "language": "zh"
+     }
+    ],
+    "rows": []
+   },
+   "requests": [
+    {
+     "as": "alice",
+     "now": "2026-11-12T10:00:00Z",
+     "query": {
+      "collections": [
+       "cards",
+       "events"
+      ]
+     },
+     "expect": {
+      "status": 200,
+      "keys": [
+       "cards",
+       "events"
+      ],
+      "rows": {},
+      "more": false,
+      "cursorAt": "2026-11-12T09:59:30Z"
+     }
+    },
+    {
+     "as": "alice",
+     "now": "2026-11-12T10:00:00Z",
+     "query": {},
+     "expect": {
+      "status": 200,
+      "keys": [
+       "workspaces",
+       "pluginStates",
+       "pluginData",
+       "cards",
+       "decks",
+       "deckSettings",
+       "limits",
+       "fsrsSets",
+       "fsrsActive",
+       "books",
+       "bookmarks",
+       "highlights",
+       "overlays",
+       "sentences",
+       "events"
+      ],
+      "rows": {
+       "workspaces": [
+        "z"
+       ]
+      },
+      "more": false,
+      "cursorAt": "2026-11-12T09:59:30Z"
+     }
+    }
+   ]
+  },
+  {
+   "name": "tombstones=1 ships tombstones in a round from no since too (the web study pull asks for it) and binds the cursor",
+   "setup": {
+    "workspaces": [
+     {
+      "ref": "z",
+      "user": "alice",
+      "language": "zh"
+     }
+    ],
+    "entries": [
+     {
+      "ref": "e1",
+      "language": "zh"
+     }
+    ],
+    "rows": [
+     {
+      "ref": "d1",
+      "user": "alice",
+      "collection": "pluginData",
+      "workspace": "z",
+      "updatedAt": "2026-11-12T08:01:00Z"
+     },
+     {
+      "ref": "d2",
+      "user": "alice",
+      "collection": "pluginData",
+      "workspace": "z",
+      "updatedAt": "2026-11-12T08:02:00Z",
+      "deletedAt": "2026-11-12T08:02:00Z"
+     },
+     {
+      "ref": "c1",
+      "user": "alice",
+      "collection": "cards",
+      "workspace": "z",
+      "entry": "e1",
+      "updatedAt": "2026-11-12T08:03:00Z"
+     },
+     {
+      "ref": "c2",
+      "user": "alice",
+      "collection": "cards",
+      "workspace": "z",
+      "entry": "e1",
+      "updatedAt": "2026-11-12T08:04:00Z",
+      "deletedAt": "2026-11-12T08:04:00Z"
+     },
+     {
+      "ref": "b1",
+      "user": "alice",
+      "collection": "books",
+      "workspace": "z",
+      "updatedAt": "2026-11-12T08:05:00Z"
+     },
+     {
+      "ref": "b2",
+      "user": "alice",
+      "collection": "books",
+      "workspace": "z",
+      "updatedAt": "2026-11-12T08:06:00Z",
+      "deletedAt": "2026-11-12T08:06:00Z"
+     }
+    ]
+   },
+   "requests": [
+    {
+     "as": "alice",
+     "now": "2026-11-12T10:00:00Z",
+     "query": {
+      "collections": [
+       "pluginData",
+       "cards",
+       "books"
+      ]
+     },
+     "expect": {
+      "status": 200,
+      "rows": {
+       "pluginData": [
+        "d1"
+       ],
+       "cards": [
+        "c1"
+       ],
+       "books": [
+        "b1"
+       ]
+      },
+      "more": false
+     }
+    },
+    {
+     "as": "alice",
+     "now": "2026-11-12T10:00:00Z",
+     "query": {
+      "collections": [
+       "pluginData",
+       "cards",
+       "books"
+      ],
+      "tombstones": "1"
+     },
+     "expect": {
+      "status": 200,
+      "rows": {
+       "pluginData": [
+        "d1",
+        "d2"
+       ],
+       "cards": [
+        "c1",
+        "c2"
+       ],
+       "books": [
+        "b1",
+        "b2"
+       ]
+      },
+      "tombstones": [
+       "d2",
+       "c2",
+       "b2"
+      ],
+      "more": false,
+      "cursorAt": "2026-11-12T09:59:30Z"
+     }
+    },
+    {
+     "as": "alice",
+     "now": "2026-11-12T10:30:00Z",
+     "query": {
+      "collections": [
+       "pluginData",
+       "cards",
+       "books"
+      ],
+      "since": "$cursor"
+     },
+     "expect": {
+      "status": 400,
+      "error": "sync_page_invalid"
+     }
+    },
+    {
+     "as": "alice",
+     "now": "2026-11-12T10:30:00Z",
+     "query": {
+      "collections": [
+       "pluginData",
+       "cards",
+       "books"
+      ],
+      "since": "$cursor",
+      "tombstones": "1"
+     },
+     "expect": {
+      "status": 200,
+      "more": false
+     }
+    },
+    {
+     "as": "alice",
+     "now": "2026-11-12T10:30:00Z",
+     "query": {
+      "collections": [
+       "pluginData",
+       "cards",
+       "books"
+      ],
+      "tombstones": "yes"
+     },
+     "expect": {
+      "status": 400,
+      "error": "sync_page_invalid"
+     }
+    },
+    {
+     "as": "alice",
+     "now": "2026-11-12T10:30:00Z",
+     "query": {
+      "collections": [
+       "pluginData",
+       "cards",
+       "books"
+      ],
+      "limit": 1,
+      "tombstones": "1"
+     },
+     "expect": {
+      "status": 200,
+      "rows": {
+       "pluginData": [
+        "d1"
+       ]
+      },
+      "more": true
+     }
+    },
+    {
+     "as": "alice",
+     "now": "2026-11-12T10:30:00Z",
+     "query": {
+      "page": "$next",
+      "tombstones": "1"
+     },
+     "expect": {
+      "status": 400,
+      "error": "sync_page_invalid"
+     }
+    },
+    {
+     "as": "alice",
+     "now": "2026-11-12T10:30:00Z",
+     "query": {
+      "page": "$next"
+     },
+     "expect": {
+      "status": 200,
+      "rows": {
+       "pluginData": [
+        "d2"
+       ]
+      },
+      "tombstones": [
+       "d2"
+      ],
+      "more": true
+     }
+    }
+   ]
+  }
+ ]
+}

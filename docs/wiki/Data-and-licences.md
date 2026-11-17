@@ -16,8 +16,9 @@ qinqin bundles dictionaries and level lists so a fresh install seeds offline (`q
 | 通用规范汉字表 (`tgh-chars`) | The standard characters list in three levels, derived from Unihan | Unicode License v3 |
 | JLPT kanji (`jlpt-kanji`) | Approximate N5 to N1 kanji levels from kanjiapi.dev plus levels derived from KANJIDIC2 | MIT and CC BY-SA 4.0 |
 | KanjiVG components (`kanjivg-components`) | The parts each kanji is drawn from, for the radical and part lookup, derived from KanjiVG | CC BY-SA 3.0 (© Ulrich Apel); the derived index under the same licence |
+| Hanzi Writer stroke data (`hanzi-writer-strokes`) | Stroke-order animation data for Chinese and Japanese characters (`hanzi-writer-data`, from the Make Me a Hanzi dataset), built into the image as a pack, not committed | Arphic Public License |
 
-The dictionary files are redistributed unmodified. Also credited on the Sources page: stroke-order data (`hanzi-writer-data`, from the Make Me a Hanzi dataset, Arphic Public License), the FSRS library, the script converter `opencc-js`, and Kanji alive example-word audio (CC BY 4.0, Japanese clips) in the published image.
+The dictionary files are redistributed unmodified. Stroke-order data is a pack like the others: it is listed in the Sources page's stroke data section with its licence and attribution, an administrator can uninstall it, and a repository checkout builds it with `node scripts/prepare-strokes-pack.mjs --out plugins/data-strokes/hanzi-writer-strokes` (after `npm --prefix apps/web ci`). Also credited on the Sources page: the stroke player `hanzi-writer`, the FSRS library, the script converter `opencc-js`, and Kanji alive example-word audio (CC BY 4.0, Japanese clips) in the published image.
 
 ## The HSK lists
 
@@ -40,6 +41,10 @@ The radical lookup uses data already bundled: Unihan's radical numbers (Chinese)
 ## Frequency order and starter decks
 
 "Most frequent first" and the starter decks (Top 500/1000/2000) are computed at request time from the frequency packs installed on the server; nothing extra is bundled for them. Japanese uses the bundled Jiten list (CC BY-SA 4.0, with attribution, shown on every starter deck). For Chinese no word frequency list with a clearly compatible licence was found (checked 2026-11-16): wordfreq's Chinese data includes word lists of unknown provenance, jieba's counts have no stated source, SUBTLEX-CH has unclear terms and the Leiden Weibo corpus is non-commercial, so these are local-only packs an operator may add for their own server. Unihan's character readings counts and KANJIDIC2's newspaper ranks are character data, not word ranks, and are not used here.
+
+## Data packages carry their licences
+
+The server turns installed packs into data packages that clients download (see [API overview](API-Overview#data-packages)). Every package holds a `NOTICE.md` (per source pack: name, version, licence, attribution, notice) and the pack's own licence files verbatim under `LICENSES/<pack id>/` (`LICENSE*`, `LICENCE*`, `ATTRIBUTION*`, `NOTICE*`, `COPYING*`, kept at import). A package contains exactly what the server has installed, so nothing reaches a client that the server does not already serve. Packs installed by an older release have no licence files stored; until an administrator runs `qinqin seed` once their packages carry only the licence name and attribution (the catalogue says `licenseTexts: false`).
 
 ## Adding a credit
 

@@ -1,7 +1,7 @@
 import { ApiError, api } from './client';
 import { uploadWithProgress, type UploadProgress } from './upload';
 
-export type PackType = 'dictionary' | 'frequency' | 'levels' | 'sentences' | 'grammar' | 'audio' | 'components';
+export type PackType = 'dictionary' | 'frequency' | 'levels' | 'sentences' | 'grammar' | 'audio' | 'components' | 'strokes';
 
 export interface InstalledPack {
 	type: PackType;
@@ -9,6 +9,8 @@ export interface InstalledPack {
 	name: string;
 	version: string;
 	language: string;
+	/** A strokes pack's languages (it has no single language); absent on other types. */
+	languages?: string[];
 	license: string;
 	attribution: string;
 	notice: string;
@@ -24,6 +26,7 @@ export interface StagedPack {
 		version: string;
 		type: PackType;
 		language: string;
+		languages?: string[];
 		license: string;
 		attribution: string;
 		notice: string;

@@ -8,7 +8,7 @@ import { user } from '../auth';
 import { contextForData } from '../study/currentContext';
 import { loadStudyHistory } from '../study/history';
 import { loadConfig } from '../study/session';
-import { activeWeights } from '../study/store';
+import { activeWeights, studyPullPages } from '../study/store';
 import { fetchStrokeData } from '../study/strokeData';
 import { workspaces } from '../workspaces';
 import { ownPartition } from './partitions';
@@ -56,6 +56,7 @@ export async function prepareActiveWorkspace(): Promise<void> {
 		fetchEntry: (id) => getEntry(id),
 		fetchStroke: (ch) => fetchStrokeData(ch),
 		fetchApi: (path) => api(path),
+		pullPages: studyPullPages,
 		storage: typeof localStorage === 'undefined' ? null : localStorage,
 		now: () => Date.now(),
 		canPrepare: controlled,

@@ -18,7 +18,6 @@ import (
 	"qinqin/internal/api"
 	"qinqin/internal/study"
 	"qinqin/internal/study/rows"
-	chinsync "qinqin/internal/sync"
 )
 
 type legacyFixture struct {
@@ -326,7 +325,7 @@ func TestLegacyViewIsolation(t *testing.T) {
 		t.Errorf("bob's card changed: %+v", got)
 	}
 	// Bob's own legacy pull holds only his card.
-	d, err := chinsync.Pull(ctx, w.db, bob, time.Unix(0, 0), map[string]bool{"pluginData": true})
+	d, err := pullDelta(ctx, w.db, bob, time.Unix(0, 0), map[string]bool{"pluginData": true})
 	if err != nil {
 		t.Fatal(err)
 	}

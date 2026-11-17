@@ -1,4 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { readFileSync, readdirSync } from "node:fs";
+import { join } from "node:path";
+import { fileURLToPath } from "node:url";
 
 const { goto } = vi.hoisted(() => ({ goto: vi.fn() }));
 
@@ -46,7 +49,7 @@ import {
   ALL_WORKSPACES,
 } from "./store";
 import { DEFAULT_W, type ParamSet } from "./fsrs/params";
-import { toLegacy, typedPull } from "./testing/legacyCodec";
+import { pageOf, pagedPull, toLegacy } from "./testing/legacyCodec";
 import { STUDY_COLLECTIONS, cardRow, legacyFamily, type StudyCollection } from "./rows";
 
 const PLUGIN_ID = "qinqin-flashcards";
@@ -75,7 +78,7 @@ function fakeStorage(): Storage {
 function jsonResponse(body: unknown, status = 200): Response {
   const isPull =
     typeof body === "object" && body !== null && Array.isArray((body as { pluginData?: unknown }).pluginData);
-  return rawResponse(isPull ? typedPull(body as Record<string, unknown>) : body, status);
+  return rawResponse(isPull ? pagedPull(body as Record<string, unknown>) : body, status);
 }
 
 /** rawResponse answers exactly `body` (no conversion). */
@@ -251,7 +254,7 @@ function isPush(input: unknown, init?: RequestInit): boolean {
 function respondPull(pull: unknown, events: unknown[] = []): void {
   vi.mocked(fetch).mockImplementation(async (input) => {
     if (String(input).startsWith("/api/events")) return jsonResponse(events);
-    return jsonResponse(pull);
+    return rawResponse(pagedPull(pull as Record<string, unknown>));
   });
 }
 
@@ -295,6 +298,45 @@ describe("study store", () => {
     expectOneStorage();
     vi.unstubAllGlobals();
     vi.clearAllMocks();
+  });
+
+  describe("loadStudyData over pull v2 pages", () => {
+    it("follows `next` and merges a split across two pages in the middle of cards", async () => {
+      const c1 = card("card-1", 41, ["general"]);
+      const c2 = card("card-2", 42, ["general"]);
+      const page1 = pagedPull({ pluginData: [pluginRow("card:card-1", c1)] });
+      const page2 = pagedPull({ pluginData: [pluginRow("card:card-2", c2)] });
+      Object.assign(page1, { more: true, next: "p2.abc", cursor: null });
+      const urls: string[] = [];
+      vi.mocked(fetch).mockImplementation(async (input) => {
+        const url = String(input);
+        urls.push(url);
+        if (url.startsWith("/api/events")) return jsonResponse([]);
+        return rawResponse(url.includes("page=") ? page2 : page1);
+      });
+      const data = await loadStudyData();
+      expect(data.cards.map((c) => c.id)).toEqual(["card-1", "card-2"]);
+      expect(urls.filter((u) => u.startsWith("/api/sync/pull"))[1]).toBe("/api/sync/pull?page=p2.abc&v=2");
+    });
+
+    it("refuses a page that does not match the contract", async () => {
+      vi.mocked(fetch).mockImplementation(async () => rawResponse({ pluginData: [] }));
+      await expect(loadStudyData()).rejects.toThrow(/contract/);
+    });
+
+    it("keeps the pre-v2 pull path out of the sources", () => {
+      const here = fileURLToPath(new URL("../../", import.meta.url));
+      const hits: string[] = [];
+      const walk = (dir: string) => {
+        for (const e of readdirSync(dir, { withFileTypes: true })) {
+          const p = join(dir, e.name);
+          if (e.isDirectory()) walk(p);
+          else if (/\.(ts|svelte)$/.test(e.name) && !e.name.endsWith(".test.ts") && readFileSync(p, "utf8").includes("SYNC_PULL_PATH")) hits.push(p);
+        }
+      };
+      walk(here);
+      expect(hits).toEqual([]);
+    });
   });
 
   describe("loadStudyData", () => {
@@ -368,7 +410,7 @@ describe("study store", () => {
       ]);
       expect("written" in data.cards[2]!).toBe(false);
       expect(calls().map(([url]) => String(url))).toEqual([
-        "/api/sync/pull?cursor=1970-01-01T00:00:00Z&collections=pluginData,pluginStates,cards,decks,deckSettings,limits,fsrsSets,fsrsActive",
+        `/api/sync/pull?collections=pluginStates%2CpluginData%2Ccards%2Cdecks%2CdeckSettings%2Climits%2CfsrsSets%2CfsrsActive&tombstones=1&v=2&workspace=${WORKSPACE_ID}`,
         `/api/events?since=1970-01-01T00:00:00Z&workspace=${WORKSPACE_ID}`,
       ]);
     });
@@ -1622,7 +1664,9 @@ describe("study store", () => {
     });
 
     it("writes the active pointer, null meaning the defaults", async () => {
-      vi.mocked(fetch).mockImplementation(async () => jsonResponse({ version: 1 }));
+      vi.mocked(fetch).mockImplementation(async (input) =>
+        String(input).startsWith("/api/sync/pull") ? jsonResponse(pagedPull({ pluginData: [] })) : jsonResponse({ version: 1 }),
+      );
       await setActiveSet(WORKSPACE_ID, "A");
       // The server now holds A: switching back to the defaults writes setId null.
       respondPull({ pluginData: [pluginRow("fsrs:active", { setId: "A", changedAt: "2026-01-06T00:00:00Z" })] });
@@ -1918,7 +1962,7 @@ describe("typed study collections", () => {
   function serve(pull: Record<string, unknown>): void {
     vi.mocked(fetch).mockImplementation(async (input) => {
       if (String(input).startsWith("/api/events")) return rawResponse([]);
-      return rawResponse({ ...empty, pluginData: [], ...pull });
+      return rawResponse(pageOf({ ...empty, pluginData: [], ...pull }));
     });
   }
 
@@ -1936,8 +1980,6 @@ describe("typed study collections", () => {
         // Tombstones and other workspaces are not study state.
         { ...cardBody("c-vocab-3", 3), ...meta({ deletedAt: "2026-02-02T00:00:00Z" }) },
         { ...cardBody("c-vocab-4", 4), ...meta({ workspaceId: 8 }) },
-        // A row the strict parse refuses is skipped.
-        { ...cardBody("c-vocab-5", 5), kind: "flash", ...meta() },
       ],
       decks: [
         {
@@ -1978,6 +2020,11 @@ describe("typed study collections", () => {
     expect(data.fsrs?.sets.map((s) => s.id)).toEqual(["S1"]);
   });
 
+  it("refuses the whole page when a typed row fails the strict parse", async () => {
+    serve({ cards: [{ ...cardBody("c-vocab-5", 5), kind: "flash", ...meta() }] });
+    await expect(loadStudyData()).rejects.toThrow(/contract/);
+  });
+
   it("ignores typed-family keys left in pluginData and keeps reading the keyed rows", async () => {
     serve({
       pluginData: [
@@ -2010,12 +2057,12 @@ describe("typed study collections", () => {
     vi.mocked(fetch).mockImplementation(async (input, init) => {
       if (isPush(input, init)) return pushAnswer(init);
       if (String(input).startsWith("/api/events")) return rawResponse([]);
-      return rawResponse({
+      return rawResponse(pageOf({
         ...empty,
         pluginData: [],
         cards: [{ ...cardBody("c-vocab-1", 1, { color: "red" }), ...meta() }],
         decks: [{ id: "d2", name: "Two", createdAt: "2026-01-01T00:00:00Z", source: null, extra: { pinned: true }, ...meta() }],
-      });
+      }));
     });
     await moveCards(["c-vocab-1"], "d2");
     await renameDeck("d2", "Zwei");
@@ -2032,11 +2079,11 @@ describe("typed study collections", () => {
     try {
       vi.mocked(fetch).mockImplementation(async (input, init) => {
         if (isPush(input, init)) return pushAnswer(init);
-        return rawResponse({
+        return rawResponse(pageOf({
           ...empty,
           pluginData: [],
           decks: [{ id: "d2", name: "Two", createdAt: "2026-01-01T00:00:00Z", source: null, extra: {}, ...meta({ updatedAt: "2026-02-01T00:00:09Z" }) }],
-        });
+        }));
       });
       await renameDeck("d2", "Zwei");
       expect(writes()[0]!.updatedAt).toBe("2026-02-01T00:00:09.001Z");
@@ -2090,7 +2137,7 @@ describe("typed study collections", () => {
 
   it("an empty pull without typed collections reads as no study state", async () => {
     vi.mocked(fetch).mockImplementation(async (input) =>
-      String(input).startsWith("/api/events") ? rawResponse([]) : rawResponse({ cursor: "x" }),
+      String(input).startsWith("/api/events") ? rawResponse([]) : rawResponse(pagedPull({ cursor: "x" })),
     );
     const data = await loadStudyData();
     expect(data.cards).toEqual([]);
@@ -2491,8 +2538,32 @@ describe("known marks", () => {
     expect(Date.parse(String(rows.find((r) => r.key === "known:5")?.updatedAt))).toBeLessThan(Date.parse("2099-01-01T00:00:00Z"));
   });
 
+  it("a re-mark after a newer server tombstone is stamped after it: the from-scratch study pull asks for tombstones", async () => {
+    // The server ships tombstones in a round from no since only for tombstones=1.
+    vi.mocked(fetch).mockImplementation(async (input, init) => {
+      const url = String(input);
+      if (url.startsWith("/api/sync/pull")) {
+        const tombs = new URL(url, "https://x.invalid").searchParams.get("tombstones") === "1";
+        const dead = pluginRow("known:4", mark(4), { workspaceId: 3, updatedAt: "2099-01-01T00:00:05Z", deletedAt: "2099-01-01T00:00:05Z" });
+        return jsonResponse({ pluginData: tombs ? [dead] : [] });
+      }
+      return jsonResponse({ dataAccepted: JSON.parse(String(init?.body)).pluginData.length, dataSkipped: 0, dataRefused: 0 });
+    });
+    await setKnownMarks(3, [4], true);
+    const pulls = calls().map(([url]) => String(url)).filter((u) => u.startsWith("/api/sync/pull"));
+    expect(pulls[0]).toBe(
+      "/api/sync/pull?collections=pluginStates%2CpluginData%2Ccards%2Cdecks%2CdeckSettings%2Climits%2CfsrsSets%2CfsrsActive&tombstones=1&v=2&workspace=3",
+    );
+    const rows = pushBodies().flatMap((b) => b.pluginData);
+    expect(rows.find((r) => r.key === "known:4")?.updatedAt).toBe("2099-01-01T00:00:05.001Z");
+  });
+
   it("a skipped mark is an error", async () => {
-    vi.mocked(fetch).mockImplementation(async () => jsonResponse({ dataAccepted: 1, dataSkipped: 1, dataRefused: 0 }));
+    vi.mocked(fetch).mockImplementation(async (input) =>
+      String(input).startsWith("/api/sync/pull")
+        ? jsonResponse(pagedPull({ pluginData: [] }))
+        : jsonResponse({ dataAccepted: 1, dataSkipped: 1, dataRefused: 0 }),
+    );
     await expect(setKnownMarks(3, [1, 2], true)).rejects.toBeInstanceOf(PartialPushError);
   });
 

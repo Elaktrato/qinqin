@@ -74,6 +74,8 @@ interface Receipt {
 	cards: number;
 	reviews: number;
 	entries: number;
+	/** Pages of the study round saved (pull v2); absent in receipts of older builds. */
+	pages?: number;
 	/** The cache partition (credential) the entries were saved in. */
 	partition: string;
 }
@@ -88,6 +90,8 @@ export interface PrepareDeps {
 	fetchEntry: (id: number) => Promise<unknown>;
 	fetchStroke: (char: string) => Promise<unknown>;
 	fetchApi: (path: string) => Promise<unknown>;
+	/** Pages of the study round `loadHistory` just read (each page is saved by the worker as it is read). */
+	pullPages: (workspaceId: number) => number;
 	storage: Storage | null;
 	now: () => number;
 	/** True when a worker controls the page, the device is online and data saver is off. */
@@ -204,7 +208,7 @@ export async function prepareOffline(
 			if (!(await d.isCached(entryPath(id)))) await d.fetchEntry(id);
 		});
 		await pool(plan.chars, (ch) => d.fetchStroke(ch));
-		const saved: Receipt = { at: now, cards: data.cards.length, reviews: data.reviews.length, entries: plan.entryIds.length, partition };
+		const saved: Receipt = { at: now, cards: data.cards.length, reviews: data.reviews.length, entries: plan.entryIds.length, pages: d.pullPages(workspaceId), partition };
 		try {
 			d.storage?.setItem(key, JSON.stringify(saved));
 		} catch {

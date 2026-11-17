@@ -1,6 +1,6 @@
 // Package packs is the one place that imports, uninstalls and lists data
 // packs of every type — dictionaries, frequency lists, level lists,
-// sentence, grammar, audio and components packs. The seed CLI and the admin API both go through it, so
+// sentence, grammar, audio, components and strokes packs. The seed CLI and the admin API both go through it, so
 // a pack installs, shows up and goes away the same way however it
 // arrived.
 package packs
@@ -19,21 +19,25 @@ import (
 	"qinqin/internal/grammar"
 	"qinqin/internal/levels"
 	"qinqin/internal/sentences"
+	"qinqin/internal/strokes"
 )
 
 // Installed is one installed pack as the admin list shows it. License
 // and Attribution are the strings the pack stated when it was imported,
-// verbatim; a legacy sentence pack carries none of them.
+// verbatim; a legacy sentence pack carries none of them. A strokes pack
+// serves several languages: Language is empty and Languages lists them
+// (sorted); every other type has Language and no Languages.
 type Installed struct {
-	Type        string `json:"type"`
-	PackID      string `json:"packId"`
-	Name        string `json:"name"`
-	Version     string `json:"version"`
-	Language    string `json:"language"`
-	License     string `json:"license"`
-	Attribution string `json:"attribution"`
-	Notice      string `json:"notice"`
-	UpdatedAt   string `json:"updatedAt"` // RFC 3339; "" for a legacy sentence pack
+	Type        string   `json:"type"`
+	PackID      string   `json:"packId"`
+	Name        string   `json:"name"`
+	Version     string   `json:"version"`
+	Language    string   `json:"language"`
+	Languages   []string `json:"languages,omitempty"`
+	License     string   `json:"license"`
+	Attribution string   `json:"attribution"`
+	Notice      string   `json:"notice"`
+	UpdatedAt   string   `json:"updatedAt"` // RFC 3339; "" for a legacy sentence pack
 }
 
 // ErrNotFound reports a pack that is not installed.
@@ -51,6 +55,7 @@ var typeOrder = map[string]int{
 	dict.TypeGrammar:    4,
 	dict.TypeAudio:      5,
 	dict.TypeComponents: 6,
+	dict.TypeStrokes:    7,
 }
 
 // Supported reports whether typ is a pack type this package manages.
@@ -71,11 +76,29 @@ func Installable(typ string) bool {
 // Option configures Import and Uninstall.
 type Option func(*options)
 
-type options struct{ audioStore string }
+type options struct {
+	audioStore string
+	onChange   func(typ, packID, language string)
+}
 
 // WithAudioStore names the directory audio clips live in (<data>/audio);
 // importing or uninstalling an audio pack needs it.
 func WithAudioStore(dir string) Option { return func(o *options) { o.audioStore = dir } }
+
+// WithOnChange has fn called after an import or an uninstall committed,
+// with the pack's type, registry id and language ("" for a strokes pack,
+// which serves several). The data packages built from the pack hang off it
+// (datapkg.Builder.PackChanged); this package cannot name them itself.
+func WithOnChange(fn func(typ, packID, language string)) Option {
+	return func(o *options) { o.onChange = fn }
+}
+
+// changed tells the onChange hook, if any.
+func (o options) changed(typ, packID, language string) {
+	if o.onChange != nil {
+		o.onChange(typ, packID, language)
+	}
+}
 
 func collect(opts []Option) options {
 	var o options
@@ -90,8 +113,28 @@ var errNoAudioStore = errors.New("packs: audio packs need an audio store directo
 
 // Import installs pack by its manifest type and returns the one-line
 // summary the seed CLI prints.
+//
+// After the type's import commits, the pack's licence files are kept
+// (StoreTexts); a failure there is returned although the pack is installed.
+//
+// The onChange hook (WithOnChange) runs once the type's import committed,
+// also when storing the texts failed afterwards: the pack's data changed.
 func Import(ctx context.Context, sqlDB *sql.DB, pack dict.Pack, opts ...Option) (string, error) {
 	o := collect(opts)
+	line, err := importData(ctx, sqlDB, pack, o)
+	if err != nil {
+		return "", err
+	}
+	err = storeTextsAfterImport(ctx, sqlDB, pack)
+	o.changed(pack.Type, RegistryID(pack.Manifest), pack.Language)
+	if err != nil {
+		return "", err
+	}
+	return line, nil
+}
+
+// importData imports pack by its type, in the type importer's transaction.
+func importData(ctx context.Context, sqlDB *sql.DB, pack dict.Pack, o options) (string, error) {
 	switch pack.Type {
 	case dict.TypeDictionary:
 		r, err := dict.ImportLexicon(ctx, sqlDB, &pack)
@@ -146,15 +189,37 @@ func Import(ctx context.Context, sqlDB *sql.DB, pack dict.Pack, opts ...Option) 
 			return "", err
 		}
 		return fmt.Sprintf("%d characters, %d parts", r.Chars, r.Parts), nil
+	case dict.TypeStrokes:
+		r, err := strokes.Import(ctx, sqlDB, pack)
+		if err != nil {
+			return "", err
+		}
+		return fmt.Sprintf("%d characters", r.Chars), nil
 	}
 	return "", fmt.Errorf("%w: %q", ErrUnknownType, pack.Type)
 }
 
-// Uninstall removes the live pack of type typ with manifest id packID.
+// Uninstall removes the live pack of type typ with registry id packID and
+// its licence texts.
 // Unknown types return ErrUnknownType, packs that are not installed
-// ErrNotFound.
+// ErrNotFound. The onChange hook (WithOnChange) runs after the pack is gone.
 func Uninstall(ctx context.Context, sqlDB *sql.DB, typ, packID string, opts ...Option) error {
 	o := collect(opts)
+	var language string
+	if o.onChange != nil {
+		// Read before the uninstall: the hook needs the pack's language.
+		if p, err := Find(ctx, sqlDB, typ, packID); err == nil {
+			language = p.Language
+		}
+	}
+	if err := uninstall(ctx, sqlDB, typ, packID, o); err != nil {
+		return err
+	}
+	o.changed(typ, packID, language)
+	return nil
+}
+
+func uninstall(ctx context.Context, sqlDB *sql.DB, typ, packID string, o options) error {
 	var err error
 	switch typ {
 	case dict.TypeDictionary:
@@ -182,15 +247,21 @@ func Uninstall(ctx context.Context, sqlDB *sql.DB, typ, packID string, opts ...O
 		_, err = audio.Uninstall(ctx, sqlDB, packID, o.audioStore)
 	case dict.TypeComponents:
 		err = components.Uninstall(ctx, sqlDB, packID)
+	case dict.TypeStrokes:
+		err = strokes.Uninstall(ctx, sqlDB, packID)
 	default:
 		return fmt.Errorf("%w: %q", ErrUnknownType, typ)
 	}
 	if errors.Is(err, grammar.ErrNotFound) || errors.Is(err, dict.ErrNotFound) || errors.Is(err, freq.ErrNotFound) ||
 		errors.Is(err, levels.ErrNotFound) || errors.Is(err, sentences.ErrNotFound) || errors.Is(err, audio.ErrPackNotFound) ||
-		errors.Is(err, components.ErrNotFound) {
+		errors.Is(err, components.ErrNotFound) || errors.Is(err, strokes.ErrNotFound) {
 		return ErrNotFound
 	}
-	return err
+	if err != nil {
+		return err
+	}
+	// The pack is gone; so are its licence texts.
+	return deleteTexts(ctx, sqlDB, typ, packID)
 }
 
 func rowID(ctx context.Context, sqlDB *sql.DB, query, packID string) (int64, error) {
@@ -221,7 +292,7 @@ func Find(ctx context.Context, sqlDB *sql.DB, typ, packID string) (Installed, er
 
 // List returns every live pack of every type, ordered by type
 // (dictionary, frequency, levels, sentences, grammar, audio,
-// components), then name, then pack id.
+// components, strokes), then name, then pack id.
 // Sentence packs imported before the registry existed list with only
 // their type and id, after the registered ones: their licence is not
 // recorded, and the list must not make them look like known packs.
@@ -258,6 +329,14 @@ func List(ctx context.Context, sqlDB *sql.DB) ([]Installed, error) {
 		if err := errors.Join(rows.Err(), rows.Close()); err != nil {
 			return nil, fmt.Errorf("packs: list %s: %w", q.typ, err)
 		}
+	}
+	strokePacks, err := strokes.Packs(ctx, sqlDB)
+	if err != nil {
+		return nil, fmt.Errorf("packs: list %s: %w", dict.TypeStrokes, err)
+	}
+	for _, sp := range strokePacks {
+		out = append(out, Installed{Type: dict.TypeStrokes, PackID: sp.PackID, Name: sp.Name, Version: sp.Version,
+			Languages: sp.Languages, License: sp.License, Attribution: sp.Attribution, Notice: sp.Notice, UpdatedAt: sp.UpdatedAt})
 	}
 
 	legacy, err := sqlDB.QueryContext(ctx, `

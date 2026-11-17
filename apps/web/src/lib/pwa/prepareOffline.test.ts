@@ -4,8 +4,8 @@ import { classify } from './sw/classify';
 import { DEFAULT_W } from '../study/fsrs/params';
 import { UTC_CONTEXT, type StudyContext } from '../study/studyContext';
 import type { ReviewEvent, StudyCard, StudyCardKind } from '../study/types';
-import { SYNC_PULL_PATH } from '../study/store';
 import { STUDY_COLLECTIONS } from '../study/rows';
+import { V2_STUDY_COLLECTIONS, firstPageUrl, nextPageUrl } from '../sync/pager';
 import { fullLogPath } from '../events';
 import { entryPath } from '../api/entries';
 import { strokeUrl } from '../study/strokeData';
@@ -19,6 +19,10 @@ import {
 	receiptKey,
 	type PrepareDeps
 } from './prepareOffline';
+
+// The legacy study pull an old shell made (still cacheable); the web itself pages with v=2.
+const SYNC_PULL_PATH =
+	'/api/sync/pull?cursor=1970-01-01T00:00:00Z&collections=pluginData,pluginStates,' + STUDY_COLLECTIONS.join(',');
 
 const now = new Date('2026-03-01T12:00:00Z');
 
@@ -138,6 +142,7 @@ describe('prepareOffline', () => {
 			canPrepare: () => true,
 			partition: async () => 'qinqin-api-v1-aaa',
 			isCached: async () => false,
+			pullPages: () => 1,
 			extraNew: 2,
 			onPrepared: () => {},
 			...over
@@ -151,6 +156,26 @@ describe('prepareOffline', () => {
 		for (const path of OFFLINE_API_PATHS) expect(deps.calls).toContain(path);
 		expect(deps.calls.filter((c) => c.startsWith('/api/entries/')).sort()).toEqual([1, 2, 3, 4].map((n) => entryPath(n)).sort());
 		expect(deps.active.max).toBeLessThanOrEqual(2);
+	});
+
+	it('warms every page of the current workspace round through the study read and counts the pages', async () => {
+		const pages: number[] = [];
+		const loadHistory = vi.fn(async (ws: number) => {
+			pages.push(ws);
+			return { decks: [], cards: vocab, fsrs: undefined, reviews: [], merged: 0 } as never;
+		});
+		const deps = makeDeps({ loadHistory, pullPages: (ws) => (ws === 7 ? 3 : 0) });
+		await prepareOffline(7, deps);
+		expect(pages).toEqual([7]);
+		expect(JSON.parse(deps.storage!.getItem(receiptKey(1, 7)) as string).pages).toBe(3);
+	});
+
+	it('the v2 first page and its continuation of a workspace round are what the worker keeps', () => {
+		const ctx = { origin: 'https://x.test', shellUrls: new Set<string>() };
+		const headers = { get: () => 'Bearer t' };
+		for (const url of [firstPageUrl({ collections: V2_STUDY_COLLECTIONS, workspace: 7 }), nextPageUrl('p2.abc')]) {
+			expect(classify({ method: 'GET', url: `https://x.test${url}`, mode: 'cors', headers }, ctx), url).toBe('api');
+		}
 	});
 
 	it('is throttled for 30 minutes, and then does not even download the history first', async () => {

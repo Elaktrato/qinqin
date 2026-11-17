@@ -1,0 +1,2221 @@
+{
+ "version": 1,
+ "rule": "packages/catalogue",
+ "_doc": "GET /api/packages answers one catalogue. valid cases decode; invalid ones must be refused for the reason given (a strict decoder: every key of rowKeys present, no other key except error, types as in README.md). error appears only in an administrator's catalogue, on a row whose last build failed. Decoded by server/internal/api (A7) and apps/web/src/lib/api/packages.ts (C5).",
+ "idPattern": "^(lexicon\\.[a-z]{2,3}(-[a-z0-9]+)*|(levels|sentences|frequency|components|audio|grammar|strokes)\\.[a-z][a-z0-9]*(-[a-z0-9]+)*)$",
+ "types": [
+  "lexicon",
+  "levels",
+  "sentences",
+  "frequency",
+  "components",
+  "audio",
+  "grammar",
+  "strokes"
+ ],
+ "states": [
+  "building",
+  "ready",
+  "failed",
+  "deleted"
+ ],
+ "topKeys": [
+  "format",
+  "instanceId",
+  "languages",
+  "building",
+  "packages"
+ ],
+ "rowKeys": [
+  "id",
+  "type",
+  "languages",
+  "formatVersion",
+  "revision",
+  "contentHash",
+  "sha256",
+  "bytes",
+  "url",
+  "state",
+  "builtAt",
+  "requires",
+  "optional",
+  "licenseTexts",
+  "sources",
+  "updatedAt",
+  "deletedAt"
+ ],
+ "adminRowKeys": [
+  "error"
+ ],
+ "sourceKeys": [
+  "type",
+  "packId",
+  "name",
+  "version",
+  "license",
+  "attribution",
+  "notice"
+ ],
+ "cases": [
+  {
+   "name": "a zh user's default catalogue: lexicon, levels, sentences, grammar, strokes",
+   "valid": true,
+   "catalogue": {
+    "format": 1,
+    "instanceId": "01JD8Z3Q4M5N6P7R8S9T0V1W2X",
+    "languages": [
+     "zh"
+    ],
+    "building": false,
+    "packages": [
+     {
+      "id": "grammar.zh-grammar-demo",
+      "type": "grammar",
+      "languages": [
+       "zh"
+      ],
+      "formatVersion": 1,
+      "revision": 1,
+      "contentHash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "bytes": 40960,
+      "url": "/api/packages/grammar.zh-grammar-demo/1",
+      "state": "ready",
+      "builtAt": "2026-11-16T10:00:00Z",
+      "requires": [],
+      "optional": false,
+      "licenseTexts": true,
+      "sources": [
+       {
+        "type": "grammar",
+        "packId": "zh-grammar-demo",
+        "name": "Chinese grammar demo (A1)",
+        "version": "1.0",
+        "license": "CC0-1.0",
+        "attribution": "Demo content written for qinqin by the project; CC0 1.0",
+        "notice": ""
+       }
+      ],
+      "updatedAt": "2026-11-16T10:00:00Z",
+      "deletedAt": null
+     },
+     {
+      "id": "lexicon.zh",
+      "type": "lexicon",
+      "languages": [
+       "zh"
+      ],
+      "formatVersion": 1,
+      "revision": 3,
+      "contentHash": "sha256:9999999999999999999999999999999999999999999999999999999999999999",
+      "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "bytes": 24117248,
+      "url": "/api/packages/lexicon.zh/3",
+      "state": "ready",
+      "builtAt": "2026-11-16T10:00:00Z",
+      "requires": [],
+      "optional": false,
+      "licenseTexts": true,
+      "sources": [
+       {
+        "type": "dictionary",
+        "packId": "cedict",
+        "name": "CC-CEDICT",
+        "version": "2026-11-11",
+        "license": "CC BY-SA 4.0",
+        "attribution": "CC-CEDICT, MDBG (https://cc-cedict.org)",
+        "notice": ""
+       },
+       {
+        "type": "dictionary",
+        "packId": "unihan",
+        "name": "Unihan database",
+        "version": "2026-11-11",
+        "license": "Unicode License v3",
+        "attribution": "Unicode Consortium, Unihan database (https://www.unicode.org/)",
+        "notice": ""
+       }
+      ],
+      "updatedAt": "2026-11-16T10:00:00Z",
+      "deletedAt": null
+     },
+     {
+      "id": "sentences.zh-demo",
+      "type": "sentences",
+      "languages": [
+       "zh"
+      ],
+      "formatVersion": 1,
+      "revision": 2,
+      "contentHash": "sha256:4444444444444444444444444444444444444444444444444444444444444444",
+      "sha256": "5555555555555555555555555555555555555555555555555555555555555555",
+      "bytes": 16384,
+      "url": "/api/packages/sentences.zh-demo/2",
+      "state": "ready",
+      "builtAt": "2026-11-16T10:00:00Z",
+      "requires": [
+       "lexicon.zh"
+      ],
+      "optional": false,
+      "licenseTexts": true,
+      "sources": [
+       {
+        "type": "sentences",
+        "packId": "zh-demo",
+        "name": "Chinese demo sentences",
+        "version": "1.0",
+        "license": "CC0-1.0",
+        "attribution": "Demo content written for qinqin by the project; CC0 1.0",
+        "notice": ""
+       }
+      ],
+      "updatedAt": "2026-11-16T10:00:00Z",
+      "deletedAt": null
+     },
+     {
+      "id": "strokes.hanzi-writer-strokes",
+      "type": "strokes",
+      "languages": [
+       "ja",
+       "zh"
+      ],
+      "formatVersion": 1,
+      "revision": 1,
+      "contentHash": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+      "bytes": 12582912,
+      "url": "/api/packages/strokes.hanzi-writer-strokes/1",
+      "state": "ready",
+      "builtAt": "2026-11-16T10:00:00Z",
+      "requires": [],
+      "optional": false,
+      "licenseTexts": true,
+      "sources": [
+       {
+        "type": "strokes",
+        "packId": "hanzi-writer-strokes",
+        "name": "Hanzi Writer stroke data",
+        "version": "2.0.1",
+        "license": "Arphic Public License",
+        "attribution": "Make Me a Hanzi (Shaunak Kishore) via hanzi-writer-data (David Chanin)",
+        "notice": ""
+       }
+      ],
+      "updatedAt": "2026-11-16T10:00:00Z",
+      "deletedAt": null
+     }
+    ]
+   }
+  },
+  {
+   "name": "every language (?languages=all), optional audio, strokes with two languages",
+   "valid": true,
+   "catalogue": {
+    "format": 1,
+    "instanceId": "01JD8Z3Q4M5N6P7R8S9T0V1W2X",
+    "languages": [
+     "ja",
+     "zh"
+    ],
+    "building": false,
+    "packages": [
+     {
+      "id": "audio.kanjialive-audio",
+      "type": "audio",
+      "languages": [
+       "ja"
+      ],
+      "formatVersion": 1,
+      "revision": 1,
+      "contentHash": "sha256:8888888888888888888888888888888888888888888888888888888888888888",
+      "sha256": "9999999999999999999999999999999999999999999999999999999999999999",
+      "bytes": 73400320,
+      "url": "/api/packages/audio.kanjialive-audio/1",
+      "state": "ready",
+      "builtAt": "2026-11-16T10:00:00Z",
+      "requires": [],
+      "optional": true,
+      "licenseTexts": true,
+      "sources": [
+       {
+        "type": "audio",
+        "packId": "kanjialive-audio",
+        "name": "Kanji alive audio",
+        "version": "1",
+        "license": "CC BY 4.0",
+        "attribution": "Kanji alive (https://kanjialive.com)",
+        "notice": ""
+       }
+      ],
+      "updatedAt": "2026-11-16T10:00:00Z",
+      "deletedAt": null
+     },
+     {
+      "id": "components.kanjivg-components",
+      "type": "components",
+      "languages": [
+       "ja"
+      ],
+      "formatVersion": 1,
+      "revision": 1,
+      "contentHash": "sha256:6666666666666666666666666666666666666666666666666666666666666666",
+      "sha256": "7777777777777777777777777777777777777777777777777777777777777777",
+      "bytes": 1048576,
+      "url": "/api/packages/components.kanjivg-components/1",
+      "state": "ready",
+      "builtAt": "2026-11-16T10:00:00Z",
+      "requires": [],
+      "optional": false,
+      "licenseTexts": true,
+      "sources": [
+       {
+        "type": "components",
+        "packId": "kanjivg-components",
+        "name": "KanjiVG components",
+        "version": "r20260714",
+        "license": "CC BY-SA 3.0",
+        "attribution": "KanjiVG © Ulrich Apel (https://kanjivg.tagaini.net); component index derived by qinqin",
+        "notice": ""
+       }
+      ],
+      "updatedAt": "2026-11-16T10:00:00Z",
+      "deletedAt": null
+     },
+     {
+      "id": "frequency.jiten-frequency",
+      "type": "frequency",
+      "languages": [
+       "ja"
+      ],
+      "formatVersion": 1,
+      "revision": 1,
+      "contentHash": "sha256:5555555555555555555555555555555555555555555555555555555555555555",
+      "sha256": "6666666666666666666666666666666666666666666666666666666666666666",
+      "bytes": 9437184,
+      "url": "/api/packages/frequency.jiten-frequency/1",
+      "state": "ready",
+      "builtAt": "2026-11-16T10:00:00Z",
+      "requires": [],
+      "optional": false,
+      "licenseTexts": true,
+      "sources": [
+       {
+        "type": "frequency",
+        "packId": "jiten-frequency",
+        "name": "Jiten frequency list",
+        "version": "2026-11-12",
+        "license": "CC BY-SA 4.0",
+        "attribution": "Jiten (https://jiten.moe), global frequency list",
+        "notice": ""
+       }
+      ],
+      "updatedAt": "2026-11-16T10:00:00Z",
+      "deletedAt": null
+     },
+     {
+      "id": "grammar.zh-grammar-demo",
+      "type": "grammar",
+      "languages": [
+       "zh"
+      ],
+      "formatVersion": 1,
+      "revision": 1,
+      "contentHash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "bytes": 40960,
+      "url": "/api/packages/grammar.zh-grammar-demo/1",
+      "state": "ready",
+      "builtAt": "2026-11-16T10:00:00Z",
+      "requires": [],
+      "optional": false,
+      "licenseTexts": true,
+      "sources": [
+       {
+        "type": "grammar",
+        "packId": "zh-grammar-demo",
+        "name": "Chinese grammar demo (A1)",
+        "version": "1.0",
+        "license": "CC0-1.0",
+        "attribution": "Demo content written for qinqin by the project; CC0 1.0",
+        "notice": ""
+       }
+      ],
+      "updatedAt": "2026-11-16T10:00:00Z",
+      "deletedAt": null
+     },
+     {
+      "id": "levels.jlpt-kanji",
+      "type": "levels",
+      "languages": [
+       "ja"
+      ],
+      "formatVersion": 1,
+      "revision": 1,
+      "contentHash": "sha256:3333333333333333333333333333333333333333333333333333333333333333",
+      "sha256": "4444444444444444444444444444444444444444444444444444444444444444",
+      "bytes": 212992,
+      "url": "/api/packages/levels.jlpt-kanji/1",
+      "state": "ready",
+      "builtAt": "2026-11-16T10:00:00Z",
+      "requires": [
+       "lexicon.ja"
+      ],
+      "optional": false,
+      "licenseTexts": true,
+      "sources": [
+       {
+        "type": "levels",
+        "packId": "jlpt-kanji",
+        "name": "JLPT kanji (approximate)",
+        "version": "kanjiapi.dev@76aa080+kanjidic2@2026-11-11",
+        "license": "MIT AND CC BY-SA 4.0",
+        "attribution": "kanjiapi.dev jlpt.tsv (MIT, © 2023 Iridium Szreter); KANJIDIC2 (CC BY-SA 4.0, © EDRDG)",
+        "notice": ""
+       }
+      ],
+      "updatedAt": "2026-11-16T10:00:00Z",
+      "deletedAt": null
+     },
+     {
+      "id": "lexicon.ja",
+      "type": "lexicon",
+      "languages": [
+       "ja"
+      ],
+      "formatVersion": 1,
+      "revision": 1,
+      "contentHash": "sha256:7777777777777777777777777777777777777777777777777777777777777777",
+      "sha256": "8888888888888888888888888888888888888888888888888888888888888888",
+      "bytes": 61210624,
+      "url": "/api/packages/lexicon.ja/1",
+      "state": "ready",
+      "builtAt": "2026-11-16T10:00:00Z",
+      "requires": [],
+      "optional": false,
+      "licenseTexts": true,
+      "sources": [
+       {
+        "type": "dictionary",
+        "packId": "jmdict",
+        "name": "JMdict",
+        "version": "2026-11-11",
+        "license": "CC BY-SA 4.0",
+        "attribution": "Electronic Dictionary Research and Development Group (EDRDG), JMdict_e",
+        "notice": ""
+       }
+      ],
+      "updatedAt": "2026-11-16T10:00:00Z",
+      "deletedAt": null
+     },
+     {
+      "id": "lexicon.zh",
+      "type": "lexicon",
+      "languages": [
+       "zh"
+      ],
+      "formatVersion": 1,
+      "revision": 3,
+      "contentHash": "sha256:9999999999999999999999999999999999999999999999999999999999999999",
+      "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "bytes": 24117248,
+      "url": "/api/packages/lexicon.zh/3",
+      "state": "ready",
+      "builtAt": "2026-11-16T10:00:00Z",
+      "requires": [],
+      "optional": false,
+      "licenseTexts": true,
+      "sources": [
+       {
+        "type": "dictionary",
+        "packId": "cedict",
+        "name": "CC-CEDICT",
+        "version": "2026-11-11",
+        "license": "CC BY-SA 4.0",
+        "attribution": "CC-CEDICT, MDBG (https://cc-cedict.org)",
+        "notice": ""
+       },
+       {
+        "type": "dictionary",
+        "packId": "unihan",
+        "name": "Unihan database",
+        "version": "2026-11-11",
+        "license": "Unicode License v3",
+        "attribution": "Unicode Consortium, Unihan database (https://www.unicode.org/)",
+        "notice": ""
+       }
+      ],
+      "updatedAt": "2026-11-16T10:00:00Z",
+      "deletedAt": null
+     },
+     {
+      "id": "sentences.zh-demo",
+      "type": "sentences",
+      "languages": [
+       "zh"
+      ],
+      "formatVersion": 1,
+      "revision": 2,
+      "contentHash": "sha256:4444444444444444444444444444444444444444444444444444444444444444",
+      "sha256": "5555555555555555555555555555555555555555555555555555555555555555",
+      "bytes": 16384,
+      "url": "/api/packages/sentences.zh-demo/2",
+      "state": "ready",
+      "builtAt": "2026-11-16T10:00:00Z",
+      "requires": [
+       "lexicon.zh"
+      ],
+      "optional": false,
+      "licenseTexts": true,
+      "sources": [
+       {
+        "type": "sentences",
+        "packId": "zh-demo",
+        "name": "Chinese demo sentences",
+        "version": "1.0",
+        "license": "CC0-1.0",
+        "attribution": "Demo content written for qinqin by the project; CC0 1.0",
+        "notice": ""
+       }
+      ],
+      "updatedAt": "2026-11-16T10:00:00Z",
+      "deletedAt": null
+     },
+     {
+      "id": "strokes.hanzi-writer-strokes",
+      "type": "strokes",
+      "languages": [
+       "ja",
+       "zh"
+      ],
+      "formatVersion": 1,
+      "revision": 1,
+      "contentHash": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+      "bytes": 12582912,
+      "url": "/api/packages/strokes.hanzi-writer-strokes/1",
+      "state": "ready",
+      "builtAt": "2026-11-16T10:00:00Z",
+      "requires": [],
+      "optional": false,
+      "licenseTexts": true,
+      "sources": [
+       {
+        "type": "strokes",
+        "packId": "hanzi-writer-strokes",
+        "name": "Hanzi Writer stroke data",
+        "version": "2.0.1",
+        "license": "Arphic Public License",
+        "attribution": "Make Me a Hanzi (Shaunak Kishore) via hanzi-writer-data (David Chanin)",
+        "notice": ""
+       }
+      ],
+      "updatedAt": "2026-11-16T10:00:00Z",
+      "deletedAt": null
+     }
+    ]
+   }
+  },
+  {
+   "name": "first build pending: building, revision 0, no url",
+   "valid": true,
+   "catalogue": {
+    "format": 1,
+    "instanceId": "01JD8Z3Q4M5N6P7R8S9T0V1W2X",
+    "languages": [
+     "ja"
+    ],
+    "building": true,
+    "packages": [
+     {
+      "id": "lexicon.ja",
+      "type": "lexicon",
+      "languages": [
+       "ja"
+      ],
+      "formatVersion": 1,
+      "revision": 0,
+      "contentHash": "",
+      "sha256": "",
+      "bytes": 0,
+      "url": null,
+      "state": "building",
+      "builtAt": null,
+      "requires": [],
+      "optional": false,
+      "licenseTexts": true,
+      "sources": [
+       {
+        "type": "dictionary",
+        "packId": "jmdict",
+        "name": "JMdict",
+        "version": "2026-11-11",
+        "license": "CC BY-SA 4.0",
+        "attribution": "Electronic Dictionary Research and Development Group (EDRDG), JMdict_e",
+        "notice": ""
+       }
+      ],
+      "updatedAt": "2026-11-16T10:00:00Z",
+      "deletedAt": null
+     }
+    ]
+   }
+  },
+  {
+   "name": "first build failed, as a user sees it (no error)",
+   "valid": true,
+   "catalogue": {
+    "format": 1,
+    "instanceId": "01JD8Z3Q4M5N6P7R8S9T0V1W2X",
+    "languages": [
+     "zh"
+    ],
+    "building": false,
+    "packages": [
+     {
+      "id": "grammar.zh-grammar-demo",
+      "type": "grammar",
+      "languages": [
+       "zh"
+      ],
+      "formatVersion": 1,
+      "revision": 0,
+      "contentHash": "",
+      "sha256": "",
+      "bytes": 0,
+      "url": null,
+      "state": "failed",
+      "builtAt": null,
+      "requires": [],
+      "optional": false,
+      "licenseTexts": true,
+      "sources": [
+       {
+        "type": "grammar",
+        "packId": "zh-grammar-demo",
+        "name": "Chinese grammar demo (A1)",
+        "version": "1.0",
+        "license": "CC0-1.0",
+        "attribution": "Demo content written for qinqin by the project; CC0 1.0",
+        "notice": ""
+       }
+      ],
+      "updatedAt": "2026-11-16T10:00:00Z",
+      "deletedAt": null
+     }
+    ]
+   }
+  },
+  {
+   "name": "first build failed, as an administrator sees it (error)",
+   "valid": true,
+   "admin": true,
+   "catalogue": {
+    "format": 1,
+    "instanceId": "01JD8Z3Q4M5N6P7R8S9T0V1W2X",
+    "languages": [
+     "zh"
+    ],
+    "building": false,
+    "packages": [
+     {
+      "id": "grammar.zh-grammar-demo",
+      "type": "grammar",
+      "languages": [
+       "zh"
+      ],
+      "formatVersion": 1,
+      "revision": 0,
+      "contentHash": "",
+      "sha256": "",
+      "bytes": 0,
+      "url": null,
+      "state": "failed",
+      "builtAt": null,
+      "requires": [],
+      "optional": false,
+      "licenseTexts": true,
+      "sources": [
+       {
+        "type": "grammar",
+        "packId": "zh-grammar-demo",
+        "name": "Chinese grammar demo (A1)",
+        "version": "1.0",
+        "license": "CC0-1.0",
+        "attribution": "Demo content written for qinqin by the project; CC0 1.0",
+        "notice": ""
+       }
+      ],
+      "updatedAt": "2026-11-16T10:00:00Z",
+      "deletedAt": null,
+      "error": "grammar: lesson 12 has no title"
+     }
+    ]
+   }
+  },
+  {
+   "name": "a later build failed: the older revision stays ready, error for administrators",
+   "valid": true,
+   "admin": true,
+   "catalogue": {
+    "format": 1,
+    "instanceId": "01JD8Z3Q4M5N6P7R8S9T0V1W2X",
+    "languages": [
+     "zh"
+    ],
+    "building": false,
+    "packages": [
+     {
+      "id": "sentences.zh-demo",
+      "type": "sentences",
+      "languages": [
+       "zh"
+      ],
+      "formatVersion": 1,
+      "revision": 2,
+      "contentHash": "sha256:4444444444444444444444444444444444444444444444444444444444444444",
+      "sha256": "5555555555555555555555555555555555555555555555555555555555555555",
+      "bytes": 16384,
+      "url": "/api/packages/sentences.zh-demo/2",
+      "state": "ready",
+      "builtAt": "2026-11-16T10:00:00Z",
+      "requires": [
+       "lexicon.zh"
+      ],
+      "optional": false,
+      "licenseTexts": true,
+      "sources": [
+       {
+        "type": "sentences",
+        "packId": "zh-demo",
+        "name": "Chinese demo sentences",
+        "version": "1.0",
+        "license": "CC0-1.0",
+        "attribution": "Demo content written for qinqin by the project; CC0 1.0",
+        "notice": ""
+       }
+      ],
+      "updatedAt": "2026-11-16T10:00:00Z",
+      "deletedAt": null,
+      "error": "sentences: database is locked"
+     }
+    ]
+   }
+  },
+  {
+   "name": "an uninstalled pack: deleted tombstone keeps its last revision, no url",
+   "valid": true,
+   "catalogue": {
+    "format": 1,
+    "instanceId": "01JD8Z3Q4M5N6P7R8S9T0V1W2X",
+    "languages": [
+     "zh"
+    ],
+    "building": false,
+    "packages": [
+     {
+      "id": "lexicon.zh",
+      "type": "lexicon",
+      "languages": [
+       "zh"
+      ],
+      "formatVersion": 1,
+      "revision": 3,
+      "contentHash": "sha256:9999999999999999999999999999999999999999999999999999999999999999",
+      "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "bytes": 24117248,
+      "url": "/api/packages/lexicon.zh/3",
+      "state": "ready",
+      "builtAt": "2026-11-16T10:00:00Z",
+      "requires": [],
+      "optional": false,
+      "licenseTexts": true,
+      "sources": [
+       {
+        "type": "dictionary",
+        "packId": "cedict",
+        "name": "CC-CEDICT",
+        "version": "2026-11-11",
+        "license": "CC BY-SA 4.0",
+        "attribution": "CC-CEDICT, MDBG (https://cc-cedict.org)",
+        "notice": ""
+       },
+       {
+        "type": "dictionary",
+        "packId": "unihan",
+        "name": "Unihan database",
+        "version": "2026-11-11",
+        "license": "Unicode License v3",
+        "attribution": "Unicode Consortium, Unihan database (https://www.unicode.org/)",
+        "notice": ""
+       }
+      ],
+      "updatedAt": "2026-11-16T10:00:00Z",
+      "deletedAt": null
+     },
+     {
+      "id": "sentences.zh-demo",
+      "type": "sentences",
+      "languages": [
+       "zh"
+      ],
+      "formatVersion": 1,
+      "revision": 2,
+      "contentHash": "sha256:4444444444444444444444444444444444444444444444444444444444444444",
+      "sha256": "5555555555555555555555555555555555555555555555555555555555555555",
+      "bytes": 16384,
+      "url": null,
+      "state": "deleted",
+      "builtAt": "2026-11-16T10:00:00Z",
+      "requires": [
+       "lexicon.zh"
+      ],
+      "optional": false,
+      "licenseTexts": true,
+      "sources": [
+       {
+        "type": "sentences",
+        "packId": "zh-demo",
+        "name": "Chinese demo sentences",
+        "version": "1.0",
+        "license": "CC0-1.0",
+        "attribution": "Demo content written for qinqin by the project; CC0 1.0",
+        "notice": ""
+       }
+      ],
+      "updatedAt": "2026-11-15T09:00:00Z",
+      "deletedAt": "2026-11-15T09:00:00Z"
+     }
+    ]
+   }
+  },
+  {
+   "name": "uninstalled before its first build finished: deleted at revision 0",
+   "valid": true,
+   "catalogue": {
+    "format": 1,
+    "instanceId": "01JD8Z3Q4M5N6P7R8S9T0V1W2X",
+    "languages": [
+     "ja"
+    ],
+    "building": false,
+    "packages": [
+     {
+      "id": "levels.jlpt-kanji",
+      "type": "levels",
+      "languages": [
+       "ja"
+      ],
+      "formatVersion": 1,
+      "revision": 0,
+      "contentHash": "",
+      "sha256": "",
+      "bytes": 0,
+      "url": null,
+      "state": "deleted",
+      "builtAt": null,
+      "requires": [
+       "lexicon.ja"
+      ],
+      "optional": false,
+      "licenseTexts": true,
+      "sources": [
+       {
+        "type": "levels",
+        "packId": "jlpt-kanji",
+        "name": "JLPT kanji (approximate)",
+        "version": "kanjiapi.dev@76aa080+kanjidic2@2026-11-11",
+        "license": "MIT AND CC BY-SA 4.0",
+        "attribution": "kanjiapi.dev jlpt.tsv (MIT, © 2023 Iridium Szreter); KANJIDIC2 (CC BY-SA 4.0, © EDRDG)",
+        "notice": ""
+       }
+      ],
+      "updatedAt": "2026-11-15T09:00:00Z",
+      "deletedAt": "2026-11-15T09:00:00Z"
+     }
+    ]
+   }
+  },
+  {
+   "name": "a pack imported before licence texts were kept: licenseTexts false",
+   "valid": true,
+   "catalogue": {
+    "format": 1,
+    "instanceId": "01JD8Z3Q4M5N6P7R8S9T0V1W2X",
+    "languages": [
+     "zh"
+    ],
+    "building": false,
+    "packages": [
+     {
+      "id": "lexicon.zh",
+      "type": "lexicon",
+      "languages": [
+       "zh"
+      ],
+      "formatVersion": 1,
+      "revision": 3,
+      "contentHash": "sha256:9999999999999999999999999999999999999999999999999999999999999999",
+      "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "bytes": 24117248,
+      "url": "/api/packages/lexicon.zh/3",
+      "state": "ready",
+      "builtAt": "2026-11-16T10:00:00Z",
+      "requires": [],
+      "optional": false,
+      "licenseTexts": false,
+      "sources": [
+       {
+        "type": "dictionary",
+        "packId": "cedict",
+        "name": "CC-CEDICT",
+        "version": "2026-11-11",
+        "license": "CC BY-SA 4.0",
+        "attribution": "CC-CEDICT, MDBG (https://cc-cedict.org)",
+        "notice": ""
+       },
+       {
+        "type": "dictionary",
+        "packId": "unihan",
+        "name": "Unihan database",
+        "version": "2026-11-11",
+        "license": "Unicode License v3",
+        "attribution": "Unicode Consortium, Unihan database (https://www.unicode.org/)",
+        "notice": ""
+       }
+      ],
+      "updatedAt": "2026-11-16T10:00:00Z",
+      "deletedAt": null
+     }
+    ]
+   }
+  },
+  {
+   "name": "a user without workspaces: no languages, no packages",
+   "valid": true,
+   "catalogue": {
+    "format": 1,
+    "instanceId": "01JD8Z3Q4M5N6P7R8S9T0V1W2X",
+    "languages": [],
+    "building": false,
+    "packages": []
+   }
+  },
+  {
+   "name": "a row without sha256",
+   "valid": false,
+   "reason": "missing key",
+   "catalogue": {
+    "format": 1,
+    "instanceId": "01JD8Z3Q4M5N6P7R8S9T0V1W2X",
+    "languages": [
+     "zh"
+    ],
+    "building": false,
+    "packages": [
+     {
+      "id": "lexicon.zh",
+      "type": "lexicon",
+      "languages": [
+       "zh"
+      ],
+      "formatVersion": 1,
+      "revision": 3,
+      "contentHash": "sha256:9999999999999999999999999999999999999999999999999999999999999999",
+      "bytes": 24117248,
+      "url": "/api/packages/lexicon.zh/3",
+      "state": "ready",
+      "builtAt": "2026-11-16T10:00:00Z",
+      "requires": [],
+      "optional": false,
+      "licenseTexts": true,
+      "sources": [
+       {
+        "type": "dictionary",
+        "packId": "cedict",
+        "name": "CC-CEDICT",
+        "version": "2026-11-11",
+        "license": "CC BY-SA 4.0",
+        "attribution": "CC-CEDICT, MDBG (https://cc-cedict.org)",
+        "notice": ""
+       },
+       {
+        "type": "dictionary",
+        "packId": "unihan",
+        "name": "Unihan database",
+        "version": "2026-11-11",
+        "license": "Unicode License v3",
+        "attribution": "Unicode Consortium, Unihan database (https://www.unicode.org/)",
+        "notice": ""
+       }
+      ],
+      "updatedAt": "2026-11-16T10:00:00Z",
+      "deletedAt": null
+     }
+    ]
+   }
+  },
+  {
+   "name": "a top level without instanceId",
+   "valid": false,
+   "reason": "missing key",
+   "catalogue": {
+    "format": 1,
+    "languages": [
+     "zh"
+    ],
+    "building": false,
+    "packages": [
+     {
+      "id": "lexicon.zh",
+      "type": "lexicon",
+      "languages": [
+       "zh"
+      ],
+      "formatVersion": 1,
+      "revision": 3,
+      "contentHash": "sha256:9999999999999999999999999999999999999999999999999999999999999999",
+      "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "bytes": 24117248,
+      "url": "/api/packages/lexicon.zh/3",
+      "state": "ready",
+      "builtAt": "2026-11-16T10:00:00Z",
+      "requires": [],
+      "optional": false,
+      "licenseTexts": true,
+      "sources": [
+       {
+        "type": "dictionary",
+        "packId": "cedict",
+        "name": "CC-CEDICT",
+        "version": "2026-11-11",
+        "license": "CC BY-SA 4.0",
+        "attribution": "CC-CEDICT, MDBG (https://cc-cedict.org)",
+        "notice": ""
+       },
+       {
+        "type": "dictionary",
+        "packId": "unihan",
+        "name": "Unihan database",
+        "version": "2026-11-11",
+        "license": "Unicode License v3",
+        "attribution": "Unicode Consortium, Unihan database (https://www.unicode.org/)",
+        "notice": ""
+       }
+      ],
+      "updatedAt": "2026-11-16T10:00:00Z",
+      "deletedAt": null
+     }
+    ]
+   }
+  },
+  {
+   "name": "an unknown row member",
+   "valid": false,
+   "reason": "unknown key",
+   "catalogue": {
+    "format": 1,
+    "instanceId": "01JD8Z3Q4M5N6P7R8S9T0V1W2X",
+    "languages": [
+     "zh"
+    ],
+    "building": false,
+    "packages": [
+     {
+      "id": "lexicon.zh",
+      "type": "lexicon",
+      "languages": [
+       "zh"
+      ],
+      "formatVersion": 1,
+      "revision": 3,
+      "contentHash": "sha256:9999999999999999999999999999999999999999999999999999999999999999",
+      "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "bytes": 24117248,
+      "url": "/api/packages/lexicon.zh/3",
+      "state": "ready",
+      "builtAt": "2026-11-16T10:00:00Z",
+      "requires": [],
+      "optional": false,
+      "licenseTexts": true,
+      "sources": [
+       {
+        "type": "dictionary",
+        "packId": "cedict",
+        "name": "CC-CEDICT",
+        "version": "2026-11-11",
+        "license": "CC BY-SA 4.0",
+        "attribution": "CC-CEDICT, MDBG (https://cc-cedict.org)",
+        "notice": ""
+       },
+       {
+        "type": "dictionary",
+        "packId": "unihan",
+        "name": "Unihan database",
+        "version": "2026-11-11",
+        "license": "Unicode License v3",
+        "attribution": "Unicode Consortium, Unihan database (https://www.unicode.org/)",
+        "notice": ""
+       }
+      ],
+      "updatedAt": "2026-11-16T10:00:00Z",
+      "deletedAt": null,
+      "mirror": "https://cdn.example"
+     }
+    ]
+   }
+  },
+  {
+   "name": "url set on a deleted row",
+   "valid": false,
+   "reason": "deleted rows have url null",
+   "catalogue": {
+    "format": 1,
+    "instanceId": "01JD8Z3Q4M5N6P7R8S9T0V1W2X",
+    "languages": [
+     "zh"
+    ],
+    "building": false,
+    "packages": [
+     {
+      "id": "sentences.zh-demo",
+      "type": "sentences",
+      "languages": [
+       "zh"
+      ],
+      "formatVersion": 1,
+      "revision": 2,
+      "contentHash": "sha256:4444444444444444444444444444444444444444444444444444444444444444",
+      "sha256": "5555555555555555555555555555555555555555555555555555555555555555",
+      "bytes": 16384,
+      "url": "/api/packages/sentences.zh-demo/2",
+      "state": "deleted",
+      "builtAt": "2026-11-16T10:00:00Z",
+      "requires": [
+       "lexicon.zh"
+      ],
+      "optional": false,
+      "licenseTexts": true,
+      "sources": [
+       {
+        "type": "sentences",
+        "packId": "zh-demo",
+        "name": "Chinese demo sentences",
+        "version": "1.0",
+        "license": "CC0-1.0",
+        "attribution": "Demo content written for qinqin by the project; CC0 1.0",
+        "notice": ""
+       }
+      ],
+      "updatedAt": "2026-11-15T09:00:00Z",
+      "deletedAt": "2026-11-15T09:00:00Z"
+     }
+    ]
+   }
+  },
+  {
+   "name": "deletedAt null on a deleted row",
+   "valid": false,
+   "reason": "deleted rows have deletedAt",
+   "catalogue": {
+    "format": 1,
+    "instanceId": "01JD8Z3Q4M5N6P7R8S9T0V1W2X",
+    "languages": [
+     "zh"
+    ],
+    "building": false,
+    "packages": [
+     {
+      "id": "sentences.zh-demo",
+      "type": "sentences",
+      "languages": [
+       "zh"
+      ],
+      "formatVersion": 1,
+      "revision": 2,
+      "contentHash": "sha256:4444444444444444444444444444444444444444444444444444444444444444",
+      "sha256": "5555555555555555555555555555555555555555555555555555555555555555",
+      "bytes": 16384,
+      "url": null,
+      "state": "deleted",
+      "builtAt": "2026-11-16T10:00:00Z",
+      "requires": [
+       "lexicon.zh"
+      ],
+      "optional": false,
+      "licenseTexts": true,
+      "sources": [
+       {
+        "type": "sentences",
+        "packId": "zh-demo",
+        "name": "Chinese demo sentences",
+        "version": "1.0",
+        "license": "CC0-1.0",
+        "attribution": "Demo content written for qinqin by the project; CC0 1.0",
+        "notice": ""
+       }
+      ],
+      "updatedAt": "2026-11-15T09:00:00Z",
+      "deletedAt": null
+     }
+    ]
+   }
+  },
+  {
+   "name": "deletedAt on a ready row",
+   "valid": false,
+   "reason": "only deleted rows have deletedAt",
+   "catalogue": {
+    "format": 1,
+    "instanceId": "01JD8Z3Q4M5N6P7R8S9T0V1W2X",
+    "languages": [
+     "zh"
+    ],
+    "building": false,
+    "packages": [
+     {
+      "id": "lexicon.zh",
+      "type": "lexicon",
+      "languages": [
+       "zh"
+      ],
+      "formatVersion": 1,
+      "revision": 3,
+      "contentHash": "sha256:9999999999999999999999999999999999999999999999999999999999999999",
+      "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "bytes": 24117248,
+      "url": "/api/packages/lexicon.zh/3",
+      "state": "ready",
+      "builtAt": "2026-11-16T10:00:00Z",
+      "requires": [],
+      "optional": false,
+      "licenseTexts": true,
+      "sources": [
+       {
+        "type": "dictionary",
+        "packId": "cedict",
+        "name": "CC-CEDICT",
+        "version": "2026-11-11",
+        "license": "CC BY-SA 4.0",
+        "attribution": "CC-CEDICT, MDBG (https://cc-cedict.org)",
+        "notice": ""
+       },
+       {
+        "type": "dictionary",
+        "packId": "unihan",
+        "name": "Unihan database",
+        "version": "2026-11-11",
+        "license": "Unicode License v3",
+        "attribution": "Unicode Consortium, Unihan database (https://www.unicode.org/)",
+        "notice": ""
+       }
+      ],
+      "updatedAt": "2026-11-16T10:00:00Z",
+      "deletedAt": "2026-11-15T09:00:00Z"
+     }
+    ]
+   }
+  },
+  {
+   "name": "ready at revision 0",
+   "valid": false,
+   "reason": "ready needs revision >= 1",
+   "catalogue": {
+    "format": 1,
+    "instanceId": "01JD8Z3Q4M5N6P7R8S9T0V1W2X",
+    "languages": [
+     "zh"
+    ],
+    "building": false,
+    "packages": [
+     {
+      "id": "lexicon.zh",
+      "type": "lexicon",
+      "languages": [
+       "zh"
+      ],
+      "formatVersion": 1,
+      "revision": 0,
+      "contentHash": "sha256:9999999999999999999999999999999999999999999999999999999999999999",
+      "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "bytes": 24117248,
+      "url": "/api/packages/lexicon.zh/0",
+      "state": "ready",
+      "builtAt": "2026-11-16T10:00:00Z",
+      "requires": [],
+      "optional": false,
+      "licenseTexts": true,
+      "sources": [
+       {
+        "type": "dictionary",
+        "packId": "cedict",
+        "name": "CC-CEDICT",
+        "version": "2026-11-11",
+        "license": "CC BY-SA 4.0",
+        "attribution": "CC-CEDICT, MDBG (https://cc-cedict.org)",
+        "notice": ""
+       },
+       {
+        "type": "dictionary",
+        "packId": "unihan",
+        "name": "Unihan database",
+        "version": "2026-11-11",
+        "license": "Unicode License v3",
+        "attribution": "Unicode Consortium, Unihan database (https://www.unicode.org/)",
+        "notice": ""
+       }
+      ],
+      "updatedAt": "2026-11-16T10:00:00Z",
+      "deletedAt": null
+     }
+    ]
+   }
+  },
+  {
+   "name": "ready without url",
+   "valid": false,
+   "reason": "ready needs url",
+   "catalogue": {
+    "format": 1,
+    "instanceId": "01JD8Z3Q4M5N6P7R8S9T0V1W2X",
+    "languages": [
+     "zh"
+    ],
+    "building": false,
+    "packages": [
+     {
+      "id": "lexicon.zh",
+      "type": "lexicon",
+      "languages": [
+       "zh"
+      ],
+      "formatVersion": 1,
+      "revision": 3,
+      "contentHash": "sha256:9999999999999999999999999999999999999999999999999999999999999999",
+      "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "bytes": 24117248,
+      "url": null,
+      "state": "ready",
+      "builtAt": "2026-11-16T10:00:00Z",
+      "requires": [],
+      "optional": false,
+      "licenseTexts": true,
+      "sources": [
+       {
+        "type": "dictionary",
+        "packId": "cedict",
+        "name": "CC-CEDICT",
+        "version": "2026-11-11",
+        "license": "CC BY-SA 4.0",
+        "attribution": "CC-CEDICT, MDBG (https://cc-cedict.org)",
+        "notice": ""
+       },
+       {
+        "type": "dictionary",
+        "packId": "unihan",
+        "name": "Unihan database",
+        "version": "2026-11-11",
+        "license": "Unicode License v3",
+        "attribution": "Unicode Consortium, Unihan database (https://www.unicode.org/)",
+        "notice": ""
+       }
+      ],
+      "updatedAt": "2026-11-16T10:00:00Z",
+      "deletedAt": null
+     }
+    ]
+   }
+  },
+  {
+   "name": "url naming another revision",
+   "valid": false,
+   "reason": "url is /api/packages/<id>/<revision>",
+   "catalogue": {
+    "format": 1,
+    "instanceId": "01JD8Z3Q4M5N6P7R8S9T0V1W2X",
+    "languages": [
+     "zh"
+    ],
+    "building": false,
+    "packages": [
+     {
+      "id": "lexicon.zh",
+      "type": "lexicon",
+      "languages": [
+       "zh"
+      ],
+      "formatVersion": 1,
+      "revision": 3,
+      "contentHash": "sha256:9999999999999999999999999999999999999999999999999999999999999999",
+      "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "bytes": 24117248,
+      "url": "/api/packages/lexicon.zh/2",
+      "state": "ready",
+      "builtAt": "2026-11-16T10:00:00Z",
+      "requires": [],
+      "optional": false,
+      "licenseTexts": true,
+      "sources": [
+       {
+        "type": "dictionary",
+        "packId": "cedict",
+        "name": "CC-CEDICT",
+        "version": "2026-11-11",
+        "license": "CC BY-SA 4.0",
+        "attribution": "CC-CEDICT, MDBG (https://cc-cedict.org)",
+        "notice": ""
+       },
+       {
+        "type": "dictionary",
+        "packId": "unihan",
+        "name": "Unihan database",
+        "version": "2026-11-11",
+        "license": "Unicode License v3",
+        "attribution": "Unicode Consortium, Unihan database (https://www.unicode.org/)",
+        "notice": ""
+       }
+      ],
+      "updatedAt": "2026-11-16T10:00:00Z",
+      "deletedAt": null
+     }
+    ]
+   }
+  },
+  {
+   "name": "building with a url",
+   "valid": false,
+   "reason": "building and failed rows have url null and revision 0",
+   "catalogue": {
+    "format": 1,
+    "instanceId": "01JD8Z3Q4M5N6P7R8S9T0V1W2X",
+    "languages": [
+     "zh"
+    ],
+    "building": false,
+    "packages": [
+     {
+      "id": "lexicon.zh",
+      "type": "lexicon",
+      "languages": [
+       "zh"
+      ],
+      "formatVersion": 1,
+      "revision": 1,
+      "contentHash": "",
+      "sha256": "",
+      "bytes": 0,
+      "url": "/api/packages/lexicon.zh/1",
+      "state": "building",
+      "builtAt": null,
+      "requires": [],
+      "optional": false,
+      "licenseTexts": true,
+      "sources": [
+       {
+        "type": "dictionary",
+        "packId": "cedict",
+        "name": "CC-CEDICT",
+        "version": "2026-11-11",
+        "license": "CC BY-SA 4.0",
+        "attribution": "CC-CEDICT, MDBG (https://cc-cedict.org)",
+        "notice": ""
+       }
+      ],
+      "updatedAt": "2026-11-16T10:00:00Z",
+      "deletedAt": null
+     }
+    ]
+   }
+  },
+  {
+   "name": "unknown state",
+   "valid": false,
+   "reason": "state not in states",
+   "catalogue": {
+    "format": 1,
+    "instanceId": "01JD8Z3Q4M5N6P7R8S9T0V1W2X",
+    "languages": [
+     "zh"
+    ],
+    "building": false,
+    "packages": [
+     {
+      "id": "lexicon.zh",
+      "type": "lexicon",
+      "languages": [
+       "zh"
+      ],
+      "formatVersion": 1,
+      "revision": 3,
+      "contentHash": "sha256:9999999999999999999999999999999999999999999999999999999999999999",
+      "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "bytes": 24117248,
+      "url": "/api/packages/lexicon.zh/3",
+      "state": "stale",
+      "builtAt": "2026-11-16T10:00:00Z",
+      "requires": [],
+      "optional": false,
+      "licenseTexts": true,
+      "sources": [
+       {
+        "type": "dictionary",
+        "packId": "cedict",
+        "name": "CC-CEDICT",
+        "version": "2026-11-11",
+        "license": "CC BY-SA 4.0",
+        "attribution": "CC-CEDICT, MDBG (https://cc-cedict.org)",
+        "notice": ""
+       },
+       {
+        "type": "dictionary",
+        "packId": "unihan",
+        "name": "Unihan database",
+        "version": "2026-11-11",
+        "license": "Unicode License v3",
+        "attribution": "Unicode Consortium, Unihan database (https://www.unicode.org/)",
+        "notice": ""
+       }
+      ],
+      "updatedAt": "2026-11-16T10:00:00Z",
+      "deletedAt": null
+     }
+    ]
+   }
+  },
+  {
+   "name": "id with a capital letter",
+   "valid": false,
+   "reason": "id does not match idPattern",
+   "catalogue": {
+    "format": 1,
+    "instanceId": "01JD8Z3Q4M5N6P7R8S9T0V1W2X",
+    "languages": [
+     "zh"
+    ],
+    "building": false,
+    "packages": [
+     {
+      "id": "lexicon.ZH",
+      "type": "lexicon",
+      "languages": [
+       "zh"
+      ],
+      "formatVersion": 1,
+      "revision": 3,
+      "contentHash": "sha256:9999999999999999999999999999999999999999999999999999999999999999",
+      "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "bytes": 24117248,
+      "url": "/api/packages/lexicon.ZH/3",
+      "state": "ready",
+      "builtAt": "2026-11-16T10:00:00Z",
+      "requires": [],
+      "optional": false,
+      "licenseTexts": true,
+      "sources": [
+       {
+        "type": "dictionary",
+        "packId": "cedict",
+        "name": "CC-CEDICT",
+        "version": "2026-11-11",
+        "license": "CC BY-SA 4.0",
+        "attribution": "CC-CEDICT, MDBG (https://cc-cedict.org)",
+        "notice": ""
+       },
+       {
+        "type": "dictionary",
+        "packId": "unihan",
+        "name": "Unihan database",
+        "version": "2026-11-11",
+        "license": "Unicode License v3",
+        "attribution": "Unicode Consortium, Unihan database (https://www.unicode.org/)",
+        "notice": ""
+       }
+      ],
+      "updatedAt": "2026-11-16T10:00:00Z",
+      "deletedAt": null
+     }
+    ]
+   }
+  },
+  {
+   "name": "id of an unknown type",
+   "valid": false,
+   "reason": "id does not match idPattern",
+   "catalogue": {
+    "format": 1,
+    "instanceId": "01JD8Z3Q4M5N6P7R8S9T0V1W2X",
+    "languages": [
+     "zh"
+    ],
+    "building": false,
+    "packages": [
+     {
+      "id": "fonts.noto",
+      "type": "fonts",
+      "languages": [
+       "zh"
+      ],
+      "formatVersion": 1,
+      "revision": 3,
+      "contentHash": "sha256:9999999999999999999999999999999999999999999999999999999999999999",
+      "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "bytes": 24117248,
+      "url": "/api/packages/fonts.noto/3",
+      "state": "ready",
+      "builtAt": "2026-11-16T10:00:00Z",
+      "requires": [],
+      "optional": false,
+      "licenseTexts": true,
+      "sources": [
+       {
+        "type": "dictionary",
+        "packId": "cedict",
+        "name": "CC-CEDICT",
+        "version": "2026-11-11",
+        "license": "CC BY-SA 4.0",
+        "attribution": "CC-CEDICT, MDBG (https://cc-cedict.org)",
+        "notice": ""
+       },
+       {
+        "type": "dictionary",
+        "packId": "unihan",
+        "name": "Unihan database",
+        "version": "2026-11-11",
+        "license": "Unicode License v3",
+        "attribution": "Unicode Consortium, Unihan database (https://www.unicode.org/)",
+        "notice": ""
+       }
+      ],
+      "updatedAt": "2026-11-16T10:00:00Z",
+      "deletedAt": null
+     }
+    ]
+   }
+  },
+  {
+   "name": "id with a path",
+   "valid": false,
+   "reason": "id does not match idPattern",
+   "catalogue": {
+    "format": 1,
+    "instanceId": "01JD8Z3Q4M5N6P7R8S9T0V1W2X",
+    "languages": [
+     "zh"
+    ],
+    "building": false,
+    "packages": [
+     {
+      "id": "lexicon.zh/..",
+      "type": "lexicon",
+      "languages": [
+       "zh"
+      ],
+      "formatVersion": 1,
+      "revision": 3,
+      "contentHash": "sha256:9999999999999999999999999999999999999999999999999999999999999999",
+      "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "bytes": 24117248,
+      "url": "/api/packages/lexicon.zh/../3",
+      "state": "ready",
+      "builtAt": "2026-11-16T10:00:00Z",
+      "requires": [],
+      "optional": false,
+      "licenseTexts": true,
+      "sources": [
+       {
+        "type": "dictionary",
+        "packId": "cedict",
+        "name": "CC-CEDICT",
+        "version": "2026-11-11",
+        "license": "CC BY-SA 4.0",
+        "attribution": "CC-CEDICT, MDBG (https://cc-cedict.org)",
+        "notice": ""
+       },
+       {
+        "type": "dictionary",
+        "packId": "unihan",
+        "name": "Unihan database",
+        "version": "2026-11-11",
+        "license": "Unicode License v3",
+        "attribution": "Unicode Consortium, Unihan database (https://www.unicode.org/)",
+        "notice": ""
+       }
+      ],
+      "updatedAt": "2026-11-16T10:00:00Z",
+      "deletedAt": null
+     }
+    ]
+   }
+  },
+  {
+   "name": "type disagreeing with the id",
+   "valid": false,
+   "reason": "type is the id's prefix",
+   "catalogue": {
+    "format": 1,
+    "instanceId": "01JD8Z3Q4M5N6P7R8S9T0V1W2X",
+    "languages": [
+     "zh"
+    ],
+    "building": false,
+    "packages": [
+     {
+      "id": "lexicon.zh",
+      "type": "levels",
+      "languages": [
+       "zh"
+      ],
+      "formatVersion": 1,
+      "revision": 3,
+      "contentHash": "sha256:9999999999999999999999999999999999999999999999999999999999999999",
+      "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "bytes": 24117248,
+      "url": "/api/packages/lexicon.zh/3",
+      "state": "ready",
+      "builtAt": "2026-11-16T10:00:00Z",
+      "requires": [],
+      "optional": false,
+      "licenseTexts": true,
+      "sources": [
+       {
+        "type": "dictionary",
+        "packId": "cedict",
+        "name": "CC-CEDICT",
+        "version": "2026-11-11",
+        "license": "CC BY-SA 4.0",
+        "attribution": "CC-CEDICT, MDBG (https://cc-cedict.org)",
+        "notice": ""
+       },
+       {
+        "type": "dictionary",
+        "packId": "unihan",
+        "name": "Unihan database",
+        "version": "2026-11-11",
+        "license": "Unicode License v3",
+        "attribution": "Unicode Consortium, Unihan database (https://www.unicode.org/)",
+        "notice": ""
+       }
+      ],
+      "updatedAt": "2026-11-16T10:00:00Z",
+      "deletedAt": null
+     }
+    ]
+   }
+  },
+  {
+   "name": "contentHash without the sha256: prefix",
+   "valid": false,
+   "reason": "contentHash is sha256:<64 hex> on built rows",
+   "catalogue": {
+    "format": 1,
+    "instanceId": "01JD8Z3Q4M5N6P7R8S9T0V1W2X",
+    "languages": [
+     "zh"
+    ],
+    "building": false,
+    "packages": [
+     {
+      "id": "lexicon.zh",
+      "type": "lexicon",
+      "languages": [
+       "zh"
+      ],
+      "formatVersion": 1,
+      "revision": 3,
+      "contentHash": "9999999999999999999999999999999999999999999999999999999999999999",
+      "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "bytes": 24117248,
+      "url": "/api/packages/lexicon.zh/3",
+      "state": "ready",
+      "builtAt": "2026-11-16T10:00:00Z",
+      "requires": [],
+      "optional": false,
+      "licenseTexts": true,
+      "sources": [
+       {
+        "type": "dictionary",
+        "packId": "cedict",
+        "name": "CC-CEDICT",
+        "version": "2026-11-11",
+        "license": "CC BY-SA 4.0",
+        "attribution": "CC-CEDICT, MDBG (https://cc-cedict.org)",
+        "notice": ""
+       },
+       {
+        "type": "dictionary",
+        "packId": "unihan",
+        "name": "Unihan database",
+        "version": "2026-11-11",
+        "license": "Unicode License v3",
+        "attribution": "Unicode Consortium, Unihan database (https://www.unicode.org/)",
+        "notice": ""
+       }
+      ],
+      "updatedAt": "2026-11-16T10:00:00Z",
+      "deletedAt": null
+     }
+    ]
+   }
+  },
+  {
+   "name": "sha256 of the wrong length",
+   "valid": false,
+   "reason": "sha256 is 64 lowercase hex on built rows",
+   "catalogue": {
+    "format": 1,
+    "instanceId": "01JD8Z3Q4M5N6P7R8S9T0V1W2X",
+    "languages": [
+     "zh"
+    ],
+    "building": false,
+    "packages": [
+     {
+      "id": "lexicon.zh",
+      "type": "lexicon",
+      "languages": [
+       "zh"
+      ],
+      "formatVersion": 1,
+      "revision": 3,
+      "contentHash": "sha256:9999999999999999999999999999999999999999999999999999999999999999",
+      "sha256": "abc",
+      "bytes": 24117248,
+      "url": "/api/packages/lexicon.zh/3",
+      "state": "ready",
+      "builtAt": "2026-11-16T10:00:00Z",
+      "requires": [],
+      "optional": false,
+      "licenseTexts": true,
+      "sources": [
+       {
+        "type": "dictionary",
+        "packId": "cedict",
+        "name": "CC-CEDICT",
+        "version": "2026-11-11",
+        "license": "CC BY-SA 4.0",
+        "attribution": "CC-CEDICT, MDBG (https://cc-cedict.org)",
+        "notice": ""
+       },
+       {
+        "type": "dictionary",
+        "packId": "unihan",
+        "name": "Unihan database",
+        "version": "2026-11-11",
+        "license": "Unicode License v3",
+        "attribution": "Unicode Consortium, Unihan database (https://www.unicode.org/)",
+        "notice": ""
+       }
+      ],
+      "updatedAt": "2026-11-16T10:00:00Z",
+      "deletedAt": null
+     }
+    ]
+   }
+  },
+  {
+   "name": "formatVersion as a string",
+   "valid": false,
+   "reason": "formatVersion is an integer >= 1",
+   "catalogue": {
+    "format": 1,
+    "instanceId": "01JD8Z3Q4M5N6P7R8S9T0V1W2X",
+    "languages": [
+     "zh"
+    ],
+    "building": false,
+    "packages": [
+     {
+      "id": "lexicon.zh",
+      "type": "lexicon",
+      "languages": [
+       "zh"
+      ],
+      "formatVersion": "1",
+      "revision": 3,
+      "contentHash": "sha256:9999999999999999999999999999999999999999999999999999999999999999",
+      "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "bytes": 24117248,
+      "url": "/api/packages/lexicon.zh/3",
+      "state": "ready",
+      "builtAt": "2026-11-16T10:00:00Z",
+      "requires": [],
+      "optional": false,
+      "licenseTexts": true,
+      "sources": [
+       {
+        "type": "dictionary",
+        "packId": "cedict",
+        "name": "CC-CEDICT",
+        "version": "2026-11-11",
+        "license": "CC BY-SA 4.0",
+        "attribution": "CC-CEDICT, MDBG (https://cc-cedict.org)",
+        "notice": ""
+       },
+       {
+        "type": "dictionary",
+        "packId": "unihan",
+        "name": "Unihan database",
+        "version": "2026-11-11",
+        "license": "Unicode License v3",
+        "attribution": "Unicode Consortium, Unihan database (https://www.unicode.org/)",
+        "notice": ""
+       }
+      ],
+      "updatedAt": "2026-11-16T10:00:00Z",
+      "deletedAt": null
+     }
+    ]
+   }
+  },
+  {
+   "name": "an empty languages list",
+   "valid": false,
+   "reason": "languages is a non-empty sorted list of codes",
+   "catalogue": {
+    "format": 1,
+    "instanceId": "01JD8Z3Q4M5N6P7R8S9T0V1W2X",
+    "languages": [
+     "zh"
+    ],
+    "building": false,
+    "packages": [
+     {
+      "id": "lexicon.zh",
+      "type": "lexicon",
+      "languages": [],
+      "formatVersion": 1,
+      "revision": 3,
+      "contentHash": "sha256:9999999999999999999999999999999999999999999999999999999999999999",
+      "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "bytes": 24117248,
+      "url": "/api/packages/lexicon.zh/3",
+      "state": "ready",
+      "builtAt": "2026-11-16T10:00:00Z",
+      "requires": [],
+      "optional": false,
+      "licenseTexts": true,
+      "sources": [
+       {
+        "type": "dictionary",
+        "packId": "cedict",
+        "name": "CC-CEDICT",
+        "version": "2026-11-11",
+        "license": "CC BY-SA 4.0",
+        "attribution": "CC-CEDICT, MDBG (https://cc-cedict.org)",
+        "notice": ""
+       },
+       {
+        "type": "dictionary",
+        "packId": "unihan",
+        "name": "Unihan database",
+        "version": "2026-11-11",
+        "license": "Unicode License v3",
+        "attribution": "Unicode Consortium, Unihan database (https://www.unicode.org/)",
+        "notice": ""
+       }
+      ],
+      "updatedAt": "2026-11-16T10:00:00Z",
+      "deletedAt": null
+     }
+    ]
+   }
+  },
+  {
+   "name": "languages not sorted",
+   "valid": false,
+   "reason": "languages is a non-empty sorted list of codes",
+   "catalogue": {
+    "format": 1,
+    "instanceId": "01JD8Z3Q4M5N6P7R8S9T0V1W2X",
+    "languages": [
+     "zh"
+    ],
+    "building": false,
+    "packages": [
+     {
+      "id": "strokes.hanzi-writer-strokes",
+      "type": "strokes",
+      "languages": [
+       "zh",
+       "ja"
+      ],
+      "formatVersion": 1,
+      "revision": 1,
+      "contentHash": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+      "bytes": 12582912,
+      "url": "/api/packages/strokes.hanzi-writer-strokes/1",
+      "state": "ready",
+      "builtAt": "2026-11-16T10:00:00Z",
+      "requires": [],
+      "optional": false,
+      "licenseTexts": true,
+      "sources": [
+       {
+        "type": "strokes",
+        "packId": "hanzi-writer-strokes",
+        "name": "Hanzi Writer stroke data",
+        "version": "2.0.1",
+        "license": "Arphic Public License",
+        "attribution": "Make Me a Hanzi (Shaunak Kishore) via hanzi-writer-data (David Chanin)",
+        "notice": ""
+       }
+      ],
+      "updatedAt": "2026-11-16T10:00:00Z",
+      "deletedAt": null
+     }
+    ]
+   }
+  },
+  {
+   "name": "a source without notice",
+   "valid": false,
+   "reason": "sources[] has every sourceKeys member",
+   "catalogue": {
+    "format": 1,
+    "instanceId": "01JD8Z3Q4M5N6P7R8S9T0V1W2X",
+    "languages": [
+     "zh"
+    ],
+    "building": false,
+    "packages": [
+     {
+      "id": "lexicon.zh",
+      "type": "lexicon",
+      "languages": [
+       "zh"
+      ],
+      "formatVersion": 1,
+      "revision": 3,
+      "contentHash": "sha256:9999999999999999999999999999999999999999999999999999999999999999",
+      "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "bytes": 24117248,
+      "url": "/api/packages/lexicon.zh/3",
+      "state": "ready",
+      "builtAt": "2026-11-16T10:00:00Z",
+      "requires": [],
+      "optional": false,
+      "licenseTexts": true,
+      "sources": [
+       {
+        "type": "dictionary",
+        "packId": "cedict",
+        "name": "CC-CEDICT",
+        "version": "2026-11-11",
+        "license": "CC BY-SA 4.0",
+        "attribution": "CC-CEDICT, MDBG (https://cc-cedict.org)"
+       }
+      ],
+      "updatedAt": "2026-11-16T10:00:00Z",
+      "deletedAt": null
+     }
+    ]
+   }
+  },
+  {
+   "name": "error with an empty text",
+   "valid": false,
+   "reason": "error is a non-empty string",
+   "catalogue": {
+    "format": 1,
+    "instanceId": "01JD8Z3Q4M5N6P7R8S9T0V1W2X",
+    "languages": [
+     "zh"
+    ],
+    "building": false,
+    "packages": [
+     {
+      "id": "sentences.zh-demo",
+      "type": "sentences",
+      "languages": [
+       "zh"
+      ],
+      "formatVersion": 1,
+      "revision": 2,
+      "contentHash": "sha256:4444444444444444444444444444444444444444444444444444444444444444",
+      "sha256": "5555555555555555555555555555555555555555555555555555555555555555",
+      "bytes": 16384,
+      "url": "/api/packages/sentences.zh-demo/2",
+      "state": "ready",
+      "builtAt": "2026-11-16T10:00:00Z",
+      "requires": [
+       "lexicon.zh"
+      ],
+      "optional": false,
+      "licenseTexts": true,
+      "sources": [
+       {
+        "type": "sentences",
+        "packId": "zh-demo",
+        "name": "Chinese demo sentences",
+        "version": "1.0",
+        "license": "CC0-1.0",
+        "attribution": "Demo content written for qinqin by the project; CC0 1.0",
+        "notice": ""
+       }
+      ],
+      "updatedAt": "2026-11-16T10:00:00Z",
+      "deletedAt": null,
+      "error": ""
+     }
+    ]
+   }
+  },
+  {
+   "name": "format 2",
+   "valid": false,
+   "reason": "format is 1",
+   "catalogue": {
+    "format": 2,
+    "instanceId": "01JD8Z3Q4M5N6P7R8S9T0V1W2X",
+    "languages": [
+     "zh"
+    ],
+    "building": false,
+    "packages": [
+     {
+      "id": "lexicon.zh",
+      "type": "lexicon",
+      "languages": [
+       "zh"
+      ],
+      "formatVersion": 1,
+      "revision": 3,
+      "contentHash": "sha256:9999999999999999999999999999999999999999999999999999999999999999",
+      "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "bytes": 24117248,
+      "url": "/api/packages/lexicon.zh/3",
+      "state": "ready",
+      "builtAt": "2026-11-16T10:00:00Z",
+      "requires": [],
+      "optional": false,
+      "licenseTexts": true,
+      "sources": [
+       {
+        "type": "dictionary",
+        "packId": "cedict",
+        "name": "CC-CEDICT",
+        "version": "2026-11-11",
+        "license": "CC BY-SA 4.0",
+        "attribution": "CC-CEDICT, MDBG (https://cc-cedict.org)",
+        "notice": ""
+       },
+       {
+        "type": "dictionary",
+        "packId": "unihan",
+        "name": "Unihan database",
+        "version": "2026-11-11",
+        "license": "Unicode License v3",
+        "attribution": "Unicode Consortium, Unihan database (https://www.unicode.org/)",
+        "notice": ""
+       }
+      ],
+      "updatedAt": "2026-11-16T10:00:00Z",
+      "deletedAt": null
+     }
+    ]
+   }
+  },
+  {
+   "name": "packages not sorted by id",
+   "valid": false,
+   "reason": "packages are sorted by id",
+   "catalogue": {
+    "format": 1,
+    "instanceId": "01JD8Z3Q4M5N6P7R8S9T0V1W2X",
+    "languages": [
+     "zh"
+    ],
+    "building": false,
+    "packages": [
+     {
+      "id": "strokes.hanzi-writer-strokes",
+      "type": "strokes",
+      "languages": [
+       "ja",
+       "zh"
+      ],
+      "formatVersion": 1,
+      "revision": 1,
+      "contentHash": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+      "bytes": 12582912,
+      "url": "/api/packages/strokes.hanzi-writer-strokes/1",
+      "state": "ready",
+      "builtAt": "2026-11-16T10:00:00Z",
+      "requires": [],
+      "optional": false,
+      "licenseTexts": true,
+      "sources": [
+       {
+        "type": "strokes",
+        "packId": "hanzi-writer-strokes",
+        "name": "Hanzi Writer stroke data",
+        "version": "2.0.1",
+        "license": "Arphic Public License",
+        "attribution": "Make Me a Hanzi (Shaunak Kishore) via hanzi-writer-data (David Chanin)",
+        "notice": ""
+       }
+      ],
+      "updatedAt": "2026-11-16T10:00:00Z",
+      "deletedAt": null
+     },
+     {
+      "id": "lexicon.zh",
+      "type": "lexicon",
+      "languages": [
+       "zh"
+      ],
+      "formatVersion": 1,
+      "revision": 3,
+      "contentHash": "sha256:9999999999999999999999999999999999999999999999999999999999999999",
+      "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "bytes": 24117248,
+      "url": "/api/packages/lexicon.zh/3",
+      "state": "ready",
+      "builtAt": "2026-11-16T10:00:00Z",
+      "requires": [],
+      "optional": false,
+      "licenseTexts": true,
+      "sources": [
+       {
+        "type": "dictionary",
+        "packId": "cedict",
+        "name": "CC-CEDICT",
+        "version": "2026-11-11",
+        "license": "CC BY-SA 4.0",
+        "attribution": "CC-CEDICT, MDBG (https://cc-cedict.org)",
+        "notice": ""
+       },
+       {
+        "type": "dictionary",
+        "packId": "unihan",
+        "name": "Unihan database",
+        "version": "2026-11-11",
+        "license": "Unicode License v3",
+        "attribution": "Unicode Consortium, Unihan database (https://www.unicode.org/)",
+        "notice": ""
+       }
+      ],
+      "updatedAt": "2026-11-16T10:00:00Z",
+      "deletedAt": null
+     }
+    ]
+   }
+  },
+  {
+   "name": "packages null",
+   "valid": false,
+   "reason": "packages is a list",
+   "catalogue": {
+    "format": 1,
+    "instanceId": "01JD8Z3Q4M5N6P7R8S9T0V1W2X",
+    "languages": [
+     "zh"
+    ],
+    "building": false,
+    "packages": null
+   }
+  }
+ ]
+}

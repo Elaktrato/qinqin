@@ -42,16 +42,21 @@ const localPacks = "plugins/data-local"
 // maintainer scripts (gitignored for size); it is used only when it exists.
 const audioPacks = "plugins/data-audio"
 
+// strokePacks is the default root of the stroke-order data pack built by
+// scripts/prepare-strokes-pack.mjs (gitignored for size); it is used only
+// when it exists.
+const strokePacks = "plugins/data-strokes"
+
 // defaultPacks is the --packs default: $QINQIN_PACKS (comma-separated; the
-// image sets it to the sample packs it ships), or the repo's plugins/data
-// followed by plugins/data-audio, then plugins/data-local, when those
-// directories exist.
+// image sets it to the packs it ships), or the repo's plugins/data followed
+// by plugins/data-audio, plugins/data-strokes, then plugins/data-local, when
+// those directories exist.
 func defaultPacks() []string {
 	if p := os.Getenv("QINQIN_PACKS"); p != "" {
 		return splitRoots(p)
 	}
 	roots := []string{"plugins/data"}
-	for _, extra := range []string{audioPacks, localPacks} {
+	for _, extra := range []string{audioPacks, strokePacks, localPacks} {
 		if info, err := os.Stat(extra); err == nil && info.IsDir() {
 			roots = append(roots, extra)
 		}
@@ -96,8 +101,8 @@ type seedPack struct {
 // character data of cedict, unihan, kanjidic2, and jmdict — come first:
 // frequency, level and sentence packs refer to existing entries and skip
 // the unknown ones, so they must follow. Frequency packs come right after
-// the dictionaries; sentences follow; grammar, audio and components packs,
-// which refer to no entries at import time, come last.
+// the dictionaries; sentences follow; grammar, audio, components and
+// strokes packs, which refer to no entries at import time, come last.
 var importOrder = map[string]int{
 	dict.TypeDictionary: 0,
 	dict.TypeFrequency:  1,
@@ -106,6 +111,7 @@ var importOrder = map[string]int{
 	dict.TypeGrammar:    4,
 	dict.TypeAudio:      5,
 	dict.TypeComponents: 6,
+	dict.TypeStrokes:    7,
 }
 
 // seed imports every pack under the roots into sqlDB through
@@ -117,7 +123,8 @@ var importOrder = map[string]int{
 // (see freq.Import) is that order — and one line per pack goes to out. Imports replace a pack's own
 // rows and touch nothing else, so seeding again is safe and leaves the
 // counts unchanged. The first failing pack stops the seed, named in the
-// error.
+// error. Then the data packages of the seeded packs are built (and any
+// other package a reconcile finds missing or stale) before seed returns.
 func seed(ctx context.Context, sqlDB *sql.DB, dataDir string, roots []string, out io.Writer) error {
 	found, err := findPacks(roots)
 	if err != nil {
@@ -137,14 +144,18 @@ func seed(ctx context.Context, sqlDB *sql.DB, dataDir string, roots []string, ou
 		return found[i].dir < found[j].dir
 	})
 
+	// Every import kicks its data packages; they build once, after the
+	// imports (kicks of one id coalesce), and seed waits for them.
+	builder := packageBuilder(sqlDB, dataDir, func(format string, args ...any) { fmt.Fprintf(out, format+"\n", args...) })
 	for _, p := range found {
-		line, err := packs.Import(ctx, sqlDB, p.pack, packs.WithAudioStore(filepath.Join(dataDir, "audio")))
+		line, err := packs.Import(ctx, sqlDB, p.pack, packs.WithAudioStore(filepath.Join(dataDir, "audio")),
+			packs.WithOnChange(builder.PackChanged))
 		if err != nil {
 			return fmt.Errorf("seed pack %s (%s): %w", p.pack.ID, p.dir, err)
 		}
 		fmt.Fprintf(out, "%-14s %-10s %s\n", p.pack.ID, p.pack.Type, line)
 	}
-	return nil
+	return buildPackages(ctx, builder, out)
 }
 
 // flashcardsPack is the plugin_data namespace of the study rows; its

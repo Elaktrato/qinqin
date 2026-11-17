@@ -2,12 +2,15 @@ package db
 
 import (
 	"context"
+	"crypto/rand"
 	"crypto/sha256"
 	"database/sql"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"log"
+
+	"github.com/oklog/ulid/v2"
 
 	"qinqin/internal/db/step038"
 	"qinqin/internal/model"
@@ -22,6 +25,19 @@ import (
 var goSteps = map[string]func(*sql.Tx) error{
 	"032_accounts":   accountsStep,
 	"038_core_study": coreStudyStep,
+	"039_packages":   packagesStep,
+}
+
+// packagesStep is the Go half of migration 039: the server's instance id, a
+// random ULID created once. It names this database (entry, workspace and
+// card ids are per database), so a client that sees another one starts over.
+// Its randomness comes from crypto/rand. A server backup restored onto a new
+// volume keeps it, as it keeps the ids.
+func packagesStep(tx *sql.Tx) error {
+	if _, err := tx.Exec(`INSERT INTO server_meta (key, value) VALUES ('instance_id', ?)`, ulid.MustNew(ulid.Now(), rand.Reader).String()); err != nil {
+		return fmt.Errorf("insert instance id: %w", err)
+	}
+	return nil
 }
 
 // hashSessionTokens replaces the plaintext bearer tokens migration 032

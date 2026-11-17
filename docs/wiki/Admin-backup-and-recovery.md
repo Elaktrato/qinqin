@@ -7,7 +7,7 @@
 
 ### Server backup in the app
 
-Choose what to include (database, books, packs, audio), enter your password (and an authenticator or recovery code if you use one), and a `qinqin-server-<date>.tar.gz` downloads. It holds `BACKUP-INFO.json` (checksums), `qinqin.db` (a consistent snapshot taken while the server runs), `books/`, `packs/` and `audio/`; never `journal/`, `cache/`, `tmp/` or `backups/`. The snapshot needs free space of the database size plus 64 MiB. One at a time, one per minute.
+Choose what to include (database, books, packs, audio), enter your password (and an authenticator or recovery code if you use one), and a `qinqin-server-<date>.tar.gz` downloads. It holds `BACKUP-INFO.json` (checksums), `qinqin.db` (a consistent snapshot taken while the server runs), `books/`, `packs/` and `audio/`; never `journal/`, `cache/`, `tmp/`, `backups/` or `packages/`. Data packages are rebuilt, not backed up: after a restore the server builds them again at start, to the same revisions and content hashes, so clients keep the files they have. The snapshot needs free space of the database size plus 64 MiB. One at a time, one per minute.
 
 **The archive contains password hashes, hashed session tokens, and AI keys and the SMTP password sealed with `QINQIN_SECRET`; authenticator secrets are sealed too. Store it like the secret.**
 

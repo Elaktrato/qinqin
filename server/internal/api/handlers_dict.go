@@ -144,6 +144,8 @@ func (s *server) handleInstallDictionary(w http.ResponseWriter, r *http.Request)
 		http.Error(w, "internal error", http.StatusInternalServerError)
 		return
 	}
+	registryID, _, _ := dict.RegistryTerms(pack.Manifest)
+	s.packChanged(dict.TypeDictionary, registryID, pack.Manifest.Language)
 	legacyToken, _ := newToken()
 	if err := placePack(packsDir, pack.Manifest, pack.Dir, legacyToken); err != nil {
 		// The import is committed: the dictionary is installed. The files
@@ -177,6 +179,9 @@ func (s *server) handleUninstallDictionary(w http.ResponseWriter, r *http.Reques
 	}
 	s.packMu.Lock()
 	defer s.packMu.Unlock()
+	// Read before the uninstall: the data packages hang off pack id and language.
+	var packID, language string
+	s.db.QueryRowContext(r.Context(), `SELECT pack_id, language FROM dictionaries WHERE id = ?`, id).Scan(&packID, &language)
 	if err := dict.Uninstall(r.Context(), s.db, id); err != nil {
 		if errors.Is(err, dict.ErrNotFound) {
 			http.Error(w, "dictionary not found", http.StatusNotFound)
@@ -185,6 +190,7 @@ func (s *server) handleUninstallDictionary(w http.ResponseWriter, r *http.Reques
 		http.Error(w, "internal error", http.StatusInternalServerError)
 		return
 	}
+	s.packChanged(dict.TypeDictionary, packID, language)
 	w.WriteHeader(http.StatusNoContent)
 }
 

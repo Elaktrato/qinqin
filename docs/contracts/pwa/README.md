@@ -41,16 +41,26 @@ rows and cannot create duplicate cards.
 The service worker answers from its saved copy only for these `GET`s, and only
 when the request carries an `Authorization` header: `/api/auth/me`,
 `/api/workspaces`, `/api/plugins`, `/api/languages`, `/api/me/time-zone`,
-`/api/sync/pull` with `collections` a non-empty subset of
-`pluginData,pluginStates,cards,decks,deckSettings,limits,fsrsSets,fsrsActive` (the
+`/api/sync/pull` in two forms. Paged (`v=2`, `docs/contracts/sync/`): a round's first
+page with `workspace=<id>` and `collections` a non-empty subset of
+`pluginData,pluginStates,cards,decks,deckSettings,limits,fsrsSets,fsrsActive`
+(optionally `limit` and `tombstones=1`, which the web study pull sends; never `since`, a delta is not offline data, never `events`,
+`overlays`, `books` or a moved name), and its continuations `v=2&page=p2.<token>`
+(nothing else in the query; the token carries its filters, the server validates
+them, and the URL is the cache key). Each page is a separate saved copy, so offline
+study reads the same pages in the same order; "Prepare offline" reads the round
+through the study read and its receipt counts the pages. Legacy (no `v`): `collections` a
+subset of the same set, so a cached v0.3.x or v0.4 old shell keeps working (the
 typed study rows of `docs/contracts/study/` and the keyed `goals:*`, `known:*` and
-`vacation:*` rows travel in it; the old `pluginData,pluginStates` form of a cached
-v0.3.x shell stays cacheable), `/api/plugins/{id}/data` and `/data/{key}`, `/api/events` with `workspace=`,
-and `/api/entries/{id}`; plus stroke data `/hanzi/U<HEX>.json` without credentials.
+`vacation:*` rows travel in both), `/api/plugins/{id}/data` and `/data/{key}`, `/api/events` with `workspace=`,
+and `/api/entries/{id}`; plus stroke data `/hanzi/U<HEX>.json` without credentials (served from the
+installed strokes package; 404 when none is installed). The package catalogue and package downloads
+(`/api/packages…`) are never cached by the worker: the web reads the catalogue only for Settings and
+installs no packages.
 Everything else (every non-GET request, admin, account, auth except `me`, AI,
 journal photos, audio, lookups, search) is never touched. The lookup history (#72,
 `../lookups/`) never reaches the cache: `qinqin-core` data reads of `lookup*` keys (or with a `prefix` that can
-match one; paths are compared decoded) are not cached, and a saved pull loses its `qinqin-core` `lookup*` rows
+match one; paths are compared decoded) are not cached, and a saved pull (legacy body or any v2 page's `collections.pluginData`) loses its `qinqin-core` `lookup*` rows
 and a saved event log its `lookup` events before it is stored (`apps/web/src/lib/pwa/sw/scrub.ts`); after a
 Clear or Remove the page filters copies saved earlier the same way. Only `200` responses are
 stored; a 401 deletes the partition; a 4xx or 5xx other than 502/503/504 is

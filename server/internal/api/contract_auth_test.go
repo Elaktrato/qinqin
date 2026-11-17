@@ -295,7 +295,7 @@ func TestAuthErrorCatalogueIsCoherent(t *testing.T) {
 
 	// Every writeAuthError call site names a catalogued code with its status.
 	names := map[string]int{
-		"StatusBadRequest": 400, "StatusUnauthorized": 401, "StatusForbidden": 403, "StatusNotFound": 404,
+		"StatusBadRequest": 400, "StatusUnauthorized": 401, "StatusForbidden": 403, "StatusNotFound": 404, "StatusGone": 410,
 		"StatusConflict": 409, "StatusRequestEntityTooLarge": 413, "StatusUnsupportedMediaType": 415, "StatusInsufficientStorage": 507, "StatusUnprocessableEntity": 422,
 		"StatusTooManyRequests": 429, "StatusInternalServerError": 500, "StatusServiceUnavailable": 503,
 	}

@@ -23,6 +23,7 @@ func TestRootMuxKeepsAPI(t *testing.T) {
 		"index.html": &fstest.MapFile{
 			Data: []byte("<!doctype html><title>qinqin spa</title>"),
 		},
+		"hanzi/U597D.json": &fstest.MapFile{Data: []byte(`{"from":"the web build"}`)},
 	}
 	// A stub stands in for the API: it names the route it was given, so a
 	// precedence regression fails with a readable message instead of a nil
@@ -56,6 +57,9 @@ func TestRootMuxKeepsAPI(t *testing.T) {
 	t.Run("api routes reach the API", func(t *testing.T) {
 		for _, c := range []struct{ method, path string }{
 			{"POST", "/api/auth/login"}, {"GET", "/api/entries/5"}, {"GET", "/healthz"},
+			// Stroke files are served by the API from the installed strokes
+			// pack, even when an old web build still carries hanzi/ files.
+			{"GET", "/hanzi/U597D.json"}, {"GET", "/hanzi/nope"},
 		} {
 			resp, body := reach(t, c.method, c.path)
 			if resp.Header.Get("X-Stub-API") != "1" || body != "stub-api "+c.method+" "+c.path {
