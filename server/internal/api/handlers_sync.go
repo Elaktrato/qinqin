@@ -1,15 +1,21 @@
 package api
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"net/http"
 	"time"
 
+	"qinqin/internal/datapkg"
+	"qinqin/internal/model"
 	chinsync "qinqin/internal/sync"
 )
 
-// handleSyncPull serves GET /api/sync/pull?cursor=: every row changed at
+// handleSyncPull serves GET /api/sync/pull: the paged form with v=2
+// (handleSyncPullV2), the legacy form otherwise.
+//
+// The legacy form, ?cursor=: every row changed at
 // or after the RFC 3339 cursor (absent = everything), tombstones
 // included, plus the cursor to pull from next time. The optional
 // collections= (comma-separated Delta collection names) limits the pull
@@ -20,6 +26,10 @@ import (
 func (s *server) handleSyncPull(w http.ResponseWriter, r *http.Request) {
 	u := s.requireUser(w, r)
 	if u == nil {
+		return
+	}
+	if r.URL.Query().Get("v") == "2" {
+		s.handleSyncPullV2(w, r, u)
 		return
 	}
 	var cursor time.Time
@@ -42,6 +52,55 @@ func (s *server) handleSyncPull(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, http.StatusOK, delta)
+}
+
+// handleSyncPullV2 serves GET /api/sync/pull?v=2: one page of the caller's
+// own rows (docs/contracts/sync/). Errors are JSON {error, message}:
+// sync_page_invalid and sync_collection_moved 400, not_found 404 for a
+// workspace= the caller does not own, sync_cursor_expired 410. Pages are
+// never cached by intermediaries (no-store); the service worker keeps its
+// own copies.
+func (s *server) handleSyncPullV2(w http.ResponseWriter, r *http.Request, u *model.User) {
+	req, err := chinsync.ParsePageRequest(r.URL.Query())
+	if err == nil {
+		var page chinsync.Page
+		page, err = chinsync.PullPage(r.Context(), s.db, u.ID, req, s.syncCatalogueETag(u.Admin))
+		if err == nil {
+			w.Header().Set("Cache-Control", "no-store")
+			writeJSON(w, http.StatusOK, page)
+			return
+		}
+	}
+	switch {
+	case errors.Is(err, chinsync.ErrMoved):
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "sync_collection_moved",
+			"message": "The lexicon collections moved to data packages: read GET /api/packages. " + err.Error()})
+	case errors.Is(err, chinsync.ErrPageInvalid):
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "sync_page_invalid",
+			"message": "Start the round again without page. " + err.Error()})
+	case errors.Is(err, chinsync.ErrNotFound):
+		writeJSON(w, http.StatusNotFound, map[string]string{"error": "not_found", "message": "No such workspace."})
+	case errors.Is(err, chinsync.ErrCursorExpired):
+		writeJSON(w, http.StatusGone, map[string]string{"error": "sync_cursor_expired",
+			"message": "Discard local user data and pull again without since."})
+	default:
+		writeInternal(w, r)
+	}
+}
+
+// syncCatalogueETag is the scope.catalogue of a paged pull: the ETag of the
+// caller's default package catalogue (its workspace languages; an
+// administrator's carries build errors), as GET /api/packages answers it.
+// Without a builder the registry is read directly (never building).
+func (s *server) syncCatalogueETag(admin bool) chinsync.CatalogueFunc {
+	reg := datapkg.Registry{DB: s.db}
+	if s.packages != nil {
+		reg = s.packages.Registry()
+	}
+	return func(ctx context.Context, languages []string) (string, error) {
+		c, err := reg.Catalogue(ctx, languages, admin)
+		return c.ETag, err
+	}
 }
 
 // handleSyncPush serves POST /api/sync/push: a client's offline events,
