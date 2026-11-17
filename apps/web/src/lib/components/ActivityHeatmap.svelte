@@ -532,27 +532,35 @@
 
 	/* The tiles of every layout (design §6 heatmap tint; tint only until the
 	   flower drawings exist, #107). Never colour alone: level, stage and today
-	   are in the tooltip and the list. */
+	   are in the tooltip and the list. Level 0 is an empty box: the page's
+	   --panel inside a --hair ring (on --raised it matched level 1 in several
+	   themes and fell below 3:1 against level 4 in Solarized Dark; #100
+	   review, ActivityHeatmap.contrast.test.ts). Levels 1–4 are ring-less fills. */
 	.heatmap :global(.tile) {
 		box-sizing: border-box;
 		border-radius: calc(var(--radius) * 0.3);
-		background: var(--raised);
+		background: var(--panel);
+		box-shadow: inset 0 0 0 1px var(--hair);
 	}
 
 	.heatmap :global(.tile.level-1) {
 		background: var(--accent-14);
+		box-shadow: none;
 	}
 
 	.heatmap :global(.tile.level-2) {
 		background: var(--accent-32);
+		box-shadow: none;
 	}
 
 	.heatmap :global(.tile.level-3) {
 		background: var(--accent-58);
+		box-shadow: none;
 	}
 
 	.heatmap :global(.tile.level-4) {
 		background: var(--accent-100);
+		box-shadow: none;
 	}
 
 	/* Hatched: a vacation day (the pattern also works without colour). */
@@ -564,9 +572,12 @@
 		box-shadow: 0 0 0 1.5px var(--accent);
 	}
 
+	/* A day still to come: a dashed outline, so it never reads as an empty past day. */
 	.heatmap :global(.tile.future) {
 		background: transparent;
-		box-shadow: inset 0 0 0 1px var(--hair);
+		box-shadow: none;
+		outline: 1px dashed var(--hair);
+		outline-offset: -1px;
 	}
 
 	@media (forced-colors: active) {
