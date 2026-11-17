@@ -10,6 +10,7 @@ import (
 	"sync"
 	"time"
 
+	"qinqin/internal/auth"
 	"qinqin/internal/datapkg"
 )
 
@@ -96,7 +97,7 @@ func (s *server) handlePackageCatalogue(w http.ResponseWriter, r *http.Request) 
 			return
 		}
 	}
-	cat, err := s.packageRegistry().Catalogue(r.Context(), languages, p.User.Admin && !p.ViaToken())
+	cat, err := s.packageRegistry().Catalogue(r.Context(), languages, catalogueAdmin(p))
 	if err != nil {
 		writeInternal(w, r)
 		return
@@ -109,6 +110,14 @@ func (s *server) handlePackageCatalogue(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 	writeJSON(w, http.StatusOK, cat)
+}
+
+// catalogueAdmin tells whether the caller gets an administrator's catalogue
+// (build errors shown): an administrator's own session, never a token. The
+// catalogue route and the paged pull's scope.catalogue both use it, so the
+// ETags they give one caller are equal.
+func catalogueAdmin(p *auth.Principal) bool {
+	return p.User.Admin && !p.ViaToken()
 }
 
 // parseCatalogueLanguages reads ?languages=: "all", or 1 to 32 distinct

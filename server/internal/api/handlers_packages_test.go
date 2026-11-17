@@ -427,3 +427,45 @@ func TestPackageDownloadsAreLimitedPerUser(t *testing.T) {
 		t.Errorf("%d slots still held", n)
 	}
 }
+
+// TestPullScopeCatalogueIsTheDefaultCatalogueETag pins that a v2 first page's
+// scope.catalogue is the ETag GET /api/packages gives the same caller by
+// default — for a user, an administrator's session (build errors shown) and
+// an administrator's token (errors hidden).
+func TestPullScopeCatalogueIsTheDefaultCatalogueETag(t *testing.T) {
+	w := newPkgWorld(t)
+	if _, err := w.s.db.Exec(`UPDATE packages SET error = 'boom'`); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := w.s.db.Exec(`INSERT INTO workspaces (user_id, language, name, updated_at)
+		SELECT id, 'zh', 'Admin zh', '2026-01-01T00:00:00Z' FROM users WHERE username = 'gate-admin'
+		AND NOT EXISTS (SELECT 1 FROM workspaces w JOIN users u ON u.id = w.user_id WHERE u.username = 'gate-admin' AND w.language = 'zh')`); err != nil {
+		t.Fatal(err)
+	}
+	etags := map[string]string{}
+	for who, tok := range map[string]string{"user": w.a.user, "admin session": w.a.admin, "admin token": w.tok.adminPatW} {
+		cat := w.get(t, "/api/packages", tok, nil)
+		if cat.Code != 200 || cat.Header().Get("ETag") == "" {
+			t.Fatalf("%s catalogue: %d %s", who, cat.Code, cat.Body)
+		}
+		pull := w.get(t, "/api/sync/pull?v=2&collections=workspaces", tok, nil)
+		if pull.Code != 200 {
+			t.Fatalf("%s pull: %d %s", who, pull.Code, pull.Body)
+		}
+		var page struct {
+			Scope *struct {
+				Catalogue string `json:"catalogue"`
+			} `json:"scope"`
+		}
+		if err := json.Unmarshal(pull.Body.Bytes(), &page); err != nil || page.Scope == nil {
+			t.Fatalf("%s pull body: %v %s", who, err, pull.Body)
+		}
+		if page.Scope.Catalogue != cat.Header().Get("ETag") {
+			t.Errorf("%s: scope.catalogue %s, catalogue ETag %s", who, page.Scope.Catalogue, cat.Header().Get("ETag"))
+		}
+		etags[who] = cat.Header().Get("ETag")
+	}
+	if etags["admin session"] == etags["admin token"] {
+		t.Errorf("the admin session's catalogue should show the build errors (ETag %s for both)", etags["admin session"])
+	}
+}

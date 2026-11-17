@@ -8,8 +8,7 @@ import (
 	"net/http"
 	"time"
 
-	"qinqin/internal/datapkg"
-	"qinqin/internal/model"
+	"qinqin/internal/auth"
 	chinsync "qinqin/internal/sync"
 )
 
@@ -26,13 +25,14 @@ import (
 // returned cursor is valid only for the collections requested. Answers
 // carry Deprecation and a Link to the paged form. Authenticated.
 func (s *server) handleSyncPull(w http.ResponseWriter, r *http.Request) {
-	u := s.requireUser(w, r)
-	if u == nil {
+	p := s.requirePrincipal(w, r)
+	if p == nil {
 		return
 	}
+	u := &p.User
 	q := r.URL.Query()
 	if q.Get("v") == "2" {
-		s.handleSyncPullV2(w, r, u)
+		s.handleSyncPullV2(w, r, p)
 		return
 	}
 	var cursor time.Time
@@ -71,11 +71,11 @@ func (s *server) handleSyncPull(w http.ResponseWriter, r *http.Request) {
 // workspace= the caller does not own, sync_cursor_expired 410. Pages are
 // never cached by intermediaries (no-store); the service worker keeps its
 // own copies.
-func (s *server) handleSyncPullV2(w http.ResponseWriter, r *http.Request, u *model.User) {
+func (s *server) handleSyncPullV2(w http.ResponseWriter, r *http.Request, p *auth.Principal) {
 	req, err := chinsync.ParsePageRequest(r.URL.Query())
 	if err == nil {
 		var page chinsync.Page
-		page, err = chinsync.PullPage(r.Context(), s.db, u.ID, req, s.syncCatalogueETag(u.Admin))
+		page, err = chinsync.PullPage(r.Context(), s.db, p.User.ID, req, s.syncCatalogueETag(p))
 		if err == nil {
 			w.Header().Set("Cache-Control", "no-store")
 			writeJSON(w, http.StatusOK, page)
@@ -100,14 +100,10 @@ func (s *server) handleSyncPullV2(w http.ResponseWriter, r *http.Request, u *mod
 }
 
 // syncCatalogueETag is the scope.catalogue of a paged pull: the ETag of the
-// caller's default package catalogue (its workspace languages; an
-// administrator's carries build errors), as GET /api/packages answers it.
-// Without a builder the registry is read directly (never building).
-func (s *server) syncCatalogueETag(admin bool) chinsync.CatalogueFunc {
-	reg := datapkg.Registry{DB: s.db}
-	if s.packages != nil {
-		reg = s.packages.Registry()
-	}
+// catalogue GET /api/packages gives the same caller by default (its
+// workspace languages, the same registry, the same catalogueAdmin rule).
+func (s *server) syncCatalogueETag(p *auth.Principal) chinsync.CatalogueFunc {
+	reg, admin := s.packageRegistry(), catalogueAdmin(p)
 	return func(ctx context.Context, languages []string) (string, error) {
 		c, err := reg.Catalogue(ctx, languages, admin)
 		return c.ETag, err

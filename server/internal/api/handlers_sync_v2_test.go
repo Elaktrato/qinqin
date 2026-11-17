@@ -97,6 +97,9 @@ func TestSyncPullV2Handler(t *testing.T) {
 		}
 	}
 	seedPluginRows(t, ctx, exec, aliceID, wsZh, 7, 10)
+	// A round ships rows stamped before its clock second (stamp < until);
+	// workspaces made in the second of the round would miss it.
+	exec(`UPDATE workspaces SET updated_at = '2026-01-01T00:00:00Z'`)
 
 	t.Run("v=2 selects the paged form, without v the legacy form", func(t *testing.T) {
 		st, h, body := get(t, ts.URL, "/api/sync/pull?v=2", alice)
