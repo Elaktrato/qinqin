@@ -166,4 +166,18 @@ describe('HeatmapMonth', () => {
 		await waitFor(() => expect(monthName()?.textContent).toBe('November 2026'));
 		expect(screen.queryByText(/Could not load this month/)).toBeNull();
 	});
+
+	it('no summary line while the goal has no countable day yet (not "0 of 0 days")', async () => {
+		vi.mocked(loadStudyHistory).mockResolvedValue({
+			decks: [],
+			cards: [],
+			reviews: [],
+			merged: 0,
+			goals: { version: 1, showStreak: true, history: [{ from: '2026-11-16', metric: 'activity:review', target: 5 }] }
+		});
+		render(ActivityHeatmap, { layout: 'month' });
+		// Today is a goal day (its stage is listed) but still open, so nothing is counted.
+		await waitFor(() => expect(screen.getByRole('list', { name: 'Daily activity' }).textContent).toMatch(/of 5/));
+		expect(screen.queryByText(/Goal reached on/)).toBeNull();
+	});
 });

@@ -229,7 +229,7 @@
 		void load(false);
 	}
 
-	/** "Goal reached on 2 of 6 days": past goal days (and today once met), vacation days left out. */
+	/** "Goal reached on 2 of 6 days": past goal days (and today once met), vacation days left out; null with none. */
 	const goalSummary = $derived.by((): string | null => {
 		let total = 0;
 		let met = 0;
@@ -239,7 +239,8 @@
 			total++;
 			if (cell.stage.status === 'met') met++;
 		}
-		return stages.size === 0 ? null : t('widgets.activity.month.goalDays', { count: total, met });
+		// No countable day yet (a goal set today, or only vacation): no line, never "0 of 0 days".
+		return total === 0 ? null : t('widgets.activity.month.goalDays', { count: total, met });
 	});
 
 	/** load requests the layout's window; without `force` an already loaded window is kept. */
