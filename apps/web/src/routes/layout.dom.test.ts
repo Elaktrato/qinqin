@@ -110,6 +110,11 @@ describe('layout auth guard', () => {
 		expect(first?.textContent).toBe('Skip to content');
 		await fireEvent.click(first as HTMLElement);
 		expect(document.activeElement?.id).toBe('main-content');
+		// The frame's main is the one main landmark and holds the page.
+		const mains = container.querySelectorAll('main, [role="main"]');
+		expect(mains).toHaveLength(1);
+		expect(mains[0].id).toBe('main-content');
+		expect(mains[0].textContent).toContain('page body');
 	});
 
 	it('the phone bar: the menu button, the title and the flag; no nav until the drawer opens', async () => {

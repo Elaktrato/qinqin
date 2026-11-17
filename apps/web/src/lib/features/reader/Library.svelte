@@ -123,7 +123,7 @@
 	}
 </script>
 
-<main class="library">
+<div class="library">
 	<h1 class="heading">
 		{t('reader.library.title')}
 		{#if workspace}<WorkspaceLabel {workspace} list={$workspaces.list} size={18} />{/if}
@@ -225,7 +225,7 @@
 			{/each}
 		</ul>
 	{/if}
-</main>
+</div>
 
 <style>
 	.upload,

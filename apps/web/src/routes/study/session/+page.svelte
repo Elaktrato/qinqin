@@ -1002,7 +1002,7 @@ import type { Run } from '$lib/study/vacation';
 
 <svelte:window onkeydown={onKeydown} />
 
-<main class="session">
+<div class="session">
 	{#if missingConfig}
 		<p class="hint" role="status">{t('study.session.opening')}</p>
 	{:else if workspaceMismatch}
@@ -1230,7 +1230,7 @@ import type { Run } from '$lib/study/vacation';
 			</article>
 		{/if}
 	{/if}
-</main>
+</div>
 
 <style>
 	.session {

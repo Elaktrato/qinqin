@@ -306,7 +306,9 @@
 
 			{#if $logoutPrompt !== null}<LogoutDialog />{/if}
 
-			<div class="content" id="main-content" tabindex="-1">
+			<!-- The one main landmark of every page (the skip link's target):
+			     pages bring plain containers, never their own <main>. -->
+			<main class="content" id="main-content" tabindex="-1">
 				{#if signedIn && !restricted && noWorkspaces}
 					<section class="empty-workspaces" aria-labelledby="empty-workspaces-heading">
 						<h2 id="empty-workspaces-heading">{t('app.workspaces.emptyTitle')}</h2>
@@ -316,7 +318,7 @@
 				{/if}
 
 				{@render children()}
-			</div>
+			</main>
 		</div>
 	</div>
 {:else}

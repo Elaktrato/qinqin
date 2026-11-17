@@ -27,9 +27,9 @@
 	<title>{pageTitle(t('account.mfa.setUp'))}</title>
 </svelte:head>
 
-<main class="auth">
+<div class="auth">
 	<h1>{t('auth.forced.mfaTitle')}</h1>
 	<p>{t('auth.forced.mfaIntro')}</p>
 	<TwoFactorSetup {options} forced onfinished={finished} />
 	<p class="hint"><button type="button" class="link" onclick={() => logout()}>{t('auth.forced.signOutInstead')}</button></p>
-</main>
+</div>

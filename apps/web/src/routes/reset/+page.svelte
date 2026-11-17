@@ -91,7 +91,7 @@
 	<title>{pageTitle(t('auth.reset.title'))}</title>
 </svelte:head>
 
-<main class="auth">
+<div class="auth">
 	<h1>{t('auth.reset.title')}</h1>
 	{#if !loaded}
 		<p class="hint" role="status">{t('auth.reset.checking')}</p>
@@ -138,4 +138,4 @@
 		<p>{t('auth.reset.askAdmin')}</p>
 		<p class="hint"><a href="/login">{t('auth.mfa.backToSignIn')}</a></p>
 	{/if}
-</main>
+</div>

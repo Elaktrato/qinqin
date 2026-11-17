@@ -195,7 +195,7 @@
 	<title>{pageTitle(t('search.title'))}</title>
 </svelte:head>
 
-<main class="search-page">
+<div class="search-page">
 	<h1>{t('search.title')}</h1>
 
 	<form class="search" role="search" onsubmit={submit}>
@@ -331,7 +331,7 @@
 			{hasFilters(filters) ? t('search.enterQueryFiltered') : t('search.enterQuery')}
 		</p>
 	{/if}
-</main>
+</div>
 
 <style>
 	.parts-link {

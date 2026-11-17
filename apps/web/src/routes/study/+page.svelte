@@ -769,7 +769,7 @@ import { limitsOf } from '$lib/study/scheduler';
 	<title>{pageTitle(t('study.setup.title'))}</title>
 </svelte:head>
 
-<main class="setup">
+<div class="setup">
 	<h1>{t('study.setup.title')}</h1>
 
 	{#if vacationText !== null}
@@ -1060,7 +1060,7 @@ import { limitsOf } from '$lib/study/scheduler';
 			{/if}
 		</section>
 	{/if}
-</main>
+</div>
 
 <style>
 	.setup {

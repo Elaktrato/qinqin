@@ -237,7 +237,7 @@
 	<title>{pageTitle(...settingsTitleParts(activeTab, page.url.searchParams.get('section')))}</title>
 </svelte:head>
 
-<main class="settings">
+<div class="settings">
 	<h1>{t('settings.title')}</h1>
 
 	<div class="tabs" role="tablist" aria-label={t('settings.tabsLabel')}>
@@ -553,7 +553,7 @@
 			{#if activeTab === 'admin'}<AdminSettings />{/if}
 		</div>
 	{/if}
-</main>
+</div>
 
 <style>
 	.settings [role='tabpanel'] {

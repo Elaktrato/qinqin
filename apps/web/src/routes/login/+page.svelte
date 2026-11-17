@@ -157,7 +157,7 @@
 	<title>{pageTitle(t('auth.signIn.title'))}</title>
 </svelte:head>
 
-<main class="auth">
+<div class="auth">
 	{#if view === 'password'}
 		<h1 tabindex="-1" bind:this={heading}>{t('auth.signIn.title')}</h1>
 
@@ -294,4 +294,4 @@
 			<p class="hint">{t('auth.signIn.forgotAsk')}</p>
 		{/if}
 	{/if}
-</main>
+</div>
