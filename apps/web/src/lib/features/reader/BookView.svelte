@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '$lib/i18n';
 	import { onDestroy, onMount, tick, untrack } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { record as recordEvent } from '$lib/events';
@@ -48,12 +49,12 @@
 	import { HighlightList } from './highlightList.svelte';
 	import { visibleHighlights, type Highlight, type HighlightColor } from './highlights';
 	import {
-		CLAMP_NOTICE,
-		ELSEWHERE_NOTICE,
-		OVERLAP_NOTICE,
+		clampNotice,
+		elsewhereNotice,
+		overlapNotice,
 		addFailure,
 		neighbourAfter,
-		TOO_LONG_NOTICE,
+		tooLongNotice,
 		highlightKey,
 		highlightKeyBusy,
 		loadLastColor,
@@ -115,7 +116,7 @@
 				if (wanted === wantedVariant) variant = wanted;
 			},
 			() => {
-				if (wanted === wantedVariant) variantError = 'Could not load the script converter.';
+				if (wanted === wantedVariant) variantError = t('reader.book.converterFailed');
 			}
 		);
 	});
@@ -563,7 +564,7 @@
 	});
 
 	function jumpToBookmark(b: Bookmark): void {
-		if (!jumpTo(b.position)) bookmarks.error = 'This bookmark points to a place the book does not have.';
+		if (!jumpTo(b.position)) bookmarks.error = t('reader.book.bookmarkMissing');
 	}
 
 	// An explicit jump (bookmark or highlight): scroll there, through the
@@ -749,15 +750,15 @@
 		const waiting = editor && waitingKey !== null && editor.key === waitingKey ? editor : null;
 		const draft = waiting ? editorDraft : '';
 		if (failure.kind === 'existing') {
-			tell(OVERLAP_NOTICE);
+			tell(overlapNotice());
 			lookup.close();
 			const existing = highlights.get(failure.id);
 			const carried = draft.trim() && existing ? (existing.note ? `${existing.note}\n${draft}` : draft) : undefined;
-			await openEditor(failure.id, { focusNote: withNote, notice: OVERLAP_NOTICE, initialNote: carried });
+			await openEditor(failure.id, { focusNote: withNote, notice: overlapNotice(), initialNote: carried });
 			return;
 		}
 		// The store announces its own errors; this one it does not.
-		if (failure.text === ELSEWHERE_NOTICE) tell(failure.text);
+		if (failure.text === elsewhereNotice()) tell(failure.text);
 		if (waiting) editor = { ...waiting, failure: failure.text };
 	}
 
@@ -765,7 +766,7 @@
 		const open = editor;
 		if (!open?.body) return;
 		const body: NewHighlight = { ...open.body, note: draft.trim() ? draft : undefined };
-		editor = { ...open, body, failure: 'Trying again…' };
+		editor = { ...open, body, failure: t('reader.book.tryingAgain') };
 		const result = await highlights.add(body);
 		if (editor?.key !== open.key) return;
 		if (result.ok) {
@@ -788,17 +789,17 @@
 	): Promise<void> {
 		if (!content) return;
 		if (!highlights.ready) {
-			tell(highlightsFailed ? highlights.loadError : 'Highlights are still loading.');
+			tell(highlightsFailed ? highlights.loadError : t('reader.book.highlightsLoading'));
 			return;
 		}
 		const runs = span ? paragraphs[span.p] : undefined;
 		const plan = planHighlight(span, runs ? paragraphString(runs) : null, content.n, color, highlights.items);
 		if (plan.kind === 'none') {
-			tell('Select some text in the book to highlight it.');
+			tell(t('reader.book.selectFirst'));
 			return;
 		}
 		if (plan.kind === 'tooLong') {
-			tell(TOO_LONG_NOTICE);
+			tell(tooLongNotice());
 			return;
 		}
 		// The new colour shows on the text, not under the selection.
@@ -806,17 +807,17 @@
 		if (plan.kind === 'existing') {
 			if (plan.exact && !withNote) {
 				rememberColor(color);
-				tell(plan.clamped ? CLAMP_NOTICE : '');
+				tell(plan.clamped ? clampNotice() : '');
 				void highlights.update(plan.highlight.id, { color });
 				return;
 			}
-			tell(plan.exact ? '' : OVERLAP_NOTICE);
+			tell(plan.exact ? '' : overlapNotice());
 			lookup.close();
-			await openEditor(plan.highlight.id, { focusNote: withNote, notice: plan.exact ? '' : OVERLAP_NOTICE });
+			await openEditor(plan.highlight.id, { focusNote: withNote, notice: plan.exact ? '' : overlapNotice() });
 			return;
 		}
 		rememberColor(color);
-		tell(plan.clamped ? CLAMP_NOTICE : '');
+		tell(plan.clamped ? clampNotice() : '');
 		const body = plan.body;
 		const adding = highlights.add(body);
 		let waitingKey: number | null = null;
@@ -827,7 +828,7 @@
 			const temp = highlights.items.find(
 				(h) => h.id < 0 && h.chapter === body.chapter && h.paragraph === body.paragraph && h.start === body.start
 			);
-			if (temp) await openEditor(temp.id, { focusNote: true, notice: plan.clamped ? CLAMP_NOTICE : '', body });
+			if (temp) await openEditor(temp.id, { focusNote: true, notice: plan.clamped ? clampNotice() : '', body });
 			waitingKey = editor?.body === body ? editor.key : null;
 		}
 		const result = await adding;
@@ -878,7 +879,7 @@
 		focusMark = h.id;
 		if (!jumpTo(formatPosition(h.chapter, h.paragraph))) {
 			focusMark = null;
-			highlights.error = 'This highlight points to a place the book does not have.';
+			highlights.error = t('reader.book.highlightMissing');
 		}
 	}
 
@@ -900,9 +901,9 @@
 	}
 
 	const railTabs = $derived([
-		{ id: 'bookmarks' as const, label: 'Bookmarks', alert: bookmarksFailed || bookmarks.error !== '' },
-		{ id: 'highlights' as const, label: 'Highlights', alert: highlightsFailed || highlights.error !== '' },
-		{ id: 'words' as const, label: 'Words' }
+		{ id: 'bookmarks' as const, label: t('reader.bookmarks.title'), alert: bookmarksFailed || bookmarks.error !== '' },
+		{ id: 'highlights' as const, label: t('reader.highlights.title'), alert: highlightsFailed || highlights.error !== '' },
+		{ id: 'words' as const, label: t('reader.words.title') }
 	]);
 
 	// --- words panel: coverage and unknown words (#68) ---
@@ -1091,34 +1092,34 @@
 {#snippet chapterNav(label: string)}
 	<nav class="chapters" aria-label={label}>
 		{#if chapter > 0}
-			<a href={bookHref(id, chapter - 1)} rel="prev">← Previous</a>
+			<a href={bookHref(id, chapter - 1)} rel="prev">{t('reader.book.previous')}</a>
 		{/if}
 		{#if chapterCount > 1}
 			<label>
-				Chapter
+				{t('reader.book.chapter')}
 				<select value={chapter} onchange={jump}>
 					{#each { length: chapterCount }, i (i)}
 						<option value={i}>{i + 1}</option>
 					{/each}
 				</select>
-				of {chapterCount}
+				{t('reader.book.of', { count: chapterCount })}
 			</label>
 		{/if}
 		{#if chapter < chapterCount - 1}
-			<a href={bookHref(id, chapter + 1)} rel="next">Next →</a>
+			<a href={bookHref(id, chapter + 1)} rel="next">{t('reader.book.next')}</a>
 		{/if}
 	</nav>
 {/snippet}
 
 <main class="book" class:column={book !== null && mode === 'column'}>
 	<div class="reading">
-		<p><a href={LIBRARY_HREF}>Back to library</a></p>
+		<p><a href={LIBRARY_HREF}>{t('reader.sources.back')}</a></p>
 
 		{#if bookError}
 			<p class="error" role="alert">{bookError}</p>
-			<button type="button" onclick={() => loadBook(id)}>Retry</button>
+			<button type="button" onclick={() => loadBook(id)}>{t('reader.library.retry')}</button>
 		{:else if !book}
-			<p aria-live="polite">Loading book…</p>
+			<p aria-live="polite">{t('reader.book.loading')}</p>
 		{:else}
 			<header>
 				<h1 lang={book.language}>{book.title}</h1>
@@ -1137,11 +1138,11 @@
 				{/if}
 				{#if book.language === 'zh'}
 					<label>
-						Script
+						{t('reader.book.script')}
 						<select bind:value={prefs.variant}>
-							<option value="original">Original</option>
-							<option value="simplified">Simplified</option>
-							<option value="traditional">Traditional</option>
+							<option value="original">{t('reader.book.original')}</option>
+							<option value="simplified">{t('reader.book.simplified')}</option>
+							<option value="traditional">{t('reader.book.traditional')}</option>
 						</select>
 					</label>
 					{#if variantError}<span class="error" role="alert">{variantError}</span>{/if}
@@ -1151,18 +1152,18 @@
 			{#if displayNotice}<p class="error" role="alert">{displayNotice}</p>{/if}
 			{#if readings.failed > 0}
 				<p role="status">
-					Some readings could not be loaded.
-					<button type="button" onclick={() => untrack(() => void readings.run({ key: `${id}:${chapter}:${variant}`, lang: book?.language ?? '', runs: paragraphs, start: topParagraph ?? 0, display, index, want: wantOf() }))}>Try again</button>
+					{t('reader.book.readingsFailed')}
+					<button type="button" onclick={() => untrack(() => void readings.run({ key: `${id}:${chapter}:${variant}`, lang: book?.language ?? '', runs: paragraphs, start: topParagraph ?? 0, display, index, want: wantOf() }))}>{t('reader.words.tryAgain')}</button>
 				</p>
 			{/if}
 
-			{@render chapterNav('Chapters')}
+			{@render chapterNav(t('reader.book.chapters'))}
 
 			{#if chapterError}
 				<p class="error" role="alert">{chapterError}</p>
-				<button type="button" onclick={() => loadChapter(id, chapter)}>Retry</button>
+				<button type="button" onclick={() => loadChapter(id, chapter)}>{t('reader.library.retry')}</button>
 			{:else if !content || content.n !== chapter}
-				<p aria-live="polite">Loading chapter…</p>
+				<p aria-live="polite">{t('reader.book.loadingChapter')}</p>
 			{:else}
 				<article>
 					<h2 lang={content.data.title.trim() ? textLang : undefined}>
@@ -1183,7 +1184,7 @@
 						bind:container
 					/>
 				</article>
-				{@render chapterNav('Chapters (end)')}
+				{@render chapterNav(t('reader.book.chaptersEnd'))}
 			{/if}
 
 			<footer class="credits">
@@ -1191,11 +1192,11 @@
 				{#if book.licenseNote}<p>{book.licenseNote}</p>{/if}
 				{#if sourceUrl}
 					<p>
-						Source:
+						{t('reader.book.source')}
 						<a href={sourceUrl} target="_blank" rel="noopener noreferrer">{book.source || sourceUrl}</a>
 					</p>
 				{:else if book.source}
-					<p>Source: {book.source}</p>
+					<p>{t('reader.book.sourceNamed', { source: book.source })}</p>
 				{/if}
 			</footer>
 

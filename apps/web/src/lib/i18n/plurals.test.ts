@@ -272,7 +272,26 @@ const CASES: [MessageKey, MessageArgs, string, string][] = [
 	['milestones.title.reviews', { n: '7' }, '7 review', '7 reviews'],
 	['milestones.title.streak', { n: '7' }, '7-day streak', '7-day streak'],
 	['milestones.title.wordsMature', { n: '7' }, '7 mature word', '7 mature words'],
-	['milestones.title.wordsStudied', { n: '7' }, '7 word studied', '7 words studied']
+	['milestones.title.wordsStudied', { n: '7' }, '7 word studied', '7 words studied'],
+	// reader (Task 19)
+	['reader.entry.moreEntries', {}, 'Show 1 more entry', 'Show 2 more entries'],
+	['reader.entry.moreSenses', {}, 'Show 1 more sense', 'Show 2 more senses'],
+	['reader.library.booksIn', {}, '1 book in', '2 books in'],
+	['reader.library.chapters', {}, '1 chapter', '2 chapters'],
+	['reader.source.results', {}, '1 result', '2 results'],
+	['reader.words.added', { deck: 'HSK' }, 'Added 1 word to HSK', 'Added 2 words to HSK'],
+	['reader.words.addedJoined', {}, '1 already had a card and joined it', '2 already had cards and joined it'],
+	['reader.words.chaptersFailed', {}, '1 chapter could not be counted.', '2 chapters could not be counted.'],
+	[
+		'reader.words.joined',
+		{ deck: 'HSK' },
+		'1 word already had a card and joined HSK',
+		'2 words already had cards and joined HSK'
+	],
+	['reader.words.marked', {}, 'Marked 1 word as known', 'Marked 2 words as known'],
+	['reader.words.tokens', {}, '1 word', '2 words'],
+	['reader.words.typesNew', {}, '1 different new word', '2 different new words'],
+	['reader.words.unmatched', {}, '1 passage is not in the dictionary', '2 passages are not in the dictionary']
 ];
 
 describe('catalogue plurals keep their English', () => {

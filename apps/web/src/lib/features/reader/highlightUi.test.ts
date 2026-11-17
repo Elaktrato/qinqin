@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import {
-	CLAMP_NOTICE,
-	ELSEWHERE_NOTICE,
+	clampNotice,
+	elsewhereNotice,
 	addFailure,
 	neighbourAfter,
-	TOO_LONG_NOTICE,
+	tooLongNotice,
 	groupSegsByRun,
 	highlightKey,
 	highlightKeyBusy,
@@ -198,8 +198,8 @@ describe('planHighlight', () => {
 	});
 
 	it('has readable notices', () => {
-		expect(CLAMP_NOTICE).toMatch(/paragraph/);
-		expect(TOO_LONG_NOTICE).toMatch(/500/);
+		expect(clampNotice()).toMatch(/paragraph/);
+		expect(tooLongNotice()).toMatch(/500/);
 	});
 });
 
@@ -310,8 +310,8 @@ describe('addFailure', () => {
 	});
 
 	it('explains an overlap with a highlight it cannot show', () => {
-		expect(addFailure({ ok: false, existingId: 7, available: false }, '')).toEqual({ kind: 'message', text: ELSEWHERE_NOTICE });
-		expect(ELSEWHERE_NOTICE).toMatch(/[Rr]eload/);
+		expect(addFailure({ ok: false, existingId: 7, available: false }, '')).toEqual({ kind: 'message', text: elsewhereNotice() });
+		expect(elsewhereNotice()).toMatch(/[Rr]eload/);
 	});
 
 	it('passes the store error on, with a fallback', () => {

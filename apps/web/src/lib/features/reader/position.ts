@@ -1,4 +1,5 @@
 // A book's reading position is stored server-side as "<chapter>:<paragraph>".
+import { t } from '$lib/i18n';
 
 export interface Position {
 	chapter: number;
@@ -37,5 +38,5 @@ export function savedChapter(position: string, chapterCount: number): number {
 
 /** chapterTitle is what the reader shows for chapter n: its title, else "Chapter n+1". */
 export function chapterTitle(title: string, n: number): string {
-	return title.trim() || `Chapter ${n + 1}`;
+	return title.trim() || t('reader.chapter', { n: n + 1 });
 }

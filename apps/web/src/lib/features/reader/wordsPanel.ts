@@ -5,58 +5,69 @@ import { familiarity, type KnownIndex } from '$lib/study/known';
 import type { Deck } from '$lib/study/types';
 import type { Coverage } from './coverage';
 import type { AddWordsResult } from './wordActions';
+import { t } from '$lib/i18n';
+import { formatNumber, formatPercent } from '$lib/i18n/format';
 
 export const PAGE_SIZE = 50;
 
-const n = (x: number): string => x.toLocaleString('en-US');
-const plural = (x: number, one: string, many: string): string => `${n(x)} ${x === 1 ? one : many}`;
+const n = (x: number): string => formatNumber(x);
 
 export function wordCountsSupported(lang: string): boolean {
 	return lang === 'zh' || lang === 'ja';
 }
 
 export function coverageText(c: Coverage, scope: 'chapter' | 'book'): string {
-	const where = scope === 'chapter' ? 'this chapter' : 'this book';
-	return c.percent === null ? `No words to count in ${where}` : `You know ${c.percent}% of the words in ${where}`;
+	if (c.percent === null) return scope === 'chapter' ? t('reader.words.noneChapter') : t('reader.words.noneBook');
+	const percent = formatPercent(c.percent / 100);
+	return scope === 'chapter' ? t('reader.words.coverageChapter', { percent }) : t('reader.words.coverageBook', { percent });
 }
 
 export function figuresText(c: Coverage): string {
-	return `${n(c.known)} of ${plural(c.tokens, 'word', 'words')} · ${plural(c.types.new, 'different new word', 'different new words')} · ${n(c.types.learning)} learning`;
+	return t('reader.words.figures', {
+		known: n(c.known),
+		tokens: t('reader.words.tokens', { count: c.tokens }),
+		fresh: t('reader.words.typesNew', { count: c.types.new }),
+		learning: n(c.types.learning)
+	});
 }
 
 export function unmatchedText(count: number): string | null {
 	if (count === 0) return null;
-	return count === 1 ? '1 passage is not in the dictionary' : `${n(count)} passages are not in the dictionary`;
+	return t('reader.words.unmatched', { count });
 }
 
 export function countingText(done: number, total: number): string {
-	return `Counting… ${n(done)} of ${n(total)} parts`;
+	return t('reader.words.counting', { done: n(done), total: n(total) });
 }
 
 export function bookProgressText(done: number, total: number): string {
-	return `Chapter ${n(done)} of ${n(total)}`;
+	return t('reader.words.bookProgress', { done: n(done), total: n(total) });
 }
 
 export function buttonLabels(selected: number, allNew: number): { addSelected: string; addAll: string; know: string } {
-	return { addSelected: `Add selected (${n(selected)})`, addAll: `Add all new words (${n(allNew)})`, know: `I know these (${n(selected)})` };
+	return {
+		addSelected: t('reader.words.addSelected', { count: n(selected) }),
+		addAll: t('reader.words.addAll', { count: n(allNew) }),
+		know: t('reader.words.know', { count: n(selected) })
+	};
 }
 
 export function addResultText(r: AddWordsResult, deck: string): string {
 	const parts: string[] = [];
 	if (r.created > 0) {
-		parts.push(`Added ${plural(r.created, 'word', 'words')} to ${deck}`);
-		if (r.joined > 0) parts.push(`${n(r.joined)} already had ${r.joined === 1 ? 'a card' : 'cards'} and joined it`);
+		parts.push(t('reader.words.added', { count: r.created, deck }));
+		if (r.joined > 0) parts.push(t('reader.words.addedJoined', { count: r.joined }));
 	} else if (r.joined > 0) {
-		parts.push(`${plural(r.joined, 'word', 'words')} already had ${r.joined === 1 ? 'a card' : 'cards'} and joined ${deck}`);
+		parts.push(t('reader.words.joined', { count: r.joined, deck }));
 	} else {
-		parts.push(`Nothing new to add to ${deck}`);
+		parts.push(t('reader.words.nothingNew', { deck }));
 	}
-	if (r.missing > 0) parts.push(`${n(r.missing)} could not be found`);
+	if (r.missing > 0) parts.push(t('reader.words.missing', { count: n(r.missing) }));
 	return parts.join('; ');
 }
 
 export function markResultText(written: number): string {
-	return written === 0 ? 'These words were already marked as known' : `Marked ${plural(written, 'word', 'words')} as known`;
+	return written === 0 ? t('reader.words.alreadyKnown') : t('reader.words.marked', { count: written });
 }
 
 export function pageOf<T>(list: readonly T[], pages: number): { shown: T[]; more: boolean } {
@@ -66,14 +77,14 @@ export function pageOf<T>(list: readonly T[], pages: number): { shown: T[]; more
 
 export function deckOptions(decks: readonly Deck[]): { id: string; name: string }[] {
 	const own = [...decks].sort((a, b) => Date.parse(a.createdAt) - Date.parse(b.createdAt) || a.id.localeCompare(b.id));
-	return [{ id: GENERAL_DECK_ID, name: 'General' }, ...own.map((d) => ({ id: d.id, name: d.name }))];
+	return [{ id: GENERAL_DECK_ID, name: t('reader.words.general') }, ...own.map((d) => ({ id: d.id, name: d.name }))];
 }
 
 /** stateLineText: the popup's state line for an entry (shown with highlighting on). */
 export function stateLineText(entryId: number, index: KnownIndex, threshold: number): string {
 	const state = familiarity(entryId, index, threshold);
-	if (state === 'new') return 'New word';
-	if (state === 'learning') return 'Learning';
-	if (index.marks.has(entryId)) return 'Known — marked by you';
-	return `Known — memory score ${index.scores.get(entryId) ?? 0}`;
+	if (state === 'new') return t('reader.state.new');
+	if (state === 'learning') return t('reader.state.learning');
+	if (index.marks.has(entryId)) return t('reader.state.marked');
+	return t('reader.state.score', { score: index.scores.get(entryId) ?? 0 });
 }

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '$lib/i18n';
 	import { tick } from 'svelte';
 	import type { LookupResult } from '$lib/api/types';
 	import { partitionSenses } from '$lib/dictionaryVisibility';
@@ -91,13 +92,13 @@
 	{#if result.reasons.length > 0 || result.tags.length > 0 || result.frequencies.length > 0}
 		<ul class="chips">
 			{#if result.reasons.length > 0}
-				<li class="chip inflection" title="Inflection">{result.reasons.join(' → ')}</li>
+				<li class="chip inflection" title={t('reader.entry.inflection')}>{result.reasons.join(' → ')}</li>
 			{/if}
 			{#each result.tags as tag, i (i)}
 				<li class="chip">{tag}</li>
 			{/each}
 			{#each result.frequencies as f (f.packId)}
-				<li class="chip frequency" title="Frequency rank ({f.packName})">
+				<li class="chip frequency" title={t('reader.entry.frequency', { pack: f.packName })}>
 					<span class="pack">{f.packName}</span>
 					{frequencyLabel(f)}
 				</li>
@@ -107,7 +108,7 @@
 
 	{#if sources.length > 0 || result.matched !== result.term}
 		<p class="source">
-			{sources.join(', ')}{#if result.matched !== result.term}{#if sources.length > 0}&ensp;·&ensp;{/if}matched
+			{sources.join(', ')}{#if result.matched !== result.term}{#if sources.length > 0}&ensp;·&ensp;{/if}{t('reader.entry.matched')}
 				<span lang={textLang}>{result.matched}</span>{/if}
 		</p>
 	{/if}
@@ -124,13 +125,13 @@
 					{/each}
 					{#if sense.xrefs.length > 0}
 						<span class="xrefs">
-							{'see also '}
+							{`${t('reader.entry.seeAlso')} `}
 							<!-- One line: whitespace between these nodes would show before the commas. -->
 							{#each sense.xrefs.map(parseXref) as xref, x (x)}{#if x > 0}{', '}{/if}<span
 									class="scan"
 									data-scan={lang}
 									lang={textLang}>{xref.headword}</span
-								>{#if xref.reading}{' '}<span lang={textLang}>{`(${xref.reading})`}</span>{/if}{#if xref.senseNo}{` sense ${xref.senseNo}`}{/if}{/each}
+								>{#if xref.reading}{' '}<span lang={textLang}>{`(${xref.reading})`}</span>{/if}{#if xref.senseNo}{` ${t('reader.entry.senseNo', { n: xref.senseNo })}`}{/if}{/each}
 						</span>
 					{/if}
 				</li>
@@ -138,18 +139,18 @@
 		</ol>
 		{#if more > 0}
 			<button type="button" class="more" onclick={() => (shown = visibleCount(senses.length, shown))}>
-				{moreLabel(more, 'sense', 'senses')}
+				{moreLabel(more, 'sense')}
 			</button>
 		{/if}
 		{#if partition.allHidden}
-			<p class="hidden-note">Shown although its dictionaries are hidden in this workspace</p>
+			<p class="hidden-note">{t('reader.entry.allHidden')}</p>
 		{:else if !revealed && partition.hidden.length > 0}
 			<button type="button" class="more reveal" onclick={reveal}>
-				Show {partition.hidden.length} from hidden dictionaries
+				{t('reader.entry.showHidden', { count: partition.hidden.length })}
 			</button>
 		{/if}
 	{/if}
-	<p class="open"><a href={`/entry/${Number(result.entryId)}`}>Open full entry</a></p>
+	<p class="open"><a href={`/entry/${Number(result.entryId)}`}>{t('reader.entry.open')}</a></p>
 </article>
 
 <style>

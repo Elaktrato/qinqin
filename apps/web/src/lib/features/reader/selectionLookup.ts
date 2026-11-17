@@ -1,12 +1,15 @@
 // Resolves a text selection to dictionary results. DOM-free: the caller
 // maps the selection to code-point offsets in the displayed paragraph and
 // injects the lookup function (lookupAt, usually through a cache).
+import { t } from '$lib/i18n';
 import type { LookupResult } from '$lib/api/types';
 import { selectionTarget, type LookupKind } from './lookup';
 import type { LookupFn } from './lookupCache';
 import { sliceCodePoints } from './paragraphText';
 
-export const START_NOTE = 'Showing matches at the start of your selection.';
+export function startNote(): string {
+	return t('reader.lookup.startNote');
+}
 
 export interface SpanTarget {
 	start: number;
@@ -47,7 +50,7 @@ export function selectionSpanTarget(paragraph: string, start: number, end: numbe
  *   (selecting 中文 in 中文课本 shows 中文, not a longer word), else the
  *   paragraph results at the selection start that cover it (this catches
  *   inflected forms, 食べ in 食べた), else every result at the start with
- *   START_NOTE. Nothing is ever invented.
+ *   startNote(). Nothing is ever invented.
  */
 export async function lookupSelection(
 	lang: string,
@@ -69,5 +72,5 @@ export async function lookupSelection(
 	const atStart = await lookup(lang, paragraph, target.start, undefined, signal);
 	const covering = atStart.filter((r) => r.end >= target.end);
 	if (covering.length > 0) return { results: covering, note: '' };
-	return { results: atStart, note: atStart.length > 0 ? START_NOTE : '' };
+	return { results: atStart, note: atStart.length > 0 ? startNote() : '' };
 }

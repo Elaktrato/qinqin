@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { t } from '$lib/i18n';
+	import Msg from '$lib/i18n/Msg.svelte';
 	import { tick } from 'svelte';
 	import { snippetAt } from './bookmarks';
 	import type { HighlightList } from './highlightList.svelte';
@@ -43,12 +45,12 @@
 	});
 
 	function chapterLabel(n: number): string {
-		const number = `Chapter ${n + 1}`;
+		const number = t('reader.chapter', { n: n + 1 });
 		const title = titles[n]?.trim();
-		return title && title !== chapterTitle('', n) ? `${number} · ${title}` : number;
+		return title && title !== chapterTitle('', n) ? t('reader.chapterTitled', { number, title }) : number;
 	}
 
-	const name = (h: Highlight) => `highlight ${snippetAt(h.text, 30)}`;
+	const name = (h: Highlight) => t('reader.highlights.name', { text: snippetAt(h.text, 30) });
 
 	async function askDelete(h: Highlight): Promise<void> {
 		confirmingId = h.id;
@@ -82,25 +84,27 @@
 </script>
 
 <section class="highlights" aria-labelledby="highlights-heading">
-	<h2 id="highlights-heading" tabindex="-1">Highlights{list.ready ? ` (${list.items.length})` : ''}</h2>
+	<h2 id="highlights-heading" tabindex="-1">
+		{list.ready ? t('reader.highlights.titleCount', { count: list.items.length }) : t('reader.highlights.title')}
+	</h2>
 	<p class="hint">
-		Select text, then pick a colour in the popup. Key: <kbd>H</kbd> (last colour). Click a highlight to edit it.
+		<Msg key="reader.highlights.hint">{#snippet kbd(text: string)}<kbd>{text}</kbd>{/snippet}</Msg>
 	</p>
 
 	{#if list.loadError && !list.loading}
 		<p class="error" id="highlights-load-error">
 			{list.loadError}
-			<button type="button" onclick={onretry}>Retry</button>
+			<button type="button" onclick={onretry}>{t('reader.highlights.retry')}</button>
 		</p>
 	{/if}
 	{#if list.error}<p class="error">{list.error}</p>{/if}
 
 	{#if list.loading}
-		<p>Loading highlights…</p>
+		<p>{t('reader.highlights.loading')}</p>
 	{:else if list.loadError}
 		<!-- The error and its Retry are shown above. -->
 	{:else if groups.length === 0}
-		<p class="empty">No highlights yet.</p>
+		<p class="empty">{t('reader.highlights.empty')}</p>
 	{:else}
 		{#each groups as group (group.chapter)}
 			<h3>{chapterLabel(group.chapter)}</h3>
@@ -115,12 +119,12 @@
 							disabled={h.id < 0}
 							aria-describedby={h.note ? `hl-meta-${h.id} hl-note-${h.id}` : `hl-meta-${h.id}`}
 						>
-							<span class="visually-hidden">Go to </span><span class="text" {lang}>{h.text}</span>
+							<span class="visually-hidden">{`${t('reader.highlights.goTo')} `}</span><span class="text" {lang}>{h.text}</span>
 						</button>
 						<span class="meta" id="hl-meta-{h.id}">
-							<span class="visually-hidden">{COLOR_NAMES[h.color]} highlight</span>
-							{#if changed.has(h.id)}<span class="badge">text changed</span>{/if}
-							{#if h.note}<span class="visually-hidden">, note: </span>{/if}
+							<span class="visually-hidden">{t('reader.highlights.colorHighlight', { color: COLOR_NAMES[h.color] })}</span>
+							{#if changed.has(h.id)}<span class="badge">{t('reader.highlights.textChanged')}</span>{/if}
+							{#if h.note}<span class="visually-hidden">{`${t('reader.highlights.noteFollows')} `}</span>{/if}
 						</span>
 						{#if h.note}<p class="note" id="hl-note-{h.id}" {lang}>{h.note}</p>{/if}
 						{#if confirmingId === h.id}
@@ -128,12 +132,12 @@
 							<span
 								class="actions"
 								role="group"
-								aria-label="Confirm delete of {name(h)}"
+								aria-label={t('reader.highlights.confirmDelete', { name: name(h) })}
 								onkeydown={(e) => confirmKey(e, h.id)}
 							>
-								Delete this highlight?
-								<button type="button" onclick={() => confirmDelete(h)}>Yes, delete</button>
-								<button id="hl-cancel-{h.id}" type="button" onclick={() => cancelDelete(h.id)}>Cancel</button>
+								{t('reader.editor.deleteQuestion')}
+								<button type="button" onclick={() => confirmDelete(h)}>{t('reader.editor.yesDelete')}</button>
+								<button id="hl-cancel-{h.id}" type="button" onclick={() => cancelDelete(h.id)}>{t('common.action.cancel')}</button>
 							</span>
 						{:else}
 							<span class="actions">
@@ -141,14 +145,14 @@
 									id="hl-edit-{h.id}"
 									type="button"
 									onclick={(e) => onedit(h, e.currentTarget)}
-									aria-label="Edit {name(h)}">Edit</button
+									aria-label={t('reader.highlights.editNamed', { name: name(h) })}>{t('reader.highlights.edit')}</button
 								>
 								<button
 									id="hl-delete-{h.id}"
 									type="button"
 									onclick={() => askDelete(h)}
 									disabled={list.busy(h.id)}
-									aria-label="Delete {name(h)}">Delete</button
+									aria-label={t('reader.highlights.deleteNamed', { name: name(h) })}>{t('reader.editor.delete')}</button
 								>
 							</span>
 						{/if}
