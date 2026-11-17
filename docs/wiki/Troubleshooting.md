@@ -18,6 +18,9 @@ Adapted from the README's table. Administrator-side items first, then user-side.
 | Test mail fails with `auth` | Wrong user name or password; Microsoft 365 needs an app password or SMTP AUTH enabled |
 | Everyone shares one sign-in limit, or limits can be dodged | `X-Forwarded-For` handling is wrong: set `QINQIN_TRUSTED_PROXIES` ([Reverse proxy, rate limiting and trusted proxies](Admin-proxy-and-rate-limiting)) |
 | "Level data missing" banner on the character map | Run `qinqin seed` once after upgrading |
+| Stroke animation missing after upgrade | The server serves stroke data from a strokes pack. At start it installs the image's pack when none is installed (log: `strokes: installed the bundled stroke data ...`), but not after an administrator uninstalled one. Run `qinqin seed` (it installs `/opt/qinqin/strokes`), or in a checkout build the pack first (`node scripts/prepare-strokes-pack.mjs --out plugins/data-strokes/hanzi-writer-strokes`) |
+| Log: `pack <id>: no licence texts stored; run "qinqin seed"` | The pack was installed before licence files were kept; run `qinqin seed` once so its data package carries them |
+| A script's sync pull answers 400 `sync_collection_moved` | Dictionary data moved to data packages: read `GET /api/packages` and download the lexicon package ([API access tokens](API-Access-tokens)) |
 | Sources page misses pack notices after an upgrade | Run `qinqin seed` once (the log has a `stored ... differs` line) |
 | No install button, "Installing needs HTTPS" in Settings | The site is opened over plain HTTP; use HTTPS (or `http://localhost`) |
 | Users do not get new versions after an update | The proxy caches `/service-worker.js`; it must pass through with `no-cache` |

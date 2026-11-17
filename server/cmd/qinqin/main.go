@@ -178,6 +178,8 @@ func serveCmd(args []string) error {
 	}
 	// The Sources page shows the stored terms; say when seed is due.
 	warnStalePackTerms(context.Background(), sqlDB, defaultPacks(), log.Printf)
+	// Data packages carry each pack's licence files; say which packs lack them.
+	warnMissingPackTexts(context.Background(), sqlDB, log.Printf)
 
 	aiSvc := aiFromEnv(sqlDB, os.Getenv, log.Printf)
 	sec := secretsFromEnv(os.Getenv)
@@ -209,8 +211,18 @@ func serveCmd(args []string) error {
 		log.Printf("offline OCR: not available (tesseract not found)")
 	}
 
+	// Stroke data: install the bundled strokes pack when none is installed
+	// (v0.3 shipped it in the web build); a failure only loses strokes.
+	if err := autoInstallStrokes(ctx, sqlDB, defaultPacks(), log.Printf); err != nil {
+		log.Printf("%v", err)
+	}
+
+	// Data packages: one builder goroutine; the startup reconcile builds what
+	// is missing or stale in the background (the catalogue says building).
+	pkgs := startPackages(ctx, sqlDB, *data, log.Printf)
+
 	log.Printf("qinqin listening on %s (data: %s)", *addr, *data)
-	return http.ListenAndServe(*addr, rootHandler(webdist.Dist, api.New(sqlDB, *data, librarySources(*data, sqlDB), api.WithAI(aiSvc), api.WithMail(mailSvc), api.WithSecrets(sec.Current, sec.Previous), api.WithOCR(tess), api.WithStageSweeper(ctx, 5*time.Minute), api.WithTrustedProxies(trusted))))
+	return http.ListenAndServe(*addr, rootHandler(webdist.Dist, api.New(sqlDB, *data, librarySources(*data, sqlDB), api.WithAI(aiSvc), api.WithMail(mailSvc), api.WithSecrets(sec.Current, sec.Previous), api.WithOCR(tess), api.WithStageSweeper(ctx, 5*time.Minute), api.WithTrustedProxies(trusted), api.WithPackages(pkgs))))
 }
 
 // version is sent in the User-Agent of requests to the text sources; set
@@ -239,13 +251,16 @@ func lexiconPinyin(st lexicon.Store) sources.Phonetics {
 	}
 }
 
-// rootHandler mounts the API on /api/ and /healthz and the web frontend on
+// rootHandler mounts the API on /api/, /hanzi/ and /healthz and the web frontend on
 // everything else. The SPA handler must never shadow the API, and the API's
 // own mux stays the sole owner of its routes.
 func rootHandler(web fs.FS, apiHandler http.Handler) http.Handler {
 	mux := http.NewServeMux()
 	mux.Handle("/api/", apiHandler)
 	mux.Handle("/healthz", apiHandler)
+	// Stroke files come from the installed strokes pack (same URL as the
+	// static files of v0.3, so old shells and the worker keep working).
+	mux.Handle("/hanzi/", apiHandler)
 	// The trailing-slash form would otherwise fall through to the SPA and
 	// answer 200 HTML to a health probe.
 	mux.Handle("/healthz/{$}", http.RedirectHandler("/healthz", http.StatusPermanentRedirect))

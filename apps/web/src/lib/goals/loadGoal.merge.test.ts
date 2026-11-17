@@ -11,7 +11,7 @@ vi.mock('../time/zone', async () => {
 
 import { invalidateStudyHistory } from '../study/history';
 import { loadGoalStatus } from './loadGoal';
-import { typedPull } from '../study/testing/legacyCodec';
+import { pagedPull } from '../study/testing/legacyCodec';
 
 const NOW = Date.parse('2026-11-16T12:00:00Z');
 const json = (body: unknown) =>
@@ -59,7 +59,7 @@ describe('loadGoalStatus through the canonical merge', () => {
 			vi.fn(async (input: RequestInfo | URL) => {
 				const url = String(input);
 				if (url.startsWith('/api/sync/pull')) {
-					return json(typedPull({
+					return json(pagedPull({
 						pluginData: [
 							row('goals:workspace', {
 								version: 1,

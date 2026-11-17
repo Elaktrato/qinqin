@@ -146,7 +146,7 @@ func TestMigration038LibraryStampsAndDeletionLog(t *testing.T) {
 		text || '|' || color || '|' || note || '|' || created_at || '|' || updated_at FROM library_highlights ORDER BY id`
 	bmBefore, hlBefore := queryStrings(t, sqlDB, bmQ), queryStrings(t, sqlDB, hlQ)
 
-	if err := migrate(sqlDB); err != nil {
+	if err := migrateThrough(sqlDB, "038_core_study"); err != nil {
 		t.Fatal(err)
 	}
 	if got := queryStrings(t, sqlDB, bmQ); !reflect.DeepEqual(got, bmBefore) {

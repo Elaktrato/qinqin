@@ -41,7 +41,7 @@ export const LOCAL_ONLY_PACKS = [
  * (and baked into the Docker image) instead of being committed, because of
  * their size: the docs may name them like a bundled pack.
  */
-export const FETCHED_PACKS = ['kanjialive-audio'];
+export const FETCHED_PACKS = ['kanjialive-audio', 'hanzi-writer-strokes'];
 export const MAX_NOTICE_BYTES = 4000;
 
 // Go's RE2 `\s` is ASCII whitespace only ([\t\n\f\r ]), so the URL part

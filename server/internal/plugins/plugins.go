@@ -766,27 +766,45 @@ func ListData(ctx context.Context, sqlDB *sql.DB, userID int64, workspaceID *int
 // the sync read clients use to catch up. Rows are ordered by recency
 // then (plugin, key) for a stable replay.
 func PullData(ctx context.Context, sqlDB *sql.DB, userID int64, since time.Time) ([]model.PluginData, error) {
+	list := make([]model.PluginData, 0)
+	err := EachData(ctx, sqlDB, userID, since, false, func(d *model.PluginData) error {
+		list = append(list, *d)
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return list, nil
+}
+
+// EachData streams PullData's rows to fn one at a time, in its order;
+// liveOnly leaves tombstones out.
+func EachData(ctx context.Context, sqlDB *sql.DB, userID int64, since time.Time, liveOnly bool, fn func(*model.PluginData) error) error {
+	live := ""
+	if liveOnly {
+		live = " AND deleted_at IS NULL"
+	}
 	rows, err := sqlDB.QueryContext(ctx, dataSelect+`
-		WHERE user_id = ? AND updated_at >= ?
+		WHERE user_id = ? AND updated_at >= ?`+live+`
 		ORDER BY updated_at, pack_id, key`,
 		userID, since.UTC().Format(time.RFC3339))
 	if err != nil {
-		return nil, fmt.Errorf("plugins: pull data of user %d: %w", userID, err)
+		return fmt.Errorf("plugins: pull data of user %d: %w", userID, err)
 	}
 	defer rows.Close()
-
-	list := make([]model.PluginData, 0)
 	for rows.Next() {
 		d, err := scanData(rows)
 		if err != nil {
-			return nil, fmt.Errorf("plugins: scan data of user %d: %w", userID, err)
+			return fmt.Errorf("plugins: scan data of user %d: %w", userID, err)
 		}
-		list = append(list, *d)
+		if err := fn(d); err != nil {
+			return err
+		}
 	}
 	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("plugins: pull data of user %d: %w", userID, err)
+		return fmt.Errorf("plugins: pull data of user %d: %w", userID, err)
 	}
-	return list, nil
+	return nil
 }
 
 // DeleteData tombstones the user's stored value for one key of one

@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 // The qinqin mark: a brand-blue rounded square with two white "seal" squares
 // side by side (the doubled 勤勤), each crossed by one blue horizontal and one
 // vertical stroke. Own geometric art, no font: licence-clean.
@@ -38,12 +39,19 @@ export function markShapes({ maskable = false } = {}) {
 
 const hex = (c) => '#' + c.map((v) => v.toString(16).padStart(2, '0')).join('');
 
+/** The logo's outline (one path, 1080 x 1080 viewBox), read from the single source file. */
+export function logoPath() {
+	const svg = readFileSync(new URL('../../src/lib/assets/qinqin-logo.svg', import.meta.url), 'utf8');
+	const m = /<path d="([^"]+)"/.exec(svg);
+	if (!m) throw new Error('qinqin-logo.svg has no path');
+	return m[1];
+}
+
+/** Theme-aware favicon: dark mark on light browser chrome, light mark on dark chrome. */
 export function faviconSvg() {
-	const rects = markShapes()
-		.map(
-			(s) =>
-				`<rect x="${+(s.x * 64).toFixed(2)}" y="${+(s.y * 64).toFixed(2)}" width="${+(s.w * 64).toFixed(2)}" height="${+(s.h * 64).toFixed(2)}" rx="${+(s.r * 64).toFixed(2)}" fill="${hex(s.color)}"/>`
-		)
-		.join('');
-	return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">${rects}</svg>\n`;
+	return (
+		'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 1080">' +
+		'<style>path{fill:#111827}@media (prefers-color-scheme:dark){path{fill:#f9fafb}}</style>' +
+		`<path d="${logoPath()}"/></svg>\n`
+	);
 }

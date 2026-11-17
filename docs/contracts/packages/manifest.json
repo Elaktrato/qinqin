@@ -1,0 +1,1460 @@
+{
+ "version": 1,
+ "rule": "packages/manifest",
+ "_doc": "manifest.json inside a package zip. valid cases decode; invalid ones must be refused for the reason given. A client also checks id, revision, contentHash and instanceId against the catalogue row and every listed file's bytes and sha256 (README.md, Verification). Decoded by server/internal/datapkg (A5).",
+ "keys": [
+  "format",
+  "formatVersion",
+  "id",
+  "type",
+  "languages",
+  "revision",
+  "contentHash",
+  "instanceId",
+  "builtAt",
+  "requires",
+  "sources",
+  "files"
+ ],
+ "fileKeys": [
+  "name",
+  "bytes",
+  "sha256"
+ ],
+ "cases": [
+  {
+   "name": "lexicon.zh with two sources and their licence files",
+   "valid": true,
+   "manifest": {
+    "format": "qinqin-package",
+    "formatVersion": 1,
+    "id": "lexicon.zh",
+    "type": "lexicon",
+    "languages": [
+     "zh"
+    ],
+    "revision": 3,
+    "contentHash": "sha256:9999999999999999999999999999999999999999999999999999999999999999",
+    "instanceId": "01JD8Z3Q4M5N6P7R8S9T0V1W2X",
+    "builtAt": "2026-11-16T10:00:00Z",
+    "requires": [],
+    "sources": [
+     {
+      "type": "dictionary",
+      "packId": "cedict",
+      "name": "CC-CEDICT",
+      "version": "2026-11-11",
+      "license": "CC BY-SA 4.0",
+      "attribution": "CC-CEDICT, MDBG (https://cc-cedict.org)",
+      "notice": ""
+     },
+     {
+      "type": "dictionary",
+      "packId": "unihan",
+      "name": "Unihan database",
+      "version": "2026-11-11",
+      "license": "Unicode License v3",
+      "attribution": "Unicode Consortium, Unihan database (https://www.unicode.org/)",
+      "notice": ""
+     }
+    ],
+    "files": [
+     {
+      "name": "data.sqlite",
+      "bytes": 81264640,
+      "sha256": "1111111111111111111111111111111111111111111111111111111111111111"
+     },
+     {
+      "name": "NOTICE.md",
+      "bytes": 912,
+      "sha256": "2222222222222222222222222222222222222222222222222222222222222222"
+     },
+     {
+      "name": "LICENSES/cedict/ATTRIBUTION.md",
+      "bytes": 655,
+      "sha256": "3333333333333333333333333333333333333333333333333333333333333333"
+     },
+     {
+      "name": "LICENSES/cedict/LICENSE",
+      "bytes": 20123,
+      "sha256": "4444444444444444444444444444444444444444444444444444444444444444"
+     },
+     {
+      "name": "LICENSES/unihan/LICENSE",
+      "bytes": 2213,
+      "sha256": "5555555555555555555555555555555555555555555555555555555555555555"
+     }
+    ]
+   }
+  },
+  {
+   "name": "lexicon.ja",
+   "valid": true,
+   "manifest": {
+    "format": "qinqin-package",
+    "formatVersion": 1,
+    "id": "lexicon.ja",
+    "type": "lexicon",
+    "languages": [
+     "ja"
+    ],
+    "revision": 1,
+    "contentHash": "sha256:7777777777777777777777777777777777777777777777777777777777777777",
+    "instanceId": "01JD8Z3Q4M5N6P7R8S9T0V1W2X",
+    "builtAt": "2026-11-16T10:00:00Z",
+    "requires": [],
+    "sources": [
+     {
+      "type": "dictionary",
+      "packId": "jmdict",
+      "name": "JMdict",
+      "version": "2026-11-11",
+      "license": "CC BY-SA 4.0",
+      "attribution": "Electronic Dictionary Research and Development Group (EDRDG), JMdict_e",
+      "notice": ""
+     }
+    ],
+    "files": [
+     {
+      "name": "data.sqlite",
+      "bytes": 81264640,
+      "sha256": "1111111111111111111111111111111111111111111111111111111111111111"
+     },
+     {
+      "name": "NOTICE.md",
+      "bytes": 912,
+      "sha256": "2222222222222222222222222222222222222222222222222222222222222222"
+     },
+     {
+      "name": "LICENSES/jmdict/LICENSE",
+      "bytes": 1802,
+      "sha256": "6666666666666666666666666666666666666666666666666666666666666666"
+     }
+    ]
+   }
+  },
+  {
+   "name": "levels.jlpt-kanji (requires lexicon.ja)",
+   "valid": true,
+   "manifest": {
+    "format": "qinqin-package",
+    "formatVersion": 1,
+    "id": "levels.jlpt-kanji",
+    "type": "levels",
+    "languages": [
+     "ja"
+    ],
+    "revision": 1,
+    "contentHash": "sha256:3333333333333333333333333333333333333333333333333333333333333333",
+    "instanceId": "01JD8Z3Q4M5N6P7R8S9T0V1W2X",
+    "builtAt": "2026-11-16T10:00:00Z",
+    "requires": [
+     "lexicon.ja"
+    ],
+    "sources": [
+     {
+      "type": "levels",
+      "packId": "jlpt-kanji",
+      "name": "JLPT kanji (approximate)",
+      "version": "kanjiapi.dev@76aa080+kanjidic2@2026-11-11",
+      "license": "MIT AND CC BY-SA 4.0",
+      "attribution": "kanjiapi.dev jlpt.tsv (MIT, © 2023 Iridium Szreter); KANJIDIC2 (CC BY-SA 4.0, © EDRDG)",
+      "notice": ""
+     }
+    ],
+    "files": [
+     {
+      "name": "data.sqlite",
+      "bytes": 81264640,
+      "sha256": "1111111111111111111111111111111111111111111111111111111111111111"
+     },
+     {
+      "name": "NOTICE.md",
+      "bytes": 912,
+      "sha256": "2222222222222222222222222222222222222222222222222222222222222222"
+     },
+     {
+      "name": "LICENSES/jlpt-kanji/LICENSE",
+      "bytes": 1290,
+      "sha256": "7777777777777777777777777777777777777777777777777777777777777777"
+     }
+    ]
+   }
+  },
+  {
+   "name": "sentences.zh-demo",
+   "valid": true,
+   "manifest": {
+    "format": "qinqin-package",
+    "formatVersion": 1,
+    "id": "sentences.zh-demo",
+    "type": "sentences",
+    "languages": [
+     "zh"
+    ],
+    "revision": 2,
+    "contentHash": "sha256:4444444444444444444444444444444444444444444444444444444444444444",
+    "instanceId": "01JD8Z3Q4M5N6P7R8S9T0V1W2X",
+    "builtAt": "2026-11-16T10:00:00Z",
+    "requires": [
+     "lexicon.zh"
+    ],
+    "sources": [
+     {
+      "type": "sentences",
+      "packId": "zh-demo",
+      "name": "Chinese demo sentences",
+      "version": "1.0",
+      "license": "CC0-1.0",
+      "attribution": "Demo content written for qinqin by the project; CC0 1.0",
+      "notice": ""
+     }
+    ],
+    "files": [
+     {
+      "name": "data.sqlite",
+      "bytes": 81264640,
+      "sha256": "1111111111111111111111111111111111111111111111111111111111111111"
+     },
+     {
+      "name": "NOTICE.md",
+      "bytes": 912,
+      "sha256": "2222222222222222222222222222222222222222222222222222222222222222"
+     },
+     {
+      "name": "LICENSES/zh-demo/LICENSE",
+      "bytes": 7048,
+      "sha256": "8888888888888888888888888888888888888888888888888888888888888888"
+     }
+    ]
+   }
+  },
+  {
+   "name": "frequency.jiten-frequency",
+   "valid": true,
+   "manifest": {
+    "format": "qinqin-package",
+    "formatVersion": 1,
+    "id": "frequency.jiten-frequency",
+    "type": "frequency",
+    "languages": [
+     "ja"
+    ],
+    "revision": 1,
+    "contentHash": "sha256:5555555555555555555555555555555555555555555555555555555555555555",
+    "instanceId": "01JD8Z3Q4M5N6P7R8S9T0V1W2X",
+    "builtAt": "2026-11-16T10:00:00Z",
+    "requires": [],
+    "sources": [
+     {
+      "type": "frequency",
+      "packId": "jiten-frequency",
+      "name": "Jiten frequency list",
+      "version": "2026-11-12",
+      "license": "CC BY-SA 4.0",
+      "attribution": "Jiten (https://jiten.moe), global frequency list",
+      "notice": ""
+     }
+    ],
+    "files": [
+     {
+      "name": "data.sqlite",
+      "bytes": 81264640,
+      "sha256": "1111111111111111111111111111111111111111111111111111111111111111"
+     },
+     {
+      "name": "NOTICE.md",
+      "bytes": 912,
+      "sha256": "2222222222222222222222222222222222222222222222222222222222222222"
+     },
+     {
+      "name": "LICENSES/jiten-frequency/LICENSE",
+      "bytes": 20123,
+      "sha256": "9999999999999999999999999999999999999999999999999999999999999999"
+     }
+    ]
+   }
+  },
+  {
+   "name": "components.kanjivg-components",
+   "valid": true,
+   "manifest": {
+    "format": "qinqin-package",
+    "formatVersion": 1,
+    "id": "components.kanjivg-components",
+    "type": "components",
+    "languages": [
+     "ja"
+    ],
+    "revision": 1,
+    "contentHash": "sha256:6666666666666666666666666666666666666666666666666666666666666666",
+    "instanceId": "01JD8Z3Q4M5N6P7R8S9T0V1W2X",
+    "builtAt": "2026-11-16T10:00:00Z",
+    "requires": [],
+    "sources": [
+     {
+      "type": "components",
+      "packId": "kanjivg-components",
+      "name": "KanjiVG components",
+      "version": "r20260714",
+      "license": "CC BY-SA 3.0",
+      "attribution": "KanjiVG © Ulrich Apel (https://kanjivg.tagaini.net); component index derived by qinqin",
+      "notice": ""
+     }
+    ],
+    "files": [
+     {
+      "name": "data.sqlite",
+      "bytes": 81264640,
+      "sha256": "1111111111111111111111111111111111111111111111111111111111111111"
+     },
+     {
+      "name": "NOTICE.md",
+      "bytes": 912,
+      "sha256": "2222222222222222222222222222222222222222222222222222222222222222"
+     },
+     {
+      "name": "LICENSES/kanjivg-components/LICENSE",
+      "bytes": 18651,
+      "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+     }
+    ]
+   }
+  },
+  {
+   "name": "audio.kanjialive-audio with its clips",
+   "valid": true,
+   "manifest": {
+    "format": "qinqin-package",
+    "formatVersion": 1,
+    "id": "audio.kanjialive-audio",
+    "type": "audio",
+    "languages": [
+     "ja"
+    ],
+    "revision": 1,
+    "contentHash": "sha256:8888888888888888888888888888888888888888888888888888888888888888",
+    "instanceId": "01JD8Z3Q4M5N6P7R8S9T0V1W2X",
+    "builtAt": "2026-11-16T10:00:00Z",
+    "requires": [],
+    "sources": [
+     {
+      "type": "audio",
+      "packId": "kanjialive-audio",
+      "name": "Kanji alive audio",
+      "version": "1",
+      "license": "CC BY 4.0",
+      "attribution": "Kanji alive (https://kanjialive.com)",
+      "notice": ""
+     }
+    ],
+    "files": [
+     {
+      "name": "data.sqlite",
+      "bytes": 81264640,
+      "sha256": "1111111111111111111111111111111111111111111111111111111111111111"
+     },
+     {
+      "name": "NOTICE.md",
+      "bytes": 912,
+      "sha256": "2222222222222222222222222222222222222222222222222222222222222222"
+     },
+     {
+      "name": "LICENSES/kanjialive-audio/LICENSE",
+      "bytes": 18657,
+      "sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+     },
+     {
+      "name": "clips/cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc.opus",
+      "bytes": 8130,
+      "sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+     },
+     {
+      "name": "clips/dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd.opus",
+      "bytes": 9214,
+      "sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+     }
+    ]
+   }
+  },
+  {
+   "name": "grammar.zh-grammar-demo",
+   "valid": true,
+   "manifest": {
+    "format": "qinqin-package",
+    "formatVersion": 1,
+    "id": "grammar.zh-grammar-demo",
+    "type": "grammar",
+    "languages": [
+     "zh"
+    ],
+    "revision": 1,
+    "contentHash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "instanceId": "01JD8Z3Q4M5N6P7R8S9T0V1W2X",
+    "builtAt": "2026-11-16T10:00:00Z",
+    "requires": [],
+    "sources": [
+     {
+      "type": "grammar",
+      "packId": "zh-grammar-demo",
+      "name": "Chinese grammar demo (A1)",
+      "version": "1.0",
+      "license": "CC0-1.0",
+      "attribution": "Demo content written for qinqin by the project; CC0 1.0",
+      "notice": ""
+     }
+    ],
+    "files": [
+     {
+      "name": "data.sqlite",
+      "bytes": 81264640,
+      "sha256": "1111111111111111111111111111111111111111111111111111111111111111"
+     },
+     {
+      "name": "NOTICE.md",
+      "bytes": 912,
+      "sha256": "2222222222222222222222222222222222222222222222222222222222222222"
+     },
+     {
+      "name": "LICENSES/zh-grammar-demo/LICENSE",
+      "bytes": 7048,
+      "sha256": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
+     }
+    ]
+   }
+  },
+  {
+   "name": "strokes.hanzi-writer-strokes",
+   "valid": true,
+   "manifest": {
+    "format": "qinqin-package",
+    "formatVersion": 1,
+    "id": "strokes.hanzi-writer-strokes",
+    "type": "strokes",
+    "languages": [
+     "ja",
+     "zh"
+    ],
+    "revision": 1,
+    "contentHash": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "instanceId": "01JD8Z3Q4M5N6P7R8S9T0V1W2X",
+    "builtAt": "2026-11-16T10:00:00Z",
+    "requires": [],
+    "sources": [
+     {
+      "type": "strokes",
+      "packId": "hanzi-writer-strokes",
+      "name": "Hanzi Writer stroke data",
+      "version": "2.0.1",
+      "license": "Arphic Public License",
+      "attribution": "Make Me a Hanzi (Shaunak Kishore) via hanzi-writer-data (David Chanin)",
+      "notice": ""
+     }
+    ],
+    "files": [
+     {
+      "name": "data.sqlite",
+      "bytes": 81264640,
+      "sha256": "1111111111111111111111111111111111111111111111111111111111111111"
+     },
+     {
+      "name": "NOTICE.md",
+      "bytes": 912,
+      "sha256": "2222222222222222222222222222222222222222222222222222222222222222"
+     },
+     {
+      "name": "LICENSES/hanzi-writer-strokes/LICENSE",
+      "bytes": 8954,
+      "sha256": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+     },
+     {
+      "name": "LICENSES/hanzi-writer-strokes/ATTRIBUTION.md",
+      "bytes": 512,
+      "sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+     }
+    ]
+   }
+  },
+  {
+   "name": "a pack without stored licence texts: no LICENSES files",
+   "valid": true,
+   "manifest": {
+    "format": "qinqin-package",
+    "formatVersion": 1,
+    "id": "lexicon.zh",
+    "type": "lexicon",
+    "languages": [
+     "zh"
+    ],
+    "revision": 3,
+    "contentHash": "sha256:9999999999999999999999999999999999999999999999999999999999999999",
+    "instanceId": "01JD8Z3Q4M5N6P7R8S9T0V1W2X",
+    "builtAt": "2026-11-16T10:00:00Z",
+    "requires": [],
+    "sources": [
+     {
+      "type": "dictionary",
+      "packId": "cedict",
+      "name": "CC-CEDICT",
+      "version": "2026-11-11",
+      "license": "CC BY-SA 4.0",
+      "attribution": "CC-CEDICT, MDBG (https://cc-cedict.org)",
+      "notice": ""
+     },
+     {
+      "type": "dictionary",
+      "packId": "unihan",
+      "name": "Unihan database",
+      "version": "2026-11-11",
+      "license": "Unicode License v3",
+      "attribution": "Unicode Consortium, Unihan database (https://www.unicode.org/)",
+      "notice": ""
+     }
+    ],
+    "files": [
+     {
+      "name": "data.sqlite",
+      "bytes": 81264640,
+      "sha256": "1111111111111111111111111111111111111111111111111111111111111111"
+     },
+     {
+      "name": "NOTICE.md",
+      "bytes": 912,
+      "sha256": "2222222222222222222222222222222222222222222222222222222222222222"
+     }
+    ]
+   }
+  },
+  {
+   "name": "format is not qinqin-package",
+   "valid": false,
+   "reason": "format",
+   "manifest": {
+    "format": "zip",
+    "formatVersion": 1,
+    "id": "lexicon.zh",
+    "type": "lexicon",
+    "languages": [
+     "zh"
+    ],
+    "revision": 3,
+    "contentHash": "sha256:9999999999999999999999999999999999999999999999999999999999999999",
+    "instanceId": "01JD8Z3Q4M5N6P7R8S9T0V1W2X",
+    "builtAt": "2026-11-16T10:00:00Z",
+    "requires": [],
+    "sources": [
+     {
+      "type": "dictionary",
+      "packId": "cedict",
+      "name": "CC-CEDICT",
+      "version": "2026-11-11",
+      "license": "CC BY-SA 4.0",
+      "attribution": "CC-CEDICT, MDBG (https://cc-cedict.org)",
+      "notice": ""
+     },
+     {
+      "type": "dictionary",
+      "packId": "unihan",
+      "name": "Unihan database",
+      "version": "2026-11-11",
+      "license": "Unicode License v3",
+      "attribution": "Unicode Consortium, Unihan database (https://www.unicode.org/)",
+      "notice": ""
+     }
+    ],
+    "files": [
+     {
+      "name": "data.sqlite",
+      "bytes": 81264640,
+      "sha256": "1111111111111111111111111111111111111111111111111111111111111111"
+     },
+     {
+      "name": "NOTICE.md",
+      "bytes": 912,
+      "sha256": "2222222222222222222222222222222222222222222222222222222222222222"
+     },
+     {
+      "name": "LICENSES/cedict/ATTRIBUTION.md",
+      "bytes": 655,
+      "sha256": "3333333333333333333333333333333333333333333333333333333333333333"
+     },
+     {
+      "name": "LICENSES/cedict/LICENSE",
+      "bytes": 20123,
+      "sha256": "4444444444444444444444444444444444444444444444444444444444444444"
+     },
+     {
+      "name": "LICENSES/unihan/LICENSE",
+      "bytes": 2213,
+      "sha256": "5555555555555555555555555555555555555555555555555555555555555555"
+     }
+    ]
+   }
+  },
+  {
+   "name": "formatVersion 0",
+   "valid": false,
+   "reason": "formatVersion is an integer >= 1",
+   "manifest": {
+    "format": "qinqin-package",
+    "formatVersion": 0,
+    "id": "lexicon.zh",
+    "type": "lexicon",
+    "languages": [
+     "zh"
+    ],
+    "revision": 3,
+    "contentHash": "sha256:9999999999999999999999999999999999999999999999999999999999999999",
+    "instanceId": "01JD8Z3Q4M5N6P7R8S9T0V1W2X",
+    "builtAt": "2026-11-16T10:00:00Z",
+    "requires": [],
+    "sources": [
+     {
+      "type": "dictionary",
+      "packId": "cedict",
+      "name": "CC-CEDICT",
+      "version": "2026-11-11",
+      "license": "CC BY-SA 4.0",
+      "attribution": "CC-CEDICT, MDBG (https://cc-cedict.org)",
+      "notice": ""
+     },
+     {
+      "type": "dictionary",
+      "packId": "unihan",
+      "name": "Unihan database",
+      "version": "2026-11-11",
+      "license": "Unicode License v3",
+      "attribution": "Unicode Consortium, Unihan database (https://www.unicode.org/)",
+      "notice": ""
+     }
+    ],
+    "files": [
+     {
+      "name": "data.sqlite",
+      "bytes": 81264640,
+      "sha256": "1111111111111111111111111111111111111111111111111111111111111111"
+     },
+     {
+      "name": "NOTICE.md",
+      "bytes": 912,
+      "sha256": "2222222222222222222222222222222222222222222222222222222222222222"
+     },
+     {
+      "name": "LICENSES/cedict/ATTRIBUTION.md",
+      "bytes": 655,
+      "sha256": "3333333333333333333333333333333333333333333333333333333333333333"
+     },
+     {
+      "name": "LICENSES/cedict/LICENSE",
+      "bytes": 20123,
+      "sha256": "4444444444444444444444444444444444444444444444444444444444444444"
+     },
+     {
+      "name": "LICENSES/unihan/LICENSE",
+      "bytes": 2213,
+      "sha256": "5555555555555555555555555555555555555555555555555555555555555555"
+     }
+    ]
+   }
+  },
+  {
+   "name": "a file name with ..",
+   "valid": false,
+   "reason": "file names are relative, '/'-separated, without '.', '..' or empty segments",
+   "manifest": {
+    "format": "qinqin-package",
+    "formatVersion": 1,
+    "id": "lexicon.zh",
+    "type": "lexicon",
+    "languages": [
+     "zh"
+    ],
+    "revision": 3,
+    "contentHash": "sha256:9999999999999999999999999999999999999999999999999999999999999999",
+    "instanceId": "01JD8Z3Q4M5N6P7R8S9T0V1W2X",
+    "builtAt": "2026-11-16T10:00:00Z",
+    "requires": [],
+    "sources": [
+     {
+      "type": "dictionary",
+      "packId": "cedict",
+      "name": "CC-CEDICT",
+      "version": "2026-11-11",
+      "license": "CC BY-SA 4.0",
+      "attribution": "CC-CEDICT, MDBG (https://cc-cedict.org)",
+      "notice": ""
+     },
+     {
+      "type": "dictionary",
+      "packId": "unihan",
+      "name": "Unihan database",
+      "version": "2026-11-11",
+      "license": "Unicode License v3",
+      "attribution": "Unicode Consortium, Unihan database (https://www.unicode.org/)",
+      "notice": ""
+     }
+    ],
+    "files": [
+     {
+      "name": "data.sqlite",
+      "bytes": 81264640,
+      "sha256": "1111111111111111111111111111111111111111111111111111111111111111"
+     },
+     {
+      "name": "NOTICE.md",
+      "bytes": 912,
+      "sha256": "2222222222222222222222222222222222222222222222222222222222222222"
+     },
+     {
+      "name": "LICENSES/../../etc/passwd",
+      "bytes": 10,
+      "sha256": "3333333333333333333333333333333333333333333333333333333333333333"
+     }
+    ]
+   }
+  },
+  {
+   "name": "a file name with a leading /",
+   "valid": false,
+   "reason": "file names are relative",
+   "manifest": {
+    "format": "qinqin-package",
+    "formatVersion": 1,
+    "id": "lexicon.zh",
+    "type": "lexicon",
+    "languages": [
+     "zh"
+    ],
+    "revision": 3,
+    "contentHash": "sha256:9999999999999999999999999999999999999999999999999999999999999999",
+    "instanceId": "01JD8Z3Q4M5N6P7R8S9T0V1W2X",
+    "builtAt": "2026-11-16T10:00:00Z",
+    "requires": [],
+    "sources": [
+     {
+      "type": "dictionary",
+      "packId": "cedict",
+      "name": "CC-CEDICT",
+      "version": "2026-11-11",
+      "license": "CC BY-SA 4.0",
+      "attribution": "CC-CEDICT, MDBG (https://cc-cedict.org)",
+      "notice": ""
+     },
+     {
+      "type": "dictionary",
+      "packId": "unihan",
+      "name": "Unihan database",
+      "version": "2026-11-11",
+      "license": "Unicode License v3",
+      "attribution": "Unicode Consortium, Unihan database (https://www.unicode.org/)",
+      "notice": ""
+     }
+    ],
+    "files": [
+     {
+      "name": "data.sqlite",
+      "bytes": 81264640,
+      "sha256": "1111111111111111111111111111111111111111111111111111111111111111"
+     },
+     {
+      "name": "NOTICE.md",
+      "bytes": 912,
+      "sha256": "2222222222222222222222222222222222222222222222222222222222222222"
+     },
+     {
+      "name": "/data.sqlite",
+      "bytes": 10,
+      "sha256": "3333333333333333333333333333333333333333333333333333333333333333"
+     }
+    ]
+   }
+  },
+  {
+   "name": "a file name with a backslash",
+   "valid": false,
+   "reason": "file names use '/' only",
+   "manifest": {
+    "format": "qinqin-package",
+    "formatVersion": 1,
+    "id": "lexicon.zh",
+    "type": "lexicon",
+    "languages": [
+     "zh"
+    ],
+    "revision": 3,
+    "contentHash": "sha256:9999999999999999999999999999999999999999999999999999999999999999",
+    "instanceId": "01JD8Z3Q4M5N6P7R8S9T0V1W2X",
+    "builtAt": "2026-11-16T10:00:00Z",
+    "requires": [],
+    "sources": [
+     {
+      "type": "dictionary",
+      "packId": "cedict",
+      "name": "CC-CEDICT",
+      "version": "2026-11-11",
+      "license": "CC BY-SA 4.0",
+      "attribution": "CC-CEDICT, MDBG (https://cc-cedict.org)",
+      "notice": ""
+     },
+     {
+      "type": "dictionary",
+      "packId": "unihan",
+      "name": "Unihan database",
+      "version": "2026-11-11",
+      "license": "Unicode License v3",
+      "attribution": "Unicode Consortium, Unihan database (https://www.unicode.org/)",
+      "notice": ""
+     }
+    ],
+    "files": [
+     {
+      "name": "data.sqlite",
+      "bytes": 81264640,
+      "sha256": "1111111111111111111111111111111111111111111111111111111111111111"
+     },
+     {
+      "name": "NOTICE.md",
+      "bytes": 912,
+      "sha256": "2222222222222222222222222222222222222222222222222222222222222222"
+     },
+     {
+      "name": "LICENSES\\cedict\\LICENSE",
+      "bytes": 10,
+      "sha256": "3333333333333333333333333333333333333333333333333333333333333333"
+     }
+    ]
+   }
+  },
+  {
+   "name": "a file name with an empty segment",
+   "valid": false,
+   "reason": "no empty segments",
+   "manifest": {
+    "format": "qinqin-package",
+    "formatVersion": 1,
+    "id": "lexicon.zh",
+    "type": "lexicon",
+    "languages": [
+     "zh"
+    ],
+    "revision": 3,
+    "contentHash": "sha256:9999999999999999999999999999999999999999999999999999999999999999",
+    "instanceId": "01JD8Z3Q4M5N6P7R8S9T0V1W2X",
+    "builtAt": "2026-11-16T10:00:00Z",
+    "requires": [],
+    "sources": [
+     {
+      "type": "dictionary",
+      "packId": "cedict",
+      "name": "CC-CEDICT",
+      "version": "2026-11-11",
+      "license": "CC BY-SA 4.0",
+      "attribution": "CC-CEDICT, MDBG (https://cc-cedict.org)",
+      "notice": ""
+     },
+     {
+      "type": "dictionary",
+      "packId": "unihan",
+      "name": "Unihan database",
+      "version": "2026-11-11",
+      "license": "Unicode License v3",
+      "attribution": "Unicode Consortium, Unihan database (https://www.unicode.org/)",
+      "notice": ""
+     }
+    ],
+    "files": [
+     {
+      "name": "data.sqlite",
+      "bytes": 81264640,
+      "sha256": "1111111111111111111111111111111111111111111111111111111111111111"
+     },
+     {
+      "name": "NOTICE.md",
+      "bytes": 912,
+      "sha256": "2222222222222222222222222222222222222222222222222222222222222222"
+     },
+     {
+      "name": "LICENSES//LICENSE",
+      "bytes": 10,
+      "sha256": "3333333333333333333333333333333333333333333333333333333333333333"
+     }
+    ]
+   }
+  },
+  {
+   "name": "duplicate names",
+   "valid": false,
+   "reason": "file names are unique",
+   "manifest": {
+    "format": "qinqin-package",
+    "formatVersion": 1,
+    "id": "lexicon.zh",
+    "type": "lexicon",
+    "languages": [
+     "zh"
+    ],
+    "revision": 3,
+    "contentHash": "sha256:9999999999999999999999999999999999999999999999999999999999999999",
+    "instanceId": "01JD8Z3Q4M5N6P7R8S9T0V1W2X",
+    "builtAt": "2026-11-16T10:00:00Z",
+    "requires": [],
+    "sources": [
+     {
+      "type": "dictionary",
+      "packId": "cedict",
+      "name": "CC-CEDICT",
+      "version": "2026-11-11",
+      "license": "CC BY-SA 4.0",
+      "attribution": "CC-CEDICT, MDBG (https://cc-cedict.org)",
+      "notice": ""
+     },
+     {
+      "type": "dictionary",
+      "packId": "unihan",
+      "name": "Unihan database",
+      "version": "2026-11-11",
+      "license": "Unicode License v3",
+      "attribution": "Unicode Consortium, Unihan database (https://www.unicode.org/)",
+      "notice": ""
+     }
+    ],
+    "files": [
+     {
+      "name": "data.sqlite",
+      "bytes": 81264640,
+      "sha256": "1111111111111111111111111111111111111111111111111111111111111111"
+     },
+     {
+      "name": "NOTICE.md",
+      "bytes": 912,
+      "sha256": "2222222222222222222222222222222222222222222222222222222222222222"
+     },
+     {
+      "name": "NOTICE.md",
+      "bytes": 912,
+      "sha256": "2222222222222222222222222222222222222222222222222222222222222222"
+     }
+    ]
+   }
+  },
+  {
+   "name": "manifest.json listed",
+   "valid": false,
+   "reason": "manifest.json is never listed",
+   "manifest": {
+    "format": "qinqin-package",
+    "formatVersion": 1,
+    "id": "lexicon.zh",
+    "type": "lexicon",
+    "languages": [
+     "zh"
+    ],
+    "revision": 3,
+    "contentHash": "sha256:9999999999999999999999999999999999999999999999999999999999999999",
+    "instanceId": "01JD8Z3Q4M5N6P7R8S9T0V1W2X",
+    "builtAt": "2026-11-16T10:00:00Z",
+    "requires": [],
+    "sources": [
+     {
+      "type": "dictionary",
+      "packId": "cedict",
+      "name": "CC-CEDICT",
+      "version": "2026-11-11",
+      "license": "CC BY-SA 4.0",
+      "attribution": "CC-CEDICT, MDBG (https://cc-cedict.org)",
+      "notice": ""
+     },
+     {
+      "type": "dictionary",
+      "packId": "unihan",
+      "name": "Unihan database",
+      "version": "2026-11-11",
+      "license": "Unicode License v3",
+      "attribution": "Unicode Consortium, Unihan database (https://www.unicode.org/)",
+      "notice": ""
+     }
+    ],
+    "files": [
+     {
+      "name": "data.sqlite",
+      "bytes": 81264640,
+      "sha256": "1111111111111111111111111111111111111111111111111111111111111111"
+     },
+     {
+      "name": "NOTICE.md",
+      "bytes": 912,
+      "sha256": "2222222222222222222222222222222222222222222222222222222222222222"
+     },
+     {
+      "name": "manifest.json",
+      "bytes": 10,
+      "sha256": "3333333333333333333333333333333333333333333333333333333333333333"
+     }
+    ]
+   }
+  },
+  {
+   "name": "no data.sqlite",
+   "valid": false,
+   "reason": "data.sqlite and NOTICE.md are listed",
+   "manifest": {
+    "format": "qinqin-package",
+    "formatVersion": 1,
+    "id": "lexicon.zh",
+    "type": "lexicon",
+    "languages": [
+     "zh"
+    ],
+    "revision": 3,
+    "contentHash": "sha256:9999999999999999999999999999999999999999999999999999999999999999",
+    "instanceId": "01JD8Z3Q4M5N6P7R8S9T0V1W2X",
+    "builtAt": "2026-11-16T10:00:00Z",
+    "requires": [],
+    "sources": [
+     {
+      "type": "dictionary",
+      "packId": "cedict",
+      "name": "CC-CEDICT",
+      "version": "2026-11-11",
+      "license": "CC BY-SA 4.0",
+      "attribution": "CC-CEDICT, MDBG (https://cc-cedict.org)",
+      "notice": ""
+     },
+     {
+      "type": "dictionary",
+      "packId": "unihan",
+      "name": "Unihan database",
+      "version": "2026-11-11",
+      "license": "Unicode License v3",
+      "attribution": "Unicode Consortium, Unihan database (https://www.unicode.org/)",
+      "notice": ""
+     }
+    ],
+    "files": [
+     {
+      "name": "NOTICE.md",
+      "bytes": 912,
+      "sha256": "2222222222222222222222222222222222222222222222222222222222222222"
+     }
+    ]
+   }
+  },
+  {
+   "name": "a file outside the known places",
+   "valid": false,
+   "reason": "files are data.sqlite, NOTICE.md, LICENSES/<packId>/<name>, clips/<sha256>.<ext> (audio)",
+   "manifest": {
+    "format": "qinqin-package",
+    "formatVersion": 1,
+    "id": "lexicon.zh",
+    "type": "lexicon",
+    "languages": [
+     "zh"
+    ],
+    "revision": 3,
+    "contentHash": "sha256:9999999999999999999999999999999999999999999999999999999999999999",
+    "instanceId": "01JD8Z3Q4M5N6P7R8S9T0V1W2X",
+    "builtAt": "2026-11-16T10:00:00Z",
+    "requires": [],
+    "sources": [
+     {
+      "type": "dictionary",
+      "packId": "cedict",
+      "name": "CC-CEDICT",
+      "version": "2026-11-11",
+      "license": "CC BY-SA 4.0",
+      "attribution": "CC-CEDICT, MDBG (https://cc-cedict.org)",
+      "notice": ""
+     },
+     {
+      "type": "dictionary",
+      "packId": "unihan",
+      "name": "Unihan database",
+      "version": "2026-11-11",
+      "license": "Unicode License v3",
+      "attribution": "Unicode Consortium, Unihan database (https://www.unicode.org/)",
+      "notice": ""
+     }
+    ],
+    "files": [
+     {
+      "name": "data.sqlite",
+      "bytes": 81264640,
+      "sha256": "1111111111111111111111111111111111111111111111111111111111111111"
+     },
+     {
+      "name": "NOTICE.md",
+      "bytes": 912,
+      "sha256": "2222222222222222222222222222222222222222222222222222222222222222"
+     },
+     {
+      "name": "extra/readme.txt",
+      "bytes": 10,
+      "sha256": "3333333333333333333333333333333333333333333333333333333333333333"
+     }
+    ]
+   }
+  },
+  {
+   "name": "a LICENSES folder of a pack that is not a source",
+   "valid": false,
+   "reason": "LICENSES/<packId>/ names a source",
+   "manifest": {
+    "format": "qinqin-package",
+    "formatVersion": 1,
+    "id": "lexicon.zh",
+    "type": "lexicon",
+    "languages": [
+     "zh"
+    ],
+    "revision": 3,
+    "contentHash": "sha256:9999999999999999999999999999999999999999999999999999999999999999",
+    "instanceId": "01JD8Z3Q4M5N6P7R8S9T0V1W2X",
+    "builtAt": "2026-11-16T10:00:00Z",
+    "requires": [],
+    "sources": [
+     {
+      "type": "dictionary",
+      "packId": "cedict",
+      "name": "CC-CEDICT",
+      "version": "2026-11-11",
+      "license": "CC BY-SA 4.0",
+      "attribution": "CC-CEDICT, MDBG (https://cc-cedict.org)",
+      "notice": ""
+     },
+     {
+      "type": "dictionary",
+      "packId": "unihan",
+      "name": "Unihan database",
+      "version": "2026-11-11",
+      "license": "Unicode License v3",
+      "attribution": "Unicode Consortium, Unihan database (https://www.unicode.org/)",
+      "notice": ""
+     }
+    ],
+    "files": [
+     {
+      "name": "data.sqlite",
+      "bytes": 81264640,
+      "sha256": "1111111111111111111111111111111111111111111111111111111111111111"
+     },
+     {
+      "name": "NOTICE.md",
+      "bytes": 912,
+      "sha256": "2222222222222222222222222222222222222222222222222222222222222222"
+     },
+     {
+      "name": "LICENSES/jmdict/LICENSE",
+      "bytes": 10,
+      "sha256": "3333333333333333333333333333333333333333333333333333333333333333"
+     }
+    ]
+   }
+  },
+  {
+   "name": "clips in a lexicon package",
+   "valid": false,
+   "reason": "clips/ only in audio packages",
+   "manifest": {
+    "format": "qinqin-package",
+    "formatVersion": 1,
+    "id": "lexicon.zh",
+    "type": "lexicon",
+    "languages": [
+     "zh"
+    ],
+    "revision": 3,
+    "contentHash": "sha256:9999999999999999999999999999999999999999999999999999999999999999",
+    "instanceId": "01JD8Z3Q4M5N6P7R8S9T0V1W2X",
+    "builtAt": "2026-11-16T10:00:00Z",
+    "requires": [],
+    "sources": [
+     {
+      "type": "dictionary",
+      "packId": "cedict",
+      "name": "CC-CEDICT",
+      "version": "2026-11-11",
+      "license": "CC BY-SA 4.0",
+      "attribution": "CC-CEDICT, MDBG (https://cc-cedict.org)",
+      "notice": ""
+     },
+     {
+      "type": "dictionary",
+      "packId": "unihan",
+      "name": "Unihan database",
+      "version": "2026-11-11",
+      "license": "Unicode License v3",
+      "attribution": "Unicode Consortium, Unihan database (https://www.unicode.org/)",
+      "notice": ""
+     }
+    ],
+    "files": [
+     {
+      "name": "data.sqlite",
+      "bytes": 81264640,
+      "sha256": "1111111111111111111111111111111111111111111111111111111111111111"
+     },
+     {
+      "name": "NOTICE.md",
+      "bytes": 912,
+      "sha256": "2222222222222222222222222222222222222222222222222222222222222222"
+     },
+     {
+      "name": "clips/cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc.opus",
+      "bytes": 10,
+      "sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+     }
+    ]
+   }
+  },
+  {
+   "name": "a file hash in upper case",
+   "valid": false,
+   "reason": "sha256 is 64 lowercase hex",
+   "manifest": {
+    "format": "qinqin-package",
+    "formatVersion": 1,
+    "id": "lexicon.zh",
+    "type": "lexicon",
+    "languages": [
+     "zh"
+    ],
+    "revision": 3,
+    "contentHash": "sha256:9999999999999999999999999999999999999999999999999999999999999999",
+    "instanceId": "01JD8Z3Q4M5N6P7R8S9T0V1W2X",
+    "builtAt": "2026-11-16T10:00:00Z",
+    "requires": [],
+    "sources": [
+     {
+      "type": "dictionary",
+      "packId": "cedict",
+      "name": "CC-CEDICT",
+      "version": "2026-11-11",
+      "license": "CC BY-SA 4.0",
+      "attribution": "CC-CEDICT, MDBG (https://cc-cedict.org)",
+      "notice": ""
+     },
+     {
+      "type": "dictionary",
+      "packId": "unihan",
+      "name": "Unihan database",
+      "version": "2026-11-11",
+      "license": "Unicode License v3",
+      "attribution": "Unicode Consortium, Unihan database (https://www.unicode.org/)",
+      "notice": ""
+     }
+    ],
+    "files": [
+     {
+      "name": "data.sqlite",
+      "bytes": 1,
+      "sha256": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+     },
+     {
+      "name": "NOTICE.md",
+      "bytes": 912,
+      "sha256": "2222222222222222222222222222222222222222222222222222222222222222"
+     }
+    ]
+   }
+  },
+  {
+   "name": "contentHash missing",
+   "valid": false,
+   "reason": "missing key",
+   "manifest": {
+    "format": "qinqin-package",
+    "formatVersion": 1,
+    "id": "lexicon.zh",
+    "type": "lexicon",
+    "languages": [
+     "zh"
+    ],
+    "revision": 3,
+    "instanceId": "01JD8Z3Q4M5N6P7R8S9T0V1W2X",
+    "builtAt": "2026-11-16T10:00:00Z",
+    "requires": [],
+    "sources": [
+     {
+      "type": "dictionary",
+      "packId": "cedict",
+      "name": "CC-CEDICT",
+      "version": "2026-11-11",
+      "license": "CC BY-SA 4.0",
+      "attribution": "CC-CEDICT, MDBG (https://cc-cedict.org)",
+      "notice": ""
+     },
+     {
+      "type": "dictionary",
+      "packId": "unihan",
+      "name": "Unihan database",
+      "version": "2026-11-11",
+      "license": "Unicode License v3",
+      "attribution": "Unicode Consortium, Unihan database (https://www.unicode.org/)",
+      "notice": ""
+     }
+    ],
+    "files": [
+     {
+      "name": "data.sqlite",
+      "bytes": 81264640,
+      "sha256": "1111111111111111111111111111111111111111111111111111111111111111"
+     },
+     {
+      "name": "NOTICE.md",
+      "bytes": 912,
+      "sha256": "2222222222222222222222222222222222222222222222222222222222222222"
+     },
+     {
+      "name": "LICENSES/cedict/ATTRIBUTION.md",
+      "bytes": 655,
+      "sha256": "3333333333333333333333333333333333333333333333333333333333333333"
+     },
+     {
+      "name": "LICENSES/cedict/LICENSE",
+      "bytes": 20123,
+      "sha256": "4444444444444444444444444444444444444444444444444444444444444444"
+     },
+     {
+      "name": "LICENSES/unihan/LICENSE",
+      "bytes": 2213,
+      "sha256": "5555555555555555555555555555555555555555555555555555555555555555"
+     }
+    ]
+   }
+  },
+  {
+   "name": "an unknown member",
+   "valid": false,
+   "reason": "unknown key",
+   "manifest": {
+    "format": "qinqin-package",
+    "formatVersion": 1,
+    "id": "lexicon.zh",
+    "type": "lexicon",
+    "languages": [
+     "zh"
+    ],
+    "revision": 3,
+    "contentHash": "sha256:9999999999999999999999999999999999999999999999999999999999999999",
+    "instanceId": "01JD8Z3Q4M5N6P7R8S9T0V1W2X",
+    "builtAt": "2026-11-16T10:00:00Z",
+    "requires": [],
+    "sources": [
+     {
+      "type": "dictionary",
+      "packId": "cedict",
+      "name": "CC-CEDICT",
+      "version": "2026-11-11",
+      "license": "CC BY-SA 4.0",
+      "attribution": "CC-CEDICT, MDBG (https://cc-cedict.org)",
+      "notice": ""
+     },
+     {
+      "type": "dictionary",
+      "packId": "unihan",
+      "name": "Unihan database",
+      "version": "2026-11-11",
+      "license": "Unicode License v3",
+      "attribution": "Unicode Consortium, Unihan database (https://www.unicode.org/)",
+      "notice": ""
+     }
+    ],
+    "files": [
+     {
+      "name": "data.sqlite",
+      "bytes": 81264640,
+      "sha256": "1111111111111111111111111111111111111111111111111111111111111111"
+     },
+     {
+      "name": "NOTICE.md",
+      "bytes": 912,
+      "sha256": "2222222222222222222222222222222222222222222222222222222222222222"
+     },
+     {
+      "name": "LICENSES/cedict/ATTRIBUTION.md",
+      "bytes": 655,
+      "sha256": "3333333333333333333333333333333333333333333333333333333333333333"
+     },
+     {
+      "name": "LICENSES/cedict/LICENSE",
+      "bytes": 20123,
+      "sha256": "4444444444444444444444444444444444444444444444444444444444444444"
+     },
+     {
+      "name": "LICENSES/unihan/LICENSE",
+      "bytes": 2213,
+      "sha256": "5555555555555555555555555555555555555555555555555555555555555555"
+     }
+    ],
+    "signature": "x"
+   }
+  },
+  {
+   "name": "revision 0",
+   "valid": false,
+   "reason": "a built package has revision >= 1",
+   "manifest": {
+    "format": "qinqin-package",
+    "formatVersion": 1,
+    "id": "lexicon.zh",
+    "type": "lexicon",
+    "languages": [
+     "zh"
+    ],
+    "revision": 0,
+    "contentHash": "sha256:9999999999999999999999999999999999999999999999999999999999999999",
+    "instanceId": "01JD8Z3Q4M5N6P7R8S9T0V1W2X",
+    "builtAt": "2026-11-16T10:00:00Z",
+    "requires": [],
+    "sources": [
+     {
+      "type": "dictionary",
+      "packId": "cedict",
+      "name": "CC-CEDICT",
+      "version": "2026-11-11",
+      "license": "CC BY-SA 4.0",
+      "attribution": "CC-CEDICT, MDBG (https://cc-cedict.org)",
+      "notice": ""
+     },
+     {
+      "type": "dictionary",
+      "packId": "unihan",
+      "name": "Unihan database",
+      "version": "2026-11-11",
+      "license": "Unicode License v3",
+      "attribution": "Unicode Consortium, Unihan database (https://www.unicode.org/)",
+      "notice": ""
+     }
+    ],
+    "files": [
+     {
+      "name": "data.sqlite",
+      "bytes": 81264640,
+      "sha256": "1111111111111111111111111111111111111111111111111111111111111111"
+     },
+     {
+      "name": "NOTICE.md",
+      "bytes": 912,
+      "sha256": "2222222222222222222222222222222222222222222222222222222222222222"
+     },
+     {
+      "name": "LICENSES/cedict/ATTRIBUTION.md",
+      "bytes": 655,
+      "sha256": "3333333333333333333333333333333333333333333333333333333333333333"
+     },
+     {
+      "name": "LICENSES/cedict/LICENSE",
+      "bytes": 20123,
+      "sha256": "4444444444444444444444444444444444444444444444444444444444444444"
+     },
+     {
+      "name": "LICENSES/unihan/LICENSE",
+      "bytes": 2213,
+      "sha256": "5555555555555555555555555555555555555555555555555555555555555555"
+     }
+    ]
+   }
+  }
+ ]
+}

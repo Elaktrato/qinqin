@@ -11,14 +11,20 @@
 		type InstalledPack,
 		type StagedPack
 	} from '$lib/api/packs';
+	import { getCatalogue, type Catalogue } from '$lib/api/packages';
 	import type { UploadProgress } from '$lib/api/upload';
 	import { languageLabel } from '$lib/languages';
 	import {
 		LICENCE_CONFIRMATION,
 		LICENCE_LABEL,
+		PACKAGES_BUILDING,
+		PACKAGES_UNAVAILABLE,
 		groupPacks,
 		licenceCaution,
 		licenceLine,
+		packLanguages,
+		packageLine,
+		packagesOf,
 		progressText,
 		replaceLines,
 		uninstallWarning
@@ -29,6 +35,20 @@
 	let packs = $state<InstalledPack[]>([]);
 	let loading = $state(true);
 	let loadError = $state('');
+
+	// What the server has built from the installed packs (GET /api/packages); null until read.
+	let catalogue = $state<Catalogue | null>(null);
+	let catalogueFailed = $state(false);
+
+	async function loadCatalogue(): Promise<void> {
+		try {
+			catalogue = await getCatalogue();
+			catalogueFailed = false;
+		} catch {
+			catalogue = null;
+			catalogueFailed = true;
+		}
+	}
 
 	let phase = $state<Phase>('idle');
 	let fileInput = $state<HTMLInputElement>();
@@ -63,6 +83,7 @@
 		loadError = '';
 		try {
 			packs = await listPacks();
+			void loadCatalogue();
 		} catch (err) {
 			packs = [];
 			loadError = message(err, 'Could not load the installed packs.');
@@ -252,8 +273,13 @@
 				<dd>{staged.manifest.version}</dd>
 				<dt>Type</dt>
 				<dd>{staged.manifest.type}</dd>
-				<dt>Language</dt>
-				<dd>{languageLabel(staged.manifest.language)}</dd>
+				{#if staged.manifest.languages?.length}
+					<dt>Languages</dt>
+					<dd>{staged.manifest.languages.map((l) => languageLabel(l)).join(', ')}</dd>
+				{:else}
+					<dt>Language</dt>
+					<dd>{languageLabel(staged.manifest.language)}</dd>
+				{/if}
 				<dt>{LICENCE_LABEL}</dt>
 				<dd class="licence">{staged.manifest.license}</dd>
 				<dt>Attribution</dt>
@@ -297,6 +323,12 @@
 		<p class="error" role="alert">{error}</p>
 	{/if}
 
+	{#if catalogue?.building}
+		<p class="notice" role="status">{PACKAGES_BUILDING}</p>
+	{:else if catalogueFailed}
+		<p class="hint">{PACKAGES_UNAVAILABLE}</p>
+	{/if}
+
 	{#if loading}
 		<p>Loading installed packs…</p>
 	{:else if loadError}
@@ -314,7 +346,7 @@
 						<div class="pack-head">
 							<strong>{pack.name || pack.packId}</strong>
 							<code>{pack.packId}</code>
-							{#if pack.language}<span>{languageLabel(pack.language)}</span>{/if}
+							{#each packLanguages(pack) as lang (lang)}<span>{languageLabel(lang)}</span>{/each}
 							{#if pack.version}<span>{pack.version}</span>{/if}
 							{#if pack.updatedAt}<span>{fmtDate(pack.updatedAt)}</span>{/if}
 						</div>
@@ -324,6 +356,11 @@
 						{#if pack.attribution}
 							<p><span class="label">Attribution:</span> {pack.attribution}</p>
 						{/if}
+						{#each packagesOf(pack, catalogue?.packages ?? []) as row (row.id)}
+							{@const line = packageLine(row)}
+							<p class="package"><span class="label">Package</span> {line.text}</p>
+							{#if line.error}<p class="error package-error">Last build failed: {line.error}</p>{/if}
+						{/each}
 						<button type="button" class="uninstall" onclick={() => askUninstall(pack)}>
 							Uninstall<span class="sr"> {pack.name || pack.packId}</span>
 						</button>

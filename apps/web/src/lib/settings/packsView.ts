@@ -3,6 +3,7 @@
 // nothing here says or hints that a licence was checked or is fine.
 
 import type { InstalledPack, PackType, StagedPack } from '$lib/api/packs';
+import type { CatalogueRow } from '$lib/api/packages';
 import type { UploadProgress } from '$lib/api/upload';
 
 export const LICENCE_LABEL = 'Licence (as stated by the pack)';
@@ -18,10 +19,17 @@ export const PACK_TYPE_LABELS: Record<PackType, string> = {
 	sentences: 'Sentences',
 	grammar: 'Grammar lessons',
 	audio: 'Audio',
-	components: 'Character components'
+	components: 'Character components',
+	strokes: 'Stroke data'
 };
 
-const TYPE_ORDER: PackType[] = ['dictionary', 'frequency', 'levels', 'sentences', 'grammar', 'audio', 'components'];
+const TYPE_ORDER: PackType[] = ['dictionary', 'frequency', 'levels', 'sentences', 'grammar', 'audio', 'components', 'strokes'];
+
+/** packLanguages is the languages a listed pack covers: a strokes pack's list, else its one language. */
+export function packLanguages(pack: InstalledPack): string[] {
+	if (pack.languages && pack.languages.length > 0) return pack.languages;
+	return pack.language ? [pack.language] : [];
+}
 
 /** groupPacks groups the server's list (already ordered) by type; empty groups are dropped. */
 export function groupPacks(list: InstalledPack[]): { type: PackType; label: string; packs: InstalledPack[] }[] {
@@ -97,7 +105,40 @@ export function uninstallWarning(type: PackType): string {
 			return `Its grammar lessons disappear. ${RESEED}`;
 		case 'components':
 			return `Its character components disappear from the radical and part lookup; radicals and stroke counts keep working. ${RESEED}`;
+		case 'strokes':
+			return `Its stroke order data disappears from the character writing view; characters it alone carried show no strokes. ${RESEED}`;
 		case 'audio':
 			return `Its recordings are deleted from the data directory and the play buttons that used them fall back to the device voice. Install it again with the fetch script and \`qinqin seed\`; audio packs cannot be uploaded here.`;
+	}
+}
+
+export const PACKAGES_BUILDING = 'Packages are being built';
+export const PACKAGES_UNAVAILABLE = 'The package state is not available right now.';
+
+/**
+ * packagesOf lists the live packages the server built from an installed pack:
+ * a package names its source packs, a lexicon several of them. Tombstones
+ * (uninstalled packages) are left out.
+ */
+export function packagesOf(pack: InstalledPack, rows: readonly CatalogueRow[]): CatalogueRow[] {
+	return rows.filter((r) => r.state !== 'deleted' && r.sources.some((s) => s.packId === pack.packId));
+}
+
+/**
+ * packageLine describes one package for the pack list: revision, size in MB
+ * and state, or that its first build is pending or failed. `error` is the
+ * build error text an administrator's catalogue carries.
+ */
+export function packageLine(row: CatalogueRow): { text: string; error: string | null } {
+	const error = row.error ?? null;
+	switch (row.state) {
+		case 'ready':
+			return { text: `${row.id}: revision ${row.revision}, ${(row.bytes / (1024 * 1024)).toFixed(1)} MB, ready`, error };
+		case 'building':
+			return { text: `${row.id}: being built`, error };
+		case 'failed':
+			return { text: `${row.id}: build failed`, error };
+		default:
+			return { text: `${row.id}: removed`, error };
 	}
 }

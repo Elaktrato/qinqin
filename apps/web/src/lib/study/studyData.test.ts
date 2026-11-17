@@ -13,6 +13,7 @@ import {
 	hasCard,
 	invalidateStudyData
 } from './studyData';
+import { pagedPull } from './testing/legacyCodec';
 import type { StudyCard, StudyData } from './types';
 
 function data(entryIds: number[] = []): StudyData {
@@ -216,7 +217,7 @@ describe('shared getStudyData', () => {
 		vi.stubGlobal(
 			'fetch',
 			vi.fn(async (_input: RequestInfo | URL, init?: RequestInit) =>
-				init?.method === 'PUT' ? jsonResponse({ version: 1 }) : jsonResponse({ pluginData: [] })
+				init?.method === 'PUT' ? jsonResponse({ version: 1 }) : jsonResponse(pagedPull({ pluginData: [] }))
 			)
 		);
 		workspaces.set({

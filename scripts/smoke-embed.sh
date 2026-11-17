@@ -4,13 +4,17 @@
 # throw-away copy of server/, build the real binary, start it on a free
 # loopback port and assert through HTTP what the unit tests cannot (they use
 # fstest.MapFS): the index, an SPA deep link, a hashed _app/immutable asset,
-# stroke data (/hanzi/U597D.json) and the licence text, plus the cache and
-# sniffing headers. Also runs scripts/check-archives.sh.
+# the licence text, plus the cache and sniffing headers, and stroke data
+# (/hanzi/U597D.json), which the server answers from the hanzi-writer-strokes
+# pack: it is built by scripts/prepare-strokes-pack.mjs into a scratch pack
+# root, as the Dockerfile does, and installed by `serve` at start. Also runs
+# scripts/check-archives.sh.
 #
 #   scripts/smoke-embed.sh [--build-web]
 #
 # --build-web runs `npm run build` first (the default reuses apps/web/build,
-# and builds it when missing). Needs node/npm for that, curl, and either go
+# and builds it when missing). Needs node/npm for that, apps/web/node_modules
+# (npm --prefix apps/web ci) for the strokes pack, curl, and either go
 # (>= the version in server/go.mod) or docker (golang:1.26 is used as the
 # current user). The worktree is not modified.
 set -euo pipefail
@@ -49,11 +53,16 @@ else
     go build -trimpath -o "$work/qinqin" ./cmd/qinqin
 fi
 
+# The strokes pack in a pack root of its own (the image's /opt/qinqin/strokes).
+node "$root/scripts/prepare-strokes-pack.mjs" --out "$work/packs/hanzi-writer-strokes" >"$work/strokes.log" 2>&1 \
+  || { cat "$work/strokes.log" >&2; exit 1; }
+
 port="${SMOKE_PORT:-$(node -e 'const s=require("net").createServer().listen(0,"127.0.0.1",()=>{console.log(s.address().port);s.close()})')}"
-"$work/qinqin" serve --addr "127.0.0.1:$port" --data "$work/data" >"$work/server.log" 2>&1 &
+QINQIN_PACKS="$work/packs" "$work/qinqin" serve --addr "127.0.0.1:$port" --data "$work/data" >"$work/server.log" 2>&1 &
 pid=$!
 base="http://127.0.0.1:$port"
-for _ in $(seq 1 50); do curl -fs "$base/healthz" >/dev/null 2>&1 && break; sleep 0.2; done
+# serve installs the strokes pack (a few seconds) before it listens.
+for _ in $(seq 1 150); do curl -fs "$base/healthz" >/dev/null 2>&1 && break; sleep 0.2; done
 curl -fs "$base/healthz" >/dev/null || { cat "$work/server.log" >&2; echo "server did not come up" >&2; exit 1; }
 
 # probe <path>: status, content type, cache control, nosniff, body file.
@@ -77,8 +86,16 @@ asset="$(cd "$web" && find _app/immutable/entry -name 'start.*.js' | sort | head
 expect "index" / 200 text/html no-store "<!doctype html>"
 expect "deep link" /entry/5 200 text/html no-store "<!doctype html>"
 expect "hashed asset" "/$asset" 200 javascript "public, max-age=31536000, immutable" "import"
-expect "stroke data" /hanzi/U597D.json 200 json "" "strokes"
 expect "licence text" /ARPHICPL.TXT 200 text/plain "" "Arphic"
+# Stroke data comes from the API (no nosniff from the static handler here).
+code="$(probe /hanzi/U597D.json)"
+if [ "$code" != 200 ]; then bad "stroke data: /hanzi/U597D.json -> $code, want 200"
+elif [ "$(hdr content-type)" != "application/json" ]; then bad "stroke data: content-type '$(hdr content-type)'"
+elif [ "$(hdr cache-control)" != "public, max-age=86400" ]; then bad "stroke data: cache-control '$(hdr cache-control)'"
+elif ! cmp -s "$work/body" "$root/apps/web/node_modules/hanzi-writer-data/好.json"; then bad "stroke data: body differs from the npm file"
+else ok "stroke data: /hanzi/U597D.json"; fi
+grep -q "strokes: installed the bundled stroke data hanzi-writer-strokes" "$work/server.log" \
+  && ok "strokes pack auto-installed" || bad "no strokes auto-install line in the server log"
 expect "missing asset falls back to index" /_app/immutable/nope.js 200 text/html no-store "<!doctype html>"
 
 [ "$(curl -s -o /dev/null -w '%{http_code}' "$base/healthz")" = 200 ] && ok "healthz" || bad "healthz"

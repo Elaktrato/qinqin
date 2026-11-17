@@ -6,6 +6,14 @@ FROM node:26-alpine AS web
 WORKDIR /src/apps/web
 COPY apps/web/package.json apps/web/package-lock.json ./
 RUN npm ci
+# Stroke-order data: the hanzi-writer-strokes pack (Arphic Public License),
+# built from the pinned hanzi-writer-data devDependency into /out/strokes and
+# shipped as a seed root below, not inside the SPA or the binary (see
+# docs/sources.md, "Stroke-order data"). The script checks the package's
+# licence text against apps/web/static/ARPHICPL.TXT.
+COPY scripts/prepare-strokes-pack.mjs /src/scripts/
+COPY apps/web/static/ARPHICPL.TXT ./static/ARPHICPL.TXT
+RUN node /src/scripts/prepare-strokes-pack.mjs --out /out/strokes/hanzi-writer-strokes
 COPY apps/web/ ./
 # The built-in plugin manifests ($builtin alias) live next to the server.
 COPY server/internal/plugins/builtin /src/server/internal/plugins/builtin
@@ -73,7 +81,12 @@ COPY plugins/data /opt/qinqin/packs
 # The Kanji alive audio pack, when built with WITH_AUDIO=1 (the default); an
 # empty directory otherwise.
 COPY --from=audio /out /opt/qinqin/audio
-ENV QINQIN_DATA=/data QINQIN_PACKS=/opt/qinqin/packs,/opt/qinqin/audio
+# The stroke-order data pack (about 13 MB). `qinqin seed` installs it with the
+# others; `serve` also installs it by itself at start when no strokes pack is
+# installed (an upgrade from v0.3 keeps its stroke animations), unless an
+# administrator uninstalled one.
+COPY --from=web /out/strokes /opt/qinqin/strokes
+ENV QINQIN_DATA=/data QINQIN_PACKS=/opt/qinqin/packs,/opt/qinqin/audio,/opt/qinqin/strokes
 VOLUME /data
 EXPOSE 8080
 ENTRYPOINT ["qinqin"]

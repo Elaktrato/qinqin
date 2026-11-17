@@ -1,0 +1,796 @@
+{
+ "version": 1,
+ "rule": "packages/versioning",
+ "_doc": "server cases: a sequence of pack operations on one test database (op import | uninstall | reconcile | restoreCopy; data names a variant of the test pack, the same name = the same content; failBuild makes the package writer fail for that step's builds), each followed by the builder draining its queue; expect lists catalogue rows by id (subset of members): hash is a label — equal labels mean equal contentHash, different labels different ones, \"\" the empty hash; files lists the revisions whose files exist under <data>/packages/<id>/ (retention keeps the previous one 7 days); error says whether the administrator's row carries error. client cases: the client rule packageAction (README.md, Client rule), applied in the order reset, deleted, pending, format, compare. Server cases: server/internal/datapkg (A6); client cases: apps/web/src/lib/packages/versioning.ts (C5).",
+ "actions": [
+  "keep",
+  "download",
+  "delete",
+  "wait",
+  "unsupported",
+  "reset"
+ ],
+ "cases": [
+  {
+   "kind": "server",
+   "name": "first import builds r1; an equal re-import changes nothing; a changed one builds r2",
+   "steps": [
+    {
+     "do": {
+      "op": "import",
+      "type": "dictionary",
+      "pack": "cedict",
+      "language": "zh",
+      "data": "v1"
+     },
+     "expect": [
+      {
+       "id": "lexicon.zh",
+       "state": "ready",
+       "revision": 1,
+       "hash": "A",
+       "files": [
+        1
+       ]
+      }
+     ]
+    },
+    {
+     "do": {
+      "op": "import",
+      "type": "dictionary",
+      "pack": "cedict",
+      "language": "zh",
+      "data": "v1"
+     },
+     "expect": [
+      {
+       "id": "lexicon.zh",
+       "state": "ready",
+       "revision": 1,
+       "hash": "A",
+       "files": [
+        1
+       ]
+      }
+     ]
+    },
+    {
+     "do": {
+      "op": "import",
+      "type": "dictionary",
+      "pack": "cedict",
+      "language": "zh",
+      "data": "v2"
+     },
+     "expect": [
+      {
+       "id": "lexicon.zh",
+       "state": "ready",
+       "revision": 2,
+       "hash": "B",
+       "files": [
+        1,
+        2
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "kind": "server",
+   "name": "a second dictionary of the language rebuilds lexicon.<lang>; its uninstall rebuilds again",
+   "steps": [
+    {
+     "do": {
+      "op": "import",
+      "type": "dictionary",
+      "pack": "cedict",
+      "language": "zh",
+      "data": "v1"
+     },
+     "expect": [
+      {
+       "id": "lexicon.zh",
+       "state": "ready",
+       "revision": 1,
+       "hash": "A",
+       "sources": [
+        "cedict"
+       ]
+      }
+     ]
+    },
+    {
+     "do": {
+      "op": "import",
+      "type": "dictionary",
+      "pack": "unihan",
+      "language": "zh",
+      "data": "v1"
+     },
+     "expect": [
+      {
+       "id": "lexicon.zh",
+       "state": "ready",
+       "revision": 2,
+       "hash": "B",
+       "sources": [
+        "cedict",
+        "unihan"
+       ]
+      }
+     ]
+    },
+    {
+     "do": {
+      "op": "uninstall",
+      "type": "dictionary",
+      "pack": "unihan"
+     },
+     "expect": [
+      {
+       "id": "lexicon.zh",
+       "state": "ready",
+       "revision": 3,
+       "hash": "C",
+       "sources": [
+        "cedict"
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "kind": "server",
+   "name": "uninstalling the last dictionary tombstones lexicon.<lang>; a reinstall continues the numbering",
+   "steps": [
+    {
+     "do": {
+      "op": "import",
+      "type": "dictionary",
+      "pack": "cedict",
+      "language": "zh",
+      "data": "v1"
+     },
+     "expect": [
+      {
+       "id": "lexicon.zh",
+       "state": "ready",
+       "revision": 1,
+       "hash": "A"
+      }
+     ]
+    },
+    {
+     "do": {
+      "op": "import",
+      "type": "dictionary",
+      "pack": "cedict",
+      "language": "zh",
+      "data": "v2"
+     },
+     "expect": [
+      {
+       "id": "lexicon.zh",
+       "state": "ready",
+       "revision": 2,
+       "hash": "B"
+      }
+     ]
+    },
+    {
+     "do": {
+      "op": "uninstall",
+      "type": "dictionary",
+      "pack": "cedict"
+     },
+     "expect": [
+      {
+       "id": "lexicon.zh",
+       "state": "deleted",
+       "revision": 2,
+       "hash": "B"
+      }
+     ]
+    },
+    {
+     "do": {
+      "op": "import",
+      "type": "dictionary",
+      "pack": "cedict",
+      "language": "zh",
+      "data": "v1"
+     },
+     "expect": [
+      {
+       "id": "lexicon.zh",
+       "state": "ready",
+       "revision": 3,
+       "hash": "A"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "kind": "server",
+   "name": "a failed build keeps the previous revision ready and records the error",
+   "steps": [
+    {
+     "do": {
+      "op": "import",
+      "type": "dictionary",
+      "pack": "cedict",
+      "language": "zh",
+      "data": "v1"
+     },
+     "expect": [
+      {
+       "id": "lexicon.zh",
+       "state": "ready",
+       "revision": 1,
+       "hash": "A"
+      }
+     ]
+    },
+    {
+     "do": {
+      "op": "import",
+      "type": "dictionary",
+      "pack": "cedict",
+      "language": "zh",
+      "data": "v2",
+      "failBuild": true
+     },
+     "expect": [
+      {
+       "id": "lexicon.zh",
+       "state": "ready",
+       "revision": 1,
+       "hash": "A",
+       "error": true
+      }
+     ]
+    },
+    {
+     "do": {
+      "op": "reconcile"
+     },
+     "expect": [
+      {
+       "id": "lexicon.zh",
+       "state": "ready",
+       "revision": 2,
+       "hash": "B",
+       "error": false
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "kind": "server",
+   "name": "a failed first build is state failed at revision 0",
+   "steps": [
+    {
+     "do": {
+      "op": "import",
+      "type": "dictionary",
+      "pack": "cedict",
+      "language": "zh",
+      "data": "v1",
+      "failBuild": true
+     },
+     "expect": [
+      {
+       "id": "lexicon.zh",
+       "state": "failed",
+       "revision": 0,
+       "hash": "",
+       "error": true
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "kind": "server",
+   "name": "a levels pack requires its lexicon; its uninstall tombstones only itself",
+   "steps": [
+    {
+     "do": {
+      "op": "import",
+      "type": "dictionary",
+      "pack": "cedict",
+      "language": "zh",
+      "data": "v1"
+     },
+     "expect": [
+      {
+       "id": "lexicon.zh",
+       "state": "ready",
+       "revision": 1,
+       "hash": "A"
+      }
+     ]
+    },
+    {
+     "do": {
+      "op": "import",
+      "type": "levels",
+      "pack": "hsk-words",
+      "language": "zh",
+      "data": "v1"
+     },
+     "expect": [
+      {
+       "id": "lexicon.zh",
+       "state": "ready",
+       "revision": 1,
+       "hash": "A"
+      },
+      {
+       "id": "levels.hsk-words",
+       "state": "ready",
+       "revision": 1,
+       "hash": "L",
+       "requires": [
+        "lexicon.zh"
+       ]
+      }
+     ]
+    },
+    {
+     "do": {
+      "op": "uninstall",
+      "type": "levels",
+      "pack": "hsk-words"
+     },
+     "expect": [
+      {
+       "id": "lexicon.zh",
+       "state": "ready",
+       "revision": 1,
+       "hash": "A"
+      },
+      {
+       "id": "levels.hsk-words",
+       "state": "deleted",
+       "revision": 1,
+       "hash": "L"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "kind": "server",
+   "name": "a restored copy of the database reconciles to the same revisions and hashes",
+   "steps": [
+    {
+     "do": {
+      "op": "import",
+      "type": "dictionary",
+      "pack": "cedict",
+      "language": "zh",
+      "data": "v1"
+     },
+     "expect": [
+      {
+       "id": "lexicon.zh",
+       "state": "ready",
+       "revision": 1,
+       "hash": "A"
+      }
+     ]
+    },
+    {
+     "do": {
+      "op": "restoreCopy"
+     },
+     "expect": [
+      {
+       "id": "lexicon.zh",
+       "state": "ready",
+       "revision": 1,
+       "hash": "A",
+       "files": [
+        1
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "kind": "client",
+   "name": "nothing installed, ready row: download",
+   "installed": null,
+   "row": {
+    "id": "lexicon.zh",
+    "state": "ready",
+    "revision": 2,
+    "formatVersion": 1,
+    "optional": false,
+    "contentHash": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+   },
+   "knownFormats": [
+    1
+   ],
+   "localInstance": "01JD8Z3Q4M5N6P7R8S9T0V1W2X",
+   "remoteInstance": "01JD8Z3Q4M5N6P7R8S9T0V1W2X",
+   "action": "download"
+  },
+  {
+   "kind": "client",
+   "name": "first run (no local instance yet): download",
+   "installed": null,
+   "row": {
+    "id": "lexicon.zh",
+    "state": "ready",
+    "revision": 2,
+    "formatVersion": 1,
+    "optional": false,
+    "contentHash": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+   },
+   "knownFormats": [
+    1
+   ],
+   "localInstance": null,
+   "remoteInstance": "01JD8Z3Q4M5N6P7R8S9T0V1W2X",
+   "action": "download"
+  },
+  {
+   "kind": "client",
+   "name": "same revision and hash: keep",
+   "installed": {
+    "revision": 2,
+    "contentHash": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "formatVersion": 1
+   },
+   "row": {
+    "id": "lexicon.zh",
+    "state": "ready",
+    "revision": 2,
+    "formatVersion": 1,
+    "optional": false,
+    "contentHash": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+   },
+   "knownFormats": [
+    1
+   ],
+   "localInstance": "01JD8Z3Q4M5N6P7R8S9T0V1W2X",
+   "remoteInstance": "01JD8Z3Q4M5N6P7R8S9T0V1W2X",
+   "action": "keep"
+  },
+  {
+   "kind": "client",
+   "name": "newer revision: download",
+   "installed": {
+    "revision": 2,
+    "contentHash": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "formatVersion": 1
+   },
+   "row": {
+    "id": "lexicon.zh",
+    "state": "ready",
+    "revision": 3,
+    "formatVersion": 1,
+    "optional": false,
+    "contentHash": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+   },
+   "knownFormats": [
+    1
+   ],
+   "localInstance": "01JD8Z3Q4M5N6P7R8S9T0V1W2X",
+   "remoteInstance": "01JD8Z3Q4M5N6P7R8S9T0V1W2X",
+   "action": "download"
+  },
+  {
+   "kind": "client",
+   "name": "older revision (server restored from an older backup): download, never compare magnitudes",
+   "installed": {
+    "revision": 2,
+    "contentHash": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "formatVersion": 1
+   },
+   "row": {
+    "id": "lexicon.zh",
+    "state": "ready",
+    "revision": 1,
+    "formatVersion": 1,
+    "optional": false,
+    "contentHash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+   },
+   "knownFormats": [
+    1
+   ],
+   "localInstance": "01JD8Z3Q4M5N6P7R8S9T0V1W2X",
+   "remoteInstance": "01JD8Z3Q4M5N6P7R8S9T0V1W2X",
+   "action": "download"
+  },
+  {
+   "kind": "client",
+   "name": "same revision, other hash: download",
+   "installed": {
+    "revision": 2,
+    "contentHash": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "formatVersion": 1
+   },
+   "row": {
+    "id": "lexicon.zh",
+    "state": "ready",
+    "revision": 2,
+    "formatVersion": 1,
+    "optional": false,
+    "contentHash": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+   },
+   "knownFormats": [
+    1
+   ],
+   "localInstance": "01JD8Z3Q4M5N6P7R8S9T0V1W2X",
+   "remoteInstance": "01JD8Z3Q4M5N6P7R8S9T0V1W2X",
+   "action": "download"
+  },
+  {
+   "kind": "client",
+   "name": "other revision, same hash: download",
+   "installed": {
+    "revision": 2,
+    "contentHash": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "formatVersion": 1
+   },
+   "row": {
+    "id": "lexicon.zh",
+    "state": "ready",
+    "revision": 5,
+    "formatVersion": 1,
+    "optional": false,
+    "contentHash": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+   },
+   "knownFormats": [
+    1
+   ],
+   "localInstance": "01JD8Z3Q4M5N6P7R8S9T0V1W2X",
+   "remoteInstance": "01JD8Z3Q4M5N6P7R8S9T0V1W2X",
+   "action": "download"
+  },
+  {
+   "kind": "client",
+   "name": "installed with another formatVersion the client knows: download",
+   "installed": {
+    "revision": 2,
+    "contentHash": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "formatVersion": 2
+   },
+   "row": {
+    "id": "lexicon.zh",
+    "state": "ready",
+    "revision": 2,
+    "formatVersion": 1,
+    "optional": false,
+    "contentHash": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+   },
+   "knownFormats": [
+    1,
+    2
+   ],
+   "localInstance": "01JD8Z3Q4M5N6P7R8S9T0V1W2X",
+   "remoteInstance": "01JD8Z3Q4M5N6P7R8S9T0V1W2X",
+   "action": "download"
+  },
+  {
+   "kind": "client",
+   "name": "unknown formatVersion, nothing installed: unsupported",
+   "installed": null,
+   "row": {
+    "id": "lexicon.zh",
+    "state": "ready",
+    "revision": 2,
+    "formatVersion": 2,
+    "optional": false,
+    "contentHash": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+   },
+   "knownFormats": [
+    1
+   ],
+   "localInstance": "01JD8Z3Q4M5N6P7R8S9T0V1W2X",
+   "remoteInstance": "01JD8Z3Q4M5N6P7R8S9T0V1W2X",
+   "action": "unsupported"
+  },
+  {
+   "kind": "client",
+   "name": "unknown formatVersion with an older file installed: unsupported (keep using the file)",
+   "installed": {
+    "revision": 2,
+    "contentHash": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "formatVersion": 1
+   },
+   "row": {
+    "id": "lexicon.zh",
+    "state": "ready",
+    "revision": 3,
+    "formatVersion": 2,
+    "optional": false,
+    "contentHash": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+   },
+   "knownFormats": [
+    1
+   ],
+   "localInstance": "01JD8Z3Q4M5N6P7R8S9T0V1W2X",
+   "remoteInstance": "01JD8Z3Q4M5N6P7R8S9T0V1W2X",
+   "action": "unsupported"
+  },
+  {
+   "kind": "client",
+   "name": "deleted row, file installed: delete",
+   "installed": {
+    "revision": 2,
+    "contentHash": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "formatVersion": 1
+   },
+   "row": {
+    "id": "lexicon.zh",
+    "state": "deleted",
+    "revision": 2,
+    "formatVersion": 1,
+    "optional": false,
+    "contentHash": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+   },
+   "knownFormats": [
+    1
+   ],
+   "localInstance": "01JD8Z3Q4M5N6P7R8S9T0V1W2X",
+   "remoteInstance": "01JD8Z3Q4M5N6P7R8S9T0V1W2X",
+   "action": "delete"
+  },
+  {
+   "kind": "client",
+   "name": "deleted row, nothing installed: keep (nothing to do)",
+   "installed": null,
+   "row": {
+    "id": "lexicon.zh",
+    "state": "deleted",
+    "revision": 2,
+    "formatVersion": 1,
+    "optional": false,
+    "contentHash": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+   },
+   "knownFormats": [
+    1
+   ],
+   "localInstance": "01JD8Z3Q4M5N6P7R8S9T0V1W2X",
+   "remoteInstance": "01JD8Z3Q4M5N6P7R8S9T0V1W2X",
+   "action": "keep"
+  },
+  {
+   "kind": "client",
+   "name": "first build pending, nothing installed: wait",
+   "installed": null,
+   "row": {
+    "id": "lexicon.zh",
+    "state": "building",
+    "revision": 0,
+    "formatVersion": 1,
+    "optional": false,
+    "contentHash": ""
+   },
+   "knownFormats": [
+    1
+   ],
+   "localInstance": "01JD8Z3Q4M5N6P7R8S9T0V1W2X",
+   "remoteInstance": "01JD8Z3Q4M5N6P7R8S9T0V1W2X",
+   "action": "wait"
+  },
+  {
+   "kind": "client",
+   "name": "first build failed, nothing installed: wait",
+   "installed": null,
+   "row": {
+    "id": "lexicon.zh",
+    "state": "failed",
+    "revision": 0,
+    "formatVersion": 1,
+    "optional": false,
+    "contentHash": ""
+   },
+   "knownFormats": [
+    1
+   ],
+   "localInstance": "01JD8Z3Q4M5N6P7R8S9T0V1W2X",
+   "remoteInstance": "01JD8Z3Q4M5N6P7R8S9T0V1W2X",
+   "action": "wait"
+  },
+  {
+   "kind": "client",
+   "name": "building with a file installed (the row was rebuilt from scratch): keep",
+   "installed": {
+    "revision": 2,
+    "contentHash": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "formatVersion": 1
+   },
+   "row": {
+    "id": "lexicon.zh",
+    "state": "building",
+    "revision": 0,
+    "formatVersion": 1,
+    "optional": false,
+    "contentHash": ""
+   },
+   "knownFormats": [
+    1
+   ],
+   "localInstance": "01JD8Z3Q4M5N6P7R8S9T0V1W2X",
+   "remoteInstance": "01JD8Z3Q4M5N6P7R8S9T0V1W2X",
+   "action": "keep"
+  },
+  {
+   "kind": "client",
+   "name": "another server instance: reset, whatever the row says",
+   "installed": {
+    "revision": 2,
+    "contentHash": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "formatVersion": 1
+   },
+   "row": {
+    "id": "lexicon.zh",
+    "state": "ready",
+    "revision": 2,
+    "formatVersion": 1,
+    "optional": false,
+    "contentHash": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+   },
+   "knownFormats": [
+    1
+   ],
+   "localInstance": "01JD8Z3Q4M5N6P7R8S9T0V1W2X",
+   "remoteInstance": "01JF0000000000000000000000",
+   "action": "reset"
+  },
+  {
+   "kind": "client",
+   "name": "another server instance on a deleted row: reset",
+   "installed": {
+    "revision": 2,
+    "contentHash": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "formatVersion": 1
+   },
+   "row": {
+    "id": "lexicon.zh",
+    "state": "deleted",
+    "revision": 2,
+    "formatVersion": 1,
+    "optional": false,
+    "contentHash": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+   },
+   "knownFormats": [
+    1
+   ],
+   "localInstance": "01JD8Z3Q4M5N6P7R8S9T0V1W2X",
+   "remoteInstance": "01JF0000000000000000000000",
+   "action": "reset"
+  },
+  {
+   "kind": "client",
+   "name": "optional package not installed: download (the client asks the user first)",
+   "installed": null,
+   "row": {
+    "id": "lexicon.zh",
+    "state": "ready",
+    "revision": 2,
+    "formatVersion": 1,
+    "optional": true,
+    "contentHash": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+   },
+   "knownFormats": [
+    1
+   ],
+   "localInstance": "01JD8Z3Q4M5N6P7R8S9T0V1W2X",
+   "remoteInstance": "01JD8Z3Q4M5N6P7R8S9T0V1W2X",
+   "action": "download"
+  }
+ ]
+}

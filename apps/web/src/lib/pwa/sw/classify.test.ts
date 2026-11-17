@@ -75,6 +75,20 @@ describe('classify: spec table', () => {
 		}
 	});
 
+	it('stroke files are a server route now and stay hanzi; the stroke pack list is bypass', () => {
+		expect(routes.some((r) => r.pattern === 'GET /hanzi/{file}' && r.access === 'public')).toBe(true);
+		expect(kind('/hanzi/U597D.json', { auth: false })).toBe('hanzi');
+		expect(kind('/api/stroke-packs')).toBe('bypass');
+		expect(kind('/api/stroke-packs', { auth: false })).toBe('bypass');
+	});
+
+	it('data packages are never cached by the worker (decision: bypass; the client stores the files itself)', () => {
+		for (const url of ['/api/packages', '/api/packages?languages=all', '/api/packages/lexicon.zh/3']) {
+			expect(kind(url), url).toBe('bypass');
+			expect(kind(url, { method: 'GET', mode: 'cors' }), url).toBe('bypass');
+		}
+	});
+
 	it('api without Authorization is never classified api', () => {
 		expect(kind('/api/workspaces', { auth: false })).toBe('bypass');
 		expect(kind('/api/entries/12', { auth: false })).toBe('bypass');
@@ -118,6 +132,45 @@ describe('classify: spec table', () => {
 		]) {
 			expect(kind(url), url).toBe('bypass');
 		}
+	});
+
+	it('a v2 study page is cacheable: first page with workspace and a study subset, and a p2 continuation', () => {
+		const study = 'pluginStates,pluginData,cards,decks,deckSettings,limits,fsrsSets,fsrsActive';
+		for (const url of [
+			`/api/sync/pull?collections=${study}&v=2&workspace=3`,
+			`/api/sync/pull?collections=${study}&tombstones=1&v=2&workspace=3`, // the web study pull
+			`/api/sync/pull?collections=cards&limit=100&v=2&workspace=3`,
+			'/api/sync/pull?collections=pluginData&v=2&workspace=12',
+			'/api/sync/pull?page=p2.abcDEF-_123&v=2'
+		]) {
+			expect(kind(url), url).toBe('api');
+		}
+	});
+
+	it('a v2 pull outside the study set is not cacheable', () => {
+		for (const url of [
+			'/api/sync/pull?collections=cards&v=2', // no workspace
+			'/api/sync/pull?v=2&workspace=3', // no collections: the whole account
+			'/api/sync/pull?collections=cards,events&v=2&workspace=3',
+			'/api/sync/pull?collections=overlays&v=2&workspace=3',
+			'/api/sync/pull?collections=books&v=2&workspace=3',
+			'/api/sync/pull?collections=cards,entries&v=2&workspace=3',
+			'/api/sync/pull?collections=cards&since=2026-01-01T00:00:00Z&v=2&workspace=3', // deltas are not offline data
+			'/api/sync/pull?collections=cards&v=2&workspace=x',
+			'/api/sync/pull?collections=cards&limit=x&v=2&workspace=3',
+			'/api/sync/pull?collections=cards&v=3&workspace=3',
+			'/api/sync/pull?page=c2.abc&v=2', // a cursor is not a page
+			'/api/sync/pull?page=&v=2',
+			'/api/sync/pull?page=p2.abc&v=2&collections=events', // a continuation carries nothing else
+			'/api/sync/pull?page=p2.abc',
+			'/api/sync/pull?collections=cards&tombstones=0&v=2&workspace=3',
+			'/api/sync/pull?collections=cards&tombstones=1&tombstones=1&v=2&workspace=3',
+			'/api/sync/pull?collections=cards&since=c2.x&tombstones=1&v=2&workspace=3', // still a delta
+			'/api/sync/pull?page=p2.abc&tombstones=1&v=2'
+		]) {
+			expect(kind(url), url).toBe('bypass');
+		}
+		expect(kind('/api/sync/pull?collections=cards&v=2&workspace=3', { auth: false }), 'no Authorization').toBe('bypass');
 	});
 
 	it('the cacheable pull collections are the plugin ones and every typed study collection', () => {

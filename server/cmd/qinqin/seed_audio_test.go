@@ -84,6 +84,23 @@ func TestDefaultPacksIncludesDataAudio(t *testing.T) {
 	}
 }
 
+func TestDefaultPacksIncludesDataStrokes(t *testing.T) {
+	t.Setenv("QINQIN_PACKS", "")
+	t.Chdir(t.TempDir())
+	if got, want := defaultPacks(), []string{"plugins/data"}; !reflect.DeepEqual(got, want) {
+		t.Errorf("without plugins/data-strokes: defaultPacks = %v, want %v", got, want)
+	}
+	for _, d := range []string{"plugins/data-audio", "plugins/data-strokes", "plugins/data-local"} {
+		if err := os.MkdirAll(d, 0o755); err != nil {
+			t.Fatal(err)
+		}
+	}
+	want := []string{"plugins/data", "plugins/data-audio", "plugins/data-strokes", "plugins/data-local"}
+	if got := defaultPacks(); !reflect.DeepEqual(got, want) {
+		t.Errorf("defaultPacks = %v, want %v", got, want)
+	}
+}
+
 func TestStalePackTermsWarnsOnAudioLicence(t *testing.T) {
 	sqlDB, _ := openTestDB(t)
 	root := t.TempDir()

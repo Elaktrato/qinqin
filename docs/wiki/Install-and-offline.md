@@ -16,6 +16,8 @@ HTTPS, or `http://localhost` on the same machine. Over plain HTTP (including a L
 
 The app opens. Your decks and today's study queue (the cards a session started now would hold, plus the next 50 new cards, within your daily limits and vacation days) are saved on the device whenever you use the app online. Offline you study those real cards and grade them; the reviews wait on the device. The time zone is saved with your data, so "today" is computed on the device.
 
+Your study data is read page by page (the paged sync pull), and each page is saved as its own copy, so offline study reads the same pages in the same order; preparing for offline use reads them all. The stroke-order animations of characters you have opened online are saved too: the server now serves them from its stroke data pack, one file per character, so a character never opened online has no animation offline. The web app does not download data packages (dictionaries stay online); a native client will.
+
 ## What does not work offline
 
 The Reader, search, the journal, dictionary lookups, settings changes, adding or editing cards, level sessions, and companion cards a word does not have yet (creating one is a write; the session says "Companion cards return when you are online."). Audio is not saved.

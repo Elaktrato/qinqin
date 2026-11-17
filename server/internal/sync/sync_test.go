@@ -74,9 +74,20 @@ func newWorkspace(t *testing.T, sqlDB *sql.DB, userID int64) int64 {
 	return id
 }
 
+// pullDelta runs the legacy pull (StreamLegacy) and decodes its answer.
+func pullDelta(ctx context.Context, sqlDB *sql.DB, userID int64, cursor time.Time, only map[string]bool) (chinsync.Delta, error) {
+	var buf bytes.Buffer
+	if err := chinsync.StreamLegacy(ctx, &buf, sqlDB, userID, cursor, only); err != nil {
+		return chinsync.Delta{}, err
+	}
+	var d chinsync.Delta
+	err := json.Unmarshal(buf.Bytes(), &d)
+	return d, err
+}
+
 func mustPull(t *testing.T, sqlDB *sql.DB, userID int64, cursor time.Time) chinsync.Delta {
 	t.Helper()
-	d, err := chinsync.Pull(context.Background(), sqlDB, userID, cursor, nil)
+	d, err := pullDelta(context.Background(), sqlDB, userID, cursor, nil)
 	if err != nil {
 		t.Fatalf("pull: %v", err)
 	}
@@ -212,10 +223,14 @@ func TestSyncEndpoints(t *testing.T) {
 		return resp
 	}
 
+	// The lexicon is in data packages now: a full legacy pull keeps its
+	// keys, empty, and still ships the caller's rows.
 	resp = call(http.MethodGet, "/api/sync/pull", nil)
 	var delta chinsync.Delta
-	if resp.StatusCode != http.StatusOK || json.NewDecoder(resp.Body).Decode(&delta) != nil || len(delta.Entries) < 3 {
-		t.Fatalf("pull status = %d entries = %d, want 200 with the world", resp.StatusCode, len(delta.Entries))
+	if resp.StatusCode != http.StatusOK || json.NewDecoder(resp.Body).Decode(&delta) != nil || len(delta.Entries) != 0 ||
+		delta.Entries == nil || len(delta.Sentences) != 0 {
+		t.Fatalf("pull status = %d entries = %d sentences = %d, want 200 without the lexicon and pack sentences",
+			resp.StatusCode, len(delta.Entries), len(delta.Sentences))
 	}
 	resp.Body.Close()
 
@@ -226,7 +241,7 @@ func TestSyncEndpoints(t *testing.T) {
 		t.Fatalf("collections pull status = %d entries = %d, want 200 with only the requested collections", resp.StatusCode, len(subset.Entries))
 	}
 	resp.Body.Close()
-	resp = call(http.MethodGet, "/api/sync/pull?collections=entries,bogus", nil)
+	resp = call(http.MethodGet, "/api/sync/pull?collections=pluginData,bogus", nil)
 	resp.Body.Close()
 	if resp.StatusCode != http.StatusBadRequest {
 		t.Errorf("unknown collection status = %d, want 400", resp.StatusCode)

@@ -613,13 +613,29 @@ committed or used as a test fixture.
 
 ## Stroke-order data
 
-Stroke-order animation data (`hanzi-writer-data`, derived from the
-Make Me a Hanzi dataset) is licensed under the **Arphic Public License**.
-The web frontend bundles it and credits it on its Sources page (a core
-credit in `apps/web/src/lib/sources/coreCredits.ts`). The full
-license text is committed at `apps/web/static/ARPHICPL.TXT` (copied verbatim
-from the `hanzi-writer-data` package) and is served by the running app at
-`/ARPHICPL.TXT` (the file in `apps/web/static/`).
+- **Hanzi Writer stroke data** (`hanzi-writer-strokes`, fetched at build time):
+  stroke-order animation data (`hanzi-writer-data`, derived from the Make Me a
+  Hanzi dataset), licensed under the **Arphic Public License** and used
+  unmodified.
+
+It is a data pack of type `strokes` (see the wiki's Data-pack-format page), not
+part of the web bundle or the binary. `scripts/prepare-strokes-pack.mjs` builds it
+from the `hanzi-writer-data` version pinned in `apps/web/package-lock.json` (a
+devDependency); the Docker image builds it in its web stage and ships it under
+`/opt/qinqin/strokes`, and a checkout builds it into the gitignored
+`plugins/data-strokes/` (a default seed root when present):
+
+    npm --prefix apps/web ci
+    node scripts/prepare-strokes-pack.mjs --out plugins/data-strokes/hanzi-writer-strokes
+
+The pack carries the package's `ARPHICPL.TXT` as `LICENSE` (the script refuses to
+build when it differs from `apps/web/static/ARPHICPL.TXT`) and an
+`ATTRIBUTION.md`; both are stored at import and travel inside the
+`strokes.hanzi-writer-strokes` data package. The server answers
+`/hanzi/U<HEX>.json` from the installed pack, and the Sources page credits it in
+its stroke data section (from `GET /api/stroke-packs`). The full licence text is
+committed at `apps/web/static/ARPHICPL.TXT` (copied verbatim from the
+`hanzi-writer-data` package) and is served by the running app at `/ARPHICPL.TXT`.
 
 Attribution: [Make Me a Hanzi](https://github.com/skishore/makemeahanzi),
 [hanzi-writer-data](https://www.npmjs.com/package/hanzi-writer-data).

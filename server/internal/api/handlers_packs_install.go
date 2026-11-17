@@ -95,7 +95,7 @@ func (s *server) runStagedImport(ctx context.Context, token string, userID int64
 		if importer == nil {
 			// Uploads never carry audio packs (the stage handler refuses them), so no store directory.
 			importer = func(ctx context.Context, sqlDB *sql.DB, p dict.Pack) (string, error) {
-				return packs.Import(ctx, sqlDB, p)
+				return packs.Import(ctx, sqlDB, p, packs.WithOnChange(s.packChanged))
 			}
 		}
 		var err error
