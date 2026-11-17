@@ -17,7 +17,11 @@ import {
 	serializeLayout,
 	homeEmptyReason
 } from './layout';
-import type { WidgetDef } from './types';
+import type { WidgetDef, WidgetSurface } from './types';
+import { allWidgets } from './registry';
+import { webPlugins } from '$lib/plugins';
+import { coreFeatures } from '$lib/features';
+import coreRowsFixture from '../../../../../docs/contracts/settings/core-rows.json';
 
 const component = null as unknown as Component;
 
@@ -286,5 +290,38 @@ describe('homeEmptyReason', () => {
 	it('says none is available when chosen widgets cannot be shown here', () => {
 		expect(homeEmptyReason(['character-map-summary'], 0)).toBe('none-available');
 		expect(homeEmptyReason(null, 0)).toBe('none-available');
+	});
+});
+
+describe('docs/contracts/settings/core-rows.json: home-layout', () => {
+	const fixture = coreRowsFixture as unknown as {
+		rule: string;
+		pluginId: string;
+		widgets: string[];
+		defaultLayout: string[];
+		layout: { name: string; value: unknown; expect: string[] | null }[];
+		resolve: { name: string; stored: string[] | null; available: { id: string; surfaces: WidgetSurface[] }[]; surface: WidgetSurface; expect: string[] }[];
+		serialize: { ids: string[]; expect: unknown }[];
+	};
+	it('names the row, the default and the widget catalogue', () => {
+		expect(fixture.rule).toBe('settings/core-rows');
+		expect(LAYOUT_PLUGIN_ID).toBe(fixture.pluginId);
+		expect(LAYOUT_KEY).toBe('home-layout');
+		expect([...DEFAULT_LAYOUT]).toEqual(fixture.defaultLayout);
+		const ids = [...coreFeatures.map((f) => f.id), ...webPlugins.map((p) => p.manifest.id)];
+		const states = ids.map((id) => ({ id, manifest: {}, enabled: true, order: 0 }));
+		expect(allWidgets(webPlugins, states, null).map((w) => w.id)).toEqual(fixture.widgets);
+	});
+	for (const c of fixture.layout) {
+		it(`parseLayout: ${c.name}`, () => expect(parseLayout(c.value)).toEqual(c.expect));
+	}
+	for (const c of fixture.resolve) {
+		it(`resolveLayout: ${c.name}`, () => {
+			const available = c.available.map((a) => ({ id: a.id, surfaces: a.surfaces }) as unknown as WidgetDef);
+			expect(resolveLayout(c.stored, available, c.surface).map((w) => w.id)).toEqual(c.expect);
+		});
+	}
+	it('serializeLayout writes version 1', () => {
+		for (const c of fixture.serialize) expect(serializeLayout(c.ids)).toEqual(c.expect);
 	});
 });

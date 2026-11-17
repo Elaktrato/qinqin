@@ -436,3 +436,17 @@ of each other in content but share the web gates; one implementer at a time. Tas
 - Adaptation: the Go test reuses `activity_days_test.go`'s `dayFixtureCase` (history, from, to, cells) and adds
   an optional per-event `workspace` (default 1); the fixture's `rules` member is compared with the registered
   built-in rules.
+- Task 9 (settings): web expectations from a scratch vitest file (deleted) running `readAudioSettings`,
+  `hiddenDictionaries`, `parseLayout`, `resolveLayout`, `serializeLayout`, `parseActivityView` and the registry's
+  `allWidgets` with every plugin and feature enabled (7 widget ids, as the spec lists); merge expectations from a
+  scratch Go test (deleted) that sent each PUT and read the stored object. 5 web test files with the fixtures
+  absent → FAIL; present → PASS (106); a `parseLayout` id altered → FAIL. Go
+  `TestContractWorkspaceSettingsMerge`: absent → FAIL (no such file); a nested `font` altered → FAIL; restored →
+  PASS. Gates: `go.sh 'gofmt -l . ; go vet ./internal/api && go test -count=1 -p 2 -timeout 30m ./internal/api'`
+  → gofmt empty, exit 0; `npm run check` 0; `npm test` 0 (398 files, 6679 passed).
+- Adaptation: `workspace-settings.json` holds `keys`, `parse` and `merge` lists; `core-rows.json` holds `widgets`,
+  `defaultLayout`, `layout`, `resolve`, `serialize`, `activityView`. The `reader` key is a pointer to
+  `reader/display-settings.json` (checked by `displaySettings.test.ts`), not repeated.
+- Observation (pinned, not a bug): the settings 400s are plain text but the 413 is JSON
+  `{"error": "workspace settings too large"}`; `activity-view` reads only `version: 1` (a newer row reads as the
+  default) while `home-layout` reads newer versions leniently.

@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import settingsFixture from '../../../../../../docs/contracts/settings/workspace-settings.json';
 import fixture from '../../../../../../docs/contracts/reader/display-settings.json';
 import { fontStack } from './fonts';
 import { DEFAULT_DISPLAY, displayPatch, parseDisplay, RUBY_SCALES } from './displaySettings';
@@ -56,5 +57,14 @@ describe('fontStack', () => {
 	});
 	it('an unknown language gets the generic stacks', () => {
 		expect(fontStack('serif', 'en')).toMatch(/serif$/);
+	});
+});
+
+describe('docs/contracts/settings/workspace-settings.json: the reader key', () => {
+	it('points to reader/display-settings.json and is the key displayPatch writes', () => {
+		const keys = (settingsFixture as unknown as { keys: { key: string; default: unknown }[] }).keys;
+		const reader = keys.find((k) => k.key === 'reader');
+		expect(reader?.default).toBe('see reader/display-settings.json');
+		expect(Object.keys(displayPatch({}, null))).toEqual(['reader']);
 	});
 });

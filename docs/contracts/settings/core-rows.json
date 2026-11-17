@@ -1,0 +1,326 @@
+{
+ "version": 1,
+ "rule": "settings/core-rows",
+ "pluginId": "qinqin-core",
+ "widgets": [
+  "activity-heatmap",
+  "character-map-summary",
+  "daily-goal",
+  "weekly-summary",
+  "flashcards-summary",
+  "word-states",
+  "reading-time"
+ ],
+ "defaultLayout": [
+  "activity-heatmap",
+  "flashcards-summary",
+  "daily-goal",
+  "weekly-summary"
+ ],
+ "layout": [
+  {
+   "name": "a version 1 layout",
+   "note": "the widget ids in order",
+   "value": {
+    "version": 1,
+    "widgets": [
+     "daily-goal",
+     "activity-heatmap"
+    ]
+   },
+   "expect": [
+    "daily-goal",
+    "activity-heatmap"
+   ]
+  },
+  {
+   "name": "a newer version is read leniently",
+   "note": "version >= 1 is read; only non-empty string ids count; unknown ids are kept",
+   "value": {
+    "version": 3,
+    "widgets": [
+     "future-widget",
+     7,
+     "",
+     "daily-goal"
+    ],
+    "extra": true
+   },
+   "expect": [
+    "future-widget",
+    "daily-goal"
+   ]
+  },
+  {
+   "name": "no row",
+   "note": "null: the default layout applies",
+   "value": null,
+   "expect": null
+  },
+  {
+   "name": "version 0 or missing",
+   "note": "not a layout: the default applies",
+   "value": {
+    "widgets": [
+     "daily-goal"
+    ]
+   },
+   "expect": null
+  },
+  {
+   "name": "widgets not a list",
+   "note": "not a layout",
+   "value": {
+    "version": 1,
+    "widgets": "daily-goal"
+   },
+   "expect": null
+  },
+  {
+   "name": "an empty layout",
+   "note": "an empty list stays empty (the learner removed every widget)",
+   "value": {
+    "version": 1,
+    "widgets": []
+   },
+   "expect": []
+  }
+ ],
+ "resolve": [
+  {
+   "name": "no stored layout: the default",
+   "note": "DEFAULT_LAYOUT, minus what is not available",
+   "stored": null,
+   "available": [
+    {
+     "id": "activity-heatmap",
+     "surfaces": [
+      "home",
+      "stats"
+     ]
+    },
+    {
+     "id": "flashcards-summary",
+     "surfaces": [
+      "home",
+      "stats"
+     ]
+    },
+    {
+     "id": "daily-goal",
+     "surfaces": [
+      "home",
+      "stats"
+     ]
+    },
+    {
+     "id": "weekly-summary",
+     "surfaces": [
+      "home",
+      "stats"
+     ]
+    },
+    {
+     "id": "reading-time",
+     "surfaces": [
+      "home",
+      "stats"
+     ]
+    }
+   ],
+   "surface": "home",
+   "expect": [
+    "activity-heatmap",
+    "flashcards-summary",
+    "daily-goal",
+    "weekly-summary"
+   ]
+  },
+  {
+   "name": "unknown and unavailable ids are skipped but stay stored",
+   "note": "a widget of a disabled plugin or another platform is not shown; resolve never rewrites the row",
+   "stored": [
+    "future-widget",
+    "reading-time",
+    "daily-goal"
+   ],
+   "available": [
+    {
+     "id": "daily-goal",
+     "surfaces": [
+      "home",
+      "stats"
+     ]
+    },
+    {
+     "id": "activity-heatmap",
+     "surfaces": [
+      "home",
+      "stats"
+     ]
+    }
+   ],
+   "surface": "home",
+   "expect": [
+    "daily-goal"
+   ]
+  },
+  {
+   "name": "duplicates keep their first position",
+   "note": "order kept, each widget once",
+   "stored": [
+    "daily-goal",
+    "activity-heatmap",
+    "daily-goal"
+   ],
+   "available": [
+    {
+     "id": "daily-goal",
+     "surfaces": [
+      "home",
+      "stats"
+     ]
+    },
+    {
+     "id": "activity-heatmap",
+     "surfaces": [
+      "home",
+      "stats"
+     ]
+    }
+   ],
+   "surface": "home",
+   "expect": [
+    "daily-goal",
+    "activity-heatmap"
+   ]
+  },
+  {
+   "name": "a widget not on the surface is skipped",
+   "note": "surfaces decide where a widget may show",
+   "stored": [
+    "daily-goal",
+    "word-states"
+   ],
+   "available": [
+    {
+     "id": "daily-goal",
+     "surfaces": [
+      "home"
+     ]
+    },
+    {
+     "id": "word-states",
+     "surfaces": [
+      "stats"
+     ]
+    }
+   ],
+   "surface": "home",
+   "expect": [
+    "daily-goal"
+   ]
+  }
+ ],
+ "serialize": [
+  {
+   "ids": [
+    "daily-goal",
+    "future-widget"
+   ],
+   "expect": {
+    "version": 1,
+    "widgets": [
+     "daily-goal",
+     "future-widget"
+    ]
+   }
+  },
+  {
+   "ids": [],
+   "expect": {
+    "version": 1,
+    "widgets": []
+   }
+  }
+ ],
+ "activityView": [
+  {
+   "name": "a version 1 view",
+   "note": "scope and hidden types as stored",
+   "value": {
+    "version": 1,
+    "scope": "all",
+    "hidden": [
+     "review",
+     "read"
+    ]
+   },
+   "expect": {
+    "scope": "all",
+    "hidden": [
+     "review",
+     "read"
+    ]
+   }
+  },
+  {
+   "name": "no row",
+   "note": "the default: this workspace, nothing hidden",
+   "value": null,
+   "expect": {
+    "scope": "workspace",
+    "hidden": []
+   }
+  },
+  {
+   "name": "another version reads as the default",
+   "note": "only version 1 is read (a newer row is not read leniently)",
+   "value": {
+    "version": 2,
+    "scope": "all",
+    "hidden": [
+     "read"
+    ]
+   },
+   "expect": {
+    "scope": "workspace",
+    "hidden": []
+   }
+  },
+  {
+   "name": "an unknown scope is workspace",
+   "note": "scope is all or workspace",
+   "value": {
+    "version": 1,
+    "scope": "everything",
+    "hidden": []
+   },
+   "expect": {
+    "scope": "workspace",
+    "hidden": []
+   }
+  },
+  {
+   "name": "non-string and repeated hidden entries drop",
+   "note": "hidden is a list of distinct type strings",
+   "value": {
+    "version": 1,
+    "scope": "workspace",
+    "hidden": [
+     "read",
+     3,
+     "read",
+     "journal"
+    ]
+   },
+   "expect": {
+    "scope": "workspace",
+    "hidden": [
+     "read",
+     "journal"
+    ]
+   }
+  }
+ ]
+}
