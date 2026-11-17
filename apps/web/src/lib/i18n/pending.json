@@ -18,7 +18,6 @@
 		"lib/admin/serverBackupView.ts",
 		"lib/admin/smtpForm.ts",
 		"lib/admin/usersView.ts",
-		"lib/api/authErrors.ts",
 		"lib/api/characters.ts",
 		"lib/api/packs.ts",
 		"lib/api/upload.ts",

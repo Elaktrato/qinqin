@@ -37,7 +37,7 @@
 				const found = await checkInvite(invite);
 				emailPolicy = found.emailPolicy;
 			} catch (err) {
-				inviteProblem = authErrorMessage(err, t('auth.register.inviteInvalid'));
+				inviteProblem = authErrorMessage(err, t('auth.register.inviteInvalid'), 'register');
 			}
 		}
 		loaded = true;
@@ -58,7 +58,7 @@
 			await register(username.trim(), password, { email: email.trim(), invite });
 			// The layout guard moves a signed-in session off this page.
 		} catch (err) {
-			error = authErrorMessage(err, t('auth.register.failed'));
+			error = authErrorMessage(err, t('auth.register.failed'), 'register');
 		} finally {
 			busy = false;
 		}

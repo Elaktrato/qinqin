@@ -33,7 +33,7 @@
 			try {
 				username = (await checkReset(token)).username;
 			} catch (err) {
-				problem = authErrorMessage(err, t('auth.reset.linkInvalid'));
+				problem = authErrorMessage(err, t('auth.reset.linkInvalid'), 'reset');
 			}
 		}
 		if (!token) {
@@ -55,7 +55,7 @@
 			await resetRequest(login.trim());
 			requested = true;
 		} catch (err) {
-			error = authErrorMessage(err, t('auth.reset.requestFailed'));
+			error = authErrorMessage(err, t('auth.reset.requestFailed'), 'reset');
 		} finally {
 			busy = false;
 		}
@@ -80,7 +80,7 @@
 			await signInWithToken(res.token);
 			await goto('/');
 		} catch (err) {
-			error = authErrorMessage(err, t('auth.reset.failed'));
+			error = authErrorMessage(err, t('auth.reset.failed'), 'reset');
 		} finally {
 			busy = false;
 		}

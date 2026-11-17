@@ -28,13 +28,15 @@ describe("authErrorMessage", () => {
       authErrorMessage(new ApiError(403, json("account_disabled", "x")), "f"),
     ).toBe("This account is disabled. Ask an administrator to enable it.");
   });
-  it("shows the server's sentence for a weak password", () => {
+  it("words a weak password from the catalogue, not the server's sentence", () => {
     expect(
       authErrorMessage(
         new ApiError(422, json("weak_password", "Use at least 10 characters.")),
         "f",
       ),
-    ).toBe("Use at least 10 characters.");
+    ).toBe(
+      "This password is not allowed: use 10 to 256 characters, and not your username.",
+    );
   });
   it("words 429 from Retry-After", () => {
     expect(
@@ -50,7 +52,7 @@ describe("authErrorMessage", () => {
       authErrorMessage(new ApiError(429, json("rate_limited", "m"), 60), "f"),
     ).toContain("1 minute.");
   });
-  it("words a registration 429 generically", () => {
+  it("words a registration 429 generically (the caller's context)", () => {
     expect(
       authErrorMessage(
         new ApiError(
@@ -59,30 +61,31 @@ describe("authErrorMessage", () => {
           6,
         ),
         "f",
+        "register",
       ),
     ).toBe("Too many attempts. Try again in 6 seconds.");
   });
-  it("uses the body message without Retry-After", () => {
+  it("words a 429 without Retry-After from the catalogue", () => {
     expect(
       authErrorMessage(
         new ApiError(429, json("rate_limited", "Try later.")),
         "f",
       ),
-    ).toBe("Try later.");
+    ).toBe("Too many attempts. Try again later.");
   });
-  it("shows the message of busy and unknown codes", () => {
+  it("words busy and other codes from the catalogue", () => {
     expect(
       authErrorMessage(
         new ApiError(503, json("busy", "The server is busy."), 2),
         "f",
       ),
-    ).toBe("The server is busy.");
+    ).toBe("The server is busy. Try again in a moment.");
     expect(
       authErrorMessage(
         new ApiError(400, json("bad_request", "Bad body.")),
         "f",
       ),
-    ).toBe("Bad body.");
+    ).toBe("The request was not understood. Reload the page and try again.");
   });
   it("maps register codes", () => {
     expect(
