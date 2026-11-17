@@ -75,7 +75,9 @@ workspace languages; `all` lists every package. A row is listed when any of its 
 ## Download: `GET /api/packages/{id}/{revision}`
 
 Signed-in users (read tokens allowed). The zip file of that revision: `ETag: "<sha256>"`,
-`Accept-Ranges: bytes`, `Range`/`If-Range` (206), `Cache-Control: private, max-age=31536000, immutable`.
+`Accept-Ranges: bytes`, `Range`/`If-Range` (206), `Cache-Control: private, no-cache` (a cached copy revalidates:
+`If-None-Match` with the ETag answers 304; not `immutable`, since a server restored from a backup may build a
+revision number again with other bytes).
 404 `package_not_found` (unknown id or revision, or not a package id), 410 `package_revision_gone` (a replaced
 revision whose file was purged; the previous revision is kept 7 days), 429 `download_busy` with
 `Retry-After: 5` (at most 2 concurrent downloads per user; unlike `rate_limited` a client may retry it

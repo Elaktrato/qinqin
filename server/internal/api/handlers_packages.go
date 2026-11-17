@@ -211,7 +211,10 @@ func (s *server) handlePackageDownload(w http.ResponseWriter, r *http.Request) {
 	defer s.downloads.release(u.ID)
 	h := w.Header()
 	h.Set("ETag", `"`+info.SHA256+`"`)
-	h.Set("Cache-Control", "private, max-age=31536000, immutable")
+	// Not immutable: a server restored from a backup may build a revision
+	// number again with other bytes, so a cached copy revalidates (304 by
+	// the strong ETag).
+	h.Set("Cache-Control", "private, no-cache")
 	h.Set("Content-Type", "application/zip")
 	// The zero modification time: the ETag alone validates (a rebuilt file
 	// of the same revision after a restore has a new time, not new bytes

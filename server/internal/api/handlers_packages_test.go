@@ -329,7 +329,9 @@ func TestPackageDownload(t *testing.T) {
 	etag := `"` + row.SHA256 + `"`
 	for k, v := range map[string]string{
 		"ETag": etag, "Content-Length": strconv.Itoa(len(full)), "Accept-Ranges": "bytes",
-		"Cache-Control": "private, max-age=31536000, immutable", "Content-Type": "application/zip",
+		// no-cache, not immutable: after a restore a revision number may come
+		// back with other bytes, so a cached copy revalidates by its ETag.
+		"Cache-Control": "private, no-cache", "Content-Type": "application/zip",
 	} {
 		if hd.Get(k) != v {
 			t.Errorf("%s = %q, want %q", k, hd.Get(k), v)
