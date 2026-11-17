@@ -1347,12 +1347,12 @@
 		/* 40em of the reader text (1.25rem): the line length the design gives it. */
 		max-width: 50rem;
 		margin-inline: auto;
-		width: 100%;
 	}
 
+	/* The padding sits outside the 50rem text width. */
 	.book.column .reading {
 		padding: var(--space-5) var(--space-6) 0;
-		box-sizing: border-box;
+		box-sizing: content-box;
 	}
 
 	.visually-hidden {

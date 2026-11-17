@@ -194,6 +194,8 @@
 	   selecting a passage leaves it out. */
 	rt {
 		font-size: var(--reader-rt-size, 0.55em);
+		/* Readings are an aid: the readable muted colour (design §9 mock). */
+		color: var(--readable-muted);
 		user-select: none;
 	}
 
@@ -207,12 +209,13 @@
 	ruby:hover > rt.concealed,
 	:global(ruby.revealed > rt.concealed),
 	:global(.chapter-text.show-all rt.concealed) {
-		color: inherit;
+		color: var(--readable-muted);
 	}
 
 	@media (forced-colors: active) {
+		rt,
 		rt.concealed {
-			color: inherit;
+			color: CanvasText;
 		}
 	}
 

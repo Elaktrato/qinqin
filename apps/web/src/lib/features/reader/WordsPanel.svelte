@@ -227,14 +227,11 @@
 							type="checkbox"
 							checked={selected.has(w.entryId)}
 							onchange={(e) => toggle(w.entryId, e.currentTarget.checked)}
-						/>{w.lemma}</label
+						/><span class={w.state === 'new' ? 'w-new w-end' : 'w-learning w-end'}>{w.lemma}</span></label
 					>
 					{#if w.reading}<span class="reading">{w.reading}</span>{/if}
 					<span class="count">×{w.count}</span>
-					<span class="state"
-						><span class={w.state === 'new' ? 'w-new w-end' : 'w-learning w-end'} aria-hidden="true">字</span>
-						{w.state === 'new' ? t('reader.words.stateNew') : t('reader.words.stateLearning')}</span
-					>
+					<span class="state">{w.state === 'new' ? t('reader.words.stateNew') : t('reader.words.stateLearning')}</span>
 				</li>
 			{/each}
 		</ul>

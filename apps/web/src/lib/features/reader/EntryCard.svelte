@@ -88,7 +88,7 @@
 	{#if levels.length > 0 || result.reasons.length > 0 || result.tags.length > 0 || result.frequencies.length > 0}
 		<ul class="chips">
 			{#each levels as level, i (i)}
-				<li class="level"><Chip tone="accent">{level}</Chip></li>
+				<li class="level"><Chip>{level}</Chip></li>
 			{/each}
 			{#each result.frequencies as f (f.packId)}
 				<li class="frequency" title={t('reader.entry.frequency', { pack: f.packName })}>

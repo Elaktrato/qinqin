@@ -231,6 +231,14 @@
 		padding-top: var(--space-1);
 	}
 
+	/* Five text tabs on one line at phone width: closer, scrolling sideways if need be. */
+	.sheet-body :global([role='tablist']) {
+		flex-wrap: nowrap;
+		gap: var(--space-4);
+		overflow-x: auto;
+		scrollbar-width: none;
+	}
+
 	@keyframes rail-panel-in {
 		from {
 			opacity: 0;

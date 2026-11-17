@@ -184,6 +184,9 @@ describe('levelChips (#102)', () => {
 		const r = { levels: [{ scheme: 'HSK', level: '3' }, { scheme: 'TOCFL', level: 'B1' }] } as LookupResult;
 		expect(levelChips(r)).toEqual(['HSK 3', 'TOCFL B1']);
 		expect(levelChips({ levels: [] } as unknown as LookupResult)).toEqual([]);
+		// A level named with its scheme's word (the bundled "HSK 3.0 (words)" has levels "HSK 1"…) is not repeated.
+		expect(levelChips({ levels: [{ scheme: 'HSK 3.0 (words)', level: 'HSK 6' }] } as LookupResult)).toEqual(['HSK 6']);
+		expect(levelChips({ levels: [{ scheme: 'JLPT kanji', level: 'N3' }] } as LookupResult)).toEqual(['JLPT kanji N3']);
 		// An older server sends no levels.
 		expect(levelChips({} as LookupResult)).toEqual([]);
 	});
