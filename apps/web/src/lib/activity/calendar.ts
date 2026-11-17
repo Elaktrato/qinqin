@@ -67,6 +67,12 @@ export function monthWindow(month: Month, today: string): { from: string; to: st
 	return { from, to: end < today ? end : today };
 }
 
+/** windowMonth: the month a loaded window is (from the 1st, within one month), else null (the 13-week window). */
+export function windowMonth(range: { from: string; to: string }): Month | null {
+	if (range.from === '' || !range.from.endsWith('-01')) return null;
+	return monthOf(range.to) === monthOf(range.from) ? monthOf(range.from) : null;
+}
+
 /** monthGrid: the month's weeks, Monday first, padded with null cells; days after today are `future`. */
 export function monthGrid(month: Month, today: string): GridCell[][] {
 	const first = `${month}-01`;

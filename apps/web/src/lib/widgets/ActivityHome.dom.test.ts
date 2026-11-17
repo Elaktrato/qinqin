@@ -1,4 +1,4 @@
-import { cleanup, render, waitFor } from '@testing-library/svelte';
+import { cleanup, render, screen, waitFor } from '@testing-library/svelte';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('$lib/api/stats', () => ({ fetchActivity: vi.fn() }));
@@ -53,10 +53,26 @@ describe('ActivityHome', () => {
 		await waitFor(() => expect(document.querySelector('.month-grid')).not.toBeNull());
 	});
 
-	it('shows the garden while the row loads', async () => {
+	it('shows a loading card and requests nothing while the row loads (#100 review)', async () => {
 		vi.mocked(loadWidgetOptions).mockReturnValue(new Promise(() => {}));
 		render(ActivityHome);
-		await waitFor(() => expect(document.querySelector('.grid')).not.toBeNull());
+		await waitFor(() => expect(screen.getByText('Loading activity…')).toBeTruthy());
+		await new Promise((r) => setTimeout(r, 0));
+		expect(document.querySelector('.grid')).toBeNull();
+		expect(fetchActivity).not.toHaveBeenCalled();
+	});
+
+	it('a month user gets one request, for the month, and never sees another window', async () => {
+		let resolveOptions: (o: { row: null; heatmapLayout: 'month' }) => void = () => {};
+		vi.mocked(loadWidgetOptions).mockReturnValue(new Promise((r) => (resolveOptions = r)));
+		render(ActivityHome);
+		await new Promise((r) => setTimeout(r, 0));
+		resolveOptions({ row: null, heatmapLayout: 'month' });
+		await waitFor(() => expect(document.querySelector('.month-grid')).not.toBeNull());
+		expect(fetchActivity).toHaveBeenCalledTimes(1);
+		const today = studyDay([]).today();
+		expect(vi.mocked(fetchActivity).mock.calls[0]).toEqual([`${today.slice(0, 7)}-01`, today]);
+		expect(document.querySelector('.grid')).toBeNull();
 	});
 
 	it('shows the garden when the row fails to load', async () => {

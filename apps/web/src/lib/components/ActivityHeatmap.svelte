@@ -20,7 +20,7 @@
 	import HeatmapGarden from '$lib/activity/HeatmapGarden.svelte';
 	import HeatmapMonth from '$lib/activity/HeatmapMonth.svelte';
 	import HeatmapWeek from '$lib/activity/HeatmapWeek.svelte';
-	import { earliestMonth, monthOf, monthWindow, nextMonth, prevMonth, weekDays } from '$lib/activity/calendar';
+	import { earliestMonth, monthOf, monthWindow, nextMonth, prevMonth, weekDays, windowMonth, type Month } from '$lib/activity/calendar';
 	import { toGoText } from '$lib/goals/goalText';
 	import { stageAmounts, stagesFor, type DayStage } from '$lib/activity/stages';
 	import type { GoalsRow } from '$lib/goals/goals';
@@ -82,6 +82,10 @@
 	let prefs = $state(initialPrefs());
 	let loading = $state(true);
 	let error = $state('');
+	// A month fetch that failed while other data is on screen (#100 review): said
+	// with Try again; the month it was for is retried.
+	let monthError = $state('');
+	let failedMonth: Month | null = null;
 	// The learner's day rule; a zone change re-folds and re-requests the window.
 	let studyDay = $state.raw(currentStudyDay());
 	// The user's vacation periods (user-global rows): their dates are hatched.
@@ -213,6 +217,10 @@
 		return t('widgets.activity.week.points', { count: points });
 	});
 
+	// The month the loaded window is, or null while the 13-week window is loaded
+	// (the month calendar never draws that one).
+	const shownMonth = $derived(windowMonth(range));
+
 	// Month paging: back to the activity route's 366-day cap, never past the current month.
 	const canPrev = $derived(month > earliestMonth(today));
 	const canNext = $derived(month < monthOf(today));
@@ -248,12 +256,18 @@
 			if (!requests.isCurrent(seq)) return;
 			response = got;
 			range = next;
+			monthError = '';
 			void loadVacations();
 			void loadGoals();
 		} catch (err) {
 			if (!requests.isCurrent(seq)) return;
 			if (response === null) error = errorMessage(err, t('stats.activity.loadFailed'));
-			else console.warn('activity refresh failed', err);
+			else if (layout === 'month' && (next.from !== range.from || next.to !== range.to)) {
+				// A new month (not a refresh of the one on screen) did not load.
+				monthError = t('widgets.activity.month.loadFailed');
+				console.warn('activity month not loaded', err);
+				failedMonth = month;
+			} else console.warn('activity refresh failed', err);
 		} finally {
 			if (requests.isCurrent(seq)) loading = false;
 		}
@@ -376,16 +390,26 @@
 	     or a flower stage (HeatmapDayList). -->
 	<div class="heatmap">
 		{#if layout === 'month'}
-			<HeatmapMonth
-				month={monthOf(range.from)}
-				{today}
-				{cells}
-				{canPrev}
-				{canNext}
-				onprev={() => page(prevMonth(month))}
-				onnext={() => page(nextMonth(month))}
-				summary={goalSummary}
-			/>
+			{#if monthError}
+				<p class="month-error" role="status">
+					{monthError}
+					<button type="button" class="retry" onclick={() => page(failedMonth ?? month)}>{t('common.action.retry')}</button>
+				</p>
+			{/if}
+			{#if shownMonth !== null}
+				<HeatmapMonth
+					month={shownMonth}
+					{today}
+					{cells}
+					{canPrev}
+					{canNext}
+					onprev={() => page(prevMonth(month))}
+					onnext={() => page(nextMonth(month))}
+					summary={goalSummary}
+				/>
+			{:else if !monthError}
+				<p class="month-loading" aria-live="polite">{t('stats.activity.loading')}</p>
+			{/if}
 		{:else if layout === 'week'}
 			<HeatmapWeek cells={weekCells} summary={weekSummary} />
 		{:else}
@@ -539,6 +563,30 @@
 		.heatmap :global(.tile.today) {
 			outline: 2px solid Highlight;
 		}
+	}
+
+	.month-error,
+	.month-loading {
+		margin: var(--space-4) 0 0;
+		font-size: var(--font-size-s);
+		color: var(--readable-muted);
+	}
+
+	.retry {
+		font: inherit;
+		min-height: 2.75rem;
+		margin-left: var(--space-2);
+		padding: 0.3rem 0.85rem;
+		border: 1px solid var(--line);
+		border-radius: 999px;
+		background: transparent;
+		color: var(--text);
+		cursor: pointer;
+	}
+
+	.retry:focus-visible {
+		outline: 2px solid var(--focus-colour);
+		outline-offset: 2px;
 	}
 
 	.legend {

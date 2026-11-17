@@ -2780,6 +2780,7 @@
 	"weekly.window.weekBefore": "Compared with the week before",
 	"widgets.activity.description": "Learning activity per day over the last 13 weeks, per workspace or across all.",
 	"widgets.activity.month.goalDays": "{count, plural, one {Goal reached on {met} of # day} other {Goal reached on {met} of # days}}",
+	"widgets.activity.month.loadFailed": "Could not load this month.",
 	"widgets.activity.month.next": "Next month",
 	"widgets.activity.month.previous": "Previous month",
 	"widgets.activity.stage.bloom": "In bloom",

@@ -142,4 +142,28 @@ describe('HeatmapMonth', () => {
 		const list = screen.getByRole('list', { name: 'Daily activity' });
 		expect(within(list).getAllByRole('listitem').length).toBe(7);
 	});
+
+	it('switching from the garden shows a loading state, not the 13-week window, until the month arrives (#100 review)', async () => {
+		const { rerender } = render(ActivityHeatmap, { layout: 'garden' });
+		await waitFor(() => expect(document.querySelector('.grid')).not.toBeNull());
+		let release: (r: ActivityResponse) => void = () => {};
+		vi.mocked(fetchActivity).mockImplementationOnce(() => new Promise((resolve) => (release = resolve)));
+		await rerender({ layout: 'month' });
+		expect(document.querySelector('.month-grid')).toBeNull();
+		expect(screen.getByText('Loading activity…')).toBeTruthy();
+		release(reply('2026-11-01', '2026-11-16'));
+		await waitFor(() => expect(monthName()?.textContent).toBe('November 2026'));
+	});
+
+	it('a failed month fetch says so with Try again instead of showing another window', async () => {
+		const { rerender } = render(ActivityHeatmap, { layout: 'garden' });
+		await waitFor(() => expect(document.querySelector('.grid')).not.toBeNull());
+		vi.mocked(fetchActivity).mockRejectedValueOnce(new Error('offline'));
+		await rerender({ layout: 'month' });
+		expect(await screen.findByText(/Could not load this month/)).toBeTruthy();
+		expect(document.querySelector('.month-grid')).toBeNull();
+		await fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
+		await waitFor(() => expect(monthName()?.textContent).toBe('November 2026'));
+		expect(screen.queryByText(/Could not load this month/)).toBeNull();
+	});
 });
