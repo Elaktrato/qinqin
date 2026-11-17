@@ -109,6 +109,33 @@ export function levelFromXp(xp: number): number {
 	return levelProgress(xp).level;
 }
 
+/** The nearest date before `d` that is not a vacation day. */
+function dateBefore(d: string, onVacation: (d: string) => boolean): string {
+	let c = addDays(d, -1);
+	for (let guard = 0; onVacation(c) && guard < 100_000; guard++) c = addDays(c, -1);
+	return c;
+}
+
+/**
+ * streakRuns gives, for each review date (sorted, distinct, no vacation
+ * dates), the length of the run it ends: a run continues when the nearest
+ * non-vacation date before a date is the previous review date (vacation
+ * days are neutral). dailyStreak's best run is the maximum; the milestones
+ * read the day each length is first reached.
+ */
+export function streakRuns(days: readonly string[], vacation: readonly Run[]): number[] {
+	const onVacation = (d: string): boolean => isVacationDay(vacation, d);
+	const out: number[] = [];
+	let run = 0;
+	let prev: string | null = null;
+	for (const d of days) {
+		run = prev !== null && dateBefore(d, onVacation) === prev ? run + 1 : 1;
+		out.push(run);
+		prev = d;
+	}
+	return out;
+}
+
 /**
  * dailyStreak counts consecutive learner days with a review (civil dates,
  * so a 23 or 25 hour day is one day). The current run counts back from
@@ -134,29 +161,15 @@ export function dailyStreak(
 		)
 	].sort();
 	const set = new Set(days);
-	/** The nearest date before `d` that is not a vacation day. */
-	const before = (d: string): string => {
-		let c = addDays(d, -1);
-		for (let guard = 0; onVacation(c) && guard < 100_000; guard++) c = addDays(c, -1);
-		return c;
-	};
-
-	let best = 0;
-	let run = 0;
-	let prev: string | null = null;
-	for (const d of days) {
-		run = prev !== null && before(d) === prev ? run + 1 : 1;
-		best = Math.max(best, run);
-		prev = d;
-	}
+	const best = streakRuns(days, vacation).reduce((a, b) => (b > a ? b : a), 0);
 
 	const todayVacation = onVacation(today);
 	const todayDone = todayVacation || set.has(today);
-	let cursor = set.has(today) ? today : before(today);
+	let cursor = set.has(today) ? today : dateBefore(today, onVacation);
 	let current = 0;
 	while (set.has(cursor)) {
 		current += 1;
-		cursor = before(cursor);
+		cursor = dateBefore(cursor, onVacation);
 	}
 	return { current, best, todayDone };
 }

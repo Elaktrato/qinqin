@@ -2208,6 +2208,76 @@
     }
    },
    "note": ""
+  },
+  {
+   "name": "milestone: a seen row follows its workspace, key and data unchanged",
+   "op": "pluginRow",
+   "maps": {
+    "workspaces": {
+     "7": 12
+    }
+   },
+   "input": {
+    "pluginId": "qinqin-flashcards",
+    "workspaceId": 7,
+    "key": "milestone:reviews:1000",
+    "data": {
+     "version": 1,
+     "id": "reviews:1000",
+     "seenAt": "2026-11-17T08:00:00.000Z",
+     "reachedDay": "2026-11-03"
+    }
+   },
+   "expect": {
+    "drop": false,
+    "workspaceId": 12,
+    "key": "milestone:reviews:1000",
+    "data": {
+     "version": 1,
+     "id": "reviews:1000",
+     "seenAt": "2026-11-17T08:00:00.000Z",
+     "reachedDay": "2026-11-03"
+    }
+   },
+   "note": "milestones/README.md: a milestone id holds no entry, card or workspace id; only the row's workspace is remapped"
+  },
+  {
+   "name": "milestone: a level row keeps its level deck id",
+   "op": "pluginRow",
+   "maps": {
+    "workspaces": {
+     "7": 12
+    }
+   },
+   "input": {
+    "pluginId": "qinqin-flashcards",
+    "workspaceId": 7,
+    "key": "milestone:level-complete:d-lvl-hsk-words-b06fd2ac",
+    "data": {
+     "version": 1,
+     "id": "level-complete:d-lvl-hsk-words-b06fd2ac",
+     "seenAt": "2026-11-17T08:00:00.000Z",
+     "reachedDay": "2026-11-05",
+     "x": [
+      1
+     ]
+    }
+   },
+   "expect": {
+    "drop": false,
+    "workspaceId": 12,
+    "key": "milestone:level-complete:d-lvl-hsk-words-b06fd2ac",
+    "data": {
+     "version": 1,
+     "id": "level-complete:d-lvl-hsk-words-b06fd2ac",
+     "seenAt": "2026-11-17T08:00:00.000Z",
+     "reachedDay": "2026-11-05",
+     "x": [
+      1
+     ]
+    }
+   },
+   "note": "the level deck id is derived from packId and level name, not from a server id; unknown members kept"
   }
  ]
 }

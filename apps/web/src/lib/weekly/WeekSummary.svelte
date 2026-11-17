@@ -2,6 +2,8 @@
 	// One week's summary: the labels, the comparison window, the rows as a
 	// description list and the seven-day strip. Every word and number comes
 	// from weekText.ts (summaryLines); this component only lays them out.
+	import { MILESTONE_TEXT } from '$lib/milestones/milestoneText';
+	import { milestonesInWeek, type HistoryItem } from '$lib/milestones/plan';
 	import type { WeekView } from './loadWeek';
 	import WeekStrip from './WeekStrip.svelte';
 	import { compareWindowText, offlineText, summaryLines, type CharactersState } from './weekText';
@@ -14,10 +16,21 @@
 		compact?: boolean;
 		/** Retry the activity request (offline). */
 		onretry?: () => void;
+		/** The milestones history (Stats → Week): its items of the shown week make a line. */
+		milestones?: { items: HistoryItem[]; titles: ReadonlyMap<string, string> };
 		locale?: string;
 	}
 
-	let { view, characters = null, compact = false, onretry, locale }: Props = $props();
+	let { view, characters = null, compact = false, onretry, milestones, locale }: Props = $props();
+
+	const weekMilestones = $derived(
+		milestones === undefined || compact
+			? null
+			: milestonesInWeek(milestones.items, view.summary.monday).flatMap((item) => {
+					const title = milestones.titles.get(item.id);
+					return title === undefined ? [] : [title];
+				})
+	);
 
 	const lines = $derived(summaryLines(view.summary, view.sources, characters, compact));
 	const offline = $derived(offlineText(view.activityError !== null, characters === 'unavailable'));
@@ -54,6 +67,12 @@
 				</dd>
 			</div>
 		{/each}
+		{#if weekMilestones !== null}
+			<div class="row">
+				<dt>{MILESTONE_TEXT.weekLine}</dt>
+				<dd><span class="value">{weekMilestones.length > 0 ? weekMilestones.join(', ') : MILESTONE_TEXT.none}</span></dd>
+			</div>
+		{/if}
 	</dl>
 
 	<WeekStrip days={view.summary.days} {locale} />
