@@ -494,7 +494,12 @@ func (r Registry) buildOrFail(ctx context.Context, id string, specs []Spec, fail
 	if err != nil {
 		return r.recordFailure(ctx, row, spec, err, stamp)
 	}
-	same := row.revision >= 1 && built.ContentHash == row.contentHash && row.formatVersion == FormatVersion
+	// The manifest carries languages and requires, which the content hash
+	// does not cover: a change of them is a new revision too, so the file's
+	// manifest.json and the catalogue row agree. (optional is catalogue
+	// only: revive updates it in place.)
+	same := row.revision >= 1 && built.ContentHash == row.contentHash && row.formatVersion == FormatVersion &&
+		row.languages == m.languages && row.requires == m.requires
 	switch {
 	case same && cand == row.revision:
 		return r.commit(ctx, spec, built, cand, now)
@@ -591,8 +596,9 @@ func (r Registry) commitRows(ctx context.Context, spec Spec, b Built, rev int, n
 	return tx.Commit()
 }
 
-// revive keeps the current revision after an equal rebuild: nothing changes
-// unless the row was not ready, carried an error or its metadata moved.
+// revive keeps the current revision after an equal rebuild (equal content
+// and manifest): nothing changes unless the row was not ready, carried an
+// error or its catalogue-only metadata (optional) moved.
 func (r Registry) revive(ctx context.Context, row pkgRow, spec Spec, stamp string) error {
 	if row.state == stateReady && row.errText == "" && row.meta == specKey(spec) {
 		return nil

@@ -131,8 +131,10 @@ change.
   table in `schemas.json` order with rows in its `order`, `qq_sources`, the licence texts); not over
   `qq_package`. Opaque to clients: compare it, never compute it. Equal content gives an equal hash whatever
   the SQLite version or row insertion order.
-- `revision` — +1 whenever `contentHash` changes, never reused, continued after an uninstall and reinstall.
-  A rebuild with an equal hash changes nothing (no new revision, no new file).
+- `revision` — +1 whenever `contentHash` changes, or the manifest's `languages` or `requires` (which the hash
+  does not cover) change, so `manifest.json` always agrees with the catalogue row; never reused, continued
+  after an uninstall and reinstall. A rebuild with an equal hash and equal manifest fields changes nothing (no
+  new revision, no new file; a change of the catalogue-only `optional` updates the row in place).
 - `sha256`, `bytes` — of the file; what a download is checked against.
 - `instanceId` — a ULID the server creates once (migration 039, `server_meta`). It is in the catalogue, every
   manifest and every pull page. A different one means another database: discard packages and local user
