@@ -24,7 +24,10 @@
 //   e. every font file bundled with the web app (.woff2, .woff, .ttf, .otf
 //      under apps/web/src or apps/web/static) is named, in backticks, in
 //      docs/sources.md, and the section (## heading) naming it also names
-//      its licence text as `apps/web/static/<NAME>.TXT`, which must exist.
+//      its licence text as `apps/web/static/<NAME>.TXT`, which must exist;
+//   f. every vendored icon set (a non-test .ts module under
+//      apps/web/src/lib/ui/icons) is named, in backticks, in docs/sources.md,
+//      in a section that also names its licence text the same way.
 //
 // Exit code 0 when everything agrees, 1 with one message per problem.
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
@@ -253,15 +256,26 @@ function fontFiles(root) {
 /** docSections splits docs/sources.md at its `## ` headings. */
 const docSections = (doc) => doc.split(/^## /m);
 
-/** fontProblems checks rule e for every bundled font file. */
-function fontProblems(root, doc) {
+const ICON_DIR = 'apps/web/src/lib/ui/icons';
+
+/** iconFiles lists the vendored icon modules (rule f). */
+function iconFiles(root) {
+	if (!existsSync(join(root, ICON_DIR))) return [];
+	return readdirSync(join(root, ICON_DIR))
+		.filter((name) => name.endsWith('.ts') && !name.endsWith('.test.ts') && !name.endsWith('.d.ts'))
+		.map((name) => `${ICON_DIR}/${name}`)
+		.sort();
+}
+
+/** namedWithLicence checks rules e and f: each file is named in a docs section that names an existing licence text. */
+function namedWithLicence(root, doc, files, what) {
 	const problems = [];
-	for (const rel of fontFiles(root)) {
+	for (const rel of files) {
 		const name = '`' + rel.split('/').pop() + '`';
 		const sections = docSections(doc).filter((s) => s.includes(name));
 		if (sections.length === 0) {
 			problems.push(
-				`${rel}: bundled font is not named in docs/sources.md; name the file, in backticks, in a section that also names its licence text (\`apps/web/static/<NAME>.TXT\`)`
+				`${rel}: ${what} is not named in docs/sources.md; name the file, in backticks, in a section that also names its licence text (\`apps/web/static/<NAME>.TXT\`)`
 			);
 			continue;
 		}
@@ -272,6 +286,9 @@ function fontProblems(root, doc) {
 	}
 	return problems;
 }
+
+/** fontProblems checks rule e for every bundled font file. */
+const fontProblems = (root, doc) => namedWithLicence(root, doc, fontFiles(root), 'bundled font');
 
 /** checkSources returns the list of problems under repo root `root`. */
 export function checkSources(root) {
@@ -337,6 +354,7 @@ export function checkSources(root) {
 		}
 	}
 	problems.push(...fontProblems(root, doc));
+	problems.push(...namedWithLicence(root, doc, iconFiles(root), 'vendored icon set'));
 	for (const id of docPackIds(doc)) {
 		if (!known.has(id)) {
 			problems.push(

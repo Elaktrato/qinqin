@@ -219,6 +219,18 @@ describe('pluginCredits', () => {
 		expect(figtree.notice).toMatch(/interface font/i);
 	});
 
+	it('credits the vendored icon set (Lucide, ISC; Feather-derived icons MIT) with its licence text', () => {
+		const lucide = coreCredits.find((credit) => credit.name === 'Lucide')!;
+		expect(lucide).toBeDefined();
+		expect(lucide.url).toBe('https://lucide.dev');
+		expect(lucide.license).toBe('ISC AND MIT');
+		expect(lucide.attribution).toBe(
+			'Copyright (c) 2026 Lucide Icons and Contributors; Copyright (c) 2013-present Cole Bemis (Feather)'
+		);
+		expect(lucide.licenseTexts).toEqual([{ label: 'ISC AND MIT license text', path: '/LUCIDE-LICENSE.TXT' }]);
+		expect(lucide.notice).toMatch(/icons/i);
+	});
+
 	it('credits the compiled-in fallback palette (Catppuccin, MIT) with its licence text', () => {
 		const catppuccin = coreCredits.find((credit) => credit.name === 'Catppuccin')!;
 		expect(catppuccin).toBeDefined();
@@ -268,6 +280,7 @@ describe('declared credits', () => {
 			'/CATPPUCCIN-LICENSE.TXT',
 			'/FIGTREE-OFL.TXT',
 			'/LEPTONICA-LICENSE.TXT',
+			'/LUCIDE-LICENSE.TXT',
 			'/OPENCC-APACHE-2.0.TXT',
 			'/OPENCC-JS-LICENSE.TXT',
 			'/TESSERACT-APACHE-2.0.TXT',

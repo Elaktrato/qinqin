@@ -53,7 +53,9 @@ describe('quick theme switch', () => {
 		const button = screen.getByRole('button', { name: 'Theme: Mocha' });
 		expect(button.getAttribute('aria-haspopup')).toBe('menu');
 		expect(button.getAttribute('aria-expanded')).toBe('false');
-		expect(button.getAttribute('title')).toBe('Theme: Mocha');
+		// The tooltip (lib/ui Tooltip, #98) shows the name on hover and focus; no native title.
+		expect(screen.getByRole('tooltip', { hidden: true }).textContent).toBe('Theme: Mocha');
+		expect(button.hasAttribute('title')).toBe(false);
 		expect(screen.queryByRole('menu')).toBeNull();
 	});
 

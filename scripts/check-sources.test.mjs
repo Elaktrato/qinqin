@@ -223,3 +223,34 @@ test('node_modules and build output are not scanned for fonts', () => {
 	withFont(root, 'apps/web/build/_app/immutable/assets/abc.woff2');
 	assert.deepEqual(checkSources(root), []);
 });
+
+/** withIcons adds a vendored icon module (and optionally a licence text) to a temp repository. */
+function withIcons(root, name, licence) {
+	const dir = join(root, 'apps/web/src/lib/ui/icons');
+	mkdirSync(dir, { recursive: true });
+	writeFileSync(join(dir, name), 'export const ICONS = {};');
+	writeFileSync(join(dir, name.replace(/\.ts$/, '.test.ts')), '// a test, never named');
+	if (licence) {
+		mkdirSync(join(root, 'apps/web/static'), { recursive: true });
+		writeFileSync(join(root, 'apps/web/static', licence), 'ISC License');
+	}
+	return root;
+}
+
+const ICON_DOC = DOC + '\n## Icons\n\nLucide (`lucide.ts`), licence text `apps/web/static/LUCIDE-LICENSE.TXT`.\n\n## Other\n';
+
+test('rule f: a vendored icon set named in the docs with an existing licence text passes', () => {
+	const root = withIcons(repo(okPacks(), ICON_DOC), 'lucide.ts', 'LUCIDE-LICENSE.TXT');
+	assert.deepEqual(checkSources(root), []);
+});
+
+test('rule f: a vendored icon set the docs do not name, or name without a licence text, is reported', () => {
+	const unnamed = withIcons(repo(okPacks()), 'lucide.ts', 'LUCIDE-LICENSE.TXT');
+	assert.deepEqual(checkSources(unnamed), [
+		'apps/web/src/lib/ui/icons/lucide.ts: vendored icon set is not named in docs/sources.md; name the file, in backticks, in a section that also names its licence text (`apps/web/static/<NAME>.TXT`)'
+	]);
+	const unlicensed = withIcons(repo(okPacks(), ICON_DOC), 'lucide.ts');
+	assert.deepEqual(checkSources(unlicensed), [
+		'apps/web/src/lib/ui/icons/lucide.ts: the docs/sources.md section naming it names no licence text that exists under apps/web/static'
+	]);
+});

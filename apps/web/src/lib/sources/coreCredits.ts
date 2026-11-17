@@ -53,6 +53,16 @@ export const coreCredits: SourceCredit[] = [
 		attribution: 'Copyright 2022 The Figtree Project Authors',
 		licenseTexts: [licenceText('OFL-1.1', '/FIGTREE-OFL.TXT')]
 	}, { notice: 'sources.core.figtree' }),
+	// The line icons (#98): Lucide shapes vendored as data
+	// (lib/ui/icons/lucide.ts); the package LICENSE ships at
+	// static/LUCIDE-LICENSE.TXT byte for byte (lib/ui/icons/lucide.test.ts).
+	credit({
+		name: 'Lucide',
+		url: 'https://lucide.dev',
+		license: 'ISC AND MIT',
+		attribution: 'Copyright (c) 2026 Lucide Icons and Contributors; Copyright (c) 2013-present Cole Bemis (Feather)',
+		licenseTexts: [licenceText('ISC AND MIT', '/LUCIDE-LICENSE.TXT')]
+	}, { notice: 'sources.core.lucide' }),
 	// The compiled-in fallback palette (#96): Catppuccin Latte and Mocha
 	// paint before the server's theme list arrives (lib/theme/fallback.ts).
 	// Its licence text ships at static/CATPPUCCIN-LICENSE.TXT, the built-in
