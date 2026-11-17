@@ -57,6 +57,21 @@ type Dictionary struct {
 	DeletedAt   *time.Time `json:"deletedAt"`
 }
 
+// StrokePack is one installed strokes pack (internal/strokes) as the
+// Sources page credits it. Ord is its lookup priority: for a character
+// several packs carry, the live pack with the lowest Ord serves it.
+type StrokePack struct {
+	PackID      string   `json:"packId"`
+	Name        string   `json:"name"`
+	Version     string   `json:"version"`
+	Languages   []string `json:"languages"`
+	License     string   `json:"license"`
+	Attribution string   `json:"attribution"`
+	Notice      string   `json:"notice"`
+	Ord         int      `json:"ord"`
+	UpdatedAt   string   `json:"updatedAt"`
+}
+
 // SenseView is one gloss of an entry with the dictionary it comes from:
 // the shape a reader needs to show a gloss together with its source and
 // license. It carries no row ids or timestamps — those are sync's

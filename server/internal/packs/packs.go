@@ -1,6 +1,6 @@
 // Package packs is the one place that imports, uninstalls and lists data
 // packs of every type — dictionaries, frequency lists, level lists,
-// sentence, grammar, audio and components packs. The seed CLI and the admin API both go through it, so
+// sentence, grammar, audio, components and strokes packs. The seed CLI and the admin API both go through it, so
 // a pack installs, shows up and goes away the same way however it
 // arrived.
 package packs
@@ -19,21 +19,25 @@ import (
 	"qinqin/internal/grammar"
 	"qinqin/internal/levels"
 	"qinqin/internal/sentences"
+	"qinqin/internal/strokes"
 )
 
 // Installed is one installed pack as the admin list shows it. License
 // and Attribution are the strings the pack stated when it was imported,
-// verbatim; a legacy sentence pack carries none of them.
+// verbatim; a legacy sentence pack carries none of them. A strokes pack
+// serves several languages: Language is empty and Languages lists them
+// (sorted); every other type has Language and no Languages.
 type Installed struct {
-	Type        string `json:"type"`
-	PackID      string `json:"packId"`
-	Name        string `json:"name"`
-	Version     string `json:"version"`
-	Language    string `json:"language"`
-	License     string `json:"license"`
-	Attribution string `json:"attribution"`
-	Notice      string `json:"notice"`
-	UpdatedAt   string `json:"updatedAt"` // RFC 3339; "" for a legacy sentence pack
+	Type        string   `json:"type"`
+	PackID      string   `json:"packId"`
+	Name        string   `json:"name"`
+	Version     string   `json:"version"`
+	Language    string   `json:"language"`
+	Languages   []string `json:"languages,omitempty"`
+	License     string   `json:"license"`
+	Attribution string   `json:"attribution"`
+	Notice      string   `json:"notice"`
+	UpdatedAt   string   `json:"updatedAt"` // RFC 3339; "" for a legacy sentence pack
 }
 
 // ErrNotFound reports a pack that is not installed.
@@ -51,6 +55,7 @@ var typeOrder = map[string]int{
 	dict.TypeGrammar:    4,
 	dict.TypeAudio:      5,
 	dict.TypeComponents: 6,
+	dict.TypeStrokes:    7,
 }
 
 // Supported reports whether typ is a pack type this package manages.
@@ -160,6 +165,12 @@ func importData(ctx context.Context, sqlDB *sql.DB, pack dict.Pack, o options) (
 			return "", err
 		}
 		return fmt.Sprintf("%d characters, %d parts", r.Chars, r.Parts), nil
+	case dict.TypeStrokes:
+		r, err := strokes.Import(ctx, sqlDB, pack)
+		if err != nil {
+			return "", err
+		}
+		return fmt.Sprintf("%d characters", r.Chars), nil
 	}
 	return "", fmt.Errorf("%w: %q", ErrUnknownType, pack.Type)
 }
@@ -197,12 +208,14 @@ func Uninstall(ctx context.Context, sqlDB *sql.DB, typ, packID string, opts ...O
 		_, err = audio.Uninstall(ctx, sqlDB, packID, o.audioStore)
 	case dict.TypeComponents:
 		err = components.Uninstall(ctx, sqlDB, packID)
+	case dict.TypeStrokes:
+		err = strokes.Uninstall(ctx, sqlDB, packID)
 	default:
 		return fmt.Errorf("%w: %q", ErrUnknownType, typ)
 	}
 	if errors.Is(err, grammar.ErrNotFound) || errors.Is(err, dict.ErrNotFound) || errors.Is(err, freq.ErrNotFound) ||
 		errors.Is(err, levels.ErrNotFound) || errors.Is(err, sentences.ErrNotFound) || errors.Is(err, audio.ErrPackNotFound) ||
-		errors.Is(err, components.ErrNotFound) {
+		errors.Is(err, components.ErrNotFound) || errors.Is(err, strokes.ErrNotFound) {
 		return ErrNotFound
 	}
 	if err != nil {
@@ -240,7 +253,7 @@ func Find(ctx context.Context, sqlDB *sql.DB, typ, packID string) (Installed, er
 
 // List returns every live pack of every type, ordered by type
 // (dictionary, frequency, levels, sentences, grammar, audio,
-// components), then name, then pack id.
+// components, strokes), then name, then pack id.
 // Sentence packs imported before the registry existed list with only
 // their type and id, after the registered ones: their licence is not
 // recorded, and the list must not make them look like known packs.
@@ -277,6 +290,14 @@ func List(ctx context.Context, sqlDB *sql.DB) ([]Installed, error) {
 		if err := errors.Join(rows.Err(), rows.Close()); err != nil {
 			return nil, fmt.Errorf("packs: list %s: %w", q.typ, err)
 		}
+	}
+	strokePacks, err := strokes.Packs(ctx, sqlDB)
+	if err != nil {
+		return nil, fmt.Errorf("packs: list %s: %w", dict.TypeStrokes, err)
+	}
+	for _, sp := range strokePacks {
+		out = append(out, Installed{Type: dict.TypeStrokes, PackID: sp.PackID, Name: sp.Name, Version: sp.Version,
+			Languages: sp.Languages, License: sp.License, Attribution: sp.Attribution, Notice: sp.Notice, UpdatedAt: sp.UpdatedAt})
 	}
 
 	legacy, err := sqlDB.QueryContext(ctx, `

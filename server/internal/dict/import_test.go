@@ -10,6 +10,7 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"reflect"
 	"slices"
 	"strings"
 	"testing"
@@ -230,7 +231,7 @@ func TestManifestRequiresLicense(t *testing.T) {
 
 func TestLoadPackDirectory(t *testing.T) {
 	pack := loadFixture(t)
-	if pack.Manifest != fixtureManifest {
+	if !reflect.DeepEqual(pack.Manifest, fixtureManifest) {
 		t.Errorf("manifest = %+v, want %+v", pack.Manifest, fixtureManifest)
 	}
 	if pack.Dir != fixturePack {
@@ -244,7 +245,7 @@ func TestLoadPackZip(t *testing.T) {
 		t.Fatalf("LoadPack(zip of fixture): %v", err)
 	}
 	t.Cleanup(func() { os.RemoveAll(pack.Dir) }) // a zip's extraction is the caller's to clean up
-	if pack.Manifest != fixtureManifest {
+	if !reflect.DeepEqual(pack.Manifest, fixtureManifest) {
 		t.Errorf("manifest = %+v, want %+v", pack.Manifest, fixtureManifest)
 	}
 	if pack.Dir == fixturePack {

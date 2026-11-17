@@ -144,15 +144,16 @@ func replacePathPrefix(msg, path string) string {
 
 // stagedManifest is the manifest as the server parsed it.
 type stagedManifest struct {
-	ID          string `json:"id"`
-	Name        string `json:"name"`
-	Version     string `json:"version"`
-	Type        string `json:"type"`
-	Language    string `json:"language"`
-	License     string `json:"license"`
-	Attribution string `json:"attribution"`
-	Notice      string `json:"notice"`
-	Format      string `json:"format"`
+	ID          string   `json:"id"`
+	Name        string   `json:"name"`
+	Version     string   `json:"version"`
+	Type        string   `json:"type"`
+	Language    string   `json:"language"`
+	Languages   []string `json:"languages,omitempty"` // a strokes pack's languages (it has no language)
+	License     string   `json:"license"`
+	Attribution string   `json:"attribution"`
+	Notice      string   `json:"notice"`
+	Format      string   `json:"format"`
 }
 
 // stagedReplaces is what installing a staged pack would replace.
@@ -271,7 +272,7 @@ func (s *server) handleStagePack(w http.ResponseWriter, r *http.Request) {
 		registryID, license, attribution = dict.RegistryTerms(m)
 	}
 	resp := stagedResponse{Token: token, Manifest: stagedManifest{ID: m.ID, Name: m.Name, Version: m.Version,
-		Type: m.Type, Language: m.Language, License: license, Attribution: attribution, Notice: m.Notice, Format: m.Format}}
+		Type: m.Type, Language: m.Language, Languages: m.Languages, License: license, Attribution: attribution, Notice: m.Notice, Format: m.Format}}
 	switch old, err := packs.Find(r.Context(), s.db, m.Type, registryID); {
 	case err == nil:
 		resp.Replaces = &stagedReplaces{Version: old.Version, License: old.License, Attribution: old.Attribution}
