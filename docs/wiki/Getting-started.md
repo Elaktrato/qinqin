@@ -24,9 +24,10 @@ The logo is the link to the home page. The home page shows widgets in the order 
 
 ## Finding your way around
 
-- The **navigation** (a bottom tab bar on narrow screens, under 720 px) holds Search, then Decks and Reader (unless you switched them off under Settings, Features), then one item per enabled plugin page (for example Journal; the set depends on which plugins are on under Settings, Plugins). Study sessions start from `/study`, the Decks page and the home widget.
-- The **workspace picker** in the header switches between your study spaces and can create a new one ([Workspaces and languages](Workspaces-and-languages)).
-- **Stats**, **Sources** and **Settings** live in the footer of every signed-in page. Sources (credits and licences for all bundled data) is also open to visitors who are not signed in.
+- The **top bar** (720 px and wider) has the logo, which takes you home, the sections as icons in the middle — Decks and Reader (unless you switched them off under Settings, Features), one item per enabled plugin page (for example Journal; the set depends on which plugins are on under Settings, Plugins), then Search and Stats — and on the right your workspace's flag and your avatar. Hover or focus an icon to see its name. Study sessions start from `/study`, the Decks page and the home widget.
+- On narrow screens (under 720 px) the bar shows a **menu button**, the page title and the flag; the menu opens a drawer with your workspaces as flags, the sections with their names (Home first) and your account.
+- The **flag** opens the workspace menu: switch between your study spaces, or **Manage workspaces** to create one ([Workspaces and languages](Workspaces-and-languages)).
+- The **avatar** opens the account menu: **Settings**, **Theme** (switch the theme in one click), **Admin settings** for administrators, **Sources** and **Sign out**. Sources (credits and licences for all bundled data) is also open to visitors who are not signed in.
 - The first Tab stop on every page is a "Skip to content" link.
 
 ## A first ten minutes

@@ -1,6 +1,6 @@
 # Stats and the activity heatmap
 
-**Stats** is in the footer of every signed-in page (`/stats`). It has up to three tabs.
+**Stats** is the bar-chart icon in the top bar (in the menu drawer on a phone) of every signed-in page (`/stats`). It has up to three tabs.
 
 - **Overview** shows every widget that applies to the current workspace, in a fixed order (core first, then flashcards and the reader, then plugins).
 - **Week** (`/stats/week`) is the [weekly summary](Weekly-summary): one week, Monday to Sunday, compared with the week before; previous weeks are a link away. It needs a workspace. It also shows your [milestones](Milestones): a card for new ones and the full list (`/stats/week#milestones`).
