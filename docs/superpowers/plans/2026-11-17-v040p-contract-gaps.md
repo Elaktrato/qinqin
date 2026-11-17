@@ -25,8 +25,8 @@ dependencies.
 
 **Spec (binding, incl. Rulings):** `docs/superpowers/specs/2026-11-17-v040p-contract-gaps-design.md`.
 
-**Issue:** created by the orchestrator from the spec's Appendix A before Task 1; write its number here and in
-the commit bodies (`Refs #<n>`).
+**Issue:** #109 (created by the orchestrator from the spec's Appendix A); follow-up D1 (page `GET /api/events`)
+is #110. Commit bodies carry `Refs #109`.
 
 **Branch / worktree:** `feature/v040p-contract-gaps`, worktree
 `/home/user/www/github/qinqin/.claude/worktrees/contract-gaps` (`<wt>`), branched from `feature/v040p-packages`
@@ -333,7 +333,21 @@ of each other in content but share the web gates; one implementer at a time. Tas
 
 ## Execution record
 
-(empty — filled by the builder: issue number, base commit, per-task commits and gate exit codes, test-first
-evidence (fixture absent → FAIL, altered value → FAIL), adaptations (real test file names, helpers), bugs found
-while extracting and their separate commits, the overview/README audit table, real-app check results, what was
-not verified, review findings and the fix wave, mutation checks.)
+- Issue: #109 (events paging follow-up D1: #110). Base commit: `2dfe78a` (item 5 merged into this branch).
+- Task 1 (envelope): Go `contract_events_test.go` with `envelope.json` absent → FAIL (`open
+  ../../../docs/contracts/events/envelope.json: no such file or directory`); present → PASS; altered
+  `stored[0].ts` (`09:00:00Z` → `09:00:00.789Z`) → FAIL; restored → PASS. Web `pullPage.contract.test.ts` +
+  `scheduler.test.ts` with the fixture absent → FAIL (import); present → PASS; altered pull `types` (lookup added)
+  → FAIL. Gates: `go.sh 'gofmt -l . ; go vet ./internal/api && go test -count=1 -p 2 -timeout 30m ./internal/api'`
+  → gofmt empty, exit 0; `npm run check` → 0; `npm test` → 1 failure (`contractsDocs.test.ts`: no README row
+  for `events/`), fixed by adding the `events/` row in this commit (targeted `contractsDocs`/`wikiDocs` → pass).
+- Adaptation: the envelope fixture is step-based (`steps: [{post | list | pull, expect}]`, then `stored` = what
+  `GET /api/events` lists afterwards) instead of the plan's flat `{post, expect}` / `{op}` cases: the list and
+  duplicate rules need several requests against one server.
+- Adaptation: the pager check decodes `envelope.json`'s pull case through `parsePullPage` (the exported entry;
+  `rowOk` is private), on the valid last page of `sync/pull-page.json` with its event row's `type` replaced.
+- Adaptation: `docs/contracts/README.md` gets its `events/` row in Task 1 (the existing doc test requires a
+  row for every folder); Task 11 still rewrites the table.
+- Ruling: the envelope fixture's first draft listed the two events of case 1 in posting order; the server lists
+  them by `ts` (`10:00:00.789+01:00` is `09:00:00Z`, before `09:59:59Z`) — a fixture error, corrected; the
+  server is right — cost: none.

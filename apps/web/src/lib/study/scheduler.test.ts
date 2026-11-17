@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 import type { ReviewEvent, ReviewGrade, StudyCard } from './types';
 import { createEmptyCard, fsrs, Rating, type Grade } from 'ts-fsrs';
 
+import envelopeFixture from '../../../../../docs/contracts/events/envelope.json';
 import vacationSchedule from '../../../../../docs/contracts/scheduler/vacation-schedule.json';
 import { DEFAULT_W } from './fsrs/params';
 import { clockFromRuns, IDENTITY_CLOCK } from './studyClock';
@@ -14,6 +15,7 @@ import {
 	levelFromXp,
 	scheduleFor,
 	schedulerCacheSize,
+	sortedReviews,
 	xpFromReviews
 } from './scheduler';
 
@@ -537,5 +539,27 @@ describe('buildQueue with a new-card key (#75)', () => {
 		// x ranks best but its deck takes no new cards today: the next-ranked z of the open deck.
 		expect(buildQueue({ ...opts, newKey }).map((c) => c.id)).toEqual(['z']);
 		expect(buildQueue(opts).map((c) => c.id)).toEqual(['y']);
+	});
+});
+
+describe('docs/contracts/events/envelope.json: replay order', () => {
+	interface EnvelopeEvent {
+		id: string;
+		ts: string;
+		type: string;
+		payload: unknown;
+	}
+	interface EnvelopeCase {
+		name: string;
+		steps: { post?: { events?: EnvelopeEvent[] }; list?: string; expect: { ids?: string[] } }[];
+		stored: EnvelopeEvent[];
+	}
+	const order = (envelopeFixture as unknown as { cases: EnvelopeCase[] }).cases.find((c) => c.name.startsWith('list order'));
+	it('sortedReviews over the stored copies equals the server list order (ts, then id)', () => {
+		expect(order).toBeDefined();
+		const serverOrder = order!.steps.find((s) => s.list === '')!.expect.ids!;
+		const stored = order!.stored.map((e) => ({ ...e, workspaceId: 7, device: 'web' }) as ReviewEvent);
+		expect(sortedReviews(stored).map((e) => e.id)).toEqual(serverOrder);
+		expect(sortedReviews([...stored].reverse()).map((e) => e.id)).toEqual(serverOrder);
 	});
 });
