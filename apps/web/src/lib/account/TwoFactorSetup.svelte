@@ -1,9 +1,12 @@
 <script lang="ts">
+	import { errorText } from '$lib/api/apiErrors';
 	import { tick } from 'svelte';
 	import { apiErrorBody } from '$lib/api/client';
 	import { putEmail, type AuthOptions } from '$lib/api/account';
 	import { confirmEmailMethod, setEmailMethod, totpConfirm, totpSetup, type TotpSetup } from '$lib/api/mfa';
 	import { loadMe, user } from '$lib/auth';
+	import { t } from '$lib/i18n';
+	import Msg from '$lib/i18n/Msg.svelte';
 	import { codeFailure, otpAttrs, otpComplete, sanitizeOtp } from './otpInput';
 	import { groupSecret, twoFactorChoices } from './mfaView';
 	import EmailVerify from './EmailVerify.svelte';
@@ -50,9 +53,9 @@
 
 	function fail(err: unknown, fallback: string) {
 		const body = apiErrorBody(err);
-		if (body?.error === 'wrong_password') return 'The password is wrong.';
+		if (body?.error === 'wrong_password') return t('account.mfa.wrongPassword');
 		if (body?.error === 'code_invalid') return codeFailure(body, fallback).text;
-		return body?.message || (err instanceof Error ? err.message : '') || fallback;
+		return errorText(err, fallback);
 	}
 
 	async function startTotp(event?: SubmitEvent) {
@@ -66,7 +69,7 @@
 			code = '';
 			await go('scan');
 		} catch (err) {
-			error = fail(err, 'Could not start the setup.');
+			error = fail(err, t('account.setup.startFailed'));
 		} finally {
 			busy = false;
 		}
@@ -83,7 +86,7 @@
 			await go('codes');
 		} catch (err) {
 			const body = apiErrorBody(err);
-			error = body?.error === 'setup_expired' ? 'The setup took too long. Start again.' : fail(err, 'Could not check the code.');
+			error = body?.error === 'setup_expired' ? t('account.setup.expired') : fail(err, t('account.verify.checkFailed'));
 			if (body?.error === 'setup_expired') await go('choose');
 		} finally {
 			busy = false;
@@ -95,7 +98,7 @@
 			await navigator.clipboard.writeText(setup?.secret ?? '');
 			copied = true;
 		} catch {
-			error = 'Could not copy. Select the key and copy it by hand.';
+			error = t('account.setup.copyFailed');
 		}
 	}
 
@@ -114,10 +117,10 @@
 			password = '';
 			verifyAddress = emailDraft.trim();
 			if (res.verification === 'sent') verifying = true;
-			else error = 'This server cannot send mail right now. Choose the authenticator app instead.';
+			else error = t('account.setup.noMail');
 			await loadMe();
 		} catch (err) {
-			error = fail(err, 'Could not save the email address.');
+			error = fail(err, t('account.setup.saveEmailFailed'));
 		} finally {
 			busy = false;
 		}
@@ -134,7 +137,7 @@
 			if (res.confirm) confirming = true;
 			else await finish();
 		} catch (err) {
-			error = fail(err, 'Could not turn on emailed codes.');
+			error = fail(err, t('account.setup.emailOnFailed'));
 		} finally {
 			busy = false;
 		}
@@ -143,21 +146,21 @@
 
 <div class="twofactor">
 	{#if step === 'choose'}
-		<h2 tabindex="-1" bind:this={heading}>Set up two-step sign-in</h2>
-		<p>Pick how you will prove it is you after your password.</p>
+		<h2 tabindex="-1" bind:this={heading}>{t('account.mfa.setUp')}</h2>
+		<p>{t('account.setup.pick')}</p>
 		<ul class="choices">
 			{#if choices.totp}
 				<li>
-					<button type="button" onclick={() => (forced ? startTotp() : go('password'))}>Authenticator app</button>
-					<span class="hint">An app such as Aegis, 2FAS or Google Authenticator makes a code every 30 seconds. Works offline.</span>
+					<button type="button" onclick={() => (forced ? startTotp() : go('password'))}>{t('account.setup.app')}</button>
+					<span class="hint">{t('account.setup.appHint')}</span>
 				</li>
 			{:else if choices.totpWhy}
 				<li class="hint">{choices.totpWhy}</li>
 			{/if}
 			{#if choices.email}
 				<li>
-					<button type="button" onclick={() => go('email')}>Email codes</button>
-					<span class="hint">We mail a 6-digit code to your confirmed address each time you sign in.</span>
+					<button type="button" onclick={() => go('email')}>{t('account.setup.email')}</button>
+					<span class="hint">{t('account.setup.emailHint')}</span>
 				</li>
 			{:else if options}
 				<li class="hint">{choices.emailWhy}</li>
@@ -165,27 +168,27 @@
 		</ul>
 		{#if error}<p class="error" role="alert">{error}</p>{/if}
 	{:else if step === 'password'}
-		<h2 tabindex="-1" bind:this={heading}>Confirm your password</h2>
+		<h2 tabindex="-1" bind:this={heading}>{t('account.setup.confirmPassword')}</h2>
 		<form onsubmit={startTotp}>
 			<label>
-				Password
+				{t('account.field.password')}
 				<input type="password" name="password" autocomplete="current-password" bind:value={password} required />
 			</label>
 			{#if error}<p class="error" role="alert">{error}</p>{/if}
-			<button type="submit" disabled={busy || !password}>Continue</button>
-			<button type="button" class="link" onclick={() => go('choose')}>Back</button>
+			<button type="submit" disabled={busy || !password}>{t('common.action.continue')}</button>
+			<button type="button" class="link" onclick={() => go('choose')}>{t('common.action.back')}</button>
 		</form>
 	{:else if step === 'scan' && setup}
-		<h2 tabindex="-1" bind:this={heading}>Scan the code</h2>
+		<h2 tabindex="-1" bind:this={heading}>{t('account.setup.scanTitle')}</h2>
 		<ol>
-			<li>Open your authenticator app and add an account.</li>
-			<li>Scan this picture, or type the key below.</li>
-			<li>Enter the 6-digit code the app shows.</li>
+			<li>{t('account.setup.scanStep1')}</li>
+			<li>{t('account.setup.scanStep2')}</li>
+			<li>{t('account.setup.scanStep3')}</li>
 		</ol>
 		<QrCode text={setup.otpauthUri} />
 		<p>
-			Key: <code class="secret" data-testid="secret">{groupSecret(setup.secret)}</code>
-			<button type="button" class="link" onclick={copySecret}>{copied ? 'Copied' : 'Copy'}</button>
+			{t('account.setup.key')} <code class="secret" data-testid="secret">{groupSecret(setup.secret)}</code>
+			<button type="button" class="link" onclick={copySecret}>{copied ? t('common.action.copied') : t('common.action.copy')}</button>
 		</p>
 		<form onsubmit={confirm}>
 			<label>
@@ -204,32 +207,34 @@
 				/>
 			</label>
 			{#if error}<p class="error" role="alert">{error}</p>{/if}
-			<button type="submit" disabled={busy || !otpComplete(code, 'totp')}>Turn on</button>
+			<button type="submit" disabled={busy || !otpComplete(code, 'totp')}>{t('account.setup.turnOn')}</button>
 		</form>
 	{:else if step === 'codes'}
 		<RecoveryCodes codes={recovery} {site} oncontinue={finish} />
 	{:else if step === 'email'}
-		<h2 tabindex="-1" bind:this={heading}>Email codes</h2>
+		<h2 tabindex="-1" bind:this={heading}>{t('account.setup.email')}</h2>
 		{#if confirming}
 			<EmailVerify
 				address={$user?.email ?? ''}
 				verify={confirmEmailMethod}
 				resend={async () => (await setEmailMethod(true)) as { resendAfter?: number }}
-				submitLabel="Turn on email codes"
+				submitLabel={t('account.setup.turnOnEmail')}
 				onverified={finish}
 			/>
 		{:else if emailReady}
-			<p>Codes will go to <strong>{$user?.email}</strong>.</p>
+			<p>
+				<Msg key="account.setup.codesGoTo" args={{ address: $user?.email ?? '' }}>{#snippet strong(text: string)}<strong>{text}</strong>{/snippet}</Msg>
+			</p>
 			<form onsubmit={enableEmail}>
 				{#if !forced}
 					<label>
-						Password
+						{t('account.field.password')}
 						<input type="password" name="password" autocomplete="current-password" bind:value={password} required />
 					</label>
 				{/if}
 				{#if error}<p class="error" role="alert">{error}</p>{/if}
-				<button type="submit" disabled={busy || (!forced && !password)}>Turn on email codes</button>
-				<button type="button" class="link" onclick={() => go('choose')}>Back</button>
+				<button type="submit" disabled={busy || (!forced && !password)}>{t('account.setup.turnOnEmail')}</button>
+				<button type="button" class="link" onclick={() => go('choose')}>{t('common.action.back')}</button>
 			</form>
 		{:else if verifying}
 			<EmailVerify
@@ -240,21 +245,21 @@
 				}}
 			/>
 		{:else}
-			<p>Add an email address first. We send a code to confirm it.</p>
+			<p>{t('account.setup.addEmailFirst')}</p>
 			<form onsubmit={saveEmail}>
 				<label>
-					Email address
+					{t('account.setup.emailAddress')}
 					<input type="email" name="email" autocomplete="email" bind:value={emailDraft} required />
 				</label>
 				{#if !forced}
 					<label>
-						Password
+						{t('account.field.password')}
 						<input type="password" name="password" autocomplete="current-password" bind:value={password} required />
 					</label>
 				{/if}
 				{#if error}<p class="error" role="alert">{error}</p>{/if}
-				<button type="submit" disabled={busy}>Send a code</button>
-				<button type="button" class="link" onclick={() => go('choose')}>Back</button>
+				<button type="submit" disabled={busy}>{t('account.setup.sendCode')}</button>
+				<button type="button" class="link" onclick={() => go('choose')}>{t('common.action.back')}</button>
 			</form>
 		{/if}
 	{/if}

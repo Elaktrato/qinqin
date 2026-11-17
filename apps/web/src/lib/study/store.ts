@@ -11,6 +11,7 @@
 import { get } from "svelte/store";
 import { ApiError, api } from "../api/client";
 import { newUlid } from "../ulid";
+import { t } from "../i18n";
 import { V2_STUDY_COLLECTIONS, firstPageUrl, pullAll } from "../sync/pager";
 import { workspaces } from "../workspaces";
 import { fullLogPath, type StudyEvent } from "../events";
@@ -526,7 +527,7 @@ async function pushChunks(
     try {
       result = await sendPush(bodyOf(i, i + count, Date.now()));
     } catch (err) {
-      throw new PartialPushError(errorMessage(err, "Could not write the cards."), done);
+      throw new PartialPushError(errorMessage(err, t("study.store.writeFailed")), done);
     } finally {
       // A failed write may still have landed: stale caches are dropped either way.
       notifyWrite(workspaceId);
@@ -535,7 +536,7 @@ async function pushChunks(
     done += result?.dataAccepted ?? count - skipped;
     if (skipped > 0) {
       throw new PartialPushError(
-        `${skipped} ${skipped === 1 ? "row was" : "rows were"} not written because the server holds newer data for ${skipped === 1 ? "it" : "them"}. Try again.`,
+        t("study.store.partialPush", { count: skipped }),
         done,
         skipped,
       );
@@ -1027,7 +1028,7 @@ export async function deleteCards(
       if (await pushOptional(workspaceId, write)) removed.push(row);
     } catch (err) {
       throw new PartialCardsError(
-        errorMessage(err, "Could not delete the cards."),
+        errorMessage(err, t("study.store.deleteFailed")),
         removed,
         err,
       );
@@ -1061,7 +1062,7 @@ export async function restoreCards(
     }
   } catch (err) {
     throw new PartialCardsError(
-      errorMessage(err, "Could not undo."),
+      errorMessage(err, t("study.store.undoFailed")),
       [...rows],
       err,
     );
@@ -1072,7 +1073,7 @@ export async function restoreCards(
       if (write !== null) await pushStudy(workspaceId, [write]);
     } catch (err) {
       throw new PartialCardsError(
-        errorMessage(err, "Could not undo."),
+        errorMessage(err, t("study.store.undoFailed")),
         todo.slice(i).reverse(),
         err,
       );
@@ -1115,7 +1116,7 @@ export async function moveCards(
       moved.push(row);
     } catch (err) {
       throw new PartialCardsError(
-        errorMessage(err, "Could not move the cards."),
+        errorMessage(err, t("study.store.moveFailed")),
         moved,
         err,
       );
@@ -1156,7 +1157,7 @@ async function rewriteSkips(
       changed.push(row);
     } catch (err) {
       throw new PartialCardsError(
-        errorMessage(err, "Could not update the word."),
+        errorMessage(err, t("study.store.updateFailed")),
         changed,
         err,
       );
@@ -1264,7 +1265,7 @@ export async function dropSiblingCards(
       if (await pushOptional(workspaceId, write)) previous.push(row);
     } catch (err) {
       throw new PartialCardsError(
-        errorMessage(err, "Could not remove the cards."),
+        errorMessage(err, t("study.store.removeFailed")),
         previous,
         err,
       );

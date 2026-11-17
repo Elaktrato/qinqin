@@ -1,5 +1,7 @@
 <script lang="ts">
 	import { errorMessage } from '$lib/stats/errors';
+	import { t } from '$lib/i18n';
+	import Msg from '$lib/i18n/Msg.svelte';
 	import GoalRing from '$lib/goals/GoalRing.svelte';
 	import { streakText } from '$lib/goals/goalText';
 	import { loadGoalStatus, type GoalView } from '$lib/goals/loadGoal';
@@ -136,7 +138,7 @@
 			decks = [];
 			cards = [];
 			reviews = [];
-			error = errorMessage(err, 'Could not load your flashcards.');
+			error = errorMessage(err, t('flashcards.widget.loadError'));
 		} finally {
 			if (seq === requestSeq) loading = false;
 		}
@@ -171,11 +173,11 @@
 </script>
 
 <WidgetCard
-	title="Flashcards"
+	title={t('flashcards.widget.title')}
 	headingId="flashcards-heading"
 	{status}
-	noWorkspaceText="Choose a workspace in the header to study."
-	loadingText="Loading study data…"
+	noWorkspaceText={t('flashcards.widget.noWorkspace')}
+	loadingText={t('flashcards.widget.loading')}
 	{error}
 	onretry={() => {
 		void load(workspaceId, true);
@@ -183,7 +185,7 @@
 	}}
 >
 	{#snippet actions()}
-		<a class="study" href="/study">Study</a>
+		<a class="study" href="/study">{t('flashcards.widget.study')}</a>
 	{/snippet}
 
 	<div class="buddy">
@@ -191,29 +193,28 @@
 		<div class="progress">
 			<p class="stats">
 				{vacationText ?? leftTodayText(left)} ·
-				Level <strong>{level}</strong> ·
-				{xp} XP
+				<Msg key="flashcards.widget.level" args={{ level, xp }}>{#snippet strong(text: string)}<strong>{text}</strong>{/snippet}</Msg>
 			</p>
 			<div
 				class="bar"
 				role="progressbar"
-				aria-label="Progress to the next level"
+				aria-label={t('flashcards.widget.progress')}
 				aria-valuemin="0"
 				aria-valuemax={progress.xpForNext}
 				aria-valuenow={progress.xpInto}
-				aria-valuetext={`${progress.xpInto} of ${progress.xpForNext} XP to level ${level + 1}`}
+				aria-valuetext={t('flashcards.widget.progressValue', { into: progress.xpInto, next: progress.xpForNext, level: level + 1 })}
 			>
 				<span style:width={`${(progress.xpInto / progress.xpForNext) * 100}%`}></span>
 			</div>
 			<p class="streak" class:idle={!streak.todayDone}>
 				<span class="flame" aria-hidden="true">🔥</span>
 				<strong>{streak.current}</strong>
-				{streak.current === 1 ? 'day' : 'days'} streak ·
+				{t('flashcards.widget.streakDays', { count: streak.current })}
 				{streak.todayDone
-					? 'done today'
+					? t('flashcards.widget.streakDone')
 					: streak.current === 0
-						? 'study today to start one'
-						: 'study today to keep it'}
+						? t('flashcards.widget.streakStart')
+						: t('flashcards.widget.streakKeep')}
 			</p>
 			{#if showGoal && goal !== null}
 				<div class="goal">

@@ -8,6 +8,8 @@ const { clearClipCache, clearAudioCache } = vi.hoisted(() => ({ clearClipCache: 
 vi.mock('$app/navigation', () => ({ goto }));
 vi.mock('./audio/source', () => ({ clearClipCache }));
 vi.mock('./api/audio', () => ({ clearAudioCache }));
+const { reloadPage } = vi.hoisted(() => ({ reloadPage: vi.fn() }));
+vi.mock('./i18n/reloadPage', () => ({ reloadPage }));
 
 import { getToken } from './api/client';
 import { auth, loadMe, login, logout, register, restriction } from './auth';
@@ -117,6 +119,14 @@ describe('auth store', () => {
 		await loadMe();
 
 		expect(get(auth)).toEqual({ token: 'stored', user });
+	});
+
+	it('mirrors the account interface language and reloads only when it differs from the running one', async () => {
+		localStorage.setItem('qinqin.token', 'stored');
+		reloadPage.mockReset();
+		await loadMe();
+		expect(localStorage.getItem('qq.interfaceLanguage')).toBe('en');
+		expect(reloadPage).not.toHaveBeenCalled();
 	});
 
 	it('keeps the stored token when the user cannot be loaded', async () => {

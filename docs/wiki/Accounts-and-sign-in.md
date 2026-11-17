@@ -34,6 +34,10 @@ Settings, Account, Access tokens: personal access tokens for your own scripts (r
 
 If the server's email policy is `optional` or `required`, set or change your address in Settings, Account. Changing it needs your password and, if you have one, an authenticator code; it cancels open reset links and notifies the old address. With email policy `off` (the default) no address is asked for or shown.
 
+## Mails in your language
+
+The mails qinqin sends (password reset, sign-in codes, email confirmation, address changes) use your interface language from Settings → Account; with "Browser default" a mail you trigger uses your browser's language, and English when the server has no mail text in it.
+
 ## Forgot your password
 
 If the server has email, the sign-in page links "Forgot password?" and sends a one-time reset link (valid for a limited time). Otherwise ask an administrator for a reset link. Using a reset link sets your password, signs you out everywhere and signs you in on this device.

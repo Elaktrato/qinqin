@@ -1,29 +1,31 @@
 <script lang="ts">
+	import { t } from '$lib/i18n';
+	import { glossLang, readingLang, studyLang } from '$lib/i18n/lang';
 	import type { Sentence } from '$lib/api/types';
 
-	let { sentences }: { sentences: Sentence[] } = $props();
+	let { sentences, language = '' }: { sentences: Sentence[]; /** The entry's language. */ language?: string } = $props();
 
 	// Pack sentences carry their source pack; user sentences have no
 	// pack, so they are labelled with the user that wrote them.
 	function origin(sentence: Sentence): string {
 		if (sentence.userId !== null) {
 			return sentence.sourcePack
-				? `${sentence.sourcePack} · user #${sentence.userId}`
-				: `user #${sentence.userId}`;
+				? t('entry.sentences.packUser', { pack: sentence.sourcePack, id: `#${sentence.userId}` })
+				: t('entry.sentences.user', { id: `#${sentence.userId}` });
 		}
-		return sentence.sourcePack || 'shared';
+		return sentence.sourcePack || t('entry.sentences.shared');
 	}
 </script>
 
 {#if sentences.length > 0}
 	<section class="sentences" aria-labelledby="sentences-heading">
-		<h2 id="sentences-heading">Example sentences</h2>
+		<h2 id="sentences-heading">{t('entry.sentences.title')}</h2>
 		<ul>
 			{#each sentences as sentence (sentence.id)}
 				<li class="sentence">
-					<p class="hanzi">{sentence.hanzi}</p>
-					{#if sentence.pinyin}<p class="pinyin">{sentence.pinyin}</p>{/if}
-					{#if sentence.translation}<p class="translation">{sentence.translation}</p>{/if}
+					<p class="hanzi" lang={studyLang(language)}>{sentence.hanzi}</p>
+					{#if sentence.pinyin}<p class="pinyin" lang={readingLang('pinyin', language)}>{sentence.pinyin}</p>{/if}
+					{#if sentence.translation}<p class="translation" lang={glossLang(undefined)}>{sentence.translation}</p>{/if}
 					<span class="origin">{origin(sentence)}</span>
 				</li>
 			{/each}

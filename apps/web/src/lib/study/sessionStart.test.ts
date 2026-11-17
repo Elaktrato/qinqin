@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { COMPANION_NOTE, sessionStartError, showCompanionNote } from './sessionStart';
+import { companionNote, sessionStartError, showCompanionNote } from './sessionStart';
 
 describe('sessionStartError', () => {
 	it('online: the original message', () => {
@@ -26,6 +26,6 @@ describe('showCompanionNote', () => {
 		expect(showCompanionNote({ offline: true, kinds: ['vocab'] })).toBe(false);
 		expect(showCompanionNote({ offline: true, kinds: ['vocab', 'sentence'] })).toBe(true);
 		expect(showCompanionNote({ offline: false, kinds: ['vocab', 'sentence'] })).toBe(false);
-		expect(COMPANION_NOTE).toBe('Companion cards return when you are online.');
+		expect(companionNote()).toBe('Companion cards return when you are online.');
 	});
 });

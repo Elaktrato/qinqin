@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { pageTitle } from '$lib/pageTitle';
+	import { t } from '$lib/i18n';
 	import { page } from '$app/state';
 	import { activeStatsTab, statsPanelLabel, statsTabs, tabKeyTarget } from '$lib/statsTabs';
 	import { currentLanguage } from '$lib/workspaces';
@@ -36,15 +37,15 @@
 </script>
 
 <svelte:head>
-	<title>{pageTitle(panelLabel, 'Stats')}</title>
+	<title>{pageTitle(panelLabel, t('stats.title'))}</title>
 </svelte:head>
 
 <main class="stats">
-	<h1>Stats</h1>
+	<h1>{t('stats.title')}</h1>
 
 	<!-- Tabs are links: the router keeps focus on the tab and the scroll
 	     position, so switching views feels like a tab, not a new page. -->
-	<div class="tabs" role="tablist" aria-label="Stats views">
+	<div class="tabs" role="tablist" aria-label={t('stats.tabsLabel')}>
 		{#each tabs as tab (tab.id)}
 			{@const selected = tab.id === active}
 			<a

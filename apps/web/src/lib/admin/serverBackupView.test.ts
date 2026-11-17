@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { backupError, canCreate, includeBody, PARTS, RESTORE_STEPS } from './serverBackupView';
+import { backupError, canCreate, includeBody, PARTS, restoreSteps } from './serverBackupView';
 
 describe('serverBackupView', () => {
 	it('builds the include list in a fixed order', () => {
@@ -20,6 +20,6 @@ describe('serverBackupView', () => {
 		expect(backupError('insufficient_storage', 'x')).toContain('free space');
 		expect(backupError('backup_running', 'x')).toBe('A backup is already running.');
 		expect(backupError('zzz', 'fallback')).toBe('fallback');
-		expect(RESTORE_STEPS.join(' ')).toContain('QINQIN_SECRET');
+		expect(restoreSteps().join(' ')).toContain('QINQIN_SECRET');
 	});
 });

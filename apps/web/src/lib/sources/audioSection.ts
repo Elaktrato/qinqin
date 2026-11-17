@@ -1,3 +1,4 @@
+import { t } from '$lib/i18n';
 import { licenseUrl } from '$lib/licenses';
 import { packTable, type PackTable } from './sections';
 
@@ -54,7 +55,10 @@ export function audioSection(packs: AudioPackInfo[]): AudioSection | null {
 		const base = `/api/audio-packs/${encodeURIComponent(p.packId)}/credits?limit=${PAGE}`;
 		const pages = Math.max(1, Math.ceil(p.clipCount / PAGE));
 		creditsPages[key] = Array.from({ length: pages }, (_, n) => ({
-			label: pages === 1 ? 'Per-recording credits' : `Per-recording credits ${n * PAGE + 1}–${Math.min((n + 1) * PAGE, p.clipCount)}`,
+			label:
+				pages === 1
+					? t('sources.audio.credits')
+					: t('sources.audio.creditsRange', { from: n * PAGE + 1, to: Math.min((n + 1) * PAGE, p.clipCount) }),
 			href: n === 0 ? base : `${base}&offset=${n * PAGE}`
 		}));
 	});

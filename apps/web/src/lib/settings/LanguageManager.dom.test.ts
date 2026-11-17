@@ -63,6 +63,17 @@ describe('LanguageManager', () => {
 		expect((screen.getByRole('button', { name: 'Add language' }) as HTMLButtonElement).disabled).toBe(true);
 	});
 
+	it('a submitted invalid code says what a code looks like (catalogue text, English unchanged)', async () => {
+		setup();
+		render(LanguageManager);
+		await screen.findByText('Portuguese');
+		const input = screen.getByLabelText('Language code');
+		await fireEvent.input(input, { target: { value: 'x' } });
+		await fireEvent.submit(input.closest('form')!);
+		expect((await screen.findByRole('alert')).textContent?.trim()).toBe('language must be a code like es or pt-br');
+		expect(registerLanguage).not.toHaveBeenCalled();
+	});
+
 	it('moves focus to Confirm after Remove and back to Remove on Cancel', async () => {
 		setup();
 		render(LanguageManager);

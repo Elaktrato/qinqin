@@ -5,6 +5,7 @@
 // the pack named on it. Contract: docs/contracts/frequency/README.md.
 
 import type { FrequencyPack } from '$lib/api/types';
+import { t } from '$lib/i18n';
 import { getStarterEntries, type StarterEntry } from '$lib/api/frequency';
 import type { Deck } from '$lib/study/types';
 import type { AddItem, AddPlan } from './addToDeck';
@@ -44,7 +45,7 @@ export function starterDecks(packs: readonly FrequencyPack[], language: string):
 }
 
 export function starterTitle(deck: StarterDeck): string {
-	return `Top ${deck.size}`;
+	return t('flashcards.starter.top', { size: deck.size });
 }
 
 /** The owned copy's name: "<pack name> · Top <size>". */
@@ -54,7 +55,7 @@ export function starterDeckName(deck: StarterDeck): string {
 
 /** The attribution line every starter deck shows. */
 export function starterCredit(deck: StarterDeck): string {
-	return `From ${deck.packName} · ${deck.license}`;
+	return t('flashcards.starter.credit', { pack: deck.packName, licence: deck.license });
 }
 
 /** The add-to-deck target of a starter deck. */
@@ -85,17 +86,17 @@ export function starterView(
 	return {
 		shown,
 		known: skipped,
-		knownLine: skipped === 0 ? null : `${skipped} known ${skipped === 1 ? 'word' : 'words'} skipped`
+		knownLine: skipped === 0 ? null : t('flashcards.starter.knownSkipped', { count: skipped })
 	};
 }
 
 /** starterAddedText: "Added 480 words; 20 you know were skipped". */
 export function starterAddedText(plan: AddPlan): string {
 	const added = plan.created + plan.joined;
-	const text = `Added ${added} ${added === 1 ? 'word' : 'words'}`;
+	const text = t('flashcards.starter.added', { count: added });
 	const known = plan.known ?? 0;
 	if (known === 0) return text;
-	return `${text}; ${known} you know ${known === 1 ? 'was' : 'were'} skipped`;
+	return t('flashcards.starter.addedKnown', { text, count: known });
 }
 
 // The words of a starter deck, loaded on demand and kept for the session.

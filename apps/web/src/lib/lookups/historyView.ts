@@ -2,6 +2,8 @@
 // Words and titles are returned as plain strings for text interpolation.
 
 import { readingBeside } from '$lib/entry/displayForm';
+import { t } from '$lib/i18n';
+import { formatDay } from '$lib/i18n/format';
 import type { EntryBase } from '$lib/api/types';
 import { GENERAL_DECK_ID } from '$lib/study/store';
 import type { Deck } from '$lib/study/types';
@@ -31,25 +33,22 @@ export function whereText(item: LookupItem, books: ReadonlyMap<number, string>):
 	for (const id of item.books) {
 		const title = books.get(id);
 		if (title === undefined) {
-			if (!removed) parts.push('a removed book');
+			if (!removed) parts.push(t('lookups.where.removedBook'));
 			removed = true;
 		} else {
 			parts.push(`《${title}》`);
 		}
 	}
-	if (item.books.length === 0 && (item.sources.reader ?? 0) > 0) parts.push('reader');
-	if ((item.sources.lesson ?? 0) > 0) parts.push('lessons');
-	if ((item.sources.search ?? 0) > 0) parts.push('search');
+	if (item.books.length === 0 && (item.sources.reader ?? 0) > 0) parts.push(t('lookups.where.reader'));
+	if ((item.sources.lesson ?? 0) > 0) parts.push(t('lookups.where.lessons'));
+	if ((item.sources.search ?? 0) > 0) parts.push(t('lookups.where.search'));
 	return parts.join(', ');
 }
 
-const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-
-/** dayLabel: "3 Nov", with the year when it is not today's year. */
+/** dayLabel: "3 Nov", with the year when it is not today's year (the format locale's short day). */
 export function dayLabel(day: string, today: string): string {
-	const [y, m, d] = day.split('-').map(Number);
-	const label = `${d} ${MONTHS[m - 1] ?? '?'}`;
-	return day.slice(0, 4) === today.slice(0, 4) ? label : `${label} ${y}`;
+	const sameYear = day.slice(0, 4) === today.slice(0, 4);
+	return formatDay(day, sameYear ? { day: 'numeric', month: 'short' } : { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
 export function historyRows(
@@ -80,26 +79,31 @@ export function historyRows(
 }
 
 export function stateLabel(state: LookupState): string {
-	return state === 'new' ? 'No card' : state === 'learning' ? 'In study' : 'Known';
+	return state === 'new'
+		? t('lookups.state.new')
+		: state === 'learning'
+			? t('lookups.state.learning')
+			: t('lookups.state.known');
 }
-
-const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
 
 export function addResultText(r: { created: number; joined: number; skipped: number; missing: number }, deck: string): string {
 	const parts: string[] = [];
-	if (r.created > 0) parts.push(`Added ${plural(r.created, 'new card', 'new cards')} to ${deck}`);
-	if (r.joined > 0) parts.push(`${plural(r.joined, 'word', 'words')} joined the deck`);
-	const missing = r.missing > 0 ? ` ${plural(r.missing, 'word is', 'words are')} not in the dictionary any more.` : '';
-	if (parts.length === 0) {
-		return r.skipped > 0 ? `Nothing to add: these words are already in ${deck}.${missing}` : `Nothing to add.${missing}`;
-	}
-	return `${parts.join('; ')}.${missing}`;
+	if (r.created > 0) parts.push(t('lookups.add.created', { count: r.created, deck }));
+	if (r.joined > 0) parts.push(t('lookups.add.joined', { count: r.joined }));
+	const result =
+		parts.length > 0
+			? t('lookups.add.done', { parts: parts.join('; ') })
+			: r.skipped > 0
+				? t('lookups.add.alreadyIn', { deck })
+				: t('lookups.add.nothing');
+	if (r.missing === 0) return result;
+	return t('lookups.add.withMissing', { result, missing: t('lookups.add.missing', { count: r.missing }) });
 }
 
 /** deckOptions: General first, then the decks by createdAt (ties: id). */
 export function deckOptions(decks: readonly Pick<Deck, 'id' | 'name' | 'createdAt'>[]): { id: string; name: string }[] {
 	const sorted = [...decks].sort((a, b) => a.createdAt.localeCompare(b.createdAt) || a.id.localeCompare(b.id));
-	return [{ id: GENERAL_DECK_ID, name: 'General' }, ...sorted.map((d) => ({ id: d.id, name: d.name }))];
+	return [{ id: GENERAL_DECK_ID, name: t('entry.study.general') }, ...sorted.map((d) => ({ id: d.id, name: d.name }))];
 }
 
 /**
@@ -108,7 +112,6 @@ export function deckOptions(decks: readonly Pick<Deck, 'id' | 'name' | 'createdA
  */
 export function historyCountText(shown: number, total: number, filter: HistoryFilter): string {
 	if (total === 0) return '';
-	const words = (n: number) => (n === 1 ? 'word' : 'words');
-	if (filter === 'all') return `${shown} ${words(shown)}`;
-	return `${shown} of ${total} ${words(total)} with no card yet`;
+	if (filter === 'all') return t('lookups.count.all', { count: shown });
+	return t('lookups.count.noCard', { count: total, shown });
 }

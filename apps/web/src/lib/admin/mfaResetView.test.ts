@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import fixture from '../../../../../docs/contracts/auth/admin-users.json';
 import errors from '../../../../../docs/contracts/auth/errors.json';
 import type { AdminUserDto } from '$lib/api/adminUsers';
-import { hasSecondStep, resetError, resetLines, resetNotice, RESET_ERROR_FALLBACK } from './mfaResetView';
+import { hasSecondStep, resetError, resetLines, resetNotice, resetErrorFallback } from './mfaResetView';
 
 describe('resetLines', () => {
 	it('names the authenticator and its recovery codes only when the user has one', () => {
@@ -46,8 +46,8 @@ describe('resetError', () => {
 		expect(resetError('busy')).toContain('busy');
 	});
 	it('falls back to one generic sentence for anything else, never a server message', () => {
-		expect(resetError(undefined)).toBe(RESET_ERROR_FALLBACK);
-		expect(resetError('something_new')).toBe(RESET_ERROR_FALLBACK);
+		expect(resetError(undefined)).toBe(resetErrorFallback());
+		expect(resetError('something_new')).toBe(resetErrorFallback());
 	});
 	it('only maps codes the server documents', () => {
 		for (const code of ['wrong_password', 'password_required', 'code_invalid', 'not_found', 'self_target', 'rate_limited', 'busy']) {

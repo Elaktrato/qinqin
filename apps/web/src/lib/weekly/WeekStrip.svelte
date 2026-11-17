@@ -4,6 +4,7 @@
 	// ("Monday 16 November: active, 42 reviews") is the item's text for
 	// screen readers and its tooltip. Words: weekText.ts.
 	import type { DayState, WeekDay } from './summary';
+	import { t } from '$lib/i18n';
 	import { dayName, dayShort } from './weekText';
 
 	interface Props {
@@ -23,7 +24,7 @@
 	};
 </script>
 
-<ol class="strip" aria-label="Days of the week">
+<ol class="strip" aria-label={t('weekly.strip.label')}>
 	{#each days as day (day.date)}
 		{@const name = dayName(day, locale)}
 		<li class="day {day.state}" title={name}>

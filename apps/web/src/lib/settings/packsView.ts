@@ -5,23 +5,33 @@
 import type { InstalledPack, PackType, StagedPack } from '$lib/api/packs';
 import type { CatalogueRow } from '$lib/api/packages';
 import type { UploadProgress } from '$lib/api/upload';
+import { labelRecord, t, type MessageKey } from '$lib/i18n';
+import { formatNumber } from '$lib/i18n/format';
 
-export const LICENCE_LABEL = 'Licence (as stated by the pack)';
-export const LICENCE_NOT_RECORDED = 'Licence not recorded — reinstall the pack to record it';
-export const LICENCE_CONFIRMATION =
-	'I have read the licence and attribution above and this server may use the data under these terms';
-export const LICENCE_CAUTION = 'This licence may restrict use or redistribution — check it before installing';
+/** The heading over a pack's licence. */
+export function licenceLabel(): string {
+	return t('packs.licence.label');
+}
+export function licenceNotRecorded(): string {
+	return t('packs.licence.notRecorded');
+}
+export function licenceConfirmation(): string {
+	return t('packs.licence.confirmation');
+}
+export function licenceCautionText(): string {
+	return t('packs.licence.caution');
+}
 
-export const PACK_TYPE_LABELS: Record<PackType, string> = {
-	dictionary: 'Dictionaries',
-	frequency: 'Frequency lists',
-	levels: 'Level lists',
-	sentences: 'Sentences',
-	grammar: 'Grammar lessons',
-	audio: 'Audio',
-	components: 'Character components',
-	strokes: 'Stroke data'
-};
+export const PACK_TYPE_LABELS: Readonly<Record<PackType, string>> = labelRecord({
+	dictionary: 'packs.type.dictionary',
+	frequency: 'packs.type.frequency',
+	levels: 'packs.type.levels',
+	sentences: 'packs.type.sentences',
+	grammar: 'packs.type.grammar',
+	audio: 'packs.type.audio',
+	components: 'packs.type.components',
+	strokes: 'packs.type.strokes'
+});
 
 const TYPE_ORDER: PackType[] = ['dictionary', 'frequency', 'levels', 'sentences', 'grammar', 'audio', 'components', 'strokes'];
 
@@ -42,7 +52,7 @@ export function groupPacks(list: InstalledPack[]): { type: PackType; label: stri
 
 /** licenceLine is the licence exactly as stored, or the not-recorded notice. */
 export function licenceLine(license: string): { text: string; recorded: boolean } {
-	return license.trim() === '' ? { text: LICENCE_NOT_RECORDED, recorded: false } : { text: license, recorded: true };
+	return license.trim() === '' ? { text: licenceNotRecorded(), recorded: false } : { text: license, recorded: true };
 }
 
 // Words in a licence string that suggest restricted use. A heuristic: it
@@ -53,7 +63,7 @@ const RESTRICTIVE =
 
 /** licenceCaution is the advisory line for a licence that may restrict use, else null. */
 export function licenceCaution(license: string): string | null {
-	return RESTRICTIVE.test(license) ? LICENCE_CAUTION : null;
+	return RESTRICTIVE.test(license) ? licenceCautionText() : null;
 }
 
 /** replaceLines describes what installing the staged pack replaces. */
@@ -61,17 +71,17 @@ export function replaceLines(staged: StagedPack): { text: string; licenceChanged
 	const old = staged.replaces;
 	if (!old) return [];
 	const m = staged.manifest;
-	const lines = [{ text: `Replaces the installed version ${old.version} with ${m.version}`, licenceChanged: false }];
+	const lines = [{ text: t('packs.replace.version', { old: old.version, new: m.version }), licenceChanged: false }];
 	if (old.license.trim() === '') {
-		lines.push({ text: `Licence was not recorded; now ${m.license}`, licenceChanged: true });
+		lines.push({ text: t('packs.replace.licenceNew', { licence: m.license }), licenceChanged: true });
 	} else if (old.license !== m.license) {
-		lines.push({ text: `Licence changes from ${old.license} to ${m.license}`, licenceChanged: true });
+		lines.push({ text: t('packs.replace.licenceChanged', { old: old.license, new: m.license }), licenceChanged: true });
 	} else {
-		lines.push({ text: `Licence stays ${m.license}`, licenceChanged: false });
+		lines.push({ text: t('packs.replace.licenceSame', { licence: m.license }), licenceChanged: false });
 	}
 	if (old.attribution !== m.attribution) {
 		lines.push({
-			text: `Attribution changes from "${old.attribution}" to "${m.attribution}"`,
+			text: t('packs.replace.attribution', { old: old.attribution, new: m.attribution }),
 			licenceChanged: false
 		});
 	}
@@ -80,40 +90,36 @@ export function replaceLines(staged: StagedPack): { text: string; licenceChanged
 
 /** progressText formats an upload's progress, e.g. "3.2 of 10.6 MB (30 %)". */
 export function progressText(p: UploadProgress): string {
-	if (p.total <= 0) return `${p.loaded} bytes`;
+	if (p.total <= 0) return t('packs.progress.bytes', { count: p.loaded });
 	const mb = p.total >= 1024 * 1024;
 	const unit = mb ? 1024 * 1024 : 1024;
-	const fmt = (n: number) => (n / unit).toFixed(1);
-	const pct = Math.min(100, Math.floor((p.loaded / p.total) * 100));
-	return `${fmt(p.loaded)} of ${fmt(p.total)} ${mb ? 'MB' : 'KB'} (${pct} %)`;
+	const fmt = (n: number) => formatNumber(n / unit, { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+	const args = { loaded: fmt(p.loaded), total: fmt(p.total), percent: Math.min(100, Math.floor((p.loaded / p.total) * 100)) };
+	return mb ? t('packs.progress.mb', args) : t('packs.progress.kb', args);
 }
 
-const RESEED = 'A later `qinqin seed` reinstalls bundled packs.';
+const UNINSTALL: Record<PackType, MessageKey> = {
+	dictionary: 'packs.uninstall.dictionary',
+	frequency: 'packs.uninstall.frequency',
+	levels: 'packs.uninstall.levels',
+	sentences: 'packs.uninstall.sentences',
+	grammar: 'packs.uninstall.grammar',
+	components: 'packs.uninstall.components',
+	strokes: 'packs.uninstall.strokes',
+	audio: 'packs.uninstall.audio'
+};
 
 /** uninstallWarning says what an uninstall removes and what stays. */
 export function uninstallWarning(type: PackType): string {
-	switch (type) {
-		case 'dictionary':
-			return `Its glosses disappear from lookups and entries. Entries, your flashcards and your edits stay. ${RESEED}`;
-		case 'frequency':
-			return `Its frequency ranks disappear from lookups and sorting. Entries stay. ${RESEED}`;
-		case 'levels':
-			return `Its levels disappear from level filters and the mastery map. Entries and your study data stay. ${RESEED}`;
-		case 'sentences':
-			return `Its example sentences disappear. Sentences you added yourself stay. ${RESEED}`;
-		case 'grammar':
-			return `Its grammar lessons disappear. ${RESEED}`;
-		case 'components':
-			return `Its character components disappear from the radical and part lookup; radicals and stroke counts keep working. ${RESEED}`;
-		case 'strokes':
-			return `Its stroke order data disappears from the character writing view; characters it alone carried show no strokes. ${RESEED}`;
-		case 'audio':
-			return `Its recordings are deleted from the data directory and the play buttons that used them fall back to the device voice. Install it again with the fetch script and \`qinqin seed\`; audio packs cannot be uploaded here.`;
-	}
+	return t(UNINSTALL[type]);
 }
 
-export const PACKAGES_BUILDING = 'Packages are being built';
-export const PACKAGES_UNAVAILABLE = 'The package state is not available right now.';
+export function packagesBuilding(): string {
+	return t('packs.packages.building');
+}
+export function packagesUnavailable(): string {
+	return t('packs.packages.unavailable');
+}
 
 /**
  * packagesOf lists the live packages the server built from an installed pack:
@@ -133,12 +139,19 @@ export function packageLine(row: CatalogueRow): { text: string; error: string | 
 	const error = row.error ?? null;
 	switch (row.state) {
 		case 'ready':
-			return { text: `${row.id}: revision ${row.revision}, ${(row.bytes / (1024 * 1024)).toFixed(1)} MB, ready`, error };
+			return {
+				text: t('packs.package.ready', {
+					id: row.id,
+					revision: row.revision,
+					mb: formatNumber(row.bytes / (1024 * 1024), { minimumFractionDigits: 1, maximumFractionDigits: 1 })
+				}),
+				error
+			};
 		case 'building':
-			return { text: `${row.id}: being built`, error };
+			return { text: t('packs.package.building', { id: row.id }), error };
 		case 'failed':
-			return { text: `${row.id}: build failed`, error };
+			return { text: t('packs.package.failed', { id: row.id }), error };
 		default:
-			return { text: `${row.id}: removed`, error };
+			return { text: t('packs.package.removed', { id: row.id }), error };
 	}
 }

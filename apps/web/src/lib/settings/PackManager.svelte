@@ -14,17 +14,19 @@
 	import { getCatalogue, type Catalogue } from '$lib/api/packages';
 	import type { UploadProgress } from '$lib/api/upload';
 	import { languageLabel } from '$lib/languages';
+	import { t } from '$lib/i18n';
+	import Msg from '$lib/i18n/Msg.svelte';
 	import {
-		LICENCE_CONFIRMATION,
-		LICENCE_LABEL,
-		PACKAGES_BUILDING,
-		PACKAGES_UNAVAILABLE,
 		groupPacks,
 		licenceCaution,
+		licenceConfirmation,
+		licenceLabel,
 		licenceLine,
 		packLanguages,
 		packageLine,
+		packagesBuilding,
 		packagesOf,
+		packagesUnavailable,
 		progressText,
 		replaceLines,
 		uninstallWarning
@@ -86,7 +88,7 @@
 			void loadCatalogue();
 		} catch (err) {
 			packs = [];
-			loadError = message(err, 'Could not load the installed packs.');
+			loadError = message(err, t('packs.error.load'));
 		} finally {
 			loading = false;
 		}
@@ -121,8 +123,8 @@
 			phase = 'review';
 		} catch (err) {
 			phase = 'idle';
-			if (err instanceof DOMException && err.name === 'AbortError') notice = 'Upload cancelled.';
-			else error = message(err, 'The upload failed.');
+			if (err instanceof DOMException && err.name === 'AbortError') notice = t('packs.upload.cancelled');
+			else error = message(err, t('packs.upload.failed'));
 		} finally {
 			upload = null;
 		}
@@ -146,9 +148,9 @@
 		resetForm();
 		try {
 			await discardStaged(token);
-			notice = 'Discarded. Nothing was installed.';
+			notice = t('packs.discarded');
 		} catch (err) {
-			error = message(err, 'Could not discard the staged pack.');
+			error = message(err, t('packs.error.discard'));
 		}
 	}
 
@@ -161,7 +163,7 @@
 			// The licence echoed here is the one shown in the review card.
 			await installStaged(token, manifest.license);
 		} catch (err) {
-			error = message(err, 'Could not start the import.');
+			error = message(err, t('packs.error.startImport'));
 			return;
 		}
 		phase = 'importing';
@@ -169,17 +171,17 @@
 		try {
 			const result = await waitForImport(token, { signal: poll.signal });
 			if (result.status === 'done') {
-				notice = `Installed ${manifest.name}: ${result.summary ?? 'done'}.`;
+				notice = t('packs.installed', { name: manifest.name, summary: result.summary ?? t('packs.installedDone') });
 				if (result.warning) error = result.warning;
 				await load();
 				onchange?.();
 			} else {
-				error = result.error ?? 'The import failed.';
+				error = result.error ?? t('packs.error.importFailed');
 			}
 			resetForm();
 		} catch (err) {
 			if (!(err instanceof DOMException && err.name === 'AbortError')) {
-				error = message(err, 'Lost contact with the server; the import may still finish. Check the list below.');
+				error = message(err, t('packs.error.lostContact'));
 				resetForm();
 			}
 		} finally {
@@ -206,11 +208,11 @@
 		notice = '';
 		try {
 			await uninstallPack(pack.type, pack.packId);
-			notice = `Uninstalled ${pack.name || pack.packId}.`;
+			notice = t('packs.uninstalled', { name: pack.name || pack.packId });
 			await load();
 			onchange?.();
 		} catch (err) {
-			error = message(err, 'Could not uninstall the pack.');
+			error = message(err, t('packs.error.uninstall'));
 		} finally {
 			uninstalling = false;
 			closeDialog();
@@ -227,15 +229,12 @@
 </script>
 
 <section class="packs" aria-labelledby="packs-heading">
-	<h2 id="packs-heading" tabindex="-1" bind:this={listHeading}>Packs</h2>
-	<p class="hint">
-		Dictionaries, frequency lists, level lists, sentences and grammar lessons installed on this
-		server. Licences are shown as each pack states them; qinqin does not check them.
-	</p>
+	<h2 id="packs-heading" tabindex="-1" bind:this={listHeading}>{t('packs.title')}</h2>
+	<p class="hint">{t('packs.intro')}</p>
 
 	<form class="install" onsubmit={(event) => { event.preventDefault(); void startUpload(); }}>
 		<label class="file">
-			<span>Pack zip</span>
+			<span>{t('packs.upload.file')}</span>
 			<input
 				bind:this={fileInput}
 				type="file"
@@ -244,48 +243,48 @@
 				disabled={phase !== 'idle'}
 			/>
 		</label>
-		<button type="submit" disabled={!file || phase !== 'idle'}>Upload</button>
+		<button type="submit" disabled={!file || phase !== 'idle'}>{t('packs.upload.submit')}</button>
 	</form>
 
 	{#if phase === 'uploading'}
 		<div class="progress" role="status">
 			{#if checking}
-				<p>Uploaded, checking the pack…</p>
-				<progress aria-label="Checking the pack"></progress>
+				<p>{t('packs.upload.checking')}</p>
+				<progress aria-label={t('packs.upload.checkingLabel')}></progress>
 			{:else}
-				<p>Uploading… {progressText(progress)}</p>
-				<progress max={progress.total || 1} value={progress.loaded} aria-label="Upload progress"></progress>
+				<p>{t('packs.upload.progress', { progress: progressText(progress) })}</p>
+				<progress max={progress.total || 1} value={progress.loaded} aria-label={t('packs.upload.progressLabel')}></progress>
 			{/if}
-			<button type="button" onclick={cancelUpload}>Cancel</button>
+			<button type="button" onclick={cancelUpload}>{t('common.action.cancel')}</button>
 		</div>
 	{/if}
 
 	{#if staged && (phase === 'review' || phase === 'importing')}
 		<div class="review" role="region" aria-labelledby="review-heading">
-			<h3 id="review-heading">Review before installing</h3>
-			<p class="hint">This is what the server read from the pack. Nothing is installed yet.</p>
+			<h3 id="review-heading">{t('packs.review.title')}</h3>
+			<p class="hint">{t('packs.review.intro')}</p>
 			<dl>
-				<dt>Name</dt>
+				<dt>{t('packs.review.name')}</dt>
 				<dd>{staged.manifest.name}</dd>
-				<dt>Pack id</dt>
+				<dt>{t('packs.review.id')}</dt>
 				<dd><code>{staged.manifest.id}</code></dd>
-				<dt>Version</dt>
+				<dt>{t('packs.review.version')}</dt>
 				<dd>{staged.manifest.version}</dd>
-				<dt>Type</dt>
+				<dt>{t('packs.review.type')}</dt>
 				<dd>{staged.manifest.type}</dd>
 				{#if staged.manifest.languages?.length}
-					<dt>Languages</dt>
+					<dt>{t('packs.review.languages')}</dt>
 					<dd>{staged.manifest.languages.map((l) => languageLabel(l)).join(', ')}</dd>
 				{:else}
-					<dt>Language</dt>
+					<dt>{t('packs.review.language')}</dt>
 					<dd>{languageLabel(staged.manifest.language)}</dd>
 				{/if}
-				<dt>{LICENCE_LABEL}</dt>
+				<dt>{licenceLabel()}</dt>
 				<dd class="licence">{staged.manifest.license}</dd>
-				<dt>Attribution</dt>
+				<dt>{t('packs.review.attribution')}</dt>
 				<dd>{staged.manifest.attribution}</dd>
 				{#if staged.manifest.notice}
-					<dt>Notice</dt>
+					<dt>{t('packs.review.notice')}</dt>
 					<dd class="notice-text">{staged.manifest.notice}</dd>
 				{/if}
 			</dl>
@@ -301,16 +300,16 @@
 			{/if}
 			<label class="confirm">
 				<input type="checkbox" bind:checked={confirmed} disabled={phase !== 'review'} />
-				<span>{LICENCE_CONFIRMATION}</span>
+				<span>{licenceConfirmation()}</span>
 			</label>
 			<div class="actions">
-				<button type="button" onclick={install} disabled={!confirmed || phase !== 'review'}>Install</button>
-				<button type="button" onclick={discard} disabled={phase !== 'review'}>Discard</button>
+				<button type="button" onclick={install} disabled={!confirmed || phase !== 'review'}>{t('packs.review.install')}</button>
+				<button type="button" onclick={discard} disabled={phase !== 'review'}>{t('packs.review.discard')}</button>
 			</div>
 			{#if phase === 'importing'}
 				<div class="progress" role="status">
-					<p>Importing… large dictionaries can take a minute</p>
-					<progress aria-label="Importing"></progress>
+					<p>{t('packs.review.importing')}</p>
+					<progress aria-label={t('packs.review.importingLabel')}></progress>
 				</div>
 			{/if}
 		</div>
@@ -324,18 +323,20 @@
 	{/if}
 
 	{#if catalogue?.building}
-		<p class="notice" role="status">{PACKAGES_BUILDING}</p>
+		<p class="notice" role="status">{packagesBuilding()}</p>
 	{:else if catalogueFailed}
-		<p class="hint">{PACKAGES_UNAVAILABLE}</p>
+		<p class="hint">{packagesUnavailable()}</p>
 	{/if}
 
 	{#if loading}
-		<p>Loading installed packs…</p>
+		<p>{t('packs.list.loading')}</p>
 	{:else if loadError}
 		<p class="error" role="alert">{loadError}</p>
-		<button type="button" onclick={load}>Retry</button>
+		<button type="button" onclick={load}>{t('packs.list.retry')}</button>
 	{:else if packs.length === 0}
-		<p>No packs are installed. Upload a pack zip above, or run <code>qinqin seed</code>.</p>
+		<p>
+			<Msg key="packs.list.none">{#snippet code(text: string)}<code>{text}</code>{/snippet}</Msg>
+		</p>
 	{:else}
 		{#each groups as group (group.type)}
 			<h3>{group.label}</h3>
@@ -351,18 +352,18 @@
 							{#if pack.updatedAt}<span>{fmtDate(pack.updatedAt)}</span>{/if}
 						</div>
 						<p class:unrecorded={!lic.recorded}>
-							{#if lic.recorded}<span class="label">{LICENCE_LABEL}:</span> {/if}{lic.text}
+							{#if lic.recorded}<span class="label">{t('packs.list.licence', { label: licenceLabel() })}</span> {/if}{lic.text}
 						</p>
 						{#if pack.attribution}
-							<p><span class="label">Attribution:</span> {pack.attribution}</p>
+							<p><span class="label">{t('packs.list.attribution')}</span> {pack.attribution}</p>
 						{/if}
 						{#each packagesOf(pack, catalogue?.packages ?? []) as row (row.id)}
 							{@const line = packageLine(row)}
-							<p class="package"><span class="label">Package</span> {line.text}</p>
-							{#if line.error}<p class="error package-error">Last build failed: {line.error}</p>{/if}
+							<p class="package"><span class="label">{t('packs.list.package')}</span> {line.text}</p>
+							{#if line.error}<p class="error package-error">{t('packs.list.buildFailed', { error: line.error })}</p>{/if}
 						{/each}
 						<button type="button" class="uninstall" onclick={() => askUninstall(pack)}>
-							Uninstall<span class="sr"> {pack.name || pack.packId}</span>
+							{t('packs.list.uninstall')}<span class="sr"> {pack.name || pack.packId}</span>
 						</button>
 					</li>
 				{/each}
@@ -370,17 +371,17 @@
 		{/each}
 	{/if}
 
-	<p><a href="/sources">See all credits on the Sources page</a></p>
+	<p><a href="/sources">{t('packs.list.sources')}</a></p>
 
 	<dialog bind:this={dialog} aria-labelledby="uninstall-heading" onclose={() => (pending = null)}>
 		{#if pending}
-			<h3 id="uninstall-heading">Uninstall {pending.name || pending.packId}?</h3>
+			<h3 id="uninstall-heading">{t('packs.uninstallDialog.title', { name: pending.name || pending.packId })}</h3>
 			<p>{uninstallWarning(pending.type)}</p>
 			<div class="actions">
 				<button type="button" onclick={confirmUninstall} disabled={uninstalling}>
-					{uninstalling ? 'Uninstalling…' : 'Uninstall'}
+					{uninstalling ? t('packs.uninstallDialog.uninstalling') : t('packs.list.uninstall')}
 				</button>
-				<button type="button" onclick={closeDialog} disabled={uninstalling}>Cancel</button>
+				<button type="button" onclick={closeDialog} disabled={uninstalling}>{t('common.action.cancel')}</button>
 			</div>
 		{/if}
 	</dialog>

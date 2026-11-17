@@ -2,16 +2,16 @@ import { describe, expect, it } from 'vitest';
 import type { InstalledPack, PackType, StagedPack } from '$lib/api/packs';
 import type { CatalogueRow } from '$lib/api/packages';
 import {
-	LICENCE_CAUTION,
-	LICENCE_CONFIRMATION,
-	LICENCE_LABEL,
-	LICENCE_NOT_RECORDED,
+	licenceCautionText,
+	licenceConfirmation,
+	licenceLabel,
+	licenceNotRecorded,
 	PACK_TYPE_LABELS,
 	groupPacks,
 	licenceCaution,
 	licenceLine,
 	packLanguages,
-	PACKAGES_BUILDING,
+	packagesBuilding,
 	packageLine,
 	packagesOf,
 	progressText,
@@ -185,15 +185,15 @@ describe('uninstallWarning for audio', () => {
 
 describe('wording', () => {
 	it('uses the agreed licence copy', () => {
-		expect(LICENCE_LABEL).toBe('Licence (as stated by the pack)');
-		expect(LICENCE_NOT_RECORDED).toBe('Licence not recorded — reinstall the pack to record it');
-		expect(LICENCE_CONFIRMATION).toBe(
+		expect(licenceLabel()).toBe('Licence (as stated by the pack)');
+		expect(licenceNotRecorded()).toBe('Licence not recorded — reinstall the pack to record it');
+		expect(licenceConfirmation()).toBe(
 			'I have read the licence and attribution above and this server may use the data under these terms'
 		);
-		expect(LICENCE_CAUTION).toBe('This licence may restrict use or redistribution — check it before installing');
+		expect(licenceCautionText()).toBe('This licence may restrict use or redistribution — check it before installing');
 	});
 	it('never implies a licence is cleared', () => {
-		const out: string[] = [LICENCE_LABEL, LICENCE_NOT_RECORDED, LICENCE_CONFIRMATION, LICENCE_CAUTION];
+		const out: string[] = [licenceLabel(), licenceNotRecorded(), licenceConfirmation(), licenceCautionText()];
 		for (const t of Object.keys(PACK_TYPE_LABELS) as PackType[]) out.push(uninstallWarning(t), PACK_TYPE_LABELS[t]);
 		for (const l of ['', 'MIT', 'unknown', 'CC BY-NC 4.0']) out.push(licenceLine(l).text, licenceCaution(l) ?? '');
 		out.push(progressText({ loaded: 1, total: 2 }));
@@ -255,6 +255,6 @@ describe('packageLine', () => {
 		});
 	});
 	it('names the building notice', () => {
-		expect(PACKAGES_BUILDING).toBe('Packages are being built');
+		expect(packagesBuilding()).toBe('Packages are being built');
 	});
 });

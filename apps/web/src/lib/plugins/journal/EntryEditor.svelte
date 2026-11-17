@@ -4,6 +4,8 @@
 </script>
 
 <script lang="ts">
+	import { t } from '$lib/i18n';
+	import { formatNumber } from '$lib/i18n/format';
 	import { onDestroy, tick, untrack } from 'svelte';
 	import { beforeNavigate, goto } from '$app/navigation';
 	import AnnotationList from './AnnotationList.svelte';
@@ -254,7 +256,7 @@
 		reviewStatus = '';
 		if (!(await flush())) {
 			failure = {
-				text: 'The entry could not be saved, so it was not sent. Try again.',
+				text: t('journal.editor.notSent'),
 				settingsLink: false,
 				offlineInstead: false,
 				poll: false
@@ -262,7 +264,7 @@
 			return;
 		}
 		reviewing = true;
-		reviewStatus = 'Reviewing… (this can take a minute)';
+		reviewStatus = t('journal.editor.reviewing');
 		const since = review?.createdAt ?? '';
 		try {
 			const r = await requestReview(ws, id, aborter.signal);
@@ -270,9 +272,9 @@
 		} catch (err) {
 			if (destroyed) return;
 			const view = aiErrorView(err, 'review');
-			if (isEntryGone(err) && view.text === 'This entry was deleted.') markGone();
+			if (isEntryGone(err) && view.text === t('journal.ai.entryGone')) markGone();
 			if (view.poll) {
-				reviewStatus = 'Still waiting for the review… (checking every few seconds)';
+				reviewStatus = t('journal.editor.stillWaiting');
 				const late = await pollForReview(() => getReview(ws, id), since, {
 					signal: aborter.signal
 				});
@@ -339,7 +341,7 @@
 			await goto(journalHref({ view: 'list' }));
 		} catch {
 			gone = false;
-			deleteError = 'Could not delete the entry. Try again.';
+			deleteError = t('journal.editor.deleteFailed');
 			deleting = false;
 		}
 	}
@@ -356,7 +358,7 @@
 		nav.cancel();
 		leaving = true;
 		void flush().then(async (ok) => {
-			if (ok || confirm('This entry could not be saved. Leave anyway and lose the unsaved changes?')) {
+			if (ok || confirm(t('journal.editor.leaveUnsaved'))) {
 				if (target) await goto(target);
 			}
 			leaving = false;
@@ -381,29 +383,29 @@
 <svelte:document onvisibilitychange={onVisibility} />
 <svelte:window onpagehide={() => void flush({ keepalive: true })} />
 
-<p><a href={journalHref({ view: 'list' })}>← Journal</a></p>
+<p><a href={journalHref({ view: 'list' })}>{t('journal.settings.back')}</a></p>
 
 {#if loadState === 'loading'}
-	<p role="status">Loading…</p>
+	<p role="status">{t('common.loading')}</p>
 {:else if loadState === 'notfound'}
-	<h1>Entry not found</h1>
-	<p>It may have been deleted, or it belongs to another workspace.</p>
-	<p><a href={journalHref({ view: 'list' })}>Back to your entries</a></p>
+	<h1>{t('journal.editor.notFound')}</h1>
+	<p>{t('journal.editor.notFoundHint')}</p>
+	<p><a href={journalHref({ view: 'list' })}>{t('journal.editor.backToList')}</a></p>
 {:else if loadState === 'error' || !entry}
-	<p class="error" role="alert">Could not load the entry.</p>
-	<button type="button" class="secondary" onclick={() => load(entryId)}>Retry</button>
+	<p class="error" role="alert">{t('journal.editor.loadFailed')}</p>
+	<button type="button" class="secondary" onclick={() => load(entryId)}>{t('journal.list.retry')}</button>
 {:else}
-	<h1 bind:this={heading} tabindex="-1">{persisted ? 'Entry' : 'New entry'}</h1>
+	<h1 bind:this={heading} tabindex="-1">{persisted ? t('journal.editor.entry') : t('journal.editor.new')}</h1>
 
 	{#if mode === 'edit'}
 		<form class="editor" onsubmit={(e) => e.preventDefault()}>
 			<div class="row">
 				<label class="date">
-					<span>Date</span>
+					<span>{t('journal.editor.date')}</span>
 					<input type="date" bind:value={date} required oninput={touch} onblur={() => void flush()} />
 				</label>
 				<label class="grow">
-					<span>Title (optional)</span>
+					<span>{t('journal.editor.titleOptional')}</span>
 					<input
 						type="text"
 						bind:value={title}
@@ -414,7 +416,7 @@
 				</label>
 			</div>
 			<label>
-				<span>Entry</span>
+				<span>{t('journal.editor.entry')}</span>
 				<textarea
 					bind:this={textarea}
 					bind:value={text}
@@ -426,32 +428,32 @@
 				></textarea>
 			</label>
 			<p id="entry-count" class="count" class:over={chars > MAX_REVIEW_CHARS}>
-				{chars.toLocaleString('en')} / {MAX_REVIEW_CHARS.toLocaleString('en')} for review
+				{t('journal.editor.count', { count: formatNumber(chars), max: formatNumber(MAX_REVIEW_CHARS) })}
 			</p>
 			{#if chars > MAX_REVIEW_CHARS}
 				<p class="count over">{tooLongHint(chars)}</p>
 			{/if}
 			{#if text.length >= ENTRY_MAX_CHARS}
-				<p class="count over">This is the longest an entry can be. Split it into two entries.</p>
+				<p class="count over">{t('journal.editor.longest')}</p>
 			{/if}
 		</form>
 		<div class="save-status" aria-live="polite">{saveStatusText(saveState)}</div>
 		{#if saveState === 'error'}
-			<button type="button" class="secondary" onclick={() => void flush()}>Save</button>
+			<button type="button" class="secondary" onclick={() => void flush()}>{t('journal.editor.save')}</button>
 		{/if}
 	{:else if review && anchoring}
-		<h2 bind:this={reviewHeading} tabindex="-1">Review</h2>
+		<h2 bind:this={reviewHeading} tabindex="-1">{t('journal.editor.review')}</h2>
 		<p class="meta">{date}{title.trim() ? ' · ' + title.trim() : ''}</p>
 		{#if outdated}
 			<div class="outdated">
-				<p>Written for an earlier version</p>
+				<p>{t('journal.editor.outdated')}</p>
 				<button
 					type="button"
 					onclick={runReview}
 					disabled={reviewing || !reviewGate.enabled}
 					aria-describedby={reviewGate.hint ? 'review-hint' : undefined}
 				>
-					Review again
+					{t('journal.editor.reviewAgain')}
 				</button>
 			</div>
 		{/if}
@@ -464,11 +466,11 @@
 		/>
 		<AnnotationList {listed} missing={anchoring.missing} onpick={pickAnnotation} />
 		<div class="actions">
-			<button type="button" class="secondary" onclick={backToEdit}>Edit</button>
+			<button type="button" class="secondary" onclick={backToEdit}>{t('journal.editor.edit')}</button>
 		</div>
 	{/if}
 
-	<div class="actions" role="group" aria-label="Entry actions">
+	<div class="actions" role="group" aria-label={t('journal.editor.actions')}>
 		{#if mode === 'edit'}
 			<button
 				type="button"
@@ -476,7 +478,7 @@
 				disabled={reviewing || !reviewGate.enabled}
 				aria-describedby={reviewGate.hint ? 'review-hint' : undefined}
 			>
-				{reviewing ? 'Reviewing…' : 'Review'}
+				{reviewing ? t('journal.editor.reviewingShort') : t('journal.editor.review')}
 			</button>
 			<button
 				type="button"
@@ -486,30 +488,30 @@
 				aria-expanded={showIdeas}
 				aria-describedby={ideasGate.hint ? 'ideas-hint' : undefined}
 			>
-				Ideas
+				{t('journal.ideas.title')}
 			</button>
 			{#if review}
-				<button type="button" class="secondary" onclick={showReview}>Show last review</button>
+				<button type="button" class="secondary" onclick={showReview}>{t('journal.editor.showLast')}</button>
 			{/if}
 		{/if}
 		{#if confirmingDelete}
-			<span class="confirm" role="group" aria-label="Delete this entry?">
-				Delete this entry and its review?
+			<span class="confirm" role="group" aria-label={t('journal.editor.deleteQuestion')}>
+				{t('journal.editor.deleteText')}
 				<button
 					type="button"
 					class="secondary danger"
 					onclick={confirmDelete}
 					disabled={deleting}
 				>
-					Yes, delete
+					{t('journal.editor.yesDelete')}
 				</button>
 				<button type="button" class="secondary" bind:this={cancelDelete} onclick={abortDelete}>
-					Cancel
+					{t('common.action.cancel')}
 				</button>
 			</span>
 		{:else}
 			<button type="button" class="secondary danger" bind:this={deleteButton} onclick={askDelete}>
-				Delete
+				{t('journal.editor.delete')}
 			</button>
 		{/if}
 	</div>
@@ -517,7 +519,7 @@
 	{#if reviewGate.hint && mode === 'edit' && !reviewGate.enabled}
 		<p id="review-hint" class="hint">
 			{reviewGate.hint}{#if reviewGate.settingsLink}
-				{' '}<a href="/settings?tab=ai">Open Settings → AI</a>{/if}
+				{' '}<a href="/settings?tab=ai">{t('journal.openAiSettings')}</a>{/if}
 		</p>
 	{/if}
 	{#if ideasGate.hint && mode === 'edit' && !ideasGate.enabled}
@@ -528,7 +530,7 @@
 	{#if failure}
 		<p class="error" role="alert">
 			{failure.text}
-			{#if failure.settingsLink}<a href="/settings?tab=ai">Open Settings → AI</a>{/if}
+			{#if failure.settingsLink}<a href="/settings?tab=ai">{t('journal.openAiSettings')}</a>{/if}
 		</p>
 	{/if}
 	{#if deleteError}<p class="error" role="alert">{deleteError}</p>{/if}

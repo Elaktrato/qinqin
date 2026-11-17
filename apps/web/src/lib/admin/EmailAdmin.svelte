@@ -4,8 +4,10 @@
 	import ReauthFields from './ReauthFields.svelte';
 	import { reauthBody, reauthError, reauthFocus, reauthNeedsCode, reauthReady } from './reauth';
 	import { apiErrorBody } from '$lib/api/client';
+	import { errorText } from '$lib/api/apiErrors';
+	import { t } from '$lib/i18n';
 	import { deleteSmtp, getSmtp, putSmtp, testSmtp, type SmtpSettings } from '$lib/api/adminSettings';
-	import { PLAIN_WARNING, draftFrom, passwordNote, payloadFrom, portForMode, testFailure, type SmtpDraft, type TlsMode } from './smtpForm';
+	import { plainWarning, draftFrom, passwordNote, payloadFrom, portForMode, testFailure, type SmtpDraft, type TlsMode } from './smtpForm';
 
 	let saved = $state<SmtpSettings | null>(null);
 	let draft = $state<SmtpDraft | null>(null);
@@ -29,7 +31,7 @@
 			saved = await getSmtp();
 			draft = draftFrom(saved);
 		} catch (err) {
-			error = apiErrorBody(err)?.message || 'Could not load the email settings.';
+			error = errorText(err, t('admin.email.error.load'));
 		}
 	});
 
@@ -52,12 +54,14 @@
 				const raw = JSON.parse((err as Error).message) as { category?: string; smtpCode?: number };
 				error = testFailure(raw.category ?? '', raw.smtpCode);
 			} else if (reauthFields && ['wrong_password', 'code_invalid', 'rate_limited'].includes(body?.error ?? '')) {
-				// the administrator's own re-authentication was refused (password_required
-				// here can also mean the mail account's password, so it keeps the server's sentence)
+				// the administrator's own re-authentication was refused
 				refused = body!.error;
 				error = reauthError(refused);
+			} else if (reauthFields && body?.error === 'password_required' && ownPassword !== '') {
+				// The own password was sent, so the code is about the mail account: a user name needs a password.
+				error = t('admin.email.error.usernameNeedsPassword');
 			} else {
-				error = body?.message || fallback;
+				error = errorText(err, fallback);
 			}
 		} finally {
 			busy = false;
@@ -79,15 +83,15 @@
 			saved = await putSmtp({ ...payloadFrom(draft!), ...reauthBody(ownPassword, needsCode, ownCode) });
 			draft = draftFrom(saved);
 			ownPassword = ownCode = '';
-			status = 'Email settings saved.';
-		}, 'Could not save the email settings.', () => saveFields);
+			status = t('admin.email.saved');
+		}, t('admin.email.error.save'), () => saveFields);
 	};
 
 	const sendTest = () =>
 		run(async () => {
 			await testSmtp({ ...(testTo.trim() ? { to: testTo.trim() } : {}), draft: payloadFrom(draft!) });
-			status = 'Test mail sent. Check the inbox.';
-		}, 'Could not send the test mail.');
+			status = t('admin.email.testSent');
+		}, t('admin.email.error.test'));
 
 	const remove = () =>
 		run(async () => {
@@ -96,78 +100,78 @@
 			saved = await getSmtp();
 			draft = draftFrom(saved);
 			confirmRemove = false;
-			status = 'Email setup removed.';
-		}, 'Could not remove the email setup.', () => removeFields);
+			status = t('admin.email.removed');
+		}, t('admin.email.error.remove'), () => removeFields);
 </script>
 
 <section aria-labelledby="admin-email-heading">
-	<h2 id="admin-email-heading">Email</h2>
-	<p class="hint">A mail server lets people reset passwords, confirm addresses, get sign-in codes and lets you require two-step sign-in.</p>
+	<h2 id="admin-email-heading">{t('admin.email.title')}</h2>
+	<p class="hint">{t('admin.email.intro')}</p>
 	{#if error}<p class="error" role="alert">{error}</p>{/if}
 	<p class="ok" role="status">{status}</p>
 	{#if saved && draft}
 		{#if saved.secret !== 'ok'}
-			<p class="hint">QINQIN_SECRET is {saved.secret}: a mail password cannot be stored. A relay without a password still works.</p>
+			<p class="hint">{t('admin.email.secretState', { state: String(saved.secret) })}</p>
 		{/if}
 		{#if (saved.usersDependOnMail ?? 0) > 0 && (!saved.configured || saved.password === 'undecryptable')}
 			<p class="error" role="alert">
-				{saved.usersDependOnMail} {saved.usersDependOnMail === 1 ? 'person has' : 'people have'} email codes as their only second step and cannot sign in while email does not work. Fix the setup below, or reset their two-factor under Users.
+				{t('admin.email.dependents', { count: saved.usersDependOnMail ?? 0 })}
 			</p>
 		{/if}
 		<form onsubmit={save} class="stack">
-			<label>Server <input name="host" bind:value={draft.host} required /></label>
+			<label>{t('admin.email.server')} <input name="host" bind:value={draft.host} required /></label>
 			<label>
-				Connection security
+				{t('admin.email.security')}
 				<select name="tls" value={draft.tls} onchange={(e) => changeMode(e.currentTarget.value as TlsMode)}>
-					<option value="starttls">STARTTLS (port 587)</option>
-					<option value="tls">TLS (port 465)</option>
-					<option value="none">None (port 25)</option>
+					<option value="starttls">{t('admin.email.security.starttls')}</option>
+					<option value="tls">{t('admin.email.security.tls')}</option>
+					<option value="none">{t('admin.email.security.none')}</option>
 				</select>
 			</label>
-			{#if draft.tls === 'none'}<p class="warn" role="note">{PLAIN_WARNING}</p>{/if}
-			<label>Port <input name="port" type="number" min="1" max="65535" bind:value={draft.port} required /></label>
-			<label>User name <input name="username" autocomplete="off" bind:value={draft.username} /></label>
+			{#if draft.tls === 'none'}<p class="warn" role="note">{plainWarning()}</p>{/if}
+			<label>{t('admin.email.port')} <input name="port" type="number" min="1" max="65535" bind:value={draft.port} required /></label>
+			<label>{t('admin.email.username')} <input name="username" autocomplete="off" bind:value={draft.username} /></label>
 			<fieldset>
-				<legend>Password</legend>
+				<legend>{t('admin.email.password')}</legend>
 				<p>{passwordNote(saved.password)}</p>
 				{#if saved.password !== 'none' && draft.passwordChoice === 'keep'}
-					<button type="button" onclick={() => (draft!.passwordChoice = 'replace')}>Replace</button>
-					<button type="button" onclick={() => ((draft!.passwordChoice = 'remove'), (draft!.password = ''))}>Remove</button>
+					<button type="button" onclick={() => (draft!.passwordChoice = 'replace')}>{t('admin.email.password.replace')}</button>
+					<button type="button" onclick={() => ((draft!.passwordChoice = 'remove'), (draft!.password = ''))}>{t('admin.email.password.remove')}</button>
 				{:else}
 					{#if draft.passwordChoice === 'remove'}
-						<p class="hint">The password will be removed when you save.</p>
-						<button type="button" onclick={() => (draft!.passwordChoice = 'keep')}>Keep it</button>
+						<p class="hint">{t('admin.email.password.willRemove')}</p>
+						<button type="button" onclick={() => (draft!.passwordChoice = 'keep')}>{t('admin.email.password.keep')}</button>
 					{:else}
 						<label>
-							New password
+							{t('admin.email.password.new')}
 							<input type="password" name="password" autocomplete="new-password" bind:value={draft.password}
 								oninput={() => (draft!.passwordChoice = 'replace')} />
 						</label>
 					{/if}
 				{/if}
 			</fieldset>
-			<label>Sender address <input name="from" type="email" bind:value={draft.fromAddress} required /></label>
-			<label>Sender name <input name="fromName" bind:value={draft.fromName} /></label>
-			<label>Address of this site <input name="publicUrl" type="url" placeholder="https://qinqin.example.org" bind:value={draft.publicUrl} required /></label>
+			<label>{t('admin.email.senderAddress')} <input name="from" type="email" bind:value={draft.fromAddress} required /></label>
+			<label>{t('admin.email.senderName')} <input name="fromName" bind:value={draft.fromName} /></label>
+			<label>{t('admin.email.siteAddress')} <input name="publicUrl" type="url" placeholder="https://qinqin.example.org" bind:value={draft.publicUrl} required /></label>
 			{#if !confirmRemove}
-				<ReauthFields bind:this={saveFields} bind:password={ownPassword} bind:code={ownCode} {needsCode} passwordLabel="Your own password, to save" />
+				<ReauthFields bind:this={saveFields} bind:password={ownPassword} bind:code={ownCode} {needsCode} passwordLabel={t('admin.email.ownPasswordSave')} />
 			{/if}
-			<div class="actions"><button type="submit" disabled={busy || confirmRemove || !reauthOk}>Save</button></div>
+			<div class="actions"><button type="submit" disabled={busy || confirmRemove || !reauthOk}>{t('admin.email.save')}</button></div>
 		</form>
 
-		<h3>Test mail</h3>
-		<label>Send to (default: your own address) <input name="to" type="email" bind:value={testTo} /></label>
-		<button type="button" disabled={busy || !draft.host} onclick={sendTest}>Send test mail</button>
+		<h3>{t('admin.email.test.title')}</h3>
+		<label>{t('admin.email.test.to')} <input name="to" type="email" bind:value={testTo} /></label>
+		<button type="button" disabled={busy || !draft.host} onclick={sendTest}>{t('admin.email.test.send')}</button>
 
 		{#if saved.configured}
-			<h3>Remove email setup</h3>
+			<h3>{t('admin.email.remove.title')}</h3>
 			{#if confirmRemove}
-				<p>This turns off password reset by email, email codes and required two-step sign-in. Personal authenticator apps keep working.</p>
-				<ReauthFields bind:this={removeFields} bind:password={ownPassword} bind:code={ownCode} {needsCode} passwordLabel="Your own password, to remove" />
-				<button type="button" disabled={busy || !reauthOk} onclick={remove}>Yes, remove</button>
-				<button type="button" onclick={() => ((confirmRemove = false), (ownPassword = ownCode = ''))}>Cancel</button>
+				<p>{t('admin.email.remove.text')}</p>
+				<ReauthFields bind:this={removeFields} bind:password={ownPassword} bind:code={ownCode} {needsCode} passwordLabel={t('admin.email.ownPasswordRemove')} />
+				<button type="button" disabled={busy || !reauthOk} onclick={remove}>{t('admin.email.remove.yes')}</button>
+				<button type="button" onclick={() => ((confirmRemove = false), (ownPassword = ownCode = ''))}>{t('common.action.cancel')}</button>
 			{:else}
-				<button type="button" onclick={() => ((confirmRemove = true), (ownPassword = ownCode = ''))}>Remove email setup…</button>
+				<button type="button" onclick={() => ((confirmRemove = true), (ownPassword = ownCode = ''))}>{t('admin.email.remove.open')}</button>
 			{/if}
 		{/if}
 	{/if}

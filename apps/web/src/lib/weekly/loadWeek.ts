@@ -4,6 +4,7 @@
 // of the activity request leave the local rows (offline).
 
 import { fetchActivity, type ActivitySource } from '../api/stats';
+import { t } from '../i18n';
 import type { GoalsRow } from '../goals/goals';
 import { usesHan } from '../languages';
 import { loadCharacterMapData, withLegacyWritten } from '../stats/characterMap';
@@ -58,7 +59,7 @@ export async function loadWeek(
 		const response = await fetchActivity(previousWeek(monday), sunday < today ? sunday : today, workspaceId);
 		activity = { sources: response.sources ?? [], cells: response.cells ?? [] };
 	} catch (err) {
-		activityError = err instanceof Error && err.message ? err.message : 'Could not load your activity.';
+		activityError = err instanceof Error && err.message ? err.message : t('stats.activity.loadFailed');
 	}
 	let mature: ((before: number, after: number) => number) | undefined;
 	let timelines: Timelines | undefined;

@@ -3,6 +3,17 @@
 import journal from '$builtin/journal.json';
 import type { ContractManifest } from '../contract';
 import type { PluginManifest } from '../index';
+import { t } from '$lib/i18n';
+
+/** A link to a licence file; the label is read when shown ("Apache-2.0 license text"). */
+function licenceText(name: string, path: string): { readonly label: string; path: string } {
+	return {
+		path,
+		get label() {
+			return t('sources.licenseText', { name });
+		}
+	};
+}
 
 export const journalManifest: PluginManifest = {
 	...(journal as unknown as ContractManifest),
@@ -11,25 +22,28 @@ export const journalManifest: PluginManifest = {
 			name: 'Tesseract OCR',
 			url: 'https://github.com/tesseract-ocr/tesseract',
 			license: 'Apache-2.0',
-			notice:
-				'The server image ships Tesseract 5.5 and the chi_sim, chi_tra, jpn and eng models from tessdata (Apache-2.0) for offline photo reading. The photo is read on this server; nothing is sent anywhere.',
-			licenseTexts: [{ label: 'Apache-2.0 license text', path: '/TESSERACT-APACHE-2.0.TXT' }]
+			get notice() {
+				return t('journal.credit.tesseract');
+			},
+			licenseTexts: [licenceText('Apache-2.0', '/TESSERACT-APACHE-2.0.TXT')]
 		},
 		{
 			name: 'Leptonica',
 			url: 'https://github.com/DanBloomberg/leptonica',
 			license: 'BSD-2-Clause',
-			notice:
-				'Tesseract links the Leptonica image library, which the server image redistributes.',
-			licenseTexts: [{ label: 'Leptonica license text', path: '/LEPTONICA-LICENSE.TXT' }]
+			get notice() {
+				return t('journal.credit.leptonica');
+			},
+			licenseTexts: [licenceText('Leptonica', '/LEPTONICA-LICENSE.TXT')]
 		},
 		{
 			name: 'Anthropic Go SDK',
 			url: 'https://github.com/anthropics/anthropic-sdk-go',
 			license: 'Apache-2.0',
-			notice:
-				'Used by the server to call Claude with your own API key when you ask for a review, ideas or a transcription.',
-			licenseTexts: [{ label: 'Apache-2.0 license text', path: '/ANTHROPIC-SDK-GO-LICENSE.TXT' }]
+			get notice() {
+				return t('journal.credit.anthropic');
+			},
+			licenseTexts: [licenceText('Apache-2.0', '/ANTHROPIC-SDK-GO-LICENSE.TXT')]
 		}
 	]
 };

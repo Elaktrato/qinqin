@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '$lib/i18n';
 	import { goto } from '$app/navigation';
 	import { loadConfig, saveConfig } from '$lib/study/session';
 	import { createDeck } from '$lib/study/store';
@@ -54,7 +55,7 @@
 		event.preventDefault();
 		const name = newName.trim();
 		if (name === '') {
-			formError = 'Give the deck a name.';
+			formError = t('flashcards.list.nameMissing');
 			return;
 		}
 		creating = true;
@@ -64,7 +65,7 @@
 			newName = '';
 			await store.load(workspaceId, true);
 		} catch (err) {
-			formError = err instanceof Error && err.message ? err.message : 'Could not create the deck.';
+			formError = err instanceof Error && err.message ? err.message : t('flashcards.list.createFailed');
 		} finally {
 			creating = false;
 		}
@@ -75,26 +76,23 @@
 		void goto('/study/session');
 	}
 
-	function plural(n: number, one: string, many = `${one}s`): string {
-		return `${n} ${n === 1 ? one : many}`;
-	}
 </script>
 
-<h1>Decks</h1>
+<h1>{t('flashcards.list.title')}</h1>
 
 {#if store.status === 'loading'}
-	<p role="status">Loading decks…</p>
+	<p role="status">{t('flashcards.list.loading')}</p>
 {:else if store.status === 'no-workspace'}
-	<p role="status">Choose a workspace in the header to see your decks.</p>
+	<p role="status">{t('flashcards.deck.noWorkspace')}</p>
 {:else if store.status === 'error'}
 	<p role="alert">{store.error}</p>
-	<button type="button" onclick={() => void store.load(workspaceId, true)}>Try again</button>
+	<button type="button" onclick={() => void store.load(workspaceId, true)}>{t('flashcards.deck.tryAgain')}</button>
 {:else if summary !== null}
 	<DeckStatsPanel numbers={summary.overall} />
 
-	<h2>Your decks</h2>
+	<h2>{t('flashcards.list.yourDecks')}</h2>
 	{#if summary.decks.length === 0}
-		<p class="hint">No cards yet. Add words from their entry page, or copy a level deck below.</p>
+		<p class="hint">{t('flashcards.list.empty')}</p>
 	{/if}
 	<ul class="decks">
 		{#each summary.decks as deck (deck.id)}
@@ -103,15 +101,18 @@
 				<div class="head">
 					<a class="name" href={flashcardsHref({ view: 'deck', deckId: deck.id })}>{deck.name}</a>
 					<span class="meta">
-						{plural(deck.numbers.words, 'word')} · {plural(deck.numbers.cards, 'card')}
+						{t('flashcards.list.meta', {
+							words: t('flashcards.deck.words', { count: deck.numbers.words }),
+							cards: t('flashcards.deck.cards', { count: deck.numbers.cards })
+						})}
 					</span>
 				</div>
 				<div class="counts">
 					{#if store.data?.ctx.vacationToday}
-						<span>On vacation</span>
+						<span>{t('flashcards.list.onVacation')}</span>
 					{:else}
-						<span>{deck.numbers.due} due</span>
-						<span>{deck.numbers.fresh} new</span>
+						<span>{t('flashcards.list.due', { count: deck.numbers.due })}</span>
+						<span>{t('flashcards.list.new', { count: deck.numbers.fresh })}</span>
 						{#if store.data !== null && limitsLeftToday !== null}
 							{@const left = deckLeftText(limitsLeftToday(deck.id, store.data, deck.kinds))}
 							{#if left !== null}<span class="left">{left}</span>{/if}
@@ -123,18 +124,18 @@
 					<span class="studied" style:width={`${shares.studied}%`}></span>
 				</div>
 				{#if deck.extras}
-					<p class="note">+ reverse/cloze cards as you study</p>
+					<p class="note">{t('flashcards.list.extras')}</p>
 				{/if}
 				<div class="actions">
 					<button
 						type="button"
 						class="primary"
-						aria-label={`Study ${deck.name}`}
-						onclick={() => study(deck.id, deck.kinds)}>Study</button
+						aria-label={t('flashcards.list.studyNamed', { name: deck.name })}
+						onclick={() => study(deck.id, deck.kinds)}>{t('flashcards.deck.study')}</button
 					>
 					<a
 						href={flashcardsHref({ view: 'settings', deckId: deck.id })}
-						aria-label={`Settings for ${deck.name}`}>Settings</a
+						aria-label={t('flashcards.list.settingsNamed', { name: deck.name })}>{t('flashcards.deck.settings')}</a
 					>
 				</div>
 			</li>
@@ -143,10 +144,10 @@
 
 	<form class="new" onsubmit={create}>
 		<label>
-			New deck name
+			{t('flashcards.list.newName')}
 			<input bind:value={newName} maxlength="80" autocomplete="off" />
 		</label>
-		<button type="submit" disabled={creating}>Create deck</button>
+		<button type="submit" disabled={creating}>{t('flashcards.list.create')}</button>
 		{#if formError}
 			<p class="error" role="alert">{formError}</p>
 		{/if}

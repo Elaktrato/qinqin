@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '$lib/i18n';
 	import { readingBeside } from '$lib/entry/displayForm';
 	import { getFrequencyPacks } from '$lib/api/frequency';
 	import type { StarterEntry } from '$lib/api/frequency';
@@ -7,6 +8,7 @@
 	import { knownEntries } from '$lib/study/known';
 	import { GENERAL_DECK_ID, PartialPushError, loadRawStudyData, pushStudy } from '$lib/study/store';
 	import { workspaces } from '$lib/workspaces';
+	import { glossLang, studyLang, wordReadingLang, readingLang } from '$lib/i18n/lang';
 	import { flashcardsHref, type FlashcardsRoute } from '../route';
 	import { addPlanRows, planAddToDeck } from './addToDeck';
 	import { createDecksData } from './decksData.svelte';
@@ -58,7 +60,7 @@
 				if (found !== null) entries = await loadStarterEntries(found.packNumId, found.size);
 			})
 			.catch((err) => {
-				loadError = errorMessage(err, 'Could not load this deck.');
+				loadError = errorMessage(err, t('flashcards.system.loadDeckFailed'));
 			});
 	});
 
@@ -82,9 +84,9 @@
 
 	function stateLabel(entryId: number): string {
 		const cardId = vocabByEntry.get(entryId);
-		if (cardId === undefined || data === null) return 'Not studied';
+		if (cardId === undefined || data === null) return t('flashcards.system.notStudied');
 		const state = classifySchedule(data.index.get(cardId) ?? null);
-		return WORD_STATES.find((s) => s.state === state)?.label ?? 'Not studied';
+		return WORD_STATES.find((s) => s.state === state)?.label ?? t('flashcards.system.notStudied');
 	}
 
 	let busy = $state(false);
@@ -105,7 +107,7 @@
 			await store.load(workspaceId, true);
 			const fresh = store.data;
 			if (store.status !== 'ready' || fresh === null) {
-				error = 'Could not load your cards to leave out the words you know. Try again.';
+				error = t('flashcards.system.knownFailed');
 				return;
 			}
 			const knownNow = knownEntries(fresh.cards, (id) => fresh.index.get(id) ?? null, fresh.known);
@@ -126,7 +128,7 @@
 			if (plan.writes.length === 0) {
 				// A deck or settings row alone (a deleted copy) is still written.
 				if (rows.length > 0) await pushStudy(workspaceId, rows);
-				result = `Nothing new to add to ${named.name}`;
+				result = t('flashcards.system.nothingNew', { name: named.name });
 				return;
 			}
 			headRows = rows.length - plan.writes.length;
@@ -139,8 +141,8 @@
 		} catch (err) {
 			error =
 				err instanceof PartialPushError && err.skipped === 0
-					? `Added ${Math.max(0, err.done - headRows)}; try again to add the rest`
-					: errorMessage(err, 'Could not add the words.');
+					? t('flashcards.system.addedPartial', { count: Math.max(0, err.done - headRows) })
+					: errorMessage(err, t('flashcards.system.addFailed'));
 		} finally {
 			busy = false;
 			progress = null;
@@ -152,47 +154,49 @@
 {#if loadError}
 	<p role="alert">{loadError}</p>
 {:else if deck === undefined || store.status === 'loading'}
-	<p role="status">Loading deck…</p>
+	<p role="status">{t('flashcards.deck.loading')}</p>
 {:else if deck === null || target === null}
-	<p role="status">Deck not found.</p>
-	<a href={flashcardsHref({ view: 'list' })}>Back to decks</a>
+	<p role="status">{t('flashcards.deck.notFound')}</p>
+	<a href={flashcardsHref({ view: 'list' })}>{t('flashcards.deck.backToDecks')}</a>
 {:else}
-	<p><a href={flashcardsHref({ view: 'list' })}>‹ Decks</a></p>
+	<p><a href={flashcardsHref({ view: 'list' })}>{t('flashcards.deck.back')}</a></p>
 	<h1>{target.name}</h1>
 	<p class="hint">
-		<span>{starterCredit(deck)}</span> · <a href="/sources">Data and licences</a>
+		<span>{starterCredit(deck)}</span> · <a href="/sources">{t('flashcards.system.dataLicences')}</a>
 	</p>
-	<p class="hint">The most frequent words of the list, computed on this server. Add it to study it.</p>
+	<p class="hint">{t('flashcards.starter.intro')}</p>
 	{#if entries === null}
-		<p role="status">Loading words…</p>
+		<p role="status">{t('flashcards.system.loadingWords')}</p>
 	{:else}
-		<p>{ownedCount} of {view.shown.length} in your decks</p>
+		<p>{t('flashcards.system.owned', { owned: ownedCount, total: view.shown.length })}</p>
 		{#if view.knownLine !== null}
 			<p class="hint">{view.knownLine}</p>
 		{/if}
 		<div class="actions">
-			<button type="button" disabled={busy} onclick={add}>Add to my decks</button>
+			<button type="button" disabled={busy} onclick={add}>{t('flashcards.system.addToMine')}</button>
 			{#if existingCopy !== null}
-				<a href={flashcardsHref({ view: 'deck', deckId: existingCopy.id })}>Open my copy</a>
+				<a href={flashcardsHref({ view: 'deck', deckId: existingCopy.id })}>{t('flashcards.starter.openCopy')}</a>
 			{/if}
 		</div>
 		{#if progress !== null}
-			<p role="status" aria-label="Adding">Adding {progress.done} of {progress.total}…</p>
+			<p role="status" aria-label={t('flashcards.system.adding')}>
+				{t('flashcards.system.addingProgress', { done: progress.done, total: progress.total })}
+			</p>
 		{/if}
 		{#if result}
 			<p role="status">{result}</p>
 		{/if}
 		{#if error}
 			<p class="error" role="alert">{error}</p>
-			<button type="button" disabled={busy} onclick={add}>Try again</button>
+			<button type="button" disabled={busy} onclick={add}>{t('flashcards.deck.tryAgain')}</button>
 		{/if}
 		<ul class="items">
 			{#each view.shown as item (item.id)}
 				<li>
-					<span class="word">{item.written}</span>
-					<span class="reading">{readingBeside(item.written, item.readings)}</span>
+					<span class="word" lang={studyLang(workspace?.language)}>{item.written}</span>
+					<span class="reading" lang={wordReadingLang(workspace?.language)}>{readingBeside(item.written, item.readings)}</span>
 					{#if glosses.has(item.id)}
-						<span class="gloss">{glosses.get(item.id)}</span>
+						<span class="gloss" lang={glossLang(undefined)}>{glosses.get(item.id)}</span>
 					{/if}
 					<span class="state">{stateLabel(item.id)}</span>
 				</li>

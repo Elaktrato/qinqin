@@ -6,7 +6,7 @@
 import type { FrequencyPack, Scheme } from '$lib/api/types';
 import type { LevelUnit } from './levelQueue';
 import { resolveSessionOrder, type NewOrder, type SessionNewOrder } from './newOrder';
-import { MIXED_NOTE, OFFLINE_NOTE, resolveAvailableOrder } from './newOrderView';
+import { mixedNote, offlineNote, resolveAvailableOrder } from './newOrderView';
 import type { RanksResult } from './frequencyRanks';
 import { isValidReview } from './scheduler';
 import type { ReviewEvent, StudyCard, StudyCardKind } from './types';
@@ -53,11 +53,11 @@ export async function sessionNewKey(
 		order = input.order;
 	} else {
 		const resolved = resolveSessionOrder(input.order, input.deckOrders ?? []);
-		if (resolved.mixed) note = MIXED_NOTE;
+		if (resolved.mixed) note = mixedNote();
 		order = resolved.order;
 	}
 	if (order.by === 'added') return { key: null, note };
-	if (!input.online) return { key: null, note: OFFLINE_NOTE };
+	if (!input.online) return { key: null, note: offlineNote() };
 	try {
 		const [packs, schemes] = await Promise.all([
 			order.by === 'frequency' ? deps.packs() : Promise.resolve([]),
@@ -73,7 +73,7 @@ export async function sessionNewKey(
 		const ranks = await deps.ranks(input.language, input.newEntryIds);
 		return { key: ranks.rankOf, note: null };
 	} catch {
-		return { key: null, note: OFFLINE_NOTE };
+		return { key: null, note: offlineNote() };
 	}
 }
 

@@ -1,0 +1,21 @@
+{
+  "version": 1,
+  "rule": "i18n/interface-language-api",
+  "note": "PUT /api/me/interface-language {language} stores the caller's interface language: '' (follow the browser/device) or a tag that language-tags.json accepts (syntax only, never support). 200 echoes {language}; GET /api/auth/me carries it as interfaceLanguage ('' for an account that never set one). Request bodies are JSON unless rawBody is given; `setup` lists bodies PUT by the same user first; `me` is the interfaceLanguage GET /api/auth/me shows afterwards. An error body is {error, message}; only error is pinned. Signed-in full session only (401 anonymous, 403 for a restricted session); personal access tokens are refused (403 token_not_allowed).",
+  "cases": [
+    {"name": "browser default", "request": {"method": "PUT", "path": "/api/me/interface-language", "body": {"language": ""}}, "setup": [{"language": "en"}], "status": 200, "body": {"language": ""}, "me": ""},
+    {"name": "language", "request": {"method": "PUT", "path": "/api/me/interface-language", "body": {"language": "en"}}, "status": 200, "body": {"language": "en"}, "me": "en"},
+    {"name": "language and script", "request": {"method": "PUT", "path": "/api/me/interface-language", "body": {"language": "zh-Hant"}}, "status": 200, "body": {"language": "zh-Hant"}, "me": "zh-Hant"},
+    {"name": "language and region", "request": {"method": "PUT", "path": "/api/me/interface-language", "body": {"language": "pt-BR"}}, "status": 200, "body": {"language": "pt-BR"}, "me": "pt-BR"},
+    {"name": "a tag no client supports is stored", "request": {"method": "PUT", "path": "/api/me/interface-language", "body": {"language": "yue"}}, "status": 200, "body": {"language": "yue"}, "me": "yue"},
+    {"name": "422 upper-case language", "request": {"method": "PUT", "path": "/api/me/interface-language", "body": {"language": "EN"}}, "setup": [{"language": "en"}], "status": 422, "body": {"error": "invalid_language"}, "me": "en"},
+    {"name": "422 underscore", "request": {"method": "PUT", "path": "/api/me/interface-language", "body": {"language": "en_US"}}, "status": 422, "body": {"error": "invalid_language"}, "me": ""},
+    {"name": "422 a word", "request": {"method": "PUT", "path": "/api/me/interface-language", "body": {"language": "english"}}, "status": 422, "body": {"error": "invalid_language"}, "me": ""},
+    {"name": "422 36 characters", "request": {"method": "PUT", "path": "/api/me/interface-language", "body": {"language": "abcdefghijklmnopqrstuvwxyzabcdefghij"}}, "status": 422, "body": {"error": "invalid_language"}, "me": ""},
+    {"name": "400 language missing", "request": {"method": "PUT", "path": "/api/me/interface-language", "body": {}}, "status": 400, "body": {"error": "bad_request"}, "me": ""},
+    {"name": "400 language not a string", "request": {"method": "PUT", "path": "/api/me/interface-language", "body": {"language": 5}}, "status": 400, "body": {"error": "bad_request"}, "me": ""},
+    {"name": "400 unknown key", "request": {"method": "PUT", "path": "/api/me/interface-language", "body": {"language": "en", "region": "GB"}}, "status": 400, "body": {"error": "bad_request"}, "me": ""},
+    {"name": "400 not JSON", "request": {"method": "PUT", "path": "/api/me/interface-language", "rawBody": "en"}, "status": 400, "body": {"error": "bad_request"}, "me": ""},
+    {"name": "401 without a session", "request": {"method": "PUT", "path": "/api/me/interface-language", "body": {"language": "en"}, "token": false}, "status": 401, "body": {"error": "unauthorized"}, "me": ""}
+  ]
+}

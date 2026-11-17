@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { t } from '$lib/i18n';
 	import { loadWorkspaceEvents } from '$lib/events';
 	import { deleteVacation, saveVacation, saveWorkspaceLimits } from '$lib/study/store';
 	import GoalSettings from './GoalSettings.svelte';
@@ -82,7 +83,7 @@
 				.map((p) => parseVacation(`vacation:${p.id}`, p))
 				.filter((p): p is VacationPeriod => p !== null);
 		} catch {
-			error = 'Could not load your vacations.';
+			error = t('settings.vacation.loadFailed');
 		}
 		loaded = true;
 	}
@@ -176,10 +177,10 @@
 		busy = true;
 		try {
 			await saveWorkspaceLimits(plan.row);
-			limitsMessage = 'Saved.';
+			limitsMessage = t('common.state.saved');
 			await load(true);
 		} catch {
-			limitsError = 'Could not save the limits.';
+			limitsError = t('settings.deckLimits.saveFailed');
 		} finally {
 			busy = false;
 		}
@@ -193,12 +194,8 @@
 <GoalSettings />
 
 <section class="vacation">
-	<h2>Vacation</h2>
-	<p class="hint">
-		A vacation freezes your reviews: nothing is due and no new cards are offered, your streak is not
-		broken, and when you come back there is no pile of overdue cards. The schedule counts the days
-		you were away as not passed.
-	</p>
+	<h2>{t('settings.vacation.title')}</h2>
+	<p class="hint">{t('settings.vacation.hint')}</p>
 
 	<form
 		onsubmit={(e) => {
@@ -207,33 +204,33 @@
 		}}
 	>
 		<fieldset>
-			<legend>Start</legend>
-			<label><input type="radio" name="vac-start" value="now" bind:group={startMode} /> Start now</label>
-			<label><input type="radio" name="vac-start" value="date" bind:group={startMode} /> On a date</label>
+			<legend>{t('settings.vacation.start')}</legend>
+			<label><input type="radio" name="vac-start" value="now" bind:group={startMode} /> {t('settings.vacation.startNow')}</label>
+			<label><input type="radio" name="vac-start" value="date" bind:group={startMode} /> {t('settings.vacation.onDate')}</label>
 			{#if startMode === 'date'}
 				<label>
-					<span>Start date</span>
+					<span>{t('settings.vacation.startDate')}</span>
 					<input type="date" min={today} bind:value={startDate} required />
 				</label>
 			{/if}
 		</fieldset>
 
 		<fieldset>
-			<legend>End</legend>
-			<label><input type="radio" name="vac-end" value="open" bind:group={endMode} /> Until I end it</label>
-			<label><input type="radio" name="vac-end" value="date" bind:group={endMode} /> Until</label>
+			<legend>{t('settings.vacation.end')}</legend>
+			<label><input type="radio" name="vac-end" value="open" bind:group={endMode} /> {t('settings.vacation.untilEnd')}</label>
+			<label><input type="radio" name="vac-end" value="date" bind:group={endMode} /> {t('settings.vacation.untilDate')}</label>
 			{#if endMode === 'date'}
 				<label>
-					<span>End date</span>
+					<span>{t('settings.vacation.endDate')}</span>
 					<input type="date" min={startMode === 'date' && startDate !== '' ? startDate : today} bind:value={endDate} required />
 				</label>
 			{/if}
 		</fieldset>
 
 		<fieldset>
-			<legend>Applies to</legend>
-			<label><input type="radio" name="vac-scope" value="all" bind:group={scopeMode} /> All workspaces</label>
-			<label><input type="radio" name="vac-scope" value="chosen" bind:group={scopeMode} /> Chosen workspaces</label>
+			<legend>{t('settings.vacation.appliesTo')}</legend>
+			<label><input type="radio" name="vac-scope" value="all" bind:group={scopeMode} /> {t('settings.vacation.scopeAll')}</label>
+			<label><input type="radio" name="vac-scope" value="chosen" bind:group={scopeMode} /> {t('settings.vacation.scopeChosen')}</label>
 			{#if scopeMode === 'chosen'}
 				<ul class="spaces">
 					{#each named as space (space.id)}
@@ -248,7 +245,7 @@
 			{/if}
 		</fieldset>
 
-		<button type="submit" disabled={busy}>{startMode === 'now' ? 'Start vacation' : 'Schedule vacation'}</button>
+		<button type="submit" disabled={busy}>{startMode === 'now' ? t('settings.vacation.startSubmit') : t('settings.vacation.schedule')}</button>
 	</form>
 
 	{#if error}
@@ -259,28 +256,28 @@
 	{/if}
 
 	{#if loaded && visible.length > 0}
-		<h3>Your vacations</h3>
+		<h3>{t('settings.vacation.yours')}</h3>
 		<ul class="periods">
 			{#each visible as period (period.id)}
 				{@const status = periodStatus(period, today)}
 				<li>
 					<span>
 						{describePeriod(period, today, named)}
-						<em>({status === 'active' ? 'active' : 'scheduled'})</em>
+						<em>({status === 'active' ? t('settings.vacation.active') : t('settings.vacation.scheduled')})</em>
 					</span>
 					{#if status === 'active'}
 						<button
 							type="button"
 							disabled={busy}
-							aria-label={`End now: ${describePeriod(period, today, named)}`}
-							onclick={() => void run(() => planEndEarly(period, today))}>End now</button
+							aria-label={t('settings.vacation.endNowLabel', { period: describePeriod(period, today, named) })}
+							onclick={() => void run(() => planEndEarly(period, today))}>{t('settings.vacation.endNow')}</button
 						>
 					{:else}
 						<button
 							type="button"
 							disabled={busy}
-							aria-label={`Cancel vacation ${describePeriod(period, today, named)}`}
-							onclick={() => void run(() => planCancel(period, today))}>Cancel</button
+							aria-label={t('settings.vacation.cancelLabel', { period: describePeriod(period, today, named) })}
+							onclick={() => void run(() => planCancel(period, today))}>{t('common.action.cancel')}</button
 						>
 					{/if}
 				</li>
@@ -290,17 +287,12 @@
 </section>
 
 <section class="limits">
-	<h2>Daily limits</h2>
-	<p class="hint">
-		Each deck gets at most this many new cards and reviews per study day, however many sessions you
-		start (the workspace value is the default for every deck; a deck can have its own in its
-		settings). A card in several decks must fit every one. Cards you are not shown stay due and come
-		back the next day.
-	</p>
-	<form novalidate onsubmit={saveLimits} aria-label="Daily limits of this workspace">
-		<LimitField legend="New cards per day" name="ws-new" bind:state={newState} />
-		<LimitField legend="Reviews per day" name="ws-reviews" bind:state={reviewsState} />
-		<button type="submit" disabled={busy || workspaceId === null}>Save limits</button>
+	<h2>{t('settings.limits.title')}</h2>
+	<p class="hint">{t('settings.limits.hint')}</p>
+	<form novalidate onsubmit={saveLimits} aria-label={t('settings.limits.formLabel')}>
+		<LimitField legend={t('settings.deckLimits.newPerDay')} name="ws-new" bind:state={newState} />
+		<LimitField legend={t('settings.deckLimits.reviewsPerDay')} name="ws-reviews" bind:state={reviewsState} />
+		<button type="submit" disabled={busy || workspaceId === null}>{t('settings.deckLimits.save')}</button>
 		{#if limitsMessage}<span role="status">{limitsMessage}</span>{/if}
 	</form>
 	{#if limitsError}

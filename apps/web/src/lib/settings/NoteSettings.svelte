@@ -2,6 +2,7 @@
 	// "Show my notes on the answer side": the workspace's qinqin-core notecfg row
 	// (docs/contracts/notes/README.md). Missing or unreadable reads as on.
 	import type { NoteCfg } from '$lib/notes/notes';
+	import { t } from '$lib/i18n';
 	import { loadNoteCfg, saveNoteCfg } from '$lib/notes/store';
 	import { workspaces } from '$lib/workspaces';
 
@@ -47,7 +48,7 @@
 			cfg = { onAnswer: value, extra: cfg.extra };
 		} catch {
 			checked = cfg.onAnswer;
-			error = 'Could not save this setting. Try again.';
+			error = t('settings.notes.saveFailed');
 		} finally {
 			busy = false;
 		}
@@ -56,12 +57,12 @@
 
 {#if workspaceId !== null}
 	<section class="notes">
-		<h2>Personal notes</h2>
+		<h2>{t('settings.notes.title')}</h2>
 		<label class="check">
 			<input type="checkbox" bind:checked disabled={busy || !loaded} onchange={change} />
-			Show my notes on the answer side
+			{t('settings.notes.onAnswer')}
 		</label>
-		<p class="hint">Your notes on words appear below a flashcard once its answer is shown, in this workspace.</p>
+		<p class="hint">{t('settings.notes.hint')}</p>
 		{#if error}<p class="error" role="alert">{error}</p>{/if}
 	</section>
 {/if}

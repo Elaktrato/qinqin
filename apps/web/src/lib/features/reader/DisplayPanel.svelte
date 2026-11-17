@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '$lib/i18n';
 	import { tick } from 'svelte';
 	import type { ReaderDisplay, ReadingsMode } from './displaySettings';
 	import { RUBY_SCALES, THRESHOLD_MAX, THRESHOLD_MIN } from './displaySettings';
@@ -26,16 +27,21 @@
 	let button = $state<HTMLButtonElement | null>(null);
 
 	const MODES: { value: ReadingsMode; label: string }[] = [
-		{ value: 'never', label: 'Never' },
-		{ value: 'always', label: 'Always' },
-		{ value: 'smart', label: 'Smart (hide readings of words I know)' }
+		{ value: 'never', label: t('reader.display.never') },
+		{ value: 'always', label: t('reader.display.always') },
+		{ value: 'smart', label: t('reader.display.smart') }
 	];
-	const SIZE_NAMES = ['Small', 'Medium', 'Large', 'Extra large'];
+	const SIZE_NAMES = [
+		t('reader.display.small'),
+		t('reader.display.medium'),
+		t('reader.display.large'),
+		t('reader.display.extraLarge')
+	];
 	const FONTS: { value: ReaderFont; label: string }[] = [
-		{ value: 'default', label: 'Default' },
-		{ value: 'sans', label: 'Sans' },
-		{ value: 'serif', label: 'Serif' },
-		{ value: 'kai', label: 'Kai' }
+		{ value: 'default', label: t('reader.display.fontDefault') },
+		{ value: 'sans', label: t('reader.display.fontSans') },
+		{ value: 'serif', label: t('reader.display.fontSerif') },
+		{ value: 'kai', label: t('reader.display.fontKai') }
 	];
 
 	async function onkeydown(e: KeyboardEvent): Promise<void> {
@@ -54,12 +60,12 @@
 		bind:this={button}
 		aria-expanded={open}
 		aria-controls="{id}-panel"
-		onclick={() => (open = !open)}>Display</button
+		onclick={() => (open = !open)}>{t('reader.display.button')}</button
 	>
 	{#if open}
 		<!-- Escape closes the disclosure from anywhere inside it; the group itself is no widget. -->
 		<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
-		<div id="{id}-panel" class="panel" role="group" aria-label="Reading display" {onkeydown}>
+		<div id="{id}-panel" class="panel" role="group" aria-label={t('reader.display.panel')} {onkeydown}>
 			{#if hasBookRuby}
 				<label class="row">
 					<input
@@ -67,12 +73,12 @@
 						checked={display.bookRuby}
 						onchange={(e) => onchange({ bookRuby: e.currentTarget.checked })}
 					/>
-					Book ruby (the reading marks printed in the book)
+					{t('reader.display.bookRuby')}
 				</label>
 			{/if}
 
 			<fieldset>
-				<legend>Readings over words</legend>
+				<legend>{t('reader.display.readings')}</legend>
 				{#each MODES as mode (mode.value)}
 					<label class="row">
 						<input
@@ -94,19 +100,20 @@
 					aria-describedby={display.highlightWords ? `${id}-legend` : undefined}
 					onchange={(e) => onchange({ highlightWords: e.currentTarget.checked })}
 				/>
-				Mark words by how well I know them
+				{t('reader.display.markWords')}
 			</label>
 			{#if display.highlightWords}
 				<ul id="{id}-legend" class="legend">
-					<li><span class="w-new w-end" aria-hidden="true">字</span> New: solid underline</li>
-					<li><span class="w-learning w-end" aria-hidden="true">字</span> Learning: dotted underline</li>
-					<li class="hint">Known words are not marked.</li>
+					<li><span class="w-new w-end" aria-hidden="true">字</span> {t('reader.display.legendNew')}</li>
+					<li><span class="w-learning w-end" aria-hidden="true">字</span> {t('reader.display.legendLearning')}</li>
+					<li class="hint">{t('reader.display.legendKnown')}</li>
 				</ul>
 			{/if}
 
 			{#if display.readings === 'smart' || display.highlightWords}
 				<div class="threshold">
-					<label for="{id}-threshold">A word counts as known from a memory score of {display.smartThreshold}</label>
+					<label for="{id}-threshold">{t('reader.display.threshold', { score: display.smartThreshold })}</label
+					>
 					<input
 						id="{id}-threshold"
 						type="range"
@@ -119,19 +126,19 @@
 					/>
 					<p id="{id}-hint" class="hint">
 						{#if display.readings === 'smart'}
-							Hide readings of words with a memory score of {display.smartThreshold} or more.
+							{t('reader.display.hideReadings', { score: display.smartThreshold })}
 						{/if}
-						Words you mark with “I know this” always count as known.
-						<a href="/stats/characters">What is the score?</a>
+						{t('reader.display.markedKnown')}
+						<a href="/stats/characters">{t('reader.display.whatScore')}</a>
 					</p>
 				</div>
 			{/if}
 			{#if display.readings === 'smart'}
-				<button type="button" aria-pressed={showAll} onclick={ontoggleAll}>Show all readings</button>
+				<button type="button" aria-pressed={showAll} onclick={ontoggleAll}>{t('reader.display.showAll')}</button>
 			{/if}
 
 			<fieldset>
-				<legend>Ruby size</legend>
+				<legend>{t('reader.display.rubySize')}</legend>
 				{#each RUBY_SCALES as scale, i (scale)}
 					<label class="row">
 						<input
@@ -147,7 +154,7 @@
 			</fieldset>
 
 			<fieldset>
-				<legend>Font</legend>
+				<legend>{t('reader.display.font')}</legend>
 				{#each FONTS as font (font.value)}
 					<label class="row">
 						<input

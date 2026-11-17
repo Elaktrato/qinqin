@@ -1,5 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { t } from '$lib/i18n';
+	import Msg from '$lib/i18n/Msg.svelte';
 	import { unusableZones } from '$lib/time/studyDay';
 	import {
 		browserZone,
@@ -57,37 +59,37 @@
 </script>
 
 <section class="study-day">
-	<h2>Study day</h2>
-	<p class="hint">
-		Your study day starts at midnight in your time zone. Heatmap, streaks, daily goals and limits all
-		count days this way, on every device.
+	<h2>{t('settings.studyDay.title')}</h2>
+	<p class="hint">{t('settings.studyDay.hint')}</p>
+	<p class="current">
+		<Msg key="settings.studyDay.current" args={{ zone: zoneLabel(current, now) }}
+			>{#snippet strong(text: string)}<strong>{text}</strong>{/snippet}</Msg
+		>
 	</p>
-	<p class="current">Time zone: <strong>{zoneLabel(current, now)}</strong></p>
-	<p class="hint">Changes apply from now on; past days stay as they were.</p>
+	<p class="hint">{t('settings.studyDay.fromNow')}</p>
 
 	{#if unusable.length > 0}
 		<p class="warning" role="alert">
-			This browser does not know the time zone {unusable.join(', ')}; days in that period are
-			counted in UTC here.
+			{t('settings.studyDay.unusable', { zones: unusable.join(', ') })}
 		</p>
 	{/if}
 
 	{#if device}
 		<div class="notice">
-			<p>This device is set to {device}.</p>
+			<p>{t('settings.studyDay.device', { zone: device })}</p>
 			<button type="button" disabled={busy} onclick={() => apply(device)}
-				>Use {device} from now on</button
+				>{t('settings.studyDay.useDevice', { zone: device })}</button
 			>
 		</div>
 	{/if}
 
 	<div class="picker">
 		<label>
-			<span>Search time zones</span>
+			<span>{t('settings.studyDay.search')}</span>
 			<input type="search" bind:value={query} autocomplete="off" />
 		</label>
 		<label>
-			<span>Time zone</span>
+			<span>{t('settings.studyDay.zone')}</span>
 			<select value={selected} onchange={(e) => (picked = e.currentTarget.value)}>
 				{#each options as zone (zone)}
 					<option value={zone}>{zone}</option>
@@ -95,7 +97,7 @@
 			</select>
 		</label>
 		<button type="button" disabled={busy || selected === current} onclick={() => apply(selected)}
-			>Change time zone</button
+			>{t('settings.studyDay.change')}</button
 		>
 	</div>
 

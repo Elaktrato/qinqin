@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
+	import { t } from '$lib/i18n';
 	import { page } from '$app/state';
 	import { ApiError } from '$lib/api/client';
 	import { fetchCharacters } from '$lib/api/characters';
@@ -53,7 +54,7 @@
 		} catch (err) {
 			if (mine !== seq) return;
 			loadError =
-				err instanceof ApiError || err instanceof Error ? err.message || 'Could not load.' : 'Could not load.';
+				err instanceof ApiError || err instanceof Error ? err.message || t('search.parts.loadFailed') : t('search.parts.loadFailed');
 		}
 	}
 
@@ -94,24 +95,24 @@
 </script>
 
 <svelte:head>
-	<title>{pageTitle('Radicals and parts')}</title>
+	<title>{pageTitle(t('search.parts.title'))}</title>
 </svelte:head>
 
 <main class="parts-page">
-	<h1>Find a character by radical or part</h1>
-	<p><a href="/search">Back to search</a></p>
+	<h1>{t('search.parts.heading')}</h1>
+	<p><a href="/search">{t('search.parts.back')}</a></p>
 
 	{#if lang === null}
 		{#if $workspacesLoaded}
-			<p class="hint">No workspace selected. Create or select a workspace in the header.</p>
+			<p class="hint">{t('search.parts.noWorkspace')}</p>
 		{/if}
 	{:else if !supported}
-		<p class="hint">Radical lookup is available in Chinese and Japanese workspaces.</p>
+		<p class="hint">{t('search.parts.unsupported')}</p>
 	{:else if loadError}
 		<p class="error" role="alert">{loadError}</p>
-		<button type="button" class="retry" onclick={() => void load(lang)}>Try again</button>
+		<button type="button" class="retry" onclick={() => void load(lang)}>{t('common.action.retry')}</button>
 	{:else if chars === null}
-		<p class="hint" aria-live="polite">Loading…</p>
+		<p class="hint" aria-live="polite">{t('common.loading')}</p>
 	{:else if chars.length === 0}
 		<p class="hint" role="status">{dictionaryHint(languageLabel(lang), $user?.admin === true)}</p>
 	{:else}
@@ -119,16 +120,16 @@
 			<input
 				type="text"
 				bind:value={typed}
-				aria-label="Type a radical or part"
-				placeholder="Type a radical or part (氵, 口…)"
+				aria-label={t('search.parts.typeLabel')}
+				placeholder={t('search.parts.typePlaceholder')}
 				maxlength="4"
 			/>
-			<button type="submit">Add</button>
-			<button type="button" class="clear" disabled={isEmpty(sel)} onclick={() => go({ p: [] })}>Clear</button>
+			<button type="submit">{t('search.parts.add')}</button>
+			<button type="button" class="clear" disabled={isEmpty(sel)} onclick={() => go({ p: [] })}>{t('search.parts.clear')}</button>
 		</form>
 
 		{#if typedChoices.length > 0}
-			<div class="chips" role="group" aria-label="Which one?">
+			<div class="chips" role="group" aria-label={t('search.parts.whichOne')}>
 				{#each typedChoices as option (option.key)}
 					<button
 						type="button"
@@ -146,13 +147,13 @@
 		{/if}
 
 		{#if !isEmpty(sel)}
-			<div class="chips selected" role="group" aria-label="Selected">
+			<div class="chips selected" role="group" aria-label={t('search.parts.selected')}>
 				{#each selectionChips(sel) as chip (chip.key)}
 					<button
 						type="button"
 						class="chip"
 						lang={glyphLang}
-						aria-label={`Remove ${chip.name}`}
+						aria-label={t('search.parts.remove', { name: chip.name })}
 						onclick={() => go(chip.next)}
 					>
 						{chip.label} <span aria-hidden="true">×</span>
@@ -162,8 +163,8 @@
 		{/if}
 
 		<section aria-labelledby="radicals-heading">
-			<h2 id="radicals-heading">Radical</h2>
-			<div class="radicals" role="group" aria-label="Radicals">
+			<h2 id="radicals-heading">{t('search.parts.radical')}</h2>
+			<div class="radicals" role="group" aria-label={t('search.parts.radicals')}>
 				{#each table as group (group.s)}
 					<h3 class="group-label">{group.s}</h3>
 					<div class="tiles">
@@ -173,7 +174,7 @@
 								class="tile"
 								lang={glyphLang}
 								aria-pressed={sel.r === r.n}
-								title={`Radical ${r.n}`}
+								title={t('search.parts.radicalNumber', { n: r.n })}
 								onclick={() => go(toggleRadical(sel, r.n))}
 							>
 								{r.c}{#if r.forms.length > 0}<span class="forms">{r.forms.join('')}</span>{/if}
@@ -185,13 +186,11 @@
 		</section>
 
 		<section aria-labelledby="parts-heading">
-			<h2 id="parts-heading">Parts</h2>
+			<h2 id="parts-heading">{t('search.parts.parts')}</h2>
 			{#if comps.parts.length === 0}
-				<p class="note">
-					No character components are installed for this language; pick a radical or a stroke count.
-				</p>
+				<p class="note">{t('search.parts.noComponents')}</p>
 			{:else}
-				<div class="parts" role="group" aria-label="Parts">
+				<div class="parts" role="group" aria-label={t('search.parts.parts')}>
 					{#each picker as group (group.s)}
 						<h3 class="group-label">{group.s === 0 ? '?' : group.s}</h3>
 						<div class="tiles">
@@ -214,15 +213,15 @@
 					{/each}
 				</div>
 				<button type="button" class="link" onclick={() => (showAllParts = !showAllParts)}>
-					{showAllParts ? 'Show common parts' : 'Show all parts'}
+					{showAllParts ? t('search.parts.showCommon') : t('search.parts.showAll')}
 				</button>
 			{/if}
 		</section>
 
 		{#if strokeChips.length > 0}
 			<section aria-labelledby="strokes-heading">
-				<h2 id="strokes-heading">Total strokes</h2>
-				<div class="chips" role="group" aria-label="Total strokes">
+				<h2 id="strokes-heading">{t('search.parts.totalStrokes')}</h2>
+				<div class="chips" role="group" aria-label={t('search.parts.totalStrokes')}>
 					{#each strokeChips as s (s)}
 						<button type="button" class="chip" aria-pressed={sel.s === s} onclick={() => go(toggleStrokes(sel, s))}>
 							{s}
@@ -235,7 +234,7 @@
 		<p class="status" role="status" aria-live="polite">{statusLine(sel, result.total)}</p>
 
 		{#if result.total > 0}
-			<ul class="results" aria-label="Matching characters" lang={glyphLang}>
+			<ul class="results" aria-label={t('search.parts.matching')} lang={glyphLang}>
 				{#each result.groups as group (group.s)}
 					{#if group.cells.length > 0}
 						<li class="result-group">
@@ -250,7 +249,7 @@
 				{/each}
 			</ul>
 			{#if result.total > result.results.length}
-				<button type="button" class="link" onclick={() => (showAllResults = true)}>Show all {result.total}</button>
+				<button type="button" class="link" onclick={() => (showAllResults = true)}>{t('search.parts.showAllResults', { count: result.total })}</button>
 			{/if}
 		{/if}
 	{/if}

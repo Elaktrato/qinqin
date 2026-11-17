@@ -1,9 +1,10 @@
 <script lang="ts">
+	import { t } from '$lib/i18n';
 	import { QUIET_ZONE, qrDrawing } from './qrMatrix';
 
 	// The QR code as SVG rects (no injected markup). The text alternative is
 	// the secret the page shows beside it.
-	let { text, label = 'QR code for your authenticator app' }: { text: string; label?: string } = $props();
+	let { text, label = t('account.qr.label') }: { text: string; label?: string } = $props();
 
 	const drawing = $derived(qrDrawing(text));
 	const box = $derived(drawing.size + QUIET_ZONE * 2);

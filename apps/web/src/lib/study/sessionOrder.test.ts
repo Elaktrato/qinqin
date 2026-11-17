@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { FrequencyPack, Scheme } from '$lib/api/types';
-import { MIXED_NOTE, OFFLINE_NOTE } from './newOrderView';
+import { mixedNote, offlineNote } from './newOrderView';
 import { candidateNewEntries, deckOrdersOf, sessionNewKey, type SessionKeyDeps } from './sessionOrder';
 import type { ReviewEvent, StudyCard } from './types';
 
@@ -61,7 +61,7 @@ describe('sessionNewKey', () => {
 			{ ...base, mode: 'decks', order: 'deck', deckOrders: [{ by: 'frequency' }, null] },
 			deps()
 		);
-		expect(r).toEqual({ key: null, note: MIXED_NOTE });
+		expect(r).toEqual({ key: null, note: mixedNote() });
 	});
 
 	it('decks: by level uses the scheme with that pack id', async () => {
@@ -88,12 +88,12 @@ describe('sessionNewKey', () => {
 			{ ...base, online: false, mode: 'decks', order: { by: 'frequency' }, deckOrders: [] },
 			deps()
 		);
-		expect(offline).toEqual({ key: null, note: OFFLINE_NOTE });
+		expect(offline).toEqual({ key: null, note: offlineNote() });
 		const failed = await sessionNewKey(
 			{ ...base, mode: 'decks', order: { by: 'frequency' }, deckOrders: [] },
 			deps({ ranks: vi.fn(async () => Promise.reject(new TypeError('fetch'))) })
 		);
-		expect(failed).toEqual({ key: null, note: OFFLINE_NOTE });
+		expect(failed).toEqual({ key: null, note: offlineNote() });
 	});
 
 	it('levels: level order unless frequency on a word scheme', async () => {

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '$lib/i18n';
 	import { onMount } from 'svelte';
 	import type { Entry, Sentence } from '$lib/api/types';
 	import ClozeChoice from '$lib/components/ClozeChoice.svelte';
@@ -56,7 +57,7 @@
 
 {#snippet gap(surface: string | undefined)}
 	<span class="gap" class:right={outcome === 'right'} class:wrong={outcome === 'wrong' || outcome === 'gaveUp'}
-		><span class="sr-only">blank</span>{done ? (surface ?? prompt.answer) : '＿＿'}</span
+		><span class="sr-only">{t('flashcards.card.blank')}</span>{done ? (surface ?? prompt.answer) : '＿＿'}</span
 	>
 {/snippet}
 
@@ -75,7 +76,7 @@
 	</p>
 
 	<div class="entry">
-		<label for="cloze-answer">Type the word</label>
+		<label for="cloze-answer">{t('flashcards.card.typeWord')}</label>
 		<input
 			id="cloze-answer"
 			type="text"
@@ -92,18 +93,18 @@
 
 	{#if !done}
 		<div class="actions">
-			<button type="button" class="primary" onclick={check} disabled={typed.trim() === ''}>Check</button>
-			<button type="button" class="secondary" onclick={() => finish('gaveUp')}>Show answer</button>
+			<button type="button" class="primary" onclick={check} disabled={typed.trim() === ''}>{t('flashcards.card.check')}</button>
+			<button type="button" class="secondary" onclick={() => finish('gaveUp')}>{t('flashcards.card.showAnswer')}</button>
 		</div>
 	{/if}
 
 	<p class="feedback" class:bad={outcome === 'wrong' || outcome === 'gaveUp'} role="status" aria-live="polite">
 		{#if outcome === 'right'}
-			Correct!
+			{t('flashcards.card.correct')}
 		{:else if outcome === 'wrong'}
-			Not quite. The answer is {prompt.answer}.
+			{t('flashcards.card.wrongAnswer', { answer: prompt.answer })}
 		{:else if outcome === 'gaveUp'}
-			The answer is {prompt.answer}.
+			{t('flashcards.card.gaveUp', { answer: prompt.answer })}
 		{:else}
 			&nbsp;
 		{/if}

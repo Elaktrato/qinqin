@@ -7,6 +7,7 @@
 // state; Young = in review with a stability under 21 days; Mature = 21
 // days or more (the same edge the Word Salad tiers use).
 
+import { t, type MessageKey } from '$lib/i18n';
 import { GENERAL_DECK_ID } from '$lib/study/store';
 import { scheduleFor, type Schedule } from '$lib/study/scheduler';
 import type { StudyClock } from '$lib/study/studyClock';
@@ -15,11 +16,20 @@ import type { Deck, ReviewEvent, StudyCard } from '$lib/study/types';
 export type WordState = 'new' | 'learning' | 'young' | 'mature';
 
 /** The four states in display order, with their visible names. */
-export const WORD_STATES: readonly { state: WordState; label: string }[] = [
-	{ state: 'new', label: 'New' },
-	{ state: 'learning', label: 'Learning' },
-	{ state: 'young', label: 'Young' },
-	{ state: 'mature', label: 'Mature' }
+function wordState(state: WordState, label: MessageKey): { state: WordState; readonly label: string } {
+	return {
+		state,
+		get label() {
+			return t(label);
+		}
+	};
+}
+
+export const WORD_STATES: readonly { state: WordState; readonly label: string }[] = [
+	wordState('new', 'stats.wordState.new'),
+	wordState('learning', 'stats.wordState.learning'),
+	wordState('young', 'stats.wordState.young'),
+	wordState('mature', 'stats.wordState.mature')
 ];
 
 /** Stability in days from which a word in review counts as mature. */
@@ -120,10 +130,17 @@ export function wordStateCounts(
 	};
 }
 
+const SUMMARY: Record<WordState, MessageKey> = {
+	new: 'stats.wordStateSummary.new',
+	learning: 'stats.wordStateSummary.learning',
+	young: 'stats.wordStateSummary.young',
+	mature: 'stats.wordStateSummary.mature'
+};
+
 /** wordStateSummary is the bar's text alternative, e.g. "16 words: 3 new, 1 learning, …". */
 export function wordStateSummary(counts: WordStateCounts): string {
-	const parts = WORD_STATES.map(({ state }) => `${counts[state]} ${state}`);
-	return `${counts.total} ${counts.total === 1 ? 'word' : 'words'}: ${parts.join(', ')}`;
+	const parts = WORD_STATES.map(({ state }) => t(SUMMARY[state], { count: counts[state] }));
+	return t('stats.wordStateSummary.text', { count: counts.total, parts: parts.join(', ') });
 }
 
 /** wordStateShares are the non-empty parts of the stacked bar, in percent. */

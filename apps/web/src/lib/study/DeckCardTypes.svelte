@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '$lib/i18n';
 	import { cleanCardTypes, type DeckSettings } from './deckSettings';
 	import { saveDeckCardTypes } from './store';
 	import type { OptInKind } from './types';
@@ -34,7 +35,7 @@
 			const saved = await saveDeckCardTypes(deckId, next);
 			onSaved?.(saved);
 		} catch (err) {
-			error = err instanceof Error && err.message ? err.message : 'Could not save this setting.';
+			error = err instanceof Error && err.message ? err.message : t('study.deckTypes.saveFailed');
 		} finally {
 			pending = null;
 			saving = false;
@@ -42,7 +43,7 @@
 	}
 </script>
 
-<fieldset class="switches" aria-label={`Extra card types for ${deckName}`}>
+<fieldset class="switches" aria-label={t('study.deckTypes.label', { deck: deckName })}>
 	{#each OPTIONS as option (option.kind)}
 		<label class="switch">
 			<input

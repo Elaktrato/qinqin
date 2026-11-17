@@ -1,7 +1,10 @@
 <script lang="ts">
 	import { pageTitle } from '$lib/pageTitle';
+	import { errorText } from '$lib/api/apiErrors';
+	import { t } from '$lib/i18n';
+	import Msg from '$lib/i18n/Msg.svelte';
 	import { onMount } from 'svelte';
-	import { ApiError, api } from '$lib/api/client';
+	import { api } from '$lib/api/client';
 	import type { ComponentPack, Dictionary, FrequencyPack, Scheme, StrokePack } from '$lib/api/types';
 	import { getComponentPacks } from '$lib/api/components';
 	import { getStrokePacks } from '$lib/api/packages';
@@ -46,7 +49,7 @@
 			sentencePacks = await listSentencePacks();
 		} catch (err) {
 			sentencePacks = [];
-			sentencesError = message(err, 'Could not load sentence pack credits.');
+			sentencesError = message(err, t('sources.error.sentences'));
 		}
 	}
 
@@ -66,15 +69,11 @@
 			audioPacks = await api<AudioPackInfo[]>('/api/audio-packs', { auth: false });
 		} catch (err) {
 			audioPacks = [];
-			audioError = message(err, 'Could not load audio credits.');
+			audioError = message(err, t('sources.error.audio'));
 		}
 	}
 
-	function message(err: unknown, fallback: string): string {
-		if (err instanceof ApiError && err.message) return err.message;
-		if (err instanceof Error && err.message) return err.message;
-		return fallback;
-	}
+	const message = errorText;
 
 	async function load(): Promise<void> {
 		loading = true;
@@ -85,7 +84,7 @@
 			dictionaries = await api<Dictionary[]>('/api/dictionaries', { auth: false });
 		} catch (err) {
 			dictionaries = [];
-			error = message(err, 'Could not load dictionary credits.');
+			error = message(err, t('sources.error.dictionaries'));
 		} finally {
 			loading = false;
 		}
@@ -98,7 +97,7 @@
 			frequencyPacks = await api<FrequencyPack[]>('/api/frequency-packs', { auth: false });
 		} catch (err) {
 			frequencyPacks = [];
-			frequencyError = message(err, 'Could not load frequency list credits.');
+			frequencyError = message(err, t('sources.error.frequency'));
 		} finally {
 			frequencyLoading = false;
 		}
@@ -115,7 +114,7 @@
 			componentPacks = await getComponentPacks();
 		} catch (err) {
 			componentPacks = [];
-			componentsError = message(err, 'Could not load character component credits.');
+			componentsError = message(err, t('sources.error.components'));
 		}
 	}
 
@@ -130,7 +129,7 @@
 			strokePacks = await getStrokePacks();
 		} catch (err) {
 			strokePacks = [];
-			strokesError = message(err, 'Could not load stroke data credits.');
+			strokesError = message(err, t('sources.error.strokes'));
 		}
 	}
 
@@ -146,7 +145,7 @@
 			schemes = await api<Scheme[]>('/api/schemes', { auth: false });
 		} catch (err) {
 			schemes = [];
-			schemesError = message(err, 'Could not load level list credits.');
+			schemesError = message(err, t('sources.error.levels'));
 		} finally {
 			schemesLoading = false;
 		}
@@ -169,7 +168,7 @@
 			grammarPacks = await listGrammar();
 		} catch (err) {
 			grammarPacks = [];
-			grammarError = message(err, 'Could not load grammar lesson credits.');
+			grammarError = message(err, t('sources.error.grammar'));
 		} finally {
 			grammarLoading = false;
 		}
@@ -188,7 +187,7 @@
 </script>
 
 <svelte:head>
-	<title>{pageTitle('Sources')}</title>
+	<title>{pageTitle(t('sources.title'))}</title>
 </svelte:head>
 
 {#snippet text(value: string, lang: string)}{#each scriptRuns(value, lang) as run, i (i)}{#if run.lang}<span
@@ -211,13 +210,14 @@
 <!-- The note link sits in a cell of its own, so the row header (announced
      with every cell) holds only the pack name. -->
 {#snippet noteHeader(table: PackTable)}
-	{#if table.notes.length > 0}<th scope="col"><span class="visually-hidden">Note</span></th>{/if}
+	{#if table.notes.length > 0}<th scope="col"><span class="visually-hidden">{t('sources.note')}</span></th>{/if}
 {/snippet}
 
 {#snippet noteCell(table: PackTable, noteId: string | undefined, name: string)}
 	{#if table.notes.length > 0}
 		<td class="note-cell">
-			{#if noteId}<a href={`#${noteId}`}>Note<span class="visually-hidden">{` on ${name}`}</span></a
+			{#if noteId}<a href={`#${noteId}`}
+					>{t('sources.note')}<span class="visually-hidden">{` ${t('sources.noteOn', { name })}`}</span></a
 				>{/if}
 		</td>
 	{/if}
@@ -227,7 +227,7 @@
      aria-labelledby could reliably name. -->
 {#snippet notes(table: PackTable)}
 	{#if table.notes.length > 0}
-		<h3 class="notes-heading">Notes</h3>
+		<h3 class="notes-heading">{t('sources.notes')}</h3>
 		<dl class="notes">
 			{#each table.notes as note (note.id)}
 				<dt id={note.id} tabindex="-1">{note.name}</dt>
@@ -235,8 +235,9 @@
 					{@render paragraphs(note.paragraphs, note.lang)}
 					{#each note.sharedWith as shared (shared.id)}
 						<p class="shared">
-							The source and terms in the note on <a href={`#${shared.id}`}>{shared.name}</a> above
-							also apply.
+							<Msg key="sources.shared" args={{ name: shared.name }}
+								>{#snippet link(text: string)}<a href={`#${shared.id}`}>{text}</a>{/snippet}</Msg
+							>
 						</p>
 					{/each}
 				</dd>
@@ -253,11 +254,11 @@
 		{#if view.license || view.attribution}
 			<dl class="facts">
 				{#if view.license}
-					<dt>License</dt>
+					<dt>{t('sources.license')}</dt>
 					<dd>{@render text(view.license, view.lang)}</dd>
 				{/if}
 				{#if view.attribution}
-					<dt>Attribution</dt>
+					<dt>{t('sources.attribution')}</dt>
 					<dd>{@render text(view.attribution, view.lang)}</dd>
 				{/if}
 			</dl>
@@ -275,36 +276,34 @@
 {/snippet}
 
 <main class="sources">
-	<h1>Sources</h1>
+	<h1>{t('sources.title')}</h1>
 	<p class="lede">
-		Meanings, character data, word frequencies, level lists, and stroke diagrams come from
-		upstream datasets. Their credits and licenses are listed here.
+		{t('sources.lede')}
 	</p>
 
 	<section>
-		<h2 id="sources-dictionaries">Installed dictionaries</h2>
+		<h2 id="sources-dictionaries">{t('sources.dictionaries.title')}</h2>
 
 		{#if loading}
-			<p>Loading dictionary credits…</p>
+			<p>{t('sources.dictionaries.loading')}</p>
 		{:else if error}
 			<p class="error" role="alert">{error}</p>
-			<button type="button" onclick={load}>Retry</button>
+			<button type="button" onclick={load}>{t('sources.retry')}</button>
 		{:else if dictionaries.length === 0}
-			<p>No dictionaries are installed.</p>
+			<p>{t('sources.dictionaries.none')}</p>
 			<p class="hint">
-				Run <code>qinqin seed</code>, or install a dictionary pack, to add meanings and
-				character data.
+				<Msg key="sources.dictionaries.hint">{#snippet code(text: string)}<code>{text}</code>{/snippet}</Msg>
 			</p>
 		{:else}
 			<div class="table-wrap">
 				<table aria-labelledby="sources-dictionaries">
 					<thead>
 						<tr>
-							<th scope="col">Name</th>
+							<th scope="col">{t('sources.col.name')}</th>
 							{@render noteHeader(dictionaryTable)}
-							<th scope="col">Version</th>
-							<th scope="col">License</th>
-							<th scope="col">Attribution</th>
+							<th scope="col">{t('sources.col.version')}</th>
+							<th scope="col">{t('sources.license')}</th>
+							<th scope="col">{t('sources.attribution')}</th>
 						</tr>
 					</thead>
 					<tbody>
@@ -324,33 +323,31 @@
 		{/if}
 
 		<p class="notice">
-			Bundled dictionaries are redistributed as unmodified upstream files. The upstream
-			dictionary packs ship with their <code>LICENSE</code> and <code>ATTRIBUTION.md</code>; the
-			project repository indexes them in <code>docs/sources.md</code>.
+			<Msg key="sources.dictionaries.notice">{#snippet code(text: string)}<code>{text}</code>{/snippet}</Msg>
 		</p>
 	</section>
 
 	<section>
-		<h2 id="sources-frequency">Frequency lists</h2>
+		<h2 id="sources-frequency">{t('sources.frequency.title')}</h2>
 
 		{#if frequencyLoading}
-			<p>Loading frequency list credits…</p>
+			<p>{t('sources.frequency.loading')}</p>
 		{:else if frequencyError}
 			<p class="error" role="alert">{frequencyError}</p>
-			<button type="button" onclick={loadFrequency}>Retry</button>
+			<button type="button" onclick={loadFrequency}>{t('sources.retry')}</button>
 		{:else if frequencyPacks.length === 0}
-			<p>No frequency lists are installed; lookups rank without them.</p>
+			<p>{t('sources.frequency.none')}</p>
 		{:else}
 			<div class="table-wrap">
 				<table aria-labelledby="sources-frequency">
 					<thead>
 						<tr>
-							<th scope="col">Name</th>
+							<th scope="col">{t('sources.col.name')}</th>
 							{@render noteHeader(frequencyTable)}
-							<th scope="col">Language</th>
-							<th scope="col">Version</th>
-							<th scope="col">License</th>
-							<th scope="col">Attribution</th>
+							<th scope="col">{t('sources.col.language')}</th>
+							<th scope="col">{t('sources.col.version')}</th>
+							<th scope="col">{t('sources.license')}</th>
+							<th scope="col">{t('sources.attribution')}</th>
 						</tr>
 					</thead>
 					<tbody>
@@ -371,30 +368,29 @@
 		{/if}
 
 		<p class="notice">
-			Word frequency ranks order the lookup results. Frequency lists with unclear licences are
-			never bundled; an instance may add them locally as a separate pack directory.
+			{t('sources.frequency.notice')}
 		</p>
 	</section>
 
 	{#if sentencesError}
 		<section>
-			<h2 id="sources-sentences">Sentences</h2>
+			<h2 id="sources-sentences">{t('sources.sentences.title')}</h2>
 			<p class="error" role="alert">{sentencesError}</p>
-			<button type="button" onclick={loadSentences}>Retry</button>
+			<button type="button" onclick={loadSentences}>{t('sources.retry')}</button>
 		</section>
 	{:else if sentencePacks.length > 0}
 		<section>
-			<h2 id="sources-sentences">Sentences</h2>
+			<h2 id="sources-sentences">{t('sources.sentences.title')}</h2>
 			<div class="table-wrap">
 				<table aria-labelledby="sources-sentences">
 					<thead>
 						<tr>
-							<th scope="col">Name</th>
+							<th scope="col">{t('sources.col.name')}</th>
 							{@render noteHeader(sentencesTable)}
-							<th scope="col">Language</th>
-							<th scope="col">Version</th>
-							<th scope="col">License</th>
-							<th scope="col">Attribution</th>
+							<th scope="col">{t('sources.col.language')}</th>
+							<th scope="col">{t('sources.col.version')}</th>
+							<th scope="col">{t('sources.license')}</th>
+							<th scope="col">{t('sources.attribution')}</th>
 						</tr>
 					</thead>
 					<tbody>
@@ -417,21 +413,21 @@
 
 	{#if components.show}
 		<section>
-			<h2 id="sources-components">Character components</h2>
+			<h2 id="sources-components">{t('sources.components.title')}</h2>
 			{#if componentsError}
 				<p class="error" role="alert">{componentsError}</p>
-				<button type="button" onclick={loadComponents}>Retry</button>
+				<button type="button" onclick={loadComponents}>{t('sources.retry')}</button>
 			{:else}
 				<div class="table-wrap">
 					<table aria-labelledby="sources-components">
 						<thead>
 							<tr>
-								<th scope="col">Name</th>
+								<th scope="col">{t('sources.col.name')}</th>
 								{@render noteHeader(components.table)}
-								<th scope="col">Language</th>
-								<th scope="col">Version</th>
-								<th scope="col">License</th>
-								<th scope="col">Attribution</th>
+								<th scope="col">{t('sources.col.language')}</th>
+								<th scope="col">{t('sources.col.version')}</th>
+								<th scope="col">{t('sources.license')}</th>
+								<th scope="col">{t('sources.attribution')}</th>
 							</tr>
 						</thead>
 						<tbody>
@@ -451,29 +447,28 @@
 				{@render notes(components.table)}
 			{/if}
 			<p class="notice">
-				Character components power the radical and part lookup. Only decompositions under a
-				redistributable licence are bundled; others stay local to an instance.
+				{t('sources.components.notice')}
 			</p>
 		</section>
 	{/if}
 
 	{#if strokes.show}
 		<section>
-			<h2 id="sources-strokes">Stroke data</h2>
+			<h2 id="sources-strokes">{t('sources.strokes.title')}</h2>
 			{#if strokesError}
 				<p class="error" role="alert">{strokesError}</p>
-				<button type="button" onclick={loadStrokes}>Retry</button>
+				<button type="button" onclick={loadStrokes}>{t('sources.retry')}</button>
 			{:else}
 				<div class="table-wrap">
 					<table aria-labelledby="sources-strokes">
 						<thead>
 							<tr>
-								<th scope="col">Name</th>
+								<th scope="col">{t('sources.col.name')}</th>
 								{@render noteHeader(strokes.table)}
-								<th scope="col">Language</th>
-								<th scope="col">Version</th>
-								<th scope="col">License</th>
-								<th scope="col">Attribution</th>
+								<th scope="col">{t('sources.col.language')}</th>
+								<th scope="col">{t('sources.col.version')}</th>
+								<th scope="col">{t('sources.license')}</th>
+								<th scope="col">{t('sources.attribution')}</th>
 							</tr>
 						</thead>
 						<tbody>
@@ -499,27 +494,26 @@
 				{@render notes(strokes.table)}
 			{/if}
 			<p class="notice">
-				Stroke-order animations and the writing cards draw from this data. It is served by this
-				server from an installed stroke pack, unmodified; the licence text ships with the app.
+				{t('sources.strokes.notice')}
 			</p>
 		</section>
 	{/if}
 
 	{#if audio}
 		<section>
-			<h2 id="sources-audio">Audio</h2>
+			<h2 id="sources-audio">{t('sources.audio.title')}</h2>
 
 			<div class="table-wrap">
 				<table aria-labelledby="sources-audio">
 					<thead>
 						<tr>
-							<th scope="col">Name</th>
+							<th scope="col">{t('sources.col.name')}</th>
 							{@render noteHeader(audio.table)}
-							<th scope="col">Language</th>
-							<th scope="col">Version</th>
-							<th scope="col">License</th>
-							<th scope="col">Attribution</th>
-							<th scope="col">Credits</th>
+							<th scope="col">{t('sources.col.language')}</th>
+							<th scope="col">{t('sources.col.version')}</th>
+							<th scope="col">{t('sources.license')}</th>
+							<th scope="col">{t('sources.attribution')}</th>
+							<th scope="col">{t('sources.col.credits')}</th>
 						</tr>
 					</thead>
 					<tbody>
@@ -550,9 +544,7 @@
 			{@render notes(audio.table)}
 
 			<p class="notice">
-				Pronunciation recordings play from the entry page and after the answer in study. Each
-				recording is credited next to its play button. Recordings with unclear licences are never
-				bundled; an instance may add them locally from <code>plugins/data-local/</code>.
+				<Msg key="sources.audio.notice">{#snippet code(text: string)}<code>{text}</code>{/snippet}</Msg>
 			</p>
 		</section>
 	{:else if audioError}
@@ -560,26 +552,26 @@
 	{/if}
 
 	<section>
-		<h2 id="sources-levels">Level lists</h2>
+		<h2 id="sources-levels">{t('sources.levels.title')}</h2>
 
 		{#if schemesLoading}
-			<p>Loading level list credits…</p>
+			<p>{t('sources.levels.loading')}</p>
 		{:else if schemesError}
 			<p class="error" role="alert">{schemesError}</p>
-			<button type="button" onclick={loadSchemes}>Retry</button>
+			<button type="button" onclick={loadSchemes}>{t('sources.retry')}</button>
 		{:else if schemes.length === 0}
-			<p>No level lists are installed.</p>
+			<p>{t('sources.levels.none')}</p>
 		{:else}
 			<div class="table-wrap">
 				<table aria-labelledby="sources-levels">
 					<thead>
 						<tr>
-							<th scope="col">Name</th>
+							<th scope="col">{t('sources.col.name')}</th>
 							{@render noteHeader(levelTable)}
-							<th scope="col">Language</th>
-							<th scope="col">Version</th>
-							<th scope="col">License</th>
-							<th scope="col">Attribution</th>
+							<th scope="col">{t('sources.col.language')}</th>
+							<th scope="col">{t('sources.col.version')}</th>
+							<th scope="col">{t('sources.license')}</th>
+							<th scope="col">{t('sources.attribution')}</th>
 						</tr>
 					</thead>
 					<tbody>
@@ -600,33 +592,31 @@
 		{/if}
 
 		<p class="notice">
-			Level lists group the character map and badge entries. Unless a pack's note above says
-			otherwise, lists installed from packs are third-party compilations, not official releases
-			of the tests they are named after.
+			{t('sources.levels.notice')}
 		</p>
 	</section>
 
 	<section>
-		<h2 id="sources-grammar">Grammar lessons</h2>
+		<h2 id="sources-grammar">{t('sources.grammar.title')}</h2>
 
 		{#if grammarLoading}
-			<p>Loading grammar lesson credits…</p>
+			<p>{t('sources.grammar.loading')}</p>
 		{:else if grammarError}
 			<p class="error" role="alert">{grammarError}</p>
-			<button type="button" onclick={loadGrammar}>Retry</button>
+			<button type="button" onclick={loadGrammar}>{t('sources.retry')}</button>
 		{:else if grammarPacks.length === 0}
-			<p>No grammar lessons are installed.</p>
+			<p>{t('sources.grammar.none')}</p>
 		{:else}
 			<div class="table-wrap">
 				<table aria-labelledby="sources-grammar">
 					<thead>
 						<tr>
-							<th scope="col">Name</th>
+							<th scope="col">{t('sources.col.name')}</th>
 							{@render noteHeader(grammarTable)}
-							<th scope="col">Language</th>
-							<th scope="col">Version</th>
-							<th scope="col">License</th>
-							<th scope="col">Attribution</th>
+							<th scope="col">{t('sources.col.language')}</th>
+							<th scope="col">{t('sources.col.version')}</th>
+							<th scope="col">{t('sources.license')}</th>
+							<th scope="col">{t('sources.attribution')}</th>
 						</tr>
 					</thead>
 					<tbody>
@@ -647,19 +637,17 @@
 		{/if}
 
 		<p class="notice">
-			Grammar lessons are written by the pack's author; the explanations and examples are not
-			taken from a syllabus. Read each pack's note for who wrote it and whether a native speaker
-			has reviewed it.
+			{t('sources.grammar.notice')}
 		</p>
 	</section>
 
 	{#if plugins.length > 0}
 		<section>
-			<h2 id="sources-plugins">Plugins</h2>
-			<p class="lede">Material that feature plugins bundle or fetch, as each plugin declares it.</p>
+			<h2 id="sources-plugins">{t('sources.plugins.title')}</h2>
+			<p class="lede">{t('sources.plugins.lede')}</p>
 			{#each plugins as plugin (plugin.id)}
 				<h3 class="plugin-name">{plugin.name}</h3>
-				<ul class="credits" aria-label={`${plugin.name} sources`}>
+				<ul class="credits" aria-label={t('sources.plugins.sources', { name: plugin.name })}>
 					{#each plugin.credits as view (view.name)}
 						{@render credit(view, 'h4')}
 					{/each}
@@ -669,7 +657,7 @@
 	{/if}
 
 	<section>
-		<h2 id="sources-core">Built into the app</h2>
+		<h2 id="sources-core">{t('sources.core.title')}</h2>
 		<ul class="credits" aria-labelledby="sources-core">
 			{#each coreViews as view (view.name)}
 				{@render credit(view, 'h3')}
@@ -678,12 +666,9 @@
 	</section>
 
 	<section>
-		<h2>More</h2>
+		<h2>{t('sources.more.title')}</h2>
 		<p>
-			Full license texts and attribution notices for the upstream dictionary packs ship with
-			each pack; the project repository indexes the bundled upstream sources in
-			<code>docs/sources.md</code>. If this instance installs additional packs, their
-			credits appear in the tables above once installed.
+			<Msg key="sources.more.text">{#snippet code(text: string)}<code>{text}</code>{/snippet}</Msg>
 		</p>
 	</section>
 </main>

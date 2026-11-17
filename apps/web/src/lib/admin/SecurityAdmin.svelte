@@ -1,6 +1,10 @@
 <script lang="ts">
 	import { onMount, tick } from 'svelte';
 	import { apiErrorBody } from '$lib/api/client';
+	import { errorText } from '$lib/api/apiErrors';
+	import { t, type MessageKey } from '$lib/i18n';
+	import { formatDateTime } from '$lib/i18n/format';
+	import type { EmailPolicy, Registration } from '$lib/api/adminSettings';
 	import {
 		getAuthSettings,
 		listAudit,
@@ -44,9 +48,18 @@
 		shown++;
 	}
 
-	function message(err: unknown, fallback: string): string {
-		return apiErrorBody(err)?.message || (err instanceof Error ? err.message : '') || fallback;
-	}
+	const message = errorText;
+
+	const REGISTRATION_SAVED: Record<Registration, MessageKey> = {
+		closed: 'admin.security.saved.registration.closed',
+		invite: 'admin.security.saved.registration.invite',
+		open: 'admin.security.saved.registration.open'
+	};
+	const EMAIL_SAVED: Record<EmailPolicy, MessageKey> = {
+		off: 'admin.security.saved.email.off',
+		optional: 'admin.security.saved.email.optional',
+		required: 'admin.security.saved.email.required'
+	};
 
 	async function loadAudit(before?: number): Promise<void> {
 		try {
@@ -55,7 +68,7 @@
 			next = page.next;
 			auditError = '';
 		} catch (err) {
-			auditError = message(err, 'Could not load the log.');
+			auditError = message(err, t('admin.security.error.log'));
 		}
 	}
 
@@ -63,7 +76,7 @@
 		try {
 			settings = await getAuthSettings();
 		} catch (err) {
-			error = message(err, 'Could not load the settings.');
+			error = message(err, t('admin.security.error.load'));
 		}
 		await loadAudit();
 	});
@@ -88,7 +101,8 @@
 			ownPassword = ownCode = '';
 		} catch (err) {
 			const kind = apiErrorBody(err)?.error ?? '';
-			error = reauth ? reauthError(kind, message(err, 'Could not save the setting.')) : message(err, 'Could not save the setting.');
+			const fallback = message(err, t('admin.security.error.save'));
+			error = reauth ? reauthError(kind, fallback) : fallback;
 			refused = kind;
 		} finally {
 			busy = false;
@@ -107,31 +121,31 @@
 </script>
 
 <section aria-labelledby="admin-security-heading">
-	<h2 id="admin-security-heading">Security</h2>
+	<h2 id="admin-security-heading">{t('admin.security.title')}</h2>
 	{#if error}<p class="error" role="alert">{error}</p>{/if}
 	<p class="ok" role="status">{status}</p>
 
 	{#if pending}
 		<form
 			class="confirm"
-			aria-label="Confirm with your password"
+			aria-label={t('admin.security.confirm.label')}
 			onsubmit={(event) => {
 				event.preventDefault();
 				const p = pending;
 				if (p && reauthReady(ownPassword, needsCode, ownCode)) void change(p.patch, p.saved, reauthBody(ownPassword, needsCode, ownCode));
 			}}
 		>
-			<p>This lowers a sign-in protection or signs people out. Confirm it with your own password.</p>
-			<ReauthFields bind:this={fields} bind:password={ownPassword} bind:code={ownCode} {needsCode} passwordLabel="Your own password, to confirm this change" />
-			<button type="submit" disabled={busy || !reauthReady(ownPassword, needsCode, ownCode)}>Confirm</button>
-			<button type="button" onclick={cancelPending}>Cancel</button>
+			<p>{t('admin.security.confirm.text')}</p>
+			<ReauthFields bind:this={fields} bind:password={ownPassword} bind:code={ownCode} {needsCode} passwordLabel={t('admin.security.confirm.ownPassword')} />
+			<button type="submit" disabled={busy || !reauthReady(ownPassword, needsCode, ownCode)}>{t('admin.security.confirm.submit')}</button>
+			<button type="button" onclick={cancelPending}>{t('common.action.cancel')}</button>
 		</form>
 	{/if}
 
 	{#key shown}
 	{#if settings && switches}
 		<fieldset>
-			<legend>Registration</legend>
+			<legend>{t('admin.security.registration')}</legend>
 			{#each REGISTRATION_CHOICES as c (c.value)}
 				<label class="choice">
 					<input
@@ -140,7 +154,7 @@
 						value={c.value}
 						checked={settings.registration === c.value}
 						disabled={busy || !!pending}
-						onchange={() => change({ registration: c.value }, `Registration is now ${c.label.toLowerCase()}.`)}
+						onchange={() => change({ registration: c.value }, t(REGISTRATION_SAVED[c.value]))}
 					/>
 					<span><strong>{c.label}</strong> {c.hint}</span>
 				</label>
@@ -148,7 +162,7 @@
 		</fieldset>
 
 		<fieldset>
-			<legend>Email addresses</legend>
+			<legend>{t('admin.security.emailAddresses')}</legend>
 			{#each EMAIL_CHOICES as c (c.value)}
 				<label class="choice">
 					<input
@@ -157,7 +171,7 @@
 						value={c.value}
 						checked={settings.emailPolicy === c.value}
 						disabled={busy || !!pending}
-						onchange={() => change({ emailPolicy: c.value }, `Email addresses are now ${c.label.toLowerCase()}.`)}
+						onchange={() => change({ emailPolicy: c.value }, t(EMAIL_SAVED[c.value]))}
 					/>
 					<span><strong>{c.label}</strong> {c.hint}</span>
 				</label>
@@ -165,56 +179,56 @@
 		</fieldset>
 
 		<fieldset>
-			<legend>Sign-in</legend>
+			<legend>{t('admin.security.signIn')}</legend>
 			{#if switches.mfa.available}
 				<label class="choice">
 					<input
 						type="checkbox"
 						checked={settings.mfaEnforced}
 						disabled={busy || !!pending}
-						onchange={(e) => change({ mfaEnforced: e.currentTarget.checked, ...(e.currentTarget.checked && signOutOthers ? { signOutOthers: true } : {}) }, 'Two-factor policy saved.')}
+						onchange={(e) => change({ mfaEnforced: e.currentTarget.checked, ...(e.currentTarget.checked && signOutOthers ? { signOutOthers: true } : {}) }, t('admin.security.saved.mfa'))}
 					/>
-					<span>Require two-factor authentication for everyone</span>
+					<span>{t('admin.security.requireMfa')}</span>
 				</label>
 				<label class="choice">
 					<input type="checkbox" bind:checked={signOutOthers} />
-					<span>Sign everyone else out now (when turning this on)</span>
+					<span>{t('admin.security.signOutOthers')}</span>
 				</label>
 				{#if !$user?.mfa?.totp}
-					<p class="hint">You have no authenticator app yourself: your own sign-in will depend on email codes.</p>
+					<p class="hint">{t('admin.security.noOwnAuthenticator')}</p>
 				{/if}
 				{#if settings.mfaEnforced && settings.mfaEnforcedEffective === false}
-					<p class="hint">Required, but inactive while no mail server is set up.</p>
+					<p class="hint">{t('admin.security.mfaInactive')}</p>
 				{/if}
 				<label class="choice">
 					<input
 						type="checkbox"
 						checked={settings.emailCodeLogin}
 						disabled={busy || !!pending}
-						onchange={(e) => change({ emailCodeLogin: e.currentTarget.checked }, 'Email sign-in code setting saved.')}
+						onchange={(e) => change({ emailCodeLogin: e.currentTarget.checked }, t('admin.security.saved.emailCode'))}
 					/>
-					<span>Allow signing in with an emailed code</span>
+					<span>{t('admin.security.allowEmailCode')}</span>
 				</label>
 			{:else}
-				<p class="hint">Two-factor enforcement and email sign-in codes: {switches.mfa.reason}</p>
+				<p class="hint">{t('admin.security.switchesUnavailable', { reason: switches.mfa.reason })}</p>
 			{/if}
 		</fieldset>
 	{/if}
 	{/key}
 
-	<h3>Activity</h3>
+	<h3>{t('admin.security.activity')}</h3>
 	{#if auditError}<p class="error" role="alert">{auditError}</p>{/if}
 	{#if events.length > 0}
-		<ul class="audit" aria-label="Recent activity">
+		<ul class="audit" aria-label={t('admin.security.recentActivity')}>
 			{#each events as e (e.id)}
-				<li><time datetime={e.at}>{new Date(e.at).toLocaleString()}</time> {auditLine(e)}</li>
+				<li><time datetime={e.at}>{formatDateTime(e.at)}</time> {auditLine(e)}</li>
 			{/each}
 		</ul>
 		{#if next !== null}
-			<button type="button" onclick={() => loadAudit(next ?? undefined)}>Load older</button>
+			<button type="button" onclick={() => loadAudit(next ?? undefined)}>{t('admin.security.loadOlder')}</button>
 		{/if}
 	{:else}
-		<p class="hint">Nothing has happened yet.</p>
+		<p class="hint">{t('admin.security.nothingYet')}</p>
 	{/if}
 </section>
 

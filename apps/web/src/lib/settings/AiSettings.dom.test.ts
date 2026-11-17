@@ -247,7 +247,7 @@ describe('Settings → AI', () => {
 		await fireEvent.input(screen.getByLabelText('Default model'), { target: { value: 'm' } });
 		m.createCustomProvider.mockRejectedValue(new ApiError(422, JSON.stringify({ error: 'endpoint_blocked', message: 'That address is never allowed.' })));
 		await fireEvent.click(screen.getByRole('button', { name: 'Add endpoint' }));
-		const msg = await screen.findByText('That address is never allowed.');
+		const msg = await screen.findByText('That address is not allowed.');
 		expect(msg.id).toBeTruthy();
 		expect(url.getAttribute('aria-describedby')).toContain(msg.id);
 		expect(url.getAttribute('aria-invalid')).toBe('true');

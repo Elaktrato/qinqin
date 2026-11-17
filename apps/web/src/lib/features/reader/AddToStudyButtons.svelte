@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '$lib/i18n';
 	import { tick } from 'svelte';
 	import { addSentence, getEntry } from '$lib/api/entries';
 	import type { LookupResult } from '$lib/api/types';
@@ -177,7 +178,7 @@
 			if (text) {
 				const saved = await resolveBookSentence({ getEntry, addSentence }, entryId, text);
 				sentenceId = saved.sentenceId;
-				if (saved.failed) note = 'Added without the example sentence: it could not be saved.';
+				if (saved.failed) note = t('reader.study.noSentence');
 			}
 			await addCard(entryId, {
 				written: popupWritten(result),
@@ -186,10 +187,10 @@
 				workspaceId: ws
 			});
 			inStudy = true;
-			if (!note) note = 'Added to study.';
+			if (!note) note = t('reader.study.added');
 		} catch {
 			note = '';
-			error = 'Could not add this word to study.';
+			error = t('reader.study.addFailed');
 		} finally {
 			busy = false;
 			if (hadFocus) await restoreFocus();
@@ -206,7 +207,7 @@
 			await setKnownMark(workspaceId, result.entryId, next);
 		} catch {
 			marked = !next;
-			markError = 'Could not save this mark.';
+			markError = t('reader.study.markFailed');
 		} finally {
 			marking = false;
 		}
@@ -229,14 +230,14 @@
 
 <div class="study" bind:this={root}>
 	{#if inStudy}
-		<span class="in-study" tabindex="-1" bind:this={pill}>In study</span>
+		<span class="in-study" tabindex="-1" bind:this={pill}>{t('reader.study.inStudy')}</span>
 	{/if}
 	<button
 		type="button"
 		class="add"
 		bind:this={addButton}
-		aria-label={inStudy ? `${term} is in study` : `Add ${term} to study`}
-		title={inStudy ? 'In study' : 'Add to study (General deck)'}
+		aria-label={inStudy ? t('reader.study.isInStudy', { term }) : t('reader.study.addNamed', { term })}
+		title={inStudy ? t('reader.study.inStudy') : t('reader.study.addGeneral')}
 		{disabled}
 		aria-busy={busy || inStudy === null}
 		onmousedown={keepSelection}
@@ -247,8 +248,8 @@
 			type="button"
 			class="deck"
 			bind:this={trigger}
-			aria-label="Add {term} to a deck"
-			title="Add to a deck"
+			aria-label={t('reader.study.addToDeckNamed', { term })}
+			title={t('reader.study.addToDeck')}
 			aria-haspopup="menu"
 			aria-expanded={menuOpen}
 			{disabled}
@@ -257,13 +258,13 @@
 		>
 	{/if}
 	{#if menuOpen}
-		<div class="menu" role="menu" tabindex="-1" aria-label="Decks" bind:this={menu} onkeydown={menuKey}>
+		<div class="menu" role="menu" tabindex="-1" aria-label={t('reader.study.decks')} bind:this={menu} onkeydown={menuKey}>
 			<button
 				type="button"
 				role="menuitem"
 				tabindex="-1"
 				onmousedown={keepSelection}
-				onclick={() => void add(GENERAL_DECK_ID)}>General</button
+				onclick={() => void add(GENERAL_DECK_ID)}>{t('reader.study.general')}</button
 			>
 			{#each decks as deck (deck.id)}
 				<button
@@ -282,10 +283,10 @@
 		aria-pressed={marked === true}
 		disabled={marking || marked === null}
 		onmousedown={keepSelection}
-		onclick={() => void toggleKnown()}>I know this</button
+		onclick={() => void toggleKnown()}>{t('reader.study.know')}</button
 	>
 	{#if stateLine}<p class="state">{stateLine}</p>{/if}
-	{#if showLookedUp}<p class="state looked-up">You've looked this up {lookedUp} times.</p>{/if}
+	{#if showLookedUp}<p class="state looked-up">{t('reader.study.lookedUp', { count: lookedUp })}</p>{/if}
 	{#if note}<p class="note" role="status">{note}</p>{/if}
 	{#if markError}<p class="error" role="alert">{markError}</p>{/if}
 	{#if error}<p class="error" role="alert">{error}</p>{/if}

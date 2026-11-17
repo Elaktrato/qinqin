@@ -1,6 +1,7 @@
 // What a weight change would do to the schedule, computed before it is
 // applied, and the gate that decides whether it may be applied.
 
+import { t } from '$lib/i18n';
 import type { HeldOut } from './optimize';
 import { isValidReview, scheduleFor, sortedReviews } from '../scheduler';
 import type { ReviewEvent, StudyCard } from '../types';
@@ -101,12 +102,12 @@ export function canApply(o: {
 	source: 'optimized' | 'imported';
 }): ApplyCheck {
 	if (o.currentWorkspace === null || o.currentWorkspace !== o.startedWorkspace) {
-		return { ok: false, reason: 'The workspace changed. Optimise again.' };
+		return { ok: false, reason: t('study.fsrs.workspaceChanged') };
 	}
 	if (o.source === 'imported') return { ok: true };
-	if (o.candidate === null) return { ok: false, reason: 'There is nothing to apply.' };
+	if (o.candidate === null) return { ok: false, reason: t('study.fsrs.nothingToApply') };
 	if (!(o.candidate.logLoss < o.activeLogLoss)) {
-		return { ok: false, reason: 'Your current parameters already fit better.' };
+		return { ok: false, reason: t('study.fsrs.alreadyBetter') };
 	}
 	const held = o.candidate.heldOut;
 	if (held !== null && held !== undefined) {
@@ -117,8 +118,8 @@ export function canApply(o: {
 			return {
 				ok: false,
 				reason: held.small
-					? 'On your most recent reviews, which were not used for fitting, the new parameters were not clearly better. They are not offered.'
-					: 'The new parameters fit your most recent reviews worse, so they are not offered.'
+					? t('study.fsrs.notClearlyBetter')
+					: t('study.fsrs.heldOutWorse')
 			};
 		}
 	}

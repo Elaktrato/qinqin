@@ -4,6 +4,8 @@
 // the grouping and mastery logic; this module only shapes the page.
 
 import type { CharRow } from '$lib/api/types';
+import { t, type MessageKey } from '$lib/i18n';
+import { formatNumber } from '$lib/i18n/format';
 import {
 	buildSections,
 	dataGap,
@@ -21,12 +23,21 @@ import {
  * lib/stats/wordStates.ts): a word's schedule state and a character's mastery
  * band are different things. The stage ids stay as they are in code.
  */
-export const STAGE_INFO: readonly { stage: Stage; label: string }[] = [
-	{ stage: 'unknown', label: 'Not studied' },
-	{ stage: 'fresh', label: 'Started' },
-	{ stage: 'learning', label: 'Growing' },
-	{ stage: 'mature', label: 'Solid' },
-	{ stage: 'learned', label: 'Learned' }
+function stage(id: Stage, label: MessageKey): { stage: Stage; readonly label: string } {
+	return {
+		stage: id,
+		get label() {
+			return t(label);
+		}
+	};
+}
+
+export const STAGE_INFO: readonly { stage: Stage; readonly label: string }[] = [
+	stage('unknown', 'stats.map.stage.unknown'),
+	stage('fresh', 'stats.map.stage.fresh'),
+	stage('learning', 'stats.map.stage.learning'),
+	stage('mature', 'stats.map.stage.mature'),
+	stage('learned', 'stats.map.stage.learned')
 ];
 
 /**
@@ -85,10 +96,8 @@ export function columnCount(template: string): number {
 	return Math.max(1, value.split(/\s+/).length);
 }
 
-const NUMBER = new Intl.NumberFormat('en-US');
-
 export function formatCount(value: number): string {
-	return NUMBER.format(value);
+	return formatNumber(value);
 }
 
 /**
@@ -104,7 +113,7 @@ export function learnedSummary(learned: number, total: number): string {
 		else if (rounded === 100 && learned < total) percent = '>99';
 		else percent = String(rounded);
 	}
-	return `${formatCount(learned)} of ${formatCount(total)} learned (${percent} %)`;
+	return t('stats.map.learnedSummary', { learned: formatCount(learned), total: formatCount(total), percent });
 }
 
 function primarySubtag(code: string): string {
@@ -172,9 +181,9 @@ export function locateGlyph(
 
 /** filterAnnouncement is the live-region text after a filter changes. */
 export function filterAnnouncement(shown: number, total: number, filtering: boolean): string {
-	if (!filtering) return `Showing all ${formatCount(total)} characters.`;
-	if (shown === 0) return 'No characters match.';
-	return `${formatCount(shown)} of ${formatCount(total)} characters ${shown === 1 ? 'matches' : 'match'}.`;
+	if (!filtering) return t('stats.map.showingAll', { total: formatCount(total) });
+	if (shown === 0) return t('stats.map.noMatch');
+	return t('stats.map.filtered', { count: shown, shown: formatCount(shown), total: formatCount(total) });
 }
 
 /** stageSegments are the non-empty parts of a stacked stage bar, in percent. */
@@ -203,7 +212,7 @@ export function sectionsFor(
 ): { sections: Section[]; gap: boolean } {
 	if (chars.length === 0) return { sections: [], gap: false };
 	if (dataGap(chars, key)) {
-		return { sections: [{ id: 'all', label: 'All characters', chars: [...chars] }], gap: true };
+		return { sections: [{ id: 'all', label: t('stats.map.allCharacters'), chars: [...chars] }], gap: true };
 	}
 	return { sections: buildSections(chars, key, members), gap: false };
 }

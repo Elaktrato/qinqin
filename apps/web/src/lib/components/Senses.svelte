@@ -1,6 +1,8 @@
 <script lang="ts">
+	import { glossLang } from '$lib/i18n/lang';
 	import type { SenseView } from '$lib/api/types';
 	import { tick } from 'svelte';
+	import { t } from '$lib/i18n';
 	import { hiddenDictionaries, partitionSenses } from '$lib/dictionaryVisibility';
 	import { licenseUrl } from '$lib/licenses';
 	import { workspaces } from '$lib/workspaces';
@@ -68,13 +70,13 @@
 
 {#if groups.length > 0}
 	<section class="senses" aria-labelledby="senses-heading">
-		<h2 id="senses-heading" bind:this={heading} tabindex="-1">Senses</h2>
+		<h2 id="senses-heading" bind:this={heading} tabindex="-1">{t('entry.senses.title')}</h2>
 		{#each groups as group (group.dictionaryId)}
 			<article class="dictionary">
 				<h3>{group.dictionaryName}</h3>
 				<ol class="glosses">
 					{#each group.glosses as gloss, index (index)}
-						<li>{gloss}</li>
+						<li lang={glossLang(undefined)}>{gloss}</li>
 					{/each}
 				</ol>
 				{#if group.license || group.attribution}
@@ -99,10 +101,10 @@
 			</article>
 		{/each}
 		{#if partition.allHidden}
-			<p class="hidden-note">Shown although its dictionaries are hidden in this workspace</p>
+			<p class="hidden-note">{t('entry.senses.hiddenShown')}</p>
 		{:else if !revealed && partition.hidden.length > 0}
 			<button type="button" class="reveal" onclick={reveal}>
-				Show {partition.hidden.length} from hidden dictionaries
+				{t('entry.senses.showHidden', { count: partition.hidden.length })}
 			</button>
 		{/if}
 	</section>

@@ -2,6 +2,7 @@
 // reader's script setting (Chinese only) before tiles are cut or a gap
 // is found.
 
+import { studyLang } from '$lib/i18n/lang';
 import { prepareVariant, convertText, type Variant } from '$lib/features/reader/variants';
 import { browserStorage, loadPrefs } from '$lib/features/reader/prefs';
 import { loadLesson } from './api';
@@ -31,11 +32,6 @@ export async function loadDisplayLesson(pack: string, id: string): Promise<Displ
 		variant === 'original'
 			? view.lesson
 			: convertLesson(view.lesson, (s) => convertText(s, variant));
-	const textLang =
-		language === 'zh' && variant !== 'original'
-			? variant === 'simplified'
-				? 'zh-Hans'
-				: 'zh-Hant'
-			: language;
+	const textLang = studyLang(language, { variant }) ?? language;
 	return { view, lesson, textLang };
 }

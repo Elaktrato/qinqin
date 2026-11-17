@@ -4,6 +4,8 @@
 // and, when they have an authenticator, a current authenticator or unused
 // recovery code. The server decides; these rules only shape the form.
 
+import { t, type MessageKey } from '$lib/i18n';
+
 export interface Reauth {
 	currentPassword: string;
 	code?: string;
@@ -27,20 +29,22 @@ export function reauthBody(password: string, needsCode: boolean, code: string): 
 	return needsCode && c ? { currentPassword: password, code: c } : { currentPassword: password };
 }
 
-export const REAUTH_ERROR_FALLBACK = 'That did not work. Try again.';
+export function reauthErrorFallback(): string {
+	return t('admin.reauth.error.fallback');
+}
 
 // Fixed sentences, never the server's message.
-const TEXT: Record<string, string> = {
-	wrong_password: 'Your password is wrong.',
-	password_required: 'Enter your own password.',
-	code_invalid: 'That code is not right. Use a current authenticator code or an unused recovery code.',
-	rate_limited: 'Too many tries. Wait a few minutes and try again.',
-	busy: 'The server is busy. Try again in a moment.'
+const TEXT: Record<string, MessageKey> = {
+	wrong_password: 'admin.reauth.error.wrongPassword',
+	password_required: 'admin.reauth.error.passwordRequired',
+	code_invalid: 'admin.reauth.error.codeInvalid',
+	rate_limited: 'admin.reauth.error.rateLimited',
+	busy: 'admin.reauth.error.busy'
 };
 
 /** The sentence for a re-authentication refusal, else `fallback`. */
-export function reauthError(code: string | undefined, fallback = REAUTH_ERROR_FALLBACK): string {
-	return (code && TEXT[code]) || fallback;
+export function reauthError(code: string | undefined, fallback = reauthErrorFallback()): string {
+	return code && Object.hasOwn(TEXT, code) ? t(TEXT[code]) : fallback;
 }
 
 /** After a refusal: which field takes focus, and which one is cleared. */

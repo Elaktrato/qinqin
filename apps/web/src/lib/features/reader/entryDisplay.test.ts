@@ -172,7 +172,7 @@ describe('parseXref', () => {
 
 describe('moreLabel', () => {
 	it('counts what is hidden, singular and plural', () => {
-		expect(moreLabel(1, 'sense', 'senses')).toBe('Show 1 more sense');
-		expect(moreLabel(4, 'entry', 'entries')).toBe('Show 4 more entries');
+		expect(moreLabel(1, 'sense')).toBe('Show 1 more sense');
+		expect(moreLabel(4, 'entry')).toBe('Show 4 more entries');
 	});
 });

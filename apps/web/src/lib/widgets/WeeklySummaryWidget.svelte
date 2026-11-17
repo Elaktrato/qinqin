@@ -4,6 +4,7 @@
 	// words or characters here (no replay, no character universe). All
 	// logic lives in lib/weekly (loadWeek.ts is the load).
 	import { errorMessage } from '$lib/stats/errors';
+	import { t } from '$lib/i18n';
 	import { onContextStale } from '$lib/study/currentContext';
 	import { currentStudyDay } from '$lib/time/zone';
 	import { loadWeek, type WeekView } from '$lib/weekly/loadWeek';
@@ -41,7 +42,7 @@
 		} catch (err) {
 			if (seq !== requestSeq) return;
 			view = null;
-			error = errorMessage(err, 'Could not load this week.');
+			error = errorMessage(err, t('widgets.week.loadFailed'));
 		} finally {
 			if (seq === requestSeq) loading = false;
 		}
@@ -55,16 +56,16 @@
 </script>
 
 <WidgetCard
-	title="This week"
+	title={t('widgets.week.title')}
 	headingId="weekly-summary-heading"
 	{status}
-	noWorkspaceText="Choose a workspace in the header to see your week."
-	loadingText="Loading this week…"
+	noWorkspaceText={t('widgets.week.noWorkspace')}
+	loadingText={t('widgets.week.loading')}
 	{error}
 	onretry={() => void load(workspaceId, true)}
 >
 	{#snippet actions()}
-		<a class="more" href="/stats/week">See the week</a>
+		<a class="more" href="/stats/week">{t('widgets.week.more')}</a>
 	{/snippet}
 
 	{#if view !== null}

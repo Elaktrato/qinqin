@@ -3,6 +3,9 @@
 	import { downloadMyData } from '$lib/api/backup';
 	import { accountDeletionPreview, deleteAccount, type SelfDeletionPreview } from '$lib/api/account';
 	import { apiErrorBody } from '$lib/api/client';
+	import { errorText } from '$lib/api/apiErrors';
+	import { t } from '$lib/i18n';
+	import Msg from '$lib/i18n/Msg.svelte';
 	import { user } from '$lib/auth';
 	import { previewLines } from '$lib/admin/deleteView';
 
@@ -41,15 +44,10 @@
 			closed = true;
 			ondone();
 		} catch (err) {
-			const body = apiErrorBody(err);
 			error =
-				body?.error === 'last_admin'
-					? 'You are the last administrator. Make someone else an administrator first.'
-					: body?.error === 'wrong_password'
-						? 'The password is wrong.'
-						: body?.error === 'code_invalid'
-							? 'That code is not right.'
-						: body?.message || 'Could not delete the account.';
+				apiErrorBody(err)?.error === 'last_admin'
+					? t('settings.account.delete.lastAdmin')
+					: errorText(err, t('settings.account.delete.error'));
 			busy = false;
 			await tick();
 			input?.focus();
@@ -78,36 +76,48 @@
 	onclose={finish}
 >
 	<form onsubmit={submit}>
-		<h2 id="{uid}-title">Delete your account?</h2>
+		<h2 id="{uid}-title">{t('settings.account.delete.dialogTitle')}</h2>
 		<div id="{uid}-what">
-			<p>This permanently deletes your account and, on every device:</p>
+			<p>{t('settings.account.delete.what')}</p>
 			{#if preview}
 				<ul>
 					{#each previewLines(preview) as line (line)}<li>{line}</li>{/each}
 				</ul>
 			{:else}
-				<p role="status">Counting…</p>
+				<p role="status">{t('settings.account.delete.counting')}</p>
 			{/if}
-			<p>This cannot be undone. <button type="button" onclick={() => void downloadMyData().catch(() => (error = 'Could not start the download.'))}>Download your data first</button> if you want to keep it.</p>
+			<p>
+				<Msg key="settings.account.delete.cannotUndo"
+					>{#snippet download(text: string)}<button
+							type="button"
+							onclick={() => void downloadMyData().catch(() => (error = t('settings.account.delete.downloadFailed')))}
+							>{text}</button
+						>{/snippet}</Msg
+				>
+			</p>
 		</div>
 		<label>
-			Your password
+			{t('account.field.yourPassword')}
 			<input bind:this={input} type="password" autocomplete="current-password" bind:value={password} />
 		</label>
 		<label>
-			Type <strong>{username}</strong> to confirm
+			<span
+				><Msg key="settings.account.delete.typeToConfirm" args={{ name: username }}
+					>{#snippet strong(text: string)}<strong>{text}</strong>{/snippet}</Msg
+				></span
+			>
 			<input bind:value={typed} autocomplete="off" />
 		</label>
 		{#if $user?.mfa?.totp}
 			<label>
-				Code from your authenticator app (or a recovery code)
+				{t('settings.account.email.code')}
 				<input name="code" autocomplete="one-time-code" bind:value={code} />
 			</label>
 		{/if}
 		{#if error}<p class="error" role="alert">{error}</p>{/if}
 		<div class="buttons">
-			<button type="button" onclick={finish} disabled={busy}>Cancel</button>
-			<button type="submit" class="danger" disabled={!ready}>{busy ? 'Deleting…' : 'Delete my account'}</button>
+			<button type="button" onclick={finish} disabled={busy}>{t('common.action.cancel')}</button>
+			<button type="submit" class="danger" disabled={!ready}>{busy ? t('settings.account.delete.deleting') : t('settings.account.delete.submit')}</button>
 		</div>
 	</form>
 </dialog>

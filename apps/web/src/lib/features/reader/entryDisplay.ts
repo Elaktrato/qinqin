@@ -1,5 +1,7 @@
 // What an entry card in the lookup popup shows, derived from one lookup
 // result. Pure, so the display rules are tested without rendering.
+import { t } from '$lib/i18n';
+import { formatNumber } from '$lib/i18n/format';
 import type { LookupResult } from '$lib/api/types';
 import { formatReading } from '$lib/format';
 
@@ -60,7 +62,7 @@ export function joinForms(forms: string[], lang: string): string {
 
 /** frequencyLabel is a pack's display value, else its rank with thousands separators. */
 export function frequencyLabel(f: Frequency): string {
-	return f.display || f.rank.toLocaleString('en-US');
+	return f.display || formatNumber(f.rank);
 }
 
 /** dictionaryNames lists each source dictionary of the senses once, in order. */
@@ -108,7 +110,7 @@ export function parseXref(text: string): Xref {
 	return xref;
 }
 
-/** moreLabel words a "show more" button. */
-export function moreLabel(hidden: number, one: string, many: string): string {
-	return `Show ${hidden} more ${hidden === 1 ? one : many}`;
+/** moreLabel words a "show more" button of hidden senses or entries. */
+export function moreLabel(hidden: number, kind: 'sense' | 'entry'): string {
+	return kind === 'sense' ? t('reader.entry.moreSenses', { count: hidden }) : t('reader.entry.moreEntries', { count: hidden });
 }

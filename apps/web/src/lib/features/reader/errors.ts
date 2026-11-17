@@ -1,5 +1,8 @@
 import { ApiError } from '$lib/api/client';
 import { languageLabel } from '$lib/languages';
+import { API_ERROR_KEYS } from '$lib/api/apiErrors';
+import { apiErrorBody } from '$lib/api/client';
+import { t, type MessageKey } from '$lib/i18n';
 
 export type ErrorContext =
 	| 'upload'
@@ -19,41 +22,41 @@ export type ErrorContext =
 	| 'highlights'
 	| 'display';
 
-const fallbacks: Record<ErrorContext, string> = {
-	upload: 'Could not upload the file.',
-	import: 'Could not import this work.',
-	list: 'Could not load your library.',
-	delete: 'Could not delete the book.',
-	search: 'Could not search the source.',
-	browse: 'Could not load suggestions.',
-	book: 'Could not load this book.',
-	chapter: 'Could not load this chapter.',
-	lookup: 'Could not look this up.',
-	bookmark: 'Could not save the bookmark.',
-	bookmarkAdd: 'Could not save the bookmark.',
-	bookmarks: 'Could not load the bookmarks.',
-	highlight: 'Could not save the highlight.',
-	highlightAdd: 'Could not save the highlight.',
-	highlights: 'Could not load the highlights.',
-	display: 'Could not save the display settings.'
+const fallbacks: Record<ErrorContext, MessageKey> = {
+	upload: 'reader.error.upload',
+	import: 'reader.error.import',
+	list: 'reader.error.list',
+	delete: 'reader.error.delete',
+	search: 'reader.error.search',
+	browse: 'reader.error.browse',
+	book: 'reader.error.book',
+	chapter: 'reader.error.chapter',
+	lookup: 'reader.error.lookup',
+	bookmark: 'reader.error.bookmark',
+	bookmarkAdd: 'reader.error.bookmark',
+	bookmarks: 'reader.error.bookmarks',
+	highlight: 'reader.error.highlight',
+	highlightAdd: 'reader.error.highlight',
+	highlights: 'reader.error.highlights',
+	display: 'reader.error.display'
 };
 
 // A 404 from a book-scoped request whose only id is the book's (opening
 // it, a chapter, the bookmark or highlight lists, adding one) means the
 // book itself is gone: deleted, or its workspace deleted in another tab
 // or on another device. The reader never asks for a chapter out of range.
-const BOOK_GONE = 'This book is no longer available.';
+const BOOK_GONE: MessageKey = 'reader.error.bookGone';
 
-const notFound: Partial<Record<ErrorContext, string>> = {
-	import: 'This work is not available from the source.',
+const notFound: Partial<Record<ErrorContext, MessageKey>> = {
+	import: 'reader.error.workGone',
 	book: BOOK_GONE,
 	chapter: BOOK_GONE,
 	bookmarks: BOOK_GONE,
 	highlights: BOOK_GONE,
 	bookmarkAdd: BOOK_GONE,
 	highlightAdd: BOOK_GONE,
-	bookmark: 'This bookmark no longer exists.',
-	highlight: 'This highlight no longer exists.'
+	bookmark: 'reader.error.bookmarkGone',
+	highlight: 'reader.error.highlightGone'
 };
 
 // Adding is a write of the same kind for the cap and size messages.
@@ -79,42 +82,48 @@ export function apiErrorMessage(err: unknown, context: ErrorContext): string {
 		if (mismatch) {
 			const workspace = languageLabel(mismatch[1]);
 			const book = languageLabel(mismatch[2]);
-			return `This book is in ${book}, but this workspace is ${workspace}. Switch to a ${book} workspace to add it.`;
+			return t('reader.error.mismatch', { book, workspace });
 		}
 		switch (err.status) {
 			case 409:
 				if (kind === 'bookmark') {
-					return 'This book already has the most bookmarks allowed (200). Delete one to add another.';
+					return t('reader.error.bookmarkCap');
 				}
 				// An overlap (409 with existingId) is handled by the caller,
 				// which opens the existing highlight; what reaches here is the cap.
 				if (kind === 'highlight') {
-					return 'This book already has the most highlights allowed (2000). Delete one to add another.';
+					return t('reader.error.highlightCap');
 				}
-				return 'This book is already in your library.';
+				return t('reader.error.alreadyInLibrary');
 			case 413:
 				if (kind === 'highlight' || kind === 'highlights') {
-					return 'This highlight or its note is too long to save.';
+					return t('reader.error.highlightTooLong');
 				}
-				return 'This file is too large (max 20 MB).';
+				return t('reader.error.fileTooLarge');
 			case 422:
 				if (context === 'upload') {
-					return 'This file could not be read as an epub, or its language is not Chinese or Japanese.';
+					return t('reader.error.unreadable');
 				}
 				break;
 			case 429:
-				return 'Another import is already running, try again in a moment.';
+				return t('reader.error.importBusy');
 			case 502:
-				return 'The source is unavailable right now, try again later.';
-			case 404:
-				if (notFound[context]) return notFound[context];
+				return t('reader.error.sourceDown');
+			case 404: {
+				const gone = notFound[context];
+				if (gone !== undefined) return t(gone);
 				break;
+			}
 			case 501:
-				if (context === 'browse') return 'This source has no suggestions. Search it instead.';
+				if (context === 'browse') return t('reader.error.noSuggestions');
 				break;
 		}
+		// A coded JSON error shows its catalogue text; an uncoded plain-text refusal of the library routes is shown
+		// as the server words it (short and free of markup only).
+		const code = apiErrorBody(err)?.error;
+		if (code !== undefined) return Object.hasOwn(API_ERROR_KEYS, code) ? t(API_ERROR_KEYS[code]) : t(fallbacks[context]);
 		const text = err.message.trim();
 		if (isPlain(text)) return text;
 	}
-	return fallbacks[context];
+	return t(fallbacks[context]);
 }

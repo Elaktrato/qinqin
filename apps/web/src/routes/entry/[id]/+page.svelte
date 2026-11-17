@@ -1,5 +1,7 @@
 <script lang="ts">
+	import Msg from '$lib/i18n/Msg.svelte';
 	import { pageTitle } from '$lib/pageTitle';
+	import { t } from '$lib/i18n';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
 	import { ApiError } from '$lib/api/client';
@@ -20,7 +22,8 @@
 	import { record } from '$lib/events';
 	import { viewPayload } from '$lib/eventPayloads';
 	import { loadEntryExtras } from '$lib/entry/extras';
-	import { formatReading } from '$lib/format';
+	import ReadingText from '$lib/components/ReadingText.svelte';
+	import { studyLang } from '$lib/i18n/lang';
 	import { languageLabel } from '$lib/languages';
 	import { entryRadicalLinks } from '$lib/radicals/selection';
 	import { workspaces } from '$lib/workspaces';
@@ -80,7 +83,7 @@
 			if (err instanceof ApiError && err.status === 404) {
 				notFound = true;
 			} else {
-				error = message(err, 'Could not load this entry.');
+				error = message(err, t('entry.page.loadFailed'));
 			}
 		} finally {
 			if (seq === requestSeq) loading = false;
@@ -169,26 +172,26 @@
 </script>
 
 <svelte:head>
-	<title>{pageTitle(notFound ? 'Entry not found' : (entry?.written ?? ''))}</title>
+	<title>{pageTitle(notFound ? t('entry.page.notFound') : (entry?.written ?? ''))}</title>
 </svelte:head>
 
 <main class="entry-page">
 	{#if loading}
-		<p class="hint" aria-live="polite">Loading entry…</p>
+		<p class="hint" aria-live="polite">{t('entry.page.loading')}</p>
 	{:else if notFound}
 		<section class="not-found">
-			<h1>Entry not found</h1>
-			<p>There is no entry with this id, or it may have been removed.</p>
-			<p><a href="/search">Back to search</a></p>
+			<h1>{t('entry.page.notFound')}</h1>
+			<p>{t('entry.page.notFoundText')}</p>
+			<p><a href="/search">{t('entry.page.backToSearch')}</a></p>
 		</section>
 	{:else if error}
 		<p class="error" role="alert">{error}</p>
-		<button type="button" class="retry" onclick={retry}>Try again</button>
+		<button type="button" class="retry" onclick={retry}>{t('common.action.retry')}</button>
 	{:else if entry}
 		<header class="head">
 			<div>
 				<div class="headword">
-					<h1 class="written">{entry.written}</h1>
+					<h1 class="written" lang={studyLang(entry.language)}>{entry.written}</h1>
 					<PlayButton
 						clips={headClips}
 						speakText={entry.written}
@@ -198,8 +201,10 @@
 					/>
 				</div>
 				{#if alsoWritten.length > 0}
-					<p class="also-written" lang={entry.language}>
-						Also written: {joinForms(alsoWritten, entry.language)}
+					<p class="also-written">
+						<Msg key="entry.page.alsoWritten" args={{ forms: joinForms(alsoWritten, entry.language) }}
+							>{#snippet forms(text: string)}<span lang={studyLang(entry?.language)}>{text}</span>{/snippet}</Msg
+						>
 					</p>
 				{/if}
 				<div class="chips">
@@ -218,7 +223,7 @@
 					kind={entry.kind}
 				/>
 				{#if !editing}
-					<a class="edit" href={`/entry/${entry.id}?edit=1`}>Edit</a>
+					<a class="edit" href={`/entry/${entry.id}?edit=1`}>{t('entry.page.edit')}</a>
 				{/if}
 			</div>
 		</header>
@@ -233,6 +238,7 @@
 				audioFor={audioFor ?? undefined}
 				word={entry.written}
 				lang={entry.language}
+				language={entry.language}
 				deviceVoice={audioSettings.deviceVoice}
 			/>
 			{#if credit}
@@ -251,13 +257,15 @@
 
 		{#if entry.variants.length > 0}
 			<section class="variants" aria-labelledby="variants-heading">
-				<h2 id="variants-heading">Variants</h2>
+				<h2 id="variants-heading">{t('entry.page.variants')}</h2>
 				<ul>
 					{#each entry.variants as variant (variant.id)}
 						<li>
-							<a href={`/entry/${variant.id}`}>{variant.written}</a>
+							<a href={`/entry/${variant.id}`} lang={studyLang(entry.language)}>{variant.written}</a>
 							{#if variant.readings.length > 0}
-								<span class="reading">{formatReading(variant.readings[0].type, variant.readings[0].value)}</span>
+								<span class="reading"
+									><ReadingText type={variant.readings[0].type} value={variant.readings[0].value} language={entry.language} /></span
+								>
 							{/if}
 						</li>
 					{/each}
@@ -267,13 +275,13 @@
 
 		{#if entry.radicalId !== null}
 			<section class="radical" aria-labelledby="radical-heading">
-				<h2 id="radical-heading">Radical</h2>
+				<h2 id="radical-heading">{t('entry.page.radical')}</h2>
 				<p>
 					<a href={`/entry/${entry.radicalId}`}>
-						{radicalWritten || `Radical entry #${entry.radicalId}`}
+						{radicalWritten || t('entry.page.radicalFallback', { number: `#${entry.radicalId}` })}
 					</a>
 					{#if lookupLinks.withRadical}
-						· <a href={lookupLinks.withRadical}>All characters with this radical</a>
+						· <a href={lookupLinks.withRadical}>{t('entry.page.withRadical')}</a>
 					{/if}
 				</p>
 			</section>
@@ -281,16 +289,18 @@
 
 		{#if chars.length > 0}
 			<section class="chars" aria-labelledby="chars-heading">
-				<h2 id="chars-heading">Characters under this radical</h2>
+				<h2 id="chars-heading">{t('entry.page.underRadical')}</h2>
 				{#if lookupLinks.browse}
-					<p class="browse"><a href={lookupLinks.browse}>Browse by stroke count</a></p>
+					<p class="browse"><a href={lookupLinks.browse}>{t('entry.page.browseStrokes')}</a></p>
 				{/if}
 				<ul>
 					{#each chars as char (char.id)}
 						<li>
-							<a href={`/entry/${char.id}`}>{char.written}</a>
+							<a href={`/entry/${char.id}`} lang={studyLang(entry.language)}>{char.written}</a>
 							{#if char.readings.length > 0}
-								<span class="reading">{formatReading(char.readings[0].type, char.readings[0].value)}</span>
+								<span class="reading"
+									><ReadingText type={char.readings[0].type} value={char.readings[0].value} language={entry.language} /></span
+								>
 							{/if}
 						</li>
 					{/each}
@@ -298,7 +308,7 @@
 			</section>
 		{/if}
 
-		<Sentences sentences={entry.sentences} />
+		<Sentences sentences={entry.sentences} language={entry.language} />
 	{/if}
 </main>
 

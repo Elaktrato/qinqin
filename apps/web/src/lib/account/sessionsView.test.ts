@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { LOGOUT_EVERYWHERE_CONFIRM, relativeTime, sessionRows } from './sessionsView';
+import { logoutEverywhereConfirm, relativeTime, sessionRows } from './sessionsView';
 
 const now = new Date('2026-11-15T12:00:00Z');
 
@@ -42,7 +42,7 @@ describe('sessionRows', () => {
 	});
 
 	it('states the confirmation for logging out everywhere', () => {
-		expect(LOGOUT_EVERYWHERE_CONFIRM).toBe(
+		expect(logoutEverywhereConfirm()).toBe(
 			'Log out everywhere? Every device, including this one, will need to sign in again.'
 		);
 	});

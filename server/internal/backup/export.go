@@ -164,8 +164,8 @@ func WriteUser(ctx context.Context, db *sql.DB, dataDir string, userID int64, w 
 		return man, fmt.Errorf("backup: begin: %w", err)
 	}
 	defer tx.Rollback()
-	var username string
-	if err := tx.QueryRowContext(ctx, `SELECT username FROM users WHERE id = ?`, userID).Scan(&username); err != nil {
+	var username, interfaceLanguage string
+	if err := tx.QueryRowContext(ctx, `SELECT username, interface_language FROM users WHERE id = ?`, userID).Scan(&username, &interfaceLanguage); err != nil {
 		return man, fmt.Errorf("backup: read user: %w", err)
 	}
 	a := &archiveWriter{z: zip.NewWriter(&limitWriter{w: w, max: meta.MaxBytes}), now: meta.Now.UTC()}
@@ -173,7 +173,7 @@ func WriteUser(ctx context.Context, db *sql.DB, dataDir string, userID int64, w 
 	counts := map[string]int{}
 
 	// account.json
-	acc := Account{Username: username, TimeZones: []TimeZone{}, PluginStates: []PluginState{}}
+	acc := Account{Username: username, TimeZones: []TimeZone{}, PluginStates: []PluginState{}, InterfaceLanguage: &interfaceLanguage}
 	rows, err := tx.QueryContext(ctx, `SELECT zone, effective_from, created_at FROM user_time_zones WHERE user_id = ? ORDER BY seq`, userID)
 	if err != nil {
 		return man, fmt.Errorf("backup: time zones: %w", err)

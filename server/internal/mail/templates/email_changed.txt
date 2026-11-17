@@ -1,5 +1,0 @@
-The email address of your {{.Site}} account was changed.
-
-From now on, password reset links and sign-in codes go to the new address. Reset links that were still open were cancelled.
-
-If this was not you, someone with access to your session changed it: sign in, review Settings, Account, and ask your administrator for help if you cannot.

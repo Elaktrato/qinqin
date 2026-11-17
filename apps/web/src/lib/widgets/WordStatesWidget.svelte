@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { errorMessage } from '$lib/stats/errors';
+	import { t } from '$lib/i18n';
 	import {
 		WORD_STATES,
 		wordStateCounts,
@@ -68,7 +69,7 @@
 		} catch (err) {
 			if (seq !== requestSeq) return;
 			result = null;
-			error = errorMessage(err, 'Could not load your flashcards.');
+			error = errorMessage(err, t('widgets.words.loadFailed'));
 		} finally {
 			if (seq === requestSeq) loading = false;
 		}
@@ -104,21 +105,21 @@
 </script>
 
 <WidgetCard
-	title="Words"
+	title={t('widgets.words.title')}
 	{headingId}
 	{status}
-	noWorkspaceText="Choose a workspace in the header to see your words."
-	loadingText="Loading your words…"
+	noWorkspaceText={t('widgets.words.noWorkspace')}
+	loadingText={t('widgets.words.loading')}
 	{error}
 	onretry={() => void load(workspaceId, true)}
-	emptyText="No flashcards yet. Add words to a deck to see how far each one has come."
+	emptyText={t('widgets.words.empty')}
 >
 	{#if overall !== null}
 		<p class="lead">
 			<strong>{overall.total}</strong>
-			{overall.total === 1 ? 'word' : 'words'} in your decks ·
+			{t('widgets.words.inDecks', { count: overall.total })}
 			<strong>{overall.new}</strong>
-			{overall.new === 1 ? 'new card' : 'new cards'} waiting
+			{t('widgets.words.waiting', { count: overall.new })}
 		</p>
 
 		<div class="bar" role="img" aria-label={wordStateSummary(overall)}>
@@ -144,19 +145,19 @@
 				class:more-right={moreRight}
 				tabindex="0"
 				role="region"
-				aria-label="Words per deck"
+				aria-label={t('widgets.words.perDeck')}
 				bind:this={tableWrap}
 				onscroll={measure}
 			>
 				<table>
-					<caption class="sr">Words per deck</caption>
+					<caption class="sr">{t('widgets.words.perDeck')}</caption>
 					<thead>
 						<tr>
-							<th scope="col">Deck</th>
+							<th scope="col">{t('widgets.words.deck')}</th>
 							{#each WORD_STATES as item (item.state)}
 								<th scope="col" class="num">{item.label}</th>
 							{/each}
-							<th scope="col" class="num">Total</th>
+							<th scope="col" class="num">{t('widgets.words.total')}</th>
 						</tr>
 					</thead>
 					<tbody>
@@ -173,13 +174,12 @@
 				</table>
 			</div>
 			{#if moreRight}
-				<p class="scroll-hint" aria-hidden="true">Scroll sideways for more columns →</p>
+				<p class="scroll-hint" aria-hidden="true">{t('widgets.words.scrollHint')}</p>
 			{/if}
 		{/if}
 
 		<p class="note">
-			Vocabulary cards only. Young = reviewed, holding under 21 days; mature = 21 days or more.
-			A word in several decks counts once overall.
+			{t('widgets.words.note')}
 		</p>
 	{/if}
 </WidgetCard>

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '$lib/i18n';
 	import type { ParamSet } from '$lib/study/fsrs/params';
 
 	let {
@@ -18,24 +19,27 @@
 	} = $props();
 
 	const label = (set: ParamSet): string =>
-		`${set.source === 'optimized' ? 'Optimised' : 'Imported'} ${set.createdAt.slice(0, 10)}`;
+		set.source === 'optimized'
+			? t('flashcards.sched.optimised', { date: set.createdAt.slice(0, 10) })
+			: t('flashcards.sched.imported', { date: set.createdAt.slice(0, 10) });
+	const active = (name: string, on: boolean): string => (on ? t('flashcards.sched.active', { name }) : name);
 </script>
 
 <section aria-labelledby="sets-heading">
-	<h2 id="sets-heading">Saved sets</h2>
+	<h2 id="sets-heading">{t('flashcards.sched.savedSets')}</h2>
 	<ul>
 		<li>
-			<span>Default parameters{activeId === null ? ' (active)' : ''}</span>
+			<span>{active(t('flashcards.sched.defaults'), activeId === null)}</span>
 			{#if activeId !== null}
-				<button type="button" disabled={busy} onclick={onDefaults}>Use defaults</button>
+				<button type="button" disabled={busy} onclick={onDefaults}>{t('flashcards.sched.useDefaults')}</button>
 			{/if}
 		</li>
 		{#each sets as set (set.id)}
 			<li>
-				<span>{label(set)}{set.id === activeId ? ' (active)' : ''}</span>
+				<span>{active(label(set), set.id === activeId)}</span>
 				{#if set.id !== activeId}
-					<button type="button" disabled={busy} onclick={() => onUse(set.id)}>Use</button>
-					<button type="button" disabled={busy} onclick={() => onDelete(set.id)}>Delete</button>
+					<button type="button" disabled={busy} onclick={() => onUse(set.id)}>{t('flashcards.sched.use')}</button>
+					<button type="button" disabled={busy} onclick={() => onDelete(set.id)}>{t('flashcards.sched.delete')}</button>
 				{/if}
 			</li>
 		{/each}

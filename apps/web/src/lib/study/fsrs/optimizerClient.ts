@@ -1,5 +1,6 @@
 // Starts the optimizer worker and turns its messages into a promise.
 
+import { t } from '$lib/i18n';
 import type { Dataset } from './dataset';
 import type { OptimizeResult } from './optimize';
 import type { Preview } from './preview';
@@ -107,7 +108,7 @@ export function runPreview(
 				resolve(m.preview);
 			} else if (m.type === 'error') {
 				finish();
-				reject(new Error(m.message ?? 'The preview failed.'));
+				reject(new Error(m.message ?? t('study.fsrs.previewFailed')));
 			}
 		};
 		worker.onerror = () => {

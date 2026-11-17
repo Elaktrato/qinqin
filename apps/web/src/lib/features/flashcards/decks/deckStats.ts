@@ -6,6 +6,7 @@
 // One schedule replay per reviewed card (`scheduleIndex`) serves every
 // deck on the page, the due counts included.
 
+import { t } from '$lib/i18n';
 import { GENERAL_DECK_ID } from '$lib/study/store';
 import { cardScore, MASTERY_THRESHOLD } from '$lib/study/mastery';
 import { dueCounts } from '$lib/study/dueCounts';
@@ -215,5 +216,9 @@ export function progressShares(n: Pick<DeckNumbers, 'words' | 'studied' | 'maste
 
 /** The bar's text alternative, e.g. "40 words: 12 mastered, 18 studied". */
 export function progressSummary(n: Pick<DeckNumbers, 'words' | 'studied' | 'mastered'>): string {
-	return `${n.words} ${n.words === 1 ? 'word' : 'words'}: ${n.mastered} mastered, ${n.studied} studied`;
+	return t('flashcards.deck.progress', {
+		words: t('flashcards.deck.words', { count: n.words }),
+		mastered: n.mastered,
+		studied: n.studied
+	});
 }

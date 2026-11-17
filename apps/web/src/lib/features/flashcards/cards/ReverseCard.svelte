@@ -1,7 +1,9 @@
 <script lang="ts">
+	import ReadingText from '$lib/components/ReadingText.svelte';
+	import { studyLang } from '$lib/i18n/lang';
+	import { t } from '$lib/i18n';
 	import { onMount } from 'svelte';
 	import type { Entry } from '$lib/api/types';
-	import { formatReading } from '$lib/format';
 	import PlayButton from '$lib/components/PlayButton.svelte';
 	import { creditLine } from '$lib/audio/button';
 	import type { CardAudio } from '$lib/study/audioCue';
@@ -61,7 +63,7 @@
 	}
 </script>
 
-<section class="front" aria-label="Meaning">
+<section class="front" aria-label={t('flashcards.card.meaning')}>
 	{#if front.pos.length > 0}
 		<p class="pos">{front.pos.join(', ')}</p>
 	{/if}
@@ -72,26 +74,26 @@
 			{/each}
 		</ol>
 	{:else}
-		<p class="hint">No glosses for this word yet.</p>
+		<p class="hint">{t('flashcards.card.noGlosses')}</p>
 	{/if}
 
 	{#if !revealed}
 		{#if readingShown && faces.readings.length > 0}
-			<ul class="readings" aria-label="Readings">
+			<ul class="readings" aria-label={t('flashcards.card.readings')}>
 				{#each faces.readings as reading, i (`${reading.type}:${i}`)}
-					<li data-type={reading.type}>{formatReading(reading.type, reading.value)}</li>
+					<li data-type={reading.type}><ReadingText type={reading.type} value={reading.value} language={entry.language} /></li>
 				{/each}
 			</ul>
 		{:else if faces.readings.length > 0}
 			<button type="button" class="secondary" onclick={() => (readingShown = true)}
-				>Show reading</button
+				>{t('flashcards.card.showReading')}</button
 			>
 		{/if}
 	{/if}
 </section>
 
 <div class="entry">
-	<label for="reverse-answer">Type the word</label>
+	<label for="reverse-answer">{t('flashcards.card.typeWord')}</label>
 	<input
 		id="reverse-answer"
 		type="text"
@@ -108,17 +110,17 @@
 
 {#if revealed}
 	<section class="answer" aria-labelledby="reverse-answer-heading">
-		<h2 id="reverse-answer-heading">Answer</h2>
+		<h2 id="reverse-answer-heading">{t('flashcards.card.answer')}</h2>
 		{#if verdict !== null}
 			<p class="feedback" class:bad={verdict === 'wrong'} role="status" aria-live="polite">
-				{verdict === 'right' ? 'Correct!' : 'Not quite.'}
+				{verdict === 'right' ? t('flashcards.card.correct') : t('flashcards.card.notQuite')}
 			</p>
 		{/if}
-		<p class="written" lang={language}>{faces.written}</p>
+		<p class="written" lang={studyLang(language)}>{faces.written}</p>
 		{#if faces.readings.length > 0}
-			<ul class="readings" aria-label="Readings">
+			<ul class="readings" aria-label={t('flashcards.card.readings')}>
 				{#each faces.readings as reading, i (`${reading.type}:${i}`)}
-					<li data-type={reading.type}>{formatReading(reading.type, reading.value)}</li>
+					<li data-type={reading.type}><ReadingText type={reading.type} value={reading.value} language={entry.language} /></li>
 				{/each}
 			</ul>
 		{/if}
@@ -148,7 +150,7 @@
 		{/each}
 	</section>
 {:else}
-	<button type="button" class="reveal" onclick={finish}>Show answer</button>
+	<button type="button" class="reveal" onclick={finish}>{t('flashcards.card.showAnswer')}</button>
 {/if}
 
 <style>

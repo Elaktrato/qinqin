@@ -238,7 +238,7 @@ func (s *server) handleResetRequest(w http.ResponseWriter, r *http.Request) {
 	allowed, _ := s.authLimiter("reset-mail").Allow(key)
 	if target.UserID != 0 && target.Eligible && allowed {
 		to, uid := target.Email, target.UserID
-		s.mail.Enqueue(mail.Job{Kind: mail.KindReset, UserID: uid, To: to,
+		s.mail.Enqueue(mail.Job{Kind: mail.KindReset, UserID: uid, To: to, AcceptLanguage: r.Header.Get("Accept-Language"),
 			Build: func(ctx context.Context, cfg mail.Config) (mail.TemplateData, bool) {
 				token, _, err := auth.IssueSelfServiceReset(ctx, s.db, uid, time.Hour)
 				if err != nil {

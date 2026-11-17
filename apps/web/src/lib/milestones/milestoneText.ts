@@ -4,18 +4,19 @@
 
 import { parseMilestoneId, type MilestoneFamily } from './catalogue';
 import type { CardPlan } from './plan';
+import { labelRecord, t, type MessageKey } from '$lib/i18n';
+import { formatDay, formatNumber } from '$lib/i18n/format';
 
 /** Titles per family: `{n}` the threshold, `{level}` the level's name (catalogue.json `titles`). */
-const TITLES: Record<MilestoneFamily, { one: string; other: string }> = {
-	reviews: { one: '{n} review', other: '{n} reviews' },
-	'words-studied': { one: '{n} word studied', other: '{n} words studied' },
-	'words-mature': { one: '{n} mature word', other: '{n} mature words' },
-	'characters-learned': { one: '{n} character learned', other: '{n} characters learned' },
-	streak: { one: '{n}-day streak', other: '{n}-day streak' },
-	'days-active': { one: '{n} day active', other: '{n} days active' },
-	'reading-hours': { one: '{n} hour of reading', other: '{n} hours of reading' },
-	'journal-entries': { one: '{n} journal entry', other: '{n} journal entries' },
-	'level-complete': { one: '{level} complete', other: '{level} complete' }
+const TITLES: Record<Exclude<MilestoneFamily, 'level-complete'>, MessageKey> = {
+	reviews: 'milestones.title.reviews',
+	'words-studied': 'milestones.title.wordsStudied',
+	'words-mature': 'milestones.title.wordsMature',
+	'characters-learned': 'milestones.title.charactersLearned',
+	streak: 'milestones.title.streak',
+	'days-active': 'milestones.title.daysActive',
+	'reading-hours': 'milestones.title.readingHours',
+	'journal-entries': 'milestones.title.journalEntries'
 };
 
 /**
@@ -26,24 +27,22 @@ const TITLES: Record<MilestoneFamily, { one: string; other: string }> = {
 export function milestoneTitle(id: string, levels: ReadonlyMap<string, string>, locale?: string): string | null {
 	const parsed = parseMilestoneId(id);
 	if (parsed === null) return null;
-	const forms = TITLES[parsed.family];
 	if (!('threshold' in parsed)) {
 		const name = levels.get(parsed.deckId);
-		return name === undefined ? null : forms.other.replace('{level}', name);
+		return name === undefined ? null : t('milestones.title.levelComplete', { level: name });
 	}
-	const n = parsed.threshold;
-	const form = new Intl.PluralRules(locale).select(n) === 'one' ? forms.one : forms.other;
-	return form.replace('{n}', new Intl.NumberFormat(locale).format(n));
+	const count = parsed.threshold;
+	return t(TITLES[parsed.family], { count, n: formatNumber(count, {}, locale) });
 }
 
 /** cardHeading: "Milestone reached", "3 milestones reached", "You have reached 14 milestones". */
 export function cardHeading(plan: CardPlan, locale?: string): string {
 	if (plan.kind === 'none') return '';
 	if (plan.kind === 'recent') {
-		return plan.items.length === 1 ? 'Milestone reached' : `${plan.items.length} milestones reached`;
+		const count = plan.items.length;
+		return count === 1 ? t('milestones.card.reachedOne') : t('milestones.card.reachedRecent', { count });
 	}
-	const count = new Intl.NumberFormat(locale).format(plan.count);
-	return `You have reached ${count} ${plan.count === 1 ? 'milestone' : 'milestones'}`;
+	return t('milestones.card.reachedTotal', { count: plan.count, n: formatNumber(plan.count, {}, locale) });
 }
 
 /**
@@ -54,35 +53,30 @@ export function cardHeading(plan: CardPlan, locale?: string): string {
 export function statusText(plan: CardPlan, titles: ReadonlyMap<string, string>, locale?: string): string {
 	const heading = cardHeading(plan, locale);
 	if (plan.kind !== 'recent') return heading;
-	return `${heading}: ${plan.items.map((r) => titles.get(r.id) ?? r.id).join(', ')}`;
+	return t('milestones.card.status', { heading, titles: plan.items.map((r) => titles.get(r.id) ?? r.id).join(', ') });
 }
 
 /** "and 11 more" under a summary card's three names. */
 export function moreText(more: number, locale?: string): string {
-	return `and ${new Intl.NumberFormat(locale).format(more)} more`;
-}
-
-function civilDate(day: string): Date {
-	return new Date(`${day}T00:00:00Z`);
+	return t('milestones.card.more', { n: formatNumber(more, {}, locale) });
 }
 
 /** reachedOn: "reached 3 November 2026" (the civil date, never shifted by the zone). */
 export function reachedOn(day: string, locale?: string): string {
-	const fmt = new Intl.DateTimeFormat(locale, { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' });
-	return `reached ${fmt.format(civilDate(day))}`;
+	return t('milestones.reachedOn', { date: formatDay(day, { day: 'numeric', month: 'long', year: 'numeric' }, locale) });
 }
 
 /** titleWithDay: "1,000 reviews, reached 3 November 2026". */
 export function titleWithDay(title: string, day: string, locale?: string): string {
-	return `${title}, ${reachedOn(day, locale)}`;
+	return t('milestones.titleWithDay', { title, reached: reachedOn(day, locale) });
 }
 
-export const MILESTONE_TEXT = {
-	section: 'Milestones',
-	dismiss: 'Dismiss',
-	seeAll: 'See all milestones',
-	isNew: 'New',
-	empty: 'No milestones yet.',
-	weekLine: 'Milestones',
-	none: 'None'
-} as const;
+export const MILESTONE_TEXT = labelRecord({
+	section: 'milestones.section',
+	dismiss: 'milestones.dismiss',
+	seeAll: 'milestones.seeAll',
+	isNew: 'milestones.isNew',
+	empty: 'milestones.empty',
+	weekLine: 'milestones.weekLine',
+	none: 'milestones.none'
+});

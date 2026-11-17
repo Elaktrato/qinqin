@@ -1,6 +1,7 @@
 <script lang="ts">
+	import { t } from '$lib/i18n';
 	import { HIGHLIGHT_COLORS } from './highlights';
-	import { COLOR_NAMES, type HighlightActions } from './highlightUi';
+	import { HIGHLIGHT_IN, type HighlightActions } from './highlightUi';
 
 	// The selection popup's action bar: highlight the selection in one of
 	// four colours, or highlight it in the last colour and open the editor
@@ -14,7 +15,7 @@
 	class="hl-bar"
 	class:not-ready={!actions.ready}
 	role="group"
-	aria-label="Highlight the selection"
+	aria-label={t('reader.highlights.bar')}
 	aria-describedby={actions.notice ? 'hl-bar-notice' : undefined}
 >
 	{#each HIGHLIGHT_COLORS as color (color)}
@@ -22,15 +23,17 @@
 			type="button"
 			class="swatch {color}"
 			class:last={color === actions.color}
-			aria-label="Highlight in {COLOR_NAMES[color].toLowerCase()}{color === actions.color ? ' (last used, key H)' : ''}"
-			title="Highlight in {COLOR_NAMES[color].toLowerCase()}{color === actions.color ? ' (H)' : ''}"
+			aria-label={color === actions.color
+				? t('reader.highlights.lastUsed', { label: t(HIGHLIGHT_IN[color]) })
+				: t(HIGHLIGHT_IN[color])}
+			title={color === actions.color ? t('reader.highlights.lastUsedShort', { label: t(HIGHLIGHT_IN[color]) }) : t(HIGHLIGHT_IN[color])}
 			onclick={() => actions.pick(color)}
 		></button>
 	{/each}
 	<button
 		type="button"
 		class="note-btn"
-		aria-label="Highlight and add a note"
+		aria-label={t('reader.highlights.withNote')}
 		onclick={() => actions.note()}
 	>
 		<svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true" focusable="false">
@@ -42,7 +45,7 @@
 				stroke-linejoin="round"
 			/>
 		</svg>
-		Note
+		{t('reader.highlights.note')}
 	</button>
 </div>
 {#if actions.notice}<p class="hl-notice" id="hl-bar-notice">{actions.notice}</p>{/if}

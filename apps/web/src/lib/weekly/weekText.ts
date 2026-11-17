@@ -4,50 +4,48 @@
 // no device zone ever shifts a label.
 
 import type { ActivitySource } from '../api/stats';
+import { t, type MessageKey } from '../i18n';
+import { formatDay, formatDayRange, formatWeekday } from '../i18n/format';
 import { formatDuration } from '../stats/readingTime';
+import { activityLabel } from '../plugins/manifestText';
 import { addDays } from '../time/studyDay';
 import type { CountRow, WeekDay, WeekSummary } from './summary';
 import { previousWeek, weekOf } from './week';
 
-const OFFLINE = 'Not available offline';
-
-function utcDate(day: string): Date {
-	return new Date(`${day}T00:00:00Z`);
-}
-
-function plural(n: number, one: string, other: string): string {
-	return `${n} ${n === 1 ? one : other}`;
+function offline(): string {
+	return t('weekly.offline');
 }
 
 /** weekRange: "16–22 November 2026" in the locale's own range form. */
 export function weekRange(monday: string, locale?: string): string {
-	const fmt = new Intl.DateTimeFormat(locale, { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' });
-	return fmt.formatRange(utcDate(monday), utcDate(addDays(monday, 6)));
+	return formatDayRange(monday, addDays(monday, 6), { day: 'numeric', month: 'long', year: 'numeric' }, locale);
 }
 
 /** weekHeading: "This week (16–22 November 2026)", "Last week (…)", "Week of …". */
 export function weekHeading(monday: string, today: string, locale?: string): string {
 	const range = weekRange(monday, locale);
 	const current = weekOf(today);
-	if (monday === current) return `This week (${range})`;
-	if (monday === previousWeek(current)) return `Last week (${range})`;
-	return `Week of ${range}`;
+	if (monday === current) return t('weekly.heading.this', { range });
+	if (monday === previousWeek(current)) return t('weekly.heading.last', { range });
+	return t('weekly.heading.of', { range });
 }
 
 /** compareText: "12 more than last week"; seconds compare in the whole minutes shown. */
 export function compareText(value: number, previous: number, unit: 'count' | 'seconds'): string {
 	if (unit === 'seconds') {
 		const diff = Math.floor(value / 60) - Math.floor(previous / 60);
-		if (diff === 0) return 'Same as last week';
-		return `${formatDuration(Math.abs(diff) * 60)} ${diff > 0 ? 'more' : 'less'} than last week`;
+		if (diff === 0) return t('weekly.compare.same');
+		const time = formatDuration(Math.abs(diff) * 60);
+		return diff > 0 ? t('weekly.compare.moreTime', { time }) : t('weekly.compare.lessTime', { time });
 	}
 	const diff = value - previous;
-	if (diff === 0) return 'Same as last week';
-	return `${Math.abs(diff)} ${diff > 0 ? 'more' : 'fewer'} than last week`;
+	if (diff === 0) return t('weekly.compare.same');
+	const count = Math.abs(diff);
+	return diff > 0 ? t('weekly.compare.more', { count }) : t('weekly.compare.fewer', { count });
 }
 
 function weekdayLong(day: string, locale?: string): string {
-	return new Intl.DateTimeFormat(locale, { weekday: 'long', timeZone: 'UTC' }).format(utcDate(day));
+	return formatWeekday(day, 'long', locale);
 }
 
 /** compareWindowText: what the comparison covers, once above the rows. */
@@ -55,72 +53,69 @@ export function compareWindowText(
 	s: Pick<WeekSummary, 'inProgress' | 'today' | 'nothingToCompare'>,
 	locale?: string
 ): string {
-	if (s.nothingToCompare) return 'Nothing last week to compare';
-	if (!s.inProgress) return 'Compared with the week before';
+	if (s.nothingToCompare) return t('weekly.window.nothing');
+	if (!s.inProgress) return t('weekly.window.weekBefore');
 	const monday = weekOf(s.today);
-	if (s.today === addDays(monday, 6)) return 'Compared with last week';
-	if (s.today === monday) return `Compared with ${weekdayLong(monday, locale)} last week`;
-	return `Compared with ${weekdayLong(monday, locale)} to ${weekdayLong(s.today, locale)} last week`;
+	if (s.today === addDays(monday, 6)) return t('weekly.window.lastWeek');
+	if (s.today === monday) return t('weekly.window.oneDay', { day: weekdayLong(monday, locale) });
+	return t('weekly.window.days', { from: weekdayLong(monday, locale), to: weekdayLong(s.today, locale) });
 }
 
-const LABELS: Record<string, string> = {
-	reviews: 'Reviews',
-	newCards: 'New cards',
-	studyTime: 'Flashcard study time',
-	reading: 'Reading',
-	journal: 'Journal entries'
+const LABELS: Record<string, MessageKey> = {
+	reviews: 'weekly.row.reviews',
+	newCards: 'weekly.row.newCards',
+	studyTime: 'weekly.row.studyTime',
+	reading: 'weekly.row.reading',
+	journal: 'weekly.row.journal'
 };
 
 export function rowLabel(row: CountRow, sources: readonly ActivitySource[]): string {
-	const fixed = LABELS[row.key];
-	if (fixed !== undefined) return fixed;
+	const fixed = Object.hasOwn(LABELS, row.key) ? LABELS[row.key] : undefined;
+	if (fixed !== undefined) return t(fixed);
 	const type = row.key.slice('activity:'.length);
-	return sources.find((s) => s.type === type)?.label ?? type;
+	const source = sources.find((s) => s.type === type);
+	return source === undefined ? type : activityLabel(source);
 }
 
 export function rowValue(row: Pick<CountRow, 'value' | 'unit'>): string {
-	if (row.value === null) return OFFLINE;
+	if (row.value === null) return offline();
 	return row.unit === 'seconds' ? formatDuration(row.value) : String(row.value);
 }
 
 /** dayShort: the visible weekday of a strip item ("Mon"). */
 export function dayShort(date: string, locale?: string): string {
-	return new Intl.DateTimeFormat(locale, { weekday: 'short', timeZone: 'UTC' }).format(utcDate(date));
+	return formatWeekday(date, 'short', locale);
 }
 
 /** dayName: the strip item's accessible name, "Monday 16 November: active, 42 reviews". */
 export function dayName(day: WeekDay, locale?: string): string {
-	const label = new Intl.DateTimeFormat(locale, {
-		weekday: 'long',
-		day: 'numeric',
-		month: 'long',
-		timeZone: 'UTC'
-	}).format(utcDate(day.date));
-	const reviews = day.reviews !== null && day.reviews > 0 ? `, ${plural(day.reviews, 'review', 'reviews')}` : '';
-	const state: Record<WeekDay['state'], string> = {
-		active: `active${reviews}`,
-		inactive: 'not active',
-		vacation: `vacation${reviews}`,
-		upcoming: 'upcoming',
-		skipped: 'no such day'
+	const label = formatDay(day.date, { weekday: 'long', day: 'numeric', month: 'long' }, locale);
+	const reviews = day.reviews !== null && day.reviews > 0 ? t('weekly.day.reviews', { count: day.reviews }) : null;
+	const state: Record<WeekDay['state'], () => string> = {
+		active: () => (reviews === null ? t('weekly.day.active') : t('weekly.day.activeReviews', { reviews })),
+		inactive: () => t('weekly.day.inactive'),
+		vacation: () => (reviews === null ? t('weekly.day.vacation') : t('weekly.day.vacationReviews', { reviews })),
+		upcoming: () => t('weekly.day.upcoming'),
+		skipped: () => t('weekly.day.skipped')
 	};
-	return `${label}: ${state[day.state]}`;
+	return t('weekly.day.name', { date: label, state: state[day.state]() });
 }
 
 export function daysActiveText(d: WeekSummary['daysActive'], inProgress: boolean): string {
-	if (d.of === 0) return 'No days to count';
-	const base = `Active on ${d.active} of ${plural(d.of, 'day', 'days')}${inProgress ? ' so far' : ''}`;
-	return d.localOnly ? `${base} (from flashcard reviews only)` : base;
+	if (d.of === 0) return t('weekly.daysActive.none');
+	const args = { count: d.of, active: d.active };
+	const base = inProgress ? t('weekly.daysActive.soFar', args) : t('weekly.daysActive.text', args);
+	return d.localOnly ? t('weekly.daysActive.localOnly', { text: base }) : base;
 }
 
 export function streakText(days: number, inProgress: boolean): string {
-	const label = inProgress ? 'Study streak' : 'Study streak at the end of the week';
-	return `${label}: ${plural(days, 'day', 'days')}`;
+	return inProgress ? t('weekly.streak.text', { count: days }) : t('weekly.streak.endOfWeek', { count: days });
 }
 
 export function goalText(goal: { met: number; of: number }, inProgress: boolean): string {
-	if (goal.of === 0) return 'No goal days to count';
-	return `Daily goal met on ${goal.met} of ${plural(goal.of, 'day', 'days')}${inProgress ? ' so far' : ''}`;
+	if (goal.of === 0) return t('weekly.goal.none');
+	const args = { count: goal.of, met: goal.met };
+	return inProgress ? t('weekly.goal.soFar', args) : t('weekly.goal.text', args);
 }
 
 /** The characters row: counted, counting, failed to load (offline), or not shown. */
@@ -128,9 +123,9 @@ export type CharactersState = { value: number; previous: number } | null | 'pend
 
 /** offlineText: the line above the rows naming what could not be loaded; null when nothing is missing. */
 export function offlineText(activity: boolean, characters: boolean): string | null {
-	if (activity && characters) return 'Reviews, reading, journal and character numbers are not available offline.';
-	if (activity) return 'Reviews, reading and journal numbers are not available offline.';
-	if (characters) return 'Characters learned is not available offline.';
+	if (activity && characters) return t('weekly.offlineText.both');
+	if (activity) return t('weekly.offlineText.activity');
+	if (characters) return t('weekly.offlineText.characters');
 	return null;
 }
 
@@ -187,8 +182,8 @@ export function summaryLines(
 		trend: null
 	});
 	const tail = [
-		plain('daysActive', 'Days active', daysActiveText(s.daysActive, s.inProgress)),
-		plain('streak', 'Streak', streakText(s.streak, s.inProgress))
+		plain('daysActive', t('weekly.term.daysActive'), daysActiveText(s.daysActive, s.inProgress)),
+		plain('streak', t('weekly.term.streak'), streakText(s.streak, s.inProgress))
 	];
 	if (compact) {
 		const flash = byKey.get('studyTime');
@@ -204,20 +199,20 @@ export function summaryLines(
 		// Offline the reading time is unknown: the flashcard time alone, said so, without a comparison.
 		const timeLine =
 			time.value === null && flash !== undefined && flash.value !== null
-				? plain('time', 'Study time', `${formatDuration(flash.value)} (flashcards only)`)
-				: countLine('time', 'Study time', time, s.nothingToCompare);
+				? plain('time', t('weekly.term.studyTime'), t('weekly.term.flashcardsOnly', { time: formatDuration(flash.value) }))
+				: countLine('time', t('weekly.term.studyTime'), time, s.nothingToCompare);
 		return [...lines, timeLine, ...tail];
 	}
 	const lines = s.rows.map((row) => countLine(row.key, rowLabel(row, sources), row, s.nothingToCompare));
 	lines.push(...tail);
 	if (s.mature !== null) {
-		lines.push(countLine('mature', 'Words reaching mature', { ...s.mature, unit: 'count' }, s.nothingToCompare));
+		lines.push(countLine('mature', t('weekly.term.mature'), { ...s.mature, unit: 'count' }, s.nothingToCompare));
 	}
-	if (characters === 'pending') lines.push(plain('characters', 'Characters learned', 'Counting characters…'));
-	else if (characters === 'unavailable') lines.push(plain('characters', 'Characters learned', OFFLINE));
+	if (characters === 'pending') lines.push(plain('characters', t('weekly.term.characters'), t('weekly.term.counting')));
+	else if (characters === 'unavailable') lines.push(plain('characters', t('weekly.term.characters'), offline()));
 	else if (characters !== null) {
-		lines.push(countLine('characters', 'Characters learned', { ...characters, unit: 'count' }, s.nothingToCompare));
+		lines.push(countLine('characters', t('weekly.term.characters'), { ...characters, unit: 'count' }, s.nothingToCompare));
 	}
-	if (s.goal !== null) lines.push(plain('goal', 'Daily goal', goalText(s.goal, s.inProgress)));
+	if (s.goal !== null) lines.push(plain('goal', t('weekly.term.goal'), goalText(s.goal, s.inProgress)));
 	return lines;
 }

@@ -3,6 +3,7 @@
 // the auth store call it.
 
 import { writable } from 'svelte/store';
+import { t } from '$lib/i18n';
 
 export interface LogoutDecision {
 	decision: 'signout' | 'ask';
@@ -39,9 +40,7 @@ export async function decideLogout(deps: {
 }
 
 export function unsentText(count: number): string {
-	return count === 1
-		? '1 review has not been sent yet. If you sign out now it is deleted from this device.'
-		: `${count} reviews have not been sent yet. If you sign out now they are deleted from this device.`;
+	return t('account.logout.unsent', { count });
 }
 
 /** The number of unsent reviews the sign-out dialog is asking about; null = no dialog. */

@@ -5,6 +5,7 @@
 	import { page } from '$app/state';
 	import { ApiError } from '$lib/api/client';
 	import { APP_NAME, APP_NAME_HANZI } from '$lib/app';
+	import { t } from '$lib/i18n';
 	import NavIcon from '$lib/components/NavIcon.svelte';
 	import { iconFor } from '$lib/components/navIcons';
 	import WorkspaceCreateForm from '$lib/components/WorkspaceCreateForm.svelte';
@@ -110,7 +111,7 @@
 		try {
 			await loadWorkspaces();
 		} catch (err) {
-			workspacesLoadError.set(message(err, 'Could not load workspaces.'));
+			workspacesLoadError.set(message(err, t('app.workspaces.loadFailed')));
 		}
 	}
 
@@ -210,7 +211,7 @@
 
 {#if allowed}
 	<!-- First focusable element: jumps past the header and its nav. -->
-	<a class="skip-link" href="#main-content" onclick={skipToContent}>Skip to content</a>
+	<a class="skip-link" href="#main-content" onclick={skipToContent}>{t('nav.skipToContent')}</a>
 	<div class="app" class:with-bar={signedIn}>
 		<UpdateBanner />
 		<OfflineBanner />
@@ -220,17 +221,17 @@
 				<a
 					class="brand"
 					href="/"
-					aria-label={`${APP_NAME}, home`}
-					title={`${APP_NAME} – home`}
+					aria-label={t('nav.brand.home', { app: APP_NAME })}
+					title={t('nav.brand.homeTitle', { app: APP_NAME })}
 					aria-current={path === '/' ? 'page' : undefined}><Logo size={30} /></a
 				>
 
 				<!-- Wide screens: pills in the header. Below 720 px: a fixed
 				     bottom tab bar (see the styles). -->
 				{#if !restricted}
-				<nav class="main-nav" aria-label="Main">
+				<nav class="main-nav" aria-label={t('nav.main')}>
 					<a href="/search" aria-current={path === '/search' ? 'page' : undefined}
-						><NavIcon name={iconFor('search')} /><span class="label">Search</span></a
+						><NavIcon name={iconFor('search')} /><span class="label">{t('nav.search')}</span></a
 					>
 					{#each pluginLinks as link (`${link.slug}:${link.title}`)}
 						<a
@@ -253,8 +254,8 @@
 					{#if $user}
 						<span class="username">{$user.username}</span>
 					{/if}
-					<button type="button" class="sign-out" title="Sign out" onclick={() => void requestSignOut()}
-						><NavIcon name={iconFor('signout')} size={18} /><span class="label">Sign out</span
+					<button type="button" class="sign-out" title={t('nav.signOut')} onclick={() => void requestSignOut()}
+						><NavIcon name={iconFor('signout')} size={18} /><span class="label">{t('nav.signOut')}</span
 						></button
 					>
 				</div>
@@ -264,7 +265,7 @@
 				<p class="workspace-error" role="alert">
 					{workspaceError}
 					<button type="button" class="retry" onclick={() => void loadShellWorkspaces()}>
-						Try again
+						{t('app.workspaces.retry')}
 					</button>
 				</p>
 			{/if}
@@ -275,12 +276,12 @@
 				<a
 					class="brand"
 					href="/login"
-					aria-label={`${APP_NAME}, sign in`}
-					title={`${APP_NAME} – sign in`}><Logo size={30} /></a
+					aria-label={t('nav.brand.signIn', { app: APP_NAME })}
+					title={t('nav.brand.signInTitle', { app: APP_NAME })}><Logo size={30} /></a
 				>
 				<div class="account guest">
 					<a class="sign-in" href="/login"
-						><NavIcon name={iconFor('signin')} size={18} /><span>Sign in</span></a
+						><NavIcon name={iconFor('signin')} size={18} /><span>{t('nav.signIn')}</span></a
 					>
 				</div>
 			</header>
@@ -291,7 +292,7 @@
 			{#if signedIn && $notice}
 				<p class="notice">
 					<span>{$notice}</span>
-					<button type="button" class="notice-dismiss" onclick={dismissNotice}>Dismiss</button>
+					<button type="button" class="notice-dismiss" onclick={dismissNotice}>{t('app.notice.dismiss')}</button>
 				</p>
 			{/if}
 		</div>
@@ -301,11 +302,8 @@
 		<div class="content" id="main-content" tabindex="-1">
 			{#if signedIn && !restricted && noWorkspaces}
 				<section class="empty-workspaces" aria-labelledby="empty-workspaces-heading">
-					<h2 id="empty-workspaces-heading">Create your first workspace</h2>
-					<p>
-						A workspace holds your study cards, reading library and progress for one language.
-						Pick a language to begin.
-					</p>
+					<h2 id="empty-workspaces-heading">{t('app.workspaces.emptyTitle')}</h2>
+					<p>{t('app.workspaces.emptyText')}</p>
 					<WorkspaceCreateForm idPrefix="empty-new" />
 				</section>
 			{/if}
@@ -315,18 +313,18 @@
 
 		{#if signedIn}
 			<footer class="footer">
-				<nav class="footer-links" aria-label="Footer">
+				<nav class="footer-links" aria-label={t('nav.footer')}>
 					{#if !restricted}
 						<a href="/stats" aria-current={inStats ? 'page' : undefined}
-							><NavIcon name={iconFor('stats')} size={16} /><span>Stats</span></a
+							><NavIcon name={iconFor('stats')} size={16} /><span>{t('nav.stats')}</span></a
 						>
 					{/if}
 					<a href="/sources" aria-current={path === '/sources' ? 'page' : undefined}
-						><NavIcon name={iconFor('sources')} size={16} /><span>Sources</span></a
+						><NavIcon name={iconFor('sources')} size={16} /><span>{t('nav.sources')}</span></a
 					>
 					{#if !restricted}
 						<a href="/settings" aria-current={path === '/settings' ? 'page' : undefined}
-							><NavIcon name={iconFor('settings')} size={16} /><span>Settings</span></a
+							><NavIcon name={iconFor('settings')} size={16} /><span>{t('nav.settings')}</span></a
 						>
 					{/if}
 				</nav>
@@ -337,11 +335,11 @@
 			</footer>
 		{:else if openSignedOut}
 			<footer class="footer">
-				<nav class="footer-links" aria-label="Footer">
+				<nav class="footer-links" aria-label={t('nav.footer')}>
 					<a href="/sources" aria-current={path === '/sources' ? 'page' : undefined}
-						><NavIcon name={iconFor('sources')} size={16} /><span>Sources</span></a
+						><NavIcon name={iconFor('sources')} size={16} /><span>{t('nav.sources')}</span></a
 					>
-					<a href="/login"><NavIcon name={iconFor('signin')} size={16} /><span>Sign in</span></a>
+					<a href="/login"><NavIcon name={iconFor('signin')} size={16} /><span>{t('nav.signIn')}</span></a>
 				</nav>
 				<span class="version">
 					<span lang="zh">{APP_NAME_HANZI}</span>
@@ -351,7 +349,7 @@
 		{/if}
 	</div>
 {:else}
-	<p class="booting">Loading…</p>
+	<p class="booting">{t('app.loading')}</p>
 {/if}
 
 <style>

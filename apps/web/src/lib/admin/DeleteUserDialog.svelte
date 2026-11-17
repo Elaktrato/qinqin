@@ -1,4 +1,7 @@
 <script lang="ts">
+	import { errorText } from '$lib/api/apiErrors';
+	import { t } from '$lib/i18n';
+	import Msg from '$lib/i18n/Msg.svelte';
 	import { onMount, tick } from 'svelte';
 	import { apiErrorBody } from '$lib/api/client';
 	import { deleteUser, deletionPreview, type DeletionPreview } from '$lib/api/adminUsers';
@@ -54,7 +57,7 @@
 			finish(true);
 		} catch (err) {
 			const b = apiErrorBody(err);
-			error = reauthError(b?.error, b?.message || 'Could not delete the account.');
+			error = reauthError(b?.error, errorText(err, t('admin.delete.error')));
 			busy = false;
 			if (b?.error === 'code_invalid') sawCodeInvalid = true;
 			const f = reauthFocus(b?.error);
@@ -88,29 +91,31 @@
 	onclose={() => finish(false)}
 >
 	<form onsubmit={submit}>
-		<h2 id="{uid}-title">Delete the account “{username}”?</h2>
+		<h2 id="{uid}-title">{t('admin.delete.title', { name: username })}</h2>
 		<div id="{uid}-what">
-			<p>This permanently deletes the account and, on every device:</p>
+			<p>{t('admin.delete.what')}</p>
 			{#if preview}
 				<ul>
 					{#each previewLines(preview) as line (line)}<li>{line}</li>{/each}
 				</ul>
 			{:else if previewFailed}
-				<p>All of their workspaces, study history, plugin data, library and AI keys.</p>
+				<p>{t('admin.delete.previewFailed')}</p>
 			{:else}
-				<p role="status">Counting…</p>
+				<p role="status">{t('admin.delete.counting')}</p>
 			{/if}
-			<p>This cannot be undone.</p>
+			<p>{t('admin.delete.cannotUndo')}</p>
 		</div>
 		<label>
-			Type <strong>{username}</strong> to confirm
+			<Msg key="admin.delete.typeToConfirm" args={{ name: username }}
+				>{#snippet strong(text: string)}<strong>{text}</strong>{/snippet}</Msg
+			>
 			<input bind:this={input} bind:value={typed} autocomplete="off" />
 		</label>
 		<ReauthFields bind:this={fields} bind:password bind:code {needsCode} />
 		{#if error}<p class="error" role="alert">{error}</p>{/if}
 		<div class="buttons">
-			<button type="button" onclick={() => finish(false)} disabled={busy}>Cancel</button>
-			<button type="submit" class="danger" disabled={!ready}>{busy ? 'Deleting…' : 'Delete account'}</button>
+			<button type="button" onclick={() => finish(false)} disabled={busy}>{t('common.action.cancel')}</button>
+			<button type="submit" class="danger" disabled={!ready}>{busy ? t('admin.delete.deleting') : t('admin.delete.submit')}</button>
 		</div>
 	</form>
 </dialog>

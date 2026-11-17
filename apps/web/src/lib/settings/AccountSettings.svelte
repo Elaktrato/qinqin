@@ -1,6 +1,14 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { apiErrorBody } from '$lib/api/client';
+	import { errorText } from '$lib/api/apiErrors';
+	import { t } from '$lib/i18n';
+	import Msg from '$lib/i18n/Msg.svelte';
+	import { putInterfaceLanguage } from '$lib/api/interfaceLanguage';
+	import { SUPPORTED_LANGUAGES } from '$lib/i18n/negotiate';
+	import { resolveInterfaceLanguage, switchInterfaceLanguage } from '$lib/i18n/interfaceLanguage';
+	import { languageName } from '$lib/i18n/format';
+	import { reloadPage } from '$lib/i18n/reloadPage';
 	import {
 		changePassword,
 		getAuthOptions,
@@ -19,7 +27,7 @@
 	import { mailAvailable } from '$lib/account/mfaView';
 	import { confirmProblem, passwordHint, passwordProblem } from '$lib/account/passwordRules';
 	import {
-		LOGOUT_EVERYWHERE_CONFIRM,
+		logoutEverywhereConfirm,
 		sessionRows,
 		type SessionDto
 	} from '$lib/account/sessionsView';
@@ -51,16 +59,12 @@
 	const tokenNote = $derived(containmentNote(tokenCount));
 	const hasOthers = $derived(rows.some((r) => r.canRevoke));
 
-	function message(err: unknown, fallback: string): string {
-		return apiErrorBody(err)?.message || (err instanceof Error ? err.message : '') || fallback;
-	}
-
 	async function loadSessions(): Promise<void> {
 		try {
 			sessions = await listSessions();
 			sessionsError = '';
 		} catch (err) {
-			sessionsError = message(err, 'Could not load your sessions.');
+			sessionsError = errorText(err, t('settings.account.sessions.error.load'));
 		} finally {
 			sessionsLoaded = true;
 		}
@@ -86,15 +90,52 @@
 		try {
 			const res = await putEmail(next, emailPassword, emailCode.trim() || undefined);
 			verifying = res.verification === 'sent';
-			emailDone = next === null ? 'Email address removed.' : verifying ? 'Email address saved. Enter the code we sent to confirm it.' : 'Email address saved.';
+			emailDone =
+				next === null
+					? t('settings.account.email.removed')
+					: verifying
+						? t('settings.account.email.savedConfirm')
+						: t('settings.account.email.saved');
 			emailPassword = emailDraft = emailCode = '';
 			await loadMe();
 		} catch (err) {
-			const body = apiErrorBody(err);
-			emailError =
-				body?.error === 'wrong_password' ? 'The password is wrong.' : message(err, 'Could not save the email address.');
+			emailError = errorText(err, t('settings.account.email.error'));
 		} finally {
 			emailBusy = false;
+		}
+	}
+
+	// Interface language: '' follows the browser; each supported language is named in itself.
+	const browserLanguages = typeof navigator === 'undefined' ? [] : (navigator.languages ?? [navigator.language]);
+	const languageChoices = SUPPORTED_LANGUAGES.map((code) => ({ code, label: languageName(code, code) }));
+	const browserDefault = languageName(resolveInterfaceLanguage('', browserLanguages), resolveInterfaceLanguage('', browserLanguages));
+	let languageDraft = $state($user?.interfaceLanguage ?? '');
+	let languageBusy = $state(false);
+	let languageError = $state('');
+	let languageNotice = $state('');
+
+	async function saveLanguage(event: SubmitEvent): Promise<void> {
+		event.preventDefault();
+		if (languageBusy) return;
+		languageBusy = true;
+		languageError = '';
+		languageNotice = '';
+		try {
+			const res = await putInterfaceLanguage(languageDraft);
+			let storage: Storage | null = null;
+			try {
+				storage = localStorage;
+			} catch {
+				storage = null;
+			}
+			const resolved = resolveInterfaceLanguage(res.language, browserLanguages);
+			if (!switchInterfaceLanguage(resolved, { storage, reload: reloadPage })) {
+				languageNotice = t('settings.account.interfaceLanguage.storageBlocked');
+				languageBusy = false;
+			}
+		} catch (err) {
+			languageError = errorText(err, t('settings.account.interfaceLanguage.error'));
+			languageBusy = false;
 		}
 	}
 
@@ -121,8 +162,8 @@
 		try {
 			await changePassword({ currentPassword: current, newPassword: next, signOutOthers });
 			pwDone =
-				(signOutOthers ? 'Password changed. Your other sessions were signed out.' : 'Password changed.') +
-				(tokenNote ? ' Your access tokens were revoked.' : '');
+				(signOutOthers ? t('settings.account.password.changedOthersOut') : t('settings.account.password.changed')) +
+				(tokenNote ? ` ${t('settings.account.password.tokensRevoked')}` : '');
 			current = next = confirm = '';
 			tokensKey++;
 			await loadSessions();
@@ -131,8 +172,8 @@
 			const body = apiErrorBody(err);
 			pwError =
 				body?.error === 'wrong_password'
-					? 'The current password is wrong.'
-					: message(err, 'Could not change the password.');
+					? t('settings.account.password.currentWrong')
+					: errorText(err, t('settings.account.password.error'));
 		} finally {
 			pwBusy = false;
 		}
@@ -146,7 +187,7 @@
 			sessions = sessions.filter((s) => s.id !== id);
 			sessionsError = '';
 		} catch (err) {
-			sessionsError = message(err, 'Could not revoke that session.');
+			sessionsError = errorText(err, t('settings.account.sessions.error.revoke'));
 		} finally {
 			busy = false;
 		}
@@ -160,7 +201,7 @@
 			tokensKey++;
 			await loadSessions();
 		} catch (err) {
-			sessionsError = message(err, 'Could not log the other devices out.');
+			sessionsError = errorText(err, t('settings.account.sessions.error.others'));
 		} finally {
 			busy = false;
 		}
@@ -174,7 +215,7 @@
 			// Every session is gone, this one too: clear the local state.
 			logout();
 		} catch (err) {
-			sessionsError = message(err, 'Could not log out everywhere.');
+			sessionsError = errorText(err, t('settings.account.sessions.error.all'));
 			confirmingAll = false;
 		} finally {
 			busy = false;
@@ -183,8 +224,12 @@
 </script>
 
 <section aria-labelledby="account-profile-heading" class="block">
-	<h2 id="account-profile-heading">Profile</h2>
-	<p>Username: <strong>{$user?.username}</strong></p>
+	<h2 id="account-profile-heading">{t('settings.account.profile.title')}</h2>
+	<p>
+		<Msg key="settings.account.profile.username" args={{ name: $user?.username ?? '' }}
+			>{#snippet strong(text: string)}<strong>{text}</strong>{/snippet}</Msg
+		>
+	</p>
 	<EmailBanner link={false} />
 	{#if emailView.visible}
 		<form
@@ -195,29 +240,31 @@
 			class="stack"
 		>
 			<p class="hint">
-				{#if $user?.email}Current address: {$user.email}{:else}No address saved.{/if}
+				{#if $user?.email}{t('settings.account.email.current', { email: $user.email })}{:else}{t(
+						'settings.account.email.none'
+					)}{/if}
 			</p>
 			<label>
 				{emailView.label}
 				<input type="email" autocomplete="email" bind:value={emailDraft} />
 			</label>
 			<label>
-				Your password
+				{t('account.field.yourPassword')}
 				<input type="password" autocomplete="current-password" bind:value={emailPassword} required />
 			</label>
 			{#if $user?.mfa?.totp}
 				<label>
-					Code from your authenticator app (or a recovery code)
+					{t('settings.account.email.code')}
 					<input name="email-code" autocomplete="one-time-code" bind:value={emailCode} required />
 				</label>
 			{/if}
 			{#if emailError}<p class="error" role="alert">{emailError}</p>{/if}
 			<p class="ok" role="status">{emailDone}</p>
 			<div class="actions">
-				<button type="submit" disabled={emailBusy || emailDraft.trim() === ''}>Save email</button>
+				<button type="submit" disabled={emailBusy || emailDraft.trim() === ''}>{t('settings.account.email.save')}</button>
 				{#if emailView.canClear}
 					<button type="button" disabled={emailBusy || emailPassword === ''} onclick={() => saveEmail(null)}
-						>Remove email</button
+						>{t('settings.account.email.remove')}</button
 					>
 				{/if}
 			</div>
@@ -226,24 +273,45 @@
 			{#if verifying}
 				<EmailVerify address={$user.email} onverified={async () => { verifying = false; await loadMe(); }} />
 			{:else}
-				<p class="hint">This address is not confirmed yet.
-					<button type="button" class="link" onclick={() => (verifying = true)}>Confirm it</button></p>
+				<p class="hint">{t('settings.account.email.unconfirmed')}
+					<button type="button" class="link" onclick={() => (verifying = true)}>{t('settings.account.email.confirm')}</button></p>
 			{/if}
 		{/if}
 	{/if}
 </section>
 
+<section aria-labelledby="account-language-heading" class="block">
+	<h2 id="account-language-heading">{t('settings.account.interfaceLanguage.title')}</h2>
+	<form onsubmit={saveLanguage} class="stack">
+		<label>
+			{t('settings.account.interfaceLanguage.label')}
+			<select bind:value={languageDraft} aria-describedby="account-language-hint">
+				<option value="">{t('settings.account.interfaceLanguage.browser', { language: browserDefault })}</option>
+				{#each languageChoices as choice (choice.code)}
+					<option value={choice.code}>{choice.label}</option>
+				{/each}
+			</select>
+		</label>
+		<p class="hint" id="account-language-hint">{t('settings.account.interfaceLanguage.hint')}</p>
+		{#if languageError}<p class="error" role="alert">{languageError}</p>{/if}
+		{#if languageNotice}<p class="hint" role="status">{languageNotice}</p>{/if}
+		<button type="submit" disabled={languageBusy}
+			>{languageBusy ? t('settings.account.interfaceLanguage.saving') : t('settings.account.interfaceLanguage.save')}</button
+		>
+	</form>
+</section>
+
 <TwoFactorManage options={optionsAll} />
 
 <section aria-labelledby="account-password-heading" class="block">
-	<h2 id="account-password-heading">Password</h2>
+	<h2 id="account-password-heading">{t('settings.account.password.title')}</h2>
 	<form onsubmit={submitPassword} class="stack">
 		<label>
-			Current password
+			{t('settings.account.password.current')}
 			<input type="password" autocomplete="current-password" bind:value={current} required />
 		</label>
 		<label>
-			New password
+			{t('settings.account.password.new')}
 			<input
 				type="password"
 				autocomplete="new-password"
@@ -254,32 +322,32 @@
 		</label>
 		<p class="hint" id="account-password-rules">{passwordHint()}</p>
 		<label>
-			Repeat the new password
+			{t('settings.account.password.repeat')}
 			<input type="password" autocomplete="new-password" bind:value={confirm} required />
 		</label>
 		<label class="check">
 			<input type="checkbox" bind:checked={signOutOthers} />
-			Sign out my other sessions
+			{t('settings.account.password.signOutOthers')}
 		</label>
 		{#if tokenNote}<p class="hint">{tokenNote}</p>{/if}
 		{#if pwError}<p class="error" role="alert">{pwError}</p>{/if}
 		<p class="ok" role="status">{pwDone}</p>
-		<button type="submit" disabled={pwBusy}>{pwBusy ? 'Changing…' : 'Change password'}</button>
+		<button type="submit" disabled={pwBusy}>{pwBusy ? t('settings.account.password.changing') : t('settings.account.password.change')}</button>
 	</form>
 </section>
 
 <section aria-labelledby="account-sessions-heading" class="block">
-	<h2 id="account-sessions-heading">Sessions</h2>
-	<p class="hint">Devices that are signed in to your account.</p>
+	<h2 id="account-sessions-heading">{t('settings.account.sessions.title')}</h2>
+	<p class="hint">{t('settings.account.sessions.intro')}</p>
 	{#if sessionsError}<p class="error" role="alert">{sessionsError}</p>{/if}
 	{#if sessionsLoaded && rows.length > 0}
-		<table aria-label="Signed-in devices">
+		<table aria-label={t('settings.account.sessions.table')}>
 			<thead>
 				<tr>
-					<th scope="col">Device</th>
-					<th scope="col">Signed in</th>
-					<th scope="col">Last active</th>
-					<th scope="col"><span class="visually-hidden">Actions</span></th>
+					<th scope="col">{t('settings.account.sessions.colDevice')}</th>
+					<th scope="col">{t('settings.account.sessions.colSignedIn')}</th>
+					<th scope="col">{t('settings.account.sessions.colLastActive')}</th>
+					<th scope="col"><span class="visually-hidden">{t('settings.tokens.colActions')}</span></th>
 				</tr>
 			</thead>
 			<tbody>
@@ -296,8 +364,8 @@
 								<button
 									type="button"
 									disabled={busy}
-									aria-label={`Revoke ${row.deviceLabel}`}
-									onclick={() => revokeOne(row.id)}>Revoke</button
+									aria-label={t('settings.account.sessions.revokeNamed', { device: row.deviceLabel })}
+									onclick={() => revokeOne(row.id)}>{t('settings.tokens.revoke')}</button
 								>
 							{/if}
 						</td>
@@ -308,18 +376,18 @@
 	{/if}
 	<div class="actions">
 		<button type="button" disabled={busy || !hasOthers} onclick={revokeOthers}
-			>Log out everywhere else</button
+			>{t('settings.account.sessions.logoutOthers')}</button
 		>
 		<button type="button" disabled={busy} onclick={() => (confirmingAll = true)}
-			>Log out everywhere</button
+			>{t('settings.account.sessions.logoutAll')}</button
 		>
 	</div>
-	{#if tokenNote}<p class="hint">Logging out other devices or everywhere: {tokenNote}</p>{/if}
+	{#if tokenNote}<p class="hint">{t('settings.account.sessions.tokenNote', { note: tokenNote })}</p>{/if}
 	{#if confirmingAll}
-		<div class="confirm" role="group" aria-label="Confirm log out everywhere">
-			<p>{LOGOUT_EVERYWHERE_CONFIRM}{#if tokenNote}{' '}{tokenNote}{/if}</p>
-			<button type="button" disabled={busy} onclick={revokeAll}>Yes, log out everywhere</button>
-			<button type="button" disabled={busy} onclick={() => (confirmingAll = false)}>Cancel</button>
+		<div class="confirm" role="group" aria-label={t('settings.account.sessions.confirmAll')}>
+			<p>{logoutEverywhereConfirm()}{#if tokenNote}{' '}{tokenNote}{/if}</p>
+			<button type="button" disabled={busy} onclick={revokeAll}>{t('settings.account.sessions.confirmAllYes')}</button>
+			<button type="button" disabled={busy} onclick={() => (confirmingAll = false)}>{t('common.action.cancel')}</button>
 		</div>
 	{/if}
 </section>
@@ -333,9 +401,9 @@
 <AppSection />
 
 <section aria-labelledby="account-delete-heading" class="block">
-	<h2 id="account-delete-heading">Delete account</h2>
-	<p class="hint">Permanently deletes your account and everything in it.</p>
-	<button type="button" onclick={() => (deleting = true)}>Delete my account…</button>
+	<h2 id="account-delete-heading">{t('settings.account.delete.title')}</h2>
+	<p class="hint">{t('settings.account.delete.intro')}</p>
+	<button type="button" onclick={() => (deleting = true)}>{t('settings.account.delete.open')}</button>
 </section>
 
 {#if deleting && $user}

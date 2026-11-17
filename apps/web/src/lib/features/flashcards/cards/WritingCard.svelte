@@ -1,7 +1,9 @@
 <script lang="ts">
+	import ReadingText from '$lib/components/ReadingText.svelte';
+	import { studyLang } from '$lib/i18n/lang';
+	import { t } from '$lib/i18n';
 	import { untrack } from 'svelte';
 	import type { Entry } from '$lib/api/types';
-	import { formatReading } from '$lib/format';
 	import { maskWritten, type CardResult, type FlowItem } from '$lib/study/cardFlow';
 	import { loadStrokeData } from '$lib/study/strokeData';
 	import { suggestWritingGrade, type CharOutcome } from '$lib/study/writing';
@@ -49,7 +51,7 @@
 
 	function fail(): void {
 		if (!alive) return;
-		failed = 'The writing pad could not load this character. Continue and grade this card yourself.';
+		failed = t('flashcards.writing.loadFailed');
 		busy = false;
 	}
 
@@ -84,7 +86,7 @@
 		const next = position + 1;
 		if (next >= chars.length) {
 			position = chars.length;
-			feedback = outcome.revealed ? `The character is ${outcome.char}.` : 'Character done.';
+			feedback = outcome.revealed ? t('flashcards.writing.revealed', { char: outcome.char }) : t('flashcards.writing.done');
 			onDone({
 				suggested: suggestWritingGrade(outcomes),
 				meta: {
@@ -94,7 +96,7 @@
 			});
 			return;
 		}
-		feedback = outcome.revealed ? `The character is ${outcome.char}.` : '';
+		feedback = outcome.revealed ? t('flashcards.writing.revealed', { char: outcome.char }) : '';
 		const advance = () => {
 			nextTimer = null;
 			if (!alive) return;
@@ -108,11 +110,11 @@
 	function onChange(progress: { mistakes: number; remaining: number }): void {
 		const changed = progress.mistakes !== mistakes;
 		mistakes = progress.mistakes;
-		if (changed) feedback = `Not that stroke. Mistakes: ${progress.mistakes}.`;
-		else if (progress.remaining === 0) feedback = 'Character done.';
+		if (changed) feedback = t('flashcards.writing.wrongStroke', { count: progress.mistakes });
+		else if (progress.remaining === 0) feedback = t('flashcards.writing.done');
 		else feedback = '';
 		if (!changed && progress.remaining > 0) {
-			strokeNote = `Stroke accepted, ${progress.remaining} to go.`;
+			strokeNote = t('flashcards.writing.strokeAccepted', { count: progress.remaining });
 		}
 	}
 
@@ -144,14 +146,14 @@
 	}
 </script>
 
-<p class="written" aria-label={done ? written : 'The word to write; boxes mark the characters to draw'}>
+<p class="written" lang={studyLang(entry.language)} aria-label={done ? written : t('flashcards.writing.wordLabel')}>
 	{masked}
 </p>
 
 {#if entry.readings.length > 0}
-	<ul class="readings" aria-label="Readings">
+	<ul class="readings" aria-label={t('flashcards.card.readings')}>
 		{#each entry.readings as reading, readingIndex (`${reading.type}:${readingIndex}`)}
-			<li>{formatReading(reading.type, reading.value)}</li>
+			<li><ReadingText type={reading.type} value={reading.value} language={entry.language} /></li>
 		{/each}
 	</ul>
 {/if}
@@ -160,7 +162,7 @@
 	<p class="glosses">{glosses.join('; ')}</p>
 {/if}
 
-<ol class="dots" aria-label="Characters">
+<ol class="dots" aria-label={t('flashcards.writing.characters')}>
 	{#each chars as ch, index (index)}
 		{@const outcome = outcomes[index]}
 		<li
@@ -170,8 +172,12 @@
 			class:missed={outcome !== undefined && !outcome.revealed && outcome.mistakes > 0}
 			class:revealed={outcome?.revealed}
 			aria-label={outcome === undefined
-				? `Character ${index + 1}${index === position ? ', current' : ''}`
-				: `${ch}: ${outcome.revealed ? 'revealed' : `${outcome.mistakes} mistakes`}`}
+				? index === position
+					? t('flashcards.writing.dotCurrent', { n: index + 1 })
+					: t('flashcards.writing.dot', { n: index + 1 })
+				: outcome.revealed
+					? t('flashcards.writing.dotRevealed', { char: ch })
+					: t('flashcards.writing.dotMistakes', { char: ch, count: outcome.mistakes })}
 		></li>
 	{/each}
 </ol>
@@ -179,7 +185,7 @@
 {#if failed}
 	<p class="error" role="alert">{failed}</p>
 	{#if !done}
-		<button type="button" class="secondary" onclick={giveUpOnError}>Continue</button>
+		<button type="button" class="secondary" onclick={giveUpOnError}>{t('flashcards.writing.continue')}</button>
 	{/if}
 {/if}
 
@@ -194,8 +200,8 @@
 				{revealSignal}
 				{hintSignal}
 				label={done
-					? `Written: ${written}`
-					: `Draw character ${Math.min(position + 1, chars.length)} of ${chars.length}, stroke by stroke`}
+					? t('flashcards.writing.written', { word: written })
+					: t('flashcards.writing.draw', { n: Math.min(position + 1, chars.length), total: chars.length })}
 			/>
 		{/key}
 	{:else}
@@ -205,9 +211,9 @@
 
 {#if !done && !failed}
 	<div class="actions">
-		<button type="button" class="secondary" disabled={busy} onclick={hint}>Hint</button>
-		<button type="button" class="secondary" disabled={busy} onclick={reveal}>Reveal character</button>
-		<span class="count" aria-hidden="true">Mistakes: {mistakes}</span>
+		<button type="button" class="secondary" disabled={busy} onclick={hint}>{t('flashcards.writing.hint')}</button>
+		<button type="button" class="secondary" disabled={busy} onclick={reveal}>{t('flashcards.writing.reveal')}</button>
+		<span class="count" aria-hidden="true">{t('flashcards.writing.mistakes', { count: mistakes })}</span>
 	</div>
 {/if}
 

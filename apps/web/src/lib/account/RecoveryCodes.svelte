@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '$lib/i18n';
 	import { recoveryClipboard, recoveryFileName, recoveryText } from './recoveryCodes';
 
 	// The recovery codes, shown once: copy, download, and confirm they are saved.
@@ -6,7 +7,7 @@
 		codes,
 		site,
 		oncontinue,
-		continueLabel = 'Continue'
+		continueLabel = t('common.action.continue')
 	}: { codes: string[]; site: string; oncontinue: () => void; continueLabel?: string } = $props();
 
 	let saved = $state(false);
@@ -19,7 +20,7 @@
 			await navigator.clipboard.writeText(recoveryClipboard(codes));
 			copied = true;
 		} catch {
-			error = 'Could not copy. Select the codes and copy them by hand.';
+			error = t('account.recovery.copyFailed');
 		}
 	}
 
@@ -36,24 +37,21 @@
 </script>
 
 <section aria-labelledby="rc-title">
-	<h2 id="rc-title" tabindex="-1">Save your recovery codes</h2>
-	<p>
-		If you lose your phone, each of these codes lets you sign in once. They are shown only now: save
-		them somewhere safe.
-	</p>
+	<h2 id="rc-title" tabindex="-1">{t('account.recovery.title')}</h2>
+	<p>{t('account.recovery.intro')}</p>
 	<ul class="codes">
 		{#each codes as code (code)}
 			<li><code>{code}</code></li>
 		{/each}
 	</ul>
 	<p class="row">
-		<button type="button" onclick={copy}>{copied ? 'Copied' : 'Copy'}</button>
-		<button type="button" onclick={download}>Download .txt</button>
+		<button type="button" onclick={copy}>{copied ? t('common.action.copied') : t('common.action.copy')}</button>
+		<button type="button" onclick={download}>{t('account.recovery.download')}</button>
 	</p>
 	{#if error}<p class="error" role="alert">{error}</p>{/if}
 	<label class="check">
 		<input type="checkbox" bind:checked={saved} />
-		I have saved these codes
+		{t('account.recovery.saved')}
 	</label>
 	<button type="button" disabled={!saved} onclick={oncontinue}>{continueLabel}</button>
 </section>

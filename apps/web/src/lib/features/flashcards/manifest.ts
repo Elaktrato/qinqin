@@ -5,6 +5,7 @@
 import flashcards from '$builtin/flashcards.json';
 import type { ContractManifest } from '$lib/plugins/contract';
 import type { PluginManifest } from '$lib/plugins';
+import { t } from '$lib/i18n';
 import FlashcardsWidget from './FlashcardsWidget.svelte';
 import WordStatesHome from '$lib/widgets/WordStatesHome.svelte';
 import WordStatesWidget from '$lib/widgets/WordStatesWidget.svelte';
@@ -14,8 +15,12 @@ export const flashcardsManifest: PluginManifest = {
 	widgets: [
 		{
 			id: 'flashcards-summary',
-			title: 'Flashcards',
-			description: 'Cards due and new, level and XP, streak and the study buddy.',
+			get title() {
+				return t('flashcards.widget.title');
+			},
+			get description() {
+				return t('flashcards.widget.description');
+			},
 			owner: 'qinqin-flashcards',
 			size: 'normal',
 			surfaces: ['stats', 'home'],
@@ -23,8 +28,12 @@ export const flashcardsManifest: PluginManifest = {
 		},
 		{
 			id: 'word-states',
-			title: 'Words',
-			description: 'Words new, learning, young and mature, overall and per deck.',
+			get title() {
+				return t('flashcards.widget.wordsTitle');
+			},
+			get description() {
+				return t('flashcards.widget.wordsDescription');
+			},
 			owner: 'qinqin-flashcards',
 			size: 'normal',
 			surfaces: ['stats', 'home'],

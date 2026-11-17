@@ -1,5 +1,7 @@
 <script lang="ts">
 	import { onMount, tick } from 'svelte';
+	import { t } from '$lib/i18n';
+	import Msg from '$lib/i18n/Msg.svelte';
 	import { ApiError } from '$lib/api/client';
 	import type { Workspace } from '$lib/api/types';
 	import { fetchWorkspaceContents, type WorkspaceContents } from '$lib/api/workspaceContents';
@@ -35,10 +37,6 @@
 
 	const ready = $derived(labelMatches(typed, label) && !deleting);
 
-	function plural(n: number, one: string, many: string): string {
-		return `${n} ${n === 1 ? one : many}`;
-	}
-
 	function finish(deleted: boolean): void {
 		if (closed) return;
 		closed = true;
@@ -57,10 +55,10 @@
 		} catch (err) {
 			error =
 				err instanceof ApiError && err.status === 409
-					? 'This is your only workspace, so it cannot be deleted.'
+					? t('app.workspaces.delete.onlyOne')
 					: err instanceof Error && err.message
 						? err.message
-						: 'Could not delete the workspace.';
+						: t('app.workspaces.delete.failed');
 			deleting = false;
 			await tick();
 			input?.focus();
@@ -105,31 +103,38 @@
 	}}
 >
 	<form onsubmit={submit}>
-		<h2 id="{uid}-title">Delete the workspace “{label}”?</h2>
+		<h2 id="{uid}-title">{t('app.workspaces.delete.title', { name: label })}</h2>
 		<div id="{uid}-what">
-			<p>This permanently deletes, on every device:</p>
+			<p>{t('app.workspaces.delete.intro')}</p>
 			<ul>
 				{#if contents}
-					<li>{plural(contents.books, 'book', 'books')} in its library, with their bookmarks and highlights</li>
+					<li>{t('app.workspaces.delete.books', { count: contents.books })}</li>
 					<li>
-						{plural(contents.cards, 'flashcard', 'flashcards')}{contents.decks > 0
-							? ` and ${plural(contents.decks, 'deck', 'decks')}`
-							: ''}
+						{contents.decks > 0
+							? t('app.workspaces.delete.cardsAndDecks', {
+									cards: t('app.workspaces.delete.cards', { count: contents.cards }),
+									decks: t('app.workspaces.delete.decks', { count: contents.decks })
+								})
+							: t('app.workspaces.delete.cards', { count: contents.cards })}
 					</li>
-					<li>{plural(contents.reviews, 'recorded review', 'recorded reviews')} and the rest of its study history</li>
+					<li>{t('app.workspaces.delete.reviews', { count: contents.reviews })}</li>
 				{:else}
-					<li>its library books, with their bookmarks and highlights</li>
-					<li>its flashcards and decks</li>
-					<li>its reviews and the rest of its study history</li>
+					<li>{t('app.workspaces.delete.booksUncounted')}</li>
+					<li>{t('app.workspaces.delete.cardsUncounted')}</li>
+					<li>{t('app.workspaces.delete.reviewsUncounted')}</li>
 				{/if}
 			</ul>
 			{#if !contents && !contentsFailed}
-				<p class="hint" aria-live="polite">Counting…</p>
+				<p class="hint" aria-live="polite">{t('app.workspaces.delete.counting')}</p>
 			{/if}
-			<p>Your other workspaces are not touched. This cannot be undone.</p>
+			<p>{t('app.workspaces.delete.others')}</p>
 		</div>
 
-		<label for="{uid}-confirm">Type <strong>{label}</strong> to confirm</label>
+		<label for="{uid}-confirm"
+			><Msg key="app.workspaces.delete.typeToConfirm" args={{ name: label }}
+				>{#snippet strong(text: string)}<strong>{text}</strong>{/snippet}</Msg
+			></label
+		>
 		<input
 			bind:this={input}
 			bind:value={typed}
@@ -144,9 +149,9 @@
 		{/if}
 
 		<div class="actions">
-			<button type="button" class="secondary" onclick={() => finish(false)} disabled={deleting}>Cancel</button>
+			<button type="button" class="secondary" onclick={() => finish(false)} disabled={deleting}>{t('common.action.cancel')}</button>
 			<button type="submit" class="danger" disabled={!ready} aria-busy={deleting}>
-				{deleting ? 'Deleting…' : 'Delete workspace'}
+				{deleting ? t('app.workspaces.delete.deleting') : t('app.workspaces.delete.submit')}
 			</button>
 		</div>
 	</form>

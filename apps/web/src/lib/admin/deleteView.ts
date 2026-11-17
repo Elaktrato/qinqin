@@ -1,6 +1,19 @@
 import type { DeletionPreview } from '$lib/api/adminUsers';
+import { t, type MessageKey } from '$lib/i18n';
 
-const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
+const LINES: [keyof DeletionPreview, MessageKey][] = [
+	['workspaces', 'admin.delete.preview.workspaces'],
+	['studyEvents', 'admin.delete.preview.studyEvents'],
+	['cards', 'admin.delete.preview.cards'],
+	['pluginData', 'admin.delete.preview.pluginData'],
+	['books', 'admin.delete.preview.books'],
+	['overlays', 'admin.delete.preview.overlays'],
+	['sentences', 'admin.delete.preview.sentences'],
+	['journalPhotos', 'admin.delete.preview.journalPhotos'],
+	['aiKeys', 'admin.delete.preview.aiKeys'],
+	['sessions', 'admin.delete.preview.sessions'],
+	['accessTokens', 'admin.delete.preview.accessTokens']
+];
 
 /**
  * previewLines words the deletion preview as the list the dialog shows
@@ -9,17 +22,10 @@ const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one :
  */
 export function previewLines(p: DeletionPreview): string[] {
 	const lines: string[] = [];
-	if (p.workspaces) lines.push(plural(p.workspaces, 'workspace', 'workspaces'));
-	if (p.studyEvents) lines.push(plural(p.studyEvents, 'recorded review and study event', 'recorded reviews and study events'));
-	if (p.cards) lines.push(plural(p.cards, 'flashcard, with its decks and study settings', 'flashcards, with their decks and study settings'));
-	if (p.pluginData) lines.push(plural(p.pluginData, 'other saved item (journal entries, notes, known words, settings)', 'other saved items (journal entries, notes, known words, settings)'));
-	if (p.books) lines.push(plural(p.books, 'book in the library, with its bookmarks and highlights', 'books in the library, with their bookmarks and highlights'));
-	if (p.overlays) lines.push(plural(p.overlays, 'edited dictionary entry', 'edited dictionary entries'));
-	if (p.sentences) lines.push(plural(p.sentences, 'sentence they added', 'sentences they added'));
-	if (p.journalPhotos) lines.push(plural(p.journalPhotos, 'journal photo draft', 'journal photo drafts'));
-	if (p.aiKeys) lines.push(plural(p.aiKeys, 'stored AI key', 'stored AI keys'));
-	if (p.sessions) lines.push(plural(p.sessions, 'signed-in session', 'signed-in sessions'));
-	if (p.accessTokens) lines.push(plural(p.accessTokens, 'personal access token', 'personal access tokens'));
-	if (lines.length === 0) lines.push('Nothing else: there is no data in this account yet.');
+	for (const [field, key] of LINES) {
+		const count = p[field];
+		if (count) lines.push(t(key, { count }));
+	}
+	if (lines.length === 0) lines.push(t('admin.delete.preview.nothing'));
 	return lines;
 }

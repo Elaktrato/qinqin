@@ -1,7 +1,10 @@
 <script lang="ts">
+	import { t } from '$lib/i18n';
+	import Msg from '$lib/i18n/Msg.svelte';
+	import { formatDate } from '$lib/i18n/format';
 	import { tick } from 'svelte';
 	import type { BookmarkList } from './bookmarkList.svelte';
-	import { MAX_LABEL_RUNES, bookmarkName, sortForPanel, type Bookmark } from './bookmarks';
+	import { MAX_LABEL_RUNES, sortForPanel, type Bookmark } from './bookmarks';
 	import { chapterTitle, parsePosition } from './position';
 
 	// The side rail's Bookmarks tab, and the accessible path to the
@@ -41,8 +44,7 @@
 
 	const sorted = $derived(sortForPanel(list.items));
 	const draftRunes = $derived(Array.from(draft.trim()).length);
-	const dateFormat = new Intl.DateTimeFormat(undefined, { dateStyle: 'medium' });
-
+	
 	// Another book: no rename or delete confirmation carries over.
 	$effect(() => {
 		void list.bookId;
@@ -52,20 +54,22 @@
 
 	function chapterOf(b: Bookmark): string {
 		const p = parsePosition(b.position);
-		if (!p) return 'Unknown place';
-		const number = `Chapter ${p.chapter + 1}`;
+		if (!p) return t('reader.bookmarks.unknownPlace');
+		const number = t('reader.chapter', { n: p.chapter + 1 });
 		const title = titles[p.chapter]?.trim();
-		return title && title !== chapterTitle('', p.chapter) ? `${number} · ${title}` : number;
+		return title && title !== chapterTitle('', p.chapter) ? t('reader.chapterTitled', { number, title }) : number;
 	}
 
 	// "bookmark 猫", or "untitled bookmark in chapter 3" for an empty label.
 	function actionName(b: Bookmark): string {
-		return b.label ? `bookmark ${b.label}` : bookmarkName(b).replace(/^U/, 'u');
+		if (b.label) return t('reader.bookmarks.actionName', { label: b.label });
+		const p = parsePosition(b.position);
+		return p ? t('reader.bookmarks.actionUntitledChapter', { n: p.chapter + 1 }) : t('reader.bookmarks.actionUntitled');
 	}
 
 	function dateOf(b: Bookmark): string {
 		const d = new Date(b.createdAt);
-		return Number.isNaN(d.getTime()) ? '' : dateFormat.format(d);
+		return Number.isNaN(d.getTime()) ? '' : formatDate(d);
 	}
 
 	async function startRename(b: Bookmark): Promise<void> {
@@ -135,7 +139,9 @@
 </script>
 
 <section class="bookmarks" aria-labelledby="bookmarks-heading">
-	<h2 id="bookmarks-heading">Bookmarks{list.ready ? ` (${list.items.length})` : ''}</h2>
+	<h2 id="bookmarks-heading">
+		{list.ready ? t('reader.bookmarks.titleCount', { count: list.items.length }) : t('reader.bookmarks.title')}
+	</h2>
 
 	<button
 		id="bookmark-here"
@@ -157,35 +163,35 @@
 				stroke-linejoin="round"
 			/>
 		</svg>
-		{failed ? 'Load bookmarks again' : here ? 'Remove bookmark' : 'Add bookmark here'}
+		{failed ? t('reader.bookmarks.loadAgain') : here ? t('reader.bookmarks.remove') : t('reader.bookmarks.addHere')}
 	</button>
 	<p id="bookmark-here-hint" class="hint">
-		{here ? 'The paragraph at the top of the screen is bookmarked.' : 'Marks the paragraph at the top of the screen.'}
-		Key: <kbd>B</kbd>
+		{#if here}<Msg key="reader.bookmarks.hereHint">{#snippet kbd(text: string)}<kbd>{text}</kbd>{/snippet}</Msg
+			>{:else}<Msg key="reader.bookmarks.addHint">{#snippet kbd(text: string)}<kbd>{text}</kbd>{/snippet}</Msg>{/if}
 	</p>
 
 	{#if failed}
 		<p class="error" id="bookmarks-load-error">
 			{list.loadError}
-			<button type="button" onclick={ontoggle}>Retry</button>
+			<button type="button" onclick={ontoggle}>{t('reader.highlights.retry')}</button>
 		</p>
 	{/if}
 	{#if list.error}<p class="error">{list.error}</p>{/if}
 
 	<div class="body">
 		{#if list.loading}
-			<p>Loading bookmarks…</p>
+			<p>{t('reader.bookmarks.loading')}</p>
 		{:else if list.loadError}
 			<!-- The error and its Retry are shown next to the button above. -->
 		{:else if sorted.length === 0}
-			<p class="empty">No bookmarks yet.</p>
+			<p class="empty">{t('reader.bookmarks.empty')}</p>
 		{:else}
 			<ul>
 				{#each sorted as b (b.id)}
 					<li>
 						{#if editingId === b.id}
 							<form class="rename" onsubmit={(e) => saveRename(e, b)}>
-								<label class="visually-hidden" for="bookmark-rename-{b.id}">Bookmark name</label>
+								<label class="visually-hidden" for="bookmark-rename-{b.id}">{t('reader.bookmarks.name')}</label>
 								<input
 									id="bookmark-rename-{b.id}"
 									{lang}
@@ -197,8 +203,8 @@
 								<span id="bookmark-count-{b.id}" class="count" class:over={draftRunes > MAX_LABEL_RUNES}>
 									{draftRunes}/{MAX_LABEL_RUNES}
 								</span>
-								<button type="submit" disabled={draftRunes > MAX_LABEL_RUNES}>Save</button>
-								<button type="button" onclick={() => cancelRename(b.id)}>Cancel</button>
+								<button type="submit" disabled={draftRunes > MAX_LABEL_RUNES}>{t('reader.bookmarks.save')}</button>
+								<button type="button" onclick={() => cancelRename(b.id)}>{t('common.action.cancel')}</button>
 							</form>
 						{:else}
 							<button
@@ -209,11 +215,11 @@
 								disabled={b.id < 0}
 								aria-describedby="bookmark-meta-{b.id}"
 							>
-								<span class="label" lang={b.label ? lang : undefined}>{b.label || 'Untitled bookmark'}</span>
+								<span class="label" lang={b.label ? lang : undefined}>{b.label || t('reader.bookmarks.untitled')}</span>
 							</button>
 							<span class="meta" id="bookmark-meta-{b.id}">
 								{chapterOf(b)}{#if dateOf(b)}<span aria-hidden="true">{' · '}</span><span
-										class="visually-hidden">{', added '}</span
+										class="visually-hidden">{`${t('reader.bookmarks.addedOn')} `}</span
 									>{dateOf(b)}{/if}
 							</span>
 							{#if confirmingId === b.id}
@@ -221,13 +227,13 @@
 								<span
 									class="actions"
 									role="group"
-									aria-label="Confirm delete of {actionName(b)}"
+									aria-label={t('reader.highlights.confirmDelete', { name: actionName(b) })}
 									onkeydown={(e) => confirmKey(e, b.id)}
 								>
-									Delete this bookmark?
-									<button type="button" onclick={() => confirmDelete(b)}>Yes, delete</button>
+									{t('reader.bookmarks.deleteQuestion')}
+									<button type="button" onclick={() => confirmDelete(b)}>{t('reader.editor.yesDelete')}</button>
 									<button id="bookmark-cancel-{b.id}" type="button" onclick={() => cancelDelete(b.id)}
-										>Cancel</button
+										>{t('common.action.cancel')}</button
 									>
 								</span>
 							{:else}
@@ -237,16 +243,16 @@
 										type="button"
 										onclick={() => startRename(b)}
 										disabled={list.busy(b.id)}
-										aria-label="Rename {actionName(b)}"
+										aria-label={t('reader.bookmarks.renameNamed', { name: actionName(b) })}
 									>
-										Rename
+										{t('reader.bookmarks.rename')}
 									</button>
 									<button
 										id="bookmark-delete-{b.id}"
 										type="button"
 										onclick={() => askDelete(b)}
 										disabled={list.busy(b.id)}
-										aria-label="Delete {actionName(b)}">Delete</button
+										aria-label={t('reader.highlights.deleteNamed', { name: actionName(b) })}>{t('reader.editor.delete')}</button
 									>
 								</span>
 							{/if}

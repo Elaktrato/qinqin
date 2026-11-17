@@ -2,6 +2,7 @@
 // "Clear offline data" button deletes.
 
 import { cleanupPartitions, type CachesLike } from './partitions';
+import { t } from '$lib/i18n';
 import { formatBytes } from './install';
 import { clearReceipts } from './prepareOffline';
 import type { OfflineState } from './offlineState';
@@ -34,8 +35,7 @@ function clock(iso: string): string {
 export function appSectionView(i: AppViewInput): AppView {
 	if (!i.secure) {
 		return {
-			httpsNote:
-				'Installing and offline study need HTTPS (or localhost). This server is reached over plain HTTP, so qinqin works as an ordinary website here.',
+			httpsNote: t('pwa.app.httpsNote'),
 			showInstall: false,
 			installedNote: false,
 			iosHint: false,
@@ -51,9 +51,9 @@ export function appSectionView(i: AppViewInput): AppView {
 		iosHint: i.ios && !i.standalone && !i.canPrompt,
 		offlineLine:
 			i.prepared === null
-				? "Offline: not prepared yet. Open the app online and it saves today's cards."
-				: `Offline: ready - ${i.prepared.cards} ${i.prepared.cards === 1 ? 'card' : 'cards'} saved at ${clock(i.prepared.at)}`,
-		storageLine: i.usage === null ? null : `Storage used: ${formatBytes(i.usage.usage)} of ${formatBytes(i.usage.quota)}`,
+				? t('pwa.app.offlineNotPrepared')
+				: t('pwa.app.offlineReady', { count: i.prepared.cards, time: clock(i.prepared.at) }),
+		storageLine: i.usage === null ? null : t('pwa.app.storageUsed', { used: formatBytes(i.usage.usage), quota: formatBytes(i.usage.quota) }),
 		showClear: true
 	};
 }

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '$lib/i18n';
 	import { ApiError } from '$lib/api/client';
 	import { GENERAL_DECK_ID, addCard } from '$lib/study/store';
 	import { getStudyData, hasCard } from '$lib/study/studyData';
@@ -103,7 +104,7 @@
 			inDeck = true;
 			justAdded = true;
 		} catch (err) {
-			error = message(err, 'Could not add this entry to your study deck.');
+			error = message(err, t('entry.study.addFailed'));
 		} finally {
 			saving = false;
 		}
@@ -113,9 +114,9 @@
 <div class="add-to-study">
 	{#if decks.length > 0}
 		<label class="deck-picker">
-			Deck
+			{t('entry.study.deck')}
 			<select bind:value={selectedDeckId} disabled={saving || inDeck === true}>
-				<option value={GENERAL_DECK_ID}>General</option>
+				<option value={GENERAL_DECK_ID}>{t('entry.study.general')}</option>
 				{#each decks as deck (deck.id)}
 					<option value={deck.id}>{deck.name}</option>
 				{/each}
@@ -131,17 +132,16 @@
 		onclick={() => void add()}
 	>
 		{saving
-			? 'Adding…'
+			? t('entry.study.adding')
 			: inDeck === null
-				? 'Checking…'
+				? t('entry.study.checking')
 				: inDeck
-					? 'In study deck'
-					: 'Add to study'}
+					? t('entry.study.inDeck')
+					: t('entry.study.add')}
 	</button>
 	{#if justAdded}
 		<p class="note" role="status">
-			Added to study. Sentence, writing and tone cards (where the word qualifies) appear
-			automatically in sessions that include them.
+			{t('entry.study.added')}
 		</p>
 	{/if}
 	{#if error}

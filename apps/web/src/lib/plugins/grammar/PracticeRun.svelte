@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '$lib/i18n';
 	import { tick } from 'svelte';
 	import { segmentBatch } from '$lib/api/segment';
 	import { loadTokens } from '$lib/study/wordSalad';
@@ -101,7 +102,7 @@
 		} catch {
 			// Nothing was written: a score that could not be compared with the
 			// stored best must never replace it.
-			saveError = 'Could not save your progress, so nothing was changed.';
+			saveError = t('grammar.practice.saveFailed');
 		}
 	}
 
@@ -119,45 +120,45 @@
 </script>
 
 <main class="practice">
-	<p class="back"><a href={grammarHref({ view: 'lesson', pack, lesson: lessonId })}>← Back to the lesson</a></p>
+	<p class="back"><a href={grammarHref({ view: 'lesson', pack, lesson: lessonId })}>{t('grammar.practice.back')}</a></p>
 
 	{#if status === 'loading'}
-		<p role="status">Loading…</p>
+		<p role="status">{t('common.loading')}</p>
 	{:else if status === 'error'}
-		<p class="error" role="alert">Could not load this lesson.</p>
+		<p class="error" role="alert">{t('grammar.lesson.loadFailed')}</p>
 	{:else if status === 'missing' || data === null}
-		<p>This lesson is no longer available.</p>
-		<p><a href={grammarHref({ view: 'browse' })}>Back to the lessons</a></p>
+		<p>{t('grammar.lesson.gone')}</p>
+		<p><a href={grammarHref({ view: 'browse' })}>{t('grammar.lesson.backToLessons')}</a></p>
 	{:else if finished}
 		<h1>{data.lesson.title}</h1>
-		<section aria-label="Result">
+		<section aria-label={t('grammar.practice.result')}>
 			<p class="score" role="status">
-				Score: {score}/{exercises.length}
+				{t('grammar.practice.score', { score, total: exercises.length })}
 			</p>
 			{#if saved}
-				<p>Best so far: {saved.best}/{saved.total}</p>
+				<p>{t('grammar.practice.best', { best: saved.best, total: saved.total })}</p>
 			{/if}
 			{#if saveError}
 				<p class="error" role="alert">{saveError}</p>
-				<button type="button" class="secondary" onclick={() => void saveResult()}>Try saving again</button>
+				<button type="button" class="secondary" onclick={() => void saveResult()}>{t('grammar.practice.saveAgain')}</button>
 			{/if}
 			<div class="actions">
-				<button type="button" class="primary" onclick={retry}>Retry</button>
-				<a class="secondary" href={grammarHref({ view: 'lesson', pack, lesson: lessonId })}>Back to lesson</a>
+				<button type="button" class="primary" onclick={retry}>{t('grammar.practice.retry')}</button>
+				<a class="secondary" href={grammarHref({ view: 'lesson', pack, lesson: lessonId })}>{t('grammar.practice.backToLesson')}</a>
 				{#if data.view.next}
-					<a class="secondary" href={grammarHref({ view: 'lesson', pack, lesson: data.view.next })}>Next lesson</a>
+					<a class="secondary" href={grammarHref({ view: 'lesson', pack, lesson: data.view.next })}>{t('grammar.practice.nextLesson')}</a>
 				{/if}
 			</div>
 		</section>
 	{:else if current === null}
-		<p>This lesson has no exercises.</p>
+		<p>{t('grammar.practice.noExercises')}</p>
 	{:else}
 		<h1>{data.lesson.title}</h1>
-		<p class="progress" aria-live="polite">Exercise {index + 1} of {exercises.length}</p>
+		<p class="progress" aria-live="polite">{t('grammar.practice.progress', { n: index + 1, total: exercises.length })}</p>
 
 		{#key `${attempt}:${index}`}
 			{#if current.kind === 'cloze' && parts}
-				<p class="instruction" tabindex="-1" bind:this={instruction}>Choose the word that fits the gap.</p>
+				<p class="instruction" tabindex="-1" bind:this={instruction}>{t('grammar.practice.cloze')}</p>
 				<p class="translation">{current.example.translation}</p>
 				<ClozeChoice
 					before={parts.before}
@@ -168,10 +169,10 @@
 					onResult={(r) => void record(r.correct)}
 				/>
 			{:else if current.kind === 'order'}
-				<p class="instruction" tabindex="-1" bind:this={instruction}>Put the words in order.</p>
+				<p class="instruction" tabindex="-1" bind:this={instruction}>{t('grammar.practice.order')}</p>
 				<p class="translation">{current.example.translation}</p>
 				{#if tokens === null}
-					<p role="status">Preparing the sentence…</p>
+					<p role="status">{t('grammar.practice.preparing')}</p>
 				{:else}
 					<WordSaladBoard
 						solution={tokens}
@@ -185,12 +186,12 @@
 		{/key}
 
 		{#if answered}
-			<section class="reveal" aria-label="The sentence">
+			<section class="reveal" aria-label={t('grammar.practice.sentence')}>
 				<p class="sentence" lang={textLang}>{current.example.text}</p>
 				{#if current.example.reading}<p class="reading">{current.example.reading}</p>{/if}
 			</section>
 			<button type="button" class="primary" bind:this={nextButton} onclick={() => void advance()}>
-				{index + 1 >= exercises.length ? 'Finish' : 'Next'}
+				{index + 1 >= exercises.length ? t('grammar.practice.finish') : t('grammar.practice.next')}
 			</button>
 		{/if}
 	{/if}

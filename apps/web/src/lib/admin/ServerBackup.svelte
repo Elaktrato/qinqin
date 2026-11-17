@@ -1,8 +1,11 @@
 <script lang="ts">
+	import { errorText } from '$lib/api/apiErrors';
+	import { t } from '$lib/i18n';
+	import Msg from '$lib/i18n/Msg.svelte';
 	import { apiErrorBody } from '$lib/api/client';
 	import { createServerBackup } from '$lib/api/backup';
 	import { user } from '$lib/auth';
-	import { PARTS, RESTORE_STEPS, SECURITY_NOTE, backupError, canCreate, includeBody } from './serverBackupView';
+	import { PARTS, backupError, canCreate, includeBody, restoreSteps, securityNote } from './serverBackupView';
 	import { tick } from 'svelte';
 	import ReauthFields from './ReauthFields.svelte';
 	import { reauthBody, reauthFocus, reauthNeedsCode } from './reauth';
@@ -41,7 +44,7 @@
 			assign(out.url);
 		} catch (err) {
 			const b = apiErrorBody(err);
-			error = backupError(b?.error, b?.message || 'Could not create the backup.');
+			error = backupError(b?.error, errorText(err, t('admin.backup.error')));
 			if (b?.error === 'code_invalid') sawCodeInvalid = true;
 			const f = reauthFocus(b?.error);
 			if (f.clear === 'code') code = '';
@@ -58,11 +61,11 @@
 </script>
 
 <section aria-labelledby="server-backup-heading">
-	<h2 id="server-backup-heading">Server backup</h2>
-	<p>{SECURITY_NOTE}</p>
+	<h2 id="server-backup-heading">{t('admin.backup.title')}</h2>
+	<p>{securityNote()}</p>
 	<form onsubmit={create} class="stack">
 		<fieldset>
-			<legend>Include</legend>
+			<legend>{t('admin.backup.include')}</legend>
 			{#each PARTS as p (p.id)}
 				<label>
 					<input type="checkbox" checked={selected.has(p.id)} onchange={(e) => toggle(p.id, e.currentTarget.checked)} />
@@ -70,16 +73,16 @@
 				</label>
 			{/each}
 		</fieldset>
-		<ReauthFields bind:this={fields} bind:password bind:code {needsCode} passwordLabel="Your password" />
-		<button type="submit" disabled={!canCreate(selected, password, busy, needsCode, code)}>Create server backup</button>
+		<ReauthFields bind:this={fields} bind:password bind:code {needsCode} passwordLabel={t('admin.backup.yourPassword')} />
+		<button type="submit" disabled={!canCreate(selected, password, busy, needsCode, code)}>{t('admin.backup.create')}</button>
 	</form>
-	{#if started}<p role="status">The download starts now.</p>{/if}
+	{#if started}<p role="status">{t('admin.backup.started')}</p>{/if}
 	{#if error}<p role="alert">{error}</p>{/if}
-	<h3>Restoring a server backup</h3>
-	<p>Restoring is done offline, not from this page:</p>
-	<ol>{#each RESTORE_STEPS as s (s)}<li>{s}</li>{/each}</ol>
+	<h3>{t('admin.backup.restore.title')}</h3>
+	<p>{t('admin.backup.restore.intro')}</p>
+	<ol>{#each restoreSteps() as s (s)}<li>{s}</li>{/each}</ol>
 	<p class="hint">
-		For a schedule use <code>qinqin backup --out &lt;file&gt;</code> from cron. Details in the README, section Backup.
+		<Msg key="admin.backup.schedule" args={{ file: '<file>' }}>{#snippet code(text: string)}<code>{text}</code>{/snippet}</Msg>
 	</p>
 </section>
 

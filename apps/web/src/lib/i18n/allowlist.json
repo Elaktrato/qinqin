@@ -1,0 +1,77 @@
+[
+	{
+		"file": "lib/settings/zoneSettings.ts",
+		"text": "Intl.DateTimeFormat(",
+		"reason": "Contract machinery: zone canonicalisation and the UTC offset read from formatToParts with a fixed 'en' locale; the label is a fixed technical format."
+	},
+	{
+		"file": "lib/time/studyDay.ts",
+		"text": "Intl.DateTimeFormat(",
+		"reason": "Contract machinery: wall-clock parts in a zone via the fixed 'en-CA' locale (learner day, docs/contracts/study-day); never shown."
+	},
+	{
+		"file": "lib/time/zone.ts",
+		"text": "Intl.DateTimeFormat(",
+		"reason": "Machinery: reads the device time zone (resolvedOptions().timeZone); formats nothing."
+	},
+	{
+		"file": "routes/+layout.svelte",
+		"text": "lang=\"zh\"",
+		"reason": "The footer brand hanzi (勤勤) is the product's name, identical in both scripts, not study text: it must not follow a Japanese workspace (spec Ruling)."
+	},
+	{
+		"file": "lib/settings/AiCustomEndpoints.svelte",
+		"text": "https://llm.example.com/v1",
+		"reason": "An example URL as the placeholder of the base-URL field: the same in every language."
+	},
+	{
+		"file": "lib/settings/aiSettingsView.ts",
+		"text": "Google Gemini",
+		"reason": "A product name (the fallback name of a built-in AI provider the server turned off), not interface text."
+	},
+	{
+		"file": "lib/admin/EmailAdmin.svelte",
+		"text": "https://qinqin.example.org",
+		"reason": "An example URL as the placeholder of the site-address field: the same in every language."
+	},
+	{
+		"file": "lib/plugins/journal/manifest.ts",
+		"text": "Tesseract OCR",
+		"reason": "A credited product's name on the Sources page (data, like pack names), not interface text."
+	},
+	{
+		"file": "lib/plugins/journal/manifest.ts",
+		"text": "Anthropic Go SDK",
+		"reason": "A credited product's name on the Sources page (data, like pack names), not interface text."
+	},
+	{
+		"file": "lib/sources/coreCredits.ts",
+		"text": "Copyright (c) 2014 David Chanin",
+		"reason": "A copyright line, quoted verbatim from the package's LICENSE (data)."
+	},
+	{
+		"file": "lib/sources/coreCredits.ts",
+		"text": "Copyright (c) 2026 Open Spaced Repetition",
+		"reason": "A copyright line, quoted verbatim from the package's LICENSE (data)."
+	},
+	{
+		"file": "lib/sources/coreCredits.ts",
+		"text": "Copyright (c) Project Nayuki; Copyright (c) 2023 Anthony Fu",
+		"reason": "Copyright lines, quoted verbatim from the package's LICENSE (data)."
+	},
+	{
+		"file": "lib/sources/coreCredits.ts",
+		"text": "Aozora Bunko",
+		"reason": "A credited source's proper name (data)."
+	},
+	{
+		"file": "lib/sources/coreCredits.ts",
+		"text": "Project Gutenberg",
+		"reason": "A credited source's proper name (data)."
+	},
+	{
+		"file": "lib/sources/coreCredits.ts",
+		"text": "MIT AND Apache-2.0",
+		"reason": "An SPDX licence expression (data)."
+	}
+]

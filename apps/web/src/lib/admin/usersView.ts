@@ -1,4 +1,6 @@
 import type { AdminUserDto } from '$lib/api/adminUsers';
+import { t, type MessageKey } from '$lib/i18n';
+import { formatRelative } from '$lib/i18n/format';
 import { hasSecondStep } from './mfaResetView';
 import { userPatchNeedsReauth, type UserPatchChange } from './adminReauthRules';
 
@@ -34,7 +36,9 @@ export function actionNeedsReauth(id: UserActionId, target: { admin: boolean; se
 	return p !== null && userPatchNeedsReauth(target.admin, target.self, p);
 }
 
-export const LAST_ADMIN_REASON = 'The last administrator cannot be removed.';
+export function lastAdminReason(): string {
+	return t('admin.users.lastAdminReason');
+}
 
 export type UserActionId =
 	| 'makeAdmin'
@@ -60,7 +64,8 @@ export interface UserRow {
 	id: number;
 	username: string;
 	email: string;
-	role: 'Administrator' | 'User';
+	/** "Administrator" or "User", in the interface language. */
+	role: string;
 	/** Text badges, never colour alone. */
 	status: string[];
 	lastSeen: string;
@@ -68,18 +73,30 @@ export interface UserRow {
 	actions: UserAction[];
 }
 
+const ACTION_LABELS: Record<UserActionId, MessageKey> = {
+	makeAdmin: 'admin.users.action.makeAdmin',
+	removeAdmin: 'admin.users.action.removeAdmin',
+	disable: 'admin.users.action.disable',
+	enable: 'admin.users.action.enable',
+	requirePasswordChange: 'admin.users.action.requirePasswordChange',
+	resetLink: 'admin.users.action.resetLink',
+	revokeResetLink: 'admin.users.action.revokeResetLink',
+	signOutEverywhere: 'admin.users.action.signOutEverywhere',
+	resetMfa: 'admin.users.action.resetMfa',
+	delete: 'admin.users.action.delete'
+};
+
 /** "Never", "Just now", "5 minutes ago", ... from an injected now. */
 export function lastSeenLabel(iso: string | null, now: Date): string {
-	if (!iso) return 'Never';
+	if (!iso) return t('admin.users.lastSeen.never');
 	const then = Date.parse(iso);
-	if (Number.isNaN(then)) return 'Never';
+	if (Number.isNaN(then)) return t('admin.users.lastSeen.never');
 	const minutes = Math.floor((now.getTime() - then) / 60000);
-	if (minutes < 1) return 'Just now';
-	if (minutes < 60) return `${minutes} minute${minutes === 1 ? '' : 's'} ago`;
+	if (minutes < 1) return t('admin.users.lastSeen.justNow');
+	if (minutes < 60) return formatRelative(-minutes, 'minute');
 	const hours = Math.floor(minutes / 60);
-	if (hours < 24) return `${hours} hour${hours === 1 ? '' : 's'} ago`;
-	const days = Math.floor(hours / 24);
-	return `${days} day${days === 1 ? '' : 's'} ago`;
+	if (hours < 24) return formatRelative(-hours, 'hour');
+	return formatRelative(-Math.floor(hours / 24), 'day');
 }
 
 /** The active administrators: admin and not disabled. */
@@ -99,32 +116,26 @@ export function userRows(users: readonly AdminUserDto[], selfId: number, now: Da
 	return users.map((u) => {
 		const self = u.id === selfId;
 		const lastAdmin = u.admin && !u.disabled && admins <= 1;
-		const guard = (id: UserActionId, label: string): UserAction => ({
+		const guard = (id: UserActionId): UserAction => ({
 			id,
-			label,
+			label: t(ACTION_LABELS[id]),
 			disabled: lastAdmin,
-			...(lastAdmin ? { reason: LAST_ADMIN_REASON } : {})
+			...(lastAdmin ? { reason: lastAdminReason() } : {})
 		});
-		const actions: UserAction[] = [
-			u.admin ? guard('removeAdmin', 'Remove admin') : { id: 'makeAdmin', label: 'Make admin', disabled: false }
-		];
-		if (!self) actions.push(u.disabled ? { id: 'enable', label: 'Enable', disabled: false } : guard('disable', 'Disable'));
-		actions.push(
-			{ id: 'requirePasswordChange', label: 'Require password change', disabled: false },
-			{ id: 'resetLink', label: 'Reset link', disabled: false },
-			{ id: 'revokeResetLink', label: 'Revoke reset link', disabled: false },
-			{ id: 'signOutEverywhere', label: 'Sign out everywhere', disabled: false }
-		);
+		const plain = (id: UserActionId): UserAction => ({ id, label: t(ACTION_LABELS[id]), disabled: false });
+		const actions: UserAction[] = [u.admin ? guard('removeAdmin') : plain('makeAdmin')];
+		if (!self) actions.push(u.disabled ? plain('enable') : guard('disable'));
+		actions.push(plain('requirePasswordChange'), plain('resetLink'), plain('revokeResetLink'), plain('signOutEverywhere'));
 		// Not for oneself: Settings, Account manages one's own factors (the server answers self_target).
-		if (!self && hasSecondStep(u)) actions.push({ id: 'resetMfa', label: 'Reset two-step sign-in', disabled: false });
-		if (!self) actions.push(guard('delete', 'Delete'));
-		const status = [u.disabled ? 'Disabled' : 'Active'];
-		if (u.mustChangePassword) status.push('Must change password');
+		if (!self && hasSecondStep(u)) actions.push(plain('resetMfa'));
+		if (!self) actions.push(guard('delete'));
+		const status = [u.disabled ? t('admin.users.status.disabled') : t('admin.users.status.active')];
+		if (u.mustChangePassword) status.push(t('admin.users.status.mustChangePassword'));
 		return {
 			id: u.id,
 			username: u.username,
 			email: u.email ?? '',
-			role: u.admin ? 'Administrator' : 'User',
+			role: u.admin ? t('admin.users.role.admin') : t('admin.users.role.user'),
 			status,
 			lastSeen: lastSeenLabel(u.lastSeenAt, now),
 			self,

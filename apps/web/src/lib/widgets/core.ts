@@ -1,6 +1,7 @@
 // The core app's own widgets: they exist whatever plugins are enabled.
 
 import ActivityHeatmap from '$lib/components/ActivityHeatmap.svelte';
+import { t } from '$lib/i18n';
 import { usesHan } from '$lib/languages';
 import CharacterMapSummary from './CharacterMapSummary.svelte';
 import DailyGoalWidget from './DailyGoalWidget.svelte';
@@ -10,8 +11,12 @@ import type { WidgetDef } from './types';
 export const coreWidgets: WidgetDef[] = [
 	{
 		id: 'activity-heatmap',
-		title: 'Activity',
-		description: 'Learning activity per day over the last 13 weeks, per workspace or across all.',
+		get title() {
+			return t('widgets.activity.title');
+		},
+		get description() {
+			return t('widgets.activity.description');
+		},
 		owner: 'core',
 		size: 'wide',
 		surfaces: ['stats', 'home'],
@@ -19,8 +24,12 @@ export const coreWidgets: WidgetDef[] = [
 	},
 	{
 		id: 'character-map-summary',
-		title: 'Characters',
-		description: 'Characters learned, the stage bar and a link to the full character map.',
+		get title() {
+			return t('widgets.characters.title');
+		},
+		get description() {
+			return t('widgets.characters.description');
+		},
 		owner: 'core',
 		size: 'normal',
 		appliesTo: usesHan,
@@ -29,8 +38,12 @@ export const coreWidgets: WidgetDef[] = [
 	},
 	{
 		id: 'daily-goal',
-		title: 'Daily goal',
-		description: 'Today’s progress towards your daily goal and the goal streak.',
+		get title() {
+			return t('widgets.goal.title');
+		},
+		get description() {
+			return t('widgets.goal.description');
+		},
 		owner: 'core',
 		size: 'normal',
 		// Home only: Stats stays as it was for learners without a goal.
@@ -39,8 +52,12 @@ export const coreWidgets: WidgetDef[] = [
 	},
 	{
 		id: 'weekly-summary',
-		title: 'This week',
-		description: 'This week so far compared with last week, day by day.',
+		get title() {
+			return t('widgets.week.title');
+		},
+		get description() {
+			return t('widgets.week.description');
+		},
 		owner: 'core',
 		size: 'normal',
 		// Home only, as the daily goal: Stats has the Week tab.

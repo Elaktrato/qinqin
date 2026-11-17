@@ -2,6 +2,7 @@
 // bookmarks panel. A bookmark's position uses the reading-position format
 // of position.ts ("<chapter>:<paragraph>"); its label is a short snippet
 // of the paragraph it was set on, editable afterwards.
+import { t } from '$lib/i18n';
 import type { Bookmark } from '$lib/api/types';
 import { parsePosition, type Position } from './position';
 
@@ -84,7 +85,7 @@ export function sortForPanel(bookmarks: Bookmark[]): Bookmark[] {
 export function bookmarkName(b: Bookmark): string {
 	if (b.label) return b.label;
 	const p = parsePosition(b.position);
-	return p ? `Untitled bookmark in chapter ${p.chapter + 1}` : 'Untitled bookmark';
+	return p ? t('reader.bookmarks.untitledChapter', { n: p.chapter + 1 }) : t('reader.bookmarks.untitled');
 }
 
 /** bookmarkedParagraphs is the set of paragraphs of `chapter` that carry a bookmark. */

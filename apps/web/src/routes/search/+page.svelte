@@ -1,5 +1,7 @@
 <script lang="ts">
 	import { pageTitle } from '$lib/pageTitle';
+	import { t } from '$lib/i18n';
+	import { glossLang, studyLang, wordReadingLang, readingLang } from '$lib/i18n/lang';
 	import { get } from 'svelte/store';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
@@ -112,12 +114,12 @@
 	// or when there is nothing to say (the visible hint covers those).
 	const announcement = $derived.by(() => {
 		if (loading || error || !searched) return '';
-		if (hits.length === 0) return `No results for “${activeQuery}”.`;
-		return `${hits.length} ${hits.length === 1 ? 'result' : 'results'} for “${activeQuery}”.`;
+		if (hits.length === 0) return t('search.noResults', { query: activeQuery });
+		return t('search.resultsAnnounce', { count: hits.length, query: activeQuery });
 	});
 
 	function sourceLabel(source: string): string {
-		return source === 'written' ? 'written form' : source;
+		return source === 'written' ? t('search.matchedWritten') : source;
 	}
 
 	async function runSearch(q: string, language: string, f: SearchFilters): Promise<void> {
@@ -137,7 +139,7 @@
 		} catch (err) {
 			if (seq !== requestSeq) return;
 			hits = [];
-			error = message(err, 'Search failed.');
+			error = message(err, t('search.failed'));
 		} finally {
 			if (seq === requestSeq) loading = false;
 		}
@@ -190,36 +192,36 @@
 </script>
 
 <svelte:head>
-	<title>{pageTitle('Search')}</title>
+	<title>{pageTitle(t('search.title'))}</title>
 </svelte:head>
 
 <main class="search-page">
-	<h1>Search</h1>
+	<h1>{t('search.title')}</h1>
 
 	<form class="search" role="search" onsubmit={submit}>
 		<input
 			name="q"
 			type="search"
 			bind:value={query}
-			aria-label="Search entries"
+			aria-label={t('search.input.label')}
 			placeholder={lang !== null
-				? 'Search entries…'
+				? t('search.input.placeholder')
 				: $workspacesLoaded
-					? 'Select a workspace to search'
-					: 'Loading workspaces…'}
+					? t('search.input.selectWorkspace')
+					: t('search.input.loadingWorkspaces')}
 			disabled={lang === null}
 		/>
-		<button type="submit" disabled={lang === null}>Search</button>
+		<button type="submit" disabled={lang === null}>{t('search.submit')}</button>
 	</form>
 
 	{#if lang !== null && usesHan(lang)}
-		<p class="parts-link"><a href="/search/parts">Find a character by radical or part</a></p>
+		<p class="parts-link"><a href="/search/parts">{t('search.partsLink')}</a></p>
 	{/if}
-	<p class="parts-link"><a href="/lookups">Lookup history</a></p>
+	<p class="parts-link"><a href="/lookups">{t('search.lookupsLink')}</a></p>
 
 	{#if lang !== null}
-		<div class="filters" role="group" aria-label="Search filters">
-			<div class="chips" role="group" aria-label="Kind">
+		<div class="filters" role="group" aria-label={t('search.filters.label')}>
+			<div class="chips" role="group" aria-label={t('search.filters.kind')}>
 				{#each KINDS as kind (kind)}
 					<button
 						type="button"
@@ -227,12 +229,12 @@
 						aria-pressed={filters.kind === kind}
 						onclick={() => applyFilters(setKind(filters, kind))}
 					>
-						{kind === 'character' ? 'Characters' : 'Words'}
+						{kind === 'character' ? t('search.filters.characters') : t('search.filters.words')}
 					</button>
 				{/each}
 			</div>
 			{#if schemes.length > 0}
-				<div class="chips" role="group" aria-label="Scheme">
+				<div class="chips" role="group" aria-label={t('search.filters.scheme')}>
 					{#each schemes as scheme (scheme.id)}
 						<button
 							type="button"
@@ -245,12 +247,12 @@
 					{/each}
 				</div>
 			{:else if schemesFailed}
-				<p class="note">Level filters are unavailable right now.</p>
+				<p class="note">{t('search.filters.levelsUnavailable')}</p>
 			{:else if !schemesLoaded}
 				<div class="chips placeholder" aria-hidden="true"></div>
 			{/if}
 			{#if activeScheme}
-				<div class="chips" role="group" aria-label="Level">
+				<div class="chips" role="group" aria-label={t('search.filters.level')}>
 					{#each activeScheme.levels as level (level.id)}
 						<button
 							type="button"
@@ -269,7 +271,7 @@
 				disabled={!hasFilters(filters)}
 				onclick={() => applyFilters(clearFilters())}
 			>
-				Clear filters
+				{t('search.filters.clear')}
 			</button>
 		</div>
 	{/if}
@@ -283,45 +285,51 @@
 
 	{#if lang === null && $workspacesLoaded}
 		<p class="hint">
-			No workspace selected. Create or select a workspace in the header to search.
-			<a href="/settings">Open settings</a>
+			{t('search.noWorkspace')}
+			<a href="/settings">{t('search.openSettings')}</a>
 		</p>
 	{:else if loading}
-		<p class="hint" aria-live="polite">Searching…</p>
+		<p class="hint" aria-live="polite">{t('search.searching')}</p>
 	{:else if error}
 		<p class="error" role="alert">{error}</p>
-		<button type="button" class="retry" onclick={retry}>Try again</button>
+		<button type="button" class="retry" onclick={retry}>{t('common.action.retry')}</button>
 	{:else if searched && hits.length === 0}
 		<p class="hint">
-			No results for “{activeQuery}”{hasFilters(filters) ? ' with these filters' : ''}.
+			{hasFilters(filters)
+				? t('search.noResultsFiltered', { query: activeQuery })
+				: t('search.noResults', { query: activeQuery })}
 		</p>
 	{:else if hits.length > 0}
 		{#if hits.length >= RESULT_CAP}
 			<p class="note">
-				Showing the first {RESULT_CAP} results. Add more of the word or a filter to narrow them.
+				{t('search.capped', { count: RESULT_CAP })}
 			</p>
 		{/if}
-		<ul class="results" aria-label="Search results">
+		<ul class="results" aria-label={t('search.results')}>
 			{#each hits as hit (hit.id)}
 				<li class="result">
 					<a class="written" href={`/entry/${hit.id}`} onclick={() => openedHit(hit.id)}
-						onauxclick={(e) => e.button === 1 && openedHit(hit.id)}>{hit.written}</a>
+						onauxclick={(e) => e.button === 1 && openedHit(hit.id)}
+						lang={studyLang(hit.language)}>{hit.written}</a
+					>
 
 					<div class="details">
 						{#if hit.readings.length > 0}
 							<span class="readings">
 								{#each hit.readings as reading (reading.ord)}
-									<span class="reading" data-type={reading.type}>{reading.value}</span>
+									<span class="reading" data-type={reading.type} lang={readingLang(reading.type, hit.language)}>{reading.value}</span>
 								{/each}
 							</span>
 						{/if}
-						<span class="source">matched {sourceLabel(hit.source)}</span>
+						<span class="source">{t('search.matched', { source: sourceLabel(hit.source) })}</span>
 					</div>
 				</li>
 			{/each}
 		</ul>
 	{:else}
-		<p class="hint">Enter a query to search entries{hasFilters(filters) ? ' within the filters' : ''}.</p>
+		<p class="hint">
+			{hasFilters(filters) ? t('search.enterQueryFiltered') : t('search.enterQuery')}
+		</p>
 	{/if}
 </main>
 

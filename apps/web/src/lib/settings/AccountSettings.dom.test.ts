@@ -6,6 +6,7 @@ vi.mock('$lib/api/client', async (importOriginal) => ({
 	...(await importOriginal<typeof import('$lib/api/client')>()),
 	api: vi.fn()
 }));
+vi.mock('$lib/i18n/reloadPage', () => ({ reloadPage: vi.fn() }));
 vi.mock('$lib/auth', async (importOriginal) => ({
 	...(await importOriginal<typeof import('$lib/auth')>()),
 	logout: vi.fn()
@@ -14,6 +15,8 @@ vi.mock('$lib/auth', async (importOriginal) => ({
 import { ApiError, api } from '$lib/api/client';
 import { auth, logout } from '$lib/auth';
 import AccountSettings from './AccountSettings.svelte';
+import { reloadPage } from '$lib/i18n/reloadPage';
+import { MIRROR_KEY } from '$lib/i18n/interfaceLanguage';
 
 const me = {
 	id: 1,
@@ -45,6 +48,7 @@ beforeEach(() => {
 		if (url.startsWith('/api/account/sessions/') && opts?.method === 'DELETE') return undefined;
 		if (url === '/api/account/sessions/revoke') return { revoked: 1 };
 		if (url === '/api/account/tokens' && !opts?.method) return { accessTokens: tokens };
+		if (url === '/api/me/interface-language' && opts?.method === 'PUT') return (opts as { body: unknown }).body;
 		throw new Error(`unexpected ${url}`);
 	}) as never);
 });
@@ -185,5 +189,62 @@ describe('Settings → Account: access tokens and containment', () => {
 		render(AccountSettings);
 		await screen.findByText('No access tokens yet.');
 		expect(document.body.textContent).not.toContain('Your access tokens are revoked too.');
+	});
+});
+
+describe('Settings → Account: interface language', () => {
+	it('offers the browser default and each supported language by its own name', async () => {
+		render(AccountSettings);
+		const select = screen.getByLabelText('Interface language') as HTMLSelectElement;
+		expect([...select.options].map((o) => o.textContent?.trim())).toEqual(['Browser default (English)', 'English']);
+		expect(select.value).toBe('');
+	});
+
+	it('shows the stored setting', async () => {
+		auth.set({ token: 'tok', user: { ...me, interfaceLanguage: 'en' } });
+		render(AccountSettings);
+		expect((screen.getByLabelText('Interface language') as HTMLSelectElement).value).toBe('en');
+	});
+
+	it('saving stores the setting on the server, mirrors it and reloads', async () => {
+		render(AccountSettings);
+		await fireEvent.change(screen.getByLabelText('Interface language'), { target: { value: 'en' } });
+		await fireEvent.click(screen.getByRole('button', { name: 'Save language' }));
+		await waitFor(() => expect(reloadPage).toHaveBeenCalledTimes(1));
+		const call = vi.mocked(api).mock.calls.find(([u]) => u === '/api/me/interface-language');
+		expect(call?.[1]).toMatchObject({ method: 'PUT', body: { language: 'en' } });
+		expect(localStorage.getItem(MIRROR_KEY)).toBe('en');
+	});
+
+	it('a save that cannot be mirrored (storage blocked) does not reload, which would drop the session', async () => {
+		const setItem = vi.spyOn(localStorage, 'setItem').mockImplementation(() => {
+			throw new Error('denied');
+		});
+		try {
+			render(AccountSettings);
+			await fireEvent.change(screen.getByLabelText('Interface language'), { target: { value: 'en' } });
+			await fireEvent.click(screen.getByRole('button', { name: 'Save language' }));
+			expect((await screen.findByText(/This browser blocks site storage/)).textContent).toBeTruthy();
+			expect(reloadPage).not.toHaveBeenCalled();
+			expect((screen.getByRole('button', { name: 'Save language' }) as HTMLButtonElement).disabled).toBe(false);
+		} finally {
+			setItem.mockRestore();
+		}
+	});
+
+	it('a refused save says so and does not reload', async () => {
+		vi.mocked(api).mockImplementation((async (url: string, opts?: { method?: string }) => {
+			if (url === '/api/me/interface-language') throw new ApiError(422, JSON.stringify({ error: 'invalid_language', message: 'x' }));
+			if (url === '/api/account/sessions') return list;
+			if (url === '/api/auth/options') return { emailPolicy: 'off' };
+			if (url === '/api/account/tokens') return { accessTokens: [] };
+			void opts;
+			throw new Error(`unexpected ${url}`);
+		}) as never);
+		render(AccountSettings);
+		await fireEvent.change(screen.getByLabelText('Interface language'), { target: { value: 'en' } });
+		await fireEvent.click(screen.getByRole('button', { name: 'Save language' }));
+		expect((await screen.findByText(/interface language must be empty/)).textContent).toBeTruthy();
+		expect(reloadPage).not.toHaveBeenCalled();
 	});
 });

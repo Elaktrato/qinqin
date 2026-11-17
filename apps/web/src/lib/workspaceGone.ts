@@ -8,6 +8,7 @@
 
 import { get } from 'svelte/store';
 import { ApiError, isWorkspaceGoneResponse, setWorkspaceGoneHandler } from './api/client';
+import { t } from './i18n';
 import { showNotice } from './notices';
 import { confirmLabel, forgetWorkspace } from './workspaceDelete';
 import { load, workspaces } from './workspaces';
@@ -47,8 +48,8 @@ async function reload(): Promise<void> {
 	forgetWorkspace(before.id, storage('localStorage'), storage('sessionStorage'));
 	showNotice(
 		current
-			? `This workspace was deleted — switched to ${confirmLabel(list, current)}.`
-			: 'This workspace was deleted.'
+			? t('app.workspaces.deletedSwitched', { workspace: confirmLabel(list, current) })
+			: t('app.workspaces.deleted')
 	);
 }
 

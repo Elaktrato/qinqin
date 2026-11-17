@@ -1,3 +1,6 @@
+import { catalogueLanguage, getLanguage } from './i18n';
+import { followServerLanguage } from './i18n/interfaceLanguage';
+import { reloadPage } from './i18n/reloadPage';
 import { clearAudioCache } from './api/audio';
 import { clearEntryBasesCache } from './api/entryBases';
 import { resetLookupRecorder } from './lookups/store';
@@ -38,6 +41,8 @@ export interface User {
 	needsCurrentPassword?: boolean;
 	/** Only `me`: which second factors the account has. */
 	mfa?: { totp: boolean; email: boolean; recoveryCodesLeft: number };
+	/** Only `me`: the interface language setting ('' = follow the browser; absent on older servers). */
+	interfaceLanguage?: string;
 }
 
 export interface AuthState {
@@ -136,10 +141,33 @@ export async function loadMe(known?: string): Promise<User | null> {
 
 	const me = await api<User>('/api/auth/me');
 	auth.set({ token: stored, user: me });
+	followAccountLanguage(me);
 	// Offline copies of any other credential (another user on this device, an
 	// earlier login of this one) are not this session's: remove them.
 	void ownPartition(stored).then((own) => cleanupPartitions(undefined, own), () => undefined);
 	return me;
+}
+
+/** The account's interface language: mirrored for the next start; a different one than running reloads once. */
+function followAccountLanguage(me: User): void {
+	const browser = typeof navigator === 'undefined' ? [] : (navigator.languages ?? [navigator.language]);
+	followServerLanguage(me, {
+		running: getLanguage(),
+		storage: webStorage('localStorage'),
+		session: webStorage('sessionStorage'),
+		browser,
+		catalogue: catalogueLanguage,
+		reload: reloadPage
+	});
+}
+
+/** A Web Storage area, or null where it is missing or access throws (blocked site data). */
+function webStorage(name: 'localStorage' | 'sessionStorage'): Storage | null {
+	try {
+		return typeof globalThis[name] === 'undefined' ? null : globalThis[name];
+	} catch {
+		return null;
+	}
 }
 
 /** What a sign-in attempt came to: a session, or a second step to answer first. */

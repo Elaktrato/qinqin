@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount, tick } from 'svelte';
+	import { t } from '$lib/i18n';
 	import type { Dictionary, Workspace } from '$lib/api/types';
 	import { dictionaryHint } from '$lib/coverage';
 	import { HIDDEN_DICTIONARIES_KEY, hiddenDictionaries } from '$lib/dictionaryVisibility';
@@ -49,7 +50,7 @@
 			await setSettings(workspace.id, { [HIDDEN_DICTIONARIES_KEY]: hidden });
 			onclose();
 		} catch (err) {
-			error = err instanceof Error && err.message ? err.message : 'Could not save.';
+			error = err instanceof Error && err.message ? err.message : t('settings.dictionaries.saveFailed');
 		} finally {
 			saving = false;
 		}
@@ -69,11 +70,11 @@
 	class="panel"
 	bind:this={panel}
 	tabindex="-1"
-	aria-label="Dictionaries shown in this workspace"
+	aria-label={t('settings.dictionaries.title')}
 	onsubmit={save}
 	onkeydown={keydown}
 >
-	<h4>Dictionaries shown in this workspace</h4>
+	<h4>{t('settings.dictionaries.title')}</h4>
 	{#if dictionaries.length === 0}
 		<p class="hint">{dictionaryHint(languageLabel(workspace.language), admin)}</p>
 	{:else}
@@ -81,7 +82,7 @@
 			<label class="choice">
 				<input type="checkbox" value={dictionary.id} bind:group={shownIds} />
 				<span>
-					<span class="sr-only">Show in entries and lookups: </span>{dictionary.name}
+					<span class="sr-only">{t('settings.dictionaries.show')}</span>{dictionary.name}
 					<span class="version">{dictionary.version}</span>
 				</span>
 			</label>
@@ -89,9 +90,9 @@
 	{/if}
 	<div class="actions">
 		{#if dictionaries.length > 0}
-			<button type="submit" class="primary" aria-busy={saving}>{saving ? 'Saving…' : 'Save'}</button>
+			<button type="submit" class="primary" aria-busy={saving}>{saving ? t('common.state.saving') : t('common.action.save')}</button>
 		{/if}
-		<button type="button" class="secondary" onclick={onclose}>Cancel</button>
+		<button type="button" class="secondary" onclick={onclose}>{t('common.action.cancel')}</button>
 	</div>
 	{#if error}<p class="error" role="alert">{error}</p>{/if}
 </form>

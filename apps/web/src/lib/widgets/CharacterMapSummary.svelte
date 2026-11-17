@@ -1,5 +1,7 @@
 <script lang="ts">
 	import StageBar from '$lib/components/map/StageBar.svelte';
+	import { t } from '$lib/i18n';
+	import Msg from '$lib/i18n/Msg.svelte';
 	import { onContextStale } from '$lib/study/currentContext';
 	import { usesHan } from '$lib/languages';
 	import { characterSummary, loadCharacterMapData, withLegacyWritten } from '$lib/stats/characterMap';
@@ -83,7 +85,7 @@
 		} catch (err) {
 			if (seq !== requestSeq) return;
 			stats = null;
-			error = errorMessage(err, 'Could not load the character map.');
+			error = errorMessage(err, t('widgets.characters.loadFailed'));
 		} finally {
 			if (seq === requestSeq) loading = false;
 		}
@@ -97,20 +99,20 @@
 
 <div class="tile">
 	<WidgetCard
-		title="Characters"
+		title={t('widgets.characters.title')}
 		headingId="character-map-summary-heading"
 		{status}
-		noWorkspaceText="Choose a workspace in the header to see your characters."
-		loadingText="Loading characters…"
+		noWorkspaceText={t('widgets.characters.noWorkspace')}
+		loadingText={t('widgets.characters.loading')}
 		{error}
 		onretry={() => void load(workspaceId, language, true)}
 		emptyText={notHan
-			? 'The character map is for Chinese and Japanese.'
-			: 'No characters are installed for this language.'}
+			? t('widgets.characters.notHan')
+			: t('widgets.characters.noneInstalled')}
 	>
 		{#snippet actions()}
 			{#if status === 'ready'}
-				<a class="open" href="/stats/characters">Open the character map</a>
+				<a class="open" href="/stats/characters">{t('widgets.characters.open')}</a>
 			{/if}
 		{/snippet}
 
@@ -127,16 +129,15 @@
 					</li>
 				{/each}
 			</ul>
-			<p class="note">Learned = {MASTERY_THRESHOLD}/100 or more.</p>
+			<p class="note">{t('widgets.characters.learnedRule', { threshold: MASTERY_THRESHOLD })}</p>
 			{#if stale}
 				<p class="note" role="status">
-					Level data missing — run <code>qinqin seed</code> to refresh. The counts are still right.
+					<Msg key="widgets.characters.stale">{#snippet code(text: string)}<code>{text}</code>{/snippet}</Msg>
 				</p>
 			{/if}
 			{#if unresolved > 0}
 				<p class="note" role="status">
-					{unresolved}
-					{unresolved === 1 ? 'card' : 'cards'} could not be resolved, so this may under-report.
+					{t('widgets.characters.unresolved', { count: unresolved })}
 				</p>
 			{/if}
 		{/if}

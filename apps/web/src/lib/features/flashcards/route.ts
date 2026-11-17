@@ -1,4 +1,5 @@
 // Routing inside /flashcards: `rest` is what follows the slug.
+import { t, type MessageKey } from '$lib/i18n';
 
 export type FlashcardsRoute =
 	| { view: 'list' }
@@ -72,16 +73,16 @@ export function flashcardsHref(route: FlashcardsRoute): string {
 	}
 }
 
-const VIEW_TITLES: Record<FlashcardsRoute['view'], string> = {
-	list: 'Decks',
-	deck: 'Deck',
-	settings: 'Deck settings',
-	'system-level': 'Level deck',
-	'system-plugin': 'Deck',
-	'system-frequency': 'Starter deck'
+const VIEW_TITLES: Record<FlashcardsRoute['view'], MessageKey> = {
+	list: 'flashcards.title.decks',
+	deck: 'flashcards.title.deck',
+	settings: 'flashcards.title.settings',
+	'system-level': 'flashcards.title.levelDeck',
+	'system-plugin': 'flashcards.title.deck',
+	'system-frequency': 'flashcards.title.starterDeck'
 };
 
 /** flashcardsTitle is the document title of a flashcards view, most specific first (pageTitle adds the app name). */
 export function flashcardsTitle(route: FlashcardsRoute): string[] {
-	return [VIEW_TITLES[route.view], 'Flashcards'];
+	return [t(VIEW_TITLES[route.view]), t('flashcards.title.flashcards')];
 }

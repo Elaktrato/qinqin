@@ -1,3 +1,4 @@
+import { t } from '$lib/i18n';
 import type { AiStatus } from '$lib/api/ai';
 // The photo import flow as a pure state machine. The component performs
 // the side effects (upload, read, delete) and feeds results back as events.
@@ -103,7 +104,7 @@ export function aiReadable(ai: AiStatus | null): boolean {
 /** "<model> can't read photos." when the AI works but the active model cannot see; else null. */
 export function noVisionText(ai: AiStatus | null): string | null {
 	if (!ai || !ai.available || !ai.active || ai.active.vision) return null;
-	return `${ai.active.model} can't read photos.`;
+	return t('journal.photo.noVision', { model: ai.active.model });
 }
 
 export function defaultEngine(aiAvailable: boolean): Engine {
@@ -115,8 +116,8 @@ export function offlineBlockReason(
 	ocr: { available: boolean; languageReady: boolean },
 	languageName: string
 ): string | null {
-	if (!ocr.available) return 'Offline reading is not installed on this server';
-	if (!ocr.languageReady) return `Offline reading has no model for ${languageName}`;
+	if (!ocr.available) return t('journal.photo.ocrMissing');
+	if (!ocr.languageReady) return t('journal.photo.ocrNoLanguage', { language: languageName });
 	return null;
 }
 
@@ -133,5 +134,5 @@ export function offlineButtonLabel(input: {
 	failedEngine: Engine | null;
 	offlineInstead: boolean;
 }): string {
-	return input.failedEngine === 'ai' && input.offlineInstead ? 'Read offline instead' : 'Read offline';
+	return input.failedEngine === 'ai' && input.offlineInstead ? t('journal.photo.offlineInstead') : t('journal.photo.offline');
 }

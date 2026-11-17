@@ -9,7 +9,7 @@ This page is for people writing a client (the web app is the reference client; a
 ## Conventions
 
 - JSON over HTTP, base path `/api`. A health check is `GET /healthz`.
-- Errors are JSON `{"error": code, "message": "English sentence"}`. Branch on `error`, never on `message`. Some older routes answer plain-text 413s.
+- Errors are JSON `{"error": code, "message": "English sentence"}`. Branch on `error`, never on `message`: the `message` stays English for developers and logs, and clients show text translated by code from their catalogue ([API errors](API-Errors)). Some older routes answer plain-text 413s.
 - Offsets in text routes count Unicode code points, not bytes.
 - Most routes are scoped by the signed-in user; workspace-scoped routes take a `workspace` id and answer 404 for a foreign one.
 

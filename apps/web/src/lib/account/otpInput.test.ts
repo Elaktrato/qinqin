@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { attemptsText, codeFailure, otpAttrs, otpComplete, resendText, sanitizeOtp } from './otpInput';
+import { apiErrorText } from '$lib/api/apiErrors';
 
 describe('otpInput', () => {
 	it('sets the attributes password managers and phones look for', () => {
@@ -36,7 +37,8 @@ describe('otpInput', () => {
 		const gone = codeFailure({ error: 'challenge_expired', message: 'x' }, 'f');
 		expect(gone.restart).toBe(true);
 		expect(gone.text).toContain('Enter your details again');
-		expect(codeFailure({ error: 'rate_limited', message: 'Slow down.' }, 'f').text).toBe('Slow down.');
+		expect(codeFailure({ error: 'rate_limited', message: 'Slow down.' }, 'f').text).toBe(apiErrorText('rate_limited'));
+		expect(codeFailure({ error: 'brand_new', message: 'Slow down.' }, 'f').text).toBe('f');
 		expect(codeFailure(null, 'Could not check the code.').text).toBe('Could not check the code.');
 	});
 });

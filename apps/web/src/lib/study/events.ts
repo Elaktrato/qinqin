@@ -5,6 +5,7 @@
 
 import type { StudyEventBody } from '../api/types';
 import { ApiError, getToken, isRestrictionResponse, isWorkspaceGoneResponse } from '../api/client';
+import { t } from '../i18n';
 import { showNotice } from '../notices';
 import { postEvents } from '../events';
 import { newUlid } from '../ulid';
@@ -191,7 +192,7 @@ export async function recordReview(
 		// The shell reloads the workspaces on the same 404 (workspaceGone.ts).
 		if (isWorkspaceGone(err)) {
 			console.warn('review not recorded; its workspace was deleted', err);
-			showNotice('This review was not saved: its workspace was deleted.');
+			showNotice(t('study.outbox.notSaved'));
 			return;
 		}
 		enqueue(event);
@@ -287,11 +288,7 @@ async function flushOnce(): Promise<void> {
 	if (sent > 0 && pendingCount(user) === 0) notifyAllSent();
 	// Reviews of a workspace deleted elsewhere are lost for good: say so.
 	if (gone > 0) {
-		showNotice(
-			gone === 1
-				? '1 queued review was not saved: its workspace was deleted.'
-				: `${gone} queued reviews were not saved: their workspace was deleted.`
-		);
+		showNotice(t('study.outbox.queuedNotSaved', { count: gone }));
 	}
 }
 

@@ -1,10 +1,23 @@
 // Pure logic of Settings -> Admin -> Backup.
+import { t, type MessageKey } from '$lib/i18n';
 
-export const PARTS: ReadonlyArray<{ id: string; label: string; hint: string }> = [
-	{ id: 'db', label: 'Database', hint: 'Accounts, study history, settings (a consistent snapshot).' },
-	{ id: 'books', label: 'Books', hint: 'The library texts of all users.' },
-	{ id: 'packs', label: 'Packs', hint: 'Installed dictionary and data packs.' },
-	{ id: 'audio', label: 'Audio', hint: 'Installed audio clips.' }
+function part(id: string, label: MessageKey, hint: MessageKey): { id: string; readonly label: string; readonly hint: string } {
+	return {
+		id,
+		get label() {
+			return t(label);
+		},
+		get hint() {
+			return t(hint);
+		}
+	};
+}
+
+export const PARTS: ReadonlyArray<{ id: string; readonly label: string; readonly hint: string }> = [
+	part('db', 'admin.backup.part.db', 'admin.backup.part.dbHint'),
+	part('books', 'admin.backup.part.books', 'admin.backup.part.booksHint'),
+	part('packs', 'admin.backup.part.packs', 'admin.backup.part.packsHint'),
+	part('audio', 'admin.backup.part.audio', 'admin.backup.part.audioHint')
 ];
 
 /** Which parts the request names: all four are the default. */
@@ -16,26 +29,30 @@ export function canCreate(selected: ReadonlySet<string>, password: string, busy:
 	return !busy && selected.size > 0 && password !== '' && (!needsCode || code.trim() !== '');
 }
 
-const TEXT: Record<string, string> = {
-	insufficient_storage: 'There is not enough free space on the data volume for a snapshot of the database. Free some space and try again.',
-	backup_running: 'A backup is already running.',
-	wrong_password: 'Your password is wrong.',
-	password_required: 'Enter your own password.',
-	rate_limited: 'Server backups are limited to one per minute. Try again shortly.',
-	code_invalid: 'That code is not right.',
-	forbidden: 'Only administrators can create server backups.'
+const TEXT: Record<string, MessageKey> = {
+	insufficient_storage: 'admin.backup.error.insufficientStorage',
+	backup_running: 'admin.backup.error.running',
+	wrong_password: 'admin.reauth.error.wrongPassword',
+	password_required: 'admin.reauth.error.passwordRequired',
+	rate_limited: 'admin.backup.error.rateLimited',
+	code_invalid: 'admin.backup.error.codeInvalid',
+	forbidden: 'admin.backup.error.forbidden'
 };
 
 export function backupError(code: string | undefined, fallback: string): string {
-	return (code && TEXT[code]) || fallback;
+	return code && Object.hasOwn(TEXT, code) ? t(TEXT[code]) : fallback;
 }
 
-export const RESTORE_STEPS: readonly string[] = [
-	'Stop the container.',
-	'Empty the data volume.',
-	'Extract the archive into it: tar xzf <file> -C /data.',
-	'Start the same QINQIN_SECRET and the same or a newer image.'
-];
+/** The restore steps, in order. */
+export function restoreSteps(): string[] {
+	return [
+		t('admin.backup.restore.stop'),
+		t('admin.backup.restore.empty'),
+		t('admin.backup.restore.extract', { file: '<file>' }),
+		t('admin.backup.restore.start')
+	];
+}
 
-export const SECURITY_NOTE =
-	'The archive holds password hashes, hashed session tokens and secrets sealed with QINQIN_SECRET. Store it like the secret itself.';
+export function securityNote(): string {
+	return t('admin.backup.securityNote');
+}

@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import type { Language, Workspace } from './api/types';
 import { flagFor, languageLabel, languageOptions, usesHan, workspaceDisplay } from './languages';
+import { installCatalogue, resetCatalogue } from './i18n';
+import en from './i18n/messages/en.json';
 
 function ws(id: number, language: string, name = ''): Workspace {
 	return { id, language, name, settings: {}, updatedAt: '2026-01-01T00:00:00Z' };
@@ -20,6 +22,15 @@ describe('languageLabel', () => {
 	it('is case-insensitive and keeps region subtags', () => {
 		expect(languageLabel('JA')).toBe('Japanese');
 		expect(languageLabel('zh-TW')).toMatch(/^Chinese/);
+	});
+
+	it('follows the interface language by default', () => {
+		installCatalogue('de', en);
+		try {
+			expect(languageLabel('ja')).toBe('Japanisch');
+		} finally {
+			resetCatalogue();
+		}
 	});
 
 	it('honours an explicit locale', () => {

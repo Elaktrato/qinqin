@@ -4,6 +4,7 @@
 // built once, filters and sorts. Pure; the component only renders.
 
 import { shownWritten } from '$lib/entry/displayForm';
+import { t } from '$lib/i18n';
 import type { EntryBase } from '$lib/api/types';
 import { cleanSkipKinds } from '$lib/study/canonical';
 import { foldSearch } from '$lib/study/charGroups';
@@ -60,7 +61,7 @@ export function deckRows(
 		// The live display form, unless the snapshot is a kana reading of the
 		// entry (a starter deck's kana row): shownWritten, as on the card front.
 		const written =
-			base === undefined ? (snapshot ?? `Entry ${entryId}`) : shownWritten(base, snapshot);
+			base === undefined ? (snapshot ?? t('flashcards.deck.entryN', { id: entryId })) : shownWritten(base, snapshot);
 		const schedule = vocab === null ? null : (index.get(vocab.id) ?? null);
 		let nextDue: string | null = null;
 		for (const card of group) {

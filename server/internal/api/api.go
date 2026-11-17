@@ -242,6 +242,7 @@ func (s *server) routes() []route {
 		{"GET /api/admin/backup/{ticket}", s.handleAdminBackupDownload, accPublic, nil, noTok},
 		{"GET /api/me/time-zone", s.handleGetTimeZone, accUser, nil, tokReadAny},
 		{"PUT /api/me/time-zone", s.handlePutTimeZone, accUser, nil, noTok},
+		{"PUT /api/me/interface-language", s.handlePutInterfaceLanguage, accUser, nil, noTok},
 		{"POST /api/account/mfa/totp/setup", s.handleTOTPSetup, accSession, []string{restrictionMFAEnrollment}, noTok},
 		{"POST /api/account/mfa/totp/confirm", s.handleTOTPConfirm, accSession, []string{restrictionMFAEnrollment}, noTok},
 		{"DELETE /api/account/mfa/totp", s.handleTOTPDisable, accUser, nil, noTok},

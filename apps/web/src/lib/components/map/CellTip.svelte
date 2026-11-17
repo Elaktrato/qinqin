@@ -1,5 +1,7 @@
 <script lang="ts">
 	import { placePopup } from '$lib/features/reader/placement';
+	import { t } from '$lib/i18n';
+	import { glossLang, readingLang, studyLang } from '$lib/i18n/lang';
 	import { STAGE_INFO, type TipRequest } from '$lib/study/mapGrid';
 
 	let { tip, id, lang }: { tip: TipRequest | null; id: string; lang: string } = $props();
@@ -37,8 +39,8 @@
 	const status = $derived.by(() => {
 		if (tip === null) return '';
 		const { stage, score, reviewedCards } = tip.cell;
-		const parts = [STAGE_LABEL[stage], `${score}/100`];
-		if (reviewedCards > 0) parts.push(`${reviewedCards} ${reviewedCards === 1 ? 'card' : 'cards'}`);
+		const parts = [STAGE_LABEL[stage], t('stats.map.tipScore', { score })];
+		if (reviewedCards > 0) parts.push(t('stats.map.tipCards', { count: reviewedCards }));
 		return parts.join(' · ');
 	});
 </script>
@@ -55,11 +57,11 @@
 >
 	{#if tip !== null && row !== null}
 		<div class="top">
-			<span class="glyph" {lang}>{row.c}</span>
+			<span class="glyph" lang={studyLang(lang)}>{row.c}</span>
 			<span class="text">
-				{#if row.r}<span class="reading">{row.r}</span>{/if}
-				{#if row.m}<span class="gloss">{row.m}</span>{/if}
-				{#if row.v?.length}<span class="variants">Also {row.v.join(' ')}</span>{/if}
+				{#if row.r}<span class="reading" lang={readingLang(lang.startsWith('ja') ? 'kana' : 'pinyin', lang)}>{row.r}</span>{/if}
+				{#if row.m}<span class="gloss" lang={glossLang(undefined)}>{row.m}</span>{/if}
+				{#if row.v?.length}<span class="variants">{t('stats.map.alsoWritten', { variants: row.v.join(' ') })}</span>{/if}
 			</span>
 		</div>
 		<div class="stage">
@@ -67,7 +69,7 @@
 			<span>{status}</span>
 		</div>
 		{#if tip.via === 'tap'}
-			<div class="more">Tap again to open the entry.</div>
+			<div class="more">{t('stats.map.tapAgain')}</div>
 		{/if}
 	{/if}
 </div>
