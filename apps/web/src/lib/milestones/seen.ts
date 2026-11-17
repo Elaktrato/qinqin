@@ -62,18 +62,43 @@ export function seenRow(
 	};
 }
 
-/** seenWritePlan: the rows to push — only ids with no live row, each once; never a tombstone. */
+/**
+ * tombstoneStamps: the newest stamp (updatedAt or deletedAt) of each
+ * tombstoned `milestone:` row, by id. A row written over a tombstone must be
+ * stamped after it, or last-write-wins skips it.
+ */
+export function tombstoneStamps(
+	rows: readonly { key: string; data?: unknown; deletedAt: string | null; updatedAt?: string }[]
+): Map<string, string> {
+	const out = new Map<string, string>();
+	for (const row of rows) {
+		if (!row.key.startsWith(MILESTONE_KEY_PREFIX) || row.deletedAt == null) continue;
+		const id = row.key.slice(MILESTONE_KEY_PREFIX.length);
+		if (id === '') continue;
+		let newest = row.deletedAt;
+		if (row.updatedAt !== undefined && Date.parse(row.updatedAt) > Date.parse(newest)) newest = row.updatedAt;
+		out.set(id, newest);
+	}
+	return out;
+}
+
+/**
+ * seenWritePlan: the rows to push — only ids with no live row, each once;
+ * never a tombstone. A key with a tombstone carries its stamp (`knownAt`).
+ */
 export function seenWritePlan(
 	mark: readonly Reached[],
 	live: ReadonlyMap<string, SeenMilestone>,
-	now: Date
-): { key: string; data: unknown }[] {
-	const out: { key: string; data: unknown }[] = [];
+	now: Date,
+	tombstones: ReadonlyMap<string, string> = new Map()
+): { key: string; data: unknown; knownAt?: string }[] {
+	const out: { key: string; data: unknown; knownAt?: string }[] = [];
 	const planned = new Set<string>();
 	for (const m of mark) {
 		if (live.has(m.id) || planned.has(m.id)) continue;
 		planned.add(m.id);
-		out.push(seenRow(m, now));
+		const knownAt = tombstones.get(m.id);
+		out.push(knownAt === undefined ? seenRow(m, now) : { ...seenRow(m, now), knownAt });
 	}
 	return out;
 }

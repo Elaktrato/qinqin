@@ -13,6 +13,7 @@ import {
 	seenIds,
 	seenRow,
 	seenWritePlan,
+	tombstoneStamps,
 	type SeenMilestone
 } from './seen';
 
@@ -66,7 +67,7 @@ describe('milestones/seen-merge.json', () => {
 
 	it.each(cases.filter((c) => c.op === 'writePlan'))('writePlan: $name', (c) => {
 		const live = parseSeenRows(c.live as Row[]);
-		const plan = seenWritePlan((c.mark as Fixture[]).map(reachedOf), live, new Date(c.now as string));
+		const plan = seenWritePlan((c.mark as Fixture[]).map(reachedOf), live, new Date(c.now as string), tombstoneStamps(c.live as Row[]));
 		expect(plan).toEqual(c.expect);
 		for (const row of plan) expect(row).not.toHaveProperty('deletedAt');
 	});
@@ -92,6 +93,19 @@ describe('seen rows', () => {
 			key: 'milestone:streak:7',
 			data: { version: 1, id: 'streak:7', seenAt: '2026-11-17T08:00:00.000Z', reachedDay: '2026-11-10' }
 		});
+	});
+
+	it('tombstoneStamps: the newest stamp of each tombstoned milestone row', () => {
+		const stamps = tombstoneStamps([
+			{ key: 'milestone:streak:3', data: {}, deletedAt: '2026-11-16T00:00:00Z', updatedAt: '2026-11-16T00:00:05Z' },
+			{ key: 'milestone:streak:7', data: {}, deletedAt: '2026-11-16T00:00:00Z' },
+			{ key: 'milestone:reviews:100', data: {}, deletedAt: null, updatedAt: '2026-11-16T00:00:00Z' },
+			{ key: 'goals:workspace', data: {}, deletedAt: '2026-11-16T00:00:00Z' }
+		]);
+		expect([...stamps]).toEqual([
+			['streak:3', '2026-11-16T00:00:05Z'],
+			['streak:7', '2026-11-16T00:00:00Z']
+		]);
 	});
 
 	it('seenWritePlan never returns an id with a live row, never a tombstone, each id once', () => {

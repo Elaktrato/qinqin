@@ -122,6 +122,8 @@ export interface StudyData {
 	known?: number[];
 	/** Seen milestones (live `milestone:` rows) by id, absent without any. */
 	seenMilestones?: ReadonlyMap<string, SeenMilestone>;
+	/** Tombstoned `milestone:` rows by id: their newest stamp (a re-dismiss is stamped after it). */
+	milestoneTombstones?: ReadonlyMap<string, string>;
 }
 
 /**

@@ -64,7 +64,7 @@ import { outboxUser } from "./outboxUser";
 import { recentSentReviews } from "./recentSent";
 import { KNOWN_PREFIX, knownMarkKey, knownMarkRow, parseKnownMark } from "./knownMarks";
 import { MILESTONE_KEY_PREFIX } from "../milestones/catalogue";
-import { parseSeenRows } from "../milestones/seen";
+import { parseSeenRows, tombstoneStamps } from "../milestones/seen";
 import {
   type Deck,
   type OptInKind,
@@ -204,7 +204,7 @@ async function fetchStudyData(
   let activeRaw: unknown = null;
   let goals: ParsedGoals = null;
   const known: number[] = [];
-  const milestoneRows: { key: string; data: unknown; deletedAt: string | null }[] = [];
+  const milestoneRows: { key: string; data: unknown; deletedAt: string | null; updatedAt?: string }[] = [];
 
   for (const collection of STUDY_COLLECTIONS) {
     const list = delta?.[collection];
@@ -272,6 +272,7 @@ async function fetchStudyData(
         key: row.key,
         data: row.deletedAt != null ? null : decodeData(row.data),
         deletedAt: row.deletedAt == null ? null : String(row.deletedAt),
+        ...(typeof row.updatedAt === "string" ? { updatedAt: row.updatedAt } : {}),
       });
       continue;
     }
@@ -287,6 +288,7 @@ async function fetchStudyData(
   }
 
   const seenMilestones = parseSeenRows(milestoneRows);
+  const milestoneTombstones = tombstoneStamps(milestoneRows);
   // Absent (not empty) without any deckcfg row: workspaces that never
   // configured a deck read exactly as before.
   return {
@@ -301,6 +303,7 @@ async function fetchStudyData(
     ...(goals === null ? {} : { goals }),
     ...(known.length > 0 ? { known } : {}),
     ...(seenMilestones.size > 0 ? { seenMilestones } : {}),
+    ...(milestoneTombstones.size > 0 ? { milestoneTombstones } : {}),
   };
 }
 
@@ -665,6 +668,7 @@ export async function loadStudyDataWith(
     ...(data.goals === undefined ? {} : { goals: data.goals }),
     ...(data.known === undefined ? {} : { known: data.known }),
     ...(data.seenMilestones === undefined ? {} : { seenMilestones: data.seenMilestones }),
+    ...(data.milestoneTombstones === undefined ? {} : { milestoneTombstones: data.milestoneTombstones }),
     reviews,
     merged,
   };
@@ -1394,27 +1398,31 @@ export async function setKnownMarks(
 /**
  * saveSeenMilestones writes `milestone:<id>` rows (docs/contracts/milestones/)
  * in one push: never a tombstone, the caller passes only keys that are not
- * live (seenWritePlan). A skipped row (another device wrote it first) or a
- * refused one counts as written; a failed request rejects and the caller
- * keeps the ids pending. Listeners are notified either way.
+ * live (seenWritePlan); a row reviving a tombstone carries its `knownAt` and
+ * is stamped after it. 'done': every row was written. 'pending': the server
+ * skipped a row (it holds a newer one for the key: a tombstone this client
+ * has not pulled, or a clock behind the server's) or refused one; the
+ * caller keeps those ids pending until the row is live in a pull. A failed
+ * request rejects (also pending). Listeners are notified either way.
  */
 export async function saveSeenMilestones(
   workspaceId: number,
-  rows: readonly { key: string; data: unknown }[],
-): Promise<void> {
+  rows: readonly { key: string; data: unknown; knownAt?: string }[],
+): Promise<"done" | "pending"> {
   requireWorkspaceArg(workspaceId, "saveSeenMilestones");
   for (const row of rows) {
     if (!row.key.startsWith(MILESTONE_KEY_PREFIX)) throw new Error(`${row.key}: not a milestone row`);
   }
-  if (rows.length === 0) return;
+  if (rows.length === 0) return "done";
   try {
     await pushKeyedRows(
       workspaceId,
-      rows.map((row) => ({ key: row.key, data: row.data })),
+      rows.map((row) => ({ key: row.key, data: row.data, ...(row.knownAt === undefined ? {} : { knownAt: row.knownAt }) })),
       { chunk: rows.length },
     );
   } catch (err) {
-    if (err instanceof PartialPushError && err.skipped > 0) return;
+    if (err instanceof PartialPushError && err.skipped > 0) return "pending";
     throw err;
   }
+  return "done";
 }

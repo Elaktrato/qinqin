@@ -157,7 +157,9 @@ Row: plugin `qinqin-flashcards`, workspace `w`, key `milestone:<id>`, data
   version, a mismatching `id`, a missing `reachedDay`); data is only read for the history date (`seenAt` a
   non-empty string, `reachedDay` a real date, else `null`). A tombstone (`deletedAt` set) is not seen.
 - A dismiss writes the rows of every covered milestone whose key is not already live (`writePlan`), never a
-  tombstone, never a rewrite of a live row. No client deletes a `milestone:` row.
+  tombstone, never a rewrite of a live row. No client deletes a `milestone:` row. A key the pull showed as a
+  tombstone is written with that tombstone's newest stamp (`knownAt`, as for known marks) and stamped after it,
+  so last-write-wins does not skip it.
 - Rows of ids this client does not know (a newer catalogue) are kept and counted as seen but not listed.
 
 - Ruling: one row per milestone, not one row holding a set — two devices writing different keys never conflict
@@ -185,16 +187,18 @@ Row: plugin `qinqin-flashcards`, workspace `w`, key `milestone:<id>`, data
 
 - Rows travel as ordinary plugin data: push `pluginData` items (`POST /api/sync/push`), pull v2 `pluginData`
   pages (`tombstones=1`: a tombstone arrives and reads as "not seen"). Last write wins per key by `updatedAt`.
-- The web sends every row of one dismiss in one push. The answer's `dataSkipped` (another device wrote the key
-  first) and `dataRefused` both count as done; a failed request (offline, 5xx) keeps the ids pending.
+- The web sends every row of one dismiss in one push. Every row accepted: done, the ids leave the pending list.
+  `dataSkipped` or `dataRefused` > 0, or a failed request (offline, 5xx): the ids stay pending (still seen
+  here) and leave only once their row is live in a pull; the next flush tries again.
 - Pending list (web): `localStorage` key `qinqin:milestones-pending:<userId>:<workspaceId>`, every access in
   `try/catch`. Seen = live rows ∪ pending. The list is flushed on the next load (at most once per 30 s) and on
   `online`; an id leaves it once its row is live in a pull. Android's local database plays this role.
 
 - Ruling: the push sends every row in one chunk (the catalogue plus the level ids stay far below the 256 KiB item
-  and body limits); a skipped or refused row is success, a failed request keeps the ids pending — retrying a
-  refused row cannot help, the flashcards namespace is always known — cost: a refused row is lost for other
-  devices (the card may show there once).
+  and body limits); only a fully accepted push drops the pending ids, a skipped, refused or failed one keeps them
+  until a pull shows the row live — a skip means the server holds a newer row for the key (a tombstone this
+  client had not pulled), which the next flush overwrites with the tombstone's stamp — cost: a refused row is
+  retried at every flush (at most every 30 s while the page is open).
 - Ruling: a local pending list instead of an outbox — plugin rows have no outbox, the seen flag is idempotent and
   harmless to lose (the worst case is the card shown once more on that device) — cost: in a private window that
   blocks storage an offline dismiss is forgotten on reload.
@@ -240,6 +244,7 @@ no entry, card or workspace id, so key and data are restored unchanged. Tombston
 
 Reads and writes `milestone:*` rows in `pluginData` of `qinqin-flashcards` (never through a typed collection),
 implements the catalogue, the reached rule (fixtures give timelines as schedules), the seen rule (key alone, never
-delete, write only absent keys, `dataSkipped` is success) and the card plan. Its local database replaces the
+delete, write only absent keys, stamp a write over a tombstone after it, keep an id pending until its row is live)
+and the card plan. Its local database replaces the
 pending list. It reads the level members from the `levels.<packId>` data packages (`packages/README.md`); the
 `packId` there is the one `ownedLevelDeckId` hashes. It reads `pluginData` from pull v2, never the legacy view.

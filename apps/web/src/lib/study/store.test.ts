@@ -2622,6 +2622,23 @@ describe("seen milestone rows", () => {
     expect("seenMilestones" in data).toBe(false);
   });
 
+  it("keeps the stamps of tombstoned milestone rows (a re-dismiss must be stamped after them)", async () => {
+    respondPull({
+      pluginData: [
+        pluginRow("milestone:reviews:100", seen("reviews:100"), { workspaceId: 3, updatedAt: "2026-11-17T09:00:00Z", deletedAt: "2026-11-17T09:00:00Z" }),
+        pluginRow("milestone:streak:7", seen("streak:7"), { workspaceId: 3 }),
+      ],
+    });
+    const data = await loadStudyDataWith(3, async () => []);
+    expect([...(data.milestoneTombstones ?? new Map())]).toEqual([["reviews:100", "2026-11-17T09:00:00Z"]]);
+  });
+
+  it("saveSeenMilestones stamps a row after the tombstone it revives", async () => {
+    vi.mocked(fetch).mockImplementation(async () => jsonResponse({ dataAccepted: 1, dataSkipped: 0, dataRefused: 0 }));
+    await saveSeenMilestones(3, [{ key: "milestone:reviews:100", data: seen("reviews:100"), knownAt: "2099-01-01T00:00:00Z" }]);
+    expect(pushes()[0].pluginData[0].updatedAt).toBe("2099-01-01T00:00:00.001Z");
+  });
+
   it("loadStudyDataWith passes seenMilestones through", async () => {
     respondPull({ pluginData: [pluginRow("milestone:reviews:100", seen("reviews:100"), { workspaceId: 3 })] });
     const data = await loadStudyDataWith(3, async () => []);
@@ -2681,7 +2698,7 @@ describe("seen milestone rows", () => {
       return jsonResponse(c.answer);
     });
     const outcome = await saveSeenMilestones(3, rows).then(
-      () => "done",
+      (result) => result,
       () => "pending",
     );
     expect(outcome).toBe(c.expect);

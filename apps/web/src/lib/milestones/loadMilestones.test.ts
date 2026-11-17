@@ -100,7 +100,7 @@ beforeEach(() => {
 		event('e2', 'journal', { entryId: 'J1' }),
 		event('e3', 'journal', { entryId: 'J9' }, 4)
 	]);
-	vi.mocked(saveSeenMilestones).mockResolvedValue(undefined);
+	vi.mocked(saveSeenMilestones).mockResolvedValue('done');
 });
 afterEach(() => {
 	vi.unstubAllGlobals();
@@ -288,6 +288,22 @@ describe('markSeen', () => {
 		expect(vi.mocked(saveSeenMilestones).mock.calls.at(-1)?.[0]).toBe(9);
 		expect(readPending(1, 9).length).toBeGreaterThan(0);
 		expect(readPending(1, WS)).toEqual([]);
+	});
+
+	it('a skipped row keeps its id pending (seen here) until it is live in a pull', async () => {
+		const view = await loadMilestones(WS, { scope: 'home', now: NOW, language: 'zh' });
+		vi.mocked(saveSeenMilestones).mockResolvedValue('pending');
+		await markSeen(view);
+		expect(ids(readPending(1, WS)).sort()).toEqual(view.plan.kind === 'none' ? [] : [...view.plan.ids].sort());
+	});
+
+	it('a tombstoned key is written with its tombstone stamp', async () => {
+		vi.mocked(loadStudyHistory).mockResolvedValue(history({ milestoneTombstones: new Map([['reviews:100', '2026-11-17T11:00:00Z']]) }));
+		const view = await loadMilestones(WS, { scope: 'home', now: NOW, language: 'zh' });
+		await markSeen(view);
+		const rows = vi.mocked(saveSeenMilestones).mock.calls.at(-1)?.[1] ?? [];
+		expect(rows.find((r) => r.key === 'milestone:reviews:100')).toMatchObject({ knownAt: '2026-11-17T11:00:00Z' });
+		expect(rows.find((r) => r.key === 'milestone:streak:3')).not.toHaveProperty('knownAt');
 	});
 
 	it('nothing to mark for no card', async () => {

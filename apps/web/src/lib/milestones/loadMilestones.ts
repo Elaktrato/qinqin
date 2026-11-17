@@ -49,6 +49,8 @@ export interface MilestonesView {
 	reached: Reached[];
 	/** The live seen rows the plan was made against. */
 	live: ReadonlyMap<string, SeenMilestone>;
+	/** Tombstoned seen rows: id → newest stamp (a re-dismiss is stamped after it). */
+	tombstones?: ReadonlyMap<string, string>;
 }
 
 export interface WeekInputs {
@@ -64,7 +66,12 @@ export interface WeekInputs {
 const FLUSH_EVERY_MS = 30_000;
 const lastFlush = new Map<string, number>();
 /** The last load's user, workspace and live rows: an `online` flush never rewrites a live row. */
-let lastPlace: { user: number; workspaceId: number; live: ReadonlyMap<string, SeenMilestone> } | null = null;
+let lastPlace: {
+	user: number;
+	workspaceId: number;
+	live: ReadonlyMap<string, SeenMilestone>;
+	tombstones: ReadonlyMap<string, string>;
+} | null = null;
 let onlineHooked = false;
 
 /** Test hook: forget the flush throttle and the last place. */
@@ -83,11 +90,13 @@ function hookOnline(): void {
 export async function flushOnOnline(): Promise<void> {
 	lastFlush.clear();
 	if (lastPlace === null) return;
-	await flushPending(lastPlace.user, lastPlace.workspaceId, lastPlace.live, Date.now());
+	await flushPending(lastPlace.user, lastPlace.workspaceId, lastPlace.live, lastPlace.tombstones, Date.now());
 }
 
-function rowOf(m: SeenMilestone, now: number): { key: string; data: unknown } {
+function rowOf(m: SeenMilestone, now: number, tombstones: ReadonlyMap<string, string>): { key: string; data: unknown; knownAt?: string } {
+	const knownAt = tombstones.get(m.id);
 	return {
+		...(knownAt === undefined ? {} : { knownAt }),
 		key: `${MILESTONE_KEY_PREFIX}${m.id}`,
 		data: {
 			version: 1,
@@ -103,6 +112,7 @@ async function flushPending(
 	user: number,
 	workspaceId: number,
 	live: ReadonlyMap<string, SeenMilestone>,
+	tombstones: ReadonlyMap<string, string>,
 	now: number
 ): Promise<void> {
 	const key = `${user}:${workspaceId}`;
@@ -112,11 +122,12 @@ async function flushPending(
 	if (pending.length === 0) return;
 	lastFlush.set(key, now);
 	try {
-		await saveSeenMilestones(
+		const result = await saveSeenMilestones(
 			workspaceId,
-			pending.map((m) => rowOf(m, now))
+			pending.map((m) => rowOf(m, now, tombstones))
 		);
-		dropPending(user, workspaceId, pending.map((m) => m.id));
+		// 'pending': a row was skipped or refused; it stays pending until live in a pull.
+		if (result === 'done') dropPending(user, workspaceId, pending.map((m) => m.id));
 	} catch {
 		// Offline or refused as a whole: the ids stay pending (still seen here).
 	}
@@ -179,12 +190,13 @@ export async function loadMilestones(
 	const today = day.today(now);
 	const [data, log] = await Promise.all([loadStudyHistory(workspaceId), loadWorkspaceEvents(workspaceId)]);
 	const live = data.seenMilestones ?? new Map<string, SeenMilestone>();
+	const tombstones = data.milestoneTombstones ?? new Map<string, string>();
 
 	const user = outboxUser();
 	if (user !== null) {
-		lastPlace = { user, workspaceId, live };
+		lastPlace = { user, workspaceId, live, tombstones };
 		prunePending(user, workspaceId, live);
-		await flushPending(user, workspaceId, live, now);
+		await flushPending(user, workspaceId, live, tombstones, now);
 	}
 	const pending = user === null ? [] : readPending(user, workspaceId);
 
@@ -233,7 +245,7 @@ export async function loadMilestones(
 	// A level no longer installed has no name: it stays seen, unlisted.
 	const history = milestoneHistory(reached, live, pending, day).filter((item) => title(item.id) !== null);
 	if (plan.kind !== 'none') for (const id of plan.ids) title(id);
-	return { workspaceId, plan, history, titles, reached, live };
+	return { workspaceId, plan, history, titles, reached, live, tombstones };
 }
 
 /**
@@ -251,10 +263,12 @@ export async function markSeen(view: MilestonesView): Promise<void> {
 	const user = outboxUser();
 	const items = mark.map((r) => ({ id: r.id, seenAt: now.toISOString(), reachedDay: r.day }));
 	if (user !== null) addPending(user, workspaceId, items);
-	const rows = seenWritePlan(mark, view.live, now);
+	const rows = seenWritePlan(mark, view.live, now, view.tombstones);
 	try {
-		await saveSeenMilestones(workspaceId, rows);
-		if (user !== null) dropPending(user, workspaceId, items.map((m) => m.id));
+		// 'pending': a row was skipped or refused; its id stays pending until live in a pull.
+		if ((await saveSeenMilestones(workspaceId, rows)) === 'done' && user !== null) {
+			dropPending(user, workspaceId, items.map((m) => m.id));
+		}
 	} catch {
 		// Offline: the ids stay pending and the next load flushes them.
 	}
