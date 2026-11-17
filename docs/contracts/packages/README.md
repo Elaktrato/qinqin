@@ -54,9 +54,10 @@ workspace languages; `all` lists every package. A row is listed when any of its 
    "updatedAt": "2026-11-16T10:00:00Z", "deletedAt": null}]}
 ```
 
-- Every key of `rowKeys` is always present; `error` (non-empty string) is added only in an administrator's
-  catalogue, on a row whose last build failed. Top-level `languages` is the language set applied (sorted);
-  `building` is true while the server builds or reconciles packages.
+- Every key of `rowKeys` is always present; `error` (non-empty string) is added only in the catalogue of an
+  administrator's own session (never through an access token), on a row whose last build failed. Top-level `languages` is the language set applied (sorted);
+  `building` is true while the server builds or reconciles packages. The `ETag` of the default catalogue
+  (no `languages`) is what a pull round's `scope.catalogue` carries for the same caller (`docs/contracts/sync/`).
 - `languages` of a row is a non-empty sorted list. Times are RFC 3339 UTC.
 - `state`:
   - `ready` — `revision >= 1`, `url = /api/packages/<id>/<revision>`, `contentHash`, `sha256`, `bytes`,

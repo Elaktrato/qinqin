@@ -53,7 +53,10 @@ through the study read and its receipt counts the pages. Legacy (no `v`): `colle
 subset of the same set, so a cached v0.3.x or v0.4 old shell keeps working (the
 typed study rows of `docs/contracts/study/` and the keyed `goals:*`, `known:*` and
 `vacation:*` rows travel in both), `/api/plugins/{id}/data` and `/data/{key}`, `/api/events` with `workspace=`,
-and `/api/entries/{id}`; plus stroke data `/hanzi/U<HEX>.json` without credentials.
+and `/api/entries/{id}`; plus stroke data `/hanzi/U<HEX>.json` without credentials (served from the
+installed strokes package; 404 when none is installed). The package catalogue and package downloads
+(`/api/packages…`) are never cached by the worker: the web reads the catalogue only for Settings and
+installs no packages.
 Everything else (every non-GET request, admin, account, auth except `me`, AI,
 journal photos, audio, lookups, search) is never touched. The lookup history (#72,
 `../lookups/`) never reaches the cache: `qinqin-core` data reads of `lookup*` keys (or with a `prefix` that can

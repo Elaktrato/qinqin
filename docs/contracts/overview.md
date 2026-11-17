@@ -10,6 +10,8 @@ Derived from the code on `develop`; each owner path below is where the rule is i
 | Layer | Folders |
 | --- | --- |
 | Identity and transport | `auth/` (token, restrictions, errors, two-step sign-in), `pwa/` (outbox, cache rules) |
+| Shared data | `packages/` (data packages: the catalogue, downloads, the zip and `data.sqlite` of every type, versioning and the client rule) |
+| User data in transit | `sync/` (the paged pull `v=2`, the push answer, the deprecated legacy pull) |
 | Time | `study-day/` (the learner's day, zone history) is the base of everything below |
 | Typed study data | `study/` (cards, decks, deck settings, limits, FSRS sets, the active set: wire shapes, last-write-wins, tombstones, the legacy codec and the legacy view for old web shells), `library/` (reader books, bookmarks, highlights, positions, the deletion log) |
 | Cards and study | `cards/` (ids, kinds, burying), `levels/` (level sessions), `decks/` (deck numbers, system deck ids, add-to-deck), `scheduler/` (vacation, study clock, due, streak, daily limits), `goals/` (daily goal, day status, goal streak), `weekly/` (weekly summary; nothing stored) |
@@ -18,22 +20,47 @@ Derived from the code on `develop`; each owner path below is where the rule is i
 | Data safety | `backup/` (archive format v1, id remapping) |
 | Personal data on entries | `notes/` (notes and the answer-side switch) |
 
-Read order: `auth/` -> `study-day/` -> this page's sync model -> `study/` -> `cards/` -> `scheduler/` -> `decks/` -> `levels/`.
+Read order: `auth/` -> `study-day/` -> this page's sync model -> `packages/` -> `sync/` -> `study/` -> `cards/` -> `scheduler/` -> `decks/` -> `levels/`.
 
 ## Sync model
 
-- Pull: the paged form `GET /api/sync/pull?v=2` is in `sync/` (`server/internal/sync/page*.go`). The legacy
-  form `GET /api/sync/pull?cursor=<RFC 3339>&collections=a,b` (`server/internal/sync/legacy.go`, deprecated
-  until v0.5.0, streamed, `sync/legacy-pull.json`): no cursor means every live row. The answer is `{cursor,
-  entries, links, senses, levelMembers, sentences, pluginData, pluginStates, overlays, dictionaries, schemes,
-  levels, cards, decks, deckSettings, limits, fsrsSets, fsrsActive}`; every collection is a non-null array.
-  The lexicon collections (entries, links, senses, levelMembers, dictionaries, schemes, levels) moved to data
-  packages (`packages/`): they are always `[]` and naming one is 400 `sync_collection_moved`; `sentences` are
-  the caller's own. Valid `collections` names are exactly those keys; an unknown one is 400. The returned cursor lags the server clock
-  by 30 s and the cursor second is inclusive, so rows can arrive twice: upsert by key. A cursor is only
-  valid for the same `collections` list it came from; do not mix subset pulls with one global cursor.
+- First copy by packages (`packages/`): shared data (the lexicon per language, level lists, pack sentences,
+  frequency, components, audio, grammar, stroke data) never travels in a pull. A client reads the catalogue
+  `GET /api/packages` (its workspace languages by default; `ETag`/`If-None-Match`), downloads each package it
+  needs (`GET /api/packages/{id}/{revision}`, resumable with `Range`; 429 `download_busy` is retried after
+  `Retry-After`), verifies it (`packages/README.md`, "Verification") and swaps the file in. The client rule
+  (`packageAction`, `packages/versioning.json` `client` cases) decides keep, download, delete, wait,
+  unsupported or reset per row. Package files are replaced, never merged into the client's own data.
+- User data by the paged pull (`sync/`): `GET /api/sync/pull?v=2` pages the caller's own rows in a **round**:
+  the round fixes `until` at its first page and ships, collection by collection in a fixed order
+  (`workspaces, pluginStates, pluginData, cards, decks, deckSettings, limits, fsrsSets, fsrsActive, books,
+  bookmarks, highlights, overlays, sentences, events`), every row with `since <= updatedAt < until`, at most
+  `limit` rows (default 500, 1..2000) and 4 MiB of rows per page (a larger row alone). A page names the next
+  one (`next`, `p2.…`, sent alone as `page=`); the last page has `more: false` and a **cursor** (`c2.…`,
+  `until − 30 s`): the `since` of the next round with the same `collections` and `workspace` (one cursor per
+  filter set; rows of the last 30 s may come twice, upsert by key). From no `since` a round ships live rows
+  only; with one it ships tombstones too. Within a library collection tombstones follow the live rows.
+- Scope: the first page of a round carries `scope` — every workspace of the caller (a workspace not listed
+  is deleted: drop its local data), the round's language set and `catalogue`, the ETag `GET /api/packages`
+  gives the same caller by default (a change means "re-read the catalogue"). `workspace=<id>` narrows a round
+  to one workspace plus user-global rows. `overlays` and own `sentences` ship only for the round's languages;
+  when the language set differs from the one inside `since`, they ship from scratch and `restarted` names them.
+- `instanceId` (in every page, the catalogue and every package manifest) names the server database; a
+  different value means another database (a restore from elsewhere, a new server): discard packages and
+  local user data and start over.
+- Errors are JSON `{error, message}`: 400 `sync_page_invalid` (bad `limit`, unknown collection, a garbled or
+  foreign token, a `page=` that repeats a filter: start the round again), 400 `sync_collection_moved` (a
+  lexicon collection: read packages), 404 `not_found` (a `workspace=` the caller does not own), 410
+  `sync_cursor_expired` (defined, not sent yet: discard local user data, pull without `since`).
+- Legacy pull (deprecated, until v0.5.0; old web shells only): `GET /api/sync/pull?cursor=<RFC 3339>&collections=a,b`
+  (`server/internal/sync/legacy.go`, `sync/legacy-pull.json`), one streamed JSON object `{cursor, entries,
+  links, senses, levelMembers, sentences, pluginData, pluginStates, overlays, dictionaries, schemes, levels,
+  cards, decks, deckSettings, limits, fsrsSets, fsrsActive}` with `Deprecation: true`. The lexicon
+  collections are always `[]` and naming one is 400 `sync_collection_moved`; `sentences` are the caller's
+  own; an unknown name or a bad cursor is a plain-text 400. Its cursor lags 30 s and its second is
+  inclusive. Android never uses it.
 - Push: `POST /api/sync/push {events: [...], pluginData: [...], cards: [...], decks: [...], deckSettings: [...],
-  limits: [...], fsrsSets: [...], fsrsActive: [...]}` (`server/internal/sync/sync.go`). The whole
+  limits: [...], fsrsSets: [...], fsrsActive: [...]}` (`server/internal/sync/sync.go`, `sync/push-result.json`). The whole
   body is validated first; an unknown or foreign workspace or plugin is 404 and nothing is applied; a bad
   item is 400. Answer: `{eventsAccepted, eventDuplicates, dataAccepted, dataSkipped, dataRefused}`.
   `dataRefused` counts rows of plugins that do not declare owns-data (the rest still applies). A value is at
@@ -106,7 +133,7 @@ fixture or the contract text that fixes the shape.
 | `lookupcfg` (plugin **`qinqin-core`**) | **user-global** (`workspaceId: null`) | `{version:1, record: bool, ...unknown kept}`; missing, deleted, other version or non-boolean = recording on | `lookups/lookups.ts` | `lookups/lookup-rows.json` |
 | `review` event | workspace (events table, not a row) | `payload {cardId, mode: card kind, grade 1..4, meta?: {tier?: 0\|1\|2, mistakes?, hints?, durationMs?}}`; an unknown `mode` reads as `vocab` | `study/types.ts` `ReviewPayload`, `study/reviewParse.ts`, `server/internal/events` | `pwa/outbox-v2.json`, `scheduler/*`, `decks/deck-stats.json` |
 | workspace settings key `reader` | workspace row of `workspaces.settings` (not plugin data) | `{version:1, bookRuby: bool, readings: never\|always\|smart, smartThreshold: 10..100, rubyScale: 0.45\|0.55\|0.65\|0.75, font: default\|sans\|serif\|kai, highlightWords: bool}`; written via `PUT /api/workspaces/{id}` with `settings` merged as RFC 7396; unknown keys kept | `features/reader/displaySettings.ts` | `reader/display-settings.json` |
-| Reader library, bookmarks, highlights, book position | **not sync rows yet**: server tables under `/api/library/books/{id}[/bookmarks\|/highlights\|/position]`; books and bookmarks carry `updatedAt`, deletions are logged in `library_deletions` (for paged library deltas, item 5) | see `library/README.md`, `apps/web/src/lib/api/types.ts` (`Bookmark`, `Highlight`) and `server/internal/library` | `features/reader/bookmarks.ts`, `highlights.ts` | `library/rows.json` |
+| Reader library, bookmarks, highlights, book position | written through `/api/library/books/{id}[/bookmarks\|/highlights\|/position]`; pulled as the `books`, `bookmarks`, `highlights` collections of the paged pull (`sync/`), deletions as tombstones from `library_deletions` | see `library/README.md`, `apps/web/src/lib/api/types.ts` (`Bookmark`, `Highlight`) and `server/internal/library` | `features/reader/bookmarks.ts`, `highlights.ts` | `library/rows.json` |
 | `read` events (reading time) | workspace (events) | free `payload`, aggregated by `lib/stats/readingTime.ts` | `features/reader/readingTimer.ts` | no fixture |
 
 Study-day inputs are not rows: the learner's zone history is `GET/PUT /api/me/time-zone` (`study-day/`).
@@ -171,13 +198,14 @@ other permanent 4xx drop the item; 5xx, 408, 429 and network errors keep it; for
   reset links, MFA challenge ids beyond the step in progress, AI provider keys.
 - Do not cache other users' data: key every cache and outbox by user (see `pwa/` partition rule).
 - Do not cache admin, account, AI, journal photo, audio, search or lookup responses as truth.
+- Package files are verified before use, never partially (`packages/README.md`, "Verification"): a download
+  that fails a check is discarded, and a package database is opened read-only and replaced as a whole.
 
 ## Gaps (no fixture yet)
 
-- `read` event payloads (reading time) have no contract fixture (item 6), and the library is not part of
-  the sync pull yet (item 5 adds it, reading `updatedAt` and `library_deletions`).
-- `POST /api/sync/push` and `GET /api/sync/pull` response shapes are covered by Go tests in
-  `server/internal/sync`, not by a shared JSON fixture.
+- `read` event payloads (reading time) have no contract fixture (item 6).
+- `GET /api/events?since=&workspace=` is not paged yet (a follow-up); a client reads events through the
+  paged pull's `events` collection instead.
 - Event `payload` shapes of `session`, `view`, `lookup`, `journal` are not specified here. `lookup` events
   (`{query}` from older web clients) are no longer written by the web app; the lookup history is the
   `lookups` row.

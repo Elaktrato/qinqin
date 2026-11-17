@@ -48,6 +48,10 @@ Round order (fixed): `workspaces`, `pluginStates`, `pluginData`, `cards`, `decks
 - A row rewritten during a round gets a stamp `>= until`: it is not shipped twice in one round and comes in
   the next one.
 - From no `since` a round ships live rows only. With a `since` it ships tombstones too (`deletedAt` set).
+- Within a library collection (`books`, `bookmarks`, `highlights`) the tombstones follow the live rows
+  instead of interleaving by stamp: the live rows by `updatedAt`, then the `library_deletions` rows by
+  `deletedAt`. Library ids are never reused, so no live row and tombstone of one round share an id; upsert
+  and delete by id and the order does not matter.
 - `page` and `since` tokens are opaque (`p2.…`, `c2.…`; only the prefixes are a contract). A page token binds
   the user and every filter; a cursor binds the collections and workspace filter, so a client keeps one
   cursor per filter set. Another user's token, a token of other filters, a garbled token, a `page=` request
@@ -68,7 +72,9 @@ Round order (fixed): `workspaces`, `pluginStates`, `pluginData`, `cards`, `decks
 - `scope` is set on the first page of a round only (null after): `workspaces` (every workspace of the caller,
   sorted by id, whatever `workspace=` says; a client deletes the local data of a workspace not listed —
   workspace deletion leaves no tombstone), `languages` (the round's language set, sorted) and `catalogue`
-  (the ETag of the caller's default `GET /api/packages`; a changed value means "re-read the catalogue").
+  (the ETag of the caller's default `GET /api/packages`, byte-equal to that response's `ETag` for the same
+  credential — an administrator's session sees build errors there, an administrator's token does not; a
+  changed value means "re-read the catalogue").
 
 ### Page
 
