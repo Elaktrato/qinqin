@@ -264,7 +264,21 @@
 		outline-offset: 1px;
 	}
 
+	/* The looked-up word: the selected wash (design §6). */
 	:global(::highlight(reader-lookup)) {
 		background-color: var(--selected-wash);
+	}
+
+	/* Forced colours: the looked-up word is the system selection, user
+	   highlights the system mark colours (their names stay in the panel). */
+	@media (forced-colors: active) {
+		:global(::highlight(reader-lookup)) {
+			background-color: Highlight;
+			color: HighlightText;
+		}
+		mark.hl {
+			background: Mark;
+			color: MarkText;
+		}
 	}
 </style>
