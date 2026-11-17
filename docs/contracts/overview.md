@@ -122,8 +122,8 @@ Every folder, in dependency order (this page's sync model and Events sections af
 - Types and payloads (`payloads.json`): `session` `null` (once per workspace per learner day; optional for
   Android), `view` `{entryId}` (once per entry page visit; optional), `lookup` never written (legacy
   `{query}`), `review` `{cardId, mode, grade, meta?}` (`review-parse.json`: parse, validity, order), `read`
-  `{bookId, seconds}` (one per reading-timer flush of ≥ 30 whole seconds; consumers clamp to 30..7200 and
-  count a `read` without `bookId`), `journal` `{entryId: string}` (once per journal entry per learner day
+  `{bookId, seconds}` (one per reading-timer flush of ≥ 30 whole seconds; consumers ignore `seconds` under 30 (it counts 0),
+  cap it at 7200, and count a `read` without `bookId`), `journal` `{entryId: string}` (once per journal entry per learner day
   when its text changed). `read` and `journal` are written exactly so by every client.
 - Declared types: `qinqin-core` declares `session`, `view`, `lookup`, `review`, `read`; `qinqin-journal`
   declares `journal`; other plugins may declare more. A client records only types declared by enabled

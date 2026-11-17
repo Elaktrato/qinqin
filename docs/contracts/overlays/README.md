@@ -29,7 +29,16 @@ patched entry view (the same body as `GET /api/entries/{id}`).
 Validation, in this order: an unknown or malformed id is `404 entry not found` (before the body is read); a
 body that is not this shape is `400 malformed request body`; a `written` that is blank after trimming is
 `400 written must not be empty`; a reading with a blank (after trimming) `type` or `value` is
-`400 each reading needs a type and a value`. Errors are plain text and store nothing.
+`400 each reading needs a type and a value`. Errors are plain text and store nothing, except a body over
+64 KiB (`maxEntryBody`): `413 {"error": "request body too large"}` (JSON), nothing stored.
+
+| Check | Status | Body |
+| --- | --- | --- |
+| unknown or malformed id | 404 | `entry not found` |
+| body over 64 KiB | 413 | `{"error": "request body too large"}` (JSON) |
+| body not the shape | 400 | `malformed request body` |
+| blank `written` | 400 | `written must not be empty` |
+| reading with a blank `type` or `value` | 400 | `each reading needs a type and a value` |
 
 ## The stored patch
 
