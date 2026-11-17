@@ -55,7 +55,7 @@ Read order: `auth/` -> `study-day/` -> this page's sync model -> `study/` -> `ca
 - Typed study rows (v0.4.0, `study/`): cards, decks, deck settings, limits, FSRS parameter sets and the
   active set travel as the six typed collections above, with fixed shapes (`study/rows.json`), an `extra`
   object for members the shape does not carry, the plugin-data last-write-wins and tombstone rules
-  (`study/lww.json`) and one extra rule: an item equal to the stored live row is skipped. Every typed row is
+  (`study/lww.json`) and one extra rule: an item equal to the stored live row is written nowhere and counted `dataAccepted` (`unchanged`). Every typed row is
   a workspace row. Owner code: `server/internal/study/rows`, `server/internal/study`; web:
   `apps/web/src/lib/study/rows.ts`, `store.ts`.
 - **Name a typed collection whenever you pull `pluginData`.** The legacy view (`study/README.md`) keeps

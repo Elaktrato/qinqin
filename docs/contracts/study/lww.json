@@ -302,7 +302,7 @@
    "collection": "cards"
   },
   {
-   "name": "equal content is skipped (an idempotent retry)",
+   "name": "equal content is unchanged: counted dataAccepted, nothing written (an idempotent retry)",
    "stored": {
     "row": {
      "id": "c-vocab-1201",
@@ -340,7 +340,69 @@
      "extra": {}
     }
    },
-   "expect": "skipped",
+   "expect": "unchanged",
+   "storedAfter": {
+    "row": {
+     "id": "c-vocab-1201",
+     "kind": "vocab",
+     "entryId": 1201,
+     "written": null,
+     "entryKind": null,
+     "sentenceId": null,
+     "skipKinds": [],
+     "deckIds": [
+      "general"
+     ],
+     "createdAt": "2026-11-10T08:00:00Z",
+     "extra": {}
+    },
+    "modifiedAt": "2026-11-12T10:00:00Z",
+    "version": 3,
+    "updatedAt": "2026-11-12T10:00:01Z",
+    "deletedAt": null
+   },
+   "collection": "cards"
+  },
+  {
+   "name": "equal content stamped before the stored edit is unchanged too (a late retry)",
+   "stored": {
+    "row": {
+     "id": "c-vocab-1201",
+     "kind": "vocab",
+     "entryId": 1201,
+     "written": null,
+     "entryKind": null,
+     "sentenceId": null,
+     "skipKinds": [],
+     "deckIds": [
+      "general"
+     ],
+     "createdAt": "2026-11-10T08:00:00Z",
+     "extra": {}
+    },
+    "modifiedAt": "2026-11-12T10:00:00Z",
+    "version": 3,
+    "updatedAt": "2026-11-12T10:00:01Z",
+    "deletedAt": null
+   },
+   "push": {
+    "updatedAt": "2026-11-01T00:00:00Z",
+    "row": {
+     "id": "c-vocab-1201",
+     "kind": "vocab",
+     "entryId": 1201,
+     "written": null,
+     "entryKind": null,
+     "sentenceId": null,
+     "skipKinds": [],
+     "deckIds": [
+      "general"
+     ],
+     "createdAt": "2026-11-10T08:00:00Z",
+     "extra": {}
+    }
+   },
+   "expect": "unchanged",
    "storedAfter": {
     "row": {
      "id": "c-vocab-1201",
@@ -412,7 +474,7 @@
      }
     }
    },
-   "expect": "skipped",
+   "expect": "unchanged",
    "storedAfter": {
     "row": {
      "id": "c-vocab-1201",
@@ -952,7 +1014,7 @@
    }
   },
   {
-   "name": "the active set follows the same rule",
+   "name": "the active set follows the same rule (equal content: unchanged)",
    "collection": "fsrsActive",
    "stored": {
     "row": {
@@ -973,7 +1035,7 @@
      "extra": {}
     }
    },
-   "expect": "skipped",
+   "expect": "unchanged",
    "storedAfter": {
     "row": {
      "setId": "s1",
@@ -986,5 +1048,10 @@
     "deletedAt": null
    }
   }
- ]
+ ],
+ "outcomes": {
+  "applied": "written: version bumped, updatedAt = now; counted dataAccepted",
+  "skipped": "not written: the stored edit is newer, or a tombstone of an absent or deleted row; counted dataSkipped",
+  "unchanged": "not written: equal to the stored live row (typed members and extra as JSON values), whatever its stamp; counted dataAccepted"
+ }
 }

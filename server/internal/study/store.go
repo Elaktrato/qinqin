@@ -40,14 +40,39 @@ func EditTime(updatedAt time.Time, deletedAt *time.Time) time.Time {
 // edited, clamped to the server clock, wins unless the stored edit time
 // (modified_at, second precision) is after it. A deletion tombstones a live
 // row and keeps its data; deleting an absent or deleted row is skipped. A
-// live write whose typed members and extra equal the stored live row is
-// skipped (an idempotent retry). An applied write bumps version and stamps
+// live write whose typed members and extra equal the stored live row is not
+// written, whatever its stamp (Unchanged: a retry or the same edit twice). An applied write bumps version and stamps
 // updated_at with the server clock; a live write revives a tombstone. The
 // caller checks that the workspace is the user's. r is validated first
 // (rows.ErrInvalid).
 func Apply(ctx context.Context, q Querier, userID int64, r rows.Row, edited time.Time, deleted bool) (bool, error) {
+	o, err := ApplyOutcome(ctx, q, userID, r, edited, deleted)
+	return o == Applied, err
+}
+
+// Outcome is what a write did, for the push counters.
+type Outcome int
+
+const (
+	// Skipped: not written (a newer stored edit, or a tombstone of an absent
+	// or deleted row); counted dataSkipped.
+	Skipped Outcome = iota
+	// Applied: written (version bumped, updated_at = now); dataAccepted.
+	Applied
+	// Unchanged: a live write equal to the stored live row, whatever its
+	// stamp (a retry, the same edit from another device); nothing written,
+	// counted dataAccepted. Contract: docs/contracts/study/lww.json.
+	Unchanged
+)
+
+func (o Outcome) String() string {
+	return [...]string{"skipped", "applied", "unchanged"}[o]
+}
+
+// ApplyOutcome is Apply reporting what it did.
+func ApplyOutcome(ctx context.Context, q Querier, userID int64, r rows.Row, edited time.Time, deleted bool) (Outcome, error) {
 	if err := rows.Validate(r); err != nil {
-		return false, err
+		return Skipped, err
 	}
 	nowT := now().UTC()
 	edited = edited.UTC()
@@ -58,26 +83,26 @@ func Apply(ctx context.Context, q Querier, userID int64, r rows.Row, edited time
 	ws := r.M().WorkspaceID
 	existing, exists, err := Load(ctx, q, userID, ws, f, r.Identity())
 	if err != nil {
-		return false, err
+		return Skipped, err
+	}
+	if !deleted && exists && existing.M().DeletedAt == nil && rows.Equal(existing, r) {
+		return Unchanged, nil
 	}
 	if exists && existing.M().ModifiedAt.After(edited.Truncate(time.Second)) {
-		return false, nil
+		return Skipped, nil
 	}
 	t := tables[f]
 	stampNow, mod := stamp(nowT), stamp(edited)
 	if deleted {
 		if !exists || existing.M().DeletedAt != nil {
-			return false, nil
+			return Skipped, nil
 		}
 		if _, err := q.ExecContext(ctx, `UPDATE `+t.name+` SET deleted_at = ?, updated_at = ?, modified_at = ?, version = version + 1
 			WHERE `+identityWhere(f)+` AND deleted_at IS NULL`,
 			append([]any{stampNow, stampNow, mod}, identityArgs(f, userID, ws, r.Identity())...)...); err != nil {
-			return false, fmt.Errorf("study: delete %s %q: %w", f, r.Identity(), err)
+			return Skipped, fmt.Errorf("study: delete %s %q: %w", f, r.Identity(), err)
 		}
-		return true, nil
-	}
-	if exists && existing.M().DeletedAt == nil && rows.Equal(existing, r) {
-		return false, nil
+		return Applied, nil
 	}
 	cols := append([]string{"user_id", "workspace_id"}, t.cols...)
 	args := append([]any{userID, ws}, typedValues(r)...)
@@ -96,9 +121,9 @@ func Apply(ctx context.Context, q Querier, userID int64, r rows.Row, edited time
 		VALUES (` + strings.TrimSuffix(strings.Repeat("?, ", len(cols)+1), ", ") + `, 1, ?, ?)
 		ON CONFLICT (` + conflict + `) DO UPDATE SET ` + strings.Join(set, ", ")
 	if _, err := q.ExecContext(ctx, query, args...); err != nil {
-		return false, fmt.Errorf("study: write %s %q: %w", f, r.Identity(), err)
+		return Skipped, fmt.Errorf("study: write %s %q: %w", f, r.Identity(), err)
 	}
-	return true, nil
+	return Applied, nil
 }
 
 // orderBy is the stable replay order of a pull: write stamp, workspace, identity.

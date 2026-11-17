@@ -121,12 +121,12 @@ func TestLWWFixture(t *testing.T) {
 				d := ts(t, *c.Push.DeletedAt)
 				deletedAt = &d
 			}
-			applied, err := study.Apply(ctx, sqlDB, 1, r, study.EditTime(r.M().UpdatedAt, deletedAt), deletedAt != nil)
+			outcome, err := study.ApplyOutcome(ctx, sqlDB, 1, r, study.EditTime(r.M().UpdatedAt, deletedAt), deletedAt != nil)
 			if err != nil {
 				t.Fatal(err)
 			}
-			if applied != (c.Expect == "applied") {
-				t.Errorf("applied = %v, want %s", applied, c.Expect)
+			if outcome.String() != c.Expect {
+				t.Errorf("outcome = %s, want %s", outcome, c.Expect)
 			}
 			got, ok, err := study.Load(ctx, sqlDB, 1, 7, f, identity)
 			if err != nil {

@@ -45,7 +45,7 @@ interface LwwCase {
 	collection: StudyCollection;
 	stored: { row: Record<string, unknown>; modifiedAt: string; deletedAt: string | null } | null;
 	push: { updatedAt: string; deletedAt?: string; row: Record<string, unknown> };
-	expect: 'applied' | 'skipped';
+	expect: 'applied' | 'skipped' | 'unchanged';
 	storedAfter: { row: Record<string, unknown> } | null;
 }
 
@@ -117,9 +117,8 @@ describe('lww.json row bodies', () => {
 			if (c.stored === null || c.stored.deletedAt !== null || c.push.deletedAt !== undefined) continue;
 			const stored = parseRow(c.collection, { ...c.stored.row, ...meta })!;
 			const pushed = parseRow(c.collection, { ...c.push.row, ...meta })!;
-			// Skipped although the push is not older: only equal content does that.
-			const notOlder = Date.parse(c.push.updatedAt) >= Date.parse(c.stored.modifiedAt);
-			const equalSkip = c.expect === 'skipped' && notOlder;
+			// The server writes nothing for equal content ("unchanged", counted accepted).
+			const equalSkip = c.expect === 'unchanged';
 			expect(sameBody(stored, pushed), c.name).toBe(equalSkip);
 		}
 	});

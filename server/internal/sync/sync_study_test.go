@@ -94,12 +94,15 @@ func TestPushAndPullEachTypedCollection(t *testing.T) {
 				t.Fatalf("push = %+v, %v; want 1 accepted", res, err)
 			}
 			res, err = chinsync.Push(ctx, sqlDB, alice, typedBody(c, typedItem(c, ws, "x1", at.Add(time.Second))))
-			if err != nil || res.DataAccepted != 0 || res.DataSkipped != 1 {
-				t.Fatalf("equal retry = %+v, %v; want 1 skipped", res, err)
+			// Equal content: accepted without a write (review fix, phases B–D, 3).
+			if err != nil || res.DataAccepted != 1 || res.DataSkipped != 0 {
+				t.Fatalf("equal retry = %+v, %v; want 1 accepted (unchanged)", res, err)
 			}
 			res, err = chinsync.Push(ctx, sqlDB, alice, typedBody(c, typedItem(c, ws, "x1", at.Add(-time.Hour))))
-			if err != nil || res.DataSkipped != 1 {
-				t.Fatalf("older push = %+v, %v; want skipped", res, err)
+			// An older push of the same content is unchanged too; older OTHER
+			// content is skipped (lww.json "older edit is skipped", via study.Apply).
+			if err != nil || res.DataAccepted != 1 || res.DataSkipped != 0 {
+				t.Fatalf("older equal push = %+v, %v; want accepted (unchanged)", res, err)
 			}
 			if _, err := chinsync.Push(ctx, sqlDB, bob, typedBody(c, typedItem(c, bobWS, "b1", at))); err != nil {
 				t.Fatal(err)

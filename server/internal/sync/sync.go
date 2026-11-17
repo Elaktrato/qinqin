@@ -283,14 +283,14 @@ func Push(ctx context.Context, sqlDB *sql.DB, userID int64, body PushBody) (Push
 		}
 	}
 	for _, it := range typed {
-		applied, err := study.Apply(ctx, sqlDB, userID, it.row, it.edited, it.deleted)
+		outcome, err := study.ApplyOutcome(ctx, sqlDB, userID, it.row, it.edited, it.deleted)
 		if err != nil {
 			return res, fmt.Errorf("sync push: %w", err)
 		}
-		if applied {
-			res.DataAccepted++
-		} else {
+		if outcome == study.Skipped {
 			res.DataSkipped++
+		} else {
+			res.DataAccepted++ // applied, or equal content that needed no write
 		}
 	}
 	return res, nil

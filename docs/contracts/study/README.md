@@ -14,7 +14,7 @@ Fixtures:
 - `rows.json` — valid and invalid wire rows per collection (the strict wire decode).
 - `legacy-codec.json` — legacy `qinqin-flashcards` row (key + data) to typed row, `unreadable`, and the
   legacy object written back (`roundTrip`); `families` maps keys to collections.
-- `lww.json` — last-write-wins and tombstone cases of a push.
+- `lww.json` — last-write-wins and tombstone cases of a push; `expect` is `applied`, `skipped` or `unchanged` (see `outcomes`).
 - `legacy-view.json` — the request shapes of a v0.3.0 web shell and what the legacy view answers.
 
 Web: `apps/web/src/lib/study/rows.ts` (strict parse, the study shapes, `sameBody`) and `store.ts` (typed
@@ -83,7 +83,9 @@ typed value always wins: the server drops `extra` members shadowed by a set type
 The plugin-data rule, per row: a push item's edit time is its `updatedAt`, or its `deletedAt` when later,
 clamped to the server clock. It wins when the stored edit time (`modified_at`, second precision) is not
 after it (a same-second client write wins). An item whose typed members and `extra` equal the stored live
-row is skipped, so a retry changes nothing (`version` included). Deleting an absent or deleted row is
+row is `unchanged`, whatever its stamp: nothing is written (`version` included) and it counts
+`dataAccepted`, so a retry after a lost answer, or the same edit from two devices, never reads as "the
+server holds newer data" (`dataSkipped`). Deleting an absent or deleted row is
 skipped; a deletion keeps the row's last data; a newer live write revives a tombstone. Every applied write
 bumps `version` and stamps `updatedAt` with the server clock. A pull from the zero cursor ships live rows
 only; any other cursor (including `1970-01-01T00:00:00Z`) ships tombstones too.
