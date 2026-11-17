@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { BASE_XP, dailyStreak, levelFromXp, levelProgress, xpByKind, xpFromReviews } from './exp';
 import streakFixture from '../../../../../docs/contracts/scheduler/streak.json';
+import reviewParseFixture from '../../../../../docs/contracts/events/review-parse.json';
 import { studyDay } from '../time/studyDay';
 import type { ReviewEvent, ReviewGrade, StudyCardKind } from './types';
 
@@ -223,6 +224,16 @@ describe('fixtures: streak with vacation days', () => {
 			const day = c.zone === 'UTC' ? UTC : studyDay([{ zone: c.zone, from: null }]);
 			const reviews = c.reviews.map((ts, i) => ev(i + 1, ts));
 			expect(dailyStreak(reviews, Date.parse(c.now), day, c.vacation)).toEqual(c.expect);
+		});
+	}
+});
+
+describe('docs/contracts/events/review-parse.json: XP counts exactly the valid reviews', () => {
+	const fixture = reviewParseFixture as unknown as { cases: { name: string; event: ReviewEvent; valid: boolean }[] };
+	for (const c of fixture.cases) {
+		it(c.name, () => {
+			expect(xpFromReviews([c.event], UTC.dayOf) > 0).toBe(c.valid);
+			expect(Object.values(xpByKind([c.event])).reduce((a, b) => a + b, 0) > 0).toBe(c.valid);
 		});
 	}
 });

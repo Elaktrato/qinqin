@@ -363,3 +363,16 @@ of each other in content but share the web gates; one implementer at a time. Tas
   production edits only for the builders and their call sites, and the two constants decide how reading time is
   split into events, never how much counts — cost: Android could flush at another cadence (same totals, other
   event counts).
+- Task 3 (review parse): values extracted by a scratch vitest file (deleted) that ran `parseReview`,
+  `isValidReview`, `xpFromReviews` and `sortedReviews` over the inputs. `reviewParse`/`scheduler`/`exp` tests
+  with `review-parse.json` absent → 3 files FAIL; present → PASS (164); flipping `valid` of the unparsable-`ts`
+  case → 2 FAIL (scheduler, exp). Gates: `npm run check` 0; `npm test` 0 (398 files, 6504 passed).
+- Ruling: `parseReview` does not read `ts` while `isValidReview` (and `exp.ts`) require a parsable one; the
+  fixture pins both ("an unparsable ts: parsed but not valid") and the README states that an event counts
+  exactly when it parses and is valid — both web paths agree on what counts, so it is not a bug — cost: none.
+- Ruling: `isValidReview` does not check `type` (its callers pass parsed reviews); the "another type" case pins
+  `parsed: null, valid: true` as built, and the README's counting rule (parse first) makes it irrelevant — cost:
+  none.
+- Ruling: non-finite numbers are written `1e999` in fixtures (JSON has no Infinity; `JSON.parse` reads it as
+  Infinity, as a stored payload would) — cost: a JSON parser that rejects overflowing numbers must special-case
+  it in tests.

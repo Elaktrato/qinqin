@@ -5,6 +5,7 @@ import type { ReviewEvent, ReviewGrade, StudyCard } from './types';
 import { createEmptyCard, fsrs, Rating, type Grade } from 'ts-fsrs';
 
 import envelopeFixture from '../../../../../docs/contracts/events/envelope.json';
+import reviewParseFixture from '../../../../../docs/contracts/events/review-parse.json';
 import vacationSchedule from '../../../../../docs/contracts/scheduler/vacation-schedule.json';
 import { DEFAULT_W } from './fsrs/params';
 import { clockFromRuns, IDENTITY_CLOCK } from './studyClock';
@@ -12,6 +13,7 @@ import { UTC_CONTEXT, type StudyContext } from './studyContext';
 import {
 	buildQueue,
 	isDue,
+	isValidReview,
 	levelFromXp,
 	scheduleFor,
 	schedulerCacheSize,
@@ -562,4 +564,23 @@ describe('docs/contracts/events/envelope.json: replay order', () => {
 		expect(sortedReviews(stored).map((e) => e.id)).toEqual(serverOrder);
 		expect(sortedReviews([...stored].reverse()).map((e) => e.id)).toEqual(serverOrder);
 	});
+});
+
+describe('docs/contracts/events/review-parse.json: validity and replay order', () => {
+	const fixture = reviewParseFixture as unknown as {
+		cases: { name: string; event: ReviewEvent; valid: boolean }[];
+		order: { name: string; events: { id: string; ts: string }[]; expect: string[] }[];
+	};
+	for (const c of fixture.cases) {
+		it(`isValidReview: ${c.name}`, () => {
+			expect(isValidReview(c.event)).toBe(c.valid);
+		});
+	}
+	for (const c of fixture.order) {
+		it(`sortedReviews: ${c.name}`, () => {
+			const events = c.events.map((e) => review('c1', 3, e.ts, e.id));
+			expect(sortedReviews(events).map((e) => e.id)).toEqual(c.expect);
+			expect(sortedReviews([...events].reverse()).map((e) => e.id)).toEqual(c.expect);
+		});
+	}
 });

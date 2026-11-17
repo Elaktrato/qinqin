@@ -22,6 +22,10 @@ Fixtures:
   `apps/web/src/lib/eventPayloads.test.ts` (the builders of `lib/eventPayloads.ts`, member order included),
   `features/reader/readingTimer.test.ts`, `plugins/journal/entryDraft.test.ts`, `stats/readingTime.test.ts`.
   The restore remap of `view` and `read` payloads is pinned in `backup/remap.json`.
+- `review-parse.json` — stored events and what a client makes of them: `parsed` (the review payload
+  `parseReview` reads, or `null`), `valid` (`isValidReview`: counted by replay and XP) and the replay `order`.
+  Decoded by `apps/web/src/lib/study/reviewParse.test.ts`, `study/scheduler.test.ts` (`isValidReview`,
+  `sortedReviews`) and `study/exp.test.ts` (XP counts exactly the valid ones).
 
 ## Envelope
 
@@ -138,3 +142,24 @@ Item 7 reconciliation: `read` = `{bookId, seconds}`, `journal` = `{entryId: stri
 what the web writes and what the server's activity rules read. "`reading-hours` sums `readSeconds`" matches the
 clamping and a `read` without `bookId` still counts; "distinct `entryId` of `journal` events" means distinct
 **strings**, matching the server's `distinctBy`.
+
+## Reviews
+
+The `review` payload is `{cardId: string, mode: <card kind>, grade: 1|2|3|4, meta?: {tier?, mistakes?, hints?,
+durationMs?}}` (written by `study/events.ts`; the overview's row keeps the shape). A client reads a stored
+event as a review in two steps, both pinned by `review-parse.json`:
+
+1. **Parse** (`parseReview`): only `type: "review"`; the payload is an object with a non-empty string `cardId`
+   and an integer `grade` 1–4 (`3.0` is 3; `"3"`, `2.5`, 0 and 5 are not grades), else the event is not a
+   review. `mode` is kept when it is one of the six kinds `vocab`, `sentence`, `writing`, `tone`, `reverse`,
+   `cloze`; missing, unknown or non-string reads as `vocab` (events from before kinds existed). `meta` is kept
+   only when every present member is valid — `tier` 0, 1 or 2; `mistakes` and `hints` integers ≥ 0;
+   `durationMs` a finite number ≥ 0 — else it is dropped whole (the review stays); unknown `meta` members and
+   extra payload members are dropped. The envelope is kept as stored. `ts` is not read here.
+2. **Validity** (`isValidReview`, the same test in `exp.ts`): `ts` parses as an instant, `cardId` a non-empty
+   string, `grade` 1–4. An event whose `ts` does not parse is parsed but never counted (no replay, no XP).
+
+An event counts as a review exactly when it parses and is valid. Replay order is `(instant of ts, id)`: the
+instant, not the text (`10:00:00+01:00` and `09:00:00Z` tie and the id decides); see Order above for why the
+stored whole-second copy is the one to order.
+
