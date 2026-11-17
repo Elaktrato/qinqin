@@ -76,9 +76,10 @@ func Negotiate(candidates, supported []string) string {
 	return DefaultLanguage
 }
 
-// maxAcceptLanguage bounds the header length and entry count read.
+// MaxAcceptLanguage bounds the Accept-Language header length read (here and
+// in a queued mail job); maxAcceptLanguageEntries bounds the entries read.
 const (
-	maxAcceptLanguage        = 1024
+	MaxAcceptLanguage        = 1024
 	maxAcceptLanguageEntries = 32
 )
 
@@ -87,8 +88,8 @@ const (
 // `*`, q=0 entries and malformed entries are skipped; a malformed or
 // oversized header yields what could be read (possibly nothing).
 func ParseAcceptLanguage(header string) []string {
-	if len(header) > maxAcceptLanguage {
-		header = header[:maxAcceptLanguage]
+	if len(header) > MaxAcceptLanguage {
+		header = header[:MaxAcceptLanguage]
 	}
 	type entry struct {
 		tag string

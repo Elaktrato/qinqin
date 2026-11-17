@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"qinqin/internal/db"
+	"qinqin/internal/i18n"
 	"qinqin/internal/mail/mailtest"
 	"qinqin/internal/netguard"
 )
@@ -174,5 +175,26 @@ func TestAnonymousTriggeredMailsCannotExhaustTheGlobalCap(t *testing.T) {
 	wait(t, func() bool { return strings.Contains(sink.all(), "sent kind=mfa_code user=99") })
 	if n := len(fake.Messages()); n != 4 {
 		t.Errorf("sent %d, want 3 anonymous + 1 reserved", n)
+	}
+}
+
+// A queued job holds at most MaxAcceptLanguage bytes of the request's
+// Accept-Language header: the queue never keeps a huge header alive, and the
+// worker reads no more than the parser would anyway.
+func TestEnqueueTruncatesAcceptLanguage(t *testing.T) {
+	s := &Service{Logf: func(string, ...any) {}}
+	long := "de-CH," + strings.Repeat("x", 10*i18n.MaxAcceptLanguage)
+	if !s.Enqueue(Job{Kind: KindLoginCode, To: "bob@example.com", AcceptLanguage: long}) {
+		t.Fatal("enqueue refused")
+	}
+	if !s.Enqueue(Job{Kind: KindLoginCode, To: "bob@example.com", AcceptLanguage: "fr"}) {
+		t.Fatal("enqueue refused")
+	}
+	got := <-s.q().ch
+	if len(got.AcceptLanguage) != i18n.MaxAcceptLanguage || got.AcceptLanguage != long[:i18n.MaxAcceptLanguage] {
+		t.Fatalf("queued header is %d bytes, want the first %d", len(got.AcceptLanguage), i18n.MaxAcceptLanguage)
+	}
+	if got := <-s.q().ch; got.AcceptLanguage != "fr" {
+		t.Fatalf("short header changed to %q", got.AcceptLanguage)
 	}
 }

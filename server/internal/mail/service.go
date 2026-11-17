@@ -10,6 +10,7 @@ import (
 	"sync"
 	"time"
 
+	"qinqin/internal/i18n"
 	"qinqin/internal/netguard"
 	"qinqin/internal/secretbox"
 )
@@ -58,7 +59,8 @@ func (s *Service) TransportFor(p *Prepared) Transport { return s.tune(p.Transpor
 // an unknown account). It returns ok=false to skip the mail.
 // AcceptLanguage is the triggering request's header: the worker picks the
 // mail's language from the recipient's stored interface language, else
-// this header, else en (Language).
+// this header, else en (Language). Enqueue keeps at most
+// i18n.MaxAcceptLanguage bytes of it (the parser reads no more).
 type Job struct {
 	Kind           Kind
 	UserID         int64
@@ -113,6 +115,9 @@ func (s *Service) clock() time.Time {
 func (s *Service) Enqueue(j Job) bool {
 	if s == nil {
 		return false
+	}
+	if len(j.AcceptLanguage) > i18n.MaxAcceptLanguage {
+		j.AcceptLanguage = j.AcceptLanguage[:i18n.MaxAcceptLanguage]
 	}
 	select {
 	case s.q().ch <- j:
