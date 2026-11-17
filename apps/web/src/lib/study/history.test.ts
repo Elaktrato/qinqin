@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { typedPull } from './testing/legacyCodec';
+import { pagedPull } from './testing/legacyCodec';
 
 const { goto } = vi.hoisted(() => ({ goto: vi.fn() }));
 
@@ -59,7 +59,7 @@ describe('loadStudyHistory', () => {
 				const url = String(input);
 				if (init?.method === 'PUT') return jsonResponse({ version: 1 });
 				if (init?.method === 'POST') return jsonResponse({ accepted: 1, duplicates: 0 });
-				if (url.startsWith('/api/sync/pull')) return jsonResponse(typedPull({ pluginData: [card] }));
+				if (url.startsWith('/api/sync/pull')) return jsonResponse(pagedPull({ pluginData: [card] }));
 				if (url.startsWith('/api/events?')) return jsonResponse([review]);
 				return jsonResponse({}, 404);
 			})

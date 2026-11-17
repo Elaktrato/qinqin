@@ -11,6 +11,7 @@
 import { get } from "svelte/store";
 import { ApiError, api } from "../api/client";
 import { newUlid } from "../ulid";
+import { V2_STUDY_COLLECTIONS, firstPageUrl, pullAll } from "../sync/pager";
 import { workspaces } from "../workspaces";
 import { fullLogPath, type StudyEvent } from "../events";
 import { canonicalCards, cleanSkipKinds, compareCanonical, newCardId } from "./canonical";
@@ -77,16 +78,6 @@ export const FLASHCARDS_PLUGIN_ID = "qinqin-flashcards";
 // The implicit deck always exists; it is never written to plugin data.
 export const GENERAL_DECK_ID = "general";
 
-/**
- * The study pull: the keyed plugin rows (goals, known marks, vacations), the
- * feature switches, and the six typed study collections. Naming a typed
- * collection keeps the server's legacy view (typed rows copied into
- * pluginData for old shells) out of this answer (docs/contracts/study/).
- */
-export const SYNC_PULL_PATH =
-  "/api/sync/pull?cursor=1970-01-01T00:00:00Z&collections=pluginData,pluginStates," +
-  STUDY_COLLECTIONS.join(",");
-
 // Only the fields the study layer reads; the server sends more.
 interface PluginDataRow {
   pluginId: string;
@@ -98,6 +89,17 @@ interface PluginDataRow {
 }
 
 type SyncDelta = { pluginData?: unknown } & Partial<Record<StudyCollection, unknown>>;
+
+/**
+ * The study pull is a paged round (docs/contracts/sync/): the keyed plugin rows
+ * (goals, known marks, vacations), the feature switches and the six typed study
+ * collections of one workspace plus user-global rows, merged in page order.
+ */
+async function pullStudy(workspaceId: number): Promise<SyncDelta> {
+  const first = firstPageUrl({ collections: V2_STUDY_COLLECTIONS, workspace: workspaceId });
+  const round = await pullAll((path) => api<unknown>(path), first, V2_STUDY_COLLECTIONS);
+  return round.collections as SyncDelta;
+}
 
 /**
  * requireWorkspaceId returns the selected workspace id. Study data is
@@ -178,7 +180,7 @@ async function fetchStudyData(
   snap?: StudySnapshot,
 ): Promise<StudyData> {
   const knownAt = snap?.knownAt;
-  const delta = await api<SyncDelta>(SYNC_PULL_PATH);
+  const delta = await pullStudy(workspaceId);
   const rows = Array.isArray(delta?.pluginData) ? delta.pluginData : [];
   const decks: Deck[] = [];
   const cards: StudyCard[] = [];

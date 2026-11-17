@@ -4,7 +4,6 @@ import { classify } from './sw/classify';
 import { DEFAULT_W } from '../study/fsrs/params';
 import { UTC_CONTEXT, type StudyContext } from '../study/studyContext';
 import type { ReviewEvent, StudyCard, StudyCardKind } from '../study/types';
-import { SYNC_PULL_PATH } from '../study/store';
 import { STUDY_COLLECTIONS } from '../study/rows';
 import { fullLogPath } from '../events';
 import { entryPath } from '../api/entries';
@@ -19,6 +18,10 @@ import {
 	receiptKey,
 	type PrepareDeps
 } from './prepareOffline';
+
+// The legacy study pull an old shell made (still cacheable); the web itself pages with v=2.
+const SYNC_PULL_PATH =
+	'/api/sync/pull?cursor=1970-01-01T00:00:00Z&collections=pluginData,pluginStates,' + STUDY_COLLECTIONS.join(',');
 
 const now = new Date('2026-03-01T12:00:00Z');
 

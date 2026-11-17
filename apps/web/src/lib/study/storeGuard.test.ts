@@ -9,6 +9,7 @@ vi.mock('./knownMarks', async (orig) => ({
 }));
 
 import { setKnownMark, setKnownMarks } from './store';
+import { pagedPull } from './testing/legacyCodec';
 
 function calls(): string[] {
 	return vi.mocked(fetch).mock.calls.map(([url, init]) => `${init?.method ?? 'GET'} ${String(url)}`);
@@ -17,7 +18,7 @@ function calls(): string[] {
 beforeEach(() => {
 	vi.stubGlobal(
 		'fetch',
-		vi.fn(async () => new Response(JSON.stringify({ pluginData: [] }), { headers: { 'content-type': 'application/json' } }))
+		vi.fn(async () => new Response(JSON.stringify(pagedPull({ pluginData: [] })), { headers: { 'content-type': 'application/json' } }))
 	);
 });
 afterEach(() => {
