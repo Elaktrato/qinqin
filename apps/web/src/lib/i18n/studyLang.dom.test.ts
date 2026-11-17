@@ -1,0 +1,101 @@
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
+import { cleanup, render, screen } from '@testing-library/svelte';
+import { afterEach, describe, expect, it } from 'vitest';
+import type { Entry, Workspace } from '$lib/api/types';
+import type { FlowItem } from '$lib/study/cardFlow';
+import type { StudyCard } from '$lib/study/types';
+import { workspaces } from '$lib/workspaces';
+import CardManager from '$lib/components/CardManager.svelte';
+import ToneCard from '$lib/features/flashcards/cards/ToneCard.svelte';
+
+// Study text carries the study language, interface text the document's (spec "lang and dir attributes"): the
+// closest [lang] of a written form is the workspace's; interface text has none of its own.
+
+const src = resolve(__dirname, '../..');
+const read = (rel: string) => readFileSync(resolve(src, rel), 'utf8');
+
+function workspace(language: string): Workspace {
+	return { id: 1, language, name: '', createdAt: 't' } as unknown as Workspace;
+}
+
+afterEach(() => {
+	cleanup();
+	workspaces.set({ list: [], current: null });
+});
+
+describe('CardManager (the lang="zh" bug)', () => {
+	it('a Japanese workspace tags its words ja, and the interface text has no lang of its own', async () => {
+		workspaces.set({ list: [workspace('ja')], current: workspace('ja') });
+		const cards: StudyCard[] = [
+			{ id: 'c-vocab-1', kind: 'vocab', entryId: 1, written: '食べる', deckIds: ['general'], createdAt: '2026-01-01T00:00:00.000Z' }
+		];
+		render(CardManager, { cards, decks: [], onchanged: async () => {} });
+		const word = screen.getByText('食べる');
+		expect(word.closest('[lang]')?.getAttribute('lang')).toBe('ja');
+		expect(screen.getByText(/Manage cards/).closest('[lang]')).toBeNull();
+	});
+});
+
+describe('ToneCard', () => {
+	const entry = {
+		id: 1,
+		language: 'zh',
+		kind: 'word',
+		written: '你好',
+		readings: [{ type: 'pinyin', value: 'nǐ hǎo', plain: 'ni3hao3', ord: 0 }],
+		attrs: {},
+		radicalId: null
+	} as unknown as Entry;
+	const item = { cardId: 'c', entryId: 1, kind: 'tone', virtual: true } as unknown as FlowItem;
+
+	it('follows a traditional-script workspace (zh-Hant), not a fixed zh', () => {
+		workspaces.set({ list: [workspace('zh-Hant')], current: workspace('zh-Hant') });
+		render(ToneCard, { item, entry, done: false, onDone: () => {} });
+		expect(screen.getByText('你好').closest('[lang]')?.getAttribute('lang')).toBe('zh-Hant');
+	});
+
+	it('a simplified workspace reads zh-Hans', () => {
+		workspaces.set({ list: [workspace('zh')], current: workspace('zh') });
+		render(ToneCard, { item, entry, done: false, onDone: () => {} });
+		expect(screen.getByText('你好').closest('[lang]')?.getAttribute('lang')).toBe('zh-Hans');
+	});
+});
+
+// Every audited component of study text takes its `lang` from lib/i18n/lang.ts (no third source).
+const AUDITED = [
+	'lib/components/CardManager.svelte',
+	'lib/features/flashcards/cards/ToneCard.svelte',
+	'lib/features/flashcards/cards/VocabCard.svelte',
+	'lib/features/flashcards/cards/ReverseCard.svelte',
+	'lib/features/flashcards/cards/WritingCard.svelte',
+	'lib/components/Readings.svelte',
+	'lib/components/Senses.svelte',
+	'lib/components/Sentences.svelte',
+	'lib/components/ReadingText.svelte',
+	'routes/entry/[id]/+page.svelte',
+	'routes/stats/characters/+page.svelte',
+	'lib/components/map/CellTip.svelte',
+	'lib/features/flashcards/decks/DeckDetail.svelte',
+	'lib/features/flashcards/decks/StarterDeckDetail.svelte',
+	'lib/features/flashcards/decks/SystemDeckDetail.svelte',
+	'routes/lookups/+page.svelte',
+	'routes/search/+page.svelte',
+	'lib/features/reader/BookView.svelte',
+	'lib/plugins/grammar/lessonData.ts'
+];
+
+describe('the audited components', () => {
+	it.each(AUDITED)('%s uses studyLang/readingLang', (rel) => {
+		expect(read(rel)).toMatch(/\b(studyLang|readingLang|glossLang)\(/);
+	});
+});
+
+describe('the shell', () => {
+	it('the header brand link carries no lang (interface text); the footer hanzi keeps lang="zh"', () => {
+		const layout = read('routes/+layout.svelte');
+		const brand = layout.slice(layout.indexOf('class="brand'), layout.indexOf('>', layout.indexOf('class="brand')));
+		expect(brand).not.toMatch(/\slang=/);
+		expect(layout).toContain('<span lang="zh">{APP_NAME_HANZI}</span>');
+	});
+});

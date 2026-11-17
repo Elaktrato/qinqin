@@ -1,5 +1,6 @@
 // Pure helpers of the home heatmap's view state.
 
+import { t } from '$lib/i18n';
 import type { ActivityView } from './activity';
 import type { StoredActivityView } from './viewPrefs';
 
@@ -105,5 +106,5 @@ export function createSaveQueue<T>(
 
 /** chipLabel is a chip's accessible name: the type and its points with the unit. */
 export function chipLabel(label: string, points: number): string {
-	return `${label}, ${points} ${points === 1 ? 'point' : 'points'}`;
+	return t('stats.activity.chip', { label, points: t('stats.activity.points', { count: points }) });
 }

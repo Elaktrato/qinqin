@@ -1,10 +1,13 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { pageTitle } from '$lib/pageTitle';
+	import { t } from '$lib/i18n';
+	import Msg from '$lib/i18n/Msg.svelte';
 	import { authErrorMessage } from '$lib/api/authErrors';
 	import { checkInvite, getAuthOptions, type AuthOptions } from '$lib/api/account';
 	import { readFragment } from '$lib/account/fragment';
 	import { register } from '$lib/auth';
+	import { passwordHint } from '$lib/account/passwordRules';
 
 	let username = $state('');
 	let password = $state('');
@@ -34,7 +37,7 @@
 				const found = await checkInvite(invite);
 				emailPolicy = found.emailPolicy;
 			} catch (err) {
-				inviteProblem = authErrorMessage(err, 'This invite link is no longer valid.');
+				inviteProblem = authErrorMessage(err, t('auth.register.inviteInvalid'), 'register');
 			}
 		}
 		loaded = true;
@@ -55,7 +58,7 @@
 			await register(username.trim(), password, { email: email.trim(), invite });
 			// The layout guard moves a signed-in session off this page.
 		} catch (err) {
-			error = authErrorMessage(err, 'Registration failed.');
+			error = authErrorMessage(err, t('auth.register.failed'), 'register');
 		} finally {
 			busy = false;
 		}
@@ -63,31 +66,33 @@
 </script>
 
 <svelte:head>
-	<title>{pageTitle('Create account')}</title>
+	<title>{pageTitle(t('auth.register.title'))}</title>
 </svelte:head>
 
 <main class="auth">
-	<h1>Create account</h1>
+	<h1>{t('auth.register.title')}</h1>
 
 	{#if !loaded}
-		<p class="hint" role="status">Loading…</p>
+		<p class="hint" role="status">{t('app.loading')}</p>
 	{:else if inviteProblem}
 		<p class="error" role="alert">{inviteProblem}</p>
-		<p class="hint">Ask the administrator for a new invite link. <a href="/login">Sign in</a></p>
+		<p class="hint">
+			<Msg key="auth.register.askNewInvite">{#snippet link(text: string)}<a href="/login">{text}</a>{/snippet}</Msg>
+		</p>
 	{:else if closed}
 		<p role="status">
 			{options?.registration === 'invite'
-				? 'You need an invite link to register. Open the link you were given, or ask the administrator.'
-				: 'Registration is closed. Ask the administrator for an invite link or an account.'}
+				? t('auth.register.needInvite')
+				: t('auth.register.closed')}
 		</p>
-		<p class="hint"><a href="/login">Sign in</a></p>
+		<p class="hint"><a href="/login">{t('auth.register.signIn')}</a></p>
 	{:else}
 		{#if options?.bootstrap}
-			<p class="hint">This is a new instance: the first account becomes the administrator.</p>
+			<p class="hint">{t('auth.register.bootstrap')}</p>
 		{/if}
 		<form onsubmit={submit}>
 			<label>
-				Username
+				{t('auth.signIn.username')}
 				<input
 					name="username"
 					autocomplete="username"
@@ -96,11 +101,11 @@
 					required
 				/>
 			</label>
-			<p class="hint" id="username-rules">3 to 32 letters, digits, dots, underscores or hyphens.</p>
+			<p class="hint" id="username-rules">{t('auth.register.usernameRules')}</p>
 
 			{#if emailPolicy !== 'off' && !options?.bootstrap}
 				<label>
-					{emailPolicy === 'required' ? 'Email' : 'Email (optional)'}
+					{emailPolicy === 'required' ? t('account.email.label') : t('account.email.labelOptional')}
 					<input
 						name="email"
 						type="email"
@@ -112,7 +117,7 @@
 			{/if}
 
 			<label>
-				Password
+				{t('account.field.password')}
 				<input
 					name="password"
 					type="password"
@@ -122,15 +127,17 @@
 					required
 				/>
 			</label>
-			<p class="hint" id="password-rules">At least 10 characters. No other rules.</p>
+			<p class="hint" id="password-rules">{passwordHint()}</p>
 
 			{#if error}
 				<p class="error" role="alert">{error}</p>
 			{/if}
 
-			<button type="submit" disabled={busy}>{busy ? 'Creating account…' : 'Create account'}</button>
+			<button type="submit" disabled={busy}>{busy ? t('auth.register.creating') : t('auth.register.submit')}</button>
 		</form>
 
-		<p class="hint">Already have an account? <a href="/login">Sign in</a>.</p>
+		<p class="hint">
+			<Msg key="auth.register.haveAccount">{#snippet link(text: string)}<a href="/login">{text}</a>{/snippet}</Msg>
+		</p>
 	{/if}
 </main>

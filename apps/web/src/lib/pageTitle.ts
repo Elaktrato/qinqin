@@ -1,4 +1,4 @@
-import { APP_NAME } from './app';
+import { t } from './i18n';
 
 /**
  * pageTitle builds a document title: the most specific part first, the
@@ -6,5 +6,5 @@ import { APP_NAME } from './app';
  * with none left it is just the app name.
  */
 export function pageTitle(...parts: string[]): string {
-	return [...parts.map((p) => p.trim()).filter(Boolean), APP_NAME].join(' · ');
+	return [...parts.map((p) => p.trim()).filter(Boolean), t('app.name')].join(' · ');
 }

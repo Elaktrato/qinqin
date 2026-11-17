@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { LookupResult } from '$lib/api/types';
-import { START_NOTE, lookupSelection, selectionSpanTarget } from './selectionLookup';
+import { startNote, lookupSelection, selectionSpanTarget } from './selectionLookup';
 
 type Dictionary = Record<string, LookupResult['kind']>;
 
@@ -126,7 +126,7 @@ describe('lookupSelection', () => {
 		const lookup = fakeLookup();
 		const target = { start: 0, end: 4, text: '学习中文', kind: 'word' as const };
 		const found = await lookupSelection('zh', '学习中文', target, lookup);
-		expect(found.note).toBe(START_NOTE);
+		expect(found.note).toBe(startNote());
 		expect(found.results.map((r) => r.term)).toEqual(['学习', '学']);
 	});
 

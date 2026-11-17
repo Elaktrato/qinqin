@@ -3,6 +3,7 @@
 // only: its grade is never recorded, so FSRS, XP, streak and the review
 // log see each card exactly once per original review.
 
+import { t } from '$lib/i18n';
 import type { FlowItem } from './cardFlow';
 import type { ClozeMode } from './cloze';
 import type { SaladTier } from './wordSalad';
@@ -123,7 +124,7 @@ export async function applyGrade(input: {
 }): Promise<GradeStep> {
 	const { queue, index, grade, tier, cloze, record } = input;
 	const item = queue[index];
-	if (item === undefined) return { ok: false, error: 'This card is no longer available.' };
+	if (item === undefined) return { ok: false, error: t('study.grade.cardGone') };
 	if (!reviewRecorded(item)) {
 		return {
 			ok: true,

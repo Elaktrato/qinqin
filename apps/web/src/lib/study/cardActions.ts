@@ -6,6 +6,7 @@
 // or the pointer rests on it. Pure and framework-free; components render
 // its `state` and call its methods.
 
+import { t, type MessageKey } from '$lib/i18n';
 import { PartialCardsError } from './store';
 import type { StudyCard, StudyCardKind } from './types';
 
@@ -37,16 +38,17 @@ export interface CardActionsState {
 	undo: UndoSlot | null;
 }
 
-const KIND_LABEL: Partial<Record<StudyCardKind, string>> = {
-	sentence: 'Word Salad',
-	writing: 'Writing',
-	tone: 'Tone',
-	reverse: 'Reverse',
-	cloze: 'Cloze'
+const KIND_LABEL: Partial<Record<StudyCardKind, MessageKey>> = {
+	sentence: 'study.cardType.sentence',
+	writing: 'study.cardType.writing',
+	tone: 'study.cardType.tone',
+	reverse: 'study.cardType.reverse',
+	cloze: 'study.cardType.cloze'
 };
 
 function label(kind: StudyCardKind): string {
-	return KIND_LABEL[kind] ?? kind;
+	const key = KIND_LABEL[kind];
+	return key ? t(key) : kind;
 }
 
 export interface CardActions {
@@ -107,7 +109,7 @@ export function createCardActions(deps: CardActionsDeps): CardActions {
 			try {
 				await action();
 			} catch (err) {
-				set({ error: err instanceof Error && err.message ? err.message : 'That did not work.' });
+				set({ error: err instanceof Error && err.message ? err.message : t('study.actions.failed') });
 			} finally {
 				// A failed write may still have landed: always show the stored state.
 				try {
@@ -146,7 +148,7 @@ export function createCardActions(deps: CardActionsDeps): CardActions {
 			run(() =>
 				changing(
 					() => deps.deleteCards(ids),
-					ids.length === 1 ? 'Card deleted.' : `${ids.length} cards deleted.`,
+					t('study.actions.deleted', { count: ids.length }),
 					false
 				)
 			),
@@ -154,7 +156,7 @@ export function createCardActions(deps: CardActionsDeps): CardActions {
 			run(() =>
 				changing(
 					() => deps.moveCards(ids, deckId),
-					ids.length === 1 ? `Moved to ${deckName}.` : `Moved ${ids.length} cards to ${deckName}.`,
+					t('study.actions.moved', { count: ids.length, deck: deckName }),
 					true
 				)
 			),
@@ -162,17 +164,17 @@ export function createCardActions(deps: CardActionsDeps): CardActions {
 			run(() =>
 				changing(
 					() => deps.dropSiblingCards(ids),
-					ids.length === 1 ? 'Card removed.' : `${ids.length} cards removed.`,
+					t('study.actions.removed', { count: ids.length }),
 					false
 				)
 			),
 		skip: (entryId, kind) =>
 			run(() =>
-				changing(() => deps.skipKind(entryId, kind), `${label(kind)} turned off for this word.`, false)
+				changing(() => deps.skipKind(entryId, kind), t('study.actions.kindOff', { kind: label(kind) }), false)
 			),
 		unskip: (entryId, kind) =>
 			run(() =>
-				changing(() => deps.unskipKind(entryId, kind), `${label(kind)} turned back on.`, false)
+				changing(() => deps.unskipKind(entryId, kind), t('study.actions.kindOn', { kind: label(kind) }), false)
 			),
 		undo: async () => {
 			if (state.undo === null || pending > 0) return;

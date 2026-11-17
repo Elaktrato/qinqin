@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { t } from '$lib/i18n';
+	import { formatDate } from '$lib/i18n/format';
 	import { onDestroy, onMount, untrack } from 'svelte';
 	import { aiErrorView, type AiErrorView } from './aiErrors';
 	import { answeredBy } from './answeredBy';
@@ -41,23 +43,23 @@
 		if (busy || !gate.enabled) return;
 		busy = true;
 		failure = null;
-		status = 'Looking for ideas… (this can take a minute)';
+		status = t('journal.ideas.looking');
 		const since = suggestions?.createdAt ?? '';
 		try {
 			suggestions = await requestSuggestions(ws, aborter.signal);
-			status = 'Ideas ready.';
+			status = t('journal.ideas.ready');
 		} catch (err) {
 			if (aborter.signal.aborted) return;
 			const view = aiErrorView(err, 'ideas');
 			if (view.poll) {
-				status = 'Still waiting for the answer…';
+				status = t('journal.ideas.waiting');
 				const late = await pollForReview(() => getSuggestions(ws), since, {
 					signal: aborter.signal
 				});
 				if (aborter.signal.aborted) return;
 				if (late) {
 					suggestions = late;
-					status = 'Ideas ready.';
+					status = t('journal.ideas.ready');
 					busy = false;
 					return;
 				}
@@ -71,20 +73,20 @@
 
 	function when(iso: string): string {
 		const d = new Date(iso);
-		return Number.isNaN(d.getTime()) ? '' : d.toLocaleDateString();
+		return Number.isNaN(d.getTime()) ? '' : formatDate(d);
 	}
 </script>
 
 <section class="ideas" aria-labelledby="ideas-heading">
-	<h2 id="ideas-heading">Ideas</h2>
+	<h2 id="ideas-heading">{t('journal.ideas.title')}</h2>
 	<div class="bar">
 		<button type="button" onclick={ask} disabled={busy || !gate.enabled}>
-			{busy ? 'Working…' : 'Get ideas'}
+			{busy ? t('journal.ideas.working') : t('journal.ideas.get')}
 		</button>
 		{#if gate.hint}
 			<span class="hint">
 				{gate.hint}{#if gate.settingsLink}
-					{' '}<a href="/settings?tab=ai">Open Settings → AI</a>{/if}
+					{' '}<a href="/settings?tab=ai">{t('journal.openAiSettings')}</a>{/if}
 			</span>
 		{/if}
 	</div>
@@ -92,13 +94,13 @@
 	{#if failure}
 		<p class="error" role="alert">
 			{failure.text}
-			{#if failure.settingsLink}<a href="/settings?tab=ai">Open Settings → AI</a>{/if}
+			{#if failure.settingsLink}<a href="/settings?tab=ai">{t('journal.openAiSettings')}</a>{/if}
 		</p>
 	{/if}
 
 	{#if suggestions && suggestions.items.length > 0}
 		<p class="hint">
-			From {when(suggestions.createdAt)}{#if suggestions.model}
+			{t('journal.ideas.from', { date: when(suggestions.createdAt) })}{#if suggestions.model}
 				· {answeredBy(suggestions.model, providerName)}{/if}
 		</p>
 		<ul>
@@ -107,19 +109,19 @@
 					<h3>{item.title}</h3>
 					<p class="prompt">{item.prompt}</p>
 					{#if item.words.length > 0}
-						<ul class="chips" aria-label="Words to try">
+						<ul class="chips" aria-label={t('journal.ideas.words')}>
 							{#each item.words as w, j (j)}<li>{w}</li>{/each}
 						</ul>
 					{/if}
 					<button type="button" class="secondary" onclick={() => onstart(item.title)}>
-						Start an entry
+						{t('journal.ideas.start')}
 						<span class="sr">: {item.title}</span>
 					</button>
 				</li>
 			{/each}
 		</ul>
 	{:else if suggestions}
-		<p class="hint">No ideas came back. Try again.</p>
+		<p class="hint">{t('journal.ideas.none')}</p>
 	{/if}
 </section>
 

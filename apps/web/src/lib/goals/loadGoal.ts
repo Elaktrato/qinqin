@@ -4,6 +4,7 @@
 // widget) call this; concurrent calls for the same workspace, learner day
 // and force flag (and signed-in user) share one promise, dropped once it settles.
 
+import { t } from '../i18n';
 import { fetchActivity, type ActivityResponse, type ActivitySource } from '../api/stats';
 import { loadStudyHistory } from '../study/history';
 import { outboxUser } from '../study/outboxUser';
@@ -65,7 +66,7 @@ async function load(workspaceId: number, now: number, force: boolean): Promise<G
 		try {
 			activity = await fetchActivity(windowStart, today, workspaceId);
 		} catch (err) {
-			activityError = err instanceof Error && err.message ? err.message : 'Could not load your activity.';
+			activityError = err instanceof Error && err.message ? err.message : t('goals.activityFailed');
 		}
 	}
 	const sources = activity.sources ?? [];

@@ -1,25 +1,27 @@
 <script lang="ts">
+	import { t } from '$lib/i18n';
+	import { formatPercent } from '$lib/i18n/format';
 	import type { DeckNumbers } from './deckStats';
 
 	// The overall numbers above the deck list: words, studied, mastered and
 	// the two review statistics of the last 30 learner days.
-	let { numbers, label = 'Overall' }: { numbers: DeckNumbers; label?: string } = $props();
+	let { numbers, label = t('flashcards.stats.overall') }: { numbers: DeckNumbers; label?: string } = $props();
 
 	const retention = $derived(
-		numbers.retention === null ? '—' : `${Math.round(numbers.retention * 100)}%`
+		numbers.retention === null ? '—' : formatPercent(numbers.retention)
 	);
 </script>
 
 <section class="panel" aria-label={label}>
 	<dl>
-		<div><dt>Words</dt><dd>{numbers.words}</dd></div>
-		<div><dt>Studied</dt><dd>{numbers.studied}</dd></div>
-		<div><dt>Mastered</dt><dd>{numbers.mastered}</dd></div>
+		<div><dt>{t('flashcards.stats.words')}</dt><dd>{numbers.words}</dd></div>
+		<div><dt>{t('flashcards.stats.studied')}</dt><dd>{numbers.studied}</dd></div>
+		<div><dt>{t('flashcards.stats.mastered')}</dt><dd>{numbers.mastered}</dd></div>
 		<div>
-			<dt>Retention (30 days)</dt>
-			<dd title={numbers.retention === null ? 'Shown after 10 repeat reviews' : ''}>{retention}</dd>
+			<dt>{t('flashcards.stats.retention')}</dt>
+			<dd title={numbers.retention === null ? t('flashcards.stats.retentionLater') : ''}>{retention}</dd>
 		</div>
-		<div><dt>Reviews (30 days)</dt><dd>{numbers.reviews30}</dd></div>
+		<div><dt>{t('flashcards.stats.reviews')}</dt><dd>{numbers.reviews30}</dd></div>
 	</dl>
 </section>
 

@@ -10,6 +10,7 @@ import (
 	"sync"
 	"time"
 
+	"qinqin/internal/i18n"
 	"qinqin/internal/netguard"
 	"qinqin/internal/secretbox"
 )
@@ -56,12 +57,17 @@ func (s *Service) TransportFor(p *Prepared) Transport { return s.tune(p.Transpor
 // sending and supplies the template data (a reset link is created there, so
 // the request that queued the job does the same database work for a known and
 // an unknown account). It returns ok=false to skip the mail.
+// AcceptLanguage is the triggering request's header: the worker picks the
+// mail's language from the recipient's stored interface language, else
+// this header, else en (Language). Enqueue keeps at most
+// i18n.MaxAcceptLanguage bytes of it (the parser reads no more).
 type Job struct {
-	Kind   Kind
-	UserID int64
-	To     string
-	Data   TemplateData
-	Build  func(ctx context.Context, cfg Config) (TemplateData, bool)
+	Kind           Kind
+	UserID         int64
+	To             string
+	AcceptLanguage string
+	Data           TemplateData
+	Build          func(ctx context.Context, cfg Config) (TemplateData, bool)
 }
 
 const (
@@ -110,6 +116,9 @@ func (s *Service) Enqueue(j Job) bool {
 	if s == nil {
 		return false
 	}
+	if len(j.AcceptLanguage) > i18n.MaxAcceptLanguage {
+		j.AcceptLanguage = j.AcceptLanguage[:i18n.MaxAcceptLanguage]
+	}
 	select {
 	case s.q().ch <- j:
 		return true
@@ -117,6 +126,19 @@ func (s *Service) Enqueue(j Job) bool {
 		s.logf("mail: dropped kind=%s user=%d reason=queue_full", j.Kind, j.UserID)
 		return false
 	}
+}
+
+// language resolves a job's language on the worker, so the request that
+// queued it does the same work for a known and an unknown account. A failed
+// read counts as no setting.
+func (s *Service) language(ctx context.Context, j Job) string {
+	var setting string
+	if j.UserID != 0 && s.Store != nil && s.Store.DB != nil {
+		if err := s.Store.DB.QueryRowContext(ctx, `SELECT interface_language FROM users WHERE id = ?`, j.UserID).Scan(&setting); err != nil {
+			setting = ""
+		}
+	}
+	return Language(setting, j.AcceptLanguage)
 }
 
 func anonymousKind(k Kind) bool { return k == KindReset || k == KindLoginCode }
@@ -191,7 +213,7 @@ func (s *Service) deliver(ctx context.Context, j Job) {
 	if data.Hours == 0 {
 		data.Hours = 1
 	}
-	msg, err := Render(j.Kind, data)
+	msg, err := Render(j.Kind, s.language(ctx, j), data)
 	if err != nil {
 		s.logf("mail: failed kind=%s user=%d category=template", j.Kind, j.UserID)
 		return

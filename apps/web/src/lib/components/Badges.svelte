@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { Badge } from '$lib/api/types';
+	import { t } from '$lib/i18n';
 	import { badgeSchemeParts } from './badgeText';
 
 	let { badges }: { badges: Badge[] } = $props();
@@ -7,7 +8,7 @@
 
 {#if badges.length > 0}
 	<section class="badges" aria-labelledby="badges-heading">
-		<h2 id="badges-heading">Badges</h2>
+		<h2 id="badges-heading">{t('entry.badges.title')}</h2>
 		<ul>
 			{#each badges as badge (`${badge.schemeId}:${badge.levelName}`)}
 				{@const scheme = badgeSchemeParts(badge.schemeName)}
@@ -20,7 +21,7 @@
 							><span class="visually-hidden">{scheme.qualifier.spoken}</span>{/if}</span
 					>
 					{#if badge.derived}
-						<span class="derived" title="Derived from a member word’s characters">derived</span>
+						<span class="derived" title={t('entry.badges.derivedTitle')}>{t('entry.badges.derived')}</span>
 					{/if}
 				</li>
 			{/each}

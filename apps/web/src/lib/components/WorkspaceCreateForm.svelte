@@ -1,5 +1,7 @@
 <script lang="ts">
 	import { onMount, tick } from 'svelte';
+	import { t } from '$lib/i18n';
+	import Msg from '$lib/i18n/Msg.svelte';
 	import { ApiError } from '$lib/api/client';
 	import { listLanguages } from '$lib/api/languages';
 	import type { Language, Workspace } from '$lib/api/types';
@@ -42,7 +44,7 @@
 
 	function message(err: unknown, fallback: string): string {
 		if (err instanceof ApiError && err.status === 409) {
-			return 'A workspace with this language and name already exists. Pick another name.';
+			return t('app.workspaces.create.exists');
 		}
 		if (err instanceof ApiError && err.message) return err.message;
 		if (err instanceof Error && err.message) return err.message;
@@ -53,7 +55,7 @@
 		try {
 			installed = await listLanguages();
 		} catch (err) {
-			languagesError = message(err, 'Could not load the languages.');
+			languagesError = message(err, t('app.workspaces.create.languagesFailed'));
 		} finally {
 			loadingLanguages = false;
 		}
@@ -74,7 +76,7 @@
 			name = '';
 			onCreated?.(created);
 		} catch (err) {
-			error = message(err, 'Could not create workspace.');
+			error = message(err, t('app.workspaces.create.failed'));
 		} finally {
 			creating = false;
 		}
@@ -90,9 +92,9 @@
 </script>
 
 <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
-<form class="create-workspace" onsubmit={submit} onkeydown={keydown} aria-label="New workspace">
+<form class="create-workspace" onsubmit={submit} onkeydown={keydown} aria-label={t('app.workspaces.create.label')}>
 	<div class="fields">
-		<label for="{idPrefix}-language">Language</label>
+		<label for="{idPrefix}-language">{t('app.workspaces.create.language')}</label>
 		<select
 			id="{idPrefix}-language"
 			bind:this={select}
@@ -101,23 +103,27 @@
 			required
 		>
 			{#if options.length === 0}
-				<option value="">{loadingLanguages ? 'Loading…' : 'No languages'}</option>
+				<option value="">{loadingLanguages ? t('common.loading') : t('app.workspaces.create.noLanguages')}</option>
 			{/if}
 			{#each options as option (option.code)}
 				<option value={option.code}>
-					{option.hasDictionary ? option.label : `${option.label} (no dictionary installed)`}
+					{option.hasDictionary ? option.label : t('app.workspaces.create.noDictionary', { language: option.label })}
 				</option>
 			{/each}
 		</select>
 
-		<label for="{idPrefix}-name">Name <span class="optional">(optional)</span></label>
+		<label for="{idPrefix}-name"
+			><Msg key="app.workspaces.create.name"
+				>{#snippet optional(text: string)}<span class="optional">{text}</span>{/snippet}</Msg
+			></label
+		>
 		<input
 			id="{idPrefix}-name"
 			bind:this={nameInput}
 			bind:value={name}
 			maxlength="40"
 			autocomplete="off"
-			placeholder="e.g. Novels"
+			placeholder={t('app.workspaces.create.namePlaceholder')}
 		/>
 	</div>
 
@@ -125,17 +131,17 @@
 		<!-- Not disabled while creating: a disabled button drops keyboard
 		     focus to <body>; submit() ignores repeats instead. -->
 		<button type="submit" class="primary" disabled={!language} aria-busy={creating}>
-			{creating ? 'Creating…' : 'Create workspace'}
+			{creating ? t('app.workspaces.create.creating') : t('app.workspaces.create.submit')}
 		</button>
 		{#if onCancel}
-			<button type="button" class="secondary" onclick={onCancel}>Cancel</button>
+			<button type="button" class="secondary" onclick={onCancel}>{t('common.action.cancel')}</button>
 		{/if}
 	</div>
 
 	{#if languagesError}
 		<p class="error" role="alert">{languagesError}</p>
 	{:else if !loadingLanguages && options.length === 0}
-		<p class="hint">No dictionary data is installed yet, so there is no language to choose.</p>
+		<p class="hint">{t('app.workspaces.create.nothingInstalled')}</p>
 	{/if}
 	{#if error}
 		<p class="error" role="alert">{error}</p>

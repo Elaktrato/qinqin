@@ -2,20 +2,22 @@
 // 10 to 256 characters, not the username in any letter case, no composition
 // rules. The server decides; this only gives inline feedback.
 
+import { t } from '$lib/i18n';
+
 export const MIN_PASSWORD = 10;
 export const MAX_PASSWORD = 256;
 
 export function passwordHint(): string {
-	return `At least ${MIN_PASSWORD} characters. No other rules.`;
+	return t('account.password.hint', { min: MIN_PASSWORD });
 }
 
 /** The sentence for a password the policy rejects, or null when it passes. */
 export function passwordProblem(username: string, password: string): string | null {
 	const length = [...password].length;
-	if (length < MIN_PASSWORD) return `Use at least ${MIN_PASSWORD} characters.`;
-	if (length > MAX_PASSWORD) return `Use at most ${MAX_PASSWORD} characters.`;
+	if (length < MIN_PASSWORD) return t('account.password.tooShort', { min: MIN_PASSWORD });
+	if (length > MAX_PASSWORD) return t('account.password.tooLong', { max: MAX_PASSWORD });
 	if (password.toLowerCase() === username.toLowerCase()) {
-		return 'The password must differ from the username.';
+		return t('account.password.sameAsUser');
 	}
 	return null;
 }
@@ -23,5 +25,5 @@ export function passwordProblem(username: string, password: string): string | nu
 /** The sentence for a confirmation that differs; silent until one is typed. */
 export function confirmProblem(password: string, confirm: string): string | null {
 	if (confirm === '') return null;
-	return password === confirm ? null : 'The two passwords do not match.';
+	return password === confirm ? null : t('account.password.mismatch');
 }

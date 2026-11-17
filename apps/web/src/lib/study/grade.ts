@@ -6,6 +6,7 @@
 // failure must leave the queue untouched and record nothing.
 
 import { ApiError } from '../api/client';
+import { t } from '../i18n';
 import { GENERAL_DECK_ID } from './store';
 import type { ReviewGrade, ReviewMeta, StudyCard, StudyCardKind } from './types';
 
@@ -102,20 +103,20 @@ export async function gradeItem({
 	if (currentWorkspaceId !== undefined && currentWorkspaceId !== workspaceId) {
 		return {
 			ok: false,
-			error: 'The workspace changed. Start a new session to continue.'
+			error: t('study.grade.workspaceChanged')
 		};
 	}
 
 	if (!item.virtual) {
 		if (item.card === null) {
-			return { ok: false, error: 'This card is no longer available.' };
+			return { ok: false, error: t('study.grade.cardGone') };
 		}
 		await recordReview(workspaceId, item.card.id, grade, mode ?? item.card.kind, meta);
 		return { ok: true, card: item.card, created: false };
 	}
 
 	if (entry === undefined || entry === null) {
-		return { ok: false, error: 'This word is still loading. Try again.' };
+		return { ok: false, error: t('study.grade.stillLoading') };
 	}
 
 	const kind = item.kind ?? 'vocab';
@@ -137,7 +138,7 @@ export async function gradeItem({
 	} catch (err) {
 		return {
 			ok: false,
-			error: message(err, 'Could not add this word to your study cards.')
+			error: message(err, t('study.grade.addFailed'))
 		};
 	}
 

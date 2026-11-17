@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount, tick } from 'svelte';
+	import { t } from '$lib/i18n';
 	import { ApiError } from '$lib/api/client';
 	import { languageUsage, registerLanguage, removeLanguage } from '$lib/api/adminLanguages';
 	import { listLanguages } from '$lib/api/languages';
@@ -45,7 +46,7 @@
 			const [langs, packs, usage] = await Promise.all([listLanguages(), listPacks(), languageUsage()]);
 			rows = languageRows(langs, packs, usage);
 		} catch (err) {
-			loadError = err instanceof ApiError ? err.message : 'Could not load the languages.';
+			loadError = err instanceof ApiError ? err.message : t('settings.languages.loadFailed');
 		} finally {
 			loading = false;
 		}
@@ -69,17 +70,17 @@
 		error = '';
 		notice = '';
 		if (!normalized) {
-			error = 'language must be a code like es or pt-br';
+			error = t('settings.languages.invalidCode');
 			return;
 		}
 		adding = true;
 		try {
 			const added = await registerLanguage(normalized);
-			notice = `Added ${languageLabel(added.code)} (${added.code}).`;
+			notice = t('settings.languages.added', { language: languageLabel(added.code), code: added.code });
 			code = '';
 			await load();
 		} catch (err) {
-			error = err instanceof ApiError ? err.message : 'Could not add the language.';
+			error = err instanceof ApiError ? err.message : t('settings.languages.addFailed');
 		} finally {
 			adding = false;
 		}
@@ -90,10 +91,10 @@
 		notice = '';
 		try {
 			await removeLanguage(row.code);
-			notice = `Removed ${row.label} (${row.code}).`;
+			notice = t('settings.languages.removed', { language: row.label, code: row.code });
 			await load();
 		} catch (err) {
-			error = err instanceof ApiError ? err.message : 'Could not remove the language.';
+			error = err instanceof ApiError ? err.message : t('settings.languages.removeFailed');
 		} finally {
 			confirmCode = null;
 			heading?.focus();
@@ -102,17 +103,24 @@
 </script>
 
 <section class="languages" aria-labelledby="languages-heading">
-	<h3 id="languages-heading" bind:this={heading} tabindex="-1">Languages</h3>
+	<h3 id="languages-heading" bind:this={heading} tabindex="-1">{t('settings.languages.title')}</h3>
 	{#if loading}
-		<p class="hint" aria-live="polite">Loading languages…</p>
+		<p class="hint" aria-live="polite">{t('settings.languages.loading')}</p>
 	{:else if loadError}
 		<p class="error" role="alert">{loadError}</p>
-		<button type="button" onclick={load}>Try again</button>
+		<button type="button" onclick={load}>{t('common.action.retry')}</button>
 	{:else}
 		<div class="scroll">
 			<table>
 				<thead>
-					<tr><th>Language</th><th>Code</th><th>Kind</th><th>Packs</th><th>Workspaces</th><th><span class="sr-only">Actions</span></th></tr>
+					<tr>
+						<th>{t('settings.languages.colLanguage')}</th>
+						<th>{t('settings.languages.colCode')}</th>
+						<th>{t('settings.languages.colKind')}</th>
+						<th>{t('settings.languages.colPacks')}</th>
+						<th>{t('settings.languages.colWorkspaces')}</th>
+						<th><span class="sr-only">{t('settings.languages.colActions')}</span></th>
+					</tr>
 				</thead>
 				<tbody>
 					{#each rows as row (row.code)}
@@ -120,11 +128,11 @@
 							<td>{row.label}</td>
 							<td>
 								<code>{row.code}</code>
-								{#if !row.valid}<span class="flag">not a valid code</span>{/if}
+								{#if !row.valid}<span class="flag">{t('settings.languages.invalid')}</span>{/if}
 							</td>
-							<td>{row.kind === 'code' ? 'built-in' : 'data only'}</td>
+							<td>{row.kind === 'code' ? t('settings.languages.builtIn') : t('settings.languages.dataOnly')}</td>
 							<td>
-								{#if row.packs.length === 0}<span class="none">none</span>{/if}
+								{#if row.packs.length === 0}<span class="none">{t('settings.languages.none')}</span>{/if}
 								{#each row.packs as pack (pack)}<div>{pack}</div>{/each}
 							</td>
 							<td>{row.workspaces}</td>
@@ -132,17 +140,17 @@
 								{#if row.removable}
 									{#if confirmCode === row.code}
 										<button type="button" class="danger" bind:this={confirmButton} onclick={() => remove(row)}>
-											Confirm remove {row.label}
+											{t('settings.languages.confirmRemove', { language: row.label })}
 										</button>
-										<button type="button" onclick={() => cancelRemove(row.code)}>Cancel</button>
+										<button type="button" onclick={() => cancelRemove(row.code)}>{t('common.action.cancel')}</button>
 									{:else}
 										<button
 											type="button"
 											bind:this={removeButtons[row.code]}
 											onclick={() => askRemove(row.code)}
-											aria-label="Remove {row.label} ({row.code})"
+											aria-label={t('settings.languages.removeLabel', { language: row.label, code: row.code })}
 										>
-											Remove
+											{t('common.action.remove')}
 										</button>
 									{/if}
 								{/if}
@@ -155,24 +163,24 @@
 	{/if}
 
 	<form class="add" onsubmit={add}>
-		<h4>Add a language</h4>
-		<label for="language-code">Language code</label>
+		<h4>{t('settings.languages.add')}</h4>
+		<label for="language-code">{t('settings.languages.code')}</label>
 		<input
 			id="language-code"
 			bind:value={code}
 			autocomplete="off"
 			spellcheck="false"
 			maxlength="20"
-			placeholder="e.g. pt-br"
+			placeholder={t('settings.languages.codePlaceholder')}
 			aria-describedby="language-code-help"
 		/>
 		<p id="language-code-help" class="hint">
-			Two or three letters, optionally with a region or script, like es or pt-br.
+			{t('settings.languages.codeHelp')}
 			{#if preview}<strong>{preview}</strong>{/if}
 		</p>
-		<p class="hint">Adds the language to the workspace list. It has no dictionary until you install a pack for it.</p>
+		<p class="hint">{t('settings.languages.addHint')}</p>
 		<button type="submit" class="primary" disabled={!normalized} aria-busy={adding}>
-			{adding ? 'Adding…' : 'Add language'}
+			{adding ? t('settings.languages.adding') : t('settings.languages.addSubmit')}
 		</button>
 	</form>
 	{#if notice}<p class="hint" role="status">{notice}</p>{/if}

@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { t } from '$lib/i18n';
+	import Msg from '$lib/i18n/Msg.svelte';
 	import { onMount, tick } from 'svelte';
 	import { ApiError } from '$lib/api/client';
 	import {
@@ -216,11 +218,11 @@
 		importStatus = '';
 		try {
 			inLibrary[key] = await importFromSource(source, result.sourceId, id);
-			importStatus = `Imported "${result.title}".`;
+			importStatus = t('reader.sources.imported', { title: result.title });
 		} catch (err) {
 			if (err instanceof ApiError && err.status === 409) {
 				inLibrary[key] = null;
-				importStatus = `"${result.title}" is already in this library.`;
+				importStatus = t('reader.sources.already', { title: result.title });
 			} else {
 				importError = apiErrorMessage(err, 'import');
 			}
@@ -238,57 +240,59 @@
 		<div class="info">
 			<strong lang={result.language || undefined}>{result.title}</strong>
 			<span class="meta">
-				<span lang={result.language || undefined}>{result.author || 'Unknown author'}</span
+				<span lang={result.language || undefined}>{result.author || t('reader.library.unknownAuthor')}</span
 				>{result.language ? ` · ${languageLabel(result.language)}` : ''}{result.note
 					? ` · ${result.note}`
 					: ''}
 			</span>
 			{#if result.reading}
 				<span class="reading"
-					>Matched reading: <span lang={result.language || undefined}>{result.reading}</span></span
+					><Msg key="reader.sources.matchedReading" args={{ reading: result.reading }}
+						>{#snippet reading(text: string)}<span lang={result.language || undefined}>{text}</span>{/snippet}</Msg
+					></span
 				>
 			{/if}
 		</div>
 		{#if done}
 			<span class="in-library">
-				In library
+				{t('reader.sources.inLibrary')}
 				{#if inLibrary[key]}
-					<a href={bookHref(inLibrary[key]!.id, 0)}>Open it</a>
+					<a href={bookHref(inLibrary[key]!.id, 0)}>{t('reader.sources.open')}</a>
 				{/if}
 			</span>
 		{:else if other}
-			<span class="meta">Needs a {languageLabel(result.language)} workspace</span>
+			<span class="meta">{t('reader.sources.needs', { language: languageLabel(result.language) })}</span>
 		{:else}
 			<button
 				type="button"
 				disabled={importing !== null || workspaceId === null}
 				onclick={() => doImport(result)}
 			>
-				{importing === key ? 'Importing…' : 'Import'}
+				{importing === key ? t('reader.sources.importing') : t('reader.sources.import')}
 			</button>
 		{/if}
 	</li>
 {/snippet}
 
 <main class="sources">
-	<p><a href={LIBRARY_HREF}>Back to library</a></p>
+	<p><a href={LIBRARY_HREF}>{t('reader.sources.back')}</a></p>
 	<h1 class="heading">
-		Browse sources
+		{t('reader.sources.title')}
 		{#if workspace}<WorkspaceLabel {workspace} list={$workspaces.list} size={18} />{/if}
 	</h1>
 	{#if workspace}
-		<p class="hint">Imports go to this workspace's library ({languageLabel(language)}).</p>
+		<p class="hint">{t('reader.sources.importsGo', { language: languageLabel(language) })}</p>
 	{/if}
 
 	{#if loadingSources}
-		<p>Loading sources…</p>
+		<p>{t('reader.sources.loading')}</p>
 	{:else if sourcesError}
 		<p class="error" role="alert">{sourcesError}</p>
-		<button type="button" onclick={loadSources}>Retry</button>
+		<button type="button" onclick={loadSources}>{t('reader.sources.retry')}</button>
 	{:else if sources.length === 0}
-		<p>No sources are available.</p>
+		<p>{t('reader.sources.none')}</p>
 	{:else}
-		<div class="tabs" role="tablist" aria-label="Sources">
+		<div class="tabs" role="tablist" aria-label={t('reader.sources.tabs')}>
 			{#each sources as source, i (source.id)}
 				<button
 					type="button"
@@ -306,16 +310,18 @@
 
 		<div class="panel" id="source-panel" role="tabpanel" aria-labelledby="source-tab-{active}">
 			<form onsubmit={search} role="search">
-				<label for="source-query">Search {activeSource?.name ?? 'the source'}</label>
+				<label for="source-query"
+					>{activeSource ? t('reader.sources.searchNamed', { name: activeSource.name }) : t('reader.sources.searchSource')}</label
+				>
 				<input
 					id="source-query"
 					type="search"
-					placeholder="Title, author, or romaji / pinyin"
+					placeholder={t('reader.sources.placeholder')}
 					bind:value={query}
 				/>
-				<button type="submit" disabled={searching || !query.trim()}>Search</button>
+				<button type="submit" disabled={searching || !query.trim()}>{t('reader.sources.search')}</button>
 				{#if showingSearch}
-					<button type="button" class="link" onclick={clearSearch}>Back to suggestions</button>
+					<button type="button" class="link" onclick={clearSearch}>{t('reader.sources.backToSuggestions')}</button>
 				{/if}
 			</form>
 
@@ -326,12 +332,12 @@
 
 			{#if showingSearch}
 				<section aria-labelledby="results-heading">
-					<h2 id="results-heading" class="visually-hidden">Search results</h2>
+					<h2 id="results-heading" class="visually-hidden">{t('reader.sources.results')}</h2>
 					<label class="toggle">
-						<input type="checkbox" bind:checked={showAll} /> Show all languages
+						<input type="checkbox" bind:checked={showAll} /> {t('reader.sources.allLanguages')}
 					</label>
 					<p role="status" aria-live="polite">
-						{#if searching}Searching…{:else if searched && !searchError}{resultCountText(
+						{#if searching}{t('reader.sources.searching')}{:else if searched && !searchError}{resultCountText(
 								visible.length,
 								results.length,
 								SOURCE_SEARCH_LIMIT
@@ -349,28 +355,27 @@
 			{:else}
 				<section aria-labelledby="browse-heading">
 					<div class="browse-head">
-						<h2 id="browse-heading">Suggestions for today</h2>
+						<h2 id="browse-heading">{t('reader.sources.suggestions')}</h2>
 						{#if servesLanguage}
 							<button type="button" onclick={() => (seed = shuffleSeed())} disabled={browsing}>
-								Shuffle
+								{t('reader.sources.shuffle')}
 							</button>
 						{/if}
 					</div>
 					{#if !workspace}
-						<p class="hint">Choose a workspace to see suggestions.</p>
+						<p class="hint">{t('reader.sources.chooseWorkspace')}</p>
 					{:else if !servesLanguage}
-						<p class="hint">{activeSource?.name} has no texts in {languageLabel(language)}.</p>
+						<p class="hint">{t('reader.sources.noTexts', { source: activeSource?.name ?? '', language: languageLabel(language) })}</p>
 					{:else if browsing}
 						<p role="status" aria-live="polite">
-							Loading suggestions… The first visit downloads the catalog, which can take a moment.
+							{t('reader.sources.loadingSuggestions')}
 						</p>
 					{:else if browseError}
 						<p class="error" role="alert">{browseError}</p>
-						<button type="button" onclick={() => browseAttempt++}>Retry</button>
+						<button type="button" onclick={() => browseAttempt++}>{t('reader.sources.retry')}</button>
 					{:else if suggestions.length === 0}
 						<p class="hint">
-							No suggestions right now: the catalog may not be available yet. Try searching, or
-							come back later.
+							{t('reader.sources.noSuggestions')}
 						</p>
 					{:else}
 						<ul class="results">
@@ -385,8 +390,7 @@
 	{/if}
 
 	<p class="attribution">
-		Texts from Aozora Bunko (public domain works only) and Project Gutenberg (public domain in
-		the USA).
+		{t('reader.sources.attribution')}
 	</p>
 </main>
 

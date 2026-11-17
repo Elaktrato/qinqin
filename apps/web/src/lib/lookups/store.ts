@@ -5,6 +5,7 @@
 // first in the same call (docs/contracts/lookups/README.md).
 
 import { api, getToken } from '../api/client';
+import { t } from '../i18n';
 import { invalidateWorkspaceEvents } from '../events';
 import { coreManifest } from '../plugins/core/manifest';
 import { createPluginSdk, type DataScope } from '../plugins/sdk';
@@ -31,7 +32,7 @@ import { LookupRecorder, type RecorderIO } from './recorder';
 /** The history row was cleared but the old `lookup` events could not be deleted. */
 export class LookupEventsNotDeletedError extends Error {
 	constructor() {
-		super('The history is cleared, but the old search records could not be deleted. Try Clear history again.');
+		super(t('lookups.eventsNotDeleted'));
 		this.name = 'LookupEventsNotDeletedError';
 	}
 }

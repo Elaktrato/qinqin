@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import type { FrequencyPack, Scheme } from '$lib/api/types';
 import {
-	MIXED_NOTE,
-	OFFLINE_NOTE,
+	mixedNote,
+	offlineNote,
 	decodeOrder,
 	deckOrderChoices,
 	deckOrderControl,
@@ -191,8 +191,8 @@ describe('resolveAvailableOrder', () => {
 		});
 	});
 	it('notes', () => {
-		expect(MIXED_NOTE).toBe('Your decks use different orders: in the order added.');
-		expect(OFFLINE_NOTE).toBe('Frequency order needs a connection; using the order added.');
+		expect(mixedNote()).toBe('Your decks use different orders: in the order added.');
+		expect(offlineNote()).toBe('Frequency order needs a connection; using the order added.');
 	});
 });
 

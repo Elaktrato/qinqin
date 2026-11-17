@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { ClozePart } from '$lib/study/cloze';
+	import { t } from '$lib/i18n';
 	import { choiceForKeyEvent } from './clozeKeys';
 
 	interface Props {
@@ -70,7 +71,7 @@
 		>{#each afterParts as part, i (i)}{#if typeof part === 'string'}{part}{:else}{@render gap(part.answer)}{/if}{/each}
 	</p>
 
-	<ul class="choices" aria-label="Choices">
+	<ul class="choices" aria-label={t('entry.cloze.choices')}>
 		{#each choices as choice, i (choice)}
 			<li>
 				<button
@@ -94,9 +95,9 @@
 		{#if !finished}
 			&nbsp;
 		{:else if correct}
-			Correct!
+			{t('entry.cloze.correct')}
 		{:else}
-			Not quite. The answer is {answer}.
+			{t('entry.cloze.wrong', { answer })}
 		{/if}
 	</p>
 </div>

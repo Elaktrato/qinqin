@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { t } from '$lib/i18n';
 	import { DEFAULT_LIMITS, type LimitPair } from '$lib/study/limits';
 	import { saveDeckLimits } from '$lib/study/store';
 	import { getStudyData } from '$lib/study/studyData';
@@ -40,7 +41,7 @@
 			reviewsState = deckFieldFrom(row, 'reviews');
 			loaded = true;
 		} catch {
-			error = 'Could not load the daily limits.';
+			error = t('settings.deckLimits.loadFailed');
 		}
 	}
 	onMount(() => void load());
@@ -57,10 +58,10 @@
 		busy = true;
 		try {
 			await saveDeckLimits(deckId, plan.row);
-			message = 'Saved.';
+			message = t('common.state.saved');
 			await load(true);
 		} catch {
-			error = 'Could not save the limits.';
+			error = t('settings.deckLimits.saveFailed');
 		} finally {
 			busy = false;
 		}
@@ -68,23 +69,21 @@
 </script>
 
 {#if loaded}
-	<form novalidate onsubmit={save} aria-label={`Daily limits of ${deckName}`}>
-		<p class="hint">
-			At most this many cards of {deckName} are offered per study day. A card in several decks must fit every one.
-		</p>
+	<form novalidate onsubmit={save} aria-label={t('settings.deckLimits.label', { deck: deckName })}>
+		<p class="hint">{t('settings.deckLimits.hint', { deck: deckName })}</p>
 		<LimitField
-			legend="New cards per day"
+			legend={t('settings.deckLimits.newPerDay')}
 			name={`new-${deckId}`}
 			bind:state={newState}
 			workspaceLabel={workspaceChoiceLabel(newWorkspace)}
 		/>
 		<LimitField
-			legend="Reviews per day"
+			legend={t('settings.deckLimits.reviewsPerDay')}
 			name={`reviews-${deckId}`}
 			bind:state={reviewsState}
 			workspaceLabel={workspaceChoiceLabel(reviewsWorkspace)}
 		/>
-		<button type="submit" disabled={busy}>Save limits</button>
+		<button type="submit" disabled={busy}>{t('settings.deckLimits.save')}</button>
 		{#if message}<span role="status">{message}</span>{/if}
 	</form>
 {/if}

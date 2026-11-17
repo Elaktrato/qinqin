@@ -5,6 +5,8 @@
 		applyRestore, discardRestore, downloadMyData, restoreStatus, safetyExportTicket, uploadRestore
 	} from '$lib/api/backup';
 	import { user } from '$lib/auth';
+	import { t } from '$lib/i18n';
+	import Msg from '$lib/i18n/Msg.svelte';
 	import {
 		canApply, clearLocalAfterRestore, errorText, formatBytes, needsDropAck, nextPollDelay, replaceSentence,
 		restoreSentence, stageProblem, unresolvedLines, type StageView
@@ -51,7 +53,7 @@
 			await downloadMyData(assign);
 		} catch (err) {
 			const b = apiErrorBody(err);
-			error = errorText(b?.error, b?.message || 'Could not start the download.');
+			error = errorText(b?.error, t('account.data.downloadFailed'));
 		} finally {
 			busy = false;
 		}
@@ -67,7 +69,7 @@
 			view = await restoreStatus(token);
 		} catch (err) {
 			const b = apiErrorBody(err);
-			error = errorText(b?.error, b?.message || 'Could not read the state of the restore.');
+			error = errorText(b?.error, t('account.data.statusFailed'));
 			view = null;
 			return;
 		}
@@ -107,7 +109,7 @@
 		} catch (err) {
 			progress = null;
 			const b = apiErrorBody(err);
-			error = errorText(b?.error, b?.message || 'The upload failed.');
+			error = errorText(b?.error, t('account.data.uploadFailed'));
 		} finally {
 			busy = false;
 		}
@@ -119,7 +121,7 @@
 			assign((await safetyExportTicket()).url);
 		} catch (err) {
 			const b = apiErrorBody(err);
-			error = errorText(b?.error, b?.message || 'There is no earlier backup to download.');
+			error = errorText(b?.error, t('account.data.noEarlier'));
 		}
 	}
 
@@ -142,7 +144,7 @@
 			await focusHeading();
 		} catch (err) {
 			const b = apiErrorBody(err);
-			error = errorText(b?.error, b?.message || 'Could not start the restore.');
+			error = errorText(b?.error, t('account.data.restoreFailed'));
 		} finally {
 			busy = false;
 		}
@@ -164,30 +166,28 @@
 </script>
 
 <section aria-labelledby="account-data-heading" class="block">
-	<h2 id="account-data-heading" tabindex="-1" bind:this={heading}>Your data</h2>
+	<h2 id="account-data-heading" tabindex="-1" bind:this={heading}>{t('account.data.title')}</h2>
+	<p class="hint">{t('account.data.downloadHint')}</p>
+	<button type="button" disabled={busy} onclick={download}>{t('account.data.download')}</button>
 	<p class="hint">
-		A download holds your workspaces, study history, cards, word edits, own sentences and library. It never holds your
-		password, sign-in sessions, two-factor secrets or AI keys; after moving to another server you enter AI keys again.
-	</p>
-	<button type="button" disabled={busy} onclick={download}>Download my data</button>
-	<p class="hint">
-		The words you looked up are in the download too. See, add to a deck or clear them in the
-		<a href="/lookups">Lookup history</a>.
+		<Msg key="account.data.lookupsHint">{#snippet link(text: string)}<a href="/lookups">{text}</a>{/snippet}</Msg>
 	</p>
 
-	<h3>Restore from a backup</h3>
-	<p class="hint">Restoring replaces <strong>all</strong> of your data with the backup's, and signs you out on your other devices.</p>
+	<h3>{t('account.data.restoreTitle')}</h3>
+	<p class="hint">
+		<Msg key="account.data.restoreHint">{#snippet strong(text: string)}<strong>{text}</strong>{/snippet}</Msg>
+	</p>
 	{#if !view || view.status === 'invalid' || view.status === 'failed'}
 		<label class="file">
-			Backup file (.zip)
+			{t('account.data.file')}
 			<input type="file" accept=".zip,application/zip" disabled={busy} onchange={pick} />
 		</label>
 	{/if}
 	{#if progress !== null}
-		<div role="progressbar" aria-label="Upload" aria-valuemin="0" aria-valuemax="100" aria-valuenow={progress}>{progress}%</div>
+		<div role="progressbar" aria-label={t('account.data.upload')} aria-valuemin="0" aria-valuemax="100" aria-valuenow={progress}>{progress}%</div>
 	{/if}
 	{#if view?.status === 'validating'}
-		<p role="status">Checking the backup…</p>
+		<p role="status">{t('account.data.checking')}</p>
 	{/if}
 	{#if view?.status === 'invalid'}
 		<p role="alert">{stageProblem(view)}</p>
@@ -199,49 +199,49 @@
 		<p>{restoreSentence(r)}</p>
 		{#each r.warnings as w, i (i)}<p role="note">{w}</p>{/each}
 		{#if r.pluginsNotInstalled.length}
-			<p class="hint">Data of plugins that are not installed here is kept but does nothing: {r.pluginsNotInstalled.join(', ')}.</p>
+			<p class="hint">{t('account.data.pluginsNotInstalled', { plugins: r.pluginsNotInstalled.join(', ') })}</p>
 		{/if}
-		{#if r.reidentifiedEvents}<p class="hint">{r.reidentifiedEvents} study events got new ids because another account here uses them.</p>{/if}
+		{#if r.reidentifiedEvents}<p class="hint">{t('account.data.reidentified', { count: r.reidentifiedEvents })}</p>{/if}
 		{#if needsDropAck(r)}
-			<div role="group" aria-label="Words this server does not have">
-				<p>This server does not have these words, so what refers to them is dropped:</p>
+			<div role="group" aria-label={t('account.data.missingWords')}>
+				<p>{t('account.data.missingWordsText')}</p>
 				<ul>{#each unresolvedLines(r) as l, i (i)}<li>{l}</li>{/each}</ul>
-				{#if r.unresolved.sentences}<p>{r.unresolved.sentences} example sentences cannot be matched either.</p>{/if}
-				<label><input type="checkbox" bind:checked={ackDrop} /> Drop them and restore the rest</label>
+				{#if r.unresolved.sentences}<p>{t('account.data.missingSentences', { count: r.unresolved.sentences })}</p>{/if}
+				<label><input type="checkbox" bind:checked={ackDrop} /> {t('account.data.dropAck')}</label>
 			</div>
 		{/if}
-		<p><button type="button" disabled={busy} onclick={downloadCurrent}>Download a backup of my current data first</button></p>
+		<p><button type="button" disabled={busy} onclick={downloadCurrent}>{t('account.data.downloadCurrent')}</button></p>
 		<form onsubmit={restore} class="stack">
-			<label>Your password <input type="password" autocomplete="current-password" bind:value={password} /></label>
+			<label>{t('account.field.yourPassword')} <input type="password" autocomplete="current-password" bind:value={password} /></label>
 			{#if hasTotp}
-				<label>Authenticator or recovery code <input autocomplete="one-time-code" bind:value={code} /></label>
+				<label>{t('account.data.code')} <input autocomplete="one-time-code" bind:value={code} /></label>
 			{/if}
-			<label>Type your username ({username}) to confirm <input autocomplete="off" bind:value={typed} /></label>
+			<label>{t('account.data.typeUsername', { username })} <input autocomplete="off" bind:value={typed} /></label>
 			<div>
-				<button type="submit" disabled={!ok}>Restore</button>
-				<button type="button" disabled={busy} onclick={cancel}>Cancel</button>
+				<button type="submit" disabled={!ok}>{t('account.data.restore')}</button>
+				<button type="button" disabled={busy} onclick={cancel}>{t('common.action.cancel')}</button>
 			</div>
 		</form>
 	{/if}
 	{#if view?.status === 'running'}
-		<p role="status">Restoring your data… this can take a minute for a large history.</p>
+		<p role="status">{t('account.data.restoring')}</p>
 	{/if}
 	{#if view?.status === 'done' && view.result}
 		<p role="status">
-			Your data was restored. You were signed out on your other devices.
-			{#if droppedReviews}{droppedReviews} reviews waiting on this device for the old workspaces were discarded.{/if}
-			The app reloads in a moment.
+			{t('account.data.restored')}
+			{#if droppedReviews}{t('account.data.droppedReviews', { count: droppedReviews })}{/if}
+			{t('account.data.reloadSoon')}
 		</p>
 		<p>
-			<button type="button" onclick={reload}>Reload now</button>
-			<button type="button" onclick={safety}>Download the data I had before</button>
+			<button type="button" onclick={reload}>{t('account.data.reloadNow')}</button>
+			<button type="button" onclick={safety}>{t('account.data.downloadBefore')}</button>
 		</p>
 	{/if}
 	{#if view?.status === 'failed'}
-		<p role="alert">{stageProblem(view) || 'The restore failed.'} Nothing was changed.</p>
+		<p role="alert">{t('account.data.nothingChanged', { problem: stageProblem(view) || t('account.data.failed') })}</p>
 	{/if}
 	{#if error}<p role="alert">{error}</p>{/if}
-	{#if view?.report}<p class="hint">Size of the backup: {formatBytes(view.report.bytes)}.</p>{/if}
+	{#if view?.report}<p class="hint">{t('account.data.size', { size: formatBytes(view.report.bytes) })}</p>{/if}
 </section>
 
 <style>

@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { ProviderInfo } from '$lib/api/ai';
+	import { t } from '$lib/i18n';
 	import { modelSuggestions, privacyNote } from './aiSettingsView';
 
 	let {
@@ -50,18 +51,18 @@
 
 {#if builtin.length + custom.length > 0}
 	<form class="addform" onsubmit={submit} autocomplete="off">
-		<h3>Add a provider</h3>
+		<h3>{t('settings.ai.add.title')}</h3>
 		<label>
-			<span>Provider</span>
+			<span>{t('settings.ai.add.provider')}</span>
 			<select value={selectedId} onchange={choose}>
-				<option value="">Choose a provider…</option>
+				<option value="">{t('settings.ai.add.choose')}</option>
 				{#if builtin.length > 0}
-					<optgroup label="Built in">
+					<optgroup label={t('settings.ai.add.builtIn')}>
 						{#each builtin as p (p.id)}<option value={p.id}>{p.name}</option>{/each}
 					</optgroup>
 				{/if}
 				{#if custom.length > 0}
-					<optgroup label="Added by your admin">
+					<optgroup label={t('settings.ai.add.byAdmin')}>
 						{#each custom as p (p.id)}<option value={p.id}>{p.name}</option>{/each}
 					</optgroup>
 				{/if}
@@ -71,10 +72,10 @@
 		{#if provider}
 			<p class="privacy" data-testid="privacy-note" aria-live="polite">{privacyNote(provider.name)}</p>
 			{#if provider.custom && provider.host}
-				<p class="admin-line">Added by your admin · {provider.host}</p>
+				<p class="admin-line">{t('settings.ai.adminLine', { host: provider.host })}</p>
 			{/if}
 			<label>
-				<span>API key</span>
+				<span>{t('settings.ai.add.apiKey')}</span>
 				<!-- An API key, not a login: keep password managers from filling the account password. -->
 				<input
 					type="password"
@@ -90,22 +91,22 @@
 				/>
 			</label>
 			{#if !needsKey}
-				<p id="key-optional" class="hint">Optional: this endpoint may not need a key.</p>
+				<p id="key-optional" class="hint">{t('settings.ai.add.keyOptional')}</p>
 			{/if}
 			{#if provider.keyUrl}
 				<p class="hint">
-					<a href={provider.keyUrl} target="_blank" rel="noopener noreferrer">Get a key from {provider.name}</a>
+					<a href={provider.keyUrl} target="_blank" rel="noopener noreferrer">{t('settings.ai.add.getKey', { name: provider.name })}</a>
 				</p>
 			{/if}
 			<label>
-				<span>Model</span>
+				<span>{t('settings.ai.add.model')}</span>
 				<input list="ai-add-models" bind:value={model} autocomplete="off" spellcheck="false" />
 			</label>
 			<datalist id="ai-add-models">
 				{#each modelSuggestions(provider) as m (m.id)}<option value={m.id}>{m.label}</option>{/each}
 			</datalist>
 			<div class="actions">
-				<button type="submit" disabled={!canSave}>{working ? 'Working…' : 'Save'}</button>
+				<button type="submit" disabled={!canSave}>{working ? t('settings.ai.add.working') : t('common.action.save')}</button>
 			</div>
 		{/if}
 	</form>

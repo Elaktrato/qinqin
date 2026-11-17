@@ -1,0 +1,28 @@
+{
+  "version": 1,
+  "rule": "i18n/language-tags",
+  "note": "Validation of the stored interface-language setting (PUT /api/me/interface-language, the backup's account.json): valid is the empty string (follow the browser/device) or a tag matching ^[a-z]{2,3}(-[A-Z][a-z]{3})?(-([A-Z]{2}|[0-9]{3}))?$ in canonical case: language, optional script, optional region. Syntax only, never support (README). Anything else is 422 invalid_language.",
+  "pattern": "^[a-z]{2,3}(-[A-Z][a-z]{3})?(-([A-Z]{2}|[0-9]{3}))?$",
+  "cases": [
+    {"name": "empty follows the browser", "value": "", "valid": true},
+    {"name": "language", "value": "en", "valid": true},
+    {"name": "three-letter language", "value": "yue", "valid": true},
+    {"name": "language and script", "value": "zh-Hant", "valid": true},
+    {"name": "language and region", "value": "pt-BR", "valid": true},
+    {"name": "numeric region", "value": "es-419", "valid": true},
+    {"name": "language, script and region", "value": "zh-Hant-TW", "valid": true},
+    {"name": "upper-case language", "value": "EN", "valid": false},
+    {"name": "lower-case region", "value": "en-us", "valid": false},
+    {"name": "lower-case script", "value": "zh-hant", "valid": false},
+    {"name": "underscore", "value": "en_US", "valid": false},
+    {"name": "a word", "value": "english", "valid": false},
+    {"name": "one letter", "value": "e", "valid": false},
+    {"name": "leading space", "value": " en", "valid": false},
+    {"name": "trailing hyphen", "value": "en-", "valid": false},
+    {"name": "variant", "value": "de-DE-1996", "valid": false},
+    {"name": "extension", "value": "de-DE-u-co-phonebk", "valid": false},
+    {"name": "private use", "value": "x-klingon", "valid": false},
+    {"name": "36 characters", "value": "abcdefghijklmnopqrstuvwxyzabcdefghij", "valid": false},
+    {"name": "region before script", "value": "zh-TW-Hant", "valid": false}
+  ]
+}

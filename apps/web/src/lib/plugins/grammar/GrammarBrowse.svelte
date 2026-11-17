@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { t } from '$lib/i18n';
+	import Msg from '$lib/i18n/Msg.svelte';
 	import { getSchemes } from '$lib/api/schemes';
 	import { languageLabel } from '$lib/languages';
 	import { workspaces } from '$lib/workspaces';
@@ -37,7 +39,7 @@
 				progress = pr;
 			},
 			() => {
-				if (mine === seq) error = 'Could not load the grammar lessons.';
+				if (mine === seq) error = t('grammar.loadFailed');
 			}
 		);
 	});
@@ -56,19 +58,18 @@
 
 <main class="grammar">
 	<h1>
-		Grammar{#if workspace}<span class="lang"> · {languageLabel(workspace.language)}</span>{/if}
+		{t('grammar.title')}{#if workspace}<span class="lang"> · {languageLabel(workspace.language)}</span>{/if}
 	</h1>
 
 	{#if workspace === null}
-		<p>Choose a workspace to see its grammar lessons.</p>
+		<p>{t('grammar.chooseWorkspace')}</p>
 	{:else if error}
 		<p class="error" role="alert">{error}</p>
 	{:else if packs === null}
-		<p role="status">Loading…</p>
+		<p role="status">{t('common.loading')}</p>
 	{:else if sections.length === 0}
 		<p>
-			No grammar lessons for this language yet. <a href="/sources">See Sources</a> for the packs
-			that are installed.
+			<Msg key="grammar.none">{#snippet link(text: string)}<a href="/sources">{text}</a>{/snippet}</Msg>
 		</p>
 	{:else}
 		{#each sections as section (section.packId)}
@@ -93,7 +94,7 @@
 									</span>
 									{#if lesson.progress}
 										<span class="score">
-											<span class="visually-hidden">Best score </span>{lesson.progress.best}/{lesson.progress
+											<span class="visually-hidden">{`${t('grammar.bestScore')} `}</span>{lesson.progress.best}/{lesson.progress
 												.total}
 										</span>
 									{/if}

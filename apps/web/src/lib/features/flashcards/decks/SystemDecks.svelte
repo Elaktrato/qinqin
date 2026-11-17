@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '$lib/i18n';
 	import { getSchemes } from '$lib/api/schemes';
 	import { errorMessage } from '$lib/stats/errors';
 	import { flashcardsHref } from '../route';
@@ -38,7 +39,7 @@
 				if (wanted === language) decks = levelDecks(schemes, wanted);
 			},
 			(err) => {
-				loadError = errorMessage(err, 'Could not load the level decks.');
+				loadError = errorMessage(err, t('flashcards.system.loadFailed'));
 			}
 		);
 	});
@@ -72,14 +73,14 @@
 </script>
 
 <section aria-labelledby="system-decks-heading">
-	<h2 id="system-decks-heading">Level and plugin decks</h2>
-	<p class="hint">Read-only decks from installed level packs. Copy one into a deck of your own to study it.</p>
+	<h2 id="system-decks-heading">{t('flashcards.system.title')}</h2>
+	<p class="hint">{t('flashcards.system.listIntro')}</p>
 	{#if loadError}
 		<p role="alert">{loadError}</p>
 	{:else if decks === null}
-		<p role="status">Loading level decks…</p>
+		<p role="status">{t('flashcards.system.loading')}</p>
 	{:else if groups.length === 0}
-		<p class="hint">No level decks are installed for this language.</p>
+		<p class="hint">{t('flashcards.system.none')}</p>
 	{:else}
 		<ul class="groups">
 			{#each groups as group (group.schemeId)}
@@ -92,7 +93,7 @@
 					>
 						<span aria-hidden="true">{expanded.includes(group.schemeId) ? '▾' : '▸'}</span>
 						{group.name}
-						<span class="count">({group.levels.length} {group.levels.length === 1 ? 'level' : 'levels'})</span>
+						<span class="count">{t('flashcards.system.levels', { count: group.levels.length })}</span>
 					</button>
 					{#if expanded.includes(group.schemeId)}
 						<ul class="levels">
@@ -104,11 +105,11 @@
 									>
 									<span class="owned">
 										{#if loaded === 'error'}
-											Could not load
+											{t('flashcards.system.couldNotLoad')}
 										{:else if loaded === undefined}
-											Loading…
+											{t('common.loading')}
 										{:else}
-											{ownedOf(loaded)} of {loaded.length} in your decks
+											{t('flashcards.system.owned', { owned: ownedOf(loaded), total: loaded.length })}
 										{/if}
 									</span>
 								</li>

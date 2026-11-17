@@ -3,6 +3,7 @@
 	// weeks browsable by link (?week=<Monday>). All logic lives in
 	// lib/weekly (week.ts for the URL, loadWeek.ts for the load).
 	import { untrack } from 'svelte';
+	import { t } from '$lib/i18n';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
 	import { onEventLogChange } from '$lib/events';
@@ -76,7 +77,7 @@
 		} catch (err) {
 			if (seq !== requestSeq) return;
 			view = null;
-			error = errorMessage(err, 'Could not load this week.');
+			error = errorMessage(err, t('weekly.page.loadFailed'));
 			return;
 		} finally {
 			if (seq === requestSeq) loading = false;
@@ -163,14 +164,14 @@
 
 <section class="week" aria-labelledby="week-heading">
 	<h2 id="week-heading" aria-live="polite">{weekHeading(shownMonday, today)}</h2>
-	<nav class="weeks" aria-label="Weeks">
+	<nav class="weeks" aria-label={t('weekly.page.weeks')}>
 		{#if hasPreviousWeek(monday, today)}
 			<a href={weekHref(previousWeek(monday), today)} data-sveltekit-keepfocus data-sveltekit-noscroll
-				>Previous week</a
+				>{t('weekly.page.previous')}</a
 			>
 		{/if}
 		{#if next !== null}
-			<a href={weekHref(next, today)} data-sveltekit-keepfocus data-sveltekit-noscroll>Next week</a>
+			<a href={weekHref(next, today)} data-sveltekit-keepfocus data-sveltekit-noscroll>{t('weekly.page.next')}</a>
 		{/if}
 	</nav>
 
@@ -178,14 +179,14 @@
 	<MilestoneCard view={view === null ? null : milestones} ondismiss={dismissMilestones} headingLevel={3} />
 
 	{#if workspaceId === null}
-		<p class="hint">Choose a workspace in the header to see its week.</p>
+		<p class="hint">{t('weekly.page.noWorkspace')}</p>
 	{:else if loading && view === null}
-		<p class="hint" aria-live="polite">Loading this week…</p>
+		<p class="hint" aria-live="polite">{t('weekly.page.loading')}</p>
 	{:else if error}
 		<p class="hint" role="status">
 			{error}
 			<button type="button" class="retry" onclick={() => void load(workspaceId, language, monday, true)}
-				>Try again</button
+				>{t('common.action.retry')}</button
 			>
 		</p>
 	{:else if view !== null}

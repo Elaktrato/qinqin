@@ -3,6 +3,7 @@
 // (also a pending setup), every recovery code and the email-code method,
 // deletes every session and revokes every personal access token.
 
+import { t, type MessageKey } from '$lib/i18n';
 import { reauthError } from './reauth';
 
 export interface MfaFactors {
@@ -18,27 +19,26 @@ export function hasSecondStep(u: { mfa?: MfaFactors }): boolean {
 /** What the reset removes and revokes, worded for the user's own factors. */
 export function resetLines(mfa: MfaFactors): string[] {
 	const lines: string[] = [];
-	if (mfa.totp) lines.push('Their authenticator app and all of its recovery codes are removed.');
-	if (mfa.email) lines.push('Sign-in codes by email are turned off.');
-	lines.push(
-		'They are signed out on every device, and all of their personal access tokens are revoked.',
-		'Next time they sign in with their password alone, or set up a second step again if this server requires one. Do this only after making sure the request really comes from them.'
-	);
+	if (mfa.totp) lines.push(t('admin.mfaReset.line.totp'));
+	if (mfa.email) lines.push(t('admin.mfaReset.line.email'));
+	lines.push(t('admin.mfaReset.line.signedOut'), t('admin.mfaReset.line.next'));
 	return lines;
 }
 
-export const RESET_ERROR_FALLBACK = 'Could not reset the two-step sign-in. Try again.';
+export function resetErrorFallback(): string {
+	return t('admin.mfaReset.error.fallback');
+}
 
-const TEXT: Record<string, string> = {
-	not_found: 'This account does not exist any more.',
-	self_target: 'You cannot reset your own two-step sign-in here. Use Settings, Account.'
+const TEXT: Record<string, MessageKey> = {
+	not_found: 'admin.mfaReset.error.notFound',
+	self_target: 'admin.mfaReset.error.selfTarget'
 };
 
 /** Fixed sentences, never the server's message (re-authentication ones from reauth.ts). */
 export function resetError(code: string | undefined): string {
-	return (code && TEXT[code]) || reauthError(code, RESET_ERROR_FALLBACK);
+	return code && Object.hasOwn(TEXT, code) ? t(TEXT[code]) : reauthError(code, resetErrorFallback());
 }
 
 export function resetNotice(username: string): string {
-	return `Two-step sign-in of ${username} was reset; they were signed out everywhere.`;
+	return t('admin.mfaReset.notice', { name: username });
 }

@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { pageTitle } from '$lib/pageTitle';
+	import { t } from '$lib/i18n';
 	import { onDestroy, untrack } from 'svelte';
 	import ImportExport from '$lib/features/flashcards/scheduling/ImportExport.svelte';
 	import OptimizePanel from '$lib/features/flashcards/scheduling/OptimizePanel.svelte';
@@ -106,7 +107,7 @@ import type { StudyContext } from '$lib/study/studyContext';
 			activeFit = evaluate(fsrs.w, dataset);
 		} catch (err) {
 			if (mine !== seq) return;
-			loadError = err instanceof Error ? err.message : 'Could not load your flashcards.';
+			loadError = err instanceof Error ? err.message : t('study.sched.loadFailed');
 		} finally {
 			if (mine === seq) loading = false;
 		}
@@ -136,7 +137,7 @@ import type { StudyContext } from '$lib/study/studyContext';
 			});
 			if (mine !== seq) return;
 			if (!sameWeights(startW, fsrs.w)) {
-				optimiseError = 'Your active parameters changed while optimising. Optimise again.';
+				optimiseError = t('study.sched.changedWhileOptimising');
 				return;
 			}
 			result = r;
@@ -156,7 +157,7 @@ import type { StudyContext } from '$lib/study/studyContext';
 			}
 		} catch (err) {
 			if (mine !== seq) return;
-			optimiseError = err instanceof Error ? err.message : 'The optimizer failed.';
+			optimiseError = err instanceof Error ? err.message : t('study.sched.optimizerFailed');
 		} finally {
 			if (mine === seq) running = false;
 		}
@@ -206,7 +207,7 @@ import type { StudyContext } from '$lib/study/studyContext';
 			})
 			.catch((err: unknown) => {
 				if (ctl.signal.aborted) return;
-				previewError = err instanceof Error ? err.message : 'The preview failed.';
+				previewError = err instanceof Error ? err.message : t('study.fsrs.previewFailed');
 				previewPending = false;
 			});
 		return () => ctl.abort();
@@ -271,7 +272,7 @@ import type { StudyContext } from '$lib/study/studyContext';
 			const problemText = verify?.(pointerBefore) ?? null;
 			if (problemText !== null) actionError = problemText;
 		} catch (err) {
-			actionError = err instanceof Error ? err.message : 'Could not save.';
+			actionError = err instanceof Error ? err.message : t('study.sched.saveFailed');
 		} finally {
 			busy = false;
 		}
@@ -298,7 +299,7 @@ import type { StudyContext } from '$lib/study/studyContext';
 			});
 			await setActiveSet(id, saved.id);
 			return saved.id;
-		}, 'Parameters changed.');
+		}, t('study.sched.changed'));
 	}
 
 	function discard(): void {
@@ -310,7 +311,7 @@ import type { StudyContext } from '$lib/study/studyContext';
 		return change(async (id) => {
 			await setActiveSet(id, setId);
 			return setId;
-		}, 'Parameters changed.');
+		}, t('study.sched.changed'));
 	}
 
 	function remove(setId: string): Promise<void> {
@@ -322,7 +323,7 @@ import type { StudyContext } from '$lib/study/studyContext';
 			null,
 			(before) =>
 				(fsrs.pointer ?? null) !== before
-					? 'The active parameters changed on another device while this set was deleted. Check which set is active.'
+					? t('study.sched.deletedActiveChanged')
 					: null
 		);
 	}
@@ -336,7 +337,7 @@ import type { StudyContext } from '$lib/study/studyContext';
 			// Read the stored pointer again: another device may have moved it.
 			await reloadData(slot.workspaceId);
 			if (!shouldRestorePointer(fsrs.pointer ?? null, slot.wrote)) {
-				actionError = 'The parameters were changed elsewhere in the meantime, so Undo did nothing.';
+				actionError = t('study.sched.undoNoop');
 				undo = null;
 				return;
 			}
@@ -345,44 +346,46 @@ import type { StudyContext } from '$lib/study/studyContext';
 			candidate = null;
 			await reloadData(slot.workspaceId);
 		} catch (err) {
-			actionError = err instanceof Error ? err.message : 'Could not undo.';
+			actionError = err instanceof Error ? err.message : t('study.store.undoFailed');
 		} finally {
 			busy = false;
 		}
 	}
 
+	function activeSetLabel(active: { source: string; createdAt: string; labelled?: number }): string {
+		const day = active.createdAt.slice(0, 10);
+		const label = active.source === 'optimized' ? t('study.sched.optimised', { day }) : t('study.sched.imported', { day });
+		return active.labelled === undefined ? label : t('study.sched.withReviews', { count: active.labelled, label });
+	}
+
 	const activeLabel = $derived(
-		fsrs.active === null
-			? 'Default parameters'
-			: `${fsrs.active.source === 'optimized' ? 'Optimised' : 'Imported'} ${fsrs.active.createdAt.slice(0, 10)}${
-					fsrs.active.labelled === undefined ? '' : ` · ${fsrs.active.labelled.toLocaleString()} reviews`
-				}`
+		fsrs.active === null ? t('study.sched.default') : activeSetLabel(fsrs.active)
 	);
 </script>
 
 <svelte:head>
-	<title>{pageTitle('Scheduling', 'Study')}</title>
+	<title>{pageTitle(t('study.sched.title'), t('study.setup.title'))}</title>
 </svelte:head>
 
 <main class="page">
-	<p><a href="/study">Back to study setup</a></p>
-	<h1>Scheduling</h1>
+	<p><a href="/study">{t('study.sched.back')}</a></p>
+	<h1>{t('study.sched.title')}</h1>
 
 	{#if workspaceId === null}
-		<p>Select a workspace to tune its scheduling.</p>
+		<p>{t('study.sched.noWorkspace')}</p>
 	{:else if loading}
-		<p role="status">Loading your reviews…</p>
+		<p role="status">{t('study.sched.loading')}</p>
 	{:else if loadError}
 		<p class="error" role="alert">{loadError}</p>
-		<button type="button" onclick={() => load(workspaceId)}>Try again</button>
+		<button type="button" onclick={() => load(workspaceId)}>{t('common.action.retry')}</button>
 	{:else}
 		{#if problem}
 			<p class="error" role="alert">{problem}</p>
 		{/if}
 		<p>
-			Active: {activeLabel}
+			{t('study.sched.active', { label: activeLabel })}
 			{#if fsrs.active !== null}
-				<button type="button" disabled={locked} onclick={() => use(null)}>Use defaults</button>
+				<button type="button" disabled={locked} onclick={() => use(null)}>{t('study.sched.useDefaults')}</button>
 			{/if}
 		</p>
 
@@ -439,7 +442,7 @@ import type { StudyContext } from '$lib/study/studyContext';
 			onfocusout={startUndoTimer}
 		>
 			<span>{undo.text}</span>
-			<button type="button" disabled={locked} onclick={undoLast}>Undo</button>
+			<button type="button" disabled={locked} onclick={undoLast}>{t('common.action.undo')}</button>
 		</div>
 	{/if}
 </div>

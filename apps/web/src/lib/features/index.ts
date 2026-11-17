@@ -8,6 +8,7 @@
 
 import type { Component } from 'svelte';
 import type { PluginInfo } from '$lib/api/types';
+import { t, type MessageKey } from '$lib/i18n';
 import { CORE_PLUGIN_ID } from '$lib/plugins/core/manifest';
 import type { PluginManifest } from '$lib/plugins';
 import { visibleNavPages, webPlugins } from '$lib/plugins';
@@ -25,12 +26,8 @@ export const RESERVED_IDS: ReadonlySet<string> = new Set([CORE_PLUGIN_ID, FLASHC
 
 export interface CoreFeature {
 	id: string;
-	/** The nav and page title. */
-	title: string;
-	/** What the switched-off notice calls it: "<label> … switched off". */
-	label: string;
-	/** The verb of that notice: `is` or `are`. */
-	verb: 'is' | 'are';
+	/** The nav and page title (catalogue text, read when shown). */
+	readonly title: string;
 	/** The URL segment. */
 	slug: string;
 	href: string;
@@ -43,9 +40,9 @@ export interface CoreFeature {
 export const coreFeatures: readonly CoreFeature[] = [
 	{
 		id: FLASHCARDS_ID,
-		title: 'Decks',
-		label: 'Flashcards',
-		verb: 'are',
+		get title() {
+			return t('features.flashcards.title');
+		},
 		slug: 'flashcards',
 		href: '/flashcards',
 		manifest: flashcardsManifest,
@@ -53,15 +50,29 @@ export const coreFeatures: readonly CoreFeature[] = [
 	},
 	{
 		id: READER_ID,
-		title: 'Reader',
-		label: 'The reader',
-		verb: 'is',
+		get title() {
+			return t('features.reader.title');
+		},
 		slug: 'reader',
 		href: '/reader',
 		manifest: readerManifest,
 		component: ReaderPage
 	}
 ];
+
+/**
+ * The heading of a switched-off feature's page: one whole message per feature (a label and a verb glued
+ * together cannot be translated; spec Ruling).
+ */
+const SWITCHED_OFF: Readonly<Record<string, MessageKey>> = {
+	[FLASHCARDS_ID]: 'features.flashcards.switchedOff',
+	[READER_ID]: 'features.reader.switchedOff'
+};
+
+/** switchedOffTitle: "Flashcards are switched off" for a core feature id. */
+export function switchedOffTitle(id: string): string {
+	return t(SWITCHED_OFF[featureById(id).id]);
+}
 
 function stateOf(id: string, states: readonly PluginInfo[]): PluginInfo | undefined {
 	return states.find((s) => s.id === id);

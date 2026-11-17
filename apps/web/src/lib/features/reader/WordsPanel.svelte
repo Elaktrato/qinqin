@@ -1,9 +1,11 @@
 <script lang="ts">
+	import { t } from '$lib/i18n';
 	import { errorMessage } from '$lib/stats/errors';
 	import type { Deck } from '$lib/study/types';
 	import type { Coverage, UnknownItem } from './coverage';
 	import { allNew, type AddWordsResult } from './wordActions';
 	import {
+		PAGE_SIZE,
 		addResultText,
 		bookProgressText,
 		buttonLabels,
@@ -119,7 +121,7 @@
 		try {
 			await run();
 		} catch (err) {
-			error = errorMessage(err, 'Could not save. Try again.');
+			error = errorMessage(err, t('reader.words.saveFailed'));
 		} finally {
 			busy = false;
 		}
@@ -127,11 +129,11 @@
 
 	const add = (ids: number[]) =>
 		act(async () => {
-			const t = target;
+			const into = target;
 			const key = lastKey;
-			const res = await onadd(ids, t);
+			const res = await onadd(ids, into);
 			if (key !== lastKey) return; // the reader moved on meanwhile
-			result = addResultText(res, t.name);
+			result = addResultText(res, into.name);
 			selected = new Set();
 		});
 
@@ -149,51 +151,57 @@
 		const u = undo;
 		return act(async () => {
 			if (u) await u();
-			result = 'Undone: the words are no longer marked as known';
+			result = t('reader.words.undone');
 		});
 	}
 </script>
 
-<h2>Words</h2>
+<h2>{t('reader.words.title')}</h2>
 {#if !wordCountsSupported(lang)}
-	<p class="hint">Word counts are available for Chinese and Japanese books</p>
+	<p class="hint">{t('reader.words.unsupported')}</p>
 {:else if cards === 'loading'}
-	<p class="hint" role="status">Loading your cards…</p>
+	<p class="hint" role="status">{t('reader.words.loadingCards')}</p>
 {:else if cards === 'error'}
-	<p class="error">Could not load your cards, so the words you know cannot be counted. <button type="button" onclick={oncardsretry}>Try again</button></p>
+	<p class="error">
+		{t('reader.words.cardsFailed')}
+		<button type="button" onclick={oncardsretry}>{t('reader.words.tryAgain')}</button>
+	</p>
 {:else}
 	<section aria-labelledby="{id}-chapter">
-		<h3 id="{id}-chapter">This chapter</h3>
+		<h3 id="{id}-chapter">{t('reader.words.thisChapter')}</h3>
 		{#if chapter !== null}
 			<p class="figure">{coverageText(chapter.coverage, 'chapter')}</p>
 			<p class="hint">{figuresText(chapter.coverage)}</p>
 			{#if unmatchedText(chapter.coverage.unmatched)}<p class="hint">{unmatchedText(chapter.coverage.unmatched)}</p>{/if}
 		{:else if failed > 0}
-			<p class="error">Some parts could not be counted. <button type="button" onclick={onretry}>Try again</button></p>
+			<p class="error">
+				{t('reader.words.partsFailed')}
+				<button type="button" onclick={onretry}>{t('reader.words.tryAgain')}</button>
+			</p>
 		{:else}
 			<p class="hint" role="status">{countingText(progress.done, progress.total)}</p>
 		{/if}
 	</section>
 
 	<section aria-labelledby="{id}-book">
-		<h3 id="{id}-book">Book</h3>
+		<h3 id="{id}-book">{t('reader.words.book')}</h3>
 		{#if bookProgress !== null}
 			<p class="hint" role="status">{bookProgressText(bookProgress.done, bookProgress.total)}</p>
-			<button type="button" onclick={oncancelbook}>Cancel</button>
+			<button type="button" onclick={oncancelbook}>{t('common.action.cancel')}</button>
 		{:else if book !== null}
 			<p class="figure">{coverageText(book.coverage, 'book')}</p>
 			<p class="hint">{figuresText(book.coverage)}</p>
 		{:else}
-			{#if bookFailed > 0}<p class="error">{bookFailed} chapters could not be counted.</p>{/if}
-			<button type="button" onclick={oncountbook}>Count the whole book</button>
+			{#if bookFailed > 0}<p class="error">{t('reader.words.chaptersFailed', { count: bookFailed })}</p>{/if}
+			<button type="button" onclick={oncountbook}>{t('reader.words.countBook')}</button>
 		{/if}
 	</section>
 
 	{#if book !== null}
 		<fieldset class="scope">
-			<legend>Words of</legend>
-			<label><input type="radio" name="{id}-scope" value="chapter" bind:group={scope} /> This chapter</label>
-			<label><input type="radio" name="{id}-scope" value="book" bind:group={scope} /> Whole book</label>
+			<legend>{t('reader.words.wordsOf')}</legend>
+			<label><input type="radio" name="{id}-scope" value="chapter" bind:group={scope} /> {t('reader.words.thisChapter')}</label>
+			<label><input type="radio" name="{id}-scope" value="book" bind:group={scope} /> {t('reader.words.wholeBook')}</label>
 		</fieldset>
 	{/if}
 
@@ -210,14 +218,14 @@
 					>
 					{#if w.reading}<span class="reading">{w.reading}</span>{/if}
 					<span class="count">×{w.count}</span>
-					<span class="chip {w.state}">{w.state === 'new' ? 'New' : 'Learning'}</span>
+					<span class="chip {w.state}">{w.state === 'new' ? t('reader.words.stateNew') : t('reader.words.stateLearning')}</span>
 				</li>
 			{/each}
 		</ul>
-		{#if page.more}<button type="button" onclick={() => (pages += 1)}>Show 50 more</button>{/if}
+		{#if page.more}<button type="button" onclick={() => (pages += 1)}>{t('reader.words.showMore', { count: PAGE_SIZE })}</button>{/if}
 
 		<div class="actions">
-			<label for="{id}-deck">Deck</label>
+			<label for="{id}-deck">{t('reader.words.deck')}</label>
 			<select id="{id}-deck" bind:value={deckId}>
 				{#each options as d (d.id)}<option value={d.id}>{d.name}</option>{/each}
 			</select>
@@ -226,11 +234,11 @@
 			<button type="button" disabled={busy || chosen.length === 0} onclick={mark}>{labels.know}</button>
 		</div>
 	{:else if current !== null}
-		<p class="hint">No unknown words here.</p>
+		<p class="hint">{t('reader.words.noneUnknown')}</p>
 	{/if}
 	<p role="status" aria-live="polite">
 		{result}
-		{#if undo}<button type="button" class="link" onclick={runUndo}>Undo</button>{/if}
+		{#if undo}<button type="button" class="link" onclick={runUndo}>{t('reader.words.undo')}</button>{/if}
 	</p>
 	{#if error}<p class="error" role="alert">{error}</p>{/if}
 {/if}

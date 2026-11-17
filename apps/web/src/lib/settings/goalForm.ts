@@ -1,6 +1,7 @@
 // Settings → Study → Daily goal: the form's view model. Pure; the row rules
 // are lib/goals/goals.ts (planGoalEdit), the metric list goalText.ts.
 
+import { t } from '$lib/i18n';
 import {
 	MAX_COUNT_TARGET,
 	MAX_MINUTES_TARGET,
@@ -31,8 +32,8 @@ export function formFrom(row: GoalsRow | null, today: string): GoalFormState {
 
 export function rangeError(unit: 'count' | 'minutes'): string {
 	return unit === 'minutes'
-		? `Enter a whole number of minutes from 1 to ${MAX_MINUTES_TARGET}`
-		: `Enter a whole number from 1 to ${MAX_COUNT_TARGET}`;
+		? t('settings.goal.rangeMinutes', { max: MAX_MINUTES_TARGET })
+		: t('settings.goal.range', { max: MAX_COUNT_TARGET });
 }
 
 function wholeNumber(text: string): number | null {
@@ -46,7 +47,7 @@ export function validateForm(
 ): { edit: GoalEdit } | { error: string } {
 	if (s.metric === '') return { edit: null };
 	const option = options.find((o) => o.metric === s.metric);
-	if (option === undefined) return { error: 'Choose what to count' };
+	if (option === undefined) return { error: t('settings.goal.chooseMetric') };
 	const max = option.unit === 'minutes' ? MAX_MINUTES_TARGET : MAX_COUNT_TARGET;
 	const target = wholeNumber(s.target);
 	if (target === null || target < 1 || target > max) return { error: rangeError(option.unit) };
@@ -58,7 +59,7 @@ export function limitHint(s: GoalFormState, newLimit: number | null): string | n
 	if (s.metric !== 'flashcards:new' || newLimit === null) return null;
 	const target = wholeNumber(s.target);
 	if (target === null || target <= newLimit) return null;
-	return `Your daily new-card limit is ${newLimit}; raise it to reach this goal`;
+	return t('settings.goal.limitHint', { limit: newLimit });
 }
 
 /**

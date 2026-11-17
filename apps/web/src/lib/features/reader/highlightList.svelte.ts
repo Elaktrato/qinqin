@@ -9,6 +9,7 @@
 // latest value per field wins) that is sent when the request in flight
 // settles. Edits of a highlight whose add is still pending wait for the
 // add and then go to its real id; a remove waits the same way.
+import { t } from '$lib/i18n';
 import { ApiError } from '$lib/api/client';
 import { HighlightOverlapError, type NewHighlight } from '$lib/api/library';
 import { snippetAt } from './bookmarks';
@@ -186,7 +187,7 @@ export class HighlightList {
 		} else {
 			shown = pending ? { ...saved, ...pending.patch } : saved;
 			this.items = [...others, shown].sort(byPlace);
-			this.announcement = `Highlight added: ${snippetAt(saved.text, ANNOUNCE_RUNES)}`;
+			this.announcement = t('reader.highlights.added', { text: snippetAt(saved.text, ANNOUNCE_RUNES) });
 		}
 		if (pending) {
 			this.#queue.set(saved.id, pending);
@@ -256,7 +257,7 @@ export class HighlightList {
 			// Newer edits waiting in the queue stay shown.
 			const newer = this.#queue.get(id)?.patch ?? {};
 			if (this.items.some((h) => h.id === id)) this.#replace(id, { ...saved, ...newer });
-			this.announcement = 'Highlight updated';
+			this.announcement = t('reader.highlights.updated');
 			settle(entry, true);
 		} catch (err) {
 			if (seq !== this.#seq) return settle(entry, false);
@@ -301,7 +302,7 @@ export class HighlightList {
 		}
 		if (seq === this.#seq && !failed) {
 			this.#server.delete(id);
-			this.announcement = `Highlight removed: ${snippetAt(removed.text, ANNOUNCE_RUNES)}`;
+			this.announcement = t('reader.highlights.removed', { text: snippetAt(removed.text, ANNOUNCE_RUNES) });
 		}
 		settle(entry, !failed);
 		if (seq === this.#seq) void this.#pump(id);

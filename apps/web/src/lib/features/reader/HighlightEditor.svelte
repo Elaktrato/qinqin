@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '$lib/i18n';
 	import { onMount, tick } from 'svelte';
 	import { snippetAt } from './bookmarks';
 	import type { HighlightList } from './highlightList.svelte';
@@ -230,17 +231,17 @@
 	>
 		<div class="head">
 			<p class="title" id={titleId}>
-				<span class="visually-hidden">Highlight: </span><span class="snippet {view.color}" {lang}
+				<span class="visually-hidden">{`${t('reader.editor.label')} `}</span><span class="snippet {view.color}" {lang}
 					>{snippetAt(view.text, 60)}</span
 				>
 			</p>
-			<button type="button" class="close" aria-label="Close the highlight editor" onclick={() => close()}>×</button>
+			<button type="button" class="close" aria-label={t('reader.editor.close')} onclick={() => close()}>×</button>
 		</div>
 		{#if failed}
-			<p class="notice failure">{sentence(failure || 'This highlight could not be saved.')} Your note is kept here.</p>
+			<p class="notice failure">{t('reader.editor.noteKept', { failure: sentence(failure || t('reader.editor.failed')) })}</p>
 		{:else if notice}<p class="notice">{notice}</p>{/if}
 
-		<div class="colors" role="group" aria-label="Colour" hidden={failed}>
+		<div class="colors" role="group" aria-label={t('reader.editor.colour')} hidden={failed}>
 			{#each HIGHLIGHT_COLORS as color (color)}
 				<button
 					type="button"
@@ -253,7 +254,7 @@
 			{/each}
 		</div>
 
-		<label class="note-label" for="hl-editor-note-{id}">Note</label>
+		<label class="note-label" for="hl-editor-note-{id}">{t('reader.editor.note')}</label>
 		<textarea
 			bind:this={noteField}
 			id="hl-editor-note-{id}"
@@ -267,26 +268,28 @@
 		></textarea>
 		<p class="help" id="hl-editor-note-help-{id}">
 			<span class="count" class:over={tooLong}>{runes}/{MAX_NOTE_RUNES}</span>
-			{#if !failed}<span>Saved when you leave the field, or with Ctrl+Enter.</span>{/if}
+			{#if !failed}<span>{t('reader.editor.help')}</span>{/if}
 		</p>
 		<!-- Saves and errors are announced by the reader's live regions. -->
 		<p class="status" class:error={status === 'error'}>
-			{#if status === 'unsaved'}Not saved yet.{:else if status === 'saving'}Saving…{:else if status === 'saved'}Saved.{:else if status === 'error'}{tooLong
-					? `The note is too long (${MAX_NOTE_RUNES} characters at most).`
-					: list.error || 'Could not save the note.'}{/if}
+			{#if status === 'unsaved'}{t('reader.editor.unsaved')}{:else if status === 'saving'}{t(
+					'reader.editor.saving'
+				)}{:else if status === 'saved'}{t('reader.editor.saved')}{:else if status === 'error'}{tooLong
+					? t('reader.editor.tooLong', { max: MAX_NOTE_RUNES })
+					: list.error || t('reader.editor.saveFailed')}{/if}
 		</p>
 
 		<div class="actions">
 			{#if failed}
-				<button type="button" class="retry" disabled={tooLong} onclick={() => onretry?.(draft)}>Try again</button>
-				<button type="button" onclick={() => close(true)}>Discard</button>
+				<button type="button" class="retry" disabled={tooLong} onclick={() => onretry?.(draft)}>{t('reader.editor.tryAgain')}</button>
+				<button type="button" onclick={() => close(true)}>{t('reader.editor.discard')}</button>
 			{:else if confirming}
-				<span>Delete this highlight?</span>
-				<button type="button" class="yes" onclick={confirmDelete}>Yes, delete</button>
-				<button type="button" class="cancel" onclick={() => void cancelDelete()}>Cancel</button>
+				<span>{t('reader.editor.deleteQuestion')}</span>
+				<button type="button" class="yes" onclick={confirmDelete}>{t('reader.editor.yesDelete')}</button>
+				<button type="button" class="cancel" onclick={() => void cancelDelete()}>{t('common.action.cancel')}</button>
 			{:else}
-				<button type="button" class="delete" onclick={() => void askDelete()}>Delete</button>
-				<button type="button" onclick={() => close()}>Done</button>
+				<button type="button" class="delete" onclick={() => void askDelete()}>{t('reader.editor.delete')}</button>
+				<button type="button" onclick={() => close()}>{t('reader.editor.done')}</button>
 			{/if}
 		</div>
 	</div>

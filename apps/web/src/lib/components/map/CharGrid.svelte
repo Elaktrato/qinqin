@@ -39,6 +39,7 @@
 
 <script lang="ts">
 	import { tick } from 'svelte';
+	import { t } from '$lib/i18n';
 	import type { CellState } from '$lib/study/charGroups';
 	import {
 		STAGE_INFO,
@@ -218,7 +219,7 @@
 <div
 	class="grid"
 	role="group"
-	aria-label="{label}: characters"
+	aria-label={t('stats.map.gridLabel', { group: label })}
 	data-section={sectionId}
 	bind:this={grid}
 	{onkeydown}

@@ -2,6 +2,7 @@
 	// Settings → Study: the workspace's daily goal. The rules live in
 	// lib/goals (row, texts) and ./goalForm.ts (form view model).
 	import { fetchActivity, type ActivitySource } from '$lib/api/stats';
+	import { t } from '$lib/i18n';
 	import { BUILTIN_SOURCES } from '$lib/goals/builtinSources';
 	import { activityType, type GoalsRow } from '$lib/goals/goals';
 	import { metricOptions, type MetricOption } from '$lib/goals/goalText';
@@ -79,7 +80,7 @@
 		} catch {
 			if (mine !== seq) return;
 			loadFailed = true;
-			error = 'Could not load your daily goal.';
+			error = t('settings.goal.loadFailed');
 		}
 	}
 
@@ -103,21 +104,21 @@
 
 	async function write(next: GoalsRow | null): Promise<void> {
 		if (next === null) {
-			message = 'No changes';
+			message = t('settings.goal.noChanges');
 			return;
 		}
 		const target = loadedFor;
 		if (target === null || target !== workspaceId) {
-			error = 'The workspace changed; check the goal again.';
+			error = t('settings.goal.workspaceChanged');
 			return;
 		}
 		busy = true;
 		try {
 			await saveGoals(target, next);
 			await load(target, true);
-			message = 'Saved.';
+			message = t('common.state.saved');
 		} catch {
-			error = 'Could not save the daily goal.';
+			error = t('settings.goal.saveFailed');
 		} finally {
 			busy = false;
 		}
@@ -148,28 +149,26 @@
 </script>
 
 <section class="goal">
-	<h2>Daily goal</h2>
-	<p class="hint">
-		One target per study day in this workspace: flashcard reviews, new cards, minutes of flashcard
-		study, or any other activity the statistics count. A change applies from today; earlier days keep
-		the goal they had. Vacation days pause the goal and its streak.
-	</p>
+	<h2>{t('settings.goal.title')}</h2>
+	<p class="hint">{t('settings.goal.hint')}</p>
 	{#if sourcesFailed}
 		<p class="note" role="status">
-			Could not load the activity list; showing the built-in choices.
-			<button type="button" onclick={() => workspaceId !== null && void loadSources(workspaceId)}>Try again</button>
+			{t('settings.goal.sourcesFailed')}
+			<button type="button" onclick={() => workspaceId !== null && void loadSources(workspaceId)}
+				>{t('common.action.retry')}</button
+			>
 		</p>
 	{/if}
 	{#if newer}
 		<p class="note" role="status">
-			This goal was set by a newer version of qinqin and cannot be changed here.
+			{t('settings.goal.newer')}
 		</p>
 	{/if}
-	<form novalidate onsubmit={save} aria-label="Daily goal of this workspace">
+	<form novalidate onsubmit={save} aria-label={t('settings.goal.formLabel')}>
 		<span class="field">
-			<label for="goal-metric">Count</label>
+			<label for="goal-metric">{t('settings.goal.count')}</label>
 			<select id="goal-metric" bind:value={form.metric} {disabled}>
-				<option value="">No daily goal</option>
+				<option value="">{t('settings.goal.none')}</option>
 				{#each options as option (option.metric)}
 					<option value={option.metric}>{option.label}</option>
 				{/each}
@@ -177,19 +176,19 @@
 		</span>
 		{#if form.metric !== ''}
 			<span class="field">
-				<label for="goal-target">Target</label>
+				<label for="goal-target">{t('settings.goal.target')}</label>
 				<input id="goal-target" type="text" inputmode="numeric" bind:value={form.target} {disabled} size="6" />
-				<span class="unit">{unit === 'minutes' ? 'minutes' : 'per day'}</span>
+				<span class="unit">{unit === 'minutes' ? t('settings.goal.unitMinutes') : t('settings.goal.unitPerDay')}</span>
 			</span>
 		{/if}
 		<label class="check">
 			<input type="checkbox" bind:checked={form.showStreak} {disabled} />
-			Show goal streak
+			{t('settings.goal.showStreak')}
 		</label>
 		<div class="actions">
-			<button type="submit" {disabled}>Save goal</button>
+			<button type="submit" {disabled}>{t('settings.goal.save')}</button>
 			{#if hasGoal}
-				<button type="button" {disabled} onclick={() => void remove()}>Remove goal</button>
+				<button type="button" {disabled} onclick={() => void remove()}>{t('settings.goal.remove')}</button>
 			{/if}
 			{#if message}<span role="status">{message}</span>{/if}
 		</div>
@@ -201,7 +200,7 @@
 		<p class="error" role="alert">
 			{error}
 			{#if loadFailed}
-				<button type="button" onclick={() => void load(workspaceId, true)}>Try again</button>
+				<button type="button" onclick={() => void load(workspaceId, true)}>{t('common.action.retry')}</button>
 			{/if}
 		</p>
 	{/if}

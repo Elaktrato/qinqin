@@ -1,5 +1,7 @@
 // Pure helpers behind the journal editor and review views.
 
+import { t } from '$lib/i18n';
+import { formatNumber } from '$lib/i18n/format';
 import { ApiError } from '$lib/api/client';
 import { MAX_REVIEW_CHARS } from './entryDraft';
 import type { Anchoring } from './anchor';
@@ -25,17 +27,17 @@ export function aiButtonGate(input: {
 	if (!input.available) {
 		return {
 			enabled: false,
-			hint: input.banner ?? 'Add an API key in Settings → AI',
+			hint: input.banner ?? t('journal.gate.noKey'),
 			settingsLink: true
 		};
 	}
 	if (input.forReview && input.chars === 0) {
-		return { enabled: false, hint: 'Write something first', settingsLink: false };
+		return { enabled: false, hint: t('journal.gate.empty'), settingsLink: false };
 	}
 	if (input.forReview && input.chars > MAX_REVIEW_CHARS) {
 		return {
 			enabled: false,
-			hint: 'Shorten the entry to 5,000 characters to review it',
+			hint: t('journal.gate.tooLong'),
 			settingsLink: false
 		};
 	}
@@ -64,9 +66,10 @@ export function listedAnnotations(all: Annotation[], anchoring: Anchoring): Anno
 }
 
 export function reviewAnnouncement(corrections: number, missing: number): string {
-	if (corrections === 0 && missing === 0) return 'Review ready: no corrections.';
-	const base = `Review ready: ${corrections} ${corrections === 1 ? 'correction' : 'corrections'}`;
-	return missing > 0 ? `${base}, ${missing} no longer in the text.` : `${base}.`;
+	if (corrections === 0 && missing === 0) return t('journal.review.readyNone');
+	return missing > 0
+		? t('journal.review.readyMissing', { count: corrections, missing })
+		: t('journal.review.ready', { count: corrections });
 }
 
 export type SaveState = 'idle' | 'dirty' | 'saving' | 'saved' | 'error';
@@ -74,13 +77,13 @@ export type SaveState = 'idle' | 'dirty' | 'saving' | 'saved' | 'error';
 export function saveStatusText(state: SaveState): string {
 	switch (state) {
 		case 'dirty':
-			return 'Unsaved changes';
+			return t('journal.save.dirty');
 		case 'saving':
-			return 'Saving…';
+			return t('journal.save.saving');
 		case 'saved':
-			return 'Saved';
+			return t('journal.save.saved');
 		case 'error':
-			return 'Not saved. Retrying when you keep typing, or press Save.';
+			return t('journal.save.error');
 		default:
 			return '';
 	}
@@ -119,6 +122,6 @@ export function isEntryGone(err: unknown): boolean {
 
 export function tooLongHint(chars: number): string {
 	return chars > MAX_REVIEW_CHARS
-		? `Longer than ${MAX_REVIEW_CHARS.toLocaleString('en')} characters: you can save it, but shorten it to get a review.`
+		? t('journal.tooLongHint', { max: formatNumber(MAX_REVIEW_CHARS) })
 		: '';
 }

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '$lib/i18n';
 	import { tick, type Snippet } from 'svelte';
 	import { inPopup } from './popupPointer.svelte';
 	import { nextFocusIndex, tabKeyTarget, type RailMode, type RailTab } from './railState';
@@ -164,8 +165,8 @@
 		class="opener"
 		aria-expanded={open}
 		aria-controls="reader-rail"
-		aria-label={anyAlert ? 'Bookmarks and highlights (needs attention)' : 'Bookmarks and highlights'}
-		title="Bookmarks and highlights"
+		aria-label={anyAlert ? t('reader.rail.bookmarksAttention') : t('reader.rail.bookmarks')}
+		title={t('reader.rail.bookmarks')}
 		onclick={() => (open ? closeDrawer(false) : openDrawer())}
 	>
 		<svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true" focusable="false">
@@ -188,7 +189,7 @@
 	class="rail {mode}"
 	class:open
 	hidden={mode === 'drawer' && !open}
-	aria-label="Bookmarks and highlights"
+	aria-label={t('reader.rail.bookmarks')}
 	onkeydown={railKey}
 	onfocusout={railFocusOut}
 >
@@ -199,8 +200,8 @@
 				class="collapse"
 				aria-expanded={open}
 				aria-controls="rail-panels"
-				aria-label={open ? 'Collapse the side panel' : 'Expand the side panel'}
-				title={open ? 'Collapse the side panel' : 'Expand the side panel'}
+				aria-label={open ? t('reader.rail.collapse') : t('reader.rail.expand')}
+				title={open ? t('reader.rail.collapse') : t('reader.rail.expand')}
 				onclick={() => onToggle(!open)}
 			>
 				<span aria-hidden="true">{open ? '»' : '«'}</span>
@@ -209,14 +210,14 @@
 			<button
 				type="button"
 				class="collapse"
-				aria-label="Close the side panel"
-				title="Close (Esc)"
+				aria-label={t('reader.rail.close')}
+				title={t('reader.rail.closeTitle')}
 				onclick={() => closeDrawer(true)}
 			>
 				<span aria-hidden="true">×</span>
 			</button>
 		{/if}
-		<div role="tablist" aria-orientation="vertical" aria-label="Side panel">
+		<div role="tablist" aria-orientation="vertical" aria-label={t('reader.rail.panel')}>
 			{#each tabs as tab, index (tab.id)}
 				<button
 					id="rail-tab-{tab.id}"
@@ -231,7 +232,7 @@
 				>
 					<span class="tab-label">{tab.label}</span>
 					{#if tab.alert}<span class="dot" aria-hidden="true"></span><span class="visually-hidden"
-							>(needs attention)</span
+							>{t('reader.rail.attention')}</span
 						>{/if}
 				</button>
 			{/each}

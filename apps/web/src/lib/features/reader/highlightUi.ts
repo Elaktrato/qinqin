@@ -1,6 +1,7 @@
 // Pure glue between the reader's DOM and the highlights: the remembered
 // colour, the `h` shortcut, what a selection turns into, the panel's
 // grouping and the segment mapping ChapterText and dom.ts share.
+import { labelRecord, t, type MessageKey } from '$lib/i18n';
 import type { NewHighlight } from '$lib/api/library';
 import { WIDGET_SELECTOR, OPEN_WIDGET_SELECTOR, isTextEntry, type KeyLike } from './bookmarkList.svelte';
 import {
@@ -30,11 +31,19 @@ export interface HighlightActions {
 	note(): void;
 }
 
-export const COLOR_NAMES: Record<HighlightColor, string> = {
-	yellow: 'Yellow',
-	green: 'Green',
-	blue: 'Blue',
-	pink: 'Pink'
+export const COLOR_NAMES: Readonly<Record<HighlightColor, string>> = labelRecord({
+	yellow: 'reader.highlights.color.yellow',
+	green: 'reader.highlights.color.green',
+	blue: 'reader.highlights.color.blue',
+	pink: 'reader.highlights.color.pink'
+});
+
+/** "Highlight in yellow": the swatch buttons of the highlight bar. */
+export const HIGHLIGHT_IN: Readonly<Record<HighlightColor, MessageKey>> = {
+	yellow: 'reader.highlights.in.yellow',
+	green: 'reader.highlights.in.green',
+	blue: 'reader.highlights.in.blue',
+	pink: 'reader.highlights.in.pink'
 };
 
 /** loadLastColor: the colour picked last in this browser, yellow by default. */
@@ -101,11 +110,18 @@ export type HighlightPlan =
 	| { kind: 'existing'; highlight: Highlight; exact: boolean; clamped: boolean }
 	| { kind: 'create'; body: NewHighlight; clamped: boolean };
 
-export const CLAMP_NOTICE = 'A highlight stays within one paragraph: only the first paragraph of your selection is used.';
-export const TOO_LONG_NOTICE = 'That selection is too long to highlight (500 characters at most). Select a shorter passage.';
-export const ELSEWHERE_NOTICE =
-	'This overlaps a highlight saved elsewhere (another tab or device). Reload the page to see it.';
-export const OVERLAP_NOTICE = 'This overlaps a highlight you already have, so it opened that one.';
+export function clampNotice(): string {
+	return t('reader.highlights.clamp');
+}
+export function tooLongNotice(): string {
+	return t('reader.highlights.tooLong');
+}
+export function elsewhereNotice(): string {
+	return t('reader.highlights.elsewhere');
+}
+export function overlapNotice(): string {
+	return t('reader.highlights.overlap');
+}
 
 /**
  * planHighlight: what highlighting a selection does. Nothing for an empty
@@ -201,7 +217,7 @@ export function addFailure(
 	storeError: string
 ): { kind: 'existing'; id: number } | { kind: 'message'; text: string } {
 	if (result.existingId !== undefined) {
-		return result.available ? { kind: 'existing', id: result.existingId } : { kind: 'message', text: ELSEWHERE_NOTICE };
+		return result.available ? { kind: 'existing', id: result.existingId } : { kind: 'message', text: elsewhereNotice() };
 	}
-	return { kind: 'message', text: storeError || 'Could not save the highlight.' };
+	return { kind: 'message', text: storeError || t('reader.error.highlight') };
 }

@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { t } from '$lib/i18n';
+	import Msg from '$lib/i18n/Msg.svelte';
 	import { segmentBatch } from '$lib/api/segment';
 	import type { Entry, Sentence } from '$lib/api/types';
 	import WordSaladBoard from './WordSaladBoard.svelte';
@@ -63,24 +65,28 @@
 
 <div class="prompt">
 	{#if !hidesTranslation || translationShown || done}
-		<p class="translation">{sentence.translation || 'No translation for this sentence.'}</p>
+		<p class="translation">{sentence.translation || t('flashcards.card.noTranslation')}</p>
 	{:else}
 		<button type="button" class="cloze" onclick={showTranslation}>
 			<span aria-hidden="true" class="blur">{sentence.translation || '—'}</span>
-			<span class="cloze-label">Show translation (counts as a hint)</span>
+			<span class="cloze-label">{t('flashcards.card.showTranslation')}</span>
 		</button>
 	{/if}
-	<p class="target">Uses <strong lang={language}>{entry.written}</strong></p>
+	<p class="target">
+		<Msg key="flashcards.card.uses" args={{ word: entry.written }}
+			>{#snippet strong(text: string)}<strong lang={language}>{text}</strong>{/snippet}</Msg
+		>
+	</p>
 </div>
 
 {#if solution === null}
-	<p class="hint" role="status">Preparing the sentence…</p>
+	<p class="hint" role="status">{t('flashcards.card.preparing')}</p>
 {:else}
 	<WordSaladBoard {solution} {seed} disabled={done} onResult={finish} language={language} />
 {/if}
 
 {#if done}
-	<section class="reveal" aria-label="The sentence">
+	<section class="reveal" aria-label={t('flashcards.card.theSentence')}>
 		<p class="sentence" lang={language}>{sentence.hanzi}</p>
 		{#if sentence.pinyin}
 			<p class="pinyin">{sentence.pinyin}</p>

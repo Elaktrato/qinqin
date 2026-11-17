@@ -1,5 +1,7 @@
 <script lang="ts">
 	import type { Fit } from '$lib/study/fsrs/evaluate';
+	import { t } from '$lib/i18n';
+	import { formatNumber } from '$lib/i18n/format';
 	import { LOW_DATA_LABELLED, MIN_LABELLED, type OptimizeResult } from '$lib/study/fsrs/optimize';
 
 	let {
@@ -24,28 +26,30 @@
 
 	const missing = $derived(Math.max(0, MIN_LABELLED - labelled));
 	const percent = $derived(Math.round(progress * 100));
-	const pct = (x: number): string => `${(x * 100).toFixed(1)} %`;
+	const pct = (x: number): string =>
+		t('flashcards.optimise.percent', { value: formatNumber(x * 100, { minimumFractionDigits: 1, maximumFractionDigits: 1 }) });
+	const loss = (n: number): string => formatNumber(n, { minimumFractionDigits: 3, maximumFractionDigits: 3 });
 </script>
 
 <section aria-labelledby="optimise-heading">
-	<h2 id="optimise-heading">Optimise</h2>
+	<h2 id="optimise-heading">{t('flashcards.optimise.title')}</h2>
 	<p class="hint">
-		{labelled.toLocaleString()} reviews can be used for fitting.
+		{t('flashcards.optimise.usable', { count: labelled })}
 		{#if missing > 0}
-			{missing.toLocaleString()} more reviews needed before the parameters can be optimised.
+			{t('flashcards.optimise.missing', { count: missing })}
 		{:else if labelled < LOW_DATA_LABELLED}
-			Little data: the fit may move a lot later.
+			{t('flashcards.optimise.littleData')}
 		{/if}
 	</p>
 
 	<div class="row">
-		<button type="button" disabled={running || missing > 0} onclick={onOptimise}>Optimise</button>
+		<button type="button" disabled={running || missing > 0} onclick={onOptimise}>{t('flashcards.optimise.run')}</button>
 		{#if running}
 			<label class="progress">
-				<span id="optimise-progress-label">Training… {percent} %</span>
+				<span id="optimise-progress-label">{t('flashcards.optimise.training', { percent })}</span>
 				<progress max="1" value={progress} aria-labelledby="optimise-progress-label"></progress>
 			</label>
-			<button type="button" onclick={onCancel}>Cancel</button>
+			<button type="button" onclick={onCancel}>{t('common.action.cancel')}</button>
 		{/if}
 	</div>
 
@@ -58,30 +62,38 @@
 			{#if result.ok}
 				{#if result.heldOut?.small}
 					<p>
-						On your most recent reviews ({result.heldOut.items.toLocaleString()}), which were not
-						used for fitting: log loss {result.heldOut.current.toFixed(3)} → {result.heldOut.candidate.toFixed(3)}.
+						{t('flashcards.optimise.heldOutSmall', {
+							items: formatNumber(result.heldOut.items),
+							before: loss(result.heldOut.current),
+							after: loss(result.heldOut.candidate)
+						})}
 					</p>
 					<p class="hint">
-						Little data, so this is the number to trust. On your earlier reviews, which were used
-						for fitting: log loss {activeFit.logLoss.toFixed(3)} → {result.logLoss.toFixed(3)}.
+						{t('flashcards.optimise.trainSmall', { before: loss(activeFit.logLoss), after: loss(result.logLoss) })}
 					</p>
 				{:else}
 					<p>
-						On your earlier reviews, which were used for fitting: log loss
-						{activeFit.logLoss.toFixed(3)} → {result.logLoss.toFixed(3)} · RMSE
-						{pct(activeFit.rmseBins)} → {pct(result.rmseBins)}
+						{t('flashcards.optimise.train', {
+							before: loss(activeFit.logLoss),
+							after: loss(result.logLoss),
+							rmseBefore: pct(activeFit.rmseBins),
+							rmseAfter: pct(result.rmseBins)
+						})}
 					</p>
 					{#if result.heldOut}
 						<p class="hint">
-							On your most recent reviews ({result.heldOut.items.toLocaleString()}), not used for the
-							check: log loss {result.heldOut.current.toFixed(3)} → {result.heldOut.candidate.toFixed(3)}.
+							{t('flashcards.optimise.heldOut', {
+								items: formatNumber(result.heldOut.items),
+								before: loss(result.heldOut.current),
+								after: loss(result.heldOut.candidate)
+							})}
 						</p>
 					{/if}
 				{/if}
 			{:else if result.reason === 'too-few'}
-				<p>Not enough reviews yet.</p>
+				<p>{t('flashcards.optimise.tooFew')}</p>
 			{:else}
-				<p>Optimisation cancelled.</p>
+				<p>{t('flashcards.optimise.cancelled')}</p>
 			{/if}
 		</div>
 	{/if}

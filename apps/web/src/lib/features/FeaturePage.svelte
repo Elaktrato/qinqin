@@ -5,9 +5,11 @@
 	// fallback title; the feature's own views set theirs.
 	import { onMount } from 'svelte';
 	import { loadPluginStates, pluginStates } from '$lib/plugins/states';
-	import { featureEnabled, type CoreFeature } from './index';
+	import { t } from '$lib/i18n';
+	import Msg from '$lib/i18n/Msg.svelte';
+	import { featureEnabled, switchedOffTitle, type CoreFeature } from './index';
 
-	let { feature, rest }: { feature: Pick<CoreFeature, 'id' | 'title' | 'label' | 'verb' | 'component'>; rest: string } =
+	let { feature, rest }: { feature: Pick<CoreFeature, 'id' | 'title' | 'component'>; rest: string } =
 		$props();
 
 	const on = $derived($pluginStates.status === 'ready' && featureEnabled(feature.id, $pluginStates.list));
@@ -24,12 +26,14 @@
 {:else}
 	<main>
 		{#if $pluginStates.status === 'idle' || $pluginStates.status === 'loading'}
-			<p role="status">Loading…</p>
+			<p role="status">{t('app.loading')}</p>
 		{:else if $pluginStates.status === 'error'}
-			<p role="alert">Could not load your settings. Reload the page to try again.</p>
+			<p role="alert">{t('features.switchedOff.loadFailed')}</p>
 		{:else}
-			<h1>{feature.label} {feature.verb} switched off</h1>
-			<p>You switched this off for yourself. Turn it back on in <a href="/settings?tab=features">Settings → Features</a>.</p>
+			<h1>{switchedOffTitle(feature.id)}</h1>
+			<p>
+				<Msg key="features.switchedOff.text">{#snippet link(text: string)}<a href="/settings?tab=features">{text}</a>{/snippet}</Msg>
+			</p>
 		{/if}
 	</main>
 {/if}

@@ -2,6 +2,7 @@
 // the select's options. The component stays thin.
 
 import { apiErrorBody } from '../api/client';
+import { t } from '../i18n';
 
 /**
  * canonicalZone resolves aliases through the runtime's own database
@@ -53,8 +54,8 @@ export function zoneMatchText(supported: readonly string[] | undefined, query: s
 	if (!supported || q === '') return '';
 	const all = supported.includes('UTC') ? supported : [...supported, 'UTC'];
 	const n = all.filter((zone) => words(zone).includes(q)).length;
-	if (n === 0) return `No time zones match “${query.trim()}”.`;
-	return n === 1 ? '1 time zone matches.' : `${n} time zones match.`;
+	if (n === 0) return t('settings.zone.noMatch', { query: query.trim() });
+	return t('settings.zone.matches', { count: n });
 }
 
 /** zoneLabel is "Asia/Tokyo (UTC+09:00)" with the offset in force at `now`. */
@@ -73,10 +74,10 @@ export function zoneLabel(zone: string, now: number): string {
 export function changeErrorMessage(err: unknown): string {
 	switch (apiErrorBody(err)?.error) {
 		case 'unknown_time_zone':
-			return 'That is not a time zone the server knows. Pick one from the list.';
+			return t('settings.zone.unknown');
 		case 'too_many_changes':
-			return 'This account has too many time zone changes recorded to add another.';
+			return t('settings.zone.tooMany');
 		default:
-			return 'Could not change the time zone. Try again.';
+			return t('settings.zone.failed');
 	}
 }

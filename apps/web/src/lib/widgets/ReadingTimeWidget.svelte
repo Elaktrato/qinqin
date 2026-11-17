@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { listAllBooks } from '$lib/api/library';
+	import { t } from '$lib/i18n';
 	import { loadWorkspaceEvents } from '$lib/events';
 	import { errorMessage } from '$lib/stats/errors';
 	import { formatDuration, readingTotals, topBooks, type ReadingTotals } from '$lib/stats/readingTime';
@@ -79,7 +80,7 @@
 		} catch (err) {
 			if (seq !== requestSeq) return;
 			totals = null;
-			error = errorMessage(err, 'Could not load your reading time.');
+			error = errorMessage(err, t('widgets.reading.loadFailed'));
 		} finally {
 			if (seq === requestSeq) loading = false;
 		}
@@ -94,36 +95,36 @@
 </script>
 
 <WidgetCard
-	title="Reading time"
+	title={t('widgets.reading.title')}
 	headingId="reading-time-heading"
 	{status}
-	noWorkspaceText="Choose a workspace in the header to see your reading time."
-	loadingText="Loading reading time…"
+	noWorkspaceText={t('widgets.reading.noWorkspace')}
+	loadingText={t('widgets.reading.loading')}
 	{error}
 	onretry={() => void load(workspaceId, true)}
-	emptyText="No reading tracked yet. Open a book in the Reader to start."
+	emptyText={t('widgets.reading.empty')}
 >
 	{#snippet actions()}
-		<a class="open" href="/reader">Reader</a>
+		<a class="open" href="/reader">{t('widgets.reading.open')}</a>
 	{/snippet}
 
 	{#if totals !== null}
 		<dl class="totals">
 			<div>
-				<dt>All time</dt>
+				<dt>{t('widgets.reading.allTime')}</dt>
 				<dd>{formatDuration(totals.totalSeconds)}</dd>
 			</div>
 			<div>
-				<dt>Last 7 days</dt>
+				<dt>{t('widgets.reading.last7')}</dt>
 				<dd>{formatDuration(totals.last7Seconds)}</dd>
 			</div>
 			<div>
-				<dt>Last 30 days</dt>
+				<dt>{t('widgets.reading.last30')}</dt>
 				<dd>{formatDuration(totals.last30Seconds)}</dd>
 			</div>
 		</dl>
 
-		<h3 class="sub">Most read</h3>
+		<h3 class="sub">{t('widgets.reading.mostRead')}</h3>
 		<ol class="books">
 			{#each top as book (book.key)}
 				<li class:removed={book.removed}>
@@ -133,10 +134,10 @@
 			{/each}
 		</ol>
 		{#if titles === null}
-			<p class="note" role="status">Book titles could not be loaded.</p>
+			<p class="note" role="status">{t('widgets.reading.titlesFailed')}</p>
 		{/if}
 
-		<p class="note">Tracked reading time (visits shorter than 30 seconds are not counted).</p>
+		<p class="note">{t('widgets.reading.note')}</p>
 	{/if}
 </WidgetCard>
 

@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { t } from '$lib/i18n';
+	import { formatNumber } from '$lib/i18n/format';
 	import { onMount } from 'svelte';
 	import type { Workspace } from '$lib/api/types';
 	import { codePoints } from './entryDraft';
@@ -27,7 +29,7 @@
 			guidance = s.guidance;
 			language = s.explanationLanguage;
 		} catch {
-			error = 'Could not load the settings. Try again later.';
+			error = t('journal.settings.loadFailed');
 		} finally {
 			loading = false;
 		}
@@ -39,44 +41,44 @@
 		if (saving || tooLong) return;
 		saving = true;
 		error = '';
-		status = 'Saving…';
+		status = t('journal.save.saving');
 		try {
 			await saveJournalSettings(workspace.id, { guidance, explanationLanguage: language });
-			status = 'Saved';
+			status = t('journal.save.saved');
 		} catch {
 			status = '';
-			error = 'Could not save the settings. Try again.';
+			error = t('journal.settings.saveFailed');
 		} finally {
 			saving = false;
 		}
 	}
 </script>
 
-<p><a href={journalHref({ view: 'list' })}>← Journal</a></p>
-<h1 bind:this={heading} tabindex="-1">Journal settings for {workspace.name}</h1>
+<p><a href={journalHref({ view: 'list' })}>{t('journal.settings.back')}</a></p>
+<h1 bind:this={heading} tabindex="-1">{t('journal.settings.title', { name: workspace.name })}</h1>
 
 {#if loading}
-	<p role="status">Loading…</p>
+	<p role="status">{t('common.loading')}</p>
 {:else}
 	<form onsubmit={save}>
 		<label>
-			<span>Correction guidance</span>
+			<span>{t('journal.settings.guidance')}</span>
 			<textarea
 				bind:value={guidance}
 				rows="6"
 				aria-describedby="guidance-help guidance-count"
-				placeholder="For example: I am a beginner, keep explanations short."
+				placeholder={t('journal.settings.placeholder')}
 			></textarea>
 		</label>
 		<p id="guidance-help" class="hint">
-			Preferences for the corrections. They cannot change the languages or the format of the review.
+			{t('journal.settings.guidanceHint')}
 		</p>
 		<p id="guidance-count" class:error={tooLong}>
-			{count.toLocaleString('en')} / {MAX_GUIDANCE.toLocaleString('en')}
+			{t('journal.settings.count', { count: formatNumber(count), max: formatNumber(MAX_GUIDANCE) })}
 		</p>
 
 		<label>
-			<span>Explanation language</span>
+			<span>{t('journal.settings.language')}</span>
 			<select bind:value={language}>
 				{#each EXPLANATION_LANGUAGES as l (l.code)}
 					<option value={l.code}>{l.label}</option>
@@ -85,13 +87,13 @@
 		</label>
 
 		<div class="bar">
-			<button type="submit" disabled={saving || tooLong}>Save</button>
+			<button type="submit" disabled={saving || tooLong}>{t('journal.settings.save')}</button>
 			<span class="live" aria-live="polite">{status}</span>
 		</div>
 		{#if error}<p class="error" role="alert">{error}</p>{/if}
 	</form>
 
-	<p><a href="/settings?tab=ai">API key and model: Settings → AI →</a></p>
+	<p><a href="/settings?tab=ai">{t('journal.settings.aiLink')}</a></p>
 {/if}
 
 <style>

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import errors from '../../../../../docs/contracts/auth/errors.json';
-import { REAUTH_ERROR_FALLBACK, reauthBody, reauthError, reauthFocus, reauthNeedsCode, reauthReady } from './reauth';
+import { reauthErrorFallback, reauthBody, reauthError, reauthFocus, reauthNeedsCode, reauthReady } from './reauth';
 
 describe('reauthNeedsCode', () => {
 	it('asks for a code when the administrator has an authenticator, or after the server asked for one', () => {
@@ -36,7 +36,7 @@ describe('reauthError', () => {
 		expect(reauthError('code_invalid')).toBe('That code is not right. Use a current authenticator code or an unused recovery code.');
 		expect(reauthError('rate_limited')).toContain('Too many tries');
 		expect(reauthError('busy')).toContain('busy');
-		expect(reauthError('something_new')).toBe(REAUTH_ERROR_FALLBACK);
+		expect(reauthError('something_new')).toBe(reauthErrorFallback());
 		expect(reauthError(undefined, 'Could not delete the account.')).toBe('Could not delete the account.');
 		for (const code of ['wrong_password', 'password_required', 'code_invalid', 'rate_limited', 'busy']) {
 			expect(Object.keys(errors)).toContain(code);

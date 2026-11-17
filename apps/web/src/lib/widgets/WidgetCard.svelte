@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
+	import { t } from '$lib/i18n';
 	import type { WidgetStatus } from './types';
 
 	// The shared frame of every widget: the bordered card, the small
@@ -28,11 +29,11 @@
 		title,
 		headingId,
 		status,
-		noWorkspaceText = 'Choose a workspace in the header.',
-		loadingText = 'Loading…',
+		noWorkspaceText = t('widgets.card.noWorkspace'),
+		loadingText = t('common.loading'),
 		error = '',
 		onretry,
-		emptyText = 'Nothing here yet.',
+		emptyText = t('widgets.card.empty'),
 		actions,
 		children
 	}: Props = $props();
@@ -52,7 +53,7 @@
 		<p class="hint muted" role="status">
 			{error}
 			{#if onretry}
-				<button type="button" class="retry" onclick={onretry}>Try again</button>
+				<button type="button" class="retry" onclick={onretry}>{t('common.action.retry')}</button>
 			{/if}
 		</p>
 	{:else if status === 'empty'}

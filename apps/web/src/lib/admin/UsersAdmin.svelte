@@ -1,6 +1,10 @@
 <script lang="ts">
 	import { onMount, tick } from 'svelte';
 	import { apiErrorBody } from '$lib/api/client';
+	import { errorText } from '$lib/api/apiErrors';
+	import { t } from '$lib/i18n';
+	import Msg from '$lib/i18n/Msg.svelte';
+	import { formatDateTime } from '$lib/i18n/format';
 	import { getAuthOptions, type AuthOptions } from '$lib/api/account';
 	import {
 		createUser,
@@ -54,9 +58,7 @@
 
 	const rows = $derived(userRows(users, $me?.id ?? 0, new Date()));
 
-	function message(err: unknown, fallback: string): string {
-		return apiErrorBody(err)?.message || (err instanceof Error ? err.message : '') || fallback;
-	}
+	const message = errorText;
 
 	/** A re-authentication refusal: fixed sentence, clear and focus the field to fix. True if it was one. */
 	async function reauthRefused(err: unknown, which: 'ask' | 'create'): Promise<boolean> {
@@ -82,7 +84,7 @@
 			users = await listUsers();
 			error = '';
 		} catch (err) {
-			error = message(err, 'Could not load the users.');
+			error = message(err, t('admin.users.error.load'));
 		} finally {
 			loaded = true;
 		}
@@ -111,13 +113,13 @@
 				admin: makeAdmin,
 				...(makeAdmin ? reauthBody(createPassword, needsCode, createCode) : {})
 			});
-			createNote = `${created.username} was created. They must choose a new password when they first sign in.`;
+			createNote = t('admin.users.created', { name: created.username });
 			username = password = email = createPassword = createCode = '';
 			makeAdmin = false;
 			await load();
 		} catch (err) {
 			refused = err;
-			error = message(err, 'Could not create the user.');
+			error = message(err, t('admin.users.error.create'));
 		} finally {
 			busy = false;
 		}
@@ -164,16 +166,16 @@
 					break;
 				case 'requirePasswordChange':
 					await patchUser(row.id, { mustChangePassword: true });
-					notice = `${row.username} signed out everywhere and must choose a new password at the next sign-in.`;
+					notice = t('admin.users.notice.passwordChange', { name: row.username });
 					break;
 				case 'signOutEverywhere': {
 					const out = await revokeUserSessions(row.id);
-					notice = `${row.username} was signed out of ${out.revoked} session${out.revoked === 1 ? '' : 's'}.`;
+					notice = t('admin.users.notice.signedOut', { name: row.username, count: out.revoked });
 					break;
 				}
 				case 'revokeResetLink':
 					await revokeResetLink(row.id);
-					notice = `Any pending reset link of ${row.username} was revoked.`;
+					notice = t('admin.users.notice.resetLinkRevoked', { name: row.username });
 					break;
 				case 'resetLink': {
 					const out = await issueResetLink(row.id, reauth ?? { currentPassword: '' });
@@ -189,7 +191,7 @@
 			await load();
 		} catch (err) {
 			refused = err;
-			error = message(err, 'That did not work.');
+			error = message(err, t('admin.users.error.action'));
 		} finally {
 			busy = false;
 		}
@@ -203,7 +205,7 @@
 			await navigator.clipboard.writeText(resetLink.url);
 			copied = true;
 		} catch {
-			error = 'Could not copy. Select the link and copy it by hand.';
+			error = t('admin.users.error.copy');
 		}
 	}
 
@@ -227,14 +229,14 @@
 </script>
 
 <section aria-labelledby="admin-users-heading">
-	<h2 id="admin-users-heading" tabindex="-1" bind:this={heading}>Users</h2>
+	<h2 id="admin-users-heading" tabindex="-1" bind:this={heading}>{t('admin.users.title')}</h2>
 	{#if error}<p class="error" role="alert">{error}</p>{/if}
 	<p class="ok" role="status">{notice}</p>
 
 	{#if askPassword}
 		<form
 			class="link"
-			aria-label="Confirm with your password"
+			aria-label={t('admin.users.confirm.label')}
 			onsubmit={(event) => {
 				event.preventDefault();
 				const a = askPassword;
@@ -247,48 +249,51 @@
 				bind:password={ownPassword}
 				bind:code={ownCode}
 				{needsCode}
-				passwordLabel="Your own password, to confirm this for {askPassword.username}"
+				passwordLabel={t('admin.users.confirm.ownPassword', { name: askPassword.username })}
 			/>
-			<button type="submit" disabled={busy || !reauthReady(ownPassword, needsCode, ownCode)}>Confirm</button>
-			<button type="button" onclick={() => (askPassword = null)}>Cancel</button>
+			<button type="submit" disabled={busy || !reauthReady(ownPassword, needsCode, ownCode)}>{t('admin.users.confirm.submit')}</button>
+			<button type="button" onclick={() => (askPassword = null)}>{t('common.action.cancel')}</button>
 		</form>
 	{/if}
 
 	{#if resetLink}
-		<div class="link" role="group" aria-label="Reset link">
+		<div class="link" role="group" aria-label={t('admin.users.resetLink.label')}>
 			<p>
-				Reset link for <strong>{resetLink.username}</strong>. This link is shown once; it works until
-				{new Date(resetLink.expiresAt).toLocaleString()}.
+				<Msg
+					key="admin.users.resetLink.text"
+					args={{ name: resetLink.username, until: formatDateTime(resetLink.expiresAt) }}
+					>{#snippet strong(text: string)}<strong>{text}</strong>{/snippet}</Msg
+				>
 			</p>
-			<input readonly value={resetLink.url} aria-label="Reset link address" onfocus={(e) => e.currentTarget.select()} />
-			<button type="button" onclick={copy}>{copied ? 'Copied' : 'Copy'}</button>
-			<button type="button" onclick={() => (resetLink = null)}>Close</button>
+			<input readonly value={resetLink.url} aria-label={t('admin.users.resetLink.address')} onfocus={(e) => e.currentTarget.select()} />
+			<button type="button" onclick={copy}>{copied ? t('common.action.copied') : t('common.action.copy')}</button>
+			<button type="button" onclick={() => (resetLink = null)}>{t('admin.users.resetLink.close')}</button>
 		</div>
 	{/if}
 
 	{#if loaded}
-		<table aria-label="Users">
+		<table aria-label={t('admin.users.title')}>
 			<thead>
 				<tr>
-					<th scope="col">Username</th>
-					{#if emailPolicy !== 'off'}<th scope="col">Email</th>{/if}
-					<th scope="col">Role</th>
-					<th scope="col">Status</th>
-					<th scope="col">Last seen</th>
-					<th scope="col">Actions</th>
+					<th scope="col">{t('admin.users.col.username')}</th>
+					{#if emailPolicy !== 'off'}<th scope="col">{t('admin.users.col.email')}</th>{/if}
+					<th scope="col">{t('admin.users.col.role')}</th>
+					<th scope="col">{t('admin.users.col.status')}</th>
+					<th scope="col">{t('admin.users.col.lastSeen')}</th>
+					<th scope="col">{t('admin.users.col.actions')}</th>
 				</tr>
 			</thead>
 			<tbody>
 				{#each rows as row (row.id)}
 					<tr>
-						<th scope="row">{row.username}{#if row.self} <span class="badge">You</span>{/if}</th>
+						<th scope="row">{row.username}{#if row.self} <span class="badge">{t('admin.users.you')}</span>{/if}</th>
 						{#if emailPolicy !== 'off'}<td>{row.email}</td>{/if}
 						<td>{row.role}</td>
 						<td>{#each row.status as s (s)}<span class="badge">{s}</span>{/each}</td>
 						<td>{row.lastSeen}</td>
 						<td>
 							<details>
-								<summary>Actions for {row.username}</summary>
+								<summary>{t('admin.users.actionsFor', { name: row.username })}</summary>
 								<ul class="actions">
 									{#each row.actions as action (action.id)}
 										<li>
@@ -310,27 +315,27 @@
 		</table>
 	{/if}
 
-	<h3>Create user</h3>
+	<h3>{t('admin.users.create.title')}</h3>
 	<form onsubmit={create} class="stack">
 		<label>
-			Username
+			{t('admin.users.create.username')}
 			<input bind:value={username} autocomplete="off" required />
 		</label>
 		<label>
-			Temporary password
+			{t('admin.users.create.tempPassword')}
 			<span class="row">
 				<input bind:value={password} autocomplete="off" required aria-describedby="admin-user-pw-rules" />
-				<button type="button" onclick={() => (password = generateTempPassword())}>Generate</button>
+				<button type="button" onclick={() => (password = generateTempPassword())}>{t('admin.users.create.generate')}</button>
 			</span>
 		</label>
 		<p class="hint" id="admin-user-pw-rules">{passwordHint()}</p>
 		{#if emailPolicy !== 'off'}
 			<label>
-				{emailPolicy === 'required' ? 'Email' : 'Email (optional)'}
+				{emailPolicy === 'required' ? t('admin.users.create.email') : t('admin.users.create.emailOptional')}
 				<input type="email" bind:value={email} required={emailPolicy === 'required'} />
 			</label>
 		{/if}
-		<label class="check"><input type="checkbox" bind:checked={makeAdmin} /> Administrator</label>
+		<label class="check"><input type="checkbox" bind:checked={makeAdmin} /> {t('admin.users.create.admin')}</label>
 		{#if makeAdmin}
 			<div class="reauth">
 				<ReauthFields
@@ -338,12 +343,14 @@
 					bind:password={createPassword}
 					bind:code={createCode}
 					{needsCode}
-					passwordLabel="Your own password, to create an administrator"
+					passwordLabel={t('admin.users.create.ownPassword')}
 				/>
 			</div>
 		{/if}
 		<p class="ok" role="status">{createNote}</p>
-		<button type="submit" disabled={busy || (makeAdmin && !reauthReady(createPassword, needsCode, createCode))}>Create user</button>
+		<button type="submit" disabled={busy || (makeAdmin && !reauthReady(createPassword, needsCode, createCode))}
+			>{t('admin.users.create.submit')}</button
+		>
 	</form>
 </section>
 

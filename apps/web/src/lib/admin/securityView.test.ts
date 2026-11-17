@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { AuditEvent } from '$lib/api/adminSettings';
-import { EMAIL_CHOICES, NEEDS_EMAIL, REGISTRATION_CHOICES, auditLine, switchStates } from './securityView';
+import { EMAIL_CHOICES, needsEmail, REGISTRATION_CHOICES, auditLine, switchStates } from './securityView';
 
 describe('security view', () => {
 	it('has a sentence per registration mode and email policy', () => {
@@ -10,7 +10,7 @@ describe('security view', () => {
 	});
 	it('hides the mail switches with the needs-email sentence while mail is unconfigured', () => {
 		const off = switchStates({ mail: { configured: false } });
-		expect(off.mfa).toEqual({ available: false, reason: NEEDS_EMAIL });
+		expect(off.mfa).toEqual({ available: false, reason: needsEmail() });
 		expect(off.emailCode.available).toBe(false);
 		expect(switchStates({ mail: { configured: true } }).mfa.available).toBe(true);
 	});

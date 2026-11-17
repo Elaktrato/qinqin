@@ -2,6 +2,7 @@
 	// "Your note" on the entry page: one plain-text note per entry in the
 	// current workspace. Rendered with text interpolation only, never as HTML.
 	import { tick } from 'svelte';
+	import { t } from '$lib/i18n';
 	import type { Note } from './notes';
 	import { canSave, counterText, isOverCap, type NoteView } from './noteEditor';
 	import { deleteNote, loadNote, saveNote } from './store';
@@ -55,7 +56,7 @@
 			note = await saveNote(workspaceId, entryId, draft, note);
 			view = note ? 'show' : 'empty';
 		} catch {
-			actionError = 'Could not save your note. Your text is still here; try again.';
+			actionError = t('notes.saveFailed');
 		} finally {
 			busy = false;
 		}
@@ -70,7 +71,7 @@
 			note = null;
 			view = 'empty';
 		} catch {
-			actionError = 'Could not delete your note. Try again.';
+			actionError = t('notes.deleteFailed');
 		} finally {
 			busy = false;
 		}
@@ -86,40 +87,40 @@
 
 {#if workspaceId !== null}
 	<section class="entry-note" aria-labelledby="entry-note-heading">
-		<h2 id="entry-note-heading">Your note</h2>
+		<h2 id="entry-note-heading">{t('notes.title')}</h2>
 		{#if view === 'loading'}
-			<p class="hint">Loading your note…</p>
+			<p class="hint">{t('notes.loading')}</p>
 		{:else if view === 'error'}
-			<p class="hint">Your note could not be loaded.</p>
-			<button type="button" onclick={() => workspaceId !== null && load(workspaceId, entryId)}>Try again</button>
+			<p class="hint">{t('notes.loadFailed')}</p>
+			<button type="button" onclick={() => workspaceId !== null && load(workspaceId, entryId)}>{t('common.action.retry')}</button>
 		{:else if view === 'empty'}
-			<button type="button" onclick={startEdit}>Add a note</button>
+			<button type="button" onclick={startEdit}>{t('notes.add')}</button>
 		{:else if view === 'edit'}
 			<textarea
 				bind:this={textarea}
 				bind:value={draft}
-				aria-label="Your note"
+				aria-label={t('notes.title')}
 				aria-describedby="entry-note-counter"
 				rows="4"
 				onkeydown={onKey}
 			></textarea>
 			<p id="entry-note-counter" class="counter" class:over={isOverCap(draft)}>{counterText(draft)}</p>
 			<div class="buttons">
-				<button type="button" onclick={save} disabled={busy || !canSave(draft, note?.text ?? null)}>Save</button>
-				<button type="button" onclick={cancel} disabled={busy}>Cancel</button>
+				<button type="button" onclick={save} disabled={busy || !canSave(draft, note?.text ?? null)}>{t('common.action.save')}</button>
+				<button type="button" onclick={cancel} disabled={busy}>{t('common.action.cancel')}</button>
 			</div>
 		{:else if note}
 			<p class="note-text" data-testid="note-text">{note.text}</p>
 			{#if view === 'confirmDelete'}
-				<p class="confirm">Delete this note?</p>
+				<p class="confirm">{t('notes.confirmDelete')}</p>
 				<div class="buttons">
-					<button type="button" onclick={remove} disabled={busy}>Delete</button>
-					<button type="button" onclick={() => (view = 'show')} disabled={busy}>Keep</button>
+					<button type="button" onclick={remove} disabled={busy}>{t('common.action.delete')}</button>
+					<button type="button" onclick={() => (view = 'show')} disabled={busy}>{t('notes.keep')}</button>
 				</div>
 			{:else}
 				<div class="buttons">
-					<button type="button" aria-label="Edit note" onclick={startEdit}>Edit</button>
-					<button type="button" aria-label="Delete note" onclick={() => (view = 'confirmDelete')}>Delete</button>
+					<button type="button" aria-label={t('notes.edit')} onclick={startEdit}>{t('notes.editShort')}</button>
+					<button type="button" aria-label={t('notes.delete')} onclick={() => (view = 'confirmDelete')}>{t('common.action.delete')}</button>
 				</div>
 			{/if}
 		{/if}

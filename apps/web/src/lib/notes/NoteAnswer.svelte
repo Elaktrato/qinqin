@@ -1,12 +1,14 @@
 <script lang="ts">
 	// The learner's note on a revealed flashcard. Plain text only: text
 	// interpolation, never HTML.
+	import { t } from '$lib/i18n';
+
 	let { text }: { text: string | undefined } = $props();
 </script>
 
 {#if text}
-	<aside class="note-answer" role="note" aria-label="Your note">
-		<h3>Your note</h3>
+	<aside class="note-answer" role="note" aria-label={t('notes.title')}>
+		<h3>{t('notes.title')}</h3>
 		<p class="note-text">{text}</p>
 	</aside>
 {/if}

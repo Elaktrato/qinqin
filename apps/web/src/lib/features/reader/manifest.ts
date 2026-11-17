@@ -2,6 +2,7 @@
 // widget. The reader is a core feature at /reader (lib/features); the text
 // sources it fetches from and the conversion library it bundles are core
 // credits (lib/sources/coreCredits.ts).
+import { t } from '$lib/i18n';
 import reader from '$builtin/reader.json';
 import type { ContractManifest } from '$lib/plugins/contract';
 import type { PluginManifest } from '$lib/plugins';
@@ -12,8 +13,12 @@ export const readerManifest: PluginManifest = {
 	widgets: [
 		{
 			id: 'reading-time',
-			title: 'Reading time',
-			description: 'Tracked reading time: all time, last 7 and 30 days, most read books.',
+			get title() {
+				return t('reader.widget.title');
+			},
+			get description() {
+				return t('reader.widget.description');
+			},
 			owner: 'qinqin-reader',
 			size: 'normal',
 			surfaces: ['stats', 'home'],

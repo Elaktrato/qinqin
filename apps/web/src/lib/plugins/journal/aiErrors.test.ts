@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { ApiError } from '$lib/api/client';
 import { aiErrorView } from './aiErrors';
+import { apiErrorText } from '$lib/api/apiErrors';
 
 function err(status: number, error: string, message = '', retry?: number): ApiError {
 	return new ApiError(status, JSON.stringify({ error, message }), retry);
@@ -49,7 +50,7 @@ describe('aiErrorView', () => {
 		(code) => {
 			const v = aiErrorView(err(409, code, 'Server says so.'), 'review');
 			expect(v.settingsLink).toBe(true);
-			expect(v.text).toBe('Server says so.');
+			expect(v.text).toBe(apiErrorText(code));
 			expect(v.poll).toBe(false);
 		}
 	);
@@ -92,9 +93,20 @@ describe('aiErrorView', () => {
 			err(429, 'rate_limited', 'You have used 30 AI calls this hour. Try again in 53 minutes.', 3138),
 			'review'
 		);
-		expect(limited.text).toBe('You have used 30 AI calls this hour. Try again in 53 minutes.');
+		expect(limited.text).toBe('You have used all AI calls for this hour. Try again in 53 minutes.');
 		const plain = aiErrorView(err(429, 'rate_limited', 'Wait.', 120), 'ideas');
-		expect(plain.text).toBe('Wait. Try again in 2 minutes.');
+		expect(plain.text).toBe('You have used all AI calls for this hour. Try again in 2 minutes.');
+		expect(aiErrorView(err(429, 'rate_limited', 'Wait.'), 'ideas').text).toBe(
+			'You have used all AI calls for this hour. Try again later.'
+		);
+		expect(aiErrorView(err(422, 'quota', 'x', 45), 'review').text).toBe(
+			'Your provider account is out of credit or over its quota. Try again in 45 s.'
+		);
+	});
+
+	it('never shows the server message of a known code', () => {
+		const v = aiErrorView(err(409, 'no_vision', 'deepseek-v4-pro on DeepSeek can\'t read photos.'), 'transcribe');
+		expect(v.text).toBe("This model can't read photos. Read it offline instead.");
 	});
 });
 

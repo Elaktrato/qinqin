@@ -1,6 +1,7 @@
 // The Stats page's views and their URLs. Pure, so the language rule and
 // the keyboard model of the tablist are tested without rendering.
 
+import { t, type MessageKey } from './i18n';
 import { usesHan } from './languages';
 import { normalizePath } from './routeAccess';
 
@@ -12,9 +13,19 @@ export interface StatsTab {
 	href: string;
 }
 
-const OVERVIEW: StatsTab = { id: 'overview', label: 'Overview', href: '/stats' };
-const WEEK: StatsTab = { id: 'week', label: 'Week', href: '/stats/week' };
-const CHARACTERS: StatsTab = { id: 'characters', label: 'Characters', href: '/stats/characters' };
+function tab(id: StatsTabId, label: MessageKey, href: string): StatsTab {
+	return {
+		id,
+		get label() {
+			return t(label);
+		},
+		href
+	};
+}
+
+const OVERVIEW: StatsTab = tab('overview', 'stats.tabs.overview', '/stats');
+const WEEK: StatsTab = tab('week', 'stats.tabs.week', '/stats/week');
+const CHARACTERS: StatsTab = tab('characters', 'stats.tabs.characters', '/stats/characters');
 
 /**
  * statsTabs lists the views for the workspace language: Overview always,

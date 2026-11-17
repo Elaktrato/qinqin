@@ -36,6 +36,7 @@
 - [API access tokens](API-Access-tokens)
 - [Plugin data API](Plugin-data-api)
 - [Plugin format](Plugin-format)
+- [Translating qinqin](Translating-qinqin)
 - [Data pack format](Data-pack-format)
 
 **Reference**

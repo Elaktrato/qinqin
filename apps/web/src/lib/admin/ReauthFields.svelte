@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { t } from '$lib/i18n';
+
 	// The acting administrator's own password and, when asked for, their
 	// authenticator or recovery code: one set of fields for every destructive
 	// admin action. The parent owns the values and calls focusField().
@@ -6,7 +8,7 @@
 		password = $bindable(''),
 		code = $bindable(''),
 		needsCode,
-		passwordLabel = 'Your own password'
+		passwordLabel = t('admin.reauth.ownPassword')
 	}: { password?: string; code?: string; needsCode: boolean; passwordLabel?: string } = $props();
 
 	let passwordInput = $state<HTMLInputElement | null>(null);
@@ -23,7 +25,7 @@
 </label>
 {#if needsCode}
 	<label>
-		Authenticator or recovery code (yours)
+		{t('admin.reauth.code')}
 		<input
 			bind:this={codeInput}
 			autocomplete="one-time-code"

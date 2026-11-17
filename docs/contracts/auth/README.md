@@ -11,7 +11,7 @@ examples of its throttling subset and a test checks that both agree on every cod
 |---|---|
 | `errors.json` | Every auth error code, its status and meaning. Bodies are always `{"error","message"}` |
 | `login-responses.json` | The three answers of `POST /api/auth/login` that carry no throttle code |
-| `me.json` | `GET /api/auth/me`: the user plus the session's `restriction` |
+| `me.json` | `GET /api/auth/me`: the user plus the session's `restriction` and the stored `interfaceLanguage` (`''` = follow the browser; set by `PUT /api/me/interface-language`, see `i18n/`) |
 | `sessions.json` | Logout, change password, the session list and revoke routes, and the restricted answer |
 | `options.json` | `GET /api/auth/options` in the four states (bootstrap, closed, invite, open) |
 | `invites.json` | Invite create (the token is shown once), list, revoke, check |

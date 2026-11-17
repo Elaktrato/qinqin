@@ -3,6 +3,7 @@
 // that arrive after the reader switched books are dropped (a sequence
 // number per loaded book). The API is injected, so this is testable
 // without a server.
+import { t } from '$lib/i18n';
 import { ApiError } from '$lib/api/client';
 import { bookmarkAt, bookmarkName, type Bookmark } from './bookmarks';
 import { apiErrorMessage } from './errors';
@@ -110,7 +111,7 @@ export class BookmarkList {
 			if (seq !== this.#seq) return;
 			// 200 returns an existing bookmark: never list it twice.
 			this.items = [...this.items.filter((b) => b.id !== temp.id && b.id !== saved.id), saved];
-			this.announcement = `Bookmark added: ${bookmarkName(saved)}`;
+			this.announcement = t('reader.bookmarks.added', { name: bookmarkName(saved) });
 		} catch (err) {
 			if (seq !== this.#seq) return;
 			this.items = this.items.filter((b) => b.id !== temp.id);
@@ -132,7 +133,7 @@ export class BookmarkList {
 			const saved = await this.#api.rename(bookId, id, wanted);
 			if (seq !== this.#seq) return;
 			this.#setLabel(id, saved.label);
-			this.announcement = `Bookmark renamed: ${bookmarkName(saved)}`;
+			this.announcement = t('reader.bookmarks.renamed', { name: bookmarkName(saved) });
 		} catch (err) {
 			if (seq !== this.#seq) return;
 			if (isGone(err)) this.items = this.items.filter((b) => b.id !== id);
@@ -164,7 +165,7 @@ export class BookmarkList {
 		} finally {
 			if (seq === this.#seq) this.#mark(id, false);
 		}
-		if (seq === this.#seq) this.announcement = `Bookmark removed: ${bookmarkName(current)}`;
+		if (seq === this.#seq) this.announcement = t('reader.bookmarks.removed', { name: bookmarkName(current) });
 	}
 
 	#setLabel(id: number, label: string): void {

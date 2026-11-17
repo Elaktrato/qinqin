@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '$lib/i18n';
 	import { tick } from 'svelte';
 	import { isCorrect, shuffleTokens } from '$lib/study/wordSalad';
 
@@ -84,23 +85,23 @@
 			)
 		) {
 			solved = true;
-			feedback = wrongChecks === 0 ? 'Correct!' : 'Correct.';
+			feedback = wrongChecks === 0 ? t('flashcards.salad.correctClean') : t('flashcards.salad.correct');
 			onResult({ wrongChecks, gaveUp: false });
 			return;
 		}
 		wrongChecks += 1;
-		feedback = `Not quite. Wrong checks: ${wrongChecks}.`;
+		feedback = t('flashcards.salad.wrong', { count: wrongChecks });
 	}
 
 	function giveUp(): void {
 		if (disabled) return;
-		feedback = 'Here is the sentence.';
+		feedback = t('flashcards.salad.gaveUp');
 		onResult({ wrongChecks, gaveUp: true });
 	}
 </script>
 
 <div class="board" data-card-input>
-	<ol class="answer" aria-label="Your sentence" lang={language} bind:this={answerList}>
+	<ol class="answer" aria-label={t('flashcards.salad.yourSentence')} lang={language} bind:this={answerList}>
 		{#each placed as id (id)}
 			<li>
 				<button
@@ -108,24 +109,24 @@
 					class="token placed"
 					class:right={solved}
 					{disabled}
-					aria-label={`Remove ${bank[id]}`}
+					aria-label={t('flashcards.salad.remove', { word: bank[id] })}
 					onclick={(event) => unplace(id, fromKeyboard(event))}>{bank[id]}</button
 				>
 			</li>
 		{:else}
-			<li class="empty">Tap the words below in order.</li>
+			<li class="empty">{t('flashcards.salad.empty')}</li>
 		{/each}
 	</ol>
 
 	{#if !disabled}
 		<!-- Hidden once finished: the full sentence is shown below. -->
-		<ul class="bank" aria-label="Word tiles" lang={language} bind:this={bankList}>
+		<ul class="bank" aria-label={t('flashcards.salad.tiles')} lang={language} bind:this={bankList}>
 			{#each available as id (id)}
 				<li>
 					<button
 						type="button"
 						class="token"
-						aria-label={`Place ${bank[id]}`}
+						aria-label={t('flashcards.salad.place', { word: bank[id] })}
 						onclick={(event) => place(id, fromKeyboard(event))}>{bank[id]}</button
 					>
 				</li>
@@ -134,16 +135,16 @@
 
 		<div class="actions">
 			<button type="button" class="secondary" disabled={placed.length === 0} onclick={undo}>
-				Undo
+				{t('flashcards.salad.undo')}
 			</button>
 			<button
 				type="button"
 				class="primary"
 				disabled={!complete}
 				bind:this={checkButton}
-				onclick={check}>Check</button
+				onclick={check}>{t('flashcards.card.check')}</button
 			>
-			<button type="button" class="secondary" onclick={giveUp}>Show answer</button>
+			<button type="button" class="secondary" onclick={giveUp}>{t('flashcards.card.showAnswer')}</button>
 		</div>
 	{/if}
 </div>

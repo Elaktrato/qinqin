@@ -1,10 +1,12 @@
+import { t } from '$lib/i18n';
+
 /** BadgeQualifier is a qualifier a badge keeps: shown short, spoken in full. */
 export interface BadgeQualifier {
 	shown: string;
 	spoken: string;
 }
 
-const APPROXIMATE: BadgeQualifier = { shown: '(approx.)', spoken: '(approximate)' };
+const approximate = (): BadgeQualifier => ({ shown: t('entry.badges.approxShown'), spoken: t('entry.badges.approxSpoken') });
 
 /**
  * badgeSchemeParts is a scheme name as the muted qualifier of a level badge
@@ -17,7 +19,7 @@ export function badgeSchemeParts(name: string): { base: string; qualifier: Badge
 	const trimmed = name.trim();
 	const match = /^(.*\S)\s*\(([^()]+)\)$/.exec(trimmed);
 	if (!match) return { base: trimmed, qualifier: null };
-	if (match[2].trim().toLowerCase() === 'approximate') return { base: match[1], qualifier: APPROXIMATE };
+	if (match[2].trim().toLowerCase() === 'approximate') return { base: match[1], qualifier: approximate() };
 	return { base: `${match[1]} ${match[2]}`, qualifier: null };
 }
 

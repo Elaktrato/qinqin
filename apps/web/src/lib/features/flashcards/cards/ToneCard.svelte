@@ -1,4 +1,8 @@
 <script lang="ts">
+	import { t } from '$lib/i18n';
+	import { readingLang, studyLang } from '$lib/i18n/lang';
+	import { workspaces } from '$lib/workspaces';
+	import Msg from '$lib/i18n/Msg.svelte';
 	import { onDestroy } from 'svelte';
 	import type { Entry } from '$lib/api/types';
 	import PlayButton from '$lib/components/PlayButton.svelte';
@@ -26,12 +30,15 @@
 
 	let { item, entry, done, onDone, audio }: Props = $props();
 
+	// The workspace's script (a zh-Hant workspace shows traditional forms), else the entry's language.
+	const textLang = $derived(studyLang($workspaces.current?.language ?? entry.language));
+
 	const TONES: { tone: Tone; glyph: string; name: string }[] = [
-		{ tone: 1, glyph: 'ˉ', name: 'first tone, high level' },
-		{ tone: 2, glyph: 'ˊ', name: 'second tone, rising' },
-		{ tone: 3, glyph: 'ˇ', name: 'third tone, dipping' },
-		{ tone: 4, glyph: 'ˋ', name: 'fourth tone, falling' },
-		{ tone: 5, glyph: '·', name: 'neutral tone' }
+		{ tone: 1, glyph: 'ˉ', name: t('flashcards.tone.name1') },
+		{ tone: 2, glyph: 'ˊ', name: t('flashcards.tone.name2') },
+		{ tone: 3, glyph: 'ˇ', name: t('flashcards.tone.name3') },
+		{ tone: 4, glyph: 'ˋ', name: t('flashcards.tone.name4') },
+		{ tone: 5, glyph: '·', name: t('flashcards.tone.name5') }
 	];
 
 	// Contours in a 100×100 box, y down (Chao tone letters 55, 35, 214, 51).
@@ -82,7 +89,7 @@
 	function setTone(index: number, tone: Tone): void {
 		if (done || index < 0 || index >= chosen.length) return;
 		chosen = chosen.map((current, i) => (i === index ? tone : current));
-		announcement = `Syllable ${index + 1}: ${nameOf(tone)}.`;
+		announcement = t('flashcards.tone.announce', { n: index + 1, tone: nameOf(tone) });
 		if (index === active && active < chosen.length - 1) active += 1;
 	}
 
@@ -90,9 +97,7 @@
 		if (done || !complete) return;
 		const result = toneVerdict(chosen as Tone[], candidates);
 		verdict = result;
-		announcement = result.correct
-			? 'Correct!'
-			: `${result.wrong} ${result.wrong === 1 ? 'tone' : 'tones'} wrong.`;
+		announcement = result.correct ? t('flashcards.card.correct') : t('flashcards.tone.wrong', { count: result.wrong });
 		onDone({ suggested: suggestToneGrade(result.wrong), meta: { mistakes: result.wrong } });
 	}
 
@@ -201,12 +206,10 @@
 
 <svelte:window onkeydown={onKeydown} />
 
-<p class="written" lang="zh">{entry.written}</p>
-<p class="prompt">
-	Swipe each pad in the tone's shape (a tap is the neutral tone), use the buttons, or press 1–5.
-</p>
+<p class="written" lang={textLang}>{entry.written}</p>
+<p class="prompt">{t('flashcards.tone.prompt')}</p>
 
-<ol class="syllables" aria-label="Syllables" data-card-input>
+<ol class="syllables" aria-label={t('flashcards.tone.syllables')} data-card-input>
 	{#each syllables as syllable, index (index)}
 		{@const tone = chosen[index] ?? null}
 		{@const mark = verdict?.marks[index]}
@@ -217,7 +220,11 @@
 				class:wrong={mark === false}
 				bind:this={pads[index]}
 				role="img"
-				aria-label={`Syllable ${index + 1}, ${labels?.[index] ?? syllable.plain}: ${tone === null ? 'no tone yet' : nameOf(tone)}`}
+				aria-label={t('flashcards.tone.padLabel', {
+					n: index + 1,
+					syllable: labels?.[index] ?? syllable.plain,
+					tone: tone === null ? t('flashcards.tone.noTone') : nameOf(tone)
+				})}
 				onpointerdown={(event) => onPointerDown(event, index)}
 				onpointermove={(event) => onPointerMove(event, index)}
 				onpointerup={(event) => onPointerUp(event, index)}
@@ -235,15 +242,17 @@
 						<polyline class="trace" points={polyline(trace, pads[index] ?? null)} />
 					{/if}
 				</svg>
-				<span class="plain" class:char={labels !== null} lang={labels === null ? undefined : 'zh'}>{labels?.[index] ?? syllable.plain}</span>
+				<span class="plain" class:char={labels !== null} lang={labels === null ? readingLang('pinyin', entry.language) : textLang}>{labels?.[index] ?? syllable.plain}</span>
 			</div>
-			<div class="tone-buttons" role="group" aria-label={labels === null ? `Tone for ${syllable.plain}` : `Tone for syllable ${index + 1}`}>
+			<div class="tone-buttons" role="group" aria-label={labels === null
+					? t('flashcards.tone.toneFor', { syllable: syllable.plain })
+					: t('flashcards.tone.toneForN', { n: index + 1 })}>
 				{#each TONES as option (option.tone)}
 					<button
 						type="button"
 						class:selected={tone === option.tone}
 						aria-pressed={tone === option.tone}
-						aria-label={`${option.tone}: ${option.name}`}
+						aria-label={t('flashcards.tone.button', { tone: option.tone, name: option.name })}
 						disabled={done}
 						onclick={() => {
 							active = index;
@@ -264,7 +273,7 @@
 </ol>
 
 {#if !done}
-	<button type="button" class="primary" disabled={!complete} onclick={check}>Check</button>
+	<button type="button" class="primary" disabled={!complete} onclick={check}>{t('flashcards.card.check')}</button>
 {/if}
 
 <p class="feedback" class:bad={verdict !== null && !verdict.correct} role="status" aria-live="polite">
@@ -273,7 +282,9 @@
 
 {#if done}
 	<p class="readings">
-		Pinyin: <strong>{allReadings.join(' / ')}</strong>
+		<Msg key="flashcards.tone.pinyin" args={{ readings: allReadings.join(' / ') }}
+			>{#snippet strong(text: string)}<strong>{text}</strong>{/snippet}</Msg
+		>
 		{#if audio}
 			<PlayButton
 				clips={audio.clips}

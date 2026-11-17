@@ -2,6 +2,7 @@
 	import type HanziWriter from 'hanzi-writer';
 	import type { CharacterJson } from 'hanzi-writer';
 	import { fetchStrokeData } from '$lib/study/strokeData';
+	import { t } from '$lib/i18n';
 
 	interface Props {
 		char: string;
@@ -117,28 +118,28 @@
 			style:width={`${size}px`}
 			style:height={`${size}px`}
 			role="img"
-			aria-label={`Stroke order for ${char}`}
+			aria-label={t('entry.strokes.label', { char })}
 		></div>
 		{#if !ready && failedFor !== char}
 			<!-- Holds the space and says what is happening, so the page does not jump. -->
 			<p class="note" style:width={`${size}px`}>
-				Loading stroke order…
+				{t('entry.strokes.loading')}
 			</p>
 		{/if}
 		{#if failedFor === char}
-			<p class="note" role="status">Stroke order could not be loaded.</p>
+			<p class="note" role="status">{t('entry.strokes.failed')}</p>
 			<div class="controls">
-				<button type="button" onclick={() => attempt++}>Try again</button>
+				<button type="button" onclick={() => attempt++}>{t('common.action.retry')}</button>
 			</div>
 		{/if}
 		{#if ready}
 			<div class="controls">
-				<button type="button" onclick={play}>Play</button>
+				<button type="button" onclick={play}>{t('entry.strokes.play')}</button>
 				<button
 					type="button"
 					class="loop"
 					aria-pressed={looping}
-					onclick={toggleLoop}>Loop</button
+					onclick={toggleLoop}>{t('entry.strokes.loop')}</button
 				>
 			</div>
 		{/if}

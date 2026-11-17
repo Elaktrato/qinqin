@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '$lib/i18n';
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
 	import IdeasPanel from './IdeasPanel.svelte';
@@ -51,7 +52,7 @@
 			loading = false;
 			void loadBadges(entries, () => true);
 		} catch {
-			loadError = 'Could not load your entries. Try again.';
+			loadError = t('journal.list.loadFailed');
 			loading = false;
 		}
 	}
@@ -74,26 +75,25 @@
 	});
 </script>
 
-<h1 bind:this={heading} tabindex="-1">Journal <span class="ws">· {workspaceName}</span></h1>
+<h1 bind:this={heading} tabindex="-1">{t('journal.title')} <span class="ws">· {workspaceName}</span></h1>
 
 <div class="actions">
-	<a class="button primary" href={journalHref({ view: 'new' })}>New entry</a>
-	<a class="button secondary" href={journalHref({ view: 'photo' })}>Upload photo</a>
+	<a class="button primary" href={journalHref({ view: 'new' })}>{t('journal.list.new')}</a>
+	<a class="button secondary" href={journalHref({ view: 'photo' })}>{t('journal.list.upload')}</a>
 	{#if resumable}
-		<a class="button secondary" href={journalHref({ view: 'photo' })}>Resume photo draft</a>
+		<a class="button secondary" href={journalHref({ view: 'photo' })}>{t('journal.list.resume')}</a>
 	{/if}
-	<a class="button secondary" href={journalHref({ view: 'settings' })}>Journal settings</a>
+	<a class="button secondary" href={journalHref({ view: 'settings' })}>{t('journal.list.settings')}</a>
 </div>
 
 {#if loading}
-	<p role="status">Loading entries…</p>
+	<p role="status">{t('journal.list.loading')}</p>
 {:else if loadError}
 	<p class="error" role="alert">{loadError}</p>
-	<button type="button" class="secondary" onclick={load}>Retry</button>
+	<button type="button" class="secondary" onclick={load}>{t('journal.list.retry')}</button>
 {:else if entries.length === 0}
 	<p class="hint">
-		No entries yet. Write a few lines in the language you are learning; the AI can underline
-		corrections when you press Review.
+		{t('journal.list.empty')}
 	</p>
 {:else}
 	<ul class="entries">
@@ -102,7 +102,7 @@
 				<a href={journalHref({ view: 'entry', id: entry.id })}>
 					<span class="date">{entry.date}</span>
 					<span class="title">{entryLabel(entry)}</span>
-					{#if reviewed[entry.id]}<span class="badge">Reviewed</span>{/if}
+					{#if reviewed[entry.id]}<span class="badge">{t('journal.list.reviewed')}</span>{/if}
 				</a>
 			</li>
 		{/each}

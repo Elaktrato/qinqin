@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '$lib/i18n';
 	import { onDestroy, onMount, untrack } from 'svelte';
 	import { beforeNavigate, goto } from '$app/navigation';
 	import { ApiError } from '$lib/api/client';
@@ -54,7 +55,7 @@
 	const aiAvailable = $derived(aiReadable(capabilities?.ai ?? null));
 	const noVision = $derived(noVisionText(capabilities?.ai ?? null));
 	const offlineReason = $derived(
-		capabilities ? offlineBlockReason(capabilities.ocr, language) : 'Checking what this server can do…'
+		capabilities ? offlineBlockReason(capabilities.ocr, language) : t('journal.photo.checking')
 	);
 	let engine = $state<Engine>('ai');
 	$effect(() => {
@@ -128,7 +129,7 @@
 					dispatch({
 						type: 'photoExpired',
 						view: {
-							text: 'This photo draft expired. Choose the photo again.',
+							text: t('journal.ai.draftExpired'),
 							settingsLink: false,
 							offlineInstead: false,
 							poll: false
@@ -152,7 +153,7 @@
 	beforeNavigate((nav) => {
 		// A reload or closing the tab keeps the draft; only in-app moves ask.
 		if (finished || !photoId || nav.type === 'leave') return;
-		if (!confirm('Discard this photo draft?')) {
+		if (!confirm(t('journal.photo.discardDraft'))) {
 			nav.cancel();
 			return;
 		}
@@ -194,7 +195,7 @@
 			try {
 				body = await downscale(file);
 			} catch {
-				pickError = 'Choose a JPEG, PNG or WebP photo.';
+				pickError = t('apiError.unsupportedImage');
 				return;
 			}
 		}
@@ -238,7 +239,7 @@
 			if (destroyed) return;
 			await goto(journalHref({ view: 'entry', id: saved.id }), { replaceState: true });
 		} catch {
-			saveError = 'Could not save the entry. Your draft is still here; try again.';
+			saveError = t('journal.photo.saveFailed');
 			saving = false;
 			void id;
 		}
@@ -246,25 +247,24 @@
 
 	function discard(): void {
 		if (flow.step === 'draft' && flow.text !== originalText) {
-			if (!confirm('Discard your changes and the photo?')) return;
+			if (!confirm(t('journal.photo.discardChanges'))) return;
 		}
 		dispatch({ type: 'discarded' });
 		void goto(journalHref({ view: 'list' }));
 	}
 </script>
 
-<h1>Photo to entry</h1>
+<h1>{t('journal.photo.title')}</h1>
 
 {#if flow.step === 'pick' || (flow.step === 'error' && flow.photoId === null)}
 	{#if flow.step === 'error'}
 		<p class="error" role="alert">{flow.view.text}</p>
 	{/if}
 	<p class="hint">
-		Pick a photo of a handwritten or printed page. Nothing is sent to the AI until you press a
-		read button, and the photo is deleted when you save or discard.
+		{t('journal.photo.intro')}
 	</p>
 	<label class="pick">
-		<span class="button primary">Choose a photo</span>
+		<span class="button primary">{t('journal.photo.choose')}</span>
 		<input
 			type="file"
 			accept="image/jpeg,image/png,image/webp"
@@ -273,22 +273,22 @@
 		/>
 	</label>
 	{#if pickError}<p class="error" role="alert">{pickError}</p>{/if}
-	<p><a href={journalHref({ view: 'list' })}>Back to the journal</a></p>
+	<p><a href={journalHref({ view: 'list' })}>{t('journal.photo.back')}</a></p>
 {:else if flow.step === 'uploading'}
-	<p role="status">Uploading…</p>
+	<p role="status">{t('journal.photo.uploading')}</p>
 {:else if flow.step === 'choose' || flow.step === 'reading' || flow.step === 'error'}
 	{#if photoUrl}
-		<img class="preview" src={photoUrl} alt="Your chosen page" />
+		<img class="preview" src={photoUrl} alt={t('journal.photo.chosenAlt')} />
 	{/if}
 	{#if flow.step === 'reading'}
-		<p role="status">Reading the page…</p>
+		<p role="status">{t('journal.photo.reading')}</p>
 	{:else}
 		{#if flow.step === 'error'}
 			<p class="error" role="alert">{flow.view.text}</p>
-			{#if flow.view.settingsLink}<p><a href="/settings?tab=ai">Open Settings → AI</a></p>{/if}
+			{#if flow.view.settingsLink}<p><a href="/settings?tab=ai">{t('journal.openAiSettings')}</a></p>{/if}
 		{/if}
 		<fieldset>
-			<legend>Read it with</legend>
+			<legend>{t('journal.photo.readWith')}</legend>
 			{#if noVision}
 				<p id="ai-novision" class="hint">{noVision}</p>
 			{:else}
@@ -299,7 +299,7 @@
 					onclick={() => read('ai')}
 					aria-describedby="ai-note"
 				>
-					Read with AI
+					{t('journal.photo.readAi')}
 				</button>
 			{/if}
 			<button
@@ -315,37 +315,37 @@
 				})}
 			</button>
 			<p id="ai-note" class="hint">
-				{#if capabilities === null}Checking what this server can do…
-				{:else if noVision}Pick a model that reads photos in Settings → AI, or read it offline.
-				{:else if aiAvailable}Sends this photo to your AI provider with your own key.
-				{:else}AI is not available. Set it up in Settings → AI.{/if}
+				{#if capabilities === null}{t('journal.photo.checking')}
+				{:else if noVision}{t('journal.photo.pickVision')}
+				{:else if aiAvailable}{t('journal.photo.aiNote')}
+				{:else}{t('journal.photo.aiMissing')}{/if}
 			</p>
 			<p id="offline-note" class="hint">
-				{offlineReason ?? 'Runs on the server; the photo goes nowhere else.'}
+				{offlineReason ?? t('journal.photo.offlineNote')}
 			</p>
 		</fieldset>
-		<button type="button" class="secondary danger" onclick={discard}>Discard photo</button>
+		<button type="button" class="secondary danger" onclick={discard}>{t('journal.photo.discardPhoto')}</button>
 	{/if}
 {:else if flow.step === 'draft'}
-	<p class="notice" role="note">Draft: check it against the photo before saving.</p>
+	<p class="notice" role="note">{t('journal.photo.draftNotice')}</p>
 	{#if flow.expired}
 		<p class="error" role="alert">
-			The photo expired on the server. Your text is kept: save it as an entry.
+			{t('journal.photo.expired')}
 		</p>
 	{/if}
-	{#if resumed}<p class="hint">Resumed your photo draft.</p>{/if}
-	{#if flow.unreadable}<p class="hint" role="status">No text found on this photo.</p>{/if}
+	{#if resumed}<p class="hint">{t('journal.photo.resumed')}</p>{/if}
+	{#if flow.unreadable}<p class="hint" role="status">{t('journal.photo.noText')}</p>{/if}
 	<div class="side">
 		<div class="photo">
 			<button type="button" class="secondary toggle" onclick={() => (showPhoto = !showPhoto)}>
-				{showPhoto ? 'Hide photo' : 'Show photo'}
+				{showPhoto ? t('journal.photo.hide') : t('journal.photo.show')}
 			</button>
 			{#if showPhoto && photoUrl}
-				<img class="preview" src={photoUrl} alt="Your page, for checking the transcription" />
+				<img class="preview" src={photoUrl} alt={t('journal.photo.checkAlt')} />
 			{/if}
 		</div>
 		<label class="text">
-			<span>Transcription</span>
+			<span>{t('journal.photo.transcription')}</span>
 			<textarea
 				rows="14"
 				value={flow.text}
@@ -355,8 +355,8 @@
 	</div>
 	{#if saveError}<p class="error" role="alert">{saveError}</p>{/if}
 	<div class="row">
-		<button type="button" class="primary" disabled={saving} onclick={save}>Save as entry</button>
-		<button type="button" class="secondary danger" onclick={discard}>Discard</button>
+		<button type="button" class="primary" disabled={saving} onclick={save}>{t('journal.photo.save')}</button>
+		<button type="button" class="secondary danger" onclick={discard}>{t('journal.photo.discard')}</button>
 	</div>
 {/if}
 

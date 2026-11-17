@@ -4,6 +4,7 @@
 // with its variant forms (a card written 愛 lights 爱), taking the maximum.
 
 import type { CharRow, Scheme } from '$lib/api/types';
+import { t, type MessageKey } from '$lib/i18n';
 import { MASTERY_THRESHOLD, stageOf, type CharMastery, type MasteryStage } from './mastery';
 
 export type Stage = MasteryStage;
@@ -49,16 +50,26 @@ export interface SectionStats {
 
 export type StageFilter = 'all' | 'not-started' | 'learning' | 'learned';
 
+/** A group-by option whose label is read from the catalogue when shown (never at module load). */
+function option(key: GroupOption['key'], label: MessageKey): GroupOption {
+	return {
+		key,
+		get label() {
+			return t(label);
+		}
+	};
+}
+
 const JA_OPTIONS: GroupOption[] = [
-	{ key: 'grade', label: 'Grade' },
-	{ key: 'freq', label: 'Frequency' },
-	{ key: 'strokes', label: 'Strokes' }
+	option('grade', 'stats.map.group.grade'),
+	option('freq', 'stats.map.group.frequency'),
+	option('strokes', 'stats.map.group.strokes')
 ];
 
 const ZH_OPTIONS: GroupOption[] = [
-	{ key: 'common', label: 'Common' },
-	{ key: 'hkgrade', label: 'HK primary grade' },
-	{ key: 'strokes', label: 'Strokes' }
+	option('common', 'stats.map.group.common'),
+	option('hkgrade', 'stats.map.group.hkGrade'),
+	option('strokes', 'stats.map.group.strokes')
 ];
 
 // The bundled level packs that are hand-written samples, not real lists.
@@ -134,13 +145,24 @@ function isPositiveInt(value: number | undefined): value is number {
 	return value !== undefined && Number.isInteger(value) && value > 0;
 }
 
-const GRADE_NAMES: Slot = { id: 'grade-names', label: 'Names (jinmeiyō, 9–10)', rank: 9 };
-const GRADE_NONE: Slot = { id: 'grade-none', label: 'Not graded', rank: 99 };
+/** A shared slot whose label is read from the catalogue when shown. */
+function fixedSlot(id: string, label: MessageKey, rank: number): Slot {
+	return {
+		id,
+		get label() {
+			return t(label);
+		},
+		rank
+	};
+}
+
+const GRADE_NAMES: Slot = fixedSlot('grade-names', 'stats.map.slot.gradeNames', 9);
+const GRADE_NONE: Slot = fixedSlot('grade-none', 'stats.map.slot.notGraded', 99);
 
 function gradeSlot(row: CharRow): Slot {
 	const g = row.g;
-	if (isPositiveInt(g) && g <= 6) return { id: `grade-${g}`, label: `Grade ${g}`, rank: g };
-	if (g === 8) return { id: 'grade-8', label: 'Secondary (grade 8)', rank: 8 };
+	if (isPositiveInt(g) && g <= 6) return { id: `grade-${g}`, label: t('stats.map.slot.gradeN', { n: g }), rank: g };
+	if (g === 8) return { id: 'grade-8', label: t('stats.map.slot.secondary'), rank: 8 };
 	if (g === 9 || g === 10) return GRADE_NAMES;
 	return GRADE_NONE;
 }
@@ -153,7 +175,7 @@ const FREQ_LAST: Slot = { id: 'freq-5', label: '2001–2501', rank: FREQ_LAST_BU
 
 function freqSlot(row: CharRow): Slot {
 	const f = row.f;
-	if (!isPositiveInt(f)) return { id: 'freq-none', label: 'Not ranked', rank: Number.MAX_SAFE_INTEGER };
+	if (!isPositiveInt(f)) return { id: 'freq-none', label: t('stats.map.slot.notRanked'), rank: Number.MAX_SAFE_INTEGER };
 	const bucket = Math.ceil(f / FREQ_BUCKET);
 	if (bucket >= FREQ_LAST_BUCKET) return FREQ_LAST;
 	const from = (bucket - 1) * FREQ_BUCKET + 1;
@@ -164,24 +186,24 @@ function freqSlot(row: CharRow): Slot {
 function strokesSlot(row: CharRow): Slot {
 	const s = row.s;
 	if (!isPositiveInt(s)) {
-		return { id: 'strokes-none', label: 'Stroke count unknown', rank: Number.MAX_SAFE_INTEGER };
+		return { id: 'strokes-none', label: t('stats.map.slot.strokesUnknown'), rank: Number.MAX_SAFE_INTEGER };
 	}
-	return { id: `strokes-${s}`, label: s === 1 ? '1 stroke' : `${s} strokes`, rank: s };
+	return { id: `strokes-${s}`, label: t('stats.map.slot.strokes', { count: s }), rank: s };
 }
 
 function commonSlot(row: CharRow): Slot {
-	if (row.b === 1) return { id: 'common-gb1', label: 'GB2312 level 1 (common)', rank: 1 };
-	if (row.b === 2) return { id: 'common-gb2', label: 'GB2312 level 2', rank: 2 };
-	if (row.t === 1) return { id: 'common-standard', label: 'Other standard characters', rank: 3 };
-	return { id: 'common-other', label: 'Other characters in the dictionary', rank: 4 };
+	if (row.b === 1) return { id: 'common-gb1', label: t('stats.map.slot.gb1'), rank: 1 };
+	if (row.b === 2) return { id: 'common-gb2', label: t('stats.map.slot.gb2'), rank: 2 };
+	if (row.t === 1) return { id: 'common-standard', label: t('stats.map.slot.standard'), rank: 3 };
+	return { id: 'common-other', label: t('stats.map.slot.other'), rank: 4 };
 }
 
 function hkgradeSlot(row: CharRow): Slot {
 	const h = row.h;
 	if (isPositiveInt(h) && h <= 6) {
-		return { id: `hkgrade-${h}`, label: `Primary grade ${h} (Hong Kong)`, rank: h };
+		return { id: `hkgrade-${h}`, label: t('stats.map.slot.hkGradeN', { n: h }), rank: h };
 	}
-	return { id: 'hkgrade-none', label: 'No grade', rank: 99 };
+	return { id: 'hkgrade-none', label: t('stats.map.slot.noGrade'), rank: 99 };
 }
 
 /**
@@ -213,7 +235,7 @@ function schemeSlotter(members: readonly SchemeLevelMembers[] | undefined): (row
 		slot: { id: `level-${level.levelId}`, label: level.name, rank: index } satisfies Slot,
 		set: level.chars
 	}));
-	const outside: Slot = { id: 'level-none', label: 'Not in this scheme', rank: Number.MAX_SAFE_INTEGER };
+	const outside: Slot = { id: 'level-none', label: t('stats.map.slot.notInScheme'), rank: Number.MAX_SAFE_INTEGER };
 	return (row) => {
 		// The glyph itself decides first; a variant (a traditional form in
 		// a list written in traditional) only when the glyph is in no level.

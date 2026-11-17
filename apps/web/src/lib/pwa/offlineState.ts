@@ -4,6 +4,7 @@
 // preparation last saved. One small store plus the sentence it shows.
 
 import { writable } from 'svelte/store';
+import { t } from '$lib/i18n';
 
 export interface OfflineState {
 	online: boolean;
@@ -92,16 +93,15 @@ function savedTime(iso: string): string | null {
 /** offlineMessage: the one sentence the banner shows, or null. */
 export function offlineMessage(state: OfflineState, nowMs: number): string | null {
 	if (!state.online) {
-		if (state.queued === 0) return "You're offline. Study works with saved cards.";
-		const what = state.queued === 1 ? '1 review is' : `${state.queued} reviews are`;
-		return `You're offline. ${what} saved on this device and will be sent when you're back online.`;
+		if (state.queued === 0) return t('pwa.offline.noQueue');
+		return t('pwa.offline.queued', { count: state.queued });
 	}
 	if (state.servedFromCacheAt !== null) {
 		const time = savedTime(state.servedFromCacheAt);
 		return time === null
-			? "Can't reach the server. Showing saved data."
-			: `Can't reach the server. Showing saved data from ${time}.`;
+			? t('pwa.offline.unreachable')
+			: t('pwa.offline.unreachableSince', { time });
 	}
-	if (state.allSentAt !== null && nowMs - state.allSentAt < ALL_SENT_MS) return 'All reviews sent.';
+	if (state.allSentAt !== null && nowMs - state.allSentAt < ALL_SENT_MS) return t('pwa.offline.allSent');
 	return null;
 }

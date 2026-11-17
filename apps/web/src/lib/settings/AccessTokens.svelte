@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { apiErrorBody } from '$lib/api/client';
+	import { errorText } from '$lib/api/apiErrors';
+	import { t } from '$lib/i18n';
 	import { listTokens, revokeAllTokens, revokeToken } from '$lib/api/tokens';
 	import { tokenRows, type TokenDto } from '$lib/account/tokensView';
 	import { workspaces } from '$lib/workspaces';
@@ -27,16 +28,12 @@
 		oncount?.(list.length);
 	}
 
-	function message(err: unknown, fallback: string): string {
-		return apiErrorBody(err)?.message || fallback;
-	}
-
 	async function load(): Promise<void> {
 		try {
 			set(await listTokens());
 			error = '';
 		} catch (err) {
-			error = message(err, 'Could not load your access tokens.');
+			error = errorText(err, t('settings.tokens.error.load'));
 		} finally {
 			loaded = true;
 		}
@@ -50,7 +47,7 @@
 			confirmOne = null;
 			await load();
 		} catch (err) {
-			error = message(err, 'Could not revoke that token.');
+			error = errorText(err, t('settings.tokens.error.revoke'));
 		} finally {
 			busy = false;
 		}
@@ -64,7 +61,7 @@
 			confirmAll = false;
 			await load();
 		} catch (err) {
-			error = message(err, 'Could not revoke the tokens.');
+			error = errorText(err, t('settings.tokens.error.revokeAll'));
 		} finally {
 			busy = false;
 		}
@@ -74,24 +71,20 @@
 </script>
 
 <section aria-labelledby="account-tokens-heading" class="block">
-	<h2 id="account-tokens-heading">Access tokens</h2>
-	<p class="hint">
-		Personal access tokens let your own scripts use the qinqin API without your password. A token acts as you, so
-		keep it like a password. Tokens never work for your account, sign-in, admin, backup or AI settings, and a password
-		change revokes them.
-	</p>
+	<h2 id="account-tokens-heading">{t('settings.tokens.title')}</h2>
+	<p class="hint">{t('settings.tokens.intro')}</p>
 	{#if error}<p class="error" role="alert">{error}</p>{/if}
 	{#if loaded && rows.length === 0 && !error}
-		<p>No access tokens yet.</p>
+		<p>{t('settings.tokens.none')}</p>
 	{:else if rows.length > 0}
-		<table aria-label="Access tokens">
+		<table aria-label={t('settings.tokens.title')}>
 			<thead>
 				<tr>
-					<th scope="col">Name</th>
-					<th scope="col">Access</th>
-					<th scope="col">Expiry</th>
-					<th scope="col">Last used</th>
-					<th scope="col"><span class="visually-hidden">Actions</span></th>
+					<th scope="col">{t('settings.tokens.colName')}</th>
+					<th scope="col">{t('settings.tokens.colAccess')}</th>
+					<th scope="col">{t('settings.tokens.colExpiry')}</th>
+					<th scope="col">{t('settings.tokens.colLastUsed')}</th>
+					<th scope="col"><span class="visually-hidden">{t('settings.tokens.colActions')}</span></th>
 				</tr>
 			</thead>
 			<tbody>
@@ -102,14 +95,14 @@
 						<td>{row.expiryText}</td>
 						<td>{row.lastUsedText}</td>
 						<td>
-							<button type="button" disabled={busy} aria-label={`Revoke ${row.name}`} onclick={() => (confirmOne = row.id)}
-								>Revoke</button
+							<button type="button" disabled={busy} aria-label={t('settings.tokens.revokeNamed', { name: row.name })} onclick={() => (confirmOne = row.id)}
+								>{t('settings.tokens.revoke')}</button
 							>
 							{#if confirmOne === row.id}
-								<div class="confirm" role="group" aria-label={`Confirm revoking ${row.name}`}>
-									<p>Revoke “{row.name}”? Scripts using it stop working.</p>
-									<button type="button" disabled={busy} onclick={() => revokeOne(row.id)}>Yes, revoke it</button>
-									<button type="button" disabled={busy} onclick={() => (confirmOne = null)}>Cancel</button>
+								<div class="confirm" role="group" aria-label={t('settings.tokens.confirmRevokeNamed', { name: row.name })}>
+									<p>{t('settings.tokens.confirmRevokeText', { name: row.name })}</p>
+									<button type="button" disabled={busy} onclick={() => revokeOne(row.id)}>{t('settings.tokens.confirmRevokeYes')}</button>
+									<button type="button" disabled={busy} onclick={() => (confirmOne = null)}>{t('common.action.cancel')}</button>
 								</div>
 							{/if}
 						</td>
@@ -119,16 +112,16 @@
 		</table>
 	{/if}
 	<div class="actions">
-		<button type="button" disabled={busy} onclick={() => (creating = true)}>New token</button>
+		<button type="button" disabled={busy} onclick={() => (creating = true)}>{t('settings.tokens.new')}</button>
 		{#if rows.length > 0}
-			<button type="button" disabled={busy} onclick={() => (confirmAll = true)}>Revoke all</button>
+			<button type="button" disabled={busy} onclick={() => (confirmAll = true)}>{t('settings.tokens.revokeAll')}</button>
 		{/if}
 	</div>
 	{#if confirmAll}
-		<div class="confirm" role="group" aria-label="Confirm revoking all access tokens">
-			<p>Revoke every access token? Every script using one stops working.</p>
-			<button type="button" disabled={busy} onclick={revokeEvery}>Yes, revoke all</button>
-			<button type="button" disabled={busy} onclick={() => (confirmAll = false)}>Cancel</button>
+		<div class="confirm" role="group" aria-label={t('settings.tokens.confirmRevokeAll')}>
+			<p>{t('settings.tokens.confirmRevokeAllText')}</p>
+			<button type="button" disabled={busy} onclick={revokeEvery}>{t('settings.tokens.confirmRevokeAllYes')}</button>
+			<button type="button" disabled={busy} onclick={() => (confirmAll = false)}>{t('common.action.cancel')}</button>
 		</div>
 	{/if}
 </section>
@@ -136,7 +129,7 @@
 {#if creating}
 	<CreateTokenDialog
 		workspaces={wsList}
-		oncreated={(t) => set([t, ...tokens])}
+		oncreated={(tok) => set([tok, ...tokens])}
 		onclose={() => {
 			creating = false;
 			void load();

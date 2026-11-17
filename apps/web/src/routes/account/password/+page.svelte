@@ -6,6 +6,7 @@
 	import { get } from 'svelte/store';
 	import { loadMe, user } from '$lib/auth';
 	import { pageTitle } from '$lib/pageTitle';
+	import { t } from '$lib/i18n';
 
 	let current = $state('');
 	let next = $state('');
@@ -24,7 +25,7 @@
 		error = '';
 		const problem =
 			passwordProblem($user?.username ?? '', next) ?? confirmProblem(next, confirm) ??
-			(confirm === '' ? 'Repeat the new password.' : null);
+			(confirm === '' ? t('auth.forced.repeatMissing') : null);
 		if (problem) {
 			error = problem;
 			return;
@@ -49,11 +50,11 @@
 				// current password as well.
 				error =
 					needCurrent && body.error === 'wrong_password'
-						? 'The current password is wrong.'
-						: 'Enter your current password to continue.';
+						? t('auth.forced.currentWrong')
+						: t('auth.forced.currentNeeded');
 				needCurrent = true;
 			} else {
-				error = body?.message || (err instanceof Error ? err.message : '') || 'Could not change the password.';
+				error = body?.message || (err instanceof Error ? err.message : '') || t('auth.forced.failed');
 			}
 		} finally {
 			busy = false;
@@ -62,20 +63,17 @@
 </script>
 
 <svelte:head>
-	<title>{pageTitle('Choose a new password')}</title>
+	<title>{pageTitle(t('auth.forced.passwordTitle'))}</title>
 </svelte:head>
 
 <main class="auth">
-	<h1 tabindex="-1" bind:this={heading}>Choose a new password</h1>
-	<p>
-		An administrator asked you to choose a new password before you continue. Other devices are
-		signed out when you change it.
-	</p>
+	<h1 tabindex="-1" bind:this={heading}>{t('auth.forced.passwordTitle')}</h1>
+	<p>{t('auth.forced.passwordIntro')}</p>
 
 	<form onsubmit={submit}>
 		{#if needCurrent}
 			<label>
-				Current password
+				{t('auth.forced.current')}
 				<input
 					name="current"
 					type="password"
@@ -87,7 +85,7 @@
 		{/if}
 
 		<label>
-			New password
+			{t('auth.reset.newPassword')}
 			<input
 				name="new"
 				type="password"
@@ -100,7 +98,7 @@
 		<p class="hint" id="password-rules">{passwordHint()}</p>
 
 		<label>
-			Repeat the new password
+			{t('auth.reset.repeat')}
 			<input name="confirm" type="password" autocomplete="new-password" bind:value={confirm} required />
 		</label>
 
@@ -108,6 +106,6 @@
 			<p class="error" role="alert">{error}</p>
 		{/if}
 
-		<button type="submit" disabled={busy}>{busy ? 'Changing…' : 'Change password'}</button>
+		<button type="submit" disabled={busy}>{busy ? t('auth.forced.changing') : t('auth.forced.submit')}</button>
 	</form>
 </main>

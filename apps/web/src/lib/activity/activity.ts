@@ -5,6 +5,7 @@
 // the heatmap's days.
 
 import type { ActivityResponse, ActivitySource } from '../api/stats';
+import { t } from '../i18n';
 import { addDays, type StudyDay } from '../time/studyDay';
 import { isVacationDay, vacationRuns, type VacationPeriod } from '../study/vacation';
 
@@ -146,7 +147,7 @@ export function describe(source: ActivitySource, raw: number): string {
 }
 
 function pointsWord(count: number): string {
-	return `${count} ${count === 1 ? 'point' : 'points'}`;
+	return t('stats.activity.points', { count });
 }
 
 /** sourcePoints sums the window's points per activity type. */
@@ -162,8 +163,8 @@ export function sourcePoints(map: Map<string, DayActivity>): Record<string, numb
 
 /** The tooltip's vacation suffix: " · On vacation" or " · Vacation in 中文, 日本語". */
 function vacationNote(day: DayActivity, workspaceName: (id: number) => string): string {
-	if (day.vacation === 'all') return ' · On vacation';
-	if (day.vacation === 'some') return ` · Vacation in ${day.vacationIn.map(workspaceName).join(', ')}`;
+	if (day.vacation === 'all') return t('stats.activity.vacationAll');
+	if (day.vacation === 'some') return t('stats.activity.vacationIn', { workspaces: day.vacationIn.map(workspaceName).join(', ') });
 	return '';
 }
 
@@ -178,22 +179,23 @@ export function dayTooltip(
 	workspaceName: (id: number) => string,
 	allHidden = false
 ): string {
-	if (allHidden) return `${day.day}: all activity types hidden`;
+	if (allHidden) return t('stats.activity.dayHidden', { day: day.day });
 	const away = vacationNote(day, workspaceName);
-	if (day.total <= 0) return `${day.day}: no activity${away}`;
+	const withAway = (text: string) => (away === '' ? text : t('stats.activity.withNote', { text, note: away }));
+	if (day.total <= 0) return withAway(t('stats.activity.dayNone', { day: day.day }));
 	const parts: string[] = [];
 	for (const source of sources) {
 		if (!day.bySource[source.type]) continue;
 		parts.push(describe(source, day.raw[source.type] ?? 0));
 	}
-	let text = `${day.day}: ${pointsWord(day.total)} — ${parts.join(', ')}`;
+	let text = t('stats.activity.day', { day: day.day, points: pointsWord(day.total), parts: parts.join(', ') });
 	const spaces = Object.entries(day.byWorkspace)
 		.map(([id, points]) => ({ id: Number(id), points }))
 		.sort((a, b) => b.points - a.points || a.id - b.id);
 	if (spaces.length > 0) {
 		text += ` · ${spaces.map((s) => `${workspaceName(s.id)} ${s.points}`).join(', ')}`;
 	}
-	return text + away;
+	return withAway(text);
 }
 
 /**
@@ -221,8 +223,10 @@ export function windowSummary(
 	scope: 'workspace' | 'all'
 ): string {
 	const weeks = Math.round(map.size / 7);
-	const where = scope === 'all' ? 'all workspaces' : 'this workspace';
-	const prefix = `Learning activity in ${where} for the last ${weeks === 1 ? 'week' : `${weeks} weeks`}`;
+	const prefix =
+		scope === 'all'
+			? t('stats.activity.summaryAll', { count: weeks })
+			: t('stats.activity.summaryWorkspace', { count: weeks });
 	const points = sourcePoints(map);
 	const raw: Record<string, number> = {};
 	for (const entry of map.values()) {
@@ -235,6 +239,6 @@ export function windowSummary(
 		total += points[source.type];
 		parts.push(describe(source, raw[source.type] ?? 0));
 	}
-	if (total === 0) return `${prefix}: no activity yet`;
-	return `${prefix}: ${pointsWord(total)} — ${parts.join(', ')}`;
+	if (total === 0) return t('stats.activity.summaryNone', { prefix });
+	return t('stats.activity.summary', { prefix, points: pointsWord(total), parts: parts.join(', ') });
 }

@@ -2,6 +2,7 @@
 // defaults and the sentences for a failed test mail. Pure.
 
 import type { SmtpPayload, SmtpSettings } from '$lib/api/adminSettings';
+import { t, type MessageKey } from '$lib/i18n';
 
 export type TlsMode = 'starttls' | 'tls' | 'none';
 export type PasswordChoice = 'keep' | 'replace' | 'remove';
@@ -19,7 +20,9 @@ export interface SmtpDraft {
 }
 
 export const PORT_DEFAULTS: Record<TlsMode, number> = { starttls: 587, tls: 465, none: 25 };
-export const PLAIN_WARNING = 'Mail is sent without encryption. Use this only on a private network, never with a password.';
+export function plainWarning(): string {
+	return t('admin.email.plainWarning');
+}
 
 /** The port to use when the mode changes: a default is replaced, a custom port is kept. */
 export function portForMode(current: number, from: TlsMode, to: TlsMode): number {
@@ -62,9 +65,9 @@ export function payloadFrom(d: SmtpDraft): SmtpPayload {
 
 /** The sentence beside the password field. */
 export function passwordNote(state: SmtpSettings['password']): string {
-	if (state === 'set') return 'A password is saved.';
-	if (state === 'undecryptable') return 'The saved password cannot be read any more: enter it again.';
-	return 'No password is saved.';
+	if (state === 'set') return t('admin.email.password.set');
+	if (state === 'undecryptable') return t('admin.email.password.undecryptable');
+	return t('admin.email.password.none');
 }
 
 /** A connection or public-URL change needs the password again (the server enforces it). */
@@ -74,19 +77,19 @@ export function needsReentry(saved: SmtpSettings, d: SmtpDraft): boolean {
 			saved.publicUrl !== d.publicUrl.trim());
 }
 
-const CATEGORY_TEXT: Record<string, string> = {
-	connect: 'The server could not be reached. Check the host name and port.',
-	blocked: 'This address is not allowed. Private networks need QINQIN_SMTP_ALLOW_PRIVATE on the server.',
-	tls: 'The secure connection failed. Check the connection security setting and the server certificate.',
-	auth: 'The server refused the user name or password.',
-	sender: 'The server refused the sender address.',
-	recipient: 'The server refused the recipient address.',
-	timeout: 'The server did not answer in time.',
-	protocol: 'The server answered in a way qinqin does not understand.'
+const CATEGORY_TEXT: Record<string, MessageKey> = {
+	connect: 'admin.email.failure.connect',
+	blocked: 'admin.email.failure.blocked',
+	tls: 'admin.email.failure.tls',
+	auth: 'admin.email.failure.auth',
+	sender: 'admin.email.failure.sender',
+	recipient: 'admin.email.failure.recipient',
+	timeout: 'admin.email.failure.timeout',
+	protocol: 'admin.email.failure.protocol'
 };
 
 /** testFailure words a failed test mail from its category and reply code. */
 export function testFailure(category: string, smtpCode?: number): string {
-	const text = CATEGORY_TEXT[category] ?? 'The test mail could not be sent.';
-	return smtpCode ? `${text} (server reply ${smtpCode})` : text;
+	const text = Object.hasOwn(CATEGORY_TEXT, category) ? t(CATEGORY_TEXT[category]) : t('admin.email.failure.other');
+	return smtpCode ? t('admin.email.failure.withCode', { text, code: smtpCode }) : text;
 }

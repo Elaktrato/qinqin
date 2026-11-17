@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '$lib/i18n';
 	import { getFrequencyPacks } from '$lib/api/frequency';
 	import { errorMessage } from '$lib/stats/errors';
 	import { noPackHint } from '$lib/study/newOrderView';
@@ -38,7 +39,7 @@
 			},
 			(err) => {
 				// Starter decks are an extra: a failed list is a quiet line, never an alert.
-				loadError = errorMessage(err, 'Could not load the starter decks.');
+				loadError = errorMessage(err, t('flashcards.starter.loadFailed'));
 			}
 		);
 	});
@@ -58,17 +59,17 @@
 
 	function ownedOf(list: number[], size: number): string {
 		const part = list.slice(0, size);
-		return `${part.filter((id) => ownedEntryIds.has(id)).length} of ${part.length} in your decks`;
+		return t('flashcards.system.owned', { owned: part.filter((id) => ownedEntryIds.has(id)).length, total: part.length });
 	}
 </script>
 
 <section aria-labelledby="starter-decks-heading">
-	<h2 id="starter-decks-heading">Starter decks</h2>
-	<p class="hint">The most frequent words first, from the frequency lists installed on this server.</p>
+	<h2 id="starter-decks-heading">{t('flashcards.starter.title')}</h2>
+	<p class="hint">{t('flashcards.starter.listIntro')}</p>
 	{#if loadError}
 		<p class="hint">{loadError}</p>
 	{:else if decks === null}
-		<p role="status">Loading starter decks…</p>
+		<p role="status">{t('flashcards.starter.loading')}</p>
 	{:else if groups.length === 0}
 		<p class="hint">{noPackHint(language)}</p>
 	{:else}
@@ -83,7 +84,7 @@
 						onclick={() => toggle(group)}
 					>
 						<span aria-hidden="true">{expanded.includes(group.packNumId) ? '▾' : '▸'}</span>
-						Starter decks · {group.name}
+						{t('flashcards.starter.group', { name: group.name })}
 					</button>
 					<p class="credit">{group.credit}</p>
 					{#if expanded.includes(group.packNumId)}
@@ -95,9 +96,9 @@
 									>
 									<span class="owned">
 										{#if loaded === 'error'}
-											Could not load
+											{t('flashcards.system.couldNotLoad')}
 										{:else if loaded === undefined}
-											Loading…
+											{t('common.loading')}
 										{:else}
 											{ownedOf(loaded, deck.size)}
 										{/if}

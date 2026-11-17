@@ -1,7 +1,0 @@
-Your two-step check code for {{.Site}} is:
-
-{{.Code}}
-
-It is valid for {{.Minutes}} minutes and works once.
-
-If this was not you, someone knows your password: change it and ignore this code.

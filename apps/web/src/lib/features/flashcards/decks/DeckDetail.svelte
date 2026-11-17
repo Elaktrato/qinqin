@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { readingBeside } from '$lib/entry/displayForm';
+	import { t, type MessageKey } from '$lib/i18n';
 	import { goto } from '$app/navigation';
 	import { onDestroy, tick, untrack } from 'svelte';
 	import { loadEntryBases } from '$lib/api/entryBases';
@@ -20,6 +21,7 @@
 	} from '$lib/study/store';
 	import { CARD_KINDS, OPT_IN_KINDS, type StudyCardKind } from '$lib/study/types';
 	import { workspaces } from '$lib/workspaces';
+	import { glossLang, studyLang, wordReadingLang, readingLang } from '$lib/i18n/lang';
 	import { flashcardsHref } from '../route';
 	import {
 		PAGE_SIZE,
@@ -47,13 +49,13 @@
 	// A new learner day (or zone) changes what is due and on vacation.
 	$effect(() => onContextStale(() => void store.load(workspaceId)));
 
-	const KIND_LABEL: Record<StudyCardKind, string> = {
-		vocab: 'Vocab',
-		sentence: 'Word Salad',
-		writing: 'Writing',
-		tone: 'Tone',
-		reverse: 'Reverse',
-		cloze: 'Cloze'
+	const KIND_KEYS: Record<StudyCardKind, MessageKey> = {
+		vocab: 'study.cardType.vocab',
+		sentence: 'study.cardType.sentence',
+		writing: 'study.cardType.writing',
+		tone: 'study.cardType.tone',
+		reverse: 'study.cardType.reverse',
+		cloze: 'study.cardType.cloze'
 	};
 
 	const data = $derived(store.data);
@@ -61,7 +63,7 @@
 		data === null
 			? null
 			: deckId === GENERAL_DECK_ID
-				? ({ id: GENERAL_DECK_ID, name: 'General' } as Deck)
+				? ({ id: GENERAL_DECK_ID, name: t('flashcards.deck.general') } as Deck)
 				: (data.decks.find((d) => d.id === deckId) ?? null)
 	);
 	const enabled = $derived(data === null ? new Set<never>() : enabledKinds(data.deckSettings, [deckId]));
@@ -186,7 +188,7 @@
 	const moveTargets = $derived(
 		data === null
 			? []
-			: [{ id: GENERAL_DECK_ID, name: 'General' }, ...data.decks].filter((d) => d.id !== deckId)
+			: [{ id: GENERAL_DECK_ID, name: t('flashcards.deck.general') }, ...data.decks].filter((d) => d.id !== deckId)
 	);
 
 	function idsOf(entryIds: number[]): string[] {
@@ -272,12 +274,7 @@
 		return list.includes(id) ? list.filter((item) => item !== id) : [...list, id];
 	}
 
-	const MOVE_NOTE =
-		'Moves the word out of every other deck too, with its other cards. You can undo this right after.';
-
-	function plural(n: number, one: string): string {
-		return `${n} ${n === 1 ? one : `${one}s`}`;
-	}
+	const kindLabel = (k: StudyCardKind): string => t(KIND_KEYS[k]);
 
 	function dueText(row: DeckRow): string {
 		if (row.nextDue === null || data === null) return '—';
@@ -287,114 +284,124 @@
 
 <div bind:this={root}>
 	{#if store.status === 'loading'}
-		<p role="status">Loading deck…</p>
+		<p role="status">{t('flashcards.deck.loading')}</p>
 	{:else if store.status === 'no-workspace'}
-		<p role="status">Choose a workspace in the header to see your decks.</p>
+		<p role="status">{t('flashcards.deck.noWorkspace')}</p>
 	{:else if store.status === 'error'}
 		<p role="alert">{store.error}</p>
-		<button type="button" onclick={() => void store.load(workspaceId, true)}>Try again</button>
+		<button type="button" onclick={() => void store.load(workspaceId, true)}>{t('flashcards.deck.tryAgain')}</button>
 	{:else if deck === null || numbers === null}
-		<p role="status">Deck not found.</p>
-		<a href={flashcardsHref({ view: 'list' })}>Back to decks</a>
+		<p role="status">{t('flashcards.deck.notFound')}</p>
+		<a href={flashcardsHref({ view: 'list' })}>{t('flashcards.deck.backToDecks')}</a>
 	{:else}
-		<p class="back"><a href={flashcardsHref({ view: 'list' })}>‹ Decks</a></p>
+		<p class="back"><a href={flashcardsHref({ view: 'list' })}>{t('flashcards.deck.back')}</a></p>
 		<h1 tabindex="-1">{deck.name}</h1>
 		{#if deck.source !== undefined}
 			<p class="source">
-				Copied from {copiedFrom(deck.source)}
+				{t('flashcards.deck.copiedFrom', { source: copiedFrom(deck.source) })}
 			</p>
 		{/if}
-		<section class="numbers" aria-label={`${deck.name} numbers`}>
+		<section class="numbers" aria-label={t('flashcards.deck.numbersLabel', { name: deck.name })}>
 			<p>
-				{plural(numbers.words, 'word')} · {plural(numbers.cards, 'card')} ·
-				{#if data?.ctx.vacationToday}On vacation{:else}{numbers.due} due · {numbers.fresh} new{/if} ·
-				{numbers.studied} studied · {numbers.mastered} mastered
+				{#if data?.ctx.vacationToday}{t('flashcards.deck.numbersVacation', {
+						words: t('flashcards.deck.words', { count: numbers.words }),
+						cards: t('flashcards.deck.cards', { count: numbers.cards }),
+						studied: numbers.studied,
+						mastered: numbers.mastered
+					})}{:else}{t('flashcards.deck.numbers', {
+						words: t('flashcards.deck.words', { count: numbers.words }),
+						cards: t('flashcards.deck.cards', { count: numbers.cards }),
+						due: numbers.due,
+						fresh: numbers.fresh,
+						studied: numbers.studied,
+						mastered: numbers.mastered
+					})}{/if}
 			</p>
 			{#if leftText !== null && !data?.ctx.vacationToday}
 				<p class="left">{leftText}</p>
 			{/if}
 			<div class="actions">
-				<button type="button" class="primary" onclick={study}>Study</button>
-				<a href={flashcardsHref({ view: 'settings', deckId })}>Settings</a>
+				<button type="button" class="primary" onclick={study}>{t('flashcards.deck.study')}</button>
+				<a href={flashcardsHref({ view: 'settings', deckId })}>{t('flashcards.deck.settings')}</a>
 			</div>
 		</section>
 
 		{#if rows.length === 0}
-			<p class="hint">No cards in this deck yet.</p>
+			<p class="hint">{t('flashcards.deck.empty')}</p>
 		{:else}
 			<div class="filters">
 				<label>
-					Search words
+					{t('flashcards.deck.search')}
 					<input
 						type="search"
-						aria-label="Search words"
+						aria-label={t('flashcards.deck.search')}
 						value={text}
 						oninput={(e) => onSearch(e.currentTarget.value)}
-						placeholder="Word, reading or id"
+						placeholder={t('flashcards.deck.searchPlaceholder')}
 					/>
 				</label>
 				<label>
-					State
+					{t('flashcards.deck.state')}
 					<select bind:value={stateFilter}>
-						<option value="all">All</option>
+						<option value="all">{t('flashcards.deck.all')}</option>
 						{#each WORD_STATES as s (s.state)}
 							<option value={s.state}>{s.label}</option>
 						{/each}
 					</select>
 				</label>
 				<label>
-					Kind
+					{t('flashcards.deck.kind')}
 					<select bind:value={kind}>
-						<option value="all">All</option>
+						<option value="all">{t('flashcards.deck.all')}</option>
 						{#each CARD_KINDS as k (k)}
-							<option value={k}>{KIND_LABEL[k]}</option>
+							<option value={k}>{kindLabel(k)}</option>
 						{/each}
 					</select>
 				</label>
-				<label class="check"><input type="checkbox" bind:checked={dueNow} /> Due now</label>
+				<label class="check"><input type="checkbox" bind:checked={dueNow} /> {t('flashcards.deck.dueNow')}</label>
 				<label>
-					Sort
+					{t('flashcards.deck.sort')}
 					<select bind:value={sort}>
-						<option value="added">Added</option>
-						<option value="due">Due</option>
-						<option value="state">State</option>
+						<option value="added">{t('flashcards.deck.sortAdded')}</option>
+						<option value="due">{t('flashcards.deck.sortDue')}</option>
+						<option value="state">{t('flashcards.deck.sortState')}</option>
 					</select>
 				</label>
 			</div>
 			{#if basesFailed}
-				<p class="hint">Readings could not be loaded, so search only covers the words themselves.</p>
+				<p class="hint">{t('flashcards.deck.basesFailed')}</p>
 			{/if}
 
-			<p class="count" aria-live="polite">{filtered.length} of {rows.length} words</p>
+			<p class="count" aria-live="polite">{t('flashcards.deck.count', { shown: filtered.length, total: rows.length })}</p>
 
-			<div class="bar" role="group" aria-label="Selected words">
+			<div class="bar" role="group" aria-label={t('flashcards.deck.selectedWords')}>
 				<label class="check">
 					<input
 						type="checkbox"
-						aria-label={`Select all ${filtered.length} shown`}
+						aria-label={t('flashcards.deck.selectAll', { count: filtered.length })}
 						checked={allChosen}
 						onchange={toggleAll}
 					/>
-					All
+					{t('flashcards.deck.all')}
 				</label>
-				<span>{chosen.length} selected</span>
+				<span>{t('flashcards.deck.selected', { count: chosen.length })}</span>
 				<label>
-					Move to
+					{t('flashcards.deck.moveTo')}
 					<select bind:value={target} disabled={chosen.length === 0 || controller.busy}>
-						<option value="">Choose a deck</option>
+						<option value="">{t('flashcards.deck.chooseDeck')}</option>
 						{#each moveTargets as d (d.id)}
 							<option value={d.id}>{d.name}</option>
 						{/each}
 					</select>
 				</label>
 				<button type="button" disabled={chosen.length === 0 || target === '' || controller.busy} onclick={openMoveConfirm}>
-					Move
+					{t('flashcards.deck.move')}
 				</button>
 				<button
 					type="button"
 					class="danger"
 					disabled={chosen.length === 0 || controller.busy}
-					onclick={openConfirm}>Delete</button
+					onclick={openConfirm}>{t('flashcards.deck.delete')}</button
 				>
 			</div>
 
@@ -402,32 +409,31 @@
 				<div
 					class="confirm confirm-move"
 					role="alertdialog"
-					aria-label="Confirm move"
+					aria-label={t('flashcards.deck.confirmMove')}
 					tabindex="-1"
 					onkeydown={confirmKey}
 				>
 					<p>
-						Move {plural(chosen.length, 'word')} to {targetName}?
-						{MOVE_NOTE}
+						{t('flashcards.deck.moveQuestion', { count: chosen.length, deck: targetName })}
+						{t('flashcards.deck.moveNote')}
 					</p>
-					<button type="button" onclick={move}>Move {plural(chosen.length, 'word')}</button>
-					<button type="button" class="secondary" onclick={() => (confirmingMove = false)}>Cancel</button>
+					<button type="button" onclick={move}>{t('flashcards.deck.moveWords', { count: chosen.length })}</button>
+					<button type="button" class="secondary" onclick={() => (confirmingMove = false)}>{t('common.action.cancel')}</button>
 				</div>
 			{/if}
 
 			{#if confirming && chosen.length > 0}
-				<div class="confirm" role="alertdialog" aria-label="Confirm delete" tabindex="-1" onkeydown={confirmKey}>
+				<div class="confirm" role="alertdialog" aria-label={t('flashcards.deck.confirmDelete')} tabindex="-1" onkeydown={confirmKey}>
 					<p>
-						Delete {plural(chosen.length, 'word')} from every deck, with their other cards? You can
-						undo this right after.
+						{t('flashcards.deck.deleteQuestion', { count: chosen.length })}
 					</p>
-					<button type="button" class="danger" onclick={remove}>Delete {plural(chosen.length, 'word')}</button>
-					<button type="button" class="secondary" onclick={() => (confirming = false)}>Cancel</button>
+					<button type="button" class="danger" onclick={remove}>{t('flashcards.deck.deleteWords', { count: chosen.length })}</button>
+					<button type="button" class="secondary" onclick={() => (confirming = false)}>{t('common.action.cancel')}</button>
 				</div>
 			{/if}
 
 			{#if filtered.length === 0}
-				<p class="hint">No words match.</p>
+				<p class="hint">{t('flashcards.deck.noMatch')}</p>
 			{/if}
 			<ul class="rows">
 				{#each shown as row (row.entryId)}
@@ -436,17 +442,19 @@
 							<input
 								class="pick"
 								type="checkbox"
-								aria-label={`Select ${row.written}`}
+								aria-label={t('flashcards.deck.select', { word: row.written })}
 								checked={chosen.includes(row.entryId)}
 								onchange={() => (selected = toggleNum(selected, row.entryId))}
 							/>
-							<a class="word" href={`/entry/${row.entryId}`}>{row.written}</a>
-							<span class="reading">{readingBeside(row.written, bases.get(row.entryId)?.readings ?? [])}</span>
+							<a class="word" href={`/entry/${row.entryId}`} lang={studyLang($workspaces.current?.language)}>{row.written}</a>
+							<span class="reading" lang={wordReadingLang($workspaces.current?.language)}
+								>{readingBeside(row.written, bases.get(row.entryId)?.readings ?? [])}</span
+							>
 							<span class="state">{WORD_STATES.find((s) => s.state === row.state)?.label}</span>
 							<span class="chips">
 								{#each chips(row) as chip (chip.kind)}
 									<span class="chip" class:off={chip.off}
-										>{KIND_LABEL[chip.kind]}{chip.off ? ' off' : ''}</span
+										>{chip.off ? t('flashcards.deck.kindOff', { kind: kindLabel(chip.kind) }) : kindLabel(chip.kind)}</span
 									>
 								{/each}
 							</span>
@@ -455,7 +463,7 @@
 								type="button"
 								class="more"
 								aria-expanded={expanded.includes(row.entryId)}
-								aria-label={`Cards of ${row.written}`}
+								aria-label={t('flashcards.deck.cardsOf', { word: row.written })}
 								onclick={() => (expanded = toggleNum(expanded, row.entryId))}
 								>{expanded.includes(row.entryId) ? '▴' : '▾'}</button
 							>
@@ -465,33 +473,37 @@
 								{#each OPT_IN_KINDS.filter((k) => enabled.has(k)) as k (k)}
 									{@const ids = siblingIds(row, k)}
 									<li>
-										<span>{KIND_LABEL[k]} card{ids.length === 0 && !row.skipped.includes(k) ? ' (made when studied)' : ''}</span>
+										<span
+											>{ids.length === 0 && !row.skipped.includes(k)
+												? t('flashcards.deck.kindCardLater', { kind: kindLabel(k) })
+												: t('flashcards.deck.kindCard', { kind: kindLabel(k) })}</span
+										>
 										{#if row.skipped.includes(k)}
 											<button
 												type="button"
 												disabled={controller.busy}
-												aria-label={`Turn ${KIND_LABEL[k]} back on`}
-												onclick={() => void actions.unskip(row.entryId, k)}>Turn back on</button
+												aria-label={t('flashcards.deck.turnBackOnNamed', { kind: kindLabel(k) })}
+												onclick={() => void actions.unskip(row.entryId, k)}>{t('flashcards.deck.turnBackOn')}</button
 											>
 										{:else if ids.length > 0}
 											<button
 												type="button"
 												disabled={controller.busy}
-												aria-label={`Remove ${KIND_LABEL[k]}`}
-												onclick={() => void actions.dropKind(ids)}>Remove</button
+												aria-label={t('flashcards.deck.removeNamed', { kind: kindLabel(k) })}
+												onclick={() => void actions.dropKind(ids)}>{t('flashcards.deck.remove')}</button
 											>
 										{:else if row.vocab !== null}
 											<button
 												type="button"
 												disabled={controller.busy}
-												aria-label={`Remove ${KIND_LABEL[k]}`}
-												onclick={() => void actions.skip(row.entryId, k)}>Remove</button
+												aria-label={t('flashcards.deck.removeNamed', { kind: kindLabel(k) })}
+												onclick={() => void actions.skip(row.entryId, k)}>{t('flashcards.deck.remove')}</button
 											>
 										{/if}
 									</li>
 								{/each}
 								{#if OPT_IN_KINDS.every((k) => !enabled.has(k))}
-									<li class="hint">Turn on Reverse or Cloze in the deck settings to manage them here.</li>
+									<li class="hint">{t('flashcards.deck.optInHint')}</li>
 								{/if}
 							</ul>
 						{/if}
@@ -500,7 +512,7 @@
 			</ul>
 			{#if remaining > 0}
 				<button type="button" class="moreRows" onclick={() => (pages += 1)}
-					>Show {Math.min(PAGE_SIZE, remaining)} more</button
+					>{t('flashcards.deck.showMore', { count: Math.min(PAGE_SIZE, remaining) })}</button
 				>
 			{/if}
 		{/if}
@@ -520,7 +532,7 @@
 				onfocusout={() => actions.resumeTimer()}
 			>
 				<span>{controller.undo.text}</span>
-				<button type="button" disabled={controller.busy} onclick={() => void actions.undo()}>Undo</button>
+				<button type="button" disabled={controller.busy} onclick={() => void actions.undo()}>{t('flashcards.deck.undo')}</button>
 			</div>
 		{/if}
 	</div>

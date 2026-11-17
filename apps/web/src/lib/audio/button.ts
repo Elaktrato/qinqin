@@ -1,3 +1,4 @@
+import { t } from '../i18n';
 import type { AudioClip, AudioResolution } from '../api/audio';
 import type { Reading } from '../api/types';
 import { deviceVoiceFor, type Player } from './player';
@@ -25,7 +26,7 @@ export function creditLine(clips: AudioClip[]): string {
 		const credit = c.attribution.includes(c.license) ? c.attribution : `${c.attribution} · ${c.license}`;
 		if (!seen.includes(credit)) seen.push(credit);
 	}
-	return seen.length ? `Audio: ${seen.join('; ')}` : '';
+	return seen.length ? t('common.audio.credit', { credits: seen.join('; ') }) : '';
 }
 
 /**
@@ -36,7 +37,7 @@ export function creditLine(clips: AudioClip[]): string {
 export function buttonState(i: ButtonInput): ButtonState {
 	if (i.clips.length > 0) return { visible: true, mode: 'clips', title: creditLine(i.clips) };
 	const voice = i.deviceVoice && !!i.speakText && i.voiceAvailable;
-	return { visible: voice, mode: 'voice', title: 'Device voice' };
+	return { visible: voice, mode: 'voice', title: t('common.audio.deviceVoice') };
 }
 
 /**
@@ -97,7 +98,7 @@ export function readingClips(
 
 /** playLabel is the accessible name of a play button: it says what it pronounces. */
 export function playLabel(what: string | undefined): string {
-	return what ? `Play pronunciation of ${what}` : 'Play pronunciation';
+	return what ? t('common.audio.playNamed', { what }) : t('common.audio.play');
 }
 
 /**

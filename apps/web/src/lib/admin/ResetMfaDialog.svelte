@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '$lib/i18n';
 	import { onMount, tick } from 'svelte';
 	import { apiErrorBody } from '$lib/api/client';
 	import { resetUserMfa } from '$lib/api/adminUsers';
@@ -90,15 +91,15 @@
 	onclose={() => finish(false)}
 >
 	<form onsubmit={submit}>
-		<h2 id="{uid}-title">Reset two-step sign-in for “{username}”?</h2>
+		<h2 id="{uid}-title">{t('admin.mfaReset.title', { name: username })}</h2>
 		<ul id="{uid}-what">
 			{#each resetLines(mfa) as line (line)}<li>{line}</li>{/each}
 		</ul>
 		<ReauthFields bind:this={fields} bind:password bind:code {needsCode} />
 		{#if error}<p class="error" role="alert">{error}</p>{/if}
 		<div class="buttons">
-			<button type="button" onclick={() => finish(false)} disabled={busy}>Cancel</button>
-			<button type="submit" class="danger" disabled={!ready}>Reset two-step sign-in</button>
+			<button type="button" onclick={() => finish(false)} disabled={busy}>{t('common.action.cancel')}</button>
+			<button type="submit" class="danger" disabled={!ready}>{t('admin.mfaReset.submit')}</button>
 		</div>
 	</form>
 </dialog>

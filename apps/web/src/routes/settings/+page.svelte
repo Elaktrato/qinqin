@@ -1,11 +1,13 @@
 <script lang="ts">
 	import { pageTitle } from '$lib/pageTitle';
+	import { t } from '$lib/i18n';
 	import { onMount, tick } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
 	import { ApiError, api } from '$lib/api/client';
 	import { getSchemes } from '$lib/api/schemes';
 	import type { Dictionary, PluginInfo, Scheme, Workspace } from '$lib/api/types';
+	import { pluginName as manifestPluginName } from '$lib/plugins/manifestText';
 	import { coverage, dictionaryHint, levelsHint } from '$lib/coverage';
 	import DeleteWorkspaceDialog from '$lib/components/DeleteWorkspaceDialog.svelte';
 	import WorkspaceCreateForm from '$lib/components/WorkspaceCreateForm.svelte';
@@ -108,7 +110,7 @@
 
 	function pluginName(plugin: PluginInfo): string {
 		const name = plugin.manifest?.name;
-		return typeof name === 'string' && name.trim() ? name : plugin.id;
+		return manifestPluginName({ id: plugin.id, name: typeof name === 'string' && name.trim() ? name : plugin.id });
 	}
 
 	async function loadPlugins(): Promise<void> {
@@ -128,7 +130,7 @@
 				error: ''
 			}));
 		} catch (err) {
-			pluginsError = message(err, 'Could not load plugins.');
+			pluginsError = message(err, t('settings.plugins.loadFailed'));
 		} finally {
 			pluginsLoading = false;
 		}
@@ -179,6 +181,12 @@
 		renameError = '';
 	}
 
+	/** "中文 (Novels)", or the language alone for an unnamed workspace. */
+	function workspaceName(workspace: { language: string; name?: string | null }): string {
+		const language = languageLabel(workspace.language);
+		return workspace.name ? t('settings.workspaces.labelNamed', { language, name: workspace.name }) : language;
+	}
+
 	async function saveRename(event: SubmitEvent, workspace: Workspace): Promise<void> {
 		event.preventDefault();
 		if (renameSaving) return;
@@ -190,8 +198,8 @@
 		} catch (err) {
 			renameError =
 				err instanceof ApiError && err.status === 409
-					? 'Another workspace of this language already has that name.'
-					: message(err, 'Could not rename the workspace.');
+					? t('settings.workspaces.nameTaken')
+					: message(err, t('settings.workspaces.renameFailed'));
 		} finally {
 			renameSaving = false;
 		}
@@ -217,7 +225,7 @@
 			// The shell nav and /p/<plugin> read the shared store.
 			void loadPluginStates();
 		} catch (err) {
-			row.error = message(err, 'Could not save plugin state.');
+			row.error = message(err, t('settings.plugins.saveFailed'));
 		} finally {
 			row.saving = false;
 		}
@@ -229,9 +237,9 @@
 </svelte:head>
 
 <main class="settings">
-	<h1>Settings</h1>
+	<h1>{t('settings.title')}</h1>
 
-	<div class="tabs" role="tablist" aria-label="Settings">
+	<div class="tabs" role="tablist" aria-label={t('settings.tabsLabel')}>
 		{#each tabs as tab, index (tab)}
 			<button
 				type="button"
@@ -255,12 +263,8 @@
 		aria-labelledby="settings-tab-workspaces"
 		hidden={activeTab !== 'workspaces'}
 	>
-		<h2 bind:this={workspacesHeading} tabindex="-1">Workspaces</h2>
-		<p class="hint">
-			Each workspace keeps its own cards, library and progress. You can have several of the same
-			language; give them names to tell them apart. The switcher in the header changes the active
-			one.
-		</p>
+		<h2 bind:this={workspacesHeading} tabindex="-1">{t('settings.workspaces.title')}</h2>
+		<p class="hint">{t('settings.workspaces.hint')}</p>
 
 		{#if $workspaces.list.length === 0 && !$workspacesLoaded && $workspacesLoadError}
 			<p class="error" role="alert">{$workspacesLoadError}</p>
@@ -269,14 +273,14 @@
 				onclick={() => {
 					workspacesLoadError.set('');
 					loadWorkspaces().catch((err) =>
-						workspacesLoadError.set(message(err, 'Could not load workspaces.'))
+						workspacesLoadError.set(message(err, t('app.workspaces.loadFailed')))
 					);
-				}}>Try again</button
+				}}>{t('common.action.retry')}</button
 			>
 		{:else if $workspaces.list.length === 0 && !$workspacesLoaded}
-			<p class="hint" aria-live="polite">Loading workspaces…</p>
+			<p class="hint" aria-live="polite">{t('settings.workspaces.loading')}</p>
 		{:else if $workspaces.list.length === 0}
-			<p>No workspaces yet.</p>
+			<p>{t('settings.workspaces.none')}</p>
 		{:else}
 			<ul class="workspaces">
 				{#each $workspaces.list as workspace (workspace.id)}
@@ -284,13 +288,13 @@
 						{#if renamingId === workspace.id}
 							<form class="rename" onsubmit={(event) => saveRename(event, workspace)}>
 								<WorkspaceLabel {workspace} list={$workspaces.list} withLanguage size={18} />
-								<label class="sr-only" for="rename-{workspace.id}">Workspace name</label>
+								<label class="sr-only" for="rename-{workspace.id}">{t('settings.workspaces.name')}</label>
 								<input
 									id="rename-{workspace.id}"
 									bind:value={renameDraft}
 									maxlength="40"
 									autocomplete="off"
-									placeholder="No name"
+									placeholder={t('settings.workspaces.noName')}
 									use:focusOnMount
 									onkeydown={(event) => {
 										if (event.key === 'Escape') {
@@ -301,9 +305,9 @@
 								/>
 								<!-- Not disabled while saving, so keyboard focus stays put. -->
 								<button type="submit" aria-busy={renameSaving}>
-									{renameSaving ? 'Saving…' : 'Save'}
+									{renameSaving ? t('common.state.saving') : t('common.action.save')}
 								</button>
-								<button type="button" class="secondary" onclick={cancelRename}>Cancel</button>
+								<button type="button" class="secondary" onclick={cancelRename}>{t('common.action.cancel')}</button>
 							</form>
 							{#if renameError}
 								<p class="error" role="alert">{renameError}</p>
@@ -312,13 +316,13 @@
 							<div class="row">
 								<WorkspaceLabel {workspace} list={$workspaces.list} withLanguage size={18} />
 								{#if $workspaces.current?.id === workspace.id}
-									<span class="current">current</span>
+									<span class="current">{t('settings.workspaces.current')}</span>
 								{/if}
 								{#if allDictionaries !== null && coverageOf(workspace).dictionaries.length === 0}
-									<span class="chip" title={dictionaryHint(languageLabel(workspace.language), admin)}>No dictionary</span>
+									<span class="chip" title={dictionaryHint(languageLabel(workspace.language), admin)}>{t('settings.workspaces.noDictionary')}</span>
 								{/if}
 								{#if allSchemes !== null && coverageOf(workspace).levels === 0}
-									<span class="chip" title={levelsHint(languageLabel(workspace.language))}>No level lists</span>
+									<span class="chip" title={levelsHint(languageLabel(workspace.language))}>{t('settings.workspaces.noLevels')}</span>
 								{/if}
 								<button
 									type="button"
@@ -326,21 +330,17 @@
 									bind:this={dictionaryButtons[workspace.id]}
 									onclick={() => (dictionariesOpenId = dictionariesOpenId === workspace.id ? null : workspace.id)}
 									aria-expanded={dictionariesOpenId === workspace.id}
-									aria-label="Dictionaries of {languageLabel(workspace.language)}{workspace.name
-										? ` (${workspace.name})`
-										: ''} workspace"
+									aria-label={t('settings.workspaces.dictionariesOf', { workspace: workspaceName(workspace) })}
 								>
-									Dictionaries
+									{t('settings.workspaces.dictionaries')}
 								</button>
 								<button
 									type="button"
 									class="secondary rename-button"
 									onclick={() => startRename(workspace)}
-									aria-label="Rename {languageLabel(workspace.language)}{workspace.name
-										? ` (${workspace.name})`
-										: ''} workspace"
+									aria-label={t('settings.workspaces.renameOf', { workspace: workspaceName(workspace) })}
 								>
-									Rename
+									{t('settings.workspaces.rename')}
 								</button>
 								{#if $workspaces.list.length > 1}
 									<button
@@ -348,11 +348,9 @@
 										class="secondary delete-button"
 										bind:this={deleteButtons[workspace.id]}
 										onclick={() => (deleting = workspace)}
-										aria-label="Delete {languageLabel(workspace.language)}{workspace.name
-											? ` (${workspace.name})`
-											: ''} workspace"
+										aria-label={t('settings.workspaces.deleteOf', { workspace: workspaceName(workspace) })}
 									>
-										Delete
+										{t('common.action.delete')}
 									</button>
 								{/if}
 							</div>
@@ -369,7 +367,7 @@
 				{/each}
 			</ul>
 			{#if $workspaces.list.length === 1}
-				<p class="hint">Your only workspace cannot be deleted; create another one first.</p>
+				<p class="hint">{t('settings.workspaces.onlyOne')}</p>
 			{/if}
 		{/if}
 
@@ -379,11 +377,8 @@
 
 		{#if $workspaces.current}
 			{@const active = $workspaces.current}
-			<h3>Audio for this workspace</h3>
-			<p class="hint">
-				Pronunciation buttons appear on entries and, after the answer, on study cards. These two
-				options belong to the current workspace.
-			</p>
+			<h3>{t('settings.workspaces.audioTitle')}</h3>
+			<p class="hint">{t('settings.workspaces.audioHint')}</p>
 			<AudioSettings
 				settings={active.settings}
 				onChange={async (patch) => {
@@ -392,7 +387,7 @@
 			/>
 		{/if}
 
-		<h3>New workspace</h3>
+		<h3>{t('settings.workspaces.new')}</h3>
 		<WorkspaceCreateForm idPrefix="settings-new" />
 	</div>
 
@@ -430,19 +425,15 @@
 		aria-labelledby="settings-tab-plugins"
 		hidden={activeTab !== 'plugins'}
 	>
-		<h2>Plugins</h2>
-		<p class="hint">
-			The server registers built-in plugins at startup. A disabled plugin's pages and widgets are
-			hidden everywhere. The order sets the plugins' place in the navigation; the home page
-			follows your widget layout instead.
-		</p>
+		<h2>{t('settings.plugins.title')}</h2>
+		<p class="hint">{t('settings.plugins.hint')}</p>
 
 		{#if pluginsLoading}
-			<p>Loading plugins…</p>
+			<p>{t('settings.plugins.loading')}</p>
 		{:else if pluginsError}
 			<p class="error" role="alert">{pluginsError}</p>
 		{:else if plugins.length === 0}
-			<p>No plugins are registered.</p>
+			<p>{t('settings.plugins.none')}</p>
 		{:else}
 			<ul class="plugins">
 				{#each plugins as plugin (plugin.id)}
@@ -451,13 +442,13 @@
 							<strong>{plugin.name}</strong>
 							<code>{plugin.id}</code>
 							{#if plugin.notice === 'app-update'}
-								<span class="needs-update">Needs an app update</span>
+								<span class="needs-update">{t('settings.plugins.needsUpdate')}</span>
 							{:else if plugin.notice === 'legacy'}
-								<span class="needs-update">Plugin has no SDK declaration (legacy)</span>
+								<span class="needs-update">{t('settings.plugins.legacy')}</span>
 							{/if}
 						</div>
 						{#if plugin.permissions}
-							<p class="plugin-permissions"><span class="plugin-permissions-label">Permissions:</span> {plugin.permissions}</p>
+							<p class="plugin-permissions"><span class="plugin-permissions-label">{t('settings.plugins.permissions')}</span> {plugin.permissions}</p>
 						{/if}
 
 						<div class="plugin-controls">
@@ -467,11 +458,11 @@
 									bind:checked={plugin.enabled}
 									onchange={() => (plugin.saved = false)}
 								/>
-								Enabled
+								{t('settings.plugins.enabled')}
 							</label>
 
 							<label class="inline">
-								Order
+								{t('settings.plugins.order')}
 								<input
 									type="number"
 									min="0"
@@ -486,14 +477,14 @@
 								onclick={() => savePlugin(plugin)}
 								disabled={plugin.saving || !validOrder(plugin.order)}
 							>
-								{plugin.saving ? 'Saving…' : 'Save'}
+								{plugin.saving ? t('common.state.saving') : t('common.action.save')}
 							</button>
 							{#if !validOrder(plugin.order)}
-								<span class="error" role="alert">Enter a whole number of 0 or more.</span>
+								<span class="error" role="alert">{t('settings.plugins.orderInvalid')}</span>
 							{/if}
 
 							{#if plugin.saved}
-								<span class="saved">Saved</span>
+								<span class="saved">{t('settings.plugins.saved')}</span>
 							{/if}
 						</div>
 
@@ -531,7 +522,7 @@
 			aria-labelledby="settings-tab-data"
 			hidden={activeTab !== 'data'}
 		>
-			<h2>Data</h2>
+			<h2>{t('settings.data.title')}</h2>
 			<PackManager
 				onchange={() => {
 					languagesKey += 1;
@@ -546,7 +537,7 @@
 			aria-labelledby="settings-tab-admin"
 			hidden={activeTab !== 'admin'}
 		>
-			<h2>Admin</h2>
+			<h2>{t('settings.adminPanel.title')}</h2>
 			{#if activeTab === 'admin'}<AdminSettings />{/if}
 		</div>
 	{/if}

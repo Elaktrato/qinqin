@@ -3,6 +3,7 @@
 	// description list and the seven-day strip. Every word and number comes
 	// from weekText.ts (summaryLines); this component only lays them out.
 	import { MILESTONE_TEXT } from '$lib/milestones/milestoneText';
+	import { t } from '$lib/i18n';
 	import { milestonesInWeek, type HistoryItem } from '$lib/milestones/plan';
 	import type { WeekView } from './loadWeek';
 	import WeekStrip from './WeekStrip.svelte';
@@ -40,14 +41,14 @@
 <div class="week-summary" class:compact>
 	{#if view.summary.inProgress || view.summary.allVacation}
 		<p class="labels">
-			{#if view.summary.inProgress}<span class="badge">In progress</span>{/if}
-			{#if view.summary.allVacation}<span class="badge">On vacation all week</span>{/if}
+			{#if view.summary.inProgress}<span class="badge">{t('weekly.badge.inProgress')}</span>{/if}
+			{#if view.summary.allVacation}<span class="badge">{t('weekly.badge.allVacation')}</span>{/if}
 		</p>
 	{/if}
 	{#if offline !== null}
 		<p class="offline" role="status">
 			{offline}
-			{#if onretry}<button type="button" class="retry" onclick={onretry}>Retry</button>{/if}
+			{#if onretry}<button type="button" class="retry" onclick={onretry}>{t('weekly.retry')}</button>{/if}
 		</p>
 	{/if}
 	<p class="window">{compareWindowText(view.summary, locale)}</p>

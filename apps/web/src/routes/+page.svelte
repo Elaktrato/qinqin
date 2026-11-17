@@ -3,6 +3,8 @@
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { APP_NAME } from '$lib/app';
+	import { t } from '$lib/i18n';
+	import Msg from '$lib/i18n/Msg.svelte';
 	import EmailBanner from '$lib/account/EmailBanner.svelte';
 	import HomeMilestones from '$lib/milestones/HomeMilestones.svelte';
 	import { webPlugins } from '$lib/plugins';
@@ -58,10 +60,10 @@
 			name="q"
 			type="search"
 			bind:value={query}
-			aria-label="Search entries"
-			placeholder="Search entries…"
+			aria-label={t('app.home.searchLabel')}
+			placeholder={t('app.home.searchPlaceholder')}
 		/>
-		<button type="submit">Search</button>
+		<button type="submit">{t('app.home.searchButton')}</button>
 	</form>
 
 	<!-- Not a widget: a stored layout must never hide it (milestones contract). -->
@@ -80,9 +82,9 @@
 		{:else if hasPlugins}
 			<p class="empty">
 				{emptyReason === 'none-chosen'
-					? 'Your home page has no widgets.'
-					: 'None of your home widgets is available in this workspace.'}
-				<a href="/settings?tab=home">Choose widgets in Settings</a>.
+					? t('app.home.noWidgets')
+					: t('app.home.noWidgetsHere')}
+				<Msg key="app.home.chooseWidgets">{#snippet link(text: string)}<a href="/settings?tab=home">{text}</a>{/snippet}</Msg>
 			</p>
 		{/if}
 	{/if}

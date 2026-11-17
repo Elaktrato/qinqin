@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { t } from '$lib/i18n';
+	import Msg from '$lib/i18n/Msg.svelte';
 	import { deleteBook, listAllBooks, listBooks, uploadBook } from '$lib/api/library';
 	import type { Book } from '$lib/api/types';
 	import WorkspaceLabel from '$lib/components/WorkspaceLabel.svelte';
@@ -86,7 +88,7 @@
 			return;
 		}
 		if (file.size > MAX_BYTES) {
-			actionError = 'This file is too large (max 20 MB).';
+			actionError = t('reader.error.fileTooLarge');
 			el.value = '';
 			return;
 		}
@@ -95,7 +97,7 @@
 			// The language fills in for an epub that does not declare one.
 			const book = await uploadBook(file, id, bookLanguage);
 			if (id === workspaceId) books = [book, ...books];
-			status = `Added "${book.title}".`;
+			status = t('reader.library.added', { title: book.title });
 		} catch (err) {
 			actionError = apiErrorMessage(err, 'upload');
 		} finally {
@@ -111,7 +113,7 @@
 		try {
 			await deleteBook(book.id);
 			books = books.filter((b) => b.id !== book.id);
-			status = `Deleted "${book.title}".`;
+			status = t('reader.library.deleted', { title: book.title });
 			confirmingId = null;
 		} catch (err) {
 			actionError = apiErrorMessage(err, 'delete');
@@ -123,20 +125,19 @@
 
 <main class="library">
 	<h1 class="heading">
-		Library
+		{t('reader.library.title')}
 		{#if workspace}<WorkspaceLabel {workspace} list={$workspaces.list} size={18} />{/if}
 	</h1>
 
 	{#if workspace}
 		<section class="upload" aria-labelledby="upload-heading">
-			<h2 id="upload-heading">Add an epub</h2>
+			<h2 id="upload-heading">{t('reader.library.addEpub')}</h2>
 			{#if bookLanguage}
 				<p class="hint">
-					Books go to this workspace's library and must be in {languageLabel(bookLanguage)}. A
-					file that does not declare its language is read as {languageLabel(bookLanguage)}.
+					{t('reader.library.languageHint', { language: languageLabel(bookLanguage) })}
 				</p>
 				<div class="row">
-					<label for="epub-file">Epub file (max 20 MB)</label>
+					<label for="epub-file">{t('reader.library.file')}</label>
 					<input
 						id="epub-file"
 						type="file"
@@ -146,47 +147,44 @@
 					/>
 				</div>
 				<p>
-					Or <a href={SOURCES_HREF}>browse public-domain texts</a> from Aozora Bunko and Project
-					Gutenberg.
+					<Msg key="reader.library.browse">{#snippet link(text: string)}<a href={SOURCES_HREF}>{text}</a>{/snippet}</Msg>
 				</p>
 			{:else}
 				<p class="hint">
-					The reader supports Chinese and Japanese books. Switch to a Chinese or Japanese
-					workspace to add books.
+					{t('reader.library.unsupported')}
 				</p>
 			{/if}
 		</section>
 	{/if}
 
 	<p class="status" role="status" aria-live="polite">
-		{#if uploading}Uploading…{:else}{status}{/if}
+		{#if uploading}{t('reader.library.uploading')}{:else}{status}{/if}
 	</p>
 	{#if actionError}
 		<p class="error" role="alert">{actionError}</p>
 	{/if}
 
 	{#if loading}
-		<p>Loading your library…</p>
+		<p>{t('reader.library.loading')}</p>
 	{:else if loadError}
 		<p class="error" role="alert">{loadError}</p>
-		<button type="button" onclick={() => workspaceId !== null && load(workspaceId)}>Retry</button>
+		<button type="button" onclick={() => workspaceId !== null && load(workspaceId)}>{t('reader.library.retry')}</button>
 	{:else if books.length === 0}
 		<p>
-			This workspace's library is empty.{#if bookLanguage}
-				Upload an epub or import a text from a source.{/if}
+			{t('reader.library.empty')}{#if bookLanguage}
+				{t('reader.library.emptyHint')}{/if}
 		</p>
 		{#if others.length > 0}
 			<section class="elsewhere" aria-labelledby="elsewhere-heading">
-				<h2 id="elsewhere-heading">Your books in other workspaces</h2>
+				<h2 id="elsewhere-heading">{t('reader.library.elsewhere')}</h2>
 				<ul>
 					{#each others as { workspace: other, count } (other.id)}
 						<li>
 							<span>
-								{count}
-								{count === 1 ? 'book' : 'books'} in
+								{t('reader.library.booksIn', { count })}
 								<WorkspaceLabel workspace={other} list={$workspaces.list} withLanguage />
 							</span>
-							<button type="button" onclick={() => select(other.id)}>Switch to this workspace</button>
+							<button type="button" onclick={() => select(other.id)}>{t('reader.library.switch')}</button>
 						</li>
 					{/each}
 				</ul>
@@ -203,25 +201,24 @@
 							href={bookHref(book.id, savedChapter(book.position, book.chapterCount))}>{book.title}</a
 						>
 						<span class="meta">
-							<span lang={book.language}>{book.author || 'Unknown author'}</span> · {languageLabel(
+							<span lang={book.language}>{book.author || t('reader.library.unknownAuthor')}</span> · {languageLabel(
 								book.language
-							)} · {book.source} · {book.chapterCount}
-							{book.chapterCount === 1 ? 'chapter' : 'chapters'}
+							)} · {book.source} · {t('reader.library.chapters', { count: book.chapterCount })}
 						</span>
 					</div>
 					{#if confirmingId === book.id}
-						<span class="confirm" role="group" aria-label="Confirm delete of {book.title}">
-							Delete this book?
+						<span class="confirm" role="group" aria-label={t('reader.library.confirmDelete', { title: book.title })}>
+							{t('reader.library.deleteQuestion')}
 							<button type="button" onclick={() => remove(book)} disabled={deletingId === book.id}>
-								Yes, delete
+								{t('reader.editor.yesDelete')}
 							</button>
-							<button type="button" onclick={() => (confirmingId = null)}>Cancel</button>
+							<button type="button" onclick={() => (confirmingId = null)}>{t('common.action.cancel')}</button>
 						</span>
 					{:else}
 						<button
 							type="button"
-							aria-label="Delete {book.title}"
-							onclick={() => (confirmingId = book.id)}>Delete</button
+							aria-label={t('reader.library.deleteNamed', { title: book.title })}
+							onclick={() => (confirmingId = book.id)}>{t('reader.editor.delete')}</button
 						>
 					{/if}
 				</li>

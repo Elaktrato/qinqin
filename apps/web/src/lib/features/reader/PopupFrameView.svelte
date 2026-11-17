@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { t } from '$lib/i18n';
+	import Msg from '$lib/i18n/Msg.svelte';
 	import { hiddenFor } from '$lib/dictionaryVisibility';
 	import { workspaces } from '$lib/workspaces';
 	import EntryCard from './EntryCard.svelte';
@@ -88,7 +90,7 @@
 	data-lookup-popup
 	role="dialog"
 	tabindex="-1"
-	aria-label="Dictionary: {frame.text}"
+	aria-label={t('reader.popup.label', { text: frame.text })}
 	style:left="{position.left}px"
 	style:top="{position.top}px"
 	style:max-height="min(26rem, {position.maxHeight}px)"
@@ -100,7 +102,7 @@
 	<div class="inner" bind:offsetHeight={contentHeight}>
 		<div class="bar">
 			{#if isRoot && info.mode === 'selection'}<span class="selected" lang={info.textLang}>{frame.text}</span>{/if}
-			<button type="button" class="close" aria-label="Close" onclick={() => lookup.closeFrame(frame.id)}>×</button>
+			<button type="button" class="close" aria-label={t('reader.popup.close')} onclick={() => lookup.closeFrame(frame.id)}>×</button>
 		</div>
 		{#if isRoot && info.mode === 'selection' && highlighter}<HighlightBar actions={highlighter} />{/if}
 		<div class="content" aria-live="polite">
@@ -108,16 +110,20 @@
 			{#if frame.error}
 				<p class="error">{frame.error}</p>
 			{:else if frame.results === null}
-				<p class="hint">Looking up…</p>
+				<p class="hint">{t('reader.popup.lookingUp')}</p>
 			{:else if results.length === 0}
-				<p class="hint">No dictionary entry found for <span lang={info.textLang}>{frame.text}</span>.</p>
+				<p class="hint">
+					<Msg key="reader.popup.none" args={{ text: frame.text }}
+						>{#snippet term(text: string)}<span lang={info.textLang}>{text}</span>{/snippet}</Msg
+					>
+				</p>
 			{:else}
 				{#each results.slice(0, visible) as result, i (`${result.entryId}:${result.kind}:${i}`)}
 					<EntryCard {result} lang={info.lang} textLang={info.textLang} {study} hidden={hiddenIds} first={isRoot && i === 0} />
 				{/each}
 				{#if hidden > 0}
 					<button type="button" class="more" onclick={() => (shown = visibleCount(results.length, shown))}>
-						{moreLabel(hidden, 'entry', 'entries')}
+						{moreLabel(hidden, 'entry')}
 					</button>
 				{/if}
 			{/if}

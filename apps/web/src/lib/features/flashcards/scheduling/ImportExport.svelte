@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '$lib/i18n';
 	import { formatWeights, parseWeightString } from '$lib/study/fsrs/params';
 
 	let {
@@ -32,21 +33,21 @@
 			error = '';
 		} catch {
 			copied = false;
-			error = 'Could not copy. Select the weights below instead.';
+			error = t('flashcards.sched.copyFailed');
 		}
 	}
 </script>
 
 <section aria-labelledby="import-heading">
-	<h2 id="import-heading">Import / export</h2>
+	<h2 id="import-heading">{t('flashcards.sched.importExport')}</h2>
 	<label>
-		Parameters (17, 19 or 21 numbers, as in Anki)
+		{t('flashcards.sched.parameters')}
 		<textarea rows="3" bind:value={text} oninput={() => (error = '')}></textarea>
 	</label>
 	<div class="row">
-		<button type="button" disabled={busy || text.trim() === ''} onclick={doImport}>Import</button>
-		<button type="button" onclick={copy}>Copy active</button>
-		{#if copied}<span role="status">Copied.</span>{/if}
+		<button type="button" disabled={busy || text.trim() === ''} onclick={doImport}>{t('flashcards.sched.import')}</button>
+		<button type="button" onclick={copy}>{t('flashcards.sched.copyActive')}</button>
+		{#if copied}<span role="status">{t('flashcards.sched.copied')}</span>{/if}
 	</div>
 	{#if error}
 		<p class="error" role="alert">{error}</p>

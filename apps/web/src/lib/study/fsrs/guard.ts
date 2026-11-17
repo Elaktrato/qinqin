@@ -1,5 +1,6 @@
 // Small checks the scheduling page makes before it trusts what it holds.
 
+import { t } from '$lib/i18n';
 import { weightsKey, type FsrsState } from './params';
 
 /** sameWeights compares two weight lists by value. */
@@ -19,7 +20,7 @@ export function shouldRestorePointer(storedPointer: string | null, wrote: string
 /** activeProblem explains an active pointer whose set cannot be read. */
 export function activeProblem(state: FsrsState): string | null {
 	if (state.pointer !== null && state.pointer !== undefined && state.active === null) {
-		return 'The active parameters could not be read, so the default parameters are used.';
+		return t('study.fsrs.activeUnreadable');
 	}
 	return null;
 }
