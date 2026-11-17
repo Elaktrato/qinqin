@@ -92,6 +92,24 @@ describe('Dialog', () => {
 		expect(onclose).toHaveBeenCalledTimes(1);
 	});
 
+	it('without showModal (the fallback) the page around it is inert while open, and only then', async () => {
+		const { opener } = await open();
+		expect(opener.closest('[inert]')).not.toBeNull();
+		const dialog = screen.getByRole('dialog');
+		expect(dialog.closest('[inert]')).toBeNull();
+		await fireEvent.keyDown(dialog, { key: 'Escape' });
+		expect(document.querySelector('[inert]')).toBeNull();
+	});
+
+	it('the fallback leaves alone what was inert before', async () => {
+		const outside = document.body.appendChild(document.createElement('div'));
+		outside.setAttribute('inert', '');
+		const { dialog } = await open();
+		await fireEvent.keyDown(dialog, { key: 'Escape' });
+		expect(outside.hasAttribute('inert')).toBe(true);
+		outside.remove();
+	});
+
 	it('describedBy names content inside the dialog as its description instead', () => {
 		render(DialogHarness, { startOpen: true, describedBy: 'harness-what' });
 		expect(screen.getByRole('dialog', { description: 'Three decks go.' })).toBeTruthy();
