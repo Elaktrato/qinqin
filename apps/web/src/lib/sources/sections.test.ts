@@ -209,6 +209,16 @@ describe('pluginCredits', () => {
 		expect(opencc).toEqual(READER_V030_SOURCES[2]);
 	});
 
+	it('credits the bundled interface font (Figtree, SIL OFL 1.1) with its licence text', () => {
+		const figtree = coreCredits.find((credit) => credit.name === 'Figtree')!;
+		expect(figtree).toBeDefined();
+		expect(figtree.url).toBe('https://github.com/erikdkennedy/figtree');
+		expect(figtree.license).toBe('OFL-1.1');
+		expect(figtree.attribution).toBe('Copyright 2022 The Figtree Project Authors');
+		expect(figtree.licenseTexts).toEqual([{ label: 'OFL-1.1 license text', path: '/FIGTREE-OFL.TXT' }]);
+		expect(figtree.notice).toMatch(/interface font/i);
+	});
+
 	it('credits the plugin sources from the real registry', () => {
 		const result = pluginCredits(
 			webPlugins.map((plugin) => plugin.manifest),
@@ -245,6 +255,7 @@ describe('declared credits', () => {
 		const paths = all.flatMap((credit) => (credit.licenseTexts ?? []).map((text) => text.path));
 		expect(paths.sort()).toEqual([
 			'/ANTHROPIC-SDK-GO-LICENSE.TXT',
+			'/FIGTREE-OFL.TXT',
 			'/LEPTONICA-LICENSE.TXT',
 			'/OPENCC-APACHE-2.0.TXT',
 			'/OPENCC-JS-LICENSE.TXT',
