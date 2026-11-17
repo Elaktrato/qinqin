@@ -49,6 +49,8 @@ export interface Derived {
 	readableBad: string;
 	/** Secondary text: `muted` when it is at least 4.5:1 on panel, else `text`. */
 	readableMuted: string;
+	/** The focus ring: `accent` when it is at least 3:1 on panel, raised and chrome, else `text`. */
+	focusRing: string;
 	highlightWash: string;
 	/** The reader's highlight colours, named by their hue (yellow = warn). */
 	highlights: { yellow: string; green: string; blue: string; pink: string };

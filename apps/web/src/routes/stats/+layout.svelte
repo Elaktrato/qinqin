@@ -117,7 +117,7 @@
 	}
 
 	.tab:focus-visible {
-		outline: 2px solid var(--accent);
+		outline: 2px solid var(--focus-colour);
 		outline-offset: -2px;
 		border-radius: 0.4rem 0.4rem 0 0;
 	}
@@ -127,7 +127,7 @@
 	}
 
 	.panel:focus-visible {
-		outline: 2px solid var(--accent);
+		outline: 2px solid var(--focus-colour);
 		outline-offset: 0.5rem;
 		border-radius: 0.25rem;
 	}

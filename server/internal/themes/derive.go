@@ -27,6 +27,7 @@ type Derived struct {
 	ReadingAccent   string            `json:"readingAccent"`
 	ReadableBad     string            `json:"readableBad"`   // error text: bad when it reads on panel, else text
 	ReadableMuted   string            `json:"readableMuted"` // secondary text: muted when it reads on panel, else text
+	FocusRing       string            `json:"focusRing"`     // accent when 3:1 on panel, raised and chrome, else text
 	HighlightWash   string            `json:"highlightWash"`
 	Highlights      Highlights        `json:"highlights"`
 	WordMarks       map[string]Mark   `json:"wordMarks"`       // new, learning (known: none)
@@ -120,6 +121,12 @@ func Derive(t Theme, accent string) Derived {
 	if Ratio(c.Muted, c.Panel) >= MinText {
 		readableMuted = c.Muted
 	}
+	focusRing := acc
+	for _, s := range []string{c.Panel, c.Raised, c.Chrome} {
+		if Ratio(acc, s) < MinGraph {
+			focusRing = c.Text
+		}
+	}
 	return Derived{
 		AccentKey: key, Accent: acc, OnAccent: on, Hair: hair, AccentTints: tints,
 		PrimaryWash: tints["14"], SelectedWash: tints["14"],
@@ -127,6 +134,7 @@ func Derive(t Theme, accent string) Derived {
 		ReadingAccent: reading,
 		ReadableBad:   readableBad,
 		ReadableMuted: readableMuted,
+		FocusRing:     focusRing,
 		HighlightWash: WithAlpha(c.Warn, 24),
 		Highlights: Highlights{
 			Yellow: c.Warn, Green: Hue(c.Warn, 135), Blue: Hue(c.Warn, 225), Pink: Hue(c.Warn, 330),

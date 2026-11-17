@@ -140,6 +140,6 @@ describe.each(cases)('$id', ({ theme, accent }) => {
 	});
 
 	it('the focus ring is at least 3:1 on panel', () => {
-		expect(ratio(vars['--accent'], panel)).toBeGreaterThanOrEqual(MIN_GRAPH);
+		expect(ratio(vars['--focus-colour'], panel)).toBeGreaterThanOrEqual(MIN_GRAPH);
 	});
 });

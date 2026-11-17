@@ -172,7 +172,7 @@
 	}
 
 	.lesson:focus-visible {
-		outline: 2px solid var(--accent);
+		outline: 2px solid var(--focus-colour);
 		outline-offset: 2px;
 	}
 

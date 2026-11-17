@@ -46,7 +46,7 @@ const NEW_TOKENS: Record<string, string> = {
 	'--motion-fast': '120ms',
 	'--motion-medium': '200ms',
 	'--ease-standard': 'cubic-bezier(0.2, 0, 0, 1)',
-	'--focus-ring': '2px solid var(--accent)',
+	'--focus-ring': '2px solid var(--focus-colour)',
 	'--focus-ring-offset': '2px',
 	'--hit': '2.75rem',
 	'--layer-float': '50',
