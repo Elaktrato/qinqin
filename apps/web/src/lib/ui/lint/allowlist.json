@@ -1,0 +1,52 @@
+[
+	{
+		"file": "lib/components/Flag.svelte",
+		"text": "#de2910",
+		"reason": "A national flag's own colours (China, Japan, Spain): content, not interface; the same in every theme."
+	},
+	{
+		"file": "lib/components/Flag.svelte",
+		"text": "#ffde00",
+		"reason": "A national flag's own colours (China, Japan, Spain): content, not interface; the same in every theme."
+	},
+	{
+		"file": "lib/components/Flag.svelte",
+		"text": "#ffffff",
+		"reason": "A national flag's own colours (China, Japan, Spain): content, not interface; the same in every theme."
+	},
+	{
+		"file": "lib/components/Flag.svelte",
+		"text": "#bc002d",
+		"reason": "A national flag's own colours (China, Japan, Spain): content, not interface; the same in every theme."
+	},
+	{
+		"file": "lib/components/Flag.svelte",
+		"text": "#000",
+		"reason": "A national flag's own colours (China, Japan, Spain): content, not interface; the same in every theme."
+	},
+	{
+		"file": "lib/components/Flag.svelte",
+		"text": "#aa151b",
+		"reason": "A national flag's own colours (China, Japan, Spain): content, not interface; the same in every theme."
+	},
+	{
+		"file": "lib/components/Flag.svelte",
+		"text": "#f1bf00",
+		"reason": "A national flag's own colours (China, Japan, Spain): content, not interface; the same in every theme."
+	},
+	{
+		"file": "lib/account/QrCode.svelte",
+		"text": "#fff",
+		"reason": "Black modules on a white quiet zone: scanners need the fixed dark-on-light contrast of a QR code, whatever the theme."
+	},
+	{
+		"file": "lib/account/QrCode.svelte",
+		"text": "#000",
+		"reason": "Black modules on a white quiet zone: scanners need the fixed dark-on-light contrast of a QR code, whatever the theme."
+	},
+	{
+		"file": "app.css",
+		"text": "rgb(",
+		"reason": "--shadow-float, the one shadow token (fixed scale tokens): a translucent black that darkens any theme's surface."
+	}
+]
