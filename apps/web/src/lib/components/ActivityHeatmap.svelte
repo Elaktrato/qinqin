@@ -278,8 +278,10 @@
 			vacations = [];
 			return;
 		}
+		const id = workspaceId;
 		try {
-			vacations = (await getStudyData(workspaceId)).vacations ?? [];
+			const got = (await getStudyData(id)).vacations ?? [];
+			if (id === workspaceId) vacations = got;
 		} catch {
 			// The marks are decoration: the heatmap works without them.
 		}
@@ -293,11 +295,13 @@
 		}
 		try {
 			const history = await loadStudyHistory(id);
+			// A slower load for the workspace switched away from never wins.
+			if (id !== workspaceId) return;
 			const row = history.goals === undefined || history.goals === 'newer' ? null : history.goals;
 			goals = { workspaceId: id, row, reviews: history.reviews, vacations: history.vacations ?? [] };
 		} catch {
 			// The stage is decoration until the drawings exist: tint only.
-			goals = null;
+			if (id === workspaceId) goals = null;
 		}
 	}
 
@@ -310,6 +314,17 @@
 	$effect(() => {
 		void layout;
 		untrack(() => void load(false));
+	});
+
+	// A workspace switch: its goal row and vacations (the activity itself is
+	// one request for every workspace and stays). Skipped until the first load.
+	$effect(() => {
+		void workspaceId;
+		untrack(() => {
+			if (response === null) return;
+			void loadVacations();
+			void loadGoals();
+		});
 	});
 
 	onMount(() => {

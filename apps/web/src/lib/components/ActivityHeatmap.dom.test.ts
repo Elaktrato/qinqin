@@ -210,6 +210,19 @@ describe('ActivityHeatmap garden and flower stages', () => {
 		expect(document.querySelectorAll('.grid .cell.today')).toHaveLength(1);
 	});
 
+	it('stages come back after a workspace switch (#100 review)', async () => {
+		const today = withGoal();
+		const WS4 = { id: 4, language: 'ja', name: 'ja' } as never;
+		render(ActivityHeatmap);
+		const list = await screen.findByRole('list', { name: 'Daily activity' });
+		await waitFor(() => expect(within(list).getAllByRole('listitem')).toHaveLength(61));
+		workspaces.set({ list: [WS, WS4], current: WS4 });
+		await waitFor(() => expect(loadStudyHistory).toHaveBeenLastCalledWith(4));
+		await waitFor(() => expect(within(list).getAllByRole('listitem')).toHaveLength(61));
+		const items = within(list).getAllByRole('listitem').map((li) => li.textContent ?? '');
+		expect(items.find((text) => text.startsWith(`${addDays(today, -2)}:`))).toContain('5 of 50 — ');
+	});
+
 	it('a failed goal load leaves the heatmap working without stages', async () => {
 		const today = withGoal();
 		vi.mocked(loadStudyHistory).mockRejectedValue(new Error('offline'));
