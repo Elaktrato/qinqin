@@ -62,10 +62,11 @@ describe('features tab', () => {
 
 describe('account tab', () => {
 	it('is visible to everyone, between AI and Data', () => {
-		expect(visibleSettingsTabs(false)).toEqual(['workspaces', 'home', 'study', 'features', 'plugins', 'ai', 'account']);
+		expect(visibleSettingsTabs(false)).toEqual(['workspaces', 'home', 'appearance', 'study', 'features', 'plugins', 'ai', 'account']);
 		expect(visibleSettingsTabs(true)).toEqual([
 			'workspaces',
 			'home',
+			'appearance',
 			'study',
 			'features',
 			'plugins',
@@ -150,5 +151,16 @@ describe('settingsTitleParts', () => {
 	it('reads a missing or unknown section as Users, like the Admin tab', () => {
 		expect(settingsTitleParts('admin', null)).toEqual(['Users', 'Admin', 'Settings']);
 		expect(settingsTitleParts('admin', 'nope')).toEqual(['Users', 'Admin', 'Settings']);
+	});
+});
+
+describe('the Appearance tab', () => {
+	it('is personal (every user), right after Home', () => {
+		expect(visibleSettingsTabs(false)).toContain('appearance');
+		expect(SETTINGS_TABS.indexOf('appearance')).toBe(SETTINGS_TABS.indexOf('home') + 1);
+		expect(parseSettingsTab('appearance')).toBe('appearance');
+		expect(SETTINGS_TAB_LABELS.appearance).toBe('Appearance');
+		expect(settingsTabHref('appearance')).toBe('/settings?tab=appearance');
+		expect(settingsTitleParts('appearance', null)).toEqual(['Appearance', 'Settings']);
 	});
 });
