@@ -60,6 +60,7 @@
 	"search.parts.radicalName": "Accessible name of a chip; {char} is the radical glyph, {n} its Kangxi number.",
 	"settings.account.delete.cannotUndo": "<download> wraps a button that downloads the user's data.",
 	"settings.account.delete.typeToConfirm": "Label of a text field; {name} is the user's own username, which they must type exactly.",
+	"settings.account.interfaceLanguage.browser": "{language} is the language the browser settings resolve to, named in that language (\"English\").",
 	"settings.account.sessions.tokenNote": "{note} is settings.tokens.revokedToo (\"Your access tokens are revoked too.\").",
 	"settings.ai.custom.refreshFailed": "Appended to settings.ai.custom.added/saved/removed; starts with a space and a dash.",
 	"settings.ai.note": "Review, Ideas and Read with AI are the journal's button labels; use the same words as those buttons.",

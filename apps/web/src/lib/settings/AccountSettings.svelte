@@ -4,6 +4,11 @@
 	import { errorText } from '$lib/api/apiErrors';
 	import { t } from '$lib/i18n';
 	import Msg from '$lib/i18n/Msg.svelte';
+	import { putInterfaceLanguage } from '$lib/api/interfaceLanguage';
+	import { SUPPORTED_LANGUAGES } from '$lib/i18n/negotiate';
+	import { resolveInterfaceLanguage, writeMirror } from '$lib/i18n/interfaceLanguage';
+	import { languageName } from '$lib/i18n/format';
+	import { reloadPage } from '$lib/i18n/reloadPage';
 	import {
 		changePassword,
 		getAuthOptions,
@@ -97,6 +102,35 @@
 			emailError = errorText(err, t('settings.account.email.error'));
 		} finally {
 			emailBusy = false;
+		}
+	}
+
+	// Interface language: '' follows the browser; each supported language is named in itself.
+	const browserLanguages = typeof navigator === 'undefined' ? [] : (navigator.languages ?? [navigator.language]);
+	const languageChoices = SUPPORTED_LANGUAGES.map((code) => ({ code, label: languageName(code, code) }));
+	const browserDefault = languageName(resolveInterfaceLanguage('', browserLanguages), resolveInterfaceLanguage('', browserLanguages));
+	let languageDraft = $state($user?.interfaceLanguage ?? '');
+	let languageBusy = $state(false);
+	let languageError = $state('');
+
+	async function saveLanguage(event: SubmitEvent): Promise<void> {
+		event.preventDefault();
+		if (languageBusy) return;
+		languageBusy = true;
+		languageError = '';
+		try {
+			const res = await putInterfaceLanguage(languageDraft);
+			let storage: Storage | null = null;
+			try {
+				storage = localStorage;
+			} catch {
+				storage = null;
+			}
+			writeMirror(storage, resolveInterfaceLanguage(res.language, browserLanguages));
+			reloadPage();
+		} catch (err) {
+			languageError = errorText(err, t('settings.account.interfaceLanguage.error'));
+			languageBusy = false;
 		}
 	}
 
@@ -239,6 +273,26 @@
 			{/if}
 		{/if}
 	{/if}
+</section>
+
+<section aria-labelledby="account-language-heading" class="block">
+	<h2 id="account-language-heading">{t('settings.account.interfaceLanguage.title')}</h2>
+	<form onsubmit={saveLanguage} class="stack">
+		<label>
+			{t('settings.account.interfaceLanguage.label')}
+			<select bind:value={languageDraft} aria-describedby="account-language-hint">
+				<option value="">{t('settings.account.interfaceLanguage.browser', { language: browserDefault })}</option>
+				{#each languageChoices as choice (choice.code)}
+					<option value={choice.code}>{choice.label}</option>
+				{/each}
+			</select>
+		</label>
+		<p class="hint" id="account-language-hint">{t('settings.account.interfaceLanguage.hint')}</p>
+		{#if languageError}<p class="error" role="alert">{languageError}</p>{/if}
+		<button type="submit" disabled={languageBusy}
+			>{languageBusy ? t('settings.account.interfaceLanguage.saving') : t('settings.account.interfaceLanguage.save')}</button
+		>
+	</form>
 </section>
 
 <TwoFactorManage options={optionsAll} />
