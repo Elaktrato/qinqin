@@ -11,3 +11,18 @@ export const FRAME_PHONE_BREAKPOINT = 720;
 export const PHONE_MAX_WIDTH = 719.98;
 /** For matchMedia and for documentation: true on the phone frame. */
 export const PHONE_MEDIA_QUERY = `(max-width: ${PHONE_MAX_WIDTH}px)`;
+
+/**
+ * onLeavePhoneFrame calls `run` once the window leaves the phone frame
+ * (grows to the breakpoint or wider: a rotation, a resize, a zoom change)
+ * and returns the unsubscribe. A no-op where matchMedia is missing.
+ */
+export function onLeavePhoneFrame(run: () => void): () => void {
+	if (typeof matchMedia !== 'function') return () => {};
+	const query = matchMedia(PHONE_MEDIA_QUERY);
+	const change = (e: { matches: boolean }): void => {
+		if (!e.matches) run();
+	};
+	query.addEventListener('change', change);
+	return () => query.removeEventListener('change', change);
+}
