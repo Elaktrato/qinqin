@@ -140,5 +140,5 @@ it implements the validation only if it ever installs theme packs itself (it doe
 | File | Rule | Decoded by |
 | --- | --- | --- |
 | `theme-file.json` | validation codes and paths, limits, accent order | Go `server/internal/themes/file_test.go` |
-| `contrast.json` | ratios, rounding, the review checks | Go `server/internal/themes/contrast_test.go` |
-| `derive.json` | derived tokens | Go `server/internal/themes/derive_test.go` |
+| `contrast.json` | ratios, rounding, the review checks | Go `server/internal/themes/contrast_test.go`; web `apps/web/src/lib/theme/contrast.test.ts` |
+| `derive.json` | derived tokens | Go `server/internal/themes/derive_test.go`; web `apps/web/src/lib/theme/derive.test.ts` (also the CSS property table) |
