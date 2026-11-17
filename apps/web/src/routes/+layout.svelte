@@ -354,9 +354,10 @@
 
 <style>
 	.app {
-		/* Nav accent: the app's blue, a darker shade for text on its tint. */
-		--nav-accent: #0b6bcb;
-		--nav-accent-text: #0957a6;
+		/* Nav accent: the theme's accent; text on its tint uses the reading
+		   accent (the accent where it reaches 4.5:1, else the text colour). */
+		--nav-accent: var(--accent);
+		--nav-accent-text: var(--reading-accent);
 		/* The fixed bottom tab bar's height (0 while there is none). Fixed
 		   elements further down, such as the reader's drawer button, keep
 		   clear of the bar with it. */
@@ -366,13 +367,6 @@
 		flex-direction: column;
 		min-height: 100vh;
 		min-height: 100dvh;
-	}
-
-	@media (prefers-color-scheme: dark) {
-		.app {
-			--nav-accent: #6cb4ff;
-			--nav-accent-text: #8cc4ff;
-		}
 	}
 
 	.content {

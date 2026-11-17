@@ -8,6 +8,7 @@ export const prerender = false;
 import { getLanguage, loadCatalogue } from '$lib/i18n';
 import { applyDocumentLanguage, startupLanguage } from '$lib/i18n/interfaceLanguage';
 import { TOKEN_KEY } from '$lib/api/client';
+import { applyStartupTheme } from '$lib/theme/apply';
 
 function storage(): Storage | null {
 	try {
@@ -23,6 +24,9 @@ function storage(): Storage | null {
  * When `me` brings another language, `loadMe` reloads once (lib/i18n/interfaceLanguage.ts).
  */
 export async function load(): Promise<Record<string, never>> {
+	// The theme first: the last tokens of this device or the compiled-in
+	// Latte/Mocha (app.html already painted the stored ones before any module).
+	applyStartupTheme();
 	const store = storage();
 	let signedIn = false;
 	try {

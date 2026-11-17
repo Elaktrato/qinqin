@@ -113,6 +113,28 @@ camelCase):
 Fixture: `derive.json` (the alpha table; Mocha and Latte, an accent below 3:1, an unknown and a missing accent,
 a theme whose every accent fails, both sides of the 4.5 and 3 roundings).
 
+## Fixed scale tokens
+
+Never themed and never stored; the web defines them in `apps/web/src/app.css` (`:root`), Android mirrors the
+values. The person's adjustments scale two of them: `--radius` (corners: 4 / 10 / 16px) and `--space` (spacing:
+0.75 / 1).
+
+| Property | Value |
+| --- | --- |
+| `--radius-large` | `calc(var(--radius) + 4px)` — panels and sheets |
+| `--font-size-xs`, `-s`, `-m`, `-l`, `-xl`, `-xxl` | 0.75, 0.875, 1, 1.25, 1.5, 2rem |
+| `--space-1` … `--space-6` | 0.25, 0.5, 0.75, 1, 1.5, 2rem, each times `--space` |
+| `--icon-s`, `--icon-m`, `--icon-l` | 16, 20, 24px |
+| `--shadow-float` | `0 1px 3px rgb(0 0 0 / 0.12), 0 12px 32px -12px rgb(0 0 0 / 0.35)` — menus, popups and sheets only |
+
+The web paints `color-scheme` and `data-scheme` on `<html>` from the theme's `scheme`, and the browser bar
+colour (`<meta name="theme-color">`) from `chrome`. Before anything loads it paints this device's last tokens
+(`localStorage` `qinqin.theme.last.v1`: both slots, so `system` still follows the device), else Catppuccin Latte or
+Mocha compiled in (`apps/web/src/lib/theme/fallback.ts`, pinned to the built-in pack).
+
+Ruling: the last tokens are kept per device, not per user — the frame paints before the user is known — cost: a
+second account on the same browser sees the first account's theme for a moment at start.
+
 ## The `appearance` row
 
 The person's choice: a plugin data row of `qinqin-core`, key `appearance`, **user-global** (`workspaceId: null`;

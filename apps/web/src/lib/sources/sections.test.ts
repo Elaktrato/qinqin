@@ -219,6 +219,16 @@ describe('pluginCredits', () => {
 		expect(figtree.notice).toMatch(/interface font/i);
 	});
 
+	it('credits the compiled-in fallback palette (Catppuccin, MIT) with its licence text', () => {
+		const catppuccin = coreCredits.find((credit) => credit.name === 'Catppuccin')!;
+		expect(catppuccin).toBeDefined();
+		expect(catppuccin.url).toBe('https://github.com/catppuccin/palette');
+		expect(catppuccin.license).toBe('MIT');
+		expect(catppuccin.attribution).toBe('Copyright (c) 2021 Catppuccin');
+		expect(catppuccin.licenseTexts).toEqual([{ label: 'MIT license text', path: '/CATPPUCCIN-LICENSE.TXT' }]);
+		expect(catppuccin.notice).toMatch(/Latte and Mocha/);
+	});
+
 	it('credits the plugin sources from the real registry', () => {
 		const result = pluginCredits(
 			webPlugins.map((plugin) => plugin.manifest),
@@ -255,6 +265,7 @@ describe('declared credits', () => {
 		const paths = all.flatMap((credit) => (credit.licenseTexts ?? []).map((text) => text.path));
 		expect(paths.sort()).toEqual([
 			'/ANTHROPIC-SDK-GO-LICENSE.TXT',
+			'/CATPPUCCIN-LICENSE.TXT',
 			'/FIGTREE-OFL.TXT',
 			'/LEPTONICA-LICENSE.TXT',
 			'/OPENCC-APACHE-2.0.TXT',

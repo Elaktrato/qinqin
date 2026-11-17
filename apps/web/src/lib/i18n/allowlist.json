@@ -66,6 +66,11 @@
 	},
 	{
 		"file": "lib/sources/coreCredits.ts",
+		"text": "Copyright (c) 2021 Catppuccin",
+		"reason": "A copyright line, quoted verbatim from the palette's LICENSE (data)."
+	},
+	{
+		"file": "lib/sources/coreCredits.ts",
 		"text": "Aozora Bunko",
 		"reason": "A credited source's proper name (data)."
 	},

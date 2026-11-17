@@ -9,6 +9,35 @@
 		<meta name="theme-color" content="#0b6bcb" />
 		<meta name="mobile-web-app-capable" content="yes" />
 		<title>qinqin</title>
+		<script>
+			// First paint (lib/theme/apply.ts, applyLastTokens): the tokens this
+			// device painted last, before the app loads. No colour of its own;
+			// nothing stored or anything malformed paints nothing.
+			(function () {
+			try {
+				var last = JSON.parse(localStorage.getItem('qinqin.theme.last.v1') || 'null');
+				var dark = last && (last.mode === 'dark' || (last.mode === 'system' && matchMedia('(prefers-color-scheme: dark)').matches));
+				var slot = last && last.v === 1 && (dark ? last.dark : last.light);
+				var ok = slot && (slot.scheme === 'light' || slot.scheme === 'dark') && slot.vars && /^(4|10|16)px$/.test(last.radius) && /^(0\.75|1)$/.test(last.space);
+				var names = ok ? Object.keys(slot.vars) : [];
+				for (var i = 0; ok && i < names.length; i++) {
+					ok = /^--[a-z0-9-]+$/.test(names[i]) && /^#[0-9a-f]{6}([0-9a-f]{2})?$/.test(slot.vars[names[i]]);
+				}
+				if (ok && names.length > 0) {
+					var root = document.documentElement;
+					for (var j = 0; j < names.length; j++) root.style.setProperty(names[j], slot.vars[names[j]]);
+					root.style.setProperty('--radius', last.radius);
+					root.style.setProperty('--space', last.space);
+					root.style.colorScheme = slot.scheme;
+					root.dataset.scheme = slot.scheme;
+					var meta = document.querySelector('meta[name="theme-color"]');
+					if (meta && slot.vars['--chrome']) meta.setAttribute('content', slot.vars['--chrome']);
+				}
+			} catch (e) {
+				// Storage blocked or a corrupt value: the app paints the fallback.
+			}
+			})();
+		</script>
 		%sveltekit.head%
 	</head>
 	<body data-sveltekit-preload-data="hover">
