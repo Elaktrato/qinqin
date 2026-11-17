@@ -30,6 +30,6 @@
 		display: block;
 		max-width: 100%;
 		height: auto;
-		border: 1px solid var(--border, #d4d4d8);
+		border: 1px solid var(--hair);
 	}
 </style>
