@@ -22,6 +22,18 @@ export function packFamily(face: HanziFace, script: HanziScript): string {
 	return `qq-${face}-${script}`;
 }
 
+/** A short sample of each script (Settings → Appearance preview); study text, not interface text. */
+export const HANZI_SAMPLES: readonly { script: HanziScript; text: string }[] = [
+	{ script: 'Hans', text: '汉字' },
+	{ script: 'Hant', text: '漢字' },
+	{ script: 'Jpan', text: 'かな漢字' }
+];
+
+/** hasPackFace: an installed pack provides `face` for at least one script. */
+export function hasPackFace(face: HanziFace, installed: InstalledFaces): boolean {
+	return HANZI_SCRIPTS.some((script) => installed.has(`${face}-${script}`));
+}
+
 const TRADITIONAL_REGIONS = new Set(['tw', 'hk', 'mo']);
 
 /**

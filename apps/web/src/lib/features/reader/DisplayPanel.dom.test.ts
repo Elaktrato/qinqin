@@ -112,6 +112,14 @@ describe('DisplayPanel', () => {
 		expect(onchange).toHaveBeenLastCalledWith({ font: 'serif' });
 	});
 
+	it('the default font is named as the app-wide hanzi font it follows', async () => {
+		const { onchange } = mount({ font: 'serif' });
+		await open();
+		// No appearance row loaded: the app-wide default, Sans.
+		await fireEvent.click(screen.getByRole('radio', { name: 'App setting (Sans)' }));
+		expect(onchange).toHaveBeenLastCalledWith({ font: 'default' });
+	});
+
 	it('Show all readings is a pressed toggle, only in Smart', async () => {
 		mount({ readings: 'always' });
 		await open();

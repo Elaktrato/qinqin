@@ -23,9 +23,25 @@
 	} from '$lib/theme/appearance';
 	import { fallbackTheme } from '$lib/theme/fallback';
 	import { themeStore, type ThemeStore } from '$lib/theme/store.svelte';
+	import { HANZI_SAMPLES, hasPackFace, type HanziScript, type InstalledFaces } from '$lib/fonts/hanzi';
+	import { packFaces } from '$lib/fonts/packFaces.svelte';
+	import { studyLang } from '$lib/i18n/lang';
 	import { accentOptions, changeFrom, isDirty, previewOf, slotThemeGroups } from './appearanceForm';
 
-	let { store = themeStore }: { store?: ThemeStore } = $props();
+	let {
+		store = themeStore,
+		installed = undefined
+	}: {
+		store?: ThemeStore;
+		/** The installed font pack faces (default: the app's packFaces). */
+		installed?: InstalledFaces;
+	} = $props();
+
+	const SAMPLE_LANG: Record<HanziScript, string | undefined> = {
+		Hans: studyLang('zh'),
+		Hant: studyLang('zh', { variant: 'traditional' }),
+		Jpan: studyLang('ja')
+	};
 
 	function copy(a: Appearance): Appearance {
 		return { ...a, light: { ...a.light }, dark: { ...a.dark } };
@@ -48,6 +64,9 @@
 
 	const dirty = $derived(isDirty(draft, store.appearance));
 	const resolved = $derived(store.resolveFor(draft));
+	const packFacesNow = $derived(installed ?? packFaces.installed);
+	// Without a pack for the chosen face, the device's fonts show it: say so.
+	const systemOnly = $derived(!hasPackFace(draft.hanziFont, packFacesNow));
 
 	const MODE_LABELS: Record<Mode, MessageKey> = {
 		system: 'settings.appearance.mode.system',
@@ -226,9 +245,9 @@
 		{/each}
 	</fieldset>
 
-	<!-- Saved in the row now; nothing paints with it until the shared hanzi
-	     font stacks land (#97 WEB-LATER tasks 11-13), so the group says so. -->
-	<fieldset class="segmented" aria-describedby="appearance-hanzi-font-pending">
+	<!-- Study text everywhere follows it (#97: lib/fonts/hanzi.css); the
+	     preview below shows it live. -->
+	<fieldset class="segmented" aria-describedby={systemOnly ? 'appearance-hanzi-font-system' : undefined}>
 		<legend>{t('settings.appearance.hanziFont.legend')}</legend>
 		{#each HANZI_FONTS as font (font)}
 			<label
@@ -241,7 +260,9 @@
 				/><span>{t(FONT_LABELS[font])}</span></label
 			>
 		{/each}
-		<p class="hint" id="appearance-hanzi-font-pending">{t('settings.appearance.hanziFont.pending')}</p>
+		{#if systemOnly}
+			<p class="hint" id="appearance-hanzi-font-system">{t('settings.appearance.hanziFont.system')}</p>
+		{/if}
 	</fieldset>
 
 	<section class="preview" aria-labelledby="appearance-preview-title">
@@ -249,6 +270,9 @@
 		<div class="sample">
 			<p>{t('settings.appearance.preview.text')}</p>
 			<p class="muted">{t('settings.appearance.preview.muted')}</p>
+			<p class="hanzi">
+				{#each HANZI_SAMPLES as sample (sample.script)}<span lang={SAMPLE_LANG[sample.script]}>{sample.text}</span>{/each}
+			</p>
 			<p class="reading">
 				<Msg key="settings.appearance.preview.reading"
 					>{#snippet fresh(text: string)}<span class="w-new w-end">{text}</span>{/snippet}{#snippet learning(
@@ -420,6 +444,13 @@
 		}
 	}
 
+	.preview .hanzi {
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--space-4);
+		margin: 0;
+		font-size: var(--font-size-l);
+	}
 	.preview .sample {
 		display: grid;
 		gap: var(--space-2);

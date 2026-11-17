@@ -39,7 +39,8 @@ describe('displayPatch', () => {
 });
 
 describe('fontStack', () => {
-	const generic = ['serif', 'sans-serif', 'system-ui', 'inherit']; // inherit: the app's own stack
+	// var(--font-hanzi): the app-wide hanzi font (#97); inherit: the app's own stack
+	const generic = ['serif', 'sans-serif', 'system-ui', 'inherit', 'var(--font-hanzi)'];
 	for (const lang of fixture.fontStacks.langs) {
 		for (const font of fixture.fontStacks.fonts) {
 			it(`${lang} ${font}`, () => {
@@ -52,8 +53,10 @@ describe('fontStack', () => {
 			});
 		}
 	}
-	it('default is the app stack; the others are the shared hanzi stacks of the full study lang', () => {
-		expect(fontStack('default', 'zh')).toBe('inherit');
+	it('default is the app-wide hanzi font; the others are the shared hanzi stacks of the full study lang', () => {
+		expect(fontStack('default', 'zh')).toBe('var(--font-hanzi)');
+		expect(fontStack('default', 'ja')).toBe('var(--font-hanzi)');
+		expect(fontStack('default', 'ko')).toBe('inherit');
 		expect(fontStack('kai', 'ja')).toBe(hanziStack('kai', 'ja', installedFaces([])));
 		expect(fontStack('serif', 'zh-Hant')).toBe(hanziStack('serif', 'zh-Hant', installedFaces([])));
 	});

@@ -103,6 +103,18 @@ Public and token-free (browsers fetch `@font-face` URLs without credentials; the
 byte for byte: `Content-Type: font/woff2`, `Cache-Control: public, max-age=31536000, immutable` (the name is the
 content's hash), `X-Content-Type-Options: nosniff`, Range requests honoured.
 
+## Choosing a face
+
+A client sets study text in the face of the `appearance` row's `hanziFont` (`sans`, `serif`, `kai`; default `sans`,
+docs/contracts/themes/README.md) for the script of the text's `lang`: `zh`, `zh-Hans`, `zh-CN` → `Hans`; `zh-Hant`,
+`zh-TW`, `zh-HK`, `zh-MO` → `Hant`; `ja` → `Jpan` (romanisations such as `zh-Latn-pinyin` and `ja-Latn` stay in the
+interface font). The installed face of that (`face`, `script`) comes first, then the platform's system fonts for that
+face and script (the web: `apps/web/src/lib/fonts/hanzi.ts`; Japanese `kai` is a textbook face, then the serif
+fonts). The reader's `reader.font` overrides the choice when it is not `default`. A slice that fails to load falls back
+to the system fonts silently. The web registers only the faces the person's choices need, and its service worker keeps
+fetched slices in a shared cache (`qinqin-fonts-v1`, at most 4,000, oldest out first; kept on sign-out) and the faces
+list with the other per-session reads.
+
 ## Android
 
 Android reads `GET /api/fonts` once per sign-in (or on a pack change) and may download the slices it needs for the

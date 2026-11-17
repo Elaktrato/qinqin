@@ -1,5 +1,7 @@
 import { cleanup, render } from '@testing-library/svelte';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { installedFaces } from '$lib/fonts/hanzi';
+import { packFaces } from '$lib/fonts/packFaces.svelte';
 import ChapterText from './ChapterText.svelte';
 import source from './ChapterText.svelte?raw';
 import { DEFAULT_DISPLAY, type ReaderDisplay } from './displaySettings';
@@ -104,8 +106,22 @@ describe('ChapterText readings', () => {
 		expect(root.style.getPropertyValue('--reader-font')).toContain('"Noto Serif CJK TC"');
 	});
 
-	it('the default font sets no font variable', () => {
-		expect(mount({ paragraphs: zh }).root.style.getPropertyValue('--reader-font')).toBe('');
+	it('the default font is the app-wide hanzi font; other languages keep the app font', () => {
+		expect(mount({ paragraphs: zh }).root.style.getPropertyValue('--reader-font')).toBe('var(--font-hanzi)');
+		cleanup();
+		expect(mount({ paragraphs: zh, lang: 'ko' }).root.style.getPropertyValue('--reader-font')).toBe('');
+	});
+
+	it('a concrete reader font asks for its pack face and puts it first when installed', async () => {
+		const need = vi.spyOn(packFaces, 'need');
+		const installed = vi.spyOn(packFaces, 'installed', 'get').mockReturnValue(installedFaces([{ face: 'kai', script: 'Hant' }]));
+		const { root, unmount } = mount({ paragraphs: zh, lang: 'zh-Hant', display: display({ font: 'kai' }) });
+		expect(need).toHaveBeenLastCalledWith('reader', ['kai']);
+		expect(root.style.getPropertyValue('--reader-font')).toMatch(/^"qq-kai-Hant", /);
+		unmount();
+		expect(need).toHaveBeenLastCalledWith('reader', []);
+		need.mockRestore();
+		installed.mockRestore();
 	});
 });
 

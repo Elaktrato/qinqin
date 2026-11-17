@@ -169,8 +169,9 @@ server stores it like any plugin row and never validates it.
   changed members — a slot change is merged into the stored slot — keep every unknown member (top level and in a
   slot), and write `version: 1`.
 - **Adjustments** (never in a theme file): corner radius `sharp` 4px, `soft` 10px, `round` 16px; spacing scale
-  `compact` 0.75, `comfortable` 1; hanzi/kanji font `sans`, `serif`, `kai` (the reader's font stacks until a font
-  pack is installed; the reader's own `reader.font` overrides it when not `default`).
+  `compact` 0.75, `comfortable` 1; hanzi/kanji font `sans`, `serif`, `kai` for all study text (how a client picks the
+  face: docs/contracts/fonts/README.md, "Choosing a face"; the reader's own `reader.font` overrides it when not
+  `default`).
 
 Fixture: `appearance.json` (`defaults`, `adjustments`, the example `row`, `parse`, `resolve` — with stand-in
 `themes` listing each theme's `accentChoices` — and `write` cases).

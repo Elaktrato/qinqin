@@ -17,8 +17,9 @@ Parsing is per field; an invalid or missing field takes its default: `bookRuby` 
 client's old local furigana pref, else true), `readings` `never|always|smart` (default `never`),
 `smartThreshold` a number rounded and clamped to 10..100 (default 80), `rubyScale` snapped to the nearest
 of 0.45, 0.55, 0.65, 0.75 (default 0.55), `font` `default|sans|serif|kai` (default `default`), `highlightWords` boolean (default `false`). A client
-writing the object keeps every key it does not know. Fonts are the platform's system fonts: no font is
-bundled by the server.
+writing the object keeps every key it does not know. `default` means the app-wide hanzi font (the `appearance` row's
+`hanziFont`, docs/contracts/themes/README.md); `sans`, `serif` and `kai` override it in the reader. Each face is an
+installed font pack's (docs/contracts/fonts/README.md, "Choosing a face") or else the platform's system fonts.
 
 ## Generated readings
 
