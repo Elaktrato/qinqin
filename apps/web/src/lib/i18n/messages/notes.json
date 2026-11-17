@@ -14,6 +14,7 @@
 	"admin.users.notice.signedOut": "{name} is a username; the plural follows the number of sessions.",
 	"admin.users.resetLink.text": "{until} is a formatted date and time.",
 	"apiError.unknown": "Shown for an error code this app version does not know yet; {code} is the technical code (e.g. sync_page_invalid).",
+	"app.home.greeting.morning": "The home page's heading before noon (device clock); afternoon until 18:00, evening after.",
 	"app.name": "The product name, shown last in every page title (\"Stats · qinqin\"). Keep it as is unless the product has an established name in the language.",
 	"app.workspaces.delete.cardsAndDecks": "{cards} is app.workspaces.delete.cards (\"12 flashcards\"), {decks} app.workspaces.delete.decks (\"2 decks\").",
 	"auth.error.rateLimitedSignIn": "{wait} is a format.duration.* text (\"6 seconds\", \"15 minutes\").",
