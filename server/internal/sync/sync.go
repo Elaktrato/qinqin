@@ -35,39 +35,26 @@ var (
 	ErrInvalid = errors.New("sync: invalid")
 )
 
-// LevelMember is one level_members row: an entry's membership in a level.
-type LevelMember struct {
-	ID        int64      `json:"id"`
-	LevelID   int64      `json:"levelId"`
-	EntryID   int64      `json:"entryId"`
-	Derived   bool       `json:"derived"`
-	UpdatedAt time.Time  `json:"updatedAt"`
-	DeletedAt *time.Time `json:"deletedAt"`
-}
-
-// Delta is everything that changed since a cursor. Every collection is
-// non-nil. Entries, links, senses, and level members are shared content;
-// sentences are the pack ones plus the caller's own; plugin data and
-// states are the caller's. Rows carry updated_at and, when removed,
-// deleted_at.
+// Delta is the legacy pull answer (StreamLegacy writes it row by row; a
+// client may decode it into this type). Every collection is non-nil. The
+// lexicon collections (Entries, Links, Senses, LevelMembers, Dictionaries,
+// Schemes, Levels) moved to data packages (GET /api/packages) and are
+// always []; Sentences are the caller's own; plugin data, states, overlays
+// and the typed study rows are the caller's. Rows carry updated_at and,
+// when removed, deleted_at.
 type Delta struct {
 	Cursor       time.Time           `json:"cursor"`
-	Entries      []Entry             `json:"entries"`
-	Links        []Link              `json:"links"`
-	Senses       []Sense             `json:"senses"`
-	LevelMembers []LevelMember       `json:"levelMembers"`
+	Entries      []json.RawMessage   `json:"entries"`
+	Links        []json.RawMessage   `json:"links"`
+	Senses       []json.RawMessage   `json:"senses"`
+	LevelMembers []json.RawMessage   `json:"levelMembers"`
 	Sentences    []model.Sentence    `json:"sentences"`
 	PluginData   []model.PluginData  `json:"pluginData"`
 	PluginStates []model.PluginState `json:"pluginStates"`
 	Overlays     []Overlay           `json:"overlays"`
-
-	// The registry rows the rows above reference — senses point at a
-	// dictionary id, level members at a level id — so a client holding
-	// only the delta can resolve them. Schemes ship without their nested
-	// levels; Levels carries those.
-	Dictionaries []model.Dictionary `json:"dictionaries"`
-	Schemes      []model.Scheme     `json:"schemes"`
-	Levels       []model.Level      `json:"levels"`
+	Dictionaries []json.RawMessage   `json:"dictionaries"`
+	Schemes      []json.RawMessage   `json:"schemes"`
+	Levels       []json.RawMessage   `json:"levels"`
 
 	// The caller's typed study rows (docs/contracts/study/), last-write-wins
 	// per row with tombstones, like plugin data.

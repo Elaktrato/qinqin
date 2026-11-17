@@ -7,7 +7,6 @@ import (
 	"testing"
 	"time"
 
-	"qinqin/internal/dict"
 	"qinqin/internal/lexicon"
 	"qinqin/internal/model"
 	"qinqin/internal/overlay"
@@ -31,31 +30,23 @@ func TestPullCursorLagsBehindNow(t *testing.T) {
 // ships live rows only; a cursor-based pull still ships tombstones.
 func TestPullFreshCursorOmitsTombstones(t *testing.T) {
 	sqlDB := newDB(t)
+	ctx := context.Background()
 	alice := newUser(t, sqlDB, "alice")
-	seedWorld(t, sqlDB)
-	backdate(t, sqlDB) // only the uninstall may count as changed
-	var dictID int64
-	if err := sqlDB.QueryRow(`SELECT id FROM dictionaries WHERE pack_id = 'mkgloss'`).Scan(&dictID); err != nil {
-		t.Fatalf("find dictionary: %v", err)
-	}
-	if err := dict.Uninstall(context.Background(), sqlDB, dictID); err != nil {
-		t.Fatalf("uninstall: %v", err)
-	}
-
-	fresh := mustPull(t, sqlDB, alice, time.Time{})
-	for _, s := range fresh.Senses {
-		if s.DeletedAt != nil {
-			t.Fatalf("fresh pull shipped tombstoned sense %d", s.ID)
+	for _, key := range []string{"kept", "gone"} {
+		if _, err := plugins.PutData(ctx, sqlDB, alice, nil, "heatmap", key, json.RawMessage(`{}`)); err != nil {
+			t.Fatal(err)
 		}
+	}
+	if err := plugins.DeleteData(ctx, sqlDB, alice, nil, "heatmap", "gone"); err != nil {
+		t.Fatal(err)
+	}
+	fresh := mustPull(t, sqlDB, alice, time.Time{})
+	if len(fresh.PluginData) != 1 || fresh.PluginData[0].Key != "kept" {
+		t.Fatalf("fresh pull = %+v, want the live row only", fresh.PluginData)
 	}
 	incremental := mustPull(t, sqlDB, alice, time.Now().UTC().Add(-time.Hour))
-	if len(incremental.Senses) == 0 {
-		t.Error("incremental pull shipped no tombstones")
-	}
-	for _, s := range incremental.Senses {
-		if s.DeletedAt == nil {
-			t.Errorf("incremental sense %d is live, want only the uninstall tombstones", s.ID)
-		}
+	if len(incremental.PluginData) != 2 {
+		t.Errorf("incremental pull = %+v, want the live row and the tombstone", incremental.PluginData)
 	}
 }
 

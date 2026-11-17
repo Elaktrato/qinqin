@@ -185,6 +185,15 @@ func selectCols(f rows.Family) string {
 
 type scanner interface{ Scan(dest ...any) error }
 
+// SelectColumns is the column list ScanRow reads for family f: a keyset scan
+// of its table (the paged sync pull) selects these.
+func SelectColumns(f rows.Family) string { return selectCols(f) }
+
+// ScanRow reads one row of family f scanned in SelectColumns order.
+func ScanRow(f rows.Family, sc interface{ Scan(dest ...any) error }) (rows.Row, error) {
+	return scanRow(f, sc)
+}
+
 func parseStamp(s string) (time.Time, error) {
 	t, err := time.Parse(time.RFC3339, s)
 	if err != nil {
