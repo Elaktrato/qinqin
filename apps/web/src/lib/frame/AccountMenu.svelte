@@ -39,9 +39,20 @@
 	const name = $derived($user?.username ?? '');
 	const themeName = $derived(store.themeOf(store.current.theme)?.name ?? store.current.theme);
 
-	// A closed menu opens at the first level again.
+	// A closed menu opens at the first level again; opening it clears an
+	// old theme error (the person is trying again).
 	$effect(() => {
 		if (!open) level = 'top';
+		else error = '';
+	});
+
+	// The theme error is announced at once (role="alert") and then goes
+	// away on its own, so it never sits over the page.
+	const ERROR_MS = 8000;
+	$effect(() => {
+		if (!error) return;
+		const timer = setTimeout(() => (error = ''), ERROR_MS);
+		return () => clearTimeout(timer);
 	});
 
 	function back(): void {
