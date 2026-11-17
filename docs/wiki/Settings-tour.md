@@ -32,6 +32,8 @@ Providers, keys and model per provider, the active provider, and this hour's usa
 
 ## Account
 
+**Interface language**: the language of menus, buttons and messages, and of the mails the server sends you. "Browser default" follows your browser's language settings; choosing a language stores it on the server for every device, and saving reloads the page. English is the only interface language today ([Translating qinqin](Translating-qinqin)). Dates and numbers follow your device's region (an English interface without a region shows "16 Nov 2026").
+
 Profile (email, if the server asks for one), password, two-step sign-in, signed-in devices, access tokens for scripts ([API access tokens](API-Access-tokens)), "Your data" (export and restore, and a link to the lookup history), the app and offline section, and Delete account. See [Accounts and sign-in](Accounts-and-sign-in), [Your data](Your-data) and [Install as an app and study offline](Install-and-offline).
 
 ## Data (administrators)

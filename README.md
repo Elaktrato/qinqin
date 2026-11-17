@@ -73,6 +73,9 @@ database with a SvelteKit single-page app embedded in the binary.
   you saw one is stored (synced, in your backup) (`docs/contracts/milestones/`).
 - **Installable app** — the web app installs as a PWA and keeps studying
   offline; reviews wait in a per-user outbox and sync when you are back online.
+- **Interface language** — every interface string comes from one catalogue (English today); the language
+  is a per-user setting that follows the browser by default, mails use it too, and study text is tagged
+  with the study language for screen readers and fonts ([Translating qinqin](docs/wiki/Translating-qinqin.md)).
 - **Accounts** — sessions you can end, registration modes and invites, password
   reset by mail, two-step sign-in (authenticator or emailed code), and personal
   backup and restore (see [Backup](#backup)).

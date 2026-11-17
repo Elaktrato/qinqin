@@ -73,3 +73,25 @@ describe('API errors are translated by code (#73)', () => {
 		expect(text).toMatch(/message[^.]*English/);
 	});
 });
+
+describe('interface language in the wiki and README (#73)', () => {
+	const wiki = resolve(__dirname, '../../../../docs/wiki');
+	const page = (name: string) => readFileSync(resolve(wiki, name), 'utf8');
+
+	it('the settings tour names the interface language setting', () => {
+		expect(page('Settings-tour.md')).toMatch(/Interface language/);
+	});
+	it('accounts and sign-in says mails come in your language', () => {
+		expect(page('Accounts-and-sign-in.md')).toMatch(/mails?[^.]*(your )?(interface )?language/i);
+	});
+	it('a Translating page is linked from the sidebar and says how a language is added', () => {
+		expect(page('_Sidebar.md')).toContain('(Translating-qinqin)');
+		const text = page('Translating-qinqin.md');
+		for (const want of ['en.json', 'catalogue test', 'server/internal/mail/messages', 'i18n-android', 'machine'])
+			expect(text, want).toContain(want);
+	});
+	it('the README feature list mentions the interface language', () => {
+		const readme = readFileSync(resolve(__dirname, '../../../../README.md'), 'utf8');
+		expect(readme).toMatch(/\*\*Interface language\*\*/);
+	});
+});
