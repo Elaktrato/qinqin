@@ -166,7 +166,8 @@ function identity(value: object): number {
 	return id;
 }
 
-function cardsKey(cards: readonly StudyCard[], deckIds: ReadonlySet<string>): string {
+/** A content key of the cards (id, kind, entry, written, decks) and the existing decks. */
+export function cardsKey(cards: readonly StudyCard[], deckIds: ReadonlySet<string>): string {
 	let h = 0x811c9dc5;
 	const mix = (text: string): void => {
 		for (let i = 0; i < text.length; i++) {
@@ -174,7 +175,7 @@ function cardsKey(cards: readonly StudyCard[], deckIds: ReadonlySet<string>): st
 			h = Math.imul(h, 0x01000193) >>> 0;
 		}
 	};
-	for (const card of cards) mix(`${card.id}|${card.kind}|${card.entryId}|${card.deckIds.join(',')};`);
+	for (const card of cards) mix(`${card.id}|${card.kind}|${card.entryId}|${card.written ?? ''}|${card.deckIds.join(',')};`);
 	return `${cards.length}:${h.toString(36)}:${[...deckIds].sort().join(',')}`;
 }
 

@@ -11,15 +11,7 @@ import { studyDay, type StudyDay, type ZoneChange } from '$lib/time/studyDay';
 import { givenTimelines, type Timelines } from '$lib/weekly/replay';
 import { FAMILIES, enabledFamilies, type MilestoneFamily } from '../catalogue';
 import type { Reached } from '../reached';
-
-/** A level of the fixture (replayReached's LevelInput). */
-interface LevelInput {
-	packId: string;
-	level: string;
-	unit: 'word' | 'character';
-	entryIds: readonly number[];
-	cells?: readonly string[][];
-}
+import type { LevelInput } from '../replayReached';
 
 export interface ReachedCase {
 	name: string;

@@ -30,8 +30,8 @@ Owner code (web): `apps/web/src/lib/milestones/` (`catalogue.ts`, `reached.ts`, 
   the live cards and the existing deck ids (`general` always exists), each card's replayed schedule after each
   of its reviews (`{ts, state, stability}`, so FSRS parameters do not matter), the character universe (`null` =
   none) and the levels (`{packId, level, unit, entryIds | cells, deckId}`; `cells` = each cell's glyph forms).
-  `expect` lists **every** reached id of the enabled families with `reachedAt` (RFC 3339 UTC) and `reachedDay`;
-  a missing or an extra id is a failure. Decoded by `reached.test.ts` (log families) and `replayReached.test.ts`
+  `expect` lists **every** reached id of the enabled families with `reachedAt` (RFC 3339 UTC) and `reachedDay`,
+  by `reachedAt`, ties in catalogue order; a missing or an extra id is a failure. Decoded by `reached.test.ts` (log families) and `replayReached.test.ts`
   (replay families).
 - `seen-rows.json` — pulled rows and what is seen (`seen`: id → `{seenAt, reachedDay}`) and listed. Decoded by
   `seen.test.ts`.
