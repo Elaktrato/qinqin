@@ -317,6 +317,11 @@
 		font-variant-numeric: tabular-nums;
 	}
 
+	/* On the accent fill the count takes the chip's --on-accent. */
+	.chip[aria-pressed='true'] .count {
+		color: inherit;
+	}
+
 	.grid {
 		display: grid;
 		grid-template-rows: repeat(7, 0.85rem);

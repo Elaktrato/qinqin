@@ -386,10 +386,11 @@
 
 <style>
 	.app {
-		/* Nav accent: the theme's accent; text on its tint uses the reading
-		   accent (the accent where it reaches 4.5:1, else the text colour). */
+		/* Nav accent: the current item sits on an accent tint with its icon in
+		   the accent; its words stay --text (the reading accent fell to about
+		   3.9:1 on the tint in Catppuccin Latte, measured in #98 B5). */
 		--nav-accent: var(--accent);
-		--nav-accent-text: var(--reading-accent);
+		--nav-accent-text: var(--text);
 		/* The fixed bottom tab bar's height (0 while there is none). Fixed
 		   elements further down, such as the reader's drawer button, keep
 		   clear of the bar with it. */
@@ -497,6 +498,11 @@
 		font-weight: 600;
 		color: var(--nav-accent-text);
 		background: color-mix(in srgb, var(--nav-accent) 14%, transparent);
+	}
+
+	.main-nav a[aria-current='page'] :global(.nav-icon),
+	.footer a[aria-current='page'] :global(.nav-icon) {
+		color: var(--nav-accent);
 	}
 
 	.workspace {
