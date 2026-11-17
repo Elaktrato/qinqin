@@ -2,7 +2,8 @@
 	// The answer (#101): below a --hair line; a region named "Answer" for
 	// screen readers (the heading is visually hidden: the line shows it).
 	// Shared classes: .fa-readings (a centred row: reading + play),
-	// .fa-reading (--reading-accent, 500), .fa-glosses, .fa-source (small, muted).
+	// .fa-reading (--reading-accent, 500), .fa-word (CJK 2.5rem), .fa-glosses,
+	// .fa-play (the round play button in the accent), .fa-source (small, muted).
 	import type { Snippet } from 'svelte';
 	import { t } from '$lib/i18n';
 
@@ -41,6 +42,24 @@
 		color: var(--reading-accent);
 		font-size: 1.125rem;
 		font-weight: var(--weight-medium);
+	}
+	.face-answer :global(.fa-word) {
+		font-family: var(--font-hanzi);
+		font-size: 2.5rem;
+		font-weight: var(--weight-regular);
+		line-height: var(--line-tight);
+	}
+	.face-answer :global(.fa-glosses) {
+		display: grid;
+		gap: var(--space-1);
+		margin: 0;
+		padding: 0;
+		list-style: none;
+	}
+	.face-answer :global(.fa-play .play) {
+		width: 2rem;
+		height: 2rem;
+		color: var(--reading-accent);
 	}
 	.face-answer :global(.fa-source) {
 		color: var(--readable-muted);

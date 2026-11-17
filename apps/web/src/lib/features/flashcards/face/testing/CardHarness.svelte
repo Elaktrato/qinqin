@@ -25,6 +25,11 @@
 
 	provideCardFace();
 	const Card = $derived(card);
+
+	/** The rendered card's instance (its exported functions, e.g. ReverseCard.finish). */
+	export function cardInstance(): unknown {
+		return instance;
+	}
 </script>
 
 <StudyFace

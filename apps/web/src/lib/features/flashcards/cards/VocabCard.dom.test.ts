@@ -6,6 +6,12 @@ import type { FlowItem } from '$lib/study/cardFlow';
 vi.mock('$lib/components/PlayButton.svelte', () => ({ default: () => ({}) }));
 
 import VocabCard from './VocabCard.svelte';
+import CardHarness from '../face/testing/CardHarness.svelte';
+
+// The card renders inside the study face (#101): the harness provides it.
+function renderCard(props: Record<string, unknown>) {
+	return render(CardHarness, { card: VocabCard, cardProps: props });
+}
 
 function kanji(over: Partial<Entry> = {}): Entry {
 	return {
@@ -42,7 +48,7 @@ afterEach(cleanup);
 
 describe('VocabCard for a character', () => {
 	it('shows only the glyph before the reveal', () => {
-		render(VocabCard, { item, entry: kanji(), revealed: false, onDone: vi.fn() });
+		renderCard({ item, entry: kanji(), revealed: false, onDone: vi.fn() });
 		expect(screen.getByText('学')).toBeTruthy();
 		expect(screen.queryByLabelText('Readings')).toBeNull();
 		expect(screen.queryByText('学校')).toBeNull();
@@ -50,13 +56,13 @@ describe('VocabCard for a character', () => {
 	});
 
 	it('shows readings and meanings after the reveal', () => {
-		render(VocabCard, { item, entry: kanji(), revealed: true, onDone: vi.fn() });
+		renderCard({ item, entry: kanji(), revealed: true, onDone: vi.fn() });
 		expect(screen.getByLabelText('Readings')).toBeTruthy();
 		expect(screen.getByText('study')).toBeTruthy();
 	});
 
 	it('shows readings only, without an empty gloss block, for a character with no senses', () => {
-		render(VocabCard, { item, entry: kanji({ senses: [] }), revealed: true, onDone: vi.fn() });
+		renderCard({ item, entry: kanji({ senses: [] }), revealed: true, onDone: vi.fn() });
 		expect(screen.getByLabelText('Readings')).toBeTruthy();
 		expect(screen.queryByText(/No glosses/)).toBeNull();
 		expect(document.querySelector('.dictionary')).toBeNull();
@@ -69,7 +75,26 @@ describe('VocabCard for a character', () => {
 			senses: [],
 			sentences: []
 		});
-		render(VocabCard, { item, entry: word, revealed: true, onDone: vi.fn() });
+		renderCard({ item, entry: word, revealed: true, onDone: vi.fn() });
 		expect(screen.getByText(/No glosses for this word yet/)).toBeTruthy();
+	});
+});
+
+describe('VocabCard on the open page (#101)', () => {
+	it('registers Show answer as the primary before the reveal', async () => {
+		const onDone = vi.fn();
+		renderCard({ item, entry: kanji(), revealed: false, onDone });
+		const button = screen.getByRole('button', { name: 'Show answer' });
+		expect(button.closest('.dock')).not.toBeNull();
+		expect(button.classList.contains('primary')).toBe(true);
+		button.click();
+		expect(onDone).toHaveBeenCalledWith({ suggested: null, meta: {} });
+	});
+
+	it('the prompt holds the word; the answer sits below the hairline', () => {
+		renderCard({ item, entry: kanji(), revealed: true, onDone: vi.fn() });
+		expect(document.querySelector('.face-prompt .fp-word')?.textContent).toBe('学');
+		expect(document.querySelector('.face-answer')?.textContent).toContain('study');
+		expect(document.querySelector('.dock button')).toBeNull();
 	});
 });

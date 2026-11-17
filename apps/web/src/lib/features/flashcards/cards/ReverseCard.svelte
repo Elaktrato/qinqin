@@ -15,6 +15,13 @@
 		suggestReverseGrade
 	} from '$lib/study/reverse';
 	import type { ReviewMeta } from '$lib/study/types';
+	import Button from '$lib/ui/Button.svelte';
+	import Field from '$lib/ui/Field.svelte';
+	import Icon from '$lib/ui/Icon.svelte';
+	import FaceAnswer from '../face/FaceAnswer.svelte';
+	import FacePrompt from '../face/FacePrompt.svelte';
+	import FaceWork from '../face/FaceWork.svelte';
+	import { usePrimary } from '../face/cardFace.svelte';
 
 	interface Props {
 		item: FlowItem;
@@ -36,7 +43,7 @@
 
 	let typed = $state('');
 	let readingShown = $state(false);
-	let field = $state<HTMLInputElement | null>(null);
+	let field = $state<HTMLInputElement | HTMLTextAreaElement>();
 
 	const typedGrade = $derived(suggestReverseGrade({ typed, accepted, readingShown: false }));
 	const verdict = $derived(typedGrade === null ? null : typedGrade === 1 ? 'wrong' : 'right');
@@ -53,6 +60,14 @@
 		onDone({ suggested, meta });
 	}
 
+	// The docked primary (#101): Show answer while the field is empty, Check
+	// once something is typed; both finish the card as before.
+	usePrimary(() =>
+		revealed
+			? null
+			: { label: typed.trim() === '' ? t('flashcards.card.showAnswer') : t('flashcards.card.check'), run: finish }
+	);
+
 	function onFieldKeydown(event: KeyboardEvent): void {
 		if (event.key !== 'Enter') return;
 		// An IME confirming a candidate also sends Enter (keyCode 229).
@@ -63,236 +78,145 @@
 	}
 </script>
 
-<section class="front" aria-label={t('flashcards.card.meaning')}>
-	{#if front.pos.length > 0}
-		<p class="pos">{front.pos.join(', ')}</p>
-	{/if}
-	{#if front.glosses.length > 0}
-		<ol class="glosses">
-			{#each front.glosses as gloss, i (i)}
-				<li>{gloss}</li>
-			{/each}
-		</ol>
-	{:else}
-		<p class="hint">{t('flashcards.card.noGlosses')}</p>
-	{/if}
+<FacePrompt>
+	<section class="front" aria-label={t('flashcards.card.meaning')}>
+		{#if front.pos.length > 0}
+			<p class="fp-sub">{front.pos.join(', ')}</p>
+		{/if}
+		{#if front.glosses.length > 0}
+			<ol class="glosses fp-meaning">
+				{#each front.glosses as gloss, i (i)}
+					<li>{gloss}</li>
+				{/each}
+			</ol>
+		{:else}
+			<p class="fp-sub">{t('flashcards.card.noGlosses')}</p>
+		{/if}
+	</section>
+</FacePrompt>
 
-	{#if !revealed}
-		{#if readingShown && faces.readings.length > 0}
+<FaceWork>
+	<div class="entry" class:right={revealed && verdict === 'right'}>
+		<Field
+			label={t('flashcards.card.typeWord')}
+			id="reverse-answer"
+			autocomplete="off"
+			autocapitalize="off"
+			spellcheck="false"
+			lang={language}
+			bind:element={field}
+			bind:value={typed}
+			disabled={revealed}
+			onkeydown={onFieldKeydown}
+		/>
+	</div>
+	{#if !revealed && faces.readings.length > 0}
+		{#if readingShown}
 			<ul class="readings" aria-label={t('flashcards.card.readings')}>
 				{#each faces.readings as reading, i (`${reading.type}:${i}`)}
 					<li data-type={reading.type}><ReadingText type={reading.type} value={reading.value} language={entry.language} /></li>
 				{/each}
 			</ul>
-		{:else if faces.readings.length > 0}
-			<button type="button" class="secondary" onclick={() => (readingShown = true)}
-				>{t('flashcards.card.showReading')}</button
-			>
+		{:else}
+			<Button variant="plain" onclick={() => (readingShown = true)}>{t('flashcards.card.showReading')}</Button>
 		{/if}
 	{/if}
-</section>
-
-<div class="entry">
-	<label for="reverse-answer">{t('flashcards.card.typeWord')}</label>
-	<input
-		id="reverse-answer"
-		type="text"
-		autocomplete="off"
-		autocapitalize="off"
-		spellcheck="false"
-		lang={language}
-		bind:this={field}
-		bind:value={typed}
-		disabled={revealed}
-		onkeydown={onFieldKeydown}
-	/>
-</div>
+</FaceWork>
 
 {#if revealed}
-	<section class="answer" aria-labelledby="reverse-answer-heading">
-		<h2 id="reverse-answer-heading">{t('flashcards.card.answer')}</h2>
+	<FaceAnswer>
 		{#if verdict !== null}
 			<p class="feedback" class:bad={verdict === 'wrong'} role="status" aria-live="polite">
-				{verdict === 'right' ? t('flashcards.card.correct') : t('flashcards.card.notQuite')}
+				<Icon name={verdict === 'right' ? 'check' : 'close'} size="s" />
+				<span>{verdict === 'right' ? t('flashcards.card.correct') : t('flashcards.card.notQuite')}</span>
 			</p>
 		{/if}
-		<p class="written" lang={studyLang(language)}>{faces.written}</p>
-		{#if faces.readings.length > 0}
-			<ul class="readings" aria-label={t('flashcards.card.readings')}>
-				{#each faces.readings as reading, i (`${reading.type}:${i}`)}
-					<li data-type={reading.type}><ReadingText type={reading.type} value={reading.value} language={entry.language} /></li>
-				{/each}
-			</ul>
-		{/if}
-		{#if audio}
-			<div class="sound">
-				<PlayButton
-					clips={audio.clips}
-					speakText={audio.speakText}
-					lang={audio.lang}
-					deviceVoice={audio.deviceVoice}
-					label={entry.written}
-				/>
-				{#if credit}
-					<p class="credit">{credit}</p>
+		<p class="fa-word" lang={studyLang(language)}>{faces.written}</p>
+		{#if faces.readings.length > 0 || audio}
+			<div class="fa-readings">
+				{#if faces.readings.length > 0}
+					<ul class="fa-readings" aria-label={t('flashcards.card.readings')}>
+						{#each faces.readings as reading, i (`${reading.type}:${i}`)}
+							<li class="fa-reading" data-type={reading.type}><ReadingText type={reading.type} value={reading.value} language={entry.language} /></li>
+						{/each}
+					</ul>
+				{/if}
+				{#if audio}
+					<span class="fa-play">
+						<PlayButton
+							clips={audio.clips}
+							speakText={audio.speakText}
+							lang={audio.lang}
+							deviceVoice={audio.deviceVoice}
+							label={entry.written}
+						/>
+					</span>
 				{/if}
 			</div>
 		{/if}
 		{#each faces.glosses as group (group.dictionaryName)}
 			<article class="dictionary">
-				<h3>{group.dictionaryName}</h3>
-				<ol class="glosses">
+				<ol class="fa-glosses">
 					{#each group.glosses as gloss, i (i)}
 						<li>{gloss}</li>
 					{/each}
 				</ol>
+				<p class="fa-source">{group.dictionaryName}</p>
 			</article>
 		{/each}
-	</section>
-{:else}
-	<button type="button" class="reveal" onclick={finish}>{t('flashcards.card.showAnswer')}</button>
+		{#if credit}
+			<p class="credit fa-source">{credit}</p>
+		{/if}
+	</FaceAnswer>
 {/if}
 
 <style>
-	.pos {
-		margin: 0;
-		font-size: 0.85rem;
-		color: var(--readable-muted);
-		font-style: italic;
-	}
-
-	.glosses {
-		margin: 0.35rem 0 0;
-		padding-left: 1.4rem;
+	.front {
 		display: grid;
-		gap: 0.25rem;
-		font-size: 1.35rem;
+		gap: var(--space-1);
+		justify-items: center;
 	}
-
-	.hint {
-		color: var(--readable-muted);
-	}
-
-	.readings {
-		list-style: none;
-		margin: 0.5rem 0 0;
+	.glosses {
+		display: grid;
+		gap: var(--space-1);
 		padding: 0;
+		list-style: none;
+	}
+	.entry {
+		width: 100%;
+		max-width: 20rem;
+	}
+	.entry :global(input) {
+		font-family: var(--font-hanzi);
+		font-size: 1.25rem;
+		text-align: center;
+	}
+	.entry.right :global(input) {
+		border-bottom: 2px solid var(--good);
+	}
+	.readings {
 		display: flex;
 		flex-wrap: wrap;
-		gap: 0.35rem 1rem;
-		color: var(--readable-muted);
-	}
-
-	.entry {
-		margin-top: 1.25rem;
-		display: grid;
-		gap: 0.3rem;
-		max-width: 22rem;
-	}
-
-	.entry label {
-		font-size: 0.85rem;
-		font-weight: 600;
-	}
-
-	.entry input {
-		min-height: 44px;
-		padding: 0.4rem 0.7rem;
-		border: 1px solid color-mix(in srgb, currentColor 35%, transparent);
-		border-radius: 0.4rem;
-		background: transparent;
-		color: inherit;
-		font: inherit;
-		font-size: 1.4rem;
-	}
-
-	.entry input:focus-visible {
-		outline: 2px solid var(--focus-colour);
-		outline-offset: 2px;
-	}
-
-	.secondary {
-		margin-top: 0.75rem;
-		min-height: 44px;
-		padding: 0.4rem 0.9rem;
-		border: 1px solid color-mix(in srgb, currentColor 35%, transparent);
-		border-radius: 0.4rem;
-		background: transparent;
-		color: inherit;
-		font: inherit;
-		cursor: pointer;
-	}
-
-	.reveal {
-		margin-top: 1.25rem;
-		min-height: 44px;
-		padding: 0.55rem 1rem;
-		border: 0;
-		border-radius: 0.4rem;
-		background: var(--accent);
-		color: var(--on-accent);
-		font: inherit;
-		font-weight: 600;
-		cursor: pointer;
-	}
-
-	.secondary:focus-visible,
-	.reveal:focus-visible {
-		outline: 2px solid var(--focus-colour);
-		outline-offset: 2px;
-	}
-
-	.answer {
-		margin-top: 1.5rem;
-		border-top: 1px solid color-mix(in srgb, currentColor 18%, transparent);
-		padding-top: 1rem;
-	}
-
-	.answer h2 {
-		margin: 0 0 0.5rem;
-		font-size: 0.8rem;
-		letter-spacing: 0.06em;
-		text-transform: uppercase;
-		color: var(--readable-muted);
-	}
-
-	.written {
+		justify-content: center;
+		gap: var(--space-1) var(--space-3);
 		margin: 0;
-		font-size: 2.5rem;
-		font-weight: 700;
-		line-height: 1.2;
+		padding: 0;
+		list-style: none;
+		color: var(--reading-accent);
 	}
-
 	.feedback {
-		margin: 0 0 0.5rem;
-		font-weight: 600;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		gap: var(--space-1);
+		font-weight: var(--weight-strong);
 		color: var(--text);
 	}
-
 	.feedback.bad {
 		color: var(--readable-bad);
 	}
-
-	.sound {
-		display: flex;
-		align-items: center;
-		gap: 0.6rem;
-		flex-wrap: wrap;
-		margin: 0.5rem 0;
-	}
-
-	.credit {
-		margin: 0;
-		font-size: 0.8rem;
-		color: var(--readable-muted);
-	}
-
-	.dictionary + .dictionary {
-		margin-top: 0.9rem;
-	}
-
-	.dictionary h3 {
-		margin: 0.5rem 0 0;
-		font-size: 1rem;
+	.dictionary {
+		display: grid;
+		gap: var(--space-1);
 	}
 </style>
