@@ -15,9 +15,17 @@ import { scanTarget } from './scanText';
 
 const POPUP = '[data-lookup-popup]';
 
-/** inPopup reports whether an event target is inside a lookup popup. */
+/**
+ * inPopup reports whether an event target is inside a lookup popup, or inside
+ * the phone's lookup sheet (a dialog holding one; its scrolling body and drag
+ * handle sit around the popup content). The sheet's backdrop is the dialog
+ * element itself: a tap there is outside.
+ */
 export function inPopup(target: EventTarget | null): boolean {
-	return target instanceof Element && target.closest(POPUP) !== null;
+	if (!(target instanceof Element)) return false;
+	if (target.closest(POPUP) !== null) return true;
+	const sheet = target.closest('dialog');
+	return sheet !== null && sheet !== target && sheet.querySelector(POPUP) !== null;
 }
 
 /** anchorOf turns a viewport rectangle into a popup frame anchor. */

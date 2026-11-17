@@ -165,7 +165,8 @@
 
 <style>
 	h2 {
-		font-size: 1rem;
+		font-size: var(--font-size-s);
+		font-weight: var(--weight-strong);
 		margin: 0.25rem 0 0.4rem;
 	}
 
@@ -212,7 +213,7 @@
 		gap: 0.25rem 0.75rem;
 		align-items: baseline;
 		padding: 0.45rem 0 0.45rem 0.6rem;
-		border-bottom: 1px solid color-mix(in srgb, currentColor 12%, transparent);
+		border-bottom: 1px solid var(--hair);
 		border-inline-start: 0.3rem solid transparent;
 	}
 
@@ -251,24 +252,25 @@
 		line-clamp: 2;
 		overflow: hidden;
 		text-decoration: underline;
-		text-decoration-color: color-mix(in srgb, currentColor 40%, transparent);
+		text-decoration-color: var(--line);
 		overflow-wrap: anywhere;
 	}
 
 	.jump:disabled {
 		cursor: default;
-		opacity: 0.7;
+		color: var(--readable-muted);
 	}
 
 	.meta:empty {
 		display: none;
 	}
 
+	/* A chip (design §5): a --raised wash, no bordered pill. */
 	.badge {
-		font-size: 0.75rem;
-		padding: 0 0.35rem;
-		border-radius: 0.6rem;
-		border: 1px solid color-mix(in srgb, currentColor 40%, transparent);
+		font-size: var(--font-size-xs);
+		padding: 0 var(--space-1);
+		border-radius: var(--radius);
+		background: var(--raised);
 	}
 
 	/* Notes keep their line breaks; long ones are cut to a few lines here

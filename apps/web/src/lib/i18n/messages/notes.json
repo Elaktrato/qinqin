@@ -54,7 +54,6 @@
 	"packs.package.ready": "{id} is a technical package id (lexicon.zh); {mb} a formatted number with one decimal.",
 	"packs.uninstall.dictionary": "`qinqin seed` is a command; keep it untranslated, with its backticks.",
 	"plugin.qinqinCore.activity.review.count": "{n} is a number or \"32 of 50\"; the plural follows the count (a goal's target). Keep in step with server/internal/plugins/builtin/core.json describe.",
-	"reader.book.chapter": "Before a chapter-number select, followed by reader.book.of (\"Chapter [3] of 12\").",
 	"reader.bookmarks.addedOn": "Screen-reader text before a bookmark's date; starts with a comma.",
 	"reader.chapterTitled": "{number} is reader.chapter (\"Chapter 3\"), {title} the chapter's own title.",
 	"reader.display.fontApp": "Reader font option that follows the app-wide hanzi font of Settings → Appearance; {font} is its current name (settings.appearance.hanziFont.sans, .serif or .kai).",

@@ -1,23 +1,28 @@
 <script lang="ts">
 	import { t } from '$lib/i18n';
+	import { IconButton, Sheet, Tabs, type IconName } from '$lib/ui';
 	import { tick, type Snippet } from 'svelte';
-	import { inPopup } from './popupPointer.svelte';
-	import { nextFocusIndex, tabKeyTarget, type RailMode, type RailTab } from './railState';
+	import { tabKeyTarget, type RailMode, type RailTab } from './railState';
 
 	export interface RailTabInfo {
 		id: RailTab;
 		label: string;
+		icon: IconName;
 		/** Something in the tab needs attention (a load or save error): a dot on its tab. */
 		alert?: boolean;
 	}
 
-	// The reader's side rail: a vertical tab strip (Bookmarks, Highlights)
-	// with one panel per tab. On wide screens (mode 'column') it is a
-	// column beside the text, sticky at the top of the screen, and `open`
-	// says whether it is expanded or collapsed to the strip. Below that
-	// (mode 'drawer') it is a drawer at the right edge, opened from a
-	// floating button; `open` says whether the drawer is shown. It never
-	// moves the page: using it does not scroll the text.
+	// The reader's side rail (design §9 "Reader", #102).
+	//
+	// mode 'column' (wide screens): a column of icon tabs at the right edge of
+	// the page (a vertical tablist with tooltips, roving tabindex), the open
+	// tab's panel (~220px) between the text and the icons. Activating the open
+	// tab collapses the panel; the icon column stays. Sticky at the top of the
+	// window and scrolling inside itself, so using it never scrolls the text.
+	//
+	// mode 'sheet' (below 1000px): nothing in the page. `open` shows the
+	// shared bottom Sheet (lib/ui) with the same panels behind text tabs; the
+	// caller owns the button that opens it (the frame's phone bar).
 	let {
 		tabs,
 		active,
@@ -26,7 +31,7 @@
 		onToggle,
 		mode,
 		panel,
-		escapeBlocked = () => false
+		opener = () => null
 	}: {
 		tabs: RailTabInfo[];
 		active: RailTab;
@@ -36,26 +41,24 @@
 		mode: RailMode;
 		/** The content of a tab's panel. */
 		panel: Snippet<[RailTab]>;
-		/** Something above the drawer takes Escape first (an open lookup popup). */
-		escapeBlocked?: () => boolean;
+		/** The button that opens the sheet, for focus when the layout switches. */
+		opener?: () => HTMLElement | null;
 	} = $props();
 
 	let rail = $state<HTMLElement | null>(null);
 
-	// Something opened from the rail that floats above it (the highlight
-	// editor, marked data-rail-overlay): using it keeps the drawer open.
-	function inOverlay(node: Node | EventTarget): boolean {
-		return node instanceof Element && node.closest('[data-rail-overlay]') !== null;
-	}
-	let opener = $state<HTMLButtonElement | null>(null);
-
-	const anyAlert = $derived(tabs.some((t) => t.alert));
+	const nameOf = (tab: RailTabInfo): string => (tab.alert ? `${tab.label} ${t('reader.rail.attention')}` : tab.label);
 
 	function focusTab(tab: RailTab): void {
 		document.getElementById(`rail-tab-${tab}`)?.focus({ preventScroll: true });
 	}
 
-	function select(tab: RailTab): void {
+	// The open tab again collapses the panel; any tab opens it on itself.
+	function activate(tab: RailTab): void {
+		if (tab === active && open) {
+			onToggle(false);
+			return;
+		}
 		onSelect(tab);
 		if (!open) onToggle(true);
 	}
@@ -68,66 +71,23 @@
 		focusTab(tabs[next].id);
 	}
 
-	async function openDrawer(): Promise<void> {
-		onToggle(true);
-		await tick();
-		focusTab(active);
+	// Crossing the 1000 px line swaps the column and the sheet. Focus in the
+	// rail would be lost with the element that held it: it goes to the active
+	// tab (column) or the sheet's button (sheet) instead. The last focus is
+	// tracked because the button (earlier in the page) may already be gone
+	// when this runs.
+	function isRail(node: EventTarget | null): boolean {
+		if (!(node instanceof Node)) return false;
+		const button = opener();
+		const sheet = document.getElementById('reader-rail-sheet');
+		return !!rail?.contains(node) || !!button?.contains(node) || !!sheet?.contains(node);
 	}
-
-	function closeDrawer(returnFocus: boolean): void {
-		onToggle(false);
-		if (returnFocus) opener?.focus({ preventScroll: true });
-	}
-
-	// The elements Tab can reach in the drawer right now (the inactive tab
-	// has tabindex -1; hidden panels have no boxes).
-	function focusables(): HTMLElement[] {
-		if (!rail) return [];
-		const all = rail.querySelectorAll<HTMLElement>(
-			'button, [href], input, select, textarea, [tabindex]'
-		);
-		return [...all].filter(
-			(el) => el.tabIndex >= 0 && !el.matches(':disabled') && el.getClientRects().length > 0
-		);
-	}
-
-	// Keys in the open drawer:
-	// - Tab and Shift+Tab wrap inside it. The drawer covers the text, so
-	//   focus leaving it would land on links hidden underneath and scroll
-	//   the page (overwriting the reading position). It stays a plain
-	//   region, not a dialog, so the `b` key keeps working in it.
-	// - Escape closes it. Inner handlers (a rename field, a delete
-	//   confirmation) take their Escape first, and so does an open lookup
-	//   popup, which is drawn on top.
-	function railKey(event: KeyboardEvent): void {
-		if (mode !== 'drawer' || !open) return;
-		if (event.key === 'Tab' && !event.altKey && !event.ctrlKey && !event.metaKey) {
-			const list = focusables();
-			const current = list.indexOf(document.activeElement as HTMLElement);
-			const next = nextFocusIndex(list.length, current, event.shiftKey);
-			if (next === null) return;
-			event.preventDefault();
-			list[next].focus();
-			return;
-		}
-		if (event.key !== 'Escape' || event.isComposing || event.defaultPrevented) return;
-		if (escapeBlocked()) return;
-		event.preventDefault();
-		closeDrawer(true);
-	}
-
-	// Safety net for the Tab wrap: focus moving to the page outside (a
-	// click target, a screen reader's virtual cursor) closes the drawer.
-	function railFocusOut(event: FocusEvent): void {
-		if (mode !== 'drawer' || !open) return;
-		const next = event.relatedTarget as Node | null;
-		if (!next || rail?.contains(next) || opener?.contains(next) || inPopup(next) || inOverlay(next)) return;
-		onToggle(false);
-	}
-
-	// Crossing the 1000 px line swaps the column and the drawer. Focus in
-	// the rail would be lost with the element that held it: it goes to
-	// the active tab (column) or the drawer button (drawer) instead.
+	let focusInRail = false;
+	$effect(() => {
+		const onFocus = (e: FocusEvent): void => void (focusInRail = isRail(e.target));
+		document.addEventListener('focusin', onFocus);
+		return () => document.removeEventListener('focusin', onFocus);
+	});
 	let lastMode: RailMode | null = null;
 	$effect.pre(() => {
 		const now = mode;
@@ -135,275 +95,166 @@
 		lastMode = now;
 		if (before === null || before === now) return;
 		const focused = document.activeElement;
-		const inside = !!focused && (!!rail?.contains(focused) || !!opener?.contains(focused));
-		if (!inside) return;
+		const lost = !focused || focused === document.body;
+		if (!isRail(focused) && !(lost && focusInRail)) return;
 		void tick().then(() => {
 			if (now === 'column') focusTab(active);
-			else opener?.focus({ preventScroll: true });
+			else opener()?.focus({ preventScroll: true });
 		});
-	});
-
-	// A click or tap outside the open drawer closes it. Focus then goes
-	// where the click put it.
-	$effect(() => {
-		if (mode !== 'drawer' || !open) return;
-		const onDown = (event: PointerEvent): void => {
-			const target = event.target as Node | null;
-			if (!target || rail?.contains(target) || opener?.contains(target) || inPopup(target) || inOverlay(target))
-				return;
-			onToggle(false);
-		};
-		document.addEventListener('pointerdown', onDown, true);
-		return () => document.removeEventListener('pointerdown', onDown, true);
 	});
 </script>
 
-{#if mode === 'drawer'}
-	<button
-		bind:this={opener}
-		type="button"
-		class="opener"
-		aria-expanded={open}
-		aria-controls="reader-rail"
-		aria-label={anyAlert ? t('reader.rail.bookmarksAttention') : t('reader.rail.bookmarks')}
-		title={t('reader.rail.bookmarks')}
-		onclick={() => (open ? closeDrawer(false) : openDrawer())}
-	>
-		<svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true" focusable="false">
-			<path
-				d="M4 1.75h8a.75.75 0 0 1 .75.75v12l-4.75-3.2-4.75 3.2v-12A.75.75 0 0 1 4 1.75z"
-				fill="none"
-				stroke="currentColor"
-				stroke-width="1.5"
-				stroke-linejoin="round"
-			/>
-		</svg>
-		{#if anyAlert}<span class="dot" aria-hidden="true"></span>{/if}
-	</button>
-{/if}
-
-<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
-<aside
-	bind:this={rail}
-	id="reader-rail"
-	class="rail {mode}"
-	class:open
-	hidden={mode === 'drawer' && !open}
-	aria-label={t('reader.rail.bookmarks')}
-	onkeydown={railKey}
-	onfocusout={railFocusOut}
->
-	<div class="strip">
-		{#if mode === 'column'}
-			<button
-				type="button"
-				class="collapse"
-				aria-expanded={open}
-				aria-controls="rail-panels"
-				aria-label={open ? t('reader.rail.collapse') : t('reader.rail.expand')}
-				title={open ? t('reader.rail.collapse') : t('reader.rail.expand')}
-				onclick={() => onToggle(!open)}
-			>
-				<span aria-hidden="true">{open ? '»' : '«'}</span>
-			</button>
-		{:else}
-			<button
-				type="button"
-				class="collapse"
-				aria-label={t('reader.rail.close')}
-				title={t('reader.rail.closeTitle')}
-				onclick={() => closeDrawer(true)}
-			>
-				<span aria-hidden="true">×</span>
-			</button>
+{#if mode === 'column'}
+	<aside bind:this={rail} id="reader-rail" class="rail" class:open aria-label={t('reader.rail.panel')}>
+		{#if open}
+			{#each tabs as tab (tab.id)}
+				{#if tab.id === active}
+					<div id="rail-panel-{tab.id}" role="tabpanel" aria-labelledby="rail-tab-{tab.id}" class="panel">
+						{@render panel(tab.id)}
+					</div>
+				{/if}
+			{/each}
 		{/if}
-		<div role="tablist" aria-orientation="vertical" aria-label={t('reader.rail.panel')}>
+		<div class="icons" role="tablist" aria-orientation="vertical" aria-label={t('reader.rail.panel')}>
 			{#each tabs as tab, index (tab.id)}
-				<button
-					id="rail-tab-{tab.id}"
-					type="button"
-					role="tab"
-					class="tab"
-					aria-selected={tab.id === active}
-					aria-controls="rail-panel-{tab.id}"
-					tabindex={tab.id === active ? 0 : -1}
-					onclick={() => select(tab.id)}
-					onkeydown={(e) => tabKey(e, index)}
-				>
-					<span class="tab-label">{tab.label}</span>
-					{#if tab.alert}<span class="dot" aria-hidden="true"></span><span class="visually-hidden"
-							>{t('reader.rail.attention')}</span
-						>{/if}
-				</button>
+				<span class="tab-cell">
+					<IconButton
+						id="rail-tab-{tab.id}"
+						class="rail-tab"
+						role="tab"
+						label={nameOf(tab)}
+						icon={tab.icon}
+						placement="start"
+						aria-selected={tab.id === active}
+						aria-expanded={tab.id === active ? open : undefined}
+						aria-controls={tab.id === active && open ? `rail-panel-${tab.id}` : undefined}
+						tabindex={tab.id === active ? 0 : -1}
+						onclick={() => activate(tab.id)}
+						onkeydown={(e: KeyboardEvent) => tabKey(e, index)}
+					/>
+					{#if tab.alert}<span class="dot" aria-hidden="true"></span>{/if}
+				</span>
 			{/each}
 		</div>
-	</div>
-
-	<div id="rail-panels" class="panels" hidden={!open}>
-		{#each tabs as tab (tab.id)}
-			<div
-				id="rail-panel-{tab.id}"
-				role="tabpanel"
-				aria-labelledby="rail-tab-{tab.id}"
-				class="panel"
-				hidden={tab.id !== active}
-			>
-				{@render panel(tab.id)}
-			</div>
-		{/each}
-	</div>
-</aside>
+	</aside>
+{:else}
+	<Sheet {open} label={t('reader.rail.sheet')} onclose={() => onToggle(false)}>
+		<div id="reader-rail-sheet" class="sheet-body">
+			<Tabs
+				label={t('reader.rail.panel')}
+				tabs={tabs.map((tab) => ({ id: tab.id, label: nameOf(tab) }))}
+				selected={active}
+				onselect={(id) => onSelect(id as RailTab)}
+				panel={panel as Snippet<[string]>}
+			/>
+		</div>
+	</Sheet>
+{/if}
 
 <style>
+	/* The rail column at the page's right edge: the open panel, then the
+	   icons. Sticky, scrolling inside itself; no box (design §5): a hairline
+	   at the start of each part. */
 	.rail {
+		position: sticky;
+		top: 0;
+		align-self: start;
 		display: flex;
-		align-items: stretch;
+		max-height: 100vh;
+		max-height: 100dvh;
 		box-sizing: border-box;
 	}
 
-	.rail[hidden] {
-		display: none;
+	.panel {
+		box-sizing: border-box;
+		width: 13.75rem;
+		overflow-y: auto;
+		overscroll-behavior: contain;
+		padding: var(--space-5) var(--space-4);
+		border-inline-start: 1px solid var(--hair);
+		font-size: var(--font-size-s);
+		animation: rail-panel-in var(--motion-medium) var(--ease-standard);
 	}
 
-	/* Wide screens: a column beside the text that stays at hand while
-	   reading. It scrolls inside itself, never the page. */
-	.rail.column {
-		/* The text column gives way on narrower screens, not the rail. */
-		flex: none;
-		position: sticky;
-		top: 1rem;
-		align-self: flex-start;
-		max-height: calc(100vh - 2rem);
-		border-inline-start: 1px solid color-mix(in srgb, currentColor 14%, transparent);
-	}
-
-	.rail.column.open {
-		width: 18rem;
-	}
-
-	/* Phones and narrow windows: a drawer over the right edge. Below the
-	   lookup popups (z-index 50+), above the workspace listbox (20). */
-	.rail.drawer {
-		position: fixed;
-		top: 0;
-		right: 0;
-		bottom: 0;
-		z-index: 30;
-		width: min(22rem, calc(100vw - 2.5rem));
-		background: var(--panel);
-		color: var(--text);
-		border-inline-start: 1px solid color-mix(in srgb, currentColor 20%, transparent);
-		box-shadow: var(--shadow-float);
-	}
-
-	.strip {
+	.icons {
+		box-sizing: border-box;
+		width: 2.75rem;
 		display: flex;
 		flex-direction: column;
-		gap: 0.35rem;
 		align-items: center;
-		flex: 0 0 auto;
-		width: 2.5rem;
-		padding: 0.25rem 0;
+		gap: var(--space-1);
+		padding: var(--space-3) 0;
+		border-inline-start: 1px solid var(--hair);
 	}
 
-	.collapse {
-		font: inherit;
-		width: 2rem;
-		height: 2rem;
-		padding: 0;
-		line-height: 1;
-	}
-
-	[role='tablist'] {
-		display: flex;
-		flex-direction: column;
-		gap: 0.35rem;
-	}
-
-	.tab {
+	.tab-cell {
 		position: relative;
-		width: 2rem;
-		padding: 0.6rem 0;
-		font: inherit;
-		font-size: 0.85rem;
-		background: none;
-		color: inherit;
-		border: 1px solid color-mix(in srgb, currentColor 25%, transparent);
-		border-radius: 0.35rem;
-		cursor: pointer;
+		display: inline-flex;
 	}
 
-	.tab-label {
-		writing-mode: vertical-rl;
+	.icons :global(.rail-tab) {
+		position: relative;
+		color: var(--readable-muted);
 	}
 
-	.tab[aria-selected='true'] {
-		border-color: var(--accent);
-		box-shadow: inset -3px 0 0 var(--accent);
-		font-weight: 600;
+	.icons :global(.rail-tab[aria-selected='true']) {
+		color: var(--accent);
+	}
+
+	/* The active tab's marker: a short accent bar at the outer edge (a
+	   shape, so the state is never carried by colour alone). */
+	.icons :global(.rail-tab[aria-selected='true'])::after {
+		content: '';
+		position: absolute;
+		inset-inline-end: calc(-1 * var(--space-1) - 2px);
+		top: 50%;
+		width: 3px;
+		height: 1.25rem;
+		margin-top: -0.625rem;
+		border-radius: 2px;
+		background: var(--accent);
 	}
 
 	.dot {
 		position: absolute;
-		top: -0.25rem;
-		right: -0.25rem;
-		width: 0.6rem;
-		height: 0.6rem;
+		top: 0.2rem;
+		inset-inline-end: 0.2rem;
+		width: 0.5rem;
+		height: 0.5rem;
 		border-radius: 50%;
 		background: var(--bad);
 		border: 2px solid var(--panel);
+		pointer-events: none;
 	}
 
-	.panels {
-		flex: 1 1 auto;
-		min-width: 0;
-		overflow-y: auto;
-		overscroll-behavior: contain;
-		padding: 0.25rem 0.5rem 0.75rem 0.75rem;
+	.sheet-body {
+		padding-top: var(--space-1);
 	}
 
-	.panels[hidden],
-	.panel[hidden] {
-		display: none;
+	/* Five text tabs on one line at phone width: closer, scrolling sideways if need be. */
+	.sheet-body :global([role='tablist']) {
+		flex-wrap: nowrap;
+		gap: var(--space-4);
+		overflow-x: auto;
+		scrollbar-width: none;
 	}
 
-	.opener {
-		position: fixed;
-		right: 0;
-		bottom: calc(1.25rem + env(safe-area-inset-bottom, 0px));
-		z-index: 25;
-		display: inline-flex;
-		align-items: center;
-		justify-content: center;
-		/* Exactly the page's side margin (main's 1.5rem padding), so it
-		   never covers the text column; 24 × 44 px is still a fair target. */
-		box-sizing: border-box;
-		width: 1.5rem;
-		height: 2.75rem;
-		padding: 0;
-		background: var(--panel);
-		color: var(--text);
-		border: 1px solid color-mix(in srgb, currentColor 30%, transparent);
-		border-inline-end: none;
-		border-radius: 0.4rem 0 0 0.4rem;
-		cursor: pointer;
+	@keyframes rail-panel-in {
+		from {
+			opacity: 0;
+		}
 	}
 
-	.opener svg {
-		flex: none;
-	}
-
-	.opener .dot {
-		top: 0.15rem;
-		right: 0.1rem;
-	}
-
-	.visually-hidden {
-		position: absolute;
-		width: 1px;
-		height: 1px;
-		overflow: hidden;
-		clip-path: inset(50%);
-		white-space: nowrap;
+	@media (forced-colors: active) {
+		.icons :global(.rail-tab) {
+			color: ButtonText;
+		}
+		.icons :global(.rail-tab[aria-selected='true'])::after {
+			background: Highlight;
+		}
+		.dot {
+			background: Highlight;
+			border-color: Canvas;
+		}
 	}
 </style>

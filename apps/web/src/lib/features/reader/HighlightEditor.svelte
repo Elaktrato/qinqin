@@ -304,8 +304,8 @@
 		overflow-y: auto;
 		overscroll-behavior: contain;
 		padding: 0.5rem 0.8rem 0.7rem;
-		border: 1px solid color-mix(in srgb, currentColor 22%, transparent);
-		border-radius: 0.5rem;
+		border: 1px solid var(--hair);
+		border-radius: var(--radius-large);
 		background: var(--panel);
 		color: var(--text);
 		box-shadow: var(--shadow-float);
@@ -385,7 +385,7 @@
 		height: 1.75rem;
 		padding: 0;
 		border-radius: 50%;
-		border: 1px solid color-mix(in srgb, currentColor 35%, transparent);
+		border: 1px solid var(--line);
 		cursor: pointer;
 	}
 

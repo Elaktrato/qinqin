@@ -185,40 +185,29 @@ button.link:disabled {
 	text-decoration: none;
 }
 
-/* Reader word states (#68, themed in #96): new = solid underline in the
-   accent over the accent tint, learning = dotted underline in `warn` over
-   a `warn` wash, known = plain (design §6 "reader word marks"). The text
-   colour never changes; the line style carries the state in every theme.
-   The underline and tint are background layers ending 0.12em before the
-   word's last piece ends (.w-end), so neighbouring words of one state stay
-   apart. */
-:root {
-	--word-new: var(--accent-14);
-	--word-new-line: var(--accent);
-	--word-learning: color-mix(in srgb, var(--warn) 14%, transparent);
-	--word-learning-line: var(--warn);
-}
+/* Reader word states (#68, themed in #96, lighter in #102): new = a thin
+   solid underline in the accent, learning = a thin dotted underline in
+   `warn`, known = plain (design §6 "reader word marks"). No tint: the text
+   colour and its background never change; the line style carries the
+   state in every theme. The line is a background layer just under the
+   glyphs, ending 0.12em before the word's last piece ends (.w-end), so
+   neighbouring words of one state stay apart. */
 .w-new,
 .w-learning {
 	background-repeat: no-repeat;
-	background-position: left bottom;
-	background-size: 100% 100%;
+	background-position: left 92%;
 }
 .w-new {
-	background-image:
-		linear-gradient(var(--word-new-line), var(--word-new-line)),
-		linear-gradient(var(--word-new), var(--word-new));
-	background-size: 100% 2px, 100% 100%;
+	background-image: linear-gradient(var(--accent), var(--accent));
+	background-size: 100% 1.5px;
 }
 .w-learning {
-	background-image:
-		repeating-linear-gradient(90deg, var(--word-learning-line) 0 3px, transparent 3px 5px),
-		linear-gradient(var(--word-learning), var(--word-learning));
-	background-size: 100% 2px, 100% 100%;
+	background-image: repeating-linear-gradient(90deg, var(--warn) 0 3px, transparent 3px 6px);
+	background-size: 100% 1.5px;
 }
 .w-new.w-end,
 .w-learning.w-end {
-	background-size: calc(100% - 0.12em) 2px, calc(100% - 0.12em) 100%;
+	background-size: calc(100% - 0.12em) 1.5px;
 }
 @media (forced-colors: active) {
 	.w-new,

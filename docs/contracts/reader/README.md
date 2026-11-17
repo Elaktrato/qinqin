@@ -74,8 +74,8 @@ data `{version: 1, entryId, createdAt}`. Valid only when the key is `known:` + a
 informational; anything else is ignored. Unmarking tombstones the row; marking again revives it under the
 same key. The mark creates no card. Backup: `backup/README.md`.
 
-Setting `reader.highlightWords` (boolean, default `false`) draws **new** words with a solid underline and
-**learning** words with a dotted one (each with a light tint); known words are plain. Inside a user
+Setting `reader.highlightWords` (boolean, default `false`) draws **new** words with a thin solid underline and
+**learning** words with a thin dotted one (no tint: the line style alone carries the state); known words are plain. Inside a user
 highlight no state is drawn. The text and its offsets are unchanged.
 
 ## Coverage (`coverage.json`)

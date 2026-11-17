@@ -269,3 +269,17 @@ describe('ChapterText word states', () => {
 		});
 	}
 });
+
+describe('the reading column (#102)', () => {
+	const style = source.slice(source.indexOf('<style>'));
+	const rule = style.slice(style.indexOf('.chapter-text {'), style.indexOf('}', style.indexOf('.chapter-text {')));
+	it('is 40em of the reader text at 1.25rem, line height 2.2 (ruby needs it), centred', () => {
+		expect(rule).toMatch(/font-size:\s*1\.25rem/);
+		expect(rule).toMatch(/line-height:\s*2\.2;/);
+		expect(rule).toMatch(/max-width:\s*40em/);
+		expect(rule).toMatch(/margin-inline:\s*auto/);
+	});
+	it('keeps the bookmarked paragraph marker an --accent pseudo-element', () => {
+		expect(style).toMatch(/p\.bookmarked::before\s*{[^}]*background:\s*var\(--accent\)/);
+	});
+});

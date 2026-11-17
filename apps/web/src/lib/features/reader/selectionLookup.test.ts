@@ -25,6 +25,7 @@ function result(term: string, kind: LookupResult['kind'], start: number): Lookup
 		reasons: [],
 		tags: [],
 		frequencies: [],
+		levels: [],
 		senses: [],
 		pri: 0
 	};

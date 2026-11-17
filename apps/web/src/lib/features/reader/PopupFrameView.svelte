@@ -4,6 +4,7 @@
 	import { hiddenFor } from '$lib/dictionaryVisibility';
 	import { workspaces } from '$lib/workspaces';
 	import EntryCard from './EntryCard.svelte';
+	import { IconButton } from '$lib/ui';
 	import HighlightBar from './HighlightBar.svelte';
 	import type { HighlightActions } from './highlightUi';
 	import { moreLabel } from './entryDisplay';
@@ -25,7 +26,8 @@
 		lookup,
 		studyWorkspaceId,
 		highlighter = null,
-		stateLine = null
+		stateLine = null,
+		sheet = false
 	}: {
 		frame: PopupFrame;
 		info: StackInfo;
@@ -34,6 +36,8 @@
 		highlighter?: HighlightActions | null;
 		/** The word-state line per entry (word highlighting on). */
 		stateLine?: ((entryId: number) => string) | null;
+		/** Inside the phone's LookupSheet: no placement, no close button (the sheet has one), no pointer scanning. */
+		sheet?: boolean;
 	} = $props();
 
 	let popup = $state<HTMLElement | null>(null);
@@ -82,28 +86,16 @@
 	});
 </script>
 
-<div
-	bind:this={popup}
-	bind:offsetWidth={width}
-	class="popup depth-{frame.depth}"
-	class:scanning={lookup.popups.shiftHeld && frame.depth < MAX_DEPTH}
-	data-lookup-popup
-	role="dialog"
-	tabindex="-1"
-	aria-label={t('reader.popup.label', { text: frame.text })}
-	style:left="{position.left}px"
-	style:top="{position.top}px"
-	style:max-height="min(26rem, {position.maxHeight}px)"
-	style:z-index={50 + frame.depth}
-	onpointerenter={lookup.popups.enter}
-	onpointerleave={lookup.popups.leave}
-	onpointermove={(e) => lookup.popups.move(e, frame.id)}
->
+{#snippet content()}
 	<div class="inner" bind:offsetHeight={contentHeight}>
+		{#if !sheet || (isRoot && info.mode === 'selection')}
 		<div class="bar">
 			{#if isRoot && info.mode === 'selection'}<span class="selected" lang={info.textLang}>{frame.text}</span>{/if}
-			<button type="button" class="close" aria-label={t('reader.popup.close')} onclick={() => lookup.closeFrame(frame.id)}>×</button>
+			{#if !sheet}<span class="close"
+					><IconButton label={t('reader.popup.close')} icon="close" size="s" placement="start" onclick={() => lookup.closeFrame(frame.id)} /></span
+				>{/if}
 		</div>
+		{/if}
 		{#if isRoot && info.mode === 'selection' && highlighter}<HighlightBar actions={highlighter} />{/if}
 		<div class="content" aria-live="polite">
 			{#if isRoot && info.note}<p class="note">{info.note}</p>{/if}
@@ -129,40 +121,69 @@
 			{/if}
 		</div>
 	</div>
-</div>
+{/snippet}
+
+{#if sheet}
+	<div class="in-sheet" data-lookup-popup>{@render content()}</div>
+{:else}
+	<div
+		bind:this={popup}
+		bind:offsetWidth={width}
+		class="popup depth-{frame.depth}"
+		class:scanning={lookup.popups.shiftHeld && frame.depth < MAX_DEPTH}
+		data-lookup-popup
+		role="dialog"
+		tabindex="-1"
+		aria-label={t('reader.popup.label', { text: frame.text })}
+		style:left="{position.left}px"
+		style:top="{position.top}px"
+		style:max-height="min(26rem, {position.maxHeight}px)"
+		style:z-index={50 + frame.depth}
+		onpointerenter={lookup.popups.enter}
+		onpointerleave={lookup.popups.leave}
+		onpointermove={(e) => lookup.popups.move(e, frame.id)}
+	>
+		{@render content()}
+	</div>
+{/if}
 
 <style>
+	/* The lookup popup (design §9 "Reader"): a floating layer below the word
+	   (placePopup; above only when there is no room below), entries
+	   separated by hairlines. */
 	.popup {
 		position: fixed;
-		width: max-content;
-		max-width: min(26rem, calc(100vw - 16px));
+		width: 18.75rem;
+		max-width: calc(100vw - 16px);
 		box-sizing: border-box;
 		overflow-y: auto;
 		overscroll-behavior: contain;
-		padding: 0.35rem 0.8rem 0.6rem;
-		border: 1px solid color-mix(in srgb, currentColor 22%, transparent);
-		border-radius: 0.5rem;
+		padding: var(--space-1) var(--space-4) var(--space-2);
+		border: 1px solid var(--hair);
+		border-radius: var(--radius-large);
 		background: var(--panel);
 		color: var(--text);
 		box-shadow: var(--shadow-float);
-		font-size: 0.9rem;
-		line-height: 1.45;
+		font-size: var(--font-size-s);
+		line-height: var(--line-body);
+		animation: popup-in var(--motion-fast) var(--ease-standard);
 	}
 
-	/* Nested popups: a coloured edge per level (the float shadow is the
-	   same for every floating layer). */
+	@keyframes popup-in {
+		from {
+			opacity: 0;
+		}
+	}
+
+	/* Nested popups (Shift+hover): an accent line at the start edge, a shape
+	   that says "opened from the one below". */
 	.popup:not(.depth-1) {
-		border-left: 3px solid color-mix(in srgb, var(--accent) 55%, transparent);
-	}
-
-	.depth-3,
-	.depth-4 {
-		border-left-color: color-mix(in srgb, var(--warn) 60%, transparent);
+		border-inline-start: 3px solid var(--accent);
 	}
 
 	/* Shift held: what Shift+hover can look up stands out. */
 	.scanning :global([data-scan]) {
-		background: color-mix(in srgb, var(--accent) 10%, transparent);
+		background: var(--selected-wash);
 	}
 
 	/* Holds its children's margins, so its height is the content's. */
@@ -172,35 +193,26 @@
 
 	.bar {
 		display: flex;
-		align-items: baseline;
-		gap: 0.5rem;
+		align-items: center;
+		gap: var(--space-2);
+		min-height: 2rem;
 	}
 
 	.selected {
-		font-size: 0.85rem;
+		font-size: var(--font-size-xs);
 		color: var(--readable-muted);
 	}
 
 	.close {
-		margin-left: auto;
-		font: inherit;
-		font-size: 1.1rem;
-		line-height: 1;
-		padding: 0.1rem 0.3rem;
-		border: none;
-		background: transparent;
-		color: inherit;
-		cursor: pointer;
-	}
-
-	.content {
-		margin-top: -0.4rem;
+		display: inline-flex;
+		margin-inline-start: auto;
+		margin-inline-end: calc(-1 * var(--space-2));
 	}
 
 	.note,
 	.hint,
 	.error {
-		margin: 0.4rem 0 0;
+		margin: var(--space-2) 0;
 	}
 
 	.note,
@@ -215,14 +227,23 @@
 	}
 
 	.more {
-		margin-top: 0.5rem;
+		margin: var(--space-1) 0 var(--space-2);
+		padding: 0;
+		border: none;
+		background: none;
+		color: var(--reading-accent);
 		font: inherit;
-		font-size: 0.85rem;
-		padding: 0.15rem 0.6rem;
-		border: 1px solid color-mix(in srgb, currentColor 25%, transparent);
-		border-radius: 0.3rem;
-		background: transparent;
-		color: inherit;
+		font-size: var(--font-size-xs);
+		text-decoration: underline;
 		cursor: pointer;
+	}
+
+	@media (forced-colors: active) {
+		.popup {
+			border-color: CanvasText;
+		}
+		.popup:not(.depth-1) {
+			border-inline-start-color: Highlight;
+		}
 	}
 </style>

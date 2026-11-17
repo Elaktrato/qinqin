@@ -1,6 +1,8 @@
 <script lang="ts">
 	import { t } from '$lib/i18n';
 	import { errorMessage } from '$lib/stats/errors';
+	import { formatPercent } from '$lib/i18n/format';
+	import { Stat } from '$lib/ui';
 	import type { Deck } from '$lib/study/types';
 	import type { Coverage, UnknownItem } from './coverage';
 	import { allNew, type AddWordsResult } from './wordActions';
@@ -156,6 +158,17 @@
 	}
 </script>
 
+<!-- A coverage figure (design §9): a large light number with its sentence
+     read first, and a 3px accent bar showing the share. -->
+{#snippet figure(c: Coverage, scope: 'chapter' | 'book')}
+	{#if c.percent === null}
+		<p class="figure">{coverageText(c, scope)}</p>
+	{:else}
+		<Stat value={formatPercent(c.percent / 100)} label={coverageText(c, scope)} />
+		<div class="coverage-bar" aria-hidden="true"><i style:width="{Math.max(0, Math.min(100, c.percent))}%"></i></div>
+	{/if}
+{/snippet}
+
 <h2>{t('reader.words.title')}</h2>
 {#if !wordCountsSupported(lang)}
 	<p class="hint">{t('reader.words.unsupported')}</p>
@@ -170,7 +183,7 @@
 	<section aria-labelledby="{id}-chapter">
 		<h3 id="{id}-chapter">{t('reader.words.thisChapter')}</h3>
 		{#if chapter !== null}
-			<p class="figure">{coverageText(chapter.coverage, 'chapter')}</p>
+			{@render figure(chapter.coverage, 'chapter')}
 			<p class="hint">{figuresText(chapter.coverage)}</p>
 			{#if unmatchedText(chapter.coverage.unmatched)}<p class="hint">{unmatchedText(chapter.coverage.unmatched)}</p>{/if}
 		{:else if failed > 0}
@@ -189,7 +202,7 @@
 			<p class="hint" role="status">{bookProgressText(bookProgress.done, bookProgress.total)}</p>
 			<button type="button" onclick={oncancelbook}>{t('common.action.cancel')}</button>
 		{:else if book !== null}
-			<p class="figure">{coverageText(book.coverage, 'book')}</p>
+			{@render figure(book.coverage, 'book')}
 			<p class="hint">{figuresText(book.coverage)}</p>
 		{:else}
 			{#if bookFailed > 0}<p class="error">{t('reader.words.chaptersFailed', { count: bookFailed })}</p>{/if}
@@ -214,11 +227,11 @@
 							type="checkbox"
 							checked={selected.has(w.entryId)}
 							onchange={(e) => toggle(w.entryId, e.currentTarget.checked)}
-						/>{w.lemma}</label
+						/><span class={w.state === 'new' ? 'w-new w-end' : 'w-learning w-end'}>{w.lemma}</span></label
 					>
 					{#if w.reading}<span class="reading">{w.reading}</span>{/if}
 					<span class="count">×{w.count}</span>
-					<span class="chip {w.state}">{w.state === 'new' ? t('reader.words.stateNew') : t('reader.words.stateLearning')}</span>
+					<span class="state">{w.state === 'new' ? t('reader.words.stateNew') : t('reader.words.stateLearning')}</span>
 				</li>
 			{/each}
 		</ul>
@@ -244,24 +257,44 @@
 {/if}
 
 <style>
+	/* A rail panel (design §5): no boxes; small headings; hairline rows. */
 	h2 {
-		font-size: 1rem;
-		margin: 0.25rem 0 0.6rem;
+		font-size: var(--font-size-s);
+		font-weight: var(--weight-strong);
+		margin: 0 0 var(--space-3);
 	}
 	h3 {
-		font-size: 0.9rem;
-		margin: 0.6rem 0 0.2rem;
+		font-size: var(--font-size-xs);
+		font-weight: var(--weight-strong);
+		color: var(--readable-muted);
+		margin: var(--space-4) 0 var(--space-1);
+	}
+	section :global(.stat .value) {
+		font-size: var(--font-size-xl);
+	}
+	.coverage-bar {
+		height: 3px;
+		margin: var(--space-2) 0;
+		border-radius: 3px;
+		background: var(--raised);
+		overflow: hidden;
+	}
+	.coverage-bar i {
+		display: block;
+		height: 100%;
+		background: var(--accent);
 	}
 	.figure {
-		margin: 0.2rem 0;
-		font-weight: 600;
+		margin: var(--space-1) 0;
+		font-weight: var(--weight-medium);
 	}
 	.hint {
-		margin: 0.2rem 0;
-		font-size: 0.85rem;
+		margin: var(--space-1) 0;
+		font-size: var(--font-size-xs);
+		color: var(--readable-muted);
 	}
 	.error {
-		margin: 0.35rem 0;
+		margin: var(--space-2) 0;
 		color: var(--readable-bad);
 		padding-inline-start: var(--space-2);
 		border-inline-start: 3px solid var(--bad);
@@ -269,49 +302,49 @@
 	.scope {
 		border: 0;
 		padding: 0;
-		margin: 0.5rem 0;
+		margin: var(--space-3) 0;
 		display: flex;
 		flex-wrap: wrap;
-		gap: 0.25rem 1rem;
+		gap: var(--space-1) var(--space-4);
 	}
 	.words {
 		list-style: none;
-		margin: 0.5rem 0;
+		margin: var(--space-3) 0;
 		padding: 0;
 	}
 	.words li {
 		display: flex;
 		flex-wrap: wrap;
 		align-items: center;
-		gap: 0.2rem 0.5rem;
+		gap: var(--space-1) var(--space-2);
 		min-height: 2rem;
+		padding: var(--space-1) 0;
+	}
+	.words li + li {
+		border-top: 1px solid var(--hair);
 	}
 	.words label {
 		display: inline-flex;
 		align-items: center;
-		gap: 0.35rem;
+		gap: var(--space-2);
+		font-family: var(--font-hanzi);
+		font-size: var(--font-size-m);
 	}
 	.reading,
+	.count,
+	.state {
+		font-size: var(--font-size-xs);
+		color: var(--readable-muted);
+	}
 	.count {
-		font-size: 0.85rem;
-	}
-	.chip {
-		font-size: 0.75rem;
-		padding: 0 0.4rem;
-		border-radius: 0.6rem;
-		border: 1px solid currentColor;
-	}
-	.chip.new {
-		border-style: solid;
-	}
-	.chip.learning {
-		border-style: dotted;
+		margin-inline-start: auto;
+		font-variant-numeric: tabular-nums;
 	}
 	.actions {
 		display: flex;
 		flex-wrap: wrap;
 		align-items: center;
-		gap: 0.4rem;
+		gap: var(--space-2);
 	}
 	.actions select,
 	.actions button {

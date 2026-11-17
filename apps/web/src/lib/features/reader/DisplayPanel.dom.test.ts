@@ -2,46 +2,58 @@ import { cleanup, fireEvent, render, screen } from '@testing-library/svelte';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import DisplayPanel from './DisplayPanel.svelte';
 import { DEFAULT_DISPLAY, type ReaderDisplay } from './displaySettings';
+import type { Variant } from './variants';
 
 afterEach(cleanup);
 
-function mount(over: Partial<ReaderDisplay> = {}, props: { hasBookRuby?: boolean; showAll?: boolean } = {}) {
+function mount(
+	over: Partial<ReaderDisplay> = {},
+	props: { hasBookRuby?: boolean; showAll?: boolean; script?: { value: Variant; error?: string } } = {}
+) {
 	const onchange = vi.fn();
 	const ontoggleAll = vi.fn();
+	const onscript = vi.fn();
 	render(DisplayPanel, {
 		display: { ...DEFAULT_DISPLAY, ...over },
 		hasBookRuby: props.hasBookRuby ?? true,
 		showAll: props.showAll ?? false,
 		onchange,
-		ontoggleAll
+		ontoggleAll,
+		script: props.script ? { ...props.script, onchange: onscript } : undefined
 	} as never);
-	return { onchange, ontoggleAll };
+	return { onchange, ontoggleAll, onscript };
 }
 
-async function open() {
-	await fireEvent.click(screen.getByRole('button', { name: 'Display' }));
-}
+// The panel is a rail panel now (#102): its settings show at once.
+async function open() {}
 
 describe('DisplayPanel', () => {
-	it('is a disclosure: aria-expanded follows it', async () => {
+	it('renders its settings without a disclosure button', () => {
 		mount();
-		const button = screen.getByRole('button', { name: 'Display' });
-		expect(button.getAttribute('aria-expanded')).toBe('false');
-		expect(screen.queryByRole('group', { name: 'Reading display' })).toBeNull();
-		await fireEvent.click(button);
-		expect(button.getAttribute('aria-expanded')).toBe('true');
+		expect(screen.queryByRole('button', { name: 'Display' })).toBeNull();
 		expect(screen.getByRole('group', { name: 'Reading display' })).toBeTruthy();
+		expect(screen.getByRole('radio', { name: /^Always/ })).toBeTruthy();
 	});
 
-	it('Escape closes the panel and returns focus to the button', async () => {
+	it('shows the script choice for Chinese books and saves it', async () => {
 		mount();
-		await open();
-		const radio = screen.getByRole('radio', { name: /^Always/ });
-		radio.focus();
-		await fireEvent.keyDown(radio, { key: 'Escape' });
-		const button = screen.getByRole('button', { name: 'Display' });
-		expect(button.getAttribute('aria-expanded')).toBe('false');
-		expect(document.activeElement).toBe(button);
+		expect(screen.queryByRole('combobox', { name: 'Script' })).toBeNull();
+		cleanup();
+		const { onscript } = mount({}, { script: { value: 'original' } });
+		const select = screen.getByRole('combobox', { name: 'Script' }) as HTMLSelectElement;
+		expect(select.value).toBe('original');
+		await fireEvent.change(select, { target: { value: 'traditional' } });
+		expect(onscript).toHaveBeenLastCalledWith('traditional');
+		cleanup();
+		mount({}, { script: { value: 'simplified', error: 'Could not load the converter.' } });
+		expect(screen.getByRole('alert').textContent).toContain('Could not load the converter.');
+	});
+
+	it('the legend uses the shared w-new / w-learning classes', () => {
+		mount({ highlightWords: true });
+		const legend = screen.getByText('New: solid underline').closest('li');
+		expect(legend?.querySelector('.w-new')).toBeTruthy();
+		expect(screen.getByText('Learning: dotted underline').closest('li')?.querySelector('.w-learning')).toBeTruthy();
 	});
 
 	it('the readings radios report their value', async () => {

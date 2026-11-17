@@ -190,3 +190,26 @@ describe('WordsPanel before the cards are loaded', () => {
 		expect(oncardsretry).toHaveBeenCalled();
 	});
 });
+
+describe('WordsPanel in the lighter style (#102)', () => {
+	it('the coverage figure is a Stat with its label first', () => {
+		const { container } = mount();
+		const stat = container.querySelector('.stat')!;
+		expect(stat).toBeTruthy();
+		const parts = [...stat.children].map((el) => el.className.split(' ')[0]);
+		expect(parts.slice(0, 2)).toEqual(['label', 'value']);
+		expect(stat.querySelector('.label')?.textContent).toBe('You know 70% of the words in this chapter');
+		expect(stat.querySelector('.value')?.textContent).toBe('70%');
+		// The 3px accent bar under it shows the share (decoration: the text says it).
+		const bar = container.querySelector('.coverage-bar') as HTMLElement;
+		expect(bar.getAttribute('aria-hidden')).toBe('true');
+		expect((bar.firstElementChild as HTMLElement).style.width).toBe('70%');
+	});
+
+	it('the state of each word uses the shared w-new / w-learning marks with its words', () => {
+		const { container } = mount();
+		const items = container.querySelectorAll('.words li');
+		expect(items[0].querySelector('.w-new')).toBeTruthy();
+		expect(items[1].querySelector('.w-learning')).toBeTruthy();
+	});
+});

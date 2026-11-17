@@ -819,8 +819,9 @@ a Japanese one on Aozora.
 
 ### Reader display
 
-The **Display** button above a chapter opens the reading display settings. They are saved
-per workspace (workspace settings, key `reader`), so they follow you across devices.
+The **Display** tab of the side rail holds the reading display settings (Chinese and Japanese
+books, books with ruby; for Chinese books also the **Script** choice). They are saved per
+workspace (workspace settings, key `reader`), so they follow you across devices.
 
 - **Book ruby** (only for a book that has ruby): the reading marks printed in the book.
 - **Readings over words**: *Never* (default), *Always*, or *Smart*. Chinese words get pinyin,
@@ -836,8 +837,8 @@ per workspace (workspace settings, key `reader`), so they follow you across devi
   **Show all readings** to see hidden readings.
 - **Ruby size** and **Font** (default, sans, serif, kai: system fonts only, nothing is downloaded).
 - **Mark words by how well I know them** (off by default): new words (no flashcard) get a
-  solid underline and a light tint, words you are learning a dotted one; known words stay
-  plain. A word is known from the threshold's memory score, or when you marked it with
+  thin solid underline in the accent, words you are learning a thin dotted one (no tint);
+  known words stay plain. A word is known from the threshold's memory score, or when you marked it with
   **I know this** in the popup (a workspace row `known:<entryId>`, synced and in the backup;
   it creates no card). The same rule hides readings in Smart mode and leaves words out of
   starter decks.
@@ -850,9 +851,12 @@ per workspace (workspace settings, key `reader`), so they follow you across devi
 The reader only: entry pages, flashcards and study cards always show readings. Rules and
 fixtures for other clients: [`docs/contracts/reader/`](docs/contracts/reader/README.md).
 
-**Add to study from the popup.** Every entry in the Reader's lookup popup has a
-**+** button that adds the word to the General deck of the book's workspace. The
-**⋯** deck menu appears only when the workspace has custom decks. The sentence of
+**Add to study from the popup.** The lookup popup opens below the word (above it
+only without room; a bottom sheet on a phone). Each entry shows the word, its
+reading, level chips (from the lookup's `levels`) and frequency chips, numbered
+meanings and the source dictionary, and an **Add to deck** button that adds the
+word to the General deck of the book's workspace in one click. The **Choose a
+deck** menu beside it appears only when the workspace has custom decks. The sentence of
 the book around the word (up to 200 characters, cut at 。！？ and similar
 terminators) is saved as the user's own example sentence on the entry and linked
 to the card; an identical sentence is reused. A sentence that cannot be saved
@@ -860,12 +864,13 @@ leaves the card without one and says so. Example sentences saved by a user are
 private to that user: other users, and anonymous callers, see only the pack's
 sentences.
 
-**Side rail.** Beside the text sits a rail with two tabs, **Bookmarks** and
-**Highlights**. On screens 1000 px and wider it is a column next to the text that
-can be collapsed to a thin tab strip; below 1000 px it is a drawer on the right
-edge, opened from a floating button and closed by Escape or a click outside. The
-open/closed state and the last tab are remembered in the browser. The reading
-toolbar is a plain strip at the top of the page; it is not sticky.
+**Side rail.** At the right edge of the page sits a column of five icon tabs,
+**Contents**, **Bookmarks**, **Highlights**, **Words** and **Display** (a vertical
+tablist; each icon has a tooltip). On screens 1000 px and wider the open tab's panel
+sits between the text and the icons; activating the open tab collapses it. Below
+1000 px one button (in the phone top bar, or above the text between 720 and 1000 px)
+opens the same tabs in a bottom sheet. The open/closed state and the last tab are
+remembered in the browser.
 
 **Bookmarks.** The rail's **Add bookmark here** button (or the `b` key) bookmarks
 the first paragraph in view and toggles it off again. The Bookmarks tab lists them
@@ -1320,7 +1325,7 @@ All library and source routes need a signed-in user, and so does
 
 | Route | Purpose |
 |---|---|
-| `GET /api/lookup?lang=&text=&offset=&kind=` | The ranked entries for the text at a code-point offset: `{"results": [...]}`, at most 30. `text` up to 64 code points (the web app sends 16, and the engine reads a 12 code-point window from the offset); `kind` is `word` or `character` and may repeat. Each result has the entry id, the `term` to show (a Japanese matched written form unless it is search-only, else the display form: こと for the usually-kana 事, の for 乃), forms with flags, readings with flags, the matched text with its `start`/`end`, inflection `reasons`, tags, `frequencies` and `senses` (each with POS). Missing or non-integer params are 400, an unsupported language 400, too long 413; an offset outside the text finds nothing |
+| `GET /api/lookup?lang=&text=&offset=&kind=` | The ranked entries for the text at a code-point offset: `{"results": [...]}`, at most 30. `text` up to 64 code points (the web app sends 16, and the engine reads a 12 code-point window from the offset); `kind` is `word` or `character` and may repeat. Each result has the entry id, the `term` to show (a Japanese matched written form unless it is search-only, else the display form: こと for the usually-kana 事, の for 乃), forms with flags, readings with flags, the matched text with its `start`/`end`, inflection `reasons`, tags, `frequencies`, `senses` (each with POS) and `levels` (`[{scheme, level}]`: the entry's lowest level in each installed levels scheme, `[]` when none). Missing or non-integer params are 400, an unsupported language 400, too long 413; an offset outside the text finds nothing |
 | `GET /api/segment/at?lang=&text=&offset=` | Tokenizer: the longest dictionary match at a code-point offset, built on the lookup engine. `text` up to 64 code points. `lemma` is the dictionary form and `reason` the deinflection; only `entries[0]` corresponds to them, later candidates are other readings or entries with the same surface (at most 8 candidates in all). A candidate has `reading: true` when it matched by a kana reading (Japanese) |
 | `POST /api/segment` `{lang, text}` | Every match in order, same shape; needs a signed-in user. `text` up to 5000 code points, body up to 256 KiB |
 | `GET /api/audio/entries/{id}` | Signed-in. The pronunciation clips of one entry: `{terms: [Clip], syllables: [[Clip]\|null]\|null}`. `terms` are recordings of the whole word (matched on written form and first reading); `syllables` (zh entries only, else `null`) has one slot per pinyin reading in the entry's order, each the clips to play in sequence or `null` when a syllable has no recording. `Clip` is `{url, packId, license, attribution, source}`; 404 for an unknown entry |

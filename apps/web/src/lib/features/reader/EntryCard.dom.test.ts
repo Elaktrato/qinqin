@@ -20,6 +20,7 @@ const result = {
 	reasons: [],
 	tags: [],
 	frequencies: [],
+	levels: [],
 	senses: [sense(1, 'hello'), sense(2, 'greeting')],
 	pri: 0
 } as unknown as LookupResult;
@@ -43,5 +44,35 @@ describe('EntryCard hidden dictionaries', () => {
 	it('shows everything by default', () => {
 		render(EntryCard, { result, lang: 'zh', textLang: 'zh' });
 		expect(screen.getByText(/greeting/)).toBeTruthy();
+	});
+});
+
+describe('EntryCard in the lighter style (#102)', () => {
+	const rich = {
+		...result,
+		levels: [{ scheme: 'HSK', level: '3' }],
+		frequencies: [{ packId: 1, packName: 'SUBTLEX', rank: 1200 }]
+	} as unknown as LookupResult;
+
+	it('shows the term, the reading in the accent class, level chips before frequency chips, numbered glosses and the source line', () => {
+		const { container } = render(EntryCard, { result: rich, lang: 'zh', textLang: 'zh-Hans' });
+		const term = container.querySelector('.term')!;
+		expect(term.textContent?.trim()).toBe('你好');
+		expect(term.getAttribute('lang')).toBe('zh-Hans');
+		expect(container.querySelector('.reading')?.classList.contains('accent')).toBe(true);
+		const chips = [...container.querySelectorAll('.chips > li')].map((li) => li.textContent?.replace(/\s+/g, ' ').trim());
+		expect(chips[0]).toBe('HSK 3');
+		expect(chips[1]).toContain('1,200');
+		expect(container.querySelectorAll('.chips .ui-chip, .chips .chip').length).toBeGreaterThan(0);
+		expect(container.querySelector('ol.senses')).toBeTruthy();
+		expect(container.querySelectorAll('ol.senses > li')).toHaveLength(2);
+		expect(container.querySelector('.source')?.textContent).toContain('d1, d2');
+	});
+
+	it('the source line comes after the glosses', () => {
+		const { container } = render(EntryCard, { result: rich, lang: 'zh', textLang: 'zh-Hans' });
+		const senses = container.querySelector('ol.senses')!;
+		const source = container.querySelector('.source')!;
+		expect(senses.compareDocumentPosition(source) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
 	});
 });

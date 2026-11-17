@@ -123,3 +123,25 @@ describe('LookupController lookup history hooks', () => {
 		expect(plain.stack.frames).toEqual([]);
 	});
 });
+
+describe('Escape order (#102 regression)', () => {
+	it('Escape closes a nested popup before the root and the root before anything else', () => {
+		hover.deps!.show(shown([11]));
+		const root = ctl.stack.frames[0].id;
+		ctl.stack.open({ anchor: { x: 0, y: 0, w: 1, h: 1 }, text: '上', offset: 0, results: [] }, root);
+		expect(ctl.stack.frames).toHaveLength(2);
+		const outer = vi.fn();
+		window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+		expect(ctl.stack.frames).toHaveLength(1);
+		expect(ctl.info).not.toBeNull();
+		window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+		expect(ctl.info).toBeNull();
+		// With nothing open, Escape is not the lookup's: it goes on untouched.
+		window.addEventListener('keydown', outer);
+		const e = new KeyboardEvent('keydown', { key: 'Escape', cancelable: true });
+		window.dispatchEvent(e);
+		window.removeEventListener('keydown', outer);
+		expect(outer).toHaveBeenCalled();
+		expect(e.defaultPrevented).toBe(false);
+	});
+});
