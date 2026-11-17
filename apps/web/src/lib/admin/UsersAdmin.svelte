@@ -440,13 +440,15 @@
 		min-width: 12rem;
 	}
 	.hint {
-		opacity: 0.75;
+		color: var(--readable-muted);
 		font-size: 0.9em;
 		margin: 0;
 	}
 	.error {
-		color: #c62828;
+		color: var(--readable-bad);
 		font-weight: 600;
+		padding-inline-start: var(--space-2);
+		border-inline-start: 3px solid var(--bad);
 	}
 	.ok {
 		min-height: 1.2em;

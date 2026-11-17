@@ -120,7 +120,7 @@
 	}
 
 	.version {
-		opacity: 0.7;
+		color: var(--readable-muted);
 		font-size: 0.8rem;
 		margin-left: 0.25rem;
 	}
@@ -141,8 +141,8 @@
 
 	.primary {
 		border: 0;
-		background: #0b6bcb;
-		color: #fff;
+		background: var(--accent);
+		color: var(--on-accent);
 		font-weight: 600;
 	}
 
@@ -154,13 +154,15 @@
 
 	.hint {
 		margin: 0;
-		opacity: 0.8;
+		color: var(--readable-muted);
 	}
 
 	.error {
 		margin: 0;
-		color: #c62828;
+		color: var(--readable-bad);
 		font-weight: 600;
+		padding-inline-start: var(--space-2);
+		border-inline-start: 3px solid var(--bad);
 	}
 
 	.sr-only {

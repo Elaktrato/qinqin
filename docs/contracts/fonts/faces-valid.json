@@ -1,0 +1,11 @@
+{
+ "version": 1,
+ "rule": "fonts/faces-valid",
+ "_doc": "faces.json documents that pass (docs/contracts/fonts/README.md). Each case is a whole faces.json; the slice files are not part of the document check.",
+ "cases": [
+  {"name":"one variable face, two slices","faces":{"version":1,"faces":[{"face":"sans","script":"Hans","original":"Noto Sans SC","weight":"200 900","style":"normal","slices":[{"file":"slices/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.woff2","unicodeRange":"U+20-7E,U+3000-303F"},{"file":"slices/bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb.woff2","unicodeRange":"U+4E00,U+4E09-4E0B"}]}]}},
+  {"name":"two weights of one face (static faces); the same ranges in another face are fine","faces":{"version":1,"faces":[{"face":"kai","script":"Jpan","original":"Klee One","weight":"400","style":"normal","slices":[{"file":"slices/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.woff2","unicodeRange":"U+20-7E,U+3000-303F"},{"file":"slices/bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb.woff2","unicodeRange":"U+4E00,U+4E09-4E0B"}]},{"face":"kai","script":"Jpan","original":"Klee One","weight":"600","style":"normal","slices":[{"file":"slices/cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc.woff2","unicodeRange":"U+20-7E,U+3000-303F"}]}]}},
+  {"name":"italic beside normal, same weight","faces":{"version":1,"faces":[{"face":"sans","script":"Hans","original":"Noto Sans SC","weight":"200 900","style":"normal","slices":[{"file":"slices/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.woff2","unicodeRange":"U+20-7E,U+3000-303F"},{"file":"slices/bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb.woff2","unicodeRange":"U+4E00,U+4E09-4E0B"}]},{"face":"sans","script":"Hans","original":"Noto Sans SC","weight":"200 900","style":"italic","slices":[{"file":"slices/dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd.woff2","unicodeRange":"U+0,U+10FFFF"}]}]}},
+  {"name":"weight bounds 1 and 1000; a lone code point next to a range","faces":{"version":1,"faces":[{"face":"sans","script":"Hans","original":"Noto Sans SC","weight":"1 1000","style":"normal","slices":[{"file":"slices/eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee.woff2","unicodeRange":"U+41,U+42-43"}]}]}}
+ ]
+}

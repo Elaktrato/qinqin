@@ -26,6 +26,7 @@ describe('cleanupPartitions', () => {
 			'qinqin-api-v0-old',
 			'qinqin-shell-abc',
 			'qinqin-hanzi-v1',
+			'qinqin-fonts-v1',
 			'someone-else'
 		]) {
 			await caches.open(name);
@@ -37,14 +38,14 @@ describe('cleanupPartitions', () => {
 		const caches = await seeded();
 		await cleanupPartitions(caches, await partitionName('Bearer one'));
 		expect((await caches.keys()).sort()).toEqual(
-			[await partitionName('Bearer one'), 'qinqin-hanzi-v1', 'qinqin-shell-abc', 'someone-else'].sort()
+			[await partitionName('Bearer one'), 'qinqin-fonts-v1', 'qinqin-hanzi-v1', 'qinqin-shell-abc', 'someone-else'].sort()
 		);
 	});
 
 	it('deletes every partition when nothing is kept (sign-out)', async () => {
 		const caches = await seeded();
 		await cleanupPartitions(caches, null);
-		expect((await caches.keys()).sort()).toEqual(['qinqin-hanzi-v1', 'qinqin-shell-abc', 'someone-else']);
+		expect((await caches.keys()).sort()).toEqual(['qinqin-fonts-v1', 'qinqin-hanzi-v1', 'qinqin-shell-abc', 'someone-else']);
 		expect(API_CACHE_FAMILY).toBe('qinqin-api-v');
 	});
 

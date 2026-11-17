@@ -24,7 +24,7 @@
 	h3 {
 		margin: 0 0 0.25rem;
 		font-size: 0.85rem;
-		opacity: 0.75;
+		color: var(--readable-muted);
 	}
 	.note-text {
 		margin: 0;

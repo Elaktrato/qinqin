@@ -320,7 +320,7 @@
 	}
 
 	.know[aria-pressed='true'] {
-		background: color-mix(in srgb, #1b8a5a 22%, transparent);
+		background: color-mix(in srgb, var(--good) 22%, transparent);
 	}
 
 	.state {
@@ -334,8 +334,8 @@
 	.add:focus-visible,
 	.deck:not(:disabled):hover,
 	.deck:focus-visible {
-		border-color: #0b6bcb;
-		color: #0b6bcb;
+		border-color: var(--accent);
+		color: var(--reading-accent);
 	}
 
 	.add:disabled,
@@ -349,11 +349,11 @@
 		font-size: 0.75rem;
 		padding: 0 0.4rem;
 		border-radius: 0.6rem;
-		background: color-mix(in srgb, #1b8a5a 22%, transparent);
+		background: color-mix(in srgb, var(--good) 22%, transparent);
 	}
 
 	.in-study:focus {
-		outline: 2px solid #0b6bcb;
+		outline: 2px solid var(--focus-colour);
 		outline-offset: 1px;
 	}
 
@@ -383,7 +383,7 @@
 
 	.menu button:hover,
 	.menu button:focus-visible {
-		background: color-mix(in srgb, #0b6bcb 16%, transparent);
+		background: color-mix(in srgb, var(--accent) 16%, transparent);
 		outline: none;
 	}
 
@@ -396,10 +396,12 @@
 	}
 
 	.note {
-		opacity: 0.75;
+		color: var(--readable-muted);
 	}
 
 	.error {
-		color: #b3261e;
+		color: var(--readable-bad);
+		padding-inline-start: var(--space-2);
+		border-inline-start: 3px solid var(--bad);
 	}
 </style>

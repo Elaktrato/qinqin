@@ -85,6 +85,13 @@ test('the fetched strokes pack the docs name is accepted', () => {
 	assert.deepEqual(checkSources(repo(okPacks(), doc)), []);
 });
 
+test('the fetched font packs are exactly the sources of prepare-font-pack.mjs, and the docs may name them', async () => {
+	const { SOURCES } = await import('./prepare-font-pack.mjs');
+	for (const id of Object.keys(SOURCES)) assert.ok(FETCHED_PACKS.includes(id), `${id} is not in FETCHED_PACKS`);
+	const doc = DOC + '| Pack | Provides |\n|---|---|\n' + Object.keys(SOURCES).map((id) => `| **F** (\`${id}\`) | x |`).join('\n') + '\n';
+	assert.deepEqual(checkSources(repo(okPacks(), doc)), []);
+});
+
 test('ids outside table rows and list items are not pack names', () => {
 	assert.deepEqual(
 		[...docPackIds('See `some-flag` and `freq-csv`.\n| Pack | x |\n|---|---|\n| **A** (`pack-a`) | `other-thing` |\n')],
@@ -159,4 +166,91 @@ test('the local-only zh components pack the docs name is accepted', () => {
 	assert.ok(LOCAL_ONLY_PACKS.includes('zh-components'));
 	const doc = DOC + '- **Chinese components** (`zh-components`, local)\n';
 	assert.deepEqual(checkSources(repo(okPacks(), doc)), []);
+});
+
+test('built-in theme packs are bundled packs that need a LICENSE and a docs entry', () => {
+	const p = okPacks();
+	p['server/internal/themes/builtin/night'] = { id: 'night', ...GOOD };
+	p['server/internal/themes/builtin/day'] = { id: 'day', ...GOOD };
+	const root = repo(p, DOC + '- **Night** (`night`, built in)\n');
+	writeFileSync(join(root, 'server/internal/themes/builtin/night/LICENSE'), 'MIT License\n');
+	writeFileSync(join(root, 'server/internal/themes/builtin/day/LICENSE'), '  \n');
+	const out = checkSources(root).join('\n');
+	assert.match(out, /server\/internal\/themes\/builtin\/day: LICENSE is missing or empty/);
+	assert.match(out, /bundled pack "day"/);
+	assert.doesNotMatch(out, /"night"/);
+	assert.doesNotMatch(out, /builtin\/night/);
+});
+
+/** withFont adds a font file (and optionally a licence text) to a temp repository. */
+function withFont(root, rel, licence) {
+	mkdirSync(dirname(join(root, rel)), { recursive: true });
+	writeFileSync(join(root, rel), 'wOF2');
+	if (licence) {
+		mkdirSync(join(root, 'apps/web/static'), { recursive: true });
+		writeFileSync(join(root, 'apps/web/static', licence), 'SIL OPEN FONT LICENSE Version 1.1');
+	}
+	return root;
+}
+
+const FONT_DOC = DOC + '\n## Interface font\n\nFigtree (`Figtree-Variable.woff2`), licence text `apps/web/static/FONT-OFL.TXT`.\n\n## Other\n';
+
+test('a bundled font named in the docs with an existing licence text passes', () => {
+	const root = withFont(repo(okPacks(), FONT_DOC), 'apps/web/src/lib/assets/fonts/Figtree-Variable.woff2', 'FONT-OFL.TXT');
+	assert.deepEqual(checkSources(root), []);
+});
+
+test('a bundled font the docs do not name is reported', () => {
+	const root = withFont(repo(okPacks()), 'apps/web/static/fonts/Other.ttf', 'FONT-OFL.TXT');
+	assert.deepEqual(checkSources(root), [
+		'apps/web/static/fonts/Other.ttf: bundled font is not named in docs/sources.md; name the file, in backticks, in a section that also names its licence text (`apps/web/static/<NAME>.TXT`)'
+	]);
+});
+
+test('a bundled font whose docs section names no existing licence text is reported', () => {
+	const missing = withFont(repo(okPacks(), FONT_DOC), 'apps/web/src/lib/assets/fonts/Figtree-Variable.woff2');
+	assert.deepEqual(checkSources(missing), [
+		'apps/web/src/lib/assets/fonts/Figtree-Variable.woff2: the docs/sources.md section naming it names no licence text that exists under apps/web/static'
+	]);
+	// A licence text in another section does not count.
+	const doc = DOC + '\n## Interface font\n\nFigtree (`Figtree-Variable.woff2`).\n\n## Other\n\n`apps/web/static/FONT-OFL.TXT`\n';
+	const elsewhere = withFont(repo(okPacks(), doc), 'apps/web/src/lib/assets/fonts/Figtree-Variable.woff2', 'FONT-OFL.TXT');
+	assert.equal(checkSources(elsewhere).length, 1);
+});
+
+test('node_modules and build output are not scanned for fonts', () => {
+	const root = withFont(repo(okPacks()), 'apps/web/node_modules/x/a.woff2');
+	withFont(root, 'apps/web/build/_app/immutable/assets/abc.woff2');
+	assert.deepEqual(checkSources(root), []);
+});
+
+/** withIcons adds a vendored icon module (and optionally a licence text) to a temp repository. */
+function withIcons(root, name, licence) {
+	const dir = join(root, 'apps/web/src/lib/ui/icons');
+	mkdirSync(dir, { recursive: true });
+	writeFileSync(join(dir, name), 'export const ICONS = {};');
+	writeFileSync(join(dir, name.replace(/\.ts$/, '.test.ts')), '// a test, never named');
+	if (licence) {
+		mkdirSync(join(root, 'apps/web/static'), { recursive: true });
+		writeFileSync(join(root, 'apps/web/static', licence), 'ISC License');
+	}
+	return root;
+}
+
+const ICON_DOC = DOC + '\n## Icons\n\nLucide (`lucide.ts`), licence text `apps/web/static/LUCIDE-LICENSE.TXT`.\n\n## Other\n';
+
+test('rule f: a vendored icon set named in the docs with an existing licence text passes', () => {
+	const root = withIcons(repo(okPacks(), ICON_DOC), 'lucide.ts', 'LUCIDE-LICENSE.TXT');
+	assert.deepEqual(checkSources(root), []);
+});
+
+test('rule f: a vendored icon set the docs do not name, or name without a licence text, is reported', () => {
+	const unnamed = withIcons(repo(okPacks()), 'lucide.ts', 'LUCIDE-LICENSE.TXT');
+	assert.deepEqual(checkSources(unnamed), [
+		'apps/web/src/lib/ui/icons/lucide.ts: vendored icon set is not named in docs/sources.md; name the file, in backticks, in a section that also names its licence text (`apps/web/static/<NAME>.TXT`)'
+	]);
+	const unlicensed = withIcons(repo(okPacks(), ICON_DOC), 'lucide.ts');
+	assert.deepEqual(checkSources(unlicensed), [
+		'apps/web/src/lib/ui/icons/lucide.ts: the docs/sources.md section naming it names no licence text that exists under apps/web/static'
+	]);
 });

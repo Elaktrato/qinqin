@@ -27,6 +27,14 @@ const (
 	// stroke JSON per character for the stroke player. It serves several
 	// languages, so its manifest states languages instead of language.
 	TypeStrokes = "strokes"
+	// TypeTheme is a colour theme pack (internal/themes): a themes.json of
+	// one or more themes. It teaches no language: its manifest states
+	// neither language nor languages.
+	TypeTheme = "theme"
+	// TypeFont is a font pack (internal/fonts): faces.json and WOFF2 slices
+	// of one or more hanzi/kanji faces. Like a theme pack it states neither
+	// language nor languages.
+	TypeFont = "font"
 )
 
 // Pack formats: how a dictionary pack's data files are encoded.
@@ -50,6 +58,11 @@ const (
 	// FormatStrokesJSONLGz is a strokes pack: strokes.jsonl.gz with one
 	// {"char", "data"} line per character (see internal/strokes).
 	FormatStrokesJSONLGz = "hanzi-writer-jsonl-gz"
+	// FormatThemesJSON is a theme pack: themes.json (docs/contracts/themes/).
+	FormatThemesJSON = "themes-json"
+	// FormatFontSlices is a font pack: faces.json plus slices/<sha256>.woff2
+	// (docs/contracts/fonts/).
+	FormatFontSlices = "font-slices"
 )
 
 // manifestTypes and manifestFormats are the valid enum values of a
@@ -64,6 +77,8 @@ var (
 		TypeAudio:      true,
 		TypeComponents: true,
 		TypeStrokes:    true,
+		TypeTheme:      true,
+		TypeFont:       true,
 	}
 	manifestFormats = map[string]bool{
 		FormatJSON:      true,
@@ -78,6 +93,8 @@ var (
 		FormatAudioIndex:     true,
 		FormatComponentsTSV:  true,
 		FormatStrokesJSONLGz: true,
+		FormatThemesJSON:     true,
+		FormatFontSlices:     true,
 	}
 )
 
@@ -89,7 +106,8 @@ var (
 //
 // A strokes pack serves several languages: it states them in Languages
 // (one or more codes, each a valid language code, no duplicates) and no
-// Language; no other type may state Languages. Its languages do not
+// Language; no other type may state Languages. A theme or font pack
+// states neither. Its languages do not
 // auto-register: a strokes pack adds no language to the server.
 //
 // Notice is optional: a caveat the Sources page shows under the pack
@@ -125,9 +143,13 @@ func (m Manifest) Validate() error {
 	case strings.TrimSpace(m.Attribution) == "":
 		return errors.New("manifest: attribution is required — packs without attribution are rejected")
 	case !manifestTypes[m.Type]:
-		return fmt.Errorf("manifest: unknown type %q (want dictionary, levels, sentences, frequency, grammar, audio, components, or strokes)", m.Type)
+		return fmt.Errorf("manifest: unknown type %q (want dictionary, levels, sentences, frequency, grammar, audio, components, strokes, theme, or font)", m.Type)
 	case !manifestFormats[m.Format]:
-		return fmt.Errorf("manifest: unknown format %q (want json, cedict, unihan, jmdict, kanjidic2, yomitan-freq, freq-csv, audio-index, components-tsv, or hanzi-writer-jsonl-gz)", m.Format)
+		return fmt.Errorf("manifest: unknown format %q (want json, cedict, unihan, jmdict, kanjidic2, yomitan-freq, freq-csv, audio-index, components-tsv, hanzi-writer-jsonl-gz, themes-json, or font-slices)", m.Format)
+	case (m.Type == TypeTheme) != (m.Format == FormatThemesJSON):
+		return fmt.Errorf("manifest: a theme pack has the format themes-json, and themes-json is for theme packs only (type %s, format %s)", m.Type, m.Format)
+	case (m.Type == TypeFont) != (m.Format == FormatFontSlices):
+		return fmt.Errorf("manifest: a font pack has the format font-slices, and font-slices is for font packs only (type %s, format %s)", m.Type, m.Format)
 	}
 	if err := m.validateLanguages(); err != nil {
 		return err
@@ -138,8 +160,15 @@ func (m Manifest) Validate() error {
 	return nil
 }
 
-// validateLanguages checks Language, or Languages for a strokes pack.
+// validateLanguages checks Language, or Languages for a strokes pack; a
+// theme or font pack states neither.
 func (m Manifest) validateLanguages() error {
+	if m.Type == TypeTheme || m.Type == TypeFont {
+		if strings.TrimSpace(m.Language) != "" || len(m.Languages) > 0 {
+			return fmt.Errorf("manifest: a %s pack states no language and no languages", m.Type)
+		}
+		return nil
+	}
 	if m.Type != TypeStrokes {
 		switch {
 		case len(m.Languages) > 0:

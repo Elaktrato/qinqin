@@ -47,6 +47,6 @@
 
 	.empty {
 		margin: 0.5rem 0 0;
-		opacity: 0.8;
+		color: var(--readable-muted);
 	}
 </style>

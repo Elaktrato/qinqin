@@ -302,7 +302,7 @@
 		margin: 0.5rem 0 0.25rem;
 		font-size: 0.8rem;
 		font-weight: 600;
-		opacity: 0.7;
+		color: var(--readable-muted);
 	}
 
 	.tiles,
@@ -329,14 +329,14 @@
 	.tile .forms {
 		margin-left: 0.15rem;
 		font-size: 0.8rem;
-		opacity: 0.7;
+		color: var(--readable-muted);
 	}
 
 	.tile[aria-pressed='true'],
 	.chip[aria-pressed='true'] {
-		background: #0b6bcb;
-		border-color: #0b6bcb;
-		color: #fff;
+		background: var(--accent);
+		border-color: var(--accent);
+		color: var(--on-accent);
 	}
 
 	.tile[aria-disabled='true'] {
@@ -347,7 +347,7 @@
 	.tile:focus-visible,
 	.chip:focus-visible,
 	.cell:focus-visible {
-		outline: 2px solid #0b6bcb;
+		outline: 2px solid var(--focus-colour);
 		outline-offset: 2px;
 	}
 
@@ -357,7 +357,7 @@
 		min-height: 2.75rem;
 		border: none;
 		background: none;
-		color: #0b6bcb;
+		color: var(--reading-accent);
 		text-decoration: underline;
 		cursor: pointer;
 	}
@@ -377,7 +377,7 @@
 	.result-label {
 		margin: 0.75rem 0 0.25rem;
 		font-size: 0.85rem;
-		opacity: 0.75;
+		color: var(--readable-muted);
 	}
 
 	.cells {
@@ -406,11 +406,13 @@
 
 	.hint,
 	.note {
-		opacity: 0.75;
+		color: var(--readable-muted);
 	}
 
 	.error {
-		color: #c62828;
+		color: var(--readable-bad);
 		font-weight: 600;
+		padding-inline-start: var(--space-2);
+		border-inline-start: 3px solid var(--bad);
 	}
 </style>

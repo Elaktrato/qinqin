@@ -55,6 +55,6 @@
 
 	.meta {
 		font-size: 0.85rem;
-		opacity: 0.75;
+		color: var(--readable-muted);
 	}
 </style>

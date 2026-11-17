@@ -249,17 +249,17 @@
 
 	.trigger:focus-visible,
 	.options:focus-visible {
-		outline: 2px solid #0b6bcb;
+		outline: 2px solid var(--focus-colour);
 		outline-offset: 2px;
 	}
 
 	.none {
-		opacity: 0.75;
+		color: var(--readable-muted);
 	}
 
 	.caret {
 		flex: none;
-		opacity: 0.7;
+		color: var(--readable-muted);
 	}
 
 	.panel {
@@ -274,9 +274,9 @@
 		padding: 0.35rem;
 		border: 1px solid color-mix(in srgb, currentColor 22%, transparent);
 		border-radius: 0.5rem;
-		background: Canvas;
-		color: CanvasText;
-		box-shadow: 0 8px 24px rgb(0 0 0 / 0.18);
+		background: var(--panel);
+		color: var(--text);
+		box-shadow: var(--shadow-float);
 	}
 
 	.options {
@@ -298,7 +298,7 @@
 	}
 
 	.options li.active {
-		background: color-mix(in srgb, #0b6bcb 16%, transparent);
+		background: color-mix(in srgb, var(--accent) 16%, transparent);
 	}
 
 	.options li[aria-selected='true'] {
@@ -307,7 +307,7 @@
 
 	.check {
 		flex: none;
-		color: #0b6bcb;
+		color: var(--reading-accent);
 	}
 
 	.new {
@@ -327,7 +327,7 @@
 
 	.new:hover,
 	.new:focus-visible {
-		background: color-mix(in srgb, #0b6bcb 12%, transparent);
+		background: color-mix(in srgb, var(--accent) 12%, transparent);
 	}
 
 	.create {

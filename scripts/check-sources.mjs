@@ -5,10 +5,13 @@
 //
 // The Sources page (/sources) is built from the pack manifests; this check
 // keeps the repository honest about them:
-//   a. every pack directory under plugins/data and plugins/samples has a
-//      manifest.json with a non-empty `license` and `attribution`;
-//   b. every bundled pack (plugins/data) has its manifest `id` mentioned,
-//      in backticks, in docs/sources.md;
+//   a. every pack directory under plugins/data, plugins/samples and
+//      server/internal/themes/builtin (the theme packs built into the
+//      binary) has a manifest.json with a non-empty `license` and
+//      `attribution`; a built-in theme pack also a non-empty LICENSE file
+//      (the upstream licence text, shipped in the binary);
+//   b. every bundled pack (plugins/data, the built-in theme packs) has its
+//      manifest `id` mentioned, in backticks, in docs/sources.md;
 //   c. every pack id docs/sources.md names in a "Pack" table row or in a
 //      "- **Name** (`id`" list item exists under plugins/data or
 //      plugins/samples, or is one of the optional local-only packs the docs
@@ -17,7 +20,14 @@
 //      after the loader trims it): at most 4,000 bytes, no control
 //      characters but \n and \t, no bidi embedding/override/isolate
 //      characters, links written [text](https://host/...) that Go's
-//      url.Parse accepts, and nothing else; plus no U+FFFD (broken UTF-8).
+//      url.Parse accepts, and nothing else; plus no U+FFFD (broken UTF-8);
+//   e. every font file bundled with the web app (.woff2, .woff, .ttf, .otf
+//      under apps/web/src or apps/web/static) is named, in backticks, in
+//      docs/sources.md, and the section (## heading) naming it also names
+//      its licence text as `apps/web/static/<NAME>.TXT`, which must exist;
+//   f. every vendored icon set (a non-test .ts module under
+//      apps/web/src/lib/ui/icons) is named, in backticks, in docs/sources.md,
+//      in a section that also names its licence text the same way.
 //
 // Exit code 0 when everything agrees, 1 with one message per problem.
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
@@ -38,11 +48,26 @@ export const LOCAL_ONLY_PACKS = [
 ];
 /**
  * Packs with a clear, redistributable licence that are fetched by a script
- * (and baked into the Docker image) instead of being committed, because of
- * their size: the docs may name them like a bundled pack.
+ * instead of being committed, because of their size: the docs may name them
+ * like a bundled pack. The audio and strokes packs are baked into the
+ * Docker image; the font packs (scripts/prepare-font-pack.mjs, one per
+ * pinned source) are built on demand and installed by an administrator.
  */
-export const FETCHED_PACKS = ['kanjialive-audio', 'hanzi-writer-strokes'];
+export const FETCHED_PACKS = [
+	'kanjialive-audio',
+	'hanzi-writer-strokes',
+	'noto-sans-sc',
+	'noto-sans-tc',
+	'noto-sans-jp',
+	'noto-serif-sc',
+	'noto-serif-tc',
+	'noto-serif-jp',
+	'lxgw-wenkai',
+	'klee-one'
+];
 export const MAX_NOTICE_BYTES = 4000;
+/** The theme packs built into the server binary (server/internal/themes). */
+export const BUILTIN_THEMES = 'server/internal/themes/builtin';
 
 // Go's RE2 `\s` is ASCII whitespace only ([\t\n\f\r ]), so the URL part
 // spells it out: a no-break space in a URL is part of the URL, as on the
@@ -211,13 +236,67 @@ export function docPackIds(text) {
 	return ids;
 }
 
+const FONT_FILE = /\.(woff2?|ttf|otf)$/i;
+const FONT_ROOTS = ['apps/web/src', 'apps/web/static'];
+
+/** fontFiles lists the font files under the web app's source and static roots (repo-relative). */
+function fontFiles(root) {
+	const out = [];
+	const walk = (rel) => {
+		for (const e of readdirSync(join(root, rel), { withFileTypes: true })) {
+			const child = `${rel}/${e.name}`;
+			if (e.isDirectory()) walk(child);
+			else if (FONT_FILE.test(e.name)) out.push(child);
+		}
+	};
+	for (const base of FONT_ROOTS) if (existsSync(join(root, base))) walk(base);
+	return out.sort();
+}
+
+/** docSections splits docs/sources.md at its `## ` headings. */
+const docSections = (doc) => doc.split(/^## /m);
+
+const ICON_DIR = 'apps/web/src/lib/ui/icons';
+
+/** iconFiles lists the vendored icon modules (rule f). */
+function iconFiles(root) {
+	if (!existsSync(join(root, ICON_DIR))) return [];
+	return readdirSync(join(root, ICON_DIR))
+		.filter((name) => name.endsWith('.ts') && !name.endsWith('.test.ts') && !name.endsWith('.d.ts'))
+		.map((name) => `${ICON_DIR}/${name}`)
+		.sort();
+}
+
+/** namedWithLicence checks rules e and f: each file is named in a docs section that names an existing licence text. */
+function namedWithLicence(root, doc, files, what) {
+	const problems = [];
+	for (const rel of files) {
+		const name = '`' + rel.split('/').pop() + '`';
+		const sections = docSections(doc).filter((s) => s.includes(name));
+		if (sections.length === 0) {
+			problems.push(
+				`${rel}: ${what} is not named in docs/sources.md; name the file, in backticks, in a section that also names its licence text (\`apps/web/static/<NAME>.TXT\`)`
+			);
+			continue;
+		}
+		const licensed = sections.some((s) =>
+			[...s.matchAll(/`apps\/web\/static\/([A-Za-z0-9._-]+\.TXT)`/g)].some(([, f]) => existsSync(join(root, 'apps/web/static', f)))
+		);
+		if (!licensed) problems.push(`${rel}: the docs/sources.md section naming it names no licence text that exists under apps/web/static`);
+	}
+	return problems;
+}
+
+/** fontProblems checks rule e for every bundled font file. */
+const fontProblems = (root, doc) => namedWithLicence(root, doc, fontFiles(root), 'bundled font');
+
 /** checkSources returns the list of problems under repo root `root`. */
 export function checkSources(root) {
 	const problems = [];
 	const bundled = new Map(); // manifest id -> dir (plugins/data)
 	const known = new Set([...LOCAL_ONLY_PACKS, ...FETCHED_PACKS]);
 
-	for (const base of ['plugins/data', 'plugins/samples']) {
+	for (const base of ['plugins/data', 'plugins/samples', BUILTIN_THEMES]) {
 		for (const name of packDirs(join(root, base))) {
 			const rel = `${base}/${name}`;
 			const file = join(root, rel, 'manifest.json');
@@ -236,7 +315,13 @@ export function checkSources(root) {
 			if (!id) problems.push(`${rel}/manifest.json: missing "id"`);
 			else {
 				known.add(id);
-				if (base === 'plugins/data') bundled.set(id, rel);
+				if (base !== 'plugins/samples') bundled.set(id, rel);
+			}
+			if (base === BUILTIN_THEMES) {
+				const lic = join(root, rel, 'LICENSE');
+				if (!existsSync(lic) || readFileSync(lic, 'utf8').trim() === '') {
+					problems.push(`${rel}: LICENSE is missing or empty; copy the palette's licence text verbatim from upstream`);
+				}
 			}
 			for (const f of ['license', 'attribution']) {
 				if (typeof m[f] !== 'string' || m[f].trim() === '') {
@@ -268,6 +353,8 @@ export function checkSources(root) {
 			problems.push(`docs/sources.md: bundled pack "${id}" (${rel}) is not mentioned; add it, in backticks, to the tables`);
 		}
 	}
+	problems.push(...fontProblems(root, doc));
+	problems.push(...namedWithLicence(root, doc, iconFiles(root), 'vendored icon set'));
 	for (const id of docPackIds(doc)) {
 		if (!known.has(id)) {
 			problems.push(

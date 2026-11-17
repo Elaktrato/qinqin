@@ -2,7 +2,7 @@
 // deliberate: a licence is only ever shown "as stated by the pack", and
 // nothing here says or hints that a licence was checked or is fine.
 
-import type { InstalledPack, PackType, StagedPack } from '$lib/api/packs';
+import type { InstalledPack, PackType, StagedPack, StagedTheme } from '$lib/api/packs';
 import type { CatalogueRow } from '$lib/api/packages';
 import type { UploadProgress } from '$lib/api/upload';
 import { labelRecord, t, type MessageKey } from '$lib/i18n';
@@ -30,10 +30,12 @@ export const PACK_TYPE_LABELS: Readonly<Record<PackType, string>> = labelRecord(
 	grammar: 'packs.type.grammar',
 	audio: 'packs.type.audio',
 	components: 'packs.type.components',
-	strokes: 'packs.type.strokes'
+	strokes: 'packs.type.strokes',
+	font: 'packs.type.font',
+	theme: 'packs.type.theme'
 });
 
-const TYPE_ORDER: PackType[] = ['dictionary', 'frequency', 'levels', 'sentences', 'grammar', 'audio', 'components', 'strokes'];
+const TYPE_ORDER: PackType[] = ['dictionary', 'frequency', 'levels', 'sentences', 'grammar', 'audio', 'components', 'strokes', 'font', 'theme'];
 
 /** packLanguages is the languages a listed pack covers: a strokes pack's list, else its one language. */
 export function packLanguages(pack: InstalledPack): string[] {
@@ -106,7 +108,9 @@ const UNINSTALL: Record<PackType, MessageKey> = {
 	grammar: 'packs.uninstall.grammar',
 	components: 'packs.uninstall.components',
 	strokes: 'packs.uninstall.strokes',
-	audio: 'packs.uninstall.audio'
+	audio: 'packs.uninstall.audio',
+	font: 'packs.uninstall.font',
+	theme: 'packs.uninstall.theme'
 };
 
 /** uninstallWarning says what an uninstall removes and what stays. */
@@ -154,4 +158,66 @@ export function packageLine(row: CatalogueRow): { text: string; error: string | 
 		default:
 			return { text: t('packs.package.removed', { id: row.id }), error };
 	}
+}
+
+// The staged review of a theme pack: the measured contrast per theme, the
+// result always in words (never by colour alone). Reported, never enforced.
+
+const COLOR_NAMES: Record<string, MessageKey> = {
+	text: 'packs.contrast.color.text',
+	muted: 'packs.contrast.color.muted',
+	raised: 'packs.contrast.color.raised',
+	bad: 'packs.contrast.color.bad',
+	onAccent: 'packs.contrast.color.onAccent',
+	panel: 'packs.contrast.color.panel',
+	chrome: 'packs.contrast.color.chrome',
+	gradeAgain: 'packs.contrast.color.gradeAgain',
+	gradeHard: 'packs.contrast.color.gradeHard',
+	gradeGood: 'packs.contrast.color.gradeGood',
+	gradeEasy: 'packs.contrast.color.gradeEasy'
+};
+
+function colorName(key: string): string {
+	if (key.startsWith('accent:')) return t('packs.contrast.color.accent', { name: key.slice('accent:'.length) });
+	const known = COLOR_NAMES[key];
+	return known ? t(known) : key;
+}
+
+function ratioText(ratio: number, digits: number): string {
+	return t('packs.contrast.ratio', {
+		ratio: formatNumber(ratio, { minimumFractionDigits: digits, maximumFractionDigits: 2 })
+	});
+}
+
+export interface ContrastRow {
+	pair: string;
+	ratio: string;
+	needed: string;
+	result: string;
+	pass: boolean;
+}
+
+/** contrastView: one staged theme's caption and table rows. */
+export function contrastView(theme: StagedTheme): { caption: string; rows: ContrastRow[] } {
+	const name = theme.family ? t('packs.contrast.familyName', { family: theme.family, name: theme.name }) : theme.name;
+	const scheme = theme.scheme === 'dark' ? t('packs.contrast.scheme.dark') : t('packs.contrast.scheme.light');
+	const result =
+		theme.failing === 0 ? t('packs.contrast.allPassTheme') : t('packs.contrast.failing', { count: theme.failing });
+	return {
+		caption: t('packs.contrast.caption', { name, scheme, result }),
+		rows: theme.checks.map((c) => ({
+			pair: t('packs.contrast.pair', { fg: colorName(c.fg), bg: colorName(c.bg) }),
+			ratio: ratioText(c.ratio, 2),
+			needed: ratioText(c.min, 0),
+			result: c.pass ? t('packs.contrast.pass') : t('packs.contrast.below'),
+			pass: c.pass
+		}))
+	};
+}
+
+/** contrastSummary: the pack's failing checks in all, with the note that a failing pack may still be installed. */
+export function contrastSummary(themes: readonly StagedTheme[]): string {
+	const failing = themes.reduce((n, th) => n + th.failing, 0);
+	if (failing === 0) return t('packs.contrast.allPass');
+	return `${t('packs.contrast.failing', { count: failing })} ${t('packs.contrast.note')}`;
 }

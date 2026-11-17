@@ -695,50 +695,34 @@ import type { StudyContext } from '$lib/study/studyContext';
 </div>
 
 <style>
+	/* The mastery ramp (design §9, one hue): not studied is a dashed outline,
+	   then the accent at 14 / 32 / 58 / 100 %. The bars and the legend use the
+	   whole ramp. A cell's glyph must stay readable (4.5:1), and no text colour
+	   reaches it on the 58 % step in any built-in theme, so a mature cell is
+	   the 32 % fill plus an accent ring; a learned cell is the full accent with
+	   --on-accent. The bar length, the ring and the corner tick tell the
+	   stages apart without colour. */
 	.map {
-		--st-edge: color-mix(in srgb, currentColor 18%, transparent);
-		--st-focus: #0b6bcb;
-		--st-tip-bg: #fff;
-		--st-tip-fg: #1b1b1b;
-		--st-unknown-bg: color-mix(in srgb, currentColor 4%, transparent);
-		--st-unknown-fg: color-mix(in srgb, currentColor 62%, transparent);
-		/* ≥ 3:1 against the page and the cell (computed: 3.7 on white). */
-		--st-unknown-edge: #858585;
-		--st-unknown-bar: color-mix(in srgb, currentColor 14%, transparent);
-		--st-fresh-bg: #fdecea;
-		--st-fresh-fg: #8c1d18;
-		--st-fresh-bar: #e57373;
-		--st-learning-bg: #fff1d6;
-		--st-learning-fg: #7a4a00;
-		--st-learning-bar: #f0a72c;
-		--st-mature-bg: #dceeff;
-		--st-mature-fg: #0b4f8a;
-		--st-mature-bar: #4a90d9;
-		--st-learned-bg: #dff3e4;
-		--st-learned-fg: #145c2e;
-		--st-learned-bar: #2e9a55;
-	}
-
-	@media (prefers-color-scheme: dark) {
-		.map {
-			--st-focus: #6cb4ff;
-			/* ≥ 3:1 against the dark page and the cell (computed: 3.6 on #121212). */
-			--st-unknown-edge: #6e6e6e;
-			--st-tip-bg: #1f2328;
-			--st-tip-fg: #eef0f2;
-			--st-fresh-bg: #4a1f1c;
-			--st-fresh-fg: #ffb4ab;
-			--st-fresh-bar: #e57373;
-			--st-learning-bg: #45320c;
-			--st-learning-fg: #ffd88a;
-			--st-learning-bar: #e0a03a;
-			--st-mature-bg: #12324f;
-			--st-mature-fg: #a8d2ff;
-			--st-mature-bar: #5aa0e6;
-			--st-learned-bg: #143f27;
-			--st-learned-fg: #9fe3b5;
-			--st-learned-bar: #43b56c;
-		}
+		--st-edge: var(--hair);
+		--st-focus: var(--accent);
+		--st-tip-bg: var(--panel);
+		--st-tip-fg: var(--text);
+		--st-unknown-bg: transparent;
+		--st-unknown-fg: var(--readable-muted);
+		/* ≥ 3:1 against the page in the built-in themes (a non-text outline). */
+		--st-unknown-edge: var(--muted);
+		--st-fresh-bg: var(--accent-14);
+		--st-fresh-fg: var(--text);
+		--st-fresh-bar: var(--mastery-1);
+		--st-learning-bg: var(--accent-32);
+		--st-learning-fg: var(--text);
+		--st-learning-bar: var(--mastery-2);
+		--st-mature-bg: var(--accent-32);
+		--st-mature-fg: var(--text);
+		--st-mature-bar: var(--mastery-3);
+		--st-learned-bg: var(--accent);
+		--st-learned-fg: var(--on-accent);
+		--st-learned-bar: var(--mastery-4);
 	}
 
 	.head h2 {
@@ -796,11 +780,11 @@ import type { StudyContext } from '$lib/study/studyContext';
 
 	.num {
 		font-variant-numeric: tabular-nums;
-		opacity: 0.8;
+		color: var(--readable-muted);
 	}
 
 	.dot {
-		opacity: 0.5;
+		color: var(--readable-muted);
 		margin-inline: 0.15rem;
 	}
 
@@ -975,25 +959,25 @@ import type { StudyContext } from '$lib/study/studyContext';
 
 	.count small {
 		font-size: 0.8rem;
-		opacity: 0.75;
+		color: var(--readable-muted);
 	}
 
 	.shown {
 		font-weight: 400;
 		font-size: 0.85rem;
-		opacity: 0.75;
+		color: var(--readable-muted);
 	}
 
 	.banner {
 		margin: 1rem 0 0;
 		padding: 0.6rem 0.8rem;
-		border: 1px solid #e2c36b;
+		border: 1px solid var(--warn);
+		border-inline-start-width: 3px;
 		border-radius: 0.4rem;
-		background: #fff6d8;
 	}
 
 	.hint {
-		opacity: 0.75;
+		color: var(--readable-muted);
 	}
 
 	.small {
@@ -1026,22 +1010,12 @@ import type { StudyContext } from '$lib/study/studyContext';
 
 	.error {
 		margin: 0;
-		color: #c62828;
+		color: var(--readable-bad);
 		font-weight: 600;
+		padding-inline-start: var(--space-2);
+		border-inline-start: 3px solid var(--bad);
 	}
 
-	/* After the base rules of .banner and .error: same specificity, so the
-	   later rule wins. */
-	@media (prefers-color-scheme: dark) {
-		.error {
-			color: #ff8a80;
-		}
-
-		.banner {
-			background: #3d3212;
-			border-color: #8a6d1e;
-		}
-	}
 
 	.sr {
 		position: absolute;

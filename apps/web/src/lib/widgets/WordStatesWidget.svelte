@@ -205,35 +205,22 @@
 		min-width: 3px;
 	}
 
-	/* Text carries every number; the colours only repeat it. */
+	/* Text carries every number; the accent ramp only repeats it (design §9,
+	   "cards by state as one stacked bar in the accent ramp"). */
 	.ws-new {
-		background: color-mix(in srgb, currentColor 28%, transparent);
+		background: var(--accent-14);
 	}
 
 	.ws-learning {
-		background: #f0a72c;
+		background: var(--accent-32);
 	}
 
 	.ws-young {
-		background: #4a90d9;
+		background: var(--accent-58);
 	}
 
 	.ws-mature {
-		background: #2e9a55;
-	}
-
-	@media (prefers-color-scheme: dark) {
-		.ws-learning {
-			background: #e0a03a;
-		}
-
-		.ws-young {
-			background: #5aa0e6;
-		}
-
-		.ws-mature {
-			background: #43b56c;
-		}
+		background: var(--accent-100);
 	}
 
 	.legend {
@@ -266,14 +253,14 @@
 
 	/* A soft edge on the right while columns are hidden there. */
 	.table-wrap.more-right {
-		mask-image: linear-gradient(to right, #000 calc(100% - 1.5rem), transparent);
+		mask-image: linear-gradient(to right, currentColor calc(100% - 1.5rem), transparent); /* only the alpha counts */
 	}
 
 	.scroll-hint {
 		margin: 0.3rem 0 0;
 		font-size: 0.78rem;
 		text-align: right;
-		opacity: 0.75;
+		color: var(--readable-muted);
 	}
 
 	table {
@@ -292,7 +279,7 @@
 	thead th {
 		font-size: 0.78rem;
 		font-weight: 600;
-		opacity: 0.8;
+		color: var(--readable-muted);
 	}
 
 	tbody th {
@@ -310,7 +297,7 @@
 	.note {
 		margin: 0.75rem 0 0;
 		font-size: 0.8rem;
-		opacity: 0.7;
+		color: var(--readable-muted);
 	}
 
 	.sr {

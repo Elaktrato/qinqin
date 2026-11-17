@@ -68,7 +68,7 @@
 
 	.quote {
 		text-decoration: line-through;
-		opacity: 0.85;
+		color: var(--readable-muted);
 	}
 
 	.gone {
@@ -84,7 +84,7 @@
 
 	.why {
 		white-space: pre-wrap;
-		opacity: 0.85;
+		color: var(--readable-muted);
 	}
 
 	.sr {

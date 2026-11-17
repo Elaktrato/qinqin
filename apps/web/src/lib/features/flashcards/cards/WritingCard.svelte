@@ -236,7 +236,7 @@
 		display: flex;
 		flex-wrap: wrap;
 		gap: 0.35rem 1rem;
-		opacity: 0.85;
+		color: var(--readable-muted);
 	}
 
 	.glosses {
@@ -259,22 +259,22 @@
 	}
 
 	.dot.current {
-		border-color: #0b6bcb;
+		border-color: var(--accent);
 	}
 
 	.dot.ok {
-		background: #2e7d32;
-		border-color: #2e7d32;
+		background: var(--good);
+		border-color: var(--good);
 	}
 
 	.dot.missed {
-		background: #ef8f00;
-		border-color: #ef8f00;
+		background: var(--warn);
+		border-color: var(--warn);
 	}
 
 	.dot.revealed {
-		background: #c62828;
-		border-color: #c62828;
+		background: var(--bad);
+		border-color: var(--bad);
 	}
 
 	.pad-wrap {
@@ -302,7 +302,7 @@
 	}
 
 	.count {
-		opacity: 0.75;
+		color: var(--readable-muted);
 		font-variant-numeric: tabular-nums;
 	}
 
@@ -319,12 +319,12 @@
 
 	.secondary:hover:not(:disabled),
 	.secondary:focus-visible {
-		border-color: #0b6bcb;
-		color: #0b6bcb;
+		border-color: var(--accent);
+		color: var(--reading-accent);
 	}
 
 	.secondary:focus-visible {
-		outline: 2px solid #0b6bcb;
+		outline: 2px solid var(--focus-colour);
 		outline-offset: 2px;
 	}
 
@@ -351,7 +351,9 @@
 
 	.error {
 		margin: 0.5rem 0;
-		color: #c62828;
+		color: var(--readable-bad);
 		font-weight: 600;
+		padding-inline-start: var(--space-2);
+		border-inline-start: 3px solid var(--bad);
 	}
 </style>

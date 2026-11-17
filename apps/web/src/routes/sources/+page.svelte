@@ -8,6 +8,7 @@
 	import type { ComponentPack, Dictionary, FrequencyPack, Scheme, StrokePack } from '$lib/api/types';
 	import { getComponentPacks } from '$lib/api/components';
 	import { getStrokePacks } from '$lib/api/packages';
+	import { getFonts, type FontList } from '$lib/api/fonts';
 	import { audioSection, type AudioPackInfo } from '$lib/sources/audioSection';
 	import { languageLabel } from '$lib/languages';
 	import { webPlugins } from '$lib/plugins';
@@ -16,13 +17,16 @@
 	import { coreCredits } from '$lib/sources/coreCredits';
 	import { cjkLang, scriptRuns, type NoticeParagraph } from '$lib/sources/notice';
 	import { listSentencePacks, type SentencePack } from '$lib/api/packs';
+	import { getThemes, type ThemesAnswer } from '$lib/api/themes';
 	import {
 		componentsSection,
 		creditView,
+		fontsSection,
 		packTable,
 		pluginCredits,
 		sentencePackSources,
 		strokesSection,
+		themesSection,
 		type CreditView,
 		type PackTable
 	} from '$lib/sources/sections';
@@ -133,6 +137,37 @@
 		}
 	}
 
+	// Theme packs (#96): the built-in ones are always listed.
+	let themesAnswer = $state<ThemesAnswer>({ themes: [], packs: [] });
+	let themesError = $state('');
+	const themes = $derived(themesSection(themesAnswer, themesError));
+
+	async function loadThemes(): Promise<void> {
+		themesError = '';
+		try {
+			themesAnswer = await getThemes();
+		} catch (err) {
+			themesAnswer = { themes: [], packs: [] };
+			themesError = message(err, t('sources.error.themes'));
+		}
+	}
+
+	// The Fonts section exists only while a font pack is installed; the list
+	// needs a session, so a signed-out visitor sees none.
+	let fontList = $state<FontList>({ faces: [], packs: [] });
+	let fontsError = $state('');
+	const fonts = $derived(fontsSection(fontList, fontsError));
+
+	async function loadFonts(): Promise<void> {
+		fontsError = '';
+		try {
+			fontList = await getFonts();
+		} catch (err) {
+			fontList = { faces: [], packs: [] };
+			fontsError = message(err, t('sources.error.fonts'));
+		}
+	}
+
 	let schemes = $state<Scheme[]>([]);
 	let schemesLoading = $state(true);
 	let schemesError = $state('');
@@ -183,6 +218,8 @@
 		loadSchemes();
 		loadComponents();
 		loadStrokes();
+		loadThemes();
+		loadFonts();
 	});
 </script>
 
@@ -452,6 +489,55 @@
 		</section>
 	{/if}
 
+	{#if themes.show}
+		<section>
+			<h2 id="sources-themes">{t('sources.themes.title')}</h2>
+			{#if themesError}
+				<p class="error" role="alert">{themesError}</p>
+				<button type="button" onclick={loadThemes}>{t('sources.retry')}</button>
+			{:else}
+				<div class="table-wrap">
+					<table aria-labelledby="sources-themes">
+						<thead>
+							<tr>
+								<th scope="col">{t('sources.col.name')}</th>
+								{@render noteHeader(themes.table)}
+								<th scope="col">{t('sources.themes.colThemes')}</th>
+								<th scope="col">{t('sources.themes.colOrigin')}</th>
+								<th scope="col">{t('sources.col.version')}</th>
+								<th scope="col">{t('sources.license')}</th>
+								<th scope="col">{t('sources.attribution')}</th>
+							</tr>
+						</thead>
+						<tbody>
+							{#each themes.table.rows as row (row.key)}
+								<tr>
+									<th scope="row" class="name">{@render cell(row.name, row.language)}</th>
+									{@render noteCell(themes.table, row.noteId, row.name)}
+									<td>{themes.themeNames[row.key]}</td>
+									<td>{themes.builtin[row.key] ? t('sources.themes.builtin') : t('sources.themes.installed')}</td>
+									<td>{row.version}</td>
+									<td>{@render cell(row.license, row.language)}</td>
+									<td>{@render cell(row.attribution, row.language)}</td>
+								</tr>
+							{/each}
+						</tbody>
+					</table>
+				</div>
+				{@render notes(themes.table)}
+				{#each themes.licenseTexts as licence (licence.key)}
+					<details class="licence-text">
+						<summary>{licence.label}</summary>
+						<pre>{licence.text}</pre>
+					</details>
+				{/each}
+			{/if}
+			<p class="notice">
+				{t('sources.themes.notice')}
+			</p>
+		</section>
+	{/if}
+
 	{#if strokes.show}
 		<section>
 			<h2 id="sources-strokes">{t('sources.strokes.title')}</h2>
@@ -495,6 +581,56 @@
 			{/if}
 			<p class="notice">
 				{t('sources.strokes.notice')}
+			</p>
+		</section>
+	{/if}
+
+	{#if fonts.show}
+		<section>
+			<h2 id="sources-fonts">{t('sources.fonts.title')}</h2>
+			{#if fontsError}
+				<p class="error" role="alert">{fontsError}</p>
+				<button type="button" onclick={loadFonts}>{t('sources.retry')}</button>
+			{:else}
+				<div class="table-wrap">
+					<table aria-labelledby="sources-fonts">
+						<thead>
+							<tr>
+								<th scope="col">{t('sources.col.name')}</th>
+								{@render noteHeader(fonts.table)}
+								<th scope="col">{t('sources.col.language')}</th>
+								<th scope="col">{t('sources.col.version')}</th>
+								<th scope="col">{t('sources.license')}</th>
+								<th scope="col">{t('sources.attribution')}</th>
+							</tr>
+						</thead>
+						<tbody>
+							{#each fonts.table.rows as row (row.key)}
+								<tr>
+									<th scope="row" class="name">{@render cell(row.name, row.language)}</th>
+									{@render noteCell(fonts.table, row.noteId, row.name)}
+									<td title={row.language}>{languageLabel(row.language)}</td>
+									<td>{row.version}</td>
+									<td>
+										{#if fonts.licenseHref[row.key]}
+											<a href={fonts.licenseHref[row.key]} rel="noreferrer">{row.license}</a>
+										{:else}
+											{@render cell(row.license, row.language)}
+										{/if}
+									</td>
+									<td>{@render cell(row.attribution, row.language)}</td>
+								</tr>
+							{/each}
+						</tbody>
+					</table>
+				</div>
+				{#each fonts.modified as line, i (i)}
+					<p>{line}</p>
+				{/each}
+				{@render notes(fonts.table)}
+			{/if}
+			<p class="notice">
+				{t('sources.fonts.notice')}
 			</p>
 		</section>
 	{/if}
@@ -680,11 +816,11 @@
 
 	.lede {
 		margin-top: 0;
-		opacity: 0.85;
+		color: var(--readable-muted);
 	}
 
 	.hint {
-		opacity: 0.75;
+		color: var(--readable-muted);
 	}
 
 	.visually-hidden {
@@ -725,7 +861,7 @@
 		font-size: 0.8rem;
 		letter-spacing: 0.04em;
 		text-transform: uppercase;
-		opacity: 0.75;
+		color: var(--readable-muted);
 		white-space: nowrap;
 	}
 
@@ -742,7 +878,7 @@
 	.notice {
 		margin: 0.9rem 0 0;
 		font-size: 0.9rem;
-		opacity: 0.85;
+		color: var(--readable-muted);
 	}
 
 	.notes-heading {
@@ -820,7 +956,7 @@
 	}
 
 	.facts dt {
-		opacity: 0.75;
+		color: var(--readable-muted);
 	}
 
 	.facts dd {
@@ -833,10 +969,23 @@
 		font-size: 0.9rem;
 	}
 
+	.licence-text {
+		margin: 0.4rem 0 0;
+		font-size: 0.9rem;
+	}
+
+	.licence-text pre {
+		white-space: pre-wrap;
+		overflow-wrap: anywhere;
+		font-size: 0.8rem;
+	}
+
 	.error {
 		margin: 0 0 0.6rem;
-		color: #c62828;
+		color: var(--readable-bad);
 		font-weight: 600;
+		padding-inline-start: var(--space-2);
+		border-inline-start: 3px solid var(--bad);
 	}
 
 	button {
@@ -845,8 +994,8 @@
 		padding: 0.45rem 0.85rem;
 		border: 0;
 		border-radius: 0.4rem;
-		background: #0b6bcb;
-		color: #fff;
+		background: var(--accent);
+		color: var(--on-accent);
 		cursor: pointer;
 	}
 

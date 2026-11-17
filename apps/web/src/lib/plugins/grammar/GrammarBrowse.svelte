@@ -120,13 +120,13 @@
 
 	.lang {
 		font-weight: 400;
-		opacity: 0.75;
+		color: var(--readable-muted);
 	}
 
 	.pack {
 		margin: 1.5rem 0 0;
 		font-size: 1rem;
-		opacity: 0.7;
+		color: var(--readable-muted);
 		font-weight: 600;
 	}
 
@@ -168,17 +168,17 @@
 	}
 
 	.lesson:hover {
-		border-color: #0b6bcb;
+		border-color: var(--accent);
 	}
 
 	.lesson:focus-visible {
-		outline: 2px solid #0b6bcb;
+		outline: 2px solid var(--focus-colour);
 		outline-offset: 2px;
 	}
 
 	.done {
 		width: 1.25rem;
-		color: #2e7d32;
+		color: var(--good);
 		font-weight: 700;
 		text-align: center;
 	}
@@ -195,7 +195,7 @@
 
 	.summary {
 		font-size: 0.9rem;
-		opacity: 0.75;
+		color: var(--readable-muted);
 	}
 
 	.score {
@@ -206,11 +206,13 @@
 	.credits {
 		margin: 1rem 0 0;
 		font-size: 0.85rem;
-		opacity: 0.7;
+		color: var(--readable-muted);
 	}
 
 	.error {
-		color: #c62828;
+		color: var(--readable-bad);
+		padding-inline-start: var(--space-2);
+		border-inline-start: 3px solid var(--bad);
 	}
 
 	.visually-hidden {

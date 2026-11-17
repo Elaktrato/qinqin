@@ -449,12 +449,14 @@
 	}
 	.hint {
 		margin: 0;
-		opacity: 0.75;
+		color: var(--readable-muted);
 	}
 	.error {
 		margin: 0;
-		color: #c62828;
+		color: var(--readable-bad);
 		font-weight: 600;
+		padding-inline-start: var(--space-2);
+		border-inline-start: 3px solid var(--bad);
 	}
 	.ok {
 		margin: 0;
@@ -497,9 +499,9 @@
 		cursor: pointer;
 	}
 	button[type='submit'] {
-		background: #0b6bcb;
-		border-color: #0b6bcb;
-		color: #fff;
+		background: var(--accent);
+		border-color: var(--accent);
+		color: var(--on-accent);
 		font-weight: 600;
 		justify-self: start;
 	}

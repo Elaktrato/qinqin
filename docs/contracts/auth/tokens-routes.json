@@ -77,6 +77,11 @@
 			"workspace": "query"
 		},
 		{
+			"pattern": "GET /api/fonts",
+			"scope": "read",
+			"workspace": "any"
+		},
+		{
 			"pattern": "GET /api/frequency-packs",
 			"scope": "read",
 			"workspace": "any"
@@ -200,6 +205,11 @@
 			"pattern": "GET /api/sync/pull",
 			"scope": "read",
 			"workspace": "refused"
+		},
+		{
+			"pattern": "GET /api/themes",
+			"scope": "read",
+			"workspace": "any"
 		},
 		{
 			"pattern": "GET /api/workspaces",

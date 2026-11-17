@@ -120,10 +120,12 @@
 	}
 
 	.hint {
-		opacity: 0.75;
+		color: var(--readable-muted);
 	}
 
 	.error {
-		color: #b3261e;
+		color: var(--readable-bad);
+		padding-inline-start: var(--space-2);
+		border-inline-start: 3px solid var(--bad);
 	}
 </style>

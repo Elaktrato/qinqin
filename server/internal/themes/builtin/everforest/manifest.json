@@ -1,0 +1,10 @@
+{
+	"id": "everforest",
+	"name": "Everforest",
+	"version": "1.0",
+	"type": "theme",
+	"license": "MIT",
+	"attribution": "© 2019 sainnhe (sainnhe/everforest)",
+	"notice": "Everforest dark, medium contrast. Colours from [Everforest](https://github.com/sainnhe/everforest) (palette.md, commit 85a86eb62409).",
+	"format": "themes-json"
+}

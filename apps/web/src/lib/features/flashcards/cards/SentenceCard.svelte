@@ -110,7 +110,7 @@
 
 	.target {
 		margin: 0;
-		opacity: 0.75;
+		color: var(--readable-muted);
 	}
 
 	.cloze {
@@ -128,7 +128,7 @@
 	}
 
 	.cloze:focus-visible {
-		outline: 2px solid #0b6bcb;
+		outline: 2px solid var(--focus-colour);
 		outline-offset: 2px;
 	}
 
@@ -141,11 +141,11 @@
 		margin-top: 0.25rem;
 		font-size: 0.85rem;
 		font-weight: 600;
-		color: #0b6bcb;
+		color: var(--reading-accent);
 	}
 
 	.hint {
-		opacity: 0.75;
+		color: var(--readable-muted);
 	}
 
 	.reveal {
@@ -165,6 +165,6 @@
 	}
 
 	.pinyin {
-		opacity: 0.8;
+		color: var(--readable-muted);
 	}
 </style>

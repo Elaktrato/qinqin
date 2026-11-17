@@ -1,0 +1,515 @@
+{
+ "version": 1,
+ "rule": "themes/contrast",
+ "_doc": "WCAG 2.2 contrast as qinqin measures it (docs/contracts/themes/README.md, Contrast): relative luminance with the 0.04045 sRGB threshold, ratio (L1+0.05)/(L2+0.05) rounded to two decimals half up; a check passes when the rounded ratio is at least its min. pairs: single ratios. checks: the staged-review checks of one theme, in order (onAccent is measured on the default accent, the derived on-accent colour of derive.json).",
+ "pairs": [
+  {
+   "fg": "#000000",
+   "bg": "#ffffff",
+   "ratio": 21.0,
+   "note": "the maximum (unrounded 21.000000)"
+  },
+  {
+   "fg": "#ffffff",
+   "bg": "#ffffff",
+   "ratio": 1.0,
+   "note": "the minimum (unrounded 1.000000)"
+  },
+  {
+   "fg": "#ffffff",
+   "bg": "#000000",
+   "ratio": 21.0,
+   "note": "order does not matter (unrounded 21.000000)"
+  },
+  {
+   "fg": "#777777",
+   "bg": "#ffffff",
+   "ratio": 4.48,
+   "note": "just below 4.5 (unrounded 4.478089)"
+  },
+  {
+   "fg": "#767676",
+   "bg": "#ffffff",
+   "ratio": 4.54,
+   "note": "just above 4.5 (unrounded 4.542225)"
+  },
+  {
+   "fg": "#018580",
+   "bg": "#ffffff",
+   "ratio": 4.5,
+   "note": "4.4987 rounds to 4.50: passes 4.5 (unrounded 4.498710)"
+  },
+  {
+   "fg": "#058580",
+   "bg": "#ffffff",
+   "ratio": 4.49,
+   "note": "4.4937 rounds to 4.49: fails 4.5 (unrounded 4.493740)"
+  },
+  {
+   "fg": "#959595",
+   "bg": "#ffffff",
+   "ratio": 3.0,
+   "note": "2.9953 rounds to 3.00: passes 3 (unrounded 2.995346)"
+  },
+  {
+   "fg": "#13a980",
+   "bg": "#ffffff",
+   "ratio": 2.99,
+   "note": "2.9938 rounds to 2.99: fails 3 (unrounded 2.993765)"
+  },
+  {
+   "fg": "#808080",
+   "bg": "#000000",
+   "ratio": 5.32,
+   "note": "the sRGB threshold side (unrounded 5.317210)"
+  },
+  {
+   "fg": "#0a0a0a",
+   "bg": "#000000",
+   "ratio": 1.06,
+   "note": "below the 0.04045 threshold (linear part) (unrounded 1.060705)"
+  },
+  {
+   "fg": "#cdd6f4",
+   "bg": "#1e1e2e",
+   "ratio": 11.34,
+   "note": "Mocha text on panel (unrounded 11.341133)"
+  },
+  {
+   "fg": "#df8e1d",
+   "bg": "#eff1f5",
+   "ratio": 2.31,
+   "note": "Latte yellow on panel (unrounded 2.314249)"
+  }
+ ],
+ "checks": [
+  {
+   "name": "Mocha",
+   "note": "the review checks in order; failing = 0",
+   "theme": {
+    "id": "catppuccin-mocha",
+    "name": "Mocha",
+    "family": "Catppuccin",
+    "scheme": "dark",
+    "colors": {
+     "chrome": "#11111b",
+     "panel": "#1e1e2e",
+     "raised": "#313244",
+     "line": "#45475a",
+     "text": "#cdd6f4",
+     "muted": "#a6adc8",
+     "good": "#a6e3a1",
+     "warn": "#f9e2af",
+     "bad": "#f38ba8",
+     "gradeAgain": "#f38ba8",
+     "gradeHard": "#fab387",
+     "gradeGood": "#a6e3a1",
+     "gradeEasy": "#89b4fa"
+    },
+    "accents": {
+     "mauve": "#cba6f7",
+     "blue": "#89b4fa"
+    },
+    "defaultAccent": "mauve"
+   },
+   "expect": [
+    {
+     "fg": "text",
+     "bg": "panel",
+     "min": 4.5,
+     "ratio": 11.34,
+     "pass": true
+    },
+    {
+     "fg": "text",
+     "bg": "chrome",
+     "min": 4.5,
+     "ratio": 12.97,
+     "pass": true
+    },
+    {
+     "fg": "muted",
+     "bg": "panel",
+     "min": 4.5,
+     "ratio": 7.37,
+     "pass": true
+    },
+    {
+     "fg": "muted",
+     "bg": "chrome",
+     "min": 4.5,
+     "ratio": 8.42,
+     "pass": true
+    },
+    {
+     "fg": "muted",
+     "bg": "raised",
+     "min": 4.5,
+     "ratio": 5.65,
+     "pass": true
+    },
+    {
+     "fg": "bad",
+     "bg": "panel",
+     "min": 4.5,
+     "ratio": 7.08,
+     "pass": true
+    },
+    {
+     "fg": "gradeAgain",
+     "bg": "panel",
+     "min": 3,
+     "ratio": 7.08,
+     "pass": true
+    },
+    {
+     "fg": "gradeHard",
+     "bg": "panel",
+     "min": 3,
+     "ratio": 9.27,
+     "pass": true
+    },
+    {
+     "fg": "gradeGood",
+     "bg": "panel",
+     "min": 3,
+     "ratio": 11.03,
+     "pass": true
+    },
+    {
+     "fg": "gradeEasy",
+     "bg": "panel",
+     "min": 3,
+     "ratio": 7.79,
+     "pass": true
+    },
+    {
+     "fg": "onAccent",
+     "bg": "accent:mauve",
+     "min": 4.5,
+     "ratio": 9.23,
+     "pass": true
+    },
+    {
+     "fg": "accent:mauve",
+     "bg": "panel",
+     "min": 3,
+     "ratio": 8.07,
+     "pass": true
+    },
+    {
+     "fg": "accent:blue",
+     "bg": "panel",
+     "min": 3,
+     "ratio": 7.79,
+     "pass": true
+    }
+   ],
+   "failing": 0
+  },
+  {
+   "name": "Latte",
+   "note": "the review checks in order; failing = 5",
+   "theme": {
+    "id": "catppuccin-latte",
+    "name": "Latte",
+    "family": "Catppuccin",
+    "scheme": "light",
+    "colors": {
+     "chrome": "#dce0e8",
+     "panel": "#eff1f5",
+     "raised": "#e6e9ef",
+     "line": "#ccd0da",
+     "text": "#4c4f69",
+     "muted": "#6c6f85",
+     "good": "#40a02b",
+     "warn": "#df8e1d",
+     "bad": "#d20f39",
+     "gradeAgain": "#d20f39",
+     "gradeHard": "#fe640b",
+     "gradeGood": "#40a02b",
+     "gradeEasy": "#1e66f5"
+    },
+    "accents": {
+     "mauve": "#8839ef",
+     "blue": "#1e66f5",
+     "yellow": "#df8e1d"
+    },
+    "defaultAccent": "mauve"
+   },
+   "expect": [
+    {
+     "fg": "text",
+     "bg": "panel",
+     "min": 4.5,
+     "ratio": 7.06,
+     "pass": true
+    },
+    {
+     "fg": "text",
+     "bg": "chrome",
+     "min": 4.5,
+     "ratio": 6.04,
+     "pass": true
+    },
+    {
+     "fg": "muted",
+     "bg": "panel",
+     "min": 4.5,
+     "ratio": 4.37,
+     "pass": false
+    },
+    {
+     "fg": "muted",
+     "bg": "chrome",
+     "min": 4.5,
+     "ratio": 3.73,
+     "pass": false
+    },
+    {
+     "fg": "muted",
+     "bg": "raised",
+     "min": 4.5,
+     "ratio": 4.06,
+     "pass": false
+    },
+    {
+     "fg": "bad",
+     "bg": "panel",
+     "min": 4.5,
+     "ratio": 4.8,
+     "pass": true
+    },
+    {
+     "fg": "gradeAgain",
+     "bg": "panel",
+     "min": 3,
+     "ratio": 4.8,
+     "pass": true
+    },
+    {
+     "fg": "gradeHard",
+     "bg": "panel",
+     "min": 3,
+     "ratio": 2.64,
+     "pass": false
+    },
+    {
+     "fg": "gradeGood",
+     "bg": "panel",
+     "min": 3,
+     "ratio": 2.96,
+     "pass": false
+    },
+    {
+     "fg": "gradeEasy",
+     "bg": "panel",
+     "min": 3,
+     "ratio": 4.34,
+     "pass": true
+    },
+    {
+     "fg": "onAccent",
+     "bg": "accent:mauve",
+     "min": 4.5,
+     "ratio": 5.41,
+     "pass": true
+    },
+    {
+     "fg": "accent:mauve",
+     "bg": "panel",
+     "min": 3,
+     "ratio": 4.79,
+     "pass": true
+    },
+    {
+     "fg": "accent:blue",
+     "bg": "panel",
+     "min": 3,
+     "ratio": 4.34,
+     "pass": true
+    },
+    {
+     "fg": "accent:yellow",
+     "bg": "panel",
+     "min": 3,
+     "ratio": 2.31,
+     "pass": false
+    }
+   ],
+   "failing": 6
+  },
+  {
+   "name": "Solarized Light with blue",
+   "note": "white on the blue accent is 3.68:1: the on-accent check fails (blue is still offered: 3.41 on panel); muted and bad fail too",
+   "theme": {
+    "id": "solarized-light",
+    "name": "Solarized Light",
+    "family": "Solarized",
+    "scheme": "light",
+    "colors": {
+     "chrome": "#eee8d5",
+     "panel": "#fdf6e3",
+     "raised": "#eee8d5",
+     "line": "#93a1a1",
+     "text": "#586e75",
+     "muted": "#657b83",
+     "good": "#859900",
+     "warn": "#b58900",
+     "bad": "#dc322f",
+     "gradeAgain": "#dc322f",
+     "gradeHard": "#cb4b16",
+     "gradeGood": "#859900",
+     "gradeEasy": "#268bd2"
+    },
+    "accents": {
+     "blue": "#268bd2",
+     "cyan": "#2aa198",
+     "green": "#859900",
+     "yellow": "#b58900",
+     "orange": "#cb4b16",
+     "red": "#dc322f",
+     "magenta": "#d33682",
+     "violet": "#6c71c4"
+    },
+    "defaultAccent": "blue"
+   },
+   "expect": [
+    {
+     "fg": "text",
+     "bg": "panel",
+     "min": 4.5,
+     "ratio": 4.99,
+     "pass": true
+    },
+    {
+     "fg": "text",
+     "bg": "chrome",
+     "min": 4.5,
+     "ratio": 4.39,
+     "pass": false
+    },
+    {
+     "fg": "muted",
+     "bg": "panel",
+     "min": 4.5,
+     "ratio": 4.13,
+     "pass": false
+    },
+    {
+     "fg": "muted",
+     "bg": "chrome",
+     "min": 4.5,
+     "ratio": 3.64,
+     "pass": false
+    },
+    {
+     "fg": "muted",
+     "bg": "raised",
+     "min": 4.5,
+     "ratio": 3.64,
+     "pass": false
+    },
+    {
+     "fg": "bad",
+     "bg": "panel",
+     "min": 4.5,
+     "ratio": 4.29,
+     "pass": false
+    },
+    {
+     "fg": "gradeAgain",
+     "bg": "panel",
+     "min": 3,
+     "ratio": 4.29,
+     "pass": true
+    },
+    {
+     "fg": "gradeHard",
+     "bg": "panel",
+     "min": 3,
+     "ratio": 4.27,
+     "pass": true
+    },
+    {
+     "fg": "gradeGood",
+     "bg": "panel",
+     "min": 3,
+     "ratio": 2.97,
+     "pass": false
+    },
+    {
+     "fg": "gradeEasy",
+     "bg": "panel",
+     "min": 3,
+     "ratio": 3.41,
+     "pass": true
+    },
+    {
+     "fg": "onAccent",
+     "bg": "accent:blue",
+     "min": 4.5,
+     "ratio": 3.68,
+     "pass": false
+    },
+    {
+     "fg": "accent:blue",
+     "bg": "panel",
+     "min": 3,
+     "ratio": 3.41,
+     "pass": true
+    },
+    {
+     "fg": "accent:cyan",
+     "bg": "panel",
+     "min": 3,
+     "ratio": 2.93,
+     "pass": false
+    },
+    {
+     "fg": "accent:green",
+     "bg": "panel",
+     "min": 3,
+     "ratio": 2.97,
+     "pass": false
+    },
+    {
+     "fg": "accent:yellow",
+     "bg": "panel",
+     "min": 3,
+     "ratio": 2.98,
+     "pass": false
+    },
+    {
+     "fg": "accent:orange",
+     "bg": "panel",
+     "min": 3,
+     "ratio": 4.27,
+     "pass": true
+    },
+    {
+     "fg": "accent:red",
+     "bg": "panel",
+     "min": 3,
+     "ratio": 4.29,
+     "pass": true
+    },
+    {
+     "fg": "accent:magenta",
+     "bg": "panel",
+     "min": 3,
+     "ratio": 4.21,
+     "pass": true
+    },
+    {
+     "fg": "accent:violet",
+     "bg": "panel",
+     "min": 3,
+     "ratio": 4.06,
+     "pass": true
+    }
+   ],
+   "failing": 10
+  }
+ ]
+}

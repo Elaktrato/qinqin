@@ -18,7 +18,7 @@
 		justify-content: center;
 		gap: 0.75rem;
 		padding: 0.5rem 1rem;
-		background: color-mix(in srgb, CanvasText 8%, Canvas);
-		border-bottom: 1px solid color-mix(in srgb, CanvasText 25%, transparent);
+		background: var(--raised);
+		border-bottom: 1px solid var(--hair);
 	}
 </style>

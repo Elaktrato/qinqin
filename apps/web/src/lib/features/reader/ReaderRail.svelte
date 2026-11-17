@@ -290,10 +290,10 @@
 		bottom: 0;
 		z-index: 30;
 		width: min(22rem, calc(100vw - 2.5rem));
-		background: Canvas;
-		color: CanvasText;
+		background: var(--panel);
+		color: var(--text);
 		border-inline-start: 1px solid color-mix(in srgb, currentColor 20%, transparent);
-		box-shadow: -0.25rem 0 1rem rgb(0 0 0 / 0.18);
+		box-shadow: var(--shadow-float);
 	}
 
 	.strip {
@@ -338,8 +338,8 @@
 	}
 
 	.tab[aria-selected='true'] {
-		border-color: #0b6bcb;
-		box-shadow: inset -3px 0 0 #0b6bcb;
+		border-color: var(--accent);
+		box-shadow: inset -3px 0 0 var(--accent);
 		font-weight: 600;
 	}
 
@@ -350,8 +350,8 @@
 		width: 0.6rem;
 		height: 0.6rem;
 		border-radius: 50%;
-		background: #b3261e;
-		border: 2px solid Canvas;
+		background: var(--bad);
+		border: 2px solid var(--panel);
 	}
 
 	.panels {
@@ -381,12 +381,11 @@
 		width: 1.5rem;
 		height: 2.75rem;
 		padding: 0;
-		background: Canvas;
-		color: CanvasText;
+		background: var(--panel);
+		color: var(--text);
 		border: 1px solid color-mix(in srgb, currentColor 30%, transparent);
 		border-inline-end: none;
 		border-radius: 0.4rem 0 0 0.4rem;
-		box-shadow: 0 0.125rem 0.3rem rgb(0 0 0 / 0.15);
 		cursor: pointer;
 	}
 
@@ -397,17 +396,6 @@
 	.opener .dot {
 		top: 0.15rem;
 		right: 0.1rem;
-	}
-
-	@media (prefers-color-scheme: dark) {
-		.tab[aria-selected='true'] {
-			border-color: #6cb4ff;
-			box-shadow: inset -3px 0 0 #6cb4ff;
-		}
-
-		.dot {
-			background: #ff8a80;
-		}
 	}
 
 	.visually-hidden {

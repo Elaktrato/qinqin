@@ -216,7 +216,7 @@
 
 	.progress,
 	.reading {
-		opacity: 0.75;
+		color: var(--readable-muted);
 	}
 
 	.instruction:focus {
@@ -271,8 +271,8 @@
 
 	.primary {
 		border: 0;
-		background: #0b6bcb;
-		color: #fff;
+		background: var(--accent);
+		color: var(--on-accent);
 	}
 
 	.secondary {
@@ -284,11 +284,13 @@
 	.primary:focus-visible,
 	.secondary:focus-visible,
 	a:focus-visible {
-		outline: 2px solid #0b6bcb;
+		outline: 2px solid var(--focus-colour);
 		outline-offset: 2px;
 	}
 
 	.error {
-		color: #c62828;
+		color: var(--readable-bad);
+		padding-inline-start: var(--space-2);
+		border-inline-start: 3px solid var(--bad);
 	}
 </style>

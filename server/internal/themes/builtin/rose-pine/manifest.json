@@ -1,0 +1,10 @@
+{
+	"id": "rose-pine",
+	"name": "Rosé Pine",
+	"version": "1.0",
+	"type": "theme",
+	"license": "MIT",
+	"attribution": "© mvllow (rose-pine/palette)",
+	"notice": "Rosé Pine, Moon and Dawn. Colours from the [Rosé Pine palette](https://github.com/rose-pine/palette) (commit 92af52b465ab).",
+	"format": "themes-json"
+}

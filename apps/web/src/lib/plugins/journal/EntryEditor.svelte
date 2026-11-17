@@ -588,12 +588,12 @@
 
 	.count {
 		margin: 0;
-		opacity: 0.8;
+		color: var(--readable-muted);
 		font-size: 0.9rem;
 	}
 
 	.count.over {
-		color: #c62828;
+		color: var(--readable-bad);
 		opacity: 1;
 		font-weight: 600;
 	}
@@ -618,7 +618,7 @@
 		flex-wrap: wrap;
 		align-items: center;
 		gap: 0.5rem 1rem;
-		border-left: 4px solid #b26a00;
+		border-left: 4px solid var(--warn);
 		padding: 0.25rem 0.75rem;
 		margin: 0.5rem 0;
 	}
@@ -629,17 +629,7 @@
 	}
 
 	.meta {
-		opacity: 0.8;
+		color: var(--readable-muted);
 		overflow-wrap: anywhere;
-	}
-
-	@media (prefers-color-scheme: dark) {
-		.count.over {
-			color: #ff8a80;
-		}
-
-		.outdated {
-			border-left-color: #ffb74d;
-		}
 	}
 </style>

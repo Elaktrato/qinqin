@@ -306,9 +306,9 @@
 		padding: 0.5rem 0.8rem 0.7rem;
 		border: 1px solid color-mix(in srgb, currentColor 22%, transparent);
 		border-radius: 0.5rem;
-		background: Canvas;
-		color: CanvasText;
-		box-shadow: 0 6px 24px rgb(0 0 0 / 0.22);
+		background: var(--panel);
+		color: var(--text);
+		box-shadow: var(--shadow-float);
 		font-size: 0.9rem;
 		line-height: 1.45;
 	}
@@ -332,19 +332,19 @@
 	}
 
 	.snippet.yellow {
-		background: #fff1a6;
+		background: var(--highlight-wash);
 	}
 
 	.snippet.green {
-		background: #cdf0c9;
+		background: color-mix(in srgb, var(--highlight-green) 24%, transparent);
 	}
 
 	.snippet.blue {
-		background: #cfe3ff;
+		background: color-mix(in srgb, var(--highlight-blue) 24%, transparent);
 	}
 
 	.snippet.pink {
-		background: #ffd6e8;
+		background: color-mix(in srgb, var(--highlight-pink) 24%, transparent);
 	}
 
 	.close {
@@ -364,13 +364,13 @@
 
 	.notice.failure {
 		opacity: 1;
-		color: #b3261e;
+		color: var(--readable-bad);
 	}
 
 	.notice {
 		margin: 0.35rem 0 0;
 		font-size: 0.85rem;
-		opacity: 0.85;
+		color: var(--readable-muted);
 	}
 
 	.colors {
@@ -395,19 +395,19 @@
 	}
 
 	.swatch.yellow {
-		background: #f6d32d;
+		background: var(--highlight-yellow);
 	}
 
 	.swatch.green {
-		background: #57b45a;
+		background: var(--highlight-green);
 	}
 
 	.swatch.blue {
-		background: #4a8fe7;
+		background: var(--highlight-blue);
 	}
 
 	.swatch.pink {
-		background: #e86aa6;
+		background: var(--highlight-pink);
 	}
 
 	.note-label {
@@ -429,11 +429,11 @@
 		gap: 0.2rem 0.6rem;
 		margin: 0.2rem 0 0;
 		font-size: 0.78rem;
-		opacity: 0.75;
+		color: var(--readable-muted);
 	}
 
 	.count.over {
-		color: #b3261e;
+		color: var(--readable-bad);
 		font-weight: 600;
 	}
 
@@ -444,7 +444,9 @@
 	}
 
 	.status.error {
-		color: #b3261e;
+		color: var(--readable-bad);
+		padding-inline-start: var(--space-2);
+		border-inline-start: 3px solid var(--bad);
 	}
 
 	.actions {
@@ -457,33 +459,7 @@
 
 	.delete,
 	.yes {
-		color: #b3261e;
-	}
-
-	@media (prefers-color-scheme: dark) {
-		.snippet.yellow {
-			background: #5f5300;
-		}
-
-		.snippet.green {
-			background: #20532b;
-		}
-
-		.snippet.blue {
-			background: #1d4678;
-		}
-
-		.snippet.pink {
-			background: #6e2747;
-		}
-
-		.count.over,
-		.notice.failure,
-		.status.error,
-		.delete,
-		.yes {
-			color: #ff8a80;
-		}
+		color: var(--readable-bad);
 	}
 
 	.visually-hidden {

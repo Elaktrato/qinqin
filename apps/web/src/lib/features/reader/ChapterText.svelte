@@ -3,6 +3,7 @@
 	import { planParagraph, type PlanSeg } from './chapterPlan';
 	import { DEFAULT_DISPLAY, type ReaderDisplay } from './displaySettings';
 	import { fontStack } from './fonts';
+	import { packFaces } from '$lib/fonts/packFaces.svelte';
 	import type { Highlight } from './highlights';
 	import type { Run } from './paragraphText';
 	import { createReveal, type Reveal } from './reveal';
@@ -69,7 +70,12 @@
 		return at;
 	}
 
-	const stack = $derived(fontStack(display.font, lang.split('-')[0]));
+	const stack = $derived(fontStack(display.font, lang, packFaces.installed));
+	// A concrete reader font needs its pack face registered (#97); default is the app's.
+	$effect(() => {
+		packFaces.need('reader', display.font === 'default' ? [] : [display.font]);
+		return () => packFaces.need('reader', []);
+	});
 
 	// A click on a highlight edits it; a click that ended a selection (a
 	// drag, a double click) is the selection lookup's, not ours.
@@ -177,14 +183,8 @@
 		width: 0.25rem;
 		height: 1em;
 		border-radius: 0.125rem;
-		background: #0b6bcb;
+		background: var(--accent);
 		pointer-events: none;
-	}
-
-	@media (prefers-color-scheme: dark) {
-		.chapter-text p.bookmarked::before {
-			background: #6cb4ff;
-		}
 	}
 
 	/* Furigana is a reading aid, not part of the text: copying or
@@ -213,9 +213,12 @@
 		}
 	}
 
-	/* Highlights: a light tint under dark text, a deep one under light
-	   text in dark mode (both well above 4.5:1). Decoration only for
-	   assistive technology: the Highlights panel is the accessible path. */
+	/* Highlights: a soft wash of the theme under the text colour (yellow is
+	   the design's --highlight-wash; green, blue and pink are 24% of their
+	   own --highlight-* colour, named by hue in every theme — never a role
+	   colour such as the accent, so the name says what is shown).
+	   Decoration only for assistive technology: the Highlights panel is the
+	   accessible path. */
 	mark.hl {
 		color: inherit;
 		border-radius: 0.15em;
@@ -223,19 +226,19 @@
 	}
 
 	mark.yellow {
-		background: #fff1a6;
+		background: var(--highlight-wash);
 	}
 
 	mark.green {
-		background: #cdf0c9;
+		background: color-mix(in srgb, var(--highlight-green) 24%, transparent);
 	}
 
 	mark.blue {
-		background: #cfe3ff;
+		background: color-mix(in srgb, var(--highlight-blue) 24%, transparent);
 	}
 
 	mark.pink {
-		background: #ffd6e8;
+		background: color-mix(in srgb, var(--highlight-pink) 24%, transparent);
 	}
 
 	/* A highlight with a note: a small dot after its last character. A
@@ -249,38 +252,16 @@
 		vertical-align: super;
 		border-radius: 50%;
 		background: currentColor;
-		opacity: 0.7;
+		color: var(--readable-muted);
 		pointer-events: none;
 	}
 
 	mark.hl:focus-visible {
-		outline: 2px solid #0b6bcb;
+		outline: 2px solid var(--focus-colour);
 		outline-offset: 1px;
 	}
 
-	@media (prefers-color-scheme: dark) {
-		mark.yellow {
-			background: #5f5300;
-		}
-
-		mark.green {
-			background: #20532b;
-		}
-
-		mark.blue {
-			background: #1d4678;
-		}
-
-		mark.pink {
-			background: #6e2747;
-		}
-
-		mark.hl:focus-visible {
-			outline-color: #6cb4ff;
-		}
-	}
-
 	:global(::highlight(reader-lookup)) {
-		background-color: color-mix(in srgb, #0b6bcb 22%, transparent);
+		background-color: var(--selected-wash);
 	}
 </style>

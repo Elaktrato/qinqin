@@ -213,10 +213,12 @@
 	}
 	.hint,
 	.note {
-		opacity: 0.8;
+		color: var(--readable-muted);
 	}
 	.error {
-		color: #c62828;
+		color: var(--readable-bad);
 		font-weight: 600;
+		padding-inline-start: var(--space-2);
+		border-inline-start: 3px solid var(--bad);
 	}
 </style>

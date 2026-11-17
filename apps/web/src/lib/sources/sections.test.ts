@@ -36,7 +36,7 @@ const READER_V030_SOURCES: SourceCredit[] = [
 import { fixtureManifest } from '$lib/plugins/fixtures';
 import { coreCredits } from './coreCredits';
 import { localLicensePath } from './credits';
-import { componentsSection, creditView, packTable, pluginCredits, sentencePackSources, strokesSection } from './sections';
+import { componentsSection, creditView, fontsSection, packTable, pluginCredits, sentencePackSources, strokesSection, themesSection } from './sections';
 
 describe('packTable', () => {
 	it('builds rows and a note per pack with a notice, with unique ids', () => {
@@ -209,6 +209,38 @@ describe('pluginCredits', () => {
 		expect(opencc).toEqual(READER_V030_SOURCES[2]);
 	});
 
+	it('credits the bundled interface font (Figtree, SIL OFL 1.1) with its licence text', () => {
+		const figtree = coreCredits.find((credit) => credit.name === 'Figtree')!;
+		expect(figtree).toBeDefined();
+		expect(figtree.url).toBe('https://github.com/erikdkennedy/figtree');
+		expect(figtree.license).toBe('OFL-1.1');
+		expect(figtree.attribution).toBe('Copyright 2022 The Figtree Project Authors');
+		expect(figtree.licenseTexts).toEqual([{ label: 'OFL-1.1 license text', path: '/FIGTREE-OFL.TXT' }]);
+		expect(figtree.notice).toMatch(/interface font/i);
+	});
+
+	it('credits the vendored icon set (Lucide, ISC; Feather-derived icons MIT) with its licence text', () => {
+		const lucide = coreCredits.find((credit) => credit.name === 'Lucide')!;
+		expect(lucide).toBeDefined();
+		expect(lucide.url).toBe('https://lucide.dev');
+		expect(lucide.license).toBe('ISC AND MIT');
+		expect(lucide.attribution).toBe(
+			'Copyright (c) 2026 Lucide Icons and Contributors; Copyright (c) 2013-present Cole Bemis (Feather)'
+		);
+		expect(lucide.licenseTexts).toEqual([{ label: 'ISC AND MIT license text', path: '/LUCIDE-LICENSE.TXT' }]);
+		expect(lucide.notice).toMatch(/icons/i);
+	});
+
+	it('credits the compiled-in fallback palette (Catppuccin, MIT) with its licence text', () => {
+		const catppuccin = coreCredits.find((credit) => credit.name === 'Catppuccin')!;
+		expect(catppuccin).toBeDefined();
+		expect(catppuccin.url).toBe('https://github.com/catppuccin/palette');
+		expect(catppuccin.license).toBe('MIT');
+		expect(catppuccin.attribution).toBe('Copyright (c) 2021 Catppuccin');
+		expect(catppuccin.licenseTexts).toEqual([{ label: 'MIT license text', path: '/CATPPUCCIN-LICENSE.TXT' }]);
+		expect(catppuccin.notice).toMatch(/Latte and Mocha/);
+	});
+
 	it('credits the plugin sources from the real registry', () => {
 		const result = pluginCredits(
 			webPlugins.map((plugin) => plugin.manifest),
@@ -245,7 +277,10 @@ describe('declared credits', () => {
 		const paths = all.flatMap((credit) => (credit.licenseTexts ?? []).map((text) => text.path));
 		expect(paths.sort()).toEqual([
 			'/ANTHROPIC-SDK-GO-LICENSE.TXT',
+			'/CATPPUCCIN-LICENSE.TXT',
+			'/FIGTREE-OFL.TXT',
 			'/LEPTONICA-LICENSE.TXT',
+			'/LUCIDE-LICENSE.TXT',
 			'/OPENCC-APACHE-2.0.TXT',
 			'/OPENCC-JS-LICENSE.TXT',
 			'/TESSERACT-APACHE-2.0.TXT',
@@ -302,6 +337,47 @@ describe('componentsSection', () => {
 	});
 });
 
+describe('fontsSection', () => {
+	const kai = (weight: string) => ({
+		packId: 'klee-one',
+		face: 'kai' as const,
+		script: 'Jpan' as const,
+		original: 'Klee One',
+		weight,
+		style: 'normal',
+		license: 'OFL-1.1',
+		attribution: 'Klee One by Fontworks',
+		slices: [{ url: `/fonts/${'a'.repeat(64)}.woff2`, unicodeRange: 'U+4E00' }]
+	});
+	const list = {
+		faces: [kai('400'), kai('600')],
+		packs: [
+			{
+				packId: 'klee-one',
+				name: 'qinqin Kai JP (Klee One, subset)',
+				version: '1.100-q1',
+				license: 'OFL-1.1',
+				attribution: 'Klee One by Fontworks (SIL OFL 1.1)',
+				notice: 'qinqin Kai JP is a modified version of Klee One.'
+			}
+		]
+	};
+	it('is hidden without packs and without an error, shown on an error', () => {
+		expect(fontsSection({ faces: [], packs: [] }, '').show).toBe(false);
+		expect(fontsSection({ faces: [], packs: [] }, 'down').show).toBe(true);
+	});
+	it('credits each pack with its licence link, notice and the face it modifies', () => {
+		const s = fontsSection(list, '');
+		expect(s.show).toBe(true);
+		expect(s.table.rows.map((r) => [r.name, r.language, r.version, r.license, r.attribution])).toEqual([
+			['qinqin Kai JP (Klee One, subset)', 'ja', '1.100-q1', 'OFL-1.1', 'Klee One by Fontworks (SIL OFL 1.1)']
+		]);
+		expect(s.table.notes).toHaveLength(1);
+		expect(s.licenseHref[0]).toBe('https://openfontlicense.org/');
+		expect(s.modified).toEqual(['qinqin Kai JP (Klee One, subset): a modified (subset, renamed) version of Klee One']);
+	});
+});
+
 describe('strokesSection', () => {
 	const pack = {
 		packId: 'hanzi-writer-strokes',
@@ -341,5 +417,38 @@ describe('the app credits no longer carry the stroke data', () => {
 	it('lists no hanzi-writer-data credit (the stroke packs are credited from the server)', () => {
 		expect(coreCredits.map((c) => c.name)).not.toContain('hanzi-writer-data');
 		expect(coreCredits.map((c) => c.name)).toContain('hanzi-writer');
+	});
+});
+
+describe('themesSection', () => {
+	const themes = [
+		{ id: 'catppuccin-latte', name: 'Latte', family: 'Catppuccin' },
+		{ id: 'catppuccin-mocha', name: 'Mocha', family: 'Catppuccin' },
+		{ id: 'paper', name: 'Paper', family: '' }
+	];
+	const packs = [
+		{ packId: 'catppuccin', name: 'Catppuccin', version: '1.0', license: 'MIT', attribution: '© 2021 Catppuccin', notice: 'Colours from [the palette](https://github.com/catppuccin/palette).', licenseText: 'MIT License\n\nCopyright (c) 2021 Catppuccin\n', builtin: true, themes: ['catppuccin-latte', 'catppuccin-mocha'] },
+		{ packId: 'paper-themes', name: 'Paper themes', version: '2', license: 'MIT', attribution: 'Paper', notice: '', licenseText: '', builtin: false, themes: ['paper', 'gone'] }
+	];
+
+	it('lists every pack in the answer order with its theme names and whether it is built in', () => {
+		const out = themesSection({ themes, packs }, '');
+		expect(out.show).toBe(true);
+		expect(out.table.rows.map((r) => [r.name, r.license, r.attribution])).toEqual([
+			['Catppuccin', 'MIT', '© 2021 Catppuccin'],
+			['Paper themes', 'MIT', 'Paper']
+		]);
+		expect(out.themeNames).toEqual({ 0: 'Latte, Mocha', 1: 'Paper' });
+		expect(out.builtin).toEqual({ 0: true, 1: false });
+		// The full licence texts the answer carries (built-in packs).
+		expect(out.licenseTexts).toEqual([
+			{ key: 0, label: 'Catppuccin: MIT license text', text: 'MIT License\n\nCopyright (c) 2021 Catppuccin\n' }
+		]);
+		expect(out.table.notes).toHaveLength(1);
+	});
+
+	it('shows on an error so the retry is reachable, and hides with nothing listed', () => {
+		expect(themesSection({ themes: [], packs: [] }, 'down').show).toBe(true);
+		expect(themesSection({ themes: [], packs: [] }, '').show).toBe(false);
 	});
 });

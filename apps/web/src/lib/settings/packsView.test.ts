@@ -16,7 +16,9 @@ import {
 	packagesOf,
 	progressText,
 	replaceLines,
-	uninstallWarning
+	uninstallWarning,
+	contrastView,
+	contrastSummary
 } from './packsView';
 
 const FORBIDDEN = /verified|approved|cleared|safe|✓|✔/i;
@@ -104,6 +106,14 @@ describe('groupPacks', () => {
 		expect(packLanguages(sp)).toEqual(['ja', 'zh']);
 		expect(packLanguages(pack('dictionary', 'd', 'D'))).toEqual(['es']);
 		expect(packLanguages({ ...pack('audio', 'a', 'A'), language: '' })).toEqual([]);
+	});
+	it('lists font packs after stroke packs, with their label and uninstall warning', () => {
+		const groups = groupPacks([{ ...pack('font', 'klee-one', 'qinqin Kai JP'), language: '' }, pack('strokes', 's', 'S')]);
+		expect(groups.map((g) => [g.type, g.label])).toEqual([
+			['strokes', 'Stroke data'],
+			['font', 'Fonts']
+		]);
+		expect(uninstallWarning('font')).toMatch(/device's own fonts/);
 	});
 	it('lists audio packs last', () => {
 		const groups = groupPacks([pack('audio', 'k', 'K'), pack('grammar', 'g', 'G'), pack('dictionary', 'd', 'D')]);
@@ -256,5 +266,56 @@ describe('packageLine', () => {
 	});
 	it('names the building notice', () => {
 		expect(packagesBuilding()).toBe('Packages are being built');
+	});
+});
+
+describe('theme packs', () => {
+	it('are grouped last with their label and uninstall warning, and have no language', () => {
+		const tp = { ...pack('theme', 'nord-extra', 'Nord extra'), language: '' };
+		const groups = groupPacks([tp, pack('strokes', 's', 'S')]);
+		expect(groups.map((g) => [g.type, g.label])).toEqual([
+			['strokes', 'Stroke data'],
+			['theme', 'Themes']
+		]);
+		expect(packLanguages(tp)).toEqual([]);
+		expect(uninstallWarning('theme')).toMatch(/default theme/);
+	});
+
+	it('describe the measured contrast of a staged theme in words', () => {
+		const view = contrastView({
+			id: 'x',
+			name: 'Paper',
+			family: 'Demo',
+			scheme: 'light',
+			checks: [
+				{ fg: 'text', bg: 'panel', min: 4.5, ratio: 12.3, pass: true },
+				{ fg: 'muted', bg: 'chrome', min: 4.5, ratio: 4.4, pass: false },
+				{ fg: 'muted', bg: 'raised', min: 4.5, ratio: 1.94, pass: false },
+				{ fg: 'bad', bg: 'panel', min: 4.5, ratio: 4.53, pass: true },
+				{ fg: 'gradeAgain', bg: 'panel', min: 3, ratio: 3, pass: true },
+				{ fg: 'onAccent', bg: 'accent:sky', min: 4.5, ratio: 3.68, pass: false },
+				{ fg: 'accent:sky', bg: 'panel', min: 3, ratio: 2.47, pass: false }
+			],
+			failing: 4
+		});
+		expect(view.caption).toBe('Demo Paper (light): 4 checks are below their minimum.');
+		expect(view.rows).toEqual([
+			{ pair: 'Text on panel', ratio: '12.30:1', needed: '4.5:1', result: 'Passes', pass: true },
+			{ pair: 'Secondary text on frame', ratio: '4.40:1', needed: '4.5:1', result: 'Below', pass: false },
+			{ pair: 'Secondary text on raised surface', ratio: '1.94:1', needed: '4.5:1', result: 'Below', pass: false },
+			{ pair: 'Error colour on panel', ratio: '4.53:1', needed: '4.5:1', result: 'Passes', pass: true },
+			{ pair: 'Grade “Again” on panel', ratio: '3.00:1', needed: '3:1', result: 'Passes', pass: true },
+			{ pair: 'Button text on Accent sky', ratio: '3.68:1', needed: '4.5:1', result: 'Below', pass: false },
+			{ pair: 'Accent sky on panel', ratio: '2.47:1', needed: '3:1', result: 'Below', pass: false }
+		]);
+	});
+
+	it('say so when every check passes, and sum the failing checks of a pack', () => {
+		const ok = { id: 'y', name: 'Night', family: '', scheme: 'dark' as const, checks: [], failing: 0 };
+		expect(contrastView(ok).caption).toBe('Night (dark): every check passes.');
+		expect(contrastSummary([ok])).toBe('Every check of every theme passes.');
+		expect(contrastSummary([ok, { ...ok, failing: 1 }, { ...ok, failing: 2 }])).toBe(
+			'3 checks are below their minimum. The pack may still be installed: contrast is reported, not enforced, accents below 3:1 are not offered in the accent picker, and error and secondary text below 4.5:1 are shown in the text colour.'
+		);
 	});
 });

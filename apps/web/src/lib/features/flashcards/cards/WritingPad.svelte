@@ -377,7 +377,7 @@
 	}
 
 	.outline {
-		fill: #0b6bcb;
+		fill: var(--accent);
 		opacity: 0;
 		transition: opacity 140ms ease-out;
 	}
@@ -392,13 +392,13 @@
 	}
 
 	.glow {
-		fill: #f5a300;
+		fill: var(--warn);
 		opacity: 0;
 		animation: pulse 900ms ease-in-out 1;
 	}
 
 	.start {
-		fill: #f5a300;
+		fill: var(--warn);
 		animation: pulse 900ms ease-in-out 1 forwards;
 		opacity: 0;
 	}

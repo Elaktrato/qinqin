@@ -267,7 +267,7 @@
 	}
 
 	.scope label.disabled {
-		color: color-mix(in srgb, currentColor 70%, transparent);
+		color: var(--readable-muted);
 		cursor: default;
 	}
 
@@ -300,21 +300,26 @@
 	}
 
 	.chip[aria-pressed='true'] {
-		background: #0b6bcb;
-		border-color: #0b6bcb;
-		color: #fff;
+		background: var(--accent);
+		border-color: var(--accent);
+		color: var(--on-accent);
 	}
 
 	.chip:focus-visible,
 	.scope input:focus-visible {
-		outline: 2px solid #0b6bcb;
+		outline: 2px solid var(--focus-colour);
 		outline-offset: 2px;
 	}
 
 	.count {
 		margin-left: 0.3rem;
-		opacity: 0.8;
+		color: var(--readable-muted);
 		font-variant-numeric: tabular-nums;
+	}
+
+	/* On the accent fill the count takes the chip's --on-accent. */
+	.chip[aria-pressed='true'] .count {
+		color: inherit;
 	}
 
 	.grid {
@@ -345,20 +350,21 @@
 		);
 	}
 
+	/* Amount: the accent ramp (design §6, heatmap tint). */
 	.level-1 {
-		background: color-mix(in srgb, #2ea043 35%, transparent);
+		background: var(--accent-14);
 	}
 
 	.level-2 {
-		background: color-mix(in srgb, #2ea043 55%, transparent);
+		background: var(--accent-32);
 	}
 
 	.level-3 {
-		background: color-mix(in srgb, #2ea043 75%, transparent);
+		background: var(--accent-58);
 	}
 
 	.level-4 {
-		background: color-mix(in srgb, #2ea043 100%, transparent);
+		background: var(--accent-100);
 	}
 
 	.legend {
@@ -369,7 +375,7 @@
 		gap: 0.5rem 1rem;
 		margin-top: 0.75rem;
 		font-size: 0.8rem;
-		opacity: 0.75;
+		color: var(--readable-muted);
 	}
 
 	.scale {

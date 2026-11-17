@@ -1244,13 +1244,15 @@ import type { Run } from '$lib/study/vacation';
 	}
 
 	.hint {
-		opacity: 0.75;
+		color: var(--readable-muted);
 	}
 
 	.error {
 		margin: 0.5rem 0 0;
-		color: #c62828;
+		color: var(--readable-bad);
 		font-weight: 600;
+		padding-inline-start: var(--space-2);
+		border-inline-start: 3px solid var(--bad);
 	}
 
 	.state {
@@ -1285,7 +1287,7 @@ import type { Run } from '$lib/study/vacation';
 	.progress {
 		margin: 0;
 		font-variant-numeric: tabular-nums;
-		opacity: 0.75;
+		color: var(--readable-muted);
 	}
 
 	.top a {
@@ -1312,32 +1314,12 @@ import type { Run } from '$lib/study/vacation';
 		border: 1px solid color-mix(in srgb, currentColor 35%, transparent);
 		border-radius: 999px;
 		padding: 0.05rem 0.55rem;
-		opacity: 0.85;
+		color: var(--readable-muted);
 	}
 
 	.badge.badge-again {
-		border-color: #c62828;
-		color: #c62828;
-		opacity: 1;
-	}
-
-	@media (prefers-color-scheme: dark) {
-		.badge.badge-again {
-			border-color: #ff8a80;
-			color: #ff8a80;
-		}
-	}
-
-	.badge.kind-sentence {
-		border-color: #6a1b9a;
-	}
-
-	.badge.kind-writing {
-		border-color: #ef8f00;
-	}
-
-	.badge.kind-tone {
-		border-color: #2e7d32;
+		border-color: var(--bad);
+		color: var(--readable-bad);
 	}
 
 	.grades {
@@ -1364,29 +1346,38 @@ import type { Run } from '$lib/study/vacation';
 		cursor: pointer;
 	}
 
+	/* Each grade's own colour on its outline (design §6); the word names it. */
+	.grade-1 {
+		border-color: var(--grade-again);
+	}
+
+	.grade-2 {
+		border-color: var(--grade-hard);
+	}
+
 	.grade-3 {
-		border-color: #0b6bcb;
+		border-color: var(--grade-good);
 	}
 
 	.grade-4 {
-		border-color: #2e7d32;
+		border-color: var(--grade-easy);
 	}
 
 	.grades button.suggested {
 		border-width: 2px;
-		border-color: #0b6bcb;
-		background: color-mix(in srgb, #0b6bcb 14%, transparent);
+		border-color: var(--accent);
+		background: color-mix(in srgb, var(--accent) 14%, transparent);
 	}
 
 	.grades button:focus-visible {
-		outline: 2px solid #0b6bcb;
+		outline: 2px solid var(--focus-colour);
 		outline-offset: 2px;
 	}
 
 	.suggested-tag {
 		font-size: 0.7rem;
 		font-weight: 500;
-		opacity: 0.8;
+		color: var(--readable-muted);
 	}
 
 	.session button:disabled {
@@ -1397,7 +1388,7 @@ import type { Run } from '$lib/study/vacation';
 	.keys {
 		margin: 0.75rem 0 0;
 		font-size: 0.85rem;
-		opacity: 0.7;
+		color: var(--readable-muted);
 	}
 
 	.stat {
@@ -1413,7 +1404,7 @@ import type { Run } from '$lib/study/vacation';
 		padding: 0;
 		list-style: none;
 		font-size: 0.9rem;
-		opacity: 0.85;
+		color: var(--readable-muted);
 	}
 
 	.bar {
@@ -1427,6 +1418,6 @@ import type { Run } from '$lib/study/vacation';
 	.bar span {
 		display: block;
 		height: 100%;
-		background: #0b6bcb;
+		background: var(--accent);
 	}
 </style>

@@ -4,7 +4,11 @@
 
 import { pluginName } from '$lib/plugins/manifestText';
 import type { SentencePack } from '$lib/api/packs';
+import type { ThemePack } from '$lib/api/themes';
 import type { ComponentPack, StrokePack } from '$lib/api/types';
+import type { FontList } from '$lib/api/fonts';
+import { t } from '$lib/i18n';
+import { licenseUrl } from '$lib/licenses';
 import type { PluginManifest } from '$lib/plugins';
 import { localLicensePath, type LicenseText, type SourceCredit } from './credits';
 import { cjkLang, parseNotice, safeHref, type NoticeParagraph } from './notice';
@@ -83,6 +87,90 @@ export function strokesSection(
 		if (/arphic public license/i.test(p.license) && localLicensePath(ARPHIC_TEXT) !== null) licenseHref[i] = ARPHIC_TEXT;
 	});
 	return { show: error !== '' || list.length > 0, table, licenseHref };
+}
+
+/**
+ * themesSection is the Sources page's "Themes" block: every theme pack of GET
+ * /api/themes (built-in packs first, as the answer orders them) with the
+ * names of its themes and whether it is built into the app. It shows while a
+ * pack is listed (the built-ins always are), or on a load error.
+ */
+export function themesSection(
+	answer: { themes: readonly { id: string; name: string }[]; packs: readonly ThemePack[] },
+	error: string
+): {
+	show: boolean;
+	table: PackTable;
+	themeNames: Record<number, string>;
+	builtin: Record<number, boolean>;
+	licenseTexts: { key: number; label: string; text: string }[];
+} {
+	const names = new Map(answer.themes.map((th) => [th.id, th.name]));
+	const table = packTable(
+		'themes',
+		answer.packs.map((p, i) => ({
+			id: i,
+			name: p.name,
+			version: p.version,
+			license: p.license,
+			attribution: p.attribution,
+			notice: p.notice
+		}))
+	);
+	const themeNames: Record<number, string> = {};
+	const builtin: Record<number, boolean> = {};
+	answer.packs.forEach((p, i) => {
+		themeNames[i] = p.themes
+			.map((id) => names.get(id))
+			.filter((n): n is string => n !== undefined)
+			.join(', ');
+		builtin[i] = p.builtin;
+	});
+	const licenseTexts = answer.packs.flatMap((p, i) =>
+		p.licenseText === ''
+			? []
+			: [{ key: i, label: t('sources.themes.licenseText', { name: p.name, license: p.license }), text: p.licenseText }]
+	);
+	return { show: error !== '' || answer.packs.length > 0, table, themeNames, builtin, licenseTexts };
+}
+
+/**
+ * fontsSection is the Sources page's "Fonts" block: one row per installed
+ * font pack from GET /api/fonts (licence linked when known), its notice,
+ * and a line naming the face each pack modifies (the slices are renamed
+ * modified versions under the OFL). Shown while a pack is installed, or on
+ * a load error.
+ */
+export function fontsSection(
+	list: FontList,
+	error: string
+): { show: boolean; table: PackTable; licenseHref: Record<number, string>; modified: string[] } {
+	const language = (packId: string) => {
+		const scripts = list.faces.filter((f) => f.packId === packId).map((f) => f.script);
+		if (scripts.length === 0) return '';
+		return scripts.every((s) => s === 'Jpan') ? 'ja' : scripts.every((s) => s !== 'Jpan') ? 'zh' : '';
+	};
+	const table = packTable(
+		'fonts',
+		list.packs.map((p, i) => ({
+			id: i,
+			name: p.name,
+			language: language(p.packId),
+			version: p.version,
+			license: p.license,
+			attribution: p.attribution,
+			notice: p.notice
+		}))
+	);
+	const licenseHref: Record<number, string> = {};
+	const modified: string[] = [];
+	list.packs.forEach((p, i) => {
+		const href = licenseUrl(p.license);
+		if (href) licenseHref[i] = href;
+		const originals = [...new Set(list.faces.filter((f) => f.packId === p.packId).map((f) => f.original))];
+		if (originals.length > 0) modified.push(t('sources.fonts.modified', { name: p.name, original: originals.join(', ') }));
+	});
+	return { show: error !== '' || list.packs.length > 0, table, licenseHref, modified };
 }
 
 export interface PackRow {

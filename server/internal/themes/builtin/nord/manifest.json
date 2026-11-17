@@ -1,0 +1,10 @@
+{
+	"id": "nord",
+	"name": "Nord",
+	"version": "1.0",
+	"type": "theme",
+	"license": "MIT",
+	"attribution": "© 2016-present Sven Greb (nordtheme/nord)",
+	"notice": "Nord (dark). Colours from [Nord](https://github.com/nordtheme/nord) (commit 1cef71605416); the frame (#242933) and the secondary text (#a3adc2) are shades between Nord's colours, as in the approved design.",
+	"format": "themes-json"
+}

@@ -1080,7 +1080,7 @@ import { limitsOf } from '$lib/study/scheduler';
 	}
 
 	.hint {
-		opacity: 0.75;
+		color: var(--readable-muted);
 	}
 
 	.empty {
@@ -1096,7 +1096,7 @@ import { limitsOf } from '$lib/study/scheduler';
 
 	.empty p {
 		margin: 0;
-		opacity: 0.8;
+		color: var(--readable-muted);
 	}
 
 	.decks,
@@ -1121,7 +1121,7 @@ import { limitsOf } from '$lib/study/scheduler';
 	}
 
 	.type-choice:focus-within {
-		border-color: #0b6bcb;
+		border-color: var(--accent);
 	}
 
 	.type-label {
@@ -1131,13 +1131,14 @@ import { limitsOf } from '$lib/study/scheduler';
 	.type-info {
 		grid-column: 2;
 		font-size: 0.9rem;
-		opacity: 0.8;
+		color: var(--readable-muted);
 	}
 
 	.warnings {
 		margin: 0 0 1rem;
 		padding-left: 1.25rem;
-		color: #8a5a00;
+		/* Warnings: --text with the --warn bar as the cue. */
+		border-inline-start: 3px solid var(--warn);
 	}
 
 	.deck {
@@ -1181,7 +1182,7 @@ import { limitsOf } from '$lib/study/scheduler';
 		border: 1px solid currentColor;
 		border-radius: 999px;
 		padding: 0.02rem 0.45rem;
-		opacity: 0.8;
+		color: var(--readable-muted);
 	}
 
 	.rename {
@@ -1264,8 +1265,8 @@ import { limitsOf } from '$lib/study/scheduler';
 		padding: 0.45rem 0.85rem;
 		border: 0;
 		border-radius: 0.4rem;
-		background: #0b6bcb;
-		color: #fff;
+		background: var(--accent);
+		color: var(--on-accent);
 		font-weight: 600;
 		cursor: pointer;
 	}
@@ -1278,7 +1279,7 @@ import { limitsOf } from '$lib/study/scheduler';
 
 	.setup button.danger {
 		background: transparent;
-		color: #c62828;
+		color: var(--readable-bad);
 		border: 1px solid currentColor;
 	}
 
@@ -1294,13 +1295,15 @@ import { limitsOf } from '$lib/study/scheduler';
 	.errors {
 		margin: 0 0 1rem;
 		padding-left: 1.25rem;
-		color: #c62828;
+		color: var(--readable-bad);
 		font-weight: 600;
 	}
 
 	.error {
 		margin: 0.5rem 0 0;
-		color: #c62828;
+		color: var(--readable-bad);
 		font-weight: 600;
+		padding-inline-start: var(--space-2);
+		border-inline-start: 3px solid var(--bad);
 	}
 </style>

@@ -124,7 +124,7 @@
 		font-size: 0.8rem;
 		letter-spacing: 0.06em;
 		text-transform: uppercase;
-		opacity: 0.7;
+		color: var(--readable-muted);
 	}
 
 	.dictionary + .dictionary {
@@ -146,7 +146,7 @@
 	.source {
 		margin: 0.35rem 0 0;
 		font-size: 0.75rem;
-		opacity: 0.7;
+		color: var(--readable-muted);
 	}
 
 	.separator {
@@ -156,7 +156,7 @@
 	.hidden-note {
 		margin: 0.75rem 0 0;
 		font-size: 0.8rem;
-		opacity: 0.7;
+		color: var(--readable-muted);
 	}
 
 	.reveal {
@@ -165,7 +165,7 @@
 		padding: 0;
 		border: none;
 		background: none;
-		color: LinkText;
+		color: var(--reading-accent);
 		font: inherit;
 		font-size: 0.85rem;
 		text-decoration: underline;

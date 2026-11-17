@@ -304,7 +304,7 @@
 	}
 
 	.hint {
-		color: color-mix(in srgb, currentColor 70%, transparent);
+		color: var(--readable-muted);
 		font-size: 0.9rem;
 	}
 
@@ -320,9 +320,9 @@
 	}
 
 	.switch[aria-checked='true'] {
-		background: #0b6bcb;
-		border-color: #0b6bcb;
-		color: #fff;
+		background: var(--accent);
+		border-color: var(--accent);
+		color: var(--on-accent);
 	}
 
 	.prompt {
@@ -370,7 +370,7 @@
 	}
 
 	.danger {
-		color: #b3261e;
+		color: var(--readable-bad);
 	}
 
 	.list {
@@ -401,7 +401,7 @@
 	.history-count {
 		margin: 0.5rem 0;
 		font-size: 0.9rem;
-		color: color-mix(in srgb, currentColor 75%, transparent);
+		color: var(--readable-muted);
 	}
 
 	.reading,
@@ -409,7 +409,7 @@
 	.where,
 	.count {
 		font-size: 0.9rem;
-		color: color-mix(in srgb, currentColor 75%, transparent);
+		color: var(--readable-muted);
 	}
 
 	.chip {

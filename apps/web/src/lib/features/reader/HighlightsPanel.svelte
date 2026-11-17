@@ -176,13 +176,13 @@
 	h3 {
 		font-size: 0.85rem;
 		margin: 0.9rem 0 0.2rem;
-		opacity: 0.8;
+		color: var(--readable-muted);
 	}
 
 	.hint {
 		margin: 0;
 		font-size: 0.8rem;
-		opacity: 0.75;
+		color: var(--readable-muted);
 	}
 
 	.error {
@@ -190,11 +190,13 @@
 		flex-wrap: wrap;
 		gap: 0.4rem;
 		align-items: center;
-		color: #b3261e;
+		color: var(--readable-bad);
+		padding-inline-start: var(--space-2);
+		border-inline-start: 3px solid var(--bad);
 	}
 
 	.empty {
-		opacity: 0.8;
+		color: var(--readable-muted);
 	}
 
 	ul {
@@ -215,19 +217,19 @@
 	}
 
 	li.yellow {
-		border-inline-start-color: #e6c21a;
+		border-inline-start-color: var(--highlight-yellow);
 	}
 
 	li.green {
-		border-inline-start-color: #4caa50;
+		border-inline-start-color: var(--highlight-green);
 	}
 
 	li.blue {
-		border-inline-start-color: #3f86e0;
+		border-inline-start-color: var(--highlight-blue);
 	}
 
 	li.pink {
-		border-inline-start-color: #e0619e;
+		border-inline-start-color: var(--highlight-pink);
 	}
 
 	.jump {
@@ -275,7 +277,7 @@
 		flex: 1 1 100%;
 		margin: 0;
 		font-size: 0.85rem;
-		opacity: 0.85;
+		color: var(--readable-muted);
 		white-space: pre-wrap;
 		overflow-wrap: anywhere;
 		display: -webkit-box;
@@ -291,12 +293,6 @@
 		gap: 0.4rem;
 		align-items: center;
 		margin-inline-start: auto;
-	}
-
-	@media (prefers-color-scheme: dark) {
-		.error {
-			color: #ff8a80;
-		}
 	}
 
 	.visually-hidden {

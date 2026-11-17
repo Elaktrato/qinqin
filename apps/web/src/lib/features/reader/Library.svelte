@@ -242,7 +242,7 @@
 
 	.hint {
 		font-size: 0.9rem;
-		opacity: 0.8;
+		color: var(--readable-muted);
 	}
 
 	.elsewhere h2 {
@@ -296,7 +296,7 @@
 
 	.meta {
 		font-size: 0.9rem;
-		opacity: 0.75;
+		color: var(--readable-muted);
 	}
 
 	.confirm {
@@ -306,6 +306,8 @@
 	}
 
 	.error {
-		color: #b3261e;
+		color: var(--readable-bad);
+		padding-inline-start: var(--space-2);
+		border-inline-start: 3px solid var(--bad);
 	}
 </style>

@@ -1,0 +1,27 @@
+/* Study text in the app-wide hanzi font (#97, design §8). lib/fonts/hanziVars.ts
+   sets --font-hanzi-hans/-hant/-jpan on :root from appearance.hanziFont (an
+   installed font pack's face first, then the system stack); here every element
+   that carries a study `lang` (lib/i18n/lang.ts) picks its script's stack as
+   --font-hanzi and is set in it. Only elements in body: <html lang> is the
+   interface language. Romanisations (pinyin, romaji) and other languages, such
+   as glosses inside study text, stay in the interface font. */
+
+[lang|='zh'] {
+	--font-hanzi: var(--font-hanzi-hans);
+}
+[lang|='zh-Hant'], [lang|='zh-TW'], [lang|='zh-HK'], [lang|='zh-MO'], [lang|='zh-Bopo'] {
+	--font-hanzi: var(--font-hanzi-hant);
+}
+[lang|='ja'] {
+	--font-hanzi: var(--font-hanzi-jpan);
+}
+
+body [lang] {
+	font-family: var(--font-ui);
+}
+body [lang|='zh'], body [lang|='ja'] {
+	font-family: var(--font-hanzi);
+}
+body [lang|='zh-Latn'], body [lang|='ja-Latn'] {
+	font-family: var(--font-ui);
+}

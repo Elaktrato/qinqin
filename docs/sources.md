@@ -640,6 +640,68 @@ committed at `apps/web/static/ARPHICPL.TXT` (copied verbatim from the
 Attribution: [Make Me a Hanzi](https://github.com/skishore/makemeahanzi),
 [hanzi-writer-data](https://www.npmjs.com/package/hanzi-writer-data).
 
+## Themes
+
+Colour themes are packs of type `theme` (format `themes-json`, see
+`docs/contracts/themes/`). These packs are **built into the server binary**
+(`server/internal/themes/builtin/<id>/`: `manifest.json`, `themes.json` and the
+upstream `LICENSE`, copied verbatim) and are always present; the Sources page
+credits them from `GET /api/themes`. Only colour values are taken from each
+project (no code, fonts or images); every palette is under the MIT licence,
+checked against the upstream LICENSE file on 2026-11-17. Each pack's LICENSE
+ships inside the server binary and reaches users verbatim: `GET /api/themes`
+serves it as the pack's `licenseText`, and the Sources page shows it under the
+Themes table. The eight themes of
+the approved design use the mockup's values, cross-checked against the
+upstream palettes; two mockup values that belonged to another variant are
+corrected (Rosé Pine's `pine` accent is `#31748f`, not Moon's `#3e8fb0`; Rosé
+Pine Dawn's text is the current palette's `#464261`, not the former `#575279`).
+
+- **Catppuccin** (`catppuccin`, built in): Latte, Frappé, Macchiato, Mocha.
+  MIT, © 2021 Catppuccin. [catppuccin/palette](https://github.com/catppuccin/palette)
+  (`palette.json` 1.8.0, commit `07d02aa110ef`). The light flavour uses mantle
+  for raised surfaces and surface0 for lines, as in the design. Latte and Mocha
+  are also compiled into the web app as the first-paint and offline fallback
+  (`apps/web/src/lib/theme/fallback.ts`, pinned to the pack's `themes.json` by a
+  test); the web app serves the same MIT text at
+  `apps/web/static/CATPPUCCIN-LICENSE.TXT` (the pack's `LICENSE`, byte for byte)
+  and credits it under "Built into the app".
+- **Rosé Pine** (`rose-pine`, built in): Rosé Pine, Moon, Dawn. MIT, © mvllow.
+  [rose-pine/palette](https://github.com/rose-pine/palette) (commit `92af52b465ab`).
+- **Nord** (`nord`, built in): MIT, © 2016-present Sven Greb.
+  [nordtheme/nord](https://github.com/nordtheme/nord) (commit `1cef71605416`).
+  The frame (`#242933`) and the secondary text (`#a3adc2`) are shades between
+  Nord's colours, as in the design.
+- **Gruvbox** (`gruvbox`, built in): the dark theme with the bright accents.
+  MIT, © 2018 Pavel Pertsev. Colours from
+  [morhetz/gruvbox](https://github.com/morhetz/gruvbox) (`colors/gruvbox.vim`,
+  commit `ef8864bb42bf`), whose README and `package.json` state MIT but which
+  ships no licence file; the `LICENSE` is the MIT text of the maintained fork
+  [gruvbox-community/gruvbox](https://github.com/gruvbox-community/gruvbox)
+  (`LICENSE.md`, commit `180ad8597134`), naming the same author.
+- **Dracula** (`dracula`, built in): MIT, © 2020 Dracula Theme.
+  [dracula/spec](https://github.com/dracula/spec) (`dracula-spec.md`, commit
+  `ccf5974d14ec`). Its secondary text colour (Comment) is below 4.5:1 on the
+  background, as upstream.
+- **Solarized** (`solarized`, built in): Solarized Light and Dark. MIT,
+  © 2011 Ethan Schoonover. [altercation/solarized](https://github.com/altercation/solarized)
+  (commit `62f656a02f93`). The default accent is magenta, not blue: white
+  button text on blue is 3.68:1, on magenta 4.55:1.
+- **Tokyo Night** (`tokyo-night`, built in): the Night variant. MIT,
+  © 2018-present Enkia. [tokyo-night/tokyo-night-vscode-theme](https://github.com/tokyo-night/tokyo-night-vscode-theme)
+  (commit `7c0f11eaef32`; the original theme, not the Apache-2.0 Neovim port).
+- **Everforest** (`everforest`, built in): Everforest Dark, medium contrast.
+  MIT, © 2019 sainnhe. [sainnhe/everforest](https://github.com/sainnhe/everforest)
+  (`palette.md`, commit `85a86eb62409`).
+- **Kanagawa** (`kanagawa`, built in): Kanagawa Wave. MIT, © 2021 Tommaso
+  Laurenzi. [rebelot/kanagawa.nvim](https://github.com/rebelot/kanagawa.nvim)
+  (`lua/kanagawa/colors.lua`, commit `bb85e4bfc8d8`).
+
+Measured contrast (`docs/contracts/themes/README.md`, "Contrast") is reported,
+never a reason to leave a theme out; every built-in theme reaches 4.5:1 for
+text on its panel and for button text on its default accent. An administrator can add more themes by uploading a theme
+pack (Settings → Data), whose review shows the measured contrast.
+
 ## Reader text sources
 
 The Reader (see the README) imports public-domain works on user request. Nothing
@@ -673,6 +735,84 @@ licence texts are committed at `apps/web/static/OPENCC-JS-LICENSE.TXT` and
 `apps/web/static/OPENCC-APACHE-2.0.TXT` (copied verbatim from the `opencc-js`
 package; a web test keeps them identical) and served by the running app at
 `/OPENCC-JS-LICENSE.TXT` and `/OPENCC-APACHE-2.0.TXT`.
+
+## Interface font
+
+The interface is set in [Figtree](https://github.com/erikdkennedy/figtree) 2.001
+("Copyright 2022 The Figtree Project Authors"), licensed under the **SIL Open Font
+License, Version 1.1** with no Reserved Font Name. The app ships the upstream variable
+WOFF2 (`fonts/webfonts/Figtree[wght].woff2` at commit
+`032dfa7fe219ef3a02890d6d3add84eacc9aebfe`, weights 300–900, 27,676 bytes) **unmodified**
+as `Figtree-Variable.woff2` under `apps/web/src/lib/assets/fonts/`; the build emits it as
+a hashed asset of the web app, and the service worker precaches it with the rest of the
+app. It is never loaded from a third-party host. The licence text is the upstream
+`OFL.txt` at the same commit, committed byte for byte at `apps/web/static/FIGTREE-OFL.TXT`
+and served by the running app at `/FIGTREE-OFL.TXT`; a web test pins both files' SHA-256.
+The Sources page credits it under "Built into the app".
+
+Hanzi and kanji faces are not bundled: they are installable font packs (next section).
+Until one is installed, Chinese and Japanese text uses the device's own fonts.
+
+
+## Icons
+
+The interface's line icons are [Lucide](https://lucide.dev) icons from the npm package
+`lucide-static` 1.66.0 (ISC License, "Copyright (c) 2026 Lucide Icons and Contributors"; the icons
+Lucide derived from [Feather](https://github.com/feathericons/feather) are under the MIT License,
+"Copyright (c) 2013-present Cole Bemis"). Only the shapes of the icons the app uses are copied, by
+`apps/web/scripts/vendor-icons.mjs`, into `lucide.ts` under `apps/web/src/lib/ui/icons/`; the app
+draws them at a stroke width of 1.5 instead of Lucide's 2 (a modification both licences allow). No
+icon package is installed and nothing is loaded from a third-party host. The package's `LICENSE`
+(both licence texts and the list of Feather-derived icons) is committed byte for byte at
+`apps/web/static/LUCIDE-LICENSE.TXT` and served by the running app at `/LUCIDE-LICENSE.TXT`; a web
+test pins its SHA-256. The Sources page credits it under "Built into the app".
+
+## Hanzi and kanji font packs
+
+Sans, Serif and Kai faces for simplified Chinese, traditional Chinese and Japanese come as
+packs of type `font` (format `font-slices`, see `docs/contracts/fonts/`): each face cut into
+WOFF2 slices by Unicode range, so a page downloads only the slices of the characters it
+shows. The packs are **never committed** and no Docker image bakes one (whether the image
+should carry a default `noto-sans-sc` is an open owner decision); an administrator builds one
+and installs it (Settings → Data upload, or `qinqin seed` with the gitignored
+`plugins/data-fonts/` as a pack root):
+
+    npm --prefix scripts/fonts ci      # the subsetter, a build-time tool of the script only
+    node scripts/prepare-font-pack.mjs --source klee-one --out plugins/data-fonts/klee-one
+
+Every source is pinned in `scripts/prepare-font-pack.mjs` (URL at a commit or release, the
+SHA-256 of each font file and of its `OFL.txt`); the script refuses to build when a download
+differs. Each licence text was compared with the canonical SIL OFL 1.1 text on 2026-11-17.
+
+| Pack | Face | Original | Licence |
+|---|---|---|---|
+| **qinqin Sans SC** (`noto-sans-sc`) | Sans, simplified Chinese | Noto Sans SC, [google/fonts](https://github.com/google/fonts) `ofl/notosanssc` at `7af0d90b4d53` (upstream [notofonts/noto-cjk](https://github.com/notofonts/noto-cjk)) | SIL OFL 1.1; "Copyright 2014-2021 Adobe, with Reserved Font Name 'Source'" |
+| **qinqin Sans TC** (`noto-sans-tc`) | Sans, traditional Chinese | Noto Sans TC, same commit | SIL OFL 1.1 (as above) |
+| **qinqin Sans JP** (`noto-sans-jp`) | Sans, Japanese | Noto Sans JP, same commit | SIL OFL 1.1 (as above) |
+| **qinqin Serif SC** (`noto-serif-sc`) | Serif, simplified Chinese | Noto Serif SC, same commit | SIL OFL 1.1; "Copyright 2012 Google Inc." |
+| **qinqin Serif TC** (`noto-serif-tc`) | Serif, traditional Chinese | Noto Serif TC, same commit | SIL OFL 1.1 (as above) |
+| **qinqin Serif JP** (`noto-serif-jp`) | Serif, Japanese | Noto Serif JP, same commit | SIL OFL 1.1 (as above) |
+| **qinqin Kai SC** (`lxgw-wenkai`) | Kai, simplified Chinese | LXGW WenKai Regular, [lxgw/LxgwWenKai](https://github.com/lxgw/LxgwWenKai) release v1.530 | SIL OFL 1.1 with Reserved Font Names '霞鹜', '霞鶩', '落霞孤鹜', '落霞孤鶩', 'LXGW' and an additional permission for unrenamed web subsets (not relied on: the slices are renamed) |
+| **qinqin Kai JP** (`klee-one`) | Kai (textbook style), Japanese | Klee One Regular and SemiBold, google/fonts `ofl/kleeone` at `7af0d90b4d53` (upstream [fontworks-fonts/Klee](https://github.com/fontworks-fonts/Klee)) | SIL OFL 1.1; "Copyright 2020 The Klee Project Authors" |
+
+Every slice is a **Modified Version** under the OFL (subset and converted), so the script
+renames it: family, full, PostScript and unique names become `qinqin <Face> <SC|TC|JP>`,
+the copyright and licence entries are kept unchanged, and the trademark, vendor, designer
+and description entries are dropped; a test checks that no slice name keeps "Noto",
+"Source", "LXGW", "Klee" or LXGW's Chinese Reserved Font Names. The pack carries the
+original's `OFL.txt` byte for byte as `LICENSE` and an `ATTRIBUTION.md` naming the original,
+its authors and the modification; the Sources page credits each installed pack from
+`GET /api/fonts`. The original names appear only in these credits, as the OFL allows.
+The slice table (`scripts/testdata/font-slices.json`) is generated from the bundled level
+lists `tgh-chars`, `joyo-grades` and `jlpt-kanji` (traditional forms through `opencc-js`);
+it contains character lists only. LXGW WenKai TC (a separate repository) is not packed:
+its licence has not been verified yet.
+
+The script's build-time tools (`scripts/fonts/package.json`, never part of the app or the
+image): [subset-font](https://github.com/papandreou/subset-font) (BSD-3-Clause) with
+[harfbuzzjs](https://github.com/harfbuzz/harfbuzzjs) (MIT; HarfBuzz is under the Old MIT
+licence), [fontverter](https://github.com/papandreou/fontverter) (BSD-3-Clause) with
+[wawoff2](https://github.com/fontello/wawoff2) (MIT; Google's WOFF2 encoder).
 
 ## Level packs
 

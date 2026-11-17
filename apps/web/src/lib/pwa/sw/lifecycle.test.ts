@@ -45,7 +45,7 @@ describe('onInstall', () => {
 });
 
 describe('onActivate', () => {
-	it('keeps the current shell, hanzi and the current API partitions; removes old generations; claims', async () => {
+	it('keeps the current shell, hanzi, fonts and the current API partitions; removes old generations; claims', async () => {
 		const caches = new FakeCacheStorage();
 		for (const name of [
 			'qinqin-shell-old',
@@ -54,13 +54,14 @@ describe('onActivate', () => {
 			'qinqin-api-v0-legacy',
 			'qinqin-api-v2-future',
 			'qinqin-hanzi-v1',
+			'qinqin-fonts-v1',
 			'unrelated'
 		]) {
 			await caches.open(name);
 		}
 		const claim = vi.fn(async () => {});
 		await onActivate({ caches, claim }, 'v7');
-		expect((await caches.keys()).sort()).toEqual(['qinqin-api-v1-abc', 'qinqin-api-v2-future', 'qinqin-hanzi-v1', 'qinqin-shell-v7', 'unrelated']);
+		expect((await caches.keys()).sort()).toEqual(['qinqin-api-v1-abc', 'qinqin-api-v2-future', 'qinqin-fonts-v1', 'qinqin-hanzi-v1', 'qinqin-shell-v7', 'unrelated']);
 		expect(claim).toHaveBeenCalledTimes(1);
 	});
 });

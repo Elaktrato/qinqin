@@ -135,13 +135,12 @@
 	}
 
 	.gap.right {
-		color: #2e7d32;
-		border-color: #2e7d32;
+		border-color: var(--good);
 	}
 
 	.gap.wrong {
-		color: #c62828;
-		border-color: #c62828;
+		color: var(--readable-bad);
+		border-color: var(--bad);
 	}
 
 	.choices {
@@ -171,15 +170,15 @@
 
 	kbd {
 		font-size: 0.75rem;
-		opacity: 0.6;
+		color: var(--readable-muted);
 	}
 
 	.choice:hover:not(:disabled) {
-		border-color: #0b6bcb;
+		border-color: var(--accent);
 	}
 
 	.choice:focus-visible {
-		outline: 2px solid #0b6bcb;
+		outline: 2px solid var(--focus-colour);
 		outline-offset: 2px;
 	}
 
@@ -188,23 +187,23 @@
 	}
 
 	.choice.right {
-		border-color: #2e7d32;
-		background: color-mix(in srgb, #2e7d32 14%, transparent);
+		border-color: var(--good);
+		background: color-mix(in srgb, var(--good) 14%, transparent);
 	}
 
 	.choice.wrong {
-		border-color: #c62828;
-		background: color-mix(in srgb, #c62828 14%, transparent);
+		border-color: var(--bad);
+		background: color-mix(in srgb, var(--bad) 14%, transparent);
 	}
 
 	.feedback {
 		min-height: 1.4rem;
 		margin: 0;
 		font-weight: 600;
-		color: #2e7d32;
+		color: var(--text);
 	}
 
 	.feedback.bad {
-		color: #c62828;
+		color: var(--readable-bad);
 	}
 </style>

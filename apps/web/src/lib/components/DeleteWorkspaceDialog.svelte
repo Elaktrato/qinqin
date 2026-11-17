@@ -7,11 +7,14 @@
 	import { fetchWorkspaceContents, type WorkspaceContents } from '$lib/api/workspaceContents';
 	import { confirmLabel, labelMatches } from '$lib/workspaceDelete';
 	import { deleteWorkspace } from '$lib/workspaces';
+	import Button from '$lib/ui/Button.svelte';
+	import Dialog from '$lib/ui/Dialog.svelte';
 
-	// The confirmation for deleting a workspace: a modal <dialog> (the
-	// browser traps focus in it, makes the page behind inert and closes it
-	// on Escape) that says what goes and asks for the workspace's label to
-	// be typed. The opener gets focus back through `onclose`.
+	// The confirmation for deleting a workspace: a modal Dialog (lib/ui: the
+	// browser traps focus in it, makes the page behind inert, Escape closes
+	// it except while deleting) that says what goes and asks for the
+	// workspace's label to be typed. The opener gets focus back through
+	// `onclose`.
 	let {
 		workspace,
 		list,
@@ -26,7 +29,6 @@
 	const uid = $props.id();
 	const label = $derived(confirmLabel(list, workspace));
 
-	let dialog = $state<HTMLDialogElement | null>(null);
 	let input = $state<HTMLInputElement | null>(null);
 	let typed = $state('');
 	let contents = $state<WorkspaceContents | null>(null);
@@ -40,7 +42,6 @@
 	function finish(deleted: boolean): void {
 		if (closed) return;
 		closed = true;
-		if (dialog?.open) dialog.close();
 		onclose(deleted);
 	}
 
@@ -66,8 +67,6 @@
 	}
 
 	onMount(() => {
-		dialog?.showModal();
-		input?.focus();
 		let alive = true;
 		fetchWorkspaceContents(workspace.id).then(
 			(found) => {
@@ -83,27 +82,15 @@
 	});
 </script>
 
-<dialog
-	bind:this={dialog}
-	class="delete-dialog"
-	aria-labelledby="{uid}-title"
-	aria-describedby="{uid}-what"
-	oncancel={(event) => {
-		// Escape: close through our own path so the opener gets focus back.
-		event.preventDefault();
-		if (!deleting) finish(false);
-	}}
-	onclose={() => {
-		// The browser closed the dialog itself (a second Escape while
-		// deleting, or any other native close): tell the opener, so it
-		// unmounts us and its Delete button opens a fresh dialog. A delete
-		// still in flight finishes on its own; its result updates the
-		// workspace list either way.
-		finish(false);
-	}}
+<Dialog
+	open
+	title={t('app.workspaces.delete.title', { name: label })}
+	describedBy="{uid}-what"
+	initialFocus="input"
+	dismissible={!deleting}
+	onclose={() => finish(false)}
 >
-	<form onsubmit={submit}>
-		<h2 id="{uid}-title">{t('app.workspaces.delete.title', { name: label })}</h2>
+	<form id="{uid}-form" onsubmit={submit}>
 		<div id="{uid}-what">
 			<p>{t('app.workspaces.delete.intro')}</p>
 			<ul>
@@ -147,43 +134,23 @@
 		{#if error}
 			<p class="error" role="alert">{error}</p>
 		{/if}
-
-		<div class="actions">
-			<button type="button" class="secondary" onclick={() => finish(false)} disabled={deleting}>{t('common.action.cancel')}</button>
-			<button type="submit" class="danger" disabled={!ready} aria-busy={deleting}>
-				{deleting ? t('app.workspaces.delete.deleting') : t('app.workspaces.delete.submit')}
-			</button>
-		</div>
 	</form>
-</dialog>
+	{#snippet actions()}
+		<Button onclick={() => finish(false)} disabled={deleting}>{t('common.action.cancel')}</Button>
+		<Button type="submit" form="{uid}-form" tone="danger" disabled={!ready} busy={deleting}>
+			{deleting ? t('app.workspaces.delete.deleting') : t('app.workspaces.delete.submit')}
+		</Button>
+	{/snippet}
+</Dialog>
 
 <style>
-	.delete-dialog {
-		max-width: min(32rem, calc(100vw - 2rem));
-		border: 1px solid color-mix(in srgb, currentColor 25%, transparent);
-		border-radius: 0.5rem;
-		padding: 1.25rem;
-		background: Canvas;
-		color: CanvasText;
-	}
-
-	.delete-dialog::backdrop {
-		background: rgb(0 0 0 / 0.45);
-	}
-
-	h2 {
-		margin: 0 0 0.75rem;
-		font-size: 1.2rem;
-		overflow-wrap: anywhere;
-	}
-
 	ul {
 		margin: 0.25rem 0 0.75rem;
 		padding-left: 1.25rem;
 	}
 
 	.hint {
-		opacity: 0.75;
+		color: var(--readable-muted);
 		margin: 0 0 0.5rem;
 	}
 
@@ -204,51 +171,11 @@
 		color: inherit;
 	}
 
-	.actions {
-		display: flex;
-		flex-wrap: wrap;
-		justify-content: flex-end;
-		gap: 0.5rem;
-		margin-top: 1rem;
-	}
-
-	button {
-		font: inherit;
-		padding: 0.45rem 0.85rem;
-		border-radius: 0.4rem;
-		font-weight: 600;
-		cursor: pointer;
-	}
-
-	button.secondary {
-		border: 1px solid color-mix(in srgb, currentColor 35%, transparent);
-		background: transparent;
-		color: inherit;
-		font-weight: 500;
-	}
-
-	button.danger {
-		border: 0;
-		background: #c62828;
-		color: #fff;
-	}
-
-	button:disabled {
-		opacity: 0.55;
-		cursor: not-allowed;
-	}
-
 	.error {
 		margin: 0.5rem 0 0;
-		color: #c62828;
+		color: var(--readable-bad);
 		font-weight: 600;
-	}
-
-	/* #c62828 is about 3.3:1 on the dark Canvas (#121212); this red is
-	   8.2:1 there (7.3:1 on #1e1e1e). */
-	@media (prefers-color-scheme: dark) {
-		.error {
-			color: #ff8a80;
-		}
+		padding-inline-start: var(--space-2);
+		border-inline-start: 3px solid var(--bad);
 	}
 </style>

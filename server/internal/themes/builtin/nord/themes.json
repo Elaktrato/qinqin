@@ -1,0 +1,3 @@
+[
+	{"id": "nord", "name": "Nord", "family": "Nord", "scheme": "dark", "colors": {"chrome": "#242933", "panel": "#2e3440", "raised": "#3b4252", "line": "#4c566a", "text": "#eceff4", "muted": "#a3adc2", "good": "#a3be8c", "warn": "#ebcb8b", "bad": "#bf616a", "gradeAgain": "#bf616a", "gradeHard": "#d08770", "gradeGood": "#a3be8c", "gradeEasy": "#81a1c1"}, "accents": {"frost": "#88c0d0", "glacier": "#81a1c1", "sea": "#5e81ac", "aurora": "#b48ead", "orange": "#d08770", "green": "#a3be8c"}, "defaultAccent": "frost"}
+]

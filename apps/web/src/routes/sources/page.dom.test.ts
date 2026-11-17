@@ -18,6 +18,35 @@ const pack = {
 
 let components: () => Response;
 let strokes: () => Response;
+let themesAnswer: () => Response;
+let fonts: () => Response;
+const fontsAsked = vi.fn();
+
+const fontList = {
+	faces: [
+		{
+			packId: 'klee-one',
+			face: 'kai',
+			script: 'Jpan',
+			original: 'Klee One',
+			weight: '400',
+			style: 'normal',
+			license: 'OFL-1.1',
+			attribution: 'Klee One by Fontworks',
+			slices: []
+		}
+	],
+	packs: [
+		{
+			packId: 'klee-one',
+			name: 'qinqin Kai JP (Klee One, subset)',
+			version: '1.100-q1',
+			license: 'OFL-1.1',
+			attribution: 'Klee One by Fontworks (SIL OFL 1.1)',
+			notice: 'qinqin Kai JP is a modified version of Klee One.'
+		}
+	]
+};
 
 const strokePack = {
 	packId: 'hanzi-writer-strokes',
@@ -36,12 +65,27 @@ function json(body: unknown, status = 200): Response {
 beforeEach(() => {
 	components = () => json([pack]);
 	strokes = () => json([strokePack]);
+	themesAnswer = () =>
+		json({
+			themes: [],
+			packs: [
+				{ packId: 'catppuccin', name: 'Catppuccin', version: '1.0', license: 'MIT', attribution: '© 2021 Catppuccin', notice: '', licenseText: 'MIT License\n\nPermission is hereby granted, free of charge', builtin: true, themes: ['catppuccin-latte'] },
+				{ packId: 'paper-themes', name: 'Paper themes', version: '2', license: 'CC0-1.0', attribution: 'Paper', notice: '', builtin: false, themes: [] }
+			]
+		});
+	fonts = () => json(fontList);
+	fontsAsked.mockClear();
 	vi.stubGlobal(
 		'fetch',
 		vi.fn(async (input: RequestInfo | URL) => {
 			const path = new URL(String(input), 'http://localhost').pathname;
 			if (path === '/api/component-packs') return components();
 			if (path === '/api/stroke-packs') return strokes();
+			if (path === '/api/themes') return themesAnswer();
+			if (path === '/api/fonts') {
+				fontsAsked();
+				return fonts();
+			}
 			return json([]);
 		})
 	);
@@ -50,6 +94,7 @@ beforeEach(() => {
 afterEach(() => {
 	cleanup();
 	vi.unstubAllGlobals();
+	localStorage.removeItem('qinqin.token');
 });
 
 describe('sources page: character components', () => {
@@ -118,6 +163,37 @@ describe('sources page: stroke packs', () => {
 	});
 });
 
+describe('sources page: font packs', () => {
+	it('credits each installed font pack for a signed-in visitor, with the face it modifies', async () => {
+		localStorage.setItem('qinqin.token', 'tok');
+		render(Page);
+		const heading = await screen.findByRole('heading', { name: 'Fonts' });
+		const section = heading.closest('section')!;
+		await waitFor(() => expect(within(section).getAllByText('qinqin Kai JP (Klee One, subset)').length).toBeGreaterThan(0));
+		expect(within(section).getByRole('link', { name: 'OFL-1.1' }).getAttribute('href')).toBe('https://openfontlicense.org/');
+		expect(within(section).getByText('qinqin Kai JP is a modified version of Klee One.')).toBeTruthy();
+		expect(within(section).getByText(/a modified \(subset, renamed\) version of Klee One/)).toBeTruthy();
+	});
+
+	it('asks nothing and shows nothing when signed out (the list needs a session)', async () => {
+		render(Page);
+		await screen.findByRole('heading', { name: 'Frequency lists' });
+		await new Promise((r) => setTimeout(r, 0));
+		expect(fontsAsked).not.toHaveBeenCalled();
+		expect(screen.queryByRole('heading', { name: 'Fonts' })).toBeNull();
+	});
+
+	it('is hidden when no font pack is installed', async () => {
+		localStorage.setItem('qinqin.token', 'tok');
+		fonts = () => json({ faces: [], packs: [] });
+		render(Page);
+		await screen.findByRole('heading', { name: 'Frequency lists' });
+		await waitFor(() => expect(fontsAsked).toHaveBeenCalled());
+		await new Promise((r) => setTimeout(r, 0));
+		expect(screen.queryByRole('heading', { name: 'Fonts' })).toBeNull();
+	});
+});
+
 describe('sources page: the reader sources are core credits (v0.4.0)', () => {
 	it('lists Aozora Bunko, Project Gutenberg and opencc-js under Built into the app, with both opencc licence texts', async () => {
 		render(Page);
@@ -130,5 +206,31 @@ describe('sources page: the reader sources are core credits (v0.4.0)', () => {
 		expect(within(core).getByRole('link', { name: 'Apache-2.0 license text' }).getAttribute('href')).toBe('/OPENCC-APACHE-2.0.TXT');
 		// No plugin section for the reader any more.
 		expect(screen.queryByRole('list', { name: 'Reader sources' })).toBeNull();
+	});
+});
+
+describe('sources page: themes', () => {
+	it('credits every theme pack, the built-in ones marked', async () => {
+		render(Page);
+		const heading = await screen.findByRole('heading', { name: 'Themes' });
+		const section = heading.closest('section')!;
+		await waitFor(() => expect(within(section).getByText('Paper themes')).toBeTruthy());
+		const builtin = within(section).getByRole('row', { name: /Catppuccin/ });
+		expect(within(builtin).getByText('Built into the app')).toBeTruthy();
+		const installed = within(section).getByRole('row', { name: /Paper themes/ });
+		expect(within(installed).getByText('Installed on this server')).toBeTruthy();
+		expect(within(installed).getByText('CC0-1.0')).toBeTruthy();
+		// The built-in pack's full licence text, behind a disclosure.
+		const summary = within(section).getByText('Catppuccin: MIT license text');
+		expect(summary.tagName).toBe('SUMMARY');
+		expect(summary.closest('details')!.textContent).toContain('Permission is hereby granted, free of charge');
+		expect(within(section).queryByText(/Paper themes: .* license text/)).toBeNull();
+	});
+
+	it('shows an error line with a retry on failure', async () => {
+		themesAnswer = () => json({ error: 'x', message: 'down' }, 500);
+		render(Page);
+		const heading = await screen.findByRole('heading', { name: 'Themes' });
+		await waitFor(() => expect(within(heading.closest('section')!).getByRole('alert')).toBeTruthy());
 	});
 });

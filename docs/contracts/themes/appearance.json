@@ -1,0 +1,1045 @@
+{
+ "version": 1,
+ "rule": "themes/appearance",
+ "_doc": "The user-global row qinqin-core / appearance (docs/contracts/themes/README.md, The appearance row). parse: the stored value (null = no row) to the settings the client applies; resolve: which slot, theme and accent are painted (themes: the installed themes with their accentChoices from derive); write: the value a client PUTs for a change.",
+ "pluginId": "qinqin-core",
+ "key": "appearance",
+ "scope": "user-global",
+ "defaults": {
+  "version": 1,
+  "mode": "system",
+  "light": {
+   "theme": "catppuccin-latte",
+   "accent": "mauve"
+  },
+  "dark": {
+   "theme": "catppuccin-mocha",
+   "accent": "mauve"
+  },
+  "corners": "soft",
+  "spacing": "comfortable",
+  "hanziFont": "sans"
+ },
+ "adjustments": {
+  "corners": {
+   "sharp": 4,
+   "soft": 10,
+   "round": 16
+  },
+  "spacing": {
+   "compact": 0.75,
+   "comfortable": 1
+  },
+  "hanziFont": [
+   "sans",
+   "serif",
+   "kai"
+  ]
+ },
+ "row": {
+  "version": 1,
+  "mode": "dark",
+  "light": {
+   "theme": "rose-pine-dawn",
+   "accent": "pine"
+  },
+  "dark": {
+   "theme": "nord",
+   "accent": "glacier"
+  },
+  "corners": "round",
+  "spacing": "compact",
+  "hanziFont": "kai"
+ },
+ "themes": [
+  {
+   "id": "catppuccin-latte",
+   "scheme": "light",
+   "defaultAccent": "mauve",
+   "accentChoices": [
+    "mauve",
+    "red",
+    "teal",
+    "blue"
+   ]
+  },
+  {
+   "id": "catppuccin-mocha",
+   "scheme": "dark",
+   "defaultAccent": "mauve",
+   "accentChoices": [
+    "mauve",
+    "pink",
+    "blue"
+   ]
+  },
+  {
+   "id": "nord",
+   "scheme": "dark",
+   "defaultAccent": "frost",
+   "accentChoices": [
+    "frost",
+    "glacier"
+   ]
+  },
+  {
+   "id": "rose-pine-dawn",
+   "scheme": "light",
+   "defaultAccent": "pine",
+   "accentChoices": [
+    "iris",
+    "love",
+    "pine"
+   ]
+  }
+ ],
+ "parse": [
+  {
+   "name": "no row",
+   "note": "null: the defaults",
+   "value": null,
+   "expect": {
+    "mode": "system",
+    "light": {
+     "theme": "catppuccin-latte",
+     "accent": "mauve"
+    },
+    "dark": {
+     "theme": "catppuccin-mocha",
+     "accent": "mauve"
+    },
+    "corners": "soft",
+    "spacing": "comfortable",
+    "hanziFont": "sans"
+   }
+  },
+  {
+   "name": "the defaults as a row",
+   "note": "",
+   "value": {
+    "version": 1,
+    "mode": "system",
+    "light": {
+     "theme": "catppuccin-latte",
+     "accent": "mauve"
+    },
+    "dark": {
+     "theme": "catppuccin-mocha",
+     "accent": "mauve"
+    },
+    "corners": "soft",
+    "spacing": "comfortable",
+    "hanziFont": "sans"
+   },
+   "expect": {
+    "mode": "system",
+    "light": {
+     "theme": "catppuccin-latte",
+     "accent": "mauve"
+    },
+    "dark": {
+     "theme": "catppuccin-mocha",
+     "accent": "mauve"
+    },
+    "corners": "soft",
+    "spacing": "comfortable",
+    "hanziFont": "sans"
+   }
+  },
+  {
+   "name": "every member set",
+   "note": "",
+   "value": {
+    "version": 1,
+    "mode": "dark",
+    "light": {
+     "theme": "rose-pine-dawn",
+     "accent": "pine"
+    },
+    "dark": {
+     "theme": "nord",
+     "accent": "glacier"
+    },
+    "corners": "round",
+    "spacing": "compact",
+    "hanziFont": "kai"
+   },
+   "expect": {
+    "mode": "dark",
+    "light": {
+     "theme": "rose-pine-dawn",
+     "accent": "pine"
+    },
+    "dark": {
+     "theme": "nord",
+     "accent": "glacier"
+    },
+    "corners": "round",
+    "spacing": "compact",
+    "hanziFont": "kai"
+   }
+  },
+  {
+   "name": "not an object",
+   "note": "a string: the defaults",
+   "value": "dark",
+   "expect": {
+    "mode": "system",
+    "light": {
+     "theme": "catppuccin-latte",
+     "accent": "mauve"
+    },
+    "dark": {
+     "theme": "catppuccin-mocha",
+     "accent": "mauve"
+    },
+    "corners": "soft",
+    "spacing": "comfortable",
+    "hanziFont": "sans"
+   }
+  },
+  {
+   "name": "an array",
+   "note": "",
+   "value": [
+    1
+   ],
+   "expect": {
+    "mode": "system",
+    "light": {
+     "theme": "catppuccin-latte",
+     "accent": "mauve"
+    },
+    "dark": {
+     "theme": "catppuccin-mocha",
+     "accent": "mauve"
+    },
+    "corners": "soft",
+    "spacing": "comfortable",
+    "hanziFont": "sans"
+   }
+  },
+  {
+   "name": "version missing",
+   "note": "not a row: the defaults",
+   "value": {
+    "mode": "dark",
+    "light": {
+     "theme": "rose-pine-dawn",
+     "accent": "pine"
+    },
+    "dark": {
+     "theme": "nord",
+     "accent": "glacier"
+    },
+    "corners": "round",
+    "spacing": "compact",
+    "hanziFont": "kai"
+   },
+   "expect": {
+    "mode": "system",
+    "light": {
+     "theme": "catppuccin-latte",
+     "accent": "mauve"
+    },
+    "dark": {
+     "theme": "catppuccin-mocha",
+     "accent": "mauve"
+    },
+    "corners": "soft",
+    "spacing": "comfortable",
+    "hanziFont": "sans"
+   }
+  },
+  {
+   "name": "version 0",
+   "note": "",
+   "value": {
+    "version": 0,
+    "mode": "dark",
+    "light": {
+     "theme": "rose-pine-dawn",
+     "accent": "pine"
+    },
+    "dark": {
+     "theme": "nord",
+     "accent": "glacier"
+    },
+    "corners": "round",
+    "spacing": "compact",
+    "hanziFont": "kai"
+   },
+   "expect": {
+    "mode": "system",
+    "light": {
+     "theme": "catppuccin-latte",
+     "accent": "mauve"
+    },
+    "dark": {
+     "theme": "catppuccin-mocha",
+     "accent": "mauve"
+    },
+    "corners": "soft",
+    "spacing": "comfortable",
+    "hanziFont": "sans"
+   }
+  },
+  {
+   "name": "version as a string",
+   "note": "",
+   "value": {
+    "version": "1",
+    "mode": "dark",
+    "light": {
+     "theme": "rose-pine-dawn",
+     "accent": "pine"
+    },
+    "dark": {
+     "theme": "nord",
+     "accent": "glacier"
+    },
+    "corners": "round",
+    "spacing": "compact",
+    "hanziFont": "kai"
+   },
+   "expect": {
+    "mode": "system",
+    "light": {
+     "theme": "catppuccin-latte",
+     "accent": "mauve"
+    },
+    "dark": {
+     "theme": "catppuccin-mocha",
+     "accent": "mauve"
+    },
+    "corners": "soft",
+    "spacing": "comfortable",
+    "hanziFont": "sans"
+   }
+  },
+  {
+   "name": "version 1.5",
+   "note": "not an integer",
+   "value": {
+    "version": 1.5,
+    "mode": "dark",
+    "light": {
+     "theme": "rose-pine-dawn",
+     "accent": "pine"
+    },
+    "dark": {
+     "theme": "nord",
+     "accent": "glacier"
+    },
+    "corners": "round",
+    "spacing": "compact",
+    "hanziFont": "kai"
+   },
+   "expect": {
+    "mode": "system",
+    "light": {
+     "theme": "catppuccin-latte",
+     "accent": "mauve"
+    },
+    "dark": {
+     "theme": "catppuccin-mocha",
+     "accent": "mauve"
+    },
+    "corners": "soft",
+    "spacing": "comfortable",
+    "hanziFont": "sans"
+   }
+  },
+  {
+   "name": "a newer version is read leniently",
+   "note": "version >= 1 is read member by member; unknown members are ignored here and kept on write",
+   "value": {
+    "version": 3,
+    "mode": "dark",
+    "light": {
+     "theme": "rose-pine-dawn",
+     "accent": "pine"
+    },
+    "dark": {
+     "theme": "nord",
+     "accent": "glacier"
+    },
+    "corners": "round",
+    "spacing": "compact",
+    "hanziFont": "kai",
+    "future": {
+     "x": 1
+    }
+   },
+   "expect": {
+    "mode": "dark",
+    "light": {
+     "theme": "rose-pine-dawn",
+     "accent": "pine"
+    },
+    "dark": {
+     "theme": "nord",
+     "accent": "glacier"
+    },
+    "corners": "round",
+    "spacing": "compact",
+    "hanziFont": "kai"
+   }
+  },
+  {
+   "name": "unknown mode",
+   "note": "system",
+   "value": {
+    "version": 1,
+    "mode": "sepia",
+    "light": {
+     "theme": "rose-pine-dawn",
+     "accent": "pine"
+    },
+    "dark": {
+     "theme": "nord",
+     "accent": "glacier"
+    },
+    "corners": "round",
+    "spacing": "compact",
+    "hanziFont": "kai"
+   },
+   "expect": {
+    "mode": "system",
+    "light": {
+     "theme": "rose-pine-dawn",
+     "accent": "pine"
+    },
+    "dark": {
+     "theme": "nord",
+     "accent": "glacier"
+    },
+    "corners": "round",
+    "spacing": "compact",
+    "hanziFont": "kai"
+   }
+  },
+  {
+   "name": "slot not an object",
+   "note": "the slot default (theme and accent)",
+   "value": {
+    "version": 1,
+    "mode": "dark",
+    "light": "nord",
+    "dark": {
+     "theme": "nord",
+     "accent": "glacier"
+    },
+    "corners": "round",
+    "spacing": "compact",
+    "hanziFont": "kai"
+   },
+   "expect": {
+    "mode": "dark",
+    "light": {
+     "theme": "catppuccin-latte",
+     "accent": "mauve"
+    },
+    "dark": {
+     "theme": "nord",
+     "accent": "glacier"
+    },
+    "corners": "round",
+    "spacing": "compact",
+    "hanziFont": "kai"
+   }
+  },
+  {
+   "name": "slot missing",
+   "note": "the slot default",
+   "value": {
+    "version": 1,
+    "mode": "light",
+    "dark": {
+     "theme": "nord",
+     "accent": "frost"
+    }
+   },
+   "expect": {
+    "mode": "light",
+    "light": {
+     "theme": "catppuccin-latte",
+     "accent": "mauve"
+    },
+    "dark": {
+     "theme": "nord",
+     "accent": "frost"
+    },
+    "corners": "soft",
+    "spacing": "comfortable",
+    "hanziFont": "sans"
+   }
+  },
+  {
+   "name": "theme not a theme id",
+   "note": "the slot's default theme; the accent is read on its own",
+   "value": {
+    "version": 1,
+    "mode": "dark",
+    "light": {
+     "theme": "rose-pine-dawn",
+     "accent": "pine"
+    },
+    "dark": {
+     "theme": "Nord!",
+     "accent": "frost"
+    },
+    "corners": "round",
+    "spacing": "compact",
+    "hanziFont": "kai"
+   },
+   "expect": {
+    "mode": "dark",
+    "light": {
+     "theme": "rose-pine-dawn",
+     "accent": "pine"
+    },
+    "dark": {
+     "theme": "catppuccin-mocha",
+     "accent": "frost"
+    },
+    "corners": "round",
+    "spacing": "compact",
+    "hanziFont": "kai"
+   }
+  },
+  {
+   "name": "accent missing",
+   "note": "null: the theme's own choice (its defaultAccent at resolve)",
+   "value": {
+    "version": 1,
+    "mode": "dark",
+    "light": {
+     "theme": "rose-pine-dawn",
+     "accent": "pine"
+    },
+    "dark": {
+     "theme": "nord"
+    },
+    "corners": "round",
+    "spacing": "compact",
+    "hanziFont": "kai"
+   },
+   "expect": {
+    "mode": "dark",
+    "light": {
+     "theme": "rose-pine-dawn",
+     "accent": "pine"
+    },
+    "dark": {
+     "theme": "nord",
+     "accent": null
+    },
+    "corners": "round",
+    "spacing": "compact",
+    "hanziFont": "kai"
+   }
+  },
+  {
+   "name": "accent not an accent key",
+   "note": "null",
+   "value": {
+    "version": 1,
+    "mode": "dark",
+    "light": {
+     "theme": "rose-pine-dawn",
+     "accent": "pine"
+    },
+    "dark": {
+     "theme": "nord",
+     "accent": "1st"
+    },
+    "corners": "round",
+    "spacing": "compact",
+    "hanziFont": "kai"
+   },
+   "expect": {
+    "mode": "dark",
+    "light": {
+     "theme": "rose-pine-dawn",
+     "accent": "pine"
+    },
+    "dark": {
+     "theme": "nord",
+     "accent": null
+    },
+    "corners": "round",
+    "spacing": "compact",
+    "hanziFont": "kai"
+   }
+  },
+  {
+   "name": "unknown adjustments",
+   "note": "each falls back on its own",
+   "value": {
+    "version": 1,
+    "mode": "dark",
+    "light": {
+     "theme": "rose-pine-dawn",
+     "accent": "pine"
+    },
+    "dark": {
+     "theme": "nord",
+     "accent": "glacier"
+    },
+    "corners": "pill",
+    "spacing": 2,
+    "hanziFont": "Kai"
+   },
+   "expect": {
+    "mode": "dark",
+    "light": {
+     "theme": "rose-pine-dawn",
+     "accent": "pine"
+    },
+    "dark": {
+     "theme": "nord",
+     "accent": "glacier"
+    },
+    "corners": "soft",
+    "spacing": "comfortable",
+    "hanziFont": "sans"
+   }
+  }
+ ],
+ "resolve": [
+  {
+   "name": "system, device light",
+   "note": "the light slot",
+   "value": {
+    "version": 1,
+    "mode": "system",
+    "light": {
+     "theme": "rose-pine-dawn",
+     "accent": "pine"
+    },
+    "dark": {
+     "theme": "nord",
+     "accent": "glacier"
+    },
+    "corners": "round",
+    "spacing": "compact",
+    "hanziFont": "kai"
+   },
+   "prefersDark": false,
+   "expect": {
+    "slot": "light",
+    "theme": "rose-pine-dawn",
+    "accent": "pine"
+   }
+  },
+  {
+   "name": "system, device dark",
+   "note": "the dark slot",
+   "value": {
+    "version": 1,
+    "mode": "system",
+    "light": {
+     "theme": "rose-pine-dawn",
+     "accent": "pine"
+    },
+    "dark": {
+     "theme": "nord",
+     "accent": "glacier"
+    },
+    "corners": "round",
+    "spacing": "compact",
+    "hanziFont": "kai"
+   },
+   "prefersDark": true,
+   "expect": {
+    "slot": "dark",
+    "theme": "nord",
+    "accent": "glacier"
+   }
+  },
+  {
+   "name": "light forced on a dark device",
+   "note": "",
+   "value": {
+    "version": 1,
+    "mode": "light",
+    "light": {
+     "theme": "rose-pine-dawn",
+     "accent": "pine"
+    },
+    "dark": {
+     "theme": "nord",
+     "accent": "glacier"
+    },
+    "corners": "round",
+    "spacing": "compact",
+    "hanziFont": "kai"
+   },
+   "prefersDark": true,
+   "expect": {
+    "slot": "light",
+    "theme": "rose-pine-dawn",
+    "accent": "pine"
+   }
+  },
+  {
+   "name": "dark forced on a light device",
+   "note": "",
+   "value": {
+    "version": 1,
+    "mode": "dark",
+    "light": {
+     "theme": "rose-pine-dawn",
+     "accent": "pine"
+    },
+    "dark": {
+     "theme": "nord",
+     "accent": "glacier"
+    },
+    "corners": "round",
+    "spacing": "compact",
+    "hanziFont": "kai"
+   },
+   "prefersDark": false,
+   "expect": {
+    "slot": "dark",
+    "theme": "nord",
+    "accent": "glacier"
+   }
+  },
+  {
+   "name": "no row",
+   "note": "the default pair",
+   "value": null,
+   "prefersDark": true,
+   "expect": {
+    "slot": "dark",
+    "theme": "catppuccin-mocha",
+    "accent": "mauve"
+   }
+  },
+  {
+   "name": "theme not installed",
+   "note": "a removed pack: the slot's default theme; the stored accent is tried on it",
+   "value": {
+    "version": 1,
+    "mode": "dark",
+    "dark": {
+     "theme": "gone-theme",
+     "accent": "pink"
+    }
+   },
+   "prefersDark": true,
+   "expect": {
+    "slot": "dark",
+    "theme": "catppuccin-mocha",
+    "accent": "pink"
+   }
+  },
+  {
+   "name": "theme not installed, accent unknown to the default",
+   "note": "",
+   "value": {
+    "version": 1,
+    "mode": "dark",
+    "dark": {
+     "theme": "gone-theme",
+     "accent": "frost"
+    }
+   },
+   "prefersDark": true,
+   "expect": {
+    "slot": "dark",
+    "theme": "catppuccin-mocha",
+    "accent": "mauve"
+   }
+  },
+  {
+   "name": "accent not offered",
+   "note": "below 3:1 or unknown: the theme's default accent",
+   "value": {
+    "version": 1,
+    "mode": "light",
+    "light": {
+     "theme": "rose-pine-dawn",
+     "accent": "gold"
+    }
+   },
+   "prefersDark": false,
+   "expect": {
+    "slot": "light",
+    "theme": "rose-pine-dawn",
+    "accent": "pine"
+   }
+  },
+  {
+   "name": "accent null",
+   "note": "the theme's default accent",
+   "value": {
+    "version": 1,
+    "mode": "dark",
+    "dark": {
+     "theme": "nord",
+     "accent": null
+    }
+   },
+   "prefersDark": true,
+   "expect": {
+    "slot": "dark",
+    "theme": "nord",
+    "accent": "frost"
+   }
+  }
+ ],
+ "write": [
+  {
+   "name": "no row: the defaults plus the change",
+   "note": "",
+   "stored": null,
+   "change": {
+    "mode": "dark"
+   },
+   "expect": {
+    "version": 1,
+    "mode": "dark",
+    "light": {
+     "theme": "catppuccin-latte",
+     "accent": "mauve"
+    },
+    "dark": {
+     "theme": "catppuccin-mocha",
+     "accent": "mauve"
+    },
+    "corners": "soft",
+    "spacing": "comfortable",
+    "hanziFont": "sans"
+   }
+  },
+  {
+   "name": "unknown members are kept",
+   "note": "top level",
+   "stored": {
+    "version": 1,
+    "mode": "dark",
+    "light": {
+     "theme": "rose-pine-dawn",
+     "accent": "pine"
+    },
+    "dark": {
+     "theme": "nord",
+     "accent": "glacier"
+    },
+    "corners": "round",
+    "spacing": "compact",
+    "hanziFont": "kai",
+    "future": {
+     "x": 1
+    }
+   },
+   "change": {
+    "corners": "sharp"
+   },
+   "expect": {
+    "version": 1,
+    "mode": "dark",
+    "light": {
+     "theme": "rose-pine-dawn",
+     "accent": "pine"
+    },
+    "dark": {
+     "theme": "nord",
+     "accent": "glacier"
+    },
+    "corners": "sharp",
+    "spacing": "compact",
+    "hanziFont": "kai",
+    "future": {
+     "x": 1
+    }
+   }
+  },
+  {
+   "name": "a slot change keeps the slot's unknown members",
+   "note": "",
+   "stored": {
+    "version": 1,
+    "mode": "dark",
+    "light": {
+     "theme": "rose-pine-dawn",
+     "accent": "pine"
+    },
+    "dark": {
+     "theme": "nord",
+     "accent": "frost",
+     "contrast": "high"
+    },
+    "corners": "round",
+    "spacing": "compact",
+    "hanziFont": "kai"
+   },
+   "change": {
+    "dark": {
+     "theme": "catppuccin-mocha",
+     "accent": "blue"
+    }
+   },
+   "expect": {
+    "version": 1,
+    "mode": "dark",
+    "light": {
+     "theme": "rose-pine-dawn",
+     "accent": "pine"
+    },
+    "dark": {
+     "theme": "catppuccin-mocha",
+     "accent": "blue",
+     "contrast": "high"
+    },
+    "corners": "round",
+    "spacing": "compact",
+    "hanziFont": "kai"
+   }
+  },
+  {
+   "name": "a slot that was not an object",
+   "note": "replaced by the change",
+   "stored": {
+    "version": 1,
+    "mode": "dark",
+    "light": "x",
+    "dark": {
+     "theme": "nord",
+     "accent": "glacier"
+    },
+    "corners": "round",
+    "spacing": "compact",
+    "hanziFont": "kai"
+   },
+   "change": {
+    "light": {
+     "theme": "catppuccin-latte",
+     "accent": "teal"
+    }
+   },
+   "expect": {
+    "version": 1,
+    "mode": "dark",
+    "light": {
+     "theme": "catppuccin-latte",
+     "accent": "teal"
+    },
+    "dark": {
+     "theme": "nord",
+     "accent": "glacier"
+    },
+    "corners": "round",
+    "spacing": "compact",
+    "hanziFont": "kai"
+   }
+  },
+  {
+   "name": "a newer version is written as version 1",
+   "note": "the writer only knows version 1; unknown members stay",
+   "stored": {
+    "version": 3,
+    "mode": "dark",
+    "light": {
+     "theme": "rose-pine-dawn",
+     "accent": "pine"
+    },
+    "dark": {
+     "theme": "nord",
+     "accent": "glacier"
+    },
+    "corners": "round",
+    "spacing": "compact",
+    "hanziFont": "kai",
+    "future": true
+   },
+   "change": {
+    "mode": "system"
+   },
+   "expect": {
+    "version": 1,
+    "mode": "system",
+    "light": {
+     "theme": "rose-pine-dawn",
+     "accent": "pine"
+    },
+    "dark": {
+     "theme": "nord",
+     "accent": "glacier"
+    },
+    "corners": "round",
+    "spacing": "compact",
+    "hanziFont": "kai",
+    "future": true
+   }
+  },
+  {
+   "name": "accent back to the theme's choice",
+   "note": "null is written as null",
+   "stored": {
+    "version": 1,
+    "mode": "dark",
+    "light": {
+     "theme": "rose-pine-dawn",
+     "accent": "pine"
+    },
+    "dark": {
+     "theme": "nord",
+     "accent": "glacier"
+    },
+    "corners": "round",
+    "spacing": "compact",
+    "hanziFont": "kai"
+   },
+   "change": {
+    "dark": {
+     "accent": null
+    }
+   },
+   "expect": {
+    "version": 1,
+    "mode": "dark",
+    "light": {
+     "theme": "rose-pine-dawn",
+     "accent": "pine"
+    },
+    "dark": {
+     "theme": "nord",
+     "accent": null
+    },
+    "corners": "round",
+    "spacing": "compact",
+    "hanziFont": "kai"
+   }
+  },
+  {
+   "name": "not an object: the defaults plus the change",
+   "note": "",
+   "stored": [
+    1
+   ],
+   "change": {
+    "hanziFont": "serif"
+   },
+   "expect": {
+    "version": 1,
+    "mode": "system",
+    "light": {
+     "theme": "catppuccin-latte",
+     "accent": "mauve"
+    },
+    "dark": {
+     "theme": "catppuccin-mocha",
+     "accent": "mauve"
+    },
+    "corners": "soft",
+    "spacing": "comfortable",
+    "hanziFont": "serif"
+   }
+  }
+ ]
+}

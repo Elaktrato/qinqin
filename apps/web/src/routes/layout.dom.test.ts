@@ -202,3 +202,54 @@ describe('layout restricted sessions', () => {
 		expect(goto).not.toHaveBeenCalled();
 	});
 });
+
+describe('layout theme store', () => {
+	const calls = () => vi.mocked(api).mock.calls.map((c) => String(c[0]));
+
+	it('loads the theme list signed out, and the appearance row once signed in', async () => {
+		const out = mountAt('/sources', null);
+		await out.findByText('page body');
+		await waitFor(() => expect(calls()).toContain('/api/themes'));
+		expect(calls().some((u) => u.startsWith('/api/plugins/qinqin-core/data'))).toBe(false);
+		cleanup();
+		vi.clearAllMocks();
+		const view = mountAt('/search', 'tok');
+		await view.findByText('page body');
+		await waitFor(() =>
+			expect(calls().filter((u) => u.startsWith('/api/plugins/qinqin-core/data') && u.includes('prefix=appearance'))).toHaveLength(1)
+		);
+	});
+
+	it('reads the installed font faces once signed in, never signed out', async () => {
+		const out = mountAt('/sources', null);
+		await out.findByText('page body');
+		await waitFor(() => expect(calls()).toContain('/api/themes'));
+		expect(calls()).not.toContain('/api/fonts');
+		cleanup();
+		vi.clearAllMocks();
+		const view = mountAt('/search', 'tok');
+		await view.findByText('page body');
+		await waitFor(() => expect(calls().filter((u) => u === '/api/fonts')).toHaveLength(1));
+	});
+
+	it('sets the app-wide hanzi font stacks on the root (default Sans, system fonts without a pack)', async () => {
+		document.documentElement.removeAttribute('style');
+		const view = mountAt('/search', 'tok');
+		await view.findByText('page body');
+		const root = document.documentElement.style;
+		await waitFor(() => expect(root.getPropertyValue('--font-hanzi-hans')).toContain('"PingFang SC"'));
+		expect(root.getPropertyValue('--font-hanzi-hant')).toContain('"PingFang TC"');
+		expect(root.getPropertyValue('--font-hanzi-jpan')).toContain('"Hiragino Sans"');
+	});
+
+	it('puts the quick theme switch in the account area when signed in, not signed out', async () => {
+		const out = mountAt('/sources', null);
+		await out.findByText('page body');
+		expect(out.queryByRole('button', { name: /^Theme:/ })).toBeNull();
+		cleanup();
+		const view = mountAt('/search', 'tok');
+		await view.findByText('page body');
+		const button = view.getByRole('button', { name: /^Theme:/ });
+		expect(button.closest('.account')).not.toBeNull();
+	});
+});

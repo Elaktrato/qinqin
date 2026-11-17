@@ -1,0 +1,9 @@
+{
+	"name": "qinqin-font-pack-tools",
+	"private": true,
+	"description": "Build-time tools of scripts/prepare-font-pack.mjs (never shipped; not a dependency of the app)",
+	"devDependencies": {
+		"fontverter": "2.1.0",
+		"subset-font": "2.9.0"
+	}
+}

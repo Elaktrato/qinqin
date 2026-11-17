@@ -1313,7 +1313,7 @@
 
 	.author {
 		margin-top: -0.5rem;
-		opacity: 0.75;
+		color: var(--readable-muted);
 	}
 
 	.toggles,
@@ -1330,7 +1330,7 @@
 		padding-top: 0.75rem;
 		border-top: 1px solid color-mix(in srgb, currentColor 18%, transparent);
 		font-size: 0.85rem;
-		opacity: 0.8;
+		color: var(--readable-muted);
 	}
 
 	.credits p {
@@ -1343,6 +1343,8 @@
 	}
 
 	.error {
-		color: #b3261e;
+		color: var(--readable-bad);
+		padding-inline-start: var(--space-2);
+		border-inline-start: 3px solid var(--bad);
 	}
 </style>

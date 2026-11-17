@@ -1,9 +1,18 @@
 <script lang="ts">
-	import { t } from '$lib/i18n';
+	import { t, type MessageKey } from '$lib/i18n';
 	import { tick } from 'svelte';
 	import type { ReaderDisplay, ReadingsMode } from './displaySettings';
 	import { RUBY_SCALES, THRESHOLD_MAX, THRESHOLD_MIN } from './displaySettings';
 	import type { ReaderFont } from './fonts';
+	import { themeStore } from '$lib/theme/store.svelte';
+	import type { HanziFont } from '$lib/theme/appearance';
+
+	// `default` follows the app-wide hanzi font (#97); its label names the current one.
+	const APP_FONT_LABELS: Record<HanziFont, MessageKey> = {
+		sans: 'settings.appearance.hanziFont.sans',
+		serif: 'settings.appearance.hanziFont.serif',
+		kai: 'settings.appearance.hanziFont.kai'
+	};
 
 	// The reader's display settings in a non-modal disclosure. Controlled:
 	// every change goes up as a patch, the parent owns the state and saves it.
@@ -37,12 +46,12 @@
 		t('reader.display.large'),
 		t('reader.display.extraLarge')
 	];
-	const FONTS: { value: ReaderFont; label: string }[] = [
-		{ value: 'default', label: t('reader.display.fontDefault') },
+	const FONTS: { value: ReaderFont; label: string }[] = $derived([
+		{ value: 'default', label: t('reader.display.fontApp', { font: t(APP_FONT_LABELS[themeStore.appearance.hanziFont]) }) },
 		{ value: 'sans', label: t('reader.display.fontSans') },
 		{ value: 'serif', label: t('reader.display.fontSerif') },
 		{ value: 'kai', label: t('reader.display.fontKai') }
-	];
+	]);
 
 	async function onkeydown(e: KeyboardEvent): Promise<void> {
 		if (e.key !== 'Escape' || e.isComposing) return;

@@ -143,12 +143,14 @@
 	}
 	.hint {
 		margin: 0;
-		opacity: 0.75;
+		color: var(--readable-muted);
 	}
 	.error {
 		margin: 0;
-		color: #c62828;
+		color: var(--readable-bad);
 		font-weight: 600;
+		padding-inline-start: var(--space-2);
+		border-inline-start: 3px solid var(--bad);
 	}
 	table {
 		border-collapse: collapse;

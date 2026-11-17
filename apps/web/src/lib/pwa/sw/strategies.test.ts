@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { FakeCacheStorage } from '../../testing/fakeCaches';
 import { classify } from './classify';
-import { HANZI_CACHE, HANZI_CAP, OFFLINE_HEADER, SAVED_AT_HEADER, handleFetch, type Deps } from './strategies';
+import { FONT_CACHE, FONT_CAP, HANZI_CACHE, HANZI_CAP, OFFLINE_HEADER, SAVED_AT_HEADER, handleFetch, type Deps } from './strategies';
 import { partitionName } from './partition';
 
 const ORIGIN = 'https://qinqin.example';
@@ -280,5 +280,38 @@ describe('hanzi', () => {
 		fetchMock.mockResolvedValue(new Response('nope', { status: 404 }));
 		await run(request('/hanzi/U1.json'));
 		expect((await caches.open(HANZI_CACHE)).entries.size).toBe(0);
+	});
+});
+
+describe('font', () => {
+	const slice = (n: number) => `/fonts/${n.toString(16).padStart(64, '0')}.woff2`;
+	const woff2 = () => new Response('wOF2…', { headers: { 'content-type': 'font/woff2' } });
+
+	it('is cache-first from one shared cache, whoever asks (content-addressed and public)', async () => {
+		expect(FONT_CACHE).toBe('qinqin-fonts-v1');
+		fetchMock.mockResolvedValue(woff2());
+		await run(request(slice(1)));
+		const res = await run(request(slice(1), { auth: 'Bearer other' }));
+		expect(await res.text()).toBe('wOF2…');
+		expect(fetchMock).toHaveBeenCalledTimes(1);
+		expect((await caches.open(FONT_CACHE)).entries.size).toBe(1);
+		expect(await caches.keys()).toEqual([FONT_CACHE]);
+	});
+
+	it('caps the cache at 4,000 slices by deleting the oldest', async () => {
+		expect(FONT_CAP).toBe(4000);
+		const cache = await caches.open(FONT_CACHE);
+		for (let i = 1; i <= FONT_CAP; i++) await cache.put(ORIGIN + slice(i), woff2());
+		fetchMock.mockResolvedValue(woff2());
+		await run(request(slice(FONT_CAP + 1)));
+		expect(cache.entries.size).toBe(FONT_CAP);
+		expect(cache.entries.has(ORIGIN + slice(1))).toBe(false);
+		expect(cache.entries.has(ORIGIN + slice(FONT_CAP + 1))).toBe(true);
+	});
+
+	it('does not store a failed fetch (an uninstalled pack answers 404)', async () => {
+		fetchMock.mockResolvedValue(new Response('nope', { status: 404 }));
+		expect((await run(request(slice(2)))).status).toBe(404);
+		expect((await caches.open(FONT_CACHE)).entries.size).toBe(0);
 	});
 });

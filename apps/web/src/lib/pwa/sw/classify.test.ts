@@ -50,6 +50,24 @@ describe('classify: spec table', () => {
 		expect(kind('/hanzi/UZZ.json')).toBe('bypass');
 	});
 
+	it('font slices are cache-first on demand, with or without a credential; look-alikes are bypass', () => {
+		const sha = 'ab'.repeat(32);
+		expect(kind(`/fonts/${sha}.woff2`, { auth: false })).toBe('font');
+		expect(kind(`/fonts/${sha}.woff2`)).toBe('font');
+		expect(kind(`/fonts/${sha}.woff2`, { method: 'HEAD' })).toBe('bypass');
+		expect(kind(`/fonts/${sha.toUpperCase()}.woff2`)).toBe('bypass');
+		expect(kind(`/fonts/${sha}.woff`)).toBe('bypass');
+		expect(kind(`/fonts/${sha.slice(2)}.woff2`)).toBe('bypass');
+		expect(kind('/fonts/../api/x.woff2')).toBe('bypass');
+		expect(kind(`https://evil.example/fonts/${sha}.woff2`)).toBe('bypass');
+		expect(kind(`/fonts/${sha}.woff2`, { mode: 'navigate' })).toBe('navigate');
+	});
+
+	it('the faces list is an API read kept per credential (offline: the pack faces stay registered)', () => {
+		expect(kind('/api/fonts')).toBe('api');
+		expect(kind('/api/fonts', { auth: false })).toBe('bypass');
+	});
+
 	it('api: allowlisted GETs with Authorization', () => {
 		for (const url of [
 			'/api/auth/me',
@@ -216,7 +234,9 @@ describe('classify: the server route table', () => {
 		'GET /api/plugins/{id}/data',
 		'GET /api/plugins/{id}/data/{key}',
 		'GET /api/events',
-		'GET /api/entries/{id}'
+		'GET /api/entries/{id}',
+		'GET /api/themes',
+		'GET /api/fonts'
 	]);
 
 	function sample(pattern: string): string {
@@ -232,11 +252,18 @@ describe('classify: the server route table', () => {
 		for (const pattern of CACHEABLE) expect(have.has(pattern), pattern).toBe(true);
 	});
 
+	/** Public file routes the worker keeps on demand, with the kind and a real file name. */
+	const FILES: Record<string, { kind: string; path: string }> = {
+		'GET /hanzi/{file}': { kind: 'hanzi', path: '/hanzi/U597D.json' },
+		'GET /fonts/{file}': { kind: 'font', path: `/fonts/${'0f'.repeat(32)}.woff2` }
+	};
+
 	for (const route of routes) {
-		const expected = CACHEABLE.has(route.pattern) ? 'api' : 'bypass';
+		const file = FILES[route.pattern];
+		const expected = file ? file.kind : CACHEABLE.has(route.pattern) ? 'api' : 'bypass';
 		it(`${route.pattern} -> ${expected}`, () => {
 			const [method] = route.pattern.split(' ');
-			expect(classify(req(sample(route.pattern), { method }), ctx)).toBe(expected);
+			expect(classify(req(file ? file.path : sample(route.pattern), { method }), ctx)).toBe(expected);
 		});
 	}
 

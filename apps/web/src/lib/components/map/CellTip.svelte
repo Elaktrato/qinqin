@@ -84,7 +84,7 @@
 		border: 1px solid var(--st-edge);
 		background: var(--st-tip-bg);
 		color: var(--st-tip-fg);
-		box-shadow: 0 6px 20px rgb(0 0 0 / 0.18);
+		box-shadow: var(--shadow-float);
 		font-size: 0.9rem;
 		pointer-events: none;
 	}
@@ -115,7 +115,7 @@
 
 	.variants,
 	.more {
-		opacity: 0.75;
+		color: var(--readable-muted);
 		font-size: 0.8rem;
 	}
 

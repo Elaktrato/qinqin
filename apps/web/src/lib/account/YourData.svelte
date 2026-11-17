@@ -249,5 +249,5 @@
 	.stack { display: grid; gap: 0.9rem; max-width: 24rem; }
 	label { display: grid; gap: 0.25rem; }
 	.file { max-width: 24rem; margin: 0.5rem 0; }
-	.hint { opacity: 0.8; }
+	.hint { color: var(--readable-muted); }
 </style>

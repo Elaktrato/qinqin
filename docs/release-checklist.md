@@ -15,7 +15,7 @@ phone-width window):
    shows a value on hover or focus.
 5. Reload a deep link (for example `/entry/5`): the page loads, not a 404.
 6. Sources page lists the packs; each licence text link
-   (`/ARPHICPL.TXT`, `/OPENCC-JS-LICENSE.TXT`) opens.
+   (`/ARPHICPL.TXT`, `/OPENCC-JS-LICENSE.TXT`, `/FIGTREE-OFL.TXT`) opens.
 7. A hard reload after the previous release picks up the new UI (index is
    `no-store`; hashed assets are cached for a year).
 

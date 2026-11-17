@@ -36,6 +36,8 @@ func warnStalePackTerms(ctx context.Context, sqlDB *sql.DB, roots []string, logf
 		dict.TypeAudio:      "audio_packs",
 		dict.TypeComponents: "component_packs",
 		dict.TypeStrokes:    "stroke_packs",
+		dict.TypeTheme:      "theme_packs",
+		dict.TypeFont:       "font_packs",
 	} {
 		rows, err := loadStoredTerms(ctx, sqlDB, table)
 		if err != nil {

@@ -71,7 +71,7 @@
 		font-size: 0.8rem;
 		letter-spacing: 0.06em;
 		text-transform: uppercase;
-		opacity: 0.7;
+		color: var(--readable-muted);
 	}
 
 	label {
@@ -82,6 +82,8 @@
 
 	.error {
 		margin: 0;
-		color: #c62828;
+		color: var(--readable-bad);
+		padding-inline-start: var(--space-2);
+		border-inline-start: 3px solid var(--bad);
 	}
 </style>

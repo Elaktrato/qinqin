@@ -35,6 +35,10 @@
 	import { requestSignOut } from '$lib/account/signOut';
 	import { logoutPrompt } from '$lib/account/logoutFlow';
 	import { watchDeletedWorkspaces } from '$lib/workspaceGone';
+	import { themeStore } from '$lib/theme/store.svelte';
+	import ThemeSwitch from '$lib/theme/ThemeSwitch.svelte';
+	import { packFaces } from '$lib/fonts/packFaces.svelte';
+	import { applyHanziVars, hanziVars } from '$lib/fonts/hanziVars';
 	import {
 		load as loadWorkspaces,
 		workspaces,
@@ -42,6 +46,7 @@
 		workspacesLoaded
 	} from '$lib/workspaces';
 	import '../app.css';
+	import '$lib/fonts/hanzi.css';
 
 	let { children } = $props();
 
@@ -123,6 +128,8 @@
 		void registerWorker();
 		captureInstallPrompt(window); // the root layout lives as long as the page
 		void persistOnceNow();
+		// The theme list and the device's light/dark switch, signed in or out.
+		void themeStore.start();
 		// Rehydrate the session from qinqin.token before guarding.
 		try {
 			await loadMe();
@@ -175,6 +182,28 @@
 			clearTimeout(timer);
 			document.removeEventListener('visibilitychange', onVisible);
 		};
+	});
+
+	// The person's appearance row: loaded once per signed-in user (not for a
+	// restricted session); signing out forgets it and keeps what is painted.
+	let themeUser: number | null | undefined = undefined;
+	$effect(() => {
+		const id = booted && signedIn && $restriction === null ? ($user?.id ?? null) : null;
+		if (id === themeUser) return;
+		themeUser = id;
+		void themeStore.setUser(id);
+		// The installed font pack faces (#97): the list needs a session.
+		if (id === null) packFaces.clear();
+		else void packFaces.load();
+	});
+
+	// The app-wide hanzi font (#97): the saved choice (or the Appearance
+	// preview) sets one stack per script on :root, an installed pack face
+	// first; only that face's slices are registered.
+	const hanziFont = $derived((themeStore.preview ?? themeStore.appearance).hanziFont);
+	$effect(() => {
+		applyHanziVars(hanziVars(hanziFont, packFaces.installed), document.documentElement);
+		packFaces.need('app', [hanziFont]);
 	});
 
 	// The learner's time zone history (and, once per account, the browser
@@ -251,6 +280,9 @@
 				</div>
 				{/if}
 				<div class="account">
+					<!-- The quick theme switch; the account menu of the frame
+					     rework (#99) takes it over. -->
+					{#if !restricted}<ThemeSwitch />{/if}
 					{#if $user}
 						<span class="username">{$user.username}</span>
 					{/if}
@@ -354,9 +386,11 @@
 
 <style>
 	.app {
-		/* Nav accent: the app's blue, a darker shade for text on its tint. */
-		--nav-accent: #0b6bcb;
-		--nav-accent-text: #0957a6;
+		/* Nav accent: the current item sits on an accent tint with its icon in
+		   the accent; its words stay --text (the reading accent fell to about
+		   3.9:1 on the tint in Catppuccin Latte, measured in #98 B5). */
+		--nav-accent: var(--accent);
+		--nav-accent-text: var(--text);
 		/* The fixed bottom tab bar's height (0 while there is none). Fixed
 		   elements further down, such as the reader's drawer button, keep
 		   clear of the bar with it. */
@@ -366,13 +400,6 @@
 		flex-direction: column;
 		min-height: 100vh;
 		min-height: 100dvh;
-	}
-
-	@media (prefers-color-scheme: dark) {
-		.app {
-			--nav-accent: #6cb4ff;
-			--nav-accent-text: #8cc4ff;
-		}
 	}
 
 	.content {
@@ -392,16 +419,16 @@
 		z-index: 100;
 		padding: 0.5rem 0.9rem;
 		border-radius: 0.5rem;
-		background: Canvas;
-		color: CanvasText;
+		background: var(--panel);
+		color: var(--text);
 		font-weight: 600;
-		box-shadow: 0 0.125rem 0.75rem rgb(0 0 0 / 0.2);
+		box-shadow: var(--shadow-float);
 		transform: translateY(-200%);
 	}
 
 	.skip-link:focus {
 		transform: none;
-		outline: 2px solid #0b6bcb;
+		outline: 2px solid var(--accent);
 		outline-offset: 2px;
 	}
 
@@ -455,24 +482,27 @@
 		gap: 0.4rem;
 		padding: 0.4rem 0.8rem 0.4rem 0.65rem;
 		border-radius: 999px;
-		color: inherit;
+		color: var(--readable-muted);
 		text-decoration: none;
-		opacity: 0.85;
 		transition:
 			background-color 0.12s ease,
 			color 0.12s ease;
 	}
 
 	.main-nav a:hover {
-		opacity: 1;
+		color: var(--text);
 		background: color-mix(in srgb, currentColor 8%, transparent);
 	}
 
 	.main-nav a[aria-current='page'] {
-		opacity: 1;
 		font-weight: 600;
 		color: var(--nav-accent-text);
 		background: color-mix(in srgb, var(--nav-accent) 14%, transparent);
+	}
+
+	.main-nav a[aria-current='page'] :global(.nav-icon),
+	.footer a[aria-current='page'] :global(.nav-icon) {
+		color: var(--nav-accent);
 	}
 
 	.workspace {
@@ -540,8 +570,10 @@
 	.workspace-error {
 		margin: 0;
 		padding: 0.5rem 1.5rem;
-		color: #c62828;
+		color: var(--readable-bad);
 		font-weight: 600;
+		padding-inline-start: var(--space-2);
+		border-inline-start: 3px solid var(--bad);
 	}
 
 	.workspace-error .retry {
@@ -619,25 +651,23 @@
 		gap: 0.35rem;
 		padding: 0.3rem 0.65rem 0.3rem 0.55rem;
 		border-radius: 999px;
-		color: inherit;
+		color: var(--readable-muted);
 		text-decoration: none;
-		opacity: 0.85;
 	}
 
 	.footer a:hover {
-		opacity: 1;
+		color: var(--text);
 		background: color-mix(in srgb, currentColor 8%, transparent);
 	}
 
 	.footer a[aria-current='page'] {
-		opacity: 1;
 		font-weight: 600;
 		color: var(--nav-accent-text);
 		background: color-mix(in srgb, var(--nav-accent) 14%, transparent);
 	}
 
 	.version {
-		opacity: 0.65;
+		color: var(--readable-muted);
 	}
 
 	/* Phones and narrow windows: the main nav becomes a fixed bottom tab
@@ -684,10 +714,9 @@
 			gap: 0;
 			padding: 0.3rem 0.5rem env(safe-area-inset-bottom, 0px);
 			overflow-x: auto;
-			background: Canvas;
-			color: CanvasText;
-			border-top: 1px solid color-mix(in srgb, currentColor 16%, transparent);
-			box-shadow: 0 -0.125rem 0.75rem rgb(0 0 0 / 0.08);
+			background: var(--panel);
+			color: var(--text);
+			border-top: 1px solid var(--hair);
 		}
 
 		.main-nav a {

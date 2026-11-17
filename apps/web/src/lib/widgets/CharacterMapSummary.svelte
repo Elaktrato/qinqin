@@ -145,45 +145,30 @@
 </div>
 
 <style>
-	/* The map's stage colours (routes/stats/characters), for StageBar and the legend. */
+	/* The map's stage colours (routes/stats/characters), for StageBar and the
+	   legend: the single-hue mastery ramp (design §9), the legend names each. */
 	.tile {
 		height: 100%;
 
-		--st-edge: color-mix(in srgb, currentColor 18%, transparent);
+		--st-edge: var(--hair);
 		--st-unknown-bg: color-mix(in srgb, currentColor 4%, transparent);
-		--st-unknown-bar: color-mix(in srgb, currentColor 14%, transparent);
-		--st-fresh-bar: #e57373;
-		--st-learning-bar: #f0a72c;
-		--st-mature-bar: #4a90d9;
-		--st-learned-bar: #2e9a55;
-	}
-
-	@media (prefers-color-scheme: dark) {
-		.tile {
-			--st-fresh-bar: #e57373;
-			--st-learning-bar: #e0a03a;
-			--st-mature-bar: #5aa0e6;
-			--st-learned-bar: #43b56c;
-		}
+		--st-unknown-edge: var(--muted);
+		--st-fresh-bar: var(--mastery-1);
+		--st-learning-bar: var(--mastery-2);
+		--st-mature-bar: var(--mastery-3);
+		--st-learned-bar: var(--mastery-4);
 	}
 
 	.open {
 		font-size: 0.8rem;
 		padding: 0.2rem 0.65rem;
-		border: 1px solid #0b6bcb;
+		border: 1px solid var(--accent);
 		border-radius: 999px;
-		color: #0b6bcb;
+		color: var(--reading-accent);
 		font-weight: 600;
 		text-decoration: none;
 	}
 
-	/* After the base rule: same specificity, so the later rule wins. */
-	@media (prefers-color-scheme: dark) {
-		.open {
-			border-color: #6cb4ff;
-			color: #6cb4ff;
-		}
-	}
 
 	.total {
 		margin: 0.9rem 0 0.5rem;
@@ -214,8 +199,11 @@
 		border: 1px solid var(--st-edge);
 	}
 
+	/* Not studied: no fill, a dashed outline (as the map's own legend). */
 	.st-unknown {
-		background: var(--st-unknown-bar);
+		background: transparent;
+		border-style: dashed;
+		border-color: var(--st-unknown-edge);
 	}
 
 	.st-fresh {
@@ -237,6 +225,6 @@
 	.note {
 		margin: 0.6rem 0 0;
 		font-size: 0.8rem;
-		opacity: 0.7;
+		color: var(--readable-muted);
 	}
 </style>

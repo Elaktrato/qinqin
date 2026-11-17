@@ -1,10 +1,85 @@
+/* The interface font (#97): Figtree, SIL OFL 1.1 (static/FIGTREE-OFL.TXT),
+   the upstream variable WOFF2 unmodified. Self-hosted: the build emits it as a
+   hashed shell asset the service worker precaches; never a third-party host. */
+@font-face {
+	font-family: 'Figtree';
+	src: url('./lib/assets/fonts/Figtree-Variable.woff2') format('woff2');
+	font-weight: 300 900;
+	font-style: normal;
+	font-display: swap;
+}
+
 :root {
 	color-scheme: light dark;
-	font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+	--font-ui: 'Figtree', system-ui, -apple-system, 'Segoe UI', sans-serif;
+	font-family: var(--font-ui);
+	--font-hanzi: var(--font-hanzi-hans, var(--font-ui));
+
+	/* Theme tokens (#96): the colour tokens (--chrome, --panel, --raised,
+	   --line, --text, --muted, --good, --warn, --bad, --grade-*, --accent,
+	   --on-accent, --hair, --reading-accent, --readable-bad, --readable-muted,
+	   --accent-14/32/58/100, the
+	   washes, --mastery-0..4) and the person's --radius and --space are set
+	   on :root by lib/theme/apply.ts (app.html paints this device's last
+	   ones before the app loads; the compiled-in Catppuccin Latte/Mocha
+	   otherwise). docs/contracts/themes/README.md lists them. */
+	--radius: 10px;
+	--space: 1;
+
+	/* Fixed scale tokens (docs/contracts/themes/README.md, "Fixed scale
+	   tokens"): never themed, the same for every person. */
+	--radius-large: calc(var(--radius) + 4px);
+	--font-size-xs: 0.75rem;
+	--font-size-s: 0.875rem;
+	--font-size-m: 1rem;
+	--font-size-l: 1.25rem;
+	--font-size-xl: 1.5rem;
+	--font-size-xxl: 2rem;
+	--space-1: calc(0.25rem * var(--space));
+	--space-2: calc(0.5rem * var(--space));
+	--space-3: calc(0.75rem * var(--space));
+	--space-4: calc(1rem * var(--space));
+	--space-5: calc(1.5rem * var(--space));
+	--space-6: calc(2rem * var(--space));
+	--icon-s: 16px;
+	--icon-m: 20px;
+	--icon-l: 24px;
+	/* Floating layers only (menus, popups, sheets). */
+	--shadow-float: 0 1px 3px rgb(0 0 0 / 0.12), 0 12px 32px -12px rgb(0 0 0 / 0.35);
+	/* Type (#98): labels ~12.5px, weights top out at 600, big numbers
+	   regular and slightly tight (design §5). */
+	--font-size-label: 0.78125rem;
+	--weight-regular: 400;
+	--weight-medium: 500;
+	--weight-strong: 600;
+	--line-tight: 1.15;
+	--line-body: 1.5;
+	--tracking-tight: -0.01em;
+	/* Motion: small and purposeful; zero under reduced motion (below). */
+	--motion-fast: 120ms;
+	--motion-medium: 200ms;
+	--ease-standard: cubic-bezier(0.2, 0, 0, 1);
+	/* Focus, touch targets, stacking. */
+	--focus-ring: 2px solid var(--focus-colour);
+	--focus-ring-offset: 2px;
+	--hit: 2.75rem;
+	--layer-float: 50;
+	--layer-modal: 100;
+}
+
+/* Every component animates with the motion tokens, so this one block
+   honours prefers-reduced-motion for all of them (#98). */
+@media (prefers-reduced-motion: reduce) {
+	:root {
+		--motion-fast: 0ms;
+		--motion-medium: 0ms;
+	}
 }
 
 body {
 	margin: 0;
+	background: var(--panel);
+	color: var(--text);
 }
 
 main {
@@ -40,8 +115,8 @@ main {
 	padding: 0.6rem 1rem;
 	border: 0;
 	border-radius: 0.4rem;
-	background: #0b6bcb;
-	color: #fff;
+	background: var(--accent);
+	color: var(--on-accent);
 	cursor: pointer;
 }
 
@@ -50,14 +125,18 @@ main {
 	cursor: progress;
 }
 
+/* Error text in --readable-bad (--bad only where it reads, else --text);
+   the bar in --bad is the cue that does not depend on the text colour. */
 .auth .error {
 	margin: 0;
-	color: #c62828;
+	padding-inline-start: var(--space-2);
+	border-inline-start: 3px solid var(--bad);
+	color: var(--readable-bad);
 	font-weight: 600;
 }
 
 .auth .hint {
-	opacity: 0.75;
+	color: var(--readable-muted);
 }
 
 /* Content for assistive tech only: stays in the accessibility tree. */
@@ -93,7 +172,7 @@ button.link {
 	padding: 0;
 	margin: 0 0.75em 0 0;
 	font: inherit;
-	color: var(--link, #2563eb);
+	color: var(--reading-accent);
 	text-decoration: underline;
 	cursor: pointer;
 }
@@ -104,25 +183,18 @@ button.link:disabled {
 	text-decoration: none;
 }
 
-/* Reader word states (#68): new = solid underline + blue tint, learning =
-   dotted underline + amber tint, known = plain. The text colour never
-   changes; the underline colours reach 3:1 against the page and the tint in
-   both themes. The underline and tint are background layers ending 0.12em
-   before the word's last piece ends (.w-end), so neighbouring words of one
-   state stay apart. */
+/* Reader word states (#68, themed in #96): new = solid underline in the
+   accent over the accent tint, learning = dotted underline in `warn` over
+   a `warn` wash, known = plain (design §6 "reader word marks"). The text
+   colour never changes; the line style carries the state in every theme.
+   The underline and tint are background layers ending 0.12em before the
+   word's last piece ends (.w-end), so neighbouring words of one state stay
+   apart. */
 :root {
-	--word-new: #e3eefe;
-	--word-new-line: #1a62c4;
-	--word-learning: #fdf0d8;
-	--word-learning-line: #a35400;
-}
-@media (prefers-color-scheme: dark) {
-	:root {
-		--word-new: #1b2c45;
-		--word-new-line: #7db5ff;
-		--word-learning: #3a2b10;
-		--word-learning-line: #f0a640;
-	}
+	--word-new: var(--accent-14);
+	--word-new-line: var(--accent);
+	--word-learning: color-mix(in srgb, var(--warn) 14%, transparent);
+	--word-learning-line: var(--warn);
 }
 .w-new,
 .w-learning {

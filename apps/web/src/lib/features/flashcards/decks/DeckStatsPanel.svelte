@@ -42,7 +42,7 @@
 
 	dt {
 		font-size: 0.8rem;
-		opacity: 0.75;
+		color: var(--readable-muted);
 	}
 
 	dd {

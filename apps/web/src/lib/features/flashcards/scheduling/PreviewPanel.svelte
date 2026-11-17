@@ -95,11 +95,13 @@
 	}
 
 	.hint {
-		opacity: 0.75;
+		color: var(--readable-muted);
 	}
 
+	/* A warning: --text with the --warn bar as the cue. */
 	.warn {
-		color: #8a5a00;
 		font-weight: 600;
+		padding-inline-start: var(--space-2);
+		border-inline-start: 3px solid var(--warn);
 	}
 </style>

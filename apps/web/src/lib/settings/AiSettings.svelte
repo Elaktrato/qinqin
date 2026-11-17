@@ -331,7 +331,7 @@
 	}
 
 	.ai button.secondary.danger {
-		color: #c62828;
+		color: var(--readable-bad);
 	}
 
 	.badge {
@@ -346,19 +346,21 @@
 	.banner {
 		padding: 0.6rem 0.75rem;
 		border: 1px solid color-mix(in srgb, currentColor 35%, transparent);
-		border-left: 4px solid #b26a00;
+		border-left: 4px solid var(--warn);
 		border-radius: 0.4rem;
 	}
 
+	/* A warning: the text in --text, the --warn bar as the cue. */
 	.warn {
 		font-weight: 600;
-		color: #b26a00;
+		padding-inline-start: var(--space-2);
+		border-inline-start: 3px solid var(--warn);
 	}
 
 	.muted,
 	.usage,
 	.note {
-		opacity: 0.85;
+		color: var(--readable-muted);
 	}
 
 	.live {
@@ -366,22 +368,9 @@
 	}
 
 	.error {
-		color: #c62828;
+		color: var(--readable-bad);
 		font-weight: 600;
-	}
-
-	@media (prefers-color-scheme: dark) {
-		.ai button.secondary.danger,
-		.error {
-			color: #ff8a80;
-		}
-
-		.banner {
-			border-left-color: #ffb74d;
-		}
-
-		.warn {
-			color: #ffb74d;
-		}
+		padding-inline-start: var(--space-2);
+		border-inline-start: 3px solid var(--bad);
 	}
 </style>

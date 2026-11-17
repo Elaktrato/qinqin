@@ -53,8 +53,8 @@ through the study read and its receipt counts the pages. Legacy (no `v`): `colle
 subset of the same set, so a cached v0.3.x or v0.4 old shell keeps working (the
 typed study rows of `docs/contracts/study/` and the keyed `goals:*`, `known:*` and
 `vacation:*` rows travel in both), `/api/plugins/{id}/data` and `/data/{key}`, `/api/events` with `workspace=`,
-and `/api/entries/{id}`; plus stroke data `/hanzi/U<HEX>.json` without credentials (served from the
-installed strokes package; 404 when none is installed). The package catalogue and package downloads
+`/api/entries/{id}` and the theme list `/api/themes` (public and not personal, but cached per credential like every other read; signed out, the web paints from its stored tokens and the compiled-in fallback, `themes/`); plus stroke data `/hanzi/U<HEX>.json` without credentials (served from the
+installed strokes package; 404 when none is installed). The font list `/api/fonts` and the font slices `/fonts/<sha256>.woff2` (#97) are not cached by the worker yet (`bypass`): the web does not use them until it registers pack faces, which adds them (slices cache-first in a shared, content-addressed cache) together with their consumer. The package catalogue and package downloads
 (`/api/packages…`) are never cached by the worker: the web reads the catalogue only for Settings and
 installs no packages.
 Everything else (every non-GET request, admin, account, auth except `me`, AI,

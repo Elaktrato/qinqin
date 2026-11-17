@@ -371,8 +371,8 @@
 		min-height: 2.75rem;
 		padding: 0 1rem;
 		border-radius: 0.4rem;
-		background: #0b6bcb;
-		color: #fff;
+		background: var(--accent);
+		color: var(--on-accent);
 		font-weight: 600;
 		cursor: pointer;
 	}
@@ -400,7 +400,7 @@
 	}
 
 	.notice {
-		border-left: 4px solid #b26a00;
+		border-left: 4px solid var(--warn);
 		padding: 0.5rem 0.75rem;
 		font-weight: 600;
 	}

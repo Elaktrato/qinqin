@@ -132,13 +132,12 @@
 	}
 
 	.gap.right {
-		color: #2e7d32;
-		border-color: #2e7d32;
+		border-color: var(--good);
 	}
 
 	.gap.wrong {
-		color: #c62828;
-		border-color: #c62828;
+		color: var(--readable-bad);
+		border-color: var(--bad);
 	}
 
 	.sr-only {
@@ -195,8 +194,8 @@
 
 	.primary {
 		border: 0;
-		background: #0b6bcb;
-		color: #fff;
+		background: var(--accent);
+		color: var(--on-accent);
 	}
 
 	.primary:disabled {
@@ -213,7 +212,7 @@
 	.entry input:focus-visible,
 	.primary:focus-visible,
 	.secondary:focus-visible {
-		outline: 2px solid #0b6bcb;
+		outline: 2px solid var(--focus-colour);
 		outline-offset: 2px;
 	}
 
@@ -221,21 +220,21 @@
 		min-height: 1.4rem;
 		margin: 0.75rem 0 0;
 		font-weight: 600;
-		color: #2e7d32;
+		color: var(--text);
 	}
 
 	.feedback.bad {
-		color: #c62828;
+		color: var(--readable-bad);
 	}
 
 	.translation {
 		margin: 1rem 0 0;
 		font-size: 1.05rem;
-		opacity: 0.85;
+		color: var(--readable-muted);
 	}
 
 	.reading {
 		margin: 0.35rem 0 0;
-		opacity: 0.8;
+		color: var(--readable-muted);
 	}
 </style>

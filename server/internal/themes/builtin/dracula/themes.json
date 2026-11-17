@@ -1,0 +1,3 @@
+[
+	{"id": "dracula", "name": "Dracula", "family": "Dracula", "scheme": "dark", "colors": {"chrome": "#21222c", "panel": "#282a36", "raised": "#44475a", "line": "#6272a4", "text": "#f8f8f2", "muted": "#6272a4", "good": "#50fa7b", "warn": "#f1fa8c", "bad": "#ff5555", "gradeAgain": "#ff5555", "gradeHard": "#ffb86c", "gradeGood": "#50fa7b", "gradeEasy": "#bd93f9"}, "accents": {"purple": "#bd93f9", "pink": "#ff79c6", "cyan": "#8be9fd", "green": "#50fa7b", "orange": "#ffb86c", "red": "#ff5555", "yellow": "#f1fa8c"}, "defaultAccent": "purple"}
+]
