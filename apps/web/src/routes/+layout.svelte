@@ -10,7 +10,7 @@
 	import WorkspaceCreateForm from '$lib/components/WorkspaceCreateForm.svelte';
 	import WorkspacePicker from '$lib/components/WorkspacePicker.svelte';
 	import { auth, loadMe, restriction, user } from '$lib/auth';
-	import { visibleNavPages, webPlugins } from '$lib/plugins';
+	import { navLinks } from '$lib/features';
 	import { setHookStates } from '$lib/plugins/hooks';
 	import { loadPluginStates, pluginStates, resetPluginStates } from '$lib/plugins/states';
 	import { recordSessionWhenSettled } from '$lib/events';
@@ -50,7 +50,8 @@
 	const workspaceError = $derived($workspacesLoadError);
 
 	const path = $derived(normalizePath(page.url.pathname));
-	const pluginLinks = $derived(visibleNavPages(webPlugins, $pluginStates));
+	// The core features first, then the enabled plugins in the user's order.
+	const pluginLinks = $derived(navLinks($pluginStates));
 	// The study-event hook delivers only to plugins the user enabled.
 	$effect(() => {
 		setHookStates($pluginStates.status === 'ready' ? $pluginStates.list : []);

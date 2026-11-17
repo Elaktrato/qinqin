@@ -130,8 +130,8 @@ func TestStatsActivityDefaults(t *testing.T) {
 		t.Fatalf("sources = %d, want 3", len(body.Sources))
 	}
 	want := []struct{ typ, plugin, unit string }{
-		{"review", "qinqin-flashcards", "count"},
-		{"read", "qinqin-reader", "seconds"},
+		{"review", "qinqin-core", "count"},
+		{"read", "qinqin-core", "seconds"},
 		{"journal", "qinqin-journal", "count"},
 	}
 	for i, w := range want {

@@ -11,7 +11,7 @@
  "counts": {
   "workspaces": 2,
   "events": 6,
-  "pluginData": 6,
+  "pluginData": 12,
   "overlays": 1,
   "sentences": 1,
   "books": 1,
@@ -56,8 +56,8 @@
   },
   {
    "name": "plugin-data/000001.jsonl",
-   "bytes": 1798,
-   "sha256": "5ff30e30d692018996cc3796a8fdf92395f36813a943e5487cd0eca6380217df"
+   "bytes": 3480,
+   "sha256": "b56308389c17caaf09302b4b889d7d8bdfae4f762326b9cdfb0733604f9962f5"
   },
   {
    "name": "refs/dictionaries.json",

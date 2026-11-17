@@ -20,6 +20,8 @@ import (
 
 	"qinqin/internal/auth"
 	"qinqin/internal/lang"
+	"qinqin/internal/study"
+	"qinqin/internal/study/rows"
 )
 
 // Errors a restore reports before it has changed anything.
@@ -389,12 +391,14 @@ func applyRestore(ctx context.Context, tx *sql.Tx, d RestoreDeps, userID, keepSe
 	}); err != nil {
 		return nil, err
 	}
-	// 6. library
+	// 6. library. Every restored library row is a new row of this server:
+	// updated_at = the restore time (a delta pull from an earlier cursor ships
+	// it, like a restored plugin row); createdAt is the archive's.
 	for _, b := range a.Books {
 		r, err := tx.ExecContext(ctx, `INSERT INTO library_books (user_id, workspace_id, language, title, author, source, source_id, source_url,
-			attribution, license_note, chapter_count, position, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+			attribution, license_note, chapter_count, position, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 			userID, m.Workspaces[b.WorkspaceID], b.Language, b.Title, b.Author, b.Source, b.SourceID, b.SourceURL,
-			b.Attribution, b.LicenseNote, b.ChapterCount, b.Position, b.CreatedAt)
+			b.Attribution, b.LicenseNote, b.ChapterCount, b.Position, b.CreatedAt, now)
 		if err != nil {
 			return nil, fmt.Errorf("backup: book: %w", err)
 		}
@@ -403,8 +407,8 @@ func applyRestore(ctx context.Context, tx *sql.Tx, d RestoreDeps, userID, keepSe
 		res.Restored.Books++
 	}
 	if err := a.Bookmarks(func(b Bookmark) error {
-		if _, err := tx.ExecContext(ctx, `INSERT INTO library_bookmarks (user_id, book_id, position, label, created_at) VALUES (?, ?, ?, ?, ?)`,
-			userID, m.Books[b.BookID], b.Position, b.Label, b.CreatedAt); err != nil {
+		if _, err := tx.ExecContext(ctx, `INSERT INTO library_bookmarks (user_id, book_id, position, label, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)`,
+			userID, m.Books[b.BookID], b.Position, b.Label, b.CreatedAt, now); err != nil {
 			return fmt.Errorf("backup: bookmark: %w", err)
 		}
 		res.Restored.Bookmarks++
@@ -415,7 +419,7 @@ func applyRestore(ctx context.Context, tx *sql.Tx, d RestoreDeps, userID, keepSe
 	if err := a.Highlights(func(h Highlight) error {
 		if _, err := tx.ExecContext(ctx, `INSERT INTO library_highlights (user_id, book_id, chapter, paragraph, start_cp, end_cp, text, color, note, created_at, updated_at)
 			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-			userID, m.Books[h.BookID], h.Chapter, h.Paragraph, h.StartCP, h.EndCP, h.Text, h.Color, h.Note, h.CreatedAt, h.UpdatedAt); err != nil {
+			userID, m.Books[h.BookID], h.Chapter, h.Paragraph, h.StartCP, h.EndCP, h.Text, h.Color, h.Note, h.CreatedAt, now); err != nil {
 			return fmt.Errorf("backup: highlight: %w", err)
 		}
 		res.Restored.Highlights++
@@ -444,6 +448,22 @@ func applyRestore(ctx context.Context, tx *sql.Tx, d RestoreDeps, userID, keepSe
 		nr, drop := m.PluginRow(r)
 		if drop {
 			res.DroppedRows++
+			return nil
+		}
+		// A typed study family goes to its typed table through the codec
+		// (one storage); updated_at = now as below, version and edit time kept.
+		if row, typed, ok := typedRow(nr); typed {
+			if !ok {
+				res.DroppedRows++
+				return nil
+			}
+			if err := study.InsertStored(ctx, tx, userID, row, int(nr.Version), now, restoredModified(nr, now), nil); err != nil {
+				return fmt.Errorf("backup: study row: %w", err)
+			}
+			res.Restored.PluginData++
+			if row.Family() == rows.Cards {
+				res.Restored.Cards++
+			}
 			return nil
 		}
 		var ws any

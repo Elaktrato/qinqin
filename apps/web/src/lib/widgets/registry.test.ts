@@ -114,6 +114,7 @@ describe('allWidgets', () => {
 			['qinqin-flashcards', 'normal'],
 			['qinqin-reader', 'normal']
 		]);
+		// The reader has no state row here: its widget stays away, as in v0.3.0.
 		expect(ids(allWidgets(webPlugins, [state('qinqin-flashcards', false)], 'zh'))).toEqual([
 			'activity-heatmap',
 			'character-map-summary',

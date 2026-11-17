@@ -1,7 +1,9 @@
 package backup
 
 import (
+	"context"
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -9,6 +11,8 @@ import (
 	"testing"
 
 	"qinqin/internal/db"
+	"qinqin/internal/study"
+	"qinqin/internal/study/rows"
 )
 
 func newTestDB(t *testing.T) *sql.DB {
@@ -112,12 +116,34 @@ func seedUserData(t *testing.T, sqlDB *sql.DB, dataDir string, uid, e1, e2, dict
 		exec(t, sqlDB, `INSERT INTO plugin_data (pack_id, user_id, workspace_id, key, data, version, updated_at, modified_at) VALUES (?, ?, ?, ?, ?, 2, '2026-11-10T08:00:00Z', ?)`, pack, uid, ws, key, data, modified)
 		s.PluginCount++
 	}
-	pd("qinqin-flashcards", s.WS1, fmt.Sprintf("card:c-vocab-%d", e1), fmt.Sprintf(`{"id":"c-vocab-%d","kind":"vocab","entryId":%d,"deckIds":["general"]}`, e1, e1), "2026-11-10T08:00:00Z")
-	pd("qinqin-flashcards", s.WS1, fmt.Sprintf("card:c-reverse-%d", e1), fmt.Sprintf(`{"id":"c-reverse-%d","kind":"reverse","entryId":%d,"deckIds":["general"],"x-unknown":{"b":1,"a":2}}`, e1, e1), nil)
-	pd("qinqin-flashcards", s.WS2, "card:SENTCARD01", fmt.Sprintf(`{"id":"SENTCARD01","kind":"sentence","entryId":%d,"sentenceId":%d,"deckIds":[]}`, e2, s.PackSent), "2026-11-10T08:00:00Z")
+	// Cards are typed study rows (migration 038); a backup carries them as
+	// their legacy qinqin-flashcards rows.
+	typed := func(ws int64, key, data string) {
+		r, err := rows.FromLegacy(key, json.RawMessage(data))
+		if err != nil {
+			t.Fatalf("seed %s: %v", key, err)
+		}
+		r.M().WorkspaceID = ws
+		if err := study.InsertStored(context.Background(), sqlDB, uid, r, 2, "2026-11-10T08:00:00Z", "2026-11-10T08:00:00Z", nil); err != nil {
+			t.Fatal(err)
+		}
+		s.PluginCount++
+	}
+	typed(s.WS1, fmt.Sprintf("card:c-vocab-%d", e1), fmt.Sprintf(`{"id":"c-vocab-%d","kind":"vocab","entryId":%d,"deckIds":["general"],"createdAt":"2026-11-10T08:00:00Z"}`, e1, e1))
+	typed(s.WS1, fmt.Sprintf("card:c-reverse-%d", e1), fmt.Sprintf(`{"id":"c-reverse-%d","kind":"reverse","entryId":%d,"deckIds":["general"],"createdAt":"2026-11-10T08:00:00Z","x-unknown":{"b":1,"a":2}}`, e1, e1))
+	typed(s.WS2, "card:SENTCARD01", fmt.Sprintf(`{"id":"SENTCARD01","kind":"sentence","entryId":%d,"sentenceId":%d,"deckIds":[],"createdAt":"2026-11-10T08:00:00Z"}`, e2, s.PackSent))
 	pd("qinqin-flashcards", nil, "vacation:01JD00000000000000000V001", fmt.Sprintf(`{"id":"01JD00000000000000000V001","from":"2026-12-20","to":"2026-12-27","scope":{"workspaces":[%d]}}`, s.WS1), "2026-11-13T00:00:00Z")
-	pd("other-plugin", nil, "settings", `{"theme":"dark"}`, "2026-11-10T08:00:00Z")
+	pd("other-plugin", nil, "settings", `{"theme":"dark"}`, nil)
 	exec(t, sqlDB, `INSERT INTO plugin_data (pack_id, user_id, workspace_id, key, data, version, updated_at, deleted_at) VALUES ('qinqin-flashcards', ?, ?, 'card:TOMBSTONE', '{}', 3, 't', 't')`, uid, s.WS1)
+	// A leftover row the migration could not read (no createdAt), and a
+	// typed tombstone: neither is ever exported.
+	exec(t, sqlDB, `INSERT INTO plugin_data (pack_id, user_id, workspace_id, key, data, version, updated_at) VALUES ('qinqin-flashcards', ?, ?, 'card:LEFTOVER', '{"id":"LEFTOVER","kind":"vocab","entryId":1,"deckIds":[]}', 1, '2026-11-10T08:00:00Z')`, uid, s.WS1)
+	gone, _ := rows.FromLegacy("deck:GONE", json.RawMessage(`{"id":"GONE","name":"Gone","createdAt":"t"}`))
+	gone.M().WorkspaceID = s.WS1
+	deletedAt := "2026-11-10T09:00:00Z"
+	if err := study.InsertStored(context.Background(), sqlDB, uid, gone, 3, deletedAt, deletedAt, &deletedAt); err != nil {
+		t.Fatal(err)
+	}
 	exec(t, sqlDB, `INSERT INTO plugin_states (user_id, pack_id, enabled, ord, updated_at) VALUES (?, 'qinqin-flashcards', 1, 2, 't')`, uid)
 	exec(t, sqlDB, `INSERT INTO user_edits (user_id, entry_id, written, readings, updated_at) VALUES (?, ?, 'edited', NULL, '2026-11-09T00:00:00Z')`, uid, e1)
 	exec(t, sqlDB, `INSERT INTO user_time_zones (user_id, seq, zone, effective_from, created_at) VALUES (?, 0, 'Europe/Berlin', NULL, 't'), (?, 1, 'Asia/Tokyo', '2026-11-05T00:00:00Z', 't')`, uid, uid)

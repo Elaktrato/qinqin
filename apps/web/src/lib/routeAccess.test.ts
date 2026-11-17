@@ -42,6 +42,10 @@ describe('routeAccess', () => {
 		expect(routeAccess('/stats')).toBe('private');
 		expect(routeAccess('/stats/characters')).toBe('private');
 		expect(routeAccess('/study/map')).toBe('private');
+		// The core feature routes (v0.4.0) are signed-in pages.
+		expect(routeAccess('/flashcards')).toBe('private');
+		expect(routeAccess('/flashcards/deck/general')).toBe('private');
+		expect(routeAccess('/reader/book/1/0')).toBe('private');
 		expect(routeAccess('/no-such-page')).toBe('private');
 	});
 });

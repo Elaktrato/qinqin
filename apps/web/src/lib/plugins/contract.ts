@@ -75,8 +75,6 @@ export function builtinManifests(): ContractManifest[] {
 	return BUILTINS;
 }
 
-const CORE_ID = 'qinqin-core';
-
 let registered: unknown[] | null = null;
 
 /**
@@ -89,24 +87,27 @@ export function setRegisteredManifests(manifests: unknown[] | null): void {
 	registered = manifests;
 }
 
-function eventTypes(manifest: unknown): string[] {
+function activityTypes(manifest: unknown): string[] {
 	if (typeof manifest !== 'object' || manifest === null) return [];
-	const m = manifest as { id?: unknown; events?: unknown };
-	if (m.id === CORE_ID || !Array.isArray(m.events)) return [];
-	return m.events.flatMap((e) =>
-		typeof e === 'object' && e !== null && typeof (e as { type?: unknown }).type === 'string'
-			? [(e as { type: string }).type]
-			: []
-	);
+	const m = manifest as { events?: unknown };
+	if (!Array.isArray(m.events)) return [];
+	return m.events.flatMap((e) => {
+		if (typeof e !== 'object' || e === null) return [];
+		const decl = e as { type?: unknown; activity?: unknown };
+		return typeof decl.type === 'string' && typeof decl.activity === 'object' && decl.activity !== null
+			? [decl.type]
+			: [];
+	});
 }
 
 /**
- * logChangingTypes is every event type declared by a built-in or a
- * registered plugin other than the core: only those change what the
- * readers of the full event log show. The core's `session` event is
- * posted on every home load, and dropping the cached log for it would
- * defeat the cache.
+ * logChangingTypes is every event type with an activity rule declared by a
+ * built-in or a registered plugin (today review and read from the core,
+ * journal from the journal): only those change what the readers of the
+ * full event log show. The core's `session`, `view` and `lookup` events
+ * have no rule; `session` is posted on every home load, and dropping the
+ * cached log for it would defeat the cache.
  */
 export function logChangingTypes(): ReadonlySet<string> {
-	return new Set([...BUILTINS, ...(registered ?? [])].flatMap(eventTypes));
+	return new Set([...BUILTINS, ...(registered ?? [])].flatMap(activityTypes));
 }

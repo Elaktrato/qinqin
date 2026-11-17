@@ -54,7 +54,8 @@ func tableCounts(t *testing.T, db *sql.DB) map[string]int {
 	t.Helper()
 	out := map[string]int{}
 	for _, tb := range []string{"users", "workspaces", "study_events", "plugin_data", "plugin_states", "user_edits", "sentences",
-		"library_books", "library_bookmarks", "library_highlights", "user_time_zones", "sessions", "entries"} {
+		"library_books", "library_bookmarks", "library_highlights", "user_time_zones", "sessions", "entries",
+		"study_cards", "study_decks", "study_deck_settings", "study_limits", "study_fsrs_sets", "study_fsrs_active", "library_deletions"} {
 		var n int
 		db.QueryRow(`SELECT COUNT(*) FROM ` + tb).Scan(&n)
 		out[tb] = n

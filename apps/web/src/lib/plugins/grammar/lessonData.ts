@@ -2,8 +2,8 @@
 // reader's script setting (Chinese only) before tiles are cut or a gap
 // is found.
 
-import { prepareVariant, convertText, type Variant } from '../reader/variants';
-import { browserStorage, loadPrefs } from '../reader/prefs';
+import { prepareVariant, convertText, type Variant } from '$lib/features/reader/variants';
+import { browserStorage, loadPrefs } from '$lib/features/reader/prefs';
 import { loadLesson } from './api';
 import { convertLesson } from './exercises';
 import type { Lesson, LessonView } from './types';

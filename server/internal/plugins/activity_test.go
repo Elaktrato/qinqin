@@ -78,10 +78,10 @@ func TestParseManifestActivity(t *testing.T) {
 
 func TestBuiltinActivityRules(t *testing.T) {
 	want := map[string]plugins.ActivityRule{
-		"qinqin-flashcards": {Label: "Flashcard reviews", Describe: plugins.Plural{One: "{n} flashcard review", Other: "{n} flashcard reviews"}},
-		"qinqin-reader": {Label: "Reading", Describe: plugins.Plural{One: "{n} minute of reading", Other: "{n} minutes of reading"},
+		"qinqin-core/review": {Label: "Flashcard reviews", Describe: plugins.Plural{One: "{n} flashcard review", Other: "{n} flashcard reviews"}},
+		"qinqin-core/read": {Label: "Reading", Describe: plugins.Plural{One: "{n} minute of reading", Other: "{n} minutes of reading"},
 			Measure: &plugins.Measure{Field: "seconds", Unit: "seconds", Min: 30, Max: 7200}, PointsPer: 300},
-		"qinqin-journal": {Label: "Journal entries", Describe: plugins.Plural{One: "{n} journal entry", Other: "{n} journal entries"}, DistinctBy: "entryId"},
+		"qinqin-journal/journal": {Label: "Journal entries", Describe: plugins.Plural{One: "{n} journal entry", Other: "{n} journal entries"}, DistinctBy: "entryId"},
 	}
 	seen := 0
 	for _, raw := range plugins.Builtin() {
@@ -89,20 +89,18 @@ func TestBuiltinActivityRules(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		w, ok := want[m.ID]
-		if !ok {
-			if m.Events != nil {
-				for _, e := range m.Events {
-					if e.Activity != nil {
-						t.Errorf("%s/%s unexpectedly has a rule", m.ID, e.Type)
-					}
+		for _, e := range m.Events {
+			w, ok := want[m.ID+"/"+e.Type]
+			if !ok {
+				if e.Activity != nil {
+					t.Errorf("%s/%s unexpectedly has a rule", m.ID, e.Type)
 				}
+				continue
 			}
-			continue
-		}
-		seen++
-		if got := m.Events[0].Activity; got == nil || !reflect.DeepEqual(*got, w) {
-			t.Errorf("%s rule = %+v, want %+v", m.ID, got, w)
+			seen++
+			if got := e.Activity; got == nil || !reflect.DeepEqual(*got, w) {
+				t.Errorf("%s/%s rule = %+v, want %+v", m.ID, e.Type, got, w)
+			}
 		}
 	}
 	if seen != 3 {
@@ -139,7 +137,7 @@ func TestActivityRules(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	want := []string{"review/qinqin-flashcards", "read/qinqin-reader", "journal/qinqin-journal"}
+	want := []string{"review/qinqin-core", "read/qinqin-core", "journal/qinqin-journal"}
 	if !reflect.DeepEqual(pairs(got), want) {
 		t.Fatalf("builtins = %v, want %v", pairs(got), want)
 	}

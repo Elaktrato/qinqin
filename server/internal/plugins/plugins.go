@@ -272,11 +272,19 @@ func featurePlugins(ctx context.Context, sqlDB *sql.DB) ([]model.PluginInfo, err
 	return list, nil
 }
 
+// CoreFeatureIDs are the reserved registry rows of the core features
+// flashcards and the reader: not plugins, but each user's state row of them
+// is that user's feature switch.
+var CoreFeatureIDs = []string{"qinqin-flashcards", "qinqin-reader"}
+
 // isHiddenBuiltin reports whether a registry row is one of the built-in
-// plugins and declares no surface: nothing a user can switch or visit.
+// plugins and declares no surface: not a plugin to list (the core row).
+// The two core feature rows declare no surface either but are listed
+// unhidden: a cached v0.3.x web shell leaves hidden rows out of Settings
+// and would lose the two switches; new clients know the reserved ids.
 // Admin-registered plugins are never hidden, whatever they declare.
 func isHiddenBuiltin(id, manifest string) bool {
-	if !slices.Contains(BuiltinIDs(), id) {
+	if !slices.Contains(BuiltinIDs(), id) || slices.Contains(CoreFeatureIDs, id) {
 		return false
 	}
 	var m struct {

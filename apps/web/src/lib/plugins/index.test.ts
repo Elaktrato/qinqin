@@ -90,25 +90,6 @@ describe('plugin pages', () => {
 	});
 });
 
-describe('reader registration', () => {
-	it('shows the Reader nav link when enabled and hides it when disabled', () => {
-		expect(navPages(webPlugins, []).filter((link) => link.href === '/p/reader')).toEqual([
-			{ slug: 'reader', title: 'Reader', href: '/p/reader' }
-		]);
-		expect(
-			navPages(webPlugins, [state('qinqin-reader', 0, false)]).filter((link) => link.slug === 'reader')
-		).toEqual([]);
-	});
-
-	it('gives the reader only its reading-time widget', () => {
-		const reader = webPlugins.find((p) => p.manifest.id === 'qinqin-reader');
-
-		expect((reader?.manifest.widgets ?? []).map((w) => [w.id, w.owner])).toEqual([
-			['reading-time', 'qinqin-reader']
-		]);
-	});
-});
-
 describe('isCorePlugin', () => {
 	it('recognises only the core app registry row', () => {
 		expect(isCorePlugin('qinqin-core')).toBe(true);
@@ -124,15 +105,14 @@ describe('visibleNavPages', () => {
 		}
 	});
 
-	it('shows the links of enabled plugins once ready', () => {
-		expect(visibleNavPages(webPlugins, { list: [], status: 'ready' }).map((l) => l.href)).toContain(
-			'/p/reader'
-		);
+	it('shows the links of enabled plugins once ready (the core features are not plugins)', () => {
+		const ready = visibleNavPages(webPlugins, { list: [], status: 'ready' }).map((l) => l.href);
+		expect(ready).toEqual(['/p/journal', '/p/grammar']);
 		expect(
 			visibleNavPages(webPlugins, {
-				list: [state('qinqin-reader', 0, false)],
+				list: [state('qinqin-journal', 0, false)],
 				status: 'ready'
 			}).map((l) => l.href)
-		).not.toContain('/p/reader');
+		).toEqual(['/p/grammar']);
 	});
 });

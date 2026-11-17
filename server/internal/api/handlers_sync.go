@@ -44,10 +44,11 @@ func (s *server) handleSyncPull(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, delta)
 }
 
-// handleSyncPush serves POST /api/sync/push: a client's offline events
-// and plugin data. Events are idempotent by id; plugin data is
-// last-write-wins. A foreign or unknown workspace or plugin is 404 and
-// nothing in the push is applied. Authenticated.
+// handleSyncPush serves POST /api/sync/push: a client's offline events,
+// plugin data and typed study rows. Events are idempotent by id; plugin
+// data and typed rows are last-write-wins. A malformed item is 400, a
+// foreign or unknown workspace or plugin is 404, and then nothing in the
+// push is applied; an item above 256 KiB is 413. Authenticated.
 func (s *server) handleSyncPush(w http.ResponseWriter, r *http.Request) {
 	u := s.requireUser(w, r)
 	if u == nil {
@@ -63,6 +64,15 @@ func (s *server) handleSyncPush(w http.ResponseWriter, r *http.Request) {
 		if len(d.Data) > maxPluginDataValue {
 			writeTooLarge(w) // the per-value cap of PUT /api/plugins/{id}/data/{key}
 			return
+		}
+	}
+	// A typed study row replaces a plugin-data row: the same per-item cap.
+	for _, coll := range body.Typed() {
+		for _, item := range coll.Items {
+			if len(item) > maxPluginDataValue {
+				writeTooLarge(w)
+				return
+			}
 		}
 	}
 	res, err := chinsync.Push(r.Context(), s.db, u.ID, body)

@@ -104,7 +104,7 @@
 	emptyText="No reading tracked yet. Open a book in the Reader to start."
 >
 	{#snippet actions()}
-		<a class="open" href="/p/reader">Reader</a>
+		<a class="open" href="/reader">Reader</a>
 	{/snippet}
 
 	{#if totals !== null}

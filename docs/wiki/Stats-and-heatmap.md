@@ -2,7 +2,7 @@
 
 **Stats** is in the footer of every signed-in page (`/stats`). It has up to three tabs.
 
-- **Overview** shows every widget that applies to the current workspace, in a fixed order (core first, then plugins).
+- **Overview** shows every widget that applies to the current workspace, in a fixed order (core first, then flashcards and the reader, then plugins).
 - **Week** (`/stats/week`) is the [weekly summary](Weekly-summary): one week, Monday to Sunday, compared with the week before; previous weeks are a link away. It needs a workspace.
 - **Characters** (`/stats/characters`) is the mastery map. It exists only in Chinese and Japanese workspaces; elsewhere the tab is hidden and a direct visit explains why. The old address `/study/map` redirects here.
 
@@ -16,7 +16,7 @@
 | Words | How far each word has come: New, Learning, Young (under 21 days), Mature; one row per deck | all |
 | Reading time | Total, last 7 and last 30 days, five most read books | all |
 
-The [Daily goal](Daily-goals) widget and the **This week** widget ([Weekly summary](Weekly-summary)) are on the home page only; Stats has the Week tab instead. A plugin's widgets only appear while that plugin is enabled. The home page shows the widgets of your own layout (see [Settings tour](Settings-tour)).
+The [Daily goal](Daily-goals) widget and the **This week** widget ([Weekly summary](Weekly-summary)) are on the home page only; Stats has the Week tab instead. A plugin's widgets only appear while that plugin is enabled, and the flashcards and reader widgets while you have not switched that feature off (Settings → Features). The home page shows the widgets of your own layout (see [Settings tour](Settings-tour)).
 
 ## The activity heatmap
 

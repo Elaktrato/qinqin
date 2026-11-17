@@ -2,11 +2,20 @@
 	import { pageTitle } from '$lib/pageTitle';
 	import { onMount } from 'svelte';
 	import { page } from '$app/state';
+	import { goto } from '$app/navigation';
+	import { legacyRedirect } from '$lib/legacyRoutes';
 	import { findPlugin, webPlugins } from '$lib/plugins';
 	import { loadPluginStates, pluginStates } from '$lib/plugins/states';
 
+	// Flashcards and the reader moved to /flashcards and /reader (v0.4.0):
+	// old links land there, and the redirect replaces this history entry.
+	const moved = $derived(legacyRedirect(page.url));
+	$effect(() => {
+		if (moved !== null) void goto(moved, { replaceState: true });
+	});
+
 	const view = $derived(
-		$pluginStates.status === 'ready'
+		$pluginStates.status === 'ready' && moved === null
 			? findPlugin(page.params.plugin ?? '', webPlugins, $pluginStates.list)?.pages?.[0]
 			: undefined
 	);

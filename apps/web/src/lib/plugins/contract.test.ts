@@ -23,7 +23,7 @@ describe('sdkSupported', () => {
 });
 
 describe('logChangingTypes', () => {
-	it('is the event types of every non-core built-in', () => {
+	it('is the event types with an activity rule of every built-in', () => {
 		expect([...logChangingTypes()].sort()).toEqual(['journal', 'read', 'review']);
 	});
 });
@@ -31,9 +31,9 @@ describe('logChangingTypes', () => {
 describe('logChangingTypes with registered plugins', () => {
 	afterEach(() => setRegisteredManifests(null));
 
-	it('adds the event types of admin-registered plugins', () => {
+	it('adds the event types with an activity rule of admin-registered plugins', () => {
 		setRegisteredManifests([
-			{ id: 'zz-grammar', sdk: 1, events: [{ type: 'drill' }, { type: 'review' }] },
+			{ id: 'zz-grammar', sdk: 1, events: [{ type: 'drill', activity: { label: 'Drill', describe: { one: '{n}', other: '{n}' } } }, { type: 'review' }, { type: 'quiet' }] },
 			{ id: 'qinqin-core', sdk: 1, events: [{ type: 'session' }] },
 			{ id: 'junk', events: 'nope' },
 			null

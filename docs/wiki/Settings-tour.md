@@ -1,6 +1,6 @@
 # Settings tour
 
-Settings is in the footer of every signed-in page. The open tab is part of the address (`/settings?tab=home`), so you can bookmark or share a tab. Tabs are Workspaces, Home, Study, Plugins, AI and Account for everyone, and Data and Admin for administrators.
+Settings is in the footer of every signed-in page. The open tab is part of the address (`/settings?tab=home`), so you can bookmark or share a tab. Tabs are Workspaces, Home, Study, Features, Plugins, AI and Account for everyone, and Data and Admin for administrators.
 
 ## Workspaces
 
@@ -18,9 +18,13 @@ Chooses and orders the home-page widgets. Each widget has an "On the home page" 
 - **Show my notes on the answer side** (per workspace, on by default): your personal notes on words below a revealed flashcard ([Flashcards: study sessions](Flashcards-study-sessions)).
 - A link to Scheduling ([Scheduling and FSRS](Scheduling-and-FSRS)).
 
+## Features
+
+Switch **Decks** (flashcards) or the **Reader** off for yourself. A switched-off feature's page, navigation link and widgets are hidden for you only; nothing is deleted, and reviews and reading time from another device still count in your stats and goals. Switch it back on at any time.
+
 ## Plugins
 
-Switch feature plugins on or off (flashcards, Reader, Journal and others). Each plugin lists the permissions it declared and the third-party material it uses. Switching a plugin off hides its pages and widgets.
+Switch feature plugins on or off (Journal, Grammar and others). Each plugin lists the permissions it declared and the third-party material it uses. Switching a plugin off hides its pages and widgets.
 
 ## AI
 

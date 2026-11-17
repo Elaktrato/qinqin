@@ -1,13 +1,12 @@
-// Deck and card definitions as workspace-scoped plugin data. Reads come
-// from one sync pull; writes are single-key PUTs and a delete is a
-// tombstoning DELETE. A missing current workspace is an error: study
+// The study state of a workspace. Cards, decks, deck settings, limits and
+// FSRS sets are typed core rows (docs/contracts/study/), read from one sync
+// pull; the keyed rows goals:workspace, known:* and vacation:* stay plugin
+// data of the study namespace `qinqin-flashcards`. A missing current workspace is an error: study
 // data must never fall back to user-global or another workspace's rows.
 // The one explicit exception: `vacation:*` rows are user-global (they
 // apply to every workspace or a chosen list) and are read from rows with
 // no workspace (docs/contracts/scheduler/).
-// Rows of the workspace: deck:*, card:*, deckcfg:*, fsrs:set:*, fsrs:active,
-// limits:workspace, limits:deck:*, and the daily goal goals:workspace
-// (docs/contracts/goals/).
+// The daily goal is goals:workspace (docs/contracts/goals/).
 
 import { get } from "svelte/store";
 import { ApiError, api } from "../api/client";
@@ -16,40 +15,55 @@ import { workspaces } from "../workspaces";
 import { fullLogPath, type StudyEvent } from "../events";
 import { canonicalCards, cleanSkipKinds, compareCanonical, newCardId } from "./canonical";
 import {
-  ACTIVE_KEY,
   DEFAULT_W,
-  SET_PREFIX,
-  parseParamSet,
   resolveState,
   type ParamSet,
 } from "./fsrs/params";
 import {
-  DECKCFG_PREFIX,
-  deckSettingsKey,
-  parseDeckSettings,
-  serializeDeckSettings,
   cleanCardTypes,
   type DeckSettings,
 } from "./deckSettings";
 import type { NewOrder } from "./newOrder";
 import { cardKey, parseReview } from "./reviewParse";
-import { VACATION_PREFIX, parseVacation, type VacationPeriod } from "./vacation";
 import {
-  LIMITS_DECK_PREFIX,
-  LIMITS_WORKSPACE_KEY,
-  limitsDeckKey,
-  parseLimitRow,
-  type LimitPair,
-} from "./limits";
+  STUDY_COLLECTIONS,
+  activeOf,
+  activeRow,
+  bodyOf,
+  cardRow,
+  deckRow,
+  limitsRow,
+  sameBody,
+  setRow,
+  settingsRow,
+  studyKey,
+  cardOf,
+  deckOf,
+  identityOf,
+  legacyFamily,
+  limitsOf,
+  parseRow,
+  setOf,
+  settingsOf,
+  type CardRow,
+  type DeckRow,
+  type DeckSettingsRow,
+  type FsrsSetRow,
+  type FsrsActiveRow,
+  type LimitsRow,
+  type StudyCollection,
+  type StudyRow,
+  type StudyRowBody,
+} from "./rows";
+import { VACATION_PREFIX, parseVacation, type VacationPeriod } from "./vacation";
+import type { LimitPair } from "./limits";
 import { GOALS_KEY, parseGoalsRow, type GoalsRow, type ParsedGoals } from "../goals/goals";
 import { pendingReviews } from "./events";
 import { outboxUser } from "./outboxUser";
 import { recentSentReviews } from "./recentSent";
 import { KNOWN_PREFIX, knownMarkKey, knownMarkRow, parseKnownMark } from "./knownMarks";
 import {
-  CARD_KINDS,
   type Deck,
-  type DeckSource,
   type OptInKind,
   type ReviewEvent,
   type StudyCard,
@@ -63,11 +77,15 @@ export const FLASHCARDS_PLUGIN_ID = "qinqin-flashcards";
 // The implicit deck always exists; it is never written to plugin data.
 export const GENERAL_DECK_ID = "general";
 
-const DECK_PREFIX = "deck:";
-const CARD_PREFIX = "card:";
-/** Every plugin row of the user (decks, cards, FSRS sets, vacation and limits rows). */
+/**
+ * The study pull: the keyed plugin rows (goals, known marks, vacations), the
+ * feature switches, and the six typed study collections. Naming a typed
+ * collection keeps the server's legacy view (typed rows copied into
+ * pluginData for old shells) out of this answer (docs/contracts/study/).
+ */
 export const SYNC_PULL_PATH =
-  "/api/sync/pull?cursor=1970-01-01T00:00:00Z&collections=pluginData,pluginStates";
+  "/api/sync/pull?cursor=1970-01-01T00:00:00Z&collections=pluginData,pluginStates," +
+  STUDY_COLLECTIONS.join(",");
 
 // Only the fields the study layer reads; the server sends more.
 interface PluginDataRow {
@@ -79,9 +97,7 @@ interface PluginDataRow {
   updatedAt: unknown;
 }
 
-interface SyncDelta {
-  pluginData?: unknown;
-}
+type SyncDelta = { pluginData?: unknown } & Partial<Record<StudyCollection, unknown>>;
 
 /**
  * requireWorkspaceId returns the selected workspace id. Study data is
@@ -95,14 +111,6 @@ function requireWorkspaceId(): number {
     throw new Error("no workspace selected: study data is workspace-scoped");
   }
   return workspace.id;
-}
-
-function deckKey(id: string): string {
-  return `${DECK_PREFIX}${id}`;
-}
-
-function cardRowKey(id: string): string {
-  return `${CARD_PREFIX}${id}`;
 }
 
 function dataPath(key: string, workspaceId: number): string {
@@ -137,87 +145,26 @@ function asPluginDataRow(value: unknown): PluginDataRow | null {
   return { pluginId, key, workspaceId: workspace, data, deletedAt, updatedAt };
 }
 
-function parseDeck(key: string, raw: unknown): Deck | null {
-  if (!isRecord(raw)) return null;
-  const { id, name, createdAt } = raw;
-  if (
-    typeof id !== "string" ||
-    typeof name !== "string" ||
-    typeof createdAt !== "string"
-  ) {
-    return null;
-  }
-  // The key and the payload must agree: a write updates `deck:<id>`
-  // and a mismatched row would make renames target the wrong key.
-  if (key !== deckKey(id)) return null;
-  const result: Deck = { id, name, createdAt };
-  const source = parseSource(raw.source);
-  if (source !== undefined) result.source = source;
-  return result;
+/** The newest time the server holds for a row, live or tombstoned. */
+function newestOf(times: readonly unknown[]): string | undefined {
+  return times
+    .filter((t): t is string => typeof t === "string" && !Number.isNaN(Date.parse(t)))
+    .sort((a, b) => Date.parse(b) - Date.parse(a))[0];
 }
 
-function parseSource(raw: unknown): DeckSource | undefined {
-  if (!isRecord(raw)) return undefined;
-  if (
-    raw.type === "level" &&
-    typeof raw.packId === "string" &&
-    typeof raw.level === "string"
-  ) {
-    return { type: "level", packId: raw.packId, level: raw.level };
-  }
-  if (
-    raw.type === "plugin" &&
-    typeof raw.pluginId === "string" &&
-    typeof raw.key === "string"
-  ) {
-    return { type: "plugin", pluginId: raw.pluginId, key: raw.key };
-  }
-  if (
-    raw.type === "frequency" &&
-    typeof raw.packId === "string" &&
-    typeof raw.size === "number" &&
-    Number.isInteger(raw.size) &&
-    raw.size > 0
-  ) {
-    return { type: "frequency", packId: raw.packId, size: raw.size };
-  }
-  return undefined;
+/**
+ * What the server holds for the rows of one workspace, read with the study
+ * data, so a write can be planned against it (studyWrite): `knownAt` is the
+ * newest time per row (`<collection>:<identity>` for typed rows, the plugin
+ * key for keyed rows), `stored` every typed row, tombstones included.
+ */
+export interface StudySnapshot {
+  knownAt: Map<string, string>;
+  stored: Map<string, StudyRow>;
 }
 
-function parseCard(key: string, raw: unknown): StudyCard | null {
-  if (!isRecord(raw)) return null;
-  const { id, kind, entryId, sentenceId, deckIds, createdAt, written, entryKind, skipKinds } = raw;
-  if (typeof id !== "string" || typeof entryId !== "number") return null;
-  if (!CARD_KINDS.includes(kind as StudyCardKind)) return null;
-  if (typeof createdAt !== "string") return null;
-  if (key !== cardRowKey(id)) return null;
-  if (!Array.isArray(deckIds)) return null;
-  const decks = [
-    ...new Set(
-      deckIds.filter((deckId): deckId is string => typeof deckId === "string"),
-    ),
-  ];
-  const card: StudyCard = {
-    id,
-    kind: kind as StudyCardKind,
-    entryId,
-    deckIds: decks,
-    createdAt,
-  };
-  if (typeof written === "string") {
-    card.written = written;
-  }
-  if (entryKind === "character") {
-    card.entryKind = "character";
-  }
-  if (typeof sentenceId === "number") {
-    card.sentenceId = sentenceId;
-  }
-  if (kind === "vocab" && Array.isArray(skipKinds)) {
-    const skipped = cleanSkipKinds(skipKinds);
-    if (skipped.length > 0) card.skipKinds = skipped;
-  }
-  return card;
+function newSnapshot(): StudySnapshot {
+  return { knownAt: new Map(), stored: new Map() };
 }
 
 /**
@@ -228,8 +175,9 @@ function parseCard(key: string, raw: unknown): StudyCard | null {
  */
 async function fetchStudyData(
   workspaceId: number,
-  knownAt?: Map<string, string>,
+  snap?: StudySnapshot,
 ): Promise<StudyData> {
+  const knownAt = snap?.knownAt;
   const delta = await api<SyncDelta>(SYNC_PULL_PATH);
   const rows = Array.isArray(delta?.pluginData) ? delta.pluginData : [];
   const decks: Deck[] = [];
@@ -243,10 +191,55 @@ async function fetchStudyData(
   let goals: ParsedGoals = null;
   const known: number[] = [];
 
+  for (const collection of STUDY_COLLECTIONS) {
+    const list = delta?.[collection];
+    for (const raw of Array.isArray(list) ? list : []) {
+      // A row the strict parse refuses is skipped rather than failing the page.
+      const row = parseRow(collection, raw);
+      if (row === null || row.workspaceId !== workspaceId) continue;
+      if (knownAt !== undefined) {
+        const newest = newestOf([row.updatedAt, row.deletedAt]);
+        if (newest !== undefined) knownAt.set(studyKey(collection, identityOf(collection, row)), newest);
+      }
+      snap?.stored.set(studyKey(collection, identityOf(collection, row)), row);
+      if (row.deletedAt !== null) continue;
+      switch (collection) {
+        case "cards":
+          cards.push(cardOf(row as CardRow));
+          break;
+        case "decks":
+          decks.push(deckOf(row as DeckRow));
+          break;
+        case "deckSettings": {
+          const settings = settingsOf(row as DeckSettingsRow);
+          deckSettings[settings.deckId] = settings;
+          break;
+        }
+        case "limits": {
+          const limits = row as LimitsRow;
+          if (limits.deckId === null) limitsWorkspace = limitsOf(limits);
+          else limitsDecks[limits.deckId] = limitsOf(limits);
+          break;
+        }
+        case "fsrsSets": {
+          const set = setOf(row as FsrsSetRow);
+          if (set !== null) sets.push(set);
+          break;
+        }
+        case "fsrsActive":
+          activeRaw = activeOf(row as FsrsActiveRow);
+          break;
+      }
+    }
+  }
+
   for (const value of rows) {
     const row = asPluginDataRow(value);
     if (row === null) continue;
     if (row.pluginId !== FLASHCARDS_PLUGIN_ID) continue;
+    // A typed-family key in pluginData is a leftover the server could not
+    // read (or an old server's legacy view): never study state.
+    if (legacyFamily(row.key) !== null) continue;
     if (row.workspaceId === null && row.key.startsWith(VACATION_PREFIX)) {
       if (row.deletedAt != null) continue;
       const period = parseVacation(row.key, decodeData(row.data));
@@ -255,36 +248,13 @@ async function fetchStudyData(
     }
     if (row.workspaceId !== workspaceId) continue;
     if (knownAt !== undefined) {
-      // The newest time the server holds for the key, live or tombstoned.
-      const times = [row.updatedAt, row.deletedAt].filter(
-        (t): t is string => typeof t === "string" && !Number.isNaN(Date.parse(t)),
-      );
-      const newest = times.sort((a, b) => Date.parse(b) - Date.parse(a))[0];
+      const newest = newestOf([row.updatedAt, row.deletedAt]);
       if (newest !== undefined) knownAt.set(row.key, newest);
     }
     if (row.deletedAt != null) continue;
 
     const data = decodeData(row.data);
-    if (row.key.startsWith(DECK_PREFIX)) {
-      const deck = parseDeck(row.key, data);
-      if (deck !== null) decks.push(deck);
-    } else if (row.key.startsWith(CARD_PREFIX)) {
-      const card = parseCard(row.key, data);
-      if (card !== null) cards.push(card);
-    } else if (row.key.startsWith(DECKCFG_PREFIX)) {
-      const settings = parseDeckSettings(row.key, data);
-      if (settings !== null) deckSettings[settings.deckId] = settings;
-    } else if (row.key.startsWith(SET_PREFIX)) {
-      const set = parseParamSet(row.key, data);
-      if (set !== null) sets.push(set);
-    } else if (row.key === LIMITS_WORKSPACE_KEY) {
-      limitsWorkspace = parseLimitRow(row.key, data);
-    } else if (row.key.startsWith(LIMITS_DECK_PREFIX)) {
-      const parsed = parseLimitRow(row.key, data);
-      if (parsed !== null) limitsDecks[row.key.slice(LIMITS_DECK_PREFIX.length)] = parsed;
-    } else if (row.key === ACTIVE_KEY) {
-      activeRaw = data;
-    } else if (row.key === GOALS_KEY) {
+    if (row.key === GOALS_KEY) {
       goals = parseGoalsRow(data);
     } else if (row.key.startsWith(KNOWN_PREFIX)) {
       const entryId = parseKnownMark(row.key, data);
@@ -308,19 +278,19 @@ async function fetchStudyData(
   };
 }
 
-/** The row keys of the study data, for callers that write rows in batches. */
+/** The keys of typed rows in `knownAt` and `stored`: `<collection>:<identity>`. */
 export const studyRowKey = {
-  deck: (id: string): string => deckKey(id),
-  card: (id: string): string => cardRowKey(id),
+  deck: (id: string): string => studyKey("decks", id),
+  card: (id: string): string => studyKey("cards", id),
+  settings: (deckId: string): string => studyKey("deckSettings", deckId),
 };
 
 /**
  * loadRawStudyData reads the live decks and cards of a workspace as stored:
  * duplicate cards are NOT merged, so a writer sees every row it must keep
- * consistent (the decks view's add-to-deck plan). `knownAt` is the newest
- * time the server holds per row key (updatedAt or tombstone), for stamping
- * a later write after it. Pages that show or
- * schedule cards use loadStudyData instead.
+ * consistent (the decks view's add-to-deck plan). `knownAt` and `stored`
+ * are what the server holds (StudySnapshot), for planning a write with
+ * studyWrite. Pages that show or schedule cards use loadStudyData instead.
  */
 export async function loadRawStudyData(
   workspaceId: number,
@@ -328,12 +298,14 @@ export async function loadRawStudyData(
   decks: Deck[];
   cards: StudyCard[];
   knownAt: Map<string, string>;
-  /** The live `deckcfg:` rows, by deck id (always set by the store). */
+  /** Every typed row of the workspace, tombstones included. */
+  stored: Map<string, StudyRow>;
+  /** The live deck settings rows, by deck id (always set by the store). */
   deckSettings?: Record<string, DeckSettings>;
 }> {
-  const knownAt = new Map<string, string>();
-  const { decks, cards, deckSettings } = await fetchStudyData(workspaceId, knownAt);
-  return { decks, cards, knownAt, deckSettings: deckSettings ?? {} };
+  const snap = newSnapshot();
+  const { decks, cards, deckSettings } = await fetchStudyData(workspaceId, snap);
+  return { decks, cards, knownAt: snap.knownAt, stored: snap.stored, deckSettings: deckSettings ?? {} };
 }
 
 // Called after every write with the workspace it touched, so caches of
@@ -355,11 +327,19 @@ function notifyWrite(workspaceId: number): void {
   for (const listener of writeListeners) listener(workspaceId);
 }
 
+/** Only the keyed rows (goals, known marks) still use the plugin-data routes. */
+function assertKeyedRow(key: string): void {
+  if (legacyFamily(key) !== null) {
+    throw new Error(`${key}: a typed study row is written through the typed push`);
+  }
+}
+
 async function putData(
   workspaceId: number,
   key: string,
   value: unknown,
 ): Promise<void> {
+  assertKeyedRow(key);
   try {
     await api(dataPath(key, workspaceId), { method: "PUT", body: value });
   } finally {
@@ -398,47 +378,124 @@ interface PushResult {
   dataRefused?: number;
 }
 
+/** One typed study write: the row's typed body (no meta), its stored time, and whether it is a tombstone. */
+export interface StudyWrite {
+  collection: StudyCollection;
+  row: StudyRowBody;
+  /** The newest time the server holds for the row (StudySnapshot.knownAt). */
+  knownAt?: string;
+  deleted?: true;
+}
+
+type Snap = Partial<StudySnapshot> | undefined;
+
+/** extraOf: the stored row's `extra` (a tombstone's too), echoed back on a write. */
+export function extraOf(snap: Snap, collection: StudyCollection, identity: string): Record<string, unknown> {
+  return { ...(snap?.stored?.get(studyKey(collection, identity))?.extra ?? {}) };
+}
+
 /**
- * pushStudyRows writes plugin-data rows through POST /api/sync/push in
- * sequential chunks (last write wins on `updatedAt` = now). One request
- * replaces hundreds of single PUTs. A chunk the server only partly applied
- * (a newer row won, or the plugin may not own data) is an error: callers
- * must never report success for it. Listeners are notified after each chunk.
+ * studyWrite plans one typed write against what the server holds: null
+ * when it would change nothing (the live row is equal, or a tombstone of a
+ * row that is absent or already deleted) - the server would skip it, and a
+ * skipped item reads as "the server holds newer data". A tombstone carries
+ * the stored row's last data.
  */
-export async function pushStudyRows(
+export function studyWrite(
+  snap: Snap,
+  collection: StudyCollection,
+  row: StudyRowBody,
+  opts: { deleted?: boolean } = {},
+): StudyWrite | null {
+  const key = studyKey(collection, identityOf(collection, row));
+  const stored = snap?.stored?.get(key);
+  const live = stored !== undefined && stored.deletedAt === null;
+  const knownAt = snap?.knownAt?.get(key);
+  const at = knownAt === undefined ? {} : { knownAt };
+  if (opts.deleted === true) {
+    if (!live) return null;
+    return { collection, row: bodyOf(stored), ...at, deleted: true };
+  }
+  if (live && sameBody(stored, row)) return null;
+  return { collection, row, ...at };
+}
+
+/** studyDelete: the tombstone of a stored row, or null when it is not live. */
+function studyDelete(snap: Snap, collection: StudyCollection, identity: string): StudyWrite | null {
+  const stored = snap?.stored?.get(studyKey(collection, identity));
+  return stored === undefined ? null : studyWrite(snap, collection, bodyOf(stored), { deleted: true });
+}
+
+function stampOf(nowMs: number, knownAt: string | undefined): string {
+  // Last write wins on this stamp: never earlier than what the server
+  // already holds for the row (a client clock behind the server's would
+  // lose to a fresh tombstone for ever).
+  return new Date(Math.max(nowMs, stampAfter(knownAt))).toISOString();
+}
+
+async function sendPush(body: Record<string, unknown>): Promise<PushResult> {
+  return api<PushResult>("/api/sync/push", { method: "POST", body });
+}
+
+function typedBody(workspaceId: number, writes: readonly StudyWrite[], nowMs: number): Record<string, unknown[]> {
+  const body: Record<string, unknown[]> = {};
+  for (const write of writes) {
+    const stamp = stampOf(nowMs, write.knownAt);
+    (body[write.collection] ??= []).push({
+      ...write.row,
+      workspaceId,
+      updatedAt: stamp,
+      // A tombstone: the server skips it when it holds no live row.
+      ...(write.deleted ? { deletedAt: stamp } : {}),
+    });
+  }
+  return body;
+}
+
+/**
+ * pushStudy writes typed study rows through POST /api/sync/push in
+ * sequential chunks (last write wins on `updatedAt`, see stampOf). A chunk
+ * the server only partly applied (a newer row won, or it refused one) is a
+ * PartialPushError: callers must never report success for it. Listeners are
+ * notified after each chunk.
+ */
+export async function pushStudy(
   workspaceId: number,
-  rows: readonly { key: string; data: unknown; knownAt?: string; deleted?: true }[],
+  writes: readonly StudyWrite[],
   opts: { chunk?: number; onProgress?: (done: number, total: number) => void } = {},
+): Promise<void> {
+  await pushChunks(workspaceId, writes.length, opts, (from, to, nowMs) =>
+    typedBody(workspaceId, writes.slice(from, to), nowMs),
+  );
+}
+
+/**
+ * pushOptional writes one typed row whose loss is fine (a tombstone another
+ * tab may have written already): false when the server skipped it.
+ */
+async function pushOptional(workspaceId: number, write: StudyWrite): Promise<boolean> {
+  let result: PushResult;
+  try {
+    result = await sendPush(typedBody(workspaceId, [write], Date.now()));
+  } finally {
+    notifyWrite(workspaceId);
+  }
+  return (result?.dataSkipped ?? 0) + (result?.dataRefused ?? 0) === 0;
+}
+
+async function pushChunks(
+  workspaceId: number,
+  total: number,
+  opts: { chunk?: number; onProgress?: (done: number, total: number) => void },
+  bodyOf: (from: number, to: number, nowMs: number) => Record<string, unknown>,
 ): Promise<void> {
   const size = Math.max(1, opts.chunk ?? 200);
   let done = 0;
-  for (let i = 0; i < rows.length; i += size) {
-    const part = rows.slice(i, i + size);
-    const nowMs = Date.now();
+  for (let i = 0; i < total; i += size) {
+    const count = Math.min(size, total - i);
     let result: PushResult;
     try {
-      result = await api<PushResult>("/api/sync/push", {
-        method: "POST",
-        body: {
-          pluginData: part.map((row) => {
-            // Last write wins on this stamp: never earlier than what the server
-            // already holds for the row (a client clock behind the server's would
-            // lose to a fresh tombstone for ever).
-            const stamp = new Date(
-              Math.max(nowMs, stampAfter(row.knownAt)),
-            ).toISOString();
-            return {
-              pluginId: FLASHCARDS_PLUGIN_ID,
-              key: row.key,
-              workspaceId,
-              data: row.data,
-              updatedAt: stamp,
-              // A tombstone: the server skips it when it holds no live row.
-              ...(row.deleted ? { deletedAt: stamp } : {}),
-            };
-          }),
-        },
-      });
+      result = await sendPush(bodyOf(i, i + count, Date.now()));
     } catch (err) {
       throw new PartialPushError(errorMessage(err, "Could not write the cards."), done);
     } finally {
@@ -446,7 +503,7 @@ export async function pushStudyRows(
       notifyWrite(workspaceId);
     }
     const skipped = (result?.dataSkipped ?? 0) + (result?.dataRefused ?? 0);
-    done += result?.dataAccepted ?? part.length - skipped;
+    done += result?.dataAccepted ?? count - skipped;
     if (skipped > 0) {
       throw new PartialPushError(
         `${skipped} ${skipped === 1 ? "row was" : "rows were"} not written because the server holds newer data for ${skipped === 1 ? "it" : "them"}. Try again.`,
@@ -454,11 +511,37 @@ export async function pushStudyRows(
         skipped,
       );
     }
-    opts.onProgress?.(done, rows.length);
+    opts.onProgress?.(done, total);
   }
 }
 
+/**
+ * pushKeyedRows writes keyed plugin-data rows of the study namespace
+ * (known marks) through POST /api/sync/push, like pushStudy.
+ */
+async function pushKeyedRows(
+  workspaceId: number,
+  rows: readonly { key: string; data: unknown; knownAt?: string; deleted?: true }[],
+  opts: { chunk?: number; onProgress?: (done: number, total: number) => void } = {},
+): Promise<void> {
+  for (const row of rows) assertKeyedRow(row.key);
+  await pushChunks(workspaceId, rows.length, opts, (from, to, nowMs) => ({
+    pluginData: rows.slice(from, to).map((row) => {
+      const stamp = stampOf(nowMs, row.knownAt);
+      return {
+        pluginId: FLASHCARDS_PLUGIN_ID,
+        key: row.key,
+        workspaceId,
+        data: row.data,
+        updatedAt: stamp,
+        ...(row.deleted ? { deletedAt: stamp } : {}),
+      };
+    }),
+  }));
+}
+
 async function deleteData(workspaceId: number, key: string): Promise<void> {
+  assertKeyedRow(key);
   try {
     await api(dataPath(key, workspaceId), { method: "DELETE" });
   } finally {
@@ -585,7 +668,7 @@ export async function saveParamSet(
     id: newUlid(),
     createdAt: new Date().toISOString(),
   };
-  await putData(workspaceId, `${SET_PREFIX}${saved.id}`, saved);
+  await pushStudy(workspaceId, [{ collection: "fsrsSets", row: setRow(saved) }]);
   return saved;
 }
 
@@ -594,10 +677,18 @@ export async function setActiveSet(
   workspaceId: number,
   setId: string | null,
 ): Promise<void> {
-  await putData(workspaceId, ACTIVE_KEY, {
-    setId,
-    changedAt: new Date().toISOString(),
-  });
+  const snap = newSnapshot();
+  await fetchStudyData(workspaceId, snap);
+  // Already in use: no write (a new changedAt would be a change of nothing).
+  const stored = snap.stored.get(studyKey("fsrsActive", ""));
+  const current = stored === undefined || stored.deletedAt !== null ? null : (stored as FsrsActiveRow).setId;
+  if (current === setId) return;
+  const write = studyWrite(
+    snap,
+    "fsrsActive",
+    activeRow(setId, new Date().toISOString(), extraOf(snap, "fsrsActive", "")),
+  );
+  if (write !== null) await pushStudy(workspaceId, [write]);
 }
 
 /** deleteParamSet tombstones a set; the active one cannot be deleted. */
@@ -605,11 +696,14 @@ export async function deleteParamSet(
   workspaceId: number,
   id: string,
 ): Promise<void> {
-  const { fsrs } = await fetchStudyData(workspaceId);
+  const snap = newSnapshot();
+  const { fsrs } = await fetchStudyData(workspaceId, snap);
   if (fsrs?.active?.id === id) {
     throw new Error("Cannot delete the active parameters.");
   }
-  await deleteData(workspaceId, `${SET_PREFIX}${id}`);
+  // A set that is not stored (another tab deleted it) is already gone.
+  const write = studyDelete(snap, "fsrsSets", id);
+  if (write !== null) await pushStudy(workspaceId, [write]);
 }
 
 /** createDeck stores a new ULID-keyed deck and returns it. */
@@ -620,7 +714,7 @@ export async function createDeck(name: string): Promise<Deck> {
     name,
     createdAt: new Date().toISOString(),
   };
-  await putData(workspaceId, deckKey(deck.id), deck);
+  await pushStudy(workspaceId, [{ collection: "decks", row: deckRow(deck) }]);
   return deck;
 }
 
@@ -630,13 +724,15 @@ export async function createDeck(name: string): Promise<Deck> {
  */
 export async function renameDeck(id: string, name: string): Promise<Deck> {
   const workspaceId = requireWorkspaceId();
-  const { decks } = await fetchStudyData(workspaceId);
+  const snap = newSnapshot();
+  const { decks } = await fetchStudyData(workspaceId, snap);
   const existing = decks.find((deck) => deck.id === id);
   if (existing === undefined) {
     throw new Error(`deck "${id}" not found`);
   }
   const renamed: Deck = { ...existing, name };
-  await putData(workspaceId, deckKey(id), renamed);
+  const write = studyWrite(snap, "decks", deckRow(renamed, extraOf(snap, "decks", id)));
+  if (write !== null) await pushStudy(workspaceId, [write]);
   return renamed;
 }
 
@@ -653,8 +749,8 @@ export async function deleteDeck(id: string): Promise<void> {
     // The implicit deck has no stored row to tombstone and must survive.
     throw new Error("the general deck cannot be deleted");
   }
-  const knownAt = new Map<string, string>();
-  const { cards, deckSettings, limits } = await fetchStudyData(workspaceId, knownAt);
+  const snap = newSnapshot();
+  const { cards } = await fetchStudyData(workspaceId, snap);
   // One batch (chunks of 200) instead of a request per card: a big copied
   // deck is a handful of requests. A failure throws before the tombstone.
   const rows = cards
@@ -662,30 +758,16 @@ export async function deleteDeck(id: string): Promise<void> {
     .map((card) => {
       const remaining = card.deckIds.filter((deckId) => deckId !== id);
       const deckIds = remaining.length === 0 ? [GENERAL_DECK_ID] : remaining;
-      return {
-        key: cardRowKey(card.id),
-        data: { ...card, deckIds },
-        knownAt: knownAt.get(cardRowKey(card.id)),
-      };
-    });
-  await pushStudyRows(workspaceId, rows);
-  await deleteData(workspaceId, deckKey(id));
-  // The deck's card type switches go with it; another tab may have
-  // removed the row already.
-  if (deckSettings?.[id] !== undefined) {
-    try {
-      await deleteData(workspaceId, deckSettingsKey(id));
-    } catch (err) {
-      if (!(err instanceof ApiError && err.status === 404)) throw err;
-    }
-  }
-  // So do its daily limits.
-  if (limits?.decks[id] !== undefined) {
-    try {
-      await deleteData(workspaceId, limitsDeckKey(id));
-    } catch (err) {
-      if (!(err instanceof ApiError && err.status === 404)) throw err;
-    }
+      return studyWrite(snap, "cards", cardRow({ ...card, deckIds }, extraOf(snap, "cards", card.id)));
+    })
+    .filter((write): write is StudyWrite => write !== null);
+  await pushStudy(workspaceId, rows);
+  const tombstone = studyDelete(snap, "decks", id);
+  if (tombstone !== null) await pushStudy(workspaceId, [tombstone]);
+  // The deck's card type switches and its daily limits go with it; another
+  // tab may have removed those rows already (a skipped tombstone is fine).
+  for (const write of [studyDelete(snap, "deckSettings", id), studyDelete(snap, "limits", id)]) {
+    if (write !== null) await pushOptional(workspaceId, write);
   }
 }
 
@@ -699,19 +781,17 @@ export async function saveDeckCardTypes(
   cardTypes: readonly OptInKind[],
 ): Promise<DeckSettings> {
   const workspaceId = requireWorkspaceId();
-  const { deckSettings } = await fetchStudyData(workspaceId);
+  const snap = newSnapshot();
+  const { deckSettings } = await fetchStudyData(workspaceId, snap);
   const stored = deckSettings?.[deckId];
   const next: DeckSettings = {
     deckId,
     cardTypes: cleanCardTypes(cardTypes),
     ...(stored?.newOrder ? { newOrder: stored.newOrder } : {}),
-    extra: stored?.extra ?? {},
+    extra: stored?.extra ?? extraOf(snap, "deckSettings", deckId),
   };
-  await putData(
-    workspaceId,
-    deckSettingsKey(deckId),
-    serializeDeckSettings(next, new Date().toISOString()),
-  );
+  const write = studyWrite(snap, "deckSettings", settingsRow(next));
+  if (write !== null) await pushStudy(workspaceId, [write]);
   return next;
 }
 
@@ -731,20 +811,18 @@ export async function saveDeckNewOrder(
   order: NewOrder,
 ): Promise<DeckSettings> {
   const workspaceId = requireWorkspaceId();
-  const { deckSettings } = await fetchStudyData(workspaceId);
+  const snap = newSnapshot();
+  const { deckSettings } = await fetchStudyData(workspaceId, snap);
   const stored = deckSettings?.[deckId];
   const next: DeckSettings = {
     deckId,
     cardTypes: stored?.cardTypes ?? [],
     ...(order.by === "added" ? {} : { newOrder: order }),
     // Choosing an order replaces an unreadable stored one too.
-    extra: withoutNewOrder(stored?.extra ?? {}),
+    extra: withoutNewOrder(stored?.extra ?? extraOf(snap, "deckSettings", deckId)),
   };
-  await putData(
-    workspaceId,
-    deckSettingsKey(deckId),
-    serializeDeckSettings(next, new Date().toISOString()),
-  );
+  const write = studyWrite(snap, "deckSettings", settingsRow(next));
+  if (write !== null) await pushStudy(workspaceId, [write]);
   return next;
 }
 
@@ -779,7 +857,8 @@ export async function addCard(
 ): Promise<StudyCard> {
   const workspaceId = opts.workspaceId ?? requireWorkspaceId();
   const kind = opts.kind ?? "vocab";
-  const { cards } = await fetchStudyData(workspaceId);
+  const snap = newSnapshot();
+  const { cards } = await fetchStudyData(workspaceId, snap);
   const wanted = cardKey(kind, entryId, opts.sentenceId);
   // Several stored duplicates: answer with the one loadStudyData keeps.
   const existing = cards
@@ -806,7 +885,9 @@ export async function addCard(
   if (opts.sentenceId !== undefined) {
     card.sentenceId = opts.sentenceId;
   }
-  await putData(workspaceId, cardRowKey(card.id), card);
+  // The id of a deleted card revives its tombstone (and its extra).
+  const write = studyWrite(snap, "cards", cardRow(card, extraOf(snap, "cards", card.id)));
+  if (write !== null) await pushStudy(workspaceId, [write]);
   return card;
 }
 
@@ -898,7 +979,8 @@ export async function deleteCards(
 ): Promise<StudyCard[]> {
   const workspaceId = requireWorkspaceId();
   if (ids.length === 0) return [];
-  const { cards } = await fetchStudyData(workspaceId);
+  const snap = newSnapshot();
+  const { cards } = await fetchStudyData(workspaceId, snap);
   const asked = new Set(ids);
   const rows = rowsOfCards(cards, ids);
   const ordered = [
@@ -907,11 +989,12 @@ export async function deleteCards(
   ];
   const removed: StudyCard[] = [];
   for (const row of ordered) {
+    const write = studyDelete(snap, "cards", row.id);
+    if (write === null) continue;
     try {
-      await deleteData(workspaceId, cardRowKey(row.id));
-      removed.push(row);
+      // Skipped: another tab deleted (or rewrote) the row since the read.
+      if (await pushOptional(workspaceId, write)) removed.push(row);
     } catch (err) {
-      if (err instanceof ApiError && err.status === 404) continue;
       throw new PartialCardsError(
         errorMessage(err, "Could not delete the cards."),
         removed,
@@ -937,11 +1020,12 @@ export async function restoreCards(
 ): Promise<void> {
   const workspaceId = requireWorkspaceId();
   let todo = [...rows].reverse();
+  const snap = newSnapshot();
   try {
+    // Read first: a restore is stamped after the tombstone the server holds.
+    const { cards } = await fetchStudyData(workspaceId, snap);
     if (opts.onlyLive === true) {
-      const live = new Set(
-        (await fetchStudyData(workspaceId)).cards.map((card) => card.id),
-      );
+      const live = new Set(cards.map((card) => card.id));
       todo = todo.filter((row) => live.has(row.id));
     }
   } catch (err) {
@@ -953,7 +1037,8 @@ export async function restoreCards(
   }
   for (let i = 0; i < todo.length; i++) {
     try {
-      await putData(workspaceId, cardRowKey(todo[i].id), todo[i]);
+      const write = studyWrite(snap, "cards", cardRow(todo[i], extraOf(snap, "cards", todo[i].id)));
+      if (write !== null) await pushStudy(workspaceId, [write]);
     } catch (err) {
       throw new PartialCardsError(
         errorMessage(err, "Could not undo."),
@@ -978,7 +1063,8 @@ export async function moveCards(
   const workspaceId = requireWorkspaceId();
   if (deckId === "") throw new Error("choose a deck to move the cards to");
   if (ids.length === 0) return [];
-  const { cards, decks } = await fetchStudyData(workspaceId);
+  const snap = newSnapshot();
+  const { cards, decks } = await fetchStudyData(workspaceId, snap);
   if (deckId !== GENERAL_DECK_ID && !decks.some((deck) => deck.id === deckId)) {
     // Only the general deck is implicit: any other target must exist.
     throw new Error(`deck "${deckId}" not found`);
@@ -989,10 +1075,12 @@ export async function moveCards(
   const moved: StudyCard[] = [];
   for (const row of changed) {
     try {
-      await putData(workspaceId, cardRowKey(row.id), {
-        ...row,
-        deckIds: [deckId],
-      });
+      const write = studyWrite(
+        snap,
+        "cards",
+        cardRow({ ...row, deckIds: [deckId] }, extraOf(snap, "cards", row.id)),
+      );
+      if (write !== null) await pushStudy(workspaceId, [write]);
       moved.push(row);
     } catch (err) {
       throw new PartialCardsError(
@@ -1023,6 +1111,7 @@ function withSkip(row: StudyCard, skipKinds: readonly StudyCardKind[]): StudyCar
 /** Writes new skipKinds to the entry's vocab rows; returns their previous state. */
 async function rewriteSkips(
   workspaceId: number,
+  snap: StudySnapshot,
   rows: readonly StudyCard[],
   next: (row: StudyCard) => StudyCardKind[],
 ): Promise<StudyCard[]> {
@@ -1031,7 +1120,8 @@ async function rewriteSkips(
     const updated = withSkip(row, next(row));
     if (JSON.stringify(updated.skipKinds ?? []) === JSON.stringify(row.skipKinds ?? [])) continue;
     try {
-      await putData(workspaceId, cardRowKey(row.id), updated);
+      const write = studyWrite(snap, "cards", cardRow(updated, extraOf(snap, "cards", row.id)));
+      if (write !== null) await pushStudy(workspaceId, [write]);
       changed.push(row);
     } catch (err) {
       throw new PartialCardsError(
@@ -1061,10 +1151,11 @@ export async function skipKind(
 ): Promise<StudyCard[]> {
   assertSkippable(kind);
   const workspaceId = requireWorkspaceId();
-  const { cards } = await fetchStudyData(workspaceId);
+  const snap = newSnapshot();
+  const { cards } = await fetchStudyData(workspaceId, snap);
   const rows = vocabRowsOf(cards, entryId);
   if (rows.length === 0) throw new Error("this word has no vocab card to hold the setting");
-  return rewriteSkips(workspaceId, rows, (row) => [...(row.skipKinds ?? []), kind]);
+  return rewriteSkips(workspaceId, snap, rows, (row) => [...(row.skipKinds ?? []), kind]);
 }
 
 /** unskipKind removes a kind from the word's `skipKinds`; returns the previous rows for undo. */
@@ -1074,10 +1165,11 @@ export async function unskipKind(
 ): Promise<StudyCard[]> {
   assertSkippable(kind);
   const workspaceId = requireWorkspaceId();
-  const { cards } = await fetchStudyData(workspaceId);
+  const snap = newSnapshot();
+  const { cards } = await fetchStudyData(workspaceId, snap);
   const rows = vocabRowsOf(cards, entryId);
   if (rows.length === 0) throw new Error("this word has no vocab card to hold the setting");
-  return rewriteSkips(workspaceId, rows, (row) =>
+  return rewriteSkips(workspaceId, snap, rows, (row) =>
     (row.skipKinds ?? []).filter((skipped) => skipped !== kind),
   );
 }
@@ -1096,7 +1188,8 @@ export async function dropSiblingCards(
 ): Promise<StudyCard[]> {
   const workspaceId = requireWorkspaceId();
   if (ids.length === 0) return [];
-  const { cards } = await fetchStudyData(workspaceId);
+  const snap = newSnapshot();
+  const { cards } = await fetchStudyData(workspaceId, snap);
   const asked = cards.filter((card) => ids.includes(card.id));
   if (asked.some((card) => card.kind === "vocab")) {
     throw new Error("only the other cards of a word can be removed on their own");
@@ -1121,7 +1214,7 @@ export async function dropSiblingCards(
     const rows = vocabRowsOf(cards, entryId);
     try {
       previous.push(
-        ...(await rewriteSkips(workspaceId, rows, (row) => [
+        ...(await rewriteSkips(workspaceId, snap, rows, (row) => [
           ...(row.skipKinds ?? []),
           ...kinds,
         ])),
@@ -1134,11 +1227,11 @@ export async function dropSiblingCards(
     }
   }
   for (const row of siblings) {
+    const write = studyDelete(snap, "cards", row.id);
+    if (write === null) continue;
     try {
-      await deleteData(workspaceId, cardRowKey(row.id));
-      previous.push(row);
+      if (await pushOptional(workspaceId, write)) previous.push(row);
     } catch (err) {
-      if (err instanceof ApiError && err.status === 404) continue;
       throw new PartialCardsError(
         errorMessage(err, "Could not remove the cards."),
         previous,
@@ -1183,7 +1276,11 @@ export async function deleteVacation(id: string): Promise<void> {
 
 /** saveWorkspaceLimits stores the workspace's daily limits (`null` = unlimited). */
 export async function saveWorkspaceLimits(limits: Partial<LimitPair>): Promise<void> {
-  await putData(requireWorkspaceId(), LIMITS_WORKSPACE_KEY, { version: 1, ...limits });
+  const workspaceId = requireWorkspaceId();
+  const snap = newSnapshot();
+  await fetchStudyData(workspaceId, snap);
+  const write = studyWrite(snap, "limits", limitsRow(null, limits, extraOf(snap, "limits", "")));
+  if (write !== null) await pushStudy(workspaceId, [write]);
 }
 
 /**
@@ -1205,15 +1302,16 @@ export async function saveGoals(workspaceId: number, row: GoalsRow): Promise<voi
  */
 export async function saveDeckLimits(deckId: string, limits: Partial<LimitPair>): Promise<void> {
   const workspaceId = requireWorkspaceId();
+  const snap = newSnapshot();
+  await fetchStudyData(workspaceId, snap);
   if (Object.keys(limits).length === 0) {
-    try {
-      await deleteData(workspaceId, limitsDeckKey(deckId));
-    } catch (err) {
-      if (!(err instanceof ApiError && err.status === 404)) throw err;
-    }
+    // Nothing left to say: the row goes (another tab may have removed it).
+    const write = studyDelete(snap, "limits", deckId);
+    if (write !== null) await pushOptional(workspaceId, write);
     return;
   }
-  await putData(workspaceId, limitsDeckKey(deckId), { version: 1, ...limits });
+  const write = studyWrite(snap, "limits", limitsRow(deckId, limits, extraOf(snap, "limits", deckId)));
+  if (write !== null) await pushStudy(workspaceId, [write]);
 }
 
 function requireWorkspaceArg(workspaceId: number, fn: string): void {
@@ -1242,7 +1340,7 @@ export async function setKnownMark(workspaceId: number, entryId: number, on: boo
 }
 
 /**
- * setKnownMarks marks or unmarks many entries through pushStudyRows (200
+ * setKnownMarks marks or unmarks many entries through pushKeyedRows (200
  * rows per request). A skipped row is a PartialPushError; unmark only
  * entries whose mark is live (a tombstone for a missing row is skipped).
  */
@@ -1263,5 +1361,5 @@ export async function setKnownMarks(
     const stamp = at === undefined ? {} : { knownAt: at };
     return on ? { ...row, ...stamp } : { key: row.key, data: {}, deleted: true as const, ...stamp };
   });
-  await pushStudyRows(workspaceId, rows, opts);
+  await pushKeyedRows(workspaceId, rows, opts);
 }

@@ -137,9 +137,12 @@ type PluginInfo struct {
 	Manifest json.RawMessage `json:"manifest"`
 	Enabled  bool            `json:"enabled"`
 	Order    int             `json:"order"`
-	// Hidden marks the app's own built-in plugins that have no surface
-	// (qinqin-core: registered only so its data is accepted). Clients
-	// leave them out of plugin lists; the routes still work for them.
+	// Hidden marks the app's own built-in rows that have no surface and are
+	// no feature (qinqin-core: registered only so its data is accepted).
+	// Clients leave them out of plugin lists; the routes and the state still
+	// work for them. The core features qinqin-flashcards and qinqin-reader
+	// are not hidden (old web shells show their switch from this list); new
+	// clients know those reserved ids and show them as features.
 	Hidden bool `json:"hidden"`
 }
 

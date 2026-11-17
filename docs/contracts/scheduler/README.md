@@ -5,16 +5,18 @@ Issues #88 (vacation mode) and #89 (daily limits). Rule source:
 `docs/contracts/study-day/`. Every client (web, Android) implements these rules and runs the fixtures in
 this folder. Fixtures win over code. Fixture format: see `docs/contracts/README.md`.
 
-## Storage rows (plugin `qinqin-flashcards`, plugin data)
+## Storage rows (study namespace `qinqin-flashcards` plugin data, and the typed `limits` collection)
 
 - `vacation:<ULID>` is **user-global** (no `workspace` on write, `workspaceId: null` in the sync pull):
   `{version:1, id, start, end|null, scope:"all"|{workspaces:[int,...]}, createdDay, createdAt}`. Dates are
   learner days (`YYYY-MM-DD`). An unusable row (tombstone, other version, `end < start`, empty workspace
   list, impossible date, `id` differing from the key, non-integer workspace id) is ignored.
-- `limits:workspace` = `{version:1, new?, reviews?}` and `limits:deck:<deckId>` (the `general` deck
-  included) = the same fields, workspace-scoped. A field is an integer 0..9999 or `null` (unlimited); a
-  missing or unusable field falls back (deck -> workspace -> default 20 new / 200 reviews). Clients
-  read these rows like `fsrs:*`.
+- Daily limits are typed `limits` rows (`study/README.md`): `{deckId: null (the workspace) | "<deckId>"
+  (the `general` deck included), new: null | {limit}, reviews: same}`, workspace-scoped. A limit is an
+  integer 0..9999 or `null` (unlimited); a field that is `null` (not set) falls back (deck -> workspace ->
+  default 20 new / 200 reviews). Their legacy form (old shells, backups, `limits-rows.json`) is
+  `limits:workspace` / `limits:deck:<deckId>` = `{version:1, new?, reviews?}` with the same fall-back for a
+  missing or unusable field.
 
 ## Vacation days and edits (`vacation-days.json`)
 
@@ -69,8 +71,8 @@ candidates); `limitedOut` counts candidates refused by a daily limit.
 
 ## Android and other clients
 
-Read the user-global `vacation:*` rows and the workspace `limits:*` rows like `fsrs:*` (one plugin-data
-pull; `vacation:*` rows arrive with `workspaceId: null`). Use the learner's day for every date here, port
+Read the user-global `vacation:*` plugin rows (they arrive with `workspaceId: null`) and the typed `limits`
+and `fsrsSets`/`fsrsActive` rows from one pull that names those collections. Use the learner's day for every date here, port
 `v` and `inverse` with whole-day shifts (`n * 86 400 000 ms`, never the run's real length), feed ts-fsrs
 `f_i = max(v(ts_i), f_{i-1})`, map the due back with `inverse`, keep the instant due rule
 (`due <= now`), and build every queue from the same admission. A client must not write a vacation date before

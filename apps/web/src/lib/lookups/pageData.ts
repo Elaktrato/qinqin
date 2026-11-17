@@ -5,12 +5,12 @@
 import { loadEntryBases } from '$lib/api/entryBases';
 import { listBooks } from '$lib/api/library';
 import type { EntryBase } from '$lib/api/types';
-import { scheduleIndex } from '$lib/plugins/flashcards/decks/deckStats';
-import { addWords, type AddWordsResult } from '$lib/plugins/reader/wordActions';
+import { scheduleIndex } from '$lib/features/flashcards/decks/deckStats';
+import { addWords, type AddWordsResult } from '$lib/features/reader/wordActions';
 import { contextForData } from '$lib/study/currentContext';
 import { loadStudyHistory } from '$lib/study/history';
 import { type KnownIndex, familiarity, knownIndex } from '$lib/study/known';
-import { activeWeights, loadRawStudyData, pushStudyRows } from '$lib/study/store';
+import { activeWeights, loadRawStudyData, pushStudy } from '$lib/study/store';
 import { invalidateStudyData } from '$lib/study/studyData';
 import type { Deck } from '$lib/study/types';
 import type { LookupHistory, LookupState } from './lookups';
@@ -65,7 +65,7 @@ export async function addEntries(
 		now,
 		bases: (ids) => loadEntryBases(ids),
 		raw: () => loadRawStudyData(ws),
-		push: (w, rows) => pushStudyRows(w, rows)
+		push: (w, writes) => pushStudy(w, writes)
 	});
 	invalidateStudyData(ws);
 	return result;

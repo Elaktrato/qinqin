@@ -120,6 +120,13 @@ func scramble(t *testing.T, w *baseWorld) (extraWS, extraBook int64) {
 	os.WriteFile(filepath.Join(w.Data, "books", strconv.FormatInt(uid, 10), strconv.FormatInt(extraBook, 10)+".json"), []byte(`[]`), 0o644)
 	exec(t, w.DB, `INSERT INTO sessions (token_hash, user_id, created_at, last_used_at) VALUES ('keep', ?, 't', 't'), ('other', ?, 't', 't')`, uid, uid)
 	exec(t, w.DB, `INSERT INTO access_tokens (user_id, name, token_hash, hint, scope, created_at, expires_at) VALUES (?, 'n', 'pat', 'abcdef', 'write', 't', '9999')`, uid)
+	// a typed card written after the backup, a typed tombstone and a library deletion log row:
+	// a restore replaces the first and clears the other two (clients pull in full afterwards)
+	exec(t, w.DB, `INSERT INTO study_cards (user_id, workspace_id, id, kind, entry_id, created_at, version, updated_at, modified_at)
+		VALUES (?, ?, 'c-later', 'vocab', 1, 't', 1, '2026-11-15T00:00:00Z', '2026-11-15T00:00:00Z')`, uid, w.Alice.WS1)
+	exec(t, w.DB, `INSERT INTO study_decks (user_id, workspace_id, id, name, created_at, version, updated_at, modified_at, deleted_at)
+		VALUES (?, ?, 'd-gone-too', 'x', 't', 2, '2026-11-15T00:00:00Z', '2026-11-15T00:00:00Z', '2026-11-15T00:00:00Z')`, uid, w.Alice.WS1)
+	exec(t, w.DB, `INSERT INTO library_deletions (user_id, collection, row_id, workspace_id, deleted_at) VALUES (?, 'books', 999, ?, '2026-11-15T00:00:00Z')`, uid, w.Alice.WS1)
 	return
 }
 
@@ -158,6 +165,11 @@ func TestRestoreReplacesTheUsersDataAndOnlyTheirs(t *testing.T) {
 		fmt.Sprintf(`SELECT COUNT(*) FROM library_books WHERE id IN (%d, %d)`, w.Alice.Book, extraBook),
 		`SELECT COUNT(*) FROM plugin_data WHERE pack_id = 'junk'`,
 		fmt.Sprintf(`SELECT COUNT(*) FROM journal_photos WHERE user_id = %d`, uid),
+		fmt.Sprintf(`SELECT COUNT(*) FROM study_cards WHERE user_id = %d AND id = 'c-later'`, uid),
+		fmt.Sprintf(`SELECT COUNT(*) FROM study_decks WHERE user_id = %d`, uid),
+		fmt.Sprintf(`SELECT COUNT(*) FROM library_deletions WHERE user_id = %d`, uid),
+		// typed families land in the typed tables, never in plugin_data
+		fmt.Sprintf(`SELECT COUNT(*) FROM plugin_data WHERE user_id = %d AND pack_id = 'qinqin-flashcards' AND key LIKE 'card:%%'`, uid),
 	} {
 		var n int
 		w.DB.QueryRow(q).Scan(&n)
@@ -207,6 +219,14 @@ func TestRestoreReplacesTheUsersDataAndOnlyTheirs(t *testing.T) {
 	w.DB.QueryRow(`SELECT COUNT(*) FROM plugin_data WHERE user_id = ? AND updated_at < '2026-11-16'`, uid).Scan(&stale)
 	if nullMod != 1 || stale != 0 {
 		t.Errorf("modified_at NULL rows %d, rows with an old updated_at %d", nullMod, stale)
+	}
+	// typed cards: updated_at = now (the restore's stamp, so every pull sees them), version and
+	// modified_at kept, workspaces remapped to the new ids
+	var cards, keptStamps, staleCards int
+	w.DB.QueryRow(`SELECT COUNT(*), SUM(version = 2 AND modified_at = '2026-11-10T08:00:00Z'), SUM(updated_at < '2026-11-16')
+		FROM study_cards WHERE user_id = ? AND deleted_at IS NULL AND workspace_id IN (SELECT id FROM workspaces WHERE user_id = ?)`, uid, uid).Scan(&cards, &keptStamps, &staleCards)
+	if cards != 3 || keptStamps != 3 || staleCards != 0 || res.Restored.Cards != 3 {
+		t.Errorf("typed cards %d (stamps kept %d, stale %d), restored cards %d", cards, keptStamps, staleCards, res.Restored.Cards)
 	}
 	// user-global rows (workspaceId null) round-trip, and the vacation scope follows the NEW workspace
 	var vac string
@@ -320,7 +340,7 @@ func TestRestoreUnresolvedNeedsAcknowledgementAndChangesNothing(t *testing.T) {
 	if n != 0 {
 		t.Error("the old workspace survived")
 	}
-	tg.DB.QueryRow(`SELECT COUNT(*) FROM plugin_data WHERE user_id = ? AND key LIKE 'card:%'`, tg.UID).Scan(&n)
+	tg.DB.QueryRow(`SELECT COUNT(*) FROM study_cards WHERE user_id = ?`, tg.UID).Scan(&n)
 	if n != 2 {
 		t.Errorf("cards after dropping: %d, want the two cards of 你好", n)
 	}
@@ -396,12 +416,14 @@ func TestRestoreOntoAServerWithShiftedEntryIds(t *testing.T) {
 		t.Fatal(err)
 	}
 	// card keys and ids follow the target's entry ids; the review events too
-	var key, data string
-	if err := tg.DB.QueryRow(`SELECT key, data FROM plugin_data WHERE user_id = ? AND key LIKE 'card:c-reverse-%'`, tg.UID).Scan(&key, &data); err != nil {
+	var key string
+	var entry int64
+	var extra string
+	if err := tg.DB.QueryRow(`SELECT id, entry_id, extra FROM study_cards WHERE user_id = ? AND id LIKE 'c-reverse-%'`, tg.UID).Scan(&key, &entry, &extra); err != nil {
 		t.Fatal(err)
 	}
-	if key != "card:c-reverse-"+strconv.FormatInt(tg.E1, 10) || !strings.Contains(data, `"entryId":`+strconv.FormatInt(tg.E1, 10)) || !strings.Contains(data, `"x-unknown":{"b":1,"a":2}`) {
-		t.Errorf("card %s %s", key, data)
+	if key != "c-reverse-"+strconv.FormatInt(tg.E1, 10) || entry != tg.E1 || !strings.Contains(extra, `"x-unknown"`) {
+		t.Errorf("card %s entry %d extra %s", key, entry, extra)
 	}
 	var n int
 	tg.DB.QueryRow(`SELECT COUNT(*) FROM study_events WHERE user_id = ? AND payload LIKE ?`, tg.UID, `%"cardId":"c-reverse-`+strconv.FormatInt(tg.E1, 10)+`"%`).Scan(&n)
@@ -416,12 +438,11 @@ func TestRestoreOntoAServerWithShiftedEntryIds(t *testing.T) {
 	if n != 1 {
 		t.Errorf("overlay not on the target entry")
 	}
-	var sid int64
-	var sdata string
-	tg.DB.QueryRow(`SELECT data FROM plugin_data WHERE user_id = ? AND key = 'card:SENTCARD01'`, tg.UID).Scan(&sdata)
+	var sid, cardSent int64
+	tg.DB.QueryRow(`SELECT sentence_id FROM study_cards WHERE user_id = ? AND id = 'SENTCARD01'`, tg.UID).Scan(&cardSent)
 	tg.DB.QueryRow(`SELECT id FROM sentences WHERE source_pack = 'tatoeba'`).Scan(&sid)
-	if !strings.Contains(sdata, `"sentenceId":`+strconv.FormatInt(sid, 10)) {
-		t.Errorf("sentence card %s, pack sentence %d", sdata, sid)
+	if cardSent != sid || sid == 0 {
+		t.Errorf("sentence card's sentence %d, pack sentence %d", cardSent, sid)
 	}
 }
 

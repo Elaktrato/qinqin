@@ -25,7 +25,21 @@ export function normalizeUrl(url: string): string {
 	return `${parsed.pathname}?${new URLSearchParams(pairs).toString()}`;
 }
 
-const PLUGIN_COLLECTIONS = new Set(['pluginData', 'pluginStates']);
+/**
+ * The pull collections an offline copy may hold: the plugin rows and switches
+ * and the typed study rows (docs/contracts/study/); never the dictionary.
+ */
+export const CACHEABLE_PULL_COLLECTIONS: readonly string[] = [
+	'pluginData',
+	'pluginStates',
+	'cards',
+	'decks',
+	'deckSettings',
+	'limits',
+	'fsrsSets',
+	'fsrsActive'
+];
+const PULL_COLLECTIONS = new Set(CACHEABLE_PULL_COLLECTIONS);
 const SEGMENT = '[^/]+';
 const API_PATTERNS: RegExp[] = [
 	/^\/api\/auth\/me$/,
@@ -73,7 +87,7 @@ function apiAllowed(url: URL): boolean {
 		const all = searchParams.getAll('collections');
 		if (all.length !== 1) return false;
 		const list = all[0].split(',');
-		return list.length > 0 && list.every((c) => PLUGIN_COLLECTIONS.has(c));
+		return list.length > 0 && list.every((c) => PULL_COLLECTIONS.has(c));
 	}
 	if (pathname === '/api/events') return (searchParams.get('workspace') ?? '') !== '';
 	return false;

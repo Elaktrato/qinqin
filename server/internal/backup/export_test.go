@@ -7,13 +7,19 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
+	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
+
+	"qinqin/internal/study"
+	"qinqin/internal/study/rows"
 )
 
 var testMeta = Meta{AppVersion: "0.3.0", SchemaVersion: "035_user_time_zones", Now: time.Date(2026, 11, 15, 12, 0, 0, 0, time.UTC)}
@@ -98,8 +104,11 @@ func TestWriteUserLayoutAndContent(t *testing.T) {
 	for _, l := range rows {
 		var r PluginRow
 		strictDecode(t, []byte(l), &r)
-		if r.Key == "card:TOMBSTONE" {
+		if r.Key == "card:TOMBSTONE" || r.Key == "deck:GONE" {
 			t.Error("tombstoned row exported")
+		}
+		if r.Key == "card:LEFTOVER" {
+			t.Error("a leftover typed-family plugin row was exported")
 		}
 		if r.WorkspaceID == nil {
 			global++
@@ -110,6 +119,26 @@ func TestWriteUserLayoutAndContent(t *testing.T) {
 	}
 	if len(rows) != 5 || global != 2 || nullModified != 1 {
 		t.Errorf("plugin rows %d global %d nullModified %d", len(rows), global, nullModified)
+	}
+	// typed cards travel as their legacy qinqin-flashcards rows (rows.ToLegacy)
+	cards := map[string]PluginRow{}
+	for _, l := range rows {
+		var r PluginRow
+		strictDecode(t, []byte(l), &r)
+		if strings.HasPrefix(r.Key, "card:") {
+			cards[r.Key] = r
+		}
+	}
+	rev := cards["card:c-reverse-"+strconv.FormatInt(w.E1, 10)]
+	if len(cards) != 3 || rev.PluginID != FlashcardsPlugin || rev.WorkspaceID == nil || *rev.WorkspaceID != w.Alice.WS1 ||
+		rev.Version != 2 || rev.UpdatedAt != "2026-11-10T08:00:00Z" || rev.ModifiedAt == nil || *rev.ModifiedAt != "2026-11-10T08:00:00Z" {
+		t.Errorf("exported cards %+v", cards)
+	}
+	if want := fmt.Sprintf(`{"createdAt":"2026-11-10T08:00:00Z","deckIds":["general"],"entryId":%d,"id":"c-reverse-%d","kind":"reverse","x-unknown":{"b":1,"a":2}}`, w.E1, w.E1); string(rev.Data) != want {
+		t.Errorf("reverse card data %s, want %s", rev.Data, want)
+	}
+	if strings.Contains(strings.Join(order, ","), "deletion") || m.FormatVersion != 1 {
+		t.Errorf("archive names %v format %d", order, m.FormatVersion)
 	}
 	// own sentences only, none tombstoned
 	var s OwnSentence
@@ -280,4 +309,113 @@ func TestWriteUserRefusesToProduceWhatARestoreWouldRefuse(t *testing.T) {
 	if _, err := WriteUser(ctx, w.DB, w.Data, w.AliceUID, io.Discard, testMeta); err != nil {
 		t.Errorf("a normal export failed: %v", err)
 	}
+}
+
+// A typed-family plugin row is exported only while it carries a readable
+// study row no typed row shadows; the counts the dry run shows agree.
+func TestExportTypedFamilyLeftovers(t *testing.T) {
+	w := newWorld(t)
+	uid := w.AliceUID
+	e1 := strconv.FormatInt(w.E1, 10)
+	ins := func(ws int64, key, data string) {
+		exec(t, w.DB, `INSERT INTO plugin_data (pack_id, user_id, workspace_id, key, data, version, updated_at, modified_at)
+			VALUES ('qinqin-flashcards', ?, ?, ?, ?, 1, '2026-11-10T08:00:00Z', '2026-11-10T08:00:00Z')`, uid, ws, key, data)
+	}
+	// readable and unshadowed: exported
+	ins(w.Alice.WS2, "deck:PLAIN", `{"id":"PLAIN","name":"n","createdAt":"t"}`)
+	// readable but a typed row holds the key: only the typed row goes
+	ins(w.Alice.WS1, "card:c-vocab-"+e1, `{"id":"c-vocab-`+e1+`","kind":"vocab","entryId":`+e1+`,"deckIds":["SHADOWED"],"createdAt":"t"}`)
+	// readable but in another user's workspace: never
+	ins(w.Bob.WS1, "deck:FOREIGN", `{"id":"FOREIGN","name":"n","createdAt":"t"}`)
+	data, man := exportBytes(t, w, uid)
+	files, _ := unzipAll(t, data)
+	keys := map[string]int{}
+	for _, l := range lines(files[PartName(NamePluginData, 1)]) {
+		var r PluginRow
+		strictDecode(t, []byte(l), &r)
+		keys[r.Key]++
+		if strings.Contains(string(r.Data), "SHADOWED") {
+			t.Error("a shadowed leftover was exported")
+		}
+	}
+	if keys["deck:PLAIN"] != 1 || keys["card:c-vocab-"+e1] != 1 || keys["deck:FOREIGN"] != 0 || keys["card:LEFTOVER"] != 0 {
+		t.Errorf("exported keys %v", keys)
+	}
+	c, err := CurrentCounts(context.Background(), w.DB, uid)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if c.PluginData != man.Counts["pluginData"] || c.PluginData != 6 || c.Cards != 3 {
+		t.Errorf("CurrentCounts %+v, export counts %v", c, man.Counts)
+	}
+}
+
+// Every typed study family travels as its legacy qinqin-flashcards row
+// (rows.ToLegacy): key, data, version, updatedAt and modifiedAt of the
+// typed row; the archive opens (no duplicate keys) and stays format v1.
+func TestExportEveryTypedFamilyAsItsLegacyRow(t *testing.T) {
+	w := newWorld(t)
+	uid := w.AliceUID
+	legacy := map[string]string{
+		"deck:d-1":         `{"id":"d-1","name":"Words","createdAt":"2026-11-01T00:00:00Z","source":{"type":"frequency","packId":"zh-freq","size":500}}`,
+		"deckcfg:d-1":      `{"deckId":"d-1","cardTypes":["reverse"],"newOrder":{"by":"level","packId":"hsk"},"x-keep":1}`,
+		"limits:workspace": `{"version":1,"new":10,"reviews":null}`,
+		"limits:deck:d-1":  `{"version":1,"new":0}`,
+		"fsrs:set:s-1":     `{"id":"s-1","w":[0.2,1.2,3.1,15.6,7.2,0.5,1.4,0.005,1.5,0.1,1,1.9,0.1,0.3,2.3,0.2,3,0.5,0.6,0.1,0.5],"createdAt":"2026-11-01T00:00:00Z","source":"optimized","labelled":120,"logLoss":0.31,"baselineLogLoss":0.35}`,
+		"fsrs:active":      `{"setId":"s-1","changedAt":"2026-11-02T00:00:00Z"}`,
+	}
+	want := map[string]rows.Row{}
+	for key, data := range legacy {
+		r, err := rows.FromLegacy(key, json.RawMessage(data))
+		if err != nil {
+			t.Fatalf("%s: %v", key, err)
+		}
+		r.M().WorkspaceID = w.Alice.WS2
+		if err := study.InsertStored(context.Background(), w.DB, uid, r, 7, "2026-11-12T10:00:00Z", "2026-11-12T09:59:58Z", nil); err != nil {
+			t.Fatal(err)
+		}
+		r.M().ModifiedAt = time.Date(2026, 11, 12, 9, 59, 58, 0, time.UTC) // what ToLegacy writes into deckcfg
+		want[key] = r
+	}
+	data, man := exportBytes(t, w, uid)
+	if man.FormatVersion != 1 {
+		t.Errorf("formatVersion %d", man.FormatVersion)
+	}
+	files, _ := unzipAll(t, data)
+	got := map[string]PluginRow{}
+	for _, l := range lines(files[PartName(NamePluginData, 1)]) {
+		var r PluginRow
+		strictDecode(t, []byte(l), &r)
+		if r.WorkspaceID != nil && *r.WorkspaceID == w.Alice.WS2 {
+			got[r.Key] = r
+		}
+	}
+	for key, r := range want {
+		g, ok := got[key]
+		if !ok {
+			t.Errorf("%s not exported", key)
+			continue
+		}
+		wantKey, wantData := rows.ToLegacy(r)
+		var a, b any
+		json.Unmarshal(g.Data, &a)
+		json.Unmarshal(wantData, &b)
+		if wantKey != key || fmt.Sprint(a) != fmt.Sprint(b) || g.PluginID != FlashcardsPlugin || g.Version != 7 ||
+			g.UpdatedAt != "2026-11-12T10:00:00Z" || g.ModifiedAt == nil || *g.ModifiedAt != "2026-11-12T09:59:58Z" {
+			t.Errorf("%s exported %+v %s, want %s", key, g, g.Data, wantData)
+		}
+	}
+	// deckcfg's inner updatedAt is the row's edit time; unknown members are kept.
+	var cfg map[string]any
+	json.Unmarshal(got["deckcfg:d-1"].Data, &cfg)
+	if cfg["updatedAt"] != "2026-11-12T09:59:58Z" || cfg["x-keep"] != float64(1) {
+		t.Errorf("deckcfg data %s", got["deckcfg:d-1"].Data)
+	}
+	p := filepath.Join(t.TempDir(), "a.zip")
+	os.WriteFile(p, data, 0o644)
+	a, err := Open(p)
+	if err != nil {
+		t.Fatalf("the archive does not open: %v", err)
+	}
+	a.Close()
 }

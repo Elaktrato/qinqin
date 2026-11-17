@@ -43,7 +43,7 @@ Everything is in `/data`: `qinqin.db` (with `-wal` and `-shm`), `packs/`, `audio
 
 ## Upgrading
 
-Back up first ([Backup, recovery and the command line](Admin-backup-and-recovery)). Change the tag in `QINQIN_IMAGE` and redeploy with "Pull latest image". Migrations are embedded and run at start. They are one-way: **downgrading is not supported**; going back needs the pre-upgrade backup. After an upgrade the log may say `pack <id>: stored ... differs`: run `qinqin seed` to refresh. A backup taken before migration 032 contains old plaintext session tokens: keep it private and delete it after upgrading.
+Back up first ([Backup, recovery and the command line](Admin-backup-and-recovery)). Change the tag in `QINQIN_IMAGE` and redeploy with "Pull latest image". Migrations are embedded and run at start. They are one-way: **downgrading is not supported**, and that includes running an older binary on an upgraded database; going back needs the pre-upgrade backup. (If a v0.3 binary did run on a v0.4 database, the flashcards rows it wrote are taken over at the next start of v0.4, except changes to rows v0.4 already holds.) After an upgrade the log may say `pack <id>: stored ... differs`: run `qinqin seed` to refresh. A backup taken before migration 032 contains old plaintext session tokens: keep it private and delete it after upgrading.
 
 Upgrading from v0.1.0 or an early development database is not supported for entry data: start from a fresh data directory and seed again.
 

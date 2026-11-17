@@ -5,13 +5,28 @@ vi.mock('$app/navigation', () => ({ goto: vi.fn() }));
 import type { PluginInfo } from '../api/types';
 import { builtinManifests } from '../plugins/contract';
 import { webPlugins } from '../plugins';
-import { pluginRowInfo, validOrder } from './pluginRows';
+import { listedPlugins, pluginRowInfo, validOrder } from './pluginRows';
 
 function info(manifest: Record<string, unknown>): PluginInfo {
 	return { id: String(manifest.id), manifest: manifest as PluginInfo['manifest'], enabled: true, order: 0 };
 }
 
 const journal = builtinManifests().find((m) => m.id === 'qinqin-journal')!;
+
+describe('listedPlugins (Settings -> Plugins)', () => {
+	it('lists the plugins only: never the core row or the two core features, hidden or not', () => {
+		const row = (id: string, hidden?: boolean): PluginInfo => ({ id, manifest: {}, enabled: true, order: 0, ...(hidden === undefined ? {} : { hidden }) });
+		const list = [
+			row('qinqin-core', true),
+			row('qinqin-flashcards', false),
+			row('qinqin-reader'),
+			row('qinqin-journal'),
+			row('qinqin-grammar'),
+			row('some-hidden-builtin', true)
+		];
+		expect(listedPlugins(list).map((p) => p.id)).toEqual(['qinqin-journal', 'qinqin-grammar']);
+	});
+});
 
 describe('pluginRowInfo', () => {
 	it('lists the journal permissions and needs no update', () => {

@@ -18,6 +18,7 @@ import (
 	"qinqin/internal/journal"
 	"qinqin/internal/lang"
 	"qinqin/internal/library"
+	"qinqin/internal/study"
 
 	"modernc.org/sqlite"
 	sqlite3 "modernc.org/sqlite/lib"
@@ -458,8 +459,9 @@ func (s *server) deleteWorkspace(ctx context.Context, userID, id int64) ([]int64
 		return nil, nil, errWorkspaceNotFound
 	}
 	// Every table with a workspace_id column (migrations 009, 010, 019,
-	// 037); bookmarks and highlights hang off the books.
-	for _, table := range []string{"study_events", "plugin_data"} {
+	// 037, the typed study tables of 038); bookmarks and highlights hang
+	// off the books.
+	for _, table := range append([]string{"study_events", "plugin_data"}, study.Tables()...) {
 		if _, err := tx.ExecContext(ctx, `DELETE FROM `+table+` WHERE workspace_id = ?`, id); err != nil {
 			return nil, nil, err
 		}

@@ -43,8 +43,9 @@ database with a SvelteKit single-page app embedded in the binary.
   revealed (switch in **Settings → Study**), synced and included in the backup
   (`docs/contracts/notes/`).
 - **Study mode** — add any word from its entry page and review it with Anki-style
-  grading; the flashcards plugin derives FSRS schedules and EXP/levels from the
-  event log.
+  grading; flashcards derive FSRS schedules and EXP/levels from the event log.
+  Flashcards and the reader are part of the app (not plugins since v0.4.0); each
+  user can switch either off for themselves in **Settings → Features**.
 - **Decks, limits and vacation** — a decks view with per-deck numbers (studied,
   mastered, due, 30-day reviews, retention) and copies of level decks; starter decks
   (Top 500/1000/2000 of an installed frequency list, known words skipped) and a
@@ -297,8 +298,8 @@ Two kinds, both in the app (issue [#61](https://github.com/Elaktrato/qinqin/issu
 **Your own data (every user): Settings, Account, Your data.**
 
 - *Download my data* gives a zip of JSON (format v1, `docs/contracts/backup/`): workspaces and settings,
-  study history, flashcards and decks, vacation periods and limits (all plugin rows, user-global ones
-  included), word edits, personal notes, your own sentences, library books with bookmarks and highlights, plugin switches
+  study history, flashcards and decks, vacation periods and limits (the typed study rows as their v0.3
+  plugin rows, and all plugin rows, user-global ones included), word edits, personal notes, your own sentences, library books with bookmarks and highlights, plugin switches
   and your time zone history. The link is a one-time ticket valid 60 s; six downloads per hour.
 - The download never holds your password, email, sessions, two-factor secrets and recovery codes, AI keys,
   invites, the audit log, SMTP settings, QINQIN_SECRET, journal photo drafts, deleted rows, or dictionary
@@ -360,7 +361,17 @@ plaintext session tokens: store it like the database and delete it after the upg
 redeploy with *Pull latest image* enabled. Migrations are embedded in the
 binary and applied automatically at start (`server/internal/db`); they are
 one-way. **Downgrading is not supported**: going back to an older image needs
-the pre-upgrade backup. After an upgrade the log may say
+the pre-upgrade backup.
+
+Upgrading to v0.4.0: migration 038 moves the flashcards data (cards, decks, deck
+settings, daily limits, FSRS parameter sets and the active set) from plugin data
+into typed tables, keeping every card id, review, setting, version and stamp; nothing
+is lost, and a row no v0.3 client could read stays where it was. Old open tabs (a
+cached v0.3 app) keep reading and writing their cards until they are reloaded. Old
+`/p/flashcards` and `/p/reader` links redirect to `/flashcards` and `/reader`. A v0.3
+backup restores on v0.4 and a v0.4 backup restores on v0.3 (that is the way back: running the v0.3
+binary on the upgraded database is unsupported; if it happened, the flashcards rows it wrote are taken
+over at the next v0.4 start, except changes to rows v0.4 already holds). After an upgrade the log may say
 `pack <id>: stored ... differs`; run `qinqin seed` in the console to refresh.
 
 ### Reverse proxy and HTTPS
@@ -861,9 +872,9 @@ untouched. The home widget shows
 "18 reviews · 5 new left today" and the decks list "x new · y reviews left today". Both features count by
 the learner's day ("Study day and time zone").
 
-Data: vacations are user-global plugin-data rows `vacation:<ULID>` (every client reads them), limits are
-workspace rows `limits:workspace` and `limits:deck:<deckId>` of the `qinqin-flashcards` plugin; there is
-no server change. The exact rules and JSON fixtures for the Android client are in
+Data: vacations are user-global plugin-data rows `vacation:<ULID>` of the study namespace
+`qinqin-flashcards` (every client reads them), limits are typed `limits` rows of the workspace
+(`docs/contracts/study/`). The exact rules and JSON fixtures for the Android client are in
 [`docs/contracts/scheduler/`](docs/contracts/scheduler/README.md).
 
 ## Install as an app and study offline
@@ -944,7 +955,7 @@ by unit and component tests and by checking the served files and headers.
 
 ## Studying
 
-Study is a web feature plugin (`qinqin-flashcards`). To add a word, open any
+Study is a core feature of the app (its decks page is `/flashcards`). To add a word, open any
 character or word entry and press **Add to study** next to its title; the card
 joins the general deck and keeps the entry's first example sentence for context.
 
@@ -982,7 +993,7 @@ queue and the due counts. Reverse and cloze reviews give XP and count for streak
 and the heatmap, but not for character mastery. Rules and fixtures for other
 clients: `docs/contracts/cards/`.
 
-**Decks page.** The flashcards plugin has a page of its own, **Decks** (`/p/flashcards`,
+**Decks page.** Flashcards have a page of their own, **Decks** (`/flashcards`,
 in the main navigation): your overall numbers (words, studied, mastered, retention and
 reviews of the last 30 learner days), then every deck with its words and cards, what is
 due and new, a progress bar and **Study** (a session over that deck only, with the saved
@@ -1220,7 +1231,7 @@ older ULID format, or a sentence card whose derived id another sentence already
 holds and so falls back to another id), both rows are stored until a later write
 touches them; only the merged view hides it.
 
-Studying adds no bundled data. Decks and cards are workspace plugin data and
+Studying adds no bundled data. Decks and cards are typed workspace rows and
 reviews are events, so the dictionaries in `plugins/data/` stay unmodified.
 
 See the [design doc](docs/superpowers/specs/2026-11-12-flashcards-design.md) for
@@ -1369,6 +1380,9 @@ cannot import from the sources; epub uploads still work.
 
 ### Feature plugins
 
+The built-in feature plugins are the journal and grammar; flashcards and the reader
+are core features (`apps/web/src/lib/features/`) with reserved registry ids
+(`qinqin-flashcards`, `qinqin-reader`) whose per-user state is the feature switch.
 Every built-in feature plugin has one manifest, a JSON file in
 `server/internal/plugins/builtin/` that the Go server embeds and validates at
 start-up (`plugins.ParseManifest`; unknown fields are rejected) and the web build

@@ -75,6 +75,9 @@ type Book struct {
 	ChapterCount int       `json:"chapterCount"`
 	Position     string    `json:"position"`
 	CreatedAt    time.Time `json:"createdAt"`
+	// UpdatedAt is the row's write stamp: creation, then every position
+	// write (migration 038; the paged library sync reads it).
+	UpdatedAt time.Time `json:"updatedAt"`
 }
 
 // Store keeps books in DB with their content files under Dir.
@@ -84,7 +87,7 @@ type Store struct {
 }
 
 const columns = `id, user_id, workspace_id, language, title, author, source, source_id,
-	source_url, attribution, license_note, chapter_count, position, created_at`
+	source_url, attribution, license_note, chapter_count, position, created_at, updated_at`
 
 // path is the content file of a book, built from integer ids only.
 func (s Store) path(userID, id int64) string {
@@ -110,6 +113,7 @@ func (s Store) Create(ctx context.Context, b Book, chapters []Chapter) (Book, er
 	}
 	b.ChapterCount = len(chapters)
 	b.CreatedAt = time.Now().UTC().Truncate(time.Second)
+	b.UpdatedAt = b.CreatedAt
 
 	tx, err := s.DB.BeginTx(ctx, nil)
 	if err != nil {
@@ -122,8 +126,8 @@ func (s Store) Create(ctx context.Context, b Book, chapters []Chapter) (Book, er
 	// a read snapshot (which WAL can refuse with SQLITE_BUSY_SNAPSHOT).
 	res, err := tx.ExecContext(ctx, `
 		INSERT INTO library_books (user_id, workspace_id, language, title, author, source, source_id,
-			source_url, attribution, license_note, chapter_count, position, created_at)
-		SELECT ?1, w.id, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13
+			source_url, attribution, license_note, chapter_count, position, created_at, updated_at)
+		SELECT ?1, w.id, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?13
 		FROM workspaces w WHERE w.id = ?2 AND w.user_id = ?1 AND w.language = ?3`,
 		b.UserID, b.WorkspaceID, b.Language, b.Title, b.Author, b.Source, b.SourceID,
 		b.SourceURL, b.Attribution, b.LicenseNote, b.ChapterCount, b.Position,
@@ -192,15 +196,16 @@ func writeFile(path string, content []byte) error {
 // scan reads one book row.
 func scan(row interface{ Scan(...any) error }) (Book, error) {
 	var b Book
-	var created string
+	var created, updated string
 	err := row.Scan(&b.ID, &b.UserID, &b.WorkspaceID, &b.Language, &b.Title, &b.Author, &b.Source, &b.SourceID,
-		&b.SourceURL, &b.Attribution, &b.LicenseNote, &b.ChapterCount, &b.Position, &created)
+		&b.SourceURL, &b.Attribution, &b.LicenseNote, &b.ChapterCount, &b.Position, &created, &updated)
 	if err != nil {
 		return Book{}, err
 	}
 	if b.CreatedAt, err = time.Parse(time.RFC3339, created); err != nil {
 		return Book{}, fmt.Errorf("library: parse created_at %q: %w", created, err)
 	}
+	b.UpdatedAt = stampOr(updated, b.CreatedAt)
 	return b, nil
 }
 
@@ -315,7 +320,8 @@ func (s Store) SetPosition(ctx context.Context, userID, id int64, position strin
 		return err
 	}
 	res, err := s.DB.ExecContext(ctx,
-		`UPDATE library_books SET position = ? WHERE user_id = ? AND id = ?`, position, userID, id)
+		`UPDATE library_books SET position = ?, updated_at = ? WHERE user_id = ? AND id = ?`,
+		position, nowStamp(), userID, id)
 	if err != nil {
 		return fmt.Errorf("library: set position %d: %w", id, err)
 	}
@@ -335,6 +341,21 @@ func (s Store) Delete(ctx context.Context, userID, id int64) error {
 		return fmt.Errorf("library: delete %d: %w", id, err)
 	}
 	defer tx.Rollback()
+	// Children first (logged with the book's workspace), then the book.
+	const book = `SELECT id FROM library_books WHERE user_id = ?1 AND id = ?2`
+	for _, c := range childCollections {
+		if err := logDeletions(ctx, tx, c.name, `SELECT ?1, b.workspace_id, x.id FROM `+c.table+` x
+			JOIN library_books b ON b.id = x.book_id WHERE b.user_id = ?1 AND b.id = ?2`, userID, id); err != nil {
+			return fmt.Errorf("library: delete %d: %w", id, err)
+		}
+		if _, err := tx.ExecContext(ctx,
+			`DELETE FROM `+c.table+` WHERE book_id IN (`+book+`)`, userID, id); err != nil {
+			return fmt.Errorf("library: delete %s %d: %w", c.name, id, err)
+		}
+	}
+	if err := logDeletions(ctx, tx, "books", `SELECT user_id, workspace_id, id FROM library_books WHERE user_id = ?1 AND id = ?2`, userID, id); err != nil {
+		return fmt.Errorf("library: delete %d: %w", id, err)
+	}
 	res, err := tx.ExecContext(ctx,
 		`DELETE FROM library_books WHERE user_id = ? AND id = ?`, userID, id)
 	if err != nil {
@@ -344,14 +365,6 @@ func (s Store) Delete(ctx context.Context, userID, id int64) error {
 		return fmt.Errorf("library: delete %d: %w", id, err)
 	} else if n == 0 {
 		return ErrNotFound
-	}
-	if _, err := tx.ExecContext(ctx,
-		`DELETE FROM library_bookmarks WHERE book_id = ?`, id); err != nil {
-		return fmt.Errorf("library: delete bookmarks %d: %w", id, err)
-	}
-	if _, err := tx.ExecContext(ctx,
-		`DELETE FROM library_highlights WHERE book_id = ?`, id); err != nil {
-		return fmt.Errorf("library: delete highlights %d: %w", id, err)
 	}
 	if err := tx.Commit(); err != nil {
 		return fmt.Errorf("library: delete %d: %w", id, err)
@@ -371,13 +384,20 @@ func (s Store) Delete(ctx context.Context, userID, id int64) error {
 // committed, so a rollback never loses a book's text. Another user's
 // workspace deletes nothing.
 func DeleteWorkspaceBooks(ctx context.Context, tx *sql.Tx, userID, workspaceID int64) ([]int64, error) {
-	// Children first, while the book rows still say which books they are.
+	// Children first, while the book rows still say which books they are;
+	// every removed row is logged in library_deletions on the same tx.
 	const books = `SELECT id FROM library_books WHERE user_id = ?1 AND workspace_id = ?2`
-	for _, table := range []string{"library_bookmarks", "library_highlights"} {
-		if _, err := tx.ExecContext(ctx,
-			`DELETE FROM `+table+` WHERE book_id IN (`+books+`)`, userID, workspaceID); err != nil {
-			return nil, fmt.Errorf("library: delete workspace %d %s: %w", workspaceID, table, err)
+	for _, c := range childCollections {
+		if err := logDeletions(ctx, tx, c.name, `SELECT ?1, ?2, id FROM `+c.table+` WHERE book_id IN (`+books+`)`, userID, workspaceID); err != nil {
+			return nil, fmt.Errorf("library: delete workspace %d %s: %w", workspaceID, c.table, err)
 		}
+		if _, err := tx.ExecContext(ctx,
+			`DELETE FROM `+c.table+` WHERE book_id IN (`+books+`)`, userID, workspaceID); err != nil {
+			return nil, fmt.Errorf("library: delete workspace %d %s: %w", workspaceID, c.table, err)
+		}
+	}
+	if err := logDeletions(ctx, tx, "books", `SELECT ?1, ?2, id FROM library_books WHERE user_id = ?1 AND workspace_id = ?2`, userID, workspaceID); err != nil {
+		return nil, fmt.Errorf("library: delete workspace %d books: %w", workspaceID, err)
 	}
 	rows, err := tx.QueryContext(ctx,
 		`DELETE FROM library_books WHERE user_id = ?1 AND workspace_id = ?2 RETURNING id`, userID, workspaceID)
@@ -411,4 +431,46 @@ func (s Store) RemoveContent(userID int64, ids []int64) error {
 		}
 	}
 	return errors.Join(errs...)
+}
+
+// childCollections are the rows that hang off a book, by deletion-log
+// collection name and table.
+var childCollections = []struct{ name, table string }{
+	{"bookmarks", "library_bookmarks"},
+	{"highlights", "library_highlights"},
+}
+
+// execer is what *sql.DB and *sql.Tx offer for a statement.
+type execer interface {
+	ExecContext(ctx context.Context, query string, args ...any) (sql.Result, error)
+}
+
+// logDeletions records, in the caller's transaction, one library_deletions
+// row per (user_id, workspace_id, row id) that rowsQuery selects, before
+// the caller deletes those rows. The live tables keep hard deletes; the
+// log is what a delta sync pages for tombstones (migration 038). Ids are
+// never reused (AUTOINCREMENT), so (collection, row_id) is unique; a
+// conflict (an id restored verbatim, then deleted again) refreshes the row.
+func logDeletions(ctx context.Context, q execer, collection, rowsQuery string, args ...any) error {
+	_, err := q.ExecContext(ctx, `INSERT INTO library_deletions (user_id, workspace_id, row_id, collection, deleted_at)
+		SELECT d.*, '`+collection+`', '`+nowStamp()+`' FROM (`+rowsQuery+`) d WHERE true
+		ON CONFLICT (collection, row_id) DO UPDATE SET user_id = excluded.user_id,
+			workspace_id = excluded.workspace_id, deleted_at = excluded.deleted_at`, args...)
+	if err != nil {
+		return fmt.Errorf("log %s deletions: %w", collection, err)
+	}
+	return nil
+}
+
+// nowStamp is the write stamp of a library row: RFC 3339 UTC seconds.
+func nowStamp() string { return time.Now().UTC().Format(time.RFC3339) }
+
+// stampOr parses a stored stamp; an empty or unreadable one (a row from
+// before migration 038 backfilled nothing) falls back to fallback.
+func stampOr(s string, fallback time.Time) time.Time {
+	t, err := time.Parse(time.RFC3339, s)
+	if err != nil {
+		return fallback
+	}
+	return t
 }

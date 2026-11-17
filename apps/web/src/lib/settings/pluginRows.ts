@@ -3,6 +3,7 @@
 
 import type { PluginInfo } from '../api/types';
 import type { WebPlugin } from '../plugins';
+import { RESERVED_IDS } from '../features';
 import { PERMISSION_LABELS, PERMISSIONS, sdkSupported, type Permission } from '../plugins/contract';
 
 export interface PluginRowInfo {
@@ -14,6 +15,15 @@ export interface PluginRowInfo {
 	 * registered without an sdk declaration (grandfathered).
 	 */
 	notice: 'app-update' | 'legacy' | null;
+}
+
+/**
+ * listedPlugins: the rows Settings -> Plugins shows. The core row and the two
+ * core features are never plugins (lib/features), whatever `hidden` says;
+ * other rows the server flags hidden (surface-less built-ins) stay out too.
+ */
+export function listedPlugins<T extends PluginInfo>(list: readonly T[]): T[] {
+	return list.filter((plugin) => !plugin.hidden && !RESERVED_IDS.has(plugin.id));
 }
 
 export function pluginRowInfo(plugin: PluginInfo, web: WebPlugin[]): PluginRowInfo {

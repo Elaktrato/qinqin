@@ -12,6 +12,7 @@ import (
 	"qinqin/internal/events"
 	"qinqin/internal/lexicon"
 	"qinqin/internal/plugins"
+	"qinqin/internal/study"
 )
 
 const (
@@ -29,23 +30,23 @@ func SuggestionInput(ctx context.Context, sqlDB *sql.DB, userID, workspaceID int
 	if err != nil {
 		return nil, nil, err
 	}
-	rows, err := plugins.ListData(ctx, sqlDB, userID, &workspaceID, "qinqin-flashcards", "card:")
+	// The workspace's live cards (typed study rows; a leftover plugin row
+	// no client can read is not a card).
+	live, err := study.ListCards(ctx, sqlDB, userID, workspaceID)
 	if err != nil {
 		return nil, nil, err
 	}
 	type card struct {
-		EntryID int64  `json:"entryId"`
-		Written string `json:"written"`
+		EntryID int64
+		Written string
 	}
 	cards := map[string]card{}
-	for _, row := range rows {
-		var c struct {
-			ID string `json:"id"`
-			card
+	for _, c := range live {
+		k := card{EntryID: c.EntryID}
+		if c.Written != nil {
+			k.Written = *c.Written
 		}
-		if json.Unmarshal(row.Data, &c) == nil && c.ID != "" {
-			cards[c.ID] = c.card
-		}
+		cards[c.ID] = k
 	}
 	// Newest review first; Since returns oldest first.
 	var order []card
@@ -96,7 +97,7 @@ func SuggestionInput(ctx context.Context, sqlDB *sql.DB, userID, workspaceID int
 		}
 	}
 
-	rows, err = plugins.ListData(ctx, sqlDB, userID, &workspaceID, PluginID, "entry:")
+	rows, err := plugins.ListData(ctx, sqlDB, userID, &workspaceID, PluginID, "entry:")
 	if err != nil {
 		return nil, nil, err
 	}

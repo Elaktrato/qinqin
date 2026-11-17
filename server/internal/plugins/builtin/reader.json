@@ -1,12 +1,12 @@
 {
 	"id": "qinqin-reader",
 	"name": "Reader",
-	"version": "1.1",
+	"version": "2.0",
 	"type": "feature",
 	"sdk": 1,
-	"description": "Read books and articles with tap-to-look-up.",
-	"surfaces": ["page", "home-widget"],
-	"permissions": ["read:entries", "read:study-events", "write:study-events"],
+	"description": "Core feature, not a plugin: the per-user Reader switch.",
+	"surfaces": [],
+	"permissions": [],
 	"hooks": [],
-	"events": [{ "type": "read", "activity": { "label": "Reading", "describe": { "one": "{n} minute of reading", "other": "{n} minutes of reading" }, "measure": { "field": "seconds", "unit": "seconds", "min": 30, "max": 7200 }, "pointsPer": 300 } }]
+	"events": []
 }

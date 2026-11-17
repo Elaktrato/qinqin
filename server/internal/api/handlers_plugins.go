@@ -8,6 +8,7 @@ import (
 	"strconv"
 
 	"qinqin/internal/plugins"
+	"qinqin/internal/study/rows"
 )
 
 // handleRegisterPlugin serves POST /api/admin/plugins: an admin
@@ -132,6 +133,9 @@ func (s *server) handleGetPluginData(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
+	if legacyKey(r.PathValue("id"), r.PathValue("key"), workspaceID) && s.legacyGet(w, r, u.ID, *workspaceID, r.PathValue("key")) {
+		return
+	}
 	d, err := plugins.GetData(r.Context(), s.db, u.ID, workspaceID, r.PathValue("id"), r.PathValue("key"))
 	if errors.Is(err, plugins.ErrNotFound) {
 		http.Error(w, "plugin data not found", http.StatusNotFound)
@@ -166,10 +170,17 @@ func (s *server) handleListPluginData(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "plugin not found", http.StatusNotFound)
 		return
 	}
-	list, err := plugins.ListData(r.Context(), s.db, u.ID, workspaceID, pluginID, r.URL.Query().Get("prefix"))
+	prefix := r.URL.Query().Get("prefix")
+	list, err := plugins.ListData(r.Context(), s.db, u.ID, workspaceID, pluginID, prefix)
 	if err != nil {
 		http.Error(w, "internal error", http.StatusInternalServerError)
 		return
+	}
+	if pluginID == rows.Namespace && workspaceID != nil {
+		if list, err = s.mergeLegacyList(r, u.ID, *workspaceID, prefix, list); err != nil {
+			http.Error(w, "internal error", http.StatusInternalServerError)
+			return
+		}
 	}
 	writeJSON(w, http.StatusOK, list)
 }
@@ -213,6 +224,10 @@ func (s *server) handlePutPluginData(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "plugin does not declare owns-data", http.StatusForbidden)
 		return
 	}
+	if _, typed := rows.FamilyOf(key); typed && pluginID == rows.Namespace {
+		s.legacyPut(w, r, u.ID, workspaceID, key, body)
+		return
+	}
 	d, err := plugins.PutDataRow(r.Context(), s.db, u.ID, workspaceID, pluginID, key, json.RawMessage(body), nil)
 	if err != nil {
 		http.Error(w, "internal error", http.StatusInternalServerError)
@@ -246,6 +261,9 @@ func (s *server) handleDeletePluginData(w http.ResponseWriter, r *http.Request) 
 	}
 	if !allowed {
 		http.Error(w, "plugin does not declare owns-data", http.StatusForbidden)
+		return
+	}
+	if legacyKey(pluginID, r.PathValue("key"), workspaceID) && s.legacyDelete(w, r, u.ID, *workspaceID, r.PathValue("key")) {
 		return
 	}
 	err = plugins.DeleteData(r.Context(), s.db, u.ID, workspaceID, pluginID, r.PathValue("key"))
