@@ -69,7 +69,7 @@
 		return at;
 	}
 
-	const stack = $derived(fontStack(display.font, lang.split('-')[0]));
+	const stack = $derived(fontStack(display.font, lang));
 
 	// A click on a highlight edits it; a click that ended a selection (a
 	// drag, a double click) is the selection lookup's, not ours.

@@ -100,6 +100,8 @@ describe('ChapterText readings', () => {
 		expect(root.getAttribute('lang')).toBe('zh-Hant');
 		expect(root.style.getPropertyValue('--reader-rt-size')).toBe('0.75em');
 		expect(root.style.getPropertyValue('--reader-font')).toContain('serif');
+		// The full study lang picks the script: traditional text gets the TC families.
+		expect(root.style.getPropertyValue('--reader-font')).toContain('"Noto Serif CJK TC"');
 	});
 
 	it('the default font sets no font variable', () => {

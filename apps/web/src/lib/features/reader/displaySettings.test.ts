@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import settingsFixture from '../../../../../../docs/contracts/settings/workspace-settings.json';
 import fixture from '../../../../../../docs/contracts/reader/display-settings.json';
+import { hanziStack, installedFaces } from '$lib/fonts/hanzi';
 import { fontStack } from './fonts';
 import { DEFAULT_DISPLAY, displayPatch, parseDisplay, RUBY_SCALES } from './displaySettings';
 
@@ -51,9 +52,13 @@ describe('fontStack', () => {
 			});
 		}
 	}
-	it('default is the app stack and kai in ja is the serif stack', () => {
+	it('default is the app stack; the others are the shared hanzi stacks of the full study lang', () => {
 		expect(fontStack('default', 'zh')).toBe('inherit');
-		expect(fontStack('kai', 'ja')).toBe(fontStack('serif', 'ja'));
+		expect(fontStack('kai', 'ja')).toBe(hanziStack('kai', 'ja', installedFaces([])));
+		expect(fontStack('serif', 'zh-Hant')).toBe(hanziStack('serif', 'zh-Hant', installedFaces([])));
+	});
+	it('an installed pack face comes first', () => {
+		expect(fontStack('kai', 'zh-Hans', installedFaces([{ face: 'kai', script: 'Hans' }]))).toMatch(/^"qq-kai-Hans", /);
 	});
 	it('an unknown language gets the generic stacks', () => {
 		expect(fontStack('serif', 'en')).toMatch(/serif$/);
