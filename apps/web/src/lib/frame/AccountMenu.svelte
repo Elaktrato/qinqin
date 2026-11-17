@@ -66,7 +66,12 @@
 				<div class="who" id="{uid}-who">{name}</div>
 				{#if !restricted}
 					<MenuItem href="/settings" icon="settings">{t('nav.settings')}</MenuItem>
-					<MenuItem keepOpen focus icon="palette" onselect={() => (level = 'theme')}
+					<MenuItem
+						keepOpen
+						focus
+						icon="palette"
+						label={t('account.menu.theme', { name: themeName })}
+						onselect={() => (level = 'theme')}
 						>{t('nav.account.theme')} <span class="value">{themeName}</span><Icon name="forward" size="s" /></MenuItem
 					>
 					{#if $user?.admin}

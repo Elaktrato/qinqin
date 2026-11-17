@@ -2,5 +2,10 @@
   "version": 1,
   "rule": "i18n/retired-keys",
   "note": "Catalogue keys that were removed. A key is stable and never reused: changing a message's meaning means a new key, and a removed key is appended here (never deleted from this list). No catalogue of any language, on any client, may contain a retired key, so a stale translation or Android file can never show a wrong sentence.",
-  "keys": []
+  "keys": [
+    "app.workspaces.picker.new",
+    "app.workspaces.picker.noWorkspace",
+    "nav.brand.homeTitle",
+    "nav.footer"
+  ]
 }

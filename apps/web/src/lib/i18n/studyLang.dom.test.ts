@@ -92,10 +92,14 @@ describe('the audited components', () => {
 });
 
 describe('the shell', () => {
-	it('the header brand link carries no lang (interface text); the footer hanzi keeps lang="zh"', () => {
-		const layout = read('routes/+layout.svelte');
-		const brand = layout.slice(layout.indexOf('class="brand'), layout.indexOf('>', layout.indexOf('class="brand')));
-		expect(brand).not.toMatch(/\slang=/);
-		expect(layout).toContain('<span lang="zh">{APP_NAME_HANZI}</span>');
+	// The footer and its brand hanzi line went with the frame (#99); the bar's
+	// logo links carry no lang (interface text).
+	it('the bar brand links carry no lang (interface text)', () => {
+		for (const file of ['routes/+layout.svelte', 'lib/frame/TopBar.svelte']) {
+			const src = read(file);
+			const brand = src.slice(src.indexOf('class="brand'), src.indexOf('>', src.indexOf('class="brand')));
+			expect(brand, file).not.toMatch(/\slang=/);
+			expect(src, file).not.toMatch(/\slang="(?!ts")/);
+		}
 	});
 });

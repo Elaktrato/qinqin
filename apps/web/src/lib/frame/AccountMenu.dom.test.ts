@@ -78,6 +78,8 @@ describe('AccountMenu', () => {
 		expect(names()).toEqual(['Settings', 'Theme Latte', 'Sources', 'Sign out']);
 		expect(screen.getByRole('menuitem', { name: 'Settings' }).getAttribute('href')).toBe('/settings');
 		expect(screen.getByRole('menuitem', { name: 'Sources' }).getAttribute('href')).toBe('/sources');
+		// Laid out as "Theme   Latte ›", named as one phrase.
+		expect(screen.getByRole('menuitem', { name: 'Theme: Latte' })).toBeTruthy();
 	});
 
 	it('Admin settings only for admins', async () => {
