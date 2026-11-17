@@ -76,11 +76,29 @@ func Installable(typ string) bool {
 // Option configures Import and Uninstall.
 type Option func(*options)
 
-type options struct{ audioStore string }
+type options struct {
+	audioStore string
+	onChange   func(typ, packID, language string)
+}
 
 // WithAudioStore names the directory audio clips live in (<data>/audio);
 // importing or uninstalling an audio pack needs it.
 func WithAudioStore(dir string) Option { return func(o *options) { o.audioStore = dir } }
+
+// WithOnChange has fn called after an import or an uninstall committed,
+// with the pack's type, registry id and language ("" for a strokes pack,
+// which serves several). The data packages built from the pack hang off it
+// (datapkg.Builder.PackChanged); this package cannot name them itself.
+func WithOnChange(fn func(typ, packID, language string)) Option {
+	return func(o *options) { o.onChange = fn }
+}
+
+// changed tells the onChange hook, if any.
+func (o options) changed(typ, packID, language string) {
+	if o.onChange != nil {
+		o.onChange(typ, packID, language)
+	}
+}
 
 func collect(opts []Option) options {
 	var o options
@@ -98,12 +116,18 @@ var errNoAudioStore = errors.New("packs: audio packs need an audio store directo
 //
 // After the type's import commits, the pack's licence files are kept
 // (StoreTexts); a failure there is returned although the pack is installed.
+//
+// The onChange hook (WithOnChange) runs once the type's import committed,
+// also when storing the texts failed afterwards: the pack's data changed.
 func Import(ctx context.Context, sqlDB *sql.DB, pack dict.Pack, opts ...Option) (string, error) {
-	line, err := importData(ctx, sqlDB, pack, collect(opts))
+	o := collect(opts)
+	line, err := importData(ctx, sqlDB, pack, o)
 	if err != nil {
 		return "", err
 	}
-	if err := storeTextsAfterImport(ctx, sqlDB, pack); err != nil {
+	err = storeTextsAfterImport(ctx, sqlDB, pack)
+	o.changed(pack.Type, RegistryID(pack.Manifest), pack.Language)
+	if err != nil {
 		return "", err
 	}
 	return line, nil
@@ -178,9 +202,24 @@ func importData(ctx context.Context, sqlDB *sql.DB, pack dict.Pack, o options) (
 // Uninstall removes the live pack of type typ with registry id packID and
 // its licence texts.
 // Unknown types return ErrUnknownType, packs that are not installed
-// ErrNotFound.
+// ErrNotFound. The onChange hook (WithOnChange) runs after the pack is gone.
 func Uninstall(ctx context.Context, sqlDB *sql.DB, typ, packID string, opts ...Option) error {
 	o := collect(opts)
+	var language string
+	if o.onChange != nil {
+		// Read before the uninstall: the hook needs the pack's language.
+		if p, err := Find(ctx, sqlDB, typ, packID); err == nil {
+			language = p.Language
+		}
+	}
+	if err := uninstall(ctx, sqlDB, typ, packID, o); err != nil {
+		return err
+	}
+	o.changed(typ, packID, language)
+	return nil
+}
+
+func uninstall(ctx context.Context, sqlDB *sql.DB, typ, packID string, o options) error {
 	var err error
 	switch typ {
 	case dict.TypeDictionary:

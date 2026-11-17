@@ -211,8 +211,12 @@ func serveCmd(args []string) error {
 		log.Printf("offline OCR: not available (tesseract not found)")
 	}
 
+	// Data packages: one builder goroutine; the startup reconcile builds what
+	// is missing or stale in the background (the catalogue says building).
+	pkgs := startPackages(ctx, sqlDB, *data, log.Printf)
+
 	log.Printf("qinqin listening on %s (data: %s)", *addr, *data)
-	return http.ListenAndServe(*addr, rootHandler(webdist.Dist, api.New(sqlDB, *data, librarySources(*data, sqlDB), api.WithAI(aiSvc), api.WithMail(mailSvc), api.WithSecrets(sec.Current, sec.Previous), api.WithOCR(tess), api.WithStageSweeper(ctx, 5*time.Minute), api.WithTrustedProxies(trusted))))
+	return http.ListenAndServe(*addr, rootHandler(webdist.Dist, api.New(sqlDB, *data, librarySources(*data, sqlDB), api.WithAI(aiSvc), api.WithMail(mailSvc), api.WithSecrets(sec.Current, sec.Previous), api.WithOCR(tess), api.WithStageSweeper(ctx, 5*time.Minute), api.WithTrustedProxies(trusted), api.WithPackages(pkgs))))
 }
 
 // version is sent in the User-Agent of requests to the text sources; set

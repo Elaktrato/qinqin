@@ -44,7 +44,7 @@ func (s *server) handleUninstallPack(w http.ResponseWriter, r *http.Request) {
 	s.packMu.Lock()
 	defer s.packMu.Unlock()
 	err := packs.Uninstall(r.Context(), s.db, r.PathValue("type"), r.PathValue("packId"),
-		packs.WithAudioStore(filepath.Join(s.dataDir, "audio")))
+		packs.WithAudioStore(filepath.Join(s.dataDir, "audio")), packs.WithOnChange(s.packChanged))
 	switch {
 	case errors.Is(err, packs.ErrUnknownType):
 		http.Error(w, "unknown pack type", http.StatusNotFound)
