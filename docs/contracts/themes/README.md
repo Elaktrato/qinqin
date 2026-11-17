@@ -1,0 +1,107 @@
+# Themes: theme files, contrast, derived tokens, the `appearance` row
+
+Colour themes are data (#96). A theme is a set of colour tokens in a JSON file; themes arrive in packs of type
+`theme` (format `themes-json`), built-in ones ship inside the server binary, and every client paints with the
+same tokens derived by the same rule. Design: `docs/superpowers/specs/2026-11-16-visual-rework-design.md` §6, §7,
+§12; plan: `docs/superpowers/plans/2026-11-17-vr-themes.md`.
+
+## Theme file
+
+A theme pack holds `manifest.json` (the usual pack fields; `type: "theme"`, `format: "themes-json"`, **no**
+`language` or `languages`), `themes.json`, and its licence files. `themes.json` is a JSON **array** of 1–64
+themes, at most 262,144 bytes:
+
+```json
+[{ "id": "catppuccin-mocha", "name": "Mocha", "family": "Catppuccin", "scheme": "dark",
+   "colors": { "chrome": "#11111b", "panel": "#1e1e2e", "raised": "#313244", "line": "#45475a",
+               "text": "#cdd6f4", "muted": "#a6adc8", "good": "#a6e3a1", "warn": "#f9e2af", "bad": "#f38ba8",
+               "gradeAgain": "#f38ba8", "gradeHard": "#fab387", "gradeGood": "#a6e3a1", "gradeEasy": "#89b4fa" },
+   "accents": { "mauve": "#cba6f7", "blue": "#89b4fa" }, "defaultAccent": "mauve" }]
+```
+
+| Member | Rule |
+| --- | --- |
+| `id` | `^[a-z0-9]+(-[a-z0-9]+)*$`, at most 64 bytes; unique in the file, and on a server unique among the built-in themes and every installed pack |
+| `name` | 1–64 code points, no control character, no leading or trailing white space |
+| `family` | optional; the same rule as `name` (the picker groups by it, else by the pack name) |
+| `scheme` | `light` or `dark` |
+| `colors` | exactly the 13 keys below, each `#rrggbb` in **lower case** |
+| `accents` | 1–16 members; key `^[a-z][a-z0-9-]{0,31}$`, value a colour; **the file's order is kept** (the picker shows them in that order) |
+| `defaultAccent` | a key of `accents` |
+
+Colour tokens (design §6): `chrome` (the window frame: top bar, drawer, rail), `panel` (the content surface,
+menus, sheets), `raised` (hover, selected row, inset surfaces), `line` (lines and outlines), `text`, `muted`
+(secondary text), `good`, `warn`, `bad` (semantic states), `gradeAgain`, `gradeHard`, `gradeGood`, `gradeEasy`
+(the four grade buttons).
+
+## Validation
+
+Theme files are strict: a member the contract does not name, a member written twice in one object (anywhere),
+an upper-case or short hex, a colour with alpha are refused. The **first** problem is reported as a stable
+`code` and a JSON `path` (`$[1].colors.panel`), checked in this order:
+
+1. the file: size (`too-large`), JSON (`bad-json`), an array (`not-an-array`), 1–64 themes (`no-themes`,
+   `too-many-themes`);
+2. theme by theme, in file order: an object (`not-an-object`), a repeated member (`duplicate-member`), an unknown
+   member, first in file order (`unknown-member`), a missing member in the order `id`, `name`, `scheme`,
+   `colors`, `accents`, `defaultAccent` (`missing-member`), `id` (`bad-id`, then `duplicate-id`), `name`
+   (`bad-name`), `family` (`bad-family`), `scheme` (`bad-scheme`), `colors` (object, repeated, unknown, then the
+   13 keys in token order: `missing-member` or `bad-colour`), `accents` (object, repeated, `no-accents`,
+   `too-many-accents`, then each member in file order: `bad-accent-key`, `bad-colour`), `defaultAccent`
+   (`bad-default-accent`).
+
+A pack whose `themes.json` fails is refused at upload (`400 invalid pack: themes.json: <code> at <path>`) and by
+`qinqin seed`; nothing is stored. Fixture: `theme-file.json`.
+
+## Contrast
+
+Contrast is **measured and reported**, never a reason to refuse a theme (design §7).
+
+- Relative luminance (WCAG 2.2): each sRGB channel `c = v/255` becomes `c/12.92` when `c <= 0.04045`, else
+  `((c + 0.055)/1.055)^2.4`; `L = 0.2126 R + 0.7152 G + 0.0722 B`.
+- Ratio: `(L1 + 0.05)/(L2 + 0.05)` with `L1` the lighter, **rounded to two decimals half up**
+  (`floor(r*100 + 0.5)/100`). Every comparison uses the rounded ratio, so implementations in IEEE doubles agree.
+- The review checks of one theme, in this order: `text` on `panel`, `text` on `chrome`, `muted` on `panel`,
+  `muted` on `chrome` (each at least **4.5**); `gradeAgain`, `gradeHard`, `gradeGood`, `gradeEasy` on `panel`
+  (at least **3**); every accent `accent:<key>` on `panel` (at least **3**), in file order. Each check is
+  `{fg, bg, min, ratio, pass}`; `failing` counts the checks that do not pass.
+
+Fixture: `contrast.json` (single ratios, including both sides of the rounding at 4.5 and 3, and the review of
+Catppuccin Mocha and Latte).
+
+## Derived tokens
+
+(Task 2.)
+
+## The `appearance` row
+
+(Task 8.)
+
+## `GET /api/themes`
+
+(Task 7.)
+
+## Built-in themes
+
+(Task 5.)
+
+## Android
+
+Android reads the same theme files through `GET /api/themes`, the same `appearance` row and the same derivation;
+it implements the validation only if it ever installs theme packs itself (it does not today).
+
+## Rulings
+
+- Ruling: colours are lower-case `#rrggbb` only — one spelling per colour keeps comparisons, hashes and the
+  contrast arithmetic identical everywhere — cost: a pack author lower-cases their hex.
+- Ruling: theme files are strict (unknown or repeated members refused) — a typo such as `gradeagain` would
+  otherwise silently paint the wrong colour — cost: a new optional token needs a new pack format value.
+- Ruling: contrast ratios are compared after rounding to two decimals — Go and JavaScript `pow` may differ in the
+  last bit; rounding makes the 4.5 / 3 decisions identical — cost: a ratio of 4.495 counts as 4.5.
+
+## Fixtures
+
+| File | Rule | Decoded by |
+| --- | --- | --- |
+| `theme-file.json` | validation codes and paths, limits, accent order | Go `server/internal/themes/file_test.go` |
+| `contrast.json` | ratios, rounding, the review checks | Go `server/internal/themes/contrast_test.go` |

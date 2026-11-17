@@ -1,0 +1,3306 @@
+{
+ "version": 1,
+ "rule": "themes/theme-file",
+ "_doc": "Validation of a theme pack's themes.json (docs/contracts/themes/README.md). file is the parsed JSON, or a string \"$raw:<text>\" that is the file's exact text. padTo: the file (written as compact JSON) is followed by spaces up to that many bytes. expect is {ok, ids, accents?} (accents: each theme's accent keys in order) or the first error {code, path}.",
+ "limits": {
+  "maxBytes": 262144,
+  "maxThemes": 64,
+  "maxAccents": 16,
+  "maxIdBytes": 64,
+  "maxNameCodePoints": 64
+ },
+ "colorKeys": [
+  "chrome",
+  "panel",
+  "raised",
+  "line",
+  "text",
+  "muted",
+  "good",
+  "warn",
+  "bad",
+  "gradeAgain",
+  "gradeHard",
+  "gradeGood",
+  "gradeEasy"
+ ],
+ "cases": [
+  {
+   "name": "two valid themes",
+   "note": "a light and a dark theme; ids in file order",
+   "file": [
+    {
+     "id": "catppuccin-latte",
+     "name": "Latte",
+     "family": "Catppuccin",
+     "scheme": "light",
+     "colors": {
+      "chrome": "#dce0e8",
+      "panel": "#eff1f5",
+      "raised": "#e6e9ef",
+      "line": "#ccd0da",
+      "text": "#4c4f69",
+      "muted": "#6c6f85",
+      "good": "#40a02b",
+      "warn": "#df8e1d",
+      "bad": "#d20f39",
+      "gradeAgain": "#d20f39",
+      "gradeHard": "#fe640b",
+      "gradeGood": "#40a02b",
+      "gradeEasy": "#1e66f5"
+     },
+     "accents": {
+      "mauve": "#8839ef",
+      "blue": "#1e66f5",
+      "yellow": "#df8e1d"
+     },
+     "defaultAccent": "mauve"
+    },
+    {
+     "id": "catppuccin-mocha",
+     "name": "Mocha",
+     "family": "Catppuccin",
+     "scheme": "dark",
+     "colors": {
+      "chrome": "#11111b",
+      "panel": "#1e1e2e",
+      "raised": "#313244",
+      "line": "#45475a",
+      "text": "#cdd6f4",
+      "muted": "#a6adc8",
+      "good": "#a6e3a1",
+      "warn": "#f9e2af",
+      "bad": "#f38ba8",
+      "gradeAgain": "#f38ba8",
+      "gradeHard": "#fab387",
+      "gradeGood": "#a6e3a1",
+      "gradeEasy": "#89b4fa"
+     },
+     "accents": {
+      "mauve": "#cba6f7",
+      "blue": "#89b4fa"
+     },
+     "defaultAccent": "mauve"
+    }
+   ],
+   "expect": {
+    "ok": true,
+    "ids": [
+     "catppuccin-latte",
+     "catppuccin-mocha"
+    ],
+    "accents": [
+     [
+      "mauve",
+      "blue",
+      "yellow"
+     ],
+     [
+      "mauve",
+      "blue"
+     ]
+    ]
+   }
+  },
+  {
+   "name": "family may be omitted",
+   "note": "family is optional (the picker groups by the pack name then)",
+   "file": [
+    {
+     "id": "catppuccin-mocha",
+     "name": "Mocha",
+     "scheme": "dark",
+     "colors": {
+      "chrome": "#11111b",
+      "panel": "#1e1e2e",
+      "raised": "#313244",
+      "line": "#45475a",
+      "text": "#cdd6f4",
+      "muted": "#a6adc8",
+      "good": "#a6e3a1",
+      "warn": "#f9e2af",
+      "bad": "#f38ba8",
+      "gradeAgain": "#f38ba8",
+      "gradeHard": "#fab387",
+      "gradeGood": "#a6e3a1",
+      "gradeEasy": "#89b4fa"
+     },
+     "accents": {
+      "mauve": "#cba6f7",
+      "blue": "#89b4fa"
+     },
+     "defaultAccent": "mauve"
+    }
+   ],
+   "expect": {
+    "ok": true,
+    "ids": [
+     "catppuccin-mocha"
+    ]
+   }
+  },
+  {
+   "name": "accent order is the file order",
+   "note": "accents are kept in the order the file writes them, never sorted",
+   "file": [
+    {
+     "id": "catppuccin-mocha",
+     "name": "Mocha",
+     "family": "Catppuccin",
+     "scheme": "dark",
+     "colors": {
+      "chrome": "#11111b",
+      "panel": "#1e1e2e",
+      "raised": "#313244",
+      "line": "#45475a",
+      "text": "#cdd6f4",
+      "muted": "#a6adc8",
+      "good": "#a6e3a1",
+      "warn": "#f9e2af",
+      "bad": "#f38ba8",
+      "gradeAgain": "#f38ba8",
+      "gradeHard": "#fab387",
+      "gradeGood": "#a6e3a1",
+      "gradeEasy": "#89b4fa"
+     },
+     "accents": {
+      "zeta": "#cba6f7",
+      "alpha": "#89b4fa",
+      "mid-1": "#a6e3a1"
+     },
+     "defaultAccent": "alpha"
+    }
+   ],
+   "expect": {
+    "ok": true,
+    "ids": [
+     "catppuccin-mocha"
+    ],
+    "accents": [
+     [
+      "zeta",
+      "alpha",
+      "mid-1"
+     ]
+    ]
+   }
+  },
+  {
+   "name": "bad JSON",
+   "note": "not JSON at all",
+   "file": "$raw:[{\"id\": ",
+   "expect": {
+    "code": "bad-json",
+    "path": "$"
+   }
+  },
+  {
+   "name": "too large",
+   "note": "more than 262144 bytes, checked before parsing",
+   "file": [
+    {
+     "id": "catppuccin-mocha",
+     "name": "Mocha",
+     "family": "Catppuccin",
+     "scheme": "dark",
+     "colors": {
+      "chrome": "#11111b",
+      "panel": "#1e1e2e",
+      "raised": "#313244",
+      "line": "#45475a",
+      "text": "#cdd6f4",
+      "muted": "#a6adc8",
+      "good": "#a6e3a1",
+      "warn": "#f9e2af",
+      "bad": "#f38ba8",
+      "gradeAgain": "#f38ba8",
+      "gradeHard": "#fab387",
+      "gradeGood": "#a6e3a1",
+      "gradeEasy": "#89b4fa"
+     },
+     "accents": {
+      "mauve": "#cba6f7",
+      "blue": "#89b4fa"
+     },
+     "defaultAccent": "mauve"
+    }
+   ],
+   "expect": {
+    "code": "too-large",
+    "path": "$"
+   },
+   "padTo": 262145
+  },
+  {
+   "name": "exactly at the size limit",
+   "note": "262144 bytes (trailing spaces) is accepted",
+   "file": [
+    {
+     "id": "catppuccin-mocha",
+     "name": "Mocha",
+     "family": "Catppuccin",
+     "scheme": "dark",
+     "colors": {
+      "chrome": "#11111b",
+      "panel": "#1e1e2e",
+      "raised": "#313244",
+      "line": "#45475a",
+      "text": "#cdd6f4",
+      "muted": "#a6adc8",
+      "good": "#a6e3a1",
+      "warn": "#f9e2af",
+      "bad": "#f38ba8",
+      "gradeAgain": "#f38ba8",
+      "gradeHard": "#fab387",
+      "gradeGood": "#a6e3a1",
+      "gradeEasy": "#89b4fa"
+     },
+     "accents": {
+      "mauve": "#cba6f7",
+      "blue": "#89b4fa"
+     },
+     "defaultAccent": "mauve"
+    }
+   ],
+   "expect": {
+    "ok": true,
+    "ids": [
+     "catppuccin-mocha"
+    ]
+   },
+   "padTo": 262144
+  },
+  {
+   "name": "an object at the top",
+   "note": "the file is an array of themes",
+   "file": {
+    "id": "catppuccin-mocha",
+    "name": "Mocha",
+    "family": "Catppuccin",
+    "scheme": "dark",
+    "colors": {
+     "chrome": "#11111b",
+     "panel": "#1e1e2e",
+     "raised": "#313244",
+     "line": "#45475a",
+     "text": "#cdd6f4",
+     "muted": "#a6adc8",
+     "good": "#a6e3a1",
+     "warn": "#f9e2af",
+     "bad": "#f38ba8",
+     "gradeAgain": "#f38ba8",
+     "gradeHard": "#fab387",
+     "gradeGood": "#a6e3a1",
+     "gradeEasy": "#89b4fa"
+    },
+    "accents": {
+     "mauve": "#cba6f7",
+     "blue": "#89b4fa"
+    },
+    "defaultAccent": "mauve"
+   },
+   "expect": {
+    "code": "not-an-array",
+    "path": "$"
+   }
+  },
+  {
+   "name": "an empty array",
+   "note": "at least one theme",
+   "file": [],
+   "expect": {
+    "code": "no-themes",
+    "path": "$"
+   }
+  },
+  {
+   "name": "65 themes",
+   "note": "at most 64 themes in one file",
+   "file": [
+    {
+     "id": "t0",
+     "name": "Mocha",
+     "family": "Catppuccin",
+     "scheme": "dark",
+     "colors": {
+      "chrome": "#11111b",
+      "panel": "#1e1e2e",
+      "raised": "#313244",
+      "line": "#45475a",
+      "text": "#cdd6f4",
+      "muted": "#a6adc8",
+      "good": "#a6e3a1",
+      "warn": "#f9e2af",
+      "bad": "#f38ba8",
+      "gradeAgain": "#f38ba8",
+      "gradeHard": "#fab387",
+      "gradeGood": "#a6e3a1",
+      "gradeEasy": "#89b4fa"
+     },
+     "accents": {
+      "mauve": "#cba6f7",
+      "blue": "#89b4fa"
+     },
+     "defaultAccent": "mauve"
+    },
+    {
+     "id": "t1",
+     "name": "Mocha",
+     "family": "Catppuccin",
+     "scheme": "dark",
+     "colors": {
+      "chrome": "#11111b",
+      "panel": "#1e1e2e",
+      "raised": "#313244",
+      "line": "#45475a",
+      "text": "#cdd6f4",
+      "muted": "#a6adc8",
+      "good": "#a6e3a1",
+      "warn": "#f9e2af",
+      "bad": "#f38ba8",
+      "gradeAgain": "#f38ba8",
+      "gradeHard": "#fab387",
+      "gradeGood": "#a6e3a1",
+      "gradeEasy": "#89b4fa"
+     },
+     "accents": {
+      "mauve": "#cba6f7",
+      "blue": "#89b4fa"
+     },
+     "defaultAccent": "mauve"
+    },
+    {
+     "id": "t2",
+     "name": "Mocha",
+     "family": "Catppuccin",
+     "scheme": "dark",
+     "colors": {
+      "chrome": "#11111b",
+      "panel": "#1e1e2e",
+      "raised": "#313244",
+      "line": "#45475a",
+      "text": "#cdd6f4",
+      "muted": "#a6adc8",
+      "good": "#a6e3a1",
+      "warn": "#f9e2af",
+      "bad": "#f38ba8",
+      "gradeAgain": "#f38ba8",
+      "gradeHard": "#fab387",
+      "gradeGood": "#a6e3a1",
+      "gradeEasy": "#89b4fa"
+     },
+     "accents": {
+      "mauve": "#cba6f7",
+      "blue": "#89b4fa"
+     },
+     "defaultAccent": "mauve"
+    },
+    {
+     "id": "t3",
+     "name": "Mocha",
+     "family": "Catppuccin",
+     "scheme": "dark",
+     "colors": {
+      "chrome": "#11111b",
+      "panel": "#1e1e2e",
+      "raised": "#313244",
+      "line": "#45475a",
+      "text": "#cdd6f4",
+      "muted": "#a6adc8",
+      "good": "#a6e3a1",
+      "warn": "#f9e2af",
+      "bad": "#f38ba8",
+      "gradeAgain": "#f38ba8",
+      "gradeHard": "#fab387",
+      "gradeGood": "#a6e3a1",
+      "gradeEasy": "#89b4fa"
+     },
+     "accents": {
+      "mauve": "#cba6f7",
+      "blue": "#89b4fa"
+     },
+     "defaultAccent": "mauve"
+    },
+    {
+     "id": "t4",
+     "name": "Mocha",
+     "family": "Catppuccin",
+     "scheme": "dark",
+     "colors": {
+      "chrome": "#11111b",
+      "panel": "#1e1e2e",
+      "raised": "#313244",
+      "line": "#45475a",
+      "text": "#cdd6f4",
+      "muted": "#a6adc8",
+      "good": "#a6e3a1",
+      "warn": "#f9e2af",
+      "bad": "#f38ba8",
+      "gradeAgain": "#f38ba8",
+      "gradeHard": "#fab387",
+      "gradeGood": "#a6e3a1",
+      "gradeEasy": "#89b4fa"
+     },
+     "accents": {
+      "mauve": "#cba6f7",
+      "blue": "#89b4fa"
+     },
+     "defaultAccent": "mauve"
+    },
+    {
+     "id": "t5",
+     "name": "Mocha",
+     "family": "Catppuccin",
+     "scheme": "dark",
+     "colors": {
+      "chrome": "#11111b",
+      "panel": "#1e1e2e",
+      "raised": "#313244",
+      "line": "#45475a",
+      "text": "#cdd6f4",
+      "muted": "#a6adc8",
+      "good": "#a6e3a1",
+      "warn": "#f9e2af",
+      "bad": "#f38ba8",
+      "gradeAgain": "#f38ba8",
+      "gradeHard": "#fab387",
+      "gradeGood": "#a6e3a1",
+      "gradeEasy": "#89b4fa"
+     },
+     "accents": {
+      "mauve": "#cba6f7",
+      "blue": "#89b4fa"
+     },
+     "defaultAccent": "mauve"
+    },
+    {
+     "id": "t6",
+     "name": "Mocha",
+     "family": "Catppuccin",
+     "scheme": "dark",
+     "colors": {
+      "chrome": "#11111b",
+      "panel": "#1e1e2e",
+      "raised": "#313244",
+      "line": "#45475a",
+      "text": "#cdd6f4",
+      "muted": "#a6adc8",
+      "good": "#a6e3a1",
+      "warn": "#f9e2af",
+      "bad": "#f38ba8",
+      "gradeAgain": "#f38ba8",
+      "gradeHard": "#fab387",
+      "gradeGood": "#a6e3a1",
+      "gradeEasy": "#89b4fa"
+     },
+     "accents": {
+      "mauve": "#cba6f7",
+      "blue": "#89b4fa"
+     },
+     "defaultAccent": "mauve"
+    },
+    {
+     "id": "t7",
+     "name": "Mocha",
+     "family": "Catppuccin",
+     "scheme": "dark",
+     "colors": {
+      "chrome": "#11111b",
+      "panel": "#1e1e2e",
+      "raised": "#313244",
+      "line": "#45475a",
+      "text": "#cdd6f4",
+      "muted": "#a6adc8",
+      "good": "#a6e3a1",
+      "warn": "#f9e2af",
+      "bad": "#f38ba8",
+      "gradeAgain": "#f38ba8",
+      "gradeHard": "#fab387",
+      "gradeGood": "#a6e3a1",
+      "gradeEasy": "#89b4fa"
+     },
+     "accents": {
+      "mauve": "#cba6f7",
+      "blue": "#89b4fa"
+     },
+     "defaultAccent": "mauve"
+    },
+    {
+     "id": "t8",
+     "name": "Mocha",
+     "family": "Catppuccin",
+     "scheme": "dark",
+     "colors": {
+      "chrome": "#11111b",
+      "panel": "#1e1e2e",
+      "raised": "#313244",
+      "line": "#45475a",
+      "text": "#cdd6f4",
+      "muted": "#a6adc8",
+      "good": "#a6e3a1",
+      "warn": "#f9e2af",
+      "bad": "#f38ba8",
+      "gradeAgain": "#f38ba8",
+      "gradeHard": "#fab387",
+      "gradeGood": "#a6e3a1",
+      "gradeEasy": "#89b4fa"
+     },
+     "accents": {
+      "mauve": "#cba6f7",
+      "blue": "#89b4fa"
+     },
+     "defaultAccent": "mauve"
+    },
+    {
+     "id": "t9",
+     "name": "Mocha",
+     "family": "Catppuccin",
+     "scheme": "dark",
+     "colors": {
+      "chrome": "#11111b",
+      "panel": "#1e1e2e",
+      "raised": "#313244",
+      "line": "#45475a",
+      "text": "#cdd6f4",
+      "muted": "#a6adc8",
+      "good": "#a6e3a1",
+      "warn": "#f9e2af",
+      "bad": "#f38ba8",
+      "gradeAgain": "#f38ba8",
+      "gradeHard": "#fab387",
+      "gradeGood": "#a6e3a1",
+      "gradeEasy": "#89b4fa"
+     },
+     "accents": {
+      "mauve": "#cba6f7",
+      "blue": "#89b4fa"
+     },
+     "defaultAccent": "mauve"
+    },
+    {
+     "id": "t10",
+     "name": "Mocha",
+     "family": "Catppuccin",
+     "scheme": "dark",
+     "colors": {
+      "chrome": "#11111b",
+      "panel": "#1e1e2e",
+      "raised": "#313244",
+      "line": "#45475a",
+      "text": "#cdd6f4",
+      "muted": "#a6adc8",
+      "good": "#a6e3a1",
+      "warn": "#f9e2af",
+      "bad": "#f38ba8",
+      "gradeAgain": "#f38ba8",
+      "gradeHard": "#fab387",
+      "gradeGood": "#a6e3a1",
+      "gradeEasy": "#89b4fa"
+     },
+     "accents": {
+      "mauve": "#cba6f7",
+      "blue": "#89b4fa"
+     },
+     "defaultAccent": "mauve"
+    },
+    {
+     "id": "t11",
+     "name": "Mocha",
+     "family": "Catppuccin",
+     "scheme": "dark",
+     "colors": {
+      "chrome": "#11111b",
+      "panel": "#1e1e2e",
+      "raised": "#313244",
+      "line": "#45475a",
+      "text": "#cdd6f4",
+      "muted": "#a6adc8",
+      "good": "#a6e3a1",
+      "warn": "#f9e2af",
+      "bad": "#f38ba8",
+      "gradeAgain": "#f38ba8",
+      "gradeHard": "#fab387",
+      "gradeGood": "#a6e3a1",
+      "gradeEasy": "#89b4fa"
+     },
+     "accents": {
+      "mauve": "#cba6f7",
+      "blue": "#89b4fa"
+     },
+     "defaultAccent": "mauve"
+    },
+    {
+     "id": "t12",
+     "name": "Mocha",
+     "family": "Catppuccin",
+     "scheme": "dark",
+     "colors": {
+      "chrome": "#11111b",
+      "panel": "#1e1e2e",
+      "raised": "#313244",
+      "line": "#45475a",
+      "text": "#cdd6f4",
+      "muted": "#a6adc8",
+      "good": "#a6e3a1",
+      "warn": "#f9e2af",
+      "bad": "#f38ba8",
+      "gradeAgain": "#f38ba8",
+      "gradeHard": "#fab387",
+      "gradeGood": "#a6e3a1",
+      "gradeEasy": "#89b4fa"
+     },
+     "accents": {
+      "mauve": "#cba6f7",
+      "blue": "#89b4fa"
+     },
+     "defaultAccent": "mauve"
+    },
+    {
+     "id": "t13",
+     "name": "Mocha",
+     "family": "Catppuccin",
+     "scheme": "dark",
+     "colors": {
+      "chrome": "#11111b",
+      "panel": "#1e1e2e",
+      "raised": "#313244",
+      "line": "#45475a",
+      "text": "#cdd6f4",
+      "muted": "#a6adc8",
+      "good": "#a6e3a1",
+      "warn": "#f9e2af",
+      "bad": "#f38ba8",
+      "gradeAgain": "#f38ba8",
+      "gradeHard": "#fab387",
+      "gradeGood": "#a6e3a1",
+      "gradeEasy": "#89b4fa"
+     },
+     "accents": {
+      "mauve": "#cba6f7",
+      "blue": "#89b4fa"
+     },
+     "defaultAccent": "mauve"
+    },
+    {
+     "id": "t14",
+     "name": "Mocha",
+     "family": "Catppuccin",
+     "scheme": "dark",
+     "colors": {
+      "chrome": "#11111b",
+      "panel": "#1e1e2e",
+      "raised": "#313244",
+      "line": "#45475a",
+      "text": "#cdd6f4",
+      "muted": "#a6adc8",
+      "good": "#a6e3a1",
+      "warn": "#f9e2af",
+      "bad": "#f38ba8",
+      "gradeAgain": "#f38ba8",
+      "gradeHard": "#fab387",
+      "gradeGood": "#a6e3a1",
+      "gradeEasy": "#89b4fa"
+     },
+     "accents": {
+      "mauve": "#cba6f7",
+      "blue": "#89b4fa"
+     },
+     "defaultAccent": "mauve"
+    },
+    {
+     "id": "t15",
+     "name": "Mocha",
+     "family": "Catppuccin",
+     "scheme": "dark",
+     "colors": {
+      "chrome": "#11111b",
+      "panel": "#1e1e2e",
+      "raised": "#313244",
+      "line": "#45475a",
+      "text": "#cdd6f4",
+      "muted": "#a6adc8",
+      "good": "#a6e3a1",
+      "warn": "#f9e2af",
+      "bad": "#f38ba8",
+      "gradeAgain": "#f38ba8",
+      "gradeHard": "#fab387",
+      "gradeGood": "#a6e3a1",
+      "gradeEasy": "#89b4fa"
+     },
+     "accents": {
+      "mauve": "#cba6f7",
+      "blue": "#89b4fa"
+     },
+     "defaultAccent": "mauve"
+    },
+    {
+     "id": "t16",
+     "name": "Mocha",
+     "family": "Catppuccin",
+     "scheme": "dark",
+     "colors": {
+      "chrome": "#11111b",
+      "panel": "#1e1e2e",
+      "raised": "#313244",
+      "line": "#45475a",
+      "text": "#cdd6f4",
+      "muted": "#a6adc8",
+      "good": "#a6e3a1",
+      "warn": "#f9e2af",
+      "bad": "#f38ba8",
+      "gradeAgain": "#f38ba8",
+      "gradeHard": "#fab387",
+      "gradeGood": "#a6e3a1",
+      "gradeEasy": "#89b4fa"
+     },
+     "accents": {
+      "mauve": "#cba6f7",
+      "blue": "#89b4fa"
+     },
+     "defaultAccent": "mauve"
+    },
+    {
+     "id": "t17",
+     "name": "Mocha",
+     "family": "Catppuccin",
+     "scheme": "dark",
+     "colors": {
+      "chrome": "#11111b",
+      "panel": "#1e1e2e",
+      "raised": "#313244",
+      "line": "#45475a",
+      "text": "#cdd6f4",
+      "muted": "#a6adc8",
+      "good": "#a6e3a1",
+      "warn": "#f9e2af",
+      "bad": "#f38ba8",
+      "gradeAgain": "#f38ba8",
+      "gradeHard": "#fab387",
+      "gradeGood": "#a6e3a1",
+      "gradeEasy": "#89b4fa"
+     },
+     "accents": {
+      "mauve": "#cba6f7",
+      "blue": "#89b4fa"
+     },
+     "defaultAccent": "mauve"
+    },
+    {
+     "id": "t18",
+     "name": "Mocha",
+     "family": "Catppuccin",
+     "scheme": "dark",
+     "colors": {
+      "chrome": "#11111b",
+      "panel": "#1e1e2e",
+      "raised": "#313244",
+      "line": "#45475a",
+      "text": "#cdd6f4",
+      "muted": "#a6adc8",
+      "good": "#a6e3a1",
+      "warn": "#f9e2af",
+      "bad": "#f38ba8",
+      "gradeAgain": "#f38ba8",
+      "gradeHard": "#fab387",
+      "gradeGood": "#a6e3a1",
+      "gradeEasy": "#89b4fa"
+     },
+     "accents": {
+      "mauve": "#cba6f7",
+      "blue": "#89b4fa"
+     },
+     "defaultAccent": "mauve"
+    },
+    {
+     "id": "t19",
+     "name": "Mocha",
+     "family": "Catppuccin",
+     "scheme": "dark",
+     "colors": {
+      "chrome": "#11111b",
+      "panel": "#1e1e2e",
+      "raised": "#313244",
+      "line": "#45475a",
+      "text": "#cdd6f4",
+      "muted": "#a6adc8",
+      "good": "#a6e3a1",
+      "warn": "#f9e2af",
+      "bad": "#f38ba8",
+      "gradeAgain": "#f38ba8",
+      "gradeHard": "#fab387",
+      "gradeGood": "#a6e3a1",
+      "gradeEasy": "#89b4fa"
+     },
+     "accents": {
+      "mauve": "#cba6f7",
+      "blue": "#89b4fa"
+     },
+     "defaultAccent": "mauve"
+    },
+    {
+     "id": "t20",
+     "name": "Mocha",
+     "family": "Catppuccin",
+     "scheme": "dark",
+     "colors": {
+      "chrome": "#11111b",
+      "panel": "#1e1e2e",
+      "raised": "#313244",
+      "line": "#45475a",
+      "text": "#cdd6f4",
+      "muted": "#a6adc8",
+      "good": "#a6e3a1",
+      "warn": "#f9e2af",
+      "bad": "#f38ba8",
+      "gradeAgain": "#f38ba8",
+      "gradeHard": "#fab387",
+      "gradeGood": "#a6e3a1",
+      "gradeEasy": "#89b4fa"
+     },
+     "accents": {
+      "mauve": "#cba6f7",
+      "blue": "#89b4fa"
+     },
+     "defaultAccent": "mauve"
+    },
+    {
+     "id": "t21",
+     "name": "Mocha",
+     "family": "Catppuccin",
+     "scheme": "dark",
+     "colors": {
+      "chrome": "#11111b",
+      "panel": "#1e1e2e",
+      "raised": "#313244",
+      "line": "#45475a",
+      "text": "#cdd6f4",
+      "muted": "#a6adc8",
+      "good": "#a6e3a1",
+      "warn": "#f9e2af",
+      "bad": "#f38ba8",
+      "gradeAgain": "#f38ba8",
+      "gradeHard": "#fab387",
+      "gradeGood": "#a6e3a1",
+      "gradeEasy": "#89b4fa"
+     },
+     "accents": {
+      "mauve": "#cba6f7",
+      "blue": "#89b4fa"
+     },
+     "defaultAccent": "mauve"
+    },
+    {
+     "id": "t22",
+     "name": "Mocha",
+     "family": "Catppuccin",
+     "scheme": "dark",
+     "colors": {
+      "chrome": "#11111b",
+      "panel": "#1e1e2e",
+      "raised": "#313244",
+      "line": "#45475a",
+      "text": "#cdd6f4",
+      "muted": "#a6adc8",
+      "good": "#a6e3a1",
+      "warn": "#f9e2af",
+      "bad": "#f38ba8",
+      "gradeAgain": "#f38ba8",
+      "gradeHard": "#fab387",
+      "gradeGood": "#a6e3a1",
+      "gradeEasy": "#89b4fa"
+     },
+     "accents": {
+      "mauve": "#cba6f7",
+      "blue": "#89b4fa"
+     },
+     "defaultAccent": "mauve"
+    },
+    {
+     "id": "t23",
+     "name": "Mocha",
+     "family": "Catppuccin",
+     "scheme": "dark",
+     "colors": {
+      "chrome": "#11111b",
+      "panel": "#1e1e2e",
+      "raised": "#313244",
+      "line": "#45475a",
+      "text": "#cdd6f4",
+      "muted": "#a6adc8",
+      "good": "#a6e3a1",
+      "warn": "#f9e2af",
+      "bad": "#f38ba8",
+      "gradeAgain": "#f38ba8",
+      "gradeHard": "#fab387",
+      "gradeGood": "#a6e3a1",
+      "gradeEasy": "#89b4fa"
+     },
+     "accents": {
+      "mauve": "#cba6f7",
+      "blue": "#89b4fa"
+     },
+     "defaultAccent": "mauve"
+    },
+    {
+     "id": "t24",
+     "name": "Mocha",
+     "family": "Catppuccin",
+     "scheme": "dark",
+     "colors": {
+      "chrome": "#11111b",
+      "panel": "#1e1e2e",
+      "raised": "#313244",
+      "line": "#45475a",
+      "text": "#cdd6f4",
+      "muted": "#a6adc8",
+      "good": "#a6e3a1",
+      "warn": "#f9e2af",
+      "bad": "#f38ba8",
+      "gradeAgain": "#f38ba8",
+      "gradeHard": "#fab387",
+      "gradeGood": "#a6e3a1",
+      "gradeEasy": "#89b4fa"
+     },
+     "accents": {
+      "mauve": "#cba6f7",
+      "blue": "#89b4fa"
+     },
+     "defaultAccent": "mauve"
+    },
+    {
+     "id": "t25",
+     "name": "Mocha",
+     "family": "Catppuccin",
+     "scheme": "dark",
+     "colors": {
+      "chrome": "#11111b",
+      "panel": "#1e1e2e",
+      "raised": "#313244",
+      "line": "#45475a",
+      "text": "#cdd6f4",
+      "muted": "#a6adc8",
+      "good": "#a6e3a1",
+      "warn": "#f9e2af",
+      "bad": "#f38ba8",
+      "gradeAgain": "#f38ba8",
+      "gradeHard": "#fab387",
+      "gradeGood": "#a6e3a1",
+      "gradeEasy": "#89b4fa"
+     },
+     "accents": {
+      "mauve": "#cba6f7",
+      "blue": "#89b4fa"
+     },
+     "defaultAccent": "mauve"
+    },
+    {
+     "id": "t26",
+     "name": "Mocha",
+     "family": "Catppuccin",
+     "scheme": "dark",
+     "colors": {
+      "chrome": "#11111b",
+      "panel": "#1e1e2e",
+      "raised": "#313244",
+      "line": "#45475a",
+      "text": "#cdd6f4",
+      "muted": "#a6adc8",
+      "good": "#a6e3a1",
+      "warn": "#f9e2af",
+      "bad": "#f38ba8",
+      "gradeAgain": "#f38ba8",
+      "gradeHard": "#fab387",
+      "gradeGood": "#a6e3a1",
+      "gradeEasy": "#89b4fa"
+     },
+     "accents": {
+      "mauve": "#cba6f7",
+      "blue": "#89b4fa"
+     },
+     "defaultAccent": "mauve"
+    },
+    {
+     "id": "t27",
+     "name": "Mocha",
+     "family": "Catppuccin",
+     "scheme": "dark",
+     "colors": {
+      "chrome": "#11111b",
+      "panel": "#1e1e2e",
+      "raised": "#313244",
+      "line": "#45475a",
+      "text": "#cdd6f4",
+      "muted": "#a6adc8",
+      "good": "#a6e3a1",
+      "warn": "#f9e2af",
+      "bad": "#f38ba8",
+      "gradeAgain": "#f38ba8",
+      "gradeHard": "#fab387",
+      "gradeGood": "#a6e3a1",
+      "gradeEasy": "#89b4fa"
+     },
+     "accents": {
+      "mauve": "#cba6f7",
+      "blue": "#89b4fa"
+     },
+     "defaultAccent": "mauve"
+    },
+    {
+     "id": "t28",
+     "name": "Mocha",
+     "family": "Catppuccin",
+     "scheme": "dark",
+     "colors": {
+      "chrome": "#11111b",
+      "panel": "#1e1e2e",
+      "raised": "#313244",
+      "line": "#45475a",
+      "text": "#cdd6f4",
+      "muted": "#a6adc8",
+      "good": "#a6e3a1",
+      "warn": "#f9e2af",
+      "bad": "#f38ba8",
+      "gradeAgain": "#f38ba8",
+      "gradeHard": "#fab387",
+      "gradeGood": "#a6e3a1",
+      "gradeEasy": "#89b4fa"
+     },
+     "accents": {
+      "mauve": "#cba6f7",
+      "blue": "#89b4fa"
+     },
+     "defaultAccent": "mauve"
+    },
+    {
+     "id": "t29",
+     "name": "Mocha",
+     "family": "Catppuccin",
+     "scheme": "dark",
+     "colors": {
+      "chrome": "#11111b",
+      "panel": "#1e1e2e",
+      "raised": "#313244",
+      "line": "#45475a",
+      "text": "#cdd6f4",
+      "muted": "#a6adc8",
+      "good": "#a6e3a1",
+      "warn": "#f9e2af",
+      "bad": "#f38ba8",
+      "gradeAgain": "#f38ba8",
+      "gradeHard": "#fab387",
+      "gradeGood": "#a6e3a1",
+      "gradeEasy": "#89b4fa"
+     },
+     "accents": {
+      "mauve": "#cba6f7",
+      "blue": "#89b4fa"
+     },
+     "defaultAccent": "mauve"
+    },
+    {
+     "id": "t30",
+     "name": "Mocha",
+     "family": "Catppuccin",
+     "scheme": "dark",
+     "colors": {
+      "chrome": "#11111b",
+      "panel": "#1e1e2e",
+      "raised": "#313244",
+      "line": "#45475a",
+      "text": "#cdd6f4",
+      "muted": "#a6adc8",
+      "good": "#a6e3a1",
+      "warn": "#f9e2af",
+      "bad": "#f38ba8",
+      "gradeAgain": "#f38ba8",
+      "gradeHard": "#fab387",
+      "gradeGood": "#a6e3a1",
+      "gradeEasy": "#89b4fa"
+     },
+     "accents": {
+      "mauve": "#cba6f7",
+      "blue": "#89b4fa"
+     },
+     "defaultAccent": "mauve"
+    },
+    {
+     "id": "t31",
+     "name": "Mocha",
+     "family": "Catppuccin",
+     "scheme": "dark",
+     "colors": {
+      "chrome": "#11111b",
+      "panel": "#1e1e2e",
+      "raised": "#313244",
+      "line": "#45475a",
+      "text": "#cdd6f4",
+      "muted": "#a6adc8",
+      "good": "#a6e3a1",
+      "warn": "#f9e2af",
+      "bad": "#f38ba8",
+      "gradeAgain": "#f38ba8",
+      "gradeHard": "#fab387",
+      "gradeGood": "#a6e3a1",
+      "gradeEasy": "#89b4fa"
+     },
+     "accents": {
+      "mauve": "#cba6f7",
+      "blue": "#89b4fa"
+     },
+     "defaultAccent": "mauve"
+    },
+    {
+     "id": "t32",
+     "name": "Mocha",
+     "family": "Catppuccin",
+     "scheme": "dark",
+     "colors": {
+      "chrome": "#11111b",
+      "panel": "#1e1e2e",
+      "raised": "#313244",
+      "line": "#45475a",
+      "text": "#cdd6f4",
+      "muted": "#a6adc8",
+      "good": "#a6e3a1",
+      "warn": "#f9e2af",
+      "bad": "#f38ba8",
+      "gradeAgain": "#f38ba8",
+      "gradeHard": "#fab387",
+      "gradeGood": "#a6e3a1",
+      "gradeEasy": "#89b4fa"
+     },
+     "accents": {
+      "mauve": "#cba6f7",
+      "blue": "#89b4fa"
+     },
+     "defaultAccent": "mauve"
+    },
+    {
+     "id": "t33",
+     "name": "Mocha",
+     "family": "Catppuccin",
+     "scheme": "dark",
+     "colors": {
+      "chrome": "#11111b",
+      "panel": "#1e1e2e",
+      "raised": "#313244",
+      "line": "#45475a",
+      "text": "#cdd6f4",
+      "muted": "#a6adc8",
+      "good": "#a6e3a1",
+      "warn": "#f9e2af",
+      "bad": "#f38ba8",
+      "gradeAgain": "#f38ba8",
+      "gradeHard": "#fab387",
+      "gradeGood": "#a6e3a1",
+      "gradeEasy": "#89b4fa"
+     },
+     "accents": {
+      "mauve": "#cba6f7",
+      "blue": "#89b4fa"
+     },
+     "defaultAccent": "mauve"
+    },
+    {
+     "id": "t34",
+     "name": "Mocha",
+     "family": "Catppuccin",
+     "scheme": "dark",
+     "colors": {
+      "chrome": "#11111b",
+      "panel": "#1e1e2e",
+      "raised": "#313244",
+      "line": "#45475a",
+      "text": "#cdd6f4",
+      "muted": "#a6adc8",
+      "good": "#a6e3a1",
+      "warn": "#f9e2af",
+      "bad": "#f38ba8",
+      "gradeAgain": "#f38ba8",
+      "gradeHard": "#fab387",
+      "gradeGood": "#a6e3a1",
+      "gradeEasy": "#89b4fa"
+     },
+     "accents": {
+      "mauve": "#cba6f7",
+      "blue": "#89b4fa"
+     },
+     "defaultAccent": "mauve"
+    },
+    {
+     "id": "t35",
+     "name": "Mocha",
+     "family": "Catppuccin",
+     "scheme": "dark",
+     "colors": {
+      "chrome": "#11111b",
+      "panel": "#1e1e2e",
+      "raised": "#313244",
+      "line": "#45475a",
+      "text": "#cdd6f4",
+      "muted": "#a6adc8",
+      "good": "#a6e3a1",
+      "warn": "#f9e2af",
+      "bad": "#f38ba8",
+      "gradeAgain": "#f38ba8",
+      "gradeHard": "#fab387",
+      "gradeGood": "#a6e3a1",
+      "gradeEasy": "#89b4fa"
+     },
+     "accents": {
+      "mauve": "#cba6f7",
+      "blue": "#89b4fa"
+     },
+     "defaultAccent": "mauve"
+    },
+    {
+     "id": "t36",
+     "name": "Mocha",
+     "family": "Catppuccin",
+     "scheme": "dark",
+     "colors": {
+      "chrome": "#11111b",
+      "panel": "#1e1e2e",
+      "raised": "#313244",
+      "line": "#45475a",
+      "text": "#cdd6f4",
+      "muted": "#a6adc8",
+      "good": "#a6e3a1",
+      "warn": "#f9e2af",
+      "bad": "#f38ba8",
+      "gradeAgain": "#f38ba8",
+      "gradeHard": "#fab387",
+      "gradeGood": "#a6e3a1",
+      "gradeEasy": "#89b4fa"
+     },
+     "accents": {
+      "mauve": "#cba6f7",
+      "blue": "#89b4fa"
+     },
+     "defaultAccent": "mauve"
+    },
+    {
+     "id": "t37",
+     "name": "Mocha",
+     "family": "Catppuccin",
+     "scheme": "dark",
+     "colors": {
+      "chrome": "#11111b",
+      "panel": "#1e1e2e",
+      "raised": "#313244",
+      "line": "#45475a",
+      "text": "#cdd6f4",
+      "muted": "#a6adc8",
+      "good": "#a6e3a1",
+      "warn": "#f9e2af",
+      "bad": "#f38ba8",
+      "gradeAgain": "#f38ba8",
+      "gradeHard": "#fab387",
+      "gradeGood": "#a6e3a1",
+      "gradeEasy": "#89b4fa"
+     },
+     "accents": {
+      "mauve": "#cba6f7",
+      "blue": "#89b4fa"
+     },
+     "defaultAccent": "mauve"
+    },
+    {
+     "id": "t38",
+     "name": "Mocha",
+     "family": "Catppuccin",
+     "scheme": "dark",
+     "colors": {
+      "chrome": "#11111b",
+      "panel": "#1e1e2e",
+      "raised": "#313244",
+      "line": "#45475a",
+      "text": "#cdd6f4",
+      "muted": "#a6adc8",
+      "good": "#a6e3a1",
+      "warn": "#f9e2af",
+      "bad": "#f38ba8",
+      "gradeAgain": "#f38ba8",
+      "gradeHard": "#fab387",
+      "gradeGood": "#a6e3a1",
+      "gradeEasy": "#89b4fa"
+     },
+     "accents": {
+      "mauve": "#cba6f7",
+      "blue": "#89b4fa"
+     },
+     "defaultAccent": "mauve"
+    },
+    {
+     "id": "t39",
+     "name": "Mocha",
+     "family": "Catppuccin",
+     "scheme": "dark",
+     "colors": {
+      "chrome": "#11111b",
+      "panel": "#1e1e2e",
+      "raised": "#313244",
+      "line": "#45475a",
+      "text": "#cdd6f4",
+      "muted": "#a6adc8",
+      "good": "#a6e3a1",
+      "warn": "#f9e2af",
+      "bad": "#f38ba8",
+      "gradeAgain": "#f38ba8",
+      "gradeHard": "#fab387",
+      "gradeGood": "#a6e3a1",
+      "gradeEasy": "#89b4fa"
+     },
+     "accents": {
+      "mauve": "#cba6f7",
+      "blue": "#89b4fa"
+     },
+     "defaultAccent": "mauve"
+    },
+    {
+     "id": "t40",
+     "name": "Mocha",
+     "family": "Catppuccin",
+     "scheme": "dark",
+     "colors": {
+      "chrome": "#11111b",
+      "panel": "#1e1e2e",
+      "raised": "#313244",
+      "line": "#45475a",
+      "text": "#cdd6f4",
+      "muted": "#a6adc8",
+      "good": "#a6e3a1",
+      "warn": "#f9e2af",
+      "bad": "#f38ba8",
+      "gradeAgain": "#f38ba8",
+      "gradeHard": "#fab387",
+      "gradeGood": "#a6e3a1",
+      "gradeEasy": "#89b4fa"
+     },
+     "accents": {
+      "mauve": "#cba6f7",
+      "blue": "#89b4fa"
+     },
+     "defaultAccent": "mauve"
+    },
+    {
+     "id": "t41",
+     "name": "Mocha",
+     "family": "Catppuccin",
+     "scheme": "dark",
+     "colors": {
+      "chrome": "#11111b",
+      "panel": "#1e1e2e",
+      "raised": "#313244",
+      "line": "#45475a",
+      "text": "#cdd6f4",
+      "muted": "#a6adc8",
+      "good": "#a6e3a1",
+      "warn": "#f9e2af",
+      "bad": "#f38ba8",
+      "gradeAgain": "#f38ba8",
+      "gradeHard": "#fab387",
+      "gradeGood": "#a6e3a1",
+      "gradeEasy": "#89b4fa"
+     },
+     "accents": {
+      "mauve": "#cba6f7",
+      "blue": "#89b4fa"
+     },
+     "defaultAccent": "mauve"
+    },
+    {
+     "id": "t42",
+     "name": "Mocha",
+     "family": "Catppuccin",
+     "scheme": "dark",
+     "colors": {
+      "chrome": "#11111b",
+      "panel": "#1e1e2e",
+      "raised": "#313244",
+      "line": "#45475a",
+      "text": "#cdd6f4",
+      "muted": "#a6adc8",
+      "good": "#a6e3a1",
+      "warn": "#f9e2af",
+      "bad": "#f38ba8",
+      "gradeAgain": "#f38ba8",
+      "gradeHard": "#fab387",
+      "gradeGood": "#a6e3a1",
+      "gradeEasy": "#89b4fa"
+     },
+     "accents": {
+      "mauve": "#cba6f7",
+      "blue": "#89b4fa"
+     },
+     "defaultAccent": "mauve"
+    },
+    {
+     "id": "t43",
+     "name": "Mocha",
+     "family": "Catppuccin",
+     "scheme": "dark",
+     "colors": {
+      "chrome": "#11111b",
+      "panel": "#1e1e2e",
+      "raised": "#313244",
+      "line": "#45475a",
+      "text": "#cdd6f4",
+      "muted": "#a6adc8",
+      "good": "#a6e3a1",
+      "warn": "#f9e2af",
+      "bad": "#f38ba8",
+      "gradeAgain": "#f38ba8",
+      "gradeHard": "#fab387",
+      "gradeGood": "#a6e3a1",
+      "gradeEasy": "#89b4fa"
+     },
+     "accents": {
+      "mauve": "#cba6f7",
+      "blue": "#89b4fa"
+     },
+     "defaultAccent": "mauve"
+    },
+    {
+     "id": "t44",
+     "name": "Mocha",
+     "family": "Catppuccin",
+     "scheme": "dark",
+     "colors": {
+      "chrome": "#11111b",
+      "panel": "#1e1e2e",
+      "raised": "#313244",
+      "line": "#45475a",
+      "text": "#cdd6f4",
+      "muted": "#a6adc8",
+      "good": "#a6e3a1",
+      "warn": "#f9e2af",
+      "bad": "#f38ba8",
+      "gradeAgain": "#f38ba8",
+      "gradeHard": "#fab387",
+      "gradeGood": "#a6e3a1",
+      "gradeEasy": "#89b4fa"
+     },
+     "accents": {
+      "mauve": "#cba6f7",
+      "blue": "#89b4fa"
+     },
+     "defaultAccent": "mauve"
+    },
+    {
+     "id": "t45",
+     "name": "Mocha",
+     "family": "Catppuccin",
+     "scheme": "dark",
+     "colors": {
+      "chrome": "#11111b",
+      "panel": "#1e1e2e",
+      "raised": "#313244",
+      "line": "#45475a",
+      "text": "#cdd6f4",
+      "muted": "#a6adc8",
+      "good": "#a6e3a1",
+      "warn": "#f9e2af",
+      "bad": "#f38ba8",
+      "gradeAgain": "#f38ba8",
+      "gradeHard": "#fab387",
+      "gradeGood": "#a6e3a1",
+      "gradeEasy": "#89b4fa"
+     },
+     "accents": {
+      "mauve": "#cba6f7",
+      "blue": "#89b4fa"
+     },
+     "defaultAccent": "mauve"
+    },
+    {
+     "id": "t46",
+     "name": "Mocha",
+     "family": "Catppuccin",
+     "scheme": "dark",
+     "colors": {
+      "chrome": "#11111b",
+      "panel": "#1e1e2e",
+      "raised": "#313244",
+      "line": "#45475a",
+      "text": "#cdd6f4",
+      "muted": "#a6adc8",
+      "good": "#a6e3a1",
+      "warn": "#f9e2af",
+      "bad": "#f38ba8",
+      "gradeAgain": "#f38ba8",
+      "gradeHard": "#fab387",
+      "gradeGood": "#a6e3a1",
+      "gradeEasy": "#89b4fa"
+     },
+     "accents": {
+      "mauve": "#cba6f7",
+      "blue": "#89b4fa"
+     },
+     "defaultAccent": "mauve"
+    },
+    {
+     "id": "t47",
+     "name": "Mocha",
+     "family": "Catppuccin",
+     "scheme": "dark",
+     "colors": {
+      "chrome": "#11111b",
+      "panel": "#1e1e2e",
+      "raised": "#313244",
+      "line": "#45475a",
+      "text": "#cdd6f4",
+      "muted": "#a6adc8",
+      "good": "#a6e3a1",
+      "warn": "#f9e2af",
+      "bad": "#f38ba8",
+      "gradeAgain": "#f38ba8",
+      "gradeHard": "#fab387",
+      "gradeGood": "#a6e3a1",
+      "gradeEasy": "#89b4fa"
+     },
+     "accents": {
+      "mauve": "#cba6f7",
+      "blue": "#89b4fa"
+     },
+     "defaultAccent": "mauve"
+    },
+    {
+     "id": "t48",
+     "name": "Mocha",
+     "family": "Catppuccin",
+     "scheme": "dark",
+     "colors": {
+      "chrome": "#11111b",
+      "panel": "#1e1e2e",
+      "raised": "#313244",
+      "line": "#45475a",
+      "text": "#cdd6f4",
+      "muted": "#a6adc8",
+      "good": "#a6e3a1",
+      "warn": "#f9e2af",
+      "bad": "#f38ba8",
+      "gradeAgain": "#f38ba8",
+      "gradeHard": "#fab387",
+      "gradeGood": "#a6e3a1",
+      "gradeEasy": "#89b4fa"
+     },
+     "accents": {
+      "mauve": "#cba6f7",
+      "blue": "#89b4fa"
+     },
+     "defaultAccent": "mauve"
+    },
+    {
+     "id": "t49",
+     "name": "Mocha",
+     "family": "Catppuccin",
+     "scheme": "dark",
+     "colors": {
+      "chrome": "#11111b",
+      "panel": "#1e1e2e",
+      "raised": "#313244",
+      "line": "#45475a",
+      "text": "#cdd6f4",
+      "muted": "#a6adc8",
+      "good": "#a6e3a1",
+      "warn": "#f9e2af",
+      "bad": "#f38ba8",
+      "gradeAgain": "#f38ba8",
+      "gradeHard": "#fab387",
+      "gradeGood": "#a6e3a1",
+      "gradeEasy": "#89b4fa"
+     },
+     "accents": {
+      "mauve": "#cba6f7",
+      "blue": "#89b4fa"
+     },
+     "defaultAccent": "mauve"
+    },
+    {
+     "id": "t50",
+     "name": "Mocha",
+     "family": "Catppuccin",
+     "scheme": "dark",
+     "colors": {
+      "chrome": "#11111b",
+      "panel": "#1e1e2e",
+      "raised": "#313244",
+      "line": "#45475a",
+      "text": "#cdd6f4",
+      "muted": "#a6adc8",
+      "good": "#a6e3a1",
+      "warn": "#f9e2af",
+      "bad": "#f38ba8",
+      "gradeAgain": "#f38ba8",
+      "gradeHard": "#fab387",
+      "gradeGood": "#a6e3a1",
+      "gradeEasy": "#89b4fa"
+     },
+     "accents": {
+      "mauve": "#cba6f7",
+      "blue": "#89b4fa"
+     },
+     "defaultAccent": "mauve"
+    },
+    {
+     "id": "t51",
+     "name": "Mocha",
+     "family": "Catppuccin",
+     "scheme": "dark",
+     "colors": {
+      "chrome": "#11111b",
+      "panel": "#1e1e2e",
+      "raised": "#313244",
+      "line": "#45475a",
+      "text": "#cdd6f4",
+      "muted": "#a6adc8",
+      "good": "#a6e3a1",
+      "warn": "#f9e2af",
+      "bad": "#f38ba8",
+      "gradeAgain": "#f38ba8",
+      "gradeHard": "#fab387",
+      "gradeGood": "#a6e3a1",
+      "gradeEasy": "#89b4fa"
+     },
+     "accents": {
+      "mauve": "#cba6f7",
+      "blue": "#89b4fa"
+     },
+     "defaultAccent": "mauve"
+    },
+    {
+     "id": "t52",
+     "name": "Mocha",
+     "family": "Catppuccin",
+     "scheme": "dark",
+     "colors": {
+      "chrome": "#11111b",
+      "panel": "#1e1e2e",
+      "raised": "#313244",
+      "line": "#45475a",
+      "text": "#cdd6f4",
+      "muted": "#a6adc8",
+      "good": "#a6e3a1",
+      "warn": "#f9e2af",
+      "bad": "#f38ba8",
+      "gradeAgain": "#f38ba8",
+      "gradeHard": "#fab387",
+      "gradeGood": "#a6e3a1",
+      "gradeEasy": "#89b4fa"
+     },
+     "accents": {
+      "mauve": "#cba6f7",
+      "blue": "#89b4fa"
+     },
+     "defaultAccent": "mauve"
+    },
+    {
+     "id": "t53",
+     "name": "Mocha",
+     "family": "Catppuccin",
+     "scheme": "dark",
+     "colors": {
+      "chrome": "#11111b",
+      "panel": "#1e1e2e",
+      "raised": "#313244",
+      "line": "#45475a",
+      "text": "#cdd6f4",
+      "muted": "#a6adc8",
+      "good": "#a6e3a1",
+      "warn": "#f9e2af",
+      "bad": "#f38ba8",
+      "gradeAgain": "#f38ba8",
+      "gradeHard": "#fab387",
+      "gradeGood": "#a6e3a1",
+      "gradeEasy": "#89b4fa"
+     },
+     "accents": {
+      "mauve": "#cba6f7",
+      "blue": "#89b4fa"
+     },
+     "defaultAccent": "mauve"
+    },
+    {
+     "id": "t54",
+     "name": "Mocha",
+     "family": "Catppuccin",
+     "scheme": "dark",
+     "colors": {
+      "chrome": "#11111b",
+      "panel": "#1e1e2e",
+      "raised": "#313244",
+      "line": "#45475a",
+      "text": "#cdd6f4",
+      "muted": "#a6adc8",
+      "good": "#a6e3a1",
+      "warn": "#f9e2af",
+      "bad": "#f38ba8",
+      "gradeAgain": "#f38ba8",
+      "gradeHard": "#fab387",
+      "gradeGood": "#a6e3a1",
+      "gradeEasy": "#89b4fa"
+     },
+     "accents": {
+      "mauve": "#cba6f7",
+      "blue": "#89b4fa"
+     },
+     "defaultAccent": "mauve"
+    },
+    {
+     "id": "t55",
+     "name": "Mocha",
+     "family": "Catppuccin",
+     "scheme": "dark",
+     "colors": {
+      "chrome": "#11111b",
+      "panel": "#1e1e2e",
+      "raised": "#313244",
+      "line": "#45475a",
+      "text": "#cdd6f4",
+      "muted": "#a6adc8",
+      "good": "#a6e3a1",
+      "warn": "#f9e2af",
+      "bad": "#f38ba8",
+      "gradeAgain": "#f38ba8",
+      "gradeHard": "#fab387",
+      "gradeGood": "#a6e3a1",
+      "gradeEasy": "#89b4fa"
+     },
+     "accents": {
+      "mauve": "#cba6f7",
+      "blue": "#89b4fa"
+     },
+     "defaultAccent": "mauve"
+    },
+    {
+     "id": "t56",
+     "name": "Mocha",
+     "family": "Catppuccin",
+     "scheme": "dark",
+     "colors": {
+      "chrome": "#11111b",
+      "panel": "#1e1e2e",
+      "raised": "#313244",
+      "line": "#45475a",
+      "text": "#cdd6f4",
+      "muted": "#a6adc8",
+      "good": "#a6e3a1",
+      "warn": "#f9e2af",
+      "bad": "#f38ba8",
+      "gradeAgain": "#f38ba8",
+      "gradeHard": "#fab387",
+      "gradeGood": "#a6e3a1",
+      "gradeEasy": "#89b4fa"
+     },
+     "accents": {
+      "mauve": "#cba6f7",
+      "blue": "#89b4fa"
+     },
+     "defaultAccent": "mauve"
+    },
+    {
+     "id": "t57",
+     "name": "Mocha",
+     "family": "Catppuccin",
+     "scheme": "dark",
+     "colors": {
+      "chrome": "#11111b",
+      "panel": "#1e1e2e",
+      "raised": "#313244",
+      "line": "#45475a",
+      "text": "#cdd6f4",
+      "muted": "#a6adc8",
+      "good": "#a6e3a1",
+      "warn": "#f9e2af",
+      "bad": "#f38ba8",
+      "gradeAgain": "#f38ba8",
+      "gradeHard": "#fab387",
+      "gradeGood": "#a6e3a1",
+      "gradeEasy": "#89b4fa"
+     },
+     "accents": {
+      "mauve": "#cba6f7",
+      "blue": "#89b4fa"
+     },
+     "defaultAccent": "mauve"
+    },
+    {
+     "id": "t58",
+     "name": "Mocha",
+     "family": "Catppuccin",
+     "scheme": "dark",
+     "colors": {
+      "chrome": "#11111b",
+      "panel": "#1e1e2e",
+      "raised": "#313244",
+      "line": "#45475a",
+      "text": "#cdd6f4",
+      "muted": "#a6adc8",
+      "good": "#a6e3a1",
+      "warn": "#f9e2af",
+      "bad": "#f38ba8",
+      "gradeAgain": "#f38ba8",
+      "gradeHard": "#fab387",
+      "gradeGood": "#a6e3a1",
+      "gradeEasy": "#89b4fa"
+     },
+     "accents": {
+      "mauve": "#cba6f7",
+      "blue": "#89b4fa"
+     },
+     "defaultAccent": "mauve"
+    },
+    {
+     "id": "t59",
+     "name": "Mocha",
+     "family": "Catppuccin",
+     "scheme": "dark",
+     "colors": {
+      "chrome": "#11111b",
+      "panel": "#1e1e2e",
+      "raised": "#313244",
+      "line": "#45475a",
+      "text": "#cdd6f4",
+      "muted": "#a6adc8",
+      "good": "#a6e3a1",
+      "warn": "#f9e2af",
+      "bad": "#f38ba8",
+      "gradeAgain": "#f38ba8",
+      "gradeHard": "#fab387",
+      "gradeGood": "#a6e3a1",
+      "gradeEasy": "#89b4fa"
+     },
+     "accents": {
+      "mauve": "#cba6f7",
+      "blue": "#89b4fa"
+     },
+     "defaultAccent": "mauve"
+    },
+    {
+     "id": "t60",
+     "name": "Mocha",
+     "family": "Catppuccin",
+     "scheme": "dark",
+     "colors": {
+      "chrome": "#11111b",
+      "panel": "#1e1e2e",
+      "raised": "#313244",
+      "line": "#45475a",
+      "text": "#cdd6f4",
+      "muted": "#a6adc8",
+      "good": "#a6e3a1",
+      "warn": "#f9e2af",
+      "bad": "#f38ba8",
+      "gradeAgain": "#f38ba8",
+      "gradeHard": "#fab387",
+      "gradeGood": "#a6e3a1",
+      "gradeEasy": "#89b4fa"
+     },
+     "accents": {
+      "mauve": "#cba6f7",
+      "blue": "#89b4fa"
+     },
+     "defaultAccent": "mauve"
+    },
+    {
+     "id": "t61",
+     "name": "Mocha",
+     "family": "Catppuccin",
+     "scheme": "dark",
+     "colors": {
+      "chrome": "#11111b",
+      "panel": "#1e1e2e",
+      "raised": "#313244",
+      "line": "#45475a",
+      "text": "#cdd6f4",
+      "muted": "#a6adc8",
+      "good": "#a6e3a1",
+      "warn": "#f9e2af",
+      "bad": "#f38ba8",
+      "gradeAgain": "#f38ba8",
+      "gradeHard": "#fab387",
+      "gradeGood": "#a6e3a1",
+      "gradeEasy": "#89b4fa"
+     },
+     "accents": {
+      "mauve": "#cba6f7",
+      "blue": "#89b4fa"
+     },
+     "defaultAccent": "mauve"
+    },
+    {
+     "id": "t62",
+     "name": "Mocha",
+     "family": "Catppuccin",
+     "scheme": "dark",
+     "colors": {
+      "chrome": "#11111b",
+      "panel": "#1e1e2e",
+      "raised": "#313244",
+      "line": "#45475a",
+      "text": "#cdd6f4",
+      "muted": "#a6adc8",
+      "good": "#a6e3a1",
+      "warn": "#f9e2af",
+      "bad": "#f38ba8",
+      "gradeAgain": "#f38ba8",
+      "gradeHard": "#fab387",
+      "gradeGood": "#a6e3a1",
+      "gradeEasy": "#89b4fa"
+     },
+     "accents": {
+      "mauve": "#cba6f7",
+      "blue": "#89b4fa"
+     },
+     "defaultAccent": "mauve"
+    },
+    {
+     "id": "t63",
+     "name": "Mocha",
+     "family": "Catppuccin",
+     "scheme": "dark",
+     "colors": {
+      "chrome": "#11111b",
+      "panel": "#1e1e2e",
+      "raised": "#313244",
+      "line": "#45475a",
+      "text": "#cdd6f4",
+      "muted": "#a6adc8",
+      "good": "#a6e3a1",
+      "warn": "#f9e2af",
+      "bad": "#f38ba8",
+      "gradeAgain": "#f38ba8",
+      "gradeHard": "#fab387",
+      "gradeGood": "#a6e3a1",
+      "gradeEasy": "#89b4fa"
+     },
+     "accents": {
+      "mauve": "#cba6f7",
+      "blue": "#89b4fa"
+     },
+     "defaultAccent": "mauve"
+    },
+    {
+     "id": "t64",
+     "name": "Mocha",
+     "family": "Catppuccin",
+     "scheme": "dark",
+     "colors": {
+      "chrome": "#11111b",
+      "panel": "#1e1e2e",
+      "raised": "#313244",
+      "line": "#45475a",
+      "text": "#cdd6f4",
+      "muted": "#a6adc8",
+      "good": "#a6e3a1",
+      "warn": "#f9e2af",
+      "bad": "#f38ba8",
+      "gradeAgain": "#f38ba8",
+      "gradeHard": "#fab387",
+      "gradeGood": "#a6e3a1",
+      "gradeEasy": "#89b4fa"
+     },
+     "accents": {
+      "mauve": "#cba6f7",
+      "blue": "#89b4fa"
+     },
+     "defaultAccent": "mauve"
+    }
+   ],
+   "expect": {
+    "code": "too-many-themes",
+    "path": "$"
+   }
+  },
+  {
+   "name": "a theme that is not an object",
+   "note": "",
+   "file": [
+    {
+     "id": "catppuccin-mocha",
+     "name": "Mocha",
+     "family": "Catppuccin",
+     "scheme": "dark",
+     "colors": {
+      "chrome": "#11111b",
+      "panel": "#1e1e2e",
+      "raised": "#313244",
+      "line": "#45475a",
+      "text": "#cdd6f4",
+      "muted": "#a6adc8",
+      "good": "#a6e3a1",
+      "warn": "#f9e2af",
+      "bad": "#f38ba8",
+      "gradeAgain": "#f38ba8",
+      "gradeHard": "#fab387",
+      "gradeGood": "#a6e3a1",
+      "gradeEasy": "#89b4fa"
+     },
+     "accents": {
+      "mauve": "#cba6f7",
+      "blue": "#89b4fa"
+     },
+     "defaultAccent": "mauve"
+    },
+    "x"
+   ],
+   "expect": {
+    "code": "not-an-object",
+    "path": "$[1]"
+   }
+  },
+  {
+   "name": "a repeated member",
+   "note": "a member written twice in one object is refused (no last-wins)",
+   "file": "$raw:[{\"id\":\"a\",\"id\":\"b\",\"name\":\"A\",\"scheme\":\"dark\",\"colors\":{},\"accents\":{},\"defaultAccent\":\"x\"}]",
+   "expect": {
+    "code": "duplicate-member",
+    "path": "$[0].id"
+   }
+  },
+  {
+   "name": "a repeated accent key",
+   "note": "a repeated member inside accents is refused too",
+   "file": "$raw:[{\"id\": \"catppuccin-mocha\", \"name\": \"Mocha\", \"family\": \"Catppuccin\", \"scheme\": \"dark\", \"colors\": {\"chrome\": \"#11111b\", \"panel\": \"#1e1e2e\", \"raised\": \"#313244\", \"line\": \"#45475a\", \"text\": \"#cdd6f4\", \"muted\": \"#a6adc8\", \"good\": \"#a6e3a1\", \"warn\": \"#f9e2af\", \"bad\": \"#f38ba8\", \"gradeAgain\": \"#f38ba8\", \"gradeHard\": \"#fab387\", \"gradeGood\": \"#a6e3a1\", \"gradeEasy\": \"#89b4fa\"}, \"accents\": {\"mauve\": \"#cba6f7\", \"blue\": \"#89b4fa\", \"mauve\": \"#cba6f7\"}, \"defaultAccent\": \"mauve\"}]",
+   "expect": {
+    "code": "duplicate-member",
+    "path": "$[0].accents.mauve"
+   }
+  },
+  {
+   "name": "an unknown member",
+   "note": "theme files are strict: a member the contract does not name is refused",
+   "file": [
+    {
+     "id": "catppuccin-mocha",
+     "name": "Mocha",
+     "family": "Catppuccin",
+     "scheme": "dark",
+     "colors": {
+      "chrome": "#11111b",
+      "panel": "#1e1e2e",
+      "raised": "#313244",
+      "line": "#45475a",
+      "text": "#cdd6f4",
+      "muted": "#a6adc8",
+      "good": "#a6e3a1",
+      "warn": "#f9e2af",
+      "bad": "#f38ba8",
+      "gradeAgain": "#f38ba8",
+      "gradeHard": "#fab387",
+      "gradeGood": "#a6e3a1",
+      "gradeEasy": "#89b4fa"
+     },
+     "accents": {
+      "mauve": "#cba6f7",
+      "blue": "#89b4fa"
+     },
+     "defaultAccent": "mauve",
+     "board": "#16141f"
+    }
+   ],
+   "expect": {
+    "code": "unknown-member",
+    "path": "$[0].board"
+   }
+  },
+  {
+   "name": "board in colors",
+   "note": "the mockup's board is not a token",
+   "file": [
+    {
+     "id": "catppuccin-mocha",
+     "name": "Mocha",
+     "family": "Catppuccin",
+     "scheme": "dark",
+     "colors": {
+      "chrome": "#11111b",
+      "panel": "#1e1e2e",
+      "raised": "#313244",
+      "line": "#45475a",
+      "text": "#cdd6f4",
+      "muted": "#a6adc8",
+      "good": "#a6e3a1",
+      "warn": "#f9e2af",
+      "bad": "#f38ba8",
+      "gradeAgain": "#f38ba8",
+      "gradeHard": "#fab387",
+      "gradeGood": "#a6e3a1",
+      "gradeEasy": "#89b4fa",
+      "board": "#16141f"
+     },
+     "accents": {
+      "mauve": "#cba6f7",
+      "blue": "#89b4fa"
+     },
+     "defaultAccent": "mauve"
+    }
+   ],
+   "expect": {
+    "code": "unknown-member",
+    "path": "$[0].colors.board"
+   }
+  },
+  {
+   "name": "missing scheme",
+   "note": "required members in the order id, name, scheme, colors, accents, defaultAccent",
+   "file": [
+    {
+     "id": "catppuccin-mocha",
+     "name": "Mocha",
+     "family": "Catppuccin",
+     "colors": {
+      "chrome": "#11111b",
+      "panel": "#1e1e2e",
+      "raised": "#313244",
+      "line": "#45475a",
+      "text": "#cdd6f4",
+      "muted": "#a6adc8",
+      "good": "#a6e3a1",
+      "warn": "#f9e2af",
+      "bad": "#f38ba8",
+      "gradeAgain": "#f38ba8",
+      "gradeHard": "#fab387",
+      "gradeGood": "#a6e3a1",
+      "gradeEasy": "#89b4fa"
+     },
+     "accents": {
+      "mauve": "#cba6f7",
+      "blue": "#89b4fa"
+     },
+     "defaultAccent": "mauve"
+    }
+   ],
+   "expect": {
+    "code": "missing-member",
+    "path": "$[0].scheme"
+   }
+  },
+  {
+   "name": "missing id and name",
+   "note": "the first missing member in that order is named",
+   "file": [
+    {
+     "family": "Catppuccin",
+     "scheme": "dark",
+     "colors": {
+      "chrome": "#11111b",
+      "panel": "#1e1e2e",
+      "raised": "#313244",
+      "line": "#45475a",
+      "text": "#cdd6f4",
+      "muted": "#a6adc8",
+      "good": "#a6e3a1",
+      "warn": "#f9e2af",
+      "bad": "#f38ba8",
+      "gradeAgain": "#f38ba8",
+      "gradeHard": "#fab387",
+      "gradeGood": "#a6e3a1",
+      "gradeEasy": "#89b4fa"
+     },
+     "accents": {
+      "mauve": "#cba6f7",
+      "blue": "#89b4fa"
+     },
+     "defaultAccent": "mauve"
+    }
+   ],
+   "expect": {
+    "code": "missing-member",
+    "path": "$[0].id"
+   }
+  },
+  {
+   "name": "missing colour",
+   "note": "every one of the 13 colour keys is required",
+   "file": [
+    {
+     "id": "catppuccin-mocha",
+     "name": "Mocha",
+     "family": "Catppuccin",
+     "scheme": "dark",
+     "colors": {
+      "chrome": "#11111b",
+      "panel": "#1e1e2e",
+      "raised": "#313244",
+      "line": "#45475a",
+      "text": "#cdd6f4",
+      "muted": "#a6adc8",
+      "good": "#a6e3a1",
+      "warn": "#f9e2af",
+      "bad": "#f38ba8",
+      "gradeAgain": "#f38ba8",
+      "gradeGood": "#a6e3a1",
+      "gradeEasy": "#89b4fa"
+     },
+     "accents": {
+      "mauve": "#cba6f7",
+      "blue": "#89b4fa"
+     },
+     "defaultAccent": "mauve"
+    }
+   ],
+   "expect": {
+    "code": "missing-member",
+    "path": "$[0].colors.gradeHard"
+   }
+  },
+  {
+   "name": "bad id: capital letter",
+   "note": "ids are lower-case words joined by single hyphens",
+   "file": [
+    {
+     "id": "Catppuccin-mocha",
+     "name": "Mocha",
+     "family": "Catppuccin",
+     "scheme": "dark",
+     "colors": {
+      "chrome": "#11111b",
+      "panel": "#1e1e2e",
+      "raised": "#313244",
+      "line": "#45475a",
+      "text": "#cdd6f4",
+      "muted": "#a6adc8",
+      "good": "#a6e3a1",
+      "warn": "#f9e2af",
+      "bad": "#f38ba8",
+      "gradeAgain": "#f38ba8",
+      "gradeHard": "#fab387",
+      "gradeGood": "#a6e3a1",
+      "gradeEasy": "#89b4fa"
+     },
+     "accents": {
+      "mauve": "#cba6f7",
+      "blue": "#89b4fa"
+     },
+     "defaultAccent": "mauve"
+    }
+   ],
+   "expect": {
+    "code": "bad-id",
+    "path": "$[0].id"
+   }
+  },
+  {
+   "name": "bad id: double hyphen",
+   "note": "",
+   "file": [
+    {
+     "id": "a--b",
+     "name": "Mocha",
+     "family": "Catppuccin",
+     "scheme": "dark",
+     "colors": {
+      "chrome": "#11111b",
+      "panel": "#1e1e2e",
+      "raised": "#313244",
+      "line": "#45475a",
+      "text": "#cdd6f4",
+      "muted": "#a6adc8",
+      "good": "#a6e3a1",
+      "warn": "#f9e2af",
+      "bad": "#f38ba8",
+      "gradeAgain": "#f38ba8",
+      "gradeHard": "#fab387",
+      "gradeGood": "#a6e3a1",
+      "gradeEasy": "#89b4fa"
+     },
+     "accents": {
+      "mauve": "#cba6f7",
+      "blue": "#89b4fa"
+     },
+     "defaultAccent": "mauve"
+    }
+   ],
+   "expect": {
+    "code": "bad-id",
+    "path": "$[0].id"
+   }
+  },
+  {
+   "name": "bad id: too long",
+   "note": "at most 64 bytes",
+   "file": [
+    {
+     "id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+     "name": "Mocha",
+     "family": "Catppuccin",
+     "scheme": "dark",
+     "colors": {
+      "chrome": "#11111b",
+      "panel": "#1e1e2e",
+      "raised": "#313244",
+      "line": "#45475a",
+      "text": "#cdd6f4",
+      "muted": "#a6adc8",
+      "good": "#a6e3a1",
+      "warn": "#f9e2af",
+      "bad": "#f38ba8",
+      "gradeAgain": "#f38ba8",
+      "gradeHard": "#fab387",
+      "gradeGood": "#a6e3a1",
+      "gradeEasy": "#89b4fa"
+     },
+     "accents": {
+      "mauve": "#cba6f7",
+      "blue": "#89b4fa"
+     },
+     "defaultAccent": "mauve"
+    }
+   ],
+   "expect": {
+    "code": "bad-id",
+    "path": "$[0].id"
+   }
+  },
+  {
+   "name": "bad id: not a string",
+   "note": "",
+   "file": [
+    {
+     "id": 7,
+     "name": "Mocha",
+     "family": "Catppuccin",
+     "scheme": "dark",
+     "colors": {
+      "chrome": "#11111b",
+      "panel": "#1e1e2e",
+      "raised": "#313244",
+      "line": "#45475a",
+      "text": "#cdd6f4",
+      "muted": "#a6adc8",
+      "good": "#a6e3a1",
+      "warn": "#f9e2af",
+      "bad": "#f38ba8",
+      "gradeAgain": "#f38ba8",
+      "gradeHard": "#fab387",
+      "gradeGood": "#a6e3a1",
+      "gradeEasy": "#89b4fa"
+     },
+     "accents": {
+      "mauve": "#cba6f7",
+      "blue": "#89b4fa"
+     },
+     "defaultAccent": "mauve"
+    }
+   ],
+   "expect": {
+    "code": "bad-id",
+    "path": "$[0].id"
+   }
+  },
+  {
+   "name": "duplicate id",
+   "note": "ids are unique within the file; the second one is named",
+   "file": [
+    {
+     "id": "catppuccin-mocha",
+     "name": "Mocha",
+     "family": "Catppuccin",
+     "scheme": "dark",
+     "colors": {
+      "chrome": "#11111b",
+      "panel": "#1e1e2e",
+      "raised": "#313244",
+      "line": "#45475a",
+      "text": "#cdd6f4",
+      "muted": "#a6adc8",
+      "good": "#a6e3a1",
+      "warn": "#f9e2af",
+      "bad": "#f38ba8",
+      "gradeAgain": "#f38ba8",
+      "gradeHard": "#fab387",
+      "gradeGood": "#a6e3a1",
+      "gradeEasy": "#89b4fa"
+     },
+     "accents": {
+      "mauve": "#cba6f7",
+      "blue": "#89b4fa"
+     },
+     "defaultAccent": "mauve"
+    },
+    {
+     "id": "catppuccin-mocha",
+     "name": "Other",
+     "family": "Catppuccin",
+     "scheme": "dark",
+     "colors": {
+      "chrome": "#11111b",
+      "panel": "#1e1e2e",
+      "raised": "#313244",
+      "line": "#45475a",
+      "text": "#cdd6f4",
+      "muted": "#a6adc8",
+      "good": "#a6e3a1",
+      "warn": "#f9e2af",
+      "bad": "#f38ba8",
+      "gradeAgain": "#f38ba8",
+      "gradeHard": "#fab387",
+      "gradeGood": "#a6e3a1",
+      "gradeEasy": "#89b4fa"
+     },
+     "accents": {
+      "mauve": "#cba6f7",
+      "blue": "#89b4fa"
+     },
+     "defaultAccent": "mauve"
+    }
+   ],
+   "expect": {
+    "code": "duplicate-id",
+    "path": "$[1].id"
+   }
+  },
+  {
+   "name": "empty name",
+   "note": "1..64 code points",
+   "file": [
+    {
+     "id": "catppuccin-mocha",
+     "name": "",
+     "family": "Catppuccin",
+     "scheme": "dark",
+     "colors": {
+      "chrome": "#11111b",
+      "panel": "#1e1e2e",
+      "raised": "#313244",
+      "line": "#45475a",
+      "text": "#cdd6f4",
+      "muted": "#a6adc8",
+      "good": "#a6e3a1",
+      "warn": "#f9e2af",
+      "bad": "#f38ba8",
+      "gradeAgain": "#f38ba8",
+      "gradeHard": "#fab387",
+      "gradeGood": "#a6e3a1",
+      "gradeEasy": "#89b4fa"
+     },
+     "accents": {
+      "mauve": "#cba6f7",
+      "blue": "#89b4fa"
+     },
+     "defaultAccent": "mauve"
+    }
+   ],
+   "expect": {
+    "code": "bad-name",
+    "path": "$[0].name"
+   }
+  },
+  {
+   "name": "name with surrounding space",
+   "note": "no leading or trailing white space",
+   "file": [
+    {
+     "id": "catppuccin-mocha",
+     "name": " Mocha",
+     "family": "Catppuccin",
+     "scheme": "dark",
+     "colors": {
+      "chrome": "#11111b",
+      "panel": "#1e1e2e",
+      "raised": "#313244",
+      "line": "#45475a",
+      "text": "#cdd6f4",
+      "muted": "#a6adc8",
+      "good": "#a6e3a1",
+      "warn": "#f9e2af",
+      "bad": "#f38ba8",
+      "gradeAgain": "#f38ba8",
+      "gradeHard": "#fab387",
+      "gradeGood": "#a6e3a1",
+      "gradeEasy": "#89b4fa"
+     },
+     "accents": {
+      "mauve": "#cba6f7",
+      "blue": "#89b4fa"
+     },
+     "defaultAccent": "mauve"
+    }
+   ],
+   "expect": {
+    "code": "bad-name",
+    "path": "$[0].name"
+   }
+  },
+  {
+   "name": "name with a control character",
+   "note": "",
+   "file": [
+    {
+     "id": "catppuccin-mocha",
+     "name": "Mo\ncha",
+     "family": "Catppuccin",
+     "scheme": "dark",
+     "colors": {
+      "chrome": "#11111b",
+      "panel": "#1e1e2e",
+      "raised": "#313244",
+      "line": "#45475a",
+      "text": "#cdd6f4",
+      "muted": "#a6adc8",
+      "good": "#a6e3a1",
+      "warn": "#f9e2af",
+      "bad": "#f38ba8",
+      "gradeAgain": "#f38ba8",
+      "gradeHard": "#fab387",
+      "gradeGood": "#a6e3a1",
+      "gradeEasy": "#89b4fa"
+     },
+     "accents": {
+      "mauve": "#cba6f7",
+      "blue": "#89b4fa"
+     },
+     "defaultAccent": "mauve"
+    }
+   ],
+   "expect": {
+    "code": "bad-name",
+    "path": "$[0].name"
+   }
+  },
+  {
+   "name": "name of 64 code points",
+   "note": "counted in code points, not bytes",
+   "file": [
+    {
+     "id": "catppuccin-mocha",
+     "name": "主主主主主主主主主主主主主主主主主主主主主主主主主主主主主主主主主主主主主主主主主主主主主主主主主主主主主主主主主主主主主主主主",
+     "family": "Catppuccin",
+     "scheme": "dark",
+     "colors": {
+      "chrome": "#11111b",
+      "panel": "#1e1e2e",
+      "raised": "#313244",
+      "line": "#45475a",
+      "text": "#cdd6f4",
+      "muted": "#a6adc8",
+      "good": "#a6e3a1",
+      "warn": "#f9e2af",
+      "bad": "#f38ba8",
+      "gradeAgain": "#f38ba8",
+      "gradeHard": "#fab387",
+      "gradeGood": "#a6e3a1",
+      "gradeEasy": "#89b4fa"
+     },
+     "accents": {
+      "mauve": "#cba6f7",
+      "blue": "#89b4fa"
+     },
+     "defaultAccent": "mauve"
+    }
+   ],
+   "expect": {
+    "ok": true,
+    "ids": [
+     "catppuccin-mocha"
+    ]
+   }
+  },
+  {
+   "name": "name of 65 code points",
+   "note": "",
+   "file": [
+    {
+     "id": "catppuccin-mocha",
+     "name": "主主主主主主主主主主主主主主主主主主主主主主主主主主主主主主主主主主主主主主主主主主主主主主主主主主主主主主主主主主主主主主主主主",
+     "family": "Catppuccin",
+     "scheme": "dark",
+     "colors": {
+      "chrome": "#11111b",
+      "panel": "#1e1e2e",
+      "raised": "#313244",
+      "line": "#45475a",
+      "text": "#cdd6f4",
+      "muted": "#a6adc8",
+      "good": "#a6e3a1",
+      "warn": "#f9e2af",
+      "bad": "#f38ba8",
+      "gradeAgain": "#f38ba8",
+      "gradeHard": "#fab387",
+      "gradeGood": "#a6e3a1",
+      "gradeEasy": "#89b4fa"
+     },
+     "accents": {
+      "mauve": "#cba6f7",
+      "blue": "#89b4fa"
+     },
+     "defaultAccent": "mauve"
+    }
+   ],
+   "expect": {
+    "code": "bad-name",
+    "path": "$[0].name"
+   }
+  },
+  {
+   "name": "bad family",
+   "note": "same rule as name when present",
+   "file": [
+    {
+     "id": "catppuccin-mocha",
+     "name": "Mocha",
+     "family": "",
+     "scheme": "dark",
+     "colors": {
+      "chrome": "#11111b",
+      "panel": "#1e1e2e",
+      "raised": "#313244",
+      "line": "#45475a",
+      "text": "#cdd6f4",
+      "muted": "#a6adc8",
+      "good": "#a6e3a1",
+      "warn": "#f9e2af",
+      "bad": "#f38ba8",
+      "gradeAgain": "#f38ba8",
+      "gradeHard": "#fab387",
+      "gradeGood": "#a6e3a1",
+      "gradeEasy": "#89b4fa"
+     },
+     "accents": {
+      "mauve": "#cba6f7",
+      "blue": "#89b4fa"
+     },
+     "defaultAccent": "mauve"
+    }
+   ],
+   "expect": {
+    "code": "bad-family",
+    "path": "$[0].family"
+   }
+  },
+  {
+   "name": "bad scheme",
+   "note": "light or dark",
+   "file": [
+    {
+     "id": "catppuccin-mocha",
+     "name": "Mocha",
+     "family": "Catppuccin",
+     "scheme": "dim",
+     "colors": {
+      "chrome": "#11111b",
+      "panel": "#1e1e2e",
+      "raised": "#313244",
+      "line": "#45475a",
+      "text": "#cdd6f4",
+      "muted": "#a6adc8",
+      "good": "#a6e3a1",
+      "warn": "#f9e2af",
+      "bad": "#f38ba8",
+      "gradeAgain": "#f38ba8",
+      "gradeHard": "#fab387",
+      "gradeGood": "#a6e3a1",
+      "gradeEasy": "#89b4fa"
+     },
+     "accents": {
+      "mauve": "#cba6f7",
+      "blue": "#89b4fa"
+     },
+     "defaultAccent": "mauve"
+    }
+   ],
+   "expect": {
+    "code": "bad-scheme",
+    "path": "$[0].scheme"
+   }
+  },
+  {
+   "name": "colors not an object",
+   "note": "",
+   "file": [
+    {
+     "id": "catppuccin-mocha",
+     "name": "Mocha",
+     "family": "Catppuccin",
+     "scheme": "dark",
+     "colors": [
+      "#000000"
+     ],
+     "accents": {
+      "mauve": "#cba6f7",
+      "blue": "#89b4fa"
+     },
+     "defaultAccent": "mauve"
+    }
+   ],
+   "expect": {
+    "code": "not-an-object",
+    "path": "$[0].colors"
+   }
+  },
+  {
+   "name": "upper-case hex",
+   "note": "colours are #rrggbb in lower case",
+   "file": [
+    {
+     "id": "catppuccin-mocha",
+     "name": "Mocha",
+     "family": "Catppuccin",
+     "scheme": "dark",
+     "colors": {
+      "chrome": "#11111b",
+      "panel": "#1E1E2E",
+      "raised": "#313244",
+      "line": "#45475a",
+      "text": "#cdd6f4",
+      "muted": "#a6adc8",
+      "good": "#a6e3a1",
+      "warn": "#f9e2af",
+      "bad": "#f38ba8",
+      "gradeAgain": "#f38ba8",
+      "gradeHard": "#fab387",
+      "gradeGood": "#a6e3a1",
+      "gradeEasy": "#89b4fa"
+     },
+     "accents": {
+      "mauve": "#cba6f7",
+      "blue": "#89b4fa"
+     },
+     "defaultAccent": "mauve"
+    }
+   ],
+   "expect": {
+    "code": "bad-colour",
+    "path": "$[0].colors.panel"
+   }
+  },
+  {
+   "name": "short hex",
+   "note": "#rgb is refused",
+   "file": [
+    {
+     "id": "catppuccin-mocha",
+     "name": "Mocha",
+     "family": "Catppuccin",
+     "scheme": "dark",
+     "colors": {
+      "chrome": "#11111b",
+      "panel": "#123",
+      "raised": "#313244",
+      "line": "#45475a",
+      "text": "#cdd6f4",
+      "muted": "#a6adc8",
+      "good": "#a6e3a1",
+      "warn": "#f9e2af",
+      "bad": "#f38ba8",
+      "gradeAgain": "#f38ba8",
+      "gradeHard": "#fab387",
+      "gradeGood": "#a6e3a1",
+      "gradeEasy": "#89b4fa"
+     },
+     "accents": {
+      "mauve": "#cba6f7",
+      "blue": "#89b4fa"
+     },
+     "defaultAccent": "mauve"
+    }
+   ],
+   "expect": {
+    "code": "bad-colour",
+    "path": "$[0].colors.panel"
+   }
+  },
+  {
+   "name": "hex with alpha",
+   "note": "#rrggbbaa is refused (alpha is derived, never stored)",
+   "file": [
+    {
+     "id": "catppuccin-mocha",
+     "name": "Mocha",
+     "family": "Catppuccin",
+     "scheme": "dark",
+     "colors": {
+      "chrome": "#11111b",
+      "panel": "#1e1e2eff",
+      "raised": "#313244",
+      "line": "#45475a",
+      "text": "#cdd6f4",
+      "muted": "#a6adc8",
+      "good": "#a6e3a1",
+      "warn": "#f9e2af",
+      "bad": "#f38ba8",
+      "gradeAgain": "#f38ba8",
+      "gradeHard": "#fab387",
+      "gradeGood": "#a6e3a1",
+      "gradeEasy": "#89b4fa"
+     },
+     "accents": {
+      "mauve": "#cba6f7",
+      "blue": "#89b4fa"
+     },
+     "defaultAccent": "mauve"
+    }
+   ],
+   "expect": {
+    "code": "bad-colour",
+    "path": "$[0].colors.panel"
+   }
+  },
+  {
+   "name": "colour not a string",
+   "note": "",
+   "file": [
+    {
+     "id": "catppuccin-mocha",
+     "name": "Mocha",
+     "family": "Catppuccin",
+     "scheme": "dark",
+     "colors": {
+      "chrome": "#11111b",
+      "panel": "#1e1e2e",
+      "raised": "#313244",
+      "line": "#45475a",
+      "text": 0,
+      "muted": "#a6adc8",
+      "good": "#a6e3a1",
+      "warn": "#f9e2af",
+      "bad": "#f38ba8",
+      "gradeAgain": "#f38ba8",
+      "gradeHard": "#fab387",
+      "gradeGood": "#a6e3a1",
+      "gradeEasy": "#89b4fa"
+     },
+     "accents": {
+      "mauve": "#cba6f7",
+      "blue": "#89b4fa"
+     },
+     "defaultAccent": "mauve"
+    }
+   ],
+   "expect": {
+    "code": "bad-colour",
+    "path": "$[0].colors.text"
+   }
+  },
+  {
+   "name": "colour order",
+   "note": "colour keys are checked in the token order chrome … gradeEasy",
+   "file": [
+    {
+     "id": "catppuccin-mocha",
+     "name": "Mocha",
+     "family": "Catppuccin",
+     "scheme": "dark",
+     "colors": {
+      "chrome": "blue",
+      "panel": "#1e1e2e",
+      "raised": "#313244",
+      "line": "#45475a",
+      "text": "#cdd6f4",
+      "muted": "red",
+      "good": "#a6e3a1",
+      "warn": "#f9e2af",
+      "bad": "#f38ba8",
+      "gradeAgain": "#f38ba8",
+      "gradeHard": "#fab387",
+      "gradeGood": "#a6e3a1",
+      "gradeEasy": "#89b4fa"
+     },
+     "accents": {
+      "mauve": "#cba6f7",
+      "blue": "#89b4fa"
+     },
+     "defaultAccent": "mauve"
+    }
+   ],
+   "expect": {
+    "code": "bad-colour",
+    "path": "$[0].colors.chrome"
+   }
+  },
+  {
+   "name": "accents not an object",
+   "note": "",
+   "file": [
+    {
+     "id": "catppuccin-mocha",
+     "name": "Mocha",
+     "family": "Catppuccin",
+     "scheme": "dark",
+     "colors": {
+      "chrome": "#11111b",
+      "panel": "#1e1e2e",
+      "raised": "#313244",
+      "line": "#45475a",
+      "text": "#cdd6f4",
+      "muted": "#a6adc8",
+      "good": "#a6e3a1",
+      "warn": "#f9e2af",
+      "bad": "#f38ba8",
+      "gradeAgain": "#f38ba8",
+      "gradeHard": "#fab387",
+      "gradeGood": "#a6e3a1",
+      "gradeEasy": "#89b4fa"
+     },
+     "accents": [],
+     "defaultAccent": "mauve"
+    }
+   ],
+   "expect": {
+    "code": "not-an-object",
+    "path": "$[0].accents"
+   }
+  },
+  {
+   "name": "no accents",
+   "note": "at least one accent",
+   "file": [
+    {
+     "id": "catppuccin-mocha",
+     "name": "Mocha",
+     "family": "Catppuccin",
+     "scheme": "dark",
+     "colors": {
+      "chrome": "#11111b",
+      "panel": "#1e1e2e",
+      "raised": "#313244",
+      "line": "#45475a",
+      "text": "#cdd6f4",
+      "muted": "#a6adc8",
+      "good": "#a6e3a1",
+      "warn": "#f9e2af",
+      "bad": "#f38ba8",
+      "gradeAgain": "#f38ba8",
+      "gradeHard": "#fab387",
+      "gradeGood": "#a6e3a1",
+      "gradeEasy": "#89b4fa"
+     },
+     "accents": {},
+     "defaultAccent": "mauve"
+    }
+   ],
+   "expect": {
+    "code": "no-accents",
+    "path": "$[0].accents"
+   }
+  },
+  {
+   "name": "17 accents",
+   "note": "at most 16",
+   "file": [
+    {
+     "id": "catppuccin-mocha",
+     "name": "Mocha",
+     "family": "Catppuccin",
+     "scheme": "dark",
+     "colors": {
+      "chrome": "#11111b",
+      "panel": "#1e1e2e",
+      "raised": "#313244",
+      "line": "#45475a",
+      "text": "#cdd6f4",
+      "muted": "#a6adc8",
+      "good": "#a6e3a1",
+      "warn": "#f9e2af",
+      "bad": "#f38ba8",
+      "gradeAgain": "#f38ba8",
+      "gradeHard": "#fab387",
+      "gradeGood": "#a6e3a1",
+      "gradeEasy": "#89b4fa"
+     },
+     "accents": {
+      "a0": "#cba6f7",
+      "a1": "#cba6f7",
+      "a2": "#cba6f7",
+      "a3": "#cba6f7",
+      "a4": "#cba6f7",
+      "a5": "#cba6f7",
+      "a6": "#cba6f7",
+      "a7": "#cba6f7",
+      "a8": "#cba6f7",
+      "a9": "#cba6f7",
+      "a10": "#cba6f7",
+      "a11": "#cba6f7",
+      "a12": "#cba6f7",
+      "a13": "#cba6f7",
+      "a14": "#cba6f7",
+      "a15": "#cba6f7",
+      "a16": "#cba6f7"
+     },
+     "defaultAccent": "a0"
+    }
+   ],
+   "expect": {
+    "code": "too-many-accents",
+    "path": "$[0].accents"
+   }
+  },
+  {
+   "name": "accent key starting with a digit",
+   "note": "keys match ^[a-z][a-z0-9-]{0,31}$",
+   "file": [
+    {
+     "id": "catppuccin-mocha",
+     "name": "Mocha",
+     "family": "Catppuccin",
+     "scheme": "dark",
+     "colors": {
+      "chrome": "#11111b",
+      "panel": "#1e1e2e",
+      "raised": "#313244",
+      "line": "#45475a",
+      "text": "#cdd6f4",
+      "muted": "#a6adc8",
+      "good": "#a6e3a1",
+      "warn": "#f9e2af",
+      "bad": "#f38ba8",
+      "gradeAgain": "#f38ba8",
+      "gradeHard": "#fab387",
+      "gradeGood": "#a6e3a1",
+      "gradeEasy": "#89b4fa"
+     },
+     "accents": {
+      "1st": "#cba6f7"
+     },
+     "defaultAccent": "1st"
+    }
+   ],
+   "expect": {
+    "code": "bad-accent-key",
+    "path": "$[0].accents.1st"
+   }
+  },
+  {
+   "name": "accent key too long",
+   "note": "",
+   "file": [
+    {
+     "id": "catppuccin-mocha",
+     "name": "Mocha",
+     "family": "Catppuccin",
+     "scheme": "dark",
+     "colors": {
+      "chrome": "#11111b",
+      "panel": "#1e1e2e",
+      "raised": "#313244",
+      "line": "#45475a",
+      "text": "#cdd6f4",
+      "muted": "#a6adc8",
+      "good": "#a6e3a1",
+      "warn": "#f9e2af",
+      "bad": "#f38ba8",
+      "gradeAgain": "#f38ba8",
+      "gradeHard": "#fab387",
+      "gradeGood": "#a6e3a1",
+      "gradeEasy": "#89b4fa"
+     },
+     "accents": {
+      "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa": "#cba6f7"
+     },
+     "defaultAccent": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    }
+   ],
+   "expect": {
+    "code": "bad-accent-key",
+    "path": "$[0].accents.aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+   }
+  },
+  {
+   "name": "accent colour",
+   "note": "",
+   "file": [
+    {
+     "id": "catppuccin-mocha",
+     "name": "Mocha",
+     "family": "Catppuccin",
+     "scheme": "dark",
+     "colors": {
+      "chrome": "#11111b",
+      "panel": "#1e1e2e",
+      "raised": "#313244",
+      "line": "#45475a",
+      "text": "#cdd6f4",
+      "muted": "#a6adc8",
+      "good": "#a6e3a1",
+      "warn": "#f9e2af",
+      "bad": "#f38ba8",
+      "gradeAgain": "#f38ba8",
+      "gradeHard": "#fab387",
+      "gradeGood": "#a6e3a1",
+      "gradeEasy": "#89b4fa"
+     },
+     "accents": {
+      "mauve": "#CBA6F7"
+     },
+     "defaultAccent": "mauve"
+    }
+   ],
+   "expect": {
+    "code": "bad-colour",
+    "path": "$[0].accents.mauve"
+   }
+  },
+  {
+   "name": "default accent not an accent",
+   "note": "",
+   "file": [
+    {
+     "id": "catppuccin-mocha",
+     "name": "Mocha",
+     "family": "Catppuccin",
+     "scheme": "dark",
+     "colors": {
+      "chrome": "#11111b",
+      "panel": "#1e1e2e",
+      "raised": "#313244",
+      "line": "#45475a",
+      "text": "#cdd6f4",
+      "muted": "#a6adc8",
+      "good": "#a6e3a1",
+      "warn": "#f9e2af",
+      "bad": "#f38ba8",
+      "gradeAgain": "#f38ba8",
+      "gradeHard": "#fab387",
+      "gradeGood": "#a6e3a1",
+      "gradeEasy": "#89b4fa"
+     },
+     "accents": {
+      "mauve": "#cba6f7",
+      "blue": "#89b4fa"
+     },
+     "defaultAccent": "green"
+    }
+   ],
+   "expect": {
+    "code": "bad-default-accent",
+    "path": "$[0].defaultAccent"
+   }
+  },
+  {
+   "name": "default accent not a string",
+   "note": "",
+   "file": [
+    {
+     "id": "catppuccin-mocha",
+     "name": "Mocha",
+     "family": "Catppuccin",
+     "scheme": "dark",
+     "colors": {
+      "chrome": "#11111b",
+      "panel": "#1e1e2e",
+      "raised": "#313244",
+      "line": "#45475a",
+      "text": "#cdd6f4",
+      "muted": "#a6adc8",
+      "good": "#a6e3a1",
+      "warn": "#f9e2af",
+      "bad": "#f38ba8",
+      "gradeAgain": "#f38ba8",
+      "gradeHard": "#fab387",
+      "gradeGood": "#a6e3a1",
+      "gradeEasy": "#89b4fa"
+     },
+     "accents": {
+      "mauve": "#cba6f7",
+      "blue": "#89b4fa"
+     },
+     "defaultAccent": 1
+    }
+   ],
+   "expect": {
+    "code": "bad-default-accent",
+    "path": "$[0].defaultAccent"
+   }
+  },
+  {
+   "name": "first error wins across themes",
+   "note": "the second theme's error is not reached",
+   "file": [
+    {
+     "id": "catppuccin-mocha",
+     "name": "Mocha",
+     "family": "Catppuccin",
+     "scheme": "dim",
+     "colors": {
+      "chrome": "#11111b",
+      "panel": "#1e1e2e",
+      "raised": "#313244",
+      "line": "#45475a",
+      "text": "#cdd6f4",
+      "muted": "#a6adc8",
+      "good": "#a6e3a1",
+      "warn": "#f9e2af",
+      "bad": "#f38ba8",
+      "gradeAgain": "#f38ba8",
+      "gradeHard": "#fab387",
+      "gradeGood": "#a6e3a1",
+      "gradeEasy": "#89b4fa"
+     },
+     "accents": {
+      "mauve": "#cba6f7",
+      "blue": "#89b4fa"
+     },
+     "defaultAccent": "mauve"
+    },
+    {
+     "id": "x",
+     "name": "",
+     "family": "Catppuccin",
+     "scheme": "dark",
+     "colors": {
+      "chrome": "#11111b",
+      "panel": "#1e1e2e",
+      "raised": "#313244",
+      "line": "#45475a",
+      "text": "#cdd6f4",
+      "muted": "#a6adc8",
+      "good": "#a6e3a1",
+      "warn": "#f9e2af",
+      "bad": "#f38ba8",
+      "gradeAgain": "#f38ba8",
+      "gradeHard": "#fab387",
+      "gradeGood": "#a6e3a1",
+      "gradeEasy": "#89b4fa"
+     },
+     "accents": {
+      "mauve": "#cba6f7",
+      "blue": "#89b4fa"
+     },
+     "defaultAccent": "mauve"
+    }
+   ],
+   "expect": {
+    "code": "bad-scheme",
+    "path": "$[0].scheme"
+   }
+  },
+  {
+   "name": "unknown member before missing member",
+   "note": "",
+   "file": [
+    {
+     "id": "catppuccin-mocha",
+     "name": "Mocha",
+     "family": "Catppuccin",
+     "colors": {
+      "chrome": "#11111b",
+      "panel": "#1e1e2e",
+      "raised": "#313244",
+      "line": "#45475a",
+      "text": "#cdd6f4",
+      "muted": "#a6adc8",
+      "good": "#a6e3a1",
+      "warn": "#f9e2af",
+      "bad": "#f38ba8",
+      "gradeAgain": "#f38ba8",
+      "gradeHard": "#fab387",
+      "gradeGood": "#a6e3a1",
+      "gradeEasy": "#89b4fa"
+     },
+     "accents": {
+      "mauve": "#cba6f7",
+      "blue": "#89b4fa"
+     },
+     "defaultAccent": "mauve",
+     "extra": 1
+    }
+   ],
+   "expect": {
+    "code": "unknown-member",
+    "path": "$[0].extra"
+   }
+  }
+ ]
+}
