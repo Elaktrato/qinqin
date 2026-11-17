@@ -4,6 +4,7 @@
 	import { goto } from '$app/navigation';
 	import { APP_NAME } from '$lib/app';
 	import EmailBanner from '$lib/account/EmailBanner.svelte';
+	import HomeMilestones from '$lib/milestones/HomeMilestones.svelte';
 	import { webPlugins } from '$lib/plugins';
 	import { pluginStates } from '$lib/plugins/states';
 	import { homeEmptyReason, loadLayout, placeWidgets, resolveLayout } from '$lib/widgets/layout';
@@ -62,6 +63,9 @@
 		/>
 		<button type="submit">Search</button>
 	</form>
+
+	<!-- Not a widget: a stored layout must never hide it (milestones contract). -->
+	<HomeMilestones />
 
 	{#if layoutReady}
 		{#if placed.length > 0}

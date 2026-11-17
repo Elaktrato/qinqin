@@ -2,7 +2,17 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
-import { BASE_XP, DAILY_BONUS, GRADE_BONUS, dailyStreak, levelFromXp, levelProgress, xpByKind, xpFromReviews } from './exp';
+import {
+	BASE_XP,
+	DAILY_BONUS,
+	GRADE_BONUS,
+	dailyStreak,
+	levelFromXp,
+	levelProgress,
+	streakRuns,
+	xpByKind,
+	xpFromReviews
+} from './exp';
 import streakFixture from '../../../../../docs/contracts/scheduler/streak.json';
 import xpFixture from '../../../../../docs/contracts/scheduler/xp.json';
 import { studyDay, type ZoneChange } from '../time/studyDay';
@@ -178,6 +188,16 @@ describe('dailyStreak', () => {
 			ev(4, '2026-01-14T10:00:00Z')
 		];
 		expect(dailyStreak(r, now, UTC)).toEqual({ current: 1, best: 1, todayDone: false });
+	});
+});
+
+describe('streakRuns', () => {
+	it('gives the run length each review date ends, vacation dates neutral', () => {
+		const vacation = [{ start: '2026-01-04', end: '2026-01-05' }];
+		expect(streakRuns(['2026-01-01', '2026-01-02', '2026-01-03', '2026-01-06', '2026-01-08'], vacation)).toEqual([
+			1, 2, 3, 4, 1
+		]);
+		expect(streakRuns([], [])).toEqual([]);
 	});
 });
 

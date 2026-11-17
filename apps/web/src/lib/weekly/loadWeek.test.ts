@@ -105,6 +105,12 @@ describe('loadWeek', () => {
 		expect(loadCharacterMapData).not.toHaveBeenCalled();
 	});
 
+	it('exposes the timelines it built with detail (the milestones reuse them), none without', async () => {
+		expect((await loadWeek(3, '2026-11-09', { now: NOW })).timelines).toBeUndefined();
+		const detailed = await loadWeek(3, '2026-11-09', { now: NOW, detail: true });
+		expect(detailed.timelines?.of('old').length).toBe(longReviews.length);
+	});
+
 	it('passes force to the study history', async () => {
 		await loadWeek(3, '2026-11-09', { now: NOW, force: true });
 		expect(loadStudyHistory).toHaveBeenCalledWith(3, { force: true });
@@ -130,6 +136,11 @@ describe('loadWeekCharacters', () => {
 		const out = await loadWeekCharacters(3, 'zh', '2026-11-09', { now: NOW });
 		expect(loadCharacterMapData).toHaveBeenCalledWith(3, 'zh', { force: false });
 		expect(withLegacyWritten).toHaveBeenCalledTimes(1);
-		expect(out).toEqual({ value: 0, previous: 0 });
+		const { universe, ...pair } = out!;
+		expect(pair).toEqual({ value: 0, previous: 0 });
+		// The universe and the resolved cards it scored, for the milestones.
+		expect(universe.chars).toEqual([{ i: 1, c: '好' }]);
+		expect(universe.cards).toEqual([card('old', '好')]);
+		expect(universe.timelines.of('old').length).toBe(longReviews.length);
 	});
 });

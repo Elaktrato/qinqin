@@ -46,8 +46,11 @@ import {
   saveGoals,
   setKnownMark,
   setKnownMarks,
+  saveSeenMilestones,
+  loadStudyDataWith,
   ALL_WORKSPACES,
 } from "./store";
+import seenMergeFixture from "../../../../../docs/contracts/milestones/seen-merge.json";
 import { DEFAULT_W, type ParamSet } from "./fsrs/params";
 import { pageOf, pagedPull, toLegacy } from "./testing/legacyCodec";
 import { STUDY_COLLECTIONS, cardRow, legacyFamily, type StudyCollection } from "./rows";
@@ -2569,5 +2572,140 @@ describe("known marks", () => {
 
   it("setKnownMarks refuses an id that is not a workspace", async () => {
     await expect(setKnownMarks(1.5, [1], true)).rejects.toThrow(/workspace/);
+  });
+});
+
+describe("seen milestone rows", () => {
+  beforeEach(() => {
+    vi.stubGlobal("localStorage", fakeStorage());
+    vi.stubGlobal("fetch", vi.fn());
+    selectWorkspace(3);
+  });
+  afterEach(() => {
+    expectOneStorage();
+    vi.unstubAllGlobals();
+    vi.clearAllMocks();
+  });
+  const seen = (id: string, day = "2026-11-03") => ({ version: 1, id, seenAt: "2026-11-17T08:00:00.000Z", reachedDay: day });
+
+  it("parses the live milestone: rows of the workspace only", async () => {
+    respondPull({
+      pluginData: [
+        pluginRow("milestone:reviews:100", seen("reviews:100"), { workspaceId: 3 }),
+        pluginRow("milestone:streak:7", seen("streak:7"), { workspaceId: 4 }),
+        pluginRow("milestone:streak:3", seen("streak:3"), { workspaceId: null }),
+        pluginRow("milestone:streak:14", seen("streak:14"), { workspaceId: 3, pluginId: "qinqin-core" }),
+        pluginRow("milestone:days-active:10", seen("days-active:10"), { workspaceId: 3, deletedAt: "2026-11-17T09:00:00Z" }),
+        pluginRow("milestone:journal-entries:1", JSON.stringify(seen("journal-entries:1", "2026-11-05")), { workspaceId: 3 }),
+        pluginRow("milestone:quiz:5", { version: 2 }, { workspaceId: 3 }),
+      ],
+    });
+    const data = await loadStudyData(3);
+    expect([...(data.seenMilestones ?? new Map()).entries()]).toEqual([
+      ["reviews:100", { id: "reviews:100", seenAt: "2026-11-17T08:00:00.000Z", reachedDay: "2026-11-03" }],
+      ["journal-entries:1", { id: "journal-entries:1", seenAt: "2026-11-17T08:00:00.000Z", reachedDay: "2026-11-05" }],
+      ["quiz:5", { id: "quiz:5", seenAt: null, reachedDay: null }],
+    ]);
+  });
+
+  it("leaves seenMilestones absent without live rows; a milestone row is never a deck or a card", async () => {
+    respondPull({ pluginData: [pluginRow("milestone:reviews:100", seen("reviews:100"), { workspaceId: 3, deletedAt: "2026-11-17T09:00:00Z" })] });
+    const data = await loadStudyData(3);
+    expect("seenMilestones" in data).toBe(false);
+    expect(data.cards).toEqual([]);
+    expect(data.decks).toEqual([]);
+  });
+
+  it("a typed-family key in pluginData is still never study state", async () => {
+    respondPull({ pluginData: [pluginRow("card:milestone:reviews:100", seen("reviews:100"), { workspaceId: 3 })] });
+    const data = await loadStudyData(3);
+    expect("seenMilestones" in data).toBe(false);
+  });
+
+  it("keeps the stamps of tombstoned milestone rows (a re-dismiss must be stamped after them)", async () => {
+    respondPull({
+      pluginData: [
+        pluginRow("milestone:reviews:100", seen("reviews:100"), { workspaceId: 3, updatedAt: "2026-11-17T09:00:00Z", deletedAt: "2026-11-17T09:00:00Z" }),
+        pluginRow("milestone:streak:7", seen("streak:7"), { workspaceId: 3 }),
+      ],
+    });
+    const data = await loadStudyDataWith(3, async () => []);
+    expect([...(data.milestoneTombstones ?? new Map())]).toEqual([["reviews:100", "2026-11-17T09:00:00Z"]]);
+  });
+
+  it("saveSeenMilestones stamps a row after the tombstone it revives", async () => {
+    vi.mocked(fetch).mockImplementation(async () => jsonResponse({ dataAccepted: 1, dataSkipped: 0, dataRefused: 0 }));
+    await saveSeenMilestones(3, [{ key: "milestone:reviews:100", data: seen("reviews:100"), knownAt: "2099-01-01T00:00:00Z" }]);
+    expect(pushes()[0].pluginData[0].updatedAt).toBe("2099-01-01T00:00:00.001Z");
+  });
+
+  it("loadStudyDataWith passes seenMilestones through", async () => {
+    respondPull({ pluginData: [pluginRow("milestone:reviews:100", seen("reviews:100"), { workspaceId: 3 })] });
+    const data = await loadStudyDataWith(3, async () => []);
+    expect([...(data.seenMilestones?.keys() ?? [])]).toEqual(["reviews:100"]);
+  });
+
+  function pushes(): Array<{ pluginData: Array<Record<string, unknown>> }> {
+    return calls()
+      .filter(([url]) => String(url) === "/api/sync/push")
+      .map(([, init]) => JSON.parse(String(init?.body)));
+  }
+  const rows = [
+    { key: "milestone:reviews:100", data: seen("reviews:100") },
+    { key: "milestone:streak:7", data: seen("streak:7") },
+  ];
+
+  it("saveSeenMilestones sends one push with every row, no tombstone, and notifies", async () => {
+    vi.mocked(fetch).mockImplementation(async () => jsonResponse({ dataAccepted: 2, dataSkipped: 0, dataRefused: 0 }));
+    const touched: number[] = [];
+    const off = onStudyWrite((w) => touched.push(w));
+    await saveSeenMilestones(3, rows);
+    off();
+    const bodies = pushes();
+    expect(bodies).toHaveLength(1);
+    expect(bodies[0].pluginData).toHaveLength(2);
+    for (const item of bodies[0].pluginData) {
+      expect(item).toMatchObject({ pluginId: PLUGIN_ID, workspaceId: 3 });
+      expect(typeof item.updatedAt).toBe("string");
+      expect(item).not.toHaveProperty("deletedAt");
+    }
+    expect(bodies[0].pluginData.map((i) => i.key)).toEqual(rows.map((r) => r.key));
+    expect(touched).toEqual([3]);
+  });
+
+  it("saveSeenMilestones sends 80 rows in one request", async () => {
+    vi.mocked(fetch).mockImplementation(async () => jsonResponse({ dataAccepted: 80, dataSkipped: 0, dataRefused: 0 }));
+    const many = Array.from({ length: 80 }, (_, i) => ({ key: `milestone:level-complete:d-lvl-x-${String(i).padStart(8, "0")}`, data: {} }));
+    await saveSeenMilestones(3, many);
+    expect(pushes()).toHaveLength(1);
+  });
+
+  it("saveSeenMilestones with nothing to write sends nothing", async () => {
+    await saveSeenMilestones(3, []);
+    expect(calls()).toHaveLength(0);
+  });
+
+  it("saveSeenMilestones refuses another row family and a missing workspace", async () => {
+    await expect(saveSeenMilestones(3, [{ key: "known:5", data: {} }])).rejects.toThrow(/milestone/);
+    await expect(saveSeenMilestones(0, rows)).rejects.toThrow(/workspace/);
+    expect(calls()).toHaveLength(0);
+  });
+
+  const push = seenMergeFixture.cases.filter((c) => c.op === "push") as Array<{ name: string; answer: unknown; expect: string }>;
+  it.each(push)("milestones/seen-merge.json push: $name", async (c) => {
+    vi.mocked(fetch).mockImplementation(async () => {
+      if (c.answer === "network") throw new TypeError("Failed to fetch");
+      return jsonResponse(c.answer);
+    });
+    const outcome = await saveSeenMilestones(3, rows).then(
+      (result) => result,
+      () => "pending",
+    );
+    expect(outcome).toBe(c.expect);
+  });
+
+  it("a server error keeps the ids pending (the push rejects)", async () => {
+    vi.mocked(fetch).mockImplementation(async () => jsonResponse({ error: "boom" }, 500));
+    await expect(saveSeenMilestones(3, rows)).rejects.toBeInstanceOf(PartialPushError);
   });
 });

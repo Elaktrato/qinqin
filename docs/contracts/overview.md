@@ -18,7 +18,7 @@ where the rule is implemented today.
 | Time | `study-day/` (the learner's day, zone history) is the base of everything below |
 | Study events | `events/` (the envelope and how the server stores it, the payload of every type and when it is written, review parsing and replay order, heatmap activity scoring) |
 | Typed study data | `study/` (cards, decks, deck settings, limits, FSRS sets, the active set: wire shapes, last-write-wins, tombstones, the legacy codec and the legacy view for old web shells; the duplicate-card merge), `library/` (reader books, bookmarks, highlights, positions, the deletion log) |
-| Cards and study | `cards/` (ids, kinds, burying, cloze, the deck session plan), `levels/` (level sessions), `scheduler/` (the FSRS pin, XP and levels, vacation, study clock, due, streak, daily limits), `decks/` (deck numbers, system deck ids, add-to-deck, character mastery), `frequency/` (frequency order of new cards, starter decks, the known-word predicate, the display form of an entry), `goals/` (daily goal, day status, goal streak), `weekly/` (weekly summary; nothing stored) |
+| Cards and study | `cards/` (ids, kinds, burying, cloze, the deck session plan), `levels/` (level sessions), `scheduler/` (the FSRS pin, XP and levels, vacation, study clock, due, streak, daily limits), `decks/` (deck numbers, system deck ids, add-to-deck, character mastery), `frequency/` (frequency order of new cards, starter decks, the known-word predicate, the display form of an entry), `goals/` (daily goal, day status, goal streak), `weekly/` (weekly summary; nothing stored), `milestones/` (weekly milestones: catalogue, reached rule, the `milestone:<id>` seen rows, card plan) |
 | Reader | `reader/` (display settings, furigana, smart readings, word states, coverage) |
 | Personal data on entries | `notes/` (notes and the answer-side switch), `lookups/` (lookup history and its switch), `overlays/` (a user's edits of a shared entry) |
 | Lookup | `radicals/` (Kangxi table, `k` in the character universe, components index, radical and part lookup) |
@@ -30,7 +30,7 @@ where the rule is implemented today.
 Every folder, in dependency order (this page's sync model and Events sections after `sync/`):
 
 `auth/` → `study-day/` → `packages/` → `sync/` → `events/` → `study/` → `cards/` → `scheduler/` → `decks/` →
-`levels/` → `frequency/` → `goals/` → `weekly/` → `reader/` → `library/` → `notes/` → `lookups/` →
+`levels/` → `frequency/` → `goals/` → `weekly/` → `milestones/` → `reader/` → `library/` → `notes/` → `lookups/` →
 `radicals/` → `settings/` → `overlays/` → `backup/` → `pwa/`
 
 ## Sync model
@@ -101,7 +101,7 @@ Every folder, in dependency order (this page's sync model and Events sections af
   plugin row of a typed family is applied to the typed table. Android never uses it: it pulls and pushes
   the typed collections, and `pluginData` only for the keyed rows below. A pull without `collections`
   carries the typed collections and no legacy rows.
-- The keyed study rows (`goals:workspace`, `known:*`, `vacation:*`) are plugin data of the study namespace
+- The keyed study rows (`goals:workspace`, `known:*`, `vacation:*`, `milestone:*`) are plugin data of the study namespace
   `qinqin-flashcards` (`FLASHCARDS_PLUGIN_ID`), which is not a plugin. The registry ids `qinqin-core`,
   `qinqin-flashcards` and `qinqin-reader` are reserved: the last two are the core features flashcards and
   the reader, and the caller's `pluginStates` row of each is that user's switch for the feature
@@ -159,6 +159,7 @@ fixture or the contract text that fixes the shape.
 | `vacation:<ULID>` | **user-global** (`workspaceId: null`; written without `workspace`) | `{version:1, id, start: "YYYY-MM-DD", end: day \| null, scope: "all" \| {workspaces: int[]}, createdDay, createdAt}` | `study/vacation.ts`, `study/store.ts` (reads rows with no workspace) | `scheduler/vacation-days.json`, `scheduler/vacation-schedule.json` |
 | `note:<entryId>` (plugin **`qinqin-core`**) | workspace (the current one, even for an entry of another language) | `{version:1, entryId: int (= the key's number), text: string (plain text, non-empty after trim), ...unknown kept}`; key decimal, positive, no leading zero; absent unless all hold; editor cap 2000 code points; delete = tombstone; restore rewrites key and `entryId` to the target entry, drops it when unresolved | `notes/notes.ts`, `notes/store.ts`; restore: `server/internal/backup/remap.go` | `notes/note-rows.json`, `notes/note-text.json`, `backup/remap.json` |
 | `known:<entryId>` | workspace (the book's workspace when written from the reader) | `{version:1, entryId: int (= the key's number), createdAt: RFC 3339, ...unknown kept}`; key decimal, positive, no leading zero; anything else is ignored; unmark = tombstone, mark again revives the same key; the learner's manual "I know this word" (a known entry for the reader, smart readings and starter decks; creates no card); restore rewrites key and `entryId` to the target entry, drops it when invalid or unresolved | `study/knownMarks.ts`, `study/store.ts` (`setKnownMark`, `setKnownMarks`), `study/known.ts`; restore: `server/internal/backup/remap.go` | `reader/word-states.json`, `frequency/known.json`, `backup/remap.json` |
+| `milestone:<id>` | workspace | `{version:1, id, seenAt: RFC 3339, reachedDay: "YYYY-MM-DD", ...unknown kept}`; `<id>` is a catalogue id (`reviews:1000`, `level-complete:d-lvl-…`); **seen is decided by the key alone** (a live row = seen whatever its data; a tombstone = not seen); written only when the key is not live, never rewritten, never deleted by any client; unknown ids are kept and count as seen; restore remaps only the workspace | `milestones/seen.ts`, `study/store.ts` (`saveSeenMilestones`) | `milestones/seen-rows.json`, `milestones/seen-merge.json`, `backup/remap.json` |
 | `notecfg` (plugin **`qinqin-core`**) | workspace | `{version:1, onAnswer: bool, ...unknown kept}`; missing, deleted, other version or non-boolean = on | `notes/notes.ts` | `notes/note-rows.json` |
 | `lookups` (plugin **`qinqin-core`**) | workspace | `{version:1, clearedAt: RFC 3339 \| null, items: [{entryId: int, count: int 1..1000000, firstAt, lastAt, sources: {reader?, lesson?, search?: int}, books: int[≤3]}], ...unknown kept}`; one row per workspace, at most 500 items newest first; written only by read-merge-write in one flush (10-minute dedupe); Clear = `PUT` with `items: []` and `clearedAt` (never a `DELETE`); restore remaps item entries and books, merges duplicates, drops a row that is not version 1 | `lookups/lookups.ts`, `lookups/recorder.ts`, `lookups/store.ts`; restore: `server/internal/backup/remap.go` | `lookups/lookup-rows.json`, `lookups/lookup-merge.json`, `lookups/lookup-prompt.json`, `backup/remap.json` |
 | `lookupcfg` (plugin **`qinqin-core`**) | **user-global** (`workspaceId: null`) | `{version:1, record: bool, ...unknown kept}`; missing, deleted, other version or non-boolean = recording on | `lookups/lookups.ts` | `lookups/lookup-rows.json` |
@@ -212,6 +213,8 @@ Study-day inputs are not rows: the learner's zone history is `GET/PUT /api/me/ti
   starter deck's kana row shown as written). Reader popup snapshot: `reader/popup-written.json`.
 - Weekly summary (Monday to Sunday learner dates, rows, days, comparison, mature and character crossings;
   computed from events, nothing stored, no row key): `weekly/`.
+- Milestones (catalogue, the first event that reaches a threshold, ever reached, levels complete when every
+  member is learned, the `milestone:<id>` seen rows, the card plan and history): `milestones/`.
 
 ## Backup archive (`backup/`)
 
