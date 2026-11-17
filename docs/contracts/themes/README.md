@@ -71,7 +71,41 @@ Catppuccin Mocha and Latte).
 
 ## Derived tokens
 
-(Task 2.)
+Never in a theme file; computed by every client from the theme and the person's accent (design §6). Ratios are
+the rounded ones of the Contrast section. `alpha(c, p)` appends to `#rrggbb` the two lower-case hex digits of
+`floor((p*255 + 50)/100)` (14 → `24`, 24 → `3d`, 32 → `52`, 55 → `8c`, 58 → `94`, 100 → `ff`); the result is drawn
+over whatever surface it sits on (CSS `#rrggbbaa`, Compose ARGB).
+
+| Token | Rule |
+| --- | --- |
+| `accentChoices` | the accent keys whose ratio on `panel` is at least 3, in file order; empty → `[defaultAccent]` |
+| `accentKey` | the requested key when it is in `accentChoices`, else `defaultAccent` (also for no key, an unknown key, an accent below 3:1) |
+| `accent` | the colour of `accentKey` |
+| `onAccent` | `chrome` when `ratio(chrome, accent) >= ratio(#ffffff, accent)`, else `#ffffff` (text on a filled accent) |
+| `hair` | `alpha(line, 55)` — separators and outlines, 1px |
+| `accentTints` | `{"14", "32", "58", "100"}` → `alpha(accent, p)` |
+| `primaryWash`, `selectedWash` | `alpha(accent, 14)` — the one primary action's background; the selected reader word |
+| `mastery` | `[hair, tint 14, tint 32, tint 58, tint 100]` — stage 0 is an **outline** in `hair` (no fill), stages 1–4 fills |
+| `readingAccent` | `accent` when `ratio(accent, panel) >= 4.5`, else `text` — small accent-coloured text (readings) |
+| `highlightWash` | `alpha(warn, 24)` — reader highlights |
+| `wordMarks` | `new`: `{color: accent, style: "solid"}`, `learning`: `{color: warn, style: "dotted"}`; known words have none |
+| `correctionMarks` | `mistake`: `{color: gradeAgain, style: "wavy"}`, `suggestion`: `{color: gradeEasy, style: "dotted"}` |
+
+Every mark keeps its line style in forced-colours mode (the colour becomes the system colour; the shape carries
+the meaning). CSS custom properties the web sets on `:root` (Android names its Compose tokens the same way in
+camelCase):
+
+| Property | Value |
+| --- | --- |
+| `--chrome`, `--panel`, `--raised`, `--line`, `--text`, `--muted`, `--good`, `--warn`, `--bad` | the theme's colours |
+| `--grade-again`, `--grade-hard`, `--grade-good`, `--grade-easy` | the grade colours |
+| `--accent`, `--on-accent`, `--hair`, `--reading-accent` | derived |
+| `--accent-14`, `--accent-32`, `--accent-58`, `--accent-100` | the accent tints |
+| `--primary-wash`, `--selected-wash`, `--highlight-wash` | the washes |
+| `--mastery-0` … `--mastery-4` | the mastery ramp |
+
+Fixture: `derive.json` (the alpha table; Mocha and Latte, an accent below 3:1, an unknown and a missing accent,
+a theme whose every accent fails, both sides of the 4.5 and 3 roundings).
 
 ## The `appearance` row
 
@@ -96,6 +130,8 @@ it implements the validation only if it ever installs theme packs itself (it doe
   contrast arithmetic identical everywhere — cost: a pack author lower-cases their hex.
 - Ruling: theme files are strict (unknown or repeated members refused) — a typo such as `gradeagain` would
   otherwise silently paint the wrong colour — cost: a new optional token needs a new pack format value.
+- Ruling: an accent the person chose that is not offered (below 3:1, or unknown after a theme change or from another device) falls back to the theme's `defaultAccent`, even when that one is below 3:1 too — a theme always has a working accent and the row keeps the choice — cost: a theme whose every accent fails paints with a weak accent (its review shows it).
+- Ruling: `onAccent` follows the design (whichever of `chrome` or white contrasts more), not the mockup's luminance threshold — the design is the source of truth and the rule needs no tuning per theme — cost: none known.
 - Ruling: contrast ratios are compared after rounding to two decimals — Go and JavaScript `pow` may differ in the
   last bit; rounding makes the 4.5 / 3 decisions identical — cost: a ratio of 4.495 counts as 4.5.
 
@@ -105,3 +141,4 @@ it implements the validation only if it ever installs theme packs itself (it doe
 | --- | --- | --- |
 | `theme-file.json` | validation codes and paths, limits, accent order | Go `server/internal/themes/file_test.go` |
 | `contrast.json` | ratios, rounding, the review checks | Go `server/internal/themes/contrast_test.go` |
+| `derive.json` | derived tokens | Go `server/internal/themes/derive_test.go` |
