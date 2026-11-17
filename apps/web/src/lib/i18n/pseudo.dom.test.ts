@@ -13,6 +13,7 @@ import CreateTokenDialog from '$lib/settings/CreateTokenDialog.svelte';
 import ResetMfaDialog from '$lib/admin/ResetMfaDialog.svelte';
 import DeckStatsPanel from '$lib/features/flashcards/decks/DeckStatsPanel.svelte';
 import HighlightBar from '$lib/features/reader/HighlightBar.svelte';
+import OverallReview from '$lib/plugins/journal/OverallReview.svelte';
 
 // The pseudo-locale sample (spec Ruling): each extraction task adds one component of its area to SAMPLES; the
 // test renders it in en-XA and fails on any text node that is still plain ASCII English (a missed string, or
@@ -70,6 +71,21 @@ const SAMPLES: Sample[] = [
 		name: 'HighlightBar',
 		component: HighlightBar,
 		props: { actions: { ready: true, color: 'yellow', notice: '', pick: () => {}, note: () => {} } }
+	},
+	// journal and grammar (Task 20)
+	{
+		name: 'OverallReview',
+		component: OverallReview,
+		props: {
+			review: {
+				overall: { summary: '写得很好。', strengths: ['语法正确'], focus: ['多用连词'] },
+				model: 'm-1',
+				provider: '',
+				annotations: [],
+				createdAt: '2026-11-16T10:00:00Z'
+			}
+		},
+		allow: ['m-1']
 	}
 ];
 

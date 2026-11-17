@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '$lib/i18n';
 	import { workspaces } from '$lib/workspaces';
 	import PopupStackView from '$lib/features/reader/PopupStackView.svelte';
 	import { LookupController } from '$lib/features/reader/useLookup.svelte';
@@ -82,22 +83,22 @@
 </script>
 
 <main class="lesson">
-	<p class="back"><a href={grammarHref({ view: 'browse' })}>← All lessons</a></p>
+	<p class="back"><a href={grammarHref({ view: 'browse' })}>{t('grammar.lesson.all')}</a></p>
 
 	{#if status === 'loading'}
-		<p role="status">Loading…</p>
+		<p role="status">{t('common.loading')}</p>
 	{:else if status === 'error'}
-		<p class="error" role="alert">Could not load this lesson.</p>
+		<p class="error" role="alert">{t('grammar.lesson.loadFailed')}</p>
 	{:else if status === 'missing' || lesson === null || data === null}
-		<p>This lesson is no longer available.</p>
-		<p><a href={grammarHref({ view: 'browse' })}>Back to the lessons</a></p>
+		<p>{t('grammar.lesson.gone')}</p>
+		<p><a href={grammarHref({ view: 'browse' })}>{t('grammar.lesson.backToLessons')}</a></p>
 	{:else}
 		<div bind:this={container}>
 			<h1 lang={textLang}>{lesson.title}</h1>
 			<p class="summary">{lesson.summary}</p>
 
 			{#if lesson.pattern.length > 0}
-				<div class="pattern" lang={textLang} aria-label="Pattern">
+				<div class="pattern" lang={textLang} aria-label={t('grammar.lesson.pattern')}>
 					{#each lesson.pattern as line, i (i)}
 						<p data-p={i}><span data-r="0">{line}</span></p>
 					{/each}
@@ -110,11 +111,11 @@
 				{/each}
 			</div>
 
-			<h2>Examples</h2>
+			<h2>{t('grammar.lesson.examples')}</h2>
 			{#if hasReadings}
 				<label class="toggle">
 					<input type="checkbox" bind:checked={showReadings} />
-					Show readings
+					{t('grammar.lesson.showReadings')}
 				</label>
 			{/if}
 			<ul class="examples">
@@ -131,15 +132,15 @@
 		</div>
 
 		<p class="practice">
-			<a class="button" href={practiceHref}>Practice</a>
+			<a class="button" href={practiceHref}>{t('grammar.lesson.practice')}</a>
 		</p>
 
-		<nav class="neighbours" aria-label="Lessons">
+		<nav class="neighbours" aria-label={t('grammar.lesson.lessons')}>
 			{#if data.view.prev}
-				<a href={grammarHref({ view: 'lesson', pack, lesson: data.view.prev })}>← Previous lesson</a>
+				<a href={grammarHref({ view: 'lesson', pack, lesson: data.view.prev })}>{t('grammar.lesson.previous')}</a>
 			{:else}<span></span>{/if}
 			{#if data.view.next}
-				<a href={grammarHref({ view: 'lesson', pack, lesson: data.view.next })}>Next lesson →</a>
+				<a href={grammarHref({ view: 'lesson', pack, lesson: data.view.next })}>{t('grammar.lesson.next')}</a>
 			{/if}
 		</nav>
 

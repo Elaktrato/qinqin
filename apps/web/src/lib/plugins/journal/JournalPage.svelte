@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '$lib/i18n';
 	import { pageTitle } from '$lib/pageTitle';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
@@ -69,13 +70,13 @@
 </script>
 
 <svelte:head>
-	<title>{pageTitle('Journal')}</title>
+	<title>{pageTitle(t('journal.title'))}</title>
 </svelte:head>
 
 <main class="journal">
 	{#if !workspace}
-		<h1>Journal</h1>
-		<p>Choose a workspace first.</p>
+		<h1>{t('journal.title')}</h1>
+		<p>{t('journal.chooseWorkspace')}</p>
 	{:else if route.view === 'settings'}
 		<JournalSettingsView {workspace} />
 	{:else if route.view === 'photo'}

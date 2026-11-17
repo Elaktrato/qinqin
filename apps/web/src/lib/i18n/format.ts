@@ -142,12 +142,24 @@ export function formatDuration(totalSeconds: number): string {
 	return list.format(parts.slice(0, 2));
 }
 
-/** A language code named in the interface language (`ja` → `Japanese`); the code itself when unknown or broken. */
-export function languageName(code: string, locale: string = getLanguage()): string {
+/**
+ * A language code named in the interface language (`ja` → `Japanese`); the code itself when unknown or broken.
+ * `standard` names a script or region in brackets (`Chinese (Simplified)`) instead of the dialect name.
+ */
+export function languageName(
+	code: string,
+	locale: string = getLanguage(),
+	display: 'dialect' | 'standard' = 'dialect'
+): string {
 	if (!code) return code;
 	let names: Intl.DisplayNames | null;
 	try {
-		names = cached('ln', locale, {}, () => new Intl.DisplayNames([locale], { type: 'language', fallback: 'code' }));
+		names = cached(
+			'ln',
+			locale,
+			{ display },
+			() => new Intl.DisplayNames([locale], { type: 'language', fallback: 'code', languageDisplay: display })
+		);
 	} catch {
 		return code;
 	}

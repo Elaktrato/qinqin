@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '$lib/i18n';
 	import { tick } from 'svelte';
 	import { segments, type Placed } from './anchor';
 	import { annotationCategory } from './editorLogic';
@@ -57,12 +58,12 @@
 	<p class="text">{#each runs as run, i (i)}{#if run.annotationId}{@const id = run.annotationId}{@const a = annotations.find((x) => x.id === id)}<button type="button" class="annot {annotationCategory(a?.category ?? '')}" bind:this={buttons[id]} aria-expanded={openId === id} aria-controls={openId === id ? 'annotation-popover' : undefined} onclick={() => toggle(id)}>{run.text}</button>{:else}{run.text}{/if}{/each}</p>
 
 	{#if open}
-		<div class="popover" id="annotation-popover" bind:this={popover} tabindex="-1" role="group" aria-label="Correction">
+		<div class="popover" id="annotation-popover" bind:this={popover} tabindex="-1" role="group" aria-label={t('journal.review.correction')}>
 			<p class="cat">{open.category}</p>
-			<p><span class="label">You wrote</span> <span class="quote">{open.quote}</span></p>
-			<p><span class="label">Correction</span> <strong class="fix">{open.correction}</strong></p>
+			<p><span class="label">{t('journal.review.youWrote')}</span> <span class="quote">{open.quote}</span></p>
+			<p><span class="label">{t('journal.review.correction')}</span> <strong class="fix">{open.correction}</strong></p>
 			<p class="why">{open.explanation}</p>
-			<button type="button" class="secondary" onclick={close}>Close</button>
+			<button type="button" class="secondary" onclick={close}>{t('journal.review.close')}</button>
 		</div>
 	{/if}
 </div>

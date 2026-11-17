@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '$lib/i18n';
 	import type { Annotation } from './types';
 
 	let {
@@ -9,9 +10,9 @@
 </script>
 
 <section class="annotations" aria-labelledby="annotations-heading">
-	<h3 id="annotations-heading">All corrections ({listed.length})</h3>
+	<h3 id="annotations-heading">{t('journal.annotations.all', { count: listed.length })}</h3>
 	{#if listed.length === 0}
-		<p class="hint">No corrections in the current text.</p>
+		<p class="hint">{t('journal.annotations.none')}</p>
 	{:else}
 		<ol>
 			{#each listed as a (a.id)}
@@ -19,7 +20,7 @@
 					<button type="button" class="secondary" onclick={() => onpick(a.id)}>
 						<span class="quote">{a.quote}</span>
 						<span aria-hidden="true">→</span>
-						<span class="sr">corrected to</span>
+						<span class="sr">{t('journal.annotations.correctedTo')}</span>
 						<strong>{a.correction}</strong>
 					</button>
 				</li>
@@ -28,8 +29,8 @@
 	{/if}
 
 	{#if missing.length > 0}
-		<h3>No longer in the text</h3>
-		<p class="hint">You changed these words after the review.</p>
+		<h3>{t('journal.annotations.gone')}</h3>
+		<p class="hint">{t('journal.annotations.goneHint')}</p>
 		<ul>
 			{#each missing as a (a.id)}
 				<li class="gone">

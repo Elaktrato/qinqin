@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '$lib/i18n';
 	import { onMount } from 'svelte';
 	import { answeredBy } from './answeredBy';
 	import { loadProviderNames } from './providerNames';
@@ -17,16 +18,16 @@
 </script>
 
 <section class="overall" aria-labelledby="overall-heading">
-	<h3 id="overall-heading">Overall</h3>
+	<h3 id="overall-heading">{t('journal.overall.title')}</h3>
 	<p class="summary">{review.overall.summary}</p>
 	{#if review.overall.strengths.length > 0}
-		<h4>What went well</h4>
+		<h4>{t('journal.overall.strengths')}</h4>
 		<ul>
 			{#each review.overall.strengths as s, i (i)}<li>{s}</li>{/each}
 		</ul>
 	{/if}
 	{#if review.overall.focus.length > 0}
-		<h4>Focus next</h4>
+		<h4>{t('journal.overall.focus')}</h4>
 		<ul>
 			{#each review.overall.focus as f, i (i)}<li>{f}</li>{/each}
 		</ul>

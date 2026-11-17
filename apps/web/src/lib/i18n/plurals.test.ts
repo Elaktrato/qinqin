@@ -291,7 +291,16 @@ const CASES: [MessageKey, MessageArgs, string, string][] = [
 	['reader.words.marked', {}, 'Marked 1 word as known', 'Marked 2 words as known'],
 	['reader.words.tokens', {}, '1 word', '2 words'],
 	['reader.words.typesNew', {}, '1 different new word', '2 different new words'],
-	['reader.words.unmatched', {}, '1 passage is not in the dictionary', '2 passages are not in the dictionary']
+	['reader.words.unmatched', {}, '1 passage is not in the dictionary', '2 passages are not in the dictionary'],
+	// journal and grammar (Task 20)
+	['journal.ai.waitMinutes', {}, '1 minute', '2 minutes'],
+	['journal.review.ready', {}, 'Review ready: 1 correction.', 'Review ready: 2 corrections.'],
+	[
+		'journal.review.readyMissing',
+		{ missing: '3' },
+		'Review ready: 1 correction, 3 no longer in the text.',
+		'Review ready: 2 corrections, 3 no longer in the text.'
+	]
 ];
 
 describe('catalogue plurals keep their English', () => {

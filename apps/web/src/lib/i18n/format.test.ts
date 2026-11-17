@@ -152,5 +152,8 @@ describe('lists and language names', () => {
 		expect(languageName('zh-Hant')).toBe('Traditional Chinese');
 		expect(languageName('')).toBe('');
 		expect(languageName('!!')).toBe('!!');
+		expect(languageName('zh-Hans', 'en', 'standard')).toBe('Chinese (Simplified)');
+		expect(languageName('zh-Hant', 'en', 'standard')).toBe('Chinese (Traditional)');
+		expect(languageName('de', 'en', 'standard')).toBe('German');
 	});
 });
