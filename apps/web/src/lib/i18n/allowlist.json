@@ -1,0 +1,22 @@
+[
+	{
+		"file": "lib/settings/zoneSettings.ts",
+		"text": "Intl.DateTimeFormat(",
+		"reason": "Contract machinery: zone canonicalisation and the UTC offset read from formatToParts with a fixed 'en' locale; the label is a fixed technical format."
+	},
+	{
+		"file": "lib/time/studyDay.ts",
+		"text": "Intl.DateTimeFormat(",
+		"reason": "Contract machinery: wall-clock parts in a zone via the fixed 'en-CA' locale (learner day, docs/contracts/study-day); never shown."
+	},
+	{
+		"file": "lib/time/zone.ts",
+		"text": "Intl.DateTimeFormat(",
+		"reason": "Machinery: reads the device time zone (resolvedOptions().timeZone); formats nothing."
+	},
+	{
+		"file": "routes/+layout.svelte",
+		"text": "lang=\"zh\"",
+		"reason": "The footer brand hanzi (勤勤) is the product's name, identical in both scripts, not study text: it must not follow a Japanese workspace (spec Ruling)."
+	}
+]
