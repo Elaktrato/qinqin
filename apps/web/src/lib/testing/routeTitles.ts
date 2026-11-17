@@ -11,10 +11,6 @@ export function setsTitle(source: string): boolean {
 }
 
 /**
- * pluginPageImports lists the import paths of the components registered as
- * plugin pages (`pages: [{ …, component: X }]`) in the plugin index source.
- */
-/**
  * featurePageImports: the page components lib/features/index.ts registers
  * (`component: X` with `import X from '$lib/...'`), as paths under src/lib.
  */
@@ -28,6 +24,10 @@ export function featurePageImports(featuresSource: string): string[] {
 	});
 }
 
+/**
+ * pluginPageImports lists the import paths of the components registered as
+ * plugin pages (`pages: [{ …, component: X }]`) in the plugin index source.
+ */
 export function pluginPageImports(indexSource: string): string[] {
 	const imports = new Map<string, string>();
 	for (const m of indexSource.matchAll(/^import\s+(\w+)\s+from\s+'([^']+)';/gm)) imports.set(m[1], m[2]);
