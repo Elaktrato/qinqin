@@ -1,0 +1,459 @@
+{
+ "version": 1,
+ "rule": "decks/char-mastery",
+ "masteryKinds": [
+  "vocab",
+  "sentence",
+  "writing",
+  "tone"
+ ],
+ "maxStabilityDays": 365,
+ "cases": [
+  {
+   "name": "the mean strength of the cards that contain the glyph",
+   "note": "score = round(100 * mean(strength)), strength = min(1, log2(1 + stability) / log2(366))",
+   "chars": [
+    "学",
+    "习",
+    "生"
+   ],
+   "cards": [
+    {
+     "id": "a",
+     "kind": "vocab",
+     "entryId": 1,
+     "written": "学习",
+     "deckIds": [
+      "general"
+     ],
+     "createdAt": "2026-01-01T00:00:00Z"
+    },
+    {
+     "id": "b",
+     "kind": "writing",
+     "entryId": 1,
+     "written": "学",
+     "deckIds": [
+      "general"
+     ],
+     "createdAt": "2026-01-01T00:00:00Z"
+    },
+    {
+     "id": "c",
+     "kind": "vocab",
+     "entryId": 1,
+     "written": "学生",
+     "deckIds": [
+      "general"
+     ],
+     "createdAt": "2026-01-01T00:00:00Z"
+    }
+   ],
+   "schedules": {
+    "a": 10,
+    "b": 365,
+    "c": 1
+   },
+   "expect": {
+    "学": {
+     "score": 51,
+     "stage": "mature",
+     "reviewedCards": 3
+    },
+    "习": {
+     "score": 41,
+     "stage": "learning",
+     "reviewedCards": 1
+    },
+    "生": {
+     "score": 12,
+     "stage": "fresh",
+     "reviewedCards": 1
+    }
+   }
+  },
+  {
+   "name": "a glyph repeated in one card counts once",
+   "note": "each card counts once per glyph it contains",
+   "chars": [
+    "谢"
+   ],
+   "cards": [
+    {
+     "id": "a",
+     "kind": "vocab",
+     "entryId": 1,
+     "written": "谢谢",
+     "deckIds": [
+      "general"
+     ],
+     "createdAt": "2026-01-01T00:00:00Z"
+    },
+    {
+     "id": "b",
+     "kind": "tone",
+     "entryId": 1,
+     "written": "谢",
+     "deckIds": [
+      "general"
+     ],
+     "createdAt": "2026-01-01T00:00:00Z"
+    }
+   ],
+   "schedules": {
+    "a": 3,
+    "b": 30
+   },
+   "expect": {
+    "谢": {
+     "score": 41,
+     "stage": "learning",
+     "reviewedCards": 2
+    }
+   }
+  },
+  {
+   "name": "only vocab, sentence, writing and tone cards count",
+   "note": "reverse and cloze cards never move the map",
+   "chars": [
+    "水"
+   ],
+   "cards": [
+    {
+     "id": "a",
+     "kind": "vocab",
+     "entryId": 1,
+     "written": "水",
+     "deckIds": [
+      "general"
+     ],
+     "createdAt": "2026-01-01T00:00:00Z"
+    },
+    {
+     "id": "b",
+     "kind": "reverse",
+     "entryId": 1,
+     "written": "水",
+     "deckIds": [
+      "general"
+     ],
+     "createdAt": "2026-01-01T00:00:00Z"
+    },
+    {
+     "id": "c",
+     "kind": "cloze",
+     "entryId": 1,
+     "written": "水",
+     "deckIds": [
+      "general"
+     ],
+     "createdAt": "2026-01-01T00:00:00Z"
+    }
+   ],
+   "schedules": {
+    "a": 2,
+    "b": 365,
+    "c": 365
+   },
+   "expect": {
+    "水": {
+     "score": 19,
+     "stage": "fresh",
+     "reviewedCards": 1
+    }
+   }
+  },
+  {
+   "name": "never-reviewed and snapshot-less cards are skipped",
+   "note": "a card without a schedule or without a written snapshot adds nothing; a glyph with no counted card is unknown",
+   "chars": [
+    "火",
+    "山"
+   ],
+   "cards": [
+    {
+     "id": "a",
+     "kind": "vocab",
+     "entryId": 1,
+     "written": "火",
+     "deckIds": [
+      "general"
+     ],
+     "createdAt": "2026-01-01T00:00:00Z"
+    },
+    {
+     "id": "b",
+     "kind": "vocab",
+     "entryId": 1,
+     "written": "火山",
+     "deckIds": [
+      "general"
+     ],
+     "createdAt": "2026-01-01T00:00:00Z"
+    },
+    {
+     "id": "c",
+     "kind": "vocab",
+     "entryId": 1,
+     "deckIds": [
+      "general"
+     ],
+     "createdAt": "2026-01-01T00:00:00Z"
+    }
+   ],
+   "schedules": {
+    "a": null,
+    "b": 0.5,
+    "c": 365
+   },
+   "expect": {
+    "火": {
+     "score": 7,
+     "stage": "fresh",
+     "reviewedCards": 1
+    },
+    "山": {
+     "score": 7,
+     "stage": "fresh",
+     "reviewedCards": 1
+    }
+   }
+  },
+  {
+   "name": "an empty glyph is never matched",
+   "note": "the empty string is unknown, never a substring of every card",
+   "chars": [
+    "",
+    "木"
+   ],
+   "cards": [
+    {
+     "id": "a",
+     "kind": "vocab",
+     "entryId": 1,
+     "written": "木",
+     "deckIds": [
+      "general"
+     ],
+     "createdAt": "2026-01-01T00:00:00Z"
+    }
+   ],
+   "schedules": {
+    "a": 100
+   },
+   "expect": {
+    "": {
+     "score": 0,
+     "stage": "unknown",
+     "reviewedCards": 0
+    },
+    "木": {
+     "score": 78,
+     "stage": "mature",
+     "reviewedCards": 1
+    }
+   }
+  },
+  {
+   "name": "stability above a year is capped; zero and negative count 0",
+   "note": "strength is clamped to 0..1",
+   "chars": [
+    "大",
+    "小"
+   ],
+   "cards": [
+    {
+     "id": "a",
+     "kind": "vocab",
+     "entryId": 1,
+     "written": "大",
+     "deckIds": [
+      "general"
+     ],
+     "createdAt": "2026-01-01T00:00:00Z"
+    },
+    {
+     "id": "b",
+     "kind": "vocab",
+     "entryId": 1,
+     "written": "小",
+     "deckIds": [
+      "general"
+     ],
+     "createdAt": "2026-01-01T00:00:00Z"
+    },
+    {
+     "id": "c",
+     "kind": "sentence",
+     "entryId": 1,
+     "written": "小",
+     "deckIds": [
+      "general"
+     ],
+     "createdAt": "2026-01-01T00:00:00Z"
+    }
+   ],
+   "schedules": {
+    "a": 5000,
+    "b": 0,
+    "c": -3
+   },
+   "expect": {
+    "大": {
+     "score": 100,
+     "stage": "learned",
+     "reviewedCards": 1
+    },
+    "小": {
+     "score": 0,
+     "stage": "unknown",
+     "reviewedCards": 2
+    }
+   }
+  }
+ ],
+ "stages": [
+  {
+   "score": 0,
+   "stage": "unknown"
+  },
+  {
+   "score": 1,
+   "stage": "fresh"
+  },
+  {
+   "score": 24,
+   "stage": "fresh"
+  },
+  {
+   "score": 25,
+   "stage": "learning"
+  },
+  {
+   "score": 49,
+   "stage": "learning"
+  },
+  {
+   "score": 50,
+   "stage": "mature"
+  },
+  {
+   "score": 79,
+   "stage": "mature"
+  },
+  {
+   "score": 80,
+   "stage": "learned"
+  },
+  {
+   "score": 100,
+   "stage": "learned"
+  }
+ ],
+ "cells": [
+  {
+   "name": "a cell takes the best of its glyph and its variants",
+   "note": "the maximum score, never the sum; the card count is the one of the form that set the score",
+   "chars": [
+    {
+     "i": 1,
+     "c": "学",
+     "v": [
+      "學"
+     ]
+    }
+   ],
+   "mastery": {
+    "学": {
+     "score": 40,
+     "stage": "learning",
+     "reviewedCards": 3
+    },
+    "學": {
+     "score": 85,
+     "stage": "learned",
+     "reviewedCards": 1
+    }
+   },
+   "expect": [
+    {
+     "c": "学",
+     "score": 85,
+     "stage": "learned",
+     "reviewedCards": 1
+    }
+   ]
+  },
+  {
+   "name": "equal scores: the larger card count",
+   "note": "ties on score take the larger reviewed-card count",
+   "chars": [
+    {
+     "i": 1,
+     "c": "国",
+     "v": [
+      "國"
+     ]
+    }
+   ],
+   "mastery": {
+    "国": {
+     "score": 60,
+     "stage": "mature",
+     "reviewedCards": 1
+    },
+    "國": {
+     "score": 60,
+     "stage": "mature",
+     "reviewedCards": 4
+    }
+   },
+   "expect": [
+    {
+     "c": "国",
+     "score": 60,
+     "stage": "mature",
+     "reviewedCards": 4
+    }
+   ]
+  },
+  {
+   "name": "a glyph without mastery is unknown",
+   "note": "no entry in the mastery map scores 0 (unknown)",
+   "chars": [
+    {
+     "i": 2,
+     "c": "龍",
+     "v": [
+      "龙"
+     ]
+    },
+    {
+     "i": 3,
+     "c": "一"
+    }
+   ],
+   "mastery": {
+    "龙": {
+     "score": 0,
+     "stage": "unknown",
+     "reviewedCards": 0
+    }
+   },
+   "expect": [
+    {
+     "c": "龍",
+     "score": 0,
+     "stage": "unknown",
+     "reviewedCards": 0
+    },
+    {
+     "c": "一",
+     "score": 0,
+     "stage": "unknown",
+     "reviewedCards": 0
+    }
+   ]
+  }
+ ]
+}

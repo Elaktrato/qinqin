@@ -4,7 +4,8 @@ import { describe, expect, it } from 'vitest';
 
 import { BASE_XP, dailyStreak, levelFromXp, levelProgress, xpByKind, xpFromReviews } from './exp';
 import streakFixture from '../../../../../docs/contracts/scheduler/streak.json';
-import { studyDay } from '../time/studyDay';
+import xpFixture from '../../../../../docs/contracts/scheduler/xp.json';
+import { studyDay, type ZoneChange } from '../time/studyDay';
 import type { ReviewEvent, ReviewGrade, StudyCardKind } from './types';
 
 // Read with JSON.parse, not imported: a JSON import turns 1e999 into null, the
@@ -243,4 +244,31 @@ describe('docs/contracts/events/review-parse.json: XP counts exactly the valid r
 			expect(Object.values(xpByKind([c.event])).reduce((a, b) => a + b, 0) > 0).toBe(c.valid);
 		});
 	}
+});
+
+describe('docs/contracts/scheduler/xp.json', () => {
+	const fixture = xpFixture as unknown as {
+		rule: string;
+		baseXp: Record<StudyCardKind, number>;
+		cases: { name: string; history: ZoneChange[]; events: ReviewEvent[]; expect: { xp: number; byKind: Record<StudyCardKind, number> } }[];
+		levels: { xp: number | 'NaN' | 'Infinity'; expect: { level: number; xpInto: number; xpForNext: number } }[];
+	};
+	const num = (x: number | string): number => (x === 'NaN' ? Number.NaN : x === 'Infinity' ? Infinity : (x as number));
+	it('has the base table', () => {
+		expect(fixture.rule).toBe('scheduler/xp');
+		expect(BASE_XP).toEqual(fixture.baseXp);
+	});
+	for (const c of fixture.cases) {
+		it(c.name, () => {
+			expect(xpFromReviews(c.events, studyDay(c.history).dayOf)).toBe(c.expect.xp);
+			expect(xpByKind(c.events)).toEqual(c.expect.byKind);
+		});
+	}
+	it('levelProgress at the boundaries', () => {
+		expect(fixture.levels.length).toBeGreaterThan(10);
+		for (const l of fixture.levels) {
+			expect(levelProgress(num(l.xp)), String(l.xp)).toEqual(l.expect);
+			expect(levelFromXp(num(l.xp))).toBe(l.expect.level);
+		}
+	});
 });

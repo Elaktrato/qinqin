@@ -1,4 +1,4 @@
-# Scheduler contract: FSRS, vacation, study clock, due, streak, daily limits
+# Scheduler contract: FSRS, XP, vacation, study clock, due, streak, daily limits
 
 Issues #88 (vacation mode) and #89 (daily limits). Rule source:
 `docs/superpowers/specs/2026-11-15-v030-vacation-and-limits-design.md`; the learner's day is
@@ -108,6 +108,19 @@ at the frozen instant (`optimizer-steps.inside` cases).
 `Step.t = dateDiffInDays(f_{i-1}, f_i)` (ts-fsrs UTC calendar days, equals the replay's `elapsed_days`),
 `labelled` counts steps after the first with `t >= 1`. The training days (holdout split) stay the real
 `floor(ts / DAY)`.
+
+## XP and levels (`xp.json`)
+
+Derived from the review log, never stored (web: `lib/study/exp.ts`, decoded by `exp.test.ts`; no server code).
+Only reviews that count (`events/review-parse.json`: parsable `ts`, non-empty `cardId`, grade 1–4) earn XP.
+
+- Per review: `baseXp[mode]` (vocab 10, sentence 15, writing 20, tone 8, reverse 10, cloze 15; a missing or
+  unknown mode is vocab) + grade bonus (Again 0, Hard 0, Good 5, Easy 10). `byKind` sums these per kind.
+- Plus `dailyBonus` 10 per distinct **learner day** (zone history, `study-day/`) with at least one counted
+  review; vacation days are not excluded. The total never depends on event order.
+- Level: start at level 1; going from level L to L+1 costs `100 · L` XP. `levelProgress(xp)` floors `xp`,
+  treats a negative or non-finite value as 0 and returns `{level, xpInto, xpForNext}` (`levels` cases:
+  boundaries 99/100, 299/300, 599/600, a million, negative, fractional, NaN, Infinity).
 
 ## Due and streak (`due-today.json`, `streak.json`)
 

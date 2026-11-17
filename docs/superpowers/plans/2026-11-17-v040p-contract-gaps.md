@@ -417,3 +417,13 @@ of each other in content but share the web gates; one implementer at a time. Tas
   the reserve.
 - Observation (pinned, not a bug): `isEligible` for tone reads the session context's language, not the
   entry's, and only clean toned pinyin counts (`xue2 xi2` is not eligible, `xué xí` is).
+- Task 7 (XP, mastery): expectations from a scratch vitest file (deleted) running `xpFromReviews`, `xpByKind`,
+  `levelProgress`, `masteryFromSchedules`, `stageOf`, `cellStates`; hand-checked (e.g. base case 108 + 10 = 118;
+  学 = round(100 · mean(0.406, 1, 0.117)) = 51). `exp`/`mastery`/`charGroups` tests with both fixtures absent → 3
+  FAIL; present → PASS (150); `xpInto` 13000 → 13001 and one score 51 → 52 → 2 FAIL. Gates: `npm run check` 0;
+  `npm test` 0 (398 files, 6634 passed).
+- Adaptation: `xp.json` holds `cases` plus a `levels` value table; `char-mastery.json` holds `cases`, `stages`
+  and `cells`. Non-finite XP inputs are written `"NaN"`/`"Infinity"` (strings the test maps), since `levelProgress`
+  takes a number from code, not from a stored row.
+- Observation (pinned, not a bug): the XP daily bonus counts vacation days (the streak does not); a counted card
+  of stability 0 leaves its glyph at score 0, stage `unknown`, with `reviewedCards` > 0.
