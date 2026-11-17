@@ -163,12 +163,12 @@
 		border: 1px solid color-mix(in srgb, currentColor 25%, transparent);
 		border-radius: 0.5rem;
 		padding: 1.25rem;
-		background: Canvas;
-		color: CanvasText;
+		background: var(--panel);
+		color: var(--text);
 	}
 
 	.delete-dialog::backdrop {
-		background: rgb(0 0 0 / 0.45);
+		background: color-mix(in srgb, var(--chrome) 60%, transparent);
 	}
 
 	h2 {
@@ -183,7 +183,7 @@
 	}
 
 	.hint {
-		opacity: 0.75;
+		color: var(--readable-muted);
 		margin: 0 0 0.5rem;
 	}
 
@@ -229,8 +229,8 @@
 
 	button.danger {
 		border: 0;
-		background: #c62828;
-		color: #fff;
+		background: color-mix(in srgb, var(--bad) 14%, transparent);
+		color: var(--readable-bad);
 	}
 
 	button:disabled {
@@ -240,15 +240,12 @@
 
 	.error {
 		margin: 0.5rem 0 0;
-		color: #c62828;
+		color: var(--readable-bad);
 		font-weight: 600;
+		padding-inline-start: var(--space-2);
+		border-inline-start: 3px solid var(--bad);
 	}
 
 	/* #c62828 is about 3.3:1 on the dark Canvas (#121212); this red is
 	   8.2:1 there (7.3:1 on #1e1e1e). */
-	@media (prefers-color-scheme: dark) {
-		.error {
-			color: #ff8a80;
-		}
-	}
 </style>

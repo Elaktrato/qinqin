@@ -168,7 +168,7 @@
 
 	.optional {
 		font-weight: 400;
-		opacity: 0.7;
+		color: var(--readable-muted);
 	}
 
 	select,
@@ -178,7 +178,7 @@
 		padding: 0.35rem 0.5rem;
 		border: 1px solid color-mix(in srgb, currentColor 35%, transparent);
 		border-radius: 0.4rem;
-		background: Canvas;
+		background: var(--panel);
 		color: inherit;
 	}
 
@@ -197,8 +197,8 @@
 
 	.primary {
 		border: 0;
-		background: #0b6bcb;
-		color: #fff;
+		background: var(--accent);
+		color: var(--on-accent);
 		font-weight: 600;
 	}
 
@@ -215,12 +215,14 @@
 
 	.error {
 		margin: 0;
-		color: #c62828;
+		color: var(--readable-bad);
 		font-weight: 600;
+		padding-inline-start: var(--space-2);
+		border-inline-start: 3px solid var(--bad);
 	}
 
 	.hint {
 		margin: 0;
-		opacity: 0.75;
+		color: var(--readable-muted);
 	}
 </style>

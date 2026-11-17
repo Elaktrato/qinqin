@@ -47,7 +47,7 @@
 		font-size: 0.8rem;
 		letter-spacing: 0.06em;
 		text-transform: uppercase;
-		opacity: 0.7;
+		color: var(--readable-muted);
 	}
 
 	.sentences ul {
@@ -74,7 +74,7 @@
 
 	.pinyin {
 		font-size: 0.9rem;
-		opacity: 0.8;
+		color: var(--readable-muted);
 	}
 
 	.translation {
@@ -85,6 +85,6 @@
 		display: inline-block;
 		margin-top: 0.35rem;
 		font-size: 0.7rem;
-		opacity: 0.65;
+		color: var(--readable-muted);
 	}
 </style>

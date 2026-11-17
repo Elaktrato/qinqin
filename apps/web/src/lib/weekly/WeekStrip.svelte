@@ -65,9 +65,9 @@
 	}
 
 	.active {
-		background: #0b6bcb;
-		border-color: #0b6bcb;
-		color: #fff;
+		background: var(--accent);
+		border-color: var(--accent);
+		color: var(--on-accent);
 	}
 
 	.vacation {
@@ -81,13 +81,5 @@
 
 	.skipped {
 		border-color: transparent;
-	}
-
-	@media (prefers-color-scheme: dark) {
-		.active {
-			background: #6cb4ff;
-			border-color: #6cb4ff;
-			color: #121212;
-		}
 	}
 </style>

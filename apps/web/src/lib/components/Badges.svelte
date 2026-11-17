@@ -43,7 +43,7 @@
 		font-size: 0.8rem;
 		letter-spacing: 0.06em;
 		text-transform: uppercase;
-		opacity: 0.7;
+		color: var(--readable-muted);
 	}
 
 	.badges ul {
@@ -71,7 +71,7 @@
 
 	.sep,
 	.scheme {
-		opacity: 0.7;
+		color: var(--readable-muted);
 	}
 
 	.visually-hidden {
@@ -89,7 +89,7 @@
 		letter-spacing: 0.04em;
 		padding: 0.05rem 0.35rem;
 		border-radius: 999px;
-		background: color-mix(in srgb, #0b6bcb 15%, transparent);
-		color: #0b6bcb;
+		background: color-mix(in srgb, var(--accent) 15%, transparent);
+		color: var(--reading-accent);
 	}
 </style>

@@ -21,7 +21,7 @@ import { opacityFindings } from './opacity';
 type Rule = 'colour' | 'opacity';
 
 /** The pinned lengths of pending.json: each migration batch lowers them. */
-const PENDING_LENGTH: Record<Rule, number> = { colour: 72, opacity: 74 };
+const PENDING_LENGTH: Record<Rule, number> = { colour: 56, opacity: 58 };
 
 const LINTS: Record<Rule, (src: string, kind: StyleKind) => Finding[]> = {
 	colour: colourFindings,

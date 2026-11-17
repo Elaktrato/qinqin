@@ -92,15 +92,9 @@
 	}
 
 	.fill {
-		stroke: #0b6bcb;
+		stroke: var(--accent);
 		stroke-linecap: round;
 		transition: stroke-dashoffset 0.4s ease-out;
-	}
-
-	@media (prefers-color-scheme: dark) {
-		.fill {
-			stroke: #6cb4ff;
-		}
 	}
 
 	@media (prefers-reduced-motion: reduce) {
@@ -121,13 +115,7 @@
 
 	.check {
 		font-weight: 700;
-		color: #1b7f3b;
-	}
-
-	@media (prefers-color-scheme: dark) {
-		.check {
-			color: #6fd08c;
-		}
+		color: var(--good);
 	}
 
 	.reached-word {
@@ -142,6 +130,6 @@
 	.status {
 		margin: 0;
 		font-size: 0.9rem;
-		opacity: 0.85;
+		color: var(--readable-muted);
 	}
 </style>

@@ -167,7 +167,7 @@
 		align-items: center;
 		margin: 0;
 		font-size: 0.8rem;
-		opacity: 0.65;
+		color: var(--readable-muted);
 	}
 
 	.controls {
@@ -190,13 +190,13 @@
 
 	.controls button:hover,
 	.controls button:focus-visible {
-		border-color: #0b6bcb;
-		color: #0b6bcb;
+		border-color: var(--accent);
+		color: var(--reading-accent);
 	}
 
 	.controls .loop[aria-pressed='true'] {
-		border-color: #0b6bcb;
-		color: #0b6bcb;
-		background: color-mix(in srgb, #0b6bcb 12%, transparent);
+		border-color: var(--accent);
+		color: var(--reading-accent);
+		background: color-mix(in srgb, var(--accent) 12%, transparent);
 	}
 </style>
