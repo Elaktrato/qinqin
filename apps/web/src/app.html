@@ -12,16 +12,20 @@
 		<script>
 			// First paint (lib/theme/apply.ts, applyLastTokens): the tokens this
 			// device painted last, before the app loads. No colour of its own;
-			// nothing stored or anything malformed paints nothing.
+			// nothing stored or anything malformed paints nothing. NAMES is
+			// lib/theme/derive.ts TOKEN_NAMES (apply.dom.test.ts compares them);
+			// the stored names must be exactly these, as loadLastTokens wants.
 			(function () {
 			try {
+				var NAMES = ['--chrome', '--panel', '--raised', '--line', '--text', '--muted', '--good', '--warn', '--bad', '--grade-again', '--grade-hard', '--grade-good', '--grade-easy', '--accent', '--on-accent', '--hair', '--reading-accent', '--readable-bad', '--readable-muted', '--accent-14', '--accent-32', '--accent-58', '--accent-100', '--primary-wash', '--selected-wash', '--highlight-wash', '--mastery-0', '--mastery-1', '--mastery-2', '--mastery-3', '--mastery-4'];
 				var last = JSON.parse(localStorage.getItem('qinqin.theme.last.v1') || 'null');
 				var dark = last && (last.mode === 'dark' || (last.mode === 'system' && matchMedia('(prefers-color-scheme: dark)').matches));
 				var slot = last && last.v === 1 && (dark ? last.dark : last.light);
 				var ok = slot && (slot.scheme === 'light' || slot.scheme === 'dark') && slot.vars && /^(4|10|16)px$/.test(last.radius) && /^(0\.75|1)$/.test(last.space);
-				var names = ok ? Object.keys(slot.vars) : [];
+				ok = ok && Object.keys(slot.vars).length === NAMES.length;
+				var names = ok ? NAMES : [];
 				for (var i = 0; ok && i < names.length; i++) {
-					ok = /^--[a-z0-9-]+$/.test(names[i]) && /^#[0-9a-f]{6}([0-9a-f]{2})?$/.test(slot.vars[names[i]]);
+					ok = typeof slot.vars[names[i]] === 'string' && /^#[0-9a-f]{6}([0-9a-f]{2})?$/.test(slot.vars[names[i]]);
 				}
 				if (ok && names.length > 0) {
 					var root = document.documentElement;

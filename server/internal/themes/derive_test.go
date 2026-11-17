@@ -1,6 +1,7 @@
 package themes
 
 import (
+	"bytes"
 	"encoding/json"
 	"os"
 	"reflect"
@@ -21,7 +22,7 @@ func TestDeriveContract(t *testing.T) {
 			Name   string          `json:"name"`
 			Theme  json.RawMessage `json:"theme"`
 			Accent *string         `json:"accent"`
-			Expect Derived         `json:"expect"`
+			Expect json.RawMessage `json:"expect"`
 		} `json:"cases"`
 	}
 	if err := json.Unmarshal(raw, &doc); err != nil {
@@ -44,8 +45,15 @@ func TestDeriveContract(t *testing.T) {
 		if c.Accent != nil {
 			accent = *c.Accent
 		}
-		if got := Derive(th, accent); !reflect.DeepEqual(got, c.Expect) {
-			t.Errorf("%s: Derive =\n%+v\nwant\n%+v", c.Name, got, c.Expect)
+		// Strict: a token of the fixture that Derived does not carry fails.
+		dec := json.NewDecoder(bytes.NewReader(c.Expect))
+		dec.DisallowUnknownFields()
+		var want Derived
+		if err := dec.Decode(&want); err != nil {
+			t.Fatalf("%s: expect: %v", c.Name, err)
+		}
+		if got := Derive(th, accent); !reflect.DeepEqual(got, want) {
+			t.Errorf("%s: Derive =\n%+v\nwant\n%+v", c.Name, got, want)
 		}
 	}
 }

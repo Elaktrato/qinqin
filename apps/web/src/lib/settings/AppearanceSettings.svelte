@@ -102,7 +102,7 @@
 		error = '';
 		status = '';
 		try {
-			await store.save(changeFrom(draft));
+			await store.save(changeFrom(draft, store.appearance));
 			touched = false;
 			editing = null;
 			store.setPreview(null);
@@ -226,7 +226,9 @@
 		{/each}
 	</fieldset>
 
-	<fieldset class="segmented">
+	<!-- Saved in the row now; nothing paints with it until the shared hanzi
+	     font stacks land (#97 WEB-LATER tasks 11-13), so the group says so. -->
+	<fieldset class="segmented" aria-describedby="appearance-hanzi-font-pending">
 		<legend>{t('settings.appearance.hanziFont.legend')}</legend>
 		{#each HANZI_FONTS as font (font)}
 			<label
@@ -239,6 +241,7 @@
 				/><span>{t(FONT_LABELS[font])}</span></label
 			>
 		{/each}
+		<p class="hint" id="appearance-hanzi-font-pending">{t('settings.appearance.hanziFont.pending')}</p>
 	</fieldset>
 
 	<section class="preview" aria-labelledby="appearance-preview-title">
@@ -291,7 +294,7 @@
 	}
 	.hint {
 		margin: 0;
-		color: var(--muted);
+		color: var(--readable-muted);
 	}
 	fieldset {
 		margin: 0;
@@ -327,7 +330,7 @@
 	}
 	.group-label {
 		font-size: var(--font-size-xs);
-		color: var(--muted);
+		color: var(--readable-muted);
 		min-width: 5.5rem;
 	}
 
@@ -430,7 +433,7 @@
 		margin: 0;
 	}
 	.preview .muted {
-		color: var(--muted);
+		color: var(--readable-muted);
 	}
 	.row {
 		display: flex;
@@ -489,7 +492,9 @@
 	}
 	.error {
 		margin: 0;
-		color: var(--bad);
+		padding-inline-start: var(--space-2);
+		border-inline-start: 3px solid var(--bad);
+		color: var(--readable-bad);
 		font-weight: 600;
 	}
 	.status {

@@ -1,7 +1,7 @@
 {
  "version": 1,
  "rule": "themes/contrast",
- "_doc": "WCAG 2.2 contrast as qinqin measures it (docs/contracts/themes/README.md, Contrast): relative luminance with the 0.04045 sRGB threshold, ratio (L1+0.05)/(L2+0.05) rounded to two decimals half up; a check passes when the rounded ratio is at least its min. pairs: single ratios. checks: the staged-review checks of one theme, in order.",
+ "_doc": "WCAG 2.2 contrast as qinqin measures it (docs/contracts/themes/README.md, Contrast): relative luminance with the 0.04045 sRGB threshold, ratio (L1+0.05)/(L2+0.05) rounded to two decimals half up; a check passes when the rounded ratio is at least its min. pairs: single ratios. checks: the staged-review checks of one theme, in order (onAccent is measured on the default accent, the derived on-accent colour of derive.json).",
  "pairs": [
   {
    "fg": "#000000",
@@ -142,6 +142,20 @@
      "pass": true
     },
     {
+     "fg": "muted",
+     "bg": "raised",
+     "min": 4.5,
+     "ratio": 5.65,
+     "pass": true
+    },
+    {
+     "fg": "bad",
+     "bg": "panel",
+     "min": 4.5,
+     "ratio": 7.08,
+     "pass": true
+    },
+    {
      "fg": "gradeAgain",
      "bg": "panel",
      "min": 3,
@@ -167,6 +181,13 @@
      "bg": "panel",
      "min": 3,
      "ratio": 7.79,
+     "pass": true
+    },
+    {
+     "fg": "onAccent",
+     "bg": "accent:mauve",
+     "min": 4.5,
+     "ratio": 9.23,
      "pass": true
     },
     {
@@ -246,6 +267,20 @@
      "pass": false
     },
     {
+     "fg": "muted",
+     "bg": "raised",
+     "min": 4.5,
+     "ratio": 4.06,
+     "pass": false
+    },
+    {
+     "fg": "bad",
+     "bg": "panel",
+     "min": 4.5,
+     "ratio": 4.8,
+     "pass": true
+    },
+    {
      "fg": "gradeAgain",
      "bg": "panel",
      "min": 3,
@@ -274,6 +309,13 @@
      "pass": true
     },
     {
+     "fg": "onAccent",
+     "bg": "accent:mauve",
+     "min": 4.5,
+     "ratio": 5.41,
+     "pass": true
+    },
+    {
      "fg": "accent:mauve",
      "bg": "panel",
      "min": 3,
@@ -295,7 +337,179 @@
      "pass": false
     }
    ],
-   "failing": 5
+   "failing": 6
+  },
+  {
+   "name": "Solarized Light with blue",
+   "note": "white on the blue accent is 3.68:1: the on-accent check fails (blue is still offered: 3.41 on panel); muted and bad fail too",
+   "theme": {
+    "id": "solarized-light",
+    "name": "Solarized Light",
+    "family": "Solarized",
+    "scheme": "light",
+    "colors": {
+     "chrome": "#eee8d5",
+     "panel": "#fdf6e3",
+     "raised": "#eee8d5",
+     "line": "#93a1a1",
+     "text": "#586e75",
+     "muted": "#657b83",
+     "good": "#859900",
+     "warn": "#b58900",
+     "bad": "#dc322f",
+     "gradeAgain": "#dc322f",
+     "gradeHard": "#cb4b16",
+     "gradeGood": "#859900",
+     "gradeEasy": "#268bd2"
+    },
+    "accents": {
+     "blue": "#268bd2",
+     "cyan": "#2aa198",
+     "green": "#859900",
+     "yellow": "#b58900",
+     "orange": "#cb4b16",
+     "red": "#dc322f",
+     "magenta": "#d33682",
+     "violet": "#6c71c4"
+    },
+    "defaultAccent": "blue"
+   },
+   "expect": [
+    {
+     "fg": "text",
+     "bg": "panel",
+     "min": 4.5,
+     "ratio": 4.99,
+     "pass": true
+    },
+    {
+     "fg": "text",
+     "bg": "chrome",
+     "min": 4.5,
+     "ratio": 4.39,
+     "pass": false
+    },
+    {
+     "fg": "muted",
+     "bg": "panel",
+     "min": 4.5,
+     "ratio": 4.13,
+     "pass": false
+    },
+    {
+     "fg": "muted",
+     "bg": "chrome",
+     "min": 4.5,
+     "ratio": 3.64,
+     "pass": false
+    },
+    {
+     "fg": "muted",
+     "bg": "raised",
+     "min": 4.5,
+     "ratio": 3.64,
+     "pass": false
+    },
+    {
+     "fg": "bad",
+     "bg": "panel",
+     "min": 4.5,
+     "ratio": 4.29,
+     "pass": false
+    },
+    {
+     "fg": "gradeAgain",
+     "bg": "panel",
+     "min": 3,
+     "ratio": 4.29,
+     "pass": true
+    },
+    {
+     "fg": "gradeHard",
+     "bg": "panel",
+     "min": 3,
+     "ratio": 4.27,
+     "pass": true
+    },
+    {
+     "fg": "gradeGood",
+     "bg": "panel",
+     "min": 3,
+     "ratio": 2.97,
+     "pass": false
+    },
+    {
+     "fg": "gradeEasy",
+     "bg": "panel",
+     "min": 3,
+     "ratio": 3.41,
+     "pass": true
+    },
+    {
+     "fg": "onAccent",
+     "bg": "accent:blue",
+     "min": 4.5,
+     "ratio": 3.68,
+     "pass": false
+    },
+    {
+     "fg": "accent:blue",
+     "bg": "panel",
+     "min": 3,
+     "ratio": 3.41,
+     "pass": true
+    },
+    {
+     "fg": "accent:cyan",
+     "bg": "panel",
+     "min": 3,
+     "ratio": 2.93,
+     "pass": false
+    },
+    {
+     "fg": "accent:green",
+     "bg": "panel",
+     "min": 3,
+     "ratio": 2.97,
+     "pass": false
+    },
+    {
+     "fg": "accent:yellow",
+     "bg": "panel",
+     "min": 3,
+     "ratio": 2.98,
+     "pass": false
+    },
+    {
+     "fg": "accent:orange",
+     "bg": "panel",
+     "min": 3,
+     "ratio": 4.27,
+     "pass": true
+    },
+    {
+     "fg": "accent:red",
+     "bg": "panel",
+     "min": 3,
+     "ratio": 4.29,
+     "pass": true
+    },
+    {
+     "fg": "accent:magenta",
+     "bg": "panel",
+     "min": 3,
+     "ratio": 4.21,
+     "pass": true
+    },
+    {
+     "fg": "accent:violet",
+     "bg": "panel",
+     "min": 3,
+     "ratio": 4.06,
+     "pass": true
+    }
+   ],
+   "failing": 10
   }
  ]
 }

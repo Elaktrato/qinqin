@@ -40,6 +40,10 @@ func TestBuiltinPacks(t *testing.T) {
 			if r := Ratio(th.Colors.Text, th.Colors.Panel); r < MinText {
 				t.Errorf("%s: text on panel %.2f:1, a built-in theme needs %.1f", th.ID, r, MinText)
 			}
+			// Button text on the default accent (the one primary action).
+			if d := Derive(th, ""); Ratio(d.OnAccent, d.Accent) < MinText {
+				t.Errorf("%s: on-accent on %s %.2f:1, a built-in theme needs %.1f", th.ID, d.AccentKey, Ratio(d.OnAccent, d.Accent), MinText)
+			}
 		}
 		if p.Manifest.ID != want.PackID || strings.Join(ids, ",") != strings.Join(want.Themes, ",") {
 			t.Errorf("pack %d = %s %v, want %s %v", i, p.Manifest.ID, ids, want.PackID, want.Themes)

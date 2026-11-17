@@ -210,12 +210,16 @@ func Uninstall(ctx context.Context, sqlDB *sql.DB, packID string) error {
 
 // Pack is one theme pack with its credits and its theme ids in file order.
 type Pack struct {
-	PackID      string   `json:"packId"`
-	Name        string   `json:"name"`
-	Version     string   `json:"version"`
-	License     string   `json:"license"`
-	Attribution string   `json:"attribution"`
-	Notice      string   `json:"notice"`
+	PackID      string `json:"packId"`
+	Name        string `json:"name"`
+	Version     string `json:"version"`
+	License     string `json:"license"`
+	Attribution string `json:"attribution"`
+	Notice      string `json:"notice"`
+	// LicenseText is the full licence text of a built-in pack (its embedded
+	// LICENSE); "" for an installed pack, whose licence files the admin saw
+	// at upload and which are not kept.
+	LicenseText string   `json:"licenseText"`
 	Builtin     bool     `json:"builtin"`
 	Themes      []string `json:"themes"`
 	UpdatedAt   string   `json:"-"`

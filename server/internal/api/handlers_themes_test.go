@@ -8,6 +8,8 @@ import (
 	"os"
 	"strings"
 	"testing"
+
+	"qinqin/internal/themes"
 )
 
 type themesAnswer struct {
@@ -29,6 +31,7 @@ type themesAnswer struct {
 		License     string   `json:"license"`
 		Attribution string   `json:"attribution"`
 		Notice      string   `json:"notice"`
+		LicenseText string   `json:"licenseText"`
 		Builtin     bool     `json:"builtin"`
 		Themes      []string `json:"themes"`
 	} `json:"packs"`
@@ -80,8 +83,13 @@ func TestListThemes(t *testing.T) {
 		t.Fatalf("%d packs, want the %d built-in ones", len(got.Packs), len(want.BuiltinPacks))
 	}
 	var wantIDs []string
+	builtin := themes.Builtin()
 	for i, p := range want.BuiltinPacks {
 		gp := got.Packs[i]
+		// The full licence text of a built-in pack, its embedded LICENSE.
+		if gp.LicenseText != builtin[i].License || !strings.Contains(gp.LicenseText, "Permission is hereby granted") {
+			t.Errorf("pack %s licenseText = %q", gp.PackID, gp.LicenseText)
+		}
 		if gp.PackID != p.PackID || !gp.Builtin || strings.Join(gp.Themes, ",") != strings.Join(p.Themes, ",") ||
 			gp.License != "MIT" || gp.Attribution == "" || gp.Notice == "" || gp.Name == "" {
 			t.Errorf("pack %d = %+v, want %s %v", i, gp, p.PackID, p.Themes)
@@ -142,7 +150,7 @@ func TestListThemes(t *testing.T) {
 	json.Unmarshal(after, &got)
 	lastPack, lastTheme := got.Packs[len(got.Packs)-1], got.Themes[len(got.Themes)-1]
 	if lastPack.PackID != "test-themes" || lastPack.Builtin || lastPack.Version != "1.0" || lastPack.Attribution != "Qinqin test fixtures" ||
-		strings.Join(lastPack.Themes, ",") != "test-night" {
+		strings.Join(lastPack.Themes, ",") != "test-night" || lastPack.LicenseText != "" {
 		t.Errorf("installed pack = %+v", lastPack)
 	}
 	if lastTheme.ID != "test-night" || lastTheme.Builtin || lastTheme.PackID != "test-themes" || lastTheme.Name != "Night" {

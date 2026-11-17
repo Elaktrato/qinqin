@@ -19,6 +19,7 @@ const pack = {
 	license: 'MIT',
 	attribution: '© 2021 Catppuccin (catppuccin/palette)',
 	notice: 'The four flavours.',
+	licenseText: 'MIT License\n\nCopyright (c) 2021 Catppuccin\n',
 	builtin: true,
 	themes: ['catppuccin-latte', 'catppuccin-mocha']
 };
@@ -32,6 +33,11 @@ describe('parseThemesAnswer', () => {
 		expect(out.packs).toEqual([pack]);
 	});
 
+	it('reads a pack without a licence text (an installed pack, an older server) as ""', () => {
+		const { licenseText: _, ...installed } = pack;
+		expect(parseThemesAnswer({ themes: [], packs: [installed] }).packs[0].licenseText).toBe('');
+	});
+
 	it('drops a broken entry and keeps the rest', () => {
 		const broken = [
 			{ ...mocha, id: 'Bad Id' },
@@ -42,6 +48,8 @@ describe('parseThemesAnswer', () => {
 			{ ...mocha, id: 'x5', scheme: 'sepia' },
 			{ ...mocha, id: 'x6', name: '' },
 			{ ...mocha, id: 'x7', accents: { mauve: '#CBA6F7' } },
+			// An inherited property name is not an accent of the theme.
+			{ ...mocha, id: 'x8', defaultAccent: 'constructor' },
 			null,
 			'nord'
 		];

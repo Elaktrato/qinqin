@@ -39,8 +39,22 @@ export function accentOptions(theme: Theme): AccentOption[] {
 	return accentChoices(theme).map((key) => ({ key, color: theme.accents[key] }));
 }
 
-/** changeFrom: the change that writes every member of the draft. */
-export function changeFrom(a: Appearance): AppearanceChange {
+/**
+ * changeFrom: the change that writes every member of the draft; with
+ * `saved`, only the members that differ from it (a slot whole, theme and
+ * accent, when either changed), so a save leaves members changed elsewhere
+ * since the page loaded alone.
+ */
+export function changeFrom(a: Appearance, saved?: Appearance): AppearanceChange {
+	if (saved !== undefined) {
+		const all = changeFrom(a);
+		const before = changeFrom(saved);
+		const out: Record<string, unknown> = {};
+		for (const key of Object.keys(all) as (keyof AppearanceChange)[]) {
+			if (JSON.stringify(all[key]) !== JSON.stringify(before[key])) out[key] = all[key];
+		}
+		return out as AppearanceChange;
+	}
 	return {
 		mode: a.mode,
 		light: { theme: a.light.theme, accent: a.light.accent },

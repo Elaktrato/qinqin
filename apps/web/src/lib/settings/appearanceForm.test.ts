@@ -60,6 +60,13 @@ describe('changeFrom / isDirty / previewOf', () => {
 		});
 	});
 
+	it('writes only the members that differ from the saved row (a whole slot when its theme or accent changed)', () => {
+		const saved = parseAppearance(null);
+		const draft = { ...saved, corners: 'round' as const, dark: { theme: 'nord', accent: null } };
+		expect(changeFrom(draft, saved)).toEqual({ corners: 'round', dark: { theme: 'nord', accent: null } });
+		expect(changeFrom(saved, saved)).toEqual({});
+	});
+
 	it('compares drafts by value', () => {
 		const a = parseAppearance(null);
 		expect(isDirty(a, parseAppearance(null))).toBe(false);

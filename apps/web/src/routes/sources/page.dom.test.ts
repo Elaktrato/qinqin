@@ -69,7 +69,7 @@ beforeEach(() => {
 		json({
 			themes: [],
 			packs: [
-				{ packId: 'catppuccin', name: 'Catppuccin', version: '1.0', license: 'MIT', attribution: '© 2021 Catppuccin', notice: '', builtin: true, themes: ['catppuccin-latte'] },
+				{ packId: 'catppuccin', name: 'Catppuccin', version: '1.0', license: 'MIT', attribution: '© 2021 Catppuccin', notice: '', licenseText: 'MIT License\n\nPermission is hereby granted, free of charge', builtin: true, themes: ['catppuccin-latte'] },
 				{ packId: 'paper-themes', name: 'Paper themes', version: '2', license: 'CC0-1.0', attribution: 'Paper', notice: '', builtin: false, themes: [] }
 			]
 		});
@@ -220,6 +220,11 @@ describe('sources page: themes', () => {
 		const installed = within(section).getByRole('row', { name: /Paper themes/ });
 		expect(within(installed).getByText('Installed on this server')).toBeTruthy();
 		expect(within(installed).getByText('CC0-1.0')).toBeTruthy();
+		// The built-in pack's full licence text, behind a disclosure.
+		const summary = within(section).getByText('Catppuccin: MIT license text');
+		expect(summary.tagName).toBe('SUMMARY');
+		expect(summary.closest('details')!.textContent).toContain('Permission is hereby granted, free of charge');
+		expect(within(section).queryByText(/Paper themes: .* license text/)).toBeNull();
 	});
 
 	it('shows an error line with a retry on failure', async () => {

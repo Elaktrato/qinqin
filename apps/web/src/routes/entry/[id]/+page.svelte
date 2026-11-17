@@ -348,7 +348,7 @@
 
 	.also-written {
 		margin: 0.25rem 0 0;
-		color: var(--muted, #666);
+		color: var(--readable-muted);
 	}
 
 	.headword {

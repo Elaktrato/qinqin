@@ -414,8 +414,8 @@ describe('themesSection', () => {
 		{ id: 'paper', name: 'Paper', family: '' }
 	];
 	const packs = [
-		{ packId: 'catppuccin', name: 'Catppuccin', version: '1.0', license: 'MIT', attribution: '© 2021 Catppuccin', notice: 'Colours from [the palette](https://github.com/catppuccin/palette).', builtin: true, themes: ['catppuccin-latte', 'catppuccin-mocha'] },
-		{ packId: 'paper-themes', name: 'Paper themes', version: '2', license: 'MIT', attribution: 'Paper', notice: '', builtin: false, themes: ['paper', 'gone'] }
+		{ packId: 'catppuccin', name: 'Catppuccin', version: '1.0', license: 'MIT', attribution: '© 2021 Catppuccin', notice: 'Colours from [the palette](https://github.com/catppuccin/palette).', licenseText: 'MIT License\n\nCopyright (c) 2021 Catppuccin\n', builtin: true, themes: ['catppuccin-latte', 'catppuccin-mocha'] },
+		{ packId: 'paper-themes', name: 'Paper themes', version: '2', license: 'MIT', attribution: 'Paper', notice: '', licenseText: '', builtin: false, themes: ['paper', 'gone'] }
 	];
 
 	it('lists every pack in the answer order with its theme names and whether it is built in', () => {
@@ -427,6 +427,10 @@ describe('themesSection', () => {
 		]);
 		expect(out.themeNames).toEqual({ 0: 'Latte, Mocha', 1: 'Paper' });
 		expect(out.builtin).toEqual({ 0: true, 1: false });
+		// The full licence texts the answer carries (built-in packs).
+		expect(out.licenseTexts).toEqual([
+			{ key: 0, label: 'Catppuccin: MIT license text', text: 'MIT License\n\nCopyright (c) 2021 Catppuccin\n' }
+		]);
 		expect(out.table.notes).toHaveLength(1);
 	});
 

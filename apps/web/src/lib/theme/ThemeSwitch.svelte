@@ -220,7 +220,9 @@
 		padding: var(--space-1) var(--space-2);
 		white-space: nowrap;
 		background: var(--panel);
-		color: var(--bad);
+		border-inline-start: 3px solid var(--bad);
+		color: var(--readable-bad);
+		font-weight: 600;
 		border-radius: var(--radius);
 		box-shadow: var(--shadow-float);
 	}

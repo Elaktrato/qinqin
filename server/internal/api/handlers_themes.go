@@ -76,7 +76,7 @@ func (s *server) handleListThemes(w http.ResponseWriter, r *http.Request) {
 		}
 		m := p.Manifest
 		out.Packs = append(out.Packs, themes.Pack{PackID: m.ID, Name: m.Name, Version: m.Version, License: m.License,
-			Attribution: m.Attribution, Notice: m.Notice, Builtin: true, Themes: ids})
+			Attribution: m.Attribution, Notice: m.Notice, LicenseText: p.License, Builtin: true, Themes: ids})
 	}
 	installed, err := themes.Installed(r.Context(), s.db)
 	if err != nil {

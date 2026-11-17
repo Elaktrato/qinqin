@@ -181,4 +181,22 @@ describe('the first-paint script in app.html', () => {
 		const fn = new Function('localStorage', 'matchMedia', 'document', match![1]);
 		expect(() => fn(throwingStorage(), () => ({ matches: true }), document)).not.toThrow();
 	});
+
+	it('names exactly TOKEN_NAMES, in order', () => {
+		const list = match![1].match(/var NAMES = \[([^\]]*)\]/);
+		expect(list).not.toBeNull();
+		const names = [...list![1].matchAll(/'([^']*)'/g)].map((m) => m[1]);
+		expect(names).toEqual([...TOKEN_NAMES]);
+	});
+
+	it('paints nothing when the stored names are not exactly TOKEN_NAMES (as loadLastTokens)', () => {
+		const last: LastTokens = lastTokensFor(parseAppearance(null), latte, 'mauve', mocha, 'mauve');
+		const extra = { ...last, dark: { ...last.dark, vars: { ...last.dark.vars, '--evil': '#000000' } } };
+		runScript(JSON.stringify(extra), true);
+		expect(root.getAttribute('style')).toBeNull();
+		const { '--panel': _, ...rest } = last.dark.vars;
+		const missing = { ...last, dark: { ...last.dark, vars: rest } };
+		runScript(JSON.stringify(missing), true);
+		expect(root.getAttribute('style')).toBeNull();
+	});
 });
