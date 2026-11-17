@@ -59,7 +59,10 @@ const isCategory = (s: string): s is PluralCategory => (PLURAL_CATEGORIES as rea
 
 class Parser {
 	i = 0;
-	constructor(readonly src: string) {}
+	readonly src: string;
+	constructor(src: string) {
+		this.src = src;
+	}
 
 	fail(kind: MessageErrorKind, detail = ''): never {
 		throw new MessageError(kind, this.src, detail);
