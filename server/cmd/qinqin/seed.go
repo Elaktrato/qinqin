@@ -118,7 +118,8 @@ var importOrder = map[string]int{
 // (see freq.Import) is that order — and one line per pack goes to out. Imports replace a pack's own
 // rows and touch nothing else, so seeding again is safe and leaves the
 // counts unchanged. The first failing pack stops the seed, named in the
-// error.
+// error. Then the data packages of the seeded packs are built (and any
+// other package a reconcile finds missing or stale) before seed returns.
 func seed(ctx context.Context, sqlDB *sql.DB, dataDir string, roots []string, out io.Writer) error {
 	found, err := findPacks(roots)
 	if err != nil {
@@ -138,14 +139,18 @@ func seed(ctx context.Context, sqlDB *sql.DB, dataDir string, roots []string, ou
 		return found[i].dir < found[j].dir
 	})
 
+	// Every import kicks its data packages; they build once, after the
+	// imports (kicks of one id coalesce), and seed waits for them.
+	builder := packageBuilder(sqlDB, dataDir, func(format string, args ...any) { fmt.Fprintf(out, format+"\n", args...) })
 	for _, p := range found {
-		line, err := packs.Import(ctx, sqlDB, p.pack, packs.WithAudioStore(filepath.Join(dataDir, "audio")))
+		line, err := packs.Import(ctx, sqlDB, p.pack, packs.WithAudioStore(filepath.Join(dataDir, "audio")),
+			packs.WithOnChange(builder.PackChanged))
 		if err != nil {
 			return fmt.Errorf("seed pack %s (%s): %w", p.pack.ID, p.dir, err)
 		}
 		fmt.Fprintf(out, "%-14s %-10s %s\n", p.pack.ID, p.pack.Type, line)
 	}
-	return nil
+	return buildPackages(ctx, builder, out)
 }
 
 // flashcardsPack is the plugin_data namespace of the study rows; its
