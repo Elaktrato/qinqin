@@ -463,3 +463,18 @@ Build (2026-11-17, Tasks 1–11; Task 12 is the orchestrator's):
 - Adaptation: backup is pinned twice: the two `pluginRow` cases of `backup/remap.json` and a Go pinning test
   `server/internal/backup/milestones_test.go` (export: two live rows, the tombstone left out; restore: rows in
   the remapped zh / ja workspaces, key and data unchanged). Both pass without Go code changes (generic path).
+- Adaptation: `loadMilestones(workspaceId, {scope, language, now?, week?})` takes the workspace language (Han
+  families, level schemes) from its caller; `week` is `{timelines, chars, cards?}` (the Week tab's timelines,
+  universe and the cards it scored the universe with); the levels are loaded inside (`getSchemes`, `levelDecks`,
+  `getSchemeEntries` per word level, `fetchSchemeCharacters` per character scheme + `buildSections`), one failing
+  level is left out. `MilestonesView` also carries `reached` and `live`, and `markSeen(workspaceId, view)` takes
+  the view (it needs the reached days and the live rows for the write plan).
+- Ruling: a level's title is `"<scheme name> · <level> complete"` (the name a copied level deck gets in the
+  decks view) — level names alone repeat across packs ("Level 1") — cost: longer titles.
+- Ruling: a seen level milestone whose level is no longer installed has no name and is left out of the history
+  (still seen) — the same rule as unknown ids — cost: it disappears from the list until the pack is back.
+- Ruling: the pending flush runs at most once per 30 s per user and workspace (and again on `online`) — a failed
+  push still notifies study writers, the Week page reloads on that, and an unthrottled flush would loop while
+  offline — cost: a flush can wait up to 30 s after reconnecting without an `online` event.
+- Adaptation: dates are built as `new Date(`${day}T00:00:00Z`)` (as `weekText.ts`), not `Date.UTC(`, which
+  `time/utcGuard.test.ts` forbids outside its allow-list.
