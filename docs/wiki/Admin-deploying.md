@@ -4,7 +4,7 @@ qinqin is a single container: a Go server with SQLite and the embedded web app, 
 
 ## Images
 
-CI publishes `ghcr.io/elaktrato/qinqin` on pushes to `main` and on `v*` tags. Tags are `latest` (newest `main` build), `v<version>` and `sha-<commit>`. For production pin a `v*` tag in `QINQIN_IMAGE`, so a redeploy never changes the version by surprise. The published image includes Tesseract OCR (about 193 MB) and the Kanji alive audio (about 70 MB); self-builds can leave them out with `--build-arg WITH_OCR=0` and `WITH_AUDIO=0`.
+CI publishes `ghcr.io/elaktrato/qinqin` on pushes to `main` and on `v*` tags. Tags are `latest` (newest `main` build), `v<version>` and `sha-<commit>`. For production pin a `v*` tag in `QINQIN_IMAGE`, so a redeploy never changes the version by surprise. The published image includes Tesseract OCR (about 193 MB) and the Kanji alive audio (about 70 MB); self-builds can leave them out with `--build-arg WITH_OCR=0` and `WITH_AUDIO=0`. Stroke-order data is a pack in the image (`/opt/qinqin/strokes`, about 13 MB), no longer part of the web app.
 
 A new GitHub container package is private: `docker pull` fails with `unauthorized` until you make the package public, or give Portainer a registry login with a token that has only the `read:packages` scope.
 
@@ -32,7 +32,9 @@ Create the admin account **before** exposing the port beyond your LAN: while no 
 
 ## Data directory
 
-Everything is in `/data`: `qinqin.db` (with `-wal` and `-shm`), `packs/`, `audio/`, `books/<user id>/`, `journal/<user id>/` (photo drafts), `backups/`, `tmp/` (emptied at start) and `cache/sources/` (safe to delete). The bundled packs stay in the image.
+Everything is in `/data`: `qinqin.db` (with `-wal` and `-shm`), `packs/`, `audio/`, `packages/`, `books/<user id>/`, `journal/<user id>/` (photo drafts), `backups/`, `tmp/` (emptied at start) and `cache/sources/` (safe to delete). The bundled packs stay in the image.
+
+`packages/` holds the data packages clients download (`<id>/r<revision>.qqpkg`): one per language lexicon and per installed pack, built by the server from the database after every pack install or removal and at start. The first start builds them all in the background (about a minute for Chinese and Japanese; the app works meanwhile). Plan disk space roughly the size of the installed data compressed (CC-CEDICT's lexicon is about 15 MB, the stroke data about 13 MB, the audio pack its clips); a replaced revision is kept 7 days. The directory is not backed up: a restored server rebuilds it.
 
 ## Checklist after deploying
 
@@ -43,7 +45,7 @@ Everything is in `/data`: `qinqin.db` (with `-wal` and `-shm`), `packs/`, `audio
 
 ## Upgrading
 
-Back up first ([Backup, recovery and the command line](Admin-backup-and-recovery)). Change the tag in `QINQIN_IMAGE` and redeploy with "Pull latest image". Migrations are embedded and run at start. They are one-way: **downgrading is not supported**, and that includes running an older binary on an upgraded database; going back needs the pre-upgrade backup. (If a v0.3 binary did run on a v0.4 database, the flashcards rows it wrote are taken over at the next start of v0.4, except changes to rows v0.4 already holds.) After an upgrade the log may say `pack <id>: stored ... differs`: run `qinqin seed` to refresh. A backup taken before migration 032 contains old plaintext session tokens: keep it private and delete it after upgrading.
+Back up first ([Backup, recovery and the command line](Admin-backup-and-recovery)). Change the tag in `QINQIN_IMAGE` and redeploy with "Pull latest image". Migrations are embedded and run at start. They are one-way: **downgrading is not supported**, and that includes running an older binary on an upgraded database; going back needs the pre-upgrade backup. (If a v0.3 binary did run on a v0.4 database, the flashcards rows it wrote are taken over at the next start of v0.4, except changes to rows v0.4 already holds.) After an upgrade the log may say `pack <id>: stored ... differs`: run `qinqin seed` to refresh. Upgrading to data packages (migration 039): the first start installs the image's stroke-order pack (log: `strokes: installed the bundled stroke data ...`) and builds `packages/`; the log line `pack <id>: no licence texts stored; run "qinqin seed"` means a pack was installed before licence files were kept: run `qinqin seed` once so its package carries them (a new revision). Scripts that read dictionary collections from the sync pull must switch to packages ([API access tokens](API-Access-tokens)). A backup taken before migration 032 contains old plaintext session tokens: keep it private and delete it after upgrading.
 
 Upgrading from v0.1.0 or an early development database is not supported for entry data: start from a fresh data directory and seed again.
 
