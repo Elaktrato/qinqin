@@ -410,7 +410,7 @@ describe("study store", () => {
       ]);
       expect("written" in data.cards[2]!).toBe(false);
       expect(calls().map(([url]) => String(url))).toEqual([
-        `/api/sync/pull?collections=pluginStates%2CpluginData%2Ccards%2Cdecks%2CdeckSettings%2Climits%2CfsrsSets%2CfsrsActive&v=2&workspace=${WORKSPACE_ID}`,
+        `/api/sync/pull?collections=pluginStates%2CpluginData%2Ccards%2Cdecks%2CdeckSettings%2Climits%2CfsrsSets%2CfsrsActive&tombstones=1&v=2&workspace=${WORKSPACE_ID}`,
         `/api/events?since=1970-01-01T00:00:00Z&workspace=${WORKSPACE_ID}`,
       ]);
     });
@@ -2536,6 +2536,26 @@ describe("known marks", () => {
     expect(rows.find((r) => r.key === "known:4")?.updatedAt).toBe("2099-01-01T00:00:05.001Z");
     // known:5 of another workspace does not count: stamped now.
     expect(Date.parse(String(rows.find((r) => r.key === "known:5")?.updatedAt))).toBeLessThan(Date.parse("2099-01-01T00:00:00Z"));
+  });
+
+  it("a re-mark after a newer server tombstone is stamped after it: the from-scratch study pull asks for tombstones", async () => {
+    // The server ships tombstones in a round from no since only for tombstones=1.
+    vi.mocked(fetch).mockImplementation(async (input, init) => {
+      const url = String(input);
+      if (url.startsWith("/api/sync/pull")) {
+        const tombs = new URL(url, "https://x.invalid").searchParams.get("tombstones") === "1";
+        const dead = pluginRow("known:4", mark(4), { workspaceId: 3, updatedAt: "2099-01-01T00:00:05Z", deletedAt: "2099-01-01T00:00:05Z" });
+        return jsonResponse({ pluginData: tombs ? [dead] : [] });
+      }
+      return jsonResponse({ dataAccepted: JSON.parse(String(init?.body)).pluginData.length, dataSkipped: 0, dataRefused: 0 });
+    });
+    await setKnownMarks(3, [4], true);
+    const pulls = calls().map(([url]) => String(url)).filter((u) => u.startsWith("/api/sync/pull"));
+    expect(pulls[0]).toBe(
+      "/api/sync/pull?collections=pluginStates%2CpluginData%2Ccards%2Cdecks%2CdeckSettings%2Climits%2CfsrsSets%2CfsrsActive&tombstones=1&v=2&workspace=3",
+    );
+    const rows = pushBodies().flatMap((b) => b.pluginData);
+    expect(rows.find((r) => r.key === "known:4")?.updatedAt).toBe("2099-01-01T00:00:05.001Z");
   });
 
   it("a skipped mark is an error", async () => {

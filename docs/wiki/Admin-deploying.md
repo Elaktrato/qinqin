@@ -34,7 +34,7 @@ Create the admin account **before** exposing the port beyond your LAN: while no 
 
 Everything is in `/data`: `qinqin.db` (with `-wal` and `-shm`), `packs/`, `audio/`, `packages/`, `books/<user id>/`, `journal/<user id>/` (photo drafts), `backups/`, `tmp/` (emptied at start) and `cache/sources/` (safe to delete). The bundled packs stay in the image.
 
-`packages/` holds the data packages clients download (`<id>/r<revision>.qqpkg`): one per language lexicon and per installed pack, built by the server from the database after every pack install or removal and at start. The first start builds them all in the background (about a minute for Chinese and Japanese; the app works meanwhile). Plan disk space roughly the size of the installed data compressed (CC-CEDICT's lexicon is about 15 MB, the stroke data about 13 MB, the audio pack its clips); a replaced revision is kept 7 days. The directory is not backed up: a restored server rebuilds it.
+`packages/` holds the data packages clients download (`<id>/r<revision>.qqpkg`): one per language lexicon and per installed pack, built by the server from the database after every pack install or removal and at start. The first start builds them all in the background (about a minute for Chinese and Japanese; the app works meanwhile). Plan disk space roughly the size of the installed data compressed (CC-CEDICT's lexicon is about 15 MB, the stroke data about 13 MB, the audio pack its clips); a replaced revision is kept 7 days. Builds take turns through the lock file `packages/.lock`, so `qinqin seed` may run while the server runs (the one that comes second waits). The directory is not backed up: a restored server rebuilds it.
 
 ## Checklist after deploying
 

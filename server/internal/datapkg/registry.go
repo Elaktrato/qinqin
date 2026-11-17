@@ -37,7 +37,10 @@ var ErrGone = errors.New("datapkg: package revision gone")
 
 // Registry is the package registry (tables packages and package_files) and
 // the files under Dir (<data>/packages/<id>/r<revision>.qqpkg). Builds run
-// only on the Builder's goroutine; Catalogue and Open are safe anywhere.
+// only on the Builder's goroutine, and every build and reconcile holds
+// <Dir>/.lock (lock.go), so another process on the same directory (qinqin
+// seed next to qinqin serve) takes turns; Catalogue and Open are safe
+// anywhere.
 type Registry struct {
 	DB       *sql.DB
 	Dir      string           // <data>/packages
@@ -250,7 +253,14 @@ func (r Registry) Open(ctx context.Context, id string, revision int) (*os.File, 
 // package that is current is not rebuilt (pack imports and uninstalls kick
 // their packages directly). Run it on the Builder (KickReconcile) so builds
 // never overlap. It returns the first build error after trying them all.
+// It holds the registry lock throughout (the purge of stray .tmp files must
+// not meet another process's build in flight).
 func (r Registry) Reconcile(ctx context.Context) error {
+	unlock, err := r.lock(ctx)
+	if err != nil {
+		return fmt.Errorf("datapkg: lock: %w", err)
+	}
+	defer unlock()
 	if err := r.purgeTemp(); err != nil {
 		return err
 	}
@@ -272,7 +282,7 @@ func (r Registry) Reconcile(ctx context.Context) error {
 	var first error
 	for _, id := range ids {
 		if _, ok := planned[id]; !ok {
-			if err := r.build(ctx, id, specs); err != nil && first == nil {
+			if err := r.buildLocked(ctx, id, specs); err != nil && first == nil {
 				first = err
 			}
 		}
@@ -285,7 +295,7 @@ func (r Registry) Reconcile(ctx context.Context) error {
 		if ok && !r.stale(row, s) {
 			continue
 		}
-		if err := r.build(ctx, s.ID, specs); err != nil && first == nil {
+		if err := r.buildLocked(ctx, s.ID, specs); err != nil && first == nil {
 			first = err
 		}
 	}
@@ -303,7 +313,9 @@ const (
 // pkgRow is a packages row as the builder needs it.
 type pkgRow struct {
 	id, state, contentHash, errText, meta string
+	languages, requires                   string // JSON as stored: the manifest fields outside the content hash
 	revision, formatVersion               int
+	bytes                                 int64
 }
 
 func (r Registry) row(ctx context.Context, id string) (pkgRow, bool, error) {
@@ -312,9 +324,9 @@ func (r Registry) row(ctx context.Context, id string) (pkgRow, bool, error) {
 		langs, requires, sources string
 		optional, licenseTexts   bool
 	)
-	err := r.DB.QueryRowContext(ctx, `SELECT id, state, content_hash, error, revision, format_version, languages, requires,
+	err := r.DB.QueryRowContext(ctx, `SELECT id, state, content_hash, error, revision, format_version, bytes, languages, requires,
 		sources, optional, license_texts FROM packages WHERE id = ?`, id).
-		Scan(&p.id, &p.state, &p.contentHash, &p.errText, &p.revision, &p.formatVersion, &langs, &requires, &sources, &optional, &licenseTexts)
+		Scan(&p.id, &p.state, &p.contentHash, &p.errText, &p.revision, &p.formatVersion, &p.bytes, &langs, &requires, &sources, &optional, &licenseTexts)
 	if errors.Is(err, sql.ErrNoRows) {
 		return pkgRow{}, false, nil
 	}
@@ -322,6 +334,7 @@ func (r Registry) row(ctx context.Context, id string) (pkgRow, bool, error) {
 		return pkgRow{}, false, err
 	}
 	p.meta = metaKey(langs, requires, sources, optional, licenseTexts)
+	p.languages, p.requires = langs, requires
 	return p, true, nil
 }
 
@@ -370,10 +383,27 @@ func specKey(s Spec) string {
 	return metaKey(m.languages, m.requires, m.sources, s.Optional, s.LicenseTexts())
 }
 
-// stale reports whether a planned package needs a build at reconcile.
+// stale reports whether a planned package needs a build at reconcile: also
+// when the current file's size is not the row's (a file of another build
+// under the same name, e.g. after an interrupted commit).
 func (r Registry) stale(p pkgRow, s Spec) bool {
 	return p.state != stateReady || p.formatVersion != FormatVersion || p.errText != "" ||
-		p.meta != specKey(s) || !r.fileExists(p.id, p.revision)
+		p.meta != specKey(s) || !r.fileIntact(p)
+}
+
+// fileIntact reports whether the row's current revision has its file on
+// disk at the row's size.
+func (r Registry) fileIntact(p pkgRow) bool {
+	return r.fileExists(p.id, p.revision) && r.fileSize(p.id, p.revision) == p.bytes
+}
+
+// fileSize is the size of a revision's file (-1 when it cannot be read).
+func (r Registry) fileSize(id string, revision int) int64 {
+	st, err := os.Stat(r.filePath(id, revision))
+	if err != nil {
+		return -1
+	}
+	return st.Size()
 }
 
 func (r Registry) filePath(id string, revision int) string {
@@ -391,8 +421,39 @@ func (r Registry) fileExists(id string, revision int) bool {
 // build makes the registry row and file of one package id match the
 // database: a tombstone when no spec plans it, else a build that becomes a
 // new revision only when its content hash differs from the current one.
-// A failed build keeps a ready revision ready and records the error.
-func (r Registry) build(ctx context.Context, id string, specs []Spec) error {
+// A failed build keeps a ready revision ready and records the error. It
+// takes the registry lock and plans under it; a lock that cannot be taken
+// (an unusable directory) is that package's build failure, recorded on its
+// row without touching files.
+func (r Registry) build(ctx context.Context, id string) error {
+	if _, _, err := ParseID(id); err != nil {
+		return err
+	}
+	unlock, lockErr := r.lock(ctx)
+	if lockErr != nil && ctx.Err() != nil {
+		return lockErr
+	}
+	if lockErr == nil {
+		defer unlock()
+	}
+	specs, err := Plan(ctx, r.DB)
+	if err != nil {
+		return err
+	}
+	if lockErr != nil {
+		return r.buildOrFail(ctx, id, specs, fmt.Errorf("lock: %w", lockErr))
+	}
+	return r.buildLocked(ctx, id, specs)
+}
+
+// buildLocked is build under the registry lock, against specs.
+func (r Registry) buildLocked(ctx context.Context, id string, specs []Spec) error {
+	return r.buildOrFail(ctx, id, specs, nil)
+}
+
+// buildOrFail builds id, or with fail set only records fail as the build's
+// failure (rows only).
+func (r Registry) buildOrFail(ctx context.Context, id string, specs []Spec, fail error) error {
 	if _, _, err := ParseID(id); err != nil {
 		return err
 	}
@@ -420,38 +481,47 @@ func (r Registry) build(ctx context.Context, id string, specs []Spec) error {
 		}
 		row = pkgRow{id: id, state: stateBuilding}
 	}
+	if fail != nil {
+		return r.recordFailure(ctx, row, spec, fail, stamp)
+	}
 	maxRev := row.revision
 	if err := r.DB.QueryRowContext(ctx, `SELECT COALESCE(MAX(revision), 0) FROM package_files WHERE id = ?`, id).Scan(&maxRev); err != nil {
 		return err
 	}
 	maxRev = max(maxRev, row.revision)
 
-	// A ready revision whose file is missing (a restored database): build
-	// that revision again; only a content change makes a new one.
+	// A ready revision whose file is missing (a restored database) or not
+	// of the row's size: build that revision again and replace the file;
+	// only a content change makes a new one.
 	cand := maxRev + 1
-	if row.state == stateReady && row.revision >= 1 && !r.fileExists(id, row.revision) {
+	if row.state == stateReady && row.revision >= 1 && !r.fileIntact(row) {
 		cand = row.revision
 	}
 	built, err := r.buildFile(ctx, spec, cand, now)
 	if err != nil {
 		return r.recordFailure(ctx, row, spec, err, stamp)
 	}
-	same := row.revision >= 1 && built.ContentHash == row.contentHash && row.formatVersion == FormatVersion
+	// The manifest carries languages and requires, which the content hash
+	// does not cover: a change of them is a new revision too, so the file's
+	// manifest.json and the catalogue row agree. (optional is catalogue
+	// only: revive updates it in place.)
+	same := row.revision >= 1 && built.ContentHash == row.contentHash && row.formatVersion == FormatVersion &&
+		row.languages == m.languages && row.requires == m.requires
 	switch {
 	case same && cand == row.revision:
-		return r.commit(ctx, spec, built, cand, now)
-	case same && r.fileExists(id, row.revision):
+		return r.place(ctx, row, spec, built, cand, now, stamp)
+	case same && r.fileIntact(row):
 		os.Remove(built.Path)
 		return r.revive(ctx, row, spec, stamp)
 	case same:
-		// The current revision's file is gone (purged after a tombstone):
-		// rebuild it under its own number.
+		// The current revision's file is gone (purged after a tombstone) or
+		// damaged: rebuild it under its own number.
 		os.Remove(built.Path)
 		again, err := r.buildFile(ctx, spec, row.revision, now)
 		if err != nil {
 			return r.recordFailure(ctx, row, spec, err, stamp)
 		}
-		return r.commit(ctx, spec, again, row.revision, now)
+		return r.place(ctx, row, spec, again, row.revision, now, stamp)
 	case cand == row.revision:
 		// Restored database, but the content differs: a new revision.
 		os.Remove(built.Path)
@@ -459,9 +529,9 @@ func (r Registry) build(ctx context.Context, id string, specs []Spec) error {
 		if err != nil {
 			return r.recordFailure(ctx, row, spec, err, stamp)
 		}
-		return r.commit(ctx, spec, again, maxRev+1, now)
+		return r.place(ctx, row, spec, again, maxRev+1, now, stamp)
 	}
-	return r.commit(ctx, spec, built, cand, now)
+	return r.place(ctx, row, spec, built, cand, now, stamp)
 }
 
 // buildHook runs before every package build (tests count builds and inject
@@ -484,19 +554,39 @@ func (r Registry) buildFile(ctx context.Context, spec Spec, revision int, now ti
 	return Build(ctx, r.DB, spec, BuildMeta{InstanceID: instance, Revision: revision, Now: now, AudioDir: r.AudioDir}, r.Dir)
 }
 
-// commit moves a built file into place as revision rev and makes it the
-// package's ready revision; every other live file of the package starts
-// its retention.
+// place commits a built file as revision rev (commit); a failure is the
+// build's recorded failure (a ready row keeps serving its revision, and the
+// error makes the next reconcile retry).
+func (r Registry) place(ctx context.Context, row pkgRow, spec Spec, b Built, rev int, now time.Time, stamp string) error {
+	if err := r.commit(ctx, spec, b, rev, now); err != nil {
+		return r.recordFailure(ctx, row, spec, err, stamp)
+	}
+	return nil
+}
+
+// commit makes a built file the package's ready revision rev and moves it
+// into place; every other live file of the package starts its retention.
+// The rename runs inside the rows' transaction, just before its commit: a
+// failed rename rolls the rows back (the previous revision stays the
+// served one), and the window in which the rows describe a file not yet in
+// place is closed.
 func (r Registry) commit(ctx context.Context, spec Spec, b Built, rev int, now time.Time) error {
 	dest := r.filePath(spec.ID, rev)
 	if err := os.MkdirAll(filepath.Dir(dest), 0o755); err != nil {
 		os.Remove(b.Path)
 		return err
 	}
-	if err := os.Rename(b.Path, dest); err != nil {
+	if err := r.commitRows(ctx, spec, b, rev, now, func() error { return renameFile(b.Path, dest) }); err != nil {
 		os.Remove(b.Path)
 		return err
 	}
+	return nil
+}
+
+// renameFile moves a built file into place (tests inject failures).
+var renameFile = os.Rename
+
+func (r Registry) commitRows(ctx context.Context, spec Spec, b Built, rev int, now time.Time, move func() error) error {
 	stamp := now.Format(time.RFC3339)
 	m := metaOf(spec)
 	tx, err := r.DB.BeginTx(ctx, nil)
@@ -520,11 +610,15 @@ func (r Registry) commit(ctx context.Context, spec Spec, b Built, rev int, now t
 		m.requires, spec.Optional, m.sources, spec.LicenseTexts(), stamp, spec.ID); err != nil {
 		return err
 	}
+	if err := move(); err != nil {
+		return err
+	}
 	return tx.Commit()
 }
 
-// revive keeps the current revision after an equal rebuild: nothing changes
-// unless the row was not ready, carried an error or its metadata moved.
+// revive keeps the current revision after an equal rebuild (equal content
+// and manifest): nothing changes unless the row was not ready, carried an
+// error or its catalogue-only metadata (optional) moved.
 func (r Registry) revive(ctx context.Context, row pkgRow, spec Spec, stamp string) error {
 	if row.state == stateReady && row.errText == "" && row.meta == specKey(spec) {
 		return nil

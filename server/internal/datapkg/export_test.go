@@ -15,3 +15,11 @@ func SetBuildHookForTest(f func(id string) error) (restore func()) {
 	buildHook = f
 	return func() { buildHook = old }
 }
+
+// SetRenameHookForTest replaces the rename that moves a built file into
+// place and returns a restore func.
+func SetRenameHookForTest(f func(oldPath, newPath string) error) (restore func()) {
+	old := renameFile
+	renameFile = f
+	return func() { renameFile = old }
+}

@@ -79,8 +79,8 @@ export function holdsLookups(url: URL): boolean {
 
 /**
  * v2PullAllowed: a paged study pull is offline data when it is one workspace's
- * first page (collections a subset of the study set, no `since`: a delta is not
- * offline data) or a continuation (`page=p2.…`, the token carries its filters
+ * first page (collections a subset of the study set, optionally `tombstones=1`,
+ * no `since`: a delta is not offline data) or a continuation (`page=p2.…`, the token carries its filters
  * and the server validates them; the URL is the cache key). Nothing else.
  */
 function v2PullAllowed(params: URLSearchParams): boolean {
@@ -88,9 +88,10 @@ function v2PullAllowed(params: URLSearchParams): boolean {
 	const keys = [...params.keys()];
 	if (keys.length !== new Set(keys).size) return false;
 	if (params.has('page')) return keys.length === 2 && /^p2\.[A-Za-z0-9_-]+$/.test(params.get('page') ?? '');
-	if (!keys.every((k) => ['v', 'collections', 'workspace', 'limit'].includes(k))) return false;
+	if (!keys.every((k) => ['v', 'collections', 'workspace', 'limit', 'tombstones'].includes(k))) return false;
 	if (!/^[0-9]+$/.test(params.get('workspace') ?? '')) return false;
 	if (params.has('limit') && !/^[0-9]+$/.test(params.get('limit') ?? '')) return false;
+	if (params.has('tombstones') && params.get('tombstones') !== '1') return false;
 	const list = (params.get('collections') ?? '').split(',');
 	return list.every((c) => PULL_COLLECTIONS.has(c));
 }
