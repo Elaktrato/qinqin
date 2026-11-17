@@ -56,8 +56,12 @@
 		min-width: 3px;
 	}
 
+	/* Not studied: the empty track with a dashed outline (stage 0 is an
+	   outline, not a fill: its ramp step is ~1:1 against stage 1's). */
 	.st-unknown {
-		background: var(--st-unknown-bar);
+		background: transparent;
+		outline: 1px dashed var(--st-unknown-edge, var(--muted));
+		outline-offset: -1px;
 		min-width: 0;
 	}
 

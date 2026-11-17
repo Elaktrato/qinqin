@@ -711,7 +711,6 @@ import type { StudyContext } from '$lib/study/studyContext';
 		--st-unknown-fg: var(--readable-muted);
 		/* ≥ 3:1 against the page in the built-in themes (a non-text outline). */
 		--st-unknown-edge: var(--muted);
-		--st-unknown-bar: var(--mastery-0);
 		--st-fresh-bg: var(--accent-14);
 		--st-fresh-fg: var(--text);
 		--st-fresh-bar: var(--mastery-1);
