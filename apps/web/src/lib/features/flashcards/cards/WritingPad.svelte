@@ -28,7 +28,6 @@
 	const MISS_MS = 250;
 	const REVEAL_STEP_MS = 150;
 	const GLOW_MS = 1000;
-	const MISS_COLOR = '#c62828';
 
 	// The quiz state is a plain variable on purpose: a fast writer's next
 	// stroke is judged against the state the previous stroke produced, with
@@ -98,7 +97,10 @@
 		ctx.lineWidth = 6;
 		ctx.lineCap = 'round';
 		ctx.lineJoin = 'round';
-		const base = getComputedStyle(canvas).color || '#444';
+		// Canvas cannot use var(): the ink reads the theme's tokens (#101).
+		const style = getComputedStyle(canvas);
+		const base = style.getPropertyValue('--accent').trim() || style.color;
+		const miss = style.getPropertyValue('--bad').trim() || style.color;
 		stroke(ctx, live, base, 1);
 		fades = fades.filter((f) => now - f.start < f.duration);
 		for (const f of fades) {
@@ -108,7 +110,7 @@
 				// fades; the outline fades in underneath via CSS.
 				stroke(ctx, morphPath(f.ink, f.target, t), base, 1 - t);
 			} else {
-				stroke(ctx, f.ink, f.color ?? MISS_COLOR, f.hold ? 1 : 1 - t);
+				stroke(ctx, f.ink, f.color ?? miss, f.hold ? 1 : 1 - t);
 			}
 		}
 		ctx.globalAlpha = 1;
@@ -190,7 +192,7 @@
 			if (quiz.complete) finish(false, instant ? 0 : SNAP_MS);
 		} else if ('miss' in effect) {
 			// Reduced motion keeps a static red cue instead of a fade.
-			fades.push({ ink, target: null, start: now, duration: MISS_MS, color: MISS_COLOR, hold: instant });
+			fades.push({ ink, target: null, start: now, duration: MISS_MS, color: null, hold: instant });
 			if (quiz.outline) scaffold = true;
 			if (effect.glow !== undefined) showGlow(effect.glow);
 		}
@@ -343,8 +345,10 @@
 		width: 100%;
 		aspect-ratio: 1;
 		box-sizing: border-box;
-		border: 1px solid color-mix(in srgb, currentColor 25%, transparent);
-		border-radius: 0.4rem;
+		border: 1px solid var(--hair);
+		border-radius: var(--radius);
+		background: transparent;
+		color: var(--text);
 		touch-action: none;
 		user-select: none;
 	}
@@ -365,15 +369,16 @@
 		cursor: crosshair;
 	}
 
+	/* The guide lines: --hair, dashed (design §9). */
 	.grid {
-		stroke: color-mix(in srgb, currentColor 14%, transparent);
+		stroke: var(--hair);
 		stroke-width: 3;
+		stroke-dasharray: 18 14;
 	}
 
 	.grid.diag {
 		stroke-dasharray: 12 14;
 		stroke-width: 2;
-		stroke: color-mix(in srgb, currentColor 9%, transparent);
 	}
 
 	.outline {
@@ -410,6 +415,12 @@
 		}
 		35% {
 			opacity: 0.85;
+		}
+	}
+
+	@media (forced-colors: active) {
+		.pad {
+			border-color: ButtonText;
 		}
 	}
 
