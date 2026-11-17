@@ -3,6 +3,7 @@
 // learner days, RFC 3339 instants, row keys, file names, API payloads — never goes through these (spec Ruling).
 // Outside lib/i18n, `Intl.*Format(` and `toLocale*String(` fail the lint: use these helpers.
 import { getFormatLocale, getLanguage, t } from './index';
+import { isDay } from '../time/studyDay';
 
 type Instant = Date | number | string;
 
@@ -54,12 +55,9 @@ export function formatTime(instant: Instant, opts: Intl.DateTimeFormatOptions = 
 	return formatInstant(instant, { timeStyle: 'short' }, opts);
 }
 
-/** A learner day `YYYY-MM-DD` as UTC midnight, or null when it is not a real date. */
+/** A learner day `YYYY-MM-DD` as UTC midnight (the study-day rule validates it), or null. */
 function dayDate(day: string): Date | null {
-	const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(day);
-	if (m === null) return null;
-	const d = new Date(Date.UTC(Number(m[1]), Number(m[2]) - 1, Number(m[3])));
-	return d.toISOString().slice(0, 10) === day ? d : null;
+	return isDay(day) ? new Date(`${day}T00:00:00Z`) : null;
 }
 
 /** A learner day (`YYYY-MM-DD`) shown as a date, formatted in UTC so it never shifts; invalid days unchanged. */
