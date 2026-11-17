@@ -520,3 +520,7 @@ of each other in content but share the web gates; one implementer at a time. Tas
   ./internal/api` and the three contract tests → exit 0; Node v26.13.1 `npm run check` 0, `npm test` 0 (398 files,
   6797 passed). No Go code beyond comments changed, so no full Go gate.
 
+
+#### Task 12 — real-app check (orchestrator)
+
+Ruling: no separate built-server run for this item — the only production change is the pure payload-builder module (`lib/eventPayloads.ts`), proven byte-identical by tests, plus comments and exports; the server's behaviour is unchanged and its events/settings/overlay rules are exercised by Go contract tests that post to the real handlers; item 5's real-app check covered the built server just before — cost if wrong: a wiring slip in one of the four event call sites would show only in a browser (listed in the handoff for the owner).
