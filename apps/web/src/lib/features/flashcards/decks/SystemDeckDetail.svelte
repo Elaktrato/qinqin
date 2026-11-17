@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '$lib/i18n';
 	import { readingBeside } from '$lib/entry/displayForm';
 	import { goto } from '$app/navigation';
 	import { getSchemes } from '$lib/api/schemes';
@@ -49,7 +50,7 @@
 				if (found !== null) items = await loadLevelItems(found);
 			})
 			.catch((err) => {
-				loadError = errorMessage(err, 'Could not load this deck.');
+				loadError = errorMessage(err, t('flashcards.system.loadDeckFailed'));
 			});
 	});
 
@@ -66,9 +67,9 @@
 
 	function stateLabel(entryId: number): string {
 		const cardId = vocabByEntry.get(entryId);
-		if (cardId === undefined || data === null) return 'Not studied';
+		if (cardId === undefined || data === null) return t('flashcards.system.notStudied');
 		const state = classifySchedule(data.index.get(cardId) ?? null);
-		return WORD_STATES.find((s) => s.state === state)?.label ?? 'Not studied';
+		return WORD_STATES.find((s) => s.state === state)?.label ?? t('flashcards.system.notStudied');
 	}
 
 	const newName = $derived(deck ? `${deck.schemeName} · ${deck.level}` : '');
@@ -92,8 +93,9 @@
 	}
 
 	function words(n: number): string {
-		const unit = deck?.unit === 'character' ? 'character' : 'word';
-		return `${n} ${unit}${n === 1 ? '' : 's'}`;
+		return deck?.unit === 'character'
+			? t('flashcards.system.characters', { count: n })
+			: t('flashcards.system.words', { count: n });
 	}
 
 	async function add(): Promise<void> {
@@ -118,12 +120,12 @@
 					source: { type: 'level', packId: deck.packId, level: deck.level }
 				};
 			} else if (targetChoice === GENERAL_DECK_ID) {
-				target = { id: GENERAL_DECK_ID, name: 'General' };
+				target = { id: GENERAL_DECK_ID, name: t('flashcards.deck.general') };
 			} else {
 				const chosen = raw.decks.find((d) => d.id === targetChoice);
 				if (chosen === undefined) {
 					// Another tab deleted it: never write a deck row named only by an id.
-					error = 'That deck was removed — pick another';
+					error = t('flashcards.system.targetRemoved');
 					targetChoice = 'new';
 					retryable = false;
 					return;
@@ -143,7 +145,7 @@
 			});
 			const rows = addPlanRows(plan, raw);
 			if (rows.length === 0) {
-				result = `Nothing new to add to ${target.name}`;
+				result = t('flashcards.system.nothingNew', { name: target.name });
 				return;
 			}
 			deckRows = plan.deck === null ? 0 : 1;
@@ -152,7 +154,7 @@
 			await pushStudy(workspaceId, rows, {
 				onProgress: (done) => (progress = { done: Math.max(0, done - deckRows), total })
 			});
-			result = `Added ${words(plan.created + plan.joined)} to ${target.name}`;
+			result = t('flashcards.system.added', { items: words(plan.created + plan.joined), name: target.name });
 			skippedBefore = false;
 		} catch (err) {
 			if (err instanceof PartialPushError) {
@@ -160,15 +162,15 @@
 					skippedBefore = true;
 					retryable = !retrying;
 					error = retrying
-						? `The server keeps newer data for ${err.skipped} ${err.skipped === 1 ? 'row' : 'rows'}. Open the deck on your other device, then try again later.`
+						? t('flashcards.system.serverNewer', { count: err.skipped })
 						: err.message;
 				} else {
 					skippedBefore = false;
-					error = `Added ${Math.max(0, err.done - deckRows)}; try again to add the rest`;
+					error = t('flashcards.system.addedPartial', { count: Math.max(0, err.done - deckRows) });
 				}
 			} else {
 				skippedBefore = false;
-				error = errorMessage(err, 'Could not add the words.');
+				error = errorMessage(err, t('flashcards.system.addFailed'));
 			}
 		} finally {
 			busy = false;
@@ -182,36 +184,42 @@
 {#if loadError}
 	<p role="alert">{loadError}</p>
 {:else if deck === undefined || store.status === 'loading'}
-	<p role="status">Loading deck…</p>
+	<p role="status">{t('flashcards.deck.loading')}</p>
 {:else if deck === null}
-	<p role="status">Deck not found.</p>
-	<a href={flashcardsHref({ view: 'list' })}>Back to decks</a>
+	<p role="status">{t('flashcards.deck.notFound')}</p>
+	<a href={flashcardsHref({ view: 'list' })}>{t('flashcards.deck.backToDecks')}</a>
 {:else}
-	<p><a href={flashcardsHref({ view: 'list' })}>‹ Decks</a></p>
+	<p><a href={flashcardsHref({ view: 'list' })}>{t('flashcards.deck.back')}</a></p>
 	<h1>{newName}</h1>
-	<p class="hint">A read-only {deck.unit === 'character' ? 'character' : 'word'} list from an installed level pack.</p>
+	<p class="hint">
+		{deck.unit === 'character' ? t('flashcards.system.introCharacters') : t('flashcards.system.introWords')}
+	</p>
 	{#if items === null}
-		<p role="status">Loading items…</p>
+		<p role="status">{t('flashcards.system.loadingItems')}</p>
 	{:else}
-		<p>{ownedCount} of {items.length} in your decks</p>
+		<p>{t('flashcards.system.owned', { owned: ownedCount, total: items.length })}</p>
 		<div class="actions">
-			<button type="button" class="primary" onclick={study}>Study this level</button>
+			<button type="button" class="primary" onclick={study}>{t('flashcards.system.studyLevel')}</button>
 			<label>
-				Add to
+				{t('flashcards.system.addTo')}
 				<select bind:value={targetChoice} disabled={busy}>
 					<option value="new"
-						>{existingCopy === null ? `New deck: ${newName}` : `Existing copy: ${existingCopy.name}`}</option
+						>{existingCopy === null
+							? t('flashcards.system.newDeck', { name: newName })
+							: t('flashcards.system.existingCopy', { name: existingCopy.name })}</option
 					>
-					<option value={GENERAL_DECK_ID}>General</option>
+					<option value={GENERAL_DECK_ID}>{t('flashcards.deck.general')}</option>
 					{#each data?.decks ?? [] as d (d.id)}
 						<option value={d.id}>{d.name}</option>
 					{/each}
 				</select>
 			</label>
-			<button type="button" disabled={busy} onclick={add}>Add to my decks</button>
+			<button type="button" disabled={busy} onclick={add}>{t('flashcards.system.addToMine')}</button>
 		</div>
 		{#if progress !== null}
-			<p role="status" aria-label="Adding">Adding {progress.done} of {progress.total}…</p>
+			<p role="status" aria-label={t('flashcards.system.adding')}>
+				{t('flashcards.system.addingProgress', { done: progress.done, total: progress.total })}
+			</p>
 		{/if}
 		{#if result}
 			<p role="status">{result}</p>
@@ -219,7 +227,7 @@
 		{#if error}
 			<p class="error" role="alert">{error}</p>
 			{#if retryable}
-				<button type="button" disabled={busy} onclick={add}>Try again</button>
+				<button type="button" disabled={busy} onclick={add}>{t('flashcards.deck.tryAgain')}</button>
 			{/if}
 		{/if}
 		<ul class="items">

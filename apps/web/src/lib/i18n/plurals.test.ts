@@ -203,7 +203,76 @@ const CASES: [MessageKey, MessageArgs, string, string][] = [
 		'1 person has email codes as their only second step and cannot sign in while email does not work. Fix the setup below, or reset their two-factor under Users.',
 		'2 people have email codes as their only second step and cannot sign in while email does not work. Fix the setup below, or reset their two-factor under Users.'
 	],
-	['admin.users.notice.signedOut', { name: 'li' }, 'li was signed out of 1 session.', 'li was signed out of 2 sessions.']
+	['admin.users.notice.signedOut', { name: 'li' }, 'li was signed out of 1 session.', 'li was signed out of 2 sessions.'],
+	// flashcards and milestones (Task 18)
+	['flashcards.deck.cards', {}, '1 card', '2 cards'],
+	[
+		'flashcards.deck.deleteQuestion',
+		{},
+		'Delete 1 word from every deck, with their other cards? You can undo this right after.',
+		'Delete 2 words from every deck, with their other cards? You can undo this right after.'
+	],
+	['flashcards.deck.deleteWords', {}, 'Delete 1 word', 'Delete 2 words'],
+	['flashcards.deck.moveQuestion', { deck: 'HSK' }, 'Move 1 word to HSK?', 'Move 2 words to HSK?'],
+	['flashcards.deck.moveWords', {}, 'Move 1 word', 'Move 2 words'],
+	['flashcards.deck.words', {}, '1 word', '2 words'],
+	[
+		'flashcards.delete.allInGeneral',
+		{ head: 'Delete “x”?' },
+		'Delete “x”? Its 1 card stays in General.',
+		'Delete “x”? Its 2 cards stay in General.'
+	],
+	[
+		'flashcards.delete.allToGeneral',
+		{ head: 'Delete “x”?' },
+		'Delete “x”? Its 1 card moves to General.',
+		'Delete “x”? Its 2 cards move to General.'
+	],
+	['flashcards.delete.movesToGeneral', {}, '1 moves to General', '2 move to General'],
+	[
+		'flashcards.delete.split',
+		{ head: 'Delete “x”?', parts: '1 stays in A' },
+		'Delete “x”? Its 1 card: 1 stays in A.',
+		'Delete “x”? Its 2 cards: 1 stays in A.'
+	],
+	['flashcards.delete.staysIn', { deck: 'A' }, '1 stays in A', '2 stay in A'],
+	[
+		'flashcards.optimise.missing',
+		{},
+		'1 more review needed before the parameters can be optimised.',
+		'2 more reviews needed before the parameters can be optimised.'
+	],
+	['flashcards.optimise.usable', {}, '1 review can be used for fitting.', '2 reviews can be used for fitting.'],
+	['flashcards.starter.added', {}, 'Added 1 word', 'Added 2 words'],
+	[
+		'flashcards.starter.addedKnown',
+		{ text: 'Added 3 words' },
+		'Added 3 words; 1 you know was skipped',
+		'Added 3 words; 2 you know were skipped'
+	],
+	['flashcards.starter.knownSkipped', {}, '1 known word skipped', '2 known words skipped'],
+	['flashcards.system.characters', {}, '1 character', '2 characters'],
+	['flashcards.system.levels', {}, '(1 level)', '(2 levels)'],
+	[
+		'flashcards.system.serverNewer',
+		{},
+		'The server keeps newer data for 1 row. Open the deck on your other device, then try again later.',
+		'The server keeps newer data for 2 rows. Open the deck on your other device, then try again later.'
+	],
+	['flashcards.system.words', {}, '1 word', '2 words'],
+	['flashcards.tone.wrong', {}, '1 tone wrong.', '2 tones wrong.'],
+	['flashcards.widget.streakDays', {}, 'day streak', 'days streak'],
+	['flashcards.writing.dotMistakes', { char: '字' }, '字: 1 mistake', '字: 2 mistakes'],
+	['milestones.card.reachedRecent', {}, '1 milestone reached', '2 milestones reached'],
+	['milestones.card.reachedTotal', { n: '7' }, 'You have reached 7 milestone', 'You have reached 7 milestones'],
+	['milestones.title.charactersLearned', { n: '7' }, '7 character learned', '7 characters learned'],
+	['milestones.title.daysActive', { n: '7' }, '7 day active', '7 days active'],
+	['milestones.title.journalEntries', { n: '7' }, '7 journal entry', '7 journal entries'],
+	['milestones.title.readingHours', { n: '7' }, '7 hour of reading', '7 hours of reading'],
+	['milestones.title.reviews', { n: '7' }, '7 review', '7 reviews'],
+	['milestones.title.streak', { n: '7' }, '7-day streak', '7-day streak'],
+	['milestones.title.wordsMature', { n: '7' }, '7 mature word', '7 mature words'],
+	['milestones.title.wordsStudied', { n: '7' }, '7 word studied', '7 words studied']
 ];
 
 describe('catalogue plurals keep their English', () => {

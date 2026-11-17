@@ -69,6 +69,11 @@ const a = new DOMException('The request was aborted.', 'AbortError');`;
 		expect(tsFindings(src, false)).toEqual([]);
 	});
 
+	it('ignores SVG path data', () => {
+		const src = `const C = { 1: 'M12 22 L88 22', 3: 'M12 42 Q42 98 88 26', z: 'M0 0 H10 V10 Z' }; const s = 'Real sentence here';`;
+		expect(texts(tsFindings(src, false))).toEqual(['Real sentence here']);
+	});
+
 	it('survives regex literals with quotes', () => {
 		const src = `const re = /["']/g; const s = 'Real sentence here';`;
 		expect(texts(tsFindings(src, false))).toEqual(['Real sentence here']);

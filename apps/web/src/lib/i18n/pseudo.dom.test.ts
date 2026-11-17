@@ -11,6 +11,7 @@ import StageBar from '$lib/components/map/StageBar.svelte';
 import LimitField from '$lib/settings/LimitField.svelte';
 import CreateTokenDialog from '$lib/settings/CreateTokenDialog.svelte';
 import ResetMfaDialog from '$lib/admin/ResetMfaDialog.svelte';
+import DeckStatsPanel from '$lib/features/flashcards/decks/DeckStatsPanel.svelte';
 
 // The pseudo-locale sample (spec Ruling): each extraction task adds one component of its area to SAMPLES; the
 // test renders it in en-XA and fails on any text node that is still plain ASCII English (a missed string, or
@@ -56,6 +57,12 @@ const SAMPLES: Sample[] = [
 		name: 'ResetMfaDialog',
 		component: ResetMfaDialog,
 		props: { id: 2, username: '李明', mfa: { totp: true, email: true }, onclose: () => {}, ongone: () => {} }
+	},
+	// flashcards and milestones (Task 18)
+	{
+		name: 'DeckStatsPanel',
+		component: DeckStatsPanel,
+		props: { numbers: { words: 12, studied: 8, mastered: 3, retention: null, reviews30: 40 } }
 	}
 ];
 

@@ -32,6 +32,7 @@
 
 <script lang="ts">
 	import { mascotState, type MascotMood } from '$lib/study/mascot';
+	import { t, type MessageKey } from '$lib/i18n';
 
 	let {
 		level,
@@ -41,7 +42,13 @@
 	}: { level: number; streak: number; todayDone: boolean; size?: number } = $props();
 
 	const buddy = $derived(mascotState({ level, streak, todayDone }));
-	const label = $derived(`Study buddy, stage ${buddy.stage}, ${buddy.mood}`);
+	const MOODS = {
+		happy: 'flashcards.mascot.mood.happy',
+		sleepy: 'flashcards.mascot.mood.sleepy',
+		cheering: 'flashcards.mascot.mood.cheering',
+		proud: 'flashcards.mascot.mood.proud'
+	} as const satisfies Record<MascotMood, MessageKey>;
+	const label = $derived(t('flashcards.mascot.label', { stage: buddy.stage, mood: t(MOODS[buddy.mood]) }));
 
 	// Which path is known to exist; anything else shows the placeholder.
 	let available = $state<string | null>(null);

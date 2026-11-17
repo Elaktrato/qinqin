@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '$lib/i18n';
 	import type { Entry } from '$lib/api/types';
 	import { formatReading } from '$lib/format';
 	import PlayButton from '$lib/components/PlayButton.svelte';
@@ -47,7 +48,7 @@
 <p class="written">{faces.front.written}</p>
 
 {#if faces.front.readings.length > 0}
-	<ul class="readings" aria-label="Readings">
+	<ul class="readings" aria-label={t('flashcards.card.readings')}>
 		{#each faces.front.readings as reading, readingIndex (`${reading.type}:${readingIndex}`)}
 			<li data-type={reading.type}>{formatReading(reading.type, reading.value)}</li>
 		{/each}
@@ -64,9 +65,9 @@
 
 {#if revealed}
 	<section class="answer" aria-labelledby="answer-heading">
-		<h2 id="answer-heading">Answer</h2>
+		<h2 id="answer-heading">{t('flashcards.card.answer')}</h2>
 		{#if showsBackReadings}
-			<ul class="readings back-readings" aria-label="Readings">
+			<ul class="readings back-readings" aria-label={t('flashcards.card.readings')}>
 				{#each faces.back.readings as reading, readingIndex (`${reading.type}:${readingIndex}`)}
 					<li data-type={reading.type}>{formatReading(reading.type, reading.value)}</li>
 				{/each}
@@ -98,11 +99,11 @@
 				</article>
 			{/each}
 		{:else if !showsBackReadings}
-			<p class="hint">No glosses for this word yet.</p>
+			<p class="hint">{t('flashcards.card.noGlosses')}</p>
 		{/if}
 	</section>
 {:else}
-	<button type="button" class="reveal" onclick={reveal}>Show answer</button>
+	<button type="button" class="reveal" onclick={reveal}>{t('flashcards.card.showAnswer')}</button>
 {/if}
 
 <style>

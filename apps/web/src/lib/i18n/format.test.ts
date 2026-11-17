@@ -3,6 +3,7 @@ import {
 	formatDate,
 	formatDateTime,
 	formatDay,
+	formatDayRange,
 	formatDuration,
 	formatList,
 	formatNumber,
@@ -21,6 +22,8 @@ afterEach(() => resetCatalogue());
 /** Intl uses narrow no-break spaces in some patterns; compare with plain spaces. */
 const plain = (s: string) => s.replace(/[  ]/g, ' ');
 const inLocale = (locale: string) => installCatalogue('en', en, locale);
+/** ICU versions differ in the spaces around a range dash. */
+const dash = (s: string) => s.replace(/\s*–\s*/gu, '–');
 
 const instant = Date.UTC(2026, 10, 16, 14, 5);
 const utc = { timeZone: 'UTC' } as const;
@@ -73,6 +76,30 @@ describe('learner days', () => {
 
 	it('an invalid day is returned unchanged', () => {
 		expect(formatDay('2026-13-40')).toBe('2026-13-40');
+	});
+
+	it('formatDayRange: two learner days in the range form of the locale, never shifted', () => {
+		const long = { day: 'numeric', month: 'long', year: 'numeric' } as const;
+		const saved = process.env.TZ;
+		try {
+			for (const tz of ['Pacific/Kiritimati', 'Pacific/Pago_Pago']) {
+				process.env.TZ = tz;
+				expect(dash(formatDayRange('2026-11-16', '2026-11-22', long, 'en-GB'))).toBe('16–22 November 2026');
+			}
+		} finally {
+			process.env.TZ = saved;
+		}
+		expect(dash(formatDayRange('2026-12-28', '2027-01-03', long, 'en-GB'))).toBe('28 December 2026–3 January 2027');
+		inLocale('de');
+		expect(dash(formatDayRange('2026-11-16', '2026-11-22', long))).toBe('16.–22. November 2026');
+		expect(formatDayRange('2026-11-16', 'nope')).toBe('2026-11-16 – nope');
+	});
+
+	it('an explicit locale overrides the format locale for one call', () => {
+		expect(formatNumber(100000, {}, 'de')).toBe('100.000');
+		expect(formatDay('2026-11-03', { day: 'numeric', month: 'long', year: 'numeric' }, 'en-GB')).toBe('3 November 2026');
+		expect(formatWeekday('2026-11-16', 'long', 'de')).toBe('Montag');
+		expect(formatNumber(100000)).toBe('100,000');
 	});
 });
 

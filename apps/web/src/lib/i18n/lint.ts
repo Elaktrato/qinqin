@@ -26,9 +26,12 @@ const letterCount = (s: string): number => (s.split(PLACEHOLDER).join('').match(
 const hasLetters = (s: string): boolean => letterCount(s) >= 2;
 
 /** Capital first letter, a space, two or more words with letters. */
+/** SVG path data (`M12 22 L88 22`): commands and numbers only. */
+const isPathData = (t: string): boolean => /^[MLHVCSQTAZ][\d\s.,MLHVCSQTAZmlhvcsqtaz-]*$/.test(t) && /\d/.test(t);
+
 function isSentence(s: string): boolean {
 	const t = s.trim();
-	if (!/^\p{Lu}/u.test(t) || !/\s/.test(t)) return false;
+	if (!/^\p{Lu}/u.test(t) || !/\s/.test(t) || isPathData(t)) return false;
 	return t.split(/\s+/).filter((w) => /\p{L}/u.test(w)).length >= 2;
 }
 

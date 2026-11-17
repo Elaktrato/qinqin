@@ -15,14 +15,16 @@ function cached<T>(kind: string, locale: string, opts: object, make: () => T): T
 	return v;
 }
 
-const numberFormat = (opts: Intl.NumberFormatOptions) =>
-	cached('n', getFormatLocale(), opts, () => new Intl.NumberFormat(getFormatLocale(), opts));
-const dateFormat = (opts: Intl.DateTimeFormatOptions) =>
-	cached('d', getFormatLocale(), opts, () => new Intl.DateTimeFormat(getFormatLocale(), opts));
+// `locale` (optional on some helpers) overrides the format locale for one call: a component whose tests pin a
+// locale, or text that must follow another locale. Callers normally leave it out.
+const numberFormat = (opts: Intl.NumberFormatOptions, locale = getFormatLocale()) =>
+	cached('n', locale, opts, () => new Intl.NumberFormat(locale, opts));
+const dateFormat = (opts: Intl.DateTimeFormatOptions, locale = getFormatLocale()) =>
+	cached('d', locale, opts, () => new Intl.DateTimeFormat(locale, opts));
 
 /** A number in the format locale (`1,234.5`). */
-export function formatNumber(n: number, opts: Intl.NumberFormatOptions = {}): string {
-	return numberFormat(opts).format(n);
+export function formatNumber(n: number, opts: Intl.NumberFormatOptions = {}, locale?: string): string {
+	return numberFormat(opts, locale).format(n);
 }
 
 /** A fraction as a percentage (`0.256` → `26%`; pass `maximumFractionDigits` for more). */
@@ -61,14 +63,30 @@ function dayDate(day: string): Date | null {
 }
 
 /** A learner day (`YYYY-MM-DD`) shown as a date, formatted in UTC so it never shifts; invalid days unchanged. */
-export function formatDay(day: string, opts: Intl.DateTimeFormatOptions = { dateStyle: 'medium' }): string {
+export function formatDay(day: string, opts: Intl.DateTimeFormatOptions = { dateStyle: 'medium' }, locale?: string): string {
 	const d = dayDate(day);
-	return d === null ? day : dateFormat({ ...opts, timeZone: 'UTC' }).format(d);
+	return d === null ? day : dateFormat({ ...opts, timeZone: 'UTC' }, locale).format(d);
 }
 
 /** The weekday of a learner day (`Monday`, or `Mon` with `short`), never shifted by the zone. */
-export function formatWeekday(day: string, style: 'long' | 'short' | 'narrow' = 'long'): string {
-	return formatDay(day, { weekday: style });
+export function formatWeekday(day: string, style: 'long' | 'short' | 'narrow' = 'long', locale?: string): string {
+	return formatDay(day, { weekday: style }, locale);
+}
+
+/**
+ * Two learner days as a range in the locale's own form (`16–22 November 2026`, `28 Dec 2026 – 3 Jan 2027`),
+ * formatted in UTC so it never shifts; with an invalid day, both as given joined by an en dash.
+ */
+export function formatDayRange(
+	from: string,
+	to: string,
+	opts: Intl.DateTimeFormatOptions = { dateStyle: 'medium' },
+	locale?: string
+): string {
+	const a = dayDate(from);
+	const b = dayDate(to);
+	if (a === null || b === null) return `${from} – ${to}`;
+	return dateFormat({ ...opts, timeZone: 'UTC' }, locale).formatRange(a, b);
 }
 
 /** `5 minutes ago`, `in 2 days`. */

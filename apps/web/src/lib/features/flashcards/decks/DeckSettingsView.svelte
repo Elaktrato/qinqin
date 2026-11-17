@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from '$lib/i18n';
 	import { goto } from '$app/navigation';
 	import type { Component } from 'svelte';
 	import { tick, untrack } from 'svelte';
@@ -76,10 +77,10 @@
 		busy = true;
 		try {
 			await saveDeckNewOrder(deckId, order === 'deck' ? { by: 'added' } : order);
-			message = 'Saved.';
+			message = t('flashcards.settings.saved');
 			await store.load(workspaceId, true);
 		} catch (err) {
-			error = err instanceof Error && err.message ? err.message : 'Could not save the order.';
+			error = err instanceof Error && err.message ? err.message : t('flashcards.settings.orderFailed');
 		} finally {
 			busy = false;
 		}
@@ -97,16 +98,16 @@
 		error = '';
 		const next = name.trim();
 		if (next === '') {
-			error = 'Give the deck a name.';
+			error = t('flashcards.list.nameMissing');
 			return;
 		}
 		busy = true;
 		try {
 			await renameDeck(deckId, next);
-			message = 'Renamed.';
+			message = t('flashcards.settings.renamed');
 			await store.load(workspaceId, true);
 		} catch (err) {
-			error = err instanceof Error && err.message ? err.message : 'Could not rename the deck.';
+			error = err instanceof Error && err.message ? err.message : t('flashcards.settings.renameFailed');
 		} finally {
 			busy = false;
 		}
@@ -125,7 +126,7 @@
 			await deleteDeck(deckId);
 			await goto(flashcardsHref({ view: 'list' }));
 		} catch (err) {
-			error = err instanceof Error && err.message ? err.message : 'Could not delete the deck.';
+			error = err instanceof Error && err.message ? err.message : t('flashcards.settings.deleteFailed');
 			confirming = false;
 		} finally {
 			busy = false;
@@ -142,37 +143,37 @@
 
 <div bind:this={root}>
 	{#if store.status === 'loading'}
-		<p role="status">Loading deck…</p>
+		<p role="status">{t('flashcards.deck.loading')}</p>
 	{:else if store.status === 'no-workspace'}
-		<p role="status">Choose a workspace in the header to see your decks.</p>
+		<p role="status">{t('flashcards.deck.noWorkspace')}</p>
 	{:else if store.status === 'error'}
 		<p role="alert">{store.error}</p>
-		<button type="button" onclick={() => void store.load(workspaceId, true)}>Try again</button>
+		<button type="button" onclick={() => void store.load(workspaceId, true)}>{t('flashcards.deck.tryAgain')}</button>
 	{:else if deck === null || data === null}
-		<p role="status">Deck not found.</p>
-		<a href={flashcardsHref({ view: 'list' })}>Back to decks</a>
+		<p role="status">{t('flashcards.deck.notFound')}</p>
+		<a href={flashcardsHref({ view: 'list' })}>{t('flashcards.deck.backToDecks')}</a>
 	{:else}
 		<p class="back">
-			<a href={flashcardsHref({ view: 'deck', deckId })}>‹ {deck.name}</a>
+			<a href={flashcardsHref({ view: 'deck', deckId })}>{t('flashcards.settings.back', { name: deck.name })}</a>
 		</p>
-		<h1>{isGeneral ? 'General settings' : `${deck.name} settings`}</h1>
+		<h1>{isGeneral ? t('flashcards.settings.generalTitle') : t('flashcards.settings.title', { name: deck.name })}</h1>
 
 		{#if !isGeneral}
 			<section>
-				<h2>Name</h2>
+				<h2>{t('flashcards.settings.name')}</h2>
 				<form class="row" onsubmit={rename}>
 					<label>
-						Deck name
+						{t('flashcards.settings.deckName')}
 						<input bind:value={name} maxlength="80" autocomplete="off" />
 					</label>
-					<button type="submit" disabled={busy}>Save name</button>
+					<button type="submit" disabled={busy}>{t('flashcards.settings.saveName')}</button>
 				</form>
 			</section>
 		{/if}
 
 		<section>
-			<h2>Card types</h2>
-			<p class="hint">Reverse and Cloze cards are made while you study the words of this deck.</p>
+			<h2>{t('flashcards.settings.cardTypes')}</h2>
+			<p class="hint">{t('flashcards.settings.cardTypesHint')}</p>
 			<DeckCardTypes
 				{deckId}
 				deckName={deck.name}
@@ -182,9 +183,9 @@
 		</section>
 
 		<section>
-			<h2>New cards</h2>
+			<h2>{t('flashcards.settings.newCards')}</h2>
 			<label>
-				Order of new cards
+				{t('flashcards.settings.order')}
 				<select
 					value={orderControl.value}
 					disabled={busy || orderControl.disabled}
@@ -203,22 +204,22 @@
 		{#if limitsEditor !== null}
 			{@const Editor = limitsEditor}
 			<section>
-				<h2>Daily limits</h2>
+				<h2>{t('flashcards.settings.dailyLimits')}</h2>
 				<Editor {deckId} deckName={deck.name} />
 			</section>
 		{/if}
 
 		{#if !isGeneral}
 			<section>
-				<h2>Delete</h2>
-				<button type="button" class="danger" disabled={busy} onclick={openConfirm}>Delete deck</button>
+				<h2>{t('flashcards.settings.delete')}</h2>
+				<button type="button" class="danger" disabled={busy} onclick={openConfirm}>{t('flashcards.settings.deleteDeck')}</button>
 				{#if confirming}
-					<div class="confirm" role="alertdialog" aria-label="Confirm delete" tabindex="-1" onkeydown={confirmKey}>
+					<div class="confirm" role="alertdialog" aria-label={t('flashcards.deck.confirmDelete')} tabindex="-1" onkeydown={confirmKey}>
 						<p>{deleteDeckText(deck, data.cards, data.decks)}</p>
 						<button type="button" class="danger" disabled={busy} onclick={remove}
-							>Delete “{deck.name}”</button
+							>{t('flashcards.settings.deleteNamed', { name: deck.name })}</button
 						>
-						<button type="button" class="secondary" onclick={() => (confirming = false)}>Cancel</button>
+						<button type="button" class="secondary" onclick={() => (confirming = false)}>{t('common.action.cancel')}</button>
 					</div>
 				{/if}
 			</section>

@@ -5,6 +5,7 @@
 
 import { untrack } from 'svelte';
 import { errorMessage } from '$lib/stats/errors';
+import { t } from '$lib/i18n';
 import { DEFAULT_W } from '$lib/study/fsrs/params';
 import type { DeckSettings } from '$lib/study/deckSettings';
 import { loadStudyHistory } from '$lib/study/history';
@@ -74,7 +75,7 @@ export function createDecksData() {
 		} catch (err) {
 			if (mine !== seq) return;
 			snapshot = null;
-			error = errorMessage(err, 'Could not load your decks.');
+			error = errorMessage(err, t('flashcards.decks.loadError'));
 			status = 'error';
 		}
 	}
