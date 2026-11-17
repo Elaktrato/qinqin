@@ -3,13 +3,13 @@
 // cards in instant order; all points at one instant are applied together,
 // then the thresholds are checked, so the running values equal a snapshot
 // (scheduleAt) at every instant. Counters are incremental: a point updates
-// only its card, the glyphs of its written form and the cells and levels
-// that hold them. Pure and memoised per timelines object.
+// only its card, the running strength sums of the glyphs of its written form
+// and the cells and levels that hold them. Pure and memoised per timelines object.
 // Rule and fixtures: docs/contracts/milestones/ (reached.json).
 
 import type { CharRow } from '$lib/api/types';
 import { classifySchedule } from '$lib/stats/wordStates';
-import { MASTERY_KINDS, MASTERY_THRESHOLD, masteryFromSchedules } from '$lib/study/mastery';
+import { MASTERY_KINDS, MASTERY_THRESHOLD, cardStrength, masteryFromSchedules } from '$lib/study/mastery';
 import type { Schedule } from '$lib/study/scheduler';
 import type { StudyCard } from '$lib/study/types';
 import type { StudyDay } from '$lib/time/studyDay';
@@ -148,6 +148,8 @@ export function sweep(
 	const matureCards = new Map<number, number>(); // entry -> mature scoped cards
 	const levelCount = levels.map(() => 0);
 	const score = new Map<string, number>();
+	const sums = new Map<string, number>();
+	const counts = new Map<string, number>();
 	let mature = 0;
 	let learned = 0;
 
@@ -160,8 +162,16 @@ export function sweep(
 		for (; i < points.length && points[i].ts === t; i++) {
 			const p = points[i];
 			const entry = tracked[p.card];
+			const previous = current.get(entry.card.id);
 			current.set(entry.card.id, p.schedule);
-			for (const glyph of entry.glyphs) dirty.add(glyph);
+			if (entry.glyphs.length > 0) {
+				const delta = cardStrength(p.schedule.stability) - (previous === undefined ? 0 : cardStrength(previous.stability));
+				for (const glyph of entry.glyphs) {
+					sums.set(glyph, (sums.get(glyph) ?? 0) + delta);
+					if (previous === undefined) counts.set(glyph, (counts.get(glyph) ?? 0) + 1);
+					dirty.add(glyph);
+				}
+			}
 			if (!entry.scoped) continue;
 			const isMature = classifySchedule(p.schedule) === 'mature';
 			if (isMature === matureNow[p.card]) continue;
@@ -175,11 +185,17 @@ export function sweep(
 				for (const level of levelsOfEntry.get(id) ?? []) levelCount[level] += after > 0 ? 1 : -1;
 			}
 		}
-		// Glyph scores exactly as the map computes them, then their cells.
+		// Glyph scores from running sums; a mean that sits on a rounding edge is
+		// computed again exactly as the map does (masteryFromSchedules, card order).
 		const touched = new Set<number>();
 		for (const glyph of dirty) {
-			const m = masteryFromSchedules([glyph], cardsOfGlyph.get(glyph) ?? [], scheduleOf).get(glyph);
-			score.set(glyph, m?.score ?? 0);
+			const n = counts.get(glyph) ?? 0;
+			const x = n === 0 ? 0 : (100 * (sums.get(glyph) ?? 0)) / n;
+			let value = Math.round(x);
+			if (Math.abs(x - Math.floor(x) - 0.5) < 1e-6) {
+				value = masteryFromSchedules([glyph], cardsOfGlyph.get(glyph) ?? [], scheduleOf).get(glyph)?.score ?? 0;
+			}
+			score.set(glyph, value);
 			for (const cell of cellsOf.get(glyph) ?? []) touched.add(cell);
 		}
 		for (const index of touched) {

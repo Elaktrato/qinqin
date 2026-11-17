@@ -37,7 +37,7 @@ function clamp01(value: number): number {
  * card that holds for a year counts fully and doubling the stability
  * always adds the same amount.
  */
-function cardStrength(stability: number): number {
+export function cardStrength(stability: number): number {
 	if (!Number.isFinite(stability)) return 0;
 	return clamp01(Math.log2(1 + Math.max(0, stability)) / MAX_LOG);
 }

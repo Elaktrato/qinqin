@@ -484,3 +484,9 @@ Build (2026-11-17, Tasks 1–11; Task 12 is the orchestrator's):
   `lib/milestones/HomeMilestones.svelte` (loads once the plugin states are ready, reloads on `onStudyWrite` /
   `onEventLogChange` of the workspace, drops stale answers), placed under the search form, not a widget. Existing
   week page tests select the week heading by name (a second `h2`, "Milestones", now exists).
+- Deviation (Task 10, found by the perf guard): the first sweep recomputed a touched glyph's score with
+  `masteryFromSchedules` over all its cards (≈ 9 s for 5 000 cards / 50 000 reviews). The sweep now keeps running
+  strength sums per glyph (`cardStrength`, now exported from `study/mastery.ts`) and recomputes exactly only when a
+  mean sits within 1e-6 of a rounding edge; the seeded snapshot equivalence tests still pass. Test-first evidence for
+  the guard: a stub loader that rebuilds timelines (`timelinesFor([...reviews], DEFAULT_W, <another clock>)`)
+  failed the "no replay" assertion; a copied log on the same clock does not rebuild (memoised by `reviewsKey`).
