@@ -33,6 +33,11 @@ describe('Button', () => {
 		expect(b.getAttribute('type')).toBe('submit');
 	});
 
+	it('a submit button may name its form (a Dialog action outside the form)', () => {
+		render(Button, { children: text('Delete'), type: 'submit', form: 'f1' });
+		expect(screen.getByRole('button', { name: 'Delete' }).getAttribute('form')).toBe('f1');
+	});
+
 	it('is a link when given href', () => {
 		render(Button, { children: text('Open'), href: '/study', variant: 'plain' });
 		const a = screen.getByRole('link', { name: 'Open' });

@@ -1,5 +1,7 @@
 <script lang="ts">
-	import { onMount, tick } from 'svelte';
+	import { tick } from 'svelte';
+	import Button from '$lib/ui/Button.svelte';
+	import Dialog from '$lib/ui/Dialog.svelte';
 	import { errorText } from '$lib/api/apiErrors';
 	import { t } from '$lib/i18n';
 	import Msg from '$lib/i18n/Msg.svelte';
@@ -16,7 +18,6 @@
 	}: { workspaces: { id: number; name: string }[]; oncreated: (t: TokenDto) => void; onclose: () => void } = $props();
 
 	const uid = $props.id();
-	let dialog = $state<HTMLDialogElement | null>(null);
 	let nameInput = $state<HTMLInputElement | null>(null);
 	let name = $state('');
 	let scope = $state<'read' | 'write'>('read');
@@ -34,10 +35,6 @@
 		closed = true;
 		token = '';
 		password = '';
-		if (dialog?.open) {
-			if (typeof dialog.close === 'function') dialog.close();
-			else dialog.removeAttribute('open');
-		}
 		onclose();
 	}
 
@@ -80,26 +77,18 @@
 			error = t('settings.tokens.create.copyFailed');
 		}
 	}
-
-	onMount(() => {
-		if (typeof dialog?.showModal === 'function') dialog.showModal();
-		else dialog?.setAttribute('open', '');
-		nameInput?.focus();
-	});
 </script>
 
-<dialog
-	bind:this={dialog}
-	aria-labelledby="{uid}-title"
-	oncancel={(event) => {
-		event.preventDefault();
-		if (!busy) finish();
-	}}
+<Dialog
+	open
+	title={token ? t('settings.tokens.created.title') : t('settings.tokens.create.title')}
+	description={token ? undefined : t('settings.tokens.create.intro')}
+	initialFocus="input"
+	dismissible={!busy}
 	onclose={finish}
 >
 	{#if token}
 		<div class="stack">
-			<h2 id="{uid}-title">{t('settings.tokens.created.title')}</h2>
 			<label>
 				{t('settings.tokens.created.title')}
 				<input class="mono" readonly value={token} onfocus={(e) => (e.currentTarget as HTMLInputElement).select()} />
@@ -108,20 +97,15 @@
 				<Msg key="settings.tokens.created.once">{#snippet strong(text: string)}<strong>{text}</strong>{/snippet}</Msg>
 			</p>
 			<div class="buttons">
-				<button type="button" onclick={copy}>{t('common.action.copy')}</button>
+				<Button onclick={copy}>{t('common.action.copy')}</Button>
 				<span role="status">{copied ? t('common.action.copied') : ''}</span>
 			</div>
 			{#if error}<p class="error" role="alert">{error}</p>{/if}
 			<p>{t('settings.tokens.created.tryIt')}</p>
 			<pre class="mono">{exampleCommand(location.origin, token)}</pre>
-			<div class="buttons">
-				<button type="button" class="primary" onclick={finish}>{t('settings.tokens.created.done')}</button>
-			</div>
 		</div>
 	{:else}
-		<form onsubmit={submit} class="stack">
-			<h2 id="{uid}-title">{t('settings.tokens.create.title')}</h2>
-			<p class="hint">{t('settings.tokens.create.intro')}</p>
+		<form id="{uid}-form" onsubmit={submit} class="stack">
 			<label>
 				{t('settings.tokens.colName')}
 				<input bind:this={nameInput} bind:value={name} maxlength="64" autocomplete="off" />
@@ -153,19 +137,21 @@
 				<input type="password" autocomplete="current-password" bind:value={password} />
 			</label>
 			{#if error}<p class="error" role="alert">{error}</p>{/if}
-			<div class="buttons">
-				<button type="button" onclick={finish} disabled={busy}>{t('common.action.cancel')}</button>
-				<button type="submit" class="primary" disabled={busy}>{busy ? t('settings.tokens.create.creating') : t('settings.tokens.create.submit')}</button>
-			</div>
 		</form>
 	{/if}
-</dialog>
+	{#snippet actions()}
+		{#if token}
+			<Button variant="primary" onclick={finish}>{t('settings.tokens.created.done')}</Button>
+		{:else}
+			<Button onclick={finish} disabled={busy}>{t('common.action.cancel')}</Button>
+			<Button type="submit" form="{uid}-form" variant="primary" disabled={busy}
+				>{busy ? t('settings.tokens.create.creating') : t('settings.tokens.create.submit')}</Button
+			>
+		{/if}
+	{/snippet}
+</Dialog>
 
 <style>
-	dialog {
-		max-width: min(36rem, calc(100vw - 2rem));
-		padding: 1.2rem;
-	}
 	.stack {
 		display: grid;
 		gap: 0.8rem;
@@ -199,12 +185,8 @@
 	pre {
 		margin: 0;
 		padding: 0.6rem;
-		border: 1px solid color-mix(in srgb, currentColor 25%, transparent);
+		border: 1px solid var(--hair);
 		border-radius: 0.4rem;
-	}
-	.hint {
-		margin: 0;
-		color: var(--readable-muted);
 	}
 	.warn,
 	.error {
@@ -221,12 +203,5 @@
 		flex-wrap: wrap;
 		gap: 0.6rem;
 		align-items: center;
-	}
-	button {
-		font: inherit;
-		padding: 0.45rem 0.9rem;
-	}
-	.primary {
-		font-weight: 600;
 	}
 </style>

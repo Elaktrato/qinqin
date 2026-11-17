@@ -47,7 +47,12 @@ export function modal(node: HTMLDialogElement, initialFocus?: string): { destroy
 		}
 	} else node.setAttribute('open', '');
 	const target = (initialFocus ? node.querySelector<HTMLElement>(initialFocus) : null) ?? focusables(node)[0] ?? node;
-	queueMicrotask(() => target.focus());
+	// Now (the dialog is in the document when the action runs), and once more
+	// after the browser's own showModal focusing step, unless focus has moved on.
+	target.focus();
+	queueMicrotask(() => {
+		if (!node.contains(document.activeElement) || document.activeElement === node) target.focus();
+	});
 	return {
 		destroy() {
 			if (typeof node.close === 'function' && node.open) node.close();

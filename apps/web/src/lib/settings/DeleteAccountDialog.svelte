@@ -1,5 +1,7 @@
 <script lang="ts">
 	import { onMount, tick } from 'svelte';
+	import Button from '$lib/ui/Button.svelte';
+	import Dialog from '$lib/ui/Dialog.svelte';
 	import { downloadMyData } from '$lib/api/backup';
 	import { accountDeletionPreview, deleteAccount, type SelfDeletionPreview } from '$lib/api/account';
 	import { apiErrorBody } from '$lib/api/client';
@@ -15,7 +17,6 @@
 	let { username, ondone, onclose }: { username: string; ondone: () => void; onclose: () => void } = $props();
 
 	const uid = $props.id();
-	let dialog = $state<HTMLDialogElement | null>(null);
 	let input = $state<HTMLInputElement | null>(null);
 	let password = $state('');
 	let typed = $state('');
@@ -30,7 +31,6 @@
 	function finish(): void {
 		if (closed) return;
 		closed = true;
-		if (dialog?.open) dialog.close();
 		onclose();
 	}
 
@@ -55,9 +55,6 @@
 	}
 
 	onMount(() => {
-		if (typeof dialog?.showModal === 'function') dialog.showModal();
-		else dialog?.setAttribute('open', '');
-		input?.focus();
 		accountDeletionPreview().then(
 			(p) => (preview = p),
 			() => undefined
@@ -65,18 +62,15 @@
 	});
 </script>
 
-<dialog
-	bind:this={dialog}
-	aria-labelledby="{uid}-title"
-	aria-describedby="{uid}-what"
-	oncancel={(event) => {
-		event.preventDefault();
-		if (!busy) finish();
-	}}
+<Dialog
+	open
+	title={t('settings.account.delete.dialogTitle')}
+	describedBy="{uid}-what"
+	initialFocus="input[type='password']"
+	dismissible={!busy}
 	onclose={finish}
 >
-	<form onsubmit={submit}>
-		<h2 id="{uid}-title">{t('settings.account.delete.dialogTitle')}</h2>
+	<form id="{uid}-form" onsubmit={submit}>
 		<div id="{uid}-what">
 			<p>{t('settings.account.delete.what')}</p>
 			{#if preview}
@@ -115,18 +109,16 @@
 			</label>
 		{/if}
 		{#if error}<p class="error" role="alert">{error}</p>{/if}
-		<div class="buttons">
-			<button type="button" onclick={finish} disabled={busy}>{t('common.action.cancel')}</button>
-			<button type="submit" class="danger" disabled={!ready}>{busy ? t('settings.account.delete.deleting') : t('settings.account.delete.submit')}</button>
-		</div>
 	</form>
-</dialog>
+	{#snippet actions()}
+		<Button onclick={finish} disabled={busy}>{t('common.action.cancel')}</Button>
+		<Button type="submit" form="{uid}-form" tone="danger" disabled={!ready}
+			>{busy ? t('settings.account.delete.deleting') : t('settings.account.delete.submit')}</Button
+		>
+	{/snippet}
+</Dialog>
 
 <style>
-	dialog {
-		max-width: min(34rem, calc(100vw - 2rem));
-		padding: 1.2rem;
-	}
 	label {
 		display: grid;
 		gap: 0.3rem;
@@ -136,25 +128,10 @@
 		font: inherit;
 		padding: 0.45rem 0.6rem;
 	}
-	.buttons {
-		display: flex;
-		gap: 0.6rem;
-		justify-content: flex-end;
-		margin-top: 1rem;
-	}
 	.error {
 		color: var(--readable-bad);
 		font-weight: 600;
 		padding-inline-start: var(--space-2);
 		border-inline-start: 3px solid var(--bad);
-	}
-	.danger {
-		background: color-mix(in srgb, var(--bad) 14%, transparent);
-		border-color: var(--bad);
-		color: var(--readable-bad);
-	}
-	button:disabled {
-		opacity: 0.55;
-		cursor: not-allowed;
 	}
 </style>
