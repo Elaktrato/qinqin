@@ -50,7 +50,7 @@
 	<title>{pageTitle()}</title>
 </svelte:head>
 
-<main class="home">
+<div class="page-body home">
 	<h1>{APP_NAME}</h1>
 
 	<EmailBanner />
@@ -88,7 +88,7 @@
 			</p>
 		{/if}
 	{/if}
-</main>
+</div>
 
 <style>
 	.home h1 {

@@ -22,6 +22,8 @@
 // One page owns the slot at a time (the last caller wins).
 
 import type { Snippet } from 'svelte';
+import { APP_NAME } from '$lib/app';
+import { t } from '$lib/i18n';
 import type { FrameSection } from './sections';
 import { homeSection } from './sections';
 
@@ -65,8 +67,34 @@ export const pageFrame = {
 	}
 };
 
-/** phoneTitle: a page's own title, else its section's label, else Home. */
-export function phoneTitle(override: string | null, current: string | null, sections: readonly FrameSection[]): string {
+// The pages of no section (the account menu's and the account flows'):
+// the same catalogue text as their document titles. pageFrame.test.ts
+// walks the route tree, so a new page of no section must be added here.
+const ROUTE_TITLES: Record<string, () => string> = {
+	'/settings': () => t('nav.settings'),
+	'/sources': () => t('nav.sources'),
+	'/account/password': () => t('auth.forced.passwordTitle'),
+	'/account/two-factor-setup': () => t('account.mfa.setUp'),
+	'/reset': () => t('auth.reset.title'),
+	'/login': () => t('auth.signIn.title'),
+	'/register': () => t('auth.register.title')
+};
+
+/**
+ * phoneTitle: a page's own title, else its section's label, Home on Home,
+ * else the route's own title (Settings, Sources, the account pages), else
+ * the app's name (an unknown path).
+ */
+export function phoneTitle(
+	override: string | null,
+	current: string | null,
+	sections: readonly FrameSection[],
+	path: string
+): string {
 	if (override) return override;
-	return sections.find((s) => s.id === current)?.label ?? homeSection().label;
+	if (current === 'home') return homeSection().label;
+	const section = sections.find((s) => s.id === current);
+	if (section) return section.label;
+	const trimmed = path.length > 1 ? path.replace(/\/+$/, '') : path;
+	return ROUTE_TITLES[trimmed]?.() ?? APP_NAME;
 }

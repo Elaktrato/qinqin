@@ -3,7 +3,8 @@
 	// are a floating layer that fades in). The trigger is an icon button with
 	// a tooltip (`icon`), a text button (`text`) or custom content with a
 // tooltip (`trigger`: the frame's flag and avatar); the popup holds MenuItems.
-	// Opening focuses the checked item, else the first; Up/Down wrap,
+	// Opening focuses the checked item, else the first; ArrowDown/ArrowUp
+	// on the trigger open it on the first/last item; Up/Down wrap,
 	// Home/End jump, a letter jumps to the next item starting with it; Escape
 	// closes and returns focus to the trigger; Tab and a pointer outside close
 	// without taking focus.
@@ -83,12 +84,30 @@
 
 	setMenuContext({ close, settle });
 
-	async function toggle(): Promise<void> {
-		open = !open;
-		if (!open) return;
+	// Opens and focuses the checked item (else the first), or the first or
+	// last item (ArrowDown / ArrowUp on the trigger, APG menu button).
+	async function show(at: 'checked' | 'first' | 'last'): Promise<void> {
+		open = true;
 		await tick();
 		const list = items();
-		(list.find((el) => el.getAttribute('aria-checked') === 'true') ?? list[0])?.focus();
+		const pick =
+			at === 'last'
+				? list[list.length - 1]
+				: at === 'first'
+					? list[0]
+					: (list.find((el) => el.getAttribute('aria-checked') === 'true') ?? list[0]);
+		pick?.focus();
+	}
+
+	function toggle(): void {
+		if (open) open = false;
+		else void show('checked');
+	}
+
+	function triggerKeys(e: KeyboardEvent): void {
+		if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return;
+		e.preventDefault();
+		void show(e.key === 'ArrowDown' ? 'first' : 'last');
 	}
 
 	function onkeydown(e: KeyboardEvent): void {
@@ -145,7 +164,8 @@
 					aria-haspopup="menu"
 					aria-expanded={open}
 					aria-controls={open ? menuId : undefined}
-					onclick={toggle}>{@render triggerContent()}</button
+					onclick={toggle}
+					onkeydown={triggerKeys}>{@render triggerContent()}</button
 				>
 			{/snippet}
 		</Tooltip>
@@ -161,6 +181,7 @@
 			tooltipSuppressed={open}
 			placement={tooltipPlacement}
 			onclick={toggle}
+			onkeydown={triggerKeys}
 		/>
 	{:else}
 		<button
@@ -171,6 +192,7 @@
 			aria-expanded={open}
 			aria-controls={open ? menuId : undefined}
 			onclick={toggle}
+			onkeydown={triggerKeys}
 			>{#if icon}<Icon name={icon} size="s" />{/if}{text ?? label}<Icon name="expand-down" size="s" /></button
 		>
 	{/if}

@@ -167,7 +167,7 @@
 	<title>{pageTitle(t('lookups.title'))}</title>
 </svelte:head>
 
-<main class="lookups-page">
+<div class="page-body lookups-page">
 	<h1>{t('lookups.title')}</h1>
 
 	<div class="switch-row">
@@ -296,7 +296,7 @@
 			{/if}
 		{/if}
 	{/if}
-</main>
+</div>
 
 <style>
 	.lookups-page {

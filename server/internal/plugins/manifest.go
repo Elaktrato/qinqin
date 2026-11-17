@@ -114,7 +114,9 @@ func ParseManifest(raw []byte) (Manifest, error) {
 	var fields map[string]json.RawMessage
 	if json.Unmarshal(raw, &fields) == nil {
 		if icon, ok := fields["icon"]; ok && (isNull(icon) || !iconPattern.MatchString(m.Icon)) {
-			add("icon %s must match %s", string(icon), iconPattern)
+			// The pattern only: the value may be anything up to the body
+			// limit, and this message goes back to the client and the log.
+			add("icon must match %s", iconPattern)
 		}
 	}
 	checkList := func(field string, values, known []string) {
