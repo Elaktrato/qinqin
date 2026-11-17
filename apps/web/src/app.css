@@ -16,7 +16,7 @@
 
 	/* Theme tokens (#96): the colour tokens (--chrome, --panel, --raised,
 	   --line, --text, --muted, --good, --warn, --bad, --grade-*, --accent,
-	   --on-accent, --hair, --reading-accent, --readable-bad,
+	   --on-accent, --hair, --reading-accent, --readable-bad, --readable-muted,
 	   --accent-14/32/58/100, the
 	   washes, --mastery-0..4) and the person's --radius and --space are set
 	   on :root by lib/theme/apply.ts (app.html paints this device's last
@@ -111,7 +111,7 @@ main {
 }
 
 .auth .hint {
-	opacity: 0.75;
+	color: var(--readable-muted);
 }
 
 /* Content for assistive tech only: stays in the accessibility tree. */

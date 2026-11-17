@@ -31,4 +31,15 @@ describe('readable text colours', () => {
 	it('error text uses --readable-bad, never --bad (Nord bad is 3.05:1 on panel)', () => {
 		expect(textUses('--bad')).toEqual([]);
 	});
+
+	it('secondary text uses --readable-muted, never --muted (Dracula muted is 3.03:1 on panel)', () => {
+		expect(textUses('--muted')).toEqual([]);
+	});
+
+	it('the sign-in hint is secondary text, not faded text (opacity can take a theme below 4.5:1)', () => {
+		// Pages still on their own colours fade their hints too; they move to the tokens in #98.
+		const rule = readFileSync(join(src, 'app.css'), 'utf8').match(/\.auth \.hint\s*\{([^}]*)\}/);
+		expect(rule?.[1]).toContain('color: var(--readable-muted)');
+		expect(rule?.[1]).not.toMatch(/opacity/);
+	});
 });

@@ -294,7 +294,7 @@
 	}
 	.hint {
 		margin: 0;
-		color: var(--muted);
+		color: var(--readable-muted);
 	}
 	fieldset {
 		margin: 0;
@@ -330,7 +330,7 @@
 	}
 	.group-label {
 		font-size: var(--font-size-xs);
-		color: var(--muted);
+		color: var(--readable-muted);
 		min-width: 5.5rem;
 	}
 
@@ -433,7 +433,7 @@
 		margin: 0;
 	}
 	.preview .muted {
-		color: var(--muted);
+		color: var(--readable-muted);
 	}
 	.row {
 		display: flex;

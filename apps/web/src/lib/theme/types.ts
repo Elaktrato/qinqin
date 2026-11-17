@@ -47,6 +47,8 @@ export interface Derived {
 	readingAccent: string;
 	/** Error text: `bad` when it is at least 4.5:1 on panel, else `text`. */
 	readableBad: string;
+	/** Secondary text: `muted` when it is at least 4.5:1 on panel, else `text`. */
+	readableMuted: string;
 	highlightWash: string;
 	wordMarks: { new: Mark; learning: Mark };
 	correctionMarks: { mistake: Mark; suggestion: Mark };

@@ -21,7 +21,8 @@ type Derived struct {
 	SelectedWash    string            `json:"selectedWash"`
 	Mastery         []string          `json:"mastery"` // stage 0 (an outline in hair) .. 4
 	ReadingAccent   string            `json:"readingAccent"`
-	ReadableBad     string            `json:"readableBad"` // error text: bad when it reads on panel, else text
+	ReadableBad     string            `json:"readableBad"`   // error text: bad when it reads on panel, else text
+	ReadableMuted   string            `json:"readableMuted"` // secondary text: muted when it reads on panel, else text
 	HighlightWash   string            `json:"highlightWash"`
 	WordMarks       map[string]Mark   `json:"wordMarks"`       // new, learning (known: none)
 	CorrectionMarks map[string]Mark   `json:"correctionMarks"` // mistake, suggestion
@@ -84,12 +85,17 @@ func Derive(t Theme, accent string) Derived {
 	if Ratio(c.Bad, c.Panel) >= MinText {
 		readableBad = c.Bad
 	}
+	readableMuted := c.Text
+	if Ratio(c.Muted, c.Panel) >= MinText {
+		readableMuted = c.Muted
+	}
 	return Derived{
 		AccentKey: key, Accent: acc, OnAccent: on, Hair: hair, AccentTints: tints,
 		PrimaryWash: tints["14"], SelectedWash: tints["14"],
 		Mastery:       []string{hair, tints["14"], tints["32"], tints["58"], tints["100"]},
 		ReadingAccent: reading,
 		ReadableBad:   readableBad,
+		ReadableMuted: readableMuted,
 		HighlightWash: WithAlpha(c.Warn, 24),
 		WordMarks: map[string]Mark{
 			"new":      {Color: acc, Style: "solid"},
