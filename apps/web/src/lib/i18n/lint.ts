@@ -236,7 +236,7 @@ function decodeText(s: string): string {
 }
 
 /** Index after the tag starting at `i` (`<`), skipping quoted values and `{…}` expressions. */
-function tagEnd(m: string, i: number): number {
+export function tagEnd(m: string, i: number): number {
 	let j = i + 1;
 	while (j < m.length) {
 		const c = m[j];

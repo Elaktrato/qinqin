@@ -91,7 +91,7 @@ type AndroidCase = {
 };
 
 describe('i18n/android-convert.json', () => {
-	it.each((android.cases as AndroidCase[]).map((c) => [c.name, c] as const))('%s', (_, c) => {
+	it.each((android.cases as unknown as AndroidCase[]).map((c) => [c.name, c] as const))('%s', (_, c) => {
 		expect(convert(c.catalogue, c.en ?? c.catalogue, c.notes ?? {})).toBe(c.output);
 	});
 });
