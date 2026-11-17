@@ -1,0 +1,172 @@
+{
+  "version": 1,
+  "rule": "events/payloads",
+  "constants": {
+    "minBurstSeconds": 30,
+    "idleCutoffMs": 120000,
+    "maxReadSeconds": 7200
+  },
+  "types": [
+    {"type": "session", "write": true, "builder": "sessionPayload"},
+    {"type": "view", "write": true, "builder": "viewPayload"},
+    {"type": "lookup", "write": false},
+    {"type": "read", "write": true, "builder": "readPayload"},
+    {"type": "journal", "write": true, "builder": "journalPayload"}
+  ],
+  "cases": [
+    {
+      "kind": "build", "type": "session", "name": "session carries no payload",
+      "note": "the session event's payload is JSON null",
+      "args": [], "expect": null
+    },
+    {
+      "kind": "build", "type": "view", "name": "view names the entry",
+      "note": "{entryId} with the dictionary entry id (a positive integer)",
+      "args": [12], "expect": {"entryId": 12}
+    },
+    {
+      "kind": "build", "type": "read", "name": "read names the book, then the seconds",
+      "note": "{bookId, seconds} in this member order; seconds are whole seconds >= 30 from the reading timer",
+      "args": [3, 45], "expect": {"bookId": 3, "seconds": 45}
+    },
+    {
+      "kind": "build", "type": "journal", "name": "journal names the journal entry by its ULID string",
+      "note": "{entryId} with the journal entry's ULID, a string (never a number)",
+      "args": ["01KA00000000000000000000J1"], "expect": {"entryId": "01KA00000000000000000000J1"}
+    },
+    {
+      "kind": "emit", "type": "read", "name": "29.9 s flush to nothing and are kept for the next flush",
+      "note": "flush returns whole seconds only from 30 on; below that it returns 0 and keeps the time",
+      "steps": [
+        {"op": "activity", "at": 0},
+        {"op": "activity", "at": 29900},
+        {"op": "flush", "at": 29900, "expect": 0},
+        {"op": "accrued", "expect": 29900},
+        {"op": "activity", "at": 30100},
+        {"op": "flush", "at": 30100, "expect": 30},
+        {"op": "accrued", "expect": 100}
+      ]
+    },
+    {
+      "kind": "emit", "type": "read", "name": "exactly 30 s is one event of 30",
+      "note": "30 whole seconds is the smallest read event",
+      "steps": [
+        {"op": "activity", "at": 0},
+        {"op": "activity", "at": 30000},
+        {"op": "flush", "at": 30000, "expect": 30},
+        {"op": "accrued", "expect": 0}
+      ]
+    },
+    {
+      "kind": "emit", "type": "read", "name": "a 10-minute gap between activity pings counts 120 s",
+      "note": "a gap longer than the idle cut-off counts as the cut-off (120 s)",
+      "steps": [
+        {"op": "activity", "at": 0},
+        {"op": "activity", "at": 600000},
+        {"op": "flush", "at": 600000, "expect": 120}
+      ]
+    },
+    {
+      "kind": "emit", "type": "read", "name": "hidden time does not count",
+      "note": "hiding credits the gap up to the hide, then nothing accrues until visible; activity while hidden is ignored; time counts again from the moment the page is visible",
+      "steps": [
+        {"op": "activity", "at": 0},
+        {"op": "activity", "at": 40000},
+        {"op": "hidden", "at": 50000},
+        {"op": "activity", "at": 500000},
+        {"op": "visible", "at": 1000000},
+        {"op": "activity", "at": 1040000},
+        {"op": "flush", "at": 1040000, "expect": 90}
+      ]
+    },
+    {
+      "kind": "emit", "type": "read", "name": "the fraction of a second is kept for the next flush",
+      "note": "flush takes whole seconds; the remaining milliseconds stay accrued",
+      "steps": [
+        {"op": "activity", "at": 0},
+        {"op": "activity", "at": 45500},
+        {"op": "flush", "at": 45500, "expect": 45},
+        {"op": "accrued", "expect": 500},
+        {"op": "activity", "at": 75000},
+        {"op": "flush", "at": 75000, "expect": 30}
+      ]
+    },
+    {
+      "kind": "emit", "type": "read", "name": "a clock that goes backwards adds nothing",
+      "note": "only a later ping credits time",
+      "steps": [
+        {"op": "activity", "at": 60000},
+        {"op": "activity", "at": 0},
+        {"op": "activity", "at": 30000},
+        {"op": "flush", "at": 30000, "expect": 30}
+      ]
+    },
+    {
+      "kind": "emit", "type": "journal", "name": "unchanged text never emits",
+      "note": "a save that did not change the text records nothing and does not use up the day",
+      "history": [],
+      "steps": [
+        {"entryId": "A", "textChanged": false, "now": "2026-11-13T10:00:00Z", "expect": false},
+        {"entryId": "A", "textChanged": true, "now": "2026-11-13T10:00:00Z", "expect": true}
+      ]
+    },
+    {
+      "kind": "emit", "type": "journal", "name": "once per entry per learner day",
+      "note": "the second change of the same entry on the same learner day emits nothing; another entry emits",
+      "history": [],
+      "steps": [
+        {"entryId": "A", "textChanged": true, "now": "2026-11-13T10:00:00Z", "expect": true},
+        {"entryId": "A", "textChanged": true, "now": "2026-11-13T23:59:00Z", "expect": false},
+        {"entryId": "B", "textChanged": true, "now": "2026-11-13T23:59:00Z", "expect": true},
+        {"entryId": "A", "textChanged": true, "now": "2026-11-14T00:01:00Z", "expect": true}
+      ]
+    },
+    {
+      "kind": "emit", "type": "journal", "name": "the learner day follows the zone history",
+      "note": "after a change to Asia/Tokyo the day turns at 15:00Z: 14:00Z and 15:05Z are two learner days, 20:00Z the same as 15:05Z",
+      "history": [{"zone": "UTC", "from": null}, {"zone": "Asia/Tokyo", "from": "2026-11-13T12:00:00Z"}],
+      "steps": [
+        {"entryId": "A", "textChanged": true, "now": "2026-11-13T10:00:00Z", "expect": true},
+        {"entryId": "A", "textChanged": true, "now": "2026-11-13T14:00:00Z", "expect": false},
+        {"entryId": "A", "textChanged": true, "now": "2026-11-13T15:05:00Z", "expect": true},
+        {"entryId": "A", "textChanged": true, "now": "2026-11-13T20:00:00Z", "expect": false}
+      ]
+    },
+    {
+      "kind": "consume", "type": "read", "name": "read payloads: seconds and points per event",
+      "note": "0 unless seconds is a finite number >= 30; seconds counted min(seconds, 7200); points min(ceil(seconds / 300), 24)",
+      "payloads": [
+        {"payload": {"bookId": 1, "seconds": 29}, "seconds": 0, "points": 0},
+        {"payload": {"bookId": 1, "seconds": 30}, "seconds": 30, "points": 1},
+        {"payload": {"bookId": 1, "seconds": 300}, "seconds": 300, "points": 1},
+        {"payload": {"bookId": 1, "seconds": 301}, "seconds": 301, "points": 2},
+        {"payload": {"bookId": 1, "seconds": 7200}, "seconds": 7200, "points": 24},
+        {"payload": {"bookId": 1, "seconds": 7201}, "seconds": 7200, "points": 24},
+        {"payload": {"bookId": 1, "seconds": 30.5}, "seconds": 30.5, "points": 1},
+        {"payload": {"bookId": 1, "seconds": "600"}, "seconds": 0, "points": 0},
+        {"payload": {"bookId": 1}, "seconds": 0, "points": 0},
+        {"payload": {"seconds": 600}, "seconds": 600, "points": 2},
+        {"payload": null, "seconds": 0, "points": 0}
+      ]
+    },
+    {
+      "kind": "consume", "type": "read", "name": "reading totals: a read without bookId counts under the unknown book",
+      "note": "a restore removes bookId when the book is unknown; the time still counts, per book under null, listed after the known books on a tie",
+      "history": [],
+      "now": "2026-11-14T12:00:00Z",
+      "events": [
+        {"ts": "2026-11-14T08:00:00Z", "type": "read", "payload": {"bookId": 3, "seconds": 600}},
+        {"ts": "2026-11-13T08:00:00Z", "type": "read", "payload": {"seconds": 600}},
+        {"ts": "2026-11-01T08:00:00Z", "type": "read", "payload": {"bookId": 0, "seconds": 120}},
+        {"ts": "2026-11-14T09:00:00Z", "type": "read", "payload": {"bookId": 3, "seconds": 20}},
+        {"ts": "2026-11-14T09:00:00Z", "type": "journal", "payload": {"entryId": "A"}}
+      ],
+      "expect": {
+        "totalSeconds": 1320,
+        "last7Seconds": 1200,
+        "last30Seconds": 1320,
+        "books": [{"bookId": null, "seconds": 720}, {"bookId": 3, "seconds": 600}]
+      }
+    }
+  ]
+}

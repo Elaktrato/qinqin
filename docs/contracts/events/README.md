@@ -17,6 +17,11 @@ Fixtures:
   (every step and the stored list), `apps/web/src/lib/study/scheduler.test.ts` (the order case) and
   `apps/web/src/lib/sync/pullPage.contract.test.ts` (the pull case). `$ws` is a workspace of the caller,
   `$bobWs` one of another user.
+- `payloads.json` — the payload of each written type (`build`), when the web emits `read` and `journal`
+  events (`emit`) and how a consumer counts a `read` payload (`consume`). Decoded by
+  `apps/web/src/lib/eventPayloads.test.ts` (the builders of `lib/eventPayloads.ts`, member order included),
+  `features/reader/readingTimer.test.ts`, `plugins/journal/entryDraft.test.ts`, `stats/readingTime.test.ts`.
+  The restore remap of `view` and `read` payloads is pinned in `backup/remap.json`.
 
 ## Envelope
 
@@ -98,3 +103,38 @@ alter every stored log and the pull's string comparison — cost: none.
 The manifests are `server/internal/plugins/builtin/*.json`; other plugins may declare more types. The server
 stores any type; the web plugin SDK refuses to record a type the recording plugin's manifest does not declare.
 A client records only types declared by enabled plugins.
+
+## Payloads and emit rules
+
+| Type | Shape (written) | Emit rule | Consumers must |
+| --- | --- | --- | --- |
+| `session` | `null` | at most once per workspace per learner day (per device), when that workspace becomes the current one in the app shell (`routes/+layout.svelte`; a `localStorage` receipt `qinqin.session.<ws>.<day>` is written before the POST) | ignore it (nothing derives from it) |
+| `view` | `{entryId: int > 0}` | once per entry page visit (current workspace) | ignore it except backup remap |
+| `lookup` | (legacy `{query: string}`) | **never** (#72: the history is the `lookups` row) | ignore it; never ship or cache it |
+| `read` | `{bookId: int > 0, seconds: int ≥ 30}` | one event per flush of the reading timer when it holds ≥ 30 whole seconds (time accrues between activity pings while visible; a gap over 120 s counts 120 s; flushed every 5 minutes of accrued time, on page hide, `pagehide` and leaving the book; under 30 s is kept for the next flush of the same book and workspace and dropped on a book or workspace switch), in the **book's** workspace | count `readSeconds(payload)`: 0 unless `seconds` is a finite number ≥ 30, else `min(seconds, 7200)`; points `min(ceil(seconds/300), 24)`; `bookId` may be **absent** (restore of an unknown book) — the time still counts, book unknown |
+| `journal` | `{entryId: string}` (the journal entry's ULID) | when a save changed the text, at most once per entry per learner day | count distinct `entryId` **strings** per learner day; a non-string `entryId` never counts |
+
+Member order is part of the shape (`{bookId, seconds}`, not `{seconds, bookId}`): the server stores the JSON text
+as sent, so two clients writing the same event write the same bytes. The reading timer
+(`features/reader/readingTimer.ts`: `MIN_BURST_SECONDS` 30, `IDLE_CUTOFF_MS` 120 000) is pinned by the `emit`
+cases; the 5-minute flush and the 1-second activity throttle are constants of
+`features/reader/BookView.svelte` (`FLUSH_EVERY_MS`, `ACTIVITY_THROTTLE_MS`), not of the fixture: they decide
+how reading time is split into events, never how much is counted.
+
+Ruling: Android **may** omit `session` and `view` (telemetry nothing derives from) but, if it writes them, uses
+exactly these shapes — the backup remap reads `view.entryId`, and an incompatible shape would be silently kept
+unremapped — cost: none for the learner.
+
+Ruling: `read` and `journal` are written exactly as above by every client — the heatmap, the weekly summary,
+goals and item 7 count them — cost if wrong: reading time or journal days differ per device.
+
+Ruling: the web's four call sites use named payload builders in the pure module `lib/eventPayloads.ts`
+(`sessionPayload()`, `viewPayload(entryId)`, `readPayload(bookId, seconds)`, `journalPayload(entryId)`), and
+`payloads.json` is decoded against the builders and against the consumers (`readingPoints`, `readSeconds`,
+`journalEventDue`, and the reading timer's flush) — the payload of `read` was built inline in a Svelte
+component, which no fixture can reach — cost: a four-line refactor; behaviour identical.
+
+Item 7 reconciliation: `read` = `{bookId, seconds}`, `journal` = `{entryId: string}`, verified 2026-11-17 against
+what the web writes and what the server's activity rules read. "`reading-hours` sums `readSeconds`" matches the
+clamping and a `read` without `bookId` still counts; "distinct `entryId` of `journal` events" means distinct
+**strings**, matching the server's `distinctBy`.

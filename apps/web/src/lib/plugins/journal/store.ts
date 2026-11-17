@@ -3,6 +3,7 @@
 // through the prefix route, so the journal never pulls every plugin row.
 
 import type { StudyDay } from '../../time/studyDay';
+import { journalPayload } from '../../eventPayloads';
 import { newUlid } from '../../ulid';
 import { createPluginSdk, type DataScope } from '../sdk';
 import { journalManifest } from './manifest';
@@ -129,5 +130,5 @@ export async function saveJournalSettings(workspaceId: number, s: JournalSetting
 
 /** Records the once-per-day `journal` study event for an entry; rejects on failure. */
 export function recordJournalEvent(workspaceId: number, entryId: string, now: Date): Promise<void> {
-	return sdk.events.record('journal', workspaceId, { entryId }, now);
+	return sdk.events.record('journal', workspaceId, journalPayload(entryId), now);
 }

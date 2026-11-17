@@ -351,3 +351,15 @@ of each other in content but share the web gates; one implementer at a time. Tas
 - Ruling: the envelope fixture's first draft listed the two events of case 1 in posting order; the server lists
   them by `ts` (`10:00:00.789+01:00` is `09:00:00Z`, before `09:59:59Z`) — a fixture error, corrected; the
   server is right — cost: none.
+- Task 2 (payloads): `eventPayloads.test.ts`, `readingTimer.test.ts`, `entryDraft.test.ts`,
+  `readingTime.test.ts` with `payloads.json` absent → 4 files FAIL (import); with the fixture and before
+  `eventPayloads.ts` existed → `eventPayloads.test.ts` FAIL (module missing), the 3 consumer files PASS (the
+  fixture values were taken from the running consumers); builders added → PASS. Mutations: `readPayload` returning
+  `{seconds, bookId}` → FAIL (member order); one `points` 2 → 1 → FAIL. Gates: `npm run check` 0; `npm test` 0
+  (398 files, 6503 passed, 1 skipped); `npm run build` 0. `backup/remap.json` already has `read` (bookId remapped
+  or removed) and `view` (entryId remapped or removed) cases: left unchanged.
+- Ruling: the 5-minute flush (`FLUSH_EVERY_MS`) and the 1-second activity throttle (`ACTIVITY_THROTTLE_MS`) stay
+  constants of `BookView.svelte` and are stated in `events/README.md`, not pinned by a fixture — the plan allows
+  production edits only for the builders and their call sites, and the two constants decide how reading time is
+  split into events, never how much counts — cost: Android could flush at another cadence (same totals, other
+  event counts).

@@ -1,4 +1,5 @@
-import { studyDay } from '../time/studyDay';
+import { studyDay, type ZoneChange } from '../time/studyDay';
+import payloadsFixture from '../../../../../docs/contracts/events/payloads.json';
 import { describe, expect, it } from 'vitest';
 
 import {
@@ -175,4 +176,34 @@ describe('formatDuration', () => {
 		expect(formatDuration(-5)).toBe('0 min');
 		expect(formatDuration(Number.NaN)).toBe('0 min');
 	});
+});
+
+describe('docs/contracts/events/payloads.json: how read payloads count', () => {
+	interface ConsumeCase {
+		kind: string;
+		type: string;
+		name: string;
+		payloads?: { payload: unknown; seconds: number; points: number }[];
+		history?: ZoneChange[];
+		now?: string;
+		events?: { ts: string; type: string; payload: unknown }[];
+		expect?: unknown;
+	}
+	const fixture = payloadsFixture as unknown as { constants: { maxReadSeconds: number }; cases: ConsumeCase[] };
+	const cases = fixture.cases.filter((x) => x.kind === 'consume' && x.type === 'read');
+	it('uses the cap of the fixture', () => {
+		expect(MAX_READ_SECONDS).toBe(fixture.constants.maxReadSeconds);
+		expect(cases.length).toBeGreaterThan(1);
+	});
+	for (const c of cases) {
+		it(c.name, () => {
+			for (const p of c.payloads ?? []) {
+				expect(readSeconds(p.payload), JSON.stringify(p.payload)).toBe(p.seconds);
+				expect(readingPoints(p.payload), JSON.stringify(p.payload)).toBe(p.points);
+			}
+			if (c.events) {
+				expect(readingTotals(c.events, new Date(c.now!), studyDay(c.history!))).toEqual(c.expect);
+			}
+		});
+	}
 });
