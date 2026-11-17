@@ -2045,6 +2045,20 @@ describe("typed study collections", () => {
     }
   });
 
+  it("a row stored only as a tombstone gets no second tombstone (deleteParamSet, deleteDeck)", async () => {
+    const gone = meta({ deletedAt: "2026-02-02T00:00:00Z" });
+    serve({
+      decks: [{ id: "d1", name: "Old", createdAt: "2026-01-01T00:00:00Z", source: null, extra: {}, ...gone }],
+      deckSettings: [{ deckId: "d1", cardTypes: [], newOrder: null, extra: {}, ...gone }],
+      limits: [{ deckId: "d1", new: { limit: 1 }, reviews: null, extra: {}, ...gone }],
+      fsrsSets: [{ ...set("S9"), ...gone }],
+    });
+    await deleteParamSet(WORKSPACE_ID, "S9");
+    await deleteDeck("d1");
+    expect(writes()).toEqual([]);
+    expect(pushBodies()).toEqual([]);
+  });
+
   it("an unchanged row is not written (the server would skip it as equal content)", async () => {
     serve({
       deckSettings: [{ deckId: "d1", cardTypes: ["cloze"], newOrder: { by: "frequency" }, extra: {}, ...meta() }],
