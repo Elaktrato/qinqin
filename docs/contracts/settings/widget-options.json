@@ -1,0 +1,137 @@
+{
+ "version": 1,
+ "rule": "settings/widget-options",
+ "pluginId": "qinqin-core",
+ "key": "widget-options",
+ "scope": "user-global",
+ "defaults": {
+  "activity-heatmap": {
+   "layout": "garden"
+  }
+ },
+ "layouts": [
+  "garden",
+  "month",
+  "week"
+ ],
+ "row": {
+  "version": 1,
+  "activity-heatmap": {
+   "layout": "month"
+  }
+ },
+ "parse": [
+  {
+   "name": "garden",
+   "value": { "version": 1, "activity-heatmap": { "layout": "garden" } },
+   "expect": "garden"
+  },
+  {
+   "name": "month",
+   "value": { "version": 1, "activity-heatmap": { "layout": "month" } },
+   "expect": "month"
+  },
+  {
+   "name": "week",
+   "value": { "version": 1, "activity-heatmap": { "layout": "week" } },
+   "expect": "week"
+  },
+  {
+   "name": "no row",
+   "note": "a never-saved row reads as the default",
+   "value": null,
+   "expect": "garden"
+  },
+  {
+   "name": "not an object",
+   "value": "week",
+   "expect": "garden"
+  },
+  {
+   "name": "an array",
+   "value": [{ "version": 1, "activity-heatmap": { "layout": "week" } }],
+   "expect": "garden"
+  },
+  {
+   "name": "version missing",
+   "value": { "activity-heatmap": { "layout": "week" } },
+   "expect": "garden"
+  },
+  {
+   "name": "version 0",
+   "value": { "version": 0, "activity-heatmap": { "layout": "week" } },
+   "expect": "garden"
+  },
+  {
+   "name": "version as a string",
+   "value": { "version": "1", "activity-heatmap": { "layout": "week" } },
+   "expect": "garden"
+  },
+  {
+   "name": "a newer version is read leniently",
+   "note": "its layout counts when it is one of the three",
+   "value": { "version": 2, "activity-heatmap": { "layout": "month" } },
+   "expect": "month"
+  },
+  {
+   "name": "an unknown layout",
+   "value": { "version": 1, "activity-heatmap": { "layout": "spiral" } },
+   "expect": "garden"
+  },
+  {
+   "name": "activity-heatmap not an object",
+   "value": { "version": 1, "activity-heatmap": "week" },
+   "expect": "garden"
+  },
+  {
+   "name": "extra keys are ignored for reading",
+   "value": { "version": 1, "daily-goal": { "x": 1 }, "activity-heatmap": { "layout": "week", "size": "l" } },
+   "expect": "week"
+  }
+ ],
+ "write": [
+  {
+   "name": "no row",
+   "stored": null,
+   "layout": "week",
+   "expect": { "version": 1, "activity-heatmap": { "layout": "week" } }
+  },
+  {
+   "name": "an unknown top-level key is kept",
+   "stored": { "version": 1, "daily-goal": { "x": 1 }, "activity-heatmap": { "layout": "garden" } },
+   "layout": "month",
+   "expect": { "version": 1, "daily-goal": { "x": 1 }, "activity-heatmap": { "layout": "month" } }
+  },
+  {
+   "name": "an unknown inner key is kept",
+   "stored": { "version": 1, "activity-heatmap": { "layout": "garden", "size": "l" } },
+   "layout": "week",
+   "expect": { "version": 1, "activity-heatmap": { "layout": "week", "size": "l" } }
+  },
+  {
+   "name": "a newer version is kept",
+   "stored": { "version": 2, "future": true, "activity-heatmap": { "layout": "garden" } },
+   "layout": "month",
+   "expect": { "version": 2, "future": true, "activity-heatmap": { "layout": "month" } }
+  },
+  {
+   "name": "a malformed row is replaced",
+   "note": "not an object: a fresh version 1 row",
+   "stored": [1, 2],
+   "layout": "garden",
+   "expect": { "version": 1, "activity-heatmap": { "layout": "garden" } }
+  },
+  {
+   "name": "a missing or bad version becomes 1",
+   "stored": { "version": "1", "daily-goal": { "x": 1 } },
+   "layout": "week",
+   "expect": { "version": 1, "daily-goal": { "x": 1 }, "activity-heatmap": { "layout": "week" } }
+  },
+  {
+   "name": "activity-heatmap not an object is replaced",
+   "stored": { "version": 1, "daily-goal": { "x": 1 }, "activity-heatmap": "week" },
+   "layout": "month",
+   "expect": { "version": 1, "daily-goal": { "x": 1 }, "activity-heatmap": { "layout": "month" } }
+  }
+ ]
+}
