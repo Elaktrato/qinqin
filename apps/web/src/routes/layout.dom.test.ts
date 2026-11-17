@@ -220,6 +220,28 @@ describe('layout theme store', () => {
 		);
 	});
 
+	it('reads the installed font faces once signed in, never signed out', async () => {
+		const out = mountAt('/sources', null);
+		await out.findByText('page body');
+		await waitFor(() => expect(calls()).toContain('/api/themes'));
+		expect(calls()).not.toContain('/api/fonts');
+		cleanup();
+		vi.clearAllMocks();
+		const view = mountAt('/search', 'tok');
+		await view.findByText('page body');
+		await waitFor(() => expect(calls().filter((u) => u === '/api/fonts')).toHaveLength(1));
+	});
+
+	it('sets the app-wide hanzi font stacks on the root (default Sans, system fonts without a pack)', async () => {
+		document.documentElement.removeAttribute('style');
+		const view = mountAt('/search', 'tok');
+		await view.findByText('page body');
+		const root = document.documentElement.style;
+		await waitFor(() => expect(root.getPropertyValue('--font-hanzi-hans')).toContain('"PingFang SC"'));
+		expect(root.getPropertyValue('--font-hanzi-hant')).toContain('"PingFang TC"');
+		expect(root.getPropertyValue('--font-hanzi-jpan')).toContain('"Hiragino Sans"');
+	});
+
 	it('puts the quick theme switch in the account area when signed in, not signed out', async () => {
 		const out = mountAt('/sources', null);
 		await out.findByText('page body');

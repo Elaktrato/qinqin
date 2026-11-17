@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ListedTheme } from '$lib/api/themes';
 import { FALLBACK_THEMES } from '$lib/theme/fallback';
 import { createThemeStore, type ThemeStore, type ThemeStoreDeps } from '$lib/theme/store.svelte';
+import { installedFaces, type InstalledFaces } from '$lib/fonts/hanzi';
 import AppearanceSettings from './AppearanceSettings.svelte';
 
 const latte: ListedTheme = { ...FALLBACK_THEMES[0], family: 'Catppuccin', packId: 'catppuccin', builtin: true };
@@ -23,7 +24,11 @@ const panel = () => root.style.getPropertyValue('--panel');
 let deps: ThemeStoreDeps;
 let store: ThemeStore;
 
-async function setup(row: unknown = null, saveRow: ThemeStoreDeps['saveRow'] = async () => {}): Promise<void> {
+async function setup(
+	row: unknown = null,
+	saveRow: ThemeStoreDeps['saveRow'] = async () => {},
+	installed: InstalledFaces = installedFaces([])
+): Promise<void> {
 	deps = {
 		fetchThemes: vi.fn(async () => ({ themes: [latte, mocha, nord], packs: [] })),
 		loadRow: vi.fn(async () => row),
@@ -35,7 +40,7 @@ async function setup(row: unknown = null, saveRow: ThemeStoreDeps['saveRow'] = a
 	store = createThemeStore(deps);
 	await store.start();
 	await store.setUser(1);
-	render(AppearanceSettings, { store });
+	render(AppearanceSettings, { store, installed });
 }
 
 beforeEach(() => root.removeAttribute('style'));
@@ -58,9 +63,35 @@ describe('Settings → Appearance', () => {
 		expect((within(corners).getByRole('radio', { name: 'Round' }) as HTMLInputElement).checked).toBe(true);
 		expect(screen.getByRole('group', { name: 'Spacing' })).toBeTruthy();
 		const hanzi = screen.getByRole('group', { name: 'Hanzi and kanji font' });
-		// Saved now, applied later (#97 web tasks): the group says so and is described by it.
-		const pending = within(hanzi).getByText('Saved with your appearance; hanzi and kanji text follows it from a coming update.');
-		expect(hanzi.getAttribute('aria-describedby')).toBe(pending.id);
+		// Applied now (#97): no "from a coming update" hint any more.
+		expect(within(hanzi).queryByText(/coming update/)).toBeNull();
+	});
+
+	it('the preview shows hanzi and kanji in each script, tagged with its study lang', async () => {
+		await setup();
+		const preview = screen.getByRole('region', { name: 'Preview' });
+		const samples = [...preview.querySelectorAll('.hanzi [lang]')].map((e) => [e.getAttribute('lang'), e.textContent]);
+		expect(samples).toEqual([
+			['zh-Hans', '汉字'],
+			['zh-Hant', '漢字'],
+			['ja', 'かな漢字']
+		]);
+	});
+
+	it('says when the chosen face has no font pack, describing the group by it', async () => {
+		await setup();
+		const hanzi = screen.getByRole('group', { name: 'Hanzi and kanji font' });
+		const hint = within(hanzi).getByText("Uses your device's fonts; an administrator can install a font pack.");
+		expect(hanzi.getAttribute('aria-describedby')).toBe(hint.id);
+	});
+
+	it('names no hint when a pack provides the chosen face', async () => {
+		await setup(null, async () => {}, installedFaces([{ face: 'sans', script: 'Jpan' }]));
+		const hanzi = screen.getByRole('group', { name: 'Hanzi and kanji font' });
+		expect(within(hanzi).queryByText(/font pack/)).toBeNull();
+		expect(hanzi.hasAttribute('aria-describedby')).toBe(false);
+		await fireEvent.click(within(hanzi).getByRole('radio', { name: 'Kai' }));
+		expect(within(hanzi).getByText(/font pack/)).toBeTruthy();
 	});
 
 	it('offers only accents at 3:1 on panel, each named with a tooltip', async () => {

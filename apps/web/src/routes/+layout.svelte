@@ -37,6 +37,8 @@
 	import { watchDeletedWorkspaces } from '$lib/workspaceGone';
 	import { themeStore } from '$lib/theme/store.svelte';
 	import ThemeSwitch from '$lib/theme/ThemeSwitch.svelte';
+	import { packFaces } from '$lib/fonts/packFaces.svelte';
+	import { applyHanziVars, hanziVars } from '$lib/fonts/hanziVars';
 	import {
 		load as loadWorkspaces,
 		workspaces,
@@ -44,6 +46,7 @@
 		workspacesLoaded
 	} from '$lib/workspaces';
 	import '../app.css';
+	import '$lib/fonts/hanzi.css';
 
 	let { children } = $props();
 
@@ -189,6 +192,18 @@
 		if (id === themeUser) return;
 		themeUser = id;
 		void themeStore.setUser(id);
+		// The installed font pack faces (#97): the list needs a session.
+		if (id === null) packFaces.clear();
+		else void packFaces.load();
+	});
+
+	// The app-wide hanzi font (#97): the saved choice (or the Appearance
+	// preview) sets one stack per script on :root, an installed pack face
+	// first; only that face's slices are registered.
+	const hanziFont = $derived((themeStore.preview ?? themeStore.appearance).hanziFont);
+	$effect(() => {
+		applyHanziVars(hanziVars(hanziFont, packFaces.installed), document.documentElement);
+		packFaces.need('app', [hanziFont]);
 	});
 
 	// The learner's time zone history (and, once per account, the browser

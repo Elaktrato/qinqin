@@ -3,6 +3,7 @@
 	import { planParagraph, type PlanSeg } from './chapterPlan';
 	import { DEFAULT_DISPLAY, type ReaderDisplay } from './displaySettings';
 	import { fontStack } from './fonts';
+	import { packFaces } from '$lib/fonts/packFaces.svelte';
 	import type { Highlight } from './highlights';
 	import type { Run } from './paragraphText';
 	import { createReveal, type Reveal } from './reveal';
@@ -69,7 +70,12 @@
 		return at;
 	}
 
-	const stack = $derived(fontStack(display.font, lang.split('-')[0]));
+	const stack = $derived(fontStack(display.font, lang, packFaces.installed));
+	// A concrete reader font needs its pack face registered (#97); default is the app's.
+	$effect(() => {
+		packFaces.need('reader', display.font === 'default' ? [] : [display.font]);
+		return () => packFaces.need('reader', []);
+	});
 
 	// A click on a highlight edits it; a click that ended a selection (a
 	// drag, a double click) is the selection lookup's, not ours.

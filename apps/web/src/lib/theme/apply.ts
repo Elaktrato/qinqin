@@ -43,7 +43,7 @@ export function slotTokens(theme: Theme, accent: string | null): SlotTokens {
 	return { scheme: theme.scheme, vars: { ...cssVariables(theme, derive(theme, accent)) } };
 }
 
-/** adjustmentVars: corners and spacing as properties (the hanzi font is stored only; #97 maps it). */
+/** adjustmentVars: corners and spacing as properties (the hanzi font: lib/fonts/hanziVars.ts, set by the root layout). */
 export function adjustmentVars(a: Appearance): AdjustmentVars {
 	return {
 		'--radius': `${ADJUSTMENTS.corners[a.corners]}px`,

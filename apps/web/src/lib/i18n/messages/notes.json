@@ -49,6 +49,7 @@
 	"reader.book.chapter": "Before a chapter-number select, followed by reader.book.of (\"Chapter [3] of 12\").",
 	"reader.bookmarks.addedOn": "Screen-reader text before a bookmark's date; starts with a comma.",
 	"reader.chapterTitled": "{number} is reader.chapter (\"Chapter 3\"), {title} the chapter's own title.",
+	"reader.display.fontApp": "Reader font option that follows the app-wide hanzi font of Settings → Appearance; {font} is its current name (settings.appearance.hanziFont.sans, .serif or .kai).",
 	"reader.editor.noteKept": "{failure} is a full sentence saying why the highlight was not saved.",
 	"reader.error.mismatch": "{book} and {workspace} are language names (\"Japanese\", \"Chinese\").",
 	"reader.highlights.name": "Lower case: used inside other messages (\"Delete highlight 猫…\").",
