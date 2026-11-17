@@ -113,7 +113,19 @@
 	}
 
 	const empty = { from: '', to: '', timeZone: 'UTC', sources: [], cells: [] } satisfies ActivityResponse;
-	const today = $derived(studyDay.today(Date.now()));
+	// The learner's today: state, not derived, so a tab left open overnight moves
+	// on (a minute tick, a zone change and each load set it; #100 review).
+	let today = $state(untrack(() => studyDay.today(Date.now())));
+	/** syncToday moves `today` to the clock's learner day; true when it changed. */
+	function syncToday(): boolean {
+		const now = studyDay.today(Date.now());
+		if (now === today) return false;
+		// The month calendar on the current month follows into the new month.
+		if (month === monthOf(today)) month = monthOf(now);
+		today = now;
+		return true;
+	}
+	const TICK_MS = 60_000;
 	// Nothing is folded before the first response sets the window.
 	const loaded = $derived(response !== null && range.from !== '');
 	const marks = $derived(
@@ -224,6 +236,7 @@
 
 	/** load requests the layout's window; without `force` an already loaded window is kept. */
 	async function load(force = true): Promise<void> {
+		syncToday();
 		const now = new Date();
 		const next = wanted(now);
 		if (!force && response !== null && next.from === range.from && next.to === range.to) return;
@@ -292,7 +305,12 @@
 			studyDay = next;
 			void load();
 		});
+		// The learner day turns at midnight in their zone: re-request the window then.
+		const tick = setInterval(() => {
+			if (syncToday()) void load();
+		}, TICK_MS);
 		return () => {
+			clearInterval(tick);
 			offEvents();
 			offZone();
 		};
