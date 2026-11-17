@@ -245,7 +245,4 @@
 		padding-inline-start: var(--space-2);
 		border-inline-start: 3px solid var(--bad);
 	}
-
-	/* #c62828 is about 3.3:1 on the dark Canvas (#121212); this red is
-	   8.2:1 there (7.3:1 on #1e1e1e). */
 </style>

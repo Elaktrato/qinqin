@@ -36,8 +36,8 @@
 </ol>
 
 <style>
-	/* Active: #0b6bcb fill with white text (5.3:1), #6cb4ff on dark with
-	   #121212 text (about 8.6:1). Borders are currentColor at 60 % or more
+	/* Active: an --accent fill with --on-accent text (at least 4.5:1 for every
+	   built-in theme's default accent). Borders are currentColor at 60 % or more
 	   (at least 3:1 against the card in both themes); vacation is dashed,
 	   upcoming dotted, a skipped day has no border. No animation. */
 	.strip {

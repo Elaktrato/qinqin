@@ -1,7 +1,6 @@
 {
 	"colour": [
 		"app.css",
-		"lib/features/flashcards/FlashcardsWidget.svelte",
 		"lib/features/flashcards/cards/ClozeCard.svelte",
 		"lib/features/flashcards/cards/ReverseCard.svelte",
 		"lib/features/flashcards/cards/SentenceCard.svelte",
@@ -39,11 +38,6 @@
 		"lib/plugins/journal/JournalPage.svelte",
 		"lib/plugins/journal/PhotoImport.svelte",
 		"lib/plugins/journal/ReviewText.svelte",
-		"lib/widgets/CharacterMapSummary.svelte",
-		"lib/widgets/DailyGoalWidget.svelte",
-		"lib/widgets/ReadingTimeWidget.svelte",
-		"lib/widgets/WeeklySummaryWidget.svelte",
-		"lib/widgets/WordStatesWidget.svelte",
 		"routes/+layout.svelte",
 		"routes/+page.svelte",
 		"routes/entry/[id]/+page.svelte",
@@ -58,7 +52,6 @@
 		"routes/study/session/+page.svelte"
 	],
 	"opacity": [
-		"lib/features/flashcards/FlashcardsWidget.svelte",
 		"lib/features/flashcards/cards/ClozeCard.svelte",
 		"lib/features/flashcards/cards/ReverseCard.svelte",
 		"lib/features/flashcards/cards/SentenceCard.svelte",
@@ -99,11 +92,6 @@
 		"lib/plugins/journal/JournalPage.svelte",
 		"lib/plugins/journal/OverallReview.svelte",
 		"lib/plugins/journal/ReviewText.svelte",
-		"lib/widgets/CharacterMapSummary.svelte",
-		"lib/widgets/DailyGoalWidget.svelte",
-		"lib/widgets/ReadingTimeWidget.svelte",
-		"lib/widgets/WidgetCard.svelte",
-		"lib/widgets/WordStatesWidget.svelte",
 		"routes/+layout.svelte",
 		"routes/+page.svelte",
 		"routes/entry/[id]/+page.svelte",

@@ -86,13 +86,13 @@
 		font-size: 0.8rem;
 		letter-spacing: 0.06em;
 		text-transform: uppercase;
-		opacity: 0.7;
+		color: var(--readable-muted);
 	}
 
 	.hint {
 		margin: 0.9rem 0 0;
 		font-size: 0.9rem;
-		opacity: 0.75;
+		color: var(--readable-muted);
 	}
 
 	.muted {
