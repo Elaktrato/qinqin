@@ -106,8 +106,16 @@ database with a SvelteKit single-page app embedded in the binary.
   is disabled keeps its place in the stored layout and returns when the plugin
   is enabled again; one that does not fit the active workspace's language is
   marked "Not available for <language>" and can still be placed for the others.
-- **Activity heatmap** — a home widget showing 13 weeks of learning activity,
+- **Activity heatmap** — a home widget showing your learning activity,
   adding up flashcard reviews, reading time in the Reader and journal entries.
+  Settings → Home picks its layout for the home page: **Garden grid** (13
+  weeks, the default), **Month calendar** (one month with dates and bigger
+  tiles, paged back up to a year) or **This week** (seven large days with the
+  amount under each; it opens Stats → Week). Stats always shows the garden grid.
+  The choice is stored in the user-global `qinqin-core` row `widget-options`.
+  With a daily goal, each day's flower stage (Nothing yet, Sprout, Bud,
+  Opening, In bloom, Resting) is named in the tile's tooltip and the
+  screen-reader text; the flower drawings come later, tiles are tinted only.
   It shows the active workspace by default; "All workspaces" switches to the
   combined view (tooltips then name each workspace), and a chip per activity
   type hides or shows that type. The choice is remembered per user on every
@@ -1227,8 +1235,8 @@ applies to the workspace, in the order of this table:
 
 A plugin's widgets are shown only while that plugin is enabled.
 
-- **Activity**: one cell per UTC day over the last 13 weeks, coloured by
-  activity points. A flashcard review is one point. Reading in the Reader is one
+- **Activity**: one cell per learner day over the last 13 weeks (on the home
+  page: the layout chosen in Settings → Home), tinted by activity points. A flashcard review is one point. Reading in the Reader is one
   point per started 5 minutes. The reader records a `read` event with the active
   seconds of each reading burst. A burst under 30 s is not recorded, an idle gap
   between inputs counts at most 2 minutes, and a hidden tab does not count.
