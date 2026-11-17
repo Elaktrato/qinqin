@@ -66,6 +66,10 @@ describe('fixed scale tokens', () => {
 		for (const [name, value] of table) expect(root.get(name), name).toBe(value);
 	});
 
+	it('the old --link variable is gone (B4: --reading-accent)', () => {
+		expect(css).not.toMatch(/--link\b/);
+	});
+
 	it('the motion tokens are zero under prefers-reduced-motion', () => {
 		const m = /@media \(prefers-reduced-motion: reduce\) \{\s*:root \{([^}]*)\}/.exec(css);
 		expect(m).not.toBeNull();
