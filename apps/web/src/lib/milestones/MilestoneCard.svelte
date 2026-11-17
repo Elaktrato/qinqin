@@ -12,10 +12,12 @@
 	interface Props {
 		view: MilestonesView | null;
 		ondismiss: () => void;
+		/** The card heading's level: 2 on home, 3 inside the Week tab's section. */
+		headingLevel?: 2 | 3;
 		locale?: string;
 	}
 
-	let { view, ondismiss, locale }: Props = $props();
+	let { view, ondismiss, headingLevel = 2, locale }: Props = $props();
 
 	const headingId = $props.id();
 	const plan = $derived(view?.plan ?? { kind: 'none' as const });
@@ -45,7 +47,7 @@
 		<section class="milestone-card" aria-labelledby={headingId}>
 			<span class="icon" aria-hidden="true">★</span>
 			<div class="body">
-				<h2 id={headingId}>{cardHeading(plan, locale)}</h2>
+				<svelte:element this={`h${headingLevel}`} id={headingId} class="heading">{cardHeading(plan, locale)}</svelte:element>
 				<ul>
 					{#each named as item (item.id)}
 						<li>{line(item.id, item.day)}</li>
@@ -94,7 +96,7 @@
 		min-width: 0;
 	}
 
-	h2 {
+	.heading {
 		margin: 0;
 		font-size: 1.05rem;
 	}

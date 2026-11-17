@@ -241,7 +241,9 @@ describe('Stats week page', () => {
 			vi.mocked(loadWeekCharacters).mockResolvedValue({ value: 3, previous: 1, universe } as never);
 			vi.mocked(loadMilestones).mockResolvedValue(someMilestones());
 			render(Page);
-			await waitFor(() => expect(screen.getByRole('heading', { level: 2, name: 'Milestone reached' })).toBeTruthy());
+			await waitFor(() => expect(screen.getByRole('heading', { level: 3, name: 'Milestone reached' })).toBeTruthy());
+			// Inside the week's section (h2), below its heading; the history keeps its own h2.
+			expect(screen.getByRole('heading', { level: 3, name: 'Milestone reached' }).closest('section.week')).not.toBeNull();
 			expect(loadMilestones).toHaveBeenCalledWith(1, {
 				scope: 'week',
 				language: 'zh',

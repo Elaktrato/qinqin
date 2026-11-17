@@ -175,7 +175,7 @@
 	</nav>
 
 	<!-- Always rendered: the status region must exist before the card's text arrives. -->
-	<MilestoneCard view={view === null ? null : milestones} ondismiss={dismissMilestones} />
+	<MilestoneCard view={view === null ? null : milestones} ondismiss={dismissMilestones} headingLevel={3} />
 
 	{#if workspaceId === null}
 		<p class="hint">Choose a workspace in the header to see its week.</p>

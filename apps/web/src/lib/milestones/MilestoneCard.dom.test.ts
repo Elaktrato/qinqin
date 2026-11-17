@@ -62,6 +62,13 @@ describe('MilestoneCard', () => {
 		expect(container.querySelector('[role="status"]')?.textContent).toBe('2 milestones reached: 7-day streak, 1,000 reviews');
 	});
 
+	it('the heading level follows the page (h3 inside the Week section)', () => {
+		const items = [r('streak:7', '2026-11-16')];
+		render(MilestoneCard, { view: view({ kind: 'recent', items, ids: ['streak:7'] }), ondismiss: () => {}, headingLevel: 3 });
+		const heading = screen.getByRole('heading', { level: 3, name: 'Milestone reached' });
+		expect(document.querySelector('section')?.getAttribute('aria-labelledby')).toBe(heading.id);
+	});
+
 	it('recent: names each milestone with its date, in a labelled section', () => {
 		const items = [r('streak:7', '2026-11-16'), r('reviews:1000', '2026-11-03')];
 		render(MilestoneCard, { view: view({ kind: 'recent', items, ids: items.map((i) => i.id) }), ondismiss: () => {}, locale: 'en-GB' });
