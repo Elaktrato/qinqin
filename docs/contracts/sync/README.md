@@ -120,7 +120,9 @@ counts `dataAccepted` without a write.
 
 Any pull without `v=2`: `cursor` (RFC 3339, optional) and `collections` exactly as in v0.3.x, one JSON
 object, streamed row by row. It answers `Deprecation: true` and
-`Link: </api/sync/pull?v=2>; rel="successor-version"`.
+`Link: </api/sync/pull?v=2>; rel="successor-version"`. A client that reads nothing for 60 s is cut (the
+write deadline moves forward as rows go out), so a stalled reader does not hold the server's read
+transaction; the truncated JSON makes it retry, as after a network cut.
 
 - Item 4's legacy view applies unchanged (`docs/contracts/study/legacy-view.json`): a pull naming
   `pluginData` and none of the typed collections gets the typed rows as `qinqin-flashcards` rows in

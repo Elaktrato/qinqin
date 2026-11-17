@@ -58,7 +58,9 @@ func (s *server) handleSyncPull(w http.ResponseWriter, r *http.Request) {
 	h.Set("Content-Type", "application/json")
 	h.Set("Deprecation", "true")
 	h.Set("Link", `</api/sync/pull?v=2>; rel="successor-version"`)
-	if err := chinsync.StreamLegacy(r.Context(), w, s.db, u.ID, cursor, only); err != nil && r.Context().Err() == nil {
+	// A stalled client is cut one window after the last row went out.
+	out := newDeadlineWriter(w, http.NewResponseController(w), legacyPullWindow, time.Now)
+	if err := chinsync.StreamLegacy(r.Context(), out, s.db, u.ID, cursor, only); err != nil && r.Context().Err() == nil {
 		// The status and part of the body are out: the JSON stays truncated
 		// and the client retries, as after a network cut.
 		log.Printf("sync pull (legacy) of user %d: %v", u.ID, err)
