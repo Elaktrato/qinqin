@@ -194,6 +194,32 @@ func keysetQuery(cols, table, stamp, extra string) string {
 		ORDER BY %[2]s, rowid LIMIT ?6`, table, stamp, extra, cols)
 }
 
+// query is the segment's keyset scan for a round from since ("" = none:
+// live rows only) under the workspace filter.
+func (s segment) query(since string, workspace int64) string {
+	extra := ""
+	if s.extra != nil {
+		extra = s.extra(workspace)
+	}
+	if s.tomb && since == "" {
+		extra += " AND deleted_at IS NULL"
+	}
+	return keysetQuery(s.cols, s.table, s.stamp, extra)
+}
+
+// args binds query: ?1..?6 always, ?7 (workspace) and ?8 (languages as a
+// JSON array) when the narrowing uses them.
+func (s segment) args(query string, user int64, since, until string, from position, n int, workspace int64, languages []string) []any {
+	args := []any{user, since, until, from.Stamp, from.RowID, n}
+	if strings.Contains(query, "?8") {
+		langs, _ := json.Marshal(languages)
+		args = append(args, workspace, string(langs))
+	} else if strings.Contains(query, "?7") {
+		args = append(args, workspace)
+	}
+	return args
+}
+
 // pullPage answers one v2 request over set.
 func pullPage(ctx context.Context, sqlDB *sql.DB, userID int64, req PageRequest, set roundSet, cat CatalogueFunc) (Page, error) {
 	now := req.Now
@@ -286,8 +312,6 @@ func walk(ctx context.Context, sqlDB *sql.DB, st pageToken, set roundSet) (Page,
 			page.Restarted = append(page.Restarted, c)
 		}
 	}
-	langs, _ := json.Marshal(st.Languages)
-
 	shipped, size := 0, 0
 	pos := st.Pos
 	more := false
@@ -306,20 +330,8 @@ func walk(ctx context.Context, sqlDB *sql.DB, st pageToken, set roundSet) (Page,
 		if seg != st.Pos.Seg {
 			pos = position{Seg: seg}
 		}
-		extra := ""
-		if s.extra != nil {
-			extra = s.extra(st.Filters.Workspace)
-		}
-		if s.tomb && since == "" {
-			extra += " AND deleted_at IS NULL"
-		}
-		query := keysetQuery(s.cols, s.table, s.stamp, extra)
-		args := []any{st.User, since, st.Until, pos.Stamp, pos.RowID, st.Limit - shipped + 1}
-		if strings.Contains(query, "?8") {
-			args = append(args, st.Filters.Workspace, string(langs))
-		} else if strings.Contains(query, "?7") {
-			args = append(args, st.Filters.Workspace)
-		}
+		query := s.query(since, st.Filters.Workspace)
+		args := s.args(query, st.User, since, st.Until, pos, st.Limit-shipped+1, st.Filters.Workspace, st.Languages)
 		stop, err := func() (bool, error) {
 			rows, err := sqlDB.QueryContext(ctx, query, args...)
 			if err != nil {
