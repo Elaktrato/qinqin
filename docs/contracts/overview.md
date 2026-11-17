@@ -1,9 +1,12 @@
 # Contracts overview (read this first, Android)
 
-Everything a second client (Kotlin) must do the same way as the web app. The folders next to this file
-hold the rules (README) and JSON fixtures; this page says how they fit together and lists every stored
-row convention. Where this page and a fixture disagree, the fixture wins (`docs/contracts/README.md`).
-Derived from the code on `develop`; each owner path below is where the rule is implemented today.
+Everything a second client (Kotlin, #34–#38) must do the same way as the web app and the server. This page
+is the **single entry point**: start here, follow the read order, and build from `docs/contracts/` alone,
+without reading TypeScript or Go. The folders next to this file hold the rules (README) and JSON fixtures;
+this page says how they fit together, lists every stored row convention, what is device-local and what is
+deliberately not specified. Where this page and a fixture disagree, the fixture wins; the code is not the
+source of a rule (`docs/contracts/README.md`). Derived from the code on `develop`; each owner path below is
+where the rule is implemented today.
 
 ## How the folders fit
 
@@ -13,14 +16,22 @@ Derived from the code on `develop`; each owner path below is where the rule is i
 | Shared data | `packages/` (data packages: the catalogue, downloads, the zip and `data.sqlite` of every type, versioning and the client rule) |
 | User data in transit | `sync/` (the paged pull `v=2`, the push answer, the deprecated legacy pull) |
 | Time | `study-day/` (the learner's day, zone history) is the base of everything below |
-| Typed study data | `study/` (cards, decks, deck settings, limits, FSRS sets, the active set: wire shapes, last-write-wins, tombstones, the legacy codec and the legacy view for old web shells), `library/` (reader books, bookmarks, highlights, positions, the deletion log) |
-| Cards and study | `cards/` (ids, kinds, burying), `levels/` (level sessions), `decks/` (deck numbers, system deck ids, add-to-deck), `scheduler/` (vacation, study clock, due, streak, daily limits), `goals/` (daily goal, day status, goal streak), `weekly/` (weekly summary; nothing stored) |
+| Study events | `events/` (the envelope and how the server stores it, the payload of every type and when it is written, review parsing and replay order, heatmap activity scoring) |
+| Typed study data | `study/` (cards, decks, deck settings, limits, FSRS sets, the active set: wire shapes, last-write-wins, tombstones, the legacy codec and the legacy view for old web shells; the duplicate-card merge), `library/` (reader books, bookmarks, highlights, positions, the deletion log) |
+| Cards and study | `cards/` (ids, kinds, burying, cloze, the deck session plan), `levels/` (level sessions), `scheduler/` (the FSRS pin, XP and levels, vacation, study clock, due, streak, daily limits), `decks/` (deck numbers, system deck ids, add-to-deck, character mastery), `frequency/` (frequency order of new cards, starter decks, the known-word predicate, the display form of an entry), `goals/` (daily goal, day status, goal streak), `weekly/` (weekly summary; nothing stored) |
 | Reader | `reader/` (display settings, furigana, smart readings, word states, coverage) |
+| Personal data on entries | `notes/` (notes and the answer-side switch), `lookups/` (lookup history and its switch), `overlays/` (a user's edits of a shared entry) |
 | Lookup | `radicals/` (Kangxi table, `k` in the character universe, components index, radical and part lookup) |
+| Settings | `settings/` (workspace settings keys and their merge; the `qinqin-core` user rows `home-layout` and `activity-view`) |
 | Data safety | `backup/` (archive format v1, id remapping) |
-| Personal data on entries | `notes/` (notes and the answer-side switch) |
 
-Read order: `auth/` -> `study-day/` -> this page's sync model -> `packages/` -> `sync/` -> `study/` -> `cards/` -> `scheduler/` -> `decks/` -> `levels/`.
+## Read order
+
+Every folder, in dependency order (this page's sync model and Events sections after `sync/`):
+
+`auth/` → `study-day/` → `packages/` → `sync/` → `events/` → `study/` → `cards/` → `scheduler/` → `decks/` →
+`levels/` → `frequency/` → `goals/` → `weekly/` → `reader/` → `library/` → `notes/` → `lookups/` →
+`radicals/` → `settings/` → `overlays/` → `backup/` → `pwa/`
 
 ## Sync model
 
@@ -74,14 +85,10 @@ Read order: `auth/` -> `study-day/` -> this page's sync model -> `packages/` -> 
   `deletedAt != null` as absent. Deleting an absent or already deleted row counts as skipped.
 - `workspaceId: null` rows are user-global (apply to every workspace). Examples: `vacation:*`, `lookupcfg` and the `qinqin-core` UI rows.
   Everything else is per workspace; a write needs a current workspace and never falls back to another.
-- Events: study events, idempotent by client-generated ULID `id`. Via the push body or
-  `POST /api/events/batch {events:[...]}` -> `{accepted, duplicates}`; the server forces `userId` to the
-  caller and keeps `ts` verbatim; `workspaceId` must be owned (else 404). `GET /api/events?since=&workspace=`
-  lists them. Event shape: `{id (ULID), workspaceId, device, ts (RFC 3339), type, payload}`, `type` one of
-  `session|view|lookup|review|read|journal` (`apps/web/src/lib/events.ts`). A card's schedule is never
-  stored: it is derived by replaying `review` events (`scheduler/`). Events are append-only, except that
-  the owner can delete their `lookup` events of a workspace (`DELETE /api/events/lookups?workspace=`,
-  `lookups/`); the web app no longer emits them.
+- Events: study events, idempotent by client-generated ULID `id`, append-only. Via the push body or
+  `POST /api/events/batch`; the server forces `userId` to the caller, stores `ts` as **UTC whole seconds**
+  (fraction truncated) and never validates `type` or `payload`. A card's schedule is never stored: it is
+  derived by replaying `review` events (`scheduler/`). Details in the Events section below and `events/`.
 - Typed study rows (v0.4.0, `study/`): cards, decks, deck settings, limits, FSRS parameter sets and the
   active set travel as the six typed collections above, with fixed shapes (`study/rows.json`), an `extra`
   object for members the shape does not carry, the plugin-data last-write-wins and tombstone rules
@@ -100,6 +107,30 @@ Read order: `auth/` -> `study-day/` -> this page's sync model -> `packages/` -> 
   the reader, and the caller's `pluginStates` row of each is that user's switch for the feature
   (`PUT /api/plugins/{id}/state {enabled, order: 0}`). Switching off only hides the feature in the client;
   the server never refuses or hides its data or events. Personal notes (`note:*`, `notecfg`) and the lookup history (`lookups`, `lookupcfg`) are plugin data of the built-in plugin `qinqin-core` (`CORE_PLUGIN_ID`, which also holds user-global UI rows such as the home layout and the activity view).
+
+## Events (`events/`)
+
+- Envelope `{id (ULID), workspaceId, device, ts (RFC 3339), type, payload}`. The server stores `ts` as UTC
+  whole seconds (`10:00:00.789+01:00` → `09:00:00Z`), any `type` and any JSON `payload` (absent = `null`,
+  returned compact); a repeated id is a duplicate, never an error, and the first copy stays. Batch errors are
+  plain-text 400 (`id` not a ULID, `ts` or `workspaceId` missing) and 404 (foreign workspace), and store
+  nothing of the batch. `envelope.json`.
+- Order everything by `(ts, id)`. **Android sends `ts` already truncated to whole seconds (UTC)** so its local
+  copy equals the server copy byte for byte (Ruling in `events/README.md`).
+- Reading events: the paged pull's `events` collection (every type except `lookup`). `GET /api/events` is
+  unpaged (follow-up #110).
+- Types and payloads (`payloads.json`): `session` `null` (once per workspace per learner day; optional for
+  Android), `view` `{entryId}` (once per entry page visit; optional), `lookup` never written (legacy
+  `{query}`), `review` `{cardId, mode, grade, meta?}` (`review-parse.json`: parse, validity, order), `read`
+  `{bookId, seconds}` (one per reading-timer flush of ≥ 30 whole seconds; consumers clamp to 30..7200 and
+  count a `read` without `bookId`), `journal` `{entryId: string}` (once per journal entry per learner day
+  when its text changed). `read` and `journal` are written exactly so by every client.
+- Declared types: `qinqin-core` declares `session`, `view`, `lookup`, `review`, `read`; `qinqin-journal`
+  declares `journal`; other plugins may declare more. A client records only types declared by enabled
+  plugins.
+- Heatmap scoring (`activity.json`): per learner day, workspace and type: `review` counts events; `read`
+  sums `ceil(min(seconds, 7200) / 300)` per event with `seconds` a number ≥ 30 (raw = the seconds); `journal`
+  counts distinct string `entryId`s. Goals and the weekly summary read `raw`.
 
 ## Row-key conventions
 
@@ -131,10 +162,14 @@ fixture or the contract text that fixes the shape.
 | `notecfg` (plugin **`qinqin-core`**) | workspace | `{version:1, onAnswer: bool, ...unknown kept}`; missing, deleted, other version or non-boolean = on | `notes/notes.ts` | `notes/note-rows.json` |
 | `lookups` (plugin **`qinqin-core`**) | workspace | `{version:1, clearedAt: RFC 3339 \| null, items: [{entryId: int, count: int 1..1000000, firstAt, lastAt, sources: {reader?, lesson?, search?: int}, books: int[≤3]}], ...unknown kept}`; one row per workspace, at most 500 items newest first; written only by read-merge-write in one flush (10-minute dedupe); Clear = `PUT` with `items: []` and `clearedAt` (never a `DELETE`); restore remaps item entries and books, merges duplicates, drops a row that is not version 1 | `lookups/lookups.ts`, `lookups/recorder.ts`, `lookups/store.ts`; restore: `server/internal/backup/remap.go` | `lookups/lookup-rows.json`, `lookups/lookup-merge.json`, `lookups/lookup-prompt.json`, `backup/remap.json` |
 | `lookupcfg` (plugin **`qinqin-core`**) | **user-global** (`workspaceId: null`) | `{version:1, record: bool, ...unknown kept}`; missing, deleted, other version or non-boolean = recording on | `lookups/lookups.ts` | `lookups/lookup-rows.json` |
-| `review` event | workspace (events table, not a row) | `payload {cardId, mode: card kind, grade 1..4, meta?: {tier?: 0\|1\|2, mistakes?, hints?, durationMs?}}`; an unknown `mode` reads as `vocab` | `study/types.ts` `ReviewPayload`, `study/reviewParse.ts`, `server/internal/events` | `pwa/outbox-v2.json`, `scheduler/*`, `decks/deck-stats.json` |
-| workspace settings key `reader` | workspace row of `workspaces.settings` (not plugin data) | `{version:1, bookRuby: bool, readings: never\|always\|smart, smartThreshold: 10..100, rubyScale: 0.45\|0.55\|0.65\|0.75, font: default\|sans\|serif\|kai, highlightWords: bool}`; written via `PUT /api/workspaces/{id}` with `settings` merged as RFC 7396; unknown keys kept | `features/reader/displaySettings.ts` | `reader/display-settings.json` |
+| `review` event | workspace (events table, not a row) | `payload {cardId, mode: card kind, grade 1..4, meta?: {tier?: 0\|1\|2, mistakes?, hints?, durationMs?}}`; an unknown `mode` reads as `vocab` | `study/types.ts` `ReviewPayload`, `study/reviewParse.ts`, `server/internal/events` | `events/review-parse.json`, `pwa/outbox-v2.json`, `scheduler/*`, `decks/deck-stats.json` |
+| workspace settings key `reader` | workspace row of `workspaces.settings` (not plugin data) | `{version:1, bookRuby: bool, readings: never\|always\|smart, smartThreshold: 10..100, rubyScale: 0.45\|0.55\|0.65\|0.75, font: default\|sans\|serif\|kai, highlightWords: bool}`; written via `PUT /api/workspaces/{id}` with `settings` merged as RFC 7396 (merged object ≤ 64 KiB); unknown keys kept | `features/reader/displaySettings.ts` | `reader/display-settings.json`, `settings/workspace-settings.json` |
+| workspace settings keys `hiddenDictionaries`, `audioAutoplay`, `audioDeviceVoice` | workspace row of `workspaces.settings` | `hiddenDictionaries`: positive integer dictionary ids (others ignored); `audioAutoplay`: bool, default false; `audioDeviceVoice`: bool, default true; same merge | `dictionaryVisibility.ts`, `audio/settings.ts` | `settings/workspace-settings.json` |
+| `home-layout` (plugin **`qinqin-core`**) | **user-global** | `{version: 1, widgets: [widget id]}`; a newer version is read leniently; unknown ids are kept stored, in place; no row = the default layout | `widgets/layout.ts` | `settings/core-rows.json` |
+| `activity-view` (plugin **`qinqin-core`**) | **user-global** | `{version: 1, scope: "workspace"\|"all", hidden: [activity type]}`; any other version reads as the default | `activity/viewPrefs.ts` | `settings/core-rows.json` |
+| Overlays (entry edits) | per user and entry (`user_edits`, not plugin data); pulled as `overlays` | `{entryId, written: string\|null, readings: [{type, value}]\|null, updatedAt}`; `null` = untouched; server-stamped, last arrival wins | `server/internal/overlay` | `overlays/overlay.json` |
 | Reader library, bookmarks, highlights, book position | written through `/api/library/books/{id}[/bookmarks\|/highlights\|/position]`; pulled as the `books`, `bookmarks`, `highlights` collections of the paged pull (`sync/`), deletions as tombstones from `library_deletions` | see `library/README.md`, `apps/web/src/lib/api/types.ts` (`Bookmark`, `Highlight`) and `server/internal/library` | `features/reader/bookmarks.ts`, `highlights.ts` | `library/rows.json` |
-| `read` events (reading time) | workspace (events) | free `payload`, aggregated by `lib/stats/readingTime.ts` | `features/reader/readingTimer.ts` | no fixture |
+| `read`, `journal`, `session`, `view` events | workspace (events table, not rows) | see the Events section | `lib/eventPayloads.ts` | `events/payloads.json`, `events/activity.json` |
 
 Study-day inputs are not rows: the learner's zone history is `GET/PUT /api/me/time-zone` (`study-day/`).
 
@@ -160,9 +195,14 @@ Study-day inputs are not rows: the learner's zone history is `GET/PUT /api/me/ti
 ## Study rules (links)
 
 - Day: `study-day/` (`dayOf`, `dayStart`, zone history, `GET/PUT /api/me/time-zone`).
+- FSRS: `scheduler/fsrs.json` (ts-fsrs 5.4.2, every parameter, weight validation and migration, the active
+  set, a replay oracle with every intermediate card state). Port ts-fsrs against it.
+- Duplicate cards are merged at read time before anything counts: `study/canonical.json`.
 - Clock, vacation, due, streak, limits: `scheduler/` (vacation shifts the study clock by whole days;
-  limits count by the learner's day). Level sessions: `levels/`. Deck numbers and system deck ids: `decks/`.
-- Reverse and cloze cards, sibling burying: `cards/`.
+  limits count by the learner's day). XP and levels: `scheduler/xp.json`. Level sessions: `levels/`. Deck
+  numbers and system deck ids: `decks/`; character mastery and the map: `decks/char-mastery.json`.
+- Reverse and cloze cards, sibling burying, the deck session plan (order, companions, budget, reserve,
+  eligibility): `cards/` (`deck-session.json`).
 - Daily goal, its amounts (activity cells of the workspace, new cards and capped answer time from the review
   log), day status and goal streak (vacation days neutral): `goals/`.
 - Display form of an entry (the headword lists, cards and the reader show, and the `written` snapshot of
@@ -189,6 +229,18 @@ signed-in user's are flushed, oldest first; a 401 or a restriction 403 stops the
 other permanent 4xx drop the item; 5xx, 408, 429 and network errors keep it; foreign items expire after
 30 days. Offline sessions create no cards.
 
+## Device-local state (not shared)
+
+The web keeps these on the device only (`localStorage`, IndexedDB); they are not synced and not part of any
+contract, so Android is free to keep its own: the session setup of the study page (`qinqin.study.session`,
+card-type memory `qinqin.study.cardTypes`, `qinqin.study.extraTypes`), companions found ineligible
+(`qinqin.study.ineligible`, the `skip` set of `cards/deck-session.json`), recently shown sentences
+(`qinqin.study.sent.v1`), the review outbox (`qinqin.study.pending.v2`, `pwa/`), the `session` event receipt
+(`qinqin.session.<ws>.<day>`), the cached zone history (`qinqin.studyDay.<user>`), reader preferences and rail
+(`qinqin.reader.prefs`, `qinqin.reader.rail`), the highlight colour (`qinqin.reader.highlightColor`), the
+character map grouping (`qinqin.map.groupBy.*`), grammar reading toggles, the journal photo draft, offline
+preparation marks (`qinqin.pwa.*`), the current workspace and the session token.
+
 ## What the Android client must not cache or store
 
 - Download tickets (`/api/account/export/{ticket}`, `/api/admin/backup/{ticket}`, safety export): single-use,
@@ -201,11 +253,22 @@ other permanent 4xx drop the item; 5xx, 408, 429 and network errors keep it; for
 - Package files are verified before use, never partially (`packages/README.md`, "Verification"): a download
   that fails a check is discarded, and a package database is opened read-only and replaced as a whole.
 
-## Gaps (no fixture yet)
+## Not specified (on purpose)
 
-- `read` event payloads (reading time) have no contract fixture (item 6).
-- `GET /api/events?since=&workspace=` is not paged yet (a follow-up); a client reads events through the
-  paged pull's `events` collection instead.
-- Event `payload` shapes of `session`, `view`, `lookup`, `journal` are not specified here. `lookup` events
-  (`{query}` from older web clients) are no longer written by the web app; the lookup history is the
-  `lookups` row.
+Nothing Android needs for #34–#38 that today's code defines is missing above. These are left out deliberately,
+each with its owner:
+
+- **Paging `GET /api/events`** — a route change; read events from the paged pull's `events` collection
+  meanwhile (#110).
+- **Grade suggestions** (writing, tone, reverse, word salad), **tone gestures and the writing engine** — the
+  learner confirms every grade, so a different suggestion never changes stored data; the native engines are
+  #38's own work.
+- **Offline search normalisation** (tone- and romaji-insensitive search) — pinned when #36 decides to search
+  offline (#36).
+- **Journal and grammar plugin rows** (journal entries, reviews, settings, photos; grammar runs) — not in
+  Android's first plugin set; only the `journal` event payload is pinned (`events/`).
+- **The FSRS optimizer** (training, evaluation) — Android reads `fsrsSets`, it does not optimise; its step input
+  is pinned (`scheduler/optimizer-steps.json`).
+- **The plugin manifest format for Kotlin plugins** — belongs to #38's host design (`docs/wiki/Plugin-format.md`
+  describes the web one).
+- **Interface strings and their key scheme** — v0.4.0 prep item 8 (#73).

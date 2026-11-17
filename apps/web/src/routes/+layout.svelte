@@ -184,7 +184,7 @@
 		void syncStudyDayUser($user?.id ?? null);
 	});
 
-	// One session event per workspace per UTC day, recorded for whichever
+	// One session event per workspace per learner day, recorded for whichever
 	// workspace is active once the list is in: the first one at load and any
 	// the user switches to or creates later (receipts keep it once a day).
 	$effect(() => {

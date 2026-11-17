@@ -1,0 +1,1062 @@
+{
+  "version": 1,
+  "rule": "study/canonical",
+  "cases": [
+    {
+      "name": "no duplicates: unchanged",
+      "note": "different keys are different cards; nothing merged",
+      "cards": [
+        {
+          "id": "c-vocab-1",
+          "kind": "vocab",
+          "entryId": 1,
+          "deckIds": [
+            "general"
+          ],
+          "createdAt": "2026-01-01T00:00:00Z"
+        },
+        {
+          "id": "c-writing-1",
+          "kind": "writing",
+          "entryId": 1,
+          "deckIds": [
+            "general"
+          ],
+          "createdAt": "2026-01-01T00:00:00Z"
+        },
+        {
+          "id": "c-vocab-2",
+          "kind": "vocab",
+          "entryId": 2,
+          "deckIds": [
+            "general"
+          ],
+          "createdAt": "2026-01-01T00:00:00Z"
+        }
+      ],
+      "reviews": [
+        {
+          "id": "01KA0000000000000000000001",
+          "workspaceId": 7,
+          "device": "web",
+          "ts": "2026-02-01T00:00:00Z",
+          "type": "review",
+          "payload": {
+            "cardId": "c-vocab-1",
+            "mode": "vocab",
+            "grade": 3
+          }
+        }
+      ],
+      "expect": {
+        "cards": [
+          {
+            "id": "c-vocab-1",
+            "kind": "vocab",
+            "entryId": 1,
+            "deckIds": [
+              "general"
+            ],
+            "createdAt": "2026-01-01T00:00:00Z"
+          },
+          {
+            "id": "c-writing-1",
+            "kind": "writing",
+            "entryId": 1,
+            "deckIds": [
+              "general"
+            ],
+            "createdAt": "2026-01-01T00:00:00Z"
+          },
+          {
+            "id": "c-vocab-2",
+            "kind": "vocab",
+            "entryId": 2,
+            "deckIds": [
+              "general"
+            ],
+            "createdAt": "2026-01-01T00:00:00Z"
+          }
+        ],
+        "reviews": [
+          {
+            "id": "01KA0000000000000000000001",
+            "workspaceId": 7,
+            "device": "web",
+            "ts": "2026-02-01T00:00:00Z",
+            "type": "review",
+            "payload": {
+              "cardId": "c-vocab-1",
+              "mode": "vocab",
+              "grade": 3
+            }
+          }
+        ],
+        "merged": 0
+      }
+    },
+    {
+      "name": "the earliest createdAt survives and takes the reviews",
+      "note": "reviews of the duplicate are re-pointed to the survivor and keep their event ids; decks are the union, survivor first",
+      "cards": [
+        {
+          "id": "01HZZZ0000000000000000000B",
+          "kind": "vocab",
+          "entryId": 5,
+          "deckIds": [
+            "d2",
+            "general"
+          ],
+          "createdAt": "2026-01-02T00:00:00Z"
+        },
+        {
+          "id": "01HZZZ0000000000000000000A",
+          "kind": "vocab",
+          "entryId": 5,
+          "deckIds": [
+            "d1"
+          ],
+          "createdAt": "2026-01-01T00:00:00Z"
+        }
+      ],
+      "reviews": [
+        {
+          "id": "01KA0000000000000000000001",
+          "workspaceId": 7,
+          "device": "web",
+          "ts": "2026-02-01T00:00:00Z",
+          "type": "review",
+          "payload": {
+            "cardId": "01HZZZ0000000000000000000B",
+            "mode": "vocab",
+            "grade": 3
+          }
+        },
+        {
+          "id": "01KA0000000000000000000002",
+          "workspaceId": 7,
+          "device": "web",
+          "ts": "2026-02-01T00:00:00Z",
+          "type": "review",
+          "payload": {
+            "cardId": "01HZZZ0000000000000000000A",
+            "mode": "vocab",
+            "grade": 4
+          }
+        }
+      ],
+      "expect": {
+        "cards": [
+          {
+            "id": "01HZZZ0000000000000000000A",
+            "kind": "vocab",
+            "entryId": 5,
+            "deckIds": [
+              "d1",
+              "d2",
+              "general"
+            ],
+            "createdAt": "2026-01-01T00:00:00Z"
+          }
+        ],
+        "reviews": [
+          {
+            "id": "01KA0000000000000000000001",
+            "workspaceId": 7,
+            "device": "web",
+            "ts": "2026-02-01T00:00:00Z",
+            "type": "review",
+            "payload": {
+              "cardId": "01HZZZ0000000000000000000A",
+              "mode": "vocab",
+              "grade": 3
+            }
+          },
+          {
+            "id": "01KA0000000000000000000002",
+            "workspaceId": 7,
+            "device": "web",
+            "ts": "2026-02-01T00:00:00Z",
+            "type": "review",
+            "payload": {
+              "cardId": "01HZZZ0000000000000000000A",
+              "mode": "vocab",
+              "grade": 4
+            }
+          }
+        ],
+        "merged": 1
+      }
+    },
+    {
+      "name": "equal createdAt: the lowest id survives",
+      "note": "ids compare as strings",
+      "cards": [
+        {
+          "id": "01HZZZ0000000000000000000B",
+          "kind": "vocab",
+          "entryId": 5,
+          "deckIds": [
+            "general"
+          ],
+          "createdAt": "2026-01-01T00:00:00Z"
+        },
+        {
+          "id": "01HZZZ0000000000000000000A",
+          "kind": "vocab",
+          "entryId": 5,
+          "deckIds": [
+            "general"
+          ],
+          "createdAt": "2026-01-01T00:00:00.000Z"
+        }
+      ],
+      "reviews": [],
+      "expect": {
+        "cards": [
+          {
+            "id": "01HZZZ0000000000000000000A",
+            "kind": "vocab",
+            "entryId": 5,
+            "deckIds": [
+              "general"
+            ],
+            "createdAt": "2026-01-01T00:00:00.000Z"
+          }
+        ],
+        "reviews": [],
+        "merged": 1
+      }
+    },
+    {
+      "name": "the same instant in two notations is a tie",
+      "note": "createdAt compares as an instant",
+      "cards": [
+        {
+          "id": "01HZZZ0000000000000000000A",
+          "kind": "vocab",
+          "entryId": 5,
+          "deckIds": [
+            "general"
+          ],
+          "createdAt": "2026-01-01T01:00:00+01:00"
+        },
+        {
+          "id": "01HZZZ0000000000000000000B",
+          "kind": "vocab",
+          "entryId": 5,
+          "deckIds": [
+            "general"
+          ],
+          "createdAt": "2026-01-01T00:00:00Z",
+          "written": "好"
+        }
+      ],
+      "reviews": [
+        {
+          "id": "01KA0000000000000000000001",
+          "workspaceId": 7,
+          "device": "web",
+          "ts": "2026-02-01T00:00:00Z",
+          "type": "review",
+          "payload": {
+            "cardId": "01HZZZ0000000000000000000B",
+            "mode": "vocab",
+            "grade": 3
+          }
+        }
+      ],
+      "expect": {
+        "cards": [
+          {
+            "id": "01HZZZ0000000000000000000A",
+            "kind": "vocab",
+            "entryId": 5,
+            "deckIds": [
+              "general"
+            ],
+            "createdAt": "2026-01-01T01:00:00+01:00",
+            "written": "好"
+          }
+        ],
+        "reviews": [
+          {
+            "id": "01KA0000000000000000000001",
+            "workspaceId": 7,
+            "device": "web",
+            "ts": "2026-02-01T00:00:00Z",
+            "type": "review",
+            "payload": {
+              "cardId": "01HZZZ0000000000000000000A",
+              "mode": "vocab",
+              "grade": 3
+            }
+          }
+        ],
+        "merged": 1
+      }
+    },
+    {
+      "name": "an unparsable createdAt loses to a real one",
+      "note": "an unparsable time sorts after every real time",
+      "cards": [
+        {
+          "id": "01HZZZ0000000000000000000A",
+          "kind": "vocab",
+          "entryId": 5,
+          "deckIds": [
+            "general"
+          ],
+          "createdAt": "garbage"
+        },
+        {
+          "id": "01HZZZ0000000000000000000B",
+          "kind": "vocab",
+          "entryId": 5,
+          "deckIds": [
+            "general"
+          ],
+          "createdAt": "2030-01-01T00:00:00Z"
+        }
+      ],
+      "reviews": [
+        {
+          "id": "01KA0000000000000000000001",
+          "workspaceId": 7,
+          "device": "web",
+          "ts": "2026-02-01T00:00:00Z",
+          "type": "review",
+          "payload": {
+            "cardId": "01HZZZ0000000000000000000A",
+            "mode": "vocab",
+            "grade": 3
+          }
+        }
+      ],
+      "expect": {
+        "cards": [
+          {
+            "id": "01HZZZ0000000000000000000B",
+            "kind": "vocab",
+            "entryId": 5,
+            "deckIds": [
+              "general"
+            ],
+            "createdAt": "2030-01-01T00:00:00Z"
+          }
+        ],
+        "reviews": [
+          {
+            "id": "01KA0000000000000000000001",
+            "workspaceId": 7,
+            "device": "web",
+            "ts": "2026-02-01T00:00:00Z",
+            "type": "review",
+            "payload": {
+              "cardId": "01HZZZ0000000000000000000B",
+              "mode": "vocab",
+              "grade": 3
+            }
+          }
+        ],
+        "merged": 1
+      }
+    },
+    {
+      "name": "two unparsable createdAt: the lowest id survives",
+      "note": "unparsable times tie",
+      "cards": [
+        {
+          "id": "01HZZZ0000000000000000000B",
+          "kind": "vocab",
+          "entryId": 5,
+          "deckIds": [
+            "general"
+          ],
+          "createdAt": ""
+        },
+        {
+          "id": "01HZZZ0000000000000000000A",
+          "kind": "vocab",
+          "entryId": 5,
+          "deckIds": [
+            "general"
+          ],
+          "createdAt": "garbage"
+        }
+      ],
+      "reviews": [],
+      "expect": {
+        "cards": [
+          {
+            "id": "01HZZZ0000000000000000000A",
+            "kind": "vocab",
+            "entryId": 5,
+            "deckIds": [
+              "general"
+            ],
+            "createdAt": "garbage"
+          }
+        ],
+        "reviews": [],
+        "merged": 1
+      }
+    },
+    {
+      "name": "missing fields come from the oldest duplicate that has one",
+      "note": "written, entryKind and sentenceId fill in from the duplicates in canonical order; the survivor keeps what it has",
+      "cards": [
+        {
+          "id": "s",
+          "kind": "vocab",
+          "entryId": 9,
+          "deckIds": [
+            "general"
+          ],
+          "createdAt": "2026-01-01T00:00:00Z"
+        },
+        {
+          "id": "d1",
+          "kind": "vocab",
+          "entryId": 9,
+          "deckIds": [
+            "general"
+          ],
+          "createdAt": "2026-01-02T00:00:00Z",
+          "entryKind": "character"
+        },
+        {
+          "id": "d2",
+          "kind": "vocab",
+          "entryId": 9,
+          "deckIds": [
+            "general"
+          ],
+          "createdAt": "2026-01-03T00:00:00Z",
+          "written": "字",
+          "sentenceId": 70
+        },
+        {
+          "id": "d3",
+          "kind": "vocab",
+          "entryId": 9,
+          "deckIds": [
+            "general"
+          ],
+          "createdAt": "2026-01-04T00:00:00Z",
+          "written": "字old",
+          "sentenceId": 71
+        }
+      ],
+      "reviews": [],
+      "expect": {
+        "cards": [
+          {
+            "id": "s",
+            "kind": "vocab",
+            "entryId": 9,
+            "deckIds": [
+              "general"
+            ],
+            "createdAt": "2026-01-01T00:00:00Z",
+            "entryKind": "character",
+            "written": "字",
+            "sentenceId": 70
+          }
+        ],
+        "reviews": [],
+        "merged": 3
+      }
+    },
+    {
+      "name": "the survivor's own fields win",
+      "note": "a duplicate never overwrites a field the survivor has",
+      "cards": [
+        {
+          "id": "s",
+          "kind": "vocab",
+          "entryId": 9,
+          "deckIds": [
+            "general"
+          ],
+          "createdAt": "2026-01-01T00:00:00Z",
+          "written": "新",
+          "sentenceId": 3
+        },
+        {
+          "id": "d1",
+          "kind": "vocab",
+          "entryId": 9,
+          "deckIds": [
+            "general"
+          ],
+          "createdAt": "2026-01-02T00:00:00Z",
+          "written": "旧",
+          "sentenceId": 4,
+          "entryKind": "character"
+        }
+      ],
+      "reviews": [],
+      "expect": {
+        "cards": [
+          {
+            "id": "s",
+            "kind": "vocab",
+            "entryId": 9,
+            "deckIds": [
+              "general"
+            ],
+            "createdAt": "2026-01-01T00:00:00Z",
+            "written": "新",
+            "sentenceId": 3,
+            "entryKind": "character"
+          }
+        ],
+        "reviews": [],
+        "merged": 1
+      }
+    },
+    {
+      "name": "skipKinds are united in kind order",
+      "note": "known non-vocab kinds only, deduplicated, ordered vocab, sentence, writing, tone, reverse, cloze",
+      "cards": [
+        {
+          "id": "s",
+          "kind": "vocab",
+          "entryId": 9,
+          "deckIds": [
+            "general"
+          ],
+          "createdAt": "2026-01-01T00:00:00Z",
+          "skipKinds": [
+            "tone",
+            "cloze"
+          ]
+        },
+        {
+          "id": "d1",
+          "kind": "vocab",
+          "entryId": 9,
+          "deckIds": [
+            "general"
+          ],
+          "createdAt": "2026-01-02T00:00:00Z",
+          "skipKinds": [
+            "sentence",
+            "tone"
+          ]
+        }
+      ],
+      "reviews": [],
+      "expect": {
+        "cards": [
+          {
+            "id": "s",
+            "kind": "vocab",
+            "entryId": 9,
+            "deckIds": [
+              "general"
+            ],
+            "createdAt": "2026-01-01T00:00:00Z",
+            "skipKinds": [
+              "sentence",
+              "tone",
+              "cloze"
+            ]
+          }
+        ],
+        "reviews": [],
+        "merged": 1
+      }
+    },
+    {
+      "name": "skipKinds of a duplicate when the survivor has none",
+      "note": "the union is taken even when only a duplicate skips kinds",
+      "cards": [
+        {
+          "id": "s",
+          "kind": "vocab",
+          "entryId": 9,
+          "deckIds": [
+            "general"
+          ],
+          "createdAt": "2026-01-01T00:00:00Z"
+        },
+        {
+          "id": "d1",
+          "kind": "vocab",
+          "entryId": 9,
+          "deckIds": [
+            "general"
+          ],
+          "createdAt": "2026-01-02T00:00:00Z",
+          "skipKinds": [
+            "writing"
+          ]
+        }
+      ],
+      "reviews": [],
+      "expect": {
+        "cards": [
+          {
+            "id": "s",
+            "kind": "vocab",
+            "entryId": 9,
+            "deckIds": [
+              "general"
+            ],
+            "createdAt": "2026-01-01T00:00:00Z",
+            "skipKinds": [
+              "writing"
+            ]
+          }
+        ],
+        "reviews": [],
+        "merged": 1
+      }
+    },
+    {
+      "name": "the survivor keeps its position; duplicates drop out",
+      "note": "output order is the input order of the kept cards",
+      "cards": [
+        {
+          "id": "x",
+          "kind": "vocab",
+          "entryId": 1,
+          "deckIds": [
+            "general"
+          ],
+          "createdAt": "2026-01-01T00:00:00Z"
+        },
+        {
+          "id": "d1",
+          "kind": "vocab",
+          "entryId": 9,
+          "deckIds": [
+            "b"
+          ],
+          "createdAt": "2026-01-03T00:00:00Z"
+        },
+        {
+          "id": "y",
+          "kind": "tone",
+          "entryId": 1,
+          "deckIds": [
+            "general"
+          ],
+          "createdAt": "2026-01-01T00:00:00Z"
+        },
+        {
+          "id": "s",
+          "kind": "vocab",
+          "entryId": 9,
+          "deckIds": [
+            "a"
+          ],
+          "createdAt": "2026-01-01T00:00:00Z"
+        },
+        {
+          "id": "d2",
+          "kind": "vocab",
+          "entryId": 9,
+          "deckIds": [
+            "c",
+            "a"
+          ],
+          "createdAt": "2026-01-02T00:00:00Z"
+        }
+      ],
+      "reviews": [
+        {
+          "id": "01KA0000000000000000000001",
+          "workspaceId": 7,
+          "device": "web",
+          "ts": "2026-02-01T00:00:00Z",
+          "type": "review",
+          "payload": {
+            "cardId": "d1",
+            "mode": "vocab",
+            "grade": 3
+          }
+        },
+        {
+          "id": "01KA0000000000000000000002",
+          "workspaceId": 7,
+          "device": "web",
+          "ts": "2026-02-01T00:00:00Z",
+          "type": "review",
+          "payload": {
+            "cardId": "x",
+            "mode": "vocab",
+            "grade": 3
+          }
+        },
+        {
+          "id": "01KA0000000000000000000003",
+          "workspaceId": 7,
+          "device": "web",
+          "ts": "2026-02-01T00:00:00Z",
+          "type": "review",
+          "payload": {
+            "cardId": "d2",
+            "mode": "vocab",
+            "grade": 3
+          }
+        },
+        {
+          "id": "01KA0000000000000000000004",
+          "workspaceId": 7,
+          "device": "web",
+          "ts": "2026-02-01T00:00:00Z",
+          "type": "review",
+          "payload": {
+            "cardId": "gone",
+            "mode": "vocab",
+            "grade": 3
+          }
+        }
+      ],
+      "expect": {
+        "cards": [
+          {
+            "id": "x",
+            "kind": "vocab",
+            "entryId": 1,
+            "deckIds": [
+              "general"
+            ],
+            "createdAt": "2026-01-01T00:00:00Z"
+          },
+          {
+            "id": "y",
+            "kind": "tone",
+            "entryId": 1,
+            "deckIds": [
+              "general"
+            ],
+            "createdAt": "2026-01-01T00:00:00Z"
+          },
+          {
+            "id": "s",
+            "kind": "vocab",
+            "entryId": 9,
+            "deckIds": [
+              "a",
+              "c",
+              "b"
+            ],
+            "createdAt": "2026-01-01T00:00:00Z"
+          }
+        ],
+        "reviews": [
+          {
+            "id": "01KA0000000000000000000001",
+            "workspaceId": 7,
+            "device": "web",
+            "ts": "2026-02-01T00:00:00Z",
+            "type": "review",
+            "payload": {
+              "cardId": "s",
+              "mode": "vocab",
+              "grade": 3
+            }
+          },
+          {
+            "id": "01KA0000000000000000000002",
+            "workspaceId": 7,
+            "device": "web",
+            "ts": "2026-02-01T00:00:00Z",
+            "type": "review",
+            "payload": {
+              "cardId": "x",
+              "mode": "vocab",
+              "grade": 3
+            }
+          },
+          {
+            "id": "01KA0000000000000000000003",
+            "workspaceId": 7,
+            "device": "web",
+            "ts": "2026-02-01T00:00:00Z",
+            "type": "review",
+            "payload": {
+              "cardId": "s",
+              "mode": "vocab",
+              "grade": 3
+            }
+          },
+          {
+            "id": "01KA0000000000000000000004",
+            "workspaceId": 7,
+            "device": "web",
+            "ts": "2026-02-01T00:00:00Z",
+            "type": "review",
+            "payload": {
+              "cardId": "gone",
+              "mode": "vocab",
+              "grade": 3
+            }
+          }
+        ],
+        "merged": 2
+      }
+    },
+    {
+      "name": "sentence cards about different sentences are two cards",
+      "note": "a sentence card key includes its sentenceId",
+      "cards": [
+        {
+          "id": "a",
+          "kind": "sentence",
+          "entryId": 4,
+          "deckIds": [
+            "general"
+          ],
+          "createdAt": "2026-01-01T00:00:00Z",
+          "sentenceId": 1
+        },
+        {
+          "id": "b",
+          "kind": "sentence",
+          "entryId": 4,
+          "deckIds": [
+            "general"
+          ],
+          "createdAt": "2026-01-02T00:00:00Z",
+          "sentenceId": 2
+        }
+      ],
+      "reviews": [],
+      "expect": {
+        "cards": [
+          {
+            "id": "a",
+            "kind": "sentence",
+            "entryId": 4,
+            "deckIds": [
+              "general"
+            ],
+            "createdAt": "2026-01-01T00:00:00Z",
+            "sentenceId": 1
+          },
+          {
+            "id": "b",
+            "kind": "sentence",
+            "entryId": 4,
+            "deckIds": [
+              "general"
+            ],
+            "createdAt": "2026-01-02T00:00:00Z",
+            "sentenceId": 2
+          }
+        ],
+        "reviews": [],
+        "merged": 0
+      }
+    },
+    {
+      "name": "sentence cards about the same sentence merge",
+      "note": "same kind, entry and sentence",
+      "cards": [
+        {
+          "id": "a",
+          "kind": "sentence",
+          "entryId": 4,
+          "deckIds": [
+            "general"
+          ],
+          "createdAt": "2026-01-02T00:00:00Z",
+          "sentenceId": 1
+        },
+        {
+          "id": "b",
+          "kind": "sentence",
+          "entryId": 4,
+          "deckIds": [
+            "general"
+          ],
+          "createdAt": "2026-01-01T00:00:00Z",
+          "sentenceId": 1
+        }
+      ],
+      "reviews": [
+        {
+          "id": "01KA0000000000000000000001",
+          "workspaceId": 7,
+          "device": "web",
+          "ts": "2026-02-01T00:00:00Z",
+          "type": "review",
+          "payload": {
+            "cardId": "a",
+            "mode": "sentence",
+            "grade": 2
+          }
+        }
+      ],
+      "expect": {
+        "cards": [
+          {
+            "id": "b",
+            "kind": "sentence",
+            "entryId": 4,
+            "deckIds": [
+              "general"
+            ],
+            "createdAt": "2026-01-01T00:00:00Z",
+            "sentenceId": 1
+          }
+        ],
+        "reviews": [
+          {
+            "id": "01KA0000000000000000000001",
+            "workspaceId": 7,
+            "device": "web",
+            "ts": "2026-02-01T00:00:00Z",
+            "type": "review",
+            "payload": {
+              "cardId": "b",
+              "mode": "sentence",
+              "grade": 2
+            }
+          }
+        ],
+        "merged": 1
+      }
+    },
+    {
+      "name": "a sentence card without sentenceId is another card",
+      "note": "sentence:4: and sentence:4:1 are different keys",
+      "cards": [
+        {
+          "id": "a",
+          "kind": "sentence",
+          "entryId": 4,
+          "deckIds": [
+            "general"
+          ],
+          "createdAt": "2026-01-01T00:00:00Z"
+        },
+        {
+          "id": "b",
+          "kind": "sentence",
+          "entryId": 4,
+          "deckIds": [
+            "general"
+          ],
+          "createdAt": "2026-01-02T00:00:00Z",
+          "sentenceId": 1
+        }
+      ],
+      "reviews": [],
+      "expect": {
+        "cards": [
+          {
+            "id": "a",
+            "kind": "sentence",
+            "entryId": 4,
+            "deckIds": [
+              "general"
+            ],
+            "createdAt": "2026-01-01T00:00:00Z"
+          },
+          {
+            "id": "b",
+            "kind": "sentence",
+            "entryId": 4,
+            "deckIds": [
+              "general"
+            ],
+            "createdAt": "2026-01-02T00:00:00Z",
+            "sentenceId": 1
+          }
+        ],
+        "reviews": [],
+        "merged": 0
+      }
+    },
+    {
+      "name": "vocab cards ignore sentenceId in their key",
+      "note": "vocab, writing and tone keys are kind and entry only",
+      "cards": [
+        {
+          "id": "a",
+          "kind": "vocab",
+          "entryId": 4,
+          "deckIds": [
+            "general"
+          ],
+          "createdAt": "2026-01-01T00:00:00Z",
+          "sentenceId": 1
+        },
+        {
+          "id": "b",
+          "kind": "vocab",
+          "entryId": 4,
+          "deckIds": [
+            "general"
+          ],
+          "createdAt": "2026-01-02T00:00:00Z",
+          "sentenceId": 2
+        }
+      ],
+      "reviews": [],
+      "expect": {
+        "cards": [
+          {
+            "id": "a",
+            "kind": "vocab",
+            "entryId": 4,
+            "deckIds": [
+              "general"
+            ],
+            "createdAt": "2026-01-01T00:00:00Z",
+            "sentenceId": 1
+          }
+        ],
+        "reviews": [],
+        "merged": 1
+      }
+    },
+    {
+      "name": "the same id twice is one card",
+      "note": "a repeated id is kept once and counts as merged",
+      "cards": [
+        {
+          "id": "a",
+          "kind": "vocab",
+          "entryId": 4,
+          "deckIds": [
+            "x"
+          ],
+          "createdAt": "2026-01-01T00:00:00Z"
+        },
+        {
+          "id": "a",
+          "kind": "vocab",
+          "entryId": 4,
+          "deckIds": [
+            "y"
+          ],
+          "createdAt": "2026-01-01T00:00:00Z"
+        }
+      ],
+      "reviews": [],
+      "expect": {
+        "cards": [
+          {
+            "id": "a",
+            "kind": "vocab",
+            "entryId": 4,
+            "deckIds": [
+              "x",
+              "y"
+            ],
+            "createdAt": "2026-01-01T00:00:00Z"
+          }
+        ],
+        "reviews": [],
+        "merged": 1
+      }
+    }
+  ]
+}

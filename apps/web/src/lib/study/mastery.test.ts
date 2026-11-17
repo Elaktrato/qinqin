@@ -1,6 +1,7 @@
 import { IDENTITY_CLOCK } from '$lib/study/studyClock';
 import { describe, expect, it } from 'vitest';
 
+import charMasteryFixture from '../../../../../docs/contracts/decks/char-mastery.json';
 import { DEFAULT_W } from './fsrs/params';
 import { cardScore, masteryForChars, masteryFromSchedules, MASTERY_KINDS, stageOf, type CharMastery } from './mastery';
 import { scheduleFor, type Schedule } from './scheduler';
@@ -416,4 +417,29 @@ describe('masteryFromSchedules', () => {
 			masteryForChars(chars, cards, reviews, NOW, DEFAULT_W, IDENTITY_CLOCK)
 		);
 	});
+});
+
+describe('docs/contracts/decks/char-mastery.json', () => {
+	const fixture = charMasteryFixture as unknown as {
+		rule: string;
+		masteryKinds: string[];
+		cases: { name: string; chars: string[]; cards: StudyCard[]; schedules: Record<string, number | null>; expect: Record<string, CharMastery> }[];
+		stages: { score: number; stage: string }[];
+	};
+	it('has the kinds and the stage bands', () => {
+		expect(fixture.rule).toBe('decks/char-mastery');
+		expect([...MASTERY_KINDS]).toEqual(fixture.masteryKinds);
+		for (const s of fixture.stages) expect(stageOf(s.score), String(s.score)).toBe(s.stage);
+	});
+	for (const c of fixture.cases) {
+		it(c.name, () => {
+			const scheduleOf = (id: string): Schedule | null => {
+				const stability = c.schedules[id];
+				return stability === undefined || stability === null
+					? null
+					: { due: '2026-01-01T00:00:00.000Z', stability, difficulty: 5, state: 2 };
+			};
+			expect(Object.fromEntries(masteryFromSchedules(c.chars, c.cards, scheduleOf))).toEqual(c.expect);
+		});
+	}
 });
