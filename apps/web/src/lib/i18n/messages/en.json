@@ -2030,6 +2030,7 @@
 	"settings.languages.confirmRemove": "Confirm remove {language}",
 	"settings.languages.dataOnly": "data only",
 	"settings.languages.invalid": "not a valid code",
+	"settings.languages.invalidCode": "language must be a code like es or pt-br",
 	"settings.languages.loadFailed": "Could not load the languages.",
 	"settings.languages.loading": "Loading languages…",
 	"settings.languages.none": "none",

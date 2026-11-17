@@ -69,6 +69,22 @@ const a = new DOMException('The request was aborted.', 'AbortError');`;
 		expect(tsFindings(src, false)).toEqual([]);
 	});
 
+	it('finds lower-case sentences of three or more words assigned to an error, notice or message', () => {
+		const src = `error = 'language must be a code like es or pt-br';
+languageError = 'could not save it';
+const o = { message: 'try again later please', notice: "saved for now" };
+this.message = \`failed after \${n} tries\`;
+const a = 'lowercase words here'; label = 'not a message here'; error = 'two words';
+if (error === 'some lower words') x(); error = 'invalid_language';`;
+		expect(texts(tsFindings(src, false))).toEqual([
+			'language must be a code like es or pt-br',
+			'could not save it',
+			'try again later please',
+			'saved for now',
+			'failed after {…} tries'
+		]);
+	});
+
 	it('ignores SVG path data', () => {
 		const src = `const C = { 1: 'M12 22 L88 22', 3: 'M12 42 Q42 98 88 26', z: 'M0 0 H10 V10 Z' }; const s = 'Real sentence here';`;
 		expect(texts(tsFindings(src, false))).toEqual(['Real sentence here']);

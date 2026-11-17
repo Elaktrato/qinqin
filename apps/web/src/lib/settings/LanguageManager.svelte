@@ -70,7 +70,7 @@
 		error = '';
 		notice = '';
 		if (!normalized) {
-			error = 'language must be a code like es or pt-br';
+			error = t('settings.languages.invalidCode');
 			return;
 		}
 		adding = true;

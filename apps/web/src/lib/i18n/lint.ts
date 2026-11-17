@@ -210,9 +210,28 @@ function isDeveloperText(code: string, index: number): boolean {
 /** `{n} reviews`, `${n} minute${…}`: a placeholder, a space, then a word of two or more letters. */
 const isWordTemplate = (s: string): boolean => /^\{[^{}]*\}\s+\p{L}{2,}/u.test(s.trim());
 
+/** A lower-case sentence: a lower-case first letter and three or more words with letters (`could not save it`). */
+function isLowerSentence(s: string): boolean {
+	const t = s.trim();
+	return /^\p{Ll}/u.test(t) && t.split(/\s+/).filter((w) => /\p{L}/u.test(w)).length >= 3;
+}
+
+/** A literal assigned to an error, notice or message (`error = '…'`, `languageError = '…'`, `{ message: '…' }`). */
+function isMessageTarget(code: string, index: number): boolean {
+	return /\b\w*(?:error|Error|notice|Notice|message|Message)\s*[=:]\s*$/.test(
+		code.slice(Math.max(0, index - 80), index)
+	);
+}
+
 function sentenceHits(code: string, from: number, to: number, templates = false): Hit[] {
 	return scanJs(code, from, to)
-		.filter((l) => (isSentence(l.text) || (templates && isWordTemplate(l.text))) && !isDeveloperText(code, l.index))
+		.filter(
+			(l) =>
+				(isSentence(l.text) ||
+					(templates && isWordTemplate(l.text)) ||
+					(isLowerSentence(l.text) && isMessageTarget(code, l.index))) &&
+				!isDeveloperText(code, l.index)
+		)
 		.map((l) => ({ index: l.index, line: lineAt(code, l.index), text: l.text.trim() }));
 }
 
