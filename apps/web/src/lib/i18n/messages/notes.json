@@ -86,6 +86,14 @@
 	"stats.map.filtered": "{shown} and {total} are formatted numbers; the plural follows the shown count.",
 	"study.summary.cardsIn": "Between bold numbers: \"<b>12</b> cards in <b>2</b> decks · <b>3</b> due · <b>5</b> new\"; each fragment is one message.",
 	"weekly.day.name": "Accessible name of a day in the week strip; {date} is \"Monday 16 November\", {state} one of weekly.day.*.",
+	"widgets.activity.stage.bloom": "Flower stage: the day's goal reached.",
+	"widgets.activity.stage.bud": "Flower stage: a third of the day's goal or more done.",
+	"widgets.activity.stage.opening": "Flower stage: two thirds of the day's goal or more done.",
+	"widgets.activity.stage.resting": "Flower stage of a vacation day.",
+	"widgets.activity.stage.soil": "Flower stage of a heatmap day with a daily goal and nothing done yet (shown as text until the flower drawings exist).",
+	"widgets.activity.stage.sprout": "Flower stage: under a third of the day's goal done.",
+	"widgets.activity.stageNote": "Appended to a heatmap day's tooltip: {progress} is goals.progress.amountOfTarget (\"21 of 50\"), {stage} one of widgets.activity.stage.*.",
+	"widgets.activity.today": "Appended to the tooltip of today's heatmap tile, after \" · \"; lower case mid-sentence.",
 	"widgets.characters.stale": "<code> wraps the command name; keep it untranslated.",
 	"widgets.words.inDecks": "Follows the bold total (\"12 words in your decks ·\"); the number itself is shown before it, outside the message."
 }
