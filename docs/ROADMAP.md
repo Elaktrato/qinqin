@@ -79,7 +79,7 @@ Native Kotlin (Jetpack Compose, Room), Android only — replaces the earlier Flu
 
 ## Future (milestone)
 
-- ~~[#39](https://github.com/Elaktrato/qinqin/issues/39) feature-plugin SDK~~ — done (strict manifest contract, permissions, embedded built-in manifests, web SDK, study-event hook; design `docs/superpowers/specs/2026-11-15-plugin-sdk-design.md`). Follow-up: [#85](https://github.com/Elaktrato/qinqin/issues/85) move flashcards and reader onto the SDK
+- ~~[#39](https://github.com/Elaktrato/qinqin/issues/39) feature-plugin SDK~~ — done (strict manifest contract, permissions, embedded built-in manifests, web SDK, study-event hook; design `docs/superpowers/specs/2026-11-15-plugin-sdk-design.md`). Follow-up: ~~[#85](https://github.com/Elaktrato/qinqin/issues/85) move flashcards and reader onto the SDK~~ — reworked: they became core features (v0.4.0 prep)
 - ~~[#40](https://github.com/Elaktrato/qinqin/issues/40) data-plugin management UI~~ — done (Settings → Data: staged upload with licence review, list, uninstall; design `docs/superpowers/specs/2026-11-15-pack-management-design.md`)
 - ~~[#41](https://github.com/Elaktrato/qinqin/issues/41) language and workspace management UI~~ — done (Settings → Data → Languages, per-workspace hidden dictionaries, coverage hints, code validation; design `docs/superpowers/specs/2026-11-15-language-management-design.md`)
 - [#42](https://github.com/Elaktrato/qinqin/issues/42) Jōyō / TOCFL / curriculum level packs: bundled `joyo-grades` (KANJIDIC2) and
