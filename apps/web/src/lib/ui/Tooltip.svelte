@@ -11,6 +11,7 @@
 	//              (IconButton) and is hidden from assistive tech; true: the
 	//              trigger must set aria-describedby={tipId}
 	//   open       bindable; the gallery renders it open
+	//   suppress   keeps it hidden (a menu button while its menu is open)
 	import type { Snippet } from 'svelte';
 
 	let {
@@ -18,12 +19,14 @@
 		placement = 'below',
 		describe = false,
 		open = $bindable(false),
+		suppress = false,
 		children
 	}: {
 		text: string;
 		placement?: 'below' | 'above' | 'start' | 'end';
 		describe?: boolean;
 		open?: boolean;
+		suppress?: boolean;
 		children: Snippet<[string]>;
 	} = $props();
 
@@ -81,7 +84,7 @@
 		id={tipId}
 		role="tooltip"
 		class="tip {placement}"
-		data-open={open ? 'true' : 'false'}
+		data-open={open && !suppress ? 'true' : 'false'}
 		aria-hidden={describe ? undefined : 'true'}>{text}</span
 	>
 </span>

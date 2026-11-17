@@ -12,6 +12,7 @@
 	//   href       renders a link instead of a button
 	//   tooltip    false only where the same words are visible next to it
 	//   placement  where the tooltip opens (Tooltip)
+	//   tooltipSuppressed  hides the tooltip for now (its menu is open)
 	//   …rest      passed to the <button>/<a> (aria-haspopup, aria-expanded, …)
 	import type { HTMLAttributes } from 'svelte/elements';
 	import Icon from './Icon.svelte';
@@ -27,6 +28,7 @@
 		disabled?: boolean;
 		tooltip?: boolean;
 		placement?: 'below' | 'above' | 'start' | 'end';
+		tooltipSuppressed?: boolean;
 		onclick?: (e: MouseEvent) => void;
 		element?: HTMLElement;
 	} & Omit<HTMLAttributes<HTMLElement>, 'onclick'>;
@@ -40,6 +42,7 @@
 		disabled = false,
 		tooltip = true,
 		placement = 'below',
+		tooltipSuppressed = false,
 		onclick,
 		element = $bindable(),
 		...rest
@@ -64,7 +67,7 @@
 {/snippet}
 
 {#if tooltip}
-	<Tooltip text={label} {placement}>
+	<Tooltip text={label} {placement} suppress={tooltipSuppressed}>
 		{#snippet children()}{@render control()}{/snippet}
 	</Tooltip>
 {:else}
