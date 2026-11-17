@@ -186,7 +186,10 @@ Row: plugin `qinqin-flashcards`, workspace `w`, key `milestone:<id>`, data
 ## Sync, offline and "never unsee"
 
 - Rows travel as ordinary plugin data: push `pluginData` items (`POST /api/sync/push`), pull v2 `pluginData`
-  pages (`tombstones=1`: a tombstone arrives and reads as "not seen"). Last write wins per key by `updatedAt`.
+  pages (`tombstones=1`: a tombstone arrives and reads as "not seen"). Last write wins per key by `updatedAt`:
+  a second device pushing the same key later is accepted (the later writer wins, only `seenAt` changes); the
+  server skips a push (`dataSkipped`) only when it holds a newer row for the key — a tombstone the client had not
+  pulled, or a client clock behind the server's.
 - The web sends every row of one dismiss in one push. Every row accepted: done, the ids leave the pending list.
   `dataSkipped` or `dataRefused` > 0, or a failed request (offline, 5xx): the ids stay pending (still seen
   here) and leave only once their row is live in a pull; the next flush tries again.
@@ -203,8 +206,9 @@ Row: plugin `qinqin-flashcards`, workspace `w`, key `milestone:<id>`, data
   harmless to lose (the worst case is the card shown once more on that device) — cost: in a private window that
   blocks storage an offline dismiss is forgotten on reload.
 - Ruling: "shown once" is per account eventually, not instantly — a second device that loads before the first
-  device's push arrives may show the same card; whoever dismisses second writes a key that may already be live
-  (skipped) — cost: the same milestone can be shown once per device in a race.
+  device's push arrives may show the same card; whoever dismisses second writes the same key again, which is
+  accepted (the later writer wins) and still means seen — cost: the same milestone can be shown once per device in
+  a race.
 
 ## What is shown
 

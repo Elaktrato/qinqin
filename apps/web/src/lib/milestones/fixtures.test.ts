@@ -2,6 +2,8 @@
 // rule names, the id grammar of every id the fixtures use, the level ids
 // against the decks contract and each case's own invariants. The behaviour is
 // decoded by catalogue/reached/replayReached/seen/plan.test.ts.
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import catalogue from '../../../../../docs/contracts/milestones/catalogue.json';
 import reached from '../../../../../docs/contracts/milestones/reached.json';
@@ -68,5 +70,13 @@ describe('docs/contracts/milestones fixtures', () => {
 			const unseen = (c.reached as { id: string }[]).filter((r) => !seen.has(r.id)).map((r) => r.id);
 			expect([...(c.expect as { ids: string[] }).ids].sort(), c.name).toEqual(unseen.sort());
 		}
+	});
+
+	it('the README says what a skipped row means under last-write-wins', () => {
+		const readme = readFileSync(resolve(__dirname, '../../../../../docs/contracts/milestones/README.md'), 'utf8');
+		// A later push of the same key is accepted (the later writer wins); a skip means the server holds a
+		// newer row (a tombstone not pulled yet, or a clock behind the server's), never "another device wrote it first".
+		expect(readme).not.toMatch(/wrote (it|the key) first|written elsewhere|skipped\) — cost/);
+		expect(readme).toContain('the later writer wins');
 	});
 });
