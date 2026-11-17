@@ -214,8 +214,9 @@
 	}
 
 	/* Highlights: a soft wash of the theme under the text colour (yellow is
-	   the design's --highlight-wash; green, blue and pink are 24% of --good,
-	   --accent and --grade-again — the colour names stay the stored data).
+	   the design's --highlight-wash; green, blue and pink are 24% of their
+	   own --highlight-* colour, named by hue in every theme — never a role
+	   colour such as the accent, so the name says what is shown).
 	   Decoration only for assistive technology: the Highlights panel is the
 	   accessible path. */
 	mark.hl {
@@ -229,15 +230,15 @@
 	}
 
 	mark.green {
-		background: color-mix(in srgb, var(--good) 24%, transparent);
+		background: color-mix(in srgb, var(--highlight-green) 24%, transparent);
 	}
 
 	mark.blue {
-		background: color-mix(in srgb, var(--accent) 24%, transparent);
+		background: color-mix(in srgb, var(--highlight-blue) 24%, transparent);
 	}
 
 	mark.pink {
-		background: color-mix(in srgb, var(--grade-again) 24%, transparent);
+		background: color-mix(in srgb, var(--highlight-pink) 24%, transparent);
 	}
 
 	/* A highlight with a note: a small dot after its last character. A

@@ -14,6 +14,27 @@ export function withAlpha(color: string, p: number): string {
 	);
 }
 
+/**
+ * hue: `color` with its largest and smallest channel kept (HSL saturation and
+ * lightness stay) and its spread put on hue `deg`; channels round half up.
+ */
+export function hue(color: string, deg: number): string {
+	const ch = [1, 3, 5].map((i) => parseInt(color.slice(i, i + 2), 16));
+	const max = Math.max(...ch);
+	const min = Math.min(...ch);
+	const h = deg / 60;
+	const x = min + Math.floor((max - min) * (1 - Math.abs((h % 2) - 1)) + 0.5);
+	const rgb = [
+		[max, x, min],
+		[x, max, min],
+		[min, max, x],
+		[min, x, max],
+		[x, min, max],
+		[max, min, x]
+	][Math.floor(h) % 6];
+	return '#' + rgb.map((v) => v.toString(16).padStart(2, '0')).join('');
+}
+
 /** accentChoices: accents at least 3:1 on panel, in file order; never empty. */
 export function accentChoices(theme: Theme): string[] {
 	const out = Object.entries(theme.accents)
@@ -48,6 +69,7 @@ export function derive(theme: Theme, accent: string | null): Derived {
 		readableBad: ratio(c.bad, c.panel) >= MIN_TEXT ? c.bad : c.text,
 		readableMuted: ratio(c.muted, c.panel) >= MIN_TEXT ? c.muted : c.text,
 		highlightWash: withAlpha(c.warn, 24),
+		highlights: { yellow: c.warn, green: hue(c.warn, 135), blue: hue(c.warn, 225), pink: hue(c.warn, 330) },
 		wordMarks: {
 			new: { color: acc, style: 'solid' },
 			learning: { color: c.warn, style: 'dotted' }
@@ -88,6 +110,10 @@ export const TOKEN_NAMES = [
 	'--primary-wash',
 	'--selected-wash',
 	'--highlight-wash',
+	'--highlight-yellow',
+	'--highlight-green',
+	'--highlight-blue',
+	'--highlight-pink',
 	'--mastery-0',
 	'--mastery-1',
 	'--mastery-2',
@@ -126,6 +152,10 @@ export function cssVariables(theme: Theme, d: Derived): Record<TokenName, string
 		'--primary-wash': d.primaryWash,
 		'--selected-wash': d.selectedWash,
 		'--highlight-wash': d.highlightWash,
+		'--highlight-yellow': d.highlights.yellow,
+		'--highlight-green': d.highlights.green,
+		'--highlight-blue': d.highlights.blue,
+		'--highlight-pink': d.highlights.pink,
 		'--mastery-0': d.mastery[0],
 		'--mastery-1': d.mastery[1],
 		'--mastery-2': d.mastery[2],

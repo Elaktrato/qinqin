@@ -336,15 +336,15 @@
 	}
 
 	.snippet.green {
-		background: color-mix(in srgb, var(--good) 24%, transparent);
+		background: color-mix(in srgb, var(--highlight-green) 24%, transparent);
 	}
 
 	.snippet.blue {
-		background: color-mix(in srgb, var(--accent) 24%, transparent);
+		background: color-mix(in srgb, var(--highlight-blue) 24%, transparent);
 	}
 
 	.snippet.pink {
-		background: color-mix(in srgb, var(--grade-again) 24%, transparent);
+		background: color-mix(in srgb, var(--highlight-pink) 24%, transparent);
 	}
 
 	.close {
@@ -395,19 +395,19 @@
 	}
 
 	.swatch.yellow {
-		background: var(--warn);
+		background: var(--highlight-yellow);
 	}
 
 	.swatch.green {
-		background: var(--good);
+		background: var(--highlight-green);
 	}
 
 	.swatch.blue {
-		background: var(--accent);
+		background: var(--highlight-blue);
 	}
 
 	.swatch.pink {
-		background: var(--grade-again);
+		background: var(--highlight-pink);
 	}
 
 	.note-label {

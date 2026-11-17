@@ -17,7 +17,7 @@
 			// the stored names must be exactly these, as loadLastTokens wants.
 			(function () {
 			try {
-				var NAMES = ['--chrome', '--panel', '--raised', '--line', '--text', '--muted', '--good', '--warn', '--bad', '--grade-again', '--grade-hard', '--grade-good', '--grade-easy', '--accent', '--on-accent', '--hair', '--reading-accent', '--readable-bad', '--readable-muted', '--accent-14', '--accent-32', '--accent-58', '--accent-100', '--primary-wash', '--selected-wash', '--highlight-wash', '--mastery-0', '--mastery-1', '--mastery-2', '--mastery-3', '--mastery-4'];
+				var NAMES = ['--chrome', '--panel', '--raised', '--line', '--text', '--muted', '--good', '--warn', '--bad', '--grade-again', '--grade-hard', '--grade-good', '--grade-easy', '--accent', '--on-accent', '--hair', '--reading-accent', '--readable-bad', '--readable-muted', '--accent-14', '--accent-32', '--accent-58', '--accent-100', '--primary-wash', '--selected-wash', '--highlight-wash', '--highlight-yellow', '--highlight-green', '--highlight-blue', '--highlight-pink', '--mastery-0', '--mastery-1', '--mastery-2', '--mastery-3', '--mastery-4'];
 				var last = JSON.parse(localStorage.getItem('qinqin.theme.last.v1') || 'null');
 				var dark = last && (last.mode === 'dark' || (last.mode === 'system' && matchMedia('(prefers-color-scheme: dark)').matches));
 				var slot = last && last.v === 1 && (dark ? last.dark : last.light);

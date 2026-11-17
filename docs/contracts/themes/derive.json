@@ -81,6 +81,12 @@
     ],
     "readingAccent": "#cba6f7",
     "highlightWash": "#f9e2af3d",
+    "highlights": {
+     "yellow": "#f9e2af",
+     "green": "#aff9c2",
+     "blue": "#afc2f9",
+     "pink": "#f9afd4"
+    },
     "wordMarks": {
      "new": {
       "color": "#cba6f7",
@@ -162,6 +168,12 @@
     ],
     "readingAccent": "#8839ef",
     "highlightWash": "#df8e1d3d",
+    "highlights": {
+     "yellow": "#df8e1d",
+     "green": "#1ddf4e",
+     "blue": "#1d4edf",
+     "pink": "#df1d7e"
+    },
     "wordMarks": {
      "new": {
       "color": "#8839ef",
@@ -243,6 +255,12 @@
     ],
     "readingAccent": "#8839ef",
     "highlightWash": "#df8e1d3d",
+    "highlights": {
+     "yellow": "#df8e1d",
+     "green": "#1ddf4e",
+     "blue": "#1d4edf",
+     "pink": "#df1d7e"
+    },
     "wordMarks": {
      "new": {
       "color": "#8839ef",
@@ -323,6 +341,12 @@
     ],
     "readingAccent": "#cba6f7",
     "highlightWash": "#f9e2af3d",
+    "highlights": {
+     "yellow": "#f9e2af",
+     "green": "#aff9c2",
+     "blue": "#afc2f9",
+     "pink": "#f9afd4"
+    },
     "wordMarks": {
      "new": {
       "color": "#cba6f7",
@@ -403,6 +427,12 @@
     ],
     "readingAccent": "#cba6f7",
     "highlightWash": "#f9e2af3d",
+    "highlights": {
+     "yellow": "#f9e2af",
+     "green": "#aff9c2",
+     "blue": "#afc2f9",
+     "pink": "#f9afd4"
+    },
     "wordMarks": {
      "new": {
       "color": "#cba6f7",
@@ -483,6 +513,12 @@
     ],
     "readingAccent": "#4c4f69",
     "highlightWash": "#df8e1d3d",
+    "highlights": {
+     "yellow": "#df8e1d",
+     "green": "#1ddf4e",
+     "blue": "#1d4edf",
+     "pink": "#df1d7e"
+    },
     "wordMarks": {
      "new": {
       "color": "#c6e6f5",
@@ -564,6 +600,12 @@
     ],
     "readingAccent": "#018580",
     "highlightWash": "#df8e1d3d",
+    "highlights": {
+     "yellow": "#df8e1d",
+     "green": "#1ddf4e",
+     "blue": "#1d4edf",
+     "pink": "#df1d7e"
+    },
     "wordMarks": {
      "new": {
       "color": "#018580",
@@ -647,6 +689,12 @@
     ],
     "readingAccent": "#4c4f69",
     "highlightWash": "#df8e1d3d",
+    "highlights": {
+     "yellow": "#df8e1d",
+     "green": "#1ddf4e",
+     "blue": "#1d4edf",
+     "pink": "#df1d7e"
+    },
     "wordMarks": {
      "new": {
       "color": "#058580",
@@ -730,6 +778,12 @@
     ],
     "readingAccent": "#4c4f69",
     "highlightWash": "#df8e1d3d",
+    "highlights": {
+     "yellow": "#df8e1d",
+     "green": "#1ddf4e",
+     "blue": "#1d4edf",
+     "pink": "#df1d7e"
+    },
     "wordMarks": {
      "new": {
       "color": "#959595",
@@ -813,6 +867,12 @@
     ],
     "readingAccent": "#4c4f69",
     "highlightWash": "#df8e1d3d",
+    "highlights": {
+     "yellow": "#df8e1d",
+     "green": "#1ddf4e",
+     "blue": "#1d4edf",
+     "pink": "#df1d7e"
+    },
     "wordMarks": {
      "new": {
       "color": "#058580",
@@ -896,6 +956,12 @@
     ],
     "readingAccent": "#018580",
     "highlightWash": "#df8e1d3d",
+    "highlights": {
+     "yellow": "#df8e1d",
+     "green": "#1ddf4e",
+     "blue": "#1d4edf",
+     "pink": "#df1d7e"
+    },
     "wordMarks": {
      "new": {
       "color": "#018580",
@@ -979,6 +1045,12 @@
     ],
     "readingAccent": "#018580",
     "highlightWash": "#df8e1d3d",
+    "highlights": {
+     "yellow": "#df8e1d",
+     "green": "#1ddf4e",
+     "blue": "#1d4edf",
+     "pink": "#df1d7e"
+    },
     "wordMarks": {
      "new": {
       "color": "#018580",
@@ -1062,6 +1134,12 @@
     ],
     "readingAccent": "#018580",
     "highlightWash": "#df8e1d3d",
+    "highlights": {
+     "yellow": "#df8e1d",
+     "green": "#1ddf4e",
+     "blue": "#1d4edf",
+     "pink": "#df1d7e"
+    },
     "wordMarks": {
      "new": {
       "color": "#018580",
@@ -1145,6 +1223,12 @@
     ],
     "readingAccent": "#018580",
     "highlightWash": "#df8e1d3d",
+    "highlights": {
+     "yellow": "#df8e1d",
+     "green": "#1ddf4e",
+     "blue": "#1d4edf",
+     "pink": "#df1d7e"
+    },
     "wordMarks": {
      "new": {
       "color": "#018580",
@@ -1171,6 +1255,93 @@
      "teal",
      "deep",
      "grey"
+    ]
+   }
+  },
+  {
+   "name": "highlight hues, rounding half up",
+   "note": "warn #df8e1e: max 223, min 30, spread 193 (odd), so a half-spread step lands on .5 and rounds up (pink blue channel 30 + 96.5 -> 127); a quarter step on .25 rounds down (blue green channel 30 + 48.25 -> 78)",
+   "theme": {
+    "id": "catppuccin-latte",
+    "name": "Latte",
+    "family": "Catppuccin",
+    "scheme": "light",
+    "colors": {
+     "chrome": "#dce0e8",
+     "panel": "#eff1f5",
+     "raised": "#e6e9ef",
+     "line": "#ccd0da",
+     "text": "#4c4f69",
+     "muted": "#6c6f85",
+     "good": "#40a02b",
+     "warn": "#df8e1e",
+     "bad": "#d20f39",
+     "gradeAgain": "#d20f39",
+     "gradeHard": "#fe640b",
+     "gradeGood": "#40a02b",
+     "gradeEasy": "#1e66f5"
+    },
+    "accents": {
+     "mauve": "#8839ef",
+     "blue": "#1e66f5",
+     "yellow": "#df8e1d"
+    },
+    "defaultAccent": "mauve"
+   },
+   "accent": "mauve",
+   "expect": {
+    "accentKey": "mauve",
+    "accent": "#8839ef",
+    "onAccent": "#ffffff",
+    "hair": "#ccd0da8c",
+    "accentTints": {
+     "14": "#8839ef24",
+     "32": "#8839ef52",
+     "58": "#8839ef94",
+     "100": "#8839efff"
+    },
+    "primaryWash": "#8839ef24",
+    "selectedWash": "#8839ef24",
+    "mastery": [
+     "#ccd0da8c",
+     "#8839ef24",
+     "#8839ef52",
+     "#8839ef94",
+     "#8839efff"
+    ],
+    "readingAccent": "#8839ef",
+    "highlightWash": "#df8e1e3d",
+    "highlights": {
+     "yellow": "#df8e1e",
+     "green": "#1edf4e",
+     "blue": "#1e4edf",
+     "pink": "#df1e7f"
+    },
+    "wordMarks": {
+     "new": {
+      "color": "#8839ef",
+      "style": "solid"
+     },
+     "learning": {
+      "color": "#df8e1e",
+      "style": "dotted"
+     }
+    },
+    "correctionMarks": {
+     "mistake": {
+      "color": "#d20f39",
+      "style": "wavy"
+     },
+     "suggestion": {
+      "color": "#1e66f5",
+      "style": "dotted"
+     }
+    },
+    "readableBad": "#d20f39",
+    "readableMuted": "#4c4f69",
+    "accentChoices": [
+     "mauve",
+     "blue"
     ]
    }
   }

@@ -50,6 +50,8 @@ export interface Derived {
 	/** Secondary text: `muted` when it is at least 4.5:1 on panel, else `text`. */
 	readableMuted: string;
 	highlightWash: string;
+	/** The reader's highlight colours, named by their hue (yellow = warn). */
+	highlights: { yellow: string; green: string; blue: string; pink: string };
 	wordMarks: { new: Mark; learning: Mark };
 	correctionMarks: { mistake: Mark; suggestion: Mark };
 	accentChoices: string[];

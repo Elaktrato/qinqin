@@ -76,19 +76,19 @@
 	}
 
 	.swatch.yellow {
-		background: var(--warn);
+		background: var(--highlight-yellow);
 	}
 
 	.swatch.green {
-		background: var(--good);
+		background: var(--highlight-green);
 	}
 
 	.swatch.blue {
-		background: var(--accent);
+		background: var(--highlight-blue);
 	}
 
 	.swatch.pink {
-		background: var(--grade-again);
+		background: var(--highlight-pink);
 	}
 
 	.note-btn {

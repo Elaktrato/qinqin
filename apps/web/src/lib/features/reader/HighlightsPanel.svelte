@@ -217,19 +217,19 @@
 	}
 
 	li.yellow {
-		border-inline-start-color: var(--warn);
+		border-inline-start-color: var(--highlight-yellow);
 	}
 
 	li.green {
-		border-inline-start-color: var(--good);
+		border-inline-start-color: var(--highlight-green);
 	}
 
 	li.blue {
-		border-inline-start-color: var(--accent);
+		border-inline-start-color: var(--highlight-blue);
 	}
 
 	li.pink {
-		border-inline-start-color: var(--grade-again);
+		border-inline-start-color: var(--highlight-pink);
 	}
 
 	.jump {

@@ -99,6 +99,7 @@ over whatever surface it sits on (CSS `#rrggbbaa`, Compose ARGB).
 | `readableBad` | `bad` when `ratio(bad, panel) >= 4.5`, else `text` — error text; a non-colour cue (a bar in `bad`, a graphic at 3:1) marks it as an error either way |
 | `readableMuted` | `muted` when `ratio(muted, panel) >= 4.5`, else `text` — secondary text (hints, group labels); `muted` itself stays for non-text uses |
 | `highlightWash` | `alpha(warn, 24)` — reader highlights |
+| `highlights` | `{yellow, green, blue, pink}` — the four reader highlight colours, named by what they show: `yellow` is `warn`; the others are `hue(warn, 135)`, `hue(warn, 225)`, `hue(warn, 330)`. `hue(c, H)` keeps the largest and the smallest channel of `c` (`max`, `min`, 0–255, so HSL saturation and lightness stay) and puts the spread `d = max − min` on hue `H`: with `h = H/60`, `x = min + floor(d·(1 − |h mod 2 − 1|) + 0.5)`, the channels (R, G, B) are, by sector `floor(h)`, 0: (max, x, min), 1: (x, max, min), 2: (min, max, x), 3: (min, x, max), 4: (x, min, max), 5: (max, min, x). The steps used are quarters and halves of `d`, exact in doubles. Named by hue, not by role (never `accent` or `good`), so they keep their name in every theme and with every accent; marks are `alpha(colour, 24)` washes (yellow = `highlightWash`) under `text`, swatches the full colour |
 | `wordMarks` | `new`: `{color: accent, style: "solid"}`, `learning`: `{color: warn, style: "dotted"}`; known words have none |
 | `correctionMarks` | `mistake`: `{color: gradeAgain, style: "wavy"}`, `suggestion`: `{color: gradeEasy, style: "dotted"}` |
 
@@ -113,10 +114,12 @@ camelCase):
 | `--accent`, `--on-accent`, `--hair`, `--reading-accent`, `--readable-bad`, `--readable-muted` | derived |
 | `--accent-14`, `--accent-32`, `--accent-58`, `--accent-100` | the accent tints |
 | `--primary-wash`, `--selected-wash`, `--highlight-wash` | the washes |
+| `--highlight-yellow`, `--highlight-green`, `--highlight-blue`, `--highlight-pink` | the highlight colours |
 | `--mastery-0` … `--mastery-4` | the mastery ramp |
 
 Fixture: `derive.json` (the alpha table; Mocha and Latte, an accent below 3:1, an unknown and a missing accent,
-a theme whose every accent fails, both sides of the 4.5 and 3 roundings, `readableBad` and `readableMuted` on both sides of 4.5).
+a theme whose every accent fails, both sides of the 4.5 and 3 roundings, `readableBad` and `readableMuted` on both sides of 4.5, the
+highlight hues with a half step rounding up).
 
 ## Fixed scale tokens
 

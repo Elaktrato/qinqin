@@ -23,7 +23,7 @@ describe('cssVariables', () => {
 
 	it('sets exactly the properties of the README table', () => {
 		expect(Object.keys(vars).sort()).toEqual([...TOKEN_NAMES].sort());
-		expect(TOKEN_NAMES).toHaveLength(31);
+		expect(TOKEN_NAMES).toHaveLength(35);
 	});
 
 	it('maps theme colours, grades and derived tokens', () => {
