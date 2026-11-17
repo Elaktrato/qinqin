@@ -63,7 +63,8 @@ export interface WeekInputs {
 /** A pending flush is tried at most this often (a failed push notifies, and the page reloads). */
 const FLUSH_EVERY_MS = 30_000;
 const lastFlush = new Map<string, number>();
-let lastPlace: { user: number; workspaceId: number } | null = null;
+/** The last load's user, workspace and live rows: an `online` flush never rewrites a live row. */
+let lastPlace: { user: number; workspaceId: number; live: ReadonlyMap<string, SeenMilestone> } | null = null;
 let onlineHooked = false;
 
 /** Test hook: forget the flush throttle and the last place. */
@@ -75,10 +76,14 @@ export function resetMilestonesForTests(): void {
 function hookOnline(): void {
 	if (onlineHooked || typeof window === 'undefined') return;
 	onlineHooked = true;
-	window.addEventListener('online', () => {
-		lastFlush.clear();
-		if (lastPlace !== null) void flushPending(lastPlace.user, lastPlace.workspaceId, new Map(), Date.now());
-	});
+	window.addEventListener('online', () => void flushOnOnline());
+}
+
+/** flushOnOnline: back online, push the pending ids that were not live at the last load. */
+export async function flushOnOnline(): Promise<void> {
+	lastFlush.clear();
+	if (lastPlace === null) return;
+	await flushPending(lastPlace.user, lastPlace.workspaceId, lastPlace.live, Date.now());
 }
 
 function rowOf(m: SeenMilestone, now: number): { key: string; data: unknown } {
@@ -177,7 +182,7 @@ export async function loadMilestones(
 
 	const user = outboxUser();
 	if (user !== null) {
-		lastPlace = { user, workspaceId };
+		lastPlace = { user, workspaceId, live };
 		prunePending(user, workspaceId, live);
 		await flushPending(user, workspaceId, live, now);
 	}

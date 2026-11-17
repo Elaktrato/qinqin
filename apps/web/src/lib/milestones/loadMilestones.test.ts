@@ -23,7 +23,7 @@ import { PartialPushError, saveSeenMilestones } from '$lib/study/store';
 import type { ReviewEvent, StudyCard, StudyHistory } from '$lib/study/types';
 import { givenTimelines, replayStats } from '$lib/weekly/replay';
 import { levelMilestoneId } from './catalogue';
-import { loadMilestones, markSeen, resetMilestonesForTests } from './loadMilestones';
+import { flushOnOnline, loadMilestones, markSeen, resetMilestonesForTests } from './loadMilestones';
 import { addPending, readPending } from './seen';
 
 const NOW = Date.parse('2026-11-17T12:00:00Z');
@@ -193,6 +193,24 @@ describe('loadMilestones', () => {
 		await loadMilestones(WS, { scope: 'home', now: NOW, language: 'zh' });
 		expect(saveSeenMilestones).not.toHaveBeenCalled();
 		expect(readPending(1, WS)).toEqual([]);
+	});
+
+	it('back online: flushes the pending ids against the live rows of the last load, never rewriting a live row', async () => {
+		vi.mocked(loadStudyHistory).mockResolvedValue(
+			history({ seenMilestones: new Map([['reviews:100', { id: 'reviews:100', seenAt: null, reachedDay: '2026-11-08' }]]) })
+		);
+		await loadMilestones(WS, { scope: 'home', now: NOW, language: 'zh' });
+		vi.mocked(saveSeenMilestones).mockClear();
+		addPending(1, WS, ['reviews:100', 'streak:3'].map((id) => ({ id, seenAt: null, reachedDay: '2026-11-10' })));
+		await flushOnOnline();
+		expect(saveSeenMilestones).toHaveBeenCalledTimes(1);
+		expect(vi.mocked(saveSeenMilestones).mock.calls[0][1].map((r) => r.key)).toEqual(['milestone:streak:3']);
+	});
+
+	it('back online before any load: nothing is flushed', async () => {
+		addPending(1, WS, [{ id: 'streak:3', seenAt: null, reachedDay: null }]);
+		await flushOnOnline();
+		expect(saveSeenMilestones).not.toHaveBeenCalled();
 	});
 
 	it('each call reads only its workspace pending list', async () => {
