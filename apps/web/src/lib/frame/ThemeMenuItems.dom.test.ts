@@ -1,9 +1,9 @@
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/svelte';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ListedTheme } from '$lib/api/themes';
-import { FALLBACK_THEMES } from './fallback';
-import { createThemeStore, type ThemeStore, type ThemeStoreDeps } from './store.svelte';
-import ThemeSwitch from './ThemeSwitch.svelte';
+import { FALLBACK_THEMES } from '$lib/theme/fallback';
+import { createThemeStore, type ThemeStore, type ThemeStoreDeps } from '$lib/theme/store.svelte';
+import ThemeMenuHarness from './testing/ThemeMenuHarness.svelte';
 
 const latte: ListedTheme = { ...FALLBACK_THEMES[0], family: 'Catppuccin', packId: 'catppuccin', builtin: true };
 const mocha: ListedTheme = { ...FALLBACK_THEMES[1], family: 'Catppuccin', packId: 'catppuccin', builtin: true };
@@ -21,7 +21,7 @@ const root = document.documentElement;
 let deps: ThemeStoreDeps;
 let store: ThemeStore;
 
-async function setup(row: unknown, opts: { saveFails?: boolean; rowFails?: boolean } = {}) {
+async function setup(row: unknown, opts: { saveFails?: boolean; rowFails?: boolean; onback?: () => void } = {}) {
 	deps = {
 		fetchThemes: vi.fn(async () => ({ themes: [latte, mocha, nord], packs: [] })),
 		loadRow: vi.fn(async () => {
@@ -38,7 +38,7 @@ async function setup(row: unknown, opts: { saveFails?: boolean; rowFails?: boole
 	store = createThemeStore(deps);
 	await store.start();
 	await store.setUser(1);
-	render(ThemeSwitch, { store });
+	render(ThemeMenuHarness, { store, onback: opts.onback });
 }
 
 beforeEach(() => root.removeAttribute('style'));
@@ -47,7 +47,9 @@ afterEach(() => {
 	root.removeAttribute('style');
 });
 
-describe('quick theme switch', () => {
+// The cases of the retired ThemeSwitch (#98), moved with its logic (#99):
+// the items now live inside the account menu's theme level.
+describe('theme menu items (the quick theme switch)', () => {
 	it('is a named menu button with a tooltip, closed at first', async () => {
 		await setup({ version: 1, mode: 'dark' });
 		const button = screen.getByRole('button', { name: 'Theme: Mocha' });
@@ -64,6 +66,8 @@ describe('quick theme switch', () => {
 		await fireEvent.click(screen.getByRole('button', { name: 'Theme: Mocha' }));
 		const items = screen.getAllByRole('menuitemradio');
 		expect(items.map((i) => i.textContent?.trim())).toEqual(['Mocha', 'Nord']);
+		// No Back item without a level to go back to.
+		expect(screen.queryByRole('menuitem', { name: 'Back' })).toBeNull();
 		expect(items[0].getAttribute('aria-checked')).toBe('true');
 		const settings = screen.getByRole('menuitem', { name: 'Appearance settings…' });
 		expect(settings.getAttribute('href')).toBe('/settings?tab=appearance');
@@ -114,5 +118,16 @@ describe('quick theme switch', () => {
 		await fireEvent.click(screen.getByRole('button', { name: /^Theme/ }));
 		expect(screen.queryAllByRole('menuitemradio')).toHaveLength(0);
 		expect(screen.getByRole('menuitem', { name: 'Appearance settings…' })).toBeTruthy();
+	});
+
+	it('with onback, a Back item comes first and runs it, keeping the menu open', async () => {
+		const onback = vi.fn();
+		await setup({ version: 1, mode: 'dark' }, { onback });
+		await fireEvent.click(screen.getByRole('button', { name: 'Theme: Mocha' }));
+		const items = screen.getAllByRole('menuitem');
+		expect(items[0].textContent?.trim()).toBe('Back');
+		await fireEvent.click(items[0]);
+		expect(onback).toHaveBeenCalledTimes(1);
+		expect(screen.getByRole('menu')).toBeTruthy();
 	});
 });
