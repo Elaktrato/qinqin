@@ -46,7 +46,11 @@ Round order (fixed): `workspaces`, `pluginStates`, `pluginData`, `cards`, `decks
   without rows ends on an empty page. Then `next` is null and `cursor` is set: `until − 30 s`, so a row
   stamped before a slow commit comes next round (rows of the last 30 s may arrive twice: upsert by key).
 - A row rewritten during a round gets a stamp `>= until`: it is not shipped twice in one round and comes in
-  the next one.
+  the next one. A client that reads only from-scratch rounds and drops the cursor (the web study read) can
+  therefore miss a row edited while its multi-page round runs, if the row's old stamp sorted onto a page not
+  yet read: that load lacks the row, and the next load (a new round) has it. Accepted: the window is one
+  round and nothing is lost on the server; until the next load a local write to that row is stamped by the
+  local clock alone (no server time known for it), as for a row the client never saw.
 - From no `since` a round ships live rows only. With a `since` it ships tombstones too (`deletedAt` set).
   `tombstones=1` (the only value) makes a round from no `since` ship tombstones as well, library
   `library_deletions` rows included; with a `since` it changes nothing. A client that stamps its writes after
