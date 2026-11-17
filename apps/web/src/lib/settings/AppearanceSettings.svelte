@@ -102,7 +102,7 @@
 		error = '';
 		status = '';
 		try {
-			await store.save(changeFrom(draft));
+			await store.save(changeFrom(draft, store.appearance));
 			touched = false;
 			editing = null;
 			store.setPreview(null);

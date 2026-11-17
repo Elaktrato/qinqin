@@ -165,6 +165,47 @@ describe('theme store', () => {
 		expect(store.appearance.light.theme).toBe('nord');
 	});
 
+	it('save merges the change into a fresh read: a stale tab keeps another device’s other-slot change', async () => {
+		let server: unknown = { version: 1, mode: 'light' };
+		const shared = {
+			loadRow: vi.fn(async () => (server === null ? null : JSON.parse(JSON.stringify(server)))),
+			saveRow: vi.fn(async (value: unknown) => {
+				server = JSON.parse(JSON.stringify(value));
+			})
+		};
+		const tabA = createThemeStore({ ...deps, ...shared });
+		const tabB = createThemeStore({ ...deps, ...shared });
+		for (const tab of [tabA, tabB]) {
+			await tab.start();
+			await tab.setUser(1);
+		}
+		await tabB.save({ dark: { theme: 'nord', accent: 'glacier' } });
+		// Tab A loaded the row before tab B's save and changes the other slot.
+		await tabA.save({ light: { theme: 'catppuccin-latte', accent: 'blue' } });
+		expect(server).toEqual(
+			expect.objectContaining({
+				mode: 'light',
+				light: { theme: 'catppuccin-latte', accent: 'blue' },
+				dark: { theme: 'nord', accent: 'glacier' }
+			})
+		);
+		expect(tabA.appearance.dark.theme).toBe('nord');
+	});
+
+	it('save falls back to the known row when the fresh read fails', async () => {
+		deps.loadRow = vi
+			.fn()
+			.mockResolvedValueOnce({ version: 1, mode: 'dark', future: 1 })
+			.mockRejectedValue(new Error('offline'));
+		const store = createThemeStore(deps);
+		await store.start();
+		await store.setUser(1);
+		await store.save({ corners: 'round' });
+		expect(deps.saveRow).toHaveBeenCalledWith(
+			expect.objectContaining({ version: 1, mode: 'dark', future: 1, corners: 'round' })
+		);
+	});
+
 	it('a failed save keeps the row and the painted theme, and rejects', async () => {
 		deps.saveRow = vi.fn(async () => {
 			throw new Error('offline');

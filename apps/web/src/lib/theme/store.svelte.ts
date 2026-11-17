@@ -238,9 +238,24 @@ export function createThemeStore(overrides: Partial<ThemeStoreDeps> = {}) {
 			}
 		},
 
-		/** save writes a change to the row (unknown members kept) and paints it. Rejects on failure. */
+		/**
+		 * save writes a change to the row (unknown members kept) and paints it.
+		 * The change is merged into a fresh read of the row, so a tab loaded
+		 * earlier never writes back another device's change to the members it
+		 * did not touch; the known row is the base only when the read fails.
+		 * Rejects when the write fails.
+		 */
 		async save(change: AppearanceChange): Promise<void> {
-			const next = writeAppearance(row, change);
+			const id = userId;
+			let base = row;
+			try {
+				const fresh = await deps.loadRow();
+				if (userId !== id) return;
+				base = fresh ?? null;
+			} catch {
+				// Offline or a server error: the row loaded at sign-in is the base.
+			}
+			const next = writeAppearance(base, change);
 			await deps.saveRow(next);
 			row = next;
 			rowLoaded = true;
