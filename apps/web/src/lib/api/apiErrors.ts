@@ -16,6 +16,7 @@ export const API_ERROR_KEYS: Readonly<Record<string, MessageKey>> = {
 	invalid_email: 'apiError.invalidEmail',
 	email_taken: 'apiError.emailTaken',
 	mail_unavailable: 'apiError.mailUnavailable',
+	invalid_language: 'apiError.invalidLanguage',
 	invalid_host: 'apiError.invalidHost',
 	smtp_host_blocked: 'apiError.smtpHostBlocked',
 	invalid_port: 'apiError.invalidPort',

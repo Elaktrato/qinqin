@@ -175,6 +175,7 @@
 	"apiError.invalidEmail": "Enter a valid email address.",
 	"apiError.invalidHost": "Enter the host name of the mail server (no scheme, path or spaces).",
 	"apiError.invalidInvite": "These invite settings are not valid.",
+	"apiError.invalidLanguage": "The interface language must be empty or a language tag such as en, zh-Hant or pt-BR.",
 	"apiError.invalidPort": "The port must be between 1 and 65535.",
 	"apiError.invalidPublicUrl": "Enter the address people use to reach this site, such as https://qinqin.example.org (no path, query or login).",
 	"apiError.invalidRequest": "This request is not valid.",
