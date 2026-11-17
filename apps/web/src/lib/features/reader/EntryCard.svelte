@@ -4,11 +4,13 @@
 	import type { LookupResult } from '$lib/api/types';
 	import { partitionSenses } from '$lib/dictionaryVisibility';
 	import AddToStudyButtons from './AddToStudyButtons.svelte';
+	import { Chip } from '$lib/ui';
 	import {
 		dictionaryNames,
 		frequencyLabel,
 		hasCjk,
 		joinForms,
+		levelChips,
 		moreLabel,
 		otherForms,
 		parseXref,
@@ -53,6 +55,7 @@
 	const reading = $derived(readingLine(result, lang));
 	const forms = $derived(otherForms(result));
 	const sources = $derived(dictionaryNames(result));
+	const levels = $derived(levelChips(result));
 	const allSenses = $derived(shownSenses(result));
 	const partition = $derived(partitionSenses(allSenses, hidden));
 	let revealed = $state(false);
@@ -70,54 +73,42 @@
 	const more = $derived(senses.length - visible);
 </script>
 
+<!-- One entry (design §9 "Reader"): term, reading, chips (levels first,
+     then frequency and tags), numbered glosses, the source line, actions.
+     Entries are separated by hairlines, never boxed. -->
 <article class="entry">
 	<header>
 		<span class="term" lang={textLang}>
 			{#if ruby}<ruby>{result.term}<rt>{ruby}</rt></ruby>{:else}{result.term}{/if}
 		</span>
-		{#if reading}<span class="reading" lang={textLang}>{reading}</span>{/if}
+		{#if reading}<span class="reading accent" lang={textLang}>{reading}</span>{/if}
 		{#if forms.length > 0}<span class="forms" lang={textLang}>{joinForms(forms, lang)}</span>{/if}
-		{#if study}
-			<AddToStudyButtons
-				{result}
-				workspaceId={study.workspaceId}
-				paragraph={study.paragraph}
-				hold={study.hold}
-				stateLine={study.stateLine ? study.stateLine(result.entryId) : null}
-				{first}
-			/>
-		{/if}
 	</header>
 
-	{#if result.reasons.length > 0 || result.tags.length > 0 || result.frequencies.length > 0}
+	{#if levels.length > 0 || result.reasons.length > 0 || result.tags.length > 0 || result.frequencies.length > 0}
 		<ul class="chips">
-			{#if result.reasons.length > 0}
-				<li class="chip inflection" title={t('reader.entry.inflection')}>{result.reasons.join(' → ')}</li>
-			{/if}
-			{#each result.tags as tag, i (i)}
-				<li class="chip">{tag}</li>
+			{#each levels as level, i (i)}
+				<li class="level"><Chip tone="accent">{level}</Chip></li>
 			{/each}
 			{#each result.frequencies as f (f.packId)}
-				<li class="chip frequency" title={t('reader.entry.frequency', { pack: f.packName })}>
-					<span class="pack">{f.packName}</span>
-					{frequencyLabel(f)}
+				<li class="frequency" title={t('reader.entry.frequency', { pack: f.packName })}>
+					<Chip><span class="pack">{f.packName}</span> {frequencyLabel(f)}</Chip>
 				</li>
 			{/each}
+			{#if result.reasons.length > 0}
+				<li class="inflection" title={t('reader.entry.inflection')}><Chip>{result.reasons.join(' → ')}</Chip></li>
+			{/if}
+			{#each result.tags as tag, i (i)}
+				<li><Chip>{tag}</Chip></li>
+			{/each}
 		</ul>
-	{/if}
-
-	{#if sources.length > 0 || result.matched !== result.term}
-		<p class="source">
-			{sources.join(', ')}{#if result.matched !== result.term}{#if sources.length > 0}&ensp;·&ensp;{/if}{t('reader.entry.matched')}
-				<span lang={textLang}>{result.matched}</span>{/if}
-		</p>
 	{/if}
 
 	{#if senses.length > 0}
 		<ol class="senses" bind:this={sensesList} tabindex="-1">
 			{#each senses.slice(0, visible) as sense, i (i)}
 				<li>
-					{#each senseChips(sense) as chip, c (c)}<span class="chip pos">{chip}</span>{/each}
+					{#each senseChips(sense) as chip, c (c)}<span class="pos">{chip}</span>{/each}
 					<!-- Separators are expressions: Svelte trims literal whitespace at block edges. -->
 					{#each sense.glosses as gloss, g (g)}
 						{#if g > 0}{'; '}{/if}
@@ -150,36 +141,59 @@
 			</button>
 		{/if}
 	{/if}
+	{#if sources.length > 0 || result.matched !== result.term}
+		<p class="source">
+			{sources.join(', ')}{#if result.matched !== result.term}{#if sources.length > 0}&ensp;·&ensp;{/if}{t('reader.entry.matched')}
+				<span lang={textLang}>{result.matched}</span>{/if}
+		</p>
+	{/if}
+	{#if study}
+		<AddToStudyButtons
+			{result}
+			workspaceId={study.workspaceId}
+			paragraph={study.paragraph}
+			hold={study.hold}
+			stateLine={study.stateLine ? study.stateLine(result.entryId) : null}
+			{first}
+		/>
+	{/if}
 	<p class="open"><a href={`/entry/${Number(result.entryId)}`}>{t('reader.entry.open')}</a></p>
 </article>
 
 <style>
+	.entry {
+		display: grid;
+		gap: var(--space-2);
+		padding: var(--space-3) 0;
+	}
+
 	.entry + :global(.entry) {
-		margin-top: 0.6rem;
-		padding-top: 0.6rem;
-		border-top: 1px solid color-mix(in srgb, currentColor 15%, transparent);
+		border-top: 1px solid var(--hair);
 	}
 
 	header {
 		display: flex;
 		align-items: baseline;
 		flex-wrap: wrap;
-		gap: 0.2rem 0.6rem;
+		gap: var(--space-1) var(--space-2);
 	}
 
 	.term {
-		font-size: 1.5rem;
-		font-weight: 600;
-		line-height: 1.6;
+		font-family: var(--font-hanzi);
+		font-size: var(--font-size-xl);
+		font-weight: var(--weight-regular);
+		line-height: 1.5;
 	}
 
 	rt {
 		font-size: 0.5em;
-		font-weight: 400;
+		font-weight: var(--weight-regular);
 	}
 
-	.reading {
-		font-size: 1.05rem;
+	/* The reading in the readable accent (design §9). */
+	.reading.accent {
+		color: var(--reading-accent);
+		font-weight: var(--weight-medium);
 	}
 
 	.forms,
@@ -191,48 +205,32 @@
 		list-style: none;
 		display: flex;
 		flex-wrap: wrap;
-		gap: 0.25rem;
-		margin: 0.2rem 0 0;
+		gap: var(--space-1);
+		margin: 0;
 		padding: 0;
-	}
-
-	.chip {
-		display: inline-block;
-		padding: 0 0.4rem;
-		border-radius: 0.6rem;
-		font-size: 0.75rem;
-		line-height: 1.5;
-		background: color-mix(in srgb, currentColor 10%, transparent);
-	}
-
-	.inflection {
-		background: var(--accent-14);
-	}
-
-	.frequency {
-		background: color-mix(in srgb, var(--good) 22%, transparent);
 	}
 
 	.pack {
 		color: var(--readable-muted);
-		margin-right: 0.2rem;
 	}
 
 	.pos {
-		margin-right: 0.25rem;
-		background: color-mix(in srgb, var(--accent) 18%, transparent);
+		margin-inline-end: var(--space-1);
+		color: var(--readable-muted);
+		font-size: var(--font-size-xs);
 	}
 
 	.source {
-		margin: 0.25rem 0 0;
-		font-size: 0.75rem;
+		margin: 0;
+		font-size: var(--font-size-xs);
 	}
 
 	.senses {
-		margin: 0.3rem 0 0;
-		padding-left: 1.4rem;
+		margin: 0;
+		padding-inline-start: 1.2em;
 		display: grid;
-		gap: 0.2rem;
+		gap: 2px;
+		font-size: var(--font-size-s);
 	}
 
 	.xrefs {
@@ -242,35 +240,35 @@
 
 	/* Shift+hover looks these up: a faint dotted underline shows where. */
 	.scan {
-		text-decoration: underline dotted color-mix(in srgb, currentColor 45%, transparent);
+		text-decoration: underline dotted var(--line);
 		text-underline-offset: 0.2em;
 	}
 
 	.more {
-		margin-top: 0.25rem;
+		justify-self: start;
 		padding: 0;
 		border: none;
 		background: none;
 		color: var(--reading-accent);
 		font: inherit;
-		font-size: 0.8rem;
+		font-size: var(--font-size-xs);
 		cursor: pointer;
 		text-decoration: underline;
 	}
 
 	.hidden-note {
-		margin: 0.25rem 0 0;
-		font-size: 0.75rem;
+		margin: 0;
+		font-size: var(--font-size-xs);
 		color: var(--readable-muted);
 	}
 
 	.reveal {
 		display: block;
-		min-height: 44px;
+		min-height: var(--hit);
 	}
 
 	.open {
-		margin: 0.25rem 0 0;
-		font-size: 0.8rem;
+		margin: 0;
+		font-size: var(--font-size-xs);
 	}
 </style>

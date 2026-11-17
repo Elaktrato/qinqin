@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { LookupResult } from '$lib/api/types';
 import {
 	dictionaryNames,
+	levelChips,
 	frequencyLabel,
 	hasCjk,
 	joinForms,
@@ -175,5 +176,15 @@ describe('moreLabel', () => {
 	it('counts what is hidden, singular and plural', () => {
 		expect(moreLabel(1, 'sense')).toBe('Show 1 more sense');
 		expect(moreLabel(4, 'entry')).toBe('Show 4 more entries');
+	});
+});
+
+describe('levelChips (#102)', () => {
+	it('one chip per scheme, in result order, none for []', () => {
+		const r = { levels: [{ scheme: 'HSK', level: '3' }, { scheme: 'TOCFL', level: 'B1' }] } as LookupResult;
+		expect(levelChips(r)).toEqual(['HSK 3', 'TOCFL B1']);
+		expect(levelChips({ levels: [] } as unknown as LookupResult)).toEqual([]);
+		// An older server sends no levels.
+		expect(levelChips({} as LookupResult)).toEqual([]);
 	});
 });

@@ -1,4 +1,6 @@
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/svelte';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/svelte';
+import { tick } from 'svelte';
+import popupFixture from '../../../../../../docs/contracts/reader/popup-written.json';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { LookupResult } from '$lib/api/types';
 
@@ -55,7 +57,7 @@ describe('AddToStudyButtons', () => {
 			paragraph: null,
 			hold: vi.fn()
 		});
-		const plus = await screen.findByRole('button', { name: "Add 学 to study" });
+		const plus = await screen.findByRole('button', { name: 'Add to deck: 学' });
 		await waitFor(() => expect((plus as HTMLButtonElement).disabled).toBe(false));
 		await fireEvent.click(plus);
 		await waitFor(() => expect(addCard).toHaveBeenCalled());
@@ -71,7 +73,7 @@ describe('AddToStudyButtons', () => {
 			paragraph: null,
 			hold: vi.fn()
 		});
-		const plus = await screen.findByRole('button', { name: "Add 学 to study" });
+		const plus = await screen.findByRole('button', { name: 'Add to deck: 学' });
 		await waitFor(() => expect((plus as HTMLButtonElement).disabled).toBe(false));
 		await fireEvent.click(plus);
 		await waitFor(() => expect(addCard).toHaveBeenCalled());
@@ -191,5 +193,66 @@ describe("You've looked this up N times (#72)", () => {
 		mount();
 		await settled();
 		expect(screen.queryByText(HINT)).toBeNull();
+	});
+});
+
+describe('the lighter popup actions (#102)', () => {
+	const mount = (over: Record<string, unknown> = {}) =>
+		render(AddToStudyButtons, { result: result('word'), workspaceId: 3, paragraph: null, hold: vi.fn(), ...over } as never);
+	const ready = async (name: string | RegExp) => {
+		const b = (await screen.findByRole('button', { name })) as HTMLButtonElement;
+		await waitFor(() => expect(b.disabled).toBe(false));
+		return b;
+	};
+
+	it('"Add to deck" is the primary button and adds to General in one click (as before)', async () => {
+		mount();
+		const add = await ready('Add to deck: 学');
+		expect(add.textContent).toContain('Add to deck');
+		expect(add.classList.contains('primary')).toBe(true);
+		await fireEvent.click(add);
+		await waitFor(() => expect(addCard).toHaveBeenCalled());
+		const [, opts] = vi.mocked(addCard).mock.calls[0] as unknown as [number, Record<string, unknown>];
+		expect(opts.deckIds).toEqual(['general']);
+		expect(await screen.findByText('In study')).toBeTruthy();
+	});
+
+	it('"Choose a deck" opens a Menu of decks, Escape returns focus to it, choosing one adds there', async () => {
+		vi.mocked(getStudyData).mockResolvedValue({
+			decks: [{ id: 'd1', name: 'Lu Xun', createdAt: '2026-11-01T00:00:00Z' }],
+			cards: []
+		} as never);
+		mount();
+		const choose = await ready('Choose a deck');
+		await fireEvent.click(choose);
+		const menu = await screen.findByRole('menu');
+		expect(within(menu).getAllByRole('menuitem').map((i) => i.textContent?.trim())).toEqual(['General', 'Lu Xun']);
+		await fireEvent.keyDown(document.activeElement!, { key: 'Escape' });
+		await tick();
+		expect(screen.queryByRole('menu')).toBeNull();
+		expect(document.activeElement).toBe(choose);
+		await fireEvent.click(choose);
+		await fireEvent.click(within(await screen.findByRole('menu')).getByRole('menuitem', { name: 'Lu Xun' }));
+		await waitFor(() => expect(addCard).toHaveBeenCalled());
+		const [, opts] = vi.mocked(addCard).mock.calls[0] as unknown as [number, Record<string, unknown>];
+		expect(opts.deckIds).toEqual(['d1']);
+		vi.mocked(getStudyData).mockResolvedValue({ decks: [], cards: [] } as never);
+	});
+
+	it('"I know this" is a toggle with aria-pressed and a check icon when on', async () => {
+		vi.mocked(getStudyData).mockResolvedValueOnce({ decks: [], cards: [], known: [11] } as never);
+		mount();
+		const b = await ready('I know this');
+		await waitFor(() => expect(b.getAttribute('aria-pressed')).toBe('true'));
+		expect(b.querySelector('svg')).toBeTruthy();
+	});
+
+	it('the snapshot is the display form of reader/popup-written.json (の, not 乃)', async () => {
+		const c = popupFixture.cases[0];
+		mount({ result: { ...result('word'), term: c.term, forms: c.forms, readings: c.readings, senses: c.senses } });
+		await fireEvent.click(await ready(`Add to deck: ${c.term}`));
+		await waitFor(() => expect(addCard).toHaveBeenCalled());
+		const [, opts] = vi.mocked(addCard).mock.calls[0] as unknown as [number, Record<string, unknown>];
+		expect(opts.written).toBe('の');
 	});
 });

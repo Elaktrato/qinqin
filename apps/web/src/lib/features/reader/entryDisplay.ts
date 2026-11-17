@@ -114,3 +114,8 @@ export function parseXref(text: string): Xref {
 export function moreLabel(hidden: number, kind: 'sense' | 'entry'): string {
 	return kind === 'sense' ? t('reader.entry.moreSenses', { count: hidden }) : t('reader.entry.moreEntries', { count: hidden });
 }
+
+/** levelChips are the result's level chips ("HSK 3"): one per scheme, in result order. */
+export function levelChips(r: LookupResult): string[] {
+	return (r.levels ?? []).map((l) => t('reader.entry.level', { scheme: l.scheme, level: l.level }));
+}
