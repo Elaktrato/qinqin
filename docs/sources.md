@@ -674,6 +674,25 @@ licence texts are committed at `apps/web/static/OPENCC-JS-LICENSE.TXT` and
 package; a web test keeps them identical) and served by the running app at
 `/OPENCC-JS-LICENSE.TXT` and `/OPENCC-APACHE-2.0.TXT`.
 
+## Interface font
+
+The interface is set in [Figtree](https://github.com/erikdkennedy/figtree) 2.001
+("Copyright 2022 The Figtree Project Authors"), licensed under the **SIL Open Font
+License, Version 1.1** with no Reserved Font Name. The app ships the upstream variable
+WOFF2 (`fonts/webfonts/Figtree[wght].woff2` at commit
+`032dfa7fe219ef3a02890d6d3add84eacc9aebfe`, weights 300–900, 27,676 bytes) **unmodified**
+as `Figtree-Variable.woff2` under `apps/web/src/lib/assets/fonts/`; the build emits it as
+a hashed asset of the web app, and the service worker precaches it with the rest of the
+app. It is never loaded from a third-party host. The licence text is the upstream
+`OFL.txt` at the same commit, committed byte for byte at `apps/web/static/FIGTREE-OFL.TXT`
+and served by the running app at `/FIGTREE-OFL.TXT`; a web test pins both files' SHA-256.
+The Sources page credits it under "Built into the app".
+
+Hanzi and kanji faces (Noto Sans/Serif SC/TC/JP, LXGW WenKai, Klee One; all SIL OFL 1.1)
+are not bundled: they are planned as installable font packs
+(`docs/superpowers/plans/2026-11-17-vr-fonts.md`). Until one is installed, Chinese and
+Japanese text uses the device's own fonts.
+
 ## Level packs
 
 A levels pack is a directory with a `manifest.json` (`"type": "levels"`, `language`,

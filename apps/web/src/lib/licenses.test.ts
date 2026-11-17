@@ -7,6 +7,7 @@ const BYSA4 = 'https://creativecommons.org/licenses/by-sa/4.0/';
 const BYSA3 = 'https://creativecommons.org/licenses/by-sa/3.0/';
 const CC0 = 'https://creativecommons.org/publicdomain/zero/1.0/';
 const UNICODE = 'https://www.unicode.org/license.txt';
+const OFL = 'https://openfontlicense.org/';
 
 describe('licenseUrl', () => {
 	it.each([
@@ -22,7 +23,9 @@ describe('licenseUrl', () => {
 		['CC0 1.0', CC0],
 		['CC0-1.0', CC0],
 		['Unicode License v3', UNICODE],
-		['Unicode-3.0', UNICODE]
+		['Unicode-3.0', UNICODE],
+		['OFL-1.1', OFL],
+		['SIL OFL 1.1', OFL]
 	])('links %s', (name, url) => {
 		expect(licenseUrl(name)).toBe(url);
 	});
@@ -42,7 +45,9 @@ describe('licenseUrl', () => {
 		'per file',
 		'EDRDG Licence',
 		'see https://example.com/licence',
-		'L'
+		'L',
+		'OFL',
+		'OFL-1.0'
 	])('keeps %j plain', (name) => {
 		expect(licenseUrl(name)).toBeNull();
 	});

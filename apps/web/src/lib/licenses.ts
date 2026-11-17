@@ -11,6 +11,7 @@ const BYSA4 = 'https://creativecommons.org/licenses/by-sa/4.0/';
 const BYSA3 = 'https://creativecommons.org/licenses/by-sa/3.0/';
 const CC0 = 'https://creativecommons.org/publicdomain/zero/1.0/';
 const UNICODE = 'https://www.unicode.org/license.txt';
+const OFL = 'https://openfontlicense.org/';
 
 const KNOWN: ReadonlyMap<string, string> = new Map([
 	['cc by 4.0', BY4],
@@ -25,7 +26,9 @@ const KNOWN: ReadonlyMap<string, string> = new Map([
 	['cc0 1.0', CC0],
 	['cc0-1.0', CC0],
 	['unicode license v3', UNICODE],
-	['unicode-3.0', UNICODE]
+	['unicode-3.0', UNICODE],
+	['ofl-1.1', OFL],
+	['sil ofl 1.1', OFL]
 ]);
 
 /** licenseUrl is the canonical licence text URL of a recognised licence name, else null. */

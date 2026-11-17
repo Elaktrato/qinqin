@@ -61,6 +61,11 @@
 	},
 	{
 		"file": "lib/sources/coreCredits.ts",
+		"text": "Copyright 2022 The Figtree Project Authors",
+		"reason": "A copyright line, quoted verbatim from the font's OFL.txt (data)."
+	},
+	{
+		"file": "lib/sources/coreCredits.ts",
 		"text": "Aozora Bunko",
 		"reason": "A credited source's proper name (data)."
 	},

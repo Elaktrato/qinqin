@@ -17,7 +17,11 @@
 //      after the loader trims it): at most 4,000 bytes, no control
 //      characters but \n and \t, no bidi embedding/override/isolate
 //      characters, links written [text](https://host/...) that Go's
-//      url.Parse accepts, and nothing else; plus no U+FFFD (broken UTF-8).
+//      url.Parse accepts, and nothing else; plus no U+FFFD (broken UTF-8);
+//   e. every font file bundled with the web app (.woff2, .woff, .ttf, .otf
+//      under apps/web/src or apps/web/static) is named, in backticks, in
+//      docs/sources.md, and the section (## heading) naming it also names
+//      its licence text as `apps/web/static/<NAME>.TXT`, which must exist.
 //
 // Exit code 0 when everything agrees, 1 with one message per problem.
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
@@ -211,6 +215,46 @@ export function docPackIds(text) {
 	return ids;
 }
 
+const FONT_FILE = /\.(woff2?|ttf|otf)$/i;
+const FONT_ROOTS = ['apps/web/src', 'apps/web/static'];
+
+/** fontFiles lists the font files under the web app's source and static roots (repo-relative). */
+function fontFiles(root) {
+	const out = [];
+	const walk = (rel) => {
+		for (const e of readdirSync(join(root, rel), { withFileTypes: true })) {
+			const child = `${rel}/${e.name}`;
+			if (e.isDirectory()) walk(child);
+			else if (FONT_FILE.test(e.name)) out.push(child);
+		}
+	};
+	for (const base of FONT_ROOTS) if (existsSync(join(root, base))) walk(base);
+	return out.sort();
+}
+
+/** docSections splits docs/sources.md at its `## ` headings. */
+const docSections = (doc) => doc.split(/^## /m);
+
+/** fontProblems checks rule e for every bundled font file. */
+function fontProblems(root, doc) {
+	const problems = [];
+	for (const rel of fontFiles(root)) {
+		const name = '`' + rel.split('/').pop() + '`';
+		const sections = docSections(doc).filter((s) => s.includes(name));
+		if (sections.length === 0) {
+			problems.push(
+				`${rel}: bundled font is not named in docs/sources.md; name the file, in backticks, in a section that also names its licence text (\`apps/web/static/<NAME>.TXT\`)`
+			);
+			continue;
+		}
+		const licensed = sections.some((s) =>
+			[...s.matchAll(/`apps\/web\/static\/([A-Za-z0-9._-]+\.TXT)`/g)].some(([, f]) => existsSync(join(root, 'apps/web/static', f)))
+		);
+		if (!licensed) problems.push(`${rel}: the docs/sources.md section naming it names no licence text that exists under apps/web/static`);
+	}
+	return problems;
+}
+
 /** checkSources returns the list of problems under repo root `root`. */
 export function checkSources(root) {
 	const problems = [];
@@ -268,6 +312,7 @@ export function checkSources(root) {
 			problems.push(`docs/sources.md: bundled pack "${id}" (${rel}) is not mentioned; add it, in backticks, to the tables`);
 		}
 	}
+	problems.push(...fontProblems(root, doc));
 	for (const id of docPackIds(doc)) {
 		if (!known.has(id)) {
 			problems.push(

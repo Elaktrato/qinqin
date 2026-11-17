@@ -160,3 +160,45 @@ test('the local-only zh components pack the docs name is accepted', () => {
 	const doc = DOC + '- **Chinese components** (`zh-components`, local)\n';
 	assert.deepEqual(checkSources(repo(okPacks(), doc)), []);
 });
+
+/** withFont adds a font file (and optionally a licence text) to a temp repository. */
+function withFont(root, rel, licence) {
+	mkdirSync(dirname(join(root, rel)), { recursive: true });
+	writeFileSync(join(root, rel), 'wOF2');
+	if (licence) {
+		mkdirSync(join(root, 'apps/web/static'), { recursive: true });
+		writeFileSync(join(root, 'apps/web/static', licence), 'SIL OPEN FONT LICENSE Version 1.1');
+	}
+	return root;
+}
+
+const FONT_DOC = DOC + '\n## Interface font\n\nFigtree (`Figtree-Variable.woff2`), licence text `apps/web/static/FONT-OFL.TXT`.\n\n## Other\n';
+
+test('a bundled font named in the docs with an existing licence text passes', () => {
+	const root = withFont(repo(okPacks(), FONT_DOC), 'apps/web/src/lib/assets/fonts/Figtree-Variable.woff2', 'FONT-OFL.TXT');
+	assert.deepEqual(checkSources(root), []);
+});
+
+test('a bundled font the docs do not name is reported', () => {
+	const root = withFont(repo(okPacks()), 'apps/web/static/fonts/Other.ttf', 'FONT-OFL.TXT');
+	assert.deepEqual(checkSources(root), [
+		'apps/web/static/fonts/Other.ttf: bundled font is not named in docs/sources.md; name the file, in backticks, in a section that also names its licence text (`apps/web/static/<NAME>.TXT`)'
+	]);
+});
+
+test('a bundled font whose docs section names no existing licence text is reported', () => {
+	const missing = withFont(repo(okPacks(), FONT_DOC), 'apps/web/src/lib/assets/fonts/Figtree-Variable.woff2');
+	assert.deepEqual(checkSources(missing), [
+		'apps/web/src/lib/assets/fonts/Figtree-Variable.woff2: the docs/sources.md section naming it names no licence text that exists under apps/web/static'
+	]);
+	// A licence text in another section does not count.
+	const doc = DOC + '\n## Interface font\n\nFigtree (`Figtree-Variable.woff2`).\n\n## Other\n\n`apps/web/static/FONT-OFL.TXT`\n';
+	const elsewhere = withFont(repo(okPacks(), doc), 'apps/web/src/lib/assets/fonts/Figtree-Variable.woff2', 'FONT-OFL.TXT');
+	assert.equal(checkSources(elsewhere).length, 1);
+});
+
+test('node_modules and build output are not scanned for fonts', () => {
+	const root = withFont(repo(okPacks()), 'apps/web/node_modules/x/a.woff2');
+	withFont(root, 'apps/web/build/_app/immutable/assets/abc.woff2');
+	assert.deepEqual(checkSources(root), []);
+});

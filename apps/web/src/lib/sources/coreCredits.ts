@@ -44,6 +44,15 @@ export const coreCredits: SourceCredit[] = [
 		license: 'MIT',
 		attribution: 'Copyright (c) 2026 Open Spaced Repetition',
 	}, { notice: 'sources.core.tsFsrs' }),
+	// The interface font (#97), bundled unmodified; its licence text ships
+	// at static/FIGTREE-OFL.TXT (upstream OFL.txt, byte for byte).
+	credit({
+		name: 'Figtree',
+		url: 'https://github.com/erikdkennedy/figtree',
+		license: 'OFL-1.1',
+		attribution: 'Copyright 2022 The Figtree Project Authors',
+		licenseTexts: [licenceText('OFL-1.1', '/FIGTREE-OFL.TXT')]
+	}, { notice: 'sources.core.figtree' }),
 	credit({
 		name: 'uqr',
 		url: 'https://github.com/unjs/uqr',
