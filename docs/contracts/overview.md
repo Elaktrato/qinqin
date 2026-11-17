@@ -194,6 +194,23 @@ Study-day inputs are not rows: the learner's zone history is `GET/PUT /api/me/ti
   that does not declare token use. A client app signs in with a session, never with an access token.
   `auth/tokens.json`, `auth/tokens-format.json`, `auth/README.md` (Personal access tokens).
 
+## Interface language
+
+- Every user-visible string comes from a catalogue (`i18n/README.md`): the web's
+  `apps/web/src/lib/i18n/messages/en.json` is the source of every client key; Android converts it to
+  `values/strings.xml` with the reference converter (`apps/web/scripts/i18n-android.mjs`) and keeps Android-only
+  keys under `android.*`. Plurals, arguments and rich-text tags follow the shared ICU subset; `messages.json` and
+  `android-convert.json` pin both sides.
+- The setting: `GET /api/auth/me` carries `interfaceLanguage` (`''` = follow the device); `PUT
+  /api/me/interface-language {language}` stores it (422 `invalid_language`; sessions only, never access tokens).
+  Resolve with `negotiate.json` (the setting if non-empty, else the device list; `en` today). Formatting uses the
+  interface language plus the device region (`negotiate.json` `formatLocale`; English without a region → `en-GB`).
+- Show API errors by `error` code from the catalogue (`apiError.*`), never the English `message`. Built-in plugin
+  names and activity labels come from `plugin.<idCamel>.*`. Study text carries the study language, interface text
+  none of its own (`i18n/README.md`, "`lang` and `dir` attributes").
+- Android checklist: convert the catalogue, implement `negotiate.json` (both lists), read and write the setting,
+  and decode `messages.json`, `plural-categories.json` and `language-tags.json` in the Android tests.
+
 ## Study rules (links)
 
 - Day: `study-day/` (`dayOf`, `dayStart`, zone history, `GET/PUT /api/me/time-zone`).

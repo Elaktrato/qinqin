@@ -64,3 +64,12 @@ describe('docs/wiki', () => {
 		expect(r.status, r.stderr).toBe(0);
 	});
 });
+
+describe('API errors are translated by code (#73)', () => {
+	const wiki = resolve(__dirname, '../../../../docs/wiki');
+	it.each(['API-Errors.md', 'API-Overview.md'])('%s says clients show text by code and message stays English', (page) => {
+		const text = readFileSync(resolve(wiki, page), 'utf8');
+		expect(text).toMatch(/translat\w+ by (the )?(error )?code|by code/i);
+		expect(text).toMatch(/message[^.]*English/);
+	});
+});

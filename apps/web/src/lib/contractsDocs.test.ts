@@ -92,3 +92,34 @@ describe('docs/contracts coverage', () => {
 		expect(readOrder).toContain(`\`${name}/\``);
 	});
 });
+
+describe('interface language (#73)', () => {
+	const overview = readFileSync(resolve(root, 'overview.md'), 'utf8');
+	const i18n = readFileSync(resolve(root, 'i18n/README.md'), 'utf8');
+
+	it('overview.md has an Interface language section and an Android line for it', () => {
+		expect(overview).toMatch(/^## Interface language/m);
+		expect(overview).toContain('i18n/README.md');
+		expect(overview).toMatch(/interfaceLanguage/);
+		expect(overview).toMatch(/Android[^\n]*(strings\.xml|catalogue)/);
+	});
+
+	it('i18n/README.md covers every spec section and carries the Rulings', () => {
+		for (const heading of [
+			'## Catalogue files',
+			'## Keys',
+			'## Message syntax',
+			'## Android conversion',
+			'## Interface language',
+			'## `lang` and `dir` attributes',
+			'## Locale formatting',
+			'## API errors',
+			'## Plugin manifests',
+			'## Rulings',
+			'## Fixtures'
+		])
+			expect(i18n, heading).toContain(heading);
+		expect(i18n).toContain('en-GB');
+		expect(i18n).toMatch(/studyLang/);
+	});
+});
