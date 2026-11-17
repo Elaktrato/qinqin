@@ -186,6 +186,25 @@ components.
 - **Tokens only:** components hold no colour literal and no `prefers-color-scheme`; the painted theme (also when
   the person forces Light or Dark) is the only source of colour.
 
+**Base components** (web: `apps/web/src/lib/ui/`, re-exported by `index.ts`; each file's header documents its API;
+Android builds the same set in Compose). Every visible word is a prop the caller fills from the catalogue.
+
+| Component | API | Rule it carries |
+| --- | --- | --- |
+| `Icon` | `name`, `size` (`s`/`m`/`l` or px), `label?` | Lucide shapes (`icons/lucide.ts`), stroke 1.5, `currentColor`; decorative unless labelled |
+| `IconButton` | `label` (required), `icon`, `size?`, `pressed?`, `href?`, `disabled?`, `tooltip?`, `placement?` | named + tooltip on hover/focus; no box at rest; 44px target on touch |
+| `Tooltip` | `text`, `placement?`, `describe?`, `open?`, `suppress?`, children(`tipId`) | hover and keyboard focus, hoverable, Escape hides (WCAG 1.4.13) |
+| `Button` | `variant` (`secondary`/`primary`/`plain`/`filled`), `tone?` (`danger`), `type?`, `href?`, `busy?`, `icon?` | one primary in the soft tint; secondary a hairline; filled rare; disabled not faded |
+| `Field` | `label`, `bind:value`, `type?`, `hint?`, `error?`, `hideLabel?`, `multiline?` | an underline; 2px accent on focus; hint and error linked; error has a `bad` bar |
+| `Tabs` | `label`, `tabs` (`{id, label, href?}`), `bind:selected`, `onselect?`, `panel?` | text tabs, 2px accent underline; APG tabs, or links with `aria-current` for routes |
+| `Menu` / `MenuItem` | `label`, `icon?` / `text?`, `menuLabel?`, `align?`, `bind:open` / `onselect?`, `href?`, `checked?`, `icon?`, `separator?` | floating layer; roving focus, typeahead, Escape returns focus; a check mark for the chosen item |
+| `Dialog` | `bind:open`, `title`, `description?`, `onclose?`, `initialFocus?`, `actions` | native modal `<dialog>`; focus in, trapped, returned; Escape closes once |
+| `Sheet` | `bind:open`, `label`, `onclose?`, `onnext?`, `onprev?`, `initialFocus?` | the bottom sheet of the reader lookup and the journal corrections; drag down to close, swipe or arrows to page |
+| `Chip` | `tone?` (`neutral`/`accent`/`good`) | small text on `raised`, no border; `good` adds a dot |
+| `Stat` | `value`, `label`, `change?` (`{text, direction}`) | big light number, small muted label; the change in words plus an arrow |
+| `Section` | `title?`, `level?`, `actions?` | unboxed group; a hairline between Sections |
+| `Panel` | `raised?` | the one box: the content surface, an inset that must read as one object |
+
 ## The `appearance` row
 
 The person's choice: a plugin data row of `qinqin-core`, key `appearance`, **user-global** (`workspaceId: null`;
