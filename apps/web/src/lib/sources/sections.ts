@@ -2,6 +2,7 @@
 // notes from the API, the plugin credits from the web plugin manifests,
 // and the app's own credits. The page only renders what this returns.
 
+import { pluginName } from '$lib/plugins/manifestText';
 import type { SentencePack } from '$lib/api/packs';
 import type { ComponentPack, StrokePack } from '$lib/api/types';
 import type { PluginManifest } from '$lib/plugins';
@@ -210,6 +211,6 @@ export function pluginCredits(
 		const credits = (manifest.sources ?? [])
 			.filter((credit) => !coreNames.has(credit.name.trim().toLowerCase()))
 			.map(creditView);
-		return credits.length > 0 ? [{ id: manifest.id, name: manifest.name, credits }] : [];
+		return credits.length > 0 ? [{ id: manifest.id, name: pluginName(manifest), credits }] : [];
 	});
 }

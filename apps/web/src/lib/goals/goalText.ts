@@ -5,6 +5,7 @@
 import type { ActivitySource } from '../api/stats';
 import { t } from '../i18n';
 import { activityType, type GoalMetric } from './goals';
+import { activityLabel, activityText } from '../plugins/manifestText';
 import type { GoalDay } from './progress';
 
 export interface MetricOption {
@@ -19,13 +20,13 @@ const REVIEW_TYPE = 'review';
 export function metricOptions(sources: readonly ActivitySource[]): MetricOption[] {
 	const option = (s: ActivitySource): MetricOption => ({
 		metric: `activity:${s.type}`,
-		label: s.label,
+		label: activityLabel(s),
 		unit: s.unit === 'seconds' ? 'minutes' : 'count'
 	});
 	const review = sources.find((s) => s.type === REVIEW_TYPE);
 	const others = sources
 		.filter((s) => s.type !== REVIEW_TYPE)
-		.sort((a, b) => a.label.localeCompare(b.label) || (a.type < b.type ? -1 : 1));
+		.sort((a, b) => activityLabel(a).localeCompare(activityLabel(b)) || (a.type < b.type ? -1 : 1));
 	return [
 		...(review === undefined ? [] : [option(review)]),
 		{ metric: 'flashcards:new', label: t('goals.metric.newCards'), unit: 'count' },
@@ -34,10 +35,10 @@ export function metricOptions(sources: readonly ActivitySource[]): MetricOption[
 	];
 }
 
-function templateOf(metric: GoalMetric, sources: readonly ActivitySource[]): { one: string; other: string } {
+/** The activity source a metric counts; an unknown type words itself with its id ("{n} pomodoro"). */
+function sourceOf(metric: GoalMetric, sources: readonly ActivitySource[]): Pick<ActivitySource, 'plugin' | 'type' | 'describe'> {
 	const type = activityType(metric) ?? metric;
-	const source = sources.find((s) => s.type === type);
-	return source?.describe ?? { one: `{n} ${type}`, other: `{n} ${type}` };
+	return sources.find((s) => s.type === type) ?? { plugin: '', type, describe: { one: `{n} ${type}`, other: `{n} ${type}` } };
 }
 
 /** progressText: "32 of 50 flashcard reviews today"; the plural follows the target. */
@@ -47,11 +48,9 @@ export function progressText(day: GoalDay, sources: readonly ActivitySource[]): 
 	if (day.metric === 'flashcards:studyTime') {
 		return t('goals.progress.studyTime', { count: day.target, amount: day.amount });
 	}
-	// A plugin's own `describe` template (manifest text, Task 22 brings its catalogue wording).
-	const template = templateOf(day.metric, sources);
-	const words = day.target === 1 ? template.one : template.other;
+	// A source's count text: the catalogue's for a built-in plugin, else the manifest's `describe` templates.
 	const amount = t('goals.progress.amountOfTarget', { amount: day.amount, target: day.target });
-	return t('goals.progress.today', { progress: words.replaceAll('{n}', amount) });
+	return t('goals.progress.today', { progress: activityText(sourceOf(day.metric, sources), day.target, amount) });
 }
 
 /** shortText: "32/50" for the small ring; empty without a goal. */

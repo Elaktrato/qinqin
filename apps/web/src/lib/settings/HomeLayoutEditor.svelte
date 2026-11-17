@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { pluginName } from '$lib/plugins/manifestText';
 	// Settings → Home: which widgets the home page shows, and in what
 	// order. The layout is one list per user (every workspace and device
 	// shares it), so widgets that do not apply to the active workspace's
@@ -71,7 +72,7 @@
 			if (shown.has(id)) return [];
 			for (const plugin of owners) {
 				const widget = plugin.manifest.widgets?.find((w) => w.id === id);
-				if (widget) return [{ id, title: widget.title, plugin: plugin.manifest.name }];
+				if (widget) return [{ id, title: widget.title, plugin: pluginName(plugin.manifest) }];
 			}
 			return [];
 		});
@@ -80,15 +81,17 @@
 	// The default layout's titles, from every widget this build knows.
 	const defaultTitles = $derived.by(() => {
 		const known = [...coreWidgets, ...owners.flatMap((p) => p.manifest.widgets ?? [])];
-		return DEFAULT_LAYOUT.map((id) => known.find((w) => w.id === id)?.title ?? id).join(', then ');
+		return DEFAULT_LAYOUT.map((id) => known.find((w) => w.id === id)?.title ?? id).reduce((before, after) =>
+			t('settings.home.thenJoin', { before, after })
+		);
 	});
 
 	function ownerLabel(owner: string): string {
 		if (owner === 'core') return t('settings.home.core');
 		const plugin = owners.find((p) => p.manifest.id === owner);
-		if (plugin) return plugin.manifest.name;
+		if (plugin) return pluginName(plugin.manifest);
 		const name = pluginState(owner, states)?.manifest?.name;
-		return typeof name === 'string' && name.trim() ? name : owner;
+		return pluginName({ id: owner, name: typeof name === 'string' && name.trim() ? name : owner });
 	}
 
 	async function load(): Promise<void> {

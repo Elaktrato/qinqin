@@ -2,6 +2,7 @@
 	import { onMount } from 'svelte';
 	import { errorMessage } from '$lib/stats/errors';
 	import { t } from '$lib/i18n';
+	import { activityLabel } from '$lib/plugins/manifestText';
 	import { fetchActivity, type ActivityResponse } from '$lib/api/stats';
 	import {
 		HEATMAP_DAYS,
@@ -202,10 +203,10 @@
 					type="button"
 					class="chip"
 					aria-pressed={!stored.hidden.includes(source.type)}
-					aria-label={chipLabel(source.label, chipPoints[source.type] ?? 0)}
+					aria-label={chipLabel(activityLabel(source), chipPoints[source.type] ?? 0)}
 					onclick={() => remember({ ...stored, hidden: toggleHidden(stored.hidden, source.type) })}
 				>
-					{source.label}
+					{activityLabel(source)}
 					<span class="count">{chipPoints[source.type] ?? 0}</span>
 				</button>
 			{/each}

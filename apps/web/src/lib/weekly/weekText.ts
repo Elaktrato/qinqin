@@ -6,6 +6,7 @@
 import type { ActivitySource } from '../api/stats';
 import { t, type MessageKey } from '../i18n';
 import { formatDuration } from '../stats/readingTime';
+import { activityLabel } from '../plugins/manifestText';
 import { addDays } from '../time/studyDay';
 import type { CountRow, WeekDay, WeekSummary } from './summary';
 import { previousWeek, weekOf } from './week';
@@ -76,7 +77,8 @@ export function rowLabel(row: CountRow, sources: readonly ActivitySource[]): str
 	const fixed = Object.hasOwn(LABELS, row.key) ? LABELS[row.key] : undefined;
 	if (fixed !== undefined) return t(fixed);
 	const type = row.key.slice('activity:'.length);
-	return sources.find((s) => s.type === type)?.label ?? type;
+	const source = sources.find((s) => s.type === type);
+	return source === undefined ? type : activityLabel(source);
 }
 
 export function rowValue(row: Pick<CountRow, 'value' | 'unit'>): string {

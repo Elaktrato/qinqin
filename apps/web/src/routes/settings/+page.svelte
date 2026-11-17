@@ -7,6 +7,7 @@
 	import { ApiError, api } from '$lib/api/client';
 	import { getSchemes } from '$lib/api/schemes';
 	import type { Dictionary, PluginInfo, Scheme, Workspace } from '$lib/api/types';
+	import { pluginName as manifestPluginName } from '$lib/plugins/manifestText';
 	import { coverage, dictionaryHint, levelsHint } from '$lib/coverage';
 	import DeleteWorkspaceDialog from '$lib/components/DeleteWorkspaceDialog.svelte';
 	import WorkspaceCreateForm from '$lib/components/WorkspaceCreateForm.svelte';
@@ -109,7 +110,7 @@
 
 	function pluginName(plugin: PluginInfo): string {
 		const name = plugin.manifest?.name;
-		return typeof name === 'string' && name.trim() ? name : plugin.id;
+		return manifestPluginName({ id: plugin.id, name: typeof name === 'string' && name.trim() ? name : plugin.id });
 	}
 
 	async function loadPlugins(): Promise<void> {

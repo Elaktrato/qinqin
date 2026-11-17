@@ -303,7 +303,11 @@ const CASES: [MessageKey, MessageArgs, string, string][] = [
 	],
 	// the rest (Task 21)
 	['stats.map.tipCards', {}, '1 card', '2 cards'],
-	['stats.wordStateSummary.text', { parts: '1 new' }, '1 word: 1 new', '2 words: 1 new']
+	['stats.wordStateSummary.text', { parts: '1 new' }, '1 word: 1 new', '2 words: 1 new'],
+	// built-in plugin manifests (Task 22)
+	['plugin.qinqinCore.activity.review.count', { n: '7' }, '7 flashcard review', '7 flashcard reviews'],
+	['plugin.qinqinCore.activity.read.count', { n: '7' }, '7 minute of reading', '7 minutes of reading'],
+	['plugin.qinqinJournal.activity.journal.count', { n: '7' }, '7 journal entry', '7 journal entries']
 ];
 
 describe('catalogue plurals keep their English', () => {
