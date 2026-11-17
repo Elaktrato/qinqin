@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { pageTitle } from '$lib/pageTitle';
+	import { t } from '$lib/i18n';
 	import { onMount, tick, untrack } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { resolveAudio, type AudioResolution } from '$lib/api/audio';
@@ -61,7 +62,7 @@ import type { Run } from '$lib/study/vacation';
 	import { buildLevelPlan, type LevelUnit } from '$lib/study/levelQueue';
 	import { MAX_RESHOWS, applyGrade, progressOf, removeAt } from '$lib/study/requeue';
 	import { SESSION_CONFIG_KEY, loadConfig } from '$lib/study/session';
-	import { COMPANION_NOTE, sessionStartError, showCompanionNote } from '$lib/study/sessionStart';
+	import { companionNote, sessionStartError, showCompanionNote } from '$lib/study/sessionStart';
 	import { offline } from '$lib/pwa/offlineState';
 	import { activeWeights, addCard, loadStudyData } from '$lib/study/store';
 	import { getFrequencyPacks } from '$lib/api/frequency';
@@ -87,38 +88,37 @@ import type { Run } from '$lib/study/vacation';
 
 	const GRADE_KEYS: Record<string, ReviewGrade> = { '1': 1, '2': 2, '3': 3, '4': 4 };
 	const GRADE_LABELS: { grade: ReviewGrade; label: string }[] = [
-		{ grade: 1, label: 'Again' },
-		{ grade: 2, label: 'Hard' },
-		{ grade: 3, label: 'Good' },
-		{ grade: 4, label: 'Easy' }
+		{ grade: 1, label: t('study.grade.again') },
+		{ grade: 2, label: t('study.grade.hard') },
+		{ grade: 3, label: t('study.grade.good') },
+		{ grade: 4, label: t('study.grade.easy') }
 	];
 
 	const KIND_LABELS: Record<StudyCardKind, string> = {
-		vocab: 'Vocab',
-		sentence: 'Word Salad',
-		writing: 'Writing',
-		tone: 'Tone',
-		reverse: 'Reverse',
-		cloze: 'Cloze'
+		vocab: t('study.cardType.vocab'),
+		sentence: t('study.cardType.sentence'),
+		writing: t('study.cardType.writing'),
+		tone: t('study.cardType.tone'),
+		reverse: t('study.cardType.reverse'),
+		cloze: t('study.cardType.cloze')
 	};
 
 	const STUDY_KINDS: readonly StudyCardKind[] = CARD_KINDS;
 
 	const TIER_LABELS: Record<SaladTier, string> = {
-		0: 'Tier 0 · words, translation shown',
-		1: 'Tier 1 · words, translation hidden',
-		2: 'Tier 2 · single characters'
+		0: t('study.session.tier0'),
+		1: t('study.session.tier1'),
+		2: t('study.session.tier2')
 	};
 
 	// The key map per kind, shown under the grade buttons.
 	const KEY_HINTS: Record<StudyCardKind, string> = {
-		vocab: 'Keys: Space or Enter shows the answer · 1–4 grade',
-		sentence: 'Tap the tiles in order, then Check · keys 1–4 grade once checked',
-		writing: 'Draw each character stroke by stroke · keys 1–4 grade when finished',
-		tone: 'Keys: 1–5 set the highlighted syllable’s tone (5 = neutral) · ←/→ move · Backspace clears · Enter checks · then 1–4 grade',
-		reverse:
-			'Keys: type the word and press Enter to check · Space or Enter outside the field shows the answer · 1–4 grade',
-		cloze: 'Keys: 1–4 pick a choice or type the word, Enter checks · then 1–4 grade'
+		vocab: t('study.session.keys.vocab'),
+		sentence: t('study.session.keys.sentence'),
+		writing: t('study.session.keys.writing'),
+		tone: t('study.session.keys.tone'),
+		reverse: t('study.session.keys.reverse'),
+		cloze: t('study.session.keys.cloze')
 	};
 
 	// The SPA has no SSR, so the tab's setup is readable during init.
@@ -175,12 +175,12 @@ import type { Run } from '$lib/study/vacation';
 		);
 		if (scheme === undefined) {
 			throw new LevelWorkspaceMismatch(
-				'This level scheme is not installed for the current workspace language. Start a new session from the study setup.'
+				t('study.session.schemeMissing')
 			);
 		}
 		if (!scheme.levels.some((level) => level.name === config.levelName)) {
 			throw new LevelWorkspaceMismatch(
-				`The level “${config.levelName}” no longer exists in ${scheme.name}. Start a new session from the study setup.`
+				t('study.session.levelGone', { level: config.levelName ?? '', scheme: scheme.name })
 			);
 		}
 		return {
@@ -352,7 +352,7 @@ import type { Run } from '$lib/study/vacation';
 			entries = { ...entries, [entryId]: entry };
 		} catch (err) {
 			if (seq !== requestSeq) return;
-			entryError = message(err, 'Could not load this word.');
+			entryError = message(err, t('study.session.wordFailed'));
 		} finally {
 			if (seq === requestSeq && pendingEntryId === entryId) {
 				pendingEntryId = null;
@@ -519,7 +519,7 @@ import type { Run } from '$lib/study/vacation';
 				loadError = sessionStartError({
 					offline: !$offline.online || err instanceof TypeError,
 					mode: config.mode,
-					fallback: message(err, 'Could not start your session.')
+					fallback: message(err, t('study.session.startFailed'))
 				});
 			}
 		} finally {
@@ -913,7 +913,7 @@ import type { Run } from '$lib/study/vacation';
 					cardId: item.cardId
 				});
 				if (next.buried > 0) {
-					buryNote = `${next.buried} related ${next.buried === 1 ? 'card is' : 'cards are'} buried until tomorrow`;
+					buryNote = t('study.session.buried', { count: next.buried });
 				}
 				queue = next.plan.queue;
 				reserve = next.plan.reserve;
@@ -997,79 +997,81 @@ import type { Run } from '$lib/study/vacation';
 </script>
 
 <svelte:head>
-	<title>{pageTitle('Session', 'Study')}</title>
+	<title>{pageTitle(t('study.session.title'), t('study.setup.title'))}</title>
 </svelte:head>
 
 <svelte:window onkeydown={onKeydown} />
 
 <main class="session">
 	{#if missingConfig}
-		<p class="hint" role="status">Opening study setup…</p>
+		<p class="hint" role="status">{t('study.session.opening')}</p>
 	{:else if workspaceMismatch}
 		<section class="state" aria-labelledby="mismatch-heading">
-			<h1 id="mismatch-heading">Session unavailable</h1>
+			<h1 id="mismatch-heading">{t('study.session.unavailable')}</h1>
 			<p class="error" role="alert">{workspaceMismatch}</p>
-			<a href="/study">Back to study setup</a>
+			<a href="/study">{t('study.session.back')}</a>
 		</section>
 	{:else if loadError}
 		<section class="state" aria-labelledby="error-heading">
-			<h1 id="error-heading">Session unavailable</h1>
+			<h1 id="error-heading">{t('study.session.unavailable')}</h1>
 			<p class="error" role="alert">{loadError}</p>
-			<button type="button" onclick={retryLoad}>Retry</button>
-			<a href="/study">Back to study setup</a>
+			<button type="button" onclick={retryLoad}>{t('study.session.retry')}</button>
+			<a href="/study">{t('study.session.back')}</a>
 		</section>
 	{:else if noWorkspace}
 		<section class="state">
-			<h1>No workspace</h1>
-			<p class="hint">Choose a workspace in the header to study.</p>
-			<a href="/study">Back to study setup</a>
+			<h1>{t('study.session.noWorkspace')}</h1>
+			<p class="hint">{t('study.session.noWorkspaceText')}</p>
+			<a href="/study">{t('study.session.back')}</a>
 		</section>
 	{:else if loading}
-		<p class="hint" role="status">Loading your session…</p>
+		<p class="hint" role="status">{t('study.session.loading')}</p>
 	{:else if queue.length === 0}
 		<section class="state" aria-labelledby="empty-heading">
-			<h1 id="empty-heading">Nothing to study</h1>
-			<p>Nothing due — add words or raise your limits</p>
-			<a href="/study">Back to study setup</a>
+			<h1 id="empty-heading">{t('study.session.empty')}</h1>
+			<p>{t('study.session.emptyText')}</p>
+			<a href="/study">{t('study.session.back')}</a>
 		</section>
 	{:else if complete}
 		<section class="summary" aria-labelledby="summary-heading">
-			<h1 id="summary-heading">Session complete</h1>
+			<h1 id="summary-heading">{t('study.session.complete')}</h1>
 			<p class="stat">
 				<strong>{sessionReviews.length}</strong>
-				{sessionReviews.length === 1 ? 'review' : 'reviews'}
+				{t('study.session.reviews', { count: sessionReviews.length })}
 			</p>
 			{#if reshown > 0}
 				<p class="stat">
-					<strong>{reshown}</strong> re-{reshown === 1 ? 'show' : 'shows'} (practice, not counted)
+					<strong>{reshown}</strong> {t('study.session.reshows', { count: reshown })}
 				</p>
 			{/if}
-			<p class="stat"><strong>+{sessionXp}</strong> XP this session</p>
-			<ul class="breakdown" aria-label="XP by card type">
+			<p class="stat"><strong>+{sessionXp}</strong> {t('study.session.xp')}</p>
+			<ul class="breakdown" aria-label={t('study.session.xpByType')}>
 				{#each STUDY_KINDS as kind (kind)}
 					{#if kindXp[kind] > 0}
 						<li>{KIND_LABELS[kind]} <strong>+{kindXp[kind]}</strong></li>
 					{/if}
 				{/each}
 				{#if dailyBonusXp > 0}
-					<li>Daily bonus <strong>+{dailyBonusXp}</strong></li>
+					<li>{t('study.session.dailyBonus')} <strong>+{dailyBonusXp}</strong></li>
 				{/if}
 			</ul>
-			<p class="stat">Level <strong>{progress.level}</strong></p>
+			<p class="stat">{t('study.session.level')} <strong>{progress.level}</strong></p>
 			<div
 				class="bar"
 				role="progressbar"
-				aria-label="Progress to the next level"
+				aria-label={t('study.session.progressLabel')}
 				aria-valuemin="0"
 				aria-valuemax={progress.xpForNext}
 				aria-valuenow={progress.xpInto}
 			>
 				<span style:width={`${(progress.xpInto / progress.xpForNext) * 100}%`}></span>
 			</div>
-			<p class="hint">{progress.xpInto} / {progress.xpForNext} XP to level {progress.level + 1}</p>
+			<p class="hint">
+				{t('study.session.xpToLevel', { into: progress.xpInto, next: progress.xpForNext, level: progress.level + 1 })}
+			</p>
 			<p class="stat">
-				<span aria-hidden="true">🔥</span> Streak <strong>{streak.current}</strong>
-				{streak.current === 1 ? 'day' : 'days'}
+				<span aria-hidden="true">🔥</span> {t('study.session.streak')} <strong>{streak.current}</strong>
+				{t('study.session.streakDays', { count: streak.current })}
 			</p>
 			<Mascot
 				level={progress.level}
@@ -1077,16 +1079,19 @@ import type { Run } from '$lib/study/vacation';
 				todayDone={streak.todayDone}
 				size={72}
 			/>
-			<a href="/study">Back to study setup</a>
+			<a href="/study">{t('study.session.back')}</a>
 		</section>
 	{:else}
 		<header class="top">
-			<h1>Study</h1>
+			<h1>{t('study.setup.title')}</h1>
 			<p class="progress" aria-live="polite">
-					{queueProgress.position} / {queueProgress.total}{#if queueProgress.pending > 0}, {queueProgress.pending}
-						to repeat{/if}
+					{#if queueProgress.pending > 0}{t('study.session.progressRepeat', {
+							position: queueProgress.position,
+							total: queueProgress.total,
+							count: queueProgress.pending
+						})}{:else}{queueProgress.position} / {queueProgress.total}{/if}
 				</p>
-			<a href="/study">End session</a>
+			<a href="/study">{t('study.session.end')}</a>
 		</header>
 
 		{#if buryNote}
@@ -1098,19 +1103,19 @@ import type { Run } from '$lib/study/vacation';
 		{/if}
 
 		{#if showCompanionNote({ offline: offlineSession, kinds })}
-			<p class="hint">{COMPANION_NOTE}</p>
+			<p class="hint">{companionNote()}</p>
 		{/if}
 
 		{#if entryError}
 			<section class="state">
 				<p class="error" role="alert">{entryError}</p>
-				<button type="button" onclick={retryEntry}>Retry</button>
+				<button type="button" onclick={retryEntry}>{t('study.session.retry')}</button>
 			</section>
 		{:else if resolved === null}
-			<p class="hint" role="status">Loading card…</p>
+			<p class="hint" role="status">{t('study.session.loadingCard')}</p>
 		{:else}
 			{@const current = resolved}
-			<article class="card" aria-label={`${KIND_LABELS[current.item.kind]} card`}>
+			<article class="card" aria-label={t('study.session.cardLabel', { kind: KIND_LABELS[current.item.kind] })}>
 				<p class="badges">
 					<span class="badge kind-{current.item.kind}">{KIND_LABELS[current.item.kind]}</span>
 					{#if current.item.kind === 'sentence'}
@@ -1118,11 +1123,11 @@ import type { Run } from '$lib/study/vacation';
 					{/if}
 					{#if current.item.reshow !== undefined}
 						<span class="badge badge-again"
-							>Again, look {current.item.reshow + 1} of {MAX_RESHOWS + 1}</span
+							>{t('study.session.again', { n: current.item.reshow + 1, max: MAX_RESHOWS + 1 })}</span
 						>
 					{/if}
 					{#if current.item.virtual && current.item.kind !== 'vocab'}
-						<span class="badge">new</span>
+						<span class="badge">{t('study.session.new')}</span>
 					{/if}
 				</p>
 
@@ -1194,7 +1199,7 @@ import type { Run } from '$lib/study/vacation';
 					<p class="error" role="alert">{gradeError}</p>
 				{/if}
 
-				<div class="grades" role="group" aria-label="Grade this card">
+				<div class="grades" role="group" aria-label={t('study.session.grades')}>
 					{#each GRADE_LABELS as option (option.grade)}
 						<button
 							type="button"
@@ -1202,22 +1207,26 @@ import type { Run } from '$lib/study/vacation';
 							class:suggested={done && suggested === option.grade}
 							bind:this={gradeButtons[option.grade - 1]}
 							disabled={!done || grading}
-							title={`Press ${option.grade}`}
+							title={t('study.session.press', { key: option.grade })}
 							aria-label={done && suggested === option.grade
-								? `${option.label} (suggested), key ${option.grade}`
-								: `${option.label}, key ${option.grade}`}
+								? t('study.session.gradeSuggested', { grade: option.label, key: option.grade })
+								: t('study.session.gradeKey', { grade: option.label, key: option.grade })}
 							onclick={(event) =>
 								// detail 0: activated from the keyboard, not a pointer.
 								void submitGrade(option.grade, event.detail === 0 ? 'activation' : 'click')}
 						>
 							{option.label}
 							{#if done && suggested === option.grade}
-								<span class="suggested-tag" aria-hidden="true">suggested</span>
+								<span class="suggested-tag" aria-hidden="true">{t('study.session.suggested')}</span>
 							{/if}
 						</button>
 					{/each}
 				</div>
-				<p class="keys">{KEY_HINTS[current.item.kind]}{#if done && canSound(currentAudio)} · P plays{/if}</p>
+				<p class="keys">
+					{done && canSound(currentAudio)
+						? t('study.session.keysPlays', { keys: KEY_HINTS[current.item.kind] })
+						: KEY_HINTS[current.item.kind]}
+				</p>
 			</article>
 		{/if}
 	{/if}

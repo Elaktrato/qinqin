@@ -3,6 +3,7 @@
 	// and ring.ts; this only draws them. Without a goal it renders nothing; on
 	// vacation or for an activity that is no longer counted only a status line.
 	import type { ActivitySource } from '$lib/api/stats';
+	import { t } from '$lib/i18n';
 	import { ariaText, shortText, statusLine } from './goalText';
 	import type { GoalDay } from './progress';
 	import { ringArc } from './ring';
@@ -32,7 +33,7 @@
 		class="goal-ring {size}"
 		class:reached
 		role="progressbar"
-		aria-label="Daily goal"
+		aria-label={t('goals.ring.label')}
 		aria-valuemin="0"
 		aria-valuemax={day.target}
 		aria-valuenow={Math.min(day.amount, day.target)}
@@ -55,7 +56,7 @@
 		{#if size === 'small'}
 			<span class="text short" aria-hidden="true">{shortText(day)}</span>
 			<!-- Reached is said in words, not by colour or the check mark alone. -->
-			{#if reached}<span class="reached-word" aria-hidden="true">Goal reached</span>{/if}
+			{#if reached}<span class="reached-word" aria-hidden="true">{t('goals.status.reached')}</span>{/if}
 		{:else}
 			<p class="text">{valueText}</p>
 		{/if}

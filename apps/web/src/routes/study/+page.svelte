@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { pageTitle } from '$lib/pageTitle';
+	import { t } from '$lib/i18n';
 	import { goto } from '$app/navigation';
 	import { ApiError } from '$lib/api/client';
 	import { fetchSchemeCharacters, getSchemeEntries, getSchemes } from '$lib/api/schemes';
@@ -44,7 +45,7 @@ import { limitsOf } from '$lib/study/scheduler';
 	import { getFrequencyPacks } from '$lib/api/frequency';
 	import type { FrequencyPack } from '$lib/api/types';
 	import { resolveSessionOrder } from '$lib/study/newOrder';
-	import { MIXED_NOTE, decodeOrder, encodeOrder, sessionOrderChoices } from '$lib/study/newOrderView';
+	import { mixedNote, decodeOrder, encodeOrder, sessionOrderChoices } from '$lib/study/newOrderView';
 	import { deckOrdersOf } from '$lib/study/sessionOrder';
 	import {
 		CARD_TYPES,
@@ -76,8 +77,9 @@ import { limitsOf } from '$lib/study/scheduler';
 
 	function describeScheduling(data: Awaited<ReturnType<typeof loadStudyData>>): string {
 		const active = data.fsrs?.active;
-		if (active === null || active === undefined) return 'default parameters';
-		return `${active.source === 'optimized' ? 'optimised' : 'imported'} on ${active.createdAt.slice(0, 10)}`;
+		if (active === null || active === undefined) return t('study.setup.schedDefault');
+		const day = active.createdAt.slice(0, 10);
+		return active.source === 'optimized' ? t('study.setup.schedOptimised', { day }) : t('study.setup.schedImported', { day });
 	}
 
 	// Counts only need to distinguish "none" from "some"; the actual
@@ -86,14 +88,12 @@ import { limitsOf } from '$lib/study/scheduler';
 
 	// One line per card type, shown next to its checkbox.
 	const TYPE_INFO: Record<StudyCardKind, string> = {
-		vocab: 'See the word, recall its meaning, then reveal the answer.',
-		sentence:
-			'Rebuild an example sentence from shuffled tiles; words without sentences are skipped.',
-		writing:
-			'Draw each Han character stroke by stroke; words without Han characters are skipped.',
-		tone: 'Swipe or type the tone of every syllable (Chinese only).',
-		reverse: 'See the meaning, recall the word (words only; switched on per deck).',
-		cloze: 'Fill the gap in an example sentence (switched on per deck).'
+		vocab: t('study.setup.info.vocab'),
+		sentence: t('study.setup.info.sentence'),
+		writing: t('study.setup.info.writing'),
+		tone: t('study.setup.info.tone'),
+		reverse: t('study.setup.info.reverse'),
+		cloze: t('study.setup.info.cloze')
 	};
 
 	// Restore this tab's setup before the first render: on an SPA the
@@ -110,7 +110,7 @@ import { limitsOf } from '$lib/study/scheduler';
 	// Per-deck Reverse/Cloze switches (`deckcfg:` rows) and the learner's per-workspace unchecks.
 	let deckSettings = $state.raw<Record<string, DeckSettings>>({});
 	let extraChoices = $state.raw<ExtraChoices>({});
-	let schedulingLabel = $state('default parameters');
+	let schedulingLabel = $state(t('study.setup.schedDefault'));
 	let loading = $state(true);
 	let loadError = $state('');
 	let noWorkspace = $state(false);
@@ -233,7 +233,7 @@ import { limitsOf } from '$lib/study/scheduler';
 			decks = [];
 			cards = [];
 			reviews = [];
-			loadError = message(err, 'Could not load your decks.');
+			loadError = message(err, t('study.setup.decksFailed'));
 		} finally {
 			if (seq === requestSeq) loading = false;
 		}
@@ -259,7 +259,7 @@ import { limitsOf } from '$lib/study/scheduler';
 			vacations = data.vacations ?? [];
 			schedulingLabel = describeScheduling(data);
 		} catch (err) {
-			if (seq === requestSeq) deckError = message(err, 'Could not reload your cards.');
+			if (seq === requestSeq) deckError = message(err, t('study.setup.reloadFailed'));
 		}
 	}
 
@@ -274,7 +274,7 @@ import { limitsOf } from '$lib/study/scheduler';
 		} catch (err) {
 			if (seq !== requestSeq) return;
 			schemes = [];
-			schemeError = message(err, 'Could not load level schemes.');
+			schemeError = message(err, t('study.setup.schemesFailed'));
 		} finally {
 			if (seq === requestSeq) schemesLoaded = true;
 		}
@@ -365,7 +365,7 @@ import { limitsOf } from '$lib/study/scheduler';
 			levelEntries = list;
 		} catch (err) {
 			if (seq !== levelEntriesSeq) return;
-			levelEntriesError = message(err, 'Could not load this level.');
+			levelEntriesError = message(err, t('study.setup.levelFailed'));
 		} finally {
 			if (seq === levelEntriesSeq) levelEntriesLoading = false;
 		}
@@ -414,7 +414,7 @@ import { limitsOf } from '$lib/study/scheduler';
 		const count = levelLearned.get(name);
 		return count === undefined || count.total === 0
 			? name
-			: `${name} — ${count.learned} of ${count.total} learned`;
+			: t('study.setup.levelOption', { level: name, learned: count.learned, total: count.total });
 	}
 
 	// Tone needs pinyin, so it is only offered in Chinese workspaces. A
@@ -539,8 +539,8 @@ import { limitsOf } from '$lib/study/scheduler';
 	const levelEntryTotal = $derived(levelEntryCount(levelEntries, levelUnit));
 	const levelNoun = $derived(
 		levelUnit === 'character'
-			? levelEntryTotal === 1 ? 'character' : 'characters'
-			: levelEntryTotal === 1 ? 'word' : 'words'
+			? t('study.setup.unit.characters', { count: levelEntryTotal })
+			: t('study.setup.unit.words', { count: levelEntryTotal })
 	);
 
 	// True when no deck of the session has a daily limit (the note is dropped then).
@@ -565,44 +565,44 @@ import { limitsOf } from '$lib/study/scheduler';
 	);
 
 	const guidance = $derived.by(() => {
-		if (noWorkspace) return 'Choose a workspace in the header to set up a study session.';
-		if (loading) return 'Loading your study data…';
-		if (selectedKinds.length === 0) return 'Select at least one card type.';
+		if (noWorkspace) return t('study.guide.noWorkspace');
+		if (loading) return t('study.guide.loading');
+		if (selectedKinds.length === 0) return t('study.config.selectType');
 
 		if (mode === 'levels') {
-			if (!schemesLoaded) return 'Loading level schemes…';
+			if (!schemesLoaded) return t('study.guide.loadingSchemes');
 			if (schemeError) return schemeError;
 			if (schemesForLanguage.length === 0) {
-				return 'No level schemes are installed for this workspace language.';
+				return t('study.guide.noSchemes');
 			}
 			if (levelSelection === null) {
-				return 'Choose a scheme and a level to start.';
+				return t('study.guide.chooseLevel');
 			}
 			if (levelEntriesError) return levelEntriesError;
-			if (levelEntriesLoading) return 'Loading this level…';
+			if (levelEntriesLoading) return t('study.guide.loadingLevel');
 			if (levelEntries.length === 0) {
-				return `This level has no ${levelUnit === 'character' ? 'characters' : 'words'} yet.`;
+				return levelUnit === 'character' ? t('study.guide.levelNoCharacters') : t('study.guide.levelNoWords');
 			}
 			if (!levelUsable(levelUnit, levelKinds)) {
 				return levelUnit === 'character'
-					? 'Character levels study Vocab (recognition) and Writing cards. Select one of them, or switch to My decks.'
-					: 'Level sessions study vocab cards only. Select Vocab, or switch to My decks.';
+					? t('study.guide.characterKinds')
+					: t('study.guide.vocabOnly');
 			}
 			if (counts.due + counts.fresh === 0) {
 				if (levelUnit === 'character' && !selectedKinds.includes('vocab')) {
-					return 'Nothing to write here: writing cards need stroke data and the characters of this level have none left to study. Select Vocab to practise recognition.';
+					return t('study.guide.nothingToWrite');
 				}
-				return 'Nothing is due and no new cards are left in this level.';
+				return t('study.guide.levelDone');
 			}
 			return '';
 		}
 
-		if (selectedDeckIds.length === 0) return 'Select at least one deck to start.';
+		if (selectedDeckIds.length === 0) return t('study.guide.selectDeck');
 		if (selectedCards.length === 0) {
-			return 'The selected decks have no cards yet. Open a word from search and add it from its entry page — new cards go to General unless you pick a deck there.';
+			return t('study.guide.noCards');
 		}
 		if (counts.due + counts.fresh === 0) {
-			return 'Nothing is due and no new cards are left in the selected decks.';
+			return t('study.guide.decksDone');
 		}
 		return '';
 	});
@@ -642,7 +642,7 @@ import { limitsOf } from '$lib/study/scheduler';
 			selectedDeckIds = [...selectedDeckIds, deck.id];
 			deckName = '';
 		} catch (err) {
-			deckError = message(err, 'Could not create the deck.');
+			deckError = message(err, t('study.decks.createFailed'));
 		} finally {
 			creating = false;
 		}
@@ -663,7 +663,7 @@ import { limitsOf } from '$lib/study/scheduler';
 		event.preventDefault();
 		const name = renameName.trim();
 		if (!name) {
-			deckError = 'Deck name cannot be empty.';
+			deckError = t('study.decks.nameEmpty');
 			return;
 		}
 
@@ -673,16 +673,14 @@ import { limitsOf } from '$lib/study/scheduler';
 			decks = decks.map((deck) => (deck.id === id ? renamed : deck));
 			cancelRename();
 		} catch (err) {
-			deckError = message(err, 'Could not rename the deck.');
+			deckError = message(err, t('study.decks.renameFailed'));
 		}
 	}
 
 	async function removeDeck(deck: Deck): Promise<void> {
 		if (deletingId !== null) return;
 		if (
-			!confirm(
-				`Delete "${deck.name}"? Its cards stay in your other decks, or move to General.`
-			)
+			!confirm(t('study.decks.confirmDelete', { deck: deck.name }))
 		) {
 			return;
 		}
@@ -704,7 +702,7 @@ import { limitsOf } from '$lib/study/scheduler';
 			});
 			selectedDeckIds = selectedDeckIds.filter((id) => id !== deck.id);
 		} catch (err) {
-			deckError = message(err, 'Could not delete the deck.');
+			deckError = message(err, t('study.decks.deleteFailed'));
 		} finally {
 			deletingId = null;
 		}
@@ -756,7 +754,7 @@ import { limitsOf } from '$lib/study/scheduler';
 		// positive id and a level name, so validation alone cannot catch
 		// it; the resolved selection can.
 		if (errors.length === 0 && mode === 'levels' && levelSelection === null) {
-			errors = ['Choose a level from a scheme installed for this workspace.'];
+			errors = [t('study.setup.levelGone')];
 		}
 		if (errors.length > 0) return;
 
@@ -768,29 +766,29 @@ import { limitsOf } from '$lib/study/scheduler';
 </script>
 
 <svelte:head>
-	<title>{pageTitle('Study')}</title>
+	<title>{pageTitle(t('study.setup.title'))}</title>
 </svelte:head>
 
 <main class="setup">
-	<h1>Study</h1>
+	<h1>{t('study.setup.title')}</h1>
 
 	{#if vacationText !== null}
-		<p class="vacation" role="status">{vacationText}. <a href="/settings?tab=study">Change</a></p>
+		<p class="vacation" role="status">{vacationText}. <a href="/settings?tab=study">{t('study.setup.change')}</a></p>
 	{/if}
-	<p class="hint">Choose what this session should draw from.</p>
+	<p class="hint">{t('study.setup.intro')}</p>
 	{#if $workspaces.current && usesHan($workspaces.current.language)}
-		<p class="hint"><a href="/stats/characters">View the mastery map →</a></p>
+		<p class="hint"><a href="/stats/characters">{t('study.setup.masteryMap')}</a></p>
 	{/if}
 
 	{#if loadError}
 		<p class="error" role="alert">{loadError}</p>
 	{:else if noWorkspace}
-		<p class="hint" role="status">Choose a workspace in the header to set up a study session.</p>
+		<p class="hint" role="status">{t('study.guide.noWorkspace')}</p>
 	{:else if loading}
-		<p class="hint" role="status">Loading your study data…</p>
+		<p class="hint" role="status">{t('study.guide.loading')}</p>
 	{:else}
 		<section aria-labelledby="mode-heading">
-			<h2 id="mode-heading">Session source</h2>
+			<h2 id="mode-heading">{t('study.setup.source')}</h2>
 			<div class="modes" role="radiogroup" aria-labelledby="mode-heading">
 				<label class="inline">
 					<input
@@ -800,7 +798,7 @@ import { limitsOf } from '$lib/study/scheduler';
 						checked={mode === 'decks'}
 						onchange={() => selectMode('decks')}
 					/>
-					My decks
+					{t('study.setup.myDecks')}
 				</label>
 				<label class="inline">
 					<input
@@ -810,22 +808,19 @@ import { limitsOf } from '$lib/study/scheduler';
 						checked={mode === 'levels'}
 						onchange={() => selectMode('levels')}
 					/>
-					By level
+					{t('study.setup.byLevel')}
 				</label>
 			</div>
 		</section>
 
 		{#if mode === 'decks'}
 			<section aria-labelledby="decks-heading">
-				<h2 id="decks-heading">Decks</h2>
+				<h2 id="decks-heading">{t('study.decks.title')}</h2>
 
 				{#if decks.length === 0}
 					<div class="empty">
-						<h3>No decks yet</h3>
-						<p>
-							Your cards start in General. Create a deck below to organise them by topic or
-							level.
-						</p>
+						<h3>{t('study.decks.none')}</h3>
+						<p>{t('study.decks.noneText')}</p>
 					</div>
 				{/if}
 
@@ -836,12 +831,12 @@ import { limitsOf } from '$lib/study/scheduler';
 								<form class="rename" onsubmit={(event) => submitRename(event, deck.id)}>
 									<input
 										bind:value={renameName}
-										aria-label={`New name for ${deck.name}`}
+										aria-label={t('study.decks.newName', { deck: deck.name })}
 										maxlength="80"
 										required
 									/>
-									<button type="submit">Save</button>
-									<button type="button" class="secondary" onclick={cancelRename}>Cancel</button>
+									<button type="submit">{t('common.action.save')}</button>
+									<button type="button" class="secondary" onclick={cancelRename}>{t('common.action.cancel')}</button>
 								</form>
 							{:else}
 								<label class="deck-choice">
@@ -852,14 +847,14 @@ import { limitsOf } from '$lib/study/scheduler';
 									/>
 									<span class="deck-name">{deck.name}</span>
 									{#if deck.id === GENERAL_DECK_ID}
-										<span class="tag">default</span>
+										<span class="tag">{t('study.decks.default')}</span>
 									{/if}
 								</label>
 
 								{#if deck.id !== GENERAL_DECK_ID}
 									<div class="deck-actions">
 										<button type="button" class="secondary" onclick={() => beginRename(deck)}>
-											Rename
+											{t('study.decks.rename')}
 										</button>
 										<button
 											type="button"
@@ -867,7 +862,7 @@ import { limitsOf } from '$lib/study/scheduler';
 											disabled={deletingId === deck.id}
 											onclick={() => removeDeck(deck)}
 										>
-											{deletingId === deck.id ? 'Deleting…' : 'Delete'}
+											{deletingId === deck.id ? t('study.decks.deleting') : t('common.action.delete')}
 										</button>
 									</div>
 								{/if}
@@ -886,17 +881,17 @@ import { limitsOf } from '$lib/study/scheduler';
 
 				<form class="create" onsubmit={addDeck}>
 					<label>
-						New deck
+						{t('study.decks.new')}
 						<input
 							bind:value={deckName}
-							placeholder="HSK 2, Travel, …"
+							placeholder={t('study.decks.newPlaceholder')}
 							maxlength="80"
 							autocomplete="off"
 							required
 						/>
 					</label>
 					<button type="submit" disabled={creating}>
-						{creating ? 'Creating…' : 'Create deck'}
+						{creating ? t('study.decks.creating') : t('study.decks.create')}
 					</button>
 				</form>
 
@@ -908,21 +903,19 @@ import { limitsOf } from '$lib/study/scheduler';
 			<CardManager {cards} decks={allDecks} onchanged={refreshData} />
 		{:else}
 			<section aria-labelledby="levels-heading">
-				<h2 id="levels-heading">Level</h2>
-				<p class="hint">Draw words or characters from one level of an installed scheme.</p>
+				<h2 id="levels-heading">{t('study.level.title')}</h2>
+				<p class="hint">{t('study.level.intro')}</p>
 
 				{#if schemeError}
 					<p class="error" role="alert">{schemeError}</p>
 				{:else if !schemesLoaded}
-					<p class="hint" role="status">Loading schemes…</p>
+					<p class="hint" role="status">{t('study.level.loadingSchemes')}</p>
 				{:else if schemesForLanguage.length === 0}
-					<p class="hint">
-						No level schemes are installed for this workspace language yet.
-					</p>
+					<p class="hint">{t('study.level.noSchemes')}</p>
 				{:else}
 					<div class="levels">
 						<label>
-							Scheme
+							{t('study.level.scheme')}
 							<select bind:value={schemeId}>
 								{#each schemesForLanguage as scheme (scheme.id)}
 									<option value={scheme.id}>{scheme.name}</option>
@@ -930,7 +923,7 @@ import { limitsOf } from '$lib/study/scheduler';
 							</select>
 						</label>
 						<label>
-							Level
+							{t('study.level.level')}
 							<select bind:value={levelName}>
 								{#each schemeLevels as level (level.id)}
 									<option value={level.name}>{levelOptionLabel(level.name)}</option>
@@ -942,28 +935,28 @@ import { limitsOf } from '$lib/study/scheduler';
 					{#if levelEntriesError}
 						<p class="error" role="alert">{levelEntriesError}</p>
 					{:else if levelEntriesLoading}
-						<p class="hint" role="status">Loading this level…</p>
+						<p class="hint" role="status">{t('study.guide.loadingLevel')}</p>
 					{/if}
 				{/if}
 			</section>
 		{/if}
 
 		<section aria-labelledby="limits-heading">
-			<h2 id="limits-heading">Limits</h2>
-			<p class="hint">A session stops after these counts, reviews first.</p>
+			<h2 id="limits-heading">{t('study.limitsSection.title')}</h2>
+			<p class="hint">{t('study.limitsSection.intro')}</p>
 
 			<div class="limits">
 				<label>
-					New cards
+					{t('study.limitsSection.newCards')}
 					<input type="number" min="1" max="999" step="1" bind:value={newLimit} />
 				</label>
 				<label>
-					Reviews
+					{t('study.limitsSection.reviews')}
 					<input type="number" min="1" max="999" step="1" bind:value={reviewLimit} />
 				</label>
 			</div>
 			<label class="order">
-				Order of new cards
+				{t('study.limitsSection.order')}
 				<select
 					value={orderValue}
 					onchange={(event) => (newOrderValue = (event.currentTarget as HTMLSelectElement).value)}
@@ -974,20 +967,20 @@ import { limitsOf } from '$lib/study/scheduler';
 				</select>
 			</label>
 			{#if ordersMixed}
-				<p class="hint" role="status">{MIXED_NOTE}</p>
+				<p class="hint" role="status">{mixedNote()}</p>
 			{/if}
 			{#if orderView.hint !== null}
 				<p class="hint">{orderView.hint}</p>
 			{/if}
 			<p class="hint">
-				<a href="/study/scheduling">Scheduling: {schedulingLabel}</a>
+				<a href="/study/scheduling">{t('study.limitsSection.scheduling', { label: schedulingLabel })}</a>
 			</p>
 		</section>
 
 		<section aria-labelledby="types-heading">
-			<h2 id="types-heading">Card types</h2>
+			<h2 id="types-heading">{t('study.types.title')}</h2>
 
-			<p class="hint">Pick at least one. Sentence, writing and tone cards are made from the words in your decks the first time you study them.</p>
+			<p class="hint">{t('study.types.intro')}</p>
 			<ul class="types">
 				{#each visibleTypes as type (type.id)}
 					<li>
@@ -1007,42 +1000,41 @@ import { limitsOf } from '$lib/study/scheduler';
 		</section>
 
 		<section class="summary" aria-labelledby="summary-heading">
-			<h2 id="summary-heading">This session</h2>
+			<h2 id="summary-heading">{t('study.summary.title')}</h2>
 			{#if vacationText === null}
 				<p class="today">{startTodayText(counts.due, counts.fresh, noDailyLimit)}</p>
 			{/if}
 			{#if mode === 'levels'}
 				<p class="stats">
 					<strong>{levelEntryTotal}</strong>
-					{levelNoun} in
-					<strong>{selectedScheme?.name ?? 'this scheme'}</strong>
+					{t('study.summary.levelIn', { noun: levelNoun })}
+					<strong>{selectedScheme?.name ?? t('study.summary.thisScheme')}</strong>
 					{levelSelection?.levelName ?? ''} ·
 					<strong>{counts.due}</strong>
-					due ·
+					{t('study.summary.dueDot')}
 					<strong>{counts.fresh}</strong>
-					new
+					{t('study.summary.new')}
 				</p>
 			{:else}
 				<p class="stats">
 					<strong>{selectedCards.length}</strong>
-					{selectedCards.length === 1 ? 'card' : 'cards'} in
+					{t('study.summary.cardsIn', { count: selectedCards.length })}
 					<strong>{selectedDeckIds.length}</strong>
-					{selectedDeckIds.length === 1 ? 'deck' : 'decks'} ·
+					{t('study.summary.decksDot', { count: selectedDeckIds.length })}
 					<strong>{counts.due}</strong>
-					due ·
+					{t('study.summary.dueDot')}
 					<strong>{counts.fresh}</strong>
-					new
+					{t('study.summary.new')}
 				</p>
 				{#if plannedCompanions > 0}
 					<p class="hint">
-						Up to {plannedCompanions} of the new cards are Word Salad, writing or tone cards made the first time
-						you study them; words without a sentence, stroke data or pinyin are skipped then.
+						{t('study.summary.companions', { count: plannedCompanions })}
 					</p>
 				{/if}
 			{/if}
 
 			{#if typeWarnings.length > 0}
-				<ul class="warnings" aria-label="Card type warnings">
+				<ul class="warnings" aria-label={t('study.summary.warnings')}>
 					{#each typeWarnings as warning (warning)}
 						<li>{warning}</li>
 					{/each}
@@ -1059,7 +1051,7 @@ import { limitsOf } from '$lib/study/scheduler';
 
 			{#if vacationText === null}
 				<button type="button" class="start" disabled={starting || guidance !== ''} onclick={start}>
-					{starting ? 'Starting…' : 'Start studying'}
+					{starting ? t('study.summary.starting') : t('study.summary.start')}
 				</button>
 			{/if}
 

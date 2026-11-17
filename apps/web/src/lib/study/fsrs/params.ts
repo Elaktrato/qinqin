@@ -4,6 +4,7 @@
 // values are rejected, never silently clipped (migrateParameters clips).
 
 import { CLAMP_PARAMETERS, checkParameters, default_w, migrateParameters } from 'ts-fsrs';
+import { t } from '$lib/i18n';
 
 export const DEFAULT_W: readonly number[] = default_w;
 
@@ -36,23 +37,23 @@ type Checked = { ok: true; w: number[] } | { ok: false; error: string };
  * would clip is reported with its 1-based position instead.
  */
 export function checkWeights(raw: unknown): Checked {
-	if (!Array.isArray(raw)) return { ok: false, error: 'Not a list of numbers.' };
+	if (!Array.isArray(raw)) return { ok: false, error: t('study.fsrs.notNumbers') };
 	if (!raw.every((x) => typeof x === 'number')) {
-		return { ok: false, error: 'Not a list of numbers.' };
+		return { ok: false, error: t('study.fsrs.notNumbers') };
 	}
 	const w = raw as number[];
 	try {
 		checkParameters(w);
 	} catch {
 		const bad = w.findIndex((x) => !Number.isFinite(x));
-		if (bad >= 0) return { ok: false, error: `Weight ${bad + 1} is not a finite number.` };
-		return { ok: false, error: `Expected 17, 19 or 21 numbers, got ${w.length}.` };
+		if (bad >= 0) return { ok: false, error: t('study.fsrs.notFinite', { n: bad + 1 }) };
+		return { ok: false, error: t('study.fsrs.wrongCount', { count: w.length }) };
 	}
 	const ranges = CLAMP_PARAMETERS(2, true);
 	for (let i = 0; i < w.length; i++) {
 		const [min, max] = ranges[i];
 		if (w[i] < min || w[i] > max) {
-			return { ok: false, error: `Weight ${i + 1} is outside ${min}–${max}.` };
+			return { ok: false, error: t('study.fsrs.outside', { n: i + 1, min, max }) };
 		}
 	}
 	return { ok: true, w: [...w] };
@@ -124,7 +125,7 @@ export function parseWeightString(s: string): Checked {
 		.split(/[\s,;]+/)
 		.filter((t) => t !== '');
 	if (tokens.length === 0 || !tokens.every((t) => NUMBER.test(t))) {
-		return { ok: false, error: 'Not a list of numbers.' };
+		return { ok: false, error: t('study.fsrs.notNumbers') };
 	}
 	const checked = checkWeights(tokens.map(Number));
 	if (!checked.ok) return checked;
@@ -137,7 +138,7 @@ export function parseWeightString(s: string): Checked {
 	for (let i = 0; i < raw.length; i++) {
 		if (converted.includes(i)) continue;
 		if (migrated[i] !== raw[i]) {
-			return { ok: false, error: `Weight ${i + 1} could not be read as given.` };
+			return { ok: false, error: t('study.fsrs.unreadable', { n: i + 1 }) };
 		}
 	}
 	for (const i of converted) {
@@ -145,7 +146,7 @@ export function parseWeightString(s: string): Checked {
 		if (!(migrated[i] >= min && migrated[i] <= max)) {
 			return {
 				ok: false,
-				error: `Weight ${i + 1} is outside ${min}–${max} after converting from 17 numbers.`
+				error: t('study.fsrs.outsideConverted', { n: i + 1, min, max })
 			};
 		}
 	}

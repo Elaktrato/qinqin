@@ -6,6 +6,7 @@ import PseudoStub from './PseudoStub.test.svelte';
 import AppSection from '$lib/pwa/AppSection.svelte';
 import EmailVerify from '$lib/account/EmailVerify.svelte';
 import Badges from '$lib/components/Badges.svelte';
+import NoteAnswer from '$lib/notes/NoteAnswer.svelte';
 
 // The pseudo-locale sample (spec Ruling): each extraction task adds one component of its area to SAMPLES; the
 // test renders it in en-XA and fails on any text node that is still plain ASCII English (a missed string, or
@@ -25,7 +26,9 @@ const SAMPLES: Sample[] = [
 		name: 'Badges',
 		component: Badges,
 		props: { badges: [{ schemeId: 1, schemeName: '汉语 (approximate)', levelName: '一级', derived: true }] }
-	}
+	},
+	// study, widgets, goals, notes, lookups (Task 13)
+	{ name: 'NoteAnswer', component: NoteAnswer, props: { text: '记住这个字' } }
 ];
 
 describe('renderPseudo', () => {

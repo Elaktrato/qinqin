@@ -11,7 +11,12 @@
 	"entry.reading.kun": "Japanese kun'yomi reading label.",
 	"entry.reading.on": "Japanese on'yomi reading label (\"On: カン\").",
 	"features.switchedOff.text": "<link> wraps the link to Settings → Features; keep the arrow or use the language's own menu path notation.",
+	"goals.progress.newCards": "{amount} is today's count; # is the target, which the plural follows (\"32 of 50 new cards today\").",
 	"nav.brand.home": "Accessible name of the logo link to the home page; {app} is the product name.",
 	"search.matched": "Under a search result: which field matched; {source} is search.matchedWritten or a reading type such as pinyin.",
-	"search.parts.radicalName": "Accessible name of a chip; {char} is the radical glyph, {n} its Kangxi number."
+	"search.parts.radicalName": "Accessible name of a chip; {char} is the radical glyph, {n} its Kangxi number.",
+	"stats.map.filtered": "{shown} and {total} are formatted numbers; the plural follows the shown count.",
+	"study.summary.cardsIn": "Between bold numbers: \"<b>12</b> cards in <b>2</b> decks · <b>3</b> due · <b>5</b> new\"; each fragment is one message.",
+	"widgets.characters.stale": "<code> wraps the command name; keep it untranslated.",
+	"widgets.words.inDecks": "Follows the bold total (\"12 words in your decks ·\"); the number itself is shown before it, outside the message."
 }

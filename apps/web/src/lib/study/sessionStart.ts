@@ -1,9 +1,12 @@
 // The words around starting a study session without a connection.
 
+import { t } from '$lib/i18n';
 import type { StudySessionMode } from './session';
 import type { StudyCardKind } from './types';
 
-export const COMPANION_NOTE = 'Companion cards return when you are online.';
+export function companionNote(): string {
+	return t('study.offline.companion');
+}
 
 const COMPANION_KINDS: readonly StudyCardKind[] = ['sentence', 'writing', 'tone', 'reverse', 'cloze'];
 
@@ -11,8 +14,8 @@ const COMPANION_KINDS: readonly StudyCardKind[] = ['sentence', 'writing', 'tone'
 export function sessionStartError(opts: { offline: boolean; mode: StudySessionMode; fallback: string }): string {
 	if (!opts.offline) return opts.fallback;
 	return opts.mode === 'levels'
-		? 'Level sessions need a connection. Start a deck session instead.'
-		: "This workspace isn't ready for offline study yet. Open it once while online.";
+		? t('study.offline.levelsNeedConnection')
+		: t('study.offline.notReady');
 }
 
 /** showCompanionNote: offline sessions plan no companion cards; say so when some were asked for. */

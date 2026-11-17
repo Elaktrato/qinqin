@@ -6,6 +6,7 @@
 // download. Components stay thin: every decision is here.
 
 import type { FrequencyPack, Scheme } from '$lib/api/types';
+import { t } from '$lib/i18n';
 import { languageLabel } from '$lib/languages';
 import { ADDED, parseNewOrder, type NewOrder, type SessionNewOrder } from './newOrder';
 
@@ -14,10 +15,15 @@ export interface OrderChoice {
 	label: string;
 }
 
-export const MIXED_NOTE = 'Your decks use different orders: in the order added.';
-export const OFFLINE_NOTE = 'Frequency order needs a connection; using the order added.';
-export const MISSING_LEVELS_NOTE =
-	'The level list of this order is not installed; using the order added.';
+export function mixedNote(): string {
+	return t('study.order.mixed');
+}
+export function offlineNote(): string {
+	return t('study.order.offline');
+}
+export function missingLevelsNote(): string {
+	return t('study.order.missingLevels');
+}
 
 /** encodeOrder turns an order into a select value. */
 export function encodeOrder(order: SessionNewOrder): string {
@@ -43,18 +49,18 @@ export function rankingPack(
 }
 
 export function noPackHint(language: string): string {
-	return `No frequency list is installed for ${languageLabel(language)}. An administrator can add one in Settings, Data; see Data and licences.`;
+	return t('study.order.noPack', { language: languageLabel(language) });
 }
 
 function frequencyChoice(pack: FrequencyPack): OrderChoice {
-	return { value: 'frequency', label: `Most frequent first (${pack.name})` };
+	return { value: 'frequency', label: t('study.order.frequencyPack', { pack: pack.name }) };
 }
 
 function levelChoices(schemes: readonly Scheme[], language: string): OrderChoice[] {
 	const code = language.toLowerCase();
 	return schemes
 		.filter((scheme) => scheme.language.toLowerCase() === code && scheme.packId)
-		.map((scheme) => ({ value: `level:${scheme.packId}`, label: `By level: ${scheme.name}` }));
+		.map((scheme) => ({ value: `level:${scheme.packId}`, label: t('study.order.byLevel', { scheme: scheme.name }) }));
 }
 
 export interface OrderEnv {
@@ -75,13 +81,13 @@ export function sessionOrderChoices(
 	const pack = rankingPack(env.packs, env.language);
 	const hint = pack === null ? noPackHint(env.language) : null;
 	if (env.mode === 'levels') {
-		const choices: OrderChoice[] = [{ value: 'deck', label: 'Level order' }];
+		const choices: OrderChoice[] = [{ value: 'deck', label: t('study.order.levelOrder') }];
 		if (pack !== null && env.levelScheme?.unit === 'word') choices.push(frequencyChoice(pack));
 		return { choices, hint };
 	}
 	const choices: OrderChoice[] = [
-		{ value: 'deck', label: 'As each deck is set' },
-		{ value: 'added', label: 'In the order added' }
+		{ value: 'deck', label: t('study.order.asDeck') },
+		{ value: 'added', label: t('study.order.added') }
 	];
 	if (pack !== null) choices.push(frequencyChoice(pack));
 	choices.push(...levelChoices(env.schemes, env.language));
@@ -91,7 +97,7 @@ export function sessionOrderChoices(
 /** deckOrderChoices: the deck settings' choices. */
 export function deckOrderChoices(env: OrderEnv): { choices: OrderChoice[]; hint: string | null } {
 	const pack = rankingPack(env.packs, env.language);
-	const choices: OrderChoice[] = [{ value: 'added', label: 'In the order added' }];
+	const choices: OrderChoice[] = [{ value: 'added', label: t('study.order.added') }];
 	if (pack !== null) choices.push(frequencyChoice(pack));
 	choices.push(...levelChoices(env.schemes, env.language));
 	return { choices, hint: pack === null ? noPackHint(env.language) : null };
@@ -108,7 +114,7 @@ export function resolveAvailableOrder(
 	if (order.by === 'frequency' && rankingPack(env.packs, env.language) === null) {
 		return {
 			order: { by: 'added' },
-			note: `No frequency list is installed for ${languageLabel(env.language)}; using the order added.`
+			note: t('study.order.noPackFallback', { language: languageLabel(env.language) })
 		};
 	}
 	if (order.by === 'level') {
@@ -116,7 +122,7 @@ export function resolveAvailableOrder(
 		const found = env.schemes.some(
 			(s) => s.packId === order.packId && s.language.toLowerCase() === code
 		);
-		if (!found) return { order: { by: 'added' }, note: MISSING_LEVELS_NOTE };
+		if (!found) return { order: { by: 'added' }, note: missingLevelsNote() };
 	}
 	return { order, note: null };
 }
@@ -126,9 +132,9 @@ export interface ControlChoice extends OrderChoice {
 }
 
 function orderLabel(order: NewOrder): string {
-	if (order.by === 'frequency') return 'Most frequent first';
-	if (order.by === 'level') return `By level: ${order.packId}`;
-	return 'In the order added';
+	if (order.by === 'frequency') return t('study.order.frequency');
+	if (order.by === 'level') return t('study.order.byLevel', { scheme: order.packId });
+	return t('study.order.added');
 }
 
 /**
@@ -150,13 +156,13 @@ export function deckOrderControl(input: {
 			choices: [{ value, label: orderLabel(stored), disabled: true }],
 			value,
 			disabled: true,
-			hint: input.failed ? 'Could not load the order choices. Try again later.' : null
+			hint: input.failed ? t('study.order.loadFailed') : null
 		};
 	}
 	const { choices, hint } = deckOrderChoices(input.env);
 	const out: ControlChoice[] = [...choices];
 	if (!choices.some((c) => c.value === value)) {
-		out.push({ value, label: `${orderLabel(stored)} (not available)`, disabled: true });
+		out.push({ value, label: t('study.order.notAvailable', { order: orderLabel(stored) }), disabled: true });
 	}
 	return { choices: out, value, disabled: false, hint };
 }

@@ -4,6 +4,7 @@
 // runner creates the card. The queue is therefore a mix of real card ids
 // and stable virtual ids, never duplicate entries.
 
+import { t } from '$lib/i18n';
 import { compareCanonical } from './canonical';
 import { backfillLimit } from './cardFlow';
 import { existingDecksOf, isValidReview, limitsOf, scheduleFor, sortedReviews } from './scheduler';
@@ -350,11 +351,11 @@ export function levelUsable(unit: LevelUnit, kinds: readonly StudyCardKind[]): b
 export function levelTypeWarnings(unit: LevelUnit, kinds: readonly StudyCardKind[]): string[] {
 	if (unit === 'character') {
 		return kinds.some((kind) => !CHARACTER_KINDS.includes(kind))
-			? ['Character levels study recognition and writing cards.']
+			? [t('study.level.characterTypes')]
 			: [];
 	}
 	return kinds.some((kind) => kind !== 'vocab')
-		? ['Level sessions study vocab cards only; the other types apply to deck sessions.']
+		? [t('study.level.vocabOnly')]
 		: [];
 }
 

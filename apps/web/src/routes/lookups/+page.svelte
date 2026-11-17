@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { onDestroy, tick } from 'svelte';
 	import { pageTitle } from '$lib/pageTitle';
+	import { t } from '$lib/i18n';
 	import {
 		PAGE_SIZE,
 		addResultText,
@@ -51,7 +52,7 @@
 			record = next.record;
 		} catch {
 			if (mine !== seq) return;
-			loadError = 'Could not load the lookup history.';
+			loadError = t('lookups.loadFailed');
 		}
 	}
 
@@ -101,7 +102,7 @@
 		try {
 			await work();
 		} catch (err) {
-			actionError = err instanceof Error && err.message ? err.message : 'That did not work. Try again.';
+			actionError = err instanceof Error && err.message ? err.message : t('lookups.actionFailed');
 		} finally {
 			busy = false;
 		}
@@ -123,7 +124,7 @@
 			const history = await removeFromHistory(wsId as number, ids);
 			if (data) data = { ...data, history };
 			selected = selected.filter((x) => !ids.includes(x));
-			status = ids.length === 1 ? 'Removed 1 word from the history.' : `Removed ${ids.length} words from the history.`;
+			status = t('lookups.removed', { count: ids.length });
 		});
 	}
 
@@ -141,7 +142,7 @@
 					}
 				});
 				if (data) data = { ...data, history: out.history };
-				status = 'The lookup history is cleared.';
+				status = t('lookups.cleared');
 			} catch (err) {
 				// The row may be cleared even when the old search records were not.
 				await load(id);
@@ -162,11 +163,11 @@
 </script>
 
 <svelte:head>
-	<title>{pageTitle('Lookup history')}</title>
+	<title>{pageTitle(t('lookups.title'))}</title>
 </svelte:head>
 
 <main class="lookups-page">
-	<h1>Lookup history</h1>
+	<h1>{t('lookups.title')}</h1>
 
 	<div class="switch-row">
 		<button
@@ -176,72 +177,69 @@
 			aria-describedby="record-hint"
 			class="switch"
 			disabled={busy || data === null}
-			onclick={() => setRecord(!record)}>Record words I look up</button
+			onclick={() => setRecord(!record)}>{t('lookups.record')}</button
 		>
-		<p id="record-hint" class="hint">
-			Words you hover or select in the reader and lessons, and search results you open, are kept on your
-			server for every workspace. Turning this off stops recording on all your devices; it does not delete
-			anything.
-		</p>
+		<p id="record-hint" class="hint">{t('lookups.recordHint')}</p>
 	</div>
 	{#if offerClear}
 		<p class="offer">
-			Recording is off. <button type="button" onclick={() => ((confirming = true), (offerClear = false))}>Clear history too</button>
+			{t('lookups.recordingOff')}
+			<button type="button" onclick={() => ((confirming = true), (offerClear = false))}
+				>{t('lookups.clearToo')}</button
+			>
 		</p>
 	{/if}
 
 	{#if wsId === null}
-		<p class="hint">Select a workspace in the header to see its lookup history.</p>
+		<p class="hint">{t('lookups.noWorkspace')}</p>
 	{:else if loadError}
-		<p role="alert">{loadError} <button type="button" onclick={() => wsId !== null && load(wsId)}>Try again</button></p>
+		<p role="alert">{loadError} <button type="button" onclick={() => wsId !== null && load(wsId)}>{t('common.action.retry')}</button></p>
 	{:else if data === null}
-		<p role="status">Loading…</p>
+		<p role="status">{t('common.loading')}</p>
 	{:else}
 		{#if prompt.length > 0}
 			<section class="prompt" aria-labelledby="prompt-heading">
-				<h2 id="prompt-heading">You keep looking these up</h2>
+				<h2 id="prompt-heading">{t('lookups.prompt.title')}</h2>
 				<p class="words">
 					{#each prompt as p, i (p.entryId)}{i > 0 ? '、' : ''}<a href={`/entry/${p.entryId}`}>{written(p.entryId)}</a
 						> <span class="count">×{p.count}</span>{/each}
 				</p>
 				<button type="button" disabled={busy} onclick={() => add(prompt.map((p) => p.entryId))}
-					>Add these {prompt.length} to {deck.name}</button
+					>{t('lookups.prompt.add', { count: prompt.length, deck: deck.name })}</button
 				>
 			</section>
 		{/if}
 
-		<div class="toolbar" role="group" aria-label="History actions">
-			<label>Deck
+		<div class="toolbar" role="group" aria-label={t('lookups.toolbar')}>
+			<label>{t('lookups.deck')}
 				<select bind:value={deckId} disabled={busy}>
 					{#each decks as d (d.id)}<option value={d.id}>{d.name}</option>{/each}
 				</select>
 			</label>
 			<button type="button" disabled={busy || selected.length === 0} onclick={() => add([...selected])}
-				>Add selected ({selected.length})</button
+				>{t('lookups.addSelected', { count: selected.length })}</button
 			>
 			<button type="button" disabled={busy || selected.length === 0} onclick={() => remove([...selected])}
-				>Remove selected ({selected.length})</button
+				>{t('lookups.removeSelected', { count: selected.length })}</button
 			>
 			<fieldset class="filter" onchange={announceFilter}>
-				<legend class="visually-hidden">Show</legend>
-				<label><input type="radio" name="filter" value="all" bind:group={filter} /> All</label>
-				<label><input type="radio" name="filter" value="nocard" bind:group={filter} /> No card yet</label>
+				<legend class="visually-hidden">{t('lookups.filter.show')}</legend>
+				<label><input type="radio" name="filter" value="all" bind:group={filter} /> {t('lookups.filter.all')}</label>
+				<label><input type="radio" name="filter" value="nocard" bind:group={filter} /> {t('lookups.filter.noCard')}</label>
 			</fieldset>
 			<button
 				type="button"
 				class="danger"
 				disabled={busy || data.history.items.length === 0}
-				onclick={() => (confirming = true)}>Clear history…</button
+				onclick={() => (confirming = true)}>{t('lookups.clear')}</button
 			>
 		</div>
 
 		{#if confirming}
-			<div class="confirm" role="group" aria-label="Clear the lookup history">
-				<p>
-					Delete the lookup history of {wsName}, including old search records? This cannot be undone.
-				</p>
-				<button type="button" class="danger" disabled={busy} onclick={clearAll}>Delete</button>
-				<button type="button" disabled={busy} onclick={() => (confirming = false)}>Keep</button>
+			<div class="confirm" role="group" aria-label={t('lookups.clearLabel')}>
+				<p>{t('lookups.clearConfirm', { workspace: wsName })}</p>
+				<button type="button" class="danger" disabled={busy} onclick={clearAll}>{t('common.action.delete')}</button>
+				<button type="button" disabled={busy} onclick={() => (confirming = false)}>{t('notes.keep')}</button>
 			</div>
 		{/if}
 
@@ -253,19 +251,19 @@
 		<p class="filter-live visually-hidden" aria-live="polite">{filterAnnouncement}</p>
 
 		{#if data.history.items.length === 0}
-			<p class="hint">No lookups yet. Hover or select a word in the reader, or open a search result.</p>
+			<p class="hint">{t('lookups.empty')}</p>
 		{:else if rows.length === 0}
-			<p class="hint">Every word here already has a card or is marked known.</p>
+			<p class="hint">{t('lookups.allCarded')}</p>
 		{:else}
-			<ul class="list" aria-label="Looked-up words">
+			<ul class="list" aria-label={t('lookups.list')}>
 				{#each visible as row (row.entryId)}
 					<li class="row">
 						{#if row.missing}
-							<span class="word missing">Not in the dictionary any more</span>
+							<span class="word missing">{t('lookups.missing')}</span>
 						{:else}
 							<input
 								type="checkbox"
-								aria-label={`Select ${row.written}`}
+								aria-label={t('lookups.select', { word: row.written ?? '' })}
 								checked={selected.includes(row.entryId)}
 								onchange={(e) => toggle(row.entryId, e.currentTarget.checked)}
 							/>
@@ -273,27 +271,27 @@
 							{#if row.reading}<span class="reading">{row.reading}</span>{/if}
 						{/if}
 						<span class="count">×{row.count}</span>
-						<span class="when">last {dayLabel(row.lastDay, today)}</span>
+						<span class="when">{t('lookups.last', { day: dayLabel(row.lastDay, today) })}</span>
 						{#if row.where}<span class="where">{row.where}</span>{/if}
 						{#if !row.missing}<span class="chip" data-state={row.state}>{stateLabel(row.state)}</span>{/if}
 						<span class="actions">
 							{#if !row.missing}
-								<button type="button" disabled={busy} aria-label={`Add ${row.written}`} onclick={() => add([row.entryId])}
-									>Add</button
+								<button type="button" disabled={busy} aria-label={t('lookups.addWord', { word: row.written ?? '' })} onclick={() => add([row.entryId])}
+									>{t('lookups.add')}</button
 								>
 							{/if}
 							<button
 								type="button"
 								disabled={busy}
-								aria-label={`Remove ${row.written ?? 'this word'}`}
-								onclick={() => remove([row.entryId])}>Remove</button
+								aria-label={t('lookups.removeWord', { word: row.written ?? t('lookups.thisWord') })}
+								onclick={() => remove([row.entryId])}>{t('common.action.remove')}</button
 							>
 						</span>
 					</li>
 				{/each}
 			</ul>
 			{#if rows.length > shown}
-				<button type="button" onclick={() => (shown += PAGE_SIZE)}>Show 50 more</button>
+				<button type="button" onclick={() => (shown += PAGE_SIZE)}>{t('lookups.showMore')}</button>
 			{/if}
 		{/if}
 	{/if}

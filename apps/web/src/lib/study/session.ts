@@ -4,6 +4,7 @@
 // sessionStorage rather than the server: no sync, no stale setup on the
 // next device.
 
+import { t } from '$lib/i18n';
 import { parseNewOrder, type SessionNewOrder } from './newOrder';
 import { CARD_KINDS } from './types';
 
@@ -44,12 +45,12 @@ export const SESSION_CONFIG_KEY = 'qinqin.study.session';
 
 /** Every card kind a session can include. */
 export const CARD_TYPES = [
-	{ id: 'vocab', label: 'Vocab', available: true },
-	{ id: 'sentence', label: 'Word Salad', available: true },
-	{ id: 'writing', label: 'Writing', available: true },
-	{ id: 'tone', label: 'Tone', available: true },
-	{ id: 'reverse', label: 'Reverse', available: true },
-	{ id: 'cloze', label: 'Cloze', available: true }
+	{ id: 'vocab', get label() { return t('study.cardType.vocab'); }, available: true },
+	{ id: 'sentence', get label() { return t('study.cardType.sentence'); }, available: true },
+	{ id: 'writing', get label() { return t('study.cardType.writing'); }, available: true },
+	{ id: 'tone', get label() { return t('study.cardType.tone'); }, available: true },
+	{ id: 'reverse', get label() { return t('study.cardType.reverse'); }, available: true },
+	{ id: 'cloze', get label() { return t('study.cardType.cloze'); }, available: true }
 ] as const;
 
 /** The documented starting point: General deck, 20 new, 100 reviews. */
@@ -99,29 +100,29 @@ export function validateConfig(config: StudySessionConfig): string[] {
 	const errors: string[] = [];
 
 	if (config.mode !== 'decks' && config.mode !== 'levels') {
-		errors.push('Choose a session mode.');
+		errors.push(t('study.config.chooseMode'));
 	}
 
 	if (config.mode === 'levels') {
 		if (!isPositiveId(config.schemeId)) {
-			errors.push('Select a scheme.');
+			errors.push(t('study.config.selectScheme'));
 		}
 		if (!isNonEmptyName(config.levelName)) {
-			errors.push('Select a level.');
+			errors.push(t('study.config.selectLevel'));
 		}
 	} else if (
 		config.mode === 'decks' &&
 		(!Array.isArray(config.deckIds) || config.deckIds.length === 0)
 	) {
-		errors.push('Select at least one deck.');
+		errors.push(t('study.config.selectDeck'));
 	}
 
 	if (!isPositiveLimit(config.newLimit)) {
-		errors.push(`New card limit must be a whole number from 1 to ${MAX_LIMIT}.`);
+		errors.push(t('study.config.newLimit', { max: MAX_LIMIT }));
 	}
 
 	if (!isPositiveLimit(config.reviewLimit)) {
-		errors.push(`Review limit must be a whole number from 1 to ${MAX_LIMIT}.`);
+		errors.push(t('study.config.reviewLimit', { max: MAX_LIMIT }));
 	}
 
 	if (
@@ -129,7 +130,7 @@ export function validateConfig(config: StudySessionConfig): string[] {
 		config.cardTypes.length === 0 ||
 		!config.cardTypes.every((type) => (CARD_KINDS as readonly string[]).includes(type))
 	) {
-		errors.push('Select at least one card type.');
+		errors.push(t('study.config.selectType'));
 	}
 
 	return errors;

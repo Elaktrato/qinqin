@@ -80,7 +80,68 @@ const CASES: [MessageKey, MessageArgs, string, string][] = [
 	],
 	['search.resultsAnnounce', { query: '水' }, '1 result for “水”.', '2 results for “水”.'],
 	['search.parts.count', {}, '1 character', '2 characters'],
-	['search.parts.strokes', {}, '1 stroke', '2 strokes']
+	['search.parts.strokes', {}, '1 stroke', '2 strokes'],
+	// study, widgets, goals, notes, lookups (Task 13)
+	['study.actions.deleted', {}, 'Card deleted.', '2 cards deleted.'],
+	['study.actions.moved', { deck: '汉' }, 'Moved to 汉.', 'Moved 2 cards to 汉.'],
+	['study.actions.removed', {}, 'Card removed.', '2 cards removed.'],
+	['stats.map.slot.strokes', {}, '1 stroke', '2 strokes'],
+	[
+		'study.outbox.queuedNotSaved',
+		{},
+		'1 queued review was not saved: its workspace was deleted.',
+		'2 queued reviews were not saved: their workspace was deleted.'
+	],
+	['study.limits.reviews', {}, '1 review', '2 reviews'],
+	['stats.map.filtered', { shown: '1', total: '9' }, '1 of 9 characters matches.', '1 of 9 characters match.'],
+	[
+		'study.store.partialPush',
+		{},
+		'1 row was not written because the server holds newer data for it. Try again.',
+		'2 rows were not written because the server holds newer data for them. Try again.'
+	],
+	['goals.progress.newCards', { amount: 0 }, '0 of 1 new card today', '0 of 2 new cards today'],
+	[
+		'goals.progress.studyTime',
+		{ amount: 0 },
+		'0 of 1 minute of flashcard study today',
+		'0 of 2 minutes of flashcard study today'
+	],
+	['goals.streak.days', {}, 'Goal streak: 1 day', 'Goal streak: 2 days'],
+	['lookups.add.created', { deck: '汉' }, 'Added 1 new card to 汉', 'Added 2 new cards to 汉'],
+	['lookups.add.joined', {}, '1 word joined the deck', '2 words joined the deck'],
+	[
+		'lookups.add.missing',
+		{},
+		'1 word is not in the dictionary any more.',
+		'2 words are not in the dictionary any more.'
+	],
+	['lookups.count.all', {}, '1 word', '2 words'],
+	['lookups.count.noCard', { shown: 1 }, '1 of 1 word with no card yet', '1 of 2 words with no card yet'],
+	['lookups.removed', {}, 'Removed 1 word from the history.', 'Removed 2 words from the history.'],
+	['lookups.prompt.add', { deck: '汉' }, 'Add this 1 to 汉', 'Add these 2 to 汉'],
+	[
+		'widgets.characters.unresolved',
+		{},
+		'1 card could not be resolved, so this may under-report.',
+		'2 cards could not be resolved, so this may under-report.'
+	],
+	['widgets.words.inDecks', {}, 'word in your decks ·', 'words in your decks ·'],
+	['widgets.words.waiting', {}, 'new card waiting', 'new cards waiting'],
+	['study.setup.unit.characters', {}, 'character', 'characters'],
+	['study.setup.unit.words', {}, 'word', 'words'],
+	['study.summary.cardsIn', {}, 'card in', 'cards in'],
+	['study.summary.decksDot', {}, 'deck ·', 'decks ·'],
+	['study.sched.withReviews', { label: 'Imported 2026-11-01' }, 'Imported 2026-11-01 · 1 review', 'Imported 2026-11-01 · 2 reviews'],
+	[
+		'study.session.buried',
+		{},
+		'1 related card is buried until tomorrow',
+		'2 related cards are buried until tomorrow'
+	],
+	['study.session.reviews', {}, 'review', 'reviews'],
+	['study.session.reshows', {}, 're-show (practice, not counted)', 're-shows (practice, not counted)'],
+	['study.session.streakDays', {}, 'day', 'days']
 ];
 
 describe('catalogue plurals keep their English', () => {
