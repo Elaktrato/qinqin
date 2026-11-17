@@ -24,14 +24,16 @@ token rule, no new pull collection.**
 
 **Spec (binding, incl. Rulings):** `docs/superpowers/specs/2026-11-16-v040p-milestones-design.md`.
 
-**Branch / worktree:** `feature/v040p-milestones` at `/home/user/qinqin/.claude/worktrees/milestones` (`<wt>`).
-**Before Task 1** the branch must contain items 4, 5 and 6 merged into `feature/v0.4.0-prep` (the orchestrator
-merges the collection branch in). Check: `git -C <wt> log --oneline` shows the three merges;
-`docs/contracts/study/rows.json` (item 4), `docs/contracts/sync/pull-page.json` (item 5) and item 6's `read` /
-`journal` payload fixtures exist; `pushStudyRows` still writes `qinqin-flashcards` plugin rows. If any is missing,
-or item 4 moved `known:` / `goals:workspace` out of plugin data, stop and report (the storage ruling depends on it).
-Paths below use today's layout; if item 4 moved `lib/plugins/flashcards` to `lib/features/flashcards`, use the
-new path. The orchestrator merges and pushes; never push.
+**Branch / worktree:** `feature/v040p-milestones` at `/home/user/www/github/qinqin/.claude/worktrees/milestones`
+(`<wt>`), cut from the collection branch `feature/v0.4.0-prep-2` (= `develop` after items 4 and 5 and the
+provisional logo). Items 4 and 5 are already in the branch (re-read 2026-11-17, see the Execution record).
+**Before Task 1** item 6 must be merged in too (the orchestrator merges the collection branch in). Check:
+`git -C <wt> log --oneline` shows the item 6 merge; `apps/web/src/lib/eventPayloads.ts` exists and its `read` parser
+gives `{bookId?, seconds}` and its `journal` parser `{entryId: string}`; item 6's `read` / `journal` payload
+fixtures exist under `docs/contracts/` and `overview.md` "Gaps" no longer lists them; `study/store.ts` still parses
+`goals:workspace` / `known:*` from `pluginData` and writes keyed rows with `pushKeyedRows`. If any is missing or
+item 6 pinned a different shape, stop and report (Tasks 1 and 3 depend on it). Paths below are the built layout
+(`lib/features/flashcards/...`). The orchestrator merges and pushes; never push.
 
 ## Gates
 
@@ -44,8 +46,11 @@ new path. The orchestrator merges and pushes; never push.
   (`gofmt -l` prints nothing; only `internal/ai` `TestHostnameResolvingToEmbeddedFormIsRefused` may fail, IPv6).
 - Node 26 full vitest once before the last commit:
   `cd <wt>/apps/web && PATH=/home/user/qq-tools/node-v26.13.1-linux-x64/bin:$PATH npx vitest run`.
-- No new route: the route walk, the PWA route fixture, `auth/tokens-routes.json` and `docs/wiki/API-Routes.md`
-  stay as they are (their tests confirm). If a reviewer asks for a route or a typed collection, stop and re-plan.
+- No new route, no migration: the route walk (`route{}` rows), the PWA route fixture (no
+  `UPDATE_ROUTES_FIXTURE=1` run), `auth/tokens-routes.json` (no token rule), `node scripts/gen-api-docs.mjs` output
+  and `docs/wiki/API-Routes.md` stay as they are (their tests confirm); the migrations end at `039_packages.sql`.
+  If a reviewer asks for a route or a typed collection (which would need migration 040, a pull collection in item
+  5's round order, a `route{}` row with an access value, 401 and two-user isolation tests), stop and re-plan.
 - One commit per task, explicit `git add <files>`, conventional message ending with a blank line and exactly
   `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>`. `git status` clean after each commit.
 
@@ -54,9 +59,14 @@ new path. The orchestrator merges and pushes; never push.
 - Ids `<family>:<threshold>` and `level-complete:<ownedLevelDeckId(packId, level)>`; never renamed or removed.
 - Reached = the first event (by `ts`, ties by id, `ts ≤ now`) at which the quantity reaches the threshold;
   "ever reached"; `reachedDay = dayOf(reachedAt)`; streak by date (the `dailyStreak` rule, vacation neutral).
-- Scopes reused, never copied: `isValidReview`, `classifySchedule`, `MASTERY_THRESHOLD`, `cellStates`,
-  `buildSections`, `masteryGlyphs`, `readSeconds`, `vacationRuns` / `isVacationDay`, `ownedLevelDeckId`,
-  `levelItems`, `timelinesFor` / `reviewsKey`.
+- Scopes reused, never copied (homes: spec "The pure interface"): `isValidReview`, `classifySchedule`,
+  `MASTERY_THRESHOLD`, `cellStates`, `buildSections`, `masteryGlyphs`, `readSeconds`, `vacationRuns` /
+  `isVacationDay`, `ownedLevelDeckId`, `levelDecks`, `levelItems`, `timelinesFor` / `reviewsKey`, and item 6's
+  `lib/eventPayloads.ts` parsers for `read` / `journal`.
+- `read` counts by seconds alone (`bookId` may be missing after a restore); `journal` counts only a string `entryId`
+  (the heatmap's `distinctBy` counts text values only), for `journal-entries` and for `days-active`.
+- Feature switches from the `pluginStates` store when `status === 'ready'`: `featureEnabled(FLASHCARDS_ID |
+  READER_ID)`, `pluginEnabled('qinqin-journal')`; otherwise no card.
 - Seen = a live `milestone:<id>` row (key alone) ∪ the pending list. No client ever deletes or rewrites a live row.
 - Home computes log families only; Stats → Week computes all families. Feature switches gate families.
 - Per workspace. Strings only in `milestoneText.ts`. No toast, no animation, no sound.
@@ -82,12 +92,16 @@ new path. The orchestrator merges and pushes; never push.
 **Files:** Create `docs/contracts/milestones/README.md`, `catalogue.json`, `reached.json`, `seen-rows.json`,
 `seen-merge.json`, `show-plan.json`; modify `docs/contracts/README.md` (folder row; web tests
 `lib/milestones/{catalogue,reached,replayReached,seen,plan}.test.ts`; Go: the `backup/remap.json` case),
-`docs/contracts/overview.md` (row-key table row `milestone:<id>` — scope workspace, shape `{version:1, id, seenAt,
-reachedDay, ...unknown kept}`, seen by key alone, never deleted, owner `lib/milestones/seen.ts`, `study/store.ts`,
-pinned by `milestones/seen-rows.json`, `seen-merge.json`; "How the folders fit" Cards and study gains
-`milestones/`; "Study rules (links)" gains a line), `docs/contracts/backup/remap.json` (one `pluginRow` case: a
-`qinqin-flashcards` `milestone:reviews:1000` row of workspace 7 → 12, key and data unchanged; one for a
-`level-complete:` id).
+`docs/contracts/overview.md` ("Row-key conventions → Keyed rows" table row `milestone:<id>` — scope workspace,
+shape `{version:1, id, seenAt, reachedDay, ...unknown kept}`, seen by key alone, never deleted, owner
+`lib/milestones/seen.ts`, `study/store.ts`, pinned by `milestones/seen-rows.json`, `seen-merge.json`; the "Sync
+model" sentence "The keyed study rows (`goals:workspace`, `known:*`, `vacation:*`)" gains `milestone:*`; "How the
+folders fit" gains `milestones/`; "Study rules (links)" gains a line), `docs/contracts/backup/remap.json` (two
+cases in the existing shape `{name, op: "pluginRow", maps: {workspaces: {"7": 12}}, input: {pluginId:
+"qinqin-flashcards", workspaceId: 7, key, data}, expect: {drop: false, workspaceId: 12, key, data}, note}`: a
+`milestone:reviews:1000` row and a `milestone:level-complete:<id>` row, key and data unchanged). No new `events`
+case: the existing "read event: bookId through the book map, unknown book removed" case already pins the restored
+shape this item counts.
 
 - [ ] **Step 1:** README: copy the spec's catalogue table, the reached rule, the level rule, the seen rule and every
   Ruling verbatim; sync, offline and Android notes; "the summary stores nothing, the seen rows are the only state".
@@ -102,8 +116,9 @@ pinned by `milestones/seen-rows.json`, `seen-merge.json`; "How the folders fit" 
   in its `note`. `expect` lists every reached id of the case (a missing id is a failure, an extra id too).
 - [ ] **Step 4:** `seen-rows.json`, `seen-merge.json`, `show-plan.json` (shapes as in Tasks 5 and 6; `today`
   given; the backfill case has 20 reached ids over three years).
-- [ ] **Step 5:** `python3 -m json.tool` each file (exit 0). Run the backup Go test under the lock
-  (`go test -count=1 ./internal/backup`): it must PASS with the new cases (generic path; no Go code changes —
+- [ ] **Step 5:** `python3 -m json.tool` each file (exit 0); `npx vitest run src/lib/contractsDocs.test.ts` PASS.
+  Run the backup Go test under the lock (the Go gate's `flock … env -u … GOTOOLCHAIN=auto GOFLAGS=-buildvcs=false`
+  prefix, `go test -count=1 ./internal/backup`): it must PASS with the new cases (generic path; no Go code changes —
   this is a pinning test, record it as such). Commit `docs(contracts): milestones fixtures`.
 
 ### Task 2: `catalogue.ts`
@@ -155,8 +170,10 @@ export function reachedFromLog(input: LogInputs): Reached[]
   family the reached instant is the earliest event whose prefix count reaches the threshold (brute force over
   prefixes); the streak family agrees with `dailyStreak(prefix…).best` at the reached day and the day before;
   disabled families yield nothing; a review after `now` is ignored; memo returns the same array for an equal
-  reloaded log (`reviewsKey`).
-- [ ] **Step 2:** FAIL. **Step 3:** Implement (`isValidReview`, `readSeconds`, `isVacationDay`, the `dailyStreak`
+  reloaded log (`reviewsKey`); a `read` event with no `bookId` counts its seconds; a `journal` event with a numeric,
+  empty or missing `entryId` moves neither `journal-entries` nor `days-active`.
+- [ ] **Step 2:** FAIL. **Step 3:** Implement (item 6's `lib/eventPayloads.ts` parsers, `isValidReview`,
+  `readSeconds`, `isVacationDay`, the `dailyStreak`
   run rule — extract a shared `streakRuns(days, vacation)` helper from `study/exp.ts` if needed, with its existing
   tests unchanged). **Step 4:** PASS + gates. **Step 5:** Commit `feat(milestones): milestones reached in the event log`.
 
@@ -191,8 +208,10 @@ export function reachedFromReplay(input: ReplayInputs): Reached[]
 ### Task 5: `seen.ts` and the study store
 
 **Files:** Create `apps/web/src/lib/milestones/seen.ts`, `seen.test.ts`; modify `apps/web/src/lib/study/store.ts`
-(parse `milestone:` rows of the workspace into `StudyData.seenMilestones`; `saveSeenMilestones`),
-`apps/web/src/lib/study/types.ts`, `store.test.ts`.
+(in `fetchStudyData`'s `pluginData` loop, beside `GOALS_KEY` / `KNOWN_PREFIX`: parse live and tombstoned
+`milestone:` rows of the workspace into `StudyData.seenMilestones`; copy it in `loadStudyDataWith` into
+`StudyHistory`; export `saveSeenMilestones` next to `pushKeyedRows`), `apps/web/src/lib/study/types.ts`
+(`StudyData.seenMilestones?`), `store.test.ts`.
 
 **Interfaces:**
 ```ts
@@ -208,14 +227,18 @@ export function prunePending(userId: number, workspaceId: number, live: Readonly
 // study/store.ts
 export async function saveSeenMilestones(workspaceId: number, rows: readonly { key: string; data: unknown }[]): Promise<void>
 ```
-`saveSeenMilestones` uses `pushStudyRows`; a `PartialPushError` whose rows were all skipped is success (another
-device wrote them first); a network error rethrows (the caller keeps the pending list).
+`saveSeenMilestones` uses `pushKeyedRows` with `chunk: rows.length` (one request) and no `knownAt` (no client
+writes a `milestone:` tombstone). `pushChunks` turns both a skip and a network failure into `PartialPushError`: with
+`skipped > 0` it is success (skipped = another device wrote it first; refused cannot be retried usefully), with
+`skipped === 0` it rethrows (the caller keeps the pending list). `notifyWrite` fires either way (study caches
+drop; `onStudyWrite` listeners reload).
 
 - [ ] **Step 1: Failing tests:** every `seen-rows.json` / `seen-merge.json` case; `seenWritePlan` never returns an
   id with a live row, never a tombstone; pending storage keyed by user and workspace (user 1 never reads user 2's),
   throwing `localStorage` → `[]` and no throw; store: a `milestone:` row of another workspace or a user-global one is
-  ignored; `saveSeenMilestones` sends `pluginId: "qinqin-flashcards"`, the workspace id, no `deletedAt`, and treats
-  `dataSkipped` as success.
+  ignored; a typed-family key is still never study state; `saveSeenMilestones` sends one `POST /api/sync/push` with
+  `pluginData` items `pluginId: "qinqin-flashcards"`, the workspace id, `updatedAt`, no `deletedAt`, treats
+  `dataSkipped: n` as success and a rejected request as failure; `loadStudyDataWith` passes `seenMilestones` through.
 - [ ] **Step 2:** FAIL. **Step 3:** Implement. **Step 4:** PASS + gates (full web suite: store consumers).
   **Step 5:** Commit `feat(milestones): seen rows and pending list`.
 
@@ -257,12 +280,17 @@ export function loadMilestones(workspaceId: number, opts: { scope: 'home' | 'wee
   week?: { timelines: Timelines; chars: CharRow[] | null; levels: LevelInput[] } }): Promise<MilestonesView>
 export function markSeen(workspaceId: number, plan: CardPlan, reached: readonly Reached[]): Promise<void>
 ```
-`loadMilestones` reads `loadStudyHistory`, `loadWorkspaceEvents`, the feature switches, the vacation runs and the
-pending list; flushes pending rows (failure keeps them); `scope: 'home'` passes only log families. `markSeen` adds
+`loadMilestones` reads `loadStudyHistory` (`study/history.ts`), `loadWorkspaceEvents` (`lib/events.ts`), the
+feature switches (`pluginStates`: `featureEnabled`, `pluginEnabled('qinqin-journal')`; not `ready` → plan `none`),
+the vacation runs and the pending list; flushes pending rows (failure keeps them); `scope: 'home'` passes only log
+families. The Week scope also loads the levels (`getSchemes`, `levelDecks(schemes, language)`, `getSchemeEntries` /
+`fetchSchemeCharacters`; the Week tab does not load them today) and takes the universe and cards from
+`loadCharacterMapData` as `loadWeekCharacters` does. `markSeen` adds
 the ids to the pending list first, then `saveSeenMilestones`, then prunes on success.
 
 - [ ] **Step 1: Failing tests:** titles of every family (singular/plural, `Intl` grouping, `en`), unknown id →
-  null, the date never shifted by `TZ=Pacific/Kiritimati` / `America/Adak`; loader (mocks): home never builds
+  null, the date never shifted by `TZ=Pacific/Kiritimati` / `America/Adak`; loader (mocks): plugin states not
+  `ready` → `none`; journal plugin off → no `journal-entries`; home never builds
   timelines or fetches characters; a switched-off feature drops its families; pending flushed once and kept on a
   rejected push; `markSeen` offline → ids pending and the next load shows no card; a workspace switch mid-load is
   dropped by a sequence guard (the caller's), each call reads only its workspace's pending list.
@@ -288,8 +316,11 @@ titles: Map<string, string>}`.
 **Files:** Modify `apps/web/src/routes/+page.svelte` (card above the widgets), `apps/web/src/routes/stats/week/+page.svelte`
 (card above the summary, `#milestones` history section, passes the tab's timelines, universe and levels),
 `apps/web/src/lib/weekly/WeekSummary.svelte` (a "Milestones" line from `milestonesInWeek`), their dom tests
-(`routes/stats/week/page.dom.test.ts`, the home page test or a new `routes/home.dom.test.ts`,
-`lib/weekly/WeekSummary.dom.test.ts`), `lib/weekly/loadWeek.ts` only to expose the built timelines (no second replay).
+(`routes/stats/week/page.dom.test.ts`, a new `routes/home.dom.test.ts` — no home page test exists,
+`lib/weekly/WeekSummary.dom.test.ts`), `lib/weekly/loadWeek.ts` only to expose the built timelines of `loadWeek`
+and the universe/cards of `loadWeekCharacters` (no second replay; `timelinesFor` is memoised by `reviewsKey`).
+The Week page already listens to `onStudyWrite` / `onEventLogChange` / `onContextStale`; the milestones load joins
+that reload and its sequence guard.
 
 - [ ] **Step 1: Failing tests:** home shows the card for log families and hides it after dismiss (the push is sent
   with the covered ids); Week shows replay-family cards; the history lists seen and new items; the week's
@@ -326,15 +357,21 @@ titles: Map<string, string>}`.
   --exclude .git`), `npm --prefix <copy>/apps/web ci && run build`, copy the build where the server embeds it, build
   the server under the Go lock, run it with a scratch data dir on a free `127.0.0.1` port (not 8080/8085/8300).
   With Python: first user and a second user, workspaces A (zh) and B; `PUT /api/me/time-zone` Europe/Berlin; card
-  rows for 12 vocab cards (typed push, item 4); 120 `review` events over 8 consecutive days via `POST
-  /api/events/batch`, `read` events (2 × 40 min), one `journal` event. A temporary vitest file in the copy only
+  rows for 12 vocab cards (typed `cards` items in `POST /api/sync/push`, item 4); 120 `review` events over 8
+  consecutive days, `read` events (2 × 40 min, one without `bookId`), one `journal` event with a string `entryId`
+  and one with a numeric one, via `POST /api/events/batch` (or `events` of `POST /api/sync/push`). A
+  temporary vitest file in the copy only
   (`QINQIN_CHECK_URL=… npx vitest run src/realapp.check.test.ts`) fetches the log, rows and zone history and asserts
   with the pure modules: `reviews:100`, `words-studied:10`, `streak:3`, `streak:7`, `reading-hours:1`,
-  `journal-entries:1` reached on the expected Berlin days; plan `summary`/`recent` as expected. Then push the seen
-  rows (`POST /api/sync/push`) → pull v2 shows them; a second push of one key with an older `updatedAt` →
-  `dataSkipped: 1` and the row still live; a different key from "device 2" → both live (union); the second user's
-  pull never shows them and a push into A is 404. Account export (ticket) contains the `milestone:` rows; restore
-  into the second user → rows in the remapped workspace. Never commit the file. Kill the server, delete the copy,
+  `journal-entries:1` reached on the expected Berlin days, `journal-entries:10` not reached by the numeric id,
+  reading counted with and without `bookId`; plan `summary`/`recent` as expected. Then push the seen rows
+  (`POST /api/sync/push`) → `GET /api/sync/pull?v=2&collections=pluginData&workspace=A` pages show them; a second
+  push of one key with an older `updatedAt` → `dataSkipped: 1` and the row still live; a different key from
+  "device 2" → both live (union); the second user's pull never shows them and a push into A is 404. Account export
+  (`POST /api/account/export`, then `GET /api/account/export/{ticket}`) has the `milestone:` rows in
+  `plugin-data/NNNNNN.jsonl`; restore into the second user (`POST /api/account/restore`, then
+  `POST /api/account/restore/{token}`) → rows in the remapped
+  workspace. Never commit the file. Kill the server, delete the copy,
   binary, data dir and scripts.
 - [ ] **Step 2:** Full web gates (`run check`, `test`, `run build`), Node 26 full vitest, ONE full Go gate.
   `git status` clean.
@@ -356,5 +393,43 @@ study modules: run the full web suite there. One implementer at a time (shared w
 
 ## Execution record
 
-(empty — filled by the builder: adaptations to items 4–6 as merged, deviations as Rulings, test-first evidence per
-task, real-app check, final gate exit codes, what was not verified, review fixes, mutation check.)
+(filled by the builder: further adaptations, deviations as Rulings, test-first evidence per task, real-app check,
+final gate exit codes, what was not verified, review fixes, mutation check.)
+
+Re-read of spec and plan against the built items 4 and 5 (2026-11-17, docs only, before item 6 is merged):
+
+- Adaptation: worktree path is `/home/user/www/github/qinqin/.claude/worktrees/milestones`, base
+  `feature/v0.4.0-prep-2`; items 4 and 5 are in the branch, item 6 (`lib/eventPayloads.ts`, `read` / `journal`
+  fixtures) is the remaining precondition of Task 1.
+- Adaptation: storage ruling confirmed against item 4 — `goals:workspace`, `known:*`, `vacation:*` stayed keyed
+  `qinqin-flashcards` plugin rows (`overview.md` "Keyed rows", `study/store.ts`); `milestone:*` follows them. No
+  typed table, no migration (next free would be 040), no route, no token rule, no PWA route fixture change.
+- Adaptation: `pushStudyRows` does not exist; keyed rows are written by the private `pushKeyedRows` in
+  `study/store.ts`; `saveSeenMilestones` is exported beside it. `pushChunks` reports a network failure as
+  `PartialPushError` with `skipped === 0`, a skip or refusal with `skipped > 0` (sum of `dataSkipped` and
+  `dataRefused`), and stops after the first partial chunk.
+- Adaptation: the parse goes into `fetchStudyData`'s `pluginData` loop (beside `GOALS_KEY`, `KNOWN_PREFIX`) and must
+  be copied in `loadStudyDataWith` (fields are passed through one by one); `milestone:` is no `legacyFamily` prefix.
+- Adaptation: the study pull is item 5's paged pull v2 (`pullStudy`, `V2_STUDY_COLLECTIONS` with `pluginData` and
+  `pluginStates`, `tombstones=1`): tombstones arrive and read as not seen.
+- Adaptation: backup plugin lines are `{pluginId, workspaceId|null, key, data, version, updatedAt, modifiedAt|null}`;
+  the `remap.json` `pluginRow` case shape is `{name, op, maps, input, expect: {drop, workspaceId, key, data}, note}`.
+- Adaptation: `read` = `{bookId, seconds}` and `journal` = `{entryId: string}` (item 6); after a restore of an
+  unknown book `bookId` is removed (`remap.go`) and the seconds still count; a non-string `entryId` counts for
+  neither `journal-entries` nor `days-active` (server `distinctBy` counts `json_type = 'text'` only).
+- Adaptation: helper homes — `ownedLevelDeckId`, `levelDecks`, `levelItems` in
+  `lib/features/flashcards/decks/systemDecks.ts`; `classifySchedule` in `lib/stats/wordStates.ts`; `readSeconds` in
+  `lib/stats/readingTime.ts`; `CharRow` in `lib/api/types.ts`; `StudyDay` in `lib/time/studyDay.ts`.
+- Adaptation: switches — flashcards and reader are core features (`featureEnabled` in `lib/features/index.ts`), the
+  journal is still the plugin `qinqin-journal` (`pluginEnabled` in `lib/plugins/index.ts`).
+- Adaptation: the Week tab loads timelines (`loadWeek`) and the universe (`loadWeekCharacters` →
+  `loadCharacterMapData`) but no levels; the Week scope of `loadMilestones` loads schemes and members itself
+  (`lib/api/schemes.ts`, cached). No home page dom test exists; Task 9 creates `routes/home.dom.test.ts`.
+- Adaptation: Android reads level members from `levels.<packId>` packages (item 5).
+- Ruling: features are read only when `pluginStates.status === 'ready'`, else no card — a missing state row reads
+  as on and would flash a card of a switched-off feature — cost: no card while the states are unavailable.
+- Ruling: `saveSeenMilestones` pushes all rows in one chunk; `PartialPushError` with `skipped > 0` is success,
+  with `skipped === 0` a failure that keeps the ids pending — retrying a refused row cannot succeed — cost: a
+  refused row is not seen on other devices (one extra card there).
+- Ruling: a `read` event without `bookId` counts; a `journal` event without a string `entryId` does not — agrees
+  with the heatmap and the reading totals — cost: an old numeric-id journal event earns nothing.
