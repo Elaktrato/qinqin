@@ -47,6 +47,15 @@ export interface SweepState {
 	levels: number[];
 }
 
+/**
+ * The range of `now` a sweep's answer holds for: from its latest included
+ * point to (not including) its earliest point after `now`.
+ */
+export interface SweepWindow {
+	from: number;
+	until: number;
+}
+
 interface Cell {
 	forms: readonly string[];
 	learned: boolean;
@@ -62,7 +71,7 @@ interface Cell {
 export function sweep(
 	input: ReplayInputs,
 	probe: (t: number, state: SweepState) => void
-): void {
+): SweepWindow {
 	const { families, timelines, now } = input;
 	const wantMature = families.has('words-mature');
 	const wantLevels = families.has('level-complete');
@@ -135,9 +144,13 @@ export function sweep(
 	}
 
 	const points: { ts: number; card: number; schedule: Schedule }[] = [];
+	const window: SweepWindow = { from: Number.NEGATIVE_INFINITY, until: Number.POSITIVE_INFINITY };
 	tracked.forEach((t, card) => {
 		for (const point of timelines.of(t.card.id)) {
-			if (point.ts <= now) points.push({ ts: point.ts, card, schedule: point.schedule });
+			if (point.ts <= now) {
+				points.push({ ts: point.ts, card, schedule: point.schedule });
+				if (point.ts > window.from) window.from = point.ts;
+			} else if (point.ts < window.until) window.until = point.ts;
 		}
 	});
 	// Stable: a card's own points keep their replay order within one instant.
@@ -209,9 +222,10 @@ export function sweep(
 		}
 		probe(t, { mature, learned, levels: levelCount.slice() });
 	}
+	return window;
 }
 
-function compute(input: ReplayInputs): Reached[] {
+function compute(input: ReplayInputs): { result: Reached[]; window: SweepWindow } {
 	const out: Reached[] = [];
 	const thresholds = (family: MilestoneFamily) =>
 		input.families.has(family) ? (FAMILIES.find((f) => f.family === family)?.thresholds ?? []) : [];
@@ -238,13 +252,15 @@ function compute(input: ReplayInputs): Reached[] {
 			out.push({ id: levelMilestoneId(level.packId, level.level), at: t, day });
 		});
 	};
-	sweep(input, probe);
-	return out.sort((a, b) => a.at - b.at || compareIds(a.id, b.id));
+	const window = sweep(input, probe);
+	return { result: out.sort((a, b) => a.at - b.at || compareIds(a.id, b.id)), window };
 }
 
-// One answer per timelines object and scope; the timelines are memoised by
-// the reviews' content already (timelinesFor), so a reload sweeps nothing.
-const memo = new WeakMap<Timelines, Map<string, Reached[]>>();
+// One answer per timelines object and scope, valid while `now` stays in the
+// sweep's window (a point after `now`, a fast device clock, joins once now
+// passes it); the timelines are memoised by the reviews' content already
+// (timelinesFor), so a reload sweeps nothing.
+const memo = new WeakMap<Timelines, Map<string, { result: Reached[]; window: SweepWindow }>>();
 const identities = new WeakMap<object, number>();
 let nextIdentity = 1;
 
@@ -266,7 +282,6 @@ export function reachedFromReplay(input: ReplayInputs): Reached[] {
 	const key = [
 		cardsKey(input.cards, input.deckIds),
 		identity(input.day),
-		input.day.today(input.now),
 		[...input.families].sort().join(','),
 		identity(input.chars),
 		JSON.stringify(input.levels)
@@ -277,9 +292,10 @@ export function reachedFromReplay(input: ReplayInputs): Reached[] {
 		memo.set(input.timelines, byKey);
 	}
 	const cached = byKey.get(key);
-	if (cached !== undefined) return cached;
-	const result = compute(input);
+	if (cached !== undefined && cached.window.from <= input.now && input.now < cached.window.until) return cached.result;
+	const answer = compute(input);
+	byKey.delete(key);
 	if (byKey.size >= 4) byKey.delete(byKey.keys().next().value as string);
-	byKey.set(key, result);
-	return result;
+	byKey.set(key, answer);
+	return answer.result;
 }

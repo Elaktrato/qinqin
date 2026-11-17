@@ -205,6 +205,14 @@ describe('reachedFromReplay', () => {
 		expect(replayStats.timelines).toBe(built);
 	});
 
+	it('the memo follows now within one day: a future-stamped review counts once now passes it', () => {
+		// The 10th card's point is at t0 + 9 s; both calls are on the same learner day.
+		const timelines: Timelines = matureTen();
+		expect(reachedFromReplay(input({ timelines, now: t0 + 8_000 }))).toEqual([]);
+		expect(reachedFromReplay(input({ timelines, now: t0 + 9_000 })).map((r) => r.id)).toEqual(['words-mature:10']);
+		expect(reachedFromReplay(input({ timelines, now: t0 + 8_500 }))).toEqual([]);
+	});
+
 	it('memoises per timelines object', () => {
 		const timelines: Timelines = matureTen();
 		const a = reachedFromReplay(input({ timelines }));
