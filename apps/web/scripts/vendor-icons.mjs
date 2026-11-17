@@ -70,6 +70,7 @@ export const WANTED = {
 	library: 'library',
 	map: 'map',
 	menu: 'menu',
+	milestone: 'award',
 	minus: 'minus',
 	more: 'ellipsis',
 	palette: 'palette',

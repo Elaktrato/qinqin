@@ -17,12 +17,20 @@ vi.mock('$lib/events', async (importOriginal) => ({
 	...(await importOriginal<typeof import('$lib/events')>()),
 	onEventLogChange: vi.fn(() => () => {})
 }));
+vi.mock('$lib/time/zone', async (importOriginal) => {
+	const actual = await importOriginal<typeof import('$lib/time/zone')>();
+	return { ...actual, currentStudyDay: vi.fn(actual.currentStudyDay) };
+});
 vi.mock('$lib/study/store', async (importOriginal) => ({
 	...(await importOriginal<typeof import('$lib/study/store')>()),
 	onStudyWrite: vi.fn(() => () => {})
 }));
 
+import { goto } from '$app/navigation';
+import { allWidgets } from '$lib/widgets/registry';
 import { loadMilestones, markSeen, type MilestonesView } from '$lib/milestones/loadMilestones';
+import { studyDay } from '$lib/time/studyDay';
+import { currentStudyDay } from '$lib/time/zone';
 import { onEventLogChange } from '$lib/events';
 import { pluginStates } from '$lib/plugins/states';
 import { onStudyWrite } from '$lib/study/store';
@@ -149,5 +157,57 @@ describe('home milestones', () => {
 		await waitFor(() => expect(cardHeading()).toBeTruthy());
 		onLog(1);
 		await waitFor(() => expect(loadMilestones).toHaveBeenCalledTimes(3));
+	});
+});
+
+describe('home heading and search', () => {
+	afterEach(() => vi.useRealTimers());
+
+	it.each([
+		[9, 'Good morning'],
+		[15, 'Good afternoon'],
+		[21, 'Good evening']
+	])('the h1 is the greeting for the device hour (%i:00)', async (hour, greeting) => {
+		vi.useFakeTimers({ toFake: ['Date'] });
+		vi.setSystemTime(new Date(2026, 10, 16, hour, 0, 0));
+		render(Page);
+		const headings = screen.getAllByRole('heading', { level: 1 });
+		expect(headings).toHaveLength(1);
+		expect(headings[0].textContent).toBe(greeting);
+	});
+
+	it("a date line shows the learner's today, not the device's", async () => {
+		vi.useFakeTimers({ toFake: ['Date'] });
+		vi.setSystemTime(new Date('2026-11-16T20:00:00Z')); // already the 17th in Tokyo
+		vi.mocked(currentStudyDay).mockReturnValue(studyDay([{ zone: 'Asia/Tokyo', from: null }]));
+		render(Page);
+		expect(document.querySelector('.date')?.textContent).toBe('Tuesday 17 November');
+	});
+
+	it('the search is a labelled field that goes to /search?q=', async () => {
+		render(Page);
+		const field = screen.getByRole('searchbox', { name: 'Search entries' });
+		await fireEvent.input(field, { target: { value: ' 你好 ' } });
+		await fireEvent.click(screen.getByRole('button', { name: 'Search' }));
+		await waitFor(() => expect(goto).toHaveBeenCalledWith(`/search?q=${encodeURIComponent('你好')}`));
+	});
+});
+
+describe('home with a feature switched off', () => {
+	it('shows no widget of a switched-off feature', async () => {
+		const actual = await vi.importActual<typeof import('$lib/widgets/registry')>('$lib/widgets/registry');
+		vi.mocked(allWidgets).mockImplementation((plugins, states, language) =>
+			actual.allWidgets(plugins, states, language, [])
+		);
+		pluginStates.set({ list: [{ id: 'qinqin-flashcards', manifest: {}, enabled: true, order: 0 }], status: 'ready' });
+		const { unmount } = render(Page);
+		await waitFor(() => expect(document.querySelector('[data-widget="flashcards-summary"]')).not.toBeNull());
+		unmount();
+		pluginStates.set({ list: [{ id: 'qinqin-flashcards', manifest: {}, enabled: false, order: 0 }], status: 'ready' });
+		render(Page);
+		await waitFor(() => expect(screen.getByText(/None of your home widgets is available in this workspace/)).toBeTruthy());
+		expect(document.querySelector('[data-widget="flashcards-summary"]')).toBeNull();
+		const link = screen.getByRole('link', { name: 'Choose widgets in Settings' });
+		expect(link.getAttribute('href')).toBe('/settings?tab=home');
 	});
 });

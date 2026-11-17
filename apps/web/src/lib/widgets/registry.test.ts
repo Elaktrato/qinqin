@@ -4,6 +4,8 @@ import type { PluginInfo } from '$lib/api/types';
 import type { WebPlugin } from '$lib/plugins';
 import { webPlugins } from '$lib/plugins';
 import { fixtureManifest } from '$lib/plugins/fixtures';
+import ActivityHeatmap from '$lib/components/ActivityHeatmap.svelte';
+import ActivityHome from './ActivityHome.svelte';
 import { allWidgets } from './registry';
 import type { WidgetDef } from './types';
 
@@ -131,6 +133,13 @@ describe('allWidgets', () => {
 			size: 'normal',
 			surfaces: ['home']
 		});
+	});
+
+	it('the activity heatmap has a home component (the chosen layout); Stats keeps the garden', () => {
+		const heatmap = allWidgets(webPlugins, [], 'zh').find((w) => w.id === 'activity-heatmap')!;
+		expect(heatmap.homeComponent).toBe(ActivityHome);
+		expect(heatmap.component).toBe(ActivityHeatmap);
+		expect(heatmap.homeComponent).not.toBe(heatmap.component);
 	});
 
 	it('offers the daily goal on the home page only (not Stats)', () => {

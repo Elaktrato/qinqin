@@ -1,0 +1,210 @@
+{
+  "version": 1,
+  "rule": "goals/flower-stages",
+  "stages": [
+    "soil",
+    "sprout",
+    "bud",
+    "opening",
+    "bloom",
+    "resting"
+  ],
+  "note": "input: a goal day (goal-days.json shape plus its fraction); expect: the stage, null = no flower",
+  "cases": [
+    {
+      "name": "no goal",
+      "day": {
+        "day": "2026-11-16",
+        "status": "none",
+        "metric": null,
+        "target": null,
+        "amount": 0,
+        "fraction": 0,
+        "unavailable": false
+      },
+      "expect": null
+    },
+    {
+      "name": "an unavailable goal (its type is no longer a source)",
+      "day": {
+        "day": "2026-11-16",
+        "status": "none",
+        "metric": "activity:review",
+        "target": 50,
+        "amount": 0,
+        "fraction": 0,
+        "unavailable": true
+      },
+      "expect": null
+    },
+    {
+      "name": "a vacation day",
+      "day": {
+        "day": "2026-11-16",
+        "status": "vacation",
+        "metric": "activity:review",
+        "target": 50,
+        "amount": 0,
+        "fraction": 0,
+        "unavailable": false
+      },
+      "expect": "resting"
+    },
+    {
+      "name": "a vacation day with the target reached: vacation is checked before the amount",
+      "day": {
+        "day": "2026-11-16",
+        "status": "vacation",
+        "metric": "activity:review",
+        "target": 50,
+        "amount": 60,
+        "fraction": 0,
+        "unavailable": false
+      },
+      "expect": "resting"
+    },
+    {
+      "name": "met",
+      "day": {
+        "day": "2026-11-16",
+        "status": "met",
+        "metric": "activity:review",
+        "target": 50,
+        "amount": 50,
+        "fraction": 1,
+        "unavailable": false
+      },
+      "expect": "bloom"
+    },
+    {
+      "name": "met above the target",
+      "day": {
+        "day": "2026-11-16",
+        "status": "met",
+        "metric": "activity:review",
+        "target": 50,
+        "amount": 80,
+        "fraction": 1,
+        "unavailable": false
+      },
+      "expect": "bloom"
+    },
+    {
+      "name": "open with nothing done",
+      "day": {
+        "day": "2026-11-16",
+        "status": "open",
+        "metric": "activity:review",
+        "target": 50,
+        "amount": 0,
+        "fraction": 0,
+        "unavailable": false
+      },
+      "expect": "soil"
+    },
+    {
+      "name": "missed with nothing done",
+      "day": {
+        "day": "2026-11-16",
+        "status": "missed",
+        "metric": "activity:review",
+        "target": 50,
+        "amount": 0,
+        "fraction": 0,
+        "unavailable": false
+      },
+      "expect": "soil"
+    },
+    {
+      "name": "just below a third",
+      "day": {
+        "day": "2026-11-16",
+        "status": "missed",
+        "metric": "activity:review",
+        "target": 30,
+        "amount": 9,
+        "fraction": 0.3,
+        "unavailable": false
+      },
+      "expect": "sprout"
+    },
+    {
+      "name": "exactly a third",
+      "day": {
+        "day": "2026-11-16",
+        "status": "open",
+        "metric": "activity:review",
+        "target": 30,
+        "amount": 10,
+        "fraction": 0.3333333333333333,
+        "unavailable": false
+      },
+      "expect": "bud"
+    },
+    {
+      "name": "just below two thirds",
+      "day": {
+        "day": "2026-11-16",
+        "status": "missed",
+        "metric": "activity:review",
+        "target": 30,
+        "amount": 19,
+        "fraction": 0.6333333333333333,
+        "unavailable": false
+      },
+      "expect": "bud"
+    },
+    {
+      "name": "exactly two thirds",
+      "day": {
+        "day": "2026-11-16",
+        "status": "open",
+        "metric": "activity:review",
+        "target": 30,
+        "amount": 20,
+        "fraction": 0.6666666666666666,
+        "unavailable": false
+      },
+      "expect": "opening"
+    },
+    {
+      "name": "0.99 of the target",
+      "day": {
+        "day": "2026-11-16",
+        "status": "missed",
+        "metric": "activity:review",
+        "target": 100,
+        "amount": 99,
+        "fraction": 0.99,
+        "unavailable": false
+      },
+      "expect": "opening"
+    },
+    {
+      "name": "seconds: the fraction of the raw seconds decides (30 s of a 10-minute goal is a sprout though the whole minutes are 0)",
+      "day": {
+        "day": "2026-11-16",
+        "status": "open",
+        "metric": "flashcards:studyTime",
+        "target": 10,
+        "amount": 0,
+        "fraction": 0.05,
+        "unavailable": false
+      },
+      "expect": "sprout"
+    },
+    {
+      "name": "seconds: exactly a third of the seconds",
+      "day": {
+        "day": "2026-11-16",
+        "status": "missed",
+        "metric": "activity:read",
+        "target": 10,
+        "amount": 3,
+        "fraction": 0.3333333333333333,
+        "unavailable": false
+      },
+      "expect": "bud"
+    }
+  ]
+}

@@ -3,6 +3,7 @@ import type { ActivityResponse, ActivitySource } from '../api/stats';
 import {
 	HEATMAP_DAYS,
 	dayTooltip,
+	foldRange,
 	describe as describeActivity,
 	foldActivity,
 	levelFor,
@@ -188,6 +189,28 @@ describe('dayTooltip', () => {
 		expect(dayTooltip(day, SOURCES, names)).toBe(
 			'2026-11-13: 1 point — 1 flashcard review · Workspace 7 1'
 		);
+	});
+
+	it('with a stage appends the stage phrase, and today', () => {
+		const day = fold(resp([cell('2026-11-13', 3, 'review', 9)]), { workspace: 3, hidden: [] }, NOW).get('2026-11-13')!;
+		const stage = { stage: 'bud' as const, status: 'open' as const, metric: 'activity:review' as const, amount: 21, target: 50 };
+		expect(dayTooltip(day, SOURCES, names, false, { stage })).toBe(
+			'2026-11-13: 9 points — 9 flashcard reviews · 21 of 50 — Bud'
+		);
+		expect(dayTooltip(day, SOURCES, names, false, { stage, today: true })).toBe(
+			'2026-11-13: 9 points — 9 flashcard reviews · 21 of 50 — Bud · today'
+		);
+		const empty = fold(resp([]), { workspace: 3, hidden: [] }, NOW).get('2026-11-13')!;
+		expect(dayTooltip(empty, SOURCES, names, false, { stage: { ...stage, stage: 'soil', amount: 0 } })).toBe(
+			'2026-11-13: no activity · 0 of 50 — Nothing yet'
+		);
+	});
+
+	it('foldRange folds any window, not only the one ending today', () => {
+		const map = foldRange(resp([cell('2026-10-31', 3, 'review', 2), cell('2026-11-01', 3, 'review', 1)]), { workspace: 3, hidden: [] }, '2026-10-01', '2026-10-31');
+		expect(map.size).toBe(31);
+		expect(map.get('2026-10-31')?.total).toBe(2);
+		expect(map.has('2026-11-01')).toBe(false);
 	});
 
 	it('says hidden, not no activity, when every type is hidden', () => {

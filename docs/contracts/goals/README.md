@@ -2,7 +2,8 @@
 
 Issue #67 (daily goals). Rule source: `docs/superpowers/specs/2026-11-16-v030s-daily-goals-design.md`; the
 learner's day is `docs/contracts/study-day/`, vacation runs are `docs/contracts/scheduler/`. Every client
-(web, Android) implements these rules and runs the fixtures in this folder. Fixtures win over code. Fixture
+(web, Android) implements these rules and runs the fixtures in this folder. Fixtures win over code
+(`goal-rows.json`, `goal-amounts.json`, `goal-days.json`, `goal-streak.json`, `flower-stages.json`). Fixture
 format: see `docs/contracts/README.md`. The server is unchanged: no Go test decodes these files.
 
 Progress is **never stored**: nothing writes amounts or statuses; they are derived from the event log every
@@ -100,6 +101,27 @@ The walk never goes before `windowStart` (normally `today - 365`, the activity r
 passes `windowStart` without a break and the run is not empty, `capped` is true and the run shows as
 "`current`+ days" (at least that many; with vacation days in the window `current` is below 366). Today `none`
 gives `current: 0`.
+
+## Flower stage (`flower-stages.json`)
+
+Each heatmap day of a workspace with a goal row has a **flower stage** (design §9 "Home"), from its day status
+above:
+
+| Stage | When |
+| --- | --- |
+| none (`null`) | status `none`, or an unavailable goal: no flower, the tile is tinted by amount only |
+| `resting` | `vacation` (checked before the amount, whatever was done) |
+| `bloom` | `met` |
+| `soil` | `open` or `missed` with nothing done (fraction 0) |
+| `sprout` | fraction above 0 and below 1/3 |
+| `bud` | fraction at least 1/3 and below 2/3 |
+| `opening` | fraction at least 2/3, not met |
+
+The fraction is the raw amount over the target (`fraction` of the day status: seconds over `target * 60` for
+seconds and study time, so 30 seconds of a 10-minute goal is a `sprout` although its whole minutes are 0).
+The stage is **derived, never stored**. Until the owner's drawings exist (#107) clients show it as **text
+only** (the tile's tooltip and its accessible name, e.g. "21 of 50 — Bud"); the tile keeps the activity tint.
+The fixture's `day` is a goal-days output (with its `fraction`), `expect` the stage.
 
 ## Android and other clients
 
