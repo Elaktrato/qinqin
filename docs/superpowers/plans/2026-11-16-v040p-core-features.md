@@ -771,3 +771,250 @@ deviations with reasons, the `sample-v1` change, what was not verified).
   `logChangingTypes` (A9); the deletion preview has `cards` (A10). Library JSON has `updatedAt` on books
   and bookmarks (the web may ignore it). `limits` legacy data is `{version:1,new:number|null,…}`, the
   typed wire is `{"new":{"limit":…}|null}` — do not mix them up (A13 did once).
+
+### Phases B–D (second builder)
+
+Order as committed: B1 `4d7abff`, B4 `38cbd15`, B2 `0caa586`, B3 `27208f7`, B5 `e21535d`, B6 `19b3d0e`, B7
+`d5cc625`, B8 `e99af37`, C1 `3b18dca`, D1 `f2b4929`, D2 `362c113`, then the phase A review fixes (below), then
+this record (C2). Every web commit: `npm run check` 0 errors / 0 warnings, full `npm test` exit 0, `npm run build`
+exit 0 (counts below); every Go commit: `gofmt -l .` empty, `go vet` + `go test` of the touched packages exit 0.
+
+#### B1 — `lib/study/rows.ts`
+
+- Tests first (`rows.test.ts`: every `rows.json` case valid → parse → serialize equal / invalid → null,
+  identity per `identity` table, the `families` table of `legacy-codec.json`, the shadowing drop, kind order,
+  push rows without `version`/`deletedAt`, every `lww.json` row body, `sameBody` against the equal-content
+  skips of `lww.json`, the `*Of`/`*Row` pairs, `limitsOf` null / `{limit:null}` / `{limit:n}`, an unusable FSRS
+  set → null). Seen failing (module missing); then 95 passed. The first `sameBody` oracle (case name starts
+  with "equal") was wrong — the fsrsActive case is an equal skip too — and was replaced by one derived from
+  the case data. Gates: check 0, test 382 files / 6138, build 0.
+- `rows.ts` also has `sameBody` (a writer never sends an equal row, see B3) and `legacyFamily`.
+
+#### B4 — PWA allowlist (committed before B2)
+
+- Deviation: B4 came before B2. B2 changes `SYNC_PULL_PATH`; without the allowlist the new path is not
+  cacheable and `prepareOffline.test.ts` is red, so B2 alone could not be green. Tests first
+  (`classify.test.ts`: subsets of the eight names cacheable, the old `pluginData,pluginStates` form still
+  cacheable, `card`, `cards,entries`, a trailing comma, `library` refused; `CACHEABLE_PULL_COLLECTIONS` equals
+  `pluginData, pluginStates, ...STUDY_COLLECTIONS`); seen failing (1), then 174 passed. `docs/contracts/pwa/
+  README.md` allowlist sentence. Verified on the B4-only tree (B2 files stashed): check 0, test 382/6140, build 0.
+  `routes.fixture.json` unchanged.
+
+#### B2 — read path
+
+- `SYNC_PULL_PATH` names `pluginData,pluginStates` and the six typed collections; `fetchStudyData` builds
+  `StudyData` from typed rows of the workspace (tombstones and other workspaces skipped, rows the strict
+  parse refuses skipped); `pluginData` rows of typed-family keys are ignored; goals, known marks and vacations
+  still come from `pluginData`.
+- Ruling: the existing ~120 store tests keep describing study state as the v0.3.0 plugin rows it was; the
+  test helper `jsonResponse` serves such a pull as the migrated server does, through a test-only mirror of the
+  Go codec (`lib/study/testing/legacyCodec.ts`, `typedPull`) that is itself pinned by all 77 cases of
+  `legacy-codec.json` — why: those tests then prove parity with the v0.3.0 parsers (the codec is defined as
+  that parity) instead of being rewritten one by one — cost if wrong: a web test helper that must follow the
+  codec fixture (it fails when they differ). New typed-row tests use raw typed pulls (`rawResponse`).
+- Tests first: 58 store tests failed after the conversion, then all passed; `history`, `loadGoal.merge` and
+  `workspaceContents` tests wrap their pulls in `typedPull`; `prepareOffline.test.ts` asserts the warmed pull
+  names every typed collection. Gates: check 0, test 383/6221, build 0.
+- Deviation: the `knownAt` key change (`<collection>:<identity>`) moved to B3, together with `studyRowKey`
+  (one rule; B2 kept the legacy keys so its writers stayed correct).
+
+#### B3 — write paths on typed push
+
+- `pushStudy(workspaceId, writes)` (chunks of 200, stamp `max(now, knownAt + 1 ms)`, `deletedAt = updatedAt`
+  for tombstones, `PartialPushError` unchanged), `StudySnapshot` (`knownAt` + every stored typed row,
+  tombstones included) from `loadRawStudyData`, `studyWrite` / `extraOf` (echo the stored `extra`),
+  `studyRowKey = <collection>:<identity>`. `pushStudyRows` is gone; keyed rows use the private
+  `pushKeyedRows`, and `putData`/`deleteData`/`pushKeyedRows` throw for a typed-family key
+  (`assertKeyedRow`). `addPlanRows` returns typed writes; `planAddToDeck` returns `DeckSettings`; callers
+  (Starter/SystemDeckDetail, BookView, lookups `pageData`, reader `wordActions`) push typed writes.
+- Tests first: every store write test now reads the real `POST /api/sync/push` items (content compared
+  through the test codec's legacy view of them), a guard after every test (`expectOneStorage`) fails on any
+  plugin-data URL or `pluginData` item of a typed family, new typed tests (extra echo, stamp after the stored
+  time with the clock behind, no equal write), `oneStorage.test.ts` (static: only `store.ts` names the
+  plugin-data routes, three lines, behind `assertKeyedRow`). Seen failing (61), then passing.
+  Gates: check 0, test 384/6229, build 0.
+- Rulings:
+  - A writer never sends a write that would change nothing (equal live body; tombstone of an absent or
+    deleted row) — why: the server counts it `dataSkipped`, which the client reads as "the server holds newer
+    data" — cost if wrong: none known.
+  - A tombstone the server skips (another tab removed the row) is "already gone" (was a 404) for deleted
+    cards, dropped siblings, a deck's settings and limits rows; other skipped writes raise `PartialPushError`
+    — cost: a delete racing a newer edit on another device reports the card as not removed.
+  - Every write path reads first (`setActiveSet`, `saveWorkspaceLimits`, `restoreCards` without `onlyLive`
+    now pull before writing; they were server-time PUTs) — why: stamp after the stored time — cost: one more
+    pull per write.
+  - `deleteParamSet` of a set that is not stored resolves (nothing to delete) instead of a 404 error.
+  - Re-adding a deleted card revives its tombstone with the tombstone's `extra`.
+
+#### B5 — core feature registry
+
+- `lib/features/index.ts`: `FLASHCARDS_ID`, `READER_ID`, `RESERVED_IDS`, `coreFeatures` (Decks, Reader),
+  `featureEnabled` (no row = on), `featureWidgets`, `findFeature`, `navLinks` (features first, then plugins in
+  the user's order, nothing before `ready`). `webPlugins` = journal, grammar. `allWidgets` adds the feature
+  widgets; Settings → Plugins rows via `listedPlugins` (excludes `RESERVED_IDS` whatever `hidden` says — this is
+  what keeps review fix 5 consistent); Home layout editor and Sources page know the features as widget and
+  credit owners; the route-title walk scans the feature pages. `logChangingTypes` / `builtinSources` were
+  already done in A9 (their tests pass unchanged); the manifest test pins each event type to core/journal.
+- Transitional (until B6/B7): feature hrefs `/p/<slug>` resolved by the `/p` route; feature credits listed
+  through their manifests.
+- Ruling: a feature's widgets show only with a state row that is on (the v0.3.0 rule), the nav link and page
+  with no row too — why: no widget flashes in before the states load; nav waits for `ready` anyway.
+- Seen failing (missing module, `listedPlugins`, nav), then passing; a collection error in `routeTitles.test.ts`
+  (my regex matched the interface line) was caught by the full run and fixed before the commit. Gates: check 0,
+  test 385/6236, build 0.
+
+#### B6 — core routes and redirects
+
+- `/flashcards/[...rest]`, `/reader/[...rest]` render `FeaturePage` (the feature, or "Flashcards are switched
+  off" / "The reader is switched off" with a link to Settings → Features; loading and error states).
+  `legacyRedirect` maps `/p/flashcards[/rest]` and `/p/reader[/rest]` keeping query and fragment; the `/p` page
+  redirects with `goto(…, {replaceState: true})` from `page.url`. Route builders, the reading-time widget link
+  and every test literal moved to the new prefixes; `routeAccess` pins both as private.
+- Ruling: the redirect runs in the `/p` page, not in a `+page.ts` load — why: the load's `url` does not carry
+  the fragment (SvelteKit forbids `url.hash` in load), and the plan keeps the fragment — cost: the `/p` page
+  mounts for a moment before the redirect.
+- Seen failing (23), then passing. Gates: check 0, test 388/6249, build 0.
+
+#### B7 — Settings → Features and core credits
+
+- Tab `features` (after Study): `FeatureSettings.svelte` (thin) + `featureSwitches.ts` (PUT
+  `/api/plugins/{id}/state {enabled, order: 0}`, then `loadPluginStates`); a failed save puts the switch back.
+  Aozora Bunko, Project Gutenberg and opencc-js (both licence links) moved word for word to `coreCredits`
+  (a test pins them against the v0.3.0 manifest objects); the Sources page lists them under "Built into the
+  app"; the plugin section lists journal only. `thirdPartyLicenses.test.ts` unchanged and green.
+- Seen failing (4 + missing component), then passing. Gates: check 0, test 389/6256, build 0.
+
+#### B8 — move under `lib/features/`
+
+- `git mv` of both folders; only import lines changed (206 files, 48+/48−; relative `../reader` imports in
+  grammar became `$lib/features/reader`); paths in `docs/contracts/README.md`, `overview.md`, `docs/sources.md`.
+  Gates: check 0, test 389/6256, build 0, `gen-api-docs --check` 0.
+
+#### C1 — old-shell scenario test
+
+- `api/compat_old_shell_test.go`: a database built at schema 037 (users and workspace through the API on the
+  037 schema, then v0.3.0-shaped rows by SQL), reopened → migration 038, then the v0.3.0 web's request
+  sequence (PUT card, `pushStudyRows` + DELETE deck / deckcfg / limits, PUT deckcfg with `newOrder`, PUT
+  `limits:deck:general`, DELETE `fsrs:active`, a `known:` push, an outbox flush and its retry); after every step
+  the typed pull and the legacy pull hold the same rows (data, version, stamps, tombstones; the leftover only in
+  the legacy pull). Passed on the first run, as the plan expects; mutation check: `legacyView` forced false →
+  the test fails ("legacy keys []"); restored.
+- Ruling: `db.OpenThrough(path, last)` is exported for compatibility tests in other packages — why:
+  `migrateThrough` is unexported and `export_test.go` is invisible to `api` tests — cost: one exported test-
+  support function in `db` (documented as such).
+
+#### D1, D2 — docs
+
+- Overview: layer row `study/` + `library/`, sync model (typed collections, "name a typed collection whenever
+  you pull `pluginData`", reserved ids and the switch), the six typed families moved to a "Typed study rows"
+  table, keyed rows under the study namespace, library row pinned by `library/rows.json`, Gaps reduced to
+  `read` payloads / library sync and push/pull response shapes. READMEs: `study/` (web owners, legacy-view
+  fixture), `cards/`, `scheduler/`, `frequency/`, `backup/` wording. Wiki: Plugin-format (built-in table,
+  reserved ids), Plugin-data-api, Settings-tour (Features), Reader, both Flashcards pages, API-Overview,
+  API-Access-tokens (the documented break), Stats-and-heatmap, Getting-started; README (features, upgrade
+  note for migration 038, studying, decks page URL, data notes). `contractsDocs`/`wikiDocs` tests pass.
+
+#### Review fixes (phase A)
+
+One fix wave for the independent phase-A review; each test-first (seen failing), one commit per finding:
+
+1. `27192ac` (must) restored `library_books`/`library_bookmarks`/`library_highlights` rows get `updated_at` =
+   the restore time (`TestRestoreStampsLibraryRowsWithTheRestoreTime`; failed 3/3 tables, then passed).
+2. `fe9fd83` a legacy-view push (or PUT) equal to the stored live row after the codec's cleaning counts
+   `dataAccepted` with no write (`TestLegacyPushOfEqualContentIsAccepted`: identical retry, duplicate deck ids +
+   empty `skipKinds`, an equal retry stamped earlier; older other content still skipped). The
+   `legacy-view.json` case "an equal rewrite is skipped" was changed deliberately to "accepted without a
+   write"; `study/README.md` says so. Typed pushes keep the equal-content skip (the new web never sends one).
+3. `5207dd0` migration 038's Go step uses `internal/db/step038`, a frozen copy of the codec, the 038 table
+   columns and the insert, pinned by a frozen copy of the fixture (`testdata/legacy-codec-038.json`); a test
+   fails if migration code imports `internal/study`. The copy was taken after fixes 6/7 (038 is unreleased).
+4. `0b96bfb` `study.AdoptLeftovers` runs at every start (cmd/qinqin): readable, unshadowed typed-family
+   `plugin_data` rows of an owned workspace move into the typed tables, one transaction per row; shadowed,
+   unreadable, user-global and foreign rows stay. Test + two mutants killed (never adopt; ignore the shadow →
+   UNIQUE failure). README and wiki Admin-deploying: running an older binary on an upgraded database is
+   unsupported (what happens if it does). The one-storage guard allows `study/adopt.go` deliberately.
+5. `5bdfdeb` `qinqin-flashcards`/`qinqin-reader` are listed with `hidden: false` (`plugins.CoreFeatureIDs`);
+   `qinqin-core` stays hidden. The new web is unaffected (`listedPlugins` excludes the reserved ids).
+6. `b67ff4c` a card whose `sentenceId` is not an integer in `1..2^53-1` keeps the value in `extra` and stays
+   readable (the v0.3.0 web read such a card); three fixture cases replace "fractional sentence id →
+   unreadable"; Go codec and the web test codec changed. Direct `ToLegacy` test with an unvalidated row pins
+   "typed members win over `extra`" (the surviving mutant M6).
+   Ruling (declined parts of finding 6): non-list `cardTypes`, members beyond a valid `source` variant,
+   non-string/unknown members of `deckIds`/`skipKinds`/`cardTypes`, and an absent `fsrs:active` `setId` keep
+   the v0.3.0 cleaning — why: the v0.3.0 web dropped exactly these on its next save (the spec's codec rule is
+   parity with it), and keeping them would need typed-named `extra` members next to a set typed member, which
+   the shadowing rule (server and web) removes — cost if wrong: junk values a v0.3.0 shell also dropped are
+   dropped at the migration instead of at that shell's next save.
+8. (with 6) `study/README.md` states the `extra` rule exactly: a typed member's name only for an unusable
+   legacy value while the typed member is unset, and what the legacy view returns.
+7. `a8a2c99` typed `Decode` (Go) and `parseRow` (web) refuse the zero `updatedAt`; `rows.json` case added.
+9. `805babe` `restoredModified` clamps to the restore time (`TestRestoredModifiedIsClampedToTheRestoreTime`).
+10. `615180a` `TestListPluginDataRoute` registers `lang.Zh` itself (it failed alone with 422 "unknown
+    language": it relied on another test's registration).
+- `89e545b` follow-up of fix 1 in a test (see Final gates).
+
+#### C2 — real-app check
+
+v0.3.0 built from `git archive v0.3.0 server`, this branch from `git archive HEAD server` (placeholder
+`webdist/dist/index.html`), both run on 127.0.0.1:18471/18472, data in a scratch dir, driven by Python
+(`urllib`, `sqlite3`); every server stopped and the scratch dir deleted afterwards.
+
+- Step 1 (v0.3.0): 25 dictionary entries and a sentence inserted by SQL (no pack seeded), users alicec2
+  (admin) and bobc2, workspaces zh and ja; as the v0.3.0 web: 20 cards (vocab, reverse, cloze, sentence with
+  `sentenceId`, writing, tone, a character card, written snapshots, `skipKinds`), one deleted, one unreadable
+  (`entryId` 1.5), 3 decks (user, `d-lvl-…`, `d-frq-…`), `deckcfg:general` (`cardTypes`, `newOrder` level),
+  `limits:workspace`, `limits:deck:general`, two FSRS sets, `fsrs:active`, `goals:workspace`, `known:`, a
+  user-global `vacation:`, a `qinqin-core` note, 100 reviews + 1 read event, an epub with position, bookmark and
+  highlight; B switched the reader off; saved the legacy pull, events, library JSON; exported A (v1 zip).
+- Step 2: the new binary on the same data dir logged `migration 038: moved 29 study rows (cards 20, decks 3,
+  deckSettings 1, limits 2, fsrsSets 2, fsrsActive 1), left 1 unreadable rows in plugin_data`.
+- Step 3: typed pull holds all 20 card ids with the same `version`, `updatedAt` and tombstone; legacy pull
+  equals the saved v0.3.0 pull for every typed-family key except one documented codec effect: the inner
+  `updatedAt` of `deckcfg:general` reads as the row's edit time (`2026-11-16T19:55:32Z` instead of the
+  client's `…08:00:00.000Z`; the spec's rule, the v0.3.0 parser ignores the field); the unreadable row is still
+  in the legacy pull and not typed; events identical; books, bookmarks, highlights equal plus `updatedAt`; B's
+  reader switch still off and listed `hidden: false`; `/api/stats/activity` reports `review` and `read` under
+  `qinqin-core` (journal under its plugin).
+- Step 4 (old shell by curl-equivalent requests): PUT a card, a `pushStudyRows` deck delete (7 cards rewritten)
+  — and the same push again (`dataAccepted 7, dataSkipped 0`, review fix 2) — DELETE deck, PUT deckcfg
+  (`newOrder` frequency), PUT `limits:deck:general`, DELETE `fsrs:active`, a `known:` push; the typed pull shows
+  all of it.
+- Step 5: A's v1 archive restored into B (staged upload, dry run, apply): `cards 19`, `droppedRows 1` (the
+  unreadable row), `reidentifiedEvents 101`; B's typed pull: 19 live cards in B's new zh workspace (A's are in
+  workspace 1), all six families, 100 reviews pointing at B's cards; keyed rows goals/known/vacation. (A first
+  attempt was cut off: my script stopped the server while the asynchronous apply ran; the transaction rolled
+  back and B was unchanged — redone with a wait.)
+- Step 6: A exported on the new binary: `formatVersion` 1, `pluginData` 32; restored on a fresh v0.3.0 server
+  (same dictionary inserted): dry run clean (`cards 20`, nothing unresolved or dropped), restore done; its
+  legacy pull holds 20 cards, 2 decks (the user deck was deleted in step 4), deckcfg, 2 limits, 2 FSRS sets
+  (`fsrs:active` tombstoned in step 4, not exported), known, goals, vacation.
+- Step 7: an outbox-v2 review (new ULID) via `POST /api/events/batch`: accepted 1; again: duplicates 1.
+- Extra (review fix 4): the v0.3.0 binary run again on the migrated data dir wrote a new card through PUT; the
+  next start of the new binary logged `study: adopted 1 study rows …` and the card is a typed row, no longer a
+  plugin row.
+
+#### Final gates
+
+- Web: `npm run check` exit 0 (1287 files, 0 errors, 0 warnings); `npm test` exit 0, 389 files / 6259 tests;
+  `npm run build` exit 0; Node 26.13.1 `npx vitest run` exit 0, 389 / 6259. `node scripts/gen-api-docs.mjs
+  --check` exit 0 (no route added in B–D; route walk, `routes.fixture.json`, `auth/tokens-routes.json` unchanged).
+- Go, ONE full run (proxies unset) on the final tree: `gofmt -l .` printed nothing, `go vet ./...` ok,
+  `go test -count=1 -p 2 ./...`: 40 packages ok, 3 without tests, 1 failed — `internal/ai`, only
+  `TestHostnameResolvingToEmbeddedFormIsRefused` (the known no-IPv6 sandbox failure); exit 1 for exactly that.
+- An earlier full run (before `89e545b`) failed `api` `TestRoundTripOnTheSameServer`. Root cause: review fix 1
+  stamps restored bookmarks and highlights with the restore time (intended), and the round-trip canon compared
+  that stamp, so it failed whenever export and restore fell in different seconds (my api run right after fix 1
+  passed by timing). The test was wrong by its own rule ("row stamps that a restore resets are left out"):
+  `89e545b` leaves `updatedAt` out of its bookmark/highlight lines; the restore-time stamp itself is pinned by
+  `backup` `TestRestoreStampsLibraryRowsWithTheRestoreTime`. Full api package rerun: ok; then the full run above.
+- The web gates above ran on the final web tree (nothing in `apps/` changed after them).
+
+#### Not verified
+
+- A real browser: a cached v0.3.x shell (old service worker, old bundle) against the new server was replayed
+  as requests (C1, C2 step 4), not run; the new pages, Settings → Features, the `/p/…` redirect and offline
+  study from the cached typed pull were checked by jsdom/unit tests only, not in a browser or as an installed PWA.
+- No independent review of phases B–D or of the fix wave yet, and no mutation run beyond the checks named above
+  (C1 legacyView, AdoptLeftovers ×2, the oneStorage guard bites by construction).
+- The C2 data used SQL-inserted dictionary entries, not a seeded pack; journal and grammar were not exercised.
+- No `-race` run (no new shared state).
