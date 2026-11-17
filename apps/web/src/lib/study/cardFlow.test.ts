@@ -967,6 +967,8 @@ describe('docs/contracts/cards/deck-session.json', () => {
 		expect(fixture.plans.length).toBeGreaterThanOrEqual(20);
 		expect(fixture.steps.length).toBeGreaterThanOrEqual(3);
 		expect(fixture.eligible.length).toBeGreaterThanOrEqual(10);
+		// "default" is the only weight set the cases use: deckOptions passes DEFAULT_W (scheduler/fsrs.json).
+		for (const c of [...fixture.plans, ...fixture.steps]) expect(c.weights, c.name).toBe('default');
 	});
 	for (const c of fixture.plans) {
 		it(`plan: ${c.name}`, () => {

@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
-import { BASE_XP, dailyStreak, levelFromXp, levelProgress, xpByKind, xpFromReviews } from './exp';
+import { BASE_XP, DAILY_BONUS, GRADE_BONUS, dailyStreak, levelFromXp, levelProgress, xpByKind, xpFromReviews } from './exp';
 import streakFixture from '../../../../../docs/contracts/scheduler/streak.json';
 import xpFixture from '../../../../../docs/contracts/scheduler/xp.json';
 import { studyDay, type ZoneChange } from '../time/studyDay';
@@ -250,6 +250,9 @@ describe('docs/contracts/scheduler/xp.json', () => {
 	const fixture = xpFixture as unknown as {
 		rule: string;
 		baseXp: Record<StudyCardKind, number>;
+		gradeBonus: Record<string, number>;
+		dailyBonus: number;
+		levelRule: string;
 		cases: { name: string; history: ZoneChange[]; events: ReviewEvent[]; expect: { xp: number; byKind: Record<StudyCardKind, number> } }[];
 		levels: { xp: number | 'NaN' | 'Infinity'; expect: { level: number; xpInto: number; xpForNext: number } }[];
 	};
@@ -257,6 +260,14 @@ describe('docs/contracts/scheduler/xp.json', () => {
 	it('has the base table', () => {
 		expect(fixture.rule).toBe('scheduler/xp');
 		expect(BASE_XP).toEqual(fixture.baseXp);
+		expect(GRADE_BONUS).toEqual(fixture.gradeBonus);
+		expect(DAILY_BONUS).toBe(fixture.dailyBonus);
+		expect(fixture.levelRule).toContain('100 * L');
+		// The level rule in words, checked against the code at its first boundaries.
+		for (let level = 1; level <= 5; level++) {
+			const start = (100 * level * (level - 1)) / 2;
+			expect(levelProgress(start)).toEqual({ level, xpInto: 0, xpForNext: 100 * level });
+		}
 	});
 	for (const c of fixture.cases) {
 		it(c.name, () => {

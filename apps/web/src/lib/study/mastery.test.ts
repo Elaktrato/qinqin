@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 
 import charMasteryFixture from '../../../../../docs/contracts/decks/char-mastery.json';
 import { DEFAULT_W } from './fsrs/params';
-import { cardScore, masteryForChars, masteryFromSchedules, MASTERY_KINDS, stageOf, type CharMastery } from './mastery';
+import { cardScore, masteryForChars, masteryFromSchedules, MASTERY_KINDS, MAX_STABILITY_DAYS, stageOf, type CharMastery } from './mastery';
 import { scheduleFor, type Schedule } from './scheduler';
 import type { ReviewEvent, ReviewGrade, StudyCard } from './types';
 
@@ -423,12 +423,15 @@ describe('docs/contracts/decks/char-mastery.json', () => {
 	const fixture = charMasteryFixture as unknown as {
 		rule: string;
 		masteryKinds: string[];
+		maxStabilityDays: number;
 		cases: { name: string; chars: string[]; cards: StudyCard[]; schedules: Record<string, number | null>; expect: Record<string, CharMastery> }[];
 		stages: { score: number; stage: string }[];
 	};
 	it('has the kinds and the stage bands', () => {
 		expect(fixture.rule).toBe('decks/char-mastery');
 		expect([...MASTERY_KINDS]).toEqual(fixture.masteryKinds);
+		expect(MAX_STABILITY_DAYS).toBe(fixture.maxStabilityDays);
+		expect(cardScore(fixture.maxStabilityDays)).toBe(100);
 		for (const s of fixture.stages) expect(stageOf(s.score), String(s.score)).toBe(s.stage);
 	});
 	for (const c of fixture.cases) {

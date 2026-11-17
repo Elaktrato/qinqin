@@ -506,4 +506,17 @@ of each other in content but share the web gates; one implementer at a time. Tas
   packages ok, exit 0 (the IPv6 test passed too); Node v26.13.1: generator `--check` 0, `npm run check` 0,
   `npm test` (full vitest) 0 — 398 files, 6795 tests passed — `npm run build` 0. Task 12 (real-app check,
   review, final gates) is left to the orchestrator.
+- Review fix wave (no Critical findings): `6079263` comments say `ts` is stored as UTC whole seconds (model,
+  batch handler, web event types; comment-only); `09b55e8` `settings/README.md` gains the 16 KiB body cap (413
+  JSON) and the re-encoding of the patch before `json_patch` (alphabetical members, float64 numbers, `<>&` escaped
+  as six bytes), `overlays/README.md` the 64 KiB body cap (413 JSON) and an error table, `overview.md` says read
+  seconds under 30 count 0 and are capped at 7200; this commit strengthens the decoders: `GRADE_BONUS`,
+  `DAILY_BONUS` (`exp.ts`) and `MAX_STABILITY_DAYS` (`mastery.ts`) are exported (no behaviour change) and asserted
+  against `xp.json` / `char-mastery.json` (with the level rule checked at its first boundaries), every
+  `deck-session.json` case must use `weights: "default"`, the replay-count check runs inside an `it`, and
+  `scheduler.test.ts` runs `gen-scheduler-fixtures.mjs --check` so a hand edit of any generated member (also
+  `reps`, `lapses`, `scheduled_days`, `learning_steps`) fails. Mutations: `lapses` 0 → 9 in `fsrs.json` → the
+  `--check` test FAILS; `dailyBonus` 10 → 11 → FAIL. Gates: Go `gofmt -l` empty, `go vet ./internal/model
+  ./internal/api` and the three contract tests → exit 0; Node v26.13.1 `npm run check` 0, `npm test` 0 (398 files,
+  6797 passed). No Go code beyond comments changed, so no full Go gate.
 

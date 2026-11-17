@@ -1,3 +1,4 @@
+import { spawnSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { studyDay } from '../time/studyDay';
@@ -635,7 +636,16 @@ describe('docs/contracts/scheduler/fsrs.json: the FSRS pin', () => {
 		const pkg = JSON.parse(readFileSync(resolve(__dirname, '../../../node_modules/ts-fsrs/package.json'), 'utf8'));
 		expect(pkg.version).toBe(fixture.tsFsrs);
 	});
-	expect(fixture.replay.length).toBeGreaterThanOrEqual(20);
+	it('has at least 20 replay sequences', () => {
+		expect(fixture.replay.length).toBeGreaterThanOrEqual(20);
+	});
+	it('the generated files equal the generator output (gen-scheduler-fixtures.mjs --check)', () => {
+		// Catches a hand edit of any member, including those only a port reads (reps, lapses, scheduled_days, learning_steps).
+		const script = resolve(__dirname, '../../../../../scripts/contracts/gen-scheduler-fixtures.mjs');
+		const run = spawnSync(process.execPath, [script, '--check'], { encoding: 'utf8' });
+		expect(run.stderr).toBe('');
+		expect(run.status).toBe(0);
+	}, 30_000);
 	for (const c of fixture.replay) {
 		it(`replay: ${c.name}`, () => {
 			const w = c.w === 'default' ? DEFAULT_W : c.w;
