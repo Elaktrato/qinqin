@@ -56,7 +56,6 @@
 				class="tile level-{cell?.level ?? 0}"
 				class:vacation={cell?.vacation}
 				class:today={slot.day === today}
-				class:strong={(cell?.level ?? 0) >= 3}
 				data-day={slot.day}
 				title={cell?.label}
 			><span class="dn">{formatNumber(Number(slot.day.slice(8)))}</span></span>
@@ -113,27 +112,29 @@
 		border-radius: calc(var(--radius) * 0.6);
 	}
 
-	/* Day numbers: --text on the light tints, --on-accent on levels 3-4 (Ruling, measured per theme). */
+	/* Day numbers sit on a small --panel chip, so they read on every tint
+	   (the mid tint failed 4.5:1 with both --text and --on-accent; Ruling). */
 	.dn {
 		position: absolute;
 		top: 0.2rem;
-		left: 0.35rem;
+		left: 0.2rem;
+		padding: 0 0.2rem;
+		border-radius: calc(var(--radius) * 0.3);
+		background: var(--panel);
 		font-size: var(--font-size-xs);
+		line-height: var(--line-tight);
 		font-variant-numeric: tabular-nums;
 		color: var(--text);
 	}
 
-	.strong .dn {
-		color: var(--on-accent);
-	}
-
 	.future .dn {
+		background: transparent;
 		color: var(--readable-muted);
 	}
 
 	@media (forced-colors: active) {
-		.dn,
-		.strong .dn {
+		.dn {
+			background: Canvas;
 			color: CanvasText;
 		}
 	}

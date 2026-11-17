@@ -77,14 +77,11 @@
 		border: 0;
 	}
 
+	/* No box (design §5): space and the star set it apart. */
 	.milestone-card {
 		display: flex;
 		gap: 0.75rem;
 		margin: 1.5rem 0 0;
-		padding: 0.8rem 1rem;
-		/* currentColor at 60 %: at least 3:1 against the page in light and dark. */
-		border: 1px solid color-mix(in srgb, currentColor 60%, transparent);
-		border-radius: 0.5rem;
 	}
 
 	.icon {
