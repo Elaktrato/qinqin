@@ -63,4 +63,43 @@ describe('the main landmark', () => {
 		expect(mains(source)).toBe(0);
 		expect(roleMain(source)).toBe(false);
 	});
+
+	it('no global rule styles the main element (the frame main is full width; pages use .page-body)', () => {
+		const css = readFileSync(resolve(src, 'app.css'), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
+		expect(css).not.toMatch(/(^|[\s,}>+~])main\s*[{,:.[]/m);
+		expect(css).toMatch(/\.page-body\s*\{[^}]*max-width:\s*48rem/);
+	});
+
+	// The pages that brought a <main> got their column (centred, 48rem, padded)
+	// from the global main rule; their root container keeps it as .page-body.
+	const columns = [
+		'routes/+page.svelte',
+		'routes/account/password/+page.svelte',
+		'routes/account/two-factor-setup/+page.svelte',
+		'routes/entry/[id]/+page.svelte',
+		'routes/login/+page.svelte',
+		'routes/lookups/+page.svelte',
+		'routes/p/[plugin]/[...rest]/+page.svelte',
+		'routes/register/+page.svelte',
+		'routes/reset/+page.svelte',
+		'routes/search/+page.svelte',
+		'routes/search/parts/+page.svelte',
+		'routes/settings/+page.svelte',
+		'routes/sources/+page.svelte',
+		'routes/stats/+layout.svelte',
+		'routes/study/+page.svelte',
+		'routes/study/scheduling/+page.svelte',
+		'routes/study/session/+page.svelte',
+		'lib/features/FeaturePage.svelte',
+		'lib/features/reader/BookView.svelte',
+		'lib/features/reader/Library.svelte',
+		'lib/features/reader/SourceBrowser.svelte',
+		'lib/plugins/grammar/GrammarBrowse.svelte',
+		'lib/plugins/grammar/LessonView.svelte',
+		'lib/plugins/grammar/PracticeRun.svelte',
+		'lib/plugins/journal/JournalPage.svelte'
+	];
+	it.each(columns)('%s keeps the page column (.page-body)', (file) => {
+		expect(markup(readFileSync(resolve(src, file), 'utf8'))).toMatch(/class="page-body\b/);
+	});
 });

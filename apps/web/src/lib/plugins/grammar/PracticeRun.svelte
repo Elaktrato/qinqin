@@ -119,7 +119,7 @@
 	);
 </script>
 
-<div class="practice">
+<div class="page-body practice">
 	<p class="back"><a href={grammarHref({ view: 'lesson', pack, lesson: lessonId })}>{t('grammar.practice.back')}</a></p>
 
 	{#if status === 'loading'}

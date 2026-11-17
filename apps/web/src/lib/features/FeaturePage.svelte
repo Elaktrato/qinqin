@@ -24,7 +24,7 @@
 	{@const Page = feature.component}
 	<Page {rest} />
 {:else}
-	<div>
+	<div class="page-body">
 		{#if $pluginStates.status === 'idle' || $pluginStates.status === 'loading'}
 			<p role="status">{t('app.loading')}</p>
 		{:else if $pluginStates.status === 'error'}

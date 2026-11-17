@@ -27,7 +27,7 @@
 	<title>{pageTitle(t('account.mfa.setUp'))}</title>
 </svelte:head>
 
-<div class="auth">
+<div class="page-body auth">
 	<h1>{t('auth.forced.mfaTitle')}</h1>
 	<p>{t('auth.forced.mfaIntro')}</p>
 	<TwoFactorSetup {options} forced onfinished={finished} />

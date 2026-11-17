@@ -1106,7 +1106,7 @@
 	</nav>
 {/snippet}
 
-<div class="book" class:column={book !== null && mode === 'column'}>
+<div class="page-body book" class:column={book !== null && mode === 'column'}>
 	<div class="reading">
 		<p><a href={LIBRARY_HREF}>{t('reader.sources.back')}</a></p>
 

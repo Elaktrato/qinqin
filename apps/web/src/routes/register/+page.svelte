@@ -69,7 +69,7 @@
 	<title>{pageTitle(t('auth.register.title'))}</title>
 </svelte:head>
 
-<div class="auth">
+<div class="page-body auth">
 	<h1>{t('auth.register.title')}</h1>
 
 	{#if !loaded}

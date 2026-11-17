@@ -50,7 +50,7 @@
 	<title>{pageTitle()}</title>
 </svelte:head>
 
-<div class="home">
+<div class="page-body home">
 	<h1>{APP_NAME}</h1>
 
 	<EmailBanner />

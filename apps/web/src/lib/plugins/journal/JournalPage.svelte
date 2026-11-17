@@ -73,7 +73,7 @@
 	<title>{pageTitle(t('journal.title'))}</title>
 </svelte:head>
 
-<div class="journal">
+<div class="page-body journal">
 	{#if !workspace}
 		<h1>{t('journal.title')}</h1>
 		<p>{t('journal.chooseWorkspace')}</p>

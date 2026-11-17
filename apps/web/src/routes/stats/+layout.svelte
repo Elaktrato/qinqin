@@ -40,7 +40,7 @@
 	<title>{pageTitle(panelLabel, t('stats.title'))}</title>
 </svelte:head>
 
-<div class="stats">
+<div class="page-body stats">
 	<h1>{t('stats.title')}</h1>
 
 	<!-- Tabs are links: the router keeps focus on the tab and the scroll

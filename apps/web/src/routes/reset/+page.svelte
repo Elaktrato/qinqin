@@ -91,7 +91,7 @@
 	<title>{pageTitle(t('auth.reset.title'))}</title>
 </svelte:head>
 
-<div class="auth">
+<div class="page-body auth">
 	<h1>{t('auth.reset.title')}</h1>
 	{#if !loaded}
 		<p class="hint" role="status">{t('auth.reset.checking')}</p>

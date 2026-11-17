@@ -175,7 +175,7 @@
 	<title>{pageTitle(notFound ? t('entry.page.notFound') : (entry?.written ?? ''))}</title>
 </svelte:head>
 
-<div class="entry-page">
+<div class="page-body entry-page">
 	{#if loading}
 		<p class="hint" aria-live="polite">{t('entry.page.loading')}</p>
 	{:else if notFound}

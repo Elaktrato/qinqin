@@ -237,7 +237,7 @@
 	<title>{pageTitle(...settingsTitleParts(activeTab, page.url.searchParams.get('section')))}</title>
 </svelte:head>
 
-<div class="settings">
+<div class="page-body settings">
 	<h1>{t('settings.title')}</h1>
 
 	<div class="tabs" role="tablist" aria-label={t('settings.tabsLabel')}>

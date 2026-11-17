@@ -56,7 +56,7 @@
 	);
 </script>
 
-<div class="grammar">
+<div class="page-body grammar">
 	<h1>
 		{t('grammar.title')}{#if workspace}<span class="lang"> · {languageLabel(workspace.language)}</span>{/if}
 	</h1>

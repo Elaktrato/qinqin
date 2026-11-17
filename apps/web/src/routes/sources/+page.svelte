@@ -312,7 +312,7 @@
 	</li>
 {/snippet}
 
-<div class="sources">
+<div class="page-body sources">
 	<h1>{t('sources.title')}</h1>
 	<p class="lede">
 		{t('sources.lede')}

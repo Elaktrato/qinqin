@@ -82,7 +82,7 @@
 	const hasReadings = $derived(lesson?.examples.some((e) => e.reading !== '') ?? false);
 </script>
 
-<div class="lesson">
+<div class="page-body lesson">
 	<p class="back"><a href={grammarHref({ view: 'browse' })}>{t('grammar.lesson.all')}</a></p>
 
 	{#if status === 'loading'}

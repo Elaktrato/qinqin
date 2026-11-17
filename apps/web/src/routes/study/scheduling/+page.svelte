@@ -367,7 +367,7 @@ import type { StudyContext } from '$lib/study/studyContext';
 	<title>{pageTitle(t('study.sched.title'), t('study.setup.title'))}</title>
 </svelte:head>
 
-<div class="page">
+<div class="page-body page">
 	<p><a href="/study">{t('study.sched.back')}</a></p>
 	<h1>{t('study.sched.title')}</h1>
 

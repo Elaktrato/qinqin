@@ -123,7 +123,7 @@
 	}
 </script>
 
-<div class="library">
+<div class="page-body library">
 	<h1 class="heading">
 		{t('reader.library.title')}
 		{#if workspace}<WorkspaceLabel {workspace} list={$workspaces.list} size={18} />{/if}

@@ -98,7 +98,7 @@
 	<title>{pageTitle(t('search.parts.title'))}</title>
 </svelte:head>
 
-<div class="parts-page">
+<div class="page-body parts-page">
 	<h1>{t('search.parts.heading')}</h1>
 	<p><a href="/search">{t('search.parts.back')}</a></p>
 

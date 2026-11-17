@@ -195,7 +195,7 @@
 	<title>{pageTitle(t('search.title'))}</title>
 </svelte:head>
 
-<div class="search-page">
+<div class="page-body search-page">
 	<h1>{t('search.title')}</h1>
 
 	<form class="search" role="search" onsubmit={submit}>
