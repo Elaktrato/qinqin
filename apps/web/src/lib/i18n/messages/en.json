@@ -2557,6 +2557,7 @@
 	"study.guide.nothingToWrite": "Nothing to write here: writing cards need stroke data and the characters of this level have none left to study. Select Vocab to practise recognition.",
 	"study.guide.selectDeck": "Select at least one deck to start.",
 	"study.guide.vocabOnly": "Level sessions study vocab cards only. Select Vocab, or switch to My decks.",
+	"study.interval.under": "{lt}{value}",
 	"study.level.characterTypes": "Character levels study recognition and writing cards.",
 	"study.level.intro": "Draw words or characters from one level of an installed scheme.",
 	"study.level.level": "Level",

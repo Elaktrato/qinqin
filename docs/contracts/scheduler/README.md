@@ -160,8 +160,9 @@ The short label of an interval `ms` (hand-written cases on both sides of every e
 `minute`, `round(ms / 60 000)`, at least 1; `< 24 h` → `hour`, rounded; `< 30 days` → `day`, rounded;
 `< 365 days` → `month`, `round(days / 30)`, at least 1; else `year`, `days / 365` rounded to one decimal.
 Rounding is half up. The text is the locale's narrow unit (`Intl.NumberFormat` `style: "unit"`, `unitDisplay:
-"narrow"`: English `6m`, `3h`, `1d`, `2mo`, `1.4y`; `<1m` is the catalogue key `study.interval.under` around
-the number 1 with the unit minute) and the screen-reader text is the relative form ("in 6 minutes"). The
+"narrow"`: English `6m`, `3h`, `1d`, `1.4y`; a locale whose narrow month reads like its narrow minute, as
+English `2m`, writes the month short: `2 mths`; `<1m` is the catalogue key `study.interval.under` with the
+narrow 1 minute) and the screen-reader text is the relative form ("in 6 minutes"). The
 fixture fixes the bucket and the value, not the string. Fixtures win over code.
 
 ## Android and other clients
