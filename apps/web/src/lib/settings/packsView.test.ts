@@ -315,7 +315,7 @@ describe('theme packs', () => {
 		expect(contrastView(ok).caption).toBe('Night (dark): every check passes.');
 		expect(contrastSummary([ok])).toBe('Every check of every theme passes.');
 		expect(contrastSummary([ok, { ...ok, failing: 1 }, { ...ok, failing: 2 }])).toBe(
-			'3 checks are below their minimum. The pack may still be installed: contrast is reported, not enforced, and accents below 3:1 are not offered in the accent picker.'
+			'3 checks are below their minimum. The pack may still be installed: contrast is reported, not enforced, accents below 3:1 are not offered in the accent picker, and error text below 4.5:1 is shown in the text colour.'
 		);
 	});
 });

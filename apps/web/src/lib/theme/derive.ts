@@ -45,6 +45,7 @@ export function derive(theme: Theme, accent: string | null): Derived {
 		selectedWash: tints['14'],
 		mastery: [hair, tints['14'], tints['32'], tints['58'], tints['100']],
 		readingAccent: ratio(acc, c.panel) >= MIN_TEXT ? acc : c.text,
+		readableBad: ratio(c.bad, c.panel) >= MIN_TEXT ? c.bad : c.text,
 		highlightWash: withAlpha(c.warn, 24),
 		wordMarks: {
 			new: { color: acc, style: 'solid' },
@@ -77,6 +78,7 @@ export const TOKEN_NAMES = [
 	'--on-accent',
 	'--hair',
 	'--reading-accent',
+	'--readable-bad',
 	'--accent-14',
 	'--accent-32',
 	'--accent-58',
@@ -113,6 +115,7 @@ export function cssVariables(theme: Theme, d: Derived): Record<TokenName, string
 		'--on-accent': d.onAccent,
 		'--hair': d.hair,
 		'--reading-accent': d.readingAccent,
+		'--readable-bad': d.readableBad,
 		'--accent-14': d.accentTints['14'],
 		'--accent-32': d.accentTints['32'],
 		'--accent-58': d.accentTints['58'],

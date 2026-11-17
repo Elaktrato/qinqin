@@ -45,6 +45,8 @@ export interface Derived {
 	selectedWash: string;
 	mastery: string[];
 	readingAccent: string;
+	/** Error text: `bad` when it is at least 4.5:1 on panel, else `text`. */
+	readableBad: string;
 	highlightWash: string;
 	wordMarks: { new: Mark; learning: Mark };
 	correctionMarks: { mistake: Mark; suggestion: Mark };

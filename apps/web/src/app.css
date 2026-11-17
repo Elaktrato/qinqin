@@ -16,7 +16,8 @@
 
 	/* Theme tokens (#96): the colour tokens (--chrome, --panel, --raised,
 	   --line, --text, --muted, --good, --warn, --bad, --grade-*, --accent,
-	   --on-accent, --hair, --reading-accent, --accent-14/32/58/100, the
+	   --on-accent, --hair, --reading-accent, --readable-bad,
+	   --accent-14/32/58/100, the
 	   washes, --mastery-0..4) and the person's --radius and --space are set
 	   on :root by lib/theme/apply.ts (app.html paints this device's last
 	   ones before the app loads; the compiled-in Catppuccin Latte/Mocha
@@ -99,9 +100,13 @@ main {
 	cursor: progress;
 }
 
+/* Error text in --readable-bad (--bad only where it reads, else --text);
+   the bar in --bad is the cue that does not depend on the text colour. */
 .auth .error {
 	margin: 0;
-	color: var(--bad);
+	padding-inline-start: var(--space-2);
+	border-inline-start: 3px solid var(--bad);
+	color: var(--readable-bad);
 	font-weight: 600;
 }
 

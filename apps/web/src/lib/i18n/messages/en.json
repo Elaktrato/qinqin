@@ -1346,7 +1346,7 @@
 	"packs.contrast.color.text": "Text",
 	"packs.contrast.failing": "{count, plural, one {# check is below its minimum.} other {# checks are below their minimum.}}",
 	"packs.contrast.familyName": "{family} {name}",
-	"packs.contrast.note": "The pack may still be installed: contrast is reported, not enforced, and accents below 3:1 are not offered in the accent picker.",
+	"packs.contrast.note": "The pack may still be installed: contrast is reported, not enforced, accents below 3:1 are not offered in the accent picker, and error text below 4.5:1 is shown in the text colour.",
 	"packs.contrast.pair": "{fg} on {bg}",
 	"packs.contrast.pass": "Passes",
 	"packs.contrast.ratio": "{ratio}:1",

@@ -489,7 +489,9 @@
 	}
 	.error {
 		margin: 0;
-		color: var(--bad);
+		padding-inline-start: var(--space-2);
+		border-inline-start: 3px solid var(--bad);
+		color: var(--readable-bad);
 		font-weight: 600;
 	}
 	.status {

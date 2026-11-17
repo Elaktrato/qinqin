@@ -96,6 +96,7 @@ over whatever surface it sits on (CSS `#rrggbbaa`, Compose ARGB).
 | `primaryWash`, `selectedWash` | `alpha(accent, 14)` — the one primary action's background; the selected reader word |
 | `mastery` | `[hair, tint 14, tint 32, tint 58, tint 100]` — stage 0 is an **outline** in `hair` (no fill), stages 1–4 fills |
 | `readingAccent` | `accent` when `ratio(accent, panel) >= 4.5`, else `text` — small accent-coloured text (readings) |
+| `readableBad` | `bad` when `ratio(bad, panel) >= 4.5`, else `text` — error text; a non-colour cue (a bar in `bad`, a graphic at 3:1) marks it as an error either way |
 | `highlightWash` | `alpha(warn, 24)` — reader highlights |
 | `wordMarks` | `new`: `{color: accent, style: "solid"}`, `learning`: `{color: warn, style: "dotted"}`; known words have none |
 | `correctionMarks` | `mistake`: `{color: gradeAgain, style: "wavy"}`, `suggestion`: `{color: gradeEasy, style: "dotted"}` |
@@ -108,13 +109,13 @@ camelCase):
 | --- | --- |
 | `--chrome`, `--panel`, `--raised`, `--line`, `--text`, `--muted`, `--good`, `--warn`, `--bad` | the theme's colours |
 | `--grade-again`, `--grade-hard`, `--grade-good`, `--grade-easy` | the grade colours |
-| `--accent`, `--on-accent`, `--hair`, `--reading-accent` | derived |
+| `--accent`, `--on-accent`, `--hair`, `--reading-accent`, `--readable-bad` | derived |
 | `--accent-14`, `--accent-32`, `--accent-58`, `--accent-100` | the accent tints |
 | `--primary-wash`, `--selected-wash`, `--highlight-wash` | the washes |
 | `--mastery-0` … `--mastery-4` | the mastery ramp |
 
 Fixture: `derive.json` (the alpha table; Mocha and Latte, an accent below 3:1, an unknown and a missing accent,
-a theme whose every accent fails, both sides of the 4.5 and 3 roundings).
+a theme whose every accent fails, both sides of the 4.5 and 3 roundings, `readableBad` on both sides of 4.5).
 
 ## Fixed scale tokens
 
