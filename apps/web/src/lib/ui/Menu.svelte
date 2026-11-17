@@ -78,7 +78,9 @@
 		else if (e.key === 'Home') next = 0;
 		else if (e.key === 'End') next = list.length - 1;
 		else if (e.key === 'Escape') {
+			// The key ends here: a Dialog around the menu closes only on the next Escape.
 			e.preventDefault();
+			e.stopPropagation();
 			close(true);
 			return;
 		} else if (e.key === 'Tab') {
