@@ -1,0 +1,139 @@
+{
+  "version": 1,
+  "rule": "scheduler/interval-text",
+  "note": "Hand-written. The bucket and value of the short label of a grade button's interval (ms from now to the due). Strings are formatted per locale (Intl unit, narrow); this file fixes the bucket and the number, not the text.",
+  "cases": [
+    {
+      "ms": -5000,
+      "unit": "lessThanMinute",
+      "value": 1,
+      "note": "negative (a due in the past) reads as under a minute"
+    },
+    {
+      "ms": 0,
+      "unit": "lessThanMinute",
+      "value": 1,
+      "note": "now"
+    },
+    {
+      "ms": 59999,
+      "unit": "lessThanMinute",
+      "value": 1,
+      "note": "just under a minute"
+    },
+    {
+      "ms": 60000,
+      "unit": "lessThanMinute",
+      "value": 1,
+      "note": "exactly one minute: the 1 minute learning step reads <1m"
+    },
+    {
+      "ms": 60001,
+      "unit": "minute",
+      "value": 1,
+      "note": "just over a minute"
+    },
+    {
+      "ms": 360000,
+      "unit": "minute",
+      "value": 6,
+      "note": "6 minutes"
+    },
+    {
+      "ms": 600000,
+      "unit": "minute",
+      "value": 10,
+      "note": "the 10 minute step"
+    },
+    {
+      "ms": 3599999,
+      "unit": "minute",
+      "value": 60,
+      "note": "just under an hour rounds to 60 minutes"
+    },
+    {
+      "ms": 3600000,
+      "unit": "hour",
+      "value": 1,
+      "note": "one hour"
+    },
+    {
+      "ms": 10800000,
+      "unit": "hour",
+      "value": 3,
+      "note": "3 hours"
+    },
+    {
+      "ms": 86399999,
+      "unit": "hour",
+      "value": 24,
+      "note": "just under a day rounds to 24 hours"
+    },
+    {
+      "ms": 86400000,
+      "unit": "day",
+      "value": 1,
+      "note": "one day"
+    },
+    {
+      "ms": 345600000,
+      "unit": "day",
+      "value": 4,
+      "note": "4 days"
+    },
+    {
+      "ms": 388800000,
+      "unit": "day",
+      "value": 5,
+      "note": "4.5 days round half up"
+    },
+    {
+      "ms": 2591999999,
+      "unit": "day",
+      "value": 30,
+      "note": "just under 30 days"
+    },
+    {
+      "ms": 2592000000,
+      "unit": "month",
+      "value": 1,
+      "note": "30 days"
+    },
+    {
+      "ms": 5184000000,
+      "unit": "month",
+      "value": 2,
+      "note": "60 days"
+    },
+    {
+      "ms": 31535999999,
+      "unit": "month",
+      "value": 12,
+      "note": "just under 365 days: 364.99.../30 rounds to 12"
+    },
+    {
+      "ms": 31536000000,
+      "unit": "year",
+      "value": 1,
+      "note": "365 days"
+    },
+    {
+      "ms": 45411840000,
+      "unit": "year",
+      "value": 1.4,
+      "note": "1.44 years: one decimal"
+    },
+    {
+      "ms": 46042560000,
+      "unit": "year",
+      "value": 1.5,
+      "note": "1.46 years"
+    },
+    {
+      "ms": 3153600000000,
+      "unit": "year",
+      "value": 100,
+      "note": "the maximum interval"
+    }
+  ]
+}

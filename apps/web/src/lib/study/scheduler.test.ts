@@ -663,3 +663,33 @@ describe('docs/contracts/scheduler/fsrs.json: the FSRS pin', () => {
 		});
 	}
 });
+
+describe('docs/contracts/scheduler next-intervals.json and interval-text.json (#101)', () => {
+	const read = (file: string): unknown =>
+		JSON.parse(readFileSync(resolve(__dirname, '../../../../../docs/contracts/scheduler', file), 'utf8'));
+
+	it('next-intervals.json: every case has the four grades with ms = due - now', () => {
+		const fixture = read('next-intervals.json') as {
+			rule: string;
+			cases: { name: string; now: string; expected: { grade: number; due: string; ms: number }[] }[];
+		};
+		expect(fixture.rule).toBe('scheduler/next-intervals');
+		expect(fixture.cases.length).toBeGreaterThanOrEqual(8);
+		for (const c of fixture.cases) {
+			expect(c.expected.map((e) => e.grade), c.name).toEqual([1, 2, 3, 4]);
+			for (const e of c.expected) expect(e.ms, c.name).toBe(Date.parse(e.due) - Date.parse(c.now));
+		}
+	});
+	it('interval-text.json: every case names a bucket and a value', () => {
+		const fixture = read('interval-text.json') as {
+			rule: string;
+			cases: { ms: number; unit: string; value: number }[];
+		};
+		expect(fixture.rule).toBe('scheduler/interval-text');
+		const units = new Set(['lessThanMinute', 'minute', 'hour', 'day', 'month', 'year']);
+		for (const c of fixture.cases) {
+			expect(units.has(c.unit), String(c.ms)).toBe(true);
+			expect(Number.isFinite(c.value)).toBe(true);
+		}
+	});
+});
