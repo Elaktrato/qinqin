@@ -278,7 +278,7 @@
 	}
 
 	.here.remove svg {
-		color: #0b6bcb;
+		color: var(--reading-accent);
 	}
 
 	.here[aria-disabled='true'] {
@@ -289,7 +289,7 @@
 	.hint {
 		margin: 0.35rem 0 0;
 		font-size: 0.8rem;
-		opacity: 0.75;
+		color: var(--readable-muted);
 	}
 
 	.error {
@@ -301,12 +301,6 @@
 
 	.body {
 		margin-top: 0.75rem;
-	}
-
-	@media (prefers-color-scheme: dark) {
-		.here.remove svg {
-			color: #6cb4ff;
-		}
 	}
 
 	ul {
@@ -355,7 +349,7 @@
 
 	.meta {
 		font-size: 0.85rem;
-		opacity: 0.75;
+		color: var(--readable-muted);
 	}
 
 	.actions {
@@ -382,20 +376,22 @@
 
 	.count {
 		font-size: 0.8rem;
-		opacity: 0.7;
+		color: var(--readable-muted);
 	}
 
 	.count.over {
-		color: #b3261e;
+		color: var(--readable-bad);
 		opacity: 1;
 	}
 
 	.empty {
-		opacity: 0.8;
+		color: var(--readable-muted);
 	}
 
 	.error {
-		color: #b3261e;
+		color: var(--readable-bad);
+		padding-inline-start: var(--space-2);
+		border-inline-start: 3px solid var(--bad);
 	}
 
 	.visually-hidden {

@@ -76,19 +76,19 @@
 	}
 
 	.swatch.yellow {
-		background: #f6d32d;
+		background: var(--warn);
 	}
 
 	.swatch.green {
-		background: #57b45a;
+		background: var(--good);
 	}
 
 	.swatch.blue {
-		background: #4a8fe7;
+		background: var(--accent);
 	}
 
 	.swatch.pink {
-		background: #e86aa6;
+		background: var(--grade-again);
 	}
 
 	.note-btn {
@@ -106,12 +106,12 @@
 	}
 
 	.not-ready {
-		opacity: 0.6;
+		color: var(--readable-muted);
 	}
 
 	.hl-notice {
 		margin: 0 0 0.35rem;
 		font-size: 0.8rem;
-		opacity: 0.85;
+		color: var(--readable-muted);
 	}
 </style>

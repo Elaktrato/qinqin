@@ -184,7 +184,7 @@
 
 	.forms,
 	.source {
-		opacity: 0.75;
+		color: var(--readable-muted);
 	}
 
 	.chips {
@@ -206,21 +206,21 @@
 	}
 
 	.inflection {
-		background: color-mix(in srgb, #8a4fd1 22%, transparent);
+		background: var(--accent-14);
 	}
 
 	.frequency {
-		background: color-mix(in srgb, #1b8a5a 22%, transparent);
+		background: color-mix(in srgb, var(--good) 22%, transparent);
 	}
 
 	.pack {
-		opacity: 0.75;
+		color: var(--readable-muted);
 		margin-right: 0.2rem;
 	}
 
 	.pos {
 		margin-right: 0.25rem;
-		background: color-mix(in srgb, #0b6bcb 18%, transparent);
+		background: color-mix(in srgb, var(--accent) 18%, transparent);
 	}
 
 	.source {
@@ -236,7 +236,7 @@
 	}
 
 	.xrefs {
-		opacity: 0.8;
+		color: var(--readable-muted);
 		font-style: italic;
 	}
 
@@ -251,7 +251,7 @@
 		padding: 0;
 		border: none;
 		background: none;
-		color: LinkText;
+		color: var(--reading-accent);
 		font: inherit;
 		font-size: 0.8rem;
 		cursor: pointer;
@@ -261,7 +261,7 @@
 	.hidden-note {
 		margin: 0.25rem 0 0;
 		font-size: 0.75rem;
-		opacity: 0.7;
+		color: var(--readable-muted);
 	}
 
 	.reveal {

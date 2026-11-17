@@ -142,27 +142,27 @@
 		padding: 0.35rem 0.8rem 0.6rem;
 		border: 1px solid color-mix(in srgb, currentColor 22%, transparent);
 		border-radius: 0.5rem;
-		background: Canvas;
-		color: CanvasText;
-		box-shadow: 0 6px 24px rgb(0 0 0 / 0.18);
+		background: var(--panel);
+		color: var(--text);
+		box-shadow: var(--shadow-float);
 		font-size: 0.9rem;
 		line-height: 1.45;
 	}
 
-	/* Nested popups: a coloured edge and a deeper shadow per level. */
+	/* Nested popups: a coloured edge per level (the float shadow is the
+	   same for every floating layer). */
 	.popup:not(.depth-1) {
-		border-left: 3px solid color-mix(in srgb, #0b6bcb 55%, transparent);
-		box-shadow: 0 10px 32px rgb(0 0 0 / 0.26);
+		border-left: 3px solid color-mix(in srgb, var(--accent) 55%, transparent);
 	}
 
 	.depth-3,
 	.depth-4 {
-		border-left-color: color-mix(in srgb, #8a4fd1 60%, transparent);
+		border-left-color: color-mix(in srgb, var(--warn) 60%, transparent);
 	}
 
 	/* Shift held: what Shift+hover can look up stands out. */
 	.scanning :global([data-scan]) {
-		background: color-mix(in srgb, #0b6bcb 10%, transparent);
+		background: color-mix(in srgb, var(--accent) 10%, transparent);
 	}
 
 	/* Holds its children's margins, so its height is the content's. */
@@ -178,7 +178,7 @@
 
 	.selected {
 		font-size: 0.85rem;
-		opacity: 0.75;
+		color: var(--readable-muted);
 	}
 
 	.close {
@@ -205,11 +205,13 @@
 
 	.note,
 	.hint {
-		opacity: 0.75;
+		color: var(--readable-muted);
 	}
 
 	.error {
-		color: #b3261e;
+		color: var(--readable-bad);
+		padding-inline-start: var(--space-2);
+		border-inline-start: 3px solid var(--bad);
 	}
 
 	.more {
