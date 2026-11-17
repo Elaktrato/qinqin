@@ -35,6 +35,7 @@
 	import { requestSignOut } from '$lib/account/signOut';
 	import { logoutPrompt } from '$lib/account/logoutFlow';
 	import { watchDeletedWorkspaces } from '$lib/workspaceGone';
+	import { themeStore } from '$lib/theme/store.svelte';
 	import {
 		load as loadWorkspaces,
 		workspaces,
@@ -123,6 +124,8 @@
 		void registerWorker();
 		captureInstallPrompt(window); // the root layout lives as long as the page
 		void persistOnceNow();
+		// The theme list and the device's light/dark switch, signed in or out.
+		void themeStore.start();
 		// Rehydrate the session from qinqin.token before guarding.
 		try {
 			await loadMe();
@@ -175,6 +178,16 @@
 			clearTimeout(timer);
 			document.removeEventListener('visibilitychange', onVisible);
 		};
+	});
+
+	// The person's appearance row: loaded once per signed-in user (not for a
+	// restricted session); signing out forgets it and keeps what is painted.
+	let themeUser: number | null | undefined = undefined;
+	$effect(() => {
+		const id = booted && signedIn && $restriction === null ? ($user?.id ?? null) : null;
+		if (id === themeUser) return;
+		themeUser = id;
+		void themeStore.setUser(id);
 	});
 
 	// The learner's time zone history (and, once per account, the browser

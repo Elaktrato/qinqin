@@ -169,9 +169,8 @@ export function resolveAppearance(
  * `stored`.
  */
 export function writeAppearance(stored: unknown, change: AppearanceChange): Record<string, unknown> {
-	const base: Record<string, unknown> = isRow(stored)
-		? (structuredClone(stored) as Record<string, unknown>)
-		: (structuredClone(defaults()) as unknown as Record<string, unknown>);
+	// A JSON copy: the stored value is JSON (and may be a reactive proxy).
+	const base = JSON.parse(JSON.stringify(isRow(stored) ? stored : defaults())) as Record<string, unknown>;
 	base.version = VERSION;
 	for (const key of ['mode', 'corners', 'spacing', 'hanziFont'] as const) {
 		if (change[key] !== undefined) base[key] = change[key];
