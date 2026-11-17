@@ -131,6 +131,21 @@ values. The person's adjustments scale two of them: `--radius` (corners: 4 / 10 
 | `--space-1` … `--space-6` | 0.25, 0.5, 0.75, 1, 1.5, 2rem, each times `--space` |
 | `--icon-s`, `--icon-m`, `--icon-l` | 16, 20, 24px |
 | `--shadow-float` | `0 1px 3px rgb(0 0 0 / 0.12), 0 12px 32px -12px rgb(0 0 0 / 0.35)` — menus, popups and sheets only |
+| `--font-size-label` | `0.78125rem` — 12.5px labels (sentence case, `--readable-muted`, never all caps) |
+| `--weight-regular` | `400` — body text and big numbers |
+| `--weight-medium` | `500` — emphasis inside text, big numbers that need a little weight |
+| `--weight-strong` | `600` — headings, the selected tab, the primary action; type never goes above it |
+| `--line-tight` | `1.15` — big numbers, headings |
+| `--line-body` | `1.5` — running text (the reader sets its own ~2.2 for ruby) |
+| `--tracking-tight` | `-0.01em` — big numbers |
+| `--motion-fast` | `120ms` — fades (menus, tooltips); `0ms` under `prefers-reduced-motion: reduce` |
+| `--motion-medium` | `200ms` — slides (sheets, drawers); `0ms` under `prefers-reduced-motion: reduce` |
+| `--ease-standard` | `cubic-bezier(0.2, 0, 0, 1)` — every transition |
+| `--focus-ring` | `2px solid var(--accent)` — every `:focus-visible` outline (forced colours: `Highlight`) |
+| `--focus-ring-offset` | `2px` |
+| `--hit` | `2.75rem` — the smallest touch target (44px) on coarse pointers |
+| `--layer-float` | `50` — menus, popups, tooltips |
+| `--layer-modal` | `100` — dialogs and sheets |
 
 The web paints `color-scheme` and `data-scheme` on `<html>` from the theme's `scheme`, and the browser bar
 colour (`<meta name="theme-color">`) from `chrome`. Before anything loads it paints this device's last tokens
@@ -139,6 +154,37 @@ Mocha compiled in (`apps/web/src/lib/theme/fallback.ts`, pinned to the built-in 
 
 Ruling: the last tokens are kept per device, not per user — the frame paints before the user is known — cost: a
 second account on the same browser sees the first account's theme for a moment at start.
+
+## Design rules and base components
+
+The rules every screen follows (design §5), in tokens. Android applies the same rules to its Compose
+components.
+
+- **A box needs a reason.** Group with space (`--space-*`) and small labels. A fill, border, radius or shadow marks
+  one element as a separate object: the content surface (`panel`, `--radius-large`), a floating layer (menu,
+  popup, sheet, dialog: `panel` + `--hair` outline + `--shadow-float`), the selected row (`--selected-wash`). Never
+  a box per block.
+- **Hairlines, not blocks.** Separators and outlines are 1px `--hair`.
+- **Colour only where it means something:** the accent (current place, the primary action, readings), grades,
+  semantic states, data. Neutral (`--text`, `--readable-muted`, `--hair`, `--raised`) everywhere else.
+- **One primary action per view** in the soft accent tint (`--primary-wash` behind `--reading-accent` text).
+  Secondary actions are a `--hair` outline or plain text. A filled accent (`--accent` behind `--on-accent`) is
+  rare.
+- **Type tops out at 600** (`--weight-strong`). Big numbers are `--weight-regular`, large, `--line-tight`,
+  `--tracking-tight`. Labels are sentence case, `--font-size-label`, `--readable-muted` — no all-caps labels.
+  Secondary text is `--readable-muted`, never faded with `opacity`.
+- **Icons:** line icons, 1.5 stroke on a 24 grid, `currentColor` (`--icon-s/m/l`). Icon-only buttons always have
+  an accessible name and a tooltip on hover and keyboard focus.
+- **Fields are an underline** (`--line`, 2px `--accent` when focused), not a box.
+- **Active state:** navigation shows a small accent dot (top bar) or a short accent bar (rail); tabs a 2px accent
+  underline.
+- **Focus:** every focusable element shows `outline: var(--focus-ring)` with `--focus-ring-offset` on
+  `:focus-visible`; in forced colours the ring is `Highlight` and fills that carry state become borders.
+- **Motion** uses `--motion-fast` / `--motion-medium` with `--ease-standard` only, so `prefers-reduced-motion`
+  stops it everywhere.
+- **Never colour alone:** every coloured meaning also has text, shape or line style.
+- **Tokens only:** components hold no colour literal and no `prefers-color-scheme`; the painted theme (also when
+  the person forces Light or Dark) is the only source of colour.
 
 ## The `appearance` row
 

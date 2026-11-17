@@ -45,10 +45,38 @@
 	--icon-l: 24px;
 	/* Floating layers only (menus, popups, sheets). */
 	--shadow-float: 0 1px 3px rgb(0 0 0 / 0.12), 0 12px 32px -12px rgb(0 0 0 / 0.35);
+	/* Type (#98): labels ~12.5px, weights top out at 600, big numbers
+	   regular and slightly tight (design §5). */
+	--font-size-label: 0.78125rem;
+	--weight-regular: 400;
+	--weight-medium: 500;
+	--weight-strong: 600;
+	--line-tight: 1.15;
+	--line-body: 1.5;
+	--tracking-tight: -0.01em;
+	/* Motion: small and purposeful; zero under reduced motion (below). */
+	--motion-fast: 120ms;
+	--motion-medium: 200ms;
+	--ease-standard: cubic-bezier(0.2, 0, 0, 1);
+	/* Focus, touch targets, stacking. */
+	--focus-ring: 2px solid var(--accent);
+	--focus-ring-offset: 2px;
+	--hit: 2.75rem;
+	--layer-float: 50;
+	--layer-modal: 100;
 
 	/* Today's colour variables, now from the theme (the pages move to the
 	   tokens themselves in #98+). */
 	--link: var(--reading-accent);
+}
+
+/* Every component animates with the motion tokens, so this one block
+   honours prefers-reduced-motion for all of them (#98). */
+@media (prefers-reduced-motion: reduce) {
+	:root {
+		--motion-fast: 0ms;
+		--motion-medium: 0ms;
+	}
 }
 
 body {
