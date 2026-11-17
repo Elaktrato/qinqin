@@ -22,7 +22,7 @@ const numberFormat = (opts: Intl.NumberFormatOptions, locale = getFormatLocale()
 const dateFormat = (opts: Intl.DateTimeFormatOptions, locale = getFormatLocale()) =>
 	cached('d', locale, opts, () => new Intl.DateTimeFormat(locale, opts));
 
-/** A number in the format locale (`1,234.5`). */
+/** A number in the format locale (`1,234.5` in English, `1.234,5` in de). */
 export function formatNumber(n: number, opts: Intl.NumberFormatOptions = {}, locale?: string): string {
 	return numberFormat(opts, locale).format(n);
 }
@@ -47,17 +47,17 @@ function formatInstant(instant: Instant, base: Intl.DateTimeFormatOptions, opts:
 	return dateFormat(fields ? opts : { ...base, ...opts }).format(d);
 }
 
-/** The date of an instant in the device's zone (`Nov 16, 2026`); '' for an invalid instant. */
+/** The date of an instant in the device's zone (`16 Nov 2026` in en-GB, the English default); '' for an invalid instant. */
 export function formatDate(instant: Instant, opts: Intl.DateTimeFormatOptions = {}): string {
 	return formatInstant(instant, { dateStyle: 'medium' }, opts);
 }
 
-/** Date and time of an instant (`Nov 16, 2026, 2:05 PM`). */
+/** Date and time of an instant (`16 Nov 2026, 14:05` in en-GB; `Nov 16, 2026, 2:05 PM` in en-US). */
 export function formatDateTime(instant: Instant, opts: Intl.DateTimeFormatOptions = {}): string {
 	return formatInstant(instant, { dateStyle: 'medium', timeStyle: 'short' }, opts);
 }
 
-/** The time of an instant (`2:05 PM`). */
+/** The time of an instant (`14:05` in en-GB; `2:05 PM` in en-US). */
 export function formatTime(instant: Instant, opts: Intl.DateTimeFormatOptions = {}): string {
 	return formatInstant(instant, { timeStyle: 'short' }, opts);
 }
@@ -122,7 +122,7 @@ export function formatRelativeFrom(then: Instant, now: Instant = Date.now()): st
 	return formatRelative(-0, 'second');
 }
 
-/** `a, b, and c` (`conjunction`), `a or b` (`disjunction`). */
+/** `a, b and c` (`conjunction`; en-US adds the serial comma), `a or b` (`disjunction`). */
 export function formatList(items: readonly string[], type: 'conjunction' | 'disjunction' = 'conjunction'): string {
 	const locale = getFormatLocale();
 	return cached('l', locale, { type }, () => new Intl.ListFormat(locale, { type })).format(items);
