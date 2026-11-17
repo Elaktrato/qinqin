@@ -257,7 +257,8 @@ export interface PluginInfo {
 }
 
 // StudyEventBody is one event in POST /api/events/batch. The server
-// overwrites userId with the token's user and keeps ts verbatim.
+// overwrites userId with the token's user and stores ts as UTC whole
+// seconds (fraction truncated; docs/contracts/events/).
 export interface StudyEventBody {
 	id: string;
 	workspaceId: number;

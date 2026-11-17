@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { CharRow, Scheme } from '$lib/api/types';
 import type { CharMastery } from './mastery';
+import charMasteryFixture from '../../../../../docs/contracts/decks/char-mastery.json';
 import { MASTERY_THRESHOLD as MASTERY_SOURCE, stageOf } from './mastery';
 import {
 	MASTERY_THRESHOLD,
@@ -624,4 +625,22 @@ describe('variantFormCount', () => {
 		expect(variantFormCount(rows, new Set(['爱', '汉', '愛']))).toBe(0);
 		expect(variantFormCount(rows, undefined)).toBe(0);
 	});
+});
+
+describe('docs/contracts/decks/char-mastery.json: cells over variant glyphs', () => {
+	const fixture = charMasteryFixture as unknown as {
+		cells: {
+			name: string;
+			chars: CharRow[];
+			mastery: Record<string, CharMastery>;
+			expect: { c: string; score: number; stage: string; reviewedCards: number }[];
+		}[];
+	};
+	for (const c of fixture.cells) {
+		it(c.name, () => {
+			const cells = cellStates(c.chars, new Map(Object.entries(c.mastery)));
+			expect(cells.map((x) => ({ c: x.char.c, score: x.score, stage: x.stage, reviewedCards: x.reviewedCards }))).toEqual(c.expect);
+			expect(cells.map((x) => x.char)).toEqual(c.chars);
+		});
+	}
 });

@@ -10,6 +10,7 @@ import {
 	parseActivityView,
 	saveActivityView
 } from './viewPrefs';
+import coreRowsFixture from '../../../../../docs/contracts/settings/core-rows.json';
 
 describe('parseActivityView', () => {
 	it('round-trips a valid value', () => {
@@ -90,4 +91,15 @@ describe('view store', () => {
 			hidden: ['read']
 		});
 	});
+});
+
+describe('docs/contracts/settings/core-rows.json: activity-view', () => {
+	const fixture = coreRowsFixture as unknown as {
+		pluginId: string;
+		activityView: { name: string; value: unknown; expect: unknown }[];
+	};
+	it('names the row', () => expect(ACTIVITY_VIEW_KEY).toBe('activity-view'));
+	for (const c of fixture.activityView) {
+		it(c.name, () => expect(parseActivityView(c.value)).toEqual(c.expect));
+	}
 });

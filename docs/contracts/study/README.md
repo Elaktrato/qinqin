@@ -16,6 +16,8 @@ Fixtures:
   legacy object written back (`roundTrip`); `families` maps keys to collections.
 - `lww.json` — last-write-wins and tombstone cases of a push; `expect` is `applied`, `skipped` or `unchanged` (see `outcomes`).
 - `legacy-view.json` — the request shapes of a v0.3.0 web shell and what the legacy view answers.
+- `canonical.json` — duplicate cards merged at read time: `{cards, reviews}` and the merged `{cards, reviews,
+  merged}` (web: `apps/web/src/lib/study/canonical.test.ts`).
 
 Web: `apps/web/src/lib/study/rows.ts` (strict parse, the study shapes, `sameBody`) and `store.ts` (typed
 pull and push; a write is never sent when it would change nothing). The web decodes `rows.json`, `lww.json`
@@ -64,7 +66,8 @@ Decode rules (`rows.json`): an unknown top-level member, a missing key, a wrong 
 an object, an `entryId`/`sentenceId` that is not an integer in `1..2^53-1`, an unknown kind, `skipKinds` on a
 non-vocab card, a duplicate in `deckIds`, `skipKinds` or `cardTypes`, a source or order outside its variants,
 a limit outside `0..9999`, a weight list that is not 21 numbers and an `updatedAt` that is not an RFC 3339 time or is the zero time (`0001-01-01T00:00:00Z`) are invalid. The server checks structure
-only: FSRS weight ranges stay a client rule (a set outside the ts-fsrs ranges is unusable = default weights).
+only: FSRS weight ranges stay a client rule (a set outside the ts-fsrs ranges is unusable = default weights;
+the rule and its cases are `scheduler/fsrs.json`).
 On push `version` is ignored and may be left out, and `deletedAt` may be left out (= live).
 
 `extra` holds every member the typed shape does not carry, verbatim (a newer client's member, or a known
@@ -123,3 +126,29 @@ A cached v0.3.x web shell keeps working for the v0.4.x line through a legacy vie
 
 Android never uses the legacy view: it pulls and pushes the typed collections and uses `pluginData` only
 for the keyed rows.
+
+## Duplicate cards (`canonical.json`)
+
+New cards get a deterministic id (`c-<kind>-<entryId>`, `cards/card-ids.json`), so two devices adding the same
+card write one row. Older cards (ULID ids) can exist twice; every client merges them **at read time**, before
+limits, queues, statistics and goals count anything. Stored rows are never rewritten.
+
+- Duplicates share a `cardKey`: `<kind>:<entryId>`, and for sentence cards `sentence:<entryId>:<sentenceId>`
+  (empty after the last colon when there is none). Vocab, writing and tone keys ignore `sentenceId`; two
+  sentence cards about different sentences, or one with and one without a `sentenceId`, are different cards.
+- Per key the **earliest `createdAt`** survives (compared as instants: `01:00:00+01:00` ties `00:00:00Z`); ties,
+  and two unparsable times, go to the **lowest id** (string order). An unparsable `createdAt` loses to every
+  real one.
+- The survivor keeps its own members and its **position** in the card list; the duplicates drop out. It gains
+  every deck of the duplicates (its own decks first, then each duplicate's new decks, duplicates taken in
+  survivor order: earliest first); a missing `written`, `entryKind` or `sentenceId` is taken from the first
+  duplicate in that order that has one; `skipKinds` become the union of all, as known non-vocab kinds in kind
+  order (`sentence, writing, tone, reverse, cloze`).
+- Reviews of a duplicate are **re-pointed** to the survivor (`payload.cardId`); the event ids and every other
+  member stay. Reviews of other cards are untouched.
+- `merged` is the number of cards that dropped out (a card id listed twice counts once as merged).
+- The merge is pure and idempotent: merging the result again changes nothing.
+
+Ruling: no Go test and no server implementation — the server never merges cards (it stores rows as written);
+adding one would be a second implementation nobody runs — cost: none.
+

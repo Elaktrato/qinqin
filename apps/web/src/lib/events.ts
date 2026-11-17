@@ -3,6 +3,7 @@
 // failed POST must never break the page the user is on.
 
 import { api } from './api/client';
+import { sessionPayload } from './eventPayloads';
 import { logChangingTypes } from './plugins/contract';
 import { emitStudyEvents } from './plugins/hooks';
 import type { StudyEventBody } from './api/types';
@@ -14,7 +15,8 @@ import { createWorkspaceCache } from './workspaceCache';
 export type EventType = 'session' | 'view' | 'lookup' | 'review' | 'read' | 'journal';
 
 // StudyEvent is one event as GET /api/events serves it: the row the
-// server stored, with the caller's own timestamp kept verbatim.
+// server stored, with the caller's own timestamp stored as UTC whole
+// seconds (fraction truncated; docs/contracts/events/).
 export interface StudyEvent {
 	id: string;
 	workspaceId: number;
@@ -156,7 +158,7 @@ export function recordSessionOnce(
 	} catch {
 		// Storage unavailable (private mode): record without a receipt.
 	}
-	void record('session', workspaceId);
+	void record('session', workspaceId, sessionPayload());
 }
 
 /**

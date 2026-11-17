@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { Workspace } from './api/types';
-import { hiddenDictionaries, hiddenFor, partitionSenses } from './dictionaryVisibility';
+import { HIDDEN_DICTIONARIES_KEY, hiddenDictionaries, hiddenFor, partitionSenses } from './dictionaryVisibility';
+import settingsFixture from '../../../../docs/contracts/settings/workspace-settings.json';
 
 function ws(id: number, settings: Record<string, unknown> = {}): Workspace {
 	return { id, language: 'zh', name: '', settings, updatedAt: 't' };
@@ -54,4 +55,18 @@ describe('partitionSenses', () => {
 		expect(partitionSenses(senses, new Set()).shown).toHaveLength(3);
 		expect(partitionSenses([], new Set([1])).allHidden).toBe(false);
 	});
+});
+
+describe('docs/contracts/settings/workspace-settings.json: hiddenDictionaries', () => {
+	const fixture = settingsFixture as unknown as {
+		keys: { key: string }[];
+		parse: { name: string; settings: Record<string, unknown> | null; expect: { hiddenDictionaries: number[] } }[];
+	};
+	it('names the key', () => expect(fixture.keys.some((k) => k.key === HIDDEN_DICTIONARIES_KEY)).toBe(true));
+	for (const c of fixture.parse) {
+		it(c.name, () => {
+			const ws = { id: 1, language: 'zh', name: 'Chinese', settings: c.settings } as unknown as Workspace;
+			expect([...hiddenDictionaries(ws)]).toEqual(c.expect.hiddenDictionaries);
+		});
+	}
 });

@@ -1,0 +1,2762 @@
+{
+ "version": 1,
+ "rule": "cards/deck-session",
+ "plans": [
+  {
+   "name": "due cards: earliest due first, equal due by id",
+   "note": "b and a have the same history, so the same due: id order decides; c is due earlier",
+   "history": [],
+   "now": "2026-03-10T12:00:00Z",
+   "language": "zh",
+   "deckIds": [
+    "general"
+   ],
+   "kinds": [
+    "vocab"
+   ],
+   "newLimit": 20,
+   "reviewLimit": 200,
+   "weights": "default",
+   "cards": [
+    {
+     "id": "b",
+     "kind": "vocab",
+     "entryId": 1,
+     "written": "学习",
+     "deckIds": [
+      "general"
+     ],
+     "createdAt": "2026-01-01T00:00:00Z"
+    },
+    {
+     "id": "a",
+     "kind": "vocab",
+     "entryId": 2,
+     "written": "学习",
+     "deckIds": [
+      "general"
+     ],
+     "createdAt": "2026-01-01T00:00:00Z"
+    },
+    {
+     "id": "c",
+     "kind": "vocab",
+     "entryId": 3,
+     "written": "学习",
+     "deckIds": [
+      "general"
+     ],
+     "createdAt": "2026-01-01T00:00:00Z"
+    }
+   ],
+   "reviews": [
+    {
+     "cardId": "b",
+     "ts": "2026-03-01T09:00:00Z",
+     "grade": 3
+    },
+    {
+     "cardId": "a",
+     "ts": "2026-03-01T09:00:00Z",
+     "grade": 3
+    },
+    {
+     "cardId": "c",
+     "ts": "2026-02-20T09:00:00Z",
+     "grade": 3
+    }
+   ],
+   "expect": {
+    "queue": [
+     "c",
+     "a",
+     "b"
+    ],
+    "reserve": [],
+    "backfillLeft": 40
+   }
+  },
+  {
+   "name": "new cards: createdAt order, equal createdAt by id",
+   "note": "never-reviewed cards in the order added (createdAt, then id)",
+   "history": [],
+   "now": "2026-03-10T12:00:00Z",
+   "language": "zh",
+   "deckIds": [
+    "general"
+   ],
+   "kinds": [
+    "vocab"
+   ],
+   "newLimit": 20,
+   "reviewLimit": 200,
+   "weights": "default",
+   "cards": [
+    {
+     "id": "n3",
+     "kind": "vocab",
+     "entryId": 3,
+     "written": "学习",
+     "deckIds": [
+      "general"
+     ],
+     "createdAt": "2026-01-03T00:00:00Z"
+    },
+    {
+     "id": "n2b",
+     "kind": "vocab",
+     "entryId": 2,
+     "written": "学习",
+     "deckIds": [
+      "general"
+     ],
+     "createdAt": "2026-01-02T00:00:00Z"
+    },
+    {
+     "id": "n2a",
+     "kind": "vocab",
+     "entryId": 4,
+     "written": "学习",
+     "deckIds": [
+      "general"
+     ],
+     "createdAt": "2026-01-02T00:00:00Z"
+    },
+    {
+     "id": "n1",
+     "kind": "vocab",
+     "entryId": 1,
+     "written": "学习",
+     "deckIds": [
+      "general"
+     ],
+     "createdAt": "2026-01-01T00:00:00Z"
+    }
+   ],
+   "reviews": [],
+   "expect": {
+    "queue": [
+     "n1",
+     "n2a",
+     "n2b",
+     "n3"
+    ],
+    "reserve": [],
+    "backfillLeft": 40
+   }
+  },
+  {
+   "name": "new cards by frequency rank (orderNew)",
+   "note": "with a new-card order, ranked cards first by rank, unranked after them in the order added",
+   "history": [],
+   "now": "2026-03-10T12:00:00Z",
+   "language": "zh",
+   "deckIds": [
+    "general"
+   ],
+   "kinds": [
+    "vocab"
+   ],
+   "newLimit": 20,
+   "reviewLimit": 200,
+   "weights": "default",
+   "newRank": {
+    "2": 2,
+    "3": 1
+   },
+   "cards": [
+    {
+     "id": "n1",
+     "kind": "vocab",
+     "entryId": 1,
+     "written": "学习",
+     "deckIds": [
+      "general"
+     ],
+     "createdAt": "2026-01-01T00:00:00Z"
+    },
+    {
+     "id": "n2",
+     "kind": "vocab",
+     "entryId": 2,
+     "written": "学习",
+     "deckIds": [
+      "general"
+     ],
+     "createdAt": "2026-01-02T00:00:00Z"
+    },
+    {
+     "id": "n3",
+     "kind": "vocab",
+     "entryId": 3,
+     "written": "学习",
+     "deckIds": [
+      "general"
+     ],
+     "createdAt": "2026-01-03T00:00:00Z"
+    },
+    {
+     "id": "n4",
+     "kind": "vocab",
+     "entryId": 4,
+     "written": "学习",
+     "deckIds": [
+      "general"
+     ],
+     "createdAt": "2026-01-04T00:00:00Z"
+    }
+   ],
+   "reviews": [],
+   "expect": {
+    "queue": [
+     "n3",
+     "n2",
+     "n1",
+     "n4"
+    ],
+    "reserve": [],
+    "backfillLeft": 40
+   }
+  },
+  {
+   "name": "due before new, each up to its limit",
+   "note": "reviewLimit 1 and newLimit 1: one due card, then one new card",
+   "history": [],
+   "now": "2026-03-10T12:00:00Z",
+   "language": "zh",
+   "deckIds": [
+    "general"
+   ],
+   "kinds": [
+    "vocab"
+   ],
+   "newLimit": 1,
+   "reviewLimit": 1,
+   "weights": "default",
+   "cards": [
+    {
+     "id": "d1",
+     "kind": "vocab",
+     "entryId": 1,
+     "written": "学习",
+     "deckIds": [
+      "general"
+     ],
+     "createdAt": "2026-01-01T00:00:00Z"
+    },
+    {
+     "id": "d2",
+     "kind": "vocab",
+     "entryId": 2,
+     "written": "学习",
+     "deckIds": [
+      "general"
+     ],
+     "createdAt": "2026-01-01T00:00:00Z"
+    },
+    {
+     "id": "n1",
+     "kind": "vocab",
+     "entryId": 3,
+     "written": "学习",
+     "deckIds": [
+      "general"
+     ],
+     "createdAt": "2026-01-02T00:00:00Z"
+    },
+    {
+     "id": "n2",
+     "kind": "vocab",
+     "entryId": 4,
+     "written": "学习",
+     "deckIds": [
+      "general"
+     ],
+     "createdAt": "2026-01-03T00:00:00Z"
+    }
+   ],
+   "reviews": [
+    {
+     "cardId": "d1",
+     "ts": "2026-02-01T09:00:00Z",
+     "grade": 3
+    },
+    {
+     "cardId": "d2",
+     "ts": "2026-02-02T09:00:00Z",
+     "grade": 3
+    }
+   ],
+   "expect": {
+    "queue": [
+     "d1",
+     "n1"
+    ],
+    "reserve": [],
+    "backfillLeft": 30
+   }
+  },
+  {
+   "name": "a reverse card needs a session deck that switches reverse on",
+   "note": "r1 sits in a deck without the switch and is not queued; r2 sits in d2, which enables reverse",
+   "history": [],
+   "now": "2026-03-10T12:00:00Z",
+   "language": "zh",
+   "deckIds": [
+    "general",
+    "d2"
+   ],
+   "kinds": [
+    "vocab",
+    "reverse"
+   ],
+   "newLimit": 20,
+   "reviewLimit": 200,
+   "weights": "default",
+   "deckSettings": {
+    "d2": [
+     "reverse"
+    ]
+   },
+   "cards": [
+    {
+     "id": "v1",
+     "kind": "vocab",
+     "entryId": 1,
+     "written": "学习",
+     "deckIds": [
+      "general"
+     ],
+     "createdAt": "2026-01-01T00:00:00Z"
+    },
+    {
+     "id": "v2",
+     "kind": "vocab",
+     "entryId": 2,
+     "written": "学习",
+     "deckIds": [
+      "d2"
+     ],
+     "createdAt": "2026-01-01T00:00:00Z"
+    },
+    {
+     "id": "r1",
+     "kind": "reverse",
+     "entryId": 1,
+     "written": "学习",
+     "deckIds": [
+      "general"
+     ],
+     "createdAt": "2026-01-02T00:00:00Z"
+    },
+    {
+     "id": "r2",
+     "kind": "reverse",
+     "entryId": 2,
+     "written": "学习",
+     "deckIds": [
+      "d2"
+     ],
+     "createdAt": "2026-01-02T00:00:00Z"
+    }
+   ],
+   "reviews": [
+    {
+     "cardId": "v1",
+     "ts": "2026-03-09T00:00:00Z",
+     "grade": 4
+    },
+    {
+     "cardId": "v2",
+     "ts": "2026-03-09T00:00:00Z",
+     "grade": 4
+    }
+   ],
+   "expect": {
+    "queue": [
+     "r2"
+    ],
+    "reserve": [],
+    "backfillLeft": 40
+   }
+  },
+  {
+   "name": "a kind the word skips is never queued or planned",
+   "note": "v1 skips writing: its writing card stays out and no writing companion is planned; v2 gets one",
+   "history": [],
+   "now": "2026-03-10T12:00:00Z",
+   "language": "zh",
+   "deckIds": [
+    "general"
+   ],
+   "kinds": [
+    "vocab",
+    "writing"
+   ],
+   "newLimit": 20,
+   "reviewLimit": 200,
+   "weights": "default",
+   "cards": [
+    {
+     "id": "v1",
+     "kind": "vocab",
+     "entryId": 1,
+     "written": "学习",
+     "deckIds": [
+      "general"
+     ],
+     "createdAt": "2026-01-01T00:00:00Z",
+     "skipKinds": [
+      "writing"
+     ]
+    },
+    {
+     "id": "w1",
+     "kind": "writing",
+     "entryId": 1,
+     "written": "学习",
+     "deckIds": [
+      "general"
+     ],
+     "createdAt": "2026-01-02T00:00:00Z"
+    },
+    {
+     "id": "v2",
+     "kind": "vocab",
+     "entryId": 2,
+     "written": "学习",
+     "deckIds": [
+      "general"
+     ],
+     "createdAt": "2026-01-01T00:00:00Z"
+    }
+   ],
+   "reviews": [
+    {
+     "cardId": "v1",
+     "ts": "2026-03-09T00:00:00Z",
+     "grade": 4
+    },
+    {
+     "cardId": "v2",
+     "ts": "2026-03-09T00:00:00Z",
+     "grade": 4
+    }
+   ],
+   "expect": {
+    "queue": [
+     "companion:writing:2"
+    ],
+    "reserve": [],
+    "backfillLeft": 40
+   }
+  },
+  {
+   "name": "a sibling answered today buries the opt-in cards of the word",
+   "note": "v1 was answered today: its reverse card r1 is buried until the next learner day, and no reverse companion is planned for it",
+   "history": [],
+   "now": "2026-03-10T12:00:00Z",
+   "language": "zh",
+   "deckIds": [
+    "general"
+   ],
+   "kinds": [
+    "vocab",
+    "reverse"
+   ],
+   "newLimit": 20,
+   "reviewLimit": 200,
+   "weights": "default",
+   "deckSettings": {
+    "general": [
+     "reverse"
+    ]
+   },
+   "cards": [
+    {
+     "id": "v1",
+     "kind": "vocab",
+     "entryId": 1,
+     "written": "学习",
+     "deckIds": [
+      "general"
+     ],
+     "createdAt": "2026-01-01T00:00:00Z"
+    },
+    {
+     "id": "r1",
+     "kind": "reverse",
+     "entryId": 1,
+     "written": "学习",
+     "deckIds": [
+      "general"
+     ],
+     "createdAt": "2026-01-02T00:00:00Z"
+    },
+    {
+     "id": "v2",
+     "kind": "vocab",
+     "entryId": 2,
+     "written": "学习",
+     "deckIds": [
+      "general"
+     ],
+     "createdAt": "2026-01-01T00:00:00Z"
+    }
+   ],
+   "reviews": [
+    {
+     "cardId": "v1",
+     "ts": "2026-03-10T08:00:00Z",
+     "grade": 3
+    },
+    {
+     "cardId": "r1",
+     "ts": "2026-03-01T00:00:00Z",
+     "grade": 1
+    },
+    {
+     "cardId": "v2",
+     "ts": "2026-03-09T00:00:00Z",
+     "grade": 4
+    }
+   ],
+   "expect": {
+    "queue": [
+     "v1",
+     "companion:reverse:2"
+    ],
+    "reserve": [],
+    "backfillLeft": 40
+   }
+  },
+  {
+   "name": "companions round-robin over the kinds within the budget",
+   "note": "budget 3 over two words: sentence, writing, tone of the oldest word first (one per kind per round), the rest is the reserve",
+   "history": [],
+   "now": "2026-03-10T12:00:00Z",
+   "language": "zh",
+   "deckIds": [
+    "general"
+   ],
+   "kinds": [
+    "vocab",
+    "sentence",
+    "writing",
+    "tone"
+   ],
+   "newLimit": 3,
+   "reviewLimit": 200,
+   "weights": "default",
+   "cards": [
+    {
+     "id": "v1",
+     "kind": "vocab",
+     "entryId": 1,
+     "written": "学习",
+     "deckIds": [
+      "general"
+     ],
+     "createdAt": "2026-01-01T00:00:00Z"
+    },
+    {
+     "id": "v2",
+     "kind": "vocab",
+     "entryId": 2,
+     "written": "你",
+     "deckIds": [
+      "general"
+     ],
+     "createdAt": "2026-01-02T00:00:00Z"
+    }
+   ],
+   "reviews": [
+    {
+     "cardId": "v1",
+     "ts": "2026-03-09T00:00:00Z",
+     "grade": 4
+    },
+    {
+     "cardId": "v2",
+     "ts": "2026-03-09T00:00:00Z",
+     "grade": 4
+    }
+   ],
+   "expect": {
+    "queue": [
+     "companion:sentence:1",
+     "companion:writing:1",
+     "companion:tone:1"
+    ],
+    "reserve": [
+     "companion:sentence:2",
+     "companion:writing:2",
+     "companion:tone:2"
+    ],
+    "backfillLeft": 30
+   }
+  },
+  {
+   "name": "new real cards use the budget before companions",
+   "note": "newLimit 2 with one new vocab card leaves one companion slot",
+   "history": [],
+   "now": "2026-03-10T12:00:00Z",
+   "language": "zh",
+   "deckIds": [
+    "general"
+   ],
+   "kinds": [
+    "vocab",
+    "sentence"
+   ],
+   "newLimit": 2,
+   "reviewLimit": 200,
+   "weights": "default",
+   "cards": [
+    {
+     "id": "v1",
+     "kind": "vocab",
+     "entryId": 1,
+     "written": "学习",
+     "deckIds": [
+      "general"
+     ],
+     "createdAt": "2026-01-01T00:00:00Z"
+    },
+    {
+     "id": "v2",
+     "kind": "vocab",
+     "entryId": 2,
+     "written": "学习",
+     "deckIds": [
+      "general"
+     ],
+     "createdAt": "2026-01-02T00:00:00Z"
+    },
+    {
+     "id": "n3",
+     "kind": "vocab",
+     "entryId": 3,
+     "written": "学习",
+     "deckIds": [
+      "general"
+     ],
+     "createdAt": "2026-01-03T00:00:00Z"
+    }
+   ],
+   "reviews": [
+    {
+     "cardId": "v1",
+     "ts": "2026-03-09T00:00:00Z",
+     "grade": 4
+    },
+    {
+     "cardId": "v2",
+     "ts": "2026-03-09T00:00:00Z",
+     "grade": 4
+    }
+   ],
+   "expect": {
+    "queue": [
+     "n3",
+     "companion:sentence:1"
+    ],
+    "reserve": [
+     "companion:sentence:2",
+     "companion:sentence:3"
+    ],
+    "backfillLeft": 30
+   }
+  },
+  {
+   "name": "reverse is preferred over cloze, at most one opt-in per word",
+   "note": "a word gets a reverse companion; a word that already has a reverse card gets cloze instead",
+   "history": [],
+   "now": "2026-03-10T12:00:00Z",
+   "language": "zh",
+   "deckIds": [
+    "general"
+   ],
+   "kinds": [
+    "vocab",
+    "reverse",
+    "cloze"
+   ],
+   "newLimit": 20,
+   "reviewLimit": 200,
+   "weights": "default",
+   "deckSettings": {
+    "general": [
+     "reverse",
+     "cloze"
+    ]
+   },
+   "cards": [
+    {
+     "id": "v1",
+     "kind": "vocab",
+     "entryId": 1,
+     "written": "学习",
+     "deckIds": [
+      "general"
+     ],
+     "createdAt": "2026-01-01T00:00:00Z"
+    },
+    {
+     "id": "v2",
+     "kind": "vocab",
+     "entryId": 2,
+     "written": "学习",
+     "deckIds": [
+      "general"
+     ],
+     "createdAt": "2026-01-02T00:00:00Z"
+    },
+    {
+     "id": "r2",
+     "kind": "reverse",
+     "entryId": 2,
+     "written": "学习",
+     "deckIds": [
+      "general"
+     ],
+     "createdAt": "2026-01-03T00:00:00Z"
+    }
+   ],
+   "reviews": [
+    {
+     "cardId": "v1",
+     "ts": "2026-03-09T00:00:00Z",
+     "grade": 4
+    },
+    {
+     "cardId": "v2",
+     "ts": "2026-03-09T00:00:00Z",
+     "grade": 4
+    },
+    {
+     "cardId": "r2",
+     "ts": "2026-03-09T00:00:00Z",
+     "grade": 4
+    }
+   ],
+   "expect": {
+    "queue": [
+     "companion:reverse:1",
+     "companion:cloze:2"
+    ],
+    "reserve": [],
+    "backfillLeft": 40
+   }
+  },
+  {
+   "name": "a word with a queued real card gets no opt-in companion",
+   "note": "v1 is due today, so it is excluded from opt-in planning; v2 is not and gets its reverse companion",
+   "history": [],
+   "now": "2026-03-10T12:00:00Z",
+   "language": "zh",
+   "deckIds": [
+    "general"
+   ],
+   "kinds": [
+    "vocab",
+    "reverse"
+   ],
+   "newLimit": 20,
+   "reviewLimit": 200,
+   "weights": "default",
+   "deckSettings": {
+    "general": [
+     "reverse"
+    ]
+   },
+   "cards": [
+    {
+     "id": "v1",
+     "kind": "vocab",
+     "entryId": 1,
+     "written": "学习",
+     "deckIds": [
+      "general"
+     ],
+     "createdAt": "2026-01-01T00:00:00Z"
+    },
+    {
+     "id": "v2",
+     "kind": "vocab",
+     "entryId": 2,
+     "written": "学习",
+     "deckIds": [
+      "general"
+     ],
+     "createdAt": "2026-01-02T00:00:00Z"
+    }
+   ],
+   "reviews": [
+    {
+     "cardId": "v1",
+     "ts": "2026-02-01T09:00:00Z",
+     "grade": 3
+    },
+    {
+     "cardId": "v2",
+     "ts": "2026-03-09T00:00:00Z",
+     "grade": 4
+    }
+   ],
+   "expect": {
+    "queue": [
+     "v1",
+     "companion:reverse:2"
+    ],
+    "reserve": [],
+    "backfillLeft": 40
+   }
+  },
+  {
+   "name": "opt-in companions only from decks of the session that enable them",
+   "note": "v2 is in d2 (reverse on) but d2 is not a session deck",
+   "history": [],
+   "now": "2026-03-10T12:00:00Z",
+   "language": "zh",
+   "deckIds": [
+    "general"
+   ],
+   "kinds": [
+    "vocab",
+    "reverse"
+   ],
+   "newLimit": 20,
+   "reviewLimit": 200,
+   "weights": "default",
+   "deckSettings": {
+    "d2": [
+     "reverse"
+    ]
+   },
+   "cards": [
+    {
+     "id": "v1",
+     "kind": "vocab",
+     "entryId": 1,
+     "written": "学习",
+     "deckIds": [
+      "general"
+     ],
+     "createdAt": "2026-01-01T00:00:00Z"
+    },
+    {
+     "id": "v2",
+     "kind": "vocab",
+     "entryId": 2,
+     "written": "学习",
+     "deckIds": [
+      "general",
+      "d2"
+     ],
+     "createdAt": "2026-01-02T00:00:00Z"
+    }
+   ],
+   "reviews": [
+    {
+     "cardId": "v1",
+     "ts": "2026-03-09T00:00:00Z",
+     "grade": 4
+    },
+    {
+     "cardId": "v2",
+     "ts": "2026-03-09T00:00:00Z",
+     "grade": 4
+    }
+   ],
+   "expect": {
+    "queue": [],
+    "reserve": [],
+    "backfillLeft": 40
+   }
+  },
+  {
+   "name": "writing is not planned for a snapshot without Han characters",
+   "note": "a written snapshot without a Han character can never be written; without a snapshot the runner decides when shown",
+   "history": [],
+   "now": "2026-03-10T12:00:00Z",
+   "language": "zh",
+   "deckIds": [
+    "general"
+   ],
+   "kinds": [
+    "vocab",
+    "writing"
+   ],
+   "newLimit": 20,
+   "reviewLimit": 200,
+   "weights": "default",
+   "cards": [
+    {
+     "id": "v1",
+     "kind": "vocab",
+     "entryId": 1,
+     "written": "abc",
+     "deckIds": [
+      "general"
+     ],
+     "createdAt": "2026-01-01T00:00:00Z"
+    },
+    {
+     "id": "v2",
+     "kind": "vocab",
+     "entryId": 2,
+     "written": "字",
+     "deckIds": [
+      "general"
+     ],
+     "createdAt": "2026-01-02T00:00:00Z"
+    },
+    {
+     "id": "v3",
+     "kind": "vocab",
+     "entryId": 3,
+     "deckIds": [
+      "general"
+     ],
+     "createdAt": "2026-01-03T00:00:00Z"
+    }
+   ],
+   "reviews": [
+    {
+     "cardId": "v1",
+     "ts": "2026-03-09T00:00:00Z",
+     "grade": 4
+    },
+    {
+     "cardId": "v2",
+     "ts": "2026-03-09T00:00:00Z",
+     "grade": 4
+    },
+    {
+     "cardId": "v3",
+     "ts": "2026-03-09T00:00:00Z",
+     "grade": 4
+    }
+   ],
+   "expect": {
+    "queue": [
+     "companion:writing:2",
+     "companion:writing:3"
+    ],
+    "reserve": [],
+    "backfillLeft": 40
+   }
+  },
+  {
+   "name": "tone is a session kind only in a Chinese workspace",
+   "note": "in a Japanese workspace tone cards and tone companions are left out",
+   "history": [],
+   "now": "2026-03-10T12:00:00Z",
+   "language": "ja",
+   "deckIds": [
+    "general"
+   ],
+   "kinds": [
+    "vocab",
+    "tone"
+   ],
+   "newLimit": 20,
+   "reviewLimit": 200,
+   "weights": "default",
+   "cards": [
+    {
+     "id": "v1",
+     "kind": "vocab",
+     "entryId": 1,
+     "written": "学习",
+     "deckIds": [
+      "general"
+     ],
+     "createdAt": "2026-01-01T00:00:00Z"
+    },
+    {
+     "id": "t1",
+     "kind": "tone",
+     "entryId": 1,
+     "written": "学习",
+     "deckIds": [
+      "general"
+     ],
+     "createdAt": "2026-01-02T00:00:00Z"
+    }
+   ],
+   "reviews": [
+    {
+     "cardId": "v1",
+     "ts": "2026-03-09T00:00:00Z",
+     "grade": 4
+    }
+   ],
+   "expect": {
+    "queue": [],
+    "reserve": [],
+    "backfillLeft": 40
+   }
+  },
+  {
+   "name": "offline: real cards only",
+   "note": "offline no companion is planned (a companion is created by a row write on its first grade)",
+   "history": [],
+   "now": "2026-03-10T12:00:00Z",
+   "language": "zh",
+   "deckIds": [
+    "general"
+   ],
+   "kinds": [
+    "vocab",
+    "sentence"
+   ],
+   "newLimit": 20,
+   "reviewLimit": 200,
+   "weights": "default",
+   "offline": true,
+   "cards": [
+    {
+     "id": "v1",
+     "kind": "vocab",
+     "entryId": 1,
+     "written": "学习",
+     "deckIds": [
+      "general"
+     ],
+     "createdAt": "2026-01-01T00:00:00Z"
+    },
+    {
+     "id": "n2",
+     "kind": "vocab",
+     "entryId": 2,
+     "written": "学习",
+     "deckIds": [
+      "general"
+     ],
+     "createdAt": "2026-01-02T00:00:00Z"
+    }
+   ],
+   "reviews": [
+    {
+     "cardId": "v1",
+     "ts": "2026-02-01T09:00:00Z",
+     "grade": 3
+    }
+   ],
+   "expect": {
+    "queue": [
+     "v1",
+     "n2"
+    ],
+    "reserve": [],
+    "backfillLeft": 40
+   }
+  },
+  {
+   "name": "a vacation day has an empty session",
+   "note": "today is inside a vacation run: nothing is due and nothing new is shown",
+   "history": [],
+   "now": "2026-03-10T12:00:00Z",
+   "language": "zh",
+   "deckIds": [
+    "general"
+   ],
+   "kinds": [
+    "vocab"
+   ],
+   "newLimit": 20,
+   "reviewLimit": 200,
+   "weights": "default",
+   "vacation": [
+    {
+     "start": "2026-03-09",
+     "end": "2026-03-12"
+    }
+   ],
+   "cards": [
+    {
+     "id": "v1",
+     "kind": "vocab",
+     "entryId": 1,
+     "written": "学习",
+     "deckIds": [
+      "general"
+     ],
+     "createdAt": "2026-01-01T00:00:00Z"
+    },
+    {
+     "id": "n2",
+     "kind": "vocab",
+     "entryId": 2,
+     "written": "学习",
+     "deckIds": [
+      "general"
+     ],
+     "createdAt": "2026-01-02T00:00:00Z"
+    }
+   ],
+   "reviews": [
+    {
+     "cardId": "v1",
+     "ts": "2026-02-01T09:00:00Z",
+     "grade": 3
+    }
+   ],
+   "expect": {
+    "queue": [],
+    "reserve": [],
+    "backfillLeft": 40
+   }
+  },
+  {
+   "name": "newLimit 0: no new cards, no companions, backfill 30",
+   "note": "backfillLimit = max(30, 2 * newLimit)",
+   "history": [],
+   "now": "2026-03-10T12:00:00Z",
+   "language": "zh",
+   "deckIds": [
+    "general"
+   ],
+   "kinds": [
+    "vocab",
+    "sentence"
+   ],
+   "newLimit": 0,
+   "reviewLimit": 200,
+   "weights": "default",
+   "cards": [
+    {
+     "id": "v1",
+     "kind": "vocab",
+     "entryId": 1,
+     "written": "学习",
+     "deckIds": [
+      "general"
+     ],
+     "createdAt": "2026-01-01T00:00:00Z"
+    },
+    {
+     "id": "n2",
+     "kind": "vocab",
+     "entryId": 2,
+     "written": "学习",
+     "deckIds": [
+      "general"
+     ],
+     "createdAt": "2026-01-02T00:00:00Z"
+    }
+   ],
+   "reviews": [
+    {
+     "cardId": "v1",
+     "ts": "2026-02-01T09:00:00Z",
+     "grade": 3
+    }
+   ],
+   "expect": {
+    "queue": [
+     "v1"
+    ],
+    "reserve": [
+     "companion:sentence:1",
+     "companion:sentence:2"
+    ],
+    "backfillLeft": 30
+   }
+  },
+  {
+   "name": "newLimit 25: backfill 50",
+   "note": "backfillLimit = max(30, 2 * newLimit)",
+   "history": [],
+   "now": "2026-03-10T12:00:00Z",
+   "language": "zh",
+   "deckIds": [
+    "general"
+   ],
+   "kinds": [
+    "vocab"
+   ],
+   "newLimit": 25,
+   "reviewLimit": 200,
+   "weights": "default",
+   "cards": [
+    {
+     "id": "n1",
+     "kind": "vocab",
+     "entryId": 1,
+     "written": "学习",
+     "deckIds": [
+      "general"
+     ],
+     "createdAt": "2026-01-01T00:00:00Z"
+    }
+   ],
+   "reviews": [],
+   "expect": {
+    "queue": [
+     "n1"
+    ],
+    "reserve": [],
+    "backfillLeft": 50
+   }
+  },
+  {
+   "name": "a companion remembered ineligible is never planned",
+   "note": "skip holds kind:entryId of companions found ineligible earlier",
+   "history": [],
+   "now": "2026-03-10T12:00:00Z",
+   "language": "zh",
+   "deckIds": [
+    "general"
+   ],
+   "kinds": [
+    "vocab",
+    "sentence"
+   ],
+   "newLimit": 20,
+   "reviewLimit": 200,
+   "weights": "default",
+   "skip": [
+    "sentence:1"
+   ],
+   "cards": [
+    {
+     "id": "v1",
+     "kind": "vocab",
+     "entryId": 1,
+     "written": "学习",
+     "deckIds": [
+      "general"
+     ],
+     "createdAt": "2026-01-01T00:00:00Z"
+    },
+    {
+     "id": "v2",
+     "kind": "vocab",
+     "entryId": 2,
+     "written": "学习",
+     "deckIds": [
+      "general"
+     ],
+     "createdAt": "2026-01-02T00:00:00Z"
+    }
+   ],
+   "reviews": [
+    {
+     "cardId": "v1",
+     "ts": "2026-03-09T00:00:00Z",
+     "grade": 4
+    },
+    {
+     "cardId": "v2",
+     "ts": "2026-03-09T00:00:00Z",
+     "grade": 4
+    }
+   ],
+   "expect": {
+    "queue": [
+     "companion:sentence:2"
+    ],
+    "reserve": [],
+    "backfillLeft": 40
+   }
+  },
+  {
+   "name": "a deck daily new limit caps new cards and companions",
+   "note": "deck d1 allows 1 new card a day: one new item from d1, the rest of d1 is neither queued nor reserved",
+   "history": [],
+   "now": "2026-03-10T12:00:00Z",
+   "language": "zh",
+   "deckIds": [
+    "d1"
+   ],
+   "kinds": [
+    "vocab",
+    "sentence"
+   ],
+   "newLimit": 20,
+   "reviewLimit": 200,
+   "weights": "default",
+   "limits": {
+    "workspace": null,
+    "decks": {
+     "d1": {
+      "new": 1
+     }
+    }
+   },
+   "cards": [
+    {
+     "id": "v1",
+     "kind": "vocab",
+     "entryId": 1,
+     "written": "学习",
+     "deckIds": [
+      "d1"
+     ],
+     "createdAt": "2026-01-01T00:00:00Z"
+    },
+    {
+     "id": "v2",
+     "kind": "vocab",
+     "entryId": 2,
+     "written": "学习",
+     "deckIds": [
+      "d1"
+     ],
+     "createdAt": "2026-01-02T00:00:00Z"
+    },
+    {
+     "id": "n3",
+     "kind": "vocab",
+     "entryId": 3,
+     "written": "学习",
+     "deckIds": [
+      "d1"
+     ],
+     "createdAt": "2026-01-03T00:00:00Z"
+    }
+   ],
+   "reviews": [
+    {
+     "cardId": "v1",
+     "ts": "2026-03-09T00:00:00Z",
+     "grade": 4
+    },
+    {
+     "cardId": "v2",
+     "ts": "2026-03-09T00:00:00Z",
+     "grade": 4
+    }
+   ],
+   "expect": {
+    "queue": [
+     "n3"
+    ],
+    "reserve": [],
+    "backfillLeft": 40
+   }
+  },
+  {
+   "name": "a character card unlocks writing the learner day after its first review",
+   "note": "character cards get no sentence or tone companion; writing only after the learner day of the first review (Tokyo days here)",
+   "history": [
+    {
+     "zone": "Asia/Tokyo",
+     "from": null
+    }
+   ],
+   "now": "2026-03-10T12:00:00Z",
+   "language": "zh",
+   "deckIds": [
+    "general"
+   ],
+   "kinds": [
+    "vocab",
+    "sentence",
+    "writing",
+    "tone"
+   ],
+   "newLimit": 20,
+   "reviewLimit": 200,
+   "weights": "default",
+   "cards": [
+    {
+     "id": "c1",
+     "kind": "vocab",
+     "entryId": 1,
+     "written": "学",
+     "deckIds": [
+      "general"
+     ],
+     "createdAt": "2026-01-01T00:00:00Z",
+     "entryKind": "character"
+    },
+    {
+     "id": "c2",
+     "kind": "vocab",
+     "entryId": 2,
+     "written": "习",
+     "deckIds": [
+      "general"
+     ],
+     "createdAt": "2026-01-02T00:00:00Z",
+     "entryKind": "character"
+    }
+   ],
+   "reviews": [
+    {
+     "cardId": "c1",
+     "ts": "2026-03-09T10:00:00Z",
+     "grade": 4
+    },
+    {
+     "cardId": "c2",
+     "ts": "2026-03-10T10:00:00Z",
+     "grade": 4
+    }
+   ],
+   "expect": {
+    "queue": [
+     "companion:writing:1"
+    ],
+    "reserve": [],
+    "backfillLeft": 40
+   }
+  },
+  {
+   "name": "only cards of the session decks and kinds",
+   "note": "cards outside deckIds or of a kind not selected stay out",
+   "history": [],
+   "now": "2026-03-10T12:00:00Z",
+   "language": "zh",
+   "deckIds": [
+    "d1"
+   ],
+   "kinds": [
+    "vocab"
+   ],
+   "newLimit": 20,
+   "reviewLimit": 200,
+   "weights": "default",
+   "cards": [
+    {
+     "id": "n1",
+     "kind": "vocab",
+     "entryId": 1,
+     "written": "学习",
+     "deckIds": [
+      "d1"
+     ],
+     "createdAt": "2026-01-01T00:00:00Z"
+    },
+    {
+     "id": "n2",
+     "kind": "vocab",
+     "entryId": 2,
+     "written": "学习",
+     "deckIds": [
+      "d2"
+     ],
+     "createdAt": "2026-01-02T00:00:00Z"
+    },
+    {
+     "id": "s1",
+     "kind": "sentence",
+     "entryId": 1,
+     "written": "学习",
+     "deckIds": [
+      "d1"
+     ],
+     "createdAt": "2026-01-03T00:00:00Z",
+     "sentenceId": 5
+    }
+   ],
+   "reviews": [],
+   "expect": {
+    "queue": [
+     "n1"
+    ],
+    "reserve": [],
+    "backfillLeft": 40
+   }
+  }
+ ],
+ "steps": [
+  {
+   "name": "dropping a companion backfills from the reserve",
+   "note": "a dropped virtual item frees its slot: the first reserve item is appended and backfillLeft decreases; dropping a real card frees nothing; an unknown id changes nothing",
+   "history": [],
+   "now": "2026-03-10T12:00:00Z",
+   "language": "zh",
+   "deckIds": [
+    "general"
+   ],
+   "kinds": [
+    "vocab",
+    "sentence"
+   ],
+   "newLimit": 2,
+   "reviewLimit": 200,
+   "weights": "default",
+   "cards": [
+    {
+     "id": "v1",
+     "kind": "vocab",
+     "entryId": 1,
+     "written": "学习",
+     "deckIds": [
+      "general"
+     ],
+     "createdAt": "2026-01-01T00:00:00Z"
+    },
+    {
+     "id": "v2",
+     "kind": "vocab",
+     "entryId": 2,
+     "written": "学习",
+     "deckIds": [
+      "general"
+     ],
+     "createdAt": "2026-01-02T00:00:00Z"
+    },
+    {
+     "id": "v3",
+     "kind": "vocab",
+     "entryId": 3,
+     "written": "学习",
+     "deckIds": [
+      "general"
+     ],
+     "createdAt": "2026-01-03T00:00:00Z"
+    },
+    {
+     "id": "d4",
+     "kind": "vocab",
+     "entryId": 4,
+     "written": "学习",
+     "deckIds": [
+      "general"
+     ],
+     "createdAt": "2026-01-04T00:00:00Z"
+    }
+   ],
+   "reviews": [
+    {
+     "cardId": "v1",
+     "ts": "2026-03-09T00:00:00Z",
+     "grade": 4
+    },
+    {
+     "cardId": "v2",
+     "ts": "2026-03-09T00:00:00Z",
+     "grade": 4
+    },
+    {
+     "cardId": "v3",
+     "ts": "2026-03-09T00:00:00Z",
+     "grade": 4
+    },
+    {
+     "cardId": "d4",
+     "ts": "2026-02-01T09:00:00Z",
+     "grade": 3
+    }
+   ],
+   "expect": {
+    "queue": [
+     "d4",
+     "companion:sentence:1",
+     "companion:sentence:2"
+    ],
+    "reserve": [
+     "companion:sentence:3",
+     "companion:sentence:4"
+    ],
+    "backfillLeft": 30
+   },
+   "steps": [
+    {
+     "op": "drop",
+     "cardId": "companion:sentence:1",
+     "expect": {
+      "queue": [
+       "d4",
+       "companion:sentence:2",
+       "companion:sentence:3"
+      ],
+      "reserve": [
+       "companion:sentence:4"
+      ],
+      "backfillLeft": 29
+     }
+    },
+    {
+     "op": "drop",
+     "cardId": "d4",
+     "expect": {
+      "queue": [
+       "companion:sentence:2",
+       "companion:sentence:3"
+      ],
+      "reserve": [
+       "companion:sentence:4"
+      ],
+      "backfillLeft": 29
+     }
+    },
+    {
+     "op": "drop",
+     "cardId": "nope",
+     "expect": {
+      "queue": [
+       "companion:sentence:2",
+       "companion:sentence:3"
+      ],
+      "reserve": [
+       "companion:sentence:4"
+      ],
+      "backfillLeft": 29
+     }
+    }
+   ]
+  },
+  {
+   "name": "backfill stops at backfillLeft",
+   "note": "with backfillLeft exhausted a dropped companion is not replaced",
+   "history": [],
+   "now": "2026-03-10T12:00:00Z",
+   "language": "zh",
+   "deckIds": [
+    "general"
+   ],
+   "kinds": [
+    "vocab",
+    "sentence"
+   ],
+   "newLimit": 1,
+   "reviewLimit": 200,
+   "weights": "default",
+   "limits": {
+    "workspace": {
+     "new": 100
+    },
+    "decks": {}
+   },
+   "cards": [
+    {
+     "id": "v1",
+     "kind": "vocab",
+     "entryId": 1,
+     "written": "学习",
+     "deckIds": [
+      "general"
+     ],
+     "createdAt": "2026-01-01T00:00:00Z"
+    },
+    {
+     "id": "v2",
+     "kind": "vocab",
+     "entryId": 2,
+     "written": "学习",
+     "deckIds": [
+      "general"
+     ],
+     "createdAt": "2026-01-01T00:00:01Z"
+    },
+    {
+     "id": "v3",
+     "kind": "vocab",
+     "entryId": 3,
+     "written": "学习",
+     "deckIds": [
+      "general"
+     ],
+     "createdAt": "2026-01-01T00:00:02Z"
+    },
+    {
+     "id": "v4",
+     "kind": "vocab",
+     "entryId": 4,
+     "written": "学习",
+     "deckIds": [
+      "general"
+     ],
+     "createdAt": "2026-01-01T00:00:03Z"
+    },
+    {
+     "id": "v5",
+     "kind": "vocab",
+     "entryId": 5,
+     "written": "学习",
+     "deckIds": [
+      "general"
+     ],
+     "createdAt": "2026-01-01T00:00:04Z"
+    },
+    {
+     "id": "v6",
+     "kind": "vocab",
+     "entryId": 6,
+     "written": "学习",
+     "deckIds": [
+      "general"
+     ],
+     "createdAt": "2026-01-01T00:00:05Z"
+    },
+    {
+     "id": "v7",
+     "kind": "vocab",
+     "entryId": 7,
+     "written": "学习",
+     "deckIds": [
+      "general"
+     ],
+     "createdAt": "2026-01-01T00:00:06Z"
+    },
+    {
+     "id": "v8",
+     "kind": "vocab",
+     "entryId": 8,
+     "written": "学习",
+     "deckIds": [
+      "general"
+     ],
+     "createdAt": "2026-01-01T00:00:07Z"
+    },
+    {
+     "id": "v9",
+     "kind": "vocab",
+     "entryId": 9,
+     "written": "学习",
+     "deckIds": [
+      "general"
+     ],
+     "createdAt": "2026-01-01T00:00:08Z"
+    },
+    {
+     "id": "v10",
+     "kind": "vocab",
+     "entryId": 10,
+     "written": "学习",
+     "deckIds": [
+      "general"
+     ],
+     "createdAt": "2026-01-01T00:00:09Z"
+    },
+    {
+     "id": "v11",
+     "kind": "vocab",
+     "entryId": 11,
+     "written": "学习",
+     "deckIds": [
+      "general"
+     ],
+     "createdAt": "2026-01-01T00:00:10Z"
+    },
+    {
+     "id": "v12",
+     "kind": "vocab",
+     "entryId": 12,
+     "written": "学习",
+     "deckIds": [
+      "general"
+     ],
+     "createdAt": "2026-01-01T00:00:11Z"
+    },
+    {
+     "id": "v13",
+     "kind": "vocab",
+     "entryId": 13,
+     "written": "学习",
+     "deckIds": [
+      "general"
+     ],
+     "createdAt": "2026-01-01T00:00:12Z"
+    },
+    {
+     "id": "v14",
+     "kind": "vocab",
+     "entryId": 14,
+     "written": "学习",
+     "deckIds": [
+      "general"
+     ],
+     "createdAt": "2026-01-01T00:00:13Z"
+    },
+    {
+     "id": "v15",
+     "kind": "vocab",
+     "entryId": 15,
+     "written": "学习",
+     "deckIds": [
+      "general"
+     ],
+     "createdAt": "2026-01-01T00:00:14Z"
+    },
+    {
+     "id": "v16",
+     "kind": "vocab",
+     "entryId": 16,
+     "written": "学习",
+     "deckIds": [
+      "general"
+     ],
+     "createdAt": "2026-01-01T00:00:15Z"
+    },
+    {
+     "id": "v17",
+     "kind": "vocab",
+     "entryId": 17,
+     "written": "学习",
+     "deckIds": [
+      "general"
+     ],
+     "createdAt": "2026-01-01T00:00:16Z"
+    },
+    {
+     "id": "v18",
+     "kind": "vocab",
+     "entryId": 18,
+     "written": "学习",
+     "deckIds": [
+      "general"
+     ],
+     "createdAt": "2026-01-01T00:00:17Z"
+    },
+    {
+     "id": "v19",
+     "kind": "vocab",
+     "entryId": 19,
+     "written": "学习",
+     "deckIds": [
+      "general"
+     ],
+     "createdAt": "2026-01-01T00:00:18Z"
+    },
+    {
+     "id": "v20",
+     "kind": "vocab",
+     "entryId": 20,
+     "written": "学习",
+     "deckIds": [
+      "general"
+     ],
+     "createdAt": "2026-01-01T00:00:19Z"
+    },
+    {
+     "id": "v21",
+     "kind": "vocab",
+     "entryId": 21,
+     "written": "学习",
+     "deckIds": [
+      "general"
+     ],
+     "createdAt": "2026-01-01T00:00:20Z"
+    },
+    {
+     "id": "v22",
+     "kind": "vocab",
+     "entryId": 22,
+     "written": "学习",
+     "deckIds": [
+      "general"
+     ],
+     "createdAt": "2026-01-01T00:00:21Z"
+    },
+    {
+     "id": "v23",
+     "kind": "vocab",
+     "entryId": 23,
+     "written": "学习",
+     "deckIds": [
+      "general"
+     ],
+     "createdAt": "2026-01-01T00:00:22Z"
+    },
+    {
+     "id": "v24",
+     "kind": "vocab",
+     "entryId": 24,
+     "written": "学习",
+     "deckIds": [
+      "general"
+     ],
+     "createdAt": "2026-01-01T00:00:23Z"
+    },
+    {
+     "id": "v25",
+     "kind": "vocab",
+     "entryId": 25,
+     "written": "学习",
+     "deckIds": [
+      "general"
+     ],
+     "createdAt": "2026-01-01T00:00:24Z"
+    },
+    {
+     "id": "v26",
+     "kind": "vocab",
+     "entryId": 26,
+     "written": "学习",
+     "deckIds": [
+      "general"
+     ],
+     "createdAt": "2026-01-01T00:00:25Z"
+    },
+    {
+     "id": "v27",
+     "kind": "vocab",
+     "entryId": 27,
+     "written": "学习",
+     "deckIds": [
+      "general"
+     ],
+     "createdAt": "2026-01-01T00:00:26Z"
+    },
+    {
+     "id": "v28",
+     "kind": "vocab",
+     "entryId": 28,
+     "written": "学习",
+     "deckIds": [
+      "general"
+     ],
+     "createdAt": "2026-01-01T00:00:27Z"
+    },
+    {
+     "id": "v29",
+     "kind": "vocab",
+     "entryId": 29,
+     "written": "学习",
+     "deckIds": [
+      "general"
+     ],
+     "createdAt": "2026-01-01T00:00:28Z"
+    },
+    {
+     "id": "v30",
+     "kind": "vocab",
+     "entryId": 30,
+     "written": "学习",
+     "deckIds": [
+      "general"
+     ],
+     "createdAt": "2026-01-01T00:00:29Z"
+    },
+    {
+     "id": "v31",
+     "kind": "vocab",
+     "entryId": 31,
+     "written": "学习",
+     "deckIds": [
+      "general"
+     ],
+     "createdAt": "2026-01-01T00:00:30Z"
+    },
+    {
+     "id": "v32",
+     "kind": "vocab",
+     "entryId": 32,
+     "written": "学习",
+     "deckIds": [
+      "general"
+     ],
+     "createdAt": "2026-01-01T00:00:31Z"
+    },
+    {
+     "id": "v33",
+     "kind": "vocab",
+     "entryId": 33,
+     "written": "学习",
+     "deckIds": [
+      "general"
+     ],
+     "createdAt": "2026-01-01T00:00:32Z"
+    }
+   ],
+   "reviews": [
+    {
+     "cardId": "v1",
+     "ts": "2026-03-09T00:00:00Z",
+     "grade": 4
+    },
+    {
+     "cardId": "v2",
+     "ts": "2026-03-09T00:00:00Z",
+     "grade": 4
+    },
+    {
+     "cardId": "v3",
+     "ts": "2026-03-09T00:00:00Z",
+     "grade": 4
+    },
+    {
+     "cardId": "v4",
+     "ts": "2026-03-09T00:00:00Z",
+     "grade": 4
+    },
+    {
+     "cardId": "v5",
+     "ts": "2026-03-09T00:00:00Z",
+     "grade": 4
+    },
+    {
+     "cardId": "v6",
+     "ts": "2026-03-09T00:00:00Z",
+     "grade": 4
+    },
+    {
+     "cardId": "v7",
+     "ts": "2026-03-09T00:00:00Z",
+     "grade": 4
+    },
+    {
+     "cardId": "v8",
+     "ts": "2026-03-09T00:00:00Z",
+     "grade": 4
+    },
+    {
+     "cardId": "v9",
+     "ts": "2026-03-09T00:00:00Z",
+     "grade": 4
+    },
+    {
+     "cardId": "v10",
+     "ts": "2026-03-09T00:00:00Z",
+     "grade": 4
+    },
+    {
+     "cardId": "v11",
+     "ts": "2026-03-09T00:00:00Z",
+     "grade": 4
+    },
+    {
+     "cardId": "v12",
+     "ts": "2026-03-09T00:00:00Z",
+     "grade": 4
+    },
+    {
+     "cardId": "v13",
+     "ts": "2026-03-09T00:00:00Z",
+     "grade": 4
+    },
+    {
+     "cardId": "v14",
+     "ts": "2026-03-09T00:00:00Z",
+     "grade": 4
+    },
+    {
+     "cardId": "v15",
+     "ts": "2026-03-09T00:00:00Z",
+     "grade": 4
+    },
+    {
+     "cardId": "v16",
+     "ts": "2026-03-09T00:00:00Z",
+     "grade": 4
+    },
+    {
+     "cardId": "v17",
+     "ts": "2026-03-09T00:00:00Z",
+     "grade": 4
+    },
+    {
+     "cardId": "v18",
+     "ts": "2026-03-09T00:00:00Z",
+     "grade": 4
+    },
+    {
+     "cardId": "v19",
+     "ts": "2026-03-09T00:00:00Z",
+     "grade": 4
+    },
+    {
+     "cardId": "v20",
+     "ts": "2026-03-09T00:00:00Z",
+     "grade": 4
+    },
+    {
+     "cardId": "v21",
+     "ts": "2026-03-09T00:00:00Z",
+     "grade": 4
+    },
+    {
+     "cardId": "v22",
+     "ts": "2026-03-09T00:00:00Z",
+     "grade": 4
+    },
+    {
+     "cardId": "v23",
+     "ts": "2026-03-09T00:00:00Z",
+     "grade": 4
+    },
+    {
+     "cardId": "v24",
+     "ts": "2026-03-09T00:00:00Z",
+     "grade": 4
+    },
+    {
+     "cardId": "v25",
+     "ts": "2026-03-09T00:00:00Z",
+     "grade": 4
+    },
+    {
+     "cardId": "v26",
+     "ts": "2026-03-09T00:00:00Z",
+     "grade": 4
+    },
+    {
+     "cardId": "v27",
+     "ts": "2026-03-09T00:00:00Z",
+     "grade": 4
+    },
+    {
+     "cardId": "v28",
+     "ts": "2026-03-09T00:00:00Z",
+     "grade": 4
+    },
+    {
+     "cardId": "v29",
+     "ts": "2026-03-09T00:00:00Z",
+     "grade": 4
+    },
+    {
+     "cardId": "v30",
+     "ts": "2026-03-09T00:00:00Z",
+     "grade": 4
+    },
+    {
+     "cardId": "v31",
+     "ts": "2026-03-09T00:00:00Z",
+     "grade": 4
+    },
+    {
+     "cardId": "v32",
+     "ts": "2026-03-09T00:00:00Z",
+     "grade": 4
+    },
+    {
+     "cardId": "v33",
+     "ts": "2026-03-09T00:00:00Z",
+     "grade": 4
+    }
+   ],
+   "expect": {
+    "queue": [
+     "companion:sentence:1"
+    ],
+    "reserve": [
+     "companion:sentence:2",
+     "companion:sentence:3",
+     "companion:sentence:4",
+     "companion:sentence:5",
+     "companion:sentence:6",
+     "companion:sentence:7",
+     "companion:sentence:8",
+     "companion:sentence:9",
+     "companion:sentence:10",
+     "companion:sentence:11",
+     "companion:sentence:12",
+     "companion:sentence:13",
+     "companion:sentence:14",
+     "companion:sentence:15",
+     "companion:sentence:16",
+     "companion:sentence:17",
+     "companion:sentence:18",
+     "companion:sentence:19",
+     "companion:sentence:20",
+     "companion:sentence:21",
+     "companion:sentence:22",
+     "companion:sentence:23",
+     "companion:sentence:24",
+     "companion:sentence:25",
+     "companion:sentence:26",
+     "companion:sentence:27",
+     "companion:sentence:28",
+     "companion:sentence:29",
+     "companion:sentence:30",
+     "companion:sentence:31",
+     "companion:sentence:32",
+     "companion:sentence:33"
+    ],
+    "backfillLeft": 30
+   },
+   "steps": [
+    {
+     "op": "drop",
+     "cardId": "companion:sentence:1",
+     "expect": {
+      "queue": [
+       "companion:sentence:2"
+      ],
+      "reserve": [
+       "companion:sentence:3",
+       "companion:sentence:4",
+       "companion:sentence:5",
+       "companion:sentence:6",
+       "companion:sentence:7",
+       "companion:sentence:8",
+       "companion:sentence:9",
+       "companion:sentence:10",
+       "companion:sentence:11",
+       "companion:sentence:12",
+       "companion:sentence:13",
+       "companion:sentence:14",
+       "companion:sentence:15",
+       "companion:sentence:16",
+       "companion:sentence:17",
+       "companion:sentence:18",
+       "companion:sentence:19",
+       "companion:sentence:20",
+       "companion:sentence:21",
+       "companion:sentence:22",
+       "companion:sentence:23",
+       "companion:sentence:24",
+       "companion:sentence:25",
+       "companion:sentence:26",
+       "companion:sentence:27",
+       "companion:sentence:28",
+       "companion:sentence:29",
+       "companion:sentence:30",
+       "companion:sentence:31",
+       "companion:sentence:32",
+       "companion:sentence:33"
+      ],
+      "backfillLeft": 29
+     }
+    },
+    {
+     "op": "drop",
+     "cardId": "companion:sentence:2"
+    },
+    {
+     "op": "drop",
+     "cardId": "companion:sentence:3"
+    },
+    {
+     "op": "drop",
+     "cardId": "companion:sentence:4"
+    },
+    {
+     "op": "drop",
+     "cardId": "companion:sentence:5"
+    },
+    {
+     "op": "drop",
+     "cardId": "companion:sentence:6"
+    },
+    {
+     "op": "drop",
+     "cardId": "companion:sentence:7"
+    },
+    {
+     "op": "drop",
+     "cardId": "companion:sentence:8"
+    },
+    {
+     "op": "drop",
+     "cardId": "companion:sentence:9"
+    },
+    {
+     "op": "drop",
+     "cardId": "companion:sentence:10"
+    },
+    {
+     "op": "drop",
+     "cardId": "companion:sentence:11"
+    },
+    {
+     "op": "drop",
+     "cardId": "companion:sentence:12"
+    },
+    {
+     "op": "drop",
+     "cardId": "companion:sentence:13"
+    },
+    {
+     "op": "drop",
+     "cardId": "companion:sentence:14"
+    },
+    {
+     "op": "drop",
+     "cardId": "companion:sentence:15"
+    },
+    {
+     "op": "drop",
+     "cardId": "companion:sentence:16"
+    },
+    {
+     "op": "drop",
+     "cardId": "companion:sentence:17"
+    },
+    {
+     "op": "drop",
+     "cardId": "companion:sentence:18"
+    },
+    {
+     "op": "drop",
+     "cardId": "companion:sentence:19"
+    },
+    {
+     "op": "drop",
+     "cardId": "companion:sentence:20"
+    },
+    {
+     "op": "drop",
+     "cardId": "companion:sentence:21"
+    },
+    {
+     "op": "drop",
+     "cardId": "companion:sentence:22"
+    },
+    {
+     "op": "drop",
+     "cardId": "companion:sentence:23"
+    },
+    {
+     "op": "drop",
+     "cardId": "companion:sentence:24"
+    },
+    {
+     "op": "drop",
+     "cardId": "companion:sentence:25"
+    },
+    {
+     "op": "drop",
+     "cardId": "companion:sentence:26"
+    },
+    {
+     "op": "drop",
+     "cardId": "companion:sentence:27"
+    },
+    {
+     "op": "drop",
+     "cardId": "companion:sentence:28"
+    },
+    {
+     "op": "drop",
+     "cardId": "companion:sentence:29"
+    },
+    {
+     "op": "drop",
+     "cardId": "companion:sentence:30",
+     "expect": {
+      "queue": [
+       "companion:sentence:31"
+      ],
+      "reserve": [
+       "companion:sentence:32",
+       "companion:sentence:33"
+      ],
+      "backfillLeft": 0
+     }
+    },
+    {
+     "op": "drop",
+     "cardId": "companion:sentence:31",
+     "expect": {
+      "queue": [],
+      "reserve": [
+       "companion:sentence:32",
+       "companion:sentence:33"
+      ],
+      "backfillLeft": 0
+     }
+    }
+   ]
+  },
+  {
+   "name": "answering a word buries its later opt-in items",
+   "note": "answering vocab v1 removes the later real reverse card r1 of word 1 (a real card frees nothing); answering the virtual reverse item of word 2 removes the later sentence item of word 2 (virtual: the first reserve item takes its slot)",
+   "history": [],
+   "now": "2026-03-10T12:00:00Z",
+   "language": "zh",
+   "deckIds": [
+    "general"
+   ],
+   "kinds": [
+    "vocab",
+    "sentence",
+    "reverse"
+   ],
+   "newLimit": 5,
+   "reviewLimit": 200,
+   "weights": "default",
+   "deckSettings": {
+    "general": [
+     "reverse"
+    ]
+   },
+   "cards": [
+    {
+     "id": "v1",
+     "kind": "vocab",
+     "entryId": 1,
+     "written": "学习",
+     "deckIds": [
+      "general"
+     ],
+     "createdAt": "2026-01-01T00:00:00Z"
+    },
+    {
+     "id": "r1",
+     "kind": "reverse",
+     "entryId": 1,
+     "written": "学习",
+     "deckIds": [
+      "general"
+     ],
+     "createdAt": "2026-01-02T00:00:00Z"
+    },
+    {
+     "id": "v2",
+     "kind": "vocab",
+     "entryId": 2,
+     "written": "学习",
+     "deckIds": [
+      "general"
+     ],
+     "createdAt": "2026-01-03T00:00:00Z"
+    },
+    {
+     "id": "v3",
+     "kind": "vocab",
+     "entryId": 3,
+     "written": "学习",
+     "deckIds": [
+      "general"
+     ],
+     "createdAt": "2026-01-04T00:00:00Z"
+    }
+   ],
+   "reviews": [
+    {
+     "cardId": "v1",
+     "ts": "2026-02-01T09:00:00Z",
+     "grade": 3
+    },
+    {
+     "cardId": "v2",
+     "ts": "2026-03-09T00:00:00Z",
+     "grade": 4
+    },
+    {
+     "cardId": "v3",
+     "ts": "2026-03-09T00:00:00Z",
+     "grade": 4
+    }
+   ],
+   "expect": {
+    "queue": [
+     "v1",
+     "r1",
+     "companion:sentence:1",
+     "companion:reverse:2",
+     "companion:sentence:2",
+     "companion:reverse:3"
+    ],
+    "reserve": [
+     "companion:sentence:3"
+    ],
+    "backfillLeft": 30
+   },
+   "steps": [
+    {
+     "op": "bury",
+     "index": 0,
+     "answered": {
+      "kind": "vocab",
+      "entryId": 1,
+      "cardId": "v1"
+     },
+     "expect": {
+      "queue": [
+       "v1",
+       "companion:sentence:1",
+       "companion:reverse:2",
+       "companion:sentence:2",
+       "companion:reverse:3"
+      ],
+      "reserve": [
+       "companion:sentence:3"
+      ],
+      "backfillLeft": 30,
+      "buried": 1
+     }
+    },
+    {
+     "op": "bury",
+     "index": 2,
+     "answered": {
+      "kind": "reverse",
+      "entryId": 2,
+      "cardId": "companion:reverse:2"
+     },
+     "expect": {
+      "queue": [
+       "v1",
+       "companion:sentence:1",
+       "companion:reverse:2",
+       "companion:reverse:3",
+       "companion:sentence:3"
+      ],
+      "reserve": [],
+      "backfillLeft": 29,
+      "buried": 1
+     }
+    }
+   ]
+  }
+ ],
+ "eligible": [
+  {
+   "name": "vocab is always eligible",
+   "note": "vocab is always eligible",
+   "kind": "vocab",
+   "entry": {
+    "language": "ja",
+    "written": "abc",
+    "readings": []
+   },
+   "ctx": {
+    "language": "ja",
+    "hasSentence": false
+   },
+   "expect": true
+  },
+  {
+   "name": "sentence needs a resolved sentence",
+   "note": "sentence needs a resolved sentence",
+   "kind": "sentence",
+   "entry": {
+    "language": "zh",
+    "written": "学习",
+    "readings": []
+   },
+   "ctx": {
+    "language": "zh",
+    "hasSentence": false
+   },
+   "expect": false
+  },
+  {
+   "name": "sentence with a sentence",
+   "note": "sentence with a sentence",
+   "kind": "sentence",
+   "entry": {
+    "language": "zh",
+    "written": "学习",
+    "readings": []
+   },
+   "ctx": {
+    "language": "zh",
+    "hasSentence": true
+   },
+   "expect": true
+  },
+  {
+   "name": "writing needs a Han character with stroke data",
+   "note": "writing needs a Han character with stroke data",
+   "kind": "writing",
+   "entry": {
+    "language": "zh",
+    "written": "学习",
+    "readings": []
+   },
+   "ctx": {
+    "language": "zh",
+    "hasSentence": false,
+    "usableChars": []
+   },
+   "expect": false
+  },
+  {
+   "name": "writing with stroke data",
+   "note": "writing with stroke data",
+   "kind": "writing",
+   "entry": {
+    "language": "zh",
+    "written": "学习",
+    "readings": []
+   },
+   "ctx": {
+    "language": "zh",
+    "hasSentence": false,
+    "usableChars": [
+     "学"
+    ]
+   },
+   "expect": true
+  },
+  {
+   "name": "writing of a character without glosses",
+   "note": "writing of a character without glosses",
+   "kind": "writing",
+   "entry": {
+    "language": "zh",
+    "written": "学",
+    "readings": [],
+    "kind": "character",
+    "senses": []
+   },
+   "ctx": {
+    "language": "zh",
+    "hasSentence": false,
+    "usableChars": [
+     "学"
+    ]
+   },
+   "expect": false
+  },
+  {
+   "name": "tone in a Chinese workspace with a pinyin reading",
+   "note": "tone in a Chinese workspace with a pinyin reading",
+   "kind": "tone",
+   "entry": {
+    "language": "zh",
+    "written": "学习",
+    "readings": [
+     {
+      "type": "pinyin",
+      "value": "xué xí"
+     }
+    ]
+   },
+   "ctx": {
+    "language": "zh-Hant",
+    "hasSentence": false
+   },
+   "expect": true
+  },
+  {
+   "name": "tone with only a numbered pinyin reading",
+   "note": "tone with only a numbered pinyin reading",
+   "kind": "tone",
+   "entry": {
+    "language": "zh",
+    "written": "学习",
+    "readings": [
+     {
+      "type": "pinyin",
+      "value": "xue2 xi2"
+     }
+    ]
+   },
+   "ctx": {
+    "language": "zh",
+    "hasSentence": false
+   },
+   "expect": false
+  },
+  {
+   "name": "tone outside Chinese",
+   "note": "tone outside Chinese",
+   "kind": "tone",
+   "entry": {
+    "language": "ja",
+    "written": "学習",
+    "readings": [
+     {
+      "type": "pinyin",
+      "value": "xué xí"
+     }
+    ]
+   },
+   "ctx": {
+    "language": "ja",
+    "hasSentence": false
+   },
+   "expect": false
+  },
+  {
+   "name": "tone without a pinyin reading",
+   "note": "tone without a pinyin reading",
+   "kind": "tone",
+   "entry": {
+    "language": "zh",
+    "written": "学习",
+    "readings": [
+     {
+      "type": "zhuyin",
+      "value": "ㄒㄩㄝˊ"
+     }
+    ]
+   },
+   "ctx": {
+    "language": "zh",
+    "hasSentence": false
+   },
+   "expect": false
+  },
+  {
+   "name": "reverse needs a word with a gloss",
+   "note": "reverse needs a word with a gloss",
+   "kind": "reverse",
+   "entry": {
+    "language": "zh",
+    "written": "学习",
+    "readings": [],
+    "kind": "word",
+    "senses": [
+     {}
+    ]
+   },
+   "ctx": {
+    "language": "zh",
+    "hasSentence": false
+   },
+   "expect": true
+  },
+  {
+   "name": "reverse of a character",
+   "note": "reverse of a character",
+   "kind": "reverse",
+   "entry": {
+    "language": "zh",
+    "written": "学",
+    "readings": [],
+    "kind": "character",
+    "senses": [
+     {}
+    ]
+   },
+   "ctx": {
+    "language": "zh",
+    "hasSentence": false
+   },
+   "expect": false
+  },
+  {
+   "name": "reverse of a word without glosses",
+   "note": "reverse of a word without glosses",
+   "kind": "reverse",
+   "entry": {
+    "language": "zh",
+    "written": "学习",
+    "readings": [],
+    "kind": "word",
+    "senses": []
+   },
+   "ctx": {
+    "language": "zh",
+    "hasSentence": false
+   },
+   "expect": false
+  },
+  {
+   "name": "cloze needs an eligible cloze sentence",
+   "note": "cloze needs an eligible cloze sentence",
+   "kind": "cloze",
+   "entry": {
+    "language": "zh",
+    "written": "学习",
+    "readings": []
+   },
+   "ctx": {
+    "language": "zh",
+    "hasSentence": true,
+    "hasCloze": false
+   },
+   "expect": false
+  },
+  {
+   "name": "cloze with a cloze sentence",
+   "note": "cloze with a cloze sentence",
+   "kind": "cloze",
+   "entry": {
+    "language": "zh",
+    "written": "学习",
+    "readings": []
+   },
+   "ctx": {
+    "language": "zh",
+    "hasSentence": false,
+    "hasCloze": true
+   },
+   "expect": true
+  }
+ ]
+}

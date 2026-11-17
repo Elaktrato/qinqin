@@ -16,10 +16,10 @@ export const BASE_XP: Record<StudyCardKind, number> = {
 	cloze: 15
 };
 
-const GRADE_BONUS: Record<ReviewGrade, number> = { 1: 0, 2: 0, 3: 5, 4: 10 };
+export const GRADE_BONUS: Record<ReviewGrade, number> = { 1: 0, 2: 0, 3: 5, 4: 10 };
 
 /** Bonus for the first review of each learner day. */
-const DAILY_BONUS = 10;
+export const DAILY_BONUS = 10;
 
 interface ValidReview {
 	id: string;
