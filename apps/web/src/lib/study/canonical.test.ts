@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { canonicalCards, newCardId } from './canonical';
+import canonicalFixture from '../../../../../docs/contracts/study/canonical.json';
 import { cardKey } from './reviewParse';
 import type { ReviewEvent, ReviewGrade, StudyCard, StudyCardKind } from './types';
 
@@ -207,4 +208,33 @@ describe('canonicalCards skipKinds', () => {
 		const b = card('x-dup', 1, '2026-01-02T00:00:00Z');
 		expect('skipKinds' in canonicalCards([a, b], []).cards[0]).toBe(false);
 	});
+});
+
+describe('docs/contracts/study/canonical.json', () => {
+	const fixture = canonicalFixture as unknown as {
+		rule: string;
+		cases: {
+			name: string;
+			note: string;
+			cards: StudyCard[];
+			reviews: ReviewEvent[];
+			expect: { cards: StudyCard[]; reviews: ReviewEvent[]; merged: number };
+		}[];
+	};
+	it('has cases', () => {
+		expect(fixture.rule).toBe('study/canonical');
+		expect(fixture.cases.length).toBeGreaterThan(10);
+	});
+	for (const c of fixture.cases) {
+		it(c.name, () => {
+			const cards = structuredClone(c.cards);
+			const reviews = structuredClone(c.reviews);
+			expect(canonicalCards(cards, reviews)).toEqual(c.expect);
+			// The inputs are untouched.
+			expect(cards).toEqual(c.cards);
+			expect(reviews).toEqual(c.reviews);
+			// Idempotent: the merged result merges to itself.
+			expect(canonicalCards(c.expect.cards, c.expect.reviews)).toEqual({ ...c.expect, merged: 0 });
+		});
+	}
 });

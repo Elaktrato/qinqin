@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { IDLE_CUTOFF_MS, MIN_BURST_SECONDS, createReadingTimer } from './readingTimer';
+import payloadsFixture from '../../../../../../docs/contracts/events/payloads.json';
 
 const S = 1000;
 
@@ -73,4 +74,30 @@ describe('createReadingTimer', () => {
 		t.hidden(20 * S);
 		expect(t.flush(20 * S)).toBe(0);
 	});
+});
+
+describe('docs/contracts/events/payloads.json: when a read event is emitted', () => {
+	interface Step {
+		op: 'activity' | 'hidden' | 'visible' | 'flush' | 'accrued';
+		at?: number;
+		expect?: number;
+	}
+	const fixture = payloadsFixture as unknown as {
+		constants: { minBurstSeconds: number; idleCutoffMs: number };
+		cases: { kind: string; type: string; name: string; steps?: Step[] }[];
+	};
+	it('uses the constants of the fixture', () => {
+		expect(MIN_BURST_SECONDS).toBe(fixture.constants.minBurstSeconds);
+		expect(IDLE_CUTOFF_MS).toBe(fixture.constants.idleCutoffMs);
+	});
+	for (const c of fixture.cases.filter((x) => x.kind === 'emit' && x.type === 'read')) {
+		it(c.name, () => {
+			const t = createReadingTimer();
+			for (const s of c.steps!) {
+				if (s.op === 'flush') expect(t.flush(s.at!)).toBe(s.expect);
+				else if (s.op === 'accrued') expect(t.accrued()).toBe(s.expect);
+				else t[s.op](s.at!);
+			}
+		});
+	}
 });

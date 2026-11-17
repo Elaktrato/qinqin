@@ -18,6 +18,7 @@
 	import { readAudioSettings } from '$lib/audio/settings';
 	import PlayButton from '$lib/components/PlayButton.svelte';
 	import { record } from '$lib/events';
+	import { viewPayload } from '$lib/eventPayloads';
 	import { loadEntryExtras } from '$lib/entry/extras';
 	import { formatReading } from '$lib/format';
 	import { languageLabel } from '$lib/languages';
@@ -163,7 +164,7 @@
 		const workspace = $workspaces.current?.id ?? null;
 		if (viewed === null || workspace === null || viewedEntry === viewed) return;
 		viewedEntry = viewed;
-		void record('view', workspace, { entryId: viewed });
+		void record('view', workspace, viewPayload(viewed));
 	});
 </script>
 

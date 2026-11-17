@@ -1,0 +1,607 @@
+{
+  "version": 1,
+  "rule": "events/review-parse",
+  "cases": [
+    {
+      "name": "a well-formed review is kept as is",
+      "note": "cardId, mode, grade and valid meta survive unchanged",
+      "event": {
+        "id": "01KA0000000000000000000001",
+        "workspaceId": 7,
+        "device": "web",
+        "ts": "2026-11-17T09:00:00Z",
+        "type": "review",
+        "payload": {
+          "cardId": "c1",
+          "mode": "sentence",
+          "grade": 3,
+          "meta": {
+            "tier": 1,
+            "mistakes": 0,
+            "hints": 2,
+            "durationMs": 4200
+          }
+        }
+      },
+      "parsed": {
+        "cardId": "c1",
+        "mode": "sentence",
+        "grade": 3,
+        "meta": {
+          "tier": 1,
+          "mistakes": 0,
+          "hints": 2,
+          "durationMs": 4200
+        }
+      },
+      "valid": true
+    },
+    {
+      "name": "every card kind is a real mode",
+      "note": "the six kinds vocab, sentence, writing, tone, reverse, cloze are kept",
+      "event": {
+        "id": "01KA0000000000000000000001",
+        "workspaceId": 7,
+        "device": "web",
+        "ts": "2026-11-17T09:00:00Z",
+        "type": "review",
+        "payload": {
+          "cardId": "c1",
+          "mode": "cloze",
+          "grade": 4
+        }
+      },
+      "parsed": {
+        "cardId": "c1",
+        "mode": "cloze",
+        "grade": 4
+      },
+      "valid": true
+    },
+    {
+      "name": "a missing mode reads as vocab",
+      "note": "events from before kinds existed",
+      "event": {
+        "id": "01KA0000000000000000000001",
+        "workspaceId": 7,
+        "device": "web",
+        "ts": "2026-11-17T09:00:00Z",
+        "type": "review",
+        "payload": {
+          "cardId": "c1",
+          "grade": 2
+        }
+      },
+      "parsed": {
+        "cardId": "c1",
+        "mode": "vocab",
+        "grade": 2
+      },
+      "valid": true
+    },
+    {
+      "name": "an unknown mode reads as vocab",
+      "note": "an unknown mode never rejects the review",
+      "event": {
+        "id": "01KA0000000000000000000001",
+        "workspaceId": 7,
+        "device": "web",
+        "ts": "2026-11-17T09:00:00Z",
+        "type": "review",
+        "payload": {
+          "cardId": "c1",
+          "mode": "bogus",
+          "grade": 1
+        }
+      },
+      "parsed": {
+        "cardId": "c1",
+        "mode": "vocab",
+        "grade": 1
+      },
+      "valid": true
+    },
+    {
+      "name": "a non-string mode reads as vocab",
+      "note": "only the six kind strings are modes",
+      "event": {
+        "id": "01KA0000000000000000000001",
+        "workspaceId": 7,
+        "device": "web",
+        "ts": "2026-11-17T09:00:00Z",
+        "type": "review",
+        "payload": {
+          "cardId": "c1",
+          "mode": 3,
+          "grade": 3
+        }
+      },
+      "parsed": {
+        "cardId": "c1",
+        "mode": "vocab",
+        "grade": 3
+      },
+      "valid": true
+    },
+    {
+      "name": "grade 0 is rejected",
+      "note": "grades are the integers 1 to 4",
+      "event": {
+        "id": "01KA0000000000000000000001",
+        "workspaceId": 7,
+        "device": "web",
+        "ts": "2026-11-17T09:00:00Z",
+        "type": "review",
+        "payload": {
+          "cardId": "c1",
+          "mode": "vocab",
+          "grade": 0
+        }
+      },
+      "parsed": null,
+      "valid": false
+    },
+    {
+      "name": "grade 5 is rejected",
+      "note": "grades are the integers 1 to 4",
+      "event": {
+        "id": "01KA0000000000000000000001",
+        "workspaceId": 7,
+        "device": "web",
+        "ts": "2026-11-17T09:00:00Z",
+        "type": "review",
+        "payload": {
+          "cardId": "c1",
+          "mode": "vocab",
+          "grade": 5
+        }
+      },
+      "parsed": null,
+      "valid": false
+    },
+    {
+      "name": "grade 2.5 is rejected",
+      "note": "a fractional grade is not a grade",
+      "event": {
+        "id": "01KA0000000000000000000001",
+        "workspaceId": 7,
+        "device": "web",
+        "ts": "2026-11-17T09:00:00Z",
+        "type": "review",
+        "payload": {
+          "cardId": "c1",
+          "mode": "vocab",
+          "grade": 2.5
+        }
+      },
+      "parsed": null,
+      "valid": false
+    },
+    {
+      "name": "grade 3.0 is grade 3",
+      "note": "JSON 3.0 is the number 3",
+      "event": {
+        "id": "01KA0000000000000000000001",
+        "workspaceId": 7,
+        "device": "web",
+        "ts": "2026-11-17T09:00:00Z",
+        "type": "review",
+        "payload": {
+          "cardId": "c1",
+          "mode": "vocab",
+          "grade": 3.0
+        }
+      },
+      "parsed": {
+        "cardId": "c1",
+        "mode": "vocab",
+        "grade": 3
+      },
+      "valid": true
+    },
+    {
+      "name": "grade \"3\" is rejected",
+      "note": "a string is not a grade",
+      "event": {
+        "id": "01KA0000000000000000000001",
+        "workspaceId": 7,
+        "device": "web",
+        "ts": "2026-11-17T09:00:00Z",
+        "type": "review",
+        "payload": {
+          "cardId": "c1",
+          "mode": "vocab",
+          "grade": "3"
+        }
+      },
+      "parsed": null,
+      "valid": false
+    },
+    {
+      "name": "a missing grade is rejected",
+      "note": "no grade, no review",
+      "event": {
+        "id": "01KA0000000000000000000001",
+        "workspaceId": 7,
+        "device": "web",
+        "ts": "2026-11-17T09:00:00Z",
+        "type": "review",
+        "payload": {
+          "cardId": "c1",
+          "mode": "vocab"
+        }
+      },
+      "parsed": null,
+      "valid": false
+    },
+    {
+      "name": "an empty cardId is rejected",
+      "note": "the card id is a non-empty string",
+      "event": {
+        "id": "01KA0000000000000000000001",
+        "workspaceId": 7,
+        "device": "web",
+        "ts": "2026-11-17T09:00:00Z",
+        "type": "review",
+        "payload": {
+          "cardId": "",
+          "mode": "vocab",
+          "grade": 3
+        }
+      },
+      "parsed": null,
+      "valid": false
+    },
+    {
+      "name": "a numeric cardId is rejected",
+      "note": "the card id is a string",
+      "event": {
+        "id": "01KA0000000000000000000001",
+        "workspaceId": 7,
+        "device": "web",
+        "ts": "2026-11-17T09:00:00Z",
+        "type": "review",
+        "payload": {
+          "cardId": 12,
+          "mode": "vocab",
+          "grade": 3
+        }
+      },
+      "parsed": null,
+      "valid": false
+    },
+    {
+      "name": "meta with one bad member is dropped whole",
+      "note": "tier must be 0, 1 or 2; one bad member drops the whole meta, the review stays",
+      "event": {
+        "id": "01KA0000000000000000000001",
+        "workspaceId": 7,
+        "device": "web",
+        "ts": "2026-11-17T09:00:00Z",
+        "type": "review",
+        "payload": {
+          "cardId": "c1",
+          "mode": "vocab",
+          "grade": 3,
+          "meta": {
+            "tier": 3,
+            "mistakes": 1
+          }
+        }
+      },
+      "parsed": {
+        "cardId": "c1",
+        "mode": "vocab",
+        "grade": 3
+      },
+      "valid": true
+    },
+    {
+      "name": "negative durationMs drops meta",
+      "note": "durationMs is a finite number >= 0",
+      "event": {
+        "id": "01KA0000000000000000000001",
+        "workspaceId": 7,
+        "device": "web",
+        "ts": "2026-11-17T09:00:00Z",
+        "type": "review",
+        "payload": {
+          "cardId": "c1",
+          "mode": "vocab",
+          "grade": 3,
+          "meta": {
+            "durationMs": -1,
+            "hints": 1
+          }
+        }
+      },
+      "parsed": {
+        "cardId": "c1",
+        "mode": "vocab",
+        "grade": 3
+      },
+      "valid": true
+    },
+    {
+      "name": "an overflowing durationMs drops meta",
+      "note": "1e999 parses as Infinity, which is not finite",
+      "event": {
+        "id": "01KA0000000000000000000001",
+        "workspaceId": 7,
+        "device": "web",
+        "ts": "2026-11-17T09:00:00Z",
+        "type": "review",
+        "payload": {
+          "cardId": "c1",
+          "mode": "vocab",
+          "grade": 3,
+          "meta": {
+            "durationMs": 1e999
+          }
+        }
+      },
+      "parsed": {
+        "cardId": "c1",
+        "mode": "vocab",
+        "grade": 3
+      },
+      "valid": true
+    },
+    {
+      "name": "a fractional mistakes count drops meta",
+      "note": "mistakes and hints are integers >= 0",
+      "event": {
+        "id": "01KA0000000000000000000001",
+        "workspaceId": 7,
+        "device": "web",
+        "ts": "2026-11-17T09:00:00Z",
+        "type": "review",
+        "payload": {
+          "cardId": "c1",
+          "mode": "vocab",
+          "grade": 3,
+          "meta": {
+            "mistakes": 1.5
+          }
+        }
+      },
+      "parsed": {
+        "cardId": "c1",
+        "mode": "vocab",
+        "grade": 3
+      },
+      "valid": true
+    },
+    {
+      "name": "meta that is not an object is dropped",
+      "note": "an array or a string is not meta",
+      "event": {
+        "id": "01KA0000000000000000000001",
+        "workspaceId": 7,
+        "device": "web",
+        "ts": "2026-11-17T09:00:00Z",
+        "type": "review",
+        "payload": {
+          "cardId": "c1",
+          "mode": "vocab",
+          "grade": 3,
+          "meta": [
+            1
+          ]
+        }
+      },
+      "parsed": {
+        "cardId": "c1",
+        "mode": "vocab",
+        "grade": 3
+      },
+      "valid": true
+    },
+    {
+      "name": "unknown meta members are dropped, known ones kept",
+      "note": "only tier, mistakes, hints, durationMs are read",
+      "event": {
+        "id": "01KA0000000000000000000001",
+        "workspaceId": 7,
+        "device": "web",
+        "ts": "2026-11-17T09:00:00Z",
+        "type": "review",
+        "payload": {
+          "cardId": "c1",
+          "mode": "vocab",
+          "grade": 3,
+          "meta": {
+            "hints": 0,
+            "speed": 9
+          }
+        }
+      },
+      "parsed": {
+        "cardId": "c1",
+        "mode": "vocab",
+        "grade": 3,
+        "meta": {
+          "hints": 0
+        }
+      },
+      "valid": true
+    },
+    {
+      "name": "extra payload members are ignored",
+      "note": "the parsed payload holds cardId, mode, grade and meta only",
+      "event": {
+        "id": "01KA0000000000000000000001",
+        "workspaceId": 7,
+        "device": "web",
+        "ts": "2026-11-17T09:00:00Z",
+        "type": "review",
+        "payload": {
+          "cardId": "c1",
+          "mode": "vocab",
+          "grade": 3,
+          "extra": true
+        }
+      },
+      "parsed": {
+        "cardId": "c1",
+        "mode": "vocab",
+        "grade": 3
+      },
+      "valid": true
+    },
+    {
+      "name": "a non-object payload is rejected",
+      "note": "null, arrays and scalars are not review payloads",
+      "event": {
+        "id": "01KA0000000000000000000001",
+        "workspaceId": 7,
+        "device": "web",
+        "ts": "2026-11-17T09:00:00Z",
+        "type": "review",
+        "payload": null
+      },
+      "parsed": null,
+      "valid": false
+    },
+    {
+      "name": "an array payload is rejected",
+      "note": "an array has no cardId",
+      "event": {
+        "id": "01KA0000000000000000000001",
+        "workspaceId": 7,
+        "device": "web",
+        "ts": "2026-11-17T09:00:00Z",
+        "type": "review",
+        "payload": [
+          "c1",
+          3
+        ]
+      },
+      "parsed": null,
+      "valid": false
+    },
+    {
+      "name": "another type is not a review",
+      "note": "only type review parses",
+      "event": {
+        "id": "01KA0000000000000000000001",
+        "workspaceId": 7,
+        "device": "web",
+        "ts": "2026-11-17T09:00:00Z",
+        "type": "read",
+        "payload": {
+          "cardId": "c1",
+          "mode": "vocab",
+          "grade": 3
+        }
+      },
+      "parsed": null,
+      "valid": true
+    },
+    {
+      "name": "an unparsable ts: parsed but not valid",
+      "note": "parseReview does not read ts; replay and XP skip an event whose ts does not parse",
+      "event": {
+        "id": "01KA0000000000000000000001",
+        "workspaceId": 7,
+        "device": "web",
+        "ts": "yesterday",
+        "type": "review",
+        "payload": {
+          "cardId": "c1",
+          "mode": "vocab",
+          "grade": 3
+        }
+      },
+      "parsed": {
+        "cardId": "c1",
+        "mode": "vocab",
+        "grade": 3
+      },
+      "valid": false
+    },
+    {
+      "name": "a ts with an offset is valid",
+      "note": "any RFC 3339 instant is valid",
+      "event": {
+        "id": "01KA0000000000000000000001",
+        "workspaceId": 7,
+        "device": "web",
+        "ts": "2026-11-17T10:00:00+01:00",
+        "type": "review",
+        "payload": {
+          "cardId": "c1",
+          "mode": "vocab",
+          "grade": 3
+        }
+      },
+      "parsed": {
+        "cardId": "c1",
+        "mode": "vocab",
+        "grade": 3
+      },
+      "valid": true
+    }
+  ],
+  "order": [
+    {
+      "name": "ts first, then id",
+      "note": "an earlier instant replays first; in one instant the smaller id first",
+      "events": [
+        {
+          "id": "01KA0000000000000000000003",
+          "ts": "2026-11-17T09:00:01Z"
+        },
+        {
+          "id": "01KA0000000000000000000002",
+          "ts": "2026-11-17T09:00:00Z"
+        },
+        {
+          "id": "01KA0000000000000000000001",
+          "ts": "2026-11-17T09:00:00Z"
+        }
+      ],
+      "expect": [
+        "01KA0000000000000000000001",
+        "01KA0000000000000000000002",
+        "01KA0000000000000000000003"
+      ]
+    },
+    {
+      "name": "the instant counts, not the text",
+      "note": "10:00:00+01:00 and 09:00:00Z are one instant: the id decides",
+      "events": [
+        {
+          "id": "01KA0000000000000000000002",
+          "ts": "2026-11-17T10:00:00+01:00"
+        },
+        {
+          "id": "01KA0000000000000000000001",
+          "ts": "2026-11-17T09:00:00Z"
+        }
+      ],
+      "expect": [
+        "01KA0000000000000000000001",
+        "01KA0000000000000000000002"
+      ]
+    },
+    {
+      "name": "milliseconds of a local copy order before the id",
+      "note": "a copy that still carries milliseconds orders by them; the stored (whole-second) copies of the same events order by id (envelope.json): send whole seconds",
+      "events": [
+        {
+          "id": "01KA0000000000000000000001",
+          "ts": "2026-11-17T09:00:00.900Z"
+        },
+        {
+          "id": "01KA0000000000000000000002",
+          "ts": "2026-11-17T09:00:00.100Z"
+        }
+      ],
+      "expect": [
+        "01KA0000000000000000000002",
+        "01KA0000000000000000000001"
+      ]
+    }
+  ]
+}

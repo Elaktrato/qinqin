@@ -1,4 +1,6 @@
-import { studyDay } from '../time/studyDay';
+import { studyDay, type ZoneChange } from '../time/studyDay';
+import activityFixture from '../../../../../docs/contracts/events/activity.json';
+import payloadsFixture from '../../../../../docs/contracts/events/payloads.json';
 import { describe, expect, it } from 'vitest';
 
 import {
@@ -175,4 +177,65 @@ describe('formatDuration', () => {
 		expect(formatDuration(-5)).toBe('0 min');
 		expect(formatDuration(Number.NaN)).toBe('0 min');
 	});
+});
+
+describe('docs/contracts/events/payloads.json: how read payloads count', () => {
+	interface ConsumeCase {
+		kind: string;
+		type: string;
+		name: string;
+		payloads?: { payload: unknown; seconds: number; points: number }[];
+		history?: ZoneChange[];
+		now?: string;
+		events?: { ts: string; type: string; payload: unknown }[];
+		expect?: unknown;
+	}
+	const fixture = payloadsFixture as unknown as { constants: { maxReadSeconds: number }; cases: ConsumeCase[] };
+	const cases = fixture.cases.filter((x) => x.kind === 'consume' && x.type === 'read');
+	it('uses the cap of the fixture', () => {
+		expect(MAX_READ_SECONDS).toBe(fixture.constants.maxReadSeconds);
+		expect(cases.length).toBeGreaterThan(1);
+	});
+	for (const c of cases) {
+		it(c.name, () => {
+			for (const p of c.payloads ?? []) {
+				expect(readSeconds(p.payload), JSON.stringify(p.payload)).toBe(p.seconds);
+				expect(readingPoints(p.payload), JSON.stringify(p.payload)).toBe(p.points);
+			}
+			if (c.events) {
+				expect(readingTotals(c.events, new Date(c.now!), studyDay(c.history!))).toEqual(c.expect);
+			}
+		});
+	}
+});
+
+describe('docs/contracts/events/activity.json: read cells per event, as the server scores them', () => {
+	const fixture = activityFixture as unknown as {
+		cases: {
+			name: string;
+			history: ZoneChange[];
+			events: { ts: string; type: string; workspace?: number; payload: unknown }[];
+			cells: { day: string; workspace: number; type: string; points: number; raw: number }[];
+		}[];
+	};
+	const cases = fixture.cases.filter((c) => c.events.some((e) => e.type === 'read'));
+	it('has read cases', () => expect(cases.length).toBeGreaterThanOrEqual(6));
+	for (const c of cases) {
+		it(c.name, () => {
+			const day = studyDay(c.history);
+			const cells = new Map<string, { day: string; workspace: number; type: string; points: number; raw: number }>();
+			for (const e of c.events) {
+				if (e.type !== 'read') continue;
+				const points = readingPoints(e.payload);
+				if (points === 0) continue;
+				const d = day.dayOf(Date.parse(e.ts));
+				const ws = e.workspace ?? 1;
+				const cell = cells.get(`${d}|${ws}`) ?? { day: d, workspace: ws, type: 'read', points: 0, raw: 0 };
+				cell.points += points;
+				cell.raw += readSeconds(e.payload);
+				cells.set(`${d}|${ws}`, cell);
+			}
+			expect([...cells.values()]).toEqual(c.cells.filter((cell) => cell.type === 'read'));
+		});
+	}
 });

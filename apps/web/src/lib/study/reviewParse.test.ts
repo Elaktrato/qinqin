@@ -1,7 +1,15 @@
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 import type { StudyEvent } from '../events';
 import { cardKey, parseReview } from './reviewParse';
+
+// Read with JSON.parse, not imported: a JSON import turns 1e999 into null, the
+// fixture means Infinity (what JSON.parse makes of a stored 1e999).
+const reviewParseFixture: unknown = JSON.parse(
+	readFileSync(resolve(__dirname, '../../../../../docs/contracts/events/review-parse.json'), 'utf8')
+);
 
 function event(payload: unknown, overrides: Partial<StudyEvent> = {}): StudyEvent {
 	return {
@@ -72,4 +80,30 @@ describe('cardKey', () => {
 		expect(cardKey('vocab', 1)).not.toBe(cardKey('vocab', 2));
 		expect(cardKey('vocab', 1)).toBe(cardKey('vocab', 1));
 	});
+});
+
+describe('docs/contracts/events/review-parse.json: parseReview', () => {
+	const fixture = reviewParseFixture as unknown as {
+		rule: string;
+		cases: { name: string; event: StudyEvent; parsed: unknown }[];
+	};
+	it('has cases', () => {
+		expect(fixture.rule).toBe('events/review-parse');
+		expect(fixture.cases.length).toBeGreaterThan(20);
+		const overflow = fixture.cases.find((c) => c.name === 'an overflowing durationMs drops meta');
+		expect((overflow?.event.payload as { meta: { durationMs: number } }).meta.durationMs).toBe(Infinity);
+	});
+	for (const c of fixture.cases) {
+		it(c.name, () => {
+			const got = parseReview(c.event);
+			if (c.parsed === null) {
+				expect(got).toBeNull();
+				return;
+			}
+			const { payload, ...envelope } = got!;
+			const { payload: _raw, ...sent } = c.event;
+			expect(envelope).toEqual({ ...sent, type: 'review' });
+			expect(payload).toEqual(c.parsed);
+		});
+	}
 });

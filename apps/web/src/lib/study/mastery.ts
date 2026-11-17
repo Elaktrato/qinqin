@@ -25,7 +25,7 @@ export interface CharMastery {
 }
 
 // A year of stability is the ceiling: the formula reaches 1.0 there.
-const MAX_STABILITY_DAYS = 365;
+export const MAX_STABILITY_DAYS = 365;
 const MAX_LOG = Math.log2(1 + MAX_STABILITY_DAYS);
 
 function clamp01(value: number): number {

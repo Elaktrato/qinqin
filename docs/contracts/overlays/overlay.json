@@ -1,0 +1,702 @@
+{
+ "version": 1,
+ "rule": "overlays/overlay",
+ "entry": {
+  "language": "zh",
+  "kind": "character",
+  "key": "发",
+  "written": "发",
+  "readings": [
+   {
+    "type": "pinyin",
+    "value": "fā",
+    "plain": "fa",
+    "ord": 0
+   },
+   {
+    "type": "bopomofo",
+    "value": "ㄈㄚ",
+    "plain": "ㄈㄚ",
+    "ord": 1
+   }
+  ]
+ },
+ "cases": [
+  {
+   "name": "unknown id with a bad body is 404",
+   "note": "the entry is checked before the body: 404 before 400",
+   "steps": [
+    {
+     "unknownId": true,
+     "put": {
+      "written": ""
+     },
+     "expect": {
+      "status": 404,
+      "text": "entry not found\n"
+     }
+    }
+   ],
+   "row": null
+  },
+  {
+   "name": "a blank written is 400",
+   "note": "written, when not null, must have a non-space character; nothing is stored",
+   "steps": [
+    {
+     "put": {
+      "written": "  "
+     },
+     "expect": {
+      "status": 400,
+      "text": "written must not be empty\n"
+     }
+    }
+   ],
+   "row": null
+  },
+  {
+   "name": "a reading with a blank value is 400",
+   "note": "every reading needs a non-blank type and value; nothing is stored",
+   "steps": [
+    {
+     "put": {
+      "readings": [
+       {
+        "type": "pinyin",
+        "value": " "
+       }
+      ]
+     },
+     "expect": {
+      "status": 400,
+      "text": "each reading needs a type and a value\n"
+     }
+    }
+   ],
+   "row": null
+  },
+  {
+   "name": "a reading with a blank type is 400",
+   "note": "every reading needs a non-blank type and value",
+   "steps": [
+    {
+     "put": {
+      "readings": [
+       {
+        "type": "",
+        "value": "fa1"
+       }
+      ]
+     },
+     "expect": {
+      "status": 400,
+      "text": "each reading needs a type and a value\n"
+     }
+    }
+   ],
+   "row": null
+  },
+  {
+   "name": "a malformed body is 400",
+   "note": "written must be a string or null",
+   "steps": [
+    {
+     "put": {
+      "written": 5
+     },
+     "expect": {
+      "status": 400,
+      "text": "malformed request body\n"
+     }
+    }
+   ],
+   "row": null
+  },
+  {
+   "name": "written only",
+   "note": "readings absent (null) stay the shared readings",
+   "steps": [
+    {
+     "put": {
+      "written": "發"
+     },
+     "expect": {
+      "status": 200,
+      "written": "發",
+      "readings": [
+       {
+        "type": "pinyin",
+        "value": "fā",
+        "plain": "fa",
+        "ord": 0
+       },
+       {
+        "type": "bopomofo",
+        "value": "ㄈㄚ",
+        "plain": "ㄈㄚ",
+        "ord": 1
+       }
+      ]
+     }
+    }
+   ],
+   "row": {
+    "written": "發",
+    "readings": null,
+    "fresh": true
+   }
+  },
+  {
+   "name": "readings only",
+   "note": "the readings replace the shared readings exactly as sent (nothing derived)",
+   "steps": [
+    {
+     "put": {
+      "readings": [
+       {
+        "type": "pinyin",
+        "value": "fa4"
+       }
+      ]
+     },
+     "expect": {
+      "status": 200,
+      "written": "发",
+      "readings": [
+       {
+        "type": "pinyin",
+        "value": "fa4",
+        "plain": "",
+        "ord": 0
+       }
+      ]
+     }
+    }
+   ],
+   "row": {
+    "written": null,
+    "readings": [
+     {
+      "type": "pinyin",
+      "value": "fa4",
+      "plain": "",
+      "ord": 0
+     }
+    ],
+    "fresh": true
+   }
+  },
+  {
+   "name": "readings [] shows no readings",
+   "note": "an empty list is stored and the entry then shows no readings",
+   "steps": [
+    {
+     "put": {
+      "written": null,
+      "readings": []
+     },
+     "expect": {
+      "status": 200,
+      "written": "发",
+      "readings": []
+     }
+    }
+   ],
+   "row": {
+    "written": null,
+    "readings": [],
+    "fresh": true
+   }
+  },
+  {
+   "name": "written is stored as sent",
+   "note": "the blank check trims, the stored value is not trimmed",
+   "steps": [
+    {
+     "put": {
+      "written": " 發 "
+     },
+     "expect": {
+      "status": 200,
+      "written": " 發 ",
+      "readings": [
+       {
+        "type": "pinyin",
+        "value": "fā",
+        "plain": "fa",
+        "ord": 0
+       },
+       {
+        "type": "bopomofo",
+        "value": "ㄈㄚ",
+        "plain": "ㄈㄚ",
+        "ord": 1
+       }
+      ]
+     }
+    }
+   ],
+   "row": {
+    "written": " 發 ",
+    "readings": null,
+    "fresh": true
+   }
+  },
+  {
+   "name": "unknown body members are ignored",
+   "note": "only written and readings are read",
+   "steps": [
+    {
+     "put": {
+      "written": "發",
+      "glosses": [
+       "x"
+      ]
+     },
+     "expect": {
+      "status": 200,
+      "written": "發",
+      "readings": [
+       {
+        "type": "pinyin",
+        "value": "fā",
+        "plain": "fa",
+        "ord": 0
+       },
+       {
+        "type": "bopomofo",
+        "value": "ㄈㄚ",
+        "plain": "ㄈㄚ",
+        "ord": 1
+       }
+      ]
+     }
+    }
+   ],
+   "row": {
+    "written": "發",
+    "readings": null,
+    "fresh": true
+   }
+  },
+  {
+   "name": "a new patch replaces the previous one wholesale",
+   "note": "the second PUT has no written, so written is untouched (shared) again",
+   "steps": [
+    {
+     "put": {
+      "written": "發",
+      "readings": [
+       {
+        "type": "pinyin",
+        "value": "fa4"
+       }
+      ]
+     },
+     "expect": {
+      "status": 200,
+      "written": "發",
+      "readings": [
+       {
+        "type": "pinyin",
+        "value": "fa4",
+        "plain": "",
+        "ord": 0
+       }
+      ]
+     }
+    },
+    {
+     "put": {
+      "readings": [
+       {
+        "type": "pinyin",
+        "value": "fa1"
+       }
+      ]
+     },
+     "expect": {
+      "status": 200,
+      "written": "发",
+      "readings": [
+       {
+        "type": "pinyin",
+        "value": "fa1",
+        "plain": "",
+        "ord": 0
+       }
+      ]
+     }
+    }
+   ],
+   "row": {
+    "written": null,
+    "readings": [
+     {
+      "type": "pinyin",
+      "value": "fa1",
+      "plain": "",
+      "ord": 0
+     }
+    ],
+    "fresh": true
+   }
+  },
+  {
+   "name": "the later arrival wins",
+   "note": "the server stamps each PUT with its own clock; the last one to arrive is the patch",
+   "steps": [
+    {
+     "put": {
+      "written": "A"
+     },
+     "expect": {
+      "status": 200,
+      "written": "A",
+      "readings": [
+       {
+        "type": "pinyin",
+        "value": "fā",
+        "plain": "fa",
+        "ord": 0
+       },
+       {
+        "type": "bopomofo",
+        "value": "ㄈㄚ",
+        "plain": "ㄈㄚ",
+        "ord": 1
+       }
+      ]
+     }
+    },
+    {
+     "put": {
+      "written": "B"
+     },
+     "expect": {
+      "status": 200,
+      "written": "B",
+      "readings": [
+       {
+        "type": "pinyin",
+        "value": "fā",
+        "plain": "fa",
+        "ord": 0
+       },
+       {
+        "type": "bopomofo",
+        "value": "ㄈㄚ",
+        "plain": "ㄈㄚ",
+        "ord": 1
+       }
+      ]
+     }
+    }
+   ],
+   "row": {
+    "written": "B",
+    "readings": null,
+    "fresh": true
+   }
+  },
+  {
+   "name": "an all-null patch reverts and keeps its row with a fresh stamp",
+   "note": "{} (or both null) shows the shared values; the row stays, stamped anew, so other devices learn of the revert",
+   "steps": [
+    {
+     "put": {
+      "written": "發"
+     },
+     "expect": {
+      "status": 200,
+      "written": "發",
+      "readings": [
+       {
+        "type": "pinyin",
+        "value": "fā",
+        "plain": "fa",
+        "ord": 0
+       },
+       {
+        "type": "bopomofo",
+        "value": "ㄈㄚ",
+        "plain": "ㄈㄚ",
+        "ord": 1
+       }
+      ]
+     }
+    },
+    {
+     "age": true
+    },
+    {
+     "put": {},
+     "expect": {
+      "status": 200,
+      "written": "发",
+      "readings": [
+       {
+        "type": "pinyin",
+        "value": "fā",
+        "plain": "fa",
+        "ord": 0
+       },
+       {
+        "type": "bopomofo",
+        "value": "ㄈㄚ",
+        "plain": "ㄈㄚ",
+        "ord": 1
+       }
+      ]
+     }
+    }
+   ],
+   "row": {
+    "written": null,
+    "readings": null,
+    "fresh": true
+   }
+  }
+ ],
+ "apply": [
+  {
+   "name": "no row: the shared entry",
+   "note": "without a stored patch nothing changes",
+   "shared": {
+    "readings": [
+     {
+      "type": "pinyin",
+      "value": "fā",
+      "plain": "fa",
+      "ord": 0
+     },
+     {
+      "type": "bopomofo",
+      "value": "ㄈㄚ",
+      "plain": "ㄈㄚ",
+      "ord": 1
+     }
+    ],
+    "written": "发"
+   },
+   "row": null,
+   "expect": {
+    "readings": [
+     {
+      "type": "pinyin",
+      "value": "fā",
+      "plain": "fa",
+      "ord": 0
+     },
+     {
+      "type": "bopomofo",
+      "value": "ㄈㄚ",
+      "plain": "ㄈㄚ",
+      "ord": 1
+     }
+    ],
+    "written": "发"
+   }
+  },
+  {
+   "name": "written replaced, readings untouched",
+   "note": "a non-null written replaces the written form; null readings keep the shared readings",
+   "shared": {
+    "readings": [
+     {
+      "type": "pinyin",
+      "value": "fā",
+      "plain": "fa",
+      "ord": 0
+     },
+     {
+      "type": "bopomofo",
+      "value": "ㄈㄚ",
+      "plain": "ㄈㄚ",
+      "ord": 1
+     }
+    ],
+    "written": "发"
+   },
+   "row": {
+    "written": "發",
+    "readings": null
+   },
+   "expect": {
+    "written": "發",
+    "readings": [
+     {
+      "type": "pinyin",
+      "value": "fā",
+      "plain": "fa",
+      "ord": 0
+     },
+     {
+      "type": "bopomofo",
+      "value": "ㄈㄚ",
+      "plain": "ㄈㄚ",
+      "ord": 1
+     }
+    ]
+   }
+  },
+  {
+   "name": "readings replaced exactly",
+   "note": "non-null readings replace the shared list as stored, nothing derived",
+   "shared": {
+    "readings": [
+     {
+      "type": "pinyin",
+      "value": "fā",
+      "plain": "fa",
+      "ord": 0
+     },
+     {
+      "type": "bopomofo",
+      "value": "ㄈㄚ",
+      "plain": "ㄈㄚ",
+      "ord": 1
+     }
+    ],
+    "written": "发"
+   },
+   "row": {
+    "written": null,
+    "readings": [
+     {
+      "type": "pinyin",
+      "value": "fa4",
+      "plain": "",
+      "ord": 0
+     }
+    ]
+   },
+   "expect": {
+    "written": "发",
+    "readings": [
+     {
+      "type": "pinyin",
+      "value": "fa4",
+      "plain": "",
+      "ord": 0
+     }
+    ]
+   }
+  },
+  {
+   "name": "an empty readings list shows no readings",
+   "note": "[] is not null: the entry shows no readings",
+   "shared": {
+    "readings": [
+     {
+      "type": "pinyin",
+      "value": "fā",
+      "plain": "fa",
+      "ord": 0
+     },
+     {
+      "type": "bopomofo",
+      "value": "ㄈㄚ",
+      "plain": "ㄈㄚ",
+      "ord": 1
+     }
+    ],
+    "written": "发"
+   },
+   "row": {
+    "written": null,
+    "readings": []
+   },
+   "expect": {
+    "written": "发",
+    "readings": []
+   }
+  },
+  {
+   "name": "a row of two nulls is the shared entry",
+   "note": "a revert row changes nothing",
+   "shared": {
+    "readings": [
+     {
+      "type": "pinyin",
+      "value": "fā",
+      "plain": "fa",
+      "ord": 0
+     },
+     {
+      "type": "bopomofo",
+      "value": "ㄈㄚ",
+      "plain": "ㄈㄚ",
+      "ord": 1
+     }
+    ],
+    "written": "发"
+   },
+   "row": {
+    "written": null,
+    "readings": null
+   },
+   "expect": {
+    "readings": [
+     {
+      "type": "pinyin",
+      "value": "fā",
+      "plain": "fa",
+      "ord": 0
+     },
+     {
+      "type": "bopomofo",
+      "value": "ㄈㄚ",
+      "plain": "ㄈㄚ",
+      "ord": 1
+     }
+    ],
+    "written": "发"
+   }
+  },
+  {
+   "name": "both replaced",
+   "note": "written and readings both from the patch",
+   "shared": {
+    "readings": [
+     {
+      "type": "pinyin",
+      "value": "fā",
+      "plain": "fa",
+      "ord": 0
+     },
+     {
+      "type": "bopomofo",
+      "value": "ㄈㄚ",
+      "plain": "ㄈㄚ",
+      "ord": 1
+     }
+    ],
+    "written": "发"
+   },
+   "row": {
+    "written": "發",
+    "readings": [
+     {
+      "type": "pinyin",
+      "value": "fa1",
+      "plain": "",
+      "ord": 0
+     }
+    ]
+   },
+   "expect": {
+    "written": "發",
+    "readings": [
+     {
+      "type": "pinyin",
+      "value": "fa1",
+      "plain": "",
+      "ord": 0
+     }
+    ]
+   }
+  }
+ ]
+}

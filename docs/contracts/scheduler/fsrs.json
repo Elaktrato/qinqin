@@ -1,0 +1,3089 @@
+{
+  "version": 1,
+  "rule": "scheduler/fsrs",
+  "generator": "scripts/contracts/gen-scheduler-fixtures.mjs",
+  "tsFsrs": "5.4.2",
+  "parameters": {
+    "request_retention": 0.9,
+    "maximum_interval": 36500,
+    "w": [
+      0.212,
+      1.2931,
+      2.3065,
+      8.2956,
+      6.4133,
+      0.8334,
+      3.0194,
+      0.001,
+      1.8722,
+      0.1666,
+      0.796,
+      1.4835,
+      0.0614,
+      0.2629,
+      1.6483,
+      0.6014,
+      1.8729,
+      0.5425,
+      0.0912,
+      0.0658,
+      0.1542
+    ],
+    "enable_fuzz": false,
+    "enable_short_term": true,
+    "learning_steps": [
+      "1m",
+      "10m"
+    ],
+    "relearning_steps": [
+      "10m"
+    ]
+  },
+  "clampRanges": [
+    [
+      0.001,
+      100
+    ],
+    [
+      0.001,
+      100
+    ],
+    [
+      0.001,
+      100
+    ],
+    [
+      0.001,
+      100
+    ],
+    [
+      1,
+      10
+    ],
+    [
+      0.001,
+      4
+    ],
+    [
+      0.001,
+      4
+    ],
+    [
+      0.001,
+      0.75
+    ],
+    [
+      0,
+      4.5
+    ],
+    [
+      0,
+      0.8
+    ],
+    [
+      0.001,
+      3.5
+    ],
+    [
+      0.001,
+      5
+    ],
+    [
+      0.001,
+      0.25
+    ],
+    [
+      0.001,
+      0.9
+    ],
+    [
+      0,
+      4
+    ],
+    [
+      0,
+      1
+    ],
+    [
+      1,
+      6
+    ],
+    [
+      0,
+      2
+    ],
+    [
+      0,
+      2
+    ],
+    [
+      0.01,
+      0.8
+    ],
+    [
+      0.1,
+      0.8
+    ]
+  ],
+  "weights": [
+    {
+      "name": "the 21 default weights",
+      "note": "FSRS-6 defaults are valid and migrate to themselves",
+      "w": [
+        0.212,
+        1.2931,
+        2.3065,
+        8.2956,
+        6.4133,
+        0.8334,
+        3.0194,
+        0.001,
+        1.8722,
+        0.1666,
+        0.796,
+        1.4835,
+        0.0614,
+        0.2629,
+        1.6483,
+        0.6014,
+        1.8729,
+        0.5425,
+        0.0912,
+        0.0658,
+        0.1542
+      ],
+      "expect": {
+        "ok": true,
+        "migrated": [
+          0.212,
+          1.2931,
+          2.3065,
+          8.2956,
+          6.4133,
+          0.8334,
+          3.0194,
+          0.001,
+          1.8722,
+          0.1666,
+          0.796,
+          1.4835,
+          0.0614,
+          0.2629,
+          1.6483,
+          0.6014,
+          1.8729,
+          0.5425,
+          0.0912,
+          0.0658,
+          0.1542
+        ]
+      }
+    },
+    {
+      "name": "a custom 21-weight set",
+      "note": "inside every clamp range: kept as given",
+      "w": [
+        0.3,
+        1.1,
+        2.9,
+        9.5,
+        6.9,
+        0.7,
+        2.5,
+        0.01,
+        1.6,
+        0.2,
+        0.9,
+        1.6,
+        0.08,
+        0.3,
+        1.5,
+        0.5,
+        2.2,
+        0.6,
+        0.15,
+        0.1,
+        0.25
+      ],
+      "expect": {
+        "ok": true,
+        "migrated": [
+          0.3,
+          1.1,
+          2.9,
+          9.5,
+          6.9,
+          0.7,
+          2.5,
+          0.01,
+          1.6,
+          0.2,
+          0.9,
+          1.6,
+          0.08,
+          0.3,
+          1.5,
+          0.5,
+          2.2,
+          0.6,
+          0.15,
+          0.1,
+          0.25
+        ]
+      }
+    },
+    {
+      "name": "19 weights (FSRS-5) migrate to 21",
+      "note": "w19 = 0 and w20 = 0.5 (the FSRS-5 decay) are appended",
+      "w": [
+        0.40255,
+        1.18385,
+        3.173,
+        15.69105,
+        7.1949,
+        0.5345,
+        1.4604,
+        0.0046,
+        1.54575,
+        0.1192,
+        1.01925,
+        1.9395,
+        0.11,
+        0.29605,
+        2.2698,
+        0.2315,
+        2.9898,
+        0.51655,
+        0.6621
+      ],
+      "expect": {
+        "ok": true,
+        "migrated": [
+          0.40255,
+          1.18385,
+          3.173,
+          15.69105,
+          7.1949,
+          0.5345,
+          1.4604,
+          0.0046,
+          1.54575,
+          0.1192,
+          1.01925,
+          1.9395,
+          0.11,
+          0.29605,
+          2.2698,
+          0.2315,
+          2.9898,
+          0.51655,
+          0.6621,
+          0,
+          0.5
+        ]
+      }
+    },
+    {
+      "name": "17 weights (FSRS-4.5) migrate to 21",
+      "note": "w4..w6 are converted, w17..w20 = 0, 0, 0, 0.5 appended",
+      "w": [
+        0.4872,
+        1.4003,
+        3.7145,
+        13.8206,
+        5.1618,
+        1.2298,
+        0.8975,
+        0.031,
+        1.6474,
+        0.1367,
+        1.0461,
+        2.1072,
+        0.0793,
+        0.3246,
+        1.587,
+        0.2272,
+        2.8755
+      ],
+      "expect": {
+        "ok": true,
+        "migrated": [
+          0.4872,
+          1.4003,
+          3.7145,
+          13.8206,
+          7.6214,
+          0.51510155,
+          1.3975,
+          0.031,
+          1.6474,
+          0.1367,
+          1.0461,
+          2.1072,
+          0.0793,
+          0.3246,
+          1.587,
+          0.2272,
+          2.8755,
+          0,
+          0,
+          0,
+          0.5
+        ]
+      }
+    },
+    {
+      "name": "a value below its range",
+      "note": "w1 below 0.001 is rejected with its 1-based position, never clipped",
+      "w": [
+        0.0005,
+        1.2931,
+        2.3065,
+        8.2956,
+        6.4133,
+        0.8334,
+        3.0194,
+        0.001,
+        1.8722,
+        0.1666,
+        0.796,
+        1.4835,
+        0.0614,
+        0.2629,
+        1.6483,
+        0.6014,
+        1.8729,
+        0.5425,
+        0.0912,
+        0.0658,
+        0.1542
+      ],
+      "expect": {
+        "ok": false,
+        "reason": "range",
+        "position": 1
+      }
+    },
+    {
+      "name": "a value above its range",
+      "note": "w5 above 10 is rejected",
+      "w": [
+        0.212,
+        1.2931,
+        2.3065,
+        8.2956,
+        10.5,
+        0.8334,
+        3.0194,
+        0.001,
+        1.8722,
+        0.1666,
+        0.796,
+        1.4835,
+        0.0614,
+        0.2629,
+        1.6483,
+        0.6014,
+        1.8729,
+        0.5425,
+        0.0912,
+        0.0658,
+        0.1542
+      ],
+      "expect": {
+        "ok": false,
+        "reason": "range",
+        "position": 5
+      }
+    },
+    {
+      "name": "the range ends are inside",
+      "note": "min and max themselves are valid",
+      "w": [
+        0.001,
+        1.2931,
+        2.3065,
+        8.2956,
+        10,
+        0.8334,
+        3.0194,
+        0.001,
+        1.8722,
+        0.1666,
+        0.796,
+        1.4835,
+        0.0614,
+        0.2629,
+        1.6483,
+        0.6014,
+        1.8729,
+        0.5425,
+        0.0912,
+        0.0658,
+        0.1542
+      ],
+      "expect": {
+        "ok": true,
+        "migrated": [
+          0.001,
+          1.2931,
+          2.3065,
+          8.2956,
+          10,
+          0.8334,
+          3.0194,
+          0.001,
+          1.8722,
+          0.1666,
+          0.796,
+          1.4835,
+          0.0614,
+          0.2629,
+          1.6483,
+          0.6014,
+          1.8729,
+          0.5425,
+          0.0912,
+          0.0658,
+          0.1542
+        ]
+      }
+    },
+    {
+      "name": "a non-finite value",
+      "note": "Infinity (1e999 in JSON) is not finite; reported with its position",
+      "w": [
+        0.212,
+        1.2931,
+        1e999,
+        8.2956,
+        6.4133,
+        0.8334,
+        3.0194,
+        0.001,
+        1.8722,
+        0.1666,
+        0.796,
+        1.4835,
+        0.0614,
+        0.2629,
+        1.6483,
+        0.6014,
+        1.8729,
+        0.5425,
+        0.0912,
+        0.0658,
+        0.1542
+      ],
+      "expect": {
+        "ok": false,
+        "reason": "nonFinite",
+        "position": 3
+      }
+    },
+    {
+      "name": "18 numbers",
+      "note": "only 17, 19 or 21 numbers are weights",
+      "w": [
+        0.212,
+        1.2931,
+        2.3065,
+        8.2956,
+        6.4133,
+        0.8334,
+        3.0194,
+        0.001,
+        1.8722,
+        0.1666,
+        0.796,
+        1.4835,
+        0.0614,
+        0.2629,
+        1.6483,
+        0.6014,
+        1.8729,
+        0.5425
+      ],
+      "expect": {
+        "ok": false,
+        "reason": "length"
+      }
+    },
+    {
+      "name": "22 numbers",
+      "note": "only 17, 19 or 21 numbers are weights",
+      "w": [
+        0.212,
+        1.2931,
+        2.3065,
+        8.2956,
+        6.4133,
+        0.8334,
+        3.0194,
+        0.001,
+        1.8722,
+        0.1666,
+        0.796,
+        1.4835,
+        0.0614,
+        0.2629,
+        1.6483,
+        0.6014,
+        1.8729,
+        0.5425,
+        0.0912,
+        0.0658,
+        0.1542,
+        0.1
+      ],
+      "expect": {
+        "ok": false,
+        "reason": "length"
+      }
+    },
+    {
+      "name": "no numbers",
+      "note": "an empty list is the wrong length",
+      "w": [],
+      "expect": {
+        "ok": false,
+        "reason": "length"
+      }
+    },
+    {
+      "name": "a string among the numbers",
+      "note": "every member must be a JSON number",
+      "w": [
+        "0.2",
+        1.2931,
+        2.3065,
+        8.2956,
+        6.4133,
+        0.8334,
+        3.0194,
+        0.001,
+        1.8722,
+        0.1666,
+        0.796,
+        1.4835,
+        0.0614,
+        0.2629,
+        1.6483,
+        0.6014,
+        1.8729,
+        0.5425,
+        0.0912,
+        0.0658,
+        0.1542
+      ],
+      "expect": {
+        "ok": false,
+        "reason": "notNumbers"
+      }
+    },
+    {
+      "name": "not a list",
+      "note": "an object is not a weight list",
+      "w": {
+        "w": [
+          0.212,
+          1.2931,
+          2.3065,
+          8.2956,
+          6.4133,
+          0.8334,
+          3.0194,
+          0.001,
+          1.8722,
+          0.1666,
+          0.796,
+          1.4835,
+          0.0614,
+          0.2629,
+          1.6483,
+          0.6014,
+          1.8729,
+          0.5425,
+          0.0912,
+          0.0658,
+          0.1542
+        ]
+      },
+      "expect": {
+        "ok": false,
+        "reason": "notNumbers"
+      }
+    }
+  ],
+  "paramSet": [
+    {
+      "name": "an optimized set with every optional number",
+      "note": "every member kept",
+      "key": "fsrs:set:s1",
+      "raw": {
+        "id": "s1",
+        "w": [
+          0.3,
+          1.1,
+          2.9,
+          9.5,
+          6.9,
+          0.7,
+          2.5,
+          0.01,
+          1.6,
+          0.2,
+          0.9,
+          1.6,
+          0.08,
+          0.3,
+          1.5,
+          0.5,
+          2.2,
+          0.6,
+          0.15,
+          0.1,
+          0.25
+        ],
+        "createdAt": "2026-11-01T10:00:00Z",
+        "source": "optimized",
+        "labelled": 812,
+        "logLoss": 0.31,
+        "baselineLogLoss": 0.35
+      },
+      "expect": {
+        "id": "s1",
+        "w": [
+          0.3,
+          1.1,
+          2.9,
+          9.5,
+          6.9,
+          0.7,
+          2.5,
+          0.01,
+          1.6,
+          0.2,
+          0.9,
+          1.6,
+          0.08,
+          0.3,
+          1.5,
+          0.5,
+          2.2,
+          0.6,
+          0.15,
+          0.1,
+          0.25
+        ],
+        "createdAt": "2026-11-01T10:00:00Z",
+        "source": "optimized",
+        "labelled": 812,
+        "logLoss": 0.31,
+        "baselineLogLoss": 0.35
+      }
+    },
+    {
+      "name": "an imported set without optional numbers",
+      "note": "labelled, logLoss, baselineLogLoss are optional",
+      "key": "fsrs:set:s2",
+      "raw": {
+        "id": "s2",
+        "w": [
+          0.212,
+          1.2931,
+          2.3065,
+          8.2956,
+          6.4133,
+          0.8334,
+          3.0194,
+          0.001,
+          1.8722,
+          0.1666,
+          0.796,
+          1.4835,
+          0.0614,
+          0.2629,
+          1.6483,
+          0.6014,
+          1.8729,
+          0.5425,
+          0.0912,
+          0.0658,
+          0.1542
+        ],
+        "createdAt": "2026-11-02T10:00:00Z",
+        "source": "imported"
+      },
+      "expect": {
+        "id": "s2",
+        "w": [
+          0.212,
+          1.2931,
+          2.3065,
+          8.2956,
+          6.4133,
+          0.8334,
+          3.0194,
+          0.001,
+          1.8722,
+          0.1666,
+          0.796,
+          1.4835,
+          0.0614,
+          0.2629,
+          1.6483,
+          0.6014,
+          1.8729,
+          0.5425,
+          0.0912,
+          0.0658,
+          0.1542
+        ],
+        "createdAt": "2026-11-02T10:00:00Z",
+        "source": "imported"
+      }
+    },
+    {
+      "name": "the key names another id",
+      "note": "key must be fsrs:set:<id>",
+      "key": "fsrs:set:s9",
+      "raw": {
+        "id": "s1",
+        "w": [
+          0.3,
+          1.1,
+          2.9,
+          9.5,
+          6.9,
+          0.7,
+          2.5,
+          0.01,
+          1.6,
+          0.2,
+          0.9,
+          1.6,
+          0.08,
+          0.3,
+          1.5,
+          0.5,
+          2.2,
+          0.6,
+          0.15,
+          0.1,
+          0.25
+        ],
+        "createdAt": "2026-11-01T10:00:00Z",
+        "source": "optimized",
+        "labelled": 812,
+        "logLoss": 0.31,
+        "baselineLogLoss": 0.35
+      },
+      "expect": null
+    },
+    {
+      "name": "an unknown source",
+      "note": "source is optimized or imported",
+      "key": "fsrs:set:s1",
+      "raw": {
+        "id": "s1",
+        "w": [
+          0.3,
+          1.1,
+          2.9,
+          9.5,
+          6.9,
+          0.7,
+          2.5,
+          0.01,
+          1.6,
+          0.2,
+          0.9,
+          1.6,
+          0.08,
+          0.3,
+          1.5,
+          0.5,
+          2.2,
+          0.6,
+          0.15,
+          0.1,
+          0.25
+        ],
+        "createdAt": "2026-11-01T10:00:00Z",
+        "source": "manual",
+        "labelled": 812,
+        "logLoss": 0.31,
+        "baselineLogLoss": 0.35
+      },
+      "expect": null
+    },
+    {
+      "name": "19 weights in a stored set",
+      "note": "a stored set holds exactly 21 weights (migrate before storing)",
+      "key": "fsrs:set:s1",
+      "raw": {
+        "id": "s1",
+        "w": [
+          0.40255,
+          1.18385,
+          3.173,
+          15.69105,
+          7.1949,
+          0.5345,
+          1.4604,
+          0.0046,
+          1.54575,
+          0.1192,
+          1.01925,
+          1.9395,
+          0.11,
+          0.29605,
+          2.2698,
+          0.2315,
+          2.9898,
+          0.51655,
+          0.6621
+        ],
+        "createdAt": "2026-11-01T10:00:00Z",
+        "source": "optimized",
+        "labelled": 812,
+        "logLoss": 0.31,
+        "baselineLogLoss": 0.35
+      },
+      "expect": null
+    },
+    {
+      "name": "a weight out of range",
+      "note": "the weight check applies",
+      "key": "fsrs:set:s1",
+      "raw": {
+        "id": "s1",
+        "w": [
+          0.3,
+          1.1,
+          2.9,
+          9.5,
+          11,
+          0.7,
+          2.5,
+          0.01,
+          1.6,
+          0.2,
+          0.9,
+          1.6,
+          0.08,
+          0.3,
+          1.5,
+          0.5,
+          2.2,
+          0.6,
+          0.15,
+          0.1,
+          0.25
+        ],
+        "createdAt": "2026-11-01T10:00:00Z",
+        "source": "optimized",
+        "labelled": 812,
+        "logLoss": 0.31,
+        "baselineLogLoss": 0.35
+      },
+      "expect": null
+    },
+    {
+      "name": "an optional number that is a string",
+      "note": "present optional members must be finite numbers",
+      "key": "fsrs:set:s1",
+      "raw": {
+        "id": "s1",
+        "w": [
+          0.3,
+          1.1,
+          2.9,
+          9.5,
+          6.9,
+          0.7,
+          2.5,
+          0.01,
+          1.6,
+          0.2,
+          0.9,
+          1.6,
+          0.08,
+          0.3,
+          1.5,
+          0.5,
+          2.2,
+          0.6,
+          0.15,
+          0.1,
+          0.25
+        ],
+        "createdAt": "2026-11-01T10:00:00Z",
+        "source": "optimized",
+        "labelled": 812,
+        "logLoss": "0.31",
+        "baselineLogLoss": 0.35
+      },
+      "expect": null
+    },
+    {
+      "name": "an optional number that is null",
+      "note": "null is not absent",
+      "key": "fsrs:set:s1",
+      "raw": {
+        "id": "s1",
+        "w": [
+          0.3,
+          1.1,
+          2.9,
+          9.5,
+          6.9,
+          0.7,
+          2.5,
+          0.01,
+          1.6,
+          0.2,
+          0.9,
+          1.6,
+          0.08,
+          0.3,
+          1.5,
+          0.5,
+          2.2,
+          0.6,
+          0.15,
+          0.1,
+          0.25
+        ],
+        "createdAt": "2026-11-01T10:00:00Z",
+        "source": "optimized",
+        "labelled": null,
+        "logLoss": 0.31,
+        "baselineLogLoss": 0.35
+      },
+      "expect": null
+    },
+    {
+      "name": "createdAt missing",
+      "note": "id and createdAt are strings",
+      "key": "fsrs:set:s1",
+      "raw": {
+        "id": "s1",
+        "w": [
+          0.3,
+          1.1,
+          2.9,
+          9.5,
+          6.9,
+          0.7,
+          2.5,
+          0.01,
+          1.6,
+          0.2,
+          0.9,
+          1.6,
+          0.08,
+          0.3,
+          1.5,
+          0.5,
+          2.2,
+          0.6,
+          0.15,
+          0.1,
+          0.25
+        ],
+        "source": "optimized"
+      },
+      "expect": null
+    },
+    {
+      "name": "not an object",
+      "note": "a row value is an object",
+      "key": "fsrs:set:s1",
+      "raw": [
+        [
+          0.3,
+          1.1,
+          2.9,
+          9.5,
+          6.9,
+          0.7,
+          2.5,
+          0.01,
+          1.6,
+          0.2,
+          0.9,
+          1.6,
+          0.08,
+          0.3,
+          1.5,
+          0.5,
+          2.2,
+          0.6,
+          0.15,
+          0.1,
+          0.25
+        ]
+      ],
+      "expect": null
+    }
+  ],
+  "resolve": [
+    {
+      "name": "pointer to a set",
+      "note": "newest first; equal createdAt: the larger id first",
+      "sets": [
+        {
+          "id": "a",
+          "w": [
+            0.3,
+            1.1,
+            2.9,
+            9.5,
+            6.9,
+            0.7,
+            2.5,
+            0.01,
+            1.6,
+            0.2,
+            0.9,
+            1.6,
+            0.08,
+            0.3,
+            1.5,
+            0.5,
+            2.2,
+            0.6,
+            0.15,
+            0.1,
+            0.25
+          ],
+          "createdAt": "2026-10-01T00:00:00Z",
+          "source": "optimized"
+        },
+        {
+          "id": "b",
+          "w": [
+            0.212,
+            1.2931,
+            2.3065,
+            8.2956,
+            6.4133,
+            0.8334,
+            3.0194,
+            0.001,
+            1.8722,
+            0.1666,
+            0.796,
+            1.4835,
+            0.0614,
+            0.2629,
+            1.6483,
+            0.6014,
+            1.8729,
+            0.5425,
+            0.0912,
+            0.0658,
+            0.1542
+          ],
+          "createdAt": "2026-11-01T00:00:00Z",
+          "source": "imported"
+        },
+        {
+          "id": "c",
+          "w": [
+            0.3,
+            1.1,
+            2.9,
+            9.5,
+            6.9,
+            0.7,
+            2.5,
+            0.01,
+            1.6,
+            0.2,
+            0.9,
+            1.6,
+            0.08,
+            0.3,
+            1.5,
+            0.5,
+            2.2,
+            0.6,
+            0.15,
+            0.1,
+            0.25
+          ],
+          "createdAt": "2026-11-01T00:00:00Z",
+          "source": "optimized"
+        }
+      ],
+      "active": {
+        "setId": "a"
+      },
+      "expect": {
+        "order": [
+          "c",
+          "b",
+          "a"
+        ],
+        "active": "a",
+        "w": "a",
+        "pointer": "a"
+      }
+    },
+    {
+      "name": "no pointer row",
+      "note": "no pointer: the default weights",
+      "sets": [
+        {
+          "id": "a",
+          "w": [
+            0.3,
+            1.1,
+            2.9,
+            9.5,
+            6.9,
+            0.7,
+            2.5,
+            0.01,
+            1.6,
+            0.2,
+            0.9,
+            1.6,
+            0.08,
+            0.3,
+            1.5,
+            0.5,
+            2.2,
+            0.6,
+            0.15,
+            0.1,
+            0.25
+          ],
+          "createdAt": "2026-10-01T00:00:00Z",
+          "source": "optimized"
+        }
+      ],
+      "active": null,
+      "expect": {
+        "order": [
+          "a"
+        ],
+        "active": null,
+        "w": "default",
+        "pointer": null
+      }
+    },
+    {
+      "name": "a dangling pointer",
+      "note": "a pointer to a set that is not there means the defaults; the pointer is still reported",
+      "sets": [
+        {
+          "id": "a",
+          "w": [
+            0.3,
+            1.1,
+            2.9,
+            9.5,
+            6.9,
+            0.7,
+            2.5,
+            0.01,
+            1.6,
+            0.2,
+            0.9,
+            1.6,
+            0.08,
+            0.3,
+            1.5,
+            0.5,
+            2.2,
+            0.6,
+            0.15,
+            0.1,
+            0.25
+          ],
+          "createdAt": "2026-10-01T00:00:00Z",
+          "source": "optimized"
+        }
+      ],
+      "active": {
+        "setId": "gone"
+      },
+      "expect": {
+        "order": [
+          "a"
+        ],
+        "active": null,
+        "w": "default",
+        "pointer": "gone"
+      }
+    },
+    {
+      "name": "setId null",
+      "note": "a null setId is no pointer",
+      "sets": [
+        {
+          "id": "a",
+          "w": [
+            0.3,
+            1.1,
+            2.9,
+            9.5,
+            6.9,
+            0.7,
+            2.5,
+            0.01,
+            1.6,
+            0.2,
+            0.9,
+            1.6,
+            0.08,
+            0.3,
+            1.5,
+            0.5,
+            2.2,
+            0.6,
+            0.15,
+            0.1,
+            0.25
+          ],
+          "createdAt": "2026-10-01T00:00:00Z",
+          "source": "optimized"
+        }
+      ],
+      "active": {
+        "setId": null
+      },
+      "expect": {
+        "order": [
+          "a"
+        ],
+        "active": null,
+        "w": "default",
+        "pointer": null
+      }
+    },
+    {
+      "name": "setId not a string",
+      "note": "only a string names a set",
+      "sets": [
+        {
+          "id": "a",
+          "w": [
+            0.3,
+            1.1,
+            2.9,
+            9.5,
+            6.9,
+            0.7,
+            2.5,
+            0.01,
+            1.6,
+            0.2,
+            0.9,
+            1.6,
+            0.08,
+            0.3,
+            1.5,
+            0.5,
+            2.2,
+            0.6,
+            0.15,
+            0.1,
+            0.25
+          ],
+          "createdAt": "2026-10-01T00:00:00Z",
+          "source": "optimized"
+        }
+      ],
+      "active": {
+        "setId": 1
+      },
+      "expect": {
+        "order": [
+          "a"
+        ],
+        "active": null,
+        "w": "default",
+        "pointer": null
+      }
+    }
+  ],
+  "replay": [
+    {
+      "name": "new card: Again, then Good through both learning steps, then a day",
+      "note": "learning steps 1m and 10m, then the review state",
+      "w": "default",
+      "reviews": [
+        {
+          "id": "01KA0000000000000000000001",
+          "ts": "2026-01-05T09:00:00Z",
+          "grade": 1
+        },
+        {
+          "id": "01KA0000000000000000000002",
+          "ts": "2026-01-05T09:01:00Z",
+          "grade": 3
+        },
+        {
+          "id": "01KA0000000000000000000003",
+          "ts": "2026-01-05T09:11:00Z",
+          "grade": 3
+        },
+        {
+          "id": "01KA0000000000000000000004",
+          "ts": "2026-01-06T09:11:00Z",
+          "grade": 3
+        }
+      ],
+      "order": [
+        "01KA0000000000000000000001",
+        "01KA0000000000000000000002",
+        "01KA0000000000000000000003",
+        "01KA0000000000000000000004"
+      ],
+      "points": [
+        {
+          "due": "2026-01-05T09:01:00Z",
+          "stability": 0.212,
+          "difficulty": 6.4133,
+          "state": 1,
+          "reps": 1,
+          "lapses": 0,
+          "scheduled_days": 0,
+          "learning_steps": 0
+        },
+        {
+          "due": "2026-01-05T09:11:00Z",
+          "stability": 0.24668919,
+          "difficulty": 6.40211507,
+          "state": 1,
+          "reps": 2,
+          "lapses": 0,
+          "scheduled_days": 0,
+          "learning_steps": 1
+        },
+        {
+          "due": "2026-01-06T09:11:00Z",
+          "stability": 0.28420636,
+          "difficulty": 6.39094132,
+          "state": 2,
+          "reps": 3,
+          "lapses": 0,
+          "scheduled_days": 1,
+          "learning_steps": 0
+        },
+        {
+          "due": "2026-01-08T09:11:00Z",
+          "stability": 2.15207825,
+          "difficulty": 6.37977875,
+          "state": 2,
+          "reps": 4,
+          "lapses": 0,
+          "scheduled_days": 2,
+          "learning_steps": 0
+        }
+      ]
+    },
+    {
+      "name": "new card Good twice in learning",
+      "note": "Good on a new card goes to the 10m step; Good at the step graduates",
+      "w": "default",
+      "reviews": [
+        {
+          "id": "01KA0000000000000000000001",
+          "ts": "2026-01-05T09:00:00Z",
+          "grade": 3
+        },
+        {
+          "id": "01KA0000000000000000000002",
+          "ts": "2026-01-05T09:10:00Z",
+          "grade": 3
+        }
+      ],
+      "order": [
+        "01KA0000000000000000000001",
+        "01KA0000000000000000000002"
+      ],
+      "points": [
+        {
+          "due": "2026-01-05T09:10:00Z",
+          "stability": 2.3065,
+          "difficulty": 2.11810397,
+          "state": 1,
+          "reps": 1,
+          "lapses": 0,
+          "scheduled_days": 0,
+          "learning_steps": 1
+        },
+        {
+          "due": "2026-01-07T09:10:00Z",
+          "stability": 2.3065,
+          "difficulty": 2.11121424,
+          "state": 2,
+          "reps": 2,
+          "lapses": 0,
+          "scheduled_days": 2,
+          "learning_steps": 0
+        }
+      ]
+    },
+    {
+      "name": "Again repeated in learning",
+      "note": "Again stays on the first step",
+      "w": "default",
+      "reviews": [
+        {
+          "id": "01KA0000000000000000000001",
+          "ts": "2026-01-05T09:00:00Z",
+          "grade": 1
+        },
+        {
+          "id": "01KA0000000000000000000002",
+          "ts": "2026-01-05T09:01:00Z",
+          "grade": 1
+        },
+        {
+          "id": "01KA0000000000000000000003",
+          "ts": "2026-01-05T09:02:00Z",
+          "grade": 1
+        },
+        {
+          "id": "01KA0000000000000000000004",
+          "ts": "2026-01-05T09:03:00Z",
+          "grade": 3
+        },
+        {
+          "id": "01KA0000000000000000000005",
+          "ts": "2026-01-05T09:13:00Z",
+          "grade": 3
+        }
+      ],
+      "order": [
+        "01KA0000000000000000000001",
+        "01KA0000000000000000000002",
+        "01KA0000000000000000000003",
+        "01KA0000000000000000000004",
+        "01KA0000000000000000000005"
+      ],
+      "points": [
+        {
+          "due": "2026-01-05T09:01:00Z",
+          "stability": 0.212,
+          "difficulty": 6.4133,
+          "state": 1,
+          "reps": 1,
+          "lapses": 0,
+          "scheduled_days": 0,
+          "learning_steps": 0
+        },
+        {
+          "due": "2026-01-05T09:02:00Z",
+          "stability": 0.08335672,
+          "difficulty": 8.80630447,
+          "state": 1,
+          "reps": 2,
+          "lapses": 0,
+          "scheduled_days": 0,
+          "learning_steps": 0
+        },
+        {
+          "due": "2026-01-05T09:03:00Z",
+          "stability": 0.03485141,
+          "difficulty": 9.59286876,
+          "state": 1,
+          "reps": 3,
+          "lapses": 0,
+          "scheduled_days": 0,
+          "learning_steps": 0
+        },
+        {
+          "due": "2026-01-05T09:13:00Z",
+          "stability": 0.04566983,
+          "difficulty": 9.57850426,
+          "state": 1,
+          "reps": 4,
+          "lapses": 0,
+          "scheduled_days": 0,
+          "learning_steps": 1
+        },
+        {
+          "due": "2026-01-06T09:13:00Z",
+          "stability": 0.05879128,
+          "difficulty": 9.56415413,
+          "state": 2,
+          "reps": 5,
+          "lapses": 0,
+          "scheduled_days": 1,
+          "learning_steps": 0
+        }
+      ]
+    },
+    {
+      "name": "Hard from new",
+      "note": "Hard on the first step waits between the steps",
+      "w": "default",
+      "reviews": [
+        {
+          "id": "01KA0000000000000000000001",
+          "ts": "2026-01-05T09:00:00Z",
+          "grade": 2
+        },
+        {
+          "id": "01KA0000000000000000000002",
+          "ts": "2026-01-05T09:06:00Z",
+          "grade": 2
+        },
+        {
+          "id": "01KA0000000000000000000003",
+          "ts": "2026-01-05T09:20:00Z",
+          "grade": 3
+        }
+      ],
+      "order": [
+        "01KA0000000000000000000001",
+        "01KA0000000000000000000002",
+        "01KA0000000000000000000003"
+      ],
+      "points": [
+        {
+          "due": "2026-01-05T09:06:00Z",
+          "stability": 1.2931,
+          "difficulty": 5.11217071,
+          "state": 1,
+          "reps": 1,
+          "lapses": 0,
+          "scheduled_days": 0,
+          "learning_steps": 0
+        },
+        {
+          "due": "2026-01-05T09:12:00Z",
+          "stability": 1.2931,
+          "difficulty": 6.74045952,
+          "state": 1,
+          "reps": 2,
+          "lapses": 0,
+          "scheduled_days": 0,
+          "learning_steps": 0
+        },
+        {
+          "due": "2026-01-05T09:30:00Z",
+          "stability": 1.33589976,
+          "difficulty": 6.72894743,
+          "state": 1,
+          "reps": 3,
+          "lapses": 0,
+          "scheduled_days": 0,
+          "learning_steps": 1
+        }
+      ]
+    },
+    {
+      "name": "Easy from new",
+      "note": "Easy skips the learning steps",
+      "w": "default",
+      "reviews": [
+        {
+          "id": "01KA0000000000000000000001",
+          "ts": "2026-01-05T09:00:00Z",
+          "grade": 4
+        },
+        {
+          "id": "01KA0000000000000000000002",
+          "ts": "2026-01-20T09:00:00Z",
+          "grade": 4
+        }
+      ],
+      "order": [
+        "01KA0000000000000000000001",
+        "01KA0000000000000000000002"
+      ],
+      "points": [
+        {
+          "due": "2026-01-13T09:00:00Z",
+          "stability": 8.2956,
+          "difficulty": 1,
+          "state": 2,
+          "reps": 1,
+          "lapses": 0,
+          "scheduled_days": 8,
+          "learning_steps": 0
+        },
+        {
+          "due": "2026-04-26T09:00:00Z",
+          "stability": 95.50778479,
+          "difficulty": 1,
+          "state": 2,
+          "reps": 2,
+          "lapses": 0,
+          "scheduled_days": 96,
+          "learning_steps": 0
+        }
+      ]
+    },
+    {
+      "name": "Good on the due dates",
+      "note": "a well-known card",
+      "w": "default",
+      "reviews": [
+        {
+          "id": "01KA0000000000000000000001",
+          "ts": "2026-01-05T09:00:00Z",
+          "grade": 3
+        },
+        {
+          "id": "01KA0000000000000000000002",
+          "ts": "2026-01-05T09:10:00Z",
+          "grade": 3
+        },
+        {
+          "id": "01KA0000000000000000000003",
+          "ts": "2026-01-08T09:00:00Z",
+          "grade": 3
+        },
+        {
+          "id": "01KA0000000000000000000004",
+          "ts": "2026-01-19T09:00:00Z",
+          "grade": 3
+        },
+        {
+          "id": "01KA0000000000000000000005",
+          "ts": "2026-02-20T09:00:00Z",
+          "grade": 3
+        }
+      ],
+      "order": [
+        "01KA0000000000000000000001",
+        "01KA0000000000000000000002",
+        "01KA0000000000000000000003",
+        "01KA0000000000000000000004",
+        "01KA0000000000000000000005"
+      ],
+      "points": [
+        {
+          "due": "2026-01-05T09:10:00Z",
+          "stability": 2.3065,
+          "difficulty": 2.11810397,
+          "state": 1,
+          "reps": 1,
+          "lapses": 0,
+          "scheduled_days": 0,
+          "learning_steps": 1
+        },
+        {
+          "due": "2026-01-07T09:10:00Z",
+          "stability": 2.3065,
+          "difficulty": 2.11121424,
+          "state": 2,
+          "reps": 2,
+          "lapses": 0,
+          "scheduled_days": 2,
+          "learning_steps": 0
+        },
+        {
+          "due": "2026-01-22T09:00:00Z",
+          "stability": 13.8358397,
+          "difficulty": 2.1043314,
+          "state": 2,
+          "reps": 3,
+          "lapses": 0,
+          "scheduled_days": 14,
+          "learning_steps": 0
+        },
+        {
+          "due": "2026-03-10T09:00:00Z",
+          "stability": 50.01332469,
+          "difficulty": 2.09745544,
+          "state": 2,
+          "reps": 4,
+          "lapses": 0,
+          "scheduled_days": 50,
+          "learning_steps": 0
+        },
+        {
+          "due": "2026-07-09T09:00:00Z",
+          "stability": 139.42853642,
+          "difficulty": 2.09058635,
+          "state": 2,
+          "reps": 5,
+          "lapses": 0,
+          "scheduled_days": 139,
+          "learning_steps": 0
+        }
+      ]
+    },
+    {
+      "name": "a lapse after months, relearning, back to review",
+      "note": "Again in review goes to relearning (10m), lapses + 1",
+      "w": "default",
+      "reviews": [
+        {
+          "id": "01KA0000000000000000000001",
+          "ts": "2026-01-05T09:00:00Z",
+          "grade": 3
+        },
+        {
+          "id": "01KA0000000000000000000002",
+          "ts": "2026-01-05T09:10:00Z",
+          "grade": 3
+        },
+        {
+          "id": "01KA0000000000000000000003",
+          "ts": "2026-01-08T09:00:00Z",
+          "grade": 3
+        },
+        {
+          "id": "01KA0000000000000000000004",
+          "ts": "2026-05-08T09:00:00Z",
+          "grade": 1
+        },
+        {
+          "id": "01KA0000000000000000000005",
+          "ts": "2026-05-08T09:10:00Z",
+          "grade": 3
+        },
+        {
+          "id": "01KA0000000000000000000006",
+          "ts": "2026-05-09T09:00:00Z",
+          "grade": 3
+        }
+      ],
+      "order": [
+        "01KA0000000000000000000001",
+        "01KA0000000000000000000002",
+        "01KA0000000000000000000003",
+        "01KA0000000000000000000004",
+        "01KA0000000000000000000005",
+        "01KA0000000000000000000006"
+      ],
+      "points": [
+        {
+          "due": "2026-01-05T09:10:00Z",
+          "stability": 2.3065,
+          "difficulty": 2.11810397,
+          "state": 1,
+          "reps": 1,
+          "lapses": 0,
+          "scheduled_days": 0,
+          "learning_steps": 1
+        },
+        {
+          "due": "2026-01-07T09:10:00Z",
+          "stability": 2.3065,
+          "difficulty": 2.11121424,
+          "state": 2,
+          "reps": 2,
+          "lapses": 0,
+          "scheduled_days": 2,
+          "learning_steps": 0
+        },
+        {
+          "due": "2026-01-22T09:00:00Z",
+          "stability": 13.8358397,
+          "difficulty": 2.1043314,
+          "state": 2,
+          "reps": 3,
+          "lapses": 0,
+          "scheduled_days": 14,
+          "learning_steps": 0
+        },
+        {
+          "due": "2026-05-08T09:10:00Z",
+          "stability": 2.37211759,
+          "difficulty": 7.38997579,
+          "state": 3,
+          "reps": 4,
+          "lapses": 1,
+          "scheduled_days": 0,
+          "learning_steps": 0
+        },
+        {
+          "due": "2026-05-10T09:10:00Z",
+          "stability": 2.37211759,
+          "difficulty": 7.37781418,
+          "state": 2,
+          "reps": 5,
+          "lapses": 1,
+          "scheduled_days": 2,
+          "learning_steps": 0
+        },
+        {
+          "due": "2026-05-14T09:00:00Z",
+          "stability": 4.41450026,
+          "difficulty": 7.36566474,
+          "state": 2,
+          "reps": 6,
+          "lapses": 1,
+          "scheduled_days": 5,
+          "learning_steps": 0
+        }
+      ]
+    },
+    {
+      "name": "Again in relearning",
+      "note": "Again on the relearning step stays there",
+      "w": "default",
+      "reviews": [
+        {
+          "id": "01KA0000000000000000000001",
+          "ts": "2026-01-05T09:00:00Z",
+          "grade": 4
+        },
+        {
+          "id": "01KA0000000000000000000002",
+          "ts": "2026-01-25T09:00:00Z",
+          "grade": 1
+        },
+        {
+          "id": "01KA0000000000000000000003",
+          "ts": "2026-01-25T09:10:00Z",
+          "grade": 1
+        },
+        {
+          "id": "01KA0000000000000000000004",
+          "ts": "2026-01-25T09:20:00Z",
+          "grade": 3
+        }
+      ],
+      "order": [
+        "01KA0000000000000000000001",
+        "01KA0000000000000000000002",
+        "01KA0000000000000000000003",
+        "01KA0000000000000000000004"
+      ],
+      "points": [
+        {
+          "due": "2026-01-13T09:00:00Z",
+          "stability": 8.2956,
+          "difficulty": 1,
+          "state": 2,
+          "reps": 1,
+          "lapses": 0,
+          "scheduled_days": 8,
+          "learning_steps": 0
+        },
+        {
+          "due": "2026-01-25T09:10:00Z",
+          "stability": 1.5663583,
+          "difficulty": 7.02698957,
+          "state": 3,
+          "reps": 2,
+          "lapses": 1,
+          "scheduled_days": 0,
+          "learning_steps": 0
+        },
+        {
+          "due": "2026-01-25T09:20:00Z",
+          "stability": 0.53993927,
+          "difficulty": 9.00802006,
+          "state": 3,
+          "reps": 3,
+          "lapses": 1,
+          "scheduled_days": 0,
+          "learning_steps": 0
+        },
+        {
+          "due": "2026-01-26T09:20:00Z",
+          "stability": 0.59080447,
+          "difficulty": 8.99424041,
+          "state": 2,
+          "reps": 4,
+          "lapses": 1,
+          "scheduled_days": 1,
+          "learning_steps": 0
+        }
+      ]
+    },
+    {
+      "name": "several lapses",
+      "note": "each Again in review counts a lapse",
+      "w": "default",
+      "reviews": [
+        {
+          "id": "01KA0000000000000000000001",
+          "ts": "2026-01-05T09:00:00Z",
+          "grade": 4
+        },
+        {
+          "id": "01KA0000000000000000000002",
+          "ts": "2026-01-20T09:00:00Z",
+          "grade": 1
+        },
+        {
+          "id": "01KA0000000000000000000003",
+          "ts": "2026-01-20T09:10:00Z",
+          "grade": 3
+        },
+        {
+          "id": "01KA0000000000000000000004",
+          "ts": "2026-01-25T09:00:00Z",
+          "grade": 1
+        },
+        {
+          "id": "01KA0000000000000000000005",
+          "ts": "2026-01-25T09:10:00Z",
+          "grade": 3
+        },
+        {
+          "id": "01KA0000000000000000000006",
+          "ts": "2026-02-05T09:00:00Z",
+          "grade": 1
+        },
+        {
+          "id": "01KA0000000000000000000007",
+          "ts": "2026-02-05T09:10:00Z",
+          "grade": 3
+        }
+      ],
+      "order": [
+        "01KA0000000000000000000001",
+        "01KA0000000000000000000002",
+        "01KA0000000000000000000003",
+        "01KA0000000000000000000004",
+        "01KA0000000000000000000005",
+        "01KA0000000000000000000006",
+        "01KA0000000000000000000007"
+      ],
+      "points": [
+        {
+          "due": "2026-01-13T09:00:00Z",
+          "stability": 8.2956,
+          "difficulty": 1,
+          "state": 2,
+          "reps": 1,
+          "lapses": 0,
+          "scheduled_days": 8,
+          "learning_steps": 0
+        },
+        {
+          "due": "2026-01-20T09:10:00Z",
+          "stability": 1.50292748,
+          "difficulty": 7.02698957,
+          "state": 3,
+          "reps": 2,
+          "lapses": 1,
+          "scheduled_days": 0,
+          "learning_steps": 0
+        },
+        {
+          "due": "2026-01-22T09:10:00Z",
+          "stability": 1.53738506,
+          "difficulty": 7.01519095,
+          "state": 2,
+          "reps": 3,
+          "lapses": 1,
+          "scheduled_days": 2,
+          "learning_steps": 0
+        },
+        {
+          "due": "2026-01-25T09:10:00Z",
+          "stability": 0.50611052,
+          "difficulty": 9.00414193,
+          "state": 3,
+          "reps": 4,
+          "lapses": 2,
+          "scheduled_days": 0,
+          "learning_steps": 0
+        },
+        {
+          "due": "2026-01-26T09:10:00Z",
+          "stability": 0.55615158,
+          "difficulty": 8.99036616,
+          "state": 2,
+          "reps": 5,
+          "lapses": 2,
+          "scheduled_days": 1,
+          "learning_steps": 0
+        },
+        {
+          "due": "2026-02-05T09:10:00Z",
+          "stability": 0.29498711,
+          "difficulty": 9.65336859,
+          "state": 3,
+          "reps": 6,
+          "lapses": 3,
+          "scheduled_days": 0,
+          "learning_steps": 0
+        },
+        {
+          "due": "2026-02-06T09:10:00Z",
+          "stability": 0.33587459,
+          "difficulty": 9.63894359,
+          "state": 2,
+          "reps": 7,
+          "lapses": 3,
+          "scheduled_days": 1,
+          "learning_steps": 0
+        }
+      ]
+    },
+    {
+      "name": "sub-day reviews of a review card",
+      "note": "same-day reviews of a review card use the short-term formula",
+      "w": "default",
+      "reviews": [
+        {
+          "id": "01KA0000000000000000000001",
+          "ts": "2026-01-05T09:00:00Z",
+          "grade": 4
+        },
+        {
+          "id": "01KA0000000000000000000002",
+          "ts": "2026-01-05T15:00:00Z",
+          "grade": 3
+        },
+        {
+          "id": "01KA0000000000000000000003",
+          "ts": "2026-01-05T21:00:00Z",
+          "grade": 3
+        },
+        {
+          "id": "01KA0000000000000000000004",
+          "ts": "2026-01-06T03:00:00Z",
+          "grade": 2
+        }
+      ],
+      "order": [
+        "01KA0000000000000000000001",
+        "01KA0000000000000000000002",
+        "01KA0000000000000000000003",
+        "01KA0000000000000000000004"
+      ],
+      "points": [
+        {
+          "due": "2026-01-13T09:00:00Z",
+          "stability": 8.2956,
+          "difficulty": 1,
+          "state": 2,
+          "reps": 1,
+          "lapses": 0,
+          "scheduled_days": 8,
+          "learning_steps": 0
+        },
+        {
+          "due": "2026-01-14T15:00:00Z",
+          "stability": 8.2956,
+          "difficulty": 1,
+          "state": 2,
+          "reps": 2,
+          "lapses": 0,
+          "scheduled_days": 9,
+          "learning_steps": 0
+        },
+        {
+          "due": "2026-01-14T21:00:00Z",
+          "stability": 8.2956,
+          "difficulty": 1,
+          "state": 2,
+          "reps": 3,
+          "lapses": 0,
+          "scheduled_days": 9,
+          "learning_steps": 0
+        },
+        {
+          "due": "2026-01-17T03:00:00Z",
+          "stability": 11.4165426,
+          "difficulty": 4.01060897,
+          "state": 2,
+          "reps": 4,
+          "lapses": 0,
+          "scheduled_days": 11,
+          "learning_steps": 0
+        }
+      ]
+    },
+    {
+      "name": "early review before the due date",
+      "note": "a review before due counts its real elapsed days",
+      "w": "default",
+      "reviews": [
+        {
+          "id": "01KA0000000000000000000001",
+          "ts": "2026-01-05T09:00:00Z",
+          "grade": 4
+        },
+        {
+          "id": "01KA0000000000000000000002",
+          "ts": "2026-01-08T09:00:00Z",
+          "grade": 3
+        }
+      ],
+      "order": [
+        "01KA0000000000000000000001",
+        "01KA0000000000000000000002"
+      ],
+      "points": [
+        {
+          "due": "2026-01-13T09:00:00Z",
+          "stability": 8.2956,
+          "difficulty": 1,
+          "state": 2,
+          "reps": 1,
+          "lapses": 0,
+          "scheduled_days": 8,
+          "learning_steps": 0
+        },
+        {
+          "due": "2026-01-30T09:00:00Z",
+          "stability": 22.34796465,
+          "difficulty": 1,
+          "state": 2,
+          "reps": 2,
+          "lapses": 0,
+          "scheduled_days": 22,
+          "learning_steps": 0
+        }
+      ]
+    },
+    {
+      "name": "a very late review",
+      "note": "a year overdue and still remembered",
+      "w": "default",
+      "reviews": [
+        {
+          "id": "01KA0000000000000000000001",
+          "ts": "2026-01-05T09:00:00Z",
+          "grade": 3
+        },
+        {
+          "id": "01KA0000000000000000000002",
+          "ts": "2026-01-05T09:10:00Z",
+          "grade": 3
+        },
+        {
+          "id": "01KA0000000000000000000003",
+          "ts": "2027-01-05T09:00:00Z",
+          "grade": 3
+        }
+      ],
+      "order": [
+        "01KA0000000000000000000001",
+        "01KA0000000000000000000002",
+        "01KA0000000000000000000003"
+      ],
+      "points": [
+        {
+          "due": "2026-01-05T09:10:00Z",
+          "stability": 2.3065,
+          "difficulty": 2.11810397,
+          "state": 1,
+          "reps": 1,
+          "lapses": 0,
+          "scheduled_days": 0,
+          "learning_steps": 1
+        },
+        {
+          "due": "2026-01-07T09:10:00Z",
+          "stability": 2.3065,
+          "difficulty": 2.11121424,
+          "state": 2,
+          "reps": 2,
+          "lapses": 0,
+          "scheduled_days": 2,
+          "learning_steps": 0
+        },
+        {
+          "due": "2027-03-11T09:00:00Z",
+          "stability": 64.74327506,
+          "difficulty": 2.1043314,
+          "state": 2,
+          "reps": 3,
+          "lapses": 0,
+          "scheduled_days": 65,
+          "learning_steps": 0
+        }
+      ]
+    },
+    {
+      "name": "Easy every time up to the maximum interval",
+      "note": "reviewed on each due date; intervals never exceed maximum_interval 36500",
+      "w": "default",
+      "reviews": [
+        {
+          "id": "01KA0000000000000000000001",
+          "ts": "2026-01-05T09:00:00Z",
+          "grade": 4
+        },
+        {
+          "id": "01KA0000000000000000000002",
+          "ts": "2026-01-13T09:00:00Z",
+          "grade": 4
+        },
+        {
+          "id": "01KA0000000000000000000003",
+          "ts": "2026-03-20T09:00:00Z",
+          "grade": 4
+        },
+        {
+          "id": "01KA0000000000000000000004",
+          "ts": "2027-04-21T09:00:00Z",
+          "grade": 4
+        },
+        {
+          "id": "01KA0000000000000000000005",
+          "ts": "2032-06-08T09:00:00Z",
+          "grade": 4
+        },
+        {
+          "id": "01KA0000000000000000000006",
+          "ts": "2052-04-29T09:00:00Z",
+          "grade": 4
+        },
+        {
+          "id": "01KA0000000000000000000007",
+          "ts": "2117-11-08T09:00:00Z",
+          "grade": 4
+        },
+        {
+          "id": "01KA0000000000000000000008",
+          "ts": "2217-10-17T09:00:00Z",
+          "grade": 4
+        },
+        {
+          "id": "01KA0000000000000000000009",
+          "ts": "2317-09-25T09:00:00Z",
+          "grade": 4
+        }
+      ],
+      "order": [
+        "01KA0000000000000000000001",
+        "01KA0000000000000000000002",
+        "01KA0000000000000000000003",
+        "01KA0000000000000000000004",
+        "01KA0000000000000000000005",
+        "01KA0000000000000000000006",
+        "01KA0000000000000000000007",
+        "01KA0000000000000000000008",
+        "01KA0000000000000000000009"
+      ],
+      "points": [
+        {
+          "due": "2026-01-13T09:00:00Z",
+          "stability": 8.2956,
+          "difficulty": 1,
+          "state": 2,
+          "reps": 1,
+          "lapses": 0,
+          "scheduled_days": 8,
+          "learning_steps": 0
+        },
+        {
+          "due": "2026-03-20T09:00:00Z",
+          "stability": 65.62422648,
+          "difficulty": 1,
+          "state": 2,
+          "reps": 2,
+          "lapses": 0,
+          "scheduled_days": 66,
+          "learning_steps": 0
+        },
+        {
+          "due": "2027-04-21T09:00:00Z",
+          "stability": 396.77501923,
+          "difficulty": 1,
+          "state": 2,
+          "reps": 3,
+          "lapses": 0,
+          "scheduled_days": 397,
+          "learning_steps": 0
+        },
+        {
+          "due": "2032-06-08T09:00:00Z",
+          "stability": 1874.91696522,
+          "difficulty": 1,
+          "state": 2,
+          "reps": 4,
+          "lapses": 0,
+          "scheduled_days": 1875,
+          "learning_steps": 0
+        },
+        {
+          "due": "2052-04-29T09:00:00Z",
+          "stability": 7265.43276492,
+          "difficulty": 1,
+          "state": 2,
+          "reps": 5,
+          "lapses": 0,
+          "scheduled_days": 7265,
+          "learning_steps": 0
+        },
+        {
+          "due": "2117-11-08T09:00:00Z",
+          "stability": 23932.92272654,
+          "difficulty": 1,
+          "state": 2,
+          "reps": 6,
+          "lapses": 0,
+          "scheduled_days": 23933,
+          "learning_steps": 0
+        },
+        {
+          "due": "2217-10-17T09:00:00Z",
+          "stability": 36500,
+          "difficulty": 1,
+          "state": 2,
+          "reps": 7,
+          "lapses": 0,
+          "scheduled_days": 36502,
+          "learning_steps": 0
+        },
+        {
+          "due": "2317-09-25T09:00:00Z",
+          "stability": 36500,
+          "difficulty": 1,
+          "state": 2,
+          "reps": 8,
+          "lapses": 0,
+          "scheduled_days": 36502,
+          "learning_steps": 0
+        },
+        {
+          "due": "2417-09-02T09:00:00Z",
+          "stability": 36500,
+          "difficulty": 1,
+          "state": 2,
+          "reps": 9,
+          "lapses": 0,
+          "scheduled_days": 36502,
+          "learning_steps": 0
+        }
+      ]
+    },
+    {
+      "name": "Hard every time",
+      "note": "Hard grows the interval slowly",
+      "w": "default",
+      "reviews": [
+        {
+          "id": "01KA0000000000000000000001",
+          "ts": "2026-01-05T09:00:00Z",
+          "grade": 3
+        },
+        {
+          "id": "01KA0000000000000000000002",
+          "ts": "2026-01-05T09:10:00Z",
+          "grade": 3
+        },
+        {
+          "id": "01KA0000000000000000000003",
+          "ts": "2026-01-08T09:00:00Z",
+          "grade": 2
+        },
+        {
+          "id": "01KA0000000000000000000004",
+          "ts": "2026-01-12T09:00:00Z",
+          "grade": 2
+        },
+        {
+          "id": "01KA0000000000000000000005",
+          "ts": "2026-01-18T09:00:00Z",
+          "grade": 2
+        }
+      ],
+      "order": [
+        "01KA0000000000000000000001",
+        "01KA0000000000000000000002",
+        "01KA0000000000000000000003",
+        "01KA0000000000000000000004",
+        "01KA0000000000000000000005"
+      ],
+      "points": [
+        {
+          "due": "2026-01-05T09:10:00Z",
+          "stability": 2.3065,
+          "difficulty": 2.11810397,
+          "state": 1,
+          "reps": 1,
+          "lapses": 0,
+          "scheduled_days": 0,
+          "learning_steps": 1
+        },
+        {
+          "due": "2026-01-07T09:10:00Z",
+          "stability": 2.3065,
+          "difficulty": 2.11121424,
+          "state": 2,
+          "reps": 2,
+          "lapses": 0,
+          "scheduled_days": 2,
+          "learning_steps": 0
+        },
+        {
+          "due": "2026-01-17T09:00:00Z",
+          "stability": 9.24024489,
+          "difficulty": 4.74828477,
+          "state": 2,
+          "reps": 3,
+          "lapses": 0,
+          "scheduled_days": 9,
+          "learning_steps": 0
+        },
+        {
+          "due": "2026-01-28T09:00:00Z",
+          "stability": 15.97226147,
+          "difficulty": 6.49889507,
+          "state": 2,
+          "reps": 4,
+          "lapses": 0,
+          "scheduled_days": 16,
+          "learning_steps": 0
+        },
+        {
+          "due": "2026-02-10T09:00:00Z",
+          "stability": 22.75617376,
+          "difficulty": 7.66103176,
+          "state": 2,
+          "reps": 5,
+          "lapses": 0,
+          "scheduled_days": 23,
+          "learning_steps": 0
+        }
+      ]
+    },
+    {
+      "name": "every grade in turn",
+      "note": "all four ratings in learning, review and relearning",
+      "w": "default",
+      "reviews": [
+        {
+          "id": "01KA0000000000000000000001",
+          "ts": "2026-01-05T09:00:00Z",
+          "grade": 2
+        },
+        {
+          "id": "01KA0000000000000000000002",
+          "ts": "2026-01-05T09:08:00Z",
+          "grade": 3
+        },
+        {
+          "id": "01KA0000000000000000000003",
+          "ts": "2026-01-06T09:00:00Z",
+          "grade": 4
+        },
+        {
+          "id": "01KA0000000000000000000004",
+          "ts": "2026-01-16T09:00:00Z",
+          "grade": 1
+        },
+        {
+          "id": "01KA0000000000000000000005",
+          "ts": "2026-01-16T09:10:00Z",
+          "grade": 2
+        },
+        {
+          "id": "01KA0000000000000000000006",
+          "ts": "2026-01-16T09:30:00Z",
+          "grade": 3
+        }
+      ],
+      "order": [
+        "01KA0000000000000000000001",
+        "01KA0000000000000000000002",
+        "01KA0000000000000000000003",
+        "01KA0000000000000000000004",
+        "01KA0000000000000000000005",
+        "01KA0000000000000000000006"
+      ],
+      "points": [
+        {
+          "due": "2026-01-05T09:06:00Z",
+          "stability": 1.2931,
+          "difficulty": 5.11217071,
+          "state": 1,
+          "reps": 1,
+          "lapses": 0,
+          "scheduled_days": 0,
+          "learning_steps": 0
+        },
+        {
+          "due": "2026-01-05T09:18:00Z",
+          "stability": 1.33589976,
+          "difficulty": 5.10228691,
+          "state": 1,
+          "reps": 2,
+          "lapses": 0,
+          "scheduled_days": 0,
+          "learning_steps": 1
+        },
+        {
+          "due": "2026-01-13T09:00:00Z",
+          "stability": 7.45344042,
+          "difficulty": 3.4509278,
+          "state": 2,
+          "reps": 3,
+          "lapses": 0,
+          "scheduled_days": 7,
+          "learning_steps": 0
+        },
+        {
+          "due": "2026-01-16T09:10:00Z",
+          "stability": 1.26422906,
+          "difficulty": 7.83259287,
+          "state": 3,
+          "reps": 4,
+          "lapses": 1,
+          "scheduled_days": 0,
+          "learning_steps": 0
+        },
+        {
+          "due": "2026-01-16T09:25:00Z",
+          "stability": 1.26422906,
+          "difficulty": 8.54640252,
+          "state": 3,
+          "reps": 5,
+          "lapses": 1,
+          "scheduled_days": 0,
+          "learning_steps": 0
+        },
+        {
+          "due": "2026-01-17T09:30:00Z",
+          "stability": 1.30801519,
+          "difficulty": 8.53308449,
+          "state": 2,
+          "reps": 6,
+          "lapses": 1,
+          "scheduled_days": 1,
+          "learning_steps": 0
+        }
+      ]
+    },
+    {
+      "name": "two reviews in the same second: id order, Again first",
+      "note": "the same instant replays by id: 01 (Again) before 02 (Good), whatever the order given",
+      "w": "default",
+      "reviews": [
+        {
+          "id": "01KA0000000000000000000002",
+          "ts": "2026-01-05T09:00:00Z",
+          "grade": 3
+        },
+        {
+          "id": "01KA0000000000000000000001",
+          "ts": "2026-01-05T09:00:00Z",
+          "grade": 1
+        }
+      ],
+      "order": [
+        "01KA0000000000000000000001",
+        "01KA0000000000000000000002"
+      ],
+      "points": [
+        {
+          "due": "2026-01-05T09:01:00Z",
+          "stability": 0.212,
+          "difficulty": 6.4133,
+          "state": 1,
+          "reps": 1,
+          "lapses": 0,
+          "scheduled_days": 0,
+          "learning_steps": 0
+        },
+        {
+          "due": "2026-01-05T09:10:00Z",
+          "stability": 0.24668919,
+          "difficulty": 6.40211507,
+          "state": 1,
+          "reps": 2,
+          "lapses": 0,
+          "scheduled_days": 0,
+          "learning_steps": 1
+        }
+      ]
+    },
+    {
+      "name": "two reviews in the same second: id order, Good first",
+      "note": "swapping the ids swaps the result",
+      "w": "default",
+      "reviews": [
+        {
+          "id": "01KA0000000000000000000002",
+          "ts": "2026-01-05T09:00:00Z",
+          "grade": 1
+        },
+        {
+          "id": "01KA0000000000000000000001",
+          "ts": "2026-01-05T09:00:00Z",
+          "grade": 3
+        }
+      ],
+      "order": [
+        "01KA0000000000000000000001",
+        "01KA0000000000000000000002"
+      ],
+      "points": [
+        {
+          "due": "2026-01-05T09:10:00Z",
+          "stability": 2.3065,
+          "difficulty": 2.11810397,
+          "state": 1,
+          "reps": 1,
+          "lapses": 0,
+          "scheduled_days": 0,
+          "learning_steps": 1
+        },
+        {
+          "due": "2026-01-05T09:01:00Z",
+          "stability": 0.77508398,
+          "difficulty": 7.39450274,
+          "state": 1,
+          "reps": 2,
+          "lapses": 0,
+          "scheduled_days": 0,
+          "learning_steps": 0
+        }
+      ]
+    },
+    {
+      "name": "one instant in two notations",
+      "note": "ordered by the instant, so the id decides",
+      "w": "default",
+      "reviews": [
+        {
+          "id": "01KA0000000000000000000002",
+          "ts": "2026-01-05T10:00:00+01:00",
+          "grade": 4
+        },
+        {
+          "id": "01KA0000000000000000000001",
+          "ts": "2026-01-05T09:00:00Z",
+          "grade": 1
+        }
+      ],
+      "order": [
+        "01KA0000000000000000000001",
+        "01KA0000000000000000000002"
+      ],
+      "points": [
+        {
+          "due": "2026-01-05T09:01:00Z",
+          "stability": 0.212,
+          "difficulty": 6.4133,
+          "state": 1,
+          "reps": 1,
+          "lapses": 0,
+          "scheduled_days": 0,
+          "learning_steps": 0
+        },
+        {
+          "due": "2026-01-06T09:00:00Z",
+          "stability": 0.42437996,
+          "difficulty": 5.20002037,
+          "state": 2,
+          "reps": 2,
+          "lapses": 0,
+          "scheduled_days": 1,
+          "learning_steps": 0
+        }
+      ]
+    },
+    {
+      "name": "out-of-order input is sorted by instant",
+      "note": "replay order is the instant, not the order given",
+      "w": "default",
+      "reviews": [
+        {
+          "id": "01KA0000000000000000000001",
+          "ts": "2026-01-08T09:00:00Z",
+          "grade": 3
+        },
+        {
+          "id": "01KA0000000000000000000002",
+          "ts": "2026-01-05T09:00:00Z",
+          "grade": 3
+        },
+        {
+          "id": "01KA0000000000000000000003",
+          "ts": "2026-01-05T09:10:00Z",
+          "grade": 3
+        }
+      ],
+      "order": [
+        "01KA0000000000000000000002",
+        "01KA0000000000000000000003",
+        "01KA0000000000000000000001"
+      ],
+      "points": [
+        {
+          "due": "2026-01-05T09:10:00Z",
+          "stability": 2.3065,
+          "difficulty": 2.11810397,
+          "state": 1,
+          "reps": 1,
+          "lapses": 0,
+          "scheduled_days": 0,
+          "learning_steps": 1
+        },
+        {
+          "due": "2026-01-07T09:10:00Z",
+          "stability": 2.3065,
+          "difficulty": 2.11121424,
+          "state": 2,
+          "reps": 2,
+          "lapses": 0,
+          "scheduled_days": 2,
+          "learning_steps": 0
+        },
+        {
+          "due": "2026-01-22T09:00:00Z",
+          "stability": 13.8358397,
+          "difficulty": 2.1043314,
+          "state": 2,
+          "reps": 3,
+          "lapses": 0,
+          "scheduled_days": 14,
+          "learning_steps": 0
+        }
+      ]
+    },
+    {
+      "name": "a custom 21-weight set",
+      "note": "the active set's weights replace the defaults; every other option unchanged",
+      "w": [
+        0.3,
+        1.1,
+        2.9,
+        9.5,
+        6.9,
+        0.7,
+        2.5,
+        0.01,
+        1.6,
+        0.2,
+        0.9,
+        1.6,
+        0.08,
+        0.3,
+        1.5,
+        0.5,
+        2.2,
+        0.6,
+        0.15,
+        0.1,
+        0.25
+      ],
+      "reviews": [
+        {
+          "id": "01KA0000000000000000000001",
+          "ts": "2026-01-05T09:00:00Z",
+          "grade": 3
+        },
+        {
+          "id": "01KA0000000000000000000002",
+          "ts": "2026-01-05T09:10:00Z",
+          "grade": 3
+        },
+        {
+          "id": "01KA0000000000000000000003",
+          "ts": "2026-01-08T09:00:00Z",
+          "grade": 3
+        },
+        {
+          "id": "01KA0000000000000000000004",
+          "ts": "2026-01-20T09:00:00Z",
+          "grade": 1
+        },
+        {
+          "id": "01KA0000000000000000000005",
+          "ts": "2026-01-20T09:10:00Z",
+          "grade": 3
+        }
+      ],
+      "order": [
+        "01KA0000000000000000000001",
+        "01KA0000000000000000000002",
+        "01KA0000000000000000000003",
+        "01KA0000000000000000000004",
+        "01KA0000000000000000000005"
+      ],
+      "points": [
+        {
+          "due": "2026-01-05T09:10:00Z",
+          "stability": 2.9,
+          "difficulty": 3.84480003,
+          "state": 1,
+          "reps": 1,
+          "lapses": 0,
+          "scheduled_days": 0,
+          "learning_steps": 1
+        },
+        {
+          "due": "2026-01-08T09:10:00Z",
+          "stability": 2.9,
+          "difficulty": 3.80369033,
+          "state": 2,
+          "reps": 2,
+          "lapses": 0,
+          "scheduled_days": 3,
+          "learning_steps": 0
+        },
+        {
+          "due": "2026-01-19T09:00:00Z",
+          "stability": 10.98556203,
+          "difficulty": 3.76299173,
+          "state": 2,
+          "reps": 3,
+          "lapses": 0,
+          "scheduled_days": 11,
+          "learning_steps": 0
+        },
+        {
+          "due": "2026-01-20T09:10:00Z",
+          "stability": 1.86984682,
+          "difficulty": 7.15305466,
+          "state": 3,
+          "reps": 4,
+          "lapses": 1,
+          "scheduled_days": 0,
+          "learning_steps": 0
+        },
+        {
+          "due": "2026-01-22T09:10:00Z",
+          "stability": 1.92181656,
+          "difficulty": 7.07886241,
+          "state": 2,
+          "reps": 5,
+          "lapses": 1,
+          "scheduled_days": 2,
+          "learning_steps": 0
+        }
+      ]
+    },
+    {
+      "name": "a migrated 17-weight set",
+      "note": "stored sets hold the 21 migrated weights (from: the 17 given)",
+      "w": [
+        0.4872,
+        1.4003,
+        3.7145,
+        13.8206,
+        7.6214,
+        0.51510155,
+        1.3975,
+        0.031,
+        1.6474,
+        0.1367,
+        1.0461,
+        2.1072,
+        0.0793,
+        0.3246,
+        1.587,
+        0.2272,
+        2.8755,
+        0,
+        0,
+        0,
+        0.5
+      ],
+      "from": [
+        0.4872,
+        1.4003,
+        3.7145,
+        13.8206,
+        5.1618,
+        1.2298,
+        0.8975,
+        0.031,
+        1.6474,
+        0.1367,
+        1.0461,
+        2.1072,
+        0.0793,
+        0.3246,
+        1.587,
+        0.2272,
+        2.8755
+      ],
+      "reviews": [
+        {
+          "id": "01KA0000000000000000000001",
+          "ts": "2026-01-05T09:00:00Z",
+          "grade": 3
+        },
+        {
+          "id": "01KA0000000000000000000002",
+          "ts": "2026-01-05T09:10:00Z",
+          "grade": 3
+        },
+        {
+          "id": "01KA0000000000000000000003",
+          "ts": "2026-01-09T09:00:00Z",
+          "grade": 3
+        },
+        {
+          "id": "01KA0000000000000000000004",
+          "ts": "2026-01-25T09:00:00Z",
+          "grade": 4
+        }
+      ],
+      "order": [
+        "01KA0000000000000000000001",
+        "01KA0000000000000000000002",
+        "01KA0000000000000000000003",
+        "01KA0000000000000000000004"
+      ],
+      "points": [
+        {
+          "due": "2026-01-05T09:10:00Z",
+          "stability": 3.7145,
+          "difficulty": 5.81976521,
+          "state": 1,
+          "reps": 1,
+          "lapses": 0,
+          "scheduled_days": 0,
+          "learning_steps": 1
+        },
+        {
+          "due": "2026-01-09T09:10:00Z",
+          "stability": 3.7145,
+          "difficulty": 5.76124449,
+          "state": 2,
+          "reps": 2,
+          "lapses": 0,
+          "scheduled_days": 4,
+          "learning_steps": 0
+        },
+        {
+          "due": "2026-01-23T09:00:00Z",
+          "stability": 13.66905126,
+          "difficulty": 5.70453791,
+          "state": 2,
+          "reps": 3,
+          "lapses": 0,
+          "scheduled_days": 14,
+          "learning_steps": 0
+        },
+        {
+          "due": "2026-05-15T09:00:00Z",
+          "stability": 109.63948118,
+          "difficulty": 5.00327611,
+          "state": 2,
+          "reps": 4,
+          "lapses": 0,
+          "scheduled_days": 110,
+          "learning_steps": 0
+        }
+      ]
+    },
+    {
+      "name": "a migrated 19-weight set",
+      "note": "w19 = 0, w20 = 0.5 after migration",
+      "w": [
+        0.40255,
+        1.18385,
+        3.173,
+        15.69105,
+        7.1949,
+        0.5345,
+        1.4604,
+        0.0046,
+        1.54575,
+        0.1192,
+        1.01925,
+        1.9395,
+        0.11,
+        0.29605,
+        2.2698,
+        0.2315,
+        2.9898,
+        0.51655,
+        0.6621,
+        0,
+        0.5
+      ],
+      "from": [
+        0.40255,
+        1.18385,
+        3.173,
+        15.69105,
+        7.1949,
+        0.5345,
+        1.4604,
+        0.0046,
+        1.54575,
+        0.1192,
+        1.01925,
+        1.9395,
+        0.11,
+        0.29605,
+        2.2698,
+        0.2315,
+        2.9898,
+        0.51655,
+        0.6621
+      ],
+      "reviews": [
+        {
+          "id": "01KA0000000000000000000001",
+          "ts": "2026-01-05T09:00:00Z",
+          "grade": 1
+        },
+        {
+          "id": "01KA0000000000000000000002",
+          "ts": "2026-01-05T09:01:00Z",
+          "grade": 3
+        },
+        {
+          "id": "01KA0000000000000000000003",
+          "ts": "2026-01-05T09:11:00Z",
+          "grade": 3
+        },
+        {
+          "id": "01KA0000000000000000000004",
+          "ts": "2026-01-07T09:00:00Z",
+          "grade": 3
+        }
+      ],
+      "order": [
+        "01KA0000000000000000000001",
+        "01KA0000000000000000000002",
+        "01KA0000000000000000000003",
+        "01KA0000000000000000000004"
+      ],
+      "points": [
+        {
+          "due": "2026-01-05T09:01:00Z",
+          "stability": 0.40255,
+          "difficulty": 7.1949,
+          "state": 1,
+          "reps": 1,
+          "lapses": 0,
+          "scheduled_days": 0,
+          "learning_steps": 0
+        },
+        {
+          "due": "2026-01-05T09:11:00Z",
+          "stability": 0.57187843,
+          "difficulty": 7.17663617,
+          "state": 1,
+          "reps": 2,
+          "lapses": 0,
+          "scheduled_days": 0,
+          "learning_steps": 1
+        },
+        {
+          "due": "2026-01-06T09:11:00Z",
+          "stability": 0.80958557,
+          "difficulty": 7.15845635,
+          "state": 2,
+          "reps": 3,
+          "lapses": 0,
+          "scheduled_days": 1,
+          "learning_steps": 0
+        },
+        {
+          "due": "2026-01-11T09:00:00Z",
+          "stability": 4.27368654,
+          "difficulty": 7.14036016,
+          "state": 2,
+          "reps": 4,
+          "lapses": 0,
+          "scheduled_days": 4,
+          "learning_steps": 0
+        }
+      ]
+    }
+  ]
+}

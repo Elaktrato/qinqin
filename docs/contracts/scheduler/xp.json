@@ -1,0 +1,517 @@
+{
+ "version": 1,
+ "rule": "scheduler/xp",
+ "baseXp": {
+  "vocab": 10,
+  "sentence": 15,
+  "writing": 20,
+  "tone": 8,
+  "reverse": 10,
+  "cloze": 15
+ },
+ "gradeBonus": {
+  "1": 0,
+  "2": 0,
+  "3": 5,
+  "4": 10
+ },
+ "dailyBonus": 10,
+ "levelRule": "level L to L+1 costs 100 * L XP; xp is floored, a negative or non-finite xp is 0 (\"NaN\" and \"Infinity\" stand for those numbers)",
+ "cases": [
+  {
+   "name": "no reviews",
+   "note": "no reviews, no XP",
+   "history": [],
+   "events": [],
+   "expect": {
+    "xp": 0,
+    "byKind": {
+     "vocab": 0,
+     "sentence": 0,
+     "writing": 0,
+     "tone": 0,
+     "reverse": 0,
+     "cloze": 0
+    }
+   }
+  },
+  {
+   "name": "base by kind, grade bonus",
+   "note": "base vocab 10, sentence 15, writing 20, tone 8, reverse 10, cloze 15; Good +5, Easy +10, Again and Hard +0; one day: +10",
+   "history": [],
+   "events": [
+    {
+     "id": "01KA0000000000000000000001",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-03-01T09:00:00Z",
+     "type": "review",
+     "payload": {
+      "cardId": "c1",
+      "mode": "vocab",
+      "grade": 1
+     }
+    },
+    {
+     "id": "01KA0000000000000000000002",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-03-01T09:01:00Z",
+     "type": "review",
+     "payload": {
+      "cardId": "c1",
+      "mode": "sentence",
+      "grade": 2
+     }
+    },
+    {
+     "id": "01KA0000000000000000000003",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-03-01T09:02:00Z",
+     "type": "review",
+     "payload": {
+      "cardId": "c1",
+      "mode": "writing",
+      "grade": 3
+     }
+    },
+    {
+     "id": "01KA0000000000000000000004",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-03-01T09:03:00Z",
+     "type": "review",
+     "payload": {
+      "cardId": "c1",
+      "mode": "tone",
+      "grade": 4
+     }
+    },
+    {
+     "id": "01KA0000000000000000000005",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-03-01T09:04:00Z",
+     "type": "review",
+     "payload": {
+      "cardId": "c1",
+      "mode": "reverse",
+      "grade": 3
+     }
+    },
+    {
+     "id": "01KA0000000000000000000006",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-03-01T09:05:00Z",
+     "type": "review",
+     "payload": {
+      "cardId": "c1",
+      "mode": "cloze",
+      "grade": 4
+     }
+    }
+   ],
+   "expect": {
+    "xp": 118,
+    "byKind": {
+     "vocab": 10,
+     "sentence": 15,
+     "writing": 25,
+     "tone": 18,
+     "reverse": 15,
+     "cloze": 25
+    }
+   }
+  },
+  {
+   "name": "daily bonus per distinct learner day",
+   "note": "+10 once per learner day with at least one valid review, however many reviews",
+   "history": [],
+   "events": [
+    {
+     "id": "01KA0000000000000000000007",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-03-01T09:00:00Z",
+     "type": "review",
+     "payload": {
+      "cardId": "c1",
+      "mode": "vocab",
+      "grade": 3
+     }
+    },
+    {
+     "id": "01KA0000000000000000000008",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-03-01T23:59:59Z",
+     "type": "review",
+     "payload": {
+      "cardId": "c1",
+      "mode": "vocab",
+      "grade": 3
+     }
+    },
+    {
+     "id": "01KA0000000000000000000009",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-03-02T00:00:00Z",
+     "type": "review",
+     "payload": {
+      "cardId": "c1",
+      "mode": "vocab",
+      "grade": 3
+     }
+    },
+    {
+     "id": "01KA0000000000000000000010",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-03-05T12:00:00Z",
+     "type": "review",
+     "payload": {
+      "cardId": "c1",
+      "mode": "vocab",
+      "grade": 3
+     }
+    }
+   ],
+   "expect": {
+    "xp": 90,
+    "byKind": {
+     "vocab": 60,
+     "sentence": 0,
+     "writing": 0,
+     "tone": 0,
+     "reverse": 0,
+     "cloze": 0
+    }
+   }
+  },
+  {
+   "name": "the daily bonus follows the zone history",
+   "note": "in Asia/Tokyo 14:59Z and 15:00Z are two learner days, 15:00Z and 23:00Z one",
+   "history": [
+    {
+     "zone": "Asia/Tokyo",
+     "from": null
+    }
+   ],
+   "events": [
+    {
+     "id": "01KA0000000000000000000011",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-03-01T14:59:00Z",
+     "type": "review",
+     "payload": {
+      "cardId": "c1",
+      "mode": "vocab",
+      "grade": 3
+     }
+    },
+    {
+     "id": "01KA0000000000000000000012",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-03-01T15:00:00Z",
+     "type": "review",
+     "payload": {
+      "cardId": "c1",
+      "mode": "vocab",
+      "grade": 3
+     }
+    },
+    {
+     "id": "01KA0000000000000000000013",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-03-01T23:00:00Z",
+     "type": "review",
+     "payload": {
+      "cardId": "c1",
+      "mode": "vocab",
+      "grade": 3
+     }
+    }
+   ],
+   "expect": {
+    "xp": 65,
+    "byKind": {
+     "vocab": 45,
+     "sentence": 0,
+     "writing": 0,
+     "tone": 0,
+     "reverse": 0,
+     "cloze": 0
+    }
+   }
+  },
+  {
+   "name": "an unknown or missing mode counts as vocab",
+   "note": "base 10 for an unknown or missing mode",
+   "history": [],
+   "events": [
+    {
+     "id": "01KA0000000000000000000014",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-03-01T09:00:00Z",
+     "type": "review",
+     "payload": {
+      "cardId": "c1",
+      "mode": "bogus",
+      "grade": 3
+     }
+    },
+    {
+     "id": "01KA0000000000000000000015",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-03-01T09:01:00Z",
+     "type": "review",
+     "payload": {
+      "cardId": "c1",
+      "grade": 3
+     }
+    }
+   ],
+   "expect": {
+    "xp": 40,
+    "byKind": {
+     "vocab": 30,
+     "sentence": 0,
+     "writing": 0,
+     "tone": 0,
+     "reverse": 0,
+     "cloze": 0
+    }
+   }
+  },
+  {
+   "name": "invalid reviews earn nothing, not even the daily bonus",
+   "note": "grade outside 1..4, empty cardId, unparsable ts: no XP and no day",
+   "history": [],
+   "events": [
+    {
+     "id": "01KA0000000000000000000016",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-03-01T09:00:00Z",
+     "type": "review",
+     "payload": {
+      "cardId": "c1",
+      "mode": "vocab",
+      "grade": 5
+     }
+    },
+    {
+     "id": "01KA0000000000000000000017",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-03-02T09:00:00Z",
+     "type": "review",
+     "payload": {
+      "cardId": "",
+      "mode": "vocab",
+      "grade": 3
+     }
+    },
+    {
+     "id": "01KA0000000000000000000018",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "not a time",
+     "type": "review",
+     "payload": {
+      "cardId": "c1",
+      "mode": "vocab",
+      "grade": 3
+     }
+    },
+    {
+     "id": "01KA0000000000000000000019",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-03-04T09:00:00Z",
+     "type": "review",
+     "payload": {
+      "cardId": "c1",
+      "mode": "vocab",
+      "grade": 0
+     }
+    }
+   ],
+   "expect": {
+    "xp": 0,
+    "byKind": {
+     "vocab": 0,
+     "sentence": 0,
+     "writing": 0,
+     "tone": 0,
+     "reverse": 0,
+     "cloze": 0
+    }
+   }
+  },
+  {
+   "name": "order does not matter",
+   "note": "the same reviews in any order give the same XP",
+   "history": [],
+   "events": [
+    {
+     "id": "01KA0000000000000000000020",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-03-05T09:00:00Z",
+     "type": "review",
+     "payload": {
+      "cardId": "c1",
+      "mode": "writing",
+      "grade": 4
+     }
+    },
+    {
+     "id": "01KA0000000000000000000021",
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-03-01T09:00:00Z",
+     "type": "review",
+     "payload": {
+      "cardId": "c1",
+      "mode": "tone",
+      "grade": 1
+     }
+    }
+   ],
+   "expect": {
+    "xp": 58,
+    "byKind": {
+     "vocab": 0,
+     "sentence": 0,
+     "writing": 30,
+     "tone": 8,
+     "reverse": 0,
+     "cloze": 0
+    }
+   }
+  }
+ ],
+ "levels": [
+  {
+   "xp": 0,
+   "expect": {
+    "level": 1,
+    "xpInto": 0,
+    "xpForNext": 100
+   }
+  },
+  {
+   "xp": 1,
+   "expect": {
+    "level": 1,
+    "xpInto": 1,
+    "xpForNext": 100
+   }
+  },
+  {
+   "xp": 99,
+   "expect": {
+    "level": 1,
+    "xpInto": 99,
+    "xpForNext": 100
+   }
+  },
+  {
+   "xp": 100,
+   "expect": {
+    "level": 2,
+    "xpInto": 0,
+    "xpForNext": 200
+   }
+  },
+  {
+   "xp": 101,
+   "expect": {
+    "level": 2,
+    "xpInto": 1,
+    "xpForNext": 200
+   }
+  },
+  {
+   "xp": 299,
+   "expect": {
+    "level": 2,
+    "xpInto": 199,
+    "xpForNext": 200
+   }
+  },
+  {
+   "xp": 300,
+   "expect": {
+    "level": 3,
+    "xpInto": 0,
+    "xpForNext": 300
+   }
+  },
+  {
+   "xp": 599,
+   "expect": {
+    "level": 3,
+    "xpInto": 299,
+    "xpForNext": 300
+   }
+  },
+  {
+   "xp": 600,
+   "expect": {
+    "level": 4,
+    "xpInto": 0,
+    "xpForNext": 400
+   }
+  },
+  {
+   "xp": 1000000,
+   "expect": {
+    "level": 141,
+    "xpInto": 13000,
+    "xpForNext": 14100
+   }
+  },
+  {
+   "xp": -5,
+   "expect": {
+    "level": 1,
+    "xpInto": 0,
+    "xpForNext": 100
+   }
+  },
+  {
+   "xp": 150.9,
+   "expect": {
+    "level": 2,
+    "xpInto": 50,
+    "xpForNext": 200
+   }
+  },
+  {
+   "xp": "NaN",
+   "expect": {
+    "level": 1,
+    "xpInto": 0,
+    "xpForNext": 100
+   }
+  },
+  {
+   "xp": "Infinity",
+   "expect": {
+    "level": 1,
+    "xpInto": 0,
+    "xpForNext": 100
+   }
+  }
+ ]
+}

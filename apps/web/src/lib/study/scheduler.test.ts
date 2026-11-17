@@ -1,9 +1,19 @@
+import { spawnSync } from 'node:child_process';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { studyDay } from '../time/studyDay';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import type { ReviewEvent, ReviewGrade, StudyCard } from './types';
-import { createEmptyCard, fsrs, Rating, type Grade } from 'ts-fsrs';
+import { createEmptyCard, fsrs, generatorParameters, Rating, type Grade } from 'ts-fsrs';
 
+// A passthrough spy: the options scheduler.ts hands to ts-fsrs are part of the FSRS pin.
+vi.mock('ts-fsrs', async (importOriginal) => {
+	const actual = await importOriginal<typeof import('ts-fsrs')>();
+	return { ...actual, fsrs: vi.fn(actual.fsrs) };
+});
+
+import envelopeFixture from '../../../../../docs/contracts/events/envelope.json';
 import vacationSchedule from '../../../../../docs/contracts/scheduler/vacation-schedule.json';
 import { DEFAULT_W } from './fsrs/params';
 import { clockFromRuns, IDENTITY_CLOCK } from './studyClock';
@@ -11,11 +21,23 @@ import { UTC_CONTEXT, type StudyContext } from './studyContext';
 import {
 	buildQueue,
 	isDue,
+	isValidReview,
 	levelFromXp,
 	scheduleFor,
+	scheduleTimeline,
 	schedulerCacheSize,
+	sortedReviews,
 	xpFromReviews
 } from './scheduler';
+
+// Read with JSON.parse, not imported: a JSON import turns 1e999 into null, the
+// fixture means Infinity (what JSON.parse makes of a stored 1e999).
+const fsrsFixture: unknown = JSON.parse(
+	readFileSync(resolve(__dirname, '../../../../../docs/contracts/scheduler/fsrs.json'), 'utf8')
+);
+const reviewParseFixture: unknown = JSON.parse(
+	readFileSync(resolve(__dirname, '../../../../../docs/contracts/events/review-parse.json'), 'utf8')
+);
 
 // ULIDs are lexicographically sortable: same-instant reviews break ties
 // on the id, exactly like the server's own ordering.
@@ -538,4 +560,106 @@ describe('buildQueue with a new-card key (#75)', () => {
 		expect(buildQueue({ ...opts, newKey }).map((c) => c.id)).toEqual(['z']);
 		expect(buildQueue(opts).map((c) => c.id)).toEqual(['y']);
 	});
+});
+
+describe('docs/contracts/events/envelope.json: replay order', () => {
+	interface EnvelopeEvent {
+		id: string;
+		ts: string;
+		type: string;
+		payload: unknown;
+	}
+	interface EnvelopeCase {
+		name: string;
+		steps: { post?: { events?: EnvelopeEvent[] }; list?: string; expect: { ids?: string[] } }[];
+		stored: EnvelopeEvent[];
+	}
+	const order = (envelopeFixture as unknown as { cases: EnvelopeCase[] }).cases.find((c) => c.name.startsWith('list order'));
+	it('sortedReviews over the stored copies equals the server list order (ts, then id)', () => {
+		expect(order).toBeDefined();
+		const serverOrder = order!.steps.find((s) => s.list === '')!.expect.ids!;
+		const stored = order!.stored.map((e) => ({ ...e, workspaceId: 7, device: 'web' }) as ReviewEvent);
+		expect(sortedReviews(stored).map((e) => e.id)).toEqual(serverOrder);
+		expect(sortedReviews([...stored].reverse()).map((e) => e.id)).toEqual(serverOrder);
+	});
+});
+
+describe('docs/contracts/events/review-parse.json: validity and replay order', () => {
+	const fixture = reviewParseFixture as unknown as {
+		cases: { name: string; event: ReviewEvent; valid: boolean }[];
+		order: { name: string; events: { id: string; ts: string }[]; expect: string[] }[];
+	};
+	for (const c of fixture.cases) {
+		it(`isValidReview: ${c.name}`, () => {
+			expect(isValidReview(c.event)).toBe(c.valid);
+		});
+	}
+	for (const c of fixture.order) {
+		it(`sortedReviews: ${c.name}`, () => {
+			const events = c.events.map((e) => review('c1', 3, e.ts, e.id));
+			expect(sortedReviews(events).map((e) => e.id)).toEqual(c.expect);
+			expect(sortedReviews([...events].reverse()).map((e) => e.id)).toEqual(c.expect);
+		});
+	}
+});
+
+describe('docs/contracts/scheduler/fsrs.json: the FSRS pin', () => {
+	interface Point {
+		due: string;
+		stability: number;
+		difficulty: number;
+		state: number;
+	}
+	const fixture = fsrsFixture as {
+		tsFsrs: string;
+		parameters: Record<string, unknown> & { w: number[] };
+		replay: {
+			name: string;
+			w: 'default' | number[];
+			reviews: { id: string; ts: string; grade: ReviewGrade }[];
+			order: string[];
+			points: Point[];
+		}[];
+	};
+
+	it('scheduler.ts passes only w to ts-fsrs, so every other option is the pinned default', () => {
+		// A weight set no other test uses, so the scheduler cache builds a new instance.
+		const w = [...fixture.parameters.w];
+		w[0] = 0.2345;
+		vi.mocked(fsrs).mockClear();
+		scheduleFor('c1', [review('c1', 3, '2026-01-05T09:00:00Z')], new Date(0), w, IDENTITY_CLOCK);
+		expect(vi.mocked(fsrs).mock.calls).toEqual([[{ w }]]);
+		expect(generatorParameters({ w })).toEqual({ ...fixture.parameters, w });
+		expect(generatorParameters()).toEqual(fixture.parameters);
+	});
+	it('records the installed ts-fsrs version', () => {
+		const pkg = JSON.parse(readFileSync(resolve(__dirname, '../../../node_modules/ts-fsrs/package.json'), 'utf8'));
+		expect(pkg.version).toBe(fixture.tsFsrs);
+	});
+	it('has at least 20 replay sequences', () => {
+		expect(fixture.replay.length).toBeGreaterThanOrEqual(20);
+	});
+	it('the generated files equal the generator output (gen-scheduler-fixtures.mjs --check)', () => {
+		// Catches a hand edit of any member, including those only a port reads (reps, lapses, scheduled_days, learning_steps).
+		const script = resolve(__dirname, '../../../../../scripts/contracts/gen-scheduler-fixtures.mjs');
+		const run = spawnSync(process.execPath, [script, '--check'], { encoding: 'utf8' });
+		expect(run.stderr).toBe('');
+		expect(run.status).toBe(0);
+	}, 30_000);
+	for (const c of fixture.replay) {
+		it(`replay: ${c.name}`, () => {
+			const w = c.w === 'default' ? DEFAULT_W : c.w;
+			const events = c.reviews.map((r) => review('c1', r.grade, r.ts, r.id));
+			const timeline = scheduleTimeline('c1', events, w, IDENTITY_CLOCK);
+			expect(timeline).toHaveLength(c.points.length);
+			timeline.forEach((p, i) => {
+				const want = c.points[i];
+				expect(Date.parse(p.schedule.due), `due ${i}`).toBe(Date.parse(want.due));
+				expect(p.schedule.stability).toBeCloseTo(want.stability, 8);
+				expect(p.schedule.difficulty).toBeCloseTo(want.difficulty, 8);
+				expect(p.schedule.state).toBe(want.state);
+				expect(p.ts).toBe(Date.parse(c.reviews.find((r) => r.id === c.order[i])!.ts));
+			});
+		});
+	}
 });
