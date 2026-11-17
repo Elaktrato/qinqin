@@ -158,8 +158,8 @@ describe('BookView Words tab', () => {
 		await screen.findByText('You know 50% of the words in this chapter');
 		expect(segmentWithReadings).toHaveBeenCalledTimes(1);
 		expect(screen.getByRole('checkbox', { name: '世界' })).toBeTruthy();
-		// The panel alone draws no word states in the text.
-		expect(document.querySelector('.w-new')).toBeNull();
+		// The panel alone draws no word states in the text (its own list shows sample marks).
+		expect(document.querySelector('.chapter-text .w-new')).toBeNull();
 	});
 });
 
