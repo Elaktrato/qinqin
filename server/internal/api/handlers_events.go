@@ -24,8 +24,8 @@ type eventBatch struct {
 // offline-recorded events. Each event's id — the client-generated ULID
 // — makes retries harmless: an already-stored id counts as a duplicate,
 // never an error. The events' user is the token's user, overwriting
-// whatever the body claims; their timestamps are the client's own, kept
-// verbatim. Each event's workspace must belong to the caller: unknown
+// whatever the body claims; their timestamps are the client's own,
+// stored as UTC whole seconds (fraction truncated). Each event's workspace must belong to the caller: unknown
 // and foreign ids are 404.
 func (s *server) handleEventBatch(w http.ResponseWriter, r *http.Request) {
 	u := s.requireUser(w, r)

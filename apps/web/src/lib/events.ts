@@ -15,7 +15,8 @@ import { createWorkspaceCache } from './workspaceCache';
 export type EventType = 'session' | 'view' | 'lookup' | 'review' | 'read' | 'journal';
 
 // StudyEvent is one event as GET /api/events serves it: the row the
-// server stored, with the caller's own timestamp kept verbatim.
+// server stored, with the caller's own timestamp stored as UTC whole
+// seconds (fraction truncated; docs/contracts/events/).
 export interface StudyEvent {
 	id: string;
 	workspaceId: number;
