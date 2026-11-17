@@ -78,3 +78,19 @@ describe('Settings -> Home: the heatmap layout', () => {
 		expect(screen.queryByRole('group', { name: 'Heatmap layout' })).toBeNull();
 	});
 });
+
+describe('Settings -> Home with a feature switched off', () => {
+	it("lists the flashcards widgets while Flashcards is on and leaves them out when it is off", async () => {
+		pluginStates.set({ list: [{ id: 'qinqin-flashcards', manifest: {}, enabled: true, order: 0 }], status: 'ready' });
+		const { unmount } = render(HomeLayoutEditor);
+		await fieldset();
+		expect(screen.getAllByText('Flashcards', { selector: '.items strong' })).toHaveLength(1);
+		unmount();
+		pluginStates.set({ list: [{ id: 'qinqin-flashcards', manifest: {}, enabled: false, order: 0 }], status: 'ready' });
+		render(HomeLayoutEditor);
+		await fieldset();
+		// No row; the parked note says it stays in the layout for when the feature is back.
+		expect(screen.queryAllByText('Flashcards', { selector: '.items strong' })).toHaveLength(0);
+		expect(screen.queryByText('Words', { selector: '.items strong' })).toBeNull();
+	});
+});

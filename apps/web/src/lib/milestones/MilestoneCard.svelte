@@ -6,6 +6,8 @@
 	// loading), so the status region exists before its text arrives and a card
 	// that appears after loading is announced once; the interactive card sits
 	// outside the region. No animation, no sound.
+	import Button from '$lib/ui/Button.svelte';
+	import Icon from '$lib/ui/Icon.svelte';
 	import type { MilestonesView } from './loadMilestones';
 	import { MILESTONE_TEXT, cardHeading, moreText, statusText, titleWithDay } from './milestoneText';
 
@@ -45,7 +47,7 @@
 <div class="milestone-status visually-hidden" role="status">{status}</div>
 {#if plan.kind !== 'none'}
 		<section class="milestone-card" aria-labelledby={headingId}>
-			<span class="icon" aria-hidden="true">★</span>
+			<span class="icon" aria-hidden="true"><Icon name="milestone" size="l" /></span>
 			<div class="body">
 				<svelte:element this={`h${headingLevel}`} id={headingId} class="heading">{cardHeading(plan, locale)}</svelte:element>
 				<ul>
@@ -57,9 +59,9 @@
 					{#if plan.more > 0}<p class="more">{moreText(plan.more, locale)}</p>{/if}
 					<p class="more"><a href="/stats/week#milestones" onclick={ondismiss}>{MILESTONE_TEXT.seeAll}</a></p>
 				{/if}
-				<button type="button" class="dismiss" aria-describedby={headingId} onclick={dismiss}>
-					{MILESTONE_TEXT.dismiss}
-				</button>
+				<div class="dismiss">
+					<Button variant="secondary" aria-describedby={headingId} onclick={dismiss}>{MILESTONE_TEXT.dismiss}</Button>
+				</div>
 			</div>
 		</section>
 {/if}
@@ -77,16 +79,19 @@
 		border: 0;
 	}
 
-	/* No box (design §5): space and the star set it apart. */
+	/* A once-shown, dismissable notice is a separate object (design §5, R5):
+	   one hairline outline, no fill, no shadow. */
 	.milestone-card {
 		display: flex;
-		gap: 0.75rem;
-		margin: 1.5rem 0 0;
+		gap: var(--space-3);
+		margin: var(--space-5) 0 0;
+		padding: var(--space-3) var(--space-4);
+		border: 1px solid var(--hair);
+		border-radius: var(--radius);
 	}
 
 	.icon {
-		font-size: 1.4rem;
-		line-height: 1;
+		display: inline-flex;
 	}
 
 	.body {
@@ -95,7 +100,8 @@
 
 	.heading {
 		margin: 0;
-		font-size: 1.05rem;
+		font-size: var(--font-size-m);
+		font-weight: var(--weight-strong);
 	}
 
 	ul {
@@ -108,13 +114,6 @@
 	}
 
 	.dismiss {
-		font: inherit;
-		margin-top: 0.6rem;
-		padding: 0.3rem 0.8rem;
-		border: 1px solid color-mix(in srgb, currentColor 60%, transparent);
-		border-radius: 999px;
-		background: transparent;
-		color: inherit;
-		cursor: pointer;
+		margin-top: var(--space-3);
 	}
 </style>

@@ -27,6 +27,7 @@ vi.mock('$lib/study/store', async (importOriginal) => ({
 }));
 
 import { goto } from '$app/navigation';
+import { allWidgets } from '$lib/widgets/registry';
 import { loadMilestones, markSeen, type MilestonesView } from '$lib/milestones/loadMilestones';
 import { studyDay } from '$lib/time/studyDay';
 import { currentStudyDay } from '$lib/time/zone';
@@ -189,5 +190,24 @@ describe('home heading and search', () => {
 		await fireEvent.input(field, { target: { value: ' 你好 ' } });
 		await fireEvent.click(screen.getByRole('button', { name: 'Search' }));
 		await waitFor(() => expect(goto).toHaveBeenCalledWith(`/search?q=${encodeURIComponent('你好')}`));
+	});
+});
+
+describe('home with a feature switched off', () => {
+	it('shows no widget of a switched-off feature', async () => {
+		const actual = await vi.importActual<typeof import('$lib/widgets/registry')>('$lib/widgets/registry');
+		vi.mocked(allWidgets).mockImplementation((plugins, states, language) =>
+			actual.allWidgets(plugins, states, language, [])
+		);
+		pluginStates.set({ list: [{ id: 'qinqin-flashcards', manifest: {}, enabled: true, order: 0 }], status: 'ready' });
+		const { unmount } = render(Page);
+		await waitFor(() => expect(document.querySelector('[data-widget="flashcards-summary"]')).not.toBeNull());
+		unmount();
+		pluginStates.set({ list: [{ id: 'qinqin-flashcards', manifest: {}, enabled: false, order: 0 }], status: 'ready' });
+		render(Page);
+		await waitFor(() => expect(screen.getByText(/None of your home widgets is available in this workspace/)).toBeTruthy());
+		expect(document.querySelector('[data-widget="flashcards-summary"]')).toBeNull();
+		const link = screen.getByRole('link', { name: 'Choose widgets in Settings' });
+		expect(link.getAttribute('href')).toBe('/settings?tab=home');
 	});
 });

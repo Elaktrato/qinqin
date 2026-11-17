@@ -28,9 +28,10 @@
 {/if}
 
 <style>
+	/* A notice line (R8): text and the link, a hairline rule below, no box. */
 	.banner {
-		padding: 0.6rem 0.8rem;
-		border: 1px solid color-mix(in srgb, currentColor 40%, transparent);
-		border-radius: 0.5rem;
+		margin: var(--space-3) 0;
+		padding: 0 0 var(--space-2);
+		border-bottom: 1px solid var(--hair);
 	}
 </style>
