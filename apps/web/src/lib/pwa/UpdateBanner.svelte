@@ -1,11 +1,12 @@
 <script lang="ts">
+	import { t } from '$lib/i18n';
 	import { applyUpdate, updateAvailable } from './register';
 </script>
 
 {#if $updateAvailable}
 	<div class="update" role="status">
-		<span>A new version of qinqin is available.</span>
-		<button type="button" onclick={applyUpdate}>Reload</button>
+		<span>{t('pwa.update.available')}</span>
+		<button type="button" onclick={applyUpdate}>{t('pwa.update.reload')}</button>
 	</div>
 {/if}
 

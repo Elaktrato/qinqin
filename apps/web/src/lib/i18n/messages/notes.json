@@ -1,3 +1,5 @@
 {
-	"app.name": "The product name, shown last in every page title (\"Stats · qinqin\"). Keep it as is unless the product has an established name in the language."
+	"app.name": "The product name, shown last in every page title (\"Stats · qinqin\"). Keep it as is unless the product has an established name in the language.",
+	"features.switchedOff.text": "<link> wraps the link to Settings → Features; keep the arrow or use the language's own menu path notation.",
+	"nav.brand.home": "Accessible name of the logo link to the home page; {app} is the product name."
 }

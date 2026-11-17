@@ -3,6 +3,7 @@ import type { Component } from 'svelte';
 import { englishText, renderPseudo } from '$lib/testing/pseudo';
 import { resetCatalogue } from './index';
 import PseudoStub from './PseudoStub.test.svelte';
+import AppSection from '$lib/pwa/AppSection.svelte';
 
 // The pseudo-locale sample (spec Ruling): each extraction task adds one component of its area to SAMPLES; the
 // test renders it in en-XA and fails on any text node that is still plain ASCII English (a missed string, or
@@ -12,7 +13,10 @@ import PseudoStub from './PseudoStub.test.svelte';
 afterEach(() => resetCatalogue());
 
 type Sample = { name: string; component: Component<any>; props: Record<string, unknown>; allow?: string[] };
-const SAMPLES: Sample[] = [];
+const SAMPLES: Sample[] = [
+	// shell (Task 9): jsdom is not a secure context, so the HTTPS note shows
+	{ name: 'AppSection', component: AppSection, props: {} }
+];
 
 describe('renderPseudo', () => {
 	it('finds hard-coded English next to catalogue text', () => {

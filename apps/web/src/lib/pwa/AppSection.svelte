@@ -2,6 +2,7 @@
 	import { onMount } from 'svelte';
 	import { getToken } from '$lib/api/client';
 	import { user } from '$lib/auth';
+	import { t } from '$lib/i18n';
 	import { workspaces } from '$lib/workspaces';
 	import { appSectionView, clearOfflineData } from './appSectionView';
 	import { ownPartition } from './partitions';
@@ -77,27 +78,27 @@
 </script>
 
 <section aria-labelledby="{uid}-heading" class="block">
-	<h2 id="{uid}-heading">App</h2>
+	<h2 id="{uid}-heading">{t('pwa.app.title')}</h2>
 	{#if view.httpsNote}
 		<p class="hint">{view.httpsNote}</p>
 	{:else}
 		{#if view.showInstall}
-			<p><button type="button" onclick={() => void promptInstall()}>Install qinqin</button></p>
+			<p><button type="button" onclick={() => void promptInstall()}>{t('pwa.app.install')}</button></p>
 		{/if}
 		{#if view.installedNote}
-			<p class="hint">qinqin is installed on this device.</p>
+			<p class="hint">{t('pwa.app.installed')}</p>
 		{/if}
 		{#if view.iosHint}
-			<p class="hint">To install on iPhone or iPad: tap Share, then Add to Home Screen.</p>
+			<p class="hint">{t('pwa.app.iosHint')}</p>
 		{/if}
 		{#if view.offlineLine}<p>{view.offlineLine}</p>{/if}
 		{#if view.storageLine}<p class="hint">{view.storageLine}</p>{/if}
 		{#if view.showClear}
 			<p>
-				<button type="button" onclick={() => void clear()} disabled={busy}>Clear offline data</button>
+				<button type="button" onclick={() => void clear()} disabled={busy}>{t('pwa.app.clear')}</button>
 			</p>
 			<p class="hint" role="status">
-				{cleared ? 'Offline data cleared. Reviews that are still waiting to be sent were kept.' : ''}
+				{cleared ? t('pwa.app.cleared') : ''}
 			</p>
 		{/if}
 	{/if}
