@@ -101,8 +101,8 @@ type seedPack struct {
 // character data of cedict, unihan, kanjidic2, and jmdict — come first:
 // frequency, level and sentence packs refer to existing entries and skip
 // the unknown ones, so they must follow. Frequency packs come right after
-// the dictionaries; sentences follow; grammar, audio, components, strokes
-// and theme packs, which refer to no entries at import time, come last.
+// the dictionaries; sentences follow; grammar, audio, components, strokes,
+// theme and font packs, which refer to no entries at import time, come last.
 var importOrder = map[string]int{
 	dict.TypeDictionary: 0,
 	dict.TypeFrequency:  1,
@@ -113,6 +113,7 @@ var importOrder = map[string]int{
 	dict.TypeComponents: 6,
 	dict.TypeStrokes:    7,
 	dict.TypeTheme:      8,
+	dict.TypeFont:       9,
 }
 
 // seed imports every pack under the roots into sqlDB through
@@ -149,7 +150,7 @@ func seed(ctx context.Context, sqlDB *sql.DB, dataDir string, roots []string, ou
 	// imports (kicks of one id coalesce), and seed waits for them.
 	builder := packageBuilder(sqlDB, dataDir, func(format string, args ...any) { fmt.Fprintf(out, format+"\n", args...) })
 	for _, p := range found {
-		line, err := packs.Import(ctx, sqlDB, p.pack, packs.WithAudioStore(filepath.Join(dataDir, "audio")),
+		line, err := packs.Import(ctx, sqlDB, p.pack, packs.WithAudioStore(filepath.Join(dataDir, "audio")), packs.WithFontStore(filepath.Join(dataDir, "fonts")),
 			packs.WithOnChange(builder.PackChanged))
 		if err != nil {
 			return fmt.Errorf("seed pack %s (%s): %w", p.pack.ID, p.dir, err)

@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"qinqin/internal/dict"
+	"qinqin/internal/fonts"
 	"qinqin/internal/packs"
 	"qinqin/internal/themes"
 )
@@ -45,7 +46,8 @@ func (s *server) handleUninstallPack(w http.ResponseWriter, r *http.Request) {
 	s.packMu.Lock()
 	defer s.packMu.Unlock()
 	err := packs.Uninstall(r.Context(), s.db, r.PathValue("type"), r.PathValue("packId"),
-		packs.WithAudioStore(filepath.Join(s.dataDir, "audio")), packs.WithOnChange(s.packChanged))
+		packs.WithAudioStore(filepath.Join(s.dataDir, "audio")), packs.WithFontStore(filepath.Join(s.dataDir, "fonts")),
+		packs.WithOnChange(s.packChanged))
 	switch {
 	case errors.Is(err, packs.ErrUnknownType):
 		http.Error(w, "unknown pack type", http.StatusNotFound)
@@ -292,6 +294,14 @@ func (s *server) handleStagePack(w http.ResponseWriter, r *http.Request) {
 			checks := themes.Review(t)
 			review = append(review, stagedTheme{ID: t.ID, Name: t.Name, Family: t.Family, Scheme: t.Scheme,
 				Checks: checks, Failing: themes.Failing(checks)})
+		}
+	}
+	// A font pack's faces.json and every slice file are checked now: a
+	// broken pack is refused before the licence review, not after it.
+	if m.Type == dict.TypeFont {
+		if _, err := fonts.CheckPack(pack); err != nil {
+			http.Error(w, packErrorText(err, dir, s.dataDir), http.StatusBadRequest)
+			return
 		}
 	}
 	// The registry row a pack's import writes can differ from its manifest
