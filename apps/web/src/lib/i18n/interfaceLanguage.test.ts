@@ -81,15 +81,15 @@ describe('followServerLanguage', () => {
 	it('mirrors the resolved language and reloads only when it differs from the running one', () => {
 		const s = memoryStorage();
 		const reload = vi.fn();
-		expect(followServerLanguage({ interfaceLanguage: '' }, { running: 'en', storage: s, browser: ['en'], reload })).toBe(false);
+		expect(followServerLanguage({ interfaceLanguage: '' }, { running: 'en', storage: s, session: memoryStorage(), browser: ['en'], catalogue: (l) => l, reload })).toBe(false);
 		expect(reload).not.toHaveBeenCalled();
 		expect(s.getItem(MIRROR_KEY)).toBe('en');
-		expect(followServerLanguage({ interfaceLanguage: 'en' }, { running: 'xx', storage: s, browser: [], reload })).toBe(true);
+		expect(followServerLanguage({ interfaceLanguage: 'en' }, { running: 'xx', storage: s, session: memoryStorage(), browser: [], catalogue: (l) => l, reload })).toBe(true);
 		expect(reload).toHaveBeenCalledTimes(1);
 	});
 	it('an older server without the field behaves like the browser default', () => {
 		const reload = vi.fn();
-		expect(followServerLanguage({}, { running: 'en', storage: null, browser: ['fr'], reload })).toBe(false);
+		expect(followServerLanguage({}, { running: 'en', storage: null, session: null, browser: ['fr'], catalogue: (l) => l, reload })).toBe(false);
 	});
 });
 

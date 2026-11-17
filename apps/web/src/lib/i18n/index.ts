@@ -84,16 +84,20 @@ function deviceLanguages(): readonly string[] {
 	return typeof navigator === 'undefined' ? [] : (navigator.languages ?? [navigator.language]);
 }
 
+/** The language whose catalogue `loadCatalogue(lang)` installs: the negotiated one if it has a file, else en. */
+export function catalogueLanguage(lang: string): string {
+	const resolved = negotiate([lang], SUPPORTED_LANGUAGES);
+	return resolved !== DEFAULT_LANGUAGE && loaders[`./messages/${resolved}.json`] !== undefined ? resolved : DEFAULT_LANGUAGE;
+}
+
 /**
  * Installs the catalogue of a resolved interface language before the app mounts (root `+layout.ts`). A language
  * without a catalogue resolves to en; en needs no request.
  */
 export async function loadCatalogue(lang: string, device: readonly string[] = deviceLanguages()): Promise<void> {
-	const resolved = negotiate([lang], SUPPORTED_LANGUAGES);
+	const chosen = catalogueLanguage(lang);
 	let next: Readonly<Record<string, string>> = english;
-	const loader = loaders[`./messages/${resolved}.json`];
-	const chosen = resolved !== DEFAULT_LANGUAGE && loader !== undefined ? resolved : DEFAULT_LANGUAGE;
-	if (chosen !== DEFAULT_LANGUAGE) next = (await loader()).default;
+	if (chosen !== DEFAULT_LANGUAGE) next = (await loaders[`./messages/${chosen}.json`]()).default;
 	language = chosen;
 	messages = next;
 	fmtLocale = formatLocale(chosen, device);

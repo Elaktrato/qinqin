@@ -1,4 +1,4 @@
-import { getLanguage } from './i18n';
+import { catalogueLanguage, getLanguage } from './i18n';
 import { followServerLanguage } from './i18n/interfaceLanguage';
 import { reloadPage } from './i18n/reloadPage';
 import { clearAudioCache } from './api/audio';
@@ -150,14 +150,24 @@ export async function loadMe(known?: string): Promise<User | null> {
 
 /** The account's interface language: mirrored for the next start; a different one than running reloads once. */
 function followAccountLanguage(me: User): void {
-	let storage: Storage | null = null;
-	try {
-		storage = typeof localStorage === 'undefined' ? null : localStorage;
-	} catch {
-		storage = null;
-	}
 	const browser = typeof navigator === 'undefined' ? [] : (navigator.languages ?? [navigator.language]);
-	followServerLanguage(me, { running: getLanguage(), storage, browser, reload: reloadPage });
+	followServerLanguage(me, {
+		running: getLanguage(),
+		storage: webStorage('localStorage'),
+		session: webStorage('sessionStorage'),
+		browser,
+		catalogue: catalogueLanguage,
+		reload: reloadPage
+	});
+}
+
+/** A Web Storage area, or null where it is missing or access throws (blocked site data). */
+function webStorage(name: 'localStorage' | 'sessionStorage'): Storage | null {
+	try {
+		return typeof globalThis[name] === 'undefined' ? null : globalThis[name];
+	} catch {
+		return null;
+	}
 }
 
 /** What a sign-in attempt came to: a session, or a second step to answer first. */

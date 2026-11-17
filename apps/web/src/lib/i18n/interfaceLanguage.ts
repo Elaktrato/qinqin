@@ -2,6 +2,7 @@
 // browser's languages decide; signed in the stored setting from `me.interfaceLanguage` ('' = follow the browser).
 // The last resolved language is mirrored in localStorage for the first paint and an offline start; when `me`
 // brings a different one, the page reloads once (`t` is no store: a language change is a reload, spec Ruling).
+// The reload is guarded so it can never loop (see followServerLanguage).
 import { SUPPORTED_LANGUAGES, isLanguageSetting, negotiate } from './negotiate';
 
 export const MIRROR_KEY = 'qq.interfaceLanguage';
@@ -37,17 +38,69 @@ export function startupLanguage(o: { signedIn: boolean; storage: Storage | null;
 	return resolveInterfaceLanguage(mirrored ?? undefined, o.browser);
 }
 
+/** sessionStorage: set just before a language reload, so the start it causes never reloads again. */
+export const RELOAD_MARKER_KEY = 'qq.interfaceLanguage.reloaded';
+
+/** Writes the mirror and reads it back: true only when it now holds `language` (a reload would then apply it). */
+function mirrorHolds(storage: Storage | null, language: string): boolean {
+	writeMirror(storage, language);
+	return readMirror(storage) === language;
+}
+
+/** Reads and removes the one-shot reload marker; a blocked sessionStorage reads as unmarked. */
+function takeReloadMarker(session: Storage | null): boolean {
+	try {
+		const marked = session?.getItem(RELOAD_MARKER_KEY) != null;
+		if (marked) session?.removeItem(RELOAD_MARKER_KEY);
+		return marked;
+	} catch {
+		return false;
+	}
+}
+
+/** Sets the one-shot reload marker; false when it cannot be stored (then no reload: it could not be bounded). */
+function setReloadMarker(session: Storage | null): boolean {
+	try {
+		if (!session) return false;
+		session.setItem(RELOAD_MARKER_KEY, '1');
+		return session.getItem(RELOAD_MARKER_KEY) !== null;
+	} catch {
+		return false;
+	}
+}
+
 /**
- * After `me` loaded: mirror the account's resolved language, and reload when it differs from the running one.
- * Returns whether it reloads.
+ * After `me` loaded: mirror the account's resolved language, and reload when its catalogue differs from the running
+ * one. Never loops: it reloads only when the mirror now holds the language (blocked storage would also drop an
+ * unstored session on reload), when the language's catalogue (`catalogue`, as `loadCatalogue` would install it)
+ * differs from the running one, and at most once per start (a sessionStorage marker). Returns whether it reloads.
  */
 export function followServerLanguage(
 	me: { interfaceLanguage?: string },
-	o: { running: string; storage: Storage | null; browser: readonly string[]; reload: () => void }
+	o: {
+		running: string;
+		storage: Storage | null;
+		session: Storage | null;
+		browser: readonly string[];
+		catalogue: (language: string) => string;
+		reload: () => void;
+	}
 ): boolean {
 	const resolved = resolveInterfaceLanguage(me.interfaceLanguage ?? '', o.browser);
-	writeMirror(o.storage, resolved);
-	if (resolved === o.running) return false;
+	const reloadedOnce = takeReloadMarker(o.session);
+	if (!mirrorHolds(o.storage, resolved)) return false;
+	if (o.catalogue(resolved) === o.running) return false;
+	if (reloadedOnce || !setReloadMarker(o.session)) return false;
+	o.reload();
+	return true;
+}
+
+/**
+ * Settings saved a new interface language: mirror it and reload, but only when the mirror now holds it (else the
+ * reload would neither show it nor keep an unstored session). Returns whether it reloads.
+ */
+export function switchInterfaceLanguage(resolved: string, o: { storage: Storage | null; reload: () => void }): boolean {
+	if (!mirrorHolds(o.storage, resolved)) return false;
 	o.reload();
 	return true;
 }

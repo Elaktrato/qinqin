@@ -216,6 +216,22 @@ describe('Settings → Account: interface language', () => {
 		expect(localStorage.getItem(MIRROR_KEY)).toBe('en');
 	});
 
+	it('a save that cannot be mirrored (storage blocked) does not reload, which would drop the session', async () => {
+		const setItem = vi.spyOn(localStorage, 'setItem').mockImplementation(() => {
+			throw new Error('denied');
+		});
+		try {
+			render(AccountSettings);
+			await fireEvent.change(screen.getByLabelText('Interface language'), { target: { value: 'en' } });
+			await fireEvent.click(screen.getByRole('button', { name: 'Save language' }));
+			expect((await screen.findByText(/This browser blocks site storage/)).textContent).toBeTruthy();
+			expect(reloadPage).not.toHaveBeenCalled();
+			expect((screen.getByRole('button', { name: 'Save language' }) as HTMLButtonElement).disabled).toBe(false);
+		} finally {
+			setItem.mockRestore();
+		}
+	});
+
 	it('a refused save says so and does not reload', async () => {
 		vi.mocked(api).mockImplementation((async (url: string, opts?: { method?: string }) => {
 			if (url === '/api/me/interface-language') throw new ApiError(422, JSON.stringify({ error: 'invalid_language', message: 'x' }));

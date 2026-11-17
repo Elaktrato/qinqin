@@ -1,5 +1,8 @@
+import { existsSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
+	catalogueLanguage,
 	getFormatLocale,
 	getLanguage,
 	installCatalogue,
@@ -11,6 +14,7 @@ import {
 	type MessageKey
 } from './index';
 import { MessageError } from './message';
+import { SUPPORTED_LANGUAGES } from './negotiate';
 
 afterEach(() => {
 	resetCatalogue();
@@ -72,6 +76,21 @@ describe('loadCatalogue', () => {
 
 	it('the default before any catalogue is loaded formats like en-GB', () => {
 		expect(getFormatLocale()).toBe('en-GB');
+	});
+});
+
+describe('catalogueLanguage', () => {
+	it('every supported language has a catalogue file (else its start would load en and never match)', () => {
+		for (const lang of SUPPORTED_LANGUAGES) {
+			expect(existsSync(resolve(__dirname, 'messages', `${lang}.json`)), lang).toBe(true);
+			expect(catalogueLanguage(lang)).toBe(lang);
+		}
+	});
+
+	it('is the catalogue loadCatalogue installs: a language without one is en', async () => {
+		expect(catalogueLanguage('zz')).toBe('en');
+		await loadCatalogue('zz', []);
+		expect(getLanguage()).toBe(catalogueLanguage('zz'));
 	});
 });
 

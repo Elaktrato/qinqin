@@ -6,7 +6,7 @@
 	import Msg from '$lib/i18n/Msg.svelte';
 	import { putInterfaceLanguage } from '$lib/api/interfaceLanguage';
 	import { SUPPORTED_LANGUAGES } from '$lib/i18n/negotiate';
-	import { resolveInterfaceLanguage, writeMirror } from '$lib/i18n/interfaceLanguage';
+	import { resolveInterfaceLanguage, switchInterfaceLanguage } from '$lib/i18n/interfaceLanguage';
 	import { languageName } from '$lib/i18n/format';
 	import { reloadPage } from '$lib/i18n/reloadPage';
 	import {
@@ -112,12 +112,14 @@
 	let languageDraft = $state($user?.interfaceLanguage ?? '');
 	let languageBusy = $state(false);
 	let languageError = $state('');
+	let languageNotice = $state('');
 
 	async function saveLanguage(event: SubmitEvent): Promise<void> {
 		event.preventDefault();
 		if (languageBusy) return;
 		languageBusy = true;
 		languageError = '';
+		languageNotice = '';
 		try {
 			const res = await putInterfaceLanguage(languageDraft);
 			let storage: Storage | null = null;
@@ -126,8 +128,11 @@
 			} catch {
 				storage = null;
 			}
-			writeMirror(storage, resolveInterfaceLanguage(res.language, browserLanguages));
-			reloadPage();
+			const resolved = resolveInterfaceLanguage(res.language, browserLanguages);
+			if (!switchInterfaceLanguage(resolved, { storage, reload: reloadPage })) {
+				languageNotice = t('settings.account.interfaceLanguage.storageBlocked');
+				languageBusy = false;
+			}
 		} catch (err) {
 			languageError = errorText(err, t('settings.account.interfaceLanguage.error'));
 			languageBusy = false;
@@ -289,6 +294,7 @@
 		</label>
 		<p class="hint" id="account-language-hint">{t('settings.account.interfaceLanguage.hint')}</p>
 		{#if languageError}<p class="error" role="alert">{languageError}</p>{/if}
+		{#if languageNotice}<p class="hint" role="status">{languageNotice}</p>{/if}
 		<button type="submit" disabled={languageBusy}
 			>{languageBusy ? t('settings.account.interfaceLanguage.saving') : t('settings.account.interfaceLanguage.save')}</button
 		>

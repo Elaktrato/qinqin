@@ -1814,6 +1814,7 @@
 	"settings.account.interfaceLanguage.label": "Interface language",
 	"settings.account.interfaceLanguage.save": "Save language",
 	"settings.account.interfaceLanguage.saving": "Saving…",
+	"settings.account.interfaceLanguage.storageBlocked": "Saved. This browser blocks site storage, so this page keeps its current language; your other devices and the mails this server sends you use the new one.",
 	"settings.account.interfaceLanguage.title": "Language",
 	"settings.account.password.change": "Change password",
 	"settings.account.password.changed": "Password changed.",
