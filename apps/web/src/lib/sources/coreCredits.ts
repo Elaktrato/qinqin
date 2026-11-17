@@ -53,6 +53,17 @@ export const coreCredits: SourceCredit[] = [
 		attribution: 'Copyright 2022 The Figtree Project Authors',
 		licenseTexts: [licenceText('OFL-1.1', '/FIGTREE-OFL.TXT')]
 	}, { notice: 'sources.core.figtree' }),
+	// The compiled-in fallback palette (#96): Catppuccin Latte and Mocha
+	// paint before the server's theme list arrives (lib/theme/fallback.ts).
+	// Its licence text ships at static/CATPPUCCIN-LICENSE.TXT, the built-in
+	// theme pack's LICENSE byte for byte (lib/theme/fallback.test.ts).
+	credit({
+		name: 'Catppuccin',
+		url: 'https://github.com/catppuccin/palette',
+		license: 'MIT',
+		attribution: 'Copyright (c) 2021 Catppuccin',
+		licenseTexts: [licenceText('MIT', '/CATPPUCCIN-LICENSE.TXT')]
+	}, { notice: 'sources.core.catppuccin' }),
 	credit({
 		name: 'uqr',
 		url: 'https://github.com/unjs/uqr',

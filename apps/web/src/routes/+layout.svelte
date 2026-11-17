@@ -35,6 +35,8 @@
 	import { requestSignOut } from '$lib/account/signOut';
 	import { logoutPrompt } from '$lib/account/logoutFlow';
 	import { watchDeletedWorkspaces } from '$lib/workspaceGone';
+	import { themeStore } from '$lib/theme/store.svelte';
+	import ThemeSwitch from '$lib/theme/ThemeSwitch.svelte';
 	import {
 		load as loadWorkspaces,
 		workspaces,
@@ -123,6 +125,8 @@
 		void registerWorker();
 		captureInstallPrompt(window); // the root layout lives as long as the page
 		void persistOnceNow();
+		// The theme list and the device's light/dark switch, signed in or out.
+		void themeStore.start();
 		// Rehydrate the session from qinqin.token before guarding.
 		try {
 			await loadMe();
@@ -175,6 +179,16 @@
 			clearTimeout(timer);
 			document.removeEventListener('visibilitychange', onVisible);
 		};
+	});
+
+	// The person's appearance row: loaded once per signed-in user (not for a
+	// restricted session); signing out forgets it and keeps what is painted.
+	let themeUser: number | null | undefined = undefined;
+	$effect(() => {
+		const id = booted && signedIn && $restriction === null ? ($user?.id ?? null) : null;
+		if (id === themeUser) return;
+		themeUser = id;
+		void themeStore.setUser(id);
 	});
 
 	// The learner's time zone history (and, once per account, the browser
@@ -251,6 +265,9 @@
 				</div>
 				{/if}
 				<div class="account">
+					<!-- The quick theme switch; the account menu of the frame
+					     rework (#99) takes it over. -->
+					{#if !restricted}<ThemeSwitch />{/if}
 					{#if $user}
 						<span class="username">{$user.username}</span>
 					{/if}
@@ -354,9 +371,10 @@
 
 <style>
 	.app {
-		/* Nav accent: the app's blue, a darker shade for text on its tint. */
-		--nav-accent: #0b6bcb;
-		--nav-accent-text: #0957a6;
+		/* Nav accent: the theme's accent; text on its tint uses the reading
+		   accent (the accent where it reaches 4.5:1, else the text colour). */
+		--nav-accent: var(--accent);
+		--nav-accent-text: var(--reading-accent);
 		/* The fixed bottom tab bar's height (0 while there is none). Fixed
 		   elements further down, such as the reader's drawer button, keep
 		   clear of the bar with it. */
@@ -366,13 +384,6 @@
 		flex-direction: column;
 		min-height: 100vh;
 		min-height: 100dvh;
-	}
-
-	@media (prefers-color-scheme: dark) {
-		.app {
-			--nav-accent: #6cb4ff;
-			--nav-accent-text: #8cc4ff;
-		}
 	}
 
 	.content {

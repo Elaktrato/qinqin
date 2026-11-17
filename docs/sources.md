@@ -657,7 +657,12 @@ Pine Dawn's text is the current palette's `#464261`, not the former `#575279`).
 - **Catppuccin** (`catppuccin`, built in): Latte, Frappé, Macchiato, Mocha.
   MIT, © 2021 Catppuccin. [catppuccin/palette](https://github.com/catppuccin/palette)
   (`palette.json` 1.8.0, commit `07d02aa110ef`). The light flavour uses mantle
-  for raised surfaces and surface0 for lines, as in the design.
+  for raised surfaces and surface0 for lines, as in the design. Latte and Mocha
+  are also compiled into the web app as the first-paint and offline fallback
+  (`apps/web/src/lib/theme/fallback.ts`, pinned to the pack's `themes.json` by a
+  test); the web app serves the same MIT text at
+  `apps/web/static/CATPPUCCIN-LICENSE.TXT` (the pack's `LICENSE`, byte for byte)
+  and credits it under "Built into the app".
 - **Rosé Pine** (`rose-pine`, built in): Rosé Pine, Moon, Dawn. MIT, © mvllow.
   [rose-pine/palette](https://github.com/rose-pine/palette) (commit `92af52b465ab`).
 - **Nord** (`nord`, built in): MIT, © 2016-present Sven Greb.

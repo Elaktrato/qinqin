@@ -24,6 +24,11 @@ database with a SvelteKit single-page app embedded in the binary.
 - **Workspaces** — keep Chinese and Japanese study separate, or split one
   language into several named workspaces; each has its own flag, decks, library
   and statistics (see [Workspaces](#workspaces)).
+- **Themes** — Settings → Appearance picks a light and a dark colour theme
+  (Catppuccin, Rosé Pine, Nord, Gruvbox, Dracula, Solarized, Tokyo Night,
+  Everforest, Kanagawa built in; more as `theme` packs), an accent, corners,
+  spacing and the hanzi font; saved to your account and following the device's
+  light/dark setting (rules: `docs/contracts/themes/`).
 - **Search** — across written forms, readings, and meanings, scoped to the
   current workspace language.
 - **Radical and part lookup** — in Chinese and Japanese workspaces, find a

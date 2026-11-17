@@ -44,3 +44,16 @@ describe('root layout load', () => {
 		}
 	});
 });
+
+describe('root layout load: the theme before mount', () => {
+	afterEach(() => {
+		document.documentElement.removeAttribute('style');
+		document.documentElement.removeAttribute('data-scheme');
+	});
+
+	it('paints the compiled-in fallback when this device has no stored tokens', async () => {
+		await load();
+		expect(document.documentElement.style.getPropertyValue('--panel')).toMatch(/^#[0-9a-f]{6}$/);
+		expect(document.documentElement.dataset.scheme).toMatch(/^(light|dark)$/);
+	});
+});

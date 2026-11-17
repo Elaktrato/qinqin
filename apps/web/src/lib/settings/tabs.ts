@@ -5,6 +5,7 @@ import { t } from '$lib/i18n';
 export const SETTINGS_TABS = [
 	'workspaces',
 	'home',
+	'appearance',
 	'study',
 	'features',
 	'plugins',
@@ -21,6 +22,9 @@ export const SETTINGS_TAB_LABELS: Readonly<Record<SettingsTab, string>> = {
 	},
 	get home() {
 		return t('settings.tabs.home');
+	},
+	get appearance() {
+		return t('settings.tabs.appearance');
 	},
 	get study() {
 		return t('settings.tabs.study');

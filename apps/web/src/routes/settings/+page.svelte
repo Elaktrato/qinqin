@@ -21,6 +21,7 @@
 	import AdminSettings from '$lib/settings/AdminSettings.svelte';
 	import AiSettings from '$lib/settings/AiSettings.svelte';
 	import AudioSettings from '$lib/settings/AudioSettings.svelte';
+	import AppearanceSettings from '$lib/settings/AppearanceSettings.svelte';
 	import HomeLayoutEditor from '$lib/settings/HomeLayoutEditor.svelte';
 	import StudyDaySettings from '$lib/settings/StudyDaySettings.svelte';
 	import StudySettings from '$lib/settings/StudySettings.svelte';
@@ -495,6 +496,16 @@
 				{/each}
 			</ul>
 		{/if}
+	</div>
+
+	<div
+		role="tabpanel"
+		id="settings-panel-appearance"
+		aria-labelledby="settings-tab-appearance"
+		hidden={activeTab !== 'appearance'}
+	>
+		<!-- Mounted only while open: leaving the tab unsaved ends the live preview. -->
+		{#if activeTab === 'appearance'}<AppearanceSettings />{/if}
 	</div>
 
 	<div

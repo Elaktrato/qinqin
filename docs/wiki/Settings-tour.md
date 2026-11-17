@@ -1,6 +1,6 @@
 # Settings tour
 
-Settings is in the footer of every signed-in page. The open tab is part of the address (`/settings?tab=home`), so you can bookmark or share a tab. Tabs are Workspaces, Home, Study, Features, Plugins, AI and Account for everyone, and Data and Admin for administrators.
+Settings is in the footer of every signed-in page. The open tab is part of the address (`/settings?tab=home`), so you can bookmark or share a tab. Tabs are Workspaces, Home, Appearance, Study, Features, Plugins, AI and Account for everyone, and Data and Admin for administrators.
 
 ## Workspaces
 
@@ -9,6 +9,10 @@ Create, rename and delete workspaces ([Workspaces and languages](Workspaces-and-
 ## Home
 
 Chooses and orders the home-page widgets. Each widget has an "On the home page" switch and **Move up** / **Move down** buttons (or drag a row by its handle). A preview shows the result and **Reset to default** restores the default layout (activity, flashcards, the daily goal, then this week). Changes save immediately to your account, so every device and workspace gets them. A widget whose plugin is disabled keeps its place and returns when the plugin is enabled again; one that does not fit the active workspace's language is marked "Not available for <language>".
+
+## Appearance
+
+Your colour theme and adjustments (`/settings?tab=appearance`), saved to your account so every device gets them. **Mode** is System (follows your device's light or dark setting), Light or Dark; you pick a **Light theme** and a **Dark theme** (Catppuccin, Rosé Pine, Nord, Gruvbox, Dracula, Solarized, Tokyo Night, Everforest, Kanagawa and any theme pack an administrator installed), each with an **accent** — only accents that stand out at least 3:1 against the theme's background are offered. **Corners** (Sharp, Soft, Round), **Spacing** (Compact, Comfortable) and the **Hanzi and kanji font** (Sans, Serif, Kai; stored now, used once the font work lands) complete it. Every change shows right away, with a preview of text, the primary action, the grade colours and the reader's word marks; **Save** keeps it, **Discard changes** goes back, **Reset to defaults** restores Catppuccin Latte and Mocha. Leaving the tab without saving returns to your saved look. The palette button next to your name switches the theme of the current mode in one click. The app remembers the last theme on this device, so it starts in your colours even offline.
 
 ## Study
 
@@ -38,7 +42,7 @@ Profile (email, if the server asks for one), password, two-step sign-in, signed-
 
 ## Data (administrators)
 
-Install dictionary and level packs, register or remove languages ([Data and licences](Data-and-licences)). Each pack shows its data package (revision, size, state, and for administrators the error of a failed build); "Packages are being built" appears while the server builds them.
+Install dictionary, level and theme packs, register or remove languages ([Data and licences](Data-and-licences)). Each pack shows its data package (revision, size, state, and for administrators the error of a failed build); "Packages are being built" appears while the server builds them. A theme pack's review shows the measured contrast of each of its themes (pair, ratio, minimum, "Passes" or "Below"); a theme below a minimum can still be installed.
 
 ## Admin (administrators)
 

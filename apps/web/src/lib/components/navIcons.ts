@@ -11,6 +11,7 @@ export type NavIconName =
 	| 'gear'
 	| 'signin'
 	| 'signout'
+	| 'palette'
 	| 'plugin';
 
 // Keys are normalised (lower case, no `qinqin-` pack prefix).

@@ -29,6 +29,8 @@
 		packagesUnavailable,
 		progressText,
 		replaceLines,
+		contrastSummary,
+		contrastView,
 		uninstallWarning
 	} from './packsView';
 
@@ -275,7 +277,7 @@
 				{#if staged.manifest.languages?.length}
 					<dt>{t('packs.review.languages')}</dt>
 					<dd>{staged.manifest.languages.map((l) => languageLabel(l)).join(', ')}</dd>
-				{:else}
+				{:else if staged.manifest.language}
 					<dt>{t('packs.review.language')}</dt>
 					<dd>{languageLabel(staged.manifest.language)}</dd>
 				{/if}
@@ -288,6 +290,39 @@
 					<dd class="notice-text">{staged.manifest.notice}</dd>
 				{/if}
 			</dl>
+			{#if staged.themes?.length}
+				<!-- A theme pack: the measured contrast of every theme (reported, never enforced). -->
+				<div class="contrast">
+					<h4>{t('packs.contrast.title')}</h4>
+					<p>{contrastSummary(staged.themes)}</p>
+					{#each staged.themes as theme (theme.id)}
+						{@const view = contrastView(theme)}
+						<div class="table-wrap">
+							<table>
+								<caption>{view.caption}</caption>
+								<thead>
+									<tr>
+										<th scope="col">{t('packs.contrast.col.pair')}</th>
+										<th scope="col">{t('packs.contrast.col.ratio')}</th>
+										<th scope="col">{t('packs.contrast.col.needed')}</th>
+										<th scope="col">{t('packs.contrast.col.result')}</th>
+									</tr>
+								</thead>
+								<tbody>
+									{#each view.rows as row, i (i)}
+										<tr class:below={!row.pass}>
+											<th scope="row">{row.pair}</th>
+											<td>{row.ratio}</td>
+											<td>{row.needed}</td>
+											<td class="result">{row.result}</td>
+										</tr>
+									{/each}
+								</tbody>
+							</table>
+						</div>
+					{/each}
+				</div>
+			{/if}
 			{#if caution}
 				<p class="caution" role="note">{caution}</p>
 			{/if}
@@ -511,5 +546,32 @@
 	}
 	dialog {
 		max-width: min(32rem, 92vw);
+	}
+	/* The contrast tables of a staged theme pack: the result is a word;
+	   a row below its minimum is also bold (never colour alone). */
+	.contrast h4 {
+		margin: 1rem 0 0.25rem;
+	}
+	.contrast .table-wrap {
+		overflow-x: auto;
+		margin-block: 0.5rem;
+	}
+	.contrast table {
+		border-collapse: collapse;
+		font-size: 0.9rem;
+	}
+	.contrast caption {
+		text-align: start;
+		font-weight: 600;
+		padding-bottom: 0.25rem;
+	}
+	.contrast th,
+	.contrast td {
+		text-align: start;
+		padding: 0.2rem 0.75rem 0.2rem 0;
+		border-bottom: 1px solid var(--hair);
+	}
+	.contrast tr.below .result {
+		font-weight: 700;
 	}
 </style>

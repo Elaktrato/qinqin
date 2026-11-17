@@ -184,6 +184,7 @@ const CASES: [MessageKey, MessageArgs, string, string][] = [
 	['settings.tokens.expiresInHours', {}, 'Expires in 1 hour', 'Expires in 2 hours'],
 	['settings.tokens.create.days', {}, '1 day', '2 days'],
 	['packs.progress.bytes', {}, '1 byte', '2 bytes'],
+	['packs.contrast.failing', {}, '1 check is below its minimum.', '2 checks are below their minimum.'],
 	// admin (Task 17)
 	['admin.delete.preview.workspaces', {}, '1 workspace', '2 workspaces'],
 	['admin.delete.preview.studyEvents', {}, '1 recorded review and study event', '2 recorded reviews and study events'],
