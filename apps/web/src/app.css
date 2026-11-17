@@ -1,6 +1,18 @@
+/* The interface font (#97): Figtree, SIL OFL 1.1 (static/FIGTREE-OFL.TXT),
+   the upstream variable WOFF2 unmodified. Self-hosted: the build emits it as a
+   hashed shell asset the service worker precaches; never a third-party host. */
+@font-face {
+	font-family: 'Figtree';
+	src: url('./lib/assets/fonts/Figtree-Variable.woff2') format('woff2');
+	font-weight: 300 900;
+	font-style: normal;
+	font-display: swap;
+}
+
 :root {
 	color-scheme: light dark;
-	font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+	--font-ui: 'Figtree', system-ui, -apple-system, 'Segoe UI', sans-serif;
+	font-family: var(--font-ui);
 }
 
 body {
