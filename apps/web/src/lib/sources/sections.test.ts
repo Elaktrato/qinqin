@@ -36,7 +36,7 @@ const READER_V030_SOURCES: SourceCredit[] = [
 import { fixtureManifest } from '$lib/plugins/fixtures';
 import { coreCredits } from './coreCredits';
 import { localLicensePath } from './credits';
-import { componentsSection, creditView, packTable, pluginCredits, sentencePackSources, strokesSection } from './sections';
+import { componentsSection, creditView, packTable, pluginCredits, sentencePackSources, strokesSection, themesSection } from './sections';
 
 describe('packTable', () => {
 	it('builds rows and a note per pack with a notice, with unique ids', () => {
@@ -363,5 +363,34 @@ describe('the app credits no longer carry the stroke data', () => {
 	it('lists no hanzi-writer-data credit (the stroke packs are credited from the server)', () => {
 		expect(coreCredits.map((c) => c.name)).not.toContain('hanzi-writer-data');
 		expect(coreCredits.map((c) => c.name)).toContain('hanzi-writer');
+	});
+});
+
+describe('themesSection', () => {
+	const themes = [
+		{ id: 'catppuccin-latte', name: 'Latte', family: 'Catppuccin' },
+		{ id: 'catppuccin-mocha', name: 'Mocha', family: 'Catppuccin' },
+		{ id: 'paper', name: 'Paper', family: '' }
+	];
+	const packs = [
+		{ packId: 'catppuccin', name: 'Catppuccin', version: '1.0', license: 'MIT', attribution: '© 2021 Catppuccin', notice: 'Colours from [the palette](https://github.com/catppuccin/palette).', builtin: true, themes: ['catppuccin-latte', 'catppuccin-mocha'] },
+		{ packId: 'paper-themes', name: 'Paper themes', version: '2', license: 'MIT', attribution: 'Paper', notice: '', builtin: false, themes: ['paper', 'gone'] }
+	];
+
+	it('lists every pack in the answer order with its theme names and whether it is built in', () => {
+		const out = themesSection({ themes, packs }, '');
+		expect(out.show).toBe(true);
+		expect(out.table.rows.map((r) => [r.name, r.license, r.attribution])).toEqual([
+			['Catppuccin', 'MIT', '© 2021 Catppuccin'],
+			['Paper themes', 'MIT', 'Paper']
+		]);
+		expect(out.themeNames).toEqual({ 0: 'Latte, Mocha', 1: 'Paper' });
+		expect(out.builtin).toEqual({ 0: true, 1: false });
+		expect(out.table.notes).toHaveLength(1);
+	});
+
+	it('shows on an error so the retry is reachable, and hides with nothing listed', () => {
+		expect(themesSection({ themes: [], packs: [] }, 'down').show).toBe(true);
+		expect(themesSection({ themes: [], packs: [] }, '').show).toBe(false);
 	});
 });

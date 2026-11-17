@@ -18,6 +18,7 @@ const pack = {
 
 let components: () => Response;
 let strokes: () => Response;
+let themesAnswer: () => Response;
 
 const strokePack = {
 	packId: 'hanzi-writer-strokes',
@@ -36,12 +37,21 @@ function json(body: unknown, status = 200): Response {
 beforeEach(() => {
 	components = () => json([pack]);
 	strokes = () => json([strokePack]);
+	themesAnswer = () =>
+		json({
+			themes: [],
+			packs: [
+				{ packId: 'catppuccin', name: 'Catppuccin', version: '1.0', license: 'MIT', attribution: '© 2021 Catppuccin', notice: '', builtin: true, themes: ['catppuccin-latte'] },
+				{ packId: 'paper-themes', name: 'Paper themes', version: '2', license: 'CC0-1.0', attribution: 'Paper', notice: '', builtin: false, themes: [] }
+			]
+		});
 	vi.stubGlobal(
 		'fetch',
 		vi.fn(async (input: RequestInfo | URL) => {
 			const path = new URL(String(input), 'http://localhost').pathname;
 			if (path === '/api/component-packs') return components();
 			if (path === '/api/stroke-packs') return strokes();
+			if (path === '/api/themes') return themesAnswer();
 			return json([]);
 		})
 	);
@@ -130,5 +140,26 @@ describe('sources page: the reader sources are core credits (v0.4.0)', () => {
 		expect(within(core).getByRole('link', { name: 'Apache-2.0 license text' }).getAttribute('href')).toBe('/OPENCC-APACHE-2.0.TXT');
 		// No plugin section for the reader any more.
 		expect(screen.queryByRole('list', { name: 'Reader sources' })).toBeNull();
+	});
+});
+
+describe('sources page: themes', () => {
+	it('credits every theme pack, the built-in ones marked', async () => {
+		render(Page);
+		const heading = await screen.findByRole('heading', { name: 'Themes' });
+		const section = heading.closest('section')!;
+		await waitFor(() => expect(within(section).getByText('Paper themes')).toBeTruthy());
+		const builtin = within(section).getByRole('row', { name: /Catppuccin/ });
+		expect(within(builtin).getByText('Built into the app')).toBeTruthy();
+		const installed = within(section).getByRole('row', { name: /Paper themes/ });
+		expect(within(installed).getByText('Installed on this server')).toBeTruthy();
+		expect(within(installed).getByText('CC0-1.0')).toBeTruthy();
+	});
+
+	it('shows an error line with a retry on failure', async () => {
+		themesAnswer = () => json({ error: 'x', message: 'down' }, 500);
+		render(Page);
+		const heading = await screen.findByRole('heading', { name: 'Themes' });
+		await waitFor(() => expect(within(heading.closest('section')!).getByRole('alert')).toBeTruthy());
 	});
 });

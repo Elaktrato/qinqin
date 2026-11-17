@@ -4,6 +4,7 @@
 
 import { pluginName } from '$lib/plugins/manifestText';
 import type { SentencePack } from '$lib/api/packs';
+import type { ThemePack } from '$lib/api/themes';
 import type { ComponentPack, StrokePack } from '$lib/api/types';
 import type { PluginManifest } from '$lib/plugins';
 import { localLicensePath, type LicenseText, type SourceCredit } from './credits';
@@ -83,6 +84,40 @@ export function strokesSection(
 		if (/arphic public license/i.test(p.license) && localLicensePath(ARPHIC_TEXT) !== null) licenseHref[i] = ARPHIC_TEXT;
 	});
 	return { show: error !== '' || list.length > 0, table, licenseHref };
+}
+
+/**
+ * themesSection is the Sources page's "Themes" block: every theme pack of GET
+ * /api/themes (built-in packs first, as the answer orders them) with the
+ * names of its themes and whether it is built into the app. It shows while a
+ * pack is listed (the built-ins always are), or on a load error.
+ */
+export function themesSection(
+	answer: { themes: readonly { id: string; name: string }[]; packs: readonly ThemePack[] },
+	error: string
+): { show: boolean; table: PackTable; themeNames: Record<number, string>; builtin: Record<number, boolean> } {
+	const names = new Map(answer.themes.map((th) => [th.id, th.name]));
+	const table = packTable(
+		'themes',
+		answer.packs.map((p, i) => ({
+			id: i,
+			name: p.name,
+			version: p.version,
+			license: p.license,
+			attribution: p.attribution,
+			notice: p.notice
+		}))
+	);
+	const themeNames: Record<number, string> = {};
+	const builtin: Record<number, boolean> = {};
+	answer.packs.forEach((p, i) => {
+		themeNames[i] = p.themes
+			.map((id) => names.get(id))
+			.filter((n): n is string => n !== undefined)
+			.join(', ');
+		builtin[i] = p.builtin;
+	});
+	return { show: error !== '' || answer.packs.length > 0, table, themeNames, builtin };
 }
 
 export interface PackRow {

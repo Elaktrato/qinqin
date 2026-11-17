@@ -16,6 +16,7 @@
 	import { coreCredits } from '$lib/sources/coreCredits';
 	import { cjkLang, scriptRuns, type NoticeParagraph } from '$lib/sources/notice';
 	import { listSentencePacks, type SentencePack } from '$lib/api/packs';
+	import { getThemes, type ThemesAnswer } from '$lib/api/themes';
 	import {
 		componentsSection,
 		creditView,
@@ -23,6 +24,7 @@
 		pluginCredits,
 		sentencePackSources,
 		strokesSection,
+		themesSection,
 		type CreditView,
 		type PackTable
 	} from '$lib/sources/sections';
@@ -133,6 +135,21 @@
 		}
 	}
 
+	// Theme packs (#96): the built-in ones are always listed.
+	let themesAnswer = $state<ThemesAnswer>({ themes: [], packs: [] });
+	let themesError = $state('');
+	const themes = $derived(themesSection(themesAnswer, themesError));
+
+	async function loadThemes(): Promise<void> {
+		themesError = '';
+		try {
+			themesAnswer = await getThemes();
+		} catch (err) {
+			themesAnswer = { themes: [], packs: [] };
+			themesError = message(err, t('sources.error.themes'));
+		}
+	}
+
 	let schemes = $state<Scheme[]>([]);
 	let schemesLoading = $state(true);
 	let schemesError = $state('');
@@ -183,6 +200,7 @@
 		loadSchemes();
 		loadComponents();
 		loadStrokes();
+		loadThemes();
 	});
 </script>
 
@@ -448,6 +466,49 @@
 			{/if}
 			<p class="notice">
 				{t('sources.components.notice')}
+			</p>
+		</section>
+	{/if}
+
+	{#if themes.show}
+		<section>
+			<h2 id="sources-themes">{t('sources.themes.title')}</h2>
+			{#if themesError}
+				<p class="error" role="alert">{themesError}</p>
+				<button type="button" onclick={loadThemes}>{t('sources.retry')}</button>
+			{:else}
+				<div class="table-wrap">
+					<table aria-labelledby="sources-themes">
+						<thead>
+							<tr>
+								<th scope="col">{t('sources.col.name')}</th>
+								{@render noteHeader(themes.table)}
+								<th scope="col">{t('sources.themes.colThemes')}</th>
+								<th scope="col">{t('sources.themes.colOrigin')}</th>
+								<th scope="col">{t('sources.col.version')}</th>
+								<th scope="col">{t('sources.license')}</th>
+								<th scope="col">{t('sources.attribution')}</th>
+							</tr>
+						</thead>
+						<tbody>
+							{#each themes.table.rows as row (row.key)}
+								<tr>
+									<th scope="row" class="name">{@render cell(row.name, row.language)}</th>
+									{@render noteCell(themes.table, row.noteId, row.name)}
+									<td>{themes.themeNames[row.key]}</td>
+									<td>{themes.builtin[row.key] ? t('sources.themes.builtin') : t('sources.themes.installed')}</td>
+									<td>{row.version}</td>
+									<td>{@render cell(row.license, row.language)}</td>
+									<td>{@render cell(row.attribution, row.language)}</td>
+								</tr>
+							{/each}
+						</tbody>
+					</table>
+				</div>
+				{@render notes(themes.table)}
+			{/if}
+			<p class="notice">
+				{t('sources.themes.notice')}
 			</p>
 		</section>
 	{/if}

@@ -1,7 +1,28 @@
 import { ApiError, api } from './client';
 import { uploadWithProgress, type UploadProgress } from './upload';
 
-export type PackType = 'dictionary' | 'frequency' | 'levels' | 'sentences' | 'grammar' | 'audio' | 'components' | 'strokes';
+import type { Check } from '$lib/theme/contrast';
+
+export type PackType =
+	| 'dictionary'
+	| 'frequency'
+	| 'levels'
+	| 'sentences'
+	| 'grammar'
+	| 'audio'
+	| 'components'
+	| 'strokes'
+	| 'theme';
+
+/** One theme of a staged theme pack with its measured contrast (docs/contracts/themes/README.md, Contrast). */
+export interface StagedTheme {
+	id: string;
+	name: string;
+	family: string;
+	scheme: 'light' | 'dark';
+	checks: Check[];
+	failing: number;
+}
 
 export interface InstalledPack {
 	type: PackType;
@@ -35,6 +56,8 @@ export interface StagedPack {
 	replaces: { version: string; license: string; attribution: string } | null;
 	files: number;
 	bytes: number;
+	/** A theme pack's themes in file order (absent for other types). */
+	themes?: StagedTheme[];
 }
 
 /** The server's upload cap; a bigger zip is refused before it is sent. */
