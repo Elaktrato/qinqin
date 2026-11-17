@@ -9,6 +9,7 @@
 	} from '$lib/api/ai';
 	import { apiErrorBody } from '$lib/api/client';
 	import { aiErrorView } from '$lib/plugins/journal/aiErrors';
+	import { t } from '$lib/i18n';
 
 	let {
 		endpoints,
@@ -57,7 +58,7 @@
 			name = baseUrl = defaultModel = '';
 			vision = false;
 			keyRequired = true;
-			message = 'Endpoint added';
+			message = t('settings.ai.custom.added');
 		} catch (err) {
 			const text = aiErrorView(err, 'review').text;
 			if (apiErrorBody(err)?.error === 'endpoint_blocked') urlError = text;
@@ -75,7 +76,7 @@
 		try {
 			await onchanged();
 		} catch {
-			message += ' — but qinqin could not refresh the list. Reload the page.';
+			message += t('settings.ai.custom.refreshFailed');
 		}
 	}
 
@@ -98,7 +99,7 @@
 				structured: editStructured
 			});
 			editing = null;
-			message = 'Endpoint saved';
+			message = t('settings.ai.custom.saved');
 		} catch (err) {
 			error = aiErrorView(err, 'review').text;
 			return;
@@ -114,7 +115,7 @@
 		try {
 			await deleteCustomProvider(id);
 			removing = null;
-			message = 'Endpoint removed, with everyone’s keys for it';
+			message = t('settings.ai.custom.removed');
 		} catch (err) {
 			error = aiErrorView(err, 'review').text;
 			return;
@@ -132,17 +133,14 @@
 </script>
 
 <section class="custom" aria-labelledby="custom-heading">
-	<h3 id="custom-heading">Custom endpoints</h3>
+	<h3 id="custom-heading">{t('settings.ai.custom.title')}</h3>
 	<p class="hint">
-		Add an OpenAI-compatible endpoint (Ollama, LM Studio, vLLM, a company gateway…). Everyone on this
-		server can then store their own key for it. The address, name and key setting cannot be changed
-		later; remove the endpoint and add it again instead.
-		{#if !privateAllowed}Private network addresses are off on this server
-			(QINQIN_AI_ALLOW_PRIVATE).{/if}
+		{t('settings.ai.custom.intro')}
+		{#if !privateAllowed}{t('settings.ai.custom.privateOff')}{/if}
 	</p>
 
 	{#if endpoints.length > 0}
-		<ul class="endpoints" aria-label="Custom endpoints">
+		<ul class="endpoints" aria-label={t('settings.ai.custom.title')}>
 			{#each endpoints as p (p.id)}
 				<li>
 					<div class="line">
@@ -152,21 +150,21 @@
 					{#if editing === p.id}
 						<form class="editform" onsubmit={saveEdit}>
 							<label>
-								<span>Default model for {p.name}</span>
+								<span>{t('settings.ai.custom.defaultModelFor', { name: p.name })}</span>
 								<input bind:value={editModel} autocomplete="off" spellcheck="false" />
 							</label>
-							<label class="check"><input type="checkbox" bind:checked={editVision} /> Reads photos</label>
+							<label class="check"><input type="checkbox" bind:checked={editVision} /> {t('settings.ai.readsPhotos')}</label>
 							<label>
-								<span>Structured mode for {p.name}</span>
+								<span>{t('settings.ai.custom.structuredFor', { name: p.name })}</span>
 								<select bind:value={editStructured}>
-									<option value="json_schema">JSON schema</option>
-									<option value="json_object">JSON mode</option>
-									<option value="prompt">Prompt only</option>
+									<option value="json_schema">{t('settings.ai.custom.modeSchema')}</option>
+									<option value="json_object">{t('settings.ai.structured.jsonObject')}</option>
+									<option value="prompt">{t('settings.ai.custom.modePrompt')}</option>
 								</select>
 							</label>
 							<div class="actions">
-								<button type="submit" disabled={busy || editModel.trim() === ''}>Save endpoint</button>
-								<button type="button" class="secondary" onclick={() => (editing = null)}>Cancel</button>
+								<button type="submit" disabled={busy || editModel.trim() === ''}>{t('settings.ai.custom.save')}</button>
+								<button type="button" class="secondary" onclick={() => (editing = null)}>{t('common.action.cancel')}</button>
 							</div>
 						</form>
 					{:else if removing === p.id}
@@ -174,25 +172,27 @@
 						<span
 							class="confirm"
 							role="group"
-							aria-label={`Remove the ${p.name} endpoint?`}
+							aria-label={t('settings.ai.custom.removeConfirmName', { name: p.name })}
 							tabindex="-1"
 							onkeydown={(e) => e.key === 'Escape' && cancelRemove(p.id)}
 						>
-							Remove {p.name} and everyone’s keys for it?
-							<button type="button" class="secondary danger" onclick={() => remove(p.id)} disabled={busy}>Yes, remove</button>
-							<button type="button" class="secondary" onclick={() => cancelRemove(p.id)}>Cancel</button>
+							{t('settings.ai.custom.removeConfirm', { name: p.name })}
+							<button type="button" class="secondary danger" onclick={() => remove(p.id)} disabled={busy}>{t('settings.ai.removeYes')}</button>
+							<button type="button" class="secondary" onclick={() => cancelRemove(p.id)}>{t('common.action.cancel')}</button>
 						</span>
 					{:else}
 						<div class="actions">
-							<button type="button" class="secondary" aria-label={`Edit ${p.name}`} onclick={() => edit(p)}>Edit</button>
+							<button type="button" class="secondary" aria-label={t('settings.ai.custom.editNamed', { name: p.name })} onclick={() => edit(p)}
+								>{t('settings.ai.custom.edit')}</button
+							>
 							<button
 								type="button"
 								id={`remove-endpoint-${p.id}`}
 								class="secondary danger"
-								aria-label={`Remove ${p.name} endpoint`}
+								aria-label={t('settings.ai.custom.removeNamed', { name: p.name })}
 								onclick={() => (removing = p.id)}
 							>
-								Remove
+								{t('common.action.remove')}
 							</button>
 						</div>
 					{/if}
@@ -203,11 +203,11 @@
 
 	<form class="addform" onsubmit={add}>
 		<label>
-			<span>Name</span>
+			<span>{t('settings.ai.custom.name')}</span>
 			<input bind:value={name} maxlength="40" autocomplete="off" />
 		</label>
 		<label>
-			<span>Base URL</span>
+			<span>{t('settings.ai.custom.baseUrl')}</span>
 			<input
 				type="url"
 				bind:value={baseUrl}
@@ -220,21 +220,21 @@
 		</label>
 		{#if urlError}<p id="custom-url-error" class="error" role="alert">{urlError}</p>{/if}
 		<label>
-			<span>Default model</span>
+			<span>{t('settings.ai.custom.defaultModel')}</span>
 			<input bind:value={defaultModel} autocomplete="off" spellcheck="false" />
 		</label>
-		<label class="check"><input type="checkbox" bind:checked={vision} /> Reads photos</label>
-		<label class="check"><input type="checkbox" bind:checked={keyRequired} /> Needs an API key</label>
+		<label class="check"><input type="checkbox" bind:checked={vision} /> {t('settings.ai.readsPhotos')}</label>
+		<label class="check"><input type="checkbox" bind:checked={keyRequired} /> {t('settings.ai.custom.needsKey')}</label>
 		<label>
-			<span>Structured mode</span>
+			<span>{t('settings.ai.custom.structured')}</span>
 			<select bind:value={structured}>
-				<option value="json_object">JSON mode (works almost everywhere)</option>
-				<option value="json_schema">JSON schema (if the endpoint supports it)</option>
-				<option value="prompt">Prompt only</option>
+				<option value="json_object">{t('settings.ai.custom.modeObjectHint')}</option>
+				<option value="json_schema">{t('settings.ai.custom.modeSchemaHint')}</option>
+				<option value="prompt">{t('settings.ai.custom.modePrompt')}</option>
 			</select>
 		</label>
 		<div class="actions">
-			<button type="submit" disabled={!canAdd}>{busy ? 'Working…' : 'Add endpoint'}</button>
+			<button type="submit" disabled={!canAdd}>{busy ? t('settings.ai.add.working') : t('settings.ai.custom.add')}</button>
 		</div>
 	</form>
 	{#if message}<p class="hint">{message}</p>{/if}

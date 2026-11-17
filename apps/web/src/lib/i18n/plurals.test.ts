@@ -178,7 +178,12 @@ const CASES: [MessageKey, MessageArgs, string, string][] = [
 		{},
 		'stays in your layout while the plugin is disabled and comes back when you enable it under Plugins.',
 		'stay in your layout while the plugin is disabled and come back when you enable it under Plugins.'
-	]
+	],
+	// settings, part 2 (Task 16)
+	['settings.tokens.expiresInDays', {}, 'Expires in 1 day', 'Expires in 2 days'],
+	['settings.tokens.expiresInHours', {}, 'Expires in 1 hour', 'Expires in 2 hours'],
+	['settings.tokens.create.days', {}, '1 day', '2 days'],
+	['packs.progress.bytes', {}, '1 byte', '2 bytes']
 ];
 
 describe('catalogue plurals keep their English', () => {

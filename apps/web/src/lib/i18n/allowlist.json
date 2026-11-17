@@ -18,5 +18,15 @@
 		"file": "routes/+layout.svelte",
 		"text": "lang=\"zh\"",
 		"reason": "The footer brand hanzi (勤勤) is the product's name, identical in both scripts, not study text: it must not follow a Japanese workspace (spec Ruling)."
+	},
+	{
+		"file": "lib/settings/AiCustomEndpoints.svelte",
+		"text": "https://llm.example.com/v1",
+		"reason": "An example URL as the placeholder of the base-URL field: the same in every language."
+	},
+	{
+		"file": "lib/settings/aiSettingsView.ts",
+		"text": "Google Gemini",
+		"reason": "A product name (the fallback name of a built-in AI provider the server turned off), not interface text."
 	}
 ]

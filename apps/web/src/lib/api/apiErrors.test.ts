@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { ApiError } from '$lib/api/client';
-import { API_ERROR_KEYS, apiErrorText } from './apiErrors';
+import { API_ERROR_KEYS, apiErrorText, errorText } from './apiErrors';
 import { authErrorMessage } from './authErrors';
 import en from '$lib/i18n/messages/en.json';
 
@@ -63,5 +63,16 @@ describe('apiError catalogue', () => {
 		expect(authErrorMessage(new ApiError(429, json('rate_limited', 'Try later.')), 'f')).toBe(
 			apiErrorText('rate_limited')
 		);
+	});
+
+	it('errorText: a known code from the catalogue, anything else the screen\'s fallback, never the message', () => {
+		expect(errorText(new ApiError(401, json('wrong_password', 'server English')), 'Could not save.')).toBe(
+			'The password is wrong.'
+		);
+		expect(errorText(new ApiError(400, json('brand_new', 'A newer server explains it.')), 'Could not save.')).toBe(
+			'Could not save.'
+		);
+		expect(errorText(new ApiError(500, 'plain text'), 'Could not save.')).toBe('Could not save.');
+		expect(errorText(new TypeError('Failed to fetch'), 'Could not save.')).toBe('Could not save.');
 	});
 });

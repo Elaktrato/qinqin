@@ -4,6 +4,7 @@
 // this build imports through the `$builtin` alias.
 
 import core from '$builtin/core.json';
+import { labelRecord } from '../i18n';
 import flashcards from '$builtin/flashcards.json';
 import grammar from '$builtin/grammar.json';
 import journal from '$builtin/journal.json';
@@ -55,12 +56,12 @@ export interface ContractManifest {
 }
 
 /** What each permission means, in plain words, for Settings. */
-export const PERMISSION_LABELS: Record<Permission, string> = {
-	'owns-data': 'Stores its own data',
-	'read:entries': 'Reads dictionary entries',
-	'read:study-events': 'Reads your study history',
-	'write:study-events': 'Records study activity'
-};
+export const PERMISSION_LABELS: Readonly<Record<Permission, string>> = labelRecord({
+	'owns-data': 'settings.plugins.permission.ownsData',
+	'read:entries': 'settings.plugins.permission.readEntries',
+	'read:study-events': 'settings.plugins.permission.readStudyEvents',
+	'write:study-events': 'settings.plugins.permission.writeStudyEvents'
+});
 
 /** sdkSupported is true for a manifest object whose integer sdk this build runs. */
 export function sdkSupported(manifest: unknown): boolean {

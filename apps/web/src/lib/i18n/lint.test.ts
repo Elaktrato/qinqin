@@ -58,13 +58,14 @@ const d = \`Took \${n} minutes\`; const e = 'x.y.z';`;
 		expect(texts(tsFindings(src, false))).toEqual(['{…} minute{…}', '{n} reviews']);
 	});
 
-	it('exempts Error and console arguments and comments', () => {
+	it('exempts Error, DOMException and console arguments and comments', () => {
 		const src = `// A comment sentence here
 /* Another comment here */
 throw new Error('A page does not match');
 console.warn('Something went odd');
 class PartialError extends Error {}
-const x = new TypeError(\`Bad value \${v}\`);`;
+const x = new TypeError(\`Bad value \${v}\`);
+const a = new DOMException('The request was aborted.', 'AbortError');`;
 		expect(tsFindings(src, false)).toEqual([]);
 	});
 

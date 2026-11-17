@@ -1,8 +1,10 @@
 <script lang="ts">
 	import { onMount, tick } from 'svelte';
-	import { apiErrorBody } from '$lib/api/client';
+	import { errorText } from '$lib/api/apiErrors';
+	import { t } from '$lib/i18n';
+	import Msg from '$lib/i18n/Msg.svelte';
 	import { createToken } from '$lib/api/tokens';
-	import { DEFAULT_EXPIRY, EXPIRY_CHOICES, exampleCommand, validateTokenForm, type TokenDto } from '$lib/account/tokensView';
+	import { DEFAULT_EXPIRY, EXPIRY_CHOICES, exampleCommand, scopeText, validateTokenForm, type TokenDto } from '$lib/account/tokensView';
 
 	// "New token": the form, then a one-time view of the token. The token
 	// lives in this component's state only; closing drops it (it is never
@@ -39,12 +41,6 @@
 		onclose();
 	}
 
-	function refusal(err: unknown): string {
-		const body = apiErrorBody(err);
-		if (body?.error === 'wrong_password') return 'The password is wrong.';
-		return body?.message || 'Could not create the token.';
-	}
-
 	async function submit(event: SubmitEvent): Promise<void> {
 		event.preventDefault();
 		if (busy) return;
@@ -68,7 +64,7 @@
 			token = out.token;
 			oncreated(out.accessToken);
 		} catch (err) {
-			error = refusal(err);
+			error = errorText(err, t('settings.tokens.create.error'));
 			await tick();
 			nameInput?.focus();
 		} finally {
@@ -81,7 +77,7 @@
 			await navigator.clipboard.writeText(token);
 			copied = true;
 		} catch {
-			error = 'Could not copy. Select the token and copy it by hand.';
+			error = t('settings.tokens.create.copyFailed');
 		}
 	}
 
@@ -103,61 +99,63 @@
 >
 	{#if token}
 		<div class="stack">
-			<h2 id="{uid}-title">Your new access token</h2>
+			<h2 id="{uid}-title">{t('settings.tokens.created.title')}</h2>
 			<label>
-				Your new access token
+				{t('settings.tokens.created.title')}
 				<input class="mono" readonly value={token} onfocus={(e) => (e.currentTarget as HTMLInputElement).select()} />
 			</label>
-			<p class="warn"><strong>You will not see this token again.</strong> Copy it now and keep it like a password.</p>
+			<p class="warn">
+				<Msg key="settings.tokens.created.once">{#snippet strong(text: string)}<strong>{text}</strong>{/snippet}</Msg>
+			</p>
 			<div class="buttons">
-				<button type="button" onclick={copy}>Copy</button>
-				<span role="status">{copied ? 'Copied' : ''}</span>
+				<button type="button" onclick={copy}>{t('common.action.copy')}</button>
+				<span role="status">{copied ? t('common.action.copied') : ''}</span>
 			</div>
 			{#if error}<p class="error" role="alert">{error}</p>{/if}
-			<p>Try it:</p>
+			<p>{t('settings.tokens.created.tryIt')}</p>
 			<pre class="mono">{exampleCommand(location.origin, token)}</pre>
 			<div class="buttons">
-				<button type="button" class="primary" onclick={finish}>Done</button>
+				<button type="button" class="primary" onclick={finish}>{t('settings.tokens.created.done')}</button>
 			</div>
 		</div>
 	{:else}
 		<form onsubmit={submit} class="stack">
-			<h2 id="{uid}-title">New access token</h2>
-			<p class="hint">For scripts that call the qinqin API. It never works for your account, sign-in, admin, backup or AI settings.</p>
+			<h2 id="{uid}-title">{t('settings.tokens.create.title')}</h2>
+			<p class="hint">{t('settings.tokens.create.intro')}</p>
 			<label>
-				Name
+				{t('settings.tokens.colName')}
 				<input bind:this={nameInput} bind:value={name} maxlength="64" autocomplete="off" />
 			</label>
 			<fieldset>
-				<legend>Access</legend>
-				<label class="check"><input type="radio" name="{uid}-scope" value="read" bind:group={scope} /> Read only</label>
-				<label class="check"><input type="radio" name="{uid}-scope" value="write" bind:group={scope} /> Read and write</label>
+				<legend>{t('settings.tokens.colAccess')}</legend>
+				<label class="check"><input type="radio" name="{uid}-scope" value="read" bind:group={scope} /> {scopeText('read')}</label>
+				<label class="check"><input type="radio" name="{uid}-scope" value="write" bind:group={scope} /> {scopeText('write')}</label>
 			</fieldset>
 			<label>
-				Workspace
+				{t('settings.tokens.create.workspace')}
 				<select bind:value={workspace}>
-					<option value="">All workspaces</option>
+					<option value="">{t('settings.tokens.allWorkspaces')}</option>
 					{#each workspaces as ws (ws.id)}
-						<option value={String(ws.id)}>{ws.name.trim() || `Workspace ${ws.id}`}</option>
+						<option value={String(ws.id)}>{ws.name.trim() || t('settings.tokens.workspaceN', { id: ws.id })}</option>
 					{/each}
 				</select>
 			</label>
 			<label>
-				Expires after
+				{t('settings.tokens.create.expiresAfter')}
 				<select bind:value={days}>
 					{#each EXPIRY_CHOICES as d (d)}
-						<option value={String(d)}>{d} days</option>
+						<option value={String(d)}>{t('settings.tokens.create.days', { count: d })}</option>
 					{/each}
 				</select>
 			</label>
 			<label>
-				Your password
+				{t('account.field.yourPassword')}
 				<input type="password" autocomplete="current-password" bind:value={password} />
 			</label>
 			{#if error}<p class="error" role="alert">{error}</p>{/if}
 			<div class="buttons">
-				<button type="button" onclick={finish} disabled={busy}>Cancel</button>
-				<button type="submit" class="primary" disabled={busy}>{busy ? 'Creating…' : 'Create token'}</button>
+				<button type="button" onclick={finish} disabled={busy}>{t('common.action.cancel')}</button>
+				<button type="submit" class="primary" disabled={busy}>{busy ? t('settings.tokens.create.creating') : t('settings.tokens.create.submit')}</button>
 			</div>
 		</form>
 	{/if}

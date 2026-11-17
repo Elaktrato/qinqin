@@ -133,7 +133,7 @@ describe('Settings → Account: access tokens', () => {
 	it.each([
 		[apiError(403, 'wrong_password', 'The current password is wrong.'), 'The password is wrong.'],
 		[apiError(409, 'token_limit', 'You already have 20 access tokens. Revoke one first.'), 'You already have 20 access tokens. Revoke one first.'],
-		[apiError(422, 'invalid_token_request', 'The name must be 1 to 64 characters.'), 'The name must be 1 to 64 characters.']
+		[apiError(422, 'invalid_token_request', 'The name must be 1 to 64 characters.'), 'This access token request is not valid.']
 	])('shows the server refusal %#', async (err, text) => {
 		createError = err;
 		render(AccessTokens);

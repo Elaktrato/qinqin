@@ -1,6 +1,8 @@
 // What the Settings → AI tab says, derived from the server's status and the
 // provider registry.
 import type { AiStatus, ModelInfo, ProviderInfo, ProvidersResponse, Structured } from '$lib/api/ai';
+import { t, type MessageKey } from '$lib/i18n';
+import { formatNumber } from '$lib/i18n/format';
 
 export interface ProviderRow {
 	id: string;
@@ -29,23 +31,21 @@ export interface AiSettingsView {
 	canManageCustom: boolean;
 }
 
-const BANNERS: Record<string, string> = {
-	no_secret: 'AI features are off on this server: the administrator has not set QINQIN_SECRET.',
-	invalid_secret:
-		'AI features are off: QINQIN_SECRET is set but invalid (it must be 32 random bytes, base64).',
-	key_undecryptable:
-		'Your saved key can no longer be read (the server secret changed). Enter it again.',
-	no_provider: "AI features are off: the server's AI provider setting is invalid.",
-	no_selection: 'Choose which provider to use.',
-	provider_disabled: 'The provider you chose is turned off on this server. Choose another one.'
+const BANNERS: Record<string, MessageKey> = {
+	no_secret: 'settings.ai.banner.noSecret',
+	invalid_secret: 'settings.ai.banner.invalidSecret',
+	key_undecryptable: 'settings.ai.banner.keyUndecryptable',
+	no_provider: 'settings.ai.banner.noProvider',
+	no_selection: 'settings.ai.banner.noSelection',
+	provider_disabled: 'settings.ai.banner.providerDisabled'
 };
 
 const NO_KEY_STORE = new Set(['no_secret', 'invalid_secret', 'no_provider']);
 
-const STRUCTURED_LABELS: Record<Structured, string> = {
-	json_schema: 'Structured replies',
-	json_object: 'JSON mode',
-	prompt: 'Prompted JSON'
+const STRUCTURED_LABELS: Record<Structured, MessageKey> = {
+	json_schema: 'settings.ai.structured.jsonSchema',
+	json_object: 'settings.ai.structured.jsonObject',
+	prompt: 'settings.ai.structured.prompt'
 };
 
 // Names for the built-in ids, used when a provider the server turned off no
@@ -61,13 +61,9 @@ const BUILTIN_NAMES: Record<string, string> = {
 	openrouter: 'OpenRouter'
 };
 
-function n(value: number): string {
-	return value.toLocaleString('en');
-}
-
 /** The sentence shown wherever a key for the provider is typed. */
 export function privacyNote(name: string): string {
-	return `Your journal text, guidance and the photos you choose to read with AI are sent to ${name} when you press a button. ${name}'s terms apply.`;
+	return t('settings.ai.privacy', { name });
 }
 
 /** Suggested model ids of a provider (any other id may be typed). */
@@ -77,7 +73,7 @@ export function modelSuggestions(provider: ProviderInfo | undefined): ModelInfo[
 
 /** The banner for a status, for pages that have no provider registry. */
 export function aiBanner(status: AiStatus): string | null {
-	return BANNERS[status.reason] ?? null;
+	return Object.hasOwn(BANNERS, status.reason) ? t(BANNERS[status.reason]) : null;
 }
 
 export function aiSettingsView(status: AiStatus, providers: ProvidersResponse): AiSettingsView {
@@ -93,10 +89,10 @@ export function aiSettingsView(status: AiStatus, providers: ProvidersResponse): 
 		let stateText: string | null = null;
 		if (off) {
 			state = 'disabled';
-			stateText = 'Turned off by the server';
+			stateText = t('settings.ai.state.disabled');
 		} else if (k.state === 'undecryptable') {
 			state = 'undecryptable';
-			stateText = 'Enter the key again';
+			stateText = t('settings.ai.state.undecryptable');
 		}
 		return {
 			id: k.provider,
@@ -106,9 +102,9 @@ export function aiSettingsView(status: AiStatus, providers: ProvidersResponse): 
 			modelLabel: model?.label ?? k.model,
 			active: k.provider === activeId && !off,
 			vision: p ? (model?.vision ?? p.vision) : false,
-			structuredLabel: p ? STRUCTURED_LABELS[p.structured] : '',
+			structuredLabel: p ? t(STRUCTURED_LABELS[p.structured]) : '',
 			custom: p?.custom ?? k.provider.startsWith('custom-'),
-			adminLine: p?.custom && p.host ? `Added by your admin · ${p.host}` : null,
+			adminLine: p?.custom && p.host ? t('settings.ai.adminLine', { host: p.host }) : null,
 			state,
 			stateText
 		};
@@ -124,7 +120,12 @@ export function aiSettingsView(status: AiStatus, providers: ProvidersResponse): 
 		canAddKey: !NO_KEY_STORE.has(status.reason),
 		rows,
 		addable: { builtin: free.filter((p) => !p.custom), custom: free.filter((p) => p.custom) },
-		usageLine: `${n(callsLastHour)} of ${n(limitPerHour)} AI calls this hour · ${n(inputTokens)} tokens in, ${n(outputTokens)} out`,
+		usageLine: t('settings.ai.usage', {
+			calls: formatNumber(callsLastHour),
+			limit: formatNumber(limitPerHour),
+			tokensIn: formatNumber(inputTokens),
+			tokensOut: formatNumber(outputTokens)
+		}),
 		testProvider: status.fake,
 		canManageCustom: providers.canManageCustom
 	};

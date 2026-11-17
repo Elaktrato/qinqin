@@ -1,5 +1,15 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { getFormatLocale, getLanguage, installCatalogue, loadCatalogue, resetCatalogue, t, tParts, type MessageKey } from './index';
+import {
+	getFormatLocale,
+	getLanguage,
+	installCatalogue,
+	labelRecord,
+	loadCatalogue,
+	resetCatalogue,
+	t,
+	tParts,
+	type MessageKey
+} from './index';
 import { MessageError } from './message';
 
 afterEach(() => {
@@ -58,5 +68,17 @@ describe('loadCatalogue', () => {
 		await loadCatalogue('zz', ['zz-ZZ']);
 		expect(getLanguage()).toBe('en');
 		expect(getFormatLocale()).toBe('en');
+	});
+});
+
+describe('labelRecord', () => {
+	it('reads each label from the active catalogue when it is read, not when the record is made', () => {
+		const labels = labelRecord({ a: k('test.a'), b: k('test.b') });
+		installCatalogue('xx', { 'test.a': 'Eins', 'test.b': 'Zwei' });
+		expect(labels.a).toBe('Eins');
+		expect({ ...labels }).toEqual({ a: 'Eins', b: 'Zwei' });
+		expect(Object.keys(labels)).toEqual(['a', 'b']);
+		installCatalogue('yy', { 'test.a': 'Un', 'test.b': 'Deux' });
+		expect(labels.b).toBe('Deux');
 	});
 });

@@ -1,5 +1,6 @@
 <script lang="ts">
 	import ServerBackup from '$lib/admin/ServerBackup.svelte';
+	import { t } from '$lib/i18n';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
 	import EmailAdmin from '$lib/admin/EmailAdmin.svelte';
@@ -12,7 +13,7 @@
 	const section = $derived(parseAdminSection(page.url.searchParams.get('section')));
 </script>
 
-<nav class="sections" aria-label="Admin sections">
+<nav class="sections" aria-label={t('settings.admin.sections')}>
 	{#each ADMIN_SECTIONS as id (id)}
 		<a
 			href={adminSectionHref(id)}

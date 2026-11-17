@@ -53,6 +53,18 @@ export function t(key: MessageKey, args: MessageArgs = {}): string {
 	return formatMessage(lookup(key), fmtLocale, args, { missing: strict ? 'throw' : 'keep' });
 }
 
+/**
+ * A record of interface labels read lazily: each property is a getter that calls `t` when read, so a module may
+ * define the record at top level (`const LABELS = labelRecord({ read: 'settings.tokens.readOnly' })`).
+ */
+export function labelRecord<K extends string>(keys: Readonly<Record<K, MessageKey>>): Readonly<Record<K, string>> {
+	const out = {} as Record<K, string>;
+	for (const name of Object.keys(keys) as K[]) {
+		Object.defineProperty(out, name, { enumerable: true, get: () => t(keys[name]) });
+	}
+	return out;
+}
+
 /** Rich-text parts of a message (`<Msg>` renders them; tags become snippets). */
 export function tParts(key: MessageKey, args: MessageArgs = {}): Part[] {
 	return formatParts(lookup(key), fmtLocale, args, { missing: strict ? 'throw' : 'keep' });

@@ -199,9 +199,9 @@ export function scanJs(code: string, from = 0, to = code.length): Lit[] {
 	return out.sort((a, b) => a.index - b.index);
 }
 
-/** A literal passed straight to an `Error` constructor or a `console` method (developer text, not shown). */
+/** A literal passed straight to an `Error`/`DOMException` constructor or a `console` method (developer text, not shown). */
 function isDeveloperText(code: string, index: number): boolean {
-	return /(?:\b\w*Error|\bconsole\.\w+)\s*\(\s*$/.test(code.slice(Math.max(0, index - 80), index));
+	return /(?:\b\w*Error|\bDOMException|\bconsole\.\w+)\s*\(\s*$/.test(code.slice(Math.max(0, index - 80), index));
 }
 
 /** `{n} reviews`, `${n} minute${…}`: a placeholder, a space, then a word of two or more letters. */
