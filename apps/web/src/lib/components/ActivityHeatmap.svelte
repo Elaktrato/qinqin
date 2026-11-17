@@ -20,7 +20,7 @@
 	import HeatmapGarden from '$lib/activity/HeatmapGarden.svelte';
 	import HeatmapMonth from '$lib/activity/HeatmapMonth.svelte';
 	import HeatmapWeek from '$lib/activity/HeatmapWeek.svelte';
-	import { earliestMonth, monthOf, monthWindow, nextMonth, prevMonth, weekDays } from '$lib/activity/calendar';
+	import { earliestMonth, monthOf, monthWindow, nextMonth, prevMonth, weekDays, windowMonth, type Month } from '$lib/activity/calendar';
 	import { toGoText } from '$lib/goals/goalText';
 	import { stageAmounts, stagesFor, type DayStage } from '$lib/activity/stages';
 	import type { GoalsRow } from '$lib/goals/goals';
@@ -82,6 +82,10 @@
 	let prefs = $state(initialPrefs());
 	let loading = $state(true);
 	let error = $state('');
+	// A month fetch that failed while other data is on screen (#100 review): said
+	// with Try again; the month it was for is retried.
+	let monthError = $state('');
+	let failedMonth: Month | null = null;
 	// The learner's day rule; a zone change re-folds and re-requests the window.
 	let studyDay = $state.raw(currentStudyDay());
 	// The user's vacation periods (user-global rows): their dates are hatched.
@@ -113,7 +117,19 @@
 	}
 
 	const empty = { from: '', to: '', timeZone: 'UTC', sources: [], cells: [] } satisfies ActivityResponse;
-	const today = $derived(studyDay.today(Date.now()));
+	// The learner's today: state, not derived, so a tab left open overnight moves
+	// on (a minute tick, a zone change and each load set it; #100 review).
+	let today = $state(untrack(() => studyDay.today(Date.now())));
+	/** syncToday moves `today` to the clock's learner day; true when it changed. */
+	function syncToday(): boolean {
+		const now = studyDay.today(Date.now());
+		if (now === today) return false;
+		// The month calendar on the current month follows into the new month.
+		if (month === monthOf(today)) month = monthOf(now);
+		today = now;
+		return true;
+	}
+	const TICK_MS = 60_000;
 	// Nothing is folded before the first response sets the window.
 	const loaded = $derived(response !== null && range.from !== '');
 	const marks = $derived(
@@ -201,15 +217,21 @@
 		return t('widgets.activity.week.points', { count: points });
 	});
 
+	// The month the loaded window is, or null while the 13-week window is loaded
+	// (the month calendar never draws that one).
+	const shownMonth = $derived(windowMonth(range));
+
 	// Month paging: back to the activity route's 366-day cap, never past the current month.
 	const canPrev = $derived(month > earliestMonth(today));
 	const canNext = $derived(month < monthOf(today));
+	// `month` moves ahead of the screen while a page loads, so quick clicks
+	// page on from the newest request; a failed page puts it back (load).
 	function page(next: string): void {
 		month = next;
 		void load(false);
 	}
 
-	/** "Goal reached on 2 of 6 days": past goal days (and today once met), vacation days left out. */
+	/** "Goal reached on 2 of 6 days": past goal days (and today once met), vacation days left out; null with none. */
 	const goalSummary = $derived.by((): string | null => {
 		let total = 0;
 		let met = 0;
@@ -219,11 +241,13 @@
 			total++;
 			if (cell.stage.status === 'met') met++;
 		}
-		return stages.size === 0 ? null : t('widgets.activity.month.goalDays', { count: total, met });
+		// No countable day yet (a goal set today, or only vacation): no line, never "0 of 0 days".
+		return total === 0 ? null : t('widgets.activity.month.goalDays', { count: total, met });
 	});
 
 	/** load requests the layout's window; without `force` an already loaded window is kept. */
 	async function load(force = true): Promise<void> {
+		syncToday();
 		const now = new Date();
 		const next = wanted(now);
 		if (!force && response !== null && next.from === range.from && next.to === range.to) return;
@@ -235,12 +259,20 @@
 			if (!requests.isCurrent(seq)) return;
 			response = got;
 			range = next;
+			monthError = '';
 			void loadVacations();
 			void loadGoals();
 		} catch (err) {
 			if (!requests.isCurrent(seq)) return;
 			if (response === null) error = errorMessage(err, t('stats.activity.loadFailed'));
-			else console.warn('activity refresh failed', err);
+			else if (layout === 'month' && (next.from !== range.from || next.to !== range.to)) {
+				// A new month (not a refresh of the one on screen) did not load.
+				monthError = t('widgets.activity.month.loadFailed');
+				console.warn('activity month not loaded', err);
+				failedMonth = month;
+				// Paging stays in step with the month on screen (#100 review).
+				if (shownMonth !== null) month = shownMonth;
+			} else console.warn('activity refresh failed', err);
 		} finally {
 			if (requests.isCurrent(seq)) loading = false;
 		}
@@ -251,8 +283,10 @@
 			vacations = [];
 			return;
 		}
+		const id = workspaceId;
 		try {
-			vacations = (await getStudyData(workspaceId)).vacations ?? [];
+			const got = (await getStudyData(id)).vacations ?? [];
+			if (id === workspaceId) vacations = got;
 		} catch {
 			// The marks are decoration: the heatmap works without them.
 		}
@@ -266,11 +300,13 @@
 		}
 		try {
 			const history = await loadStudyHistory(id);
+			// A slower load for the workspace switched away from never wins.
+			if (id !== workspaceId) return;
 			const row = history.goals === undefined || history.goals === 'newer' ? null : history.goals;
 			goals = { workspaceId: id, row, reviews: history.reviews, vacations: history.vacations ?? [] };
 		} catch {
 			// The stage is decoration until the drawings exist: tint only.
-			goals = null;
+			if (id === workspaceId) goals = null;
 		}
 	}
 
@@ -285,6 +321,17 @@
 		untrack(() => void load(false));
 	});
 
+	// A workspace switch: its goal row and vacations (the activity itself is
+	// one request for every workspace and stays). Skipped until the first load.
+	$effect(() => {
+		void workspaceId;
+		untrack(() => {
+			if (response === null) return;
+			void loadVacations();
+			void loadGoals();
+		});
+	});
+
 	onMount(() => {
 		void loadActivityView().then((view) => (prefs = prefsLoaded(prefs, view)));
 		const offEvents = onEventLogChange(() => void load());
@@ -292,7 +339,12 @@
 			studyDay = next;
 			void load();
 		});
+		// The learner day turns at midnight in their zone: re-request the window then.
+		const tick = setInterval(() => {
+			if (syncToday()) void load();
+		}, TICK_MS);
 		return () => {
+			clearInterval(tick);
 			offEvents();
 			offZone();
 		};
@@ -358,16 +410,26 @@
 	     or a flower stage (HeatmapDayList). -->
 	<div class="heatmap">
 		{#if layout === 'month'}
-			<HeatmapMonth
-				month={monthOf(range.from)}
-				{today}
-				{cells}
-				{canPrev}
-				{canNext}
-				onprev={() => page(prevMonth(month))}
-				onnext={() => page(nextMonth(month))}
-				summary={goalSummary}
-			/>
+			{#if monthError}
+				<p class="month-error" role="status">
+					{monthError}
+					<button type="button" class="retry" onclick={() => page(failedMonth ?? month)}>{t('common.action.retry')}</button>
+				</p>
+			{/if}
+			{#if shownMonth !== null}
+				<HeatmapMonth
+					month={shownMonth}
+					{today}
+					{cells}
+					{canPrev}
+					{canNext}
+					onprev={() => page(prevMonth(month))}
+					onnext={() => page(nextMonth(month))}
+					summary={goalSummary}
+				/>
+			{:else if !monthError}
+				<p class="month-loading" aria-live="polite">{t('stats.activity.loading')}</p>
+			{/if}
 		{:else if layout === 'week'}
 			<HeatmapWeek cells={weekCells} summary={weekSummary} />
 		{:else}
@@ -475,27 +537,35 @@
 
 	/* The tiles of every layout (design §6 heatmap tint; tint only until the
 	   flower drawings exist, #107). Never colour alone: level, stage and today
-	   are in the tooltip and the list. */
+	   are in the tooltip and the list. Level 0 is an empty box: the page's
+	   --panel inside a --hair ring (on --raised it matched level 1 in several
+	   themes and fell below 3:1 against level 4 in Solarized Dark; #100
+	   review, ActivityHeatmap.contrast.test.ts). Levels 1–4 are ring-less fills. */
 	.heatmap :global(.tile) {
 		box-sizing: border-box;
 		border-radius: calc(var(--radius) * 0.3);
-		background: var(--raised);
+		background: var(--panel);
+		box-shadow: inset 0 0 0 1px var(--hair);
 	}
 
 	.heatmap :global(.tile.level-1) {
 		background: var(--accent-14);
+		box-shadow: none;
 	}
 
 	.heatmap :global(.tile.level-2) {
 		background: var(--accent-32);
+		box-shadow: none;
 	}
 
 	.heatmap :global(.tile.level-3) {
 		background: var(--accent-58);
+		box-shadow: none;
 	}
 
 	.heatmap :global(.tile.level-4) {
 		background: var(--accent-100);
+		box-shadow: none;
 	}
 
 	/* Hatched: a vacation day (the pattern also works without colour). */
@@ -503,13 +573,18 @@
 		background-image: repeating-linear-gradient(45deg, var(--line) 0 2px, transparent 2px 5px);
 	}
 
+	/* Today: a --panel gap inside an accent ring, so the ring shows on the
+	   accent-filled level-4 tile too (#100 review). */
 	.heatmap :global(.tile.today) {
-		box-shadow: 0 0 0 1.5px var(--accent);
+		box-shadow: 0 0 0 1.5px var(--panel), 0 0 0 3px var(--accent);
 	}
 
+	/* A day still to come: a dashed outline, so it never reads as an empty past day. */
 	.heatmap :global(.tile.future) {
 		background: transparent;
-		box-shadow: inset 0 0 0 1px var(--hair);
+		box-shadow: none;
+		outline: 1px dashed var(--hair);
+		outline-offset: -1px;
 	}
 
 	@media (forced-colors: active) {
@@ -520,7 +595,32 @@
 
 		.heatmap :global(.tile.today) {
 			outline: 2px solid Highlight;
+			outline-offset: 1px;
 		}
+	}
+
+	.month-error,
+	.month-loading {
+		margin: var(--space-4) 0 0;
+		font-size: var(--font-size-s);
+		color: var(--readable-muted);
+	}
+
+	.retry {
+		font: inherit;
+		min-height: 2.75rem;
+		margin-left: var(--space-2);
+		padding: 0.3rem 0.85rem;
+		border: 1px solid var(--line);
+		border-radius: 999px;
+		background: transparent;
+		color: var(--text);
+		cursor: pointer;
+	}
+
+	.retry:focus-visible {
+		outline: 2px solid var(--focus-colour);
+		outline-offset: 2px;
 	}
 
 	.legend {

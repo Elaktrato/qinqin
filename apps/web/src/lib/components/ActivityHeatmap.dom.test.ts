@@ -210,6 +210,19 @@ describe('ActivityHeatmap garden and flower stages', () => {
 		expect(document.querySelectorAll('.grid .cell.today')).toHaveLength(1);
 	});
 
+	it('stages come back after a workspace switch (#100 review)', async () => {
+		const today = withGoal();
+		const WS4 = { id: 4, language: 'ja', name: 'ja' } as never;
+		render(ActivityHeatmap);
+		const list = await screen.findByRole('list', { name: 'Daily activity' });
+		await waitFor(() => expect(within(list).getAllByRole('listitem')).toHaveLength(61));
+		workspaces.set({ list: [WS, WS4], current: WS4 });
+		await waitFor(() => expect(loadStudyHistory).toHaveBeenLastCalledWith(4));
+		await waitFor(() => expect(within(list).getAllByRole('listitem')).toHaveLength(61));
+		const items = within(list).getAllByRole('listitem').map((li) => li.textContent ?? '');
+		expect(items.find((text) => text.startsWith(`${addDays(today, -2)}:`))).toContain('5 of 50 — ');
+	});
+
 	it('a failed goal load leaves the heatmap working without stages', async () => {
 		const today = withGoal();
 		vi.mocked(loadStudyHistory).mockRejectedValue(new Error('offline'));
@@ -218,5 +231,44 @@ describe('ActivityHeatmap garden and flower stages', () => {
 		await waitFor(() => expect(within(list).getAllByRole('listitem')).toHaveLength(2));
 		expect(within(list).getAllByRole('listitem')[1].textContent).toContain(`${today}: 21 points`);
 		expect(list.textContent).not.toMatch(/ — Bud/);
+	});
+});
+
+/** Waits on real macrotasks while setInterval is faked (waitFor polls with setInterval). */
+async function until(check: () => boolean): Promise<void> {
+	for (let i = 0; i < 200 && !check(); i++) await new Promise((r) => setTimeout(r, 5));
+	expect(check()).toBe(true);
+}
+
+describe('ActivityHeatmap across midnight (#100 review)', () => {
+	it('moves today, the today marker and the window when the learner day turns while the tab is open', async () => {
+		vi.useFakeTimers({ toFake: ['Date', 'setInterval', 'clearInterval'] });
+		vi.setSystemTime(new Date('2026-11-15T14:58:30Z')); // 23:58:30 in Tokyo, the 15th
+		vi.mocked(currentStudyDay).mockReturnValue(TOKYO);
+		vi.mocked(fetchActivity).mockImplementation(async (from, to) => ({ ...empty, from, to }));
+		workspaces.set({ list: [WS], current: WS });
+		render(ActivityHeatmap);
+		await until(() => document.querySelector('.grid .cell.today') !== null);
+		expect(document.querySelector('.grid .cell.today')?.getAttribute('data-day')).toBe('2026-11-15');
+		expect(vi.mocked(fetchActivity).mock.calls[0]).toEqual(['2026-08-17', '2026-11-15']);
+		// Two minutes later it is the 16th in Tokyo (the learner day turns at local midnight).
+		vi.advanceTimersByTime(120_000);
+		await until(() => document.querySelector('.grid .cell.today')?.getAttribute('data-day') === '2026-11-16');
+		expect(vi.mocked(fetchActivity).mock.calls.at(-1)).toEqual(['2026-08-18', '2026-11-16']);
+		expect(document.querySelectorAll('.grid .cell.today')).toHaveLength(1);
+		expect(document.querySelector('.grid .cell[data-day="2026-11-15"]')?.getAttribute('title')).not.toMatch(/today$/);
+	});
+
+	it('the week layout follows the new day too', async () => {
+		vi.useFakeTimers({ toFake: ['Date', 'setInterval', 'clearInterval'] });
+		vi.setSystemTime(new Date('2026-11-15T23:59:00Z')); // Sunday the 15th, UTC
+		vi.mocked(fetchActivity).mockImplementation(async (from, to) => ({ ...empty, from, to }));
+		workspaces.set({ list: [WS], current: WS });
+		render(ActivityHeatmap, { layout: 'week' });
+		await until(() => document.querySelector('.week-days .today') !== null);
+		expect(document.querySelector('.week-days .today')?.getAttribute('data-day')).toBe('2026-11-15');
+		vi.advanceTimersByTime(60_000);
+		// Monday the 16th starts a new week.
+		await until(() => document.querySelector('.week-days .today')?.getAttribute('data-day') === '2026-11-16');
 	});
 });

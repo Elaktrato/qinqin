@@ -71,6 +71,38 @@ describe('Settings -> Home: the heatmap layout', () => {
 		expect(document.querySelector('[aria-live="polite"]')?.textContent).toMatch(/Could not save the heatmap layout/);
 	});
 
+	it('saves one at a time, newest wins; a failed earlier save never resets the radio (#100 review)', async () => {
+		let failMonth: (err: Error) => void = () => {};
+		vi.mocked(saveHeatmapLayout)
+			.mockImplementationOnce(() => new Promise((_, reject) => (failMonth = reject)))
+			.mockResolvedValue(undefined);
+		render(HomeLayoutEditor);
+		const group = await fieldset();
+		await fireEvent.click(within(group).getByRole('radio', { name: 'Month calendar' }));
+		await fireEvent.click(within(group).getByRole('radio', { name: 'This week' }));
+		await fireEvent.click(within(group).getByRole('radio', { name: 'Garden grid' }));
+		await fireEvent.click(within(group).getByRole('radio', { name: 'This week' }));
+		// Only the first is in flight; the rest wait and collapse into the newest.
+		expect(saveHeatmapLayout).toHaveBeenCalledTimes(1);
+		failMonth(new Error('offline'));
+		await waitFor(() => expect(saveHeatmapLayout).toHaveBeenCalledTimes(2));
+		expect(vi.mocked(saveHeatmapLayout).mock.calls[1]).toEqual(['week']);
+		await waitFor(() => expect(document.querySelector('[aria-live="polite"]')?.textContent).toBe('Heatmap layout: This week.'));
+		expect(within(group).getByRole('radio', { name: 'This week' })).toHaveProperty('checked', true);
+		expect(within(group).queryByText(/Could not save the heatmap layout/)).toBeNull();
+	});
+
+	it('when the newest save fails the radio goes back to the last saved layout', async () => {
+		vi.mocked(saveHeatmapLayout).mockResolvedValueOnce(undefined).mockRejectedValueOnce(new Error('offline'));
+		render(HomeLayoutEditor);
+		const group = await fieldset();
+		await fireEvent.click(within(group).getByRole('radio', { name: 'Month calendar' }));
+		await waitFor(() => expect(document.querySelector('[aria-live="polite"]')?.textContent).toBe('Heatmap layout: Month calendar.'));
+		await fireEvent.click(within(group).getByRole('radio', { name: 'This week' }));
+		await waitFor(() => expect(within(group).getByRole('radio', { name: 'Month calendar' })).toHaveProperty('checked', true));
+		expect(within(group).getByText(/Could not save the heatmap layout \(offline\)/)).toBeTruthy();
+	});
+
 	it('the fieldset is shown only while the widget is on the home page', async () => {
 		vi.mocked(loadLayout).mockResolvedValue(['daily-goal']);
 		render(HomeLayoutEditor);

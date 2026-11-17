@@ -5,6 +5,7 @@ import {
 	monthGrid,
 	monthOf,
 	monthWindow,
+	windowMonth,
 	nextMonth,
 	prevMonth,
 	weekDays,
@@ -36,6 +37,14 @@ describe('months', () => {
 	it('monthWindow ends at today in the current month and at month end before', () => {
 		expect(monthWindow('2026-11', '2026-11-16')).toEqual({ from: '2026-11-01', to: '2026-11-16' });
 		expect(monthWindow('2026-10', '2026-11-16')).toEqual({ from: '2026-10-01', to: '2026-10-31' });
+	});
+
+	it('windowMonth names the month a loaded window covers, or null for a 13-week window', () => {
+		expect(windowMonth({ from: '2026-11-01', to: '2026-11-16' })).toBe('2026-11');
+		expect(windowMonth({ from: '2026-10-01', to: '2026-10-31' })).toBe('2026-10');
+		expect(windowMonth({ from: '2026-08-01', to: '2026-10-30' })).toBeNull();
+		expect(windowMonth({ from: '2026-08-18', to: '2026-11-16' })).toBeNull();
+		expect(windowMonth({ from: '', to: '' })).toBeNull();
 	});
 });
 

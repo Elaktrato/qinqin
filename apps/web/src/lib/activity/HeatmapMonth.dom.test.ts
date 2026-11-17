@@ -142,4 +142,57 @@ describe('HeatmapMonth', () => {
 		const list = screen.getByRole('list', { name: 'Daily activity' });
 		expect(within(list).getAllByRole('listitem').length).toBe(7);
 	});
+
+	it('switching from the garden shows a loading state, not the 13-week window, until the month arrives (#100 review)', async () => {
+		const { rerender } = render(ActivityHeatmap, { layout: 'garden' });
+		await waitFor(() => expect(document.querySelector('.grid')).not.toBeNull());
+		let release: (r: ActivityResponse) => void = () => {};
+		vi.mocked(fetchActivity).mockImplementationOnce(() => new Promise((resolve) => (release = resolve)));
+		await rerender({ layout: 'month' });
+		expect(document.querySelector('.month-grid')).toBeNull();
+		expect(screen.getByText('Loading activity…')).toBeTruthy();
+		release(reply('2026-11-01', '2026-11-16'));
+		await waitFor(() => expect(monthName()?.textContent).toBe('November 2026'));
+	});
+
+	it('a failed month fetch says so with Try again instead of showing another window', async () => {
+		const { rerender } = render(ActivityHeatmap, { layout: 'garden' });
+		await waitFor(() => expect(document.querySelector('.grid')).not.toBeNull());
+		vi.mocked(fetchActivity).mockRejectedValueOnce(new Error('offline'));
+		await rerender({ layout: 'month' });
+		expect(await screen.findByText(/Could not load this month/)).toBeTruthy();
+		expect(document.querySelector('.month-grid')).toBeNull();
+		await fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
+		await waitFor(() => expect(monthName()?.textContent).toBe('November 2026'));
+		expect(screen.queryByText(/Could not load this month/)).toBeNull();
+	});
+
+	it('no summary line while the goal has no countable day yet (not "0 of 0 days")', async () => {
+		vi.mocked(loadStudyHistory).mockResolvedValue({
+			decks: [],
+			cards: [],
+			reviews: [],
+			merged: 0,
+			goals: { version: 1, showStreak: true, history: [{ from: '2026-11-16', metric: 'activity:review', target: 5 }] }
+		});
+		render(ActivityHeatmap, { layout: 'month' });
+		// Today is a goal day (its stage is listed) but still open, so nothing is counted.
+		await waitFor(() => expect(screen.getByRole('list', { name: 'Daily activity' }).textContent).toMatch(/of 5/));
+		expect(screen.queryByText(/Goal reached on/)).toBeNull();
+	});
+
+	it('a failed page keeps the month on screen and the paging in step with it (#100 review)', async () => {
+		render(ActivityHeatmap, { layout: 'month' });
+		await waitFor(() => expect(monthName()?.textContent).toBe('November 2026'));
+		vi.mocked(fetchActivity).mockRejectedValueOnce(new Error('offline'));
+		await fireEvent.click(screen.getByRole('button', { name: 'Previous month' }));
+		expect(await screen.findByText(/Could not load this month/)).toBeTruthy();
+		expect(monthName()?.textContent).toBe('November 2026');
+		// Still November: Next stays disabled and Previous asks for October again, not September.
+		expect(screen.getByRole('button', { name: 'Next month' }).hasAttribute('disabled')).toBe(true);
+		await fireEvent.click(screen.getByRole('button', { name: 'Previous month' }));
+		await waitFor(() => expect(monthName()?.textContent).toBe('October 2026'));
+		expect(vi.mocked(fetchActivity).mock.calls.at(-1)).toEqual(['2026-10-01', '2026-10-31']);
+		expect(screen.queryByText(/Could not load this month/)).toBeNull();
+	});
 });
