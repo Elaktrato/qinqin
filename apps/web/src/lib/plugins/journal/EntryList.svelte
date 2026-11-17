@@ -122,7 +122,7 @@
 
 	.ws {
 		font-weight: 400;
-		opacity: 0.7;
+		color: var(--readable-muted);
 		font-size: 1rem;
 	}
 
@@ -146,8 +146,8 @@
 	}
 
 	a.button.primary {
-		background: #0b6bcb;
-		color: #fff;
+		background: var(--accent);
+		color: var(--on-accent);
 	}
 
 	a.button.secondary {
@@ -183,7 +183,7 @@
 
 	.date {
 		font-variant-numeric: tabular-nums;
-		opacity: 0.75;
+		color: var(--readable-muted);
 	}
 
 	.title {

@@ -102,46 +102,27 @@
 		outline-offset: 2px;
 	}
 
+	/* The category's line colour, from the theme (design §6 correction marks:
+	   mistakes in the grade colours); the wavy line and the category named in
+	   the popover carry the meaning without colour. */
 	.grammar {
-		text-decoration-color: #c62828;
+		text-decoration-color: var(--grade-again);
 	}
 
 	.word-choice {
-		text-decoration-color: #b26a00;
+		text-decoration-color: var(--grade-hard);
 	}
 
 	.spelling {
-		text-decoration-color: #6a1b9a;
+		text-decoration-color: var(--accent);
 	}
 
 	.style {
-		text-decoration-color: #0b6bcb;
+		text-decoration-color: var(--grade-easy);
 	}
 
 	.other {
-		text-decoration-color: #5f6b7a;
-	}
-
-	@media (prefers-color-scheme: dark) {
-		.grammar {
-			text-decoration-color: #ff8a80;
-		}
-
-		.word-choice {
-			text-decoration-color: #ffb74d;
-		}
-
-		.spelling {
-			text-decoration-color: #ce93d8;
-		}
-
-		.style {
-			text-decoration-color: #6cb4ff;
-		}
-
-		.other {
-			text-decoration-color: #aab4c0;
-		}
+		text-decoration-color: var(--muted);
 	}
 
 	.popover {
@@ -160,18 +141,18 @@
 	.cat {
 		text-transform: capitalize;
 		font-size: 0.85rem;
-		opacity: 0.75;
+		color: var(--readable-muted);
 	}
 
 	.label {
 		font-size: 0.85rem;
-		opacity: 0.75;
+		color: var(--readable-muted);
 		margin-right: 0.4rem;
 	}
 
 	.quote {
 		text-decoration: line-through;
-		opacity: 0.85;
+		color: var(--readable-muted);
 	}
 
 	.why {

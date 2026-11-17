@@ -123,8 +123,8 @@
 	}
 
 	.journal :global(button:where(:not(.annot, .secondary))) {
-		background: #0b6bcb;
-		color: #fff;
+		background: var(--accent);
+		color: var(--on-accent);
 	}
 
 	.journal :global(button:disabled) {
@@ -140,28 +140,23 @@
 	}
 
 	.journal :global(.error) {
-		color: #c62828;
+		color: var(--readable-bad);
 		font-weight: 600;
+		padding-inline-start: var(--space-2);
+		border-inline-start: 3px solid var(--bad);
 	}
 
 	.journal :global(.danger) {
-		color: #c62828;
+		color: var(--readable-bad);
 	}
 
 	.journal :global(.hint) {
-		opacity: 0.8;
+		color: var(--readable-muted);
 	}
 
 	.journal :global(:focus-visible) {
 		outline: 2px solid currentColor;
 		outline-offset: 2px;
-	}
-
-	@media (prefers-color-scheme: dark) {
-		.journal :global(.error),
-		.journal :global(.danger) {
-			color: #ff8a80;
-		}
 	}
 
 	@media (max-width: 30rem) {
