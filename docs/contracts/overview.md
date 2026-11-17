@@ -22,11 +22,14 @@ Read order: `auth/` -> `study-day/` -> this page's sync model -> `study/` -> `ca
 
 ## Sync model
 
-- Pull: `GET /api/sync/pull?cursor=<RFC 3339>&collections=a,b` (`server/internal/sync/pull*.go`). No cursor
-  means everything. The answer is `{cursor, entries, links, senses, levelMembers, sentences, pluginData,
-  pluginStates, overlays, dictionaries, schemes, levels, cards, decks, deckSettings, limits, fsrsSets,
-  fsrsActive}`; every collection is a non-null array. Valid
-  `collections` names are exactly those; an unknown one is 400. The returned cursor lags the server clock
+- Pull: the paged form `GET /api/sync/pull?v=2` is in `sync/` (`server/internal/sync/page*.go`). The legacy
+  form `GET /api/sync/pull?cursor=<RFC 3339>&collections=a,b` (`server/internal/sync/legacy.go`, deprecated
+  until v0.5.0, streamed, `sync/legacy-pull.json`): no cursor means every live row. The answer is `{cursor,
+  entries, links, senses, levelMembers, sentences, pluginData, pluginStates, overlays, dictionaries, schemes,
+  levels, cards, decks, deckSettings, limits, fsrsSets, fsrsActive}`; every collection is a non-null array.
+  The lexicon collections (entries, links, senses, levelMembers, dictionaries, schemes, levels) moved to data
+  packages (`packages/`): they are always `[]` and naming one is 400 `sync_collection_moved`; `sentences` are
+  the caller's own. Valid `collections` names are exactly those keys; an unknown one is 400. The returned cursor lags the server clock
   by 30 s and the cursor second is inclusive, so rows can arrive twice: upsert by key. A cursor is only
   valid for the same `collections` list it came from; do not mix subset pulls with one global cursor.
 - Push: `POST /api/sync/push {events: [...], pluginData: [...], cards: [...], decks: [...], deckSettings: [...],

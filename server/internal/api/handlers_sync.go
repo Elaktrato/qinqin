@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"log"
 	"net/http"
 	"time"
 
@@ -15,25 +16,27 @@ import (
 // handleSyncPull serves GET /api/sync/pull: the paged form with v=2
 // (handleSyncPullV2), the legacy form otherwise.
 //
-// The legacy form, ?cursor=: every row changed at
-// or after the RFC 3339 cursor (absent = everything), tombstones
-// included, plus the cursor to pull from next time. The optional
-// collections= (comma-separated Delta collection names) limits the pull
-// to those; the others come back empty, and an unknown name is 400. The
-// returned cursor is valid only for the collections requested; a client
-// that mixes subset pulls with one global cursor would miss changes.
-// Authenticated.
+// The legacy form, ?cursor= (deprecated, until v0.5.0): every row of the
+// caller changed at or after the RFC 3339 cursor (absent = live rows
+// only), tombstones included, plus the cursor to pull from next time,
+// streamed row by row (sync.StreamLegacy). The optional collections=
+// (comma-separated Delta collection names) limits the pull to those; the
+// others come back empty. An unknown name or a bad cursor is a plain-text
+// 400; a lexicon collection is 400 sync_collection_moved (JSON). The
+// returned cursor is valid only for the collections requested. Answers
+// carry Deprecation and a Link to the paged form. Authenticated.
 func (s *server) handleSyncPull(w http.ResponseWriter, r *http.Request) {
 	u := s.requireUser(w, r)
 	if u == nil {
 		return
 	}
-	if r.URL.Query().Get("v") == "2" {
+	q := r.URL.Query()
+	if q.Get("v") == "2" {
 		s.handleSyncPullV2(w, r, u)
 		return
 	}
 	var cursor time.Time
-	if raw := r.URL.Query().Get("cursor"); raw != "" {
+	if raw := q.Get("cursor"); raw != "" {
 		t, err := time.Parse(time.RFC3339, raw)
 		if err != nil {
 			http.Error(w, "cursor must be RFC 3339", http.StatusBadRequest)
@@ -41,17 +44,25 @@ func (s *server) handleSyncPull(w http.ResponseWriter, r *http.Request) {
 		}
 		cursor = t
 	}
-	only, err := chinsync.ParseCollections(r.URL.Query().Get("collections"))
+	only, err := chinsync.ParseCollections(q.Get("collections"))
+	if errors.Is(err, chinsync.ErrMoved) {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "sync_collection_moved",
+			"message": "The lexicon collections moved to data packages: read GET /api/packages. " + err.Error()})
+		return
+	}
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	delta, err := chinsync.Pull(r.Context(), s.db, u.ID, cursor, only)
-	if err != nil {
-		http.Error(w, "internal error", http.StatusInternalServerError)
-		return
+	h := w.Header()
+	h.Set("Content-Type", "application/json")
+	h.Set("Deprecation", "true")
+	h.Set("Link", `</api/sync/pull?v=2>; rel="successor-version"`)
+	if err := chinsync.StreamLegacy(r.Context(), w, s.db, u.ID, cursor, only); err != nil && r.Context().Err() == nil {
+		// The status and part of the body are out: the JSON stays truncated
+		// and the client retries, as after a network cut.
+		log.Printf("sync pull (legacy) of user %d: %v", u.ID, err)
 	}
-	writeJSON(w, http.StatusOK, delta)
 }
 
 // handleSyncPullV2 serves GET /api/sync/pull?v=2: one page of the caller's

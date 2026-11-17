@@ -139,31 +139,62 @@ func orderBy(f rows.Family) string {
 // (inclusive second), tombstones included — except from the zero time,
 // where only live rows ship.
 func PullRows(ctx context.Context, q Querier, userID int64, f rows.Family, since time.Time) ([]rows.Row, error) {
+	out := []rows.Row{}
+	err := PullEach(ctx, q, userID, f, since, false, func(r rows.Row) error {
+		out = append(out, r)
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// legacyKeySQL is rows.LegacyKey of a stored row, per family.
+var legacyKeySQL = map[rows.Family]string{
+	rows.Cards:        `'card:' || id`,
+	rows.Decks:        `'deck:' || id`,
+	rows.DeckSettings: `'deckcfg:' || deck_id`,
+	rows.Limits:       `CASE WHEN deck_id = '' THEN 'limits:workspace' ELSE 'limits:deck:' || deck_id END`,
+	rows.FsrsSets:     `'fsrs:set:' || id`,
+	rows.FsrsActive:   `'fsrs:active'`,
+}
+
+// PullEach streams the rows PullRows returns to fn, one at a time. With
+// byLegacyKey the order is (updated_at, legacy key, workspace), the order
+// the legacy view merges typed rows with plugin rows in; otherwise it is
+// PullRows' order.
+func PullEach(ctx context.Context, q Querier, userID int64, f rows.Family, since time.Time, byLegacyKey bool, fn func(rows.Row) error) error {
 	t, ok := tables[f]
 	if !ok {
-		return nil, fmt.Errorf("study: unknown family %q", f)
+		return fmt.Errorf("study: unknown family %q", f)
 	}
 	query := `SELECT ` + selectCols(f) + ` FROM ` + t.name + ` WHERE user_id = ? AND updated_at >= ?`
 	if since.IsZero() {
 		query += ` AND deleted_at IS NULL`
 	}
-	rs, err := q.QueryContext(ctx, query+` ORDER BY `+orderBy(f), userID, since.UTC().Format(time.RFC3339))
+	order := orderBy(f)
+	if byLegacyKey {
+		order = "updated_at, " + legacyKeySQL[f] + ", workspace_id"
+	}
+	rs, err := q.QueryContext(ctx, query+` ORDER BY `+order, userID, since.UTC().Format(time.RFC3339))
 	if err != nil {
-		return nil, fmt.Errorf("study: pull %s: %w", f, err)
+		return fmt.Errorf("study: pull %s: %w", f, err)
 	}
 	defer rs.Close()
-	out := []rows.Row{}
 	for rs.Next() {
 		r, err := scanRow(f, rs)
 		if err != nil {
-			return nil, fmt.Errorf("study: pull %s: %w", f, err)
+			return fmt.Errorf("study: pull %s: %w", f, err)
 		}
-		out = append(out, r)
+		if err := fn(r); err != nil {
+			return err
+		}
 	}
 	if err := rs.Err(); err != nil {
-		return nil, fmt.Errorf("study: pull %s: %w", f, err)
+		return fmt.Errorf("study: pull %s: %w", f, err)
 	}
-	return out, nil
+	return nil
 }
 
 // ForEach streams the user's live rows of family f (every workspace) in

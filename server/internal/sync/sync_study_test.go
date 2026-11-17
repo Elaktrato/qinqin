@@ -108,7 +108,7 @@ func TestPushAndPullEachTypedCollection(t *testing.T) {
 				t.Fatal(err)
 			}
 			only, _ := chinsync.ParseCollections(c)
-			d, err := chinsync.Pull(ctx, sqlDB, alice, time.Time{}, only)
+			d, err := pullDelta(ctx, sqlDB, alice, time.Time{}, only)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -125,7 +125,7 @@ func TestPushAndPullEachTypedCollection(t *testing.T) {
 				t.Errorf("pull %s shipped pluginData %+v", c, d.PluginData)
 			}
 			// Bob's full pull holds only his row.
-			d, _ = chinsync.Pull(ctx, sqlDB, bob, time.Time{}, nil)
+			d, _ = pullDelta(ctx, sqlDB, bob, time.Time{}, nil)
 			raw, _ := json.Marshal(d)
 			if typedCount(d, c) != 1 || bytes.Contains(raw, []byte(`"x1"`)) || bytes.Contains(raw, []byte(fmt.Sprintf(`"workspaceId":%d`, ws))) {
 				t.Errorf("bob's pull: %s", raw)
@@ -136,10 +136,10 @@ func TestPushAndPullEachTypedCollection(t *testing.T) {
 			if res, err := chinsync.Push(ctx, sqlDB, alice, typedBody(c, json.RawMessage(item))); err != nil || res.DataAccepted != 1 {
 				t.Fatalf("tombstone push = %+v, %v", res, err)
 			}
-			if d, _ := chinsync.Pull(ctx, sqlDB, alice, time.Time{}, only); typedCount(d, c) != 0 {
+			if d, _ := pullDelta(ctx, sqlDB, alice, time.Time{}, only); typedCount(d, c) != 0 {
 				t.Errorf("zero-cursor pull shipped a tombstone")
 			}
-			if d, _ := chinsync.Pull(ctx, sqlDB, alice, time.Unix(0, 0), only); typedCount(d, c) != 1 {
+			if d, _ := pullDelta(ctx, sqlDB, alice, time.Unix(0, 0), only); typedCount(d, c) != 1 {
 				t.Errorf("1970 pull lacks the tombstone")
 			}
 		})
@@ -215,7 +215,7 @@ func TestMixedPush(t *testing.T) {
 	if err != nil || res.EventsAccepted != 1 || res.DataAccepted != 3 {
 		t.Fatalf("mixed push = %+v, %v; want 1 event and 3 data rows", res, err)
 	}
-	d, _ := chinsync.Pull(ctx, sqlDB, alice, time.Time{}, nil)
+	d, _ := pullDelta(ctx, sqlDB, alice, time.Time{}, nil)
 	if len(d.Cards) != 1 || len(d.Decks) != 1 || len(d.PluginData) != 1 || d.PluginData[0].Key != "known:5" {
 		t.Errorf("pull after mixed push: cards %d decks %d pluginData %+v", len(d.Cards), len(d.Decks), d.PluginData)
 	}
