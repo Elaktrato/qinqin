@@ -753,6 +753,20 @@ The Sources page credits it under "Built into the app".
 Hanzi and kanji faces are not bundled: they are installable font packs (next section).
 Until one is installed, Chinese and Japanese text uses the device's own fonts.
 
+
+## Icons
+
+The interface's line icons are [Lucide](https://lucide.dev) icons from the npm package
+`lucide-static` 1.66.0 (ISC License, "Copyright (c) 2026 Lucide Icons and Contributors"; the icons
+Lucide derived from [Feather](https://github.com/feathericons/feather) are under the MIT License,
+"Copyright (c) 2013-present Cole Bemis"). Only the shapes of the icons the app uses are copied, by
+`apps/web/scripts/vendor-icons.mjs`, into `lucide.ts` under `apps/web/src/lib/ui/icons/`; the app
+draws them at a stroke width of 1.5 instead of Lucide's 2 (a modification both licences allow). No
+icon package is installed and nothing is loaded from a third-party host. The package's `LICENSE`
+(both licence texts and the list of Feather-derived icons) is committed byte for byte at
+`apps/web/static/LUCIDE-LICENSE.TXT` and served by the running app at `/LUCIDE-LICENSE.TXT`; a web
+test pins its SHA-256. The Sources page credits it under "Built into the app".
+
 ## Hanzi and kanji font packs
 
 Sans, Serif and Kai faces for simplified Chinese, traditional Chinese and Japanese come as

@@ -66,6 +66,16 @@
 	},
 	{
 		"file": "lib/sources/coreCredits.ts",
+		"text": "Copyright (c) 2026 Lucide Icons and Contributors; Copyright (c) 2013-present Cole Bemis (Feather)",
+		"reason": "Copyright lines, quoted verbatim from the icon package's LICENSE (data)."
+	},
+	{
+		"file": "lib/sources/coreCredits.ts",
+		"text": "ISC AND MIT",
+		"reason": "An SPDX licence expression (data), not prose."
+	},
+	{
+		"file": "lib/sources/coreCredits.ts",
 		"text": "Copyright (c) 2021 Catppuccin",
 		"reason": "A copyright line, quoted verbatim from the palette's LICENSE (data)."
 	},
