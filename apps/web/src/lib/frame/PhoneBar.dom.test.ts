@@ -1,8 +1,9 @@
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/svelte';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { auth } from '$lib/auth';
 import { FLASHCARDS_ID, READER_ID } from '$lib/features';
 import { workspaces } from '$lib/workspaces';
+import { PHONE_MEDIA_QUERY } from './breakpoint';
 import { frameSections } from './sections';
 import PhoneHarness from './testing/PhoneHarness.svelte';
 
@@ -24,6 +25,7 @@ beforeEach(() => {
 });
 afterEach(() => {
 	cleanup();
+	vi.unstubAllGlobals();
 	auth.set({ token: null, user: null });
 });
 
@@ -69,5 +71,49 @@ describe('PhoneBar', () => {
 		await view.rerender({ page: false });
 		await waitFor(() => expect(bar.querySelector('.title')?.textContent).toBe('Search'));
 		expect(within(bar).queryByRole('button', { name: 'Add to deck' })).toBeNull();
+	});
+
+	it('the drawer closes when the window grows past the phone breakpoint; focus goes to the page', async () => {
+		// The drawer is a modal dialog inside the phone bar, which is display: none
+		// on the desktop frame: left open, it would keep the whole page inert.
+		const listeners = new Set<(e: { matches: boolean }) => void>();
+		const query = { matches: true, media: PHONE_MEDIA_QUERY };
+		const matchMedia = vi.fn((q: string) => ({
+			...query,
+			media: q,
+			get matches() {
+				return query.matches;
+			},
+			addEventListener: (_: string, fn: (e: { matches: boolean }) => void) => listeners.add(fn),
+			removeEventListener: (_: string, fn: (e: { matches: boolean }) => void) => listeners.delete(fn)
+		}));
+		vi.stubGlobal('matchMedia', matchMedia);
+		const main = document.createElement('main');
+		main.id = 'main-content';
+		main.tabIndex = -1;
+		document.body.append(main);
+		try {
+			render(PhoneHarness, { sections, current: 'reader' });
+			await fireEvent.click(screen.getByRole('button', { name: 'Open menu' }));
+			await screen.findByRole('dialog', { name: 'Menu' });
+			expect(matchMedia).toHaveBeenCalledWith(PHONE_MEDIA_QUERY);
+			expect(listeners.size).toBe(1);
+			query.matches = false;
+			for (const fn of [...listeners]) fn({ matches: false });
+			await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Menu' })).toBeNull());
+			expect(screen.getByRole('button', { name: 'Open menu' }).getAttribute('aria-expanded')).toBe('false');
+			// The menu button is hidden with the phone bar: focus lands on the page.
+			await waitFor(() => expect(document.activeElement).toBe(main));
+			expect(listeners.size).toBe(0);
+		} finally {
+			main.remove();
+		}
+	});
+
+	it('without matchMedia the drawer still opens', async () => {
+		vi.stubGlobal('matchMedia', undefined);
+		render(PhoneHarness, { sections, current: 'reader' });
+		await fireEvent.click(screen.getByRole('button', { name: 'Open menu' }));
+		expect(await screen.findByRole('dialog', { name: 'Menu' })).toBeTruthy();
 	});
 });

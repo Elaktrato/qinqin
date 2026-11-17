@@ -27,11 +27,13 @@ function me(admin = false, restriction: User['restriction'] = ''): User {
 	};
 }
 
-async function store(): Promise<ThemeStore> {
+async function store(failSave = false): Promise<ThemeStore> {
 	const s = createThemeStore({
 		fetchThemes: vi.fn(async () => ({ themes: [latte, mocha], packs: [] })),
 		loadRow: vi.fn(async () => ({ version: 1, mode: 'light' })),
-		saveRow: vi.fn(async () => {}),
+		saveRow: vi.fn(async () => {
+			if (failSave) throw new Error('offline');
+		}),
 		storage: () => null,
 		media: () => null,
 		root: () => root
@@ -41,9 +43,9 @@ async function store(): Promise<ThemeStore> {
 	return s;
 }
 
-async function mount(user: User, restricted = false) {
+async function mount(user: User, restricted = false, failSave = false) {
 	auth.set({ token: 'tok', user });
-	render(AccountMenu, { store: await store(), restricted });
+	render(AccountMenu, { store: await store(failSave), restricted });
 	const trigger = screen.getByRole('button', { name: 'Account menu' });
 	return trigger;
 }
@@ -52,6 +54,7 @@ const names = () => screen.getAllByRole('menuitem').map((i) => i.textContent?.re
 
 beforeEach(() => root.removeAttribute('style'));
 afterEach(() => {
+	vi.useRealTimers();
 	cleanup();
 	vi.clearAllMocks();
 	auth.set({ token: null, user: null });
@@ -128,10 +131,41 @@ describe('AccountMenu', () => {
 		expect(requestSignOut).toHaveBeenCalledTimes(1);
 	});
 
-	it('a restricted session gets Sign out only', async () => {
+	it('a restricted session gets Sources and Sign out only', async () => {
 		const trigger = await mount(me(false, 'password_change'), true);
 		await fireEvent.click(trigger);
-		expect(names()).toEqual(['Sign out']);
+		expect(names()).toEqual(['Sources', 'Sign out']);
+		// The open Sources page stays reachable (the old footer linked it).
+		expect(screen.getByRole('menuitem', { name: 'Sources' }).getAttribute('href')).toBe('/sources');
 		expect(screen.queryAllByRole('menuitemradio')).toEqual([]);
+	});
+
+	describe('a failed theme change', () => {
+		async function fail() {
+			const trigger = await mount(me(), false, true);
+			await fireEvent.click(trigger);
+			await fireEvent.click(screen.getByRole('menuitem', { name: /^Theme/ }));
+			await fireEvent.click(screen.getByRole('menuitemradio', { name: 'Latte' }));
+			await waitFor(() => expect(screen.getByRole('alert').textContent).toBe('Could not change the theme. Try again.'));
+			return trigger;
+		}
+
+		it('the alert goes away on its own after a while', async () => {
+			vi.useFakeTimers({ shouldAdvanceTime: true });
+			await fail();
+			await vi.advanceTimersByTimeAsync(7000);
+			expect(screen.queryByRole('alert')).not.toBeNull();
+			await vi.advanceTimersByTimeAsync(1500);
+			expect(screen.queryByRole('alert')).toBeNull();
+		});
+
+		it('opening the menu again clears the alert', async () => {
+			const trigger = await fail();
+			// The pick closed the menu; the alert stays beside it.
+			expect(screen.queryByRole('menu')).toBeNull();
+			expect(screen.queryByRole('alert')).not.toBeNull();
+			await fireEvent.click(trigger);
+			await waitFor(() => expect(screen.queryByRole('alert')).toBeNull());
+		});
 	});
 });

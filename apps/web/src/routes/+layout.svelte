@@ -256,7 +256,7 @@
 		{:else if framed}
 			<!-- A restricted session (forced password change, MFA enrolment)
 			     and a signed-out visitor of an open page: the logo and the
-			     account menu (Sign out only) or a sign-in link; no sections,
+			     account menu (Sources and Sign out only) or a sign-in link; no sections,
 			     no workspace, nothing private. -->
 			<header class="bar">
 				<div class="minimal">
@@ -306,7 +306,9 @@
 
 			{#if $logoutPrompt !== null}<LogoutDialog />{/if}
 
-			<div class="content" id="main-content" tabindex="-1">
+			<!-- The one main landmark of every page (the skip link's target):
+			     pages bring plain containers, never their own <main>. -->
+			<main class="content" id="main-content" tabindex="-1">
 				{#if signedIn && !restricted && noWorkspaces}
 					<section class="empty-workspaces" aria-labelledby="empty-workspaces-heading">
 						<h2 id="empty-workspaces-heading">{t('app.workspaces.emptyTitle')}</h2>
@@ -316,7 +318,7 @@
 				{/if}
 
 				{@render children()}
-			</div>
+			</main>
 		</div>
 	</div>
 {:else}

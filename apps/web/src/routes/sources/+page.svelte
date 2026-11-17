@@ -312,7 +312,7 @@
 	</li>
 {/snippet}
 
-<main class="sources">
+<div class="page-body sources">
 	<h1>{t('sources.title')}</h1>
 	<p class="lede">
 		{t('sources.lede')}
@@ -807,7 +807,7 @@
 			<Msg key="sources.more.text">{#snippet code(text: string)}<code>{text}</code>{/snippet}</Msg>
 		</p>
 	</section>
-</main>
+</div>
 
 <style>
 	.sources section {

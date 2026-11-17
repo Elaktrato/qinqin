@@ -6,7 +6,7 @@
 	// theme level: Back, the painted slot's themes, Appearance settings…;
 	// ArrowLeft or Back returns to the first level with focus on Theme,
 	// Escape closes the whole menu. A restricted session (forced password
-	// change, MFA enrolment) gets Sign out only.
+	// change, MFA enrolment) gets Sources (an open page) and Sign out only.
 	import { tick } from 'svelte';
 	import { t } from '$lib/i18n';
 	import { user } from '$lib/auth';
@@ -39,9 +39,20 @@
 	const name = $derived($user?.username ?? '');
 	const themeName = $derived(store.themeOf(store.current.theme)?.name ?? store.current.theme);
 
-	// A closed menu opens at the first level again.
+	// A closed menu opens at the first level again; opening it clears an
+	// old theme error (the person is trying again).
 	$effect(() => {
 		if (!open) level = 'top';
+		else error = '';
+	});
+
+	// The theme error is announced at once (role="alert") and then goes
+	// away on its own, so it never sits over the page.
+	const ERROR_MS = 8000;
+	$effect(() => {
+		if (!error) return;
+		const timer = setTimeout(() => (error = ''), ERROR_MS);
+		return () => clearTimeout(timer);
 	});
 
 	function back(): void {
@@ -80,9 +91,10 @@
 					{#if $user?.admin}
 						<MenuItem href="/settings?tab=admin" icon="admin">{t('nav.account.adminSettings')}</MenuItem>
 					{/if}
-					<MenuItem href="/sources" icon="library">{t('nav.sources')}</MenuItem>
-					<MenuItem separator />
 				{/if}
+				<!-- The open Sources page, for a restricted session too. -->
+				<MenuItem href="/sources" icon="library">{t('nav.sources')}</MenuItem>
+				<MenuItem separator />
 				<MenuItem icon="sign-out" tone="bad" onselect={() => void requestSignOut()}>{t('nav.signOut')}</MenuItem>
 			</div>
 		{:else}
