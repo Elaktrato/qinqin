@@ -257,3 +257,49 @@ func TestImportRejectsOtherTypesAndFormats(t *testing.T) {
 		t.Errorf("missing data file: Import = %v, want ErrInvalidPack", err)
 	}
 }
+
+// An uninstall turns the startup auto-install off for good (server_meta);
+// a fresh database has it on, and Live tells whether any pack serves.
+func TestUninstallTurnsAutoInstallOff(t *testing.T) {
+	ctx := context.Background()
+	sqlDB := newDB(t)
+	off, err := strokes.AutoInstallOff(ctx, sqlDB)
+	if err != nil || off {
+		t.Fatalf("fresh database: off = %v, %v", off, err)
+	}
+	if live, err := strokes.Live(ctx, sqlDB); err != nil || live {
+		t.Fatalf("fresh database: live = %v, %v", live, err)
+	}
+	if _, err := strokes.Import(ctx, sqlDB, writePack(t, "hw", "1", []string{"zh"}, threeChars())); err != nil {
+		t.Fatal(err)
+	}
+	if live, err := strokes.Live(ctx, sqlDB); err != nil || !live {
+		t.Fatalf("after import: live = %v, %v", live, err)
+	}
+	if off, _ := strokes.AutoInstallOff(ctx, sqlDB); off {
+		t.Fatal("an import turned auto-install off")
+	}
+	if err := strokes.Uninstall(ctx, sqlDB, "hw"); err != nil {
+		t.Fatal(err)
+	}
+	if off, err := strokes.AutoInstallOff(ctx, sqlDB); err != nil || !off {
+		t.Fatalf("after uninstall: off = %v, %v", off, err)
+	}
+	if live, _ := strokes.Live(ctx, sqlDB); live {
+		t.Fatal("live after the uninstall")
+	}
+	// A failed uninstall (unknown pack) changes nothing; a reinstall keeps it off.
+	if _, err := strokes.Import(ctx, sqlDB, writePack(t, "hw", "1", []string{"zh"}, threeChars())); err != nil {
+		t.Fatal(err)
+	}
+	if off, _ := strokes.AutoInstallOff(ctx, sqlDB); !off {
+		t.Fatal("a reinstall turned auto-install back on")
+	}
+	fresh := newDB(t)
+	if err := strokes.Uninstall(ctx, fresh, "nope"); !errors.Is(err, strokes.ErrNotFound) {
+		t.Fatalf("unknown uninstall: %v", err)
+	}
+	if off, _ := strokes.AutoInstallOff(ctx, fresh); off {
+		t.Fatal("a failed uninstall turned auto-install off")
+	}
+}

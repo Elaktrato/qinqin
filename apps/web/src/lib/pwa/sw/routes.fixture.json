@@ -344,12 +344,20 @@
 		"access": "user"
 	},
 	{
+		"pattern": "GET /api/stroke-packs",
+		"access": "public"
+	},
+	{
 		"pattern": "GET /api/sync/pull",
 		"access": "user"
 	},
 	{
 		"pattern": "GET /api/workspaces",
 		"access": "user"
+	},
+	{
+		"pattern": "GET /hanzi/{file}",
+		"access": "public"
 	},
 	{
 		"pattern": "GET /healthz",

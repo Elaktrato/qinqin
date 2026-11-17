@@ -192,6 +192,11 @@
 			"workspace": "query"
 		},
 		{
+			"pattern": "GET /api/stroke-packs",
+			"scope": "read",
+			"workspace": "any"
+		},
+		{
 			"pattern": "GET /api/sync/pull",
 			"scope": "read",
 			"workspace": "refused"

@@ -335,6 +335,7 @@ var v1TokenRoutes = map[string]tokenRule{
 	// tokens of any workspace limit may mirror them.
 	"GET /api/packages":                 tokReadGlobal,
 	"GET /api/packages/{id}/{revision}": tokReadGlobal,
+	"GET /api/stroke-packs":             tokReadGlobal,
 
 	"GET /api/workspaces":                      tokReadAny,
 	"GET /api/sync/pull":                       tokReadAny,

@@ -75,6 +75,13 @@ describe('classify: spec table', () => {
 		}
 	});
 
+	it('stroke files are a server route now and stay hanzi; the stroke pack list is bypass', () => {
+		expect(routes.some((r) => r.pattern === 'GET /hanzi/{file}' && r.access === 'public')).toBe(true);
+		expect(kind('/hanzi/U597D.json', { auth: false })).toBe('hanzi');
+		expect(kind('/api/stroke-packs')).toBe('bypass');
+		expect(kind('/api/stroke-packs', { auth: false })).toBe('bypass');
+	});
+
 	it('data packages are never cached by the worker (decision: bypass; the client stores the files itself)', () => {
 		for (const url of ['/api/packages', '/api/packages?languages=all', '/api/packages/lexicon.zh/3']) {
 			expect(kind(url), url).toBe('bypass');

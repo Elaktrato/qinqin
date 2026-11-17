@@ -271,7 +271,8 @@ func parseLine(raw []byte) (line, error) {
 }
 
 // Uninstall soft-deletes the strokes pack packID and removes its rows, in
-// one transaction. An unknown or already uninstalled pack returns
+// one transaction, and turns the startup auto-install of the bundled pack
+// off (AutoInstallOff). An unknown or already uninstalled pack returns
 // ErrNotFound.
 func Uninstall(ctx context.Context, sqlDB *sql.DB, packID string) error {
 	tx, err := sqlDB.BeginTx(ctx, nil)
@@ -291,10 +292,43 @@ func Uninstall(ctx context.Context, sqlDB *sql.DB, packID string) error {
 	if _, err := tx.ExecContext(ctx, `DELETE FROM strokes WHERE pack_id = ?`, packID); err != nil {
 		return fmt.Errorf("uninstall strokes pack %s: %w", packID, err)
 	}
+	// An administrator removed stroke data: serve must not bring the bundled
+	// pack back at its next start.
+	if _, err := tx.ExecContext(ctx, `
+		INSERT INTO server_meta (key, value) VALUES (?, 'off') ON CONFLICT (key) DO UPDATE SET value = 'off'`, autoInstallKey); err != nil {
+		return fmt.Errorf("uninstall strokes pack %s: %w", packID, err)
+	}
 	if err := tx.Commit(); err != nil {
 		return fmt.Errorf("uninstall strokes pack %s: %w", packID, err)
 	}
 	return nil
+}
+
+// autoInstallKey is the server_meta key whose value "off" stops serve from
+// installing the bundled strokes pack (set by every Uninstall).
+const autoInstallKey = "strokes_auto_install"
+
+// AutoInstallOff reports whether an uninstall turned the startup
+// auto-install of the bundled strokes pack off.
+func AutoInstallOff(ctx context.Context, q Querier) (bool, error) {
+	var v string
+	err := q.QueryRowContext(ctx, `SELECT value FROM server_meta WHERE key = ?`, autoInstallKey).Scan(&v)
+	if errors.Is(err, sql.ErrNoRows) {
+		return false, nil
+	}
+	if err != nil {
+		return false, fmt.Errorf("strokes: auto-install flag: %w", err)
+	}
+	return v == "off", nil
+}
+
+// Live reports whether any strokes pack is installed.
+func Live(ctx context.Context, q Querier) (bool, error) {
+	var n int
+	if err := q.QueryRowContext(ctx, `SELECT COUNT(*) FROM stroke_packs WHERE deleted_at IS NULL`).Scan(&n); err != nil {
+		return false, fmt.Errorf("strokes: live packs: %w", err)
+	}
+	return n > 0, nil
 }
 
 // Lookup returns the stroke JSON of char from the first live pack (by ord)
