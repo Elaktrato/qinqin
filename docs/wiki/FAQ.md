@@ -6,7 +6,7 @@
 
 **What leaves the server?** Nothing by itself. AI text and photos leave only when you press an AI button, to the provider you made active. Reader imports contact Aozora Bunko or Gutenberg when you ask. Email goes through the server's own SMTP settings.
 
-**Do I need an AI key?** No. Everything except the Journal's AI review, topic ideas and AI photo reading works without one. Offline photo reading (Tesseract) needs no key either. AI features have not yet been tested with real keys by the project owner.
+**Do I need an AI key?** No. Everything except the Journal's AI review, topic ideas and AI photo reading works without one. Offline photo reading (Tesseract) needs no key either. Each user brings their own key; the server owner decides which providers are allowed ([AI providers and offline OCR](Admin-AI-and-OCR)). AI features have not yet been tested with real keys by the project owner.
 
 **Why can I not register?** The default registration mode is closed. Ask an administrator for an account or an invite link.
 
@@ -20,10 +20,14 @@
 
 **Can I move to another server?** Yes: download your data and restore it there ([Your data](Your-data)); administrators can move the whole server with a backup and the same `QINQIN_SECRET` ([Backup, recovery and the command line](Admin-backup-and-recovery)).
 
-**A word is missing from the dictionary.** Dictionaries are packs. An administrator can install more; local-only packs are possible ([Data and licences](Data-and-licences)). Words missing when restoring a backup are reported and can be restored later.
+**A word is missing from the dictionary.** Dictionaries are packs. An administrator can install more; local-only packs are possible ([Data packs on the server](Admin-data-packs), [Data and licences](Data-and-licences)). Words missing when restoring a backup are reported and can be restored later.
 
 **Are the HSK lists licensed?** They are included with attribution at the owner's decision; the legal status has not been verified ([Data and licences](Data-and-licences)).
 
-**Can I downgrade?** No. Migrations are one-way. Keep a backup from before each upgrade.
+**Can I downgrade?** No. Migrations are one-way. Keep a backup from before each upgrade ([Upgrading](Admin-upgrading)).
 
-**Where do I report a bug?** On the repository's GitHub issue tracker.
+**Which version should I run?** Pin a release tag such as `ghcr.io/elaktrato/qinqin:v0.3.0`; every release has notes on the repository's Releases page ([Deploying](Admin-deploying#release-images-and-versions)).
+
+**Can I translate the interface?** Yes: a translation is one catalogue file, written by a person ([Translating qinqin](Translating-qinqin)).
+
+**Where do I report a bug?** On the repository's [issue tracker](https://github.com/Elaktrato/qinqin/issues).

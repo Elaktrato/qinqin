@@ -1,10 +1,11 @@
 # API overview
 
-This page is for people writing a client (the web app is the reference client; a native Android client is planned). The rules that every client must implement identically live in the repository under `docs/contracts/`, each with JSON fixtures that the Go server and the web app run as tests. Fixtures win over code.
+This page is for people writing a client or a script (the web app is the reference client; a native Android client is planned). The rules that every client must implement identically live in the repository under [`docs/contracts/`](https://github.com/Elaktrato/qinqin/tree/develop/docs/contracts), each with JSON fixtures that the Go server and the web app run as tests. Fixtures win over prose; start with `docs/contracts/overview.md`.
 
-- [API routes](API-Routes) lists every route with its access class (generated from the real route table).
+- [API reference](API-Reference) describes each route's request and response, area by area, and the request body limits.
+- [API routes](API-Routes) lists every route with its access class and token rule (generated from the real route table).
 - [API errors](API-Errors) is the error-code catalogue (generated).
-- The README's API section describes request and response shapes, body limits and per-route rules.
+- [API access tokens](API-Access-tokens) is the guide for scripts.
 
 ## Conventions
 
@@ -39,7 +40,11 @@ A script uses a personal access token instead of a session: `qq_pat_` plus 64 he
 
 ### Throttling
 
-Login and register are rate-limited per client, pair and username; limited answers are 429 `rate_limited` with `Retry-After`, or 503 `busy`. See `docs/contracts/auth/throttling.md`.
+Login and register are rate-limited per client, pair and username; limited answers are 429 `rate_limited` with `Retry-After`, or 503 `busy`. Never retry a 429 or 503 automatically (the one exception is `download_busy` on a package download). See `docs/contracts/auth/throttling.md` and [Reverse proxy, rate limiting and trusted proxies](Admin-proxy-and-rate-limiting).
+
+### Interface language
+
+`GET /api/auth/me` carries `interfaceLanguage` (`""` until set: follow the browser or device). `PUT /api/me/interface-language {language}` stores it for every device of the user; the server checks the syntax of the tag only, never whether a client supports it. The server's mails use it too. Negotiation, catalogue format and the Android conversion: `docs/contracts/i18n/` and [Translating qinqin](Translating-qinqin).
 
 ## Sync
 
@@ -60,8 +65,19 @@ Dictionary and other shared data is not in the pull. The server builds a version
 
 ## Contracts for client implementers
 
-Start with `docs/contracts/overview.md`, then the folder of the area you implement: `auth/` (sessions, errors, MFA, invites), `study-day/` (the learner's day and time zone), `scheduler/` (vacation, limits, FSRS clock), `cards/` (reverse, cloze, burying), `decks/` (deck numbers, level decks), `levels/`, `backup/` (the personal backup archive), `reader/` (display settings, furigana), `packages/` (data packages), `sync/` (the paged pull and the push answer) and `pwa/` (offline allowlist and the review outbox). The index is `docs/contracts/README.md`.
+Start with `docs/contracts/overview.md` (the read order, device-local state and what is deliberately unspecified), then the folder of the area you implement:
+
+| Area | Folders |
+|---|---|
+| Sign-in and accounts | `auth/` (sessions, errors, two-step sign-in, invites, reset links, access tokens, throttling) |
+| Sync and shared data | `sync/` (the paged pull and the push answer), `packages/` (data packages), `events/` (the event envelope and payloads), `study/` (typed study rows), `settings/`, `overlays/` (a user's edits of entries) |
+| Studying | `study-day/` (the learner's day and time zone), `scheduler/` (FSRS, vacation, limits), `cards/`, `decks/`, `levels/`, `frequency/`, `goals/`, `milestones/`, `weekly/`, `stats/`, `radicals/` |
+| Reading and writing | `reader/` (display settings, furigana), `library/` (books, bookmarks, highlights), `journal/`, `notes/`, `lookups/` |
+| Appearance and text | `themes/`, `fonts/`, `i18n/` |
+| Offline and backup | `pwa/` (offline allowlist and the review outbox), `backup/` (the personal backup archive) |
+
+The index with one line per folder is `docs/contracts/README.md`.
 
 ## When you add a route
 
-The route table is checked against `apps/web/src/lib/pwa/sw/routes.fixture.json` by a Go test (`UPDATE_ROUTES_FIXTURE=1 go test -run RoutesFixture ./internal/api/` regenerates it); then run `node scripts/gen-api-docs.mjs` to refresh the wiki's route page.
+See [Development](Development#when-you-add-a-route): the route table is checked against `apps/web/src/lib/pwa/sw/routes.fixture.json` by a Go test, the token rules against `docs/contracts/auth/tokens-routes.json`, and `node scripts/gen-api-docs.mjs` refreshes the wiki's route and error pages.

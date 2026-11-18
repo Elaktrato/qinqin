@@ -25,25 +25,35 @@
 **Running a server**
 
 - [Deploying](Admin-deploying)
+- [Upgrading](Admin-upgrading)
 - [Environment variables](Admin-environment-variables)
 - [Users and registration](Admin-users-and-registration)
 - [Email and security](Admin-email-and-security)
 - [Proxy and rate limiting](Admin-proxy-and-rate-limiting)
 - [Backup and recovery](Admin-backup-and-recovery)
+- [Data packs](Admin-data-packs)
+- [AI and OCR](Admin-AI-and-OCR)
 
 **API**
 
 - [API overview](API-Overview)
+- [API reference](API-Reference)
 - [API routes](API-Routes)
 - [API errors](API-Errors)
 - [API access tokens](API-Access-tokens)
 - [Plugin data API](Plugin-data-api)
 - [Plugin format](Plugin-format)
-- [Translating qinqin](Translating-qinqin)
 - [Data pack format](Data-pack-format)
 
 **Reference**
 
 - [Data and licences](Data-and-licences)
+- [Dictionary data model](Dictionary-data-model)
 - [Troubleshooting](Troubleshooting)
 - [FAQ](FAQ)
+
+**Developing**
+
+- [Development](Development)
+- [Project layout](Project-layout)
+- [Translating qinqin](Translating-qinqin)
