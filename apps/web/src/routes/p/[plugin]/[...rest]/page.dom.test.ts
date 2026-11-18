@@ -1,4 +1,4 @@
-import { cleanup, render, waitFor } from '@testing-library/svelte';
+import { cleanup, render, screen, waitFor } from '@testing-library/svelte';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('$app/state', () => import('$lib/testing/appState.svelte'));
@@ -13,6 +13,7 @@ import { page, setUrl } from '$lib/testing/appState.svelte';
 import { pluginStates } from '$lib/plugins/states';
 import { workspaces } from '$lib/workspaces';
 import Page from './+page.svelte';
+import source from './+page.svelte?raw';
 
 afterEach(() => {
 	cleanup();
@@ -26,6 +27,14 @@ function at(plugin: string, rest: string): void {
 	setUrl(`/p/${plugin}/${rest}`);
 	(page as unknown as { params: Record<string, string> }).params = { plugin, rest };
 }
+
+describe('the plugin shell notices in the lighter look (#106)', () => {
+	it('the loading, error and unavailable states are muted plain text', () => {
+		const css = source.slice(source.indexOf('<style>'));
+		expect(css).toMatch(/\.notice\s*\{[^}]*color:\s*var\(--readable-muted\)/);
+		expect(css).toMatch(/\.notice\[role='alert'\]\s*\{[^}]*color:\s*var\(--readable-bad\)/);
+	});
+});
 
 describe('plugin page titles', () => {
 	it('ends with the plugin view title once the plugins are known', async () => {
@@ -49,6 +58,9 @@ describe('plugin page titles', () => {
 		setUrl('/p/flashcards/deck/general/settings?x=1#cards');
 		(page as unknown as { params: Record<string, string> }).params = { plugin: 'flashcards', rest: 'deck/general/settings' };
 		render(Page);
+		// the notice never flashes before the redirect (#106, prep item R1)
+		expect(screen.queryByRole('alert')).toBeNull();
+		expect(screen.queryByText('Plugin not available.')).toBeNull();
 		await waitFor(() => expect(goto).toHaveBeenCalledWith('/flashcards/deck/general/settings?x=1#cards', { replaceState: true }));
 		vi.mocked(goto).mockClear();
 		cleanup();

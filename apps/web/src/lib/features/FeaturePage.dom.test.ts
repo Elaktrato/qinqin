@@ -4,9 +4,11 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 vi.mock('$app/navigation', () => ({ goto: vi.fn(() => Promise.resolve()) }));
 
 import { pluginStates } from '$lib/plugins/states';
+import { primaryActions } from '$lib/ui/testing/primary';
 import FeaturePage from './FeaturePage.svelte';
 import FeatureStub from './FeatureStub.test.svelte';
 import { FLASHCARDS_ID, READER_ID } from './index';
+import source from './FeaturePage.svelte?raw';
 
 
 afterEach(() => {
@@ -37,6 +39,14 @@ describe('FeaturePage', () => {
 		const link = screen.getByRole('link', { name: 'Settings → Features' });
 		expect(link.getAttribute('href')).toBe('/settings?tab=features');
 		expect(screen.queryByTestId('stub')).toBeNull();
+		// a notice, not an action: no primary button competes with the sentence
+		expect(primaryActions(document.body)).toHaveLength(0);
+	});
+
+	it('the notice is muted text with a recognisable text link (#106)', () => {
+		const css = source.slice(source.indexOf('<style>'));
+		expect(css).toMatch(/\.notice\s*\{[^}]*color:\s*var\(--readable-muted\)/);
+		expect(css).toMatch(/\.notice a\s*\{[^}]*text-decoration:\s*underline/);
 	});
 
 	it('another feature switched off does not hide this one', async () => {

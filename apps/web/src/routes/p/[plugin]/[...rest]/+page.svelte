@@ -32,12 +32,25 @@
 </svelte:head>
 
 {#if $pluginStates.status === 'idle' || $pluginStates.status === 'loading'}
-	<div class="page-body"><p>{t('app.plugin.loading')}</p></div>
+	<div class="page-body"><p class="notice">{t('app.plugin.loading')}</p></div>
 {:else if $pluginStates.status === 'error'}
-	<div class="page-body"><p role="alert">{t('app.plugin.loadFailed')}</p></div>
+	<div class="page-body"><p class="notice" role="alert">{t('app.plugin.loadFailed')}</p></div>
 {:else if view}
 	{@const Page = view.component}
 	<Page rest={page.params.rest ?? ''} />
-{:else}
-	<div class="page-body"><p>{t('app.plugin.unavailable')}</p></div>
+{:else if moved === null}
+	<!-- A moved core page redirects first: never flash "not available" (#106, R1). -->
+	<div class="page-body"><p class="notice">{t('app.plugin.unavailable')}</p></div>
 {/if}
+
+<style>
+	/* The shell's own states are plain muted text (#106); the error keeps its
+	   role and reads as an error. */
+	.notice {
+		margin: 0;
+		color: var(--readable-muted);
+	}
+	.notice[role='alert'] {
+		color: var(--readable-bad);
+	}
+</style>
