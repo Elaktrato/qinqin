@@ -8,7 +8,7 @@
 	//   label      the field's name (t(…)); always present
 	//   value      bindable string
 	//   options    { value, label }[] (rendered first)
-	//   groups     { label, options }[] (rendered after `options`, as optgroups)
+	//   groups     { id?, label, options }[] (rendered after `options`, as optgroups)
 	//   hint       help text under the field
 	//   error      error text; sets aria-invalid
 	//   hideLabel  keeps the label for assistive tech only
@@ -25,7 +25,7 @@
 		label: string;
 		value?: string;
 		options?: readonly Option[];
-		groups?: readonly { label: string; options: readonly Option[] }[];
+		groups?: readonly { id?: string; label: string; options: readonly Option[] }[];
 		hint?: string;
 		error?: string;
 		hideLabel?: boolean;
@@ -71,7 +71,7 @@
 		{#each options as option (option.value)}
 			<option value={option.value}>{option.label}</option>
 		{/each}
-		{#each groups as group (group.label)}
+		{#each groups as group (group.id ?? group.label)}
 			<optgroup label={group.label}>
 				{#each group.options as option (option.value)}
 					<option value={option.value}>{option.label}</option>

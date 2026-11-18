@@ -2471,6 +2471,7 @@
 	"stats.map.legend": "Stages",
 	"stats.map.level": "Level",
 	"stats.map.level.all": "All levels",
+	"stats.map.level.empty": "This level has no characters yet.",
 	"stats.map.level.hint": "Show only the characters of the level you are studying.",
 	"stats.map.loadFailed": "Could not load the character map.",
 	"stats.map.loading": "Loading the character map",

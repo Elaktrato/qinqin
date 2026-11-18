@@ -208,14 +208,14 @@
 			// A stored level from another scheme must not be grouped by that
 			// scheme's levels: the level wins, as it does when it is chosen.
 			const storedLevel = parseLevelValue(levelValue);
-			if (
-				storedLevel !== null &&
-				groupKey !== null &&
-				groupKey.startsWith('scheme:') &&
-				groupKey !== `scheme:${storedLevel.schemeId}`
-			) {
-				groupKey = `scheme:${storedLevel.schemeId}` as GroupKey;
-				writeGroupBy(storage(), lang, groupKey);
+			if (storedLevel !== null && groupKey !== null && groupKey.startsWith('scheme:')) {
+				const own = `scheme:${storedLevel.schemeId}`;
+				const offered = groupOptions(lang, schemeList).some((option) => option.key === own);
+				const target = (offered ? own : lang.trim().toLowerCase().startsWith('ja') ? 'grade' : 'common') as GroupKey;
+				if (groupKey !== target) {
+					groupKey = target;
+					writeGroupBy(storage(), lang, groupKey);
+				}
 			}
 			void backfillWritten(data.cards, seq);
 		} catch (err) {
@@ -248,10 +248,29 @@
 	});
 
 	const options = $derived(groupOptions(language, schemes));
-	const groupItems = $derived(options.map((option) => ({ value: option.key, label: option.label })));
-	const levelGroups = $derived(levelGroupsFor(language, schemes));
 	const levelChoice = $derived(parseLevelValue(levelValue));
+	// A chosen level limits Group by to the built-in groupings and the
+	// level's own scheme: regrouping the level by another scheme would cut
+	// its characters by the wrong headings.
+	const groupItems = $derived.by(() => {
+		const items = options.map((option) => ({ value: option.key, label: option.label }));
+		if (levelChoice === null) return items;
+		const own = `scheme:${levelChoice.schemeId}`;
+		return items.filter((item) => !item.value.startsWith('scheme:') || item.value === own);
+	});
+	const levelGroups = $derived(levelGroupsFor(language, schemes));
 	const chars = $derived(universe?.chars ?? []);
+
+	/**
+	 * levelGroupTarget is the Group by value a level opens on: its own scheme
+	 * when Group by offers it, else the language's built-in equivalent (Grade
+	 * for the Jōyō pack, which Group by deliberately hides).
+	 */
+	function levelGroupTarget(choice: { schemeId: number }): GroupKey {
+		const own = `scheme:${choice.schemeId}`;
+		if (options.some((option) => option.key === own)) return own as GroupKey;
+		return (language.trim().toLowerCase().startsWith('ja') ? 'grade' : 'common') as GroupKey;
+	}
 	const selectedLevel = $derived.by(() => {
 		const choice = levelChoice;
 		if (choice === null || levelMembers?.schemeId !== choice.schemeId) return null;
@@ -260,7 +279,7 @@
 	// While the chosen level loads, the map is empty rather than every
 	// character: a flash of 10k cells would be the problem this filter solves.
 	const filteredChars = $derived(
-		levelChoice === null ? chars : selectedLevel === null ? [] : filterByLevel(chars, selectedLevel)
+		levelChoice === null ? chars : levelMembers === null || selectedLevel === null ? [] : filterByLevel(chars, levelMembers.levels, selectedLevel.levelId)
 	);
 
 	// One mastery pass over every glyph and variant; a cell takes the best
@@ -310,10 +329,10 @@
 		levelError = '';
 		try {
 			const levels = await fetchSchemeCharacters(id);
-			if (seq !== levelSeq) return;
+			if (seq !== levelSeq || parseLevelValue(levelValue)?.schemeId !== id) return;
 			levelMembers = { schemeId: id, levels };
 		} catch (err) {
-			if (seq !== levelSeq) return;
+			if (seq !== levelSeq || parseLevelValue(levelValue)?.schemeId !== id) return;
 			levelError = message(err, t('stats.map.membersFailed'));
 		} finally {
 			if (seq === levelSeq) levelLoading = false;
@@ -435,7 +454,11 @@
 		void stageFilter;
 		void query;
 		void levelValue;
+		void selectedLevel;
 		clearTimeout(announceTimer);
+		// Do not announce "No characters match." while the level is still
+		// loading; the effect runs again when selectedLevel arrives.
+		if (untrack(() => levelChoice !== null && selectedLevel === null)) return;
 		const text = untrack(() => filterAnnouncement(shownTotal, totals.total, filtering));
 		// Nothing to say on the first paint, before any filter was used.
 		if (untrack(() => universe === null || (!filtering && announcement === ''))) return;
@@ -471,10 +494,17 @@
 	 * the current grouping.
 	 */
 	function chooseLevel(value: string): void {
+		// A new selection invalidates any level fetch still in flight, even
+		// when it returns to a scheme whose data is already held.
+		levelSeq += 1;
+		levelLoading = false;
+		levelError = '';
 		levelValue = value;
 		const choice = parseLevelValue(value);
-		if (choice !== null && groupKey !== `scheme:${choice.schemeId}`) {
-			chooseGroup(`scheme:${choice.schemeId}` as GroupKey);
+		if (choice !== null) {
+			const target = levelGroupTarget(choice);
+			if (groupKey !== target) chooseGroup(target);
+			if (levelMembers?.schemeId !== choice.schemeId) void loadLevelMembers(choice.schemeId);
 		}
 		if (workspaceId !== null) writeLevelChoice(storage(), workspaceId, value);
 	}
@@ -611,6 +641,7 @@
 			<Msg key="stats.map.noneInstalled">{#snippet code(text: string)}<code>{text}</code>{/snippet}</Msg>
 		</p>
 	{:else}
+		{#if levelChoice === null || selectedLevel !== null}
 		<section class="summary" aria-label={t('stats.map.summary')}>
 			<p class="total">
 				<strong>{learnedSummary(totals.learned, totals.total)}</strong>
@@ -639,6 +670,7 @@
 				{/each}
 			</div>
 		</section>
+		{/if}
 
 		{#if levelHint}
 			<p class="banner" role="status">
@@ -743,7 +775,9 @@
 				{/if}
 			</div>
 
-			{#if filtering && shownTotal === 0}
+			{#if levelChoice !== null && selectedLevel !== null && filteredChars.length === 0}
+				<p class="hint">{t('stats.map.level.empty')}</p>
+			{:else if filtering && shownTotal === 0}
 				<p class="hint">{t('stats.map.noMatch')}</p>
 			{/if}
 

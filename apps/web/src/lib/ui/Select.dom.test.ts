@@ -31,8 +31,12 @@ describe('Select', () => {
 			value: '7:70',
 			options: [{ value: 'all', label: 'All levels' }],
 			groups: [
-				{ label: 'JLPT kanji', options: [{ value: '7:70', label: 'N5' }, { value: '7:71', label: 'N4' }] },
-				{ label: 'HSK 3.0', options: [{ value: '8:80', label: 'HSK 1' }] }
+				{
+					id: '7',
+					label: 'JLPT kanji',
+					options: [{ value: '7:70', label: 'N5' }, { value: '7:71', label: 'N4' }]
+				},
+				{ id: '8', label: 'HSK 3.0', options: [{ value: '8:80', label: 'HSK 1' }] }
 			]
 		});
 		const select = screen.getByLabelText('Level') as HTMLSelectElement;

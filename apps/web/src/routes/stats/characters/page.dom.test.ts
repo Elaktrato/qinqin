@@ -131,6 +131,14 @@ describe('Stats → Characters', () => {
 					{ id: 70, name: 'HSK 1', ord: 0 },
 					{ id: 71, name: 'HSK 2', ord: 1 }
 				]
+			},
+			{
+				id: 8,
+				name: 'HSK 3.0 (words)',
+				unit: 'word',
+				language: 'zh',
+				packId: 'hsk-words',
+				levels: [{ id: 80, name: 'HSK 1 words', ord: 0 }]
 			}
 		]);
 		vi.mocked(fetchSchemeCharacters).mockResolvedValue([
@@ -143,14 +151,119 @@ describe('Stats → Characters', () => {
 		const group = level.querySelector('optgroup[label="HSK 3.0 (characters)"]')!;
 		expect([...group.querySelectorAll('option')].map((option) => option.textContent)).toEqual(['HSK 1', 'HSK 2']);
 
+		const groupBy = screen.getByLabelText('Group by') as HTMLSelectElement;
 		await fireEvent.change(level, { target: { value: '7:70' } });
 		await waitFor(() => expect(container.querySelectorAll('.cell')).toHaveLength(2));
 		expect(container.querySelector('.total strong')?.textContent).toBe('0 of 2 learned (0 %)');
 		expect(localStorage.getItem('qinqin.map.level.1')).toBe('7:70');
+		expect(groupBy.value).toBe('scheme:7');
+		expect([...groupBy.options].map((option) => option.value)).not.toContain('scheme:8');
 
 		await fireEvent.change(level, { target: { value: 'all' } });
 		await waitFor(() => expect(container.querySelectorAll('.cell')).toHaveLength(5));
 		expect(container.querySelector('.total strong')?.textContent).toBe('1 of 5 learned (20 %)');
+		expect(groupBy.value).toBe('scheme:7');
+	});
+
+	it('a Jōyō level opens the built-in Grade grouping, not a blank Group by', async () => {
+		select(1, 'ja');
+		vi.mocked(getSchemes).mockResolvedValue([
+			{
+				id: 9,
+				name: 'Jōyō kanji by school grade',
+				unit: 'character',
+				language: 'ja',
+				packId: 'joyo-grades',
+				levels: [{ id: 90, name: 'Grade 1', ord: 0 }]
+			}
+		]);
+		vi.mocked(fetchSchemeCharacters).mockResolvedValue([
+			{ levelId: 90, name: 'Grade 1', chars: new Set(['一', '二']) }
+		]);
+		await ready();
+		const level = screen.getByLabelText('Level') as HTMLSelectElement;
+		expect([...level.options].map((option) => option.textContent)).toContain('Grade 1');
+		await fireEvent.change(level, { target: { value: '9:90' } });
+		await waitFor(() => {
+			const groupBy = screen.getByLabelText('Group by') as HTMLSelectElement;
+			expect(groupBy.value).toBe('grade');
+			expect(groupBy.selectedIndex).toBeGreaterThanOrEqual(0);
+		});
+	});
+
+	it('a late level answer never replaces a newer choice', async () => {
+		const schemes = [
+			{
+				id: 7,
+				name: 'HSK 3.0 (characters)',
+				unit: 'character',
+				language: 'zh',
+				packId: 'hsk-chars',
+				levels: [{ id: 70, name: 'HSK 1', ord: 0 }]
+			},
+			{
+				id: 8,
+				name: 'HSK 3.0 (words)',
+				unit: 'word',
+				language: 'zh',
+				packId: 'hsk-words',
+				levels: [{ id: 80, name: 'HSK 1 words', ord: 0 }]
+			}
+		];
+		const seven = [
+			{ levelId: 70, name: 'HSK 1', chars: new Set(['一', '二']) },
+			{ levelId: 81, name: 'HSK 2', chars: new Set(['三']) }
+		];
+		const eight = [
+			{ levelId: 80, name: 'HSK 1 words', chars: new Set(['四', '五']) }
+		];
+		let releaseSeven!: (levels: typeof seven) => void;
+		const firstSeven = new Promise<typeof seven>((resolve) => (releaseSeven = resolve));
+		let calls = 0;
+		vi.mocked(getSchemes).mockResolvedValue(schemes);
+		vi.mocked(fetchSchemeCharacters).mockImplementation((id) => {
+			if (id === 8) return Promise.resolve(eight);
+			calls += 1;
+			return calls === 1 ? firstSeven : Promise.resolve(seven);
+		});
+
+		const container = await ready();
+		const level = screen.getByLabelText('Level') as HTMLSelectElement;
+		await fireEvent.change(level, { target: { value: '7:70' } });
+		expect(level.value).toBe('7:70');
+		expect(container.textContent).not.toContain('No characters match.');
+
+		await fireEvent.change(level, { target: { value: '8:80' } });
+		await waitFor(() => expect(container.querySelectorAll('.cell')).toHaveLength(2));
+		expect([...container.querySelectorAll('.cell')].map((c) => c.textContent?.trim())).toEqual(['四', '五']);
+
+		await fireEvent.change(level, { target: { value: '7:70' } });
+		await waitFor(() => expect(container.querySelectorAll('.cell')).toHaveLength(2));
+		expect([...container.querySelectorAll('.cell')].map((c) => c.textContent?.trim())).toEqual(['一', '二']);
+		const live = container.querySelector('p.sr[role="status"]');
+		await waitFor(() => expect(live?.textContent).toContain('2 of 2 characters match.'), { timeout: 2000 });
+
+		releaseSeven(seven);
+		await new Promise((resolve) => setTimeout(resolve, 0));
+		expect([...container.querySelectorAll('.cell')].map((c) => c.textContent?.trim())).toEqual(['一', '二']);
+	});
+
+	it('an empty level says so instead of “No characters match”', async () => {
+		vi.mocked(getSchemes).mockResolvedValue([
+			{
+				id: 7,
+				name: 'HSK 3.0 (characters)',
+				unit: 'character',
+				language: 'zh',
+				packId: 'hsk-chars',
+				levels: [{ id: 72, name: 'HSK 7–9', ord: 0 }]
+			}
+		]);
+		vi.mocked(fetchSchemeCharacters).mockResolvedValue([{ levelId: 72, name: 'HSK 7–9', chars: new Set() }]);
+		await ready();
+		await fireEvent.change(screen.getByLabelText('Level'), { target: { value: '7:72' } });
+		expect(await screen.findByText('This level has no characters yet.')).toBeTruthy();
+		expect(screen.queryByText('No characters match.')).toBeNull();
 	});
 
 	it('reads a remembered level and falls back to all levels for a stale one', async () => {
