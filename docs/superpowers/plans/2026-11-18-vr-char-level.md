@@ -21,8 +21,9 @@ for a scheme grouping.
 - Choosing a level restricts the map, the stage filter counts and the **X of Y learned**
   summary to that level's characters. The learned rule is unchanged (mastery threshold).
 - Choosing a level also switches **Group by** to that level's scheme, so the map opens on the
-  chosen level rather than on empty sections of another scheme. The person can then regroup
-  the same level by Grade / Frequency / Strokes.
+  chosen level rather than on empty sections of another scheme. The Jōyō pack is hidden from
+  Group by (Grade is the same list), so a Jōyō level opens Grade instead. The person can then
+  regroup the same level by the built-in groupings.
 - **All levels** clears the filter and keeps the current grouping.
 - The choice is remembered per workspace (`localStorage`), so two workspaces of one language
   can be at different levels. A stored level that no longer exists (its pack was uninstalled)
@@ -36,9 +37,9 @@ for a scheme grouping.
 - Ruling: a level **filter** separate from Group by, not one option per level in Group by —
   the person wants "my level" while keeping the grouping choice (grade, frequency, strokes);
   one list would conflate the two. Cost: one more control in the map's control row.
-- Ruling: the filter includes a character whose variant form is in the level — the map's
-  cells merge those forms, and the scheme grouping already assigns them this way. Cost: a
-  level's visible cell count can differ from the raw list length by the merged variants.
+- Ruling: a cell belongs to the level the scheme grouping assigns it: its own glyph first,
+  then a variant form, first level wins. The map's cells merge those forms. Cost: a level's
+  visible cell count can differ from the raw list length by the merged variants.
 - Ruling: remember the level per workspace, not per language like Group by — two workspaces
   of one language can study different levels. Cost: a new browser does not know the choice
   until it is made again.

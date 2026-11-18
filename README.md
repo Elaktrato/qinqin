@@ -1203,8 +1203,9 @@ every character of the language, studied or not, shaded by mastery.
   (JLPT N5, HSK 2, Jōyō grade 3, …). The map, the stage counts and the
   "X of Y learned" summary then cover only that level, including a character
   whose variant form is in it; choosing a level opens its scheme under
-  **Group by**, so the view starts on that level rather than on other
-  schemes' empty sections. The choice is remembered per workspace.
+  **Group by** (Grade for the Jōyō pack, which Group by already shows as
+  Grade), so the view starts on that level rather than on other schemes'
+  empty sections. The choice is remembered per workspace.
 - **Sections** show learned/total and a stacked stage bar. The stage legend doubles
   as a filter (All, Not studied, In progress, Learned). Search matches the glyph,
   the reading (toneless pinyin works), the meaning, and hiragana or katakana.
