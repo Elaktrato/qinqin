@@ -419,7 +419,7 @@
 		{#if hits.length >= RESULT_CAP}
 			<p class="note">{t('search.capped', { count: RESULT_CAP })}</p>
 		{/if}
-		<ul class="results" aria-label={t('search.results')} onkeydown={rowKeys}>
+		<ul class="results" aria-label={t('search.results')}>
 			{#each hits as hit (hit.id)}
 				<li>
 					<ResultRow
@@ -429,6 +429,7 @@
 						tabstop={hit.id === activeId}
 						hidden={hidden}
 						onactivate={(event) => choose(event, hit.id)}
+						onkey={rowKeys}
 					/>
 				</li>
 			{/each}

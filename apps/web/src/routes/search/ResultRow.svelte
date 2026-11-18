@@ -13,7 +13,8 @@
 		selected,
 		hidden,
 		tabstop = false,
-		onactivate
+		onactivate,
+		onkey
 	}: {
 		hit: SearchHit;
 		href: string;
@@ -22,6 +23,8 @@
 		/** The list's one tab stop (arrow keys move focus, Home/End jump). */
 		tabstop?: boolean;
 		onactivate?: (event: MouseEvent) => void;
+		/** Arrow keys move between the list's rows (the list owns the roving tab stop). */
+		onkey?: (event: KeyboardEvent) => void;
 	} = $props();
 
 	const reading = $derived(hit.readings[0]);
@@ -41,6 +44,7 @@
 	aria-current={selected ? 'true' : undefined}
 	aria-describedby={`${id}-reading ${id}-gloss ${id}-meta`}
 	onclick={(e) => onactivate?.(e)}
+	onkeydown={(e) => onkey?.(e)}
 	onauxclick={(e) => {
 		if (e.button === 1) onactivate?.(e);
 	}}
