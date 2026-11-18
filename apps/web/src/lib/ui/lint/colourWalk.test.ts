@@ -1,5 +1,12 @@
-// The style lints over src/ (#98 PART B): `colour` (no literal colour, no prefers-color-scheme: colours.ts) and
-// `opacity` (no text faded with opacity: opacity.ts). Unit cases: colours.test.ts, opacity.test.ts.
+// The style lints over src/: PART B's `colour` (no literal colour, no prefers-color-scheme: colours.ts) and
+// `opacity` (no text faded with opacity: opacity.ts), plus #106's restyle rules (restyle.ts):
+//   weight  — type tops out at 600 (no 650, 700, bold, bolder)
+//   caps    — sentence case (no text-transform: uppercase/capitalize, no small-caps)
+//   border  — hairlines: a border wider than 1px outside focus and selected states
+//   shadow  — only --shadow-float, none, or a hairline inset
+//   control — a raw text-like <button>/<select>/<input> in a page file #106 owns (lib/ui/** exempt: it owns the
+//             controls). Only the files PAGES names with owner '#106' are scanned for it; checkbox, radio, file,
+//             range, colour and the one-time-code input are allowed.
 //
 // - Scanned: every `.svelte` and `.css` file under src/.
 // - Exempt by path: the theme machinery (`lib/theme/**`: it reads the OS preference and paints the tokens by design),
@@ -10,7 +17,8 @@
 //   declaration); exactly `count` findings match, so a new one of the same text in the same file fails.
 // - pending.json: per rule, the ratchet baseline while the migration lands in batches — a listed file may still
 //   hold findings, a clean listed file fails ("remove it"), and each list may only shrink (PENDING_LENGTH).
-//   `UPDATE_STYLE_PENDING=1` rewrites it from the current findings.
+//   `UPDATE_STYLE_PENDING=1` rewrites it from the current findings. #106's lists are seeded from this tree and
+//   lowered as pages are restyled; P26 names the remainder.
 import { readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
@@ -18,16 +26,33 @@ import allowlist from './allowlist.json';
 import pending from './pending.json';
 import { colourFindings, type Finding, type StyleKind } from './colours';
 import { opacityFindings } from './opacity';
+import { stalePending, type RestyleRule, restyleFindings } from './restyle';
+import { PAGES } from './pages';
 
-type Rule = 'colour' | 'opacity';
+type Rule = 'colour' | 'opacity' | RestyleRule;
+
+const RULES: Rule[] = ['colour', 'opacity', 'weight', 'caps', 'border', 'shadow', 'control'];
 
 /** The pinned lengths of pending.json: each migration batch lowers them. */
-const PENDING_LENGTH: Record<Rule, number> = { colour: 0, opacity: 0 };
+const PENDING_LENGTH: Record<Rule, number> = {
+	colour: 0,
+	opacity: 0,
+	weight: 4,
+	caps: 7,
+	border: 17,
+	shadow: 6,
+	control: 5
+};
 
-const LINTS: Record<Rule, (src: string, kind: StyleKind) => Finding[]> = {
+const LINTS: Record<'colour' | 'opacity', (src: string, kind: StyleKind) => Finding[]> = {
 	colour: colourFindings,
 	opacity: opacityFindings
 };
+
+/** Files the manifest names with owner '#106': the only ones the `control` rule scans. */
+const CONTROL_FILES = new Set(
+	PAGES.filter((page) => page.owner === '#106').flatMap((page) => page.files)
+);
 
 const src = resolve(__dirname, '../../..');
 
@@ -36,6 +61,10 @@ const isScanned = (rel: string): boolean =>
 	!/\.test\.svelte$/.test(rel) &&
 	!/(^|\/)testing\//.test(rel) &&
 	!rel.startsWith('lib/theme/');
+
+/** The `control` rule: a page file #106 owns, never the base components (lib/ui owns the controls). */
+export const scannedForControl = (rel: string): boolean =>
+	CONTROL_FILES.has(rel) && !rel.startsWith('lib/ui/');
 
 function walk(dir: string): string[] {
 	const out: string[] = [];
@@ -49,10 +78,18 @@ function walk(dir: string): string[] {
 const files = walk(src).filter(isScanned).sort();
 const sources = new Map(files.map((rel) => [rel, readFileSync(join(src, rel), 'utf8')]));
 const kindOf = (rel: string): StyleKind => (rel.endsWith('.css') ? 'css' : 'svelte');
-const all: Record<Rule, Map<string, Finding[]>> = {
-	colour: new Map(files.map((rel) => [rel, colourFindings(sources.get(rel)!, kindOf(rel))])),
-	opacity: new Map(files.map((rel) => [rel, LINTS.opacity(sources.get(rel)!, kindOf(rel))]))
-};
+const restyleOf = new Map(files.map((rel) => [rel, restyleFindings(sources.get(rel)!, kindOf(rel))]));
+
+function findingsOf(rule: Rule, rel: string): Finding[] {
+	if (rule === 'colour' || rule === 'opacity') return LINTS[rule](sources.get(rel)!, kindOf(rel));
+	if (rule === 'control' && !scannedForControl(rel)) return [];
+	return restyleOf.get(rel)!.filter((f) => f.rule === rule);
+}
+
+const all: Record<Rule, Map<string, Finding[]>> = Object.fromEntries(
+	RULES.map((rule) => [rule, new Map(files.map((rel) => [rel, findingsOf(rule, rel)]))])
+) as Record<Rule, Map<string, Finding[]>>;
+
 type Entry = { rule: string; file: string; text: string; within?: string; count: number; reason: string };
 const entries: Entry[] = allowlist;
 
@@ -67,7 +104,7 @@ const offenders = (rule: Rule): string[] =>
 	files.filter((rel) => all[rule].get(rel)!.some((f) => !allowed(rule, rel, f)));
 
 if (process.env.UPDATE_STYLE_PENDING === '1') {
-	const next = { colour: offenders('colour'), opacity: offenders('opacity') };
+	const next = Object.fromEntries(RULES.map((rule) => [rule, offenders(rule)]));
 	writeFileSync(join(__dirname, 'pending.json'), JSON.stringify(next, null, '\t') + '\n');
 }
 
@@ -75,6 +112,16 @@ describe('the walk', () => {
 	it('covers the components and the global CSS', () => {
 		expect(files.length).toBeGreaterThan(150);
 		expect(files).toContain('app.css');
+	});
+});
+
+describe('the allowed raw controls', () => {
+	it('control scans only the page files #106 owns, never lib/ui', () => {
+		expect(scannedForControl('routes/login/+page.svelte')).toBe(true);
+		expect(scannedForControl('routes/sources/+page.svelte')).toBe(true);
+		expect(scannedForControl('lib/ui/Field.svelte')).toBe(false);
+		expect(scannedForControl('routes/+page.svelte')).toBe(false);
+		expect(scannedForControl('lib/widgets/ActivityHome.svelte')).toBe(false);
 	});
 });
 
@@ -89,8 +136,8 @@ describe('the allowlist matching', () => {
 	});
 });
 
-describe.each(['colour', 'opacity'] as const)('%s lint', (rule) => {
-	const list: string[] = pending[rule];
+describe.each(RULES)('%s lint', (rule) => {
+	const list: string[] = pending[rule] ?? [];
 
 	it('no finding outside the allowlist and the pending files', () => {
 		const bad = files.flatMap((rel) =>
@@ -105,7 +152,7 @@ describe.each(['colour', 'opacity'] as const)('%s lint', (rule) => {
 	});
 
 	it('pending lists only existing files that still have findings, sorted, and only shrinks', () => {
-		const stale = list.filter((rel) => !offenders(rule).includes(rel));
+		const stale = stalePending(list, offenders(rule));
 		expect(stale, 'clean now: remove from pending.json').toEqual([]);
 		expect(list).toEqual([...list].sort());
 		expect(list.length).toBe(PENDING_LENGTH[rule]);

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { restyleFindings } from './restyle';
+import { stalePending, restyleFindings } from './restyle';
 
 const css = (body: string): string => `<style>${body}</style>`;
 
@@ -27,11 +27,32 @@ describe('restyle rules (#106)', () => {
 		expect(restyleFindings(css('.a{border-bottom:1px solid var(--hair)}'), 'svelte')).toEqual([]);
 	});
 
+	it('border exempts the semantic 3px inline-start bar and forced-colour state borders', () => {
+		// The error / caution bar is the non-colour cue, not a box (#106).
+		expect(restyleFindings(css('.error{border-inline-start:3px solid var(--bad)}'), 'svelte')).toEqual([]);
+		expect(restyleFindings(css('.caution{border-inline-start:3px solid var(--warn)}'), 'svelte')).toEqual([]);
+		expect(restyleFindings(css('.a{border:3px solid var(--bad)}'), 'svelte')).toHaveLength(1);
+		// Forced colours turn a state fill into a system-colour border.
+		expect(restyleFindings(css('.a{border:2px solid Highlight}'), 'svelte')).toEqual([]);
+		expect(restyleFindings(css('.a{border-bottom:2px solid transparent}'), 'svelte')).toHaveLength(1);
+	});
+
 	it('shadow flags a blurred shadow, not float/none/hairline insets', () => {
 		expect(restyleFindings(css('.a{box-shadow:0 10px 30px rgba(0,0,0,.3)}'), 'svelte')[0].rule).toBe('shadow');
 		expect(restyleFindings(css('.a{box-shadow:var(--shadow-float)}'), 'svelte')).toEqual([]);
 		expect(restyleFindings(css('.a{box-shadow:none}'), 'svelte')).toEqual([]);
 		expect(restyleFindings(css('.a{box-shadow:inset 0 0 0 1px var(--line)}'), 'svelte')).toEqual([]);
+		// Field's focus underline is a 1px accent line under the border, not a floating shadow.
+		expect(restyleFindings(css('.a{box-shadow:0 1px 0 0 var(--accent)}'), 'svelte')).toEqual([]);
+	});
+
+	it('stalePending names a clean file still listed, and nothing that still has a finding', () => {
+		// A listed file with no findings must fail the ratchet ("clean now: remove it").
+		expect(stalePending(['routes/login/+page.svelte'], ['routes/settings/+page.svelte'])).toEqual([
+			'routes/login/+page.svelte'
+		]);
+		expect(stalePending(['a', 'b'], ['b', 'c'])).toEqual(['a']);
+		expect(stalePending([], [])).toEqual([]);
 	});
 
 	it('control flags raw text controls, not checkboxes or the OTP input', () => {

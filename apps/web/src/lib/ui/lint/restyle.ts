@@ -3,10 +3,20 @@
 // selected states), shadow (only --shadow-float, none or a hairline inset) and
 // control (a raw text-like control in a page file; lib/ui owns the controls).
 
+export type RestyleRule = 'weight' | 'caps' | 'border' | 'shadow' | 'control';
+
 export interface Finding {
-	rule: 'weight' | 'caps' | 'border' | 'shadow' | 'control';
+	rule: RestyleRule;
 	line: number;
 	text: string;
+}
+
+/**
+ * stalePending: the files still in a ratchet list that no longer have a finding. The walk fails on a non-empty
+ * answer ("clean now: remove it"), so a list may only shrink and only while its files are dirty.
+ */
+export function stalePending(list: readonly string[], offenders: readonly string[]): string[] {
+	return list.filter((rel) => !offenders.includes(rel));
 }
 
 const linesOf = (src: string): string[] => src.split('\n');
@@ -29,8 +39,14 @@ function ruleBlocks(style: string): { selector: string; body: string; start: num
 	return out;
 }
 
-function exemptBorder(selector: string): boolean {
-	return /:focus-visible|\[aria-selected|\[aria-current|\.selected/.test(selector);
+function exemptBorder(selector: string, prop: string, value: string): boolean {
+	if (/:focus-visible|\[aria-selected|\[aria-current|\.selected/.test(selector)) return true;
+	// Forced colours replace a state fill with a 2px system-colour border (design §5, Accessibility).
+	if (/Highlight|CanvasText|ButtonText/.test(value)) return true;
+	// The 3px inline-start bar is the non-colour cue of an error or a caution (design §5: never colour alone);
+	// it is not a box around a group. Field.svelte carries the error bar.
+	if (prop === 'border-inline-start' && /^3px solid var\(--(bad|warn)\)$/.test(value)) return true;
+	return false;
 }
 
 export function restyleFindings(src: string, kind: 'svelte' | 'css'): Finding[] {
@@ -53,7 +69,10 @@ export function restyleFindings(src: string, kind: 'svelte' | 'css'): Finding[] 
 			if (prop === 'text-transform' && /uppercase|capitalize/.test(value))
 				out.push({ rule: 'caps', line, text });
 			if (prop === 'font-variant' && /small-caps/.test(value)) out.push({ rule: 'caps', line, text });
-			if (/^border(-(top|right|bottom|left|inline|block)(-(start|end))?)?$/.test(prop) && !exemptBorder(block.selector)) {
+			if (
+				/^border(-(top|right|bottom|left|inline|block)(-(start|end))?)?$/.test(prop) &&
+				!exemptBorder(block.selector, prop, value)
+			) {
 				const m = /(\d+(?:\.\d+)?)px/.exec(value);
 				if (m && Number(m[1]) > 1) out.push({ rule: 'border', line, text });
 			}
@@ -63,7 +82,9 @@ export function restyleFindings(src: string, kind: 'svelte' | 'css'): Finding[] 
 					value.includes('var(--shadow-float)') ||
 					/^inset 0 0 0 1px /.test(value) ||
 					/^inset 0 -1px 0 /.test(value) ||
-					/^inset 2px 0 0 /.test(value);
+					/^inset 2px 0 0 /.test(value) ||
+					// Field's focus underline: the 1px border plus this 1px accent line (bases, #106).
+					value === '0 1px 0 0 var(--accent)';
 				if (!ok) out.push({ rule: 'shadow', line, text });
 			}
 		}
