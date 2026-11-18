@@ -217,15 +217,28 @@ No reverse proxy in front? Set `QINQIN_TRUSTED_PROXIES=none` (in `.env`, or
 the stack environment): the default trusts private-network peers' `X-Forwarded-For`,
 which a LAN client could forge to dodge the per-client sign-in limits.
 
-On the first run, seed the bundled packs (the upstream dictionaries, the Jiten
-frequency list and the HSK 3.0 character, HSK 3.0 word and JLPT kanji level lists), then create the admin account:
+The first start installs the bundled packs by itself (the upstream dictionaries,
+the Jiten frequency list, the HSK 3.0 character, HSK 3.0 word and JLPT kanji
+level lists, the stroke data and the Kanji alive audio when present) before it
+listens: about 2 minutes (126 s measured on a busy machine; the first start only), and the health check allows 300 s. Create
+the admin account:
 
 ```bash
-docker compose exec qinqin qinqin seed
 docker compose exec qinqin qinqin adduser --admin --username you
 ```
 
-`qinqin seed` takes `--data <dir>` (the data directory; default `$QINQIN_DATA` or
+The auto-seed runs once per database and only on a fresh instance, that is
+while no pack of any type is installed. An upgraded or curated instance is
+never touched, and packs an administrator uninstalled stay uninstalled (a marker
+in the database records that it ran). It leaves out the demo packs `es-demo`
+and `zh-grammar-demo`. A pack that fails to import is logged
+(`auto-seed failed ...`), the server starts anyway, and the next start tries
+again. `QINQIN_AUTO_SEED=0` (or `false`, `off`) turns it off.
+
+`qinqin seed` is for what the auto-seed does not do: the demo packs
+(`docker compose exec qinqin qinqin seed` installs everything the image ships,
+demos included), local packs, and re-seeding after an image update that ships
+newer packs. It takes `--data <dir>` (the data directory; default `$QINQIN_DATA` or
 `./data`) and `--packs <dir>[,<dir>...]` (pack roots, comma-separated and/or
 repeated; default `$QINQIN_PACKS`, or `plugins/data` plus `plugins/data-local`
 when that exists; the image sets `QINQIN_PACKS` to the packs it ships). Under
@@ -360,16 +373,16 @@ variables are the same, and `QINQIN_SECRET` is now optional.
    Containers, `qinqin`, Console, command `/bin/sh`, Connect. Then:
 
    ```sh
-   qinqin seed
    qinqin adduser --username <name> --admin
    ```
 
    `adduser` prompts for the password and needs a TTY; Portainer's console
-   provides one (the typed password is echoed). `seed` installs the bundled
-   packs from the image (CC-CEDICT, Unihan, JMdict, KANJIDIC2, Jiten
-   frequencies, HSK 3.0 and JLPT kanji level lists, es-demo, and the Kanji
-   alive audio when present) into the database; it takes under a minute
-   (about 45 s measured) and is idempotent. Run it while nobody uses the app.
+   provides one (the typed password is echoed). The first start has already
+   installed the bundled packs from the image (CC-CEDICT, Unihan, JMdict,
+   KANJIDIC2, Jiten frequencies, HSK 3.0 and JLPT kanji level lists, the stroke
+   data, and the Kanji alive audio when present) before it listened, which
+   takes about 2 minutes (the health check waits up to 300 s). The demo packs are
+   not installed; `qinqin seed` adds them, and local packs.
 
    **Or create the admin automatically.** Set `QINQIN_BOOTSTRAP_ADMIN` to the
    admin's username in the stack's environment variables. On the first start,
@@ -383,7 +396,7 @@ variables are the same, and `QINQIN_SECRET` is now optional.
    starts ignore both variables, so remove the password from the stack after
    the first sign-in. A username or password that breaks the rules stops the
    server from starting, with the reason in the log. This replaces the
-   `adduser` step; you still run `qinqin seed`.
+   `adduser` step.
 5. Put a reverse proxy with HTTPS in front (below), then run the checklist.
 
 ### Data directory
@@ -746,7 +759,7 @@ cost matters (calls are limited to 30 per user and hour across all providers).
 - `curl http://<host>:<port>/healthz` returns `ok`; Portainer shows the
   container `healthy`.
 - Log in as the admin created in step 4.
-- Search `好`: results appear (the seed ran).
+- Search `好`: results appear (the first-start seed ran).
 - Create a deck/flashcard.
 - Journal: with the fake provider off (`QINQIN_AI_PROVIDER` unset), Settings,
   AI lists the providers and shows a key as storable; save a key (it becomes
@@ -1761,6 +1774,7 @@ Without a valid secret the server still starts, AI shows as disabled with the re
 | `QINQIN_SECRET` | 32 random bytes, base64 (standard or URL form, padded or not). Required to store API keys |
 | `QINQIN_SECRET_PREVIOUS` | The old secret for one restart while rotating |
 | `QINQIN_SMTP_ALLOW_PRIVATE` | `1` or `true` lets the mail server be on loopback or a private network (a relay container, a LAN host). Off by default |
+| `QINQIN_AUTO_SEED` | `0`, `false` or `off` (any case) stops the first start from installing the bundled packs (demo packs are never installed this way). Default on: it runs once, on a fresh instance with no pack installed |
 | `QINQIN_BOOTSTRAP_ADMIN` | Username of the first admin, created on the first start while no user exists; the admin must set a new password at the first sign-in. Empty: off (then create the admin with `adduser`). Ignored once users exist. An invalid value stops the server from starting |
 | `QINQIN_BOOTSTRAP_PASSWORD` | Initial password of that admin (10 to 256 characters, not the username). Empty: a random one is generated and printed once in the container log. A supplied password is never logged |
 | `QINQIN_TESSERACT` | Path of the `tesseract` binary (default `tesseract` from `PATH`) |

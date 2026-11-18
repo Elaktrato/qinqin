@@ -94,8 +94,11 @@ elif [ "$(hdr content-type)" != "application/json" ]; then bad "stroke data: con
 elif [ "$(hdr cache-control)" != "public, max-age=86400" ]; then bad "stroke data: cache-control '$(hdr cache-control)'"
 elif ! cmp -s "$work/body" "$root/apps/web/node_modules/hanzi-writer-data/好.json"; then bad "stroke data: body differs from the npm file"
 else ok "stroke data: /hanzi/U597D.json"; fi
-grep -q "strokes: installed the bundled stroke data hanzi-writer-strokes" "$work/server.log" \
-  && ok "strokes pack auto-installed" || bad "no strokes auto-install line in the server log"
+# On a fresh data directory the first-start auto-seed installs the pack; the
+# strokes auto-install (an upgrade from v0.3, which shipped strokes) logs the
+# other line. Either means serve installed it before listening.
+grep -qE "auto-seed: hanzi-writer-strokes +strokes|strokes: installed the bundled stroke data hanzi-writer-strokes" "$work/server.log" \
+  && ok "strokes pack installed at start" || bad "no strokes install line (auto-seed or auto-install) in the server log"
 expect "missing asset falls back to index" /_app/immutable/nope.js 200 text/html no-store "<!doctype html>"
 
 [ "$(curl -s -o /dev/null -w '%{http_code}' "$base/healthz")" = 200 ] && ok "healthz" || bad "healthz"
