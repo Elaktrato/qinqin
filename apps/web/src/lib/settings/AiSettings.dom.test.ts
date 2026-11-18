@@ -17,6 +17,7 @@ vi.mock('$lib/api/ai', () => ({
 
 import * as ai from '$lib/api/ai';
 import { ApiError } from '$lib/api/client';
+import { primaryActions } from '$lib/ui/testing/primary';
 import AiSettings from './AiSettings.svelte';
 
 const m = vi.mocked(ai);
@@ -64,6 +65,16 @@ afterEach(cleanup);
 const rows = () => within(screen.getByRole('list', { name: 'Your providers' })).getAllByRole('listitem');
 
 describe('Settings → AI key field and progress', () => {
+	it('has one primary Save; provider, key and model are base underlines', async () => {
+		setup(status());
+		await fireEvent.change(await screen.findByLabelText('Provider'), { target: { value: 'openai' } });
+		expect(primaryActions(document.body)).toHaveLength(1);
+		expect(screen.getByRole('button', { name: 'Save' }).className).toContain('primary');
+		expect(screen.getByLabelText('Provider').closest('.field')).toBeTruthy();
+		expect(screen.getByLabelText('API key').closest('.field')).toBeTruthy();
+		expect(screen.getByLabelText('Model').closest('.field')).toBeTruthy();
+	});
+
 	it('is not autofilled with the login password and is not part of a login-looking form', async () => {
 		setup(status());
 		await fireEvent.change(await screen.findByLabelText('Provider'), { target: { value: 'openai' } });

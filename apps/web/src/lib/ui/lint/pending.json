@@ -18,7 +18,6 @@
 		"lib/plugins/journal/EntryEditor.svelte",
 		"lib/plugins/journal/PhotoImport.svelte",
 		"lib/settings/AdminSettings.svelte",
-		"lib/settings/AiSettings.svelte",
 		"lib/weekly/WeekStrip.svelte"
 	],
 	"shadow": [
