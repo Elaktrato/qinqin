@@ -1199,6 +1199,12 @@ every character of the language, studied or not, shaded by mastery.
   agree on all but 3 of 3,088 characters. Every installed level scheme
   that is not a sample pack is offered the same way, under its name; characters
   outside it land in "Not in this scheme".
+- **Level.** Choose **All levels** or one installed level scheme's level
+  (JLPT N5, HSK 2, Jōyō grade 3, …). The map, the stage counts and the
+  "X of Y learned" summary then cover only that level, including a character
+  whose variant form is in it; choosing a level opens its scheme under
+  **Group by**, so the view starts on that level rather than on other
+  schemes' empty sections. The choice is remembered per workspace.
 - **Sections** show learned/total and a stacked stage bar. The stage legend doubles
   as a filter (All, Not studied, In progress, Learned). Search matches the glyph,
   the reading (toneless pinyin works), the meaning, and hiragana or katakana.
