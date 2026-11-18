@@ -84,7 +84,7 @@ describe('NavDrawer', () => {
 		expect(links.map((l) => l.textContent?.trim())).toEqual(['Home', 'Search', 'Decks', 'Reader', 'Journal', 'Grammar', 'Stats']);
 		expect(links[0].getAttribute('href')).toBe('/');
 		for (const link of links) expect(link.querySelector('svg')).not.toBeNull();
-		expect(links.map((l) => l.getAttribute('aria-current'))).toEqual([null, 'page', null, null, null, null, null]);
+		expect(links.map((l) => l.getAttribute('aria-current'))).toEqual([null, null, null, 'page', null, null, null]);
 	});
 
 	it('following a link closes the drawer', async () => {
