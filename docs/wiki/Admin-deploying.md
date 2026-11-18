@@ -110,7 +110,7 @@ The bundled packs themselves stay in the image (`/opt/qinqin/packs`, `/opt/qinqi
 
 ## Checklist after deploying
 
-- `curl http://<host>:<port>/healthz` answers `ok`; Portainer shows the container `healthy` (the compose healthcheck runs `wget` against `/healthz` every 30 s, with a 15 s start period).
+- `curl http://<host>:<port>/healthz` answers `ok`; Portainer shows the container `healthy` (the compose healthcheck runs `wget` against `/healthz` every 30 s, with a 300 s start period that covers the first start's auto-seed).
 - Sign in as the admin from step 4.
 - Search `好`: results appear (the first-start seed ran).
 - Create a deck and a flashcard.
