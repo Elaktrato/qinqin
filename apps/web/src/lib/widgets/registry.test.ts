@@ -6,6 +6,7 @@ import { webPlugins } from '$lib/plugins';
 import { fixtureManifest } from '$lib/plugins/fixtures';
 import ActivityHeatmap from '$lib/components/ActivityHeatmap.svelte';
 import ActivityHome from './ActivityHome.svelte';
+import { DEFAULT_LAYOUT } from './layout';
 import { allWidgets } from './registry';
 import type { WidgetDef } from './types';
 
@@ -102,6 +103,7 @@ describe('allWidgets', () => {
 			'activity-heatmap',
 			'character-map-summary',
 			'daily-goal',
+			'summary-numbers',
 			'weekly-summary',
 			'flashcards-summary',
 			'word-states',
@@ -111,6 +113,7 @@ describe('allWidgets', () => {
 			['core', 'wide'],
 			['core', 'normal'],
 			['core', 'normal'],
+			['core', 'wide'],
 			['core', 'normal'],
 			['qinqin-flashcards', 'normal'],
 			['qinqin-flashcards', 'normal'],
@@ -121,8 +124,21 @@ describe('allWidgets', () => {
 			'activity-heatmap',
 			'character-map-summary',
 			'daily-goal',
+			'summary-numbers',
 			'weekly-summary'
 		]);
+	});
+
+	it('summary-numbers is core, wide, on Stats and Home, not in the default home layout', () => {
+		const list = allWidgets(webPlugins, [state('qinqin-flashcards')], 'zh');
+		const summary = list.find((w) => w.id === 'summary-numbers')!;
+		expect(summary).toMatchObject({
+			title: 'Summary',
+			owner: 'core',
+			size: 'wide',
+			surfaces: ['stats', 'home']
+		});
+		expect(DEFAULT_LAYOUT).not.toContain('summary-numbers');
 	});
 
 	it('offers this week on the home page only (Stats has the Week tab)', () => {
