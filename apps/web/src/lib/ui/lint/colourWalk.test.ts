@@ -39,7 +39,7 @@ const PENDING_LENGTH: Record<Rule, number> = {
 	opacity: 0,
 	weight: 0,
 	caps: 1,
-	border: 13,
+	border: 12,
 	shadow: 4,
 	control: 3
 };

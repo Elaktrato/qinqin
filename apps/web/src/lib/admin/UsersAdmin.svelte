@@ -23,6 +23,7 @@
 	import ReauthFields from './ReauthFields.svelte';
 	import { reauthBody, reauthError, reauthFocus, reauthNeedsCode, reauthReady, type Reauth } from './reauth';
 	import { actionNeedsReauth, generateTempPassword, userRows, type UserActionId } from './usersView';
+	import { Button, Chip, Field, IconButton, Panel, Section } from '$lib/ui';
 
 	let users = $state<AdminUserDto[]>([]);
 	let loaded = $state(false);
@@ -54,11 +55,11 @@
 	const needsCode = $derived(reauthNeedsCode($me?.mfa?.totp, sawCodeInvalid));
 	let askFields = $state<ReturnType<typeof ReauthFields> | null>(null);
 	let createFields = $state<ReturnType<typeof ReauthFields> | null>(null);
-	let heading = $state<HTMLHeadingElement | null>(null);
 
 	const rows = $derived(userRows(users, $me?.id ?? 0, new Date()));
 
 	const message = errorText;
+	const emailRequired = $derived(emailPolicy === 'required');
 
 	/** A re-authentication refusal: fixed sentence, clear and focus the field to fix. True if it was one. */
 	async function reauthRefused(err: unknown, which: 'ask' | 'create'): Promise<boolean> {
@@ -217,19 +218,18 @@
 			await load();
 		}
 		await tick();
-		heading?.focus();
+		document.getElementById('admin-users-heading')?.focus();
 	}
 
 	async function closeDelete(deleted: boolean): Promise<void> {
 		deleting = null;
 		if (deleted) await load();
 		await tick();
-		heading?.focus();
+		document.getElementById('admin-users-heading')?.focus();
 	}
 </script>
 
-<section aria-labelledby="admin-users-heading">
-	<h2 id="admin-users-heading" tabindex="-1" bind:this={heading}>{t('admin.users.title')}</h2>
+<Section title={t('admin.users.title')} headingId="admin-users-heading" focusable>
 	{#if error}<p class="error" role="alert">{error}</p>{/if}
 	<p class="ok" role="status">{notice}</p>
 
@@ -251,13 +251,15 @@
 				{needsCode}
 				passwordLabel={t('admin.users.confirm.ownPassword', { name: askPassword.username })}
 			/>
-			<button type="submit" disabled={busy || !reauthReady(ownPassword, needsCode, ownCode)}>{t('admin.users.confirm.submit')}</button>
-			<button type="button" onclick={() => (askPassword = null)}>{t('common.action.cancel')}</button>
+			<Button type="submit" variant="primary" disabled={busy || !reauthReady(ownPassword, needsCode, ownCode)}
+				>{t('admin.users.confirm.submit')}</Button
+			>
+			<Button onclick={() => (askPassword = null)}>{t('common.action.cancel')}</Button>
 		</form>
 	{/if}
 
 	{#if resetLink}
-		<div class="link" role="group" aria-label={t('admin.users.resetLink.label')}>
+		<Panel class="link" role="group" aria-label={t('admin.users.resetLink.label')}>
 			<p>
 				<Msg
 					key="admin.users.resetLink.text"
@@ -265,14 +267,22 @@
 					>{#snippet strong(text: string)}<strong>{text}</strong>{/snippet}</Msg
 				>
 			</p>
-			<input readonly value={resetLink.url} aria-label={t('admin.users.resetLink.address')} onfocus={(e) => e.currentTarget.select()} />
-			<button type="button" onclick={copy}>{copied ? t('common.action.copied') : t('common.action.copy')}</button>
-			<button type="button" onclick={() => (resetLink = null)}>{t('admin.users.resetLink.close')}</button>
-		</div>
+			<Field
+				label={t('admin.users.resetLink.address')}
+				readonly
+				value={resetLink.url}
+				onfocus={(e) => e.currentTarget.select()}
+			/>
+			<div class="row-actions">
+				<IconButton icon="copy" label={t('common.action.copy')} onclick={copy} />
+				<Button onclick={() => (resetLink = null)}>{t('admin.users.resetLink.close')}</Button>
+				<span role="status">{copied ? t('common.action.copied') : ''}</span>
+			</div>
+		</Panel>
 	{/if}
 
 	{#if loaded}
-		<table aria-label={t('admin.users.title')}>
+		<table class="ui-table" aria-label={t('admin.users.title')}>
 			<thead>
 				<tr>
 					<th scope="col">{t('admin.users.col.username')}</th>
@@ -286,10 +296,10 @@
 			<tbody>
 				{#each rows as row (row.id)}
 					<tr>
-						<th scope="row">{row.username}{#if row.self} <span class="badge">{t('admin.users.you')}</span>{/if}</th>
+						<th scope="row">{row.username}{#if row.self} <Chip>{t('admin.users.you')}</Chip>{/if}</th>
 						{#if emailPolicy !== 'off'}<td>{row.email}</td>{/if}
 						<td>{row.role}</td>
-						<td>{#each row.status as s (s)}<span class="badge">{s}</span>{/each}</td>
+						<td>{#each row.status as s (s)}<Chip>{s}</Chip>{/each}</td>
 						<td>{row.lastSeen}</td>
 						<td>
 							<details>
@@ -297,11 +307,11 @@
 								<ul class="actions">
 									{#each row.actions as action (action.id)}
 										<li>
-											<button
-												type="button"
+											<Button
+												tone={/delete|disable|removeAdmin|resetMfa/i.test(action.id) ? 'danger' : 'default'}
 												disabled={busy || action.disabled}
 												aria-describedby={action.reason ? `why-${row.id}-${action.id}` : undefined}
-												onclick={() => run(row, action.id)}>{action.label}</button
+												onclick={() => run(row, action.id)}>{action.label}</Button
 											>
 											{#if action.reason}<span class="hint" id="why-{row.id}-{action.id}">{action.reason}</span>{/if}
 										</li>
@@ -315,25 +325,27 @@
 		</table>
 	{/if}
 
-	<h3>{t('admin.users.create.title')}</h3>
+	<Section title={t('admin.users.create.title')} level={3}>
 	<form onsubmit={create} class="stack">
-		<label>
-			{t('admin.users.create.username')}
-			<input bind:value={username} autocomplete="off" required />
-		</label>
-		<label>
-			{t('admin.users.create.tempPassword')}
-			<span class="row">
-				<input bind:value={password} autocomplete="off" required aria-describedby="admin-user-pw-rules" />
-				<button type="button" onclick={() => (password = generateTempPassword())}>{t('admin.users.create.generate')}</button>
-			</span>
-		</label>
+		<Field label={t('admin.users.create.username')} bind:value={username} autocomplete="off" required />
+		<div class="row">
+			<Field
+				label={t('admin.users.create.tempPassword')}
+				bind:value={password}
+				autocomplete="off"
+				required
+				aria-describedby="admin-user-pw-rules"
+			/>
+			<Button onclick={() => (password = generateTempPassword())}>{t('admin.users.create.generate')}</Button>
+		</div>
 		<p class="hint" id="admin-user-pw-rules">{passwordHint()}</p>
 		{#if emailPolicy !== 'off'}
-			<label>
-				{emailPolicy === 'required' ? t('admin.users.create.email') : t('admin.users.create.emailOptional')}
-				<input type="email" bind:value={email} required={emailPolicy === 'required'} />
-			</label>
+			<Field
+				label={emailRequired ? t('admin.users.create.email') : t('admin.users.create.emailOptional')}
+				type="email"
+				bind:value={email}
+				required={emailRequired}
+			/>
 		{/if}
 		<label class="check"><input type="checkbox" bind:checked={makeAdmin} /> {t('admin.users.create.admin')}</label>
 		{#if makeAdmin}
@@ -348,11 +360,12 @@
 			</div>
 		{/if}
 		<p class="ok" role="status">{createNote}</p>
-		<button type="submit" disabled={busy || (makeAdmin && !reauthReady(createPassword, needsCode, createCode))}
-			>{t('admin.users.create.submit')}</button
+		<Button type="submit" variant="primary" disabled={busy || (makeAdmin && !reauthReady(createPassword, needsCode, createCode))}
+			>{t('admin.users.create.submit')}</Button
 		>
 	</form>
-</section>
+	</Section>
+</Section>
 
 {#if deleting}
 	<DeleteUserDialog id={deleting.id} username={deleting.username} onclose={closeDelete} />
@@ -369,93 +382,65 @@
 {/if}
 
 <style>
-	table {
-		border-collapse: collapse;
-		width: 100%;
-		margin: 0.75rem 0;
-	}
-	th,
-	td {
-		text-align: left;
-		padding: 0.45rem 0.6rem;
-		border-bottom: 1px solid color-mix(in srgb, currentColor 18%, transparent);
-		vertical-align: top;
-	}
-	.badge {
-		margin-right: 0.35rem;
-		padding: 0.1rem 0.45rem;
-		border: 1px solid currentColor;
-		border-radius: 0.8rem;
-		font-size: 0.8em;
-	}
-	.actions {
-		list-style: none;
-		margin: 0.4rem 0 0;
-		padding: 0;
-		display: grid;
-		gap: 0.3rem;
-	}
 	.stack {
 		display: grid;
-		gap: 0.8rem;
+		gap: var(--space-3);
 		max-width: 26rem;
 	}
-	label {
-		display: grid;
-		gap: 0.3rem;
-		font-weight: 600;
-	}
+
 	label.check {
 		display: flex;
-		gap: 0.5rem;
+		gap: var(--space-2);
 		align-items: center;
-		font-weight: 400;
+		min-height: var(--hit);
 	}
+
 	.row {
 		display: flex;
-		gap: 0.5rem;
+		flex-wrap: wrap;
+		gap: var(--space-2);
+		align-items: end;
 	}
-	.row input {
-		flex: 1;
+
+	.row :global(.field) {
+		flex: 1 1 14rem;
 	}
-	input:not([type='checkbox']) {
-		font: inherit;
-		padding: 0.45rem 0.6rem;
-	}
+
 	.link {
+		display: grid;
+		gap: var(--space-2);
+		margin-block: var(--space-3);
+	}
+
+	.row-actions {
 		display: flex;
 		flex-wrap: wrap;
-		gap: 0.5rem;
+		gap: var(--space-2);
 		align-items: center;
-		padding: 0.8rem;
-		border: 1px solid color-mix(in srgb, currentColor 35%, transparent);
-		border-radius: 0.5rem;
 	}
-	.link p {
-		flex-basis: 100%;
-		margin: 0;
+
+	.actions {
+		list-style: none;
+		margin: var(--space-1) 0 0;
+		padding: 0;
+		display: grid;
+		gap: var(--space-1);
 	}
-	.link input {
-		flex: 1;
-		min-width: 12rem;
-	}
+
 	.hint {
 		color: var(--readable-muted);
-		font-size: 0.9em;
+		font-size: var(--font-size-label);
 		margin: 0;
 	}
+
 	.error {
 		color: var(--readable-bad);
-		font-weight: 600;
 		padding-inline-start: var(--space-2);
 		border-inline-start: 3px solid var(--bad);
 	}
+
 	.ok {
 		min-height: 1.2em;
-		margin: 0.4rem 0;
-	}
-	button:disabled {
-		opacity: 0.55;
-		cursor: not-allowed;
+		margin-block: var(--space-1);
 	}
 </style>

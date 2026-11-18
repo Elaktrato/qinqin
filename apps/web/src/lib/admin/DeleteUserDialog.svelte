@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { errorText } from '$lib/api/apiErrors';
 	import { t } from '$lib/i18n';
+	import { Field } from '$lib/ui';
 	import Msg from '$lib/i18n/Msg.svelte';
 	import { onMount, tick } from 'svelte';
 	import { apiErrorBody } from '$lib/api/client';
@@ -23,7 +24,7 @@
 	}: { id: number; username: string; onclose: (deleted: boolean) => void } = $props();
 
 	const uid = $props.id();
-	let input = $state<HTMLInputElement | null>(null);
+	let input = $state<HTMLInputElement | undefined>(undefined);
 	let typed = $state('');
 	let password = $state('');
 	let code = $state('');
@@ -96,36 +97,26 @@
 			{/if}
 			<p>{t('admin.delete.cannotUndo')}</p>
 		</div>
-		<label>
-			<Msg key="admin.delete.typeToConfirm" args={{ name: username }}
-				>{#snippet strong(text: string)}<strong>{text}</strong>{/snippet}</Msg
-			>
-			<input bind:this={input} bind:value={typed} autocomplete="off" />
-		</label>
+		<Field
+			label={t('admin.delete.typeToConfirm', { name: username }).replace(/<[^>]+>/g, '')}
+			bind:element={input}
+			bind:value={typed}
+			autocomplete="off"
+		/>
 		<ReauthFields bind:this={fields} bind:password bind:code {needsCode} />
 		{#if error}<p class="error" role="alert">{error}</p>{/if}
 	</form>
 	{#snippet actions()}
 		<Button onclick={() => finish(false)} disabled={busy}>{t('common.action.cancel')}</Button>
-		<Button type="submit" form="{uid}-form" tone="danger" disabled={!ready} {busy}
+		<Button type="submit" form="{uid}-form" variant="primary" tone="danger" disabled={!ready} {busy}
 			>{busy ? t('admin.delete.deleting') : t('admin.delete.submit')}</Button
 		>
 	{/snippet}
 </Dialog>
 
 <style>
-	label {
-		display: grid;
-		gap: 0.3rem;
-		margin-top: 0.8rem;
-	}
-	input {
-		font: inherit;
-		padding: 0.45rem 0.6rem;
-	}
 	.error {
 		color: var(--readable-bad);
-		font-weight: 600;
 		padding-inline-start: var(--space-2);
 		border-inline-start: 3px solid var(--bad);
 	}

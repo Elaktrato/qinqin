@@ -9,6 +9,7 @@ vi.mock('$lib/api/adminSettings', () => ({
 }));
 
 import * as api from '$lib/api/adminSettings';
+import { primaryActions } from '$lib/ui/testing/primary';
 import InvitesAdmin from './InvitesAdmin.svelte';
 
 const invite = (o: object = {}) => ({
@@ -26,6 +27,16 @@ afterEach(() => {
 });
 
 describe('InvitesAdmin', () => {
+	it('has one primary; uses, expiry and note are base controls', async () => {
+		render(InvitesAdmin);
+		await screen.findByRole('table', { name: 'Invites' });
+		expect(primaryActions(document.body)).toHaveLength(1);
+		expect(screen.getByRole('button', { name: 'Create invite link' }).className).toContain('primary');
+		expect(screen.getByLabelText('Uses (1 to 100)').closest('.field')).toBeTruthy();
+		expect(screen.getByLabelText('Expires').closest('.field')).toBeTruthy();
+		expect(screen.getByLabelText('Note (optional)').closest('.field')).toBeTruthy();
+	});
+
 	it('sends the chosen uses and expiry and shows the link once', async () => {
 		vi.mocked(api.createInvite).mockResolvedValue({ invite: invite() as never, token: 'tok', path: '/register#invite=tok' });
 		render(InvitesAdmin);

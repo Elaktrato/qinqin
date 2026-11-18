@@ -17,7 +17,6 @@
 		"lib/notes/NoteAnswer.svelte",
 		"lib/plugins/journal/EntryEditor.svelte",
 		"lib/plugins/journal/PhotoImport.svelte",
-		"lib/settings/AdminSettings.svelte",
 		"lib/weekly/WeekStrip.svelte"
 	],
 	"shadow": [

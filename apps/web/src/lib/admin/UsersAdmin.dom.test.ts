@@ -18,6 +18,7 @@ vi.mock('$lib/api/account', () => ({ getAuthOptions: vi.fn() }));
 import * as adminUsers from '$lib/api/adminUsers';
 import { getAuthOptions } from '$lib/api/account';
 import { auth } from '$lib/auth';
+import { primaryActions } from '$lib/ui/testing/primary';
 import UsersAdmin from './UsersAdmin.svelte';
 
 const dto = (id: number, o: object = {}) => ({
@@ -47,6 +48,16 @@ afterEach(() => {
 });
 
 describe('UsersAdmin', () => {
+	it('the users table is a .ui-table; create has the section primary and Field underlines', async () => {
+		render(UsersAdmin);
+		const table = await screen.findByRole('table', { name: 'Users' });
+		expect(table.className).toContain('ui-table');
+		const form = screen.getByRole('button', { name: 'Create user' }).closest('form')!;
+		expect(primaryActions(form)).toHaveLength(1);
+		expect(screen.getByLabelText('Username').closest('.field')).toBeTruthy();
+		expect(screen.getByLabelText('Temporary password').closest('.field')).toBeTruthy();
+	});
+
 	it('revokes a pending reset link without asking for a password', async () => {
 		vi.mocked(adminUsers.revokeResetLink).mockResolvedValue(undefined as never);
 		render(UsersAdmin);

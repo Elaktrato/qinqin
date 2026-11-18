@@ -9,6 +9,7 @@ const me = await vi.hoisted(async () => {
 vi.mock('$lib/auth', () => ({ user: me }));
 vi.mock('$lib/api/backup', () => ({ createServerBackup: vi.fn() }));
 import * as api from '$lib/api/backup';
+import { primaryActions } from '$lib/ui/testing/primary';
 import ServerBackup from './ServerBackup.svelte';
 
 afterEach(() => { cleanup(); vi.clearAllMocks(); me.set({ username: 'owner', mfa: { totp: false } }); });
@@ -19,6 +20,13 @@ async function fill(): Promise<HTMLButtonElement> {
 }
 
 describe('ServerBackup', () => {
+	it('has one primary and its password is a Field', async () => {
+		render(ServerBackup);
+		expect(primaryActions(document.body)).toHaveLength(1);
+		expect(screen.getByRole('button', { name: 'Create server backup' }).className).toContain('primary');
+		expect(screen.getByLabelText('Your password').closest('.field')).toBeTruthy();
+	});
+
 	it('sends the chosen parts and password, then navigates to the ticket URL', async () => {
 		vi.mocked(api.createServerBackup).mockResolvedValue({ url: '/api/admin/backup/t', expiresInSeconds: 60, include: [] });
 		const assign = vi.fn();

@@ -9,6 +9,7 @@
 	import { tick } from 'svelte';
 	import ReauthFields from './ReauthFields.svelte';
 	import { reauthBody, reauthFocus, reauthNeedsCode } from './reauth';
+	import { Button, Section } from '$lib/ui';
 
 	let { assign = (u: string) => location.assign(u) }: { assign?: (url: string) => void } = $props();
 
@@ -60,8 +61,7 @@
 	}
 </script>
 
-<section aria-labelledby="server-backup-heading">
-	<h2 id="server-backup-heading">{t('admin.backup.title')}</h2>
+<Section title={t('admin.backup.title')}>
 	<p>{securityNote()}</p>
 	<form onsubmit={create} class="stack">
 		<fieldset>
@@ -74,7 +74,9 @@
 			{/each}
 		</fieldset>
 		<ReauthFields bind:this={fields} bind:password bind:code {needsCode} passwordLabel={t('admin.backup.yourPassword')} />
-		<button type="submit" disabled={!canCreate(selected, password, busy, needsCode, code)}>{t('admin.backup.create')}</button>
+		<Button type="submit" variant="primary" disabled={!canCreate(selected, password, busy, needsCode, code)}
+			>{t('admin.backup.create')}</Button
+		>
 	</form>
 	{#if started}<p role="status">{t('admin.backup.started')}</p>{/if}
 	{#if error}<p role="alert">{error}</p>{/if}
@@ -84,10 +86,30 @@
 	<p class="hint">
 		<Msg key="admin.backup.schedule" args={{ file: '<file>' }}>{#snippet code(text: string)}<code>{text}</code>{/snippet}</Msg>
 	</p>
-</section>
+</Section>
 
 <style>
-	.stack { display: grid; gap: 0.9rem; max-width: 28rem; }
-	label { display: grid; gap: 0.15rem; }
-	.hint { color: var(--readable-muted); font-size: 0.9em; }
+	.stack {
+		display: grid;
+		gap: var(--space-3);
+		max-width: 28rem;
+	}
+
+	label {
+		display: flex;
+		gap: var(--space-2);
+		align-items: baseline;
+		min-height: var(--hit);
+	}
+
+	h3 {
+		margin: var(--space-5) 0 var(--space-2);
+		font-size: var(--font-size-l);
+		font-weight: var(--weight-strong);
+	}
+
+	.hint {
+		color: var(--readable-muted);
+		font-size: var(--font-size-label);
+	}
 </style>
