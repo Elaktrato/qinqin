@@ -25,6 +25,34 @@ describe('Select', () => {
 		expect(label.className).not.toContain('visually-hidden');
 	});
 
+	it('renders option groups after the plain options', () => {
+		render(Select, {
+			label: 'Level',
+			value: '7:70',
+			options: [{ value: 'all', label: 'All levels' }],
+			groups: [
+				{
+					id: '7',
+					label: 'JLPT kanji',
+					options: [{ value: '7:70', label: 'N5' }, { value: '7:71', label: 'N4' }]
+				},
+				{ id: '8', label: 'HSK 3.0', options: [{ value: '8:80', label: 'HSK 1' }] }
+			]
+		});
+		const select = screen.getByLabelText('Level') as HTMLSelectElement;
+		expect([...select.querySelectorAll('optgroup')].map((group) => group.label)).toEqual([
+			'JLPT kanji',
+			'HSK 3.0'
+		]);
+		expect([...select.options].map((option) => option.textContent)).toEqual([
+			'All levels',
+			'N5',
+			'N4',
+			'HSK 1'
+		]);
+		expect(select.value).toBe('7:70');
+	});
+
 	it('binds its value both ways', async () => {
 		render(SelectHarness);
 		const select = screen.getByLabelText('Group by') as HTMLSelectElement;
