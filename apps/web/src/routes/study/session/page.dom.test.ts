@@ -420,23 +420,39 @@ describe('the open page (#101)', () => {
 		expect(shown().slice(0, 3)).toEqual(['<1m', '6m', '10m']);
 	});
 
-	it('the label equals the schedule the grade produces', async () => {
+	it('the label equals the schedule the recorded review produces', async () => {
 		configure(['vocab']);
+		// Record the grade the session actually writes, not an independently guessed one.
+		let recorded:
+			| { workspaceId: number; cardId: string; grade: number; mode: string; at: Date }
+			| undefined;
+		vi.mocked(recordReview).mockImplementationOnce(async (workspaceId, cardId, grade, mode) => {
+			recorded = { workspaceId, cardId, grade, mode, at: new Date() };
+		});
 		render(Page);
 		await screen.findByLabelText('Recognise card');
 		await fireEvent.click(screen.getByRole('button', { name: 'Show answer' }));
 		const good = await screen.findByRole('button', { name: /^Good, next review/ });
 		await fireEvent.click(good);
-		await waitFor(() => expect(recordReview).toHaveBeenCalledTimes(1));
-		const at = new Date();
+		await waitFor(() => expect(recorded).toBeDefined());
+		const r = recorded!;
 		const due = scheduleFor(
-			'c-vocab-11',
-			[{ id: '01JTESTREVIEW0000000000009', workspaceId: 1, device: 'web', ts: at.toISOString(), type: 'review', payload: { cardId: 'c-vocab-11', mode: 'vocab', grade: 3 } }],
-			at,
+			r.cardId,
+			[
+				{
+					id: '01JTESTREVIEW0000000000009',
+					workspaceId: r.workspaceId,
+					device: 'web',
+					ts: r.at.toISOString(),
+					type: 'review',
+					payload: { cardId: r.cardId, mode: r.mode as never, grade: r.grade as never }
+				}
+			],
+			r.at,
 			DEFAULT_W,
 			IDENTITY_CLOCK
 		)!.due;
-		expect(shortInterval(Date.parse(due) - at.getTime())).toBe(good.querySelector('.when')!.textContent);
+		expect(shortInterval(Date.parse(due) - r.at.getTime())).toBe(good.querySelector('.when')!.textContent);
 	});
 
 	it('announces "Good. Next review in 10 minutes." in a polite status after a grade', async () => {
