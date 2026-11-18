@@ -145,8 +145,8 @@ qinqin seed --packs plugins/data,plugins/data-local
 The converter fails with a clear message if one of the six files is missing.
 Under Docker, put the output on a host directory, mount it (for example
 `./plugins/data-local:/opt/qinqin/local:ro`) and run
-`docker compose exec qinqin qinqin seed --packs /opt/qinqin/packs,/opt/qinqin/local`
-(see the README). Once seeded, the
+`docker compose exec qinqin qinqin seed --packs /opt/qinqin/packs,/opt/qinqin/audio,/opt/qinqin/strokes,/opt/qinqin/local`
+(see the wiki page `docs/wiki/Admin-deploying.md`, "What `qinqin seed` does"). Once seeded, the
 map's "Group by" and the Sources page pick it up like any installed scheme. The
 generated `ATTRIBUTION.md` quotes the README chain, names the pinned upstream
 commit, records the SHA-256 of the input files and says "not bundled, local use

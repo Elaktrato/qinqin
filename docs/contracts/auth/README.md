@@ -143,7 +143,7 @@ The conditional rules are pinned as cases in `admin-reauth.json`.
 admin screens only; the Kotlin client needs just the routes above, `PUT /api/account/email`,
 `GET /api/account/deletion-preview` and `DELETE /api/account` (self deletion: `{password, confirm}`; 409
 `last_admin` for the last active administrator). Deleting an account removes its data in one transaction (the
-exact list is in the project README, "Registration, invites and user management").
+exact list is on the wiki page `docs/wiki/Admin-users-and-registration.md`, "What deleting an account removes").
 
 ## Client rules
 Send `deviceName`; treat the token as opaque; on 401 drop the token and show sign-in; on a 403 with a
