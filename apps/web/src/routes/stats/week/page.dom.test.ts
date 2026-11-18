@@ -40,6 +40,7 @@ function view(monday: string, reviews = 12): WeekView {
 		compareThrough: '2026-11-11',
 		rows: [{ key: 'reviews', value: reviews, previous: 0, unit: 'count' }],
 		days: [],
+		previousDays: [],
 		daysActive: { active: 1, of: 3, localOnly: false },
 		streak: 1,
 		mature: null,

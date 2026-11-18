@@ -23,6 +23,12 @@ function summary(over: Partial<Summary> = {}): Summary {
 			reviews: i < 3 ? 4 : null,
 			points: i < 3 ? 4 : null
 		})),
+		previousDays: Array.from({ length: 7 }, (_, i) => ({
+			date: `2026-11-${9 + i}`,
+			state: 'inactive' as const,
+			reviews: 0,
+			points: 0
+		})),
 		daysActive: { active: 3, of: 3, localOnly: false },
 		streak: 4,
 		mature: { value: 2, previous: 0 },

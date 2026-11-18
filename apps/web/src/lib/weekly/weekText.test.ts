@@ -166,6 +166,7 @@ describe('summaryLines', () => {
 			{ key: 'activity:drill', value: 4, previous: 0, unit: 'count' }
 		],
 		days: [],
+		previousDays: [],
 		daysActive: { active: 5, of: 7, localOnly: false },
 		streak: 3,
 		mature: { value: 2, previous: 1 },
@@ -233,7 +234,7 @@ describe('summaryLines', () => {
 describe('characters unavailable', () => {
 	it('keeps the row with the offline text', () => {
 		const s = {
-			monday: '2026-11-09', today: '2026-11-18', inProgress: false, compareThrough: '2026-11-08', rows: [], days: [],
+			monday: '2026-11-09', today: '2026-11-18', inProgress: false, compareThrough: '2026-11-08', rows: [], days: [], previousDays: [],
 			daysActive: { active: 0, of: 7, localOnly: false }, streak: 0, mature: null, characters: null, goal: null,
 			allVacation: false, nothingToCompare: false
 		} as WeekSummary;

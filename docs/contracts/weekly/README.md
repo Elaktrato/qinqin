@@ -89,6 +89,24 @@ leave vacation days out — "neutral" means a vacation day neither counts for no
 
 `allVacation`: every date of the week is `vacation` or `skipped`, at least one `vacation`.
 
+### Previous days (the paired bars)
+
+`previousDays` is the seven dates `d₁ − 7 … d₁ − 1` (Monday to Sunday), each with the same shape and state
+rules as `days`: `reviews` is the `review` cell's `raw`, `points` the sum of the date's cells' `points`;
+`null` for both while the activity response is unavailable. All seven dates are in the past, so the state is
+never `upcoming`; the other states follow the same precedence (`skipped`, `vacation`, `active`, `inactive`).
+The state is active on a day with points of any activity type or with a local review — the same rule as the
+week's days.
+
+The paired bars use this whole week; the four numbers above them keep the contract's comparison window
+(`previous` on each row: the same weekday for the week in progress, the whole week for a completed one).
+
+Ruling: the paired bars measure each day's **activity points** (`WeekDay.points`, the heatmap's measure,
+covering every activity type) — the mock does not name the measure and points are what "a day's study" means
+everywhere else; last week's bars cover all seven days while the four numbers keep the same-days window —
+cost: on a Wednesday the bars show last week's Thursday–Sunday, which the numbers do not count (the legend
+says "last week", not "compared").
+
 ### Streak
 
 `dailyStreak(reviews, end, day, vacation).current` (`scheduler/`), `end = now` for the current week, else

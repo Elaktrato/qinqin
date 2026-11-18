@@ -262,6 +262,50 @@
             "reviews": 0
           }
         ],
+        "previousDays": [
+          {
+            "date": "2026-11-02",
+            "state": "inactive",
+            "reviews": 0,
+            "points": 0
+          },
+          {
+            "date": "2026-11-03",
+            "state": "active",
+            "reviews": 8,
+            "points": 8
+          },
+          {
+            "date": "2026-11-04",
+            "state": "active",
+            "reviews": 0,
+            "points": 2
+          },
+          {
+            "date": "2026-11-05",
+            "state": "active",
+            "reviews": 0,
+            "points": 1
+          },
+          {
+            "date": "2026-11-06",
+            "state": "inactive",
+            "reviews": 0,
+            "points": 0
+          },
+          {
+            "date": "2026-11-07",
+            "state": "inactive",
+            "reviews": 0,
+            "points": 0
+          },
+          {
+            "date": "2026-11-08",
+            "state": "inactive",
+            "reviews": 0,
+            "points": 0
+          }
+        ],
         "daysActive": {
           "active": 5,
           "of": 7,
@@ -488,6 +532,50 @@
             "reviews": null
           }
         ],
+        "previousDays": [
+          {
+            "date": "2026-11-09",
+            "state": "active",
+            "reviews": 3,
+            "points": 3
+          },
+          {
+            "date": "2026-11-10",
+            "state": "active",
+            "reviews": 3,
+            "points": 3
+          },
+          {
+            "date": "2026-11-11",
+            "state": "active",
+            "reviews": 1,
+            "points": 1
+          },
+          {
+            "date": "2026-11-12",
+            "state": "inactive",
+            "reviews": 0,
+            "points": 0
+          },
+          {
+            "date": "2026-11-13",
+            "state": "active",
+            "reviews": 20,
+            "points": 20
+          },
+          {
+            "date": "2026-11-14",
+            "state": "inactive",
+            "reviews": 0,
+            "points": 0
+          },
+          {
+            "date": "2026-11-15",
+            "state": "active",
+            "reviews": 0,
+            "points": 0
+          }
+        ],
         "daysActive": {
           "active": 3,
           "of": 3,
@@ -693,6 +781,50 @@
             "reviews": 0
           }
         ],
+        "previousDays": [
+          {
+            "date": "2026-10-26",
+            "state": "inactive",
+            "reviews": 0,
+            "points": 0
+          },
+          {
+            "date": "2026-10-27",
+            "state": "active",
+            "reviews": 2,
+            "points": 2
+          },
+          {
+            "date": "2026-10-28",
+            "state": "inactive",
+            "reviews": 0,
+            "points": 0
+          },
+          {
+            "date": "2026-10-29",
+            "state": "inactive",
+            "reviews": 0,
+            "points": 0
+          },
+          {
+            "date": "2026-10-30",
+            "state": "inactive",
+            "reviews": 0,
+            "points": 0
+          },
+          {
+            "date": "2026-10-31",
+            "state": "inactive",
+            "reviews": 0,
+            "points": 0
+          },
+          {
+            "date": "2026-11-01",
+            "state": "inactive",
+            "reviews": 0,
+            "points": 0
+          }
+        ],
         "daysActive": {
           "active": 3,
           "of": 6,
@@ -838,6 +970,50 @@
             "date": "2026-11-08",
             "state": "vacation",
             "reviews": 0
+          }
+        ],
+        "previousDays": [
+          {
+            "date": "2026-10-26",
+            "state": "inactive",
+            "reviews": 0,
+            "points": 0
+          },
+          {
+            "date": "2026-10-27",
+            "state": "inactive",
+            "reviews": 0,
+            "points": 0
+          },
+          {
+            "date": "2026-10-28",
+            "state": "inactive",
+            "reviews": 0,
+            "points": 0
+          },
+          {
+            "date": "2026-10-29",
+            "state": "inactive",
+            "reviews": 0,
+            "points": 0
+          },
+          {
+            "date": "2026-10-30",
+            "state": "vacation",
+            "reviews": 0,
+            "points": 0
+          },
+          {
+            "date": "2026-10-31",
+            "state": "vacation",
+            "reviews": 0,
+            "points": 0
+          },
+          {
+            "date": "2026-11-01",
+            "state": "vacation",
+            "reviews": 0,
+            "points": 0
           }
         ],
         "daysActive": {
@@ -988,6 +1164,50 @@
             "reviews": null
           }
         ],
+        "previousDays": [
+          {
+            "date": "2026-11-09",
+            "state": "inactive",
+            "reviews": 0,
+            "points": 0
+          },
+          {
+            "date": "2026-11-10",
+            "state": "inactive",
+            "reviews": 0,
+            "points": 0
+          },
+          {
+            "date": "2026-11-11",
+            "state": "inactive",
+            "reviews": 0,
+            "points": 0
+          },
+          {
+            "date": "2026-11-12",
+            "state": "inactive",
+            "reviews": 0,
+            "points": 0
+          },
+          {
+            "date": "2026-11-13",
+            "state": "inactive",
+            "reviews": 0,
+            "points": 0
+          },
+          {
+            "date": "2026-11-14",
+            "state": "inactive",
+            "reviews": 0,
+            "points": 0
+          },
+          {
+            "date": "2026-11-15",
+            "state": "inactive",
+            "reviews": 0,
+            "points": 0
+          }
+        ],
         "daysActive": {
           "active": 1,
           "of": 1,
@@ -1100,6 +1320,50 @@
             "date": "2026-11-15",
             "state": "inactive",
             "reviews": null
+          }
+        ],
+        "previousDays": [
+          {
+            "date": "2026-11-02",
+            "state": "inactive",
+            "reviews": null,
+            "points": null
+          },
+          {
+            "date": "2026-11-03",
+            "state": "inactive",
+            "reviews": null,
+            "points": null
+          },
+          {
+            "date": "2026-11-04",
+            "state": "inactive",
+            "reviews": null,
+            "points": null
+          },
+          {
+            "date": "2026-11-05",
+            "state": "active",
+            "reviews": null,
+            "points": null
+          },
+          {
+            "date": "2026-11-06",
+            "state": "inactive",
+            "reviews": null,
+            "points": null
+          },
+          {
+            "date": "2026-11-07",
+            "state": "inactive",
+            "reviews": null,
+            "points": null
+          },
+          {
+            "date": "2026-11-08",
+            "state": "inactive",
+            "reviews": null,
+            "points": null
           }
         ],
         "daysActive": {
@@ -1249,6 +1513,50 @@
             "date": "2012-01-01",
             "state": "active",
             "reviews": 0
+          }
+        ],
+        "previousDays": [
+          {
+            "date": "2011-12-19",
+            "state": "inactive",
+            "reviews": 0,
+            "points": 0
+          },
+          {
+            "date": "2011-12-20",
+            "state": "inactive",
+            "reviews": 0,
+            "points": 0
+          },
+          {
+            "date": "2011-12-21",
+            "state": "inactive",
+            "reviews": 0,
+            "points": 0
+          },
+          {
+            "date": "2011-12-22",
+            "state": "inactive",
+            "reviews": 0,
+            "points": 0
+          },
+          {
+            "date": "2011-12-23",
+            "state": "inactive",
+            "reviews": 0,
+            "points": 0
+          },
+          {
+            "date": "2011-12-24",
+            "state": "inactive",
+            "reviews": 0,
+            "points": 0
+          },
+          {
+            "date": "2011-12-25",
+            "state": "inactive",
+            "reviews": 0,
+            "points": 0
           }
         ],
         "daysActive": {
@@ -1426,6 +1734,50 @@
             "reviews": null
           }
         ],
+        "previousDays": [
+          {
+            "date": "2026-11-09",
+            "state": "inactive",
+            "reviews": 0,
+            "points": 0
+          },
+          {
+            "date": "2026-11-10",
+            "state": "inactive",
+            "reviews": 0,
+            "points": 0
+          },
+          {
+            "date": "2026-11-11",
+            "state": "inactive",
+            "reviews": 0,
+            "points": 0
+          },
+          {
+            "date": "2026-11-12",
+            "state": "inactive",
+            "reviews": 0,
+            "points": 0
+          },
+          {
+            "date": "2026-11-13",
+            "state": "inactive",
+            "reviews": 0,
+            "points": 0
+          },
+          {
+            "date": "2026-11-14",
+            "state": "inactive",
+            "reviews": 0,
+            "points": 0
+          },
+          {
+            "date": "2026-11-15",
+            "state": "inactive",
+            "reviews": 0,
+            "points": 0
+          }
+        ],
         "daysActive": {
           "active": 4,
           "of": 4,
@@ -1580,6 +1932,50 @@
             "date": "2026-10-25",
             "state": "active",
             "reviews": 0
+          }
+        ],
+        "previousDays": [
+          {
+            "date": "2026-10-12",
+            "state": "inactive",
+            "reviews": 0,
+            "points": 0
+          },
+          {
+            "date": "2026-10-13",
+            "state": "inactive",
+            "reviews": 0,
+            "points": 0
+          },
+          {
+            "date": "2026-10-14",
+            "state": "inactive",
+            "reviews": 0,
+            "points": 0
+          },
+          {
+            "date": "2026-10-15",
+            "state": "inactive",
+            "reviews": 0,
+            "points": 0
+          },
+          {
+            "date": "2026-10-16",
+            "state": "inactive",
+            "reviews": 0,
+            "points": 0
+          },
+          {
+            "date": "2026-10-17",
+            "state": "inactive",
+            "reviews": 0,
+            "points": 0
+          },
+          {
+            "date": "2026-10-18",
+            "state": "inactive",
+            "reviews": 0,
+            "points": 0
           }
         ],
         "daysActive": {
@@ -1850,6 +2246,50 @@
         }
       ],
       "expect": {
+        "previousDays": [
+          {
+            "date": "2026-11-02",
+            "state": "inactive",
+            "reviews": 0,
+            "points": 0
+          },
+          {
+            "date": "2026-11-03",
+            "state": "inactive",
+            "reviews": 0,
+            "points": 0
+          },
+          {
+            "date": "2026-11-04",
+            "state": "inactive",
+            "reviews": 0,
+            "points": 0
+          },
+          {
+            "date": "2026-11-05",
+            "state": "inactive",
+            "reviews": 0,
+            "points": 0
+          },
+          {
+            "date": "2026-11-06",
+            "state": "inactive",
+            "reviews": 0,
+            "points": 0
+          },
+          {
+            "date": "2026-11-07",
+            "state": "inactive",
+            "reviews": 0,
+            "points": 0
+          },
+          {
+            "date": "2026-11-08",
+            "state": "inactive",
+            "reviews": 0,
+            "points": 0
+          }
+        ],
         "mature": {
           "value": 2,
           "previous": 1
@@ -1932,6 +2372,50 @@
         }
       ],
       "expect": {
+        "previousDays": [
+          {
+            "date": "2026-11-02",
+            "state": "inactive",
+            "reviews": 0,
+            "points": 0
+          },
+          {
+            "date": "2026-11-03",
+            "state": "inactive",
+            "reviews": 0,
+            "points": 0
+          },
+          {
+            "date": "2026-11-04",
+            "state": "inactive",
+            "reviews": 0,
+            "points": 0
+          },
+          {
+            "date": "2026-11-05",
+            "state": "inactive",
+            "reviews": 0,
+            "points": 0
+          },
+          {
+            "date": "2026-11-06",
+            "state": "inactive",
+            "reviews": 0,
+            "points": 0
+          },
+          {
+            "date": "2026-11-07",
+            "state": "inactive",
+            "reviews": 0,
+            "points": 0
+          },
+          {
+            "date": "2026-11-08",
+            "state": "inactive",
+            "reviews": 0,
+            "points": 0
+          }
+        ],
         "mature": {
           "value": 1,
           "previous": 0
@@ -2038,6 +2522,50 @@
             "date": "2026-11-22",
             "state": "upcoming",
             "reviews": null
+          }
+        ],
+        "previousDays": [
+          {
+            "date": "2026-11-09",
+            "state": "inactive",
+            "reviews": 0,
+            "points": 0
+          },
+          {
+            "date": "2026-11-10",
+            "state": "inactive",
+            "reviews": 0,
+            "points": 0
+          },
+          {
+            "date": "2026-11-11",
+            "state": "inactive",
+            "reviews": 0,
+            "points": 0
+          },
+          {
+            "date": "2026-11-12",
+            "state": "inactive",
+            "reviews": 0,
+            "points": 0
+          },
+          {
+            "date": "2026-11-13",
+            "state": "inactive",
+            "reviews": 0,
+            "points": 0
+          },
+          {
+            "date": "2026-11-14",
+            "state": "inactive",
+            "reviews": 0,
+            "points": 0
+          },
+          {
+            "date": "2026-11-15",
+            "state": "inactive",
+            "reviews": 0,
+            "points": 0
           }
         ],
         "daysActive": {
