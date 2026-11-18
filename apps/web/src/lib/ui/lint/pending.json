@@ -45,7 +45,6 @@
 		"routes/lookups/+page.svelte",
 		"routes/search/parts/+page.svelte",
 		"routes/settings/+page.svelte",
-		"routes/study/+page.svelte",
-		"routes/study/scheduling/+page.svelte"
+		"routes/study/+page.svelte"
 	]
 }

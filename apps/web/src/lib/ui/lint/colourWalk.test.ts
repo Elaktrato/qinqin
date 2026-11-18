@@ -41,7 +41,7 @@ const PENDING_LENGTH: Record<Rule, number> = {
 	caps: 7,
 	border: 16,
 	shadow: 5,
-	control: 5
+	control: 4
 };
 
 const LINTS: Record<'colour' | 'opacity', (src: string, kind: StyleKind) => Finding[]> = {

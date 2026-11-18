@@ -3,6 +3,7 @@
 	import { formatDate, formatNumber } from '$lib/i18n/format';
 	import type { Fit } from '$lib/study/fsrs/evaluate';
 	import type { ApplyCheck, Preview } from '$lib/study/fsrs/preview';
+	import { Button, Section } from '$lib/ui';
 
 	let {
 		preview,
@@ -35,8 +36,7 @@
 	const date = (iso: string): string => formatDate(iso);
 </script>
 
-<section aria-labelledby="preview-heading">
-	<h2 id="preview-heading">{t('flashcards.sched.preview')}</h2>
+<Section title={t('flashcards.sched.preview')}>
 	<p class="hint">
 		{t(source === 'imported' ? 'flashcards.sched.fitImported' : 'flashcards.sched.fitNew', {
 			before: loss(fit.current.logLoss),
@@ -77,21 +77,18 @@
 		<p role="status">{check.reason}</p>
 	{/if}
 	<div class="row">
-		<button type="button" disabled={busy || !check.ok || pending || error !== ''} onclick={onApply}>{t('flashcards.sched.apply')}</button>
-		<button type="button" disabled={busy} onclick={onDiscard}>{t('flashcards.sched.discard')}</button>
+		<Button variant="primary" disabled={busy || !check.ok || pending || error !== ''} onclick={onApply}
+			>{t('flashcards.sched.apply')}</Button
+		>
+		<Button disabled={busy} onclick={onDiscard}>{t('flashcards.sched.discard')}</Button>
 	</div>
-</section>
+</Section>
 
 <style>
 	.row {
 		display: flex;
-		gap: 0.75rem;
-	}
-
-	button {
-		min-height: 44px;
-		min-width: 44px;
-		padding: 0 1rem;
+		flex-wrap: wrap;
+		gap: var(--space-3);
 	}
 
 	.hint {
@@ -100,7 +97,7 @@
 
 	/* A warning: --text with the --warn bar as the cue. */
 	.warn {
-		font-weight: 600;
+		font-weight: var(--weight-medium);
 		padding-inline-start: var(--space-2);
 		border-inline-start: 3px solid var(--warn);
 	}
