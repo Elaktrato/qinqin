@@ -242,11 +242,17 @@
 </div>
 
 <style>
+	/* The single-hue mastery ramp (design §9): stage 0 is an outline, then
+	   the accent at 14 / 32 / 58 / 100 %. Shape cues (the bottom bar's
+	   length and the learned tick) repeat the stage without colour. Text is
+	   --text on 0–2 and --on-accent on 3–4 (the plan's ruling; the visual
+	   check measures the split per theme). */
 	.grid {
+		--cell-size: 34px;
 		display: grid;
-		grid-template-columns: repeat(auto-fill, minmax(2.6rem, 1fr));
-		gap: 0.25rem;
-		padding: 0.25rem 0 0.5rem;
+		grid-template-columns: repeat(auto-fill, var(--cell-size));
+		gap: 4px;
+		padding: var(--space-1) 0 var(--space-2);
 	}
 
 	.cell {
@@ -254,55 +260,47 @@
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		aspect-ratio: 1;
-		min-height: 2.4rem;
+		width: var(--cell-size);
+		height: var(--cell-size);
 		box-sizing: border-box;
-		border-radius: 0.3rem;
-		border: 1px solid var(--st-edge);
-		font-size: 1.2rem;
+		border: 1px solid transparent;
+		border-radius: calc(var(--radius) * 0.5);
+		font-size: 18px;
 		line-height: 1;
 		text-decoration: none;
 	}
 
 	.cell:focus-visible {
-		outline: 3px solid var(--st-focus);
-		outline-offset: 1px;
+		outline: var(--focus-ring);
+		outline-offset: var(--focus-ring-offset);
 		z-index: 1;
 	}
 
-	.cell:hover {
-		border-color: currentColor;
-	}
-
-	/* Not studied: neutral and dashed, so it never reads as "fresh". */
+	/* Not studied: an outline, no fill. */
 	.st-unknown {
-		background: var(--st-unknown-bg);
-		color: var(--st-unknown-fg);
-		border-style: dashed;
-		border-color: var(--st-unknown-edge);
+		background: transparent;
+		box-shadow: inset 0 0 0 1px var(--line);
+		color: var(--text);
 	}
 
 	.st-fresh {
-		background: var(--st-fresh-bg);
-		color: var(--st-fresh-fg);
+		background: var(--mastery-1);
+		color: var(--text);
 	}
 
 	.st-learning {
-		background: var(--st-learning-bg);
-		color: var(--st-learning-fg);
+		background: var(--mastery-2);
+		color: var(--text);
 	}
 
-	/* Mature: an inner accent ring on top of its fill (the map's legend). */
 	.st-mature {
-		background: var(--st-mature-bg);
-		color: var(--st-mature-fg);
-		box-shadow: inset 0 0 0 2px var(--accent);
+		background: var(--mastery-3);
+		color: var(--on-accent);
 	}
 
 	.st-learned {
-		background: var(--st-learned-bg);
-		color: var(--st-learned-fg);
-		border-color: var(--st-learned-fg);
+		background: var(--mastery-4);
+		color: var(--on-accent);
 	}
 
 	/* Started but not learned: a bar along the bottom whose length grows
@@ -342,7 +340,7 @@
 		width: 0.7rem;
 		height: 0.7rem;
 		border-top-right-radius: 0.25rem;
-		background: var(--st-learned-fg);
+		background: currentColor;
 		clip-path: polygon(0 0, 100% 0, 100% 100%);
 	}
 
@@ -353,7 +351,7 @@
 		right: 0.06rem;
 		width: 0.18rem;
 		height: 0.3rem;
-		border: solid var(--st-learned-bg);
+		border: solid var(--mastery-4);
 		border-width: 0 0.1rem 0.1rem 0;
 		transform: rotate(45deg);
 		z-index: 1;
@@ -366,17 +364,66 @@
 	@keyframes flash {
 		0%,
 		40% {
-			box-shadow: 0 0 0 4px var(--st-focus);
+			box-shadow: 0 0 0 4px var(--focus-colour);
 		}
 		100% {
 			box-shadow: 0 0 0 0 transparent;
 		}
 	}
 
+	@media (max-width: 719px) {
+		.grid {
+			--cell-size: 30px;
+		}
+		.cell {
+			font-size: 16px;
+		}
+	}
+
 	@media (prefers-reduced-motion: reduce) {
 		.cell:global(.flash) {
 			animation: none;
-			box-shadow: 0 0 0 3px var(--st-focus);
+			box-shadow: 0 0 0 3px var(--focus-colour);
+		}
+	}
+
+	/* Forced colours: fills carry no meaning; the border style does (a
+	   shape cue per stage), and the glyph stays CanvasText. */
+	@media (forced-colors: active) {
+		.cell {
+			background: Canvas;
+			color: CanvasText;
+			border-color: CanvasText;
+			box-shadow: none;
+		}
+		.st-unknown {
+			border-style: dotted;
+			border-width: 1px;
+		}
+		.st-fresh {
+			border-style: dashed;
+			border-width: 1px;
+		}
+		.st-learning {
+			border-style: solid;
+			border-width: 1px;
+		}
+		.st-mature {
+			border-style: solid;
+			border-width: 2px;
+		}
+		.st-learned {
+			border-style: double;
+			border-width: 3px;
+		}
+		.st-fresh::after,
+		.st-learning::after,
+		.st-mature::after,
+		.st-learned::after {
+			background: CanvasText;
+		}
+		.st-learned::before {
+			border-color: Canvas;
 		}
 	}
 </style>

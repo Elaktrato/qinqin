@@ -2442,6 +2442,7 @@
 	"stats.map.jumpFound": "{glyph} is in {section}.",
 	"stats.map.jumpMissing": "{glyph} is not in this map.",
 	"stats.map.learnedSummary": "{learned} of {total} learned ({percent} %)",
+	"stats.map.legend": "Stages",
 	"stats.map.loadFailed": "Could not load the character map.",
 	"stats.map.loading": "Loading the character map",
 	"stats.map.loadingLevels": "Loading the levels of this scheme…",
