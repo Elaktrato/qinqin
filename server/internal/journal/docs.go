@@ -46,6 +46,7 @@ type Annotation struct {
 	Correction  string `json:"correction"`
 	Explanation string `json:"explanation"`
 	Category    string `json:"category"`
+	Kind        string `json:"kind"`
 }
 
 // DropCounts says how many model annotations were discarded, and why.
