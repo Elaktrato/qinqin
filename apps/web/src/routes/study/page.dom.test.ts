@@ -12,7 +12,8 @@ vi.mock('$lib/api/characters', () => ({ fetchCharacters: vi.fn() }));
 vi.mock('$lib/api/frequency', () => ({ getFrequencyPacks: vi.fn(async () => []) }));
 vi.mock('$lib/study/store', async (importOriginal) => ({
 	...(await importOriginal<typeof import('$lib/study/store')>()),
-	loadStudyData: vi.fn()
+	loadStudyData: vi.fn(),
+	saveDeckCardTypesForDecks: vi.fn()
 }));
 vi.mock('$lib/components/CardManager.svelte', () => ({ default: () => ({}) }));
 vi.mock('$lib/time/zone', () => ({
@@ -26,7 +27,7 @@ import { getFrequencyPacks } from '$lib/api/frequency';
 import { goto } from '$app/navigation';
 import { fireEvent } from '@testing-library/svelte';
 import { fetchSchemeCharacters, getSchemeEntries, getSchemes } from '$lib/api/schemes';
-import { loadStudyData } from '$lib/study/store';
+import { loadStudyData, saveDeckCardTypesForDecks } from '$lib/study/store';
 import { studyDay } from '$lib/time/studyDay';
 import { currentStudyDay } from '$lib/time/zone';
 import { workspaces } from '$lib/workspaces';
@@ -102,6 +103,19 @@ describe('study setup, level sessions', () => {
 		expect(screen.getByLabelText('Scheme', { selector: 'select' }).closest('.field')).toBeTruthy();
 		expect(screen.getByLabelText('Level', { selector: 'select' }).closest('.field')).toBeTruthy();
 		expect(screen.getByLabelText('New cards').closest('.field')).toBeTruthy();
+	});
+
+	it('Study all starts a session that ignores the limits', async () => {
+		setup(charScheme, ['vocab']);
+		render(Page);
+		await screen.findByText(/characters in/);
+		const all = screen.getByRole('button', { name: 'Study all' });
+		expect((all as HTMLButtonElement).disabled).toBe(false);
+		await fireEvent.click(all);
+		await waitFor(() => expect(goto).toHaveBeenCalledWith('/study/session'));
+		const config = JSON.parse(sessionStorage.getItem(SESSION_CONFIG_KEY)!);
+		expect(config.studyAll).toBe(true);
+		expect(config.newLimit).toBe(20);
 	});
 
 	it('enables start for a character level with new items', async () => {
@@ -227,12 +241,14 @@ describe('study setup, reverse and cloze checkboxes', () => {
 	const box = (name: RegExp) =>
 		document.querySelector(`.types input[aria-describedby="type-${name.source}-info"]`) as HTMLInputElement | null;
 
-	it('shows no Reverse or Cloze checkbox when no selected deck enables them', async () => {
+	it('shows Reverse and Cloze once even when no deck enables them', async () => {
 		deckSetup();
 		render(Page);
 		await screen.findByText(/This session/);
-		expect(box(/reverse/)).toBeNull();
-		expect(box(/cloze/)).toBeNull();
+		expect(box(/reverse/)).not.toBeNull();
+		expect(box(/cloze/)).not.toBeNull();
+		expect(box(/reverse/)!.checked).toBe(false);
+		expect(box(/cloze/)!.checked).toBe(false);
 	});
 
 	it('shows the enabled kinds, checked by default', async () => {
@@ -241,7 +257,22 @@ describe('study setup, reverse and cloze checkboxes', () => {
 		render(Page);
 		await waitFor(() => expect(box(/reverse/)).not.toBeNull());
 		expect(box(/reverse/)!.checked).toBe(true);
-		expect(box(/cloze/)).toBeNull();
+		expect(box(/cloze/)!.checked).toBe(false);
+	});
+
+	it('the global Reverse checkbox enables it on every deck at once', async () => {
+		deckSetup();
+		withSettings([]);
+		vi.mocked(saveDeckCardTypesForDecks).mockResolvedValue({
+			general: { deckId: 'general', cardTypes: ['reverse'], extra: {} }
+		});
+		render(Page);
+		await waitFor(() => expect(box(/reverse/)).not.toBeNull());
+		await fireEvent.click(box(/reverse/)!);
+		await waitFor(() =>
+			expect(saveDeckCardTypesForDecks).toHaveBeenCalledWith(['general'], 'reverse', true)
+		);
+		expect(box(/reverse/)!.checked).toBe(true);
 	});
 
 	it('starts unchecked after the learner unchecked it before in this workspace', async () => {
@@ -279,6 +310,18 @@ describe('study start and the daily limits', () => {
 		setup(charScheme, ['vocab']);
 		render(Page);
 		expect((await screen.findByText(/^Today:/)).textContent).toBe('Today: 0 reviews and 3 new (daily limits applied)');
+	});
+
+	it('Study all stays available when the daily limits would stop a normal session', async () => {
+		setup(charScheme, ['vocab']);
+		vi.mocked(loadStudyData).mockResolvedValue({
+			decks: [], cards: [], reviews: [], merged: 0,
+			limits: { workspace: { new: 0, reviews: 0 }, decks: {} }
+		});
+		render(Page);
+		await screen.findByText(/characters in/);
+		expect((screen.getByRole('button', { name: /start studying/i }) as HTMLButtonElement).disabled).toBe(true);
+		expect((screen.getByRole('button', { name: 'Study all' }) as HTMLButtonElement).disabled).toBe(false);
 	});
 
 	it('caps the new cards by the workspace limit', async () => {

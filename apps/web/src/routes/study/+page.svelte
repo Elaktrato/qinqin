@@ -24,7 +24,7 @@
 		type ExtraChoices
 	} from '$lib/study/cardTypesMemory';
 	import DeckCardTypes from '$lib/study/DeckCardTypes.svelte';
-	import { enabledKinds, type DeckSettings } from '$lib/study/deckSettings';
+	import { cleanCardTypes, enabledKinds, type DeckSettings } from '$lib/study/deckSettings';
 	import { buriedLevelEntries, buriedNow } from '$lib/study/siblings';
 	import { DEFAULT_W } from '$lib/study/fsrs/params';
 	import {
@@ -41,6 +41,7 @@ import { vacationBanner, vacationStatus } from '$lib/settings/vacationForm';
 import { startTodayText } from '$lib/study/limitsText';
 import { limitsOf } from '$lib/study/scheduler';
 	import { currentStudyDay } from '$lib/time/zone';
+	import { STUDY_ALL_LIMIT } from '$lib/study/session';
 	import { hasStrokeData } from '$lib/study/strokeIndex';
 	import { getFrequencyPacks } from '$lib/api/frequency';
 	import type { FrequencyPack } from '$lib/api/types';
@@ -64,7 +65,8 @@ import { limitsOf } from '$lib/study/scheduler';
 		activeWeights,
 		deleteDeck,
 		loadStudyData,
-		renameDeck
+		renameDeck,
+		saveDeckCardTypesForDecks
 	} from '$lib/study/store';
 	import {
 		CARD_KINDS,
@@ -147,6 +149,10 @@ import { limitsOf } from '$lib/study/scheduler';
 	let schemeCharactersSeq = 0;
 	// The language's character rows (variants), the Stats map's universe.
 	let universeRows = $state.raw<CharRow[]>([]);
+
+	let advancedOpen = $state(false);
+	let typeSaving = $state<string | null>(null);
+	let typeError = $state('');
 
 	let deckName = $state('');
 	let creating = $state(false);
@@ -429,7 +435,7 @@ import { limitsOf } from '$lib/study/scheduler';
 		CARD_TYPES.filter(
 			(type) =>
 				(type.id !== 'tone' || isChinese(workspaceLanguage ?? '')) &&
-				(!isOptIn(type.id) || enabledOptIn.has(type.id as OptInKind))
+				(mode === 'decks' || !isOptIn(type.id))
 		)
 	);
 
@@ -480,6 +486,32 @@ import { limitsOf } from '$lib/study/scheduler';
 
 	const deckCounts = $derived({ due: deckPlan.due, fresh: deckPlan.fresh });
 
+	// What Study all would contain: the same plan without any daily limits.
+	const noLimitCtx = $derived({
+		...ctx,
+		limits: { ...ctx.limits, workspace: null, decks: {} }
+	});
+	const deckAllPlan = $derived.by(() => {
+		const empty = { due: 0, fresh: 0, byKind: { vocab: 0, sentence: 0, writing: 0, tone: 0, reverse: 0, cloze: 0 } };
+		if (selectedDeckIds.length === 0 || selectedKinds.length === 0) return empty;
+		const items = deckSessionItems({
+			cards,
+			reviews,
+			deckIds: selectedDeckIds,
+			kinds: selectedKinds,
+			newLimit: STUDY_ALL_LIMIT,
+			reviewLimit: STUDY_ALL_LIMIT,
+			now: new Date(),
+			w: weights,
+			language: workspaceLanguage ?? '',
+			deckSettings,
+			ctx: noLimitCtx,
+			skip: activeWorkspaceId === null ? undefined : loadIneligible(activeWorkspaceId)
+		});
+		return sessionCounts(items, reviews);
+	});
+	const deckAllCounts = $derived({ due: deckAllPlan.due, fresh: deckAllPlan.fresh });
+
 	// Planned companions are candidates, not promises: whether a word has
 	// a sentence, stroke data or a clean pinyin reading is only known when
 	// it comes up, and unsuitable words are skipped then.
@@ -523,6 +555,28 @@ import { limitsOf } from '$lib/study/scheduler';
 		});
 	});
 
+	const levelAllCounts = $derived.by(() => {
+		if (levelSelection === null || levelEntries.length === 0 || !levelUsable(levelUnit, levelKinds)) {
+			return { due: 0, fresh: 0, items: 0, unitLabel: levelUnit === 'character' ? 'characters' : 'words' } as const;
+		}
+		return levelPlanCounts({
+			entries: levelEntries,
+			cards,
+			reviews,
+			now: new Date(),
+			w: weights,
+			unit: levelUnit,
+			kinds: levelKinds,
+			ctx: noLimitCtx,
+			hasStrokes: hasStrokeData,
+			excludeEntries: buriedLevelEntries(
+				buriedNow({ cards, reviews, now: new Date(), studyDay: ctx.day }),
+				cards
+			),
+			skip: activeWorkspaceId === null ? undefined : loadIneligible(activeWorkspaceId)
+		});
+	});
+
 	// Selected types that have nothing to study: a warning, not a block,
 	// as long as another selected type has cards.
 	const typeWarnings = $derived.by((): string[] => {
@@ -537,6 +591,7 @@ import { limitsOf } from '$lib/study/scheduler';
 	});
 
 	const counts = $derived(mode === 'levels' ? levelCounts : deckCounts);
+	const allCounts = $derived(mode === 'levels' ? levelAllCounts : deckAllCounts);
 	const levelEntryTotal = $derived(levelEntryCount(levelEntries, levelUnit));
 	const levelNoun = $derived(
 		levelUnit === 'character'
@@ -608,6 +663,8 @@ import { limitsOf } from '$lib/study/scheduler';
 		return '';
 	});
 
+	const studyAllBlocked = $derived(starting || (guidance !== '' && allCounts.due + allCounts.fresh === 0));
+
 	function toggleDeck(id: string): void {
 		errors = [];
 		selectedDeckIds = selectedDeckIds.includes(id)
@@ -615,17 +672,63 @@ import { limitsOf } from '$lib/study/scheduler';
 			: [...selectedDeckIds, id];
 	}
 
-	function toggleCardType(id: string): void {
+	async function toggleCardType(id: string): Promise<void> {
 		errors = [];
+		typeError = '';
 		if (isOptIn(id)) {
-			const next = !extraKinds.includes(id as OptInKind);
-			extraChoices = { ...extraChoices, [id]: next };
-			if (activeWorkspaceId !== null) rememberExtraChoice(activeWorkspaceId, id as OptInKind, next);
+			const kind = id as OptInKind;
+			const next = !extraKinds.includes(kind);
+			const previousSettings = deckSettings;
+			const previousChoices = extraChoices;
+			// Optimistic: the checkbox and the counts follow the click at once.
+			const optimistic: Record<string, DeckSettings> = { ...deckSettings };
+			for (const deck of allDecks) {
+				const stored = optimistic[deck.id];
+				const current = cleanCardTypes(stored?.cardTypes ?? []);
+				optimistic[deck.id] = {
+					deckId: deck.id,
+					cardTypes: next ? cleanCardTypes([...current, kind]) : current.filter((value) => value !== kind),
+					...(stored?.newOrder ? { newOrder: stored.newOrder } : {}),
+					extra: stored?.extra ?? {}
+				};
+			}
+			deckSettings = optimistic;
+			extraChoices = { ...extraChoices, [kind]: next };
+			if (activeWorkspaceId !== null) rememberExtraChoice(activeWorkspaceId, kind, next);
+			typeSaving = id;
+			try {
+				const saved = await saveDeckCardTypesForDecks(
+					allDecks.map((deck) => deck.id),
+					kind,
+					next
+				);
+				deckSettings = { ...deckSettings, ...saved };
+			} catch (err) {
+				deckSettings = previousSettings;
+				extraChoices = previousChoices;
+				if (activeWorkspaceId !== null) rememberExtraChoice(activeWorkspaceId, kind, !next);
+				typeError = message(err, t('study.types.saveFailed'));
+			} finally {
+				typeSaving = null;
+			}
 			return;
 		}
 		cardTypes = cardTypes.includes(id)
 			? cardTypes.filter((type) => type !== id)
 			: [...cardTypes, id];
+	}
+
+	/** A per-deck switch under Advanced can enable a kind the global list shows. */
+	function deckTypesSaved(deckId: string, saved: DeckSettings): void {
+		deckSettings = { ...deckSettings, [deckId]: saved };
+		let next = extraChoices;
+		for (const kind of OPT_IN_KINDS) {
+			if (saved.cardTypes.includes(kind) && next[kind] !== true) {
+				next = { ...next, [kind]: true };
+				if (activeWorkspaceId !== null) rememberExtraChoice(activeWorkspaceId, kind, true);
+			}
+		}
+		extraChoices = next;
 	}
 
 	async function addDeck(event: SubmitEvent): Promise<void> {
@@ -733,8 +836,9 @@ import { limitsOf } from '$lib/study/scheduler';
 		mode = next;
 	}
 
-	function start(): void {
+	function start(studyAll = false): void {
 		const config: StudySessionConfig = {
+			...(studyAll ? { studyAll: true } : {}),
 			mode,
 			// Keep both modes' fields so switching back restores the
 			// selection; validateConfig reads only the active mode's.
@@ -788,6 +892,118 @@ import { limitsOf } from '$lib/study/scheduler';
 	{:else if loading}
 		<p class="hint" role="status">{t('study.guide.loading')}</p>
 	{:else}
+
+
+		<Section title={t('study.summary.title')} headingId="summary-heading">
+			{#if vacationText === null}
+				<p class="today">{startTodayText(counts.due, counts.fresh, noDailyLimit)}</p>
+			{/if}
+			{#if mode === 'levels'}
+				<p class="stats">
+					<strong>{levelEntryTotal}</strong>
+					{t('study.summary.levelIn', { noun: levelNoun })}
+					<strong>{selectedScheme?.name ?? t('study.summary.thisScheme')}</strong>
+					{levelSelection?.levelName ?? ''} ·
+					<strong>{counts.due}</strong>
+					{t('study.summary.dueDot')}
+					<strong>{counts.fresh}</strong>
+					{t('study.summary.new')}
+				</p>
+			{:else}
+				<p class="stats">
+					<strong>{selectedCards.length}</strong>
+					{t('study.summary.cardsIn', { count: selectedCards.length })}
+					<strong>{selectedDeckIds.length}</strong>
+					{t('study.summary.decksDot', { count: selectedDeckIds.length })}
+					<strong>{counts.due}</strong>
+					{t('study.summary.dueDot')}
+					<strong>{counts.fresh}</strong>
+					{t('study.summary.new')}
+				</p>
+				{#if plannedCompanions > 0}
+					<p class="hint">
+						{t('study.summary.companions', { count: plannedCompanions })}
+					</p>
+				{/if}
+			{/if}
+
+			{#if typeWarnings.length > 0}
+				<ul class="warnings" aria-label={t('study.summary.warnings')}>
+					{#each typeWarnings as warning (warning)}
+						<li>{warning}</li>
+					{/each}
+				</ul>
+			{/if}
+
+			{#if errors.length > 0}
+				<ul class="errors" role="alert">
+					{#each errors as error (error)}
+						<li>{error}</li>
+					{/each}
+				</ul>
+			{/if}
+
+			{#if vacationText === null}
+				<div class="start-actions">
+					<Button
+						variant="primary"
+						disabled={starting || guidance !== ''}
+						onclick={() => start()}
+					>
+						{starting ? t('study.summary.starting') : t('study.summary.start')}
+					</Button>
+					<Button variant="secondary" disabled={studyAllBlocked} onclick={() => start(true)}>
+						{t('study.summary.startAll')}
+					</Button>
+				</div>
+				<p class="hint">{t('study.summary.startAllHint')}</p>
+			{/if}
+
+			{#if guidance && vacationText === null}
+				<p class="hint" role="status">{guidance}</p>
+			{/if}
+		</Section>
+
+		<Section title={t('study.limitsSection.title')} headingId="limits-heading">
+			<p class="hint">{t('study.limitsSection.intro')}</p>
+
+			<div class="limits">
+				<Field
+					label={t('study.limitsSection.newCards')}
+					type="number"
+					min={1}
+					max={999}
+					step={1}
+					value={String(newLimit)}
+					oninput={(event) => (newLimit = Number(event.currentTarget.value))}
+				/>
+				<Field
+					label={t('study.limitsSection.reviews')}
+					type="number"
+					min={1}
+					max={999}
+					step={1}
+					value={String(reviewLimit)}
+					oninput={(event) => (reviewLimit = Number(event.currentTarget.value))}
+				/>
+			</div>
+			<Select
+				label={t('study.limitsSection.order')}
+				value={orderValue}
+				onchange={(event) => (newOrderValue = (event.currentTarget as HTMLSelectElement).value)}
+				options={orderView.choices.map((choice) => ({ value: choice.value, label: choice.label }))}
+			/>
+			{#if ordersMixed}
+				<p class="hint" role="status">{mixedNote()}</p>
+			{/if}
+			{#if orderView.hint !== null}
+				<p class="hint">{orderView.hint}</p>
+			{/if}
+			<p class="hint">
+				<a href="/study/scheduling">{t('study.limitsSection.scheduling', { label: schedulingLabel })}</a>
+			</p>
+		</Section>
+
 		<Section title={t('study.setup.source')} headingId="mode-heading">
 			<div class="modes" role="radiogroup" aria-labelledby="mode-heading">
 				<label class="inline">
@@ -863,14 +1079,6 @@ import { limitsOf } from '$lib/study/scheduler';
 										</Button>
 									</div>
 								{/if}
-								<div class="deck-types">
-									<DeckCardTypes
-										deckId={deck.id}
-										deckName={deck.name}
-										cardTypes={deckSettings[deck.id]?.cardTypes ?? []}
-										onSaved={(saved) => (deckSettings = { ...deckSettings, [deck.id]: saved })}
-									/>
-								</div>
 							{/if}
 						</li>
 					{/each}
@@ -931,45 +1139,6 @@ import { limitsOf } from '$lib/study/scheduler';
 			</Section>
 		{/if}
 
-		<Section title={t('study.limitsSection.title')} headingId="limits-heading">
-			<p class="hint">{t('study.limitsSection.intro')}</p>
-
-			<div class="limits">
-				<Field
-					label={t('study.limitsSection.newCards')}
-					type="number"
-					min={1}
-					max={999}
-					step={1}
-					value={String(newLimit)}
-					oninput={(event) => (newLimit = Number(event.currentTarget.value))}
-				/>
-				<Field
-					label={t('study.limitsSection.reviews')}
-					type="number"
-					min={1}
-					max={999}
-					step={1}
-					value={String(reviewLimit)}
-					oninput={(event) => (reviewLimit = Number(event.currentTarget.value))}
-				/>
-			</div>
-			<Select
-				label={t('study.limitsSection.order')}
-				value={orderValue}
-				onchange={(event) => (newOrderValue = (event.currentTarget as HTMLSelectElement).value)}
-				options={orderView.choices.map((choice) => ({ value: choice.value, label: choice.label }))}
-			/>
-			{#if ordersMixed}
-				<p class="hint" role="status">{mixedNote()}</p>
-			{/if}
-			{#if orderView.hint !== null}
-				<p class="hint">{orderView.hint}</p>
-			{/if}
-			<p class="hint">
-				<a href="/study/scheduling">{t('study.limitsSection.scheduling', { label: schedulingLabel })}</a>
-			</p>
-		</Section>
 
 		<Section title={t('study.types.title')} headingId="types-heading">
 
@@ -981,8 +1150,9 @@ import { limitsOf } from '$lib/study/scheduler';
 							<input
 								type="checkbox"
 								checked={isChecked(type.id)}
+								disabled={typeSaving !== null}
 								aria-describedby={`type-${type.id}-info`}
-								onchange={() => toggleCardType(type.id)}
+								onchange={() => void toggleCardType(type.id)}
 							/>
 							<span class="type-label">{type.label}</span>
 							<span class="type-info" id={`type-${type.id}-info`}>{TYPE_INFO[type.id]}</span>
@@ -990,67 +1160,38 @@ import { limitsOf } from '$lib/study/scheduler';
 					</li>
 				{/each}
 			</ul>
+			{#if typeError}
+				<p class="error" role="alert">{typeError}</p>
+			{/if}
 		</Section>
 
-		<Section title={t('study.summary.title')} headingId="summary-heading">
-			{#if vacationText === null}
-				<p class="today">{startTodayText(counts.due, counts.fresh, noDailyLimit)}</p>
-			{/if}
-			{#if mode === 'levels'}
-				<p class="stats">
-					<strong>{levelEntryTotal}</strong>
-					{t('study.summary.levelIn', { noun: levelNoun })}
-					<strong>{selectedScheme?.name ?? t('study.summary.thisScheme')}</strong>
-					{levelSelection?.levelName ?? ''} ·
-					<strong>{counts.due}</strong>
-					{t('study.summary.dueDot')}
-					<strong>{counts.fresh}</strong>
-					{t('study.summary.new')}
-				</p>
-			{:else}
-				<p class="stats">
-					<strong>{selectedCards.length}</strong>
-					{t('study.summary.cardsIn', { count: selectedCards.length })}
-					<strong>{selectedDeckIds.length}</strong>
-					{t('study.summary.decksDot', { count: selectedDeckIds.length })}
-					<strong>{counts.due}</strong>
-					{t('study.summary.dueDot')}
-					<strong>{counts.fresh}</strong>
-					{t('study.summary.new')}
-				</p>
-				{#if plannedCompanions > 0}
-					<p class="hint">
-						{t('study.summary.companions', { count: plannedCompanions })}
-					</p>
+		{#if mode === 'decks'}
+			<Section title={t('study.advanced.title')} headingId="advanced-heading">
+				<p class="hint">{t('study.advanced.intro')}</p>
+				<Button
+					variant="secondary"
+					icon={advancedOpen ? 'expand-down' : 'forward'}
+					aria-expanded={advancedOpen}
+					onclick={() => (advancedOpen = !advancedOpen)}
+				>{t('study.advanced.toggle')}</Button>
+				{#if advancedOpen}
+					<ul class="advanced-decks">
+						{#each allDecks as deck (deck.id)}
+							<li>
+								<span class="advanced-name">{deck.name}</span>
+								<DeckCardTypes
+									deckId={deck.id}
+									deckName={deck.name}
+									cardTypes={deckSettings[deck.id]?.cardTypes ?? []}
+									onSaved={(saved) => deckTypesSaved(deck.id, saved)}
+								/>
+							</li>
+						{/each}
+					</ul>
 				{/if}
-			{/if}
+			</Section>
+		{/if}
 
-			{#if typeWarnings.length > 0}
-				<ul class="warnings" aria-label={t('study.summary.warnings')}>
-					{#each typeWarnings as warning (warning)}
-						<li>{warning}</li>
-					{/each}
-				</ul>
-			{/if}
-
-			{#if errors.length > 0}
-				<ul class="errors" role="alert">
-					{#each errors as error (error)}
-						<li>{error}</li>
-					{/each}
-				</ul>
-			{/if}
-
-			{#if vacationText === null}
-				<Button variant="primary" disabled={starting || guidance !== ''} onclick={start}>
-					{starting ? t('study.summary.starting') : t('study.summary.start')}
-				</Button>
-			{/if}
-
-			{#if guidance && vacationText === null}
-				<p class="hint" role="status">{guidance}</p>
-			{/if}
-		</Section>
 	{/if}
 </div>
 
@@ -1068,6 +1209,30 @@ import { limitsOf } from '$lib/study/scheduler';
 	.types {
 		display: grid;
 		gap: var(--space-2);
+	}
+
+	.start-actions {
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--space-3);
+		align-items: center;
+	}
+
+	.advanced-decks {
+		list-style: none;
+		margin: var(--space-4) 0 0;
+		padding: 0;
+		display: grid;
+		gap: var(--space-3);
+	}
+
+	.advanced-decks li {
+		padding-top: var(--space-2);
+		border-top: 1px solid var(--hair);
+	}
+
+	.advanced-name {
+		font-weight: var(--weight-medium);
 	}
 
 	.inline,
@@ -1098,9 +1263,6 @@ import { limitsOf } from '$lib/study/scheduler';
 		border-top: 1px solid var(--hair);
 	}
 
-	.deck-types {
-		flex-basis: 100%;
-	}
 
 	.deck-actions {
 		display: flex;
