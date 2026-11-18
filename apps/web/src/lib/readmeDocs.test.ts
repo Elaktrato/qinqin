@@ -1,33 +1,13 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { mdAnchors as anchors } from './testing/mdAnchors';
 
 // Doc check for the README front page: its wiki links point at pages of docs/wiki (the wiki's source) and at
 // headings that exist there, its links into the repository resolve, and it stays a short front page.
 const root = resolve(__dirname, '../../../..');
 const readme = readFileSync(resolve(root, 'README.md'), 'utf8');
 const WIKI = 'https://github.com/Elaktrato/qinqin/wiki';
-
-/** GitHub's heading anchor: lower case, punctuation dropped, spaces to hyphens; repeats get -1, -2, ... */
-function anchors(md: string): Set<string> {
-	const out = new Set<string>();
-	const seen = new Map<string, number>();
-	let fence = false;
-	for (const line of md.split('\n')) {
-		if (/^\s*(```|~~~)/.test(line)) fence = !fence;
-		const m = !fence && /^#{1,6}\s+(.*?)\s*#*\s*$/.exec(line);
-		if (!m) continue;
-		const base = m[1]
-			.replace(/\[([^\]]*)\]\([^)]*\)/g, '$1')
-			.toLowerCase()
-			.replace(/[^\p{L}\p{N}\p{M} _-]/gu, '')
-			.replace(/ /g, '-');
-		const n = seen.get(base) ?? 0;
-		seen.set(base, n + 1);
-		out.add(n === 0 ? base : `${base}-${n}`);
-	}
-	return out;
-}
 
 const wikiLinks = [...readme.matchAll(/\]\((https:\/\/github\.com\/Elaktrato\/qinqin\/wiki[^)\s]*)\)/g)].map(
 	(m) => m[1]
@@ -68,7 +48,8 @@ describe('README.md', () => {
 		expect(readme).toContain('docs/sources.md');
 		expect(readme).toMatch(/Sources\*\* page/);
 		const hasLicence = ['LICENSE', 'LICENSE.md', 'LICENSE.txt', 'COPYING'].some((f) => existsSync(resolve(root, f)));
-		if (!hasLicence) expect(readme).toMatch(/no licence file/);
+		if (hasLicence) expect(readme).not.toMatch(/no licence file/);
+		else expect(readme).toMatch(/no licence file/);
 	});
 });
 
