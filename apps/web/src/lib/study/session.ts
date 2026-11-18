@@ -33,6 +33,8 @@ export interface StudySessionConfig {
 	 * own order (level order in a level session).
 	 */
 	newOrder?: SessionNewOrder;
+	/** Ignore the session and deck daily limits for this one session. */
+	studyAll?: boolean;
 }
 
 /** sessionNewOrder is the setup's order of new cards, 'deck' by default. */
@@ -67,6 +69,9 @@ export const DEFAULT_CONFIG: StudySessionConfig = {
 // The server and the scheduler both treat limits as small counts; a
 // four-digit limit is almost certainly a typo, not a study plan.
 const MAX_LIMIT = 999;
+
+/** The cap a study-all session uses in place of a person's limits. */
+export const STUDY_ALL_LIMIT = 1_000_000;
 
 function isRecord(value: unknown): value is Record<string, unknown> {
 	return typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -117,12 +122,14 @@ export function validateConfig(config: StudySessionConfig): string[] {
 		errors.push(t('study.config.selectDeck'));
 	}
 
-	if (!isPositiveLimit(config.newLimit)) {
-		errors.push(t('study.config.newLimit', { max: MAX_LIMIT }));
-	}
+	if (config.studyAll !== true) {
+		if (!isPositiveLimit(config.newLimit)) {
+			errors.push(t('study.config.newLimit', { max: MAX_LIMIT }));
+		}
 
-	if (!isPositiveLimit(config.reviewLimit)) {
-		errors.push(t('study.config.reviewLimit', { max: MAX_LIMIT }));
+		if (!isPositiveLimit(config.reviewLimit)) {
+			errors.push(t('study.config.reviewLimit', { max: MAX_LIMIT }));
+		}
 	}
 
 	if (
@@ -159,7 +166,7 @@ function parseConfig(raw: string): StudySessionConfig | null {
 	}
 
 	if (!isRecord(parsed)) return null;
-	const { mode, schemeId, levelName, deckIds, newLimit, reviewLimit, cardTypes, newOrder } = parsed;
+	const { mode, schemeId, levelName, deckIds, newLimit, reviewLimit, cardTypes, newOrder, studyAll } = parsed;
 	if (!isStringArray(deckIds) || !isStringArray(cardTypes)) return null;
 	if (typeof newLimit !== 'number' || typeof reviewLimit !== 'number') return null;
 
@@ -174,7 +181,8 @@ function parseConfig(raw: string): StudySessionConfig | null {
 		deckIds: [...deckIds],
 		newLimit,
 		reviewLimit,
-		cardTypes: [...cardTypes]
+		cardTypes: [...cardTypes],
+		...(studyAll === true ? { studyAll: true } : {})
 	};
 	// A missing or unreadable order is the deck setting; it never discards the setup.
 	const order = parseNewOrder(newOrder);
