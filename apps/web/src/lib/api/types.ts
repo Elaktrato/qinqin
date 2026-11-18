@@ -61,8 +61,8 @@ export interface SearchLevel {
 
 export interface SearchHit extends EntryBase {
 	source: string;
-	glosses: SearchGloss[];
-	levels: SearchLevel[];
+	glosses?: SearchGloss[];
+	levels?: SearchLevel[];
 }
 
 // EntryCharacter is one Han character of a word entry (#104).
@@ -101,7 +101,7 @@ export interface Entry extends EntryBase {
 	senses: SenseView[];
 	forms?: { text: string; flags: string[]; pri?: number }[];
 	senseGroups?: SenseGroup[];
-	characters: EntryCharacter[];
+	characters?: EntryCharacter[];
 }
 
 // EntryDetail is the full entry view returned by GET and PUT

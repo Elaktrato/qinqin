@@ -21,7 +21,7 @@ afterEach(cleanup);
 
 describe('ResultRow (#104)', () => {
 	it('is one link named by the word with reading, gloss and kind as its description', () => {
-		render(ResultRow, { hit, href: '/search?q=qin&e=7', selected: false, hidden: new Set() });
+		render(ResultRow, { hit, href: '/search?q=qin&e=7', selected: false, hidden: new Set<number>() });
 		const link = screen.getByRole('link', { name: '勤奋' });
 		const description = link.getAttribute('aria-describedby')!.split(' ').map((id) => document.getElementById(id)?.textContent).join(' ');
 		expect(description).toContain('qínfèn');
@@ -30,18 +30,18 @@ describe('ResultRow (#104)', () => {
 	});
 
 	it('carries the study lang on the word and the reading lang on the reading', () => {
-		render(ResultRow, { hit, href: '/search?e=7', selected: false, hidden: new Set() });
+		render(ResultRow, { hit, href: '/search?e=7', selected: false, hidden: new Set<number>() });
 		expect(screen.getByRole('link').querySelector('.word')?.getAttribute('lang')).toBe('zh-Hans');
 		expect(screen.getByRole('link').querySelector('.reading')?.getAttribute('lang')).toBe('zh-Latn-pinyin');
 	});
 
 	it('marks the selected row with aria-current', () => {
-		render(ResultRow, { hit, href: '/search?e=7', selected: true, hidden: new Set() });
+		render(ResultRow, { hit, href: '/search?e=7', selected: true, hidden: new Set<number>() });
 		expect(screen.getByRole('link').getAttribute('aria-current')).toBe('true');
 	});
 
 	it('hides a gloss whose dictionary is hidden', () => {
-		render(ResultRow, { hit, href: '/search?e=7', selected: false, hidden: new Set([1]) });
+		render(ResultRow, { hit, href: '/search?e=7', selected: false, hidden: new Set<number>([1]) });
 		expect(document.querySelector('.gloss')?.textContent).toBe('');
 	});
 
