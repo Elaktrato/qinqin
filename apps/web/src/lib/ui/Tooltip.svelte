@@ -112,6 +112,10 @@
 	.tooltip-anchor {
 		position: relative;
 		display: inline-flex;
+		/* As a grid item (the top bar's logo in its 1fr column) the anchor must
+		   shrink to its trigger: stretched, it would centre the tip on the whole
+		   column and show it for hovers beside the trigger. */
+		justify-self: start;
 	}
 	.tip {
 		position: absolute;

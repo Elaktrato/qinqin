@@ -5,7 +5,7 @@
 
 import type { FrequencyPack, Scheme } from '$lib/api/types';
 import type { LevelUnit } from './levelQueue';
-import { resolveSessionOrder, type NewOrder, type SessionNewOrder } from './newOrder';
+import { randomKey, resolveSessionOrder, type NewOrder, type ResolvedOrder, type SessionNewOrder } from './newOrder';
 import { mixedNote, offlineNote, resolveAvailableOrder } from './newOrderView';
 import type { RanksResult } from './frequencyRanks';
 import { isValidReview } from './scheduler';
@@ -31,6 +31,8 @@ export interface SessionKeyInput {
 	/** The entries whose items can be new (candidateNewEntries). */
 	newEntryIds: readonly number[];
 	online: boolean;
+	/** Fixes the shuffle of the random order for the whole session. */
+	seed: number;
 }
 
 export interface SessionKey {
@@ -43,8 +45,9 @@ export async function sessionNewKey(
 	input: SessionKeyInput,
 	deps: SessionKeyDeps
 ): Promise<SessionKey> {
-	let order: NewOrder;
+	let order: ResolvedOrder;
 	let note: string | null = null;
+	if (input.order === 'random') return { key: randomKey(input.seed), note: null };
 	if (input.mode === 'levels') {
 		// Level sessions keep level order unless the setup asks for frequency on words.
 		if (input.order === 'deck' || input.order.by !== 'frequency' || input.levelUnit !== 'word') {
@@ -56,6 +59,7 @@ export async function sessionNewKey(
 		if (resolved.mixed) note = mixedNote();
 		order = resolved.order;
 	}
+	if (order.by === 'random') return { key: randomKey(input.seed), note };
 	if (order.by === 'added') return { key: null, note };
 	if (!input.online) return { key: null, note: offlineNote() };
 	try {

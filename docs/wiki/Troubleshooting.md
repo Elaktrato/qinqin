@@ -21,6 +21,7 @@ Check the container log first (Portainer: Containers, `qinqin`, Logs; or `docker
 
 | Symptom | Cause and fix |
 |---|---|
+| Search finds nothing right after the first start, or the log says `auto-seed failed ...` | A fresh instance installs the bundled packs before it listens (about 2 minutes). A failed pack is retried at the next start; check `QINQIN_AUTO_SEED` is not `0`, or run `qinqin seed` ([Deploying](Admin-deploying#the-auto-seed-on-the-first-start)) |
 | "database is locked" during seed | Seed while the app is idle (5 s busy timeout) |
 | `seed: no packs ... under ...` | The pack roots are wrong. Under Docker the image's roots are set already; extra folders must be mounted and named in `--packs` ([Data packs on the server](Admin-data-packs)) |
 | `seed: data packages failed to build` | The lines above it name the package and the error; Settings → Data shows the same error under the pack |

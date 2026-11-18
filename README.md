@@ -79,12 +79,11 @@ Repository with compose path `docker-compose.yml`). In a folder holding that fil
 
 ```sh
 docker compose up -d
-docker compose exec qinqin qinqin seed
 docker compose exec qinqin qinqin adduser --admin --username you
 ```
 
-`seed` installs the bundled dictionaries, frequency and level lists (under a minute; run it while nobody uses
-the app). `adduser` asks for a password (10 to 256 characters, not the username). Then open
+The first start installs the bundled dictionaries, frequency and level lists, stroke data and audio by itself
+before it listens (about 2 minutes, once; `QINQIN_AUTO_SEED=0` turns that off). `adduser` asks for a password (10 to 256 characters, not the username). Then open
 <http://localhost:8080>.
 
 - **Create the admin before the port is reachable beyond your LAN.** While no user exists, the first

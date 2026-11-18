@@ -281,13 +281,15 @@ describe('newOrder in the setup (#75)', () => {
 		vi.unstubAllGlobals();
 	});
 
-	it('defaults to the deck setting', () => {
-		expect(sessionNewOrder(DEFAULT_CONFIG)).toBe('deck');
-		expect(sessionNewOrder(config())).toBe('deck');
+	it('defaults to random', () => {
+		expect(sessionNewOrder(DEFAULT_CONFIG)).toBe('random');
+		expect(sessionNewOrder(config())).toBe('random');
 	});
 
 	it('round-trips an explicit order', () => {
 		for (const newOrder of [
+			'deck',
+			'random',
 			{ by: 'frequency' },
 			{ by: 'added' },
 			{ by: 'level', packId: 'hsk-words' }
@@ -298,18 +300,25 @@ describe('newOrder in the setup (#75)', () => {
 		}
 	});
 
-	it("an old setup without the field still loads, as 'deck'", () => {
+	it("an old setup without the field still loads, as random", () => {
 		sessionStorage.setItem(SESSION_CONFIG_KEY, JSON.stringify(config()));
 		expect(loadConfig()).toEqual(config());
-		expect(sessionNewOrder(loadConfig())).toBe('deck');
+		expect(sessionNewOrder(loadConfig())).toBe('random');
 	});
 
-	it("a stored 'deck' or a malformed order loads as 'deck' and keeps the setup", () => {
-		for (const newOrder of ['deck', { by: 'level' }, 'frequency', 7]) {
+	it('keeps the seed that fixes the shuffle of a started session', () => {
+		saveConfig(config({ seed: 123456 }));
+		expect(loadConfig().seed).toBe(123456);
+		sessionStorage.setItem(SESSION_CONFIG_KEY, JSON.stringify({ ...config(), seed: 'x' }));
+		expect(loadConfig().seed).toBeUndefined();
+	});
+
+	it("a malformed order loads as random and keeps the setup", () => {
+		for (const newOrder of [{ by: 'level' }, 'frequency', 7]) {
 			sessionStorage.setItem(SESSION_CONFIG_KEY, JSON.stringify({ ...config({ newLimit: 7 }), newOrder }));
 			const loaded = loadConfig();
 			expect(loaded.newLimit).toBe(7);
-			expect(sessionNewOrder(loaded)).toBe('deck');
+			expect(sessionNewOrder(loaded)).toBe('random');
 		}
 	});
 });

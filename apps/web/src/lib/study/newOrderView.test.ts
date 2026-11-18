@@ -58,6 +58,7 @@ describe('encode and decode', () => {
 	it('round-trips every order', () => {
 		for (const o of [
 			'deck',
+			'random',
 			{ by: 'added' },
 			{ by: 'frequency' },
 			{ by: 'level', packId: 'hsk-words' }
@@ -86,6 +87,7 @@ describe('sessionOrderChoices', () => {
 			schemes: [jlptKanji, hskWords, jlptWords]
 		});
 		expect(choices).toEqual([
+			{ value: 'random', label: 'Random' },
 			{ value: 'deck', label: 'As each deck is set' },
 			{ value: 'added', label: 'In the order added' },
 			{ value: 'frequency', label: 'Most frequent first (Jiten frequency list)' },
@@ -102,7 +104,7 @@ describe('sessionOrderChoices', () => {
 			packs: [zhPack],
 			schemes: []
 		});
-		expect(choices.map((c) => c.value)).toEqual(['deck', 'added']);
+		expect(choices.map((c) => c.value)).toEqual(['random', 'deck', 'added']);
 		expect(hint).toBe(
 			'No frequency list is installed for Japanese. An administrator can add one in Settings, Data; see Data and licences.'
 		);
@@ -119,6 +121,7 @@ describe('sessionOrderChoices', () => {
 				levelScheme: jlptWords
 			}).choices
 		).toEqual([
+			{ value: 'random', label: 'Random within the level' },
 			{ value: 'deck', label: 'Level order' },
 			{ value: 'frequency', label: 'Most frequent first (Jiten frequency list)' }
 		]);
@@ -129,7 +132,10 @@ describe('sessionOrderChoices', () => {
 			schemes: [],
 			levelScheme: jlptKanji
 		});
-		expect(kanji.choices).toEqual([{ value: 'deck', label: 'Level order' }]);
+		expect(kanji.choices).toEqual([
+			{ value: 'random', label: 'Random within the level' },
+			{ value: 'deck', label: 'Level order' }
+		]);
 		expect(kanji.hint).toBeNull();
 		const none = sessionOrderChoices({
 			mode: 'levels',
@@ -138,7 +144,7 @@ describe('sessionOrderChoices', () => {
 			schemes: [],
 			levelScheme: jlptWords
 		});
-		expect(none.choices.map((c) => c.value)).toEqual(['deck']);
+		expect(none.choices.map((c) => c.value)).toEqual(['random', 'deck']);
 		expect(none.hint).toContain('No frequency list is installed for Japanese.');
 	});
 });
