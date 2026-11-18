@@ -102,6 +102,7 @@ describe('FlashcardsWidget goal ring', () => {
 			payload: { cardId: `c${i}`, mode: 'vocab', grade: 3 }
 		}));
 		vi.mocked(loadStudyHistory).mockResolvedValue({ decks: [], cards: [], reviews, merged: 0 });
+		vi.mocked(loadGoalStatus).mockResolvedValue(NO_GOAL);
 		const total = xpFromReviews(reviews, currentStudyDay().dayOf);
 		const progress = levelProgress(total);
 		expect(progress).toEqual({ level: 3, xpInto: 200, xpForNext: 300 });
