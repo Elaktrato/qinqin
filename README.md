@@ -54,7 +54,8 @@ database with a SvelteKit single-page app embedded in the binary.
   Flashcards and the reader are part of the app (not plugins since v0.4.0); each
   user can switch either off for themselves in **Settings → Features**.
 - **Decks, limits and vacation** — a decks view with per-deck numbers (studied,
-  mastered, due, 30-day reviews, retention) and copies of level decks; starter decks
+  mastered, due, 30-day reviews, retention), one-click **Add** copies in the level and
+  starter deck dropdowns, and starter decks
   (Top 500/1000/2000 of an installed frequency list, known words skipped) and a
   per-deck and per-session order for new cards (added, most frequent first, by level); optional
   reverse and cloze cards per deck; daily limits for new cards and reviews (per
@@ -1147,9 +1148,10 @@ under 21 days.
 as read-only level decks, collapsed by scheme. A level shows how many of its words are
 already in your decks, can be studied as a level session, and can be copied with **Add to
 my decks**: into a new deck of your own (named like the level, with a fixed id so adding
-again never makes a second one) or into a deck you pick. Adding again only adds what is
-new; words you already have join the deck without losing their history. Rules and test
-vectors for other clients: `docs/contracts/decks/`.
+again never makes a second one) or into a deck you pick. The expanded level's **Add** in
+the overview does the new-deck copy in one click; once it exists it shows **Open my copy**.
+Adding again only adds what is new; words you already have join the deck without losing
+their history. Rules and test vectors for other clients: `docs/contracts/decks/`.
 
 Sentence, writing and tone cards are **companions** of the vocab cards in the
 chosen decks. They are planned as virtual cards that share the new-card limit, and
