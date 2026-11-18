@@ -25,10 +25,12 @@ database with a SvelteKit single-page app embedded in the binary.
   language into several named workspaces; each has its own flag, decks, library
   and statistics (see [Workspaces](#workspaces)).
 - **Themes** — Settings → Appearance picks a light and a dark colour theme
-  (Catppuccin, Rosé Pine, Nord, Gruvbox, Dracula, Solarized, Tokyo Night,
-  Everforest, Kanagawa built in; more as `theme` packs), an accent, corners,
+  (qinqin Day, Night and Deep plus the Neon, Pigments and Pop extras, then
+  Catppuccin, Rosé Pine, Nord, Gruvbox, Dracula, Solarized, Tokyo Night,
+  Everforest and Kanagawa built in; more as `theme` packs), an accent, corners,
   spacing and the hanzi font; saved to your account and following the device's
-  light/dark setting (rules: `docs/contracts/themes/`).
+  light/dark setting (rules: `docs/contracts/themes/`). qinqin Day and Night
+  are the defaults for a fresh account and the offline first paint.
 - **Search** — across written forms, readings, and meanings, scoped to the
   current workspace language.
 - **Radical and part lookup** — in Chinese and Japanese workspaces, find a
@@ -1341,7 +1343,7 @@ All library and source routes need a signed-in user, and so does
 | `GET /api/packages?languages=` | Signed-in (tokens allowed). The data package catalogue (`docs/contracts/packages/`): the packages of the caller's workspace languages, or `languages=zh,ja` / `all`, with revision, content hash, file SHA-256, size, state, licences and sources; `ETag`/`If-None-Match`. A build error is shown to an administrator's own session only |
 | `GET /api/packages/{id}/{revision}` | Signed-in (tokens allowed). One package file (a zip with `manifest.json`, `NOTICE.md`, `LICENSES/`, `data.sqlite`); `Range`/`If-Range` resume it; served `private, no-cache` with the file's `ETag` (304 on revalidation) and `nosniff`. 404 `package_not_found`, 410 `package_revision_gone` (replaced and purged after 7 days), 429 `download_busy` with `Retry-After` (at most 2 downloads per user at a time) |
 | `GET /api/stroke-packs` | Public. The installed stroke-order packs with `packId`, `name`, `version`, `languages`, `license`, `attribution`, `notice` (the Sources page lists them) |
-| `GET /api/themes` | Public, no user data (read tokens allowed). Every colour theme with its colours and every theme pack's credits: `{themes: [{id, name, family, scheme, colors, accents, defaultAccent, packId, builtin}], packs: [{packId, name, version, license, attribution, notice, builtin, themes}]}` — the built-in packs (Catppuccin, Rosé Pine, Nord, Gruvbox, Dracula, Solarized, Tokyo Night, Everforest, Kanagawa) first, then installed theme packs; strong `ETag`, `no-cache`, 304 on `If-None-Match`; contract `docs/contracts/themes/` |
+| `GET /api/themes` | Public, no user data (read tokens allowed). Every colour theme with its colours and every theme pack's credits: `{themes: [{id, name, family, scheme, colors, accents, defaultAccent, packId, builtin}], packs: [{packId, name, version, license, attribution, notice, builtin, themes}]}` — the built-in packs (qinqin, qinqin extras, Catppuccin, Rosé Pine, Nord, Gruvbox, Dracula, Solarized, Tokyo Night, Everforest, Kanagawa) first, then installed theme packs; strong `ETag`, `no-cache`, 304 on `If-None-Match`; contract `docs/contracts/themes/` |
 | `GET /api/fonts` | Signed in (read tokens of any workspace allowed); the same answer for every user. The faces of the installed font packs with their WOFF2 slices and the packs' credits: `{faces: [{packId, face, script, original, weight, style, license, attribution, slices: [{url, unicodeRange}]}], packs: [{packId, name, version, license, attribution, notice}]}`; empty lists when none is installed; strong `ETag`, `no-cache`, 304 on `If-None-Match`; contract `docs/contracts/fonts/` |
 | `GET /fonts/<sha256>.woff2` | Public, no token. One slice of an installed font pack, byte for byte (`font/woff2`, `public, max-age=31536000, immutable`, `nosniff`, Range requests); 404 for anything that is not a slice of an installed pack |
 | `GET /hanzi/U<HEX>.json` | Public. The stroke-order data of one character from the installed strokes pack, byte for byte (`public, max-age=86400`, `ETag`, `nosniff`); 404 when no pack has it |

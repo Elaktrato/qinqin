@@ -155,8 +155,8 @@ values. The person's adjustments scale two of them: `--radius` (corners: 4 / 10 
 
 The web paints `color-scheme` and `data-scheme` on `<html>` from the theme's `scheme`, and the browser bar
 colour (`<meta name="theme-color">`) from `chrome`. Before anything loads it paints this device's last tokens
-(`localStorage` `qinqin.theme.last.v1`: both slots, so `system` still follows the device), else Catppuccin Latte or
-Mocha compiled in (`apps/web/src/lib/theme/fallback.ts`, pinned to the built-in pack).
+(`localStorage` `qinqin.theme.last.v1`: both slots, so `system` still follows the device), else qinqin Day or
+Night compiled in (`apps/web/src/lib/theme/fallback.ts`, pinned to the built-in pack).
 
 Ruling: the last tokens are kept per device, not per user — the frame paints before the user is known — cost: a
 second account on the same browser sees the first account's theme for a moment at start.
@@ -223,8 +223,8 @@ server stores it like any plugin row and never validates it.
 
 ```json
 { "version": 1, "mode": "system",
-  "light": { "theme": "catppuccin-latte", "accent": "mauve" },
-  "dark":  { "theme": "catppuccin-mocha", "accent": "mauve" },
+  "light": { "theme": "qinqin-day", "accent": "azure" },
+  "dark":  { "theme": "qinqin-night", "accent": "cyan" },
   "corners": "soft", "spacing": "comfortable", "hanziFont": "sans" }
 ```
 
@@ -261,13 +261,13 @@ present and of the expected scheme — cost: none.
 Public (no session needed; a read token is allowed), the same answer for everyone, small:
 
 ```json
-{ "themes": [ { "id": "catppuccin-latte", "name": "Latte", "family": "Catppuccin", "scheme": "light",
-                "colors": { "chrome": "#dce0e8", "...": "..." }, "accents": { "mauve": "#8839ef", "...": "..." },
-                "defaultAccent": "mauve", "packId": "catppuccin", "builtin": true } ],
-  "packs":  [ { "packId": "catppuccin", "name": "Catppuccin", "version": "1.0", "license": "MIT",
-                "attribution": "© 2021 Catppuccin (catppuccin/palette)", "notice": "...",
-                "licenseText": "MIT License\n\nCopyright (c) 2021 Catppuccin\n...", "builtin": true,
-                "themes": ["catppuccin-latte", "catppuccin-frappe", "catppuccin-macchiato", "catppuccin-mocha"] } ] }
+{ "themes": [ { "id": "qinqin-day", "name": "qinqin Day", "family": "qinqin", "scheme": "light",
+                "colors": { "chrome": "#e3f4fa", "...": "..." }, "accents": { "azure": "#0077b3", "...": "..." },
+                "defaultAccent": "azure", "packId": "qinqin", "builtin": true } ],
+  "packs":  [ { "packId": "qinqin", "name": "qinqin", "version": "1.0", "license": "MIT",
+                "attribution": "© 2026 qinqin", "notice": "...",
+                "licenseText": "MIT License\n\nCopyright (c) 2026 qinqin\n...", "builtin": true,
+                "themes": ["qinqin-day", "qinqin-night", "qinqin-deep"] } ] }
 ```
 
 - Built-in packs first in their fixed order (`themes-api.json`), then the installed packs by name, then pack id;
@@ -280,7 +280,7 @@ Public (no session needed; a read token is allowed), the same answer for everyon
   that no longer parses is skipped (logged), never a 500.
 - `ETag` (strong) and `Cache-Control: no-cache`: clients revalidate with `If-None-Match` and get `304`. The web's
   service worker keeps it per credential like its other reads (`pwa/`); the web also keeps the last applied
-  tokens on the device for the first paint and compiles Catppuccin Latte and Mocha in as the fallback.
+  tokens on the device for the first paint and compiles qinqin Day and Night in as the fallback.
 
 Ruling: public, not signed-in only — the sign-in page paints with a theme, the Sources page credits the packs
 without a session (like every other pack list), and the answer holds nothing personal — cost: anyone can see
@@ -290,7 +290,9 @@ which theme packs an administrator installed.
 
 Embedded in the server binary (`server/internal/themes/builtin/<pack>/`), always present, never stored, never
 uninstalled; an uploaded pack may not use a built-in pack id or theme id (`400 invalid pack`). Order (pinned by
-`themes-api.json` `builtinPacks`): `catppuccin` (`catppuccin-latte`, `catppuccin-frappe`, `catppuccin-macchiato`,
+`themes-api.json` `builtinPacks`): `qinqin` (`qinqin-day`, `qinqin-night`, `qinqin-deep`), `qinqin-extras`
+(`qinqin-neon-light`, `qinqin-neon-dark`, `qinqin-pigment-light`, `qinqin-pigment-dark`, `qinqin-pop-light`,
+`qinqin-pop-dark`), `catppuccin` (`catppuccin-latte`, `catppuccin-frappe`, `catppuccin-macchiato`,
 `catppuccin-mocha`), `rose-pine` (`rose-pine`, `rose-pine-moon`, `rose-pine-dawn`), `nord`, `gruvbox`, `dracula`,
 `solarized` (`solarized-light`, `solarized-dark`), `tokyo-night`, `everforest` (`everforest-dark`), `kanagawa`
 (`kanagawa-wave`). Licences, sources and the two corrections of mockup values: `docs/sources.md`, "Themes". Every
@@ -301,10 +303,11 @@ accents), Rosé Pine Moon (muted on panel 4.46, on raised 3.61), Rosé Pine Dawn
 accents), Dracula (muted 3.03 / 3.36, on raised 1.94), Nord (`bad` 3.05, muted on raised 4.46), Gruvbox (`bad` 4.29,
 muted on raised 4.17), Solarized Light (text on chrome 4.39, muted, `bad` 4.29, a grade, three accents), Solarized
 Dark (muted on chrome and raised 4.11, `bad` 3.25), Catppuccin Frappé, Everforest and Kanagawa (muted on raised
-4.26, 4.44, 4.34).
+4.26, 4.44, 4.34). All nine house themes (`qinqin` and `qinqin-extras`) pass every check of the review, with no
+pair below its minimum (measured 2026-11-18).
 
-The default pair is `catppuccin-latte` (light) and `catppuccin-mocha` (dark) until a qinqin house theme exists
-(design §10, #108).
+The default pair is `qinqin-day` (light, accent `azure`) and `qinqin-night` (dark, accent `cyan`); a fresh account
+and the offline first paint use it (design §7a, issue #108). An account that stored an explicit theme keeps it.
 
 ## Android
 

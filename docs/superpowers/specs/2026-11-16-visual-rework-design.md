@@ -29,7 +29,7 @@ Non-goals
 - No change to what features do; this is look, layout and navigation only (plus the small data additions in §9).
 - No new CSS framework or UI kit.
 - The flower, level and day-marker drawings: the owner draws them (issue, §11). Until then they are left out.
-- The qinqin house theme is designed separately (§7a, issue #108).
+- The qinqin house theme and the extra house themes are designed in §7a (issue #108).
 
 Anti-goals (would make this a failure even if it works)
 - A heavy, blocky look: filled boxes everywhere, pills with borders, bold everything. The owner explicitly asked
