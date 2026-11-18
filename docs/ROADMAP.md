@@ -69,6 +69,34 @@ Direction: `docs/superpowers/directions/2026-11-16-v0.4.0-prep.md`; takeover bri
 - Done: ~~[#94](https://github.com/Elaktrato/qinqin/issues/94) weekly milestones~~ (`docs/contracts/milestones/`, stored seen state as `milestone:<id>` rows).
 - Done: ~~[#73](https://github.com/Elaktrato/qinqin/issues/73) translatable interface~~ (English complete, per-user language, `docs/contracts/i18n/`, wiki `Translating-qinqin.md`).
 
+## v0.5.0 — visual rework (web) — done on develop
+
+Design: `docs/superpowers/specs/2026-11-16-visual-rework-design.md`; mockups:
+`docs/superpowers/specs/assets/2026-11-16-visual-rework-mockups.html`; epic
+[#95](https://github.com/Elaktrato/qinqin/issues/95).
+
+- Done: [#96](https://github.com/Elaktrato/qinqin/issues/96) theme packs and appearance,
+  [#97](https://github.com/Elaktrato/qinqin/issues/97) interface font and CJK font packs,
+  [#98](https://github.com/Elaktrato/qinqin/issues/98) base components and design rules,
+  [#99](https://github.com/Elaktrato/qinqin/issues/99) frame and phone drawer,
+  [#100](https://github.com/Elaktrato/qinqin/issues/100) Home and the heatmap layouts,
+  [#101](https://github.com/Elaktrato/qinqin/issues/101) flashcards,
+  [#102](https://github.com/Elaktrato/qinqin/issues/102) reader,
+  [#103](https://github.com/Elaktrato/qinqin/issues/103) journal,
+  [#104](https://github.com/Elaktrato/qinqin/issues/104) search and the entry page,
+  [#105](https://github.com/Elaktrato/qinqin/issues/105) stats,
+  [#106](https://github.com/Elaktrato/qinqin/issues/106) the remaining pages, and
+  [#108](https://github.com/Elaktrato/qinqin/issues/108) the qinqin house themes.
+- Owner follow-ups of 2026-11-18 are in: Settings tabs wrap instead of showing a scrollbar;
+  Search leads the frame menu (after Home); Stats → Characters has a **Level** filter
+  (all levels or one installed level scheme's level, remembered per workspace, with its own
+  "X of Y learned" count).
+- Open: [#107](https://github.com/Elaktrato/qinqin/issues/107) the owner's lotus stages, level
+  badges and day markers. #95 closes when those drawings land.
+- Owner checks: every page at 360 and 1440 px in light and dark and in at least three themes;
+  the qinqin Day, Night and Deep themes on a real device; a real screen reader, touch and
+  200 % zoom pass.
+
 ## v0.4.0 — Android client (milestone)
 
 Native Kotlin (Jetpack Compose, Room), Android only — replaces the earlier Flutter plan.
