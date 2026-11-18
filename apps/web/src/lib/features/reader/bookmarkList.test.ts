@@ -286,6 +286,8 @@ describe('bookmarkKey', () => {
 			'[role="listbox"]',
 			'[role="menu"]',
 			'[role="dialog"]',
+			// The shared Sheet/Dialog are native <dialog>s (implicit role).
+			'dialog',
 			'[aria-haspopup][aria-expanded="true"]'
 		]) {
 			expect(inWidget(inside(part), noDoc), part).toBe(true);
@@ -306,8 +308,14 @@ describe('bookmarkKey', () => {
 			querySelector: (sel: string) =>
 				sel.split(',').some((s) => s.trim() === '[role="listbox"]') ? {} : null
 		};
+		const openDialog = {
+			querySelector: (sel: string) =>
+				sel.split(',').some((s) => s.trim() === 'dialog[open]') ? {} : null
+		};
 		expect(inWidget(outside, openMenu)).toBe(true);
 		expect(inWidget(null, openListbox)).toBe(true);
+		// A modal sheet owns the keys with focus anywhere.
+		expect(inWidget(outside, openDialog)).toBe(true);
 		expect(inWidget(outside, { querySelector: () => null })).toBe(false);
 		expect(inWidget(outside, null)).toBe(false);
 	});

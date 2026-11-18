@@ -472,6 +472,7 @@ describe('BookView lookup sheet (#102)', () => {
 		vi.mocked(addHighlight).mockImplementation(async (bookId: number, h: object) => ({
 			id: 88, bookId, ...h, note: '', createdAt: '', updatedAt: ''
 		}) as never);
+		vi.mocked(addBookmark).mockClear();
 	});
 	afterEach(() => setWidth(1024));
 
@@ -485,6 +486,21 @@ describe('BookView lookup sheet (#102)', () => {
 		await fireEvent.pointerDown(document.body, { button: 0 });
 		await fireEvent.pointerUp(window, { button: 0 });
 	}
+
+	it('b and h do nothing inside the lookup sheet', async () => {
+		setWidth(700);
+		render(BookView, { id: 1, chapter: 0 });
+		await waitFor(() => expect(document.querySelector('p[data-p="0"]')).toBeTruthy());
+		await selectFirstTwo();
+		const sheet = await screen.findByRole('dialog', { name: /Dictionary:/ }, { timeout: 2000 });
+		const close = within(sheet).getByRole('button', { name: 'Close' });
+		close.focus();
+		await fireEvent.keyDown(close, { key: 'b' });
+		await fireEvent.keyDown(close, { key: 'h' });
+		await new Promise((r) => setTimeout(r, 20));
+		expect(addBookmark).not.toHaveBeenCalled();
+		expect(addHighlight).not.toHaveBeenCalled();
+	});
 
 	it("closing the lookup sheet returns focus to the word's paragraph", async () => {
 		setWidth(700);
@@ -570,6 +586,33 @@ describe('BookView shortcuts and focus across the new layout (#102)', () => {
 		const root = document.querySelector('.chapter-text')!;
 		await fireEvent.keyDown(window, { key: 'R' });
 		expect(root.classList.contains('show-all')).toBe(true);
+	});
+
+	it('b, h and R do nothing while the rail sheet owns the keys', async () => {
+		setWidth(800);
+		render(BookView, { id: 1, chapter: 0 });
+		await ready();
+		// A stale selection: without the guard, `h` would act on it behind the modal.
+		// (Smart readings wrap the run in <ruby>, so select its base text.)
+		await waitFor(() => expect(document.querySelector('p[data-p="0"] ruby.gen')).toBeTruthy());
+		const text = document.querySelector('p[data-p="0"] ruby.gen')!.firstChild!;
+		const range = document.createRange();
+		range.setStart(text, 0);
+		range.setEnd(text, 2);
+		window.getSelection()!.removeAllRanges();
+		window.getSelection()!.addRange(range);
+		await fireEvent.click(screen.getByRole('button', { name: RAIL_BUTTON }));
+		const sheet = screen.getByRole('dialog', { name: 'Book tools' });
+		const close = within(sheet).getByRole('button', { name: 'Close' });
+		close.focus();
+		await fireEvent.keyDown(close, { key: 'b' });
+		await fireEvent.keyDown(close, { key: 'h' });
+		await fireEvent.keyDown(close, { key: 'R' });
+		await tick();
+		await new Promise((r) => setTimeout(r, 20));
+		expect(addBookmark).not.toHaveBeenCalled();
+		expect(addHighlight).not.toHaveBeenCalled();
+		expect(document.querySelector('.chapter-text')!.classList.contains('show-all')).toBe(false);
 	});
 
 	it('the rail sheet repeats the bookmark announcement inside the dialog', async () => {

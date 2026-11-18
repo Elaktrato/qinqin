@@ -210,11 +210,15 @@ export function isTextEntry(
 	return !NON_TEXT_INPUTS.has((el.type ?? '').toLowerCase());
 }
 
-/** Focus inside these (or on the trigger of an open one) means a widget owns the keys. */
+/**
+ * Focus inside these (or on the trigger of an open one) means a widget owns
+ * the keys. `dialog` catches the native <dialog> of the shared Sheet (and the
+ * journal's): it has an implicit role, not `role="dialog"`.
+ */
 export const WIDGET_SELECTOR =
-	'[role="listbox"], [role="menu"], [role="dialog"], [aria-haspopup][aria-expanded="true"]';
-/** These are rendered only while open (workspace picker, deck menu). */
-export const OPEN_WIDGET_SELECTOR = '[role="listbox"], [role="menu"]';
+	'[role="listbox"], [role="menu"], [role="dialog"], dialog, [aria-haspopup][aria-expanded="true"]';
+/** These are rendered only while open (workspace picker, deck menu) or modal (an open <dialog>). */
+export const OPEN_WIDGET_SELECTOR = '[role="listbox"], [role="menu"], dialog[open]';
 
 /**
  * inWidget: a listbox, menu or dialog has focus (the key event's target is
