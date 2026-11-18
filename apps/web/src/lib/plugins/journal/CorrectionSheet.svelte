@@ -59,17 +59,18 @@
 	}
 
 	function close(): void {
-		const id = lastId;
 		sheetOpen = false;
 		onclose();
-		queueMicrotask(() => {
-			if (id !== null) document.getElementById(`mark-${id}`)?.focus();
-		});
+	}
+
+	// The modal action focuses this after the sheet is gone.
+	function returnFocus(): HTMLElement | null {
+		return lastId === null ? null : document.getElementById(`mark-${lastId}`);
 	}
 </script>
 
 {#if mode === 'ideas' || current !== null}
-	<Sheet bind:open={sheetOpen} {label} onclose={close} onnext={() => page(1)} onprev={() => page(-1)}>
+	<Sheet bind:open={sheetOpen} {label} onclose={close} {returnFocus} onnext={() => page(1)} onprev={() => page(-1)}>
 		{#if mode === 'ideas' && workspaceId !== undefined && gate !== undefined && onstart !== undefined}
 			<IdeasPanel {workspaceId} {gate} {onstart} title={t('journal.list.ideasToday')} />
 		{:else if current !== null}

@@ -1219,7 +1219,6 @@
 	"journal.photo.title": "Photo to entry",
 	"journal.photo.transcription": "Transcription",
 	"journal.photo.uploading": "Uploading…",
-	"journal.review.close": "Close",
 	"journal.review.correction": "Correction",
 	"journal.review.ready": "{count, plural, one {Review ready: # correction.} other {Review ready: # corrections.}}",
 	"journal.review.readyMissing": "{count, plural, one {Review ready: # correction, {missing} no longer in the text.} other {Review ready: # corrections, {missing} no longer in the text.}}",
