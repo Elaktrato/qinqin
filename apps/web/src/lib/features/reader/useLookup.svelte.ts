@@ -228,6 +228,18 @@ export class LookupController {
 		this.popups.prune();
 	}
 
+	/**
+	 * The phone sheet shows the root frame only (a mouse cannot nest there):
+	 * drop every frame opened from it, so narrowing a window leaves nothing
+	 * outside the now modal sheet.
+	 */
+	closeNested(): void {
+		const root = this.stack.frames[0];
+		if (!root) return;
+		this.stack.closeAbove(root.id);
+		this.popups.prune();
+	}
+
 	/** A popup's close button: that popup and the ones opened from it. */
 	closeFrame(id: number): void {
 		const index = this.stack.frames.findIndex((f) => f.id === id);
