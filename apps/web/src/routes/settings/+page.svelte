@@ -35,11 +35,11 @@
 		parseSettingsTab,
 		settingsTabHref,
 		settingsTitleParts,
-		tabKeyTarget,
 		visibleSettingsTabs,
 		type SettingsTab
 	} from '$lib/settings/tabs';
 	import { load as loadWorkspaces, rename, setSettings as setWorkspaceSettings, workspaces, workspacesLoadError, workspacesLoaded } from '$lib/workspaces';
+	import { Section, Tabs } from '$lib/ui';
 
 	interface PluginRow {
 		id: string;
@@ -59,24 +59,25 @@
 	const admin = $derived($user?.admin === true);
 	const tabs = $derived(visibleSettingsTabs(admin));
 	const activeTab = $derived(parseSettingsTab(page.url.searchParams.get('tab'), admin));
-	const tabButtons: Partial<Record<SettingsTab, HTMLButtonElement>> = {};
+	let root = $state<HTMLElement | undefined>(undefined);
 
-	async function selectTab(tab: SettingsTab, focus = false): Promise<void> {
+	async function selectTab(tab: SettingsTab): Promise<void> {
 		if (tab !== activeTab) {
 			await goto(settingsTabHref(tab), { replaceState: true, keepFocus: true, noScroll: true });
 		}
-		if (focus) {
-			await tick();
-			tabButtons[tab]?.focus();
-		}
 	}
 
-	function tabKey(event: KeyboardEvent, index: number): void {
-		const next = tabKeyTarget(event.key, index, tabs.length);
-		if (next === null) return;
-		event.preventDefault();
-		void selectTab(tabs[next], true);
-	}
+	// The row scrolls sideways on a phone (as it did before); keep the open
+	// tab visible, also when a deep link opens one that sits off-screen.
+	$effect(() => {
+		void activeTab;
+		void tick().then(() => {
+			root?.querySelector<HTMLElement>('[role="tab"][aria-selected="true"]')?.scrollIntoView?.({
+				block: 'nearest',
+				inline: 'nearest'
+			});
+		});
+	});
 
 	// The workspace being renamed (one at a time) and its draft name.
 	let renamingId = $state<number | null>(null);
@@ -237,33 +238,17 @@
 	<title>{pageTitle(...settingsTitleParts(activeTab, page.url.searchParams.get('section')))}</title>
 </svelte:head>
 
-<div class="page-body settings">
+<div class="page-body settings" bind:this={root}>
 	<h1>{t('settings.title')}</h1>
 
-	<div class="tabs" role="tablist" aria-label={t('settings.tabsLabel')}>
-		{#each tabs as tab, index (tab)}
-			<button
-				type="button"
-				role="tab"
-				id="settings-tab-{tab}"
-				aria-selected={tab === activeTab}
-				aria-controls="settings-panel-{tab}"
-				tabindex={tab === activeTab ? 0 : -1}
-				bind:this={tabButtons[tab]}
-				onclick={() => selectTab(tab)}
-				onkeydown={(event) => tabKey(event, index)}
-			>
-				{SETTINGS_TAB_LABELS[tab]}
-			</button>
-		{/each}
-	</div>
-
-	<div
-		role="tabpanel"
-		id="settings-panel-workspaces"
-		aria-labelledby="settings-tab-workspaces"
-		hidden={activeTab !== 'workspaces'}
+	<Tabs
+		label={t('settings.tabsLabel')}
+		tabs={tabs.map((tab) => ({ id: tab, label: SETTINGS_TAB_LABELS[tab] }))}
+		selected={activeTab}
+		onselect={(id) => selectTab(id as SettingsTab)}
 	>
+		{#snippet panel()}
+			<div class="group" hidden={activeTab !== 'workspaces'}>
 		<h2 bind:this={workspacesHeading} tabindex="-1">{t('settings.workspaces.title')}</h2>
 		<p class="hint">{t('settings.workspaces.hint')}</p>
 
@@ -378,55 +363,36 @@
 
 		{#if $workspaces.current}
 			{@const active = $workspaces.current}
-			<h3>{t('settings.workspaces.audioTitle')}</h3>
-			<p class="hint">{t('settings.workspaces.audioHint')}</p>
-			<AudioSettings
-				settings={active.settings}
-				onChange={async (patch) => {
-					await setWorkspaceSettings(active.id, patch);
-				}}
-			/>
+			<Section title={t('settings.workspaces.audioTitle')} level={3}>
+				<p class="hint">{t('settings.workspaces.audioHint')}</p>
+				<AudioSettings
+					settings={active.settings}
+					onChange={async (patch) => {
+						await setWorkspaceSettings(active.id, patch);
+					}}
+				/>
+			</Section>
 		{/if}
 
 		<!-- The phone drawer's + lands here (#99). -->
 		<h3 id="new-workspace" tabindex="-1">{t('settings.workspaces.new')}</h3>
 		<WorkspaceCreateForm idPrefix="settings-new" />
-	</div>
+			</div>
 
-	<div
-		role="tabpanel"
-		id="settings-panel-home"
-		aria-labelledby="settings-tab-home"
-		hidden={activeTab !== 'home'}
-	>
-		<HomeLayoutEditor />
-	</div>
+			<div class="group" hidden={activeTab !== 'home'}>
+				<HomeLayoutEditor />
+			</div>
 
-	<div
-		role="tabpanel"
-		id="settings-panel-study"
-		aria-labelledby="settings-tab-study"
-		hidden={activeTab !== 'study'}
-	>
-		<StudyDaySettings />
-		<StudySettings />
-	</div>
+			<div class="group" hidden={activeTab !== 'study'}>
+				<StudyDaySettings />
+				<StudySettings />
+			</div>
 
-	<div
-		role="tabpanel"
-		id="settings-panel-features"
-		aria-labelledby="settings-tab-features"
-		hidden={activeTab !== 'features'}
-	>
-		<FeatureSettings />
-	</div>
+			<div class="group" hidden={activeTab !== 'features'}>
+				<FeatureSettings />
+			</div>
 
-	<div
-		role="tabpanel"
-		id="settings-panel-plugins"
-		aria-labelledby="settings-tab-plugins"
-		hidden={activeTab !== 'plugins'}
-	>
+			<div class="group" hidden={activeTab !== 'plugins'}>
 		<h2>{t('settings.plugins.title')}</h2>
 		<p class="hint">{t('settings.plugins.hint')}</p>
 
@@ -497,104 +463,69 @@
 				{/each}
 			</ul>
 		{/if}
-	</div>
+			</div>
 
-	<div
-		role="tabpanel"
-		id="settings-panel-appearance"
-		aria-labelledby="settings-tab-appearance"
-		hidden={activeTab !== 'appearance'}
-	>
-		<!-- Mounted only while open: leaving the tab unsaved ends the live preview. -->
-		{#if activeTab === 'appearance'}<AppearanceSettings />{/if}
-	</div>
+			<div class="group" hidden={activeTab !== 'appearance'}>
+				<!-- Mounted only while open: leaving the tab unsaved ends the live preview. -->
+				{#if activeTab === 'appearance'}<AppearanceSettings />{/if}
+			</div>
 
-	<div
-		role="tabpanel"
-		id="settings-panel-ai"
-		aria-labelledby="settings-tab-ai"
-		hidden={activeTab !== 'ai'}
-	>
-		<AiSettings />
-	</div>
+			<div class="group" hidden={activeTab !== 'ai'}>
+				<AiSettings />
+			</div>
 
-	<div
-		role="tabpanel"
-		id="settings-panel-account"
-		aria-labelledby="settings-tab-account"
-		hidden={activeTab !== 'account'}
-	>
-		<AccountSettings />
-	</div>
+			<div class="group" hidden={activeTab !== 'account'}>
+				<AccountSettings />
+			</div>
 
-	{#if admin}
-		<div
-			role="tabpanel"
-			id="settings-panel-data"
-			aria-labelledby="settings-tab-data"
-			hidden={activeTab !== 'data'}
-		>
-			<h2>{t('settings.data.title')}</h2>
-			<PackManager
-				onchange={() => {
-					languagesKey += 1;
-					loadCoverage();
-				}}
-			/>
-			<LanguageManager refreshKey={languagesKey} />
-		</div>
-		<div
-			role="tabpanel"
-			id="settings-panel-admin"
-			aria-labelledby="settings-tab-admin"
-			hidden={activeTab !== 'admin'}
-		>
-			<h2>{t('settings.adminPanel.title')}</h2>
-			{#if activeTab === 'admin'}<AdminSettings />{/if}
-		</div>
-	{/if}
+			{#if admin}
+				<div class="group" hidden={activeTab !== 'data'}>
+					<h2>{t('settings.data.title')}</h2>
+					<PackManager
+						onchange={() => {
+							languagesKey += 1;
+							loadCoverage();
+						}}
+					/>
+					<LanguageManager refreshKey={languagesKey} />
+				</div>
+				<div class="group" hidden={activeTab !== 'admin'}>
+					<h2>{t('settings.adminPanel.title')}</h2>
+					{#if activeTab === 'admin'}<AdminSettings />{/if}
+				</div>
+			{/if}
+		{/snippet}
+	</Tabs>
 </div>
 
 <style>
-	.settings [role='tabpanel'] {
-		margin-top: 1.5rem;
-	}
-
-	.settings [role='tabpanel'][hidden] {
-		display: none;
-	}
-
-	/* The tab strip: plain text tabs with an underline for the open one;
-	   it scrolls sideways rather than wrapping on a narrow phone. */
-	.tabs {
-		display: flex;
-		gap: 0.25rem;
+	/* The tab row is the base Tabs (in-page form); it scrolls sideways on a
+	   phone instead of wrapping, as it did before (#106). */
+	.settings :global([role='tablist']) {
+		flex-wrap: nowrap;
 		overflow-x: auto;
-		border-bottom: 1px solid color-mix(in srgb, currentColor 18%, transparent);
+		scrollbar-width: thin;
 	}
 
-	.settings .tabs [role='tab'] {
-		min-height: 2.75rem;
-		padding: 0.5rem 1rem;
-		border: 0;
-		border-bottom: 2px solid transparent;
-		border-radius: 0;
-		margin-bottom: -1px;
-		background: transparent;
-		color: var(--readable-muted);
-		font-weight: 500;
+	.settings :global([role='tablist'] [role='tab']) {
 		white-space: nowrap;
 	}
 
-	.settings .tabs [role='tab'][aria-selected='true'] {
-		font-weight: 600;
-		color: var(--text);
-		border-bottom-color: var(--accent);
+	.settings :global([role='tabpanel']) {
+		margin-top: var(--space-6);
 	}
 
-	.settings .tabs [role='tab']:focus-visible {
-		outline: var(--focus-ring);
-		outline-offset: -4px;
+	.settings .group[hidden] {
+		display: none;
+	}
+
+	/* A panel's heading (the components inside bring their own Section
+	   headings, level 3 and below). */
+	.settings h2 {
+		margin: 0 0 var(--space-3);
+		font-size: var(--font-size-l);
+		font-weight: var(--weight-strong);
+		line-height: var(--line-tight);
 	}
 
 	.hint {
@@ -651,7 +582,7 @@
 		color: inherit;
 	}
 
-	.settings button.secondary {
+	.settings button.secondary:not(.button):not([role='tab']) {
 		border: 1px solid color-mix(in srgb, currentColor 35%, transparent);
 		background: transparent;
 		color: inherit;
@@ -730,7 +661,7 @@
 	}
 
 	.plugin-controls input,
-	.settings button {
+	.settings button:not(.button):not([role='tab']) {
 		font: inherit;
 	}
 
@@ -742,7 +673,7 @@
 		color: inherit;
 	}
 
-	.settings button {
+	.settings button:not(.button):not([role='tab']) {
 		padding: 0.45rem 0.85rem;
 		border: 0;
 		border-radius: 0.4rem;
@@ -752,7 +683,7 @@
 		cursor: pointer;
 	}
 
-	.settings button:disabled {
+	.settings button:not(.button):not([role='tab']):disabled {
 		opacity: 0.6;
 		cursor: progress;
 	}

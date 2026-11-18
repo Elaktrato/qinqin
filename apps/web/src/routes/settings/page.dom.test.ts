@@ -33,6 +33,59 @@ afterEach(() => {
 	vi.clearAllMocks();
 });
 
+describe('the settings tab row in the lighter look (#106)', () => {
+	afterEach(() => auth.set({ token: null, user: null }));
+
+	it('is a tablist with eight tabs for a member and ten for an admin', async () => {
+		render(Page);
+		const list = screen.getByRole('tablist', { name: 'Settings' });
+		expect([...list.querySelectorAll('[role="tab"]')].map((tab) => tab.textContent?.trim())).toEqual([
+			'Workspaces',
+			'Home',
+			'Appearance',
+			'Study',
+			'Features',
+			'Plugins',
+			'AI',
+			'Account'
+		]);
+		cleanup();
+		auth.set({ token: 't', user: { id: 1, username: 'root', admin: true } as never });
+		render(Page);
+		expect(screen.getAllByRole('tab')).toHaveLength(10);
+	});
+
+	it('the ?tab=data deep link selects Data', async () => {
+		auth.set({ token: 't', user: { id: 1, username: 'root', admin: true } as never });
+		setUrl('/settings?tab=data');
+		render(Page);
+		expect(screen.getByRole('tab', { name: 'Data' }).getAttribute('aria-selected')).toBe('true');
+	});
+
+	it('arrow keys move focus and selection (automatic activation, as today)', async () => {
+		render(Page);
+		const workspaces = screen.getByRole('tab', { name: 'Workspaces' });
+		workspaces.focus();
+		await fireEvent.keyDown(workspaces, { key: 'ArrowRight' });
+		const home = screen.getByRole('tab', { name: 'Home' });
+		expect(home.getAttribute('aria-selected')).toBe('true');
+		expect(document.activeElement).toBe(home);
+	});
+
+	it('scrolls the selected tab into view when a deep link opens a far one', async () => {
+		const scrollIntoView = vi.fn();
+		const original = Element.prototype.scrollIntoView;
+		Element.prototype.scrollIntoView = scrollIntoView;
+		try {
+			setUrl('/settings?tab=account');
+			render(Page);
+			await waitFor(() => expect(scrollIntoView).toHaveBeenCalled());
+		} finally {
+			Element.prototype.scrollIntoView = original;
+		}
+	});
+});
+
 describe('settings loading states', () => {
 	it('shows a loading note, not "No workspaces yet.", until the list has arrived', async () => {
 		render(Page);
