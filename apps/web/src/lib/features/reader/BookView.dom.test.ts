@@ -362,6 +362,7 @@ describe('BookView rail (#102)', () => {
 		expect(screen.queryByRole('tablist')).toBeNull();
 		const buttons = screen.getAllByRole('button', { name: RAIL_BUTTON });
 		expect(buttons).toHaveLength(1);
+		expect(buttons[0].getAttribute('aria-controls')).toBe('reader-rail-sheet');
 		await fireEvent.click(buttons[0]);
 		const sheet = screen.getByRole('dialog', { name: 'Book tools' });
 		expect(within(sheet).getAllByRole('tab').map((tab) => tab.textContent?.trim())).toEqual([

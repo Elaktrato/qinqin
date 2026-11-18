@@ -1137,6 +1137,7 @@
 				placement="below-end"
 				aria-haspopup="dialog"
 				aria-expanded={drawerOpen}
+				aria-controls="reader-rail-sheet"
 				bind:element={() => undefined, bind}
 				onclick={() => (drawerOpen = true)}
 			/>

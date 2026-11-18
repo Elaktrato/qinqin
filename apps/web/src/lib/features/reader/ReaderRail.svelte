@@ -119,7 +119,7 @@
 </script>
 
 {#if mode === 'column'}
-	<aside bind:this={rail} id="reader-rail" class="rail" class:open aria-label={t('reader.rail.panel')}>
+	<aside bind:this={rail} id="reader-rail" class="rail" aria-label={t('reader.rail.panel')}>
 		{#if open}
 			{#each tabs as tab (tab.id)}
 				{#if tab.id === active}

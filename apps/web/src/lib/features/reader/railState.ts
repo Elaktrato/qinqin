@@ -75,10 +75,14 @@ export function tabKeyTarget(key: string, index: number, count: number): number 
 
 /**
  * nextFocusIndex: where Tab (or Shift+Tab with `shift`) moves the focus
- * among the `count` focusable elements of the open drawer, wrapping at
+ * among the `count` focusable elements of an open drawer, wrapping at
  * both ends so focus never leaves it for the page hidden underneath.
  * `current` outside 0..count-1 (focus on none of them) starts at an end.
  * Null when the drawer has nothing focusable.
+ *
+ * Kept (with its tests) as the drawer's Tab contract: the #102 rail is a
+ * modal Sheet whose trap is lib/ui/modal.ts's, so nothing calls this from
+ * production any more.
  */
 export function nextFocusIndex(count: number, current: number, shift: boolean): number | null {
 	if (count <= 0) return null;
