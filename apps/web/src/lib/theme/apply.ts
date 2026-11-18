@@ -57,6 +57,26 @@ function setThemeColor(color: string | undefined): void {
 	if (meta) meta.setAttribute('content', color);
 }
 
+/** The class that turns on the brief colour transition of a theme switch. */
+export const THEME_ANIM_CLASS = 'theme-anim';
+let themeAnimTimer: ReturnType<typeof setTimeout> | null = null;
+
+/**
+ * animateThemeChange marks `root` so colours cross-fade once (app.css,
+ * `html.theme-anim`); it removes the class when the transition ends, so
+ * hover and layout animations keep their own timing. A reduced-motion
+ * device gets a 0ms transition and sees no change.
+ */
+export function animateThemeChange(root: HTMLElement | null): void {
+	if (root === null || typeof root.classList === 'undefined') return;
+	root.classList.add(THEME_ANIM_CLASS);
+	if (themeAnimTimer !== null) clearTimeout(themeAnimTimer);
+	themeAnimTimer = setTimeout(() => {
+		root.classList.remove(THEME_ANIM_CLASS);
+		themeAnimTimer = null;
+	}, 240);
+}
+
 /** applySlot paints one slot's tokens and the adjustments on `root`. */
 export function applySlot(slot: SlotTokens, adj: AdjustmentVars, root: HTMLElement): void {
 	for (const [name, value] of Object.entries(slot.vars)) root.style.setProperty(name, value);

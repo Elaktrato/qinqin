@@ -21,7 +21,7 @@
 	   --accent-14/32/58/100, the
 	   washes, --mastery-0..4) and the person's --radius and --space are set
 	   on :root by lib/theme/apply.ts (app.html paints this device's last
-	   ones before the app loads; the compiled-in Catppuccin Latte/Mocha
+	   ones before the app loads; the compiled-in qinqin Day/Night
 	   otherwise). docs/contracts/themes/README.md lists them. */
 	--radius: 10px;
 	--space: 1;
@@ -74,6 +74,23 @@
 		--motion-fast: 0ms;
 		--motion-medium: 0ms;
 	}
+}
+
+/* A theme switch cross-fades the colours for a moment (#108). apply.ts adds
+   the class only for a person-initiated switch, so hover and layout
+   animations keep their own timing; --motion-medium is 0ms under reduced
+   motion. */
+html.theme-anim,
+html.theme-anim *,
+html.theme-anim *::before,
+html.theme-anim *::after {
+	transition:
+		background-color var(--motion-medium) ease,
+		border-color var(--motion-medium) ease,
+		color var(--motion-medium) ease,
+		fill var(--motion-medium) ease,
+		stroke var(--motion-medium) ease,
+		box-shadow var(--motion-medium) ease;
 }
 
 body {
