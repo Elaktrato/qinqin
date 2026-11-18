@@ -7,7 +7,8 @@
 	// API: <Select label bind:value? options hint? error? hideLabel? id? …rest />
 	//   label      the field's name (t(…)); always present
 	//   value      bindable string
-	//   options    { value, label }[]
+	//   options    { value, label }[] (rendered first)
+	//   groups     { label, options }[] (rendered after `options`, as optgroups)
 	//   hint       help text under the field
 	//   error      error text; sets aria-invalid
 	//   hideLabel  keeps the label for assistive tech only
@@ -23,7 +24,8 @@
 	type Props = {
 		label: string;
 		value?: string;
-		options: readonly Option[];
+		options?: readonly Option[];
+		groups?: readonly { label: string; options: readonly Option[] }[];
 		hint?: string;
 		error?: string;
 		hideLabel?: boolean;
@@ -35,7 +37,8 @@
 	let {
 		label,
 		value = $bindable(''),
-		options,
+		options = [],
+		groups = [],
 		hint,
 		error,
 		hideLabel = false,
@@ -68,9 +71,16 @@
 		{#each options as option (option.value)}
 			<option value={option.value}>{option.label}</option>
 		{/each}
+		{#each groups as group (group.label)}
+			<optgroup label={group.label}>
+				{#each group.options as option (option.value)}
+					<option value={option.value}>{option.label}</option>
+				{/each}
+			</optgroup>
+		{/each}
 	</select>
 	{#if hint}<p class="hint" id={hintId}>{hint}</p>{/if}
-	{#if error}<p class="error" id={errorId}>{error}</p>{/if}
+	{#if error}<p class="error" id={errorId} role="alert">{error}</p>{/if}
 </div>
 
 <style>
