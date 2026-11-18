@@ -1522,7 +1522,7 @@
 	"reader.bookmarks.untitledChapter": "Untitled bookmark in chapter {n}",
 	"reader.chapter": "Chapter {n}",
 	"reader.chapterTitled": "{number} · {title}",
-	"reader.contents.current": "{title} (reading now)",
+	"reader.contents.currentSuffix": "(reading now)",
 	"reader.display.always": "Always",
 	"reader.display.bookRuby": "Book ruby (the reading marks printed in the book)",
 	"reader.display.extraLarge": "Extra large",
