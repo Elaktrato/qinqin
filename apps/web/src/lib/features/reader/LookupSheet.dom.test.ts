@@ -112,6 +112,30 @@ describe('the lookup on the phone (#102)', () => {
 		expect(inPopup(sheet)).toBe(false);
 	});
 
+	it('a replaced lookup sheet does not close the lookup that replaced it', async () => {
+		stubPhone(true);
+		const lookup = fakeLookup('hover', [root]);
+		const view = render(PopupStackView, {
+			lookup: lookup as unknown as LookupController,
+			studyWorkspaceId: 7,
+			highlighter
+		});
+		const old = screen.getByRole('dialog', { name: 'Dictionary: 故乡' });
+		// A new root frame (a rotation, a replaced hover root): the old sheet unmounts.
+		await view.rerender({
+			lookup: {
+				...lookup,
+				stack: { frames: [{ ...root, id: 2, text: '乡' }] }
+			} as unknown as LookupController,
+			studyWorkspaceId: 7,
+			highlighter
+		});
+		expect(screen.getByRole('dialog', { name: 'Dictionary: 乡' })).toBeTruthy();
+		// The browser queues the detached dialog's native close event after teardown.
+		old.dispatchEvent(new Event('close'));
+		expect(lookup.close).not.toHaveBeenCalled();
+	});
+
 	it('above the breakpoint the popup path is unchanged', () => {
 		stubPhone(false);
 		mount();

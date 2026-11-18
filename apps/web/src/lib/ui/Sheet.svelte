@@ -15,6 +15,7 @@
 	//   onnext/onprev paging (swipe toward the start = next, mirrored in right-to-left text)
 	//   initialFocus  a selector inside to focus first (else the first focusable)
 	import type { Snippet } from 'svelte';
+	import { onDestroy } from 'svelte';
 	import { t } from '$lib/i18n';
 	import IconButton from './IconButton.svelte';
 	import { modal, wrapTab } from './modal';
@@ -41,12 +42,17 @@
 	let dragY = $state(0);
 	let dragging = $state(false);
 	let start: { x: number; y: number; at: number; id: number } | null = null;
+	// Unmounting: modal.destroy() calls dialog.close(), whose queued `close`
+	// event still reaches this listener from the detached element. That is
+	// not a dismissal: a replacement lookup may already own the state.
+	let destroying = false;
+	onDestroy(() => (destroying = true));
 
 	const SWIPE = 60; // px sideways for a page
 	const FLICK = 0.5; // px per ms downwards for a quick close
 
 	function dismiss(): void {
-		if (!open) return;
+		if (!open || destroying) return;
 		open = false;
 		dragY = 0;
 		onclose?.();
