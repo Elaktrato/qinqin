@@ -270,10 +270,6 @@
 				? t('entry.page.simplified')
 				: t('entry.page.variant');
 	}
-
-	function variantName(variant: EntryBase): string {
-		return t('entry.page.variantLabel', { form: variant.written, label: variantText(variant) });
-	}
 </script>
 
 {#snippet phoneActions()}
@@ -299,11 +295,8 @@
 			<div class="word-line">
 				<svelte:element this={headingLevel === 1 ? 'h1' : 'h2'} class="written" bind:this={headingEl} tabindex="-1" lang={studyLang(entry.language)}>{entry.written}</svelte:element>
 				{#each entry.variants as variant (variant.id)}
-					<a
-						class="variant"
-						href={`/entry/${variant.id}`}
-						lang={studyLang(entry.language)}
-						aria-label={variantName(variant)}>{variant.written} <small>{variantText(variant)}</small></a
+					<a class="variant" href={`/entry/${variant.id}`} lang={studyLang(entry.language)}
+						>{variant.written} <small>{variantText(variant)}</small></a
 					>
 				{/each}
 			</div>

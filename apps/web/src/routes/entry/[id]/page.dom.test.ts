@@ -122,7 +122,7 @@ describe('entry page robustness', () => {
 			})
 		);
 		render(Page);
-		const link = await screen.findByRole('link', { name: '妳 (traditional)' });
+		const link = await screen.findByRole('link', { name: '妳 traditional' });
 		expect(link.getAttribute('href')).toBe('/entry/7');
 	});
 
