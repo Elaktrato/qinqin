@@ -18,9 +18,17 @@ Only when you press an AI button, and only to the active provider: the entry tex
 
 ## Features
 
-- **Review**: underlined corrections plus an overall review of one entry. The result is stored with the entry. On Anthropic's Opus and Sonnet a safety refusal can be retried by a fallback model on your key; the review then says which model answered and marks "(fallback)".
+- **Review**: corrections in the margin plus an overall review of one entry. The result is stored with the entry. On Anthropic's Opus and Sonnet a safety refusal can be retried by a fallback model on your key; the review then says which model answered and marks "(fallback)".
 - **Topic ideas**: suggestions from your recent words and entries.
 - **Photo to entry**: choose a photo (JPEG, PNG or WebP, up to 10 MiB and 25 megapixels). It is stripped of metadata including GPS, shrunk and kept only while the draft is open. **Read with AI** sends it to your provider; **Read offline** uses Tesseract on the server and sends nothing anywhere (Chinese, Japanese and Latin-script languages; vertical Japanese is read poorly). There is no automatic fallback between the two. A model that cannot read photos makes AI reading unavailable.
+
+## The page
+
+The journal is three columns on a wide screen: your entries on the left (date, title, a small dot when an entry has been reviewed), the page in the middle (date, title, text), and the margin on the right (topic ideas while you write; corrections after a review, like comments in a document). From 720 px the page and margin stay side by side and the entries move behind an **All entries** link; on a phone the list is its own view and the entry shows one column.
+
+A correction is a **mistake** (something wrong: grammar, spelling, a word that does not fit) or a **suggestion** (correct, but it could be more natural). Mistakes get a red wavy underline, suggestions a blue dotted one; the open correction is tinted and expands in the margin with the category, what you wrote struck through, the fix in green and why. Reviews made before this distinction existed show every correction as a mistake. On the phone tapping a correction opens it in the same bottom sheet as the reader's lookup; swipe or use the arrow keys for the next one.
+
+The overall review sits below the text with the provider and model. Editing the text after a review marks it as written for an earlier version: the writing page keeps **Review again** and a link to the old corrections.
 
 ## Limits
 

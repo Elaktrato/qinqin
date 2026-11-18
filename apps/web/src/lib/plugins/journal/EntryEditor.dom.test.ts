@@ -139,6 +139,15 @@ describe('EntryEditor in three columns (#103)', () => {
 		expect(screen.getByRole('button', { name: 'Review again' })).toBeTruthy();
 	});
 
+	it('the review-status live region stays outside the margin', async () => {
+		await renderEditor();
+		await fireEvent.click(screen.getByRole('button', { name: 'Review' }));
+		await waitFor(() => expect(document.querySelector('aside[aria-label="Margin"]')).toBeTruthy());
+		expect(document.querySelector('.live')?.closest('aside')).toBeNull();
+		const status = document.querySelector('.live');
+		expect(status?.getAttribute('aria-live')).toBe('polite');
+	});
+
 	it('below 720px tapping a mark opens the correction sheet', async () => {
 		vi.stubGlobal('matchMedia', vi.fn(() => ({ matches: true, addEventListener: vi.fn(), removeEventListener: vi.fn() })));
 		try {
