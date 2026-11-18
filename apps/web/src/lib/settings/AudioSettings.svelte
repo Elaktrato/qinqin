@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { t } from '$lib/i18n';
 	import { AUDIO_AUTOPLAY_KEY, AUDIO_DEVICE_VOICE_KEY, readAudioSettings } from '$lib/audio/settings';
+	import Section from '$lib/ui/Section.svelte';
 
 	let {
 		settings,
@@ -34,8 +35,8 @@
 	}
 </script>
 
-<fieldset class="audio" aria-busy={saving}>
-	<legend>{t('settings.audio.title')}</legend>
+<Section title={t('settings.audio.title')} level={4}>
+	<div class="audio" aria-busy={saving}>
 	<label>
 		<input
 			type="checkbox"
@@ -55,29 +56,20 @@
 	{#if error}
 		<p class="error" role="alert">{error}</p>
 	{/if}
-</fieldset>
+	</div>
+</Section>
 
 <style>
 	.audio {
-		margin: 1rem 0 0;
-		padding: 0;
-		border: 0;
 		display: grid;
-		gap: 0.4rem;
-	}
-
-	legend {
-		padding: 0;
-		font-size: 0.8rem;
-		letter-spacing: 0.06em;
-		text-transform: uppercase;
-		color: var(--readable-muted);
+		gap: var(--space-2);
 	}
 
 	label {
 		display: flex;
 		align-items: center;
-		gap: 0.5rem;
+		gap: var(--space-2);
+		min-height: var(--hit);
 	}
 
 	.error {

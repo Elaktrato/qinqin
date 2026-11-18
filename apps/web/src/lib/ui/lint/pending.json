@@ -3,8 +3,7 @@
 	"opacity": [],
 	"weight": [],
 	"caps": [
-		"lib/components/EntryEditor.svelte",
-		"lib/settings/AudioSettings.svelte"
+		"lib/components/EntryEditor.svelte"
 	],
 	"border": [
 		"lib/components/ClozeChoice.svelte",

@@ -31,6 +31,7 @@ import type { VacationPeriod } from '$lib/study/vacation';
 import { studyDay } from '$lib/time/studyDay';
 import { currentStudyDay } from '$lib/time/zone';
 import { workspaces } from '$lib/workspaces';
+import { primaryActions } from '$lib/ui/testing/primary';
 import StudySettings from './StudySettings.svelte';
 
 const day = studyDay([]);
@@ -61,6 +62,18 @@ beforeEach(() => vi.clearAllMocks());
 afterEach(() => cleanup());
 
 describe('StudySettings vacation', () => {
+	it('has one primary in the vacation form; its dates are Field underlines', async () => {
+		setup();
+		await screen.findByRole('heading', { name: 'Vacation' });
+		const form = screen.getByRole('button', { name: 'Start vacation' }).closest('form')!;
+		expect(primaryActions(form)).toHaveLength(1);
+		expect(screen.getByRole('button', { name: 'Start vacation' }).className).toContain('primary');
+		await fireEvent.click(screen.getByLabelText('On a date'));
+		expect(screen.getByLabelText('Start date').closest('.field')).toBeTruthy();
+		await fireEvent.click(screen.getByLabelText('Until'));
+		expect(screen.getByLabelText('End date').closest('.field')).toBeTruthy();
+	});
+
 	it('starts a vacation now when nothing was studied today', async () => {
 		setup();
 		await screen.findByRole('heading', { name: 'Vacation' });
@@ -150,6 +163,15 @@ describe('StudySettings messages', () => {
 });
 
 describe('StudySettings daily limits', () => {
+	it('has one primary in the limits form and number Fields for the values', async () => {
+		setup();
+		const save = await screen.findByRole('button', { name: 'Save limits' });
+		expect(primaryActions(save.closest('form')!)).toHaveLength(1);
+		expect(save.className).toContain('primary');
+		expect((screen.getByLabelText('New cards per day value') as HTMLInputElement).type).toBe('number');
+		expect(screen.getByLabelText('New cards per day value').closest('.field')).toBeTruthy();
+	});
+
 	it('shows the defaults and saves new values and unlimited reviews', async () => {
 		setup();
 		const newValue = (await screen.findByLabelText('New cards per day value')) as HTMLInputElement;
