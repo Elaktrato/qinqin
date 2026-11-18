@@ -45,6 +45,12 @@ describe('ResultRow (#104)', () => {
 		expect(document.querySelector('.gloss')?.textContent).toBe('');
 	});
 
+	it('mutes the gloss and keeps the reading and meta on a phone', () => {
+		const style = source.slice(source.indexOf('<style'));
+		expect(style).toMatch(/\.gloss\s*\{[^}]*color:\s*var\(--readable-muted\)/);
+		expect(style).not.toMatch(/@media \(max-width: 40rem\)/);
+	});
+
 	it('uses the reading accent, the selected wash and an accent start bar', () => {
 		const style = source.slice(source.indexOf('<style'));
 		expect(style).toMatch(/\.reading\s*\{[^}]*color:\s*var\(--reading-accent\)/);

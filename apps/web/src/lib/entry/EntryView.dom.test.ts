@@ -34,7 +34,10 @@ vi.mock('$lib/notes/store', async (orig) => ({
 }));
 
 import { fireEvent, within } from '@testing-library/svelte';
+import { ApiError } from '$lib/api/client';
 import { getEntry } from '$lib/api/entries';
+import { getEntryRanks } from '$lib/api/frequency';
+import { getStudyData } from '$lib/study/studyData';
 import { record } from '$lib/events';
 import { pageFrame } from '$lib/frame/pageFrame.svelte';
 import { setUrl } from '$lib/testing/appState.svelte';
@@ -251,5 +254,44 @@ describe("a word's characters (#104)", () => {
 		const second = rows[1];
 		expect(second.querySelector('small')?.textContent).toBe('Radical 大');
 		expect(second.textContent).not.toContain('0 strokes');
+	});
+});
+
+
+describe('entry extras and the not-found state (#104)', () => {
+	it('does not ask for frequency ranks while signed out', async () => {
+		getEntryMock.mockResolvedValue(entry());
+		render(EntryView, { entryId: 5, recordView: false });
+		await screen.findByRole('heading', { name: '勤奋' });
+		await new Promise((r) => setTimeout(r, 0));
+		expect(getEntryRanks).not.toHaveBeenCalled();
+	});
+
+	it('refreshes the In N decks chip after an add', async () => {
+		let cards: unknown[] = [];
+		vi.mocked(getStudyData).mockImplementation(async () => ({ decks: [], cards, known: [] }) as never);
+		getEntryMock.mockResolvedValue(entry());
+		const { container } = render(EntryView, { entryId: 5, recordView: false });
+		await screen.findByRole('heading', { name: '勤奋' });
+		await waitFor(() => expect(screen.getByRole('button', { name: 'Add to deck' })).toBeTruthy());
+		cards = [{ id: 'c1', kind: 'vocab', entryId: 5, deckIds: ['deck-1'], written: '勤奋' }];
+		await fireEvent.click(screen.getByRole('button', { name: 'Add to deck' }));
+		await waitFor(() => expect(screen.getByText('In 1 deck')).toBeTruthy());
+		expect(container.textContent).toContain('In 1 deck');
+	});
+
+	it('renders the not-found state at the given heading level and links back to the search URL', async () => {
+		getEntryMock.mockRejectedValue(new ApiError(404, 'not found'));
+		render(EntryView, {
+			entryId: 999,
+			headingLevel: 2,
+			recordView: false,
+			backHref: '/search?q=qin&kind=word'
+		});
+		const heading = await screen.findByRole('heading', { level: 2, name: 'Entry not found' });
+		expect(heading.tagName).toBe('H2');
+		expect(screen.getByRole('link', { name: 'Back to search' }).getAttribute('href')).toBe(
+			'/search?q=qin&kind=word'
+		);
 	});
 });

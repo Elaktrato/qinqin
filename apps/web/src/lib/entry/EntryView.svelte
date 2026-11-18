@@ -44,12 +44,15 @@
 		headingLevel = 1,
 		recordView = true,
 		focusOnLoad = false,
+		backHref = '/search',
 		ontitle,
 		onstate
 	}: {
 		entryId: number | null;
 		headingLevel?: 1 | 2;
 		recordView?: boolean;
+		/** Where the not-found state links back (the search detail keeps its query). */
+		backHref?: string;
 		/** A phone navigation focuses the entry heading once the entry is on screen. */
 		focusOnLoad?: boolean;
 		ontitle?: (written: string) => void;
@@ -286,7 +289,7 @@
 		<section class="not-found">
 			<svelte:element this={headingLevel === 1 ? 'h1' : 'h2'}>{t('entry.page.notFound')}</svelte:element>
 			<p>{t('entry.page.notFoundText')}</p>
-			<p><a href="/search">{t('entry.page.backToSearch')}</a></p>
+			<p><a href={backHref}>{t('entry.page.backToSearch')}</a></p>
 		</section>
 	{:else if error}
 		<p class="error" role="alert">{error}</p>

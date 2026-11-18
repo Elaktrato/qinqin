@@ -93,17 +93,12 @@
 		overflow: hidden;
 		text-overflow: ellipsis;
 		white-space: nowrap;
+		color: var(--readable-muted);
 	}
 	.meta {
 		grid-column: 2;
 		grid-row: 2;
 		font-size: var(--font-size-label);
 		color: var(--readable-muted);
-	}
-	@media (max-width: 40rem) {
-		.reading,
-		.meta {
-			display: none;
-		}
 	}
 </style>
