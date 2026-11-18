@@ -337,14 +337,17 @@ const NEXT_CASES = [
 	{ name: 'a relearning card', w: DEFAULT, runs: [], reviews: [['2026-01-05T09:00:00Z', 4], ['2026-01-25T09:00:00Z', 1]], now: '2026-01-25T09:10:00Z', note: 'after a lapse, at the 10 minute relearning step' },
 	{ name: 'a card at the maximum interval', w: DEFAULT, runs: [], reviews: (() => { const out = []; let t = Date.parse('2026-01-05T09:00:00Z'); const f = fsrs(); let card = createEmptyCard(new Date(t)); for (let i = 0; i < 9; i++) { out.push([iso(t), 4]); card = f.next(card, new Date(t), Rating.Easy).card; t = card.due.getTime(); } return out; })(), now: 'due', note: 'Easy on every due date; no interval exceeds maximum_interval' },
 	{ name: 'a vacation run between the last review and now', w: DEFAULT, runs: [{ start: '2026-01-05', a: '2026-01-04T15:00:00Z', n: 7 }], zone: 'Asia/Tokyo', reviews: [['2025-12-28T03:00:00Z', 3], ['2025-12-28T03:10:00Z', 3], ['2026-01-02T03:00:00Z', 3]], now: '2026-01-14T03:00:00Z', note: 'now is moved earlier by the run (7 x 24 h) before it is fed; every previewed due is past the run start, so it moves later by the same amount' },
+	{ name: 'now inside a vacation run', w: DEFAULT, runs: [{ start: '2026-01-05', a: '2026-01-04T15:00:00Z', n: 7 }], zone: 'Asia/Tokyo', reviews: [['2025-12-28T03:00:00Z', 3], ['2025-12-28T03:10:00Z', 3]], now: '2026-01-06T03:00:00Z', note: 'v(now) subtracts the part of the run already elapsed (27 h), not the whole run' },
 	{ name: 'a custom 21-weight set', w: CUSTOM_W, runs: [], reviews: [['2026-01-05T09:00:00Z', 3], ['2026-01-05T09:10:00Z', 3]], now: '2026-01-09T09:00:00Z', note: 'the active set\'s weights' },
 	{ name: 'a new card with a custom 21-weight set', w: CUSTOM_W, runs: [], reviews: [], now: '2026-01-05T09:00:00Z', note: 'the weights change the Easy interval of a new card' }
 ];
 
 function shiftBy(runs, t) {
-	let shift = 0;
-	for (const r of runs) if (t >= r.a + r.n * DAY) shift += r.n * DAY;
-	return t - shift;
+	// The study clock's v(): subtract the part of a run already elapsed at t,
+	// not only runs that have fully ended (studyClock.ts).
+	let out = t;
+	for (const r of runs) out -= Math.min(Math.max(t - r.a, 0), r.n * DAY);
+	return out;
 }
 
 function nextIntervals(c) {
