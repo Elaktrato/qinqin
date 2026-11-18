@@ -142,6 +142,7 @@ function validateLesson(path, lesson, levelId, lessonIds, exampleIds) {
 		});
 		if (typeof ex.contrast !== 'boolean') fail(`${ep}.contrast: must be a boolean`);
 		if (ex.contrast) contrasts++;
+		if (ex.noOrder !== undefined && typeof ex.noOrder !== 'boolean') fail(`${ep}.noOrder: must be a boolean`);
 		if (!Array.isArray(ex.kinds) || !ex.kinds.includes('clearly-wrong')) {
 			fail(`${ep}.kinds: must include "clearly-wrong"`);
 		}

@@ -90,6 +90,25 @@ test('a valid fragment builds lessons.json and COVERAGE.md', async () => {
 	}
 });
 
+test('passes noOrder through and still strips contrast and kinds', async () => {
+	const dir = mkdtempSync(join(tmpdir(), 'grammar-'));
+	try {
+		const frag = fragment();
+		frag.rows[0].lesson.examples[0].noOrder = true;
+		writeFileSync(join(dir, 'x.json'), JSON.stringify(frag, null, 2));
+		await buildGrammarPack({ authoredDir: dir, outDir: dir, levels: FIXTURE_LEVELS });
+		const lessons = JSON.parse(readFileSync(join(dir, 'lessons.json'), 'utf8'));
+		const flagged = lessons.lessons[0].examples[0];
+		assert.equal(flagged.noOrder, true);
+		assert.equal('contrast' in flagged, false);
+		assert.equal('kinds' in flagged, false);
+		// An example without the flag omits it entirely.
+		assert.equal('noOrder' in lessons.lessons[0].examples[1], false);
+	} finally {
+		rmSync(dir, { recursive: true, force: true });
+	}
+});
+
 test('a subset of rows is accepted and marked not authored yet', async () => {
 	const dir = mkdtempSync(join(tmpdir(), 'grammar-'));
 	try {
@@ -164,6 +183,7 @@ const rejections = [
 	['a missing row number', (f) => delete f.rows[0].row, 'rows[0]: row must be a positive integer'],
 	['a duplicate row number with the same label', (f) => ((f.rows[1].row = 1), (f.rows[1].label = 'label one')), 'rows[1]: row 1 appears twice'],
 	['a duplicate lesson id', (f) => (f.rows[1].lesson.id = 'l1'), 'rows[1].lesson.id'],
+	['a non-boolean noOrder', (f) => (f.rows[0].lesson.examples[0].noOrder = 'yes'), 'rows[0].lesson.examples[0].noOrder'],
 	['a body containing <b>', (f) => (f.rows[0].lesson.body[0] = 'text <b>bold</b>'), 'rows[0].lesson.body[0]']
 ];
 

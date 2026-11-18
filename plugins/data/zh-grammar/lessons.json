@@ -423,7 +423,8 @@
             "很",
             "吗",
             "在"
-          ]
+          ],
+          "noOrder": true
         },
         {
           "id": "hsk1-separable-verbs-2",
@@ -1196,7 +1197,8 @@
             "很",
             "吗",
             "的"
-          ]
+          ],
+          "noOrder": true
         },
         {
           "id": "hsk1-dou-4",
@@ -1334,7 +1336,8 @@
             "在",
             "吗",
             "很"
-          ]
+          ],
+          "noOrder": true
         },
         {
           "id": "hsk1-zai-again-3",
@@ -1474,7 +1477,8 @@
             "没",
             "吗",
             "很"
-          ]
+          ],
+          "noOrder": true
         },
         {
           "id": "hsk1-negation-2",
@@ -1486,7 +1490,8 @@
             "不",
             "吗",
             "很"
-          ]
+          ],
+          "noOrder": true
         },
         {
           "id": "hsk1-negation-3",
@@ -1522,7 +1527,8 @@
             "吗",
             "们",
             "的"
-          ]
+          ],
+          "noOrder": true
         },
         {
           "id": "hsk1-negation-6",
@@ -1598,7 +1604,8 @@
             "是",
             "很",
             "吗"
-          ]
+          ],
+          "noOrder": true
         },
         {
           "id": "hsk1-zai-preposition-5",
@@ -1638,7 +1645,8 @@
             "对",
             "很",
             "吗"
-          ]
+          ],
+          "noOrder": true
         },
         {
           "id": "hsk1-he-dui-2",
@@ -1662,7 +1670,8 @@
             "对",
             "吗",
             "很"
-          ]
+          ],
+          "noOrder": true
         },
         {
           "id": "hsk1-he-dui-4",
@@ -1686,7 +1695,8 @@
             "对",
             "吗",
             "很"
-          ]
+          ],
+          "noOrder": true
         }
       ]
     },
@@ -1713,7 +1723,8 @@
             "对",
             "很",
             "吗"
-          ]
+          ],
+          "noOrder": true
         },
         {
           "id": "hsk1-he-conjunction-2",
@@ -1725,7 +1736,8 @@
             "对",
             "很",
             "吗"
-          ]
+          ],
+          "noOrder": true
         },
         {
           "id": "hsk1-he-conjunction-3",
@@ -1737,7 +1749,8 @@
             "对",
             "吗",
             "很"
-          ]
+          ],
+          "noOrder": true
         },
         {
           "id": "hsk1-he-conjunction-4",
@@ -1749,7 +1762,8 @@
             "对",
             "吗",
             "很"
-          ]
+          ],
+          "noOrder": true
         },
         {
           "id": "hsk1-he-conjunction-5",
@@ -2193,7 +2207,8 @@
             "对",
             "吗",
             "很"
-          ]
+          ],
+          "noOrder": true
         },
         {
           "id": "hsk1-phrase-types-2",
@@ -2659,7 +2674,8 @@
             "吗",
             "很",
             "的"
-          ]
+          ],
+          "noOrder": true
         },
         {
           "id": "hsk1-adverbial-3",
@@ -3454,7 +3470,8 @@
             "对",
             "吗",
             "很"
-          ]
+          ],
+          "noOrder": true
         }
       ]
     },
@@ -3605,7 +3622,8 @@
             "对",
             "吗",
             "很"
-          ]
+          ],
+          "noOrder": true
         }
       ]
     },
@@ -3963,7 +3981,8 @@
             "吗",
             "很",
             "的"
-          ]
+          ],
+          "noOrder": true
         },
         {
           "id": "hsk1-time-expressions-4",
@@ -3975,7 +3994,8 @@
             "吗",
             "很",
             "的"
-          ]
+          ],
+          "noOrder": true
         },
         {
           "id": "hsk1-time-expressions-5",

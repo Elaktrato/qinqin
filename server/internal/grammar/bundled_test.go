@@ -51,6 +51,34 @@ func TestBundledGrammarPack(t *testing.T) {
 			}
 		}
 	}
+	// The tutor-reviewed examples with a second legal order skip the
+	// word-order exercise; every other example keeps it.
+	noOrder := map[string]bool{}
+	for _, l := range data.Lessons {
+		for _, e := range l.Examples {
+			noOrder[e.ID] = e.NoOrder
+		}
+	}
+	flagged := []string{
+		"hsk1-negation-1", "hsk1-negation-2", "hsk1-negation-5",
+		"hsk1-separable-verbs-1", "hsk1-zai-preposition-4", "hsk1-adverbial-2",
+		"hsk1-zai-again-2", "hsk1-time-expressions-3", "hsk1-time-expressions-4",
+		"hsk1-he-conjunction-1", "hsk1-he-conjunction-2", "hsk1-he-conjunction-3",
+		"hsk1-he-conjunction-4", "hsk1-he-dui-1", "hsk1-he-dui-3", "hsk1-he-dui-5",
+		"hsk1-phrase-types-1", "hsk1-serial-verbs-5", "hsk1-coordinate-clauses-5",
+		"hsk1-dou-3",
+	}
+	for _, id := range flagged {
+		if !noOrder[id] {
+			t.Errorf("%s: want NoOrder true", id)
+		}
+	}
+	sample := []string{"hsk1-negation-3", "hsk1-negation-4", "hsk1-he-dui-2", "hsk1-he-dui-4", "hsk1-adverbial-1"}
+	for _, id := range sample {
+		if noOrder[id] {
+			t.Errorf("%s: want NoOrder false", id)
+		}
+	}
 	sqlDB := newDB(t)
 	ctx := t.Context()
 	if _, err := grammar.Import(ctx, sqlDB, pack); err != nil {

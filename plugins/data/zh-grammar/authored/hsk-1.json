@@ -105,7 +105,7 @@
           "Put a duration or 了 inside: 睡了八个小时 (not 睡觉了八个小时), 上了课, 看了病. To add an object, use the plain verb: 看医生, not 看病医生. The contrast example shows the plain verb 看 taking the object 医生."
         ],
         "examples": [
-          { "id": "hsk1-separable-verbs-1", "text": "爸爸今天上班。", "reading": "bàba jīntiān shàngbān.", "translation": "Dad is going to work today.", "focus": "上班", "distractors": ["很", "吗", "在"], "contrast": false, "kinds": ["clearly-wrong"] },
+          { "id": "hsk1-separable-verbs-1", "text": "爸爸今天上班。", "reading": "bàba jīntiān shàngbān.", "translation": "Dad is going to work today.", "focus": "上班", "distractors": ["很", "吗", "在"], "contrast": false, "kinds": ["clearly-wrong"], "noOrder": true },
           { "id": "hsk1-separable-verbs-2", "text": "我睡了八个小时。", "reading": "wǒ shuì le bā ge xiǎoshí.", "translation": "I slept for eight hours.", "focus": "睡", "distractors": ["睡觉", "看病", "吗"], "contrast": false, "kinds": ["similar", "clearly-wrong"] },
           { "id": "hsk1-separable-verbs-3", "text": "他生病了。", "reading": "tā shēngbìng le.", "translation": "He has fallen ill.", "focus": "生病", "distractors": ["很", "吗", "第"], "contrast": false, "kinds": ["clearly-wrong"] },
           { "id": "hsk1-separable-verbs-4", "text": "我们在上课。", "reading": "wǒmen zài shàngkè.", "translation": "We are in class.", "focus": "上课", "distractors": ["很", "吗", "第"], "contrast": false, "kinds": ["clearly-wrong"] },
@@ -295,7 +295,7 @@
         "examples": [
           { "id": "hsk1-dou-1", "text": "我们都是学生。", "reading": "wǒmen dōu shì xuéshēng.", "translation": "We are all students.", "focus": "都", "distractors": ["很", "吗", "在"], "contrast": false, "kinds": ["clearly-wrong"] },
           { "id": "hsk1-dou-2", "text": "他们都很忙。", "reading": "tāmen dōu hěn máng.", "translation": "They are all busy.", "focus": "都", "distractors": ["很", "吗", "在"], "contrast": false, "kinds": ["clearly-wrong"] },
-          { "id": "hsk1-dou-3", "text": "这些书我都看了。", "reading": "zhèxiē shū wǒ dōu kàn le.", "translation": "I have read all these books.", "focus": "都", "distractors": ["很", "吗", "的"], "contrast": false, "kinds": ["clearly-wrong"] },
+          { "id": "hsk1-dou-3", "text": "这些书我都看了。", "reading": "zhèxiē shū wǒ dōu kàn le.", "translation": "I have read all these books.", "focus": "都", "distractors": ["很", "吗", "的"], "contrast": false, "kinds": ["clearly-wrong"], "noOrder": true },
           { "id": "hsk1-dou-4", "text": "大家都不认识他。", "reading": "dàjiā dōu bú rènshi tā.", "translation": "Nobody knows him.", "focus": "都", "distractors": ["很", "吗", "在"], "contrast": false, "kinds": ["clearly-wrong"] },
           { "id": "hsk1-dou-5", "text": "他也很忙。", "reading": "tā yě hěn máng.", "translation": "He is busy too.", "focus": "也", "distractors": ["都", "很", "吗"], "contrast": true, "kinds": ["similar", "clearly-wrong"] }
         ]
@@ -338,7 +338,7 @@
         ],
         "examples": [
           { "id": "hsk1-zai-again-1", "text": "请再说一下。", "reading": "qǐng zài shuō yíxià.", "translation": "Please say it again.", "focus": "再", "distractors": ["在", "吗", "很"], "contrast": false, "kinds": ["similar", "clearly-wrong"] },
-          { "id": "hsk1-zai-again-2", "text": "我明天再来。", "reading": "wǒ míngtiān zài lái.", "translation": "I will come again tomorrow.", "focus": "再", "distractors": ["在", "吗", "很"], "contrast": false, "kinds": ["similar", "clearly-wrong"] },
+          { "id": "hsk1-zai-again-2", "text": "我明天再来。", "reading": "wǒ míngtiān zài lái.", "translation": "I will come again tomorrow.", "focus": "再", "distractors": ["在", "吗", "很"], "contrast": false, "kinds": ["similar", "clearly-wrong"], "noOrder": true },
           { "id": "hsk1-zai-again-3", "text": "你再吃一个包子吧。", "reading": "nǐ zài chī yí ge bāozi ba.", "translation": "Have another bun.", "focus": "再", "distractors": ["吗", "很", "的"], "contrast": false, "kinds": ["clearly-wrong"] },
           { "id": "hsk1-zai-again-4", "text": "我们再看一个电影。", "reading": "wǒmen zài kàn yí ge diànyǐng.", "translation": "Let us watch another film.", "focus": "再", "distractors": ["吗", "很", "的"], "contrast": false, "kinds": ["clearly-wrong"] },
           { "id": "hsk1-zai-again-5", "text": "我还想买一本书。", "reading": "wǒ hái xiǎng mǎi yì běn shū.", "translation": "I still want to buy a book.", "focus": "还", "distractors": ["再", "吗", "的"], "contrast": true, "kinds": ["similar", "clearly-wrong"] }
@@ -381,11 +381,11 @@
           "For a past event use 没, not 不, and drop 了 (我没吃饭, not 没吃了饭). The contrast example uses sentence-final 了 with 不 to mark a change of plan: 我不去了 (I am not going anymore). Do not put 了 right after a verb negated with 没. (不 occasionally appears in a past context with a refusing meaning, but at this level always use 没 for the past.)"
         ],
         "examples": [
-          { "id": "hsk1-negation-1", "text": "我明天不喝茶。", "reading": "wǒ míngtiān bù hē chá.", "translation": "I will not drink tea tomorrow.", "focus": "不", "distractors": ["没", "吗", "很"], "contrast": false, "kinds": ["similar", "clearly-wrong"] },
-          { "id": "hsk1-negation-2", "text": "昨天我没去学校。", "reading": "zuótiān wǒ méi qù xuéxiào.", "translation": "I did not go to school yesterday.", "focus": "没", "distractors": ["不", "吗", "很"], "contrast": false, "kinds": ["similar", "clearly-wrong"] },
+          { "id": "hsk1-negation-1", "text": "我明天不喝茶。", "reading": "wǒ míngtiān bù hē chá.", "translation": "I will not drink tea tomorrow.", "focus": "不", "distractors": ["没", "吗", "很"], "contrast": false, "kinds": ["similar", "clearly-wrong"], "noOrder": true },
+          { "id": "hsk1-negation-2", "text": "昨天我没去学校。", "reading": "zuótiān wǒ méi qù xuéxiào.", "translation": "I did not go to school yesterday.", "focus": "没", "distractors": ["不", "吗", "很"], "contrast": false, "kinds": ["similar", "clearly-wrong"], "noOrder": true },
           { "id": "hsk1-negation-3", "text": "请不要说话。", "reading": "qǐng bú yào shuōhuà.", "translation": "Please do not talk.", "focus": "不要", "distractors": ["不", "吗", "很"], "contrast": false, "kinds": ["similar", "clearly-wrong"] },
           { "id": "hsk1-negation-4", "text": "他没有手机。", "reading": "tā méiyǒu shǒujī.", "translation": "He does not have a phone.", "focus": "没有", "distractors": ["不有", "吗", "很"], "contrast": false, "kinds": ["similar", "clearly-wrong"] },
-          { "id": "hsk1-negation-5", "text": "我今天不想上班。", "reading": "wǒ jīntiān bù xiǎng shàngbān.", "translation": "I do not want to go to work today.", "focus": "不", "distractors": ["吗", "们", "的"], "contrast": false, "kinds": ["clearly-wrong"] },
+          { "id": "hsk1-negation-5", "text": "我今天不想上班。", "reading": "wǒ jīntiān bù xiǎng shàngbān.", "translation": "I do not want to go to work today.", "focus": "不", "distractors": ["吗", "们", "的"], "contrast": false, "kinds": ["clearly-wrong"], "noOrder": true },
           { "id": "hsk1-negation-6", "text": "我不去了。", "reading": "wǒ bú qù le.", "translation": "I am not going anymore.", "focus": "了", "distractors": ["吗", "很", "在"], "contrast": true, "kinds": ["similar", "clearly-wrong"] }
         ]
       }
@@ -407,7 +407,7 @@
           { "id": "hsk1-zai-preposition-1", "text": "我在家吃饭。", "reading": "wǒ zài jiā chī fàn.", "translation": "I eat at home.", "focus": "在", "distractors": ["是", "很", "吗"], "contrast": false, "kinds": ["similar", "clearly-wrong"] },
           { "id": "hsk1-zai-preposition-2", "text": "他在学校学习。", "reading": "tā zài xuéxiào xuéxí.", "translation": "He studies at school.", "focus": "在", "distractors": ["是", "很", "吗"], "contrast": false, "kinds": ["similar", "clearly-wrong"] },
           { "id": "hsk1-zai-preposition-3", "text": "我们在饭店吃晚饭。", "reading": "wǒmen zài fàndiàn chī wǎnfàn.", "translation": "We have dinner at a restaurant.", "focus": "在", "distractors": ["是", "很", "都"], "contrast": false, "kinds": ["similar", "clearly-wrong"] },
-          { "id": "hsk1-zai-preposition-4", "text": "我上午在医院看病。", "reading": "wǒ shàngwǔ zài yīyuàn kànbìng.", "translation": "I see a doctor at the hospital in the morning.", "focus": "在", "distractors": ["是", "很", "吗"], "contrast": false, "kinds": ["similar", "clearly-wrong"] },
+          { "id": "hsk1-zai-preposition-4", "text": "我上午在医院看病。", "reading": "wǒ shàngwǔ zài yīyuàn kànbìng.", "translation": "I see a doctor at the hospital in the morning.", "focus": "在", "distractors": ["是", "很", "吗"], "contrast": false, "kinds": ["similar", "clearly-wrong"], "noOrder": true },
           { "id": "hsk1-zai-preposition-5", "text": "姐姐正在看电视。", "reading": "jiějie zhèngzài kàn diànshì.", "translation": "My older sister is watching TV.", "focus": "正在", "distractors": ["很", "吗", "的"], "contrast": true, "kinds": ["clearly-wrong"] }
         ]
       }
@@ -426,11 +426,11 @@
           "The contrast example uses 和 as a conjunction joining two nouns (苹果和饺子). As a preposition 和 means with and is followed by a verb phrase (我和朋友去); as a conjunction it joins two things into one unit (我喜欢苹果和饺子)."
         ],
         "examples": [
-          { "id": "hsk1-he-dui-1", "text": "我和他一起去学校。", "reading": "wǒ hé tā yìqǐ qù xuéxiào.", "translation": "I go to school with him.", "focus": "和", "distractors": ["对", "很", "吗"], "contrast": false, "kinds": ["similar", "clearly-wrong"] },
+          { "id": "hsk1-he-dui-1", "text": "我和他一起去学校。", "reading": "wǒ hé tā yìqǐ qù xuéxiào.", "translation": "I go to school with him.", "focus": "和", "distractors": ["对", "很", "吗"], "contrast": false, "kinds": ["similar", "clearly-wrong"], "noOrder": true },
           { "id": "hsk1-he-dui-2", "text": "妈妈对我很好。", "reading": "māma duì wǒ hěn hǎo.", "translation": "Mum is very kind to me.", "focus": "对", "distractors": ["吗", "很", "的"], "contrast": false, "kinds": ["clearly-wrong"] },
-          { "id": "hsk1-he-dui-3", "text": "我和姐姐住一个房间。", "reading": "wǒ hé jiějie zhù yí ge fángjiān.", "translation": "I share a room with my older sister.", "focus": "和", "distractors": ["对", "吗", "很"], "contrast": false, "kinds": ["similar", "clearly-wrong"] },
+          { "id": "hsk1-he-dui-3", "text": "我和姐姐住一个房间。", "reading": "wǒ hé jiějie zhù yí ge fángjiān.", "translation": "I share a room with my older sister.", "focus": "和", "distractors": ["对", "吗", "很"], "contrast": false, "kinds": ["similar", "clearly-wrong"], "noOrder": true },
           { "id": "hsk1-he-dui-4", "text": "老师对我们很好。", "reading": "lǎoshī duì wǒmen hěn hǎo.", "translation": "The teacher is very kind to us.", "focus": "对", "distractors": ["吗", "很", "的"], "contrast": false, "kinds": ["clearly-wrong"] },
-          { "id": "hsk1-he-dui-5", "text": "我喜欢苹果和饺子。", "reading": "wǒ xǐhuan píngguǒ hé jiǎozi.", "translation": "I like apples and dumplings.", "focus": "和", "distractors": ["对", "吗", "很"], "contrast": true, "kinds": ["similar", "clearly-wrong"] }
+          { "id": "hsk1-he-dui-5", "text": "我喜欢苹果和饺子。", "reading": "wǒ xǐhuan píngguǒ hé jiǎozi.", "translation": "I like apples and dumplings.", "focus": "和", "distractors": ["对", "吗", "很"], "contrast": true, "kinds": ["similar", "clearly-wrong"], "noOrder": true }
         ]
       }
     },
@@ -448,10 +448,10 @@
           "The contrast example uses 和 as a preposition meaning with (我和朋友去电影院 = I go with friends). As a conjunction 和 joins two equal things; as a preposition it introduces a companion before a verb. 和 does not join two sentences (you cannot say 我去商店和我买书)."
         ],
         "examples": [
-          { "id": "hsk1-he-conjunction-1", "text": "我和妹妹都喜欢猫。", "reading": "wǒ hé mèimei dōu xǐhuan māo.", "translation": "My younger sister and I both like cats.", "focus": "和", "distractors": ["对", "很", "吗"], "contrast": false, "kinds": ["similar", "clearly-wrong"] },
-          { "id": "hsk1-he-conjunction-2", "text": "爸爸和妈妈都在公司工作。", "reading": "bàba hé māma dōu zài gōngsī gōngzuò.", "translation": "Dad and Mum both work at a company.", "focus": "和", "distractors": ["对", "很", "吗"], "contrast": false, "kinds": ["similar", "clearly-wrong"] },
-          { "id": "hsk1-he-conjunction-3", "text": "我喜欢看书和写字。", "reading": "wǒ xǐhuan kàn shū hé xiě zì.", "translation": "I like reading and writing.", "focus": "和", "distractors": ["对", "吗", "很"], "contrast": false, "kinds": ["similar", "clearly-wrong"] },
-          { "id": "hsk1-he-conjunction-4", "text": "这本书和那本书都很好。", "reading": "zhè běn shū hé nà běn shū dōu hěn hǎo.", "translation": "This book and that book are both good.", "focus": "和", "distractors": ["对", "吗", "很"], "contrast": false, "kinds": ["similar", "clearly-wrong"] },
+          { "id": "hsk1-he-conjunction-1", "text": "我和妹妹都喜欢猫。", "reading": "wǒ hé mèimei dōu xǐhuan māo.", "translation": "My younger sister and I both like cats.", "focus": "和", "distractors": ["对", "很", "吗"], "contrast": false, "kinds": ["similar", "clearly-wrong"], "noOrder": true },
+          { "id": "hsk1-he-conjunction-2", "text": "爸爸和妈妈都在公司工作。", "reading": "bàba hé māma dōu zài gōngsī gōngzuò.", "translation": "Dad and Mum both work at a company.", "focus": "和", "distractors": ["对", "很", "吗"], "contrast": false, "kinds": ["similar", "clearly-wrong"], "noOrder": true },
+          { "id": "hsk1-he-conjunction-3", "text": "我喜欢看书和写字。", "reading": "wǒ xǐhuan kàn shū hé xiě zì.", "translation": "I like reading and writing.", "focus": "和", "distractors": ["对", "吗", "很"], "contrast": false, "kinds": ["similar", "clearly-wrong"], "noOrder": true },
+          { "id": "hsk1-he-conjunction-4", "text": "这本书和那本书都很好。", "reading": "zhè běn shū hé nà běn shū dōu hěn hǎo.", "translation": "This book and that book are both good.", "focus": "和", "distractors": ["对", "吗", "很"], "contrast": false, "kinds": ["similar", "clearly-wrong"], "noOrder": true },
           { "id": "hsk1-he-conjunction-5", "text": "我和朋友去电影院。", "reading": "wǒ hé péngyou qù diànyǐngyuàn.", "translation": "I go to the cinema with a friend.", "focus": "和", "distractors": ["对", "吗", "很"], "contrast": true, "kinds": ["similar", "clearly-wrong"] }
         ]
       }
@@ -582,7 +582,7 @@
           "The contrast example uses a preposition-object phrase (在家), which is an other type (next lesson): a preposition plus its object, used before a verb. The four basic types build the core of a sentence; preposition-object and place phrases modify it."
         ],
         "examples": [
-          { "id": "hsk1-phrase-types-1", "text": "我和妹妹去学校。", "reading": "wǒ hé mèimei qù xuéxiào.", "translation": "My younger sister and I go to school.", "focus": "和", "distractors": ["对", "吗", "很"], "contrast": false, "kinds": ["similar", "clearly-wrong"] },
+          { "id": "hsk1-phrase-types-1", "text": "我和妹妹去学校。", "reading": "wǒ hé mèimei qù xuéxiào.", "translation": "My younger sister and I go to school.", "focus": "和", "distractors": ["对", "吗", "很"], "contrast": false, "kinds": ["similar", "clearly-wrong"], "noOrder": true },
           { "id": "hsk1-phrase-types-2", "text": "这是我的新书。", "reading": "zhè shì wǒ de xīn shū.", "translation": "This is my new book.", "focus": "的", "distractors": ["得", "地", "吗"], "contrast": false, "kinds": ["similar", "clearly-wrong"] },
           { "id": "hsk1-phrase-types-3", "text": "我喜欢看电影。", "reading": "wǒ xǐhuan kàn diànyǐng.", "translation": "I like watching films.", "focus": "看", "distractors": ["吗", "很", "在"], "contrast": false, "kinds": ["clearly-wrong"] },
           { "id": "hsk1-phrase-types-4", "text": "我觉得他很好。", "reading": "wǒ juéde tā hěn hǎo.", "translation": "I think he is very good.", "focus": "觉得", "distractors": ["吗", "很", "的"], "contrast": false, "kinds": ["clearly-wrong"] },
@@ -715,7 +715,7 @@
         ],
         "examples": [
           { "id": "hsk1-adverbial-1", "text": "我很忙。", "reading": "wǒ hěn máng.", "translation": "I am busy.", "focus": "很", "distractors": ["吗", "第", "边"], "contrast": false, "kinds": ["clearly-wrong"] },
-          { "id": "hsk1-adverbial-2", "text": "我明天去学校。", "reading": "wǒ míngtiān qù xuéxiào.", "translation": "I go to school tomorrow.", "focus": "明天", "distractors": ["吗", "很", "的"], "contrast": false, "kinds": ["clearly-wrong"] },
+          { "id": "hsk1-adverbial-2", "text": "我明天去学校。", "reading": "wǒ míngtiān qù xuéxiào.", "translation": "I go to school tomorrow.", "focus": "明天", "distractors": ["吗", "很", "的"], "contrast": false, "kinds": ["clearly-wrong"], "noOrder": true },
           { "id": "hsk1-adverbial-3", "text": "我们在家吃饭。", "reading": "wǒmen zài jiā chī fàn.", "translation": "We eat at home.", "focus": "在", "distractors": ["是", "很", "吗"], "contrast": false, "kinds": ["similar", "clearly-wrong"] },
           { "id": "hsk1-adverbial-4", "text": "他非常喜欢猫。", "reading": "tā fēicháng xǐhuan māo.", "translation": "He likes cats very much.", "focus": "非常", "distractors": ["吗", "的", "再"], "contrast": false, "kinds": ["clearly-wrong"] },
           { "id": "hsk1-adverbial-5", "text": "这是我的书。", "reading": "zhè shì wǒ de shū.", "translation": "This is my book.", "focus": "的", "distractors": ["得", "地", "吗"], "contrast": true, "kinds": ["similar", "clearly-wrong"] }
@@ -938,7 +938,7 @@
           { "id": "hsk1-serial-verbs-2", "text": "他坐出租车去学校。", "reading": "tā zuò chūzūchē qù xuéxiào.", "translation": "He goes to school by taxi.", "focus": "坐", "distractors": ["吗", "很", "第"], "contrast": false, "kinds": ["clearly-wrong"] },
           { "id": "hsk1-serial-verbs-3", "text": "妈妈去医院看病。", "reading": "māma qù yīyuàn kànbìng.", "translation": "Mum goes to the hospital to see a doctor.", "focus": "看", "distractors": ["吗", "很", "在"], "contrast": false, "kinds": ["clearly-wrong"] },
           { "id": "hsk1-serial-verbs-4", "text": "他开车去公司。", "reading": "tā kāi chē qù gōngsī.", "translation": "He drives to the company.", "focus": "开", "distractors": ["吗", "很", "第"], "contrast": false, "kinds": ["clearly-wrong"] },
-          { "id": "hsk1-serial-verbs-5", "text": "我和朋友去书店。", "reading": "wǒ hé péngyou qù shūdiàn.", "translation": "I go to the bookshop with a friend.", "focus": "和", "distractors": ["对", "吗", "很"], "contrast": true, "kinds": ["similar", "clearly-wrong"] }
+          { "id": "hsk1-serial-verbs-5", "text": "我和朋友去书店。", "reading": "wǒ hé péngyou qù shūdiàn.", "translation": "I go to the bookshop with a friend.", "focus": "和", "distractors": ["对", "吗", "很"], "contrast": true, "kinds": ["similar", "clearly-wrong"], "noOrder": true }
         ]
       }
     },
@@ -982,7 +982,7 @@
           { "id": "hsk1-coordinate-clauses-2", "text": "他会说汉语，还会写汉字。", "reading": "tā huì shuō Hànyǔ, hái huì xiě Hànzì.", "translation": "He can speak Chinese, and he can also write characters.", "focus": "还", "distractors": ["再", "吗", "在"], "contrast": false, "kinds": ["similar", "clearly-wrong"] },
           { "id": "hsk1-coordinate-clauses-3", "text": "今天很冷，还下雨。", "reading": "jīntiān hěn lěng, hái xià yǔ.", "translation": "It is cold today, and it is also raining.", "focus": "还", "distractors": ["再", "吗", "很"], "contrast": false, "kinds": ["similar", "clearly-wrong"] },
           { "id": "hsk1-coordinate-clauses-4", "text": "我是学生，他也是学生。", "reading": "wǒ shì xuéshēng, tā yě shì xuéshēng.", "translation": "I am a student, and he is a student too.", "focus": "也", "distractors": ["都", "吗", "很"], "contrast": false, "kinds": ["similar", "clearly-wrong"] },
-          { "id": "hsk1-coordinate-clauses-5", "text": "我有哥哥和姐姐。", "reading": "wǒ yǒu gēge hé jiějie.", "translation": "I have an older brother and an older sister.", "focus": "和", "distractors": ["对", "吗", "很"], "contrast": true, "kinds": ["similar", "clearly-wrong"] }
+          { "id": "hsk1-coordinate-clauses-5", "text": "我有哥哥和姐姐。", "reading": "wǒ yǒu gēge hé jiějie.", "translation": "I have an older brother and an older sister.", "focus": "和", "distractors": ["对", "吗", "很"], "contrast": true, "kinds": ["similar", "clearly-wrong"], "noOrder": true }
         ]
       }
     },
@@ -1090,8 +1090,8 @@
         "examples": [
           { "id": "hsk1-time-expressions-1", "text": "今天星期几？", "reading": "jīntiān xīngqī jǐ?", "translation": "What day is it today?", "focus": "星期", "distractors": ["吗", "很", "的"], "contrast": false, "kinds": ["clearly-wrong"] },
           { "id": "hsk1-time-expressions-2", "text": "现在八点十分。", "reading": "xiànzài bā diǎn shí fēn.", "translation": "It is ten past eight.", "focus": "分", "distractors": ["岁", "吗", "个"], "contrast": false, "kinds": ["similar", "clearly-wrong"] },
-          { "id": "hsk1-time-expressions-3", "text": "我明年去中国。", "reading": "wǒ míngnián qù Zhōngguó.", "translation": "I am going to China next year.", "focus": "明年", "distractors": ["吗", "很", "的"], "contrast": false, "kinds": ["clearly-wrong"] },
-          { "id": "hsk1-time-expressions-4", "text": "他上午上课。", "reading": "tā shàngwǔ shàngkè.", "translation": "He has class in the morning.", "focus": "上午", "distractors": ["吗", "很", "的"], "contrast": false, "kinds": ["clearly-wrong"] },
+          { "id": "hsk1-time-expressions-3", "text": "我明年去中国。", "reading": "wǒ míngnián qù Zhōngguó.", "translation": "I am going to China next year.", "focus": "明年", "distractors": ["吗", "很", "的"], "contrast": false, "kinds": ["clearly-wrong"], "noOrder": true },
+          { "id": "hsk1-time-expressions-4", "text": "他上午上课。", "reading": "tā shàngwǔ shàngkè.", "translation": "He has class in the morning.", "focus": "上午", "distractors": ["吗", "很", "的"], "contrast": false, "kinds": ["clearly-wrong"], "noOrder": true },
           { "id": "hsk1-time-expressions-5", "text": "现在两点半。", "reading": "xiànzài liǎng diǎn bàn.", "translation": "It is half past two.", "focus": "半", "distractors": ["分", "吗", "很"], "contrast": true, "kinds": ["similar", "clearly-wrong"] }
         ]
       }

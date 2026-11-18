@@ -65,10 +65,15 @@ pack's `language` is stored as its primary subtag (`zh-tw` becomes `zh`).
 Grammar pack format (`format: json`): `lessons.json` is `{"levels": [{"id",
 "name", "schemeLevels": [{"scheme": "<levels pack id>", "level": "<level name>"}]}],
 "lessons": [{"id", "level", "title", "summary", "pattern": [...], "body": [...],
-"examples": [{"id", "text", "reading", "translation", "focus", "distractors": [...]}]}]}`.
+"examples": [{"id", "text", "reading", "translation", "focus", "distractors": [...],
+"noOrder"}]}]}`.
 Lesson text is plain text. `focus` (a part of `text`) and at least two
 `distractors` that are wrong in that sentence give a fill-the-gap exercise.
-The full limits are enforced by `server/internal/grammar/schema.go`.
+The optional `noOrder: true` on an example skips its word-order exercise for a
+sentence whose tokens have a second legal order (time-adverb fronting, `A和B`
+symmetry, `都` object fronting); its fill-the-gap exercise still runs. Absent
+means false. The full limits are enforced by
+`server/internal/grammar/schema.go`.
 
 The other hand-written samples live in `plugins/samples/`, outside the default
 seed root. The DICTIONARIES `zh-mini` (pinyin → bopomofo, traditional
