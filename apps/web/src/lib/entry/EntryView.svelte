@@ -38,8 +38,9 @@
 	let {
 		entryId: requestedId,
 		headingLevel = 1,
-		recordView = true
-	}: { entryId: number | null; headingLevel?: 1 | 2; recordView?: boolean } = $props();
+		recordView = true,
+		ontitle
+	}: { entryId: number | null; headingLevel?: 1 | 2; recordView?: boolean; ontitle?: (written: string) => void } = $props();
 
 	let entry = $state<Entry | null>(null);
 	let chars = $state<EntryBase[]>([]);
@@ -84,6 +85,7 @@
 			const loaded = await getEntry(id);
 			if (seq !== requestSeq) return;
 			entry = loaded;
+			ontitle?.(loaded.written);
 			// The optional sections must never blank the page: they load after
 			// the entry is on screen and fall back to nothing on failure.
 			void loadExtras(loaded, seq);
@@ -245,7 +247,7 @@
 				{/if}
 				<div class="chips">
 					<Chip>{t(entry.kind === 'character' ? 'entry.chips.character' : 'entry.chips.word')}</Chip>
-					{#if rank !== null}<Chip>{t('entry.chips.frequency', { rank: formatNumber(rank) })}</Chip>{/if}
+					{#if rank !== null}<Chip>#{t('entry.chips.frequency', { rank: formatNumber(rank) })}</Chip>{/if}
 					{#if inDecks > 0}<Chip tone="good">{t('entry.chips.inDecks', { count: inDecks })}</Chip>{/if}
 					{#if entry.language !== $workspaces.current?.language}
 						<Chip>{languageLabel(entry.language)}</Chip>
@@ -314,7 +316,7 @@
 											{#if c.reading}<span class="reading" lang={studyLang(entry.language)}>{c.reading.value}</span>{/if}
 											{#if c.gloss}<span class="gloss">{c.gloss}</span>{/if}
 											<small>
-												{#if c.radical}{t('entry.char.meta', { radical: c.radical.written, strokes: c.strokes })}{:else}{t('entry.char.metaNoRadical', { strokes: c.strokes })}{/if}
+												{#if c.radical}{t('entry.char.meta', { radical: c.radical.written })} · {/if}{t('entry.char.strokes', { strokes: c.strokes })}
 											</small>
 										</span>
 									</a>

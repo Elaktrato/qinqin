@@ -1,5 +1,7 @@
 <script lang="ts">
 	import { page } from '$app/state';
+	import { pageTitle } from '$lib/pageTitle';
+	import { t } from '$lib/i18n';
 	import EntryView from '$lib/entry/EntryView.svelte';
 	import { setFrameTitle } from '$lib/frame/pageFrame.svelte';
 
@@ -10,9 +12,14 @@
 	}
 
 	const entryId = $derived(parseEntryId(page.params.id));
+	let written = $state('');
 	setFrameTitle(() => (entryId === null ? '' : `#${entryId}`));
 </script>
 
+<svelte:head>
+	<title>{pageTitle(written || t('entry.page.notFound'))}</title>
+</svelte:head>
+
 <div class="page-body entry-page">
-	<EntryView {entryId} headingLevel={1} recordView={true} />
+	<EntryView {entryId} headingLevel={1} recordView={true} ontitle={(w) => (written = w)} />
 </div>

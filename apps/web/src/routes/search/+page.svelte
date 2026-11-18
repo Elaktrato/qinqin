@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { pageTitle } from '$lib/pageTitle';
 	import { t } from '$lib/i18n';
-	import { glossLang, studyLang, wordReadingLang, readingLang } from '$lib/i18n/lang';
 	import { get } from 'svelte/store';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
@@ -144,10 +143,6 @@
 		if (hits.length === 0) return t('search.noResults', { query: activeQuery });
 		return t('search.resultsAnnounce', { count: hits.length, query: activeQuery });
 	});
-
-	function sourceLabel(source: string): string {
-		return source === 'written' ? t('search.matchedWritten') : source;
-	}
 
 	async function runSearch(q: string, language: string, f: SearchFilters): Promise<void> {
 		const seq = ++requestSeq;

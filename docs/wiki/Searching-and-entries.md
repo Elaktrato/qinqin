@@ -6,9 +6,11 @@ Search looks across written forms, readings and meanings and is scoped to the la
 
 Readings you can search by: pinyin and bopomofo for Chinese, kana (and romaji) for Japanese.
 
+On a wide screen the results stay on the left and the selected entry opens beside them; a row is one link, named by the word, with its reading, the first gloss your workspace does not hide and its kind and level. Choosing a row keeps the list in place. The address carries everything, so a search can be shared or reloaded: `/search?q=…&kind=…&scheme=…&level=…&e=<entry id>`. A new query drops the selected entry; changing a filter keeps it. On a phone the list and the entry are two views: tapping a result opens the entry, and **Back to results** returns to the list.
+
 ## Find a character by radical or part
 
-In a Chinese or Japanese workspace, **Find a character by radical or part** on the Search page opens `/search/parts`, for a character you can see but cannot read or type (鯖, 锈).
+In a Chinese or Japanese workspace, **By parts** next to the search field opens `/search/parts`, for a character you can see but cannot read or type (鯖, 锈).
 
 - **Radical**: the 214 Kangxi radicals in 17 groups by their classical stroke count. Each tile shows the radical with the shapes you meet in text (氵 for 水; 讠 in Chinese, 竜 in Japanese). Picking one lists the characters classified under it.
 - **Parts**: the parts you can see anywhere in the character, at any depth (語 has 言 口 吾 五 二). Every chosen part must be in the character. Parts that would leave nothing are greyed out; the list shows the common parts first, **Show all parts** lists the rest. Japanese has a bundled parts list (derived from KanjiVG); Chinese has radicals and strokes only, unless the server has a local components pack.
@@ -25,7 +27,8 @@ An entry is one dictionary headword, either a **word** or a **character** (kanji
 - **Chinese**: one entry per simplified written form; traditional forms are forms of the same entry, so searching 學習 finds 学习. A written form with several readings (行 xíng, háng) is one entry with all readings.
 - **Japanese**: one entry per JMdict word, with all forms and readings and part-of-speech tags per sense. Homographs are separate entries.
 - **Japanese headwords**: a word whose main meaning the dictionary marks as usually written in kana is shown in kana (こと, する, これ, わかる) in search results, on the entry page, in decks, on cards and in the Reader popup; its other spellings are listed on the entry page ("Also written: 事"), and searching for a kanji spelling shows that spelling. A spelling the dictionary keeps only for searching is never shown as the headword (の, not 乃). A card added before this rule keeps the form it was added with in the card manager until you add it again.
-- **Characters** show readings, radicals, variants and stroke counts. Chinese character entries add animated stroke order. A radical entry lists the characters classified under it.
+- **Characters** show readings, radicals, variants and stroke counts. Chinese character entries add animated stroke order. A radical entry lists the characters classified under it. A word entry lists its Han characters in order with each character's reading, gloss, radical, stroke count and level, linked to the character entry; a Chinese word lets you pick which character the stroke player shows.
+- **Related** lists the dictionaries' cross-references to other words, linked to search.
 - **Level badges** (HSK, JLPT and other level schemes you have installed) appear on entries; word-based schemes derive badges for their characters.
 - **Frequency**: a rank chip appears where a frequency pack covers the word. Frequency also orders lookup results when a pack exists.
 - **Example sentences** come from installed sentence packs plus your own. Sentences you save are private to you.
