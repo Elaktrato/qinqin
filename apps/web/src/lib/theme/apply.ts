@@ -4,7 +4,7 @@
 // (`qinqin.theme.last.v1`), so the next start paints before anything loads:
 // app.html's first-paint script reads them (it mirrors applyLastTokens; a
 // test runs both and compares), and applyStartupTheme paints them, or the
-// compiled-in Latte/Mocha, before the app mounts.
+// compiled-in qinqin Day/Night, before the app mounts.
 
 import { ADJUSTMENTS, DEFAULT_APPEARANCE, MODES, slotFor, type Appearance, type Mode, type Slot } from './appearance';
 import { cssVariables, derive, TOKEN_NAMES } from './derive';
@@ -173,7 +173,7 @@ export function prefersDarkScheme(): boolean {
 
 /**
  * applyStartupTheme runs before the app mounts: the last tokens of this
- * device, else the compiled-in Latte or Mocha by the device preference.
+ * device, else the compiled-in qinqin Day or Night by the device preference.
  */
 export function applyStartupTheme(
 	storage: Storage | null = deviceStorage(),
