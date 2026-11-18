@@ -3,6 +3,7 @@
 **Using qinqin**
 
 - [Getting started](Getting-started)
+- [Finding your way](Finding-your-way)
 - [Workspaces and languages](Workspaces-and-languages)
 - [Searching and entries](Searching-and-entries)
 - [Flashcards: study sessions](Flashcards-study-sessions)
@@ -10,11 +11,13 @@
 - [Daily goals](Daily-goals)
 - [Scheduling and FSRS](Scheduling-and-FSRS)
 - [Reader](Reader)
+- [Grammar lessons](Grammar-lessons)
 - [Journal and AI](Journal-and-AI)
 - [Stats and heatmap](Stats-and-heatmap)
 - [Weekly summary](Weekly-summary)
 - [Milestones](Milestones)
 - [Settings tour](Settings-tour)
+- [Appearance and themes](Appearance-and-themes)
 - [Accounts and sign-in](Accounts-and-sign-in)
 - [Your data](Your-data)
 - [Install and offline](Install-and-offline)

@@ -1,19 +1,20 @@
 # qinqin wiki
 
-qinqin (勤勤, pronounced qínqín) is a self-hosted platform for studying Chinese and Japanese: dictionary lookup, character readings and stroke order, flashcards scheduled with FSRS, a Reader for books, a Journal with optional AI review, and statistics. It is one small Docker stack: a Go server with a SQLite database and an embedded web app.
+qinqin (勤勤, pronounced qínqín) is a self-hosted platform for studying Chinese and Japanese: dictionary lookup, character readings and stroke order, flashcards scheduled with FSRS, a Reader for books, short grammar lessons, a Journal with optional AI review, statistics, and themes of your choice. It is one small Docker stack: a Go server with a SQLite database and an embedded web app.
 
 This wiki has four parts. Pick the one that matches why you are here.
 
 ## Using qinqin
 
-- [Getting started](Getting-started): first sign-in, the home page, the main areas.
+- [Getting started](Getting-started): your account, the first sign-in, a first ten minutes.
+- [Finding your way](Finding-your-way): the top bar, the phone menu, the workspace and account menus, the home page.
 - [Workspaces and languages](Workspaces-and-languages)
-- [Searching and entries](Searching-and-entries)
+- [Searching and entries](Searching-and-entries): search, radical and part lookup, entries, notes, lookup history.
 - [Flashcards: study sessions](Flashcards-study-sessions), [Decks, limits and vacation](Flashcards-decks-limits-vacation), [Daily goals](Daily-goals), [Scheduling and the FSRS optimizer](Scheduling-and-FSRS)
-- [Reader](Reader)
+- [Reader](Reader) and [Grammar lessons](Grammar-lessons)
 - [Journal and AI providers](Journal-and-AI)
 - [Stats and the activity heatmap](Stats-and-heatmap), [Weekly summary](Weekly-summary), [Milestones](Milestones)
-- [Settings tour](Settings-tour)
+- [Settings tour](Settings-tour) and [Appearance and themes](Appearance-and-themes)
 - [Accounts and sign-in](Accounts-and-sign-in)
 - [Your data: export and restore](Your-data)
 - [Install as an app and study offline](Install-and-offline)
