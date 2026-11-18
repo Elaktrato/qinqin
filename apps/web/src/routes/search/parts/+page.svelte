@@ -255,10 +255,6 @@
 </div>
 
 <style>
-	.parts-page section {
-		margin-top: 1.25rem;
-	}
-
 	.typed {
 		display: flex;
 		flex-wrap: wrap;
@@ -275,11 +271,6 @@
 		margin-top: 0.75rem;
 	}
 
-	.clear:disabled {
-		opacity: 0.45;
-		cursor: default;
-	}
-
 	.group-label {
 		margin: 0.5rem 0 0.25rem;
 		font-size: 0.8rem;
@@ -294,7 +285,7 @@
 		gap: 0.3rem;
 	}
 
-	.tile {
+	:global(.tile) {
 		min-width: 2.75rem;
 		min-height: 2.75rem;
 		padding: 0.2rem 0.35rem;
@@ -308,20 +299,20 @@
 		cursor: pointer;
 	}
 
-	.tile .forms {
+	:global(.tile) .forms {
 		margin-left: 0.15rem;
 		font-size: 0.8rem;
 		color: var(--readable-muted);
 	}
 
-	.tile[aria-pressed='true'],
-	.chip[aria-pressed='true'] {
+	:global(.tile[aria-pressed='true']),
+	:global(.chip[aria-pressed='true']) {
 		background: var(--accent);
 		border-color: var(--accent);
 		color: var(--on-accent);
 	}
 
-	.tile[aria-disabled='true'] {
+	:global(.tile[aria-disabled='true']) {
 		opacity: 0.3;
 		cursor: default;
 	}

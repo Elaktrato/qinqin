@@ -41,7 +41,7 @@ const PENDING_LENGTH: Record<Rule, number> = {
 	caps: 1,
 	border: 11,
 	shadow: 4,
-	control: 3
+	control: 0
 };
 
 const LINTS: Record<'colour' | 'opacity', (src: string, kind: StyleKind) => Finding[]> = {
@@ -137,11 +137,7 @@ describe('the allowlist matching', () => {
 });
 
 /** Page-manifest files still carrying restyle findings until the Select-dependent pass (P7/P17/P22). */
-const PAGE_REMAINDER: Partial<Record<Rule, string[]>> = {
-	control: [
-		'routes/search/parts/+page.svelte',
-	]
-};
+const PAGE_REMAINDER: Partial<Record<Rule, string[]>> = {};
 
 describe('the page manifest and the ratchet (#106)', () => {
 	it('no #106 page file is on a restyle list except the named Select-pass remainder', () => {

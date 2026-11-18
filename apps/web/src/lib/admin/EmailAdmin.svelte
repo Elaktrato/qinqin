@@ -109,7 +109,7 @@
 	<p class="hint">{t('admin.email.intro')}</p>
 	{#if error}<p class="error" role="alert">{error}</p>{/if}
 	<p class="ok" role="status">{status}</p>
-	{#if saved && draft}
+	{#if saved && draft && typeof draft.port === 'number'}
 		{#if saved.secret !== 'ok'}
 			<p class="hint">{t('admin.email.secretState', { state: String(saved.secret) })}</p>
 		{/if}
