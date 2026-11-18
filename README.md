@@ -90,7 +90,8 @@ before it listens (about 2 minutes, once; `QINQIN_AUTO_SEED=0` turns that off). 
   registration becomes the administrator, whoever makes it. Or set `QINQIN_BOOTSTRAP_ADMIN` to a username:
   on the first start the server creates that admin before it opens the port and prints a one-time password in
   the container log (or uses `QINQIN_BOOTSTRAP_PASSWORD`); it must be changed at the first sign-in.
-- **`QINQIN_SECRET` is optional.** Without it the AI features are off and everything else works. With it
+- **`QINQIN_SECRET` is optional.** Without it the AI features, authenticator apps and a
+  stored mail password are unavailable; everything else works. With it
   (`head -c 32 /dev/urandom | base64`) users' AI keys, the mail password and authenticator secrets are stored
   encrypted. Back it up separately from the data volume; it is never written there.
 - **No reverse proxy in front?** Set `QINQIN_TRUSTED_PROXIES=none`. For HTTPS (needed to install the app
@@ -106,7 +107,7 @@ Portainer step by step, the data directory and the checklist after deploying:
 ## Release images and versions
 
 CI publishes `ghcr.io/elaktrato/qinqin` on pushes to `main` and on `v*` tags (pushes to `develop` only run
-the tests). Tags: `latest` (the newest `main` build), `v<version>` for a release (for example `v0.4.0`) and
+the tests). Tags: `latest` (the newest `main` build), `v<version>` for a release (for example `v0.4.1`) and
 `sha-<commit>`. For production pin a `v*` tag in `QINQIN_IMAGE`, so a redeploy never changes the version by
 surprise. The package is public; an image your own fork publishes starts as a private package (see
 [Deploying](https://github.com/Elaktrato/qinqin/wiki/Admin-deploying#release-images-and-versions)).

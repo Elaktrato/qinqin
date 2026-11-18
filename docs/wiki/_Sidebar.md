@@ -34,7 +34,7 @@
 - [Data packs](Admin-data-packs)
 - [AI and OCR](Admin-AI-and-OCR)
 
-**API**
+**Building a client**
 
 - [API overview](API-Overview)
 - [API reference](API-Reference)

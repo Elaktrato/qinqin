@@ -12,7 +12,7 @@ Check the container log first (Portainer: Containers, `qinqin`, Logs; or `docker
 | Container keeps restarting | Read its log. A bad host path in `QINQIN_DATA_VOLUME`, or no write permission (`create data directory ...`): fix the ownership (the image runs as root). `QINQIN_TRUSTED_PROXIES: ...`: a malformed value. `QINQIN_BOOTSTRAP_ADMIN: ...` or `QINQIN_BOOTSTRAP_PASSWORD: ...`: the bootstrap username or password breaks the rules (3 to 32 letters, digits, `.`, `_`, `-`; a password of 10 to 256 characters, not the username) |
 | The bootstrap admin's generated password is lost | It is printed once (`bootstrap: initial password ...`) on the first start only. If nobody has signed in, run `qinqin recover --username <name>` to set a new temporary one |
 | "port is already allocated" | Change `QINQIN_PORT` |
-| Container unhealthy | Run `wget -qO- http://127.0.0.1:8080/healthz` inside it and read the log; a slow first start on a slow disk can exceed the 15 s start period |
+| Container unhealthy | Run `wget -qO- http://127.0.0.1:8080/healthz` inside it and read the log; the first start installs the bundled packs before it listens (about 2 minutes); on a slow disk it can exceed the 300 s start period |
 | Log: `AI disabled: QINQIN_SECRET is not 32 bytes of base64` | Regenerate with `head -c 32 /dev/urandom \| base64`. Without it AI stays off; the app works |
 | AI settings say there is no secret | `QINQIN_SECRET` was unset or invalid when the container started; fix it and redeploy |
 | Everyone shares one sign-in limit, or limits can be dodged | `X-Forwarded-For` handling is wrong: set `QINQIN_TRUSTED_PROXIES` ([Reverse proxy, rate limiting and trusted proxies](Admin-proxy-and-rate-limiting)) |

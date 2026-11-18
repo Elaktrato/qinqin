@@ -1,12 +1,12 @@
 # Environment variables
 
-Set them in a `.env` file next to `docker-compose.yml`, in the shell, or (Portainer) in the stack's Environment variables. `docker-compose.yml` passes each of the variables below to the container; a variable not listed here is not read by the server.
+Set them in a `.env` file next to `docker-compose.yml`, in the shell, or (Portainer) in the stack's Environment variables. `docker-compose.yml` passes every server variable below to the container. It does not pass `QINQIN_PACKS` (the image sets it), the command-line `QINQIN_PASSWORD` or `TESSDATA_PREFIX`: set those yourself where you need them (for example `docker compose exec -e QINQIN_PASSWORD=...`).
 
 ## Stack variables (read by Docker Compose)
 
 | Variable | Meaning |
 |---|---|
-| `QINQIN_IMAGE` | The image to run. Default `ghcr.io/elaktrato/qinqin:latest`; for production pin a release such as `ghcr.io/elaktrato/qinqin:v0.3.0` ([Deploying](Admin-deploying#release-images-and-versions)) |
+| `QINQIN_IMAGE` | The image to run. Default `ghcr.io/elaktrato/qinqin:latest`; for production pin a release such as `ghcr.io/elaktrato/qinqin:v0.4.1` ([Deploying](Admin-deploying#release-images-and-versions)) |
 | `QINQIN_PORT` | The published host port. Default 8080 (the container always listens on 8080) |
 | `QINQIN_DATA_VOLUME` | Default `qinqin-data`, a named volume that works everywhere, Portainer included. A value starting with `./` or `/` bind-mounts that host directory instead: `./data` (next to the compose file; plain compose only, a relative path is unreliable in Portainer; also the way to keep an old quick-start install) or an absolute path such as `/srv/qinqin/data`. The directory must be writable by root, the user the image runs as |
 
@@ -24,6 +24,7 @@ Set them in a `.env` file next to `docker-compose.yml`, in the shell, or (Portai
 | `QINQIN_AI_ALLOW_PRIVATE` | `1` or `true`: administrators may register custom AI endpoints on loopback and private addresses (Ollama on your LAN). Off by default; enable it only if you trust every administrator, since their endpoints can then reach your network |
 | `QINQIN_AI_PROVIDER` | Legacy. Unset: real providers, all allowed (subject to `QINQIN_AI_PROVIDERS`). `anthropic` means `QINQIN_AI_PROVIDERS=anthropic` (a log line says so), so an upgrade never sends text to a provider you did not allow. `fake` is for testing only: a deterministic provider that replaces every adapter, never contacts an AI service, and shows "Test provider — no real AI" in the app. Anything else disables AI |
 | `QINQIN_TESSERACT` | Path of the `tesseract` binary for offline photo reading. Empty: `tesseract` from `PATH` (the image has one). `TESSDATA_PREFIX` is passed through to it |
+| `QINQIN_AUTO_SEED` | `0`, `false` or `off` (any case) stops the first start of a fresh instance from installing the bundled packs; the demo packs are never installed this way. Default on: it runs once, on a fresh instance with no pack installed. `qinqin seed` still works ([Deploying](Admin-deploying#the-auto-seed-on-the-first-start)) |
 
 ## Set by the image
 
@@ -33,13 +34,12 @@ You normally leave these alone.
 |---|---|
 | `QINQIN_DATA` | The data directory: `/data` in the image and the compose file. It is also the default of every command's `--data`; without it the default is `./data` |
 | `QINQIN_PACKS` | The pack roots `qinqin seed` reads, comma-separated. The image sets `/opt/qinqin/packs,/opt/qinqin/audio,/opt/qinqin/strokes`; the server also reads them at start (to install the stroke data when none is installed, and to compare stored pack terms with the manifests). Without it the default is `plugins/data` plus `plugins/data-audio`, `plugins/data-strokes` and `plugins/data-local`, each when it exists |
-| `QINQIN_AUTO_SEED` | `0`, `false` or `off` (any case) stops the first start from installing the bundled packs; the demo packs are never installed this way. Default on: it runs once, on a fresh instance with no pack installed. `qinqin seed` still works |
 
 ## Command-line only
 
 | Variable | Meaning |
 |---|---|
-| `QINQIN_PASSWORD` | Read by `qinqin recover` as the new password; otherwise it reads standard input |
+| `QINQIN_PASSWORD` | Read by `qinqin adduser` and `qinqin recover` as the password; when it is empty they read one line of standard input |
 
 `qinqin serve` also takes `--addr` (listen address, default `:8080`) and `--data`. The commands are listed in [Backup, recovery and the command line](Admin-backup-and-recovery#the-command-line).
 

@@ -1,1 +1,1 @@
-qinqin documentation, generated from [`docs/wiki/`](https://github.com/Elaktrato/qinqin/tree/develop/docs/wiki) in the repository; it describes the `develop` branch. Found a mistake? [Open an issue](https://github.com/Elaktrato/qinqin/issues).
+qinqin documentation, generated from [`docs/wiki/`](https://github.com/Elaktrato/qinqin/tree/develop/docs/wiki) in the repository; it describes the branch it was published from (normally `main`). Found a mistake? [Open an issue](https://github.com/Elaktrato/qinqin/issues).

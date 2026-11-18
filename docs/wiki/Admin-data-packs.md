@@ -6,12 +6,12 @@ Everything qinqin knows about words and characters comes from **packs**: diction
 
 | Where it comes from | What | How it gets installed |
 |---|---|---|
-| **Bundled** (`plugins/data/` in the repository, `/opt/qinqin/packs` in the image) | CC-CEDICT, Unihan, JMdict, KANJIDIC2, the Jiten frequency list, HSK 3.0 characters and words, jōyō grades, 通用规范汉字表, JLPT kanji, KanjiVG components, a Spanish demo dictionary and a Chinese grammar demo | `qinqin seed` |
-| **Built into the image** (not committed) | The stroke-order data `hanzi-writer-strokes` (`/opt/qinqin/strokes`) and the Kanji alive audio (`/opt/qinqin/audio`, when the image was built with it) | `qinqin seed`; the stroke data also installs itself at start when no strokes pack is installed |
+| **Bundled** (`plugins/data/` in the repository, `/opt/qinqin/packs` in the image) | CC-CEDICT, Unihan, JMdict, KANJIDIC2, the Jiten frequency list, HSK 3.0 characters and words, jōyō grades, 通用规范汉字表, JLPT kanji, KanjiVG components, a Spanish demo dictionary and a Chinese grammar demo | The first start of a fresh instance ([auto-seed](Admin-deploying#the-auto-seed-on-the-first-start); not the two demos), or `qinqin seed` (everything, demos included) |
+| **Built into the image** (not committed) | The stroke-order data `hanzi-writer-strokes` (`/opt/qinqin/strokes`) and the Kanji alive audio (`/opt/qinqin/audio`, when the image was built with it) | The first start ([auto-seed](Admin-deploying#the-auto-seed-on-the-first-start)), or `qinqin seed`; the stroke data also installs itself at start when no strokes pack is installed |
 | **Built by you** (never committed or bundled) | Font packs, made with `scripts/prepare-font-pack.mjs` from a pinned upstream face ([Data and licences](Data-and-licences#hanzi-and-kanji-font-packs)) | Upload in Settings → Data, or `qinqin seed --packs <folder>` |
 | **Local-only** (the gitignored `plugins/data-local/`) | Data with an unclear or restrictive licence: a Chinese frequency list, the JLPT vocabulary pack, a Chinese components pack, your own level lists | `qinqin seed` with the folder mounted and named in `--packs` |
 
-The bundled set is chosen so a fresh server can seed offline and every pack's licence allows redistribution (see `docs/sources.md`). Local-only data stays on your server: it is never part of the repository or the image, and you are responsible for its terms.
+The bundled set is chosen so a fresh server can seed itself offline on its first start and every pack's licence allows redistribution (see `docs/sources.md`). Local-only data stays on your server: it is never part of the repository or the image, and you are responsible for its terms.
 
 **Under Docker** `qinqin seed` sees only the image's pack roots (`/opt/qinqin/packs`, `/opt/qinqin/audio`, `/opt/qinqin/strokes`). To add a host folder, mount it, for example `./plugins/data-local:/opt/qinqin/local:ro`, and name every root:
 

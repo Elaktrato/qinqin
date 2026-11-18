@@ -8,24 +8,26 @@
 # EMPTY instance. To keep using ./data, set QINQIN_DATA_VOLUME=./data
 # (previously ./data; set QINQIN_DATA_VOLUME=./data to keep using it).
 #
-# First run - seed the packs and create the admin BEFORE exposing the port
-# beyond your LAN (until a user exists, the first registration over the API
-# becomes the admin):
-#   docker compose exec qinqin qinqin seed
+# First run - the first start installs the bundled packs by itself before it
+# listens (about 2 minutes; see QINQIN_AUTO_SEED below). Create the admin
+# BEFORE exposing the port beyond your LAN (until a user exists, the first
+# registration over the API becomes the admin):
 #   docker compose exec qinqin qinqin adduser --username <name> --admin
-# or set QINQIN_BOOTSTRAP_ADMIN below. Set variables in a .env file next to
+# or set QINQIN_BOOTSTRAP_ADMIN below. `qinqin seed` is only needed for the
+# demo packs, local packs, or re-seeding after an image with newer packs. Set variables in a .env file next to
 # this file, in the shell, or (Portainer) in the stack's Environment variables.
 #
 # Variables:
 #   QINQIN_SECRET    optional. 32 random bytes, base64. Generate with
 #                      head -c 32 /dev/urandom | base64
-#                    Empty or unset = AI features off (the server starts and
+#                    Empty or unset = AI features, authenticator apps and a
+#                    stored mail password unavailable (the server starts and
 #                    the rest works; no weak default key is used). With it,
 #                    each user's AI API key, the SMTP password and authenticator
 #                    secrets are stored encrypted. Back it up separately from
 #                    the data volume; it is never written to /data.
 #   QINQIN_IMAGE     default ghcr.io/elaktrato/qinqin:latest. Pin a release,
-#                    e.g. ghcr.io/elaktrato/qinqin:v1.2.3 (tags: latest, v*, sha).
+#                    e.g. ghcr.io/elaktrato/qinqin:v0.4.1 (tags: latest, v*, sha).
 #   QINQIN_PORT      published host port, default 8080.
 # Backups: users download their data in the app; admins create server backups
 #                    (Settings, Admin, Backup) or run `docker exec <c> qinqin backup --out /data/backups/x.tar.gz`.
@@ -57,7 +59,8 @@
 #                    comma list of CIDRs/addresses (a CDN's ranges, one proxy).
 #   QINQIN_AUTO_SEED  0, false or off stops the first start from installing the
 #                    bundled packs (default on; the demo packs are never
-#                    installed this way). See "Seeding" in the README.
+#                    installed this way). See the wiki page Admin-deploying,
+#                    "The auto-seed on the first start".
 #   QINQIN_BOOTSTRAP_ADMIN  username of the first admin, created on the first
 #                    start while the instance has no users (empty = off). The
 #                    admin must set a new password at the first sign-in. Later

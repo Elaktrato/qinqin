@@ -16,7 +16,7 @@ docker compose exec qinqin qinqin adduser --admin --username you
 - **No reverse proxy in front?** Set `QINQIN_TRUSTED_PROXIES=none` (in a `.env` file next to `docker-compose.yml`, or in the stack's environment). The default trusts the `X-Forwarded-For` header of private-network peers, which a LAN client could forge to dodge the per-client sign-in limits ([Reverse proxy, rate limiting and trusted proxies](Admin-proxy-and-rate-limiting)).
 - **The first start seeds itself.** Before it listens, a fresh instance installs the bundled packs (about 2 minutes, once; the health check waits up to 300 s). See [the auto-seed](#the-auto-seed-on-the-first-start) below.
 - **Create the admin before you expose the port beyond your LAN.** While no user exists, the first registration over the API becomes the administrator, whoever makes it. `QINQIN_BOOTSTRAP_ADMIN` (below) closes that window completely.
-- **Where the data lives.** In the named volume `qinqin-data`. Set `QINQIN_DATA_VOLUME=./data` (or an absolute path such as `/srv/qinqin/data`) to bind-mount a host directory instead. `QINQIN_PORT` changes the published port, `QINQIN_IMAGE` pins an image. `QINQIN_SECRET` is optional: empty means the AI features are off ([AI providers and offline OCR](Admin-AI-and-OCR)).
+- **Where the data lives.** In the named volume `qinqin-data`. Set `QINQIN_DATA_VOLUME=./data` (or an absolute path such as `/srv/qinqin/data`) to bind-mount a host directory instead. `QINQIN_PORT` changes the published port, `QINQIN_IMAGE` pins an image. `QINQIN_SECRET` is optional: empty means the AI features, authenticator apps and a stored mail password are unavailable, and everything else works ([AI providers and offline OCR](Admin-AI-and-OCR)).
 - **Upgrading from the old quick start?** It kept the data in `./data`; the compose file now defaults to a named volume, so without a change you would start on an empty instance. Set `QINQIN_DATA_VOLUME=./data` to keep using it.
 
 ### The auto-seed on the first start
@@ -45,7 +45,7 @@ CI publishes the image `ghcr.io/elaktrato/qinqin` on pushes to `main` and on `v*
 | Tag | What it is |
 |---|---|
 | `latest` | The newest build of `main` |
-| `v<version>` | A release tag, for example `v0.3.0` |
+| `v<version>` | A release tag, for example `v0.4.1` |
 | `sha-<commit>` | One exact commit |
 
 **For production pin a `v*` tag** in `QINQIN_IMAGE` rather than `latest`, so a redeploy never changes the version by surprise.
@@ -60,7 +60,7 @@ The published image is the full build:
 
 Self-builds can leave the first two out with `docker build --build-arg WITH_OCR=0 .` and `--build-arg WITH_AUDIO=0`; the server starts normally and the features show as unavailable. Details in [AI providers and offline OCR](Admin-AI-and-OCR) and [Development](Development).
 
-The project's package `ghcr.io/elaktrato/qinqin` is public: `docker pull` needs no login. Check from the server with `docker pull ghcr.io/elaktrato/qinqin:v0.4.0`.
+The project's package `ghcr.io/elaktrato/qinqin` is public: `docker pull` needs no login. Check from the server with `docker pull ghcr.io/elaktrato/qinqin:v0.4.1`.
 
 **Your own fork's package starts private.** GitHub creates a new container package as private, so a `docker pull` or a Portainer deployment of an image your fork's CI published fails with `unauthorized` until you either
 
@@ -75,7 +75,7 @@ Portainer needs no special file: `docker-compose.yml` is plain compose. It uses 
 
 1. **Generate the secret** (optional; without it AI, authenticator apps and a stored mail password are unavailable) and keep it in a password manager: `head -c 32 /dev/urandom | base64`. Back it up **separately** from the data volume; it is never written to `/data`.
 2. **Add the stack.** Portainer: Stacks, Add stack. Either *Web editor* and paste `docker-compose.yml`, or *Repository* with the URL `https://github.com/Elaktrato/qinqin`, reference `refs/heads/main` (or a tag) and compose path `docker-compose.yml`.
-3. **Environment variables** (stack form): `QINQIN_SECRET`, `QINQIN_IMAGE` (for example `ghcr.io/elaktrato/qinqin:v0.3.0`), `QINQIN_PORT` (host port, default 8080). Optional: `QINQIN_DATA_VOLUME` as an absolute host path such as `/srv/qinqin/data` (the directory must exist and be writable by root), `QINQIN_TRUSTED_PROXIES` (**`none` if nothing reverse-proxies to qinqin**), `QINQIN_AI_PROVIDERS`, `QINQIN_AI_ALLOW_PRIVATE`, `QINQIN_SMTP_ALLOW_PRIVATE`, `QINQIN_BOOTSTRAP_ADMIN`, and `QINQIN_SECRET_PREVIOUS` only while rotating the secret. The full list: [Environment variables](Admin-environment-variables). Deploy the stack.
+3. **Environment variables** (stack form): `QINQIN_SECRET`, `QINQIN_IMAGE` (for example `ghcr.io/elaktrato/qinqin:v0.4.1`), `QINQIN_PORT` (host port, default 8080). Optional: `QINQIN_DATA_VOLUME` as an absolute host path such as `/srv/qinqin/data` (the directory must exist and be writable by root), `QINQIN_TRUSTED_PROXIES` (**`none` if nothing reverse-proxies to qinqin**), `QINQIN_AI_PROVIDERS`, `QINQIN_AI_ALLOW_PRIVATE`, `QINQIN_SMTP_ALLOW_PRIVATE`, `QINQIN_BOOTSTRAP_ADMIN`, and `QINQIN_SECRET_PREVIOUS` only while rotating the secret. The full list: [Environment variables](Admin-environment-variables). Deploy the stack.
 4. **First run, before exposing the port beyond your LAN.** Containers, `qinqin`, Console, command `/bin/sh`, Connect. Then:
 
    ```sh
@@ -110,7 +110,7 @@ The bundled packs themselves stay in the image (`/opt/qinqin/packs`, `/opt/qinqi
 
 ## Checklist after deploying
 
-- `curl http://<host>:<port>/healthz` answers `ok`; Portainer shows the container `healthy` (the compose healthcheck runs `wget` against `/healthz` every 30 s, with a 15 s start period).
+- `curl http://<host>:<port>/healthz` answers `ok`; Portainer shows the container `healthy` (the compose healthcheck runs `wget` against `/healthz` every 30 s, with a 300 s start period that covers the first start's auto-seed).
 - Sign in as the admin from step 4.
 - Search `好`: results appear (the first-start seed ran).
 - Create a deck and a flashcard.

@@ -14,7 +14,7 @@ Where things live in the repository ([github.com/Elaktrato/qinqin](https://githu
 | `server/internal/ai`, `journal`, `mail`, `i18n` | AI providers, journal photos and OCR, the mail queue and its catalogue (`mail/messages/`), the Go message formatter |
 | `server/internal/plugins` | The plugin manifest contract and the built-in manifests (`plugins/builtin/*.json`) |
 | `server/internal/webdist` | The embedded web app |
-| `apps/web/` | The SvelteKit web app (adapter-static, a single-page app); catalogue in `src/lib/i18n/messages/`, the service worker in `src/lib/pwa/sw/`, settings screens in `src/lib/settings/`, core features in `src/lib/features/` |
+| `apps/web/` | The SvelteKit web app (adapter-static, a single-page app); catalogue in `src/lib/i18n/messages/`, the service worker in `src/lib/pwa/sw/`, settings screens in `src/lib/settings/`, the rules of which pages need a sign-in in `src/lib/routeAccess.ts`, core features in `src/lib/features/` |
 | `plugins/data/` | Bundled seed packs (dictionaries, the Jiten frequency list, the level lists, the KanjiVG component index, the demos) with their licences and attribution notices; `plugins/data/README.md` documents the formats |
 | `plugins/data-local/` | Gitignored: local-only packs with unclear or restrictive licences |
 | `plugins/data-strokes/`, `plugins/data-audio/`, `plugins/data-fonts/` | Gitignored: the built stroke pack, fetched audio packs and built font packs |
@@ -26,7 +26,7 @@ Where things live in the repository ([github.com/Elaktrato/qinqin](https://githu
 | `docs/git-flow.md`, `docs/release-checklist.md`, `docs/ROADMAP.md` | Branching, the pre-release browser checklist, the roadmap |
 | `docs/superpowers/` | Design specs, plans and handoffs of past work |
 | `docker-compose.yml`, `Dockerfile` | The one compose file (plain compose and Portainer) and the image build |
-| `.github/workflows/` | `build.yml` (tests, image, release) and `audio-stage.yml` |
+| `.github/workflows/` | `build.yml` (tests, image, release), `audio-stage.yml` (the audio build stage) and `wiki.yml` (publishes `docs/wiki/` to the wiki) |
 
 ## Scripts
 

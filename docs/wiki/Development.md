@@ -73,6 +73,8 @@ The Dockerfile has four stages: `web` (the SPA and the stroke pack), `build` (th
 
 `.github/workflows/audio-stage.yml` builds only the Dockerfile's `audio` stage on pull requests that touch the Dockerfile, `.github/` or the audio scripts, weekly, and by hand, so a broken pin or an unreachable `media.kanjialive.com` shows before release day.
 
+`.github/workflows/wiki.yml` publishes `docs/wiki/` to the GitHub wiki on pushes to `main` that change `docs/wiki/`, and by hand from any branch (Run workflow). It needs the repository secret `WIKI_TOKEN`; without it the job prints a notice and succeeds without publishing (`docs/wiki/README.md`).
+
 ## Branches and releases
 
 The repository follows git-flow (`docs/git-flow.md`):
