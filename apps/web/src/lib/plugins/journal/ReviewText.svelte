@@ -58,6 +58,7 @@
 	<!-- No whitespace between the runs: the paragraph is pre-wrap and must show the text exactly. -->
 	<p class="text">{#each runs as run, i (i)}{#if run.annotationId}{@const id = run.annotationId}{@const kind = kindOf(id)}<button
 				type="button"
+				id={`mark-${id}`}
 				class="mark {kind}"
 				class:open={openId === id}
 				aria-expanded={openId === id}
