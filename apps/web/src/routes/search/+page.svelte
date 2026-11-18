@@ -547,10 +547,6 @@
 		color: var(--text);
 		box-shadow: inset 0 -1.5px 0 var(--accent);
 	}
-	.clear:disabled {
-		opacity: 0.45;
-		cursor: default;
-	}
 	.chip:focus-visible,
 	.clear:focus-visible {
 		outline: var(--focus-ring);
