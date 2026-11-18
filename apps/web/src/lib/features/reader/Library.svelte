@@ -11,6 +11,7 @@
 	import { initialUploadLanguage } from './uploadLanguage';
 	import { savedChapter } from './position';
 	import { SOURCES_HREF, bookHref } from './route';
+	import { Button } from '$lib/ui';
 
 	const MAX_BYTES = 20 * 1024 * 1024;
 
@@ -30,6 +31,7 @@
 	let uploading = $state(false);
 	let confirmingId = $state<number | null>(null);
 	let deletingId = $state<number | null>(null);
+	let fileInput = $state<HTMLInputElement | undefined>(undefined);
 	// When this library is empty: the user's books in other workspaces
 	// (after the upgrade they may sit in another workspace than this one).
 	let elsewhere = $state<Book[]>([]);
@@ -137,14 +139,19 @@
 					{t('reader.library.languageHint', { language: languageLabel(bookLanguage) })}
 				</p>
 				<div class="row">
-					<label for="epub-file">{t('reader.library.file')}</label>
 					<input
+						bind:this={fileInput}
 						id="epub-file"
+						class="visually-hidden"
 						type="file"
 						accept=".epub,application/epub+zip"
+						aria-label={t('reader.library.file')}
 						onchange={onFile}
 						disabled={uploading}
 					/>
+					<Button variant="primary" disabled={uploading} onclick={() => fileInput?.click()}
+						>{t('reader.library.addEpub')}</Button
+					>
 				</div>
 				<p>
 					<Msg key="reader.library.browse">{#snippet link(text: string)}<a href={SOURCES_HREF}>{text}</a>{/snippet}</Msg>
@@ -168,7 +175,7 @@
 		<p>{t('reader.library.loading')}</p>
 	{:else if loadError}
 		<p class="error" role="alert">{loadError}</p>
-		<button type="button" onclick={() => workspaceId !== null && load(workspaceId)}>{t('reader.library.retry')}</button>
+		<Button onclick={() => workspaceId !== null && load(workspaceId)}>{t('reader.library.retry')}</Button>
 	{:else if books.length === 0}
 		<p>
 			{t('reader.library.empty')}{#if bookLanguage}
@@ -184,7 +191,7 @@
 								{t('reader.library.booksIn', { count })}
 								<WorkspaceLabel workspace={other} list={$workspaces.list} withLanguage />
 							</span>
-							<button type="button" onclick={() => select(other.id)}>{t('reader.library.switch')}</button>
+							<Button onclick={() => select(other.id)}>{t('reader.library.switch')}</Button>
 						</li>
 					{/each}
 				</ul>
@@ -209,16 +216,16 @@
 					{#if confirmingId === book.id}
 						<span class="confirm" role="group" aria-label={t('reader.library.confirmDelete', { title: book.title })}>
 							{t('reader.library.deleteQuestion')}
-							<button type="button" onclick={() => remove(book)} disabled={deletingId === book.id}>
+							<Button variant="primary" tone="danger" onclick={() => remove(book)} disabled={deletingId === book.id}>
 								{t('reader.editor.yesDelete')}
-							</button>
-							<button type="button" onclick={() => (confirmingId = null)}>{t('common.action.cancel')}</button>
+							</Button>
+							<Button onclick={() => (confirmingId = null)}>{t('common.action.cancel')}</Button>
 						</span>
 					{:else}
-						<button
-							type="button"
+						<Button
+							tone="danger"
 							aria-label={t('reader.library.deleteNamed', { title: book.title })}
-							onclick={() => (confirmingId = book.id)}>{t('reader.editor.delete')}</button
+							onclick={() => (confirmingId = book.id)}>{t('reader.editor.delete')}</Button
 						>
 					{/if}
 				</li>
@@ -230,23 +237,19 @@
 <style>
 	.upload,
 	.books {
-		margin-top: 1.5rem;
+		margin-top: var(--space-6);
 	}
 
 	.heading {
 		display: flex;
 		flex-wrap: wrap;
 		align-items: center;
-		gap: 0.6rem;
+		gap: var(--space-2);
 	}
 
 	.hint {
-		font-size: 0.9rem;
+		font-size: var(--font-size-label);
 		color: var(--readable-muted);
-	}
-
-	.elsewhere h2 {
-		font-size: 1.05rem;
 	}
 
 	.elsewhere ul {
@@ -258,16 +261,17 @@
 		display: flex;
 		flex-wrap: wrap;
 		align-items: center;
-		gap: 0.5rem 1rem;
-		padding: 0.4rem 0;
+		gap: var(--space-2) var(--space-4);
+		padding-block: var(--space-2);
+		border-bottom: 1px solid var(--hair);
 	}
 
 	.row {
 		display: flex;
 		flex-wrap: wrap;
-		gap: 0.5rem;
+		gap: var(--space-2);
 		align-items: center;
-		margin-bottom: 0.5rem;
+		margin-bottom: var(--space-2);
 	}
 
 	.books {
@@ -280,9 +284,9 @@
 		flex-wrap: wrap;
 		justify-content: space-between;
 		align-items: center;
-		gap: 0.5rem;
-		padding: 0.6rem 0;
-		border-bottom: 1px solid color-mix(in srgb, currentColor 18%, transparent);
+		gap: var(--space-2);
+		padding-block: var(--space-3);
+		border-bottom: 1px solid var(--hair);
 	}
 
 	.info {
@@ -291,17 +295,17 @@
 	}
 
 	.title {
-		font-weight: 600;
+		font-weight: var(--weight-strong);
 	}
 
 	.meta {
-		font-size: 0.9rem;
+		font-size: var(--font-size-label);
 		color: var(--readable-muted);
 	}
 
 	.confirm {
 		display: inline-flex;
-		gap: 0.4rem;
+		gap: var(--space-1);
 		align-items: center;
 	}
 

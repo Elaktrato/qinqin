@@ -21,6 +21,7 @@
 	import { libraryKey } from './libraryKey';
 	import { LIBRARY_HREF, bookHref } from './route';
 	import { resultCountText } from './sourceResults';
+	import { Button, Field, Tabs } from '$lib/ui';
 
 	// Imports go to the selected workspace's library, and only works in its
 	// language can be imported there.
@@ -34,7 +35,6 @@
 	let active = $state('');
 	let sourcesError = $state('');
 	let loadingSources = $state(true);
-	let tabButtons = $state<HTMLButtonElement[]>([]);
 
 	let query = $state('');
 	let results = $state<SourceResult[]>([]);
@@ -170,21 +170,6 @@
 		clearSearch();
 	}
 
-	// Tabs: arrow keys move and select, wrapping around; Home/End jump.
-	async function tabKey(event: KeyboardEvent, index: number): Promise<void> {
-		const count = sources.length;
-		let next = -1;
-		if (event.key === 'ArrowRight' || event.key === 'ArrowDown') next = (index + 1) % count;
-		else if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') next = (index - 1 + count) % count;
-		else if (event.key === 'Home') next = 0;
-		else if (event.key === 'End') next = count - 1;
-		if (next < 0) return;
-		event.preventDefault();
-		pick(sources[next].id);
-		await tick();
-		tabButtons[next]?.focus();
-	}
-
 	async function search(event: Event): Promise<void> {
 		event.preventDefault();
 		const q = query.trim();
@@ -263,13 +248,12 @@
 		{:else if other}
 			<span class="meta">{t('reader.sources.needs', { language: languageLabel(result.language) })}</span>
 		{:else}
-			<button
-				type="button"
+			<Button
 				disabled={importing !== null || workspaceId === null}
 				onclick={() => doImport(result)}
 			>
 				{importing === key ? t('reader.sources.importing') : t('reader.sources.import')}
-			</button>
+			</Button>
 		{/if}
 	</li>
 {/snippet}
@@ -288,40 +272,31 @@
 		<p>{t('reader.sources.loading')}</p>
 	{:else if sourcesError}
 		<p class="error" role="alert">{sourcesError}</p>
-		<button type="button" onclick={loadSources}>{t('reader.sources.retry')}</button>
+		<Button onclick={loadSources}>{t('reader.sources.retry')}</Button>
 	{:else if sources.length === 0}
 		<p>{t('reader.sources.none')}</p>
 	{:else}
-		<div class="tabs" role="tablist" aria-label={t('reader.sources.tabs')}>
-			{#each sources as source, i (source.id)}
-				<button
-					type="button"
-					role="tab"
-					id="source-tab-{source.id}"
-					aria-selected={source.id === active}
-					aria-controls="source-panel"
-					tabindex={source.id === active ? 0 : -1}
-					bind:this={tabButtons[i]}
-					onclick={() => pick(source.id)}
-					onkeydown={(e) => tabKey(e, i)}>{source.name}</button
-				>
-			{/each}
-		</div>
-
-		<div class="panel" id="source-panel" role="tabpanel" aria-labelledby="source-tab-{active}">
+		<Tabs
+			label={t('reader.sources.tabs')}
+			tabs={sources.map((source) => ({ id: source.id, label: source.name }))}
+			selected={active}
+			onselect={(id) => pick(id)}
+		>
+			{#snippet panel()}
+				<div class="panel">
 			<form onsubmit={search} role="search">
-				<label for="source-query"
-					>{activeSource ? t('reader.sources.searchNamed', { name: activeSource.name }) : t('reader.sources.searchSource')}</label
-				>
-				<input
-					id="source-query"
-					type="search"
-					placeholder={t('reader.sources.placeholder')}
-					bind:value={query}
-				/>
-				<button type="submit" disabled={searching || !query.trim()}>{t('reader.sources.search')}</button>
+				<div class="query">
+					<Field
+						label={activeSource ? t('reader.sources.searchNamed', { name: activeSource.name }) : t('reader.sources.searchSource')}
+						id="source-query"
+						type="search"
+						placeholder={t('reader.sources.placeholder')}
+						bind:value={query}
+					/>
+				</div>
+				<Button type="submit" disabled={searching || !query.trim()}>{t('reader.sources.search')}</Button>
 				{#if showingSearch}
-					<button type="button" class="link" onclick={clearSearch}>{t('reader.sources.backToSuggestions')}</button>
+					<Button variant="plain" onclick={clearSearch}>{t('reader.sources.backToSuggestions')}</Button>
 				{/if}
 			</form>
 
@@ -357,9 +332,9 @@
 					<div class="browse-head">
 						<h2 id="browse-heading">{t('reader.sources.suggestions')}</h2>
 						{#if servesLanguage}
-							<button type="button" onclick={() => (seed = shuffleSeed())} disabled={browsing}>
+							<Button onclick={() => (seed = shuffleSeed())} disabled={browsing}>
 								{t('reader.sources.shuffle')}
-							</button>
+							</Button>
 						{/if}
 					</div>
 					{#if !workspace}
@@ -372,7 +347,7 @@
 						</p>
 					{:else if browseError}
 						<p class="error" role="alert">{browseError}</p>
-						<button type="button" onclick={() => browseAttempt++}>{t('reader.sources.retry')}</button>
+						<Button onclick={() => browseAttempt++}>{t('reader.sources.retry')}</Button>
 					{:else if suggestions.length === 0}
 						<p class="hint">
 							{t('reader.sources.noSuggestions')}
@@ -386,7 +361,9 @@
 					{/if}
 				</section>
 			{/if}
-		</div>
+				</div>
+			{/snippet}
+		</Tabs>
 	{/if}
 
 	<p class="attribution">
@@ -408,85 +385,39 @@
 		display: flex;
 		flex-wrap: wrap;
 		align-items: center;
-		gap: 0.6rem;
+		gap: var(--space-2);
 	}
 
 	.hint {
 		color: var(--readable-muted);
 	}
 
-	/* Tabs: an underlined row that wraps on narrow screens. */
-	.tabs {
-		display: flex;
-		flex-wrap: wrap;
-		gap: 0 0.25rem;
-		margin: 1rem 0 0;
-		border-bottom: 1px solid color-mix(in srgb, currentColor 22%, transparent);
-	}
-
-	[role='tab'] {
-		font: inherit;
-		padding: 0.5rem 0.9rem;
-		margin-bottom: -1px;
-		border: none;
-		border-bottom: 2px solid transparent;
-		border-radius: 0.3rem 0.3rem 0 0;
-		background: transparent;
-		color: var(--readable-muted);
-		cursor: pointer;
-	}
-
-	[role='tab']:hover {
-		color: var(--text);
-		background: color-mix(in srgb, currentColor 6%, transparent);
-	}
-
-	[role='tab'][aria-selected='true'] {
-		font-weight: 600;
-		color: var(--text);
-		border-bottom-color: var(--accent);
-	}
-
-	[role='tab']:focus-visible {
-		outline: 2px solid var(--focus-colour);
-		outline-offset: -2px;
-	}
-
 	.panel {
-		padding-top: 1rem;
+		padding-top: var(--space-4);
 	}
 
 	form {
 		display: flex;
 		flex-wrap: wrap;
-		gap: 0.5rem;
-		align-items: center;
+		gap: var(--space-2);
+		align-items: end;
 	}
 
-	input[type='search'] {
-		min-width: min(18rem, 100%);
-	}
-
-	.link {
-		border: none;
-		background: none;
-		padding: 0;
-		font: inherit;
-		color: var(--reading-accent);
-		text-decoration: underline;
-		cursor: pointer;
+	.query {
+		flex: 1 1 18rem;
 	}
 
 	.browse-head {
 		display: flex;
 		flex-wrap: wrap;
 		align-items: baseline;
-		gap: 0.5rem 1rem;
+		gap: var(--space-1) var(--space-3);
+		margin-block: var(--space-2);
 	}
 
 	.browse-head h2 {
-		font-size: 1.15rem;
-		margin: 1rem 0 0.25rem;
+		font-size: var(--font-size-l);
+		margin: 0;
 	}
 
 	.results {
@@ -499,9 +430,9 @@
 		flex-wrap: wrap;
 		justify-content: space-between;
 		align-items: center;
-		gap: 0.5rem;
-		padding: 0.6rem 0;
-		border-bottom: 1px solid color-mix(in srgb, currentColor 18%, transparent);
+		gap: var(--space-2);
+		padding-block: var(--space-2);
+		border-bottom: 1px solid var(--hair);
 	}
 
 	.info {
@@ -512,13 +443,13 @@
 	.meta,
 	.attribution,
 	.reading {
-		font-size: 0.9rem;
+		font-size: var(--font-size-label);
 		color: var(--readable-muted);
 	}
 
 	.in-library {
 		display: inline-flex;
-		gap: 0.5rem;
+		gap: var(--space-2);
 		align-items: baseline;
 	}
 

@@ -13,7 +13,6 @@
 		"lib/features/reader/BookView.svelte",
 		"lib/features/reader/PopupFrameView.svelte",
 		"lib/features/reader/ReaderRail.svelte",
-		"lib/features/reader/SourceBrowser.svelte",
 		"lib/notes/NoteAnswer.svelte",
 		"lib/plugins/journal/EntryEditor.svelte",
 		"lib/plugins/journal/PhotoImport.svelte",
