@@ -27,6 +27,27 @@ type entryBody struct {
 	Variants    []model.EntryBase `json:"variants"`
 	Badges      []badgeBody       `json:"badges"`
 	Sentences   []model.Sentence  `json:"sentences"`
+	Characters  []characterBody   `json:"characters"`
+}
+
+// characterBody mirrors one character of a word entry response.
+type characterBody struct {
+	ID      int64  `json:"id"`
+	Written string `json:"written"`
+	Reading *struct {
+		Type  string `json:"type"`
+		Value string `json:"value"`
+	} `json:"reading"`
+	Gloss   string `json:"gloss"`
+	Radical *struct {
+		ID      int64  `json:"id"`
+		Written string `json:"written"`
+	} `json:"radical"`
+	Strokes int `json:"strokes"`
+	Levels  []struct {
+		Scheme string `json:"scheme"`
+		Level  string `json:"level"`
+	} `json:"levels"`
 }
 
 // formBody mirrors one written form in an entry response.
@@ -206,7 +227,7 @@ func TestGetEntryJapaneseWord(t *testing.T) {
 	var raw map[string]json.RawMessage
 	decodeJSON(t, resp, &raw)
 	for _, k := range []string{"id", "language", "kind", "written", "readings", "attrs", "radicalId",
-		"updatedAt", "deletedAt", "senses", "variants", "badges", "sentences", "forms", "senseGroups"} {
+		"updatedAt", "deletedAt", "senses", "variants", "badges", "sentences", "forms", "senseGroups", "characters"} {
 		if _, ok := raw[k]; !ok {
 			t.Errorf("entry JSON lacks %q: %s", k, raw)
 		}

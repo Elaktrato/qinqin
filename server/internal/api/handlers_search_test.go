@@ -15,7 +15,15 @@ import (
 // searchHitBody mirrors one element of GET /api/search.
 type searchHitBody struct {
 	model.EntryBase
-	Source string `json:"source"`
+	Source  string `json:"source"`
+	Glosses []struct {
+		DictionaryID int64  `json:"dictionaryId"`
+		Gloss        string `json:"gloss"`
+	} `json:"glosses"`
+	Levels []struct {
+		Scheme string `json:"scheme"`
+		Level  string `json:"level"`
+	} `json:"levels"`
 }
 
 func TestSearchEndpoint(t *testing.T) {
@@ -60,6 +68,12 @@ func TestSearchEndpoint(t *testing.T) {
 	if status != http.StatusOK || len(hits) == 0 || hits[0].ID != hao || hits[0].Source != "pinyin" ||
 		hits[0].Written != "好" || hits[0].RadicalID == nil || hits[0].Attrs == nil || len(hits[0].Readings) != 2 {
 		t.Errorf("hao = %d %+v, want 好 via pinyin first, with readings, attrs and radicalId", status, hits)
+	}
+	if len(hits[0].Glosses) == 0 || hits[0].Glosses[0].DictionaryID == 0 || hits[0].Glosses[0].Gloss == "" {
+		t.Errorf("hao glosses = %+v, want the first gloss of its dictionary", hits[0].Glosses)
+	}
+	if len(hits[0].Levels) != 1 || hits[0].Levels[0].Scheme != "Empty scheme" || hits[0].Levels[0].Level != "1" {
+		t.Errorf("hao levels = %+v, want Empty scheme 1", hits[0].Levels)
 	}
 
 	// Tiers: the exact form first, then reading prefixes ranked by id,
