@@ -20,9 +20,12 @@
 // `pdftotext -tsv` by line, drops the watermark and the page furniture,
 // maps the level headings, and carries the current category/subcategory/item
 // forward. A row is one 细目 item, or a subcategory/category that has
-// content of its own (no item). Merged cells make the exact row list
-// ambiguous: the converter produces the best row list and the maintainer
-// checks each level against the PDF before authoring.
+// content of its own (no item). Merged cells can shift a label (the
+// category/subcategory text sits centred over the rows it spans), so the
+// row list is approximate: before authoring, cross-check each level against
+// the layout dump /tmp/opencode/hsk/outline-hsk-<n>.txt and the PDF, and
+// add any row the extractor missed. The build script's --complete guard
+// uses the corrected LEVELS row counts, so a missing row fails the build.
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';

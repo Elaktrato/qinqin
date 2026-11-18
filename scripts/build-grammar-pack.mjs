@@ -22,10 +22,12 @@ function fail(message) {
 	throw new PackError(message);
 }
 
-// The pack's seven levels in difficulty order (the row counts are binding).
+// The pack's seven levels in difficulty order. The row counts are the
+// corrected, binding syllabus row counts (the original plan under-counted
+// HSK 1 by 数词, 连接词语或短语 and 叹词, and HSK 2 by one row).
 export const LEVELS = [
-	{ id: 'hsk-1', name: 'Level 1 · First sentences', schemeLevel: 'HSK 1', rows: 45 },
-	{ id: 'hsk-2', name: 'Level 2 · Everyday basics', schemeLevel: 'HSK 2', rows: 60 },
+	{ id: 'hsk-1', name: 'Level 1 · First sentences', schemeLevel: 'HSK 1', rows: 48 },
+	{ id: 'hsk-2', name: 'Level 2 · Everyday basics', schemeLevel: 'HSK 2', rows: 61 },
 	{ id: 'hsk-3', name: 'Level 3 · Getting around', schemeLevel: 'HSK 3', rows: 56 },
 	{ id: 'hsk-4', name: 'Level 4 · Connected speech', schemeLevel: 'HSK 4', rows: 46 },
 	{ id: 'hsk-5', name: 'Level 5 · Nuance and attitude', schemeLevel: 'HSK 5', rows: 39 },

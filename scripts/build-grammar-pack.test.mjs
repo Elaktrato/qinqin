@@ -147,8 +147,8 @@ test('LEVELS is the seven binding levels', () => {
 	assert.deepEqual(
 		LEVELS.map((l) => [l.id, l.rows]),
 		[
-			['hsk-1', 45],
-			['hsk-2', 60],
+			['hsk-1', 48],
+			['hsk-2', 61],
 			['hsk-3', 56],
 			['hsk-4', 46],
 			['hsk-5', 39],
@@ -157,6 +157,7 @@ test('LEVELS is the seven binding levels', () => {
 		]
 	);
 	assert.equal(LEVELS[6].schemeLevel, 'HSK 7–9');
+	assert.equal(LEVELS.reduce((n, l) => n + l.rows, 0), 307);
 });
 
 test('--check validates without writing, and PackError is the failure type', async () => {
