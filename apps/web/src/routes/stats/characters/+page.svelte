@@ -205,6 +205,18 @@
 			ctx = contextForData(data, id);
 			groupKey = readGroupBy(storage(), lang, groupOptions(lang, schemeList));
 			levelValue = readLevelChoice(storage(), id, levelGroupsFor(lang, schemeList));
+			// A stored level from another scheme must not be grouped by that
+			// scheme's levels: the level wins, as it does when it is chosen.
+			const storedLevel = parseLevelValue(levelValue);
+			if (
+				storedLevel !== null &&
+				groupKey !== null &&
+				groupKey.startsWith('scheme:') &&
+				groupKey !== `scheme:${storedLevel.schemeId}`
+			) {
+				groupKey = `scheme:${storedLevel.schemeId}` as GroupKey;
+				writeGroupBy(storage(), lang, groupKey);
+			}
 			void backfillWritten(data.cards, seq);
 		} catch (err) {
 			if (seq !== requestSeq) return;

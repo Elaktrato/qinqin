@@ -162,14 +162,24 @@ describe('Stats → Characters', () => {
 				language: 'zh',
 				packId: 'hsk-chars',
 				levels: [{ id: 71, name: 'HSK 2', ord: 0 }]
+			},
+			{
+				id: 8,
+				name: 'HSK 3.0 (words)',
+				unit: 'word',
+				language: 'zh',
+				packId: 'hsk-words',
+				levels: [{ id: 81, name: 'HSK 2', ord: 0 }]
 			}
 		]);
 		vi.mocked(fetchSchemeCharacters).mockResolvedValue([
 			{ levelId: 71, name: 'HSK 2', chars: new Set(['三']) }
 		]);
 		localStorage.setItem('qinqin.map.level.1', '7:71');
+		localStorage.setItem('qinqin.map.groupBy.zh', 'scheme:8');
 		const container = await ready();
 		expect((screen.getByLabelText('Level') as HTMLSelectElement).value).toBe('7:71');
+		expect((screen.getByLabelText('Group by') as HTMLSelectElement).value).toBe('scheme:7');
 		await waitFor(() => expect(container.querySelectorAll('.cell')).toHaveLength(1));
 
 		localStorage.setItem('qinqin.map.level.1', '7:999');
