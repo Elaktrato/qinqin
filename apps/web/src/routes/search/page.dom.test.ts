@@ -66,6 +66,26 @@ describe('search page', () => {
 		expect(vi.mocked(goto).mock.calls[0][0]).toBe('/search?q=ni');
 	});
 
+	it('with e the split marks the selection and links back to the list', async () => {
+		searchMock.mockResolvedValue([hit(7, '勤奋')]);
+		setUrl('/search?q=qin&e=7');
+		render(Page);
+		await screen.findByText('勤奋');
+		expect(document.querySelector('.split')?.classList.contains('has-selection')).toBe(true);
+		const back = screen.getByRole('link', { name: 'Back to results' });
+		expect(back.getAttribute('href')).toBe('/search?q=qin');
+	});
+
+	it('clicking a result selects it in the URL and records one lookup', async () => {
+		searchMock.mockResolvedValue([hit(7, '勤奋')]);
+		setUrl('/search?q=qin');
+		render(Page);
+		const link = await screen.findByRole('link', { name: '勤奋' });
+		await fireEvent.click(link);
+		expect(vi.mocked(goto).mock.calls[0][0]).toBe('/search?q=qin&e=7');
+		expect(recordLookup).toHaveBeenCalledTimes(1);
+	});
+
 	it('ignores a stale response that resolves after a newer search', async () => {
 		const first = deferred<SearchHit[]>();
 		const second = deferred<SearchHit[]>();
@@ -167,13 +187,13 @@ describe('search page', () => {
 
 	it('links the radical and part lookup in ja and zh workspaces only', async () => {
 		render(Page);
-		const link = await screen.findByRole('link', { name: 'Find a character by radical or part' });
+		const link = await screen.findByRole('link', { name: 'By parts' });
 		expect(link.getAttribute('href')).toBe('/search/parts');
 		cleanup();
 		workspaces.set({ list: [], current: { id: 2, language: 'es', name: 'es' } as never });
 		render(Page);
 		await tick();
-		expect(screen.queryByRole('link', { name: 'Find a character by radical or part' })).toBeNull();
+		expect(screen.queryByRole('link', { name: 'By parts' })).toBeNull();
 	});
 
 	it('records no lookup event for a query (#72)', async () => {

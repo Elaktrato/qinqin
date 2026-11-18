@@ -11,12 +11,14 @@
 		hit,
 		href,
 		selected,
-		hidden
+		hidden,
+		onactivate
 	}: {
 		hit: SearchHit;
 		href: string;
 		selected: boolean;
 		hidden: ReadonlySet<number>;
+		onactivate?: (event: MouseEvent) => void;
 	} = $props();
 
 	const reading = $derived(hit.readings[0]);
@@ -32,6 +34,10 @@
 	aria-label={hit.written}
 	aria-current={selected ? 'true' : undefined}
 	aria-describedby={`${id}-reading ${id}-gloss ${id}-meta`}
+	onclick={(e) => onactivate?.(e)}
+	onauxclick={(e) => {
+		if (e.button === 1) onactivate?.(e);
+	}}
 >
 	<span class="word" lang={studyLang(hit.language)}>{hit.written}</span>
 	<span class="reading" id={`${id}-reading`} lang={reading ? readingLang(reading.type, hit.language) : undefined}

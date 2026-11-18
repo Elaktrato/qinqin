@@ -20,6 +20,7 @@
 		reconcileFilters,
 		schemesForLanguage,
 		searchHref,
+		selectedFromParams,
 		setKind,
 		setLevel,
 		setScheme,
@@ -28,8 +29,13 @@
 	import { onMount } from 'svelte';
 	import { listLanguages } from '$lib/api/languages';
 	import { dictionaryHint } from '$lib/coverage';
+	import { hiddenDictionaries } from '$lib/dictionaryVisibility';
 	import { languageLabel, usesHan } from '$lib/languages';
 	import { user } from '$lib/auth';
+	import Field from '$lib/ui/Field.svelte';
+	import Button from '$lib/ui/Button.svelte';
+	import ResultRow from './ResultRow.svelte';
+	import EntryView from '$lib/entry/EntryView.svelte';
 
 	// The server's default result cap (lexicon.defaultSearchLimit).
 	const RESULT_CAP = 50;
@@ -44,7 +50,11 @@
 	let activeQuery = $state('');
 
 	const lang = $derived($currentLanguage);
+	const hidden = $derived(hiddenDictionaries($workspaces.current));
 	const urlQuery = $derived(page.url.searchParams.get('q') ?? '');
+	const selected = $derived(selectedFromParams(page.url.searchParams));
+	const selectedHit = $derived(selected === null ? null : (hits.find((h) => h.id === selected) ?? null));
+	const preview = $derived(selectedHit ?? hits[0] ?? null);
 
 	// Guards against a slow earlier request overwriting a newer result.
 	let requestSeq = 0;
@@ -79,7 +89,7 @@
 	// Chips act on the committed search (the URL query), not on text still
 	// being typed: a chip never silently submits a half-typed query.
 	function applyFilters(next: SearchFilters): void {
-		goto(searchHref(urlQuery.trim(), next), { keepFocus: true, noScroll: true }).catch(() => {});
+		goto(searchHref(urlQuery.trim(), next, selected), { keepFocus: true, noScroll: true }).catch(() => {});
 	}
 
 	// After a workspace/language switch, a scheme or level of another
@@ -88,7 +98,7 @@
 		if (!schemesLoaded || lang === null) return;
 		const next = reconcileFilters(filters, schemes);
 		if (next !== filters) {
-			goto(searchHref(urlQuery.trim(), next), {
+			goto(searchHref(urlQuery.trim(), next, selected), {
 				replaceState: true,
 				keepFocus: true,
 				noScroll: true
@@ -108,6 +118,23 @@
 	// queries are never recorded.
 	function openedHit(entryId: number): void {
 		recordLookup(get(workspaces).current?.id, { entryId, source: 'search' });
+	}
+
+	/** Choosing a result: desktop replaces the entry in place; a phone pushes, so Back returns to the list. */
+	function choose(event: MouseEvent, entryId: number): void {
+		if (event.metaKey || event.ctrlKey || event.shiftKey) {
+			openedHit(entryId);
+			return;
+		}
+		event.preventDefault();
+		openedHit(entryId);
+		const wide =
+			typeof window.matchMedia !== 'function' || window.matchMedia('(min-width: 720px)').matches;
+		void goto(searchHref(activeQuery, filters, entryId), {
+			replaceState: wide,
+			keepFocus: wide,
+			noScroll: true
+		});
 	}
 
 	// What a screen reader hears once a search settles; empty while it runs
@@ -192,18 +219,22 @@
 </script>
 
 <svelte:head>
-	<title>{pageTitle(t('search.title'))}</title>
+	<title>{pageTitle(selectedHit?.written ?? '', t('search.title'))}</title>
 </svelte:head>
 
 <div class="page-body search-page">
 	<h1>{t('search.title')}</h1>
 
+	<div class="split" class:has-selection={selected !== null}>
+		<div class="list-pane">
+
 	<form class="search" role="search" onsubmit={submit}>
-		<input
+		<Field
+			label={t('search.input.label')}
+			hideLabel
 			name="q"
 			type="search"
 			bind:value={query}
-			aria-label={t('search.input.label')}
 			placeholder={lang !== null
 				? t('search.input.placeholder')
 				: $workspacesLoaded
@@ -211,12 +242,12 @@
 					: t('search.input.loadingWorkspaces')}
 			disabled={lang === null}
 		/>
-		<button type="submit" disabled={lang === null}>{t('search.submit')}</button>
+		<Button type="submit" variant="primary" disabled={lang === null}>{t('search.submit')}</Button>
+		{#if lang !== null && usesHan(lang)}
+			<Button variant="secondary" href="/search/parts" icon="parts">{t('search.byParts')}</Button>
+		{/if}
 	</form>
 
-	{#if lang !== null && usesHan(lang)}
-		<p class="parts-link"><a href="/search/parts">{t('search.partsLink')}</a></p>
-	{/if}
 	<p class="parts-link"><a href="/lookups">{t('search.lookupsLink')}</a></p>
 
 	{#if lang !== null}
@@ -300,29 +331,20 @@
 				: t('search.noResults', { query: activeQuery })}
 		</p>
 	{:else if hits.length > 0}
+		<p class="scount">{t('search.count', { count: hits.length, query: activeQuery })}</p>
 		{#if hits.length >= RESULT_CAP}
-			<p class="note">
-				{t('search.capped', { count: RESULT_CAP })}
-			</p>
+			<p class="note">{t('search.capped', { count: RESULT_CAP })}</p>
 		{/if}
 		<ul class="results" aria-label={t('search.results')}>
 			{#each hits as hit (hit.id)}
-				<li class="result">
-					<a class="written" href={`/entry/${hit.id}`} onclick={() => openedHit(hit.id)}
-						onauxclick={(e) => e.button === 1 && openedHit(hit.id)}
-						lang={studyLang(hit.language)}>{hit.written}</a
-					>
-
-					<div class="details">
-						{#if hit.readings.length > 0}
-							<span class="readings">
-								{#each hit.readings as reading (reading.ord)}
-									<span class="reading" data-type={reading.type} lang={readingLang(reading.type, hit.language)}>{reading.value}</span>
-								{/each}
-							</span>
-						{/if}
-						<span class="source">{t('search.matched', { source: sourceLabel(hit.source) })}</span>
-					</div>
+				<li>
+					<ResultRow
+						{hit}
+						href={searchHref(activeQuery, filters, hit.id)}
+						selected={selected === hit.id}
+						hidden={hidden}
+						onactivate={(event) => choose(event, hit.id)}
+					/>
 				</li>
 			{/each}
 		</ul>
@@ -331,175 +353,112 @@
 			{hasFilters(filters) ? t('search.enterQueryFiltered') : t('search.enterQuery')}
 		</p>
 	{/if}
+		</div>
+
+		<div class="detail-pane">
+			{#if preview}
+				<div class="back-to-results"><Button variant="secondary" href={searchHref(activeQuery, filters)}>{t('search.backToResults')}</Button></div>
+				<EntryView entryId={preview.id} headingLevel={2} recordView={selected !== null} />
+			{:else}
+				<p class="hint">{t('search.detail')}</p>
+			{/if}
+		</div>
+	</div>
 </div>
 
 <style>
-	.parts-link {
-		margin: 0.6rem 0 0;
-	}
-
-	.filters {
+	.split {
 		display: grid;
-		gap: 0.6rem;
-		margin-top: 1rem;
-		max-width: 40rem;
+		grid-template-columns: minmax(0, 1fr);
+		gap: var(--space-5);
+		align-items: start;
 	}
-
+	.list-pane,
+	.detail-pane {
+		min-width: 0;
+		display: grid;
+		gap: var(--space-3);
+		align-content: start;
+	}
+	.search {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: end;
+		gap: var(--space-2);
+	}
+	.search :global(.field) {
+		flex: 1 1 12rem;
+	}
+	.filters {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: var(--space-1) var(--space-4);
+	}
 	.chips {
 		display: flex;
 		flex-wrap: wrap;
-		gap: 0.4rem;
+		gap: var(--space-1) var(--space-3);
 	}
-
 	.chip,
 	.clear {
 		font: inherit;
-		font-size: 0.9rem;
-		min-height: 2.75rem;
-		padding: 0.3rem 0.85rem;
-		border: 1px solid color-mix(in srgb, currentColor 35%, transparent);
-		border-radius: 999px;
+		font-size: var(--font-size-label);
+		padding: var(--space-1) 0;
+		border: 0;
+		border-radius: 0;
 		background: transparent;
-		color: inherit;
+		color: var(--readable-muted);
 		cursor: pointer;
+		box-shadow: inset 0 -1.5px 0 transparent;
 	}
-
-	.placeholder {
-		min-height: 2.75rem;
+	.chip[aria-pressed='true'] {
+		color: var(--text);
+		box-shadow: inset 0 -1.5px 0 var(--accent);
 	}
-
 	.clear:disabled {
 		opacity: 0.45;
 		cursor: default;
 	}
-
-	.chip[aria-pressed='true'] {
-		background: var(--accent);
-		border-color: var(--accent);
-		color: var(--on-accent);
-	}
-
 	.chip:focus-visible,
 	.clear:focus-visible {
-		outline: 2px solid var(--focus-colour);
-		outline-offset: 2px;
+		outline: var(--focus-ring);
+		outline-offset: var(--focus-ring-offset);
 	}
-
-	.clear {
-		justify-self: start;
-		border-style: dashed;
-	}
-
-	.note {
+	.note,
+	.scount {
 		margin: 0;
-		font-size: 0.85rem;
+		font-size: var(--font-size-label);
 		color: var(--readable-muted);
 	}
-
-	.search {
-		display: flex;
-		gap: 0.5rem;
-		max-width: 32rem;
-	}
-
-	.search input {
-		flex: 1;
-		min-width: 0;
-		font: inherit;
-		padding: 0.55rem 0.7rem;
-		border: 1px solid color-mix(in srgb, currentColor 35%, transparent);
-		border-radius: 0.4rem;
-		background: transparent;
-		color: inherit;
-	}
-
-	.search button {
-		font: inherit;
-		font-weight: 600;
-		padding: 0.6rem 1rem;
-		border: 0;
-		border-radius: 0.4rem;
-		background: var(--accent);
-		color: var(--on-accent);
-		cursor: pointer;
-	}
-
-	.hint {
-		margin-top: 1.5rem;
-		color: var(--readable-muted);
-	}
-
-	.error {
-		margin-top: 1.5rem;
-		color: var(--readable-bad);
-		font-weight: 600;
-		padding-inline-start: var(--space-2);
-		border-inline-start: 3px solid var(--bad);
-	}
-
-	.retry {
-		margin-top: 0.75rem;
-		font: inherit;
-		padding: 0.45rem 0.85rem;
-		border: 1px solid color-mix(in srgb, currentColor 35%, transparent);
-		border-radius: 0.4rem;
-		background: transparent;
-		color: inherit;
-		cursor: pointer;
-	}
-
 	.results {
-		list-style: none;
-		margin: 1.5rem 0 0;
+		margin: 0;
 		padding: 0;
+		list-style: none;
 		display: grid;
-		gap: 0.5rem;
+		gap: 1px;
 	}
-
-	.result {
-		display: flex;
-		flex-wrap: wrap;
-		align-items: baseline;
-		gap: 0.75rem 1rem;
-		padding: 0.65rem 0.85rem;
-		border: 1px solid color-mix(in srgb, currentColor 18%, transparent);
-		border-radius: 0.4rem;
-	}
-
-	.written {
-		font-size: 1.6rem;
-		line-height: 1.2;
-		font-weight: 600;
-		text-decoration: none;
-	}
-
-	.written:hover,
-	.written:focus-visible {
-		text-decoration: underline;
-	}
-
-	.details {
-		display: flex;
-		flex-wrap: wrap;
-		align-items: baseline;
-		gap: 0.35rem 0.85rem;
-	}
-
-	.readings {
-		display: flex;
-		flex-wrap: wrap;
-		gap: 0.35rem;
-	}
-
-	.reading {
-		font-size: 1rem;
-	}
-
-	.source {
-		font-size: 0.8rem;
+	.hint {
 		color: var(--readable-muted);
-		border: 1px solid color-mix(in srgb, currentColor 30%, transparent);
-		border-radius: 999px;
-		padding: 0.05rem 0.5rem;
+	}
+	.error {
+		color: var(--readable-bad);
+	}
+	.back-to-results {
+		justify-self: start;
+	}
+	@media (max-width: 45rem) {
+		.split.has-selection .list-pane,
+		.split:not(.has-selection) .detail-pane {
+			display: none;
+		}
+	}
+	@media (min-width: 45rem) {
+		.split {
+			grid-template-columns: minmax(18rem, 24rem) minmax(0, 1fr);
+		}
+		.back-to-results {
+			display: none;
+		}
 	}
 </style>
