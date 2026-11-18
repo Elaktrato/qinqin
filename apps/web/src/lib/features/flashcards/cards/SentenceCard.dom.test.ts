@@ -78,6 +78,24 @@ describe('SentenceCard on the open page (#101)', () => {
 		expect(screen.getByRole('status').textContent).toContain('Not quite. Wrong checks: 1.');
 	});
 
+	it('an incomplete sentence checked with one tile counts a wrong check', async () => {
+		const { onDone } = await setup();
+		const check = screen.getByRole('button', { name: 'Check' }) as HTMLButtonElement;
+		await fireEvent.click(screen.getByRole('button', { name: 'Place 我' }));
+		expect(check.disabled).toBe(false);
+		await fireEvent.click(check);
+		expect(onDone).not.toHaveBeenCalled();
+		expect(screen.getByRole('status').textContent).toContain('Not quite. Wrong checks: 1.');
+	});
+
+	it('placing the last tile with the keyboard focuses the docked Check', async () => {
+		await setup();
+		await fireEvent.click(screen.getByRole('button', { name: 'Place 我' }), { detail: 0 });
+		await fireEvent.click(screen.getByRole('button', { name: 'Place 喜欢' }), { detail: 0 });
+		const check = screen.getByRole('button', { name: 'Check' });
+		expect(document.activeElement).toBe(check);
+	});
+
 	it('Undo and Show answer are secondary in the work area', async () => {
 		const { onDone } = await setup();
 		const undo = screen.getByRole('button', { name: 'Undo' });

@@ -13,6 +13,8 @@ export interface FacePrimary {
 
 export class CardFace {
 	primary = $state.raw<FacePrimary | null>(null);
+	/** The docked button's element, while it is rendered (keyboard focus fallback). */
+	primaryElement = $state.raw<HTMLElement | null>(null);
 	#owner: object | null = null;
 
 	/** register: the owner's primary replaces any other; null clears its own. */
@@ -43,6 +45,14 @@ export function useCardFace(): CardFace {
 	const face = getContext<CardFace | undefined>(KEY);
 	if (face === undefined) throw new Error('useCardFace: a card must be rendered inside the study face');
 	return face;
+}
+
+/**
+ * useOptionalCardFace: for a component shared with pages outside the session
+ * (WordSaladBoard is also the grammar practice board); null without a face.
+ */
+export function useOptionalCardFace(): CardFace | null {
+	return getContext<CardFace | undefined>(KEY) ?? null;
 }
 
 /**
