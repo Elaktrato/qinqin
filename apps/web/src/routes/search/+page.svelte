@@ -235,6 +235,8 @@
 		}
 		event.preventDefault();
 		openedHit(entryId);
+		// The clicked row is the list's tab stop when the reader comes back.
+		activeId = entryId;
 		const wide =
 			typeof window.matchMedia !== 'function' || !window.matchMedia(PHONE_MEDIA_QUERY).matches;
 		// A phone push scrolls to the top and moves focus to the entry once
