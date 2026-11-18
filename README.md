@@ -142,6 +142,66 @@ database with a SvelteKit single-page app embedded in the binary.
   are installable data packs; widgets and views come from feature plugins that
   the server registers at startup so Settings can enable them.
 
+## Screenshots
+
+The app in the 2026 visual rework, with demo data only (a made-up account). Themes are
+picked from the built-in set; the qinqin Day and qinqin Night themes are the defaults.
+
+![Home with the garden heatmap, activity chips and the daily goal](docs/assets/screenshots/home-1440-latte.png)
+
+*Home: the garden heatmap, activity by type, the daily goal and the week's numbers.*
+
+![A flashcard after the answer, with the four grade buttons and their intervals](docs/assets/screenshots/session-1440-mocha.png)
+
+*A flashcard after the answer: the readings and meanings, then Again / Hard / Good / Easy with their intervals.*
+
+![The reader with a word's lookup popup open](docs/assets/screenshots/reader-1440-rosepine-dawn.png)
+
+*The reader with a word's lookup popup: readings, level, meanings and Add to deck.*
+
+![The reader's lookup as a phone bottom sheet](docs/assets/screenshots/reader-sheet-360-rosepine.png)
+
+*The same lookup on a phone: the bottom sheet keeps the text visible.*
+
+![A journal entry's review with corrections in the right margin](docs/assets/screenshots/journal-1440-nord.png)
+
+*The journal: the three-column page with the review's corrections in the margin.*
+
+![Search with the selected entry beside the results](docs/assets/screenshots/search-entry-1440-gruvbox.png)
+
+*Search: results on the left, the entry with meanings, characters and stroke order beside them.*
+
+![Stats overview with four numbers and the activity widgets](docs/assets/screenshots/stats-overview-1440-latte.png)
+
+*Stats → Overview: the four numbers, words by state, the level line and reviews per day.*
+
+![The character mastery map with the level filter](docs/assets/screenshots/stats-characters-1024-gruvbox.png)
+
+*Stats → Characters: the single-hue mastery map; the Level select shows one level's own count.*
+
+![The week with four numbers and paired daily bars](docs/assets/screenshots/stats-week-360-mocha.png)
+
+*Stats → Week: four numbers, the compared window and this week / last week per day.*
+
+![The phone drawer with Home and then Search first](docs/assets/screenshots/drawer-360-mocha.png)
+
+*The phone drawer: Home, then Search, then the feature pages.*
+
+![The decks view with the overall numbers and the deck list](docs/assets/screenshots/decks-1024-macchiato.png)
+
+*Decks: overall numbers, your decks, starter decks and the installed level decks.*
+
+![Settings → Appearance on a phone, with the qinqin themes first](docs/assets/screenshots/settings-appearance-360-frappe.png)
+
+*Settings → Appearance: the tabs wrap on a phone, and the qinqin themes lead the picker.*
+
+![The sign-in page on a phone](docs/assets/screenshots/sign-in-360-latte.png)
+
+*Sign in on a phone.*
+
+Dictionary data in the screenshots: CC-CEDICT, CC BY-SA 4.0; text: Lu Xun, public
+domain; theme credits: [`docs/sources.md`](docs/sources.md).
+
 ## Quick start (Docker Compose / Portainer)
 
 The stack is a single service. For a production deployment on Portainer see [Deploying with Portainer](#deploying-with-portainer). In Portainer, create a stack from
