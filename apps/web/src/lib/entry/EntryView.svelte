@@ -402,7 +402,13 @@
 						{#if entry.kind === 'word' && entry.characters && entry.characters.length > 1}
 							<p class="pick">
 								{#each entry.characters as c (c.id)}
-									<button type="button" class="pick-char" aria-pressed={strokeChar === c.written} onclick={() => (chosenChar = c.written)} lang={studyLang(entry.language)}>{c.written}</button>
+									<button
+									type="button"
+									class="pick-char"
+									aria-pressed={strokeChar === c.written}
+									aria-label={t('entry.strokes.pick', { char: c.written })}
+									onclick={() => (chosenChar = c.written)}
+									lang={studyLang(entry.language)}>{c.written}</button>
 								{/each}
 							</p>
 						{/if}

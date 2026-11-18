@@ -196,3 +196,20 @@ describe('the entry on a phone (#104)', () => {
 		await waitFor(() => expect(pageFrame.actions).toBeNull());
 	});
 });
+
+
+describe('a word stroke picker (#104)', () => {
+	it('names each picker button after the character it shows', async () => {
+		getEntryMock.mockResolvedValue(
+			entry({
+				characters: [
+					{ id: 6, written: '勤', reading: null, gloss: '', radical: null, strokes: 13, levels: [] },
+					{ id: 7, written: '奋', reading: null, gloss: '', radical: null, strokes: 8, levels: [] }
+				]
+			})
+		);
+		render(EntryView, { entryId: 5, recordView: false });
+		expect(await screen.findByRole('button', { name: 'Show the strokes of 勤' })).toBeTruthy();
+		expect(screen.getByRole('button', { name: 'Show the strokes of 奋' })).toBeTruthy();
+	});
+});
