@@ -4,7 +4,7 @@ Flashcards are part of the app (you can switch them off for yourself in [Setting
 
 ## Starting a session
 
-`/study` is the session setup. Choose the decks to draw from, the card types, and the limits for new cards and reviews. At least one type must be selected. A session only queues the types you selected (a Tone-only session never shows a vocab card). Your last choice is preselected in new tabs of the same workspace, and the home widget counts the same types.
+`/study` is the session setup. It opens with **This session** and **Limits** at the top: the counts, the limits for new cards and reviews, the order of new cards, **Start studying** and **Study all**. **Study all** ignores the limits and each deck's daily limit for that one session, so every due review and new card is included. Then choose the decks or level, and the card types. At least one type must be selected. A session only queues the types you selected (a Tone-only session never shows a vocab card). Your last choice is preselected in new tabs of the same workspace, and the home widget counts the same types.
 
 You can also draw from a level instead of a deck: choose **By level**, pick an installed scheme (HSK, JLPT, a curriculum pack) and one of its levels. A word that already has a card reuses it; the rest get a card in the General deck when you first grade them, so abandoning a level session creates nothing.
 
@@ -25,7 +25,7 @@ Sentence, writing and tone cards are **companions** of vocab cards: a companion 
 
 ### Reverse and cloze cards
 
-They are opt-in per deck: each deck row on `/study` has a **Reverse** and a **Cloze** switch. A deck that never turns them on behaves as before. After you answer a reverse or cloze card of a word, its other cards are buried until your next learner day (they stay due but are left out of the queue and counts); vocab, sentence, writing and tone cards do not bury each other. Reverse and cloze reviews give XP and count for streaks and the heatmap but not for character mastery.
+They appear once in the setup's **Card types** list. Checking one enables it on every deck at once; **Advanced settings → Per-deck card types** has the switches for a single deck. A deck with neither enabled behaves as before. After you answer a reverse or cloze card of a word, its other cards are buried until your next learner day (they stay due but are left out of the queue and counts); vocab, sentence, writing and tone cards do not bury each other. Reverse and cloze reviews give XP and count for streaks and the heatmap but not for character mastery.
 
 ## The session screen
 
