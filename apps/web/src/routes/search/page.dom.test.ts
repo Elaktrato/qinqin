@@ -430,6 +430,9 @@ describe('search page', () => {
 	it('links the lookup history', async () => {
 		render(Page);
 		expect(screen.getByRole('link', { name: 'Lookup history' }).getAttribute('href')).toBe('/lookups');
+		const source = (await import('./+page.svelte?raw')).default as string;
+		expect(source).toMatch(/\.parts-link a\s*\{[^}]*color:\s*var\(--reading-accent\)/);
+		expect(source).toMatch(/\.parts-link a\s*\{[^}]*text-decoration:\s*underline/);
 	});
 
 	it('a middle-click open records too; a right-button auxclick does not', async () => {

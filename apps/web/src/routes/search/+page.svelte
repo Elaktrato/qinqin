@@ -493,6 +493,14 @@
 </div>
 
 <style>
+	/* Text links stay recognisable without colour (#106): theme-aware accent
+	   text and an underline. */
+	.parts-link a {
+		color: var(--reading-accent);
+		text-decoration: underline;
+		text-underline-offset: 0.15em;
+	}
+
 	.split {
 		display: grid;
 		grid-template-columns: minmax(0, 1fr);
