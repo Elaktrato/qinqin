@@ -587,3 +587,19 @@ build the types gained no required fields because the extras are optional. No as
 **Not verified:** a real browser/Playwright comparison (columns at 1024/1440, the container query, the phone
 Back flow, the stroke player) — pending in the combined gallery pass; a real screen reader and touch; a large
 dictionary's search timings; Android.
+
+## Review fix wave (2026-11-18)
+
+The independent review (`/tmp/opencode/reviews/104-report.md`, 2 Critical, 11 Important, 8 Minor) was fixed test-first in the worktree `vr-fixwave104` (branch `feature/vr-fixwave-104`, cut from `300f8cb2`). Every finding has its own commit or a small related group:
+
+**Commits:** `5b8668c0` C1/C2 (the detail is the URL's entry; Back on every `e`) · `04e8ec61` I1 (middle click) · `fc88e2cc` I2 (same-text submit drops `e`) · `0a014eff` I3/I4 (phone scroll/focus, roving rows, Back focus) · `d5e75a45` the a11y follow-up for the row handler · `4c834ea0` I8 (own-form resolution, dedupe, cap) · `f47c77b7` the missing levels/search Go tests · `23bef67f` I10/M3 (frame/document titles) · `a3926c23` I5 (entry header, Meanings/Examples/Related, Add to deck) · `64aa1ddd` I6 (stroke colours, play/pause, progress) · `1eebfd49` I7 (character rows) · `f490e53e` I9 (search field/filters) · `3390d6c7` M1/M2 (720px switch, no hidden preview) · `7097bbd5` M6/M4/M5/M7 (not-found link, extras guards, row text) · `6bab1359` M8 (wiki and API fields) · `688c6f6b` the a11y-name tests · this record.
+
+**Test-first:** the C1/C2, I1–I4, I6, I7, I9, I10 and M6 tests were written and seen to fail against `300f8cb2` before the code changed (e.g. `record` for entry 7 instead of 9, the missing Back link with `e` and no hits, `goto` on a middle click, `#5` as the phone title, `0 strokes`, `'#0b6bcb'`). The I8 `覆/复` and dedupe tests failed on the old resolver and pass on the new one; the I5 tests failed on the absent header/meanings/`<b>`; the I9 tests failed on the primary Search button and the missing All/Level menu. The M4/M5 and levels/search guard tests pass on the shipped behaviour and close the coverage gap (the review's I11).
+
+**Changed existing tests (forced by the design):** `AddToStudy.dom.test.ts` finds the button as "Add to deck"; `Senses.dom.test.ts` focuses "Meanings · CEDICT" instead of the removed "Senses" heading; the entry route's variant test asserts the header's labelled variant link instead of the removed side-list reading; the search `By parts` test still finds a link (now an IconButton); the search page's events mock gained the exports reached through `EntryView`; the `StrokePlayer` missing-data test asserts the failed text instead of a hidden player. No assertion was weakened.
+
+**Removed keys:** `entry.page.variants` (the variant moved into the header), `entry.sentences.title` (the heading is `entry.page.examples`), `search.filters.scheme` (the level Menu replaces the scheme chips). **Added:** `entry.page.examples/meaningsFrom/variantLabel/traditional/simplified/variant`, `entry.char.level`, `entry.strokes.pause/progress/pick`, `entry.study.chooseDeck`, `search.filters.all/levelMenu/anyLevel/anyLevelItem/schemeLevel` (`anyLevelItem` is the menu's "Any level" while `anyLevel` is the trigger's "any": one key cannot carry both capitalisations).
+
+**Adaptations:** the not-found back link takes `backHref` so the search detail keeps its query; `EntryView` publishes a phone page action and passes `onadded`/`onchange` to `AddToStudy`; the entry detail's not-found heading follows `headingLevel`; the level Menu clears scheme and level on "Any level" (a level needs a scheme). `Search.filters.scheme` chips were dropped because the Menu sets scheme and level together.
+
+**Not verified:** the Playwright visual pass (column widths, the 720px edge, real touch/screen reader) and a real browser's middle-click default action; the full suites/build/`go ./...` are the orchestrator's.
