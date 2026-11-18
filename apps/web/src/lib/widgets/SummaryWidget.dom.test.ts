@@ -15,7 +15,12 @@ vi.mock('$lib/study/store', async (importOriginal) => ({
 	...(await importOriginal<typeof import('$lib/study/store')>()),
 	onStudyWrite: vi.fn(() => () => {})
 }));
+vi.mock('$lib/events', async (importOriginal) => ({
+	...(await importOriginal<typeof import('$lib/events')>()),
+	onEventLogChange: vi.fn(() => () => {})
+}));
 
+import { onEventLogChange } from '$lib/events';
 import { loadStudyHistory } from '$lib/study/history';
 import { summaryNumbers, type SummaryNumbers } from '$lib/stats/summary';
 import { onContextStale } from '$lib/study/currentContext';
@@ -131,6 +136,18 @@ describe('SummaryWidget', () => {
 		await tick();
 		expect(loadStudyHistory).toHaveBeenCalledTimes(1);
 		onWrite(1);
+		await waitFor(() => expect(loadStudyHistory).toHaveBeenCalledTimes(2));
+	});
+
+	it('reloads on a posted review for this workspace', async () => {
+		render(SummaryWidget);
+		await waitFor(() => expect(loadStudyHistory).toHaveBeenCalledTimes(1));
+		const onLog = vi.mocked(onEventLogChange).mock.calls.at(-1)![0];
+
+		onLog(2);
+		await tick();
+		expect(loadStudyHistory).toHaveBeenCalledTimes(1);
+		onLog(1);
 		await waitFor(() => expect(loadStudyHistory).toHaveBeenCalledTimes(2));
 	});
 

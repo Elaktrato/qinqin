@@ -3,8 +3,11 @@
 	// one bar for each of the last 30 learner days, today emphasised. The
 	// bars are decorative; the visible summary and a visually hidden list
 	// carry every number (design §9, "never colour alone").
+	import { onEventLogChange } from '$lib/events';
+	import { featureEnabled, FLASHCARDS_ID } from '$lib/features';
 	import { t } from '$lib/i18n';
 	import { formatDay } from '$lib/i18n/format';
+	import { pluginStates } from '$lib/plugins/states';
 	import { errorMessage } from '$lib/stats/errors';
 	import { reviewsPerDay, type ReviewDay } from '$lib/stats/summary';
 	import { contextForData, onContextStale } from '$lib/study/currentContext';
@@ -22,20 +25,31 @@
 	let requestSeq = 0;
 
 	const workspaceId = $derived($workspaces.current?.id ?? null);
+	// Before the states are known the feature counts as on (no flash of the note).
+	const flashcardsOn = $derived(
+		$pluginStates.status === 'ready'
+			? featureEnabled(FLASHCARDS_ID, $pluginStates.list)
+			: true
+	);
 	const total = $derived(series?.reduce((sum, day) => sum + day.count, 0) ?? 0);
 	const todayCount = $derived(series?.find((day) => day.today)?.count ?? 0);
 	const busiest = $derived(series?.reduce((max, day) => Math.max(max, day.count), 0) ?? 0);
 	const withReviews = $derived(series?.filter((day) => day.count > 0) ?? []);
+	const emptyText = $derived(
+		flashcardsOn ? t('widgets.reviewsPerDay.empty') : t('stats.summary.noFlashcards')
+	);
 	const status = $derived<WidgetStatus>(
 		noWorkspace
 			? 'no-workspace'
-			: loading
-				? 'loading'
-				: error
-					? 'error'
-					: series !== null && total === 0
-						? 'empty'
-						: 'ready'
+			: !flashcardsOn
+				? 'empty'
+				: loading
+					? 'loading'
+					: error
+						? 'error'
+						: series !== null && total === 0
+							? 'empty'
+							: 'ready'
 	);
 
 	function dayText(day: ReviewDay): string {
@@ -81,14 +95,32 @@
 	}
 
 	$effect(() => {
+		if (!flashcardsOn) {
+			// Switching the feature off drops the chart at once; no reviews
+			// can be made, so the historical counts are not shown.
+			requestSeq += 1;
+			series = null;
+			loading = false;
+			noWorkspace = workspaceId === null;
+			return;
+		}
 		void load(workspaceId);
 	});
 	$effect(() => onContextStale(() => void load(workspaceId)));
+
+	// A posted review or a study-data write changes the chart; the history
+	// cache is dropped by both. Only this workspace (or all) triggers a load.
 	$effect(() => {
 		const id = workspaceId;
-		return onStudyWrite((touched) => {
+		const again = (touched: number): void => {
 			if (id !== null && (touched === id || touched === ALL_WORKSPACES)) void load(id);
-		});
+		};
+		const offLog = onEventLogChange(again);
+		const offWrite = onStudyWrite(again);
+		return () => {
+			offLog();
+			offWrite();
+		};
 	});
 </script>
 
@@ -98,7 +130,7 @@
 	{status}
 	{error}
 	onretry={() => void load(workspaceId, true)}
-	emptyText={t('widgets.reviewsPerDay.empty')}
+	{emptyText}
 >
 	{#if series !== null}
 		<p class="summary">{t('stats.reviewsPerDay.summary', { total, today: todayCount })}</p>

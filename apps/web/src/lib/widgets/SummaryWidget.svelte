@@ -4,6 +4,7 @@
 	// days and time studied this month. Every number is computed by
 	// lib/stats/summary.ts from the shared study history; the widget only
 	// formats and lays them out (design §9, §5).
+	import { onEventLogChange } from '$lib/events';
 	import { featureEnabled, FLASHCARDS_ID } from '$lib/features';
 	import { RETENTION_MIN_REVIEWS } from '$lib/features/flashcards/decks/deckStats';
 	import { t } from '$lib/i18n';
@@ -104,12 +105,18 @@
 	$effect(() => onContextStale(() => void load(workspaceId)));
 
 	// A posted review or a study-data write changes the numbers; the history
-	// cache is already dropped. Only this workspace (or all) triggers a load.
+	// cache is dropped by both. Only this workspace (or all) triggers a load.
 	$effect(() => {
 		const id = workspaceId;
-		return onStudyWrite((touched) => {
+		const again = (touched: number): void => {
 			if (id !== null && (touched === id || touched === ALL_WORKSPACES)) void load(id);
-		});
+		};
+		const offLog = onEventLogChange(again);
+		const offWrite = onStudyWrite(again);
+		return () => {
+			offLog();
+			offWrite();
+		};
 	});
 </script>
 

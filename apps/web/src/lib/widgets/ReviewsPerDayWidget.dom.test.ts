@@ -1,4 +1,5 @@
 import { cleanup, render, screen, waitFor } from '@testing-library/svelte';
+import { tick } from 'svelte';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('$lib/study/history', () => ({ loadStudyHistory: vi.fn() }));
@@ -14,9 +15,15 @@ vi.mock('$lib/study/store', async (importOriginal) => ({
 	...(await importOriginal<typeof import('$lib/study/store')>()),
 	onStudyWrite: vi.fn(() => () => {})
 }));
+vi.mock('$lib/events', async (importOriginal) => ({
+	...(await importOriginal<typeof import('$lib/events')>()),
+	onEventLogChange: vi.fn(() => () => {})
+}));
 
+import { onEventLogChange } from '$lib/events';
 import { loadStudyHistory } from '$lib/study/history';
 import { reviewsPerDay, type ReviewDay } from '$lib/stats/summary';
+import { pluginStates } from '$lib/plugins/states';
 import { workspaces } from '$lib/workspaces';
 import ReviewsPerDayWidget from './ReviewsPerDayWidget.svelte';
 
@@ -37,8 +44,22 @@ function select(id: number | null): void {
 	});
 }
 
+function flashcards(enabled: boolean): void {
+	pluginStates.set({
+		list: [{ id: 'qinqin-flashcards', manifest: {}, enabled, order: 0 }],
+		status: 'ready'
+	});
+}
+
+function deferred<T>() {
+	let resolve!: (v: T) => void;
+	const promise = new Promise<T>((res) => (resolve = res));
+	return { promise, resolve };
+}
+
 beforeEach(() => {
 	select(1);
+	flashcards(true);
 	vi.mocked(loadStudyHistory).mockResolvedValue({ decks: [], cards: [], reviews: [], merged: 0 });
 	vi.mocked(reviewsPerDay).mockReturnValue(series({ '2026-11-17': 21, '2026-11-18': 7 }));
 });
@@ -46,10 +67,11 @@ afterEach(() => {
 	cleanup();
 	vi.clearAllMocks();
 	select(null);
+	pluginStates.set({ list: [], status: 'idle' });
 });
 
 describe('ReviewsPerDayWidget', () => {
-	it('thirty decorative bars and a visually hidden list of the days with reviews', async () => {
+	it('thirty decorative columns and a visually hidden list of the days with reviews', async () => {
 		const { container } = render(ReviewsPerDayWidget);
 		await waitFor(() => expect(announced(container)).toBe(30));
 
@@ -100,6 +122,47 @@ describe('ReviewsPerDayWidget', () => {
 		const { container } = render(ReviewsPerDayWidget);
 		expect(await screen.findByText('No reviews in the last 30 days.')).toBeTruthy();
 		expect(container.querySelector('.chart')).toBeNull();
+	});
+
+	it('flashcards switched off shows the note, not historical reviews', async () => {
+		flashcards(false);
+		const { container } = render(ReviewsPerDayWidget);
+
+		expect(
+			await screen.findByText('Switch on flashcards in Settings → Features to see these numbers.')
+		).toBeTruthy();
+		expect(container.querySelector('.chart')).toBeNull();
+		expect(loadStudyHistory).not.toHaveBeenCalled();
+	});
+
+	it('reloads on a posted review for this workspace', async () => {
+		render(ReviewsPerDayWidget);
+		await waitFor(() => expect(loadStudyHistory).toHaveBeenCalledTimes(1));
+		const onLog = vi.mocked(onEventLogChange).mock.calls.at(-1)![0];
+
+		onLog(2);
+		await tick();
+		expect(loadStudyHistory).toHaveBeenCalledTimes(1);
+		onLog(1);
+		await waitFor(() => expect(loadStudyHistory).toHaveBeenCalledTimes(2));
+	});
+
+	it('a slow earlier load never overwrites a newer one', async () => {
+		const first = deferred<never>();
+		const second = deferred<never>();
+		vi.mocked(loadStudyHistory).mockReturnValueOnce(first.promise).mockReturnValueOnce(second.promise);
+		const { container } = render(ReviewsPerDayWidget);
+		await tick();
+		select(2);
+		await tick();
+		vi.mocked(reviewsPerDay).mockReturnValue(series({ '2026-11-18': 5 }));
+		second.resolve({ decks: [], cards: [], reviews: [], merged: 0 } as never);
+		await waitFor(() => expect(screen.getByText('5 reviews in the last 30 days, 5 today')).toBeTruthy());
+		first.resolve({ decks: [], cards: [], reviews: [], merged: 0 } as never);
+		await tick();
+		await Promise.resolve();
+		expect(screen.getByText('5 reviews in the last 30 days, 5 today')).toBeTruthy();
+		expect(container.querySelector('.chart')).not.toBeNull();
 	});
 
 	it('asks for a workspace without one, and shows errors with Try again', async () => {
