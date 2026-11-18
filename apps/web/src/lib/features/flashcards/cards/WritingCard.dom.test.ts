@@ -85,6 +85,11 @@ describe('WritingCard on the open page (#101)', () => {
 		expect(style).not.toMatch(/#[0-9a-fA-F]{3,8}\b|\brgba?\(/);
 		expect(padSource).toMatch(/getPropertyValue\('--accent'\)/);
 	});
+
+	it('fills the finished character in --good', () => {
+		expect(padSource).toMatch(/\.pad\.done\s+\.outline\s*\{[^}]*fill:\s*var\(--good\)/);
+		expect(padSource).toMatch(/class:done=\{finished\}/);
+	});
 });
 
 describe('WritingCard without stroke data (#101, prep-run item 2)', () => {
