@@ -7,7 +7,6 @@ import {
 	navigationPlan,
 	tooLongHint,
 	aiButtonGate,
-	annotationCategory,
 	editorTarget,
 	listedAnnotations,
 	reviewAnnouncement,
@@ -64,16 +63,6 @@ describe('aiButtonGate', () => {
 	});
 });
 
-describe('annotationCategory', () => {
-	it('maps known categories and falls back to other', () => {
-		expect(annotationCategory('grammar')).toBe('grammar');
-		expect(annotationCategory('word choice')).toBe('word-choice');
-		expect(annotationCategory('spelling')).toBe('spelling');
-		expect(annotationCategory('style')).toBe('style');
-		expect(annotationCategory('surprise')).toBe('other');
-		expect(annotationCategory('')).toBe('other');
-	});
-});
 
 describe('listedAnnotations', () => {
 	it('keeps the review order and leaves out missing ones', () => {

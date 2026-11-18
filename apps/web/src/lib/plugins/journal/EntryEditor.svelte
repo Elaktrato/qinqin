@@ -91,6 +91,7 @@
 	let deleteButton = $state<HTMLButtonElement>();
 	let cancelDelete = $state<HTMLButtonElement>();
 	let reviewText = $state<{ focusAnnotation(id: string): Promise<void> }>();
+	let openCorrectionId = $state<string | null>(null);
 
 	const chars = $derived(codePoints(text));
 	const reviewGate = $derived(
@@ -376,6 +377,7 @@
 	}
 
 	function pickAnnotation(id: string): void {
+		openCorrectionId = id;
 		void reviewText?.focusAnnotation(id);
 	}
 </script>
@@ -463,6 +465,8 @@
 			{text}
 			placed={anchoring.placed}
 			annotations={review.annotations}
+			openId={openCorrectionId}
+			onopen={(id) => (openCorrectionId = id)}
 		/>
 		<AnnotationList {listed} missing={anchoring.missing} onpick={pickAnnotation} />
 		<div class="actions">
