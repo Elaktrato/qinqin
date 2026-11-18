@@ -278,7 +278,6 @@ and no syllabus text is reproduced. The syllabus grants no reuse licence.
 | 36 |  | not authored yet |
 | 37 |  | not authored yet |
 | 38 |  | not authored yet |
-| 39 |  | not authored yet |
 
 ## Level 6 · Formal ground
 

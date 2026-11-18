@@ -18,7 +18,7 @@
           { "id": "hsk1-prefixes-1", "text": "他是小学生。", "reading": "tā shì xiǎoxuéshēng.", "translation": "He is a primary-school pupil.", "focus": "小", "distractors": ["第", "很", "吗"], "contrast": false, "kinds": ["similar", "clearly-wrong"] },
           { "id": "hsk1-prefixes-2", "text": "小王是我的同学。", "reading": "Xiǎo Wáng shì wǒ de tóngxué.", "translation": "Xiao Wang is my classmate.", "focus": "小", "distractors": ["第", "很", "吗"], "contrast": false, "kinds": ["similar", "clearly-wrong"] },
           { "id": "hsk1-prefixes-3", "text": "这是我的第一本书。", "reading": "zhè shì wǒ de dì-yī běn shū.", "translation": "This is my first book.", "focus": "第", "distractors": ["小", "很", "吗"], "contrast": false, "kinds": ["similar", "clearly-wrong"] },
-          { "id": "hsk1-prefixes-4", "text": "小朋友们在唱歌。", "reading": "xiǎopéngyǒumen zài chàng gē.", "translation": "The children are singing.", "focus": "小", "distractors": ["第", "很", "吗"], "contrast": false, "kinds": ["similar", "clearly-wrong"] },
+          { "id": "hsk1-prefixes-4", "text": "小朋友们在唱歌。", "reading": "xiǎopéngyoumen zài chàng gē.", "translation": "The children are singing.", "focus": "小", "distractors": ["第", "很", "吗"], "contrast": false, "kinds": ["similar", "clearly-wrong"] },
           { "id": "hsk1-prefixes-5", "text": "同学们好！", "reading": "tóngxuémen hǎo!", "translation": "Hello, classmates!", "focus": "们", "distractors": ["第", "吗", "的"], "contrast": true, "kinds": ["similar", "clearly-wrong"] }
         ]
       }
@@ -82,11 +82,11 @@
           "To negate a modal, put 不 before it: 不想, 不会, 不能. The contrast example shows this. 没 does not negate 会 or 能 (you cannot say 没会开车); 没 negates 有 and past events."
         ],
         "examples": [
-          { "id": "hsk1-modal-verbs-1", "text": "我会说汉语。", "reading": "wǒ huì shuō Hànyǔ.", "translation": "I can speak Chinese.", "focus": "会", "distractors": ["在", "吗", "的"], "contrast": false, "kinds": ["clearly-wrong"] },
+          { "id": "hsk1-modal-verbs-1", "text": "我会说汉语。", "reading": "wǒ huì shuō Hànyǔ.", "translation": "I can speak Chinese.", "focus": "会", "distractors": ["第", "吗", "的"], "contrast": false, "kinds": ["clearly-wrong"] },
           { "id": "hsk1-modal-verbs-2", "text": "我要一杯茶。", "reading": "wǒ yào yì bēi chá.", "translation": "I would like a cup of tea.", "focus": "要", "distractors": ["会", "能", "想", "吗"], "contrast": false, "kinds": ["similar", "clearly-wrong"] },
           { "id": "hsk1-modal-verbs-3", "text": "我想去中国。", "reading": "wǒ xiǎng qù Zhōngguó.", "translation": "I want to go to China.", "focus": "想", "distractors": ["吗", "的", "在"], "contrast": false, "kinds": ["clearly-wrong"] },
           { "id": "hsk1-modal-verbs-4", "text": "你可以坐出租车。", "reading": "nǐ kěyǐ zuò chūzūchē.", "translation": "You may take a taxi.", "focus": "可以", "distractors": ["吗", "的", "很"], "contrast": false, "kinds": ["clearly-wrong"] },
-          { "id": "hsk1-modal-verbs-5", "text": "他能吃十个饺子。", "reading": "tā néng chī shí ge jiǎozi.", "translation": "He can eat ten dumplings.", "focus": "能", "distractors": ["吗", "的", "在"], "contrast": false, "kinds": ["clearly-wrong"] },
+          { "id": "hsk1-modal-verbs-5", "text": "他能吃十个饺子。", "reading": "tā néng chī shí ge jiǎozi.", "translation": "He can eat ten dumplings.", "focus": "能", "distractors": ["吗", "的", "第"], "contrast": false, "kinds": ["clearly-wrong"] },
           { "id": "hsk1-modal-verbs-6", "text": "我不会开车。", "reading": "wǒ bú huì kāi chē.", "translation": "I cannot drive.", "focus": "不", "distractors": ["没", "吗", "的"], "contrast": true, "kinds": ["similar", "clearly-wrong"] }
         ]
       }
@@ -250,7 +250,7 @@
           { "id": "hsk1-time-measures-1", "text": "我妹妹五岁。", "reading": "wǒ mèimei wǔ suì.", "translation": "My younger sister is five.", "focus": "岁", "distractors": ["个", "只", "吗"], "contrast": false, "kinds": ["similar", "clearly-wrong"] },
           { "id": "hsk1-time-measures-2", "text": "今天三月五号。", "reading": "jīntiān sān yuè wǔ hào.", "translation": "Today is the fifth of March.", "focus": "号", "distractors": ["岁", "个", "吗"], "contrast": false, "kinds": ["similar", "clearly-wrong"] },
           { "id": "hsk1-time-measures-3", "text": "现在八点。", "reading": "xiànzài bā diǎn.", "translation": "It is eight o'clock.", "focus": "点", "distractors": ["岁", "分", "吗"], "contrast": false, "kinds": ["similar", "clearly-wrong"] },
-          { "id": "hsk1-time-measures-4", "text": "我学了一年汉语。", "reading": "wǒ xué le yì nián Hànyǔ.", "translation": "I have studied Chinese for a year.", "focus": "年", "distractors": ["岁", "号", "吗"], "contrast": false, "kinds": ["similar", "clearly-wrong"] },
+          { "id": "hsk1-time-measures-4", "text": "我学了一年汉语。", "reading": "wǒ xué le yì nián Hànyǔ.", "translation": "I studied Chinese for a year.", "focus": "年", "distractors": ["岁", "号", "吗"], "contrast": false, "kinds": ["similar", "clearly-wrong"] },
           { "id": "hsk1-time-measures-5", "text": "我一天工作八个小时。", "reading": "wǒ yì tiān gōngzuò bā ge xiǎoshí.", "translation": "I work eight hours a day.", "focus": "天", "distractors": ["岁", "吗", "很"], "contrast": false, "kinds": ["similar", "clearly-wrong"] },
           { "id": "hsk1-time-measures-6", "text": "现在八点半。", "reading": "xiànzài bā diǎn bàn.", "translation": "It is half past eight.", "focus": "半", "distractors": ["分", "岁", "吗"], "contrast": true, "kinds": ["similar", "clearly-wrong"] }
         ]
@@ -272,7 +272,7 @@
         "examples": [
           { "id": "hsk1-degree-adverbs-1", "text": "今天非常热。", "reading": "jīntiān fēicháng rè.", "translation": "It is very hot today.", "focus": "非常", "distractors": ["吗", "的", "们"], "contrast": false, "kinds": ["clearly-wrong"] },
           { "id": "hsk1-degree-adverbs-2", "text": "这个电影很好看。", "reading": "zhège diànyǐng hěn hǎokàn.", "translation": "This film is good.", "focus": "很", "distractors": ["吗", "的", "在"], "contrast": false, "kinds": ["clearly-wrong"] },
-          { "id": "hsk1-degree-adverbs-3", "text": "太贵了！", "reading": "tài guì le!", "translation": "Too expensive!", "focus": "太", "distractors": ["很", "吗", "的"], "contrast": false, "kinds": ["similar", "clearly-wrong"] },
+          { "id": "hsk1-degree-adverbs-3", "text": "太贵了！", "reading": "tài guì le!", "translation": "Too expensive!", "focus": "太", "distractors": ["在", "吗", "的"], "contrast": false, "kinds": ["clearly-wrong"] },
           { "id": "hsk1-degree-adverbs-4", "text": "你真好！", "reading": "nǐ zhēn hǎo!", "translation": "You are really kind!", "focus": "真", "distractors": ["吗", "的", "在"], "contrast": false, "kinds": ["clearly-wrong"] },
           { "id": "hsk1-degree-adverbs-5", "text": "我有点儿忙。", "reading": "wǒ yǒudiǎnr máng.", "translation": "I am a bit busy.", "focus": "有点儿", "distractors": ["一点儿", "吗", "的"], "contrast": false, "kinds": ["similar", "clearly-wrong"] },
           { "id": "hsk1-degree-adverbs-6", "text": "我想喝一点儿水。", "reading": "wǒ xiǎng hē yìdiǎnr shuǐ.", "translation": "I would like to drink a little water.", "focus": "一点儿", "distractors": ["有点儿", "吗", "很"], "contrast": true, "kinds": ["similar", "clearly-wrong"] }
@@ -359,7 +359,7 @@
           "The contrast example uses 都 (all), which sums up every member rather than adding one. When 也 and 都 appear together, 也 comes first: 我们也都想去. Do not put 也 or 还 after the verb or at the end of the sentence."
         ],
         "examples": [
-          { "id": "hsk1-hai-ye-1", "text": "我也喜欢猫。", "reading": "wǒ yě xǐhuan māo.", "translation": "I like cats too.", "focus": "也", "distractors": ["很", "吗", "在"], "contrast": false, "kinds": ["clearly-wrong"] },
+          { "id": "hsk1-hai-ye-1", "text": "我也喜欢猫。", "reading": "wǒ yě xǐhuan māo.", "translation": "I like cats too.", "focus": "也", "distractors": ["再", "吗", "在"], "contrast": false, "kinds": ["clearly-wrong"] },
           { "id": "hsk1-hai-ye-2", "text": "他还有一个妹妹。", "reading": "tā hái yǒu yí ge mèimei.", "translation": "He also has a younger sister.", "focus": "还", "distractors": ["再", "吗", "很"], "contrast": false, "kinds": ["similar", "clearly-wrong"] },
           { "id": "hsk1-hai-ye-3", "text": "我们也都想去。", "reading": "wǒmen yě dōu xiǎng qù.", "translation": "We all want to go too.", "focus": "也", "distractors": ["吗", "很", "的"], "contrast": false, "kinds": ["clearly-wrong"] },
           { "id": "hsk1-hai-ye-4", "text": "苹果很好吃，饺子也很好吃。", "reading": "píngguǒ hěn hǎochī, jiǎozi yě hěn hǎochī.", "translation": "Apples are tasty, and dumplings are tasty too.", "focus": "也", "distractors": ["吗", "很", "在"], "contrast": false, "kinds": ["clearly-wrong"] },
@@ -385,7 +385,7 @@
           { "id": "hsk1-negation-2", "text": "昨天我没去学校。", "reading": "zuótiān wǒ méi qù xuéxiào.", "translation": "I did not go to school yesterday.", "focus": "没", "distractors": ["不", "吗", "很"], "contrast": false, "kinds": ["similar", "clearly-wrong"] },
           { "id": "hsk1-negation-3", "text": "请不要说话。", "reading": "qǐng bú yào shuōhuà.", "translation": "Please do not talk.", "focus": "不要", "distractors": ["不", "吗", "很"], "contrast": false, "kinds": ["similar", "clearly-wrong"] },
           { "id": "hsk1-negation-4", "text": "他没有手机。", "reading": "tā méiyǒu shǒujī.", "translation": "He does not have a phone.", "focus": "没有", "distractors": ["不有", "吗", "很"], "contrast": false, "kinds": ["similar", "clearly-wrong"] },
-          { "id": "hsk1-negation-5", "text": "我今天不想上班。", "reading": "wǒ jīntiān bù xiǎng shàngbān.", "translation": "I do not want to go to work today.", "focus": "不", "distractors": ["吗", "在", "的"], "contrast": false, "kinds": ["clearly-wrong"] },
+          { "id": "hsk1-negation-5", "text": "我今天不想上班。", "reading": "wǒ jīntiān bù xiǎng shàngbān.", "translation": "I do not want to go to work today.", "focus": "不", "distractors": ["吗", "们", "的"], "contrast": false, "kinds": ["clearly-wrong"] },
           { "id": "hsk1-negation-6", "text": "我不去了。", "reading": "wǒ bú qù le.", "translation": "I am not going anymore.", "focus": "了", "distractors": ["吗", "很", "在"], "contrast": true, "kinds": ["similar", "clearly-wrong"] }
         ]
       }
@@ -627,10 +627,10 @@
         ],
         "examples": [
           { "id": "hsk1-subject-1", "text": "我是学生。", "reading": "wǒ shì xuéshēng.", "translation": "I am a student.", "focus": "我", "distractors": ["吗", "很", "的"], "contrast": false, "kinds": ["clearly-wrong"] },
-          { "id": "hsk1-subject-2", "text": "爸爸喜欢喝茶。", "reading": "bàba xǐhuan hē chá.", "translation": "Dad likes drinking tea.", "focus": "爸爸", "distractors": ["吗", "很", "的"], "contrast": false, "kinds": ["clearly-wrong"] },
+          { "id": "hsk1-subject-2", "text": "爸爸喜欢喝茶。", "reading": "bàba xǐhuan hē chá.", "translation": "Dad likes drinking tea.", "focus": "爸爸", "distractors": ["吗", "们", "的"], "contrast": false, "kinds": ["clearly-wrong"] },
           { "id": "hsk1-subject-3", "text": "我的老师很忙。", "reading": "wǒ de lǎoshī hěn máng.", "translation": "My teacher is busy.", "focus": "我的老师", "distractors": ["吗", "很", "在"], "contrast": false, "kinds": ["clearly-wrong"] },
           { "id": "hsk1-subject-4", "text": "这个商店很大。", "reading": "zhège shāngdiàn hěn dà.", "translation": "This shop is big.", "focus": "这个商店", "distractors": ["吗", "很", "在"], "contrast": false, "kinds": ["clearly-wrong"] },
-          { "id": "hsk1-subject-5", "text": "我们都喜欢他。", "reading": "wǒmen dōu xǐhuan tā.", "translation": "We all like him.", "focus": "都", "distractors": ["很", "吗", "在"], "contrast": true, "kinds": ["clearly-wrong"] }
+          { "id": "hsk1-subject-5", "text": "我们都喜欢他。", "reading": "wǒmen dōu xǐhuan tā.", "translation": "We all like him.", "focus": "都", "distractors": ["再", "吗", "在"], "contrast": true, "kinds": ["clearly-wrong"] }
         ]
       }
     },
@@ -717,7 +717,7 @@
           { "id": "hsk1-adverbial-1", "text": "我很忙。", "reading": "wǒ hěn máng.", "translation": "I am busy.", "focus": "很", "distractors": ["吗", "的", "们"], "contrast": false, "kinds": ["clearly-wrong"] },
           { "id": "hsk1-adverbial-2", "text": "我明天去学校。", "reading": "wǒ míngtiān qù xuéxiào.", "translation": "I go to school tomorrow.", "focus": "明天", "distractors": ["吗", "很", "的"], "contrast": false, "kinds": ["clearly-wrong"] },
           { "id": "hsk1-adverbial-3", "text": "我们在家吃饭。", "reading": "wǒmen zài jiā chī fàn.", "translation": "We eat at home.", "focus": "在", "distractors": ["是", "很", "吗"], "contrast": false, "kinds": ["similar", "clearly-wrong"] },
-          { "id": "hsk1-adverbial-4", "text": "他非常喜欢猫。", "reading": "tā fēicháng xǐhuan māo.", "translation": "He likes cats very much.", "focus": "非常", "distractors": ["吗", "的", "很"], "contrast": false, "kinds": ["clearly-wrong"] },
+          { "id": "hsk1-adverbial-4", "text": "他非常喜欢猫。", "reading": "tā fēicháng xǐhuan māo.", "translation": "He likes cats very much.", "focus": "非常", "distractors": ["吗", "的", "再"], "contrast": false, "kinds": ["clearly-wrong"] },
           { "id": "hsk1-adverbial-5", "text": "这是我的书。", "reading": "zhè shì wǒ de shū.", "translation": "This is my book.", "focus": "的", "distractors": ["得", "地", "吗"], "contrast": true, "kinds": ["similar", "clearly-wrong"] }
         ]
       }
@@ -781,8 +781,8 @@
         ],
         "examples": [
           { "id": "hsk1-declarative-1", "text": "我是学生。", "reading": "wǒ shì xuéshēng.", "translation": "I am a student.", "focus": "是", "distractors": ["吗", "很", "在"], "contrast": false, "kinds": ["similar", "clearly-wrong"] },
-          { "id": "hsk1-declarative-2", "text": "他喜欢喝茶。", "reading": "tā xǐhuan hē chá.", "translation": "He likes drinking tea.", "focus": "喜欢", "distractors": ["吗", "的", "在"], "contrast": false, "kinds": ["clearly-wrong"] },
-          { "id": "hsk1-declarative-3", "text": "今天不冷。", "reading": "jīntiān bù lěng.", "translation": "It is not cold today.", "focus": "不", "distractors": ["吗", "很", "的"], "contrast": false, "kinds": ["similar", "clearly-wrong"] },
+          { "id": "hsk1-declarative-2", "text": "他喜欢喝茶。", "reading": "tā xǐhuan hē chá.", "translation": "He likes drinking tea.", "focus": "喜欢", "distractors": ["吗", "的", "很"], "contrast": false, "kinds": ["clearly-wrong"] },
+          { "id": "hsk1-declarative-3", "text": "今天不冷。", "reading": "jīntiān bù lěng.", "translation": "It is not cold today.", "focus": "不", "distractors": ["吗", "没", "的"], "contrast": false, "kinds": ["similar", "clearly-wrong"] },
           { "id": "hsk1-declarative-4", "text": "我没有弟弟。", "reading": "wǒ méiyǒu dìdi.", "translation": "I do not have a younger brother.", "focus": "没有", "distractors": ["不有", "吗", "很"], "contrast": false, "kinds": ["similar", "clearly-wrong"] },
           { "id": "hsk1-declarative-5", "text": "你是学生吗？", "reading": "nǐ shì xuéshēng ma?", "translation": "Are you a student?", "focus": "吗", "distractors": ["呢", "很", "的"], "contrast": true, "kinds": ["similar", "clearly-wrong"] }
         ]
@@ -846,9 +846,9 @@
           "The contrast example uses 很 in a plain statement (今天很热。), which just describes without strong feeling. 太 usually needs 了 to exclaim; a bare 太贵 is incomplete. 很 states a degree; 太 and 真 exclaim."
         ],
         "examples": [
-          { "id": "hsk1-exclamative-1", "text": "太好了！", "reading": "tài hǎo le!", "translation": "Great!", "focus": "太", "distractors": ["很", "吗", "的"], "contrast": false, "kinds": ["similar", "clearly-wrong"] },
+          { "id": "hsk1-exclamative-1", "text": "太好了！", "reading": "tài hǎo le!", "translation": "Great!", "focus": "太", "distractors": ["在", "吗", "的"], "contrast": false, "kinds": ["clearly-wrong"] },
           { "id": "hsk1-exclamative-2", "text": "真漂亮！", "reading": "zhēn piàoliang!", "translation": "How pretty!", "focus": "真", "distractors": ["吗", "的", "在"], "contrast": false, "kinds": ["clearly-wrong"] },
-          { "id": "hsk1-exclamative-3", "text": "太贵了！", "reading": "tài guì le!", "translation": "Too expensive!", "focus": "太", "distractors": ["很", "吗", "的"], "contrast": false, "kinds": ["similar", "clearly-wrong"] },
+          { "id": "hsk1-exclamative-3", "text": "太贵了！", "reading": "tài guì le!", "translation": "Too expensive!", "focus": "太", "distractors": ["在", "吗", "的"], "contrast": false, "kinds": ["clearly-wrong"] },
           { "id": "hsk1-exclamative-4", "text": "好大的苹果！", "reading": "hǎo dà de píngguǒ!", "translation": "What a big apple!", "focus": "好", "distractors": ["吗", "的", "在"], "contrast": false, "kinds": ["clearly-wrong"] },
           { "id": "hsk1-exclamative-5", "text": "今天很热。", "reading": "jīntiān hěn rè.", "translation": "It is hot today.", "focus": "很", "distractors": ["吗", "的", "在"], "contrast": true, "kinds": ["clearly-wrong"] }
         ]

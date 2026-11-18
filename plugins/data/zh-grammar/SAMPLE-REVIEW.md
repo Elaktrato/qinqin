@@ -52,3 +52,67 @@ COVERAGE.md row matches the lesson's scope.
 No wrong distractor, unexplained contrast, tone error or misleading pattern
 remained in the ten lessons after the fix above. Native-speaker review is still
 a separate, open item; this is an author self-check, not a native review.
+
+## Post-review correction: correct-answer distractors (很 / 在)
+
+A content review found that the binding rule "every distractor wrong in that
+exact slot / none another correct answer / none correct under a different
+reading" was violated where the distractor 很 or 在 itself fills the gap and
+yields a grammatical sentence. Every 很 and 在 distractor in all 262 examples
+was then audited by substituting it into the gap and judging the result. Twelve
+distractors were replaced (eight 很, four 在); the two named minors were fixed.
+The lesson focus and the contrast example were preserved in every case.
+
+### Replaced distractors (example id — old → new — why the old was wrong)
+
+很 produced a correct (or borderline-correct) sentence:
+- hsk1-hai-ye-1 — 很 → 再 — 我很喜欢猫 is correct (degree adverb before 喜欢).
+- hsk1-subject-5 — 很 → 再 — 我们很喜欢他 is correct.
+- hsk1-adverbial-4 — 很 → 再 — 他很喜欢猫 is correct.
+- hsk1-declarative-3 — 很 → 没 — 今天很冷 is correct; 没 is a genuine 不/没
+  contrast and is wrong before an adjective (今天没冷), so kinds stays similar.
+- hsk1-subject-2 — 很 → 们 — subjectless 很喜欢喝茶 is grammatical (pro-drop);
+  们 cannot start a sentence.
+- hsk1-degree-adverbs-3 — 很 → 在 — 很贵了 is borderline (很…了 change statement);
+  在贵了 is ungrammatical. kinds now clearly-wrong (no degree adverb is safely
+  wrong in the 太…了 frame).
+- hsk1-exclamative-1 — 很 → 在 — 很好了 is borderline; 在好了 is ungrammatical.
+  kinds now clearly-wrong.
+- hsk1-exclamative-3 — 很 → 在 — 很贵了 is borderline; 在贵了 is ungrammatical.
+  kinds now clearly-wrong.
+
+在 produced a correct progressive (or other grammatical) sentence:
+- hsk1-modal-verbs-1 — 在 → 第 — 我在说汉语 is a correct progressive; 我第说汉语
+  is ungrammatical. (们 was rejected: 我+们 would form 我们, also correct.)
+- hsk1-modal-verbs-5 — 在 → 第 — 他在吃十个饺子 is a correct progressive;
+  他第吃十个饺子 is ungrammatical. (们 rejected: forms 他们.)
+- hsk1-declarative-2 — 在 → 很 — 他在喝茶 is a correct progressive; here the gap
+  is the verb 喜欢 itself, so 他很喝茶 (很 before the action verb 喝) is wrong.
+- hsk1-negation-5 — 在 → 们 — additional finding from the full audit (not in the
+  review's named list): 我今天在想上班 is grammatical (在想 = thinking about);
+  我今天们想上班 is ungrammatical. (很 rejected: 很想上班 is correct; 没 rejected:
+  没想上班 is correct.)
+
+New distractors were checked for adjacent-character word formation (e.g. 们
+after 我/他 forms 我们/他们; 小 before 说 forms 小说) so none accidentally spells
+a correct sentence. 再 is wrong before the stative verb 喜欢; 第 cannot modify a
+verb; 在 cannot modify an adjective; 没 cannot negate an adjective.
+
+### Minors fixed
+- hsk1-prefixes-4 reading: xiǎopéngyǒumen → xiǎopéngyoumen (朋友 is neutral
+  péngyou).
+- hsk1-time-measures-4 translation: "I have studied Chinese for a year" →
+  "I studied Chinese for a year" (V+了+duration without final 了 is a completed
+  span, simple past).
+
+### Reviewed and kept (wrong in slot, not defects)
+- hsk1-modal-verbs-3 在 → 我在去中国: 在 does not form a progressive with 去
+  (prescriptively wrong); kept.
+- hsk1-sentence-types-1 很 → 他很狗: 很+狗 is non-standard slang, not a correct
+  HSK 1 sentence; kept.
+- All other remaining 很/在 distractors sit in noun, measure-word, particle,
+  pronoun or verb slots where 很/在 cannot grammatically appear; verified wrong.
+
+After the corrections, no 很 or 在 distractor yields a correct sentence in its
+slot. Re-verified with build --check, a full build, check-sources, and
+TestBundledGrammarPack / TestCommittedPackNotices (all pass).

@@ -125,7 +125,7 @@
         {
           "id": "hsk1-prefixes-4",
           "text": "小朋友们在唱歌。",
-          "reading": "xiǎopéngyǒumen zài chàng gē.",
+          "reading": "xiǎopéngyoumen zài chàng gē.",
           "translation": "The children are singing.",
           "focus": "小",
           "distractors": [
@@ -332,7 +332,7 @@
           "translation": "I can speak Chinese.",
           "focus": "会",
           "distractors": [
-            "在",
+            "第",
             "吗",
             "的"
           ]
@@ -383,7 +383,7 @@
           "distractors": [
             "吗",
             "的",
-            "在"
+            "第"
           ]
         },
         {
@@ -1026,7 +1026,7 @@
           "id": "hsk1-time-measures-4",
           "text": "我学了一年汉语。",
           "reading": "wǒ xué le yì nián Hànyǔ.",
-          "translation": "I have studied Chinese for a year.",
+          "translation": "I studied Chinese for a year.",
           "focus": "年",
           "distractors": [
             "岁",
@@ -1105,7 +1105,7 @@
           "translation": "Too expensive!",
           "focus": "太",
           "distractors": [
-            "很",
+            "在",
             "吗",
             "的"
           ]
@@ -1394,7 +1394,7 @@
           "translation": "I like cats too.",
           "focus": "也",
           "distractors": [
-            "很",
+            "再",
             "吗",
             "在"
           ]
@@ -1520,7 +1520,7 @@
           "focus": "不",
           "distractors": [
             "吗",
-            "在",
+            "们",
             "的"
           ]
         },
@@ -2355,7 +2355,7 @@
           "focus": "爸爸",
           "distractors": [
             "吗",
-            "很",
+            "们",
             "的"
           ]
         },
@@ -2390,7 +2390,7 @@
           "translation": "We all like him.",
           "focus": "都",
           "distractors": [
-            "很",
+            "再",
             "吗",
             "在"
           ]
@@ -2682,7 +2682,7 @@
           "distractors": [
             "吗",
             "的",
-            "很"
+            "再"
           ]
         },
         {
@@ -2884,7 +2884,7 @@
           "distractors": [
             "吗",
             "的",
-            "在"
+            "很"
           ]
         },
         {
@@ -2895,7 +2895,7 @@
           "focus": "不",
           "distractors": [
             "吗",
-            "很",
+            "没",
             "的"
           ]
         },
@@ -3099,7 +3099,7 @@
           "translation": "Great!",
           "focus": "太",
           "distractors": [
-            "很",
+            "在",
             "吗",
             "的"
           ]
@@ -3123,7 +3123,7 @@
           "translation": "Too expensive!",
           "focus": "太",
           "distractors": [
-            "很",
+            "在",
             "吗",
             "的"
           ]
