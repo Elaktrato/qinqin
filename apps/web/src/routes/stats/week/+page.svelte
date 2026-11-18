@@ -10,6 +10,7 @@
 	import { usesHan } from '$lib/languages';
 	import { errorMessage } from '$lib/stats/errors';
 	import { onContextStale } from '$lib/study/currentContext';
+	import IconButton from '$lib/ui/IconButton.svelte';
 	import { ALL_WORKSPACES, onStudyWrite } from '$lib/study/store';
 	import { currentStudyDay } from '$lib/time/zone';
 	import { loadWeek, loadWeekCharacters, type WeekView } from '$lib/weekly/loadWeek';
@@ -131,6 +132,12 @@
 		void markSeen(shown);
 	}
 
+	function go(target: string): void {
+		// keepFocus: the arrow is still there after the week changed, so focus
+		// stays on it instead of falling to the page.
+		void goto(weekHref(target, today), { keepFocus: true, noScroll: true }).catch(() => {});
+	}
+
 	$effect(() => {
 		const href = weekRedirect(param, today);
 		if (href !== null) void goto(href, { replaceState: true, keepFocus: true, noScroll: true }).catch(() => {});
@@ -163,17 +170,23 @@
 </script>
 
 <section class="week" aria-labelledby="week-heading">
-	<h2 id="week-heading" aria-live="polite">{weekHeading(shownMonday, today)}</h2>
-	<nav class="weeks" aria-label={t('weekly.page.weeks')}>
-		{#if hasPreviousWeek(monday, today)}
-			<a href={weekHref(previousWeek(monday), today)} data-sveltekit-keepfocus data-sveltekit-noscroll
-				>{t('weekly.page.previous')}</a
-			>
-		{/if}
-		{#if next !== null}
-			<a href={weekHref(next, today)} data-sveltekit-keepfocus data-sveltekit-noscroll>{t('weekly.page.next')}</a>
-		{/if}
-	</nav>
+	<div class="week-head">
+		<nav class="weeks" aria-label={t('weekly.page.weeks')}>
+			<IconButton
+				label={t('weekly.page.previous')}
+				icon="back"
+				disabled={!hasPreviousWeek(monday, today)}
+				onclick={() => go(previousWeek(monday))}
+			/>
+			<h2 id="week-heading" aria-live="polite">{weekHeading(shownMonday, today)}</h2>
+			<IconButton
+				label={t('weekly.page.next')}
+				icon="forward"
+				disabled={next === null}
+				onclick={() => next !== null && go(next)}
+			/>
+		</nav>
+	</div>
 
 	<!-- Always rendered: the status region must exist before the card's text arrives. -->
 	<MilestoneCard view={view === null ? null : milestones} ondismiss={dismissMilestones} headingLevel={3} />
@@ -209,25 +222,30 @@
 {/if}
 
 <style>
-	.week,
-	.milestones {
-		max-width: 40rem;
+	.week {
+		max-width: 64rem;
 	}
 
 	.milestones {
+		max-width: 40rem;
 		margin-top: 2rem;
+	}
+
+	.week-head {
+		display: flex;
+		align-items: center;
 	}
 
 	h2 {
 		margin: 0;
-		font-size: 1.15rem;
+		font-size: var(--font-size-l);
+		font-weight: var(--weight-strong);
 	}
 
 	.weeks {
 		display: flex;
-		gap: 1rem;
-		margin-top: 0.5rem;
-		font-size: 0.9rem;
+		align-items: center;
+		gap: var(--space-2);
 	}
 
 	/* The previous week's numbers while the next one loads. */

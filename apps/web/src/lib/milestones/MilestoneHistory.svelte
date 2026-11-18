@@ -1,8 +1,9 @@
 <script lang="ts">
-	// Every milestone of the workspace, newest first: the seen ones with their
-	// stored day and the new ones marked "New" (as text, never colour alone).
+	// Every milestone of the workspace, newest first: the title as a plain
+	// row, its day as muted text and the new ones marked "New" as text (never
+	// colour alone). No pill: a --hair separator is the whole structure.
 	import type { HistoryItem } from './plan';
-	import { MILESTONE_TEXT, titleWithDay } from './milestoneText';
+	import { MILESTONE_TEXT, reachedOn } from './milestoneText';
 
 	interface Props {
 		items: HistoryItem[];
@@ -21,7 +22,8 @@
 	<ol class="milestone-history">
 		{#each shown as item (item.id)}
 			<li>
-				{titleWithDay(titles.get(item.id) ?? item.id, item.day, locale)}
+				<span class="title">{titles.get(item.id) ?? item.id}</span>
+				<span class="date">{reachedOn(item.day, locale)}</span>
 				{#if item.isNew}<span class="new">{MILESTONE_TEXT.isNew}</span>{/if}
 			</li>
 		{/each}
@@ -30,23 +32,36 @@
 
 <style>
 	.milestone-history {
-		margin: 0.5rem 0 0;
-		padding-left: 1.4rem;
-		display: grid;
-		gap: 0.3rem;
+		margin: var(--space-2) 0 0;
+		padding: 0;
+		list-style: none;
+	}
+
+	li {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: baseline;
+		gap: var(--space-1) var(--space-3);
+		padding: var(--space-2) 0;
+		border-top: 1px solid var(--hair);
+	}
+
+	.title {
+		font-weight: var(--weight-medium);
+	}
+
+	.date {
+		font-size: var(--font-size-s);
+		color: var(--readable-muted);
 	}
 
 	.new {
-		margin-left: 0.4rem;
-		font-size: 0.75rem;
-		font-weight: 600;
-		padding: 0.05rem 0.45rem;
-		border: 1px solid currentColor;
-		border-radius: 999px;
+		font-size: var(--font-size-s);
+		font-weight: var(--weight-strong);
 	}
 
 	.empty {
-		margin: 0.5rem 0 0;
+		margin: var(--space-2) 0 0;
 		color: var(--readable-muted);
 	}
 </style>

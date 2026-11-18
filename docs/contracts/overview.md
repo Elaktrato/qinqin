@@ -18,7 +18,7 @@ where the rule is implemented today.
 | Time | `study-day/` (the learner's day, zone history) is the base of everything below |
 | Study events | `events/` (the envelope and how the server stores it, the payload of every type and when it is written, review parsing and replay order, heatmap activity scoring) |
 | Typed study data | `study/` (cards, decks, deck settings, limits, FSRS sets, the active set: wire shapes, last-write-wins, tombstones, the legacy codec and the legacy view for old web shells; the duplicate-card merge), `library/` (reader books, bookmarks, highlights, positions, the deletion log) |
-| Cards and study | `cards/` (ids, kinds, burying, cloze, the deck session plan), `levels/` (level sessions), `scheduler/` (the FSRS pin, XP and levels, vacation, study clock, due, streak, daily limits), `decks/` (deck numbers, system deck ids, add-to-deck, character mastery), `frequency/` (frequency order of new cards, starter decks, the known-word predicate, the display form of an entry), `goals/` (daily goal, day status, goal streak), `weekly/` (weekly summary; nothing stored), `milestones/` (weekly milestones: catalogue, reached rule, the `milestone:<id>` seen rows, card plan) |
+| Cards and study | `cards/` (ids, kinds, burying, cloze, the deck session plan), `levels/` (level sessions), `scheduler/` (the FSRS pin, XP and levels, vacation, study clock, due, streak, daily limits), `decks/` (deck numbers, system deck ids, add-to-deck, character mastery), `frequency/` (frequency order of new cards, starter decks, the known-word predicate, the display form of an entry), `goals/` (daily goal, day status, goal streak), `weekly/` (weekly summary; nothing stored), `stats/` (the Overview's four summary numbers and reviews per day; nothing stored), `milestones/` (weekly milestones: catalogue, reached rule, the `milestone:<id>` seen rows, card plan) |
 | Reader | `reader/` (display settings, furigana, smart readings, word states, coverage) |
 | Personal data on entries | `notes/` (notes and the answer-side switch), `lookups/` (lookup history and its switch), `overlays/` (a user's edits of a shared entry), `journal/` (review documents and their mistake/suggestion kind) |
 | Lookup | `radicals/` (Kangxi table, `k` in the character universe, components index, radical and part lookup) |
@@ -32,7 +32,7 @@ where the rule is implemented today.
 Every folder, in dependency order (this page's sync model and Events sections after `sync/`):
 
 `auth/` → `study-day/` → `packages/` → `sync/` → `events/` → `study/` → `cards/` → `scheduler/` → `decks/` →
-`levels/` → `frequency/` → `goals/` → `weekly/` → `milestones/` → `reader/` → `library/` → `notes/` → `lookups/` →
+`levels/` → `frequency/` → `goals/` → `weekly/` → `stats/` → `milestones/` → `reader/` → `library/` → `notes/` → `lookups/` →
 `radicals/` → `journal/` → `settings/` → `themes/` → `fonts/` → `overlays/` → `backup/` → `pwa/` → `i18n/`
 
 ## Sync model
@@ -235,6 +235,9 @@ Study-day inputs are not rows: the learner's zone history is `GET/PUT /api/me/ti
   starter deck's kana row shown as written). Reader popup snapshot: `reader/popup-written.json`.
 - Weekly summary (Monday to Sunday learner dates, rows, days, comparison, mature and character crossings;
   computed from events, nothing stored, no row key): `weekly/`.
+- Stats summary numbers (Stats → Overview; streak, words known, recall over the last 30 days, study time this
+  month and the reviews-per-day series — every figure reuses the rules above, computed on the client, nothing
+  stored): `stats/`.
 - Milestones (catalogue, the first event that reaches a threshold, ever reached, levels complete when every
   member is learned, the `milestone:<id>` seen rows, the card plan and history): `milestones/`.
 

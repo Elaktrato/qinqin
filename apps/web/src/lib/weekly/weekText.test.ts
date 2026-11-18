@@ -69,6 +69,14 @@ describe('compareText', () => {
 		expect(compareText(60, 360, 'seconds')).toBe('5 min less than last week');
 		expect(compareText(130, 150, 'seconds')).toBe('Same as last week');
 	});
+
+	it('names the week before for a browsed past week', () => {
+		expect(compareText(20, 8, 'count', false)).toBe('12 more than the week before');
+		expect(compareText(5, 8, 'count', false)).toBe('3 fewer than the week before');
+		expect(compareText(4, 4, 'count', false)).toBe('Same as the week before');
+		expect(compareText(3900, 0, 'seconds', false)).toBe('1 h 05 min more than the week before');
+		expect(compareText(60, 360, 'seconds', false)).toBe('5 min less than the week before');
+	});
 });
 
 describe('compareWindowText', () => {
@@ -79,7 +87,10 @@ describe('compareWindowText', () => {
 		expect(compareWindowText(s(true, '2026-11-16'), L)).toBe('Compared with Monday last week');
 		expect(compareWindowText(s(true, '2026-11-22'), L)).toBe('Compared with last week');
 		expect(compareWindowText(s(false, '2026-11-18'), L)).toBe('Compared with the week before');
-		expect(compareWindowText(s(false, '2026-11-18', true), L)).toBe('Nothing last week to compare');
+		expect(compareWindowText(s(false, '2026-11-18', true), L)).toBe(
+			'Nothing in the week before to compare'
+		);
+		expect(compareWindowText(s(true, '2026-11-18', true), L)).toBe('Nothing last week to compare');
 	});
 });
 
@@ -166,6 +177,7 @@ describe('summaryLines', () => {
 			{ key: 'activity:drill', value: 4, previous: 0, unit: 'count' }
 		],
 		days: [],
+		previousDays: [],
 		daysActive: { active: 5, of: 7, localOnly: false },
 		streak: 3,
 		mature: { value: 2, previous: 1 },
@@ -191,13 +203,13 @@ describe('summaryLines', () => {
 			'Characters learned',
 			'Daily goal'
 		]);
-		expect(lines[0]).toEqual({ id: 'reviews', term: 'Reviews', value: '15', comparison: '7 more than last week', trend: 'up' });
+		expect(lines[0]).toEqual({ id: 'reviews', term: 'Reviews', value: '15', comparison: '7 more than the week before', trend: 'up' });
 		expect(lines[1].trend).toBe('same');
-		expect(lines[3]).toMatchObject({ value: '10 min', comparison: '5 min less than last week', trend: 'down' });
+		expect(lines[3]).toMatchObject({ value: '10 min', comparison: '5 min less than the week before', trend: 'down' });
 		expect(lines[6]).toMatchObject({ value: 'Active on 5 of 7 days', comparison: null, trend: null });
 		expect(lines[7].value).toBe('Study streak at the end of the week: 3 days');
-		expect(lines[8]).toMatchObject({ value: '2', comparison: '1 more than last week' });
-		expect(lines[9]).toMatchObject({ value: '3', comparison: '2 fewer than last week' });
+		expect(lines[8]).toMatchObject({ value: '2', comparison: '1 more than the week before' });
+		expect(lines[9]).toMatchObject({ value: '3', comparison: '2 fewer than the week before' });
 		expect(lines[10]).toMatchObject({ value: 'Daily goal met on 2 of 6 days', comparison: null });
 	});
 
@@ -233,7 +245,7 @@ describe('summaryLines', () => {
 describe('characters unavailable', () => {
 	it('keeps the row with the offline text', () => {
 		const s = {
-			monday: '2026-11-09', today: '2026-11-18', inProgress: false, compareThrough: '2026-11-08', rows: [], days: [],
+			monday: '2026-11-09', today: '2026-11-18', inProgress: false, compareThrough: '2026-11-08', rows: [], days: [], previousDays: [],
 			daysActive: { active: 0, of: 7, localOnly: false }, streak: 0, mature: null, characters: null, goal: null,
 			allVacation: false, nothingToCompare: false
 		} as WeekSummary;

@@ -6,6 +6,8 @@ import { usesHan } from '$lib/languages';
 import ActivityHome from './ActivityHome.svelte';
 import CharacterMapSummary from './CharacterMapSummary.svelte';
 import DailyGoalWidget from './DailyGoalWidget.svelte';
+import ReviewsPerDayWidget from './ReviewsPerDayWidget.svelte';
+import SummaryWidget from './SummaryWidget.svelte';
 import WeeklySummaryWidget from './WeeklySummaryWidget.svelte';
 import type { WidgetDef } from './types';
 
@@ -52,6 +54,32 @@ export const coreWidgets: WidgetDef[] = [
 		// Home only: Stats stays as it was for learners without a goal.
 		surfaces: ['home'],
 		component: DailyGoalWidget
+	},
+	{
+		id: 'summary-numbers',
+		get title() {
+			return t('widgets.summary.title');
+		},
+		get description() {
+			return t('widgets.summary.description');
+		},
+		owner: 'core',
+		size: 'wide',
+		surfaces: ['stats', 'home'],
+		component: SummaryWidget
+	},
+	{
+		id: 'reviews-per-day',
+		get title() {
+			return t('widgets.reviewsPerDay.title');
+		},
+		get description() {
+			return t('widgets.reviewsPerDay.description');
+		},
+		owner: 'core',
+		size: 'wide',
+		surfaces: ['stats', 'home'],
+		component: ReviewsPerDayWidget
 	},
 	{
 		id: 'weekly-summary',
