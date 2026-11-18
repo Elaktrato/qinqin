@@ -29,6 +29,7 @@
 		reviewedTodayIn,
 		startNowNote
 	} from './vacationForm';
+	import { Button, Field, Section } from '$lib/ui';
 
 	// Vacation: freezes the schedule (nothing due, streak neutral). Periods are
 	// user-global rows; the pure rules live in lib/study/vacation.ts.
@@ -193,8 +194,7 @@
 
 <GoalSettings />
 
-<section class="vacation">
-	<h2>{t('settings.vacation.title')}</h2>
+<Section title={t('settings.vacation.title')}>
 	<p class="hint">{t('settings.vacation.hint')}</p>
 
 	<form
@@ -208,10 +208,7 @@
 			<label><input type="radio" name="vac-start" value="now" bind:group={startMode} /> {t('settings.vacation.startNow')}</label>
 			<label><input type="radio" name="vac-start" value="date" bind:group={startMode} /> {t('settings.vacation.onDate')}</label>
 			{#if startMode === 'date'}
-				<label>
-					<span>{t('settings.vacation.startDate')}</span>
-					<input type="date" min={today} bind:value={startDate} required />
-				</label>
+				<Field label={t('settings.vacation.startDate')} type="date" min={today} bind:value={startDate} required />
 			{/if}
 		</fieldset>
 
@@ -220,10 +217,13 @@
 			<label><input type="radio" name="vac-end" value="open" bind:group={endMode} /> {t('settings.vacation.untilEnd')}</label>
 			<label><input type="radio" name="vac-end" value="date" bind:group={endMode} /> {t('settings.vacation.untilDate')}</label>
 			{#if endMode === 'date'}
-				<label>
-					<span>{t('settings.vacation.endDate')}</span>
-					<input type="date" min={startMode === 'date' && startDate !== '' ? startDate : today} bind:value={endDate} required />
-				</label>
+				<Field
+					label={t('settings.vacation.endDate')}
+					type="date"
+					min={startMode === 'date' && startDate !== '' ? startDate : today}
+					bind:value={endDate}
+					required
+				/>
 			{/if}
 		</fieldset>
 
@@ -245,7 +245,9 @@
 			{/if}
 		</fieldset>
 
-		<button type="submit" disabled={busy}>{startMode === 'now' ? t('settings.vacation.startSubmit') : t('settings.vacation.schedule')}</button>
+		<Button type="submit" variant="primary" disabled={busy}
+			>{startMode === 'now' ? t('settings.vacation.startSubmit') : t('settings.vacation.schedule')}</Button
+		>
 	</form>
 
 	{#if error}
@@ -266,70 +268,83 @@
 						<em>({status === 'active' ? t('settings.vacation.active') : t('settings.vacation.scheduled')})</em>
 					</span>
 					{#if status === 'active'}
-						<button
-							type="button"
+						<Button
 							disabled={busy}
 							aria-label={t('settings.vacation.endNowLabel', { period: describePeriod(period, today, named) })}
-							onclick={() => void run(() => planEndEarly(period, today))}>{t('settings.vacation.endNow')}</button
+							onclick={() => void run(() => planEndEarly(period, today))}>{t('settings.vacation.endNow')}</Button
 						>
 					{:else}
-						<button
-							type="button"
+						<Button
 							disabled={busy}
 							aria-label={t('settings.vacation.cancelLabel', { period: describePeriod(period, today, named) })}
-							onclick={() => void run(() => planCancel(period, today))}>{t('common.action.cancel')}</button
+							onclick={() => void run(() => planCancel(period, today))}>{t('common.action.cancel')}</Button
 						>
 					{/if}
 				</li>
 			{/each}
 		</ul>
 	{/if}
-</section>
+</Section>
 
-<section class="limits">
-	<h2>{t('settings.limits.title')}</h2>
+<Section title={t('settings.limits.title')}>
 	<p class="hint">{t('settings.limits.hint')}</p>
 	<form novalidate onsubmit={saveLimits} aria-label={t('settings.limits.formLabel')}>
 		<LimitField legend={t('settings.deckLimits.newPerDay')} name="ws-new" bind:state={newState} />
 		<LimitField legend={t('settings.deckLimits.reviewsPerDay')} name="ws-reviews" bind:state={reviewsState} />
-		<button type="submit" disabled={busy || workspaceId === null}>{t('settings.deckLimits.save')}</button>
+		<Button type="submit" variant="primary" disabled={busy || workspaceId === null}>{t('settings.deckLimits.save')}</Button>
 		{#if limitsMessage}<span role="status">{limitsMessage}</span>{/if}
 	</form>
 	{#if limitsError}
 		<p class="error" role="alert">{limitsError}</p>
 	{/if}
-</section>
+</Section>
 <NoteSettings />
 
 <style>
 	fieldset {
 		display: flex;
 		flex-wrap: wrap;
-		gap: 0.5rem 1rem;
+		gap: var(--space-2) var(--space-4);
 		align-items: center;
-		margin-block: 0.75rem;
-		border: 1px solid var(--border, currentColor);
-		border-radius: 0.5rem;
+		margin-block: var(--space-3);
 	}
+
+	fieldset :global(.field) {
+		flex: 1 1 12rem;
+	}
+
 	.spaces {
 		list-style: none;
 		margin: 0;
 		padding: 0;
 		width: 100%;
 	}
+
 	.periods {
 		list-style: none;
 		padding: 0;
 	}
+
 	.periods li {
 		display: flex;
 		flex-wrap: wrap;
-		gap: 0.5rem;
+		gap: var(--space-2);
 		align-items: center;
-		margin-block: 0.4rem;
+		padding-block: var(--space-2);
 	}
+
+	.periods li + li {
+		border-top: 1px solid var(--hair);
+	}
+
 	.error,
 	.note {
-		margin-block: 0.5rem;
+		margin-block: var(--space-2);
+	}
+
+	.error {
+		color: var(--readable-bad);
+		padding-inline-start: var(--space-2);
+		border-inline-start: 3px solid var(--bad);
 	}
 </style>

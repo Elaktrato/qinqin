@@ -51,6 +51,7 @@ export const WANTED = {
 	back: 'chevron-left',
 	bookmark: 'bookmark',
 	check: 'check',
+	copy: 'copy',
 	close: 'x',
 	contents: 'list',
 	delete: 'trash',

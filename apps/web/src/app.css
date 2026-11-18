@@ -108,41 +108,18 @@ body {
 	padding: 3rem 1.5rem;
 }
 
+/* The signed-out and forced pages (#106): one narrow column at the panel's
+   start. The frame's panel is the only box; the controls are the base
+   components, so .auth brings no box of its own. */
+.page-body.auth {
+	max-width: 24rem;
+	margin-inline: 0;
+}
+
 .auth form {
 	display: grid;
-	gap: 1rem;
-	max-width: 22rem;
-}
-
-.auth label {
-	display: grid;
-	gap: 0.35rem;
-	font-weight: 600;
-}
-
-.auth input {
-	font: inherit;
-	padding: 0.55rem 0.7rem;
-	border: 1px solid color-mix(in srgb, currentColor 35%, transparent);
-	border-radius: 0.4rem;
-	background: transparent;
-	color: inherit;
-}
-
-.auth button {
-	font: inherit;
-	font-weight: 600;
-	padding: 0.6rem 1rem;
-	border: 0;
-	border-radius: 0.4rem;
-	background: var(--accent);
-	color: var(--on-accent);
-	cursor: pointer;
-}
-
-.auth button:disabled {
-	opacity: 0.6;
-	cursor: progress;
+	gap: var(--space-4);
+	max-width: 100%;
 }
 
 /* Error text in --readable-bad (--bad only where it reads, else --text);
@@ -241,4 +218,99 @@ button.link:disabled {
 	.w-learning {
 		text-decoration-style: dotted;
 	}
+}
+
+/* Restyle base elements (#106): shared, token-only rules every page may rely on. */
+b,
+strong {
+	font-weight: var(--weight-strong);
+}
+
+input[type='checkbox'],
+input[type='radio'],
+input[type='range'],
+progress {
+	accent-color: var(--accent);
+}
+
+fieldset {
+	margin: 0;
+	padding: 0;
+	border: 0;
+}
+
+legend {
+	font-size: var(--font-size-label);
+	font-weight: var(--weight-medium);
+	color: var(--readable-muted);
+}
+
+/* The one-time code input is the one text control the pages keep raw (#106,
+   allowed): it owns its sanitised value (spaces, letters, recovery grouping),
+   so it is not Field. It still reads as Field's underline, with the label
+   style above it. */
+input[autocomplete='one-time-code'] {
+	box-sizing: border-box;
+	display: block;
+	width: 100%;
+	min-height: 2.25rem;
+	padding: var(--space-1) 0;
+	border: 0;
+	border-bottom: 1px solid var(--line);
+	border-radius: 0;
+	background: transparent;
+	color: var(--text);
+	font: inherit;
+	line-height: var(--line-body);
+}
+
+input[autocomplete='one-time-code']:focus {
+	outline: none;
+	border-bottom-color: var(--accent);
+	box-shadow: 0 1px 0 0 var(--accent);
+}
+
+label:has(> input[autocomplete='one-time-code']) {
+	display: grid;
+	gap: var(--space-1);
+	font-size: var(--font-size-label);
+	color: var(--readable-muted);
+}
+
+@media (forced-colors: active) {
+	input[autocomplete='one-time-code']:focus {
+		outline: 2px solid Highlight;
+		outline-offset: 2px;
+	}
+}
+
+/* An opt-in table: hairline rows, label-style headers, no outer border or zebra. */
+.ui-table {
+	width: 100%;
+	border-collapse: collapse;
+}
+
+.ui-table caption {
+	text-align: start;
+	color: var(--readable-muted);
+	font-size: var(--font-size-label);
+	padding-bottom: var(--space-1);
+}
+
+.ui-table th,
+.ui-table td {
+	padding: var(--space-1) var(--space-2);
+	border-bottom: 1px solid var(--hair);
+	text-align: start;
+	vertical-align: top;
+}
+
+.ui-table th {
+	font-size: var(--font-size-label);
+	font-weight: var(--weight-medium);
+	color: var(--readable-muted);
+}
+
+.ui-table .num {
+	font-variant-numeric: tabular-nums;
 }

@@ -7,6 +7,7 @@
 	import { EXPLANATION_LANGUAGES } from './languages';
 	import { journalHref } from './route';
 	import { getJournalSettings, saveJournalSettings } from './store';
+	import { Button, Field, Select } from '$lib/ui';
 
 	let { workspace }: { workspace: Workspace } = $props();
 
@@ -61,15 +62,13 @@
 	<p role="status">{t('common.loading')}</p>
 {:else}
 	<form onsubmit={save}>
-		<label>
-			<span>{t('journal.settings.guidance')}</span>
-			<textarea
-				bind:value={guidance}
-				rows="6"
-				aria-describedby="guidance-help guidance-count"
-				placeholder={t('journal.settings.placeholder')}
-			></textarea>
-		</label>
+		<Field
+			label={t('journal.settings.guidance')}
+			multiline
+			bind:value={guidance}
+			aria-describedby="guidance-help guidance-count"
+			placeholder={t('journal.settings.placeholder')}
+		/>
 		<p id="guidance-help" class="hint">
 			{t('journal.settings.guidanceHint')}
 		</p>
@@ -77,17 +76,14 @@
 			{t('journal.settings.count', { count: formatNumber(count), max: formatNumber(MAX_GUIDANCE) })}
 		</p>
 
-		<label>
-			<span>{t('journal.settings.language')}</span>
-			<select bind:value={language}>
-				{#each EXPLANATION_LANGUAGES as l (l.code)}
-					<option value={l.code}>{l.label}</option>
-				{/each}
-			</select>
-		</label>
+		<Select
+			label={t('journal.settings.language')}
+			bind:value={language}
+			options={EXPLANATION_LANGUAGES.map((l) => ({ value: l.code, label: l.label }))}
+		/>
 
 		<div class="bar">
-			<button type="submit" disabled={saving || tooLong}>{t('journal.settings.save')}</button>
+			<Button type="submit" variant="primary" disabled={saving || tooLong}>{t('journal.settings.save')}</Button>
 			<span class="live" aria-live="polite">{status}</span>
 		</div>
 		{#if error}<p class="error" role="alert">{error}</p>{/if}
@@ -103,36 +99,31 @@
 
 	form {
 		display: grid;
-		gap: 0.5rem;
+		gap: var(--space-2);
 		max-width: 34rem;
 	}
 
-	label {
-		display: grid;
-		gap: 0.3rem;
-		font-weight: 600;
-	}
-
-	textarea,
-	select {
-		font: inherit;
-		font-weight: 400;
-		padding: 0.5rem 0.6rem;
-		border: 1px solid color-mix(in srgb, currentColor 35%, transparent);
-		border-radius: 0.4rem;
-		background: transparent;
-		color: inherit;
-		box-sizing: border-box;
-		width: 100%;
+	form :global(textarea) {
+		min-height: 9rem;
 	}
 
 	p {
 		margin: 0.25rem 0;
 	}
 
+	.hint {
+		color: var(--readable-muted);
+	}
+
+	.error {
+		color: var(--readable-bad);
+		padding-inline-start: var(--space-2);
+		border-inline-start: 3px solid var(--bad);
+	}
+
 	.bar {
 		display: flex;
 		align-items: center;
-		gap: 0.75rem;
+		gap: var(--space-3);
 	}
 </style>

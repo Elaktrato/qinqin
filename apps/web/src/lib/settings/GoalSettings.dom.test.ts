@@ -20,6 +20,7 @@ import type { StudyData } from '$lib/study/types';
 import { studyDay } from '$lib/time/studyDay';
 import { currentStudyDay } from '$lib/time/zone';
 import { workspaces } from '$lib/workspaces';
+import { primaryActions } from '$lib/ui/testing/primary';
 import GoalSettings from './GoalSettings.svelte';
 
 const day = studyDay([]);
@@ -68,6 +69,16 @@ async function form() {
 }
 
 describe('GoalSettings', () => {
+	it('has one primary action; the metric is a Select and the target a number Field', async () => {
+		setup({ goals: goal('activity:review', 50) });
+		await form();
+		expect(primaryActions(document.body)).toHaveLength(1);
+		expect(screen.getByRole('button', { name: 'Save goal' }).className).toContain('primary');
+		expect(screen.getByLabelText('Count').closest('.field')).toBeTruthy();
+		expect(screen.getByLabelText('Target').closest('.field')).toBeTruthy();
+		expect((screen.getByLabelText('Target') as HTMLInputElement).type).toBe('number');
+	});
+
 	it('lists the metrics from the activity sources (one request for today)', async () => {
 		setup();
 		const { metric } = await form();

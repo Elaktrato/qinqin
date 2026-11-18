@@ -63,20 +63,23 @@
 
 <style>
 	.switches {
-		margin: 0.4rem 0 0;
+		margin: 0;
 		padding: 0;
-		border: 0;
-		display: flex;
-		flex-wrap: wrap;
-		gap: 0.25rem 1.25rem;
-		font-size: 0.9rem;
+		display: grid;
+		font-size: var(--font-size-s);
 	}
 
 	.switch {
-		display: inline-flex;
+		display: flex;
+		flex-wrap: wrap;
 		align-items: center;
-		gap: 0.4rem;
-		min-height: 44px;
+		gap: var(--space-1) var(--space-2);
+		min-height: var(--hit);
+		padding-block: var(--space-1);
+	}
+
+	.switch + .switch {
+		border-top: 1px solid var(--hair);
 	}
 
 	.info {
@@ -84,10 +87,8 @@
 	}
 
 	.error {
-		flex-basis: 100%;
 		margin: 0;
 		color: var(--readable-bad);
-		font-weight: 600;
 		padding-inline-start: var(--space-2);
 		border-inline-start: 3px solid var(--bad);
 	}

@@ -27,6 +27,7 @@ import type { Deck, StudyCard } from '$lib/study/types';
 import { strongReviews } from '$lib/testing/reviews';
 import { workspaces } from '$lib/workspaces';
 import { clearStarterCache } from './starterDecks';
+import { primaryActions } from '$lib/ui/testing/primary';
 import StarterDeckDetail from './StarterDeckDetail.svelte';
 
 const jiten = {
@@ -114,6 +115,13 @@ afterEach(() => {
 const route = { view: 'system-frequency' as const, packId: 'jiten-frequency', size: 500 as const };
 
 describe('StarterDeckDetail', () => {
+	it('has one primary Add to my decks', async () => {
+		render(StarterDeckDetail, { route: { view: 'system-frequency', packId: 'jiten-frequency', size: 500 } });
+		await screen.findByRole('heading', { level: 1 });
+		expect(primaryActions(document.body)).toHaveLength(1);
+		expect(screen.getByRole('button', { name: 'Add to my decks' }).className).toContain('primary');
+	});
+
 	it('lists the words with their state, skips the known ones, names the licence', async () => {
 		render(StarterDeckDetail, { route });
 		await screen.findByRole('heading', { name: 'Jiten frequency list · Top 500' });

@@ -10,6 +10,7 @@ vi.mock('$lib/auth', () => ({ user: me }));
 
 vi.mock('$lib/api/adminSettings', () => ({ getSmtp: vi.fn(), putSmtp: vi.fn(), deleteSmtp: vi.fn(), testSmtp: vi.fn() }));
 import * as api from '$lib/api/adminSettings';
+import { primaryActions } from '$lib/ui/testing/primary';
 import EmailAdmin from './EmailAdmin.svelte';
 
 const saved = (o: object = {}) => ({ configured: true, host: 'mail.example.org', port: 587, tls: 'starttls', username: 'u', password: 'set',
@@ -19,6 +20,15 @@ beforeEach(() => vi.mocked(api.getSmtp).mockResolvedValue(saved() as never));
 afterEach(() => { cleanup(); vi.clearAllMocks(); });
 
 describe('EmailAdmin', () => {
+	it('has one primary Save; text fields and TLS are base controls', async () => {
+		render(EmailAdmin);
+		await screen.findByText('A password is saved.');
+		expect(primaryActions(document.body)).toHaveLength(1);
+		expect(screen.getByRole('button', { name: 'Save' }).className).toContain('primary');
+		expect(screen.getByLabelText('Server').closest('.field')).toBeTruthy();
+		expect(screen.getByLabelText('Connection security').closest('.field')).toBeTruthy();
+	});
+
 	it('says a password is saved, never prefills it, and saves without the key', async () => {
 		vi.mocked(api.putSmtp).mockResolvedValue(saved() as never);
 		render(EmailAdmin);

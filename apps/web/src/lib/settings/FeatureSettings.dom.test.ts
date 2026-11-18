@@ -9,6 +9,7 @@ vi.mock('$lib/api/client', async (importOriginal) => ({
 
 import { api } from '$lib/api/client';
 import type { PluginInfo } from '$lib/api/types';
+import { primaryActions } from '$lib/ui/testing/primary';
 import { pluginStates } from '$lib/plugins/states';
 import FeatureSettings from './FeatureSettings.svelte';
 
@@ -62,6 +63,12 @@ describe('Settings -> Features', () => {
 	it('says what switching off does: hidden for you, nothing deleted', () => {
 		render(FeatureSettings);
 		expect(screen.getByText(/nothing is deleted/i)).toBeTruthy();
+	});
+
+	it('the switches are hairline rows and the view has no primary action (#106)', () => {
+		render(FeatureSettings);
+		expect(document.querySelectorAll('.features li').length).toBe(2);
+		expect(primaryActions(document.body)).toHaveLength(0);
 	});
 
 	it('a failed save puts the switch back and says so', async () => {

@@ -12,6 +12,7 @@
 		workspaceChoiceLabel,
 		type FieldState
 	} from './limitsForm';
+	import { Button } from '$lib/ui';
 
 	// The per-deck daily limit control (deck settings page, General included):
 	// each field follows the workspace, has its own number, or is unlimited.
@@ -83,10 +84,19 @@
 			bind:state={reviewsState}
 			workspaceLabel={workspaceChoiceLabel(reviewsWorkspace)}
 		/>
-		<button type="submit" disabled={busy}>{t('settings.deckLimits.save')}</button>
+		<Button type="submit" variant="primary" disabled={busy}>{t('settings.deckLimits.save')}</Button>
 		{#if message}<span role="status">{message}</span>{/if}
 	</form>
 {/if}
 {#if error}
 	<p class="error" role="alert">{error}</p>
 {/if}
+
+<style>
+	.error {
+		margin-block: var(--space-2);
+		color: var(--readable-bad);
+		padding-inline-start: var(--space-2);
+		border-inline-start: 3px solid var(--bad);
+	}
+</style>

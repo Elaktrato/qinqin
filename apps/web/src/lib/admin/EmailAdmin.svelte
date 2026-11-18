@@ -6,6 +6,7 @@
 	import { apiErrorBody } from '$lib/api/client';
 	import { errorText } from '$lib/api/apiErrors';
 	import { t } from '$lib/i18n';
+	import { Button, Field, Section, Select } from '$lib/ui';
 	import { deleteSmtp, getSmtp, putSmtp, testSmtp, type SmtpSettings } from '$lib/api/adminSettings';
 	import { plainWarning, draftFrom, passwordNote, payloadFrom, portForMode, testFailure, type SmtpDraft, type TlsMode } from './smtpForm';
 
@@ -104,12 +105,11 @@
 		}, t('admin.email.error.remove'), () => removeFields);
 </script>
 
-<section aria-labelledby="admin-email-heading">
-	<h2 id="admin-email-heading">{t('admin.email.title')}</h2>
+<Section title={t('admin.email.title')}>
 	<p class="hint">{t('admin.email.intro')}</p>
 	{#if error}<p class="error" role="alert">{error}</p>{/if}
 	<p class="ok" role="status">{status}</p>
-	{#if saved && draft}
+	{#if saved && draft && typeof draft.port === 'number'}
 		{#if saved.secret !== 'ok'}
 			<p class="hint">{t('admin.email.secretState', { state: String(saved.secret) })}</p>
 		{/if}
@@ -119,60 +119,88 @@
 			</p>
 		{/if}
 		<form onsubmit={save} class="stack">
-			<label>{t('admin.email.server')} <input name="host" bind:value={draft.host} required /></label>
-			<label>
-				{t('admin.email.security')}
-				<select name="tls" value={draft.tls} onchange={(e) => changeMode(e.currentTarget.value as TlsMode)}>
-					<option value="starttls">{t('admin.email.security.starttls')}</option>
-					<option value="tls">{t('admin.email.security.tls')}</option>
-					<option value="none">{t('admin.email.security.none')}</option>
-				</select>
-			</label>
+			<Field label={t('admin.email.server')} name="host" bind:value={draft.host} required />
+			<Select
+				label={t('admin.email.security')}
+				name="tls"
+				value={draft.tls}
+				onchange={(e) => changeMode(e.currentTarget.value as TlsMode)}
+				options={[
+					{ value: 'starttls', label: t('admin.email.security.starttls') },
+					{ value: 'tls', label: t('admin.email.security.tls') },
+					{ value: 'none', label: t('admin.email.security.none') }
+				]}
+			/>
 			{#if draft.tls === 'none'}<p class="warn" role="note">{plainWarning()}</p>{/if}
-			<label>{t('admin.email.port')} <input name="port" type="number" min="1" max="65535" bind:value={draft.port} required /></label>
-			<label>{t('admin.email.username')} <input name="username" autocomplete="off" bind:value={draft.username} /></label>
+			<Field
+				label={t('admin.email.port')}
+				name="port"
+				type="number"
+				min={1}
+				max={65535}
+				value={String(draft!.port)}
+				oninput={(event) => (draft!.port = Number(event.currentTarget.value))}
+				required
+			/>
+			<Field label={t('admin.email.username')} name="username" autocomplete="off" bind:value={draft.username} />
 			<fieldset>
 				<legend>{t('admin.email.password')}</legend>
 				<p>{passwordNote(saved.password)}</p>
 				{#if saved.password !== 'none' && draft.passwordChoice === 'keep'}
-					<button type="button" onclick={() => (draft!.passwordChoice = 'replace')}>{t('admin.email.password.replace')}</button>
-					<button type="button" onclick={() => ((draft!.passwordChoice = 'remove'), (draft!.password = ''))}>{t('admin.email.password.remove')}</button>
+					<Button onclick={() => (draft!.passwordChoice = 'replace')}>{t('admin.email.password.replace')}</Button>
+					<Button tone="danger" onclick={() => ((draft!.passwordChoice = 'remove'), (draft!.password = ''))}
+						>{t('admin.email.password.remove')}</Button
+					>
 				{:else}
 					{#if draft.passwordChoice === 'remove'}
 						<p class="hint">{t('admin.email.password.willRemove')}</p>
-						<button type="button" onclick={() => (draft!.passwordChoice = 'keep')}>{t('admin.email.password.keep')}</button>
+						<Button onclick={() => (draft!.passwordChoice = 'keep')}>{t('admin.email.password.keep')}</Button>
 					{:else}
-						<label>
-							{t('admin.email.password.new')}
-							<input type="password" name="password" autocomplete="new-password" bind:value={draft.password}
-								oninput={() => (draft!.passwordChoice = 'replace')} />
-						</label>
+						<Field
+							label={t('admin.email.password.new')}
+							type="password"
+							name="password"
+							autocomplete="new-password"
+							bind:value={draft.password}
+							oninput={() => (draft!.passwordChoice = 'replace')}
+						/>
 					{/if}
 				{/if}
 			</fieldset>
-			<label>{t('admin.email.senderAddress')} <input name="from" type="email" bind:value={draft.fromAddress} required /></label>
-			<label>{t('admin.email.senderName')} <input name="fromName" bind:value={draft.fromName} /></label>
-			<label>{t('admin.email.siteAddress')} <input name="publicUrl" type="url" placeholder="https://qinqin.example.org" bind:value={draft.publicUrl} required /></label>
+			<Field label={t('admin.email.senderAddress')} name="from" type="email" bind:value={draft.fromAddress} required />
+			<Field label={t('admin.email.senderName')} name="fromName" bind:value={draft.fromName} />
+			<Field
+				label={t('admin.email.siteAddress')}
+				name="publicUrl"
+				type="url"
+				placeholder="https://qinqin.example.org"
+				bind:value={draft.publicUrl}
+				required
+			/>
 			{#if !confirmRemove}
 				<ReauthFields bind:this={saveFields} bind:password={ownPassword} bind:code={ownCode} {needsCode} passwordLabel={t('admin.email.ownPasswordSave')} />
 			{/if}
-			<div class="actions"><button type="submit" disabled={busy || confirmRemove || !reauthOk}>{t('admin.email.save')}</button></div>
+			<div class="actions">
+				<Button type="submit" variant="primary" disabled={busy || confirmRemove || !reauthOk}>{t('admin.email.save')}</Button>
+			</div>
 		</form>
 
 		<h3>{t('admin.email.test.title')}</h3>
-		<label>{t('admin.email.test.to')} <input name="to" type="email" bind:value={testTo} /></label>
-		<button type="button" disabled={busy || !draft.host} onclick={sendTest}>{t('admin.email.test.send')}</button>
+		<Field label={t('admin.email.test.to')} name="to" type="email" bind:value={testTo} />
+		<Button disabled={busy || !draft.host} onclick={sendTest}>{t('admin.email.test.send')}</Button>
 
 		{#if saved.configured}
 			<h3>{t('admin.email.remove.title')}</h3>
 			{#if confirmRemove}
 				<p>{t('admin.email.remove.text')}</p>
 				<ReauthFields bind:this={removeFields} bind:password={ownPassword} bind:code={ownCode} {needsCode} passwordLabel={t('admin.email.ownPasswordRemove')} />
-				<button type="button" disabled={busy || !reauthOk} onclick={remove}>{t('admin.email.remove.yes')}</button>
-				<button type="button" onclick={() => ((confirmRemove = false), (ownPassword = ownCode = ''))}>{t('common.action.cancel')}</button>
+				<Button tone="danger" disabled={busy || !reauthOk} onclick={remove}>{t('admin.email.remove.yes')}</Button>
+				<Button onclick={() => ((confirmRemove = false), (ownPassword = ownCode = ''))}>{t('common.action.cancel')}</Button>
 			{:else}
-				<button type="button" onclick={() => ((confirmRemove = true), (ownPassword = ownCode = ''))}>{t('admin.email.remove.open')}</button>
+				<Button tone="danger" onclick={() => ((confirmRemove = true), (ownPassword = ownCode = ''))}
+					>{t('admin.email.remove.open')}</Button
+				>
 			{/if}
 		{/if}
 	{/if}
-</section>
+</Section>

@@ -8,6 +8,7 @@
 	import { progressShares, progressSummary } from './deckStats';
 	import { createDecksData } from './decksData.svelte';
 	import DeckStatsPanel from './DeckStatsPanel.svelte';
+	import { Button, Field, Section } from '$lib/ui';
 	import SystemDecks from './SystemDecks.svelte';
 	import StarterDecks from './StarterDecks.svelte';
 	import { deckSessionConfig, sessionKinds } from './studyStart';
@@ -86,11 +87,14 @@
 	<p role="status">{t('flashcards.deck.noWorkspace')}</p>
 {:else if store.status === 'error'}
 	<p role="alert">{store.error}</p>
-	<button type="button" onclick={() => void store.load(workspaceId, true)}>{t('flashcards.deck.tryAgain')}</button>
+	<Button onclick={() => void store.load(workspaceId, true)}>{t('flashcards.deck.tryAgain')}</Button>
 {:else if summary !== null}
 	<DeckStatsPanel numbers={summary.overall} />
 
-	<h2>{t('flashcards.list.yourDecks')}</h2>
+	<Section title={t('flashcards.list.yourDecks')}>
+	<div class="study-all">
+		<Button href="/study" variant="primary">{t('flashcards.deck.study')}</Button>
+	</div>
 	{#if summary.decks.length === 0}
 		<p class="hint">{t('flashcards.list.empty')}</p>
 	{/if}
@@ -127,15 +131,13 @@
 					<p class="note">{t('flashcards.list.extras')}</p>
 				{/if}
 				<div class="actions">
-					<button
-						type="button"
-						class="primary"
+					<Button
 						aria-label={t('flashcards.list.studyNamed', { name: deck.name })}
-						onclick={() => study(deck.id, deck.kinds)}>{t('flashcards.deck.study')}</button
+						onclick={() => study(deck.id, deck.kinds)}>{t('flashcards.deck.study')}</Button
 					>
-					<a
+					<Button
 						href={flashcardsHref({ view: 'settings', deckId: deck.id })}
-						aria-label={t('flashcards.list.settingsNamed', { name: deck.name })}>{t('flashcards.deck.settings')}</a
+						aria-label={t('flashcards.list.settingsNamed', { name: deck.name })}>{t('flashcards.deck.settings')}</Button
 					>
 				</div>
 			</li>
@@ -143,15 +145,13 @@
 	</ul>
 
 	<form class="new" onsubmit={create}>
-		<label>
-			{t('flashcards.list.newName')}
-			<input bind:value={newName} maxlength="80" autocomplete="off" />
-		</label>
-		<button type="submit" disabled={creating}>{t('flashcards.list.create')}</button>
+		<Field label={t('flashcards.list.newName')} bind:value={newName} maxlength={80} autocomplete="off" />
+		<Button type="submit" disabled={creating}>{t('flashcards.list.create')}</Button>
 		{#if formError}
 			<p class="error" role="alert">{formError}</p>
 		{/if}
 	</form>
+	</Section>
 
 	<StarterDecks language={$workspaces.current?.language ?? ''} {ownedEntryIds} />
 	<SystemDecks language={$workspaces.current?.language ?? ''} {ownedEntryIds} />
@@ -160,49 +160,53 @@
 <style>
 	.decks {
 		list-style: none;
-		margin: 0.5rem 0;
+		margin: 0;
 		padding: 0;
-		display: grid;
-		gap: 0.75rem;
 	}
 
-	li {
-		padding: 0.75rem 1rem;
-		border: 1px solid color-mix(in srgb, currentColor 22%, transparent);
-		border-radius: 0.5rem;
+	.decks li {
+		padding-block: var(--space-3);
+	}
+
+	.decks li + li {
+		border-top: 1px solid var(--hair);
+	}
+
+	.study-all {
+		margin-bottom: var(--space-3);
 	}
 
 	.head {
 		display: flex;
 		flex-wrap: wrap;
-		gap: 0.25rem 0.75rem;
+		gap: var(--space-1) var(--space-3);
 		align-items: baseline;
 	}
 
 	.name {
-		font-weight: 600;
-		font-size: 1.05rem;
+		font-weight: var(--weight-strong);
+		font-size: var(--font-size-l);
 	}
 
 	.meta,
 	.counts {
-		font-size: 0.9rem;
+		font-size: var(--font-size-label);
 		color: var(--readable-muted);
 	}
 
 	.counts {
 		display: flex;
-		gap: 1rem;
-		margin-top: 0.25rem;
+		gap: var(--space-3);
+		margin-top: var(--space-1);
 	}
 
 	.bar {
 		display: flex;
-		height: 0.5rem;
-		margin-top: 0.5rem;
-		border-radius: 999px;
+		height: 0.35rem;
+		margin-top: var(--space-2);
+		border-radius: var(--radius);
 		overflow: hidden;
-		background: color-mix(in srgb, currentColor 14%, transparent);
+		background: var(--raised);
 	}
 
 	.mastered {
@@ -214,53 +218,35 @@
 	}
 
 	.note {
-		margin: 0.4rem 0 0;
-		font-size: 0.8rem;
+		margin: var(--space-1) 0 0;
+		font-size: var(--font-size-label);
 		color: var(--readable-muted);
 	}
 
 	.actions {
 		display: flex;
-		gap: 1rem;
+		gap: var(--space-2);
 		align-items: center;
-		margin-top: 0.6rem;
-	}
-
-	button,
-	.actions a {
-		min-height: 44px;
-		display: inline-flex;
-		align-items: center;
-	}
-
-	.primary {
-		padding: 0 1rem;
-		border: 1px solid var(--accent);
-		border-radius: 999px;
-		background: var(--accent);
-		color: var(--on-accent);
-		font-weight: 600;
+		margin-top: var(--space-2);
 	}
 
 	.new {
 		display: flex;
 		flex-wrap: wrap;
-		gap: 0.5rem;
+		gap: var(--space-2);
 		align-items: end;
-		margin: 1rem 0;
+		margin-block: var(--space-4);
+		max-width: 28rem;
 	}
 
-	.new label {
-		display: grid;
-		gap: 0.2rem;
-		font-size: 0.9rem;
+	.new :global(.field) {
+		flex: 1 1 14rem;
 	}
 
 	.error {
 		flex-basis: 100%;
 		margin: 0;
 		color: var(--readable-bad);
-		font-weight: 600;
 		padding-inline-start: var(--space-2);
 		border-inline-start: 3px solid var(--bad);
 	}

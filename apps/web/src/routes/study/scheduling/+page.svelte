@@ -23,6 +23,7 @@ import type { StudyContext } from '$lib/study/studyContext';
 	} from '$lib/study/store';
 	import type { ReviewEvent, StudyCard } from '$lib/study/types';
 	import { workspaces } from '$lib/workspaces';
+	import { Button } from '$lib/ui';
 
 	interface Candidate {
 		workspaceId: number;
@@ -377,7 +378,7 @@ import type { StudyContext } from '$lib/study/studyContext';
 		<p role="status">{t('study.sched.loading')}</p>
 	{:else if loadError}
 		<p class="error" role="alert">{loadError}</p>
-		<button type="button" onclick={() => load(workspaceId)}>{t('common.action.retry')}</button>
+		<Button onclick={() => load(workspaceId)}>{t('common.action.retry')}</Button>
 	{:else}
 		{#if problem}
 			<p class="error" role="alert">{problem}</p>
@@ -385,7 +386,7 @@ import type { StudyContext } from '$lib/study/studyContext';
 		<p>
 			{t('study.sched.active', { label: activeLabel })}
 			{#if fsrs.active !== null}
-				<button type="button" disabled={locked} onclick={() => use(null)}>{t('study.sched.useDefaults')}</button>
+				<Button disabled={locked} onclick={() => use(null)}>{t('study.sched.useDefaults')}</Button>
 			{/if}
 		</p>
 
@@ -396,6 +397,7 @@ import type { StudyContext } from '$lib/study/studyContext';
 			{result}
 			{activeFit}
 			error={optimiseError}
+			primary={candidate === null}
 			onOptimise={optimise}
 			onCancel={cancel}
 		/>
@@ -442,28 +444,13 @@ import type { StudyContext } from '$lib/study/studyContext';
 			onfocusout={startUndoTimer}
 		>
 			<span>{undo.text}</span>
-			<button type="button" disabled={locked} onclick={undoLast}>{t('common.action.undo')}</button>
+			<Button disabled={locked} onclick={undoLast}>{t('common.action.undo')}</Button>
 		</div>
 	{/if}
 </div>
 
 <style>
-	.page {
-		margin: 0 auto;
-		max-width: 48rem;
-		padding: 2.5rem 1.5rem;
-	}
-
-	.page :global(section) {
-		margin-top: 2rem;
-	}
-
-	button {
-		min-height: 44px;
-		min-width: 44px;
-		padding: 0 1rem;
-	}
-
+	/* No second page container: .page-body owns the column and its margins (#106). */
 	.error {
 		color: var(--readable-bad);
 		padding-inline-start: var(--space-2);
@@ -476,19 +463,19 @@ import type { StudyContext } from '$lib/study/studyContext';
 		display: flex;
 		justify-content: center;
 		pointer-events: none;
-		z-index: 50;
+		z-index: var(--layer-float);
 	}
 
 	.toast {
 		pointer-events: auto;
 		display: flex;
 		align-items: center;
-		gap: 1rem;
+		gap: var(--space-4);
 		background: var(--panel);
 		color: var(--text);
 		border: 1px solid var(--hair);
-		border-radius: 0.5rem;
-		padding: 0.6rem 1rem;
+		border-radius: var(--radius);
+		padding: var(--space-2) var(--space-4);
 		box-shadow: var(--shadow-float);
 	}
 </style>

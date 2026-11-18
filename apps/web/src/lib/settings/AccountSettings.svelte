@@ -36,6 +36,7 @@
 	import AppSection from '$lib/pwa/AppSection.svelte';
 	import AccessTokens from './AccessTokens.svelte';
 	import { containmentNote } from '$lib/account/tokensView';
+	import { Button, Field, Section, Select } from '$lib/ui';
 
 	let current = $state('');
 	let next = $state('');
@@ -223,8 +224,7 @@
 	}
 </script>
 
-<section aria-labelledby="account-profile-heading" class="block">
-	<h2 id="account-profile-heading">{t('settings.account.profile.title')}</h2>
+<Section title={t('settings.account.profile.title')}>
 	<p>
 		<Msg key="settings.account.profile.username" args={{ name: $user?.username ?? '' }}
 			>{#snippet strong(text: string)}<strong>{text}</strong>{/snippet}</Msg
@@ -244,14 +244,14 @@
 						'settings.account.email.none'
 					)}{/if}
 			</p>
-			<label>
-				{emailView.label}
-				<input type="email" autocomplete="email" bind:value={emailDraft} />
-			</label>
-			<label>
-				{t('account.field.yourPassword')}
-				<input type="password" autocomplete="current-password" bind:value={emailPassword} required />
-			</label>
+			<Field label={emailView.label} type="email" autocomplete="email" bind:value={emailDraft} />
+			<Field
+				label={t('account.field.yourPassword')}
+				type="password"
+				autocomplete="current-password"
+				bind:value={emailPassword}
+				required
+			/>
 			{#if $user?.mfa?.totp}
 				<label>
 					{t('settings.account.email.code')}
@@ -261,10 +261,12 @@
 			{#if emailError}<p class="error" role="alert">{emailError}</p>{/if}
 			<p class="ok" role="status">{emailDone}</p>
 			<div class="actions">
-				<button type="submit" disabled={emailBusy || emailDraft.trim() === ''}>{t('settings.account.email.save')}</button>
+				<Button type="submit" variant="primary" disabled={emailBusy || emailDraft.trim() === ''}
+					>{t('settings.account.email.save')}</Button
+				>
 				{#if emailView.canClear}
-					<button type="button" disabled={emailBusy || emailPassword === ''} onclick={() => saveEmail(null)}
-						>{t('settings.account.email.remove')}</button
+					<Button tone="danger" disabled={emailBusy || emailPassword === ''} onclick={() => saveEmail(null)}
+						>{t('settings.account.email.remove')}</Button
 					>
 				{/if}
 			</div>
@@ -274,57 +276,59 @@
 				<EmailVerify address={$user.email} onverified={async () => { verifying = false; await loadMe(); }} />
 			{:else}
 				<p class="hint">{t('settings.account.email.unconfirmed')}
-					<button type="button" class="link" onclick={() => (verifying = true)}>{t('settings.account.email.confirm')}</button></p>
+					<Button variant="plain" onclick={() => (verifying = true)}>{t('settings.account.email.confirm')}</Button></p>
 			{/if}
 		{/if}
 	{/if}
-</section>
+</Section>
 
-<section aria-labelledby="account-language-heading" class="block">
-	<h2 id="account-language-heading">{t('settings.account.interfaceLanguage.title')}</h2>
+<Section title={t('settings.account.interfaceLanguage.title')}>
 	<form onsubmit={saveLanguage} class="stack">
-		<label>
-			{t('settings.account.interfaceLanguage.label')}
-			<select bind:value={languageDraft} aria-describedby="account-language-hint">
-				<option value="">{t('settings.account.interfaceLanguage.browser', { language: browserDefault })}</option>
-				{#each languageChoices as choice (choice.code)}
-					<option value={choice.code}>{choice.label}</option>
-				{/each}
-			</select>
-		</label>
+		<Select
+			label={t('settings.account.interfaceLanguage.label')}
+			bind:value={languageDraft}
+			aria-describedby="account-language-hint"
+			options={[
+				{ value: '', label: t('settings.account.interfaceLanguage.browser', { language: browserDefault }) },
+				...languageChoices.map((choice) => ({ value: choice.code, label: choice.label }))
+			]}
+		/>
 		<p class="hint" id="account-language-hint">{t('settings.account.interfaceLanguage.hint')}</p>
 		{#if languageError}<p class="error" role="alert">{languageError}</p>{/if}
 		{#if languageNotice}<p class="hint" role="status">{languageNotice}</p>{/if}
-		<button type="submit" disabled={languageBusy}
-			>{languageBusy ? t('settings.account.interfaceLanguage.saving') : t('settings.account.interfaceLanguage.save')}</button
+		<Button type="submit" variant="primary" disabled={languageBusy}
+			>{languageBusy ? t('settings.account.interfaceLanguage.saving') : t('settings.account.interfaceLanguage.save')}</Button
 		>
 	</form>
-</section>
+</Section>
 
 <TwoFactorManage options={optionsAll} />
 
-<section aria-labelledby="account-password-heading" class="block">
-	<h2 id="account-password-heading">{t('settings.account.password.title')}</h2>
+<Section title={t('settings.account.password.title')}>
 	<form onsubmit={submitPassword} class="stack">
-		<label>
-			{t('settings.account.password.current')}
-			<input type="password" autocomplete="current-password" bind:value={current} required />
-		</label>
-		<label>
-			{t('settings.account.password.new')}
-			<input
-				type="password"
-				autocomplete="new-password"
-				aria-describedby="account-password-rules"
-				bind:value={next}
-				required
-			/>
-		</label>
+		<Field
+			label={t('settings.account.password.current')}
+			type="password"
+			autocomplete="current-password"
+			bind:value={current}
+			required
+		/>
+		<Field
+			label={t('settings.account.password.new')}
+			type="password"
+			autocomplete="new-password"
+			aria-describedby="account-password-rules"
+			bind:value={next}
+			required
+		/>
 		<p class="hint" id="account-password-rules">{passwordHint()}</p>
-		<label>
-			{t('settings.account.password.repeat')}
-			<input type="password" autocomplete="new-password" bind:value={confirm} required />
-		</label>
+		<Field
+			label={t('settings.account.password.repeat')}
+			type="password"
+			autocomplete="new-password"
+			bind:value={confirm}
+			required
+		/>
 		<label class="check">
 			<input type="checkbox" bind:checked={signOutOthers} />
 			{t('settings.account.password.signOutOthers')}
@@ -332,16 +336,17 @@
 		{#if tokenNote}<p class="hint">{tokenNote}</p>{/if}
 		{#if pwError}<p class="error" role="alert">{pwError}</p>{/if}
 		<p class="ok" role="status">{pwDone}</p>
-		<button type="submit" disabled={pwBusy}>{pwBusy ? t('settings.account.password.changing') : t('settings.account.password.change')}</button>
+		<Button type="submit" variant="primary" disabled={pwBusy}
+			>{pwBusy ? t('settings.account.password.changing') : t('settings.account.password.change')}</Button
+		>
 	</form>
-</section>
+</Section>
 
-<section aria-labelledby="account-sessions-heading" class="block">
-	<h2 id="account-sessions-heading">{t('settings.account.sessions.title')}</h2>
+<Section title={t('settings.account.sessions.title')}>
 	<p class="hint">{t('settings.account.sessions.intro')}</p>
 	{#if sessionsError}<p class="error" role="alert">{sessionsError}</p>{/if}
 	{#if sessionsLoaded && rows.length > 0}
-		<table aria-label={t('settings.account.sessions.table')}>
+		<table class="ui-table" aria-label={t('settings.account.sessions.table')}>
 			<thead>
 				<tr>
 					<th scope="col">{t('settings.account.sessions.colDevice')}</th>
@@ -361,11 +366,10 @@
 						<td>{row.lastActive}</td>
 						<td>
 							{#if row.canRevoke}
-								<button
-									type="button"
+								<Button
 									disabled={busy}
 									aria-label={t('settings.account.sessions.revokeNamed', { device: row.deviceLabel })}
-									onclick={() => revokeOne(row.id)}>{t('settings.tokens.revoke')}</button
+									onclick={() => revokeOne(row.id)}>{t('settings.tokens.revoke')}</Button
 								>
 							{/if}
 						</td>
@@ -375,22 +379,18 @@
 		</table>
 	{/if}
 	<div class="actions">
-		<button type="button" disabled={busy || !hasOthers} onclick={revokeOthers}
-			>{t('settings.account.sessions.logoutOthers')}</button
-		>
-		<button type="button" disabled={busy} onclick={() => (confirmingAll = true)}
-			>{t('settings.account.sessions.logoutAll')}</button
-		>
+		<Button disabled={busy || !hasOthers} onclick={revokeOthers}>{t('settings.account.sessions.logoutOthers')}</Button>
+		<Button disabled={busy} onclick={() => (confirmingAll = true)}>{t('settings.account.sessions.logoutAll')}</Button>
 	</div>
 	{#if tokenNote}<p class="hint">{t('settings.account.sessions.tokenNote', { note: tokenNote })}</p>{/if}
 	{#if confirmingAll}
 		<div class="confirm" role="group" aria-label={t('settings.account.sessions.confirmAll')}>
 			<p>{logoutEverywhereConfirm()}{#if tokenNote}{' '}{tokenNote}{/if}</p>
-			<button type="button" disabled={busy} onclick={revokeAll}>{t('settings.account.sessions.confirmAllYes')}</button>
-			<button type="button" disabled={busy} onclick={() => (confirmingAll = false)}>{t('common.action.cancel')}</button>
+			<Button tone="danger" disabled={busy} onclick={revokeAll}>{t('settings.account.sessions.confirmAllYes')}</Button>
+			<Button disabled={busy} onclick={() => (confirmingAll = false)}>{t('common.action.cancel')}</Button>
 		</div>
 	{/if}
-</section>
+</Section>
 
 {#key tokensKey}
 	<AccessTokens oncount={(n) => (tokenCount = n)} />
@@ -400,11 +400,10 @@
 
 <AppSection />
 
-<section aria-labelledby="account-delete-heading" class="block">
-	<h2 id="account-delete-heading">{t('settings.account.delete.title')}</h2>
+<Section title={t('settings.account.delete.title')}>
 	<p class="hint">{t('settings.account.delete.intro')}</p>
-	<button type="button" onclick={() => (deleting = true)}>{t('settings.account.delete.open')}</button>
-</section>
+	<Button tone="danger" onclick={() => (deleting = true)}>{t('settings.account.delete.open')}</Button>
+</Section>
 
 {#if deleting && $user}
 	<DeleteAccountDialog
@@ -420,105 +419,52 @@
 {/if}
 
 <style>
-	.block {
-		margin-bottom: 2rem;
-	}
 	.stack {
 		display: grid;
-		gap: 0.9rem;
+		gap: var(--space-3);
 		max-width: 24rem;
 	}
-	label {
-		display: grid;
-		gap: 0.3rem;
-		font-weight: 600;
-	}
+
 	label.check {
 		display: flex;
-		gap: 0.5rem;
+		gap: var(--space-2);
 		align-items: center;
-		font-weight: 400;
+		min-height: var(--hit);
 	}
-	input:not([type='checkbox']) {
-		font: inherit;
-		padding: 0.5rem 0.65rem;
-		border: 1px solid color-mix(in srgb, currentColor 35%, transparent);
-		border-radius: 0.4rem;
-		background: transparent;
-		color: inherit;
-	}
+
 	.hint {
 		margin: 0;
 		color: var(--readable-muted);
 	}
+
 	.error {
 		margin: 0;
 		color: var(--readable-bad);
-		font-weight: 600;
 		padding-inline-start: var(--space-2);
 		border-inline-start: 3px solid var(--bad);
 	}
+
 	.ok {
 		margin: 0;
 		min-height: 1.2em;
 	}
-	table {
-		border-collapse: collapse;
-		width: 100%;
-		margin: 0.75rem 0;
-	}
-	th,
-	td {
-		text-align: left;
-		padding: 0.45rem 0.6rem;
-		border-bottom: 1px solid color-mix(in srgb, currentColor 18%, transparent);
-	}
-	tbody th {
-		font-weight: 600;
-	}
-	.badge {
-		margin-left: 0.5rem;
-		padding: 0.1rem 0.45rem;
-		border: 1px solid currentColor;
-		border-radius: 0.8rem;
-		font-size: 0.8em;
-		font-weight: 600;
-	}
+
 	.actions {
 		display: flex;
 		flex-wrap: wrap;
-		gap: 0.6rem;
+		gap: var(--space-2);
 	}
-	button {
-		font: inherit;
-		padding: 0.45rem 0.9rem;
-		border: 1px solid color-mix(in srgb, currentColor 40%, transparent);
-		border-radius: 0.4rem;
-		background: transparent;
-		color: inherit;
-		cursor: pointer;
-	}
-	button[type='submit'] {
-		background: var(--accent);
-		border-color: var(--accent);
-		color: var(--on-accent);
-		font-weight: 600;
-		justify-self: start;
-	}
-	button:disabled {
-		opacity: 0.55;
-		cursor: not-allowed;
-	}
+
 	.confirm {
-		margin-top: 0.8rem;
-		padding: 0.8rem;
-		border: 1px solid color-mix(in srgb, currentColor 35%, transparent);
-		border-radius: 0.5rem;
+		margin-top: var(--space-3);
+		padding-block: var(--space-3);
+		border-top: 1px solid var(--hair);
 		display: flex;
 		flex-wrap: wrap;
-		gap: 0.6rem;
+		gap: var(--space-2);
 		align-items: center;
 	}
+
 	.confirm p {
 		flex-basis: 100%;
 		margin: 0;

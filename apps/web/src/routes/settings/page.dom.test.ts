@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/svelte';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/svelte';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('$app/state', () => import('$lib/testing/appState.svelte'));
@@ -11,10 +11,11 @@ vi.mock('$lib/api/client', async (importOriginal) => ({
 import { api } from '$lib/api/client';
 import { setUrl } from '$lib/testing/appState.svelte';
 import { auth } from '$lib/auth';
+import { primaryActions } from '$lib/ui/testing/primary';
 import { workspaces, workspacesLoadError, workspacesLoaded } from '$lib/workspaces';
 import Page from './+page.svelte';
 
-const plugin = { id: 'qinqin-journal', manifest: { name: 'Journal' }, enabled: true, order: 2 };
+const plugin = { id: 'qinqin-journal', manifest: { name: 'Journal', version: '1.2.3' }, enabled: true, order: 2 };
 
 beforeEach(() => {
 	setUrl('/settings');
@@ -31,6 +32,75 @@ beforeEach(() => {
 afterEach(() => {
 	cleanup();
 	vi.clearAllMocks();
+});
+
+describe('the settings tab row in the lighter look (#106)', () => {
+	afterEach(() => auth.set({ token: null, user: null }));
+
+	it('is a tablist with eight tabs for a member and ten for an admin', async () => {
+		render(Page);
+		const list = screen.getByRole('tablist', { name: 'Settings' });
+		expect([...list.querySelectorAll('[role="tab"]')].map((tab) => tab.textContent?.trim())).toEqual([
+			'Workspaces',
+			'Home',
+			'Appearance',
+			'Study',
+			'Features',
+			'Plugins',
+			'AI',
+			'Account'
+		]);
+		cleanup();
+		auth.set({ token: 't', user: { id: 1, username: 'root', admin: true } as never });
+		render(Page);
+		expect(screen.getAllByRole('tab')).toHaveLength(10);
+	});
+
+	it('the ?tab=data deep link selects Data', async () => {
+		auth.set({ token: 't', user: { id: 1, username: 'root', admin: true } as never });
+		setUrl('/settings?tab=data');
+		render(Page);
+		expect(screen.getByRole('tab', { name: 'Data' }).getAttribute('aria-selected')).toBe('true');
+	});
+
+	it('arrow keys move focus and selection (automatic activation, as today)', async () => {
+		render(Page);
+		const workspaces = screen.getByRole('tab', { name: 'Workspaces' });
+		workspaces.focus();
+		await fireEvent.keyDown(workspaces, { key: 'ArrowRight' });
+		const home = screen.getByRole('tab', { name: 'Home' });
+		expect(home.getAttribute('aria-selected')).toBe('true');
+		expect(document.activeElement).toBe(home);
+	});
+
+	it('the wrapped row shows a deep-linked far tab without a sideways scroll', async () => {
+		const scrollIntoView = vi.fn();
+		const original = Element.prototype.scrollIntoView;
+		Element.prototype.scrollIntoView = scrollIntoView;
+		try {
+			setUrl('/settings?tab=account');
+			render(Page);
+			expect(screen.getByRole('tab', { name: 'Account' }).getAttribute('aria-selected')).toBe('true');
+			expect(scrollIntoView).not.toHaveBeenCalled();
+		} finally {
+			Element.prototype.scrollIntoView = original;
+		}
+	});
+});
+
+describe('the workspaces view in the lighter look (#106)', () => {
+	it('has one primary action and hairline rows with secondary actions', async () => {
+		workspaces.set({
+			list: [{ id: 1, language: 'zh', name: 'Chinese', settings: {}, updatedAt: '' } as never],
+			current: null
+		});
+		workspacesLoaded.set(true);
+		render(Page);
+		expect(primaryActions(document.body)).toHaveLength(1);
+		expect(screen.getByRole('button', { name: 'Create workspace' }).className).toContain('primary');
+		expect(screen.getByRole('button', { name: /^Rename / }).className).toContain('secondary');
+		expect(screen.getByRole('button', { name: 'Create workspace' }).closest('form')?.querySelector('.field')).toBeTruthy();
+	});
 });
 
 describe('settings loading states', () => {
@@ -80,6 +150,18 @@ describe('plugin order validation', () => {
 		await fireEvent.input(order, { target: { value: '0' } });
 		await waitFor(() => expect(save.disabled).toBe(false));
 		expect(screen.queryByText('Enter a whole number of 0 or more.')).toBeNull();
+	});
+});
+
+describe('the plugin list in the lighter look (#106)', () => {
+	it('shows the version as a chip and saves with a secondary Button; no primary', async () => {
+		setUrl('/settings?tab=plugins');
+		render(Page);
+		const row = (await screen.findByText('Journal')).closest('li')!;
+		expect(within(row).getByText('1.2.3')).toBeTruthy();
+		const save = within(row).getByRole('button', { name: 'Save' });
+		expect(save.className).toContain('secondary');
+		expect(primaryActions(document.body)).toHaveLength(0);
 	});
 });
 

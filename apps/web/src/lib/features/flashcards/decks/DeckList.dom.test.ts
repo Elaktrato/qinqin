@@ -19,6 +19,7 @@ import { SESSION_CONFIG_KEY } from '$lib/study/session';
 import type { Deck, ReviewEvent, StudyCard, StudyHistory } from '$lib/study/types';
 import { workspaces } from '$lib/workspaces';
 import { currentStudyDay } from '$lib/time/zone';
+import { primaryActions } from '$lib/ui/testing/primary';
 import DeckList from './DeckList.svelte';
 
 const verbs: Deck = { id: 'd1', name: 'Verbs', createdAt: '2026-01-01T00:00:00.000Z' };
@@ -59,6 +60,17 @@ afterEach(() => {
 });
 
 describe('DeckList', () => {
+	it('has one primary Study; rows are hairlines and the new-deck name a Field', async () => {
+		render(DeckList);
+		await screen.findByRole('link', { name: 'Verbs' });
+		expect(primaryActions(document.body)).toHaveLength(1);
+		expect(screen.getByRole('link', { name: 'Study' }).className).toContain('primary');
+		expect(screen.getByRole('button', { name: 'Study Verbs' }).className).toContain('secondary');
+		const row = screen.getByRole('link', { name: 'Verbs' }).closest('li') as HTMLElement;
+		expect(screen.getByLabelText('New deck name').closest('.field')).toBeTruthy();
+		expect(screen.getByRole('region', { name: 'Overall' })).toBeTruthy();
+	});
+
 	it('shows loading, then the overall numbers and one row per deck', async () => {
 		render(DeckList);
 		expect(screen.getByRole('status').textContent).toContain('Loading');

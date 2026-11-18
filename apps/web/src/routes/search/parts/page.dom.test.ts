@@ -19,6 +19,7 @@ import { fetchComponents } from '$lib/api/components';
 import type { CharRow } from '$lib/api/types';
 import { page, setUrl } from '$lib/testing/appState.svelte';
 import { workspaces } from '$lib/workspaces';
+import { primaryActions } from '$lib/ui/testing/primary';
 import Page from './+page.svelte';
 
 const chars: CharRow[] = [
@@ -70,6 +71,14 @@ afterEach(() => {
 });
 
 describe('radical and part lookup page', () => {
+	it('has one primary Add and a Field for the typed part', async () => {
+		render(Page);
+		await screen.findByLabelText('Type a radical or part');
+		expect(primaryActions(document.body)).toHaveLength(1);
+		expect(screen.getByRole('button', { name: 'Add' }).className).toContain('primary');
+		expect(screen.getByLabelText('Type a radical or part').closest('.field')).toBeTruthy();
+	});
+
 	it('shows 17 stroke groups, the parts picker and no results before a pick', async () => {
 		render(Page);
 		const table = await screen.findByRole('group', { name: 'Radicals' });

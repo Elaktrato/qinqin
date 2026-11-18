@@ -8,6 +8,7 @@
 	import { recoveryWarning, stateSentence, twoFactorChoices } from './mfaView';
 	import RecoveryCodes from './RecoveryCodes.svelte';
 	import TwoFactorSetup from './TwoFactorSetup.svelte';
+	import { Button, Field, Section } from '$lib/ui';
 
 	// Settings, Account: the two-factor state and its changes.
 	let { options }: { options: AuthOptions | null } = $props();
@@ -55,8 +56,7 @@
 	}
 </script>
 
-<section aria-labelledby="account-2fa-heading" class="block">
-	<h2 id="account-2fa-heading">{t('account.mfa.title')}</h2>
+<Section title={t('account.mfa.title')}>
 	<p>{stateSentence(mfa)}</p>
 	{#if warning}<p class="error" role="status">{warning}</p>{/if}
 	{#if nothingToOffer && options}
@@ -68,10 +68,13 @@
 		<TwoFactorSetup {options} onfinished={() => open('none')} />
 	{:else if action === 'disable' || action === 'regen' || action === 'emailOff'}
 		<form onsubmit={submit} class="stack">
-			<label>
-				{t('account.field.yourPassword')}
-				<input type="password" autocomplete="current-password" bind:value={password} required />
-			</label>
+			<Field
+				label={t('account.field.yourPassword')}
+				type="password"
+				autocomplete="current-password"
+				bind:value={password}
+				required
+			/>
 			{#if action !== 'emailOff'}
 				<label>
 					{t('account.mfa.codeOrRecovery')}
@@ -80,26 +83,26 @@
 			{/if}
 			{#if error}<p class="error" role="alert">{error}</p>{/if}
 			<div class="actions">
-				<button type="submit" disabled={busy}>
+				<Button type="submit" variant="primary" tone="danger" disabled={busy}>
 					{action === 'disable' ? t('account.mfa.turnOffApp') : action === 'regen' ? t('account.mfa.makeRecovery') : t('account.mfa.turnOffEmail')}
-				</button>
-				<button type="button" onclick={() => open('none')}>{t('common.action.cancel')}</button>
+				</Button>
+				<Button onclick={() => open('none')}>{t('common.action.cancel')}</Button>
 			</div>
 		</form>
 	{:else}
 		<div class="actions">
 			{#if (choices.totp || choices.email) && !mfa?.totp}
-				<button type="button" onclick={() => open('setup')}>{t('account.mfa.setUp')}</button>
+				<Button onclick={() => open('setup')}>{t('account.mfa.setUp')}</Button>
 			{/if}
 			{#if mfa?.totp}
-				<button type="button" onclick={() => open('regen')}>{t('account.mfa.newRecovery')}</button>
-				<button type="button" onclick={() => open('disable')}>{t('account.mfa.turnOffApp')}</button>
+				<Button onclick={() => open('regen')}>{t('account.mfa.newRecovery')}</Button>
+				<Button tone="danger" onclick={() => open('disable')}>{t('account.mfa.turnOffApp')}</Button>
 			{/if}
 			{#if mfa?.email}
-				<button type="button" onclick={() => open('emailOff')}>{t('account.mfa.turnOffEmail')}</button>
+				<Button tone="danger" onclick={() => open('emailOff')}>{t('account.mfa.turnOffEmail')}</Button>
 			{:else if mfa?.totp && choices.email && $user?.emailVerified}
-				<button type="button" onclick={() => open('setup')}>{t('account.mfa.addEmail')}</button>
+				<Button onclick={() => open('setup')}>{t('account.mfa.addEmail')}</Button>
 			{/if}
 		</div>
 	{/if}
-</section>
+</Section>

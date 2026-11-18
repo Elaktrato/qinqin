@@ -3,6 +3,7 @@
 	import { t } from '$lib/i18n';
 	import { formatNumber } from '$lib/i18n/format';
 	import { LOW_DATA_LABELLED, MIN_LABELLED, type OptimizeResult } from '$lib/study/fsrs/optimize';
+	import { Button, Section } from '$lib/ui';
 
 	let {
 		labelled,
@@ -11,6 +12,7 @@
 		result,
 		activeFit,
 		error,
+		primary = true,
 		onOptimise,
 		onCancel
 	}: {
@@ -20,6 +22,8 @@
 		result: OptimizeResult | null;
 		activeFit: Fit;
 		error: string;
+		/** The view's one primary: false while a candidate's Apply is primary. */
+		primary?: boolean;
 		onOptimise: () => void;
 		onCancel: () => void;
 	} = $props();
@@ -31,8 +35,7 @@
 	const loss = (n: number): string => formatNumber(n, { minimumFractionDigits: 3, maximumFractionDigits: 3 });
 </script>
 
-<section aria-labelledby="optimise-heading">
-	<h2 id="optimise-heading">{t('flashcards.optimise.title')}</h2>
+<Section title={t('flashcards.optimise.title')}>
 	<p class="hint">
 		{t('flashcards.optimise.usable', { count: labelled })}
 		{#if missing > 0}
@@ -43,13 +46,17 @@
 	</p>
 
 	<div class="row">
-		<button type="button" disabled={running || missing > 0} onclick={onOptimise}>{t('flashcards.optimise.run')}</button>
+		<Button
+			variant={primary ? 'primary' : 'secondary'}
+			disabled={running || missing > 0}
+			onclick={onOptimise}>{t('flashcards.optimise.run')}</Button
+		>
 		{#if running}
 			<label class="progress">
 				<span id="optimise-progress-label">{t('flashcards.optimise.training', { percent })}</span>
 				<progress max="1" value={progress} aria-labelledby="optimise-progress-label"></progress>
 			</label>
-			<button type="button" onclick={onCancel}>{t('common.action.cancel')}</button>
+			<Button variant="plain" onclick={onCancel}>{t('common.action.cancel')}</Button>
 		{/if}
 	</div>
 
@@ -97,26 +104,20 @@
 			{/if}
 		</div>
 	{/if}
-</section>
+</Section>
 
 <style>
 	.row {
 		display: flex;
 		flex-wrap: wrap;
 		align-items: center;
-		gap: 0.75rem 1rem;
-	}
-
-	button {
-		min-height: 44px;
-		min-width: 44px;
-		padding: 0 1rem;
+		gap: var(--space-3) var(--space-4);
 	}
 
 	.progress {
 		display: flex;
 		flex-direction: column;
-		gap: 0.25rem;
+		gap: var(--space-1);
 	}
 
 	.hint {

@@ -10,6 +10,7 @@
 	import { loadDisplayLesson, type DisplayLesson } from './lessonData';
 	import { recordRun } from './progress';
 	import { grammarHref } from './route';
+	import { Button } from '$lib/ui';
 	import type { Progress } from './types';
 	// (attempt 0 keeps the plain lesson seed; a retry shuffles anew)
 
@@ -46,7 +47,7 @@
 	// Per exercise: null while open, then right on the first try or not.
 	let results = $state<(boolean | null)[]>([]);
 	let tokens = $state<string[] | null>(null);
-	let nextButton = $state<HTMLButtonElement | null>(null);
+	let nextButton = $state<HTMLElement | undefined>(undefined);
 	let instruction = $state<HTMLElement | null>(null);
 	let saved = $state<Progress | null>(null);
 	let saveError = $state('');
@@ -140,13 +141,17 @@
 			{/if}
 			{#if saveError}
 				<p class="error" role="alert">{saveError}</p>
-				<button type="button" class="secondary" onclick={() => void saveResult()}>{t('grammar.practice.saveAgain')}</button>
+				<Button onclick={() => void saveResult()}>{t('grammar.practice.saveAgain')}</Button>
 			{/if}
 			<div class="actions">
-				<button type="button" class="primary" onclick={retry}>{t('grammar.practice.retry')}</button>
-				<a class="secondary" href={grammarHref({ view: 'lesson', pack, lesson: lessonId })}>{t('grammar.practice.backToLesson')}</a>
+				<Button variant="primary" onclick={retry}>{t('grammar.practice.retry')}</Button>
+				<Button href={grammarHref({ view: 'lesson', pack, lesson: lessonId })}
+					>{t('grammar.practice.backToLesson')}</Button
+				>
 				{#if data.view.next}
-					<a class="secondary" href={grammarHref({ view: 'lesson', pack, lesson: data.view.next })}>{t('grammar.practice.nextLesson')}</a>
+					<Button href={grammarHref({ view: 'lesson', pack, lesson: data.view.next })}
+						>{t('grammar.practice.nextLesson')}</Button
+					>
 				{/if}
 			</div>
 		</section>
@@ -190,28 +195,28 @@
 				<p class="sentence" lang={textLang}>{current.example.text}</p>
 				{#if current.example.reading}<p class="reading">{current.example.reading}</p>{/if}
 			</section>
-			<button type="button" class="primary" bind:this={nextButton} onclick={() => void advance()}>
+			<Button variant="primary" bind:element={nextButton} onclick={() => void advance()}>
 				{index + 1 >= exercises.length ? t('grammar.practice.finish') : t('grammar.practice.next')}
-			</button>
+			</Button>
 		{/if}
 	{/if}
 </div>
 
 <style>
-	.practice {
-		max-width: 46rem;
-		margin: 0 auto;
-		padding: 1rem;
-	}
-
+		/* No second page container: .page-body owns the column (#106). */
 	.back a {
 		display: inline-flex;
 		align-items: center;
-		min-height: 44px;
+		min-height: var(--hit);
+	}
+
+	.back a:focus-visible {
+		outline: var(--focus-ring);
+		outline-offset: var(--focus-ring-offset);
 	}
 
 	h1 {
-		margin: 0.25rem 0;
+		margin-block: var(--space-1);
 	}
 
 	.progress,
@@ -224,17 +229,17 @@
 	}
 
 	.instruction {
-		margin: 1rem 0 0.25rem;
-		font-weight: 600;
+		margin-block: var(--space-4) var(--space-1);
+		font-weight: var(--weight-medium);
 	}
 
 	.translation {
-		margin: 0 0 0.75rem;
-		font-size: 1.1rem;
+		margin-block: 0 var(--space-3);
+		font-size: var(--font-size-l);
 	}
 
 	.reveal {
-		margin: 0.5rem 0 1rem;
+		margin-block: var(--space-2) var(--space-4);
 	}
 
 	.reveal p {
@@ -242,54 +247,23 @@
 	}
 
 	.sentence {
-		font-size: 1.4rem;
+		font-size: var(--font-size-xl);
 	}
 
 	.score {
-		font-size: 1.6rem;
-		font-weight: 700;
+		font-size: var(--font-size-xl);
+		font-weight: var(--weight-strong);
 	}
 
 	.actions {
 		display: flex;
 		flex-wrap: wrap;
-		gap: 0.5rem;
-	}
-
-	.primary,
-	.secondary {
-		display: inline-flex;
-		align-items: center;
-		min-height: 44px;
-		padding: 0 1.2rem;
-		border-radius: 0.4rem;
-		font: inherit;
-		font-weight: 600;
-		text-decoration: none;
-		cursor: pointer;
-	}
-
-	.primary {
-		border: 0;
-		background: var(--accent);
-		color: var(--on-accent);
-	}
-
-	.secondary {
-		border: 1px solid color-mix(in srgb, currentColor 35%, transparent);
-		background: transparent;
-		color: inherit;
-	}
-
-	.primary:focus-visible,
-	.secondary:focus-visible,
-	a:focus-visible {
-		outline: 2px solid var(--focus-colour);
-		outline-offset: 2px;
+		gap: var(--space-2);
 	}
 
 	.error {
 		color: var(--readable-bad);
+		font-weight: var(--weight-medium);
 		padding-inline-start: var(--space-2);
 		border-inline-start: 3px solid var(--bad);
 	}

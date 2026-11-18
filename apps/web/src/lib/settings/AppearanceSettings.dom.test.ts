@@ -4,6 +4,7 @@ import type { ListedTheme } from '$lib/api/themes';
 import { FALLBACK_THEMES } from '$lib/theme/fallback';
 import { createThemeStore, type ThemeStore, type ThemeStoreDeps } from '$lib/theme/store.svelte';
 import { installedFaces, type InstalledFaces } from '$lib/fonts/hanzi';
+import { primaryActions } from '$lib/ui/testing/primary';
 import AppearanceSettings from './AppearanceSettings.svelte';
 
 const latte: ListedTheme = { ...FALLBACK_THEMES[0], family: FALLBACK_THEMES[0].family ?? '', packId: 'qinqin', builtin: true };
@@ -65,6 +66,14 @@ describe('Settings → Appearance', () => {
 		const hanzi = screen.getByRole('group', { name: 'Hanzi and kanji font' });
 		// Applied now (#97): no "from a coming update" hint any more.
 		expect(within(hanzi).queryByText(/coming update/)).toBeNull();
+	});
+
+	it('Save is the view\'s one primary action (#106)', async () => {
+		await setup();
+		const save = screen.getByRole('button', { name: 'Save' });
+		expect(primaryActions(document.body)).toEqual([save]);
+		expect(save.className).toContain('primary');
+		expect(screen.getByRole('button', { name: 'Reset to defaults' }).className).toContain('plain');
 	});
 
 	it('the preview shows hanzi and kanji in each script, tagged with its study lang', async () => {

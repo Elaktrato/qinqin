@@ -16,6 +16,7 @@ vi.mock('$lib/widgets/options', async (importOriginal) => ({
 import { pluginStates } from '$lib/plugins/states';
 import { loadLayout } from '$lib/widgets/layout';
 import { loadWidgetOptions, saveHeatmapLayout } from '$lib/widgets/options';
+import { primaryActions } from '$lib/ui/testing/primary';
 import HomeLayoutEditor from './HomeLayoutEditor.svelte';
 
 beforeEach(() => {
@@ -101,6 +102,19 @@ describe('Settings -> Home: the heatmap layout', () => {
 		await fireEvent.click(within(group).getByRole('radio', { name: 'This week' }));
 		await waitFor(() => expect(within(group).getByRole('radio', { name: 'Month calendar' })).toHaveProperty('checked', true));
 		expect(within(group).getByText(/Could not save the heatmap layout \(offline\)/)).toBeTruthy();
+	});
+
+	it('is hairline rows with base Buttons and no primary action (it saves on change, #106)', async () => {
+		render(HomeLayoutEditor);
+		await fieldset();
+		expect(document.querySelectorAll('.items .item').length).toBeGreaterThan(0);
+		// A change saves itself: the view has no primary action.
+		expect(primaryActions(document.body)).toHaveLength(0);
+		const up = screen.getAllByRole('button', { name: /^Move .* up$/ })[0];
+		expect(up.className).toContain('button');
+		expect(up.className).toContain('plain');
+		const reset = screen.getByRole('button', { name: 'Reset to default' });
+		expect(reset.className).toContain('secondary');
 	});
 
 	it('the fieldset is shown only while the widget is on the home page', async () => {

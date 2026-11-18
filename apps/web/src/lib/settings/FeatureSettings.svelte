@@ -37,7 +37,7 @@
 {:else}
 	<ul class="features">
 		{#each switches as feature (feature.id)}
-			<li>
+			<li class="feature">
 				<label class="inline">
 					<input
 						type="checkbox"
@@ -45,7 +45,7 @@
 						disabled={saving === feature.id}
 						onchange={(event) => toggle(feature.id, event)}
 					/>
-					{feature.title}
+					<span class="title">{feature.title}</span>
 				</label>
 				{#if saved === feature.id}<span class="saved">{t('settings.features.saved')}</span>{/if}
 			</li>
@@ -59,11 +59,53 @@
 <style>
 	.features {
 		list-style: none;
+		margin: 0;
 		padding: 0;
-		display: grid;
-		gap: 0.5rem;
 	}
+	/* One switch per hairline row, not a box (#106). */
+	.feature {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: var(--space-2);
+		min-height: var(--hit);
+	}
+	.feature + .feature {
+		border-top: 1px solid var(--hair);
+	}
+	.inline {
+		display: flex;
+		align-items: center;
+		gap: var(--space-2);
+		cursor: pointer;
+	}
+	.title {
+		font-weight: var(--weight-medium);
+	}
+	/* The words say it; the --good dot repeats it as a shape (#106). */
 	.saved {
-		margin-left: 0.5rem;
+		margin-inline-start: var(--space-1);
+		color: var(--readable-muted);
+		font-size: var(--font-size-label);
+	}
+	.saved::before {
+		content: '';
+		display: inline-block;
+		width: 0.45em;
+		height: 0.45em;
+		margin-inline-end: 0.35em;
+		border-radius: 50%;
+		background: var(--good);
+		vertical-align: 0.1em;
+	}
+	.error {
+		margin: var(--space-2) 0 0;
+		padding-inline-start: var(--space-2);
+		border-inline-start: 3px solid var(--bad);
+		color: var(--readable-bad);
+		font-weight: var(--weight-medium);
+	}
+	.hint {
+		color: var(--readable-muted);
 	}
 </style>

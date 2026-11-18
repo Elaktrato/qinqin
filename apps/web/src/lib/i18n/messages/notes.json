@@ -30,6 +30,7 @@
 	"flashcards.delete.staysIn": "{deck} is a deck name.",
 	"flashcards.sched.daysPair": "\"d\" abbreviates days; {before} and {after} are numbers with one decimal.",
 	"flashcards.starter.addedKnown": "{text} is flashcards.starter.added (\"Added 480 words\").",
+	"flashcards.stats.cards": "The number of cards in the learner's decks, beside the word count (a word may have several cards).",
 	"flashcards.stats.retention": "The 30-day recall share, the same number as Stats' \"Recall, last 30 days\"; below the 10-review floor the value is a dash whose title is flashcards.stats.retentionLater.",
 	"flashcards.widget.level": "{xp} is the XP into the level, {next} the XP the next level needs (both formatted numbers); the phone and the desktop show the same line.",
 	"flashcards.widget.streakDays": "Follows the bold streak number (\"<b>5</b> days streak\"); the number itself is outside the message.",

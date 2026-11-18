@@ -11,6 +11,7 @@ vi.mock('$lib/api/backup', () => ({
 	downloadMyData: vi.fn(), uploadRestore: vi.fn(), restoreStatus: vi.fn(), applyRestore: vi.fn(), discardRestore: vi.fn(), safetyExportTicket: vi.fn()
 }));
 import * as api from '$lib/api/backup';
+import { primaryActions } from '$lib/ui/testing/primary';
 import YourData from './YourData.svelte';
 
 const zero = { workspaces: 0, events: 0, cards: 0, pluginData: 0, overlays: 0, sentences: 0, books: 0, bookmarks: 0, highlights: 0 };
@@ -38,6 +39,16 @@ beforeEach(() => {
 afterEach(() => { cleanup(); vi.resetAllMocks(); });
 
 describe('YourData', () => {
+	it('uses a Section and Field underlines; the restore is the section primary', async () => {
+		vi.mocked(api.restoreStatus).mockResolvedValueOnce(ready() as never);
+		render(YourData);
+		await choose();
+		await screen.findByText(/replace everything you have now/);
+		expect(screen.getByLabelText('Your password').closest('.field')).toBeTruthy();
+		expect(screen.getByLabelText(/Type your username/).closest('.field')).toBeTruthy();
+		expect(primaryActions(document.body)).toHaveLength(1);
+	});
+
 	it('links the lookup history (#72)', () => {
 		render(YourData);
 		expect(screen.getByRole('link', { name: 'Lookup history' }).getAttribute('href')).toBe('/lookups');

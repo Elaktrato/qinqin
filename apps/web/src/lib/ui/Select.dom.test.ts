@@ -79,6 +79,18 @@ describe('Select', () => {
 		).toBe(select);
 	});
 
+	it('renders option groups after the plain options', () => {
+		render(Select, {
+			label: 'Provider',
+			value: '',
+			options: [{ value: '', label: 'Choose' }],
+			groups: [{ label: 'Built in', options: [{ value: 'a', label: 'A' }] }]
+		});
+		const select = screen.getByLabelText('Provider') as HTMLSelectElement;
+		expect([...select.querySelectorAll('optgroup')].map((g) => g.label)).toEqual(['Built in']);
+		expect([...select.options].map((o) => o.value)).toEqual(['', 'a']);
+	});
+
 	it('hideLabel keeps the label for assistive technology', () => {
 		render(Select, { label: 'Group by', value: 'level', options, hideLabel: true });
 		expect(screen.getByRole('combobox', { name: 'Group by' })).toBeTruthy();

@@ -11,6 +11,7 @@
 		onStudyDayChange
 	} from '$lib/time/zone';
 	import { changeErrorMessage, mismatch, zoneLabel, zoneMatchText, zoneOptions } from './zoneSettings';
+	import { Button, Field, Section, Select } from '$lib/ui';
 
 	let day = $state(currentStudyDay());
 	let history = $state([...currentHistory()]);
@@ -58,8 +59,7 @@
 	}
 </script>
 
-<section class="study-day">
-	<h2>{t('settings.studyDay.title')}</h2>
+<Section title={t('settings.studyDay.title')}>
 	<p class="hint">{t('settings.studyDay.hint')}</p>
 	<p class="current">
 		<Msg key="settings.studyDay.current" args={{ zone: zoneLabel(current, now) }}
@@ -77,27 +77,26 @@
 	{#if device}
 		<div class="notice">
 			<p>{t('settings.studyDay.device', { zone: device })}</p>
-			<button type="button" disabled={busy} onclick={() => apply(device)}
-				>{t('settings.studyDay.useDevice', { zone: device })}</button
+			<Button disabled={busy} onclick={() => apply(device)}
+				>{t('settings.studyDay.useDevice', { zone: device })}</Button
 			>
 		</div>
 	{/if}
 
 	<div class="picker">
-		<label>
-			<span>{t('settings.studyDay.search')}</span>
-			<input type="search" bind:value={query} autocomplete="off" />
-		</label>
-		<label>
-			<span>{t('settings.studyDay.zone')}</span>
-			<select value={selected} onchange={(e) => (picked = e.currentTarget.value)}>
-				{#each options as zone (zone)}
-					<option value={zone}>{zone}</option>
-				{/each}
-			</select>
-		</label>
-		<button type="button" disabled={busy || selected === current} onclick={() => apply(selected)}
-			>{t('settings.studyDay.change')}</button
+		<div class="search">
+			<Field label={t('settings.studyDay.search')} type="search" bind:value={query} autocomplete="off" />
+		</div>
+		<div class="zone">
+			<Select
+				label={t('settings.studyDay.zone')}
+				value={selected}
+				options={options.map((zone) => ({ value: zone, label: zone }))}
+				onchange={(e) => (picked = e.currentTarget.value)}
+			/>
+		</div>
+		<Button variant="primary" disabled={busy || selected === current} onclick={() => apply(selected)}
+			>{t('settings.studyDay.change')}</Button
 		>
 	</div>
 
@@ -106,28 +105,39 @@
 	{#if error}
 		<p class="error" role="alert">{error}</p>
 	{/if}
-</section>
+</Section>
 
 <style>
 	.picker {
 		display: flex;
 		flex-wrap: wrap;
-		gap: 0.75rem;
+		gap: var(--space-3);
 		align-items: end;
-		margin-block: 1rem;
+		margin-block: var(--space-4);
 	}
-	.picker label {
-		display: grid;
-		gap: 0.25rem;
+
+	.search {
+		flex: 1 1 12rem;
 	}
+
+	.zone {
+		flex: 1 1 14rem;
+	}
+
 	.notice {
-		margin-block: 0.75rem;
-		padding: 0.75rem 1rem;
-		border: 1px solid var(--border, currentColor);
-		border-radius: 0.5rem;
+		margin-block: var(--space-3);
+		padding-inline-start: var(--space-3);
+		border-inline-start: 1px solid var(--hair);
 	}
+
 	.warning,
 	.error {
-		margin-block: 0.5rem;
+		margin-block: var(--space-2);
+	}
+
+	.error {
+		color: var(--readable-bad);
+		padding-inline-start: var(--space-2);
+		border-inline-start: 3px solid var(--bad);
 	}
 </style>

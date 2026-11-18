@@ -7,6 +7,7 @@
 	import { loadDisplayLesson, type DisplayLesson } from './lessonData';
 	import { browserReadingsStorage, loadReadings, saveReadings } from './readings';
 	import { grammarHref } from './route';
+	import { Button } from '$lib/ui';
 
 	let { pack, lessonId }: { pack: string; lessonId: string } = $props();
 
@@ -120,9 +121,14 @@
 			{/if}
 			<ul class="examples">
 				{#each lesson.examples as example, i (example.id)}
+					{@const at = example.focus ? example.text.indexOf(example.focus) : -1}
 					<li>
 						<p class="text" lang={textLang} data-p={exampleStart + i}>
-							<span data-r="0">{example.text}</span>
+							<span data-r="0"
+								>{#if at >= 0}{example.text.slice(0, at)}<span class="target">{example.focus}</span>{example.text.slice(
+										at + example.focus.length
+									)}{:else}{example.text}{/if}</span
+							>
 						</p>
 						{#if showReadings && example.reading}<p class="reading">{example.reading}</p>{/if}
 						<p class="translation">{example.translation}</p>
@@ -132,7 +138,7 @@
 		</div>
 
 		<p class="practice">
-			<a class="button" href={practiceHref}>{t('grammar.lesson.practice')}</a>
+			<Button variant="primary" href={practiceHref}>{t('grammar.lesson.practice')}</Button>
 		</p>
 
 		<nav class="neighbours" aria-label={t('grammar.lesson.lessons')}>
@@ -153,60 +159,63 @@
 </div>
 
 <style>
-	.lesson {
-		max-width: 46rem;
-		margin: 0 auto;
-		padding: 1rem;
-	}
-
+		/* No second page container: .page-body owns the column (#106). */
 	.back a,
 	.neighbours a {
 		display: inline-flex;
 		align-items: center;
-		min-height: 44px;
+		min-height: var(--hit);
+	}
+
+	.back a:focus-visible,
+	.neighbours a:focus-visible {
+		outline: var(--focus-ring);
+		outline-offset: var(--focus-ring-offset);
 	}
 
 	h1 {
-		margin: 0.25rem 0;
+		margin-block: var(--space-1);
 	}
 
 	.summary {
-		margin: 0 0 1rem;
+		margin-block: 0 var(--space-4);
 		color: var(--readable-muted);
 	}
 
+	/* The pattern is marked by an accent rule, not a box (#106). */
 	.pattern {
-		margin: 0 0 1rem;
-		padding: 0.6rem 0.9rem;
-		border: 1px solid color-mix(in srgb, currentColor 25%, transparent);
-		border-inline-start: 4px solid var(--accent);
-		border-radius: 0.4rem;
-		background: color-mix(in srgb, currentColor 5%, transparent);
-		font-size: 1.25rem;
+		margin-block: 0 var(--space-4);
+		padding-inline-start: var(--space-3);
+		box-shadow: inset 2px 0 0 var(--accent);
+		font-size: var(--font-size-l);
 	}
 
 	.pattern p {
-		margin: 0.2rem 0;
+		margin-block: var(--space-1);
 	}
 
 	.body p {
-		margin: 0 0 0.8rem;
-		line-height: 1.6;
+		margin-block: 0 var(--space-3);
+		line-height: var(--line-body);
 	}
 
 	.toggle {
 		display: inline-flex;
 		align-items: center;
-		gap: 0.5rem;
-		min-height: 44px;
+		gap: var(--space-2);
+		min-height: var(--hit);
 	}
 
 	.examples {
 		list-style: none;
 		margin: 0;
 		padding: 0;
-		display: grid;
-		gap: 0.9rem;
+	}
+
+	.examples li + li {
+		margin-top: var(--space-4);
+		padding-top: var(--space-4);
+		border-top: 1px solid var(--hair);
 	}
 
 	.examples p {
@@ -214,8 +223,12 @@
 	}
 
 	.text {
-		font-size: 1.6rem;
-		line-height: 1.7;
+		font-size: var(--font-size-xl);
+		line-height: var(--line-body);
+	}
+
+	.target {
+		color: var(--reading-accent);
 	}
 
 	.reading {
@@ -227,41 +240,24 @@
 	}
 
 	.practice {
-		margin: 1.5rem 0 0.5rem;
-	}
-
-	.button {
-		display: inline-flex;
-		align-items: center;
-		min-height: 44px;
-		padding: 0 1.4rem;
-		border-radius: 0.4rem;
-		background: var(--accent);
-		color: var(--on-accent);
-		font-weight: 600;
-		text-decoration: none;
-	}
-
-	.button:focus-visible,
-	a:focus-visible {
-		outline: 2px solid var(--focus-colour);
-		outline-offset: 2px;
+		margin-block: var(--space-5) var(--space-2);
 	}
 
 	.neighbours {
 		display: flex;
 		justify-content: space-between;
-		gap: 1rem;
+		gap: var(--space-4);
 	}
 
 	.credits {
-		margin-top: 1rem;
-		font-size: 0.85rem;
+		margin-top: var(--space-4);
+		font-size: var(--font-size-label);
 		color: var(--readable-muted);
 	}
 
 	.error {
 		color: var(--readable-bad);
+		font-weight: var(--weight-medium);
 		padding-inline-start: var(--space-2);
 		border-inline-start: 3px solid var(--bad);
 	}

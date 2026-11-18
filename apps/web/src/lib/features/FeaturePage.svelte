@@ -26,14 +26,33 @@
 {:else}
 	<div class="page-body">
 		{#if $pluginStates.status === 'idle' || $pluginStates.status === 'loading'}
-			<p role="status">{t('app.loading')}</p>
+			<p class="notice" role="status">{t('app.loading')}</p>
 		{:else if $pluginStates.status === 'error'}
-			<p role="alert">{t('features.switchedOff.loadFailed')}</p>
+			<p class="notice" role="alert">{t('features.switchedOff.loadFailed')}</p>
 		{:else}
 			<h1>{switchedOffTitle(feature.id)}</h1>
-			<p>
+			<p class="notice">
 				<Msg key="features.switchedOff.text">{#snippet link(text: string)}<a href="/settings?tab=features">{text}</a>{/snippet}</Msg>
 			</p>
 		{/if}
 	</div>
 {/if}
+
+<style>
+	/* A notice, not a page: muted running text; the link stays recognisable
+	   without colour (design §5, #106). */
+	.notice {
+		margin: 0;
+		color: var(--readable-muted);
+	}
+	.notice a {
+		color: var(--reading-accent);
+		text-decoration: underline;
+		text-underline-offset: 0.15em;
+	}
+	@media (forced-colors: active) {
+		.notice a {
+			color: LinkText;
+		}
+	}
+</style>
