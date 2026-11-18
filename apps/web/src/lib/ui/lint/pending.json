@@ -24,7 +24,5 @@
 		"lib/features/flashcards/cards/ClozeCard.svelte",
 		"lib/features/flashcards/cards/ToneCard.svelte"
 	],
-	"control": [
-		"routes/search/parts/+page.svelte"
-	]
+	"control": []
 }

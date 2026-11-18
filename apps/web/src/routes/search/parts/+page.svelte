@@ -24,6 +24,7 @@
 	} from '$lib/radicals/selection';
 	import { partsHref, selectionFromParams } from '$lib/radicals/url';
 	import { currentLanguage, workspacesLoaded } from '$lib/workspaces';
+	import { Button, Field, Section } from '$lib/ui';
 
 	const lang = $derived($currentLanguage);
 	const supported = $derived(lang !== null && usesHan(lang));
@@ -110,29 +111,30 @@
 		<p class="hint">{t('search.parts.unsupported')}</p>
 	{:else if loadError}
 		<p class="error" role="alert">{loadError}</p>
-		<button type="button" class="retry" onclick={() => void load(lang)}>{t('common.action.retry')}</button>
+		<Button onclick={() => void load(lang)}>{t('common.action.retry')}</Button>
 	{:else if chars === null}
 		<p class="hint" aria-live="polite">{t('common.loading')}</p>
 	{:else if chars.length === 0}
 		<p class="hint" role="status">{dictionaryHint(languageLabel(lang), $user?.admin === true)}</p>
 	{:else}
 		<form class="typed" onsubmit={submitTyped}>
-			<input
-				type="text"
-				bind:value={typed}
-				aria-label={t('search.parts.typeLabel')}
-				placeholder={t('search.parts.typePlaceholder')}
-				maxlength="4"
-			/>
-			<button type="submit">{t('search.parts.add')}</button>
-			<button type="button" class="clear" disabled={isEmpty(sel)} onclick={() => go({ p: [] })}>{t('search.parts.clear')}</button>
+			<div class="typed-field">
+				<Field
+					label={t('search.parts.typeLabel')}
+					bind:value={typed}
+					placeholder={t('search.parts.typePlaceholder')}
+					maxlength={4}
+				/>
+			</div>
+			<Button type="submit" variant="primary">{t('search.parts.add')}</Button>
+			<Button disabled={isEmpty(sel)} onclick={() => go({ p: [] })}>{t('search.parts.clear')}</Button>
 		</form>
 
 		{#if typedChoices.length > 0}
 			<div class="chips" role="group" aria-label={t('search.parts.whichOne')}>
 				{#each typedChoices as option (option.key)}
-					<button
-						type="button"
+					<Button
+						variant="plain"
 						class="chip"
 						lang={glyphLang}
 						onclick={() => {
@@ -141,7 +143,7 @@
 						}}
 					>
 						{option.name}
-					</button>
+					</Button>
 				{/each}
 			</div>
 		{/if}
@@ -149,28 +151,27 @@
 		{#if !isEmpty(sel)}
 			<div class="chips selected" role="group" aria-label={t('search.parts.selected')}>
 				{#each selectionChips(sel) as chip (chip.key)}
-					<button
-						type="button"
+					<Button
+						variant="plain"
 						class="chip"
 						lang={glyphLang}
 						aria-label={t('search.parts.remove', { name: chip.name })}
 						onclick={() => go(chip.next)}
 					>
 						{chip.label} <span aria-hidden="true">×</span>
-					</button>
+					</Button>
 				{/each}
 			</div>
 		{/if}
 
-		<section aria-labelledby="radicals-heading">
-			<h2 id="radicals-heading">{t('search.parts.radical')}</h2>
+		<Section title={t('search.parts.radical')}>
 			<div class="radicals" role="group" aria-label={t('search.parts.radicals')}>
 				{#each table as group (group.s)}
 					<h3 class="group-label">{group.s}</h3>
 					<div class="tiles">
 						{#each group.radicals as r (r.n)}
-							<button
-								type="button"
+							<Button
+								variant="plain"
 								class="tile"
 								lang={glyphLang}
 								aria-pressed={sel.r === r.n}
@@ -178,15 +179,14 @@
 								onclick={() => go(toggleRadical(sel, r.n))}
 							>
 								{r.c}{#if r.forms.length > 0}<span class="forms">{r.forms.join('')}</span>{/if}
-							</button>
+							</Button>
 						{/each}
 					</div>
 				{/each}
 			</div>
-		</section>
+		</Section>
 
-		<section aria-labelledby="parts-heading">
-			<h2 id="parts-heading">{t('search.parts.parts')}</h2>
+		<Section title={t('search.parts.parts')}>
 			{#if comps.parts.length === 0}
 				<p class="note">{t('search.parts.noComponents')}</p>
 			{:else}
@@ -196,8 +196,8 @@
 						<div class="tiles">
 							{#each group.parts as part (part.c)}
 								{@const chosen = sel.p.includes(part.c)}
-								<button
-									type="button"
+								<Button
+									variant="plain"
 									class="tile"
 									lang={glyphLang}
 									aria-pressed={chosen}
@@ -207,28 +207,27 @@
 									}}
 								>
 									{part.c}
-								</button>
+								</Button>
 							{/each}
 						</div>
 					{/each}
 				</div>
-				<button type="button" class="link" onclick={() => (showAllParts = !showAllParts)}>
+				<Button variant="plain" onclick={() => (showAllParts = !showAllParts)}>
 					{showAllParts ? t('search.parts.showCommon') : t('search.parts.showAll')}
-				</button>
+				</Button>
 			{/if}
-		</section>
+		</Section>
 
 		{#if strokeChips.length > 0}
-			<section aria-labelledby="strokes-heading">
-				<h2 id="strokes-heading">{t('search.parts.totalStrokes')}</h2>
+			<Section title={t('search.parts.totalStrokes')}>
 				<div class="chips" role="group" aria-label={t('search.parts.totalStrokes')}>
 					{#each strokeChips as s (s)}
-						<button type="button" class="chip" aria-pressed={sel.s === s} onclick={() => go(toggleStrokes(sel, s))}>
+						<Button variant="plain" class="chip" aria-pressed={sel.s === s} onclick={() => go(toggleStrokes(sel, s))}>
 							{s}
-						</button>
+						</Button>
 					{/each}
 				</div>
-			</section>
+			</Section>
 		{/if}
 
 		<p class="status" role="status" aria-live="polite">{statusLine(sel, result.total)}</p>
@@ -249,7 +248,7 @@
 				{/each}
 			</ul>
 			{#if result.total > result.results.length}
-				<button type="button" class="link" onclick={() => (showAllResults = true)}>{t('search.parts.showAllResults', { count: result.total })}</button>
+				<Button variant="plain" onclick={() => (showAllResults = true)}>{t('search.parts.showAllResults', { count: result.total })}</Button>
 			{/if}
 		{/if}
 	{/if}
@@ -263,30 +262,13 @@
 	.typed {
 		display: flex;
 		flex-wrap: wrap;
-		gap: 0.5rem;
+		gap: var(--space-2);
+		align-items: end;
 		max-width: 32rem;
 	}
 
-	.typed input {
-		flex: 1;
-		min-width: 8rem;
-		font: inherit;
-		padding: 0.55rem 0.7rem;
-		border: 1px solid color-mix(in srgb, currentColor 35%, transparent);
-		border-radius: 0.4rem;
-	}
-
-	.typed button,
-	.chip,
-	.retry {
-		font: inherit;
-		min-height: 2.75rem;
-		padding: 0.3rem 0.85rem;
-		border: 1px solid color-mix(in srgb, currentColor 35%, transparent);
-		border-radius: 999px;
-		background: transparent;
-		color: inherit;
-		cursor: pointer;
+	.typed-field {
+		flex: 1 1 10rem;
 	}
 
 	.selected {
@@ -344,22 +326,9 @@
 		cursor: default;
 	}
 
-	.tile:focus-visible,
-	.chip:focus-visible,
 	.cell:focus-visible {
 		outline: 2px solid var(--focus-colour);
 		outline-offset: 2px;
-	}
-
-	.link {
-		margin-top: 0.5rem;
-		font: inherit;
-		min-height: 2.75rem;
-		border: none;
-		background: none;
-		color: var(--reading-accent);
-		text-decoration: underline;
-		cursor: pointer;
 	}
 
 	.status {
