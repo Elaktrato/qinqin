@@ -4,11 +4,11 @@ qinqin is an installable web app (PWA). It is a stopgap for phones; a native And
 
 ## Requirements
 
-HTTPS, or `http://localhost` on the same machine. Over plain HTTP (including a LAN address such as `http://192.168.1.20:8080`) browsers refuse service workers: the site works as before, without installing or offline use, and Settings → Account → App says so ("This server is reached over plain HTTP, so qinqin works as an ordinary website here."). Ask your administrator for an HTTPS address ([Reverse proxy, rate limiting and trusted proxies](Admin-proxy-and-rate-limiting)).
+HTTPS, or `http://localhost` on the same machine. Over plain HTTP (including a LAN address such as `http://192.168.1.20:8080`) browsers do not allow installing or offline use: the site works as before, without installing or offline use, and Settings → Account → App says so ("This server is reached over plain HTTP, so qinqin works as an ordinary website here."). Ask your administrator for an HTTPS address ([Reverse proxy, rate limiting and trusted proxies](Admin-proxy-and-rate-limiting)).
 
 ## Installing
 
-- Chrome or Edge (Android, desktop): Settings, Account, App, **Install qinqin**, or the browser's own install entry.
+- Chrome or Edge (Android, desktop): Settings → Account → App, **Install qinqin**, or the browser's own install entry.
 - iPhone and iPad (Safari): Share, then Add to Home Screen. Safari has no install button, so the app has none.
 - Firefox for Android: menu, Install. Firefox on the desktop cannot install web apps.
 
@@ -26,7 +26,7 @@ The Reader, search, the journal, grammar lessons, dictionary lookups, settings c
 
 ## Sync
 
-A review is sent when you grade it. If the server cannot be reached it waits in a per-user queue and is sent when the browser goes online, when you return to the app, and once a minute while the app is open. Every review has its own id, so a retry never counts twice. There is no background sync: on iOS and in any browser, reviews leave the device when you next open the app.
+A review is sent when you grade it. If the server cannot be reached it waits on the device, kept for your account only, and is sent when the browser goes online, when you return to the app, and once a minute while the app is open. A review sent twice still counts once. There is no background sync: on iOS and in any browser, reviews leave the device when you next open the app.
 
 ## Several people on one device
 
@@ -34,13 +34,13 @@ Saved data is kept per sign-in: a different user gets an empty saved copy and th
 
 ## Signed-out sessions
 
-If your session was revoked while you were offline (it expired, you ended it on another device, an administrator forced a password change), you can keep studying the saved cards until the device reaches the server. Then the server refuses the session, the saved copies are deleted and you sign in again; the waiting reviews are sent after that sign-in. A session that must first change its password or set up two-step sign-in never studies: the app shows only the page you may use, and waiting reviews stay queued.
+If your session was revoked while you were offline (it expired, you ended it on another device, an administrator forced a password change), you can keep studying the saved cards until the device reaches the server. Then the server refuses the session, the saved copies are deleted and you sign in again; the waiting reviews are sent after that sign-in. A session that must first change its password or set up two-step sign-in never studies: the app shows only the page you may use, and waiting reviews stay on the device.
 
 ## Updates
 
 A new version downloads in the background and a bar says "A new version of qinqin is available. Reload". Nothing changes under an open page until you press Reload.
 
-## Settings, Account, App
+## Settings → Account → App
 
 Shows the install button (or "qinqin is installed on this device"; on iPhone and iPad the Share hint), what is saved for offline use ("Offline: ready - 70 cards saved at 09:12", or "not prepared yet"), the storage in use, and **Clear offline data** (saved copies only; waiting reviews are kept).
 
