@@ -15,35 +15,21 @@ git add -A && git commit -m "docs: update wiki from docs/wiki" && git push
 
 `README.md` stays out of the wiki (it only explains this folder). `Home.md`, `_Sidebar.md` and `_Footer.md` are the special pages GitHub recognises.
 
-## Publishing from CI (optional)
+## Publishing from CI
+
+The workflow `.github/workflows/wiki.yml` publishes this folder to `<repo>.wiki.git`:
+
+- on every push to `main` that changes `docs/wiki/`;
+- by hand: Actions, wiki, **Run workflow** (`workflow_dispatch`) publishes the `docs/wiki/` of the branch it is started on, so the owner can publish from `develop` or a docs branch.
+
+It clones the wiki repository, copies the folder in with `rsync --delete` (leaving out `README.md`), and commits and pushes only when something changed ("docs: update wiki from docs/wiki at <sha> (<branch>)").
+
+One-time setup:
 
 1. The owner enables the wiki in the repository settings (Features, Wikis) and creates the first page in the web UI once. GitHub cannot create it through the API.
-2. Create a token that may push to the repository (a fine-grained personal access token with Contents write, or a GitHub App token) and store it as the repository secret `WIKI_TOKEN`. Never write it into a file.
-3. A workflow step then pushes `docs/wiki` to `<repo>.wiki.git`. Example, shown here as documentation only (no workflow file exists in the repository):
+2. Create a token that may push to the repository (a fine-grained personal access token with Contents write, or a GitHub App token) and store it as the repository secret `WIKI_TOKEN` (Settings, Secrets and variables, Actions). Never write it into a file.
 
-```yaml
-name: wiki
-on:
-  push:
-    branches: [main]
-    paths: ['docs/wiki/**']
-jobs:
-  publish:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Push docs/wiki to the wiki repository
-        env:
-          WIKI_TOKEN: ${{ secrets.WIKI_TOKEN }}
-        run: |
-          git clone "https://x-access-token:${WIKI_TOKEN}@github.com/${GITHUB_REPOSITORY}.wiki.git" /tmp/wiki
-          rsync -a --delete --exclude .git --exclude README.md docs/wiki/ /tmp/wiki/
-          cd /tmp/wiki
-          git config user.name "github-actions"
-          git config user.email "github-actions@users.noreply.github.com"
-          git add -A
-          git diff --cached --quiet || { git commit -m "docs: update wiki from docs/wiki"; git push; }
-```
+Without `WIKI_TOKEN` the job prints a notice ("Wiki not published") and succeeds without publishing, so a missing secret never fails a build. Add the secret, then run the workflow again.
 
 ## Conventions
 

@@ -60,7 +60,7 @@ If the server has email, the sign-in page links "Forgot password?" and sends a o
 
 ## Deleting your account
 
-Settings, Account, Delete account. The dialog shows what is removed: workspaces, study history, flashcards, journal entries, reader settings, your dictionary edits and sentences, library books with bookmarks and highlights and their files, photo drafts, AI keys and usage, time-zone history, sessions, reset links and invites you created. Confirm with your password and by typing your username. Kept: admin-registered AI endpoints, installed packs and languages, and the audit log (your name becomes `deleted user #id`). The last active administrator cannot delete themselves. Consider downloading [your data](Your-data) first.
+Settings, Account, Delete account. The dialog shows what is removed: workspaces, study history, flashcards, journal entries, reader settings, your dictionary edits and sentences, library books with bookmarks and highlights and their files, photo drafts, AI keys and usage, time-zone history, sessions, reset links and invites you created. Confirm with your password and by typing your username. Kept: admin-registered AI endpoints, installed packs and languages, and the audit log (your name becomes `deleted user #id`). The last active administrator cannot delete themselves. The full list, also for an administrator deleting someone else's account, is on [Users, registration and invites](Admin-users-and-registration#what-deleting-an-account-removes). Consider downloading [your data](Your-data) first.
 
 ## Sign-in throttling
 

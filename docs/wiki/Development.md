@@ -45,7 +45,7 @@ node scripts/check-sources.mjs && node --test scripts/*.test.mjs
 ```
 
 - A slow opt-in test seeds the real bundled packs and checks lookups against them: `QINQIN_REAL_DATA_TESTS=1 go test ./cmd/qinqin -run RealPacks -v` (from `server/`). Other test-only switches: `QINQIN_REQUIRE_TESSERACT=1` (the OCR test fails instead of skipping when the binary is missing; CI sets it), `QINQIN_BIG_TESTS`, `QINQIN_PERF_BUDGET_MS`.
-- Doc checks: `cd apps/web && npx vitest run src/lib/wikiDocs.test.ts src/lib/contractsDocs.test.ts src/lib/readmeGallery.test.ts` and `node scripts/gen-api-docs.mjs --check` (every wiki page is in `_Sidebar.md`, every link resolves, the generated API pages are current).
+- Doc checks: `cd apps/web && npx vitest run src/lib/wikiDocs.test.ts src/lib/contractsDocs.test.ts src/lib/readmeGallery.test.ts src/lib/readmeDocs.test.ts` and `node scripts/gen-api-docs.mjs --check` (every wiki page is in `_Sidebar.md`, every link resolves, the generated API pages are current; every wiki link in `README.md` points at an existing `docs/wiki` page and heading).
 - Timing tests (icons, weekly and milestone performance, schedule timeline, reader readings) can fail on a loaded machine and pass alone. Concurrent builds in one worktree clobber `.svelte-kit`.
 
 ## How the build fits together

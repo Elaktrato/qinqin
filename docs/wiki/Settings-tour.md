@@ -48,7 +48,7 @@ Profile (email, if the server asks for one), password, two-step sign-in, signed-
 
 ## Data (administrators)
 
-Administrators install and remove packs here: dictionaries, level lists, sentences, frequency lists, grammar lessons, audio, character components, stroke data, themes and fonts; they also register or remove languages. Each pack shows its licence, its data package (revision, size, state, or the error of a failed build), and a theme pack its measured contrast. See [Installing data packs](Admin-data-packs).
+The tab has two parts, **Packs** and **Languages**. Under Packs administrators install and remove packs: dictionaries, level lists, sentences, frequency lists, grammar lessons, audio, character components, stroke data, themes and fonts; under Languages they register or remove languages. Each pack shows its licence, its data package (revision, size, state, or the error of a failed build), and a theme pack its measured contrast. See [Data packs on the server](Admin-data-packs) ([Settings → Data](Admin-data-packs#settings--data-administrators), [Languages](Admin-data-packs#languages)).
 
 Other users do not see this tab. What it changes reaches everyone: a new dictionary adds meanings to entries and lookups, a level list adds badges, level decks and the Level filters, a frequency list adds frequency chips, the frequency order and starter decks, a grammar pack adds lessons, a theme pack adds themes to Appearance, a font pack adds the faces of the Hanzi and kanji font. The **Sources** page (account menu) lists everything installed, with credits and licences, for every user.
 
