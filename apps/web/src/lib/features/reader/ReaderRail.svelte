@@ -90,8 +90,17 @@
 	let focusInRail = false;
 	$effect(() => {
 		const onFocus = (e: FocusEvent): void => void (focusInRail = isRail(e.target));
+		// Focus left the rail (a click on non-focusable text leaves <body>):
+		// a later breakpoint change must not pull it back into the rail.
+		const onBlur = (e: FocusEvent): void => {
+			if (!isRail(e.relatedTarget)) focusInRail = false;
+		};
 		document.addEventListener('focusin', onFocus);
-		return () => document.removeEventListener('focusin', onFocus);
+		document.addEventListener('focusout', onBlur);
+		return () => {
+			document.removeEventListener('focusin', onFocus);
+			document.removeEventListener('focusout', onBlur);
+		};
 	});
 	let lastMode: RailMode | null = null;
 	$effect.pre(() => {

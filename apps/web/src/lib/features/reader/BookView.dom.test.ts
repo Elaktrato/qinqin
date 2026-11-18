@@ -576,6 +576,22 @@ describe('BookView shortcuts and focus across the new layout (#102)', () => {
 		expect(document.activeElement).toBe(button);
 	});
 
+	it('crossing 1000px after focus left the rail does not steal focus from the page', async () => {
+		setWidth(1280);
+		render(BookView, { id: 1, chapter: 0 });
+		await ready();
+		const tab = screen.getByRole('tab', { selected: true });
+		tab.focus();
+		// A click on non-focusable text moves focus to <body>; no new focusin fires.
+		tab.blur();
+		expect(document.activeElement).toBe(document.body);
+		setWidth(800);
+		window.dispatchEvent(new Event('resize'));
+		await tick();
+		await tick();
+		expect(document.activeElement).toBe(document.body);
+	});
+
 	it('Escape in a bookmark rename or delete confirmation cancels that action, not the sheet', async () => {
 		setWidth(800);
 		vi.mocked(listBookmarks).mockResolvedValueOnce([
