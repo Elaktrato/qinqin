@@ -64,7 +64,7 @@
 {#if open}
 	<dialog
 		bind:this={dialog}
-		use:modal={initialFocus}
+		use:modal={{ initialFocus }}
 		class="dialog"
 		aria-modal="true"
 		aria-labelledby="{uid}-title"

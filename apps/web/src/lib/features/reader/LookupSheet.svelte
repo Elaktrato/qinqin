@@ -33,6 +33,11 @@
 	});
 </script>
 
-<Sheet open label={t('reader.popup.label', { text: frame.text })} onclose={() => lookup.close()}>
+<Sheet
+	open
+	label={t('reader.popup.label', { text: frame.text })}
+	onclose={() => lookup.close()}
+	returnFocus={() => lookup.wordParagraph()}
+>
 	<PopupFrameView {frame} {info} {lookup} {studyWorkspaceId} {highlighter} {stateLine} sheet />
 </Sheet>

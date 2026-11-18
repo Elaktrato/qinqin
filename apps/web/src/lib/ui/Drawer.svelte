@@ -101,7 +101,7 @@
 
 {#if open}
 	<dialog
-		use:modal={initialFocus}
+		use:modal={{ initialFocus }}
 		{id}
 		class="drawer"
 		class:dragging

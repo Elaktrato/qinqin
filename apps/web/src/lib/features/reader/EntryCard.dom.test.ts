@@ -1,6 +1,7 @@
 import { cleanup, fireEvent, render, screen } from '@testing-library/svelte';
 import { afterEach, describe, expect, it } from 'vitest';
 import type { LookupResult } from '$lib/api/types';
+import source from './EntryCard.svelte?raw';
 import EntryCard from './EntryCard.svelte';
 
 function sense(dictionaryId: number, gloss: string) {
@@ -74,5 +75,19 @@ describe('EntryCard in the lighter style (#102)', () => {
 		const senses = container.querySelector('ol.senses')!;
 		const source = container.querySelector('.source')!;
 		expect(senses.compareDocumentPosition(source) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+	});
+});
+
+describe('EntryCard Japanese word (#102)', () => {
+	it('shows the reading as ruby in the reading accent and weight 500', () => {
+		const word = { ...result, term: '食べる', reading: 'たべる', readings: [], levels: [] } as unknown as LookupResult;
+		const { container } = render(EntryCard, { result: word, lang: 'ja', textLang: 'ja' });
+		const rt = container.querySelector('rt')!;
+		expect(rt.textContent).toBe('たべる');
+		// A Japanese word has no separate reading line: the ruby is the reading.
+		expect(container.querySelector('.reading')).toBeNull();
+		const style = source.slice(source.indexOf('<style>'));
+		expect(style).toMatch(/rt\s*\{[^}]*color:\s*var\(--reading-accent\)/);
+		expect(style).toMatch(/rt\s*\{[^}]*font-weight:\s*var\(--weight-medium\)/);
 	});
 });

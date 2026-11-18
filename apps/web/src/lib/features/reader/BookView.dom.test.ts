@@ -362,6 +362,7 @@ describe('BookView rail (#102)', () => {
 		expect(screen.queryByRole('tablist')).toBeNull();
 		const buttons = screen.getAllByRole('button', { name: RAIL_BUTTON });
 		expect(buttons).toHaveLength(1);
+		expect(buttons[0].getAttribute('aria-controls')).toBe('reader-rail-sheet');
 		await fireEvent.click(buttons[0]);
 		const sheet = screen.getByRole('dialog', { name: 'Book tools' });
 		expect(within(sheet).getAllByRole('tab').map((tab) => tab.textContent?.trim())).toEqual([
@@ -371,6 +372,40 @@ describe('BookView rail (#102)', () => {
 			'Words',
 			'Display'
 		]);
+	});
+
+	it('the rail sheet closes across the phone breakpoint, so no hidden opener keeps focus', async () => {
+		setWidth(800);
+		render(BookView, { id: 1, chapter: 0 });
+		await screen.findByText('你好世界');
+		await fireEvent.click(screen.getByRole('button', { name: RAIL_BUTTON }));
+		expect(screen.getByRole('dialog', { name: 'Book tools' })).toBeTruthy();
+		setWidth(700);
+		window.dispatchEvent(new Event('resize'));
+		await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Book tools' })).toBeNull());
+		cleanup();
+		setWidth(700);
+		render(BookView, { id: 1, chapter: 0 });
+		await screen.findByText('你好世界');
+		await fireEvent.click(screen.getByRole('button', { name: RAIL_BUTTON }));
+		expect(screen.getByRole('dialog', { name: 'Book tools' })).toBeTruthy();
+		setWidth(800);
+		window.dispatchEvent(new Event('resize'));
+		await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Book tools' })).toBeNull());
+	});
+
+	it('a failed display save is shown inside the rail sheet', async () => {
+		setWidth(800);
+		vi.mocked(setSettings).mockRejectedValueOnce(new Error('offline'));
+		render(BookView, { id: 1, chapter: 0 });
+		await screen.findByText('你好世界');
+		await fireEvent.click(screen.getByRole('button', { name: RAIL_BUTTON }));
+		const sheet = screen.getByRole('dialog', { name: 'Book tools' });
+		await fireEvent.click(within(sheet).getByRole('tab', { name: 'Display' }));
+		await fireEvent.click(within(sheet).getByRole('radio', { name: /^Always/ }));
+		await waitFor(() => expect(within(sheet).getByRole('alert').textContent).toBe('Could not save the display settings.'), {
+			timeout: 3000
+		});
 	});
 
 	it('jumping from a panel in the sheet closes it and moves to the place', async () => {
@@ -417,6 +452,76 @@ describe('BookView rail (#102)', () => {
 	it('existing: the Words tab is found by its name', async () => {
 		render(BookView, { id: 1, chapter: 0 });
 		expect(await screen.findByRole('tab', { name: /Words/ })).toBeTruthy();
+	});
+});
+
+describe('BookView lookup sheet (#102)', () => {
+	beforeEach(() => {
+		Element.prototype.scrollIntoView ??= function () {};
+		Range.prototype.getBoundingClientRect ??= () =>
+			({ x: 0, y: 0, left: 0, top: 0, right: 0, bottom: 0, width: 0, height: 0, toJSON() {} }) as DOMRect;
+		Range.prototype.getClientRects ??= () => [] as unknown as DOMRectList;
+		vi.stubGlobal('IntersectionObserver', VisibleObserver);
+		setReader({ readings: 'never', highlightWords: false });
+		vi.stubGlobal('matchMedia', (query: string) => ({
+			matches: true,
+			media: query,
+			addEventListener() {},
+			removeEventListener() {}
+		}));
+		vi.mocked(addHighlight).mockReset();
+		vi.mocked(addHighlight).mockImplementation(async (bookId: number, h: object) => ({
+			id: 88, bookId, ...h, note: '', createdAt: '', updatedAt: ''
+		}) as never);
+		vi.mocked(addBookmark).mockClear();
+	});
+	afterEach(() => setWidth(1024));
+
+	async function selectFirstTwo(): Promise<void> {
+		const text = document.querySelector('p[data-p="0"] [data-r="0"]')!.firstChild!;
+		const range = document.createRange();
+		range.setStart(text, 0);
+		range.setEnd(text, 2);
+		window.getSelection()!.removeAllRanges();
+		window.getSelection()!.addRange(range);
+		await fireEvent.pointerDown(document.body, { button: 0 });
+		await fireEvent.pointerUp(window, { button: 0 });
+	}
+
+	it('b and h do nothing inside the lookup sheet', async () => {
+		setWidth(700);
+		render(BookView, { id: 1, chapter: 0 });
+		await waitFor(() => expect(document.querySelector('p[data-p="0"]')).toBeTruthy());
+		await selectFirstTwo();
+		const sheet = await screen.findByRole('dialog', { name: /Dictionary:/ }, { timeout: 2000 });
+		const close = within(sheet).getByRole('button', { name: 'Close' });
+		close.focus();
+		await fireEvent.keyDown(close, { key: 'b' });
+		await fireEvent.keyDown(close, { key: 'h' });
+		await new Promise((r) => setTimeout(r, 20));
+		expect(addBookmark).not.toHaveBeenCalled();
+		expect(addHighlight).not.toHaveBeenCalled();
+	});
+
+	it("closing the lookup sheet returns focus to the word's paragraph", async () => {
+		setWidth(700);
+		render(BookView, { id: 1, chapter: 0 });
+		await waitFor(() => expect(document.querySelector('p[data-p="0"]')).toBeTruthy());
+		await selectFirstTwo();
+		const sheet = await screen.findByRole('dialog', { name: /Dictionary:/ }, { timeout: 2000 });
+		await fireEvent.click(within(sheet).getByRole('button', { name: 'Close' }));
+		await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+		await waitFor(() => expect(document.activeElement?.getAttribute('data-p')).toBe('0'));
+	});
+
+	it('a highlight applied in the sheet leaves its result in a status region inside the dialog', async () => {
+		setWidth(700);
+		render(BookView, { id: 1, chapter: 0 });
+		await waitFor(() => expect(document.querySelector('p[data-p="0"]')).toBeTruthy());
+		await selectFirstTwo();
+		const sheet = await screen.findByRole('dialog', { name: /Dictionary:/ }, { timeout: 2000 });
+		await fireEvent.click(within(sheet).getByRole('button', { name: /Highlight in yellow/ }));
+		await waitFor(() => expect(within(sheet).getByRole('status').textContent).toBe('Highlight added: 你好'));
 	});
 });
 
@@ -484,6 +589,43 @@ describe('BookView shortcuts and focus across the new layout (#102)', () => {
 		expect(root.classList.contains('show-all')).toBe(true);
 	});
 
+	it('b, h and R do nothing while the rail sheet owns the keys', async () => {
+		setWidth(800);
+		render(BookView, { id: 1, chapter: 0 });
+		await ready();
+		// A stale selection: without the guard, `h` would act on it behind the modal.
+		// (Smart readings wrap the run in <ruby>, so select its base text.)
+		await waitFor(() => expect(document.querySelector('p[data-p="0"] ruby.gen')).toBeTruthy());
+		const text = document.querySelector('p[data-p="0"] ruby.gen')!.firstChild!;
+		const range = document.createRange();
+		range.setStart(text, 0);
+		range.setEnd(text, 2);
+		window.getSelection()!.removeAllRanges();
+		window.getSelection()!.addRange(range);
+		await fireEvent.click(screen.getByRole('button', { name: RAIL_BUTTON }));
+		const sheet = screen.getByRole('dialog', { name: 'Book tools' });
+		const close = within(sheet).getByRole('button', { name: 'Close' });
+		close.focus();
+		await fireEvent.keyDown(close, { key: 'b' });
+		await fireEvent.keyDown(close, { key: 'h' });
+		await fireEvent.keyDown(close, { key: 'R' });
+		await tick();
+		await new Promise((r) => setTimeout(r, 20));
+		expect(addBookmark).not.toHaveBeenCalled();
+		expect(addHighlight).not.toHaveBeenCalled();
+		expect(document.querySelector('.chapter-text')!.classList.contains('show-all')).toBe(false);
+	});
+
+	it('the rail sheet repeats the bookmark announcement inside the dialog', async () => {
+		setWidth(800);
+		render(BookView, { id: 1, chapter: 0 });
+		await ready();
+		await fireEvent.click(screen.getByRole('button', { name: RAIL_BUTTON }));
+		const sheet = screen.getByRole('dialog', { name: 'Book tools' });
+		await fireEvent.click(within(sheet).getByRole('button', { name: 'Add bookmark here' }));
+		await waitFor(() => expect(within(sheet).getByText('Bookmark added: 你好世界')).toBeTruthy());
+	});
+
 	it('Escape in the open rail sheet closes it and focus returns to the rail button', async () => {
 		setWidth(800);
 		render(BookView, { id: 1, chapter: 0 });
@@ -496,6 +638,46 @@ describe('BookView shortcuts and focus across the new layout (#102)', () => {
 		await fireEvent.keyDown(sheet, { key: 'Escape' });
 		await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Book tools' })).toBeNull());
 		expect(document.activeElement).toBe(button);
+	});
+
+	it('crossing 1000px after focus left the rail does not steal focus from the page', async () => {
+		setWidth(1280);
+		render(BookView, { id: 1, chapter: 0 });
+		await ready();
+		const tab = screen.getByRole('tab', { selected: true });
+		tab.focus();
+		// A click on non-focusable text moves focus to <body>; no new focusin fires.
+		tab.blur();
+		expect(document.activeElement).toBe(document.body);
+		setWidth(800);
+		window.dispatchEvent(new Event('resize'));
+		await tick();
+		await tick();
+		expect(document.activeElement).toBe(document.body);
+	});
+
+	it('Escape in a bookmark rename or delete confirmation cancels that action, not the sheet', async () => {
+		setWidth(800);
+		vi.mocked(listBookmarks).mockResolvedValueOnce([
+			{ id: 5, bookId: 1, position: '0:0', label: '你好', createdAt: '2026-11-16T10:00:00Z' }
+		] as never);
+		render(BookView, { id: 1, chapter: 0 });
+		await ready();
+		await fireEvent.click(screen.getByRole('button', { name: RAIL_BUTTON }));
+		const sheet = screen.getByRole('dialog', { name: 'Book tools' });
+		await fireEvent.click(await within(sheet).findByRole('button', { name: 'Rename bookmark 你好' }));
+		const input = within(sheet).getByRole('textbox', { name: 'Bookmark name' });
+		await fireEvent.keyDown(input, { key: 'Escape' });
+		// The inner action took Escape: the sheet stays, the rename is cancelled.
+		expect(screen.getByRole('dialog', { name: 'Book tools' })).toBe(sheet);
+		expect(within(sheet).queryByRole('textbox', { name: 'Bookmark name' })).toBeNull();
+		expect(within(sheet).getByRole('button', { name: 'Rename bookmark 你好' })).toBeTruthy();
+		await fireEvent.click(within(sheet).getByRole('button', { name: 'Delete bookmark 你好' }));
+		const cancel = within(sheet).getByRole('button', { name: 'Cancel' });
+		await fireEvent.keyDown(cancel, { key: 'Escape' });
+		expect(screen.getByRole('dialog', { name: 'Book tools' })).toBe(sheet);
+		expect(within(sheet).queryByText('Delete this bookmark?')).toBeNull();
+		expect(within(sheet).getByRole('button', { name: 'Delete bookmark 你好' })).toBeTruthy();
 	});
 
 	it('crossing 1000px with focus in the rail moves focus to the rail button and back to the active tab', async () => {
