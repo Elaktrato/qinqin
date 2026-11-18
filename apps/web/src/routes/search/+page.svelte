@@ -52,8 +52,21 @@
 	const hidden = $derived(hiddenDictionaries($workspaces.current));
 	const urlQuery = $derived(page.url.searchParams.get('q') ?? '');
 	const selected = $derived(selectedFromParams(page.url.searchParams));
-	const selectedHit = $derived(selected === null ? null : (hits.find((h) => h.id === selected) ?? null));
-	const preview = $derived(selectedHit ?? hits[0] ?? null);
+	// The URL's e is the detail's entry even when the visible hits do not
+	// contain it (a shared link, a filter that hides it, the result cap):
+	// a preview only fills in when nothing is selected.
+	const detailId = $derived(selected ?? hits[0]?.id ?? null);
+	// The written form the URL's entry loaded with, so the document title
+	// names that entry and never a preview or a stale load.
+	let titledEntry = $state<{ id: number; written: string } | null>(null);
+	const titleWord = $derived(
+		selected !== null && titledEntry?.id === selected ? titledEntry.written : ''
+	);
+
+	function titled(written: string): void {
+		if (selected === null || detailId !== selected) return;
+		titledEntry = { id: detailId, written };
+	}
 
 	// Guards against a slow earlier request overwriting a newer result.
 	let requestSeq = 0;
@@ -214,7 +227,7 @@
 </script>
 
 <svelte:head>
-	<title>{pageTitle(selectedHit?.written ?? '', t('search.title'))}</title>
+	<title>{pageTitle(titleWord, t('search.title'))}</title>
 </svelte:head>
 
 <div class="page-body search-page">
@@ -351,9 +364,16 @@
 		</div>
 
 		<div class="detail-pane">
-			{#if preview}
+			{#if selected !== null}
 				<div class="back-to-results"><Button variant="secondary" href={searchHref(activeQuery, filters)}>{t('search.backToResults')}</Button></div>
-				<EntryView entryId={preview.id} headingLevel={2} recordView={selected !== null} />
+			{/if}
+			{#if detailId !== null}
+				<EntryView
+					entryId={detailId}
+					headingLevel={2}
+					recordView={selected !== null && detailId === selected}
+					ontitle={titled}
+				/>
 			{:else}
 				<p class="hint">{t('search.detail')}</p>
 			{/if}

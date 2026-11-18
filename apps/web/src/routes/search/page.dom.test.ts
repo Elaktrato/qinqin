@@ -1,27 +1,83 @@
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/svelte';
 import { tick } from 'svelte';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { SearchHit } from '$lib/api/types';
+import type { Entry, SearchHit } from '$lib/api/types';
 
 vi.mock('$app/state', () => import('$lib/testing/appState.svelte'));
 vi.mock('$app/navigation', () => ({ goto: vi.fn(() => Promise.resolve()) }));
 vi.mock('$lib/api/search', () => ({ search: vi.fn() }));
 vi.mock('$lib/api/schemes', () => ({ getSchemes: vi.fn(() => Promise.resolve([])) }));
+vi.mock('$lib/api/entries', () => ({
+	getEntry: vi.fn(),
+	getCharsUnderRadical: vi.fn(async () => []),
+	getSharedEntry: vi.fn()
+}));
 vi.mock('$lib/events', () => ({ record: vi.fn() }));
 vi.mock('$lib/lookups/sink', () => ({ recordLookup: vi.fn() }));
+vi.mock('$lib/components/AddToStudy.svelte', () => ({ default: () => ({}) }));
+vi.mock('$lib/components/StrokePlayer.svelte', () => ({ default: () => ({}) }));
+vi.mock('$lib/notes/store', async (orig) => ({
+	...(await orig<typeof import('$lib/notes/store')>()),
+	loadNote: vi.fn(async () => null)
+}));
+vi.mock('$lib/api/audio', () => ({ getEntryAudio: vi.fn(async () => ({ terms: [], syllables: null })) }));
+vi.mock('$lib/api/frequency', () => ({
+	getEntryRanks: vi.fn(async () => ({ pack: null, ranks: [] }))
+}));
 
 import { goto } from '$app/navigation';
+import { getEntry } from '$lib/api/entries';
 import { record } from '$lib/events';
 import { recordLookup } from '$lib/lookups/sink';
 import { search } from '$lib/api/search';
+import { PHONE_MEDIA_QUERY, FRAME_PHONE_BREAKPOINT } from '$lib/frame/breakpoint';
 import { setUrl } from '$lib/testing/appState.svelte';
 import { workspaces, workspacesLoaded } from '$lib/workspaces';
 import Page from './+page.svelte';
 
 const searchMock = vi.mocked(search);
+const getEntryMock = vi.mocked(getEntry);
 
 function hit(id: number, written: string): SearchHit {
 	return { id, written, readings: [], source: 'written' } as unknown as SearchHit;
+}
+
+function entry(id: number, written: string): Entry {
+	return {
+		id,
+		language: 'zh',
+		kind: 'word',
+		written,
+		readings: [{ type: 'pinyin', value: 'fu4', plain: 'fu', ord: 0 }],
+		attrs: {},
+		radicalId: null,
+		badges: [],
+		variants: [],
+		sentences: [],
+		senses: [],
+		forms: [],
+		characters: []
+	};
+}
+
+/** setViewport mimics the frame's one switch: the phone by default. */
+function setViewport(phone: boolean): void {
+	const media = phone
+		? PHONE_MEDIA_QUERY
+		: `(min-width: ${FRAME_PHONE_BREAKPOINT}px)`;
+	vi.stubGlobal(
+		'matchMedia',
+		vi.fn((q: string) => ({
+			matches: q === media,
+			media: q,
+			onchange: null,
+			addEventListener: vi.fn(),
+			removeEventListener: vi.fn(),
+			addListener: vi.fn(),
+			removeListener: vi.fn(),
+			dispatchEvent: vi.fn()
+		}))
+	);
 }
 
 function deferred<T>() {
@@ -36,6 +92,8 @@ function deferred<T>() {
 
 beforeEach(() => {
 	setUrl('/search');
+	setViewport(true);
+	getEntryMock.mockRejectedValue(new Error('no entry stubbed'));
 	workspaces.set({
 		list: [],
 		current: { id: 1, language: 'zh', name: 'zh' } as never
@@ -45,6 +103,7 @@ beforeEach(() => {
 afterEach(() => {
 	cleanup();
 	vi.clearAllMocks();
+	vi.unstubAllGlobals();
 });
 
 describe('search page', () => {
@@ -74,6 +133,64 @@ describe('search page', () => {
 		expect(document.querySelector('.split')?.classList.contains('has-selection')).toBe(true);
 		const back = screen.getByRole('link', { name: 'Back to results' });
 		expect(back.getAttribute('href')).toBe('/search?q=qin');
+	});
+
+	it('shows the URL entry even when it is not among the hits, and records that entry', async () => {
+		searchMock.mockResolvedValue([hit(7, '勤奋')]);
+		getEntryMock.mockImplementation(async (id: number) =>
+			id === 9 ? entry(9, '覆') : entry(7, '勤奋')
+		);
+		setUrl('/search?q=cover&e=9');
+		render(Page);
+		const heading = await screen.findByRole('heading', { level: 2, name: '覆' });
+		expect(heading.textContent).toBe('覆');
+		await waitFor(() => expect(record).toHaveBeenCalledWith('view', 1, { entryId: 9 }));
+		expect(record).not.toHaveBeenCalledWith('view', 1, { entryId: 7 });
+		expect(document.title).toBe('覆 · Search · qinqin');
+	});
+
+	it('with e and no q shows the entry, its Back link and no search', async () => {
+		getEntryMock.mockResolvedValue(entry(9, '覆'));
+		setUrl('/search?e=9');
+		render(Page);
+		expect(await screen.findByRole('heading', { level: 2, name: '覆' })).toBeTruthy();
+		expect(searchMock).not.toHaveBeenCalled();
+		expect(screen.getByRole('link', { name: 'Back to results' }).getAttribute('href')).toBe('/search');
+		expect(document.querySelector('.split')?.classList.contains('has-selection')).toBe(true);
+	});
+
+	it('keeps the URL entry when a filter change returns no hits (phone: Back stays)', async () => {
+		searchMock.mockResolvedValue([]);
+		getEntryMock.mockResolvedValue(entry(9, '覆'));
+		setUrl('/search?q=cover&kind=character&e=9');
+		render(Page);
+		expect(await screen.findByRole('heading', { level: 2, name: '覆' })).toBeTruthy();
+		expect(screen.getByRole('link', { name: 'Back to results' }).getAttribute('href')).toBe(
+			'/search?q=cover&kind=character'
+		);
+	});
+
+	it('with e and a failed search still shows the entry and the Back link', async () => {
+		searchMock.mockRejectedValue(new Error('search down'));
+		getEntryMock.mockResolvedValue(entry(9, '覆'));
+		setUrl('/search?q=cover&e=9');
+		render(Page);
+		expect(await screen.findByRole('heading', { level: 2, name: '覆' })).toBeTruthy();
+		expect(screen.getByRole('alert')).toBeTruthy();
+		expect(screen.getByRole('link', { name: 'Back to results' })).toBeTruthy();
+	});
+
+	it('without e previews the first result on a wide screen, records no view and marks no row', async () => {
+		setViewport(false);
+		searchMock.mockResolvedValue([hit(7, '勤奋'), hit(8, '勤劳')]);
+		getEntryMock.mockResolvedValue(entry(7, '勤奋'));
+		setUrl('/search?q=qin');
+		render(Page);
+		expect(await screen.findByRole('heading', { level: 2, name: '勤奋' })).toBeTruthy();
+		expect(screen.queryByRole('link', { name: 'Back to results' })).toBeNull();
+		expect(document.querySelector('[aria-current="true"]')).toBeNull();
+		expect(record).not.toHaveBeenCalled();
+		expect(document.title).toBe('Search · qinqin');
 	});
 
 	it('clicking a result selects it in the URL and records one lookup', async () => {
