@@ -8,7 +8,7 @@ Readings you can search by: pinyin and bopomofo for Chinese, kana (and romaji) f
 
 On a wide screen the results stay on the left and the selected entry opens beside them; a row is one link, named by the word, with its reading, the first gloss your workspace does not hide and its kind and level. Choosing a row keeps the list in place. The address carries everything, so a search can be shared or reloaded: `/search?q=…&kind=…&scheme=…&level=…&e=<entry id>`. A new query drops the selected entry; changing a filter keeps it. On a phone the list and the entry are two views: tapping a result opens the entry, and **Back to results** returns to the list. A link with `e` shows that entry even when your filters or the result cap would hide its row, and the entry is still shown (with **Back to results**) when the search finds nothing or fails.
 
-The filters are text options: **All**, **Words** and **Characters**, and **Level: any**, which opens a menu of **Any level** and each installed level scheme's levels. **Clear filters** appears only while a filter is set.
+The filters are text options: **All**, **Words** and **Characters**, and **Level: any**, which opens a menu of **Any level** and each installed level scheme's levels. **Clear filters** appears only while a filter is set. When the list is cut at the cap the page says "Showing the first 50 results. Add more of the word or a filter to narrow them." If the workspace's language has no dictionary installed, or no level lists, a line above the results says so (administrators get a pointer to Settings → Data). You can also start a search from the box on the home page.
 
 ## Find a character by radical or part
 
