@@ -28,6 +28,7 @@
 - [Email and security](Admin-email-and-security)
 - [Proxy and rate limiting](Admin-proxy-and-rate-limiting)
 - [Backup and recovery](Admin-backup-and-recovery)
+- [Data packs](Admin-data-packs)
 
 **API**
 
