@@ -78,7 +78,7 @@ What each route takes and answers, area by area. [API routes](API-Routes) is the
 
 | Route | Purpose |
 |---|---|
-| `GET /api/workspaces`, `POST /api/workspaces` `{language, name?}` | List the caller's workspaces (creating the defaults on a first call) and create one; an over-long or invalid name is 422, a duplicate (language, name) 409 |
+| `GET /api/workspaces`, `POST /api/workspaces` `{language, name?}` | List the caller's workspaces (creating the defaults on a first call) and create one (201); an over-long or invalid name is 422, a duplicate (language, name) 409. `language`: a code that exactly matches a stored one keeps its spelling; otherwise it must be well formed (422 "language must be a code like es or pt-br") and is normalised. A non-administrator may only use a known language (a code pack such as `zh` or `ja`, a registered language, installed dictionary data, or any live level, frequency, sentence, grammar or audio pack of it), else 422 "unknown language — ask the administrator to add it"; an administrator's request registers a new code. These errors are plain text |
 | `PUT /api/workspaces/{id}` `{name?, settings?}` | Rename and/or merge settings; at least one field is required |
 | `DELETE /api/workspaces/{id}` | Delete a workspace and everything scoped to it: 204, 404 for an unknown or foreign id, 409 for the caller's last workspace |
 
