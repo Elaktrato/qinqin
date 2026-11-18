@@ -23,6 +23,7 @@
 		setKind,
 		setLevel,
 		setScheme,
+		submitHref,
 		type SearchFilters
 	} from '$lib/searchFilters';
 	import { onMount } from 'svelte';
@@ -188,10 +189,12 @@
 		const q = query.trim();
 		// Show the query that is searched, not the untrimmed text typed.
 		query = q;
-		const href = searchHref(q, filters);
+		const href = submitHref(q, filters);
 		// The same search again does not change the URL, so the effect below
 		// would not run: treat it as a refresh instead of a silent no-op.
-		if (q && lang && q === urlQuery.trim() && href === searchHref(urlQuery.trim(), filters)) {
+		// The comparison includes everything in the URL (the selected entry
+		// too), so resubmitting a query with e drops e.
+		if (q && lang && href === page.url.pathname + page.url.search) {
 			void runSearch(q, lang, filters);
 			return;
 		}

@@ -253,6 +253,17 @@ describe('search page', () => {
 		expect(goto).not.toHaveBeenCalled();
 	});
 
+	it('submitting the same text drops e and navigates to the URL without it', async () => {
+		searchMock.mockResolvedValue([hit(7, '勤奋')]);
+		getEntryMock.mockResolvedValue(entry(7, '勤奋'));
+		setUrl('/search?q=qin&e=7');
+		render(Page);
+		await screen.findByRole('heading', { level: 2, name: '勤奋' });
+		const input = screen.getByLabelText('Search entries');
+		await fireEvent.submit(input.closest('form')!);
+		expect(vi.mocked(goto).mock.calls[0][0]).toBe('/search?q=qin');
+	});
+
 	it('puts the trimmed query back into the input on submit', async () => {
 		searchMock.mockResolvedValue([]);
 		setUrl('/search?q=ni');
