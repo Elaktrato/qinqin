@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen } from '@testing-library/svelte';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/svelte';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { Entry, Sentence } from '$lib/api/types';
 import type { FlowItem } from '$lib/study/cardFlow';
@@ -34,7 +34,7 @@ function setup(over: Record<string, unknown> = {}) {
 		...over
 	};
 	const view = render(CardHarness, { card: ClozeCard, cardProps: props, kindLabel: 'Fill the gap', done: props.done as boolean });
-	return { onDone, ...view };
+	return { onDone, props, ...view };
 }
 
 describe('ClozeCard (type)', () => {
@@ -147,6 +147,16 @@ describe('ClozeCard on the open page (#101)', () => {
 		expect(check.disabled).toBe(false);
 		await fireEvent.click(check);
 		expect(onDone.mock.calls[0][0].suggested).toBe(3);
+	});
+
+	it('marks the correct gap with a check icon once done', async () => {
+		const view = setup();
+		const field = screen.getByLabelText('Type the word');
+		await fireEvent.input(field, { target: { value: '喜欢' } });
+		await fireEvent.keyDown(field, { key: 'Enter' });
+		await waitFor(() => expect(document.querySelector('.gap.right')).not.toBeNull());
+		await view.rerender({ card: ClozeCard, cardProps: { ...view.props, done: true }, kindLabel: 'Fill the gap', done: true });
+		expect(document.querySelector('.gap.right svg')).not.toBeNull();
 	});
 
 	it('choose mode: primary Show answer gives up; choices are buttons with their digit', async () => {

@@ -104,7 +104,10 @@
 
 {#snippet gap(surface: string | undefined)}
 	<span class="gap" class:right={outcome === 'right'} class:wrong={outcome === 'wrong' || outcome === 'gaveUp'}
-		><span class="sr-only">{t('flashcards.card.blank')}</span>{done ? (surface ?? prompt.answer) : '＿＿'}</span
+		><span class="sr-only">{t('flashcards.card.blank')}</span>{done ? (surface ?? prompt.answer) : '＿＿'}{#if done && outcome === 'right'}<Icon
+				name="check"
+				size="s"
+			/>{/if}</span
 	>
 {/snippet}
 
