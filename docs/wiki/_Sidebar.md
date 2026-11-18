@@ -34,6 +34,7 @@
 **API**
 
 - [API overview](API-Overview)
+- [API reference](API-Reference)
 - [API routes](API-Routes)
 - [API errors](API-Errors)
 - [API access tokens](API-Access-tokens)
