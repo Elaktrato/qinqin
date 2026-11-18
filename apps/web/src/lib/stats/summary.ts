@@ -3,7 +3,12 @@
 // Pure: the caller passes one workspace's history and the learner's day.
 // Rule and fixture: docs/contracts/stats/.
 
-import { deckNumbers, scheduleIndex, type ScheduleIndex } from '$lib/features/flashcards/decks/deckStats';
+import {
+	deckNumbers,
+	scheduleIndex,
+	STATS_WINDOW_DAYS,
+	type ScheduleIndex
+} from '$lib/features/flashcards/decks/deckStats';
 import { flashcardAmounts } from '$lib/goals/amounts';
 import type { DeckSettings } from '$lib/study/deckSettings';
 import { dailyStreak } from '$lib/study/exp';
@@ -14,8 +19,7 @@ import type { Deck, ReviewEvent, StudyCard, StudyCardKind } from '$lib/study/typ
 import type { Run } from '$lib/study/vacation';
 import { addDays, type StudyDay } from '$lib/time/studyDay';
 
-/** The window of the review statistics, in learner days ending today. */
-export const STATS_WINDOW_DAYS = 30;
+export { STATS_WINDOW_DAYS };
 
 export interface SummaryInput {
 	workspaceId: number;

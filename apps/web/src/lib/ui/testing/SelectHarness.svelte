@@ -11,3 +11,4 @@
 
 <Select label="Group by" bind:value {options} />
 <p data-testid="echo">{value}</p>
+<button type="button" onclick={() => (value = 'a')}>Set a</button>

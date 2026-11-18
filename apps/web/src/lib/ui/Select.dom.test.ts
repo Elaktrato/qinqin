@@ -31,6 +31,9 @@ describe('Select', () => {
 		expect(select.value).toBe('b');
 		await fireEvent.change(select, { target: { value: 'c' } });
 		expect(screen.getByTestId('echo').textContent).toBe('c');
+		await fireEvent.click(screen.getByRole('button', { name: 'Set a' }));
+		expect(select.value).toBe('a');
+		expect(screen.getByTestId('echo').textContent).toBe('a');
 	});
 
 	it('links the hint and the error, and error sets aria-invalid', () => {
@@ -74,5 +77,7 @@ describe('Select', () => {
 		expect(css).not.toMatch(/#[0-9a-f]{3,8}\b|\brgba?\(|\bhsla?\(/i);
 		expect(css).toMatch(/@media \(forced-colors: active\)/);
 		expect(css).toMatch(/CanvasText/);
+		expect(css).toMatch(/@media \(prefers-reduced-motion: reduce\)/);
+		expect(css).toMatch(/transition:\s*none/);
 	});
 });

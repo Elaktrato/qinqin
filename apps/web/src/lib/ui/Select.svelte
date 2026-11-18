@@ -120,6 +120,11 @@
 		color: var(--readable-bad);
 		font-weight: var(--weight-medium);
 	}
+	@media (prefers-reduced-motion: reduce) {
+		select {
+			transition: none;
+		}
+	}
 	@media (forced-colors: active) {
 		select {
 			color: CanvasText;
