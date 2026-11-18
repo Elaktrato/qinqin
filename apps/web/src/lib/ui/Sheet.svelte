@@ -12,6 +12,7 @@
 	//   open          bindable; the sheet exists only while open
 	//   label         the accessible name (t(…)), e.g. the looked-up word
 	//   onclose       called when the person dismisses it (or the browser closes it natively)
+	//   returnFocus   where focus goes on close (default: the opener)
 	//   onnext/onprev paging (swipe toward the start = next, mirrored in right-to-left text)
 	//   initialFocus  a selector inside to focus first (else the first focusable)
 	import type { Snippet } from 'svelte';
@@ -24,6 +25,7 @@
 		open = $bindable(false),
 		label,
 		onclose,
+		returnFocus,
 		onnext,
 		onprev,
 		initialFocus,
@@ -32,6 +34,8 @@
 		open?: boolean;
 		label: string;
 		onclose?: () => void;
+		/** Where focus goes after the sheet is gone (the lookup's paragraph), else the opener. */
+		returnFocus?: () => HTMLElement | null;
 		onnext?: () => void;
 		onprev?: () => void;
 		initialFocus?: string;
@@ -131,7 +135,7 @@
 {#if open}
 	<dialog
 		bind:this={sheet}
-		use:modal={initialFocus}
+		use:modal={{ initialFocus, returnFocus }}
 		class="sheet"
 		class:dragging
 		style:translate={dragY ? `0 ${dragY}px` : undefined}

@@ -420,6 +420,46 @@ describe('BookView rail (#102)', () => {
 	});
 });
 
+describe('BookView lookup sheet (#102)', () => {
+	beforeEach(() => {
+		Element.prototype.scrollIntoView ??= function () {};
+		Range.prototype.getBoundingClientRect ??= () =>
+			({ x: 0, y: 0, left: 0, top: 0, right: 0, bottom: 0, width: 0, height: 0, toJSON() {} }) as DOMRect;
+		Range.prototype.getClientRects ??= () => [] as unknown as DOMRectList;
+		vi.stubGlobal('IntersectionObserver', VisibleObserver);
+		setReader({ readings: 'never', highlightWords: false });
+		vi.stubGlobal('matchMedia', (query: string) => ({
+			matches: true,
+			media: query,
+			addEventListener() {},
+			removeEventListener() {}
+		}));
+	});
+	afterEach(() => setWidth(1024));
+
+	async function selectFirstTwo(): Promise<void> {
+		const text = document.querySelector('p[data-p="0"] [data-r="0"]')!.firstChild!;
+		const range = document.createRange();
+		range.setStart(text, 0);
+		range.setEnd(text, 2);
+		window.getSelection()!.removeAllRanges();
+		window.getSelection()!.addRange(range);
+		await fireEvent.pointerDown(document.body, { button: 0 });
+		await fireEvent.pointerUp(window, { button: 0 });
+	}
+
+	it("closing the lookup sheet returns focus to the word's paragraph", async () => {
+		setWidth(700);
+		render(BookView, { id: 1, chapter: 0 });
+		await waitFor(() => expect(document.querySelector('p[data-p="0"]')).toBeTruthy());
+		await selectFirstTwo();
+		const sheet = await screen.findByRole('dialog', { name: /Dictionary:/ }, { timeout: 2000 });
+		await fireEvent.click(within(sheet).getByRole('button', { name: 'Close' }));
+		await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+		await waitFor(() => expect(document.activeElement?.getAttribute('data-p')).toBe('0'));
+	});
+});
+
 describe('BookView shortcuts and focus across the new layout (#102)', () => {
 	beforeEach(() => {
 		Element.prototype.scrollIntoView ??= function () {};

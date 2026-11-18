@@ -36,7 +36,8 @@ function fakeLookup(mode: 'hover' | 'selection', frames: PopupFrame[]) {
 		popups: { shiftHeld: false, enter: vi.fn(), leave: vi.fn(), move: vi.fn() },
 		hold: vi.fn(),
 		close: vi.fn(),
-		closeFrame: vi.fn()
+		closeFrame: vi.fn(),
+		wordParagraph: vi.fn(() => null)
 	};
 	return lookup;
 }

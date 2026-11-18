@@ -55,9 +55,29 @@ export function inertAround(node: HTMLElement): () => void {
 /**
  * modal is a Svelte action for a <dialog> rendered while open: it opens the
  * dialog modally, focuses `initialFocus` (a selector inside it) or the first
- * focusable element, and on removal gives focus back.
+ * focusable element, and on removal gives focus back — to `returnFocus()`
+ * when the caller names a better place (the phone lookup sheet returns to
+ * the word's paragraph, not to a <body> that cannot take focus).
  */
-export function modal(node: HTMLDialogElement, initialFocus?: string): { destroy(): void } {
+export interface ModalOptions {
+	/** A selector inside the dialog to focus first (else the first focusable element). */
+	initialFocus?: string;
+	/** Where focus goes on close, instead of the element focused when it opened. */
+	returnFocus?: () => HTMLElement | null;
+}
+
+// focusQuietly focuses an element that is not a tab stop (a paragraph):
+// it joins the tab order only while it has focus.
+function focusQuietly(el: HTMLElement): void {
+	if (el.tabIndex < 0 && !el.hasAttribute('tabindex')) {
+		el.tabIndex = -1;
+		el.addEventListener('blur', () => el.removeAttribute('tabindex'), { once: true });
+	}
+	el.focus({ preventScroll: true });
+}
+
+export function modal(node: HTMLDialogElement, options: ModalOptions = {}): { destroy(): void } {
+	const { initialFocus, returnFocus } = options;
 	const before = document.activeElement instanceof HTMLElement ? document.activeElement : null;
 	let undoInert: (() => void) | null = null;
 	const fallback = (): void => {
@@ -82,7 +102,8 @@ export function modal(node: HTMLDialogElement, initialFocus?: string): { destroy
 		destroy() {
 			undoInert?.();
 			if (typeof node.close === 'function' && node.open) node.close();
-			if (before && before.isConnected) queueMicrotask(() => before.focus());
+			const back = returnFocus ? returnFocus() : before && before.isConnected ? before : null;
+			if (back) queueMicrotask(() => focusQuietly(back));
 		}
 	};
 }

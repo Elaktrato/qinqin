@@ -10,6 +10,7 @@ import { DwellCounter } from '$lib/lookups/dwell';
 import {
 	caretFromPoint,
 	highlightSpan,
+	paragraphElement,
 	rangeContainsPoint,
 	rangeForSpan,
 	runPointAt,
@@ -81,6 +82,8 @@ export class LookupController {
 	#selectionSpan: Span | null = null;
 	#frame = 0;
 	#dwell: DwellCounter;
+	/** The paragraph of the current (or last) lookup's word, for focus after the phone sheet closes. */
+	#word: HTMLElement | null = null;
 	/**
 	 * The selection a selection popup was opened for, as the highlighter
 	 * needs it (untrimmed, clamped to its first paragraph); null otherwise.
@@ -270,6 +273,8 @@ export class LookupController {
 		const range = this.#rangeOf(shown.span);
 		if (!range) return this.#hover.close();
 		this.#highlight(range);
+		const container = this.#opts.container();
+		this.#word = container ? paragraphElement(container, shown.span.p) : null;
 		this.popups.cancel();
 		this.stack.open({
 			anchor: anchorOf(range.getBoundingClientRect()),
@@ -323,6 +328,7 @@ export class LookupController {
 		const range = this.#rangeOf(span);
 		if (!range) return;
 		this.close();
+		this.#word = paragraphElement(container, span.p);
 		const abort = new AbortController();
 		this.#selectionAbort = abort;
 		const seq = this.#selectionSeq;
@@ -348,6 +354,15 @@ export class LookupController {
 			if (abort.signal.aborted || seq !== this.#selectionSeq) return;
 			this.stack.update(id, { results: [], error: apiErrorMessage(err, 'lookup') });
 		}
+	}
+
+	/**
+	 * wordParagraph is the <p> the current (or last) lookup was opened on:
+	 * the phone sheet returns focus there, because the page text itself is
+	 * not a tab stop. Null once the chapter was re-rendered under it.
+	 */
+	wordParagraph(): HTMLElement | null {
+		return this.#word?.isConnected ? this.#word : null;
 	}
 
 	/**
