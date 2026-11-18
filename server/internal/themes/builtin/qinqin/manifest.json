@@ -1,0 +1,10 @@
+{
+	"id": "qinqin",
+	"name": "qinqin",
+	"version": "1.0",
+	"type": "theme",
+	"license": "MIT",
+	"attribution": "© 2026 qinqin",
+	"notice": "qinqin's house themes: Day (the default light), Night (the default dark) and Deep. Built from the owner's own palette; the state and grade colours were added beside the blues.",
+	"format": "themes-json"
+}
