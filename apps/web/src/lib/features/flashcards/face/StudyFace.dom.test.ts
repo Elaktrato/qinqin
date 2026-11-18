@@ -29,6 +29,14 @@ describe('StudyFace (#101)', () => {
 		}
 	});
 
+	it('keeps the session messages above the card', () => {
+		const status = createRawSnippet(() => ({ render: () => '<p class="session-message">3 related cards are buried</p>' }));
+		render(CardHarness, { card: PrimaryCard, status });
+		const message = document.querySelector('.session-message')!;
+		const card = document.querySelector('.fc')!;
+		expect(message.compareDocumentPosition(card) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+	});
+
 	it('the close button is an IconButton named End session that links to /study, with a tooltip', () => {
 		render(CardHarness, { card: PrimaryCard });
 		const close = screen.getByRole('link', { name: 'End session' });
