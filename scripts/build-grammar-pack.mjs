@@ -24,7 +24,9 @@ function fail(message) {
 
 // The pack's seven levels in difficulty order. The row counts are the
 // corrected, binding syllabus row counts (the original plan under-counted
-// HSK 1 by 数词, 连接词语或短语 and 叹词, and HSK 2 by one row).
+// HSK 1 by 数词, 连接词语或短语 and 叹词, and HSK 2 by one row). A level's
+// `rows` is a floor: a fragment may author rows above it (the syllabus may
+// have more), and --complete requires rows 1..rows but allows extras.
 export const LEVELS = [
 	{ id: 'hsk-1', name: 'Level 1 · First sentences', schemeLevel: 'HSK 1', rows: 48 },
 	{ id: 'hsk-2', name: 'Level 2 · Everyday basics', schemeLevel: 'HSK 2', rows: 61 },
@@ -195,7 +197,9 @@ export function renderCoverage(levels, lessons) {
 	for (const lv of levels) {
 		const byRow = byLevel.get(lv.id) ?? new Map();
 		lines.push(`## ${lv.name}`, '', '| # | Syllabus row (qinqin\u2019s words) | Lesson(s) |', '|---|-------------------------------|-----------|');
-		for (let row = 1; row <= lv.rows; row++) {
+		let maxRow = lv.rows;
+		for (const row of byRow.keys()) if (row > maxRow) maxRow = row;
+		for (let row = 1; row <= maxRow; row++) {
 			const entries = byRow.get(row) ?? [];
 			const label = entries.map((l) => l.label).join(' / ');
 			const ids = entries.map((l) => l.lesson.id).join(', ');
@@ -236,7 +240,7 @@ export async function buildGrammarPack({ authoredDir, outDir, levels = LEVELS, c
 		fragment.rows.forEach((entry, i) => {
 			const path = `${lv.id} rows[${i}]`;
 			const row = entry?.row;
-			if (!Number.isInteger(row) || row < 1 || row > lv.rows) fail(`${path}: missing row number`);
+			if (!Number.isInteger(row) || row < 1) fail(`${path}: row must be a positive integer`);
 			const label = entry?.label;
 			if (typeof label !== 'string' || label.trim() === '') fail(`${path}.label: is required`);
 			if (labelsByRow.has(row)) {

@@ -121,6 +121,39 @@ test('a split row lists both lessons under one syllabus row', async () => {
 	}
 });
 
+test('a row above the level floor is valid and appears in COVERAGE.md', async () => {
+	const dir = mkdtempSync(join(tmpdir(), 'grammar-'));
+	try {
+		const frag = fragment();
+		frag.rows.push({ row: 3, label: 'label three', lesson: lesson('l3') });
+		writeFileSync(join(dir, 'x.json'), JSON.stringify(frag, null, 2));
+		const result = await buildGrammarPack({ authoredDir: dir, outDir: dir, levels: FIXTURE_LEVELS });
+		assert.deepEqual(result, { rows: 2, lessons: 3 });
+		const lessons = JSON.parse(readFileSync(join(dir, 'lessons.json'), 'utf8'));
+		assert.deepEqual(lessons.lessons.map((l) => l.id), ['l1', 'l2', 'l3']);
+		const coverage = readFileSync(join(dir, 'COVERAGE.md'), 'utf8');
+		assert.match(coverage, /\| 3 \| label three \| l3 \|/);
+	} finally {
+		rmSync(dir, { recursive: true, force: true });
+	}
+});
+
+test('--complete requires every row up to the floor but allows rows above it', async () => {
+	const dir = mkdtempSync(join(tmpdir(), 'grammar-'));
+	try {
+		// Rows 1 and 3, with row 2 missing: the floor (rows 1..2) is not met.
+		const frag = fragment();
+		frag.rows = [frag.rows[0], { row: 3, label: 'label three', lesson: lesson('l3') }];
+		writeFileSync(join(dir, 'x.json'), JSON.stringify(frag, null, 2));
+		await assert.rejects(
+			buildGrammarPack({ authoredDir: dir, outDir: dir, levels: FIXTURE_LEVELS, complete: true }),
+			(err) => err instanceof PackError && err.message.includes('x: row 2 is not authored')
+		);
+	} finally {
+		rmSync(dir, { recursive: true, force: true });
+	}
+});
+
 const rejections = [
 	['three examples', (f) => (f.rows[0].lesson.examples = f.rows[0].lesson.examples.slice(0, 3)), 'rows[0].lesson.examples: 3 examples'],
 	['a focus that occurs twice', (f) => (f.rows[0].lesson.examples[0].text = '我是学生，是。'), 'rows[0].lesson.examples[0].focus'],
@@ -128,7 +161,7 @@ const rejections = [
 	['two identical distractors', (f) => (f.rows[0].lesson.examples[0].distractors[1] = '很'), 'rows[0].lesson.examples[0].distractors[1]'],
 	['no contrast example', (f) => f.rows[0].lesson.examples.forEach((e) => (e.contrast = false)), 'rows[0].lesson: 0 contrast examples'],
 	['three contrast examples', (f) => f.rows[0].lesson.examples.forEach((e, i) => (e.contrast = i < 3)), 'rows[0].lesson: 3 contrast examples'],
-	['a missing row number', (f) => delete f.rows[0].row, 'rows[0]: missing row number'],
+	['a missing row number', (f) => delete f.rows[0].row, 'rows[0]: row must be a positive integer'],
 	['a duplicate row number with the same label', (f) => ((f.rows[1].row = 1), (f.rows[1].label = 'label one')), 'rows[1]: row 1 appears twice'],
 	['a duplicate lesson id', (f) => (f.rows[1].lesson.id = 'l1'), 'rows[1].lesson.id'],
 	['a body containing <b>', (f) => (f.rows[0].lesson.body[0] = 'text <b>bold</b>'), 'rows[0].lesson.body[0]']
