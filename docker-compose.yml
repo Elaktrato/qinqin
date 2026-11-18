@@ -27,7 +27,7 @@
 #                    secrets are stored encrypted. Back it up separately from
 #                    the data volume; it is never written to /data.
 #   QINQIN_IMAGE     default ghcr.io/elaktrato/qinqin:latest. Pin a release,
-#                    e.g. ghcr.io/elaktrato/qinqin:v1.2.3 (tags: latest, v*, sha).
+#                    e.g. ghcr.io/elaktrato/qinqin:v0.4.1 (tags: latest, v*, sha).
 #   QINQIN_PORT      published host port, default 8080.
 # Backups: users download their data in the app; admins create server backups
 #                    (Settings, Admin, Backup) or run `docker exec <c> qinqin backup --out /data/backups/x.tar.gz`.

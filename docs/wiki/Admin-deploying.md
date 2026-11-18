@@ -45,7 +45,7 @@ CI publishes the image `ghcr.io/elaktrato/qinqin` on pushes to `main` and on `v*
 | Tag | What it is |
 |---|---|
 | `latest` | The newest build of `main` |
-| `v<version>` | A release tag, for example `v0.3.0` |
+| `v<version>` | A release tag, for example `v0.4.1` |
 | `sha-<commit>` | One exact commit |
 
 **For production pin a `v*` tag** in `QINQIN_IMAGE` rather than `latest`, so a redeploy never changes the version by surprise.
@@ -60,7 +60,7 @@ The published image is the full build:
 
 Self-builds can leave the first two out with `docker build --build-arg WITH_OCR=0 .` and `--build-arg WITH_AUDIO=0`; the server starts normally and the features show as unavailable. Details in [AI providers and offline OCR](Admin-AI-and-OCR) and [Development](Development).
 
-The project's package `ghcr.io/elaktrato/qinqin` is public: `docker pull` needs no login. Check from the server with `docker pull ghcr.io/elaktrato/qinqin:v0.4.0`.
+The project's package `ghcr.io/elaktrato/qinqin` is public: `docker pull` needs no login. Check from the server with `docker pull ghcr.io/elaktrato/qinqin:v0.4.1`.
 
 **Your own fork's package starts private.** GitHub creates a new container package as private, so a `docker pull` or a Portainer deployment of an image your fork's CI published fails with `unauthorized` until you either
 
@@ -75,7 +75,7 @@ Portainer needs no special file: `docker-compose.yml` is plain compose. It uses 
 
 1. **Generate the secret** (optional; without it AI, authenticator apps and a stored mail password are unavailable) and keep it in a password manager: `head -c 32 /dev/urandom | base64`. Back it up **separately** from the data volume; it is never written to `/data`.
 2. **Add the stack.** Portainer: Stacks, Add stack. Either *Web editor* and paste `docker-compose.yml`, or *Repository* with the URL `https://github.com/Elaktrato/qinqin`, reference `refs/heads/main` (or a tag) and compose path `docker-compose.yml`.
-3. **Environment variables** (stack form): `QINQIN_SECRET`, `QINQIN_IMAGE` (for example `ghcr.io/elaktrato/qinqin:v0.3.0`), `QINQIN_PORT` (host port, default 8080). Optional: `QINQIN_DATA_VOLUME` as an absolute host path such as `/srv/qinqin/data` (the directory must exist and be writable by root), `QINQIN_TRUSTED_PROXIES` (**`none` if nothing reverse-proxies to qinqin**), `QINQIN_AI_PROVIDERS`, `QINQIN_AI_ALLOW_PRIVATE`, `QINQIN_SMTP_ALLOW_PRIVATE`, `QINQIN_BOOTSTRAP_ADMIN`, and `QINQIN_SECRET_PREVIOUS` only while rotating the secret. The full list: [Environment variables](Admin-environment-variables). Deploy the stack.
+3. **Environment variables** (stack form): `QINQIN_SECRET`, `QINQIN_IMAGE` (for example `ghcr.io/elaktrato/qinqin:v0.4.1`), `QINQIN_PORT` (host port, default 8080). Optional: `QINQIN_DATA_VOLUME` as an absolute host path such as `/srv/qinqin/data` (the directory must exist and be writable by root), `QINQIN_TRUSTED_PROXIES` (**`none` if nothing reverse-proxies to qinqin**), `QINQIN_AI_PROVIDERS`, `QINQIN_AI_ALLOW_PRIVATE`, `QINQIN_SMTP_ALLOW_PRIVATE`, `QINQIN_BOOTSTRAP_ADMIN`, and `QINQIN_SECRET_PREVIOUS` only while rotating the secret. The full list: [Environment variables](Admin-environment-variables). Deploy the stack.
 4. **First run, before exposing the port beyond your LAN.** Containers, `qinqin`, Console, command `/bin/sh`, Connect. Then:
 
    ```sh
