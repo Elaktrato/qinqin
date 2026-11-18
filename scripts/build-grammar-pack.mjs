@@ -32,7 +32,7 @@ export const LEVELS = [
 	{ id: 'hsk-2', name: 'Level 2 · Everyday basics', schemeLevel: 'HSK 2', rows: 61 },
 	{ id: 'hsk-3', name: 'Level 3 · Getting around', schemeLevel: 'HSK 3', rows: 56 },
 	{ id: 'hsk-4', name: 'Level 4 · Connected speech', schemeLevel: 'HSK 4', rows: 46 },
-	{ id: 'hsk-5', name: 'Level 5 · Nuance and attitude', schemeLevel: 'HSK 5', rows: 39 },
+	{ id: 'hsk-5', name: 'Level 5 · Nuance and attitude', schemeLevel: 'HSK 5', rows: 38 },
 	{ id: 'hsk-6', name: 'Level 6 · Formal ground', schemeLevel: 'HSK 6', rows: 30 },
 	{ id: 'hsk-7-9', name: 'Level 7 · Mastery', schemeLevel: 'HSK 7–9', rows: 27 }
 ];
