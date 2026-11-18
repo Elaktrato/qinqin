@@ -36,14 +36,26 @@ describe('slotThemeGroups', () => {
 		const groups = slotThemeGroups(themes, 'light', 'nord');
 		expect(groups.flatMap((g) => g.themes.map((x) => x.id))).toEqual(['catppuccin-latte', 'nord', 'rose-pine-dawn']);
 	});
+
+	it('keeps the server list order, so the house family leads the picker', () => {
+		const house = [
+			{ ...FALLBACK_THEMES[0], family: FALLBACK_THEMES[0].family ?? '', packId: 'qinqin', builtin: true },
+			{ ...FALLBACK_THEMES[1], family: FALLBACK_THEMES[1].family ?? '', packId: 'qinqin', builtin: true }
+		];
+		expect(slotThemeGroups([...house, ...themes], 'light', 'qinqin-day').map((g) => g.family)).toEqual([
+			'qinqin',
+			'Catppuccin',
+			'Rosé Pine'
+		]);
+	});
 });
 
 describe('accentOptions', () => {
 	it('offers only the accents at 3:1 or more on panel, in file order, with their colours', () => {
 		const latte = FALLBACK_THEMES[0];
 		const opts = accentOptions(latte);
-		expect(opts.map((o) => o.key)).toEqual(['mauve', 'red', 'teal', 'blue']);
-		expect(opts[0]).toEqual({ key: 'mauve', color: '#8839ef' });
+		expect(opts.map((o) => o.key)).toEqual(['azure', 'blue', 'navy', 'teal', 'violet', 'pink']);
+		expect(opts[0]).toEqual({ key: 'azure', color: '#0077b3' });
 	});
 });
 
@@ -52,7 +64,7 @@ describe('changeFrom / isDirty / previewOf', () => {
 		const a = parseAppearance({ version: 1, mode: 'dark', dark: { theme: 'nord', accent: null }, corners: 'round' });
 		expect(changeFrom(a)).toEqual({
 			mode: 'dark',
-			light: { theme: 'catppuccin-latte', accent: 'mauve' },
+			light: { theme: 'qinqin-day', accent: 'azure' },
 			dark: { theme: 'nord', accent: null },
 			corners: 'round',
 			spacing: 'comfortable',

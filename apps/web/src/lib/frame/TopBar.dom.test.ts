@@ -47,8 +47,8 @@ describe('TopBar', () => {
 		mount('/settings');
 		const nav = screen.getByRole('navigation', { name: 'Main' });
 		const links = within(nav).getAllByRole('link');
-		expect(links.map((l) => l.getAttribute('aria-label'))).toEqual(['Decks', 'Reader', 'Journal', 'Grammar', 'Search', 'Stats']);
-		expect(links.map((l) => l.getAttribute('href'))).toEqual(['/flashcards', '/reader', '/p/journal', '/p/grammar', '/search', '/stats']);
+		expect(links.map((l) => l.getAttribute('aria-label'))).toEqual(['Search', 'Decks', 'Reader', 'Journal', 'Grammar', 'Stats']);
+		expect(links.map((l) => l.getAttribute('href'))).toEqual(['/search', '/flashcards', '/reader', '/p/journal', '/p/grammar', '/stats']);
 		for (const link of links) {
 			expect(link.textContent?.trim()).toBe('');
 			expect(link.querySelector('svg')).not.toBeNull();

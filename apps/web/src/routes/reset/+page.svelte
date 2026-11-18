@@ -11,6 +11,7 @@
 	import { hasSession, stepFor } from '$lib/account/loginFlow';
 	import { confirmProblem, passwordHint, passwordProblem } from '$lib/account/passwordRules';
 	import { signInWithToken } from '$lib/auth';
+	import { Button, Field } from '$lib/ui';
 
 	let token = $state('');
 	let username = $state('');
@@ -106,17 +107,25 @@
 			<p>
 				<Msg key="auth.reset.chooseFor" args={{ username }}>{#snippet strong(text: string)}<strong>{text}</strong>{/snippet}</Msg>
 			</p>
-			<label>
-				{t('auth.reset.newPassword')}
-				<input type="password" autocomplete="new-password" aria-describedby="reset-rules" bind:value={password} required />
-			</label>
-			<p class="hint" id="reset-rules">{passwordHint()}</p>
-			<label>
-				{t('auth.reset.repeat')}
-				<input type="password" autocomplete="new-password" bind:value={confirm} required />
-			</label>
+			<Field
+				label={t('auth.reset.newPassword')}
+				type="password"
+				autocomplete="new-password"
+				hint={passwordHint()}
+				bind:value={password}
+				required
+			/>
+			<Field
+				label={t('auth.reset.repeat')}
+				type="password"
+				autocomplete="new-password"
+				bind:value={confirm}
+				required
+			/>
 			{#if error}<p class="error" role="alert">{error}</p>{/if}
-			<button type="submit" disabled={busy}>{busy ? t('auth.reset.saving') : t('auth.reset.submit')}</button>
+			<Button type="submit" variant="primary" busy={busy}
+				>{busy ? t('auth.reset.saving') : t('auth.reset.submit')}</Button
+			>
 		</form>
 	{:else if mailReset}
 		{#if requested}
@@ -125,12 +134,17 @@
 		{:else}
 			<form onsubmit={request}>
 				<p>{t('auth.reset.requestIntro')}</p>
-				<label>
-					{t('auth.emailLogin.login')}
-					<input name="login" autocomplete="username" bind:value={login} required />
-				</label>
+				<Field
+					label={t('auth.emailLogin.login')}
+					name="login"
+					autocomplete="username"
+					bind:value={login}
+					required
+				/>
 				{#if error}<p class="error" role="alert">{error}</p>{/if}
-				<button type="submit" disabled={busy}>{busy ? t('auth.emailLogin.sending') : t('auth.reset.send')}</button>
+				<Button type="submit" variant="primary" busy={busy}
+					>{busy ? t('auth.emailLogin.sending') : t('auth.reset.send')}</Button
+				>
 			</form>
 			<p class="hint"><a href="/login">{t('auth.mfa.backToSignIn')}</a></p>
 		{/if}

@@ -1,4 +1,5 @@
 import { cleanup, render, screen, waitFor } from '@testing-library/svelte';
+import { tick } from 'svelte';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Entry } from '$lib/api/types';
 
@@ -9,15 +10,23 @@ vi.mock('$lib/api/entries', () => ({
 	getCharsUnderRadical: vi.fn(),
 	getSharedEntry: vi.fn()
 }));
-vi.mock('$lib/events', () => ({ record: vi.fn() }));
+vi.mock('$lib/events', () => ({
+	record: vi.fn(),
+	loadWorkspaceEvents: vi.fn(async () => []),
+	onEventLogChange: vi.fn(() => () => {})
+}));
 vi.mock('$lib/components/AddToStudy.svelte', () => ({ default: () => ({}) }));
 vi.mock('$lib/components/StrokePlayer.svelte', () => ({ default: () => ({}) }));
+vi.mock('$lib/api/audio', () => ({ getEntryAudio: vi.fn(async () => ({ terms: [], syllables: null })) }));
+vi.mock('$lib/api/frequency', () => ({ getEntryRanks: vi.fn(async () => ({ pack: null, ranks: [] })) }));
 vi.mock('$lib/notes/store', async (orig) => ({
 	...(await orig<typeof import('$lib/notes/store')>()),
 	loadNote: vi.fn(async () => ({ entryId: 5, text: 'my mnemonic', extra: {} }))
 }));
 
 import { getCharsUnderRadical, getEntry, getSharedEntry } from '$lib/api/entries';
+import { ApiError } from '$lib/api/client';
+import { pageFrame } from '$lib/frame/pageFrame.svelte';
 import { page, setUrl } from '$lib/testing/appState.svelte';
 import { loadNote } from '$lib/notes/store';
 import { workspaces } from '$lib/workspaces';
@@ -102,18 +111,19 @@ describe('entry page robustness', () => {
 		expect(screen.queryByRole('alert')).toBeNull();
 	});
 
-	it('lists variants with formatted readings', async () => {
+	it('shows a variant small beside the word with its label as a link', async () => {
 		vi.mocked(getEntry).mockResolvedValue(
 			entry({
 				kind: 'word',
+				forms: [{ text: '你', flags: [] }, { text: '妳', flags: ['trad'] }],
 				variants: [
 					{ id: 7, language: 'zh', kind: 'word', written: '妳', readings: [{ type: 'pinyin', value: 'ni3', plain: 'ni', ord: 0 }] }
 				] as never
 			})
 		);
 		render(Page);
-		const link = await screen.findByRole('link', { name: '妳' });
-		expect(link.parentElement?.textContent).toContain('Pinyin: ni3');
+		const link = await screen.findByRole('link', { name: '妳 traditional' });
+		expect(link.getAttribute('href')).toBe('/entry/7');
 	});
 
 	it('links a character to all characters with its radical', async () => {
@@ -206,5 +216,45 @@ describe('entry page written forms', () => {
 		render(Page);
 		await screen.findByRole('heading', { name: '犬' });
 		expect(screen.queryByText(/Also written/)).toBeNull();
+	});
+});
+
+
+describe('entry page titles and the phone bar (#104)', () => {
+	it('names the frame and the document after the word', async () => {
+		vi.mocked(getEntry).mockResolvedValue(entry({ written: '你' }));
+		render(Page);
+		await screen.findByRole('heading', { name: '你' });
+		await waitFor(() => expect(pageFrame.title).toBe('你'));
+		expect(document.title).toBe('你 · qinqin');
+	});
+
+	it('does not say "not found" while the entry is loading or after a network error', async () => {
+		let reject!: (e: unknown) => void;
+		vi.mocked(getEntry).mockReturnValue(
+			new Promise((_, rej) => {
+				reject = rej;
+			}) as never
+		);
+		render(Page);
+		await tick();
+		expect(document.title).toBe('qinqin');
+		reject(new ApiError(500, 'down'));
+		await waitFor(() => expect(screen.getByRole('alert')).toBeTruthy());
+		expect(document.title).toBe('qinqin');
+	});
+
+	it('says "Entry not found" on a 404 and never keeps the previous word', async () => {
+		vi.mocked(getEntry).mockImplementation((async (id: number) => {
+			if (id === 999) throw new ApiError(404, 'not found');
+			return entry({ written: '你' });
+		}) as never);
+		render(Page);
+		await screen.findByRole('heading', { name: '你' });
+		expect(document.title).toBe('你 · qinqin');
+		(page as unknown as { params: Record<string, string> }).params = { id: '999' };
+		await tick();
+		await waitFor(() => expect(document.title).toBe('Entry not found · qinqin'));
+		expect(pageFrame.title === null || pageFrame.title === '').toBe(true);
 	});
 });

@@ -12,6 +12,7 @@ vi.mock('$lib/time/zone', () => ({
 import { ApiError } from '$lib/api/client';
 import { studyDay } from '$lib/time/studyDay';
 import * as zone from '$lib/time/zone';
+import { primaryActions } from '$lib/ui/testing/primary';
 import StudyDaySettings from './StudyDaySettings.svelte';
 
 const z = vi.mocked(zone);
@@ -82,6 +83,14 @@ describe('StudyDaySettings', () => {
 		setup([{ zone: 'Europe/Berlin', from: null }], 'Europe/Berlin');
 		const options = [...(screen.getByLabelText('Time zone') as HTMLSelectElement).options].map((o) => o.value);
 		expect(options).toEqual(['Europe/Berlin']);
+	});
+
+	it('has one primary action; the search and zone are Field and Select underlines', async () => {
+		setup([{ zone: 'Europe/Berlin', from: null }], 'Europe/Berlin');
+		expect(primaryActions(document.body)).toHaveLength(1);
+		expect(screen.getByRole('button', { name: 'Change time zone' }).className).toContain('primary');
+		expect(screen.getByRole('searchbox', { name: 'Search time zones' }).closest('.field')).toBeTruthy();
+		expect(screen.getByLabelText('Time zone').closest('.field')).toBeTruthy();
 	});
 
 	it('shows an error when the change fails', async () => {

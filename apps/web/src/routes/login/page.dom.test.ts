@@ -8,6 +8,7 @@ vi.mock('$lib/api/mfa', () => ({ mfaSendEmail: vi.fn(), emailLoginStart: vi.fn()
 
 import { signIn as login } from '$lib/auth';
 import { getAuthOptions } from '$lib/api/account';
+import { primaryActions } from '$lib/ui/testing/primary';
 import Page from './+page.svelte';
 
 beforeEach(() => {
@@ -23,6 +24,35 @@ async function submit() {
 	await fireEvent.input(screen.getByLabelText('Password'), { target: { value: 'pw' } });
 	await fireEvent.click(screen.getByRole('button', { name: 'Sign in' }));
 }
+
+describe('the sign-in views in the lighter look (#106)', () => {
+	it('the password step has one primary action, "Sign in"', async () => {
+		render(Page);
+		const submit = screen.getByRole('button', { name: 'Sign in' });
+		expect(primaryActions(document.body)).toEqual([submit]);
+	});
+
+	it('the username and password are Field underlines with their labels', async () => {
+		render(Page);
+		expect(screen.getByLabelText('Username').closest('.field')).not.toBeNull();
+		expect(screen.getByLabelText('Password').closest('.field')).not.toBeNull();
+	});
+
+	it('the other-method signs are plain text, not a second button style', async () => {
+		vi.mocked(getAuthOptions).mockResolvedValue({
+			bootstrap: false,
+			registration: 'closed',
+			emailPolicy: 'off',
+			passwordReset: true,
+			emailCodeLogin: true,
+			passwordMinLength: 10
+		} as never);
+		render(Page);
+		const email = await screen.findByRole('button', { name: 'Email me a sign-in code' });
+		expect(email.className).toContain('plain');
+		expect(screen.getByRole('link', { name: 'Forgot password?' })).toBeTruthy();
+	});
+});
 
 describe('login page throttling', () => {
 	it('shows the wait, keeps the button enabled and sends no second request', async () => {

@@ -60,7 +60,7 @@
 	}
 
 	.mark {
-		font-weight: 700;
+		font-weight: var(--weight-strong);
 		font-size: 0.85rem;
 	}
 

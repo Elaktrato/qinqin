@@ -8,6 +8,7 @@
 	import { onContextStale } from '$lib/study/currentContext';
 	import { currentStudyDay } from '$lib/time/zone';
 	import { loadWeek, type WeekView } from '$lib/weekly/loadWeek';
+	import Button from '$lib/ui/Button.svelte';
 	import WeekSummary from '$lib/weekly/WeekSummary.svelte';
 	import { weekOf } from '$lib/weekly/week';
 	import { workspaces } from '$lib/workspaces';
@@ -65,22 +66,10 @@
 	onretry={() => void load(workspaceId, true)}
 >
 	{#snippet actions()}
-		<a class="more" href="/stats/week">{t('widgets.week.more')}</a>
+		<Button variant="plain" href="/stats/week">{t('widgets.week.more')}</Button>
 	{/snippet}
 
 	{#if view !== null}
-		<WeekSummary {view} compact onretry={() => void load(workspaceId, true)} />
+		<WeekSummary {view} layout="compact" onretry={() => void load(workspaceId, true)} />
 	{/if}
 </WidgetCard>
-
-<style>
-	.more {
-		font-size: 0.8rem;
-		padding: 0.2rem 0.65rem;
-		border: 1px solid var(--accent);
-		border-radius: 999px;
-		color: var(--reading-accent);
-		font-weight: 600;
-		text-decoration: none;
-	}
-</style>

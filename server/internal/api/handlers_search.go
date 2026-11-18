@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"strings"
 
+	"qinqin/internal/levels"
 	"qinqin/internal/lexicon"
 )
 
@@ -51,14 +52,55 @@ func (s *server) handleSearch(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "internal error", http.StatusInternalServerError)
 		return
 	}
+	ids := make([]int64, len(hits))
+	for i, h := range hits {
+		ids[i] = h.Entry.ID
+	}
+	lv, err := levels.LowestPerScheme(r.Context(), s.db, ids)
+	if err != nil {
+		http.Error(w, "internal error", http.StatusInternalServerError)
+		return
+	}
 	out := make([]searchHit, len(hits))
 	for i, h := range hits {
 		if h.Source == "written" && h.Entry.Language == "ja" {
 			bases[i].Written = matchedForm(h.Entry, strings.TrimSpace(q.Text))
 		}
-		out[i] = searchHit{EntryBase: bases[i], Source: h.Source}
+		out[i] = searchHit{
+			EntryBase: bases[i],
+			Source:    h.Source,
+			Glosses:   firstGlosses(h.Entry),
+			Levels:    levelViews(lv[h.Entry.ID]),
+		}
 	}
 	writeJSON(w, http.StatusOK, out)
+}
+
+// firstGlosses is the first gloss of each dictionary in the entry's sense
+// order, at most three; the arrays are never nil.
+func firstGlosses(e lexicon.Entry) []searchGloss {
+	out := make([]searchGloss, 0, 3)
+	seen := map[int64]bool{}
+	for _, sense := range e.Senses {
+		if len(out) == 3 {
+			break
+		}
+		if seen[sense.DictionaryID] || len(sense.Glosses) == 0 {
+			continue
+		}
+		seen[sense.DictionaryID] = true
+		out = append(out, searchGloss{DictionaryID: sense.DictionaryID, Gloss: sense.Glosses[0]})
+	}
+	return out
+}
+
+// levelViews maps the shared levels result onto the API's level rows.
+func levelViews(ls []levels.Level) []lookupLevel {
+	out := make([]lookupLevel, 0, len(ls))
+	for _, l := range ls {
+		out = append(out, lookupLevel{Scheme: l.SchemeName, Level: l.LevelName})
+	}
+	return out
 }
 
 // matchedForm is what a Japanese written-form hit shows: the form that

@@ -25,7 +25,7 @@ function storage(): Storage | null {
  */
 export async function load(): Promise<Record<string, never>> {
 	// The theme first: the last tokens of this device or the compiled-in
-	// Latte/Mocha (app.html already painted the stored ones before any module).
+	// qinqin Day/Night (app.html already painted the stored ones before any module).
 	applyStartupTheme();
 	const store = storage();
 	let signedIn = false;

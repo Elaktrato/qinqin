@@ -47,6 +47,7 @@ import { limitsOf } from '$lib/study/scheduler';
 	import { resolveSessionOrder } from '$lib/study/newOrder';
 	import { mixedNote, decodeOrder, encodeOrder, sessionOrderChoices } from '$lib/study/newOrderView';
 	import { deckOrdersOf } from '$lib/study/sessionOrder';
+	import { Button, Field, Section, Select } from '$lib/ui';
 	import {
 		CARD_TYPES,
 		loadConfig,
@@ -787,8 +788,7 @@ import { limitsOf } from '$lib/study/scheduler';
 	{:else if loading}
 		<p class="hint" role="status">{t('study.guide.loading')}</p>
 	{:else}
-		<section aria-labelledby="mode-heading">
-			<h2 id="mode-heading">{t('study.setup.source')}</h2>
+		<Section title={t('study.setup.source')} headingId="mode-heading">
 			<div class="modes" role="radiogroup" aria-labelledby="mode-heading">
 				<label class="inline">
 					<input
@@ -811,11 +811,10 @@ import { limitsOf } from '$lib/study/scheduler';
 					{t('study.setup.byLevel')}
 				</label>
 			</div>
-		</section>
+		</Section>
 
 		{#if mode === 'decks'}
-			<section aria-labelledby="decks-heading">
-				<h2 id="decks-heading">{t('study.decks.title')}</h2>
+			<Section title={t('study.decks.title')} headingId="decks-heading">
 
 				{#if decks.length === 0}
 					<div class="empty">
@@ -829,14 +828,15 @@ import { limitsOf } from '$lib/study/scheduler';
 						<li class="deck">
 							{#if renamingId === deck.id}
 								<form class="rename" onsubmit={(event) => submitRename(event, deck.id)}>
-									<input
+									<Field
+										label={t('study.decks.newName', { deck: deck.name })}
+										hideLabel
 										bind:value={renameName}
-										aria-label={t('study.decks.newName', { deck: deck.name })}
-										maxlength="80"
+										maxlength={80}
 										required
 									/>
-									<button type="submit">{t('common.action.save')}</button>
-									<button type="button" class="secondary" onclick={cancelRename}>{t('common.action.cancel')}</button>
+									<Button type="submit">{t('common.action.save')}</Button>
+									<Button onclick={cancelRename}>{t('common.action.cancel')}</Button>
 								</form>
 							{:else}
 								<label class="deck-choice">
@@ -853,17 +853,14 @@ import { limitsOf } from '$lib/study/scheduler';
 
 								{#if deck.id !== GENERAL_DECK_ID}
 									<div class="deck-actions">
-										<button type="button" class="secondary" onclick={() => beginRename(deck)}>
-											{t('study.decks.rename')}
-										</button>
-										<button
-											type="button"
-											class="danger"
+										<Button onclick={() => beginRename(deck)}>{t('study.decks.rename')}</Button>
+										<Button
+											tone="danger"
 											disabled={deletingId === deck.id}
 											onclick={() => removeDeck(deck)}
 										>
 											{deletingId === deck.id ? t('study.decks.deleting') : t('common.action.delete')}
-										</button>
+										</Button>
 									</div>
 								{/if}
 								<div class="deck-types">
@@ -880,30 +877,27 @@ import { limitsOf } from '$lib/study/scheduler';
 				</ul>
 
 				<form class="create" onsubmit={addDeck}>
-					<label>
-						{t('study.decks.new')}
-						<input
-							bind:value={deckName}
-							placeholder={t('study.decks.newPlaceholder')}
-							maxlength="80"
-							autocomplete="off"
-							required
-						/>
-					</label>
-					<button type="submit" disabled={creating}>
+					<Field
+						label={t('study.decks.new')}
+						bind:value={deckName}
+						placeholder={t('study.decks.newPlaceholder')}
+						maxlength={80}
+						autocomplete="off"
+						required
+					/>
+					<Button type="submit" disabled={creating}>
 						{creating ? t('study.decks.creating') : t('study.decks.create')}
-					</button>
+					</Button>
 				</form>
 
 				{#if deckError}
 					<p class="error" role="alert">{deckError}</p>
 				{/if}
-			</section>
+			</Section>
 
 			<CardManager {cards} decks={allDecks} onchanged={refreshData} />
 		{:else}
-			<section aria-labelledby="levels-heading">
-				<h2 id="levels-heading">{t('study.level.title')}</h2>
+			<Section title={t('study.level.title')} headingId="levels-heading">
 				<p class="hint">{t('study.level.intro')}</p>
 
 				{#if schemeError}
@@ -914,22 +908,18 @@ import { limitsOf } from '$lib/study/scheduler';
 					<p class="hint">{t('study.level.noSchemes')}</p>
 				{:else}
 					<div class="levels">
-						<label>
-							{t('study.level.scheme')}
-							<select bind:value={schemeId}>
-								{#each schemesForLanguage as scheme (scheme.id)}
-									<option value={scheme.id}>{scheme.name}</option>
-								{/each}
-							</select>
-						</label>
-						<label>
-							{t('study.level.level')}
-							<select bind:value={levelName}>
-								{#each schemeLevels as level (level.id)}
-									<option value={level.name}>{levelOptionLabel(level.name)}</option>
-								{/each}
-							</select>
-						</label>
+						<Select
+							label={t('study.level.scheme')}
+							value={schemeId === null ? '' : String(schemeId)}
+							onchange={(event) => (schemeId = Number(event.currentTarget.value))}
+							options={schemesForLanguage.map((scheme) => ({ value: String(scheme.id), label: scheme.name }))}
+						/>
+						<Select
+							label={t('study.level.level')}
+							value={levelName ?? ''}
+							onchange={(event) => (levelName = event.currentTarget.value)}
+							options={schemeLevels.map((level) => ({ value: level.name, label: levelOptionLabel(level.name) }))}
+						/>
 					</div>
 
 					{#if levelEntriesError}
@@ -938,34 +928,38 @@ import { limitsOf } from '$lib/study/scheduler';
 						<p class="hint" role="status">{t('study.guide.loadingLevel')}</p>
 					{/if}
 				{/if}
-			</section>
+			</Section>
 		{/if}
 
-		<section aria-labelledby="limits-heading">
-			<h2 id="limits-heading">{t('study.limitsSection.title')}</h2>
+		<Section title={t('study.limitsSection.title')} headingId="limits-heading">
 			<p class="hint">{t('study.limitsSection.intro')}</p>
 
 			<div class="limits">
-				<label>
-					{t('study.limitsSection.newCards')}
-					<input type="number" min="1" max="999" step="1" bind:value={newLimit} />
-				</label>
-				<label>
-					{t('study.limitsSection.reviews')}
-					<input type="number" min="1" max="999" step="1" bind:value={reviewLimit} />
-				</label>
+				<Field
+					label={t('study.limitsSection.newCards')}
+					type="number"
+					min={1}
+					max={999}
+					step={1}
+					value={String(newLimit)}
+					oninput={(event) => (newLimit = Number(event.currentTarget.value))}
+				/>
+				<Field
+					label={t('study.limitsSection.reviews')}
+					type="number"
+					min={1}
+					max={999}
+					step={1}
+					value={String(reviewLimit)}
+					oninput={(event) => (reviewLimit = Number(event.currentTarget.value))}
+				/>
 			</div>
-			<label class="order">
-				{t('study.limitsSection.order')}
-				<select
-					value={orderValue}
-					onchange={(event) => (newOrderValue = (event.currentTarget as HTMLSelectElement).value)}
-				>
-					{#each orderView.choices as choice (choice.value)}
-						<option value={choice.value}>{choice.label}</option>
-					{/each}
-				</select>
-			</label>
+			<Select
+				label={t('study.limitsSection.order')}
+				value={orderValue}
+				onchange={(event) => (newOrderValue = (event.currentTarget as HTMLSelectElement).value)}
+				options={orderView.choices.map((choice) => ({ value: choice.value, label: choice.label }))}
+			/>
 			{#if ordersMixed}
 				<p class="hint" role="status">{mixedNote()}</p>
 			{/if}
@@ -975,10 +969,9 @@ import { limitsOf } from '$lib/study/scheduler';
 			<p class="hint">
 				<a href="/study/scheduling">{t('study.limitsSection.scheduling', { label: schedulingLabel })}</a>
 			</p>
-		</section>
+		</Section>
 
-		<section aria-labelledby="types-heading">
-			<h2 id="types-heading">{t('study.types.title')}</h2>
+		<Section title={t('study.types.title')} headingId="types-heading">
 
 			<p class="hint">{t('study.types.intro')}</p>
 			<ul class="types">
@@ -997,10 +990,9 @@ import { limitsOf } from '$lib/study/scheduler';
 					</li>
 				{/each}
 			</ul>
-		</section>
+		</Section>
 
-		<section class="summary" aria-labelledby="summary-heading">
-			<h2 id="summary-heading">{t('study.summary.title')}</h2>
+		<Section title={t('study.summary.title')} headingId="summary-heading">
 			{#if vacationText === null}
 				<p class="today">{startTodayText(counts.due, counts.fresh, noDailyLimit)}</p>
 			{/if}
@@ -1050,260 +1042,113 @@ import { limitsOf } from '$lib/study/scheduler';
 			{/if}
 
 			{#if vacationText === null}
-				<button type="button" class="start" disabled={starting || guidance !== ''} onclick={start}>
+				<Button variant="primary" disabled={starting || guidance !== ''} onclick={start}>
 					{starting ? t('study.summary.starting') : t('study.summary.start')}
-				</button>
+				</Button>
 			{/if}
 
 			{#if guidance && vacationText === null}
 				<p class="hint" role="status">{guidance}</p>
 			{/if}
-		</section>
+		</Section>
 	{/if}
 </div>
 
 <style>
-	.setup {
-		margin: 0 auto;
-		max-width: 48rem;
-		padding: 2.5rem 1.5rem;
-	}
-
-	.setup section {
-		margin-top: 2rem;
-	}
-
+	/* .page-body is the only page column (#106); the setup brings no second one. */
 	h1,
-	h2,
 	h3 {
-		margin-bottom: 0.5rem;
+		margin-bottom: var(--space-2);
 	}
 
-	.hint {
-		color: var(--readable-muted);
-	}
-
-	.empty {
-		border: 1px dashed color-mix(in srgb, currentColor 30%, transparent);
-		border-radius: 0.4rem;
-		padding: 0.75rem 1rem;
-		margin-bottom: 1rem;
-	}
-
-	.empty h3 {
-		margin: 0 0 0.35rem;
-	}
-
-	.empty p {
-		margin: 0;
-		color: var(--readable-muted);
-	}
-
+	.modes,
 	.decks,
+	.levels,
+	.limits,
 	.types {
+		display: grid;
+		gap: var(--space-2);
+	}
+
+	.inline,
+	.deck-choice,
+	.type-choice {
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--space-2);
+		align-items: center;
+		min-height: var(--hit);
+	}
+
+	.decks {
 		list-style: none;
 		margin: 0;
 		padding: 0;
-		display: grid;
-		gap: 0.5rem;
-	}
-
-	.type-choice {
-		display: grid;
-		grid-template-columns: auto 1fr;
-		column-gap: 0.55rem;
-		row-gap: 0.1rem;
-		align-items: center;
-		border: 1px solid color-mix(in srgb, currentColor 18%, transparent);
-		border-radius: 0.4rem;
-		padding: 0.55rem 0.75rem;
-		cursor: pointer;
-	}
-
-	.type-choice:focus-within {
-		border-color: var(--accent);
-	}
-
-	.type-label {
-		font-weight: 600;
-	}
-
-	.type-info {
-		grid-column: 2;
-		font-size: 0.9rem;
-		color: var(--readable-muted);
-	}
-
-	.warnings {
-		margin: 0 0 1rem;
-		padding-left: 1.25rem;
-		/* Warnings: --text with the --warn bar as the cue. */
-		border-inline-start: 3px solid var(--warn);
 	}
 
 	.deck {
 		display: flex;
 		flex-wrap: wrap;
+		gap: var(--space-2);
 		align-items: center;
-		justify-content: space-between;
-		gap: 0.5rem;
-		border: 1px solid color-mix(in srgb, currentColor 18%, transparent);
-		border-radius: 0.4rem;
-		padding: 0.6rem 0.75rem;
+		padding-block: var(--space-2);
+	}
+
+	.deck + .deck {
+		border-top: 1px solid var(--hair);
 	}
 
 	.deck-types {
 		flex-basis: 100%;
 	}
 
-	.deck-choice,
-	.inline {
-		display: flex;
-		align-items: center;
-		gap: 0.45rem;
-	}
-
-	.deck-name {
-		font-weight: 600;
-	}
-
 	.deck-actions {
 		display: flex;
-		gap: 0.5rem;
+		gap: var(--space-2);
+		margin-inline-start: auto;
 	}
 
-	.deck-actions button,
-	.rename button {
-		padding: 0.3rem 0.6rem;
-	}
-
-	.tag {
-		font-size: 0.75rem;
-		border: 1px solid currentColor;
-		border-radius: 999px;
-		padding: 0.02rem 0.45rem;
-		color: var(--readable-muted);
-	}
-
-	.rename {
-		display: flex;
-		flex-wrap: wrap;
-		align-items: center;
-		gap: 0.5rem;
-		width: 100%;
-	}
-
+	.rename,
 	.create {
 		display: flex;
 		flex-wrap: wrap;
+		gap: var(--space-2);
 		align-items: end;
-		gap: 0.75rem;
-		margin-top: 0.75rem;
 	}
 
-	.create label,
-	.limits label,
-	.order,
-	.levels label {
-		display: grid;
-		gap: 0.35rem;
-		font-weight: 600;
+	.rename :global(.field),
+	.create :global(.field) {
+		flex: 1 1 14rem;
+	}
+
+	.types {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+	}
+
+	.types li + li {
+		border-top: 1px solid var(--hair);
 	}
 
 	.limits {
-		display: flex;
-		flex-wrap: wrap;
-		gap: 1rem;
-	}
-
-	.order {
-		margin-top: 0.75rem;
-		max-width: 100%;
-	}
-
-	.order select {
-		max-width: 100%;
-	}
-
-	.modes,
-	.levels {
-		display: flex;
-		flex-wrap: wrap;
-		gap: 1rem;
-	}
-
-	.modes {
-		gap: 1.5rem;
-	}
-
-	.create input,
-	.limits input,
-	.levels select,
-	.order select,
-	.rename input,
-	.setup button {
-		font: inherit;
-	}
-
-	.create input,
-	.limits input,
-	.levels select,
-	.order select,
-	.rename input {
-		padding: 0.4rem 0.55rem;
-		border: 1px solid color-mix(in srgb, currentColor 35%, transparent);
-		border-radius: 0.4rem;
-		background: transparent;
-		color: inherit;
-	}
-
-	.limits input {
-		width: 5rem;
-	}
-
-	.setup button {
-		padding: 0.45rem 0.85rem;
-		border: 0;
-		border-radius: 0.4rem;
-		background: var(--accent);
-		color: var(--on-accent);
-		font-weight: 600;
-		cursor: pointer;
-	}
-
-	.setup button.secondary {
-		background: transparent;
-		color: inherit;
-		border: 1px solid color-mix(in srgb, currentColor 35%, transparent);
-	}
-
-	.setup button.danger {
-		background: transparent;
-		color: var(--readable-bad);
-		border: 1px solid currentColor;
-	}
-
-	.setup button:disabled {
-		opacity: 0.6;
-		cursor: not-allowed;
-	}
-
-	.stats {
-		margin: 0.5rem 0 1rem;
-	}
-
-	.errors {
-		margin: 0 0 1rem;
-		padding-left: 1.25rem;
-		color: var(--readable-bad);
-		font-weight: 600;
+		grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+		max-width: 28rem;
 	}
 
 	.error {
-		margin: 0.5rem 0 0;
 		color: var(--readable-bad);
-		font-weight: 600;
 		padding-inline-start: var(--space-2);
 		border-inline-start: 3px solid var(--bad);
+	}
+
+	.hint {
+		color: var(--readable-muted);
+	}
+
+	.stats {
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--space-1) var(--space-2);
 	}
 </style>

@@ -16,6 +16,7 @@
 	import AiCustomEndpoints from './AiCustomEndpoints.svelte';
 	import AiProviderForm from './AiProviderForm.svelte';
 	import { aiSettingsView, modelSuggestions } from './aiSettingsView';
+	import { Button, Chip, Field, Section } from '$lib/ui';
 
 	let status = $state<AiStatus | null>(null);
 	let registry = $state<ProvidersResponse | null>(null);
@@ -113,17 +114,16 @@
 	const customEndpoints = $derived(registry ? registry.providers.filter((p) => p.custom) : []);
 </script>
 
-<section class="ai" aria-labelledby="ai-heading">
-	<h2 id="ai-heading">{t('settings.ai.title')}</h2>
+<Section title={t('settings.ai.title')}>
 
 	{#if loadError}
 		<p class="error" role="alert">{loadError}</p>
-		<button type="button" class="secondary" onclick={load}>{t('settings.ai.retry')}</button>
+		<Button onclick={load}>{t('settings.ai.retry')}</Button>
 	{:else if !status || !registry || !view}
 		<p>{t('common.loading')}</p>
 	{:else}
 		{#if view.testProvider}
-			<p><span class="badge">{t('settings.ai.testProvider')}</span></p>
+			<p><Chip>{t('settings.ai.testProvider')}</Chip></p>
 		{/if}
 		{#if view.banner}
 			<p class="banner">{view.banner}</p>
@@ -136,7 +136,7 @@
 					<li class:active={row.active}>
 						<div class="head">
 							<strong>{row.name}</strong>
-							{#if row.active}<span class="badge active-badge">{t('settings.ai.active')}</span>{/if}
+							{#if row.active}<Chip>{t('settings.ai.active')}</Chip>{/if}
 							<span class="muted">{t('settings.ai.keyHint', { hint: row.hint })}</span>
 						</div>
 						{#if row.adminLine}<p class="muted">{row.adminLine}</p>{/if}
@@ -145,8 +145,8 @@
 						{:else}
 							<p class="muted">
 								<span>{row.modelLabel}</span>
-								{#if row.vision}<span class="badge">{t('settings.ai.readsPhotos')}</span>{/if}
-								{#if row.structuredLabel}<span class="badge">{row.structuredLabel}</span>{/if}
+								{#if row.vision}<Chip>{t('settings.ai.readsPhotos')}</Chip>{/if}
+								{#if row.structuredLabel}<Chip>{row.structuredLabel}</Chip>{/if}
 							</p>
 							{#if row.stateText}<p class="warn">{row.stateText}</p>{/if}
 						{/if}
@@ -154,21 +154,19 @@
 						{#if editingModel === row.id}
 							{@const prov = registry.providers.find((p) => p.id === row.id)}
 							<form class="modelform" onsubmit={(e) => saveModel(e, row.id)}>
-								<label>
-									<span>{t('settings.ai.modelFor', { name: row.name })}</span>
-									<input
-										list={`models-${row.id}`}
-										bind:value={modelDraft}
-										autocomplete="off"
-										spellcheck="false"
-									/>
-								</label>
+								<Field
+									label={t('settings.ai.modelFor', { name: row.name })}
+									list={`models-${row.id}`}
+									bind:value={modelDraft}
+									autocomplete="off"
+									spellcheck="false"
+								/>
 								<datalist id={`models-${row.id}`}>
 									{#each modelSuggestions(prov) as m (m.id)}<option value={m.id}>{m.label}</option>{/each}
 								</datalist>
 								<div class="actions">
-									<button type="submit" disabled={busy || modelDraft.trim() === ''}>{t('settings.ai.saveModel')}</button>
-									<button type="button" class="secondary" onclick={() => (editingModel = null)}>{t('common.action.cancel')}</button>
+									<Button type="submit" disabled={busy || modelDraft.trim() === ''}>{t('settings.ai.saveModel')}</Button>
+									<Button onclick={() => (editingModel = null)}>{t('common.action.cancel')}</Button>
 								</div>
 							</form>
 						{:else if confirmingRemove === row.id}
@@ -181,38 +179,37 @@
 								onkeydown={(e) => e.key === 'Escape' && cancelRemove(row.id)}
 							>
 								{t('settings.ai.removeConfirm', { name: row.name })}
-								<button type="button" class="secondary danger" onclick={() => remove(row.id)} disabled={busy}>
+								<Button tone="danger" onclick={() => remove(row.id)} disabled={busy}>
 									{t('settings.ai.removeYes')}
-								</button>
-								<button type="button" class="secondary" onclick={() => cancelRemove(row.id)}>{t('common.action.cancel')}</button>
+								</Button>
+								<Button onclick={() => cancelRemove(row.id)}>{t('common.action.cancel')}</Button>
 							</span>
 						{:else}
 							<div class="actions">
 								{#if row.state !== 'disabled'}
 									{#if !row.active && row.state === 'ok'}
-										<button type="button" class="secondary" aria-label={t('settings.ai.makeActiveNamed', { name: row.name })} disabled={busy} onclick={() => makeActive(row.id)}>
+										<Button aria-label={t('settings.ai.makeActiveNamed', { name: row.name })} disabled={busy} onclick={() => makeActive(row.id)}>
 											{t('settings.ai.makeActive')}
-										</button>
+										</Button>
 									{/if}
 									{#if row.state === 'ok'}
-										<button type="button" class="secondary" aria-label={t('settings.ai.testNamed', { name: row.name })} disabled={busy} onclick={() => testKey(row.id)}>
+										<Button aria-label={t('settings.ai.testNamed', { name: row.name })} disabled={busy} onclick={() => testKey(row.id)}>
 											{t('settings.ai.test')}
-										</button>
+										</Button>
 									{/if}
-									<button type="button" class="secondary" aria-label={t('settings.ai.changeModelNamed', { name: row.name })} disabled={busy} onclick={() => startModel(row.id, row.model)}>
+									<Button aria-label={t('settings.ai.changeModelNamed', { name: row.name })} disabled={busy} onclick={() => startModel(row.id, row.model)}>
 										{t('settings.ai.changeModel')}
-									</button>
+									</Button>
 								{/if}
-								<button
-									type="button"
+								<Button
 									id={`remove-${row.id}`}
-									class="secondary danger"
+									tone="danger"
 									aria-label={t('settings.ai.removeNamed', { name: row.name })}
 									disabled={busy}
 									onclick={() => (confirmingRemove = row.id)}
 								>
 									{t('common.action.remove')}
-								</button>
+								</Button>
 							</div>
 						{/if}
 					</li>
@@ -248,65 +245,45 @@
 			<a href="/p/journal/settings">{t('settings.ai.journalLink')}</a>
 		</p>
 	{/if}
-</section>
+</Section>
 
 <style>
 	h3 {
-		margin: 1rem 0 0.5rem;
+		margin: var(--space-4) 0 var(--space-2);
+		font-size: var(--font-size-l);
+		font-weight: var(--weight-strong);
 	}
 
 	.rows {
 		list-style: none;
 		padding: 0;
-		display: grid;
-		gap: 0.75rem;
 		max-width: 36rem;
 	}
 
 	.rows li {
-		padding: 0.6rem 0.75rem;
-		border: 1px solid color-mix(in srgb, currentColor 25%, transparent);
-		border-radius: 0.5rem;
+		padding-block: var(--space-3);
 	}
 
-	.rows li.active {
-		border-color: currentColor;
+	.rows li + li {
+		border-top: 1px solid var(--hair);
 	}
 
 	.rows p {
-		margin: 0.3rem 0;
+		margin: var(--space-1) 0;
 	}
 
 	.head {
 		display: flex;
 		flex-wrap: wrap;
 		align-items: baseline;
-		gap: 0.25rem 0.6rem;
+		gap: var(--space-1) var(--space-2);
 	}
 
 	.modelform {
 		display: grid;
-		gap: 0.6rem;
-		margin-top: 0.5rem;
-	}
-
-	.modelform label {
-		display: grid;
-		gap: 0.3rem;
-		font-weight: 600;
-	}
-
-	.modelform input {
-		font: inherit;
-		font-weight: 400;
-		min-height: 2.75rem;
-		padding: 0.4rem 0.6rem;
-		border: 1px solid color-mix(in srgb, currentColor 35%, transparent);
-		border-radius: 0.4rem;
-		background: transparent;
-		color: inherit;
-		box-sizing: border-box;
-		width: 100%;
+		gap: var(--space-2);
+		margin-top: var(--space-2);
+		max-width: 28rem;
 	}
 
 	.actions,
@@ -314,45 +291,18 @@
 		display: flex;
 		flex-wrap: wrap;
 		align-items: center;
-		gap: 0.5rem 0.75rem;
-		margin-top: 0.4rem;
-	}
-
-	.ai button {
-		min-height: 2.75rem;
-		min-width: 2.75rem;
-	}
-
-	.ai button.secondary {
-		border: 1px solid color-mix(in srgb, currentColor 35%, transparent);
-		background: transparent;
-		color: inherit;
-		font-weight: 500;
-	}
-
-	.ai button.secondary.danger {
-		color: var(--readable-bad);
-	}
-
-	.badge {
-		display: inline-block;
-		padding: 0.1rem 0.55rem;
-		border: 1px solid currentColor;
-		border-radius: 999px;
-		font-weight: 600;
-		font-size: 0.8rem;
+		gap: var(--space-2);
+		margin-top: var(--space-1);
 	}
 
 	.banner {
-		padding: 0.6rem 0.75rem;
-		border: 1px solid color-mix(in srgb, currentColor 35%, transparent);
-		border-left: 4px solid var(--warn);
-		border-radius: 0.4rem;
+		padding-inline-start: var(--space-3);
+		border-inline-start: 3px solid var(--warn);
 	}
 
 	/* A warning: the text in --text, the --warn bar as the cue. */
 	.warn {
-		font-weight: 600;
+		font-weight: var(--weight-strong);
 		padding-inline-start: var(--space-2);
 		border-inline-start: 3px solid var(--warn);
 	}
@@ -369,7 +319,6 @@
 
 	.error {
 		color: var(--readable-bad);
-		font-weight: 600;
 		padding-inline-start: var(--space-2);
 		border-inline-start: 3px solid var(--bad);
 	}

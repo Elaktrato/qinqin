@@ -8,7 +8,7 @@ Open it under **Stats**, tab **Week** (`/stats/week`), or from the **This week**
 
 A week is Monday to Sunday in your own days: your time zone, as set in [Settings tour](Settings-tour), not UTC dates. A review at 23:30 on a Monday in Berlin belongs to that Monday. A week in which the clocks change still has seven days. If you moved across the date line and a date never happened for you, that day is shown as "no such day" and is not counted.
 
-**Previous week** and **Next week** step through the weeks. You can go back 52 weeks. The current week says **In progress**; its days after today are shown as upcoming and are not counted.
+The **Previous week** and **Next week** arrows step through the weeks; at the oldest week or in the current week the arrow is disabled rather than removed, so the layout does not jump. You can go back 52 weeks. The current week says **In progress**; its days after today are shown as upcoming and are not counted.
 
 ## What the numbers mean
 
@@ -26,17 +26,19 @@ A week is Monday to Sunday in your own days: your time zone, as set in [Settings
 | Characters learned | Chinese and Japanese workspaces only: characters whose score reached 80 of 100 that week, as on the character map. This row appears a moment after the others ("Counting characters…") |
 | Daily goal | the days on which you reached your [daily goal](Daily-goals) out of the days it counted; today counts once its goal is reached |
 
+The Week tab puts four numbers first — **Reviews**, **New cards**, **Flashcard study time** and **Journal entries** — each with its change from last week. When the journal plugin is off, **Reading** takes the fourth place; every other row is listed under **More this week**. Below the four numbers the paired bars show each day of the week beside the same weekday of the week before: the accent bar is this week, the muted one last week, both scaled to the busiest day of the two weeks. The whole of last week is drawn, even while the four numbers compare only up to the same weekday.
+
 ## Compared with last week
 
-Each number says how it compares with the week before: "12 more than last week", "3 fewer than last week" or "Same as last week". While the week is in progress it compares with last week **up to the same weekday** ("Compared with Monday to Wednesday last week", the whole of last Wednesday included), so a Wednesday is not compared with a whole week. With nothing in the week before (your first week, or after a break) it says "Nothing last week to compare". The arrows are decoration; the words say the same.
+Each number says how it compares with the week before: "12 more than last week", "3 fewer than last week" or "Same as last week". While the week is in progress it compares with last week **up to the same weekday** ("Compared with Monday to Wednesday last week", the whole of last Wednesday included), so a Wednesday is not compared with a whole week. With nothing in the week before (your first week, or after a break) it says "Nothing last week to compare". The trend arrows are decoration; the words say the same.
 
 ## Vacation days
 
-A [vacation](Flashcards-decks-limits-vacation) day is marked in the day strip and is neutral: it does not count for or against **Days active** or the daily goal, and it never breaks the streak. Anything you did on a vacation day still counts in the totals. A week that was vacation from start to end says **On vacation all week**.
+A [vacation](Flashcards-decks-limits-vacation) day is marked in the day strip (home widget) or the bar column (Week tab) and is neutral: it does not count for or against **Days active** or the daily goal, and it never breaks the streak. Anything you did on a vacation day still counts in the totals. A week that was vacation from start to end says **On vacation all week**.
 
-## The day strip
+## The day strip and the bars
 
-Seven boxes, Monday to Sunday: active (a tick, filled), not active (a dot), vacation (V, dashed), upcoming (dotted) and "no such day" (a dash). Each box has its full description as a tooltip and for screen readers, for example "Monday 16 November: active, 42 reviews".
+On the Week tab the paired bars carry each day's state (active, not active, vacation, upcoming, "no such day") in the column's tooltip and in a screen-reader list, for example "Monday: 42 points this week, 30 last week, active"; the visible legend names **This week** and **Last week**. The home widget keeps the seven-box strip: active (a tick, filled), not active (a dot), vacation (V, dashed), upcoming (dotted) and "no such day" (a dash), each with its full description as a tooltip and for screen readers.
 
 ## Offline
 
@@ -44,7 +46,7 @@ Without a connection the summary still shows what this device knows: new cards, 
 
 ## Milestones
 
-Above the summary a card names milestones you reached and have not seen yet ("1,000 reviews", "a 7-day streak", "HSK 1 complete"); **Dismiss** puts it away for good. Below it, the **Milestones** section lists every milestone you have reached, newest first, new ones marked **New**. The summary's **Milestones** line names the milestones of the week shown. See [Milestones](Milestones).
+Above the summary a card names milestones you reached and have not seen yet ("1,000 reviews", "a 7-day streak", "HSK 1 complete"); **Dismiss** puts it away for good. Below it, the **Milestones** section lists every milestone you have reached, newest first, with its date as muted text and new ones marked **New**. The summary's **Milestone this week** line names the milestones of the week shown. See [Milestones](Milestones).
 
 ## The home widget
 

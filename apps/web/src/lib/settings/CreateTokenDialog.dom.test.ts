@@ -6,6 +6,7 @@ vi.mock('$lib/api/tokens', () => ({ createToken: vi.fn() }));
 import { createToken } from '$lib/api/tokens';
 import { ApiError } from '$lib/api/client';
 import { deferred, escape, pressEnter } from '$lib/ui/testing/dialogForm';
+import { primaryActions } from '$lib/ui/testing/primary';
 import CreateTokenDialog from './CreateTokenDialog.svelte';
 
 const created = { token: 'qq_secret', accessToken: { id: 3 } };
@@ -28,6 +29,22 @@ afterEach(() => {
 });
 
 describe('CreateTokenDialog', () => {
+	it('name, password, workspace and expiry are base controls; the token sits in a raised Panel', async () => {
+		vi.mocked(createToken).mockResolvedValue(created as never);
+		const f = setup();
+		expect(screen.getByLabelText('Name').closest('.field')).toBeTruthy();
+		expect(screen.getByLabelText('Your password').closest('.field')).toBeTruthy();
+		expect(screen.getByLabelText('Workspace').closest('.field')).toBeTruthy();
+		expect(screen.getByLabelText('Expires after').closest('.field')).toBeTruthy();
+		expect(primaryActions(document.body)).toHaveLength(1);
+		await fireEvent.input(f.name, { target: { value: 'ci' } });
+		await fireEvent.input(f.password, { target: { value: 'pw' } });
+		await fireEvent.click(f.submit);
+		const token = await screen.findByLabelText('Your new access token', { selector: 'input' });
+		expect(token.closest('.panel.raised')).toBeTruthy();
+		expect(screen.getByRole('button', { name: 'Copy' }).className).toContain('icon-button');
+	});
+
 	it('starts in the name field', () => {
 		const f = setup();
 		expect(document.activeElement).toBe(f.name);

@@ -5,6 +5,7 @@
 	import { t } from '$lib/i18n';
 	import { loadNoteCfg, saveNoteCfg } from '$lib/notes/store';
 	import { workspaces } from '$lib/workspaces';
+	import Section from '$lib/ui/Section.svelte';
 
 	const workspaceId = $derived($workspaces.current?.id ?? null);
 	let cfg = $state.raw<NoteCfg>({ onAnswer: true, extra: {} });
@@ -56,15 +57,14 @@
 </script>
 
 {#if workspaceId !== null}
-	<section class="notes">
-		<h2>{t('settings.notes.title')}</h2>
+	<Section title={t('settings.notes.title')}>
 		<label class="check">
 			<input type="checkbox" bind:checked disabled={busy || !loaded} onchange={change} />
 			{t('settings.notes.onAnswer')}
 		</label>
 		<p class="hint">{t('settings.notes.hint')}</p>
 		{#if error}<p class="error" role="alert">{error}</p>{/if}
-	</section>
+	</Section>
 {/if}
 
 <style>

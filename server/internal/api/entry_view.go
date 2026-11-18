@@ -29,6 +29,7 @@ type entryResponse struct {
 	Variants    []model.EntryBase `json:"variants"`
 	Badges      []model.Badge     `json:"badges"`
 	Sentences   []model.Sentence  `json:"sentences"`
+	Characters  []entryCharacter  `json:"characters"`
 }
 
 // formView is one written form of an entry: its text, its source flags
@@ -53,11 +54,20 @@ type senseGroup struct {
 	Xrefs          []string `json:"xrefs"`
 }
 
-// searchHit is one element of GET /api/search: the entry's base fields
-// and why it matched ("written", "gloss", or a reading type).
+// searchGloss is the first gloss of one dictionary for a search hit.
+type searchGloss struct {
+	DictionaryID int64  `json:"dictionaryId"`
+	Gloss        string `json:"gloss"`
+}
+
+// searchHit is one element of GET /api/search: the entry's base fields,
+// why it matched ("written", "gloss", or a reading type), the first gloss
+// of each dictionary and the lowest level per scheme.
 type searchHit struct {
 	model.EntryBase
-	Source string `json:"source"`
+	Source  string        `json:"source"`
+	Glosses []searchGloss `json:"glosses"`
+	Levels  []lookupLevel `json:"levels"`
 }
 
 // entryBase maps a lexicon entry onto the API's base view: Written is
@@ -156,6 +166,9 @@ func buildEntryResponse(ctx context.Context, sqlDB *sql.DB, e *lexicon.Entry, vi
 		return nil, err
 	}
 	if resp.Sentences, err = sentences.ForEntry(ctx, sqlDB, e.ID, viewerID); err != nil {
+		return nil, err
+	}
+	if resp.Characters, err = entryCharacters(ctx, sqlDB, e); err != nil {
 		return nil, err
 	}
 	return resp, nil

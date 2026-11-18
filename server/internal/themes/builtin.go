@@ -27,7 +27,7 @@ var builtinFS embed.FS
 
 // builtinOrder is the order GET /api/themes lists the built-in packs in
 // (docs/contracts/themes/themes-api.json).
-var builtinOrder = []string{"catppuccin", "rose-pine", "nord", "gruvbox", "dracula", "solarized", "tokyo-night", "everforest", "kanagawa"}
+var builtinOrder = []string{"qinqin", "qinqin-extras", "catppuccin", "rose-pine", "nord", "gruvbox", "dracula", "solarized", "tokyo-night", "everforest", "kanagawa"}
 
 var loadBuiltin = sync.OnceValue(func() []BuiltinPack {
 	out := make([]BuiltinPack, 0, len(builtinOrder))

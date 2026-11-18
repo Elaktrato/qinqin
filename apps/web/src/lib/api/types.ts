@@ -49,8 +49,31 @@ export interface EntryBase {
 // SearchHit is one result of GET /api/search: the entry plus the source
 // of the match — "written", "gloss", or the type of the matching reading
 // ("pinyin", "bopomofo", "kana", …).
+export interface SearchGloss {
+	dictionaryId: number;
+	gloss: string;
+}
+
+export interface SearchLevel {
+	scheme: string;
+	level: string;
+}
+
 export interface SearchHit extends EntryBase {
 	source: string;
+	glosses?: SearchGloss[];
+	levels?: SearchLevel[];
+}
+
+// EntryCharacter is one Han character of a word entry (#104).
+export interface EntryCharacter {
+	id: number;
+	written: string;
+	reading: { type: string; value: string } | null;
+	gloss: string;
+	radical: { id: number; written: string } | null;
+	strokes: number;
+	levels: SearchLevel[];
 }
 
 // SenseGroup is one sense of an entry as one dictionary gives it, with
@@ -78,6 +101,7 @@ export interface Entry extends EntryBase {
 	senses: SenseView[];
 	forms?: { text: string; flags: string[]; pri?: number }[];
 	senseGroups?: SenseGroup[];
+	characters?: EntryCharacter[];
 }
 
 // EntryDetail is the full entry view returned by GET and PUT

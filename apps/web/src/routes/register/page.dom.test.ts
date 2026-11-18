@@ -7,6 +7,7 @@ vi.mock('$lib/api/account', () => ({ getAuthOptions: vi.fn(), checkInvite: vi.fn
 
 import { register } from '$lib/auth';
 import { checkInvite, getAuthOptions } from '$lib/api/account';
+import { primaryActions } from '$lib/ui/testing/primary';
 import Page from './+page.svelte';
 
 const opts = (o: object) => ({
@@ -60,6 +61,10 @@ describe('register page', () => {
 		expect(email.required).toBe(true);
 		await fireEvent.input(screen.getByLabelText('Username'), { target: { value: 'newcomer' } });
 		await fireEvent.input(email, { target: { value: 'n@example.org' } });
+		// one primary action on the register view, and Field underlines (#106)
+		expect(primaryActions(document.body).map((b) => b.textContent?.trim())).toEqual(['Create account']);
+		expect(screen.getByLabelText('Username').closest('.field')).not.toBeNull();
+		expect(screen.getByLabelText('Password').closest('.field')).not.toBeNull();
 		await fireEvent.input(screen.getByLabelText('Password'), { target: { value: 'long-enough-pw' } });
 		await fireEvent.click(screen.getByRole('button', { name: 'Create account' }));
 		await waitFor(() =>

@@ -65,7 +65,7 @@ const SAMPLES: Sample[] = [
 	{
 		name: 'DeckStatsPanel',
 		component: DeckStatsPanel,
-		props: { numbers: { words: 12, studied: 8, mastered: 3, retention: null, reviews30: 40 } }
+		props: { numbers: { words: 12, cards: 14, studied: 8, mastered: 3, retention: null, reviews30: 40 } }
 	},
 	// reader (Task 19)
 	{

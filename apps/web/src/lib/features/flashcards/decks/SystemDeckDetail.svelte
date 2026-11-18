@@ -16,6 +16,7 @@
 	import { loadLevelItems } from './systemDeckItems';
 	import { levelDecks, ownedLevelDeckId, type LevelDeck } from './systemDecks';
 	import { levelSessionConfig } from './studyStart';
+	import { Button, Select } from '$lib/ui';
 
 	// A read-only level deck: its items with the learner's state, a level
 	// session, and "Add to my decks" (idempotent, see addToDeck.ts). Plugin
@@ -200,22 +201,24 @@
 	{:else}
 		<p>{t('flashcards.system.owned', { owned: ownedCount, total: items.length })}</p>
 		<div class="actions">
-			<button type="button" class="primary" onclick={study}>{t('flashcards.system.studyLevel')}</button>
-			<label>
-				{t('flashcards.system.addTo')}
-				<select bind:value={targetChoice} disabled={busy}>
-					<option value="new"
-						>{existingCopy === null
-							? t('flashcards.system.newDeck', { name: newName })
-							: t('flashcards.system.existingCopy', { name: existingCopy.name })}</option
-					>
-					<option value={GENERAL_DECK_ID}>{t('flashcards.deck.general')}</option>
-					{#each data?.decks ?? [] as d (d.id)}
-						<option value={d.id}>{d.name}</option>
-					{/each}
-				</select>
-			</label>
-			<button type="button" disabled={busy} onclick={add}>{t('flashcards.system.addToMine')}</button>
+			<Button onclick={study}>{t('flashcards.system.studyLevel')}</Button>
+			<Select
+				label={t('flashcards.system.addTo')}
+				bind:value={targetChoice}
+				disabled={busy}
+				options={[
+					{
+						value: 'new',
+						label:
+							existingCopy === null
+								? t('flashcards.system.newDeck', { name: newName })
+								: t('flashcards.system.existingCopy', { name: existingCopy.name })
+					},
+					{ value: GENERAL_DECK_ID, label: t('flashcards.deck.general') },
+					...(data?.decks ?? []).map((d) => ({ value: d.id, label: d.name }))
+				]}
+			/>
+			<Button variant="primary" disabled={busy} onclick={add}>{t('flashcards.system.addToMine')}</Button>
 		</div>
 		{#if progress !== null}
 			<p role="status" aria-label={t('flashcards.system.adding')}>
@@ -228,7 +231,7 @@
 		{#if error}
 			<p class="error" role="alert">{error}</p>
 			{#if retryable}
-				<button type="button" disabled={busy} onclick={add}>{t('flashcards.deck.tryAgain')}</button>
+				<Button disabled={busy} onclick={add}>{t('flashcards.deck.tryAgain')}</Button>
 			{/if}
 		{/if}
 		<ul class="items">
@@ -247,60 +250,43 @@
 	.actions {
 		display: flex;
 		flex-wrap: wrap;
-		gap: 0.5rem 1rem;
+		gap: var(--space-3);
 		align-items: end;
-		margin: 0.75rem 0;
+		margin-block: var(--space-3);
 	}
 
-	label {
-		display: grid;
-		gap: 0.2rem;
-		font-size: 0.85rem;
-	}
-
-	button {
-		min-height: 44px;
-	}
-
-	.primary {
-		padding: 0 1rem;
-		border: 1px solid var(--accent);
-		border-radius: 999px;
-		background: var(--accent);
-		color: var(--on-accent);
-		font-weight: 600;
+	.actions :global(.field) {
+		flex: 0 1 18rem;
 	}
 
 	.items {
 		list-style: none;
-		margin: 0.5rem 0;
+		margin: var(--space-3) 0;
 		padding: 0;
 	}
 
 	.items li {
 		display: flex;
 		flex-wrap: wrap;
-		gap: 0.25rem 1rem;
+		gap: var(--space-1) var(--space-3);
 		align-items: baseline;
-		padding: 0.3rem 0;
-		border-bottom: 1px solid color-mix(in srgb, currentColor 14%, transparent);
+		padding-block: var(--space-2);
+		border-bottom: 1px solid var(--hair);
 	}
 
 	.word {
-		font-size: 1.1rem;
-		font-weight: 600;
+		font-size: var(--font-size-xl);
+		font-family: var(--font-hanzi);
 	}
 
 	.reading,
-	.state,
-	.hint {
+	.state {
 		color: var(--readable-muted);
-		font-size: 0.9rem;
+		font-size: var(--font-size-label);
 	}
 
 	.error {
 		color: var(--readable-bad);
-		font-weight: 600;
 		padding-inline-start: var(--space-2);
 		border-inline-start: 3px solid var(--bad);
 	}

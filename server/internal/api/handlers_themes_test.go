@@ -106,10 +106,23 @@ func TestListThemes(t *testing.T) {
 	if strings.Join(ids, ",") != strings.Join(wantIDs, ",") {
 		t.Fatalf("themes %v, want %v", ids, wantIDs)
 	}
-	mocha := got.Themes[3]
+	mochaIdx := -1
+	for i, th := range got.Themes {
+		if th.ID == "catppuccin-mocha" {
+			mochaIdx = i
+		}
+	}
+	if mochaIdx < 0 {
+		t.Fatal("catppuccin-mocha is not in the answer")
+	}
+	mocha := got.Themes[mochaIdx]
 	if mocha.ID != "catppuccin-mocha" || mocha.Family != "Catppuccin" || mocha.Scheme != "dark" || mocha.Colors["panel"] != "#1e1e2e" ||
 		!bytes.HasPrefix(mocha.Accents, []byte(`{"mauve":"#cba6f7","pink":`)) {
 		t.Errorf("mocha = %+v accents %s", mocha, mocha.Accents)
+	}
+	// The house themes lead the list (issue #108).
+	if got.Themes[0].ID != "qinqin-day" || got.Themes[1].ID != "qinqin-night" || got.Themes[2].ID != "qinqin-deep" {
+		t.Errorf("themes start %s, %s, %s; want the house themes", got.Themes[0].ID, got.Themes[1].ID, got.Themes[2].ID)
 	}
 
 	// Two users and anonymous read the same bytes; a read token is allowed.

@@ -14,6 +14,7 @@ vi.mock('$lib/auth', async (importOriginal) => ({
 
 import { ApiError, api } from '$lib/api/client';
 import { auth, logout } from '$lib/auth';
+import { primaryActions } from '$lib/ui/testing/primary';
 import AccountSettings from './AccountSettings.svelte';
 import { reloadPage } from '$lib/i18n/reloadPage';
 import { MIRROR_KEY } from '$lib/i18n/interfaceLanguage';
@@ -107,6 +108,30 @@ describe('Settings → Account: password', () => {
 		await fireEvent.click(screen.getByRole('button', { name: 'Change password' }));
 		expect((await screen.findByRole('alert')).textContent).toBe('Use at least 10 characters.');
 		expect(vi.mocked(api).mock.calls.some(([u]) => u === '/api/account/password')).toBe(false);
+	});
+});
+
+describe('Settings → Account: sections in the lighter look (#106)', () => {
+	it('has one primary per saving section and underline fields', () => {
+		render(AccountSettings);
+		const password = screen.getByRole('region', { name: 'Password' });
+		expect(primaryActions(password)).toHaveLength(1);
+		expect(within(password).getByRole('button', { name: 'Change password' }).className).toContain('primary');
+		expect(screen.getByLabelText('Current password').closest('.field')).toBeTruthy();
+		expect(screen.getByLabelText('New password').closest('.field')).toBeTruthy();
+		const language = screen.getByRole('region', { name: 'Language' });
+		expect(primaryActions(language)).toHaveLength(1);
+		expect(screen.getByLabelText('Interface language').closest('.field')).toBeTruthy();
+		const deleteSection = screen.getByRole('region', { name: 'Delete account' });
+		const open = within(deleteSection).getByRole('button', { name: 'Delete my account…' });
+		expect(open.className).toContain('danger');
+		expect(open.className).not.toContain('primary');
+	});
+
+	it('renders the session list as a .ui-table', async () => {
+		render(AccountSettings);
+		const table = await screen.findByRole('table', { name: 'Signed-in devices' });
+		expect(table.className).toContain('ui-table');
 	});
 });
 

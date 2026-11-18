@@ -4,17 +4,20 @@
 	import { pluginStates } from '$lib/plugins/states';
 	import { placeWidgets } from '$lib/widgets/layout';
 	import { allWidgets } from '$lib/widgets/registry';
+	import { statsOrder } from '$lib/stats/order';
 	import { currentLanguage } from '$lib/workspaces';
 
-	// Every widget that applies, in the registry's fixed order (core
-	// first, then plugins in plugin order); only the home page is
-	// arranged by the user. Plugin widgets join once the plugin states
-	// are loaded, as on home.
+	// The design's default arrangement first, then every other available
+	// widget in registry order (core, features, plugins); only the home
+	// page is arranged by the user. Plugin widgets join once the plugin
+	// states are loaded, as on home.
 	const states = $derived($pluginStates.status === 'ready' ? $pluginStates.list : []);
 	const placed = $derived(
 		placeWidgets(
-			allWidgets(webPlugins, states, $currentLanguage).filter((widget) =>
-				widget.surfaces.includes('stats')
+			statsOrder(
+				allWidgets(webPlugins, states, $currentLanguage).filter((widget) =>
+					widget.surfaces.includes('stats')
+				)
 			)
 		)
 	);
@@ -35,11 +38,12 @@
 
 <style>
 	/* One column on phones, two from ~900 px; wide widgets and a normal
-	   one without a partner span the row (placeWidgets). */
+	   one without a partner span the row (placeWidgets). No box: space
+	   groups the widgets (design §5). */
 	.widgets {
 		display: grid;
 		grid-template-columns: minmax(0, 1fr);
-		gap: 2.5rem 1.25rem;
+		gap: var(--space-6) var(--space-5);
 	}
 
 	@media (min-width: 900px) {

@@ -25,10 +25,12 @@ database with a SvelteKit single-page app embedded in the binary.
   language into several named workspaces; each has its own flag, decks, library
   and statistics (see [Workspaces](#workspaces)).
 - **Themes** — Settings → Appearance picks a light and a dark colour theme
-  (Catppuccin, Rosé Pine, Nord, Gruvbox, Dracula, Solarized, Tokyo Night,
-  Everforest, Kanagawa built in; more as `theme` packs), an accent, corners,
+  (qinqin Day, Night and Deep plus the Neon, Pigments and Pop extras, then
+  Catppuccin, Rosé Pine, Nord, Gruvbox, Dracula, Solarized, Tokyo Night,
+  Everforest and Kanagawa built in; more as `theme` packs), an accent, corners,
   spacing and the hanzi font; saved to your account and following the device's
-  light/dark setting (rules: `docs/contracts/themes/`).
+  light/dark setting (rules: `docs/contracts/themes/`). qinqin Day and Night
+  are the defaults for a fresh account and the offline first paint.
 - **Search** — across written forms, readings, and meanings, scoped to the
   current workspace language.
 - **Radical and part lookup** — in Chinese and Japanese workspaces, find a
@@ -122,10 +124,14 @@ database with a SvelteKit single-page app embedded in the binary.
   device. Plugins contribute activity through an `events[].activity` rule in
   their manifest (`label`, `describe`, and optionally `measure` + `pointsPer`
   or `distinctBy`); the server scores it, no core change is needed.
-- **Stats** — a nav item for every workspace (`/stats`) with two tabs:
-  **Overview** shows every widget that applies to the workspace, in a fixed
-  order (core first, then plugins); **Characters** (`/stats/characters`) is the
-  mastery map, for Chinese and Japanese workspaces only.
+- **Stats** — a nav item for every workspace (`/stats`) with three text tabs:
+  **Overview** stays a widget grid and opens with four large numbers (day
+  streak, words known, recall over the last 30 days, time studied this month),
+  then cards by state, the level and XP line, reviews per day over the last 30
+  days and every other widget that applies; **Characters**
+  (`/stats/characters`) is the single-hue mastery map, for Chinese and Japanese
+  workspaces only; **Week** (`/stats/week`) browses weeks with arrows and shows
+  four numbers, paired bars for this and last week, and the milestones.
 - **Journal and AI** — write dated entries per workspace; with your own
   key for the AI provider you choose (Anthropic, OpenAI, Google Gemini,
   DeepSeek, Mistral, xAI, Groq, OpenRouter or a custom OpenAI-compatible
@@ -135,6 +141,66 @@ database with a SvelteKit single-page app embedded in the binary.
 - **Plugin architecture** — dictionaries, level schemes, and example sentences
   are installable data packs; widgets and views come from feature plugins that
   the server registers at startup so Settings can enable them.
+
+## Screenshots
+
+The app in the 2026 visual rework, with demo data only (a made-up account). Themes are
+picked from the built-in set; the qinqin Day and qinqin Night themes are the defaults.
+
+![Home with the garden heatmap, activity chips and the daily goal](docs/assets/screenshots/home-1440-latte.png)
+
+*Home: the garden heatmap, activity by type, the daily goal and the week's numbers.*
+
+![A flashcard after the answer, with the four grade buttons and their intervals](docs/assets/screenshots/session-1440-mocha.png)
+
+*A flashcard after the answer: the readings and meanings, then Again / Hard / Good / Easy with their intervals.*
+
+![The reader with a word's lookup popup open](docs/assets/screenshots/reader-1440-rosepine-dawn.png)
+
+*The reader with a word's lookup popup: readings, level, meanings and Add to deck.*
+
+![The reader's lookup as a phone bottom sheet](docs/assets/screenshots/reader-sheet-360-rosepine.png)
+
+*The same lookup on a phone: the bottom sheet keeps the text visible.*
+
+![A journal entry's review with corrections in the right margin](docs/assets/screenshots/journal-1440-nord.png)
+
+*The journal: the three-column page with the review's corrections in the margin.*
+
+![Search with the selected entry beside the results](docs/assets/screenshots/search-entry-1440-gruvbox.png)
+
+*Search: results on the left, the entry with meanings, characters and stroke order beside them.*
+
+![Stats overview with four numbers and the activity widgets](docs/assets/screenshots/stats-overview-1440-latte.png)
+
+*Stats → Overview: the four numbers, words by state, the level line and reviews per day.*
+
+![The character mastery map with the level filter](docs/assets/screenshots/stats-characters-1024-gruvbox.png)
+
+*Stats → Characters: the single-hue mastery map; the Level select shows one level's own count.*
+
+![The week with four numbers and paired daily bars](docs/assets/screenshots/stats-week-360-mocha.png)
+
+*Stats → Week: four numbers, the compared window and this week / last week per day.*
+
+![The phone drawer with Home and then Search first](docs/assets/screenshots/drawer-360-mocha.png)
+
+*The phone drawer: Home, then Search, then the feature pages.*
+
+![The decks view with the overall numbers and the deck list](docs/assets/screenshots/decks-1024-macchiato.png)
+
+*Decks: overall numbers, your decks, starter decks and the installed level decks.*
+
+![Settings → Appearance on a phone, with the qinqin themes first](docs/assets/screenshots/settings-appearance-360-frappe.png)
+
+*Settings → Appearance: the tabs wrap on a phone, and the qinqin themes lead the picker.*
+
+![The sign-in page on a phone](docs/assets/screenshots/sign-in-360-latte.png)
+
+*Sign in on a phone.*
+
+Dictionary data in the screenshots: CC-CEDICT, CC BY-SA 4.0; text: Lu Xun, public
+domain; theme credits: [`docs/sources.md`](docs/sources.md).
 
 ## Quick start (Docker Compose / Portainer)
 
@@ -1193,6 +1259,13 @@ every character of the language, studied or not, shaded by mastery.
   agree on all but 3 of 3,088 characters. Every installed level scheme
   that is not a sample pack is offered the same way, under its name; characters
   outside it land in "Not in this scheme".
+- **Level.** Choose **All levels** or one installed level scheme's level
+  (JLPT N5, HSK 2, Jōyō grade 3, …). The map, the stage counts and the
+  "X of Y learned" summary then cover only that level, including a character
+  whose variant form is in it; choosing a level opens its scheme under
+  **Group by** (Grade for the Jōyō pack, which Group by already shows as
+  Grade), so the view starts on that level rather than on other schemes'
+  empty sections. The choice is remembered per workspace.
 - **Sections** show learned/total and a stacked stage bar. The stage legend doubles
   as a filter (All, Not studied, In progress, Learned). Search matches the glyph,
   the reading (toneless pinyin works), the meaning, and hiragana or katakana.
@@ -1233,21 +1306,35 @@ if you name the roots. A pack is a directory with a `manifest.json` (`"type": "l
 `word` or `character`. See `plugins/samples/hsk-mini` for the layout. The sample
 `hsk-mini` and `jlpt-mini` packs are not seeded by default and not offered as map groupings.
 
-**Home and Stats widgets.** Five widgets ship. Each one shows the current
+**Home and Stats widgets.** Seven widgets ship. Each one shows the current
 workspace. The home page shows the widgets in your layout (Settings → Home; by
-default Activity, then Flashcards). Stats → Overview shows every widget that
-applies to the workspace, in the order of this table:
+default Activity, then Flashcards). Stats → Overview puts the summary numbers
+first, then the cards by state and the level line, then reviews per day, and
+every other widget that applies after them:
 
 | Id | Widget | Owner | Size | Languages |
 |---|---|---|---|---|
+| `summary-numbers` | Summary | core | wide | all |
+| `word-states` | Words | `qinqin-flashcards` | normal | all |
+| `flashcards-summary` | Flashcards | `qinqin-flashcards` | normal | all |
+| `reviews-per-day` | Reviews per day | core | wide | all |
 | `activity-heatmap` | Activity | core | wide | all |
 | `character-map-summary` | Characters | core | normal | Chinese, Japanese |
-| `flashcards-summary` | Flashcards | `qinqin-flashcards` | normal | all |
-| `word-states` | Words | `qinqin-flashcards` | normal | all |
 | `reading-time` | Reading time | `qinqin-reader` | normal | all |
 
-A plugin's widgets are shown only while that plugin is enabled.
+A plugin's widgets appear after the default arrangement while that plugin is
+enabled.
 
+- **Summary**: the four numbers at the top of Stats → Overview — the current
+  review streak (the flashcards widget's number), words known by the one known
+  predicate (a manual known mark or a vocab card at the mastery threshold),
+  recall over the last 30 days (the decks page's overall figure, shown after 10
+  repeat reviews) and the flashcard study time of the current calendar month.
+  With flashcards switched off it says how to switch them on. It can also be
+  added to the home page.
+- **Reviews per day**: one bar for each of the last 30 learner days, today
+  emphasised, with the total and today's count in words above the chart. It can
+  also be added to the home page.
 - **Activity**: one cell per learner day over the last 13 weeks (on the home
   page: the layout chosen in Settings → Home), tinted by activity points. A flashcard review is one point. Reading in the Reader is one
   point per started 5 minutes. The reader records a `read` event with the active
@@ -1341,7 +1428,7 @@ All library and source routes need a signed-in user, and so does
 | `GET /api/packages?languages=` | Signed-in (tokens allowed). The data package catalogue (`docs/contracts/packages/`): the packages of the caller's workspace languages, or `languages=zh,ja` / `all`, with revision, content hash, file SHA-256, size, state, licences and sources; `ETag`/`If-None-Match`. A build error is shown to an administrator's own session only |
 | `GET /api/packages/{id}/{revision}` | Signed-in (tokens allowed). One package file (a zip with `manifest.json`, `NOTICE.md`, `LICENSES/`, `data.sqlite`); `Range`/`If-Range` resume it; served `private, no-cache` with the file's `ETag` (304 on revalidation) and `nosniff`. 404 `package_not_found`, 410 `package_revision_gone` (replaced and purged after 7 days), 429 `download_busy` with `Retry-After` (at most 2 downloads per user at a time) |
 | `GET /api/stroke-packs` | Public. The installed stroke-order packs with `packId`, `name`, `version`, `languages`, `license`, `attribution`, `notice` (the Sources page lists them) |
-| `GET /api/themes` | Public, no user data (read tokens allowed). Every colour theme with its colours and every theme pack's credits: `{themes: [{id, name, family, scheme, colors, accents, defaultAccent, packId, builtin}], packs: [{packId, name, version, license, attribution, notice, builtin, themes}]}` — the built-in packs (Catppuccin, Rosé Pine, Nord, Gruvbox, Dracula, Solarized, Tokyo Night, Everforest, Kanagawa) first, then installed theme packs; strong `ETag`, `no-cache`, 304 on `If-None-Match`; contract `docs/contracts/themes/` |
+| `GET /api/themes` | Public, no user data (read tokens allowed). Every colour theme with its colours and every theme pack's credits: `{themes: [{id, name, family, scheme, colors, accents, defaultAccent, packId, builtin}], packs: [{packId, name, version, license, attribution, notice, builtin, themes}]}` — the built-in packs (qinqin, qinqin extras, Catppuccin, Rosé Pine, Nord, Gruvbox, Dracula, Solarized, Tokyo Night, Everforest, Kanagawa) first, then installed theme packs; strong `ETag`, `no-cache`, 304 on `If-None-Match`; contract `docs/contracts/themes/` |
 | `GET /api/fonts` | Signed in (read tokens of any workspace allowed); the same answer for every user. The faces of the installed font packs with their WOFF2 slices and the packs' credits: `{faces: [{packId, face, script, original, weight, style, license, attribution, slices: [{url, unicodeRange}]}], packs: [{packId, name, version, license, attribution, notice}]}`; empty lists when none is installed; strong `ETag`, `no-cache`, 304 on `If-None-Match`; contract `docs/contracts/fonts/` |
 | `GET /fonts/<sha256>.woff2` | Public, no token. One slice of an installed font pack, byte for byte (`font/woff2`, `public, max-age=31536000, immutable`, `nosniff`, Range requests); 404 for anything that is not a slice of an installed pack |
 | `GET /hanzi/U<HEX>.json` | Public. The stroke-order data of one character from the installed strokes pack, byte for byte (`public, max-age=86400`, `ETag`, `nosniff`); 404 when no pack has it |

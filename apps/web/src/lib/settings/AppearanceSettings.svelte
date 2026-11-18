@@ -27,6 +27,7 @@
 	import { packFaces } from '$lib/fonts/packFaces.svelte';
 	import { studyLang } from '$lib/i18n/lang';
 	import { accentOptions, changeFrom, isDirty, previewOf, slotThemeGroups } from './appearanceForm';
+	import { Button, Panel, Section } from '$lib/ui';
 
 	let {
 		store = themeStore,
@@ -265,9 +266,9 @@
 		{/if}
 	</fieldset>
 
-	<section class="preview" aria-labelledby="appearance-preview-title">
-		<h3 id="appearance-preview-title">{t('settings.appearance.preview.title')}</h3>
-		<div class="sample">
+	<Section title={t('settings.appearance.preview.title')} level={3}>
+		<!-- Panel raised: the live sample is an inset that reads as one object (#106). -->
+		<Panel raised><div class="sample">
 			<p>{t('settings.appearance.preview.text')}</p>
 			<p class="muted">{t('settings.appearance.preview.muted')}</p>
 			<p class="hanzi">
@@ -287,20 +288,20 @@
 				<span class="grade good">{t('study.grade.good')}</span>
 				<span class="grade easy">{t('study.grade.easy')}</span>
 			</div>
-		</div>
-	</section>
+		</div></Panel>
+	</Section>
 
 	{#if !store.rowLoaded}
 		<p class="hint">{t('settings.appearance.notLoaded')}</p>
 	{/if}
 	<div class="actions">
-		<button type="button" class="save" disabled={busy || !dirty || !store.rowLoaded} onclick={save}
-			>{busy ? t('settings.appearance.saving') : t('settings.appearance.save')}</button
-		>
+		<Button variant="primary" busy={busy} disabled={!dirty || !store.rowLoaded} onclick={save}>
+			{busy ? t('settings.appearance.saving') : t('settings.appearance.save')}
+		</Button>
 		{#if dirty}
-			<button type="button" disabled={busy} onclick={discard}>{t('settings.appearance.discard')}</button>
+			<Button disabled={busy} onclick={discard}>{t('settings.appearance.discard')}</Button>
 		{/if}
-		<button type="button" disabled={busy} onclick={reset}>{t('settings.appearance.reset')}</button>
+		<Button variant="plain" disabled={busy} onclick={reset}>{t('settings.appearance.reset')}</Button>
 	</div>
 	<!-- Always in the DOM, so the save and discard results are announced. -->
 	<p class="status" role="status">{status}</p>
@@ -312,8 +313,7 @@
 		display: grid;
 		gap: var(--space-4);
 	}
-	.appearance h2,
-	.appearance h3 {
+	.appearance h2 {
 		margin: 0;
 	}
 	.hint {
@@ -330,7 +330,7 @@
 		gap: var(--space-2);
 	}
 	legend {
-		font-weight: 600;
+		font-weight: var(--weight-strong);
 		margin-bottom: var(--space-2);
 		padding: 0;
 	}
@@ -338,12 +338,12 @@
 		flex-basis: 100%;
 		font-size: var(--font-size-s);
 	}
+	/* The two slots are hairline groups, not boxes (#106). */
 	.slot {
 		display: grid;
 		gap: var(--space-3);
-		padding: var(--space-4);
-		border: 1px solid var(--hair);
-		border-radius: var(--radius-large);
+		padding-top: var(--space-4);
+		border-top: 1px solid var(--hair);
 	}
 	.group {
 		display: flex;
@@ -360,26 +360,22 @@
 
 	/* A radio inside a label: chips and segments. The native radio stays
 	   visible (state without colour), tinted with the accent. */
+	/* A radio inside a label: a chip wash, no bordered pill (§5, #106). */
 	.segmented label,
 	.chip {
 		display: inline-flex;
 		align-items: center;
 		gap: var(--space-2);
 		padding: var(--space-1) var(--space-3);
-		border: 1px solid var(--hair);
-		border-radius: 999px;
+		border: 0;
+		border-radius: var(--radius);
 		background: var(--raised);
 		color: var(--text);
 		cursor: pointer;
 	}
 	.segmented label:has(input:checked),
 	.chip:has(input:checked) {
-		border-color: var(--accent);
 		background: var(--selected-wash);
-	}
-	input[type='radio'] {
-		accent-color: var(--accent);
-		margin: 0;
 	}
 	.swatch {
 		display: inline-grid;
@@ -416,22 +412,21 @@
 		width: 1.75rem;
 		height: 1.75rem;
 		border-radius: 50%;
-		box-shadow: 0 0 0 2px var(--panel);
+		border: 1px solid var(--hair);
 		forced-color-adjust: none;
 	}
 	.accent:has(input:checked) .dot {
-		box-shadow:
-			0 0 0 2px var(--panel),
-			0 0 0 4px var(--text);
+		outline: 2px solid var(--text);
+		outline-offset: 2px;
 	}
 	.accent:has(input:focus-visible) {
-		outline: 2px solid var(--focus-colour);
+		outline: var(--focus-ring);
 		outline-offset: 4px;
 	}
 	.segmented label:has(input:focus-visible),
 	.chip:has(input:focus-visible) {
-		outline: 2px solid var(--focus-colour);
-		outline-offset: 2px;
+		outline: var(--focus-ring);
+		outline-offset: var(--focus-ring-offset);
 	}
 	@media (forced-colors: active) {
 		.accent:has(input:checked) .dot {
@@ -444,26 +439,22 @@
 		}
 	}
 
-	.preview .hanzi {
+	.sample .hanzi {
 		display: flex;
 		flex-wrap: wrap;
 		gap: var(--space-4);
 		margin: 0;
 		font-size: var(--font-size-l);
 	}
-	.preview .sample {
+	.sample {
 		display: grid;
 		gap: var(--space-2);
-		padding: var(--space-4);
-		border: 1px solid var(--hair);
-		border-radius: var(--radius-large);
-		background: var(--panel);
 		color: var(--text);
 	}
-	.preview p {
+	.sample p {
 		margin: 0;
 	}
-	.preview .muted {
+	.sample .muted {
 		color: var(--readable-muted);
 	}
 	.row {
@@ -475,14 +466,17 @@
 	.grade {
 		padding: var(--space-1) var(--space-3);
 		border-radius: var(--radius);
-		font-weight: 600;
+		font-weight: var(--weight-strong);
 	}
 	.primary {
 		background: var(--accent);
 		color: var(--on-accent);
 	}
+	/* The grade preview is coloured text with a 2px underline, not a box (§9, #106). */
 	.grade {
-		border: 2px solid currentColor;
+		text-decoration: underline;
+		text-decoration-thickness: 2px;
+		text-underline-offset: 0.25em;
 	}
 	.grade.again {
 		color: var(--grade-again);
@@ -502,31 +496,12 @@
 		flex-wrap: wrap;
 		gap: var(--space-2);
 	}
-	.actions button {
-		font: inherit;
-		padding: var(--space-2) var(--space-4);
-		border-radius: var(--radius);
-		border: 1px solid var(--hair);
-		background: var(--raised);
-		color: var(--text);
-		cursor: pointer;
-	}
-	.actions .save {
-		background: var(--accent);
-		color: var(--on-accent);
-		border-color: var(--accent);
-		font-weight: 600;
-	}
-	.actions button:disabled {
-		opacity: 0.6;
-		cursor: not-allowed;
-	}
 	.error {
 		margin: 0;
 		padding-inline-start: var(--space-2);
 		border-inline-start: 3px solid var(--bad);
 		color: var(--readable-bad);
-		font-weight: 600;
+		font-weight: var(--weight-medium);
 	}
 	.status {
 		margin: 0;

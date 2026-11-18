@@ -35,15 +35,16 @@
 		parseSettingsTab,
 		settingsTabHref,
 		settingsTitleParts,
-		tabKeyTarget,
 		visibleSettingsTabs,
 		type SettingsTab
 	} from '$lib/settings/tabs';
 	import { load as loadWorkspaces, rename, setSettings as setWorkspaceSettings, workspaces, workspacesLoadError, workspacesLoaded } from '$lib/workspaces';
+	import { Button, Chip, Field, Section, Tabs } from '$lib/ui';
 
 	interface PluginRow {
 		id: string;
 		name: string;
+		version: string;
 		enabled: boolean;
 		order: number;
 		permissions: string;
@@ -59,23 +60,10 @@
 	const admin = $derived($user?.admin === true);
 	const tabs = $derived(visibleSettingsTabs(admin));
 	const activeTab = $derived(parseSettingsTab(page.url.searchParams.get('tab'), admin));
-	const tabButtons: Partial<Record<SettingsTab, HTMLButtonElement>> = {};
-
-	async function selectTab(tab: SettingsTab, focus = false): Promise<void> {
+	async function selectTab(tab: SettingsTab): Promise<void> {
 		if (tab !== activeTab) {
 			await goto(settingsTabHref(tab), { replaceState: true, keepFocus: true, noScroll: true });
 		}
-		if (focus) {
-			await tick();
-			tabButtons[tab]?.focus();
-		}
-	}
-
-	function tabKey(event: KeyboardEvent, index: number): void {
-		const next = tabKeyTarget(event.key, index, tabs.length);
-		if (next === null) return;
-		event.preventDefault();
-		void selectTab(tabs[next], true);
 	}
 
 	// The workspace being renamed (one at a time) and its draft name.
@@ -88,7 +76,9 @@
 	// goes when it closes: back to its Delete button, or to the section
 	// heading once the row is gone.
 	let deleting = $state<Workspace | null>(null);
-	const deleteButtons: Record<number, HTMLButtonElement> = {};
+	let renameInput = $state<HTMLInputElement | undefined>(undefined);
+	const deleteButtons: Record<number, HTMLElement | undefined> = {};
+	const renameButtons: Record<number, HTMLElement | undefined> = {};
 	let workspacesHeading = $state<HTMLHeadingElement | null>(null);
 
 	async function closeDelete(deleted: boolean): Promise<void> {
@@ -123,6 +113,7 @@
 			plugins = listedPlugins(list).map((plugin) => ({
 				id: plugin.id,
 				name: pluginName(plugin),
+				version: typeof plugin.manifest?.version === 'string' ? plugin.manifest.version : '',
 				enabled: plugin.enabled,
 				order: plugin.order,
 				...pluginRowInfo(plugin, webPlugins),
@@ -159,7 +150,7 @@
 	onMount(loadCoverage);
 	// The workspace whose Dictionaries panel is open, and its button.
 	let dictionariesOpenId = $state<number | null>(null);
-	const dictionaryButtons: Record<number, HTMLButtonElement | undefined> = {};
+	const dictionaryButtons: Record<number, HTMLElement | undefined> = {};
 
 	function coverageOf(workspace: Workspace) {
 		return coverage(workspace.language, allDictionaries ?? [], allSchemes ?? []);
@@ -171,10 +162,13 @@
 		dictionaryButtons[id]?.focus();
 	}
 
-	function startRename(workspace: Workspace): void {
+	async function startRename(workspace: Workspace): Promise<void> {
 		renamingId = workspace.id;
 		renameDraft = workspace.name;
 		renameError = '';
+		await tick();
+		renameInput?.focus();
+		renameInput?.select();
 	}
 
 	function cancelRename(): void {
@@ -206,11 +200,6 @@
 		}
 	}
 
-	function focusOnMount(node: HTMLInputElement): void {
-		node.focus();
-		node.select();
-	}
-
 	async function savePlugin(row: PluginRow): Promise<void> {
 		if (row.saving || !validOrder(row.order)) return;
 
@@ -240,43 +229,26 @@
 <div class="page-body settings">
 	<h1>{t('settings.title')}</h1>
 
-	<div class="tabs" role="tablist" aria-label={t('settings.tabsLabel')}>
-		{#each tabs as tab, index (tab)}
-			<button
-				type="button"
-				role="tab"
-				id="settings-tab-{tab}"
-				aria-selected={tab === activeTab}
-				aria-controls="settings-panel-{tab}"
-				tabindex={tab === activeTab ? 0 : -1}
-				bind:this={tabButtons[tab]}
-				onclick={() => selectTab(tab)}
-				onkeydown={(event) => tabKey(event, index)}
-			>
-				{SETTINGS_TAB_LABELS[tab]}
-			</button>
-		{/each}
-	</div>
-
-	<div
-		role="tabpanel"
-		id="settings-panel-workspaces"
-		aria-labelledby="settings-tab-workspaces"
-		hidden={activeTab !== 'workspaces'}
+	<Tabs
+		label={t('settings.tabsLabel')}
+		tabs={tabs.map((tab) => ({ id: tab, label: SETTINGS_TAB_LABELS[tab] }))}
+		selected={activeTab}
+		onselect={(id) => selectTab(id as SettingsTab)}
 	>
+		{#snippet panel()}
+			<div class="group" hidden={activeTab !== 'workspaces'}>
 		<h2 bind:this={workspacesHeading} tabindex="-1">{t('settings.workspaces.title')}</h2>
 		<p class="hint">{t('settings.workspaces.hint')}</p>
 
 		{#if $workspaces.list.length === 0 && !$workspacesLoaded && $workspacesLoadError}
 			<p class="error" role="alert">{$workspacesLoadError}</p>
-			<button
-				type="button"
+			<Button
 				onclick={() => {
 					workspacesLoadError.set('');
 					loadWorkspaces().catch((err) =>
 						workspacesLoadError.set(message(err, t('app.workspaces.loadFailed')))
 					);
-				}}>{t('common.action.retry')}</button
+				}}>{t('common.action.retry')}</Button
 			>
 		{:else if $workspaces.list.length === 0 && !$workspacesLoaded}
 			<p class="hint" aria-live="polite">{t('settings.workspaces.loading')}</p>
@@ -289,14 +261,15 @@
 						{#if renamingId === workspace.id}
 							<form class="rename" onsubmit={(event) => saveRename(event, workspace)}>
 								<WorkspaceLabel {workspace} list={$workspaces.list} withLanguage size={18} />
-								<label class="sr-only" for="rename-{workspace.id}">{t('settings.workspaces.name')}</label>
-								<input
+								<Field
+									class="rename-field"
+									label={t('settings.workspaces.name')}
 									id="rename-{workspace.id}"
+									bind:element={renameInput}
 									bind:value={renameDraft}
-									maxlength="40"
+									maxlength={40}
 									autocomplete="off"
 									placeholder={t('settings.workspaces.noName')}
-									use:focusOnMount
 									onkeydown={(event) => {
 										if (event.key === 'Escape') {
 											event.preventDefault();
@@ -305,10 +278,10 @@
 									}}
 								/>
 								<!-- Not disabled while saving, so keyboard focus stays put. -->
-								<button type="submit" aria-busy={renameSaving}>
+								<Button type="submit" busy={renameSaving}>
 									{renameSaving ? t('common.state.saving') : t('common.action.save')}
-								</button>
-								<button type="button" class="secondary" onclick={cancelRename}>{t('common.action.cancel')}</button>
+								</Button>
+								<Button type="button" onclick={cancelRename}>{t('common.action.cancel')}</Button>
 							</form>
 							{#if renameError}
 								<p class="error" role="alert">{renameError}</p>
@@ -317,42 +290,42 @@
 							<div class="row">
 								<WorkspaceLabel {workspace} list={$workspaces.list} withLanguage size={18} />
 								{#if $workspaces.current?.id === workspace.id}
-									<span class="current">{t('settings.workspaces.current')}</span>
+									<Chip>{t('settings.workspaces.current')}</Chip>
 								{/if}
 								{#if allDictionaries !== null && coverageOf(workspace).dictionaries.length === 0}
-									<span class="chip" title={dictionaryHint(languageLabel(workspace.language), admin)}>{t('settings.workspaces.noDictionary')}</span>
+									<span title={dictionaryHint(languageLabel(workspace.language), admin)}
+										><Chip>{t('settings.workspaces.noDictionary')}</Chip></span
+									>
 								{/if}
 								{#if allSchemes !== null && coverageOf(workspace).levels === 0}
-									<span class="chip" title={levelsHint(languageLabel(workspace.language))}>{t('settings.workspaces.noLevels')}</span>
+									<span title={levelsHint(languageLabel(workspace.language))}
+										><Chip>{t('settings.workspaces.noLevels')}</Chip></span
+									>
 								{/if}
-								<button
-									type="button"
-									class="secondary dictionaries-button"
-									bind:this={dictionaryButtons[workspace.id]}
+								<Button
+									element={dictionaryButtons[workspace.id]}
 									onclick={() => (dictionariesOpenId = dictionariesOpenId === workspace.id ? null : workspace.id)}
 									aria-expanded={dictionariesOpenId === workspace.id}
 									aria-label={t('settings.workspaces.dictionariesOf', { workspace: workspaceName(workspace) })}
 								>
 									{t('settings.workspaces.dictionaries')}
-								</button>
-								<button
-									type="button"
-									class="secondary rename-button"
+								</Button>
+								<Button
+									element={renameButtons[workspace.id]}
 									onclick={() => startRename(workspace)}
 									aria-label={t('settings.workspaces.renameOf', { workspace: workspaceName(workspace) })}
 								>
 									{t('settings.workspaces.rename')}
-								</button>
+								</Button>
 								{#if $workspaces.list.length > 1}
-									<button
-										type="button"
-										class="secondary delete-button"
-										bind:this={deleteButtons[workspace.id]}
+									<Button
+										tone="danger"
+										element={deleteButtons[workspace.id]}
 										onclick={() => (deleting = workspace)}
 										aria-label={t('settings.workspaces.deleteOf', { workspace: workspaceName(workspace) })}
 									>
 										{t('common.action.delete')}
-									</button>
+									</Button>
 								{/if}
 							</div>
 							{#if dictionariesOpenId === workspace.id}
@@ -378,55 +351,36 @@
 
 		{#if $workspaces.current}
 			{@const active = $workspaces.current}
-			<h3>{t('settings.workspaces.audioTitle')}</h3>
-			<p class="hint">{t('settings.workspaces.audioHint')}</p>
-			<AudioSettings
-				settings={active.settings}
-				onChange={async (patch) => {
-					await setWorkspaceSettings(active.id, patch);
-				}}
-			/>
+			<Section title={t('settings.workspaces.audioTitle')} level={3}>
+				<p class="hint">{t('settings.workspaces.audioHint')}</p>
+				<AudioSettings
+					settings={active.settings}
+					onChange={async (patch) => {
+						await setWorkspaceSettings(active.id, patch);
+					}}
+				/>
+			</Section>
 		{/if}
 
 		<!-- The phone drawer's + lands here (#99). -->
 		<h3 id="new-workspace" tabindex="-1">{t('settings.workspaces.new')}</h3>
 		<WorkspaceCreateForm idPrefix="settings-new" />
-	</div>
+			</div>
 
-	<div
-		role="tabpanel"
-		id="settings-panel-home"
-		aria-labelledby="settings-tab-home"
-		hidden={activeTab !== 'home'}
-	>
-		<HomeLayoutEditor />
-	</div>
+			<div class="group" hidden={activeTab !== 'home'}>
+				<HomeLayoutEditor />
+			</div>
 
-	<div
-		role="tabpanel"
-		id="settings-panel-study"
-		aria-labelledby="settings-tab-study"
-		hidden={activeTab !== 'study'}
-	>
-		<StudyDaySettings />
-		<StudySettings />
-	</div>
+			<div class="group" hidden={activeTab !== 'study'}>
+				<StudyDaySettings />
+				<StudySettings />
+			</div>
 
-	<div
-		role="tabpanel"
-		id="settings-panel-features"
-		aria-labelledby="settings-tab-features"
-		hidden={activeTab !== 'features'}
-	>
-		<FeatureSettings />
-	</div>
+			<div class="group" hidden={activeTab !== 'features'}>
+				<FeatureSettings />
+			</div>
 
-	<div
-		role="tabpanel"
-		id="settings-panel-plugins"
-		aria-labelledby="settings-tab-plugins"
-		hidden={activeTab !== 'plugins'}
-	>
+			<div class="group" hidden={activeTab !== 'plugins'}>
 		<h2>{t('settings.plugins.title')}</h2>
 		<p class="hint">{t('settings.plugins.hint')}</p>
 
@@ -442,11 +396,12 @@
 					<li class="plugin">
 						<div class="plugin-head">
 							<strong>{plugin.name}</strong>
+							{#if plugin.version}<Chip>{plugin.version}</Chip>{/if}
 							<code>{plugin.id}</code>
 							{#if plugin.notice === 'app-update'}
-								<span class="needs-update">{t('settings.plugins.needsUpdate')}</span>
+								<Chip>{t('settings.plugins.needsUpdate')}</Chip>
 							{:else if plugin.notice === 'legacy'}
-								<span class="needs-update">{t('settings.plugins.legacy')}</span>
+								<Chip>{t('settings.plugins.legacy')}</Chip>
 							{/if}
 						</div>
 						{#if plugin.permissions}
@@ -463,24 +418,28 @@
 								{t('settings.plugins.enabled')}
 							</label>
 
-							<label class="inline">
-								{t('settings.plugins.order')}
-								<input
+							<div class="order">
+								<Field
+									label={t('settings.plugins.order')}
 									type="number"
 									min="0"
 									step="1"
-									bind:value={plugin.order}
-									oninput={() => (plugin.saved = false)}
+									value={String(plugin.order)}
+									oninput={(event) => {
+										const raw = (event.currentTarget as HTMLInputElement).value;
+										plugin.order = raw === '' ? Number.NaN : Number(raw);
+										plugin.saved = false;
+									}}
 								/>
-							</label>
+							</div>
 
-							<button
-								type="button"
+							<Button
 								onclick={() => savePlugin(plugin)}
 								disabled={plugin.saving || !validOrder(plugin.order)}
+								busy={plugin.saving}
 							>
 								{plugin.saving ? t('common.state.saving') : t('common.action.save')}
-							</button>
+							</Button>
 							{#if !validOrder(plugin.order)}
 								<span class="error" role="alert">{t('settings.plugins.orderInvalid')}</span>
 							{/if}
@@ -497,124 +456,98 @@
 				{/each}
 			</ul>
 		{/if}
-	</div>
+			</div>
 
-	<div
-		role="tabpanel"
-		id="settings-panel-appearance"
-		aria-labelledby="settings-tab-appearance"
-		hidden={activeTab !== 'appearance'}
-	>
-		<!-- Mounted only while open: leaving the tab unsaved ends the live preview. -->
-		{#if activeTab === 'appearance'}<AppearanceSettings />{/if}
-	</div>
+			<div class="group" hidden={activeTab !== 'appearance'}>
+				<!-- Mounted only while open: leaving the tab unsaved ends the live preview. -->
+				{#if activeTab === 'appearance'}<AppearanceSettings />{/if}
+			</div>
 
-	<div
-		role="tabpanel"
-		id="settings-panel-ai"
-		aria-labelledby="settings-tab-ai"
-		hidden={activeTab !== 'ai'}
-	>
-		<AiSettings />
-	</div>
+			<div class="group" hidden={activeTab !== 'ai'}>
+				<AiSettings />
+			</div>
 
-	<div
-		role="tabpanel"
-		id="settings-panel-account"
-		aria-labelledby="settings-tab-account"
-		hidden={activeTab !== 'account'}
-	>
-		<AccountSettings />
-	</div>
+			<div class="group" hidden={activeTab !== 'account'}>
+				<AccountSettings />
+			</div>
 
-	{#if admin}
-		<div
-			role="tabpanel"
-			id="settings-panel-data"
-			aria-labelledby="settings-tab-data"
-			hidden={activeTab !== 'data'}
-		>
-			<h2>{t('settings.data.title')}</h2>
-			<PackManager
-				onchange={() => {
-					languagesKey += 1;
-					loadCoverage();
-				}}
-			/>
-			<LanguageManager refreshKey={languagesKey} />
-		</div>
-		<div
-			role="tabpanel"
-			id="settings-panel-admin"
-			aria-labelledby="settings-tab-admin"
-			hidden={activeTab !== 'admin'}
-		>
-			<h2>{t('settings.adminPanel.title')}</h2>
-			{#if activeTab === 'admin'}<AdminSettings />{/if}
-		</div>
-	{/if}
+			{#if admin}
+				<div class="group" hidden={activeTab !== 'data'}>
+					<h2>{t('settings.data.title')}</h2>
+					<PackManager
+						onchange={() => {
+							languagesKey += 1;
+							loadCoverage();
+						}}
+					/>
+					<LanguageManager refreshKey={languagesKey} />
+				</div>
+				<div class="group" hidden={activeTab !== 'admin'}>
+					<h2>{t('settings.adminPanel.title')}</h2>
+					{#if activeTab === 'admin'}<AdminSettings />{/if}
+				</div>
+			{/if}
+		{/snippet}
+	</Tabs>
 </div>
 
 <style>
-	.settings [role='tabpanel'] {
-		margin-top: 1.5rem;
-	}
-
-	.settings [role='tabpanel'][hidden] {
-		display: none;
-	}
-
-	/* The tab strip: plain text tabs with an underline for the open one;
-	   it scrolls sideways rather than wrapping on a narrow phone. */
-	.tabs {
-		display: flex;
-		gap: 0.25rem;
-		overflow-x: auto;
-		border-bottom: 1px solid color-mix(in srgb, currentColor 18%, transparent);
-	}
-
-	.settings .tabs [role='tab'] {
-		min-height: 2.75rem;
-		padding: 0.5rem 1rem;
-		border: 0;
-		border-bottom: 2px solid transparent;
-		border-radius: 0;
-		margin-bottom: -1px;
-		background: transparent;
-		color: var(--readable-muted);
-		font-weight: 500;
+	/* The tab row is the base Tabs (in-page form); it wraps onto as many
+	   rows as the width needs, so no tab is ever off-screen and no scrollbar
+	   appears (#106 owner request, 2026-11-18). A single tab's label still
+	   never breaks mid-word. */
+	.settings :global([role='tablist'] [role='tab']) {
 		white-space: nowrap;
 	}
 
-	.settings .tabs [role='tab'][aria-selected='true'] {
-		font-weight: 600;
-		color: var(--text);
-		border-bottom-color: var(--accent);
+	.settings :global([role='tabpanel']) {
+		margin-top: var(--space-6);
 	}
 
-	.settings .tabs [role='tab']:focus-visible {
-		outline: var(--focus-ring);
-		outline-offset: -4px;
+	.settings .group[hidden] {
+		display: none;
+	}
+
+	/* A panel's heading (the components inside bring their own Section
+	   headings, level 3 and below). */
+	.settings h2 {
+		margin: 0 0 var(--space-3);
+		font-size: var(--font-size-l);
+		font-weight: var(--weight-strong);
+		line-height: var(--line-tight);
 	}
 
 	.hint {
 		color: var(--readable-muted);
 	}
 
-	.workspaces,
-	.plugins {
+	.workspaces {
 		list-style: none;
-		margin: 0 0 1rem;
+		margin: 0 0 var(--space-4);
 		padding: 0;
-		display: grid;
-		gap: 0.5rem;
 	}
 
-	.workspaces li,
+	.workspaces li {
+		padding-block: var(--space-3);
+	}
+
+	.workspaces li + li {
+		border-top: 1px solid var(--hair);
+	}
+
+	/* Plugin rows are hairline rows, not a box per plugin (#106). */
+	.plugins {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+	}
+
 	.plugin {
-		border: 1px solid color-mix(in srgb, currentColor 18%, transparent);
-		border-radius: 0.4rem;
-		padding: 0.6rem 0.75rem;
+		padding-block: var(--space-3);
+	}
+
+	.plugin + .plugin {
+		border-top: 1px solid var(--hair);
 	}
 
 	.workspaces .row,
@@ -622,70 +555,15 @@
 		display: flex;
 		flex-wrap: wrap;
 		align-items: center;
-		gap: 0.5rem 0.75rem;
+		gap: var(--space-2) var(--space-3);
 	}
 
-	.rename-button {
-		margin-left: auto;
+	.rename :global(.rename-field) {
+		flex: 1 1 10rem;
 	}
-
-	/* .secondary.delete-button: beats `.settings button.secondary`
-	   (color: inherit), which comes later and used to win. */
-	.settings button.secondary.delete-button {
-		color: var(--readable-bad);
-	}
-
 
 	h2[tabindex='-1']:focus {
 		outline: none;
-	}
-
-	.rename input {
-		flex: 1 1 10rem;
-		min-width: 0;
-		font: inherit;
-		padding: 0.35rem 0.5rem;
-		border: 1px solid color-mix(in srgb, currentColor 35%, transparent);
-		border-radius: 0.4rem;
-		background: transparent;
-		color: inherit;
-	}
-
-	.settings button.secondary {
-		border: 1px solid color-mix(in srgb, currentColor 35%, transparent);
-		background: transparent;
-		color: inherit;
-		font-weight: 500;
-	}
-
-	.sr-only {
-		position: absolute;
-		width: 1px;
-		height: 1px;
-		margin: -1px;
-		padding: 0;
-		overflow: hidden;
-		clip: rect(0 0 0 0);
-		white-space: nowrap;
-		border: 0;
-	}
-
-	.chip {
-		font-size: 0.8rem;
-		border-radius: 999px;
-		padding: 0.05rem 0.5rem;
-		background: color-mix(in srgb, currentColor 12%, transparent);
-	}
-
-	.dictionaries-button {
-		min-height: 44px;
-	}
-
-	.current {
-		font-size: 0.8rem;
-		border: 1px solid currentColor;
-		border-radius: 999px;
-		padding: 0.05rem 0.5rem;
 	}
 
 	.plugin-permissions {
@@ -694,14 +572,7 @@
 	}
 
 	.plugin-permissions-label {
-		font-weight: 600;
-	}
-
-	.needs-update {
-		font-size: 0.8rem;
-		border: 1px solid currentColor;
-		border-radius: 999px;
-		padding: 0.05rem 0.5rem;
+		font-weight: var(--weight-strong);
 	}
 
 	.plugin-head {
@@ -725,36 +596,8 @@
 		gap: 0.35rem;
 	}
 
-	.plugin-controls input[type='number'] {
-		width: 4.5rem;
-	}
-
-	.plugin-controls input,
-	.settings button {
-		font: inherit;
-	}
-
-	.plugin-controls input {
-		padding: 0.4rem 0.55rem;
-		border: 1px solid color-mix(in srgb, currentColor 35%, transparent);
-		border-radius: 0.4rem;
-		background: transparent;
-		color: inherit;
-	}
-
-	.settings button {
-		padding: 0.45rem 0.85rem;
-		border: 0;
-		border-radius: 0.4rem;
-		background: var(--accent);
-		color: var(--on-accent);
-		font-weight: 600;
-		cursor: pointer;
-	}
-
-	.settings button:disabled {
-		opacity: 0.6;
-		cursor: progress;
+	.order {
+		width: 5rem;
 	}
 
 	.error {

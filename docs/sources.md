@@ -647,8 +647,9 @@ Colour themes are packs of type `theme` (format `themes-json`, see
 (`server/internal/themes/builtin/<id>/`: `manifest.json`, `themes.json` and the
 upstream `LICENSE`, copied verbatim) and are always present; the Sources page
 credits them from `GET /api/themes`. Only colour values are taken from each
-project (no code, fonts or images); every palette is under the MIT licence,
-checked against the upstream LICENSE file on 2026-11-17. Each pack's LICENSE
+project (no code, fonts or images); every third-party palette is under the MIT
+licence, checked against the upstream LICENSE file on 2026-11-17, and the qinqin
+packs are the project's own work under the same MIT text. Each pack's LICENSE
 ships inside the server binary and reaches users verbatim: `GET /api/themes`
 serves it as the pack's `licenseText`, and the Sources page shows it under the
 Themes table. The eight themes of
@@ -657,15 +658,25 @@ upstream palettes; two mockup values that belonged to another variant are
 corrected (Rosé Pine's `pine` accent is `#31748f`, not Moon's `#3e8fb0`; Rosé
 Pine Dawn's text is the current palette's `#464261`, not the former `#575279`).
 
+- **qinqin** (`qinqin`, built in): Day, Night, Deep. MIT, © 2026 qinqin. The
+  owner's own palette (`#ffffff #0ce6f2 #0098db #1e579c #203562 #252446
+  #201533`); the palette has no red, orange or green, so the state and grade
+  colours were added beside the blues. Day and Night are the default light and
+  dark themes and are also compiled into the web app as the first-paint and
+  offline fallback (`apps/web/src/lib/theme/fallback.ts`, pinned to the pack's
+  `themes.json` by a test); the web app serves the same MIT text at
+  `apps/web/static/QINQIN-LICENSE.TXT` (the pack's `LICENSE`, byte for byte)
+  and credits it under "Built into the app".
+- **qinqin extras** (`qinqin-extras`, built in): Neon Day and Night, Pigments
+  Celadon and Indigo, Pop Bubblegum and Grape. MIT, © 2026 qinqin. Three further
+  directions: Neon's ink-grey surfaces with neon accents; Pigments' painter's
+  accents 胭脂 rouge, 朱 vermilion, 藤黄 gamboge, 石绿 malachite, 群青
+  ultramarine and 紫 violet; Pop's tinted surfaces and clashing
+  complementaries.
 - **Catppuccin** (`catppuccin`, built in): Latte, Frappé, Macchiato, Mocha.
   MIT, © 2021 Catppuccin. [catppuccin/palette](https://github.com/catppuccin/palette)
   (`palette.json` 1.8.0, commit `07d02aa110ef`). The light flavour uses mantle
-  for raised surfaces and surface0 for lines, as in the design. Latte and Mocha
-  are also compiled into the web app as the first-paint and offline fallback
-  (`apps/web/src/lib/theme/fallback.ts`, pinned to the pack's `themes.json` by a
-  test); the web app serves the same MIT text at
-  `apps/web/static/CATPPUCCIN-LICENSE.TXT` (the pack's `LICENSE`, byte for byte)
-  and credits it under "Built into the app".
+  for raised surfaces and surface0 for lines, as in the design.
 - **Rosé Pine** (`rose-pine`, built in): Rosé Pine, Moon, Dawn. MIT, © mvllow.
   [rose-pine/palette](https://github.com/rose-pine/palette) (commit `92af52b465ab`).
 - **Nord** (`nord`, built in): MIT, © 2016-present Sven Greb.

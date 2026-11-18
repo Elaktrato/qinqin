@@ -39,14 +39,33 @@ export function setLevel(f: SearchFilters, level: string): SearchFilters {
 	return { ...f, level: f.level === level ? '' : level };
 }
 
-export function searchHref(q: string, f: SearchFilters): string {
+export function searchHref(q: string, f: SearchFilters, entryId?: number | null): string {
 	const params = new URLSearchParams();
 	if (q) params.set('q', q);
 	if (f.kind) params.set('kind', f.kind);
 	if (f.scheme) params.set('scheme', f.scheme);
 	if (f.scheme && f.level) params.set('level', f.level);
+	if (entryId != null) params.set('e', String(entryId));
 	const s = params.toString();
 	return s ? `/search?${s}` : '/search';
+}
+
+/** The URL of a submitted query: a new query drops the selected entry. */
+export function submitHref(q: string, f: SearchFilters): string {
+	return searchHref(q, f);
+}
+
+/** The URL after a filter change: the selected entry stays. */
+export function filterHref(q: string, f: SearchFilters, entryId?: number | null): string {
+	return searchHref(q, f, entryId);
+}
+
+/** selectedFromParams: the `e` entry id, or null when it is not a positive safe integer. */
+export function selectedFromParams(params: URLSearchParams): number | null {
+	const raw = params.get('e');
+	if (raw === null || !/^[1-9]\d*$/.test(raw)) return null;
+	const n = Number(raw);
+	return Number.isSafeInteger(n) ? n : null;
 }
 
 /** Schemes of the workspace language that carry a manifest id. */

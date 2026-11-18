@@ -22,19 +22,19 @@ describe('frameSections', () => {
 		}
 	});
 
-	it('core features, then plugin pages in the user order, then Search and Stats', () => {
+	it('Search first, then core features and plugin pages in the user order, Stats last', () => {
 		const sections = frameSections(all);
-		expect(sections.map((s) => s.id)).toEqual(['flashcards', 'reader', 'journal', 'grammar', 'search', 'stats']);
-		expect(sections.map((s) => s.icon)).toEqual(['study', 'reader', 'journal', 'grammar', 'search', 'stats']);
-		expect(sections.map((s) => s.label)).toEqual(['Decks', 'Reader', 'Journal', 'Grammar', 'Search', 'Stats']);
-		expect(sections.map((s) => s.href)).toEqual(['/flashcards', '/reader', '/p/journal', '/p/grammar', '/search', '/stats']);
+		expect(sections.map((s) => s.id)).toEqual(['search', 'flashcards', 'reader', 'journal', 'grammar', 'stats']);
+		expect(sections.map((s) => s.icon)).toEqual(['search', 'study', 'reader', 'journal', 'grammar', 'stats']);
+		expect(sections.map((s) => s.label)).toEqual(['Search', 'Decks', 'Reader', 'Journal', 'Grammar', 'Stats']);
+		expect(sections.map((s) => s.href)).toEqual(['/search', '/flashcards', '/reader', '/p/journal', '/p/grammar', '/stats']);
 		const swapped = frameSections(ready([state('qinqin-journal', 3), state('qinqin-grammar', 1)]));
-		expect(swapped.map((s) => s.id)).toEqual(['flashcards', 'reader', 'grammar', 'journal', 'search', 'stats']);
+		expect(swapped.map((s) => s.id)).toEqual(['search', 'flashcards', 'reader', 'grammar', 'journal', 'stats']);
 	});
 
 	it('leaves out a switched-off feature and a disabled plugin', () => {
 		const sections = frameSections(ready([state(READER_ID, 0, false), state('qinqin-journal', 0, false)]));
-		expect(sections.map((s) => s.id)).toEqual(['flashcards', 'grammar', 'search', 'stats']);
+		expect(sections.map((s) => s.id)).toEqual(['search', 'flashcards', 'grammar', 'stats']);
 	});
 
 	it('a plugin page without an icon, or with one the app does not know, gets the generic icon', () => {

@@ -21,6 +21,7 @@ import { getSchemes } from '$lib/api/schemes';
 import { deleteDeck, renameDeck, saveDeckCardTypes, saveDeckNewOrder } from '$lib/study/store';
 import type { Deck, StudyCard } from '$lib/study/types';
 import { workspaces } from '$lib/workspaces';
+import { primaryActions } from '$lib/ui/testing/primary';
 import DeckSettingsView from './DeckSettingsView.svelte';
 import LimitsStub from './testing/LimitsStub.svelte';
 
@@ -51,6 +52,16 @@ afterEach(() => {
 });
 
 describe('DeckSettingsView', () => {
+	it('has one primary Save; the name and order are base underlines', async () => {
+		render(DeckSettingsView, { deckId: 'd1' });
+		await screen.findByRole('heading', { level: 1, name: 'Greetings settings' });
+		const nameForm = screen.getByRole('button', { name: 'Save name' }).closest('form')!;
+		expect(primaryActions(nameForm)).toHaveLength(1);
+		expect(screen.getByRole('button', { name: 'Save name' }).className).toContain('primary');
+		expect(screen.getByLabelText('Deck name').closest('.field')).toBeTruthy();
+		expect(screen.getByLabelText('Order of new cards').closest('.field')).toBeTruthy();
+	});
+
 	it('renames a deck and refuses an empty name', async () => {
 		render(DeckSettingsView, { deckId: 'd1' });
 		const input = (await screen.findByLabelText('Deck name')) as HTMLInputElement;

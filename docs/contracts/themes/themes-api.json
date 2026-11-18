@@ -4,6 +4,25 @@
  "_doc": "GET /api/themes (docs/contracts/themes/README.md). builtinPacks: the built-in theme packs and their theme ids, in the order the answer lists them (always present, before every installed pack); each built-in pack's licenseText is its embedded LICENSE (server/internal/api/handlers_themes_test.go).",
  "builtinPacks": [
   {
+   "packId": "qinqin",
+   "themes": [
+    "qinqin-day",
+    "qinqin-night",
+    "qinqin-deep"
+   ]
+  },
+  {
+   "packId": "qinqin-extras",
+   "themes": [
+    "qinqin-neon-light",
+    "qinqin-neon-dark",
+    "qinqin-pigment-light",
+    "qinqin-pigment-dark",
+    "qinqin-pop-light",
+    "qinqin-pop-dark"
+   ]
+  },
+  {
    "packId": "catppuccin",
    "themes": [
     "catppuccin-latte",

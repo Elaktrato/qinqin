@@ -18,6 +18,6 @@
 >
 	{#snippet actions()}
 		<Button onclick={staySignedIn}>{t('account.logout.stay')}</Button>
-		<Button tone="danger" onclick={signOutAndDelete}>{t('account.logout.delete')}</Button>
+		<Button variant="primary" tone="danger" onclick={signOutAndDelete}>{t('account.logout.delete')}</Button>
 	{/snippet}
 </Dialog>

@@ -10,6 +10,7 @@
 	import { completeEmailLogin, completeMfa, signIn, type SignInResult } from '$lib/auth';
 	import { firstMethod, otherMethods, type MfaChallenge, type MfaMethod } from '$lib/account/loginFlow';
 	import { codeFailure, otpAttrs, otpComplete, resendText, sanitizeOtp } from '$lib/account/otpInput';
+	import { Button, Field } from '$lib/ui';
 
 	type View = 'password' | 'mfa' | 'emailStart' | 'emailCode';
 
@@ -162,21 +163,22 @@
 		<h1 tabindex="-1" bind:this={heading}>{t('auth.signIn.title')}</h1>
 
 		<form onsubmit={submitPassword}>
-			<label>
-				{t('auth.signIn.username')}
-				<input name="username" autocomplete="username" bind:value={username} required />
-			</label>
+			<Field
+				label={t('auth.signIn.username')}
+				name="username"
+				autocomplete="username"
+				bind:value={username}
+				required
+			/>
 
-			<label>
-				{t('account.field.password')}
-				<input
-					name="password"
-					type="password"
-					autocomplete="current-password"
-					bind:value={password}
-					required
-				/>
-			</label>
+			<Field
+				label={t('account.field.password')}
+				name="password"
+				type="password"
+				autocomplete="current-password"
+				bind:value={password}
+				required
+			/>
 
 			{#if notice}
 				<p class="hint" role="status">{notice}</p>
@@ -185,11 +187,13 @@
 				<p class="error" role="alert">{error}</p>
 			{/if}
 
-			<button type="submit" disabled={busy}>{busy ? t('auth.signIn.signingIn') : t('auth.signIn.submit')}</button>
+			<Button type="submit" variant="primary" busy={busy}
+				>{busy ? t('auth.signIn.signingIn') : t('auth.signIn.submit')}</Button
+			>
 		</form>
 
 		{#if options?.emailCodeLogin}
-			<p class="hint"><button type="button" class="link" onclick={() => enter('emailStart')}>{t('auth.signIn.emailCodeLink')}</button></p>
+			<p class="hint"><Button variant="plain" onclick={() => enter('emailStart')}>{t('auth.signIn.emailCodeLink')}</Button></p>
 		{/if}
 	{:else if view === 'mfa' && mfa}
 		<h1 tabindex="-1" bind:this={heading}>{t('auth.mfa.title')}</h1>
@@ -221,36 +225,43 @@
 			{#if error}
 				<p class="error" role="alert">{error}</p>
 			{/if}
-			<button type="submit" disabled={busy || !otpComplete(code, method)}>{busy ? t('auth.mfa.checking') : t('common.action.continue')}</button>
+			<Button type="submit" variant="primary" busy={busy} disabled={!otpComplete(code, method)}
+				>{busy ? t('auth.mfa.checking') : t('common.action.continue')}</Button
+			>
 		</form>
 		{#if method === 'email'}
 			<p class="hint">
 				{resendText(resendLeft)}
-				<button type="button" class="link" disabled={busy || resendLeft > 0} onclick={sendMfaEmail}>{t('account.verify.sendNew')}</button>
+				<Button variant="plain" disabled={busy || resendLeft > 0} onclick={sendMfaEmail}>{t('account.verify.sendNew')}</Button>
 			</p>
 		{/if}
 		<p class="hint">
 			{#each others as other (other)}
-				<button type="button" class="link" onclick={() => pick(other)}>
+				<Button variant="plain" onclick={() => pick(other)}>
 					{other === 'recovery' ? t('auth.mfa.useRecovery') : other === 'email' ? t('auth.mfa.useEmail') : t('auth.mfa.useApp')}
-				</button>
+				</Button>
 			{/each}
-			<button type="button" class="link" onclick={() => backToStart('')}>{t('auth.mfa.backToSignIn')}</button>
+			<Button variant="plain" onclick={() => backToStart('')}>{t('auth.mfa.backToSignIn')}</Button>
 		</p>
 		<p class="sr-only" aria-live="polite">{live}</p>
 	{:else if view === 'emailStart'}
 		<h1 tabindex="-1" bind:this={heading}>{t('auth.emailLogin.title')}</h1>
 		<form onsubmit={startEmailLogin}>
-			<label>
-				{t('auth.emailLogin.login')}
-				<input name="login" autocomplete="username" bind:value={emailLogin} required />
-			</label>
+			<Field
+				label={t('auth.emailLogin.login')}
+				name="login"
+				autocomplete="username"
+				bind:value={emailLogin}
+				required
+			/>
 			{#if error}
 				<p class="error" role="alert">{error}</p>
 			{/if}
-			<button type="submit" disabled={busy}>{busy ? t('auth.emailLogin.sending') : t('auth.emailLogin.submit')}</button>
+			<Button type="submit" variant="primary" busy={busy}
+				>{busy ? t('auth.emailLogin.sending') : t('auth.emailLogin.submit')}</Button
+			>
 		</form>
-		<p class="hint"><button type="button" class="link" onclick={() => enter('password')}>{t('auth.mfa.backToSignIn')}</button></p>
+		<p class="hint"><Button variant="plain" onclick={() => enter('password')}>{t('auth.mfa.backToSignIn')}</Button></p>
 	{:else if view === 'emailCode'}
 		<h1 tabindex="-1" bind:this={heading}>{t('auth.emailLogin.codeTitle')}</h1>
 		<form onsubmit={submitEmailLogin}>
@@ -270,13 +281,15 @@
 			{#if error}
 				<p class="error" role="alert">{error}</p>
 			{/if}
-			<button type="submit" disabled={busy || !otpComplete(code, 'email')}>{busy ? t('auth.mfa.checking') : t('auth.signIn.submit')}</button>
+			<Button type="submit" variant="primary" busy={busy} disabled={!otpComplete(code, 'email')}
+				>{busy ? t('auth.mfa.checking') : t('auth.signIn.submit')}</Button
+			>
 		</form>
 		<p class="hint">
 			{resendText(resendLeft)}
-			<button type="button" class="link" disabled={busy || resendLeft > 0} onclick={() => startEmailLogin()}>{t('account.verify.sendNew')}</button>
+			<Button variant="plain" disabled={busy || resendLeft > 0} onclick={() => startEmailLogin()}>{t('account.verify.sendNew')}</Button>
 		</p>
-		<p class="hint"><button type="button" class="link" onclick={() => backToStart('')}>{t('auth.mfa.backToSignIn')}</button></p>
+		<p class="hint"><Button variant="plain" onclick={() => backToStart('')}>{t('auth.mfa.backToSignIn')}</Button></p>
 		<p class="sr-only" aria-live="polite">{live}</p>
 	{/if}
 

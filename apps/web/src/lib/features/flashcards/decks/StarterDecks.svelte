@@ -4,6 +4,7 @@
 	import { errorMessage } from '$lib/stats/errors';
 	import { noPackHint } from '$lib/study/newOrderView';
 	import { flashcardsHref } from '../route';
+	import { Button, Section } from '$lib/ui';
 	import { loadStarterEntries, starterCredit, starterDecks, starterTitle, type StarterDeck } from './starterDecks';
 
 	// Starter decks (#75): Top 500/1000/2000 of each installed frequency pack
@@ -63,8 +64,7 @@
 	}
 </script>
 
-<section aria-labelledby="starter-decks-heading">
-	<h2 id="starter-decks-heading">{t('flashcards.starter.title')}</h2>
+<Section title={t('flashcards.starter.title')}>
 	<p class="hint">{t('flashcards.starter.listIntro')}</p>
 	{#if loadError}
 		<p class="hint">{loadError}</p>
@@ -77,15 +77,15 @@
 			{#each groups as group (group.packNumId)}
 				{@const loaded = items[group.packNumId]}
 				<li>
-					<button
-						type="button"
+					<Button
+						variant="plain"
 						class="toggle"
 						aria-expanded={expanded.includes(group.packNumId)}
 						onclick={() => toggle(group)}
 					>
 						<span aria-hidden="true">{expanded.includes(group.packNumId) ? '▾' : '▸'}</span>
 						{t('flashcards.starter.group', { name: group.name })}
-					</button>
+					</Button>
 					<p class="credit">{group.credit}</p>
 					{#if expanded.includes(group.packNumId)}
 						<ul class="levels">
@@ -111,7 +111,7 @@
 			{/each}
 		</ul>
 	{/if}
-</section>
+</Section>
 
 <style>
 	.groups,
@@ -125,17 +125,6 @@
 		padding-left: 1.5rem;
 	}
 
-	.toggle {
-		min-height: 44px;
-		width: 100%;
-		display: flex;
-		gap: 0.5rem;
-		align-items: center;
-		text-align: left;
-		border: 0;
-		background: transparent;
-		font-weight: 600;
-	}
 
 	.credit {
 		margin: 0 0 0.25rem 1.5rem;

@@ -88,7 +88,7 @@
 	</form>
 	{#snippet actions()}
 		<Button onclick={() => finish(false)} disabled={busy}>{t('common.action.cancel')}</Button>
-		<Button type="submit" form="{uid}-form" tone="danger" disabled={!ready} {busy}>{t('admin.mfaReset.submit')}</Button>
+		<Button type="submit" form="{uid}-form" variant="primary" tone="danger" disabled={!ready} {busy}>{t('admin.mfaReset.submit')}</Button>
 	{/snippet}
 </Dialog>
 

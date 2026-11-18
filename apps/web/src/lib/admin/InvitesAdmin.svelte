@@ -2,6 +2,7 @@
 	import { onMount } from 'svelte';
 	import { errorText } from '$lib/api/apiErrors';
 	import { t } from '$lib/i18n';
+	import { Button, Chip, Field, IconButton, Panel, Section, Select } from '$lib/ui';
 	import {
 		createInvite,
 		getAuthSettings,
@@ -92,42 +93,53 @@
 	}
 </script>
 
-<section aria-labelledby="admin-invites-heading">
-	<h2 id="admin-invites-heading">{t('admin.invites.title')}</h2>
+<Section title={t('admin.invites.title')}>
 	{#if closed}<p class="note" role="note">{closedNote()}</p>{/if}
 	{#if error}<p class="error" role="alert">{error}</p>{/if}
 
 	<form onsubmit={create} class="stack">
-		<label>
-			{t('admin.invites.uses.label')}
-			<input type="number" min="1" max="100" bind:value={maxUses} required />
-		</label>
-		<label>
-			{t('admin.invites.expires')}
-			<select bind:value={expiry}>
-				{#each EXPIRY_CHOICES as c (c.label)}
-					<option value={c.days === null ? 'none' : String(c.days)}>{c.label}</option>
-				{/each}
-			</select>
-		</label>
-		<label>
-			{t('admin.invites.note')}
-			<input bind:value={note} maxlength="100" autocomplete="off" />
-		</label>
-		<button type="submit" disabled={busy}>{t('admin.invites.create')}</button>
+		<Field
+			label={t('admin.invites.uses.label')}
+			type="number"
+			min={1}
+			max={100}
+			value={String(maxUses)}
+			oninput={(event) => (maxUses = Number(event.currentTarget.value))}
+			required
+		/>
+		<Select
+			label={t('admin.invites.expires')}
+			bind:value={expiry}
+			options={EXPIRY_CHOICES.map((c) => ({
+				value: c.days === null ? 'none' : String(c.days),
+				label: c.label
+			}))}
+		/>
+		<Field label={t('admin.invites.note')} bind:value={note} maxlength={100} autocomplete="off" />
+		<Button type="submit" variant="primary" disabled={busy}>{t('admin.invites.create')}</Button>
 	</form>
 
 	{#if created}
 		<div class="link" role="group" aria-label={t('admin.invites.newLink')}>
-			<p>{t('admin.invites.shownOnce')}</p>
-			<input readonly value={created} aria-label={t('admin.invites.link')} onfocus={(e) => e.currentTarget.select()} />
-			<button type="button" onclick={copy}>{copied ? t('common.action.copied') : t('common.action.copy')}</button>
-			<button type="button" onclick={() => (created = null)}>{t('admin.invites.close')}</button>
+			<Panel raised>
+				<p>{t('admin.invites.shownOnce')}</p>
+				<Field
+					label={t('admin.invites.link')}
+					readonly
+					value={created}
+					onfocus={(e) => e.currentTarget.select()}
+				/>
+				<div class="actions">
+					<IconButton icon="copy" label={t('common.action.copy')} onclick={copy} />
+					<Button onclick={() => (created = null)}>{t('admin.invites.close')}</Button>
+					<span role="status">{copied ? t('common.action.copied') : ''}</span>
+				</div>
+			</Panel>
 		</div>
 	{/if}
 
 	{#if loaded && rows.length > 0}
-		<table aria-label={t('admin.invites.title')}>
+		<table class="ui-table" aria-label={t('admin.invites.title')}>
 			<thead>
 				<tr>
 					<th scope="col">{t('admin.invites.colNote')}</th>
@@ -141,13 +153,13 @@
 				{#each rows as row (row.id)}
 					<tr>
 						<th scope="row">{row.note}</th>
-						<td><span class="badge">{row.state}</span></td>
+						<td><Chip>{row.state}</Chip></td>
 						<td>{row.uses}</td>
 						<td>{row.expires}</td>
 						<td>
 							{#if row.canRevoke}
-								<button type="button" disabled={busy} aria-label={t('admin.invites.revokeNamed', { note: row.note })}
-									onclick={() => revoke(row.id)}>{t('admin.invites.revoke')}</button
+								<Button disabled={busy} aria-label={t('admin.invites.revokeNamed', { note: row.note })}
+									onclick={() => revoke(row.id)}>{t('admin.invites.revoke')}</Button
 								>
 							{/if}
 						</td>
@@ -158,66 +170,43 @@
 	{:else if loaded}
 		<p class="hint">{t('admin.invites.none')}</p>
 	{/if}
-</section>
+</Section>
 
 <style>
 	.stack {
 		display: grid;
-		gap: 0.8rem;
+		gap: var(--space-3);
 		max-width: 22rem;
-		margin-bottom: 1rem;
+		margin-bottom: var(--space-4);
 	}
-	label {
-		display: grid;
-		gap: 0.3rem;
-		font-weight: 600;
-	}
-	input,
-	select {
-		font: inherit;
-		padding: 0.45rem 0.6rem;
-	}
-	table {
-		border-collapse: collapse;
-		width: 100%;
-	}
-	th,
-	td {
-		text-align: left;
-		padding: 0.45rem 0.6rem;
-		border-bottom: 1px solid color-mix(in srgb, currentColor 18%, transparent);
-	}
-	.badge {
-		padding: 0.1rem 0.45rem;
-		border: 1px solid currentColor;
-		border-radius: 0.8rem;
-		font-size: 0.8em;
-	}
+
 	.link {
-		display: flex;
-		flex-wrap: wrap;
-		gap: 0.5rem;
-		align-items: center;
-		padding: 0.8rem;
-		margin-bottom: 1rem;
-		border: 1px solid color-mix(in srgb, currentColor 35%, transparent);
-		border-radius: 0.5rem;
+		margin-bottom: var(--space-4);
 	}
+
+	.link :global(.panel) {
+		display: grid;
+		gap: var(--space-2);
+	}
+
 	.link p {
-		flex-basis: 100%;
 		margin: 0;
 	}
-	.link input {
-		flex: 1;
-		min-width: 12rem;
+
+	.actions {
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--space-2);
+		align-items: center;
 	}
+
 	.hint,
 	.note {
 		color: var(--readable-muted);
 	}
+
 	.error {
 		color: var(--readable-bad);
-		font-weight: 600;
 		padding-inline-start: var(--space-2);
 		border-inline-start: 3px solid var(--bad);
 	}

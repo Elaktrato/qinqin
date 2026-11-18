@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { t } from '$lib/i18n';
 	import { formatWeights, parseWeightString } from '$lib/study/fsrs/params';
+	import { Button, Field, Section } from '$lib/ui';
 
 	let {
 		activeW,
@@ -38,51 +39,36 @@
 	}
 </script>
 
-<section aria-labelledby="import-heading">
-	<h2 id="import-heading">{t('flashcards.sched.importExport')}</h2>
-	<label>
-		{t('flashcards.sched.parameters')}
-		<textarea rows="3" bind:value={text} oninput={() => (error = '')}></textarea>
-	</label>
+<Section title={t('flashcards.sched.importExport')}>
+	<Field
+		label={t('flashcards.sched.parameters')}
+		multiline
+		bind:value={text}
+		oninput={() => (error = '')}
+	/>
 	<div class="row">
-		<button type="button" disabled={busy || text.trim() === ''} onclick={doImport}>{t('flashcards.sched.import')}</button>
-		<button type="button" onclick={copy}>{t('flashcards.sched.copyActive')}</button>
+		<Button disabled={busy || text.trim() === ''} onclick={doImport}>{t('flashcards.sched.import')}</Button>
+		<Button variant="plain" onclick={copy}>{t('flashcards.sched.copyActive')}</Button>
 		{#if copied}<span role="status">{t('flashcards.sched.copied')}</span>{/if}
 	</div>
 	{#if error}
 		<p class="error" role="alert">{error}</p>
 	{/if}
 	<p class="hint"><code>{formatWeights(activeW)}</code></p>
-</section>
+</Section>
 
 <style>
-	label {
-		display: flex;
-		flex-direction: column;
-		gap: 0.25rem;
-	}
-
-	textarea {
-		font: inherit;
-		width: 100%;
-	}
-
 	.row {
 		display: flex;
 		flex-wrap: wrap;
 		align-items: center;
-		gap: 0.75rem;
-		margin-top: 0.5rem;
-	}
-
-	button {
-		min-height: 44px;
-		min-width: 44px;
-		padding: 0 1rem;
+		gap: var(--space-3);
+		margin-top: var(--space-2);
 	}
 
 	.error {
 		color: var(--readable-bad);
+		font-weight: var(--weight-medium);
 		padding-inline-start: var(--space-2);
 		border-inline-start: 3px solid var(--bad);
 	}

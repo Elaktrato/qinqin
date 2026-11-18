@@ -26,6 +26,7 @@ function keyed(writes: readonly StudyWrite[]): { key: string; data: unknown; kno
 import type { Deck, ReviewEvent, StudyCard } from '$lib/study/types';
 import { workspaces } from '$lib/workspaces';
 import { clearLevelItemsCache } from './systemDeckItems';
+import { primaryActions } from '$lib/ui/testing/primary';
 import SystemDeckDetail from './SystemDeckDetail.svelte';
 
 const SCHEME: Scheme = {
@@ -111,6 +112,14 @@ async function open(): Promise<void> {
 }
 
 describe('SystemDeckDetail', () => {
+	it('has one primary Add to my decks; the target deck is a Select', async () => {
+		render(SystemDeckDetail, { route: { view: 'system-level', packId: 'hsk-words', level: 'HSK 1' } });
+		await screen.findByRole('heading', { level: 1 });
+		expect(primaryActions(document.body)).toHaveLength(1);
+		expect(screen.getByRole('button', { name: 'Add to my decks' }).className).toContain('primary');
+		expect(screen.getByLabelText('Add to').closest('.field')).toBeTruthy();
+	});
+
 	it('lists the items with the learner state, or Not studied', async () => {
 		await open();
 		await screen.findByText('词1');

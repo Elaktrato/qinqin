@@ -32,6 +32,7 @@ import { currentStudyDay } from '$lib/time/zone';
 import { workspaces } from '$lib/workspaces';
 import { strongReviews } from '$lib/testing/reviews';
 import { SESSION_CONFIG_KEY } from '$lib/study/session';
+import { primaryActions } from '$lib/ui/testing/primary';
 import Page from './+page.svelte';
 
 const charScheme: Scheme = {
@@ -92,6 +93,17 @@ afterEach(() => {
 });
 
 describe('study setup, level sessions', () => {
+	it('has one primary Start; scheme, level and limits are base controls', async () => {
+		setup(charScheme, ['vocab']);
+		render(Page);
+		await screen.findByText(/characters in/);
+		expect(primaryActions(document.body)).toHaveLength(1);
+		expect(screen.getByRole('button', { name: /start/i }).className).toContain('primary');
+		expect(screen.getByLabelText('Scheme', { selector: 'select' }).closest('.field')).toBeTruthy();
+		expect(screen.getByLabelText('Level', { selector: 'select' }).closest('.field')).toBeTruthy();
+		expect(screen.getByLabelText('New cards').closest('.field')).toBeTruthy();
+	});
+
 	it('enables start for a character level with new items', async () => {
 		setup(charScheme, ['vocab']);
 		render(Page);

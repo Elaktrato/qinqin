@@ -7,6 +7,7 @@
 	import { listPacks } from '$lib/api/packs';
 	import { languageLabel } from '$lib/languages';
 	import { languageRows, normalizeCode, type LanguageRow } from './languagesView';
+	import { Button, Field } from '$lib/ui';
 
 	// Admin view of every known language: where its data comes from, how
 	// many workspaces use it, and registration/removal of data-only ones.
@@ -21,8 +22,8 @@
 	let error = $state('');
 	let notice = $state('');
 	let confirmCode = $state<string | null>(null);
-	let confirmButton = $state<HTMLButtonElement | null>(null);
-	const removeButtons: Record<string, HTMLButtonElement | undefined> = {};
+	let confirmButton = $state<HTMLElement | undefined>(undefined);
+	const removeButtons: Record<string, HTMLElement | undefined> = {};
 
 	async function askRemove(code: string): Promise<void> {
 		confirmCode = code;
@@ -108,10 +109,10 @@
 		<p class="hint" aria-live="polite">{t('settings.languages.loading')}</p>
 	{:else if loadError}
 		<p class="error" role="alert">{loadError}</p>
-		<button type="button" onclick={load}>{t('common.action.retry')}</button>
+		<Button onclick={load}>{t('common.action.retry')}</Button>
 	{:else}
 		<div class="scroll">
-			<table>
+			<table class="ui-table">
 				<thead>
 					<tr>
 						<th>{t('settings.languages.colLanguage')}</th>
@@ -139,19 +140,18 @@
 							<td>
 								{#if row.removable}
 									{#if confirmCode === row.code}
-										<button type="button" class="danger" bind:this={confirmButton} onclick={() => remove(row)}>
+										<Button tone="danger" bind:element={confirmButton} onclick={() => remove(row)}>
 											{t('settings.languages.confirmRemove', { language: row.label })}
-										</button>
-										<button type="button" onclick={() => cancelRemove(row.code)}>{t('common.action.cancel')}</button>
+										</Button>
+										<Button onclick={() => cancelRemove(row.code)}>{t('common.action.cancel')}</Button>
 									{:else}
-										<button
-											type="button"
-											bind:this={removeButtons[row.code]}
+										<Button
+											bind:element={removeButtons[row.code]}
 											onclick={() => askRemove(row.code)}
 											aria-label={t('settings.languages.removeLabel', { language: row.label, code: row.code })}
 										>
 											{t('common.action.remove')}
-										</button>
+										</Button>
 									{/if}
 								{/if}
 							</td>
@@ -164,13 +164,13 @@
 
 	<form class="add" onsubmit={add}>
 		<h4>{t('settings.languages.add')}</h4>
-		<label for="language-code">{t('settings.languages.code')}</label>
-		<input
+		<Field
+			label={t('settings.languages.code')}
 			id="language-code"
 			bind:value={code}
 			autocomplete="off"
 			spellcheck="false"
-			maxlength="20"
+			maxlength={20}
 			placeholder={t('settings.languages.codePlaceholder')}
 			aria-describedby="language-code-help"
 		/>
@@ -179,9 +179,9 @@
 			{#if preview}<strong>{preview}</strong>{/if}
 		</p>
 		<p class="hint">{t('settings.languages.addHint')}</p>
-		<button type="submit" class="primary" disabled={!normalized} aria-busy={adding}>
+		<Button type="submit" disabled={!normalized} busy={adding}>
 			{adding ? t('settings.languages.adding') : t('settings.languages.addSubmit')}
-		</button>
+		</Button>
 	</form>
 	{#if notice}<p class="hint" role="status">{notice}</p>{/if}
 	{#if error}<p class="error" role="alert">{error}</p>{/if}
@@ -189,9 +189,9 @@
 
 <style>
 	.languages {
-		margin-top: 2rem;
+		margin-top: var(--space-6);
 		display: grid;
-		gap: 0.6rem;
+		gap: var(--space-2);
 	}
 
 	h3,
@@ -199,28 +199,25 @@
 		margin: 0;
 	}
 
+	h3 {
+		font-size: var(--font-size-l);
+		font-weight: var(--weight-strong);
+	}
+
+	h4 {
+		font-size: var(--font-size-label);
+		font-weight: var(--weight-strong);
+	}
+
 	.scroll {
 		overflow-x: auto;
 	}
 
-	table {
-		border-collapse: collapse;
-		min-width: 100%;
-	}
-
-	th,
-	td {
-		text-align: left;
-		padding: 0.4rem 0.6rem;
-		border-bottom: 1px solid color-mix(in srgb, currentColor 15%, transparent);
-		vertical-align: top;
-	}
-
 	.flag {
-		margin-left: 0.4rem;
-		font-size: 0.75rem;
+		margin-left: var(--space-1);
+		font-size: var(--font-size-label);
 		color: var(--readable-bad);
-		font-weight: 600;
+		font-weight: var(--weight-strong);
 	}
 
 	.sr-only {
@@ -238,7 +235,7 @@
 
 	.add {
 		display: grid;
-		gap: 0.4rem;
+		gap: var(--space-1);
 		max-width: 28rem;
 	}
 
@@ -250,46 +247,7 @@
 	.error {
 		margin: 0;
 		color: var(--readable-bad);
-		font-weight: 600;
 		padding-inline-start: var(--space-2);
 		border-inline-start: 3px solid var(--bad);
-	}
-
-	input,
-	button {
-		font: inherit;
-		min-height: 44px;
-		border-radius: 0.4rem;
-		padding: 0.35rem 0.7rem;
-	}
-
-	input {
-		border: 1px solid color-mix(in srgb, currentColor 35%, transparent);
-		background: var(--panel);
-		color: inherit;
-	}
-
-	button {
-		border: 1px solid color-mix(in srgb, currentColor 35%, transparent);
-		background: transparent;
-		color: inherit;
-		cursor: pointer;
-	}
-
-	.primary {
-		border: 0;
-		background: var(--accent);
-		color: var(--on-accent);
-		font-weight: 600;
-	}
-
-	.primary:disabled {
-		opacity: 0.6;
-		cursor: default;
-	}
-
-	.danger {
-		border-color: var(--bad);
-		color: var(--readable-bad);
 	}
 </style>
