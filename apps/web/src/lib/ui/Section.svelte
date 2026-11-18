@@ -4,26 +4,42 @@
 	// Section. A region named by its heading; untitled Sections are plain
 	// groups.
 	//
-	// API: <Section title? level? actions?>content</Section>
-	//   title    the heading (t(…)); sentence case, never all caps
-	//   level    the heading level 2 (default) | 3 | 4 — follow the page outline
-	//   actions  a snippet shown at the heading's end (plain or IconButtons)
+	// API: <Section title? level? actions? headingId? focusable?>content</Section>
+	//   title      the heading (t(…)); sentence case, never all caps
+	//   level      the heading level 2 (default) | 3 | 4 — follow the page outline
+	//   actions    a snippet shown at the heading's end (plain or IconButtons)
+	//   headingId  the heading's id (else generated); a page may focus it
+	//   focusable  the heading takes script focus (tabindex="-1"), for a view change
 	import type { Snippet } from 'svelte';
 
 	let {
 		title,
 		level = 2,
 		actions,
+		headingId,
+		focusable = false,
 		children
-	}: { title?: string; level?: 2 | 3 | 4; actions?: Snippet; children: Snippet } = $props();
+	}: {
+		title?: string;
+		level?: 2 | 3 | 4;
+		actions?: Snippet;
+		headingId?: string;
+		focusable?: boolean;
+		children: Snippet;
+	} = $props();
 
 	const uid = $props.id();
 </script>
 
-<section class="section qq-section" aria-labelledby={title ? `${uid}-h` : undefined}>
+<section class="section qq-section" aria-labelledby={title ? (headingId ?? `${uid}-h`) : undefined}>
 	{#if title || actions}
 		<div class="head">
-			{#if title}<svelte:element this={`h${level}`} id="{uid}-h" class="title">{title}</svelte:element>{/if}
+			{#if title}<svelte:element
+					this={`h${level}`}
+					id={headingId ?? `${uid}-h`}
+					class="title"
+					tabindex={focusable ? -1 : undefined}>{title}</svelte:element
+				>{/if}
 			{#if actions}<div class="actions">{@render actions()}</div>{/if}
 		</div>
 	{/if}
