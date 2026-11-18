@@ -141,7 +141,6 @@ const PAGE_REMAINDER: Partial<Record<Rule, string[]>> = {
 	control: [
 		'routes/lookups/+page.svelte',
 		'routes/search/parts/+page.svelte',
-		'routes/study/+page.svelte'
 	]
 };
 

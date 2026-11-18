@@ -27,7 +27,6 @@
 	],
 	"control": [
 		"routes/lookups/+page.svelte",
-		"routes/search/parts/+page.svelte",
-		"routes/study/+page.svelte"
+		"routes/search/parts/+page.svelte"
 	]
 }
