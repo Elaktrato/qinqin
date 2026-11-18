@@ -40,7 +40,6 @@
 - [API access tokens](API-Access-tokens)
 - [Plugin data API](Plugin-data-api)
 - [Plugin format](Plugin-format)
-- [Translating qinqin](Translating-qinqin)
 - [Data pack format](Data-pack-format)
 
 **Reference**
@@ -49,3 +48,9 @@
 - [Dictionary data model](Dictionary-data-model)
 - [Troubleshooting](Troubleshooting)
 - [FAQ](FAQ)
+
+**Developing**
+
+- [Development](Development)
+- [Project layout](Project-layout)
+- [Translating qinqin](Translating-qinqin)
