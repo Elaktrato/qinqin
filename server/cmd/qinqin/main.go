@@ -216,6 +216,13 @@ func serveCmd(args []string) error {
 		log.Printf("offline OCR: not available (tesseract not found)")
 	}
 
+	// First start: install the bundled packs (not the demos) when nothing is
+	// installed yet; synchronous, before the listener. A failure is logged and
+	// the server starts anyway (the next start retries; `qinqin seed` works).
+	if err := autoSeed(ctx, sqlDB, *data, defaultPacks(), os.Getenv, log.Printf); err != nil {
+		log.Printf("%v", err)
+	}
+
 	// Stroke data: install the bundled strokes pack when none is installed
 	// (v0.3 shipped it in the web build); a failure only loses strokes.
 	if err := autoInstallStrokes(ctx, sqlDB, defaultPacks(), log.Printf); err != nil {

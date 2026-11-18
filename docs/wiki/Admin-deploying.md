@@ -8,16 +8,27 @@ You need Docker with the Compose plugin. In a checkout of the repository (or a f
 
 ```sh
 docker compose up -d
-docker compose exec qinqin qinqin seed
 docker compose exec qinqin qinqin adduser --admin --username you
 ```
 
 `adduser` asks for a password (10 to 256 characters, not the username). Then open `http://localhost:8080`.
 
 - **No reverse proxy in front?** Set `QINQIN_TRUSTED_PROXIES=none` (in a `.env` file next to `docker-compose.yml`, or in the stack's environment). The default trusts the `X-Forwarded-For` header of private-network peers, which a LAN client could forge to dodge the per-client sign-in limits ([Reverse proxy, rate limiting and trusted proxies](Admin-proxy-and-rate-limiting)).
-- **Seed and create the admin before you expose the port beyond your LAN.** While no user exists, the first registration over the API becomes the administrator, whoever makes it. `QINQIN_BOOTSTRAP_ADMIN` (below) closes that window completely.
+- **The first start seeds itself.** Before it listens, a fresh instance installs the bundled packs (about 2 minutes, once; the health check waits up to 300 s). See [the auto-seed](#the-auto-seed-on-the-first-start) below.
+- **Create the admin before you expose the port beyond your LAN.** While no user exists, the first registration over the API becomes the administrator, whoever makes it. `QINQIN_BOOTSTRAP_ADMIN` (below) closes that window completely.
 - **Where the data lives.** In the named volume `qinqin-data`. Set `QINQIN_DATA_VOLUME=./data` (or an absolute path such as `/srv/qinqin/data`) to bind-mount a host directory instead. `QINQIN_PORT` changes the published port, `QINQIN_IMAGE` pins an image. `QINQIN_SECRET` is optional: empty means the AI features are off ([AI providers and offline OCR](Admin-AI-and-OCR)).
 - **Upgrading from the old quick start?** It kept the data in `./data`; the compose file now defaults to a named volume, so without a change you would start on an empty instance. Set `QINQIN_DATA_VOLUME=./data` to keep using it.
+
+### The auto-seed on the first start
+
+The first start of a fresh instance installs the bundled packs by itself before the server listens: the upstream dictionaries, the Jiten frequency list, the HSK 3.0 character, HSK 3.0 word and JLPT kanji level lists, the stroke data and the Kanji alive audio when present. It takes about 2 minutes (126 s measured on a busy machine; the first start only), and the compose health check allows 300 s.
+
+- It runs once per database and only on a fresh instance, that is while no pack of any type is installed. An upgraded or curated instance is never touched, and packs an administrator uninstalled stay uninstalled (a marker in the database records that it ran).
+- It leaves out the demo packs `es-demo` and `zh-grammar-demo`.
+- A pack that fails to import is logged (`auto-seed failed ...`); the server starts anyway and the next start tries again.
+- `QINQIN_AUTO_SEED=0` (or `false`, `off`) turns it off.
+
+`qinqin seed` is for what the auto-seed does not do: the demo packs (it installs everything the image ships, demos included), local packs, and re-seeding after an image update that ships newer packs.
 
 ### What `qinqin seed` does
 
@@ -68,13 +79,12 @@ Portainer needs no special file: `docker-compose.yml` is plain compose. It uses 
 4. **First run, before exposing the port beyond your LAN.** Containers, `qinqin`, Console, command `/bin/sh`, Connect. Then:
 
    ```sh
-   qinqin seed
    qinqin adduser --username <name> --admin
    ```
 
-   `adduser` asks for the password and needs a terminal; Portainer's console provides one (the typed password is echoed). Run `seed` while nobody uses the app.
+   `adduser` asks for the password and needs a terminal; Portainer's console provides one (the typed password is echoed). The first start has already installed the bundled packs before it opened the port ([the auto-seed](#the-auto-seed-on-the-first-start)); the demo packs are not installed, `qinqin seed` adds them and local packs.
 
-   **Or create the admin automatically.** Set `QINQIN_BOOTSTRAP_ADMIN` to the admin's username. On the first start, while no user exists, the server creates that administrator before it opens the port, so nobody can claim the first registration. The admin must choose a new password at the first sign-in; until then the session can do nothing else. Set `QINQIN_BOOTSTRAP_PASSWORD` to choose the initial password (10 to 256 characters, not the username), or leave it empty: the server then generates one (20 characters) and prints it **once** in the container log (Portainer: Containers, `qinqin`, Logs; the line starts `bootstrap: initial password`). A supplied password is never logged. Later starts ignore both variables, so remove the password from the stack after the first sign-in. A username or password that breaks the rules stops the server from starting, with the reason in the log. This replaces `adduser`; you still run `qinqin seed`.
+   **Or create the admin automatically.** Set `QINQIN_BOOTSTRAP_ADMIN` to the admin's username. On the first start, while no user exists, the server creates that administrator before it opens the port, so nobody can claim the first registration. The admin must choose a new password at the first sign-in; until then the session can do nothing else. Set `QINQIN_BOOTSTRAP_PASSWORD` to choose the initial password (10 to 256 characters, not the username), or leave it empty: the server then generates one (20 characters) and prints it **once** in the container log (Portainer: Containers, `qinqin`, Logs; the line starts `bootstrap: initial password`). A supplied password is never logged. Later starts ignore both variables, so remove the password from the stack after the first sign-in. A username or password that breaks the rules stops the server from starting, with the reason in the log. This replaces `adduser`.
 5. Put a reverse proxy with HTTPS in front ([Reverse proxy, rate limiting and trusted proxies](Admin-proxy-and-rate-limiting)), then run the checklist below.
 
 ## Data directory
@@ -102,7 +112,7 @@ The bundled packs themselves stay in the image (`/opt/qinqin/packs`, `/opt/qinqi
 
 - `curl http://<host>:<port>/healthz` answers `ok`; Portainer shows the container `healthy` (the compose healthcheck runs `wget` against `/healthz` every 30 s, with a 15 s start period).
 - Sign in as the admin from step 4.
-- Search `好`: results appear (the seed ran).
+- Search `好`: results appear (the first-start seed ran).
 - Create a deck and a flashcard.
 - If you set `QINQIN_SECRET`, the container log shows `AI: QINQIN_SECRET ok`. With `QINQIN_AI_PROVIDER` unset, Settings → AI lists the providers and shows a key as storable; saving a key makes it the active provider, and a journal review works.
 - Over HTTPS, `curl -sI https://<host>/service-worker.js` shows `Cache-Control: no-cache` and a JavaScript content type, and `/manifest.webmanifest` is `application/manifest+json`. A proxy that caches or rewrites them breaks installing the app and updates.

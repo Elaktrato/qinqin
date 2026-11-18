@@ -77,7 +77,7 @@
 		const order = decodeOrder(value);
 		busy = true;
 		try {
-			await saveDeckNewOrder(deckId, order === 'deck' ? { by: 'added' } : order);
+			await saveDeckNewOrder(deckId, order === 'deck' || order === 'random' ? { by: 'added' } : order);
 			message = t('flashcards.settings.saved');
 			await store.load(workspaceId, true);
 		} catch (err) {

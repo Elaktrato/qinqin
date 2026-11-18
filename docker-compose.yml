@@ -55,6 +55,9 @@
 #                    client that reaches the port directly could otherwise
 #                    forge the header and dodge the per-client limits. Or a
 #                    comma list of CIDRs/addresses (a CDN's ranges, one proxy).
+#   QINQIN_AUTO_SEED  0, false or off stops the first start from installing the
+#                    bundled packs (default on; the demo packs are never
+#                    installed this way). See "Seeding" in the README.
 #   QINQIN_BOOTSTRAP_ADMIN  username of the first admin, created on the first
 #                    start while the instance has no users (empty = off). The
 #                    admin must set a new password at the first sign-in. Later
@@ -87,12 +90,16 @@ services:
       QINQIN_BOOTSTRAP_ADMIN: ${QINQIN_BOOTSTRAP_ADMIN:-}
       QINQIN_BOOTSTRAP_PASSWORD: ${QINQIN_BOOTSTRAP_PASSWORD:-}
       QINQIN_TESSERACT: ${QINQIN_TESSERACT:-}
+      QINQIN_AUTO_SEED: ${QINQIN_AUTO_SEED:-}
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8080/healthz"]
       interval: 30s
       timeout: 5s
       retries: 3
-      start_period: 15s
+      # The first start installs the bundled packs before it listens (about
+      # 2 minutes measured on a busy dev machine, more on a slow disk); do not
+      # count that as unhealthy.
+      start_period: 300s
     security_opt:
       - no-new-privileges:true
     # No `user:` and no `read_only:`: the image has no USER (runs as root) and

@@ -33,6 +33,7 @@ You normally leave these alone.
 |---|---|
 | `QINQIN_DATA` | The data directory: `/data` in the image and the compose file. It is also the default of every command's `--data`; without it the default is `./data` |
 | `QINQIN_PACKS` | The pack roots `qinqin seed` reads, comma-separated. The image sets `/opt/qinqin/packs,/opt/qinqin/audio,/opt/qinqin/strokes`; the server also reads them at start (to install the stroke data when none is installed, and to compare stored pack terms with the manifests). Without it the default is `plugins/data` plus `plugins/data-audio`, `plugins/data-strokes` and `plugins/data-local`, each when it exists |
+| `QINQIN_AUTO_SEED` | `0`, `false` or `off` (any case) stops the first start from installing the bundled packs; the demo packs are never installed this way. Default on: it runs once, on a fresh instance with no pack installed. `qinqin seed` still works |
 
 ## Command-line only
 
