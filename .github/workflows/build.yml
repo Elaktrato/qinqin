@@ -106,3 +106,33 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+  # A GitHub Release for every v* tag, after the image is pushed. The body is
+  # docs/releases/<tag>.md when that file exists, else GitHub's generated
+  # notes. Tags with a hyphen (v0.5.0-rc1) become pre-releases. Re-running the
+  # job for a tag that already has a release changes nothing.
+  release:
+    needs: image
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+      - name: Create the release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "Release $TAG already exists; nothing to do."
+            exit 0
+          fi
+          args=(--verify-tag --title "qinqin $TAG")
+          if [ -f "docs/releases/$TAG.md" ]; then
+            args+=(--notes-file "docs/releases/$TAG.md")
+          else
+            args+=(--generate-notes)
+          fi
+          case "$TAG" in *-*) args+=(--prerelease) ;; esac
+          gh release create "$TAG" "${args[@]}"
