@@ -19,6 +19,10 @@ The bundled set is chosen so a fresh server can seed offline and every pack's li
 docker compose exec qinqin qinqin seed --packs /opt/qinqin/packs,/opt/qinqin/audio,/opt/qinqin/strokes,/opt/qinqin/local
 ```
 
+**Your own level list** (TBCL, a curriculum table, any private list): put a folder `plugins/data-local/<id>/` with a `manifest.json` (`"type": "levels"`, `"format": "json"`, a `license` and an `attribution`) and a `levels.json`, or let `node scripts/prepare-local-levels.mjs` convert a TSV into one, then run `qinqin seed --packs plugins/data,plugins/data-local` (in a checkout) or the Docker form above. Font packs built into `plugins/data-fonts/` are not a default root either: name the folder in `--packs`, or upload the pack. The hand-written samples in `plugins/samples/` (`zh-mini`, `ja-mini`, `hsk-mini`, `jlpt-mini`) are never seeded unless you name them (`qinqin seed --packs plugins/samples`). `zh-grammar-demo` is the only bundled grammar pack.
+
+**Re-seed after upgrades that add pack data.** A database seeded before the character-map level fields existed shows a "Level data missing" banner on the character map until `qinqin seed` runs. A re-seed also drops the pre-2010 four-level JLPT field that older KANJIDIC2 imports wrote; JLPT levels come only from the `jlpt-kanji` pack.
+
 `seed` imports dictionaries first, then frequency lists, levels, sentences and the rest, each group in path order; the order of frequency packs is their priority (the first one with data for an entry decides the "most frequent first" order). Re-running replaces each pack's own rows and touches nothing else.
 
 ## Settings → Data (administrators)
