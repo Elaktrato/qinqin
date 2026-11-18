@@ -30,6 +30,7 @@ import { SESSION_CONFIG_KEY } from '$lib/study/session';
 import type { Deck, StudyCard } from '$lib/study/types';
 import { workspaces } from '$lib/workspaces';
 import { currentStudyDay } from '$lib/time/zone';
+import { primaryActions } from '$lib/ui/testing/primary';
 import DeckDetail from './DeckDetail.svelte';
 
 const verbs: Deck = { id: 'd1', name: 'Verbs', createdAt: '2026-01-01T00:00:00.000Z' };
@@ -132,6 +133,17 @@ const wordRows = () => [...document.querySelectorAll('li[data-entry]')];
 const written = () => wordRows().map((li) => li.getAttribute('data-entry'));
 
 describe('DeckDetail', () => {
+	it('has one primary Study; filters and move are base underlines', async () => {
+		await open();
+		expect(primaryActions(document.body)).toHaveLength(1);
+		expect(screen.getByRole('button', { name: 'Study' }).className).toContain('primary');
+		expect(screen.getByRole('searchbox', { name: 'Search words' }).closest('.field')).toBeTruthy();
+		expect(screen.getByLabelText('State').closest('.field')).toBeTruthy();
+		expect(screen.getByLabelText('Kind').closest('.field')).toBeTruthy();
+		expect(screen.getByLabelText('Sort').closest('.field')).toBeTruthy();
+		expect(screen.getByLabelText('Move to').closest('.field')).toBeTruthy();
+	});
+
 	it('shows the deck header with its numbers, Study and Settings', async () => {
 		await open();
 		expect(screen.getByRole('heading', { level: 1, name: 'Verbs' })).toBeTruthy();

@@ -23,6 +23,7 @@
 		duplicateGlosses,
 		type StarterDeck
 	} from './starterDecks';
+	import { Button } from '$lib/ui';
 
 	// A starter deck (#75): the pack's top words as the server resolves them,
 	// with the learner's state; known words are skipped and never added. It
@@ -173,9 +174,9 @@
 			<p class="hint">{view.knownLine}</p>
 		{/if}
 		<div class="actions">
-			<button type="button" disabled={busy} onclick={add}>{t('flashcards.system.addToMine')}</button>
+			<Button variant="primary" disabled={busy} onclick={add}>{t('flashcards.system.addToMine')}</Button>
 			{#if existingCopy !== null}
-				<a href={flashcardsHref({ view: 'deck', deckId: existingCopy.id })}>{t('flashcards.starter.openCopy')}</a>
+				<Button href={flashcardsHref({ view: 'deck', deckId: existingCopy.id })}>{t('flashcards.starter.openCopy')}</Button>
 			{/if}
 		</div>
 		{#if progress !== null}
@@ -188,7 +189,7 @@
 		{/if}
 		{#if error}
 			<p class="error" role="alert">{error}</p>
-			<button type="button" disabled={busy} onclick={add}>{t('flashcards.deck.tryAgain')}</button>
+			<Button disabled={busy} onclick={add}>{t('flashcards.deck.tryAgain')}</Button>
 		{/if}
 		<ul class="items">
 			{#each view.shown as item (item.id)}
@@ -209,47 +210,49 @@
 	.actions {
 		display: flex;
 		flex-wrap: wrap;
-		gap: 0.5rem 1rem;
+		gap: var(--space-2);
 		align-items: center;
-		margin: 0.75rem 0;
-	}
-
-	button {
-		min-height: 44px;
+		margin-block: var(--space-3);
 	}
 
 	.items {
 		list-style: none;
-		margin: 0.5rem 0;
+		margin: var(--space-3) 0;
 		padding: 0;
 	}
 
 	.items li {
 		display: flex;
 		flex-wrap: wrap;
-		gap: 0.25rem 1rem;
+		gap: var(--space-1) var(--space-3);
 		align-items: baseline;
-		padding: 0.3rem 0;
-		border-bottom: 1px solid color-mix(in srgb, currentColor 14%, transparent);
+		padding-block: var(--space-2);
+		border-bottom: 1px solid var(--hair);
 	}
 
 	.word {
-		font-size: 1.1rem;
-		font-weight: 600;
+		font-size: var(--font-size-xl);
+		font-family: var(--font-hanzi);
 	}
 
 	.reading,
 	.gloss,
-	.state,
-	.hint {
+	.state {
 		color: var(--readable-muted);
-		font-size: 0.9rem;
+		font-size: var(--font-size-label);
+	}
+
+	.gloss {
+		color: var(--text);
 	}
 
 	.error {
 		color: var(--readable-bad);
-		font-weight: 600;
 		padding-inline-start: var(--space-2);
 		border-inline-start: 3px solid var(--bad);
+	}
+
+	.hint {
+		color: var(--readable-muted);
 	}
 </style>

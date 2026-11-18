@@ -11,6 +11,7 @@
 	import { decodeOrder, deckOrderControl } from '$lib/study/newOrderView';
 	import { workspaces } from '$lib/workspaces';
 	import { flashcardsHref } from '../route';
+	import { Button, Field, Section, Select } from '$lib/ui';
 	import { deleteDeckText } from './deleteText';
 	import { createDecksData } from './decksData.svelte';
 	import { deckLimitsEditor, type DeckLimitsEditorProps } from './DeckLimitsSlot';
@@ -148,7 +149,7 @@
 		<p role="status">{t('flashcards.deck.noWorkspace')}</p>
 	{:else if store.status === 'error'}
 		<p role="alert">{store.error}</p>
-		<button type="button" onclick={() => void store.load(workspaceId, true)}>{t('flashcards.deck.tryAgain')}</button>
+		<Button onclick={() => void store.load(workspaceId, true)}>{t('flashcards.deck.tryAgain')}</Button>
 	{:else if deck === null || data === null}
 		<p role="status">{t('flashcards.deck.notFound')}</p>
 		<a href={flashcardsHref({ view: 'list' })}>{t('flashcards.deck.backToDecks')}</a>
@@ -159,20 +160,20 @@
 		<h1>{isGeneral ? t('flashcards.settings.generalTitle') : t('flashcards.settings.title', { name: deck.name })}</h1>
 
 		{#if !isGeneral}
-			<section>
-				<h2>{t('flashcards.settings.name')}</h2>
+			<Section title={t('flashcards.settings.name')}>
 				<form class="row" onsubmit={rename}>
-					<label>
-						{t('flashcards.settings.deckName')}
-						<input bind:value={name} maxlength="80" autocomplete="off" />
-					</label>
-					<button type="submit" disabled={busy}>{t('flashcards.settings.saveName')}</button>
+					<Field
+						label={t('flashcards.settings.deckName')}
+						bind:value={name}
+						maxlength={80}
+						autocomplete="off"
+					/>
+					<Button type="submit" variant="primary" disabled={busy}>{t('flashcards.settings.saveName')}</Button>
 				</form>
-			</section>
+			</Section>
 		{/if}
 
-		<section>
-			<h2>{t('flashcards.settings.cardTypes')}</h2>
+		<Section title={t('flashcards.settings.cardTypes')}>
 			<p class="hint">{t('flashcards.settings.cardTypesHint')}</p>
 			<DeckCardTypes
 				{deckId}
@@ -180,49 +181,45 @@
 				cardTypes={data.deckSettings[deckId]?.cardTypes ?? []}
 				onSaved={() => void store.load(workspaceId, true)}
 			/>
-		</section>
+		</Section>
 
-		<section>
-			<h2>{t('flashcards.settings.newCards')}</h2>
-			<label>
-				{t('flashcards.settings.order')}
-				<select
-					value={orderControl.value}
-					disabled={busy || orderControl.disabled}
-					onchange={(event) => void saveOrder((event.currentTarget as HTMLSelectElement).value)}
-				>
-					{#each orderControl.choices as choice (choice.value)}
-						<option value={choice.value} disabled={choice.disabled}>{choice.label}</option>
-					{/each}
-				</select>
-			</label>
+		<Section title={t('flashcards.settings.newCards')}>
+			<Select
+				label={t('flashcards.settings.order')}
+				value={orderControl.value}
+				disabled={busy || orderControl.disabled}
+				onchange={(event) => void saveOrder((event.currentTarget as HTMLSelectElement).value)}
+				options={orderControl.choices.map((choice) => ({
+					value: choice.value,
+					label: choice.label,
+					disabled: choice.disabled
+				}))}
+			/>
 			{#if orderControl.hint !== null}
 				<p class="hint">{orderControl.hint}</p>
 			{/if}
-		</section>
+		</Section>
 
 		{#if limitsEditor !== null}
 			{@const Editor = limitsEditor}
-			<section>
-				<h2>{t('flashcards.settings.dailyLimits')}</h2>
+			<Section title={t('flashcards.settings.dailyLimits')}>
 				<Editor {deckId} deckName={deck.name} />
-			</section>
+			</Section>
 		{/if}
 
 		{#if !isGeneral}
-			<section>
-				<h2>{t('flashcards.settings.delete')}</h2>
-				<button type="button" class="danger" disabled={busy} onclick={openConfirm}>{t('flashcards.settings.deleteDeck')}</button>
+			<Section title={t('flashcards.settings.delete')}>
+				<Button tone="danger" disabled={busy} onclick={openConfirm}>{t('flashcards.settings.deleteDeck')}</Button>
 				{#if confirming}
 					<div class="confirm" role="alertdialog" aria-label={t('flashcards.deck.confirmDelete')} tabindex="-1" onkeydown={confirmKey}>
 						<p>{deleteDeckText(deck, data.cards, data.decks)}</p>
-						<button type="button" class="danger" disabled={busy} onclick={remove}
-							>{t('flashcards.settings.deleteNamed', { name: deck.name })}</button
+						<Button variant="primary" tone="danger" disabled={busy} onclick={remove}
+							>{t('flashcards.settings.deleteNamed', { name: deck.name })}</Button
 						>
-						<button type="button" class="secondary" onclick={() => (confirming = false)}>{t('common.action.cancel')}</button>
+						<Button onclick={() => (confirming = false)}>{t('common.action.cancel')}</Button>
 					</div>
 				{/if}
-			</section>
+			</Section>
 		{/if}
 
 		{#if message}
@@ -235,53 +232,41 @@
 </div>
 
 <style>
-	section {
-		margin: 1.25rem 0;
-	}
-
 	.row {
 		display: flex;
 		flex-wrap: wrap;
-		gap: 0.5rem;
+		gap: var(--space-2);
 		align-items: end;
+		max-width: 32rem;
 	}
 
-	label {
-		display: grid;
-		gap: 0.2rem;
-		font-size: 0.9rem;
-	}
-
-	button,
-	select {
-		min-height: 44px;
-	}
-
-	select {
-		max-width: 100%;
-		font: inherit;
-	}
-
-	.danger {
-		color: var(--readable-bad);
+	.row :global(.field) {
+		flex: 1 1 16rem;
 	}
 
 	.confirm {
-		margin-top: 0.75rem;
-		padding: 0.75rem;
-		border: 1px solid var(--bad);
-		border-radius: 0.5rem;
+		margin-top: var(--space-3);
+		padding-block: var(--space-3);
+		border-top: 1px solid var(--hair);
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--space-2);
+		align-items: center;
+	}
+
+	.confirm p {
+		flex-basis: 100%;
+		margin: 0;
 	}
 
 	.error {
 		color: var(--readable-bad);
-		font-weight: 600;
 		padding-inline-start: var(--space-2);
 		border-inline-start: 3px solid var(--bad);
 	}
 
 	.hint {
 		color: var(--readable-muted);
-		margin: 0.25rem 0;
+		margin: var(--space-1) 0;
 	}
 </style>
