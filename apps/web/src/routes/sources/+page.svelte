@@ -5,6 +5,7 @@
 	import Msg from '$lib/i18n/Msg.svelte';
 	import { onMount } from 'svelte';
 	import { api } from '$lib/api/client';
+	import { Button } from '$lib/ui';
 	import type { ComponentPack, Dictionary, FrequencyPack, Scheme, StrokePack } from '$lib/api/types';
 	import { getComponentPacks } from '$lib/api/components';
 	import { getStrokePacks } from '$lib/api/packages';
@@ -325,15 +326,16 @@
 			<p>{t('sources.dictionaries.loading')}</p>
 		{:else if error}
 			<p class="error" role="alert">{error}</p>
-			<button type="button" onclick={load}>{t('sources.retry')}</button>
+			<Button onclick={load}>{t('sources.retry')}</Button>
 		{:else if dictionaries.length === 0}
 			<p>{t('sources.dictionaries.none')}</p>
 			<p class="hint">
 				<Msg key="sources.dictionaries.hint">{#snippet code(text: string)}<code>{text}</code>{/snippet}</Msg>
 			</p>
 		{:else}
-			<div class="table-wrap">
-				<table aria-labelledby="sources-dictionaries">
+			<!-- svelte-ignore a11y_no_noninteractive_tabindex (a scrollable region is keyboard reachable, WCAG 2.1.1) -->
+			<div class="table-wrap" tabindex="0" role="region" aria-labelledby="sources-dictionaries">
+				<table class="ui-table" aria-labelledby="sources-dictionaries">
 					<thead>
 						<tr>
 							<th scope="col">{t('sources.col.name')}</th>
@@ -371,12 +373,13 @@
 			<p>{t('sources.frequency.loading')}</p>
 		{:else if frequencyError}
 			<p class="error" role="alert">{frequencyError}</p>
-			<button type="button" onclick={loadFrequency}>{t('sources.retry')}</button>
+			<Button onclick={loadFrequency}>{t('sources.retry')}</Button>
 		{:else if frequencyPacks.length === 0}
 			<p>{t('sources.frequency.none')}</p>
 		{:else}
-			<div class="table-wrap">
-				<table aria-labelledby="sources-frequency">
+			<!-- svelte-ignore a11y_no_noninteractive_tabindex (a scrollable region is keyboard reachable, WCAG 2.1.1) -->
+			<div class="table-wrap" tabindex="0" role="region" aria-labelledby="sources-frequency">
+				<table class="ui-table" aria-labelledby="sources-frequency">
 					<thead>
 						<tr>
 							<th scope="col">{t('sources.col.name')}</th>
@@ -413,13 +416,14 @@
 		<section>
 			<h2 id="sources-sentences">{t('sources.sentences.title')}</h2>
 			<p class="error" role="alert">{sentencesError}</p>
-			<button type="button" onclick={loadSentences}>{t('sources.retry')}</button>
+			<Button onclick={loadSentences}>{t('sources.retry')}</Button>
 		</section>
 	{:else if sentencePacks.length > 0}
 		<section>
 			<h2 id="sources-sentences">{t('sources.sentences.title')}</h2>
-			<div class="table-wrap">
-				<table aria-labelledby="sources-sentences">
+			<!-- svelte-ignore a11y_no_noninteractive_tabindex (a scrollable region is keyboard reachable, WCAG 2.1.1) -->
+			<div class="table-wrap" tabindex="0" role="region" aria-labelledby="sources-sentences">
+				<table class="ui-table" aria-labelledby="sources-sentences">
 					<thead>
 						<tr>
 							<th scope="col">{t('sources.col.name')}</th>
@@ -453,10 +457,11 @@
 			<h2 id="sources-components">{t('sources.components.title')}</h2>
 			{#if componentsError}
 				<p class="error" role="alert">{componentsError}</p>
-				<button type="button" onclick={loadComponents}>{t('sources.retry')}</button>
+				<Button onclick={loadComponents}>{t('sources.retry')}</Button>
 			{:else}
-				<div class="table-wrap">
-					<table aria-labelledby="sources-components">
+				<!-- svelte-ignore a11y_no_noninteractive_tabindex (a scrollable region is keyboard reachable, WCAG 2.1.1) -->
+				<div class="table-wrap" tabindex="0" role="region" aria-labelledby="sources-components">
+					<table class="ui-table" aria-labelledby="sources-components">
 						<thead>
 							<tr>
 								<th scope="col">{t('sources.col.name')}</th>
@@ -494,10 +499,11 @@
 			<h2 id="sources-themes">{t('sources.themes.title')}</h2>
 			{#if themesError}
 				<p class="error" role="alert">{themesError}</p>
-				<button type="button" onclick={loadThemes}>{t('sources.retry')}</button>
+				<Button onclick={loadThemes}>{t('sources.retry')}</Button>
 			{:else}
-				<div class="table-wrap">
-					<table aria-labelledby="sources-themes">
+				<!-- svelte-ignore a11y_no_noninteractive_tabindex (a scrollable region is keyboard reachable, WCAG 2.1.1) -->
+				<div class="table-wrap" tabindex="0" role="region" aria-labelledby="sources-themes">
+					<table class="ui-table" aria-labelledby="sources-themes">
 						<thead>
 							<tr>
 								<th scope="col">{t('sources.col.name')}</th>
@@ -543,10 +549,11 @@
 			<h2 id="sources-strokes">{t('sources.strokes.title')}</h2>
 			{#if strokesError}
 				<p class="error" role="alert">{strokesError}</p>
-				<button type="button" onclick={loadStrokes}>{t('sources.retry')}</button>
+				<Button onclick={loadStrokes}>{t('sources.retry')}</Button>
 			{:else}
-				<div class="table-wrap">
-					<table aria-labelledby="sources-strokes">
+				<!-- svelte-ignore a11y_no_noninteractive_tabindex (a scrollable region is keyboard reachable, WCAG 2.1.1) -->
+				<div class="table-wrap" tabindex="0" role="region" aria-labelledby="sources-strokes">
+					<table class="ui-table" aria-labelledby="sources-strokes">
 						<thead>
 							<tr>
 								<th scope="col">{t('sources.col.name')}</th>
@@ -590,10 +597,11 @@
 			<h2 id="sources-fonts">{t('sources.fonts.title')}</h2>
 			{#if fontsError}
 				<p class="error" role="alert">{fontsError}</p>
-				<button type="button" onclick={loadFonts}>{t('sources.retry')}</button>
+				<Button onclick={loadFonts}>{t('sources.retry')}</Button>
 			{:else}
-				<div class="table-wrap">
-					<table aria-labelledby="sources-fonts">
+				<!-- svelte-ignore a11y_no_noninteractive_tabindex (a scrollable region is keyboard reachable, WCAG 2.1.1) -->
+				<div class="table-wrap" tabindex="0" role="region" aria-labelledby="sources-fonts">
+					<table class="ui-table" aria-labelledby="sources-fonts">
 						<thead>
 							<tr>
 								<th scope="col">{t('sources.col.name')}</th>
@@ -639,8 +647,9 @@
 		<section>
 			<h2 id="sources-audio">{t('sources.audio.title')}</h2>
 
-			<div class="table-wrap">
-				<table aria-labelledby="sources-audio">
+			<!-- svelte-ignore a11y_no_noninteractive_tabindex (a scrollable region is keyboard reachable, WCAG 2.1.1) -->
+			<div class="table-wrap" tabindex="0" role="region" aria-labelledby="sources-audio">
+				<table class="ui-table" aria-labelledby="sources-audio">
 					<thead>
 						<tr>
 							<th scope="col">{t('sources.col.name')}</th>
@@ -694,12 +703,13 @@
 			<p>{t('sources.levels.loading')}</p>
 		{:else if schemesError}
 			<p class="error" role="alert">{schemesError}</p>
-			<button type="button" onclick={loadSchemes}>{t('sources.retry')}</button>
+			<Button onclick={loadSchemes}>{t('sources.retry')}</Button>
 		{:else if schemes.length === 0}
 			<p>{t('sources.levels.none')}</p>
 		{:else}
-			<div class="table-wrap">
-				<table aria-labelledby="sources-levels">
+			<!-- svelte-ignore a11y_no_noninteractive_tabindex (a scrollable region is keyboard reachable, WCAG 2.1.1) -->
+			<div class="table-wrap" tabindex="0" role="region" aria-labelledby="sources-levels">
+				<table class="ui-table" aria-labelledby="sources-levels">
 					<thead>
 						<tr>
 							<th scope="col">{t('sources.col.name')}</th>
@@ -739,12 +749,13 @@
 			<p>{t('sources.grammar.loading')}</p>
 		{:else if grammarError}
 			<p class="error" role="alert">{grammarError}</p>
-			<button type="button" onclick={loadGrammar}>{t('sources.retry')}</button>
+			<Button onclick={loadGrammar}>{t('sources.retry')}</Button>
 		{:else if grammarPacks.length === 0}
 			<p>{t('sources.grammar.none')}</p>
 		{:else}
-			<div class="table-wrap">
-				<table aria-labelledby="sources-grammar">
+			<!-- svelte-ignore a11y_no_noninteractive_tabindex (a scrollable region is keyboard reachable, WCAG 2.1.1) -->
+			<div class="table-wrap" tabindex="0" role="region" aria-labelledby="sources-grammar">
+				<table class="ui-table" aria-labelledby="sources-grammar">
 					<thead>
 						<tr>
 							<th scope="col">{t('sources.col.name')}</th>
@@ -810,8 +821,14 @@
 </div>
 
 <style>
+	/* Sections keep today's order and ids; the hairline separates them. */
 	.sources section {
-		margin-top: 2rem;
+		margin-top: var(--space-5);
+	}
+
+	.sources section + section {
+		padding-top: var(--space-5);
+		border-top: 1px solid var(--hair);
 	}
 
 	.lede {
@@ -832,41 +849,18 @@
 		white-space: nowrap;
 	}
 
+	/* A wide table scrolls inside its own named region; no box (#106). */
 	.table-wrap {
 		overflow-x: auto;
-		border: 1px solid color-mix(in srgb, currentColor 18%, transparent);
-		border-radius: 0.4rem;
 	}
 
-	table {
-		width: 100%;
-		border-collapse: collapse;
-		font-size: 0.95rem;
-	}
-
-	th,
-	td {
-		padding: 0.5rem 0.7rem;
-		text-align: left;
-		vertical-align: top;
-		border-bottom: 1px solid color-mix(in srgb, currentColor 14%, transparent);
-	}
-
-	tbody tr:last-child td,
-	tbody tr:last-child th {
-		border-bottom: 0;
-	}
-
-	thead th {
-		font-size: 0.8rem;
-		letter-spacing: 0.04em;
-		text-transform: uppercase;
-		color: var(--readable-muted);
-		white-space: nowrap;
+	.table-wrap:focus-visible {
+		outline: var(--focus-ring);
+		outline-offset: var(--focus-ring-offset);
 	}
 
 	.name {
-		font-weight: 600;
+		font-weight: var(--weight-strong);
 		white-space: nowrap;
 	}
 
@@ -902,14 +896,14 @@
 	}
 
 	.notes dt:focus-visible {
-		outline: 2px solid currentColor;
-		outline-offset: 2px;
+		outline: var(--focus-ring);
+		outline-offset: var(--focus-ring-offset);
 	}
 
 	.notes dd {
 		margin: 0.2rem 0 0;
-		padding-left: 0.8rem;
-		border-left: 3px solid color-mix(in srgb, currentColor 18%, transparent);
+		padding-inline-start: var(--space-3);
+		border-inline-start: 1px solid var(--hair);
 	}
 
 	.notes dd :global(p),
@@ -935,11 +929,14 @@
 		gap: 0.8rem;
 	}
 
+	/* Credits are hairline rows, not a table and not a box (#106). */
 	.credit {
-		padding: 0.7rem 0.9rem;
-		border: 1px solid color-mix(in srgb, currentColor 18%, transparent);
-		border-radius: 0.4rem;
-		font-size: 0.95rem;
+		padding-block: var(--space-3);
+		font-size: var(--font-size-s);
+	}
+
+	.credit + .credit {
+		border-top: 1px solid var(--hair);
 	}
 
 	.credit-name {
@@ -988,18 +985,25 @@
 		border-inline-start: 3px solid var(--bad);
 	}
 
-	button {
-		font: inherit;
-		font-weight: 600;
-		padding: 0.45rem 0.85rem;
-		border: 0;
-		border-radius: 0.4rem;
-		background: var(--accent);
-		color: var(--on-accent);
+	/* Text links stay recognisable without colour (#106): accent text and an
+	   underline; forced colours keep the underline and the system link colour. */
+	a {
+		color: var(--reading-accent);
+		text-decoration: underline;
+		text-underline-offset: 0.15em;
+	}
+
+	summary {
 		cursor: pointer;
 	}
 
-	a {
-		color: inherit;
+	@media (forced-colors: active) {
+		a {
+			color: LinkText;
+		}
+		.table-wrap:focus-visible,
+		.notes dt:focus-visible {
+			outline-color: Highlight;
+		}
 	}
 </style>
