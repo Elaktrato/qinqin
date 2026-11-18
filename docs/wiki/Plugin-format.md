@@ -106,6 +106,22 @@ The page renders at `/p/<slug>/<rest>`, where the slug is the plugin id without 
 
 A web plugin can also contribute widgets: the optional `widgets` array of its manifest (`PluginManifest.widgets`, next to `sources`) lists `WidgetDef`s (`apps/web/src/lib/widgets/types.ts`: id, title, description, owner, size `normal` or `wide`, an optional `appliesTo(language)`, surfaces and a component without props). The app's own widgets are in `apps/web/src/lib/widgets/core.ts`. A plugin's widgets exist only while the server lists the plugin and it is enabled. The home page renders the user's layout, the ordered widget ids in the user-global plugin data row `qinqin-core` / `home-layout` (`{"version": 1, "widgets": [...]}`, no workspace; a missing row means the default layout; a higher version is read leniently, its string ids only, and saving writes version 1), through `apps/web/src/lib/widgets/layout.ts`. The per-plugin `order` in Settings no longer affects the home page (it orders the navigation links).
 
+The widgets that ship, by id (`appliesTo` limits one to some languages; surfaces are where it can appear):
+
+| Id | Widget | Owner | Size | Surfaces | Languages |
+|---|---|---|---|---|---|
+| `summary-numbers` | Summary | core | wide | stats, home | all |
+| `word-states` | Words | `qinqin-flashcards` | normal | stats, home | all |
+| `flashcards-summary` | Flashcards | `qinqin-flashcards` | normal | stats, home | all |
+| `reviews-per-day` | Reviews per day | core | wide | stats, home | all |
+| `activity-heatmap` | Activity | core | wide | stats, home | all |
+| `character-map-summary` | Characters | core | normal | stats, home | Chinese, Japanese |
+| `reading-time` | Reading time | `qinqin-reader` | normal | stats, home | all |
+| `daily-goal` | Daily goal | core | normal | home | all |
+| `weekly-summary` | This week | core | normal | home | all |
+
+Options of single widgets live in another user-global row, `qinqin-core` / `widget-options`, one member per widget id; today only the activity heatmap has one (its home layout: `garden`, `month` or `week`). Unknown keys are kept, and a write re-reads the row first so keys another device wrote meanwhile survive (contract: `docs/contracts/settings/`).
+
 A plugin that ships or fetches third-party material credits it in the optional `sources` array of its manifest ([Data and licences](Data-and-licences#credits-and-the-sources-page)).
 
 Data packs (dictionaries, level lists and so on) are a different kind of plugin: see [Data pack format](Data-pack-format).
