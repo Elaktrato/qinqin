@@ -14,8 +14,9 @@
 	let {
 		workspaceId,
 		gate,
-		onstart
-	}: { workspaceId: number; gate: AiGate; onstart: (title: string) => void } = $props();
+		onstart,
+		title = t('journal.ideas.title')
+	}: { workspaceId: number; gate: AiGate; onstart: (title: string) => void; title?: string } = $props();
 
 	const ws = untrack(() => workspaceId);
 	const aborter = new AbortController();
@@ -78,7 +79,7 @@
 </script>
 
 <section class="ideas" aria-labelledby="ideas-heading">
-	<h2 id="ideas-heading">{t('journal.ideas.title')}</h2>
+	<h2 id="ideas-heading">{title}</h2>
 	<div class="bar">
 		<button type="button" onclick={ask} disabled={busy || !gate.enabled}>
 			{busy ? t('journal.ideas.working') : t('journal.ideas.get')}
