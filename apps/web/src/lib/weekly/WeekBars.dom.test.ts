@@ -1,6 +1,7 @@
 import { cleanup, render, screen } from '@testing-library/svelte';
 import { afterEach, describe, expect, it } from 'vitest';
 import type { WeekDay, WeekSummary } from './summary';
+import { weekRangeShort } from './weekText';
 import WeekBars from './WeekBars.svelte';
 
 function day(date: string, over: Partial<WeekDay> = {}): WeekDay {
@@ -101,9 +102,17 @@ describe('WeekBars', () => {
 
 		expect(screen.queryByText('This week')).toBeNull();
 		expect(screen.queryByText('Last week')).toBeNull();
-		expect(screen.getByText('9–15 Nov and 2–8 Nov, per day')).toBeTruthy();
-		expect(screen.getByText('Shown week (9–15 Nov)')).toBeTruthy();
-		expect(screen.getByText('Week before (2–8 Nov)')).toBeTruthy();
+		const shown = weekRangeShort('2026-11-09', 'en-GB');
+		const before = weekRangeShort('2026-11-02', 'en-GB');
+		const title = container.querySelector('.title')?.textContent?.replace(/\s+/g, ' ').trim();
+		expect(title).toBe(`${shown} and ${before}, per day`.replace(/\s+/g, ' '));
+		const legend = [...container.querySelectorAll('.legend li')].map((li) =>
+			li.textContent?.replace(/\s+/g, ' ').trim()
+		);
+		expect(legend).toEqual([
+			`Shown week (${shown})`.replace(/\s+/g, ' '),
+			`Week before (${before})`.replace(/\s+/g, ' ')
+		]);
 		const monday = container.querySelector('[data-day="2026-11-09"]')!;
 		expect(monday.getAttribute('title')).toBe(
 			'Monday: 42 points in the shown week, 30 in the week before, active'

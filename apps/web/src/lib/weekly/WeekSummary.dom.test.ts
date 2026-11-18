@@ -4,6 +4,7 @@ import type { ActivitySource } from '$lib/api/stats';
 import type { WeekView } from './loadWeek';
 import type { WeekSummary as Summary } from './summary';
 import WeekSummary from './WeekSummary.svelte';
+import { weekRangeShort } from './weekText';
 import weekStripSource from './WeekStrip.svelte?raw';
 import weekSummarySource from './WeekSummary.svelte?raw';
 
@@ -186,9 +187,10 @@ describe('WeekSummary — page layout', () => {
 			milestones
 		});
 
-		expect(container.querySelector('.more-title')?.textContent?.trim()).toBe('More in 9–15 Nov');
+		const range = weekRangeShort('2026-11-09', 'en-GB');
+		expect(container.querySelector('.more-title')?.textContent?.trim()).toBe(`More in ${range}`);
 		expect(container.querySelector('.milestone-line')?.textContent?.trim()).toBe(
-			'Milestone in 9–15 Nov: 100 reviews'
+			`Milestone in ${range}: 100 reviews`
 		);
 		const changes = [...container.querySelectorAll('.stats .stat .change')].map((el) =>
 			el.textContent?.trim()
