@@ -25,7 +25,7 @@
 	>
 		<span style:width="{width}%"></span>
 	</div>
-	<span class="count">{countText}</span>
+	<span class="count" aria-live="polite" aria-atomic="true">{countText}</span>
 </div>
 
 <style>

@@ -36,7 +36,7 @@ async function setup(over: Record<string, unknown> = {}) {
 	const props = { item, entry, chars: ['你', '好'], done: false, onDone, ...over };
 	const view = render(CardHarness, { card: WritingCard, cardProps: props, kindLabel: 'Write' });
 	await waitFor(() => expect(screen.getByRole('img')).toBeTruthy());
-	return { onDone, ...view };
+	return { onDone, props, ...view };
 }
 
 describe('WritingCard on the open page (#101)', () => {
@@ -56,6 +56,20 @@ describe('WritingCard on the open page (#101)', () => {
 		await waitFor(() => expect(onDone).toHaveBeenCalledTimes(1));
 		expect(onDone.mock.calls[0][0]).toEqual({ suggested: 1, meta: { mistakes: 0, hints: 1 } });
 		expect(screen.getByRole('status').textContent).toContain('The character is 你.');
+	});
+
+	it('shows the after-done feedback in the answer region', async () => {
+		const view = await setup({ chars: ['你'] });
+		await fireEvent.click(screen.getByRole('button', { name: 'Show strokes' }));
+		await waitFor(() => expect(screen.getByRole('status').textContent).toContain('The character is 你.'));
+		await view.rerender({
+			card: WritingCard,
+			cardProps: { ...view.props, done: true },
+			kindLabel: 'Write',
+			done: true
+		});
+		const answer = document.querySelector('.face-answer')!;
+		expect(answer.textContent).toContain('The character is 你.');
 	});
 
 	it('Hint is a secondary button in the work area', async () => {
@@ -84,6 +98,11 @@ describe('WritingCard on the open page (#101)', () => {
 		expect(style).toMatch(/border:\s*1px solid var\(--hair\)/);
 		expect(style).not.toMatch(/#[0-9a-fA-F]{3,8}\b|\brgba?\(/);
 		expect(padSource).toMatch(/getPropertyValue\('--accent'\)/);
+	});
+
+	it('fills the finished character in --good', () => {
+		expect(padSource).toMatch(/\.pad\.done\s+\.outline\s*\{[^}]*fill:\s*var\(--good\)/);
+		expect(padSource).toMatch(/class:done=\{finished\}/);
 	});
 });
 

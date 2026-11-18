@@ -14,7 +14,7 @@ You can also draw from a level instead of a deck: choose **By level**, pick an i
 
 | Type | What you do | Needs |
 |---|---|---|
-| Vocab | See the word and readings and the example sentence with the word blanked; press **Show answer** for the meanings | any word |
+| Vocab | See the word; press **Show answer** for its reading (with play), meanings and the example sentence with the word blanked | any word |
 | Word Salad | Rebuild the example sentence from shuffled tiles, then **Check** (or **Show answer**) | an example sentence |
 | Writing | Draw each Han character stroke by stroke (order and direction are checked); **Show strokes** reveals the current character | Han characters with stroke data from the installed strokes pack |
 | Tone | Swipe the tone's shape on each syllable pad, use the tone buttons, or press 1 to 5 | a Chinese word with pinyin (Chinese workspaces only) |

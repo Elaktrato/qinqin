@@ -566,3 +566,38 @@ offline session from the service worker's cached pull in Playwright (the context
 offline; the banner was raised with an `offline` event; the offline session itself is covered by the jsdom test);
 touch gestures on the pads; audio (no audio pack in the scratch data, so no play button was seen); the summary screen
 after a whole session (restyled on `Section`/`Stat`, jsdom only); Android.
+
+### Review fix wave (independent review, 2026-11-18)
+
+Independent read-only review of the merged work (0 Critical, 4 Important, 8 Minor). Branch
+`feature/vr-fixwave-101` from `feature/visual-rework` fbd01ca7; one commit per finding, test first (each new
+test run red for the named reason before the fix). Commits: `160bf705` progress live region (D4) · `9e9fdd17`
+state h1 (D5) · `3e0b9aef` Recognise prompt/answer (D1) · `c9c93ef1` Build the sentence incomplete check and
+docked Check focus (D2/D3) · `fb392816` correct-gap check (D6) · `139dbfd7` finished pad in `--good` (D8) ·
+`14e4b881` Write answer region (D7) · `96bd14ea` session messages above the card (D10) · `c0e9a75d` the label
+test replays the recorded review (D11) · `3da1e8ee` vacation shift inside a run + new fixture case (D12).
+
+**Corrected claim:** the Execution record above says "live regions unchanged"; the review found the progress
+count's polite region was lost when `SessionTop` was introduced. It is restored on the count
+(`aria-live="polite" aria-atomic="true"`), and that sentence should be read as "the grade live region and the
+count live region are both present".
+
+**Rulings added while fixing**
+- Ruling: the Recognise prompt is the word alone; the blanked example sentence moves to the answer below the
+  hairline together with the reading and glosses — the design's prompt is the word, and the sentence was a
+  pre-reveal hint — cost: one more line in the answer than the mockup's answer list.
+- Ruling: after a grade, a Recall or type-mode Fill the gap card focuses its field (its `onMount` autofocus),
+  not the next card's heading; every other kind focuses the heading as planned. The grade status still names the
+  grade and the count live region announces the position — cost: the focused heading's "N of M" is not heard for
+  those two kinds; typed input stays one keystroke away.
+- Ruling: the interval label for a month in English is `2 mths`, not the plan's `2mo` (documented in the earlier
+  month/minute collision ruling) — cost: a wider label than the mockup.
+
+**Existing tests changed:** only the two new expectations in `VocabCard.dom.test.ts` for the moved sentence and
+the new word-prompt case; `StudyFace.dom.test.ts` gained the count live-region and status-order cases;
+`SentenceCard.dom.test.ts` gained the incomplete-check and keyboard-focus cases; `ClozeCard.dom.test.ts`,
+`WritingCard.dom.test.ts` and `page.dom.test.ts` gained the cases named above. No assertion was weakened.
+
+**Not verified:** a real screen reader (the repeated identical grade message is still the same string); the
+field-focus race on a real device; Playwright screenshots of the fixed faces (the visual check below predates
+the fix wave).

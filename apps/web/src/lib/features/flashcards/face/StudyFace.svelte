@@ -48,11 +48,11 @@
 
 <div class="study-face">
 	<SessionTop {progress} {countText} />
+	{#if status}{@render status()}{/if}
 	<article class="fc" aria-label={cardLabel}>
 		<FaceHeader {kindLabel} {headingLabel} {deckLevel} {chips} bind:heading />
 		{@render children()}
 		{#if note}{@render note()}{/if}
-		{#if status}{@render status()}{/if}
 	</article>
 	<ActionDock {done} {grades} {keys} />
 </div>

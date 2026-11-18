@@ -9,6 +9,7 @@
 		card,
 		cardProps = {},
 		chips,
+		status,
 		kindLabel = 'Recognise',
 		deckLevel = null,
 		done = false,
@@ -17,6 +18,7 @@
 		card: Component<any>; // eslint-disable-line @typescript-eslint/no-explicit-any
 		cardProps?: Record<string, unknown>;
 		chips?: Snippet;
+		status?: Snippet;
 		kindLabel?: string;
 		deckLevel?: string | null;
 		done?: boolean;
@@ -41,6 +43,7 @@
 	countText="1 / 3"
 	{done}
 	{chips}
+	{status}
 	keys="Keys: test"
 >
 	<Card bind:this={instance} {...cardProps} />
