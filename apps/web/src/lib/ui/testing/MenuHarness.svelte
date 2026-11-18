@@ -4,6 +4,7 @@
 	import MenuItem from '../MenuItem.svelte';
 	let { picked = (_: string) => {}, open = $bindable(false) }: { picked?: (v: string) => void; open?: boolean } = $props();
 	let size = $state('m');
+	let level = $state<'top' | 'more'>('top');
 </script>
 
 <button type="button">Before</button>
@@ -17,5 +18,15 @@
 </Menu>
 <Menu text="Chinese" label="Workspace" menuLabel="Workspaces" align="start">
 	<MenuItem onselect={() => picked('ja')}>Japanese</MenuItem>
+</Menu>
+<Menu label="Account menu">
+	{#snippet trigger()}<span class="avatar" data-testid="avatar">U</span>{/snippet}
+	{#if level === 'top'}
+		<MenuItem keepOpen onselect={() => { picked('drill'); level = 'more'; }}>Theme</MenuItem>
+		<MenuItem onselect={() => picked('out')}>Sign out</MenuItem>
+	{:else}
+		<MenuItem keepOpen onselect={() => (level = 'top')}>Back</MenuItem>
+		<MenuItem checked={true}>Latte</MenuItem>
+	{/if}
 </Menu>
 <output data-testid="size">{size}</output>

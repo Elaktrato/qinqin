@@ -1,4 +1,4 @@
-import { cleanup, render, waitFor } from '@testing-library/svelte';
+import { cleanup, render, waitFor, within } from '@testing-library/svelte';
 import { createRawSnippet } from 'svelte';
 import { get } from 'svelte/store';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -25,6 +25,11 @@ import { api } from '$lib/api/client';
 import { auth } from '$lib/auth';
 import { setUrl } from '$lib/testing/appState.svelte';
 import Layout from './+layout.svelte';
+
+/** The desktop bar (both bars are in the DOM; CSS shows one, and jsdom has no CSS). */
+function desktop(container: HTMLElement): HTMLElement {
+	return container.querySelector('[data-frame="desktop"]') as HTMLElement;
+}
 
 const children = createRawSnippet(() => ({ render: () => '<p>page body</p>' }));
 
@@ -67,21 +72,71 @@ describe('layout auth guard', () => {
 		expect(goto).not.toHaveBeenCalled();
 	});
 
-	it('puts Stats in the footer links, not in the main navigation', async () => {
-		const { findByText, getByRole } = mountAt('/search', 'tok');
+	// The design moves Stats from the footer into the bar (#99): these two
+	// cases replace "puts Stats in the footer links, not in the main
+	// navigation" and "marks the footer Stats link current on stats pages".
+	it('puts Stats in the main navigation, current on /stats/week', async () => {
+		const { findByText, container } = mountAt('/stats/week', 'tok');
 		await findByText('page body');
-		const footer = getByRole('navigation', { name: 'Footer' });
-		const main = getByRole('navigation', { name: 'Main' });
-		expect(footer.querySelector('a[href="/stats"]')).not.toBeNull();
-		expect(main.querySelector('a[href="/stats"]')).toBeNull();
-		expect(main.querySelector('a[href="/search"]')).not.toBeNull();
+		const main = desktop(container).querySelector('nav[aria-label="Main"]') as HTMLElement;
+		const stats = main.querySelector('a[href="/stats"]');
+		expect(stats).not.toBeNull();
+		expect(stats?.getAttribute('aria-current')).toBe('page');
+		expect(main.querySelector('a[href="/search"]')?.hasAttribute('aria-current')).toBe(false);
 	});
 
-	it('marks the footer Stats link current on stats pages', async () => {
-		const { findByText, getByRole } = mountAt('/stats/characters', 'tok');
+	it('has no footer and no bottom bar', async () => {
+		const { findByText, queryByRole, container } = mountAt('/search', 'tok');
 		await findByText('page body');
-		const link = getByRole('navigation', { name: 'Footer' }).querySelector('a[href="/stats"]');
-		expect(link?.getAttribute('aria-current')).toBe('page');
+		expect(queryByRole('contentinfo')).toBeNull();
+		expect(container.querySelector('footer')).toBeNull();
+		expect(queryByRole('navigation', { name: 'Footer' })).toBeNull();
+		expect(container.querySelectorAll('header')).toHaveLength(1);
+	});
+
+	it('reaches Settings and Sources from the account menu', async () => {
+		const { findByText, container } = mountAt('/search', 'tok');
+		await findByText('page body');
+		const bar = desktop(container);
+		await fireEvent.click(within(bar).getByRole('button', { name: 'Account menu' }));
+		expect(within(bar).getByRole('menuitem', { name: 'Settings' }).getAttribute('href')).toBe('/settings');
+		expect(within(bar).getByRole('menuitem', { name: 'Sources' }).getAttribute('href')).toBe('/sources');
+	});
+
+	it('the skip link is the first focusable element and focuses #main-content', async () => {
+		const { findByText, container } = mountAt('/search', 'tok');
+		await findByText('page body');
+		const first = container.querySelector('a[href], button');
+		expect(first?.textContent).toBe('Skip to content');
+		await fireEvent.click(first as HTMLElement);
+		expect(document.activeElement?.id).toBe('main-content');
+		// The frame's main is the one main landmark and holds the page.
+		const mains = container.querySelectorAll('main, [role="main"]');
+		expect(mains).toHaveLength(1);
+		expect(mains[0].id).toBe('main-content');
+		expect(mains[0].textContent).toContain('page body');
+	});
+
+	it('the phone bar: the menu button, the title and the flag; no nav until the drawer opens', async () => {
+		const { findByText, container } = mountAt('/stats/week', 'tok');
+		await findByText('page body');
+		const phone = container.querySelector('[data-frame="phone"]') as HTMLElement;
+		expect(phone.closest('header')).toBe(desktop(container).closest('header'));
+		expect(within(phone).getByRole('button', { name: 'Open menu' })).toBeTruthy();
+		expect(phone.querySelector('.title')?.textContent).toBe('Stats');
+		expect(within(phone).queryByRole('navigation')).toBeNull();
+		// Only the desktop nav exists (CSS hides it on the phone).
+		expect(container.querySelectorAll('nav[aria-label="Main"]')).toHaveLength(1);
+	});
+
+	it('signed out on /sources: the logo links to /login, a Sign in link shows, no nav', async () => {
+		const { findByText, getByRole, queryByRole } = mountAt('/sources', null);
+		await findByText('page body');
+		expect(getByRole('link', { name: 'qinqin, sign in' }).getAttribute('href')).toBe('/login');
+		expect(getByRole('link', { name: 'Sign in' }).getAttribute('href')).toBe('/login');
+		expect(queryByRole('navigation')).toBeNull();
+		expect(queryByRole('button', { name: 'Account menu' })).toBeNull();
+		expect(queryByRole('button', { name: /^Workspace/ })).toBeNull();
 	});
 
 	it('leaves the open Sources page alone when signed out', async () => {
@@ -178,15 +233,19 @@ describe('layout restricted sessions', () => {
 	});
 
 	it('renders the change page itself and keeps Sign out within reach', async () => {
-		const { findByText, getByRole, queryByRole } = mountRestricted(
+		const { findByText, getByRole, getAllByRole, queryByRole } = mountRestricted(
 			'/account/password',
 			'password_change'
 		);
 		await findByText('page body');
 		expect(goto).not.toHaveBeenCalled();
-		expect(getByRole('button', { name: 'Sign out' })).toBeTruthy();
+		// The logo and an account menu holding the open Sources page and Sign out only (#99).
+		expect(getByRole('link', { name: 'qinqin, home' })).toBeTruthy();
+		await fireEvent.click(getByRole('button', { name: 'Account menu' }));
+		expect(getAllByRole('menuitem').map((i) => i.textContent?.trim())).toEqual(['Sources', 'Sign out']);
 		// No navigation into the app while restricted.
 		expect(queryByRole('navigation', { name: 'Main' })).toBeNull();
+		expect(queryByRole('button', { name: /^Workspace/ })).toBeNull();
 	});
 
 	it('sends an enrolment session to its setup page', async () => {
@@ -242,14 +301,16 @@ describe('layout theme store', () => {
 		expect(root.getPropertyValue('--font-hanzi-jpan')).toContain('"Hiragino Sans"');
 	});
 
-	it('puts the quick theme switch in the account area when signed in, not signed out', async () => {
+	// The quick theme switch moved into the account menu (#99).
+	it('puts the quick theme switch in the account menu when signed in, not signed out', async () => {
 		const out = mountAt('/sources', null);
 		await out.findByText('page body');
-		expect(out.queryByRole('button', { name: /^Theme:/ })).toBeNull();
+		expect(out.queryByRole('button', { name: 'Account menu' })).toBeNull();
 		cleanup();
 		const view = mountAt('/search', 'tok');
 		await view.findByText('page body');
-		const button = view.getByRole('button', { name: /^Theme:/ });
-		expect(button.closest('.account')).not.toBeNull();
+		const bar = desktop(view.container);
+		await fireEvent.click(within(bar).getByRole('button', { name: 'Account menu' }));
+		expect(within(bar).getByRole('menuitem', { name: /^Theme/ })).toBeTruthy();
 	});
 });

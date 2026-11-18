@@ -237,7 +237,7 @@
 	<title>{pageTitle(...settingsTitleParts(activeTab, page.url.searchParams.get('section')))}</title>
 </svelte:head>
 
-<main class="settings">
+<div class="page-body settings">
 	<h1>{t('settings.title')}</h1>
 
 	<div class="tabs" role="tablist" aria-label={t('settings.tabsLabel')}>
@@ -388,7 +388,8 @@
 			/>
 		{/if}
 
-		<h3>{t('settings.workspaces.new')}</h3>
+		<!-- The phone drawer's + lands here (#99). -->
+		<h3 id="new-workspace" tabindex="-1">{t('settings.workspaces.new')}</h3>
 		<WorkspaceCreateForm idPrefix="settings-new" />
 	</div>
 
@@ -552,7 +553,7 @@
 			{#if activeTab === 'admin'}<AdminSettings />{/if}
 		</div>
 	{/if}
-</main>
+</div>
 
 <style>
 	.settings [role='tabpanel'] {

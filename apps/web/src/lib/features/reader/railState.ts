@@ -1,19 +1,20 @@
-// The reader's side rail (bookmarks, highlights, words): which tab is shown and
-// whether the wide-screen column is expanded, remembered per browser in
+// The reader's side rail (contents, bookmarks, highlights, words, display):
+// which tab is shown and whether the wide-screen panel is expanded, remembered per browser in
 // localStorage when it is available. Every access is guarded, as in
 // prefs.ts: the reader must work without storage.
 import type { PrefsStorage } from './prefs';
 
-export type RailTab = 'bookmarks' | 'highlights' | 'words';
-export const RAIL_TABS: readonly RailTab[] = ['bookmarks', 'highlights', 'words'];
+export type RailTab = 'contents' | 'bookmarks' | 'highlights' | 'words' | 'display';
+export const RAIL_TABS: readonly RailTab[] = ['contents', 'bookmarks', 'highlights', 'words', 'display'];
 
 export interface RailState {
-	/** The column is expanded (wide screens). The phone drawer always starts closed. */
+	/** The panel beside the icon column is expanded (wide screens). The phone sheet always starts closed. */
 	open: boolean;
 	tab: RailTab;
 }
 
-export type RailMode = 'column' | 'drawer';
+/** column: icons at the right edge with a panel beside the text; sheet: one top-bar button opening a bottom sheet. */
+export type RailMode = 'column' | 'sheet';
 
 /** From this viewport width the rail is a column beside the text. */
 export const RAIL_COLUMN_MIN_WIDTH = 1000;
@@ -44,9 +45,9 @@ export function saveRailState(storage: PrefsStorage | null, state: RailState): v
 	}
 }
 
-/** railMode: a column beside the text on wide screens, else a drawer. */
+/** railMode: a column beside the text on wide screens, else a bottom sheet. */
 export function railMode(width: number): RailMode {
-	return width >= RAIL_COLUMN_MIN_WIDTH ? 'column' : 'drawer';
+	return width >= RAIL_COLUMN_MIN_WIDTH ? 'column' : 'sheet';
 }
 
 /**

@@ -113,7 +113,13 @@
     "accentChoices": [
      "mauve",
      "blue"
-    ]
+    ],
+    "readableGrades": {
+     "again": "#f38ba8",
+     "hard": "#fab387",
+     "good": "#a6e3a1",
+     "easy": "#89b4fa"
+    }
    }
   },
   {
@@ -201,7 +207,13 @@
     "accentChoices": [
      "mauve",
      "blue"
-    ]
+    ],
+    "readableGrades": {
+     "again": "#d20f39",
+     "hard": "#4c4f69",
+     "good": "#4c4f69",
+     "easy": "#4c4f69"
+    }
    }
   },
   {
@@ -289,7 +301,13 @@
     "accentChoices": [
      "mauve",
      "blue"
-    ]
+    ],
+    "readableGrades": {
+     "again": "#d20f39",
+     "hard": "#4c4f69",
+     "good": "#4c4f69",
+     "easy": "#4c4f69"
+    }
    }
   },
   {
@@ -376,7 +394,13 @@
     "accentChoices": [
      "mauve",
      "blue"
-    ]
+    ],
+    "readableGrades": {
+     "again": "#f38ba8",
+     "hard": "#fab387",
+     "good": "#a6e3a1",
+     "easy": "#89b4fa"
+    }
    }
   },
   {
@@ -463,7 +487,13 @@
     "accentChoices": [
      "mauve",
      "blue"
-    ]
+    ],
+    "readableGrades": {
+     "again": "#f38ba8",
+     "hard": "#fab387",
+     "good": "#a6e3a1",
+     "easy": "#89b4fa"
+    }
    }
   },
   {
@@ -549,7 +579,13 @@
     "focusRing": "#4c4f69",
     "accentChoices": [
      "sky"
-    ]
+    ],
+    "readableGrades": {
+     "again": "#d20f39",
+     "hard": "#4c4f69",
+     "good": "#4c4f69",
+     "easy": "#1e66f5"
+    }
    }
   },
   {
@@ -639,7 +675,13 @@
      "teal",
      "deep",
      "grey"
-    ]
+    ],
+    "readableGrades": {
+     "again": "#d20f39",
+     "hard": "#4c4f69",
+     "good": "#4c4f69",
+     "easy": "#1e66f5"
+    }
    }
   },
   {
@@ -729,7 +771,13 @@
      "teal",
      "deep",
      "grey"
-    ]
+    ],
+    "readableGrades": {
+     "again": "#d20f39",
+     "hard": "#4c4f69",
+     "good": "#4c4f69",
+     "easy": "#1e66f5"
+    }
    }
   },
   {
@@ -819,7 +867,13 @@
      "teal",
      "deep",
      "grey"
-    ]
+    ],
+    "readableGrades": {
+     "again": "#d20f39",
+     "hard": "#4c4f69",
+     "good": "#4c4f69",
+     "easy": "#1e66f5"
+    }
    }
   },
   {
@@ -909,7 +963,13 @@
      "teal",
      "deep",
      "grey"
-    ]
+    ],
+    "readableGrades": {
+     "again": "#d20f39",
+     "hard": "#4c4f69",
+     "good": "#4c4f69",
+     "easy": "#1e66f5"
+    }
    }
   },
   {
@@ -999,7 +1059,13 @@
      "teal",
      "deep",
      "grey"
-    ]
+    ],
+    "readableGrades": {
+     "again": "#d20f39",
+     "hard": "#4c4f69",
+     "good": "#4c4f69",
+     "easy": "#1e66f5"
+    }
    }
   },
   {
@@ -1089,7 +1155,13 @@
      "teal",
      "deep",
      "grey"
-    ]
+    ],
+    "readableGrades": {
+     "again": "#d20f39",
+     "hard": "#4c4f69",
+     "good": "#4c4f69",
+     "easy": "#1e66f5"
+    }
    }
   },
   {
@@ -1179,7 +1251,13 @@
      "teal",
      "deep",
      "grey"
-    ]
+    ],
+    "readableGrades": {
+     "again": "#d20f39",
+     "hard": "#4c4f69",
+     "good": "#4c4f69",
+     "easy": "#1e66f5"
+    }
    }
   },
   {
@@ -1269,7 +1347,13 @@
      "teal",
      "deep",
      "grey"
-    ]
+    ],
+    "readableGrades": {
+     "again": "#d20f39",
+     "hard": "#4c4f69",
+     "good": "#4c4f69",
+     "easy": "#1e66f5"
+    }
    }
   },
   {
@@ -1357,7 +1441,13 @@
     "accentChoices": [
      "mauve",
      "blue"
-    ]
+    ],
+    "readableGrades": {
+     "again": "#d20f39",
+     "hard": "#4c4f69",
+     "good": "#4c4f69",
+     "easy": "#4c4f69"
+    }
    }
   },
   {
@@ -1444,7 +1534,13 @@
     "accentChoices": [
      "mauve",
      "blue"
-    ]
+    ],
+    "readableGrades": {
+     "again": "#f38ba8",
+     "hard": "#fab387",
+     "good": "#a6e3a1",
+     "easy": "#89b4fa"
+    }
    }
   },
   {
@@ -1531,7 +1627,13 @@
     "accentChoices": [
      "mauve",
      "blue"
-    ]
+    ],
+    "readableGrades": {
+     "again": "#f38ba8",
+     "hard": "#fab387",
+     "good": "#a6e3a1",
+     "easy": "#89b4fa"
+    }
    }
   },
   {
@@ -1618,7 +1720,308 @@
     "accentChoices": [
      "mauve",
      "blue"
-    ]
+    ],
+    "readableGrades": {
+     "again": "#f38ba8",
+     "hard": "#fab387",
+     "good": "#a6e3a1",
+     "easy": "#89b4fa"
+    }
+   }
+  },
+  {
+   "name": "readable grade at 4.50",
+   "note": "gradeHard is 4.4987 -> 4.50 on panel: the Hard name keeps its grade colour",
+   "theme": {
+    "id": "edge",
+    "name": "Edge",
+    "family": "Catppuccin",
+    "scheme": "light",
+    "colors": {
+     "chrome": "#dce0e8",
+     "panel": "#ffffff",
+     "raised": "#e6e9ef",
+     "line": "#ccd0da",
+     "text": "#4c4f69",
+     "muted": "#6c6f85",
+     "good": "#40a02b",
+     "warn": "#df8e1d",
+     "bad": "#d20f39",
+     "gradeAgain": "#d20f39",
+     "gradeHard": "#018580",
+     "gradeGood": "#40a02b",
+     "gradeEasy": "#1e66f5"
+    },
+    "accents": {
+     "teal": "#018580",
+     "deep": "#058580",
+     "grey": "#959595",
+     "mint": "#13a980"
+    },
+    "defaultAccent": "deep"
+   },
+   "accent": "teal",
+   "expect": {
+    "accentKey": "teal",
+    "accent": "#018580",
+    "onAccent": "#ffffff",
+    "hair": "#ccd0da8c",
+    "accentTints": {
+     "14": "#01858024",
+     "32": "#01858052",
+     "58": "#01858094",
+     "100": "#018580ff"
+    },
+    "primaryWash": "#01858024",
+    "selectedWash": "#01858024",
+    "mastery": [
+     "#ccd0da8c",
+     "#01858024",
+     "#01858052",
+     "#01858094",
+     "#018580ff"
+    ],
+    "readingAccent": "#018580",
+    "highlightWash": "#df8e1d3d",
+    "highlights": {
+     "yellow": "#df8e1d",
+     "green": "#1ddf4e",
+     "blue": "#1d4edf",
+     "pink": "#df1d7e"
+    },
+    "wordMarks": {
+     "new": {
+      "color": "#018580",
+      "style": "solid"
+     },
+     "learning": {
+      "color": "#df8e1d",
+      "style": "dotted"
+     }
+    },
+    "correctionMarks": {
+     "mistake": {
+      "color": "#d20f39",
+      "style": "wavy"
+     },
+     "suggestion": {
+      "color": "#1e66f5",
+      "style": "dotted"
+     }
+    },
+    "readableBad": "#d20f39",
+    "readableMuted": "#6c6f85",
+    "focusRing": "#018580",
+    "accentChoices": [
+     "teal",
+     "deep",
+     "grey"
+    ],
+    "readableGrades": {
+     "again": "#d20f39",
+     "hard": "#018580",
+     "good": "#4c4f69",
+     "easy": "#1e66f5"
+    }
+   }
+  },
+  {
+   "name": "readable grade at 4.49",
+   "note": "gradeHard is 4.49 on panel: the Hard name uses text (its underline keeps the grade colour)",
+   "theme": {
+    "id": "edge",
+    "name": "Edge",
+    "family": "Catppuccin",
+    "scheme": "light",
+    "colors": {
+     "chrome": "#dce0e8",
+     "panel": "#ffffff",
+     "raised": "#e6e9ef",
+     "line": "#ccd0da",
+     "text": "#4c4f69",
+     "muted": "#6c6f85",
+     "good": "#40a02b",
+     "warn": "#df8e1d",
+     "bad": "#d20f39",
+     "gradeAgain": "#d20f39",
+     "gradeHard": "#058580",
+     "gradeGood": "#40a02b",
+     "gradeEasy": "#1e66f5"
+    },
+    "accents": {
+     "teal": "#018580",
+     "deep": "#058580",
+     "grey": "#959595",
+     "mint": "#13a980"
+    },
+    "defaultAccent": "deep"
+   },
+   "accent": "teal",
+   "expect": {
+    "accentKey": "teal",
+    "accent": "#018580",
+    "onAccent": "#ffffff",
+    "hair": "#ccd0da8c",
+    "accentTints": {
+     "14": "#01858024",
+     "32": "#01858052",
+     "58": "#01858094",
+     "100": "#018580ff"
+    },
+    "primaryWash": "#01858024",
+    "selectedWash": "#01858024",
+    "mastery": [
+     "#ccd0da8c",
+     "#01858024",
+     "#01858052",
+     "#01858094",
+     "#018580ff"
+    ],
+    "readingAccent": "#018580",
+    "highlightWash": "#df8e1d3d",
+    "highlights": {
+     "yellow": "#df8e1d",
+     "green": "#1ddf4e",
+     "blue": "#1d4edf",
+     "pink": "#df1d7e"
+    },
+    "wordMarks": {
+     "new": {
+      "color": "#018580",
+      "style": "solid"
+     },
+     "learning": {
+      "color": "#df8e1d",
+      "style": "dotted"
+     }
+    },
+    "correctionMarks": {
+     "mistake": {
+      "color": "#d20f39",
+      "style": "wavy"
+     },
+     "suggestion": {
+      "color": "#1e66f5",
+      "style": "dotted"
+     }
+    },
+    "readableBad": "#d20f39",
+    "readableMuted": "#6c6f85",
+    "focusRing": "#018580",
+    "accentChoices": [
+     "teal",
+     "deep",
+     "grey"
+    ],
+    "readableGrades": {
+     "again": "#d20f39",
+     "hard": "#4c4f69",
+     "good": "#4c4f69",
+     "easy": "#1e66f5"
+    }
+   }
+  },
+  {
+   "name": "Gruvbox (dark) with orange",
+   "note": "a real built-in theme",
+   "theme": {
+    "id": "gruvbox",
+    "name": "Gruvbox",
+    "family": "Gruvbox",
+    "scheme": "dark",
+    "colors": {
+     "chrome": "#1d2021",
+     "panel": "#282828",
+     "raised": "#3c3836",
+     "line": "#504945",
+     "text": "#ebdbb2",
+     "muted": "#a89984",
+     "good": "#b8bb26",
+     "warn": "#fabd2f",
+     "bad": "#fb4934",
+     "gradeAgain": "#fb4934",
+     "gradeHard": "#fe8019",
+     "gradeGood": "#b8bb26",
+     "gradeEasy": "#83a598"
+    },
+    "accents": {
+     "orange": "#fe8019",
+     "yellow": "#fabd2f",
+     "green": "#b8bb26",
+     "aqua": "#8ec07c",
+     "blue": "#83a598",
+     "purple": "#d3869b",
+     "red": "#fb4934"
+    },
+    "defaultAccent": "orange"
+   },
+   "accent": "orange",
+   "expect": {
+    "accentKey": "orange",
+    "accent": "#fe8019",
+    "onAccent": "#1d2021",
+    "hair": "#5049458c",
+    "accentTints": {
+     "14": "#fe801924",
+     "32": "#fe801952",
+     "58": "#fe801994",
+     "100": "#fe8019ff"
+    },
+    "primaryWash": "#fe801924",
+    "selectedWash": "#fe801924",
+    "mastery": [
+     "#5049458c",
+     "#fe801924",
+     "#fe801952",
+     "#fe801994",
+     "#fe8019ff"
+    ],
+    "readingAccent": "#fe8019",
+    "readableBad": "#ebdbb2",
+    "readableMuted": "#a89984",
+    "focusRing": "#fe8019",
+    "highlightWash": "#fabd2f3d",
+    "highlights": {
+     "yellow": "#fabd2f",
+     "green": "#2ffa62",
+     "blue": "#2f62fa",
+     "pink": "#fa2f95"
+    },
+    "wordMarks": {
+     "new": {
+      "color": "#fe8019",
+      "style": "solid"
+     },
+     "learning": {
+      "color": "#fabd2f",
+      "style": "dotted"
+     }
+    },
+    "correctionMarks": {
+     "mistake": {
+      "color": "#fb4934",
+      "style": "wavy"
+     },
+     "suggestion": {
+      "color": "#83a598",
+      "style": "dotted"
+     }
+    },
+    "accentChoices": [
+     "orange",
+     "yellow",
+     "green",
+     "aqua",
+     "blue",
+     "purple",
+     "red"
+    ],
+    "readableGrades": {
+     "again": "#ebdbb2",
+     "hard": "#fe8019",
+     "good": "#b8bb26",
+     "easy": "#83a598"
+    }
    }
   }
  ]

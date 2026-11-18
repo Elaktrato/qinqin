@@ -1,6 +1,7 @@
 import { cleanup, render, screen } from '@testing-library/svelte';
 import { afterEach, describe, expect, it } from 'vitest';
 import NoteAnswer from './NoteAnswer.svelte';
+import source from './NoteAnswer.svelte?raw';
 
 afterEach(cleanup);
 
@@ -26,4 +27,12 @@ describe('NoteAnswer', () => {
 			expect(container.querySelector('.note-text')?.textContent).toBe(text);
 		}
 	);
+
+	it('is the lighter note of the open page (#101): a warn start line, no fill, muted text', () => {
+		const style = source.slice(source.indexOf('<style'));
+		expect(style).toMatch(/border-inline-start:\s*2px solid color-mix\(in srgb, var\(--warn\) 60%, transparent\)/);
+		expect(style).not.toMatch(/background/);
+		expect(style).toMatch(/\.note-text\s*\{[^}]*color:\s*var\(--readable-muted\)/);
+		expect(style).toMatch(/h3\s*\{[^}]*color:\s*var\(--text\)/);
+	});
 });

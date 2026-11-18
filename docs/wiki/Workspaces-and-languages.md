@@ -14,7 +14,7 @@ The first time you open the app with no workspace you get one unnamed workspace 
 
 ## Creating, renaming, deleting
 
-Use the workspace picker in the header, or Settings, Workspaces (create, rename, delete).
+Use the flag in the top bar (the workspace menu; on a phone, the row of flags at the top of the menu drawer), or Settings, Workspaces (create, rename, delete). The menu's **Manage workspaces** and the drawer's **+** open Settings, Workspaces.
 
 - The language list contains the built-in Chinese and Japanese packs, languages an administrator registered, and languages with installed data. A language without a dictionary is marked "(no dictionary installed)".
 - A non-administrator can only choose a known language; an unknown code is refused with "ask the administrator to add it". Administrators register data-only languages (a language manager in Settings for administrators, backed by `POST /api/admin/languages`).

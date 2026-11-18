@@ -3,9 +3,9 @@
 	import { t } from '$lib/i18n';
 	import type { WidgetStatus } from './types';
 
-	// The shared frame of every widget: the bordered card, the small
-	// uppercase title, optional header actions and the states a widget
-	// passes through. A widget owns its data and tells the card which
+	// The shared frame of every widget: an unboxed group (design §5: a box
+	// needs a reason; space groups the widgets), a small sentence-case
+	// heading, optional header actions and the states a widget passes through. A widget owns its data and tells the card which
 	// state it is in; only `ready` renders the widget's own content.
 
 	interface Props {
@@ -68,9 +68,6 @@
 		box-sizing: border-box;
 		height: 100%;
 		min-width: 0;
-		padding: 1rem 1.25rem 1.15rem;
-		border: 1px solid color-mix(in srgb, currentColor 18%, transparent);
-		border-radius: 0.5rem;
 	}
 
 	.head {
@@ -83,9 +80,8 @@
 
 	h2 {
 		margin: 0;
-		font-size: 0.8rem;
-		letter-spacing: 0.06em;
-		text-transform: uppercase;
+		font-size: var(--font-size-s);
+		font-weight: var(--weight-medium);
 		color: var(--readable-muted);
 	}
 

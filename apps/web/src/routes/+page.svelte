@@ -2,8 +2,11 @@
 	import { pageTitle } from '$lib/pageTitle';
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
-	import { APP_NAME } from '$lib/app';
 	import { t } from '$lib/i18n';
+	import { formatDay } from '$lib/i18n/format';
+	import { currentStudyDay } from '$lib/time/zone';
+	import Button from '$lib/ui/Button.svelte';
+	import Field from '$lib/ui/Field.svelte';
 	import Msg from '$lib/i18n/Msg.svelte';
 	import EmailBanner from '$lib/account/EmailBanner.svelte';
 	import HomeMilestones from '$lib/milestones/HomeMilestones.svelte';
@@ -14,6 +17,14 @@
 	import { currentLanguage } from '$lib/workspaces';
 
 	let query = $state('');
+
+	// The greeting follows the device's hour; the date line is the learner's
+	// today (their study-day zone), which can differ near midnight.
+	const now = new Date();
+	const hour = now.getHours();
+	const greeting =
+		hour < 12 ? t('app.home.greeting.morning') : hour < 18 ? t('app.home.greeting.afternoon') : t('app.home.greeting.evening');
+	const dateLine = formatDay(currentStudyDay().today(now.getTime()), { weekday: 'long', day: 'numeric', month: 'long' });
 
 	// The user's home layout (null = none stored, so the default). Nothing
 	// renders until it is known, so a custom order never flashes as the
@@ -50,20 +61,26 @@
 	<title>{pageTitle()}</title>
 </svelte:head>
 
-<main class="home">
-	<h1>{APP_NAME}</h1>
+<div class="page-body home">
+	<header class="greet">
+		<h1>{greeting}</h1>
+		<p class="date">{dateLine}</p>
+	</header>
 
 	<EmailBanner />
 
 	<form class="search" role="search" onsubmit={search}>
-		<input
-			name="q"
-			type="search"
-			bind:value={query}
-			aria-label={t('app.home.searchLabel')}
-			placeholder={t('app.home.searchPlaceholder')}
-		/>
-		<button type="submit">{t('app.home.searchButton')}</button>
+		<div class="search-field">
+			<Field
+				label={t('app.home.searchLabel')}
+				hideLabel
+				type="search"
+				name="q"
+				bind:value={query}
+				placeholder={t('app.home.searchPlaceholder')}
+			/>
+		</div>
+		<Button type="submit" variant="plain">{t('app.home.searchButton')}</Button>
 	</form>
 
 	<!-- Not a widget: a stored layout must never hide it (milestones contract). -->
@@ -88,38 +105,39 @@
 			</p>
 		{/if}
 	{/if}
-</main>
+</div>
 
 <style>
-	.home h1 {
-		margin-bottom: 1.5rem;
+	.greet {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: baseline;
+		gap: var(--space-1) var(--space-3);
+		margin-bottom: var(--space-5);
+	}
+
+	.greet h1 {
+		margin: 0;
+		font-size: var(--font-size-xl);
+		font-weight: var(--weight-strong);
+		letter-spacing: -0.01em;
+	}
+
+	.date {
+		margin: 0;
+		color: var(--readable-muted);
 	}
 
 	.search {
 		display: flex;
-		gap: 0.5rem;
+		align-items: flex-end;
+		gap: var(--space-2);
 		max-width: 32rem;
 	}
 
-	.search input {
+	.search-field {
 		flex: 1;
-		font: inherit;
-		padding: 0.55rem 0.7rem;
-		border: 1px solid color-mix(in srgb, currentColor 35%, transparent);
-		border-radius: 0.4rem;
-		background: transparent;
-		color: inherit;
-	}
-
-	.search button {
-		font: inherit;
-		font-weight: 600;
-		padding: 0.6rem 1rem;
-		border: 0;
-		border-radius: 0.4rem;
-		background: var(--accent);
-		color: var(--on-accent);
-		cursor: pointer;
+		min-width: 0;
 	}
 
 	/* One column on phones, two from ~900 px; wide widgets and a normal
@@ -127,8 +145,8 @@
 	.widgets {
 		display: grid;
 		grid-template-columns: minmax(0, 1fr);
-		gap: 2.5rem 1.25rem;
-		margin-top: 2.5rem;
+		gap: var(--space-6) var(--space-5);
+		margin-top: var(--space-6);
 	}
 
 	@media (min-width: 900px) {
@@ -146,7 +164,7 @@
 	}
 
 	.empty {
-		margin-top: 2.5rem;
+		margin-top: var(--space-6);
 		color: var(--readable-muted);
 	}
 </style>

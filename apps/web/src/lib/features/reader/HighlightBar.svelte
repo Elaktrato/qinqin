@@ -65,7 +65,7 @@
 		height: 1.6rem;
 		padding: 0;
 		border-radius: 50%;
-		border: 1px solid color-mix(in srgb, currentColor 35%, transparent);
+		border: 1px solid var(--line);
 		cursor: pointer;
 	}
 
@@ -98,7 +98,7 @@
 		font: inherit;
 		font-size: 0.85rem;
 		padding: 0.15rem 0.55rem;
-		border: 1px solid color-mix(in srgb, currentColor 30%, transparent);
+		border: 1px solid var(--line);
 		border-radius: 0.3rem;
 		background: transparent;
 		color: inherit;

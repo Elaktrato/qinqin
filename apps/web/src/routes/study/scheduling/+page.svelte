@@ -367,7 +367,7 @@ import type { StudyContext } from '$lib/study/studyContext';
 	<title>{pageTitle(t('study.sched.title'), t('study.setup.title'))}</title>
 </svelte:head>
 
-<main class="page">
+<div class="page-body page">
 	<p><a href="/study">{t('study.sched.back')}</a></p>
 	<h1>{t('study.sched.title')}</h1>
 
@@ -429,7 +429,7 @@ import type { StudyContext } from '$lib/study/studyContext';
 			<p class="error" role="alert">{actionError}</p>
 		{/if}
 	{/if}
-</main>
+</div>
 
 <div class="toast-region" role="status" aria-live="polite">
 	{#if undo}
@@ -472,7 +472,7 @@ import type { StudyContext } from '$lib/study/studyContext';
 
 	.toast-region {
 		position: fixed;
-		inset: auto 0 calc(1rem + var(--bottom-bar-height, 0px)) 0;
+		inset: auto 0 calc(1rem + env(safe-area-inset-bottom, 0px)) 0;
 		display: flex;
 		justify-content: center;
 		pointer-events: none;

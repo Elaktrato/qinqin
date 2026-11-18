@@ -56,6 +56,7 @@ export function derive(theme: Theme, accent: string | null): Derived {
 		'100': withAlpha(acc, 100)
 	};
 	const hair = withAlpha(c.line, 55);
+	const readable = (color: string): string => (ratio(color, c.panel) >= MIN_TEXT ? color : c.text);
 	return {
 		accentKey,
 		accent: acc,
@@ -68,6 +69,12 @@ export function derive(theme: Theme, accent: string | null): Derived {
 		readingAccent: ratio(acc, c.panel) >= MIN_TEXT ? acc : c.text,
 		readableBad: ratio(c.bad, c.panel) >= MIN_TEXT ? c.bad : c.text,
 		readableMuted: ratio(c.muted, c.panel) >= MIN_TEXT ? c.muted : c.text,
+		readableGrades: {
+			again: readable(c.gradeAgain),
+			hard: readable(c.gradeHard),
+			good: readable(c.gradeGood),
+			easy: readable(c.gradeEasy)
+		},
 		focusRing: [c.panel, c.raised, c.chrome].every((s) => ratio(acc, s) >= MIN_GRAPH) ? acc : c.text,
 		highlightWash: withAlpha(c.warn, 24),
 		highlights: { yellow: c.warn, green: hue(c.warn, 135), blue: hue(c.warn, 225), pink: hue(c.warn, 330) },
@@ -104,6 +111,10 @@ export const TOKEN_NAMES = [
 	'--reading-accent',
 	'--readable-bad',
 	'--readable-muted',
+	'--readable-grade-again',
+	'--readable-grade-hard',
+	'--readable-grade-good',
+	'--readable-grade-easy',
 	'--focus-colour',
 	'--accent-14',
 	'--accent-32',
@@ -147,6 +158,10 @@ export function cssVariables(theme: Theme, d: Derived): Record<TokenName, string
 		'--reading-accent': d.readingAccent,
 		'--readable-bad': d.readableBad,
 		'--readable-muted': d.readableMuted,
+		'--readable-grade-again': d.readableGrades.again,
+		'--readable-grade-hard': d.readableGrades.hard,
+		'--readable-grade-good': d.readableGrades.good,
+		'--readable-grade-easy': d.readableGrades.easy,
 		'--focus-colour': d.focusRing,
 		'--accent-14': d.accentTints['14'],
 		'--accent-32': d.accentTints['32'],

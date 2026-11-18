@@ -82,7 +82,7 @@
 	const hasReadings = $derived(lesson?.examples.some((e) => e.reading !== '') ?? false);
 </script>
 
-<main class="lesson">
+<div class="page-body lesson">
 	<p class="back"><a href={grammarHref({ view: 'browse' })}>{t('grammar.lesson.all')}</a></p>
 
 	{#if status === 'loading'}
@@ -150,7 +150,7 @@
 
 		<PopupStackView {lookup} {studyWorkspaceId} />
 	{/if}
-</main>
+</div>
 
 <style>
 	.lesson {

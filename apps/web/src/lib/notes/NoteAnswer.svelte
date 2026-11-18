@@ -14,21 +14,29 @@
 {/if}
 
 <style>
+	/* The lighter note of the open page (#101, design §9): a warn start line,
+	   no fill; the label in --text, the note in --readable-muted. */
 	.note-answer {
-		margin-top: 1rem;
-		padding: 0.6rem 0.85rem;
-		border-left: 3px solid color-mix(in srgb, currentColor 35%, transparent);
-		background: color-mix(in srgb, currentColor 5%, transparent);
-		border-radius: 0.3rem;
+		padding-inline-start: var(--space-3);
+		border-inline-start: 2px solid color-mix(in srgb, var(--warn) 60%, transparent);
+		text-align: start;
 	}
 	h3 {
-		margin: 0 0 0.25rem;
-		font-size: 0.85rem;
-		color: var(--readable-muted);
+		margin: 0 0 var(--space-1);
+		font-size: var(--font-size-label);
+		font-weight: var(--weight-medium);
+		color: var(--text);
 	}
 	.note-text {
 		margin: 0;
+		font-size: var(--font-size-s);
+		color: var(--readable-muted);
 		white-space: pre-wrap;
 		overflow-wrap: anywhere;
+	}
+	@media (forced-colors: active) {
+		.note-answer {
+			border-inline-start-color: CanvasText;
+		}
 	}
 </style>

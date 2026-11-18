@@ -106,8 +106,16 @@ database with a SvelteKit single-page app embedded in the binary.
   is disabled keeps its place in the stored layout and returns when the plugin
   is enabled again; one that does not fit the active workspace's language is
   marked "Not available for <language>" and can still be placed for the others.
-- **Activity heatmap** — a home widget showing 13 weeks of learning activity,
+- **Activity heatmap** — a home widget showing your learning activity,
   adding up flashcard reviews, reading time in the Reader and journal entries.
+  Settings → Home picks its layout for the home page: **Garden grid** (13
+  weeks, the default), **Month calendar** (one month with dates and bigger
+  tiles, paged back up to a year) or **This week** (seven large days with the
+  amount under each; it opens Stats → Week). Stats always shows the garden grid.
+  The choice is stored in the user-global `qinqin-core` row `widget-options`.
+  With a daily goal, each day's flower stage (Nothing yet, Sprout, Bud,
+  Opening, In bloom, Resting) is named in the tile's tooltip and the
+  screen-reader text; the flower drawings come later, tiles are tinted only.
   It shows the active workspace by default; "All workspaces" switches to the
   combined view (tooltips then name each workspace), and a chip per activity
   type hides or shows that type. The choice is remembered per user on every
@@ -688,7 +696,7 @@ characters; ZWJ, ZWNJ and emoji tag sequences are allowed). Without a name, a
 workspace shows its language; unnamed workspaces of one language are numbered
 ("Chinese", "Chinese 2").
 
-- **Flags.** The header picker and Settings show a flag per language: China for
+- **Flags.** The workspace menu, the phone drawer and Settings show a flag per language: China for
   `zh`, Japan for `ja`, Spain for `es`, a globe for any other language. A single
   unnamed workspace shows only its flag.
 - **Creating.** The language list comes from `GET /api/languages`, which lists
@@ -719,26 +727,40 @@ workspace shows its language; unnamed workspaces of one language are numbered
 - **Defaults.** A user with no workspace gets one unnamed workspace per installed
   language on their first `GET /api/workspaces`. A user who already has a
   workspace is never touched.
-- **Switching** happens in the workspace picker in the header (it can also create
-  one). **Settings** and **Sources** live in the footer of every signed-in page, not in the nav;
-  Settings has three tabs, Workspaces (create, rename, delete), Home (the home
-  page widgets) and Plugins, each with a link of its own (`/settings?tab=home`,
-  `?tab=plugins`). The logo is the home link (there
-  is no Home item); every nav item has an icon, and below 720 px the nav becomes a
-  bottom tab bar. The nav has **Stats** (bar-chart icon) for every workspace; it
-  replaced the former **Map** item, which showed only in zh and ja workspaces.
+- **Switching** happens behind the workspace **flag** in the top bar: it opens the
+  workspace menu (each workspace with its flag, language and name, a check on the
+  current one, and **Manage workspaces**, which opens Settings). New workspaces are
+  made in Settings, Workspaces. Settings has a tab per area, Workspaces (create,
+  rename, delete), Home (the home page widgets), Plugins and so on, each with a
+  link of its own (`/settings?tab=home`, `?tab=plugins`).
+- **The frame.** On wide screens (720 px and up) the page is a raised panel on the
+  window frame, under a top bar: the logo is the home link (there is no Home
+  item), the sections sit in the middle as icons with tooltips (Decks, Reader,
+  then the enabled plugin pages such as Journal and Grammar, then Search and
+  **Stats**; the current one has an accent dot), and on the right the flag and
+  your avatar. The avatar opens the account menu: your name, **Settings**,
+  **Theme** (a quick switch between the themes of the current light or dark
+  mode), **Admin settings** for administrators, **Sources** and **Sign out**.
+  Below 720 px a bar holds a menu button, the page title and the flag; the menu
+  button opens a drawer with the workspaces as a row of flags (tap to switch,
+  + to add one), the sections with their names (Home first) and your account
+  at the bottom. There is no footer and no bottom tab bar. A plugin's section
+  icon comes from its manifest (`icon`, a generic icon otherwise). Stats is there
+  for every workspace; it replaced the former **Map** item, which showed only in
+  zh and ja workspaces.
 - **Public pages.** The Sources page (`/sources`) is open to everyone, signed in
   or not, so the licence and attribution credits are always reachable. Signed out
-  it shows a minimal header (the logo and a **Sign in** link) and the footer, with
-  no nav, workspace picker or other private page; signed in it has the usual
-  shell. A stale token there signs the user out quietly instead of redirecting.
+  it shows a minimal bar (the logo and a **Sign in** link), with no sections,
+  workspace flag or other private page; signed in it has the usual frame. A stale token there signs the user out quietly instead of redirecting.
   `/login` and `/register` are for signed-out visitors only; every other page
   needs a signed-in user. The rules live in `apps/web/src/lib/routeAccess.ts`.
 - **Navigation and focus.** The first Tab stop on every signed-in page (and on the
   public Sources page) is a "Skip to content" link, which moves focus to the page content. The logo is
-  named "qinqin, home". Below 720 px, while the bottom tab bar is shown, the page
-  keeps scroll padding below the focus so a focused control or map cell is not
-  hidden behind the bar.
+  named "qinqin, home"; every icon-only control (sections, flag, avatar, menu
+  button) has a name and a tooltip, and the current section is marked for screen
+  readers. The phone drawer is a modal dialog: focus moves to the current
+  workspace's flag, stays inside until it closes (Escape, a tap outside, a swipe
+  toward the edge, or following a link) and then returns to the menu button.
 - **Deleting.** Settings shows a **Delete** button on each workspace while the
   user has more than one. A modal dialog lists what goes (books with their
   bookmarks and highlights, flashcards and decks, recorded reviews and the rest
@@ -797,8 +819,9 @@ a Japanese one on Aozora.
 
 ### Reader display
 
-The **Display** button above a chapter opens the reading display settings. They are saved
-per workspace (workspace settings, key `reader`), so they follow you across devices.
+The **Display** tab of the side rail holds the reading display settings (Chinese and Japanese
+books, books with ruby; for Chinese books also the **Script** choice). They are saved per
+workspace (workspace settings, key `reader`), so they follow you across devices.
 
 - **Book ruby** (only for a book that has ruby): the reading marks printed in the book.
 - **Readings over words**: *Never* (default), *Always*, or *Smart*. Chinese words get pinyin,
@@ -814,8 +837,8 @@ per workspace (workspace settings, key `reader`), so they follow you across devi
   **Show all readings** to see hidden readings.
 - **Ruby size** and **Font** (default, sans, serif, kai: system fonts only, nothing is downloaded).
 - **Mark words by how well I know them** (off by default): new words (no flashcard) get a
-  solid underline and a light tint, words you are learning a dotted one; known words stay
-  plain. A word is known from the threshold's memory score, or when you marked it with
+  thin solid underline in the accent, words you are learning a thin dotted one (no tint);
+  known words stay plain. A word is known from the threshold's memory score, or when you marked it with
   **I know this** in the popup (a workspace row `known:<entryId>`, synced and in the backup;
   it creates no card). The same rule hides readings in Smart mode and leaves words out of
   starter decks.
@@ -828,9 +851,12 @@ per workspace (workspace settings, key `reader`), so they follow you across devi
 The reader only: entry pages, flashcards and study cards always show readings. Rules and
 fixtures for other clients: [`docs/contracts/reader/`](docs/contracts/reader/README.md).
 
-**Add to study from the popup.** Every entry in the Reader's lookup popup has a
-**+** button that adds the word to the General deck of the book's workspace. The
-**⋯** deck menu appears only when the workspace has custom decks. The sentence of
+**Add to study from the popup.** The lookup popup opens below the word (above it
+only without room; a bottom sheet on a phone). Each entry shows the word, its
+reading, level chips (from the lookup's `levels`) and frequency chips, numbered
+meanings and the source dictionary, and an **Add to deck** button that adds the
+word to the General deck of the book's workspace in one click. The **Choose a
+deck** menu beside it appears only when the workspace has custom decks. The sentence of
 the book around the word (up to 200 characters, cut at 。！？ and similar
 terminators) is saved as the user's own example sentence on the entry and linked
 to the card; an identical sentence is reused. A sentence that cannot be saved
@@ -838,12 +864,13 @@ leaves the card without one and says so. Example sentences saved by a user are
 private to that user: other users, and anonymous callers, see only the pack's
 sentences.
 
-**Side rail.** Beside the text sits a rail with two tabs, **Bookmarks** and
-**Highlights**. On screens 1000 px and wider it is a column next to the text that
-can be collapsed to a thin tab strip; below 1000 px it is a drawer on the right
-edge, opened from a floating button and closed by Escape or a click outside. The
-open/closed state and the last tab are remembered in the browser. The reading
-toolbar is a plain strip at the top of the page; it is not sticky.
+**Side rail.** At the right edge of the page sits a column of five icon tabs,
+**Contents**, **Bookmarks**, **Highlights**, **Words** and **Display** (a vertical
+tablist; each icon has a tooltip). On screens 1000 px and wider the open tab's panel
+sits between the text and the icons; activating the open tab collapses it. Below
+1000 px one button (in the phone top bar, or above the text between 720 and 1000 px)
+opens the same tabs in a bottom sheet. The open/closed state and the last tab are
+remembered in the browser.
 
 **Bookmarks.** The rail's **Add bookmark here** button (or the `b` key) bookmarks
 the first paragraph in view and toggles it off again. The Bookmarks tab lists them
@@ -1006,8 +1033,16 @@ workspace (the home widget counts the same types).
 |---|---|---|
 | **Vocab** | See the word, its readings and the example sentence with the word blanked, then **Show answer** for the meanings | any word |
 | **Word Salad** | Rebuild the example sentence from shuffled tiles: tap a tile to place it, tap a placed tile to remove it, **Undo**, **Check**, or **Show answer** | an example sentence |
-| **Writing** | Draw each Han character stroke by stroke (order and direction are checked); **Reveal character** animates it | Han characters with bundled stroke data; kana stay visible |
+| **Writing** | Draw each Han character stroke by stroke (order and direction are checked); **Show strokes** reveals the current character | Han characters with stroke data from the installed strokes pack; kana stay visible |
 | **Tone** | Swipe each syllable pad in the tone's shape, use the tone buttons, or press 1–5 | a Chinese word with pinyin (Chinese workspaces only) |
+
+**The session** is an open page (#101): a close button, a thin progress line and the
+count at the top; every card type has its task name (Recognise, Recall, Fill the gap,
+Build the sentence, Write, Tones) with the deck and level, the prompt, the answer area and
+the answer below a thin line; one action button docked at the bottom before the answer,
+and after it four grade buttons that each show the interval that grade gives (`<1m`,
+`6m`, `1d`, …, computed by the same scheduler; a re-show says **practice**). Keys are
+unchanged.
 
 **Reverse and cloze cards** are opt-in per deck. Each deck row on `/study` has a
 Reverse and a Cloze switch (stored per deck, General included); a deck that never
@@ -1213,8 +1248,8 @@ applies to the workspace, in the order of this table:
 
 A plugin's widgets are shown only while that plugin is enabled.
 
-- **Activity**: one cell per UTC day over the last 13 weeks, coloured by
-  activity points. A flashcard review is one point. Reading in the Reader is one
+- **Activity**: one cell per learner day over the last 13 weeks (on the home
+  page: the layout chosen in Settings → Home), tinted by activity points. A flashcard review is one point. Reading in the Reader is one
   point per started 5 minutes. The reader records a `read` event with the active
   seconds of each reading burst. A burst under 30 s is not recorded, an idle gap
   between inputs counts at most 2 minutes, and a hidden tab does not count.
@@ -1290,7 +1325,7 @@ All library and source routes need a signed-in user, and so does
 
 | Route | Purpose |
 |---|---|
-| `GET /api/lookup?lang=&text=&offset=&kind=` | The ranked entries for the text at a code-point offset: `{"results": [...]}`, at most 30. `text` up to 64 code points (the web app sends 16, and the engine reads a 12 code-point window from the offset); `kind` is `word` or `character` and may repeat. Each result has the entry id, the `term` to show (a Japanese matched written form unless it is search-only, else the display form: こと for the usually-kana 事, の for 乃), forms with flags, readings with flags, the matched text with its `start`/`end`, inflection `reasons`, tags, `frequencies` and `senses` (each with POS). Missing or non-integer params are 400, an unsupported language 400, too long 413; an offset outside the text finds nothing |
+| `GET /api/lookup?lang=&text=&offset=&kind=` | The ranked entries for the text at a code-point offset: `{"results": [...]}`, at most 30. `text` up to 64 code points (the web app sends 16, and the engine reads a 12 code-point window from the offset); `kind` is `word` or `character` and may repeat. Each result has the entry id, the `term` to show (a Japanese matched written form unless it is search-only, else the display form: こと for the usually-kana 事, の for 乃), forms with flags, readings with flags, the matched text with its `start`/`end`, inflection `reasons`, tags, `frequencies`, `senses` (each with POS) and `levels` (`[{scheme, level}]`: the entry's lowest level in each installed levels scheme, `[]` when none). Missing or non-integer params are 400, an unsupported language 400, too long 413; an offset outside the text finds nothing |
 | `GET /api/segment/at?lang=&text=&offset=` | Tokenizer: the longest dictionary match at a code-point offset, built on the lookup engine. `text` up to 64 code points. `lemma` is the dictionary form and `reason` the deinflection; only `entries[0]` corresponds to them, later candidates are other readings or entries with the same surface (at most 8 candidates in all). A candidate has `reading: true` when it matched by a kana reading (Japanese) |
 | `POST /api/segment` `{lang, text}` | Every match in order, same shape; needs a signed-in user. `text` up to 5000 code points, body up to 256 KiB |
 | `GET /api/audio/entries/{id}` | Signed-in. The pronunciation clips of one entry: `{terms: [Clip], syllables: [[Clip]\|null]\|null}`. `terms` are recordings of the whole word (matched on written form and first reading); `syllables` (zh entries only, else `null`) has one slot per pinyin reading in the entry's order, each the clips to play in sequence or `null` when a syllable has no recording. `Clip` is `{url, packId, license, attribution, source}`; 404 for an unknown entry |

@@ -114,7 +114,7 @@
 	}
 
 	.check {
-		font-weight: 700;
+		font-weight: var(--weight-strong);
 		color: var(--good);
 	}
 

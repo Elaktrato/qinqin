@@ -8,6 +8,7 @@ import type { StudyCard } from '$lib/study/types';
 import { workspaces } from '$lib/workspaces';
 import CardManager from '$lib/components/CardManager.svelte';
 import ToneCard from '$lib/features/flashcards/cards/ToneCard.svelte';
+import CardHarness from '$lib/features/flashcards/face/testing/CardHarness.svelte';
 
 // Study text carries the study language, interface text the document's (spec "lang and dir attributes"): the
 // closest [lang] of a written form is the workspace's; interface text has none of its own.
@@ -51,13 +52,15 @@ describe('ToneCard', () => {
 
 	it('follows a traditional-script workspace (zh-Hant), not a fixed zh', () => {
 		workspaces.set({ list: [workspace('zh-Hant')], current: workspace('zh-Hant') });
-		render(ToneCard, { item, entry, done: false, onDone: () => {} });
+		// A card renders inside the study face (#101).
+		render(CardHarness, { card: ToneCard, cardProps: { item, entry, done: false, onDone: () => {} } });
 		expect(screen.getByText('你好').closest('[lang]')?.getAttribute('lang')).toBe('zh-Hant');
 	});
 
 	it('a simplified workspace reads zh-Hans', () => {
 		workspaces.set({ list: [workspace('zh')], current: workspace('zh') });
-		render(ToneCard, { item, entry, done: false, onDone: () => {} });
+		// A card renders inside the study face (#101).
+		render(CardHarness, { card: ToneCard, cardProps: { item, entry, done: false, onDone: () => {} } });
 		expect(screen.getByText('你好').closest('[lang]')?.getAttribute('lang')).toBe('zh-Hans');
 	});
 });
@@ -92,10 +95,14 @@ describe('the audited components', () => {
 });
 
 describe('the shell', () => {
-	it('the header brand link carries no lang (interface text); the footer hanzi keeps lang="zh"', () => {
-		const layout = read('routes/+layout.svelte');
-		const brand = layout.slice(layout.indexOf('class="brand'), layout.indexOf('>', layout.indexOf('class="brand')));
-		expect(brand).not.toMatch(/\slang=/);
-		expect(layout).toContain('<span lang="zh">{APP_NAME_HANZI}</span>');
+	// The footer and its brand hanzi line went with the frame (#99); the bar's
+	// logo links carry no lang (interface text).
+	it('the bar brand links carry no lang (interface text)', () => {
+		for (const file of ['routes/+layout.svelte', 'lib/frame/TopBar.svelte']) {
+			const src = read(file);
+			const brand = src.slice(src.indexOf('class="brand'), src.indexOf('>', src.indexOf('class="brand')));
+			expect(brand, file).not.toMatch(/\slang=/);
+			expect(src, file).not.toMatch(/\slang="(?!ts")/);
+		}
 	});
 });

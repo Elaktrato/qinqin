@@ -2,6 +2,10 @@
 
 qinqin schedules reviews with FSRS (the `ts-fsrs` library). A card's next due date is computed from its whole review history; schedules are never stored. That is why two devices that reviewed offline merge cleanly, and why vacation days can be removed from the history without rewriting it (see [Decks, limits and vacation](Flashcards-decks-limits-vacation)).
 
+## The interval on each grade button
+
+In a study session every grade button shows the interval that grade would give (see [Flashcards: study sessions](Flashcards-study-sessions)). It is computed by replaying the card's history with the same parameters and study clock as the grade itself, at the moment you finished the card, so it is exactly the schedule you get. The label rounds: up to a minute `<1m`, then minutes, hours (under a day), days (under 30 days), months (30 days each, under a year) and years with one decimal; the unit letters follow your interface language. The rule and its fixtures are in `docs/contracts/scheduler/` (`next-intervals.json`, `interval-text.json`).
+
 ## Scheduling page
 
 The setup page `/study` has a link "Scheduling: ..." that opens `/study/scheduling`. It tunes the FSRS parameters of the current workspace:

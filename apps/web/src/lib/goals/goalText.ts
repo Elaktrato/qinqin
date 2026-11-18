@@ -4,6 +4,7 @@
 
 import type { ActivitySource } from '../api/stats';
 import { t } from '../i18n';
+import { formatNumber } from '../i18n/format';
 import { activityType, type GoalMetric } from './goals';
 import { activityLabel, activityText } from '../plugins/manifestText';
 import type { GoalDay } from './progress';
@@ -76,4 +77,19 @@ export function streakText(s: { current: number; capped: boolean }): string {
 	// Capped: at least `current` (vacation days are skipped, so not always 365).
 	if (s.capped) return t('goals.streak.capped', { count: s.current });
 	return t('goals.streak.days', { count: s.current });
+}
+
+/**
+ * toGoText: what is left of today's goal ("29 flashcard reviews to go today",
+ * "3 new cards to go today"), in the goal's display units; null when none is left.
+ */
+export function toGoText(
+	day: { metric: GoalMetric; amount: number; target: number },
+	sources: readonly ActivitySource[]
+): string | null {
+	const left = day.target - day.amount;
+	if (left <= 0) return null;
+	if (day.metric === 'flashcards:new') return t('widgets.activity.week.newCardsToGo', { count: left });
+	if (day.metric === 'flashcards:studyTime') return t('widgets.activity.week.minutesToGo', { count: left });
+	return t('widgets.activity.week.toGo', { amount: activityText(sourceOf(day.metric, sources), left, formatNumber(left)) });
 }

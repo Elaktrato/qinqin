@@ -66,7 +66,7 @@
 	<title>{pageTitle(t('auth.forced.passwordTitle'))}</title>
 </svelte:head>
 
-<main class="auth">
+<div class="page-body auth">
 	<h1 tabindex="-1" bind:this={heading}>{t('auth.forced.passwordTitle')}</h1>
 	<p>{t('auth.forced.passwordIntro')}</p>
 
@@ -108,4 +108,4 @@
 
 		<button type="submit" disabled={busy}>{busy ? t('auth.forced.changing') : t('auth.forced.submit')}</button>
 	</form>
-</main>
+</div>

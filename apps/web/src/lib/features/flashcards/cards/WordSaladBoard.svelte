@@ -2,6 +2,8 @@
 	import { t } from '$lib/i18n';
 	import { tick } from 'svelte';
 	import { isCorrect, shuffleTokens } from '$lib/study/wordSalad';
+	import Button from '$lib/ui/Button.svelte';
+	import Icon from '$lib/ui/Icon.svelte';
 
 	interface Props {
 		/** The order the learner must rebuild. */
@@ -13,9 +15,14 @@
 		onResult: (r: { wrongChecks: number; gaveUp: boolean }) => void;
 		/** BCP-47 language of the tiles. */
 		language?: string;
+		/**
+		 * The study face docks Check (#101): given, the board hands its Check
+		 * (label, run, disabled) here instead of rendering it; null once locked.
+		 */
+		dockCheck?: (check: { label: string; run: () => void; disabled: boolean } | null) => void;
 	}
 
-	let { solution, seed, disabled, onResult, language }: Props = $props();
+	let { solution, seed, disabled, onResult, language, dockCheck }: Props = $props();
 
 	// Bank ids are positions in `bank`, so duplicate tokens stay distinct tiles.
 	const bank = $derived(shuffleTokens(solution, seed));
@@ -35,7 +42,7 @@
 
 	let bankList = $state<HTMLElement | null>(null);
 	let answerList = $state<HTMLElement | null>(null);
-	let checkButton = $state<HTMLButtonElement | null>(null);
+	let checkButton = $state<HTMLElement>();
 
 	/**
 	 * A tile button disappears when it moves between bank and answer, so
@@ -54,7 +61,7 @@
 		feedback = '';
 		const at = available.indexOf(id);
 		placed = [...placed, id];
-		if (keyboard) void refocus(bankList, at, checkButton);
+		if (keyboard) void refocus(bankList, at, checkButton ?? answerList?.querySelector('button:last-of-type') ?? null);
 	}
 
 	function unplace(id: number, keyboard: boolean): void {
@@ -92,6 +99,11 @@
 		wrongChecks += 1;
 		feedback = t('flashcards.salad.wrong', { count: wrongChecks });
 	}
+
+	$effect(() => {
+		if (dockCheck === undefined) return;
+		dockCheck(disabled || solved ? null : { label: t('flashcards.card.check'), run: check, disabled: placed.length === 0 });
+	});
 
 	function giveUp(): void {
 		if (disabled) return;
@@ -134,133 +146,120 @@
 		</ul>
 
 		<div class="actions">
-			<button type="button" class="secondary" disabled={placed.length === 0} onclick={undo}>
-				{t('flashcards.salad.undo')}
-			</button>
-			<button
-				type="button"
-				class="primary"
-				disabled={!complete}
-				bind:this={checkButton}
-				onclick={check}>{t('flashcards.card.check')}</button
-			>
-			<button type="button" class="secondary" onclick={giveUp}>{t('flashcards.card.showAnswer')}</button>
+			<Button variant="secondary" disabled={placed.length === 0} onclick={undo}>{t('flashcards.salad.undo')}</Button>
+			{#if dockCheck === undefined}
+				<Button variant="primary" disabled={!complete} bind:element={checkButton} onclick={check}
+					>{t('flashcards.card.check')}</Button
+				>
+			{/if}
+			<Button variant="secondary" onclick={giveUp}>{t('flashcards.card.showAnswer')}</Button>
 		</div>
 	{/if}
 </div>
 
 <p class="feedback" class:bad={wrongChecks > 0 && !solved} role="status" aria-live="polite">
-	{feedback}
+	{#if feedback}{#if solved}<Icon name="check" size="s" />{:else if wrongChecks > 0}<Icon name="close" size="s" />{/if}<span
+			>{feedback}</span
+		>{/if}
 </p>
 
 <style>
 	.board {
-		margin-top: 1.25rem;
 		display: grid;
-		gap: 1rem;
+		gap: var(--space-4);
+		justify-items: center;
+		width: 100%;
 	}
 
 	.answer,
 	.bank {
-		list-style: none;
-		margin: 0;
-		padding: 0.6rem;
+		box-sizing: border-box;
 		display: flex;
 		flex-wrap: wrap;
-		gap: 0.45rem;
-		min-height: 3.2rem;
-		border-radius: 0.4rem;
+		justify-content: center;
+		gap: var(--space-2);
+		width: 100%;
+		max-width: 26.25rem;
+		margin: 0;
+		padding: var(--space-2);
+		list-style: none;
 	}
 
 	.answer {
-		border: 1px solid color-mix(in srgb, currentColor 25%, transparent);
+		min-height: 3.2rem;
+		border-bottom: 1px solid var(--hair);
 	}
 
 	.empty {
 		align-self: center;
 		color: var(--readable-muted);
+		font-size: var(--font-size-s);
 	}
 
 	.token {
-		min-height: 44px;
-		min-width: 44px;
-		padding: 0.4rem 0.7rem;
-		border: 1px solid color-mix(in srgb, currentColor 35%, transparent);
-		border-radius: 0.4rem;
-		background: color-mix(in srgb, currentColor 6%, transparent);
-		color: inherit;
+		min-height: var(--hit);
+		min-width: var(--hit);
+		padding: var(--space-1) var(--space-3);
+		border: 1px solid var(--line);
+		border-radius: calc(var(--radius) * 0.7);
+		background: transparent;
+		color: var(--text);
 		font: inherit;
-		font-size: 1.25rem;
+		font-family: var(--font-hanzi);
+		font-size: 1.125rem;
 		cursor: pointer;
 	}
 
-	.token.placed {
-		background: color-mix(in srgb, var(--accent) 12%, transparent);
+	.token:hover:not(:disabled) {
+		border-color: var(--accent);
+	}
+
+	.token:focus-visible {
+		outline: var(--focus-ring);
+		outline-offset: var(--focus-ring-offset);
 	}
 
 	/* A finished sentence stays fully legible: locked, not faded. */
 	.token.placed:disabled {
-		opacity: 1;
 		cursor: default;
 		border-style: dashed;
-		border-color: color-mix(in srgb, currentColor 45%, transparent);
 	}
 
 	.token.right,
 	.token.placed.right:disabled {
+		border-style: solid;
 		border-color: var(--good);
 	}
 
 	.actions {
 		display: flex;
 		flex-wrap: wrap;
-		gap: 0.5rem;
-	}
-
-	.actions button {
-		min-height: 44px;
-		padding: 0.45rem 0.9rem;
-		border-radius: 0.4rem;
-		font: inherit;
-		font-weight: 600;
-		cursor: pointer;
-	}
-
-	.primary {
-		border: 0;
-		background: var(--accent);
-		color: var(--on-accent);
-	}
-
-	.secondary {
-		border: 1px solid color-mix(in srgb, currentColor 35%, transparent);
-		background: transparent;
-		color: inherit;
-	}
-
-	button:disabled {
-		opacity: 0.45;
-		cursor: not-allowed;
-	}
-
-	button:focus-visible {
-		outline: 2px solid var(--focus-colour);
-		outline-offset: 2px;
-	}
-
-	.token:hover:not(:disabled),
-	.secondary:hover:not(:disabled) {
-		border-color: var(--accent);
+		justify-content: center;
+		gap: var(--space-2);
 	}
 
 	.feedback {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: var(--space-1);
 		min-height: 1.4rem;
-		margin: 0.75rem 0 0;
-		font-weight: 600;
+		margin: var(--space-2) 0 0;
+		font-weight: var(--weight-strong);
 		color: var(--text);
 	}
 
 	.feedback.bad {
 		color: var(--readable-bad);
+	}
+
+	@media (forced-colors: active) {
+		.token {
+			border-color: ButtonText;
+		}
+		.token.right,
+		.token.placed.right:disabled {
+			border: 2px solid Highlight;
+		}
 	}
 </style>

@@ -5,7 +5,8 @@
 // the heatmap's days.
 
 import type { ActivityResponse, ActivitySource } from '../api/stats';
-import { t } from '../i18n';
+import { t, type MessageKey } from '../i18n';
+import type { FlowerStage } from '../goals/stage';
 import { addDays, type StudyDay } from '../time/studyDay';
 import { isVacationDay, vacationRuns, type VacationPeriod } from '../study/vacation';
 
@@ -52,13 +53,24 @@ export function vacationMarks(
 	now: Date = new Date(),
 	days: number = HEATMAP_DAYS
 ): Map<string, VacationMark> {
-	const marks = new Map<string, VacationMark>();
 	const today = day.today(now.getTime());
-	const start = windowStart(day, now, days);
+	return vacationMarksRange(periods, workspaceIds, workspace, windowStart(day, now, days), today, today);
+}
+
+/** vacationMarksRange is vacationMarks over any window from..to (inclusive). */
+export function vacationMarksRange(
+	periods: readonly VacationPeriod[],
+	workspaceIds: readonly number[],
+	workspace: number | null,
+	from: string,
+	to: string,
+	today: string
+): Map<string, VacationMark> {
+	const marks = new Map<string, VacationMark>();
 	const scope = workspace === null ? [...workspaceIds] : [workspace];
 	if (scope.length === 0 || periods.length === 0) return marks;
 	const runs = new Map(scope.map((id) => [id, vacationRuns(periods, id, today)]));
-	for (let key = start; key <= today; key = addDays(key, 1)) {
+	for (let key = from; key <= to; key = addDays(key, 1)) {
 		const away = scope.filter((id) => isVacationDay(runs.get(id) ?? [], key));
 		if (away.length === 0) continue;
 		marks.set(key, { mode: away.length === scope.length ? 'all' : 'some', workspaces: away });
@@ -101,12 +113,23 @@ export function foldActivity(
 	marks?: ReadonlyMap<string, VacationMark>
 ): Map<string, DayActivity> {
 	const windowDays = windowLength(days);
-	const result = new Map<string, DayActivity>();
-	if (windowDays === 0) return result;
+	if (windowDays === 0) return new Map();
+	return foldRange(resp, view, windowStart(day, now, windowDays), day.today(now.getTime()), marks);
+}
 
-	const today = day.today(now.getTime());
-	const start = windowStart(day, now, windowDays);
-	for (let key = start; key <= today; key = addDays(key, 1)) {
+/**
+ * foldRange is foldActivity over any window from..to (inclusive), e.g. one
+ * month of the month calendar: every day appears, the same filters apply.
+ */
+export function foldRange(
+	resp: ActivityResponse,
+	view: ActivityView,
+	from: string,
+	to: string,
+	marks?: ReadonlyMap<string, VacationMark>
+): Map<string, DayActivity> {
+	const result = new Map<string, DayActivity>();
+	for (let key = from; key <= to; key = addDays(key, 1)) {
 		const mark = marks?.get(key);
 		result.set(key, {
 			day: key,
@@ -168,16 +191,58 @@ function vacationNote(day: DayActivity, workspaceName: (id: number) => string): 
 	return '';
 }
 
+const STAGE_KEYS: Record<FlowerStage, MessageKey> = {
+	soil: 'widgets.activity.stage.soil',
+	sprout: 'widgets.activity.stage.sprout',
+	bud: 'widgets.activity.stage.bud',
+	opening: 'widgets.activity.stage.opening',
+	bloom: 'widgets.activity.stage.bloom',
+	resting: 'widgets.activity.stage.resting'
+};
+
+/** stageName: the flower stage in words ("Bud"); the drawings come later (#107). */
+export function stageName(stage: FlowerStage): string {
+	return t(STAGE_KEYS[stage]);
+}
+
+/** A day's goal progress and stage, and whether it is today: appended to its tooltip. */
+export interface DayNote {
+	stage?: { stage: FlowerStage; amount: number; target: number } | null;
+	today?: boolean;
+}
+
+/** stagePhrase: "21 of 50 — Bud". */
+export function stagePhrase(stage: { stage: FlowerStage; amount: number; target: number }): string {
+	return t('widgets.activity.stageNote', {
+		progress: t('goals.progress.amountOfTarget', { amount: stage.amount, target: stage.target }),
+		stage: stageName(stage.stage)
+	});
+}
+
 /**
  * dayTooltip describes a day in the sources' fixed order, e.g.
  * "2026-11-13: 12 points — 9 flashcard reviews, 15 minutes of reading";
- * the combined view appends " · 中文 8, 日本語 4".
+ * the combined view appends " · 中文 8, 日本語 4"; a goal day appends its
+ * progress and stage (" · 21 of 50 — Bud"), today " · today".
  */
 export function dayTooltip(
 	day: DayActivity,
 	sources: readonly ActivitySource[],
 	workspaceName: (id: number) => string,
-	allHidden = false
+	allHidden = false,
+	note: DayNote = {}
+): string {
+	let text = describeDay(day, sources, workspaceName, allHidden);
+	if (note.stage) text = t('stats.activity.withNote', { text, note: stagePhrase(note.stage) });
+	if (note.today) text = t('stats.activity.withNote', { text, note: t('widgets.activity.today') });
+	return text;
+}
+
+function describeDay(
+	day: DayActivity,
+	sources: readonly ActivitySource[],
+	workspaceName: (id: number) => string,
+	allHidden: boolean
 ): string {
 	if (allHidden) return t('stats.activity.dayHidden', { day: day.day });
 	const away = vacationNote(day, workspaceName);

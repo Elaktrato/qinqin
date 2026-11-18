@@ -274,7 +274,7 @@
 	</li>
 {/snippet}
 
-<main class="sources">
+<div class="page-body sources">
 	<p><a href={LIBRARY_HREF}>{t('reader.sources.back')}</a></p>
 	<h1 class="heading">
 		{t('reader.sources.title')}
@@ -392,7 +392,7 @@
 	<p class="attribution">
 		{t('reader.sources.attribution')}
 	</p>
-</main>
+</div>
 
 <style>
 	.visually-hidden {

@@ -1,8 +1,7 @@
 <script lang="ts">
 	import { onDestroy } from 'svelte';
 	import { planParagraph, type PlanSeg } from './chapterPlan';
-	import { DEFAULT_DISPLAY, type ReaderDisplay } from './displaySettings';
-	import { fontStack } from './fonts';
+	import { DEFAULT_DISPLAY, fontStack, type ReaderDisplay } from './displaySettings';
 	import { packFaces } from '$lib/fonts/packFaces.svelte';
 	import type { Highlight } from './highlights';
 	import type { Run } from './paragraphText';
@@ -160,9 +159,13 @@
 </div>
 
 <style>
+	/* The reading column (design §9): 40em of the reader text, centred;
+	   line height 2.2 leaves room for ruby. */
 	.chapter-text {
 		font-size: 1.25rem;
-		line-height: 2;
+		line-height: 2.2;
+		max-width: 40em;
+		margin-inline: auto;
 		font-family: var(--reader-font, inherit);
 	}
 
@@ -191,6 +194,8 @@
 	   selecting a passage leaves it out. */
 	rt {
 		font-size: var(--reader-rt-size, 0.55em);
+		/* Readings are an aid: the readable muted colour (design §9 mock). */
+		color: var(--readable-muted);
 		user-select: none;
 	}
 
@@ -204,12 +209,13 @@
 	ruby:hover > rt.concealed,
 	:global(ruby.revealed > rt.concealed),
 	:global(.chapter-text.show-all rt.concealed) {
-		color: inherit;
+		color: var(--readable-muted);
 	}
 
 	@media (forced-colors: active) {
+		rt,
 		rt.concealed {
-			color: inherit;
+			color: CanvasText;
 		}
 	}
 
@@ -261,7 +267,21 @@
 		outline-offset: 1px;
 	}
 
+	/* The looked-up word: the selected wash (design §6). */
 	:global(::highlight(reader-lookup)) {
 		background-color: var(--selected-wash);
+	}
+
+	/* Forced colours: the looked-up word is the system selection, user
+	   highlights the system mark colours (their names stay in the panel). */
+	@media (forced-colors: active) {
+		:global(::highlight(reader-lookup)) {
+			background-color: Highlight;
+			color: HighlightText;
+		}
+		mark.hl {
+			background: Mark;
+			color: MarkText;
+		}
 	}
 </style>

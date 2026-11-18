@@ -11,8 +11,6 @@ import type { PluginInfo } from '$lib/api/types';
 import { t, type MessageKey } from '$lib/i18n';
 import { CORE_PLUGIN_ID } from '$lib/plugins/core/manifest';
 import type { PluginManifest } from '$lib/plugins';
-import { visibleNavPages, webPlugins } from '$lib/plugins';
-import type { PluginStatesValue } from '$lib/plugins/states';
 import FlashcardsPage from '$lib/features/flashcards/FlashcardsPage.svelte';
 import { flashcardsManifest } from '$lib/features/flashcards/manifest';
 import ReaderPage from '$lib/features/reader/ReaderPage.svelte';
@@ -104,15 +102,3 @@ export function findFeature(slug: string, states: readonly PluginInfo[]): CoreFe
 	return coreFeatures.find((f) => f.slug === slug && featureEnabled(f.id, states));
 }
 
-/**
- * navLinks: the shell nav after Search. The features come first in a fixed
- * order, then the enabled plugins in the user's plugin order; nothing shows
- * before the states are loaded (a switched-off link never flashes in).
- */
-export function navLinks(state: PluginStatesValue): { slug: string; title: string; href: string }[] {
-	if (state.status !== 'ready') return [];
-	const features = coreFeatures
-		.filter((f) => featureEnabled(f.id, state.list))
-		.map((f) => ({ slug: f.slug, title: f.title, href: f.href }));
-	return [...features, ...visibleNavPages(webPlugins, state)];
-}

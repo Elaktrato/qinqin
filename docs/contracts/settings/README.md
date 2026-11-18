@@ -12,6 +12,10 @@ Fixtures:
   `"$string:n"` is a JSON string of n `x` characters.
 - `core-rows.json` — the user-global rows `home-layout` and `activity-view` of plugin `qinqin-core`
   (web: `lib/widgets/layout.test.ts`, `lib/activity/viewPrefs.test.ts`).
+- `widget-options.json` — the user-global row `widget-options` of plugin `qinqin-core`: `row` (an example),
+  `parse` (`value` → the heatmap layout read) and `write` (`stored` + `layout` → the row written) (web:
+  `lib/widgets/options.test.ts`; Go: `cmd/qinqin/core_widget_options_test.go`,
+  `internal/backup/widget_options_test.go`).
 
 ## Workspace settings
 
@@ -46,7 +50,7 @@ Compare stored settings as JSON values, never as text.
 
 ## `qinqin-core` user-global rows
 
-Both are plugin data rows of `qinqin-core` with `workspaceId: null` (one per user, shared by every device,
+All are plugin data rows of `qinqin-core` with `workspaceId: null` (one per user, shared by every device,
 last write wins; `sync/`).
 
 **`home-layout`** — `{"version": 1, "widgets": [widget id, ...]}`: the home widgets in order.
@@ -74,6 +78,31 @@ heatmap's scope and hidden activity types.
 - Write: `{version: 1, scope, hidden}`.
 
 Ruling: Android writes `activity-view` with `version: 1` only — cost: none.
+
+**`widget-options`** — `{"version": 1, "activity-heatmap": {"layout": "garden" | "month" | "week"}}`: options of
+individual home widgets, one member per widget id. Today only the activity heatmap has one: its home layout
+(Garden grid, Month calendar, This week; design §9 "Home"). No row = `garden`.
+
+- Read (`parseWidgetOptions`): an object with an integer `version` ≥ 1; a **newer version is read leniently**
+  (its `activity-heatmap.layout` counts when it is one of the three). A non-object row, a missing or
+  non-integer `version`, a version below 1, an `activity-heatmap` that is not an object or an unknown layout
+  reads as `garden`. Other members (top-level and inside `activity-heatmap`) are ignored for reading.
+- Write (`withHeatmapLayout`): the stored object with only `activity-heatmap.layout` replaced. **Every other
+  key is kept**, top-level and inside `activity-heatmap`; `version` is kept when it is an integer ≥ 1, else 1;
+  a non-object row is replaced by a fresh version 1 row; an `activity-heatmap` that is not an object is
+  replaced by `{"layout": …}`.
+- Re-read before write (`saveHeatmapLayout`): a writer reads the row fresh (`find`) right before it `put`s, and
+  applies its change to that copy, never to the copy it loaded with the page — so keys another device wrote
+  meanwhile survive. Last write wins between two writes that race.
+- Stats keeps the garden grid; the layout applies to the home page only (until #105 decides Stats).
+- The server stores the row like any user-global plugin row (no code of its own); a restore brings it back
+  unchanged.
+
+Ruling: `widget-options` is a row of its own, not a member of `home-layout`, because the `home-layout` writer
+rewrites the whole row (`serializeLayout`) and would drop added fields — cost: one more row per user.
+
+Ruling: Android reads and writes `widget-options` the same way (lenient read, unknown keys kept, re-read before
+write) — cost: none.
 
 **`appearance`** — the person's theme, accent and adjustments: a third user-global `qinqin-core` row, specified
 with the themes in [`themes/README.md`](../themes/README.md) ("The `appearance` row", fixture `themes/appearance.json`).

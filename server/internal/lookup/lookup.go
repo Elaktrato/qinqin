@@ -84,6 +84,10 @@ type Result struct {
 	Frequencies []Frequency
 	// Senses are the entry's senses as stored: grouped by dictionary.
 	Senses []SenseOut
+	// Levels holds the entry's lowest level in each installed levels
+	// scheme, in scheme order; empty (not nil) when Service.WithLevels is
+	// set and the entry is in no scheme, nil when levels were not asked for.
+	Levels []Level
 	Pri    int
 	// Lemma is the dictionary form of Matched: the deinflected form for
 	// an inflected match (する for した, 電話する for 電話した), Matched
@@ -101,6 +105,10 @@ type Service struct {
 	Lexicon lexicon.Store
 	Freq    freq.Store
 	DB      *sql.DB
+	// WithLevels adds each result's levels (one batched query). The
+	// lookup route sets it; the segmenter, which looks up every token,
+	// does not need them.
+	WithLevels bool
 }
 
 // probe is one dictionary-side text tried for a prefix of the source.
@@ -229,6 +237,19 @@ func (s Service) Lookup(ctx context.Context, language, text string, offset int, 
 	out := make([]Result, len(cands))
 	for i, c := range cands {
 		out[i] = result(language, matches[c.at], freqs[c.at], names, window, offset)
+	}
+	if s.WithLevels {
+		ids := make([]int64, len(out))
+		for i, r := range out {
+			ids[i] = r.EntryID
+		}
+		lv, err := s.levels(ctx, ids)
+		if err != nil {
+			return nil, err
+		}
+		for i := range out {
+			out[i].Levels = append([]Level{}, lv[out[i].EntryID]...)
+		}
 	}
 	return out, nil
 }

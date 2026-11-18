@@ -18,6 +18,11 @@
 		type ToneVerdict
 	} from '$lib/study/cardFlow';
 	import { suggestToneGrade, toneFromGesture, type GesturePoint, type Tone } from '$lib/study/tones';
+	import Icon from '$lib/ui/Icon.svelte';
+	import FaceAnswer from '../face/FaceAnswer.svelte';
+	import FacePrompt from '../face/FacePrompt.svelte';
+	import FaceWork from '../face/FaceWork.svelte';
+	import { usePrimary } from '../face/cardFace.svelte';
 
 	interface Props {
 		item: FlowItem;
@@ -100,6 +105,9 @@
 		announcement = result.correct ? t('flashcards.card.correct') : t('flashcards.tone.wrong', { count: result.wrong });
 		onDone({ suggested: suggestToneGrade(result.wrong), meta: { mistakes: result.wrong } });
 	}
+
+	// The docked primary (#101): Check, disabled until every syllable has a tone.
+	usePrimary(() => (done ? null : { label: t('flashcards.card.check'), run: check, disabled: !complete }));
 
 	function point(event: PointerEvent, pad: HTMLElement): GesturePoint {
 		const rect = pad.getBoundingClientRect();
@@ -206,9 +214,12 @@
 
 <svelte:window onkeydown={onKeydown} />
 
-<p class="written" lang={textLang}>{entry.written}</p>
-<p class="prompt">{t('flashcards.tone.prompt')}</p>
+<FacePrompt>
+	<p class="fp-word written" lang={textLang}>{entry.written}</p>
+	<p class="fp-sub prompt">{t('flashcards.tone.prompt')}</p>
+</FacePrompt>
 
+<FaceWork>
 <ol class="syllables" aria-label={t('flashcards.tone.syllables')} data-card-input>
 	{#each syllables as syllable, index (index)}
 		{@const tone = chosen[index] ?? null}
@@ -242,6 +253,7 @@
 						<polyline class="trace" points={polyline(trace, pads[index] ?? null)} />
 					{/if}
 				</svg>
+				{#if mark === true}<span class="mark"><Icon name="check" size="s" /></span>{:else if mark === false}<span class="mark"><Icon name="close" size="s" /></span>{/if}
 				<span class="plain" class:char={labels !== null} lang={labels === null ? readingLang('pinyin', entry.language) : textLang}>{labels?.[index] ?? syllable.plain}</span>
 			</div>
 			<div class="tone-buttons" role="group" aria-label={labels === null
@@ -272,70 +284,73 @@
 	{/each}
 </ol>
 
-{#if !done}
-	<button type="button" class="primary" disabled={!complete} onclick={check}>{t('flashcards.card.check')}</button>
-{/if}
-
 <p class="feedback" class:bad={verdict !== null && !verdict.correct} role="status" aria-live="polite">
 	{announcement}
 </p>
+</FaceWork>
 
 {#if done}
-	<p class="readings">
-		<Msg key="flashcards.tone.pinyin" args={{ readings: allReadings.join(' / ') }}
-			>{#snippet strong(text: string)}<strong>{text}</strong>{/snippet}</Msg
-		>
-		{#if audio}
-			<PlayButton
-				clips={audio.clips}
-				speakText={audio.speakText}
-				lang={audio.lang}
-				deviceVoice={audio.deviceVoice}
-				label={entry.written}
-			/>
+	<FaceAnswer>
+		<div class="fa-readings">
+			<p class="readings">
+				<Msg key="flashcards.tone.pinyin" args={{ readings: allReadings.join(' / ') }}
+					>{#snippet strong(text: string)}<strong class="fa-reading">{text}</strong>{/snippet}</Msg
+				>
+			</p>
+			{#if audio}
+				<span class="fa-play">
+					<PlayButton
+						clips={audio.clips}
+						speakText={audio.speakText}
+						lang={audio.lang}
+						deviceVoice={audio.deviceVoice}
+						label={entry.written}
+					/>
+				</span>
+			{/if}
+		</div>
+		{#if credit}
+			<p class="credit fa-source">{credit}</p>
 		{/if}
-	</p>
-	{#if credit}
-		<p class="credit">{credit}</p>
-	{/if}
+	</FaceAnswer>
 {/if}
 
 <style>
 	.written {
 		margin: 0;
-		font-size: 2.75rem;
-		font-weight: 700;
-		line-height: 1.2;
 	}
 
 	.prompt {
-		margin: 0.35rem 0 0;
-		color: var(--readable-muted);
+		max-width: 26rem;
 	}
 
 	.syllables {
-		list-style: none;
-		margin: 1rem 0 0;
-		padding: 0;
 		display: flex;
 		flex-wrap: wrap;
-		gap: 1rem;
+		justify-content: center;
+		gap: var(--space-3);
+		margin: 0;
+		padding: 0;
+		list-style: none;
 	}
 
 	.syllable {
 		display: grid;
 		justify-items: center;
-		gap: 0.4rem;
+		gap: var(--space-2);
 	}
 
 	.pad {
 		position: relative;
-		width: 10rem;
-		height: 10rem;
-		border: 2px solid color-mix(in srgb, currentColor 25%, transparent);
-		border-radius: 0.6rem;
+		box-sizing: border-box;
+		width: 6.875rem;
+		height: 6.875rem;
+		border: 1px solid var(--hair);
+		border-radius: var(--radius);
+		background: transparent;
+		--contour: var(--accent);
 		display: grid;
-		place-items: end center;
+		place-items: center;
 		cursor: crosshair;
 		/* Swipes are gestures, never scrolls. */
 		touch-action: none;
@@ -344,14 +359,19 @@
 
 	.syllable.active .pad {
 		border-color: var(--accent);
+		box-shadow: inset 0 0 0 0.5px var(--accent);
 	}
 
 	.pad.right {
+		--contour: var(--good);
 		border-color: var(--good);
+		box-shadow: inset 0 0 0 0.5px var(--good);
 	}
 
 	.pad.wrong {
+		--contour: var(--bad);
 		border-color: var(--bad);
+		box-shadow: inset 0 0 0 0.5px var(--bad);
 	}
 
 	.contour {
@@ -360,7 +380,7 @@
 		width: 100%;
 		height: 100%;
 		fill: none;
-		stroke: var(--accent);
+		stroke: var(--contour);
 		stroke-width: 6;
 		stroke-linecap: round;
 	}
@@ -389,55 +409,69 @@
 	}
 
 	.contour circle {
-		fill: var(--accent);
+		fill: var(--contour);
 		stroke: none;
 	}
 
 	.contour .trace {
-		stroke: color-mix(in srgb, currentColor 45%, transparent);
+		stroke: var(--line);
 		stroke-width: 4;
+	}
+
+	.mark {
+		position: absolute;
+		top: var(--space-1);
+		inset-inline-end: var(--space-1);
+		display: inline-flex;
+		color: var(--text);
 	}
 
 	.plain {
 		position: relative;
-		margin-bottom: 0.35rem;
-		font-size: 1.1rem;
-		font-weight: 600;
+		font-size: var(--font-size-m);
+		font-weight: var(--weight-medium);
 		color: var(--readable-muted);
 	}
 
 	.plain.char {
-		font-size: 3rem;
+		font-family: var(--font-hanzi);
+		font-size: 1.875rem;
+		font-weight: var(--weight-regular);
 		line-height: 1;
-		color: var(--readable-muted);
 	}
 
 	.tone-buttons {
 		display: flex;
-		gap: 0.2rem;
+		gap: 0.125rem;
 	}
 
 	.tone-buttons button {
-		min-width: 1.6rem;
-		padding: 0.2rem 0.3rem;
-		border: 1px solid color-mix(in srgb, currentColor 30%, transparent);
-		border-radius: 0.3rem;
+		min-width: 1.25rem;
+		min-height: 1.5rem;
+		padding: 0 0.125rem;
+		border: 0;
+		border-radius: 0;
 		background: transparent;
-		color: inherit;
+		color: var(--readable-muted);
 		font: inherit;
-		font-size: 0.85rem;
+		font-size: var(--font-size-xs);
+		font-weight: var(--weight-medium);
 		cursor: pointer;
 	}
 
 	.tone-buttons button.selected {
-		border-color: var(--accent);
-		background: color-mix(in srgb, var(--accent) 15%, transparent);
+		color: var(--reading-accent);
+		box-shadow: inset 0 -1.5px 0 var(--accent);
+	}
+
+	.tone-buttons button:disabled {
+		cursor: default;
 	}
 
 	.answer {
 		margin: 0;
-		font-size: 1.1rem;
-		font-weight: 700;
+		font-size: var(--font-size-m);
+		font-weight: var(--weight-strong);
 	}
 
 	.right {
@@ -448,38 +482,17 @@
 		color: var(--readable-bad);
 	}
 
-	.pad.right,
-	.pad.wrong {
-		color: inherit;
-	}
-
-	.primary {
-		margin-top: 1rem;
-		padding: 0.45rem 0.9rem;
-		border: 0;
-		border-radius: 0.4rem;
-		background: var(--accent);
-		color: var(--on-accent);
-		font: inherit;
-		font-weight: 600;
-		cursor: pointer;
-	}
-
-	button:disabled {
-		opacity: 0.45;
-		cursor: not-allowed;
-	}
-
 	button:focus-visible {
-		outline: 2px solid var(--focus-colour);
-		outline-offset: 2px;
+		outline: var(--focus-ring);
+		outline-offset: var(--focus-ring-offset);
 	}
 
 	.feedback {
 		min-height: 1.4rem;
-		margin: 0.75rem 0 0;
-		font-weight: 600;
+		margin: 0;
+		font-weight: var(--weight-strong);
 		color: var(--text);
+		text-align: center;
 	}
 
 	.feedback.bad {
@@ -487,12 +500,26 @@
 	}
 
 	.readings {
-		margin: 0.25rem 0 0;
+		margin: 0;
 	}
 
-	.credit {
-		margin: 0.25rem 0 0;
-		font-size: 0.8rem;
-		color: var(--readable-muted);
+	@media (pointer: coarse) {
+		.tone-buttons button {
+			min-width: 2rem;
+			min-height: var(--hit);
+		}
+	}
+
+	@media (forced-colors: active) {
+		.pad {
+			border-color: ButtonText;
+		}
+		.syllable.active .pad,
+		.pad.right {
+			border: 2px solid Highlight;
+		}
+		.tone-buttons button.selected {
+			text-decoration: underline;
+		}
 	}
 </style>

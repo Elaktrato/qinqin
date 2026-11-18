@@ -266,7 +266,8 @@
 
 <style>
 	h2 {
-		font-size: 1rem;
+		font-size: var(--font-size-s);
+		font-weight: var(--weight-strong);
 		margin: 0.25rem 0 0.6rem;
 	}
 
@@ -282,7 +283,7 @@
 	}
 
 	.here[aria-disabled='true'] {
-		opacity: 0.6;
+		color: var(--readable-muted);
 		cursor: default;
 	}
 
@@ -315,7 +316,7 @@
 		gap: 0.25rem 0.75rem;
 		align-items: baseline;
 		padding: 0.5rem 0;
-		border-bottom: 1px solid color-mix(in srgb, currentColor 12%, transparent);
+		border-bottom: 1px solid var(--hair);
 	}
 
 	.jump {
@@ -338,13 +339,13 @@
 		line-clamp: 2;
 		overflow: hidden;
 		text-decoration: underline;
-		text-decoration-color: color-mix(in srgb, currentColor 40%, transparent);
+		text-decoration-color: var(--line);
 		overflow-wrap: anywhere;
 	}
 
 	.jump:disabled {
 		cursor: default;
-		opacity: 0.7;
+		color: var(--readable-muted);
 	}
 
 	.meta {
@@ -381,7 +382,6 @@
 
 	.count.over {
 		color: var(--readable-bad);
-		opacity: 1;
 	}
 
 	.empty {

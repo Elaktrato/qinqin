@@ -12,6 +12,32 @@ async function openMenu() {
 }
 
 describe('Menu', () => {
+	it('ArrowDown on the closed trigger opens the menu on the first item, ArrowUp on the last (APG)', async () => {
+		render(MenuHarness);
+		const label = () => document.activeElement?.textContent?.trim();
+		for (const [name, key, first] of [
+			['More actions', 'ArrowDown', 'Rename'],
+			['More actions', 'ArrowUp', 'Settings'],
+			['Chinese', 'ArrowDown', 'Japanese'],
+			['Account menu', 'ArrowUp', 'Sign out']
+		] as const) {
+			const trigger = screen.getByRole('button', { name: new RegExp(`^${name}`) });
+			trigger.focus();
+			await fireEvent.keyDown(trigger, { key });
+			expect(trigger.getAttribute('aria-expanded'), `${name} ${key}`).toBe('true');
+			await waitFor(() => expect(label(), `${name} ${key}`).toBe(first));
+			await fireEvent.keyDown(screen.getByRole('menu'), { key: 'Escape' });
+			expect(document.activeElement).toBe(trigger);
+		}
+	});
+
+	it('an arrow on an open trigger does not close the menu', async () => {
+		render(MenuHarness);
+		const { trigger } = await openMenu();
+		await fireEvent.keyDown(trigger, { key: 'ArrowDown' });
+		expect(trigger.getAttribute('aria-expanded')).toBe('true');
+	});
+
 	it('an icon trigger is a named menu button with a tooltip, closed at first', () => {
 		render(MenuHarness);
 		const trigger = screen.getByRole('button', { name: 'More actions' });
@@ -106,6 +132,36 @@ describe('Menu', () => {
 		expect(screen.getByRole('menu', { name: 'Workspaces' })).toBeTruthy();
 	});
 
+	it('a trigger snippet renders inside the trigger button, which keeps its name, aria-haspopup and tooltip', () => {
+		render(MenuHarness);
+		const trigger = screen.getByRole('button', { name: 'Account menu' });
+		expect(trigger.contains(screen.getByTestId('avatar'))).toBe(true);
+		expect(trigger.getAttribute('aria-haspopup')).toBe('menu');
+		expect(trigger.getAttribute('aria-expanded')).toBe('false');
+		const tip = trigger.parentElement?.querySelector('[role="tooltip"]');
+		expect(tip?.textContent).toBe('Account menu');
+		expect(tip?.getAttribute('aria-hidden')).toBe('true');
+	});
+
+	it('a keepOpen item runs onselect and leaves the menu open with focus on the first item of the new content', async () => {
+		const picked = vi.fn();
+		render(MenuHarness, { picked });
+		const trigger = screen.getByRole('button', { name: 'Account menu' });
+		await fireEvent.click(trigger);
+		const menu = screen.getByRole('menu', { name: 'Account menu' });
+		await fireEvent.click(screen.getByRole('menuitem', { name: 'Theme' }));
+		expect(picked).toHaveBeenCalledWith('drill');
+		expect(screen.getByRole('menu', { name: 'Account menu' })).toBe(menu);
+		expect(trigger.getAttribute('aria-expanded')).toBe('true');
+		await waitFor(() => expect(document.activeElement?.textContent?.trim()).toBe('Back'));
+		await fireEvent.click(screen.getByRole('menuitem', { name: 'Back' }));
+		await waitFor(() => expect(document.activeElement?.textContent?.trim()).toBe('Theme'));
+		// An ordinary item still closes and returns focus.
+		await fireEvent.click(screen.getByRole('menuitem', { name: 'Sign out' }));
+		expect(screen.queryByRole('menu', { name: 'Account menu' })).toBeNull();
+		expect(document.activeElement).toBe(trigger);
+	});
+
 	it('the popup is a floating layer in tokens and fades with the motion token', () => {
 		const css = source.slice(source.indexOf('<style>'));
 		expect(css).toMatch(/background: var\(--panel\)/);
@@ -113,5 +169,7 @@ describe('Menu', () => {
 		expect(css).toMatch(/box-shadow: var\(--shadow-float\)/);
 		expect(css).toMatch(/var\(--motion-fast\)/);
 		expect(css).toMatch(/z-index: var\(--layer-float\)/);
+		// Sized by its items, not by the (narrow) trigger it hangs from.
+		expect(css).toMatch(/width: max-content/);
 	});
 });

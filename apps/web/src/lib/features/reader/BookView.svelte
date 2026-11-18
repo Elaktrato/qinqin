@@ -66,6 +66,9 @@
 	} from './highlightUi';
 	import PopupStackView from './PopupStackView.svelte';
 	import ReaderRail from './ReaderRail.svelte';
+	import ContentsPanel from './ContentsPanel.svelte';
+	import { Icon, IconButton } from '$lib/ui';
+	import { setPageActions } from '$lib/frame/pageFrame.svelte';
 	import {
 		loadRailState,
 		railMode,
@@ -134,10 +137,11 @@
 
 	// --- side rail ---
 
-	// Wide screens: a column beside the text (expanded or collapsed to its
-	// tab strip, remembered). Narrow ones: a drawer that always starts
-	// closed. Either way the rail is sticky or fixed, so using it never
-	// scrolls the text (which a toolbar button at the top of the page did).
+	// Wide screens: icons at the right edge with the open tab's panel beside
+	// the text (expanded or collapsed, remembered). Narrow ones: one button
+	// (the frame's phone bar, or a row above the text between the phone
+	// frame and 1000px) opens the rail as a bottom sheet that always starts
+	// closed. The column is sticky, so using it never scrolls the text.
 	let railState = $state(loadRailState(browserStorage()));
 	$effect(() => saveRailState(browserStorage(), { open: railState.open, tab: railState.tab }));
 	let viewportWidth = $state(typeof window === 'undefined' ? 0 : window.innerWidth);
@@ -153,6 +157,14 @@
 		if (mode === 'column') drawerOpen = false;
 	});
 	const railOpen = $derived(mode === 'column' ? railState.open : drawerOpen);
+	// The buttons that open the sheet: the phone bar's and the in-page one.
+	let barButton = $state<HTMLElement | undefined>(undefined);
+	let pageButton = $state<HTMLElement | undefined>(undefined);
+	function sheetOpener(): HTMLElement | null {
+		for (const b of [barButton, pageButton]) if (b?.isConnected && b.getClientRects().length > 0) return b;
+		return barButton?.isConnected ? barButton : (pageButton ?? null);
+	}
+	setPageActions(railButtonBar);
 	// The Words tab is shown: it needs the matches and the known index.
 	const wordsPanelOpen = $derived(railOpen && railState.tab === 'words');
 
@@ -866,11 +878,18 @@
 	}
 
 	function editFromPanel(h: Highlight, opener: HTMLElement): void {
+		if (mode === 'sheet') {
+			// The modal sheet makes the page inert: close it first, then edit
+			// at the highlight in the text (focus returns there).
+			closeSheet();
+			void openEditor(h.id, { from: 'text' });
+			return;
+		}
 		void openEditor(h.id, { anchor: opener, returnTo: opener, from: 'panel' });
 	}
 
 	function jumpToHighlight(h: Highlight): void {
-		if (mode === 'drawer') drawerOpen = false;
+		closeSheet();
 		focusMark = h.id;
 		if (!jumpTo(formatPosition(h.chapter, h.paragraph))) {
 			focusMark = null;
@@ -888,18 +907,30 @@
 		railState.tab = tab;
 	}
 
-	// The drawer covers the text: a jump closes it so the bookmark shows
+	// The modal sheet covers the text: a jump closes it so the place shows
 	// (focus goes to the paragraph, as with every jump).
+	function closeSheet(): void {
+		if (mode === 'sheet') drawerOpen = false;
+	}
 	function jumpFromRail(b: Bookmark): void {
-		if (mode === 'drawer') drawerOpen = false;
+		closeSheet();
 		jumpToBookmark(b);
 	}
 
+	// Display holds the readings, ruby and font settings: Chinese and
+	// Japanese books, or any book with ruby of its own.
+	const hasDisplay = $derived(book?.language === 'ja' || book?.language === 'zh' || hasRuby);
 	const railTabs = $derived([
-		{ id: 'bookmarks' as const, label: t('reader.bookmarks.title'), alert: bookmarksFailed || bookmarks.error !== '' },
-		{ id: 'highlights' as const, label: t('reader.highlights.title'), alert: highlightsFailed || highlights.error !== '' },
-		{ id: 'words' as const, label: t('reader.words.title') }
+		{ id: 'contents' as const, label: t('reader.rail.contents'), icon: 'contents' as const },
+		{ id: 'bookmarks' as const, label: t('reader.bookmarks.title'), icon: 'bookmark' as const, alert: bookmarksFailed || bookmarks.error !== '' },
+		{ id: 'highlights' as const, label: t('reader.highlights.title'), icon: 'highlight' as const, alert: highlightsFailed || highlights.error !== '' },
+		{ id: 'words' as const, label: t('reader.words.title'), icon: 'words' as const },
+		...(hasDisplay ? [{ id: 'display' as const, label: t('reader.rail.display'), icon: 'display' as const }] : [])
 	]);
+	// A stored tab the book does not have (Display on a plain-text book) shows Contents.
+	const activeTab = $derived(railTabs.some((tab) => tab.id === railState.tab) ? railState.tab : 'contents');
+	const railAlert = $derived(railTabs.some((tab) => tab.alert));
+	const contentsTitles = $derived(Array.from({ length: chapterCount }, (_, n) => chapterTitles[n]));
 
 	// --- words panel: coverage and unknown words (#68) ---
 
@@ -1079,36 +1110,49 @@
 		};
 	});
 
-	function jump(event: Event & { currentTarget: HTMLSelectElement }): void {
-		void goto(bookHref(id, Number(event.currentTarget.value)));
-	}
 </script>
 
-{#snippet chapterNav(label: string)}
-	<nav class="chapters" aria-label={label}>
-		{#if chapter > 0}
-			<a href={bookHref(id, chapter - 1)} rel="prev">{t('reader.book.previous')}</a>
-		{/if}
-		{#if chapterCount > 1}
-			<label>
-				{t('reader.book.chapter')}
-				<select value={chapter} onchange={jump}>
-					{#each { length: chapterCount }, i (i)}
-						<option value={i}>{i + 1}</option>
-					{/each}
-				</select>
-				{t('reader.book.of', { count: chapterCount })}
-			</label>
-		{/if}
-		{#if chapter < chapterCount - 1}
-			<a href={bookHref(id, chapter + 1)} rel="next">{t('reader.book.next')}</a>
-		{/if}
-	</nav>
+<!-- The one button for the rail below 1000px: in the frame's phone bar, and
+     in a row above the text between the phone frame and 1000px. -->
+{#snippet railButton(bind: (el: HTMLElement | undefined) => void)}
+	{#if book && mode === 'sheet'}
+		<span class="rail-button">
+			<IconButton
+				label={railAlert ? `${t('reader.rail.open')} ${t('reader.rail.attention')}` : t('reader.rail.open')}
+				icon="contents"
+				placement="below-end"
+				aria-haspopup="dialog"
+				aria-expanded={drawerOpen}
+				bind:element={() => undefined, bind}
+				onclick={() => (drawerOpen = true)}
+			/>
+			{#if railAlert}<span class="dot" aria-hidden="true"></span>{/if}
+		</span>
+	{/if}
+{/snippet}
+{#snippet railButtonBar()}{@render railButton((el) => (barButton = el))}{/snippet}
+
+{#snippet chapterNav()}
+	{#if chapterCount > 1}
+		<nav class="chapters" aria-label={t('reader.book.chaptersEnd')}>
+			{#if chapter > 0}
+				<IconButton href={bookHref(id, chapter - 1)} label={t('reader.book.previousChapter')} icon="back" placement="above" />
+			{/if}
+			{#if chapter < chapterCount - 1}
+				<span class="next"
+					><IconButton href={bookHref(id, chapter + 1)} label={t('reader.book.nextChapter')} icon="forward" placement="above" /></span
+				>
+			{/if}
+		</nav>
+	{/if}
 {/snippet}
 
-<main class="book" class:column={book !== null && mode === 'column'}>
+<div class="page-body book" class:column={book !== null && mode === 'column'}>
 	<div class="reading">
-		<p><a href={LIBRARY_HREF}>{t('reader.sources.back')}</a></p>
+		<div class="top-row">
+			<a class="back" href={LIBRARY_HREF}>{t('reader.sources.back')}</a>
+			<span class="page-rail-button">{@render railButton((el) => (pageButton = el))}</span>
+		</div>
 
 		{#if bookError}
 			<p class="error" role="alert">{bookError}</p>
@@ -1116,33 +1160,19 @@
 		{:else if !book}
 			<p aria-live="polite">{t('reader.book.loading')}</p>
 		{:else}
-			<header>
+			<!-- The book line (design §9): title · author in the book's script, and
+			     whether the paragraph in view is bookmarked. -->
+			<header class="book-line">
 				<h1 lang={book.language}>{book.title}</h1>
-				{#if book.author}<p class="author" lang={book.language}>{book.author}</p>{/if}
+				{#if book.author}<span class="sep" aria-hidden="true">·</span><span class="author" lang={book.language}
+						>{book.author}</span
+					>{/if}
+				{#if hereBookmark}
+					<span class="here-mark" role="img" aria-label={t('reader.book.bookmarkedHere')}><Icon name="bookmark" size="s" /></span>
+				{/if}
 			</header>
 
-			<div class="toggles">
-				{#if book.language === 'ja' || book.language === 'zh' || hasRuby}
-					<DisplayPanel
-						{display}
-						hasBookRuby={hasRuby}
-						{showAll}
-						onchange={changeDisplay}
-						ontoggleAll={() => reveal.toggleAll()}
-					/>
-				{/if}
-				{#if book.language === 'zh'}
-					<label>
-						{t('reader.book.script')}
-						<select bind:value={prefs.variant}>
-							<option value="original">{t('reader.book.original')}</option>
-							<option value="simplified">{t('reader.book.simplified')}</option>
-							<option value="traditional">{t('reader.book.traditional')}</option>
-						</select>
-					</label>
-					{#if variantError}<span class="error" role="alert">{variantError}</span>{/if}
-				{/if}
-			</div>
+			{#if variantError}<p class="error" role="alert">{variantError}</p>{/if}
 
 			{#if displayNotice}<p class="error" role="alert">{displayNotice}</p>{/if}
 			{#if readings.failed > 0}
@@ -1152,8 +1182,6 @@
 				</p>
 			{/if}
 
-			{@render chapterNav(t('reader.book.chapters'))}
-
 			{#if chapterError}
 				<p class="error" role="alert">{chapterError}</p>
 				<button type="button" onclick={() => loadChapter(id, chapter)}>{t('reader.library.retry')}</button>
@@ -1161,7 +1189,7 @@
 				<p aria-live="polite">{t('reader.book.loadingChapter')}</p>
 			{:else}
 				<article>
-					<h2 lang={content.data.title.trim() ? textLang : undefined}>
+					<h2 class="chapter-title" lang={content.data.title.trim() ? textLang : undefined}>
 						{chapterTitle(content.data.title, content.n)}
 					</h2>
 					<ChapterText
@@ -1179,7 +1207,7 @@
 						bind:container
 					/>
 				</article>
-				{@render chapterNav(t('reader.book.chaptersEnd'))}
+				{@render chapterNav()}
 			{/if}
 
 			<footer class="credits">
@@ -1221,15 +1249,32 @@
 	{#if book}
 		<ReaderRail
 			tabs={railTabs}
-			active={railState.tab}
+			active={activeTab}
 			onSelect={selectTab}
 			open={railOpen}
 			onToggle={toggleRail}
 			{mode}
-			escapeBlocked={() => lookup.info !== null}
+			opener={sheetOpener}
 		>
 			{#snippet panel(tab: RailTab)}
-				{#if tab === 'bookmarks'}
+				{#if tab === 'contents'}
+					<ContentsPanel
+						titles={contentsTitles}
+						current={chapter}
+						hrefOf={(n) => bookHref(id, n)}
+						lang={textLang}
+						onjump={closeSheet}
+					/>
+				{:else if tab === 'display'}
+					<DisplayPanel
+						{display}
+						hasBookRuby={hasRuby}
+						{showAll}
+						onchange={changeDisplay}
+						ontoggleAll={() => reveal.toggleAll()}
+						script={book?.language === 'zh' ? { value: prefs.variant, onchange: (v) => (prefs.variant = v) } : undefined}
+					/>
+				{:else if tab === 'bookmarks'}
 					<BookmarksPanel
 						list={bookmarks}
 						lang={textLang}
@@ -1279,27 +1324,35 @@
 	<p class="visually-hidden" role="alert">{bookmarkAlert}</p>
 	<p class="visually-hidden" role="status" aria-live="polite">{highlightLive}</p>
 	<p class="visually-hidden" role="alert">{highlightAlert}</p>
-</main>
+</div>
 
 <style>
+	/* The reading page (design §9 "Reader"): the text column gets the width,
+	   centred in the space left of the rail; the rail sits at the right edge. */
 	.book {
-		max-width: 44rem;
+		max-width: none;
+		padding-block: var(--space-5) var(--space-6);
 	}
 
-	/* Wide screens: the text column keeps its width (44rem at most) and
-	   the rail sits beside it. Collapsed, the rail is just its tab strip;
-	   the page keeps its width, so the text does not move sideways. */
 	.book.column {
-		display: flex;
-		gap: 2rem;
-		align-items: flex-start;
-		max-width: calc(44rem + 2rem + 18rem);
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) auto;
+		align-items: start;
+		padding-inline-end: 0;
+		padding-block-start: 0;
 	}
 
 	.reading {
-		flex: 1 1 auto;
 		min-width: 0;
-		max-width: 44rem;
+		/* 40em of the reader text (1.25rem): the line length the design gives it. */
+		max-width: 50rem;
+		margin-inline: auto;
+	}
+
+	/* The padding sits outside the 50rem text width. */
+	.book.column .reading {
+		padding: var(--space-5) var(--space-6) 0;
+		box-sizing: content-box;
 	}
 
 	.visually-hidden {
@@ -1311,30 +1364,103 @@
 		white-space: nowrap;
 	}
 
-	.author {
-		margin-top: -0.5rem;
+	.top-row {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: var(--space-3);
+		margin-bottom: var(--space-3);
+		font-size: var(--font-size-s);
+	}
+
+	.back {
 		color: var(--readable-muted);
 	}
 
-	.toggles,
+	/* The book line: small, the title and author in the book's script. */
+	.book-line {
+		display: flex;
+		align-items: center;
+		flex-wrap: wrap;
+		gap: var(--space-1) var(--space-2);
+		margin-bottom: var(--space-2);
+		font-size: var(--font-size-s);
+	}
+
+	.book-line h1 {
+		margin: 0;
+		font-size: inherit;
+		font-weight: var(--weight-strong);
+		font-family: var(--font-hanzi);
+	}
+
+	.sep,
+	.author {
+		color: var(--readable-muted);
+	}
+
+	.author {
+		font-family: var(--font-hanzi);
+	}
+
+	.here-mark {
+		display: inline-flex;
+		margin-inline-start: auto;
+		color: var(--accent);
+	}
+
+	.chapter-title {
+		margin: 0 0 var(--space-4);
+		font-size: var(--font-size-m);
+		font-weight: var(--weight-medium);
+		color: var(--readable-muted);
+	}
+
 	.chapters {
 		display: flex;
-		flex-wrap: wrap;
-		gap: 0.75rem 1.25rem;
-		align-items: center;
-		margin: 0.75rem 0;
+		justify-content: space-between;
+		gap: var(--space-3);
+		margin: var(--space-4) 0;
+	}
+
+	.chapters .next {
+		margin-inline-start: auto;
+	}
+
+	.rail-button {
+		position: relative;
+		display: inline-flex;
+	}
+
+	.dot {
+		position: absolute;
+		top: 0.2rem;
+		inset-inline-end: 0.2rem;
+		width: 0.5rem;
+		height: 0.5rem;
+		border-radius: 50%;
+		background: var(--bad);
+		border: 2px solid var(--panel);
+		pointer-events: none;
+	}
+
+	/* The phone frame has the button in its bar (lib/frame/breakpoint.ts). */
+	@media (max-width: 719.98px) {
+		.page-rail-button {
+			display: none;
+		}
 	}
 
 	.credits {
-		margin-top: 2.5rem;
-		padding-top: 0.75rem;
-		border-top: 1px solid color-mix(in srgb, currentColor 18%, transparent);
-		font-size: 0.85rem;
+		margin-top: var(--space-6);
+		padding-top: var(--space-3);
+		border-top: 1px solid var(--hair);
+		font-size: var(--font-size-xs);
 		color: var(--readable-muted);
 	}
 
 	.credits p {
-		margin: 0.25rem 0;
+		margin: var(--space-1) 0;
 	}
 
 	/* Aozora attributions are several lines (底本, 入力, 校正...). */
@@ -1346,5 +1472,11 @@
 		color: var(--readable-bad);
 		padding-inline-start: var(--space-2);
 		border-inline-start: 3px solid var(--bad);
+	}
+
+	@media (forced-colors: active) {
+		.dot {
+			background: Highlight;
+		}
 	}
 </style>

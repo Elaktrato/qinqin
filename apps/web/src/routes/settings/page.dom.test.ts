@@ -44,6 +44,16 @@ describe('settings loading states', () => {
 	});
 });
 
+describe('the new-workspace target (#99)', () => {
+	it('the drawer\'s + lands on the New workspace heading (#new-workspace, focusable by script)', async () => {
+		render(Page);
+		const heading = document.getElementById('new-workspace');
+		expect(heading?.tagName).toBe('H3');
+		expect(heading?.textContent).toBe('New workspace');
+		expect(heading?.getAttribute('tabindex')).toBe('-1');
+	});
+});
+
 describe('settings after a failed shell load', () => {
 	it('shows the error with Try again instead of loading forever, and recovers', async () => {
 		workspacesLoadError.set('Could not load workspaces.');

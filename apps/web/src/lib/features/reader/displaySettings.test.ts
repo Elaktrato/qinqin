@@ -2,8 +2,7 @@ import { describe, expect, it } from 'vitest';
 import settingsFixture from '../../../../../../docs/contracts/settings/workspace-settings.json';
 import fixture from '../../../../../../docs/contracts/reader/display-settings.json';
 import { hanziStack, installedFaces } from '$lib/fonts/hanzi';
-import { fontStack } from './fonts';
-import { DEFAULT_DISPLAY, displayPatch, parseDisplay, RUBY_SCALES } from './displaySettings';
+import { DEFAULT_DISPLAY, displayPatch, fontStack, parseDisplay, READER_FONTS, RUBY_SCALES } from './displaySettings';
 
 describe('parseDisplay (contract)', () => {
 	expect(fixture.version).toBe(1);
@@ -62,6 +61,9 @@ describe('fontStack', () => {
 	});
 	it('an installed pack face comes first', () => {
 		expect(fontStack('kai', 'zh-Hans', installedFaces([{ face: 'kai', script: 'Hans' }]))).toMatch(/^"qq-kai-Hans", /);
+	});
+	it('READER_FONTS lives with the settings (fonts.ts is gone)', () => {
+		expect(READER_FONTS).toEqual(['default', 'sans', 'serif', 'kai']);
 	});
 	it('an unknown language gets the generic stacks', () => {
 		expect(fontStack('serif', 'en')).toMatch(/serif$/);

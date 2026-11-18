@@ -8,7 +8,7 @@ import { describe, expect, it } from 'vitest';
 
 const src = resolve(__dirname, '../../..');
 /** Rebuilt by the app-frame work (#99) in parallel; it moves to --focus-ring there. */
-const PENDING = ['routes/+layout.svelte'];
+const PENDING: string[] = [];
 
 function walk(dir: string): string[] {
 	return readdirSync(dir, { withFileTypes: true }).flatMap((e) =>

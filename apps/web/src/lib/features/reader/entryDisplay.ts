@@ -114,3 +114,15 @@ export function parseXref(text: string): Xref {
 export function moreLabel(hidden: number, kind: 'sense' | 'entry'): string {
 	return kind === 'sense' ? t('reader.entry.moreSenses', { count: hidden }) : t('reader.entry.moreEntries', { count: hidden });
 }
+
+/**
+ * levelChips are the result's level chips ("HSK 3"): one per scheme, in result
+ * order. A level already named with its scheme's first word (the bundled
+ * "HSK 3.0 (words)" scheme names its levels "HSK 1"…) is shown alone.
+ */
+export function levelChips(r: LookupResult): string[] {
+	return (r.levels ?? []).map((l) => {
+		const word = l.scheme.trim().split(/\s+/)[0] ?? '';
+		return word && l.level.startsWith(word) ? l.level : t('reader.entry.level', { scheme: l.scheme, level: l.level });
+	});
+}

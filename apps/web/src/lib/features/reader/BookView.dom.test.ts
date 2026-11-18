@@ -1,5 +1,5 @@
 import { pagedPull } from '$lib/study/testing/legacyCodec';
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/svelte';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/svelte';
 import { tick } from 'svelte';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -44,7 +44,7 @@ vi.mock('$lib/workspaces', async () => {
 	return { workspaces: state, setSettings: vi.fn(async () => ({})) };
 });
 
-import { getBook, getChapter } from '$lib/api/library';
+import { addBookmark, addHighlight, getBook, getChapter, listBookmarks, listHighlights } from '$lib/api/library';
 import { loadStudyHistory } from '$lib/study/history';
 import { segmentWithReadings } from '$lib/api/segment';
 import { setSettings, workspaces } from '$lib/workspaces';
@@ -114,7 +114,8 @@ describe('BookView readings', () => {
 	it('switching to Never makes the readings go and saves one patch', async () => {
 		render(BookView, { id: 1, chapter: 0 });
 		await waitFor(() => expect(document.querySelectorAll('ruby.gen')).toHaveLength(2));
-		await fireEvent.click(screen.getByRole('button', { name: 'Display' }));
+		// The Display settings are the rail's Display tab now (#102).
+		await fireEvent.click(screen.getByRole('tab', { name: 'Display' }));
 		await fireEvent.click(screen.getByRole('radio', { name: /^Never/ }));
 		await waitFor(() => expect(document.querySelectorAll('ruby.gen')).toHaveLength(0));
 		await waitFor(() => expect(setSettings).toHaveBeenCalledTimes(1), { timeout: 2000 });
@@ -138,8 +139,9 @@ describe('BookView word states', () => {
 	it('highlighting on with readings never: loads matches and marks the new word only', async () => {
 		setReader({ readings: 'never', highlightWords: true });
 		render(BookView, { id: 1, chapter: 0 });
-		await waitFor(() => expect(document.querySelectorAll('.w-new')).toHaveLength(1));
-		expect(document.querySelector('.w-new')?.textContent).toBe('世界');
+		// In the text (the Display legend draws a sample mark too).
+		await waitFor(() => expect(document.querySelectorAll('.chapter-text .w-new')).toHaveLength(1));
+		expect(document.querySelector('.chapter-text .w-new')?.textContent).toBe('世界');
 		expect(document.querySelector('ruby.gen')).toBeNull();
 		expect(segmentWithReadings).toHaveBeenCalledTimes(1);
 	});
@@ -156,8 +158,8 @@ describe('BookView Words tab', () => {
 		await screen.findByText('You know 50% of the words in this chapter');
 		expect(segmentWithReadings).toHaveBeenCalledTimes(1);
 		expect(screen.getByRole('checkbox', { name: '世界' })).toBeTruthy();
-		// The panel alone draws no word states in the text.
-		expect(document.querySelector('.w-new')).toBeNull();
+		// The panel alone draws no word states in the text (its own list shows sample marks).
+		expect(document.querySelector('.chapter-text .w-new')).toBeNull();
 	});
 });
 
@@ -257,5 +259,255 @@ describe('BookView in another language', () => {
 		await screen.findByText('你好世界');
 		await new Promise((r) => setTimeout(r, 30));
 		expect(loadStudyHistory).not.toHaveBeenCalled();
+	});
+});
+
+// #102: the rail at the right edge, the book line, the phone sheet.
+
+// Reports every observed paragraph as in view, so "the paragraph in view" exists.
+class VisibleObserver {
+	constructor(private callback: (records: unknown[]) => void) {}
+	observe(el: Element) {
+		this.callback([{ isIntersecting: true, target: el }]);
+	}
+	unobserve() {}
+	disconnect() {}
+	takeRecords() {
+		return [];
+	}
+}
+
+function setWidth(px: number): void {
+	Object.defineProperty(window, 'innerWidth', { configurable: true, value: px });
+}
+
+const RAIL_BUTTON = 'Contents, bookmarks, highlights, words and display';
+
+describe('BookView rail (#102)', () => {
+	beforeEach(() => {
+		Element.prototype.scrollIntoView ??= function () {};
+	});
+	afterEach(() => setWidth(1024));
+
+	it('the rail lists Contents, Bookmarks, Highlights, Words, Display', async () => {
+		setWidth(1280);
+		render(BookView, { id: 1, chapter: 0 });
+		const list = await screen.findByRole('tablist', { name: 'Side panel' });
+		expect(within(list).getAllByRole('tab').map((tab) => tab.getAttribute('aria-label'))).toEqual([
+			'Contents',
+			'Bookmarks',
+			'Highlights',
+			'Words',
+			'Display'
+		]);
+	});
+
+	it('the Display settings and script choice are not above the text any more', async () => {
+		setWidth(1280);
+		render(BookView, { id: 1, chapter: 0 });
+		await screen.findByText('你好世界');
+		expect(screen.queryByRole('radio', { name: /^Never/ })).toBeNull();
+		expect(screen.queryByRole('combobox', { name: 'Script' })).toBeNull();
+		await fireEvent.click(screen.getByRole('tab', { name: 'Display' }));
+		const panel = screen.getByRole('tabpanel');
+		expect(within(panel).getByRole('radio', { name: /^Never/ })).toBeTruthy();
+		expect(within(panel).getByRole('combobox', { name: 'Script' })).toBeTruthy();
+	});
+
+	it('chapter navigation: Contents panel links and prev/next icon buttons at the chapter end', async () => {
+		setWidth(1280);
+		vi.mocked(getBook).mockResolvedValue({
+			id: 1, workspaceId: 7, language: 'zh', title: 'T', author: '', source: '', sourceId: '', sourceUrl: '',
+			attribution: '', licenseNote: '', chapterCount: 3, position: '', createdAt: ''
+		});
+		render(BookView, { id: 1, chapter: 1 });
+		await screen.findByText('你好世界');
+		expect(screen.queryByRole('combobox', { name: /Chapter/ })).toBeNull();
+		const prev = screen.getByRole('link', { name: 'Previous chapter' });
+		const next = screen.getByRole('link', { name: 'Next chapter' });
+		expect(prev.getAttribute('href')).toBe('/reader/book/1/0');
+		expect(next.getAttribute('href')).toBe('/reader/book/1/2');
+		await fireEvent.click(screen.getByRole('tab', { name: 'Contents' }));
+		const nav = screen.getByRole('navigation', { name: 'Contents' });
+		expect(within(nav).getAllByRole('link').map((a) => a.getAttribute('href'))).toEqual([
+			'/reader/book/1/0',
+			'/reader/book/1/1',
+			'/reader/book/1/2'
+		]);
+		expect(within(nav).getByRole('link', { name: 'One (reading now)' }).getAttribute('aria-current')).toBe('page');
+	});
+
+	it('the book line shows title · author and a bookmarked state for the paragraph in view', async () => {
+		setWidth(1280);
+		vi.stubGlobal('IntersectionObserver', VisibleObserver);
+		vi.mocked(getBook).mockResolvedValue({
+			id: 1, workspaceId: 7, language: 'zh', title: '故乡', author: '鲁迅', source: '', sourceId: '', sourceUrl: '',
+			attribution: '', licenseNote: '', chapterCount: 1, position: '', createdAt: ''
+		});
+		vi.mocked(listBookmarks).mockResolvedValueOnce([
+			{ id: 5, bookId: 1, position: '0:0', label: '你好', createdAt: '2026-11-16T10:00:00Z' }
+		] as never);
+		render(BookView, { id: 1, chapter: 0 });
+		const heading = await screen.findByRole('heading', { level: 1, name: '故乡' });
+		const line = heading.closest('.book-line') as HTMLElement;
+		expect(line.textContent).toContain('鲁迅');
+		expect(heading.getAttribute('lang')).toBe('zh');
+		expect(await within(line).findByRole('img', { name: 'This place is bookmarked' })).toBeTruthy();
+	});
+
+	it('below 1000px one button opens a sheet with the five tabs', async () => {
+		setWidth(800);
+		render(BookView, { id: 1, chapter: 0 });
+		await screen.findByText('你好世界');
+		expect(screen.queryByRole('tablist')).toBeNull();
+		const buttons = screen.getAllByRole('button', { name: RAIL_BUTTON });
+		expect(buttons).toHaveLength(1);
+		await fireEvent.click(buttons[0]);
+		const sheet = screen.getByRole('dialog', { name: 'Book tools' });
+		expect(within(sheet).getAllByRole('tab').map((tab) => tab.textContent?.trim())).toEqual([
+			'Contents',
+			'Bookmarks',
+			'Highlights',
+			'Words',
+			'Display'
+		]);
+	});
+
+	it('jumping from a panel in the sheet closes it and moves to the place', async () => {
+		setWidth(800);
+		vi.mocked(listBookmarks).mockResolvedValueOnce([
+			{ id: 5, bookId: 1, position: '0:0', label: '你好', createdAt: '2026-11-16T10:00:00Z' }
+		] as never);
+		render(BookView, { id: 1, chapter: 0 });
+		await screen.findByText('你好世界');
+		await fireEvent.click(screen.getByRole('button', { name: RAIL_BUTTON }));
+		const sheet = screen.getByRole('dialog', { name: 'Book tools' });
+		await fireEvent.click(within(sheet).getByRole('tab', { name: /Bookmarks/ }));
+		await fireEvent.click(await within(sheet).findByRole('button', { name: '你好' }));
+		await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Book tools' })).toBeNull());
+		await waitFor(() => expect(document.activeElement?.getAttribute('data-p')).toBe('0'));
+	});
+
+	it('editing a highlight from the sheet closes it and opens the editor', async () => {
+		setWidth(800);
+		vi.mocked(listHighlights).mockResolvedValueOnce([
+			{ id: 9, bookId: 1, chapter: 0, paragraph: 0, start: 0, end: 2, text: '你好', color: 'yellow', note: '', createdAt: '', updatedAt: '' }
+		] as never);
+		render(BookView, { id: 1, chapter: 0 });
+		await waitFor(() => expect(document.querySelector('mark[data-h="9"]')).toBeTruthy());
+		await fireEvent.click(screen.getByRole('button', { name: RAIL_BUTTON }));
+		const sheet = screen.getByRole('dialog', { name: 'Book tools' });
+		await fireEvent.click(within(sheet).getByRole('tab', { name: /Highlights/ }));
+		await fireEvent.click(await within(sheet).findByRole('button', { name: 'Edit highlight 你好' }));
+		await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Book tools' })).toBeNull());
+		expect(await screen.findByRole('button', { name: 'Close the highlight editor' })).toBeTruthy();
+	});
+
+	it('the bookmark and highlight live regions are outside the rail and the sheet', async () => {
+		setWidth(1280);
+		render(BookView, { id: 1, chapter: 0 });
+		const rail = await screen.findByRole('complementary', { name: 'Side panel' });
+		const regions = [...document.querySelectorAll('[role="status"], [role="alert"]')].filter((el) =>
+			el.classList.contains('visually-hidden')
+		);
+		expect(regions).toHaveLength(4);
+		for (const region of regions) expect(rail.contains(region)).toBe(false);
+	});
+
+	it('existing: the Words tab is found by its name', async () => {
+		render(BookView, { id: 1, chapter: 0 });
+		expect(await screen.findByRole('tab', { name: /Words/ })).toBeTruthy();
+	});
+});
+
+describe('BookView shortcuts and focus across the new layout (#102)', () => {
+	beforeEach(() => {
+		Element.prototype.scrollIntoView ??= function () {};
+		vi.stubGlobal('IntersectionObserver', VisibleObserver);
+		vi.mocked(addBookmark).mockReset();
+		vi.mocked(addBookmark).mockImplementation(async (bookId: number, position: string, label: string) => ({
+			id: 77, bookId, position, label, createdAt: '2026-11-17T10:00:00Z'
+		}) as never);
+		vi.mocked(addHighlight).mockReset();
+		vi.mocked(addHighlight).mockImplementation(async (bookId: number, h: object) => ({
+			id: 88, bookId, ...h, note: '', createdAt: '', updatedAt: ''
+		}) as never);
+	});
+	afterEach(() => setWidth(1024));
+
+	async function ready(): Promise<void> {
+		await waitFor(() => expect(document.querySelector('p[data-p="0"]')).toBeTruthy());
+		await tick();
+	}
+
+	it('b toggles the bookmark with the rail collapsed and with the sheet closed', async () => {
+		setWidth(1280);
+		render(BookView, { id: 1, chapter: 0 });
+		await ready();
+		const active = screen.getByRole('tab', { selected: true });
+		await fireEvent.click(active);
+		expect(screen.queryByRole('tabpanel')).toBeNull();
+		await fireEvent.keyDown(window, { key: 'b' });
+		await waitFor(() => expect(addBookmark).toHaveBeenCalledTimes(1));
+		cleanup();
+		setWidth(800);
+		render(BookView, { id: 1, chapter: 0 });
+		await ready();
+		expect(screen.queryByRole('dialog')).toBeNull();
+		await fireEvent.keyDown(window, { key: 'b' });
+		await waitFor(() => expect(addBookmark).toHaveBeenCalledTimes(2));
+	});
+
+	it('h highlights the selection', async () => {
+		setReader({ readings: 'never', highlightWords: false });
+		setWidth(800);
+		render(BookView, { id: 1, chapter: 0 });
+		await ready();
+		const text = document.querySelector('p[data-p="0"] [data-r="0"]')!.firstChild!;
+		const range = document.createRange();
+		range.setStart(text, 0);
+		range.setEnd(text, 2);
+		window.getSelection()!.removeAllRanges();
+		window.getSelection()!.addRange(range);
+		await fireEvent.keyDown(window, { key: 'h' });
+		await waitFor(() => expect(addHighlight).toHaveBeenCalledTimes(1));
+		const [, body] = vi.mocked(addHighlight).mock.calls[0] as unknown as [number, Record<string, unknown>];
+		expect(body).toMatchObject({ chapter: 0, paragraph: 0, start: 0, end: 2 });
+	});
+
+	it('R reveals all readings in smart mode with the sheet closed', async () => {
+		setWidth(800);
+		render(BookView, { id: 1, chapter: 0 });
+		await waitFor(() => expect(document.querySelectorAll('ruby.gen')).toHaveLength(2));
+		const root = document.querySelector('.chapter-text')!;
+		await fireEvent.keyDown(window, { key: 'R' });
+		expect(root.classList.contains('show-all')).toBe(true);
+	});
+
+	it('Escape in the open rail sheet closes it and focus returns to the rail button', async () => {
+		setWidth(800);
+		render(BookView, { id: 1, chapter: 0 });
+		await ready();
+		const button = screen.getByRole('button', { name: RAIL_BUTTON });
+		button.focus();
+		await fireEvent.click(button);
+		const sheet = screen.getByRole('dialog', { name: 'Book tools' });
+		expect(sheet.contains(document.activeElement)).toBe(true);
+		await fireEvent.keyDown(sheet, { key: 'Escape' });
+		await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Book tools' })).toBeNull());
+		expect(document.activeElement).toBe(button);
+	});
+
+	it('crossing 1000px with focus in the rail moves focus to the rail button and back to the active tab', async () => {
+		setWidth(1280);
+		render(BookView, { id: 1, chapter: 0 });
+		await ready();
+		screen.getByRole('tab', { selected: true }).focus();
+		setWidth(800);
+		window.dispatchEvent(new Event('resize'));
+		await waitFor(() => expect(document.activeElement).toBe(screen.getByRole('button', { name: RAIL_BUTTON })));
+		setWidth(1280);
+		window.dispatchEvent(new Event('resize'));
+		await waitFor(() => expect(document.activeElement).toBe(screen.getByRole('tab', { selected: true })));
 	});
 });

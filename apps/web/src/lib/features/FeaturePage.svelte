@@ -24,7 +24,7 @@
 	{@const Page = feature.component}
 	<Page {rest} />
 {:else}
-	<main>
+	<div class="page-body">
 		{#if $pluginStates.status === 'idle' || $pluginStates.status === 'loading'}
 			<p role="status">{t('app.loading')}</p>
 		{:else if $pluginStates.status === 'error'}
@@ -35,5 +35,5 @@
 				<Msg key="features.switchedOff.text">{#snippet link(text: string)}<a href="/settings?tab=features">{text}</a>{/snippet}</Msg>
 			</p>
 		{/if}
-	</main>
+	</div>
 {/if}

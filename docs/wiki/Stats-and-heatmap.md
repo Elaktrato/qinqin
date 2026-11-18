@@ -1,6 +1,6 @@
 # Stats and the activity heatmap
 
-**Stats** is in the footer of every signed-in page (`/stats`). It has up to three tabs.
+**Stats** is the bar-chart icon in the top bar (in the menu drawer on a phone) of every signed-in page (`/stats`). It has up to three tabs.
 
 - **Overview** shows every widget that applies to the current workspace, in a fixed order (core first, then flashcards and the reader, then plugins).
 - **Week** (`/stats/week`) is the [weekly summary](Weekly-summary): one week, Monday to Sunday, compared with the week before; previous weeks are a link away. It needs a workspace. It also shows your [milestones](Milestones): a card for new ones and the full list (`/stats/week#milestones`).
@@ -26,6 +26,19 @@ One cell per day over the last 13 weeks, coloured by points. A flashcard review 
 - A chip per activity type hides or shows that type. The choice is remembered per user on every device.
 - Vacation days are hatched.
 - Days are your learner's days in your time zone, not UTC dates ([Settings tour](Settings-tour)).
+- Today's tile has a ring and its tooltip says "today".
+
+### Layouts on the home page
+
+On the home page the heatmap has three layouts; choose one under **Settings → Home** (on the Activity row). Stats always shows the garden grid.
+
+- **Garden grid**: the last 13 weeks, one small tile per day (the default).
+- **Month calendar**: one month with dates and bigger tiles. **Previous month** / **Next month** page through the last year; a line says on how many days of the month you reached your daily goal.
+- **This week**: Monday to Sunday as seven large tiles with your amount under each ("21/50" with a daily goal, else the points) and what is left for today. The whole block opens Stats → Week.
+
+### Flower stages
+
+With a [daily goal](Daily-goals) in this workspace, each day has a flower stage: **Nothing yet** (nothing done), **Sprout** (under a third of the goal), **Bud** (a third or more), **Opening** (two thirds or more), **In bloom** (goal reached) or **Resting** (a vacation day). For now the stage is named in the tile's tooltip and in the screen-reader text ("21 of 50 — Bud"); the flower drawings come later, so the tiles show only the activity tint. Under **All workspaces** there are no stages (goals belong to one workspace).
 
 ## The character map
 

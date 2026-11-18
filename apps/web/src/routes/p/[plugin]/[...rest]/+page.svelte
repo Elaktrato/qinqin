@@ -32,12 +32,12 @@
 </svelte:head>
 
 {#if $pluginStates.status === 'idle' || $pluginStates.status === 'loading'}
-	<main><p>{t('app.plugin.loading')}</p></main>
+	<div class="page-body"><p>{t('app.plugin.loading')}</p></div>
 {:else if $pluginStates.status === 'error'}
-	<main><p role="alert">{t('app.plugin.loadFailed')}</p></main>
+	<div class="page-body"><p role="alert">{t('app.plugin.loadFailed')}</p></div>
 {:else if view}
 	{@const Page = view.component}
 	<Page rest={page.params.rest ?? ''} />
 {:else}
-	<main><p>{t('app.plugin.unavailable')}</p></main>
+	<div class="page-body"><p>{t('app.plugin.unavailable')}</p></div>
 {/if}

@@ -25,14 +25,23 @@ type Derived struct {
 	SelectedWash    string            `json:"selectedWash"`
 	Mastery         []string          `json:"mastery"` // stage 0 (an outline in hair) .. 4
 	ReadingAccent   string            `json:"readingAccent"`
-	ReadableBad     string            `json:"readableBad"`   // error text: bad when it reads on panel, else text
-	ReadableMuted   string            `json:"readableMuted"` // secondary text: muted when it reads on panel, else text
-	FocusRing       string            `json:"focusRing"`     // accent when 3:1 on panel, raised and chrome, else text
+	ReadableBad     string            `json:"readableBad"`    // error text: bad when it reads on panel, else text
+	ReadableMuted   string            `json:"readableMuted"`  // secondary text: muted when it reads on panel, else text
+	ReadableGrades  Grades            `json:"readableGrades"` // grade names as text: each grade when it reads on panel, else text
+	FocusRing       string            `json:"focusRing"`      // accent when 3:1 on panel, raised and chrome, else text
 	HighlightWash   string            `json:"highlightWash"`
 	Highlights      Highlights        `json:"highlights"`
 	WordMarks       map[string]Mark   `json:"wordMarks"`       // new, learning (known: none)
 	CorrectionMarks map[string]Mark   `json:"correctionMarks"` // mistake, suggestion
 	AccentChoices   []string          `json:"accentChoices"`
+}
+
+// Grades are one colour per grade (again, hard, good, easy).
+type Grades struct {
+	Again string `json:"again"`
+	Hard  string `json:"hard"`
+	Good  string `json:"good"`
+	Easy  string `json:"easy"`
 }
 
 // Highlights are the reader's highlight colours, named by their hue.
@@ -121,6 +130,12 @@ func Derive(t Theme, accent string) Derived {
 	if Ratio(c.Muted, c.Panel) >= MinText {
 		readableMuted = c.Muted
 	}
+	readable := func(color string) string {
+		if Ratio(color, c.Panel) >= MinText {
+			return color
+		}
+		return c.Text
+	}
 	focusRing := acc
 	for _, s := range []string{c.Panel, c.Raised, c.Chrome} {
 		if Ratio(acc, s) < MinGraph {
@@ -134,6 +149,10 @@ func Derive(t Theme, accent string) Derived {
 		ReadingAccent: reading,
 		ReadableBad:   readableBad,
 		ReadableMuted: readableMuted,
+		ReadableGrades: Grades{
+			Again: readable(c.GradeAgain), Hard: readable(c.GradeHard),
+			Good: readable(c.GradeGood), Easy: readable(c.GradeEasy),
+		},
 		FocusRing:     focusRing,
 		HighlightWash: WithAlpha(c.Warn, 24),
 		Highlights: Highlights{

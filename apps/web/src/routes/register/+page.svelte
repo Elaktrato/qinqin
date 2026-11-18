@@ -69,7 +69,7 @@
 	<title>{pageTitle(t('auth.register.title'))}</title>
 </svelte:head>
 
-<main class="auth">
+<div class="page-body auth">
 	<h1>{t('auth.register.title')}</h1>
 
 	{#if !loaded}
@@ -140,4 +140,4 @@
 			<Msg key="auth.register.haveAccount">{#snippet link(text: string)}<a href="/login">{text}</a>{/snippet}</Msg>
 		</p>
 	{/if}
-</main>
+</div>

@@ -292,6 +292,8 @@ export interface LookupResult {
 		xrefs: string[];
 	}[];
 	pri: number;
+	/** The entry's lowest level in each installed levels scheme, scheme order. */
+	levels: { scheme: string; level: string }[];
 }
 
 // SegmentMatch is one dictionary match from /api/segment[/at]; start and
