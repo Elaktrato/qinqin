@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { t } from '$lib/i18n';
+	import { Button, Panel } from '$lib/ui';
 	import { recoveryClipboard, recoveryFileName, recoveryText } from './recoveryCodes';
 
 	// The recovery codes, shown once: copy, download, and confirm they are saved.
@@ -39,38 +40,55 @@
 <section aria-labelledby="rc-title">
 	<h2 id="rc-title" tabindex="-1">{t('account.recovery.title')}</h2>
 	<p>{t('account.recovery.intro')}</p>
-	<ul class="codes">
-		{#each codes as code (code)}
-			<li><code>{code}</code></li>
-		{/each}
-	</ul>
+	<!-- Panel raised: a block of values to copy, read as one object (#106). -->
+	<div class="codes-panel"><Panel raised>
+		<ul class="codes">
+			{#each codes as code (code)}
+				<li><code>{code}</code></li>
+			{/each}
+		</ul>
+	</Panel></div>
 	<p class="row">
-		<button type="button" onclick={copy}>{copied ? t('common.action.copied') : t('common.action.copy')}</button>
-		<button type="button" onclick={download}>{t('account.recovery.download')}</button>
+		<Button onclick={copy}>{copied ? t('common.action.copied') : t('common.action.copy')}</Button>
+		<Button onclick={download}>{t('account.recovery.download')}</Button>
 	</p>
 	{#if error}<p class="error" role="alert">{error}</p>{/if}
 	<label class="check">
 		<input type="checkbox" bind:checked={saved} />
 		{t('account.recovery.saved')}
 	</label>
-	<button type="button" disabled={!saved} onclick={oncontinue}>{continueLabel}</button>
+	<Button variant="primary" disabled={!saved} onclick={oncontinue}>{continueLabel}</Button>
 </section>
 
 <style>
+	.codes-panel {
+		margin-block: var(--space-3);
+	}
 	.codes {
 		columns: 2;
+		margin: 0;
 		list-style: none;
 		padding: 0;
-		font-size: 1.05rem;
+		font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+		font-size: var(--font-size-m);
+		line-height: var(--line-body);
 	}
 	.row {
 		display: flex;
-		gap: 0.5rem;
+		flex-wrap: wrap;
+		gap: var(--space-2);
 	}
 	.check {
 		display: flex;
-		gap: 0.5rem;
+		gap: var(--space-2);
 		align-items: center;
-		margin: 0.75rem 0;
+		margin-block: var(--space-3);
+	}
+	.error {
+		margin: 0;
+		padding-inline-start: var(--space-2);
+		border-inline-start: 3px solid var(--bad);
+		color: var(--readable-bad);
+		font-weight: var(--weight-medium);
 	}
 </style>

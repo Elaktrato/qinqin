@@ -11,6 +11,7 @@ vi.mock('$lib/api/mfa', () => ({ resetRequest: vi.fn() }));
 import { signInWithToken } from '$lib/auth';
 import { checkReset, getAuthOptions, useReset } from '$lib/api/account';
 import { resetRequest } from '$lib/api/mfa';
+import { primaryActions } from '$lib/ui/testing/primary';
 import Page from './+page.svelte';
 
 beforeEach(() => {
@@ -32,6 +33,12 @@ describe('reset page', () => {
 		render(Page);
 		await screen.findByText('bobby');
 		expect(history.replaceState).toHaveBeenCalled();
+		// the set-password view: one primary action, both passwords Field underlines (#106)
+		expect(primaryActions(document.body).map((b) => b.textContent?.trim())).toEqual([
+			'Set password and sign in'
+		]);
+		expect(screen.getByLabelText('New password').closest('.field')).not.toBeNull();
+		expect(screen.getByLabelText('Repeat the new password').closest('.field')).not.toBeNull();
 		await fireEvent.input(screen.getByLabelText('New password'), { target: { value: 'brand-new-password' } });
 		await fireEvent.input(screen.getByLabelText('Repeat the new password'), { target: { value: 'brand-new-password' } });
 		await fireEvent.click(screen.getByRole('button', { name: 'Set password and sign in' }));
@@ -69,7 +76,11 @@ describe('reset page', () => {
 		vi.mocked(getAuthOptions).mockResolvedValue({ passwordReset: true } as never);
 		vi.mocked(resetRequest).mockResolvedValue({});
 		render(Page);
-		await fireEvent.input(await screen.findByLabelText('Username or email address'), { target: { value: ' nobody-here ' } });
+		const login = await screen.findByLabelText('Username or email address');
+		expect(login.closest('.field')).not.toBeNull();
+		// the request view: one primary action (#106)
+		expect(primaryActions(document.body).map((b) => b.textContent?.trim())).toEqual(['Send reset link']);
+		await fireEvent.input(login, { target: { value: ' nobody-here ' } });
 		await fireEvent.click(screen.getByRole('button', { name: 'Send reset link' }));
 		const status = await screen.findByRole('status');
 		expect(status.textContent).toBe('If the account has a verified email address, we sent a link to reset the password. It works for one hour.');

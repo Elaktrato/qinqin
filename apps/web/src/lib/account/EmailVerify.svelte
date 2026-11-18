@@ -5,6 +5,7 @@
 	import { resendEmailCode, verifyEmailCode } from '$lib/api/mfa';
 	import { t } from '$lib/i18n';
 	import Msg from '$lib/i18n/Msg.svelte';
+	import { Button } from '$lib/ui';
 	import { codeFailure, otpAttrs, otpComplete, resendText, sanitizeOtp } from './otpInput';
 
 	// Confirms a self-entered address with the six-digit code the server mailed
@@ -99,10 +100,30 @@
 		/>
 	</label>
 	{#if error}<p class="error" role="alert">{error}</p>{/if}
-	<button type="submit" disabled={busy || !otpComplete(code, 'email')}>{submitLabel}</button>
+	<Button type="submit" variant="primary" busy={busy} disabled={!otpComplete(code, 'email')}
+		>{submitLabel}</Button
+	>
 	<p class="hint">
 		{resendText(left)}
-		<button type="button" class="link" disabled={busy || left > 0} onclick={resend}>{t('account.verify.sendNew')}</button>
+		<Button variant="plain" disabled={busy || left > 0} onclick={resend}>{t('account.verify.sendNew')}</Button>
 	</p>
 	<p class="sr-only" aria-live="polite">{live}</p>
 </form>
+
+<style>
+	form {
+		display: grid;
+		gap: var(--space-4);
+	}
+	.hint {
+		margin: 0;
+		color: var(--readable-muted);
+	}
+	.error {
+		margin: 0;
+		padding-inline-start: var(--space-2);
+		border-inline-start: 3px solid var(--bad);
+		color: var(--readable-bad);
+		font-weight: var(--weight-medium);
+	}
+</style>

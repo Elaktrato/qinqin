@@ -7,6 +7,7 @@
 	import { loadMe, user } from '$lib/auth';
 	import { t } from '$lib/i18n';
 	import Msg from '$lib/i18n/Msg.svelte';
+	import { Button, Field } from '$lib/ui';
 	import { codeFailure, otpAttrs, otpComplete, sanitizeOtp } from './otpInput';
 	import { groupSecret, twoFactorChoices } from './mfaView';
 	import EmailVerify from './EmailVerify.svelte';
@@ -151,7 +152,7 @@
 		<ul class="choices">
 			{#if choices.totp}
 				<li>
-					<button type="button" onclick={() => (forced ? startTotp() : go('password'))}>{t('account.setup.app')}</button>
+					<Button onclick={() => (forced ? startTotp() : go('password'))}>{t('account.setup.app')}</Button>
 					<span class="hint">{t('account.setup.appHint')}</span>
 				</li>
 			{:else if choices.totpWhy}
@@ -159,7 +160,7 @@
 			{/if}
 			{#if choices.email}
 				<li>
-					<button type="button" onclick={() => go('email')}>{t('account.setup.email')}</button>
+					<Button onclick={() => go('email')}>{t('account.setup.email')}</Button>
 					<span class="hint">{t('account.setup.emailHint')}</span>
 				</li>
 			{:else if options}
@@ -170,13 +171,19 @@
 	{:else if step === 'password'}
 		<h2 tabindex="-1" bind:this={heading}>{t('account.setup.confirmPassword')}</h2>
 		<form onsubmit={startTotp}>
-			<label>
-				{t('account.field.password')}
-				<input type="password" name="password" autocomplete="current-password" bind:value={password} required />
-			</label>
+			<Field
+				label={t('account.field.password')}
+				type="password"
+				name="password"
+				autocomplete="current-password"
+				bind:value={password}
+				required
+			/>
 			{#if error}<p class="error" role="alert">{error}</p>{/if}
-			<button type="submit" disabled={busy || !password}>{t('common.action.continue')}</button>
-			<button type="button" class="link" onclick={() => go('choose')}>{t('common.action.back')}</button>
+			<Button type="submit" variant="primary" busy={busy} disabled={!password}
+				>{t('common.action.continue')}</Button
+			>
+			<Button variant="plain" onclick={() => go('choose')}>{t('common.action.back')}</Button>
 		</form>
 	{:else if step === 'scan' && setup}
 		<h2 tabindex="-1" bind:this={heading}>{t('account.setup.scanTitle')}</h2>
@@ -188,7 +195,7 @@
 		<QrCode text={setup.otpauthUri} />
 		<p>
 			{t('account.setup.key')} <code class="secret" data-testid="secret">{groupSecret(setup.secret)}</code>
-			<button type="button" class="link" onclick={copySecret}>{copied ? t('common.action.copied') : t('common.action.copy')}</button>
+			<Button variant="plain" onclick={copySecret}>{copied ? t('common.action.copied') : t('common.action.copy')}</Button>
 		</p>
 		<form onsubmit={confirm}>
 			<label>
@@ -207,7 +214,9 @@
 				/>
 			</label>
 			{#if error}<p class="error" role="alert">{error}</p>{/if}
-			<button type="submit" disabled={busy || !otpComplete(code, 'totp')}>{t('account.setup.turnOn')}</button>
+			<Button type="submit" variant="primary" busy={busy} disabled={!otpComplete(code, 'totp')}
+				>{t('account.setup.turnOn')}</Button
+			>
 		</form>
 	{:else if step === 'codes'}
 		<RecoveryCodes codes={recovery} {site} oncontinue={finish} />
@@ -227,14 +236,20 @@
 			</p>
 			<form onsubmit={enableEmail}>
 				{#if !forced}
-					<label>
-						{t('account.field.password')}
-						<input type="password" name="password" autocomplete="current-password" bind:value={password} required />
-					</label>
+					<Field
+						label={t('account.field.password')}
+						type="password"
+						name="password"
+						autocomplete="current-password"
+						bind:value={password}
+						required
+					/>
 				{/if}
 				{#if error}<p class="error" role="alert">{error}</p>{/if}
-				<button type="submit" disabled={busy || (!forced && !password)}>{t('account.setup.turnOnEmail')}</button>
-				<button type="button" class="link" onclick={() => go('choose')}>{t('common.action.back')}</button>
+				<Button type="submit" variant="primary" busy={busy} disabled={!forced && !password}
+					>{t('account.setup.turnOnEmail')}</Button
+				>
+				<Button variant="plain" onclick={() => go('choose')}>{t('common.action.back')}</Button>
 			</form>
 		{:else if verifying}
 			<EmailVerify
@@ -247,37 +262,61 @@
 		{:else}
 			<p>{t('account.setup.addEmailFirst')}</p>
 			<form onsubmit={saveEmail}>
-				<label>
-					{t('account.setup.emailAddress')}
-					<input type="email" name="email" autocomplete="email" bind:value={emailDraft} required />
-				</label>
+				<Field
+					label={t('account.setup.emailAddress')}
+					type="email"
+					name="email"
+					autocomplete="email"
+					bind:value={emailDraft}
+					required
+				/>
 				{#if !forced}
-					<label>
-						{t('account.field.password')}
-						<input type="password" name="password" autocomplete="current-password" bind:value={password} required />
-					</label>
+					<Field
+						label={t('account.field.password')}
+						type="password"
+						name="password"
+						autocomplete="current-password"
+						bind:value={password}
+						required
+					/>
 				{/if}
 				{#if error}<p class="error" role="alert">{error}</p>{/if}
-				<button type="submit" disabled={busy}>{t('account.setup.sendCode')}</button>
-				<button type="button" class="link" onclick={() => go('choose')}>{t('common.action.back')}</button>
+				<Button type="submit" variant="primary" busy={busy}>{t('account.setup.sendCode')}</Button>
+				<Button variant="plain" onclick={() => go('choose')}>{t('common.action.back')}</Button>
 			</form>
 		{/if}
 	{/if}
 </div>
 
 <style>
+	/* The two choices are equal: hairline rows, no box, no primary (#106). */
 	.choices {
 		list-style: none;
+		margin: 0;
 		padding: 0;
-		display: grid;
-		gap: 0.75rem;
 	}
 	.choices li {
 		display: grid;
-		gap: 0.25rem;
+		gap: var(--space-1);
+		justify-items: start;
+		padding-block: var(--space-3);
+	}
+	.choices li + li {
+		border-top: 1px solid var(--hair);
+	}
+	.hint {
+		color: var(--readable-muted);
+		font-size: var(--font-size-s);
+	}
+	.error {
+		margin: 0;
+		padding-inline-start: var(--space-2);
+		border-inline-start: 3px solid var(--bad);
+		color: var(--readable-bad);
+		font-weight: var(--weight-medium);
 	}
 	.secret {
-		font-size: 1.05rem;
+		font-size: var(--font-size-m);
 		letter-spacing: 0.04em;
 		word-break: break-all;
 	}

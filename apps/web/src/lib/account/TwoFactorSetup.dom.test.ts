@@ -24,6 +24,7 @@ import { putEmail, type AuthOptions } from '$lib/api/account';
 import { confirmEmailMethod, setEmailMethod, totpConfirm, totpSetup } from '$lib/api/mfa';
 import { loadMe } from '$lib/auth';
 import { encode } from 'uqr';
+import { primaryActions } from '$lib/ui/testing/primary';
 import TwoFactorSetup from './TwoFactorSetup.svelte';
 
 const options = (o: Partial<AuthOptions> = {}): AuthOptions => ({
@@ -55,8 +56,12 @@ describe('forced enrolment with an authenticator app', () => {
 		vi.mocked(totpConfirm).mockResolvedValue({ recoveryCodes: ['AAAA-BBBB-CCCC-DDDD', 'EEEE-FFFF-GGGG-HHHH'] });
 		const onfinished = vi.fn();
 		render(TwoFactorSetup, { options: options(), forced: true, site: 'words.example.org', onfinished });
+		// choosing a method has no primary action: both choices are equal
+		expect(primaryActions(document.body)).toHaveLength(0);
 		await fireEvent.click(screen.getByRole('button', { name: 'Authenticator app' }));
 		await screen.findByRole('heading', { name: 'Scan the code' });
+		// the scan step's one primary action is turning it on
+		expect(primaryActions(document.body).map((b) => b.textContent?.trim())).toEqual(['Turn on']);
 		// forced: no password is sent
 		expect(totpSetup).toHaveBeenCalledWith({});
 		const svg = screen.getByRole('img', { name: 'QR code for your authenticator app' });
@@ -77,6 +82,7 @@ describe('forced enrolment with an authenticator app', () => {
 		await fireEvent.click(screen.getByRole('button', { name: 'Turn on' }));
 		await screen.findByRole('heading', { name: 'Save your recovery codes' });
 		expect(screen.getByText('AAAA-BBBB-CCCC-DDDD')).toBeTruthy();
+		expect(primaryActions(document.body).map((b) => b.textContent?.trim())).toEqual(['Continue']);
 		const cont = screen.getByRole('button', { name: 'Continue' }) as HTMLButtonElement;
 		expect(cont.disabled).toBe(true);
 		await fireEvent.click(screen.getByLabelText('I have saved these codes'));
@@ -104,7 +110,11 @@ describe('settings enrolment', () => {
 		vi.mocked(totpSetup).mockResolvedValue(setup);
 		render(TwoFactorSetup, { options: options(), onfinished: vi.fn() });
 		await fireEvent.click(screen.getByRole('button', { name: 'Authenticator app' }));
-		await fireEvent.input(await screen.findByLabelText('Password'), { target: { value: 'secret-pass-bobby' } });
+		const password = await screen.findByLabelText('Password');
+		expect(password.closest('.field')).not.toBeNull();
+		// the password step's one primary action
+		expect(primaryActions(document.body).map((b) => b.textContent?.trim())).toEqual(['Continue']);
+		await fireEvent.input(password, { target: { value: 'secret-pass-bobby' } });
 		await fireEvent.click(screen.getByRole('button', { name: 'Continue' }));
 		await screen.findByRole('heading', { name: 'Scan the code' });
 		expect(totpSetup).toHaveBeenCalledWith({ password: 'secret-pass-bobby' });
@@ -129,9 +139,14 @@ describe('email method path', () => {
 		const onfinished = vi.fn();
 		render(TwoFactorSetup, { options: options(), forced: true, onfinished });
 		await fireEvent.click(screen.getByRole('button', { name: 'Email codes' }));
-		await fireEvent.input(await screen.findByLabelText('Email address'), { target: { value: 'b@example.org' } });
+		const address = await screen.findByLabelText('Email address');
+		expect(address.closest('.field')).not.toBeNull();
+		expect(primaryActions(document.body).map((b) => b.textContent?.trim())).toEqual(['Send a code']);
+		await fireEvent.input(address, { target: { value: 'b@example.org' } });
 		await fireEvent.click(screen.getByRole('button', { name: 'Send a code' }));
 		expect(putEmail).toHaveBeenCalledWith('b@example.org', undefined);
+		// the mailed-code step's one primary action confirms the address
+		expect(primaryActions(document.body).map((b) => b.textContent?.trim())).toEqual(['Confirm address']);
 		await fireEvent.input(await screen.findByLabelText('Code from the email'), { target: { value: '123456' } });
 		await fireEvent.click(screen.getByRole('button', { name: 'Confirm address' }));
 		await waitFor(() => expect(verifyEmailCode).toHaveBeenCalledWith('123456'));
