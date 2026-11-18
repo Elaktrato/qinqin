@@ -6,8 +6,8 @@ import { createThemeStore, type ThemeStore, type ThemeStoreDeps } from '$lib/the
 import { installedFaces, type InstalledFaces } from '$lib/fonts/hanzi';
 import AppearanceSettings from './AppearanceSettings.svelte';
 
-const latte: ListedTheme = { ...FALLBACK_THEMES[0], family: 'Catppuccin', packId: 'catppuccin', builtin: true };
-const mocha: ListedTheme = { ...FALLBACK_THEMES[1], family: 'Catppuccin', packId: 'catppuccin', builtin: true };
+const latte: ListedTheme = { ...FALLBACK_THEMES[0], family: FALLBACK_THEMES[0].family ?? '', packId: 'qinqin', builtin: true };
+const mocha: ListedTheme = { ...FALLBACK_THEMES[1], family: FALLBACK_THEMES[1].family ?? '', packId: 'qinqin', builtin: true };
 const nord: ListedTheme = {
 	...mocha,
 	id: 'nord',
@@ -100,7 +100,7 @@ describe('Settings → Appearance', () => {
 		const names = within(accents)
 			.getAllByRole('radio')
 			.map((r) => r.getAttribute('aria-label'));
-		expect(names).toEqual(['Accent mauve', 'Accent red', 'Accent teal', 'Accent blue']);
+		expect(names).toEqual(['Accent azure', 'Accent blue', 'Accent navy', 'Accent teal', 'Accent violet', 'Accent pink']);
 		for (const radio of within(accents).getAllByRole('radio')) {
 			expect(radio.closest('label')?.getAttribute('title')).toBeTruthy();
 		}
@@ -108,14 +108,14 @@ describe('Settings → Appearance', () => {
 
 	it('previews a change live without saving, and reverts when the page closes unsaved', async () => {
 		await setup();
-		expect(panel()).toBe('#eff1f5');
+		expect(panel()).toBe('#ffffff');
 		const dark = screen.getByRole('group', { name: 'Dark theme' });
 		await fireEvent.click(within(dark).getByRole('radio', { name: 'Nord' }));
 		// The slot being edited is previewed, even on a light device.
 		expect(panel()).toBe('#2e3440');
 		expect(deps.saveRow).not.toHaveBeenCalled();
 		cleanup();
-		expect(panel()).toBe('#eff1f5');
+		expect(panel()).toBe('#ffffff');
 	});
 
 	it('saves the whole draft to the row (unknown members kept) and announces it', async () => {

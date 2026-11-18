@@ -1,82 +1,76 @@
 // The compiled-in fallback themes (design §7, "Before anything loads"):
-// Catppuccin Latte and Mocha, painted before GET /api/themes answers on a
+// qinqin Day and qinqin Night, painted before GET /api/themes answers on a
 // first visit, offline without stored tokens, or when a slot's theme is gone.
-// Copied from server/internal/themes/builtin/catppuccin/themes.json;
-// fallback.test.ts compares the two so they never drift. Catppuccin is MIT
-// (static/CATPPUCCIN-LICENSE.TXT, credited on the Sources page).
+// Copied from server/internal/themes/builtin/qinqin/themes.json;
+// fallback.test.ts compares the two so they never drift. The qinqin palettes
+// are MIT (static/QINQIN-LICENSE.TXT, credited on the Sources page).
 
 import type { Theme } from './types';
 
-export const FALLBACK_THEMES: readonly Theme[] = Object.freeze([
+const themes: Theme[] = [
 	{
-		id: 'catppuccin-latte',
-		name: 'Latte',
-		family: 'Catppuccin',
+		id: 'qinqin-day',
+		name: 'qinqin Day',
+		family: 'qinqin',
 		scheme: 'light',
 		colors: {
-			chrome: '#dce0e8',
-			panel: '#eff1f5',
-			raised: '#e6e9ef',
-			line: '#ccd0da',
-			text: '#4c4f69',
-			muted: '#6c6f85',
-			good: '#40a02b',
-			warn: '#df8e1d',
-			bad: '#d20f39',
-			gradeAgain: '#d20f39',
-			gradeHard: '#fe640b',
-			gradeGood: '#40a02b',
-			gradeEasy: '#1e66f5'
+			chrome: '#e3f4fa',
+			panel: '#ffffff',
+			raised: '#eef9fd',
+			line: '#c6e2ee',
+			text: '#201533',
+			muted: '#4b4d73',
+			good: '#0b8457',
+			warn: '#946500',
+			bad: '#d2294f',
+			gradeAgain: '#d2294f',
+			gradeHard: '#bd5200',
+			gradeGood: '#0b8457',
+			gradeEasy: '#0077b3'
 		},
 		accents: {
-			mauve: '#8839ef',
-			pink: '#ea76cb',
-			red: '#d20f39',
-			peach: '#fe640b',
-			yellow: '#df8e1d',
-			green: '#40a02b',
-			teal: '#179299',
-			sky: '#04a5e5',
-			blue: '#1e66f5',
-			lavender: '#7287fd'
+			azure: '#0077b3',
+			blue: '#1e579c',
+			navy: '#203562',
+			teal: '#00808a',
+			violet: '#6b3fd6',
+			pink: '#c4237a'
 		},
-		defaultAccent: 'mauve'
+		defaultAccent: 'azure'
 	},
 	{
-		id: 'catppuccin-mocha',
-		name: 'Mocha',
-		family: 'Catppuccin',
+		id: 'qinqin-night',
+		name: 'qinqin Night',
+		family: 'qinqin',
 		scheme: 'dark',
 		colors: {
-			chrome: '#11111b',
-			panel: '#1e1e2e',
-			raised: '#313244',
-			line: '#45475a',
-			text: '#cdd6f4',
-			muted: '#a6adc8',
-			good: '#a6e3a1',
-			warn: '#f9e2af',
-			bad: '#f38ba8',
-			gradeAgain: '#f38ba8',
-			gradeHard: '#fab387',
-			gradeGood: '#a6e3a1',
-			gradeEasy: '#89b4fa'
+			chrome: '#201533',
+			panel: '#252446',
+			raised: '#203562',
+			line: '#1e579c',
+			text: '#ffffff',
+			muted: '#aebbdb',
+			good: '#5fe39a',
+			warn: '#ffc857',
+			bad: '#ff6b8b',
+			gradeAgain: '#ff6b8b',
+			gradeHard: '#ffa45c',
+			gradeGood: '#5fe39a',
+			gradeEasy: '#0098db'
 		},
 		accents: {
-			mauve: '#cba6f7',
-			pink: '#f5c2e7',
-			red: '#f38ba8',
-			peach: '#fab387',
-			yellow: '#f9e2af',
-			green: '#a6e3a1',
-			teal: '#94e2d5',
-			sky: '#89dceb',
-			blue: '#89b4fa',
-			lavender: '#b4befe'
+			cyan: '#0ce6f2',
+			azure: '#0098db',
+			sky: '#7ab8ff',
+			violet: '#b69cff',
+			pink: '#ff7ab8',
+			gold: '#ffd166'
 		},
-		defaultAccent: 'mauve'
+		defaultAccent: 'cyan'
 	}
-]);
+];
+
+export const FALLBACK_THEMES: readonly Theme[] = Object.freeze(themes);
 
 /** fallbackTheme: the compiled-in default theme of a slot. */
 export function fallbackTheme(slot: 'light' | 'dark'): Theme {

@@ -63,17 +63,17 @@ export const coreCredits: SourceCredit[] = [
 		attribution: 'Copyright (c) 2026 Lucide Icons and Contributors; Copyright (c) 2013-present Cole Bemis (Feather)',
 		licenseTexts: [licenceText('ISC AND MIT', '/LUCIDE-LICENSE.TXT')]
 	}, { notice: 'sources.core.lucide' }),
-	// The compiled-in fallback palette (#96): Catppuccin Latte and Mocha
-	// paint before the server's theme list arrives (lib/theme/fallback.ts).
-	// Its licence text ships at static/CATPPUCCIN-LICENSE.TXT, the built-in
-	// theme pack's LICENSE byte for byte (lib/theme/fallback.test.ts).
+	// The compiled-in fallback palette (#108): qinqin Day and Night paint
+	// before the server's theme list arrives (lib/theme/fallback.ts). Its
+	// licence text ships at static/QINQIN-LICENSE.TXT, the house theme
+	// pack's LICENSE byte for byte (lib/theme/fallback.test.ts).
 	credit({
-		name: 'Catppuccin',
-		url: 'https://github.com/catppuccin/palette',
+		name: 'qinqin themes',
+		url: 'https://github.com/Elaktrato/qinqin',
 		license: 'MIT',
-		attribution: 'Copyright (c) 2021 Catppuccin',
-		licenseTexts: [licenceText('MIT', '/CATPPUCCIN-LICENSE.TXT')]
-	}, { notice: 'sources.core.catppuccin' }),
+		attribution: '© 2026 qinqin',
+		licenseTexts: [licenceText('MIT', '/QINQIN-LICENSE.TXT')]
+	}, { notice: 'sources.core.qinqinThemes' }),
 	credit({
 		name: 'uqr',
 		url: 'https://github.com/unjs/uqr',

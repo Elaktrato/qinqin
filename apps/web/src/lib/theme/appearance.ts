@@ -58,8 +58,8 @@ export interface Resolved {
 
 export const DEFAULT_APPEARANCE: Readonly<Appearance> = Object.freeze({
 	mode: 'system',
-	light: Object.freeze({ theme: 'catppuccin-latte', accent: 'mauve' }),
-	dark: Object.freeze({ theme: 'catppuccin-mocha', accent: 'mauve' }),
+	light: Object.freeze({ theme: 'qinqin-day', accent: 'azure' }),
+	dark: Object.freeze({ theme: 'qinqin-night', accent: 'cyan' }),
 	corners: 'soft',
 	spacing: 'comfortable',
 	hanziFont: 'sans'

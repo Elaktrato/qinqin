@@ -231,14 +231,14 @@ describe('pluginCredits', () => {
 		expect(lucide.notice).toMatch(/icons/i);
 	});
 
-	it('credits the compiled-in fallback palette (Catppuccin, MIT) with its licence text', () => {
-		const catppuccin = coreCredits.find((credit) => credit.name === 'Catppuccin')!;
-		expect(catppuccin).toBeDefined();
-		expect(catppuccin.url).toBe('https://github.com/catppuccin/palette');
-		expect(catppuccin.license).toBe('MIT');
-		expect(catppuccin.attribution).toBe('Copyright (c) 2021 Catppuccin');
-		expect(catppuccin.licenseTexts).toEqual([{ label: 'MIT license text', path: '/CATPPUCCIN-LICENSE.TXT' }]);
-		expect(catppuccin.notice).toMatch(/Latte and Mocha/);
+	it('credits the compiled-in fallback palette (qinqin themes, MIT) with its licence text', () => {
+		const house = coreCredits.find((credit) => credit.name === 'qinqin themes')!;
+		expect(house).toBeDefined();
+		expect(house.url).toBe('https://github.com/Elaktrato/qinqin');
+		expect(house.license).toBe('MIT');
+		expect(house.attribution).toBe('© 2026 qinqin');
+		expect(house.licenseTexts).toEqual([{ label: 'MIT license text', path: '/QINQIN-LICENSE.TXT' }]);
+		expect(house.notice).toMatch(/Day and qinqin Night/);
 	});
 
 	it('credits the plugin sources from the real registry', () => {
@@ -277,12 +277,12 @@ describe('declared credits', () => {
 		const paths = all.flatMap((credit) => (credit.licenseTexts ?? []).map((text) => text.path));
 		expect(paths.sort()).toEqual([
 			'/ANTHROPIC-SDK-GO-LICENSE.TXT',
-			'/CATPPUCCIN-LICENSE.TXT',
 			'/FIGTREE-OFL.TXT',
 			'/LEPTONICA-LICENSE.TXT',
 			'/LUCIDE-LICENSE.TXT',
 			'/OPENCC-APACHE-2.0.TXT',
 			'/OPENCC-JS-LICENSE.TXT',
+			'/QINQIN-LICENSE.TXT',
 			'/TESSERACT-APACHE-2.0.TXT',
 			'/UQR-LICENSE.TXT'
 		]);

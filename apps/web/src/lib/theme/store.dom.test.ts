@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ListedTheme, ThemesAnswer } from '$lib/api/themes';
-import { LAST_TOKENS_KEY, loadLastTokens } from './apply';
+import { LAST_TOKENS_KEY, THEME_ANIM_CLASS, loadLastTokens } from './apply';
 import { FALLBACK_THEMES } from './fallback';
 import { createThemeStore, type ThemeStoreDeps } from './store.svelte';
 import type { Theme } from './types';
@@ -73,7 +73,10 @@ beforeEach(() => {
 		root: () => root
 	};
 });
-afterEach(() => root.removeAttribute('style'));
+afterEach(() => {
+	root.removeAttribute('style');
+	root.classList.remove(THEME_ANIM_CLASS);
+});
 
 describe('theme store', () => {
 	it('paints nothing over the first paint until both the themes and the row are known', async () => {
@@ -82,7 +85,16 @@ describe('theme store', () => {
 		await store.start();
 		expect(panel()).toBe('#123456');
 		await store.setUser(1);
-		expect(panel()).toBe('#eff1f5'); // no row: Latte on a light device
+		expect(panel()).toBe('#ffffff'); // no row: qinqin Day on a light device
+	});
+
+	it('animates a preview or a save, not the first paint', async () => {
+		const store = createThemeStore(deps);
+		await store.start();
+		await store.setUser(1);
+		expect(root.classList.contains(THEME_ANIM_CLASS)).toBe(false);
+		store.setPreview({ ...store.appearance, mode: 'dark' });
+		expect(root.classList.contains(THEME_ANIM_CLASS)).toBe(true);
 	});
 
 	it('follows the device in system mode and keeps the last tokens of both slots', async () => {
@@ -90,14 +102,14 @@ describe('theme store', () => {
 		const store = createThemeStore(deps);
 		await store.start();
 		await store.setUser(1);
-		expect(panel()).toBe('#eff1f5');
+		expect(panel()).toBe('#ffffff');
 		media.flip(true);
 		expect(panel()).toBe('#2e3440');
 		expect(accent()).toBe('#81a1c1');
 		expect(root.style.colorScheme).toBe('dark');
 		const last = loadLastTokens(storage)!;
 		expect(last.mode).toBe('system');
-		expect(last.light.vars['--panel']).toBe('#eff1f5');
+		expect(last.light.vars['--panel']).toBe('#ffffff');
 		expect(last.dark.vars['--panel']).toBe('#2e3440');
 	});
 
@@ -107,8 +119,8 @@ describe('theme store', () => {
 		const store = createThemeStore(deps);
 		await store.start();
 		await store.setUser(1);
-		expect(panel()).toBe('#1e1e2e');
-		expect(accent()).toBe('#f5c2e7');
+		expect(panel()).toBe('#252446');
+		expect(accent()).toBe('#ff7ab8');
 		expect(deps.saveRow).not.toHaveBeenCalled();
 		expect(store.row).toEqual(row);
 	});
@@ -123,7 +135,7 @@ describe('theme store', () => {
 		await store.setUser(1);
 		expect(panel()).toBe('#123456');
 		expect(store.themesLoaded).toBe(false);
-		expect(store.themes.map((t) => t.id)).toEqual(['catppuccin-latte', 'catppuccin-mocha']);
+		expect(store.themes.map((t) => t.id)).toEqual(['qinqin-day', 'qinqin-night']);
 	});
 
 	it('offline with stored tokens: a device switch repaints from them', async () => {
@@ -138,7 +150,7 @@ describe('theme store', () => {
 		const store = createThemeStore(deps);
 		await store.start();
 		media.flip(true);
-		expect(panel()).toBe('#1e1e2e');
+		expect(panel()).toBe('#252446');
 	});
 
 	it('a row that fails to load keeps what is painted', async () => {
@@ -214,7 +226,7 @@ describe('theme store', () => {
 		await store.start();
 		await store.setUser(1);
 		await expect(store.save({ light: { theme: 'nord' } })).rejects.toBeTruthy();
-		expect(panel()).toBe('#eff1f5');
+		expect(panel()).toBe('#ffffff');
 		expect(store.row).toBeNull();
 	});
 
@@ -227,7 +239,7 @@ describe('theme store', () => {
 		expect(panel()).toBe('#2e3440');
 		expect(storage.getItem(LAST_TOKENS_KEY)).toBe(before);
 		store.setPreview(null);
-		expect(panel()).toBe('#eff1f5');
+		expect(panel()).toBe('#ffffff');
 	});
 
 	it('signing out forgets the row and the preview but keeps the painted theme', async () => {
@@ -260,8 +272,8 @@ describe('theme store', () => {
 		const r = store.resolveFor({ ...store.appearance, mode: 'dark', dark: { theme: 'nord', accent: 'bogus' } });
 		expect(r.slot).toBe('dark');
 		expect(r.dark).toMatchObject({ theme: 'nord', accent: 'frost' });
-		expect(r.light).toMatchObject({ theme: 'catppuccin-latte', accent: 'mauve' });
-		expect(store.accentChoicesOf('catppuccin-latte')).toContain('mauve');
-		expect(store.accentChoicesOf('catppuccin-latte')).not.toContain('yellow');
+		expect(r.light).toMatchObject({ theme: 'qinqin-day', accent: 'azure' });
+		expect(store.accentChoicesOf('qinqin-day')).toContain('azure');
+		expect(store.accentChoicesOf('qinqin-day')).not.toContain('yellow');
 	});
 });

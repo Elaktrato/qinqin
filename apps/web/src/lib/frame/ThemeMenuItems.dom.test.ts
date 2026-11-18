@@ -5,15 +5,15 @@ import { FALLBACK_THEMES } from '$lib/theme/fallback';
 import { createThemeStore, type ThemeStore, type ThemeStoreDeps } from '$lib/theme/store.svelte';
 import ThemeMenuHarness from './testing/ThemeMenuHarness.svelte';
 
-const latte: ListedTheme = { ...FALLBACK_THEMES[0], family: 'Catppuccin', packId: 'catppuccin', builtin: true };
-const mocha: ListedTheme = { ...FALLBACK_THEMES[1], family: 'Catppuccin', packId: 'catppuccin', builtin: true };
+const latte: ListedTheme = { ...FALLBACK_THEMES[0], family: FALLBACK_THEMES[0].family ?? '', packId: 'qinqin', builtin: true };
+const mocha: ListedTheme = { ...FALLBACK_THEMES[1], family: FALLBACK_THEMES[1].family ?? '', packId: 'qinqin', builtin: true };
 const nord: ListedTheme = {
 	...mocha,
 	id: 'nord',
 	name: 'Nord',
 	family: '',
 	colors: { ...mocha.colors, panel: '#2e3440' },
-	accents: { frost: '#88c0d0', mauve: '#b48ead' },
+	accents: { frost: '#88c0d0', mauve: '#b48ead', pink: '#ff7ab8' },
 	defaultAccent: 'frost'
 };
 
@@ -52,20 +52,20 @@ afterEach(() => {
 describe('theme menu items (the quick theme switch)', () => {
 	it('is a named menu button with a tooltip, closed at first', async () => {
 		await setup({ version: 1, mode: 'dark' });
-		const button = screen.getByRole('button', { name: 'Theme: Mocha' });
+		const button = screen.getByRole('button', { name: 'Theme: qinqin Night' });
 		expect(button.getAttribute('aria-haspopup')).toBe('menu');
 		expect(button.getAttribute('aria-expanded')).toBe('false');
 		// The tooltip (lib/ui Tooltip, #98) shows the name on hover and focus; no native title.
-		expect(screen.getByRole('tooltip', { hidden: true }).textContent).toBe('Theme: Mocha');
+		expect(screen.getByRole('tooltip', { hidden: true }).textContent).toBe('Theme: qinqin Night');
 		expect(button.hasAttribute('title')).toBe(false);
 		expect(screen.queryByRole('menu')).toBeNull();
 	});
 
 	it('lists the themes of the painted slot with the current one checked, plus Appearance settings', async () => {
 		await setup({ version: 1, mode: 'dark' });
-		await fireEvent.click(screen.getByRole('button', { name: 'Theme: Mocha' }));
+		await fireEvent.click(screen.getByRole('button', { name: 'Theme: qinqin Night' }));
 		const items = screen.getAllByRole('menuitemradio');
-		expect(items.map((i) => i.textContent?.trim())).toEqual(['Mocha', 'Nord']);
+		expect(items.map((i) => i.textContent?.trim())).toEqual(['qinqin Night', 'Nord']);
 		// No Back item without a level to go back to.
 		expect(screen.queryByRole('menuitem', { name: 'Back' })).toBeNull();
 		expect(items[0].getAttribute('aria-checked')).toBe('true');
@@ -75,12 +75,12 @@ describe('theme menu items (the quick theme switch)', () => {
 	});
 
 	it('picking a theme writes the slot (an offered accent kept) and repaints', async () => {
-		await setup({ version: 1, mode: 'dark', dark: { theme: 'catppuccin-mocha', accent: 'mauve' }, future: 1 });
-		await fireEvent.click(screen.getByRole('button', { name: 'Theme: Mocha' }));
+		await setup({ version: 1, mode: 'dark', dark: { theme: 'qinqin-night', accent: 'pink' }, future: 1 });
+		await fireEvent.click(screen.getByRole('button', { name: 'Theme: qinqin Night' }));
 		await fireEvent.click(screen.getByRole('menuitemradio', { name: 'Nord' }));
 		await waitFor(() => expect(deps.saveRow).toHaveBeenCalledTimes(1));
 		expect(deps.saveRow).toHaveBeenCalledWith(
-			expect.objectContaining({ dark: { theme: 'nord', accent: 'mauve' }, future: 1, mode: 'dark' })
+			expect.objectContaining({ dark: { theme: 'nord', accent: 'pink' }, future: 1, mode: 'dark' })
 		);
 		expect(root.style.getPropertyValue('--panel')).toBe('#2e3440');
 		expect(screen.queryByRole('menu')).toBeNull();
@@ -89,7 +89,7 @@ describe('theme menu items (the quick theme switch)', () => {
 
 	it('moves with the arrow keys, Home and End; Escape closes and returns focus', async () => {
 		await setup({ version: 1, mode: 'dark' });
-		const button = screen.getByRole('button', { name: 'Theme: Mocha' });
+		const button = screen.getByRole('button', { name: 'Theme: qinqin Night' });
 		await fireEvent.click(button);
 		const menu = screen.getByRole('menu');
 		const items = [...screen.getAllByRole('menuitemradio'), screen.getByRole('menuitem')];
@@ -107,10 +107,10 @@ describe('theme menu items (the quick theme switch)', () => {
 
 	it('a failed save is announced and the theme stays', async () => {
 		await setup({ version: 1, mode: 'dark' }, { saveFails: true });
-		await fireEvent.click(screen.getByRole('button', { name: 'Theme: Mocha' }));
+		await fireEvent.click(screen.getByRole('button', { name: 'Theme: qinqin Night' }));
 		await fireEvent.click(screen.getByRole('menuitemradio', { name: 'Nord' }));
 		expect((await screen.findByRole('alert')).textContent).toBe('Could not change the theme. Try again.');
-		expect(root.style.getPropertyValue('--panel')).toBe('#1e1e2e');
+		expect(root.style.getPropertyValue('--panel')).toBe('#252446');
 	});
 
 	it('without the saved row, offers only the settings link', async () => {
@@ -123,7 +123,7 @@ describe('theme menu items (the quick theme switch)', () => {
 	it('with onback, a Back item comes first and runs it, keeping the menu open', async () => {
 		const onback = vi.fn();
 		await setup({ version: 1, mode: 'dark' }, { onback });
-		await fireEvent.click(screen.getByRole('button', { name: 'Theme: Mocha' }));
+		await fireEvent.click(screen.getByRole('button', { name: 'Theme: qinqin Night' }));
 		const items = screen.getAllByRole('menuitem');
 		expect(items[0].textContent?.trim()).toBe('Back');
 		await fireEvent.click(items[0]);

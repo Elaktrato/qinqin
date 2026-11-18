@@ -10,8 +10,8 @@ import { FALLBACK_THEMES } from '$lib/theme/fallback';
 import { createThemeStore, type ThemeStore } from '$lib/theme/store.svelte';
 import AccountMenu from './AccountMenu.svelte';
 
-const latte: ListedTheme = { ...FALLBACK_THEMES[0], family: 'Catppuccin', packId: 'catppuccin', builtin: true };
-const mocha: ListedTheme = { ...FALLBACK_THEMES[1], family: 'Catppuccin', packId: 'catppuccin', builtin: true };
+const latte: ListedTheme = { ...FALLBACK_THEMES[0], family: FALLBACK_THEMES[0].family ?? '', packId: 'qinqin', builtin: true };
+const mocha: ListedTheme = { ...FALLBACK_THEMES[1], family: FALLBACK_THEMES[1].family ?? '', packId: 'qinqin', builtin: true };
 const root = document.documentElement;
 
 function me(admin = false, restriction: User['restriction'] = ''): User {
@@ -78,17 +78,17 @@ describe('AccountMenu', () => {
 		const group = menu.querySelector('[role="group"]') as HTMLElement;
 		expect(group.getAttribute('aria-labelledby')).toBeTruthy();
 		expect(document.getElementById(group.getAttribute('aria-labelledby')!)?.textContent?.trim()).toBe('mei');
-		expect(names()).toEqual(['Settings', 'Theme Latte', 'Sources', 'Sign out']);
+		expect(names()).toEqual(['Settings', 'Theme qinqin Day', 'Sources', 'Sign out']);
 		expect(screen.getByRole('menuitem', { name: 'Settings' }).getAttribute('href')).toBe('/settings');
 		expect(screen.getByRole('menuitem', { name: 'Sources' }).getAttribute('href')).toBe('/sources');
-		// Laid out as "Theme   Latte ›", named as one phrase.
-		expect(screen.getByRole('menuitem', { name: 'Theme: Latte' })).toBeTruthy();
+		// Laid out as "Theme   Day ›", named as one phrase.
+		expect(screen.getByRole('menuitem', { name: 'Theme: qinqin Day' })).toBeTruthy();
 	});
 
 	it('Admin settings only for admins', async () => {
 		const trigger = await mount(me(true));
 		await fireEvent.click(trigger);
-		expect(names()).toEqual(['Settings', 'Theme Latte', 'Admin settings', 'Sources', 'Sign out']);
+		expect(names()).toEqual(['Settings', 'Theme qinqin Day', 'Admin settings', 'Sources', 'Sign out']);
 		expect(screen.getByRole('menuitem', { name: 'Admin settings' }).getAttribute('href')).toBe('/settings?tab=admin');
 	});
 
@@ -99,7 +99,7 @@ describe('AccountMenu', () => {
 		await fireEvent.click(screen.getByRole('menuitem', { name: /^Theme/ }));
 		expect(screen.getByRole('menu', { name: 'Account menu' })).toBe(menu);
 		expect(names()).toEqual(['Back', 'Appearance settings…']);
-		expect(screen.getAllByRole('menuitemradio').map((r) => r.textContent?.trim())).toEqual(['Latte']);
+		expect(screen.getAllByRole('menuitemradio').map((r) => r.textContent?.trim())).toEqual(['qinqin Day']);
 		await waitFor(() => expect(document.activeElement?.textContent?.trim()).toBe('Back'));
 	});
 
@@ -109,10 +109,10 @@ describe('AccountMenu', () => {
 		await fireEvent.click(screen.getByRole('menuitem', { name: /^Theme/ }));
 		await waitFor(() => expect(document.activeElement?.textContent?.trim()).toBe('Back'));
 		await fireEvent.keyDown(document.activeElement as HTMLElement, { key: 'ArrowLeft' });
-		await waitFor(() => expect(document.activeElement?.textContent?.replace(/\s+/g, ' ').trim()).toBe('Theme Latte'));
+		await waitFor(() => expect(document.activeElement?.textContent?.replace(/\s+/g, ' ').trim()).toBe('Theme qinqin Day'));
 		await fireEvent.click(screen.getByRole('menuitem', { name: /^Theme/ }));
 		await fireEvent.click(screen.getByRole('menuitem', { name: 'Back' }));
-		await waitFor(() => expect(document.activeElement?.textContent?.replace(/\s+/g, ' ').trim()).toBe('Theme Latte'));
+		await waitFor(() => expect(document.activeElement?.textContent?.replace(/\s+/g, ' ').trim()).toBe('Theme qinqin Day'));
 	});
 
 	it('reopening after leaving at the theme level starts at the first level', async () => {
@@ -121,7 +121,7 @@ describe('AccountMenu', () => {
 		await fireEvent.click(screen.getByRole('menuitem', { name: /^Theme/ }));
 		await fireEvent.keyDown(screen.getByRole('menu'), { key: 'Escape' });
 		await fireEvent.click(trigger);
-		expect(names()).toEqual(['Settings', 'Theme Latte', 'Sources', 'Sign out']);
+		expect(names()).toEqual(['Settings', 'Theme qinqin Day', 'Sources', 'Sign out']);
 	});
 
 	it('Sign out calls requestSignOut', async () => {
@@ -145,7 +145,7 @@ describe('AccountMenu', () => {
 			const trigger = await mount(me(), false, true);
 			await fireEvent.click(trigger);
 			await fireEvent.click(screen.getByRole('menuitem', { name: /^Theme/ }));
-			await fireEvent.click(screen.getByRole('menuitemradio', { name: 'Latte' }));
+			await fireEvent.click(screen.getByRole('menuitemradio', { name: 'qinqin Day' }));
 			await waitFor(() => expect(screen.getByRole('alert').textContent).toBe('Could not change the theme. Try again.'));
 			return trigger;
 		}
