@@ -8,13 +8,13 @@ In a study session every grade button shows the interval that grade would give (
 
 ## Scheduling page
 
-The setup page `/study` has a link "Scheduling: ..." that opens `/study/scheduling`. It tunes the FSRS parameters of the current workspace:
+The study setup (`/study`) has a link "Scheduling: …" (for example "Scheduling: default parameters" or "optimised on 3 Nov 2026") that opens `/study/scheduling`; Settings → Study links to it too. It tunes the FSRS parameters of the current workspace:
 
 - **Active** shows which parameter set is in use ("Use defaults" returns to the standard parameters).
 - **Optimise** fits parameters to your own review history in the browser (the work runs on your device, nothing is sent anywhere). It needs enough reviews: at least 400 labelled reviews, and it warns when you have fewer than 1000.
-- A candidate set is shown with a **preview** and a held-out check comparing it to the current parameters. You **Apply** or **Discard** it.
+- A candidate set is shown with a **Preview** and a held-out check comparing it to the current parameters: how many cards would be due now and in the next 7 and 30 days, the median interval, the cards whose due date moves, and the fit on your earlier and most recent reviews (log loss). A warning appears when many more cards would be due right away. You **Apply** or **Discard** it; mastery scores and Word Salad tiers recompute too, since they use stability. Applying can be undone right after.
 - **Saved sets** lists earlier sets (optimised or imported) to use again or delete.
-- **Import and export** exchange the parameter weights as text.
+- **Import / export** exchange the parameter weights as text (17, 19 or 21 numbers, as in Anki); **Copy active** copies the set in use.
 
 Vacation days are ignored when the optimizer reads your history.
 
