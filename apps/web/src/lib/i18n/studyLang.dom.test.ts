@@ -76,14 +76,14 @@ const AUDITED = [
 	'lib/components/Senses.svelte',
 	'lib/components/Sentences.svelte',
 	'lib/components/ReadingText.svelte',
-	'routes/entry/[id]/+page.svelte',
+	'lib/entry/EntryView.svelte',
 	'routes/stats/characters/+page.svelte',
 	'lib/components/map/CellTip.svelte',
 	'lib/features/flashcards/decks/DeckDetail.svelte',
 	'lib/features/flashcards/decks/StarterDeckDetail.svelte',
 	'lib/features/flashcards/decks/SystemDeckDetail.svelte',
 	'routes/lookups/+page.svelte',
-	'routes/search/+page.svelte',
+	'routes/search/ResultRow.svelte',
 	'lib/features/reader/BookView.svelte',
 	'lib/plugins/grammar/lessonData.ts'
 ];

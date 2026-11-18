@@ -6,6 +6,9 @@ import {
 	hasFilters,
 	reconcileFilters,
 	searchHref,
+	selectedFromParams,
+	submitHref,
+	filterHref,
 	setKind,
 	setLevel,
 	setScheme,
@@ -55,6 +58,29 @@ describe('searchHref', () => {
 		);
 		expect(searchHref('', { kind: '', scheme: '', level: '' })).toBe('/search');
 		expect(searchHref('', { kind: 'word', scheme: '', level: '' })).toBe('/search?kind=word');
+	});
+});
+
+describe('the selected entry (#104)', () => {
+	it('searchHref writes q, kind, scheme, level, e in that order and omits empty ones', () => {
+		expect(searchHref('学', { kind: 'word', scheme: 'hsk', level: 'HSK 1' }, 42)).toBe(
+			'/search?q=%E5%AD%A6&kind=word&scheme=hsk&level=HSK+1&e=42'
+		);
+		expect(searchHref('', clearFilters(), 7)).toBe('/search?e=7');
+		expect(searchHref('学', clearFilters())).toBe('/search?q=%E5%AD%A6');
+	});
+	it('selectedFromParams accepts only a positive safe integer', () => {
+		expect(selectedFromParams(new URLSearchParams('e=42'))).toBe(42);
+		for (const bad of ['0', '-1', '1.5', '1e3', 'abc', '9007199254740993', '']) {
+			expect(selectedFromParams(new URLSearchParams('e=' + bad))).toBeNull();
+		}
+		expect(selectedFromParams(new URLSearchParams(''))).toBeNull();
+	});
+	it('a submitted query drops e; a filter change keeps it', () => {
+		expect(submitHref('学', { kind: 'word', scheme: '', level: '' })).toBe('/search?q=%E5%AD%A6&kind=word');
+		expect(filterHref('学', { kind: '', scheme: 'hsk', level: '' }, 42)).toBe(
+			'/search?q=%E5%AD%A6&scheme=hsk&e=42'
+		);
 	});
 });
 
