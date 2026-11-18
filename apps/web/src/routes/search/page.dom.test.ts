@@ -347,4 +347,15 @@ describe('search page', () => {
 		await fireEvent(link, new MouseEvent('auxclick', { bubbles: true, button: 1 }));
 		expect(recordLookup).toHaveBeenCalledExactlyOnceWith(1, { entryId: 7, source: 'search' });
 	});
+
+	it('a middle-click records the lookup and leaves the browser to open its tab', async () => {
+		searchMock.mockResolvedValue([hit(7, '你好')]);
+		setUrl('/search?q=ni');
+		render(Page);
+		const link = await screen.findByText('你好');
+		const event = new MouseEvent('auxclick', { bubbles: true, cancelable: true, button: 1 });
+		expect(link.dispatchEvent(event)).toBe(true);
+		expect(recordLookup).toHaveBeenCalledExactlyOnceWith(1, { entryId: 7, source: 'search' });
+		expect(goto).not.toHaveBeenCalled();
+	});
 });

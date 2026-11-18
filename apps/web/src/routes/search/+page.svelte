@@ -134,7 +134,10 @@
 
 	/** Choosing a result: desktop replaces the entry in place; a phone pushes, so Back returns to the list. */
 	function choose(event: MouseEvent, entryId: number): void {
-		if (event.metaKey || event.ctrlKey || event.shiftKey) {
+		// A middle click / modified click opens the real href in another tab:
+		// record the lookup, but never cancel the browser's own action or
+		// navigate this one.
+		if (event.type === 'auxclick' || event.button === 1 || event.metaKey || event.ctrlKey || event.shiftKey) {
 			openedHit(entryId);
 			return;
 		}
