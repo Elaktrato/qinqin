@@ -347,7 +347,8 @@
 	}
 
 	/* Learned: a corner tick on the panel tile, so the band does not rely on
-	   colour alone. --on-accent keeps the tick visible on the full accent. */
+	   colour alone. --text on --panel is the same ≥ 4.5:1 pair as the glyph;
+	   the check is a --panel notch in the tick. */
 	.st-learned::after {
 		content: '';
 		position: absolute;
@@ -356,7 +357,7 @@
 		width: 0.7rem;
 		height: 0.7rem;
 		border-top-right-radius: 0.25rem;
-		background: var(--on-accent);
+		background: var(--text);
 		clip-path: polygon(0 0, 100% 0, 100% 100%);
 	}
 
@@ -367,7 +368,7 @@
 		right: calc(var(--glyph-inset) + 0.06rem);
 		width: 0.18rem;
 		height: 0.3rem;
-		border: solid var(--mastery-4);
+		border: solid var(--panel);
 		border-width: 0 0.1rem 0.1rem 0;
 		transform: rotate(45deg);
 		z-index: 1;
