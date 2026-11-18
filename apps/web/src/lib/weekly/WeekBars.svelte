@@ -123,6 +123,9 @@
 
 	.key.last {
 		background: color-mix(in srgb, var(--muted) 35%, transparent);
+		/* The wash is under 3:1 on panel in every built-in theme; the legend's
+		   outline names the second week together with its text. */
+		border: 1px solid var(--line);
 	}
 
 	.chart {

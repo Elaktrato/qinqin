@@ -176,6 +176,12 @@
 		margin-top: var(--space-4);
 	}
 
+	@media (max-width: 719px) {
+		.stats :global(.value) {
+			font-size: 1.6rem;
+		}
+	}
+
 	@media (min-width: 720px) {
 		.stats {
 			grid-template-columns: repeat(4, minmax(0, 1fr));

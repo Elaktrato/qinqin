@@ -222,12 +222,12 @@
 {/if}
 
 <style>
-	.week,
-	.milestones {
-		max-width: 40rem;
+	.week {
+		max-width: 64rem;
 	}
 
 	.milestones {
+		max-width: 40rem;
 		margin-top: 2rem;
 	}
 
