@@ -1077,6 +1077,10 @@ import type { Run } from '$lib/study/vacation';
 <svelte:window onkeydown={onKeydown} />
 
 <div class="page-body session" class:open={currentItem !== undefined && !complete}>
+	{#if missingConfig || workspaceMismatch || loadError || noWorkspace || loading || queue.length === 0}
+		<!-- The face and the summary carry their own h1; every state between them keeps the page outline. -->
+		<h1 class="visually-hidden">{t('study.session.title')}</h1>
+	{/if}
 	{#if missingConfig}
 		<p class="hint" role="status">{t('study.session.opening')}</p>
 	{:else if workspaceMismatch}

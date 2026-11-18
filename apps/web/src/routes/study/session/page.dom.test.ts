@@ -393,6 +393,17 @@ describe('personal note on the answer side', () => {
 	});
 });
 
+describe('session states keep the page outline (#101)', () => {
+	it('the no-workspace state still has an h1', async () => {
+		configure(['vocab']);
+		workspaces.set({ list: [], current: null });
+		render(Page);
+		const h1 = await screen.findByRole('heading', { level: 1 });
+		expect(h1.textContent).toBe('Session');
+		expect(h1.classList.contains('visually-hidden')).toBe(true);
+	});
+});
+
 describe('the open page (#101)', () => {
 	function shown(): string[] {
 		return screen.getAllByRole('button').filter((b) => b.closest('[role="group"]')).map((b) => b.querySelector('.when')?.textContent ?? '');
