@@ -49,6 +49,8 @@ export interface WeekSummary {
 	compareThrough: string;
 	rows: CountRow[];
 	days: WeekDay[];
+	/** The seven days of the week before (Monday … Sunday), same rules; never upcoming. */
+	previousDays: WeekDay[];
 	daysActive: { active: number; of: number; localOnly: boolean };
 	streak: number;
 	mature: Pair | null;
@@ -187,7 +189,7 @@ export function weekSummary(input: WeekInputs): WeekSummary {
 		...others
 	];
 
-	const days: WeekDay[] = dates.map((date) => {
+	const dayEntry = (date: string): WeekDay => {
 		if (date > today) return { date, state: 'upcoming', reviews: null, points: null };
 		const reviewsOf = act === null ? null : (act.get(date)?.[REVIEW] ?? 0);
 		const pointsOf = act === null ? null : (points.get(date) ?? 0);
@@ -197,7 +199,12 @@ export function weekSummary(input: WeekInputs): WeekSummary {
 		else if ((pointsOf ?? 0) > 0 || localDays.has(date)) state = 'active';
 		else state = 'inactive';
 		return { date, state, reviews: reviewsOf, points: pointsOf };
-	});
+	};
+
+	const days: WeekDay[] = dates.map(dayEntry);
+	// The paired bars cover all seven days of the week before, even where
+	// the four numbers stop at the same weekday (contract ruling).
+	const previousDays: WeekDay[] = datesBetween(prevMonday, addDays(prevMonday, 6)).map(dayEntry);
 	// Today counts once something is done: an empty morning is not a miss.
 	const counted = days.filter(
 		(d) =>
@@ -227,6 +234,7 @@ export function weekSummary(input: WeekInputs): WeekSummary {
 		compareThrough,
 		rows,
 		days,
+		previousDays,
 		daysActive: { active: counted.filter((d) => d.state === 'active').length, of: counted.length, localOnly: act === null },
 		streak,
 		mature: pair(input.mature),

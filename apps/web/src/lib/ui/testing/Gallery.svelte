@@ -16,6 +16,7 @@
 	import MenuItem from '../MenuItem.svelte';
 	import Panel from '../Panel.svelte';
 	import Section from '../Section.svelte';
+	import Select from '../Select.svelte';
 	import Sheet from '../Sheet.svelte';
 	import Stat from '../Stat.svelte';
 	import Tabs from '../Tabs.svelte';
@@ -29,6 +30,12 @@
 		{ id: 'week', label: 'Week' }
 	];
 	let word = $state('学习');
+	let grouping = $state('level');
+	const groupings = [
+		{ value: 'level', label: 'HSK level' },
+		{ value: 'grade', label: 'Grade' },
+		{ value: 'frequency', label: 'Frequency' }
+	];
 </script>
 
 <div class="gallery">
@@ -74,6 +81,16 @@
 			<Field label="Type the word" bind:value={word} hint="Pinyin with tone numbers works too" />
 			<Field label="Email" value="mei@" error="Not an email address" />
 			<Field label="Note" multiline value="A note about this word." />
+		</div>
+	</section>
+
+	<section data-gallery="Select">
+		<h2>Selects</h2>
+		<div class="grid">
+			<Select label="Group by" bind:value={grouping} options={groupings} />
+			<Select label="Stage" value="all" options={[{ value: 'all', label: 'All' }]} hint="One choice at a time" />
+			<Select label="Sort" value="a" options={[{ value: 'a', label: 'A' }]} error="Choose a sort order" />
+			<Select label="Disabled" value="a" options={[{ value: 'a', label: 'A' }]} disabled />
 		</div>
 	</section>
 

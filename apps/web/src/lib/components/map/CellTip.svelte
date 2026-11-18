@@ -79,11 +79,11 @@
 		position: fixed;
 		z-index: 40;
 		max-width: min(18rem, calc(100vw - 16px));
-		padding: 0.55rem 0.7rem;
-		border-radius: 0.5rem;
-		border: 1px solid var(--st-edge);
-		background: var(--st-tip-bg);
-		color: var(--st-tip-fg);
+		padding: var(--space-2) var(--space-3);
+		border-radius: var(--radius);
+		border: 1px solid var(--hair);
+		background: var(--panel);
+		color: var(--text);
 		box-shadow: var(--shadow-float);
 		font-size: 0.9rem;
 		pointer-events: none;
@@ -115,7 +115,7 @@
 
 	.variants,
 	.more {
-		color: var(--readable-muted);
+		color: var(--text);
 		font-size: 0.8rem;
 	}
 
@@ -123,7 +123,7 @@
 		display: flex;
 		align-items: center;
 		gap: 0.35rem;
-		margin-top: 0.4rem;
+		margin-top: var(--space-1);
 	}
 
 	.more {
@@ -133,28 +133,53 @@
 	.swatch {
 		width: 0.8rem;
 		height: 0.8rem;
-		border-radius: 0.2rem;
-		border: 1px solid var(--st-edge);
+		border-radius: 2px;
+		border: 1px solid var(--line);
 	}
 
 	.st-unknown {
-		background: var(--st-unknown-bg);
+		background: transparent;
 		border-style: dashed;
+		border-color: var(--muted);
 	}
 
 	.st-fresh {
-		background: var(--st-fresh-bar);
+		background: var(--mastery-1);
 	}
 
 	.st-learning {
-		background: var(--st-learning-bar);
+		background: var(--mastery-2);
 	}
 
 	.st-mature {
-		background: var(--st-mature-bar);
+		background: var(--mastery-3);
 	}
 
 	.st-learned {
-		background: var(--st-learned-bar);
+		background: var(--mastery-4);
+	}
+
+	@media (forced-colors: active) {
+		.swatch {
+			border-color: CanvasText;
+		}
+		.st-unknown {
+			border-style: dotted;
+		}
+		.st-fresh {
+			border-style: dashed;
+		}
+		.st-learning {
+			border-style: solid;
+			border-width: 1px;
+		}
+		.st-mature {
+			border-style: solid;
+			border-width: 2px;
+		}
+		.st-learned {
+			border-style: double;
+			border-width: 3px;
+		}
 	}
 </style>

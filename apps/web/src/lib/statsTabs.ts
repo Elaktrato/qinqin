@@ -58,7 +58,7 @@ export function statsPanelLabel(id: StatsTabId | null): string {
  * tabKeyTarget is the index of the tab a key moves to in a horizontal
  * tablist (ArrowLeft/ArrowRight wrap round, Home and End jump), or null
  * when the key is not a tablist key. A current index of -1 (no tab
- * selected) starts from the edges.
+ * selected) starts from the edges. The settings tabs re-export it.
  */
 export function tabKeyTarget(key: string, index: number, count: number): number | null {
 	if (count <= 0) return null;

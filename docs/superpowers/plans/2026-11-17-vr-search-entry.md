@@ -526,3 +526,80 @@ lookup or search hit is the text the data carries (snapshot / `written` / `shown
 ## Execution record
 
 (empty — filled by the builder)
+
+## Execution record
+
+Built 2026-11-18 on `feature/vr-search-entry` from `feature/visual-rework` 7912bc6f (#103 merged). Inline,
+test first per task; the #103 review fixes were merged in as 499e1987 before the item gates.
+
+**Commits:** `6173166c` server glosses/levels + entry characters (Tasks 2 and 3 in one commit — the shared
+`entryResponse` edit made a clean split artificial) · `fcb3bf4a` search URL `e` (T4) · `b135babd` result row
+(+ `e01fc277`, catalogue order) (T5) · `7292b06a` EntryView extraction (T6) · `a590beaa` entry header/chips,
+two columns, characters and related (T7–T10 in one commit) · `16a6222c` search master–detail and text filters
+(T11–T12) · `90d859ed` entry title/catalogue/audit after the move · `2ee4a7ea` optional hit extras and the row
+test types · `499e1987` merge of the journal review fixes · this record.
+
+**Test-first:** the Go levels/search/character tests failed to build before the new fields and helpers, then
+failed on the expected empty values; the web URL, row and row-text tests failed on the missing functions or
+the old DOM; the entry route tests (13) ran unchanged after the extraction; the search tests failed on the
+missing `By parts` button after the field change and were updated as forced. The page/entry search tests
+cover `e`, the split class, the Back link and clicking a row (one lookup).
+
+**Gates (Node 26.13.1, Go 1.26):** full `npx vitest run` exit 0 (521 files, 10,722 passed, 8 skipped);
+`npm run check` 0 errors/0 warnings; `npm run build` exit 0; Go `gofmt -l .` empty, `go vet ./...` and
+`go test -count=1 -p 2 -timeout 30m ./...` exit 0; `node scripts/gen-api-docs.mjs --check` exit 0 (no route
+change); `node scripts/check-sources.mjs` exit 0; `node --test scripts/*.test.mjs` exit 0. After the #103 fix
+merge the search/entry/journal/i18n suites (905 tests) and `npm run check` are green.
+
+**Adaptations and rulings**
+- Ruling: `Entry.characters`, `SearchHit.glosses` and `SearchHit.levels` are optional in the web type — the
+  server now always sends them, but many existing fixtures and older servers do not; every reader uses
+  `?? []` — cost: a client must not assume the fields exist.
+- Ruling: the entry page's header, main and side sections live inside `EntryView` rather than separate
+  `EntryHeader`/`EntryCharacters`/`EntryRelated` components — there is one consumer and the existing
+  `Readings`, `Senses`, `Sentences`, `StrokePlayer` and `Note` components already own their parts; helpers
+  `relatedWords` and `decksContaining` are pure and tested — cost: a future second consumer would extract
+  them.
+- Ruling: the entry view is a container-query grid (`container-type: inline-size`, two columns at 48rem)
+  inside the route's 48rem column, so the same component fits the search detail and the full page; the search
+  page switches at 720px as the frame does — cost: two breakpoints to keep in mind.
+- Ruling: a word's stroke player picks a character with small `aria-pressed` glyph buttons (first by
+  default), as the plan says; Japanese words show no stroke player (the data is hanzi) — cost: none.
+- Ruling: the frequency rank and deck count are optional page extras (`getEntryRanks`, the cached
+  `getStudyData`); a failure leaves the chip out and never blocks the entry — cost: the header can be shorter
+  offline.
+- Ruling: search selections replace history on a wide screen and push on a phone, decided at click time by
+  `matchMedia('(min-width: 720px)')`; without `e` the first result is previewed and nothing is recorded —
+  cost: a shared link without `e` does not name the previewed entry.
+- Ruling: the `By parts` button replaces the old parts link; the result row's accessible name is the word
+  (`aria-label`) with reading, gloss and kind · level as its description — cost: the row's text is not all in
+  its name.
+- Ruling: the entry route still owns the document title (`pageTitle`) and receives the written form from
+  `EntryView` through `ontitle` — the route-title walk reads route files, and the search detail sets its own
+  title — cost: one callback.
+
+**Changed existing tests:** `routeTitles`/`pageTitles` unchanged (the route keeps `pageTitle`); the search
+`By parts` test now finds a link named "By parts" (forced); the entry route test's `$lib/events` mock gained
+the exports reached by the moved import graph; the study-lang audit now checks `lib/entry/EntryView.svelte`
+and `routes/search/ResultRow.svelte` where the study text moved (forced); `SearchHit`/`Entry` fixtures that
+build the types gained no required fields because the extras are optional. No assertion was weakened.
+
+**Not verified:** a real browser/Playwright comparison (columns at 1024/1440, the container query, the phone
+Back flow, the stroke player) — pending in the combined gallery pass; a real screen reader and touch; a large
+dictionary's search timings; Android.
+
+## Review fix wave (2026-11-18)
+
+The independent review (`/tmp/opencode/reviews/104-report.md`, 2 Critical, 11 Important, 8 Minor) was fixed test-first in the worktree `vr-fixwave104` (branch `feature/vr-fixwave-104`, cut from `300f8cb2`). Every finding has its own commit or a small related group:
+
+**Commits:** `5b8668c0` C1/C2 (the detail is the URL's entry; Back on every `e`) · `04e8ec61` I1 (middle click) · `fc88e2cc` I2 (same-text submit drops `e`) · `0a014eff` I3/I4 (phone scroll/focus, roving rows, Back focus) · `d5e75a45` the a11y follow-up for the row handler · `4c834ea0` I8 (own-form resolution, dedupe, cap) · `f47c77b7` the missing levels/search Go tests · `23bef67f` I10/M3 (frame/document titles) · `a3926c23` I5 (entry header, Meanings/Examples/Related, Add to deck) · `64aa1ddd` I6 (stroke colours, play/pause, progress) · `1eebfd49` I7 (character rows) · `f490e53e` I9 (search field/filters) · `3390d6c7` M1/M2 (720px switch, no hidden preview) · `7097bbd5` M6/M4/M5/M7 (not-found link, extras guards, row text) · `6bab1359` M8 (wiki and API fields) · `688c6f6b` the a11y-name tests · `369f654d` the chosen row as tab stop · `cab78908` a dead style · `7ca8bc2b` the variant's visible label as its name · this record.
+
+**Test-first:** the C1/C2, I1–I4, I6, I7, I9, I10 and M6 tests were written and seen to fail against `300f8cb2` before the code changed (e.g. `record` for entry 7 instead of 9, the missing Back link with `e` and no hits, `goto` on a middle click, `#5` as the phone title, `0 strokes`, `'#0b6bcb'`). The I8 `覆/复` and dedupe tests failed on the old resolver and pass on the new one; the I5 tests failed on the absent header/meanings/`<b>`; the I9 tests failed on the primary Search button and the missing All/Level menu. The M4/M5 and levels/search guard tests pass on the shipped behaviour and close the coverage gap (the review's I11).
+
+**Changed existing tests (forced by the design):** `AddToStudy.dom.test.ts` finds the button as "Add to deck"; `Senses.dom.test.ts` focuses "Meanings · CEDICT" instead of the removed "Senses" heading; the entry route's variant test asserts the header's labelled variant link instead of the removed side-list reading; the search `By parts` test still finds a link (now an IconButton); the search page's events mock gained the exports reached through `EntryView`; the `StrokePlayer` missing-data test asserts the failed text instead of a hidden player. No assertion was weakened.
+
+**Removed keys:** `entry.page.variants` (the variant moved into the header), `entry.sentences.title` (the heading is `entry.page.examples`), `search.filters.scheme` (the level Menu replaces the scheme chips). **Added:** `entry.page.examples/meaningsFrom/variantLabel/traditional/simplified/variant`, `entry.char.level`, `entry.strokes.pause/progress/pick`, `entry.study.chooseDeck`, `search.filters.all/levelMenu/anyLevel/anyLevelItem/schemeLevel` (`anyLevelItem` is the menu's "Any level" while `anyLevel` is the trigger's "any": one key cannot carry both capitalisations).
+
+**Adaptations:** the not-found back link takes `backHref` so the search detail keeps its query; `EntryView` publishes a phone page action and passes `onadded`/`onchange` to `AddToStudy`; the entry detail's not-found heading follows `headingLevel`; the level Menu clears scheme and level on "Any level" (a level needs a scheme). `Search.filters.scheme` chips were dropped because the Menu sets scheme and level together.
+
+**Not verified:** the Playwright visual pass (column widths, the 720px edge, real touch/screen reader) and a real browser's middle-click default action; the full suites/build/`go ./...` are the orchestrator's.

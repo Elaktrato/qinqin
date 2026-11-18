@@ -1,6 +1,7 @@
 import { cleanup, render, screen } from '@testing-library/svelte';
 import { afterEach, describe, expect, it } from 'vitest';
 import MilestoneHistory from './MilestoneHistory.svelte';
+import source from './MilestoneHistory.svelte?raw';
 
 afterEach(() => cleanup());
 
@@ -11,7 +12,7 @@ const TITLES = new Map([
 ]);
 
 describe('MilestoneHistory', () => {
-	it('is an ordered list, newest first, "New" as text', () => {
+	it('renders the items in the given newest-first order, "New" as text', () => {
 		render(MilestoneHistory, {
 			items: [
 				{ id: 'days-active:10', day: '2026-11-12', isNew: true },
@@ -22,13 +23,21 @@ describe('MilestoneHistory', () => {
 			locale: 'en-GB'
 		});
 		const list = document.querySelector('ol')!;
-		const items = [...list.querySelectorAll('li')].map((li) => li.textContent?.replace(/\s+/g, ' ').trim());
+		const items = [...list.querySelectorAll('li')].map((li) => ({
+			title: li.querySelector('.title')?.textContent,
+			date: li.querySelector('.date')?.textContent,
+			isNew: li.querySelector('.new')?.textContent ?? null
+		}));
 		expect(items).toEqual([
-			'10 days active, reached 12 November 2026 New',
-			'7-day streak, reached 10 November 2026',
-			'100 reviews, reached 3 November 2026'
+			{ title: '10 days active', date: 'reached 12 November 2026', isNew: 'New' },
+			{ title: '7-day streak', date: 'reached 10 November 2026', isNew: null },
+			{ title: '100 reviews', date: 'reached 3 November 2026', isNew: null }
 		]);
 		expect(screen.getByText('New').tagName).not.toBe('svg');
+		// Plain rows with a hairline, no bordered pill.
+		const css = source.slice(source.indexOf('<style>'));
+		expect(css).not.toMatch(/border-radius:\s*999px/);
+		expect(css).toMatch(/border-top: 1px solid var\(--hair\)/);
 	});
 
 	it('the empty state', () => {

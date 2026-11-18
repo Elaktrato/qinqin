@@ -2,8 +2,21 @@
 	import { t } from '$lib/i18n';
 	import { glossLang, readingLang, studyLang } from '$lib/i18n/lang';
 	import type { Sentence } from '$lib/api/types';
+	import { markTerm } from '$lib/entry/markTerm';
 
-	let { sentences, language = '' }: { sentences: Sentence[]; /** The entry's language. */ language?: string } = $props();
+	let {
+		sentences,
+		language = '',
+		term = ''
+	}: {
+		sentences: Sentence[];
+		/** The entry's language. */
+		language?: string;
+		/** The entry's word, set in the reading accent inside each example. */
+		term?: string;
+	} = $props();
+
+	const parts = (hanzi: string) => markTerm(hanzi, term);
 
 	// Pack sentences carry their source pack; user sentences have no
 	// pack, so they are labelled with the user that wrote them.
@@ -19,11 +32,14 @@
 
 {#if sentences.length > 0}
 	<section class="sentences" aria-labelledby="sentences-heading">
-		<h2 id="sentences-heading">{t('entry.sentences.title')}</h2>
+		<h2 id="sentences-heading">{t('entry.page.examples')}</h2>
 		<ul>
 			{#each sentences as sentence (sentence.id)}
 				<li class="sentence">
-					<p class="hanzi" lang={studyLang(language)}>{sentence.hanzi}</p>
+					<p class="hanzi" lang={studyLang(language)}
+						>{#each parts(sentence.hanzi) as part, index (index)}{#if part.match}<b class="term">{part.text}</b
+								>{:else}{part.text}{/if}{/each}</p
+					>
 					{#if sentence.pinyin}<p class="pinyin" lang={readingLang('pinyin', language)}>{sentence.pinyin}</p>{/if}
 					{#if sentence.translation}<p class="translation" lang={glossLang(undefined)}>{sentence.translation}</p>{/if}
 					<span class="origin">{origin(sentence)}</span>
@@ -35,7 +51,8 @@
 
 <style>
 	.sentences {
-		margin-top: 2rem;
+		display: grid;
+		gap: var(--space-2);
 	}
 
 	.sentences h2,
@@ -44,24 +61,21 @@
 	}
 
 	.sentences h2 {
-		font-size: 0.8rem;
-		letter-spacing: 0.06em;
-		text-transform: uppercase;
+		font-size: var(--font-size-label);
+		font-weight: var(--weight-medium);
 		color: var(--readable-muted);
 	}
 
 	.sentences ul {
 		list-style: none;
 		padding: 0;
-		margin-top: 0.5rem;
 		display: grid;
-		gap: 0.75rem;
+		gap: var(--space-3);
 	}
 
 	.sentence {
-		padding: 0.65rem 0.85rem;
-		border: 1px solid color-mix(in srgb, currentColor 18%, transparent);
-		border-radius: 0.4rem;
+		display: grid;
+		gap: var(--space-1);
 	}
 
 	.sentence p {
@@ -69,7 +83,12 @@
 	}
 
 	.hanzi {
-		font-size: 1.15rem;
+		font-size: 1.125rem;
+	}
+
+	.term {
+		font-weight: var(--weight-strong);
+		color: var(--reading-accent);
 	}
 
 	.pinyin {
@@ -79,11 +98,11 @@
 
 	.translation {
 		font-size: 0.95rem;
+		color: var(--readable-muted);
 	}
 
 	.origin {
 		display: inline-block;
-		margin-top: 0.35rem;
 		font-size: 0.7rem;
 		color: var(--readable-muted);
 	}
