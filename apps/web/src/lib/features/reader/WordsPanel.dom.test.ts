@@ -75,6 +75,15 @@ describe('WordsPanel', () => {
 		expect(items[0].closest('ul')).toBeTruthy();
 	});
 
+	it("the study text carries the book's lang; the interface text does not", () => {
+		mount();
+		expect(screen.getByText('猫').getAttribute('lang')).toBe('zh');
+		expect(screen.getByText('r1').getAttribute('lang')).toBe('zh');
+		// Interface text (state and count) carries none.
+		expect(screen.getByText('×3').getAttribute('lang')).toBeNull();
+		expect(screen.getAllByText('New')[0].getAttribute('lang')).toBeNull();
+	});
+
 	it('adds the selection and all new words to the chosen deck', async () => {
 		const { onadd } = mount();
 		await fireEvent.click(screen.getByRole('checkbox', { name: '狗' }));
