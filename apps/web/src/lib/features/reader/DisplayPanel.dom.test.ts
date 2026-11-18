@@ -8,7 +8,13 @@ afterEach(cleanup);
 
 function mount(
 	over: Partial<ReaderDisplay> = {},
-	props: { hasBookRuby?: boolean; showAll?: boolean; script?: { value: Variant; error?: string } } = {}
+	props: {
+		hasBookRuby?: boolean;
+		showAll?: boolean;
+		script?: { value: Variant; error?: string };
+		error?: string;
+		notice?: string;
+	} = {}
 ) {
 	const onchange = vi.fn();
 	const ontoggleAll = vi.fn();
@@ -19,6 +25,8 @@ function mount(
 		showAll: props.showAll ?? false,
 		onchange,
 		ontoggleAll,
+		error: props.error,
+		notice: props.notice,
 		script: props.script ? { ...props.script, onchange: onscript } : undefined
 	} as never);
 	return { onchange, ontoggleAll, onscript };
@@ -47,6 +55,12 @@ describe('DisplayPanel', () => {
 		cleanup();
 		mount({}, { script: { value: 'simplified', error: 'Could not load the converter.' } });
 		expect(screen.getByRole('alert').textContent).toContain('Could not load the converter.');
+	});
+
+	it('shows a save error and a readings status in the panel itself (the page alerts sit behind the sheet)', () => {
+		mount({}, { error: 'Could not save the display settings.', notice: 'Some readings could not be loaded.' });
+		expect(screen.getByRole('alert').textContent).toBe('Could not save the display settings.');
+		expect(screen.getByRole('status').textContent).toBe('Some readings could not be loaded.');
 	});
 
 	it('the legend uses the shared w-new / w-learning classes', () => {

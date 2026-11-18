@@ -1279,7 +1279,11 @@
 						{showAll}
 						onchange={changeDisplay}
 						ontoggleAll={() => reveal.toggleAll()}
-						script={book?.language === 'zh' ? { value: prefs.variant, onchange: (v) => (prefs.variant = v) } : undefined}
+						script={book?.language === 'zh'
+							? { value: prefs.variant, onchange: (v) => (prefs.variant = v), error: variantError || undefined }
+							: undefined}
+						error={displayNotice}
+						notice={readings.failed > 0 ? t('reader.book.readingsFailed') : ''}
 					/>
 				{:else if tab === 'bookmarks'}
 					<BookmarksPanel

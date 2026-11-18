@@ -373,6 +373,20 @@ describe('BookView rail (#102)', () => {
 		]);
 	});
 
+	it('a failed display save is shown inside the rail sheet', async () => {
+		setWidth(800);
+		vi.mocked(setSettings).mockRejectedValueOnce(new Error('offline'));
+		render(BookView, { id: 1, chapter: 0 });
+		await screen.findByText('你好世界');
+		await fireEvent.click(screen.getByRole('button', { name: RAIL_BUTTON }));
+		const sheet = screen.getByRole('dialog', { name: 'Book tools' });
+		await fireEvent.click(within(sheet).getByRole('tab', { name: 'Display' }));
+		await fireEvent.click(within(sheet).getByRole('radio', { name: /^Always/ }));
+		await waitFor(() => expect(within(sheet).getByRole('alert').textContent).toBe('Could not save the display settings.'), {
+			timeout: 3000
+		});
+	});
+
 	it('jumping from a panel in the sheet closes it and moves to the place', async () => {
 		setWidth(800);
 		vi.mocked(listBookmarks).mockResolvedValueOnce([
