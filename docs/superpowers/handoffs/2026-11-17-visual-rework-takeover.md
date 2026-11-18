@@ -1,9 +1,9 @@
 # Visual rework — takeover handoff (paused after #102)
 
 Written 2026-11-17 when the owner paused the run after #102. The visual rework (epic #95, sub-issues #96–#106) is
-**half built**: #96–#98 are on `develop` (pushed, CI green); #99–#102 are built, merged into the collection branch
-`feature/visual-rework` but **not yet on `develop`** (#99 and #100 are reviewed with fix waves; **#101 and #102 are
-not yet independently reviewed**); #103–#106 are planned but **not built**. This file is the brief for the agent that
+**half built**: #96–#102 are on `develop` (the owner asked for #99–#102 to be merged at the pause: merge `1cadc874`;
+#99 and #100 are reviewed with fix waves, **#101 and #102 are on `develop` but not yet independently reviewed**);
+#103–#106 are planned but **not built**. This file is the brief for the agent that
 takes over: read it completely, then the documents it names, then continue with section 4.
 
 **Do not merge to `main`, tag or release.** #107 (owner's flower/level/day-marker drawings) and #108 (house
@@ -29,7 +29,7 @@ theme) are the owner's: leave them open; the heatmap ships with tint-only tiles.
 - Collection branch: `feature/visual-rework` (local worktree `.claude/worktrees/vr-collect`; pushed to `origin` at
   the pause so it survives). It contains everything below and the current `develop` (`4675f585`).
 - `develop` = `4675f585`, CI green: #96 themes, #97 fonts, #98 base components + token migration, the **blank-page build
-  fix**, and the **study-session loop fix** (see §3). Nothing of #99–#102 is on `develop` yet.
+  fix**, and the **study-session loop fix** (see §3). #99–#102 reached `develop` with merge `1cadc874` (CI result: see the commit status).
 - All `feature/vr-*` topic branches are merged into the collection branch; their worktrees under
   `.claude/worktrees/` can be removed (`git worktree list`; two are nested inside `vr-collect/.claude/worktrees/`
   because they were created from the wrong directory). Plans for #103–#106 are on the collection branch.
@@ -42,10 +42,10 @@ theme) are the owner's: leave them open; the heatmap ships with tint-only tiles.
 | 96 | Theme packs and appearance | on `develop`, issue closed | `9cea716` | `vr-themes` |
 | 97 | Fonts (Figtree, font packs, hanzi font) | on `develop`, issue closed | `9cea716` | `vr-fonts` |
 | 98 | Base components + token migration | on `develop`, issue closed | `9cea716` | `vr-base` |
-| 99 | App frame (top bar, drawer, menus) | built + reviewed + fixed, **not on develop** | `58bf008` | `vr-frame` |
-| 100 | Home + three heatmap layouts | built + reviewed + fixed, **not on develop** | `164ef42d` | `vr-home` |
-| 101 | Flashcards open page, grade bar with intervals | built, **no independent review yet** | `6f520397` | `vr-flashcards` |
-| 102 | Reader rail, word marks, lookup popup/sheet | built, **no independent review yet** | `105ddc7d` | `vr-reader` |
+| 99 | App frame (top bar, drawer, menus) | built + reviewed + fixed, on `develop` (issue still open) | `58bf008` | `vr-frame` |
+| 100 | Home + three heatmap layouts | built + reviewed + fixed, on `develop` (issue still open) | `164ef42d` | `vr-home` |
+| 101 | Flashcards open page, grade bar with intervals | on `develop`, **no independent review yet** | `6f520397` | `vr-flashcards` |
+| 102 | Reader rail, word marks, lookup popup/sheet | on `develop`, **no independent review yet** | `105ddc7d` | `vr-reader` |
 | 103 | Journal (3 columns, margin corrections, `kind`) | plan only | — | `vr-journal` |
 | 104 | Search master–detail + entry page | plan only | — | `vr-search-entry` |
 | 105 | Stats (Overview/Characters/Week) | plan only | — | `vr-stats` |
@@ -81,8 +81,10 @@ Baseline gates on the collection head at the pause are recorded in §7 (filled i
 1. **Review #101 and #102** (independent review on the strongest model; focus per plan "Review focus"; include
    Playwright-measured contrast over the built-in themes for grade names, word marks, chips; forced colours; reduced
    motion), **one fix wave each**, merge fixes into the collection branch.
-2. **Merge #99–#102 to `develop`**: full gates on the merged tree (§5), merge the collection branch `--no-ff` into
-   `develop`, push, **wait for CI green**, comment on and close #99–#102 (pattern: see closed #96–#98 comments).
+2. **Close the loop on #99–#102**: they are already on `develop` (merge `1cadc874`). Confirm CI green on that commit,
+   then comment on and close #99 and #100 (reviewed), and #101 and #102 once their review and fix wave are merged
+   (pattern: see the closed #96–#98 comments). Later items merge from the collection branch the same way
+   (`git merge --no-ff feature/visual-rework` on `develop`, full gates, push, wait for CI).
 3. **Build #103** (journal; includes the `kind` field = Go + AI review schema + prompt change; security review focus:
    prompt injection through entry text, untrusted provider output rendered as text only), **#104** (search master–detail,
    shared `EntryView`, lookup `glosses`/`levels` on search hits, characters on entries), **#105** (stats; new `Select`
