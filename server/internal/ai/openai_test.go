@@ -18,7 +18,7 @@ import (
 
 const (
 	oaKey      = "sk-fake-good-key-0001"
-	goodReview = `{"annotations":[{"quote":"你好","context_before":"","correction":"您好","explanation":"polite","category":"grammar"}],"overall":{"summary":"ok","strengths":["a"],"focus":["b"]}}`
+	goodReview = `{"annotations":[{"quote":"你好","context_before":"","correction":"您好","explanation":"polite","category":"grammar","kind":"mistake"}],"overall":{"summary":"ok","strengths":["a"],"focus":["b"]}}`
 	goodSugg   = `{"items":[{"title":"T","prompt":"P","words":["w"]}]}`
 	goodTrans  = `{"text":"你好","unreadable":false}`
 )
@@ -309,7 +309,7 @@ func TestOpenAIReplyMapping(t *testing.T) {
 	rig := newOARig(t, func(_ int, w http.ResponseWriter, _ *http.Request, _ seenReq) { writeJSON200(w, string(fx)) })
 	ad, sp := oaAdapter(rig, nil)
 	rep, err := ad.Review(context.Background(), oaCreds(sp, ""), reviewReq())
-	if err != nil || rep.Model != "gpt-6-astra-2026-11-01" || len(rep.Annotations) != 1 || rep.Annotations[0].Correction != "您好" || rep.Overall.Summary != "Good." {
+	if err != nil || rep.Model != "gpt-6-astra-2026-11-01" || len(rep.Annotations) != 2 || rep.Annotations[0].Correction != "您好" || rep.Annotations[0].Kind != "" || rep.Annotations[1].Kind != "suggestion" || rep.Overall.Summary != "Good." {
 		t.Fatalf("fixture reply = %+v, %v", rep, err)
 	}
 	if len(rep.Calls) != 1 || rep.Calls[0].Kind != "review" {

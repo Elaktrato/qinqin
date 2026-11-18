@@ -52,6 +52,7 @@ func (Fake) Review(ctx context.Context, c Credentials, r ReviewRequest) (ReviewR
 		}
 	}
 	wrongScript := strings.Contains(r.Text, "[[fake:wrongscript]]")
+	noKind := strings.Contains(r.Text, "[[fake:nokind]]")
 
 	runes := []rune(r.Text)
 	var anns []RawAnnotation
@@ -84,12 +85,20 @@ func (Fake) Review(ctx context.Context, c Credentials, r ReviewRequest) (ReviewR
 			if wrongScript {
 				corr = "abc"
 			}
+			kind, category := "mistake", "grammar"
+			if len(anns)%2 == 1 {
+				kind, category = "suggestion", "style"
+			}
+			if noKind {
+				kind = ""
+			}
 			anns = append(anns, RawAnnotation{
 				Quote:         quote,
 				ContextBefore: string(runes[ctxStart:start]),
 				Correction:    corr,
 				Explanation:   "Fake explanation in " + r.ExplanationLanguage,
-				Category:      "grammar",
+				Category:      category,
+				Kind:          kind,
 			})
 		}
 		start = end
@@ -105,7 +114,14 @@ func (Fake) Review(ctx context.Context, c Credentials, r ReviewRequest) (ReviewR
 		if wrongScript {
 			corr = "abc"
 		}
-		anns = append(anns, RawAnnotation{Quote: "不存在的", Correction: corr, Explanation: "Fake explanation in " + r.ExplanationLanguage, Category: "grammar"})
+		kind := "mistake"
+		if len(anns)%2 == 1 {
+			kind = "suggestion"
+		}
+		if noKind {
+			kind = ""
+		}
+		anns = append(anns, RawAnnotation{Quote: "不存在的", Correction: corr, Explanation: "Fake explanation in " + r.ExplanationLanguage, Category: "grammar", Kind: kind})
 	}
 
 	model, from := c.Model, ""

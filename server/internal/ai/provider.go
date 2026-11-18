@@ -26,7 +26,7 @@ var Models = []ModelInfo{
 type Usage struct{ InputTokens, OutputTokens, CacheReadTokens int64 }
 
 // RawAnnotation is one model-proposed correction, before server validation.
-type RawAnnotation struct{ Quote, ContextBefore, Correction, Explanation, Category string }
+type RawAnnotation struct{ Quote, ContextBefore, Correction, Explanation, Category, Kind string }
 
 // Overall is the summary part of a review.
 type Overall struct {

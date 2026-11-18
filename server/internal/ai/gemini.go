@@ -240,7 +240,7 @@ func (g *Gemini) Review(ctx context.Context, cr Credentials, r ReviewRequest) (R
 		return rep, err
 	}
 	for _, a := range out.Annotations {
-		rep.Annotations = append(rep.Annotations, RawAnnotation{Quote: a.Quote, ContextBefore: a.ContextBefore, Correction: a.Correction, Explanation: a.Explanation, Category: a.Category})
+		rep.Annotations = append(rep.Annotations, RawAnnotation{Quote: a.Quote, ContextBefore: a.ContextBefore, Correction: a.Correction, Explanation: a.Explanation, Category: a.Category, Kind: a.Kind})
 	}
 	return rep, nil
 }

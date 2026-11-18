@@ -7,7 +7,7 @@
       "index": 0,
       "message": {
         "role": "assistant",
-        "content": "{\"annotations\":[{\"quote\":\"你好\",\"context_before\":\"\",\"correction\":\"您好\",\"explanation\":\"More polite.\",\"category\":\"word choice\"}],\"overall\":{\"summary\":\"Good.\",\"strengths\":[\"clear\"],\"focus\":[\"politeness\"]}}",
+        "content": "{\"annotations\":[{\"quote\":\"你好\",\"context_before\":\"\",\"correction\":\"您好\",\"explanation\":\"More polite.\",\"category\":\"word choice\"},{\"quote\":\"谢谢\",\"context_before\":\"\",\"correction\":\"多谢\",\"explanation\":\"More natural.\",\"category\":\"style\",\"kind\":\"suggestion\"}],\"overall\":{\"summary\":\"Good.\",\"strengths\":[\"clear\"],\"focus\":[\"politeness\"]}}",
         "refusal": null
       },
       "finish_reason": "stop"
@@ -16,6 +16,8 @@
   "usage": {
     "prompt_tokens": 120,
     "completion_tokens": 40,
-    "prompt_tokens_details": {"cached_tokens": 100}
+    "prompt_tokens_details": {
+      "cached_tokens": 100
+    }
   }
 }
