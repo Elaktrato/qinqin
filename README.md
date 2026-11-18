@@ -213,8 +213,8 @@ the Compose plugin required) run:
 docker compose up -d
 ```
 
-No reverse proxy in front? Set `QINQIN_TRUSTED_PROXIES=none` (uncomment it in
-`docker-compose.yml`): the default trusts private-network peers' `X-Forwarded-For`,
+No reverse proxy in front? Set `QINQIN_TRUSTED_PROXIES=none` (in `.env`, or
+the stack environment): the default trusts private-network peers' `X-Forwarded-For`,
 which a LAN client could forge to dodge the per-client sign-in limits.
 
 On the first run, seed the bundled packs (the upstream dictionaries, the Jiten
@@ -279,9 +279,16 @@ the server waits at most 5 s (`busy_timeout`) before a write fails.
 The `adduser` command prompts for a password (10 to 256 characters, not the username). Then open
 <http://localhost:8080>.
 
-The SQLite database and installed packs live in `./data` next to the compose
-file. Set `QINQIN_PORT` to change the published port and `QINQIN_IMAGE` to pin
-an image.
+The SQLite database and installed packs live in the named volume `qinqin-data`.
+Set `QINQIN_DATA_VOLUME=./data` (or an absolute path such as `/srv/qinqin/data`)
+to bind-mount a host directory instead. Set `QINQIN_PORT` to change the
+published port and `QINQIN_IMAGE` to pin an image. `QINQIN_SECRET` is optional:
+empty means AI features are off (see [Journal and AI](#journal-and-ai)).
+
+> **Upgrading from the old quick start?** It kept the data in `./data`; the
+> compose file now defaults to a named volume, so without a change you would
+> start on an empty instance. Previously `./data`: set `QINQIN_DATA_VOLUME=./data`
+> (in a `.env` file next to `docker-compose.yml`) to keep using it.
 
 > Seed and create the admin account **before** exposing the port beyond your
 > LAN: while no user exists, the first registration over the API becomes the
@@ -313,24 +320,26 @@ Check from the server with `docker pull ghcr.io/elaktrato/qinqin:v0.3.0`.
 
 ## Deploying with Portainer
 
-[`deploy/portainer-stack.yml`](deploy/portainer-stack.yml) differs from the
-quick-start `docker-compose.yml`: a named volume instead of `./data`
-(relative bind mounts depend on where Portainer checks the stack out), a
-required `QINQIN_SECRET` (the deployment fails if it is unset), memory/CPU
-limits (1 GiB, 2 CPUs), log rotation (3 x 10 MB) and `no-new-privileges`.
-It does not set `user:` or `read_only:`: the image has no `USER` (it runs as
-root) and the server writes temporary files to `/tmp` (OCR input, pack
-uploads), so a read-only root filesystem is not enabled.
+Portainer needs no special file: `docker-compose.yml` is plain compose. It uses
+a named volume (relative bind mounts depend on where Portainer checks the stack
+out), rotates the logs (3 x 10 MB) and sets `no-new-privileges`. It does not set
+`user:` or `read_only:`: the image has no `USER` (it runs as root) and the server
+writes temporary files to `/tmp` (OCR input, pack uploads), so a read-only root
+filesystem is not enabled. Memory and CPU caps are in the file, commented out.
 
-1. **Generate the secret** and store it in your password manager:
+**Upgrading:** a stack that used the compose path `deploy/portainer-stack.yml`
+must change it to `docker-compose.yml` (that file no longer exists); the
+variables are the same, and `QINQIN_SECRET` is now optional.
+
+1. **Generate the secret** (optional; without it AI is off) and store it in your password manager:
    `head -c 32 /dev/urandom | base64`. It encrypts the users' AI API keys.
    Back it up **separately** from the data volume; it is never written to
    `/data`. Lose it and users must enter their keys again.
 2. **Add the stack.** Portainer: Stacks, Add stack. Either *Web editor* and
-   paste `deploy/portainer-stack.yml`, or *Repository* with URL
+   paste `docker-compose.yml`, or *Repository* with URL
    `https://github.com/Elaktrato/qinqin`, reference `refs/heads/main` (or a
-   tag) and compose path `deploy/portainer-stack.yml`.
-3. **Environment variables** (stack form): `QINQIN_SECRET` (required),
+   tag) and compose path `docker-compose.yml`.
+3. **Environment variables** (stack form): `QINQIN_SECRET` (optional),
    `QINQIN_IMAGE` (e.g. `ghcr.io/elaktrato/qinqin:v1.2.3`), `QINQIN_PORT`
    (host port, default 8080). Optional: `QINQIN_DATA_VOLUME` as an absolute
    host path (e.g. `/srv/qinqin/data`) to bind-mount a directory instead of the
@@ -752,7 +761,6 @@ cost matters (calls are limited to 30 per user and hour across all providers).
 
 | Symptom | Cause and fix |
 |---|---|
-| Stack will not deploy: "required variable QINQIN_SECRET is missing" | Set it in the stack's environment variables |
 | Container restarting | Read its log. Bad host path in `QINQIN_DATA_VOLUME` or no write permission (`create data directory ...`); fix ownership (the image runs as root) |
 | Log: `QINQIN_SECRET ... not 32 bytes of base64` / AI disabled | Regenerate with `head -c 32 /dev/urandom | base64`; without it AI stays off, the app still works |
 | AI settings say there is no secret | `QINQIN_SECRET` unset or invalid when the container started; fix and redeploy |
