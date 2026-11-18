@@ -14,6 +14,7 @@
 	} from '$lib/study/store';
 	import { rangeIds, toggleId, wordsOfCards } from '$lib/study/cardSelection';
 	import type { Deck, StudyCard } from '$lib/study/types';
+	import { Button, Select } from '$lib/ui';
 
 	// Lists the words (vocab cards) of the workspace so they can be moved
 	// between decks or deleted, one or many at once. Every change can be
@@ -158,15 +159,16 @@
 		<p class="hint">{t('entry.cards.none')}</p>
 	{:else}
 		<div class="bar">
-			<label>
-				{t('entry.cards.show')}
-				<select bind:value={filter}>
-					<option value="all">{t('entry.cards.allDecks')}</option>
-					{#each decks as deck (deck.id)}
-						<option value={deck.id}>{deck.name}</option>
-					{/each}
-				</select>
-			</label>
+			<div class="filter">
+				<Select
+					label={t('entry.cards.show')}
+					bind:value={filter}
+					options={[
+						{ value: 'all', label: t('entry.cards.allDecks') },
+						...decks.map((deck) => ({ value: deck.id, label: deck.name }))
+					]}
+				/>
+			</div>
 			<label class="all">
 				<input type="checkbox" checked={allChosen} onchange={toggleAll} />
 				{t('entry.cards.selectAll', { count: visible.length })}
@@ -177,26 +179,27 @@
 
 		<div class="bar actions" role="group" aria-label={t('entry.cards.selected')}>
 			<span>{t('entry.cards.selectedCount', { count: chosen.length })}</span>
-			<label>
-				{t('entry.cards.moveTo')}
-				<select bind:value={target} disabled={chosen.length === 0 || busy}>
-					<option value="">{t('entry.cards.chooseDeck')}</option>
-					{#each decks as deck (deck.id)}
-						<option value={deck.id}>{deck.name}</option>
-					{/each}
-				</select>
-			</label>
-			<button type="button" disabled={chosen.length === 0 || target === '' || busy} onclick={move}>
+			<div class="filter">
+				<Select
+					label={t('entry.cards.moveTo')}
+					bind:value={target}
+					disabled={chosen.length === 0 || busy}
+					options={[
+						{ value: '', label: t('entry.cards.chooseDeck') },
+						...decks.map((deck) => ({ value: deck.id, label: deck.name }))
+					]}
+				/>
+			</div>
+			<Button disabled={chosen.length === 0 || target === '' || busy} onclick={move}>
 				{t('entry.cards.move')}
-			</button>
-			<button
-				type="button"
-				class="danger"
+			</Button>
+			<Button
+				tone="danger"
 				disabled={chosen.length === 0 || busy}
 				onclick={() => (chosen.length > 1 ? openConfirm() : remove([...chosen]))}
 			>
 				{t('common.action.delete')}
-			</button>
+			</Button>
 		</div>
 
 		{#if confirming && chosen.length > 1}
@@ -208,12 +211,10 @@
 				onkeydown={confirmKey}
 			>
 				<p>{t('entry.cards.confirmText', { count: chosen.length })}</p>
-				<button type="button" class="danger" onclick={() => remove([...chosen])}>
+				<Button tone="danger" variant="primary" onclick={() => remove([...chosen])}>
 					{t('entry.cards.deleteCount', { count: chosen.length })}
-				</button>
-				<button type="button" class="secondary" onclick={() => (confirming = false)}>
-					{t('common.action.cancel')}
-				</button>
+				</Button>
+				<Button onclick={() => (confirming = false)}>{t('common.action.cancel')}</Button>
 			</div>
 		{/if}
 
@@ -230,15 +231,14 @@
 						<span class="word" lang={studyLang($workspaces.current?.language)}>{label(card)}</span>
 						<span class="decks">{decksOf(card)}</span>
 					</label>
-					<button
-						type="button"
-						class="danger"
+					<Button
+						tone="danger"
 						aria-label={t('entry.cards.deleteOne', { word: label(card) })}
 						disabled={busy}
 						onclick={() => remove([card.id])}
 					>
 						{t('common.action.delete')}
-					</button>
+					</Button>
 				</li>
 			{/each}
 			{#if visible.length === 0}
@@ -263,7 +263,7 @@
 			onfocusout={() => actions.resumeTimer()}
 		>
 			<span>{undo.text}</span>
-			<button type="button" disabled={busy} onclick={undoLast}>{t('common.action.undo')}</button>
+			<Button disabled={busy} onclick={undoLast}>{t('common.action.undo')}</Button>
 		</div>
 	{/if}
 </div>
@@ -291,6 +291,10 @@
 		display: flex;
 		align-items: center;
 		gap: 0.4rem;
+	}
+
+	.filter {
+		min-width: 12rem;
 	}
 
 	.rows {
@@ -355,11 +359,6 @@
 	.confirm p {
 		margin: 0;
 		flex-basis: 100%;
-	}
-
-	button {
-		min-height: 2.75rem;
-		min-width: 2.75rem;
 	}
 
 	.error {
