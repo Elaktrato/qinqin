@@ -97,8 +97,9 @@ services:
       timeout: 5s
       retries: 3
       # The first start installs the bundled packs before it listens (about
-      # 45 s on a fast disk, more on a slow one); do not count that as unhealthy.
-      start_period: 120s
+      # 2 minutes measured on a busy dev machine, more on a slow disk); do not
+      # count that as unhealthy.
+      start_period: 300s
     security_opt:
       - no-new-privileges:true
     # No `user:` and no `read_only:`: the image has no USER (runs as root) and

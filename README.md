@@ -220,7 +220,7 @@ which a LAN client could forge to dodge the per-client sign-in limits.
 The first start installs the bundled packs by itself (the upstream dictionaries,
 the Jiten frequency list, the HSK 3.0 character, HSK 3.0 word and JLPT kanji
 level lists, the stroke data and the Kanji alive audio when present) before it
-listens: about 45 s on a fast disk, and the health check allows 120 s. Create
+listens: about 2 minutes (126 s measured on a busy machine; the first start only), and the health check allows 300 s. Create
 the admin account:
 
 ```bash
@@ -381,7 +381,7 @@ variables are the same, and `QINQIN_SECRET` is now optional.
    installed the bundled packs from the image (CC-CEDICT, Unihan, JMdict,
    KANJIDIC2, Jiten frequencies, HSK 3.0 and JLPT kanji level lists, the stroke
    data, and the Kanji alive audio when present) before it listened, which
-   takes about 45 s (the health check waits up to 120 s). The demo packs are
+   takes about 2 minutes (the health check waits up to 300 s). The demo packs are
    not installed; `qinqin seed` adds them, and local packs.
 
    **Or create the admin automatically.** Set `QINQIN_BOOTSTRAP_ADMIN` to the
