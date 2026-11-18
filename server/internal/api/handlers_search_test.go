@@ -2,12 +2,21 @@ package api_test
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
+	"fmt"
 	"net/http"
+	"net/http/httptest"
+	"path/filepath"
 	"slices"
+	"strings"
+	"sync/atomic"
 	"testing"
 
+	"qinqin/internal/api"
+	"qinqin/internal/db"
 	"qinqin/internal/dict"
+	"qinqin/internal/lang"
 	"qinqin/internal/levels"
 	"qinqin/internal/model"
 )
@@ -135,5 +144,141 @@ func TestSearchEndpoint(t *testing.T) {
 		if status, _ := search(q); status != http.StatusBadRequest {
 			t.Errorf("%s status = %d, want 400", q, status)
 		}
+	}
+}
+
+// TestSearchHitGlosses: one first gloss per dictionary in sense order, at
+// most three, never a gloss of an inactive dictionary, and always an array.
+func TestSearchHitGlosses(t *testing.T) {
+	lang.Register(lang.Zh{})
+	ts, sqlDB := newServer(t)
+	glosses := []string{"good one", "good two", "good three"}
+	for i, gloss := range glosses {
+		lookupImport(t, sqlDB, dict.Manifest{
+			ID: fmt.Sprintf("gloss-%d", i), Name: fmt.Sprintf("Gloss %d", i), Version: "1",
+			Type: "dictionary", Language: "zh", License: "CC BY-SA 4.0", Attribution: "test", Format: "cedict",
+		}, "dictionary.txt", fmt.Sprintf("好 好 [hao3] /%s/\n", gloss))
+	}
+	lookupImport(t, sqlDB, dict.Manifest{
+		ID: "gloss-gone", Name: "Gone", Version: "1", Type: "dictionary", Language: "zh",
+		License: "CC BY-SA 4.0", Attribution: "test", Format: "cedict",
+	}, "dictionary.txt", "坏 坏 [huai4] /bad/\n")
+	if err := dict.Uninstall(context.Background(), sqlDB, dictID(t, sqlDB, "gloss-gone")); err != nil {
+		t.Fatalf("uninstall: %v", err)
+	}
+
+	resp := doJSON(t, http.MethodGet, ts.URL, "/api/search?q=hao&lang=zh", "", nil)
+	var hits []searchHitBody
+	decodeJSON(t, resp, &hits)
+	if len(hits) != 1 || len(hits[0].Glosses) != 3 {
+		t.Fatalf("hao hits = %+v, want 好 with three glosses", hits)
+	}
+	for i, want := range glosses {
+		if hits[0].Glosses[i].Gloss != want || hits[0].Glosses[i].DictionaryID == 0 {
+			t.Errorf("gloss %d = %+v, want %q", i, hits[0].Glosses[i], want)
+		}
+		if i > 0 && hits[0].Glosses[i].DictionaryID <= hits[0].Glosses[i-1].DictionaryID {
+			t.Errorf("glosses not in sense order: %+v", hits[0].Glosses)
+		}
+	}
+
+	// The word's only dictionary is uninstalled: the hit keeps an empty
+	// array, never null.
+	resp = doJSON(t, http.MethodGet, ts.URL, "/api/search?q=huai&lang=zh", "", nil)
+	var raw []map[string]json.RawMessage
+	decodeJSON(t, resp, &raw)
+	if len(raw) != 1 || string(raw[0]["glosses"]) != "[]" {
+		t.Errorf("inactive-dictionary hit = %v, want glosses []", raw)
+	}
+}
+
+// TestSearchHitLevels: the lowest level of each scheme, never a higher one,
+// and [] for an entry in no scheme.
+func TestSearchHitLevels(t *testing.T) {
+	ts, sqlDB := newServer(t)
+	seedEntries(t, sqlDB)
+	low := writeLevelsPack(t, "low", `{"unit":"character","levels":[{"name":"3","entries":["好"]},{"name":"5","entries":["好"]}]}`)
+	other := writeLevelsPack(t, "other", `{"unit":"character","levels":[{"name":"N5","entries":["好"]}]}`)
+	for _, name := range []string{low, other} {
+		pack, err := dict.LoadPack(name)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if _, err := levels.Import(context.Background(), sqlDB, pack); err != nil {
+			t.Fatalf("import %s: %v", name, err)
+		}
+	}
+
+	resp := doJSON(t, http.MethodGet, ts.URL, "/api/search?q=hao&lang=zh", "", nil)
+	var hits []searchHitBody
+	decodeJSON(t, resp, &hits)
+	if len(hits) != 1 || len(hits[0].Levels) != 2 {
+		t.Fatalf("hao levels = %+v, want two schemes", hits)
+	}
+	if l := hits[0].Levels; l[0].Level != "3" || l[1].Level != "N5" {
+		t.Errorf("hao levels = %+v, want the lowest (3) then N5, never 5", l)
+	}
+
+	resp = doJSON(t, http.MethodGet, ts.URL, "/api/search?q=xing&lang=zh", "", nil)
+	var raw []map[string]json.RawMessage
+	decodeJSON(t, resp, &raw)
+	if len(raw) != 1 || string(raw[0]["levels"]) != "[]" {
+		t.Errorf("unescorted hit = %v, want levels []", raw)
+	}
+}
+
+// TestSearchQueriesBounded: the number of statements does not grow with the
+// number of hits (a counting driver, 1 hit against 50).
+func TestSearchQueriesBounded(t *testing.T) {
+	lang.Register(lang.Zh{})
+	path := filepath.Join(t.TempDir(), "test.db")
+	sqlDB, err := db.Open(path)
+	if err != nil {
+		t.Fatalf("db.Open: %v", err)
+	}
+	t.Cleanup(func() { sqlDB.Close() })
+	var lines strings.Builder
+	for i := 0; i < 50; i++ {
+		r := rune(0x4e00 + i)
+		fmt.Fprintf(&lines, "%c %c [ma3] /horse/\n", r, r)
+	}
+	lookupImport(t, sqlDB, dict.Manifest{
+		ID: "many", Name: "Many", Version: "1", Type: "dictionary", Language: "zh",
+		License: "CC BY-SA 4.0", Attribution: "test", Format: "cedict",
+	}, "dictionary.txt", lines.String())
+
+	var count atomic.Int64
+	counted := sql.OpenDB(countingConnector{
+		drv:   sqlDB.Driver(),
+		dsn:   path + "?_pragma=busy_timeout(5000)&_pragma=journal_mode(WAL)",
+		count: &count,
+	})
+	t.Cleanup(func() { counted.Close() })
+	ts := httptest.NewServer(api.New(counted, t.TempDir(), nil))
+	t.Cleanup(ts.Close)
+
+	search := func(limit int) []searchHitBody {
+		resp := doJSON(t, http.MethodGet, ts.URL, fmt.Sprintf("/api/search?q=horse&lang=zh&limit=%d", limit), "", nil)
+		var hits []searchHitBody
+		decodeJSON(t, resp, &hits)
+		return hits
+	}
+	// Warm the pool so connection setup is not part of either measurement.
+	_ = search(1)
+
+	count.Store(0)
+	if hits := search(1); len(hits) != 1 {
+		t.Fatalf("limit 1 hits = %d", len(hits))
+	}
+	one := count.Load()
+
+	count.Store(0)
+	if hits := search(50); len(hits) != 50 {
+		t.Fatalf("limit 50 hits = %d", len(hits))
+	}
+	fifty := count.Load()
+
+	if one != fifty {
+		t.Errorf("1 hit ran %d statements, 50 hits ran %d; want the same", one, fifty)
 	}
 }
