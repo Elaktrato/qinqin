@@ -20,6 +20,7 @@ vi.mock('$lib/time/zone', () => ({
 import { addEntries, loadPage } from '$lib/lookups/pageData';
 import { clearHistory, removeFromHistory, saveLookupCfg } from '$lib/lookups/store';
 import { workspaces } from '$lib/workspaces';
+import { primaryActions } from '$lib/ui/testing/primary';
 import Page from './+page.svelte';
 import source from './+page.svelte?raw';
 
@@ -83,6 +84,13 @@ describe('/lookups page', () => {
 		expect(within(rows[0]).getByRole('link', { name: '词1' }).getAttribute('href')).toBe('/entry/1');
 	});
 
+	it('the deck is a Select and the history rows are hairline list items', async () => {
+		vi.mocked(loadPage).mockResolvedValue(data([item(1)]));
+		render(Page);
+		await screen.findByRole('list', { name: 'Looked-up words' });
+		expect(screen.getByLabelText('Deck').closest('.field')).toBeTruthy();
+	});
+
 	it('Add on a row adds that word to the chosen deck and says what happened', async () => {
 		vi.mocked(loadPage).mockResolvedValue(data([item(1), item(2)]));
 		render(Page);
@@ -120,6 +128,7 @@ describe('/lookups page', () => {
 		);
 		render(Page);
 		const box = await screen.findByRole('region', { name: 'You keep looking these up' });
+		expect(primaryActions(box)).toHaveLength(1);
 		expect(box.textContent).toContain('词1');
 		expect(box.textContent).toContain('词2');
 		expect(box.textContent).not.toContain('词3');

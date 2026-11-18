@@ -139,7 +139,6 @@ describe('the allowlist matching', () => {
 /** Page-manifest files still carrying restyle findings until the Select-dependent pass (P7/P17/P22). */
 const PAGE_REMAINDER: Partial<Record<Rule, string[]>> = {
 	control: [
-		'routes/lookups/+page.svelte',
 		'routes/search/parts/+page.svelte',
 	]
 };

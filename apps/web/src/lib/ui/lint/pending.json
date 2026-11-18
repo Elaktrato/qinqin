@@ -25,7 +25,6 @@
 		"lib/features/flashcards/cards/ToneCard.svelte"
 	],
 	"control": [
-		"routes/lookups/+page.svelte",
 		"routes/search/parts/+page.svelte"
 	]
 }

@@ -19,6 +19,7 @@
 	import { currentStudyDay } from '$lib/time/zone';
 	import { workspaces } from '$lib/workspaces';
 	import { glossLang, studyLang, wordReadingLang, readingLang } from '$lib/i18n/lang';
+	import { Button, Section, Select } from '$lib/ui';
 
 	// The lookup history of the current workspace (#72): what the learner
 	// looked up, add to a deck, remove, clear, and the recording switch. The
@@ -171,22 +172,21 @@
 	<h1>{t('lookups.title')}</h1>
 
 	<div class="switch-row">
-		<button
-			type="button"
+		<Button
 			role="switch"
 			aria-checked={record}
 			aria-describedby="record-hint"
 			class="switch"
 			disabled={busy || data === null}
-			onclick={() => setRecord(!record)}>{t('lookups.record')}</button
+			onclick={() => setRecord(!record)}>{t('lookups.record')}</Button
 		>
 		<p id="record-hint" class="hint">{t('lookups.recordHint')}</p>
 	</div>
 	{#if offerClear}
 		<p class="offer">
 			{t('lookups.recordingOff')}
-			<button type="button" onclick={() => ((confirming = true), (offerClear = false))}
-				>{t('lookups.clearToo')}</button
+			<Button tone="danger" onclick={() => ((confirming = true), (offerClear = false))}
+				>{t('lookups.clearToo')}</Button
 			>
 		</p>
 	{/if}
@@ -194,53 +194,49 @@
 	{#if wsId === null}
 		<p class="hint">{t('lookups.noWorkspace')}</p>
 	{:else if loadError}
-		<p role="alert">{loadError} <button type="button" onclick={() => wsId !== null && load(wsId)}>{t('common.action.retry')}</button></p>
+		<p role="alert">{loadError} <Button onclick={() => wsId !== null && load(wsId)}>{t('common.action.retry')}</Button></p>
 	{:else if data === null}
 		<p role="status">{t('common.loading')}</p>
 	{:else}
 		{#if prompt.length > 0}
-			<section class="prompt" aria-labelledby="prompt-heading">
-				<h2 id="prompt-heading">{t('lookups.prompt.title')}</h2>
+			<Section title={t('lookups.prompt.title')}>
 				<p class="words">
 					{#each prompt as p, i (p.entryId)}{i > 0 ? '、' : ''}<a href={`/entry/${p.entryId}`}>{written(p.entryId)}</a
 						> <span class="count">×{p.count}</span>{/each}
 				</p>
-				<button type="button" disabled={busy} onclick={() => add(prompt.map((p) => p.entryId))}
-					>{t('lookups.prompt.add', { count: prompt.length, deck: deck.name })}</button
+				<Button variant="primary" disabled={busy} onclick={() => add(prompt.map((p) => p.entryId))}
+					>{t('lookups.prompt.add', { count: prompt.length, deck: deck.name })}</Button
 				>
-			</section>
+			</Section>
 		{/if}
 
 		<div class="toolbar" role="group" aria-label={t('lookups.toolbar')}>
-			<label>{t('lookups.deck')}
-				<select bind:value={deckId} disabled={busy}>
-					{#each decks as d (d.id)}<option value={d.id}>{d.name}</option>{/each}
-				</select>
-			</label>
-			<button type="button" disabled={busy || selected.length === 0} onclick={() => add([...selected])}
-				>{t('lookups.addSelected', { count: selected.length })}</button
+			<div class="deck-pick">
+				<Select label={t('lookups.deck')} bind:value={deckId} disabled={busy} options={decks.map((d) => ({ value: d.id, label: d.name }))} />
+			</div>
+			<Button disabled={busy || selected.length === 0} onclick={() => add([...selected])}
+				>{t('lookups.addSelected', { count: selected.length })}</Button
 			>
-			<button type="button" disabled={busy || selected.length === 0} onclick={() => remove([...selected])}
-				>{t('lookups.removeSelected', { count: selected.length })}</button
+			<Button disabled={busy || selected.length === 0} onclick={() => remove([...selected])}
+				>{t('lookups.removeSelected', { count: selected.length })}</Button
 			>
 			<fieldset class="filter" onchange={announceFilter}>
 				<legend class="visually-hidden">{t('lookups.filter.show')}</legend>
 				<label><input type="radio" name="filter" value="all" bind:group={filter} /> {t('lookups.filter.all')}</label>
 				<label><input type="radio" name="filter" value="nocard" bind:group={filter} /> {t('lookups.filter.noCard')}</label>
 			</fieldset>
-			<button
-				type="button"
-				class="danger"
+			<Button
+				tone="danger"
 				disabled={busy || data.history.items.length === 0}
-				onclick={() => (confirming = true)}>{t('lookups.clear')}</button
+				onclick={() => (confirming = true)}>{t('lookups.clear')}</Button
 			>
 		</div>
 
 		{#if confirming}
 			<div class="confirm" role="group" aria-label={t('lookups.clearLabel')}>
 				<p>{t('lookups.clearConfirm', { workspace: wsName })}</p>
-				<button type="button" class="danger" disabled={busy} onclick={clearAll}>{t('common.action.delete')}</button>
-				<button type="button" disabled={busy} onclick={() => (confirming = false)}>{t('notes.keep')}</button>
+				<Button variant="primary" tone="danger" disabled={busy} onclick={clearAll}>{t('common.action.delete')}</Button>
+				<Button disabled={busy} onclick={() => (confirming = false)}>{t('notes.keep')}</Button>
 			</div>
 		{/if}
 
@@ -277,80 +273,52 @@
 						{#if !row.missing}<span class="chip" data-state={row.state}>{stateLabel(row.state)}</span>{/if}
 						<span class="actions">
 							{#if !row.missing}
-								<button type="button" disabled={busy} aria-label={t('lookups.addWord', { word: row.written ?? '' })} onclick={() => add([row.entryId])}
-									>{t('lookups.add')}</button
+								<Button disabled={busy} aria-label={t('lookups.addWord', { word: row.written ?? '' })} onclick={() => add([row.entryId])}
+									>{t('lookups.add')}</Button
 								>
 							{/if}
-							<button
-								type="button"
+							<Button
 								disabled={busy}
 								aria-label={t('lookups.removeWord', { word: row.written ?? t('lookups.thisWord') })}
-								onclick={() => remove([row.entryId])}>{t('common.action.remove')}</button
+								onclick={() => remove([row.entryId])}>{t('common.action.remove')}</Button
 							>
 						</span>
 					</li>
 				{/each}
 			</ul>
 			{#if rows.length > shown}
-				<button type="button" onclick={() => (shown += PAGE_SIZE)}>{t('lookups.showMore')}</button>
+				<Button onclick={() => (shown += PAGE_SIZE)}>{t('lookups.showMore')}</Button>
 			{/if}
 		{/if}
 	{/if}
 </div>
 
 <style>
-	.lookups-page {
-		max-width: 52rem;
-	}
-
 	.hint {
 		color: var(--readable-muted);
-		font-size: 0.9rem;
-	}
-
-	.switch {
-		font: inherit;
-		min-height: 2.75rem;
-		padding: 0.3rem 0.85rem;
-		border: 1px solid color-mix(in srgb, currentColor 35%, transparent);
-		border-radius: 999px;
-		background: transparent;
-		color: inherit;
-		cursor: pointer;
-	}
-
-	.switch[aria-checked='true'] {
-		background: var(--accent);
-		border-color: var(--accent);
-		color: var(--on-accent);
-	}
-
-	.prompt {
-		margin: 1rem 0;
-		padding: 0.75rem 1rem;
-		border: 1px solid color-mix(in srgb, currentColor 25%, transparent);
-		border-radius: 0.5rem;
-	}
-
-	.prompt h2 {
-		margin: 0 0 0.4rem;
-		font-size: 1.05rem;
+		font-size: var(--font-size-s);
 	}
 
 	.toolbar {
 		display: flex;
 		flex-wrap: wrap;
-		gap: 0.5rem;
-		align-items: center;
-		margin: 1rem 0 0.5rem;
+		gap: var(--space-2);
+		align-items: end;
+		margin-block: var(--space-4) var(--space-2);
+	}
+
+	.deck-pick {
+		flex: 0 1 14rem;
 	}
 
 	.filter {
 		display: flex;
-		gap: 0.6rem;
+		gap: var(--space-2);
 		border: 0;
 		margin: 0;
 		padding: 0;
+		align-items: center;
+		min-height: var(--hit);
 	}
 
 	.visually-hidden {
@@ -362,17 +330,6 @@
 		white-space: nowrap;
 	}
 
-	.toolbar button,
-	.confirm button,
-	.row button,
-	.prompt button {
-		min-height: 2.75rem;
-	}
-
-	.danger {
-		color: var(--readable-bad);
-	}
-
 	.list {
 		list-style: none;
 		margin: 0;
@@ -382,25 +339,26 @@
 	.row {
 		display: flex;
 		flex-wrap: wrap;
-		gap: 0.25rem 0.75rem;
+		gap: var(--space-1) var(--space-3);
 		align-items: center;
-		padding: 0.4rem 0;
-		border-bottom: 1px solid color-mix(in srgb, currentColor 12%, transparent);
+		padding-block: var(--space-2);
+		border-bottom: 1px solid var(--hair);
 		overflow-wrap: anywhere;
 	}
 
 	.word {
-		font-size: 1.15rem;
+		font-size: var(--font-size-l);
+		font-family: var(--font-hanzi);
 	}
 
 	.missing {
-		font-size: 0.9rem;
+		font-size: var(--font-size-label);
 		font-style: italic;
 	}
 
 	.history-count {
-		margin: 0.5rem 0;
-		font-size: 0.9rem;
+		margin-block: var(--space-2);
+		font-size: var(--font-size-label);
 		color: var(--readable-muted);
 	}
 
@@ -408,20 +366,13 @@
 	.when,
 	.where,
 	.count {
-		font-size: 0.9rem;
+		font-size: var(--font-size-label);
 		color: var(--readable-muted);
 	}
 
-	.chip {
-		font-size: 0.8rem;
-		padding: 0.1rem 0.5rem;
-		border: 1px solid color-mix(in srgb, currentColor 35%, transparent);
-		border-radius: 999px;
-	}
-
 	.actions {
-		margin-left: auto;
+		margin-inline-start: auto;
 		display: flex;
-		gap: 0.4rem;
+		gap: var(--space-1);
 	}
 </style>
