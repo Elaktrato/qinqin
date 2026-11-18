@@ -5,6 +5,11 @@
 	import { getStudyData, hasCard } from '$lib/study/studyData';
 	import type { Deck } from '$lib/study/types';
 	import { workspaces } from '$lib/workspaces';
+	import Button from '$lib/ui/Button.svelte';
+	import Chip from '$lib/ui/Chip.svelte';
+	import Icon from '$lib/ui/Icon.svelte';
+	import Menu from '$lib/ui/Menu.svelte';
+	import MenuItem from '$lib/ui/MenuItem.svelte';
 
 	// `written` is snapshotted onto the card; `sentenceId` is the example
 	// sentence shown on the review front.
@@ -12,23 +17,36 @@
 		entryId,
 		written,
 		sentenceId,
-		kind
-	}: { entryId: number; written: string; sentenceId?: number; kind?: string } = $props();
+		kind,
+		onadded,
+		onchange
+	}: {
+		entryId: number;
+		written: string;
+		sentenceId?: number;
+		kind?: string;
+		/** A successful add in this view (the entry page refreshes its deck count). */
+		onadded?: () => void;
+		/** Whether a card exists, for the phone bar's Add to deck button. */
+		onchange?: (inDeck: boolean | null) => void;
+	} = $props();
 
 	// Whether this entry already has a card in the current workspace.
 	// `null` means "not known yet": the check is still running, so the
 	// button stays disabled. Only a failed check frees it, because the
 	// click then has to surface the real error.
 	let inDeck = $state<boolean | null>(null);
-	// The workspace's custom decks, and the deck a new card goes to.
-	// General is the default and always exists.
+	// The workspace's custom decks; General is the default and always exists.
 	let decks = $state<Deck[]>([]);
-	let selectedDeckId = $state(GENERAL_DECK_ID);
 	let saving = $state(false);
 	// Set only by a successful add in this view, so the note is not shown
 	// for entries that were already in the deck.
 	let justAdded = $state(false);
 	let error = $state('');
+
+	// The phone bar's Add to deck follows this (it is rendered outside this
+	// component's markup).
+	$effect(() => onchange?.(inDeck));
 
 	function message(err: unknown, fallback: string): string {
 		if (err instanceof ApiError && err.message) return err.message;
@@ -48,6 +66,7 @@
 		inDeck = null;
 		justAdded = false;
 		error = '';
+		decks = [];
 		void (async () => {
 			if (workspaceId === null) {
 				// addCard would throw; keep the button enabled so a click
@@ -61,18 +80,9 @@
 				decks = [...data.decks].sort(
 					(a, b) => a.createdAt.localeCompare(b.createdAt) || a.id.localeCompare(b.id)
 				);
-				// A deck deleted elsewhere must not stay the target.
-				if (
-					selectedDeckId !== GENERAL_DECK_ID &&
-					!decks.some((deck) => deck.id === selectedDeckId)
-				) {
-					selectedDeckId = GENERAL_DECK_ID;
-				}
 				inDeck = hasCard(data.cards, id);
 			} catch {
 				if (stale) return;
-				decks = [];
-				selectedDeckId = GENERAL_DECK_ID;
 				inDeck = false;
 			}
 		})();
@@ -81,7 +91,12 @@
 		};
 	});
 
-	async function add(): Promise<void> {
+	/** addToGeneral is the phone bar's one-click add (the same path as the button). */
+	export function addToGeneral(): void {
+		void add(GENERAL_DECK_ID);
+	}
+
+	async function add(deckId: string): Promise<void> {
 		// Unresolved or already-added means "no new card"; addCard itself
 		// is idempotent, so a race across tabs cannot duplicate either.
 		if (saving || inDeck !== false) return;
@@ -99,10 +114,11 @@
 			await addCard(entryId, {
 				written,
 				...(isCharacter ? { entryKind: 'character' as const } : { sentenceId }),
-				deckIds: [selectedDeckId]
+				deckIds: [deckId]
 			});
 			inDeck = true;
 			justAdded = true;
+			onadded?.();
 		} catch (err) {
 			error = message(err, t('entry.study.addFailed'));
 		} finally {
@@ -112,33 +128,34 @@
 </script>
 
 <div class="add-to-study">
-	{#if decks.length > 0}
-		<label class="deck-picker">
-			{t('entry.study.deck')}
-			<select bind:value={selectedDeckId} disabled={saving || inDeck === true}>
-				<option value={GENERAL_DECK_ID}>{t('entry.study.general')}</option>
-				{#each decks as deck (deck.id)}
-					<option value={deck.id}>{deck.name}</option>
-				{/each}
-			</select>
-		</label>
-	{/if}
-	<button
-		type="button"
-		class="action"
-		class:added={inDeck === true}
-		disabled={saving || inDeck !== false}
-		aria-busy={saving || inDeck === null}
-		onclick={() => void add()}
-	>
-		{saving
-			? t('entry.study.adding')
-			: inDeck === null
-				? t('entry.study.checking')
-				: inDeck
-					? t('entry.study.inDeck')
-					: t('entry.study.add')}
-	</button>
+	<div class="actions">
+		{#if inDeck === true}
+			<span class="in-study"><Chip tone="good"><Icon name="check" size="s" />{t('entry.study.inDeck')}</Chip></span>
+		{:else}
+			<Button
+				variant="primary"
+				icon="add"
+				disabled={saving || inDeck !== false}
+				aria-busy={saving || inDeck === null}
+				onclick={() => void add(GENERAL_DECK_ID)}
+			>
+				{saving ? t('entry.study.adding') : inDeck === null ? t('entry.study.checking') : t('entry.study.add')}
+			</Button>
+			{#if decks.length > 0 && !saving}
+				<Menu
+					label={t('entry.study.chooseDeck')}
+					menuLabel={t('entry.study.deck')}
+					icon="expand-down"
+					align="start"
+				>
+					<MenuItem onselect={() => void add(GENERAL_DECK_ID)}>{t('entry.study.general')}</MenuItem>
+					{#each decks as deck (deck.id)}
+						<MenuItem onselect={() => void add(deck.id)}>{deck.name}</MenuItem>
+					{/each}
+				</Menu>
+			{/if}
+		{/if}
+	</div>
 	{#if justAdded}
 		<p class="note" role="status">
 			{t('entry.study.added')}
@@ -151,62 +168,30 @@
 
 <style>
 	.add-to-study {
+		display: grid;
+		gap: var(--space-1);
+	}
+
+	.actions {
 		display: flex;
 		flex-wrap: wrap;
 		align-items: center;
-		gap: 0.5rem;
+		gap: var(--space-2);
 	}
 
-	.deck-picker {
-		display: flex;
-		align-items: center;
-		gap: 0.35rem;
-		font-size: 0.9rem;
-	}
-
-	.deck-picker select {
-		font: inherit;
-		padding: 0.35rem 0.45rem;
-		border: 1px solid color-mix(in srgb, currentColor 35%, transparent);
-		border-radius: 0.4rem;
-		background: transparent;
-		color: inherit;
-	}
-
-	.action {
-		font: inherit;
-		font-size: 0.9rem;
-		padding: 0.4rem 0.9rem;
-		border: 1px solid color-mix(in srgb, currentColor 35%, transparent);
-		border-radius: 0.4rem;
-		background: transparent;
-		color: inherit;
-		cursor: pointer;
-	}
-
-	.action:hover,
-	.action:focus-visible {
-		border-color: var(--accent);
-		color: var(--reading-accent);
-	}
-
-	.action.added {
-		border-color: color-mix(in srgb, currentColor 35%, transparent);
-		color: inherit;
-		cursor: default;
+	.note,
+	.error {
+		margin: 0;
+		font-size: var(--font-size-label);
 	}
 
 	.note {
-		margin: 0;
-		font-size: 0.85rem;
 		color: var(--readable-muted);
 	}
 
 	.error {
-		margin: 0;
-		font-size: 0.85rem;
 		color: var(--readable-bad);
-		font-weight: 600;
+		font-weight: var(--weight-strong);
 		padding-inline-start: var(--space-2);
 		border-inline-start: 3px solid var(--bad);
 	}

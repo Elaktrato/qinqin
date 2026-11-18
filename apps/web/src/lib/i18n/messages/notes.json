@@ -66,7 +66,6 @@
 	"reader.sources.matchedReading": "<reading> wraps the reading in the study language (romaji, pinyin or kana).",
 	"reader.study.lookedUp": "{count} is 2 or more.",
 	"reader.words.figures": "{known} is a number, {tokens} reader.words.tokens, {fresh} reader.words.typesNew, {learning} a number.",
-	"search.matched": "Under a search result: which field matched; {source} is search.matchedWritten or a reading type such as pinyin.",
 	"search.parts.radicalName": "Accessible name of a chip; {char} is the radical glyph, {n} its Kangxi number.",
 	"settings.account.delete.cannotUndo": "<download> wraps a button that downloads the user's data.",
 	"settings.account.delete.typeToConfirm": "Label of a text field; {name} is the user's own username, which they must type exactly.",
