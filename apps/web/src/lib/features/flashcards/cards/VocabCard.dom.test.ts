@@ -68,6 +68,32 @@ describe('VocabCard for a character', () => {
 		expect(document.querySelector('.dictionary')).toBeNull();
 	});
 
+	it('shows only the word before the reveal and its reading in the answer', () => {
+		const word = kanji({
+			kind: 'word',
+			written: '学校',
+			readings: [{ type: 'pinyin', value: 'xuéxiào', plain: 'xue2xiao4', ord: 0 }],
+			sentences: []
+		});
+		renderCard({ item, entry: word, revealed: false, onDone: vi.fn() });
+		expect(document.querySelector('.face-prompt')?.textContent?.trim()).toBe('学校');
+		expect(screen.queryByText('xuéxiào')).toBeNull();
+	});
+
+	it('shows a word’s reading and example sentence in the answer', () => {
+		const word = kanji({
+			kind: 'word',
+			written: '学校',
+			readings: [{ type: 'pinyin', value: 'xuéxiào', plain: 'xue2xiao4', ord: 0 }],
+			senses: []
+		});
+		renderCard({ item, entry: word, revealed: true, onDone: vi.fn() });
+		const answer = document.querySelector('.face-answer')!;
+		expect(answer.textContent).toContain('xuéxiào');
+		expect(answer.querySelector('.sentence')?.textContent).toBe('____');
+		expect(document.querySelector('.face-prompt')?.textContent?.trim()).toBe('学校');
+	});
+
 	it('keeps the no-glosses hint for a word with readings but no senses', () => {
 		const word = kanji({
 			kind: 'word',

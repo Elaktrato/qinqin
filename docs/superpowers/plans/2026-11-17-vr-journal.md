@@ -518,3 +518,99 @@ lookup or search hit is the text the data carries (snapshot / `written` / `shown
 ## Execution record
 
 (empty — filled by the builder)
+
+## Execution record
+
+Built 2026-11-18 on `feature/vr-journal` from `feature/visual-rework` 29ea4bce (#101 review fixes; the #102
+review fixes were merged in as 3b21cc70 before the page work). Inline, test first per task, one commit per
+task.
+
+**Commits:** `63ef5989` AI schema/prompt/decoders + fake kinds (T2) · `7224aaae` stored kind + `kind-resolve.json`
+(T3) · `ec2895f0` review contract, parser, store/API (T4) · `7c8879d4` corrections model (T5) ·
+`f431f7c6` CorrectionNote (+ `b828f19a`, a reachable hairline rule) (T6) · `1ea59cf5` controlled ReviewText
+and removal of `annotationCategory` (T7) · `03e753e6` JournalMargin (T8) · `8bac1caf` CorrectionSheet
+(+ `9f328277`, the Sheet's `returnFocus` after the #102 fix) (T9) · `652d62b2` entries store/column (T10) ·
+`851de11f` EntryEditor/JournalPage three columns (T11) · `a05e9ed8` idea Chips (T12) · `69a449eb` wiki (T13) ·
+this record.
+
+**Test-first:** the Go `kind` tests did not compile before `RawAnnotation.Kind` and `Annotation.Kind`; the
+schema/prompt/decoder tests then failed on the missing member and enum, and the fake kinds failed until it
+alternated them. The web parser tests failed with no module; the correction/margin/sheet/column/page tests
+were written before their components and failed on the missing module or the missing behaviour (marks,
+corrections order, focus, sheet name, grid children). The two type errors in `anchor.test.ts` and
+`editorLogic.test.ts` were the forced consequence of making `Annotation.kind` required.
+
+**Gates (Node 26.13.1, Go 1.26):** full `npx vitest run` exit 0 (518 files, 10,706 passed, 8 skipped);
+`npm run check` 0 errors/0 warnings; `npm run build` exit 0; Go `gofmt -l .` empty, `go vet ./...` and
+`go test -count=1 -p 2 -timeout 30m ./...` exit 0 (every package ok); `node scripts/gen-api-docs.mjs --check`
+exit 0 (no route change); `node scripts/check-sources.mjs` exit 0; `node --test scripts/*.test.mjs` exit 0
+(one skipped as before).
+
+**Adaptations and rulings**
+- Ruling: the client does not trim `kind`; the server already trims and case-folds it, and a stored
+  `"suggestion "` is a mistake (fixture) — cost: a hand-written row with padding is a mistake.
+- Ruling: `editorLogic.annotationCategory`/`CategoryKey` stay until Task 7, where the controlled ReviewText
+  removes their last caller — this kept every intermediate commit compiling and checking — cost: one dead
+  branch for three commits.
+- Ruling: the margin is a list in text order, not notes pinned beside their line (the plan's original ruling)
+  — cost: on a long entry the open note can be far from its line; opening scrolls both.
+- Ruling: list-only corrections are CorrectionNotes, missing ones are plain rows under "No longer in the
+  text": a missing correction has no mark to open, so an interactive note would promise an action the text
+  cannot show — cost: the two look different.
+- Ruling: the list view's empty-page "New entry" is secondary; the entries column's "New entry" is the view's
+  one primary — cost: two entry points with different weights (one primary, one secondary).
+- Ruling: an entry with an unchanged review opens in the reviewed page; an outdated one stays in writing with
+  the notice, "Review again" and the "N corrections" link — the design's "after the review" state, and no
+  marks can be drawn over changed text — cost: a person who opens an entry to keep writing presses Edit once.
+- Ruling: `Field` has no `rows` prop, so the entry textarea's height is set with a `min-height` style instead of
+  changing the base component in this item — cost: a style on the textarea.
+- Ruling: the journal grid is entries + page + margin from 1000px, page + margin from 720px and one column
+  below, with the entries behind "All entries" in the middle band — the design's three columns and the frame's
+  phone switch — cost: at 720–999 the entries are one click away.
+- `${count} · {status}` is one message (`journal.editor.foot`); the mistake/suggestion counts are two
+  whole-message plurals joined by " · " because the catalogue's plural syntax takes one plural per message.
+
+**Changed existing tests:** `anchor.test.ts` and `editorLogic.test.ts` test helpers gained `kind` (required
+field); `editorLogic.test.ts` lost the `annotationCategory` cases with the removed function;
+`store.test.ts` expects one more fetch (the added malformed-review case); `page.dom.test.ts` (the #101 fix
+wave's recorded-review test) got the `mode | undefined` type correction that the merged #101 branch needed.
+No assertion was weakened.
+
+**Not verified:** a real screen reader (the review live region, the margin-to-mark focus and the sheet's
+focus return are jsdom only); real touch swipes and drag on the correction sheet; a real provider's `kind`
+quality; the Playwright visual check of this item (pending with the README screenshots); Android.
+
+### Fix wave after the independent #103 review
+
+The review found one Critical (the 720–999 px list had no entries and no route to them), ten Important
+(phone entry columns, the 720–979 margin, a dead Ideas button, a duplicated hint id, the lost save live
+region, the mark ↔ note keyboard path, the ideas-sheet focus return, "Start an entry" leaving the sheet open,
+stale sheet/open state across entries, and missing study `lang`) and twelve Minor findings. Branch
+`feature/vr-fixwave-103` from `feature/visual-rework` 7912bc6f; all fixes are in one commit.
+
+- The list at 45–62.5 rem is the entries column plus the ideas margin (the empty page is hidden); the entry
+  view at 45–62.5 rem is the page plus the margin; below 45 rem the entry view hides the entries column.
+  Exactly 45 rem no longer overlaps two media rules.
+- The ideas callback in the entry view scrolls the editor's margin; the correction sheet pages only over
+  placed corrections and has a "Show N corrections" opener above the text on the phone.
+- One `#review-hint`; the save status is a polite live region again (the foot), and a failed save shows its
+  text there.
+- Escape on the margin closes the open note and focuses its mark; opening a note focuses the mark; a note is a
+  toggle now.
+- The ideas sheet omits `returnFocus` (so the shared modal returns to the opener); "Start an entry" closes the
+  sheet before navigating; `load`, `setReview` and `backToEdit` reset the open note and both sheets.
+- Study text carries `lang` in the title and entry fields, the review text, the overall review, the ideas and
+  the missing corrections; the entry textarea is line-height 1.9.
+- The parser drops an annotation without an id and duplicate ids; the ideas panel is unboxed with its title
+  and words in the study language and the prompt muted; the columns have `--hair` separators; the entries
+  column has a forced-colours block; the foot no longer shows a stray separator.
+- The entries cache is cleared on sign-out and a save that lands during a list request is kept.
+- Tests added for the one hint, the study `lang`, Escape and focus, the ideas-sheet focus, the placed-only
+  sheet list, the cache/upsert merge and the corrected column source. The docs and README now say "corrections
+  in the margin" and the wiki's breakpoint sentence matches the code.
+
+Rulings: the 45 rem band is the reviewer's proposed one (entries + margin in the list, page + margin in the
+entry view) — it keeps the entries reachable without inventing a disclosure — cost: at 720–999 the empty page
+is not shown. `journal.list.current` stays unused: `aria-current` already names the open entry and the
+catalogue test forbids an unused key — cost: no "(open)" suffix in the visible row. The visual comparison
+(360/1024/1440, forced colours, reduced motion) is still pending and will be done in the combined gallery pass.

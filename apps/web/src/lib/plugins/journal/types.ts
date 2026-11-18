@@ -19,6 +19,8 @@ export interface Annotation {
 	correction: string;
 	explanation: string;
 	category: string;
+	/** Closed set; a legacy review without it reads as a mistake. */
+	kind: 'mistake' | 'suggestion';
 }
 
 export interface DropCounts {

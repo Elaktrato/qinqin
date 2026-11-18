@@ -36,11 +36,9 @@
 		return buildVocabFaces(entry, sentence, entry.language);
 	});
 
-	// A character shows its readings only after the reveal; a word has them on
-	// the front already.
-	const showsBackReadings = $derived(
-		faces.front.readings.length === 0 && faces.back.readings.length > 0
-	);
+	// The prompt is the word alone; its readings and example sentence belong
+	// to the answer, below the hairline (design §9, #101).
+	const hasReadings = $derived(faces.back.readings.length > 0);
 
 	const credit = $derived(audio ? creditLine(audio.clips) : '');
 
@@ -54,25 +52,13 @@
 
 <FacePrompt>
 	<p class="fp-word" lang={studyLang(entry.language)}>{faces.front.written}</p>
-	{#if faces.front.readings.length > 0}
-		<ul class="readings fp-sub" aria-label={t('flashcards.card.readings')}>
-			{#each faces.front.readings as reading, readingIndex (`${reading.type}:${readingIndex}`)}
-				<li data-type={reading.type}><ReadingText type={reading.type} value={reading.value} language={entry.language} /></li>
-			{/each}
-		</ul>
-	{/if}
-	{#if faces.front.sentenceLines.length > 0}
-		{#each faces.front.sentenceLines as line, lineIndex (lineIndex)}
-			<p class="sentence">{line}</p>
-		{/each}
-	{/if}
 </FacePrompt>
 
 {#if revealed}
 	<FaceAnswer>
-		{#if showsBackReadings || audio}
+		{#if hasReadings || audio}
 			<div class="fa-readings">
-				{#if showsBackReadings}
+				{#if hasReadings}
 					<ul class="fa-readings back-readings" aria-label={t('flashcards.card.readings')}>
 						{#each faces.back.readings as reading, readingIndex (`${reading.type}:${readingIndex}`)}
 							<li class="fa-reading" data-type={reading.type}><ReadingText type={reading.type} value={reading.value} language={entry.language} /></li>
@@ -92,6 +78,9 @@
 				{/if}
 			</div>
 		{/if}
+		{#each faces.back.sentenceLines as line, lineIndex (lineIndex)}
+			<p class="sentence">{line}</p>
+		{/each}
 		{#if faces.back.glosses.length > 0}
 			{#each faces.back.glosses as group (group.dictionaryName)}
 				<article class="dictionary">
@@ -103,7 +92,7 @@
 					<p class="fa-source">{group.dictionaryName}</p>
 				</article>
 			{/each}
-		{:else if !showsBackReadings}
+		{:else if entry.kind !== 'character'}
 			<p class="hint">{t('flashcards.card.noGlosses')}</p>
 		{/if}
 		{#if credit}
@@ -113,14 +102,6 @@
 {/if}
 
 <style>
-	.readings {
-		display: flex;
-		flex-wrap: wrap;
-		justify-content: center;
-		gap: var(--space-1) var(--space-3);
-		padding: 0;
-		list-style: none;
-	}
 	.sentence {
 		font-family: var(--font-hanzi);
 		font-size: var(--font-size-l);

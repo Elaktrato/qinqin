@@ -3,12 +3,18 @@
 	import { pageTitle } from '$lib/pageTitle';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
+	import { onMount } from 'svelte';
 	import { getAiStatus } from '$lib/api/ai';
 	import { workspaces } from '$lib/workspaces';
 	import { aiBanner as bannerOf } from '$lib/settings/aiSettingsView';
 	import { aiButtonGate } from './editorLogic';
 	import EntryEditor from './EntryEditor.svelte';
-	import EntryList from './EntryList.svelte';
+	import EntriesColumn from './EntriesColumn.svelte';
+	import JournalMargin from './JournalMargin.svelte';
+	import CorrectionSheet from './CorrectionSheet.svelte';
+	import { studyLang } from '$lib/i18n/lang';
+	import { PHONE_MEDIA_QUERY } from '$lib/frame/breakpoint';
+	import Button from '$lib/ui/Button.svelte';
 	import PhotoImport from './PhotoImport.svelte';
 	import JournalSettingsView from './JournalSettings.svelte';
 	import { getCapabilities } from './api';
@@ -67,6 +73,36 @@
 	});
 
 	const newTitle = $derived(page.url.searchParams.get('title') ?? '');
+
+	let phone = $state(false);
+	let ideasOpen = $state(false);
+	let listMargin = $state<HTMLElement | null>(null);
+
+	onMount(() => {
+		if (typeof matchMedia !== 'function') return;
+		const mq = matchMedia(PHONE_MEDIA_QUERY);
+		phone = mq.matches;
+		const change = (event: MediaQueryListEvent): void => {
+			phone = event.matches;
+		};
+		mq.addEventListener?.('change', change);
+		return () => mq.removeEventListener?.('change', change);
+	});
+
+	function openIdeas(): void {
+		if (phone) ideasOpen = true;
+		else if (typeof listMargin?.scrollIntoView === 'function') listMargin.scrollIntoView({ block: 'start' });
+	}
+
+	function startIdea(title: string): void {
+		ideasOpen = false;
+		void goto(`/p/journal/new?title=${encodeURIComponent(title.trim())}`);
+	}
+
+	function openEntryIdeas(): void {
+		const margin = document.querySelector('.margin-col');
+		if (typeof margin?.scrollIntoView === 'function') margin.scrollIntoView({ block: 'start' });
+	}
 </script>
 
 <svelte:head>
@@ -84,85 +120,156 @@
 			<PhotoImport workspaceId={workspace.id} language={workspace.language} {capabilities} />
 		{/key}
 	{:else if route.view === 'entry' || route.view === 'new'}
-		{#key workspace.id}
-			<EntryEditor
-				workspaceId={workspace.id}
-				entryId={route.view === 'entry' ? route.id : null}
-				initialTitle={route.view === 'new' ? newTitle : ''}
-				{aiAvailable}
-				{aiBanner}
-			/>
-		{/key}
+		<h1 class="visually-hidden">{t('journal.title')}</h1>
+		<a class="all-entries" href={journalHref({ view: 'list' })}>{t('journal.list.allEntries')}</a>
+		<div class="journal-grid entry">
+			<div class="entries-col">
+				{#key workspace.id}
+					<EntriesColumn
+						workspaceId={workspace.id}
+						workspaceName={workspace.name}
+						language={workspace.language}
+						currentId={route.view === 'entry' ? route.id : null}
+						primaryNew={false}
+						onideas={openEntryIdeas}
+					/>
+				{/key}
+			</div>
+			{#key workspace.id}
+				<EntryEditor
+					workspaceId={workspace.id}
+					entryId={route.view === 'entry' ? route.id : null}
+					initialTitle={route.view === 'new' ? newTitle : ''}
+					{aiAvailable}
+					{aiBanner}
+					language={workspace.language}
+				/>
+			{/key}
+		</div>
 	{:else}
-		{#key workspace.id}
-			<EntryList workspaceId={workspace.id} workspaceName={workspace.name} gate={ideasGate} />
-		{/key}
+		<h1 class="visually-hidden">{t('journal.title')}</h1>
+		<div class="journal-grid list">
+			<div class="entries-col">
+				{#key workspace.id}
+					<EntriesColumn
+						workspaceId={workspace.id}
+						workspaceName={workspace.name}
+						language={workspace.language}
+						currentId={null}
+						primaryNew={true}
+						onideas={openIdeas}
+					/>
+				{/key}
+			</div>
+			<div class="empty-page">
+				<p>{t('journal.list.pick')}</p>
+				<Button variant="secondary" href={journalHref({ view: 'new' })}>{t('journal.list.new')}</Button>
+			</div>
+			{#if !phone}
+				<div class="list-margin" bind:this={listMargin}>
+					{#key workspace.id}
+						<JournalMargin
+							mode="ideas"
+							corrections={[]}
+							openId={null}
+							onopen={() => {}}
+							workspaceId={workspace.id}
+							gate={ideasGate}
+							onstart={startIdea}
+							studyLang={studyLang(workspace.language) ?? workspace.language}
+							explanationLang="en"
+						/>
+					{/key}
+				</div>
+			{/if}
+		</div>
 	{/if}
 </div>
 
+{#if ideasOpen && workspace}
+	<CorrectionSheet
+		mode="ideas"
+		corrections={[]}
+		openId={null}
+		onopen={() => {}}
+		onclose={() => (ideasOpen = false)}
+		workspaceId={workspace.id}
+		gate={ideasGate}
+		onstart={startIdea}
+		studyLang={studyLang(workspace.language) ?? workspace.language}
+		explanationLang="en"
+	/>
+{/if}
+
 <style>
 	.journal {
-		max-width: 48rem;
+		max-width: 76rem;
 	}
-
-	.journal :global(button),
-	.journal :global(a.button),
-	.journal :global(select),
-	.journal :global(input:not([type='checkbox'])) {
-		min-height: 2.75rem;
+	.journal-grid {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr);
+		gap: var(--space-5);
+		align-items: start;
 	}
-
-	/* The shape of every journal button except the inline underlines. */
-	.journal :global(button:where(:not(.annot))) {
-		padding: 0 1rem;
-		border: 1px solid transparent;
-		border-radius: 0.4rem;
-		font: inherit;
-		font-weight: 600;
-		cursor: pointer;
+	.entries-col,
+	.list-margin,
+	.empty-page {
+		min-width: 0;
 	}
-
-	.journal :global(button:where(:not(.annot, .secondary))) {
-		background: var(--accent);
-		color: var(--on-accent);
+	.empty-page {
+		display: grid;
+		gap: var(--space-3);
+		align-content: start;
+		justify-items: start;
+		max-width: 38em;
 	}
-
-	.journal :global(button:disabled) {
-		opacity: 0.6;
-		cursor: not-allowed;
-	}
-
-	.journal :global(.secondary) {
-		border: 1px solid color-mix(in srgb, currentColor 35%, transparent);
-		background: transparent;
-		color: inherit;
-		font-weight: 500;
-	}
-
-	.journal :global(.error) {
-		color: var(--readable-bad);
-		font-weight: 600;
-		padding-inline-start: var(--space-2);
-		border-inline-start: 3px solid var(--bad);
-	}
-
-	.journal :global(.danger) {
-		color: var(--readable-bad);
-	}
-
-	.journal :global(.hint) {
+	.all-entries {
+		display: none;
+		margin-bottom: var(--space-3);
 		color: var(--readable-muted);
 	}
-
-	.journal :global(:focus-visible) {
-		outline: 2px solid currentColor;
-		outline-offset: 2px;
+	@media (max-width: 44.99rem) {
+		.journal-grid.list .empty-page,
+		.journal-grid.list .list-margin,
+		.journal-grid.entry .entries-col {
+			display: none;
+		}
 	}
-
-	@media (max-width: 30rem) {
-		.journal {
-			padding-left: 1rem;
-			padding-right: 1rem;
+	@media (min-width: 45rem) {
+		.journal-grid.list {
+			grid-template-columns: 13rem minmax(0, 1fr);
+		}
+		.journal-grid.list .empty-page {
+			display: none;
+		}
+		.journal-grid.entry .entries-col {
+			display: none;
+		}
+		.entries-col {
+			border-inline-end: 1px solid var(--hair);
+			padding-inline-end: var(--space-3);
+		}
+		.list-margin {
+			border-inline-start: 1px solid var(--hair);
+			padding-inline-start: var(--space-3);
+		}
+		.all-entries {
+			display: inline-block;
+		}
+	}
+	@media (min-width: 62.5rem) {
+		.journal-grid.list {
+			grid-template-columns: 13rem minmax(0, 1fr) 16rem;
+		}
+		.journal-grid.entry {
+			grid-template-columns: 13rem minmax(0, 1fr);
+		}
+		.journal-grid.list .entries-col,
+		.journal-grid.entry .entries-col {
+			display: block;
+		}
+		.all-entries {
+			display: none;
 		}
 	}
 </style>

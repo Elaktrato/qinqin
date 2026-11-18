@@ -8,6 +8,7 @@ import { newUlid } from '../../ulid';
 import { createPluginSdk, type DataScope } from '../sdk';
 import { journalManifest } from './manifest';
 import { EXPLANATION_LANGUAGES } from './languages';
+import { parseReview } from './review';
 import type { JournalEntry, JournalSettings, Review, Suggestions } from './types';
 
 export const JOURNAL_PLUGIN_ID = journalManifest.id;
@@ -103,8 +104,7 @@ export async function deleteEntry(workspaceId: number, id: string): Promise<void
 }
 
 export async function getReview(workspaceId: number, entryId: string): Promise<Review | null> {
-	const v = await docs(workspaceId).find(REVIEW_PREFIX + entryId);
-	return isRecord(v) && typeof v.entryId === 'string' ? (v as unknown as Review) : null;
+	return parseReview(await docs(workspaceId).find(REVIEW_PREFIX + entryId));
 }
 
 export async function getSuggestions(workspaceId: number): Promise<Suggestions | null> {

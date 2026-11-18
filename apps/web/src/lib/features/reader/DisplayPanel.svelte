@@ -24,7 +24,9 @@
 		showAll,
 		onchange,
 		ontoggleAll,
-		script
+		script,
+		error,
+		notice
 	}: {
 		display: ReaderDisplay;
 		/** The open book has ruby of its own. */
@@ -33,6 +35,10 @@
 		onchange: (change: Partial<ReaderDisplay>) => void;
 		ontoggleAll: () => void;
 		script?: { value: Variant; error?: string; onchange: (value: Variant) => void };
+		/** A failed display save, shown here because the page alert sits behind the phone sheet. */
+		error?: string;
+		/** A status (the readings failed), likewise unreachable behind the sheet. */
+		notice?: string;
 	} = $props();
 
 	const id = $props.id();
@@ -58,6 +64,8 @@
 
 <div class="display">
 	<div id="{id}-panel" class="panel" role="group" aria-label={t('reader.display.panel')}>
+		{#if error}<p class="error" role="alert">{error}</p>{/if}
+		{#if notice}<p class="notice" role="status">{notice}</p>{/if}
 		{#if script}
 			<div class="script">
 				<label class="field">
@@ -258,5 +266,11 @@
 	.error {
 		margin: var(--space-1) 0 0;
 		color: var(--readable-bad);
+	}
+
+	.notice {
+		margin: var(--space-1) 0 0;
+		font-size: var(--font-size-xs);
+		color: var(--readable-muted);
 	}
 </style>

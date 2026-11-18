@@ -31,7 +31,9 @@
 		onToggle,
 		mode,
 		panel,
-		opener = () => null
+		opener = () => null,
+		bookmarkStatus = '',
+		highlightStatus = ''
 	}: {
 		tabs: RailTabInfo[];
 		active: RailTab;
@@ -43,6 +45,9 @@
 		panel: Snippet<[RailTab]>;
 		/** The button that opens the sheet, for focus when the layout switches. */
 		opener?: () => HTMLElement | null;
+		/** The page's bookmark and highlight announcements, repeated inside the modal sheet (the page regions are inert there). */
+		bookmarkStatus?: string;
+		highlightStatus?: string;
 	} = $props();
 
 	let rail = $state<HTMLElement | null>(null);
@@ -85,8 +90,17 @@
 	let focusInRail = false;
 	$effect(() => {
 		const onFocus = (e: FocusEvent): void => void (focusInRail = isRail(e.target));
+		// Focus left the rail (a click on non-focusable text leaves <body>):
+		// a later breakpoint change must not pull it back into the rail.
+		const onBlur = (e: FocusEvent): void => {
+			if (!isRail(e.relatedTarget)) focusInRail = false;
+		};
 		document.addEventListener('focusin', onFocus);
-		return () => document.removeEventListener('focusin', onFocus);
+		document.addEventListener('focusout', onBlur);
+		return () => {
+			document.removeEventListener('focusin', onFocus);
+			document.removeEventListener('focusout', onBlur);
+		};
 	});
 	let lastMode: RailMode | null = null;
 	$effect.pre(() => {
@@ -105,7 +119,7 @@
 </script>
 
 {#if mode === 'column'}
-	<aside bind:this={rail} id="reader-rail" class="rail" class:open aria-label={t('reader.rail.panel')}>
+	<aside bind:this={rail} id="reader-rail" class="rail" aria-label={t('reader.rail.panel')}>
 		{#if open}
 			{#each tabs as tab (tab.id)}
 				{#if tab.id === active}
@@ -138,8 +152,11 @@
 		</div>
 	</aside>
 {:else}
-	<Sheet {open} label={t('reader.rail.sheet')} onclose={() => onToggle(false)}>
+	<Sheet {open} label={t('reader.rail.sheet')} onclose={() => onToggle(false)} returnFocus={() => opener()}>
 		<div id="reader-rail-sheet" class="sheet-body">
+			<!-- The page's live regions are inert behind the modal sheet: repeat them here. -->
+			<p class="visually-hidden" role="status" aria-live="polite">{bookmarkStatus}</p>
+			<p class="visually-hidden" role="status" aria-live="polite">{highlightStatus}</p>
 			<Tabs
 				label={t('reader.rail.panel')}
 				tabs={tabs.map((tab) => ({ id: tab.id, label: nameOf(tab) }))}
@@ -229,6 +246,15 @@
 
 	.sheet-body {
 		padding-top: var(--space-1);
+	}
+
+	.visually-hidden {
+		position: absolute;
+		width: 1px;
+		height: 1px;
+		overflow: hidden;
+		clip-path: inset(50%);
+		white-space: nowrap;
 	}
 
 	/* Five text tabs on one line at phone width: closer, scrolling sideways if need be. */

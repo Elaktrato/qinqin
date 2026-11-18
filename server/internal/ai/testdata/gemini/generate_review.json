@@ -4,13 +4,21 @@
       "content": {
         "role": "model",
         "parts": [
-          {"text": "{\"annotations\":[{\"quote\":\"你好\",\"context_before\":\"\",\"correction\":\"您好\",\"explanation\":\"More polite.\",\"category\":\"word choice\"}],"},
-          {"text": "\"overall\":{\"summary\":\"Good.\",\"strengths\":[\"clear\"],\"focus\":[\"politeness\"]}}"}
+          {
+            "text": "{\"annotations\":[{\"quote\":\"你好\",\"context_before\":\"\",\"correction\":\"您好\",\"explanation\":\"More polite.\",\"category\":"
+          },
+          {
+            "text": "\"word choice\",\"kind\":\"mistake\"}],\"overall\":{\"summary\":\"Good.\",\"strengths\":[\"clear\"],\"focus\":[\"politeness\"]}}"
+          }
         ]
       },
       "finishReason": "STOP"
     }
   ],
-  "usageMetadata": {"promptTokenCount": 120, "candidatesTokenCount": 40, "cachedContentTokenCount": 100},
+  "usageMetadata": {
+    "promptTokenCount": 120,
+    "candidatesTokenCount": 40,
+    "cachedContentTokenCount": 100
+  },
   "modelVersion": "gemini-3.8-flash-001"
 }

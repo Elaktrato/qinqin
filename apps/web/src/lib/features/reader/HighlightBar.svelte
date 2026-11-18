@@ -8,7 +8,9 @@
 	// on its note. The `h` key does what the marked (last used) swatch does.
 	// While the highlights are loading (or failed to) the buttons still
 	// answer, with the same message the `h` key gets, shown under them.
-	let { actions }: { actions: HighlightActions } = $props();
+	// `live`: inside the phone sheet the page's own live regions are inert,
+	// so the notice is the status region that announces the result.
+	let { actions, live = false }: { actions: HighlightActions; live?: boolean } = $props();
 </script>
 
 <div
@@ -48,7 +50,11 @@
 		{t('reader.highlights.note')}
 	</button>
 </div>
-{#if actions.notice}<p class="hl-notice" id="hl-bar-notice">{actions.notice}</p>{/if}
+<p
+	class="hl-notice"
+	id="hl-bar-notice"
+	role={live ? 'status' : undefined}
+	aria-live={live ? 'polite' : undefined}>{actions.notice}</p>
 
 <style>
 	.hl-bar {
@@ -113,5 +119,9 @@
 		margin: 0 0 0.35rem;
 		font-size: 0.8rem;
 		color: var(--readable-muted);
+	}
+
+	.hl-notice:empty {
+		margin: 0;
 	}
 </style>

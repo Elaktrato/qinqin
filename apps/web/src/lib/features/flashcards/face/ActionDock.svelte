@@ -12,6 +12,13 @@
 	const face = useCardFace();
 	let sentinel = $state<HTMLElement>();
 	let under = $state(false);
+	let primaryElement = $state<HTMLElement>();
+
+	// The card's own keyboard focus fallback (WordSaladBoard): the docked
+	// Check is where Enter should land once the last tile is placed.
+	$effect(() => {
+		face.primaryElement = primaryElement ?? null;
+	});
 
 	// The sentinel sits just above the dock: out of view = content is under the dock.
 	$effect(() => {
@@ -31,7 +38,12 @@
 	{:else if face.primary !== null}
 		{@const primary = face.primary}
 		<div class="main">
-			<Button variant="primary" disabled={primary.disabled ?? false} onclick={() => primary.run()}>{primary.label}</Button>
+			<Button
+				variant="primary"
+				disabled={primary.disabled ?? false}
+				bind:element={primaryElement}
+				onclick={() => primary.run()}>{primary.label}</Button
+			>
 		</div>
 	{/if}
 	<p class="keys">{keys}</p>

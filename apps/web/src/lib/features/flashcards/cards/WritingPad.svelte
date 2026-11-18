@@ -33,7 +33,7 @@
 	// stroke is judged against the state the previous stroke produced, with
 	// no wait for rendering or animation.
 	let quiz = untrack(() => startQuiz(strokes.medians.length));
-	let finished = false;
+	let finished = $state(false);
 
 	let filled = $state<number[]>([]);
 	let scaffold = $state(false);
@@ -292,6 +292,7 @@
 
 <div
 	class="pad"
+	class:done={finished}
 	data-card-input
 	style:max-width={`${size}px`}
 	role="img"
@@ -394,6 +395,12 @@
 
 	.outline.filled {
 		opacity: 1;
+	}
+
+	/* The finished character is the correct state (design §5: colour where it
+	   means something); the dots and the feedback words carry it as well. */
+	.pad.done .outline {
+		fill: var(--good);
 	}
 
 	.glow {

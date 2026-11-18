@@ -29,6 +29,14 @@ describe('StudyFace (#101)', () => {
 		}
 	});
 
+	it('keeps the session messages above the card', () => {
+		const status = createRawSnippet(() => ({ render: () => '<p class="session-message">3 related cards are buried</p>' }));
+		render(CardHarness, { card: PrimaryCard, status });
+		const message = document.querySelector('.session-message')!;
+		const card = document.querySelector('.fc')!;
+		expect(message.compareDocumentPosition(card) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+	});
+
 	it('the close button is an IconButton named End session that links to /study, with a tooltip', () => {
 		render(CardHarness, { card: PrimaryCard });
 		const close = screen.getByRole('link', { name: 'End session' });
@@ -43,6 +51,13 @@ describe('StudyFace (#101)', () => {
 		expect(bar.getAttribute('aria-valuenow')).toBe('0');
 		expect(bar.getAttribute('aria-valuemax')).toBe('3');
 		expect(document.querySelector('.count')?.textContent).toBe('1 / 3');
+	});
+
+	it('announces the count through a polite live region', () => {
+		render(CardHarness, { card: PrimaryCard });
+		const count = document.querySelector('.count')!;
+		expect(count.getAttribute('aria-live')).toBe('polite');
+		expect(count.getAttribute('aria-atomic')).toBe('true');
 	});
 
 	it('the header shows the kind in the accent, deck · level on the right, and the re-show and tier chips', () => {

@@ -185,9 +185,12 @@
 		line-height: 1.5;
 	}
 
+	/* A Japanese word's reading is ruby (Task 9: reading --reading-accent,
+	   weight 500); the plain reading line is the Chinese path. */
 	rt {
 		font-size: 0.5em;
-		font-weight: var(--weight-regular);
+		font-weight: var(--weight-medium);
+		color: var(--reading-accent);
 	}
 
 	/* The reading in the readable accent (design §9). */

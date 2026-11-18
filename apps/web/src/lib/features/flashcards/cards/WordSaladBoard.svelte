@@ -4,6 +4,7 @@
 	import { isCorrect, shuffleTokens } from '$lib/study/wordSalad';
 	import Button from '$lib/ui/Button.svelte';
 	import Icon from '$lib/ui/Icon.svelte';
+	import { useOptionalCardFace } from '../face/cardFace.svelte';
 
 	interface Props {
 		/** The order the learner must rebuild. */
@@ -23,6 +24,9 @@
 	}
 
 	let { solution, seed, disabled, onResult, language, dockCheck }: Props = $props();
+
+	// The grammar practice page renders this board outside the study face.
+	const face = useOptionalCardFace();
 
 	// Bank ids are positions in `bank`, so duplicate tokens stay distinct tiles.
 	const bank = $derived(shuffleTokens(solution, seed));
@@ -61,7 +65,12 @@
 		feedback = '';
 		const at = available.indexOf(id);
 		placed = [...placed, id];
-		if (keyboard) void refocus(bankList, at, checkButton ?? answerList?.querySelector('button:last-of-type') ?? null);
+		if (keyboard)
+			void refocus(
+				bankList,
+				at,
+				face?.primaryElement ?? checkButton ?? answerList?.querySelector('button:last-of-type') ?? null
+			);
 	}
 
 	function unplace(id: number, keyboard: boolean): void {
@@ -84,7 +93,15 @@
 	}
 
 	function check(): void {
-		if (disabled || !complete) return;
+		if (disabled) return;
+		if (!complete) {
+			// Check unlocks with the first tile; an unfinished sentence is a
+			// wrong check, not a silent no-op.
+			if (placed.length === 0) return;
+			wrongChecks += 1;
+			feedback = t('flashcards.salad.wrong', { count: wrongChecks });
+			return;
+		}
 		if (
 			isCorrect(
 				placed.map((id) => bank[id]),

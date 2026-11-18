@@ -96,7 +96,7 @@
 				>{/if}
 		</div>
 		{/if}
-		{#if isRoot && info.mode === 'selection' && highlighter}<HighlightBar actions={highlighter} />{/if}
+		{#if isRoot && info.mode === 'selection' && highlighter}<HighlightBar actions={highlighter} live={sheet} />{/if}
 		<div class="content" aria-live="polite">
 			{#if isRoot && info.note}<p class="note">{info.note}</p>{/if}
 			{#if frame.error}
