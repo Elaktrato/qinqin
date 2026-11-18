@@ -293,6 +293,31 @@ git add plugins/data/zh-grammar server/internal/grammar/bundled_test.go server/c
 git commit -m "feat(grammar): Chinese grammar pack with HSK 1"
 ```
 
+## Task 2b: Optional `noOrder` flag for ambiguous word-order examples
+
+**Why:** the Chinese tutor found 20 HSK 1 examples whose tokens have a second legal order (time-adverb fronting, `A和B` symmetry, `都` object fronting). The word-order exercise compares the exact reference order, so a correct alternative is marked wrong. The owner chose to skip word order for those examples; fill-the-gap still runs.
+
+**Files:**
+- Modify: `server/internal/grammar/schema.go` (`Example.NoOrder`), `apps/web/src/lib/plugins/grammar/types.ts`, `apps/web/src/lib/plugins/grammar/exercises.ts`, `apps/web/src/lib/plugins/grammar/exercises.test.ts`, `scripts/build-grammar-pack.mjs`, `scripts/build-grammar-pack.test.mjs`, `plugins/data/zh-grammar/authored/hsk-1.json`, generated `lessons.json`, `server/internal/grammar/bundled_test.go`, `plugins/data/README.md`, the design doc.
+
+**Interfaces:**
+- `grammar.Example.NoOrder bool `json:"noOrder,omitempty"``; absent means false. No migration (stored JSON).
+- Web `Example.noOrder?: boolean`; `buildExercises` keeps every cloze and builds order exercises only for examples without `noOrder`.
+- The build script passes `noOrder` through; it still strips only `contrast` and `kinds`.
+- The 20 example ids to flag: `hsk1-negation-1`, `hsk1-negation-2`, `hsk1-negation-5`, `hsk1-separable-verbs-1`, `hsk1-zai-preposition-4`, `hsk1-adverbial-2`, `hsk1-zai-again-2`, `hsk1-time-expressions-3`, `hsk1-time-expressions-4`, `hsk1-he-conjunction-1`, `-2`, `-3`, `-4`, `hsk1-he-dui-1`, `-3`, `-5`, `hsk1-phrase-types-1`, `hsk1-serial-verbs-5`, `hsk1-coordinate-clauses-5`, `hsk1-dou-3`.
+
+- [ ] **Step 1: Write the failing build-script test** — a valid fixture example with `noOrder: true` round-trips to `lessons.json`, while `contrast`/`kinds` are stripped. Run `node --test scripts/build-grammar-pack.test.mjs`; expect FAIL.
+- [ ] **Step 2: Implement the build-script passthrough** and run the test to pass.
+- [ ] **Step 3: Write the failing web exercise test** — a lesson with two examples, one `noOrder`, yields two clozes and one order exercise; the order exercise is the other example. Run `cd apps/web && npx vitest run src/lib/plugins/grammar/exercises.test.ts`; expect FAIL.
+- [ ] **Step 4: Implement `Example.noOrder` in the TS type and the `buildExercises` filter**; run the test to pass.
+- [ ] **Step 5: Write the failing Go schema test** — an example with `noOrder: true` decodes; absent is false. Run `cd server && go test ./internal/grammar -run TestNoOrder`; expect FAIL.
+- [ ] **Step 6: Add `NoOrder` to the Go `Example` struct**; run the test to pass.
+- [ ] **Step 7: Mark the 20 HSK 1 examples** in `authored/hsk-1.json` with `"noOrder": true`; rebuild with `node scripts/build-grammar-pack.mjs`; confirm `lessons.json` carries the flag for those ids and no others.
+- [ ] **Step 8: Add a bundled regression check** in `TestBundledGrammarPack`: each of the 20 ids has `NoOrder`, and a sample of other examples does not.
+- [ ] **Step 9: Document the flag** in `plugins/data/README.md` (grammar format) and the design's Pack format.
+- [ ] **Step 10: Run the checks** — build `--check`, Go `./internal/grammar`, web `exercises.test.ts`, `check-sources`.
+- [ ] **Step 11: Commit** with `git commit -m "feat(grammar): skip ambiguous word-order examples"`.
+
 ## Task 3: HSK 2
 
 **Level:** `hsk-2` · **Outline:** `outline/hsk-2.json` · **Rows:** 61 · **Lessons:** 61–64 · **Split note:** split 趋向补语1 into simple and compound directions if needed.

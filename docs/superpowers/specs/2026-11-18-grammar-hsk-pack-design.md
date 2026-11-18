@@ -50,7 +50,7 @@ The owner's decisions, 2026-11-18:
 
 ## Non-goals
 
-- A new grammar schema, new exercise types, audio, SRS cards, or an authoring UI.
+- A new grammar schema beyond one optional example flag (`noOrder`), new exercise types, audio, SRS cards, or an authoring UI. The flag lets an example skip the word-order exercise when its tokens have a second legal order; fill-the-gap still runs.
 - Japanese grammar (the Japanese pack keeps its own design and review).
 - Copying the syllabus's explanatory text, task descriptions or word lists into this pack.
 - Machine-checking vocabulary against `hsk-words` (Chinese word segmentation makes a strict
@@ -158,7 +158,7 @@ Each lesson follows the existing `lessons.json` format (no schema change):
     each other. At least one is a similar/contrastive point (for example 过/着 for 了,
     得/地 for 的, 没/别 for 不); at least one is clearly wrong (for example a particle that
     cannot appear there). Never include another correct answer or a paraphrase of the focus.
-  - Every example gets a cloze, so every lesson has 4–8 clozes and 4–8 word-order exercises.
+  - Every example gets a cloze. Word order is built for every example unless it sets `noOrder: true`; that optional flag is for sentences with a second legal order (time-adverb fronting, `A和B` symmetry, `都` object fronting) where an exact-order checker would mark a correct answer wrong. Such an example still yields a cloze.
 - Vocabulary: examples use words from the level's HSK word list and earlier levels where
   possible; a proper noun or a necessary word above the level is allowed but kept rare. The
   policy is stated in `ATTRIBUTION.md`; it is not machine-checked.
