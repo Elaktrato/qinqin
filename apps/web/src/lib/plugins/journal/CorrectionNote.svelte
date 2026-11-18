@@ -17,7 +17,7 @@
 	}: {
 		correction: Correction;
 		open: boolean;
-		onopen: (id: string) => void;
+		onopen: (id: string | null) => void;
 		explanationLang: string;
 		studyLang: string;
 		id: string;
@@ -35,7 +35,7 @@
 	class="note"
 	class:open
 	aria-expanded={open}
-	onclick={() => onopen(correction.annotation.id)}
+	onclick={() => onopen(open ? null : correction.annotation.id)}
 >
 	<span class="visually-hidden">{kindLabel}: </span>
 	<span class="category"

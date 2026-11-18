@@ -38,7 +38,7 @@ afterEach(cleanup);
 describe('JournalMargin (#103)', () => {
 	it('corrections: heading, counts and one note per correction in order', () => {
 		render(JournalMargin, { mode: 'corrections', corrections: list, openId: null, onopen: vi.fn(), ...ideas });
-		expect(screen.getByRole('heading', { level: 3 }).textContent).toBe('4 corrections');
+		expect(screen.getByRole('heading', { level: 3 }).textContent).toBe('3 corrections');
 		expect(document.querySelector('.counts')?.textContent).toBe('2 mistakes · 1 suggestion');
 		const notes = [...document.querySelectorAll('button.note')];
 		expect(notes.map((n) => n.id)).toEqual(['correction-a', 'correction-b', 'correction-c']);
@@ -69,6 +69,17 @@ describe('JournalMargin (#103)', () => {
 		expect(text).toContain('Not placed in the text');
 		expect(text).toContain('No longer in the text');
 		expect(text).toContain('You changed these words after the review.');
+	});
+
+	it('Escape closes the open note and focuses its mark', async () => {
+		const mark = document.createElement('button');
+		mark.id = 'mark-a';
+		document.body.append(mark);
+		const onopen = vi.fn();
+		render(JournalMargin, { mode: 'corrections', corrections: list, openId: 'a', onopen, ...ideas });
+		await fireEvent.keyDown(screen.getByRole('complementary'), { key: 'Escape' });
+		expect(onopen).toHaveBeenCalledWith(null);
+		expect(document.activeElement).toBe(mark);
 	});
 
 	it('says when there are no corrections', () => {

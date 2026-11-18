@@ -579,3 +579,38 @@ No assertion was weakened.
 **Not verified:** a real screen reader (the review live region, the margin-to-mark focus and the sheet's
 focus return are jsdom only); real touch swipes and drag on the correction sheet; a real provider's `kind`
 quality; the Playwright visual check of this item (pending with the README screenshots); Android.
+
+### Fix wave after the independent #103 review
+
+The review found one Critical (the 720–999 px list had no entries and no route to them), ten Important
+(phone entry columns, the 720–979 margin, a dead Ideas button, a duplicated hint id, the lost save live
+region, the mark ↔ note keyboard path, the ideas-sheet focus return, "Start an entry" leaving the sheet open,
+stale sheet/open state across entries, and missing study `lang`) and twelve Minor findings. Branch
+`feature/vr-fixwave-103` from `feature/visual-rework` 7912bc6f; all fixes are in one commit.
+
+- The list at 45–62.5 rem is the entries column plus the ideas margin (the empty page is hidden); the entry
+  view at 45–62.5 rem is the page plus the margin; below 45 rem the entry view hides the entries column.
+  Exactly 45 rem no longer overlaps two media rules.
+- The ideas callback in the entry view scrolls the editor's margin; the correction sheet pages only over
+  placed corrections and has a "Show N corrections" opener above the text on the phone.
+- One `#review-hint`; the save status is a polite live region again (the foot), and a failed save shows its
+  text there.
+- Escape on the margin closes the open note and focuses its mark; opening a note focuses the mark; a note is a
+  toggle now.
+- The ideas sheet omits `returnFocus` (so the shared modal returns to the opener); "Start an entry" closes the
+  sheet before navigating; `load`, `setReview` and `backToEdit` reset the open note and both sheets.
+- Study text carries `lang` in the title and entry fields, the review text, the overall review, the ideas and
+  the missing corrections; the entry textarea is line-height 1.9.
+- The parser drops an annotation without an id and duplicate ids; the ideas panel is unboxed with its title
+  and words in the study language and the prompt muted; the columns have `--hair` separators; the entries
+  column has a forced-colours block; the foot no longer shows a stray separator.
+- The entries cache is cleared on sign-out and a save that lands during a list request is kept.
+- Tests added for the one hint, the study `lang`, Escape and focus, the ideas-sheet focus, the placed-only
+  sheet list, the cache/upsert merge and the corrected column source. The docs and README now say "corrections
+  in the margin" and the wiki's breakpoint sentence matches the code.
+
+Rulings: the 45 rem band is the reviewer's proposed one (entries + margin in the list, page + margin in the
+entry view) — it keeps the entries reachable without inventing a disclosure — cost: at 720–999 the empty page
+is not shown. `journal.list.current` stays unused: `aria-current` already names the open entry and the
+catalogue test forbids an unused key — cost: no "(open)" suffix in the visible row. The visual comparison
+(360/1024/1440, forced colours, reduced motion) is still pending and will be done in the combined gallery pass.

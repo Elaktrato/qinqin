@@ -95,7 +95,13 @@
 	}
 
 	function startIdea(title: string): void {
-		void goto(`/p/journal/new?title=${encodeURIComponent(title)}`);
+		ideasOpen = false;
+		void goto(`/p/journal/new?title=${encodeURIComponent(title.trim())}`);
+	}
+
+	function openEntryIdeas(): void {
+		const margin = document.querySelector('.margin-col');
+		if (typeof margin?.scrollIntoView === 'function') margin.scrollIntoView({ block: 'start' });
 	}
 </script>
 
@@ -125,7 +131,7 @@
 						language={workspace.language}
 						currentId={route.view === 'entry' ? route.id : null}
 						primaryNew={false}
-						onideas={openIdeas}
+						onideas={openEntryIdeas}
 					/>
 				{/key}
 			</div>
@@ -222,21 +228,30 @@
 		margin-bottom: var(--space-3);
 		color: var(--readable-muted);
 	}
-	@media (max-width: 45rem) {
+	@media (max-width: 44.99rem) {
 		.journal-grid.list .empty-page,
-		.journal-grid.list .list-margin {
+		.journal-grid.list .list-margin,
+		.journal-grid.entry .entries-col {
 			display: none;
 		}
 	}
 	@media (min-width: 45rem) {
 		.journal-grid.list {
-			grid-template-columns: minmax(0, 1fr) 15rem;
+			grid-template-columns: 13rem minmax(0, 1fr);
 		}
-		.journal-grid.list .entries-col {
+		.journal-grid.list .empty-page {
 			display: none;
 		}
 		.journal-grid.entry .entries-col {
 			display: none;
+		}
+		.entries-col {
+			border-inline-end: 1px solid var(--hair);
+			padding-inline-end: var(--space-3);
+		}
+		.list-margin {
+			border-inline-start: 1px solid var(--hair);
+			padding-inline-start: var(--space-3);
 		}
 		.all-entries {
 			display: inline-block;

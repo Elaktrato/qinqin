@@ -113,7 +113,7 @@ describe('journal store', () => {
 	});
 
 	it('reads the review and suggestions through the list route, null when absent', async () => {
-		vi.mocked(fetch).mockResolvedValueOnce(json([row('review:a', { entryId: 'a', annotations: [{ quote: 'x', correction: 'y' }] })]));
+		vi.mocked(fetch).mockResolvedValueOnce(json([row('review:a', { entryId: 'a', annotations: [{ id: 'a1', quote: 'x', correction: 'y' }] })]));
 		const review = await getReview(3, 'a');
 		expect(review?.entryId).toBe('a');
 		expect(review?.annotations[0].kind).toBe('mistake');

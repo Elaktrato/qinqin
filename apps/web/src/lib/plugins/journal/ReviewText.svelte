@@ -14,13 +14,15 @@
 		placed,
 		annotations,
 		openId,
-		onopen
+		onopen,
+		studyLang
 	}: {
 		text: string;
 		placed: Placed[];
 		annotations: Annotation[];
 		openId: string | null;
 		onopen: (id: string | null) => void;
+		studyLang?: string;
 	} = $props();
 
 	let buttons: Record<string, HTMLButtonElement | undefined> = {};
@@ -40,7 +42,7 @@
 		await tick();
 		const button = buttons[id];
 		button?.focus();
-		button?.scrollIntoView({ block: 'nearest' });
+		if (typeof button?.scrollIntoView === 'function') button.scrollIntoView({ block: 'nearest' });
 	}
 
 	function keydown(event: KeyboardEvent): void {
@@ -56,7 +58,7 @@
 <!-- svelte-ignore a11y_no_static_element_interactions -->
 <div class="review-text" onkeydown={keydown}>
 	<!-- No whitespace between the runs: the paragraph is pre-wrap and must show the text exactly. -->
-	<p class="text">{#each runs as run, i (i)}{#if run.annotationId}{@const id = run.annotationId}{@const kind = kindOf(id)}<button
+	<p class="text" lang={studyLang}>{#each runs as run, i (i)}{#if run.annotationId}{@const id = run.annotationId}{@const kind = kindOf(id)}<button
 				type="button"
 				id={`mark-${id}`}
 				class="mark {kind}"

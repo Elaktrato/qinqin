@@ -185,4 +185,14 @@
 		align-items: center;
 		gap: var(--space-2);
 	}
+	@media (forced-colors: active) {
+		.row.current {
+			box-shadow: none;
+			border-inline-start: 3px solid Highlight;
+		}
+		.reviewed-dot {
+			background: CanvasText;
+			forced-color-adjust: none;
+		}
+	}
 </style>

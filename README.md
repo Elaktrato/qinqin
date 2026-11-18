@@ -129,7 +129,7 @@ database with a SvelteKit single-page app embedded in the binary.
 - **Journal and AI** — write dated entries per workspace; with your own
   key for the AI provider you choose (Anthropic, OpenAI, Google Gemini,
   DeepSeek, Mistral, xAI, Groq, OpenRouter or a custom OpenAI-compatible
-  endpoint), get a review with underlined corrections, topic ideas, and
+  endpoint), get a review with corrections in the margin, topic ideas, and
   photo import with offline (Tesseract) or AI transcription (see
   [Journal and AI](#journal-and-ai)).
 - **Plugin architecture** — dictionaries, level schemes, and example sentences
@@ -1573,7 +1573,7 @@ runs it together with the scripts' tests (`node --test scripts/*.test.mjs`).
 
 ## Journal and AI
 
-The Journal is a page plugin (`qinqin-journal`) where you write dated entries per workspace. The AI features (a review with underlined corrections, topic ideas, and turning a photo of a page into an entry) are optional and use **your own API key for the provider you choose**; qinqin ships no key and sends nothing to any provider on its own.
+The Journal is a page plugin (`qinqin-journal`) where you write dated entries per workspace. The AI features (a review with corrections in the margin, topic ideas, and turning a photo of a page into an entry) are optional and use **your own API key for the provider you choose**; qinqin ships no key and sends nothing to any provider on its own.
 
 - **What is sent, and when.** Only when you press a button, and only to the provider you made active in Settings → AI: the entry text (up to 5,000 characters) and your guidance for a review, a list of recently studied words and the openings of your last entries for topic ideas, or one re-encoded photo for a transcription. Nothing is sent when you merely open the page or pick a photo. Photos are stripped of metadata (including GPS) and shrunk before they leave the server, are sent only when you press a transcription button, and are deleted when you save or discard the draft (a janitor sweeps forgotten ones within about an hour). Settings → AI shows, wherever you type a key, "Your journal text, guidance and the photos you choose to read with AI are sent to <provider> when you press a button. <provider>'s terms apply."
 - **Key storage.** Each user stores one key per provider in Settings → AI and makes one of them active. Keys are encrypted at rest (AES-256-GCM, bound to the user and the provider) with `QINQIN_SECRET` and are never returned by the API, written to logs, or included in sync or backups in plain text. Only the last four characters are shown as a hint. A key opens only for the provider it was stored for; a custom endpoint's key is also bound to the endpoint's address.

@@ -16,8 +16,17 @@
 		workspaceId,
 		gate,
 		onstart,
-		title = t('journal.ideas.title')
-	}: { workspaceId: number; gate: AiGate; onstart: (title: string) => void; title?: string } = $props();
+		title = t('journal.ideas.title'),
+		studyLang,
+		explanationLang
+	}: {
+		workspaceId: number;
+		gate: AiGate;
+		onstart: (title: string) => void;
+		title?: string;
+		studyLang?: string;
+		explanationLang?: string;
+	} = $props();
 
 	const ws = untrack(() => workspaceId);
 	const aborter = new AbortController();
@@ -108,11 +117,11 @@
 		<ul>
 			{#each suggestions.items as item, i (i)}
 				<li>
-					<h3>{item.title}</h3>
-					<p class="prompt">{item.prompt}</p>
+					<h3 lang={studyLang}>{item.title}</h3>
+					<p class="prompt" lang={explanationLang}>{item.prompt}</p>
 					{#if item.words.length > 0}
 						<ul class="chips" aria-label={t('journal.ideas.words')}>
-							{#each item.words as w, j (j)}<li><Chip>{w}</Chip></li>{/each}
+							{#each item.words as w, j (j)}<li><Chip><span lang={studyLang}>{w}</span></Chip></li>{/each}
 						</ul>
 					{/if}
 					<button type="button" class="secondary" onclick={() => onstart(item.title)}>
@@ -147,9 +156,8 @@
 	}
 
 	.ideas > ul > li {
-		border: 1px solid color-mix(in srgb, currentColor 18%, transparent);
-		border-radius: 0.5rem;
-		padding: 0.6rem 0.9rem;
+		border-top: 1px solid var(--hair);
+		padding-top: 0.75rem;
 	}
 
 	h3 {
@@ -161,6 +169,7 @@
 	.prompt {
 		white-space: pre-wrap;
 		overflow-wrap: anywhere;
+		color: var(--readable-muted);
 	}
 
 	.chips {
