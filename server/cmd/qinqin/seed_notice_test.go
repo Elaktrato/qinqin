@@ -22,6 +22,7 @@ func TestCommittedPackNotices(t *testing.T) {
 		"hsk-words":          {"HSK 词汇大纲", "[Legal Notice](https://www.chinesetest.cn/legal-notice)"},
 		"hsk-chars":          {"HSK 汉字大纲", "[Legal Notice](https://www.chinesetest.cn/legal-notice)"},
 		"zh-grammar-demo":    {"CC0 1.0", "not been reviewed by a native speaker"},
+		"zh-grammar":         {"CC0 1.0", "grammar outline", "not been reviewed by a native speaker"},
 		"kanjivg-components": {"[KanjiVG](https://kanjivg.tagaini.net)", "CC BY-SA 3.0", "d95a976", "same licence"},
 	}
 	noNotice := []string{"cedict", "es-demo", "jmdict", "kanjidic2", "unihan"}

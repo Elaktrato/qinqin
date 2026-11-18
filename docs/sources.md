@@ -93,6 +93,20 @@ unverified facts marked unverified) must stay the same in both places.
   grammar resource; the A1 levels are the author's own estimates (the link to
   "HSK 1" is a rough orientation only). It is **demo content that has not been
   reviewed by a native speaker**; errors are possible.
+- **Chinese grammar (HSK-aligned)** (`zh-grammar`, type `grammar`; bundled):
+  grammar lessons level by level (≈ HSK 1 to 7–9), each syllabus grammar point
+  taught with 4–8 example sentences, readings, translations and exercise
+  answers, **written for qinqin by the project and released under CC0 1.0**
+  (`plugins/data/zh-grammar`, with `LICENSE` and `ATTRIBUTION.md`). Topic
+  coverage follows the grammar outline (语法大纲) of the 《HSK 考试大纲》 /
+  Syllabus for the Chinese Proficiency Test (CLEC/CTI, edition 2025-11,
+  effective 2026-07;
+  https://hsk.cn-bj.ufileos.com/3.0/%E6%96%B0%E7%89%88HSK%E8%80%83%E8%AF%95%E5%A4%A7%E7%BA%B21219.pdf),
+  used as a **topic index only**: the lesson grouping and order, explanations,
+  examples and exercises are qinqin's own, and no syllabus text is reproduced.
+  The syllabus grants no reuse licence. The levels are qinqin's estimates, not
+  official HSK levels. It **has not been reviewed by a native speaker**; errors
+  are possible.
 
 ## Frequency data
 
