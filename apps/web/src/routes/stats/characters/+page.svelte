@@ -422,6 +422,7 @@
 	$effect(() => {
 		void stageFilter;
 		void query;
+		void levelValue;
 		clearTimeout(announceTimer);
 		const text = untrack(() => filterAnnouncement(shownTotal, totals.total, filtering));
 		// Nothing to say on the first paint, before any filter was used.
