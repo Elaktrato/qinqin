@@ -41,25 +41,27 @@ type entryCharacter struct {
 
 // entryCharacters returns the distinct Han characters of a zh/ja word's
 // written form in order, at most eight, each resolved to the character
-// entry with that written form (lowest id). A fixed number of queries
-// serves any word length: ByForm, Radicals, one GetMany for the radicals
-// and one levels query. Characters without an entry are left out.
+// entry with that written form. An entry that merely folds the form in as
+// a traditional variant (复 holds 覆) is not the character the word
+// writes: the resolution prefers the candidate whose own first form is the
+// rune (lexicon.Best's own-character rule) and shows the rune. Rows are
+// deduplicated by entry id (two forms can fold into one entry) and capped
+// after that. A fixed number of queries serves any word length: ByForm,
+// Radicals, one GetMany for the radicals and one levels query. Characters
+// without an entry are left out.
 func entryCharacters(ctx context.Context, sqlDB *sql.DB, e *lexicon.Entry) ([]entryCharacter, error) {
 	out := []entryCharacter{}
 	if e.Kind != "word" || (e.Language != "zh" && e.Language != "ja") {
 		return out, nil
 	}
-	seen := map[rune]bool{}
+	seenRunes := map[rune]bool{}
 	forms := make([]string, 0, maxEntryCharacters)
 	for _, r := range e.Headword() {
-		if !unicode.Is(unicode.Han, r) || seen[r] {
+		if !unicode.Is(unicode.Han, r) || seenRunes[r] {
 			continue
 		}
-		seen[r] = true
+		seenRunes[r] = true
 		forms = append(forms, string(r))
-		if len(forms) == maxEntryCharacters {
-			break
-		}
 	}
 	if len(forms) == 0 {
 		return out, nil
@@ -69,21 +71,47 @@ func entryCharacters(ctx context.Context, sqlDB *sql.DB, e *lexicon.Entry) ([]en
 	if err != nil {
 		return nil, err
 	}
-	chars := make([]lexicon.Entry, 0, len(forms))
+	type resolvedCharacter struct {
+		written string
+		entry   lexicon.Entry
+	}
+	resolved := make([]resolvedCharacter, 0, len(forms))
+	seenEntries := map[int64]bool{}
 	for _, form := range forms {
-		for _, candidate := range byForm[form] {
-			if candidate.Kind == "character" {
-				chars = append(chars, candidate)
+		// ByForm orders candidates by id; the first is the fallback, but a
+		// candidate whose own first form is the rune wins (Best's rule).
+		var picked *lexicon.Entry
+		for i := range byForm[form] {
+			candidate := &byForm[form][i]
+			if candidate.Kind != "character" {
+				continue
+			}
+			if picked == nil {
+				picked = candidate
+			}
+			if candidate.Headword() == form ||
+				(len(candidate.Forms) > 0 && candidate.Forms[0].Text == form) {
+				picked = candidate
 				break
 			}
 		}
+		if picked == nil || seenEntries[picked.ID] {
+			continue
+		}
+		seenEntries[picked.ID] = true
+		resolved = append(resolved, resolvedCharacter{written: form, entry: *picked})
+		if len(resolved) == maxEntryCharacters {
+			break
+		}
 	}
-	if len(chars) == 0 {
+	if len(resolved) == 0 {
 		return out, nil
 	}
-	ids := make([]int64, len(chars))
-	for i, c := range chars {
-		ids[i] = c.ID
+	chars := make([]lexicon.Entry, len(resolved))
+	ids := make([]int64, len(resolved))
+	for i, r := range resolved {
+		chars[i] = r.entry
+		ids[i] = r.entry.ID
 	}
 	radicals, err := store.Radicals(ctx, ids)
 	if err != nil {
@@ -109,10 +137,10 @@ func entryCharacters(ctx context.Context, sqlDB *sql.DB, e *lexicon.Entry) ([]en
 	if err != nil {
 		return nil, err
 	}
-	for _, c := range chars {
+	for i, c := range chars {
 		item := entryCharacter{
 			ID:      c.ID,
-			Written: c.Headword(),
+			Written: resolved[i].written,
 			Gloss:   firstEntryGloss(c),
 			Strokes: strokesOf(c),
 			Levels:  levelViews(lv[c.ID]),

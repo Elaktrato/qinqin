@@ -377,6 +377,9 @@ func TestPutEntryEndpoint(t *testing.T) {
 	if len(body.Senses) != 2 || len(body.Forms) != 2 {
 		t.Errorf("PUT response = %+v, want the full entry body", body)
 	}
+	if body.Characters == nil || len(body.Characters) != 0 {
+		t.Errorf("PUT response characters = %#v, want [] (a character has none)", body.Characters)
+	}
 
 	// GET applies the caller's patch for alice only; bob and anonymous
 	// callers see the shared entry.
