@@ -110,7 +110,9 @@ function configure(cardTypes: string[], newLimit = 20): void {
 			deckIds: ['general'],
 			newLimit,
 			reviewLimit: 100,
-			cardTypes
+			cardTypes,
+			// These tests follow the level's own order; random is the default.
+			newOrder: 'deck'
 		})
 	);
 }

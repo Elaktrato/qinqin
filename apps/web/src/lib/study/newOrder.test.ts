@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import newOrderFixture from '../../../../../docs/contracts/frequency/new-order.json';
 import deckcfgFixture from '../../../../../docs/contracts/frequency/deckcfg-new-order.json';
-import { orderNew, parseNewOrder, resolveSessionOrder, type NewOrder } from './newOrder';
+import { orderNew, parseNewOrder, randomKey, resolveSessionOrder, type NewOrder } from './newOrder';
 
 describe('orderNew (frequency/new-order.json)', () => {
 	it.each(newOrderFixture.cases)('$name', (c) => {
@@ -69,6 +69,40 @@ describe('resolveSessionOrder', () => {
 		});
 		expect(resolveSessionOrder('deck', [])).toEqual({
 			order: { by: 'added' },
+			mixed: false
+		});
+	});
+});
+
+describe('randomKey', () => {
+	it('is a stable key in [0, 1) per seed and entry', () => {
+		const a = randomKey(42);
+		for (let id = 1; id < 200; id++) {
+			const key = a(id) as number;
+			expect(key).toBeGreaterThanOrEqual(0);
+			expect(key).toBeLessThan(1);
+			expect(randomKey(42)(id)).toBe(key);
+		}
+	});
+	it('a different seed gives a different order, and it is not the id order', () => {
+		const ids = Array.from({ length: 30 }, (_, i) => i + 1);
+		const order = (seed: number) => orderNew(ids, randomKey(seed));
+		expect(order(1)).not.toEqual(order(2));
+		expect(order(1)).not.toEqual(ids);
+		expect([...order(1)].sort((x, y) => x - y)).toEqual(ids);
+	});
+	it('an item keeps its relative place when others leave (stable within a session)', () => {
+		const ids = Array.from({ length: 30 }, (_, i) => i + 1);
+		const full = orderNew(ids, randomKey(7));
+		const fewer = orderNew(ids.filter((id) => id % 3 !== 0), randomKey(7));
+		expect(full.filter((id) => id % 3 !== 0)).toEqual(fewer);
+	});
+});
+
+describe("resolveSessionOrder 'random'", () => {
+	it('is random whatever the decks say', () => {
+		expect(resolveSessionOrder('random', [{ by: 'frequency' }, null])).toEqual({
+			order: { by: 'random' },
 			mixed: false
 		});
 	});

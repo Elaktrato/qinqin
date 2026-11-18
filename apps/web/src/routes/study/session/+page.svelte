@@ -137,6 +137,10 @@ import type { Run } from '$lib/study/vacation';
 
 	// The SPA has no SSR, so the tab's setup is readable during init.
 	const config = loadConfig();
+	// The shuffle's seed lives in the saved setup, so a reload of the same
+	// session keeps its order. A setup saved before seeds existed has none:
+	// it is shuffled afresh on each load.
+	const sessionSeed = config.seed ?? Math.floor(Math.random() * 0x7fffffff);
 	const kinds: StudyCardKind[] = CARD_KINDS.filter((kind) => config.cardTypes.includes(kind));
 
 	/**
@@ -480,7 +484,8 @@ import type { Run } from '$lib/study/vacation';
 									kinds
 								})
 							: candidateNewEntries({ cards: data.cards, reviews: history, deckIds: config.deckIds }),
-					online: !offlineSession
+					online: !offlineSession,
+					seed: sessionSeed
 				},
 				{ packs: getFrequencyPacks, schemes: getSchemes, ranks: loadRanks, levelKeys: loadLevelKeys }
 			);

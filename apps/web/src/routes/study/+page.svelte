@@ -823,7 +823,7 @@ import { limitsOf } from '$lib/study/scheduler';
 	);
 	// A value the current mode does not offer (switched mode, pack removed) is the default.
 	const orderValue = $derived(
-		orderView.choices.some((choice) => choice.value === newOrderValue) ? newOrderValue : 'deck'
+		orderView.choices.some((choice) => choice.value === newOrderValue) ? newOrderValue : 'random'
 	);
 	const ordersMixed = $derived(
 		mode === 'decks' &&
@@ -850,8 +850,10 @@ import { limitsOf } from '$lib/study/scheduler';
 			// Existing kinds as set up (hidden ones stay), plus the checked opt-in kinds.
 			cardTypes: [...cardTypes.filter((kind) => !isOptIn(kind)), ...extraKinds]
 		};
-		const order = decodeOrder(orderValue);
-		if (order !== 'deck') config.newOrder = order;
+		// Always stored: absent means random, and 'deck' is a choice of its own.
+		config.newOrder = decodeOrder(orderValue);
+		// Fixes the shuffle of this session, so a reload shows the same order.
+		config.seed = Math.floor(Math.random() * 0x7fffffff);
 		// Validate what the session will actually use: a type hidden in
 		// this workspace does not count towards "at least one".
 		errors = validateConfig({ ...config, cardTypes: [...selectedKinds] });

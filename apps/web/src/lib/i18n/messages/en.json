@@ -2669,6 +2669,8 @@
 	"study.order.noPackFallback": "No frequency list is installed for {language}; using the order added.",
 	"study.order.notAvailable": "{order} (not available)",
 	"study.order.offline": "Frequency order needs a connection; using the order added.",
+	"study.order.random": "Random",
+	"study.order.randomLevel": "Random within the level",
 	"study.outbox.notSaved": "This review was not saved: its workspace was deleted.",
 	"study.outbox.queuedNotSaved": "{count, plural, one {# queued review was not saved: its workspace was deleted.} other {# queued reviews were not saved: their workspace was deleted.}}",
 	"study.sched.active": "Active: {label}",
