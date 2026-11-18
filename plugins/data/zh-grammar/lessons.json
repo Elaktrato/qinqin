@@ -422,7 +422,7 @@
           "distractors": [
             "很",
             "吗",
-            "在"
+            "第"
           ],
           "noOrder": true
         },
@@ -916,7 +916,7 @@
           "id": "hsk1-measure-words-4",
           "text": "这件衣服很漂亮。",
           "reading": "zhè jiàn yīfu hěn piàoliang.",
-          "translation": "These clothes are very pretty.",
+          "translation": "This dress is very pretty.",
           "focus": "件",
           "distractors": [
             "本",
@@ -1033,7 +1033,8 @@
             "岁",
             "号",
             "吗"
-          ]
+          ],
+          "noOrder": true
         },
         {
           "id": "hsk1-time-measures-5",
@@ -1555,7 +1556,7 @@
       ],
       "body": [
         "The preposition 在 (zài) introduces a place before the verb: 我在家吃饭, 他在学校学习. A time word also comes before the verb: 我上午在医院看病. The place and time go before the action, not after it.",
-        "The contrast example uses the adverb 正在, which marks an action in progress (妈妈正在做饭), not a place. 在 can also be the verb to be at (我在家); here it is a preposition introducing where the action happens."
+        "The contrast example uses the adverb 正在, which marks an action in progress (姐姐正在看电视), not a place. 在 can also be the verb to be at (我在家); here it is a preposition introducing where the action happens."
       ],
       "examples": [
         {
@@ -1775,7 +1776,8 @@
             "对",
             "吗",
             "很"
-          ]
+          ],
+          "noOrder": true
         }
       ]
     },
@@ -2476,9 +2478,9 @@
         },
         {
           "id": "hsk1-predicate-5",
-          "text": "我是中国人。",
-          "reading": "wǒ shì Zhōngguórén.",
-          "translation": "I am Chinese.",
+          "text": "他是医生。",
+          "reading": "tā shì yīshēng.",
+          "translation": "He is a doctor.",
           "focus": "是",
           "distractors": [
             "很",
@@ -2578,9 +2580,9 @@
       "examples": [
         {
           "id": "hsk1-attributive-1",
-          "text": "这是我的书。",
-          "reading": "zhè shì wǒ de shū.",
-          "translation": "This is my book.",
+          "text": "那是妈妈的新衣服。",
+          "reading": "nà shì māma de xīn yīfu.",
+          "translation": "Those are Mum's new clothes.",
           "focus": "的",
           "distractors": [
             "得",
@@ -2703,9 +2705,9 @@
         },
         {
           "id": "hsk1-adverbial-5",
-          "text": "这是我的书。",
-          "reading": "zhè shì wǒ de shū.",
-          "translation": "This is my book.",
+          "text": "这是姐姐的新手机。",
+          "reading": "zhè shì jiějie de xīn shǒujī.",
+          "translation": "This is my older sister's new phone.",
           "focus": "的",
           "distractors": [
             "得",
@@ -2762,7 +2764,8 @@
             "吗",
             "很",
             "的"
-          ]
+          ],
+          "noOrder": true
         },
         {
           "id": "hsk1-action-measure-4",
@@ -2876,7 +2879,7 @@
       ],
       "body": [
         "A declarative sentence states a fact: 我是学生, 他喜欢喝茶, 今天不冷. The word order is subject then predicate, and it ends in a period (。).",
-        "The contrast example uses 吗, which turns the same statement into a yes-no question (你是学生吗？) ending in a question mark. Adding 吗 changes a fact into a question; do not add it to a sentence you mean as a statement."
+        "The contrast example uses 吗, which turns the same statement into a yes-no question (你会开车吗？) ending in a question mark. Adding 吗 changes a fact into a question; do not add it to a sentence you mean as a statement."
       ],
       "examples": [
         {
@@ -2952,8 +2955,8 @@
         "verb + 不 + verb？"
       ],
       "body": [
-        "Three question types: yes-no with 吗 (你是老师吗？), wh- with a question word in the answer position (你叫什么名字？, 这是谁的书？), and affirmative-negative with verb-not-verb (你去不去学校？). The affirmative-negative form does not take 吗.",
-        "The contrast example uses 呢 for a follow-up question (我很好，你呢？= and you?). 呢 asks what about someone; it is not a yes-no, wh- or affirmative-negative question. Do not add 吗 to a wh- or affirmative-negative question."
+        "Three question types: yes-no with 吗 (你是老师吗？), wh- with a question word in the answer position (你喝什么？, 这是谁的书？), and affirmative-negative with verb-not-verb (你去不去学校？). The affirmative-negative form does not take 吗.",
+        "The contrast example uses 呢 for a follow-up question (我喜欢猫，你呢？= and you?). 呢 asks what about someone; it is not a yes-no, wh- or affirmative-negative question. Do not add 吗 to a wh- or affirmative-negative question."
       ],
       "examples": [
         {
@@ -2975,9 +2978,9 @@
           "translation": "What will you drink?",
           "focus": "什么",
           "distractors": [
-            "吗",
+            "谁",
             "很",
-            "谁"
+            "在"
           ]
         },
         {
@@ -3028,8 +3031,8 @@
         "不要 + verb"
       ],
       "body": [
-        "An imperative gives a command or request. 请 (qǐng, please) makes it polite: 请坐, 请喝茶. 不要 (bú yào, do not) forbids: 不要说话, 不要看电视. The subject is usually left out.",
-        "The contrast example uses 吧, which softens a command into a suggestion (我们回家吧！= let us go home). 请 and 不要 address the listener directly; 吧 proposes doing something together."
+        "An imperative gives a command or request. 请 (qǐng, please) makes it polite: 请大家坐, 请喝茶. 不要 (bú yào, do not) forbids: 不要说话, 不要看电视. The subject is usually left out.",
+        "The contrast example uses 吧, which softens a command into a suggestion (我们吃饭吧！= let us eat). 请 and 不要 address the listener directly; 吧 proposes doing something together."
       ],
       "examples": [
         {

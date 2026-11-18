@@ -179,3 +179,42 @@ Re-verified: build --check (48 rows / 49 lessons), full build, check-sources,
 TestBundledGrammarPack and TestCommittedPackNotices all pass; lessons.json matches
 the authored source with no contrast/kinds leakage; every focus occurs exactly
 once; every lesson keeps 4–8 examples and 1–2 body-explained contrasts.
+
+## Second tutor re-review — final scoped fixes (chinese-tutor-hsk-1-rereview.md)
+
+The tutor's re-review confirmed S1–S3, Z1/Z2/Z3/Z6 and J1–J6, J8–J12 all resolved,
+and gave a minimal closing list. Only those items were applied (nothing else was
+reopened). The Z4 word-order cases are now handled by the `noOrder` flag (added by
+the controller) rather than by rewriting texts: an example with a second legal
+order skips the word-order exercise but keeps its fill-the-gap.
+
+### Applied
+1. question-types-2: distractor 吗 → 在 (你喝吗? was a valid question once 什么 moved
+   to the end); now [谁,很,在].
+2. separable-verbs-1: distractor 在 → 第 (爸爸今天在。 is valid); now [很,吗,第].
+3. predicate-5 restored to 他是医生。(the body already cites it); shi-2 stays
+   我是中国人。— the two are no longer identical.
+4. attributive-1 → 那是妈妈的新衣服。; adverbial-5 → 这是姐姐的新手机。; de-1 stays
+   这是我的书。This removes the three identical 这是我的书/的 examples and the
+   adverbial body/example mismatch. (Remaining 这是我的书 uses have different focus
+   这/是 — acceptable same-text/different-focus reuse.)
+5. Added "noOrder": true to he-conjunction-5, action-measure-3, time-measures-4
+   (each confirmed to have a second legal order). noOrder total is now 23.
+   CONSEQUENCE: hsk1-he-conjunction now has all five examples flagged, so that
+   lesson has NO word-order exercise (only fill-the-gap runs). This is accepted and
+   recorded rather than forcing a fake order.
+6. Synced four bodies' explicit contrast quotes to the actual examples:
+   declarative (你会开车吗？), zai-preposition (姐姐正在看电视), question-types
+   (你喝什么？ / 我喜欢猫，你呢？), imperative (请大家坐 / 我们吃饭吧！).
+7. measure-words-4 translation → "This dress is very pretty." (singular 这件衣服).
+
+### Not applied (out of scope / optional, per the re-review)
+- de-3 clause-swap noOrder (marked 边缘/optional by the tutor): left unflagged.
+- Item 8 illustrative-quote mismatches (ma-ba/le-ne/shi/you bodies) and item 9
+  (shi-1 frame echo): optional, left as-is.
+
+Re-verified: build --check (48 rows / 49 lessons), full build, check-sources,
+TestBundledGrammarPack (20-id noOrder map still passes; the 3 new flags are extra)
+and TestCommittedPackNotices all pass; authored ↔ lessons.json zero drift including
+noOrder; no contrast/kinds leakage. Pack still marked "not reviewed by a native
+speaker".
