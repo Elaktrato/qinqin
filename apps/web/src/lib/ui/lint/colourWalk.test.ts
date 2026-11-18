@@ -136,6 +136,34 @@ describe('the allowlist matching', () => {
 	});
 });
 
+/** Page-manifest files still carrying restyle findings until the Select-dependent pass (P7/P17/P22). */
+const PAGE_REMAINDER: Partial<Record<Rule, string[]>> = {
+	control: [
+		'routes/lookups/+page.svelte',
+		'routes/search/parts/+page.svelte',
+		'routes/settings/+page.svelte',
+		'routes/study/+page.svelte'
+	]
+};
+
+describe('the page manifest and the ratchet (#106)', () => {
+	it('no #106 page file is on a restyle list except the named Select-pass remainder', () => {
+		// Pages owned by other items are their owners' ratchet; this test guards #106's.
+		const pageFiles = new Set(
+			PAGES.filter((page) => page.owner === '#106').flatMap((page) => page.files)
+		);
+		for (const rule of ['weight', 'caps', 'border', 'shadow', 'control'] as const) {
+			const remainder = PAGE_REMAINDER[rule] ?? [];
+			const list = pending[rule] as string[];
+			const unexpected = list.filter((file) => pageFiles.has(file) && !remainder.includes(file));
+			expect(unexpected, rule).toEqual([]);
+			// The named remainder is exact: a file that became clean must leave the list.
+			const gone = remainder.filter((file) => !list.includes(file));
+			expect(gone, `${rule}: the named remainder is clean, remove it`).toEqual([]);
+		}
+	});
+});
+
 describe.each(RULES)('%s lint', (rule) => {
 	const list: string[] = pending[rule] ?? [];
 
