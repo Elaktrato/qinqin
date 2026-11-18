@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { untrack } from 'svelte';
 	import { PHONE_MEDIA_QUERY } from '$lib/frame/breakpoint';
 	import LookupSheet from './LookupSheet.svelte';
 	import PopupFrameView from './PopupFrameView.svelte';
@@ -32,12 +33,19 @@
 		query.addEventListener('change', change);
 		return () => query.removeEventListener('change', change);
 	});
+	// A sheet has no nesting: the nested frames are closed when the phone frame
+	// takes over (and never rendered outside the modal before the effect runs).
+	$effect(() => {
+		if (phone) untrack(() => lookup.closeNested());
+	});
 </script>
 
 {#if lookup.info}
 	{#each lookup.stack.frames as frame (frame.id)}
-		{#if phone && frame.depth === 1}
-			<LookupSheet {frame} info={lookup.info} {lookup} {studyWorkspaceId} {highlighter} {stateLine} />
+		{#if phone}
+			{#if frame.depth === 1}
+				<LookupSheet {frame} info={lookup.info} {lookup} {studyWorkspaceId} {highlighter} {stateLine} />
+			{/if}
 		{:else}
 			<PopupFrameView {frame} info={lookup.info} {lookup} {studyWorkspaceId} {highlighter} {stateLine} />
 		{/if}

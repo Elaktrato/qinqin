@@ -4,8 +4,14 @@
 	let {
 		onclose = () => {},
 		onnext,
-		onprev
-	}: { onclose?: () => void; onnext?: () => void; onprev?: () => void } = $props();
+		onprev,
+		onescape
+	}: {
+		onclose?: () => void;
+		onnext?: () => void;
+		onprev?: () => void;
+		onescape?: () => void;
+	} = $props();
 	let open = $state(false);
 </script>
 
@@ -13,5 +19,16 @@
 <Sheet bind:open label="学习" {onclose} {onnext} {onprev}>
 	<p>xué xí — to study</p>
 	<input aria-label="Note" />
+	{#if onescape}
+		<!-- An inline action that takes Escape first (a rename, a confirmation). -->
+		<input
+			aria-label="Rename"
+			onkeydown={(e) => {
+				if (e.key !== 'Escape') return;
+				e.preventDefault();
+				onescape();
+			}}
+		/>
+	{/if}
 </Sheet>
 <output data-testid="state">{open ? 'open' : 'closed'}</output>

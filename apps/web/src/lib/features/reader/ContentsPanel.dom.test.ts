@@ -32,6 +32,20 @@ describe('ContentsPanel', () => {
 		expect(screen.getByRole('link', { name: '故乡' }).getAttribute('aria-current')).toBeNull();
 	});
 
+	it("the current chapter's accessible name keeps the book lang", () => {
+		mount({ titles: ['故乡', '社戏'], current: 1 });
+		const current = screen.getByRole('link', { name: '社戏 (reading now)' });
+		expect(current.getAttribute('aria-label')).toBeNull();
+		const ids = current.getAttribute('aria-labelledby')!.split(/\s+/);
+		const title = document.getElementById(ids[0])!;
+		const suffix = document.getElementById(ids[1])!;
+		expect(title.textContent).toBe('社戏');
+		expect(title.getAttribute('lang')).toBe('zh-Hans');
+		// The interface suffix carries no lang and is not part of the title's lang.
+		expect(suffix.textContent).toBe('(reading now)');
+		expect(suffix.getAttribute('lang')).toBeNull();
+	});
+
 	it('chapter titles carry the book lang', () => {
 		mount({ titles: ['故乡', ''], current: 0 });
 		const [titled, untitled] = screen.getAllByRole('link');

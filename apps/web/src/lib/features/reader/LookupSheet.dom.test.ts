@@ -1,4 +1,5 @@
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/svelte';
+import { tick } from 'svelte';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { LookupResult } from '$lib/api/types';
 
@@ -36,7 +37,9 @@ function fakeLookup(mode: 'hover' | 'selection', frames: PopupFrame[]) {
 		popups: { shiftHeld: false, enter: vi.fn(), leave: vi.fn(), move: vi.fn() },
 		hold: vi.fn(),
 		close: vi.fn(),
-		closeFrame: vi.fn()
+		closeFrame: vi.fn(),
+		closeNested: vi.fn(),
+		wordParagraph: vi.fn(() => null)
 	};
 	return lookup;
 }
@@ -112,6 +115,42 @@ describe('the lookup on the phone (#102)', () => {
 		expect(inPopup(sheet)).toBe(false);
 	});
 
+	it('inside the sheet the highlight result is a status region (the page live regions are inert)', () => {
+		stubPhone(true);
+		const actions = { ...highlighter, notice: 'Highlight added: 故乡' };
+		render(PopupStackView, {
+			lookup: fakeLookup('selection', [root]) as unknown as LookupController,
+			studyWorkspaceId: 7,
+			highlighter: actions
+		});
+		const sheet = screen.getByRole('dialog', { name: 'Dictionary: 故乡' });
+		expect(within(sheet).getByRole('status').textContent).toBe('Highlight added: 故乡');
+	});
+
+	it('a replaced lookup sheet does not close the lookup that replaced it', async () => {
+		stubPhone(true);
+		const lookup = fakeLookup('hover', [root]);
+		const view = render(PopupStackView, {
+			lookup: lookup as unknown as LookupController,
+			studyWorkspaceId: 7,
+			highlighter
+		});
+		const old = screen.getByRole('dialog', { name: 'Dictionary: 故乡' });
+		// A new root frame (a rotation, a replaced hover root): the old sheet unmounts.
+		await view.rerender({
+			lookup: {
+				...lookup,
+				stack: { frames: [{ ...root, id: 2, text: '乡' }] }
+			} as unknown as LookupController,
+			studyWorkspaceId: 7,
+			highlighter
+		});
+		expect(screen.getByRole('dialog', { name: 'Dictionary: 乡' })).toBeTruthy();
+		// The browser queues the detached dialog's native close event after teardown.
+		old.dispatchEvent(new Event('close'));
+		expect(lookup.close).not.toHaveBeenCalled();
+	});
+
 	it('above the breakpoint the popup path is unchanged', () => {
 		stubPhone(false);
 		mount();
@@ -120,11 +159,29 @@ describe('the lookup on the phone (#102)', () => {
 		expect(popup.hasAttribute('data-lookup-popup')).toBe(true);
 	});
 
-	it('nested frames keep the popup path', () => {
-		stubPhone(true);
-		mount('hover', [root, { ...root, id: 2, depth: 2, text: '乡' }]);
-		expect(screen.getByRole('dialog', { name: 'Dictionary: 故乡' }).tagName).toBe('DIALOG');
-		expect(screen.getByRole('dialog', { name: 'Dictionary: 乡' }).tagName).toBe('DIV');
+	it('narrowing below the phone breakpoint closes a nested frame, leaving only the root sheet', async () => {
+		let change: ((e: { matches: boolean }) => void) | null = null;
+		vi.stubGlobal('matchMedia', (query: string) => ({
+			matches: false,
+			media: query,
+			addEventListener: (_: string, cb: (e: { matches: boolean }) => void) => (change = cb),
+			removeEventListener() {}
+		}));
+		const lookup = fakeLookup('hover', [root, { ...root, id: 2, depth: 2, text: '乡' }]);
+		render(PopupStackView, {
+			lookup: lookup as unknown as LookupController,
+			studyWorkspaceId: 7,
+			highlighter
+		});
+		// A narrow desktop window with a mouse: the root and its Shift+hover child.
+		expect(screen.getAllByRole('dialog')).toHaveLength(2);
+		change!({ matches: true });
+		await tick();
+		expect(lookup.closeNested).toHaveBeenCalled();
+		// The page is modal now: only the root frame, as a sheet.
+		const dialogs = screen.getAllByRole('dialog');
+		expect(dialogs).toHaveLength(1);
+		expect(dialogs[0].tagName).toBe('DIALOG');
 	});
 
 	it('the Sheet is lib/ui/Sheet (the journal reuses it)', () => {

@@ -26,6 +26,8 @@
 		lang: string;
 		onjump?: () => void;
 	} = $props();
+
+	const id = $props.id();
 </script>
 
 <nav class="contents" aria-label={t('reader.rail.contents')}>
@@ -33,16 +35,17 @@
 	<ol>
 		{#each titles as title, n (n)}
 			{@const named = (title ?? '').trim()}
+			{@const titleId = `${id}-title-${n}`}
 			<li>
 				<a
 					href={hrefOf(n)}
 					aria-current={n === current ? 'page' : undefined}
-					aria-label={n === current
-						? t('reader.contents.current', { title: named || t('reader.chapter', { n: n + 1 }) })
-						: undefined}
+					aria-labelledby={n === current ? `${titleId} ${id}-now` : undefined}
 					onclick={() => onjump?.()}
 				>
-					{#if named}<span {lang}>{named}</span>{:else}<span>{t('reader.chapter', { n: n + 1 })}</span>{/if}
+					{#if named}<span id={titleId} {lang}>{named}</span>{:else}<span id={titleId}>{t('reader.chapter', { n: n + 1 })}</span>{/if}
+					<!-- The "reading now" suffix is interface text: outside the title's lang. -->
+					{#if n === current}<span id="{id}-now" class="visually-hidden">{t('reader.contents.currentSuffix')}</span>{/if}
 				</a>
 			</li>
 		{/each}
@@ -91,5 +94,14 @@
 		a[aria-current='page']::before {
 			background: Highlight;
 		}
+	}
+
+	.visually-hidden {
+		position: absolute;
+		width: 1px;
+		height: 1px;
+		overflow: hidden;
+		clip-path: inset(50%);
+		white-space: nowrap;
 	}
 </style>
