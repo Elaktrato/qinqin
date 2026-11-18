@@ -2,7 +2,7 @@
 	import { t } from '$lib/i18n';
 	import { readingLang, studyLang } from '$lib/i18n/lang';
 	import { workspaces } from '$lib/workspaces';
-	import Msg from '$lib/i18n/Msg.svelte';
+	import ReadingTable from '$lib/components/ReadingTable.svelte';
 	import { onDestroy } from 'svelte';
 	import type { Entry } from '$lib/api/types';
 	import PlayButton from '$lib/components/PlayButton.svelte';
@@ -292,11 +292,12 @@
 {#if done}
 	<FaceAnswer>
 		<div class="fa-readings">
-			<p class="readings">
-				<Msg key="flashcards.tone.pinyin" args={{ readings: allReadings.join(' / ') }}
-					>{#snippet strong(text: string)}<strong class="fa-reading">{text}</strong>{/snippet}</Msg
-				>
-			</p>
+			<ReadingTable
+				readings={allReadings.map((value) => ({ type: 'pinyin', value }))}
+				language={entry.language}
+				label={t('flashcards.card.readings')}
+				emphasis
+			/>
 			{#if audio}
 				<span class="fa-play">
 					<PlayButton
@@ -497,10 +498,6 @@
 
 	.feedback.bad {
 		color: var(--readable-bad);
-	}
-
-	.readings {
-		margin: 0;
 	}
 
 	@media (pointer: coarse) {

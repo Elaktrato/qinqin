@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { FrequencyPack, Scheme } from '$lib/api/types';
+import { randomKey } from './newOrder';
 import { mixedNote, offlineNote } from './newOrderView';
 import { candidateNewEntries, deckOrdersOf, sessionNewKey, type SessionKeyDeps } from './sessionOrder';
 import type { ReviewEvent, StudyCard } from './types';
@@ -35,7 +36,7 @@ function deps(over: Partial<SessionKeyDeps> = {}): SessionKeyDeps {
 	};
 }
 
-const base = { language: 'ja', newEntryIds: [1, 2], online: true };
+const base = { language: 'ja', newEntryIds: [1, 2], online: true, seed: 5 };
 
 describe('sessionNewKey', () => {
 	it('decks: the decks’ common frequency order loads ranks for the new entries only', async () => {
@@ -115,6 +116,22 @@ describe('sessionNewKey', () => {
 			d
 		);
 		expect(words.key?.(1)).toBe(10);
+	});
+});
+
+describe('sessionNewKey random', () => {
+	it('decks and levels: a seeded key, no network, even offline', async () => {
+		const d = deps();
+		for (const input of [
+			{ ...base, online: false, mode: 'decks' as const, order: 'random' as const, deckOrders: [] },
+			{ ...base, mode: 'levels' as const, order: 'random' as const, levelUnit: 'character' as const }
+		]) {
+			const r = await sessionNewKey(input, d);
+			expect(r.note).toBeNull();
+			expect(r.key?.(1)).toBe(randomKey(5)(1));
+		}
+		expect(d.packs).not.toHaveBeenCalled();
+		expect(d.ranks).not.toHaveBeenCalled();
 	});
 });
 

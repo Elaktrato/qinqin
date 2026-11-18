@@ -359,11 +359,21 @@ describe('study setup, new-card order (#75)', () => {
 				'Most frequent first (Jiten frequency list)'
 			)
 		);
-		expect(orderSelect().value).toBe('deck');
+		expect(orderSelect().value).toBe('random');
 		await fireEvent.change(orderSelect(), { target: { value: 'frequency' } });
 		await fireEvent.click(screen.getByRole('button', { name: /start/i }));
 		await waitFor(() => expect(goto).toHaveBeenCalledWith('/study/session'));
 		expect(JSON.parse(sessionStorage.getItem(SESSION_CONFIG_KEY)!).newOrder).toEqual({ by: 'frequency' });
+	});
+
+	it('starts random by default, with a seed that fixes the shuffle', async () => {
+		render(Page);
+		await waitFor(() => expect(orderSelect().options.length).toBeGreaterThan(1));
+		await fireEvent.click(screen.getByRole('button', { name: /start/i }));
+		await waitFor(() => expect(goto).toHaveBeenCalledWith('/study/session'));
+		const saved = JSON.parse(sessionStorage.getItem(SESSION_CONFIG_KEY)!);
+		expect(saved.newOrder).toBe('random');
+		expect(Number.isInteger(saved.seed)).toBe(true);
 	});
 
 	it('a deleted deck in the saved setup does not make the orders mixed', async () => {
@@ -384,7 +394,8 @@ describe('study setup, new-card order (#75)', () => {
 				deckIds: ['general', 'gone'],
 				newLimit: 20,
 				reviewLimit: 100,
-				cardTypes: ['vocab']
+				cardTypes: ['vocab'],
+				newOrder: 'deck'
 			})
 		);
 		render(Page);
@@ -398,6 +409,6 @@ describe('study setup, new-card order (#75)', () => {
 		await screen.findByText(
 			'No frequency list is installed for Japanese. An administrator can add one in Settings, Data; see Data and licences.'
 		);
-		expect([...orderSelect().options].map((o) => o.value)).toEqual(['deck', 'added']);
+		expect([...orderSelect().options].map((o) => o.value)).toEqual(['random', 'deck', 'added']);
 	});
 });

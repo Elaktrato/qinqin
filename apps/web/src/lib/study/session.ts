@@ -29,17 +29,23 @@ export interface StudySessionConfig {
 	reviewLimit: number;
 	cardTypes: string[];
 	/**
-	 * The order of new cards (#75). Absent = 'deck': the selected decks'
-	 * own order (level order in a level session).
+	 * The order of new cards (#75). Absent = 'random', the default: a
+	 * shuffle ('deck' follows the selected decks' own orders, level order
+	 * in a level session).
 	 */
 	newOrder?: SessionNewOrder;
+	/**
+	 * Fixes the shuffle of a started session: drawn once when it starts, so
+	 * a reload of the same session shows the same order.
+	 */
+	seed?: number;
 	/** Ignore the session and deck daily limits for this one session. */
 	studyAll?: boolean;
 }
 
-/** sessionNewOrder is the setup's order of new cards, 'deck' by default. */
+/** sessionNewOrder is the setup's order of new cards, random by default. */
 export function sessionNewOrder(config: StudySessionConfig): SessionNewOrder {
-	return config.newOrder ?? 'deck';
+	return config.newOrder ?? 'random';
 }
 
 /** sessionStorage key of the setup. */
@@ -166,7 +172,7 @@ function parseConfig(raw: string): StudySessionConfig | null {
 	}
 
 	if (!isRecord(parsed)) return null;
-	const { mode, schemeId, levelName, deckIds, newLimit, reviewLimit, cardTypes, newOrder, studyAll } = parsed;
+	const { mode, schemeId, levelName, deckIds, newLimit, reviewLimit, cardTypes, newOrder, studyAll, seed } = parsed;
 	if (!isStringArray(deckIds) || !isStringArray(cardTypes)) return null;
 	if (typeof newLimit !== 'number' || typeof reviewLimit !== 'number') return null;
 
@@ -182,11 +188,15 @@ function parseConfig(raw: string): StudySessionConfig | null {
 		newLimit,
 		reviewLimit,
 		cardTypes: [...cardTypes],
-		...(studyAll === true ? { studyAll: true } : {})
+		...(studyAll === true ? { studyAll: true } : {}),
+		...(typeof seed === 'number' && Number.isFinite(seed) ? { seed } : {})
 	};
-	// A missing or unreadable order is the deck setting; it never discards the setup.
-	const order = parseNewOrder(newOrder);
-	if (order !== null) config.newOrder = order;
+	// A missing or unreadable order is the default (random); it never discards the setup.
+	if (newOrder === 'deck' || newOrder === 'random') config.newOrder = newOrder;
+	else {
+		const order = parseNewOrder(newOrder);
+		if (order !== null) config.newOrder = order;
+	}
 	return validateConfig(config).length === 0 ? config : null;
 }
 

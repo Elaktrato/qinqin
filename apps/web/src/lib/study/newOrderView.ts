@@ -27,7 +27,7 @@ export function missingLevelsNote(): string {
 
 /** encodeOrder turns an order into a select value. */
 export function encodeOrder(order: SessionNewOrder): string {
-	if (order === 'deck') return 'deck';
+	if (order === 'deck' || order === 'random') return order;
 	return order.by === 'level' ? `level:${order.packId}` : order.by;
 }
 
@@ -36,6 +36,7 @@ export function decodeOrder(value: string): SessionNewOrder {
 	if (value.startsWith('level:')) {
 		return parseNewOrder({ by: 'level', packId: value.slice('level:'.length) }) ?? 'deck';
 	}
+	if (value === 'random') return 'random';
 	return parseNewOrder({ by: value }) ?? 'deck';
 }
 
@@ -71,7 +72,7 @@ export interface OrderEnv {
 
 /**
  * sessionOrderChoices: the setup's choices. A deck session may follow the
- * decks, the order added, frequency or a level list; a level session keeps
+ * decks, random (the default), the order added, frequency or a level list; a level session keeps
  * level order or, for a word scheme, most frequent first (word frequency
  * does not rank characters).
  */
@@ -81,11 +82,15 @@ export function sessionOrderChoices(
 	const pack = rankingPack(env.packs, env.language);
 	const hint = pack === null ? noPackHint(env.language) : null;
 	if (env.mode === 'levels') {
-		const choices: OrderChoice[] = [{ value: 'deck', label: t('study.order.levelOrder') }];
+		const choices: OrderChoice[] = [
+			{ value: 'random', label: t('study.order.randomLevel') },
+			{ value: 'deck', label: t('study.order.levelOrder') }
+		];
 		if (pack !== null && env.levelScheme?.unit === 'word') choices.push(frequencyChoice(pack));
 		return { choices, hint };
 	}
 	const choices: OrderChoice[] = [
+		{ value: 'random', label: t('study.order.random') },
 		{ value: 'deck', label: t('study.order.asDeck') },
 		{ value: 'added', label: t('study.order.added') }
 	];

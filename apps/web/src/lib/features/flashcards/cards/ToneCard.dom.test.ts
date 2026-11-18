@@ -41,6 +41,34 @@ async function key(k: string): Promise<KeyboardEvent> {
 	return event;
 }
 
+describe('ToneCard answer readings', () => {
+	const several = {
+		...entry,
+		written: '行',
+		readings: [
+			{ type: 'pinyin', value: 'xíng', plain: 'xing2', ord: 0 },
+			{ type: 'pinyin', value: 'háng', plain: 'hang2', ord: 1 }
+		]
+	} as unknown as Entry;
+
+	it('names Pinyin once and joins the readings with " | ", each in <strong>', () => {
+		setup({ entry: several, done: true });
+		const table = screen.getByRole('table', { name: 'Readings' });
+		expect(table.textContent?.replace(/\s+/g, ' ').trim()).toBe('Pinyin xíng | háng');
+		expect([...table.querySelectorAll('strong')].map((el) => el.textContent)).toEqual(['xíng', 'háng']);
+	});
+
+	it('one reading: a single value', () => {
+		setup({ done: true });
+		expect(screen.getByRole('table', { name: 'Readings' }).textContent?.replace(/\s+/g, ' ').trim()).toBe('Pinyin nǐ hǎo');
+	});
+
+	it('shows no table before the answer', () => {
+		setup();
+		expect(screen.queryByRole('table')).toBeNull();
+	});
+});
+
 describe('ToneCard on the open page (#101)', () => {
 	it('one pad per syllable with role img and its tone in the name', () => {
 		setup();
