@@ -34,6 +34,7 @@ import { getEntry } from '$lib/api/entries';
 import { record } from '$lib/events';
 import { recordLookup } from '$lib/lookups/sink';
 import { search } from '$lib/api/search';
+import { getSchemes } from '$lib/api/schemes';
 import { PHONE_MEDIA_QUERY, FRAME_PHONE_BREAKPOINT } from '$lib/frame/breakpoint';
 import { setUrl } from '$lib/testing/appState.svelte';
 import { workspaces, workspacesLoaded } from '$lib/workspaces';
@@ -451,5 +452,82 @@ describe('search page', () => {
 		expect(link.dispatchEvent(event)).toBe(true);
 		expect(recordLookup).toHaveBeenCalledExactlyOnceWith(1, { entryId: 7, source: 'search' });
 		expect(goto).not.toHaveBeenCalled();
+	});
+});
+
+
+describe('the search field and filters (#104)', () => {
+	const schemes = [
+		{
+			id: 1,
+			name: 'HSK',
+			unit: 'character',
+			language: 'zh',
+			packId: 'hsk',
+			levels: [
+				{ id: 1, ord: 0, name: '1' },
+				{ id: 2, ord: 1, name: '3' }
+			]
+		}
+	];
+
+	it('is an underline field with a named submit IconButton and a By parts IconButton', async () => {
+		render(Page);
+		const form = screen.getByRole('search');
+		const input = screen.getByLabelText('Search entries');
+		expect(form.contains(input)).toBe(true);
+		const submit = screen.getByRole('button', { name: 'Search' });
+		expect(submit.closest('form')).toBe(form);
+		expect(submit.className).not.toContain('primary');
+		const parts = await screen.findByRole('link', { name: 'By parts' });
+		expect(parts.parentElement?.querySelector('[role="tooltip"]')?.textContent).toBe('By parts');
+	});
+
+	it('All, Words and Characters are text buttons with aria-pressed; All clears the kind', async () => {
+		searchMock.mockResolvedValue([]);
+		setUrl('/search?q=x&kind=word');
+		render(Page);
+		const all = await screen.findByRole('button', { name: 'All' });
+		expect(all.getAttribute('aria-pressed')).toBe('false');
+		expect(screen.getByRole('button', { name: 'Words' }).getAttribute('aria-pressed')).toBe('true');
+		await fireEvent.click(all);
+		expect(vi.mocked(goto).mock.calls[0][0]).toBe('/search?q=x');
+	});
+
+	it('Level: any opens a Menu with Any level and the schemes levels; a pick sets both and keeps e', async () => {
+		vi.mocked(getSchemes).mockResolvedValue(schemes as never);
+		searchMock.mockResolvedValue([hit(7, '勤奋')]);
+		getEntryMock.mockResolvedValue(entry(7, '勤奋'));
+		setUrl('/search?q=x&e=7');
+		render(Page);
+		const trigger = await screen.findByRole('button', { name: /Level: any/ });
+		await fireEvent.click(trigger);
+		expect(screen.getByRole('menuitemradio', { name: 'Any level' })).toBeTruthy();
+		await fireEvent.click(await screen.findByRole('menuitemradio', { name: 'HSK 1' }));
+		expect(vi.mocked(goto).mock.calls.at(-1)?.[0]).toBe('/search?q=x&scheme=hsk&level=1&e=7');
+	});
+
+	it('Escape in the level Menu returns focus to its button', async () => {
+		vi.mocked(getSchemes).mockResolvedValue(schemes as never);
+		render(Page);
+		const trigger = await screen.findByRole('button', { name: /Level: any/ });
+		await fireEvent.click(trigger);
+		await fireEvent.keyDown(await screen.findByRole('menu'), { key: 'Escape' });
+		expect(document.activeElement).toBe(trigger);
+	});
+
+	it('shows Clear filters only when a filter is set', async () => {
+		render(Page);
+		expect(screen.queryByRole('button', { name: 'Clear filters' })).toBeNull();
+		cleanup();
+		setUrl('/search?q=x&kind=word');
+		render(Page);
+		expect(await screen.findByRole('button', { name: 'Clear filters' })).toBeTruthy();
+	});
+
+	it('draws the filters as text with a 1.5px accent underline, no border', async () => {
+		const source = (await import('./+page.svelte?raw')).default as string;
+		expect(source).toMatch(/\.chip\[aria-pressed='true'\]\s*\{[^}]*box-shadow:\s*inset 0 -1\.5px 0 var\(--accent\)/);
+		expect(source).toMatch(/\.chip,[\s\S]*?border:\s*0/);
 	});
 });

@@ -35,6 +35,10 @@
 	import { PHONE_MEDIA_QUERY } from '$lib/frame/breakpoint';
 	import Field from '$lib/ui/Field.svelte';
 	import Button from '$lib/ui/Button.svelte';
+	import Icon from '$lib/ui/Icon.svelte';
+	import IconButton from '$lib/ui/IconButton.svelte';
+	import Menu from '$lib/ui/Menu.svelte';
+	import MenuItem from '$lib/ui/MenuItem.svelte';
 	import ResultRow from './ResultRow.svelte';
 	import EntryView from '$lib/entry/EntryView.svelte';
 
@@ -143,8 +147,15 @@
 	let schemesFailed = $state(false);
 	const filters = $derived(filtersFromParams(page.url.searchParams));
 	const schemes = $derived(schemesForLanguage(allSchemes, lang));
-	const activeScheme = $derived(schemes.find((s) => s.packId === filters.scheme));
 	let schemesLoaded = $state(false);
+	// The form, so the icon-only submit button can submit it (IconButton is
+	// always type=button; Enter in the field submits natively too).
+	let searchForm = $state<HTMLFormElement | null>(null);
+	const levelText = $derived(
+		t('search.filters.levelMenu', {
+			level: filters.level || t('search.filters.anyLevel')
+		})
+	);
 
 	// Languages with installed dictionary data; null until loaded.
 	let installedCodes = $state<Set<string> | null>(null);
@@ -312,24 +323,32 @@
 	<div class="split" class:has-selection={selected !== null}>
 		<div class="list-pane">
 
-	<form class="search" role="search" onsubmit={submit}>
-		<Field
-			label={t('search.input.label')}
-			hideLabel
-			name="q"
-			type="search"
-			bind:value={query}
-			placeholder={lang !== null
-				? t('search.input.placeholder')
-				: $workspacesLoaded
-					? t('search.input.selectWorkspace')
-					: t('search.input.loadingWorkspaces')}
-			disabled={lang === null}
-		/>
-		<Button type="submit" variant="primary" disabled={lang === null}>{t('search.submit')}</Button>
-		{#if lang !== null && usesHan(lang)}
-			<Button variant="secondary" href="/search/parts" icon="parts">{t('search.byParts')}</Button>
-		{/if}
+	<form class="search" role="search" onsubmit={submit} bind:this={searchForm}>
+		<div class="sfield">
+			<span class="sfield-icon" aria-hidden="true"><Icon name="search" size="s" /></span>
+			<Field
+				label={t('search.input.label')}
+				hideLabel
+				name="q"
+				type="search"
+				bind:value={query}
+				placeholder={lang !== null
+					? t('search.input.placeholder')
+					: $workspacesLoaded
+						? t('search.input.selectWorkspace')
+						: t('search.input.loadingWorkspaces')}
+				disabled={lang === null}
+			/>
+			<IconButton
+				label={t('search.submit')}
+				icon="search"
+				disabled={lang === null}
+				onclick={() => searchForm?.requestSubmit()}
+			/>
+			{#if lang !== null && usesHan(lang)}
+				<IconButton label={t('search.byParts')} icon="parts" href="/search/parts" />
+			{/if}
+		</div>
 	</form>
 
 	<p class="parts-link"><a href="/lookups">{t('search.lookupsLink')}</a></p>
@@ -337,6 +356,14 @@
 	{#if lang !== null}
 		<div class="filters" role="group" aria-label={t('search.filters.label')}>
 			<div class="chips" role="group" aria-label={t('search.filters.kind')}>
+				<button
+					type="button"
+					class="chip"
+					aria-pressed={filters.kind === ''}
+					onclick={() => applyFilters({ ...filters, kind: '' })}
+				>
+					{t('search.filters.all')}
+				</button>
 				{#each KINDS as kind (kind)}
 					<button
 						type="button"
@@ -349,45 +376,34 @@
 				{/each}
 			</div>
 			{#if schemes.length > 0}
-				<div class="chips" role="group" aria-label={t('search.filters.scheme')}>
+				<Menu label={t('search.filters.level')} text={levelText} menuLabel={t('search.filters.level')} align="start">
+					<MenuItem
+						checked={filters.scheme === '' && filters.level === ''}
+						onselect={() => applyFilters({ ...filters, scheme: '', level: '' })}
+					>
+						{t('search.filters.anyLevelItem')}
+					</MenuItem>
 					{#each schemes as scheme (scheme.id)}
-						<button
-							type="button"
-							class="chip"
-							aria-pressed={filters.scheme === scheme.packId}
-							onclick={() => applyFilters(setScheme(filters, scheme.packId ?? ''))}
-						>
-							{scheme.name}
-						</button>
+						{#each scheme.levels as level (`${scheme.id}:${level.id}`)}
+							<MenuItem
+								checked={filters.scheme === scheme.packId && filters.level === level.name}
+								onselect={() => applyFilters(setLevel(setScheme(filters, scheme.packId ?? ''), level.name))}
+							>
+								{t('search.filters.schemeLevel', { scheme: scheme.name, level: level.name })}
+							</MenuItem>
+						{/each}
 					{/each}
-				</div>
+				</Menu>
 			{:else if schemesFailed}
 				<p class="note">{t('search.filters.levelsUnavailable')}</p>
 			{:else if !schemesLoaded}
 				<div class="chips placeholder" aria-hidden="true"></div>
 			{/if}
-			{#if activeScheme}
-				<div class="chips" role="group" aria-label={t('search.filters.level')}>
-					{#each activeScheme.levels as level (level.id)}
-						<button
-							type="button"
-							class="chip"
-							aria-pressed={filters.level === level.name}
-							onclick={() => applyFilters(setLevel(filters, level.name))}
-						>
-							{level.name}
-						</button>
-					{/each}
-				</div>
+			{#if hasFilters(filters)}
+				<button type="button" class="clear" onclick={() => applyFilters(clearFilters())}>
+					{t('search.filters.clear')}
+				</button>
 			{/if}
-			<button
-				type="button"
-				class="clear"
-				disabled={!hasFilters(filters)}
-				onclick={() => applyFilters(clearFilters())}
-			>
-				{t('search.filters.clear')}
-			</button>
 		</div>
 	{/if}
 
@@ -474,14 +490,19 @@
 		gap: var(--space-3);
 		align-content: start;
 	}
-	.search {
+	.sfield {
 		display: flex;
-		flex-wrap: wrap;
-		align-items: end;
-		gap: var(--space-2);
+		align-items: center;
+		gap: var(--space-1);
 	}
-	.search :global(.field) {
-		flex: 1 1 12rem;
+	.sfield :global(.field) {
+		flex: 1 1 auto;
+		min-width: 0;
+	}
+	.sfield-icon {
+		display: inline-grid;
+		place-items: center;
+		color: var(--readable-muted);
 	}
 	.filters {
 		display: flex;
