@@ -562,3 +562,20 @@ describe('the search layout switch (#104)', () => {
 			'/search?q=qin&kind=word'
 		);
 	});
+
+
+describe('search page a11y names (#104)', () => {
+	it('names every icon-only button and gives it a tooltip', async () => {
+		render(Page);
+		const iconButtons = screen
+			.getAllByRole('button')
+			.filter((b) => (b.textContent ?? '').trim() === '');
+		expect(iconButtons.length).toBeGreaterThan(0);
+		for (const button of iconButtons) {
+			expect(button.getAttribute('aria-label')).toBeTruthy();
+			expect(button.parentElement?.querySelector('[role="tooltip"]')?.textContent).toBe(
+				button.getAttribute('aria-label')
+			);
+		}
+	});
+});

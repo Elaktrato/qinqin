@@ -295,3 +295,19 @@ describe('entry extras and the not-found state (#104)', () => {
 		);
 	});
 });
+
+
+describe('entry a11y names (#104)', () => {
+	it('names the Choose a deck icon button and gives it a tooltip', async () => {
+		vi.mocked(getStudyData).mockResolvedValueOnce({
+			decks: [{ id: 'deck-1', name: 'History', createdAt: '2026-01-01T00:00:00Z' }],
+			cards: [],
+			known: []
+		} as never);
+		getEntryMock.mockResolvedValue(entry());
+		render(EntryView, { entryId: 5, recordView: false });
+		const choose = await screen.findByRole('button', { name: 'Choose a deck' });
+		expect(choose.getAttribute('aria-label')).toBe('Choose a deck');
+		expect(choose.parentElement?.querySelector('[role="tooltip"]')?.textContent).toBe('Choose a deck');
+	});
+});
