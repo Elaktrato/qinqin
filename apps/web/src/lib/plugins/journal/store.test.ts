@@ -113,12 +113,16 @@ describe('journal store', () => {
 	});
 
 	it('reads the review and suggestions through the list route, null when absent', async () => {
-		vi.mocked(fetch).mockResolvedValueOnce(json([row('review:a', { entryId: 'a', annotations: [] })]));
-		expect((await getReview(3, 'a'))?.entryId).toBe('a');
+		vi.mocked(fetch).mockResolvedValueOnce(json([row('review:a', { entryId: 'a', annotations: [{ quote: 'x', correction: 'y' }] })]));
+		const review = await getReview(3, 'a');
+		expect(review?.entryId).toBe('a');
+		expect(review?.annotations[0].kind).toBe('mistake');
+		vi.mocked(fetch).mockResolvedValueOnce(json([row('review:b', { annotations: [] })]));
+		expect(await getReview(3, 'b')).toBeNull();
 		expect(vi.mocked(fetch).mock.calls[0][0]).toContain('prefix=review%3Aa');
 		vi.mocked(fetch).mockResolvedValueOnce(json([]));
 		expect(await getSuggestions(3)).toBeNull();
-		expect(vi.mocked(fetch)).toHaveBeenCalledTimes(2); // no 404 requests
+		expect(vi.mocked(fetch)).toHaveBeenCalledTimes(3); // no 404 requests
 	});
 
 	it('applies settings defaults for no row, bad data and an unknown language', async () => {

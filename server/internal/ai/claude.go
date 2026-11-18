@@ -59,6 +59,7 @@ func (c *Claude) Review(ctx context.Context, cr Credentials, r ReviewRequest) (R
 			Correction    string `json:"correction"`
 			Explanation   string `json:"explanation"`
 			Category      string `json:"category"`
+			Kind          string `json:"kind"`
 		} `json:"annotations"`
 		Overall Overall `json:"overall"`
 	}
@@ -70,7 +71,7 @@ func (c *Claude) Review(ctx context.Context, cr Credentials, r ReviewRequest) (R
 		rep.FallbackFrom = cr.Model
 	}
 	for _, a := range out.Annotations {
-		rep.Annotations = append(rep.Annotations, RawAnnotation{Quote: a.Quote, ContextBefore: a.ContextBefore, Correction: a.Correction, Explanation: a.Explanation, Category: a.Category})
+		rep.Annotations = append(rep.Annotations, RawAnnotation{Quote: a.Quote, ContextBefore: a.ContextBefore, Correction: a.Correction, Explanation: a.Explanation, Category: a.Category, Kind: a.Kind})
 	}
 	return rep, nil
 }

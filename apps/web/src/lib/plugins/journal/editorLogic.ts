@@ -44,20 +44,6 @@ export function aiButtonGate(input: {
 	return { enabled: true, hint: null, settingsLink: false };
 }
 
-export type CategoryKey = 'grammar' | 'word-choice' | 'spelling' | 'style' | 'other';
-
-export function annotationCategory(category: string): CategoryKey {
-	switch (category) {
-		case 'grammar':
-		case 'spelling':
-		case 'style':
-			return category;
-		case 'word choice':
-			return 'word-choice';
-		default:
-			return 'other';
-	}
-}
 
 /** Annotations that are in the text (placed or overlapping), in review order. */
 export function listedAnnotations(all: Annotation[], anchoring: Anchoring): Annotation[] {

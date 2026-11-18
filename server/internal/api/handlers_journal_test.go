@@ -502,3 +502,36 @@ func TestAIKeyNotLoggedOnProviderErrors(t *testing.T) {
 		t.Fatal("expected the error paths to log something")
 	}
 }
+
+func TestReviewStoresKind(t *testing.T) {
+	e := newJournalEnv(t, ai.Fake{}, true)
+	e.putEntry(t, e.ws, "e1", "我昨天去学校。我今天很高兴。")
+	var got journal.Review
+	decodeJSON(t, e.post(t, "/api/journal/review", map[string]any{"workspaceId": e.ws, "entryId": "e1"}), &got)
+	if len(got.Annotations) != 2 {
+		t.Fatalf("annotations = %d", len(got.Annotations))
+	}
+	if got.Annotations[0].Kind != "mistake" || got.Annotations[1].Kind != "suggestion" {
+		t.Errorf("kinds = %q, %q", got.Annotations[0].Kind, got.Annotations[1].Kind)
+	}
+	raw, st := e.doc(t, e.ws, "review:e1")
+	if st != 200 {
+		t.Fatalf("stored review status %d", st)
+	}
+	if !strings.Contains(string(raw), `"kind":"mistake"`) || !strings.Contains(string(raw), `"kind":"suggestion"`) {
+		t.Errorf("stored review lacks kinds: %s", raw)
+	}
+
+	// Providers that omit kind still work; the server stores "mistake".
+	e.putEntry(t, e.ws, "e2", "我昨天去学校。[[fake:nokind]]")
+	var noKind journal.Review
+	decodeJSON(t, e.post(t, "/api/journal/review", map[string]any{"workspaceId": e.ws, "entryId": "e2"}), &noKind)
+	if len(noKind.Annotations) == 0 {
+		t.Fatal("no annotations")
+	}
+	for _, a := range noKind.Annotations {
+		if a.Kind != "mistake" {
+			t.Errorf("no-kind annotation stored as %q", a.Kind)
+		}
+	}
+}

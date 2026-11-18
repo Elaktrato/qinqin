@@ -20,7 +20,7 @@ where the rule is implemented today.
 | Typed study data | `study/` (cards, decks, deck settings, limits, FSRS sets, the active set: wire shapes, last-write-wins, tombstones, the legacy codec and the legacy view for old web shells; the duplicate-card merge), `library/` (reader books, bookmarks, highlights, positions, the deletion log) |
 | Cards and study | `cards/` (ids, kinds, burying, cloze, the deck session plan), `levels/` (level sessions), `scheduler/` (the FSRS pin, XP and levels, vacation, study clock, due, streak, daily limits), `decks/` (deck numbers, system deck ids, add-to-deck, character mastery), `frequency/` (frequency order of new cards, starter decks, the known-word predicate, the display form of an entry), `goals/` (daily goal, day status, goal streak), `weekly/` (weekly summary; nothing stored), `milestones/` (weekly milestones: catalogue, reached rule, the `milestone:<id>` seen rows, card plan) |
 | Reader | `reader/` (display settings, furigana, smart readings, word states, coverage) |
-| Personal data on entries | `notes/` (notes and the answer-side switch), `lookups/` (lookup history and its switch), `overlays/` (a user's edits of a shared entry) |
+| Personal data on entries | `notes/` (notes and the answer-side switch), `lookups/` (lookup history and its switch), `overlays/` (a user's edits of a shared entry), `journal/` (review documents and their mistake/suggestion kind) |
 | Lookup | `radicals/` (Kangxi table, `k` in the character universe, components index, radical and part lookup) |
 | Settings | `settings/` (workspace settings keys and their merge; the `qinqin-core` user rows `home-layout`, `activity-view` and `widget-options`) |
 | Data safety | `backup/` (archive format v1, id remapping) |
@@ -33,7 +33,7 @@ Every folder, in dependency order (this page's sync model and Events sections af
 
 `auth/` → `study-day/` → `packages/` → `sync/` → `events/` → `study/` → `cards/` → `scheduler/` → `decks/` →
 `levels/` → `frequency/` → `goals/` → `weekly/` → `milestones/` → `reader/` → `library/` → `notes/` → `lookups/` →
-`radicals/` → `settings/` → `themes/` → `fonts/` → `overlays/` → `backup/` → `pwa/` → `i18n/`
+`radicals/` → `journal/` → `settings/` → `themes/` → `fonts/` → `overlays/` → `backup/` → `pwa/` → `i18n/`
 
 ## Sync model
 
@@ -159,6 +159,7 @@ fixture or the contract text that fixes the shape.
 | --- | --- | --- | --- | --- |
 | `goals:workspace` | workspace | `{version:1, showStreak: bool, history: [{from: "YYYY-MM-DD", metric: "activity:<type>"\|"flashcards:new"\|"flashcards:studyTime"\|null, target: int\|null}]}`; the goal of day D is the last entry with `from <= D`; a version above 1 is never overwritten; unknown keys kept; at most 400 entries; progress is never stored | `goals/goals.ts` | `goals/goal-rows.json` |
 | `vacation:<ULID>` | **user-global** (`workspaceId: null`; written without `workspace`) | `{version:1, id, start: "YYYY-MM-DD", end: day \| null, scope: "all" \| {workspaces: int[]}, createdDay, createdAt}` | `study/vacation.ts`, `study/store.ts` (reads rows with no workspace) | `scheduler/vacation-days.json`, `scheduler/vacation-schedule.json` |
+| `review:<entryId>` (plugin **`qinqin-journal`**) | workspace | `{entryId, textHash, annotations: [{id, quote, prefix, suffix, correction, explanation, category, kind: "mistake"\|"suggestion"}], overall: {summary, strengths, focus}, model, provider?, fallbackFrom?, dropped, createdAt}`; legacy rows without `kind` read as `mistake`; model text is untrusted plain text | `plugins/journal/store.ts`, `plugins/journal/review.ts`; server `journal/docs.go`, `journal/resolve.go` | `journal/review-docs.json`, `journal/kind-resolve.json` |
 | `note:<entryId>` (plugin **`qinqin-core`**) | workspace (the current one, even for an entry of another language) | `{version:1, entryId: int (= the key's number), text: string (plain text, non-empty after trim), ...unknown kept}`; key decimal, positive, no leading zero; absent unless all hold; editor cap 2000 code points; delete = tombstone; restore rewrites key and `entryId` to the target entry, drops it when unresolved | `notes/notes.ts`, `notes/store.ts`; restore: `server/internal/backup/remap.go` | `notes/note-rows.json`, `notes/note-text.json`, `backup/remap.json` |
 | `known:<entryId>` | workspace (the book's workspace when written from the reader) | `{version:1, entryId: int (= the key's number), createdAt: RFC 3339, ...unknown kept}`; key decimal, positive, no leading zero; anything else is ignored; unmark = tombstone, mark again revives the same key; the learner's manual "I know this word" (a known entry for the reader, smart readings and starter decks; creates no card); restore rewrites key and `entryId` to the target entry, drops it when invalid or unresolved | `study/knownMarks.ts`, `study/store.ts` (`setKnownMark`, `setKnownMarks`), `study/known.ts`; restore: `server/internal/backup/remap.go` | `reader/word-states.json`, `frequency/known.json`, `backup/remap.json` |
 | `milestone:<id>` | workspace | `{version:1, id, seenAt: RFC 3339, reachedDay: "YYYY-MM-DD", ...unknown kept}`; `<id>` is a catalogue id (`reviews:1000`, `level-complete:d-lvl-…`); **seen is decided by the key alone** (a live row = seen whatever its data; a tombstone = not seen); written only when the key is not live, never rewritten, never deleted by any client; unknown ids are kept and count as seen; restore remaps only the workspace | `milestones/seen.ts`, `study/store.ts` (`saveSeenMilestones`) | `milestones/seen-rows.json`, `milestones/seen-merge.json`, `backup/remap.json` |
@@ -289,8 +290,9 @@ each with its owner:
   #38's own work.
 - **Offline search normalisation** (tone- and romaji-insensitive search) — pinned when #36 decides to search
   offline (#36).
-- **Journal and grammar plugin rows** (journal entries, reviews, settings, photos; grammar runs) — not in
-  Android's first plugin set; only the `journal` event payload is pinned (`events/`).
+- **Journal entries, settings and photos, and the grammar plugin rows** — not in Android's first plugin set.
+  The review document itself is pinned (`journal/`), because a client that shows a review must show the same
+  mistake/suggestion split; only the `journal` event payload is otherwise pinned (`events/`).
 - **The FSRS optimizer** (training, evaluation) — Android reads `fsrsSets`, it does not optimise; its step input
   is pinned (`scheduler/optimizer-steps.json`).
 - **The plugin manifest format for Kotlin plugins** — belongs to #38's host design (`docs/wiki/Plugin-format.md`

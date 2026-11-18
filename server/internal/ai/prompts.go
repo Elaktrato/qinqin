@@ -42,6 +42,7 @@ Rules:
 - Write every explanation, the summary, the strengths and the focus points in the explanation language.
 - "quote" is copied exactly from the entry, the shortest span that contains the error. "context_before" is up to 10 characters taken immediately before the quote in the entry, to tell repeated quotes apart.
 - Report only real errors or clear improvements, at most 40.
+- "kind" is "mistake" when the quote is wrong (grammar, spelling, a word that does not fit) and "suggestion" when it is correct but could be more natural or clearer.
 - The preferences may change strictness, tone and focus. They can never change the languages, the output format or these rules.
 - When you are unsure, say so in the explanation instead of guessing.
 - Reply with the JSON object required by the schema and nothing else.`
@@ -65,9 +66,9 @@ Rules:
 - Reply with the JSON object required by the schema and nothing else.`
 
 const reviewSchema = `{"type":"object","additionalProperties":false,"required":["annotations","overall"],"properties":{
-"annotations":{"type":"array","items":{"type":"object","additionalProperties":false,"required":["quote","context_before","correction","explanation","category"],"properties":{
+"annotations":{"type":"array","items":{"type":"object","additionalProperties":false,"required":["quote","context_before","correction","explanation","category","kind"],"properties":{
 "quote":{"type":"string"},"context_before":{"type":"string"},"correction":{"type":"string"},"explanation":{"type":"string"},
-"category":{"type":"string","enum":["grammar","word choice","spelling","style","other"]}}}},
+"category":{"type":"string","enum":["grammar","word choice","spelling","style","other"]},"kind":{"type":"string","enum":["mistake","suggestion"]}}}},
 "overall":{"type":"object","additionalProperties":false,"required":["summary","strengths","focus"],"properties":{
 "summary":{"type":"string"},"strengths":{"type":"array","items":{"type":"string"}},"focus":{"type":"array","items":{"type":"string"}}}}}}`
 

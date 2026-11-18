@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "rule": "journal/kind-resolve",
+  "note": "The model's kind is trimmed and case-folded; only mistake and suggestion survive. Anything else (absent, empty, unknown, another script, too long) is a mistake. The annotation is never dropped because of its kind.",
+  "cases": [
+    { "name": "mistake", "raw": "mistake", "kind": "mistake" },
+    { "name": "suggestion", "raw": "suggestion", "kind": "suggestion" },
+    { "name": "surrounding spaces", "raw": " Suggestion ", "kind": "suggestion" },
+    { "name": "upper case", "raw": "MISTAKE", "kind": "mistake" },
+    { "name": "empty", "raw": "", "kind": "mistake" },
+    { "name": "unknown word", "raw": "error", "kind": "mistake" },
+    { "name": "another script", "raw": "建议", "kind": "mistake" },
+    { "name": "long text", "raw": "suggestion suggestion suggestion suggestion suggestion suggestion suggestion suggestion suggestion suggestion suggestion suggestion suggestion suggestion suggestion suggestion", "kind": "mistake" },
+    { "name": "absent", "raw": null, "kind": "mistake" }
+  ]
+}

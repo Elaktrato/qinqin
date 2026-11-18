@@ -7,7 +7,6 @@ import {
 	navigationPlan,
 	tooLongHint,
 	aiButtonGate,
-	annotationCategory,
 	editorTarget,
 	listedAnnotations,
 	reviewAnnouncement,
@@ -16,7 +15,7 @@ import {
 import type { Annotation } from './types';
 
 function ann(id: string): Annotation {
-	return { id, quote: id, prefix: '', suffix: '', correction: 'x', explanation: '', category: 'other' };
+	return { id, quote: id, prefix: '', suffix: '', correction: 'x', explanation: '', category: 'other', kind: 'mistake' };
 }
 
 describe('aiButtonGate', () => {
@@ -64,16 +63,6 @@ describe('aiButtonGate', () => {
 	});
 });
 
-describe('annotationCategory', () => {
-	it('maps known categories and falls back to other', () => {
-		expect(annotationCategory('grammar')).toBe('grammar');
-		expect(annotationCategory('word choice')).toBe('word-choice');
-		expect(annotationCategory('spelling')).toBe('spelling');
-		expect(annotationCategory('style')).toBe('style');
-		expect(annotationCategory('surprise')).toBe('other');
-		expect(annotationCategory('')).toBe('other');
-	});
-});
 
 describe('listedAnnotations', () => {
 	it('keeps the review order and leaves out missing ones', () => {

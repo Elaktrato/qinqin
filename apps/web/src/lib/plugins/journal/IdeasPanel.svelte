@@ -4,6 +4,7 @@
 	import { onDestroy, onMount, untrack } from 'svelte';
 	import { aiErrorView, type AiErrorView } from './aiErrors';
 	import { answeredBy } from './answeredBy';
+	import Chip from '$lib/ui/Chip.svelte';
 	import { requestSuggestions } from './api';
 	import type { AiGate } from './editorLogic';
 	import { loadProviderNames } from './providerNames';
@@ -14,8 +15,9 @@
 	let {
 		workspaceId,
 		gate,
-		onstart
-	}: { workspaceId: number; gate: AiGate; onstart: (title: string) => void } = $props();
+		onstart,
+		title = t('journal.ideas.title')
+	}: { workspaceId: number; gate: AiGate; onstart: (title: string) => void; title?: string } = $props();
 
 	const ws = untrack(() => workspaceId);
 	const aborter = new AbortController();
@@ -78,7 +80,7 @@
 </script>
 
 <section class="ideas" aria-labelledby="ideas-heading">
-	<h2 id="ideas-heading">{t('journal.ideas.title')}</h2>
+	<h2 id="ideas-heading">{title}</h2>
 	<div class="bar">
 		<button type="button" onclick={ask} disabled={busy || !gate.enabled}>
 			{busy ? t('journal.ideas.working') : t('journal.ideas.get')}
@@ -110,7 +112,7 @@
 					<p class="prompt">{item.prompt}</p>
 					{#if item.words.length > 0}
 						<ul class="chips" aria-label={t('journal.ideas.words')}>
-							{#each item.words as w, j (j)}<li>{w}</li>{/each}
+							{#each item.words as w, j (j)}<li><Chip>{w}</Chip></li>{/each}
 						</ul>
 					{/if}
 					<button type="button" class="secondary" onclick={() => onstart(item.title)}>
@@ -171,9 +173,7 @@
 	}
 
 	.chips li {
-		border: 1px solid color-mix(in srgb, currentColor 35%, transparent);
-		border-radius: 999px;
-		padding: 0.1rem 0.65rem;
+		display: inline-flex;
 	}
 
 	.sr {

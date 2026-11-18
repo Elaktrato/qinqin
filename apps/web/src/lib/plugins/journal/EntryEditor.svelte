@@ -5,13 +5,19 @@
 
 <script lang="ts">
 	import { t } from '$lib/i18n';
-	import { formatNumber } from '$lib/i18n/format';
-	import { onDestroy, tick, untrack } from 'svelte';
+	import { formatDate, formatDay, formatNumber } from '$lib/i18n/format';
+	import { studyLang } from '$lib/i18n/lang';
+	import { onDestroy, onMount, tick, untrack } from 'svelte';
 	import { beforeNavigate, goto } from '$app/navigation';
-	import AnnotationList from './AnnotationList.svelte';
-	import IdeasPanel from './IdeasPanel.svelte';
 	import OverallReview from './OverallReview.svelte';
 	import ReviewText from './ReviewText.svelte';
+	import JournalMargin from './JournalMargin.svelte';
+	import CorrectionSheet from './CorrectionSheet.svelte';
+	import { corrections } from './corrections';
+	import { journalEntriesFor } from './journalEntries.svelte';
+	import Field from '$lib/ui/Field.svelte';
+	import Button from '$lib/ui/Button.svelte';
+	import { setFrameTitle } from '$lib/frame/pageFrame.svelte';
 	import { aiErrorView, type AiErrorView } from './aiErrors';
 	import { anchorAnnotations, isOutdated, originalCounts } from './anchor';
 	import { requestReview } from './api';
@@ -29,7 +35,6 @@
 		isEntryGone,
 		navigationPlan,
 		tooLongHint,
-		listedAnnotations,
 		reviewAnnouncement,
 		saveStatusText,
 		type SaveState
@@ -37,7 +42,16 @@
 	import { pollForReview } from './reviewPoll';
 	import { journalHref, newEntryHref } from './route';
 	import { currentStudyDay } from '$lib/time/zone';
-	import { deleteEntry, getEntry, getReview, newEntry, recordJournalEvent, saveEntry } from './store';
+	import { PHONE_MEDIA_QUERY } from '$lib/frame/breakpoint';
+	import {
+		deleteEntry,
+		getEntry,
+		getJournalSettings,
+		getReview,
+		newEntry,
+		recordJournalEvent,
+		saveEntry
+	} from './store';
 	import type { JournalEntry, Review } from './types';
 
 	let {
@@ -45,13 +59,15 @@
 		entryId,
 		initialTitle,
 		aiAvailable,
-		aiBanner
+		aiBanner,
+		language
 	}: {
 		workspaceId: number;
 		entryId: string | null;
 		initialTitle: string;
 		aiAvailable: boolean | null;
 		aiBanner: string | null;
+		language: string;
 	} = $props();
 
 	// The workspace this editor works in, fixed at creation. A save, review
@@ -80,7 +96,6 @@
 	let reviewing = $state(false);
 	let reviewStatus = $state('');
 	let failure = $state<AiErrorView | null>(null);
-	let showIdeas = $state(false);
 	let confirmingDelete = $state(false);
 	let deleting = $state(false);
 	let deleteError = $state('');
@@ -91,6 +106,12 @@
 	let deleteButton = $state<HTMLButtonElement>();
 	let cancelDelete = $state<HTMLButtonElement>();
 	let reviewText = $state<{ focusAnnotation(id: string): Promise<void> }>();
+	let openCorrectionId = $state<string | null>(null);
+	let explanationLang = $state('en');
+	let phone = $state(false);
+	let correctionSheet = $state(false);
+	let ideasSheet = $state(false);
+	let margin = $state<HTMLElement | null>(null);
 
 	const chars = $derived(codePoints(text));
 	const reviewGate = $derived(
@@ -101,10 +122,7 @@
 	);
 	const anchoring = $derived(review ? anchorAnnotations(text, review.annotations, originals) : null);
 	const outdated = $derived(review ? isOutdated(text, review) : false);
-	const listed = $derived(
-		review && anchoring ? listedAnnotations(review.annotations, anchoring) : []
-	);
-
+	const correctionsList = $derived(review && anchoring ? corrections(review, anchoring) : []);
 	function touch(): void {
 		dirty = true;
 		saveState = 'dirty';
@@ -133,6 +151,7 @@
 		const textChanged = snapshot.text !== savedText;
 		try {
 			const saved = await saveEntry(ws, snapshot, opts);
+			journalEntriesFor(ws).upsert(saved);
 			entry = saved;
 			savedText = saved.text;
 			const firstSave = !persisted;
@@ -178,7 +197,6 @@
 		review = null;
 		reviewStatus = '';
 		failure = null;
-		showIdeas = false;
 		confirmingDelete = false;
 		deleteError = '';
 		saveState = 'idle';
@@ -219,6 +237,7 @@
 					review = r;
 					// The reviewed text is only known while the text is unchanged.
 					originals = r && !isOutdated(text, r) ? originalCounts(text, r.annotations) : {};
+					if (r && !isOutdated(text, r)) mode = 'review';
 				},
 				() => {}
 			);
@@ -242,6 +261,7 @@
 
 	function setReview(r: Review): void {
 		review = r;
+		if (entry) journalEntriesFor(ws).markReviewed(entry.id);
 		mode = 'review';
 		originals = isOutdated(text, r) ? {} : originalCounts(text, r.annotations);
 		const a = anchorAnnotations(text, r.annotations, originals);
@@ -338,6 +358,7 @@
 			// A save that is already on its way must land before the delete, not after.
 			await saveChain.catch(() => false);
 			if (persisted) await deleteEntry(ws, entry.id);
+			journalEntriesFor(ws).remove(entry.id);
 			await goto(journalHref({ view: 'list' }));
 		} catch {
 			gone = false;
@@ -375,168 +396,309 @@
 		if (document.visibilityState === 'hidden') void flush({ keepalive: true });
 	}
 
-	function pickAnnotation(id: string): void {
-		void reviewText?.focusAnnotation(id);
+	function openCorrection(id: string | null): void {
+		openCorrectionId = id;
+		if (id !== null && phone) correctionSheet = true;
 	}
+
+	function closeCorrectionSheet(): void {
+		correctionSheet = false;
+		openCorrectionId = null;
+	}
+
+	function openIdeas(): void {
+		if (phone) ideasSheet = true;
+		else if (typeof margin?.scrollIntoView === 'function') margin.scrollIntoView({ block: 'start' });
+	}
+
+	function closeIdeasSheet(): void {
+		ideasSheet = false;
+	}
+
+	setFrameTitle(() => title || date);
+
+	const studyLanguage = $derived(studyLang(language));
+
+	$effect(() => {
+		getJournalSettings(ws).then(
+			(settings) => (explanationLang = settings.explanationLanguage),
+			() => {}
+		);
+	});
+
+	onMount(() => {
+		if (typeof matchMedia !== 'function') return;
+		const mq = matchMedia(PHONE_MEDIA_QUERY);
+		phone = mq.matches;
+		const change = (event: MediaQueryListEvent): void => {
+			phone = event.matches;
+		};
+		mq.addEventListener?.('change', change);
+		return () => mq.removeEventListener?.('change', change);
+	});
 </script>
 
 <svelte:document onvisibilitychange={onVisibility} />
 <svelte:window onpagehide={() => void flush({ keepalive: true })} />
 
-<p><a href={journalHref({ view: 'list' })}>{t('journal.settings.back')}</a></p>
+<div class="entry-layout" class:page-with-margin={!phone}>
+	<div class="page">
+		<p class="back"><a href={journalHref({ view: 'list' })}>{t('journal.settings.back')}</a></p>
 
-{#if loadState === 'loading'}
-	<p role="status">{t('common.loading')}</p>
-{:else if loadState === 'notfound'}
-	<h1>{t('journal.editor.notFound')}</h1>
-	<p>{t('journal.editor.notFoundHint')}</p>
-	<p><a href={journalHref({ view: 'list' })}>{t('journal.editor.backToList')}</a></p>
-{:else if loadState === 'error' || !entry}
-	<p class="error" role="alert">{t('journal.editor.loadFailed')}</p>
-	<button type="button" class="secondary" onclick={() => load(entryId)}>{t('journal.list.retry')}</button>
-{:else}
-	<h1 bind:this={heading} tabindex="-1">{persisted ? t('journal.editor.entry') : t('journal.editor.new')}</h1>
+		{#if loadState === 'loading'}
+			<p role="status">{t('common.loading')}</p>
+		{:else if loadState === 'notfound'}
+			<h1>{t('journal.editor.notFound')}</h1>
+			<p>{t('journal.editor.notFoundHint')}</p>
+			<p><a href={journalHref({ view: 'list' })}>{t('journal.editor.backToList')}</a></p>
+		{:else if loadState === 'error' || !entry}
+			<p class="error" role="alert">{t('journal.editor.loadFailed')}</p>
+			<Button variant="secondary" onclick={() => load(entryId)}>{t('journal.list.retry')}</Button>
+		{:else}
+			<h1 bind:this={heading} tabindex="-1" class="visually-hidden"
+				>{persisted ? t('journal.editor.entry') : t('journal.editor.new')}</h1
+			>
 
-	{#if mode === 'edit'}
-		<form class="editor" onsubmit={(e) => e.preventDefault()}>
-			<div class="row">
-				<label class="date">
-					<span>{t('journal.editor.date')}</span>
-					<input type="date" bind:value={date} required oninput={touch} onblur={() => void flush()} />
-				</label>
-				<label class="grow">
-					<span>{t('journal.editor.titleOptional')}</span>
-					<input
-						type="text"
-						bind:value={title}
-						maxlength="200"
+			{#if mode === 'edit'}
+				<form class="editor" onsubmit={(e) => e.preventDefault()}>
+					<div class="top">
+						<Field
+							label={t('journal.editor.date')}
+							type="date"
+							bind:value={date}
+							required
+							oninput={touch}
+							onblur={() => void flush()}
+						/>
+						<Field
+							label={t('journal.editor.titleLabel')}
+							class="title-field"
+							hideLabel
+							bind:value={title}
+							maxlength={200}
+							oninput={touch}
+							onblur={() => void flush()}
+						/>
+					</div>
+					<Field
+						label={t('journal.editor.entry')}
+						hideLabel
+						multiline
+						bind:value={text}
+						bind:element={textarea}
+						maxlength={ENTRY_MAX_CHARS}
+						style="min-height: 18rem"
+						aria-describedby="entry-count"
 						oninput={touch}
 						onblur={() => void flush()}
 					/>
-				</label>
-			</div>
-			<label>
-				<span>{t('journal.editor.entry')}</span>
-				<textarea
-					bind:this={textarea}
-					bind:value={text}
-					rows="14"
-					maxlength={ENTRY_MAX_CHARS}
-					aria-describedby="entry-count"
-					oninput={touch}
-					onblur={() => void flush()}
-				></textarea>
-			</label>
-			<p id="entry-count" class="count" class:over={chars > MAX_REVIEW_CHARS}>
-				{t('journal.editor.count', { count: formatNumber(chars), max: formatNumber(MAX_REVIEW_CHARS) })}
-			</p>
-			{#if chars > MAX_REVIEW_CHARS}
-				<p class="count over">{tooLongHint(chars)}</p>
+					<p id="entry-count" class="count" class:over={chars > MAX_REVIEW_CHARS}>
+						{t('journal.editor.count', { count: formatNumber(chars), max: formatNumber(MAX_REVIEW_CHARS) })}
+					</p>
+					{#if chars > MAX_REVIEW_CHARS}
+						<p class="count over">{tooLongHint(chars)}</p>
+					{/if}
+					{#if text.length >= ENTRY_MAX_CHARS}
+						<p class="count over">{t('journal.editor.longest')}</p>
+					{/if}
+				</form>
+				<p class="foot">
+					{t('journal.editor.foot', {
+						count: formatNumber(chars),
+						status: saveStatusText(saveState)
+					})}
+				</p>
+				{#if saveState === 'error'}
+					<Button variant="secondary" onclick={() => void flush()}>{t('journal.editor.save')}</Button>
+				{/if}
+				<div class="actions">
+					<Button
+						variant="primary"
+						onclick={runReview}
+						disabled={reviewing || !reviewGate.enabled}
+						aria-describedby={reviewGate.hint ? 'review-hint' : undefined}
+					>
+						{reviewing ? t('journal.editor.reviewingShort') : t('journal.editor.review')}
+					</Button>
+					<Button variant="secondary" href={journalHref({ view: 'photo' })}>{t('journal.editor.photo')}</Button>
+					<Button
+						variant="secondary"
+						onclick={openIdeas}
+						disabled={!ideasGate.enabled}
+						aria-describedby={ideasGate.hint ? 'ideas-hint' : undefined}
+					>
+						{t('journal.ideas.title')}
+					</Button>
+					{#if review}
+						<Button variant="secondary" onclick={showReview}>
+							{t('journal.margin.corrections', { count: correctionsList.length })}
+						</Button>
+					{/if}
+					{#if confirmingDelete}
+						<span class="confirm" role="group" aria-label={t('journal.editor.deleteQuestion')}>
+							{t('journal.editor.deleteText')}
+							<Button
+								variant="secondary"
+								tone="danger"
+								onclick={confirmDelete}
+								disabled={deleting}
+							>
+								{t('journal.editor.yesDelete')}
+							</Button>
+							<Button variant="secondary" bind:element={cancelDelete} onclick={abortDelete}>
+								{t('common.action.cancel')}
+							</Button>
+						</span>
+					{:else}
+						<Button
+							variant="plain"
+							tone="danger"
+							bind:element={deleteButton}
+							onclick={askDelete}
+						>
+							{t('journal.editor.delete')}
+						</Button>
+					{/if}
+				</div>
+				{#if reviewGate.hint && !reviewGate.enabled}
+					<p id="review-hint" class="hint">
+						{reviewGate.hint}{#if reviewGate.settingsLink}
+							{' '}<a href="/settings?tab=ai">{t('journal.openAiSettings')}</a>{/if}
+					</p>
+				{/if}
+				{#if ideasGate.hint && !ideasGate.enabled}
+					<p id="ideas-hint" class="hint">{ideasGate.hint}</p>
+				{/if}
+				{#if review && outdated}
+					<div class="outdated">
+						<p>{t('journal.editor.outdated')}</p>
+						<Button
+							variant="secondary"
+							onclick={runReview}
+							disabled={reviewing || !reviewGate.enabled}
+						>
+							{t('journal.editor.reviewAgain')}
+						</Button>
+						<Button variant="secondary" onclick={showReview}>
+							{t('journal.margin.corrections', { count: correctionsList.length })}
+						</Button>
+					</div>
+				{/if}
+			{:else if review && anchoring}
+				<h2 bind:this={reviewHeading} tabindex="-1">{t('journal.editor.review')}</h2>
+				<p class="meta">{formatDay(date, { dateStyle: 'full' })}{title.trim() ? ' · ' + title.trim() : ''}</p>
+				{#if outdated}
+					<div class="outdated">
+						<p>{t('journal.editor.outdated')}</p>
+						<Button
+							variant="secondary"
+							onclick={runReview}
+							disabled={reviewing || !reviewGate.enabled}
+							aria-describedby={reviewGate.hint ? 'review-hint' : undefined}
+						>
+							{t('journal.editor.reviewAgain')}
+						</Button>
+					</div>
+				{/if}
+				<ReviewText
+					bind:this={reviewText}
+					{text}
+					placed={anchoring.placed}
+					annotations={review.annotations}
+					openId={openCorrectionId}
+					onopen={openCorrection}
+				/>
+				<OverallReview {review} />
+				<p class="foot">
+					{t('journal.editor.reviewedAt', { time: formatDate(review.createdAt) })}
+				</p>
+				<div class="actions">
+					<Button variant="secondary" onclick={backToEdit}>{t('journal.editor.edit')}</Button>
+					{#if !outdated}
+						<Button variant="secondary" onclick={runReview} disabled={reviewing || !reviewGate.enabled}>
+							{t('journal.editor.reviewAgain')}
+						</Button>
+					{/if}
+				</div>
 			{/if}
-			{#if text.length >= ENTRY_MAX_CHARS}
-				<p class="count over">{t('journal.editor.longest')}</p>
-			{/if}
-		</form>
-		<div class="save-status" aria-live="polite">{saveStatusText(saveState)}</div>
-		{#if saveState === 'error'}
-			<button type="button" class="secondary" onclick={() => void flush()}>{t('journal.editor.save')}</button>
-		{/if}
-	{:else if review && anchoring}
-		<h2 bind:this={reviewHeading} tabindex="-1">{t('journal.editor.review')}</h2>
-		<p class="meta">{date}{title.trim() ? ' · ' + title.trim() : ''}</p>
-		{#if outdated}
-			<div class="outdated">
-				<p>{t('journal.editor.outdated')}</p>
-				<button
-					type="button"
-					onclick={runReview}
-					disabled={reviewing || !reviewGate.enabled}
-					aria-describedby={reviewGate.hint ? 'review-hint' : undefined}
-				>
-					{t('journal.editor.reviewAgain')}
-				</button>
-			</div>
-		{/if}
-		<OverallReview {review} />
-		<ReviewText
-			bind:this={reviewText}
-			{text}
-			placed={anchoring.placed}
-			annotations={review.annotations}
-		/>
-		<AnnotationList {listed} missing={anchoring.missing} onpick={pickAnnotation} />
-		<div class="actions">
-			<button type="button" class="secondary" onclick={backToEdit}>{t('journal.editor.edit')}</button>
-		</div>
-	{/if}
 
-	<div class="actions" role="group" aria-label={t('journal.editor.actions')}>
-		{#if mode === 'edit'}
-			<button
-				type="button"
-				onclick={runReview}
-				disabled={reviewing || !reviewGate.enabled}
-				aria-describedby={reviewGate.hint ? 'review-hint' : undefined}
-			>
-				{reviewing ? t('journal.editor.reviewingShort') : t('journal.editor.review')}
-			</button>
-			<button
-				type="button"
-				class="secondary"
-				onclick={() => (showIdeas = !showIdeas)}
-				disabled={!ideasGate.enabled && !showIdeas}
-				aria-expanded={showIdeas}
-				aria-describedby={ideasGate.hint ? 'ideas-hint' : undefined}
-			>
-				{t('journal.ideas.title')}
-			</button>
-			{#if review}
-				<button type="button" class="secondary" onclick={showReview}>{t('journal.editor.showLast')}</button>
+			{#if reviewGate.hint && mode === 'edit' && !reviewGate.enabled}
+				<p id="review-hint" class="hint">
+					{reviewGate.hint}{#if reviewGate.settingsLink}
+						{' '}<a href="/settings?tab=ai">{t('journal.openAiSettings')}</a>{/if}
+				</p>
 			{/if}
-		{/if}
-		{#if confirmingDelete}
-			<span class="confirm" role="group" aria-label={t('journal.editor.deleteQuestion')}>
-				{t('journal.editor.deleteText')}
-				<button
-					type="button"
-					class="secondary danger"
-					onclick={confirmDelete}
-					disabled={deleting}
-				>
-					{t('journal.editor.yesDelete')}
-				</button>
-				<button type="button" class="secondary" bind:this={cancelDelete} onclick={abortDelete}>
-					{t('common.action.cancel')}
-				</button>
-			</span>
-		{:else}
-			<button type="button" class="secondary danger" bind:this={deleteButton} onclick={askDelete}>
-				{t('journal.editor.delete')}
-			</button>
+
+			<div class="live" aria-live="polite">{reviewStatus}</div>
+			{#if failure}
+				<p class="error" role="alert">
+					{failure.text}
+					{#if failure.settingsLink}<a href="/settings?tab=ai">{t('journal.openAiSettings')}</a>{/if}
+				</p>
+			{/if}
+			{#if deleteError}<p class="error" role="alert">{deleteError}</p>{/if}
 		{/if}
 	</div>
 
-	{#if reviewGate.hint && mode === 'edit' && !reviewGate.enabled}
-		<p id="review-hint" class="hint">
-			{reviewGate.hint}{#if reviewGate.settingsLink}
-				{' '}<a href="/settings?tab=ai">{t('journal.openAiSettings')}</a>{/if}
-		</p>
+	{#if !phone}
+		<div class="margin-col" bind:this={margin}>
+			{#if mode === 'review' && review && anchoring}
+				<JournalMargin
+					mode="corrections"
+					corrections={correctionsList}
+					openId={openCorrectionId}
+					onopen={openCorrection}
+					workspaceId={ws}
+					gate={ideasGate}
+					onstart={startFromIdea}
+					studyLang={studyLanguage ?? language}
+					explanationLang={explanationLang}
+				/>
+			{:else}
+				<JournalMargin
+					mode="ideas"
+					corrections={[]}
+					openId={null}
+					onopen={() => {}}
+					workspaceId={ws}
+					gate={ideasGate}
+					onstart={startFromIdea}
+					studyLang={studyLanguage ?? language}
+					explanationLang={explanationLang}
+				/>
+			{/if}
+		</div>
 	{/if}
-	{#if ideasGate.hint && mode === 'edit' && !ideasGate.enabled}
-		<p id="ideas-hint" class="hint">{ideasGate.hint}</p>
-	{/if}
+</div>
 
-	<div class="live" aria-live="polite">{reviewStatus}</div>
-	{#if failure}
-		<p class="error" role="alert">
-			{failure.text}
-			{#if failure.settingsLink}<a href="/settings?tab=ai">{t('journal.openAiSettings')}</a>{/if}
-		</p>
+{#if phone}
+	{#if correctionSheet}
+		<CorrectionSheet
+			mode="corrections"
+			corrections={correctionsList}
+			openId={openCorrectionId}
+			onopen={openCorrection}
+			onclose={closeCorrectionSheet}
+			workspaceId={ws}
+			gate={ideasGate}
+			onstart={startFromIdea}
+			studyLang={studyLanguage ?? language}
+			explanationLang={explanationLang}
+		/>
 	{/if}
-	{#if deleteError}<p class="error" role="alert">{deleteError}</p>{/if}
-
-	{#if showIdeas && mode === 'edit'}
-		<IdeasPanel workspaceId={ws} gate={ideasGate} onstart={startFromIdea} />
+	{#if ideasSheet}
+		<CorrectionSheet
+			mode="ideas"
+			corrections={[]}
+			openId={null}
+			onopen={() => {}}
+			onclose={closeIdeasSheet}
+			workspaceId={ws}
+			gate={ideasGate}
+			onstart={startFromIdea}
+			studyLang={studyLanguage ?? language}
+			explanationLang={explanationLang}
+		/>
 	{/if}
 {/if}
 
@@ -546,90 +708,94 @@
 		outline: none;
 	}
 
-	.editor {
+	.entry-layout {
 		display: grid;
-		gap: 0.75rem;
+		grid-template-columns: minmax(0, 1fr);
+		gap: var(--space-6);
+		align-items: start;
 	}
-
-	.row {
-		display: flex;
-		flex-wrap: wrap;
-		gap: 0.75rem;
-	}
-
-	.grow {
-		flex: 1 1 12rem;
-	}
-
-	label {
+	.page {
+		min-width: 0;
 		display: grid;
-		gap: 0.3rem;
-		font-weight: 600;
-	}
-
-	input,
-	textarea {
-		font: inherit;
-		font-weight: 400;
-		padding: 0.5rem 0.6rem;
-		border: 1px solid color-mix(in srgb, currentColor 35%, transparent);
-		border-radius: 0.4rem;
-		background: transparent;
-		color: inherit;
-		box-sizing: border-box;
+		gap: var(--space-3);
+		align-content: start;
+		max-width: 38em;
+		justify-self: center;
 		width: 100%;
+	}
+	.margin-col {
 		min-width: 0;
 	}
-
-	textarea {
-		line-height: 1.6;
-		resize: vertical;
+	.back {
+		margin: 0;
 	}
-
-	.count {
+	.back a {
+		color: var(--readable-muted);
+	}
+	.editor {
+		display: grid;
+		gap: var(--space-3);
+	}
+	.top {
+		display: grid;
+		grid-template-columns: minmax(9rem, auto) minmax(0, 1fr);
+		gap: var(--space-3);
+		align-items: end;
+	}
+	.count,
+	.foot {
 		margin: 0;
 		color: var(--readable-muted);
-		font-size: 0.9rem;
+		font-size: var(--font-size-label);
 	}
-
 	.count.over {
 		color: var(--readable-bad);
-		opacity: 1;
-		font-weight: 600;
+		font-weight: var(--weight-strong);
 	}
-
-	.save-status,
 	.live {
 		min-height: 1.4em;
-		font-size: 0.9rem;
+		font-size: var(--font-size-label);
 	}
-
 	.actions,
 	.confirm {
 		display: flex;
 		flex-wrap: wrap;
 		align-items: center;
-		gap: 0.5rem 0.75rem;
-		margin: 0.75rem 0;
+		gap: var(--space-2) var(--space-3);
 	}
-
 	.outdated {
 		display: flex;
 		flex-wrap: wrap;
 		align-items: center;
-		gap: 0.5rem 1rem;
-		border-left: 4px solid var(--warn);
-		padding: 0.25rem 0.75rem;
-		margin: 0.5rem 0;
+		gap: var(--space-2) var(--space-4);
+		border-inline-start: 2px solid var(--warn);
+		padding: var(--space-1) var(--space-3);
 	}
-
 	.outdated p {
 		margin: 0;
-		font-weight: 600;
+		font-weight: var(--weight-strong);
 	}
-
 	.meta {
 		color: var(--readable-muted);
 		overflow-wrap: anywhere;
+	}
+	.hint {
+		color: var(--readable-muted);
+	}
+	.error {
+		color: var(--readable-bad);
+	}
+	@media (max-width: 61.24rem) {
+		.entry-layout {
+			grid-template-columns: minmax(0, 1fr);
+		}
+		.margin-col {
+			display: none;
+		}
+	}
+	@media (min-width: 61.25rem) {
+		.entry-layout.page-with-margin {
+			grid-template-columns: minmax(0, 1fr) 16rem;
+		}
 	}
 </style>

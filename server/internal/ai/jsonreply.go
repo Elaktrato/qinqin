@@ -79,6 +79,7 @@ type reviewWire struct {
 		Correction    string `json:"correction"`
 		Explanation   string `json:"explanation"`
 		Category      string `json:"category"`
+		Kind          string `json:"kind"`
 	} `json:"annotations"`
 	Overall Overall `json:"overall"`
 }

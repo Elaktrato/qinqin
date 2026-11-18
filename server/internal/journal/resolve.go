@@ -87,9 +87,19 @@ func ResolveAnnotations(text, lang string, raw []ai.RawAnnotation) ([]Annotation
 			Correction:  cutRunes(corr, maxFieldRunes),
 			Explanation: cutRunes(strings.TrimSpace(r.Explanation), maxFieldRunes),
 			Category:    cutRunes(strings.TrimSpace(r.Category), 40),
+			Kind:        normalizeKind(r.Kind),
 		})
 	}
 	return kept, drop
+}
+
+// normalizeKind keeps the closed set the model was asked for; anything else
+// (absent, empty, unknown, another script) reads as a mistake.
+func normalizeKind(raw string) string {
+	if strings.EqualFold(strings.TrimSpace(raw), "suggestion") {
+		return "suggestion"
+	}
+	return "mistake"
 }
 
 func occurrences(text, q []rune) []int {

@@ -25,15 +25,21 @@ describe('journal api', () => {
 		vi.unstubAllGlobals();
 	});
 
-	it('requests a review', async () => {
-		vi.mocked(fetch).mockResolvedValue(json({ entryId: 'e1' }));
+	it('requests a review and parses its kinds', async () => {
+		vi.mocked(fetch).mockResolvedValue(json({ entryId: 'e1', annotations: [{ quote: 'x', correction: 'y', kind: 'suggestion' }] }));
 		const controller = new AbortController();
-		await requestReview(3, 'e1', controller.signal);
+		const review = await requestReview(3, 'e1', controller.signal);
+		expect(review.annotations[0].kind).toBe('suggestion');
 		const [url, init] = vi.mocked(fetch).mock.calls[0];
 		expect(url).toBe('/api/journal/review');
 		expect(init?.method).toBe('POST');
 		expect(JSON.parse(init?.body as string)).toEqual({ workspaceId: 3, entryId: 'e1' });
 		expect(init?.signal).toBe(controller.signal);
+	});
+
+	it('rejects a review document without an entry id', async () => {
+		vi.mocked(fetch).mockResolvedValue(json({ annotations: [] }));
+		await expect(requestReview(3, 'e1')).rejects.toThrow();
 	});
 
 	it('requests suggestions and capabilities', async () => {
