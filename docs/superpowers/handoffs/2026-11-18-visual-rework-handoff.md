@@ -48,6 +48,12 @@ with `apps/web/src/lib/readmeGallery.test.ts`).
   the base Button; Search's Lookup history link is a theme-aware underlined link; and the
   expanded starter and level decks have **Add**, which copies the deck in one click (the
   existing idempotent plan), then shows **Open my copy**.
+- **Compact study setup** (later on 2026-11-18): This session and Limits/Start sit at the
+  top; **Study all** starts every due review and new card without the session or deck daily
+  limits; the card types are listed once (Reverse and Cloze enable every deck in one batch),
+  with per-deck switches under **Advanced settings**; checkboxes are round with a tick just
+  past the circle, and the last native selects in the card manager and reader panels use the
+  base Select.
 
 ## Gates (final branch)
 

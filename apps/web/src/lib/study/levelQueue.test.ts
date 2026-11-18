@@ -534,3 +534,25 @@ describe('level queues with a new-item key (#75)', () => {
 		expect(plan.queue.map((i) => `${i.kind}:${i.entryId}`)).toEqual(['writing:3', 'writing:1', 'vocab:2']);
 	});
 });
+
+describe('buildLevelQueue study all', () => {
+	it('ignores the session and deck daily limits for one session', () => {
+		const ctx = contextFor(UTC_CONTEXT.day, [], NOW.getTime(), [], {
+			workspace: { new: 0, reviews: 0 },
+			decks: { general: { new: 1, reviews: 1 } },
+			existingDecks: null
+		});
+		const options = {
+			ctx,
+			w: DEFAULT_W,
+			entries: [entry(1), entry(2)],
+			cards: [],
+			reviews: [],
+			newLimit: 0,
+			reviewLimit: 0,
+			now: NOW
+		};
+		expect(buildLevelQueue(options)).toHaveLength(0);
+		expect(buildLevelQueue({ ...options, studyAll: true })).toHaveLength(2);
+	});
+});

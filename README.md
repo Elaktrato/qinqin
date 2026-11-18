@@ -1103,6 +1103,12 @@ workspace (the home widget counts the same types).
 | **Writing** | Draw each Han character stroke by stroke (order and direction are checked); **Show strokes** reveals the current character | Han characters with stroke data from the installed strokes pack; kana stay visible |
 | **Tone** | Swipe each syllable pad in the tone's shape, use the tone buttons, or press 1–5 | a Chinese word with pinyin (Chinese workspaces only) |
 
+The setup opens with **This session** and **Limits** at the top: the counts, the new and
+review limits, the order of new cards, **Start studying** and **Study all**. Study all
+ignores the limits and each deck's daily limit for that one session, so every due review
+and new card is included. The source, decks and card types follow, with the per-deck
+switches under **Advanced settings**.
+
 **The session** is an open page (#101): a close button, a thin progress line and the
 count at the top; every card type has its task name (Recognise, Recall, Fill the gap,
 Build the sentence, Write, Tones) with the deck and level, the prompt, the answer area and
@@ -1111,11 +1117,10 @@ and after it four grade buttons that each show the interval that grade gives (`<
 `6m`, `1d`, …, computed by the same scheduler; a re-show says **practice**). Keys are
 unchanged.
 
-**Reverse and cloze cards** are opt-in per deck. Each deck row on `/study` has a
-Reverse and a Cloze switch (stored per deck, General included); a deck that never
-turns them on behaves exactly as before. In a session, their checkboxes appear
-when a selected deck enables the kind and start checked unless you unchecked that
-kind before in this workspace.
+**Reverse and cloze cards** appear once in the study setup's **Card types** list.
+Checking Reverse or Cloze enables it on every deck at once (stored per deck, General
+included); **Advanced settings → Per-deck card types** has the granular switches for a
+single deck. A deck with neither enabled behaves exactly as before.
 
 | Type | What you do | Needs |
 |---|---|---|

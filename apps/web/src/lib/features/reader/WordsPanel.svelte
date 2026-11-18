@@ -2,7 +2,7 @@
 	import { t } from '$lib/i18n';
 	import { errorMessage } from '$lib/stats/errors';
 	import { formatPercent } from '$lib/i18n/format';
-	import { Stat } from '$lib/ui';
+	import { Button, Select, Stat } from '$lib/ui';
 	import type { Deck } from '$lib/study/types';
 	import type { Coverage, UnknownItem } from './coverage';
 	import { allNew, type AddWordsResult } from './wordActions';
@@ -235,23 +235,26 @@
 				</li>
 			{/each}
 		</ul>
-		{#if page.more}<button type="button" onclick={() => (pages += 1)}>{t('reader.words.showMore', { count: PAGE_SIZE })}</button>{/if}
+		{#if page.more}<Button variant="plain" onclick={() => (pages += 1)}>{t('reader.words.showMore', { count: PAGE_SIZE })}</Button>{/if}
 
 		<div class="actions">
-			<label for="{id}-deck">{t('reader.words.deck')}</label>
-			<select id="{id}-deck" bind:value={deckId}>
-				{#each options as d (d.id)}<option value={d.id}>{d.name}</option>{/each}
-			</select>
-			<button type="button" disabled={busy || chosen.length === 0} onclick={() => add(chosen)}>{labels.addSelected}</button>
-			<button type="button" disabled={busy || newIds.length === 0} onclick={() => add(newIds)}>{labels.addAll}</button>
-			<button type="button" disabled={busy || chosen.length === 0} onclick={mark}>{labels.know}</button>
+			<div class="deck-pick">
+				<Select
+					label={t('reader.words.deck')}
+					bind:value={deckId}
+					options={options.map((d) => ({ value: d.id, label: d.name }))}
+				/>
+			</div>
+			<Button disabled={busy || chosen.length === 0} onclick={() => add(chosen)}>{labels.addSelected}</Button>
+			<Button disabled={busy || newIds.length === 0} onclick={() => add(newIds)}>{labels.addAll}</Button>
+			<Button disabled={busy || chosen.length === 0} onclick={mark}>{labels.know}</Button>
 		</div>
 	{:else if current !== null}
 		<p class="hint">{t('reader.words.noneUnknown')}</p>
 	{/if}
 	<p role="status" aria-live="polite">
 		{result}
-		{#if undo}<button type="button" class="link" onclick={runUndo}>{t('reader.words.undo')}</button>{/if}
+		{#if undo}<Button variant="plain" onclick={runUndo}>{t('reader.words.undo')}</Button>{/if}
 	</p>
 	{#if error}<p class="error" role="alert">{error}</p>{/if}
 {/if}
@@ -346,8 +349,7 @@
 		align-items: center;
 		gap: var(--space-2);
 	}
-	.actions select,
-	.actions button {
-		min-height: 2rem;
+	.deck-pick {
+		min-width: 10rem;
 	}
 </style>

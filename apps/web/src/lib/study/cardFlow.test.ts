@@ -383,6 +383,22 @@ describe('deckSessionPlan and dropItem', () => {
 		const plan = deckSessionPlan(options);
 		expect(dropItem(plan, 'nope')).toEqual(plan);
 	});
+
+	it('study all ignores the session and deck daily limits', () => {
+		const limited = contextFor(UTC_CONTEXT.day, [], now.getTime(), [], {
+			workspace: { new: 0, reviews: 0 },
+			decks: { general: { new: 1, reviews: 1 } },
+			existingDecks: null
+		});
+		const base = { ...options, ctx: limited, kinds: ['vocab'] as StudyCardKind[], newLimit: 0, reviewLimit: 0 };
+		expect(deckSessionPlan(base).queue).toHaveLength(0);
+		expect(deckSessionPlan({ ...base, studyAll: true }).queue.map((item) => item.cardId)).toEqual([
+			'v1',
+			'v2',
+			'v3',
+			'v4'
+		]);
+	});
 });
 
 describe('levelSessionItems', () => {

@@ -827,6 +827,43 @@ export async function saveDeckCardTypes(
   return next;
 }
 
+/**
+ * saveDeckCardTypesForDecks toggles one opt-in kind on every named deck in
+ * one pull/push: the global card-type checkboxes on the setup page use it so
+ * the decks agree before a session starts. Rows whose kinds are unchanged
+ * are not written.
+ */
+export async function saveDeckCardTypesForDecks(
+  deckIds: readonly string[],
+  kind: OptInKind,
+  on: boolean,
+): Promise<Record<string, DeckSettings>> {
+  if (deckIds.length === 0) return {};
+  const workspaceId = requireWorkspaceId();
+  const snap = newSnapshot();
+  const { deckSettings } = await fetchStudyData(workspaceId, snap);
+  const out: Record<string, DeckSettings> = {};
+  const writes: StudyWrite[] = [];
+  for (const deckId of deckIds) {
+    const stored = deckSettings?.[deckId];
+    const current = cleanCardTypes(stored?.cardTypes ?? []);
+    const nextTypes = on
+      ? cleanCardTypes([...current, kind])
+      : current.filter((value) => value !== kind);
+    const next: DeckSettings = {
+      deckId,
+      cardTypes: nextTypes,
+      ...(stored?.newOrder ? { newOrder: stored.newOrder } : {}),
+      extra: stored?.extra ?? extraOf(snap, "deckSettings", deckId),
+    };
+    out[deckId] = next;
+    const write = studyWrite(snap, "deckSettings", settingsRow(next));
+    if (write !== null) writes.push(write);
+  }
+  if (writes.length > 0) await pushStudy(workspaceId, writes);
+  return out;
+}
+
 function withoutNewOrder(extra: Record<string, unknown>): Record<string, unknown> {
   const { newOrder: _dropped, ...rest } = extra;
   void _dropped;

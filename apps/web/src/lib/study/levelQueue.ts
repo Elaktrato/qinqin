@@ -9,6 +9,7 @@ import { compareCanonical } from './canonical';
 import { backfillLimit } from './cardFlow';
 import { existingDecksOf, isValidReview, limitsOf, scheduleFor, sortedReviews } from './scheduler';
 import { orderNew } from './newOrder';
+import { STUDY_ALL_LIMIT } from './session';
 import { admit, dayCountsCached, type Candidate } from './limits';
 import { isDueNow, type StudyContext } from './studyContext';
 import type { ReviewEvent, StudyCard, StudyCardKind } from './types';
@@ -74,6 +75,8 @@ export interface BuildLevelQueueOptions {
 	 * the recognition group. Absent: level order.
 	 */
 	newKey?: (entryId: number) => number | null;
+	/** Ignore the session and deck daily limits (the owner's Study all). */
+	studyAll?: boolean;
 }
 
 /** A level session: the queue plus new items held back for dropped ones. */
@@ -123,7 +126,8 @@ export function buildLevelPlan(options: BuildLevelQueueOptions): LevelPlan {
 }
 
 function reserveSize(options: BuildLevelQueueOptions): number {
-	return options.reserve === undefined ? backfillLimit(options.newLimit) : cap(options.reserve);
+	const limit = options.studyAll ? STUDY_ALL_LIMIT : options.newLimit;
+	return options.reserve === undefined ? backfillLimit(limit) : cap(options.reserve);
 }
 
 function buildWordPlan(options: BuildLevelQueueOptions): LevelPlan {
@@ -217,8 +221,12 @@ function admitPlan(
 		),
 		...fresher.map((item) => candidate(item, 'new'))
 	];
-	const caps = { newLimit: cap(options.newLimit), reviewLimit: cap(options.reviewLimit) };
-	const limitsFor = (deckId: string) => limitsOf(ctx, deckId);
+	const caps = options.studyAll
+		? { newLimit: STUDY_ALL_LIMIT, reviewLimit: STUDY_ALL_LIMIT }
+		: { newLimit: cap(options.newLimit), reviewLimit: cap(options.reviewLimit) };
+	const limitsFor = options.studyAll
+		? () => ({ new: null, reviews: null })
+		: (deckId: string) => limitsOf(ctx, deckId);
 	const existing = existingDecksOf(ctx, candidates);
 	const inSession = new Set(admit(candidates, limitsFor, counts, caps, existing).admitted);
 	const inAllowance = new Set(

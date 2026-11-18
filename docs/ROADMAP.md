@@ -91,8 +91,10 @@ Design: `docs/superpowers/specs/2026-11-16-visual-rework-design.md`; mockups:
   Search leads the frame menu (after Home); Stats → Characters has a **Level** filter
   (all levels or one installed level scheme's level, remembered per workspace, with its own
   "X of Y learned" count); the starter and level deck dropdowns have one-click **Add**
-  copies; and the last native-looking buttons and links use the base components and theme
-  tokens.
+  copies; the study setup is compact (Start/Study all and the limits at the top, one
+  card-type list with per-deck controls under Advanced, **Study all** ignores the limits);
+  round checkboxes replace the native marks; and the last native-looking selects, buttons
+  and links use the base components and theme tokens.
 - Open: [#107](https://github.com/Elaktrato/qinqin/issues/107) the owner's lotus stages, level
   badges and day markers. #95 closes when those drawings land.
 - Owner checks: every page at 360 and 1440 px in light and dark and in at least three themes;

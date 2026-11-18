@@ -170,6 +170,11 @@ describe('validateConfig', () => {
 		expect(validateConfig(config({ deckIds: [] }))).not.toEqual([]);
 	});
 
+	it('study all ignores the session limits', () => {
+		expect(validateConfig(config({ studyAll: true, newLimit: 0, reviewLimit: 0 }))).toEqual([]);
+		expect(validateConfig(config({ studyAll: true, newLimit: 5000, reviewLimit: 5000 }))).toEqual([]);
+	});
+
 	it('ignores scheme and level in decks mode', () => {
 		expect(validateConfig(config({ schemeId: 0, levelName: '   ' }))).toEqual([]);
 		expect(validateConfig(config({ schemeId: null, levelName: null }))).toEqual([]);

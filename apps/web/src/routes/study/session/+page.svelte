@@ -61,7 +61,7 @@ import type { Run } from '$lib/study/vacation';
 	import { DEFAULT_W } from '$lib/study/fsrs/params';
 	import { buildLevelPlan, type LevelUnit } from '$lib/study/levelQueue';
 	import { MAX_RESHOWS, applyGrade, progressOf, removeAt } from '$lib/study/requeue';
-	import { SESSION_CONFIG_KEY, loadConfig } from '$lib/study/session';
+	import { SESSION_CONFIG_KEY, STUDY_ALL_LIMIT, loadConfig } from '$lib/study/session';
 	import { companionNote, sessionStartError, showCompanionNote } from '$lib/study/sessionStart';
 	import { offline } from '$lib/pwa/offlineState';
 	import { activeWeights, addCard, loadStudyData } from '$lib/study/store';
@@ -510,11 +510,12 @@ import type { Run } from '$lib/study/vacation';
 					hasStrokes: hasStrokeData,
 					skip: loadIneligible(workspaceId),
 					excludeEntries: buriedLevelEntries(buried, data.cards),
-					newKey: keyOf ?? undefined
+					newKey: keyOf ?? undefined,
+					studyAll: config.studyAll === true
 				});
 				queue = levelSessionItems(plan.queue, data.cards, kinds, buried);
 				reserve = levelSessionItems(plan.reserve, data.cards, kinds, buried);
-				backfillLeft = backfillLimit(config.newLimit);
+				backfillLeft = config.studyAll === true ? STUDY_ALL_LIMIT : backfillLimit(config.newLimit);
 			} else {
 				const plan = deckSessionPlan({
 					cards: data.cards,
@@ -531,7 +532,8 @@ import type { Run } from '$lib/study/vacation';
 					language: language ?? '',
 					// Words this tab already found unsuitable are not fetched again.
 					skip: loadIneligible(workspaceId),
-					newKey: keyOf === null ? undefined : (card) => keyOf(card.entryId)
+					newKey: keyOf === null ? undefined : (card) => keyOf(card.entryId),
+					studyAll: config.studyAll === true
 				});
 				queue = plan.queue;
 				reserve = plan.reserve;

@@ -226,11 +226,72 @@ strong {
 	font-weight: var(--weight-strong);
 }
 
-input[type='checkbox'],
 input[type='radio'],
 input[type='range'],
 progress {
 	accent-color: var(--accent);
+}
+
+/* Round checkboxes with a tick that reaches just past the circle (#95). */
+input[type='checkbox'] {
+	appearance: none;
+	box-sizing: border-box;
+	inline-size: 1.15rem;
+	block-size: 1.15rem;
+	margin: 0;
+	border: 1.5px solid var(--line);
+	border-radius: 50%;
+	background: transparent;
+	display: inline-grid;
+	place-content: center;
+	position: relative;
+	overflow: visible;
+	flex: none;
+	cursor: pointer;
+	vertical-align: middle;
+}
+input[type='checkbox']::after {
+	content: '';
+	position: absolute;
+	top: -0.14rem;
+	left: 0.06rem;
+	inline-size: 0.8rem;
+	block-size: 0.42rem;
+	border-inline-start: 2px solid var(--accent);
+	border-block-end: 2px solid var(--accent);
+	transform: rotate(-45deg) scale(0);
+	transform-origin: center;
+	transition: transform var(--motion-fast) var(--ease-standard);
+}
+input[type='checkbox']:checked {
+	border-color: var(--accent);
+}
+input[type='checkbox']:checked::after {
+	transform: rotate(-45deg) scale(1);
+}
+input[type='checkbox']:focus-visible {
+	outline: var(--focus-ring);
+	outline-offset: var(--focus-ring-offset);
+}
+input[type='checkbox']:disabled {
+	opacity: 0.55;
+	cursor: not-allowed;
+}
+@media (prefers-reduced-motion: reduce) {
+	input[type='checkbox']::after {
+		transition: none;
+	}
+}
+@media (forced-colors: active) {
+	input[type='checkbox'] {
+		border-color: CanvasText;
+	}
+	input[type='checkbox']:checked {
+		border-color: Highlight;
+	}
+	input[type='checkbox']::after {
+		border-color: Highlight;
+	}
 }
 
 fieldset {

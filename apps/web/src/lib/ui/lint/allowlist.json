@@ -83,5 +83,26 @@
 		"text": ".glow, .start",
 		"count": 1,
 		"reason": "The stroke-start marker held still under reduced motion: a graphic dot, not text."
+	},
+	{
+		"rule": "border",
+		"file": "app.css",
+		"text": "border: 1.5px solid var(--line)",
+		"count": 1,
+		"reason": "The round checkbox rim is a control shape, not a box hairline (#95)."
+	},
+	{
+		"rule": "border",
+		"file": "app.css",
+		"text": "border-inline-start: 2px solid var(--accent)",
+		"count": 1,
+		"reason": "The round checkbox tick is a control mark, not a box hairline (#95)."
+	},
+	{
+		"rule": "border",
+		"file": "app.css",
+		"text": "border-block-end: 2px solid var(--accent)",
+		"count": 1,
+		"reason": "The round checkbox tick is a control mark, not a box hairline (#95)."
 	}
 ]
