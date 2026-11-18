@@ -1,10 +1,12 @@
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/svelte';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/svelte';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('$lib/api/frequency', () => ({ getFrequencyPacks: vi.fn(), getStarterEntries: vi.fn() }));
+vi.mock('./addDeckFromOverview', () => ({ addDeckFromOverview: vi.fn() }));
 
 import { getFrequencyPacks, getStarterEntries } from '$lib/api/frequency';
-import { clearStarterCache } from './starterDecks';
+import { addDeckFromOverview } from './addDeckFromOverview';
+import { clearStarterCache, starterTarget, starterDecks } from './starterDecks';
 import StarterDecks from './StarterDecks.svelte';
 
 const jiten = {
@@ -70,5 +72,55 @@ describe('StarterDecks', () => {
 		await waitFor(() => expect(screen.getAllByText('1 of 5 in your decks')).toHaveLength(3));
 		expect(getStarterEntries).toHaveBeenCalledTimes(1);
 		expect(getStarterEntries).toHaveBeenCalledWith(3, 2000);
+	});
+
+	it('Add copies the deck from the overview and says what it added', async () => {
+		const onchanged = vi.fn();
+		vi.mocked(addDeckFromOverview).mockResolvedValue({
+			deck: null,
+			writes: [],
+			created: 5,
+			joined: 0,
+			skipped: 0,
+			known: 2
+		});
+		render(StarterDecks, {
+			language: 'ja',
+			ownedEntryIds: new Set<number>(),
+			workspaceId: 2,
+			deckIds: new Set<string>(),
+			knownIds: new Set([2, 3]),
+			onchanged
+		});
+		await fireEvent.click(await screen.findByRole('button', { name: /Starter decks/ }));
+		const add = (await screen.findAllByRole('button', { name: /^Add/ }))[0];
+		await fireEvent.click(add);
+		await waitFor(() => expect(addDeckFromOverview).toHaveBeenCalledOnce());
+		const deck = starterDecks([jiten], 'ja').find((d) => d.size === 500)!;
+		expect(addDeckFromOverview).toHaveBeenCalledWith(
+			expect.objectContaining({
+				workspaceId: 2,
+				exclude: new Set([2, 3]),
+				target: starterTarget(deck),
+				settings: { newOrder: { by: 'frequency' } }
+			})
+		);
+		expect(onchanged).toHaveBeenCalled();
+		expect(await screen.findByText(/Added 5 words; 2 you know were skipped/)).toBeTruthy();
+	});
+
+	it('an existing copy opens instead of offering Add', async () => {
+		const deck = starterDecks([jiten], 'ja').find((d) => d.size === 500)!;
+		render(StarterDecks, {
+			language: 'ja',
+			ownedEntryIds: new Set<number>(),
+			workspaceId: 2,
+			deckIds: new Set([starterTarget(deck).id])
+		});
+		await fireEvent.click(await screen.findByRole('button', { name: /Starter decks/ }));
+		const row = (await screen.findByRole('link', { name: 'Top 500' })).closest('li')!;
+		const open = within(row).getByRole('link', { name: /^Open my copy/ });
+		expect(open.getAttribute('href')).toContain(starterTarget(deck).id);
+		expect(within(row).queryByRole('button', { name: /^Add/ })).toBeNull();
 	});
 });

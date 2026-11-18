@@ -2,9 +2,12 @@ import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-li
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('$lib/api/schemes', () => ({ getSchemes: vi.fn(), getSchemeEntries: vi.fn() }));
+vi.mock('./addDeckFromOverview', () => ({ addDeckFromOverview: vi.fn() }));
 
 import { getSchemeEntries, getSchemes } from '$lib/api/schemes';
 import type { EntryBase, Scheme } from '$lib/api/types';
+import { addDeckFromOverview } from './addDeckFromOverview';
+import { ownedLevelDeckId } from './systemDecks';
 import { clearLevelItemsCache } from './systemDeckItems';
 import SystemDecks from './SystemDecks.svelte';
 
@@ -104,5 +107,41 @@ describe('SystemDecks', () => {
 		await screen.findByRole('link', { name: 'HSK 1' });
 		expect(screen.queryByRole('textbox')).toBeNull();
 		expect(screen.queryByRole('button', { name: /delete|rename|remove/i })).toBeNull();
+	});
+
+	it('Add copies a level from the overview', async () => {
+		const onchanged = vi.fn();
+		vi.mocked(addDeckFromOverview).mockResolvedValue({
+			deck: null,
+			writes: [],
+			created: 2,
+			joined: 0,
+			skipped: 0
+		});
+		render(SystemDecks, {
+			language: 'zh',
+			ownedEntryIds: new Set<number>(),
+			workspaceId: 2,
+			deckIds: new Set<string>(),
+			onchanged
+		});
+		await fireEvent.click(await screen.findByRole('button', { name: /HSK words/ }));
+		const row = (await screen.findByRole('link', { name: 'HSK 1' })).closest('li')!;
+		await fireEvent.click(await within(row).findByRole('button', { name: /^Add/ }));
+		await waitFor(() => expect(addDeckFromOverview).toHaveBeenCalledOnce());
+		expect(addDeckFromOverview).toHaveBeenCalledWith({
+			workspaceId: 2,
+			items: [
+				{ entryId: 1, written: 'w1' },
+				{ entryId: 2, written: 'w2' }
+			],
+			target: {
+				id: ownedLevelDeckId('hsk-words', 'HSK 1'),
+				name: 'HSK words · HSK 1',
+				source: { type: 'level', packId: 'hsk-words', level: 'HSK 1' }
+			}
+		});
+		expect(onchanged).toHaveBeenCalled();
+		expect(await screen.findByText('Added 2 words to HSK words · HSK 1')).toBeTruthy();
 	});
 });

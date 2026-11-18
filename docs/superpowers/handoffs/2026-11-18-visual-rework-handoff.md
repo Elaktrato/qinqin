@@ -42,6 +42,12 @@ with `apps/web/src/lib/readmeGallery.test.ts`).
   "X of Y learned" summary cover only that level; choosing a level opens its scheme under
   Group by (Grade for the Jōyō pack), and the choice is remembered per workspace. A test with
   JLPT N5 on the demo data shows its own `0 of 80 learned`, not the 13k-character map.
+- **Themed controls and one-click deck copies** (later on 2026-11-18): a page's own `class`
+  no longer replaces the base `Button` classes, so the lookups recording switch and the deck
+  disclosure toggles use the design's buttons; the journal's Get ideas / Start an entry use
+  the base Button; Search's Lookup history link is a theme-aware underlined link; and the
+  expanded starter and level decks have **Add**, which copies the deck in one click (the
+  existing idempotent plan), then shows **Open my copy**.
 
 ## Gates (final branch)
 

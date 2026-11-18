@@ -3,6 +3,7 @@
 	import { goto } from '$app/navigation';
 	import { loadConfig, saveConfig } from '$lib/study/session';
 	import { createDeck } from '$lib/study/store';
+	import { knownEntries } from '$lib/study/known';
 	import { workspaces } from '$lib/workspaces';
 	import { summarizeDecks } from './deckSummaries';
 	import { progressShares, progressSummary } from './deckStats';
@@ -47,6 +48,14 @@
 				.map((card) => card.entryId)
 		);
 	});
+
+	const deckIds = $derived(new Set((store.data?.decks ?? []).map((deck) => deck.id)));
+	const knownIds = $derived.by(() => {
+		const data = store.data;
+		if (data === null) return new Set<number>();
+		return knownEntries(data.cards, (id) => data.index.get(id) ?? null, data.known ?? []);
+	});
+	const reload = () => void store.load(workspaceId, true);
 
 	let newName = $state('');
 	let creating = $state(false);
@@ -153,8 +162,21 @@
 	</form>
 	</Section>
 
-	<StarterDecks language={$workspaces.current?.language ?? ''} {ownedEntryIds} />
-	<SystemDecks language={$workspaces.current?.language ?? ''} {ownedEntryIds} />
+	<StarterDecks
+		language={$workspaces.current?.language ?? ''}
+		{ownedEntryIds}
+		{workspaceId}
+		{deckIds}
+		{knownIds}
+		onchanged={reload}
+	/>
+	<SystemDecks
+		language={$workspaces.current?.language ?? ''}
+		{ownedEntryIds}
+		{workspaceId}
+		{deckIds}
+		onchanged={reload}
+	/>
 {/if}
 
 <style>
