@@ -45,6 +45,13 @@ describe('StudyFace (#101)', () => {
 		expect(document.querySelector('.count')?.textContent).toBe('1 / 3');
 	});
 
+	it('announces the count through a polite live region', () => {
+		render(CardHarness, { card: PrimaryCard });
+		const count = document.querySelector('.count')!;
+		expect(count.getAttribute('aria-live')).toBe('polite');
+		expect(count.getAttribute('aria-atomic')).toBe('true');
+	});
+
 	it('the header shows the kind in the accent, deck · level on the right, and the re-show and tier chips', () => {
 		const chips = createRawSnippet(() => ({ render: () => '<span class="chip">Again, look 2 of 3</span>' }));
 		render(CardHarness, { card: PrimaryCard, kindLabel: 'Build the sentence', deckLevel: 'HSK · Level 1', chips });
