@@ -22,11 +22,16 @@ The tabs are text links at the top of the page, on desktop and on the phone; the
 
 The four summary numbers reuse rules defined elsewhere: the streak is the flashcards widget's streak, **words known** is the one known-word predicate (a manual "I know this" mark or a vocabulary card at the mastery threshold), **recall** is the decks page's overall 30-day figure (shown after 10 repeat reviews; below that it says so instead of a dash) and **studied this month** is flashcard study time, the same amount as the daily goal's `flashcards:studyTime` and the Week tab's study time. With flashcards switched off the Summary widget says how to switch them on. Both **Summary** and **Reviews per day** can also be added to the home page.
 
+- **Words** counts vocabulary cards only (sentence, writing and tone cards practise a word already counted): **New** (never reviewed), **Learning** (in the FSRS learning or relearning state), **Young** (in review, holding under 21 days) and **Mature** (21 days or more). "N new cards waiting" counts every new vocabulary card, without the daily limit. On Stats it adds a table with one row per deck; a card in several decks counts in each deck's row but once in the totals. These word states are not the character map's stages: a word's state follows its flashcard schedule, a character's stage its mastery score.
+- **Reviews per day** shows the total and today's count in words above the bars of the last 30 learner days.
+- **Reading time** counts the Reader's tracked time: all time and the last 7 and 30 learner days (ending today), and the five most read books. A stretch under 30 seconds counts nothing and one stretch at most 2 hours; a book no longer in any library is "A removed book".
+- **Characters** shows "N of M learned" (learned is 80 of 100 or more), the stage bar and **Open the character map**.
+
 The [Daily goal](Daily-goals) widget and the **This week** widget ([Weekly summary](Weekly-summary)) are on the home page only; Stats has the Week tab instead. A plugin's widgets only appear while that plugin is enabled, and the flashcards and reader widgets while you have not switched that feature off (Settings → Features). The home page shows the widgets of your own layout (see [Settings tour](Settings-tour)).
 
 ## The activity heatmap
 
-One cell per day over the last 13 weeks, coloured by points. A flashcard review is one point; reading is one point per started 5 minutes; journal entries also count. Hover a cell for the day's points per source.
+One cell per day over the last 13 weeks, coloured by points. A flashcard review is one point; reading is one point per started 5 minutes (at most 24 for one stretch); journal entries also count, and so does activity from plugins that declare it. Other events (sessions, views, lookups) do not count. Hover a cell for the day's points per source.
 
 - It shows the active workspace by default; **All workspaces** switches to the combined view (tooltips name each workspace).
 - A chip per activity type hides or shows that type. The choice is remembered per user on every device.
@@ -48,12 +53,19 @@ With a [daily goal](Daily-goals) in this workspace, each day has a flower stage:
 
 ## The character map
 
-It lists every character of the language, studied or not, shaded by mastery. Japanese: all KANJIDIC2 kanji. Chinese: about 11.1 thousand characters (the standard character list plus every character with a CC-CEDICT reading).
+It lists every character of the language, studied or not, shaded by mastery. Japanese: all 13,108 KANJIDIC2 kanji. Chinese: about 11.1 thousand characters (the standard character list 通用规范汉字表 plus every character with a CC-CEDICT reading, single Han characters only). A traditional form shares its simplified character's cell: a card written 愛 colours the 爱 cell.
 
-- **Group by**: Japanese: Grade, Frequency, Strokes, approximate JLPT kanji levels. Chinese: Common, HK primary grade, Strokes, HSK 3.0 characters and words. Any installed level scheme is offered too. The choice is remembered per language.
+- **Group by**: the default is Grade (Japanese) or Common (Chinese); the choice is remembered per language.
+  - Japanese: Grade (with the jinmeiyō names and "No grade"), Frequency, Strokes, "JLPT kanji (approximate)" (N5 to N1) and, when an administrator installed the optional local JLPT vocabulary pack, "JLPT (vocabulary)".
+  - Chinese: Common (GB2312 level 1, level 2, other standard characters, other characters in the dictionary), HK primary grade, Strokes, "HSK 3.0 (characters)" (the official character list of the HSK syllabus, each character at the level that introduces it) and "HSK 3.0 (words)" (the official word list), both HSK 1 to 6 and HSK 7 to 9.
+  - A word list is shown as the characters its words are written with, each at the lowest level of a word it appears in (爱 is HSK 1 because 爱 is an HSK 1 word; 傲 is HSK 4 through 骄傲). Every other installed level scheme that is not a sample pack is offered under its name; characters outside it land in "Not in this scheme".
 - **Level**: All levels, or one installed level scheme's level (JLPT N5, HSK 2, Jōyō grade 3, …). The map, the stage counts and the "X of Y learned" summary then cover only that level; a variant form of a member is included. The choice is remembered per workspace, and choosing a level opens its scheme under **Group by** (Grade for the Jōyō pack, already shown as Grade) so the view starts on the level, not on other schemes' empty sections.
 - **Stages** use one hue, light to full: a not-studied character is an outline, then the accent at 14, 32, 58 and 100 % (not studied, started, growing, solid, learned), with a worded legend above the map. They double as a filter and the counts are in the filter's text. A character is "learned" at a score of 80 of 100. The score comes from the FSRS stability of every reviewed card whose word contains the character. Shape cues (a bottom bar that grows with the band, a corner tick and, in forced colours, a border style per stage) back the colour up.
-- Search by glyph, reading (toneless pinyin works), meaning, or kana. The grid is keyboard-navigable (arrows, Home, End; Enter opens the entry).
+- **Sections** show learned of total ("Grade 1, 60 of 80 learned") and a stacked stage bar; **Expand all** and **Collapse all** open and close them. Large sections draw their cells in batches as you scroll.
+- **Search** by glyph, reading (toneless pinyin works), meaning, or hiragana and katakana; **Jump to character** opens its section and focuses the cell ("学 is in Grade 1").
+- **Cells**: hover, focus or a first tap shows the character's reading, meaning, variants, stage, score and number of cards; a second tap opens its entry. The grid is keyboard-navigable: arrows, Home and End (row ends), Ctrl+Home and Ctrl+End (section ends); Enter opens the entry.
+- **The score** is the mean, over every reviewed card whose word contains the character, of how firmly that card's schedule has settled, with a year of FSRS stability counting fully. Nothing is stored for the map: it is worked out from your cards and reviews.
+- The Study setup links to the map ("View the mastery map →").
 - A server seeded before the level fields existed shows a "Level data missing" banner until `qinqin seed` runs (see [Backup, recovery and the command line](Admin-backup-and-recovery)).
 
 ## Related
