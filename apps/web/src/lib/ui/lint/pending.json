@@ -31,7 +31,6 @@
 		"lib/plugins/journal/PhotoImport.svelte",
 		"lib/settings/AdminSettings.svelte",
 		"lib/settings/AiSettings.svelte",
-		"lib/settings/AppearanceSettings.svelte",
 		"lib/weekly/WeekStrip.svelte",
 		"routes/stats/+layout.svelte"
 	],
@@ -40,8 +39,7 @@
 		"lib/components/map/CharGrid.svelte",
 		"lib/features/flashcards/cards/ClozeCard.svelte",
 		"lib/features/flashcards/cards/ToneCard.svelte",
-		"lib/features/flashcards/face/GradeBar.svelte",
-		"lib/settings/AppearanceSettings.svelte"
+		"lib/features/flashcards/face/GradeBar.svelte"
 	],
 	"control": [
 		"routes/lookups/+page.svelte",
