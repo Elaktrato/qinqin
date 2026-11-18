@@ -1,6 +1,6 @@
 # Data and licences
 
-qinqin bundles dictionaries and level lists so a fresh install seeds offline (`qinqin seed`). Every sense, frequency rank and level badge keeps its source, licence and attribution. Two places are the licence reference, and this page only summarises them:
+qinqin bundles dictionaries and level lists so a fresh install seeds offline: by itself on the first start ([auto-seed](Admin-deploying#the-auto-seed-on-the-first-start)), or with `qinqin seed`. Every sense, frequency rank and level badge keeps its source, licence and attribution. Two places are the licence reference, and this page only summarises them:
 
 - the app's **Sources** page (`/sources`, open to everyone, signed in or not), built from what the server has actually installed;
 - [`docs/sources.md`](https://github.com/Elaktrato/qinqin/blob/develop/docs/sources.md) in the repository: attributions, upstream links, pinned versions and the redistribution decision for every source.

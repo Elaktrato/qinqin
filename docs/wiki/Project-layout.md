@@ -26,7 +26,7 @@ Where things live in the repository ([github.com/Elaktrato/qinqin](https://githu
 | `docs/git-flow.md`, `docs/release-checklist.md`, `docs/ROADMAP.md` | Branching, the pre-release browser checklist, the roadmap |
 | `docs/superpowers/` | Design specs, plans and handoffs of past work |
 | `docker-compose.yml`, `Dockerfile` | The one compose file (plain compose and Portainer) and the image build |
-| `.github/workflows/` | `build.yml` (tests, image, release) and `audio-stage.yml` |
+| `.github/workflows/` | `build.yml` (tests, image, release), `audio-stage.yml` (the audio build stage) and `wiki.yml` (publishes `docs/wiki/` to the wiki) |
 
 ## Scripts
 
