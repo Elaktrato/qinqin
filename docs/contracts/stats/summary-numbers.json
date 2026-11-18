@@ -1,0 +1,431 @@
+{
+  "version": 1,
+  "rule": "stats/summary-numbers",
+  "note": "Hand-derived from the definitions in README.md. `schedules` gives derived schedules for cases that depend on the known threshold (the same shapes as frequency/known.json); a card without a schedule was never reviewed. `reviewsPerDay` lists only the non-empty days. Workspace 1 throughout.",
+  "cases": [
+    {
+      "name": "empty history",
+      "note": "No cards, reviews, marks or vacations: every number is zero, recall is null with base 0 and the series has no non-empty day. Today is 2026-11-18.",
+      "now": "2026-11-18T12:00:00Z",
+      "zone": "Asia/Shanghai",
+      "cards": [],
+      "reviews": [],
+      "marks": [],
+      "vacation": [],
+      "expect": {
+        "streak": 0,
+        "wordsKnown": 0,
+        "recall": { "share": null, "base": 0 },
+        "studiedSeconds": 0,
+        "reviewsPerDay": []
+      }
+    },
+    {
+      "name": "nine eligible repeat reviews stay below the floor",
+      "note": "One card, ten reviews on ten days: the first review is excluded, the nine repeat reviews are all graded 3 (kept) so retention is null because 9 < 10, and base is 9.",
+      "now": "2026-11-18T12:00:00Z",
+      "zone": "Asia/Shanghai",
+      "cards": [
+        { "id": "c1", "kind": "vocab", "entryId": 1, "deckIds": ["general"], "createdAt": "2026-01-01T00:00:00.000Z" }
+      ],
+      "reviews": [
+        { "id": "r01", "cardId": "c1", "ts": "2026-11-01T10:00:00Z", "grade": 1 },
+        { "id": "r02", "cardId": "c1", "ts": "2026-11-02T10:00:00Z", "grade": 3 },
+        { "id": "r03", "cardId": "c1", "ts": "2026-11-03T10:00:00Z", "grade": 3 },
+        { "id": "r04", "cardId": "c1", "ts": "2026-11-04T10:00:00Z", "grade": 3 },
+        { "id": "r05", "cardId": "c1", "ts": "2026-11-05T10:00:00Z", "grade": 3 },
+        { "id": "r06", "cardId": "c1", "ts": "2026-11-06T10:00:00Z", "grade": 3 },
+        { "id": "r07", "cardId": "c1", "ts": "2026-11-07T10:00:00Z", "grade": 3 },
+        { "id": "r08", "cardId": "c1", "ts": "2026-11-08T10:00:00Z", "grade": 3 },
+        { "id": "r09", "cardId": "c1", "ts": "2026-11-09T10:00:00Z", "grade": 3 },
+        { "id": "r10", "cardId": "c1", "ts": "2026-11-10T10:00:00Z", "grade": 3 }
+      ],
+      "marks": [],
+      "vacation": [],
+      "expect": {
+        "streak": 0,
+        "wordsKnown": 0,
+        "recall": { "share": null, "base": 9 },
+        "studiedSeconds": 0,
+        "reviewsPerDay": [
+          ["2026-11-01", 1],
+          ["2026-11-02", 1],
+          ["2026-11-03", 1],
+          ["2026-11-04", 1],
+          ["2026-11-05", 1],
+          ["2026-11-06", 1],
+          ["2026-11-07", 1],
+          ["2026-11-08", 1],
+          ["2026-11-09", 1],
+          ["2026-11-10", 1]
+        ]
+      }
+    },
+    {
+      "name": "ten eligible reviews give a share",
+      "note": "One card, eleven reviews: the first is excluded, ten remain; one of them is grade 1 (not kept), so retention is 9/10 = 0.9 with base 10.",
+      "now": "2026-11-18T12:00:00Z",
+      "zone": "Asia/Shanghai",
+      "cards": [
+        { "id": "c1", "kind": "vocab", "entryId": 1, "deckIds": ["general"], "createdAt": "2026-01-01T00:00:00.000Z" }
+      ],
+      "reviews": [
+        { "id": "r01", "cardId": "c1", "ts": "2026-11-01T10:00:00Z", "grade": 4 },
+        { "id": "r02", "cardId": "c1", "ts": "2026-11-02T10:00:00Z", "grade": 3 },
+        { "id": "r03", "cardId": "c1", "ts": "2026-11-03T10:00:00Z", "grade": 3 },
+        { "id": "r04", "cardId": "c1", "ts": "2026-11-04T10:00:00Z", "grade": 3 },
+        { "id": "r05", "cardId": "c1", "ts": "2026-11-05T10:00:00Z", "grade": 1 },
+        { "id": "r06", "cardId": "c1", "ts": "2026-11-06T10:00:00Z", "grade": 3 },
+        { "id": "r07", "cardId": "c1", "ts": "2026-11-07T10:00:00Z", "grade": 3 },
+        { "id": "r08", "cardId": "c1", "ts": "2026-11-08T10:00:00Z", "grade": 3 },
+        { "id": "r09", "cardId": "c1", "ts": "2026-11-09T10:00:00Z", "grade": 3 },
+        { "id": "r10", "cardId": "c1", "ts": "2026-11-10T10:00:00Z", "grade": 3 },
+        { "id": "r11", "cardId": "c1", "ts": "2026-11-11T10:00:00Z", "grade": 3 }
+      ],
+      "marks": [],
+      "vacation": [],
+      "expect": {
+        "streak": 0,
+        "wordsKnown": 0,
+        "recall": { "share": 0.9, "base": 10 },
+        "studiedSeconds": 0,
+        "reviewsPerDay": [
+          ["2026-11-01", 1],
+          ["2026-11-02", 1],
+          ["2026-11-03", 1],
+          ["2026-11-04", 1],
+          ["2026-11-05", 1],
+          ["2026-11-06", 1],
+          ["2026-11-07", 1],
+          ["2026-11-08", 1],
+          ["2026-11-09", 1],
+          ["2026-11-10", 1],
+          ["2026-11-11", 1]
+        ]
+      }
+    },
+    {
+      "name": "first reviews are excluded from recall",
+      "note": "Two cards, one first review each: an eligible review must have an earlier review of the same card, so base is 0 and retention is null.",
+      "now": "2026-11-18T12:00:00Z",
+      "zone": "Asia/Shanghai",
+      "cards": [
+        { "id": "c1", "kind": "vocab", "entryId": 1, "deckIds": ["general"], "createdAt": "2026-01-01T00:00:00.000Z" },
+        { "id": "c2", "kind": "vocab", "entryId": 2, "deckIds": ["general"], "createdAt": "2026-01-01T00:00:00.000Z" }
+      ],
+      "reviews": [
+        { "id": "r01", "cardId": "c1", "ts": "2026-11-10T10:00:00Z", "grade": 1 },
+        { "id": "r02", "cardId": "c2", "ts": "2026-11-11T10:00:00Z", "grade": 1 }
+      ],
+      "marks": [],
+      "vacation": [],
+      "expect": {
+        "streak": 0,
+        "wordsKnown": 0,
+        "recall": { "share": null, "base": 0 },
+        "studiedSeconds": 0,
+        "reviewsPerDay": [
+          ["2026-11-10", 1],
+          ["2026-11-11", 1]
+        ]
+      }
+    },
+    {
+      "name": "a known mark without a card counts",
+      "note": "Entry 2 is marked known and has no card: the mark alone makes it a known word.",
+      "now": "2026-11-18T12:00:00Z",
+      "zone": "Asia/Shanghai",
+      "cards": [],
+      "reviews": [],
+      "marks": [2],
+      "vacation": [],
+      "expect": {
+        "streak": 0,
+        "wordsKnown": 1,
+        "recall": { "share": null, "base": 0 },
+        "studiedSeconds": 0,
+        "reviewsPerDay": []
+      }
+    },
+    {
+      "name": "a card at the threshold counts, one below does not",
+      "note": "Known threshold 80: stability 109 scores 80 (known), stability 108 scores 79 (not known). Entry 5 has no schedule at all and does not count.",
+      "now": "2026-11-18T12:00:00Z",
+      "zone": "Asia/Shanghai",
+      "cards": [
+        { "id": "c-below", "kind": "vocab", "entryId": 3, "deckIds": ["general"], "createdAt": "2026-01-01T00:00:00.000Z" },
+        { "id": "c-at", "kind": "vocab", "entryId": 4, "deckIds": ["general"], "createdAt": "2026-01-01T00:00:00.000Z" },
+        { "id": "c-never", "kind": "vocab", "entryId": 5, "deckIds": ["general"], "createdAt": "2026-01-01T00:00:00.000Z" }
+      ],
+      "reviews": [],
+      "marks": [],
+      "vacation": [],
+      "schedules": {
+        "c-below": { "state": 2, "stability": 108, "difficulty": 5, "due": "2027-01-01T00:00:00.000Z" },
+        "c-at": { "state": 2, "stability": 109, "difficulty": 5, "due": "2027-01-01T00:00:00.000Z" }
+      },
+      "expect": {
+        "streak": 0,
+        "wordsKnown": 1,
+        "recall": { "share": null, "base": 0 },
+        "studiedSeconds": 0,
+        "reviewsPerDay": []
+      }
+    },
+    {
+      "name": "a deleted card counts in neither known words nor recall",
+      "note": "The reviews reference a card that is not live: it is in no deck, so recall has no eligible review, and there is no card to make a word known. The reviews still count per day, the study time still counts (it happened) and they make a three-day streak.",
+      "now": "2026-11-18T12:00:00Z",
+      "zone": "Asia/Shanghai",
+      "cards": [],
+      "reviews": [
+        { "id": "r01", "cardId": "c-gone", "ts": "2026-11-16T10:00:00Z", "grade": 4, "durationMs": 10000 },
+        { "id": "r02", "cardId": "c-gone", "ts": "2026-11-17T10:00:00Z", "grade": 4, "durationMs": 20000 },
+        { "id": "r03", "cardId": "c-gone", "ts": "2026-11-18T10:00:00Z", "grade": 4, "durationMs": 30000 }
+      ],
+      "marks": [],
+      "vacation": [],
+      "expect": {
+        "streak": 3,
+        "wordsKnown": 0,
+        "recall": { "share": null, "base": 0 },
+        "studiedSeconds": 60,
+        "reviewsPerDay": [
+          ["2026-11-16", 1],
+          ["2026-11-17", 1],
+          ["2026-11-18", 1]
+        ]
+      }
+    },
+    {
+      "name": "study time crosses a month boundary",
+      "note": "Today is 18 November: October 31 is outside the month (30 s not counted) while November 1 (45 s) and November 2 (70 s capped to 60 s) are in it, so studied is 105 s. All three days are inside the 30-day review window.",
+      "now": "2026-11-18T12:00:00Z",
+      "zone": "Asia/Shanghai",
+      "cards": [
+        { "id": "c1", "kind": "vocab", "entryId": 1, "deckIds": ["general"], "createdAt": "2026-01-01T00:00:00.000Z" },
+        { "id": "c2", "kind": "vocab", "entryId": 2, "deckIds": ["general"], "createdAt": "2026-01-01T00:00:00.000Z" },
+        { "id": "c3", "kind": "vocab", "entryId": 3, "deckIds": ["general"], "createdAt": "2026-01-01T00:00:00.000Z" }
+      ],
+      "reviews": [
+        { "id": "r01", "cardId": "c1", "ts": "2026-10-31T10:00:00Z", "grade": 3, "durationMs": 30000 },
+        { "id": "r02", "cardId": "c2", "ts": "2026-11-01T10:00:00Z", "grade": 3, "durationMs": 45000 },
+        { "id": "r03", "cardId": "c3", "ts": "2026-11-02T10:00:00Z", "grade": 3, "durationMs": 70000 }
+      ],
+      "marks": [],
+      "vacation": [],
+      "expect": {
+        "streak": 0,
+        "wordsKnown": 0,
+        "recall": { "share": null, "base": 0 },
+        "studiedSeconds": 105,
+        "reviewsPerDay": [
+          ["2026-10-31", 1],
+          ["2026-11-01", 1],
+          ["2026-11-02", 1]
+        ]
+      }
+    },
+    {
+      "name": "a review at 03:30 local belongs to the local learner day",
+      "note": "In Asia/Shanghai 03:30 on 18 November is 19:30 UTC on 17 November: a client reading the device's UTC date would put it on the previous day. The learner's day is 18 November, which is also today (the streak is 1).",
+      "now": "2026-11-18T12:00:00Z",
+      "zone": "Asia/Shanghai",
+      "cards": [
+        { "id": "c1", "kind": "vocab", "entryId": 1, "deckIds": ["general"], "createdAt": "2026-01-01T00:00:00.000Z" }
+      ],
+      "reviews": [
+        { "id": "r01", "cardId": "c1", "ts": "2026-11-18T03:30:00+08:00", "grade": 3, "durationMs": 10000 }
+      ],
+      "marks": [],
+      "vacation": [],
+      "expect": {
+        "streak": 1,
+        "wordsKnown": 0,
+        "recall": { "share": null, "base": 0 },
+        "studiedSeconds": 10,
+        "reviewsPerDay": [["2026-11-18", 1]]
+      }
+    },
+    {
+      "name": "a vacation day inside the streak is neutral",
+      "note": "Reviews on 15 and 17 November with 16 November a vacation day: the run is 2, not broken by the vacation and not extended by it. Today (18th) has no review yet, so the current run counts back from yesterday.",
+      "now": "2026-11-18T12:00:00Z",
+      "zone": "Asia/Shanghai",
+      "cards": [
+        { "id": "c1", "kind": "vocab", "entryId": 1, "deckIds": ["general"], "createdAt": "2026-01-01T00:00:00.000Z" }
+      ],
+      "reviews": [
+        { "id": "r01", "cardId": "c1", "ts": "2026-11-15T10:00:00Z", "grade": 3 },
+        { "id": "r02", "cardId": "c1", "ts": "2026-11-17T10:00:00Z", "grade": 3 }
+      ],
+      "marks": [],
+      "vacation": [{ "start": "2026-11-16", "end": "2026-11-16" }],
+      "expect": {
+        "streak": 2,
+        "wordsKnown": 0,
+        "recall": { "share": null, "base": 1 },
+        "studiedSeconds": 0,
+        "reviewsPerDay": [
+          ["2026-11-15", 1],
+          ["2026-11-17", 1]
+        ]
+      }
+    },
+    {
+      "name": "reviews older than 30 days are not in the series",
+      "note": "A review on 1 October is outside 20 October – 18 November: the series is empty, it adds no study time in November and it is a first review, so recall has base 0.",
+      "now": "2026-11-18T12:00:00Z",
+      "zone": "Asia/Shanghai",
+      "cards": [
+        { "id": "c1", "kind": "vocab", "entryId": 1, "deckIds": ["general"], "createdAt": "2026-01-01T00:00:00.000Z" }
+      ],
+      "reviews": [{ "id": "r01", "cardId": "c1", "ts": "2026-10-01T10:00:00Z", "grade": 3 }],
+      "marks": [],
+      "vacation": [],
+      "expect": {
+        "streak": 0,
+        "wordsKnown": 0,
+        "recall": { "share": null, "base": 0 },
+        "studiedSeconds": 0,
+        "reviewsPerDay": []
+      }
+    },
+  {
+    "name": "a review on the first day of the 30-day window counts, the day before does not",
+    "note": "Today is 2026-11-18, so the 30 learner days are 2026-10-20 … 2026-11-18. The review on 10-19 is outside the series (and October, so not in the month either); the one on 10-20 is the first series day. Both are first reviews of their cards, so recall stays at base 0.",
+    "now": "2026-11-18T12:00:00Z",
+    "zone": "Asia/Shanghai",
+    "cards": [
+      {
+        "id": "c1",
+        "kind": "vocab",
+        "entryId": 1,
+        "deckIds": [
+          "general"
+        ],
+        "createdAt": "2026-01-01T00:00:00.000Z"
+      },
+      {
+        "id": "c2",
+        "kind": "vocab",
+        "entryId": 2,
+        "deckIds": [
+          "general"
+        ],
+        "createdAt": "2026-01-01T00:00:00.000Z"
+      }
+    ],
+    "reviews": [
+      {
+        "id": "r30a",
+        "cardId": "c1",
+        "ts": "2026-10-19T10:00:00Z",
+        "grade": 3,
+        "mode": "vocab",
+        "durationMs": 7000
+      },
+      {
+        "id": "r30b",
+        "cardId": "c2",
+        "ts": "2026-10-20T10:00:00Z",
+        "grade": 3,
+        "mode": "vocab",
+        "durationMs": 7000
+      }
+    ],
+    "marks": [],
+    "vacation": [],
+    "expect": {
+      "streak": 0,
+      "wordsKnown": 0,
+      "recall": {
+        "share": null,
+        "base": 0
+      },
+      "studiedSeconds": 0,
+      "reviewsPerDay": [
+        [
+          "2026-10-20",
+          1
+        ]
+      ]
+    }
+  },
+  {
+    "name": "a month that started before a zone change still sums by learner day",
+    "note": "November started in Pacific/Honolulu (UTC-10); the learner moved to Pacific/Kiritimati (UTC+14) on 2026-11-10T00:00Z, mid-month. The 11-09T23:30Z review is 13:30 on 11-09 in Honolulu; the 11-10T00:30Z review is 14:30 on 11-10 in Kiritimati. Each day counts once, both are in November (7 s + 8 s = 15 s), and both are first reviews so recall stays at base 0.",
+    "now": "2026-11-18T12:00:00Z",
+    "zone": "Pacific/Honolulu",
+    "history": [
+      {
+        "zone": "Pacific/Honolulu",
+        "from": null
+      },
+      {
+        "zone": "Pacific/Kiritimati",
+        "from": "2026-11-10T00:00:00Z"
+      }
+    ],
+    "cards": [
+      {
+        "id": "c1",
+        "kind": "vocab",
+        "entryId": 1,
+        "deckIds": [
+          "general"
+        ],
+        "createdAt": "2026-01-01T00:00:00.000Z"
+      },
+      {
+        "id": "c2",
+        "kind": "vocab",
+        "entryId": 2,
+        "deckIds": [
+          "general"
+        ],
+        "createdAt": "2026-01-01T00:00:00.000Z"
+      }
+    ],
+    "reviews": [
+      {
+        "id": "rz1",
+        "cardId": "c1",
+        "ts": "2026-11-09T23:30:00Z",
+        "grade": 3,
+        "mode": "vocab",
+        "durationMs": 7000
+      },
+      {
+        "id": "rz2",
+        "cardId": "c2",
+        "ts": "2026-11-10T00:30:00Z",
+        "grade": 3,
+        "mode": "vocab",
+        "durationMs": 8000
+      }
+    ],
+    "marks": [],
+    "vacation": [],
+    "expect": {
+      "streak": 0,
+      "wordsKnown": 0,
+      "recall": {
+        "share": null,
+        "base": 0
+      },
+      "studiedSeconds": 15,
+      "reviewsPerDay": [
+        [
+          "2026-11-09",
+          1
+        ],
+        [
+          "2026-11-10",
+          1
+        ]
+      ]
+    }
+  }
+  ]
+}

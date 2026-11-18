@@ -17,7 +17,7 @@ vi.mock('$lib/study/store', async (importOriginal) => ({
 }));
 
 import { goto } from '$app/navigation';
-import { fireEvent } from '@testing-library/svelte';
+import { fireEvent, within } from '@testing-library/svelte';
 import { loadMilestones, markSeen, type MilestonesView } from '$lib/milestones/loadMilestones';
 import { givenTimelines } from '$lib/weekly/replay';
 import { onEventLogChange } from '$lib/events';
@@ -40,6 +40,7 @@ function view(monday: string, reviews = 12): WeekView {
 		compareThrough: '2026-11-11',
 		rows: [{ key: 'reviews', value: reviews, previous: 0, unit: 'count' }],
 		days: [],
+		previousDays: [],
 		daysActive: { active: 1, of: 3, localOnly: false },
 		streak: 1,
 		mature: null,
@@ -99,29 +100,48 @@ afterEach(() => {
 	vi.useRealTimers();
 });
 
-const reviewsValue = () => document.querySelector('dd .value')?.textContent;
+const firstValue = () => document.querySelector('.stats .value')?.textContent;
 
 describe('Stats week page', () => {
-	it('shows the current week without a parameter, a previous link and no next link', async () => {
+	it('shows the current week without a parameter; Previous is enabled and Next disabled, both named and tooltipped', async () => {
 		render(Page);
-		await waitFor(() => expect(reviewsValue()).toBe('12'));
+		await waitFor(() => expect(firstValue()).toBe('12'));
 		expect(loadWeek).toHaveBeenCalledWith(1, '2026-11-16', { detail: true, force: false });
 		const heading = screen.getByRole('heading', { level: 2, name: /week/i });
 		expect(heading.textContent).toMatch(/^This week \(.*16.*22.*2026\)$/);
 		expect(heading.getAttribute('aria-live')).toBe('polite');
-		const prev = screen.getByRole('link', { name: 'Previous week' });
-		expect(prev.getAttribute('href')).toBe('/stats/week?week=2026-11-09');
-		expect(prev.hasAttribute('data-sveltekit-keepfocus')).toBe(true);
-		expect(screen.queryByRole('link', { name: 'Next week' })).toBeNull();
+		const prev = screen.getByRole('button', { name: 'Previous week' }) as HTMLButtonElement;
+		const next = screen.getByRole('button', { name: 'Next week' }) as HTMLButtonElement;
+		expect(prev.disabled).toBe(false);
+		expect(next.disabled).toBe(true);
+		expect(prev.closest('.tooltip-anchor')?.querySelector('[role="tooltip"]')?.textContent).toBe('Previous week');
+		expect(next.closest('.tooltip-anchor')?.querySelector('[role="tooltip"]')?.textContent).toBe('Next week');
+		expect(screen.queryByRole('link', { name: 'Previous week' })).toBeNull();
 		expect(goto).not.toHaveBeenCalled();
 	});
 
-	it('links both ways from a completed week', async () => {
+	it('both arrows page to the neighbouring weeks from a completed week', async () => {
 		setUrl('/stats/week?week=2026-11-09');
 		render(Page);
 		await waitFor(() => expect(loadWeek).toHaveBeenCalledWith(1, '2026-11-09', expect.anything()));
-		expect(screen.getByRole('link', { name: 'Next week' }).getAttribute('href')).toBe('/stats/week');
-		expect(screen.getByRole('link', { name: 'Previous week' }).getAttribute('href')).toBe('/stats/week?week=2026-11-02');
+		const prev = screen.getByRole('button', { name: 'Previous week' });
+		const next = screen.getByRole('button', { name: 'Next week' });
+		expect((prev as HTMLButtonElement).disabled).toBe(false);
+		expect((next as HTMLButtonElement).disabled).toBe(false);
+		await fireEvent.click(next);
+		expect(goto).toHaveBeenCalledWith('/stats/week', { keepFocus: true, noScroll: true });
+		await fireEvent.click(prev);
+		expect(goto).toHaveBeenCalledWith('/stats/week?week=2026-11-02', { keepFocus: true, noScroll: true });
+	});
+
+	it('pressing Previous goes to ?week=<monday−7> and asks goto to keep the focus', async () => {
+		render(Page);
+		await waitFor(() => expect(firstValue()).toBe('12'));
+		const prev = screen.getByRole('button', { name: 'Previous week' }) as HTMLButtonElement;
+		prev.focus();
+		await fireEvent.click(prev);
+		expect(goto).toHaveBeenCalledWith('/stats/week?week=2026-11-09', { keepFocus: true, noScroll: true });
+		expect(document.activeElement).toBe(prev);
 	});
 
 	it.each([
@@ -136,11 +156,12 @@ describe('Stats week page', () => {
 		expect(vi.mocked(goto).mock.calls[0]).toEqual([href, { replaceState: true, keepFocus: true, noScroll: true }]);
 	});
 
-	it('has no previous link on the oldest week', async () => {
+	it('disables Previous on the oldest browsable week', async () => {
 		setUrl(`/stats/week?week=${oldestWeek('2026-11-18')}`);
 		render(Page);
-		await waitFor(() => expect(reviewsValue()).toBe('12'));
-		expect(screen.queryByRole('link', { name: 'Previous week' })).toBeNull();
+		await waitFor(() => expect(firstValue()).toBe('12'));
+		expect((screen.getByRole('button', { name: 'Previous week' }) as HTMLButtonElement).disabled).toBe(true);
+		expect((screen.getByRole('button', { name: 'Next week' }) as HTMLButtonElement).disabled).toBe(false);
 	});
 
 	it('reloads on a workspace switch and drops the stale answer', async () => {
@@ -153,27 +174,27 @@ describe('Stats week page', () => {
 		await tick();
 		expect(loadWeek).toHaveBeenLastCalledWith(2, '2026-11-16', expect.anything());
 		second.resolve(view('2026-11-16', 22));
-		await waitFor(() => expect(reviewsValue()).toBe('22'));
+		await waitFor(() => expect(firstValue()).toBe('22'));
 		first.resolve(view('2026-11-16', 11));
 		await tick();
 		await Promise.resolve();
-		expect(reviewsValue()).toBe('22');
+		expect(firstValue()).toBe('22');
 	});
 
 	it('reloads when the learner day changes', async () => {
 		render(Page);
-		await waitFor(() => expect(reviewsValue()).toBe('12'));
+		await waitFor(() => expect(firstValue()).toBe('12'));
 		const listener = vi.mocked(onContextStale).mock.calls[0][0];
 		vi.mocked(loadWeek).mockResolvedValueOnce(view('2026-11-16', 30));
 		listener();
-		await waitFor(() => expect(reviewsValue()).toBe('30'));
+		await waitFor(() => expect(firstValue()).toBe('30'));
 	});
 
 	it('renders the characters after the rest', async () => {
 		const chars = deferred<{ value: number; previous: number } | null>();
 		vi.mocked(loadWeekCharacters).mockReturnValueOnce(chars.promise as never);
 		render(Page);
-		await waitFor(() => expect(reviewsValue()).toBe('12'));
+		await waitFor(() => expect(firstValue()).toBe('12'));
 		expect(screen.getByText('Counting characters…')).toBeTruthy();
 		chars.resolve({ value: 3, previous: 1 });
 		await waitFor(() => expect(screen.getByText('Characters learned')).toBeTruthy());
@@ -184,14 +205,14 @@ describe('Stats week page', () => {
 	it('does not count characters outside Han languages', async () => {
 		select(1, 'es');
 		render(Page);
-		await waitFor(() => expect(reviewsValue()).toBe('12'));
+		await waitFor(() => expect(firstValue()).toBe('12'));
 		expect(loadWeekCharacters).not.toHaveBeenCalled();
 		expect(screen.queryByText('Counting characters…')).toBeNull();
 	});
 
 	it('keeps the shown week’s heading, busy and dimmed, until the next week has loaded', async () => {
 		render(Page);
-		await waitFor(() => expect(reviewsValue()).toBe('12'));
+		await waitFor(() => expect(firstValue()).toBe('12'));
 		const next = deferred<WeekView>();
 		vi.mocked(loadWeek).mockReturnValueOnce(next.promise);
 		setUrl('/stats/week?week=2026-11-09');
@@ -202,7 +223,7 @@ describe('Stats week page', () => {
 		expect(body.getAttribute('aria-busy')).toBe('true');
 		expect(body.classList.contains('stale')).toBe(true);
 		next.resolve(view('2026-11-09', 5));
-		await waitFor(() => expect(reviewsValue()).toBe('5'));
+		await waitFor(() => expect(firstValue()).toBe('5'));
 		expect(screen.getByRole('heading', { level: 2, name: /week/i }).textContent).toMatch(/^Last week/);
 		expect(body.getAttribute('aria-busy')).toBe('false');
 		expect(document.querySelector('.week-body')!.classList.contains('stale')).toBe(false);
@@ -210,7 +231,7 @@ describe('Stats week page', () => {
 
 	it('reloads after a review is posted or study data is written in this workspace', async () => {
 		render(Page);
-		await waitFor(() => expect(reviewsValue()).toBe('12'));
+		await waitFor(() => expect(firstValue()).toBe('12'));
 		const onLog = vi.mocked(onEventLogChange).mock.calls[0][0];
 		const onWrite = vi.mocked(onStudyWrite).mock.calls[0][0];
 		const calls = vi.mocked(loadWeek).mock.calls.length;
@@ -219,10 +240,10 @@ describe('Stats week page', () => {
 		expect(vi.mocked(loadWeek).mock.calls.length).toBe(calls);
 		vi.mocked(loadWeek).mockResolvedValueOnce(view('2026-11-16', 13));
 		onLog(1);
-		await waitFor(() => expect(reviewsValue()).toBe('13'));
+		await waitFor(() => expect(firstValue()).toBe('13'));
 		vi.mocked(loadWeek).mockResolvedValueOnce(view('2026-11-16', 14));
 		onWrite(0);
-		await waitFor(() => expect(reviewsValue()).toBe('14'));
+		await waitFor(() => expect(firstValue()).toBe('14'));
 	});
 
 	it('marks the characters unavailable when their load fails (offline)', async () => {
@@ -254,13 +275,17 @@ describe('Stats week page', () => {
 			expect(card.compareDocumentPosition(summary) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
 			const history = document.getElementById('milestones')!;
 			expect(history.querySelector('h2')?.textContent).toBe('Milestones');
-			expect([...history.querySelectorAll('ol li')].map((li) => li.textContent?.replace(/\s+/g, ' ').trim())).toEqual([
-				expect.stringMatching(/^100 reviews, reached .*New$/),
-				expect.stringMatching(/^3-day streak, reached /)
+			const items = [...history.querySelectorAll('ol li')].map((li) => ({
+				title: li.querySelector('.title')?.textContent,
+				date: li.querySelector('.date')?.textContent,
+				isNew: li.querySelector('.new')?.textContent ?? null
+			}));
+			expect(items).toEqual([
+				{ title: '100 reviews', date: 'reached 17 November 2026', isNew: 'New' },
+				{ title: '3-day streak', date: 'reached 2 November 2026', isNew: null }
 			]);
 			// The week's own line: only the item of the shown week.
-			const row = [...document.querySelectorAll('dl > div')].find((d) => d.querySelector('dt')?.textContent === 'Milestones');
-			expect(row?.querySelector('dd')?.textContent?.trim()).toBe('100 reviews');
+			expect(document.querySelector('.milestone-line')?.textContent).toBe('Milestone this week: 100 reviews');
 		});
 
 		it('the status region is there before the week loads; the card sits outside it', async () => {

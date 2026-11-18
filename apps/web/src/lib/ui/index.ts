@@ -11,6 +11,7 @@ export { default as Menu } from './Menu.svelte';
 export { default as MenuItem } from './MenuItem.svelte';
 export { default as Panel } from './Panel.svelte';
 export { default as Section } from './Section.svelte';
+export { default as Select } from './Select.svelte';
 export { default as Sheet } from './Sheet.svelte';
 export { default as Stat } from './Stat.svelte';
 export { default as Tabs } from './Tabs.svelte';

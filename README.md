@@ -124,10 +124,14 @@ database with a SvelteKit single-page app embedded in the binary.
   device. Plugins contribute activity through an `events[].activity` rule in
   their manifest (`label`, `describe`, and optionally `measure` + `pointsPer`
   or `distinctBy`); the server scores it, no core change is needed.
-- **Stats** — a nav item for every workspace (`/stats`) with two tabs:
-  **Overview** shows every widget that applies to the workspace, in a fixed
-  order (core first, then plugins); **Characters** (`/stats/characters`) is the
-  mastery map, for Chinese and Japanese workspaces only.
+- **Stats** — a nav item for every workspace (`/stats`) with three text tabs:
+  **Overview** stays a widget grid and opens with four large numbers (day
+  streak, words known, recall over the last 30 days, time studied this month),
+  then cards by state, the level and XP line, reviews per day over the last 30
+  days and every other widget that applies; **Characters**
+  (`/stats/characters`) is the single-hue mastery map, for Chinese and Japanese
+  workspaces only; **Week** (`/stats/week`) browses weeks with arrows and shows
+  four numbers, paired bars for this and last week, and the milestones.
 - **Journal and AI** — write dated entries per workspace; with your own
   key for the AI provider you choose (Anthropic, OpenAI, Google Gemini,
   DeepSeek, Mistral, xAI, Groq, OpenRouter or a custom OpenAI-compatible
@@ -1235,21 +1239,35 @@ if you name the roots. A pack is a directory with a `manifest.json` (`"type": "l
 `word` or `character`. See `plugins/samples/hsk-mini` for the layout. The sample
 `hsk-mini` and `jlpt-mini` packs are not seeded by default and not offered as map groupings.
 
-**Home and Stats widgets.** Five widgets ship. Each one shows the current
+**Home and Stats widgets.** Seven widgets ship. Each one shows the current
 workspace. The home page shows the widgets in your layout (Settings → Home; by
-default Activity, then Flashcards). Stats → Overview shows every widget that
-applies to the workspace, in the order of this table:
+default Activity, then Flashcards). Stats → Overview puts the summary numbers
+first, then the cards by state and the level line, then reviews per day, and
+every other widget that applies after them:
 
 | Id | Widget | Owner | Size | Languages |
 |---|---|---|---|---|
+| `summary-numbers` | Summary | core | wide | all |
+| `word-states` | Words | `qinqin-flashcards` | normal | all |
+| `flashcards-summary` | Flashcards | `qinqin-flashcards` | normal | all |
+| `reviews-per-day` | Reviews per day | core | wide | all |
 | `activity-heatmap` | Activity | core | wide | all |
 | `character-map-summary` | Characters | core | normal | Chinese, Japanese |
-| `flashcards-summary` | Flashcards | `qinqin-flashcards` | normal | all |
-| `word-states` | Words | `qinqin-flashcards` | normal | all |
 | `reading-time` | Reading time | `qinqin-reader` | normal | all |
 
-A plugin's widgets are shown only while that plugin is enabled.
+A plugin's widgets appear after the default arrangement while that plugin is
+enabled.
 
+- **Summary**: the four numbers at the top of Stats → Overview — the current
+  review streak (the flashcards widget's number), words known by the one known
+  predicate (a manual known mark or a vocab card at the mastery threshold),
+  recall over the last 30 days (the decks page's overall figure, shown after 10
+  repeat reviews) and the flashcard study time of the current calendar month.
+  With flashcards switched off it says how to switch them on. It can also be
+  added to the home page.
+- **Reviews per day**: one bar for each of the last 30 learner days, today
+  emphasised, with the total and today's count in words above the chart. It can
+  also be added to the home page.
 - **Activity**: one cell per learner day over the last 13 weeks (on the home
   page: the layout chosen in Settings → Home), tinted by activity points. A flashcard review is one point. Reading in the Reader is one
   point per started 5 minutes. The reader records a `read` event with the active

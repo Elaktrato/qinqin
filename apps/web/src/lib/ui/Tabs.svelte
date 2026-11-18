@@ -63,7 +63,13 @@
 {#if routes}
 	<nav class="tabs" aria-label={label}>
 		{#each tabs as tab (tab.id)}
-			<a class="tab" href={tab.href} aria-current={tab.id === selected ? 'page' : undefined}>{tab.label}</a>
+			<a
+				class="tab"
+				href={tab.href}
+				aria-current={tab.id === selected ? 'page' : undefined}
+				data-sveltekit-keepfocus
+				data-sveltekit-noscroll>{tab.label}</a
+			>
 		{/each}
 	</nav>
 {:else}

@@ -36,8 +36,8 @@
 		display: flex;
 		overflow: hidden;
 		border-radius: 999px;
-		background: var(--st-unknown-bg);
-		border: 1px solid var(--st-edge);
+		background: transparent;
+		border: 1px solid var(--line);
 	}
 
 	.small {
@@ -57,27 +57,50 @@
 	}
 
 	/* Not studied: the empty track with a dashed outline (stage 0 is an
-	   outline, not a fill: its ramp step is ~1:1 against stage 1's). */
+	   outline, not a fill: its ramp step is ~1:1 against stage 1's). --muted
+	   is the ≥ 3:1 edge; --line is a hairline below 3:1 in 14 of 15 themes. */
 	.st-unknown {
 		background: transparent;
-		outline: 1px dashed var(--st-unknown-edge, var(--muted));
+		outline: 1px dashed var(--muted);
 		outline-offset: -1px;
 		min-width: 0;
 	}
 
 	.st-fresh {
-		background: var(--st-fresh-bar);
+		background: var(--mastery-1);
 	}
 
 	.st-learning {
-		background: var(--st-learning-bar);
+		background: var(--mastery-2);
 	}
 
 	.st-mature {
-		background: var(--st-mature-bar);
+		background: var(--mastery-3);
 	}
 
 	.st-learned {
-		background: var(--st-learned-bar);
+		background: var(--mastery-4);
+	}
+
+	@media (forced-colors: active) {
+		.bar {
+			border-color: CanvasText;
+		}
+		.st-unknown {
+			outline-color: CanvasText;
+			outline-style: dotted;
+		}
+		.st-fresh {
+			border: 1px dashed CanvasText;
+		}
+		.st-learning {
+			border: 1px solid CanvasText;
+		}
+		.st-mature {
+			border: 2px solid CanvasText;
+		}
+		.st-learned {
+			border: 3px double CanvasText;
+		}
 	}
 </style>
