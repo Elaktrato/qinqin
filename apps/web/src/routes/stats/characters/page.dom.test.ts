@@ -1,4 +1,4 @@
-import { cleanup, render, screen, waitFor, within } from '@testing-library/svelte';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/svelte';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('$lib/api/characters', () => ({ fetchCharacters: vi.fn() }));
@@ -16,7 +16,7 @@ vi.mock('$lib/study/mastery', async (importOriginal) => ({
 }));
 
 import { fetchCharacters } from '$lib/api/characters';
-import { getSchemes } from '$lib/api/schemes';
+import { fetchSchemeCharacters, getSchemes } from '$lib/api/schemes';
 import { masteryForChars, type CharMastery } from '$lib/study/mastery';
 import { loadStudyData } from '$lib/study/store';
 import { workspaces } from '$lib/workspaces';
@@ -117,6 +117,66 @@ describe('Stats → Characters', () => {
 		expect(options).toContain('common');
 		expect(options).toContain('strokes');
 		expect(options).toContain('scheme:7');
+	});
+
+	it('the Level select filters the map to one level and its own learned count', async () => {
+		vi.mocked(getSchemes).mockResolvedValue([
+			{
+				id: 7,
+				name: 'HSK 3.0 (characters)',
+				unit: 'character',
+				language: 'zh',
+				packId: 'hsk-chars',
+				levels: [
+					{ id: 70, name: 'HSK 1', ord: 0 },
+					{ id: 71, name: 'HSK 2', ord: 1 }
+				]
+			}
+		]);
+		vi.mocked(fetchSchemeCharacters).mockResolvedValue([
+			{ levelId: 70, name: 'HSK 1', chars: new Set(['一', '二']) },
+			{ levelId: 71, name: 'HSK 2', chars: new Set(['三']) }
+		]);
+		const container = await ready();
+		const level = screen.getByLabelText('Level') as HTMLSelectElement;
+		expect(level.value).toBe('all');
+		const group = level.querySelector('optgroup[label="HSK 3.0 (characters)"]')!;
+		expect([...group.querySelectorAll('option')].map((option) => option.textContent)).toEqual(['HSK 1', 'HSK 2']);
+
+		await fireEvent.change(level, { target: { value: '7:70' } });
+		await waitFor(() => expect(container.querySelectorAll('.cell')).toHaveLength(2));
+		expect(container.querySelector('.total strong')?.textContent).toBe('0 of 2 learned (0 %)');
+		expect(localStorage.getItem('qinqin.map.level.1')).toBe('7:70');
+
+		await fireEvent.change(level, { target: { value: 'all' } });
+		await waitFor(() => expect(container.querySelectorAll('.cell')).toHaveLength(5));
+		expect(container.querySelector('.total strong')?.textContent).toBe('1 of 5 learned (20 %)');
+	});
+
+	it('reads a remembered level and falls back to all levels for a stale one', async () => {
+		vi.mocked(getSchemes).mockResolvedValue([
+			{
+				id: 7,
+				name: 'HSK 3.0 (characters)',
+				unit: 'character',
+				language: 'zh',
+				packId: 'hsk-chars',
+				levels: [{ id: 71, name: 'HSK 2', ord: 0 }]
+			}
+		]);
+		vi.mocked(fetchSchemeCharacters).mockResolvedValue([
+			{ levelId: 71, name: 'HSK 2', chars: new Set(['三']) }
+		]);
+		localStorage.setItem('qinqin.map.level.1', '7:71');
+		const container = await ready();
+		expect((screen.getByLabelText('Level') as HTMLSelectElement).value).toBe('7:71');
+		await waitFor(() => expect(container.querySelectorAll('.cell')).toHaveLength(1));
+
+		localStorage.setItem('qinqin.map.level.1', '7:999');
+		cleanup();
+		const fresh = await ready();
+		expect((screen.getByLabelText('Level') as HTMLSelectElement).value).toBe('all');
+		expect(fresh.querySelectorAll('.cell')).toHaveLength(5);
 	});
 
 	it('the stage filter is a group of text toggles with aria-pressed, the counts in text', async () => {
