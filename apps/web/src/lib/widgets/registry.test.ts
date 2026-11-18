@@ -104,6 +104,7 @@ describe('allWidgets', () => {
 			'character-map-summary',
 			'daily-goal',
 			'summary-numbers',
+			'reviews-per-day',
 			'weekly-summary',
 			'flashcards-summary',
 			'word-states',
@@ -113,6 +114,7 @@ describe('allWidgets', () => {
 			['core', 'wide'],
 			['core', 'normal'],
 			['core', 'normal'],
+			['core', 'wide'],
 			['core', 'wide'],
 			['core', 'normal'],
 			['qinqin-flashcards', 'normal'],
@@ -125,6 +127,7 @@ describe('allWidgets', () => {
 			'character-map-summary',
 			'daily-goal',
 			'summary-numbers',
+			'reviews-per-day',
 			'weekly-summary'
 		]);
 	});
@@ -139,6 +142,18 @@ describe('allWidgets', () => {
 			surfaces: ['stats', 'home']
 		});
 		expect(DEFAULT_LAYOUT).not.toContain('summary-numbers');
+	});
+
+	it('reviews-per-day is core, wide, on Stats and Home, not in the default home layout', () => {
+		const list = allWidgets(webPlugins, [state('qinqin-flashcards')], 'zh');
+		const reviews = list.find((w) => w.id === 'reviews-per-day')!;
+		expect(reviews).toMatchObject({
+			title: 'Reviews per day',
+			owner: 'core',
+			size: 'wide',
+			surfaces: ['stats', 'home']
+		});
+		expect(DEFAULT_LAYOUT).not.toContain('reviews-per-day');
 	});
 
 	it('offers this week on the home page only (Stats has the Week tab)', () => {
