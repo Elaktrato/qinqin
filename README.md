@@ -1031,7 +1031,7 @@ workspace (the home widget counts the same types).
 
 | Type | What you do | Needs |
 |---|---|---|
-| **Vocab** | See the word, its readings and the example sentence with the word blanked, then **Show answer** for the meanings | any word |
+| **Vocab** | See the word, then **Show answer** for its reading (with play), meanings and the example sentence with the word blanked | any word |
 | **Word Salad** | Rebuild the example sentence from shuffled tiles: tap a tile to place it, tap a placed tile to remove it, **Undo**, **Check**, or **Show answer** | an example sentence |
 | **Writing** | Draw each Han character stroke by stroke (order and direction are checked); **Show strokes** reveals the current character | Han characters with stroke data from the installed strokes pack; kana stay visible |
 | **Tone** | Swipe each syllable pad in the tone's shape, use the tone buttons, or press 1–5 | a Chinese word with pinyin (Chinese workspaces only) |
