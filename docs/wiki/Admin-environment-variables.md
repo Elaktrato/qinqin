@@ -1,15 +1,15 @@
 # Environment variables
 
-Taken from the README and the two stack files (`docker-compose.yml`, `deploy/portainer-stack.yml`). Set them in the stack's environment. Any variable not listed here is not read by the server.
+Taken from the README and `docker-compose.yml`. Set them in the stack's environment. Any variable not listed here is not read by the server.
 
 | Variable | Meaning |
 |---|---|
-| `QINQIN_SECRET` | 32 random bytes, base64 (standard or URL form, padded or not). Required to store AI keys; also seals the SMTP password and authenticator secrets. Required by the Portainer stack. Never written to `/data`: back it up separately |
+| `QINQIN_SECRET` | 32 random bytes, base64 (standard or URL form, padded or not). Required to store AI keys; also seals the SMTP password and authenticator secrets. Optional in `docker-compose.yml` (empty = AI off). Never written to `/data`: back it up separately |
 | `QINQIN_SECRET_PREVIOUS` | The old secret, for one restart while rotating ([Backup, recovery and the command line](Admin-backup-and-recovery)) |
 | `QINQIN_IMAGE` | Image to run (default `ghcr.io/elaktrato/qinqin:latest`); pin a `v*` tag |
 | `QINQIN_PORT` | Published host port (default 8080) |
-| `QINQIN_DATA_VOLUME` | Portainer stack: absolute host path to bind-mount instead of the named volume `qinqin-data`; must exist and be writable by root |
-| `QINQIN_DATA` | The data directory inside the container (`/data` in both stack files); also the default of `--data` for the CLI (default `./data`) |
+| `QINQIN_DATA_VOLUME` | Default `qinqin-data` (a named volume). `./data` or an absolute host path bind-mounts that directory instead (set `./data` to keep an old quick-start install); it must be writable by root |
+| `QINQIN_DATA` | The data directory inside the container (`/data` in `docker-compose.yml`); also the default of `--data` for the CLI (default `./data`) |
 | `QINQIN_PACKS` | Pack roots for `qinqin seed` (comma-separated). The image sets it to the packs it ships; without it the default is `plugins/data` plus `plugins/data-local` if present |
 | `QINQIN_PASSWORD` | Read by `qinqin recover` as the new password (otherwise it reads standard input) |
 | `QINQIN_TRUSTED_PROXIES` | Peers whose `X-Forwarded-For` is believed: a comma list of CIDRs or addresses, `none` to ignore the header, empty for the private networks. Set `none` when nothing reverse-proxies to qinqin |

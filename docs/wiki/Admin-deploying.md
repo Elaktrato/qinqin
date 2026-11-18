@@ -1,6 +1,6 @@
 # Deploying with Docker or Portainer
 
-qinqin is a single container: a Go server with SQLite and the embedded web app, listening on port 8080. The authoritative instructions are the README sections "Quick start" and "Deploying with Portainer", and the files `docker-compose.yml` and `deploy/portainer-stack.yml`. This page summarises them.
+qinqin is a single container: a Go server with SQLite and the embedded web app, listening on port 8080. The authoritative instructions are the README sections "Quick start" and "Deploying with Portainer", and the file `docker-compose.yml`. This page summarises them.
 
 ## Images
 
@@ -16,17 +16,17 @@ docker compose exec qinqin qinqin seed
 docker compose exec qinqin qinqin adduser --admin --username you
 ```
 
-Then open `http://localhost:8080`. Data lives in `./data` next to the compose file. If no reverse proxy sits in front, set `QINQIN_TRUSTED_PROXIES=none` ([Reverse proxy, rate limiting and trusted proxies](Admin-proxy-and-rate-limiting)).
+Then open `http://localhost:8080`. Data lives in the named volume `qinqin-data`. Upgrading from the old quick start, which used `./data`? Set `QINQIN_DATA_VOLUME=./data` to keep using it, or you start on an empty instance. If no reverse proxy sits in front, set `QINQIN_TRUSTED_PROXIES=none` ([Reverse proxy, rate limiting and trusted proxies](Admin-proxy-and-rate-limiting)).
 
 Create the admin account **before** exposing the port beyond your LAN: while no user exists, the first registration over the API becomes the administrator, whoever makes it.
 
 ## Portainer
 
-`deploy/portainer-stack.yml` differs from the quick-start file: a named volume instead of `./data`, a required `QINQIN_SECRET`, memory and CPU limits (1 GiB, 2 CPUs), log rotation and `no-new-privileges`. The image runs as root and writes to `/tmp`, so the root filesystem is not read-only.
+Portainer uses the same `docker-compose.yml` (plain compose): a named volume, log rotation and `no-new-privileges`; memory and CPU caps are commented out in the file. The image runs as root and writes to `/tmp`, so the root filesystem is not read-only. Stacks that used the compose path `docker-compose.yml` must change it to `docker-compose.yml`.
 
 1. Generate the secret and keep it in a password manager: `head -c 32 /dev/urandom | base64`. Back it up separately from the data volume; it is never written to `/data`.
-2. Portainer, Stacks, Add stack: paste the file, or use the repository URL `https://github.com/Elaktrato/qinqin` with compose path `deploy/portainer-stack.yml`.
-3. Set the environment variables ([Environment variables](Admin-environment-variables)): `QINQIN_SECRET` (required), `QINQIN_IMAGE`, `QINQIN_PORT`, optionally `QINQIN_DATA_VOLUME` as an absolute host path.
+2. Portainer, Stacks, Add stack: paste `docker-compose.yml`, or use the repository URL `https://github.com/Elaktrato/qinqin` with compose path `docker-compose.yml`.
+3. Set the environment variables ([Environment variables](Admin-environment-variables)): `QINQIN_SECRET` (optional; empty = AI off), `QINQIN_IMAGE`, `QINQIN_PORT`, optionally `QINQIN_DATA_VOLUME` as an absolute host path.
 4. Before exposing the port: in the container console run `qinqin seed` and `qinqin adduser --username <name> --admin`. `seed` installs the bundled packs (about a minute; run it while nobody uses the app) and is idempotent.
    Instead of `adduser` you can set `QINQIN_BOOTSTRAP_ADMIN` (and optionally `QINQIN_BOOTSTRAP_PASSWORD`): the first start then creates that admin, who must set a new password at the first sign-in. Without a password the server generates one and prints it once in the container log (Portainer: Containers, `qinqin`, Logs). Later starts ignore both variables.
 5. Put a reverse proxy with HTTPS in front, then run the checklist below.
