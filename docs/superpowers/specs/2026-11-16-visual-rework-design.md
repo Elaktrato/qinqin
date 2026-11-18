@@ -29,7 +29,7 @@ Non-goals
 - No change to what features do; this is look, layout and navigation only (plus the small data additions in §9).
 - No new CSS framework or UI kit.
 - The flower, level and day-marker drawings: the owner draws them (issue, §11). Until then they are left out.
-- A qinqin "house theme": not designed yet (§10).
+- The qinqin house theme is designed separately (§7a, issue #108).
 
 Anti-goals (would make this a failure even if it works)
 - A heavy, blocky look: filled boxes everywhere, pills with borders, bold everything. The owner explicitly asked
@@ -148,21 +148,49 @@ fields (id, name, version, type, license, attribution, notice). Content: a `them
 - **Delivery:** `GET /api/themes` lists installed themes with their colours (small; clients cache it). Android uses
   the same files and route.
 - **Before anything loads** (first paint, offline, a removed theme): the web app keeps the last applied tokens in
-  local storage and has Catppuccin Latte/Mocha compiled in as the fallback.
+  local storage and has the house theme (qinqin Day/Night) compiled in as the fallback.
 
 **The person's appearance** — a user-global row `qinqin-core` / `appearance` (syncs, backs up, contract fixture):
 
 ```json
 { "version": 1,
   "mode": "system",
-  "light": { "theme": "catppuccin-latte", "accent": "mauve" },
-  "dark":  { "theme": "catppuccin-mocha", "accent": "mauve" },
+  "light": { "theme": "qinqin-day", "accent": "azure" },
+  "dark":  { "theme": "qinqin-night", "accent": "cyan" },
   "corners": "soft", "spacing": "comfortable", "hanziFont": "sans" }
 ```
 
 `mode` is `system`, `light` or `dark`; `system` follows the device's light/dark setting using the two chosen themes. Unknown keys are kept on write (as
 other rows do). Missing row = the defaults above. Settings → Appearance (personal settings) edits it with a live
 preview; the account menu has a quick theme switch.
+
+## 7a. The house theme (owner decision 2026-11-18, issue #108)
+
+Built from the owner's palette `#ffffff #0ce6f2 #0098db #1e579c #203562 #252446 #201533` (white, cyan, azure,
+blue, navy, indigo, violet-black). Ready-to-ship theme files in the contract shape:
+[`assets/house-themes/qinqin/themes.json`](assets/house-themes/qinqin/themes.json).
+
+| Theme | Scheme | Frame (`chrome`) | Page (`panel`) | Text | Default accent |
+|---|---|---|---|---|---|
+| qinqin Day | light, **default light** | `#e3f4fa` | `#ffffff` | `#201533` | `azure` `#0077b3` |
+| qinqin Night | dark, **default dark** | `#201533` | `#252446` | `#ffffff` | `cyan` `#0ce6f2` |
+| qinqin Deep | dark | `#201533` | `#203562` | `#ffffff` | `cyan` `#0ce6f2` |
+
+- Night uses the navy `#203562` for `raised` and `#1e579c` for `line`.
+- Day's accent is a darker azure because `#0098db` on white is 3.2:1, below the 4.5:1 for small accent text.
+- The palette has no red, orange or green, so the grade and state colours (soft coral, amber, mint on dark; deeper
+  versions on Day) were added to sit beside the blues.
+- Every theme passes the contract's checks, including `onAccent` (measured 2026-11-18).
+- The new defaults replace Catppuccin Latte/Mocha in `appearance` (defaults, fallback, fixtures).
+
+**Extra built-in themes** (also owner's choice, from the same session): three further directions, each light and dark,
+in [`assets/house-themes/qinqin-extras/themes.json`](assets/house-themes/qinqin-extras/themes.json):
+- qinqin Neon (Neon Day, Neon Night): ink-grey surfaces, neon accents.
+- qinqin Pigments (Celadon, Indigo): the painter's pigments 胭脂 rouge, 朱 vermilion, 藤黄 gamboge, 石绿 malachite,
+  群青 ultramarine, 紫 violet. Accent keys are ASCII as the contract requires; the hanzi go in the pack notice.
+- qinqin Pop (Bubblegum, Grape): tinted surfaces, clashing complementaries.
+
+The pack manifests (licence, attribution, notice) are for the builder to write; the palettes are the owner's own work.
 
 ## 8. Fonts
 
@@ -283,7 +311,7 @@ invented without showing the owner.
 - Stats → Overview stays a widget grid; the four numbers are a new core summary widget.
 - Built-in themes are always present (embedded), admins can add more via theme packs.
 - Interface font Figtree (OFL) unless the builder finds a better OFL face; CJK fonts as downloadable packs.
-- The default theme pair is Catppuccin Latte/Mocha **until a qinqin house theme is designed** (open; see §11).
+- The default theme pair is qinqin Day / qinqin Night (owner decision 2026-11-18, §7a).
 
 ## 11. Left to the builder, and follow-ups
 
