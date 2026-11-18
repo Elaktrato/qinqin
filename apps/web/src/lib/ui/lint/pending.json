@@ -2,8 +2,6 @@
 	"colour": [],
 	"opacity": [],
 	"weight": [
-		"lib/plugins/grammar/GrammarBrowse.svelte",
-		"lib/plugins/grammar/PracticeRun.svelte",
 		"lib/weekly/WeekStrip.svelte",
 		"routes/stats/characters/+page.svelte"
 	],
@@ -26,7 +24,6 @@
 		"lib/features/reader/ReaderRail.svelte",
 		"lib/features/reader/SourceBrowser.svelte",
 		"lib/notes/NoteAnswer.svelte",
-		"lib/plugins/grammar/LessonView.svelte",
 		"lib/plugins/journal/EntryEditor.svelte",
 		"lib/plugins/journal/PhotoImport.svelte",
 		"lib/settings/AdminSettings.svelte",

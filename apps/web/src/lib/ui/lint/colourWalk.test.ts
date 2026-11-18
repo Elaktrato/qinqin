@@ -37,9 +37,9 @@ const RULES: Rule[] = ['colour', 'opacity', 'weight', 'caps', 'border', 'shadow'
 const PENDING_LENGTH: Record<Rule, number> = {
 	colour: 0,
 	opacity: 0,
-	weight: 4,
+	weight: 2,
 	caps: 7,
-	border: 16,
+	border: 15,
 	shadow: 5,
 	control: 4
 };
