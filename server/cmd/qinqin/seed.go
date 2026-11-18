@@ -135,6 +135,13 @@ func seed(ctx context.Context, sqlDB *sql.DB, dataDir string, roots []string, ou
 	if len(found) == 0 {
 		return fmt.Errorf("seed: no packs (directories with a manifest.json) under %s", strings.Join(roots, ", "))
 	}
+	return seedPacks(ctx, sqlDB, dataDir, found, out)
+}
+
+// seedPacks imports the found packs in seed's order (see seed), warns about
+// user data first, and builds the data packages afterwards. The caller
+// decides which packs are in found.
+func seedPacks(ctx context.Context, sqlDB *sql.DB, dataDir string, found []seedPack, out io.Writer) error {
 	if err := warnEntryIDUsers(ctx, sqlDB, out); err != nil {
 		return err
 	}
