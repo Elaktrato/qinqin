@@ -106,8 +106,8 @@ verb; 在 cannot modify an adjective; 没 cannot negate an adjective.
   span, simple past).
 
 ### Reviewed and kept (wrong in slot, not defects)
-- hsk1-modal-verbs-3 在 → 我在去中国: 在 does not form a progressive with 去
-  (prescriptively wrong); kept.
+- hsk1-modal-verbs-3 在 → 我在去中国: kept in that round as prescriptively wrong,
+  but later replaced with 很 per the tutor's Z2 (colloquial 我在去…的路上 reading).
 - hsk1-sentence-types-1 很 → 他很狗: 很+狗 is non-standard slang, not a correct
   HSK 1 sentence; kept.
 - All other remaining 很/在 distractors sit in noun, measure-word, particle,
@@ -116,3 +116,66 @@ verb; 在 cannot modify an adjective; 没 cannot negate an adjective.
 After the corrections, no 很 or 在 distractor yields a correct sentence in its
 slot. Re-verified with build --check, a full build, check-sources, and
 TestBundledGrammarPack / TestCommittedPackNotices (all pass).
+
+## Chinese tutor review (full 49-lesson / 262-example native-teacher pass)
+
+A native-teacher review (chinese-tutor-hsk-1-report.md) examined every lesson and
+example. Its 严重 (S1–S3), 重要 (Z1, Z2, Z3, Z5, Z6) and the correctness-improving
+建议 (J1–J6, J8–J12) were applied to the authored source and rebuilt. Z4 (the 20
+word-order alternative-order cases) was deliberately NOT fixed — it is a separate
+engine/content decision deferred to the controller/owner; those example texts are
+unchanged. This is a teacher review, not a release native-signoff: the pack still
+ships marked "not reviewed by a native speaker".
+
+### What changed (93 examples, 15 lesson bodies)
+- S1: the three 第一+量词 readings now write the spoken sandhi (第一本 dì-yì běn,
+  第一个 dì-yí ge); the numerals body's 一 tone rule was rewritten to match.
+- S2: the six clozes where 的 formed a legal confirmation sentence (我看的 /
+  他认识的 / 妈妈做的 / 我们在的 / 我会说汉语的 / 他会开车的) had 的 replaced.
+- S3: the two flagship 我吃了饭。examples (了1 + bare object, not a standalone
+  sentence) became 我吃了两个苹果。(le-completed-1) and 我吃了两个包子。
+  (progressive-5); both bodies' model sentences updated.
+- Z1: three over-strong body claims corrected (没 cannot negate 会 but 没能 exists
+  above this level; 再 vs 还 reworded without the false "再想 is impossible" claim;
+  "After 没 there is no 了" narrowed to "no 了 right after a 没-negated verb").
+- Z2: four weak distractors replaced (想 in 我要一杯茶; 在 in 我想去中国; 什么 in
+  你是哪国人; 没/的 in 今天不冷).
+- Z3: nine 的-defensible distractors replaced.
+- Z5: the repeated same-sentence/same-focus examples rewritten (这是我的书, 我在家
+  吃饭, 他是医生, 我是学生, 你是学生吗, 我很好你呢, 我们回家吧, 太贵了, 妈妈正在
+  做饭, 我吃饭呢, 请坐, 这是我的第一本书, 你叫什么名字, 我和妹妹都喜欢猫, 妈妈对
+  我很好, 书在桌子上), keeping each lesson's grammar point and focus.
+- Z6: 这是妈妈的电话。translation now "This is Mum's phone." (not "phone number").
+- J1: a full audit of every 的 distractor; 的 removed wherever it forms a
+  confirmation or possessive/NP fragment (sentence-final 的, V的O nominals, X的N
+  possessives), replaced with absolutely-wrong word classes (吗/很/在/们/第). The
+  classic 的/得 error distractors (de-6, attributive-5) are kept intentionally.
+- J2/J3/J4: negation body note on past 不 (refusal); de-3 given a contrast context;
+  double-object-4 → 他问我叫什么名字。
+- J5: translation polish (clothes, "I'll buy/give", "already twelve").
+- J6: 看病 kànbìng and 唱歌 chànggē written as single words (3 + 1 readings).
+- J8/J9/J10/J11/J12: prefixes body (小 is a free word elsewhere), location-nouns
+  body (前边/后边 stand alone), existential-2 → 前边有一个老师, wei body (rising
+  wéi on the phone), and the weak 岁/本 distractors → 第.
+
+### Safer frames where a tutor suggestion created a new problem
+- J3: the suggested 我喜欢大的苹果，不喜欢小的。puts 的 twice (focus must occur
+  once), so it was reframed as 我喜欢大的苹果，不喜欢小苹果。(的 unique).
+- J1 replacements were checked for adjacent-character word formation: 们 was not
+  used after 我/他/她/你 (would form 我们/他们/…); 在 was not used before an action
+  verb (would form a progressive). Two extra traps found and fixed in the audit:
+  adverbial-1 们 → 我们忙 (legal plural + bare adjective) replaced with 边;
+  degree-adverbs-4 的 → 你的好 (possessive fragment) replaced with 第.
+
+### Deliberately left
+- Z4 (20 word-order alternative-order cases): deferred to the controller/owner;
+  texts unchanged. The only Z4-listed text that changed is coordinate-clauses-5,
+  which was rewritten for Z5 (repeat removal) as explicitly requested; its
+  word-order alternative remains a deferred Z4 matter.
+- J7 (pure variety polish of same-text/different-focus reuse): not done, per scope.
+- The pack's "not reviewed by a native speaker" status is unchanged.
+
+Re-verified: build --check (48 rows / 49 lessons), full build, check-sources,
+TestBundledGrammarPack and TestCommittedPackNotices all pass; lessons.json matches
+the authored source with no contrast/kinds leakage; every focus occurs exactly
+once; every lesson keeps 4–8 examples and 1–2 body-explained contrasts.
