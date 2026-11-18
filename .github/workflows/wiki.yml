@@ -4,9 +4,11 @@ name: wiki
 # - Runs on every push to main that changes docs/wiki.
 # - "Run workflow" (workflow_dispatch) publishes the docs/wiki of the branch
 #   it is started on, so the owner can publish from develop or a docs branch.
-# Needs the repository secret WIKI_TOKEN (a fine-grained token with Contents
-# write on this repository, or a GitHub App token). Without it the job prints
-# a notice and succeeds without publishing. See docs/wiki/README.md.
+# Needs the repository secret WIKI_TOKEN. The dependable choice is a classic
+# personal access token with the public_repo scope (the repository is public).
+# Fine-grained tokens and GitHub App installation tokens are reported to be
+# refused by the wiki remote (not verified here). Without the secret the job
+# prints a notice and succeeds without publishing. See docs/wiki/README.md.
 
 on:
   push:

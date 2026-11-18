@@ -27,7 +27,7 @@ It clones the wiki repository, copies the folder in with `rsync --delete` (leavi
 One-time setup:
 
 1. The owner enables the wiki in the repository settings (Features, Wikis) and creates the first page in the web UI once. GitHub cannot create it through the API.
-2. Create a token that may push to the repository (a fine-grained personal access token with Contents write, or a GitHub App token) and store it as the repository secret `WIKI_TOKEN` (Settings, Secrets and variables, Actions). Never write it into a file.
+2. Create a **classic personal access token with the `public_repo` scope** (the repository is public) and store it as the repository secret `WIKI_TOKEN` (Settings, Secrets and variables, Actions). Never write it into a file. That is the dependable choice: fine-grained tokens and GitHub App installation tokens are reported to be refused by the wiki remote even with Contents write (not verified here), so if a push fails with 403 or "not found", switch to a classic token.
 
 Without `WIKI_TOKEN` the job prints a notice ("Wiki not published") and succeeds without publishing, so a missing secret never fails a build. Add the secret, then run the workflow again.
 
