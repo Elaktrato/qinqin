@@ -28,6 +28,7 @@ Create the admin account **before** exposing the port beyond your LAN: while no 
 2. Portainer, Stacks, Add stack: paste the file, or use the repository URL `https://github.com/Elaktrato/qinqin` with compose path `deploy/portainer-stack.yml`.
 3. Set the environment variables ([Environment variables](Admin-environment-variables)): `QINQIN_SECRET` (required), `QINQIN_IMAGE`, `QINQIN_PORT`, optionally `QINQIN_DATA_VOLUME` as an absolute host path.
 4. Before exposing the port: in the container console run `qinqin seed` and `qinqin adduser --username <name> --admin`. `seed` installs the bundled packs (about a minute; run it while nobody uses the app) and is idempotent.
+   Instead of `adduser` you can set `QINQIN_BOOTSTRAP_ADMIN` (and optionally `QINQIN_BOOTSTRAP_PASSWORD`): the first start then creates that admin, who must set a new password at the first sign-in. Without a password the server generates one and prints it once in the container log (Portainer: Containers, `qinqin`, Logs). Later starts ignore both variables.
 5. Put a reverse proxy with HTTPS in front, then run the checklist below.
 
 ## Data directory

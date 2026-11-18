@@ -166,6 +166,11 @@ func serveCmd(args []string) error {
 	}
 	defer sqlDB.Close()
 
+	// A fresh instance gets its admin here (when configured), before the
+	// port opens, so first registration never decides who is admin.
+	if err := bootstrapAdminFromEnv(context.Background(), sqlDB, os.Getenv, log.Printf); err != nil {
+		return err
+	}
 	if err := registerBuiltinPlugins(context.Background(), sqlDB); err != nil {
 		return err
 	}

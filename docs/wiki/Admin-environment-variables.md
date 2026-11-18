@@ -17,12 +17,14 @@ Taken from the README and the two stack files (`docker-compose.yml`, `deploy/por
 | `QINQIN_AI_PROVIDERS` | Comma list of providers users may choose: `anthropic`, `openai`, `gemini`, `deepseek`, `mistral`, `xai`, `groq`, `openrouter` and `custom`. Default: all |
 | `QINQIN_AI_ALLOW_PRIVATE` | `1` or `true`: admins may register custom AI endpoints on loopback and private addresses. Enable only if you trust every admin |
 | `QINQIN_AI_PROVIDER` | Legacy. `anthropic` means `QINQIN_AI_PROVIDERS=anthropic` (the log says so); `fake` is for testing only; anything else disables AI |
+| `QINQIN_BOOTSTRAP_ADMIN` | Username of the first admin, created on the first start while no user exists, with a forced password change at the first sign-in. Empty: off. Ignored once users exist. An invalid value stops the server from starting |
+| `QINQIN_BOOTSTRAP_PASSWORD` | Initial password of that admin (10 to 256 characters). Empty: a random one is generated and printed once in the container log; a supplied one is never logged |
 | `QINQIN_TESSERACT` | Path of the `tesseract` binary (default: from `PATH`). `TESSDATA_PREFIX` is passed through |
 
 Test-only variables exist in the code (for example `QINQIN_REAL_DATA_TESTS`, `QINQIN_REQUIRE_TESSERACT`, `QINQIN_BIG_TESTS`); do not set them in production.
 
 ## Notes
 
-- A malformed `QINQIN_TRUSTED_PROXIES` stops the server at startup.
+- A malformed `QINQIN_TRUSTED_PROXIES`, or an invalid `QINQIN_BOOTSTRAP_ADMIN` or `QINQIN_BOOTSTRAP_PASSWORD` while no user exists, stops the server at startup.
 - Without a valid `QINQIN_SECRET` the server starts, AI shows as disabled with the reason, authenticator apps and stored mail passwords are unavailable, but the rest of the app works.
 - Instance settings such as the registration policy, email policy and SMTP live in the app (Settings, Admin), not in environment variables.
