@@ -47,7 +47,7 @@ describe('the Stats overview widgets in the lighter look', () => {
 
 	it('FlashcardsWidget names the level line with XP into the level and the next level', () => {
 		expect(flashcards).toMatch(/key="flashcards\.widget\.level"/);
-		expect(flashcards).toMatch(/args=\{\{\s*level,\s*xp,\s*next:\s*progress\.xpForNext\s*\}\}/);
+		expect(flashcards).toMatch(/args=\{\{\s*level,\s*xp:\s*progress\.xpInto,\s*next:\s*progress\.xpForNext\s*\}\}/);
 	});
 
 	it('the secondary Reader links are plain base-component links, not bordered pills', () => {

@@ -194,7 +194,11 @@
 		<div class="progress">
 			<p class="stats">
 				{vacationText ?? leftTodayText(left)} ·
-				<Msg key="flashcards.widget.level" args={{ level, xp, next: progress.xpForNext }}>{#snippet strong(text: string)}<strong>{text}</strong>{/snippet}</Msg>
+				<Msg
+					key="flashcards.widget.level"
+					args={{ level, xp: progress.xpInto, next: progress.xpForNext }}
+				>{#snippet strong(text: string)}<strong>{text}</strong>{/snippet}</Msg
+				>
 			</p>
 			<div
 				class="bar"
