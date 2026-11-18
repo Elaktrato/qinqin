@@ -90,7 +90,8 @@ before it listens (about 2 minutes, once; `QINQIN_AUTO_SEED=0` turns that off). 
   registration becomes the administrator, whoever makes it. Or set `QINQIN_BOOTSTRAP_ADMIN` to a username:
   on the first start the server creates that admin before it opens the port and prints a one-time password in
   the container log (or uses `QINQIN_BOOTSTRAP_PASSWORD`); it must be changed at the first sign-in.
-- **`QINQIN_SECRET` is optional.** Without it the AI features are off and everything else works. With it
+- **`QINQIN_SECRET` is optional.** Without it the AI features, authenticator apps and a
+  stored mail password are unavailable; everything else works. With it
   (`head -c 32 /dev/urandom | base64`) users' AI keys, the mail password and authenticator secrets are stored
   encrypted. Back it up separately from the data volume; it is never written there.
 - **No reverse proxy in front?** Set `QINQIN_TRUSTED_PROXIES=none`. For HTTPS (needed to install the app

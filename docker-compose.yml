@@ -20,7 +20,8 @@
 # Variables:
 #   QINQIN_SECRET    optional. 32 random bytes, base64. Generate with
 #                      head -c 32 /dev/urandom | base64
-#                    Empty or unset = AI features off (the server starts and
+#                    Empty or unset = AI features, authenticator apps and a
+#                    stored mail password unavailable (the server starts and
 #                    the rest works; no weak default key is used). With it,
 #                    each user's AI API key, the SMTP password and authenticator
 #                    secrets are stored encrypted. Back it up separately from
