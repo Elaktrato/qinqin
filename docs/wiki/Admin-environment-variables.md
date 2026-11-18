@@ -11,6 +11,7 @@ Taken from the README and `docker-compose.yml`. Set them in the stack's environm
 | `QINQIN_DATA_VOLUME` | Default `qinqin-data` (a named volume). `./data` or an absolute host path bind-mounts that directory instead (set `./data` to keep an old quick-start install); it must be writable by root |
 | `QINQIN_DATA` | The data directory inside the container (`/data` in `docker-compose.yml`); also the default of `--data` for the CLI (default `./data`) |
 | `QINQIN_PACKS` | Pack roots for `qinqin seed` (comma-separated). The image sets it to the packs it ships; without it the default is `plugins/data` plus `plugins/data-local` if present |
+| `QINQIN_AUTO_SEED` | `0`, `false` or `off` (any case) stops the first start from installing the bundled packs; the demo packs are never installed this way. Default on: it runs once, on a fresh instance with no pack installed. `qinqin seed` still works |
 | `QINQIN_PASSWORD` | Read by `qinqin recover` as the new password (otherwise it reads standard input) |
 | `QINQIN_TRUSTED_PROXIES` | Peers whose `X-Forwarded-For` is believed: a comma list of CIDRs or addresses, `none` to ignore the header, empty for the private networks. Set `none` when nothing reverse-proxies to qinqin |
 | `QINQIN_SMTP_ALLOW_PRIVATE` | `1` or `true`: the mail server may be on loopback or a private network. Off by default |

@@ -12,13 +12,12 @@ A new GitHub container package is private: `docker pull` fails with `unauthorize
 
 ```sh
 docker compose up -d
-docker compose exec qinqin qinqin seed
 docker compose exec qinqin qinqin adduser --admin --username you
 ```
 
 Then open `http://localhost:8080`. Data lives in the named volume `qinqin-data`. Upgrading from the old quick start, which used `./data`? Set `QINQIN_DATA_VOLUME=./data` to keep using it, or you start on an empty instance. If no reverse proxy sits in front, set `QINQIN_TRUSTED_PROXIES=none` ([Reverse proxy, rate limiting and trusted proxies](Admin-proxy-and-rate-limiting)).
 
-Create the admin account **before** exposing the port beyond your LAN: while no user exists, the first registration over the API becomes the administrator, whoever makes it.
+The first start installs the bundled packs by itself before it listens (about 45 s; the health check waits up to 120 s). Create the admin account **before** exposing the port beyond your LAN: while no user exists, the first registration over the API becomes the administrator, whoever makes it.
 
 ## Portainer
 
@@ -27,7 +26,7 @@ Portainer uses the same `docker-compose.yml` (plain compose): a named volume, lo
 1. Generate the secret and keep it in a password manager: `head -c 32 /dev/urandom | base64`. Back it up separately from the data volume; it is never written to `/data`.
 2. Portainer, Stacks, Add stack: paste `docker-compose.yml`, or use the repository URL `https://github.com/Elaktrato/qinqin` with compose path `docker-compose.yml`.
 3. Set the environment variables ([Environment variables](Admin-environment-variables)): `QINQIN_SECRET` (optional; empty = AI off), `QINQIN_IMAGE`, `QINQIN_PORT`, optionally `QINQIN_DATA_VOLUME` as an absolute host path.
-4. Before exposing the port: in the container console run `qinqin seed` and `qinqin adduser --username <name> --admin`. `seed` installs the bundled packs (about a minute; run it while nobody uses the app) and is idempotent.
+4. Before exposing the port: in the container console run `qinqin adduser --username <name> --admin`. The first start has already installed the bundled packs (about 45 s, before the port opens). This auto-seed runs once, only while no pack is installed, and leaves out the demo packs `es-demo` and `zh-grammar-demo`; it logs `auto-seed failed` and retries at the next start if a pack fails, and `QINQIN_AUTO_SEED=0` turns it off. `qinqin seed` (idempotent; run it while nobody uses the app) installs everything the image ships, demos included, and is how you add local packs or refresh after an image update.
    Instead of `adduser` you can set `QINQIN_BOOTSTRAP_ADMIN` (and optionally `QINQIN_BOOTSTRAP_PASSWORD`): the first start then creates that admin, who must set a new password at the first sign-in. Without a password the server generates one and prints it once in the container log (Portainer: Containers, `qinqin`, Logs). Later starts ignore both variables.
 5. Put a reverse proxy with HTTPS in front, then run the checklist below.
 
@@ -40,7 +39,7 @@ Everything is in `/data`: `qinqin.db` (with `-wal` and `-shm`), `packs/`, `audio
 ## Checklist after deploying
 
 - `curl http://<host>:<port>/healthz` answers `ok`.
-- Sign in as the admin; search `好` and get results (the seed ran).
+- Sign in as the admin; search `好` and get results (the first-start seed ran).
 - The log shows `AI: QINQIN_SECRET ok` if you set a secret.
 - Over HTTPS, `/service-worker.js` has `Cache-Control: no-cache` and `/manifest.webmanifest` is `application/manifest+json`.
 
