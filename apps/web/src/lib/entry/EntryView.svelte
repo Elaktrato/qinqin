@@ -40,7 +40,8 @@
 		headingLevel = 1,
 		recordView = true,
 		focusOnLoad = false,
-		ontitle
+		ontitle,
+		onstate
 	}: {
 		entryId: number | null;
 		headingLevel?: 1 | 2;
@@ -48,6 +49,8 @@
 		/** A phone navigation focuses the entry heading once the entry is on screen. */
 		focusOnLoad?: boolean;
 		ontitle?: (written: string) => void;
+		/** The load's state, so the route's document title can follow it. */
+		onstate?: (state: 'loading' | 'ready' | 'notfound' | 'error') => void;
 	} = $props();
 
 	let entry = $state<Entry | null>(null);
@@ -96,11 +99,13 @@
 		chars = [];
 		radicalWritten = '';
 		chosenChar = null;
+		onstate?.('loading');
 		try {
 			const loaded = await getEntry(id);
 			if (seq !== requestSeq) return;
 			entry = loaded;
 			ontitle?.(loaded.written);
+			onstate?.('ready');
 			// The optional sections must never blank the page: they load after
 			// the entry is on screen and fall back to nothing on failure.
 			void loadExtras(loaded, seq);
@@ -108,8 +113,10 @@
 			if (seq !== requestSeq) return;
 			if (err instanceof ApiError && err.status === 404) {
 				notFound = true;
+				onstate?.('notfound');
 			} else {
 				error = message(err, t('entry.page.loadFailed'));
+				onstate?.('error');
 			}
 		} finally {
 			if (seq === requestSeq) loading = false;
@@ -124,31 +131,31 @@
 	}
 
 	function retry(): void {
-		const id = entryId;
+		const id = requestedId;
 		if (id !== null) void load(id);
 	}
 
-	const entryId = $derived(requestedId);
 	const editing = $derived(page.url.searchParams.get('edit') === '1');
 
 	// Cancel drops ?edit=1 without a round trip or a scroll jump. The
 	// entry effect keys on the id only, so the view is not refetched.
 	function closeEditor(): void {
-		const id = entryId;
+		const id = requestedId;
 		if (id === null) return;
 		void goto(`/entry/${id}`, { replaceState: true, noScroll: true, keepFocus: true });
 	}
 
 	function handleSaved(updated: EntryDetail): void {
 		// The PUT response is the caller's patched view, so it replaces
-		// the entry without another GET.
+		// the entry without another GET; the route's title follows the edit.
 		entry = updated;
+		ontitle?.(updated.written);
 	}
 
 	// The route param is the source of truth: loading it also makes
 	// navigating between entries refetch instead of showing stale data.
 	$effect(() => {
-		const id = entryId;
+		const id = requestedId;
 		if (id === null) {
 			requestSeq++;
 			entry = null;
@@ -157,6 +164,7 @@
 			loading = false;
 			error = '';
 			notFound = true;
+			onstate?.('notfound');
 			return;
 		}
 		void load(id);

@@ -20,13 +20,16 @@ vi.mock('$lib/api/frequency', () => ({
 }));
 vi.mock('$lib/components/AddToStudy.svelte', () => ({ default: () => ({}) }));
 vi.mock('$lib/components/StrokePlayer.svelte', () => ({ default: () => ({}) }));
+vi.mock('$lib/components/EntryEditor.svelte', () => import('./testing/SaveEditor.svelte'));
 vi.mock('$lib/notes/store', async (orig) => ({
 	...(await orig<typeof import('$lib/notes/store')>()),
 	loadNote: vi.fn(async () => null)
 }));
 
+import { fireEvent } from '@testing-library/svelte';
 import { getEntry } from '$lib/api/entries';
 import { record } from '$lib/events';
+import { setUrl } from '$lib/testing/appState.svelte';
 import { workspaces } from '$lib/workspaces';
 import EntryView from './EntryView.svelte';
 
@@ -96,5 +99,17 @@ describe('EntryView', () => {
 		await new Promise((r) => setTimeout(r, 0));
 		expect(screen.queryByRole('heading', { name: '勤奋' })).toBeNull();
 		expect(screen.getByRole('heading', { name: '勤劳' })).toBeTruthy();
+	});
+});
+
+
+describe('EntryView after an edit', () => {
+	it('names the new written form through ontitle', async () => {
+		setUrl('/entry/5?edit=1');
+		getEntryMock.mockResolvedValue(entry());
+		const titles: string[] = [];
+		render(EntryView, { entryId: 5, recordView: false, ontitle: (w) => titles.push(w) });
+		await fireEvent.click(await screen.findByRole('button', { name: 'Save entry' }));
+		expect(titles).toContain('勤勉');
 	});
 });
