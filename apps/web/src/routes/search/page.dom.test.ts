@@ -12,7 +12,11 @@ vi.mock('$lib/api/entries', () => ({
 	getCharsUnderRadical: vi.fn(async () => []),
 	getSharedEntry: vi.fn()
 }));
-vi.mock('$lib/events', () => ({ record: vi.fn() }));
+vi.mock('$lib/events', () => ({
+	record: vi.fn(),
+	loadWorkspaceEvents: vi.fn(async () => []),
+	onEventLogChange: vi.fn(() => () => {})
+}));
 vi.mock('$lib/lookups/sink', () => ({ recordLookup: vi.fn() }));
 vi.mock('$lib/components/AddToStudy.svelte', () => ({ default: () => ({}) }));
 vi.mock('$lib/components/StrokePlayer.svelte', () => ({ default: () => ({}) }));

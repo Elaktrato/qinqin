@@ -30,10 +30,13 @@
 	import EntryNote from '$lib/notes/EntryNote.svelte';
 	import { joinForms, otherForms } from '$lib/features/reader/entryDisplay';
 	import Chip from '$lib/ui/Chip.svelte';
+	import IconButton from '$lib/ui/IconButton.svelte';
 	import { relatedWords } from './related';
 	import { decksContaining } from './decks';
+	import { variantLabel } from './variant';
 	import { getEntryRanks } from '$lib/api/frequency';
 	import { getStudyData } from '$lib/study/studyData';
+	import { setPageActions } from '$lib/frame/pageFrame.svelte';
 
 	let {
 		entryId: requestedId,
@@ -71,6 +74,10 @@
 	// or a workspace arriving late never double-counts one visit.
 	let viewedEntry = $state<number | null>(null);
 
+	// The study action's state, mirrored for the phone bar's Add to deck.
+	let study = $state<AddToStudy | null>(null);
+	let studyInDeck = $state<boolean | null>(null);
+
 	// The entry's recordings (signed-in users only; the device voice needs none).
 	let audio = $state<AudioResolution | null>(null);
 
@@ -83,6 +90,9 @@
 		if (!focusOnLoad || entry === null || headingEl === null) return;
 		headingEl.focus();
 	});
+
+	// The phone bar's Add to deck is the first action the entry offers there.
+	setPageActions(phoneActions);
 
 	function message(err: unknown, fallback: string): string {
 		if (err instanceof ApiError && err.message) return err.message;
@@ -202,7 +212,7 @@
 	$effect(() => {
 		const current = entry;
 		rank = null;
-		if (!current) return;
+		if (!current || !$token) return;
 		void getEntryRanks(current.language, [current.id]).then(
 			(r) => {
 				if (entry?.id === current.id) rank = r.ranks.find((x) => x.id === current.id)?.rank ?? null;
@@ -210,6 +220,18 @@
 			() => {}
 		);
 	});
+
+	function refreshDecks(): void {
+		const current = entry;
+		const workspace = $workspaces.current?.id;
+		if (!current || workspace === undefined) return;
+		void getStudyData(workspace, { force: true }).then(
+			(data) => {
+				if (entry?.id === current.id) inDecks = decksContaining(data, current.id);
+			},
+			() => {}
+		);
+	}
 
 	$effect(() => {
 		const current = entry;
@@ -234,14 +256,34 @@
 		viewedEntry = viewed;
 		void record('view', workspace, viewPayload(viewed));
 	});
+
+	function variantText(variant: EntryBase): string {
+		if (!entry) return '';
+		const label = variantLabel(entry, variant);
+		return label === 'traditional'
+			? t('entry.page.traditional')
+			: label === 'simplified'
+				? t('entry.page.simplified')
+				: t('entry.page.variant');
+	}
+
+	function variantName(variant: EntryBase): string {
+		return t('entry.page.variantLabel', { form: variant.written, label: variantText(variant) });
+	}
 </script>
+
+{#snippet phoneActions()}
+	{#if entry !== null && studyInDeck === false}
+		<IconButton label={t('entry.study.add')} icon="add" onclick={() => study?.addToGeneral()} />
+	{/if}
+{/snippet}
 
 <div class="entry-view">
 	{#if loading}
 		<p class="hint" aria-live="polite">{t('entry.page.loading')}</p>
 	{:else if notFound}
 		<section class="not-found">
-			<h1>{t('entry.page.notFound')}</h1>
+			<svelte:element this={headingLevel === 1 ? 'h1' : 'h2'}>{t('entry.page.notFound')}</svelte:element>
 			<p>{t('entry.page.notFoundText')}</p>
 			<p><a href="/search">{t('entry.page.backToSearch')}</a></p>
 		</section>
@@ -250,35 +292,56 @@
 		<button type="button" class="retry" onclick={retry}>{t('common.action.retry')}</button>
 	{:else if entry}
 		<header class="head">
-			<div>
-				<div class="headword">
-					<svelte:element this={headingLevel === 1 ? 'h1' : 'h2'} class="written" bind:this={headingEl} tabindex="-1" lang={studyLang(entry.language)}>{entry.written}</svelte:element>
-					<PlayButton
-						clips={headClips}
-						speakText={entry.written}
-						lang={entry.language}
-						deviceVoice={audioSettings.deviceVoice}
-						label={entry.written}
-					/>
-				</div>
-				{#if alsoWritten.length > 0}
-					<p class="also-written">
-						<Msg key="entry.page.alsoWritten" args={{ forms: joinForms(alsoWritten, entry.language) }}
-							>{#snippet forms(text: string)}<span lang={studyLang(entry?.language)}>{text}</span>{/snippet}</Msg
-						>
-					</p>
+			<div class="word-line">
+				<svelte:element this={headingLevel === 1 ? 'h1' : 'h2'} class="written" bind:this={headingEl} tabindex="-1" lang={studyLang(entry.language)}>{entry.written}</svelte:element>
+				{#each entry.variants as variant (variant.id)}
+					<a
+						class="variant"
+						href={`/entry/${variant.id}`}
+						lang={studyLang(entry.language)}
+						aria-label={variantName(variant)}>{variant.written} <small>{variantText(variant)}</small></a
+					>
+				{/each}
+			</div>
+			{#if alsoWritten.length > 0}
+				<p class="also-written">
+					<Msg key="entry.page.alsoWritten" args={{ forms: joinForms(alsoWritten, entry.language) }}
+						>{#snippet forms(text: string)}<span lang={studyLang(entry?.language)}>{text}</span>{/snippet}</Msg
+					>
+				</p>
+			{/if}
+			<div class="reads">
+				<Readings
+					readings={entry.readings}
+					audioFor={audioFor ?? undefined}
+					word={entry.written}
+					lang={entry.language}
+					language={entry.language}
+					deviceVoice={audioSettings.deviceVoice}
+				/>
+				<PlayButton
+					clips={headClips}
+					speakText={entry.written}
+					lang={entry.language}
+					deviceVoice={audioSettings.deviceVoice}
+					label={entry.written}
+				/>
+			</div>
+			{#if credit}<p class="credit">{credit}</p>{/if}
+			<div class="chips">
+				<Badges badges={entry.badges} />
+				{#if rank !== null}<Chip>#{t('entry.chips.frequency', { rank: formatNumber(rank) })}</Chip>{/if}
+				<Chip>{t(entry.kind === 'character' ? 'entry.chips.character' : 'entry.chips.word')}</Chip>
+				{#if inDecks > 0}<Chip tone="good">{t('entry.chips.inDecks', { count: inDecks })}</Chip>{/if}
+				{#if entry.language !== $workspaces.current?.language}
+					<Chip>{languageLabel(entry.language)}</Chip>
 				{/if}
-				<div class="chips">
-					<Chip>{t(entry.kind === 'character' ? 'entry.chips.character' : 'entry.chips.word')}</Chip>
-					{#if rank !== null}<Chip>#{t('entry.chips.frequency', { rank: formatNumber(rank) })}</Chip>{/if}
-					{#if inDecks > 0}<Chip tone="good">{t('entry.chips.inDecks', { count: inDecks })}</Chip>{/if}
-					{#if entry.language !== $workspaces.current?.language}
-						<Chip>{languageLabel(entry.language)}</Chip>
-					{/if}
-				</div>
 			</div>
 			<div class="actions">
 				<AddToStudy
+					bind:this={study}
+					onchange={(v) => (studyInDeck = v)}
+					onadded={refreshDecks}
 					entryId={entry.id}
 					written={entry.written}
 					sentenceId={entry.sentences?.[0]?.id}
@@ -297,17 +360,8 @@
 	{:else}
 		<div class="columns">
 			<div class="main">
-				<Readings
-					readings={entry.readings}
-					audioFor={audioFor ?? undefined}
-					word={entry.written}
-					lang={entry.language}
-					language={entry.language}
-					deviceVoice={audioSettings.deviceVoice}
-				/>
-				{#if credit}<p class="credit">{credit}</p>{/if}
-				<Badges badges={entry.badges} />
-				{#key entry.id}<Senses senses={entry.senses} />{/key}
+				{#key entry.id}<Senses senses={entry.senses} senseGroups={entry.senseGroups} />{/key}
+				<Sentences sentences={entry.sentences} language={entry.language} term={entry.written} />
 				{#if related.length > 0}
 					<section class="section related" aria-labelledby="related-heading">
 						<h2 id="related-heading">{t('entry.page.related')}</h2>
@@ -319,14 +373,8 @@
 						</p>
 					</section>
 				{/if}
-				<Sentences sentences={entry.sentences} language={entry.language} />
 			</div>
 			<aside class="side">
-				{#if !editing && $workspaces.current}
-					{#key `${$workspaces.current.id}:${entry.id}`}
-						<EntryNote workspaceId={$workspaces.current.id} entryId={entry.id} />
-					{/key}
-				{/if}
 				{#if entry.characters && entry.characters.length > 0}
 					<section class="section chars-of-word" aria-labelledby="chars-of-word-heading">
 						<h2 id="chars-of-word-heading">{t('entry.page.characters')}</h2>
@@ -361,18 +409,10 @@
 						<StrokePlayer char={strokeChar} />
 					</section>
 				{/if}
-				{#if entry.variants.length > 0}
-					<section class="section" aria-labelledby="variants-heading">
-						<h2 id="variants-heading">{t('entry.page.variants')}</h2>
-						<ul class="plain-list">
-							{#each entry.variants as variant (variant.id)}
-								<li>
-									<a href={`/entry/${variant.id}`} lang={studyLang(entry.language)}>{variant.written}</a>
-									{#if variant.readings.length > 0}<span class="reading"><ReadingText type={variant.readings[0].type} value={variant.readings[0].value} language={entry.language} /></span>{/if}
-								</li>
-							{/each}
-						</ul>
-					</section>
+				{#if !editing && $workspaces.current}
+					{#key `${$workspaces.current.id}:${entry.id}`}
+						<EntryNote workspaceId={$workspaces.current.id} entryId={entry.id} />
+					{/key}
 				{/if}
 				{#if entry.radicalId !== null}
 					<section class="section" aria-labelledby="radical-heading">
@@ -420,76 +460,90 @@
 		margin-top: 0.75rem;
 		font: inherit;
 		padding: 0.45rem 0.85rem;
-		border: 1px solid color-mix(in srgb, currentColor 35%, transparent);
-		border-radius: 0.4rem;
+		border: 1px solid var(--hair);
+		border-radius: var(--radius);
 		background: transparent;
 		color: inherit;
 		cursor: pointer;
 	}
 
-	.not-found h1 {
+	.not-found h1,
+	.not-found h2 {
 		margin-bottom: 0.5rem;
 	}
 
 	.head {
-		display: flex;
-		align-items: flex-start;
-		justify-content: space-between;
-		gap: 1rem;
+		display: grid;
+		gap: var(--space-2);
+		padding-bottom: var(--space-4);
+		box-shadow: inset 0 -1px 0 var(--hair);
 	}
 
-	.also-written {
-		margin: 0.25rem 0 0;
-		color: var(--readable-muted);
-	}
-
-	.headword {
+	.word-line {
 		display: flex;
-		align-items: center;
-		gap: 0.75rem;
+		align-items: baseline;
 		flex-wrap: wrap;
-	}
-
-	.credit {
-		margin: 0.5rem 0 0;
-		font-size: 0.8rem;
-		color: var(--readable-muted);
+		gap: var(--space-1) var(--space-4);
 	}
 
 	.written {
 		margin: 0;
-		font-size: 4rem;
+		font-size: 3.5rem;
+		font-weight: var(--weight-regular);
 		line-height: 1.05;
 		/* Give the written form room without letting a long word overflow. */
 		overflow-wrap: anywhere;
 	}
 
+	.variant {
+		color: var(--readable-muted);
+		font-size: 1.25rem;
+		text-decoration: none;
+		box-shadow: inset 0 -1px 0 var(--line);
+	}
+
+	.variant small {
+		font-size: var(--font-size-label);
+	}
+
+	.also-written {
+		margin: 0;
+		color: var(--readable-muted);
+	}
+
+	.reads {
+		display: flex;
+		align-items: center;
+		flex-wrap: wrap;
+		gap: var(--space-2);
+	}
+
+	.credit {
+		margin: 0;
+		font-size: 0.8rem;
+		color: var(--readable-muted);
+	}
+
 	.chips {
 		display: flex;
 		flex-wrap: wrap;
+		align-items: center;
 		gap: var(--space-1);
-		margin-top: var(--space-2);
 	}
 
 	.actions {
 		display: flex;
 		flex-wrap: wrap;
-		align-items: flex-start;
-		gap: var(--space-2);
+		align-items: center;
+		gap: var(--space-3);
 	}
 
 	.edit {
 		font-size: var(--font-size-label);
-		padding: var(--space-1) var(--space-3);
-		border: 1px solid var(--hair);
-		border-radius: var(--radius);
+		padding: var(--space-1) 0;
 		text-decoration: none;
 		color: var(--text);
-	}
-
-	.edit:hover,
-	.edit:focus-visible {
-		border-color: var(--line);
+		box-shadow: inset 0 -1px 0 var(--line);
 	}
 
 	.entry-view {
@@ -501,6 +555,7 @@
 		grid-template-columns: minmax(0, 1fr);
 		gap: var(--space-5);
 		align-items: start;
+		margin-top: var(--space-4);
 	}
 
 	.main,

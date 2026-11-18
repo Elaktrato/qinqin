@@ -111,18 +111,19 @@ describe('entry page robustness', () => {
 		expect(screen.queryByRole('alert')).toBeNull();
 	});
 
-	it('lists variants with formatted readings', async () => {
+	it('shows a variant small beside the word with its label as a link', async () => {
 		vi.mocked(getEntry).mockResolvedValue(
 			entry({
 				kind: 'word',
+				forms: [{ text: '你', flags: [] }, { text: '妳', flags: ['trad'] }],
 				variants: [
 					{ id: 7, language: 'zh', kind: 'word', written: '妳', readings: [{ type: 'pinyin', value: 'ni3', plain: 'ni', ord: 0 }] }
 				] as never
 			})
 		);
 		render(Page);
-		const link = await screen.findByRole('link', { name: '妳' });
-		expect(link.parentElement?.textContent).toContain('Pinyin: ni3');
+		const link = await screen.findByRole('link', { name: '妳 (traditional)' });
+		expect(link.getAttribute('href')).toBe('/entry/7');
 	});
 
 	it('links a character to all characters with its radical', async () => {

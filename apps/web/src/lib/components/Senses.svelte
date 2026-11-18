@@ -1,41 +1,66 @@
 <script lang="ts">
 	import { glossLang } from '$lib/i18n/lang';
-	import type { SenseView } from '$lib/api/types';
+	import type { SenseGroup, SenseView } from '$lib/api/types';
 	import { tick } from 'svelte';
 	import { t } from '$lib/i18n';
 	import { hiddenDictionaries, partitionSenses } from '$lib/dictionaryVisibility';
 	import { licenseUrl } from '$lib/licenses';
 	import { workspaces } from '$lib/workspaces';
 
-	let { senses }: { senses: SenseView[] } = $props();
+	let {
+		senses,
+		senseGroups = []
+	}: {
+		senses: SenseView[];
+		/** The same senses with their part of speech (and xrefs), for POS. */
+		senseGroups?: SenseGroup[];
+	} = $props();
 
 	// Dictionaries the current workspace hides collapse behind a button.
 	const partition = $derived(
 		partitionSenses(senses, hiddenDictionaries($workspaces.current))
 	);
 	let revealed = $state(false);
-	let heading = $state<HTMLHeadingElement | null>(null);
+	let section = $state<HTMLElement | null>(null);
 
 	// The button vanishes once pressed: keep keyboard focus in the section.
 	async function reveal(): Promise<void> {
 		revealed = true;
 		await tick();
-		heading?.focus();
+		section?.querySelector<HTMLElement>('h2')?.focus();
 	}
 	const visibleSenses = $derived(revealed ? senses : partition.shown);
 
-	interface SenseGroup {
+	interface GlossRow {
+		text: string;
+		pos: string[];
+	}
+
+	interface SenseGroupView {
 		dictionaryId: number;
 		dictionaryName: string;
 		license: string;
 		attribution: string;
-		glosses: string[];
+		glosses: GlossRow[];
 	}
+
+	// The part of speech per dictionary and gloss (one gloss can repeat in
+	// two senses; the first sense's POS wins).
+	const posByGloss = $derived.by((): Map<string, string[]> => {
+		const map = new Map<string, string[]>();
+		for (const group of senseGroups) {
+			for (const gloss of group.glosses) {
+				const key = `${group.dictionaryId}\u0000${gloss}`;
+				if (!map.has(key)) map.set(key, group.pos);
+			}
+		}
+		return map;
+	});
 
 	// Group by dictionary in first-seen order: the API's stable order is
 	// preserved rather than resorted by name or id.
-	const groups = $derived.by((): SenseGroup[] => {
-		const byDictionary = new Map<number, SenseGroup>();
+	const groups = $derived.by((): SenseGroupView[] => {
+		const byDictionary = new Map<number, SenseGroupView>();
 		for (const sense of visibleSenses) {
 			let group = byDictionary.get(sense.dictionaryId);
 			if (!group) {
@@ -48,7 +73,10 @@
 				};
 				byDictionary.set(sense.dictionaryId, group);
 			}
-			group.glosses.push(sense.gloss);
+			group.glosses.push({
+				text: sense.gloss,
+				pos: posByGloss.get(`${sense.dictionaryId}\u0000${sense.gloss}`) ?? []
+			});
 		}
 		return [...byDictionary.values()];
 	});
@@ -69,14 +97,15 @@
 </script>
 
 {#if groups.length > 0}
-	<section class="senses" aria-labelledby="senses-heading">
-		<h2 id="senses-heading" bind:this={heading} tabindex="-1">{t('entry.senses.title')}</h2>
+	<section class="senses" bind:this={section} aria-label={t('entry.senses.title')}>
 		{#each groups as group (group.dictionaryId)}
-			<article class="dictionary">
-				<h3>{group.dictionaryName}</h3>
+			<article class="dictionary" aria-labelledby={`meanings-${group.dictionaryId}`}>
+				<h2 id={`meanings-${group.dictionaryId}`} tabindex="-1">{t('entry.page.meaningsFrom', { dictionary: group.dictionaryName })}</h2>
 				<ol class="glosses">
 					{#each group.glosses as gloss, index (index)}
-						<li lang={glossLang(undefined)}>{gloss}</li>
+						<li lang={glossLang(undefined)}>
+							{#if gloss.pos.length > 0}<span class="pos">{gloss.pos.join(', ')}</span>{/if}{gloss.text}
+						</li>
 					{/each}
 				</ol>
 				{#if group.license || group.attribution}
@@ -112,39 +141,37 @@
 
 <style>
 	.senses {
-		margin-top: 2rem;
+		display: grid;
+		gap: var(--space-4);
 	}
 
-	.senses h2,
-	.senses h3 {
-		margin: 0;
-	}
-
-	.senses h2 {
-		font-size: 0.8rem;
-		letter-spacing: 0.06em;
-		text-transform: uppercase;
+	.dictionary h2 {
+		margin: 0 0 var(--space-2);
+		font-size: var(--font-size-label);
+		font-weight: var(--weight-medium);
 		color: var(--readable-muted);
 	}
 
-	.dictionary + .dictionary {
-		margin-top: 1rem;
-	}
-
-	.dictionary h3 {
-		font-size: 1rem;
-		margin-top: 0.75rem;
+	.dictionary h2:focus-visible {
+		outline: var(--focus-ring);
+		outline-offset: var(--focus-ring-offset);
 	}
 
 	.glosses {
-		margin: 0.4rem 0 0;
-		padding-left: 1.4rem;
+		margin: 0;
+		padding-inline-start: 1.4em;
 		display: grid;
-		gap: 0.25rem;
+		gap: var(--space-1);
+	}
+
+	.pos {
+		margin-inline-end: var(--space-2);
+		font-size: var(--font-size-label);
+		color: var(--readable-muted);
 	}
 
 	.source {
-		margin: 0.35rem 0 0;
+		margin: var(--space-2) 0 0;
 		font-size: 0.75rem;
 		color: var(--readable-muted);
 	}
@@ -154,7 +181,7 @@
 	}
 
 	.hidden-note {
-		margin: 0.75rem 0 0;
+		margin: 0;
 		font-size: 0.8rem;
 		color: var(--readable-muted);
 	}
