@@ -3,7 +3,8 @@
 // apart in every theme, so colour cannot tell them apart. Stage 0 is drawn
 // as the contract says -- no fill, an outline -- and the outline carries a
 // shape cue. Its colour is --muted, at least 3:1 on the panel in every
-// built-in theme; --line is a 1.33-2.79:1 hairline. The map cell is the
+// built-in theme; --line is a 1.33-2.79:1 hairline in 14 of 15 (Dracula 3.03).
+// The map cell is the
 // design's 1px solid outline (mock .mc.m0), the legend/bar swatches dashed.
 import { describe, expect, it } from 'vitest';
 import { ratio } from '$lib/theme/contrast';

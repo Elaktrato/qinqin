@@ -290,7 +290,8 @@
 	}
 
 	/* Not studied: an outline, no fill. --muted is the ≥ 3:1 edge every
-	   built-in theme carries (--line is 1.33-2.79 on the panel). */
+	   built-in theme carries (--line is 1.33-2.79 on the panel in 14 of 15;
+	   Dracula's 3.03 line is the exception). */
 	.st-unknown {
 		background: transparent;
 		box-shadow: inset 0 0 0 1px var(--muted);
