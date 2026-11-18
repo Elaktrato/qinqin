@@ -19,6 +19,20 @@ describe('docs/contracts/journal/review-docs.json', () => {
 	});
 });
 
+describe('malformed ids', () => {
+	it('drops an annotation without an id and a duplicate id', () => {
+		const r = parseReview({
+			entryId: 'e',
+			annotations: [
+				{ quote: 'a', correction: 'b' },
+				{ id: 'a1', quote: 'a', correction: 'b' },
+				{ id: 'a1', quote: 'c', correction: 'd' }
+			]
+		});
+		expect(r?.annotations.map((a) => a.quote)).toEqual(['a']);
+	});
+});
+
 describe('annotationKind', () => {
 	it('only "suggestion" is a suggestion; everything else is a mistake', () => {
 		expect(annotationKind({ kind: 'suggestion' })).toBe('suggestion');

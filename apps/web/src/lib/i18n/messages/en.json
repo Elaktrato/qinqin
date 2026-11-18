@@ -1249,6 +1249,7 @@
 	"journal.settings.save": "Save",
 	"journal.settings.saveFailed": "Could not save the settings. Try again.",
 	"journal.settings.title": "Journal settings for {name}",
+	"journal.sheet.open": "{count, plural, one {Show # correction} other {Show # corrections}}",
 	"journal.sheet.position": "Correction {n} of {total}",
 	"journal.title": "Journal",
 	"journal.tooLongHint": "Longer than {max} characters: you can save it, but shorten it to get a review.",

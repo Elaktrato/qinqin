@@ -70,9 +70,16 @@
 </script>
 
 {#if mode === 'ideas' || current !== null}
-	<Sheet bind:open={sheetOpen} {label} onclose={close} {returnFocus} onnext={() => page(1)} onprev={() => page(-1)}>
+	<Sheet
+		bind:open={sheetOpen}
+		{label}
+		onclose={close}
+		returnFocus={mode === 'corrections' ? returnFocus : undefined}
+		onnext={() => page(1)}
+		onprev={() => page(-1)}
+	>
 		{#if mode === 'ideas' && workspaceId !== undefined && gate !== undefined && onstart !== undefined}
-			<IdeasPanel {workspaceId} {gate} {onstart} title={t('journal.list.ideasToday')} />
+			<IdeasPanel {workspaceId} {gate} onstart={(title) => { onclose(); onstart?.(title); }} title={t('journal.list.ideasToday')} {studyLang} {explanationLang} />
 		{:else if current !== null}
 			<div class="correction" id={`correction-${current.annotation.id}`}>
 				<CorrectionNote

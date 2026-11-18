@@ -2,6 +2,7 @@ import { catalogueLanguage, getLanguage } from './i18n';
 import { followServerLanguage } from './i18n/interfaceLanguage';
 import { reloadPage } from './i18n/reloadPage';
 import { clearAudioCache } from './api/audio';
+import { clearJournalEntriesCache } from '$lib/plugins/journal/journalEntries.svelte';
 import { clearEntryBasesCache } from './api/entryBases';
 import { resetLookupRecorder } from './lookups/store';
 import { clearClipCache } from './audio/source';
@@ -283,6 +284,8 @@ export function logout(): void {
 	clearStudyDay();
 	// Entry bases carry this user's own edits.
 	clearEntryBasesCache();
+	// The journal's entries column belongs to this user.
+	clearJournalEntriesCache();
 	// The lookup history's buffer and copies (memory only) belong to this user.
 	resetLookupRecorder();
 	auth.set({ token: null, user: null });

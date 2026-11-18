@@ -35,9 +35,9 @@
 	const listOnly = $derived(corrections.filter((c) => c.state === 'listOnly'));
 	const missing = $derived(corrections.filter((c) => c.state === 'missing'));
 
-	function open(id: string): void {
+	function open(id: string | null): void {
 		onopen(id);
-		scrollTo(id);
+		if (id !== null) scrollTo(id);
 	}
 
 	function scrollTo(id: string): void {
@@ -52,11 +52,23 @@
 	});
 </script>
 
-<aside class="margin" aria-label={t('journal.margin.label')}>
+<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
+<aside
+	class="margin"
+	aria-label={t('journal.margin.label')}
+	onkeydown={(event) => {
+		if (event.key === 'Escape' && openId !== null) {
+			event.preventDefault();
+			const id = openId;
+			onopen(null);
+			document.getElementById(`mark-${id}`)?.focus();
+		}
+	}}
+>
 	{#if mode === 'ideas' && workspaceId !== undefined && gate !== undefined && onstart !== undefined}
-		<IdeasPanel {workspaceId} {gate} {onstart} title={t('journal.list.ideasToday')} />
+		<IdeasPanel {workspaceId} {gate} {onstart} title={t('journal.list.ideasToday')} {studyLang} {explanationLang} />
 	{:else if mode === 'corrections'}
-		<h3 class="heading">{t('journal.margin.corrections', { count: corrections.length })}</h3>
+		<h3 class="heading">{t('journal.margin.corrections', { count: placed.length + listOnly.length })}</h3>
 		{#if corrections.length > 0}
 			<p class="counts">{t('journal.margin.mistakes', { count: counts.mistakes })} · {t('journal.margin.suggestions', { count: counts.suggestions })}</p>
 		{:else}
@@ -96,7 +108,10 @@
 			<p class="hint">{t('journal.annotations.goneHint')}</p>
 			<ul class="missing">
 				{#each missing as correction (correction.annotation.id)}
-					<li>{correction.annotation.quote} → {correction.annotation.correction}</li>
+					<li>
+						<span lang={studyLang}>{correction.annotation.quote} → {correction.annotation.correction}</span>
+						<p class="why" lang={explanationLang}>{correction.annotation.explanation}</p>
+					</li>
 				{/each}
 			</ul>
 		{/if}

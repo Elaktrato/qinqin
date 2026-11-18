@@ -96,6 +96,12 @@ describe('EntryEditor in three columns (#103)', () => {
 		expect(screen.getByLabelText('Entry')).toBeTruthy();
 	});
 
+	it('renders one review hint and tags the entry field with the study lang', async () => {
+		await renderEditor({ aiAvailable: false });
+		expect(document.querySelectorAll('#review-hint')).toHaveLength(1);
+		expect(screen.getByLabelText('Entry').getAttribute('lang')).toBe('zh-Hans');
+	});
+
 	it('typing autosaves on blur and the save status is polite', async () => {
 		await renderEditor();
 		const area = screen.getByLabelText('Entry') as HTMLTextAreaElement;
