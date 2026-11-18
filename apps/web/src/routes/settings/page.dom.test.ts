@@ -73,14 +73,15 @@ describe('the settings tab row in the lighter look (#106)', () => {
 		expect(document.activeElement).toBe(home);
 	});
 
-	it('scrolls the selected tab into view when a deep link opens a far one', async () => {
+	it('the wrapped row shows a deep-linked far tab without a sideways scroll', async () => {
 		const scrollIntoView = vi.fn();
 		const original = Element.prototype.scrollIntoView;
 		Element.prototype.scrollIntoView = scrollIntoView;
 		try {
 			setUrl('/settings?tab=account');
 			render(Page);
-			await waitFor(() => expect(scrollIntoView).toHaveBeenCalled());
+			expect(screen.getByRole('tab', { name: 'Account' }).getAttribute('aria-selected')).toBe('true');
+			expect(scrollIntoView).not.toHaveBeenCalled();
 		} finally {
 			Element.prototype.scrollIntoView = original;
 		}

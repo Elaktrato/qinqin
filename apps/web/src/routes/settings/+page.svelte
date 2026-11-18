@@ -60,25 +60,11 @@
 	const admin = $derived($user?.admin === true);
 	const tabs = $derived(visibleSettingsTabs(admin));
 	const activeTab = $derived(parseSettingsTab(page.url.searchParams.get('tab'), admin));
-	let root = $state<HTMLElement | undefined>(undefined);
-
 	async function selectTab(tab: SettingsTab): Promise<void> {
 		if (tab !== activeTab) {
 			await goto(settingsTabHref(tab), { replaceState: true, keepFocus: true, noScroll: true });
 		}
 	}
-
-	// The row scrolls sideways on a phone (as it did before); keep the open
-	// tab visible, also when a deep link opens one that sits off-screen.
-	$effect(() => {
-		void activeTab;
-		void tick().then(() => {
-			root?.querySelector<HTMLElement>('[role="tab"][aria-selected="true"]')?.scrollIntoView?.({
-				block: 'nearest',
-				inline: 'nearest'
-			});
-		});
-	});
 
 	// The workspace being renamed (one at a time) and its draft name.
 	let renamingId = $state<number | null>(null);
@@ -240,7 +226,7 @@
 	<title>{pageTitle(...settingsTitleParts(activeTab, page.url.searchParams.get('section')))}</title>
 </svelte:head>
 
-<div class="page-body settings" bind:this={root}>
+<div class="page-body settings">
 	<h1>{t('settings.title')}</h1>
 
 	<Tabs
@@ -506,14 +492,10 @@
 </div>
 
 <style>
-	/* The tab row is the base Tabs (in-page form); it scrolls sideways on a
-	   phone instead of wrapping, as it did before (#106). */
-	.settings :global([role='tablist']) {
-		flex-wrap: nowrap;
-		overflow-x: auto;
-		scrollbar-width: thin;
-	}
-
+	/* The tab row is the base Tabs (in-page form); it wraps onto as many
+	   rows as the width needs, so no tab is ever off-screen and no scrollbar
+	   appears (#106 owner request, 2026-11-18). A single tab's label still
+	   never breaks mid-word. */
 	.settings :global([role='tablist'] [role='tab']) {
 		white-space: nowrap;
 	}

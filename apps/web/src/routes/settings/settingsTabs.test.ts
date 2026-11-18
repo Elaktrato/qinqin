@@ -1,7 +1,7 @@
 // The Settings tab row (#106): the base Tabs component in its in-page form owns the tabs, their keyboard model
-// and the selected tab's 2px accent underline (Tabs.dom.test.ts). The page only keeps today's sideways-scrolling
-// row on a phone and never paints tabs of its own — a person who forces Light on a dark OS used to get the
-// dark-scheme tab blue here (#98 PART B, B2a); tokens follow the painted theme.
+// and the selected tab's 2px accent underline (Tabs.dom.test.ts). The page lets the base row wrap and never
+// paints tabs of its own — a person who forces Light on a dark OS used to get the dark-scheme tab blue here
+// (#98 PART B, B2a); tokens follow the painted theme.
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
@@ -27,9 +27,10 @@ describe('settings tabs in the lighter look', () => {
 		expect(page).not.toMatch(/role="tabpanel"/);
 	});
 
-	it('the row scrolls sideways instead of wrapping on a phone', () => {
-		const tabs = rule('[role=\'tablist\']');
-		expect(tabs).toMatch(/overflow-x:\s*auto/);
-		expect(tabs).toMatch(/flex-wrap:\s*nowrap/);
+	it('lets the base tab row wrap instead of scrolling', () => {
+		expect(style).not.toMatch(/overflow-x:\s*auto/);
+		expect(style).not.toMatch(/scrollbar-width/);
+		expect(style).not.toMatch(/flex-wrap:\s*nowrap/);
+		expect(page).toMatch(/\[role='tab'\][^{]*\{[^}]*white-space:\s*nowrap/);
 	});
 });
