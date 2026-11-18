@@ -10,26 +10,26 @@ function jsonResponse(body: unknown, status = 200): Response {
 	return new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json' } });
 }
 
-const latte = { ...FALLBACK_THEMES[0], packId: 'catppuccin', builtin: true };
-const mocha = { ...FALLBACK_THEMES[1], packId: 'catppuccin', builtin: true };
+const day = { ...FALLBACK_THEMES[0], packId: 'qinqin', builtin: true };
+const night = { ...FALLBACK_THEMES[1], packId: 'qinqin', builtin: true };
 const pack = {
-	packId: 'catppuccin',
-	name: 'Catppuccin',
+	packId: 'qinqin',
+	name: 'qinqin',
 	version: '1.0',
 	license: 'MIT',
-	attribution: '© 2021 Catppuccin (catppuccin/palette)',
-	notice: 'The four flavours.',
-	licenseText: 'MIT License\n\nCopyright (c) 2021 Catppuccin\n',
+	attribution: '© 2026 qinqin',
+	notice: 'The house themes.',
+	licenseText: 'MIT License\n\nCopyright (c) 2026 qinqin\n',
 	builtin: true,
-	themes: ['catppuccin-latte', 'catppuccin-mocha']
+	themes: ['qinqin-day', 'qinqin-night']
 };
 
 describe('parseThemesAnswer', () => {
 	it('keeps valid themes and packs in order, accents in their order', () => {
-		const out = parseThemesAnswer({ themes: [latte, mocha], packs: [pack] });
-		expect(out.themes.map((t) => t.id)).toEqual(['catppuccin-latte', 'catppuccin-mocha']);
-		expect(Object.keys(out.themes[0].accents)).toEqual(Object.keys(latte.accents));
-		expect(out.themes[0]).toMatchObject({ packId: 'catppuccin', builtin: true, family: 'Catppuccin' });
+		const out = parseThemesAnswer({ themes: [day, night], packs: [pack] });
+		expect(out.themes.map((t) => t.id)).toEqual(['qinqin-day', 'qinqin-night']);
+		expect(Object.keys(out.themes[0].accents)).toEqual(Object.keys(day.accents));
+		expect(out.themes[0]).toMatchObject({ packId: 'qinqin', builtin: true, family: 'qinqin' });
 		expect(out.packs).toEqual([pack]);
 	});
 
@@ -40,30 +40,30 @@ describe('parseThemesAnswer', () => {
 
 	it('drops a broken entry and keeps the rest', () => {
 		const broken = [
-			{ ...mocha, id: 'Bad Id' },
-			{ ...mocha, id: 'x1', colors: { ...mocha.colors, panel: 'red' } },
-			{ ...mocha, id: 'x2', colors: { ...mocha.colors, panel: undefined } },
-			{ ...mocha, id: 'x3', accents: {} },
-			{ ...mocha, id: 'x4', defaultAccent: 'nope' },
-			{ ...mocha, id: 'x5', scheme: 'sepia' },
-			{ ...mocha, id: 'x6', name: '' },
-			{ ...mocha, id: 'x7', accents: { mauve: '#CBA6F7' } },
+			{ ...night, id: 'Bad Id' },
+			{ ...night, id: 'x1', colors: { ...night.colors, panel: 'red' } },
+			{ ...night, id: 'x2', colors: { ...night.colors, panel: undefined } },
+			{ ...night, id: 'x3', accents: {} },
+			{ ...night, id: 'x4', defaultAccent: 'nope' },
+			{ ...night, id: 'x5', scheme: 'sepia' },
+			{ ...night, id: 'x6', name: '' },
+			{ ...night, id: 'x7', accents: { mauve: '#CBA6F7' } },
 			// An inherited property name is not an accent of the theme.
-			{ ...mocha, id: 'x8', defaultAccent: 'constructor' },
+			{ ...night, id: 'x8', defaultAccent: 'constructor' },
 			null,
 			'nord'
 		];
-		const out = parseThemesAnswer({ themes: [latte, ...broken], packs: [pack, { packId: 1 }, null] });
-		expect(out.themes.map((t) => t.id)).toEqual(['catppuccin-latte']);
+		const out = parseThemesAnswer({ themes: [day, ...broken], packs: [pack, { packId: 1 }, null] });
+		expect(out.themes.map((t) => t.id)).toEqual(['qinqin-day']);
 		expect(out.packs).toEqual([pack]);
 	});
 
 	it('reads a theme without family as family ""; a duplicate id keeps the first', () => {
-		const { family: _f, ...noFamily } = { ...mocha, id: 'solo' };
+		const { family: _f, ...noFamily } = { ...night, id: 'solo' };
 		const out = parseThemesAnswer({ themes: [noFamily, { ...noFamily, name: 'Again' }], packs: [] });
 		expect(out.themes).toHaveLength(1);
 		expect(out.themes[0].family).toBe('');
-		expect(out.themes[0].name).toBe('Mocha');
+		expect(out.themes[0].name).toBe('qinqin Night');
 	});
 
 	it('answers empty lists for anything that is not the answer', () => {
@@ -77,7 +77,7 @@ describe('getThemes', () => {
 	afterEach(() => vi.unstubAllGlobals());
 
 	it('requests GET /api/themes', async () => {
-		vi.mocked(fetch).mockResolvedValue(jsonResponse({ themes: [latte], packs: [pack] }));
+		vi.mocked(fetch).mockResolvedValue(jsonResponse({ themes: [day], packs: [pack] }));
 		const out = await getThemes();
 		const url = new URL(String(vi.mocked(fetch).mock.calls[0][0]), 'http://localhost');
 		expect(url.pathname).toBe('/api/themes');

@@ -4,6 +4,8 @@
 // value, resolve which theme and accent are painted, write a change while
 // keeping every member this client does not know.
 
+import { fallbackTheme } from './fallback';
+
 export const APPEARANCE_KEY = 'appearance';
 const VERSION = 1;
 
@@ -155,7 +157,7 @@ export function resolveAppearance(
 		themes.find((th) => th.id === fallbackId) ??
 		themes.find((th) => th.scheme === slot);
 	if (!theme) {
-		return { slot, theme: fallbackId, accent: choice.accent ?? DEFAULT_APPEARANCE[slot].accent ?? 'mauve' };
+		return { slot, theme: fallbackId, accent: choice.accent ?? fallbackTheme(slot).defaultAccent };
 	}
 	const accent =
 		choice.accent !== null && theme.accentChoices.includes(choice.accent) ? choice.accent : theme.defaultAccent;

@@ -88,12 +88,21 @@ describe('theme store', () => {
 		expect(panel()).toBe('#ffffff'); // no row: qinqin Day on a light device
 	});
 
-	it('animates a preview or a save, not the first paint', async () => {
+	it('animates a preview, a save and a system switch, not the first paint', async () => {
 		const store = createThemeStore(deps);
 		await store.start();
 		await store.setUser(1);
 		expect(root.classList.contains(THEME_ANIM_CLASS)).toBe(false);
+
 		store.setPreview({ ...store.appearance, mode: 'dark' });
+		expect(root.classList.contains(THEME_ANIM_CLASS)).toBe(true);
+
+		root.classList.remove(THEME_ANIM_CLASS);
+		await store.save({ mode: 'dark' });
+		expect(root.classList.contains(THEME_ANIM_CLASS)).toBe(true);
+
+		root.classList.remove(THEME_ANIM_CLASS);
+		media.flip(true);
 		expect(root.classList.contains(THEME_ANIM_CLASS)).toBe(true);
 	});
 

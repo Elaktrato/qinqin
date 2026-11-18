@@ -101,8 +101,17 @@ func TestHouseThemesLead(t *testing.T) {
 // built-in minimums (design §7a: the files were checked against the
 // contract on 2026-11-18).
 func TestHouseThemesPassTheReview(t *testing.T) {
-	for _, p := range Builtin()[:2] {
+	house := map[string]bool{"qinqin": true, "qinqin-extras": true}
+	seen := 0
+	for _, p := range Builtin() {
+		if !house[p.Manifest.ID] {
+			continue
+		}
+		seen++
 		for _, th := range p.Themes {
+			if len(Review(th)) == 0 {
+				t.Errorf("%s: the review has no checks", th.ID)
+			}
 			if checks := Review(th); Failing(checks) != 0 {
 				for _, c := range checks {
 					if !c.Pass {
@@ -111,6 +120,9 @@ func TestHouseThemesPassTheReview(t *testing.T) {
 				}
 			}
 		}
+	}
+	if seen != 2 {
+		t.Fatalf("%d house packs, want qinqin and qinqin-extras", seen)
 	}
 }
 

@@ -77,20 +77,21 @@
 }
 
 /* A theme switch cross-fades the colours for a moment (#108). apply.ts adds
-   the class only for a person-initiated switch, so hover and layout
-   animations keep their own timing; --motion-medium is 0ms under reduced
-   motion. */
+   the class only for a person-initiated switch. For those 240ms it wins
+   over a component's own transition list on the six paint properties; a
+   tooltip or menu opened in the same moment finishes without its usual
+   opacity/translate curve. --motion-medium is 0ms under reduced motion. */
 html.theme-anim,
 html.theme-anim *,
 html.theme-anim *::before,
 html.theme-anim *::after {
 	transition:
-		background-color var(--motion-medium) ease,
-		border-color var(--motion-medium) ease,
-		color var(--motion-medium) ease,
-		fill var(--motion-medium) ease,
-		stroke var(--motion-medium) ease,
-		box-shadow var(--motion-medium) ease;
+		background-color var(--motion-medium) var(--ease-standard),
+		border-color var(--motion-medium) var(--ease-standard),
+		color var(--motion-medium) var(--ease-standard),
+		fill var(--motion-medium) var(--ease-standard),
+		stroke var(--motion-medium) var(--ease-standard),
+		box-shadow var(--motion-medium) var(--ease-standard);
 }
 
 body {
