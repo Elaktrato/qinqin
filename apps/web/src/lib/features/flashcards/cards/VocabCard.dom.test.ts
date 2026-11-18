@@ -61,6 +61,23 @@ describe('VocabCard for a character', () => {
 		expect(screen.getByText('study')).toBeTruthy();
 	});
 
+	it('names each reading kind once and joins its readings with " | "', () => {
+		const entry = kanji({
+			readings: [
+				{ type: 'on', value: 'ガク', plain: 'gaku', ord: 0 },
+				{ type: 'kun', value: 'まな.ぶ', plain: 'manabu', ord: 1 },
+				{ type: 'on', value: 'ガッ', plain: 'ga', ord: 2 }
+			]
+		});
+		renderCard({ item, entry, revealed: true, onDone: vi.fn() });
+		const table = screen.getByRole('table', { name: 'Readings' });
+		expect(table.textContent).not.toContain('On:');
+		expect([...table.querySelectorAll('tr')].map((tr) => tr.textContent?.replace(/\s+/g, ' ').trim())).toEqual([
+			'On ガク | ガッ',
+			'Kun まな.ぶ'
+		]);
+	});
+
 	it('shows readings only, without an empty gloss block, for a character with no senses', () => {
 		renderCard({ item, entry: kanji({ senses: [] }), revealed: true, onDone: vi.fn() });
 		expect(screen.getByLabelText('Readings')).toBeTruthy();

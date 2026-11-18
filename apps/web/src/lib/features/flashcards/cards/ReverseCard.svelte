@@ -1,5 +1,6 @@
 <script lang="ts">
 	import ReadingText from '$lib/components/ReadingText.svelte';
+	import ReadingTable from '$lib/components/ReadingTable.svelte';
 	import { studyLang } from '$lib/i18n/lang';
 	import { t } from '$lib/i18n';
 	import { onMount } from 'svelte';
@@ -135,11 +136,7 @@
 		{#if faces.readings.length > 0 || audio}
 			<div class="fa-readings">
 				{#if faces.readings.length > 0}
-					<ul class="fa-readings" aria-label={t('flashcards.card.readings')}>
-						{#each faces.readings as reading, i (`${reading.type}:${i}`)}
-							<li class="fa-reading" data-type={reading.type}><ReadingText type={reading.type} value={reading.value} language={entry.language} /></li>
-						{/each}
-					</ul>
+					<ReadingTable readings={faces.readings} language={entry.language} label={t('flashcards.card.readings')} />
 				{/if}
 				{#if audio}
 					<span class="fa-play">

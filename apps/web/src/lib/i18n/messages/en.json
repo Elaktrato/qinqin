@@ -1027,7 +1027,6 @@
 	"flashcards.tone.name5": "neutral tone",
 	"flashcards.tone.noTone": "no tone yet",
 	"flashcards.tone.padLabel": "Syllable {n}, {syllable}: {tone}",
-	"flashcards.tone.pinyin": "Pinyin: <strong>{readings}</strong>",
 	"flashcards.tone.prompt": "Swipe each pad in the tone's shape (a tap is the neutral tone), use the buttons, or press 1–5.",
 	"flashcards.tone.syllables": "Syllables",
 	"flashcards.tone.toneFor": "Tone for {syllable}",
