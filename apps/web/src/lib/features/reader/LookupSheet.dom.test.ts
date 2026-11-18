@@ -113,6 +113,18 @@ describe('the lookup on the phone (#102)', () => {
 		expect(inPopup(sheet)).toBe(false);
 	});
 
+	it('inside the sheet the highlight result is a status region (the page live regions are inert)', () => {
+		stubPhone(true);
+		const actions = { ...highlighter, notice: 'Highlight added: 故乡' };
+		render(PopupStackView, {
+			lookup: fakeLookup('selection', [root]) as unknown as LookupController,
+			studyWorkspaceId: 7,
+			highlighter: actions
+		});
+		const sheet = screen.getByRole('dialog', { name: 'Dictionary: 故乡' });
+		expect(within(sheet).getByRole('status').textContent).toBe('Highlight added: 故乡');
+	});
+
 	it('a replaced lookup sheet does not close the lookup that replaced it', async () => {
 		stubPhone(true);
 		const lookup = fakeLookup('hover', [root]);

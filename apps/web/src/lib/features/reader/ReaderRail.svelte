@@ -31,7 +31,9 @@
 		onToggle,
 		mode,
 		panel,
-		opener = () => null
+		opener = () => null,
+		bookmarkStatus = '',
+		highlightStatus = ''
 	}: {
 		tabs: RailTabInfo[];
 		active: RailTab;
@@ -43,6 +45,9 @@
 		panel: Snippet<[RailTab]>;
 		/** The button that opens the sheet, for focus when the layout switches. */
 		opener?: () => HTMLElement | null;
+		/** The page's bookmark and highlight announcements, repeated inside the modal sheet (the page regions are inert there). */
+		bookmarkStatus?: string;
+		highlightStatus?: string;
 	} = $props();
 
 	let rail = $state<HTMLElement | null>(null);
@@ -140,6 +145,9 @@
 {:else}
 	<Sheet {open} label={t('reader.rail.sheet')} onclose={() => onToggle(false)}>
 		<div id="reader-rail-sheet" class="sheet-body">
+			<!-- The page's live regions are inert behind the modal sheet: repeat them here. -->
+			<p class="visually-hidden" role="status" aria-live="polite">{bookmarkStatus}</p>
+			<p class="visually-hidden" role="status" aria-live="polite">{highlightStatus}</p>
 			<Tabs
 				label={t('reader.rail.panel')}
 				tabs={tabs.map((tab) => ({ id: tab.id, label: nameOf(tab) }))}
@@ -229,6 +237,15 @@
 
 	.sheet-body {
 		padding-top: var(--space-1);
+	}
+
+	.visually-hidden {
+		position: absolute;
+		width: 1px;
+		height: 1px;
+		overflow: hidden;
+		clip-path: inset(50%);
+		white-space: nowrap;
 	}
 
 	/* Five text tabs on one line at phone width: closer, scrolling sideways if need be. */

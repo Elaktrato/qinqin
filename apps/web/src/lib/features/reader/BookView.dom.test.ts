@@ -434,6 +434,10 @@ describe('BookView lookup sheet (#102)', () => {
 			addEventListener() {},
 			removeEventListener() {}
 		}));
+		vi.mocked(addHighlight).mockReset();
+		vi.mocked(addHighlight).mockImplementation(async (bookId: number, h: object) => ({
+			id: 88, bookId, ...h, note: '', createdAt: '', updatedAt: ''
+		}) as never);
 	});
 	afterEach(() => setWidth(1024));
 
@@ -457,6 +461,16 @@ describe('BookView lookup sheet (#102)', () => {
 		await fireEvent.click(within(sheet).getByRole('button', { name: 'Close' }));
 		await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
 		await waitFor(() => expect(document.activeElement?.getAttribute('data-p')).toBe('0'));
+	});
+
+	it('a highlight applied in the sheet leaves its result in a status region inside the dialog', async () => {
+		setWidth(700);
+		render(BookView, { id: 1, chapter: 0 });
+		await waitFor(() => expect(document.querySelector('p[data-p="0"]')).toBeTruthy());
+		await selectFirstTwo();
+		const sheet = await screen.findByRole('dialog', { name: /Dictionary:/ }, { timeout: 2000 });
+		await fireEvent.click(within(sheet).getByRole('button', { name: /Highlight in yellow/ }));
+		await waitFor(() => expect(within(sheet).getByRole('status').textContent).toBe('Highlight added: 你好'));
 	});
 });
 
@@ -522,6 +536,16 @@ describe('BookView shortcuts and focus across the new layout (#102)', () => {
 		const root = document.querySelector('.chapter-text')!;
 		await fireEvent.keyDown(window, { key: 'R' });
 		expect(root.classList.contains('show-all')).toBe(true);
+	});
+
+	it('the rail sheet repeats the bookmark announcement inside the dialog', async () => {
+		setWidth(800);
+		render(BookView, { id: 1, chapter: 0 });
+		await ready();
+		await fireEvent.click(screen.getByRole('button', { name: RAIL_BUTTON }));
+		const sheet = screen.getByRole('dialog', { name: 'Book tools' });
+		await fireEvent.click(within(sheet).getByRole('button', { name: 'Add bookmark here' }));
+		await waitFor(() => expect(within(sheet).getByText('Bookmark added: 你好世界')).toBeTruthy());
 	});
 
 	it('Escape in the open rail sheet closes it and focus returns to the rail button', async () => {

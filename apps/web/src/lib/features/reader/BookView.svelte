@@ -764,8 +764,9 @@
 			await openEditor(failure.id, { focusNote: withNote, notice: overlapNotice(), initialNote: carried });
 			return;
 		}
-		// The store announces its own errors; this one it does not.
-		if (failure.text === elsewhereNotice()) tell(failure.text);
+		// The store announces its own errors on the page; repeat it here too:
+		// behind the phone sheet that page region is inert.
+		tell(failure.text);
 		if (waiting) editor = { ...waiting, failure: failure.text };
 	}
 
@@ -815,7 +816,10 @@
 			if (plan.exact && !withNote) {
 				rememberColor(color);
 				tell(plan.clamped ? clampNotice() : '');
-				void highlights.update(plan.highlight.id, { color });
+				void highlights.update(plan.highlight.id, { color }).then((ok) => {
+					if (ok) tell(plan.clamped ? clampNotice() : t('reader.highlights.updated'));
+					else tell(highlights.error);
+				});
 				return;
 			}
 			tell(plan.exact ? '' : overlapNotice());
@@ -840,6 +844,7 @@
 		}
 		const result = await adding;
 		if (!result.ok) await addRefused(result, waitingKey, withNote);
+		else if (!withNote) tell(plan.clamped ? clampNotice() : t('reader.highlights.added', { text: snippetAt(body.text, 30) }));
 	}
 
 	// The popup's action bar acts on the selection the popup was opened for.
@@ -1255,6 +1260,8 @@
 			onToggle={toggleRail}
 			{mode}
 			opener={sheetOpener}
+			bookmarkStatus={bookmarks.announcement}
+			highlightStatus={highlightLive}
 		>
 			{#snippet panel(tab: RailTab)}
 				{#if tab === 'contents'}
