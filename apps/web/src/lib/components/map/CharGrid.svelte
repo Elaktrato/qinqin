@@ -236,7 +236,8 @@
 			class="cell st-{cell.stage}"
 			data-i={i}
 			tabindex={i === stop ? 0 : -1}
-			aria-label="{cell.char.c}, {STAGE_NAME[cell.stage]}">{cell.char.c}</a
+			aria-label="{cell.char.c}, {STAGE_NAME[cell.stage]}"
+			><span class="glyph">{cell.char.c}</span></a
 		>
 	{/each}
 </div>
@@ -244,9 +245,9 @@
 <style>
 	/* The single-hue mastery ramp (design §9): stage 0 is an outline, then
 	   the accent at 14 / 32 / 58 / 100 %. Shape cues (the bottom bar's
-	   length and the learned tick) repeat the stage without colour. Text is
-	   --text on 0–2 and --on-accent on 3–4 (the plan's ruling; the visual
-	   check measures the split per theme). */
+	   length and the learned tick) repeat the stage without colour. The
+	   glyph sits on a --panel tile: the ramp's mid-tones cannot carry text
+	   at 4.5:1, while --text on --panel is the theme contract's pair. */
 	.grid {
 		--cell-size: 34px;
 		display: grid;
@@ -256,6 +257,7 @@
 	}
 
 	.cell {
+		--glyph-inset: 3px;
 		position: relative;
 		display: flex;
 		align-items: center;
@@ -270,17 +272,33 @@
 		text-decoration: none;
 	}
 
+	/* The contrast-backed glyph: a panel tile inside the tinted cell. */
+	.glyph {
+		position: absolute;
+		inset: var(--glyph-inset);
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		border-radius: calc(var(--radius) * 0.35);
+		background: var(--panel);
+	}
+
 	.cell:focus-visible {
 		outline: var(--focus-ring);
 		outline-offset: var(--focus-ring-offset);
 		z-index: 1;
 	}
 
-	/* Not studied: an outline, no fill. */
+	/* Not studied: an outline, no fill. --muted is the ≥ 3:1 edge every
+	   built-in theme carries (--line is 1.33-2.79 on the panel). */
 	.st-unknown {
 		background: transparent;
-		box-shadow: inset 0 0 0 1px var(--line);
+		box-shadow: inset 0 0 0 1px var(--muted);
 		color: var(--text);
+	}
+
+	.st-unknown .glyph {
+		background: transparent;
 	}
 
 	.st-fresh {
@@ -295,16 +313,16 @@
 
 	.st-mature {
 		background: var(--mastery-3);
-		color: var(--on-accent);
+		color: var(--text);
 	}
 
 	.st-learned {
 		background: var(--mastery-4);
-		color: var(--on-accent);
+		color: var(--text);
 	}
 
-	/* Started but not learned: a bar along the bottom whose length grows
-	   with the band (a quarter, a half, three quarters), so fresh,
+	/* Started but not learned: a bar on the glyph's panel tile whose length
+	   grows with the band (a quarter, a half, three quarters), so fresh,
 	   learning and mature differ from each other and from "not studied"
 	   without colour. */
 	.st-fresh::after,
@@ -312,43 +330,41 @@
 	.st-mature::after {
 		content: '';
 		position: absolute;
-		left: 0.2rem;
-		bottom: 0.18rem;
+		left: calc(var(--glyph-inset) + 0.2rem);
+		bottom: calc(var(--glyph-inset) + 0.18rem);
+		width: calc((100% - 2 * var(--glyph-inset) - 0.4rem) * 0.25);
 		height: 0.16rem;
 		border-radius: 0.1rem;
 		background: currentColor;
 	}
 
-	.st-fresh::after {
-		width: calc((100% - 0.4rem) * 0.25);
-	}
-
 	.st-learning::after {
-		width: calc((100% - 0.4rem) * 0.5);
+		width: calc((100% - 2 * var(--glyph-inset) - 0.4rem) * 0.5);
 	}
 
 	.st-mature::after {
-		width: calc((100% - 0.4rem) * 0.75);
+		width: calc((100% - 2 * var(--glyph-inset) - 0.4rem) * 0.75);
 	}
 
-	/* Learned: a corner tick, so the band does not rely on colour alone. */
+	/* Learned: a corner tick on the panel tile, so the band does not rely on
+	   colour alone. --on-accent keeps the tick visible on the full accent. */
 	.st-learned::after {
 		content: '';
 		position: absolute;
-		top: 0;
-		right: 0;
+		top: var(--glyph-inset);
+		right: var(--glyph-inset);
 		width: 0.7rem;
 		height: 0.7rem;
 		border-top-right-radius: 0.25rem;
-		background: currentColor;
+		background: var(--on-accent);
 		clip-path: polygon(0 0, 100% 0, 100% 100%);
 	}
 
 	.st-learned::before {
 		content: '';
 		position: absolute;
-		top: 0.08rem;
-		right: 0.06rem;
+		top: calc(var(--glyph-inset) + 0.08rem);
+		right: calc(var(--glyph-inset) + 0.06rem);
 		width: 0.18rem;
 		height: 0.3rem;
 		border: solid var(--mastery-4);
@@ -380,6 +396,16 @@
 		}
 	}
 
+	/* A coarse pointer keeps the 30/34 px visual but gives each cell the
+	   app's --hit (2.75rem) target through the glyph's invisible overlay. */
+	@media (pointer: coarse) {
+		.glyph::before {
+			content: '';
+			position: absolute;
+			inset: calc((var(--cell-size) - 2 * var(--glyph-inset) - var(--hit)) / 2);
+		}
+	}
+
 	@media (prefers-reduced-motion: reduce) {
 		.cell:global(.flash) {
 			animation: none;
@@ -395,6 +421,9 @@
 			color: CanvasText;
 			border-color: CanvasText;
 			box-shadow: none;
+		}
+		.glyph {
+			background: transparent;
 		}
 		.st-unknown {
 			border-style: dotted;

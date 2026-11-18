@@ -144,7 +144,7 @@ describe('Stats → Characters', () => {
 });
 
 describe('the mastery map in the single-hue ramp (source checks)', () => {
-	const COLOUR_TOKEN = /^--(accent|muted|readable|bad|warn|good|st-|raised|chrome|grade|selected|primary|highlight)/;
+	const COLOUR_TOKEN = /^--(accent|readable|bad|warn|good|st-|raised|chrome|grade|selected|primary|highlight)/;
 	const tokens = (source: string): string[] => [
 		...new Set([...source.matchAll(/var\((--[\w-]+)/g)].map((m) => m[1]))
 	];
@@ -158,7 +158,7 @@ describe('the mastery map in the single-hue ramp (source checks)', () => {
 	});
 
 	it('the stage-0 cell is an outline, not a fill', () => {
-		expect(charGrid).toMatch(/\.st-unknown\s*\{[^}]*box-shadow:\s*inset 0 0 0 1px var\(--line\)/);
+		expect(charGrid).toMatch(/\.st-unknown\s*\{[^}]*box-shadow:\s*inset 0 0 0 1px var\(--muted\)/);
 		expect(charGrid).toMatch(/\.st-unknown\s*\{[^}]*background:\s*transparent/);
 	});
 

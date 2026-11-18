@@ -140,6 +140,7 @@
 	.st-unknown {
 		background: transparent;
 		border-style: dashed;
+		border-color: var(--muted);
 	}
 
 	.st-fresh {

@@ -786,6 +786,7 @@
 	.swatch.st-unknown {
 		background: transparent;
 		border-style: dashed;
+		border-color: var(--muted);
 	}
 
 	.swatch.st-fresh {

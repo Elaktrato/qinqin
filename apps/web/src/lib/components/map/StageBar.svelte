@@ -57,10 +57,11 @@
 	}
 
 	/* Not studied: the empty track with a dashed outline (stage 0 is an
-	   outline, not a fill: its ramp step is ~1:1 against stage 1's). */
+	   outline, not a fill: its ramp step is ~1:1 against stage 1's). --muted
+	   is the ≥ 3:1 edge; --line is a hairline below 3:1 in 14 of 15 themes. */
 	.st-unknown {
 		background: transparent;
-		outline: 1px dashed var(--line);
+		outline: 1px dashed var(--muted);
 		outline-offset: -1px;
 		min-width: 0;
 	}
