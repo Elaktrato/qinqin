@@ -10,6 +10,7 @@
 	import { parseStrokeData, type CharStrokes } from '$lib/writing/strokes';
 	import WritingPad from './WritingPad.svelte';
 	import Button from '$lib/ui/Button.svelte';
+	import FaceAnswer from '../face/FaceAnswer.svelte';
 	import FacePrompt from '../face/FacePrompt.svelte';
 	import FaceWork from '../face/FaceWork.svelte';
 	import { usePrimary } from '../face/cardFace.svelte';
@@ -231,9 +232,17 @@
 		</div>
 	{/if}
 
-	<p class="feedback" role="status" aria-live="polite">{feedback}</p>
+	{#if !done}
+		<p class="feedback" role="status" aria-live="polite">{feedback}</p>
+	{/if}
 	<p class="sr-only" aria-live="polite">{strokeNote}</p>
 </FaceWork>
+
+{#if done && feedback}
+	<FaceAnswer>
+		<p class="fa-source">{feedback}</p>
+	</FaceAnswer>
+{/if}
 
 <style>
 	.written {
