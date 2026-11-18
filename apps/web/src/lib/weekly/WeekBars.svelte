@@ -6,15 +6,21 @@
 	// names the two weeks (design §9, "never colour alone").
 	import { t } from '$lib/i18n';
 	import { formatNumber, formatWeekday } from '$lib/i18n/format';
+	import { addDays } from '$lib/time/studyDay';
 	import type { WeekDay, WeekSummary } from './summary';
-	import { dayShort } from './weekText';
+	import { dayShort, weekRangeShort } from './weekText';
 
 	interface Props {
-		summary: Pick<WeekSummary, 'days' | 'previousDays'>;
+		summary: Pick<WeekSummary, 'days' | 'previousDays' | 'monday' | 'inProgress'>;
 		locale?: string;
 	}
 
 	let { summary, locale }: Props = $props();
+
+	// The current week keeps "this week / last week"; a browsed past week uses
+	// neutral words and its own dates, never today's.
+	const shownRange = $derived(weekRangeShort(summary.monday, locale));
+	const previousRange = $derived(weekRangeShort(addDays(summary.monday, -7), locale));
 
 	const busiest = $derived(
 		Math.max(
@@ -38,10 +44,10 @@
 
 	function text(day: WeekDay, previous: WeekDay | undefined): string {
 		const now = day.state === 'upcoming' ? amount(0) : amount(day.points);
-		// The template says "… this week, 30 last week": only the first amount
-		// spells out its unit.
+		// The template spells the unit once: only the first amount is a phrase,
+		// the second a bare formatted number.
 		const last = previous?.points === null ? t('weekly.offline') : formatNumber(previous?.points ?? 0);
-		const base = t('weekly.bars.day', {
+		const base = t(summary.inProgress ? 'weekly.bars.day' : 'weekly.bars.dayPast', {
 			day: formatWeekday(day.date, 'long', locale),
 			now,
 			last
@@ -55,10 +61,22 @@
 </script>
 
 <div class="week-bars">
-	<p class="title">{t('weekly.bars.title')}</p>
+	<p class="title">
+		{summary.inProgress
+			? t('weekly.bars.title')
+			: t('weekly.bars.titlePast', { shown: shownRange, previous: previousRange })}
+	</p>
 	<ul class="legend">
-		<li><span class="key now" aria-hidden="true"></span>{t('weekly.bars.thisWeek')}</li>
-		<li><span class="key last" aria-hidden="true"></span>{t('weekly.bars.lastWeek')}</li>
+		<li>
+			<span class="key now" aria-hidden="true"></span>
+			{summary.inProgress ? t('weekly.bars.thisWeek') : t('weekly.bars.shownWeek', { range: shownRange })}
+		</li>
+		<li>
+			<span class="key last" aria-hidden="true"></span>
+			{summary.inProgress
+				? t('weekly.bars.lastWeek')
+				: t('weekly.bars.weekBefore', { range: previousRange })}
+		</li>
 	</ul>
 
 	<div class="chart" aria-hidden="true">
@@ -122,10 +140,11 @@
 	}
 
 	.key.last {
+		/* The 35 % wash is under 3:1 on panel in every built-in theme; --muted
+		   is at least 3:1 (4.37 Latte, 7.37 Mocha, 5.30 Gruvbox, 5.54 Nord)
+		   and outlines the swatch and the bars themselves. */
 		background: color-mix(in srgb, var(--muted) 35%, transparent);
-		/* The wash is under 3:1 on panel in every built-in theme; the legend's
-		   outline names the second week together with its text. */
-		border: 1px solid var(--line);
+		border: 1px solid var(--muted);
 	}
 
 	.chart {
@@ -164,6 +183,9 @@
 
 	.bar.last {
 		background: color-mix(in srgb, var(--muted) 35%, transparent);
+		/* The wash alone is 1.5-2.1:1 on panel; the outline gives the bar a
+		   visible shape at the same --muted contrast as the legend's swatch. */
+		box-shadow: inset 0 0 0 1px var(--muted);
 	}
 
 	.weekday {
@@ -187,6 +209,7 @@
 			background: transparent;
 			border: 1px dashed CanvasText;
 			border-bottom: 0;
+			box-shadow: none;
 		}
 	}
 

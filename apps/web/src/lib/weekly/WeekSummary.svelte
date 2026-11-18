@@ -15,7 +15,14 @@
 	import type { WeekView } from './loadWeek';
 	import WeekBars from './WeekBars.svelte';
 	import WeekStrip from './WeekStrip.svelte';
-	import { compareWindowText, offlineText, summaryLines, type CharactersState, type SummaryLine } from './weekText';
+	import {
+		compareWindowText,
+		offlineText,
+		summaryLines,
+		weekRangeShort,
+		type CharactersState,
+		type SummaryLine
+	} from './weekText';
 
 	interface Props {
 		view: WeekView;
@@ -45,16 +52,19 @@
 
 	const lines = $derived(summaryLines(view.summary, view.sources, characters, compact));
 	const offline = $derived(offlineText(view.activityError !== null, characters === 'unavailable'));
+	// A browsed past week names its own dates; the current week keeps "this week".
+	const shownRange = $derived(weekRangeShort(view.summary.monday, locale));
 	const ARROW = { up: '▲', down: '▼', same: '=' } as const;
 
-	// The page's four numbers: reviews, new cards, study time and journal; a
-	// missing journal row (no journal plugin) makes room for reading, then the
-	// next row in the summary order.
-	const journalPresent = $derived(view.sources.some((source) => source.type === 'journal'));
+	// The page's four numbers: reviews, new cards, study time and journal. The
+	// journal row is always in the summary (contract), even offline when the
+	// activity sources are unknown; only a summary that really lacks the row
+	// makes room for reading. `view.sources` must not decide this: it is empty
+	// when the activity request failed.
 	const statIds = $derived.by(() => {
 		if (compact) return [];
-		const preferred = ['reviews', 'newCards', 'studyTime', journalPresent ? 'journal' : 'reading'];
 		const present = new Set(lines.map((line) => line.id));
+		const preferred = ['reviews', 'newCards', 'studyTime', present.has('journal') ? 'journal' : 'reading'];
 		const rest = lines.map((line) => line.id).filter((id) => !preferred.includes(id));
 		return [...preferred, ...rest].filter((id) => present.has(id)).slice(0, 4);
 	});
@@ -114,14 +124,21 @@
 
 		{#if weekMilestones !== null}
 			<p class="milestone-line">
-				{t('weekly.page.milestoneLine', {
-					titles: weekMilestones.length > 0 ? weekMilestones.join(', ') : MILESTONE_TEXT.none
-				})}
+				{view.summary.inProgress
+					? t('weekly.page.milestoneLine', {
+							titles: weekMilestones.length > 0 ? weekMilestones.join(', ') : MILESTONE_TEXT.none
+						})
+					: t('weekly.page.milestoneLinePast', {
+							range: shownRange,
+							titles: weekMilestones.length > 0 ? weekMilestones.join(', ') : MILESTONE_TEXT.none
+						})}
 			</p>
 		{/if}
 
 		{#if moreLines.length > 0}
-			<h3 class="more-title">{t('weekly.page.more')}</h3>
+			<h3 class="more-title">
+				{view.summary.inProgress ? t('weekly.page.more') : t('weekly.page.morePast', { range: shownRange })}
+			</h3>
 			<dl class="more">
 				{#each moreLines as line (line.id)}
 					<div class="row">
@@ -155,7 +172,12 @@
 		margin: var(--space-2) 0 0;
 	}
 
-	.window,
+	.window {
+		margin: var(--space-2) 0 0;
+		font-size: var(--font-size-s);
+		color: var(--readable-muted);
+	}
+
 	.offline {
 		margin: var(--space-2) 0 0;
 		font-size: var(--font-size-s);

@@ -4,8 +4,8 @@ import type { ActivitySource } from '$lib/api/stats';
 import type { WeekView } from './loadWeek';
 import type { WeekSummary as Summary } from './summary';
 import WeekSummary from './WeekSummary.svelte';
+import weekStripSource from './WeekStrip.svelte?raw';
 import weekSummarySource from './WeekSummary.svelte?raw';
-import weeklyWidgetSource from '../widgets/WeeklySummaryWidget.svelte?raw';
 
 function summary(over: Partial<Summary> = {}): Summary {
 	return {
@@ -80,9 +80,32 @@ describe('WeekSummary — page layout', () => {
 		}
 	});
 
-	it('a missing journal row is replaced by reading', () => {
-		const { container } = render(WeekSummary, { view: view({}, null, []), characters: null });
+	it('a summary without a journal row falls back to reading', () => {
+		const withoutJournal = summary().rows.filter((row) => row.key !== 'journal');
+		const { container } = render(WeekSummary, {
+			view: view({ rows: withoutJournal }, null, []),
+			characters: null
+		});
 		expect(labels(container)).toEqual(['Reviews', 'New cards', 'Flashcard study time', 'Reading']);
+	});
+
+	it('offline, with no activity sources, the journal row stays the fourth number', () => {
+		const offline = summary({
+			rows: summary().rows.map((r) =>
+				r.key === 'reviews' || r.key === 'reading' || r.key === 'journal'
+					? { ...r, value: null, previous: null }
+					: r
+			)
+		});
+		const { container } = render(WeekSummary, {
+			view: { summary: offline, sources: [], activityError: 'Offline' },
+			characters: null,
+			locale: 'en-GB'
+		});
+		expect(labels(container)).toEqual(['Reviews', 'New cards', 'Flashcard study time', 'Journal entries']);
+		const terms = [...container.querySelectorAll('.more dt')].map((el) => el.textContent?.trim());
+		expect(terms).toContain('Reading');
+		expect(terms).not.toContain('Journal entries');
 	});
 
 	it('every other row is in the "More this week" list', () => {
@@ -139,7 +162,7 @@ describe('WeekSummary — page layout', () => {
 				r.key === 'reviews' || r.key === 'reading' || r.key === 'journal' ? { ...r, value: null, previous: null } : r
 			)
 		});
-		render(WeekSummary, { view: { summary: offline, sources: [journal], activityError: 'Offline' }, characters: null, onretry });
+		render(WeekSummary, { view: { summary: offline, sources: [], activityError: 'Offline' }, characters: null, onretry });
 		expect(screen.getAllByText('Not available offline')).toHaveLength(3);
 		await fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
 		expect(onretry).toHaveBeenCalledTimes(1);
@@ -149,6 +172,36 @@ describe('WeekSummary — page layout', () => {
 		render(WeekSummary, { view: view({ inProgress: false, allVacation: true, monday: '2026-11-02' }), characters: null });
 		expect(screen.getByText('On vacation all week')).toBeTruthy();
 		expect(screen.queryByText('In progress')).toBeNull();
+	});
+
+	it('a completed past week names its own dates and the week before, not “this/last week”', () => {
+		const milestones = {
+			items: [{ id: 'reviews:100', day: '2026-11-10', isNew: true }],
+			titles: new Map([['reviews:100', '100 reviews']])
+		};
+		const { container } = render(WeekSummary, {
+			view: view({ monday: '2026-11-09', inProgress: false }),
+			characters: null,
+			locale: 'en-GB',
+			milestones
+		});
+
+		expect(container.querySelector('.more-title')?.textContent?.trim()).toBe('More in 9–15 Nov');
+		expect(container.querySelector('.milestone-line')?.textContent?.trim()).toBe(
+			'Milestone in 9–15 Nov: 100 reviews'
+		);
+		const changes = [...container.querySelectorAll('.stats .stat .change')].map((el) =>
+			el.textContent?.trim()
+		);
+		expect(changes[0]).toBe('5 more than the week before');
+		expect(changes[1]).toBe('Same as the week before');
+		expect(screen.queryByText('More this week')).toBeNull();
+	});
+
+	it('mutes the comparison window line, not the offline status (source check)', () => {
+		const css = weekSummarySource.slice(weekSummarySource.indexOf('<style>'));
+		expect(css).toMatch(/\.window\s*\{[^}]*color:\s*var\(--readable-muted\)/);
+		expect(css).toMatch(/\.offline\s*\{[^}]*font-size:[^}]*\}/);
 	});
 
 	it('shows the characters row while counting and when counted, not without', () => {
@@ -182,7 +235,13 @@ describe('WeekSummary — compact layout (home)', () => {
 	});
 
 	it('has no bordered pill and no weight above 600 (source check)', () => {
-		for (const source of [weekSummarySource, weeklyWidgetSource]) {
+		// WeekStrip is part of the compact layout; every checked file must
+		// really have a style block (an absent one would make the slice empty).
+		for (const [name, source] of [
+			['WeekSummary', weekSummarySource],
+			['WeekStrip', weekStripSource]
+		]) {
+			expect(source, `${name} has a <style> block`).toContain('<style>');
 			const css = source.slice(source.indexOf('<style>'));
 			expect(css).not.toMatch(/border-radius:\s*999px/);
 			expect(css).not.toMatch(/font-weight:\s*(bold|[7-9]00|6[1-9]\d)/);

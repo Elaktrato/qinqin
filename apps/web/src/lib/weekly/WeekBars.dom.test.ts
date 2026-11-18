@@ -27,12 +27,23 @@ const PREVIOUS: WeekDay[] = [
 	day('2026-11-15', { state: 'inactive', points: 0 })
 ];
 
-const summary = { days: DAYS, previousDays: PREVIOUS } as Pick<WeekSummary, 'days' | 'previousDays'>;
+const summary = {
+	monday: '2026-11-16',
+	inProgress: true,
+	days: DAYS,
+	previousDays: PREVIOUS
+} as Pick<WeekSummary, 'days' | 'previousDays' | 'monday' | 'inProgress'>;
+
+const PAST_DAYS = DAYS.map((d, i) => ({ ...d, date: `2026-11-${String(9 + i).padStart(2, '0')}` }));
+const PAST_PREVIOUS = PREVIOUS.map((d, i) => ({
+	...d,
+	date: `2026-11-${String(2 + i).padStart(2, '0')}`
+}));
 
 afterEach(() => cleanup());
 
 describe('WeekBars', () => {
-	it('seven columns, each with a this-week and a last-week bar scaled to the larger of both weeks', () => {
+	it('seven columns; a day with points carries paired bars scaled to the larger of both weeks', () => {
 		const { container } = render(WeekBars, { summary, locale: 'en-GB' });
 
 		const columns = [...container.querySelectorAll('[data-day]')];
@@ -77,5 +88,28 @@ describe('WeekBars', () => {
 		expect(screen.getByText('This week')).toBeTruthy();
 		expect(screen.getByText('Last week')).toBeTruthy();
 		expect(screen.getByText('This week and last week, per day')).toBeTruthy();
+	});
+
+	it('a browsed past week uses neutral, date-anchored labels, not “this/last week”', () => {
+		const past = {
+			monday: '2026-11-09',
+			inProgress: false,
+			days: PAST_DAYS,
+			previousDays: PAST_PREVIOUS
+		} as Pick<WeekSummary, 'days' | 'previousDays' | 'monday' | 'inProgress'>;
+		const { container } = render(WeekBars, { summary: past, locale: 'en-GB' });
+
+		expect(screen.queryByText('This week')).toBeNull();
+		expect(screen.queryByText('Last week')).toBeNull();
+		expect(screen.getByText('9–15 Nov and 2–8 Nov, per day')).toBeTruthy();
+		expect(screen.getByText('Shown week (9–15 Nov)')).toBeTruthy();
+		expect(screen.getByText('Week before (2–8 Nov)')).toBeTruthy();
+		const monday = container.querySelector('[data-day="2026-11-09"]')!;
+		expect(monday.getAttribute('title')).toBe(
+			'Monday: 42 points in the shown week, 30 in the week before, active'
+		);
+		const list = [...container.querySelectorAll('ul.sr-only li')].map((li) => li.textContent);
+		expect(list).toContain('Monday: 42 points in the shown week, 30 in the week before, active');
+		expect(list.some((text) => text?.includes('this week') || text?.includes('last week'))).toBe(false);
 	});
 });
