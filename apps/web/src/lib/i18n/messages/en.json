@@ -953,7 +953,7 @@
 	"flashcards.starter.top": "Top {size}",
 	"flashcards.stats.mastered": "Mastered",
 	"flashcards.stats.overall": "Overall",
-	"flashcards.stats.retention": "Retention (30 days)",
+	"flashcards.stats.retention": "Recall, last 30 days",
 	"flashcards.stats.retentionLater": "Shown after 10 repeat reviews",
 	"flashcards.stats.reviews": "Reviews (30 days)",
 	"flashcards.stats.studied": "Studied",

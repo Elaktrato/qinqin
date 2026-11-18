@@ -1,1 +1,1 @@
-<p>stub widget</p>
+<span></span>
