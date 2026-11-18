@@ -31,6 +31,7 @@
 4. **A syllabus row with no lesson or a lesson mapped to the wrong row** — “every item” is the promise. Test: the build script requires every row in every authored fragment and `--complete` requires all seven levels; `COVERAGE.md` is reviewed row by row.
 5. **The full pack making the Grammar page or API unusable** — ~340 lessons and ~1,700 examples. Test: the web browse test with 7 × 50 lessons and the final pack import test; the Task 10 smoke test opens `/p/grammar` and one lesson.
 6. **The Sources page contradicting itself about the syllabus** — the HSK word/character notices used to say no grammar points are included. Test: `check-sources` plus `TestCommittedPackNotices` and a manual Sources page read in Task 9.
+7. **A Chinese sentence that is grammatical but unnatural, a pinyin/tone slip, or a translation that misses aspect** — a structural validator cannot see it. Test: every level gets a Chinese-language grammar-tutor review (`chinese-tutor-review-prompt.md`) after the task review; findings are fixed before the level is complete.
 
 ## File Structure
 
@@ -78,7 +79,8 @@ Every level task below uses this procedure with its own outline file and row cou
 4. Write in batches of 10–15 lessons; after each batch run `node scripts/build-grammar-pack.mjs --check` and fix every error before continuing. `contrast` and `kinds` are authoring metadata; the build script strips them.
 5. When the whole level is written, run `node scripts/build-grammar-pack.mjs` to regenerate `lessons.json` and `COVERAGE.md`.
 6. Run `cd server && go test ./internal/grammar -run TestBundledGrammarPack` and fix any import failure.
-7. Commit the authored fragment, generated pack and coverage file together.
+7. The controller dispatches a separate **Chinese-language grammar-tutor review** of the whole level (prompt: `.superpowers/sdd/2026-11-18-grammar-hsk-pack/chinese-tutor-review-prompt.md`); the implementer fixes every finding in a fix round. The implementer never spawns this reviewer.
+8. Commit the authored fragment, generated pack and coverage file together.
 
 ## Task 1: Authoring tooling
 
