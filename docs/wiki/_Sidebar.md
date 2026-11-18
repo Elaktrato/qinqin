@@ -22,6 +22,7 @@
 **Running a server**
 
 - [Deploying](Admin-deploying)
+- [Upgrading](Admin-upgrading)
 - [Environment variables](Admin-environment-variables)
 - [Users and registration](Admin-users-and-registration)
 - [Email and security](Admin-email-and-security)
