@@ -203,6 +203,85 @@ describe('search page', () => {
 		expect(recordLookup).toHaveBeenCalledTimes(1);
 	});
 
+	it('on a phone a click pushes the URL, scrolls to the top and focuses the entry heading', async () => {
+		searchMock.mockResolvedValue([hit(7, '勤奋')]);
+		getEntryMock.mockResolvedValue(entry(7, '勤奋'));
+		setUrl('/search?q=qin');
+		render(Page);
+		const link = await screen.findByRole('link', { name: '勤奋' });
+		await fireEvent.click(link);
+		expect(vi.mocked(goto).mock.calls[0][1]).toEqual({
+			replaceState: false,
+			keepFocus: false,
+			noScroll: false
+		});
+		// The goto itself is mocked: follow its URL as the browser would.
+		setUrl('/search?q=qin&e=7');
+		await tick();
+		const heading = await screen.findByRole('heading', { level: 2, name: '勤奋' });
+		await waitFor(() => expect(document.activeElement).toBe(heading));
+	});
+
+	it('on a wide screen a click replaces the URL and keeps focus on the row', async () => {
+		setViewport(false);
+		searchMock.mockResolvedValue([hit(7, '勤奋')]);
+		setUrl('/search?q=qin');
+		render(Page);
+		const link = await screen.findByRole('link', { name: '勤奋' });
+		link.focus();
+		await fireEvent.click(link);
+		expect(vi.mocked(goto).mock.calls[0][1]).toEqual({
+			replaceState: true,
+			keepFocus: true,
+			noScroll: true
+		});
+		expect(document.activeElement).toBe(link);
+	});
+
+	it('Arrow keys, Home and End move between rows; one row is the tab stop', async () => {
+		searchMock.mockResolvedValue([hit(1, 'a'), hit(2, 'b'), hit(3, 'c')]);
+		setUrl('/search?q=x');
+		render(Page);
+		const rows = await screen.findAllByRole('link', { name: /^[abc]$/ });
+		expect(rows.map((r) => r.getAttribute('tabindex'))).toEqual(['0', '-1', '-1']);
+		rows[0].focus();
+		await fireEvent.keyDown(rows[0], { key: 'ArrowDown' });
+		expect(document.activeElement).toBe(rows[1]);
+		await fireEvent.keyDown(rows[1], { key: 'ArrowUp' });
+		expect(document.activeElement).toBe(rows[0]);
+		await fireEvent.keyDown(rows[0], { key: 'End' });
+		expect(document.activeElement).toBe(rows[2]);
+		expect(rows[2].getAttribute('tabindex')).toBe('0');
+		await fireEvent.keyDown(rows[2], { key: 'Home' });
+		expect(document.activeElement).toBe(rows[0]);
+		expect(rows[0].getAttribute('tabindex')).toBe('0');
+	});
+
+	it('Back to results returns focus to the row that was selected', async () => {
+		searchMock.mockResolvedValue([hit(7, '勤奋'), hit(8, '勤劳')]);
+		getEntryMock.mockResolvedValue(entry(8, '勤劳'));
+		setUrl('/search?q=qin&e=8');
+		render(Page);
+		await screen.findByRole('heading', { level: 2, name: '勤劳' });
+		expect(screen.getByRole('link', { name: 'Back to results' }).getAttribute('href')).toBe('/search?q=qin');
+		// Follow the link as the browser would.
+		setUrl('/search?q=qin');
+		await tick();
+		const row = await screen.findByRole('link', { name: '勤劳' });
+		await waitFor(() => expect(document.activeElement).toBe(row));
+	});
+
+	it('keeps the announced count after a selection', async () => {
+		searchMock.mockResolvedValue([hit(7, '勤奋'), hit(8, '勤劳')]);
+		getEntryMock.mockResolvedValue(entry(7, '勤奋'));
+		setUrl('/search?q=qin');
+		render(Page);
+		const status = await screen.findByRole('status');
+		await waitFor(() => expect(status.textContent).toBe('2 results for “qin”.'));
+		await fireEvent.click(await screen.findByRole('link', { name: '勤奋' }));
+		expect(status.textContent).toBe('2 results for “qin”.');
+	});
+
 	it('ignores a stale response that resolves after a newer search', async () => {
 		const first = deferred<SearchHit[]>();
 		const second = deferred<SearchHit[]>();

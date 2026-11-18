@@ -12,12 +12,15 @@
 		href,
 		selected,
 		hidden,
+		tabstop = false,
 		onactivate
 	}: {
 		hit: SearchHit;
 		href: string;
 		selected: boolean;
 		hidden: ReadonlySet<number>;
+		/** The list's one tab stop (arrow keys move focus, Home/End jump). */
+		tabstop?: boolean;
 		onactivate?: (event: MouseEvent) => void;
 	} = $props();
 
@@ -31,6 +34,9 @@
 	class="row"
 	class:selected
 	{href}
+	id={`hit-row-${hit.id}`}
+	data-row-id={hit.id}
+	tabindex={tabstop ? 0 : -1}
 	aria-label={hit.written}
 	aria-current={selected ? 'true' : undefined}
 	aria-describedby={`${id}-reading ${id}-gloss ${id}-meta`}

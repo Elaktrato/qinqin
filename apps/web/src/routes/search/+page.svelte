@@ -26,12 +26,13 @@
 		submitHref,
 		type SearchFilters
 	} from '$lib/searchFilters';
-	import { onMount } from 'svelte';
+	import { onMount, tick } from 'svelte';
 	import { listLanguages } from '$lib/api/languages';
 	import { dictionaryHint } from '$lib/coverage';
 	import { hiddenDictionaries } from '$lib/dictionaryVisibility';
 	import { languageLabel, usesHan } from '$lib/languages';
 	import { user } from '$lib/auth';
+	import { PHONE_MEDIA_QUERY } from '$lib/frame/breakpoint';
 	import Field from '$lib/ui/Field.svelte';
 	import Button from '$lib/ui/Button.svelte';
 	import ResultRow from './ResultRow.svelte';
@@ -71,6 +72,72 @@
 
 	// Guards against a slow earlier request overwriting a newer result.
 	let requestSeq = 0;
+
+	// The result row that is the list's single tab stop; ArrowUp/Down move
+	// between rows, Home/End jump, and Back to results returns here.
+	let activeId = $state<number | null>(null);
+	// Set by a phone selection so the entry heading takes focus once it loads.
+	let focusDetail = $state(false);
+	let lastSelected: number | null = null;
+
+	$effect(() => {
+		const ids = hits.map((h) => h.id);
+		if (activeId === null || !ids.includes(activeId)) activeId = ids[0] ?? null;
+	});
+
+	// Leaving a selection (Back to results) remembers its row; the list is
+	// re-rendered by a fresh search, so focus waits until it is back.
+	let returnFocusId = $state<number | null>(null);
+	$effect(() => {
+		const id = selected;
+		if (id !== null) {
+			lastSelected = id;
+			returnFocusId = null;
+			return;
+		}
+		if (lastSelected === null) return;
+		returnFocusId = lastSelected;
+		lastSelected = null;
+		focusDetail = false;
+	});
+	$effect(() => {
+		const id = returnFocusId;
+		const busy = loading;
+		const present = hits.some((h) => h.id === id);
+		if (id === null || busy || selected !== null || !present) return;
+		// The URL change also starts a fresh search; wait one flush for it so
+		// focus lands on the row once the list is rendered again.
+		void tick().then(() => {
+			if (returnFocusId !== id || loading || selected !== null) return;
+			const row = document.getElementById(`hit-row-${id}`);
+			if (row === null) return;
+			returnFocusId = null;
+			activeId = id;
+			row.focus();
+		});
+	});
+
+	function rowKeys(event: KeyboardEvent): void {
+		const key = event.key;
+		if (key !== 'ArrowDown' && key !== 'ArrowUp' && key !== 'Home' && key !== 'End') return;
+		const target = event.target instanceof Element ? event.target.closest('a[data-row-id]') : null;
+		const current = Number(target?.getAttribute('data-row-id') ?? activeId);
+		const index = hits.findIndex((h) => h.id === current);
+		if (index < 0) return;
+		event.preventDefault();
+		const next =
+			key === 'Home'
+				? 0
+				: key === 'End'
+					? hits.length - 1
+					: key === 'ArrowDown'
+						? Math.min(index + 1, hits.length - 1)
+						: Math.max(index - 1, 0);
+		const id = hits[next]?.id;
+		if (id === undefined) return;
+		activeId = id;
+		document.getElementById(`hit-row-${id}`)?.focus();
+	}
 
 	let allSchemes = $state<Scheme[]>([]);
 	let schemesFailed = $state(false);
@@ -145,11 +212,14 @@
 		event.preventDefault();
 		openedHit(entryId);
 		const wide =
-			typeof window.matchMedia !== 'function' || window.matchMedia('(min-width: 720px)').matches;
+			typeof window.matchMedia !== 'function' || !window.matchMedia(PHONE_MEDIA_QUERY).matches;
+		// A phone push scrolls to the top and moves focus to the entry once
+		// it loads; a wide selection keeps the reader's place on the row.
+		focusDetail = !wide;
 		void goto(searchHref(activeQuery, filters, entryId), {
 			replaceState: wide,
 			keepFocus: wide,
-			noScroll: true
+			noScroll: wide
 		});
 	}
 
@@ -349,13 +419,14 @@
 		{#if hits.length >= RESULT_CAP}
 			<p class="note">{t('search.capped', { count: RESULT_CAP })}</p>
 		{/if}
-		<ul class="results" aria-label={t('search.results')}>
+		<ul class="results" aria-label={t('search.results')} onkeydown={rowKeys}>
 			{#each hits as hit (hit.id)}
 				<li>
 					<ResultRow
 						{hit}
 						href={searchHref(activeQuery, filters, hit.id)}
 						selected={selected === hit.id}
+						tabstop={hit.id === activeId}
 						hidden={hidden}
 						onactivate={(event) => choose(event, hit.id)}
 					/>
@@ -378,6 +449,7 @@
 					entryId={detailId}
 					headingLevel={2}
 					recordView={selected !== null && detailId === selected}
+					focusOnLoad={focusDetail && selected !== null && detailId === selected}
 					ontitle={titled}
 				/>
 			{:else}

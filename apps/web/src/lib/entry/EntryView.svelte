@@ -39,8 +39,16 @@
 		entryId: requestedId,
 		headingLevel = 1,
 		recordView = true,
+		focusOnLoad = false,
 		ontitle
-	}: { entryId: number | null; headingLevel?: 1 | 2; recordView?: boolean; ontitle?: (written: string) => void } = $props();
+	}: {
+		entryId: number | null;
+		headingLevel?: 1 | 2;
+		recordView?: boolean;
+		/** A phone navigation focuses the entry heading once the entry is on screen. */
+		focusOnLoad?: boolean;
+		ontitle?: (written: string) => void;
+	} = $props();
 
 	let entry = $state<Entry | null>(null);
 	let chars = $state<EntryBase[]>([]);
@@ -65,6 +73,13 @@
 
 	// Guards against a slow earlier request overwriting a newer entry.
 	let requestSeq = 0;
+
+	// The word heading, so a phone navigation can move focus into the entry.
+	let headingEl = $state<HTMLElement | null>(null);
+	$effect(() => {
+		if (!focusOnLoad || entry === null || headingEl === null) return;
+		headingEl.focus();
+	});
 
 	function message(err: unknown, fallback: string): string {
 		if (err instanceof ApiError && err.message) return err.message;
@@ -229,7 +244,7 @@
 		<header class="head">
 			<div>
 				<div class="headword">
-					<svelte:element this={headingLevel === 1 ? 'h1' : 'h2'} class="written" lang={studyLang(entry.language)}>{entry.written}</svelte:element>
+					<svelte:element this={headingLevel === 1 ? 'h1' : 'h2'} class="written" bind:this={headingEl} tabindex="-1" lang={studyLang(entry.language)}>{entry.written}</svelte:element>
 					<PlayButton
 						clips={headClips}
 						speakText={entry.written}
