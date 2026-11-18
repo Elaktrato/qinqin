@@ -699,6 +699,7 @@
 	"entry.cards.selectedCount": "{count, plural, one {# selected} other {# selected}}",
 	"entry.cards.show": "Show",
 	"entry.cards.title": "Manage cards ({count})",
+	"entry.char.level": "{meta} · {level}",
 	"entry.char.meta": "Radical {radical}",
 	"entry.char.strokes": "{strokes, plural, one {# stroke} other {# strokes}}",
 	"entry.chips.character": "Character",

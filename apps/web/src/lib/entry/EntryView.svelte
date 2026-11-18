@@ -23,7 +23,7 @@
 	import { viewPayload } from '$lib/eventPayloads';
 	import { loadEntryExtras } from '$lib/entry/extras';
 	import ReadingText from '$lib/components/ReadingText.svelte';
-	import { studyLang } from '$lib/i18n/lang';
+	import { glossLang, readingLang, studyLang } from '$lib/i18n/lang';
 	import { languageLabel } from '$lib/languages';
 	import { entryRadicalLinks } from '$lib/radicals/selection';
 	import { workspaces } from '$lib/workspaces';
@@ -34,6 +34,7 @@
 	import { relatedWords } from './related';
 	import { decksContaining } from './decks';
 	import { variantLabel } from './variant';
+	import { characterMeta } from './characterMeta';
 	import { getEntryRanks } from '$lib/api/frequency';
 	import { getStudyData } from '$lib/study/studyData';
 	import { setPageActions } from '$lib/frame/pageFrame.svelte';
@@ -384,11 +385,9 @@
 									<a class="char" href={`/entry/${c.id}`}>
 										<span class="glyph" lang={studyLang(entry.language)}>{c.written}</span>
 										<span class="char-meta">
-											{#if c.reading}<span class="reading" lang={studyLang(entry.language)}>{c.reading.value}</span>{/if}
-											{#if c.gloss}<span class="gloss">{c.gloss}</span>{/if}
-											<small>
-												{#if c.radical}{t('entry.char.meta', { radical: c.radical.written })} · {/if}{t('entry.char.strokes', { strokes: c.strokes })}
-											</small>
+											{#if c.reading}<span class="reading" lang={readingLang(c.reading.type, entry.language)}>{c.reading.value}</span>{/if}
+											{#if c.gloss}<span class="gloss" lang={glossLang(undefined)}>{c.gloss}</span>{/if}
+											{#if characterMeta(c)}<small>{characterMeta(c)}</small>{/if}
 										</span>
 									</a>
 								</li>

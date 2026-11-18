@@ -213,3 +213,43 @@ describe('a word stroke picker (#104)', () => {
 		expect(screen.getByRole('button', { name: 'Show the strokes of 奋' })).toBeTruthy();
 	});
 });
+
+
+describe("a word's characters (#104)", () => {
+	it('shows the reading in its reading lang, the gloss in the gloss lang and only the known meta parts', async () => {
+		getEntryMock.mockResolvedValue(
+			entry({
+				characters: [
+					{
+						id: 6,
+						written: '勤',
+						reading: { type: 'pinyin', value: 'qín' },
+						gloss: 'diligent',
+						radical: { id: 9, written: '力' },
+						strokes: 13,
+						levels: [{ scheme: 'HSK', level: '5' }]
+					},
+					{
+						id: 7,
+						written: '奋',
+						reading: null,
+						gloss: '',
+						radical: { id: 10, written: '大' },
+						strokes: 0,
+						levels: []
+					}
+				]
+			})
+		);
+		const { container } = render(EntryView, { entryId: 5, recordView: false });
+		await screen.findByRole('heading', { name: '勤奋' });
+		const rows = [...container.querySelectorAll('.char')];
+		const first = rows[0];
+		expect(first.querySelector('.reading')?.getAttribute('lang')).toBe('zh-Latn-pinyin');
+		expect(first.querySelector('.gloss')?.getAttribute('lang')).toBe('en');
+		expect(first.querySelector('small')?.textContent).toBe('Radical 力 · 13 strokes · HSK 5');
+		const second = rows[1];
+		expect(second.querySelector('small')?.textContent).toBe('Radical 大');
+		expect(second.textContent).not.toContain('0 strokes');
+	});
+});
