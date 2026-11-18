@@ -373,6 +373,26 @@ describe('BookView rail (#102)', () => {
 		]);
 	});
 
+	it('the rail sheet closes across the phone breakpoint, so no hidden opener keeps focus', async () => {
+		setWidth(800);
+		render(BookView, { id: 1, chapter: 0 });
+		await screen.findByText('你好世界');
+		await fireEvent.click(screen.getByRole('button', { name: RAIL_BUTTON }));
+		expect(screen.getByRole('dialog', { name: 'Book tools' })).toBeTruthy();
+		setWidth(700);
+		window.dispatchEvent(new Event('resize'));
+		await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Book tools' })).toBeNull());
+		cleanup();
+		setWidth(700);
+		render(BookView, { id: 1, chapter: 0 });
+		await screen.findByText('你好世界');
+		await fireEvent.click(screen.getByRole('button', { name: RAIL_BUTTON }));
+		expect(screen.getByRole('dialog', { name: 'Book tools' })).toBeTruthy();
+		setWidth(800);
+		window.dispatchEvent(new Event('resize'));
+		await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Book tools' })).toBeNull());
+	});
+
 	it('a failed display save is shown inside the rail sheet', async () => {
 		setWidth(800);
 		vi.mocked(setSettings).mockRejectedValueOnce(new Error('offline'));

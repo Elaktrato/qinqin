@@ -69,6 +69,7 @@
 	import ContentsPanel from './ContentsPanel.svelte';
 	import { Icon, IconButton } from '$lib/ui';
 	import { setPageActions } from '$lib/frame/pageFrame.svelte';
+	import { FRAME_PHONE_BREAKPOINT } from '$lib/frame/breakpoint';
 	import {
 		loadRailState,
 		railMode,
@@ -152,6 +153,14 @@
 	});
 	const mode = $derived(railMode(viewportWidth));
 	let drawerOpen = $state(false);
+	// The frame's phone breakpoint swaps the two sheet openers (the page row's
+	// button and the phone bar's): a sheet open across it would return focus to
+	// the now hidden one, so it closes instead.
+	const phoneFrame = $derived(viewportWidth < FRAME_PHONE_BREAKPOINT);
+	$effect(() => {
+		void phoneFrame;
+		untrack(() => (drawerOpen = false));
+	});
 	// Back to a wide window: the drawer is gone; coming back starts closed.
 	$effect(() => {
 		if (mode === 'column') drawerOpen = false;

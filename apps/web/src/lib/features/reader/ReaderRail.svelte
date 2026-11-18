@@ -152,7 +152,7 @@
 		</div>
 	</aside>
 {:else}
-	<Sheet {open} label={t('reader.rail.sheet')} onclose={() => onToggle(false)}>
+	<Sheet {open} label={t('reader.rail.sheet')} onclose={() => onToggle(false)} returnFocus={() => opener()}>
 		<div id="reader-rail-sheet" class="sheet-body">
 			<!-- The page's live regions are inert behind the modal sheet: repeat them here. -->
 			<p class="visually-hidden" role="status" aria-live="polite">{bookmarkStatus}</p>
