@@ -2,6 +2,7 @@ import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { describe, expect, it } from 'vitest';
+import { mdAnchors } from './testing/mdAnchors';
 
 // Doc check for the wiki source in docs/wiki: the sidebar and the page files
 // agree, every internal link resolves, and the generated API pages are current.
@@ -15,13 +16,19 @@ const pages = readdirSync(wiki)
 	.sort();
 
 function internalLinks(md: string): string[] {
-	const out: string[] = [];
+	return internalTargets(md).map((t) => t.page);
+}
+
+/** Every internal link as page and optional anchor; a bare #anchor points into the page itself (page ''). */
+function internalTargets(md: string): { page: string; anchor?: string }[] {
+	const out: { page: string; anchor?: string }[] = [];
 	for (const m of md.matchAll(/\[[^\]]*\]\(([^)\s]+)\)/g)) {
 		const target = m[1];
-		if (/^[a-z][a-z0-9+.-]*:/i.test(target) || target.startsWith('#')) continue;
-		out.push(target.split('#')[0]);
+		if (/^[a-z][a-z0-9+.-]*:/i.test(target)) continue;
+		const [page, anchor] = target.split('#');
+		out.push(anchor === undefined ? { page } : { page, anchor });
 	}
-	return out;
+	return out.filter((t) => t.page !== '' || t.anchor !== undefined);
 }
 
 describe('docs/wiki', () => {
@@ -46,7 +53,18 @@ describe('docs/wiki', () => {
 	it.each([...pages, '_Footer'])('internal links in %s resolve', (name) => {
 		const md = readFileSync(resolve(wiki, `${name}.md`), 'utf8');
 		for (const target of internalLinks(md)) {
+			if (target === '') continue;
 			expect(existsSync(resolve(wiki, `${target}.md`)), `${name}.md links ${target}`).toBe(true);
+		}
+	});
+
+	it.each([...pages, '_Footer', '_Sidebar'])('#anchors of internal links in %s point at headings', (name) => {
+		const md = readFileSync(resolve(wiki, `${name}.md`), 'utf8');
+		for (const { page, anchor } of internalTargets(md)) {
+			if (anchor === undefined) continue;
+			const file = resolve(wiki, `${page === '' ? name : page}.md`);
+			if (!existsSync(file)) continue;
+			expect(mdAnchors(readFileSync(file, 'utf8')).has(anchor), `${name}.md links ${page}#${anchor}`).toBe(true);
 		}
 	});
 

@@ -1,4 +1,4 @@
-import { readFileSync, readdirSync, statSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
@@ -31,12 +31,31 @@ const files = readdirSync(dir)
 	.filter((name) => name.endsWith('.png'))
 	.sort();
 
+// Ruling (wiki move, 2026-11-18): the README is a short front page, so it shows three screenshots and keeps the
+// other ten in a collapsed "More screenshots" block. Every image in docs/assets/screenshots stays linked from
+// the README: the wiki allows no images, so an image the README drops would be an orphan file.
+const VISIBLE = 3;
+
 describe('README screenshot gallery', () => {
 	it('links the 13 images in order, each with alt text', () => {
 		expect(links.map((link) => link.path)).toEqual(
 			WANT.map((name) => `docs/assets/screenshots/${name}`)
 		);
 		for (const link of links) expect(link.alt.length, link.path).toBeGreaterThan(0);
+	});
+
+	it('shows the first three and folds the rest into one details block', () => {
+		const [open, rest = ''] = section.split(/^<details>$/m);
+		expect([...open.matchAll(/!\[/g)].length).toBe(VISIBLE);
+		expect(rest).toMatch(/^<summary>More screenshots<\/summary>$/m);
+		expect(rest).toMatch(/^<\/details>$/m);
+		expect([...rest.matchAll(/!\[/g)].length).toBe(WANT.length - VISIBLE);
+	});
+
+	it('links only images that exist', () => {
+		for (const m of readme.matchAll(/!\[[^\]]*\]\(([^)]+)\)/g)) {
+			expect(existsSync(resolve(repo, m[1])), m[1]).toBe(true);
+		}
 	});
 
 	it('links every PNG in docs/assets/screenshots', () => {
