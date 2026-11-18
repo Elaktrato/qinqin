@@ -13,7 +13,7 @@
 ## Global Constraints
 
 - Seven levels, exactly: `hsk-1` "Level 1 · First sentences", `hsk-2` "Level 2 · Everyday basics", `hsk-3` "Level 3 · Getting around", `hsk-4` "Level 4 · Connected speech", `hsk-5` "Level 5 · Nuance and attitude", `hsk-6` "Level 6 · Formal ground", `hsk-7-9` "Level 7 · Mastery". Each maps to `hsk-words` levels `HSK 1` … `HSK 7–9` (en dash in the last one).
-- Syllabus row counts: 48, 61, 56, 46, 39, 30, 27. These are floors, not caps: a level may author extra rows if the PDF has more; `--complete` requires every row up to the floor and allows more. One lesson per 细目 row; rows that are several independent constructions may split into pattern-family lessons (HSK 7–9 mainly), and `COVERAGE.md` maps the row to every lesson. Total lessons between 307 and 500.
+- Syllabus row counts (floors): 48, 61, 56, 46, 38, 30, 27. These are floors, not caps: a level may author extra rows if the PDF has more; `--complete` requires every row up to the floor and allows more. One lesson per 细目 row; rows that are several independent constructions may split into pattern-family lessons (HSK 7–9 mainly), and `COVERAGE.md` maps the row to every lesson. Total lessons between 306 and 500.
 - Every lesson has 4–8 examples. Every example has a non-empty `reading`, `translation`, `focus`, and 2–4 `distractors`. `focus` occurs exactly once in `text`. Distractors are distinct, never equal the focus, and every one is wrong in that slot.
 - Every lesson has 1–2 **contrast** examples: `focus` is a related point, not the lesson's own point, and the body explains the contrast. Every cloze has at least one clearly wrong distractor and at least one similar/contrastive distractor where one exists.
 - Lesson text is plain text. No HTML, no Markdown. `title` ≤ 120 chars, `summary` ≤ 300, `pattern` 1–3 lines ≤ 120, `body` 1–4 paragraphs ≤ 2,000 each.
@@ -147,7 +147,7 @@ Expected: PASS.
 
 - [ ] **Step 9: Generate the outlines from the real PDF**
 
-Run the commands in Appendix A. The target row counts are 48, 61, 56, 46, 39, 30, 27. The extractor is an aid: merged cells can shift or hide a label, so the printed counts may differ. Do not hand-edit the authored content; authors cross-check each level against the layout dump and add any missing row.
+Run the commands in Appendix A. The target row floors are 48, 61, 56, 46, 38, 30, 27. The extractor is an aid: merged cells can shift or hide a label, so the printed counts may differ. Do not hand-edit the authored content; authors cross-check each level against the layout dump and add any missing row.
 
 - [ ] **Step 10: Run the script test suite and commit**
 
@@ -326,9 +326,9 @@ Follow the reusable authoring procedure. Author rows 1–46 in batches of 10–1
 
 ## Task 6: HSK 5
 
-**Level:** `hsk-5` · **Outline:** `outline/hsk-5.json` · **Rows:** 39 · **Lessons:** 39–42 · **Split note:** split 趋向补语3 / 状态补语2 only if eight examples cannot show the uses.
+**Level:** `hsk-5` · **Outline:** `outline/hsk-5.json` · **Rows:** 38 (floor) · **Lessons:** 38–41 · **Split note:** split 趋向补语3 / 状态补语2 only if eight examples cannot show the uses.
 
-Follow the reusable authoring procedure. Author rows 1–39 in batches of 10–15.
+Follow the reusable authoring procedure. Author rows 1–38 in batches of 10–15; add a row above 38 if the PDF has one.
 
 - [ ] **Step 1: Author the level fragment** in `plugins/data/zh-grammar/authored/hsk-5.json`, checking after each batch.
 - [ ] **Step 2: Build and inspect the coverage**; every HSK 5 row appears.
@@ -474,7 +474,7 @@ cd -
 node scripts/prepare-hsk-grammar.mjs /tmp/opencode/hsk/grammar.tsv /tmp/opencode/hsk/outline
 ```
 
-Expected printed counts: HSK 1 45, HSK 2 60, HSK 3 56, HSK 4 46, HSK 5 39, HSK 6 30, HSK 7–9 27. The extractor is an authoring aid: the author must still check each row against the PDF because the table's merged cells and watermark can shift a line.
+Expected printed counts (the extractor's current approximation): HSK 1 46, HSK 2 59, HSK 3 54, HSK 4 44, HSK 5 38, HSK 6 31, HSK 7–9 28. These are not the binding floors; the author must check each row against the PDF because the table's merged cells and watermark can shift a line. The binding floors are 48, 61, 56, 46, 38, 30, 27.
 
 ## Appendix B: Sample review checklist (Task 2 and Task 9)
 

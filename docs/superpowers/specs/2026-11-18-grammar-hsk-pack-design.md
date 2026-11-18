@@ -33,7 +33,7 @@ The owner's decisions, 2026-11-18:
   names the members. A row that is genuinely several constructions (HSK 7–9 四字格, fixed
   patterns, discourse markers; a few HSK 1–3 rows such as 语气助词 and 趋向补语) is split into
   pattern-family lessons, and the coverage index maps the row to each. The row count is about
-  48 (HSK 1), 61 (HSK 2), 56 (HSK 3), 46 (HSK 4), 39 (HSK 5), 30 (HSK 6) and 55–65 (HSK 7–9);
+  48 (HSK 1), 61 (HSK 2), 56 (HSK 3), 46 (HSK 4), 38 (HSK 5), 30 (HSK 6) and 55–65 (HSK 7–9);
   the final, reviewed list is the pack's coverage index. The pack limit is 500 lessons, so the
   count fits.
 - 4–8 example sentences per lesson, each with reading and translation. Every example has a
@@ -123,7 +123,7 @@ Levels (ids are stable; names avoid claiming official status):
 | `hsk-2` | Level 2 · Everyday basics | `hsk-words` / `HSK 2` | 61 |
 | `hsk-3` | Level 3 · Getting around | `hsk-words` / `HSK 3` | 56 |
 | `hsk-4` | Level 4 · Connected speech | `hsk-words` / `HSK 4` | 46 |
-| `hsk-5` | Level 5 · Nuance and attitude | `hsk-words` / `HSK 5` | 39 |
+| `hsk-5` | Level 5 · Nuance and attitude | `hsk-words` / `HSK 5` | 38 |
 | `hsk-6` | Level 6 · Formal ground | `hsk-words` / `HSK 6` | 30 |
 | `hsk-7-9` | Level 7 · Mastery | `hsk-words` / `HSK 7–9` | 55–65 |
 
