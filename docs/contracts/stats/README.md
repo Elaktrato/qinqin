@@ -54,10 +54,10 @@ workspaces are never counted in any of the four numbers or the series.
 
 ## When flashcards are off
 
-The two core widgets read flashcards data, so with the feature switched off the summary widget says
+The two core widgets read flashcards data, so with the feature switched off both say
 "Switch on flashcards in Settings → Features to see these numbers." and the reviews chart is left out (no
-reviews can be made). The Stats → Overview page keeps its widget grid; plugins' widgets stay after the default
-arrangement.
+reviews can be made; historical counts are not shown). The Stats → Overview page keeps its widget grid;
+plugins' widgets stay after the default arrangement.
 
 ## The default arrangement (`statsOrder`)
 
