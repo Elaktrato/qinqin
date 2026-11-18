@@ -1011,7 +1011,7 @@
 	"flashcards.tone.toneForN": "Tone for syllable {n}",
 	"flashcards.tone.wrong": "{count, plural, one {# tone wrong.} other {# tones wrong.}}",
 	"flashcards.widget.description": "Cards due and new, level and XP, streak and the study buddy.",
-	"flashcards.widget.level": "Level <strong>{level}</strong> · {xp} XP",
+	"flashcards.widget.level": "Level <strong>{level}</strong> · {xp} / {next} XP",
 	"flashcards.widget.loadError": "Could not load your flashcards.",
 	"flashcards.widget.loading": "Loading study data…",
 	"flashcards.widget.noWorkspace": "Choose a workspace in the header to study.",

@@ -30,6 +30,7 @@
 	"flashcards.delete.staysIn": "{deck} is a deck name.",
 	"flashcards.sched.daysPair": "\"d\" abbreviates days; {before} and {after} are numbers with one decimal.",
 	"flashcards.starter.addedKnown": "{text} is flashcards.starter.added (\"Added 480 words\").",
+	"flashcards.widget.level": "{xp} is the XP into the level, {next} the XP the next level needs (both formatted numbers); the phone and the desktop show the same line.",
 	"flashcards.widget.streakDays": "Follows the bold streak number (\"<b>5</b> days streak\"); the number itself is outside the message.",
 	"flashcards.widget.streakDone": "Follows flashcards.widget.streakDays on the same line.",
 	"goals.progress.newCards": "{amount} is today's count; # is the target, which the plural follows (\"32 of 50 new cards today\").",

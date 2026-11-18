@@ -28,6 +28,7 @@
 	import { DEFAULT_W } from '$lib/study/fsrs/params';
 	import { GENERAL_DECK_ID } from '$lib/study/store';
 	import type { Deck, ReviewEvent, ReviewGrade, StudyCard } from '$lib/study/types';
+	import Button from '$lib/ui/Button.svelte';
 	import WidgetCard from '$lib/widgets/WidgetCard.svelte';
 	import type { WidgetStatus } from '$lib/widgets/types';
 	import { workspaces } from '$lib/workspaces';
@@ -185,7 +186,7 @@
 	}}
 >
 	{#snippet actions()}
-		<a class="study" href="/study">{t('flashcards.widget.study')}</a>
+		<Button variant="primary" href="/study">{t('flashcards.widget.study')}</Button>
 	{/snippet}
 
 	<div class="buddy">
@@ -193,7 +194,7 @@
 		<div class="progress">
 			<p class="stats">
 				{vacationText ?? leftTodayText(left)} ·
-				<Msg key="flashcards.widget.level" args={{ level, xp }}>{#snippet strong(text: string)}<strong>{text}</strong>{/snippet}</Msg>
+				<Msg key="flashcards.widget.level" args={{ level, xp, next: progress.xpForNext }}>{#snippet strong(text: string)}<strong>{text}</strong>{/snippet}</Msg>
 			</p>
 			<div
 				class="bar"
@@ -229,17 +230,6 @@
 </WidgetCard>
 
 <style>
-	.study {
-		font-size: 0.8rem;
-		padding: 0.2rem 0.65rem;
-		border: 1px solid var(--accent);
-		border-radius: 999px;
-		color: var(--reading-accent);
-		font-weight: 600;
-		text-decoration: none;
-	}
-
-
 	.buddy {
 		display: flex;
 		align-items: center;
@@ -252,12 +242,14 @@
 		min-width: 0;
 	}
 
+	/* The level line: a thin accent bar on a --raised track (design §9,
+	   "level and XP line"). */
 	.bar {
-		height: 0.5rem;
+		height: 4px;
 		margin-top: 0.5rem;
-		border-radius: 999px;
+		border-radius: 2px;
 		overflow: hidden;
-		background: color-mix(in srgb, currentColor 14%, transparent);
+		background: var(--raised);
 	}
 
 	.bar span {

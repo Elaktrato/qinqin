@@ -81,7 +81,7 @@ describe('FlashcardsWidget goal ring', () => {
 		const container = await ready();
 		await new Promise((r) => setTimeout(r, 0));
 		expect(text(container)).toBe(
-			'Flashcards Study Nothing due today · Level 1 · 0 XP 🔥 0 days streak · study today to start one'
+			'Flashcards Study Nothing due today · Level 1 · 0 / 100 XP 🔥 0 days streak · study today to start one'
 		);
 		expect(screen.queryByRole('progressbar', { name: 'Daily goal' })).toBeNull();
 	});

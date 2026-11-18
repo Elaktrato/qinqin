@@ -2,38 +2,21 @@
 	import { pageTitle } from '$lib/pageTitle';
 	import { t } from '$lib/i18n';
 	import { page } from '$app/state';
-	import { activeStatsTab, statsPanelLabel, statsTabs, tabKeyTarget } from '$lib/statsTabs';
+	import { activeStatsTab, statsPanelLabel, statsTabs } from '$lib/statsTabs';
+	import Tabs from '$lib/ui/Tabs.svelte';
 	import { currentLanguage } from '$lib/workspaces';
 
 	let { children } = $props();
 
 	// Each view has its own URL (/stats, /stats/week, /stats/characters),
-	// so Back, Forward and deep links pick the tab. Characters exists only for Han
-	// languages; a direct visit in another workspace shows the panel's
-	// note with no tab selected.
+	// so Back, Forward and deep links pick the tab. The tabs are links, not
+	// ARIA tabs: the base Tabs route form. Characters exists only for Han
+	// languages; a direct visit in another workspace keeps its own note.
 	const tabs = $derived(statsTabs($currentLanguage));
 	const active = $derived(activeStatsTab(page.url.pathname));
 	const activeTab = $derived(tabs.find((tab) => tab.id === active) ?? null);
 	const panelLabel = $derived(statsPanelLabel(active));
-
-	const tabEls: Record<string, HTMLAnchorElement | undefined> = {};
-
-	// Manual activation: the arrows, Home and End move focus between the
-	// tabs, Enter (a link's own key) or Space opens one. The character
-	// map is heavy, so merely arrowing past it must not load it.
-	function onkeydown(event: KeyboardEvent) {
-		const focused = tabs.findIndex((tab) => tabEls[tab.id] === document.activeElement);
-		if (event.key === ' ') {
-			if (focused < 0) return;
-			event.preventDefault();
-			tabEls[tabs[focused].id]?.click();
-			return;
-		}
-		const target = tabKeyTarget(event.key, focused, tabs.length);
-		if (target === null) return;
-		event.preventDefault();
-		tabEls[tabs[target].id]?.focus();
-	}
+	const tabItems = $derived(tabs.map((tab) => ({ id: tab.id, label: tab.label, href: tab.href })));
 </script>
 
 <svelte:head>
@@ -43,34 +26,13 @@
 <div class="page-body stats">
 	<h1>{t('stats.title')}</h1>
 
-	<!-- Tabs are links: the router keeps focus on the tab and the scroll
-	     position, so switching views feels like a tab, not a new page. -->
-	<div class="tabs" role="tablist" aria-label={t('stats.tabsLabel')}>
-		{#each tabs as tab (tab.id)}
-			{@const selected = tab.id === active}
-			<a
-				bind:this={tabEls[tab.id]}
-				id="stats-tab-{tab.id}"
-				class="tab"
-				role="tab"
-				href={tab.href}
-				{onkeydown}
-				aria-selected={selected}
-				aria-controls={selected ? 'stats-panel' : undefined}
-				tabindex={selected || (activeTab === null && tab.id === 'overview') ? 0 : -1}
-				data-sveltekit-keepfocus
-				data-sveltekit-noscroll>{tab.label}</a
-			>
-		{/each}
-	</div>
+	<Tabs label={t('stats.tabsLabel')} tabs={tabItems} selected={active ?? ''} />
 
 	<div
 		id="stats-panel"
 		class="panel"
-		role="tabpanel"
-		tabindex="0"
-		aria-labelledby={activeTab ? `stats-tab-${activeTab.id}` : undefined}
-		aria-label={activeTab ? undefined : panelLabel}
+		role="region"
+		aria-label={activeTab ? activeTab.label : panelLabel}
 	>
 		{@render children()}
 	</div>
@@ -82,53 +44,17 @@
 	}
 
 	.stats h1 {
-		margin-bottom: 1rem;
-	}
-
-	.tabs {
-		display: flex;
-		flex-wrap: wrap;
-		gap: 0.25rem;
-		border-bottom: 1px solid color-mix(in srgb, currentColor 18%, transparent);
-	}
-
-	.tab {
-		display: inline-flex;
-		align-items: center;
-		min-height: 2.75rem;
-		padding: 0 1rem;
-		margin-bottom: -1px;
-		border-bottom: 2px solid transparent;
-		color: var(--readable-muted);
-		text-decoration: none;
-		font-weight: 500;
-	}
-
-	.tab:hover {
-		color: var(--text);
-		background: color-mix(in srgb, currentColor 6%, transparent);
-	}
-
-	/* Selected: --text at 600 with the 2px accent underline (design §5). */
-	.tab[aria-selected='true'] {
-		font-weight: 600;
-		color: var(--text);
-		border-bottom-color: var(--accent);
-	}
-
-	.tab:focus-visible {
-		outline: 2px solid var(--focus-colour);
-		outline-offset: -2px;
-		border-radius: 0.4rem 0.4rem 0 0;
+		margin-bottom: var(--space-3);
+		font-weight: var(--weight-strong);
 	}
 
 	.panel {
-		margin-top: 1.5rem;
+		margin-top: var(--space-5);
 	}
 
 	.panel:focus-visible {
-		outline: 2px solid var(--focus-colour);
-		outline-offset: 0.5rem;
-		border-radius: 0.25rem;
+		outline: var(--focus-ring);
+		outline-offset: var(--focus-ring-offset);
+		border-radius: var(--radius);
 	}
 </style>
