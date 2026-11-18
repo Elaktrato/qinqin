@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { DEFAULT_W } from '$lib/study/fsrs/params';
-import { studyDay } from '$lib/time/studyDay';
+import { studyDay, type ZoneChange } from '$lib/time/studyDay';
 import { addDays } from '$lib/time/studyDay';
 import type { ReviewEvent, StudyCard } from '$lib/study/types';
 import type { Run } from '$lib/study/vacation';
@@ -14,8 +14,11 @@ vi.mock('$lib/features/flashcards/decks/deckStats', async (importOriginal) => {
 	const actual = await importOriginal<typeof import('$lib/features/flashcards/decks/deckStats')>();
 	return { ...actual, deckNumbers: vi.fn(actual.deckNumbers) };
 });
-import { deckNumbers } from '$lib/features/flashcards/decks/deckStats';
-import { reviewsPerDay, summaryNumbers, type SummaryInput } from './summary';
+import {
+	deckNumbers,
+	STATS_WINDOW_DAYS as DECK_WINDOW_DAYS
+} from '$lib/features/flashcards/decks/deckStats';
+import { reviewsPerDay, STATS_WINDOW_DAYS, summaryNumbers, type SummaryInput } from './summary';
 
 interface FixtureCard {
 	id: string;
@@ -39,6 +42,8 @@ interface FixtureCase {
 	note: string;
 	now: string;
 	zone: string;
+	/** A zone-change history; `zone` is the first zone when absent. */
+	history?: ZoneChange[];
 	cards: FixtureCard[];
 	reviews: FixtureReview[];
 	marks: number[];
@@ -74,7 +79,7 @@ function inputOf(c: FixtureCase, workspaceId = 1): SummaryInput {
 	return {
 		workspaceId,
 		now: Date.parse(c.now),
-		day: studyDay([{ zone: c.zone, from: null }]),
+		day: studyDay(c.history ?? [{ zone: c.zone, from: null }]),
 		cards,
 		decks: [],
 		reviews,
@@ -114,6 +119,10 @@ describe('summaryNumbers, every contract case', () => {
 });
 
 describe('summaryNumbers', () => {
+	it('uses the decks page’s 30-day window, one constant for both', () => {
+		expect(STATS_WINDOW_DAYS).toBe(DECK_WINDOW_DAYS);
+	});
+
 	it('reuses deckNumbers for recall (one call with deckId null)', () => {
 		vi.mocked(deckNumbers).mockClear();
 		summaryNumbers(inputOf(cases[0]));

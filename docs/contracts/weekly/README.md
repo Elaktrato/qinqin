@@ -96,7 +96,8 @@ rules as `days`: `reviews` is the `review` cell's `raw`, `points` the sum of the
 `null` for both while the activity response is unavailable. All seven dates are in the past, so the state is
 never `upcoming`; the other states follow the same precedence (`skipped`, `vacation`, `active`, `inactive`).
 The state is active on a day with points of any activity type or with a local review — the same rule as the
-week's days.
+week's days. A date skipped by a zone's date-line change can fall in the previous week too; it is `skipped`
+there as well (the Apia case `2011-12-30` in the shown week and the case with it in `previousDays` pin both).
 
 The paired bars use this whole week; the four numbers above them keep the contract's comparison window
 (`previous` on each row: the same weekday for the week in progress, the whole week for a completed one).

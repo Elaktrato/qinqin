@@ -78,10 +78,17 @@ default arrangement.
 
 ## Fixtures
 
-`summary-numbers.json`: cases `{name, note, now, zone, cards, reviews, marks, vacation, schedules?, expect}`.
+`summary-numbers.json`: cases
+`{name, note, now, zone, history?, cards, reviews, marks, vacation, schedules?, expect}`.
 
-- `zone` is the learner's zone (`studyDay` with one zone change at `null`); `now` is an RFC 3339 instant.
-  The fixture's `now` and `zone` define `today`; a case may state it in its note.
+- `zone` is the learner's zone (`studyDay` with one zone change at `null`); `history`, when present, is the
+  full zone-change history (`{zone, from}`, `from` null for the first) and wins over `zone`. `now` is an
+  RFC 3339 instant. The fixture's `now` and zone define `today`; a case may state it in its note.
+- There is no configurable day start: a learner day begins at local midnight. The plan's "review at 03:30 with
+  day start 04:00" case is therefore the zone boundary (03:30 on 18 November in Asia/Shanghai is 19:30 UTC on
+  17 November); `zone` and `history` are the only day rules.
+- The boundary cases pin the first day of the 30-day window (`today − 29`; the day before is outside) and a
+  month that started in one zone and continued in another (the month window is by learner day, not by zone).
 - `cards` are the live cards (a deleted card is absent), `reviews` the local review log events
   `{id, cardId, ts, grade, mode?, durationMs?}` of the shown workspace, `marks` the live `known:<entryId>`
   entry ids, `vacation` the merged vacation runs (`{start, end}`) of the workspace.

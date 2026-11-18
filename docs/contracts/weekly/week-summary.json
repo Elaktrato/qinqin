@@ -2574,6 +2574,197 @@
           "localOnly": false
         }
       }
+    },
+  {
+    "name": "Apia: a skipped day in the previous week is skipped there too",
+    "note": "The shown week 2012-01-02 is after the date-line change. Its previous week 2011-12-26 … 2012-01-01 contains 2011-12-30, which never existed in Pacific/Apia: previousDays has six real days plus the skipped 12-30. The 2011-12-29T12:00Z review is 02:00 on 12-29 (UTC-10); the 2011-12-31T12:00Z review is 02:00 on 2012-01-01 (UTC+14). Both are in the previous window, which also makes nothingToCompare false; the shown week has no reviews.",
+    "history": [
+      {
+        "zone": "Pacific/Apia",
+        "from": null
+      }
+    ],
+    "now": "2012-01-10T00:00:00Z",
+    "week": "2012-01-02",
+    "workspace": 1,
+    "language": "zh",
+    "vacation": [],
+    "goals": null,
+    "activity": {
+      "sources": [
+        {
+          "type": "review",
+          "plugin": "qinqin-flashcards",
+          "label": "Flashcard reviews",
+          "unit": "count",
+          "describe": {
+            "one": "{n} flashcard review",
+            "other": "{n} flashcard reviews"
+          }
+        },
+        {
+          "type": "journal",
+          "plugin": "qinqin-journal",
+          "label": "Journal entries",
+          "unit": "count",
+          "describe": {
+            "one": "{n} journal entry",
+            "other": "{n} journal entries"
+          }
+        },
+        {
+          "type": "read",
+          "plugin": "qinqin-reader",
+          "label": "Reading",
+          "unit": "seconds",
+          "describe": {
+            "one": "{n} minute of reading",
+            "other": "{n} minutes of reading"
+          }
+        }
+      ],
+      "cells": []
+    },
+    "reviews": [
+      {
+        "id": "01JWEEK0000000000000000021",
+        "ts": "2011-12-29T12:00:00Z",
+        "cardId": "a",
+        "grade": 3
+      },
+      {
+        "id": "01JWEEK0000000000000000022",
+        "ts": "2011-12-31T12:00:00Z",
+        "cardId": "b",
+        "grade": 3
+      }
+    ],
+    "expect": {
+      "inProgress": false,
+      "compareThrough": "2012-01-01",
+      "rows": [
+        {
+          "key": "reviews",
+          "value": 0,
+          "previous": 0,
+          "unit": "count"
+        },
+        {
+          "key": "newCards",
+          "value": 0,
+          "previous": 2,
+          "unit": "count"
+        },
+        {
+          "key": "studyTime",
+          "value": 0,
+          "previous": 0,
+          "unit": "seconds"
+        },
+        {
+          "key": "reading",
+          "value": 0,
+          "previous": 0,
+          "unit": "seconds"
+        },
+        {
+          "key": "journal",
+          "value": 0,
+          "previous": 0,
+          "unit": "count"
+        }
+      ],
+      "days": [
+        {
+          "date": "2012-01-02",
+          "state": "inactive",
+          "reviews": 0
+        },
+        {
+          "date": "2012-01-03",
+          "state": "inactive",
+          "reviews": 0
+        },
+        {
+          "date": "2012-01-04",
+          "state": "inactive",
+          "reviews": 0
+        },
+        {
+          "date": "2012-01-05",
+          "state": "inactive",
+          "reviews": 0
+        },
+        {
+          "date": "2012-01-06",
+          "state": "inactive",
+          "reviews": 0
+        },
+        {
+          "date": "2012-01-07",
+          "state": "inactive",
+          "reviews": 0
+        },
+        {
+          "date": "2012-01-08",
+          "state": "inactive",
+          "reviews": 0
+        }
+      ],
+      "previousDays": [
+        {
+          "date": "2011-12-26",
+          "state": "inactive",
+          "reviews": 0,
+          "points": 0
+        },
+        {
+          "date": "2011-12-27",
+          "state": "inactive",
+          "reviews": 0,
+          "points": 0
+        },
+        {
+          "date": "2011-12-28",
+          "state": "inactive",
+          "reviews": 0,
+          "points": 0
+        },
+        {
+          "date": "2011-12-29",
+          "state": "active",
+          "reviews": 0,
+          "points": 0
+        },
+        {
+          "date": "2011-12-30",
+          "state": "skipped",
+          "reviews": 0,
+          "points": 0
+        },
+        {
+          "date": "2011-12-31",
+          "state": "inactive",
+          "reviews": 0,
+          "points": 0
+        },
+        {
+          "date": "2012-01-01",
+          "state": "active",
+          "reviews": 0,
+          "points": 0
+        }
+      ],
+      "daysActive": {
+        "active": 0,
+        "of": 7,
+        "localOnly": false
+      },
+      "streak": 0,
+      "goal": null,
+      "allVacation": false,
+      "nothingToCompare": false
     }
+  }
   ]
 }

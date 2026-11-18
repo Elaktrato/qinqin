@@ -290,6 +290,142 @@
         "studiedSeconds": 0,
         "reviewsPerDay": []
       }
+    },
+  {
+    "name": "a review on the first day of the 30-day window counts, the day before does not",
+    "note": "Today is 2026-11-18, so the 30 learner days are 2026-10-20 … 2026-11-18. The review on 10-19 is outside the series (and October, so not in the month either); the one on 10-20 is the first series day. Both are first reviews of their cards, so recall stays at base 0.",
+    "now": "2026-11-18T12:00:00Z",
+    "zone": "Asia/Shanghai",
+    "cards": [
+      {
+        "id": "c1",
+        "kind": "vocab",
+        "entryId": 1,
+        "deckIds": [
+          "general"
+        ],
+        "createdAt": "2026-01-01T00:00:00.000Z"
+      },
+      {
+        "id": "c2",
+        "kind": "vocab",
+        "entryId": 2,
+        "deckIds": [
+          "general"
+        ],
+        "createdAt": "2026-01-01T00:00:00.000Z"
+      }
+    ],
+    "reviews": [
+      {
+        "id": "r30a",
+        "cardId": "c1",
+        "ts": "2026-10-19T10:00:00Z",
+        "grade": 3,
+        "mode": "vocab",
+        "durationMs": 7000
+      },
+      {
+        "id": "r30b",
+        "cardId": "c2",
+        "ts": "2026-10-20T10:00:00Z",
+        "grade": 3,
+        "mode": "vocab",
+        "durationMs": 7000
+      }
+    ],
+    "marks": [],
+    "vacation": [],
+    "expect": {
+      "streak": 0,
+      "wordsKnown": 0,
+      "recall": {
+        "share": null,
+        "base": 0
+      },
+      "studiedSeconds": 0,
+      "reviewsPerDay": [
+        [
+          "2026-10-20",
+          1
+        ]
+      ]
     }
+  },
+  {
+    "name": "a month that started before a zone change still sums by learner day",
+    "note": "November started in Pacific/Honolulu (UTC-10); the learner moved to Pacific/Kiritimati (UTC+14) on 2026-11-10T00:00Z, mid-month. The 11-09T23:30Z review is 13:30 on 11-09 in Honolulu; the 11-10T00:30Z review is 14:30 on 11-10 in Kiritimati. Each day counts once, both are in November (7 s + 8 s = 15 s), and both are first reviews so recall stays at base 0.",
+    "now": "2026-11-18T12:00:00Z",
+    "zone": "Pacific/Honolulu",
+    "history": [
+      {
+        "zone": "Pacific/Honolulu",
+        "from": null
+      },
+      {
+        "zone": "Pacific/Kiritimati",
+        "from": "2026-11-10T00:00:00Z"
+      }
+    ],
+    "cards": [
+      {
+        "id": "c1",
+        "kind": "vocab",
+        "entryId": 1,
+        "deckIds": [
+          "general"
+        ],
+        "createdAt": "2026-01-01T00:00:00.000Z"
+      },
+      {
+        "id": "c2",
+        "kind": "vocab",
+        "entryId": 2,
+        "deckIds": [
+          "general"
+        ],
+        "createdAt": "2026-01-01T00:00:00.000Z"
+      }
+    ],
+    "reviews": [
+      {
+        "id": "rz1",
+        "cardId": "c1",
+        "ts": "2026-11-09T23:30:00Z",
+        "grade": 3,
+        "mode": "vocab",
+        "durationMs": 7000
+      },
+      {
+        "id": "rz2",
+        "cardId": "c2",
+        "ts": "2026-11-10T00:30:00Z",
+        "grade": 3,
+        "mode": "vocab",
+        "durationMs": 8000
+      }
+    ],
+    "marks": [],
+    "vacation": [],
+    "expect": {
+      "streak": 0,
+      "wordsKnown": 0,
+      "recall": {
+        "share": null,
+        "base": 0
+      },
+      "studiedSeconds": 15,
+      "reviewsPerDay": [
+        [
+          "2026-11-09",
+          1
+        ],
+        [
+          "2026-11-10",
+          1
+        ]
+      ]
+    }
+  }
   ]
 }
