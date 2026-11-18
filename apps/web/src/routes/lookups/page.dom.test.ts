@@ -164,6 +164,8 @@ describe('/lookups page', () => {
 		vi.mocked(loadPage).mockResolvedValue(data([item(1)]));
 		render(Page);
 		const sw = await screen.findByRole('switch', { name: 'Record words I look up' });
+		expect(sw.className).toContain('button');
+		expect(sw.className).toContain('secondary');
 		expect(sw.getAttribute('aria-checked')).toBe('true');
 		await fireEvent.click(sw);
 		await waitFor(() => expect(saveLookupCfg).toHaveBeenCalledWith(false));

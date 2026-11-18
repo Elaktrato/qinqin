@@ -33,6 +33,14 @@ describe('Button', () => {
 		expect(b.getAttribute('type')).toBe('submit');
 	});
 
+	it('keeps its base classes when a page passes its own class', () => {
+		render(Button, { children: text('Group'), variant: 'plain', class: 'toggle' });
+		const b = screen.getByRole('button', { name: 'Group' });
+		expect(b.className).toContain('button');
+		expect(b.className).toContain('plain');
+		expect(b.className).toContain('toggle');
+	});
+
 	it('a submit button may name its form (a Dialog action outside the form)', () => {
 		render(Button, { children: text('Delete'), type: 'submit', form: 'f1' });
 		expect(screen.getByRole('button', { name: 'Delete' }).getAttribute('form')).toBe('f1');

@@ -86,12 +86,12 @@
 			{#each groups as group (group.schemeId)}
 				<li>
 					<Button
-						variant="plain"
+						variant="secondary"
 						class="toggle"
+						icon={expanded.includes(group.schemeId) ? 'expand-down' : 'forward'}
 						aria-expanded={expanded.includes(group.schemeId)}
 						onclick={() => toggle(group)}
 					>
-						<span aria-hidden="true">{expanded.includes(group.schemeId) ? '▾' : '▸'}</span>
 						{group.name}
 						<span class="count">{t('flashcards.system.levels', { count: group.levels.length })}</span>
 					</Button>

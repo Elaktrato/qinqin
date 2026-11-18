@@ -57,6 +57,8 @@ describe('StarterDecks', () => {
 			name: /Starter decks · Jiten frequency list/
 		});
 		expect(toggle.getAttribute('aria-expanded')).toBe('false');
+		expect(toggle.className).toContain('button');
+		expect(toggle.className).toContain('secondary');
 		expect(screen.getByText('From Jiten frequency list · CC BY-SA 4.0')).toBeTruthy();
 		expect(getStarterEntries).not.toHaveBeenCalled();
 		await fireEvent.click(toggle);

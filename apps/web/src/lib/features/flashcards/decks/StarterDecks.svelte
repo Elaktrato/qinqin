@@ -78,12 +78,12 @@
 				{@const loaded = items[group.packNumId]}
 				<li>
 					<Button
-						variant="plain"
+						variant="secondary"
 						class="toggle"
+						icon={expanded.includes(group.packNumId) ? 'expand-down' : 'forward'}
 						aria-expanded={expanded.includes(group.packNumId)}
 						onclick={() => toggle(group)}
 					>
-						<span aria-hidden="true">{expanded.includes(group.packNumId) ? '▾' : '▸'}</span>
 						{t('flashcards.starter.group', { name: group.name })}
 					</Button>
 					<p class="credit">{group.credit}</p>

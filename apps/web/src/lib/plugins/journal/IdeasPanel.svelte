@@ -4,6 +4,7 @@
 	import { onDestroy, onMount, untrack } from 'svelte';
 	import { aiErrorView, type AiErrorView } from './aiErrors';
 	import { answeredBy } from './answeredBy';
+	import Button from '$lib/ui/Button.svelte';
 	import Chip from '$lib/ui/Chip.svelte';
 	import { requestSuggestions } from './api';
 	import type { AiGate } from './editorLogic';
@@ -91,9 +92,9 @@
 <section class="ideas" aria-labelledby="ideas-heading">
 	<h2 id="ideas-heading">{title}</h2>
 	<div class="bar">
-		<button type="button" onclick={ask} disabled={busy || !gate.enabled}>
+		<Button onclick={ask} disabled={busy || !gate.enabled}>
 			{busy ? t('journal.ideas.working') : t('journal.ideas.get')}
-		</button>
+		</Button>
 		{#if gate.hint}
 			<span class="hint">
 				{gate.hint}{#if gate.settingsLink}
@@ -124,10 +125,10 @@
 							{#each item.words as w, j (j)}<li><Chip><span lang={studyLang}>{w}</span></Chip></li>{/each}
 						</ul>
 					{/if}
-					<button type="button" class="secondary" onclick={() => onstart(item.title)}>
+					<Button onclick={() => onstart(item.title)}>
 						{t('journal.ideas.start')}
 						<span class="sr">: {item.title}</span>
-					</button>
+					</Button>
 				</li>
 			{/each}
 		</ul>
