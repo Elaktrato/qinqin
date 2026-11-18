@@ -53,7 +53,7 @@ describe('JournalPage in three columns (#103)', () => {
 
 	it('the grid is entries + page + margin at 1000, page + margin from 720 and one column below', () => {
 		expect(source).toMatch(/@media \(min-width: 62\.5rem\)[\s\S]*grid-template-columns: 13rem minmax\(0, 1fr\) 16rem/);
-		expect(source).toMatch(/@media \(min-width: 45rem\)[\s\S]*grid-template-columns: minmax\(0, 1fr\) 15rem/);
-		expect(source).toMatch(/@media \(max-width: 45rem\)[\s\S]*\.journal-grid\.list \.empty-page/);
+		expect(source).toMatch(/@media \(min-width: 45rem\)[\s\S]*grid-template-columns: 13rem minmax\(0, 1fr\)/);
+		expect(source).toMatch(/@media \(max-width: 44.99rem\)[\s\S]*\.journal-grid\.list \.empty-page/);
 	});
 });

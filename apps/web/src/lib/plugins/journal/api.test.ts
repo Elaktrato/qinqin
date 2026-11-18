@@ -26,7 +26,7 @@ describe('journal api', () => {
 	});
 
 	it('requests a review and parses its kinds', async () => {
-		vi.mocked(fetch).mockResolvedValue(json({ entryId: 'e1', annotations: [{ quote: 'x', correction: 'y', kind: 'suggestion' }] }));
+		vi.mocked(fetch).mockResolvedValue(json({ entryId: 'e1', annotations: [{ id: 'a1', quote: 'x', correction: 'y', kind: 'suggestion' }] }));
 		const controller = new AbortController();
 		const review = await requestReview(3, 'e1', controller.signal);
 		expect(review.annotations[0].kind).toBe('suggestion');

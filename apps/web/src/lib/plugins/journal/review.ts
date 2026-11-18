@@ -30,7 +30,7 @@ export function annotationKind(value: unknown): AnnotationKind {
 }
 
 function parseAnnotation(value: unknown): Annotation | null {
-	if (!isRecord(value) || typeof value.quote !== 'string') return null;
+	if (!isRecord(value) || typeof value.quote !== 'string' || typeof value.id !== 'string' || value.id === '') return null;
 	return {
 		id: str(value.id),
 		quote: value.quote,
@@ -68,9 +68,17 @@ export function parseReview(value: unknown): Review | null {
 	return {
 		entryId: value.entryId,
 		textHash: str(value.textHash),
-		annotations: Array.isArray(value.annotations)
-			? value.annotations.map(parseAnnotation).filter((a): a is Annotation => a !== null)
-			: [],
+		annotations: (() => {
+			const seen = new Set<string>();
+			const out: Annotation[] = [];
+			for (const raw of Array.isArray(value.annotations) ? value.annotations : []) {
+				const a = parseAnnotation(raw);
+				if (a === null || seen.has(a.id)) continue;
+				seen.add(a.id);
+				out.push(a);
+			}
+			return out;
+		})(),
 		overall: parseOverall(value.overall),
 		model: str(value.model),
 		provider: str(value.provider),

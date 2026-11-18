@@ -196,6 +196,9 @@
 		mode = 'edit';
 		review = null;
 		reviewStatus = '';
+		openCorrectionId = null;
+		correctionSheet = false;
+		ideasSheet = false;
 		failure = null;
 		confirmingDelete = false;
 		deleteError = '';
@@ -261,6 +264,8 @@
 
 	function setReview(r: Review): void {
 		review = r;
+		openCorrectionId = null;
+		correctionSheet = false;
 		if (entry) journalEntriesFor(ws).markReviewed(entry.id);
 		mode = 'review';
 		originals = isOutdated(text, r) ? {} : originalCounts(text, r.annotations);
@@ -320,6 +325,8 @@
 	}
 
 	async function backToEdit(): Promise<void> {
+		openCorrectionId = null;
+		correctionSheet = false;
 		mode = 'edit';
 		await tick();
 		textarea?.focus();
@@ -331,6 +338,7 @@
 	}
 
 	async function startFromIdea(ideaTitle: string): Promise<void> {
+		ideasSheet = false;
 		await flush();
 		await goto(newEntryHref(ideaTitle));
 	}
@@ -398,8 +406,12 @@
 
 	function openCorrection(id: string | null): void {
 		openCorrectionId = id;
-		if (id !== null && phone) correctionSheet = true;
+		if (id === null) return;
+		if (phone) correctionSheet = true;
+		else void reviewText?.focusAnnotation(id);
 	}
+
+	const sheetCorrections = $derived(correctionsList.filter((c) => c.state === 'placed'));
 
 	function closeCorrectionSheet(): void {
 		correctionSheet = false;
@@ -472,8 +484,8 @@
 						/>
 						<Field
 							label={t('journal.editor.titleLabel')}
-							class="title-field"
 							hideLabel
+							lang={studyLanguage}
 							bind:value={title}
 							maxlength={200}
 							oninput={touch}
@@ -484,10 +496,11 @@
 						label={t('journal.editor.entry')}
 						hideLabel
 						multiline
+						lang={studyLanguage}
 						bind:value={text}
 						bind:element={textarea}
 						maxlength={ENTRY_MAX_CHARS}
-						style="min-height: 18rem"
+						style="min-height: 18rem; line-height: 1.9"
 						aria-describedby="entry-count"
 						oninput={touch}
 						onblur={() => void flush()}
@@ -502,12 +515,9 @@
 						<p class="count over">{t('journal.editor.longest')}</p>
 					{/if}
 				</form>
-				<p class="foot">
-					{t('journal.editor.foot', {
-						count: formatNumber(chars),
-						status: saveStatusText(saveState)
-					})}
-				</p>
+				<p class="foot" aria-live="polite">{saveStatusText(saveState)
+					? t('journal.editor.foot', { count: formatNumber(chars), status: saveStatusText(saveState) })
+					: formatNumber(chars)}</p>
 				{#if saveState === 'error'}
 					<Button variant="secondary" onclick={() => void flush()}>{t('journal.editor.save')}</Button>
 				{/if}
@@ -586,7 +596,7 @@
 				{/if}
 			{:else if review && anchoring}
 				<h2 bind:this={reviewHeading} tabindex="-1">{t('journal.editor.review')}</h2>
-				<p class="meta">{formatDay(date, { dateStyle: 'full' })}{title.trim() ? ' · ' + title.trim() : ''}</p>
+				<p class="meta">{formatDay(date, { dateStyle: 'full' })}{#if title.trim()} · <span lang={studyLanguage}>{title.trim()}</span>{/if}</p>
 				{#if outdated}
 					<div class="outdated">
 						<p>{t('journal.editor.outdated')}</p>
@@ -600,6 +610,11 @@
 						</Button>
 					</div>
 				{/if}
+				{#if phone && sheetCorrections.length > 0}
+					<Button variant="secondary" onclick={() => { openCorrection(sheetCorrections[0].annotation.id); correctionSheet = true; }}>
+						{t('journal.sheet.open', { count: sheetCorrections.length })}
+					</Button>
+				{/if}
 				<ReviewText
 					bind:this={reviewText}
 					{text}
@@ -607,8 +622,9 @@
 					annotations={review.annotations}
 					openId={openCorrectionId}
 					onopen={openCorrection}
+					studyLang={studyLanguage ?? language}
 				/>
-				<OverallReview {review} />
+				<OverallReview {review} explanationLang={explanationLang} />
 				<p class="foot">
 					{t('journal.editor.reviewedAt', { time: formatDate(review.createdAt) })}
 				</p>
@@ -620,13 +636,6 @@
 						</Button>
 					{/if}
 				</div>
-			{/if}
-
-			{#if reviewGate.hint && mode === 'edit' && !reviewGate.enabled}
-				<p id="review-hint" class="hint">
-					{reviewGate.hint}{#if reviewGate.settingsLink}
-						{' '}<a href="/settings?tab=ai">{t('journal.openAiSettings')}</a>{/if}
-				</p>
 			{/if}
 
 			<div class="live" aria-live="polite">{reviewStatus}</div>
@@ -675,7 +684,7 @@
 	{#if correctionSheet}
 		<CorrectionSheet
 			mode="corrections"
-			corrections={correctionsList}
+			corrections={sheetCorrections}
 			openId={openCorrectionId}
 			onopen={openCorrection}
 			onclose={closeCorrectionSheet}
@@ -725,6 +734,8 @@
 	}
 	.margin-col {
 		min-width: 0;
+		border-inline-start: 1px solid var(--hair);
+		padding-inline-start: var(--space-4);
 	}
 	.back {
 		margin: 0;
@@ -793,7 +804,7 @@
 			display: none;
 		}
 	}
-	@media (min-width: 61.25rem) {
+	@media (min-width: 45rem) {
 		.entry-layout.page-with-margin {
 			grid-template-columns: minmax(0, 1fr) 16rem;
 		}
