@@ -47,6 +47,13 @@ services:
       # forge the header and dodge the per-client sign-in limits). A comma list
       # of CIDRs or addresses also works (a CDN's ranges).
       # QINQIN_TRUSTED_PROXIES: none
+      # Creates the first admin on the first start (while there are no users)
+      # and makes it set a new password at the first sign-in, instead of
+      # `qinqin adduser`. Without the password a random one is generated and
+      # printed once in the container log (docker compose logs qinqin). Later
+      # starts ignore both; an invalid value stops the server from starting.
+      # QINQIN_BOOTSTRAP_ADMIN: you
+      # QINQIN_BOOTSTRAP_PASSWORD: choose-a-long-initial-password
       # Path of the tesseract binary (default: the image's).
       # QINQIN_TESSERACT: /usr/bin/tesseract
       # QINQIN_AI_PROVIDER: fake

@@ -361,6 +361,20 @@ uploads), so a read-only root filesystem is not enabled.
    frequencies, HSK 3.0 and JLPT kanji level lists, es-demo, and the Kanji
    alive audio when present) into the database; it takes under a minute
    (about 45 s measured) and is idempotent. Run it while nobody uses the app.
+
+   **Or create the admin automatically.** Set `QINQIN_BOOTSTRAP_ADMIN` to the
+   admin's username in the stack's environment variables. On the first start,
+   while no user exists, the server creates that admin before it opens the
+   port, so nobody can claim the first registration. The admin must choose a
+   new password at the first sign-in; until then the session can do nothing
+   else. Set `QINQIN_BOOTSTRAP_PASSWORD` to choose the initial password, or
+   leave it empty: the server generates one and prints it **once** in the
+   container log (Portainer: Containers, `qinqin`, Logs; look for the line
+   `bootstrap: initial password`). A supplied password is never logged. Later
+   starts ignore both variables, so remove the password from the stack after
+   the first sign-in. A username or password that breaks the rules stops the
+   server from starting, with the reason in the log. This replaces the
+   `adduser` step; you still run `qinqin seed`.
 5. Put a reverse proxy with HTTPS in front (below), then run the checklist.
 
 ### Data directory
@@ -1739,6 +1753,8 @@ Without a valid secret the server still starts, AI shows as disabled with the re
 | `QINQIN_SECRET` | 32 random bytes, base64 (standard or URL form, padded or not). Required to store API keys |
 | `QINQIN_SECRET_PREVIOUS` | The old secret for one restart while rotating |
 | `QINQIN_SMTP_ALLOW_PRIVATE` | `1` or `true` lets the mail server be on loopback or a private network (a relay container, a LAN host). Off by default |
+| `QINQIN_BOOTSTRAP_ADMIN` | Username of the first admin, created on the first start while no user exists; the admin must set a new password at the first sign-in. Empty: off (then create the admin with `adduser`). Ignored once users exist. An invalid value stops the server from starting |
+| `QINQIN_BOOTSTRAP_PASSWORD` | Initial password of that admin (10 to 256 characters, not the username). Empty: a random one is generated and printed once in the container log. A supplied password is never logged |
 | `QINQIN_TESSERACT` | Path of the `tesseract` binary (default `tesseract` from `PATH`) |
 | `QINQIN_TRUSTED_PROXIES` | Peers whose `X-Forwarded-For` is believed: a comma list of CIDRs or addresses, `none` to ignore the header, empty for the private networks (see [Reverse proxy and HTTPS](#reverse-proxy-and-https)). Set `none` when no reverse proxy sits in front |
 | `QINQIN_AI_PROVIDERS` | Comma list of the providers users may choose: built-in ids (`anthropic`, `openai`, `gemini`, `deepseek`, `mistral`, `xai`, `groq`, `openrouter`) and `custom` for admin-registered endpoints. Default: all. A disabled provider's stored keys stay (shown "turned off by the server", Remove only) and a selection on it reads as unavailable |

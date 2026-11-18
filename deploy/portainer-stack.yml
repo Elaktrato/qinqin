@@ -34,6 +34,15 @@
 #                    client that reaches the port directly could otherwise
 #                    forge the header and dodge the per-client limits. Or a
 #                    comma list of CIDRs/addresses (a CDN's ranges, one proxy).
+#   QINQIN_BOOTSTRAP_ADMIN  username of the first admin, created on the first
+#                    start while the instance has no users (empty = off). The
+#                    admin must set a new password at the first sign-in. Later
+#                    starts ignore it, so it can stay set or be removed.
+#   QINQIN_BOOTSTRAP_PASSWORD  its initial password (10 to 256 characters, not
+#                    the username). Empty = a random one is generated and
+#                    printed ONCE in the container log (Portainer: Containers,
+#                    qinqin, Logs). Remove it from the stack after the first
+#                    sign-in. An invalid value stops the server from starting.
 #   QINQIN_TESSERACT        path of the tesseract binary; empty = the image's.
 #   QINQIN_AI_PROVIDER      "fake" for testing only; never contacts an AI service.
 #                    "anthropic" (legacy) means QINQIN_AI_PROVIDERS=anthropic.
@@ -54,6 +63,8 @@ services:
       QINQIN_SMTP_ALLOW_PRIVATE: ${QINQIN_SMTP_ALLOW_PRIVATE:-}
       QINQIN_AI_PROVIDER: ${QINQIN_AI_PROVIDER:-}
       QINQIN_TRUSTED_PROXIES: ${QINQIN_TRUSTED_PROXIES:-}
+      QINQIN_BOOTSTRAP_ADMIN: ${QINQIN_BOOTSTRAP_ADMIN:-}
+      QINQIN_BOOTSTRAP_PASSWORD: ${QINQIN_BOOTSTRAP_PASSWORD:-}
       QINQIN_TESSERACT: ${QINQIN_TESSERACT:-}
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8080/healthz"]
