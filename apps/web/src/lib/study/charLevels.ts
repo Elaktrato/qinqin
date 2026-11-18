@@ -15,6 +15,8 @@ export interface LevelChoice {
 }
 
 export interface LevelGroup {
+	/** Stable key for the optgroup (the scheme id, not its display name). */
+	id: string;
 	label: string;
 	options: { value: string; label: string }[];
 }
@@ -55,6 +57,7 @@ export function levelGroupsFor(language: string, schemes: readonly Scheme[]): Le
 	const named = new Map<string, number>();
 	for (const scheme of shown) named.set(scheme.name, (named.get(scheme.name) ?? 0) + 1);
 	return shown.map((scheme) => ({
+		id: String(scheme.id),
 		label:
 			(named.get(scheme.name) ?? 0) > 1 && scheme.packId ? `${scheme.name} · ${scheme.packId}` : scheme.name,
 		options: [...scheme.levels]
@@ -96,11 +99,30 @@ export function writeLevelChoice(storage: Storage | null, workspaceId: number, v
 }
 
 /**
- * filterByLevel keeps the cells whose glyph or one of its variant forms is in
- * the level, the same rule the scheme grouping uses to assign a cell.
+ * levelOf returns the level a cell belongs to under the scheme grouping's
+ * rule: its own glyph first, then a variant form, in level order (the first
+ * level wins). Null when no level holds it.
  */
-export function filterByLevel(chars: readonly CharRow[], level: SchemeLevelMembers): CharRow[] {
-	return chars.filter(
-		(row) => level.chars.has(row.c) || (row.v ?? []).some((form) => level.chars.has(form))
-	);
+export function levelOf(
+	row: CharRow,
+	levels: readonly SchemeLevelMembers[]
+): SchemeLevelMembers | null {
+	for (const level of levels) if (level.chars.has(row.c)) return level;
+	for (const form of row.v ?? []) {
+		for (const level of levels) if (level.chars.has(form)) return level;
+	}
+	return null;
+}
+
+/**
+ * filterByLevel keeps the cells the scheme grouping assigns to one level.
+ * It uses `levelOf`, so a cell whose own glyph is in another level is not
+ * pulled into a level that only holds one of its variants.
+ */
+export function filterByLevel(
+	chars: readonly CharRow[],
+	levels: readonly SchemeLevelMembers[],
+	levelId: number
+): CharRow[] {
+	return chars.filter((row) => levelOf(row, levels)?.levelId === levelId);
 }

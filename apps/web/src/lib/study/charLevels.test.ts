@@ -3,6 +3,8 @@ import type { CharRow, Scheme } from '$lib/api/types';
 import {
 	LEVEL_ALL,
 	filterByLevel,
+	levelOf,
+	levelValue,
 	levelGroupsFor,
 	parseLevelValue,
 	readLevelChoice,
@@ -79,6 +81,7 @@ describe('levelGroupsFor', () => {
 			'JLPT kanji (approximate)',
 			'Jōyō kanji by school grade'
 		]);
+		expect(levelGroupsFor('ja', ja).map((g) => g.id)).toEqual(['2', '4']);
 		expect(levelGroupsFor('ja', ja)[0].options.map((o) => o.label)).toEqual(['N5', 'N4']);
 		expect(levelGroupsFor('zh', zh).map((g) => g.label)).toEqual(['HSK 3.0 (characters)', 'HSK 3.0 (words)']);
 	});
@@ -96,6 +99,19 @@ describe('levelGroupsFor', () => {
 			'HSK 3.0 (words)',
 			'HSK 3.0 (characters) · local-hsk'
 		]);
+	});
+
+	it('orders levels by ord, not by the order the API sent them', () => {
+		const unordered = scheme({
+			id: 11,
+			name: 'Unordered',
+			language: 'ja',
+			levels: [
+				{ id: 2, name: 'Second', ord: 1 },
+				{ id: 1, name: 'First', ord: 0 }
+			]
+		});
+		expect(levelGroupsFor('ja', [unordered])[0].options.map((o) => o.label)).toEqual(['First', 'Second']);
 	});
 
 	it('has no groups for a language not written with Han characters', () => {
@@ -130,37 +146,43 @@ describe('readLevelChoice / writeLevelChoice', () => {
 		s.setItem('qinqin.map.level.7', 'garbage');
 		expect(readLevelChoice(s, 7, groups)).toBe(LEVEL_ALL);
 		expect(readLevelChoice(null, 7, groups)).toBe(LEVEL_ALL);
-		expect(() =>
-			readLevelChoice(
-				{
-					...memoryStorage(),
-					getItem: () => {
-						throw new Error('blocked');
-					}
-				},
-				7,
-				groups
-			)
-		).not.toThrow();
+		const blocked = {
+			...memoryStorage(),
+			getItem: () => {
+				throw new Error('blocked');
+			}
+		};
+		expect(readLevelChoice(blocked, 7, groups)).toBe(LEVEL_ALL);
 	});
 });
 
-describe('filterByLevel', () => {
-	const level = { levelId: 12, name: 'N5', chars: new Set(['日', '本']) };
+describe('filterByLevel / levelOf', () => {
+	const n5 = { levelId: 12, name: 'N5', chars: new Set(['日', '本']) };
+	const n4 = { levelId: 13, name: 'N4', chars: new Set(['書', '语']) };
+	const levels = [n5, n4];
 	const rows: CharRow[] = [
 		{ i: 1, c: '日' },
 		{ i: 2, c: '本' },
-		{ i: 3, c: '語', v: ['語', '语'] },
+		{ i: 3, c: '語', v: ['语'] },
 		{ i: 4, c: '書', v: ['书'] },
 		{ i: 5, c: '水' }
 	];
 
-	it('keeps the glyphs of the level and drops the rest', () => {
-		expect(filterByLevel(rows, level).map((r) => r.c)).toEqual(['日', '本']);
+	it('keeps the glyphs the scheme grouping assigns to the level', () => {
+		expect(filterByLevel(rows, levels, 12).map((r) => r.c)).toEqual(['日', '本']);
+		expect(filterByLevel(rows, levels, 13).map((r) => r.c)).toEqual(['語', '書']);
 	});
 
-	it('keeps a cell whose variant form is in the level', () => {
-		const traditional = { ...level, chars: new Set(['书']) };
-		expect(filterByLevel(rows, traditional).map((r) => r.c)).toEqual(['書']);
+	it('uses the own glyph before a variant, the scheme grouping\'s rule', () => {
+		expect(levelOf(rows[2], levels)?.levelId).toBe(13); // 語 is not in N5; 语 is in N4
+		expect(levelOf(rows[0], levels)?.levelId).toBe(12);
+		expect(levelOf(rows[4], levels)).toBeNull();
+	});
+
+	it('does not pull a cell into a level that only holds a variant when its own glyph is in another level', () => {
+		const own = { levelId: 12, name: 'N5', chars: new Set(['書']) };
+		const variant = { levelId: 13, name: 'N4', chars: new Set(['书']) };
+		expect(filterByLevel(rows, [own, variant], 12).map((r) => r.c)).toEqual(['書']);
+		expect(filterByLevel(rows, [own, variant], 13)).toEqual([]);
 	});
 });
