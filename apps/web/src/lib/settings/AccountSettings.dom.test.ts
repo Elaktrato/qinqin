@@ -242,7 +242,7 @@ describe('Settings → Account: interface language', () => {
 	});
 
 	it('a save that cannot be mirrored (storage blocked) does not reload, which would drop the session', async () => {
-		const setItem = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+		const setItem = vi.spyOn(localStorage, 'setItem').mockImplementation(() => {
 			throw new Error('denied');
 		});
 		try {

@@ -72,17 +72,10 @@
 		{#each options as option (option.value)}
 			<option value={option.value} disabled={option.disabled}>{option.label}</option>
 		{/each}
-		{#each groups as group (group.label)}
-			<optgroup label={group.label}>
-				{#each group.options as option (option.value)}
-					<option value={option.value} disabled={option.disabled}>{option.label}</option>
-				{/each}
-			</optgroup>
-		{/each}
 		{#each groups as group (group.id ?? group.label)}
 			<optgroup label={group.label}>
 				{#each group.options as option (option.value)}
-					<option value={option.value}>{option.label}</option>
+					<option value={option.value} disabled={option.disabled}>{option.label}</option>
 				{/each}
 			</optgroup>
 		{/each}
