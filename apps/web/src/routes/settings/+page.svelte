@@ -39,11 +39,12 @@
 		type SettingsTab
 	} from '$lib/settings/tabs';
 	import { load as loadWorkspaces, rename, setSettings as setWorkspaceSettings, workspaces, workspacesLoadError, workspacesLoaded } from '$lib/workspaces';
-	import { Section, Tabs } from '$lib/ui';
+	import { Button, Chip, Field, Section, Tabs } from '$lib/ui';
 
 	interface PluginRow {
 		id: string;
 		name: string;
+		version: string;
 		enabled: boolean;
 		order: number;
 		permissions: string;
@@ -124,6 +125,7 @@
 			plugins = listedPlugins(list).map((plugin) => ({
 				id: plugin.id,
 				name: pluginName(plugin),
+				version: typeof plugin.manifest?.version === 'string' ? plugin.manifest.version : '',
 				enabled: plugin.enabled,
 				order: plugin.order,
 				...pluginRowInfo(plugin, webPlugins),
@@ -408,11 +410,12 @@
 					<li class="plugin">
 						<div class="plugin-head">
 							<strong>{plugin.name}</strong>
+							{#if plugin.version}<Chip>{plugin.version}</Chip>{/if}
 							<code>{plugin.id}</code>
 							{#if plugin.notice === 'app-update'}
-								<span class="needs-update">{t('settings.plugins.needsUpdate')}</span>
+								<Chip>{t('settings.plugins.needsUpdate')}</Chip>
 							{:else if plugin.notice === 'legacy'}
-								<span class="needs-update">{t('settings.plugins.legacy')}</span>
+								<Chip>{t('settings.plugins.legacy')}</Chip>
 							{/if}
 						</div>
 						{#if plugin.permissions}
@@ -429,24 +432,28 @@
 								{t('settings.plugins.enabled')}
 							</label>
 
-							<label class="inline">
-								{t('settings.plugins.order')}
-								<input
+							<div class="order">
+								<Field
+									label={t('settings.plugins.order')}
 									type="number"
 									min="0"
 									step="1"
-									bind:value={plugin.order}
-									oninput={() => (plugin.saved = false)}
+									value={String(plugin.order)}
+									oninput={(event) => {
+										const raw = (event.currentTarget as HTMLInputElement).value;
+										plugin.order = raw === '' ? Number.NaN : Number(raw);
+										plugin.saved = false;
+									}}
 								/>
-							</label>
+							</div>
 
-							<button
-								type="button"
+							<Button
 								onclick={() => savePlugin(plugin)}
 								disabled={plugin.saving || !validOrder(plugin.order)}
+								busy={plugin.saving}
 							>
 								{plugin.saving ? t('common.state.saving') : t('common.action.save')}
-							</button>
+							</Button>
 							{#if !validOrder(plugin.order)}
 								<span class="error" role="alert">{t('settings.plugins.orderInvalid')}</span>
 							{/if}
@@ -532,8 +539,7 @@
 		color: var(--readable-muted);
 	}
 
-	.workspaces,
-	.plugins {
+	.workspaces {
 		list-style: none;
 		margin: 0 0 1rem;
 		padding: 0;
@@ -541,11 +547,25 @@
 		gap: 0.5rem;
 	}
 
-	.workspaces li,
-	.plugin {
+	.workspaces li {
 		border: 1px solid color-mix(in srgb, currentColor 18%, transparent);
 		border-radius: 0.4rem;
 		padding: 0.6rem 0.75rem;
+	}
+
+	/* Plugin rows are hairline rows, not a box per plugin (#106). */
+	.plugins {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+	}
+
+	.plugin {
+		padding-block: var(--space-3);
+	}
+
+	.plugin + .plugin {
+		border-top: 1px solid var(--hair);
 	}
 
 	.workspaces .row,
@@ -601,13 +621,6 @@
 		border: 0;
 	}
 
-	.chip {
-		font-size: 0.8rem;
-		border-radius: 999px;
-		padding: 0.05rem 0.5rem;
-		background: color-mix(in srgb, currentColor 12%, transparent);
-	}
-
 	.dictionaries-button {
 		min-height: 44px;
 	}
@@ -625,14 +638,7 @@
 	}
 
 	.plugin-permissions-label {
-		font-weight: 600;
-	}
-
-	.needs-update {
-		font-size: 0.8rem;
-		border: 1px solid currentColor;
-		border-radius: 999px;
-		padding: 0.05rem 0.5rem;
+		font-weight: var(--weight-strong);
 	}
 
 	.plugin-head {
@@ -656,21 +662,13 @@
 		gap: 0.35rem;
 	}
 
-	.plugin-controls input[type='number'] {
-		width: 4.5rem;
+	.order {
+		width: 5rem;
 	}
 
 	.plugin-controls input,
 	.settings button:not(.button):not([role='tab']) {
 		font: inherit;
-	}
-
-	.plugin-controls input {
-		padding: 0.4rem 0.55rem;
-		border: 1px solid color-mix(in srgb, currentColor 35%, transparent);
-		border-radius: 0.4rem;
-		background: transparent;
-		color: inherit;
 	}
 
 	.settings button:not(.button):not([role='tab']) {

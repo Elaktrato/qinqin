@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/svelte';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/svelte';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('$app/state', () => import('$lib/testing/appState.svelte'));
@@ -11,10 +11,11 @@ vi.mock('$lib/api/client', async (importOriginal) => ({
 import { api } from '$lib/api/client';
 import { setUrl } from '$lib/testing/appState.svelte';
 import { auth } from '$lib/auth';
+import { primaryActions } from '$lib/ui/testing/primary';
 import { workspaces, workspacesLoadError, workspacesLoaded } from '$lib/workspaces';
 import Page from './+page.svelte';
 
-const plugin = { id: 'qinqin-journal', manifest: { name: 'Journal' }, enabled: true, order: 2 };
+const plugin = { id: 'qinqin-journal', manifest: { name: 'Journal', version: '1.2.3' }, enabled: true, order: 2 };
 
 beforeEach(() => {
 	setUrl('/settings');
@@ -133,6 +134,18 @@ describe('plugin order validation', () => {
 		await fireEvent.input(order, { target: { value: '0' } });
 		await waitFor(() => expect(save.disabled).toBe(false));
 		expect(screen.queryByText('Enter a whole number of 0 or more.')).toBeNull();
+	});
+});
+
+describe('the plugin list in the lighter look (#106)', () => {
+	it('shows the version as a chip and saves with a secondary Button; no primary', async () => {
+		setUrl('/settings?tab=plugins');
+		render(Page);
+		const row = (await screen.findByText('Journal')).closest('li')!;
+		expect(within(row).getByText('1.2.3')).toBeTruthy();
+		const save = within(row).getByRole('button', { name: 'Save' });
+		expect(save.className).toContain('secondary');
+		expect(primaryActions(document.body)).toHaveLength(0);
 	});
 });
 
