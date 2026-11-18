@@ -424,7 +424,7 @@ describe('the open page (#101)', () => {
 		configure(['vocab']);
 		// Record the grade the session actually writes, not an independently guessed one.
 		let recorded:
-			| { workspaceId: number; cardId: string; grade: number; mode: string; at: Date }
+			| { workspaceId: number; cardId: string; grade: number; mode: string | undefined; at: Date }
 			| undefined;
 		vi.mocked(recordReview).mockImplementationOnce(async (workspaceId, cardId, grade, mode) => {
 			recorded = { workspaceId, cardId, grade, mode, at: new Date() };
@@ -445,7 +445,7 @@ describe('the open page (#101)', () => {
 					device: 'web',
 					ts: r.at.toISOString(),
 					type: 'review',
-					payload: { cardId: r.cardId, mode: r.mode as never, grade: r.grade as never }
+					payload: { cardId: r.cardId, mode: (r.mode ?? 'vocab') as never, grade: r.grade as never }
 				}
 			],
 			r.at,

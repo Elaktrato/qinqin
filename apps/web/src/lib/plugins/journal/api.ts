@@ -2,14 +2,18 @@
 // temporary: nothing here stores one in plugin data.
 
 import { ApiError, api, apiBlob } from '$lib/api/client';
+import { parseReview } from './review';
 import type { Capabilities, Review, Suggestions } from './types';
 
-export function requestReview(
+export async function requestReview(
 	workspaceId: number,
 	entryId: string,
 	signal?: AbortSignal
 ): Promise<Review> {
-	return api<Review>('/api/journal/review', { body: { workspaceId, entryId }, signal });
+	const v = await api<unknown>('/api/journal/review', { body: { workspaceId, entryId }, signal });
+	const review = parseReview(v);
+	if (review === null) throw new Error('journal: the review reply is not a review');
+	return review;
 }
 
 export function requestSuggestions(workspaceId: number, signal?: AbortSignal): Promise<Suggestions> {

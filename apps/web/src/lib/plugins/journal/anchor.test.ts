@@ -6,7 +6,7 @@ import type { Annotation, Review } from './types';
 const TEXT = '我昨天去学校。我去学校了。';
 
 function ann(id: string, quote: string, prefix: string, suffix: string): Annotation {
-	return { id, quote, prefix, suffix, correction: 'x', explanation: 'e', category: 'c' };
+	return { id, quote, prefix, suffix, correction: 'x', explanation: 'e', category: 'c', kind: 'mistake' };
 }
 
 // Server-shaped: 8 code points of context on each side (journal.ResolveAnnotations).

@@ -16,7 +16,7 @@ import {
 import type { Annotation } from './types';
 
 function ann(id: string): Annotation {
-	return { id, quote: id, prefix: '', suffix: '', correction: 'x', explanation: '', category: 'other' };
+	return { id, quote: id, prefix: '', suffix: '', correction: 'x', explanation: '', category: 'other', kind: 'mistake' };
 }
 
 describe('aiButtonGate', () => {

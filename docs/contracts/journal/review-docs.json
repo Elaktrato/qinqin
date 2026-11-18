@@ -1,0 +1,149 @@
+{
+  "version": 1,
+  "rule": "journal/review-docs",
+  "note": "What a client shows from a stored review:<entryId> document. Model and legacy text is plain text; an annotation without a usable string quote is dropped; kind is the closed mistake|suggestion set, and absent or unknown is mistake.",
+  "cases": [
+    {
+      "name": "a current review keeps its kinds",
+      "doc": {
+        "entryId": "e1",
+        "textHash": "abc",
+        "annotations": [
+          { "id": "a1", "quote": "才到了", "prefix": "", "suffix": "山顶", "correction": "才到", "explanation": "才 is not followed by 了.", "category": "grammar", "kind": "mistake" },
+          { "id": "a2", "quote": "可是很开心", "prefix": "，", "suffix": "。", "correction": "虽然…但是很开心", "explanation": "More natural.", "category": "style", "kind": "suggestion" }
+        ],
+        "overall": { "summary": "Clear.", "strengths": ["order"], "focus": ["particles"] },
+        "model": "m",
+        "provider": "p",
+        "dropped": { "notFound": 0, "wrongScript": 0, "noChange": 0, "overlap": 0, "empty": 0, "tooMany": 0 },
+        "createdAt": "2026-01-05T09:00:00Z"
+      },
+      "expect": {
+        "entryId": "e1",
+        "textHash": "abc",
+        "annotations": [
+          { "id": "a1", "quote": "才到了", "prefix": "", "suffix": "山顶", "correction": "才到", "explanation": "才 is not followed by 了.", "category": "grammar", "kind": "mistake" },
+          { "id": "a2", "quote": "可是很开心", "prefix": "，", "suffix": "。", "correction": "虽然…但是很开心", "explanation": "More natural.", "category": "style", "kind": "suggestion" }
+        ],
+        "overall": { "summary": "Clear.", "strengths": ["order"], "focus": ["particles"] },
+        "model": "m",
+        "provider": "p",
+        "fallbackFrom": "",
+        "dropped": { "notFound": 0, "wrongScript": 0, "noChange": 0, "overlap": 0, "empty": 0, "tooMany": 0 },
+        "createdAt": "2026-01-05T09:00:00Z"
+      }
+    },
+    {
+      "name": "a legacy review without kind shows every correction as a mistake",
+      "doc": {
+        "entryId": "e2",
+        "textHash": "def",
+        "annotations": [
+          { "id": "a1", "quote": "一个", "prefix": "", "suffix": "很漂亮", "correction": "", "explanation": "Leave it out.", "category": "word choice" }
+        ],
+        "overall": { "summary": "Good.", "strengths": [], "focus": [] },
+        "model": "old",
+        "dropped": {},
+        "createdAt": "2025-12-01T09:00:00Z"
+      },
+      "expect": {
+        "entryId": "e2",
+        "textHash": "def",
+        "annotations": [
+          { "id": "a1", "quote": "一个", "prefix": "", "suffix": "很漂亮", "correction": "", "explanation": "Leave it out.", "category": "word choice", "kind": "mistake" }
+        ],
+        "overall": { "summary": "Good.", "strengths": [], "focus": [] },
+        "model": "old",
+        "provider": "",
+        "fallbackFrom": "",
+        "dropped": { "notFound": 0, "wrongScript": 0, "noChange": 0, "overlap": 0, "empty": 0, "tooMany": 0 },
+        "createdAt": "2025-12-01T09:00:00Z"
+      }
+    },
+    {
+      "name": "the client does not trim a kind",
+      "doc": {
+        "entryId": "e3",
+        "annotations": [{ "id": "a1", "quote": "x", "prefix": "", "suffix": "", "correction": "y", "explanation": "z", "category": "style", "kind": "suggestion " }],
+        "overall": { "summary": "s", "strengths": [], "focus": [] }
+      },
+      "expect": {
+        "entryId": "e3",
+        "textHash": "",
+        "annotations": [{ "id": "a1", "quote": "x", "prefix": "", "suffix": "", "correction": "y", "explanation": "z", "category": "style", "kind": "mistake" }],
+        "overall": { "summary": "s", "strengths": [], "focus": [] },
+        "model": "",
+        "provider": "",
+        "fallbackFrom": "",
+        "dropped": { "notFound": 0, "wrongScript": 0, "noChange": 0, "overlap": 0, "empty": 0, "tooMany": 0 },
+        "createdAt": ""
+      }
+    },
+    {
+      "name": "a non-string kind is a mistake",
+      "doc": {
+        "entryId": "e4",
+        "annotations": [{ "id": "a1", "quote": "x", "prefix": "", "suffix": "", "correction": "y", "explanation": "z", "category": "style", "kind": 3 }],
+        "overall": { "summary": "s", "strengths": [], "focus": [] }
+      },
+      "expect": {
+        "entryId": "e4",
+        "textHash": "",
+        "annotations": [{ "id": "a1", "quote": "x", "prefix": "", "suffix": "", "correction": "y", "explanation": "z", "category": "style", "kind": "mistake" }],
+        "overall": { "summary": "s", "strengths": [], "focus": [] },
+        "model": "",
+        "provider": "",
+        "fallbackFrom": "",
+        "dropped": { "notFound": 0, "wrongScript": 0, "noChange": 0, "overlap": 0, "empty": 0, "tooMany": 0 },
+        "createdAt": ""
+      }
+    },
+    {
+      "name": "an annotation with a non-string quote is dropped",
+      "doc": {
+        "entryId": "e5",
+        "annotations": [
+          { "id": "a1", "quote": 7, "prefix": "", "suffix": "", "correction": "y", "explanation": "z", "category": "grammar" },
+          { "id": "a2", "quote": "ok", "prefix": "", "suffix": "", "correction": "y", "explanation": "z", "category": "grammar", "kind": "suggestion" }
+        ],
+        "overall": { "summary": "s", "strengths": [], "focus": [] }
+      },
+      "expect": {
+        "entryId": "e5",
+        "textHash": "",
+        "annotations": [{ "id": "a2", "quote": "ok", "prefix": "", "suffix": "", "correction": "y", "explanation": "z", "category": "grammar", "kind": "suggestion" }],
+        "overall": { "summary": "s", "strengths": [], "focus": [] },
+        "model": "",
+        "provider": "",
+        "fallbackFrom": "",
+        "dropped": { "notFound": 0, "wrongScript": 0, "noChange": 0, "overlap": 0, "empty": 0, "tooMany": 0 },
+        "createdAt": ""
+      }
+    },
+    {
+      "name": "missing annotations and overall read as empty",
+      "doc": { "entryId": "e6", "textHash": "h", "extra": { "kept": 1 } },
+      "expect": {
+        "entryId": "e6",
+        "textHash": "h",
+        "annotations": [],
+        "overall": { "summary": "", "strengths": [], "focus": [] },
+        "model": "",
+        "provider": "",
+        "fallbackFrom": "",
+        "dropped": { "notFound": 0, "wrongScript": 0, "noChange": 0, "overlap": 0, "empty": 0, "tooMany": 0 },
+        "createdAt": ""
+      }
+    },
+    {
+      "name": "not an object is no review",
+      "doc": "review",
+      "expect": null
+    },
+    {
+      "name": "an object without an entry id is no review",
+      "doc": { "annotations": [] },
+      "expect": null
+    }
+  ]
+}
