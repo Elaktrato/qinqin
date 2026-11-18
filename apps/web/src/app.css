@@ -224,3 +224,59 @@ button.link:disabled {
 		text-decoration-style: dotted;
 	}
 }
+
+/* Restyle base elements (#106): shared, token-only rules every page may rely on. */
+b,
+strong {
+	font-weight: var(--weight-strong);
+}
+
+input[type='checkbox'],
+input[type='radio'],
+input[type='range'],
+progress {
+	accent-color: var(--accent);
+}
+
+fieldset {
+	margin: 0;
+	padding: 0;
+	border: 0;
+}
+
+legend {
+	font-size: var(--font-size-label);
+	font-weight: var(--weight-medium);
+	color: var(--readable-muted);
+}
+
+/* An opt-in table: hairline rows, label-style headers, no outer border or zebra. */
+.ui-table {
+	width: 100%;
+	border-collapse: collapse;
+}
+
+.ui-table caption {
+	text-align: start;
+	color: var(--readable-muted);
+	font-size: var(--font-size-label);
+	padding-bottom: var(--space-1);
+}
+
+.ui-table th,
+.ui-table td {
+	padding: var(--space-1) var(--space-2);
+	border-bottom: 1px solid var(--hair);
+	text-align: start;
+	vertical-align: top;
+}
+
+.ui-table th {
+	font-size: var(--font-size-label);
+	font-weight: var(--weight-medium);
+	color: var(--readable-muted);
+}
+
+.ui-table .num {
+	font-variant-numeric: tabular-nums;
+}
