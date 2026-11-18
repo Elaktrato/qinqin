@@ -54,15 +54,15 @@ describe('Stats layout tabs', () => {
 		expect(screen.getByText('the view')).toBeTruthy();
 	});
 
-	it('Characters is absent in a Spanish workspace and a direct visit keeps the note', () => {
+	it('Characters is absent in a Spanish workspace and a direct visit keeps its region', () => {
 		mount('/stats/characters', 'es');
 
 		const nav = screen.getByRole('navigation', { name: 'Stats views' });
 		expect(within(nav).queryByRole('link', { name: 'Characters' })).toBeNull();
 		expect(within(nav).getAllByRole('link').map((link) => link.textContent)).toEqual(['Overview', 'Week']);
 		expect(within(nav).queryByRole('link', { current: 'page' })).toBeNull();
-		// The Characters view itself still renders (its own not-Han note), in a
-		// region named after the view the URL asked for.
+		// The layout keeps a region named after the view the URL asked for; the
+		// Characters page's own not-Han note is tested in characters/page.dom.test.ts.
 		expect(screen.getByRole('region', { name: 'Characters' })).toBeTruthy();
 		expect(screen.getByText('the view')).toBeTruthy();
 	});

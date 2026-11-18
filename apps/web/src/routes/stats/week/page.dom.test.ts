@@ -134,7 +134,7 @@ describe('Stats week page', () => {
 		expect(goto).toHaveBeenCalledWith('/stats/week?week=2026-11-02', { keepFocus: true, noScroll: true });
 	});
 
-	it('pressing Previous goes to ?week=<monday−7> and keeps focus on the button', async () => {
+	it('pressing Previous goes to ?week=<monday−7> and asks goto to keep the focus', async () => {
 		render(Page);
 		await waitFor(() => expect(firstValue()).toBe('12'));
 		const prev = screen.getByRole('button', { name: 'Previous week' }) as HTMLButtonElement;

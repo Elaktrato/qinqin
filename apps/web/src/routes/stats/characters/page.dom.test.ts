@@ -76,7 +76,7 @@ async function ready(): Promise<HTMLElement> {
 }
 
 describe('Stats → Characters', () => {
-	it('cells use the mastery class per stage (m0..m4) and their accessible name says the stage', async () => {
+	it('cells use the st-* mastery class per stage and their accessible name says the stage', async () => {
 		const container = await ready();
 		const cells = [...container.querySelectorAll<HTMLElement>('.cell')];
 		const stages = cells.map((cell) => [...cell.classList].find((name) => name.startsWith('st-')));
@@ -140,6 +140,17 @@ describe('Stats → Characters', () => {
 		expect(screen.getByLabelText('Search').tagName).toBe('INPUT');
 		expect(screen.getByLabelText('Jump to character').tagName).toBe('INPUT');
 		expect(screen.getByRole('button', { name: 'Go' })).toBeTruthy();
+	});
+
+	it('a direct visit outside Han languages keeps the not-Han note and the Overview link', async () => {
+		select(1, 'es');
+		render(CharactersPage);
+
+		const status = await screen.findByRole('status');
+		expect(status.textContent).toContain('The character map is for Chinese and Japanese workspaces.');
+		expect(screen.getByRole('link', { name: 'See the Overview' }).getAttribute('href')).toBe('/stats');
+		expect(fetchCharacters).not.toHaveBeenCalled();
+		expect(loadStudyData).not.toHaveBeenCalled();
 	});
 });
 

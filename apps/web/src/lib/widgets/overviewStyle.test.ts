@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest';
 import characterMap from './CharacterMapSummary.svelte?raw';
 import flashcards from '../features/flashcards/FlashcardsWidget.svelte?raw';
 import readingTime from './ReadingTimeWidget.svelte?raw';
+import reviewsPerDay from './ReviewsPerDayWidget.svelte?raw';
+import summary from './SummaryWidget.svelte?raw';
 import wordStates from './WordStatesWidget.svelte?raw';
 
 const styleOf = (source: string): string => source.slice(source.indexOf('<style>'));
@@ -10,7 +12,9 @@ const WIDGETS: [string, string][] = [
 	['WordStatesWidget', wordStates],
 	['FlashcardsWidget', flashcards],
 	['ReadingTimeWidget', readingTime],
-	['CharacterMapSummary', characterMap]
+	['CharacterMapSummary', characterMap],
+	['SummaryWidget', summary],
+	['ReviewsPerDayWidget', reviewsPerDay]
 ];
 
 describe('the Stats overview widgets in the lighter look', () => {

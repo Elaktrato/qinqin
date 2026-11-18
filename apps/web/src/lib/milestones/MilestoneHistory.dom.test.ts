@@ -12,7 +12,7 @@ const TITLES = new Map([
 ]);
 
 describe('MilestoneHistory', () => {
-	it('is an ordered list, newest first, "New" as text', () => {
+	it('renders the items in the given newest-first order, "New" as text', () => {
 		render(MilestoneHistory, {
 			items: [
 				{ id: 'days-active:10', day: '2026-11-12', isNew: true },
