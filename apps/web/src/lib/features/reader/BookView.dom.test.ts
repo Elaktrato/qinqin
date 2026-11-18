@@ -498,6 +498,30 @@ describe('BookView shortcuts and focus across the new layout (#102)', () => {
 		expect(document.activeElement).toBe(button);
 	});
 
+	it('Escape in a bookmark rename or delete confirmation cancels that action, not the sheet', async () => {
+		setWidth(800);
+		vi.mocked(listBookmarks).mockResolvedValueOnce([
+			{ id: 5, bookId: 1, position: '0:0', label: '你好', createdAt: '2026-11-16T10:00:00Z' }
+		] as never);
+		render(BookView, { id: 1, chapter: 0 });
+		await ready();
+		await fireEvent.click(screen.getByRole('button', { name: RAIL_BUTTON }));
+		const sheet = screen.getByRole('dialog', { name: 'Book tools' });
+		await fireEvent.click(await within(sheet).findByRole('button', { name: 'Rename bookmark 你好' }));
+		const input = within(sheet).getByRole('textbox', { name: 'Bookmark name' });
+		await fireEvent.keyDown(input, { key: 'Escape' });
+		// The inner action took Escape: the sheet stays, the rename is cancelled.
+		expect(screen.getByRole('dialog', { name: 'Book tools' })).toBe(sheet);
+		expect(within(sheet).queryByRole('textbox', { name: 'Bookmark name' })).toBeNull();
+		expect(within(sheet).getByRole('button', { name: 'Rename bookmark 你好' })).toBeTruthy();
+		await fireEvent.click(within(sheet).getByRole('button', { name: 'Delete bookmark 你好' }));
+		const cancel = within(sheet).getByRole('button', { name: 'Cancel' });
+		await fireEvent.keyDown(cancel, { key: 'Escape' });
+		expect(screen.getByRole('dialog', { name: 'Book tools' })).toBe(sheet);
+		expect(within(sheet).queryByText('Delete this bookmark?')).toBeNull();
+		expect(within(sheet).getByRole('button', { name: 'Delete bookmark 你好' })).toBeTruthy();
+	});
+
 	it('crossing 1000px with focus in the rail moves focus to the rail button and back to the active tab', async () => {
 		setWidth(1280);
 		render(BookView, { id: 1, chapter: 0 });

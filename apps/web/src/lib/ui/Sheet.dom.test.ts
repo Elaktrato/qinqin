@@ -45,6 +45,16 @@ describe('Sheet', () => {
 		expect(onclose).toHaveBeenCalledTimes(1);
 	});
 
+	it('a key an inner action took does not close the sheet', async () => {
+		const onescape = vi.fn();
+		const { sheet, onclose } = await open({ onescape });
+		const rename = screen.getByRole('textbox', { name: 'Rename' });
+		await fireEvent.keyDown(rename, { key: 'Escape' });
+		expect(onescape).toHaveBeenCalledTimes(1);
+		expect(screen.getByRole('dialog')).toBe(sheet);
+		expect(onclose).not.toHaveBeenCalled();
+	});
+
 	it('dragging the handle down far enough closes it; a short drag springs back', async () => {
 		const { sheet, onclose } = await open();
 		const grab = handle(sheet);

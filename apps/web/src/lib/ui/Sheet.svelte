@@ -104,6 +104,10 @@
 	}
 
 	function onkeydown(e: KeyboardEvent): void {
+		// An inner action (an inline rename, a delete confirmation, a menu)
+		// took the key first: Escape cancels that, not the whole sheet (the
+		// old drawer's keys checked the same).
+		if (e.defaultPrevented) return;
 		if (e.key === 'Escape') {
 			e.preventDefault();
 			dismiss();
