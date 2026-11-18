@@ -72,11 +72,7 @@
 		font: inherit;
 		text-align: start;
 		cursor: pointer;
-	}
-	.note + .note {
-		border-top: 1px solid var(--hair);
-		border-start-start-radius: 0;
-		border-start-end-radius: 0;
+		border-bottom: 1px solid var(--hair);
 	}
 	.note:hover {
 		background: var(--raised);
