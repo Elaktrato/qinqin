@@ -84,8 +84,13 @@ setUnauthorizedHandler(() => {
 
 // A 403 that names a restriction means the session changed under us (an admin
 // forced a password change): reload `me` so the layout guard moves it.
+// Already known to be restricted: nothing to learn. Otherwise reload with the
+// current token as `known`, so the user is not blanked while /me is in flight
+// (a blank user reads as unrestricted and re-fires every app load).
 setRestrictedHandler(() => {
-	void loadMe().catch(() => undefined);
+	const { token: current } = get(auth);
+	if (current === null || get(restriction) !== null) return;
+	void loadMe(current).catch(() => undefined);
 });
 
 /** Offline copies of the API (all partitions) and the "prepared" receipts. Best effort. */

@@ -212,8 +212,9 @@
 	// zone as its default) loads right after sign-in; every "day" follows it.
 	// Signing out forgets it, so signing in again (same user, no reload)
 	// loads it again instead of falling back to the browser zone.
+	// Not for a restricted session: the zone call would 403 and loop.
 	$effect(() => {
-		void syncStudyDayUser($user?.id ?? null);
+		void syncStudyDayUser($restriction === null ? ($user?.id ?? null) : null);
 	});
 
 	// One session event per workspace per learner day, recorded for whichever
