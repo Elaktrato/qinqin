@@ -25,6 +25,13 @@ describe('DeckStatsPanel', () => {
 		expect(screen.queryByText('Retention (30 days)')).toBeNull();
 	});
 
+	it('names the six overall figures with #105 vocabulary', () => {
+		render(DeckStatsPanel, { numbers: NUMBERS });
+		for (const label of ['Words', 'Cards', 'Studied', 'Mastered', 'Reviews (30 days)', 'Recall, last 30 days']) {
+			expect(screen.getByText(label)).toBeTruthy();
+		}
+	});
+
 	it('keeps the below-the-floor hint', () => {
 		render(DeckStatsPanel, { numbers: { ...NUMBERS, retention: null, retentionBase: 9 } });
 		expect(screen.getByTitle('Shown after 10 repeat reviews')).toBeTruthy();

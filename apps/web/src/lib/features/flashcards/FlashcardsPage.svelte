@@ -17,16 +17,18 @@
 </svelte:head>
 
 <!-- A new route is a fresh view: no state leaks between decks. -->
-{#key rest}
-	{#if route.view === 'deck'}
-		<DeckDetail deckId={route.deckId} />
-	{:else if route.view === 'settings'}
-		<DeckSettingsView deckId={route.deckId} />
-	{:else if route.view === 'system-level' || route.view === 'system-plugin'}
-		<SystemDeckDetail {route} />
-	{:else if route.view === 'system-frequency'}
-		<StarterDeckDetail {route} />
-	{:else}
-		<DeckList />
-	{/if}
-{/key}
+<div class="page-body">
+	{#key rest}
+		{#if route.view === 'deck'}
+			<DeckDetail deckId={route.deckId} />
+		{:else if route.view === 'settings'}
+			<DeckSettingsView deckId={route.deckId} />
+		{:else if route.view === 'system-level' || route.view === 'system-plugin'}
+			<SystemDeckDetail {route} />
+		{:else if route.view === 'system-frequency'}
+			<StarterDeckDetail {route} />
+		{:else}
+			<DeckList />
+		{/if}
+	{/key}
+</div>

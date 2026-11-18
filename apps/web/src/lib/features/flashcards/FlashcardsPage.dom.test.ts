@@ -16,9 +16,10 @@ beforeEach(() =>
 afterEach(cleanup);
 
 describe('FlashcardsPage shell', () => {
-	it('renders the Decks heading for the empty rest', () => {
-		render(FlashcardsPage, { rest: '' });
+	it('renders the Decks heading inside the shared page column', () => {
+		const { container } = render(FlashcardsPage, { rest: '' });
 		expect(screen.getByRole('heading', { level: 1, name: 'Decks' })).toBeTruthy();
+		expect(container.querySelector('.page-body')?.contains(screen.getByRole('heading', { level: 1 }))).toBe(true);
 	});
 
 	it('routes system decks and settings', async () => {

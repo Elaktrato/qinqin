@@ -3,6 +3,7 @@
 	import { getSchemes } from '$lib/api/schemes';
 	import { errorMessage } from '$lib/stats/errors';
 	import { flashcardsHref } from '../route';
+	import { Button, Section } from '$lib/ui';
 	import { loadLevelItems } from './systemDeckItems';
 	import { levelDecks, type LevelDeck } from './systemDecks';
 
@@ -72,8 +73,7 @@
 	}
 </script>
 
-<section aria-labelledby="system-decks-heading">
-	<h2 id="system-decks-heading">{t('flashcards.system.title')}</h2>
+<Section title={t('flashcards.system.title')}>
 	<p class="hint">{t('flashcards.system.listIntro')}</p>
 	{#if loadError}
 		<p role="alert">{loadError}</p>
@@ -85,8 +85,8 @@
 		<ul class="groups">
 			{#each groups as group (group.schemeId)}
 				<li>
-					<button
-						type="button"
+					<Button
+						variant="plain"
 						class="toggle"
 						aria-expanded={expanded.includes(group.schemeId)}
 						onclick={() => toggle(group)}
@@ -94,7 +94,7 @@
 						<span aria-hidden="true">{expanded.includes(group.schemeId) ? '▾' : '▸'}</span>
 						{group.name}
 						<span class="count">{t('flashcards.system.levels', { count: group.levels.length })}</span>
-					</button>
+					</Button>
 					{#if expanded.includes(group.schemeId)}
 						<ul class="levels">
 							{#each group.levels as deck (deck.level)}
@@ -120,7 +120,7 @@
 			{/each}
 		</ul>
 	{/if}
-</section>
+</Section>
 
 <style>
 	.groups,
@@ -134,17 +134,6 @@
 		padding-left: 1.5rem;
 	}
 
-	.toggle {
-		min-height: 44px;
-		width: 100%;
-		display: flex;
-		gap: 0.5rem;
-		align-items: center;
-		text-align: left;
-		border: 0;
-		background: transparent;
-		font-weight: 600;
-	}
 
 	.count,
 	.owned,
