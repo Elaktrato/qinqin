@@ -32,7 +32,7 @@
 	import { hiddenDictionaries } from '$lib/dictionaryVisibility';
 	import { languageLabel, usesHan } from '$lib/languages';
 	import { user } from '$lib/auth';
-	import { PHONE_MEDIA_QUERY } from '$lib/frame/breakpoint';
+	import { FRAME_PHONE_BREAKPOINT, PHONE_MEDIA_QUERY } from '$lib/frame/breakpoint';
 	import Field from '$lib/ui/Field.svelte';
 	import Button from '$lib/ui/Button.svelte';
 	import Icon from '$lib/ui/Icon.svelte';
@@ -151,6 +151,9 @@
 	// The form, so the icon-only submit button can submit it (IconButton is
 	// always type=button; Enter in the field submits natively too).
 	let searchForm = $state<HTMLFormElement | null>(null);
+	// The frame's one layout switch: the detail preview exists only beside
+	// the list, never as a hidden fetch on the phone.
+	let wide = $state(true);
 	const levelText = $derived(
 		t('search.filters.levelMenu', {
 			level: filters.level || t('search.filters.anyLevel')
@@ -164,6 +167,15 @@
 	);
 
 	onMount(() => {
+		let media: MediaQueryList | null = null;
+		const change = (e: MediaQueryListEvent): void => {
+			wide = e.matches;
+		};
+		if (typeof window.matchMedia === 'function') {
+			media = window.matchMedia(`(min-width: ${FRAME_PHONE_BREAKPOINT}px)`);
+			wide = media.matches;
+			media.addEventListener('change', change);
+		}
 		listLanguages().then(
 			(list) => (installedCodes = new Set(list.filter((l) => l.installed).map((l) => l.code.toLowerCase()))),
 			() => {}
@@ -175,6 +187,7 @@
 			},
 			() => (schemesFailed = true)
 		);
+		return () => media?.removeEventListener('change', change);
 	});
 
 	// Chips act on the committed search (the URL query), not on text still
@@ -461,12 +474,13 @@
 			{#if selected !== null}
 				<div class="back-to-results"><Button variant="secondary" href={searchHref(activeQuery, filters)}>{t('search.backToResults')}</Button></div>
 			{/if}
-			{#if detailId !== null}
+			{#if detailId !== null && (wide || selected !== null)}
 				<EntryView
 					entryId={detailId}
 					headingLevel={2}
 					recordView={selected !== null && detailId === selected}
 					focusOnLoad={focusDetail && selected !== null && detailId === selected}
+					backHref={searchHref(activeQuery, filters)}
 					ontitle={titled}
 				/>
 			{:else}
@@ -562,13 +576,13 @@
 	.back-to-results {
 		justify-self: start;
 	}
-	@media (max-width: 45rem) {
+	@media (max-width: 719.98px) {
 		.split.has-selection .list-pane,
 		.split:not(.has-selection) .detail-pane {
 			display: none;
 		}
 	}
-	@media (min-width: 45rem) {
+	@media (min-width: 720px) {
 		.split {
 			grid-template-columns: minmax(18rem, 24rem) minmax(0, 1fr);
 		}

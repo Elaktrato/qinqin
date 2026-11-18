@@ -531,3 +531,34 @@ describe('the search field and filters (#104)', () => {
 		expect(source).toMatch(/\.chip,[\s\S]*?border:\s*0/);
 	});
 });
+
+
+describe('the search layout switch (#104)', () => {
+	it('uses the frame 720px switch in the CSS and the script', async () => {
+		const source = (await import('./+page.svelte?raw')).default as string;
+		expect(source).toContain('max-width: 719.98px');
+		expect(source).toContain('min-width: 720px');
+		expect(source).toContain('PHONE_MEDIA_QUERY');
+		expect(source).not.toContain('45rem');
+	});
+
+	it('does not fetch the preview that the phone hides', async () => {
+		searchMock.mockResolvedValue([hit(7, '勤奋')]);
+		setUrl('/search?q=qin');
+		render(Page);
+		await screen.findByRole('link', { name: '勤奋' });
+		await new Promise((r) => setTimeout(r, 0));
+		expect(getEntryMock).not.toHaveBeenCalled();
+	});
+});
+
+	it('links the detail not-found state back to the current search URL (#104)', async () => {
+		searchMock.mockResolvedValue([hit(7, '勤奋')]);
+		getEntryMock.mockRejectedValue(new (await import('$lib/api/client')).ApiError(404, 'not found'));
+		setUrl('/search?q=qin&kind=word&e=999');
+		render(Page);
+		expect(await screen.findByRole('heading', { level: 2, name: 'Entry not found' })).toBeTruthy();
+		expect(screen.getByRole('link', { name: 'Back to search' }).getAttribute('href')).toBe(
+			'/search?q=qin&kind=word'
+		);
+	});
