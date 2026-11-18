@@ -44,7 +44,7 @@ Choose **By level**, pick an installed scheme (HSK, JLPT, Jōyō grades, a curri
 
 ### Companion cards
 
-Sentence (Word Salad), writing and tone cards are **companions** of the vocab cards in the chosen decks. They share the new-card limit and each one is created only when you grade it for the first time, so abandoning a session creates nothing. A word that does not qualify (no sentence, no drawable character, no pinyin) is skipped silently and the next planned companion takes its place; the tab remembers such words and skips them in later sessions. A word gets at most one sentence card, built from its first example sentence (if that sentence later disappears, its first sentence is used instead). Companions are planned in deck sessions only.
+Sentence (Word Salad), writing and tone cards are **companions** of the vocab cards in the chosen decks. They share the new-card limit and each one is created only when you grade it for the first time, so abandoning a session creates nothing. A word that does not qualify (no sentence, no drawable character, no pinyin) is skipped silently and the next planned companion takes its place (at most `max(30, 2 × new-card limit)` times per session); the tab remembers such words and skips them in later sessions. A word gets at most one sentence card, built from its first example sentence (if that sentence later disappears, its first sentence is used instead). Companions are planned in deck sessions only.
 
 ### Reverse and cloze cards
 

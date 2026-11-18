@@ -17,8 +17,8 @@ non-empty `license` and `attribution`; every bundled pack's `id` appears in
 backticks in this file; every pack id this file names in a table row or a
 "- **Name** (`id`" list item exists (or is one of the optional local-only
 packs listed in the script); and every manifest `notice` follows the server's
-rules. To credit something new, see "Credits and the Sources page" in the
-README.
+rules. To credit something new, see "Credits and the Sources page" on the wiki
+page `docs/wiki/Data-and-licences.md`.
 
 The repository bundles four upstream dictionaries, one frequency list and
 three level lists (HSK 3.0 characters, HSK 3.0 words, JLPT kanji) under `plugins/data/` so that a fresh clone or Docker image
@@ -715,7 +715,7 @@ pack (Settings → Data), whose review shows the measured contrast.
 
 ## Reader text sources
 
-The Reader (see the README) imports public-domain works on user request. Nothing
+The Reader (see `docs/wiki/Reader.md`) imports public-domain works on user request. Nothing
 from these sources is bundled; each imported book stores its source link,
 attribution, and a licence note, which the Reader shows. The Reader plugin
 credits both sources, and `opencc-js` below, on the Sources page through the

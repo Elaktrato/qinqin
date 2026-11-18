@@ -1,7 +1,7 @@
 # qinqin: one compose file for plain `docker compose up -d`, Portainer (web
 # editor, or Repository with compose path docker-compose.yml) and anything else
-# that reads standard compose. Step by step: README, "Quick start" and
-# "Deploying with Portainer".
+# that reads standard compose. Step by step: README, "Quick start", and the wiki
+# page Admin-deploying (docs/wiki/Admin-deploying.md), "Deploying with Portainer".
 #
 # UPGRADING from the old quick start: its data lived in ./data. This file now
 # defaults to a named volume (qinqin-data), so an old install would start on an

@@ -197,7 +197,7 @@
 	"admin.backup.restore.start": "Start the same QINQIN_SECRET and the same or a newer image.",
 	"admin.backup.restore.stop": "Stop the container.",
 	"admin.backup.restore.title": "Restoring a server backup",
-	"admin.backup.schedule": "For a schedule use <code>qinqin backup --out {file}</code> from cron. Details in the README, section Backup.",
+	"admin.backup.schedule": "For a schedule use <code>qinqin backup --out {file}</code> from cron. Details in the wiki, page Backup, recovery and the command line.",
 	"admin.backup.securityNote": "The archive holds password hashes, hashed session tokens and secrets sealed with QINQIN_SECRET. Store it like the secret itself.",
 	"admin.backup.started": "The download starts now.",
 	"admin.backup.title": "Server backup",

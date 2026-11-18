@@ -46,7 +46,14 @@ git push origin main develop --tags
 - Every push to `develop` and every PR into `develop`/`main`: source and archive checks, web check/tests, Go vet + tests, web build and the embed smoke test (`scripts/smoke-embed.sh`).
 - Pushes to `main` and `v*` tags: tests, then build and push the Docker image to GHCR
   (`latest` from `main`, version tags from releases).
+- `v*` tags, once the image is pushed: a GitHub Release named `qinqin <tag>` is created automatically
+  (the `release` job of `.github/workflows/build.yml`). Its notes are `docs/releases/<tag>.md` when that
+  file exists, otherwise GitHub's generated notes; a tag with a hyphen (`v0.5.0-rc1`) becomes a
+  pre-release, and re-running the job for a tag that already has a release changes nothing. To write
+  the notes yourself, commit `docs/releases/<tag>.md` before the tag is pushed.
 - `develop` pushes never publish images.
+- Pushes to `main` that touch `docs/wiki/`, and a manual run from any branch, publish the wiki
+  (`.github/workflows/wiki.yml`; see `docs/wiki/README.md`).
 
 ## Repository settings
 

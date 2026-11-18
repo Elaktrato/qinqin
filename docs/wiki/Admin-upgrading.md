@@ -38,6 +38,10 @@ The database now stores only SHA-256 hashes of session tokens and zeroes the pag
 
 Adds a `notice` column to dictionaries, frequency packs and level schemes, empty for every installed pack. The Sources page shows a pack's longer caveats (the HSK lists' terms, the approximate JLPT levels, the Jiten note) from that stored copy, so they stay missing until you seed once after upgrading. The re-seed rewrites only the registry rows whose terms changed.
 
+### The learner time zone (study day)
+
+The release that introduced each account's time zone recomputes XP totals and best streaks from the review log with local days instead of UTC dates, so they can change once by a few points or days; the upgrade day may record one extra `session` event. The first time a user signs in afterwards the web app sends the browser's zone as the default, and that first zone applies to the whole history ([Settings tour](Settings-tour#study)).
+
 ### Migrations 018 to 023 (workspaces and the reader)
 
 They run in place and keep all data. 018 rebuilds `workspaces` with an optional `name` and `UNIQUE(user_id, language, name)` (ids unchanged, so events and plugin data still point at their workspace). 019 adds `library_books.workspace_id`: each existing book is linked to its user's oldest workspace of the book's language, and one is created when the user has none. 020 adds bookmarks, 021 highlights. 022 and 023 rebuild `workspaces` and `library_books` with `AUTOINCREMENT`, so the id of a deleted workspace or book is never handed out again (a stale browser tab gets a 404 instead of writing into someone else's new workspace or book).

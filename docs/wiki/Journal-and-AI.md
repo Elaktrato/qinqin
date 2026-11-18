@@ -75,6 +75,8 @@ The code marks these as unverified against the providers' own documentation (`UN
 
 ## For administrators
 
+What the server owner decides (the secret, allowed providers, custom endpoints, limits, offline OCR) is on [AI providers and offline OCR](Admin-AI-and-OCR); the summary below is for quick reference.
+
 ### Which providers users may choose
 
 `QINQIN_AI_PROVIDERS` is a comma list of the built-in ids (`anthropic`, `openai`, `gemini`, `deepseek`, `mistral`, `xai`, `groq`, `openrouter`) and `custom`; unset means all. A disabled provider's stored keys stay (shown "Turned off by the server", Remove only) and a selection on it reads as unavailable. The legacy `QINQIN_AI_PROVIDER=anthropic` now means `QINQIN_AI_PROVIDERS=anthropic` (a log line says so), so an upgrade never sends text to a provider you did not allow; `fake` is a test provider that never leaves the server and shows as "Test provider — no real AI". See [Environment variables](Admin-environment-variables).

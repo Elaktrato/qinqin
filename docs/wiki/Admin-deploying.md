@@ -49,12 +49,12 @@ The published image is the full build:
 
 Self-builds can leave the first two out with `docker build --build-arg WITH_OCR=0 .` and `--build-arg WITH_AUDIO=0`; the server starts normally and the features show as unavailable. Details in [AI providers and offline OCR](Admin-AI-and-OCR) and [Development](Development).
 
-**The package may be private.** GitHub creates a new container package as private, so a `docker pull` or a Portainer deployment fails with `unauthorized` until you either
+The project's package `ghcr.io/elaktrato/qinqin` is public: `docker pull` needs no login. Check from the server with `docker pull ghcr.io/elaktrato/qinqin:v0.4.0`.
+
+**Your own fork's package starts private.** GitHub creates a new container package as private, so a `docker pull` or a Portainer deployment of an image your fork's CI published fails with `unauthorized` until you either
 
 - make the package public: GitHub profile, Packages, `qinqin`, Package settings, Change visibility, Public; or
 - keep it private and give Portainer a login: Registries, Add registry, GitHub Container Registry, your GitHub username and a personal access token with only the `read:packages` scope; then select that registry when you create the stack.
-
-Check from the server with `docker pull ghcr.io/elaktrato/qinqin:v0.3.0`.
 
 ## Deploying with Portainer
 
