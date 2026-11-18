@@ -70,7 +70,7 @@
 		{/each}
 	</select>
 	{#if hint}<p class="hint" id={hintId}>{hint}</p>{/if}
-	{#if error}<p class="error" id={errorId}>{error}</p>{/if}
+	{#if error}<p class="error" id={errorId} role="alert">{error}</p>{/if}
 </div>
 
 <style>

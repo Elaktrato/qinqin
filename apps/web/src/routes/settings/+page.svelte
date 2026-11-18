@@ -90,7 +90,9 @@
 	// goes when it closes: back to its Delete button, or to the section
 	// heading once the row is gone.
 	let deleting = $state<Workspace | null>(null);
-	const deleteButtons: Record<number, HTMLButtonElement> = {};
+	let renameInput = $state<HTMLInputElement | undefined>(undefined);
+	const deleteButtons: Record<number, HTMLElement | undefined> = {};
+	const renameButtons: Record<number, HTMLElement | undefined> = {};
 	let workspacesHeading = $state<HTMLHeadingElement | null>(null);
 
 	async function closeDelete(deleted: boolean): Promise<void> {
@@ -162,7 +164,7 @@
 	onMount(loadCoverage);
 	// The workspace whose Dictionaries panel is open, and its button.
 	let dictionariesOpenId = $state<number | null>(null);
-	const dictionaryButtons: Record<number, HTMLButtonElement | undefined> = {};
+	const dictionaryButtons: Record<number, HTMLElement | undefined> = {};
 
 	function coverageOf(workspace: Workspace) {
 		return coverage(workspace.language, allDictionaries ?? [], allSchemes ?? []);
@@ -174,10 +176,13 @@
 		dictionaryButtons[id]?.focus();
 	}
 
-	function startRename(workspace: Workspace): void {
+	async function startRename(workspace: Workspace): Promise<void> {
 		renamingId = workspace.id;
 		renameDraft = workspace.name;
 		renameError = '';
+		await tick();
+		renameInput?.focus();
+		renameInput?.select();
 	}
 
 	function cancelRename(): void {
@@ -207,11 +212,6 @@
 		} finally {
 			renameSaving = false;
 		}
-	}
-
-	function focusOnMount(node: HTMLInputElement): void {
-		node.focus();
-		node.select();
 	}
 
 	async function savePlugin(row: PluginRow): Promise<void> {
@@ -256,14 +256,13 @@
 
 		{#if $workspaces.list.length === 0 && !$workspacesLoaded && $workspacesLoadError}
 			<p class="error" role="alert">{$workspacesLoadError}</p>
-			<button
-				type="button"
+			<Button
 				onclick={() => {
 					workspacesLoadError.set('');
 					loadWorkspaces().catch((err) =>
 						workspacesLoadError.set(message(err, t('app.workspaces.loadFailed')))
 					);
-				}}>{t('common.action.retry')}</button
+				}}>{t('common.action.retry')}</Button
 			>
 		{:else if $workspaces.list.length === 0 && !$workspacesLoaded}
 			<p class="hint" aria-live="polite">{t('settings.workspaces.loading')}</p>
@@ -276,14 +275,15 @@
 						{#if renamingId === workspace.id}
 							<form class="rename" onsubmit={(event) => saveRename(event, workspace)}>
 								<WorkspaceLabel {workspace} list={$workspaces.list} withLanguage size={18} />
-								<label class="sr-only" for="rename-{workspace.id}">{t('settings.workspaces.name')}</label>
-								<input
+								<Field
+									class="rename-field"
+									label={t('settings.workspaces.name')}
 									id="rename-{workspace.id}"
+									bind:element={renameInput}
 									bind:value={renameDraft}
-									maxlength="40"
+									maxlength={40}
 									autocomplete="off"
 									placeholder={t('settings.workspaces.noName')}
-									use:focusOnMount
 									onkeydown={(event) => {
 										if (event.key === 'Escape') {
 											event.preventDefault();
@@ -292,10 +292,10 @@
 									}}
 								/>
 								<!-- Not disabled while saving, so keyboard focus stays put. -->
-								<button type="submit" aria-busy={renameSaving}>
+								<Button type="submit" busy={renameSaving}>
 									{renameSaving ? t('common.state.saving') : t('common.action.save')}
-								</button>
-								<button type="button" class="secondary" onclick={cancelRename}>{t('common.action.cancel')}</button>
+								</Button>
+								<Button type="button" onclick={cancelRename}>{t('common.action.cancel')}</Button>
 							</form>
 							{#if renameError}
 								<p class="error" role="alert">{renameError}</p>
@@ -304,42 +304,42 @@
 							<div class="row">
 								<WorkspaceLabel {workspace} list={$workspaces.list} withLanguage size={18} />
 								{#if $workspaces.current?.id === workspace.id}
-									<span class="current">{t('settings.workspaces.current')}</span>
+									<Chip>{t('settings.workspaces.current')}</Chip>
 								{/if}
 								{#if allDictionaries !== null && coverageOf(workspace).dictionaries.length === 0}
-									<span class="chip" title={dictionaryHint(languageLabel(workspace.language), admin)}>{t('settings.workspaces.noDictionary')}</span>
+									<span title={dictionaryHint(languageLabel(workspace.language), admin)}
+										><Chip>{t('settings.workspaces.noDictionary')}</Chip></span
+									>
 								{/if}
 								{#if allSchemes !== null && coverageOf(workspace).levels === 0}
-									<span class="chip" title={levelsHint(languageLabel(workspace.language))}>{t('settings.workspaces.noLevels')}</span>
+									<span title={levelsHint(languageLabel(workspace.language))}
+										><Chip>{t('settings.workspaces.noLevels')}</Chip></span
+									>
 								{/if}
-								<button
-									type="button"
-									class="secondary dictionaries-button"
-									bind:this={dictionaryButtons[workspace.id]}
+								<Button
+									element={dictionaryButtons[workspace.id]}
 									onclick={() => (dictionariesOpenId = dictionariesOpenId === workspace.id ? null : workspace.id)}
 									aria-expanded={dictionariesOpenId === workspace.id}
 									aria-label={t('settings.workspaces.dictionariesOf', { workspace: workspaceName(workspace) })}
 								>
 									{t('settings.workspaces.dictionaries')}
-								</button>
-								<button
-									type="button"
-									class="secondary rename-button"
+								</Button>
+								<Button
+									element={renameButtons[workspace.id]}
 									onclick={() => startRename(workspace)}
 									aria-label={t('settings.workspaces.renameOf', { workspace: workspaceName(workspace) })}
 								>
 									{t('settings.workspaces.rename')}
-								</button>
+								</Button>
 								{#if $workspaces.list.length > 1}
-									<button
-										type="button"
-										class="secondary delete-button"
-										bind:this={deleteButtons[workspace.id]}
+									<Button
+										tone="danger"
+										element={deleteButtons[workspace.id]}
 										onclick={() => (deleting = workspace)}
 										aria-label={t('settings.workspaces.deleteOf', { workspace: workspaceName(workspace) })}
 									>
 										{t('common.action.delete')}
-									</button>
+									</Button>
 								{/if}
 							</div>
 							{#if dictionariesOpenId === workspace.id}
@@ -541,16 +541,16 @@
 
 	.workspaces {
 		list-style: none;
-		margin: 0 0 1rem;
+		margin: 0 0 var(--space-4);
 		padding: 0;
-		display: grid;
-		gap: 0.5rem;
 	}
 
 	.workspaces li {
-		border: 1px solid color-mix(in srgb, currentColor 18%, transparent);
-		border-radius: 0.4rem;
-		padding: 0.6rem 0.75rem;
+		padding-block: var(--space-3);
+	}
+
+	.workspaces li + li {
+		border-top: 1px solid var(--hair);
 	}
 
 	/* Plugin rows are hairline rows, not a box per plugin (#106). */
@@ -573,63 +573,15 @@
 		display: flex;
 		flex-wrap: wrap;
 		align-items: center;
-		gap: 0.5rem 0.75rem;
+		gap: var(--space-2) var(--space-3);
 	}
 
-	.rename-button {
-		margin-left: auto;
+	.rename :global(.rename-field) {
+		flex: 1 1 10rem;
 	}
-
-	/* .secondary.delete-button: beats `.settings button.secondary`
-	   (color: inherit), which comes later and used to win. */
-	.settings button.secondary.delete-button {
-		color: var(--readable-bad);
-	}
-
 
 	h2[tabindex='-1']:focus {
 		outline: none;
-	}
-
-	.rename input {
-		flex: 1 1 10rem;
-		min-width: 0;
-		font: inherit;
-		padding: 0.35rem 0.5rem;
-		border: 1px solid color-mix(in srgb, currentColor 35%, transparent);
-		border-radius: 0.4rem;
-		background: transparent;
-		color: inherit;
-	}
-
-	.settings button.secondary:not(.button):not([role='tab']) {
-		border: 1px solid color-mix(in srgb, currentColor 35%, transparent);
-		background: transparent;
-		color: inherit;
-		font-weight: 500;
-	}
-
-	.sr-only {
-		position: absolute;
-		width: 1px;
-		height: 1px;
-		margin: -1px;
-		padding: 0;
-		overflow: hidden;
-		clip: rect(0 0 0 0);
-		white-space: nowrap;
-		border: 0;
-	}
-
-	.dictionaries-button {
-		min-height: 44px;
-	}
-
-	.current {
-		font-size: 0.8rem;
-		border: 1px solid currentColor;
-		border-radius: 999px;
-		padding: 0.05rem 0.5rem;
 	}
 
 	.plugin-permissions {
@@ -664,26 +616,6 @@
 
 	.order {
 		width: 5rem;
-	}
-
-	.plugin-controls input,
-	.settings button:not(.button):not([role='tab']) {
-		font: inherit;
-	}
-
-	.settings button:not(.button):not([role='tab']) {
-		padding: 0.45rem 0.85rem;
-		border: 0;
-		border-radius: 0.4rem;
-		background: var(--accent);
-		color: var(--on-accent);
-		font-weight: 600;
-		cursor: pointer;
-	}
-
-	.settings button:not(.button):not([role='tab']):disabled {
-		opacity: 0.6;
-		cursor: progress;
 	}
 
 	.error {

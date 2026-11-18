@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { onMount, tick } from 'svelte';
 	import { t } from '$lib/i18n';
-	import Msg from '$lib/i18n/Msg.svelte';
 	import { ApiError } from '$lib/api/client';
 	import type { Workspace } from '$lib/api/types';
 	import { fetchWorkspaceContents, type WorkspaceContents } from '$lib/api/workspaceContents';
@@ -9,6 +8,7 @@
 	import { deleteWorkspace } from '$lib/workspaces';
 	import Button from '$lib/ui/Button.svelte';
 	import Dialog from '$lib/ui/Dialog.svelte';
+	import Field from '$lib/ui/Field.svelte';
 
 	// The confirmation for deleting a workspace: a modal Dialog (lib/ui: the
 	// browser traps focus in it, makes the page behind inert, Escape closes
@@ -29,7 +29,7 @@
 	const uid = $props.id();
 	const label = $derived(confirmLabel(list, workspace));
 
-	let input = $state<HTMLInputElement | null>(null);
+	let input = $state<HTMLInputElement | undefined>(undefined);
 	let typed = $state('');
 	let contents = $state<WorkspaceContents | null>(null);
 	let contentsFailed = $state(false);
@@ -117,23 +117,16 @@
 			<p>{t('app.workspaces.delete.others')}</p>
 		</div>
 
-		<label for="{uid}-confirm"
-			><Msg key="app.workspaces.delete.typeToConfirm" args={{ name: label }}
-				>{#snippet strong(text: string)}<strong>{text}</strong>{/snippet}</Msg
-			></label
-		>
-		<input
-			bind:this={input}
-			bind:value={typed}
+		<Field
+			label={t('app.workspaces.delete.typeToConfirm', { name: label }).replace(/<[^>]+>/g, '')}
 			id="{uid}-confirm"
+			bind:element={input}
+			bind:value={typed}
 			autocomplete="off"
 			spellcheck="false"
-			aria-invalid={error ? 'true' : undefined}
+			error={error}
 		/>
 
-		{#if error}
-			<p class="error" role="alert">{error}</p>
-		{/if}
 	</form>
 	{#snippet actions()}
 		<Button onclick={() => finish(false)} disabled={deleting}>{t('common.action.cancel')}</Button>
@@ -152,30 +145,5 @@
 	.hint {
 		color: var(--readable-muted);
 		margin: 0 0 0.5rem;
-	}
-
-	label {
-		display: block;
-		margin: 0.75rem 0 0.35rem;
-		overflow-wrap: anywhere;
-	}
-
-	input {
-		box-sizing: border-box;
-		width: 100%;
-		font: inherit;
-		padding: 0.4rem 0.55rem;
-		border: 1px solid color-mix(in srgb, currentColor 35%, transparent);
-		border-radius: 0.4rem;
-		background: transparent;
-		color: inherit;
-	}
-
-	.error {
-		margin: 0.5rem 0 0;
-		color: var(--readable-bad);
-		font-weight: 600;
-		padding-inline-start: var(--space-2);
-		border-inline-start: 3px solid var(--bad);
 	}
 </style>

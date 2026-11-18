@@ -1,12 +1,12 @@
 <script lang="ts">
 	import { onMount, tick } from 'svelte';
 	import { t } from '$lib/i18n';
-	import Msg from '$lib/i18n/Msg.svelte';
 	import { ApiError } from '$lib/api/client';
 	import { listLanguages } from '$lib/api/languages';
 	import type { Language, Workspace } from '$lib/api/types';
 	import { languageOptions } from '$lib/languages';
 	import { create, workspaces } from '$lib/workspaces';
+	import { Button, Field, Select } from '$lib/ui';
 
 	// Creates a workspace from an installed language (or one the user
 	// already has) with an optional name. Shared by the header picker,
@@ -30,10 +30,20 @@
 	let name = $state('');
 	let creating = $state(false);
 	let error = $state('');
-	let select = $state<HTMLSelectElement | null>(null);
-	let nameInput = $state<HTMLInputElement | null>(null);
+	let select = $state<HTMLSelectElement | undefined>(undefined);
+	let nameInput = $state<HTMLInputElement | undefined>(undefined);
 
 	const options = $derived(languageOptions(installed, $workspaces.list));
+	const selectOptions = $derived(
+		options.length === 0
+			? [{ value: '', label: loadingLanguages ? t('common.loading') : t('app.workspaces.create.noLanguages') }]
+			: options.map((option) => ({
+					value: option.code,
+					label: option.hasDictionary
+						? option.label
+						: t('app.workspaces.create.noDictionary', { language: option.label })
+				}))
+	);
 
 	// Keep a valid choice once the options are known.
 	$effect(() => {
@@ -94,34 +104,22 @@
 <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
 <form class="create-workspace" onsubmit={submit} onkeydown={keydown} aria-label={t('app.workspaces.create.label')}>
 	<div class="fields">
-		<label for="{idPrefix}-language">{t('app.workspaces.create.language')}</label>
-		<select
+		<Select
+			label={t('app.workspaces.create.language')}
 			id="{idPrefix}-language"
-			bind:this={select}
+			bind:element={select}
 			bind:value={language}
+			options={selectOptions}
 			disabled={options.length === 0}
 			required
-		>
-			{#if options.length === 0}
-				<option value="">{loadingLanguages ? t('common.loading') : t('app.workspaces.create.noLanguages')}</option>
-			{/if}
-			{#each options as option (option.code)}
-				<option value={option.code}>
-					{option.hasDictionary ? option.label : t('app.workspaces.create.noDictionary', { language: option.label })}
-				</option>
-			{/each}
-		</select>
+		/>
 
-		<label for="{idPrefix}-name"
-			><Msg key="app.workspaces.create.name"
-				>{#snippet optional(text: string)}<span class="optional">{text}</span>{/snippet}</Msg
-			></label
-		>
-		<input
+		<Field
+			label={t('app.workspaces.create.name').replace(/<[^>]+>/g, '')}
 			id="{idPrefix}-name"
-			bind:this={nameInput}
+			bind:element={nameInput}
 			bind:value={name}
-			maxlength="40"
+			maxlength={40}
 			autocomplete="off"
 			placeholder={t('app.workspaces.create.namePlaceholder')}
 		/>
@@ -130,11 +128,11 @@
 	<div class="actions">
 		<!-- Not disabled while creating: a disabled button drops keyboard
 		     focus to <body>; submit() ignores repeats instead. -->
-		<button type="submit" class="primary" disabled={!language} aria-busy={creating}>
+		<Button type="submit" variant="primary" disabled={!language} busy={creating}>
 			{creating ? t('app.workspaces.create.creating') : t('app.workspaces.create.submit')}
-		</button>
+		</Button>
 		{#if onCancel}
-			<button type="button" class="secondary" onclick={onCancel}>{t('common.action.cancel')}</button>
+			<Button type="button" onclick={onCancel}>{t('common.action.cancel')}</Button>
 		{/if}
 	</div>
 
@@ -151,72 +149,24 @@
 <style>
 	.create-workspace {
 		display: grid;
-		gap: 0.6rem;
+		gap: var(--space-3);
+		max-width: 28rem;
 	}
 
 	.fields {
 		display: grid;
-		grid-template-columns: auto minmax(0, 1fr);
-		align-items: center;
-		gap: 0.45rem 0.6rem;
-	}
-
-	label {
-		font-weight: 600;
-		font-size: 0.9rem;
-	}
-
-	.optional {
-		font-weight: 400;
-		color: var(--readable-muted);
-	}
-
-	select,
-	input {
-		font: inherit;
-		min-width: 0;
-		padding: 0.35rem 0.5rem;
-		border: 1px solid color-mix(in srgb, currentColor 35%, transparent);
-		border-radius: 0.4rem;
-		background: var(--panel);
-		color: inherit;
+		gap: var(--space-3);
 	}
 
 	.actions {
 		display: flex;
 		flex-wrap: wrap;
-		gap: 0.5rem;
-	}
-
-	button {
-		font: inherit;
-		padding: 0.4rem 0.8rem;
-		border-radius: 0.4rem;
-		cursor: pointer;
-	}
-
-	.primary {
-		border: 0;
-		background: var(--accent);
-		color: var(--on-accent);
-		font-weight: 600;
-	}
-
-	.primary:disabled {
-		opacity: 0.6;
-		cursor: default;
-	}
-
-	.secondary {
-		border: 1px solid color-mix(in srgb, currentColor 35%, transparent);
-		background: transparent;
-		color: inherit;
+		gap: var(--space-2);
 	}
 
 	.error {
 		margin: 0;
 		color: var(--readable-bad);
-		font-weight: 600;
 		padding-inline-start: var(--space-2);
 		border-inline-start: 3px solid var(--bad);
 	}

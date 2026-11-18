@@ -87,6 +87,21 @@ describe('the settings tab row in the lighter look (#106)', () => {
 	});
 });
 
+describe('the workspaces view in the lighter look (#106)', () => {
+	it('has one primary action and hairline rows with secondary actions', async () => {
+		workspaces.set({
+			list: [{ id: 1, language: 'zh', name: 'Chinese', settings: {}, updatedAt: '' } as never],
+			current: null
+		});
+		workspacesLoaded.set(true);
+		render(Page);
+		expect(primaryActions(document.body)).toHaveLength(1);
+		expect(screen.getByRole('button', { name: 'Create workspace' }).className).toContain('primary');
+		expect(screen.getByRole('button', { name: /^Rename / }).className).toContain('secondary');
+		expect(screen.getByRole('button', { name: 'Create workspace' }).closest('form')?.querySelector('.field')).toBeTruthy();
+	});
+});
+
 describe('settings loading states', () => {
 	it('shows a loading note, not "No workspaces yet.", until the list has arrived', async () => {
 		render(Page);

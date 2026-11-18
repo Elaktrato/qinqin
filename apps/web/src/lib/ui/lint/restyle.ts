@@ -83,6 +83,11 @@ export function restyleFindings(src: string, kind: 'svelte' | 'css'): Finding[] 
 					/^inset 0 0 0 1px /.test(value) ||
 					/^inset 0 -1px 0 /.test(value) ||
 					/^inset 2px 0 0 /.test(value) ||
+					// A vertical 1px hairline between regions (EntryView's column rule).
+					/^inset 1px 0 0 /.test(value) ||
+					// A tab's selected underline drawn as an inset shadow (Search, Stats characters).
+					/^inset 0 -1\.5px 0 /.test(value) ||
+					/^inset 0 -2px 0 /.test(value) ||
 					// Field's focus underline: the 1px border plus this 1px accent line (bases, #106).
 					value === '0 1px 0 0 var(--accent)';
 				if (!ok) out.push({ rule: 'shadow', line, text });

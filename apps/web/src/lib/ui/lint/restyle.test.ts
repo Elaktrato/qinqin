@@ -44,6 +44,10 @@ describe('restyle rules (#106)', () => {
 		expect(restyleFindings(css('.a{box-shadow:inset 0 0 0 1px var(--line)}'), 'svelte')).toEqual([]);
 		// Field's focus underline is a 1px accent line under the border, not a floating shadow.
 		expect(restyleFindings(css('.a{box-shadow:0 1px 0 0 var(--accent)}'), 'svelte')).toEqual([]);
+		// A vertical hairline between regions and a tab's inset underline are not floating shadows.
+		expect(restyleFindings(css('.a{box-shadow:inset 1px 0 0 var(--hair)}'), 'svelte')).toEqual([]);
+		expect(restyleFindings(css('.a{box-shadow:inset 0 -1.5px 0 var(--accent)}'), 'svelte')).toEqual([]);
+		expect(restyleFindings(css('.a{box-shadow:inset 0 -2px 0 var(--accent)}'), 'svelte')).toEqual([]);
 	});
 
 	it('stalePending names a clean file still listed, and nothing that still has a finding', () => {

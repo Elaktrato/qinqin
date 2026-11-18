@@ -1,18 +1,10 @@
 {
 	"colour": [],
 	"opacity": [],
-	"weight": [
-		"lib/weekly/WeekStrip.svelte",
-		"routes/stats/characters/+page.svelte"
-	],
+	"weight": [],
 	"caps": [
-		"lib/components/Badges.svelte",
 		"lib/components/EntryEditor.svelte",
-		"lib/components/Readings.svelte",
-		"lib/components/Senses.svelte",
-		"lib/components/Sentences.svelte",
-		"lib/settings/AudioSettings.svelte",
-		"routes/entry/[id]/+page.svelte"
+		"lib/settings/AudioSettings.svelte"
 	],
 	"border": [
 		"lib/components/ClozeChoice.svelte",
@@ -28,20 +20,17 @@
 		"lib/plugins/journal/PhotoImport.svelte",
 		"lib/settings/AdminSettings.svelte",
 		"lib/settings/AiSettings.svelte",
-		"lib/weekly/WeekStrip.svelte",
-		"routes/stats/+layout.svelte"
+		"lib/weekly/WeekStrip.svelte"
 	],
 	"shadow": [
 		"lib/components/ActivityHeatmap.svelte",
 		"lib/components/map/CharGrid.svelte",
 		"lib/features/flashcards/cards/ClozeCard.svelte",
-		"lib/features/flashcards/cards/ToneCard.svelte",
-		"lib/features/flashcards/face/GradeBar.svelte"
+		"lib/features/flashcards/cards/ToneCard.svelte"
 	],
 	"control": [
 		"routes/lookups/+page.svelte",
 		"routes/search/parts/+page.svelte",
-		"routes/settings/+page.svelte",
 		"routes/study/+page.svelte"
 	]
 }
