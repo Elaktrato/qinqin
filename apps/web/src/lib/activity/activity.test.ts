@@ -70,12 +70,12 @@ describe('foldActivity', () => {
 		cell('2026-11-12', 4, 'journal', 1)
 	];
 
-	it('lists 91 days oldest first, empty days zero', () => {
+	it('lists 364 days oldest first, empty days zero', () => {
 		const map = fold(resp([]), ALL, NOW);
 		const keys = [...map.keys()];
 		expect(keys).toHaveLength(HEATMAP_DAYS);
-		expect(keys[0]).toBe('2026-08-15');
-		expect(keys[90]).toBe('2026-11-13');
+		expect(keys[0]).toBe('2025-11-15');
+		expect(keys.at(-1)).toBe('2026-11-13');
 		expect(map.get('2026-11-01')).toEqual({
 			day: '2026-11-01',
 			total: 0,
@@ -117,16 +117,16 @@ describe('foldActivity', () => {
 		const map = fold(
 			resp([
 				cell('2026-11-13', 3, 'mystery', 5),
-				cell('2026-08-14', 3, 'review', 5),
+				cell('2025-11-14', 3, 'review', 5),
 				cell('2026-11-14', 3, 'review', 5),
 				cell('not-a-day', 3, 'review', 5),
-				cell('2026-08-15', 3, 'review', 1)
+				cell('2025-11-15', 3, 'review', 1)
 			]),
 			ALL,
 			NOW
 		);
 		expect([...map.values()].reduce((sum, d) => sum + d.total, 0)).toBe(1);
-		expect(map.get('2026-08-15')!.total).toBe(1);
+		expect(map.get('2025-11-15')!.total).toBe(1);
 		expect(map.size).toBe(HEATMAP_DAYS);
 	});
 });
@@ -233,21 +233,21 @@ describe('windowSummary', () => {
 
 	it('names the scope and the totals', () => {
 		expect(windowSummary(map, SOURCES, 'workspace')).toBe(
-			'Learning activity in this workspace for the last 13 weeks: 21 points — 2 flashcard reviews, 95 minutes of reading'
+			'Learning activity in this workspace for the last 52 weeks: 21 points — 2 flashcard reviews, 95 minutes of reading'
 		);
-		expect(windowSummary(map, SOURCES, 'all')).toContain('in all workspaces for the last 13 weeks');
+		expect(windowSummary(map, SOURCES, 'all')).toContain('in all workspaces for the last 52 weeks');
 	});
 
 	it('says so when there is no activity', () => {
 		expect(windowSummary(fold(resp([]), ALL, NOW), SOURCES, 'workspace')).toBe(
-			'Learning activity in this workspace for the last 13 weeks: no activity yet'
+			'Learning activity in this workspace for the last 52 weeks: no activity yet'
 		);
 	});
 });
 
 describe('windowStart', () => {
 	it("is the window's first learner day", () => {
-		expect(windowStart(UTC, NOW)).toBe('2026-08-15');
+		expect(windowStart(UTC, NOW)).toBe('2025-11-15');
 		expect(windowStart(UTC, NOW, 7)).toBe('2026-11-07');
 		expect(windowStart(UTC, NOW, 0)).toBe('2026-11-13');
 		expect(windowStart(UTC, NOW)).toBe([...fold(resp([]), ALL).keys()][0]);
@@ -275,18 +275,18 @@ describe('foldActivity by learner day', () => {
 		expect(map.get('2026-11-14')!.total).toBe(2);
 	});
 
-	it('has exactly 91 civil days across the Berlin spring-forward change', () => {
+	it('has exactly 364 civil days across the Berlin spring-forward change', () => {
 		const berlin = studyDay([{ zone: 'Europe/Berlin', from: null }]);
 		const map = foldActivity(resp([]), ALL, berlin, new Date('2025-04-10T12:00:00Z'));
 		const keys = [...map.keys()];
 		expect(keys).toHaveLength(HEATMAP_DAYS);
 		expect(keys).toContain('2025-03-30');
 		expect(new Set(keys).size).toBe(HEATMAP_DAYS);
-		expect(keys[0]).toBe('2025-01-10');
+		expect(keys[0]).toBe('2024-04-12');
 		expect(keys.at(-1)).toBe('2025-04-10');
 	});
 
-	it('has 91 days across the autumn 25 hour day and a westward zone change', () => {
+	it('has 364 days across the autumn 25 hour day and a westward zone change', () => {
 		const trip = studyDay([
 			{ zone: 'Asia/Tokyo', from: null },
 			{ zone: 'America/Los_Angeles', from: '2026-11-10T16:00:00Z' }
@@ -336,7 +336,7 @@ describe('vacation marks', () => {
 	it('puts the marks on the folded days and into the tooltip', () => {
 		const periods = [period('A', '2026-11-10', '2026-11-10', 'all'), period('B', '2026-11-12', '2026-11-12', { workspaces: [2] })];
 		const marks = vacationMarks(periods, [1, 2], null, UTC, NOW);
-		const map = foldActivity(empty, { workspace: null, hidden: [] }, UTC, NOW, 91, marks);
+		const map = foldActivity(empty, { workspace: null, hidden: [] }, UTC, NOW, HEATMAP_DAYS, marks);
 		const names = (id: number) => (id === 2 ? '日本語' : '中文');
 		expect(map.get('2026-11-10')?.vacation).toBe('all');
 		expect(map.get('2026-11-12')?.vacation).toBe('some');
