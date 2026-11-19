@@ -1,4 +1,4 @@
-import { cleanup, render, screen, waitFor, within } from '@testing-library/svelte';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/svelte';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('$lib/api/stats', () => ({ fetchActivity: vi.fn() }));
@@ -15,7 +15,7 @@ vi.mock('$lib/activity/viewPrefs', async (importOriginal) => ({
 }));
 
 import { fetchActivity } from '$lib/api/stats';
-import { loadActivityView } from '$lib/activity/viewPrefs';
+import { loadActivityView, saveActivityView } from '$lib/activity/viewPrefs';
 import { loadStudyHistory } from '$lib/study/history';
 import { getStudyData } from '$lib/study/studyData';
 import { addDays, studyDay } from '$lib/time/studyDay';
@@ -231,6 +231,55 @@ describe('ActivityHeatmap garden and flower stages', () => {
 		await waitFor(() => expect(within(list).getAllByRole('listitem')).toHaveLength(2));
 		expect(within(list).getAllByRole('listitem')[1].textContent).toContain(`${today}: 21 points`);
 		expect(list.textContent).not.toMatch(/ — Bud/);
+	});
+});
+
+describe('ActivityHeatmap controls', () => {
+	it('uses a switch for the workspace scope and remembers both states', async () => {
+		const today = studyDay([]).today();
+		workspaces.set({ list: [WS], current: WS });
+		vi.mocked(fetchActivity).mockResolvedValue({
+			from: today,
+			to: today,
+			timeZone: 'UTC',
+			sources: [REVIEWS],
+			cells: []
+		});
+		render(ActivityHeatmap);
+		const scope = (await screen.findByRole('switch', { name: 'All workspaces' })) as HTMLInputElement;
+		expect(scope.checked).toBe(false);
+		expect(screen.getByText('This workspace')).toBeTruthy();
+		expect(screen.getByText('All workspaces')).toBeTruthy();
+		await fireEvent.click(scope);
+		await waitFor(() => expect(saveActivityView).toHaveBeenCalledWith({ scope: 'all', hidden: [] }));
+		await waitFor(() => expect(scope.checked).toBe(true));
+	});
+
+	it('turns the switch on and disables it when no workspace exists', async () => {
+		workspaces.set({ list: [], current: null });
+		vi.mocked(fetchActivity).mockResolvedValue({ ...empty });
+		render(ActivityHeatmap);
+		const scope = (await screen.findByRole('switch', { name: 'All workspaces' })) as HTMLInputElement;
+		expect(scope.checked).toBe(true);
+		expect(scope.disabled).toBe(true);
+	});
+
+	it('keeps the activity types as pressed toggle tabs', async () => {
+		const today = studyDay([]).today();
+		workspaces.set({ list: [WS], current: WS });
+		vi.mocked(fetchActivity).mockResolvedValue({
+			from: today,
+			to: today,
+			timeZone: 'UTC',
+			sources: [REVIEWS],
+			cells: [{ day: today, workspace: 3, type: 'review', points: 2, raw: 2 }]
+		});
+		render(ActivityHeatmap);
+		const tab = await screen.findByRole('button', { name: 'Reviews, 2 points' });
+		expect(tab.getAttribute('aria-pressed')).toBe('true');
+		await fireEvent.click(tab);
+		await waitFor(() => expect(saveActivityView).toHaveBeenCalledWith({ scope: 'workspace', hidden: ['review'] }));
+		await waitFor(() => expect(tab.getAttribute('aria-pressed')).toBe('false'));
 	});
 });
 

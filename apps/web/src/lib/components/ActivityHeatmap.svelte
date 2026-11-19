@@ -361,39 +361,32 @@
 >
 	{#snippet actions()}
 		{#if status === 'ready'}
-		<fieldset class="scope">
-			<legend class="sr-only">{t('stats.activity.showFor')}</legend>
-			<label class:disabled={workspaceId === null}>
-				<input
-					type="radio"
-					name="activity-scope"
-					value="workspace"
-					checked={scope === 'workspace'}
-					disabled={workspaceId === null}
-					onchange={() => remember({ ...stored, scope: 'workspace' })}
-				/>
+		<div class="scope-toggle" role="group" aria-label={t('stats.activity.showFor')}>
+			<span class="scope-label" class:current={scope === 'workspace'} class:disabled={workspaceId === null}>
 				{t('stats.activity.thisWorkspace')}
-			</label>
-			<label>
+			</span>
+			<label class="switch">
 				<input
-					type="radio"
-					name="activity-scope"
-					value="all"
+					type="checkbox"
+					role="switch"
+					aria-label={t('stats.activity.allWorkspaces')}
 					checked={scope === 'all'}
-					onchange={() => remember({ ...stored, scope: 'all' })}
+					disabled={workspaceId === null}
+					onchange={(event) => remember({ ...stored, scope: event.currentTarget.checked ? 'all' : 'workspace' })}
 				/>
-				{t('stats.activity.allWorkspaces')}
+				<span class="track" aria-hidden="true"></span>
 			</label>
-		</fieldset>
+			<span class="scope-label" class:current={scope === 'all'}>{t('stats.activity.allWorkspaces')}</span>
+		</div>
 		{/if}
 	{/snippet}
 
 	{#if sources.length > 0}
-		<div class="chips" role="group" aria-label={t('stats.activity.types')}>
+		<div class="filters" role="group" aria-label={t('stats.activity.types')}>
 			{#each sources as source (source.type)}
 				<button
 					type="button"
-					class="chip"
+					class="filter-tab"
 					aria-pressed={!stored.hidden.includes(source.type)}
 					aria-label={chipLabel(activityLabel(source), chipPoints[source.type] ?? 0)}
 					onclick={() => remember({ ...stored, hidden: toggleHidden(stored.hidden, source.type) })}
@@ -461,78 +454,142 @@
 </WidgetCard>
 
 <style>
-	.scope {
-		display: flex;
-		flex-wrap: wrap;
-		gap: 0.25rem 0.9rem;
-		margin: 0;
-		padding: 0;
-		border: 0;
+	.scope-toggle {
+		display: inline-flex;
+		align-items: center;
+		gap: var(--space-2);
+		min-height: var(--hit);
 		font-size: 0.85rem;
 	}
 
-	.scope label {
+	.scope-label {
+		color: var(--readable-muted);
+	}
+
+	.scope-label.current {
+		color: var(--text);
+		font-weight: var(--weight-medium);
+	}
+
+	.scope-label.disabled {
+		color: var(--readable-muted);
+	}
+
+	.switch {
+		position: relative;
 		display: inline-flex;
 		align-items: center;
-		gap: 0.35rem;
-		min-height: 2.75rem;
+		justify-content: center;
+		flex: none;
+		width: 2.5rem;
+		height: var(--hit);
 		cursor: pointer;
 	}
 
-	.scope label.disabled {
-		color: var(--readable-muted);
+	/* A switch drawn over the real checkbox, which stays focusable and
+	   clickable (opacity 0, same box as the track). */
+	.switch input {
+		position: absolute;
+		inset: 0;
+		width: 100%;
+		height: 100%;
+		margin: 0;
+		opacity: 0;
+		cursor: pointer;
+	}
+
+	.track {
+		position: relative;
+		width: 2.5rem;
+		height: 1.4rem;
+		border-radius: 999px;
+		background: var(--line);
+		transition: background var(--motion-fast) var(--ease-standard);
+	}
+
+	.track::after {
+		content: '';
+		position: absolute;
+		top: 0.15rem;
+		left: 0.15rem;
+		width: 1.1rem;
+		height: 1.1rem;
+		border-radius: 50%;
+		background: var(--panel);
+		transition: transform var(--motion-fast) var(--ease-standard);
+	}
+
+	.switch input:checked + .track {
+		background: var(--accent);
+	}
+
+	.switch input:checked + .track::after {
+		transform: translateX(1.1rem);
+	}
+
+	.switch input:focus-visible + .track {
+		outline: var(--focus-ring);
+		outline-offset: var(--focus-ring-offset);
+	}
+
+	.switch input:disabled {
 		cursor: default;
 	}
 
-	.sr-only {
-		position: absolute;
-		width: 1px;
-		height: 1px;
-		overflow: hidden;
-		clip-path: inset(50%);
-		white-space: nowrap;
+	.switch input:disabled + .track {
+		opacity: 0.6;
 	}
 
-	.chips {
+	.filters {
 		display: flex;
 		flex-wrap: wrap;
-		gap: 0.4rem;
-		margin-top: 0.6rem;
+		gap: var(--space-4);
+		margin-top: var(--space-2);
+		border-bottom: 1px solid var(--hair);
 	}
 
-	.chip {
+	.filter-tab {
+		position: relative;
+		padding: var(--space-2) 0;
+		border: 0;
+		background: none;
+		color: var(--readable-muted);
 		font: inherit;
 		font-size: 0.85rem;
-		min-height: 2.75rem;
-		padding: 0.3rem 0.85rem;
-		border: 1px solid color-mix(in srgb, currentColor 35%, transparent);
-		border-radius: 999px;
-		background: transparent;
-		color: inherit;
+		font-weight: var(--weight-medium);
 		cursor: pointer;
+		transition: color var(--motion-fast) var(--ease-standard);
 	}
 
-	.chip[aria-pressed='true'] {
+	.filter-tab:hover {
+		color: var(--text);
+	}
+
+	.filter-tab[aria-pressed='true'] {
+		color: var(--text);
+		font-weight: var(--weight-strong);
+	}
+
+	.filter-tab[aria-pressed='true']::after {
+		content: '';
+		position: absolute;
+		inset-inline: 0;
+		bottom: -1px;
+		height: 2px;
+		border-radius: 1px;
 		background: var(--accent);
-		border-color: var(--accent);
-		color: var(--on-accent);
 	}
 
-	.chip:focus-visible,
-	.scope input:focus-visible {
-		outline: 2px solid var(--focus-colour);
-		outline-offset: 2px;
+	.filter-tab:focus-visible {
+		outline: var(--focus-ring);
+		outline-offset: var(--focus-ring-offset);
 	}
 
 	.count {
 		margin-left: 0.3rem;
 		color: var(--readable-muted);
 		font-variant-numeric: tabular-nums;
-	}
-
-	/* On the accent fill the count takes the chip's --on-accent. */
-	.chip[aria-pressed='true'] .count {
-		color: inherit;
+		font-weight: var(--weight-regular);
 	}
 
 	/* The tiles of every layout (design §6 heatmap tint; tint only until the
@@ -596,6 +653,19 @@
 		.heatmap :global(.tile.today) {
 			outline: 2px solid Highlight;
 			outline-offset: 1px;
+		}
+
+		.track {
+			outline: 1px solid CanvasText;
+			outline-offset: -1px;
+		}
+
+		.switch input:checked + .track {
+			background: Highlight;
+		}
+
+		.filter-tab[aria-pressed='true']::after {
+			background: Highlight;
 		}
 	}
 

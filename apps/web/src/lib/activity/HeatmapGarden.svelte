@@ -24,19 +24,19 @@
 <style>
 	.grid {
 		display: grid;
-		grid-template-rows: repeat(7, 0.85rem);
+		grid-template-columns: repeat(13, minmax(0, 1fr));
+		grid-template-rows: repeat(7, auto);
 		grid-auto-flow: column;
-		grid-auto-columns: 0.85rem;
 		gap: 0.2rem;
+		box-sizing: border-box;
 		margin-top: var(--space-4);
-		overflow-x: auto;
-		/* Room for today's ring inside the scroll box. */
+		/* Room for today's ring at the card's edges. */
 		padding: 0.2rem;
 	}
 
 	.cell {
 		display: block;
-		width: 0.85rem;
-		height: 0.85rem;
+		width: 100%;
+		aspect-ratio: 1;
 	}
 </style>
