@@ -4,7 +4,7 @@
 	// surrounding text colour, so it follows the app's light and dark themes.
 	import source from '$lib/assets/qinqin-logo.svg?raw';
 
-	let { size = 28 }: { size?: number } = $props();
+	let { size = 40 }: { size?: number } = $props();
 
 	const outline = /<path d="([^"]+)"/.exec(source)?.[1] ?? '';
 </script>
