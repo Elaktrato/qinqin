@@ -23,7 +23,7 @@
 				class="brand"
 				href="/"
 				aria-label={t('nav.brand.home', { app: APP_NAME })}
-				aria-current={current === 'home' ? 'page' : undefined}><Logo size={26} /></a
+				aria-current={current === 'home' ? 'page' : undefined}><Logo /></a
 			>
 		{/snippet}
 	</Tooltip>
@@ -60,8 +60,8 @@
 	.brand {
 		display: inline-grid;
 		place-items: center;
-		width: 2.25rem;
-		height: 2.25rem;
+		width: 2.5rem;
+		height: 2.5rem;
 		border-radius: var(--radius);
 		color: var(--accent);
 		text-decoration: none;

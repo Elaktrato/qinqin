@@ -4,6 +4,13 @@ import source from '$lib/assets/qinqin-logo.svg?raw';
 import Logo from './Logo.svelte';
 
 describe('Logo', () => {
+	it('defaults to a 40 px square', () => {
+		const { container } = render(Logo);
+		const svg = container.querySelector('svg')!;
+		expect(svg.getAttribute('width')).toBe('40');
+		expect(svg.getAttribute('height')).toBe('40');
+	});
+
 	it('draws the logo outline in the current text colour and is decorative', () => {
 		const { container } = render(Logo, { size: 32 });
 		const svg = container.querySelector('svg')!;

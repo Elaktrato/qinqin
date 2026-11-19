@@ -39,6 +39,7 @@ describe('TopBar', () => {
 		expect(logo.getAttribute('href')).toBe('/');
 		expect(logo.getAttribute('aria-current')).toBe('page');
 		expect(logo.hasAttribute('title')).toBe(false);
+		expect(logo.querySelector('svg')?.getAttribute('width')).toBe('40');
 		expect(logo.parentElement?.querySelector('[role="tooltip"]')?.textContent).toBe('Home');
 		expect(container.querySelectorAll('[aria-current="page"]')).toHaveLength(1);
 	});

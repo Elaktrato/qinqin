@@ -268,7 +268,7 @@
 								href={signedIn ? '/' : '/login'}
 								aria-label={signedIn
 									? t('nav.brand.home', { app: APP_NAME })
-									: t('nav.brand.signIn', { app: APP_NAME })}><Logo size={26} /></a
+									: t('nav.brand.signIn', { app: APP_NAME })}><Logo /></a
 							>
 						{/snippet}
 					</Tooltip>
@@ -404,8 +404,8 @@
 	.brand {
 		display: inline-grid;
 		place-items: center;
-		width: 2.25rem;
-		height: 2.25rem;
+		width: 2.5rem;
+		height: 2.5rem;
 		border-radius: var(--radius);
 		color: var(--accent);
 	}
