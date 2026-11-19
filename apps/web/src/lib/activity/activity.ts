@@ -10,8 +10,8 @@ import type { FlowerStage } from '../goals/stage';
 import { addDays, type StudyDay } from '../time/studyDay';
 import { isVacationDay, vacationRuns, type VacationPeriod } from '../study/vacation';
 
-/** Days covered by the heatmap: 13 weeks of 7 cells. */
-export const HEATMAP_DAYS = 91;
+/** Days covered by the heatmap: 52 weeks of 7 cells. */
+export const HEATMAP_DAYS = 364;
 
 /** The scope and filter a heatmap is drawn for. */
 export interface ActivityView {
@@ -279,7 +279,7 @@ export function levelFor(count: number): 0 | 1 | 2 | 3 | 4 {
 /**
  * windowSummary is the heatmap's aria-label: scope, window, total points
  * and each type's total in words, e.g. "Learning activity in this
- * workspace for the last 13 weeks: 21 points — 2 flashcard reviews, 95
+ * workspace for the last 52 weeks: 21 points — 2 flashcard reviews, 95
  * minutes of reading", or "…: no activity yet" for an empty window.
  */
 export function windowSummary(

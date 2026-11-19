@@ -57,7 +57,7 @@
 
 	// The core home heatmap: the server-aggregated activity (one request
 	// for every workspace and type), folded here per scope and filter, one
-	// cell per learner day (the user's time zone, lib/time/studyDay.ts) over the last 13 weeks. The view (scope, hidden
+	// cell per learner day (the user's time zone, lib/time/studyDay.ts) over the last 52 weeks. The view (scope, hidden
 	// types) is remembered per user.
 	//
 	// `layout` picks the drawing (design §9 "Home"): the garden grid (the
@@ -190,7 +190,7 @@
 		heatmapStatus({ hasData: response !== null, loading, prefsLoaded: prefs.loaded })
 	);
 
-	/** The window the layout needs: 13 weeks, or one month (never past today). */
+	/** The window the layout needs: 52 weeks, or one month (never past today). */
 	function wanted(now: Date): { from: string; to: string } {
 		const day = studyDay.today(now.getTime());
 		if (layout === 'month') return monthWindow(month, day);
@@ -426,7 +426,7 @@
 		{:else if layout === 'week'}
 			<HeatmapWeek cells={weekCells} summary={weekSummary} />
 		{:else}
-			<HeatmapGarden {cells} />
+			<HeatmapGarden {cells} {weeks} />
 			<p class="visually-hidden">{summary}</p>
 		{/if}
 	</div>

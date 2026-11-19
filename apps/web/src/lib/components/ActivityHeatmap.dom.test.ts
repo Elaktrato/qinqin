@@ -18,6 +18,7 @@ import { fetchActivity } from '$lib/api/stats';
 import { loadActivityView, saveActivityView } from '$lib/activity/viewPrefs';
 import { loadStudyHistory } from '$lib/study/history';
 import { getStudyData } from '$lib/study/studyData';
+import { HEATMAP_DAYS } from '$lib/activity/activity';
 import { addDays, studyDay } from '$lib/time/studyDay';
 import { currentStudyDay, onStudyDayChange } from '$lib/time/zone';
 import { workspaces } from '$lib/workspaces';
@@ -68,7 +69,7 @@ describe('ActivityHeatmap accessibility', () => {
 });
 
 describe('ActivityHeatmap learner days', () => {
-	it("requests the 91 learner days ending today in the user's zone", async () => {
+	it("requests the 364 learner days ending today in the user's zone", async () => {
 		vi.useFakeTimers({ toFake: ['Date'] });
 		vi.setSystemTime(new Date('2026-11-15T15:30:00Z')); // the 16th in Tokyo
 		vi.mocked(currentStudyDay).mockReturnValue(TOKYO);
@@ -76,7 +77,10 @@ describe('ActivityHeatmap learner days', () => {
 		workspaces.set({ list: [], current: { id: 3, language: 'zh', name: 'zh' } as never });
 		render(ActivityHeatmap);
 		await waitFor(() => expect(fetchActivity).toHaveBeenCalled());
-		expect(vi.mocked(fetchActivity).mock.calls[0]).toEqual(['2026-08-18', '2026-11-16']);
+		expect(vi.mocked(fetchActivity).mock.calls[0]).toEqual([
+			addDays('2026-11-16', -(HEATMAP_DAYS - 1)),
+			'2026-11-16'
+		]);
 	});
 
 	it('re-requests the window when the zone changes', async () => {
@@ -95,7 +99,10 @@ describe('ActivityHeatmap learner days', () => {
 		expect(vi.mocked(fetchActivity).mock.calls[0][1]).toBe('2026-11-15');
 		listener!(TOKYO);
 		await waitFor(() => expect(fetchActivity).toHaveBeenCalledTimes(2));
-		expect(vi.mocked(fetchActivity).mock.calls[1]).toEqual(['2026-08-18', '2026-11-16']);
+		expect(vi.mocked(fetchActivity).mock.calls[1]).toEqual([
+			addDays('2026-11-16', -(HEATMAP_DAYS - 1)),
+			'2026-11-16'
+		]);
 	});
 });
 
@@ -157,7 +164,7 @@ function withGoal(): string {
 }
 
 describe('ActivityHeatmap garden and flower stages', () => {
-	it('renders 91 decorative tiles and one list item per day with activity or a stage', async () => {
+	it('renders 364 decorative tiles and one list item per day with activity or a stage', async () => {
 		const today = studyDay([]).today();
 		workspaces.set({ list: [WS], current: WS });
 		vi.mocked(fetchActivity).mockResolvedValue({
@@ -173,7 +180,7 @@ describe('ActivityHeatmap garden and flower stages', () => {
 		render(ActivityHeatmap);
 		const list = await screen.findByRole('list', { name: 'Daily activity' });
 		await waitFor(() => expect(within(list).getAllByRole('listitem')).toHaveLength(2));
-		expect(document.querySelectorAll('.grid .cell')).toHaveLength(91);
+		expect(document.querySelectorAll('.grid .cell')).toHaveLength(HEATMAP_DAYS);
 		expect(document.querySelector('.grid .level-4')).not.toBeNull();
 	});
 
@@ -299,11 +306,17 @@ describe('ActivityHeatmap across midnight (#100 review)', () => {
 		render(ActivityHeatmap);
 		await until(() => document.querySelector('.grid .cell.today') !== null);
 		expect(document.querySelector('.grid .cell.today')?.getAttribute('data-day')).toBe('2026-11-15');
-		expect(vi.mocked(fetchActivity).mock.calls[0]).toEqual(['2026-08-17', '2026-11-15']);
+		expect(vi.mocked(fetchActivity).mock.calls[0]).toEqual([
+			addDays('2026-11-15', -(HEATMAP_DAYS - 1)),
+			'2026-11-15'
+		]);
 		// Two minutes later it is the 16th in Tokyo (the learner day turns at local midnight).
 		vi.advanceTimersByTime(120_000);
 		await until(() => document.querySelector('.grid .cell.today')?.getAttribute('data-day') === '2026-11-16');
-		expect(vi.mocked(fetchActivity).mock.calls.at(-1)).toEqual(['2026-08-18', '2026-11-16']);
+		expect(vi.mocked(fetchActivity).mock.calls.at(-1)).toEqual([
+			addDays('2026-11-16', -(HEATMAP_DAYS - 1)),
+			'2026-11-16'
+		]);
 		expect(document.querySelectorAll('.grid .cell.today')).toHaveLength(1);
 		expect(document.querySelector('.grid .cell[data-day="2026-11-15"]')?.getAttribute('title')).not.toMatch(/today$/);
 	});

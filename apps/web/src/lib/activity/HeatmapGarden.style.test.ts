@@ -6,9 +6,10 @@ import { describe, expect, it } from 'vitest';
 import source from './HeatmapGarden.svelte?raw';
 
 describe('HeatmapGarden layout', () => {
-	it('spreads the 13 weeks across the full width and keeps the cells square', () => {
-		expect(source).toMatch(/grid-template-columns:\s*repeat\(13,\s*minmax\(0,\s*1fr\)\)/);
+	it('spreads 52 weeks across the full width and keeps the cells square', () => {
+		expect(source).toMatch(/grid-template-columns:\s*repeat\(var\(--garden-weeks,\s*52\),\s*minmax\(0\.85rem,\s*1fr\)\)/);
 		expect(source).toMatch(/\.cell\s*\{[^}]*\bwidth:\s*100%/s);
 		expect(source).toMatch(/\.cell\s*\{[^}]*\baspect-ratio:\s*1/s);
+		expect(source).toMatch(/overflow-x:\s*auto/);
 	});
 });
