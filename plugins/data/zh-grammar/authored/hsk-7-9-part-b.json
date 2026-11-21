@@ -1520,7 +1520,7 @@
         "body": [
           "These colloquial formats are built on a verb. X都不X and X都没X (not even X) repeat the verb around 都 to say someone did not even do the easiest part: 看都不看 (would not even look), 试都没试 (did not even try it on). 也 can replace 都. X就X个Y (if you're going to X, X to the full) urges doing something thoroughly: 玩就玩个痛快, 吃就吃个饱.",
           "V + 个 + X adds a lively result or state with 个: 说个不停 (talk non-stop), 玩个痛快, 问个明白. V + 得个 + ……, often with 落 or 闹, names a usually bad outcome someone ends up with: 落得个两手空空 (end up with nothing). 动不动就 + V (at the slightest thing) describes an annoying habit: 动不动就发脾气.",
-          "The contrast example uses the ordinary degree complement V + 得 + 很 + Adj (唱得很好听). 个 cannot take 很 after it: 说个不停 is fine, but 唱个很好听 is wrong. A common mistake is to use 不 for something that did not happen in X都不X: for a past non-event use 没 (试都没试)."
+          "The contrast example uses the ordinary degree complement V + 得 + 很 + Adj (游得很快). 个 cannot take 很 after it: 说个不停 is fine, but 游个很快 is wrong. A common mistake is to use 不 for something that did not happen in X都不X: for a past non-event use 没 (试都没试)."
         ],
         "examples": [
           {
@@ -1646,9 +1646,9 @@
           },
           {
             "id": "hsk79-format-verb-frames-8",
-            "text": "她唱得很好听。",
-            "reading": "tā chàng de hěn hǎotīng.",
-            "translation": "She sings very nicely.",
+            "text": "他游得很快。",
+            "reading": "tā yóu de hěn kuài.",
+            "translation": "He swims fast.",
             "focus": "得",
             "distractors": [
               "个",

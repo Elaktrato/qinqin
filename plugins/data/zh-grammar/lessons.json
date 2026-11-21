@@ -9948,7 +9948,7 @@
       "body": [
         "大概 (dàgài) means probably: 他大概已经到家了. 好像 (hǎoxiàng) means it seems: 外面好像下雨了. 一定 (yídìng) means certainly; with a person's plan it is a promise (我一定来), and with a guess it means must be (他一定很累了). 必须 (bìxū) means must, have to: 开车的时候必须小心. Its negative is 不用 or 不必, never 不必须.",
         "差不多 (chàbuduō) as a predicate means about the same: 颜色差不多; before a verb it means almost: 饭差不多做好了. 几乎 (jīhū) means almost, nearly, and often goes with 没 or 每: 他几乎没吃东西.",
-        "The contrast example uses 可能 (Level 2): 他今天可能不来了. 可能 says something may happen; 必须 says it has to, and 几乎 says it nearly did. Common mistake: using 差不多 or 几乎 as a guess about the future (我差不多明天来). Use 大概 or 可能."
+        "The contrast example uses 可能 (Level 2): 明天可能会下雨. 可能 says something may happen; 必须 says it has to, and 几乎 says it nearly did. Common mistake: using 差不多 or 几乎 as a guess about the future (我差不多明天来). Use 大概 or 可能."
       ],
       "examples": [
         {
@@ -10027,9 +10027,9 @@
         },
         {
           "id": "hsk3-modal-adverbs-7",
-          "text": "他今天可能不来了。",
-          "reading": "tā jīntiān kěnéng bù lái le.",
-          "translation": "He probably isn't coming today.",
+          "text": "明天可能会下雨。",
+          "reading": "míngtiān kěnéng huì xià yǔ.",
+          "translation": "It may rain tomorrow.",
           "focus": "可能",
           "distractors": [
             "差不多",
@@ -10554,7 +10554,7 @@
       "body": [
         "把 (bǎ) brings the object in front of the verb to say what happens to it: 请把门关上, 我把作业忘在家里了, 你把这本书带给他吧. The verb cannot stand alone; it needs something after it, such as a result (关上), a place (在家里) or a receiver (给他).",
         "被 (bèi) turns the sentence round: the thing affected becomes the subject, and the doer follows 被: 他被老师批评了, 蛋糕被弟弟吃完了. The doer can be a vague 人: 我的自行车被人借走了. 被 sentences often describe something unwelcome. Negatives and modal verbs go before 把 and 被: 没把, 不能被.",
-        "The contrast example uses 给 (Level 2): 我给妈妈写了一封信. 给 introduces the person who receives something; it does not move the object or mark a doer. Common mistake: a bare verb after 把 or 被 (我把书看). Add a result or 了: 我把书看完了."
+        "The contrast example uses 给 (Level 2): 他给朋友打了一个电话. 给 introduces the person who receives something; it does not move the object or mark a doer. Common mistake: a bare verb after 把 or 被 (我把书看). Add a result or 了: 我把书看完了."
       ],
       "examples": [
         {
@@ -10631,9 +10631,9 @@
         },
         {
           "id": "hsk3-ba-bei-prepositions-7",
-          "text": "我给妈妈写了一封信。",
-          "reading": "wǒ gěi māma xiě le yì fēng xìn.",
-          "translation": "I wrote a letter to Mum.",
+          "text": "他给朋友打了一个电话。",
+          "reading": "tā gěi péngyou dǎ le yí ge diànhuà.",
+          "translation": "He gave his friend a call.",
           "focus": "给",
           "distractors": [
             "把",
@@ -10840,7 +10840,7 @@
       "body": [
         "只要 (zhǐyào) says the condition is enough, as long as; the result clause takes 就: 只要你努力，就一定能学好. 只有 (zhǐyǒu) says this is the only condition that works, only if; the result clause takes 才: 只有多练习，才能说得好, 只有周末，我们才有时间一起吃饭.",
         "如果 (rúguǒ) introduces a supposition, if; the result clause often takes 就: 如果明天下雨，我们就不去了. 如果 can be followed by ……的话 at the end of its clause.",
-        "The contrast example uses 因为……所以…… (Level 2): 因为太累了，所以他很早就睡了. 因为 gives a real cause, not a condition. Common mistake: mixing the pairs (只有……就, 只要……才). Keep 只要 with 就 and 只有 with 才."
+        "The contrast example uses 因为……所以…… (Level 2): 因为下大雪，所以学校今天放假. 因为 gives a real cause, not a condition. Common mistake: mixing the pairs (只有……就, 只要……才). Keep 只要 with 就 and 只有 with 才."
       ],
       "examples": [
         {
@@ -10906,9 +10906,9 @@
         },
         {
           "id": "hsk3-zhiyou-zhiyao-ruguo-6",
-          "text": "因为太累了，所以他很早就睡了。",
-          "reading": "yīnwèi tài lèi le, suǒyǐ tā hěn zǎo jiù shuì le.",
-          "translation": "He was so tired that he went to bed early.",
+          "text": "因为下大雪，所以学校今天放假。",
+          "reading": "yīnwèi xià dà xuě, suǒyǐ xuéxiào jīntiān fàngjià.",
+          "translation": "Because of the heavy snow, the school is closed today.",
           "focus": "所以",
           "distractors": [
             "只要",
@@ -11863,7 +11863,7 @@
         "(S + V) + predicate (大家一起去最好)"
       ],
       "body": [
-        "An activity can be the subject without any marker: 跑步对身体很好, 学汉语很有意思. English often adds -ing or to; Chinese uses the bare verb phrase. An adjective can be the subject in the same way: 认真很重要 (being conscientious is important).",
+        "An activity can be the subject without any marker: 跑步对身体很好, 学做饭很有用. English often adds -ing or to; Chinese uses the bare verb phrase. An adjective can be the subject in the same way: 认真很重要 (being conscientious is important).",
         "A whole small clause, with its own subject and predicate, can also be the subject: 大家一起去最好 (it is best if we all go together), 他每天迟到让老师很生气 (his being late every day makes the teacher angry). The predicate then judges or comments on that situation: 最好, 很重要, 没关系, 让……生气.",
         "The contrast example uses a 的-phrase as the subject (唱歌的是我姐姐). 唱歌的 means the person who sings, a noun; bare 唱歌 would mean the activity of singing.",
         "A common mistake is to keep aspect markers in the subject (在跑步对身体很好, 跑步了对身体很好). An activity used as a subject is a general idea, so it takes no 在, 了 or 着."
@@ -11883,14 +11883,14 @@
         },
         {
           "id": "hsk3-phrase-subjects-2",
-          "text": "学汉语很有意思。",
-          "reading": "xué Hànyǔ hěn yǒu yìsi.",
-          "translation": "Learning Chinese is a lot of fun.",
-          "focus": "学汉语",
+          "text": "学做饭很有用。",
+          "reading": "xué zuò fàn hěn yǒuyòng.",
+          "translation": "Learning to cook is very useful.",
+          "focus": "学做饭",
           "distractors": [
-            "学了汉语",
-            "在学汉语",
-            "学着汉语"
+            "学了做饭",
+            "在学做饭",
+            "学着做饭"
           ]
         },
         {
@@ -12484,7 +12484,7 @@
       "body": [
         "A degree complement follows the adjective and says how strong the quality is. 得很 means very: 今天热得很, 这个公园漂亮得很. 极了 means extremely and is the strongest: 这家饭馆的鱼好吃极了, 妈妈担心极了.",
         "坏了 after an adjective or a verb of feeling means to an extreme, usually about a physical or emotional state: 我累坏了 (worn out), 他饿坏了 (starving), 高兴坏了 (thrilled). It does not mean bad here. These complements end the phrase: nothing follows 得很 or 极了.",
-        "The contrast example uses a state complement (她唱得很好听): 得 follows a verb and a full adjective phrase follows 得 to describe the action. In 热得很, 很 itself is the complement, and the word before 得 is an adjective.",
+        "The contrast example uses a state complement (她画得很好看): 得 follows a verb and a full adjective phrase follows 得 to describe the action. In 热得很, 很 itself is the complement, and the word before 得 is an adjective.",
         "A common mistake is to add 很 before the adjective as well (很热得很, 很好吃极了). The complement already carries the degree."
       ],
       "examples": [
@@ -12562,9 +12562,9 @@
         },
         {
           "id": "hsk3-degree-complements-7",
-          "text": "她唱得很好听。",
-          "reading": "tā chàng de hěn hǎotīng.",
-          "translation": "She sings beautifully.",
+          "text": "她画得很好看。",
+          "reading": "tā huà de hěn hǎokàn.",
+          "translation": "She draws beautifully.",
           "focus": "得",
           "distractors": [
             "地",
@@ -20267,7 +20267,7 @@
         "不 + V1 + 也 + V2"
       ],
       "body": [
-        "In a contracted sentence (紧缩复句) two clauses run together with no pause. With no marker at all, the relation (if, when, so) comes from the meaning: 没钱买不了房子 (if you have no money, you can't buy a flat); 吃完饭再走吧; 不见不散 (we won't leave until we meet).",
+        "In a contracted sentence (紧缩复句) two clauses run together with no pause. With no marker at all, the relation (if, when, so) comes from the meaning: 没钱买不了房子 (if you have no money, you can't buy a flat); 洗完手再吃水果吧; 不见不散 (we won't leave until we meet).",
         "不……也…… means even if not, still: 你不提醒我也记得; 不用问也知道他是谁. The 也 links the two halves without a comma.",
         "The contrast example is the full form with 如果 and a comma: 如果你不去，我也不去. Dropping 如果 and the pause gives the contracted form 你不去我也不去. A common mistake is putting a comma inside a fixed contracted phrase such as 不见不散."
       ],
@@ -20310,9 +20310,9 @@
         },
         {
           "id": "hsk4-contracted-sentences-4",
-          "text": "吃完饭再走吧。",
-          "reading": "chī wán fàn zài zǒu ba.",
-          "translation": "Stay and finish your meal before you go.",
+          "text": "洗完手再吃水果吧。",
+          "reading": "xǐ wán shǒu zài chī shuǐguǒ ba.",
+          "translation": "Wash your hands first, then have some fruit.",
           "focus": "再",
           "distractors": [
             "又",
@@ -21255,7 +21255,7 @@
       ],
       "body": [
         "曾经 (céngjīng) marks a past experience and often takes 过: 我曾经在上海住过两年. 早已 (zǎoyǐ) is already, long before: 火车早已开走了. 始终 (shǐzhōng) is from beginning to end, often with a negative: 他始终没告诉我原因. 时刻 (shíkè) as an adverb means at every moment: 要时刻注意安全. 渐渐 (jiànjiàn) is gradually, often with 起来 or 了: 天气渐渐暖和起来了. 早晚 (zǎowǎn) is sooner or later and looks to the future, usually with 会: 早晚会生病的.",
-        "The contrast example uses 一直, which also means all along but, unlike 始终, can be followed by a length of time: 雨一直下了三天. 始终下了三天 is wrong. A common mistake is to use 曾经 for something still true: 我曾经住在北京 means you no longer live there."
+        "The contrast example uses 一直, which also means all along but, unlike 始终, can be followed by a length of time: 他一直等了两个小时. 始终等了两个小时 is wrong. A common mistake is to use 曾经 for something still true: 我曾经住在北京 means you no longer live there."
       ],
       "examples": [
         {
@@ -21332,14 +21332,14 @@
         },
         {
           "id": "hsk5-time-adverbs-span-7",
-          "text": "雨一直下了三天。",
-          "reading": "yǔ yìzhí xià le sān tiān.",
-          "translation": "It rained nonstop for three days.",
+          "text": "他一直等了两个小时。",
+          "reading": "tā yìzhí děng le liǎng ge xiǎoshí.",
+          "translation": "He kept waiting for two whole hours.",
           "focus": "一直",
           "distractors": [
             "始终",
-            "曾经",
-            "时刻"
+            "时刻",
+            "立刻"
           ]
         }
       ]
@@ -23489,7 +23489,7 @@
         "V + 过来 (back to normal) / V + 过去 (out of normal)"
       ],
       "body": [
-        "起来 after a verb or adjective says something begins and goes on: 天气暖和起来了, 两个人吵起来了. With an object, the object goes between 起 and 来: 外面下起雨来了. 起来 also has meanings learned as words: 想起来 (remember), 看起来 (look, seem).",
+        "起来 after a verb or adjective says something begins and goes on: 天气暖和起来了, 两个人吵起来了. With an object, the object goes between 起 and 来: 孩子们唱起歌来了. 起来 also has meanings learned as words: 想起来 (remember), 看起来 (look, seem).",
         "过来 says someone comes back to a normal, conscious or correct state: 病人醒过来了, 他终于明白过来. 过去 is the opposite: someone loses that state, faints or falls asleep: 一位老人晕了过去, 他躺在沙发上就睡过去了. So 醒过来 but 晕过去; they are not interchangeable.",
         "The contrast example uses 下来: 他的话让大家冷静了下来. 下来 says a state settles and becomes calm (previous lesson), not that something starts or recovers.",
         "A common mistake is to put the object after 起来: say 下起雨来, not 下起来雨."
@@ -23521,13 +23521,13 @@
         },
         {
           "id": "hsk5-qilai-guolai-guoqu-state-3",
-          "text": "外面下起雨来了。",
-          "reading": "wàimian xià qǐ yǔ lai le.",
-          "translation": "It has started raining outside.",
+          "text": "孩子们唱起歌来了。",
+          "reading": "háizimen chàng qǐ gē lai le.",
+          "translation": "The children have started singing.",
           "focus": "起",
           "distractors": [
             "过",
-            "出",
+            "到",
             "去"
           ]
         },
@@ -28278,7 +28278,7 @@
       "body": [
         "就算 (jiùsuàn) means even if, and it is common in speech: 就算明天下大雪，我也要去上班. The main clause takes 也 before the verb. The supposed case can be a real possibility (就算你不说), an extreme (就算再忙), or a person (就算是校长来了，也没用).",
         "就算 often comes at the head of the sentence; the subject of the second clause then goes before 也: 我也要去, 我也知道.",
-        "The contrast example uses 虽然……但是…… (虽然他很忙，但是每天都运动), which concedes a fact. 就算 concedes a supposition or an extreme, and pairs with 也, not 但是. A common mistake is to pair 就算 with 但是 or to leave out 也: 就算你不说，我知道 sounds wrong."
+        "The contrast example uses 虽然……但是…… (虽然天气不好，但是比赛照常进行), which concedes a fact. 就算 concedes a supposition or an extreme, and pairs with 也, not 但是. A common mistake is to pair 就算 with 但是 or to leave out 也: 就算你不说，我知道 sounds wrong."
       ],
       "examples": [
         {
@@ -28343,9 +28343,9 @@
         },
         {
           "id": "hsk6-jiusuan-ye-6",
-          "text": "虽然他很忙，但是每天都运动。",
-          "reading": "suīrán tā hěn máng, dànshì měi tiān dōu yùndòng.",
-          "translation": "Although he is busy, he exercises every day.",
+          "text": "虽然天气不好，但是比赛照常进行。",
+          "reading": "suīrán tiānqì bù hǎo, dànshì bǐsài zhàocháng jìnxíng.",
+          "translation": "Although the weather is bad, the match goes ahead as usual.",
           "focus": "虽然",
           "distractors": [
             "就算",
@@ -31201,9 +31201,9 @@
         },
         {
           "id": "hsk79-modal-luck-8",
-          "text": "原来他是你哥哥！",
-          "reading": "yuánlái tā shì nǐ gēge!",
-          "translation": "So he's your brother!",
+          "text": "原来你们早就认识！",
+          "reading": "yuánlái nǐmen zǎo jiù rènshi!",
+          "translation": "So you two already knew each other!",
           "focus": "原来",
           "distractors": [
             "何必",
@@ -33198,7 +33198,7 @@
       "body": [
         "These colloquial formats are built on a verb. X都不X and X都没X (not even X) repeat the verb around 都 to say someone did not even do the easiest part: 看都不看 (would not even look), 试都没试 (did not even try it on). 也 can replace 都. X就X个Y (if you're going to X, X to the full) urges doing something thoroughly: 玩就玩个痛快, 吃就吃个饱.",
         "V + 个 + X adds a lively result or state with 个: 说个不停 (talk non-stop), 玩个痛快, 问个明白. V + 得个 + ……, often with 落 or 闹, names a usually bad outcome someone ends up with: 落得个两手空空 (end up with nothing). 动不动就 + V (at the slightest thing) describes an annoying habit: 动不动就发脾气.",
-        "The contrast example uses the ordinary degree complement V + 得 + 很 + Adj (唱得很好听). 个 cannot take 很 after it: 说个不停 is fine, but 唱个很好听 is wrong. A common mistake is to use 不 for something that did not happen in X都不X: for a past non-event use 没 (试都没试)."
+        "The contrast example uses the ordinary degree complement V + 得 + 很 + Adj (游得很快). 个 cannot take 很 after it: 说个不停 is fine, but 游个很快 is wrong. A common mistake is to use 不 for something that did not happen in X都不X: for a past non-event use 没 (试都没试)."
       ],
       "examples": [
         {
@@ -33289,9 +33289,9 @@
         },
         {
           "id": "hsk79-format-verb-frames-8",
-          "text": "她唱得很好听。",
-          "reading": "tā chàng de hěn hǎotīng.",
-          "translation": "She sings very nicely.",
+          "text": "他游得很快。",
+          "reading": "tā yóu de hěn kuài.",
+          "translation": "He swims fast.",
           "focus": "得",
           "distractors": [
             "个",

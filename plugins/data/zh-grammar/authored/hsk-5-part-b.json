@@ -536,7 +536,7 @@
           "V + 过来 (back to normal) / V + 过去 (out of normal)"
         ],
         "body": [
-          "起来 after a verb or adjective says something begins and goes on: 天气暖和起来了, 两个人吵起来了. With an object, the object goes between 起 and 来: 外面下起雨来了. 起来 also has meanings learned as words: 想起来 (remember), 看起来 (look, seem).",
+          "起来 after a verb or adjective says something begins and goes on: 天气暖和起来了, 两个人吵起来了. With an object, the object goes between 起 and 来: 孩子们唱起歌来了. 起来 also has meanings learned as words: 想起来 (remember), 看起来 (look, seem).",
           "过来 says someone comes back to a normal, conscious or correct state: 病人醒过来了, 他终于明白过来. 过去 is the opposite: someone loses that state, faints or falls asleep: 一位老人晕了过去, 他躺在沙发上就睡过去了. So 醒过来 but 晕过去; they are not interchangeable.",
           "The contrast example uses 下来: 他的话让大家冷静了下来. 下来 says a state settles and becomes calm (previous lesson), not that something starts or recovers.",
           "A common mistake is to put the object after 起来: say 下起雨来, not 下起来雨."
@@ -578,13 +578,13 @@
           },
           {
             "id": "hsk5-qilai-guolai-guoqu-state-3",
-            "text": "外面下起雨来了。",
-            "reading": "wàimian xià qǐ yǔ lai le.",
-            "translation": "It has started raining outside.",
+            "text": "孩子们唱起歌来了。",
+            "reading": "háizimen chàng qǐ gē lai le.",
+            "translation": "The children have started singing.",
             "focus": "起",
             "distractors": [
               "过",
-              "出",
+              "到",
               "去"
             ],
             "contrast": false,

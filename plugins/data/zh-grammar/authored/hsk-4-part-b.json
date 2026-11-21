@@ -3706,7 +3706,7 @@
           "不 + V1 + 也 + V2"
         ],
         "body": [
-          "In a contracted sentence (紧缩复句) two clauses run together with no pause. With no marker at all, the relation (if, when, so) comes from the meaning: 没钱买不了房子 (if you have no money, you can't buy a flat); 吃完饭再走吧; 不见不散 (we won't leave until we meet).",
+          "In a contracted sentence (紧缩复句) two clauses run together with no pause. With no marker at all, the relation (if, when, so) comes from the meaning: 没钱买不了房子 (if you have no money, you can't buy a flat); 洗完手再吃水果吧; 不见不散 (we won't leave until we meet).",
           "不……也…… means even if not, still: 你不提醒我也记得; 不用问也知道他是谁. The 也 links the two halves without a comma.",
           "The contrast example is the full form with 如果 and a comma: 如果你不去，我也不去. Dropping 如果 and the pause gives the contracted form 你不去我也不去. A common mistake is putting a comma inside a fixed contracted phrase such as 不见不散."
         ],
@@ -3762,9 +3762,9 @@
           },
           {
             "id": "hsk4-contracted-sentences-4",
-            "text": "吃完饭再走吧。",
-            "reading": "chī wán fàn zài zǒu ba.",
-            "translation": "Stay and finish your meal before you go.",
+            "text": "洗完手再吃水果吧。",
+            "reading": "xǐ wán shǒu zài chī shuǐguǒ ba.",
+            "translation": "Wash your hands first, then have some fruit.",
             "focus": "再",
             "distractors": [
               "又",

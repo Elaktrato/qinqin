@@ -994,7 +994,7 @@
         ],
         "body": [
           "曾经 (céngjīng) marks a past experience and often takes 过: 我曾经在上海住过两年. 早已 (zǎoyǐ) is already, long before: 火车早已开走了. 始终 (shǐzhōng) is from beginning to end, often with a negative: 他始终没告诉我原因. 时刻 (shíkè) as an adverb means at every moment: 要时刻注意安全. 渐渐 (jiànjiàn) is gradually, often with 起来 or 了: 天气渐渐暖和起来了. 早晚 (zǎowǎn) is sooner or later and looks to the future, usually with 会: 早晚会生病的.",
-          "The contrast example uses 一直, which also means all along but, unlike 始终, can be followed by a length of time: 雨一直下了三天. 始终下了三天 is wrong. A common mistake is to use 曾经 for something still true: 我曾经住在北京 means you no longer live there."
+          "The contrast example uses 一直, which also means all along but, unlike 始终, can be followed by a length of time: 他一直等了两个小时. 始终等了两个小时 is wrong. A common mistake is to use 曾经 for something still true: 我曾经住在北京 means you no longer live there."
         ],
         "examples": [
           {
@@ -1101,14 +1101,14 @@
           },
           {
             "id": "hsk5-time-adverbs-span-7",
-            "text": "雨一直下了三天。",
-            "reading": "yǔ yìzhí xià le sān tiān.",
-            "translation": "It rained nonstop for three days.",
+            "text": "他一直等了两个小时。",
+            "reading": "tā yìzhí děng le liǎng ge xiǎoshí.",
+            "translation": "He kept waiting for two whole hours.",
             "focus": "一直",
             "distractors": [
               "始终",
-              "曾经",
-              "时刻"
+              "时刻",
+              "立刻"
             ],
             "contrast": true,
             "kinds": [
