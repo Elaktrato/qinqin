@@ -1,11 +1,11 @@
-// Tests of the zh-grammar pack builder, on a two-row fixture level (not the
+// Tests of the grammar pack builder (zh-grammar and ja-grammar), on a two-row fixture level (not the
 // real seven levels): node --test scripts/build-grammar-pack.test.mjs
 import assert from 'node:assert/strict';
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
-import { LEVELS, PackError, buildGrammarPack } from './build-grammar-pack.mjs';
+import { JA_LEVELS, LEVELS, PACKS, PackError, buildGrammarPack } from './build-grammar-pack.mjs';
 
 const FIXTURE_LEVELS = [{ id: 'x', name: 'X', schemeLevel: 'HSK 1', rows: 2 }];
 
@@ -227,4 +227,35 @@ test('--check validates without writing, and PackError is the failure type', asy
 	frag.rows[0].lesson.examples = frag.rows[0].lesson.examples.slice(0, 3);
 	const message = await errorOf(frag);
 	assert.ok(message.includes('rows[0].lesson.examples'), message);
+});
+
+test('JA_LEVELS is the five Japanese levels with the jlpt-kanji badges', () => {
+	assert.deepEqual(
+		JA_LEVELS.map((l) => [l.id, l.schemeLevel, l.rows]),
+		[
+			['n5', 'N5', 40],
+			['n4', 'N4', 46],
+			['n3', 'N3', 57],
+			['n2', 'N2', 55],
+			['n1', 'N1', 60]
+		]
+	);
+	assert.equal(PACKS.ja.levels, JA_LEVELS);
+	assert.equal(PACKS.zh.levels, LEVELS);
+});
+
+test('the ja pack renders its own scheme, heading and coverage column', async () => {
+	const dir = mkdtempSync(join(tmpdir(), 'grammar-'));
+	try {
+		writeFileSync(join(dir, 'x.json'), JSON.stringify(fragment(), null, 2));
+		await buildGrammarPack({ authoredDir: dir, outDir: dir, levels: FIXTURE_LEVELS, pack: PACKS.ja });
+		const lessons = JSON.parse(readFileSync(join(dir, 'lessons.json'), 'utf8'));
+		assert.deepEqual(lessons.levels[0].schemeLevels, [{ scheme: 'jlpt-kanji', level: 'HSK 1' }]);
+		const coverage = readFileSync(join(dir, 'COVERAGE.md'), 'utf8');
+		assert.ok(coverage.startsWith('# Japanese grammar — coverage\n'));
+		assert.ok(coverage.includes('Grammar point (qinqin\u2019s selection)'));
+		assert.ok(coverage.includes('The JLPT publishes no grammar list.'));
+	} finally {
+		rmSync(dir, { recursive: true, force: true });
+	}
 });

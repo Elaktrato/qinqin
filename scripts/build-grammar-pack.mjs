@@ -5,13 +5,14 @@
 //
 // Usage:
 //
-//   node scripts/build-grammar-pack.mjs [--check] [--complete]
+//   node scripts/build-grammar-pack.mjs [--pack zh|ja] [--check] [--complete]
 //       [--authored <dir>] [--out <dir>]
 //
-// Defaults: --authored plugins/data/zh-grammar/authored and
-// --out plugins/data/zh-grammar. --check validates and writes nothing;
-// --complete additionally requires all seven fragments, every syllabus row
-// 1..level.rows to appear at least once, and 300–500 lessons in total.
+// --pack picks the pack (default zh: plugins/data/zh-grammar; ja:
+// plugins/data/ja-grammar). Defaults: --authored <pack dir>/authored and
+// --out <pack dir>. --check validates and writes nothing; --complete
+// additionally requires every level's fragment, every row 1..level.rows to
+// appear at least once, and the pack's total lesson range.
 import { mkdir, readdir, readFile, writeFile } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
@@ -22,7 +23,7 @@ function fail(message) {
 	throw new PackError(message);
 }
 
-// The pack's seven levels in difficulty order. The row counts are the
+// The Chinese pack's seven levels in difficulty order. The row counts are the
 // corrected, binding syllabus row counts (the original plan under-counted
 // HSK 1 by 数词, 连接词语或短语 and 叹词, and HSK 2 by one row; HSK 3–7–9
 // follow the outline's 细目 rows, with HSK 4's long 连接分句或句子 list
@@ -39,8 +40,54 @@ export const LEVELS = [
 	{ id: 'hsk-7-9', name: 'Level 7 · Mastery', schemeLevel: 'HSK 7–9', rows: 40 }
 ];
 
-// Every grammar level badges against the hsk-words scheme.
-const SCHEME = 'hsk-words';
+// The Japanese pack's five levels. A level's `rows` is the number of points
+// qinqin's own selection gives it (docs/superpowers/specs/
+// 2026-11-21-ja-grammar-pack-design.md); like the HSK rows it is a floor.
+export const JA_LEVELS = [
+	{ id: 'n5', name: 'Level N5 · First sentences', schemeLevel: 'N5', rows: 40 },
+	{ id: 'n4', name: 'Level N4 · Everyday Japanese', schemeLevel: 'N4', rows: 46 },
+	{ id: 'n3', name: 'Level N3 · Connected speech', schemeLevel: 'N3', rows: 57 },
+	{ id: 'n2', name: 'Level N2 · Nuance and attitude', schemeLevel: 'N2', rows: 55 },
+	{ id: 'n1', name: 'Level N1 · Mastery', schemeLevel: 'N1', rows: 60 }
+];
+
+const ZH_SOURCE =
+	'Topic coverage follows the grammar outline (语法大纲) of the 《HSK 考试大纲》 / Syllabus for the\n' +
+	'Chinese Proficiency Test, CLEC/CTI, 2025-11 (effective 2026-07). The outline is used as a topic\n' +
+	'index only: the lesson grouping and order, explanations, examples and exercises are qinqin\u2019s own,\n' +
+	'and no syllabus text is reproduced. The syllabus grants no reuse licence.';
+
+const JA_SOURCE =
+	'The JLPT publishes no grammar list. The selection and order of grammar points per level are\n' +
+	'qinqin\u2019s own (docs/superpowers/specs/2026-11-21-ja-grammar-pack-design.md), not taken from JLPT\n' +
+	'preparation books or other published lists; the levels are estimates. Explanations, examples and\n' +
+	'exercises are qinqin\u2019s own.';
+
+// PACKS describes each grammar pack the script builds: its directory, its
+// levels, the level scheme its badges use, its COVERAGE.md heading and
+// source paragraph, and the lesson range --complete requires.
+export const PACKS = {
+	zh: {
+		dir: 'zh-grammar',
+		levels: LEVELS,
+		scheme: 'hsk-words',
+		heading: '# Chinese grammar — HSK coverage',
+		source: ZH_SOURCE,
+		rowColumn: 'Syllabus row (qinqin\u2019s words)',
+		minLessons: 300,
+		maxLessons: 500
+	},
+	ja: {
+		dir: 'ja-grammar',
+		levels: JA_LEVELS,
+		scheme: 'jlpt-kanji',
+		heading: '# Japanese grammar — coverage',
+		source: JA_SOURCE,
+		rowColumn: 'Grammar point (qinqin\u2019s selection)',
+		minLessons: 250,
+		maxLessons: 500
+	}
+};
 const ID = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 const KINDS = new Set(['similar', 'clearly-wrong']);
 const HTML_OR_MARKDOWN = /[<>[\]*`]/;
@@ -158,16 +205,16 @@ function count(haystack, needle) {
 	return haystack.split(needle).length - 1;
 }
 
-// renderLessons is the lessons.json object: the seven levels in LEVELS
+// renderLessons is the lessons.json object: the pack's levels in their
 // order and the lessons in level/row/split order, with the authoring
 // metadata (contrast, kinds) stripped.
-export function renderLessons(levels, lessons) {
+export function renderLessons(levels, lessons, pack = PACKS.zh) {
 	const index = new Map(levels.map((lv, i) => [lv.id, i]));
 	const ordered = lessons
 		.map((l, i) => ({ ...l, i }))
 		.sort((a, b) => index.get(a.levelId) - index.get(b.levelId) || a.row - b.row || a.i - b.i);
 	return {
-		levels: levels.map((lv) => ({ id: lv.id, name: lv.name, schemeLevels: [{ scheme: SCHEME, level: lv.schemeLevel }] })),
+		levels: levels.map((lv) => ({ id: lv.id, name: lv.name, schemeLevels: [{ scheme: pack.scheme, level: lv.schemeLevel }] })),
 		lessons: ordered.map(({ lesson }) => ({
 			id: lesson.id,
 			level: lesson.level,
@@ -180,15 +227,9 @@ export function renderLessons(levels, lessons) {
 	};
 }
 
-const SOURCE_PARAGRAPH =
-	'Topic coverage follows the grammar outline (语法大纲) of the 《HSK 考试大纲》 / Syllabus for the\n' +
-	'Chinese Proficiency Test, CLEC/CTI, 2025-11 (effective 2026-07). The outline is used as a topic\n' +
-	'index only: the lesson grouping and order, explanations, examples and exercises are qinqin\u2019s own,\n' +
-	'and no syllabus text is reproduced. The syllabus grants no reuse licence.';
-
 // renderCoverage is COVERAGE.md: a heading, the source paragraph, then one
 // table per level mapping every syllabus row to its lesson id (or ids).
-export function renderCoverage(levels, lessons) {
+export function renderCoverage(levels, lessons, pack = PACKS.zh) {
 	const byLevel = new Map();
 	for (const l of lessons) {
 		if (!byLevel.has(l.levelId)) byLevel.set(l.levelId, new Map());
@@ -196,10 +237,10 @@ export function renderCoverage(levels, lessons) {
 		if (!byRow.has(l.row)) byRow.set(l.row, []);
 		byRow.get(l.row).push(l);
 	}
-	const lines = ['# Chinese grammar — HSK coverage', '', SOURCE_PARAGRAPH, ''];
+	const lines = [pack.heading, '', pack.source, ''];
 	for (const lv of levels) {
 		const byRow = byLevel.get(lv.id) ?? new Map();
-		lines.push(`## ${lv.name}`, '', '| # | Syllabus row (qinqin\u2019s words) | Lesson(s) |', '|---|-------------------------------|-----------|');
+		lines.push(`## ${lv.name}`, '', `| # | ${pack.rowColumn} | Lesson(s) |`, '|---|-------------------------------|-----------|');
 		let maxRow = lv.rows;
 		for (const row of byRow.keys()) if (row > maxRow) maxRow = row;
 		for (let row = 1; row <= maxRow; row++) {
@@ -221,7 +262,8 @@ function json(value) {
 // them against the schema and the pack's content rules, and — unless
 // check — writes lessons.json and COVERAGE.md. It returns the covered row
 // count and the lesson count.
-export async function buildGrammarPack({ authoredDir, outDir, levels = LEVELS, check = false, complete = false }) {
+export async function buildGrammarPack({ authoredDir, outDir, levels, pack = PACKS.zh, check = false, complete = false }) {
+	levels ??= pack.levels;
 	const lessons = [];
 	const lessonIds = new Set();
 	const exampleIds = new Set();
@@ -231,7 +273,7 @@ export async function buildGrammarPack({ authoredDir, outDir, levels = LEVELS, c
 	for (const lv of levels) {
 		const fragment = await readFragment(authoredDir, lv.id);
 		if (!fragment) {
-			if (complete) fail(`${lv.id}: no authored fragment (--complete requires all seven)`);
+			if (complete) fail(`${lv.id}: no authored fragment (--complete requires every level)`);
 			continue;
 		}
 		rows += lv.rows;
@@ -265,20 +307,20 @@ export async function buildGrammarPack({ authoredDir, outDir, levels = LEVELS, c
 	if (complete) {
 		for (const lv of levels) {
 			const seen = covered.get(lv.id);
-			if (!seen) fail(`${lv.id}: no authored fragment (--complete requires all seven)`);
+			if (!seen) fail(`${lv.id}: no authored fragment (--complete requires every level)`);
 			for (let row = 1; row <= lv.rows; row++) {
 				if (!seen.has(row)) fail(`${lv.id}: row ${row} is not authored`);
 			}
 		}
-		if (lessons.length < 300 || lessons.length > 500) {
-			fail(`lessons: ${lessons.length} lessons, want 300 to 500`);
+		if (lessons.length < pack.minLessons || lessons.length > pack.maxLessons) {
+			fail(`lessons: ${lessons.length} lessons, want ${pack.minLessons} to ${pack.maxLessons}`);
 		}
 	}
 
 	if (!check) {
 		await mkdir(outDir, { recursive: true });
-		await writeFile(join(outDir, 'lessons.json'), json(renderLessons(levels, lessons)));
-		await writeFile(join(outDir, 'COVERAGE.md'), renderCoverage(levels, lessons));
+		await writeFile(join(outDir, 'lessons.json'), json(renderLessons(levels, lessons, pack)));
+		await writeFile(join(outDir, 'COVERAGE.md'), renderCoverage(levels, lessons, pack));
 	}
 	return { rows, lessons: lessons.length };
 }
@@ -293,17 +335,20 @@ async function main(argv) {
 		args.splice(i, 2);
 		return value;
 	};
+	const packName = flag('--pack') || 'zh';
+	const pack = PACKS[packName];
+	if (!pack) fail(`--pack: ${JSON.stringify(packName)} is not a pack (zh, ja)`);
 	const authored = flag('--authored');
 	const out = flag('--out');
 	const check = args.includes('--check');
 	const complete = args.includes('--complete');
 	if (args.some((a) => a !== '--check' && a !== '--complete')) {
-		fail('usage: node scripts/build-grammar-pack.mjs [--check] [--complete] [--authored <dir>] [--out <dir>]');
+		fail('usage: node scripts/build-grammar-pack.mjs [--pack zh|ja] [--check] [--complete] [--authored <dir>] [--out <dir>]');
 	}
 	const root = fileURLToPath(new URL('..', import.meta.url));
-	const authoredDir = authored ? resolve(authored) : join(root, 'plugins', 'data', 'zh-grammar', 'authored');
-	const outDir = out ? resolve(out) : join(root, 'plugins', 'data', 'zh-grammar');
-	const result = await buildGrammarPack({ authoredDir, outDir, check, complete });
+	const authoredDir = authored ? resolve(authored) : join(root, 'plugins', 'data', pack.dir, 'authored');
+	const outDir = out ? resolve(out) : join(root, 'plugins', 'data', pack.dir);
+	const result = await buildGrammarPack({ authoredDir, outDir, pack, check, complete });
 	console.log(`${result.rows} rows, ${result.lessons} lessons`);
 	if (!check) console.log(`wrote ${join(outDir, 'lessons.json')} and ${join(outDir, 'COVERAGE.md')}`);
 }
