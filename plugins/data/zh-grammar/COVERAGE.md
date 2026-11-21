@@ -184,6 +184,7 @@ and no syllabus text is reproduced. The syllabus grants no reuse licence.
 | 54 |  | not authored yet |
 | 55 |  | not authored yet |
 | 56 |  | not authored yet |
+| 57 |  | not authored yet |
 
 ## Level 4 · Connected speech
 
@@ -240,6 +241,86 @@ and no syllabus text is reproduced. The syllabus grants no reuse licence.
 
 | # | Syllabus row (qinqin’s words) | Lesson(s) |
 |---|-------------------------------|-----------|
+| 1 | 后缀 (-头) | hsk5-suffix-tou |
+| 2 | 指示代词 (彼此, 如此, 本) | hsk5-bici-ruci-ben |
+| 3 | 名量词: 朵, 颗, 根, 支, 副, 匹, 册 / 名量词: 群, 批, 束, 届, 集, 行, 架, 周 | hsk5-measure-objects, hsk5-measure-groups |
+| 4 | 动量词 (眼) | hsk5-measure-yan |
+| 5 | 程度副词 (过于, 相当, 较, 可, 格外, 极其) | hsk5-degree-adverbs |
+| 6 | 时间副词: 立刻, 连忙, 急忙, 尽快, 即将 / 时间副词: 曾经, 早已, 始终, 时刻, 渐渐, 早晚 | hsk5-time-adverbs-quick, hsk5-time-adverbs-span |
+| 7 | 频率副词 (老是, 通常, 时常) | hsk5-freq-adverbs |
+| 8 | 方式副词 (尽量, 亲自) | hsk5-jinliang-qinzi |
+| 9 | 关联副词 (便, 一旦) | hsk5-bian-yidan |
+| 10 | 情态副词 (似乎, 仿佛) | hsk5-sihu-fangfu |
+| 11 | 语气副词: 居然, 果然, 反而, 简直, 白, 刚好 / 语气副词: 毕竟, 反正, 根本, 绝对, 的确, 可 | hsk5-mood-adverbs-expect, hsk5-mood-adverbs-stance |
+| 12 | 介词: 引出时间、处所 (自从) | hsk5-zicong |
+| 13 | 介词: 引出方向、路径 (朝, 沿（着）) | hsk5-chao-yanzhe |
+| 14 | 介词: 引出对象 (替, 同, 较) | hsk5-ti-tong-jiao |
+| 15 | 介词: 引出凭借、依据 (凭, 据, 依据) | hsk5-ping-ju-yiju |
+| 16 | 连词: 连接词或词组 (以及, 同) | hsk5-yiji-tong |
+| 17 | 连词: 连接分句或句子 (从而, 可见, 假如, 总之) | hsk5-conger-kejian-jiaru-zongzhi |
+| 18 | 其他助词 (似的) | hsk5-shide |
+| 19 | 四字格 (A来A去, A着A着, 没A没B, 说A就A) | hsk5-four-char-frames |
+| 20 | 固定短语: 不得了, 用不着, 从……来看, （自）……以来 / 固定短语: A的A，B的B, 由……组成, X也不是，Y也不是, X也X不得，Y也Y不得 | hsk5-phrases-budeliao-yilai, hsk5-phrases-group-stuck |
+| 21 | 固定格式: X是它，Y也是它; X着也是X着; 不管怎样说; 真有你/他/她的 / 固定格式: X什么X; 什么X不X（的）; 不X白不X; X来X去，都是/就是……; 动词+什么（就）是什么 | hsk5-formats-attitude, hsk5-formats-shenme |
+| 22 | 多项状语 (time, adverb, manner, place, object before the verb) | hsk5-multiple-adverbials |
+| 23 | 可能补语 (V得 / V不得) | hsk5-v-bude |
+| 24 | 程度补语 (Adj / 心理动词 + 得不得了) | hsk5-de-budeliao |
+| 25 | 趋向补语 (state meanings: 下来, 下去) / 趋向补语 (state meanings: 起来, 过来, 过去) | hsk5-xialai-xiaqu-state, hsk5-qilai-guolai-guoqu-state |
+| 26 | 状态补语 (得 + 动词短语 / 主谓短语 / 固定短语) | hsk5-de-state-phrases |
+| 27 | “有”字句3 (有着 / V有) | hsk5-youzhe-v-you |
+| 28 | “把”字句3 (把 + O + 一 + V / 把 + O1 + V + O2) | hsk5-ba-yi-v-double |
+| 29 | 连动句3 (cause, contrast and condition between two verbs) | hsk5-serial-verb-relations |
+| 30 | 比较句4 (A + Adj + B + 数量补语) | hsk5-compare-adj-b-amount |
+| 31 | 被动句3 (被 / 叫 / 让 + N + 给 + V) | hsk5-passive-gei |
+| 32 | 承接复句 (……，便……) | hsk5-bian-sequence |
+| 33 | 选择复句 (或是……，或是……) | hsk5-huoshi |
+| 34 | 假设复句: 一旦……就……, 假如……（就）…… / 假设复句: 万一……（就）……, ……，要不然 / 不然…… | hsk5-yidan-jiaru, hsk5-wanyi-buran |
+| 35 | 因果复句 (……，因而…… / ……，可见……) | hsk5-yiner-kejian |
+| 36 | 让步复句 (哪怕……，也……) | hsk5-napa |
+| 37 | 递进复句 (不但不 / 不但没有……，反而……; 不是……，还 / 还是……) | hsk5-budan-faner |
+| 38 | 目的复句 (……，为的是……) | hsk5-wei-de-shi |
+| 39 | 紧缩复句 (没有……就没有……, 不……不……, 再……也……) | hsk5-compressed-clauses |
+
+## Level 6 · Formal ground
+
+| # | Syllabus row (qinqin’s words) | Lesson(s) |
+|---|-------------------------------|-----------|
+| 1 |  | not authored yet |
+| 2 |  | not authored yet |
+| 3 |  | not authored yet |
+| 4 |  | not authored yet |
+| 5 |  | not authored yet |
+| 6 |  | not authored yet |
+| 7 |  | not authored yet |
+| 8 |  | not authored yet |
+| 9 |  | not authored yet |
+| 10 |  | not authored yet |
+| 11 |  | not authored yet |
+| 12 |  | not authored yet |
+| 13 |  | not authored yet |
+| 14 |  | not authored yet |
+| 15 |  | not authored yet |
+| 16 |  | not authored yet |
+| 17 |  | not authored yet |
+| 18 |  | not authored yet |
+| 19 |  | not authored yet |
+| 20 |  | not authored yet |
+| 21 |  | not authored yet |
+| 22 |  | not authored yet |
+| 23 |  | not authored yet |
+| 24 |  | not authored yet |
+| 25 |  | not authored yet |
+| 26 |  | not authored yet |
+| 27 |  | not authored yet |
+| 28 |  | not authored yet |
+| 29 |  | not authored yet |
+| 30 |  | not authored yet |
+| 31 |  | not authored yet |
+
+## Level 7 · Mastery
+
+| # | Syllabus row (qinqin’s words) | Lesson(s) |
+|---|-------------------------------|-----------|
 | 1 |  | not authored yet |
 | 2 |  | not authored yet |
 | 3 |  | not authored yet |
@@ -278,71 +359,6 @@ and no syllabus text is reproduced. The syllabus grants no reuse licence.
 | 36 |  | not authored yet |
 | 37 |  | not authored yet |
 | 38 |  | not authored yet |
-
-## Level 6 · Formal ground
-
-| # | Syllabus row (qinqin’s words) | Lesson(s) |
-|---|-------------------------------|-----------|
-| 1 |  | not authored yet |
-| 2 |  | not authored yet |
-| 3 |  | not authored yet |
-| 4 |  | not authored yet |
-| 5 |  | not authored yet |
-| 6 |  | not authored yet |
-| 7 |  | not authored yet |
-| 8 |  | not authored yet |
-| 9 |  | not authored yet |
-| 10 |  | not authored yet |
-| 11 |  | not authored yet |
-| 12 |  | not authored yet |
-| 13 |  | not authored yet |
-| 14 |  | not authored yet |
-| 15 |  | not authored yet |
-| 16 |  | not authored yet |
-| 17 |  | not authored yet |
-| 18 |  | not authored yet |
-| 19 |  | not authored yet |
-| 20 |  | not authored yet |
-| 21 |  | not authored yet |
-| 22 |  | not authored yet |
-| 23 |  | not authored yet |
-| 24 |  | not authored yet |
-| 25 |  | not authored yet |
-| 26 |  | not authored yet |
-| 27 |  | not authored yet |
-| 28 |  | not authored yet |
-| 29 |  | not authored yet |
-| 30 |  | not authored yet |
-
-## Level 7 · Mastery
-
-| # | Syllabus row (qinqin’s words) | Lesson(s) |
-|---|-------------------------------|-----------|
-| 1 |  | not authored yet |
-| 2 |  | not authored yet |
-| 3 |  | not authored yet |
-| 4 |  | not authored yet |
-| 5 |  | not authored yet |
-| 6 |  | not authored yet |
-| 7 |  | not authored yet |
-| 8 |  | not authored yet |
-| 9 |  | not authored yet |
-| 10 |  | not authored yet |
-| 11 |  | not authored yet |
-| 12 |  | not authored yet |
-| 13 |  | not authored yet |
-| 14 |  | not authored yet |
-| 15 |  | not authored yet |
-| 16 |  | not authored yet |
-| 17 |  | not authored yet |
-| 18 |  | not authored yet |
-| 19 |  | not authored yet |
-| 20 |  | not authored yet |
-| 21 |  | not authored yet |
-| 22 |  | not authored yet |
-| 23 |  | not authored yet |
-| 24 |  | not authored yet |
-| 25 |  | not authored yet |
-| 26 |  | not authored yet |
-| 27 |  | not authored yet |
+| 39 |  | not authored yet |
+| 40 |  | not authored yet |
 
