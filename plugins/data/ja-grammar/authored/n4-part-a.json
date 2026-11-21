@@ -197,9 +197,9 @@
           },
           {
             "id": "n4-to-omou-4",
-            "text": "田中さんは来ないと思います。",
-            "reading": "たなかさんはこないとおもいます。",
-            "translation": "I don't think Mr Tanaka will come.",
+            "text": "山口さんは来ないと思います。",
+            "reading": "やまぐちさんはこないとおもいます。",
+            "translation": "I don't think Mr Yamaguchi will come.",
             "focus": "来ない",
             "distractors": [
               "来なく",
@@ -229,9 +229,9 @@
           },
           {
             "id": "n4-to-omou-6",
-            "text": "山田さんは明日休むと言いました。",
-            "reading": "やまださんはあしたやすむといいました。",
-            "translation": "Ms Yamada said she would take tomorrow off.",
+            "text": "中島さんは明日休むと言いました。",
+            "reading": "なかじまさんはあしたやすむといいました。",
+            "translation": "Ms Nakajima said she would take tomorrow off.",
             "focus": "言いました",
             "distractors": [
               "言いです",
@@ -452,9 +452,9 @@
           },
           {
             "id": "n4-potential-5",
-            "text": "田中さんは英語を話すことができます。",
-            "reading": "たなかさんはえいごをはなすことができます。",
-            "translation": "Mr Tanaka can speak English.",
+            "text": "山口さんは英語を話すことができます。",
+            "reading": "やまぐちさんはえいごをはなすことができます。",
+            "translation": "Mr Yamaguchi can speak English.",
             "focus": "ことができます",
             "distractors": [
               "ことをできます",
@@ -1711,22 +1711,22 @@
         "id": "n4-nara",
         "level": "n4",
         "title": "なら: if that is the case, as for",
-        "summary": "なら picks up a topic or a plan, often one the listener just mentioned, and gives advice or information about it: 駅へ行くなら, 田中さんなら.",
+        "summary": "なら picks up a topic or a plan, often one the listener just mentioned, and gives advice or information about it: 駅へ行くなら, 山口さんなら.",
         "pattern": [
           "N + なら (as for N, if it's N)",
           "V-dict / A-い + なら、advice or opinion"
         ],
         "body": [
-          "なら follows a noun directly (田中さんなら, 日本料理なら), a な-adjective stem, an い-adjective (寒いなら) or a verb's dictionary form (行くなら, 運転するなら). It does not take だ: 寒いだら and 田中さんだら are wrong.",
-          "Unlike と, ば and たら, なら does not say A happens first. 駅へ行くなら、このバスが便利です gives advice for a plan the listener has; the bus comes before arriving. With a noun, なら answers a question about that thing: if it's Mr Tanaka you want, he's in the library.",
+          "なら follows a noun directly (山口さんなら, 日本料理なら), a な-adjective stem, an い-adjective (寒いなら) or a verb's dictionary form (行くなら, 運転するなら). It does not take だ: 寒いだら and 山口さんだら are wrong.",
+          "Unlike と, ば and たら, なら does not say A happens first. 駅へ行くなら、このバスが便利です gives advice for a plan the listener has; the bus comes before arriving. With a noun, なら answers a question about that thing: if it's Mr Yamaguchi you want, he's in the library.",
           "The contrast example uses と for a habit that always follows (朝起きると、まずコーヒーを飲みます); なら cannot express a regular sequence like this. A common mistake is to use なら when A must happen before B: 駅に着いたら、電話してください asks for a call after arriving, while 駅に着くなら would ask for one before you get there."
         ],
         "examples": [
           {
             "id": "n4-nara-1",
-            "text": "田中さんなら、図書館にいますよ。",
-            "reading": "たなかさんなら、としょかんにいますよ。",
-            "translation": "If you're looking for Mr Tanaka, he's in the library.",
+            "text": "山口さんなら、図書館にいますよ。",
+            "reading": "やまぐちさんなら、としょかんにいますよ。",
+            "translation": "If you're looking for Mr Yamaguchi, he's in the library.",
             "focus": "なら",
             "distractors": [
               "なれば",
@@ -2512,9 +2512,9 @@
           },
           {
             "id": "n4-te-iku-kuru-6",
-            "text": "田中さんは今、図書館で勉強しています。",
-            "reading": "たなかさんはいま、としょかんでべんきょうしています。",
-            "translation": "Ms Tanaka is studying in the library now.",
+            "text": "山口さんは今、図書館で勉強しています。",
+            "reading": "やまぐちさんはいま、としょかんでべんきょうしています。",
+            "translation": "Ms Yamaguchi is studying in the library now.",
             "focus": "います",
             "distractors": [
               "あります",
@@ -2700,9 +2700,9 @@
           },
           {
             "id": "n4-shi-3",
-            "text": "田中さんは親切だし、頭もいいです。",
-            "reading": "たなかさんはしんせつだし、あたまもいいです。",
-            "translation": "Mr Tanaka is kind, and smart too.",
+            "text": "山口さんは親切だし、頭もいいです。",
+            "reading": "やまぐちさんはしんせつだし、あたまもいいです。",
+            "translation": "Mr Yamaguchi is kind, and smart too.",
             "focus": "親切だし",
             "distractors": [
               "親切なし",

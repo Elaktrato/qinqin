@@ -273,9 +273,9 @@
         "examples": [
           {
             "id": "n3-wake-ga-nai-1",
-            "text": "あの真面目な田中さんが嘘をつくわけがない。",
-            "reading": "あのまじめなたなかさんがうそをつくわけがない。",
-            "translation": "There's no way serious Tanaka would lie.",
+            "text": "あの真面目な山口さんが嘘をつくわけがない。",
+            "reading": "あのまじめなやまぐちさんがうそをつくわけがない。",
+            "translation": "There's no way serious Yamaguchi would lie.",
             "focus": "わけがない",
             "distractors": [
               "わけだ",
@@ -555,9 +555,9 @@
           },
           {
             "id": "n3-you-ni-iu-3",
-            "text": "田中さんに、会議に遅れないように伝えてください。",
-            "reading": "たなかさんに、かいぎにおくれないようにつたえてください。",
-            "translation": "Please tell Tanaka not to be late for the meeting.",
+            "text": "山口さんに、会議に遅れないように伝えてください。",
+            "reading": "やまぐちさんに、かいぎにおくれないようにつたえてください。",
+            "translation": "Please tell Yamaguchi not to be late for the meeting.",
             "focus": "ないように",
             "distractors": [
               "なくて",
@@ -1013,15 +1013,15 @@
         ],
         "body": [
           "謙譲語 (humble language) is used for your own actions, or your group's, when you speak to someone you respect. Common verbs: 参る (go, come), 申す (say, also for your name), いたす (do; also in ご連絡いたします), いただく (receive, eat), 拝見する (see, read), 伺う (visit, ask), おる (be; ております after a て form).",
-          "Humble verbs do not raise the listener directly; they make the speaker smaller. In business they are everywhere: 山田と申します, 後ほどご連絡いたします, 東京に住んでおります.",
+          "Humble verbs do not raise the listener directly; they make the speaker smaller. In business they are everywhere: 中島と申します, 後ほどご連絡いたします, 東京に住んでおります.",
           "The contrast example uses the respectful いらっしゃる for the teacher. A common mistake is to use a humble verb for the listener, as in 先生は何時に参りますか; for someone else's action use the respectful verb."
         ],
         "examples": [
           {
             "id": "n3-kenjougo-1",
-            "text": "はじめまして、山田と申します。",
-            "reading": "はじめまして、やまだともうします。",
-            "translation": "How do you do? My name is Yamada.",
+            "text": "はじめまして、中島と申します。",
+            "reading": "はじめまして、なかじまともうします。",
+            "translation": "How do you do? My name is Nakajima.",
             "focus": "申します",
             "distractors": [
               "おっしゃいます",

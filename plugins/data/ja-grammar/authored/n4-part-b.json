@@ -184,9 +184,9 @@
           },
           {
             "id": "n4-sou-hearsay-2",
-            "text": "姉の話では、山田さんは来月結婚するそうです。",
-            "reading": "あねのはなしでは、やまださんはらいげつけっこんするそうです。",
-            "translation": "According to my sister, Mr Yamada is getting married next month.",
+            "text": "姉の話では、中島さんは来月結婚するそうです。",
+            "reading": "あねのはなしでは、なかじまさんはらいげつけっこんするそうです。",
+            "translation": "According to my sister, Mr Nakajima is getting married next month.",
             "focus": "するそう",
             "distractors": [
               "すそう",
@@ -311,9 +311,9 @@
           },
           {
             "id": "n4-you-mitai-2",
-            "text": "田中さんは風邪のようです。",
-            "reading": "たなかさんはかぜのようです。",
-            "translation": "Mr Tanaka seems to have a cold.",
+            "text": "山口さんは風邪のようです。",
+            "reading": "やまぐちさんはかぜのようです。",
+            "translation": "Mr Yamaguchi seems to have a cold.",
             "focus": "のよう",
             "distractors": [
               "だよう",
@@ -597,9 +597,9 @@
           },
           {
             "id": "n4-kamoshirenai-3",
-            "text": "木村さんは暇かもしれないよ。",
-            "reading": "きむらさんはひまかもしれないよ。",
-            "translation": "Kimura might be free, you know.",
+            "text": "小川さんは暇かもしれないよ。",
+            "reading": "おがわさんはひまかもしれないよ。",
+            "translation": "Ogawa might be free, you know.",
             "focus": "暇かも",
             "distractors": [
               "暇なかも",
@@ -831,9 +831,9 @@
           },
           {
             "id": "n4-hazu-2",
-            "text": "田中さんは休みのはずです。",
-            "reading": "たなかさんはやすみのはずです。",
-            "translation": "Mr Tanaka is supposed to be off.",
+            "text": "山口さんは休みのはずです。",
+            "reading": "やまぐちさんはやすみのはずです。",
+            "translation": "Mr Yamaguchi is supposed to be off.",
             "focus": "のはず",
             "distractors": [
               "なはず",
@@ -1702,9 +1702,9 @@
           },
           {
             "id": "n4-ka-douka-7",
-            "text": "田中さんはもう帰ったと思います。",
-            "reading": "たなかさんはもうかえったとおもいます。",
-            "translation": "I think Mr Tanaka has already gone home.",
+            "text": "山口さんはもう帰ったと思います。",
+            "reading": "やまぐちさんはもうかえったとおもいます。",
+            "translation": "I think Mr Yamaguchi has already gone home.",
             "focus": "と",
             "distractors": [
               "か",
@@ -1794,9 +1794,9 @@
           },
           {
             "id": "n4-ageru-kureru-morau-4",
-            "text": "田中さんは山田さんにチョコレートをあげました。",
-            "reading": "たなかさんはやまださんにチョコレートをあげました。",
-            "translation": "Mr Tanaka gave Ms Yamada some chocolate.",
+            "text": "山口さんは中島さんにチョコレートをあげました。",
+            "reading": "やまぐちさんはなかじまさんにチョコレートをあげました。",
+            "translation": "Mr Yamaguchi gave Ms Nakajima some chocolate.",
             "focus": "あげました",
             "distractors": [
               "くれました",
@@ -1936,9 +1936,9 @@
           },
           {
             "id": "n4-te-ageru-kureru-morau-5",
-            "text": "田中さんに駅までの道を教えてもらいました。",
-            "reading": "たなかさんにえきまでのみちをおしえてもらいました。",
-            "translation": "Mr Tanaka showed me the way to the station.",
+            "text": "山口さんに駅までの道を教えてもらいました。",
+            "reading": "やまぐちさんにえきまでのみちをおしえてもらいました。",
+            "translation": "Mr Yamaguchi showed me the way to the station.",
             "focus": "に",
             "distractors": [
               "を",

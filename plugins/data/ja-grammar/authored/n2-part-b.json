@@ -1304,9 +1304,9 @@
           },
           {
             "id": "n2-ni-kakete-wa-3",
-            "text": "交渉にかけては、山田さんが社内で一番うまい。",
-            "reading": "こうしょうにかけては、やまださんがしゃないでいちばんうまい。",
-            "translation": "When it comes to negotiating, Yamada is the best in the company.",
+            "text": "交渉にかけては、中島さんが社内で一番うまい。",
+            "reading": "こうしょうにかけては、なかじまさんがしゃないでいちばんうまい。",
+            "translation": "When it comes to negotiating, Nakajima is the best in the company.",
             "focus": "うまい",
             "distractors": [
               "下手だ",
@@ -1906,9 +1906,9 @@
         "examples": [
           {
             "id": "n2-no-moto-de-1",
-            "text": "田中先生のもとで、研究を続けている。",
-            "reading": "たなかせんせいのもとで、けんきゅうをつづけている。",
-            "translation": "I’m continuing my research under Professor Tanaka.",
+            "text": "山口先生のもとで、研究を続けている。",
+            "reading": "やまぐちせんせいのもとで、けんきゅうをつづけている。",
+            "translation": "I’m continuing my research under Professor Yamaguchi.",
             "focus": "のもとで",
             "distractors": [
               "にもとで",

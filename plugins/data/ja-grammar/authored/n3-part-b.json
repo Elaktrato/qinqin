@@ -216,9 +216,9 @@
           },
           {
             "id": "n3-te-bakari-iru-5",
-            "text": "田中さんは会議中、スマホを見てばかりいた。",
-            "reading": "たなかさんはかいぎちゅう、スマホをみてばかりいた。",
-            "translation": "Tanaka kept looking at his phone all through the meeting.",
+            "text": "山口さんは会議中、スマホを見てばかりいた。",
+            "reading": "やまぐちさんはかいぎちゅう、スマホをみてばかりいた。",
+            "translation": "Yamaguchi kept looking at his phone all through the meeting.",
             "focus": "ばかりいた",
             "distractors": [
               "ばかりした",
@@ -925,9 +925,9 @@
           },
           {
             "id": "n3-kke-3",
-            "text": "田中さんも来るんでしたっけ？",
-            "reading": "たなかさんもくるんでしたっけ？",
-            "translation": "Is Tanaka coming too? I've forgotten.",
+            "text": "山口さんも来るんでしたっけ？",
+            "reading": "やまぐちさんもくるんでしたっけ？",
+            "translation": "Is Yamaguchi coming too? I've forgotten.",
             "focus": "っけ",
             "distractors": [
               "ぞ",
@@ -1007,16 +1007,16 @@
           "N って 〜 (topic)"
         ],
         "body": [
-          "As a quote marker, って follows a plain sentence and stands for と or と言っていた: 明日は雨が降るって言ってたよ. At the end of a sentence it reports what someone said: 田中さん、今日は休むって. As a topic marker, って follows a noun and means as for or what is: 日本の夏って、本当に暑いね, 「ハンコ」って何ですか. In 山田さんって人 it means a person called Yamada.",
+          "As a quote marker, って follows a plain sentence and stands for と or と言っていた: 明日は雨が降るって言ってたよ. At the end of a sentence it reports what someone said: 山口さん、今日は休むって. As a topic marker, って follows a noun and means as for or what is: 日本の夏って、本当に暑いね, 「ハンコ」って何ですか. In 中島さんって人 it means a person called Nakajima.",
           "The contrast example uses と, the neutral quote marker of written and polite speech: 部長は明日来ると言いました. って means the same but is casual, so it is avoided in formal writing.",
           "A common mistake is to use って in a formal report or essay. Use と or というのは there."
         ],
         "examples": [
           {
             "id": "n3-tte-1",
-            "text": "田中さん、今日は休むって。",
-            "reading": "たなかさん、きょうはやすむって。",
-            "translation": "Tanaka says he's taking today off.",
+            "text": "山口さん、今日は休むって。",
+            "reading": "やまぐちさん、きょうはやすむって。",
+            "translation": "Yamaguchi says he's taking today off.",
             "focus": "って",
             "distractors": [
               "ほど",
@@ -1082,9 +1082,9 @@
           },
           {
             "id": "n3-tte-5",
-            "text": "山田さんって人から電話があったよ。",
-            "reading": "やまださんってひとからでんわがあったよ。",
-            "translation": "You got a call from someone called Yamada.",
+            "text": "中島さんって人から電話があったよ。",
+            "reading": "なかじまさんってひとからでんわがあったよ。",
+            "translation": "You got a call from someone called Nakajima.",
             "focus": "って",
             "distractors": [
               "を",
@@ -1191,9 +1191,9 @@
           },
           {
             "id": "n3-toka-4",
-            "text": "鈴木さん、来月結婚するとか。",
-            "reading": "すずきさん、らいげつけっこんするとか。",
-            "translation": "I hear Suzuki is getting married next month.",
+            "text": "青木さん、来月結婚するとか。",
+            "reading": "あおきさん、らいげつけっこんするとか。",
+            "translation": "I hear Aoki is getting married next month.",
             "focus": "とか",
             "distractors": [
               "ほど",
@@ -2709,9 +2709,9 @@
           },
           {
             "id": "n3-ni-chigai-nai-5",
-            "text": "田中さんは今ごろ、空港に着いたに違いない。",
-            "reading": "たなかさんはいまごろ、くうこうについたにちがいない。",
-            "translation": "Tanaka must have reached the airport by now.",
+            "text": "山口さんは今ごろ、空港に着いたに違いない。",
+            "reading": "やまぐちさんはいまごろ、くうこうについたにちがいない。",
+            "translation": "Yamaguchi must have reached the airport by now.",
             "focus": "着いた",
             "distractors": [
               "着いて",
@@ -3173,9 +3173,9 @@
           },
           {
             "id": "n3-ppoi-rashii-3",
-            "text": "白っぽいシャツを着ている人が田中さんです。",
-            "reading": "しろっぽいシャツをきているひとがたなかさんです。",
-            "translation": "The person in the whitish shirt is Mr. Tanaka.",
+            "text": "白っぽいシャツを着ている人が山口さんです。",
+            "reading": "しろっぽいシャツをきているひとがやまぐちさんです。",
+            "translation": "The person in the whitish shirt is Mr. Yamaguchi.",
             "focus": "っぽい",
             "distractors": [
               "らしい",

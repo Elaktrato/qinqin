@@ -107,6 +107,13 @@ Issues #119–#123. Design and point lists:
   credit and the unreviewed note. `TestBundledJapaneseGrammarPack` requires
   250–500 lessons in all five levels.
 - Reviewer doubts left open: the noOrder rule for "clause + topic" swaps is
-  applied linguistically (tile boundaries come from the dictionary segmenter,
-  e.g. 山田 splits into 山 / 田 without a name entry); some distractors are wrong
+  applied linguistically (tile boundaries come from the dictionary segmenter);
+  some distractors are wrong
   only by meaning; N3 ことにしています with 始まる; 三十歳 read さんじゅっさい.
+- Names: JMdict has almost no surnames, so the word-order tiles split names it
+  lacks (田中 → 田 / 中). The pack uses only surnames the segmenter keeps whole
+  (山口, 中島, 小川, 青木, 山本 — they are also ordinary words); 田中, 山田, 木村
+  and 鈴木 were replaced on 2026-11-21. Check new names with POST /api/segment
+  before using them. Chinese 小王 / 小李 split into 小 + 王, which matches the
+  prefix lesson and was left as it is. A lasting fix would be an optional
+  per-example "keep together" hint for the tile cutter (not built).

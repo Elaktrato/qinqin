@@ -81,9 +81,9 @@
         },
         {
           "id": "n5-desu-2",
-          "text": "田中さんは先生です。",
-          "reading": "たなかさんはせんせいです。",
-          "translation": "Mr Tanaka is a teacher.",
+          "text": "山口さんは先生です。",
+          "reading": "やまぐちさんはせんせいです。",
+          "translation": "Mr Yamaguchi is a teacher.",
           "focus": "は",
           "distractors": [
             "を",
@@ -105,9 +105,9 @@
         },
         {
           "id": "n5-desu-4",
-          "text": "山田さんは会社員です。",
-          "reading": "やまださんはかいしゃいんです。",
-          "translation": "Ms Yamada is an office worker.",
+          "text": "中島さんは会社員です。",
+          "reading": "なかじまさんはかいしゃいんです。",
+          "translation": "Ms Nakajima is an office worker.",
           "focus": "です",
           "distractors": [
             "ます",
@@ -195,9 +195,9 @@
         },
         {
           "id": "n5-dewa-arimasen-4",
-          "text": "田中さんは学生でしたか。",
-          "reading": "たなかさんはがくせいでしたか。",
-          "translation": "Was Mr Tanaka a student?",
+          "text": "山口さんは学生でしたか。",
+          "reading": "やまぐちさんはがくせいでしたか。",
+          "translation": "Was Mr Yamaguchi a student?",
           "focus": "でしたか",
           "distractors": [
             "ましたか",
@@ -308,9 +308,9 @@
         },
         {
           "id": "n5-ka-question-words-6",
-          "text": "山田さんの傘はどれですか。",
-          "reading": "やまださんのかさはどれですか。",
-          "translation": "Which umbrella is Ms Yamada's?",
+          "text": "中島さんの傘はどれですか。",
+          "reading": "なかじまさんのかさはどれですか。",
+          "translation": "Which umbrella is Ms Nakajima's?",
           "focus": "どれ",
           "distractors": [
             "誰",
@@ -451,9 +451,9 @@
         },
         {
           "id": "n5-mo-2",
-          "text": "田中さんも行きます。",
-          "reading": "たなかさんもいきます。",
-          "translation": "Mr Tanaka is going too.",
+          "text": "山口さんも行きます。",
+          "reading": "やまぐちさんもいきます。",
+          "translation": "Mr Yamaguchi is going too.",
           "focus": "も",
           "distractors": [
             "を",
@@ -566,9 +566,9 @@
         },
         {
           "id": "n5-kore-kono-4",
-          "text": "どの人が田中さんですか。",
-          "reading": "どのひとがたなかさんですか。",
-          "translation": "Which person is Mr Tanaka?",
+          "text": "どの人が山口さんですか。",
+          "reading": "どのひとがやまぐちさんですか。",
+          "translation": "Which person is Mr Yamaguchi?",
           "focus": "どの",
           "distractors": [
             "どれ",
@@ -613,8 +613,8 @@
       ],
       "body": [
         "ここ is here (near me), そこ is there (near you), あそこ is over there (far from us both), and どこ is where. They work like nouns: ここは私の部屋です, 駅はあそこです.",
-        "こちら, そちら, あちら and どちら are polite versions used by shop staff and in careful speech: エレベーターはあちらです. こちら also introduces a person politely: こちらは田中さんです. Never use ここ for a person.",
-        "The contrast example uses これ, which points to a thing, not a place. A common mistake is to introduce a person who is present with これ (これは田中さんです) instead of こちら, or to put a noun straight after どちら (どちら国) where どの or どちらの is needed."
+        "こちら, そちら, あちら and どちら are polite versions used by shop staff and in careful speech: エレベーターはあちらです. こちら also introduces a person politely: こちらは山口さんです. Never use ここ for a person.",
+        "The contrast example uses これ, which points to a thing, not a place. A common mistake is to introduce a person who is present with これ (これは山口さんです) instead of こちら, or to put a noun straight after どちら (どちら国) where どの or どちらの is needed."
       ],
       "examples": [
         {
@@ -643,9 +643,9 @@
         },
         {
           "id": "n5-koko-kochira-3",
-          "text": "そこは山田さんの席です。",
-          "reading": "そこはやまださんのせきです。",
-          "translation": "That is Ms Yamada's seat.",
+          "text": "そこは中島さんの席です。",
+          "reading": "そこはなかじまさんのせきです。",
+          "translation": "That is Ms Nakajima's seat.",
           "focus": "そこ",
           "distractors": [
             "その",
@@ -655,9 +655,9 @@
         },
         {
           "id": "n5-koko-kochira-4",
-          "text": "こちらは田中さんです。",
-          "reading": "こちらはたなかさんです。",
-          "translation": "This is Mr Tanaka.",
+          "text": "こちらは山口さんです。",
+          "reading": "こちらはやまぐちさんです。",
+          "translation": "This is Mr Yamaguchi.",
           "focus": "こちら",
           "distractors": [
             "この",
@@ -804,7 +804,7 @@
         "N は Place に あります / います"
       ],
       "body": [
-        "The place where something exists is marked with に: 公園に犬がいます. To be more exact, add a position word after the noun with の: 机の上 (on the desk), かばんの中 (in the bag), 駅の前 (in front of the station), 田中さんの横 (next to Mr Tanaka), いすの下 (under the chair). The whole phrase then takes に.",
+        "The place where something exists is marked with に: 公園に犬がいます. To be more exact, add a position word after the noun with の: 机の上 (on the desk), かばんの中 (in the bag), 駅の前 (in front of the station), 山口さんの横 (next to Mr Yamaguchi), いすの下 (under the chair). The whole phrase then takes に.",
         "Two orders are common. Place に N が あります introduces something new. N は Place に あります answers where a known thing is: 猫はいすの下にいます.",
         "The contrast example uses で, which marks the place where an action happens (駅の前で待ちます). Existence takes に, actions take で. A common mistake is 机の上であります."
       ],
@@ -847,9 +847,9 @@
         },
         {
           "id": "n5-ni-arimasu-position-4",
-          "text": "田中さんは山田さんの横にいます。",
-          "reading": "たなかさんはやまださんのよこにいます。",
-          "translation": "Mr Tanaka is next to Ms Yamada.",
+          "text": "山口さんは中島さんの横にいます。",
+          "reading": "やまぐちさんはなかじまさんのよこにいます。",
+          "translation": "Mr Yamaguchi is next to Ms Nakajima.",
           "focus": "横に",
           "distractors": [
             "横で",
@@ -1235,9 +1235,9 @@
         },
         {
           "id": "n5-ni-he-5",
-          "text": "田中さんは部屋へ入りました。",
-          "reading": "たなかさんはへやへはいりました。",
-          "translation": "Mr Tanaka went into the room.",
+          "text": "山口さんは部屋へ入りました。",
+          "reading": "やまぐちさんはへやへはいりました。",
+          "translation": "Mr Yamaguchi went into the room.",
           "focus": "へ",
           "distractors": [
             "の",
@@ -1363,7 +1363,7 @@
       ],
       "body": [
         "Between nouns, と means and, and it lists all the items: りんごとみかんを買いました means apples and mandarins, nothing else. It joins nouns only, never verbs, adjectives or sentences.",
-        "After a person, と means with, together with: 妹と公園へ行きました, 田中さんと話しました. For alone, Japanese uses 一人で instead.",
+        "After a person, と means with, together with: 妹と公園へ行きました, 山口さんと話しました. For alone, Japanese uses 一人で instead.",
         "The contrast example uses や, which lists examples and implies other things too (本や雑誌, books, magazines and so on). と gives the whole list, や gives a sample. A common mistake is to use と to join two sentences, the way English and does."
       ],
       "examples": [
@@ -1394,9 +1394,9 @@
         },
         {
           "id": "n5-to-3",
-          "text": "田中さんと話しました。",
-          "reading": "たなかさんとはなしました。",
-          "translation": "I talked with Mr Tanaka.",
+          "text": "山口さんと話しました。",
+          "reading": "やまぐちさんとはなしました。",
+          "translation": "I talked with Mr Yamaguchi.",
           "focus": "と",
           "distractors": [
             "を",
@@ -1679,9 +1679,9 @@
         },
         {
           "id": "n5-na-adjectives-4",
-          "text": "田中さんは有名な歌手です。",
-          "reading": "たなかさんはゆうめいなかしゅです。",
-          "translation": "Ms Tanaka is a famous singer.",
+          "text": "山口さんは有名な歌手です。",
+          "reading": "やまぐちさんはゆうめいなかしゅです。",
+          "translation": "Ms Yamaguchi is a famous singer.",
           "focus": "有名な",
           "distractors": [
             "有名い",
@@ -1846,9 +1846,9 @@
         },
         {
           "id": "n5-ga-suki-3",
-          "text": "山田さんは料理が上手です。",
-          "reading": "やまださんはりょうりがじょうずです。",
-          "translation": "Ms Yamada is good at cooking.",
+          "text": "中島さんは料理が上手です。",
+          "reading": "なかじまさんはりょうりがじょうずです。",
+          "translation": "Ms Nakajima is good at cooking.",
           "focus": "上手",
           "distractors": [
             "上手な",
@@ -1907,7 +1907,7 @@
         "A は B が A-い / A です"
       ],
       "body": [
-        "は sets the topic and the rest of the sentence comments on it: 東京は大きい町です. が presents the subject as new information, often for something you see happen: あ、バスが来ました. It also marks the subject that answers a question: どれが田中さんのかばんですか.",
+        "は sets the topic and the rest of the sentence comments on it: 東京は大きい町です. が presents the subject as new information, often for something you see happen: あ、バスが来ました. It also marks the subject that answers a question: どれが山口さんのかばんですか.",
         "Question words always take が as subject, never は: 誰が, どれが, 何が. In AはBが sentences, は gives the topic and が the part being described: 兄は背が高いです, my brother is tall (his height is high).",
         "The contrast example uses を after a question word that is the object (誰を呼びましたか). Who as a subject is 誰が, who as an object is 誰を. A common mistake is どれは or 誰は in a question."
       ],
@@ -1962,9 +1962,9 @@
         },
         {
           "id": "n5-wa-ga-5",
-          "text": "どれが田中さんのかばんですか。",
-          "reading": "どれがたなかさんのかばんですか。",
-          "translation": "Which one is Mr Tanaka's bag?",
+          "text": "どれが山口さんのかばんですか。",
+          "reading": "どれがやまぐちさんのかばんですか。",
+          "translation": "Which one is Mr Yamaguchi's bag?",
           "focus": "どれが",
           "distractors": [
             "どれは",
@@ -2386,9 +2386,9 @@
         },
         {
           "id": "n5-teiru-2",
-          "text": "田中さんは電話をしています。",
-          "reading": "たなかさんはでんわをしています。",
-          "translation": "Mr Tanaka is on the phone.",
+          "text": "山口さんは電話をしています。",
+          "reading": "やまぐちさんはでんわをしています。",
+          "translation": "Mr Yamaguchi is on the phone.",
           "focus": "しています",
           "distractors": [
             "するています",
@@ -2422,9 +2422,9 @@
         },
         {
           "id": "n5-teiru-5",
-          "text": "山田さんは結婚しています。",
-          "reading": "やまださんはけっこんしています。",
-          "translation": "Ms Yamada is married.",
+          "text": "中島さんは結婚しています。",
+          "reading": "なかじまさんはけっこんしています。",
+          "translation": "Ms Nakajima is married.",
           "focus": "しています",
           "distractors": [
             "するています",
@@ -2704,9 +2704,9 @@
         },
         {
           "id": "n5-kotogadekiru-6",
-          "text": "田中さんは英語ができます。",
-          "reading": "たなかさんはえいごができます。",
-          "translation": "Mr Tanaka can speak English.",
+          "text": "山口さんは英語ができます。",
+          "reading": "やまぐちさんはえいごができます。",
+          "translation": "Mr Yamaguchi can speak English.",
           "focus": "できます",
           "distractors": [
             "します",
@@ -3991,9 +3991,9 @@
         },
         {
           "id": "n4-to-omou-4",
-          "text": "田中さんは来ないと思います。",
-          "reading": "たなかさんはこないとおもいます。",
-          "translation": "I don't think Mr Tanaka will come.",
+          "text": "山口さんは来ないと思います。",
+          "reading": "やまぐちさんはこないとおもいます。",
+          "translation": "I don't think Mr Yamaguchi will come.",
           "focus": "来ない",
           "distractors": [
             "来なく",
@@ -4013,9 +4013,9 @@
         },
         {
           "id": "n4-to-omou-6",
-          "text": "山田さんは明日休むと言いました。",
-          "reading": "やまださんはあしたやすむといいました。",
-          "translation": "Ms Yamada said she would take tomorrow off.",
+          "text": "中島さんは明日休むと言いました。",
+          "reading": "なかじまさんはあしたやすむといいました。",
+          "translation": "Ms Nakajima said she would take tomorrow off.",
           "focus": "言いました",
           "distractors": [
             "言いです",
@@ -4173,9 +4173,9 @@
         },
         {
           "id": "n4-potential-5",
-          "text": "田中さんは英語を話すことができます。",
-          "reading": "たなかさんはえいごをはなすことができます。",
-          "translation": "Mr Tanaka can speak English.",
+          "text": "山口さんは英語を話すことができます。",
+          "reading": "やまぐちさんはえいごをはなすことができます。",
+          "translation": "Mr Yamaguchi can speak English.",
           "focus": "ことができます",
           "distractors": [
             "ことをできます",
@@ -5068,22 +5068,22 @@
       "id": "n4-nara",
       "level": "n4",
       "title": "なら: if that is the case, as for",
-      "summary": "なら picks up a topic or a plan, often one the listener just mentioned, and gives advice or information about it: 駅へ行くなら, 田中さんなら.",
+      "summary": "なら picks up a topic or a plan, often one the listener just mentioned, and gives advice or information about it: 駅へ行くなら, 山口さんなら.",
       "pattern": [
         "N + なら (as for N, if it's N)",
         "V-dict / A-い + なら、advice or opinion"
       ],
       "body": [
-        "なら follows a noun directly (田中さんなら, 日本料理なら), a な-adjective stem, an い-adjective (寒いなら) or a verb's dictionary form (行くなら, 運転するなら). It does not take だ: 寒いだら and 田中さんだら are wrong.",
-        "Unlike と, ば and たら, なら does not say A happens first. 駅へ行くなら、このバスが便利です gives advice for a plan the listener has; the bus comes before arriving. With a noun, なら answers a question about that thing: if it's Mr Tanaka you want, he's in the library.",
+        "なら follows a noun directly (山口さんなら, 日本料理なら), a な-adjective stem, an い-adjective (寒いなら) or a verb's dictionary form (行くなら, 運転するなら). It does not take だ: 寒いだら and 山口さんだら are wrong.",
+        "Unlike と, ば and たら, なら does not say A happens first. 駅へ行くなら、このバスが便利です gives advice for a plan the listener has; the bus comes before arriving. With a noun, なら answers a question about that thing: if it's Mr Yamaguchi you want, he's in the library.",
         "The contrast example uses と for a habit that always follows (朝起きると、まずコーヒーを飲みます); なら cannot express a regular sequence like this. A common mistake is to use なら when A must happen before B: 駅に着いたら、電話してください asks for a call after arriving, while 駅に着くなら would ask for one before you get there."
       ],
       "examples": [
         {
           "id": "n4-nara-1",
-          "text": "田中さんなら、図書館にいますよ。",
-          "reading": "たなかさんなら、としょかんにいますよ。",
-          "translation": "If you're looking for Mr Tanaka, he's in the library.",
+          "text": "山口さんなら、図書館にいますよ。",
+          "reading": "やまぐちさんなら、としょかんにいますよ。",
+          "translation": "If you're looking for Mr Yamaguchi, he's in the library.",
           "focus": "なら",
           "distractors": [
             "なれば",
@@ -5640,9 +5640,9 @@
         },
         {
           "id": "n4-te-iku-kuru-6",
-          "text": "田中さんは今、図書館で勉強しています。",
-          "reading": "たなかさんはいま、としょかんでべんきょうしています。",
-          "translation": "Ms Tanaka is studying in the library now.",
+          "text": "山口さんは今、図書館で勉強しています。",
+          "reading": "やまぐちさんはいま、としょかんでべんきょうしています。",
+          "translation": "Ms Yamaguchi is studying in the library now.",
           "focus": "います",
           "distractors": [
             "あります",
@@ -5775,9 +5775,9 @@
         },
         {
           "id": "n4-shi-3",
-          "text": "田中さんは親切だし、頭もいいです。",
-          "reading": "たなかさんはしんせつだし、あたまもいいです。",
-          "translation": "Mr Tanaka is kind, and smart too.",
+          "text": "山口さんは親切だし、頭もいいです。",
+          "reading": "やまぐちさんはしんせつだし、あたまもいいです。",
+          "translation": "Mr Yamaguchi is kind, and smart too.",
           "focus": "親切だし",
           "distractors": [
             "親切なし",
@@ -6122,9 +6122,9 @@
         },
         {
           "id": "n4-sou-hearsay-2",
-          "text": "姉の話では、山田さんは来月結婚するそうです。",
-          "reading": "あねのはなしでは、やまださんはらいげつけっこんするそうです。",
-          "translation": "According to my sister, Mr Yamada is getting married next month.",
+          "text": "姉の話では、中島さんは来月結婚するそうです。",
+          "reading": "あねのはなしでは、なかじまさんはらいげつけっこんするそうです。",
+          "translation": "According to my sister, Mr Nakajima is getting married next month.",
           "focus": "するそう",
           "distractors": [
             "すそう",
@@ -6215,9 +6215,9 @@
         },
         {
           "id": "n4-you-mitai-2",
-          "text": "田中さんは風邪のようです。",
-          "reading": "たなかさんはかぜのようです。",
-          "translation": "Mr Tanaka seems to have a cold.",
+          "text": "山口さんは風邪のようです。",
+          "reading": "やまぐちさんはかぜのようです。",
+          "translation": "Mr Yamaguchi seems to have a cold.",
           "focus": "のよう",
           "distractors": [
             "だよう",
@@ -6423,9 +6423,9 @@
         },
         {
           "id": "n4-kamoshirenai-3",
-          "text": "木村さんは暇かもしれないよ。",
-          "reading": "きむらさんはひまかもしれないよ。",
-          "translation": "Kimura might be free, you know.",
+          "text": "小川さんは暇かもしれないよ。",
+          "reading": "おがわさんはひまかもしれないよ。",
+          "translation": "Ogawa might be free, you know.",
           "focus": "暇かも",
           "distractors": [
             "暇なかも",
@@ -6594,9 +6594,9 @@
         },
         {
           "id": "n4-hazu-2",
-          "text": "田中さんは休みのはずです。",
-          "reading": "たなかさんはやすみのはずです。",
-          "translation": "Mr Tanaka is supposed to be off.",
+          "text": "山口さんは休みのはずです。",
+          "reading": "やまぐちさんはやすみのはずです。",
+          "translation": "Mr Yamaguchi is supposed to be off.",
           "focus": "のはず",
           "distractors": [
             "なはず",
@@ -7226,9 +7226,9 @@
         },
         {
           "id": "n4-ka-douka-7",
-          "text": "田中さんはもう帰ったと思います。",
-          "reading": "たなかさんはもうかえったとおもいます。",
-          "translation": "I think Mr Tanaka has already gone home.",
+          "text": "山口さんはもう帰ったと思います。",
+          "reading": "やまぐちさんはもうかえったとおもいます。",
+          "translation": "I think Mr Yamaguchi has already gone home.",
           "focus": "と",
           "distractors": [
             "か",
@@ -7294,9 +7294,9 @@
         },
         {
           "id": "n4-ageru-kureru-morau-4",
-          "text": "田中さんは山田さんにチョコレートをあげました。",
-          "reading": "たなかさんはやまださんにチョコレートをあげました。",
-          "translation": "Mr Tanaka gave Ms Yamada some chocolate.",
+          "text": "山口さんは中島さんにチョコレートをあげました。",
+          "reading": "やまぐちさんはなかじまさんにチョコレートをあげました。",
+          "translation": "Mr Yamaguchi gave Ms Nakajima some chocolate.",
           "focus": "あげました",
           "distractors": [
             "くれました",
@@ -7397,9 +7397,9 @@
         },
         {
           "id": "n4-te-ageru-kureru-morau-5",
-          "text": "田中さんに駅までの道を教えてもらいました。",
-          "reading": "たなかさんにえきまでのみちをおしえてもらいました。",
-          "translation": "Mr Tanaka showed me the way to the station.",
+          "text": "山口さんに駅までの道を教えてもらいました。",
+          "reading": "やまぐちさんにえきまでのみちをおしえてもらいました。",
+          "translation": "Mr Yamaguchi showed me the way to the station.",
           "focus": "に",
           "distractors": [
             "を",
@@ -8386,9 +8386,9 @@
       "examples": [
         {
           "id": "n3-wake-ga-nai-1",
-          "text": "あの真面目な田中さんが嘘をつくわけがない。",
-          "reading": "あのまじめなたなかさんがうそをつくわけがない。",
-          "translation": "There's no way serious Tanaka would lie.",
+          "text": "あの真面目な山口さんが嘘をつくわけがない。",
+          "reading": "あのまじめなやまぐちさんがうそをつくわけがない。",
+          "translation": "There's no way serious Yamaguchi would lie.",
           "focus": "わけがない",
           "distractors": [
             "わけだ",
@@ -8590,9 +8590,9 @@
         },
         {
           "id": "n3-you-ni-iu-3",
-          "text": "田中さんに、会議に遅れないように伝えてください。",
-          "reading": "たなかさんに、かいぎにおくれないようにつたえてください。",
-          "translation": "Please tell Tanaka not to be late for the meeting.",
+          "text": "山口さんに、会議に遅れないように伝えてください。",
+          "reading": "やまぐちさんに、かいぎにおくれないようにつたえてください。",
+          "translation": "Please tell Yamaguchi not to be late for the meeting.",
           "focus": "ないように",
           "distractors": [
             "なくて",
@@ -8922,15 +8922,15 @@
       ],
       "body": [
         "謙譲語 (humble language) is used for your own actions, or your group's, when you speak to someone you respect. Common verbs: 参る (go, come), 申す (say, also for your name), いたす (do; also in ご連絡いたします), いただく (receive, eat), 拝見する (see, read), 伺う (visit, ask), おる (be; ております after a て form).",
-        "Humble verbs do not raise the listener directly; they make the speaker smaller. In business they are everywhere: 山田と申します, 後ほどご連絡いたします, 東京に住んでおります.",
+        "Humble verbs do not raise the listener directly; they make the speaker smaller. In business they are everywhere: 中島と申します, 後ほどご連絡いたします, 東京に住んでおります.",
         "The contrast example uses the respectful いらっしゃる for the teacher. A common mistake is to use a humble verb for the listener, as in 先生は何時に参りますか; for someone else's action use the respectful verb."
       ],
       "examples": [
         {
           "id": "n3-kenjougo-1",
-          "text": "はじめまして、山田と申します。",
-          "reading": "はじめまして、やまだともうします。",
-          "translation": "How do you do? My name is Yamada.",
+          "text": "はじめまして、中島と申します。",
+          "reading": "はじめまして、なかじまともうします。",
+          "translation": "How do you do? My name is Nakajima.",
           "focus": "申します",
           "distractors": [
             "おっしゃいます",
@@ -10879,9 +10879,9 @@
         },
         {
           "id": "n3-te-bakari-iru-5",
-          "text": "田中さんは会議中、スマホを見てばかりいた。",
-          "reading": "たなかさんはかいぎちゅう、スマホをみてばかりいた。",
-          "translation": "Tanaka kept looking at his phone all through the meeting.",
+          "text": "山口さんは会議中、スマホを見てばかりいた。",
+          "reading": "やまぐちさんはかいぎちゅう、スマホをみてばかりいた。",
+          "translation": "Yamaguchi kept looking at his phone all through the meeting.",
           "focus": "ばかりいた",
           "distractors": [
             "ばかりした",
@@ -11394,9 +11394,9 @@
         },
         {
           "id": "n3-kke-3",
-          "text": "田中さんも来るんでしたっけ？",
-          "reading": "たなかさんもくるんでしたっけ？",
-          "translation": "Is Tanaka coming too? I've forgotten.",
+          "text": "山口さんも来るんでしたっけ？",
+          "reading": "やまぐちさんもくるんでしたっけ？",
+          "translation": "Is Yamaguchi coming too? I've forgotten.",
           "focus": "っけ",
           "distractors": [
             "ぞ",
@@ -11452,16 +11452,16 @@
         "N って 〜 (topic)"
       ],
       "body": [
-        "As a quote marker, って follows a plain sentence and stands for と or と言っていた: 明日は雨が降るって言ってたよ. At the end of a sentence it reports what someone said: 田中さん、今日は休むって. As a topic marker, って follows a noun and means as for or what is: 日本の夏って、本当に暑いね, 「ハンコ」って何ですか. In 山田さんって人 it means a person called Yamada.",
+        "As a quote marker, って follows a plain sentence and stands for と or と言っていた: 明日は雨が降るって言ってたよ. At the end of a sentence it reports what someone said: 山口さん、今日は休むって. As a topic marker, って follows a noun and means as for or what is: 日本の夏って、本当に暑いね, 「ハンコ」って何ですか. In 中島さんって人 it means a person called Nakajima.",
         "The contrast example uses と, the neutral quote marker of written and polite speech: 部長は明日来ると言いました. って means the same but is casual, so it is avoided in formal writing.",
         "A common mistake is to use って in a formal report or essay. Use と or というのは there."
       ],
       "examples": [
         {
           "id": "n3-tte-1",
-          "text": "田中さん、今日は休むって。",
-          "reading": "たなかさん、きょうはやすむって。",
-          "translation": "Tanaka says he's taking today off.",
+          "text": "山口さん、今日は休むって。",
+          "reading": "やまぐちさん、きょうはやすむって。",
+          "translation": "Yamaguchi says he's taking today off.",
           "focus": "って",
           "distractors": [
             "ほど",
@@ -11507,9 +11507,9 @@
         },
         {
           "id": "n3-tte-5",
-          "text": "山田さんって人から電話があったよ。",
-          "reading": "やまださんってひとからでんわがあったよ。",
-          "translation": "You got a call from someone called Yamada.",
+          "text": "中島さんって人から電話があったよ。",
+          "reading": "なかじまさんってひとからでんわがあったよ。",
+          "translation": "You got a call from someone called Nakajima.",
           "focus": "って",
           "distractors": [
             "を",
@@ -11587,9 +11587,9 @@
         },
         {
           "id": "n3-toka-4",
-          "text": "鈴木さん、来月結婚するとか。",
-          "reading": "すずきさん、らいげつけっこんするとか。",
-          "translation": "I hear Suzuki is getting married next month.",
+          "text": "青木さん、来月結婚するとか。",
+          "reading": "あおきさん、らいげつけっこんするとか。",
+          "translation": "I hear Aoki is getting married next month.",
           "focus": "とか",
           "distractors": [
             "ほど",
@@ -12687,9 +12687,9 @@
         },
         {
           "id": "n3-ni-chigai-nai-5",
-          "text": "田中さんは今ごろ、空港に着いたに違いない。",
-          "reading": "たなかさんはいまごろ、くうこうについたにちがいない。",
-          "translation": "Tanaka must have reached the airport by now.",
+          "text": "山口さんは今ごろ、空港に着いたに違いない。",
+          "reading": "やまぐちさんはいまごろ、くうこうについたにちがいない。",
+          "translation": "Yamaguchi must have reached the airport by now.",
           "focus": "着いた",
           "distractors": [
             "着いて",
@@ -13025,9 +13025,9 @@
         },
         {
           "id": "n3-ppoi-rashii-3",
-          "text": "白っぽいシャツを着ている人が田中さんです。",
-          "reading": "しろっぽいシャツをきているひとがたなかさんです。",
-          "translation": "The person in the whitish shirt is Mr. Tanaka.",
+          "text": "白っぽいシャツを着ている人が山口さんです。",
+          "reading": "しろっぽいシャツをきているひとがやまぐちさんです。",
+          "translation": "The person in the whitish shirt is Mr. Yamaguchi.",
           "focus": "っぽい",
           "distractors": [
             "らしい",
@@ -16774,9 +16774,9 @@
         },
         {
           "id": "n2-ni-kakete-wa-3",
-          "text": "交渉にかけては、山田さんが社内で一番うまい。",
-          "reading": "こうしょうにかけては、やまださんがしゃないでいちばんうまい。",
-          "translation": "When it comes to negotiating, Yamada is the best in the company.",
+          "text": "交渉にかけては、中島さんが社内で一番うまい。",
+          "reading": "こうしょうにかけては、なかじまさんがしゃないでいちばんうまい。",
+          "translation": "When it comes to negotiating, Nakajima is the best in the company.",
           "focus": "うまい",
           "distractors": [
             "下手だ",
@@ -17211,9 +17211,9 @@
       "examples": [
         {
           "id": "n2-no-moto-de-1",
-          "text": "田中先生のもとで、研究を続けている。",
-          "reading": "たなかせんせいのもとで、けんきゅうをつづけている。",
-          "translation": "I’m continuing my research under Professor Tanaka.",
+          "text": "山口先生のもとで、研究を続けている。",
+          "reading": "やまぐちせんせいのもとで、けんきゅうをつづけている。",
+          "translation": "I’m continuing my research under Professor Yamaguchi.",
           "focus": "のもとで",
           "distractors": [
             "にもとで",

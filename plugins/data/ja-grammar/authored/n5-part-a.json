@@ -40,9 +40,9 @@
           },
           {
             "id": "n5-desu-2",
-            "text": "田中さんは先生です。",
-            "reading": "たなかさんはせんせいです。",
-            "translation": "Mr Tanaka is a teacher.",
+            "text": "山口さんは先生です。",
+            "reading": "やまぐちさんはせんせいです。",
+            "translation": "Mr Yamaguchi is a teacher.",
             "focus": "は",
             "distractors": [
               "を",
@@ -74,9 +74,9 @@
           },
           {
             "id": "n5-desu-4",
-            "text": "山田さんは会社員です。",
-            "reading": "やまださんはかいしゃいんです。",
-            "translation": "Ms Yamada is an office worker.",
+            "text": "中島さんは会社員です。",
+            "reading": "なかじまさんはかいしゃいんです。",
+            "translation": "Ms Nakajima is an office worker.",
             "focus": "です",
             "distractors": [
               "ます",
@@ -198,9 +198,9 @@
           },
           {
             "id": "n5-dewa-arimasen-4",
-            "text": "田中さんは学生でしたか。",
-            "reading": "たなかさんはがくせいでしたか。",
-            "translation": "Was Mr Tanaka a student?",
+            "text": "山口さんは学生でしたか。",
+            "reading": "やまぐちさんはがくせいでしたか。",
+            "translation": "Was Mr Yamaguchi a student?",
             "focus": "でしたか",
             "distractors": [
               "ましたか",
@@ -355,9 +355,9 @@
           },
           {
             "id": "n5-ka-question-words-6",
-            "text": "山田さんの傘はどれですか。",
-            "reading": "やまださんのかさはどれですか。",
-            "translation": "Which umbrella is Ms Yamada's?",
+            "text": "中島さんの傘はどれですか。",
+            "reading": "なかじまさんのかさはどれですか。",
+            "translation": "Which umbrella is Ms Nakajima's?",
             "focus": "どれ",
             "distractors": [
               "誰",
@@ -551,9 +551,9 @@
           },
           {
             "id": "n5-mo-2",
-            "text": "田中さんも行きます。",
-            "reading": "たなかさんもいきます。",
-            "translation": "Mr Tanaka is going too.",
+            "text": "山口さんも行きます。",
+            "reading": "やまぐちさんもいきます。",
+            "translation": "Mr Yamaguchi is going too.",
             "focus": "も",
             "distractors": [
               "を",
@@ -710,9 +710,9 @@
           },
           {
             "id": "n5-kore-kono-4",
-            "text": "どの人が田中さんですか。",
-            "reading": "どのひとがたなかさんですか。",
-            "translation": "Which person is Mr Tanaka?",
+            "text": "どの人が山口さんですか。",
+            "reading": "どのひとがやまぐちさんですか。",
+            "translation": "Which person is Mr Yamaguchi?",
             "focus": "どの",
             "distractors": [
               "どれ",
@@ -776,8 +776,8 @@
         ],
         "body": [
           "ここ is here (near me), そこ is there (near you), あそこ is over there (far from us both), and どこ is where. They work like nouns: ここは私の部屋です, 駅はあそこです.",
-          "こちら, そちら, あちら and どちら are polite versions used by shop staff and in careful speech: エレベーターはあちらです. こちら also introduces a person politely: こちらは田中さんです. Never use ここ for a person.",
-          "The contrast example uses これ, which points to a thing, not a place. A common mistake is to introduce a person who is present with これ (これは田中さんです) instead of こちら, or to put a noun straight after どちら (どちら国) where どの or どちらの is needed."
+          "こちら, そちら, あちら and どちら are polite versions used by shop staff and in careful speech: エレベーターはあちらです. こちら also introduces a person politely: こちらは山口さんです. Never use ここ for a person.",
+          "The contrast example uses これ, which points to a thing, not a place. A common mistake is to introduce a person who is present with これ (これは山口さんです) instead of こちら, or to put a noun straight after どちら (どちら国) where どの or どちらの is needed."
         ],
         "examples": [
           {
@@ -816,9 +816,9 @@
           },
           {
             "id": "n5-koko-kochira-3",
-            "text": "そこは山田さんの席です。",
-            "reading": "そこはやまださんのせきです。",
-            "translation": "That is Ms Yamada's seat.",
+            "text": "そこは中島さんの席です。",
+            "reading": "そこはなかじまさんのせきです。",
+            "translation": "That is Ms Nakajima's seat.",
             "focus": "そこ",
             "distractors": [
               "その",
@@ -833,9 +833,9 @@
           },
           {
             "id": "n5-koko-kochira-4",
-            "text": "こちらは田中さんです。",
-            "reading": "こちらはたなかさんです。",
-            "translation": "This is Mr Tanaka.",
+            "text": "こちらは山口さんです。",
+            "reading": "こちらはやまぐちさんです。",
+            "translation": "This is Mr Yamaguchi.",
             "focus": "こちら",
             "distractors": [
               "この",
@@ -1040,7 +1040,7 @@
           "N は Place に あります / います"
         ],
         "body": [
-          "The place where something exists is marked with に: 公園に犬がいます. To be more exact, add a position word after the noun with の: 机の上 (on the desk), かばんの中 (in the bag), 駅の前 (in front of the station), 田中さんの横 (next to Mr Tanaka), いすの下 (under the chair). The whole phrase then takes に.",
+          "The place where something exists is marked with に: 公園に犬がいます. To be more exact, add a position word after the noun with の: 机の上 (on the desk), かばんの中 (in the bag), 駅の前 (in front of the station), 山口さんの横 (next to Mr Yamaguchi), いすの下 (under the chair). The whole phrase then takes に.",
           "Two orders are common. Place に N が あります introduces something new. N は Place に あります answers where a known thing is: 猫はいすの下にいます.",
           "The contrast example uses で, which marks the place where an action happens (駅の前で待ちます). Existence takes に, actions take で. A common mistake is 机の上であります."
         ],
@@ -1098,9 +1098,9 @@
           },
           {
             "id": "n5-ni-arimasu-position-4",
-            "text": "田中さんは山田さんの横にいます。",
-            "reading": "たなかさんはやまださんのよこにいます。",
-            "translation": "Mr Tanaka is next to Ms Yamada.",
+            "text": "山口さんは中島さんの横にいます。",
+            "reading": "やまぐちさんはなかじまさんのよこにいます。",
+            "translation": "Mr Yamaguchi is next to Ms Nakajima.",
             "focus": "横に",
             "distractors": [
               "横で",
@@ -1632,9 +1632,9 @@
           },
           {
             "id": "n5-ni-he-5",
-            "text": "田中さんは部屋へ入りました。",
-            "reading": "たなかさんはへやへはいりました。",
-            "translation": "Mr Tanaka went into the room.",
+            "text": "山口さんは部屋へ入りました。",
+            "reading": "やまぐちさんはへやへはいりました。",
+            "translation": "Mr Yamaguchi went into the room.",
             "focus": "へ",
             "distractors": [
               "の",
@@ -1808,7 +1808,7 @@
         ],
         "body": [
           "Between nouns, と means and, and it lists all the items: りんごとみかんを買いました means apples and mandarins, nothing else. It joins nouns only, never verbs, adjectives or sentences.",
-          "After a person, と means with, together with: 妹と公園へ行きました, 田中さんと話しました. For alone, Japanese uses 一人で instead.",
+          "After a person, と means with, together with: 妹と公園へ行きました, 山口さんと話しました. For alone, Japanese uses 一人で instead.",
           "The contrast example uses や, which lists examples and implies other things too (本や雑誌, books, magazines and so on). と gives the whole list, や gives a sample. A common mistake is to use と to join two sentences, the way English and does."
         ],
         "examples": [
@@ -1849,9 +1849,9 @@
           },
           {
             "id": "n5-to-3",
-            "text": "田中さんと話しました。",
-            "reading": "たなかさんとはなしました。",
-            "translation": "I talked with Mr Tanaka.",
+            "text": "山口さんと話しました。",
+            "reading": "やまぐちさんとはなしました。",
+            "translation": "I talked with Mr Yamaguchi.",
             "focus": "と",
             "distractors": [
               "を",
@@ -2241,9 +2241,9 @@
           },
           {
             "id": "n5-na-adjectives-4",
-            "text": "田中さんは有名な歌手です。",
-            "reading": "たなかさんはゆうめいなかしゅです。",
-            "translation": "Ms Tanaka is a famous singer.",
+            "text": "山口さんは有名な歌手です。",
+            "reading": "やまぐちさんはゆうめいなかしゅです。",
+            "translation": "Ms Yamaguchi is a famous singer.",
             "focus": "有名な",
             "distractors": [
               "有名い",
@@ -2471,9 +2471,9 @@
           },
           {
             "id": "n5-ga-suki-3",
-            "text": "山田さんは料理が上手です。",
-            "reading": "やまださんはりょうりがじょうずです。",
-            "translation": "Ms Yamada is good at cooking.",
+            "text": "中島さんは料理が上手です。",
+            "reading": "なかじまさんはりょうりがじょうずです。",
+            "translation": "Ms Nakajima is good at cooking.",
             "focus": "上手",
             "distractors": [
               "上手な",
@@ -2556,7 +2556,7 @@
           "A は B が A-い / A です"
         ],
         "body": [
-          "は sets the topic and the rest of the sentence comments on it: 東京は大きい町です. が presents the subject as new information, often for something you see happen: あ、バスが来ました. It also marks the subject that answers a question: どれが田中さんのかばんですか.",
+          "は sets the topic and the rest of the sentence comments on it: 東京は大きい町です. が presents the subject as new information, often for something you see happen: あ、バスが来ました. It also marks the subject that answers a question: どれが山口さんのかばんですか.",
           "Question words always take が as subject, never は: 誰が, どれが, 何が. In AはBが sentences, は gives the topic and が the part being described: 兄は背が高いです, my brother is tall (his height is high).",
           "The contrast example uses を after a question word that is the object (誰を呼びましたか). Who as a subject is 誰が, who as an object is 誰を. A common mistake is どれは or 誰は in a question."
         ],
@@ -2631,9 +2631,9 @@
           },
           {
             "id": "n5-wa-ga-5",
-            "text": "どれが田中さんのかばんですか。",
-            "reading": "どれがたなかさんのかばんですか。",
-            "translation": "Which one is Mr Tanaka's bag?",
+            "text": "どれが山口さんのかばんですか。",
+            "reading": "どれがやまぐちさんのかばんですか。",
+            "translation": "Which one is Mr Yamaguchi's bag?",
             "focus": "どれが",
             "distractors": [
               "どれは",
