@@ -285,37 +285,37 @@ and no syllabus text is reproduced. The syllabus grants no reuse licence.
 
 | # | Syllabus row (qinqin’s words) | Lesson(s) |
 |---|-------------------------------|-----------|
-| 1 |  | not authored yet |
-| 2 |  | not authored yet |
-| 3 |  | not authored yet |
-| 4 |  | not authored yet |
-| 5 |  | not authored yet |
-| 6 |  | not authored yet |
-| 7 |  | not authored yet |
-| 8 |  | not authored yet |
-| 9 |  | not authored yet |
-| 10 |  | not authored yet |
-| 11 |  | not authored yet |
-| 12 |  | not authored yet |
-| 13 |  | not authored yet |
-| 14 |  | not authored yet |
-| 15 |  | not authored yet |
-| 16 |  | not authored yet |
-| 17 |  | not authored yet |
-| 18 |  | not authored yet |
-| 19 |  | not authored yet |
-| 20 |  | not authored yet |
-| 21 |  | not authored yet |
-| 22 |  | not authored yet |
-| 23 |  | not authored yet |
-| 24 |  | not authored yet |
-| 25 |  | not authored yet |
-| 26 |  | not authored yet |
-| 27 |  | not authored yet |
-| 28 |  | not authored yet |
-| 29 |  | not authored yet |
-| 30 |  | not authored yet |
-| 31 |  | not authored yet |
+| 1 | 类前缀 (超-, 多-, 反-, 无-, 亚-, 准-) | hsk6-class-prefixes |
+| 2 | 类后缀 (-化, -式, -型, -性) | hsk6-class-suffixes |
+| 3 | 人称代词 (人家) | hsk6-renjia |
+| 4 | 专用名量词 (串, 滴, 枝, 扇, 卷) | hsk6-measure-words-specific |
+| 5 | 动量词 (番) | hsk6-fan |
+| 6 | 程度副词 (特, 异常, 较为) | hsk6-degree-te-yichang-jiaowei |
+| 7 | 范围副词 (净, 一同, 大都) | hsk6-scope-jing-yitong-dadou |
+| 8 | 时间副词 (一时, 不时, 仍旧, 依旧, 一向) | hsk6-time-adverbs |
+| 9 | 频率副词 (一再, 再三) | hsk6-yizai-zaisan |
+| 10 | 方式副词 (不禁, 赶忙, 特地, 特意, 偷偷) | hsk6-manner-adverbs |
+| 11 | 否定副词 (未必) | hsk6-weibi |
+| 12 | 语气副词 (恰好, 倒是, 干脆, 明明, 总算) | hsk6-modal-adverbs |
+| 13 | 介词: 时间、处所 (于) | hsk6-yu |
+| 14 | 介词: 引出对象 (至于) | hsk6-zhiyu |
+| 15 | 介词: 原因 (因) | hsk6-yin |
+| 16 | 介词: 排除 (除) | hsk6-chu |
+| 17 | 连词 (不料) | hsk6-buliao |
+| 18 | 结构助词 (所) | hsk6-suo |
+| 19 | 语气助词 (啦, 嘛) | hsk6-la-ma |
+| 20 | 其他助词 (也好) | hsk6-yehao |
+| 21 | 四字格 (A这A那, 左A右B) | hsk6-four-char-zhe-na-zuo-you |
+| 22 | 固定短语 (好(不)容易, 那倒(也)是, 算了, 得了) | hsk6-fixed-phrases |
+| 23 | 固定格式: A一+量词，B一+量词; 东一A，西一A / 固定格式: 到……为止; 早(也)不X，晚(也)不X; 不X不……，一X…… / 固定格式: 好你个X; 看/瞧+把+宾语+X得; 看你X的/瞧他X的; X到Y头上来了 / 固定格式: 放着X不Y; X了就X了; 这也不X，那也不Y; X归X，Y归Y | hsk6-format-scattered, hsk6-format-time-limits, hsk6-format-exclamations, hsk6-format-attitudes |
+| 24 | 程度补语 (V/Adj + 透 + 了) | hsk6-tou-le |
+| 25 | "把"字句4 (1): 主语为非生物体 / "把"字句4 (2): 宾语为施事 | hsk6-ba-nonliving-subject, hsk6-ba-agent-object |
+| 26 | 并列复句 (一时……一时……) | hsk6-yishi-yishi |
+| 27 | 选择复句 (要么……，要么……) | hsk6-yaome |
+| 28 | 转折复句 (虽……，但/可/却/也……) | hsk6-sui-dan |
+| 29 | 条件复句: 凡是……，都…… / 条件复句: 除非……，才……; 除非……，否则/不然…… | hsk6-fanshi-dou, hsk6-chufei |
+| 30 | 让步复句 (就算……，也……) | hsk6-jiusuan-ye |
+| 31 | 目的复句 (……，以便……) | hsk6-yibian |
 
 ## Level 7 · Mastery
 

@@ -17,7 +17,7 @@
         "examples": [
           { "id": "hsk1-prefixes-1", "text": "他是小学生。", "reading": "tā shì xiǎoxuéshēng.", "translation": "He is a primary-school pupil.", "focus": "小", "distractors": ["第", "很", "吗"], "contrast": false, "kinds": ["similar", "clearly-wrong"] },
           { "id": "hsk1-prefixes-2", "text": "小王是我的同学。", "reading": "Xiǎo Wáng shì wǒ de tóngxué.", "translation": "Xiao Wang is my classmate.", "focus": "小", "distractors": ["第", "很", "吗"], "contrast": false, "kinds": ["similar", "clearly-wrong"] },
-          { "id": "hsk1-prefixes-3", "text": "这是我的第一本书。", "reading": "zhè shì wǒ de dì-yì běn shū.", "translation": "This is my first book.", "focus": "第", "distractors": ["小", "很", "吗"], "contrast": false, "kinds": ["similar", "clearly-wrong"] },
+          { "id": "hsk1-prefixes-3", "text": "这是我的第一本书。", "reading": "zhè shì wǒ de dì-yī běn shū.", "translation": "This is my first book.", "focus": "第", "distractors": ["小", "很", "吗"], "contrast": false, "kinds": ["similar", "clearly-wrong"] },
           { "id": "hsk1-prefixes-4", "text": "小朋友们在唱歌。", "reading": "xiǎopéngyoumen zài chànggē.", "translation": "The children are singing.", "focus": "小", "distractors": ["第", "很", "吗"], "contrast": false, "kinds": ["similar", "clearly-wrong"] },
           { "id": "hsk1-prefixes-5", "text": "同学们好！", "reading": "tóngxuémen hǎo!", "translation": "Hello, classmates!", "focus": "们", "distractors": ["第", "吗", "在"], "contrast": true, "kinds": ["similar", "clearly-wrong"] }
         ]
@@ -196,7 +196,7 @@
         "pattern": ["numeral (+ measure word) + noun", "半 + measure word + noun"],
         "body": [
           "一, 二, 三, 四, 五, 六, 七, 八, 九, 十, 百, 千 and 零 are the numerals. Before a measure word, two is 两, not 二: 两个人, 两本书. 二 is used inside numbers: 十二, 二十. 半 (bàn) means half: 半个苹果, 两点半. 零 marks an empty digit.",
-          "The contrast example uses the prefix 第, which makes an ordinal (第一 = first), not a count. 一 reads yī alone or at the end of a number (十一, 第一); before another syllable it changes: yí before a fourth tone (一个 yí ge, 第一个 dì-yí ge), yì before other tones (一本 yì běn, 第一本 dì-yì běn)."
+          "The contrast example uses the prefix 第, which makes an ordinal (第一 = first), not a count. 一 reads yī alone, at the end of a number (十一) and in ordinals (第一 dì-yī, 第一本 dì-yī běn, 第一个 dì-yī ge); before another syllable in a count it changes: yí before a fourth tone (一个 yí ge), yì before other tones (一本 yì běn)."
         ],
         "examples": [
           { "id": "hsk1-numerals-1", "text": "我有两个姐姐。", "reading": "wǒ yǒu liǎng ge jiějie.", "translation": "I have two older sisters.", "focus": "两", "distractors": ["二", "吗", "很"], "contrast": false, "kinds": ["similar", "clearly-wrong"] },
@@ -204,7 +204,7 @@
           { "id": "hsk1-numerals-3", "text": "我吃了半个苹果。", "reading": "wǒ chī le bàn ge píngguǒ.", "translation": "I ate half an apple.", "focus": "半", "distractors": ["二", "吗", "很"], "contrast": false, "kinds": ["similar", "clearly-wrong"] },
           { "id": "hsk1-numerals-4", "text": "这个手机一千元。", "reading": "zhège shǒujī yì qiān yuán.", "translation": "This phone costs a thousand yuan.", "focus": "千", "distractors": ["吗", "很", "的"], "contrast": false, "kinds": ["clearly-wrong"] },
           { "id": "hsk1-numerals-5", "text": "我一天吃三个苹果。", "reading": "wǒ yì tiān chī sān ge píngguǒ.", "translation": "I eat three apples a day.", "focus": "一", "distractors": ["吗", "很", "的"], "contrast": false, "kinds": ["clearly-wrong"] },
-          { "id": "hsk1-numerals-6", "text": "他是我的第一个朋友。", "reading": "tā shì wǒ de dì-yí ge péngyou.", "translation": "He is my first friend.", "focus": "第", "distractors": ["小", "吗", "很"], "contrast": true, "kinds": ["similar", "clearly-wrong"] }
+          { "id": "hsk1-numerals-6", "text": "他是我的第一个朋友。", "reading": "tā shì wǒ de dì-yī ge péngyou.", "translation": "He is my first friend.", "focus": "第", "distractors": ["小", "吗", "很"], "contrast": true, "kinds": ["similar", "clearly-wrong"] }
         ]
       }
     },
@@ -1068,7 +1068,7 @@
         "examples": [
           { "id": "hsk1-number-expressions-1", "text": "这本书二十块。", "reading": "zhè běn shū èrshí kuài.", "translation": "This book is twenty kuai.", "focus": "块", "distractors": ["吗", "很", "个"], "contrast": false, "kinds": ["similar", "clearly-wrong"] },
           { "id": "hsk1-number-expressions-2", "text": "这个手机一千元。", "reading": "zhège shǒujī yì qiān yuán.", "translation": "This phone is a thousand yuan.", "focus": "元", "distractors": ["吗", "很", "个"], "contrast": false, "kinds": ["similar", "clearly-wrong"] },
-          { "id": "hsk1-number-expressions-3", "text": "这是我第一天上班。", "reading": "zhè shì wǒ dì-yì tiān shàngbān.", "translation": "This is my first day at work.", "focus": "第", "distractors": ["吗", "很", "小"], "contrast": false, "kinds": ["similar", "clearly-wrong"] },
+          { "id": "hsk1-number-expressions-3", "text": "这是我第一天上班。", "reading": "zhè shì wǒ dì-yī tiān shàngbān.", "translation": "This is my first day at work.", "focus": "第", "distractors": ["吗", "很", "小"], "contrast": false, "kinds": ["similar", "clearly-wrong"] },
           { "id": "hsk1-number-expressions-4", "text": "一杯茶十元。", "reading": "yì bēi chá shí yuán.", "translation": "A cup of tea is ten yuan.", "focus": "元", "distractors": ["吗", "很", "个"], "contrast": false, "kinds": ["similar", "clearly-wrong"] },
           { "id": "hsk1-number-expressions-5", "text": "我有两个哥哥。", "reading": "wǒ yǒu liǎng ge gēge.", "translation": "I have two older brothers.", "focus": "两", "distractors": ["二", "吗", "很"], "contrast": true, "kinds": ["similar", "clearly-wrong"] }
         ]
