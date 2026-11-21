@@ -1,0 +1,3028 @@
+{
+  "level": {
+    "id": "n4"
+  },
+  "rows": [
+    {
+      "row": 24,
+      "label": "そうだ (appearance): looks like",
+      "lesson": {
+        "id": "n4-sou-appearance",
+        "level": "n4",
+        "title": "そうだ (appearance): looks like, looks about to",
+        "summary": "V-ます stem or adjective stem + そうだ says how something looks to you right now, or that something looks about to happen.",
+        "pattern": [
+          "V-ます stem + そうだ",
+          "A-い stem / A-な stem + そうだ (いい → よさそう, ない → なさそう)",
+          "そうな + N, そうに + V"
+        ],
+        "body": [
+          "The appearance そうだ attaches to the ます stem of a verb (降ります → 降りそうだ) and to the stem of an adjective: drop the い of an い-adjective (おいしい → おいしそう) and the な of a な-adjective (元気 → 元気そう). Two forms are irregular: いい becomes よさそう and ない becomes なさそう, so a negative adjective ends in なさそう (難しくなさそう). It is not used after nouns.",
+          "With a verb it means that something looks as if it is about to happen (雨が降りそうだ: it looks like rain); with an adjective it gives your impression from what you see (おいしそう: it looks tasty). It behaves like a な-adjective: そうな before a noun (眠そうな顔) and そうに before a verb (楽しそうに遊ぶ). In polite speech say そうです.",
+          "The contrast example uses the hearsay そうだ, which attaches to the plain form instead: 止まったそうです means you heard it, not that it looks that way. The two are told apart only by the form before そう, so 降りそうだ (looks like rain) and 降るそうだ (I hear it will rain) mean different things.",
+          "A common mistake is to attach the appearance そうだ to the dictionary form (×おいしいそう for looks tasty) or to say いいそう for looks good; the right forms are おいしそう and よさそう."
+        ],
+        "examples": [
+          {
+            "id": "n4-sou-appearance-1",
+            "text": "雨が降りそうです。",
+            "reading": "あめがふりそうです。",
+            "translation": "It looks like it is going to rain.",
+            "focus": "降りそう",
+            "distractors": [
+              "降りよう",
+              "降りらしい",
+              "降りみたい"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n4-sou-appearance-2",
+            "text": "このケーキはおいしそうですね。",
+            "reading": "このケーキはおいしそうですね。",
+            "translation": "This cake looks delicious.",
+            "focus": "そう",
+            "distractors": [
+              "よう",
+              "らしい",
+              "みたい"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n4-sou-appearance-3",
+            "text": "この店はよさそうですね。",
+            "reading": "このみせはよさそうですね。",
+            "translation": "This shop looks nice.",
+            "focus": "よさそう",
+            "distractors": [
+              "よくそう",
+              "いいそうな",
+              "よいそうに"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n4-sou-appearance-4",
+            "text": "弟は眠そうな顔をしています。",
+            "reading": "おとうとはねむそうなかおをしています。",
+            "translation": "My little brother looks sleepy.",
+            "focus": "そうな",
+            "distractors": [
+              "そうに",
+              "そうだ",
+              "そうで"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n4-sou-appearance-5",
+            "text": "子どもたちが楽しそうに遊んでいます。",
+            "reading": "こどもたちがたのしそうにあそんでいます。",
+            "translation": "The children are playing happily.",
+            "focus": "そうに",
+            "distractors": [
+              "そうな",
+              "そうだ",
+              "らしく"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n4-sou-appearance-6",
+            "text": "この問題はあまり難しくなさそうです。",
+            "reading": "このもんだいはあまりむずかしくなさそうです。",
+            "translation": "This problem does not look very difficult.",
+            "focus": "なさそう",
+            "distractors": [
+              "なそう",
+              "なくそう",
+              "なさよう"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n4-sou-appearance-7",
+            "text": "ニュースによると、電車が止まったそうです。",
+            "reading": "ニュースによると、でんしゃがとまったそうです。",
+            "translation": "According to the news, the trains have stopped.",
+            "focus": "止まったそう",
+            "distractors": [
+              "止まったそうな",
+              "止まりそうに",
+              "止まるらしいそう"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "row": 25,
+      "label": "そうだ (hearsay): I hear that",
+      "lesson": {
+        "id": "n4-sou-hearsay",
+        "level": "n4",
+        "title": "そうだ (hearsay): I hear that, they say",
+        "summary": "Plain form + そうだ passes on information you heard or read, often with a source marked by によると or では.",
+        "pattern": [
+          "plain form + そうだ",
+          "N / A-な + だそうだ",
+          "source によると / の話では、… そうだ"
+        ],
+        "body": [
+          "The hearsay そうだ attaches to a complete plain form: verbs (来るそうだ, 来ないそうだ, 来たそうだ), い-adjectives (高いそうだ) and nouns or な-adjectives with だ (雪だそうだ, 静かだったそうだ). The part before そう is never polite: say 来ないそうです, not ×来ませんそうです.",
+          "It reports what someone else said or what you read, without your own judgement. The source often comes first with によると or では (天気予報によると, 姉の話では). This そうだ has no そうな or そうに forms and no past of its own: the tense goes in the plain form before it (結婚したそうだ).",
+          "The contrast example uses the appearance そうだ, which attaches to the ます stem: 泣きそう means the child looks about to cry, something you see yourself. With 今にも (any moment now) only the appearance form fits.",
+          "A common mistake is to leave out だ after a noun or な-adjective (×雪そうです, ×静かなそうです); the hearsay form is 雪だそうです, 静かだそうです."
+        ],
+        "examples": [
+          {
+            "id": "n4-sou-hearsay-1",
+            "text": "天気予報によると、明日は雪だそうです。",
+            "reading": "てんきよほうによると、あしたはゆきだそうです。",
+            "translation": "According to the weather forecast, it will snow tomorrow.",
+            "focus": "だそう",
+            "distractors": [
+              "のそう",
+              "なそう",
+              "そう"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n4-sou-hearsay-2",
+            "text": "姉の話では、山田さんは来月結婚するそうです。",
+            "reading": "あねのはなしでは、やまださんはらいげつけっこんするそうです。",
+            "translation": "According to my sister, Mr Yamada is getting married next month.",
+            "focus": "するそう",
+            "distractors": [
+              "すそう",
+              "するそうな",
+              "するのそう"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ],
+            "noOrder": true
+          },
+          {
+            "id": "n4-sou-hearsay-3",
+            "text": "友だちによると、あのレストランは高いそうです。",
+            "reading": "ともだちによると、あのレストランはたかいそうです。",
+            "translation": "According to my friend, that restaurant is expensive.",
+            "focus": "高いそう",
+            "distractors": [
+              "高いのそう",
+              "高くそう",
+              "高いだそう"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n4-sou-hearsay-4",
+            "text": "この町は昔、とても静かだったそうです。",
+            "reading": "このまちはむかし、とてもしずかだったそうです。",
+            "translation": "I hear this town used to be very quiet.",
+            "focus": "だったそう",
+            "distractors": [
+              "だそうな",
+              "でしたそう",
+              "なだったそう"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ],
+            "noOrder": true
+          },
+          {
+            "id": "n4-sou-hearsay-5",
+            "text": "部長は明日の会議に来ないそうです。",
+            "reading": "ぶちょうはあしたのかいぎにこないそうです。",
+            "translation": "I hear the manager is not coming to tomorrow’s meeting.",
+            "focus": "来ないそう",
+            "distractors": [
+              "来ませんそう",
+              "来ないそうな",
+              "来ずそう"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n4-sou-hearsay-6",
+            "text": "あの子は今にも泣きそうです。",
+            "reading": "あのこはいまにもなきそうです。",
+            "translation": "That child looks like she is about to cry.",
+            "focus": "泣きそう",
+            "distractors": [
+              "泣くそう",
+              "泣いたそう",
+              "泣きらしい"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "row": 26,
+      "label": "ようだ and みたいだ: it seems",
+      "lesson": {
+        "id": "n4-you-mitai",
+        "level": "n4",
+        "title": "ようだ and みたいだ: it seems, it looks like",
+        "summary": "ようだ and its casual partner みたいだ give a conclusion from what you see, hear or feel, and also mean like or similar to.",
+        "pattern": [
+          "plain form + ようだ; N の ようだ; A-な な ようだ",
+          "plain form + みたいだ; N / A-な stem + みたいだ",
+          "ような / みたいな + N, ように / みたいに + V"
+        ],
+        "body": [
+          "ようだ attaches to the plain form of verbs and い-adjectives (来たようだ, 寒いようだ), to nouns with の (風邪のようだ) and to な-adjectives with な (静かなようだ). みたいだ means the same but is casual and attaches more simply: plain verbs and い-adjectives as before, and nouns and な-adjective stems directly, with no の or な (留守みたいだ, 静かみたいだ).",
+          "Both express the speaker’s own conclusion from evidence: 外は寒いようです because people come in shivering. Both also compare: 日本人のように話す (speaks like a Japanese person), 姉みたいな先生 (a teacher like my sister). Before a noun use ような or みたいな, before a verb ように or みたいに. Use ようです in polite or written Japanese and みたいだ in conversation.",
+          "The contrast example uses the appearance そうだ with a verb stem (落ちそう), which says that something looks about to happen right now. ようだ and みたいだ draw a conclusion; they do not attach to the ます stem.",
+          "A common mistake is to mix the two attachment patterns: ×風邪ようです and ×留守のみたいです are both wrong; say 風邪のようです and 留守みたいです."
+        ],
+        "examples": [
+          {
+            "id": "n4-you-mitai-1",
+            "text": "外は寒いようです。",
+            "reading": "そとはさむいようです。",
+            "translation": "It seems to be cold outside.",
+            "focus": "寒いよう",
+            "distractors": [
+              "寒いみたいの",
+              "寒くよう",
+              "寒いのよう"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n4-you-mitai-2",
+            "text": "田中さんは風邪のようです。",
+            "reading": "たなかさんはかぜのようです。",
+            "translation": "Mr Tanaka seems to have a cold.",
+            "focus": "のよう",
+            "distractors": [
+              "だよう",
+              "がよう",
+              "みたいの"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n4-you-mitai-3",
+            "text": "山本さんは留守みたいです。",
+            "reading": "やまもとさんはるすみたいです。",
+            "translation": "Ms Yamamoto seems to be out.",
+            "focus": "みたい",
+            "distractors": [
+              "のみたい",
+              "だみたい",
+              "そう"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n4-you-mitai-4",
+            "text": "私も姉みたいな先生になりたいです。",
+            "reading": "わたしもあねみたいなせんせいになりたいです。",
+            "translation": "I want to become a teacher like my older sister, too.",
+            "focus": "みたいな",
+            "distractors": [
+              "みたいだ",
+              "そうな",
+              "みたいで"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n4-you-mitai-5",
+            "text": "彼は日本人のように日本語を話します。",
+            "reading": "かれはにほんじんのようににほんごをはなします。",
+            "translation": "He speaks Japanese like a Japanese person.",
+            "focus": "のように",
+            "distractors": [
+              "のようで",
+              "そうに",
+              "のようだ"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n4-you-mitai-6",
+            "text": "この部屋、誰もいないみたいだね。",
+            "reading": "このへや、だれもいないみたいだね。",
+            "translation": "Looks like there is nobody in this room.",
+            "focus": "いないみたい",
+            "distractors": [
+              "いないような",
+              "いなくみたい",
+              "いないのみたい"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n4-you-mitai-7",
+            "text": "棚から本が落ちそうです。",
+            "reading": "たなからほんがおちそうです。",
+            "translation": "The book looks like it is about to fall off the shelf.",
+            "focus": "落ちそう",
+            "distractors": [
+              "落ちみたい",
+              "落ちよう",
+              "落ちらしい"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "row": 27,
+      "label": "らしい: apparently",
+      "lesson": {
+        "id": "n4-rashii",
+        "level": "n4",
+        "title": "らしい: apparently, I gather that",
+        "summary": "Plain form + らしい says something is apparently true, based on what you heard or gathered rather than on your own observation.",
+        "pattern": [
+          "plain form + らしい",
+          "N / A-な stem + らしい",
+          "らしいです (polite)"
+        ],
+        "body": [
+          "らしい attaches to the plain form of verbs and い-adjectives (来るらしい, おいしいらしい, あったらしい) and directly to nouns and な-adjective stems, with no だ (病気らしい, 便利らしい). It conjugates like an い-adjective (らしくない, らしかった); in polite speech add です.",
+          "It reports information you got from outside, such as rumours or something you read, with a little distance: 来週、新しい先生が来るらしい (apparently a new teacher is coming). It is less direct than the hearsay そうだ, which repeats a source, and more distant than ようだ, which is your own conclusion. After a noun らしい can also mean typical of (春らしい日, a real spring day); that use comes later.",
+          "The contrast example uses ようだ: the speaker sees that the room is dark and concludes 寝たようです. When the evidence is your own, ようだ or みたいだ fits better than らしい.",
+          "A common mistake is to put a polite form or だ before らしい (×来ますらしい, ×病気だらしい); the part before らしい is plain and nouns take it directly."
+        ],
+        "examples": [
+          {
+            "id": "n4-rashii-1",
+            "text": "来週、新しい先生が来るらしいです。",
+            "reading": "らいしゅう、あたらしいせんせいがくるらしいです。",
+            "translation": "Apparently a new teacher is coming next week.",
+            "focus": "来るらしい",
+            "distractors": [
+              "来らしい",
+              "来るのらしい",
+              "来ますらしい"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ],
+            "noOrder": true
+          },
+          {
+            "id": "n4-rashii-2",
+            "text": "あの店のラーメンはおいしいらしいよ。",
+            "reading": "あのみせのラーメンはおいしいらしいよ。",
+            "translation": "Apparently the ramen at that shop is good.",
+            "focus": "らしい",
+            "distractors": [
+              "そうな",
+              "ような",
+              "みたいな"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n4-rashii-3",
+            "text": "昨日、駅の近くで事故があったらしいです。",
+            "reading": "きのう、えきのちかくでじこがあったらしいです。",
+            "translation": "Apparently there was an accident near the station yesterday.",
+            "focus": "あったらしい",
+            "distractors": [
+              "ありらしい",
+              "ありましたらしい",
+              "あるたらしい"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ],
+            "noOrder": true
+          },
+          {
+            "id": "n4-rashii-4",
+            "text": "駅前のホテルはとても便利らしいです。",
+            "reading": "えきまえのホテルはとてもべんりらしいです。",
+            "translation": "Apparently the hotel in front of the station is very convenient.",
+            "focus": "便利らしい",
+            "distractors": [
+              "便利ならしい",
+              "便利だらしい",
+              "便利そうな"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n4-rashii-5",
+            "text": "隣の家には猫がいるらしいです。",
+            "reading": "となりのいえにはねこがいるらしいです。",
+            "translation": "Apparently the people next door have a cat.",
+            "focus": "らしい",
+            "distractors": [
+              "そうな",
+              "ようの",
+              "みたいだ"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n4-rashii-6",
+            "text": "部屋が暗いから、もう寝たようです。",
+            "reading": "へやがくらいから、もうねたようです。",
+            "translation": "The room is dark, so they seem to have gone to bed already.",
+            "focus": "寝たよう",
+            "distractors": [
+              "寝よう",
+              "寝たのよう",
+              "寝たらしく"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "row": 28,
+      "label": "かもしれない: might",
+      "lesson": {
+        "id": "n4-kamoshirenai",
+        "level": "n4",
+        "title": "かもしれない: might, may",
+        "summary": "Plain form + かもしれない (polite かもしれません) says that something is possible, about a fifty-fifty chance.",
+        "pattern": [
+          "plain form + かもしれない",
+          "N / A-な stem + かもしれない",
+          "かもしれません (polite)"
+        ],
+        "body": [
+          "かもしれない attaches to the plain form of verbs and い-adjectives (遅れるかもしれない, 忘れたかもしれない, 寒いかもしれない) and directly to nouns and な-adjective stems, without だ (雨かもしれない, 暇かもしれない). The polite form is かもしれません. In casual speech it is often cut to かも.",
+          "It says something is possible but not certain; you are about half sure. It often goes with もしかしたら (perhaps). It is weaker than でしょう / だろう, which says you think something is probably true.",
+          "The contrast example uses でしょう, which states a probable fact with more confidence, like a weather forecast. Both attach the same way, but でしょう does not go with もしかしたら.",
+          "A common mistake is to put だ or a polite verb before it (×雨だかもしれません, ×忘れましたかもしれません); say 雨かもしれません and 忘れたかもしれません."
+        ],
+        "examples": [
+          {
+            "id": "n4-kamoshirenai-1",
+            "text": "明日は雨かもしれません。",
+            "reading": "あしたはあめかもしれません。",
+            "translation": "It might rain tomorrow.",
+            "focus": "かもしれません",
+            "distractors": [
+              "かもしりません",
+              "かもしれます",
+              "だかもしれません"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n4-kamoshirenai-2",
+            "text": "少し熱があるので、明日は休むかもしれません。",
+            "reading": "すこしねつがあるので、あしたはやすむかもしれません。",
+            "translation": "I have a slight fever, so I might take tomorrow off.",
+            "focus": "休むかも",
+            "distractors": [
+              "休みかも",
+              "休みますかも",
+              "休んでかも"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n4-kamoshirenai-3",
+            "text": "木村さんは暇かもしれないよ。",
+            "reading": "きむらさんはひまかもしれないよ。",
+            "translation": "Kimura might be free, you know.",
+            "focus": "暇かも",
+            "distractors": [
+              "暇なかも",
+              "暇だかも",
+              "暇にかも"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n4-kamoshirenai-4",
+            "text": "財布を電車に忘れたかもしれません。",
+            "reading": "さいふをでんしゃにわすれたかもしれません。",
+            "translation": "I may have left my wallet on the train.",
+            "focus": "忘れた",
+            "distractors": [
+              "忘れ",
+              "忘れて",
+              "忘れました"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n4-kamoshirenai-5",
+            "text": "もしかしたら、その話は本当かもしれません。",
+            "reading": "もしかしたら、そのはなしはほんとうかもしれません。",
+            "translation": "That story might actually be true.",
+            "focus": "もしかしたら",
+            "distractors": [
+              "絶対に",
+              "必ず",
+              "ぜひ"
+            ],
+            "contrast": false,
+            "noOrder": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n4-kamoshirenai-6",
+            "text": "山の上は寒いでしょう。",
+            "reading": "やまのうえはさむいでしょう。",
+            "translation": "It is probably cold at the top of the mountain.",
+            "focus": "でしょう",
+            "distractors": [
+              "ましょう",
+              "でした",
+              "だろうです"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "row": 29,
+      "label": "でしょう / だろう: probably",
+      "lesson": {
+        "id": "n4-deshou-darou",
+        "level": "n4",
+        "title": "でしょう / だろう: probably, right?",
+        "summary": "Plain form + でしょう (plain だろう) says something is probably true; with a rising tone, でしょう? asks for agreement.",
+        "pattern": [
+          "plain form + でしょう / だろう",
+          "N / A-な stem + でしょう / だろう",
+          "plain form + だろうと思う"
+        ],
+        "body": [
+          "でしょう and its plain form だろう attach to the plain form of verbs and い-adjectives (降るでしょう, 着いただろう, 寒いでしょう) and directly to nouns and な-adjective stems (傘でしょう, にぎやかでしょう). Do not add だ or な before them.",
+          "They give the speaker’s guess that something is probably so, more confidently than かもしれない; weather forecasts use でしょう. Spoken with a rising tone, でしょう? (casual でしょ?) asks the listener to agree: これ、あなたの傘でしょう? (this is your umbrella, right?). だろう is used in plain speech and in writing, often as だろうと思う (I think it is probably so). It often goes with たぶん or きっと.",
+          "The contrast example uses かもしれない, which only says something is possible. The trains are late, so missing the meeting is a real possibility, not a firm forecast.",
+          "A common mistake is to attach でしょう to the ます stem or te-form (×降りでしょう); it takes the plain form, 降るでしょう."
+        ],
+        "examples": [
+          {
+            "id": "n4-deshou-darou-1",
+            "text": "午後から雨が降るでしょう。",
+            "reading": "ごごからあめがふるでしょう。",
+            "translation": "It will probably rain from the afternoon.",
+            "focus": "降るでしょう",
+            "distractors": [
+              "降りでしょう",
+              "降ってでしょう",
+              "降るだでしょう"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n4-deshou-darou-2",
+            "text": "林さんなら知っているだろう。",
+            "reading": "はやしさんならしっているだろう。",
+            "translation": "Hayashi will probably know.",
+            "focus": "だろう",
+            "distractors": [
+              "ましょう",
+              "でした",
+              "だろうです"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n4-deshou-darou-3",
+            "text": "これ、あなたの傘でしょう？",
+            "reading": "これ、あなたのかさでしょう？",
+            "translation": "This is your umbrella, isn’t it?",
+            "focus": "でしょう",
+            "distractors": [
+              "ましょう",
+              "だろうです",
+              "でしょうだ"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n4-deshou-darou-4",
+            "text": "週末の駅はにぎやかでしょう。",
+            "reading": "しゅうまつのえきはにぎやかでしょう。",
+            "translation": "The station will probably be busy at the weekend.",
+            "focus": "にぎやかでしょう",
+            "distractors": [
+              "にぎやかなでしょう",
+              "にぎやかだでしょう",
+              "にぎやかにでしょう"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n4-deshou-darou-5",
+            "text": "彼女はもう家に着いただろうと思います。",
+            "reading": "かのじょはもういえについただろうとおもいます。",
+            "translation": "I think she has probably got home by now.",
+            "focus": "だろうと",
+            "distractors": [
+              "ましょうと",
+              "だと",
+              "でしたと"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n4-deshou-darou-6",
+            "text": "電車が遅れているから、会議に間に合わないかもしれない。",
+            "reading": "でんしゃがおくれているから、かいぎにまにあわないかもしれない。",
+            "translation": "The trains are late, so I might not make it to the meeting.",
+            "focus": "かもしれない",
+            "distractors": [
+              "かもしらない",
+              "かもしれる",
+              "だかもしれない"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "row": 30,
+      "label": "はずだ: should be, is expected to",
+      "lesson": {
+        "id": "n4-hazu",
+        "level": "n4",
+        "title": "はずだ: should be, is expected to",
+        "summary": "Plain form + はずだ says that something should be true or should happen, judged from facts the speaker knows.",
+        "pattern": [
+          "plain form + はずだ",
+          "N の はずだ; A-な な はずだ",
+          "はずなのに: it should …, but"
+        ],
+        "body": [
+          "はず is a noun, so it attaches like one: plain verbs and い-adjectives directly (届くはずだ, 入れたはずだ, 寒いはずだ), nouns with の (休みのはずだ) and な-adjectives with な (静かなはずだ). In polite speech say はずです.",
+          "It expresses a firm expectation based on a reason: the parcel was sent on Monday, so it should arrive tomorrow. It is not a guess like でしょう and not an intention like つもり. はずなのに says that what should be true is not: 入れたはずなのに、ありません (I am sure I put it in, but it is not there).",
+          "The contrast example uses かもしれない, which only says something is possible. はず needs の after a noun, so ×車の中はずです is ungrammatical, and はず would also be too sure for a key you cannot find.",
+          "A common mistake is to use はず for your own plan (×来年留学するはずです for I intend to); for intentions use つもり."
+        ],
+        "examples": [
+          {
+            "id": "n4-hazu-1",
+            "text": "荷物は明日届くはずです。",
+            "reading": "にもつはあしたとどくはずです。",
+            "translation": "The parcel should arrive tomorrow.",
+            "focus": "届くはず",
+            "distractors": [
+              "届きはず",
+              "届くのはず",
+              "届くつもり"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n4-hazu-2",
+            "text": "田中さんは休みのはずです。",
+            "reading": "たなかさんはやすみのはずです。",
+            "translation": "Mr Tanaka is supposed to be off.",
+            "focus": "のはず",
+            "distractors": [
+              "なはず",
+              "だはず",
+              "はず"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n4-hazu-3",
+            "text": "このあたりは夜も静かなはずです。",
+            "reading": "このあたりはよるもしずかなはずです。",
+            "translation": "This area should be quiet at night, too.",
+            "focus": "なはず",
+            "distractors": [
+              "のはず",
+              "だはず",
+              "にはず"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n4-hazu-4",
+            "text": "鍵はかばんに入れたはずなのに、ありません。",
+            "reading": "かぎはかばんにいれたはずなのに、ありません。",
+            "translation": "I am sure I put the key in my bag, but it is not there.",
+            "focus": "入れたはず",
+            "distractors": [
+              "入れはず",
+              "入れるのはず",
+              "入れてはず"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n4-hazu-5",
+            "text": "アメリカに五年いたから、彼は英語が話せるはずです。",
+            "reading": "アメリカにごねんいたから、かれはえいごがはなせるはずです。",
+            "translation": "He lived in America for five years, so he should be able to speak English.",
+            "focus": "はずです",
+            "distractors": [
+              "ましょう",
+              "すぎです",
+              "でしょうです"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n4-hazu-6",
+            "text": "鍵は車の中かもしれません。",
+            "reading": "かぎはくるまのなかかもしれません。",
+            "translation": "The key might be in the car.",
+            "focus": "かもしれません",
+            "distractors": [
+              "はずです",
+              "だかもしれません",
+              "かもしれます"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "row": 31,
+      "label": "なければならない / なくてはいけない: must",
+      "lesson": {
+        "id": "n4-nakereba-naranai",
+        "level": "n4",
+        "title": "なければならない / なくてはいけない: must, have to",
+        "summary": "The ない form with なければならない or なくてはいけない says that something must be done; casual speech shortens them to なきゃ and なくちゃ.",
+        "pattern": [
+          "V-ない (drop い) + ければならない / ければいけない",
+          "V-ない (drop い) + くてはならない / くてはいけない",
+          "N / A-な + でなければならない"
+        ],
+        "body": [
+          "Take the ない form, drop い and add ければならない or くてはいけない: 起きない → 起きなければならない, 飲まない → 飲まなくてはいけない. The endings can be mixed (なければいけない, なくてはならない). Nouns and な-adjectives use でなければ (漢字でなければいけない), い-adjectives くなければ (安くなければ). The polite forms are なりません and いけません; the past is なりませんでした.",
+          "Literally they say if you do not do it, it will not do, so they mean must or have to. ならない sounds more formal and general (rules), いけない more personal and spoken. In casual speech they shrink to なきゃ (from なければ) and なくちゃ (from なくては), often with the rest dropped: もう帰らなきゃ.",
+          "The contrast example uses なくてもいい (need not), the answer when something is not necessary. It keeps the ても of even if, while なければ keeps the ば conditional; they cannot be swapped.",
+          "A common mistake is to build the ending from the dictionary form or to keep the い of ない (×起きないければ); start from the ない form without い: 起きなければ."
+        ],
+        "examples": [
+          {
+            "id": "n4-nakereba-naranai-1",
+            "text": "明日は六時に起きなければなりません。",
+            "reading": "あしたはろくじにおきなければなりません。",
+            "translation": "I have to get up at six tomorrow.",
+            "focus": "なければ",
+            "distractors": [
+              "なくても",
+              "ないければ",
+              "なくれば"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n4-nakereba-naranai-2",
+            "text": "この薬を飲まなくてはいけません。",
+            "reading": "このくすりをのまなくてはいけません。",
+            "translation": "You have to take this medicine.",
+            "focus": "なくては",
+            "distractors": [
+              "ないでは",
+              "なくても",
+              "ないくては"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n4-nakereba-naranai-3",
+            "text": "もう帰らなきゃ。",
+            "reading": "もうかえらなきゃ。",
+            "translation": "I have to go home now.",
+            "focus": "帰らなきゃ",
+            "distractors": [
+              "帰りなきゃ",
+              "帰るなきゃ",
+              "帰らないきゃ"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n4-nakereba-naranai-4",
+            "text": "答えは漢字でなければいけません。",
+            "reading": "こたえはかんじでなければいけません。",
+            "translation": "The answers must be written in kanji.",
+            "focus": "でなければ",
+            "distractors": [
+              "でないければ",
+              "になければ",
+              "でなくても"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n4-nakereba-naranai-5",
+            "text": "昨日は遅くまで働かなければなりませんでした。",
+            "reading": "きのうはおそくまではたらかなければなりませんでした。",
+            "translation": "Yesterday I had to work until late.",
+            "focus": "なりませんでした",
+            "distractors": [
+              "なりました",
+              "なりませんだった",
+              "ならないでした"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n4-nakereba-naranai-6",
+            "text": "土曜日は学校に行かなくてもいいです。",
+            "reading": "どようびはがっこうにいかなくてもいいです。",
+            "translation": "You do not have to go to school on Saturday.",
+            "focus": "なくても",
+            "distractors": [
+              "なくては",
+              "なくちゃ",
+              "ないくても"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "row": 32,
+      "label": "なくてもいい: need not",
+      "lesson": {
+        "id": "n4-nakutemoii",
+        "level": "n4",
+        "title": "なくてもいい: you do not have to",
+        "summary": "V-ない (drop い) + くてもいい says that something is not necessary; なくてもかまわない is a little more formal.",
+        "pattern": [
+          "V-ない (drop い) + くてもいい / くてもかまわない",
+          "A-い → くなくてもいい",
+          "N / A-な + じゃなくてもいい / でなくてもいい"
+        ],
+        "body": [
+          "Take the ない form, drop い and add くてもいい: 来ない → 来なくてもいい, 急がない → 急がなくてもいい. い-adjectives use くなくてもいい (広くなくてもいい), nouns and な-adjectives じゃなくてもいい or, more formally, でなくてもいい. Politely: なくてもいいです or なくてもかまいません.",
+          "It means even if you do not do it, it is fine, so it gives permission not to do something. It is the usual answer to a question with なければなりませんか: 名前を書かなければなりませんか, いいえ、書かなくてもいいです. With よ it sounds kind (無理に食べなくてもいいよ).",
+          "The contrast example uses なければならない, which says the action is required. Both start from the ない form, but なければ is followed by ならない, while なくても is followed by いい.",
+          "A common mistake is to say なくてはいい or ないくてもいい; the form is なくてもいい, with ても."
+        ],
+        "examples": [
+          {
+            "id": "n4-nakutemoii-1",
+            "text": "明日は来なくてもいいです。",
+            "reading": "あしたはこなくてもいいです。",
+            "translation": "You do not have to come tomorrow.",
+            "focus": "来なくても",
+            "distractors": [
+              "来なくては",
+              "来ないくても",
+              "来くなくても"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n4-nakutemoii-2",
+            "text": "急がなくてもかまいません。",
+            "reading": "いそがなくてもかまいません。",
+            "translation": "There is no need to hurry.",
+            "focus": "かまいません",
+            "distractors": [
+              "いけません",
+              "なりません",
+              "かまいます"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n4-nakutemoii-3",
+            "text": "靴は脱がなくてもいいですよ。",
+            "reading": "くつはぬがなくてもいいですよ。",
+            "translation": "You do not need to take your shoes off.",
+            "focus": "ても",
+            "distractors": [
+              "ては",
+              "でも",
+              "と"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n4-nakutemoii-4",
+            "text": "部屋は広くなくてもいいです。",
+            "reading": "へやはひろくなくてもいいです。",
+            "translation": "The room does not have to be big.",
+            "focus": "広くなくても",
+            "distractors": [
+              "広いなくても",
+              "広くないても",
+              "広なくても"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n4-nakutemoii-5",
+            "text": "支払いは現金じゃなくてもいいですか。",
+            "reading": "しはらいはげんきんじゃなくてもいいですか。",
+            "translation": "Is it all right if I do not pay in cash?",
+            "focus": "じゃなくても",
+            "distractors": [
+              "くなくても",
+              "じゃないても",
+              "になくても"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n4-nakutemoii-6",
+            "text": "無理に食べなくてもいいよ。",
+            "reading": "むりにたべなくてもいいよ。",
+            "translation": "You do not have to force yourself to eat it.",
+            "focus": "いい",
+            "distractors": [
+              "いけない",
+              "ならない",
+              "なる"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n4-nakutemoii-7",
+            "text": "入るときはパスポートを見せなければなりません。",
+            "reading": "はいるときはパスポートをみせなければなりません。",
+            "translation": "You must show your passport when you enter.",
+            "focus": "見せなければ",
+            "distractors": [
+              "見せなくても",
+              "見せないければ",
+              "見せなきゃれば"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "row": 33,
+      "label": "ほうがいい: advice",
+      "lesson": {
+        "id": "n4-hougaii",
+        "level": "n4",
+        "title": "ほうがいい: you had better, you should",
+        "summary": "V-た + ほうがいい gives advice to do something, and V-ない + ほうがいい advice not to; after an adjective it states a preference.",
+        "pattern": [
+          "V-た + ほうがいい",
+          "V-ない + ほうがいい",
+          "A-い / A-な な / N の + ほうがいい (preference)"
+        ],
+        "body": [
+          "For advice to do something, use the た form: 寝たほうがいい, 相談したほうがいい. For advice not to do something, use the ない form (not the past): 飲まないほうがいい. The dictionary form (寝るほうがいい) is also possible and sounds more general. After an adjective or noun, ほうがいい expresses a preference: 駅から近いほうがいい (I would rather it were near the station).",
+          "ほう means side or alternative, so the sentence literally says this side is better. It is direct advice: たほうがいいですよ is friendly between equals, but to a superior it can sound pushy, so soften it with と思います. ほうがいいです is polite; ほうがいいよ is casual.",
+          "The contrast example uses the comparison AよりBのほうが (B is more … than A). It also uses ほう, but it compares two things and is not advice.",
+          "A common mistake is to use the past negative for advice not to (×飲まなかったほうがいい); the form is 飲まないほうがいい."
+        ],
+        "examples": [
+          {
+            "id": "n4-hougaii-1",
+            "text": "熱があるなら、早く寝たほうがいいですよ。",
+            "reading": "ねつがあるなら、はやくねたほうがいいですよ。",
+            "translation": "If you have a fever, you should go to bed early.",
+            "focus": "寝た",
+            "distractors": [
+              "寝て",
+              "寝ます",
+              "寝よう"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n4-hougaii-2",
+            "text": "お酒は飲まないほうがいいです。",
+            "reading": "おさけはのまないほうがいいです。",
+            "translation": "You had better not drink alcohol.",
+            "focus": "飲まない",
+            "distractors": [
+              "飲まなく",
+              "飲まないで",
+              "飲みません"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n4-hougaii-3",
+            "text": "傘を持っていったほうがいいと思います。",
+            "reading": "かさをもっていったほうがいいとおもいます。",
+            "translation": "I think you should take an umbrella.",
+            "focus": "ほうが",
+            "distractors": [
+              "ほうを",
+              "より",
+              "ほうに"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n4-hougaii-4",
+            "text": "部屋は駅から近いほうがいいです。",
+            "reading": "へやはえきからちかいほうがいいです。",
+            "translation": "I would prefer a flat close to the station.",
+            "focus": "近い",
+            "distractors": [
+              "近く",
+              "近くて",
+              "近さ"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n4-hougaii-5",
+            "text": "先生に早く相談したほうがいいよ。",
+            "reading": "せんせいにはやくそうだんしたほうがいいよ。",
+            "translation": "You should talk to your teacher soon.",
+            "focus": "したほう",
+            "distractors": [
+              "してほう",
+              "したのほう",
+              "しほう"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n4-hougaii-6",
+            "text": "バスより電車のほうが速いです。",
+            "reading": "バスよりでんしゃのほうがはやいです。",
+            "translation": "The train is faster than the bus.",
+            "focus": "のほうが",
+            "distractors": [
+              "のほうを",
+              "ほうが",
+              "のほうに"
+            ],
+            "contrast": true,
+            "noOrder": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "row": 34,
+      "label": "すぎる: too much",
+      "lesson": {
+        "id": "n4-sugiru",
+        "level": "n4",
+        "title": "すぎる: too, too much",
+        "summary": "V-ます stem or adjective stem + すぎる says that something goes beyond the right amount, usually as a problem.",
+        "pattern": [
+          "V-ます stem + すぎる",
+          "A-い stem / A-な stem + すぎる (いい → よすぎる)",
+          "V-ます stem + すぎ (noun)"
+        ],
+        "body": [
+          "すぎる attaches to the ます stem of a verb (食べすぎる, 飲みすぎる) and to the stem of an adjective: drop い (小さい → 小さすぎる) or な (静か → 静かすぎる). いい becomes よすぎる and ない becomes なさすぎる. すぎる itself is a る-verb: すぎます, すぎました, すぎて. The stem すぎ is also a noun: 飲みすぎに気をつけて (watch out for drinking too much).",
+          "It means too or too much and normally implies a problem: この靴は小さすぎます (these shoes are too small, so they do not fit). The te-form すぎて often gives a reason for a bad result: 辛すぎて飲めません.",
+          "The contrast example uses とても (very), which only makes an adjective stronger. とても明るい is praise, while 明るすぎる would mean the room is uncomfortably bright.",
+          "A common mistake is to keep the い of the adjective (×小さいすぎる); drop it: 小さすぎる."
+        ],
+        "examples": [
+          {
+            "id": "n4-sugiru-1",
+            "text": "昨日はご飯を食べすぎました。",
+            "reading": "きのうはごはんをたべすぎました。",
+            "translation": "I ate too much yesterday.",
+            "focus": "すぎ",
+            "distractors": [
+              "すぎる",
+              "やすい",
+              "たい"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n4-sugiru-2",
+            "text": "この靴は小さすぎます。",
+            "reading": "このくつはちいさすぎます。",
+            "translation": "These shoes are too small.",
+            "focus": "小さすぎ",
+            "distractors": [
+              "小さいすぎ",
+              "小さくすぎ",
+              "小ささすぎ"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n4-sugiru-3",
+            "text": "このスープは辛すぎて飲めません。",
+            "reading": "このスープはからすぎてのめません。",
+            "translation": "This soup is too spicy for me to eat.",
+            "focus": "すぎて",
+            "distractors": [
+              "すぎに",
+              "すぎた",
+              "すぎれ"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n4-sugiru-4",
+            "text": "この町は静かすぎて、ちょっと寂しいです。",
+            "reading": "このまちはしずかすぎて、ちょっとさびしいです。",
+            "translation": "This town is too quiet; it is a bit lonely.",
+            "focus": "静かすぎ",
+            "distractors": [
+              "静かなすぎ",
+              "静かだすぎ",
+              "静かさすぎ"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n4-sugiru-5",
+            "text": "今日は天気がよすぎて、少し暑いですね。",
+            "reading": "きょうはてんきがよすぎて、すこしあついですね。",
+            "translation": "The weather is almost too good today; it is a bit hot.",
+            "focus": "よすぎ",
+            "distractors": [
+              "いいすぎ",
+              "よくすぎ",
+              "よいすぎ"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n4-sugiru-6",
+            "text": "飲みすぎに気をつけてください。",
+            "reading": "のみすぎにきをつけてください。",
+            "translation": "Be careful not to drink too much.",
+            "focus": "飲みすぎ",
+            "distractors": [
+              "飲むすぎ",
+              "飲んですぎ",
+              "飲みすぎる"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n4-sugiru-7",
+            "text": "この部屋はとても明るいです。",
+            "reading": "このへやはとてもあかるいです。",
+            "translation": "This room is very bright.",
+            "focus": "とても",
+            "distractors": [
+              "すぎ",
+              "あまり",
+              "すぎて"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "row": 35,
+      "label": "やすい and にくい: easy and hard to do",
+      "lesson": {
+        "id": "n4-yasui-nikui",
+        "level": "n4",
+        "title": "やすい and にくい: easy to do, hard to do",
+        "summary": "V-ます stem + やすい means easy to do, and V-ます stem + にくい means hard to do; both conjugate like い-adjectives.",
+        "pattern": [
+          "V-ます stem + やすい",
+          "V-ます stem + にくい",
+          "やすくて / にくくて, やすくなる"
+        ],
+        "body": [
+          "Add やすい or にくい to the ます stem: 書きます → 書きやすい, 覚えます → 覚えにくい, 分かります → 分かりやすい. The result is an い-adjective: やすくて, やすくない, にくかった, やすくなる.",
+          "やすい says an action is easy or something tends to happen (このペンは書きやすい, 雨の日は滑りやすい); にくい says it is hard to do (この漢字は覚えにくい). They describe the action, so the thing is the topic: この本は読みやすい. Do not confuse this やすい with 安い (cheap); it is usually written in kana.",
+          "The contrast example uses たい (want to), which also attaches to the ます stem and conjugates like an い-adjective, but expresses a wish, not ease.",
+          "A common mistake is to attach やすい to the dictionary form (×分かるやすい); use the ます stem: 分かりやすい."
+        ],
+        "examples": [
+          {
+            "id": "n4-yasui-nikui-1",
+            "text": "このペンはとても書きやすいです。",
+            "reading": "このペンはとてもかきやすいです。",
+            "translation": "This pen is very easy to write with.",
+            "focus": "やすい",
+            "distractors": [
+              "やさしい",
+              "やすく",
+              "すぎい"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n4-yasui-nikui-2",
+            "text": "この漢字は覚えにくいです。",
+            "reading": "このかんじはおぼえにくいです。",
+            "translation": "This kanji is hard to remember.",
+            "focus": "覚えにくい",
+            "distractors": [
+              "覚えるにくい",
+              "覚えてにくい",
+              "覚えにくく"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n4-yasui-nikui-3",
+            "text": "先生の説明は分かりやすいです。",
+            "reading": "せんせいのせつめいはわかりやすいです。",
+            "translation": "The teacher’s explanations are easy to understand.",
+            "focus": "分かりやすい",
+            "distractors": [
+              "分かるやすい",
+              "分かってやすい",
+              "分かりやさしい"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n4-yasui-nikui-4",
+            "text": "この靴は歩きやすくて、軽いです。",
+            "reading": "このくつはあるきやすくて、かるいです。",
+            "translation": "These shoes are easy to walk in and light.",
+            "focus": "やすくて",
+            "distractors": [
+              "やすいて",
+              "やすくに",
+              "やすいで"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n4-yasui-nikui-5",
+            "text": "字が小さくて読みにくいですね。",
+            "reading": "じがちいさくてよみにくいですね。",
+            "translation": "The letters are small, so it is hard to read.",
+            "focus": "にくい",
+            "distractors": [
+              "にくく",
+              "にがい",
+              "づらく"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n4-yasui-nikui-6",
+            "text": "いつか日本で働きたいです。",
+            "reading": "いつかにほんではたらきたいです。",
+            "translation": "I'd like to work in Japan someday.",
+            "focus": "働きたい",
+            "distractors": [
+              "働くたい",
+              "働きたく",
+              "働いたい"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "row": 36,
+      "label": "かどうか and question words + か in a sentence",
+      "lesson": {
+        "id": "n4-ka-douka",
+        "level": "n4",
+        "title": "かどうか and question word + か: whether, what, when",
+        "summary": "A plain-form question can sit inside a sentence: yes/no questions take かどうか, questions with a question word take か.",
+        "pattern": [
+          "plain form + かどうか + 分かる / 知る / 聞く",
+          "question word … plain form + か + 分かる / 教える",
+          "N / A-な stem + かどうか (no だ)"
+        ],
+        "body": [
+          "To put a yes/no question inside a sentence, add かどうか to the plain form: 来られるかどうか分かりません (I do not know whether I can come). To embed a question with a question word (何, 誰, どこ, いつ, 何時), add only か: 会議が何時に始まるか教えてください. Nouns and な-adjectives drop だ before か: 本当かどうか, 誰が犯人か.",
+          "The embedded question is followed by verbs such as 分かる, 知る, 聞く, 教える, 決める, 覚えている. The part before か is plain even in a polite sentence; the politeness goes at the end (分かりません). A comma or を may follow (かどうかを聞く).",
+          "The contrast example uses と思う, which quotes a statement, not a question. A statement takes と (帰ったと思います); a question takes か or かどうか.",
+          "A common mistake is to use かどうか together with a question word (×何時に始まるかどうか); with a question word use only か."
+        ],
+        "examples": [
+          {
+            "id": "n4-ka-douka-1",
+            "text": "明日来られるかどうか、まだ分かりません。",
+            "reading": "あしたこられるかどうか、まだわかりません。",
+            "translation": "I do not know yet whether I can come tomorrow.",
+            "focus": "かどうか",
+            "distractors": [
+              "どうか",
+              "とどうか",
+              "かなにか"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n4-ka-douka-2",
+            "text": "その話が本当かどうか、知っていますか。",
+            "reading": "そのはなしがほんとうかどうか、しっていますか。",
+            "translation": "Do you know whether that story is true?",
+            "focus": "本当かどうか",
+            "distractors": [
+              "本当だかどうか",
+              "本当なかどうか",
+              "本当のかどうか"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n4-ka-douka-3",
+            "text": "会議が何時に始まるか教えてください。",
+            "reading": "かいぎがなんじにはじまるかおしえてください。",
+            "translation": "Please tell me what time the meeting starts.",
+            "focus": "始まるか",
+            "distractors": [
+              "始まるかどうか",
+              "始まりか",
+              "始まるだか"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n4-ka-douka-4",
+            "text": "誰が窓を割ったか分かりません。",
+            "reading": "だれがまどをわったかわかりません。",
+            "translation": "I do not know who broke the window.",
+            "focus": "割ったか",
+            "distractors": [
+              "割ったかどうか",
+              "割ったと",
+              "割りか"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n4-ka-douka-5",
+            "text": "佐藤さんにパーティーに行くかどうか聞きました。",
+            "reading": "さとうさんにパーティーにいくかどうかききました。",
+            "translation": "I asked Ms Sato whether she is going to the party.",
+            "focus": "行くかどうか",
+            "distractors": [
+              "行きかどうか",
+              "行くかどう",
+              "行くとどうか"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ],
+            "noOrder": true
+          },
+          {
+            "id": "n4-ka-douka-6",
+            "text": "駅がどこにあるか知っていますか。",
+            "reading": "えきがどこにあるかしっていますか。",
+            "translation": "Do you know where the station is?",
+            "focus": "どこ",
+            "distractors": [
+              "何",
+              "誰",
+              "いつ"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n4-ka-douka-7",
+            "text": "田中さんはもう帰ったと思います。",
+            "reading": "たなかさんはもうかえったとおもいます。",
+            "translation": "I think Mr Tanaka has already gone home.",
+            "focus": "と",
+            "distractors": [
+              "か",
+              "かどうか",
+              "を"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "row": 37,
+      "label": "あげる, くれる, もらう: giving and receiving",
+      "lesson": {
+        "id": "n4-ageru-kureru-morau",
+        "level": "n4",
+        "title": "あげる, くれる, もらう: give and receive",
+        "summary": "Japanese has three verbs for giving and receiving, chosen by direction: あげる gives away from me, くれる gives to me, もらう receives.",
+        "pattern": [
+          "giver は receiver に N を あげる",
+          "giver が (私に) N を くれる",
+          "receiver は giver に / から N を もらう"
+        ],
+        "body": [
+          "あげる is giving from the speaker (or someone on the speaker’s side) to someone else, or between two other people: 私は妹に本をあげました. くれる is giving to the speaker or to someone in the speaker’s group: 友だちが私に花をくれました; 私に is often left out. もらう is receiving, seen from the receiver; the giver takes に or から: 父から時計をもらいました.",
+          "The choice depends on who is on the speaker’s side, not only on who holds the object. So ×友だちが私に花をあげました is wrong: the gift comes towards me, which needs くれる. Politer forms (さしあげる, くださる, いただく) come at the next level. In polite speech the verbs take ます: あげます, くれます, もらいます.",
+          "The contrast example uses 借りる (borrow), which also takes から or に for the other person, but the thing must go back. もらう means you keep it.",
+          "A common mistake is to use あげる when something is given to you; anything coming towards the speaker is くれる."
+        ],
+        "examples": [
+          {
+            "id": "n4-ageru-kureru-morau-1",
+            "text": "私は妹に本をあげました。",
+            "reading": "わたしはいもうとにほんをあげました。",
+            "translation": "I gave my younger sister a book.",
+            "focus": "あげ",
+            "distractors": [
+              "くれ",
+              "くださり",
+              "あげり"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n4-ageru-kureru-morau-2",
+            "text": "友だちが私に花をくれました。",
+            "reading": "ともだちがわたしにはなをくれました。",
+            "translation": "A friend gave me flowers.",
+            "focus": "くれ",
+            "distractors": [
+              "あげ",
+              "やり",
+              "さしあげ"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n4-ageru-kureru-morau-3",
+            "text": "誕生日に父から時計をもらいました。",
+            "reading": "たんじょうびにちちからとけいをもらいました。",
+            "translation": "I got a watch from my father for my birthday.",
+            "focus": "から",
+            "distractors": [
+              "を",
+              "で",
+              "へ"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ],
+            "noOrder": true
+          },
+          {
+            "id": "n4-ageru-kureru-morau-4",
+            "text": "田中さんは山田さんにチョコレートをあげました。",
+            "reading": "たなかさんはやまださんにチョコレートをあげました。",
+            "translation": "Mr Tanaka gave Ms Yamada some chocolate.",
+            "focus": "あげました",
+            "distractors": [
+              "くれました",
+              "くださいました",
+              "あげりました"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n4-ageru-kureru-morau-5",
+            "text": "隣の人にりんごをもらいました。",
+            "reading": "となりのひとにりんごをもらいました。",
+            "translation": "I got some apples from my neighbour.",
+            "focus": "もらい",
+            "distractors": [
+              "くれ",
+              "くださり",
+              "もらり"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n4-ageru-kureru-morau-6",
+            "text": "友だちから辞書を借りました。",
+            "reading": "ともだちからじしょをかりました。",
+            "translation": "I borrowed a dictionary from a friend.",
+            "focus": "借り",
+            "distractors": [
+              "貸し",
+              "あげ",
+              "借れ"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "row": 38,
+      "label": "てあげる, てくれる, てもらう: doing favours",
+      "lesson": {
+        "id": "n4-te-ageru-kureru-morau",
+        "level": "n4",
+        "title": "てあげる, てくれる, てもらう: doing a favour",
+        "summary": "V-て + あげる / くれる / もらう says that an action is done as a favour, with the same directions as giving and receiving.",
+        "pattern": [
+          "A は B に V-て あげる (A does B a favour)",
+          "A が (私に) V-て くれる (A does me a favour)",
+          "私は A に V-て もらう (I have A do it for me)"
+        ],
+        "body": [
+          "Add あげる, くれる or もらう to the te-form: 教えてあげる, 来てくれる, 手伝ってもらう. The directions are the same as for things: てあげる is a favour from me (or my side) to others, てくれる a favour to me, and てもらう means I get someone to do something for me, with the doer marked by に.",
+          "These forms add gratitude or kindness. 母が迎えに来てくれました sounds thankful, while 母が迎えに来ました only reports the fact. Requests use them too: 撮ってくれませんか (casual polite), 教えてもらえませんか (more polite). Offering てあげましょうか to a superior can sound condescending; with superiors say お持ちしましょうか instead (see the humble forms).",
+          "The contrast example uses plain くれる with a noun (自転車をくれました): a thing is given, not an action, so there is no te-form.",
+          "A common mistake is to use てくれる with に for the doer (×友だちに手伝ってくれました); てくれる takes が for the doer, and てもらう takes に."
+        ],
+        "examples": [
+          {
+            "id": "n4-te-ageru-kureru-morau-1",
+            "text": "私は弟に宿題を教えてあげました。",
+            "reading": "わたしはおとうとにしゅくだいをおしえてあげました。",
+            "translation": "I helped my little brother with his homework.",
+            "focus": "てあげ",
+            "distractors": [
+              "てくれ",
+              "てくださり",
+              "であげ"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n4-te-ageru-kureru-morau-2",
+            "text": "母が駅まで迎えに来てくれました。",
+            "reading": "ははがえきまでむかえにきてくれました。",
+            "translation": "My mother kindly came to pick me up at the station.",
+            "focus": "てくれ",
+            "distractors": [
+              "でくれ",
+              "てくださり",
+              "てくれり"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n4-te-ageru-kureru-morau-3",
+            "text": "友だちに引っ越しを手伝ってもらいました。",
+            "reading": "ともだちにひっこしをてつだってもらいました。",
+            "translation": "I had a friend help me move house.",
+            "focus": "てもらい",
+            "distractors": [
+              "てくれ",
+              "でもらい",
+              "てくださり"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n4-te-ageru-kureru-morau-4",
+            "text": "すみません、ちょっと写真を撮ってくれませんか。",
+            "reading": "すみません、ちょっとしゃしんをとってくれませんか。",
+            "translation": "Excuse me, could you take a photo for me?",
+            "focus": "撮って",
+            "distractors": [
+              "撮り",
+              "撮る",
+              "撮った"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n4-te-ageru-kureru-morau-5",
+            "text": "田中さんに駅までの道を教えてもらいました。",
+            "reading": "たなかさんにえきまでのみちをおしえてもらいました。",
+            "translation": "Mr Tanaka showed me the way to the station.",
+            "focus": "に",
+            "distractors": [
+              "を",
+              "で",
+              "へ"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n4-te-ageru-kureru-morau-6",
+            "text": "その荷物、持ってあげましょうか。",
+            "reading": "そのにもつ、もってあげましょうか。",
+            "translation": "Shall I carry that bag for you?",
+            "focus": "てあげ",
+            "distractors": [
+              "てくれ",
+              "であげ",
+              "てくださり"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n4-te-ageru-kureru-morau-7",
+            "text": "先輩が古い自転車をくれました。",
+            "reading": "せんぱいがふるいじてんしゃをくれました。",
+            "translation": "An older student gave me his old bicycle.",
+            "focus": "くれ",
+            "distractors": [
+              "てくれ",
+              "くれて",
+              "くださり"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "row": 39,
+      "label": "Passive (られる)",
+      "lesson": {
+        "id": "n4-passive",
+        "level": "n4",
+        "title": "The passive られる: be done, have something done to you",
+        "summary": "The passive (書かれる, 食べられる, される) makes the person or thing affected the subject; the doer takes に.",
+        "pattern": [
+          "う-verbs: あ-row + れる (書く → 書かれる)",
+          "る-verbs: られる (ほめる → ほめられる); する → される, 来る → 来られる",
+          "X は Y に V-passive / X は Y に N を V-passive"
+        ],
+        "body": [
+          "う-verbs change the final u to the a-row and add れる: 書く → 書かれる, 踏む → 踏まれる, 読む → 読まれる, 歌う → 歌われる (う becomes わ). る-verbs add られる: ほめる → ほめられる, 建てる → 建てられる. する becomes される and 来る becomes 来られる. The passive is a る-verb: られます, られました, られて.",
+          "In the direct passive the affected person or thing is the subject and the doer takes に: 弟は先生にほめられました. Japanese also has a passive with an object, for things that happen to your body or belongings: 足を踏まれました, 母に日記を読まれました. A third kind, the suffering passive, works even with intransitive verbs and shows the speaker was troubled: 雨に降られました (I got caught in the rain). Buildings and works often take the passive without a doer: この寺は六百年前に建てられました.",
+          "The contrast example uses the potential form 食べられる (can eat), which for る-verbs looks the same as the passive. The potential marks the object with が and the subject is the one who can do it; the meaning tells them apart.",
+          "A common mistake is to mark the doer with が or で (×先生がほめられました for was praised by the teacher); in the passive the doer takes に."
+        ],
+        "examples": [
+          {
+            "id": "n4-passive-1",
+            "text": "弟は先生にほめられました。",
+            "reading": "おとうとはせんせいにほめられました。",
+            "translation": "My little brother was praised by his teacher.",
+            "focus": "ほめられ",
+            "distractors": [
+              "ほめれ",
+              "ほめらせ",
+              "ほめりれ"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n4-passive-2",
+            "text": "電車で足を踏まれました。",
+            "reading": "でんしゃであしをふまれました。",
+            "translation": "Someone stepped on my foot on the train.",
+            "focus": "踏まれ",
+            "distractors": [
+              "踏みれ",
+              "踏まられ",
+              "踏めれ"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n4-passive-3",
+            "text": "帰りに雨に降られました。",
+            "reading": "かえりにあめにふられました。",
+            "translation": "I got caught in the rain on the way home.",
+            "focus": "降られ",
+            "distractors": [
+              "降れ",
+              "降らせ",
+              "降りられ"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n4-passive-4",
+            "text": "この寺は六百年前に建てられました。",
+            "reading": "このてらはろっぴゃくねんまえにたてられました。",
+            "translation": "This temple was built six hundred years ago.",
+            "focus": "建てられ",
+            "distractors": [
+              "建たれ",
+              "建てれ",
+              "建たせ"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n4-passive-5",
+            "text": "母に日記を読まれました。",
+            "reading": "ははににっきをよまれました。",
+            "translation": "My mother read my diary.",
+            "focus": "読まれ",
+            "distractors": [
+              "読めれ",
+              "読みられ",
+              "読まれれ"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n4-passive-6",
+            "text": "この歌は多くの人に歌われています。",
+            "reading": "このうたはおおくのひとにうたわれています。",
+            "translation": "This song is sung by many people.",
+            "focus": "歌われ",
+            "distractors": [
+              "歌いれ",
+              "歌られ",
+              "歌わられ"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n4-passive-7",
+            "text": "私は納豆が食べられます。",
+            "reading": "わたしはなっとうがたべられます。",
+            "translation": "I can eat natto.",
+            "focus": "が",
+            "distractors": [
+              "の",
+              "へ",
+              "な"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "row": 40,
+      "label": "Causative (させる)",
+      "lesson": {
+        "id": "n4-causative",
+        "level": "n4",
+        "title": "The causative させる: make or let someone do",
+        "summary": "The causative (行かせる, 食べさせる, させる) says that someone makes or lets another person do something.",
+        "pattern": [
+          "う-verbs: あ-row + せる (待つ → 待たせる)",
+          "る-verbs: させる (食べる → 食べさせる); する → させる, 来る → 来させる",
+          "A は B を V-causative (no object) / A は B に N を V-causative"
+        ],
+        "body": [
+          "う-verbs change the final u to the a-row and add せる: 待つ → 待たせる, 立つ → 立たせる, 行く → 行かせる. る-verbs add させる: 食べる → 食べさせる. する becomes させる and 来る becomes 来させる. The causative is a る-verb: させます, させました, させて.",
+          "The causer is the topic or subject. When the verb has no object, the person made to act takes を: 先生は学生を立たせました. When the verb already has an object with を, the person takes に so that を is not used twice: 母は弟に野菜を食べさせました. Whether it means make or let depends on context: 子どもには好きなことをさせたい (I want to let my child do what she likes). 待たせる (keep someone waiting) is very common: お待たせしました.",
+          "The contrast example uses the passive 笑われる (be laughed at), which has a similar shape but the opposite direction: the subject receives the action. Causative せる, passive れる.",
+          "A common mistake is to use を twice (×娘を犬の散歩をさせる); when there is already an object, the person takes に."
+        ],
+        "examples": [
+          {
+            "id": "n4-causative-1",
+            "text": "母は弟に野菜を食べさせました。",
+            "reading": "はははおとうとにやさいをたべさせました。",
+            "translation": "My mother made my little brother eat his vegetables.",
+            "focus": "食べさせ",
+            "distractors": [
+              "食べらせ",
+              "食べされ",
+              "食べせ"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n4-causative-2",
+            "text": "先生は学生を立たせました。",
+            "reading": "せんせいはがくせいをたたせました。",
+            "translation": "The teacher made the student stand up.",
+            "focus": "を",
+            "distractors": [
+              "が",
+              "で",
+              "から"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n4-causative-3",
+            "text": "子どもには好きなことをさせたいです。",
+            "reading": "こどもにはすきなことをさせたいです。",
+            "translation": "I want to let my child do what she likes.",
+            "focus": "させ",
+            "distractors": [
+              "しせ",
+              "すらせ",
+              "しさせ"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n4-causative-4",
+            "text": "部長は私を三時間も待たせました。",
+            "reading": "ぶちょうはわたしをさんじかんもまたせました。",
+            "translation": "The manager kept me waiting for three whole hours.",
+            "focus": "待たせ",
+            "distractors": [
+              "待ちさせ",
+              "待させ",
+              "待てせ"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n4-causative-5",
+            "text": "娘に犬の散歩をさせています。",
+            "reading": "むすめにいぬのさんぽをさせています。",
+            "translation": "I have my daughter walk the dog.",
+            "focus": "に",
+            "distractors": [
+              "を",
+              "で",
+              "へ"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n4-causative-6",
+            "text": "みんなに笑われて、恥ずかしかったです。",
+            "reading": "みんなにわらわれて、はずかしかったです。",
+            "translation": "Everyone laughed at me and I was embarrassed.",
+            "focus": "笑われて",
+            "distractors": [
+              "笑らせて",
+              "笑いれて",
+              "笑えれて"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "row": 41,
+      "label": "までに and まで",
+      "lesson": {
+        "id": "n4-madeni-made",
+        "level": "n4",
+        "title": "までに and まで: by and until",
+        "summary": "まで marks the end of a continuing action (until), and までに marks a deadline by which a one-time action happens (by).",
+        "pattern": [
+          "time / V-dict + まで + continuing action",
+          "time / V-dict + までに + one-time action",
+          "place から place まで"
+        ],
+        "body": [
+          "Both attach to a time word or a dictionary-form verb: 九時まで, 雨がやむまで; 五時までに, 卒業するまでに. まで also marks a place: 駅から家まで (from the station to my house).",
+          "まで means until: the action goes on the whole time up to that point, so it goes with continuing actions such as 働く, 待つ, いる. までに means by, no later than: a single action happens at some point before the deadline, so it goes with verbs such as 帰ってくる, 出す, 返す, 取る.",
+          "The contrast example uses 前に (before): 寝る前に says the order of two actions, not a deadline or a period. 前に attaches to the dictionary form or to a noun with の.",
+          "A common mistake is to use まで with a one-time action (×五時まで帰ってきてください); for a deadline use までに."
+        ],
+        "examples": [
+          {
+            "id": "n4-madeni-made-1",
+            "text": "五時までに帰ってきてください。",
+            "reading": "ごじまでにかえってきてください。",
+            "translation": "Please be back by five.",
+            "focus": "までに",
+            "distractors": [
+              "まで",
+              "までで",
+              "からに"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n4-madeni-made-2",
+            "text": "毎日九時まで働いています。",
+            "reading": "まいにちくじまではたらいています。",
+            "translation": "I work until nine every day.",
+            "focus": "まで",
+            "distractors": [
+              "までに",
+              "までを",
+              "にまで"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n4-madeni-made-3",
+            "text": "大学を卒業するまでに、運転免許を取りたいです。",
+            "reading": "だいがくをそつぎょうするまでに、うんてんめんきょをとりたいです。",
+            "translation": "I want to get my driving licence before I graduate from university.",
+            "focus": "までに",
+            "distractors": [
+              "まで",
+              "までで",
+              "からに"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n4-madeni-made-4",
+            "text": "駅から家まで歩いて十分です。",
+            "reading": "えきからいえまであるいてじゅっぷんです。",
+            "translation": "It is a ten-minute walk from the station to my house.",
+            "focus": "まで",
+            "distractors": [
+              "までに",
+              "を",
+              "が"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n4-madeni-made-5",
+            "text": "雨がやむまで、ここで待ちましょう。",
+            "reading": "あめがやむまで、ここでまちましょう。",
+            "translation": "Let’s wait here until the rain stops.",
+            "focus": "まで",
+            "distractors": [
+              "までに",
+              "までを",
+              "までが"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ],
+            "noOrder": true
+          },
+          {
+            "id": "n4-madeni-made-6",
+            "text": "寝る前に、歯をみがきます。",
+            "reading": "ねるまえに、はをみがきます。",
+            "translation": "I brush my teeth before going to bed.",
+            "focus": "前に",
+            "distractors": [
+              "前で",
+              "前を",
+              "前が"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "row": 42,
+      "label": "間 and 間に: while, during",
+      "lesson": {
+        "id": "n4-aida-ni",
+        "level": "n4",
+        "title": "間 and 間に: during the whole time, at some point during",
+        "summary": "Xの間 / V-ている間 says something goes on for the whole period; 間に says something happens at some point within it.",
+        "pattern": [
+          "N の 間 / V-ている 間 + continuing action",
+          "N の 間に / V-ている 間に + one-time action",
+          "A-い / A-な な + 間(に)"
+        ],
+        "body": [
+          "間 (あいだ) follows a noun with の (夏休みの間), a verb, usually in the ている form (乗っている間), or an adjective (静かな間). With に it becomes 間に. The part before 間 has its own subject with が: 母が買い物をしている間に.",
+          "間 alone means during the whole period: the main clause is a continuing action or state, often with ずっと (夏休みの間、ずっと祖母の家にいました). 間に means at one point during the period: the main clause is a single action that happens and finishes inside it (留守の間に、友だちが来た).",
+          "The contrast example uses ながら, which joins two actions done at the same time by the same person (コーヒーを飲みながら新聞を読む). 間 can have two different subjects and attaches to the ている form or a noun, not to the ます stem.",
+          "A common mistake is to use 間に with a continuing action and ずっと (×夏休みの間に、ずっと…); for the whole period use 間 without に."
+        ],
+        "examples": [
+          {
+            "id": "n4-aida-ni-1",
+            "text": "夏休みの間、ずっと祖母の家にいました。",
+            "reading": "なつやすみのあいだ、ずっとそぼのいえにいました。",
+            "translation": "I stayed at my grandmother’s house for the whole summer holiday.",
+            "focus": "間",
+            "distractors": [
+              "間に",
+              "中",
+              "ながら"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n4-aida-ni-2",
+            "text": "母が買い物をしている間に、部屋を掃除しました。",
+            "reading": "ははがかいものをしているあいだに、へやをそうじしました。",
+            "translation": "While my mother was out shopping, I cleaned the room.",
+            "focus": "間に",
+            "distractors": [
+              "ながら",
+              "間で",
+              "間を"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n4-aida-ni-3",
+            "text": "電車に乗っている間、ずっと本を読んでいました。",
+            "reading": "でんしゃにのっているあいだ、ずっとほんをよんでいました。",
+            "translation": "I read a book the whole time I was on the train.",
+            "focus": "間",
+            "distractors": [
+              "間に",
+              "ながら",
+              "間で"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n4-aida-ni-4",
+            "text": "留守の間に、友だちが来たそうです。",
+            "reading": "るすのあいだに、ともだちがきたそうです。",
+            "translation": "I hear a friend came while I was out.",
+            "focus": "間に",
+            "distractors": [
+              "間で",
+              "ながら",
+              "間を"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n4-aida-ni-5",
+            "text": "授業の間は、静かにしてください。",
+            "reading": "じゅぎょうのあいだは、しずかにしてください。",
+            "translation": "Please be quiet during the lesson.",
+            "focus": "間は",
+            "distractors": [
+              "ながら",
+              "間を",
+              "間が"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n4-aida-ni-6",
+            "text": "コーヒーを飲みながら、新聞を読みます。",
+            "reading": "コーヒーをのみながら、しんぶんをよみます。",
+            "translation": "I read the newspaper while drinking coffee.",
+            "focus": "ながら",
+            "distractors": [
+              "間",
+              "間に",
+              "て"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "row": 43,
+      "label": "ところだ: about to, in the middle of, just did",
+      "lesson": {
+        "id": "n4-tokoro-da",
+        "level": "n4",
+        "title": "ところだ: about to, in the middle of, just did",
+        "summary": "ところだ shows where you are in an action: V-dict ところ is just before, V-ている ところ is in the middle, V-た ところ is just after.",
+        "pattern": [
+          "V-dict + ところだ (about to)",
+          "V-ている + ところだ (in the middle of)",
+          "V-た + ところだ (have just done)"
+        ],
+        "body": [
+          "ところ (point, moment) follows a plain verb, and the verb form chooses the moment: 出かけるところです (I am about to go out), 料理をしているところです (she is in the middle of cooking), 着いたところです (I have just arrived). The past ところでした often means I was just about to: 電話するところでした.",
+          "Time words make the moment clear: これから and もうすぐ go with the dictionary form, たった今 and ちょうど今 with the た form. ところだ is about the moment in the action, so it is used for things happening right now or a moment ago.",
+          "The contrast example uses たばかり (just did), which can cover a longer time felt as recent: 先月引っ越したばかりです. With 先月, ところ is wrong, because たところ only means a moment ago.",
+          "A common mistake is to use the wrong verb form for the moment (×これから出かけたところです); about to takes the dictionary form."
+        ],
+        "examples": [
+          {
+            "id": "n4-tokoro-da-1",
+            "text": "これから出かけるところです。",
+            "reading": "これからでかけるところです。",
+            "translation": "I am just about to go out.",
+            "focus": "出かける",
+            "distractors": [
+              "出かけた",
+              "出かけて",
+              "出かけ"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n4-tokoro-da-2",
+            "text": "母は台所で料理をしているところです。",
+            "reading": "はははだいどころでりょうりをしているところです。",
+            "translation": "My mother is in the middle of cooking in the kitchen.",
+            "focus": "ところ",
+            "distractors": [
+              "ところに",
+              "ところを",
+              "ところで"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n4-tokoro-da-3",
+            "text": "たった今、駅に着いたところです。",
+            "reading": "たったいま、えきについたところです。",
+            "translation": "I have just this moment arrived at the station.",
+            "focus": "着いた",
+            "distractors": [
+              "着く",
+              "着いている",
+              "着いて"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n4-tokoro-da-4",
+            "text": "ちょうど今、あなたに電話するところでした。",
+            "reading": "ちょうどいま、あなたにでんわするところでした。",
+            "translation": "I was just about to call you.",
+            "focus": "ところでした",
+            "distractors": [
+              "ところだでした",
+              "ところにでした",
+              "ところをでした"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n4-tokoro-da-5",
+            "text": "もうすぐ授業が始まるところだから、静かにしてね。",
+            "reading": "もうすぐじゅぎょうがはじまるところだから、しずかにしてね。",
+            "translation": "The lesson is about to start, so be quiet, OK?",
+            "focus": "始まる",
+            "distractors": [
+              "始まった",
+              "始まって",
+              "始まり"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n4-tokoro-da-6",
+            "text": "先月引っ越したばかりです。",
+            "reading": "せんげつひっこしたばかりです。",
+            "translation": "I only moved here last month.",
+            "focus": "ばかり",
+            "distractors": [
+              "ところ",
+              "まま",
+              "ほど"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "row": 44,
+      "label": "たばかり: just did",
+      "lesson": {
+        "id": "n4-ta-bakari",
+        "level": "n4",
+        "title": "たばかり: have just done",
+        "summary": "V-た + ばかりだ says that something happened only a short time ago, as the speaker feels it, even if days or months have passed.",
+        "pattern": [
+          "V-た + ばかりだ",
+          "V-た + ばかりの + N",
+          "V-た + ばかりなのに / ばかりなので"
+        ],
+        "body": [
+          "Add ばかり to the た form: 買ったばかりだ, 来たばかりだ. It works like a noun: ばかりの before a noun (来たばかりのころ), ばかりなのに or ばかりなので in a clause, ばかりだから in casual speech. Politely: ばかりです.",
+          "たばかり says that something feels recent. The time can be long (先月引っ越したばかり, 日本に来たばかりのころ). It often explains a situation: 食べたばかりなので、お腹がいっぱい, or complains: 直したばかりなのに、また壊れた.",
+          "The contrast example uses たところ, which is about the exact moment just after an action (今、仕事が終わったところです). Use ところ for right now and ばかり for felt as recent.",
+          "A common mistake is to use the dictionary form or te-form (×買うばかり for just bought); V-ばかり and V-てばかり mean only or keep doing, so just did needs the た form."
+        ],
+        "examples": [
+          {
+            "id": "n4-ta-bakari-1",
+            "text": "この本は昨日買ったばかりです。",
+            "reading": "このほんはきのうかったばかりです。",
+            "translation": "I only bought this book yesterday.",
+            "focus": "買った",
+            "distractors": [
+              "買う",
+              "買って",
+              "買い"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n4-ta-bakari-2",
+            "text": "日本に来たばかりのころは、何も分かりませんでした。",
+            "reading": "にほんにきたばかりのころは、なにもわかりませんでした。",
+            "translation": "When I had just come to Japan, I did not understand anything.",
+            "focus": "ばかりの",
+            "distractors": [
+              "ばかりな",
+              "ばかりだ",
+              "ところの"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n4-ta-bakari-3",
+            "text": "先週直したばかりなのに、また壊れました。",
+            "reading": "せんしゅうなおしたばかりなのに、またこわれました。",
+            "translation": "I only fixed it last week, but it has broken again.",
+            "focus": "ばかりなのに",
+            "distractors": [
+              "ばかりのに",
+              "ばかりだのに",
+              "ところなのに"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n4-ta-bakari-4",
+            "text": "昼ご飯を食べたばかりなので、お腹がいっぱいです。",
+            "reading": "ひるごはんをたべたばかりなので、おなかがいっぱいです。",
+            "translation": "I have just had lunch, so I am full.",
+            "focus": "食べた",
+            "distractors": [
+              "食べる",
+              "食べ",
+              "食べよう"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n4-ta-bakari-5",
+            "text": "起きたばかりだから、まだ眠い。",
+            "reading": "おきたばかりだから、まだねむい。",
+            "translation": "I have only just got up, so I am still sleepy.",
+            "focus": "ばかりだ",
+            "distractors": [
+              "ばかりの",
+              "ばかりな",
+              "ところに"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n4-ta-bakari-6",
+            "text": "今、仕事が終わったところです。",
+            "reading": "いま、しごとがおわったところです。",
+            "translation": "I have just finished work.",
+            "focus": "ところ",
+            "distractors": [
+              "ところに",
+              "まま",
+              "ほう"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "row": 45,
+      "label": "の and こと: turning a clause into a noun",
+      "lesson": {
+        "id": "n4-no-koto",
+        "level": "n4",
+        "title": "の and こと: turning a clause into a noun",
+        "summary": "の and こと after a plain form turn a clause into a noun; the verb that follows decides which one fits.",
+        "pattern": [
+          "plain form + の / こと + は / が / を",
+          "V-dict + のが 見える / 聞こえる / 好き / 上手",
+          "N は V-dict + ことです"
+        ],
+        "body": [
+          "Both follow the plain form (読む, 読んだ, 遊んでいる) and make it a noun that can take は, が, を: 魚を釣るのが上手です, 写真を撮ることです. A な-adjective takes な before them (静かなのが好き), a noun takes なの (学生なのを).",
+          "Often both are possible (料理を作るのが好き / 作ることが好き), but some contexts need one. の is used with what you perceive directly (見える, 聞こえる, 見る) and with verbs such as 手伝う and 待つ: 遊んでいるのが見えます, 宿題をするのを手伝いました. こと is used before です in definitions (趣味は〜ことです), in fixed patterns (ことができる, ことがある), and with verbs of telling and deciding: 休むことを伝えてください.",
+          "The contrast example uses もの (a thing), which names a concrete object, not an action: 温かいものが飲みたい means something warm to drink. こと would make it an abstract matter, which cannot be drunk.",
+          "A common mistake is to end a definition with の: 趣味は写真を撮るのです sounds unnatural to most speakers; before です at the end of a definition use こと: 趣味は写真を撮ることです."
+        ],
+        "examples": [
+          {
+            "id": "n4-no-koto-1",
+            "text": "私の趣味は写真を撮ることです。",
+            "reading": "わたしのしゅみはしゃしんをとることです。",
+            "translation": "My hobby is taking photos.",
+            "focus": "こと",
+            "distractors": [
+              "もの",
+              "ところ",
+              "ことが"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n4-no-koto-2",
+            "text": "子どもが公園で遊んでいるのが見えます。",
+            "reading": "こどもがこうえんであそんでいるのがみえます。",
+            "translation": "I can see children playing in the park.",
+            "focus": "のが",
+            "distractors": [
+              "ことが",
+              "ものが",
+              "のを"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n4-no-koto-3",
+            "text": "父は魚を釣るのが上手です。",
+            "reading": "ちちはさかなをつるのがじょうずです。",
+            "translation": "My father is good at fishing.",
+            "focus": "のが",
+            "distractors": [
+              "のを",
+              "のに",
+              "とが"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n4-no-koto-4",
+            "text": "明日休むことを先生に伝えてください。",
+            "reading": "あしたやすむことをせんせいにつたえてください。",
+            "translation": "Please tell the teacher that I will be absent tomorrow.",
+            "focus": "こと",
+            "distractors": [
+              "もの",
+              "ところ",
+              "ため"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n4-no-koto-5",
+            "text": "弟が宿題をするのを手伝いました。",
+            "reading": "おとうとがしゅくだいをするのをてつだいました。",
+            "translation": "I helped my little brother do his homework.",
+            "focus": "のを",
+            "distractors": [
+              "ものを",
+              "のが",
+              "ためを"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n4-no-koto-6",
+            "text": "何か温かいものが飲みたいです。",
+            "reading": "なにかあたたかいものがのみたいです。",
+            "translation": "I want something warm to drink.",
+            "focus": "もの",
+            "distractors": [
+              "こと",
+              "ところ",
+              "とき"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "row": 46,
+      "label": "お〜になる and お〜する: first honorific and humble forms",
+      "lesson": {
+        "id": "n4-o-ninaru-o-suru",
+        "level": "n4",
+        "title": "お〜になる and お〜する: honorific and humble forms",
+        "summary": "お + V-ます stem + になる raises someone else’s action (honorific); お / ご + V-ます stem + する lowers your own action done for them (humble).",
+        "pattern": [
+          "お + V-ます stem + になる (their action)",
+          "お + V-ます stem + する; ご + する-noun + する (my action for them)",
+          "お + V-ます stem + ください (polite request)"
+        ],
+        "body": [
+          "Honorific: put お before the ます stem and add になる: 帰ります → お帰りになる, 読みます → お読みになる, 着きます → お着きになる. Humble: put お before the ます stem and add する: 持ちます → お持ちする, 知らせます → お知らせする. Sino-Japanese する-nouns take ご instead: ご案内する, ご説明する (a few such as 電話 take お: お電話する). Very short stems (見る, いる, 寝る) do not use these patterns; they have special verbs that come later.",
+          "The honorific form shows respect by raising the person who acts, so it is only for other people’s actions: 先生はもうお帰りになりました. The humble form shows respect by lowering yourself when you do something for or towards a superior or customer: 私がお荷物をお持ちします. Using the honorific for yourself (×私がお持ちになります) or the humble for a superior (×先生がお帰りしました) is a real error.",
+          "The contrast example uses お + ます stem + ください, a polite request to the listener (どうぞ、こちらにお座りください). It shares the お and the stem but asks someone to do something instead of describing an action.",
+          "A common mistake is to use お with a Sino-Japanese noun (×お案内します); most such nouns take ご: ご案内します."
+        ],
+        "examples": [
+          {
+            "id": "n4-o-ninaru-o-suru-1",
+            "text": "先生はもうお帰りになりました。",
+            "reading": "せんせいはもうおかえりになりました。",
+            "translation": "The teacher has already gone home.",
+            "focus": "になり",
+            "distractors": [
+              "なり",
+              "にし",
+              "がなり"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n4-o-ninaru-o-suru-2",
+            "text": "私がお荷物をお持ちします。",
+            "reading": "わたしがおにもつをおもちします。",
+            "translation": "Let me carry your luggage.",
+            "focus": "お持ちし",
+            "distractors": [
+              "お持ちになり",
+              "お持って",
+              "お持ちくださり"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n4-o-ninaru-o-suru-3",
+            "text": "社長は何時にお着きになりますか。",
+            "reading": "しゃちょうはなんじにおつきになりますか。",
+            "translation": "What time will the president arrive?",
+            "focus": "お着きになり",
+            "distractors": [
+              "お着きなり",
+              "お着いてになり",
+              "お着くになり"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n4-o-ninaru-o-suru-4",
+            "text": "会議室までご案内します。",
+            "reading": "かいぎしつまでごあんないします。",
+            "translation": "I will show you to the meeting room.",
+            "focus": "ご",
+            "distractors": [
+              "お",
+              "を",
+              "が"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n4-o-ninaru-o-suru-5",
+            "text": "部長はこの本をもうお読みになりましたか。",
+            "reading": "ぶちょうはこのほんをもうおよみになりましたか。",
+            "translation": "Have you already read this book, sir?",
+            "focus": "読み",
+            "distractors": [
+              "読ん",
+              "読む",
+              "読ま"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ],
+            "noOrder": true
+          },
+          {
+            "id": "n4-o-ninaru-o-suru-6",
+            "text": "結果はメールでお知らせします。",
+            "reading": "けっかはメールでおしらせします。",
+            "translation": "We will let you know the results by email.",
+            "focus": "お知らせし",
+            "distractors": [
+              "ご知らせし",
+              "お知らせて",
+              "お知るし"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n4-o-ninaru-o-suru-7",
+            "text": "どうぞ、こちらにお座りください。",
+            "reading": "どうぞ、こちらにおすわりください。",
+            "translation": "Please have a seat here.",
+            "focus": "ください",
+            "distractors": [
+              "します",
+              "てください",
+              "にします"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}

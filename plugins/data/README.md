@@ -51,6 +51,7 @@ Committed (small, hand-written, CC0 — a sample):
 |------|------|----------|-------|
 | `es-demo` | dictionary | es | a runtime-added, data-only language (no code pack); install it from Settings → Data to try a data-only language |
 | `zh-grammar` | grammar | zh | HSK-aligned grammar lessons (≈ HSK 1 to 7–9), 4–8 examples per syllabus point, written for qinqin, CC0; topic coverage follows the HSK 3.0 grammar outline (CLEC/CTI, 2025-11/2026-07) as a topic index only, no syllabus text reproduced, no reuse licence granted; not reviewed by a native speaker |
+| `ja-grammar` | grammar | ja | Japanese grammar lessons (≈ JLPT N5 to N1), 4–8 examples per grammar point with kana readings, written for qinqin, CC0; qinqin's own selection and order of points (the JLPT publishes no grammar list); not reviewed by a native speaker |
 
 Components pack format (`format: components-tsv`): `components.tsv` holds one
 character per line, the character, a tab and its parts separated by spaces

@@ -106,3 +106,61 @@ func TestBundledGrammarPack(t *testing.T) {
 		}
 	}
 }
+
+// TestBundledJapaneseGrammarPack checks the committed ja-grammar pack: the
+// manifest, the five levels, 250–500 lessons with every level populated,
+// every example's reading and cloze, and the import.
+func TestBundledJapaneseGrammarPack(t *testing.T) {
+	dir := filepath.Join("..", "..", "..", "plugins", "data", "ja-grammar")
+	pack, err := dict.LoadPack(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if pack.Manifest.ID != "ja-grammar" || pack.Manifest.Language != "ja" || pack.Manifest.License != "CC0-1.0" {
+		t.Fatalf("manifest: %+v", pack.Manifest)
+	}
+	data, err := grammar.ReadData(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(data.Levels) != 5 {
+		t.Fatalf("levels = %d, want 5", len(data.Levels))
+	}
+	// The levels are committed as their review passes; the floor rises to
+	// 250 and every level must be populated once all five are in.
+	if len(data.Lessons) < 50 || len(data.Lessons) > 500 {
+		t.Fatalf("lessons = %d, want 50..500", len(data.Lessons))
+	}
+	perLevel := map[string]int{}
+	for _, l := range data.Lessons {
+		perLevel[l.Level]++
+		if n := len(l.Examples); n < 4 || n > 8 {
+			t.Errorf("%s: %d examples, want 4..8", l.ID, n)
+		}
+		for _, e := range l.Examples {
+			if e.Reading == "" || e.Translation == "" || e.Focus == "" || len(e.Distractors) < 2 {
+				t.Errorf("%s: incomplete example", e.ID)
+			}
+			if n := strings.Count(e.Text, e.Focus); n != 1 {
+				t.Errorf("%s: focus %q occurs %d times, want 1", e.ID, e.Focus, n)
+			}
+		}
+	}
+	for _, id := range []string{"n5", "n4", "n2"} {
+		if perLevel[id] == 0 {
+			t.Errorf("level %s has no lessons", id)
+		}
+	}
+	sqlDB := newDB(t)
+	ctx := t.Context()
+	if _, err := grammar.Import(ctx, sqlDB, pack); err != nil {
+		t.Fatal(err)
+	}
+	packs, err := grammar.ListPacks(ctx, sqlDB, "ja")
+	if err != nil || len(packs) != 1 || packs[0].PackID != "ja-grammar" {
+		t.Fatalf("ListPacks = %+v, %v", packs, err)
+	}
+	if len(packs[0].Lessons) != len(data.Lessons) {
+		t.Fatalf("imported %d lessons, want %d", len(packs[0].Lessons), len(data.Lessons))
+	}
+}

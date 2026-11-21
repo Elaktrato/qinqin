@@ -99,6 +99,16 @@ unverified facts marked unverified) must stay the same in both places.
   The syllabus grants no reuse licence. The levels are qinqin's estimates, not
   official HSK levels. It **has not been reviewed by a native speaker**; errors
   are possible.
+- **Japanese grammar (≈ JLPT levels)** (`ja-grammar`, type `grammar`; bundled):
+  grammar lessons in five levels (≈ N5 to N1), each grammar point taught with
+  4–8 example sentences, kana readings, translations and exercise answers,
+  **written for qinqin by the project and released under CC0 1.0**
+  (`plugins/data/ja-grammar`, with `LICENSE` and `ATTRIBUTION.md`). The JLPT
+  publishes no grammar list; the choice and order of points per level are
+  qinqin's own (`docs/superpowers/specs/2026-11-21-ja-grammar-pack-design.md`),
+  not taken from JLPT preparation books or other published lists. The levels
+  are qinqin's estimates, not official JLPT levels. It **has not been reviewed
+  by a native speaker**; errors are possible.
 
 ## Frequency data
 
