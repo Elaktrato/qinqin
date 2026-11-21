@@ -51,6 +51,7 @@ vi.mock('$lib/api/packs', async (importOriginal) => ({
 	discardStaged: vi.fn(async () => {})
 }));
 
+import { primaryActions } from '$lib/ui/testing/primary';
 import PackManager from './PackManager.svelte';
 
 beforeEach(() => {
@@ -96,5 +97,20 @@ describe('Settings > Data: a staged theme pack', () => {
 		render(PackManager);
 		expect(await screen.findByRole('heading', { name: 'Themes' })).toBeTruthy();
 		expect(screen.getByText('Old themes', { selector: 'strong' })).toBeTruthy();
+	});
+
+	it('the review\'s one primary is Install, in a raised Panel, with a .ui-table per theme (#106)', async () => {
+		const { container } = render(PackManager);
+		expect(primaryActions(document.body).map((b) => b.textContent?.trim())).toEqual(['Upload']);
+		const input = container.querySelector('input[type="file"]') as HTMLInputElement;
+		const file = new File(['zip'], 'paper.zip', { type: 'application/zip' });
+		Object.defineProperty(input, 'files', { value: [file] });
+		await fireEvent.change(input);
+		await fireEvent.click(screen.getByRole('button', { name: 'Upload' }));
+		const review = await screen.findByRole('region', { name: 'Review before installing' });
+		expect(primaryActions(document.body).map((b) => b.textContent?.trim())).toEqual(['Install']);
+		// the licence under review reads as one object to copy from
+		expect(review.querySelector('.panel.raised')?.textContent).toContain('MIT');
+		for (const table of within(review).getAllByRole('table')) expect(table.classList.contains('ui-table')).toBe(true);
 	});
 });

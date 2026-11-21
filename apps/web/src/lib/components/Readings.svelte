@@ -3,7 +3,6 @@
 	import { studyLang } from '$lib/i18n/lang';
 	import type { Reading } from '$lib/api/types';
 	import type { AudioClip } from '$lib/api/audio';
-	import { formatReading } from '$lib/format';
 	import { t } from '$lib/i18n';
 	import PlayButton from './PlayButton.svelte';
 
@@ -32,55 +31,54 @@
 	// The API orders readings, but ord is the contract: sort a copy so a
 	// badly ordered pack still displays predictably.
 	const ordered = $derived([...readings].sort((a, b) => a.ord - b.ord));
+	// The spoken romanisation carries the reading accent; the phonetic
+	// scripts (zhuyin, kana, on/kun) stay muted.
+	const isRomanised = (type: string): boolean =>
+		type === 'pinyin' || type === 'romaji' || type === 'bopomofo';
 </script>
 
 {#if ordered.length > 0}
-	<section class="readings" aria-labelledby="readings-heading">
-		<h2 id="readings-heading">{t('entry.readings.title')}</h2>
-		<ul>
-			{#each ordered as reading, index (`${reading.type}:${reading.ord}:${index}`)}
-				<li data-type={reading.type}>
+	<!-- No section heading: the readings sit in the entry's header (#104). -->
+	<ul class="readings" aria-label={t('entry.readings.title')}>
+		{#each ordered as reading, index (`${reading.type}:${reading.ord}:${index}`)}
+			<li data-type={reading.type}>
+				<span class:romanised={isRomanised(reading.type)}>
 					<ReadingText type={reading.type} value={reading.value} language={studyLang(language) ?? ''} />
-					{#if audioFor && reading.type === 'pinyin'}
-						<PlayButton
-							clips={audioFor(reading, index) ?? []}
-							{lang}
-							{deviceVoice}
-							label={word ? `${word} (${reading.value})` : reading.value}
-						/>
-					{/if}
-				</li>
-			{/each}
-		</ul>
-	</section>
+				</span>
+				{#if audioFor && reading.type === 'pinyin'}
+					<PlayButton
+						clips={audioFor(reading, index) ?? []}
+						{lang}
+						{deviceVoice}
+						label={word ? `${word} (${reading.value})` : reading.value}
+					/>
+				{/if}
+			</li>
+		{/each}
+	</ul>
 {/if}
 
 <style>
-	.readings h2,
-	.readings ul {
-		margin: 0;
-	}
-
 	.readings {
-		margin-top: 2rem;
-	}
-
-	.readings h2 {
-		font-size: 0.8rem;
-		letter-spacing: 0.06em;
-		text-transform: uppercase;
-		color: var(--readable-muted);
-	}
-
-	.readings ul {
-		list-style: none;
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: var(--space-1) var(--space-4);
+		margin: 0;
 		padding: 0;
-		margin-top: 0.5rem;
-		display: grid;
-		gap: 0.3rem;
+		list-style: none;
 	}
 
 	.readings li {
-		font-size: 1.05rem;
+		display: flex;
+		align-items: center;
+		gap: var(--space-1);
+		font-size: 1.0625rem;
+		color: var(--readable-muted);
+	}
+
+	.readings .romanised {
+		color: var(--reading-accent);
+		font-weight: var(--weight-medium);
 	}
 </style>

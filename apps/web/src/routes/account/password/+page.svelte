@@ -7,6 +7,7 @@
 	import { loadMe, user } from '$lib/auth';
 	import { pageTitle } from '$lib/pageTitle';
 	import { t } from '$lib/i18n';
+	import { Button, Field } from '$lib/ui';
 
 	let current = $state('');
 	let next = $state('');
@@ -72,40 +73,41 @@
 
 	<form onsubmit={submit}>
 		{#if needCurrent}
-			<label>
-				{t('auth.forced.current')}
-				<input
-					name="current"
-					type="password"
-					autocomplete="current-password"
-					bind:value={current}
-					required
-				/>
-			</label>
-		{/if}
-
-		<label>
-			{t('auth.reset.newPassword')}
-			<input
-				name="new"
+			<Field
+				label={t('auth.forced.current')}
+				name="current"
 				type="password"
-				autocomplete="new-password"
-				aria-describedby="password-rules"
-				bind:value={next}
+				autocomplete="current-password"
+				bind:value={current}
 				required
 			/>
-		</label>
-		<p class="hint" id="password-rules">{passwordHint()}</p>
+		{/if}
 
-		<label>
-			{t('auth.reset.repeat')}
-			<input name="confirm" type="password" autocomplete="new-password" bind:value={confirm} required />
-		</label>
+		<Field
+			label={t('auth.reset.newPassword')}
+			name="new"
+			type="password"
+			autocomplete="new-password"
+			hint={passwordHint()}
+			bind:value={next}
+			required
+		/>
+
+		<Field
+			label={t('auth.reset.repeat')}
+			name="confirm"
+			type="password"
+			autocomplete="new-password"
+			bind:value={confirm}
+			required
+		/>
 
 		{#if error}
 			<p class="error" role="alert">{error}</p>
 		{/if}
 
-		<button type="submit" disabled={busy}>{busy ? t('auth.forced.changing') : t('auth.forced.submit')}</button>
+		<Button type="submit" variant="primary" busy={busy}
+			>{busy ? t('auth.forced.changing') : t('auth.forced.submit')}</Button
+		>
 	</form>
 </div>

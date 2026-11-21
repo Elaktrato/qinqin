@@ -3,6 +3,7 @@
 	import { getToken } from '$lib/api/client';
 	import { user } from '$lib/auth';
 	import { t } from '$lib/i18n';
+	import { Button, Section } from '$lib/ui';
 	import { workspaces } from '$lib/workspaces';
 	import { appSectionView, clearOfflineData } from './appSectionView';
 	import { ownPartition } from './partitions';
@@ -10,7 +11,6 @@
 	import { offline, setPrepared } from './offlineState';
 	import { readReceipt } from './prepareOffline';
 
-	const uid = $props.id();
 	const secure = typeof window !== 'undefined' && window.isSecureContext === true;
 	let usage = $state<{ usage: number; quota: number } | null>(null);
 	let cleared = $state(false);
@@ -77,13 +77,12 @@
 	});
 </script>
 
-<section aria-labelledby="{uid}-heading" class="block">
-	<h2 id="{uid}-heading">{t('pwa.app.title')}</h2>
+<Section title={t('pwa.app.title')}>
 	{#if view.httpsNote}
 		<p class="hint">{view.httpsNote}</p>
 	{:else}
 		{#if view.showInstall}
-			<p><button type="button" onclick={() => void promptInstall()}>{t('pwa.app.install')}</button></p>
+			<p><Button onclick={() => void promptInstall()}>{t('pwa.app.install')}</Button></p>
 		{/if}
 		{#if view.installedNote}
 			<p class="hint">{t('pwa.app.installed')}</p>
@@ -95,17 +94,15 @@
 		{#if view.storageLine}<p class="hint">{view.storageLine}</p>{/if}
 		{#if view.showClear}
 			<p>
-				<button type="button" onclick={() => void clear()} disabled={busy}>{t('pwa.app.clear')}</button>
+				<Button tone="danger" onclick={() => void clear()} disabled={busy}>{t('pwa.app.clear')}</Button>
 			</p>
 			<p class="hint" role="status">
 				{cleared ? t('pwa.app.cleared') : ''}
 			</p>
 		{/if}
 	{/if}
-</section>
+</Section>
 
 <style>
-	.block {
-		margin-bottom: 2rem;
-	}
+	/* Sections carry the spacing; the view brings no box (#106). */
 </style>

@@ -9,12 +9,12 @@
   "version": 1,
   "mode": "system",
   "light": {
-   "theme": "catppuccin-latte",
-   "accent": "mauve"
+   "theme": "qinqin-day",
+   "accent": "azure"
   },
   "dark": {
-   "theme": "catppuccin-mocha",
-   "accent": "mauve"
+   "theme": "qinqin-night",
+   "accent": "cyan"
   },
   "corners": "soft",
   "spacing": "comfortable",
@@ -52,6 +52,32 @@
   "hanziFont": "kai"
  },
  "themes": [
+  {
+   "id": "qinqin-day",
+   "scheme": "light",
+   "defaultAccent": "azure",
+   "accentChoices": [
+    "azure",
+    "blue",
+    "navy",
+    "teal",
+    "violet",
+    "pink"
+   ]
+  },
+  {
+   "id": "qinqin-night",
+   "scheme": "dark",
+   "defaultAccent": "cyan",
+   "accentChoices": [
+    "cyan",
+    "azure",
+    "sky",
+    "violet",
+    "pink",
+    "gold"
+   ]
+  },
   {
    "id": "catppuccin-latte",
    "scheme": "light",
@@ -101,12 +127,12 @@
    "expect": {
     "mode": "system",
     "light": {
-     "theme": "catppuccin-latte",
-     "accent": "mauve"
+     "theme": "qinqin-day",
+     "accent": "azure"
     },
     "dark": {
-     "theme": "catppuccin-mocha",
-     "accent": "mauve"
+     "theme": "qinqin-night",
+     "accent": "cyan"
     },
     "corners": "soft",
     "spacing": "comfortable",
@@ -120,12 +146,12 @@
     "version": 1,
     "mode": "system",
     "light": {
-     "theme": "catppuccin-latte",
-     "accent": "mauve"
+     "theme": "qinqin-day",
+     "accent": "azure"
     },
     "dark": {
-     "theme": "catppuccin-mocha",
-     "accent": "mauve"
+     "theme": "qinqin-night",
+     "accent": "cyan"
     },
     "corners": "soft",
     "spacing": "comfortable",
@@ -134,12 +160,12 @@
    "expect": {
     "mode": "system",
     "light": {
-     "theme": "catppuccin-latte",
-     "accent": "mauve"
+     "theme": "qinqin-day",
+     "accent": "azure"
     },
     "dark": {
-     "theme": "catppuccin-mocha",
-     "accent": "mauve"
+     "theme": "qinqin-night",
+     "accent": "cyan"
     },
     "corners": "soft",
     "spacing": "comfortable",
@@ -186,12 +212,12 @@
    "expect": {
     "mode": "system",
     "light": {
-     "theme": "catppuccin-latte",
-     "accent": "mauve"
+     "theme": "qinqin-day",
+     "accent": "azure"
     },
     "dark": {
-     "theme": "catppuccin-mocha",
-     "accent": "mauve"
+     "theme": "qinqin-night",
+     "accent": "cyan"
     },
     "corners": "soft",
     "spacing": "comfortable",
@@ -207,12 +233,12 @@
    "expect": {
     "mode": "system",
     "light": {
-     "theme": "catppuccin-latte",
-     "accent": "mauve"
+     "theme": "qinqin-day",
+     "accent": "azure"
     },
     "dark": {
-     "theme": "catppuccin-mocha",
-     "accent": "mauve"
+     "theme": "qinqin-night",
+     "accent": "cyan"
     },
     "corners": "soft",
     "spacing": "comfortable",
@@ -239,12 +265,12 @@
    "expect": {
     "mode": "system",
     "light": {
-     "theme": "catppuccin-latte",
-     "accent": "mauve"
+     "theme": "qinqin-day",
+     "accent": "azure"
     },
     "dark": {
-     "theme": "catppuccin-mocha",
-     "accent": "mauve"
+     "theme": "qinqin-night",
+     "accent": "cyan"
     },
     "corners": "soft",
     "spacing": "comfortable",
@@ -272,12 +298,12 @@
    "expect": {
     "mode": "system",
     "light": {
-     "theme": "catppuccin-latte",
-     "accent": "mauve"
+     "theme": "qinqin-day",
+     "accent": "azure"
     },
     "dark": {
-     "theme": "catppuccin-mocha",
-     "accent": "mauve"
+     "theme": "qinqin-night",
+     "accent": "cyan"
     },
     "corners": "soft",
     "spacing": "comfortable",
@@ -305,12 +331,12 @@
    "expect": {
     "mode": "system",
     "light": {
-     "theme": "catppuccin-latte",
-     "accent": "mauve"
+     "theme": "qinqin-day",
+     "accent": "azure"
     },
     "dark": {
-     "theme": "catppuccin-mocha",
-     "accent": "mauve"
+     "theme": "qinqin-night",
+     "accent": "cyan"
     },
     "corners": "soft",
     "spacing": "comfortable",
@@ -338,12 +364,12 @@
    "expect": {
     "mode": "system",
     "light": {
-     "theme": "catppuccin-latte",
-     "accent": "mauve"
+     "theme": "qinqin-day",
+     "accent": "azure"
     },
     "dark": {
-     "theme": "catppuccin-mocha",
-     "accent": "mauve"
+     "theme": "qinqin-night",
+     "accent": "cyan"
     },
     "corners": "soft",
     "spacing": "comfortable",
@@ -437,8 +463,8 @@
    "expect": {
     "mode": "dark",
     "light": {
-     "theme": "catppuccin-latte",
-     "accent": "mauve"
+     "theme": "qinqin-day",
+     "accent": "azure"
     },
     "dark": {
      "theme": "nord",
@@ -463,8 +489,8 @@
    "expect": {
     "mode": "light",
     "light": {
-     "theme": "catppuccin-latte",
-     "accent": "mauve"
+     "theme": "qinqin-day",
+     "accent": "azure"
     },
     "dark": {
      "theme": "nord",
@@ -500,7 +526,7 @@
      "accent": "pine"
     },
     "dark": {
-     "theme": "catppuccin-mocha",
+     "theme": "qinqin-night",
      "accent": "frost"
     },
     "corners": "round",
@@ -715,8 +741,8 @@
    "prefersDark": true,
    "expect": {
     "slot": "dark",
-    "theme": "catppuccin-mocha",
-    "accent": "mauve"
+    "theme": "qinqin-night",
+    "accent": "cyan"
    }
   },
   {
@@ -733,7 +759,7 @@
    "prefersDark": true,
    "expect": {
     "slot": "dark",
-    "theme": "catppuccin-mocha",
+    "theme": "qinqin-night",
     "accent": "pink"
    }
   },
@@ -751,8 +777,8 @@
    "prefersDark": true,
    "expect": {
     "slot": "dark",
-    "theme": "catppuccin-mocha",
-    "accent": "mauve"
+    "theme": "qinqin-night",
+    "accent": "cyan"
    }
   },
   {
@@ -804,12 +830,12 @@
     "version": 1,
     "mode": "dark",
     "light": {
-     "theme": "catppuccin-latte",
-     "accent": "mauve"
+     "theme": "qinqin-day",
+     "accent": "azure"
     },
     "dark": {
-     "theme": "catppuccin-mocha",
-     "accent": "mauve"
+     "theme": "qinqin-night",
+     "accent": "cyan"
     },
     "corners": "soft",
     "spacing": "comfortable",
@@ -1029,12 +1055,12 @@
     "version": 1,
     "mode": "system",
     "light": {
-     "theme": "catppuccin-latte",
-     "accent": "mauve"
+     "theme": "qinqin-day",
+     "accent": "azure"
     },
     "dark": {
-     "theme": "catppuccin-mocha",
-     "accent": "mauve"
+     "theme": "qinqin-night",
+     "accent": "cyan"
     },
     "corners": "soft",
     "spacing": "comfortable",

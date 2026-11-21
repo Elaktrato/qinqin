@@ -25,10 +25,12 @@ database with a SvelteKit single-page app embedded in the binary.
   language into several named workspaces; each has its own flag, decks, library
   and statistics (see [Workspaces](#workspaces)).
 - **Themes** — Settings → Appearance picks a light and a dark colour theme
-  (Catppuccin, Rosé Pine, Nord, Gruvbox, Dracula, Solarized, Tokyo Night,
-  Everforest, Kanagawa built in; more as `theme` packs), an accent, corners,
+  (qinqin Day, Night and Deep plus the Neon, Pigments and Pop extras, then
+  Catppuccin, Rosé Pine, Nord, Gruvbox, Dracula, Solarized, Tokyo Night,
+  Everforest and Kanagawa built in; more as `theme` packs), an accent, corners,
   spacing and the hanzi font; saved to your account and following the device's
-  light/dark setting (rules: `docs/contracts/themes/`).
+  light/dark setting (rules: `docs/contracts/themes/`). qinqin Day and Night
+  are the defaults for a fresh account and the offline first paint.
 - **Search** — across written forms, readings, and meanings, scoped to the
   current workspace language.
 - **Radical and part lookup** — in Chinese and Japanese workspaces, find a
@@ -52,7 +54,8 @@ database with a SvelteKit single-page app embedded in the binary.
   Flashcards and the reader are part of the app (not plugins since v0.4.0); each
   user can switch either off for themselves in **Settings → Features**.
 - **Decks, limits and vacation** — a decks view with per-deck numbers (studied,
-  mastered, due, 30-day reviews, retention) and copies of level decks; starter decks
+  mastered, due, 30-day reviews, retention), one-click **Add** copies in the level and
+  starter deck dropdowns, and starter decks
   (Top 500/1000/2000 of an installed frequency list, known words skipped) and a
   per-deck and per-session order for new cards (added, most frequent first, by level); optional
   reverse and cloze cards per deck; daily limits for new cards and reviews (per
@@ -122,10 +125,14 @@ database with a SvelteKit single-page app embedded in the binary.
   device. Plugins contribute activity through an `events[].activity` rule in
   their manifest (`label`, `describe`, and optionally `measure` + `pointsPer`
   or `distinctBy`); the server scores it, no core change is needed.
-- **Stats** — a nav item for every workspace (`/stats`) with two tabs:
-  **Overview** shows every widget that applies to the workspace, in a fixed
-  order (core first, then plugins); **Characters** (`/stats/characters`) is the
-  mastery map, for Chinese and Japanese workspaces only.
+- **Stats** — a nav item for every workspace (`/stats`) with three text tabs:
+  **Overview** stays a widget grid and opens with four large numbers (day
+  streak, words known, recall over the last 30 days, time studied this month),
+  then cards by state, the level and XP line, reviews per day over the last 30
+  days and every other widget that applies; **Characters**
+  (`/stats/characters`) is the single-hue mastery map, for Chinese and Japanese
+  workspaces only; **Week** (`/stats/week`) browses weeks with arrows and shows
+  four numbers, paired bars for this and last week, and the milestones.
 - **Journal and AI** — write dated entries per workspace; with your own
   key for the AI provider you choose (Anthropic, OpenAI, Google Gemini,
   DeepSeek, Mistral, xAI, Groq, OpenRouter or a custom OpenAI-compatible
@@ -135,6 +142,66 @@ database with a SvelteKit single-page app embedded in the binary.
 - **Plugin architecture** — dictionaries, level schemes, and example sentences
   are installable data packs; widgets and views come from feature plugins that
   the server registers at startup so Settings can enable them.
+
+## Screenshots
+
+The app in the 2026 visual rework, with demo data only (a made-up account). Themes are
+picked from the built-in set; the qinqin Day and qinqin Night themes are the defaults.
+
+![Home with the garden heatmap, activity chips and the daily goal](docs/assets/screenshots/home-1440-latte.png)
+
+*Home: the garden heatmap, activity by type, the daily goal and the week's numbers.*
+
+![A flashcard after the answer, with the four grade buttons and their intervals](docs/assets/screenshots/session-1440-mocha.png)
+
+*A flashcard after the answer: the readings and meanings, then Again / Hard / Good / Easy with their intervals.*
+
+![The reader with a word's lookup popup open](docs/assets/screenshots/reader-1440-rosepine-dawn.png)
+
+*The reader with a word's lookup popup: readings, level, meanings and Add to deck.*
+
+![The reader's lookup as a phone bottom sheet](docs/assets/screenshots/reader-sheet-360-rosepine.png)
+
+*The same lookup on a phone: the bottom sheet keeps the text visible.*
+
+![A journal entry's review with corrections in the right margin](docs/assets/screenshots/journal-1440-nord.png)
+
+*The journal: the three-column page with the review's corrections in the margin.*
+
+![Search with the selected entry beside the results](docs/assets/screenshots/search-entry-1440-gruvbox.png)
+
+*Search: results on the left, the entry with meanings, characters and stroke order beside them.*
+
+![Stats overview with four numbers and the activity widgets](docs/assets/screenshots/stats-overview-1440-latte.png)
+
+*Stats → Overview: the four numbers, words by state, the level line and reviews per day.*
+
+![The character mastery map with the level filter](docs/assets/screenshots/stats-characters-1024-gruvbox.png)
+
+*Stats → Characters: the single-hue mastery map; the Level select shows one level's own count.*
+
+![The week with four numbers and paired daily bars](docs/assets/screenshots/stats-week-360-mocha.png)
+
+*Stats → Week: four numbers, the compared window and this week / last week per day.*
+
+![The phone drawer with Home and then Search first](docs/assets/screenshots/drawer-360-mocha.png)
+
+*The phone drawer: Home, then Search, then the feature pages.*
+
+![The decks view with the overall numbers and the deck list](docs/assets/screenshots/decks-1024-macchiato.png)
+
+*Decks: overall numbers, your decks, starter decks and the installed level decks.*
+
+![Settings → Appearance on a phone, with the qinqin themes first](docs/assets/screenshots/settings-appearance-360-frappe.png)
+
+*Settings → Appearance: the tabs wrap on a phone, and the qinqin themes lead the picker.*
+
+![The sign-in page on a phone](docs/assets/screenshots/sign-in-360-latte.png)
+
+*Sign in on a phone.*
+
+Dictionary data in the screenshots: CC-CEDICT, CC BY-SA 4.0; text: Lu Xun, public
+domain; theme credits: [`docs/sources.md`](docs/sources.md).
 
 ## Quick start (Docker Compose / Portainer)
 
@@ -146,19 +213,32 @@ the Compose plugin required) run:
 docker compose up -d
 ```
 
-No reverse proxy in front? Set `QINQIN_TRUSTED_PROXIES=none` (uncomment it in
-`docker-compose.yml`): the default trusts private-network peers' `X-Forwarded-For`,
+No reverse proxy in front? Set `QINQIN_TRUSTED_PROXIES=none` (in `.env`, or
+the stack environment): the default trusts private-network peers' `X-Forwarded-For`,
 which a LAN client could forge to dodge the per-client sign-in limits.
 
-On the first run, seed the bundled packs (the upstream dictionaries, the Jiten
-frequency list and the HSK 3.0 character, HSK 3.0 word and JLPT kanji level lists), then create the admin account:
+The first start installs the bundled packs by itself (the upstream dictionaries,
+the Jiten frequency list, the HSK 3.0 character, HSK 3.0 word and JLPT kanji
+level lists, the stroke data and the Kanji alive audio when present) before it
+listens: about 2 minutes (126 s measured on a busy machine; the first start only), and the health check allows 300 s. Create
+the admin account:
 
 ```bash
-docker compose exec qinqin qinqin seed
 docker compose exec qinqin qinqin adduser --admin --username you
 ```
 
-`qinqin seed` takes `--data <dir>` (the data directory; default `$QINQIN_DATA` or
+The auto-seed runs once per database and only on a fresh instance, that is
+while no pack of any type is installed. An upgraded or curated instance is
+never touched, and packs an administrator uninstalled stay uninstalled (a marker
+in the database records that it ran). It leaves out the demo packs `es-demo`
+and `zh-grammar-demo`. A pack that fails to import is logged
+(`auto-seed failed ...`), the server starts anyway, and the next start tries
+again. `QINQIN_AUTO_SEED=0` (or `false`, `off`) turns it off.
+
+`qinqin seed` is for what the auto-seed does not do: the demo packs
+(`docker compose exec qinqin qinqin seed` installs everything the image ships,
+demos included), local packs, and re-seeding after an image update that ships
+newer packs. It takes `--data <dir>` (the data directory; default `$QINQIN_DATA` or
 `./data`) and `--packs <dir>[,<dir>...]` (pack roots, comma-separated and/or
 repeated; default `$QINQIN_PACKS`, or `plugins/data` plus `plugins/data-local`
 when that exists; the image sets `QINQIN_PACKS` to the packs it ships). Under
@@ -212,9 +292,16 @@ the server waits at most 5 s (`busy_timeout`) before a write fails.
 The `adduser` command prompts for a password (10 to 256 characters, not the username). Then open
 <http://localhost:8080>.
 
-The SQLite database and installed packs live in `./data` next to the compose
-file. Set `QINQIN_PORT` to change the published port and `QINQIN_IMAGE` to pin
-an image.
+The SQLite database and installed packs live in the named volume `qinqin-data`.
+Set `QINQIN_DATA_VOLUME=./data` (or an absolute path such as `/srv/qinqin/data`)
+to bind-mount a host directory instead. Set `QINQIN_PORT` to change the
+published port and `QINQIN_IMAGE` to pin an image. `QINQIN_SECRET` is optional:
+empty means AI features are off (see [Journal and AI](#journal-and-ai)).
+
+> **Upgrading from the old quick start?** It kept the data in `./data`; the
+> compose file now defaults to a named volume, so without a change you would
+> start on an empty instance. Previously `./data`: set `QINQIN_DATA_VOLUME=./data`
+> (in a `.env` file next to `docker-compose.yml`) to keep using it.
 
 > Seed and create the admin account **before** exposing the port beyond your
 > LAN: while no user exists, the first registration over the API becomes the
@@ -246,24 +333,26 @@ Check from the server with `docker pull ghcr.io/elaktrato/qinqin:v0.3.0`.
 
 ## Deploying with Portainer
 
-[`deploy/portainer-stack.yml`](deploy/portainer-stack.yml) differs from the
-quick-start `docker-compose.yml`: a named volume instead of `./data`
-(relative bind mounts depend on where Portainer checks the stack out), a
-required `QINQIN_SECRET` (the deployment fails if it is unset), memory/CPU
-limits (1 GiB, 2 CPUs), log rotation (3 x 10 MB) and `no-new-privileges`.
-It does not set `user:` or `read_only:`: the image has no `USER` (it runs as
-root) and the server writes temporary files to `/tmp` (OCR input, pack
-uploads), so a read-only root filesystem is not enabled.
+Portainer needs no special file: `docker-compose.yml` is plain compose. It uses
+a named volume (relative bind mounts depend on where Portainer checks the stack
+out), rotates the logs (3 x 10 MB) and sets `no-new-privileges`. It does not set
+`user:` or `read_only:`: the image has no `USER` (it runs as root) and the server
+writes temporary files to `/tmp` (OCR input, pack uploads), so a read-only root
+filesystem is not enabled. Memory and CPU caps are in the file, commented out.
 
-1. **Generate the secret** and store it in your password manager:
+**Upgrading:** a stack that used the compose path `deploy/portainer-stack.yml`
+must change it to `docker-compose.yml` (that file no longer exists); the
+variables are the same, and `QINQIN_SECRET` is now optional.
+
+1. **Generate the secret** (optional; without it AI is off) and store it in your password manager:
    `head -c 32 /dev/urandom | base64`. It encrypts the users' AI API keys.
    Back it up **separately** from the data volume; it is never written to
    `/data`. Lose it and users must enter their keys again.
 2. **Add the stack.** Portainer: Stacks, Add stack. Either *Web editor* and
-   paste `deploy/portainer-stack.yml`, or *Repository* with URL
+   paste `docker-compose.yml`, or *Repository* with URL
    `https://github.com/Elaktrato/qinqin`, reference `refs/heads/main` (or a
-   tag) and compose path `deploy/portainer-stack.yml`.
-3. **Environment variables** (stack form): `QINQIN_SECRET` (required),
+   tag) and compose path `docker-compose.yml`.
+3. **Environment variables** (stack form): `QINQIN_SECRET` (optional),
    `QINQIN_IMAGE` (e.g. `ghcr.io/elaktrato/qinqin:v1.2.3`), `QINQIN_PORT`
    (host port, default 8080). Optional: `QINQIN_DATA_VOLUME` as an absolute
    host path (e.g. `/srv/qinqin/data`) to bind-mount a directory instead of the
@@ -284,16 +373,30 @@ uploads), so a read-only root filesystem is not enabled.
    Containers, `qinqin`, Console, command `/bin/sh`, Connect. Then:
 
    ```sh
-   qinqin seed
    qinqin adduser --username <name> --admin
    ```
 
    `adduser` prompts for the password and needs a TTY; Portainer's console
-   provides one (the typed password is echoed). `seed` installs the bundled
-   packs from the image (CC-CEDICT, Unihan, JMdict, KANJIDIC2, Jiten
-   frequencies, HSK 3.0 and JLPT kanji level lists, es-demo, and the Kanji
-   alive audio when present) into the database; it takes under a minute
-   (about 45 s measured) and is idempotent. Run it while nobody uses the app.
+   provides one (the typed password is echoed). The first start has already
+   installed the bundled packs from the image (CC-CEDICT, Unihan, JMdict,
+   KANJIDIC2, Jiten frequencies, HSK 3.0 and JLPT kanji level lists, the stroke
+   data, and the Kanji alive audio when present) before it listened, which
+   takes about 2 minutes (the health check waits up to 300 s). The demo packs are
+   not installed; `qinqin seed` adds them, and local packs.
+
+   **Or create the admin automatically.** Set `QINQIN_BOOTSTRAP_ADMIN` to the
+   admin's username in the stack's environment variables. On the first start,
+   while no user exists, the server creates that admin before it opens the
+   port, so nobody can claim the first registration. The admin must choose a
+   new password at the first sign-in; until then the session can do nothing
+   else. Set `QINQIN_BOOTSTRAP_PASSWORD` to choose the initial password, or
+   leave it empty: the server generates one and prints it **once** in the
+   container log (Portainer: Containers, `qinqin`, Logs; look for the line
+   `bootstrap: initial password`). A supplied password is never logged. Later
+   starts ignore both variables, so remove the password from the stack after
+   the first sign-in. A username or password that breaks the rules stops the
+   server from starting, with the reason in the log. This replaces the
+   `adduser` step.
 5. Put a reverse proxy with HTTPS in front (below), then run the checklist.
 
 ### Data directory
@@ -656,7 +759,7 @@ cost matters (calls are limited to 30 per user and hour across all providers).
 - `curl http://<host>:<port>/healthz` returns `ok`; Portainer shows the
   container `healthy`.
 - Log in as the admin created in step 4.
-- Search `好`: results appear (the seed ran).
+- Search `好`: results appear (the first-start seed ran).
 - Create a deck/flashcard.
 - Journal: with the fake provider off (`QINQIN_AI_PROVIDER` unset), Settings,
   AI lists the providers and shows a key as storable; save a key (it becomes
@@ -671,7 +774,6 @@ cost matters (calls are limited to 30 per user and hour across all providers).
 
 | Symptom | Cause and fix |
 |---|---|
-| Stack will not deploy: "required variable QINQIN_SECRET is missing" | Set it in the stack's environment variables |
 | Container restarting | Read its log. Bad host path in `QINQIN_DATA_VOLUME` or no write permission (`create data directory ...`); fix ownership (the image runs as root) |
 | Log: `QINQIN_SECRET ... not 32 bytes of base64` / AI disabled | Regenerate with `head -c 32 /dev/urandom | base64`; without it AI stays off, the app still works |
 | AI settings say there is no secret | `QINQIN_SECRET` unset or invalid when the container started; fix and redeploy |
@@ -1036,6 +1138,12 @@ workspace (the home widget counts the same types).
 | **Writing** | Draw each Han character stroke by stroke (order and direction are checked); **Show strokes** reveals the current character | Han characters with stroke data from the installed strokes pack; kana stay visible |
 | **Tone** | Swipe each syllable pad in the tone's shape, use the tone buttons, or press 1–5 | a Chinese word with pinyin (Chinese workspaces only) |
 
+The setup opens with **This session** and **Limits** at the top: the counts, the new and
+review limits, the order of new cards, **Start studying** and **Study all**. Study all
+ignores the limits and each deck's daily limit for that one session, so every due review
+and new card is included. The source, decks and card types follow, with the per-deck
+switches under **Advanced settings**.
+
 **The session** is an open page (#101): a close button, a thin progress line and the
 count at the top; every card type has its task name (Recognise, Recall, Fill the gap,
 Build the sentence, Write, Tones) with the deck and level, the prompt, the answer area and
@@ -1044,11 +1152,10 @@ and after it four grade buttons that each show the interval that grade gives (`<
 `6m`, `1d`, …, computed by the same scheduler; a re-show says **practice**). Keys are
 unchanged.
 
-**Reverse and cloze cards** are opt-in per deck. Each deck row on `/study` has a
-Reverse and a Cloze switch (stored per deck, General included); a deck that never
-turns them on behaves exactly as before. In a session, their checkboxes appear
-when a selected deck enables the kind and start checked unless you unchecked that
-kind before in this workspace.
+**Reverse and cloze cards** appear once in the study setup's **Card types** list.
+Checking Reverse or Cloze enables it on every deck at once (stored per deck, General
+included); **Advanced settings → Per-deck card types** has the granular switches for a
+single deck. A deck with neither enabled behaves exactly as before.
 
 | Type | What you do | Needs |
 |---|---|---|
@@ -1081,9 +1188,10 @@ under 21 days.
 as read-only level decks, collapsed by scheme. A level shows how many of its words are
 already in your decks, can be studied as a level session, and can be copied with **Add to
 my decks**: into a new deck of your own (named like the level, with a fixed id so adding
-again never makes a second one) or into a deck you pick. Adding again only adds what is
-new; words you already have join the deck without losing their history. Rules and test
-vectors for other clients: `docs/contracts/decks/`.
+again never makes a second one) or into a deck you pick. The expanded level's **Add** in
+the overview does the new-deck copy in one click; once it exists it shows **Open my copy**.
+Adding again only adds what is new; words you already have join the deck without losing
+their history. Rules and test vectors for other clients: `docs/contracts/decks/`.
 
 Sentence, writing and tone cards are **companions** of the vocab cards in the
 chosen decks. They are planned as virtual cards that share the new-card limit, and
@@ -1193,6 +1301,13 @@ every character of the language, studied or not, shaded by mastery.
   agree on all but 3 of 3,088 characters. Every installed level scheme
   that is not a sample pack is offered the same way, under its name; characters
   outside it land in "Not in this scheme".
+- **Level.** Choose **All levels** or one installed level scheme's level
+  (JLPT N5, HSK 2, Jōyō grade 3, …). The map, the stage counts and the
+  "X of Y learned" summary then cover only that level, including a character
+  whose variant form is in it; choosing a level opens its scheme under
+  **Group by** (Grade for the Jōyō pack, which Group by already shows as
+  Grade), so the view starts on that level rather than on other schemes'
+  empty sections. The choice is remembered per workspace.
 - **Sections** show learned/total and a stacked stage bar. The stage legend doubles
   as a filter (All, Not studied, In progress, Learned). Search matches the glyph,
   the reading (toneless pinyin works), the meaning, and hiragana or katakana.
@@ -1233,21 +1348,35 @@ if you name the roots. A pack is a directory with a `manifest.json` (`"type": "l
 `word` or `character`. See `plugins/samples/hsk-mini` for the layout. The sample
 `hsk-mini` and `jlpt-mini` packs are not seeded by default and not offered as map groupings.
 
-**Home and Stats widgets.** Five widgets ship. Each one shows the current
+**Home and Stats widgets.** Seven widgets ship. Each one shows the current
 workspace. The home page shows the widgets in your layout (Settings → Home; by
-default Activity, then Flashcards). Stats → Overview shows every widget that
-applies to the workspace, in the order of this table:
+default Activity, then Flashcards). Stats → Overview puts the summary numbers
+first, then the cards by state and the level line, then reviews per day, and
+every other widget that applies after them:
 
 | Id | Widget | Owner | Size | Languages |
 |---|---|---|---|---|
+| `summary-numbers` | Summary | core | wide | all |
+| `word-states` | Words | `qinqin-flashcards` | normal | all |
+| `flashcards-summary` | Flashcards | `qinqin-flashcards` | normal | all |
+| `reviews-per-day` | Reviews per day | core | wide | all |
 | `activity-heatmap` | Activity | core | wide | all |
 | `character-map-summary` | Characters | core | normal | Chinese, Japanese |
-| `flashcards-summary` | Flashcards | `qinqin-flashcards` | normal | all |
-| `word-states` | Words | `qinqin-flashcards` | normal | all |
 | `reading-time` | Reading time | `qinqin-reader` | normal | all |
 
-A plugin's widgets are shown only while that plugin is enabled.
+A plugin's widgets appear after the default arrangement while that plugin is
+enabled.
 
+- **Summary**: the four numbers at the top of Stats → Overview — the current
+  review streak (the flashcards widget's number), words known by the one known
+  predicate (a manual known mark or a vocab card at the mastery threshold),
+  recall over the last 30 days (the decks page's overall figure, shown after 10
+  repeat reviews) and the flashcard study time of the current calendar month.
+  With flashcards switched off it says how to switch them on. It can also be
+  added to the home page.
+- **Reviews per day**: one bar for each of the last 30 learner days, today
+  emphasised, with the total and today's count in words above the chart. It can
+  also be added to the home page.
 - **Activity**: one cell per learner day over the last 13 weeks (on the home
   page: the layout chosen in Settings → Home), tinted by activity points. A flashcard review is one point. Reading in the Reader is one
   point per started 5 minutes. The reader records a `read` event with the active
@@ -1341,7 +1470,7 @@ All library and source routes need a signed-in user, and so does
 | `GET /api/packages?languages=` | Signed-in (tokens allowed). The data package catalogue (`docs/contracts/packages/`): the packages of the caller's workspace languages, or `languages=zh,ja` / `all`, with revision, content hash, file SHA-256, size, state, licences and sources; `ETag`/`If-None-Match`. A build error is shown to an administrator's own session only |
 | `GET /api/packages/{id}/{revision}` | Signed-in (tokens allowed). One package file (a zip with `manifest.json`, `NOTICE.md`, `LICENSES/`, `data.sqlite`); `Range`/`If-Range` resume it; served `private, no-cache` with the file's `ETag` (304 on revalidation) and `nosniff`. 404 `package_not_found`, 410 `package_revision_gone` (replaced and purged after 7 days), 429 `download_busy` with `Retry-After` (at most 2 downloads per user at a time) |
 | `GET /api/stroke-packs` | Public. The installed stroke-order packs with `packId`, `name`, `version`, `languages`, `license`, `attribution`, `notice` (the Sources page lists them) |
-| `GET /api/themes` | Public, no user data (read tokens allowed). Every colour theme with its colours and every theme pack's credits: `{themes: [{id, name, family, scheme, colors, accents, defaultAccent, packId, builtin}], packs: [{packId, name, version, license, attribution, notice, builtin, themes}]}` — the built-in packs (Catppuccin, Rosé Pine, Nord, Gruvbox, Dracula, Solarized, Tokyo Night, Everforest, Kanagawa) first, then installed theme packs; strong `ETag`, `no-cache`, 304 on `If-None-Match`; contract `docs/contracts/themes/` |
+| `GET /api/themes` | Public, no user data (read tokens allowed). Every colour theme with its colours and every theme pack's credits: `{themes: [{id, name, family, scheme, colors, accents, defaultAccent, packId, builtin}], packs: [{packId, name, version, license, attribution, notice, builtin, themes}]}` — the built-in packs (qinqin, qinqin extras, Catppuccin, Rosé Pine, Nord, Gruvbox, Dracula, Solarized, Tokyo Night, Everforest, Kanagawa) first, then installed theme packs; strong `ETag`, `no-cache`, 304 on `If-None-Match`; contract `docs/contracts/themes/` |
 | `GET /api/fonts` | Signed in (read tokens of any workspace allowed); the same answer for every user. The faces of the installed font packs with their WOFF2 slices and the packs' credits: `{faces: [{packId, face, script, original, weight, style, license, attribution, slices: [{url, unicodeRange}]}], packs: [{packId, name, version, license, attribution, notice}]}`; empty lists when none is installed; strong `ETag`, `no-cache`, 304 on `If-None-Match`; contract `docs/contracts/fonts/` |
 | `GET /fonts/<sha256>.woff2` | Public, no token. One slice of an installed font pack, byte for byte (`font/woff2`, `public, max-age=31536000, immutable`, `nosniff`, Range requests); 404 for anything that is not a slice of an installed pack |
 | `GET /hanzi/U<HEX>.json` | Public. The stroke-order data of one character from the installed strokes pack, byte for byte (`public, max-age=86400`, `ETag`, `nosniff`); 404 when no pack has it |
@@ -1645,6 +1774,9 @@ Without a valid secret the server still starts, AI shows as disabled with the re
 | `QINQIN_SECRET` | 32 random bytes, base64 (standard or URL form, padded or not). Required to store API keys |
 | `QINQIN_SECRET_PREVIOUS` | The old secret for one restart while rotating |
 | `QINQIN_SMTP_ALLOW_PRIVATE` | `1` or `true` lets the mail server be on loopback or a private network (a relay container, a LAN host). Off by default |
+| `QINQIN_AUTO_SEED` | `0`, `false` or `off` (any case) stops the first start from installing the bundled packs (demo packs are never installed this way). Default on: it runs once, on a fresh instance with no pack installed |
+| `QINQIN_BOOTSTRAP_ADMIN` | Username of the first admin, created on the first start while no user exists; the admin must set a new password at the first sign-in. Empty: off (then create the admin with `adduser`). Ignored once users exist. An invalid value stops the server from starting |
+| `QINQIN_BOOTSTRAP_PASSWORD` | Initial password of that admin (10 to 256 characters, not the username). Empty: a random one is generated and printed once in the container log. A supplied password is never logged |
 | `QINQIN_TESSERACT` | Path of the `tesseract` binary (default `tesseract` from `PATH`) |
 | `QINQIN_TRUSTED_PROXIES` | Peers whose `X-Forwarded-For` is believed: a comma list of CIDRs or addresses, `none` to ignore the header, empty for the private networks (see [Reverse proxy and HTTPS](#reverse-proxy-and-https)). Set `none` when no reverse proxy sits in front |
 | `QINQIN_AI_PROVIDERS` | Comma list of the providers users may choose: built-in ids (`anthropic`, `openai`, `gemini`, `deepseek`, `mistral`, `xai`, `groq`, `openrouter`) and `custom` for admin-registered endpoints. Default: all. A disabled provider's stored keys stay (shown "turned off by the server", Remove only) and a selection on it reads as unavailable |

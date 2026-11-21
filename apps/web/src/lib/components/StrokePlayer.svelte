@@ -3,6 +3,7 @@
 	import type { CharacterJson } from 'hanzi-writer';
 	import { fetchStrokeData } from '$lib/study/strokeData';
 	import { t } from '$lib/i18n';
+	import Button from '$lib/ui/Button.svelte';
 
 	interface Props {
 		char: string;
@@ -13,13 +14,19 @@
 
 	let host = $state<HTMLDivElement | null>(null);
 	let ready = $state(false);
-	// A character with no stroke data at all (404): the player stays hidden.
+	// A character with no stroke data at all: the failed text, never an empty box.
 	let unavailableFor = $state<string | null>(null);
-	// A transient failure: the player shows a note with Try again.
+	// A transient failure: the failed text with Try again.
 	let failedFor = $state<string | null>(null);
 	// Bumped by Try again to run the load effect once more.
 	let attempt = $state(0);
 	let looping = $state(false);
+	let playing = $state(false);
+	// The stroke being drawn and the character's total, for "勤 · 3 of 13".
+	let progress = $state(0);
+	let total = $state(0);
+	// Bumped to stop a running per-stroke animation (Pause, a new character).
+	let run = 0;
 
 	let writer: HanziWriter | null = null;
 
@@ -36,6 +43,9 @@
 		let cancelled = false;
 		ready = false;
 		looping = false;
+		playing = false;
+		progress = 0;
+		total = 0;
 		failedFor = null;
 
 		void (async () => {
@@ -59,13 +69,17 @@
 					return;
 				}
 				const data = result.data as CharacterJson;
+				total = data.strokes?.length ?? 0;
+				// The player follows the theme (design §6): the stroke is the
+				// readable accent, the outline the line colour, read at runtime.
+				const style = getComputedStyle(node);
 				writer = module.default.create(node, symbol, {
 					width: dimension,
 					height: dimension,
 					padding: 8,
 					showOutline: true,
-					strokeColor: '#0b6bcb',
-					outlineColor: '#9aa0a6',
+					strokeColor: style.getPropertyValue('--accent').trim() || 'currentColor',
+					outlineColor: style.getPropertyValue('--line').trim() || 'currentColor',
 					// Feed the self-hosted data; never hit the CDN.
 					charDataLoader: (_char, onLoad) => {
 						onLoad(data);
@@ -80,8 +94,12 @@
 
 		return () => {
 			cancelled = true;
+			run++;
 			ready = false;
 			looping = false;
+			playing = false;
+			progress = 0;
+			total = 0;
 			const active = writer;
 			writer = null;
 			if (active) void active.pauseAnimation().catch(() => {});
@@ -91,17 +109,52 @@
 		};
 	});
 
-	function play(): void {
+	async function play(): Promise<void> {
 		if (!writer) return;
+		if (playing) {
+			pause();
+			return;
+		}
 		// A one-shot animation replaces any running loop.
 		looping = false;
-		writer.animateCharacter().catch(() => {});
+		playing = true;
+		const mine = ++run;
+		progress = 0;
+		for (let i = 0; i < total; i++) {
+			if (mine !== run || !playing) return;
+			progress = i + 1;
+			let failed = false;
+			await writer.animateStroke(i).catch(() => {
+				failed = true;
+			});
+			if (failed || mine !== run) {
+				playing = false;
+				return;
+			}
+		}
+		if (mine === run) playing = false;
+	}
+
+	/** Pause stops before the next stroke; the button becomes Play. */
+	function pause(): void {
+		if (!playing) return;
+		playing = false;
+		run++;
+		void writer?.pauseAnimation().catch(() => {});
+	}
+
+	/** Try again clears the failure first: the canvas must exist for the load effect. */
+	function retry(): void {
+		failedFor = null;
+		attempt++;
 	}
 
 	function toggleLoop(): void {
 		if (!writer) return;
 		looping = !looping;
 		if (looping) {
+			playing = false;
+			run++;
 			writer.loopCharacterAnimation().catch(() => {});
 		} else {
 			// Stop the loop and settle on the fully drawn character.
@@ -110,7 +163,16 @@
 	}
 </script>
 
-{#if unavailableFor !== char}
+{#if unavailableFor === char || failedFor === char}
+	<div class="stroke-player">
+		<p class="note" role="status">{t('entry.strokes.failed')}</p>
+		{#if failedFor === char}
+			<div class="controls">
+				<button type="button" class="retry" onclick={retry}>{t('common.action.retry')}</button>
+			</div>
+		{/if}
+	</div>
+{:else}
 	<div class="stroke-player">
 		<div
 			class="canvas"
@@ -120,28 +182,24 @@
 			role="img"
 			aria-label={t('entry.strokes.label', { char })}
 		></div>
-		{#if !ready && failedFor !== char}
+		{#if !ready}
 			<!-- Holds the space and says what is happening, so the page does not jump. -->
 			<p class="note" style:width={`${size}px`}>
 				{t('entry.strokes.loading')}
 			</p>
 		{/if}
-		{#if failedFor === char}
-			<p class="note" role="status">{t('entry.strokes.failed')}</p>
-			<div class="controls">
-				<button type="button" onclick={() => attempt++}>{t('common.action.retry')}</button>
-			</div>
-		{/if}
 		{#if ready}
 			<div class="controls">
-				<button type="button" onclick={play}>{t('entry.strokes.play')}</button>
-				<button
-					type="button"
-					class="loop"
-					aria-pressed={looping}
-					onclick={toggleLoop}>{t('entry.strokes.loop')}</button
+				<Button icon={playing ? 'pause' : 'play'} onclick={() => void play()}
+					>{playing ? t('entry.strokes.pause') : t('entry.strokes.play')}</Button
 				>
+				<Button icon="repeat" aria-pressed={looping} onclick={toggleLoop}>{t('entry.strokes.loop')}</Button>
 			</div>
+			{#if total > 0}
+				<p class="progress" data-progress aria-live="off">
+					{t('entry.strokes.progress', { char, n: progress, total })}
+				</p>
+			{/if}
 		{/if}
 	</div>
 {/if}
@@ -177,26 +235,26 @@
 		gap: 0.5rem;
 	}
 
-	.controls button {
+	.retry {
 		font: inherit;
 		font-size: 0.85rem;
 		padding: 0.3rem 0.7rem;
-		border: 1px solid color-mix(in srgb, currentColor 35%, transparent);
-		border-radius: 0.4rem;
+		border: 1px solid var(--hair);
+		border-radius: var(--radius);
 		background: transparent;
 		color: inherit;
 		cursor: pointer;
 	}
 
-	.controls button:hover,
-	.controls button:focus-visible {
+	.retry:hover,
+	.retry:focus-visible {
 		border-color: var(--accent);
-		color: var(--reading-accent);
 	}
 
-	.controls .loop[aria-pressed='true'] {
-		border-color: var(--accent);
-		color: var(--reading-accent);
-		background: color-mix(in srgb, var(--accent) 12%, transparent);
+	.progress {
+		margin: 0;
+		font-size: 0.8rem;
+		color: var(--readable-muted);
+		font-variant-numeric: tabular-nums;
 	}
 </style>

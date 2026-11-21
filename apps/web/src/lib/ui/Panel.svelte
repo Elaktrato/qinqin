@@ -12,12 +12,13 @@
 
 	let {
 		raised = false,
+		class: className = '',
 		children,
 		...rest
-	}: { raised?: boolean; children: Snippet } & Omit<HTMLAttributes<HTMLDivElement>, 'children'> = $props();
+	}: { raised?: boolean; children: Snippet; class?: string } & Omit<HTMLAttributes<HTMLDivElement>, 'children'> = $props();
 </script>
 
-<div class="panel" class:raised {...rest}>{@render children()}</div>
+<div class="panel {className}" class:raised {...rest}>{@render children()}</div>
 
 <style>
 	.panel {

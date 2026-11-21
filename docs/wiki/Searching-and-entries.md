@@ -6,9 +6,13 @@ Search looks across written forms, readings and meanings and is scoped to the la
 
 Readings you can search by: pinyin and bopomofo for Chinese, kana (and romaji) for Japanese.
 
+On a wide screen the results stay on the left and the selected entry opens beside them; a row is one link, named by the word, with its reading, the first gloss your workspace does not hide and its kind and level. Choosing a row keeps the list in place. The address carries everything, so a search can be shared or reloaded: `/search?q=…&kind=…&scheme=…&level=…&e=<entry id>`. A new query drops the selected entry; changing a filter keeps it. On a phone the list and the entry are two views: tapping a result opens the entry, and **Back to results** returns to the list. A link with `e` shows that entry even when your filters or the result cap would hide its row, and the entry is still shown (with **Back to results**) when the search finds nothing or fails.
+
+The filters are text options: **All**, **Words** and **Characters**, and **Level: any**, which opens a menu of **Any level** and each installed level scheme's levels. **Clear filters** appears only while a filter is set.
+
 ## Find a character by radical or part
 
-In a Chinese or Japanese workspace, **Find a character by radical or part** on the Search page opens `/search/parts`, for a character you can see but cannot read or type (鯖, 锈).
+In a Chinese or Japanese workspace, **By parts** next to the search field opens `/search/parts`, for a character you can see but cannot read or type (鯖, 锈).
 
 - **Radical**: the 214 Kangxi radicals in 17 groups by their classical stroke count. Each tile shows the radical with the shapes you meet in text (氵 for 水; 讠 in Chinese, 竜 in Japanese). Picking one lists the characters classified under it.
 - **Parts**: the parts you can see anywhere in the character, at any depth (語 has 言 口 吾 五 二). Every chosen part must be in the character. Parts that would leave nothing are greyed out; the list shows the common parts first, **Show all parts** lists the rest. Japanese has a bundled parts list (derived from KanjiVG); Chinese has radicals and strokes only, unless the server has a local components pack.
@@ -25,8 +29,11 @@ An entry is one dictionary headword, either a **word** or a **character** (kanji
 - **Chinese**: one entry per simplified written form; traditional forms are forms of the same entry, so searching 學習 finds 学习. A written form with several readings (行 xíng, háng) is one entry with all readings.
 - **Japanese**: one entry per JMdict word, with all forms and readings and part-of-speech tags per sense. Homographs are separate entries.
 - **Japanese headwords**: a word whose main meaning the dictionary marks as usually written in kana is shown in kana (こと, する, これ, わかる) in search results, on the entry page, in decks, on cards and in the Reader popup; its other spellings are listed on the entry page ("Also written: 事"), and searching for a kanji spelling shows that spelling. A spelling the dictionary keeps only for searching is never shown as the headword (の, not 乃). A card added before this rule keeps the form it was added with in the card manager until you add it again.
-- **Characters** show readings, radicals, variants and stroke counts. Chinese character entries add animated stroke order. A radical entry lists the characters classified under it.
-- **Level badges** (HSK, JLPT and other level schemes you have installed) appear on entries; word-based schemes derive badges for their characters.
+- **Characters** show readings, radicals, variants and stroke counts. Chinese character entries add animated stroke order. A radical entry lists the characters classified under it. A word entry lists its Han characters in order with each character's reading, gloss, radical, stroke count and level, linked to the character entry; a Chinese word lets you pick which character the stroke player shows.
+- **Related** lists the dictionaries' cross-references to other words, linked to search.
+- **Level badges** (HSK, JLPT and other level schemes you have installed) appear in the entry's header; word-based schemes derive badges for their characters.
+- **The header** shows the word large, a Chinese variant beside it labelled traditional or simplified, the readings with a play button, and chips for the levels, the frequency rank, the kind and the decks containing the entry. **Add to deck** is the main action; **Choose a deck** picks another deck. On a phone the same add button sits in the top bar.
+- **Characters** in a word name each character's own entry; each row shows the reading, gloss, radical, stroke count and level when they are known. **Stroke order** plays stroke by stroke with a progress line (勤 · 3 of 13), pauses, and loops.
 - **Frequency**: a rank chip appears where a frequency pack covers the word. Frequency also orders lookup results when a pack exists.
 - **Example sentences** come from installed sentence packs plus your own. Sentences you save are private to you.
 - **Audio**: where an audio pack covers a word, a play button appears. Clips are credited on the Sources page.
@@ -37,16 +44,16 @@ You can correct written forms and readings of an entry. The edit is stored per u
 
 ## Your note
 
-Under the senses, **Your note** keeps one private note per word: a mnemonic, a usage warning, a memory hook. Press **Add a note**, type, and **Save**; **Edit** and **Delete** change it later (Delete asks first, there is no undo). Esc cancels editing.
+In the entry's side column, **Your note** keeps one private note per word: a mnemonic, a usage warning, a memory hook. Press **Add a note**, type, and **Save**; **Edit** and **Delete** change it later (Delete asks first, there is no undo). Esc cancels editing.
 
 - Plain text only, line breaks kept; nothing is turned into links or formatting. At most 2,000 characters.
-- A note belongs to the current workspace, even for a word of another language, like Add to study. Two workspaces keep separate notes.
+- A note belongs to the current workspace, even for a word of another language, like Add to deck. Two workspaces keep separate notes.
 - It syncs to your other devices, is in [your backup](Your-data), and appears on the flashcard answer side (see [Flashcards: study sessions](Flashcards-study-sessions)).
 - Notes are not searchable yet.
 
-## Add to study
+## Add to deck
 
-Press **Add to study** next to an entry's title. The card joins the General deck and keeps the entry's first example sentence for context. See [Flashcards: study sessions](Flashcards-study-sessions).
+Press **Add to deck** next to an entry's title. The card joins the General deck and keeps the entry's first example sentence for context; **Choose a deck** opens a menu of your other decks and adds the card there instead. In a deck, the button reads **In study deck**. See [Flashcards: study sessions](Flashcards-study-sessions).
 
 ## Lookup history
 

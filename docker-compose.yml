@@ -1,16 +1,75 @@
-# Quick start for plain `docker compose`. The database and installed packs live
-# in ./data next to this file. For Portainer (named volume, required
-# QINQIN_SECRET, limits) use deploy/portainer-stack.yml instead.
+# qinqin: one compose file for plain `docker compose up -d`, Portainer (web
+# editor, or Repository with compose path docker-compose.yml) and anything else
+# that reads standard compose. Step by step: README, "Quick start" and
+# "Deploying with Portainer".
 #
-# The image also ships the stroke-order data pack; serve installs it at start
-# when no strokes pack is installed, and builds the data packages clients
-# download into ./data/packages.
+# UPGRADING from the old quick start: its data lived in ./data. This file now
+# defaults to a named volume (qinqin-data), so an old install would start on an
+# EMPTY instance. To keep using ./data, set QINQIN_DATA_VOLUME=./data
+# (previously ./data; set QINQIN_DATA_VOLUME=./data to keep using it).
 #
-# First run — seed the sample packs and create the admin user:
+# First run - seed the packs and create the admin BEFORE exposing the port
+# beyond your LAN (until a user exists, the first registration over the API
+# becomes the admin):
 #   docker compose exec qinqin qinqin seed
 #   docker compose exec qinqin qinqin adduser --username <name> --admin
-# Do this BEFORE exposing the port beyond your LAN: until a user exists, the
-# first registration over the API becomes the admin — whoever makes it.
+# or set QINQIN_BOOTSTRAP_ADMIN below. Set variables in a .env file next to
+# this file, in the shell, or (Portainer) in the stack's Environment variables.
+#
+# Variables:
+#   QINQIN_SECRET    optional. 32 random bytes, base64. Generate with
+#                      head -c 32 /dev/urandom | base64
+#                    Empty or unset = AI features off (the server starts and
+#                    the rest works; no weak default key is used). With it,
+#                    each user's AI API key, the SMTP password and authenticator
+#                    secrets are stored encrypted. Back it up separately from
+#                    the data volume; it is never written to /data.
+#   QINQIN_IMAGE     default ghcr.io/elaktrato/qinqin:latest. Pin a release,
+#                    e.g. ghcr.io/elaktrato/qinqin:v1.2.3 (tags: latest, v*, sha).
+#   QINQIN_PORT      published host port, default 8080.
+# Backups: users download their data in the app; admins create server backups
+#                    (Settings, Admin, Backup) or run `docker exec <c> qinqin backup --out /data/backups/x.tar.gz`.
+#                    /data/backups lives in the data volume; bind-mount a host path there to keep archives outside it.
+#   QINQIN_DATA_VOLUME  default "qinqin-data" (a named volume, works everywhere,
+#                    Portainer included). A value starting with ./ or / is a
+#                    bind mount of a host directory instead: ./data (next to
+#                    this file; plain compose only, a relative path is
+#                    unreliable in Portainer) or an absolute path such as
+#                    /srv/qinqin/data. The directory must be writable by root,
+#                    the user the image runs as.
+#   QINQIN_SECRET_PREVIOUS  only while rotating: the OLD secret, for one restart.
+#   QINQIN_AI_PROVIDERS     comma list of the AI providers users may choose:
+#                    anthropic, openai, gemini, deepseek, mistral, xai, groq,
+#                    openrouter and "custom" (admin-registered endpoints).
+#                    Empty = all.
+#   QINQIN_AI_ALLOW_PRIVATE "1" lets admin-registered AI endpoints reach
+#                    loopback and private addresses (Ollama on your LAN). Off
+#                    by default; enable only if you trust every admin.
+#   QINQIN_SMTP_ALLOW_PRIVATE "1" lets the mail server be on loopback or a
+#                    private network (a relay container, a LAN host).
+#   QINQIN_TRUSTED_PROXIES  which peers may tell the server a client's address
+#                    through X-Forwarded-For (sign-in limits are per client).
+#                    Empty = private networks (right behind a reverse proxy on
+#                    a Docker or LAN network). "none" = ignore the header:
+#                    set it when NOTHING reverse-proxies to qinqin, because a
+#                    client that reaches the port directly could otherwise
+#                    forge the header and dodge the per-client limits. Or a
+#                    comma list of CIDRs/addresses (a CDN's ranges, one proxy).
+#   QINQIN_AUTO_SEED  0, false or off stops the first start from installing the
+#                    bundled packs (default on; the demo packs are never
+#                    installed this way). See "Seeding" in the README.
+#   QINQIN_BOOTSTRAP_ADMIN  username of the first admin, created on the first
+#                    start while the instance has no users (empty = off). The
+#                    admin must set a new password at the first sign-in. Later
+#                    starts ignore it, so it can stay set or be removed.
+#   QINQIN_BOOTSTRAP_PASSWORD  its initial password (10 to 256 characters, not
+#                    the username). Empty = a random one is generated and
+#                    printed ONCE in the container log (Portainer: Containers,
+#                    qinqin, Logs). Remove it from the stack after the first
+#                    sign-in. An invalid value stops the server from starting.
+#   QINQIN_TESSERACT        path of the tesseract binary; empty = the image's.
+#   QINQIN_AI_PROVIDER      "fake" for testing only; never contacts an AI service.
+#                    "anthropic" (legacy) means QINQIN_AI_PROVIDERS=anthropic.
 services:
   qinqin:
     image: ${QINQIN_IMAGE:-ghcr.io/elaktrato/qinqin:latest}
@@ -18,48 +77,45 @@ services:
     ports:
       - "${QINQIN_PORT:-8080}:8080"
     volumes:
-      - ./data:/data
+      - ${QINQIN_DATA_VOLUME:-qinqin-data}:/data
     environment:
       QINQIN_DATA: /data
-      # AI features (journal review, ideas, photo transcription) store each
-      # user's own API key encrypted with this secret. Back it up separately
-      # from ./data: without it stored keys cannot be read. It is never
-      # written to /data. Leave it unset to keep AI off.
-      # QINQIN_SECRET: ${QINQIN_SECRET}  # 32 random bytes, base64: head -c 32 /dev/urandom | base64
-      # To rotate: set QINQIN_SECRET to the new value and this to the old one
-      # for one restart, then remove it.
-      # QINQIN_SECRET_PREVIOUS: ${QINQIN_SECRET_PREVIOUS}
-      # Which AI providers users may choose (comma list; default: all):
-      # anthropic, openai, gemini, deepseek, mistral, xai, groq, openrouter,
-      # and "custom" for endpoints an admin registers in Settings, AI.
-      # QINQIN_AI_PROVIDERS: anthropic,openai,gemini,custom
-      # WARNING: lets admin-registered AI endpoints reach loopback and your
-      # LAN (Ollama on this host or network). Enable only if you trust every
-      # admin. Link-local and cloud-metadata addresses stay blocked.
-      # QINQIN_AI_ALLOW_PRIVATE: "1"
-      # Lets the mail server (Settings, Admin, Email) be on loopback or a private
-      # network (a relay container, a LAN host). Metadata addresses stay blocked.
-      # QINQIN_SMTP_ALLOW_PRIVATE: "1"
-      # Testing only: a fake provider that never contacts any AI service.
-      # Who may tell the server a client's address (X-Forwarded-For). Default:
-      # private networks, right for a reverse proxy on a Docker/LAN network.
-      # Without any reverse proxy in front, set "none" (a direct client could
-      # forge the header and dodge the per-client sign-in limits). A comma list
-      # of CIDRs or addresses also works (a CDN's ranges).
-      # QINQIN_TRUSTED_PROXIES: none
-      # Path of the tesseract binary (default: the image's).
-      # QINQIN_TESSERACT: /usr/bin/tesseract
-      # QINQIN_AI_PROVIDER: fake
-    security_opt:
-      - no-new-privileges:true
-    logging:
-      driver: json-file
-      options:
-        max-size: "10m"
-        max-file: "3"
+      QINQIN_SECRET: ${QINQIN_SECRET:-}
+      QINQIN_SECRET_PREVIOUS: ${QINQIN_SECRET_PREVIOUS:-}
+      QINQIN_AI_PROVIDERS: ${QINQIN_AI_PROVIDERS:-}
+      QINQIN_AI_ALLOW_PRIVATE: ${QINQIN_AI_ALLOW_PRIVATE:-}
+      QINQIN_SMTP_ALLOW_PRIVATE: ${QINQIN_SMTP_ALLOW_PRIVATE:-}
+      QINQIN_AI_PROVIDER: ${QINQIN_AI_PROVIDER:-}
+      QINQIN_TRUSTED_PROXIES: ${QINQIN_TRUSTED_PROXIES:-}
+      QINQIN_BOOTSTRAP_ADMIN: ${QINQIN_BOOTSTRAP_ADMIN:-}
+      QINQIN_BOOTSTRAP_PASSWORD: ${QINQIN_BOOTSTRAP_PASSWORD:-}
+      QINQIN_TESSERACT: ${QINQIN_TESSERACT:-}
+      QINQIN_AUTO_SEED: ${QINQIN_AUTO_SEED:-}
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8080/healthz"]
       interval: 30s
       timeout: 5s
       retries: 3
-      start_period: 10s
+      # The first start installs the bundled packs before it listens (about
+      # 2 minutes measured on a busy dev machine, more on a slow disk); do not
+      # count that as unhealthy.
+      start_period: 300s
+    security_opt:
+      - no-new-privileges:true
+    # No `user:` and no `read_only:`: the image has no USER (runs as root) and
+    # OCR, pack uploads and pack staging write temp files under /tmp.
+    # Optional resource caps. Deliberately off: the first-run seed (JMdict,
+    # CEDICT, Unihan) and OCR can need more than a guessed limit, and an
+    # out-of-memory kill during setup is worse than none. Measure first.
+    # mem_limit: 2g
+    # cpus: 2.0
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+# With QINQIN_DATA_VOLUME set to a path, Docker treats it as a bind mount and
+# the named volume below stays unused (harmless).
+volumes:
+  qinqin-data:

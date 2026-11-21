@@ -2,19 +2,25 @@
 
 **Stats** is the bar-chart icon in the top bar (in the menu drawer on a phone) of every signed-in page (`/stats`). It has up to three tabs.
 
-- **Overview** shows every widget that applies to the current workspace, in a fixed order (core first, then flashcards and the reader, then plugins).
-- **Week** (`/stats/week`) is the [weekly summary](Weekly-summary): one week, Monday to Sunday, compared with the week before; previous weeks are a link away. It needs a workspace. It also shows your [milestones](Milestones): a card for new ones and the full list (`/stats/week#milestones`).
+The tabs are text links at the top of the page, on desktop and on the phone; the current one has an accent underline.
+
+- **Overview** shows the design's default arrangement first: the four summary numbers (day streak, words known, recall over the last 30 days, time studied this month), the word-state bar, the flashcards level line, reviews per day over the last 30 days and the day heatmap. Every other widget that applies follows after them; plugins' widgets are never dropped.
+- **Week** (`/stats/week`) is the [weekly summary](Weekly-summary): one week, Monday to Sunday, browsed with **Previous week** / **Next week** arrows and compared with the week before. It needs a workspace. It also shows your [milestones](Milestones): a card for new ones and the full list (`/stats/week#milestones`).
 - **Characters** (`/stats/characters`) is the mastery map. It exists only in Chinese and Japanese workspaces; elsewhere the tab is hidden and a direct visit explains why. The old address `/study/map` redirects here.
 
 ## Widgets
 
 | Widget | What it shows | Languages |
 |---|---|---|
+| Summary | Four large light numbers: day streak, words known, **Recall, last 30 days**, studied this month | all |
+| Words | How far each word has come: New, Learning, Young (under 21 days), Mature; one row per deck | all |
+| Flashcards | What is due and new, level and XP, streak, study buddy | all |
+| Reviews per day | One bar per day for the last 30 days, today emphasised | all |
 | Activity | The heatmap | all |
 | Characters | "N of M learned" and the stage bar, with a link to the map | Chinese, Japanese |
-| Flashcards | What is due and new, level and XP, streak, study buddy | all |
-| Words | How far each word has come: New, Learning, Young (under 21 days), Mature; one row per deck | all |
 | Reading time | Total, last 7 and last 30 days, five most read books | all |
+
+The four summary numbers reuse rules defined elsewhere: the streak is the flashcards widget's streak, **words known** is the one known-word predicate (a manual "I know this" mark or a vocabulary card at the mastery threshold), **recall** is the decks page's overall 30-day figure (shown after 10 repeat reviews; below that it says so instead of a dash) and **studied this month** is flashcard study time, the same amount as the daily goal's `flashcards:studyTime` and the Week tab's study time. With flashcards switched off the Summary widget says how to switch them on. Both **Summary** and **Reviews per day** can also be added to the home page.
 
 The [Daily goal](Daily-goals) widget and the **This week** widget ([Weekly summary](Weekly-summary)) are on the home page only; Stats has the Week tab instead. A plugin's widgets only appear while that plugin is enabled, and the flashcards and reader widgets while you have not switched that feature off (Settings → Features). The home page shows the widgets of your own layout (see [Settings tour](Settings-tour)).
 
@@ -45,7 +51,8 @@ With a [daily goal](Daily-goals) in this workspace, each day has a flower stage:
 It lists every character of the language, studied or not, shaded by mastery. Japanese: all KANJIDIC2 kanji. Chinese: about 11.1 thousand characters (the standard character list plus every character with a CC-CEDICT reading).
 
 - **Group by**: Japanese: Grade, Frequency, Strokes, approximate JLPT kanji levels. Chinese: Common, HK primary grade, Strokes, HSK 3.0 characters and words. Any installed level scheme is offered too. The choice is remembered per language.
-- **Stages** (grey, red, amber, blue, green: not studied, started, growing, solid, learned) double as a filter. A character is "learned" at a score of 80 of 100. The score comes from the FSRS stability of every reviewed card whose word contains the character. Non-colour markers (a tick, a dashed outline) back the colours up.
+- **Level**: All levels, or one installed level scheme's level (JLPT N5, HSK 2, Jōyō grade 3, …). The map, the stage counts and the "X of Y learned" summary then cover only that level; a variant form of a member is included. The choice is remembered per workspace, and choosing a level opens its scheme under **Group by** (Grade for the Jōyō pack, already shown as Grade) so the view starts on the level, not on other schemes' empty sections.
+- **Stages** use one hue, light to full: a not-studied character is an outline, then the accent at 14, 32, 58 and 100 % (not studied, started, growing, solid, learned), with a worded legend above the map. They double as a filter and the counts are in the filter's text. A character is "learned" at a score of 80 of 100. The score comes from the FSRS stability of every reviewed card whose word contains the character. Shape cues (a bottom bar that grows with the band, a corner tick and, in forced colours, a border style per stage) back the colour up.
 - Search by glyph, reading (toneless pinyin works), meaning, or kana. The grid is keyboard-navigable (arrows, Home, End; Enter opens the entry).
 - A server seeded before the level fields existed shows a "Level data missing" banner until `qinqin seed` runs (see [Backup, recovery and the command line](Admin-backup-and-recovery)).
 

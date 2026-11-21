@@ -4,10 +4,11 @@ import type { ListedTheme } from '$lib/api/themes';
 import { FALLBACK_THEMES } from '$lib/theme/fallback';
 import { createThemeStore, type ThemeStore, type ThemeStoreDeps } from '$lib/theme/store.svelte';
 import { installedFaces, type InstalledFaces } from '$lib/fonts/hanzi';
+import { primaryActions } from '$lib/ui/testing/primary';
 import AppearanceSettings from './AppearanceSettings.svelte';
 
-const latte: ListedTheme = { ...FALLBACK_THEMES[0], family: 'Catppuccin', packId: 'catppuccin', builtin: true };
-const mocha: ListedTheme = { ...FALLBACK_THEMES[1], family: 'Catppuccin', packId: 'catppuccin', builtin: true };
+const latte: ListedTheme = { ...FALLBACK_THEMES[0], family: FALLBACK_THEMES[0].family ?? '', packId: 'qinqin', builtin: true };
+const mocha: ListedTheme = { ...FALLBACK_THEMES[1], family: FALLBACK_THEMES[1].family ?? '', packId: 'qinqin', builtin: true };
 const nord: ListedTheme = {
 	...mocha,
 	id: 'nord',
@@ -67,6 +68,14 @@ describe('Settings → Appearance', () => {
 		expect(within(hanzi).queryByText(/coming update/)).toBeNull();
 	});
 
+	it('Save is the view\'s one primary action (#106)', async () => {
+		await setup();
+		const save = screen.getByRole('button', { name: 'Save' });
+		expect(primaryActions(document.body)).toEqual([save]);
+		expect(save.className).toContain('primary');
+		expect(screen.getByRole('button', { name: 'Reset to defaults' }).className).toContain('plain');
+	});
+
 	it('the preview shows hanzi and kanji in each script, tagged with its study lang', async () => {
 		await setup();
 		const preview = screen.getByRole('region', { name: 'Preview' });
@@ -100,7 +109,7 @@ describe('Settings → Appearance', () => {
 		const names = within(accents)
 			.getAllByRole('radio')
 			.map((r) => r.getAttribute('aria-label'));
-		expect(names).toEqual(['Accent mauve', 'Accent red', 'Accent teal', 'Accent blue']);
+		expect(names).toEqual(['Accent azure', 'Accent blue', 'Accent navy', 'Accent teal', 'Accent violet', 'Accent pink']);
 		for (const radio of within(accents).getAllByRole('radio')) {
 			expect(radio.closest('label')?.getAttribute('title')).toBeTruthy();
 		}
@@ -108,14 +117,14 @@ describe('Settings → Appearance', () => {
 
 	it('previews a change live without saving, and reverts when the page closes unsaved', async () => {
 		await setup();
-		expect(panel()).toBe('#eff1f5');
+		expect(panel()).toBe('#ffffff');
 		const dark = screen.getByRole('group', { name: 'Dark theme' });
 		await fireEvent.click(within(dark).getByRole('radio', { name: 'Nord' }));
 		// The slot being edited is previewed, even on a light device.
 		expect(panel()).toBe('#2e3440');
 		expect(deps.saveRow).not.toHaveBeenCalled();
 		cleanup();
-		expect(panel()).toBe('#eff1f5');
+		expect(panel()).toBe('#ffffff');
 	});
 
 	it('saves the whole draft to the row (unknown members kept) and announces it', async () => {

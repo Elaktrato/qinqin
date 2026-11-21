@@ -39,6 +39,14 @@ afterEach(() => {
 });
 
 describe('DeleteAccountDialog', () => {
+	it('password and confirmation are Field underlines; the confirm is a danger primary', () => {
+		const f = setup();
+		expect(f.password.closest('.field')).toBeTruthy();
+		expect(f.typed.closest('.field')).toBeTruthy();
+		expect(f.submit.className).toContain('danger');
+		expect(f.submit.className).toContain('primary');
+	});
+
 	it('starts in the password field, described by what goes', () => {
 		const f = setup();
 		expect(document.activeElement).toBe(f.password);

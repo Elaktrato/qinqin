@@ -10,6 +10,7 @@ import type { ReviewEvent, StudyCard } from '../study/types';
 import { studyDay, type ZoneChange } from '../time/studyDay';
 import { charactersLearned, givenTimelines, wordsReachingMature } from './replay';
 import { weekSummary, type WeekInputs } from './summary';
+import { oldestWeek } from './week';
 
 interface FixtureReview {
 	id: string;
@@ -113,6 +114,22 @@ describe('weekSummary', () => {
 		expect(out.rows.map((r) => r.key)).toEqual(['reviews', 'newCards', 'studyTime', 'reading', 'journal']);
 		expect(out.daysActive).toEqual({ active: 2, of: 7, localOnly: true });
 		expect(out.days.every((d) => d.reviews === null && d.points === null)).toBe(true);
+	});
+
+	it('previousDays of the oldest browsable week are inactive with zero points when nothing was logged', () => {
+		const monday = oldestWeek('2026-11-18');
+		const out = weekSummary({ ...inputsOf(base), monday });
+		expect(out.previousDays.map((d) => d.date)).toEqual([
+			'2025-11-10',
+			'2025-11-11',
+			'2025-11-12',
+			'2025-11-13',
+			'2025-11-14',
+			'2025-11-15',
+			'2025-11-16'
+		]);
+		expect(out.previousDays.every((d) => d.state === 'inactive' && d.points === 0 && d.reviews === 0)).toBe(true);
+		expect(out.previousDays.every((d) => d.state !== 'upcoming')).toBe(true);
 	});
 
 	it('a review on a vacation date counts in new cards and not in days active', () => {

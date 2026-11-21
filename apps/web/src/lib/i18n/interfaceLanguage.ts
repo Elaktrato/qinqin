@@ -24,11 +24,15 @@ export function readMirror(storage: Storage | null): string | null {
 	}
 }
 
-export function writeMirror(storage: Storage | null, language: string): void {
+export function writeMirror(storage: Storage | null, language: string): boolean {
+	if (storage === null) return false;
 	try {
-		storage?.setItem(MIRROR_KEY, language);
+		storage.setItem(MIRROR_KEY, language);
+		return storage.getItem(MIRROR_KEY) === language;
 	} catch {
-		// Storage denied: the next start negotiates from the browser again.
+		// Storage denied: the next start negotiates from the browser again. A
+		// stale value that happens to equal `language` must not count as written.
+		return false;
 	}
 }
 
@@ -43,8 +47,7 @@ export const RELOAD_MARKER_KEY = 'qq.interfaceLanguage.reloaded';
 
 /** Writes the mirror and reads it back: true only when it now holds `language` (a reload would then apply it). */
 function mirrorHolds(storage: Storage | null, language: string): boolean {
-	writeMirror(storage, language);
-	return readMirror(storage) === language;
+	return writeMirror(storage, language) && readMirror(storage) === language;
 }
 
 /** Reads and removes the one-shot reload marker; a blocked sessionStorage reads as unmarked. */

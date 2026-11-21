@@ -9,6 +9,7 @@ vi.mock('$lib/api/mfa', () => ({ mfaSendEmail: vi.fn(), emailLoginStart: vi.fn()
 import { completeEmailLogin, completeMfa, signIn } from '$lib/auth';
 import { getAuthOptions } from '$lib/api/account';
 import { emailLoginStart, mfaSendEmail } from '$lib/api/mfa';
+import { primaryActions } from '$lib/ui/testing/primary';
 import Page from './+page.svelte';
 
 const challenge = (methods: string[], emailHint: string | null = null) => ({
@@ -41,6 +42,8 @@ async function toSecondStep(methods = ['totp', 'recovery'], hint: string | null 
 describe('two-step sign-in', () => {
 	it('shows the code step with focus on its heading and the right input attributes', async () => {
 		await toSecondStep();
+		// one primary action per view (#106): the code step verifies
+		expect(primaryActions(document.body).map((b) => b.textContent?.trim())).toEqual(['Continue']);
 		const heading = screen.getByRole('heading', { name: 'Two-step check' });
 		await waitFor(() => expect(document.activeElement).toBe(heading));
 		const input = screen.getByLabelText('Code from your authenticator app') as HTMLInputElement;
@@ -131,9 +134,15 @@ describe('sign-in by emailed code', () => {
 		vi.mocked(completeEmailLogin).mockResolvedValue({ kind: 'session' } as never);
 		render(Page);
 		await fireEvent.click(await screen.findByRole('button', { name: 'Email me a sign-in code' }));
-		await fireEvent.input(screen.getByLabelText('Username or email address'), { target: { value: ' owner ' } });
+		// the email start step: one primary action and a Field for the identifier
+		expect(primaryActions(document.body).map((b) => b.textContent?.trim())).toEqual(['Email me a code']);
+		const login = screen.getByLabelText('Username or email address');
+		expect(login.closest('.field')).not.toBeNull();
+		await fireEvent.input(login, { target: { value: ' owner ' } });
 		await fireEvent.click(screen.getByRole('button', { name: 'Email me a code' }));
 		await screen.findByRole('heading', { name: 'Enter your code' });
+		// the email code step: one primary action (the submit, still busy here)
+		expect(primaryActions(document.body)).toHaveLength(1);
 		expect(emailLoginStart).toHaveBeenCalledWith('owner');
 		// the same sentence whoever the account is
 		expect(screen.getByText(/If the account has a confirmed email address/)).toBeTruthy();

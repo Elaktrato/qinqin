@@ -2,10 +2,10 @@
 // drawer list, in one order, and which one a path belongs to. Pure, so the
 // order and the matching are tested without rendering.
 //
-// Order (plan Ruling): the core features (Decks, Reader), then the enabled
-// plugin pages in the user's plugin order, then Search, then Stats. Before
-// the plugin states are loaded only Search and Stats show, so a switched-off
-// feature never flashes in.
+// Order (plan Ruling): Search first (owner request, 2026-11-18), then the
+// core features (Decks, Reader), then the enabled plugin pages in the user's
+// plugin order, then Stats last. Before the plugin states are loaded only
+// Search and Stats show, so a switched-off feature never flashes in.
 
 import { t } from '$lib/i18n';
 import { coreFeatures, featureEnabled } from '$lib/features';
@@ -59,9 +59,9 @@ export function frameSections(state: PluginStatesValue, plugins: WebPlugin[] = w
 		match: [p.href]
 	}));
 	return [
+		{ id: 'search', label: t('nav.search'), href: '/search', icon: 'search', match: ['/search', '/entry', '/lookups'] },
 		...features,
 		...pages,
-		{ id: 'search', label: t('nav.search'), href: '/search', icon: 'search', match: ['/search', '/entry', '/lookups'] },
 		{ id: 'stats', label: t('nav.stats'), href: '/stats', icon: 'stats', match: ['/stats'] }
 	];
 }

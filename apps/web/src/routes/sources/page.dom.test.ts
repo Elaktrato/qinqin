@@ -1,9 +1,12 @@
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/svelte';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 
 vi.mock('$app/state', () => import('$lib/testing/appState.svelte'));
 vi.mock('$app/navigation', () => ({ goto: vi.fn(() => Promise.resolve()) }));
 
+import { primaryActions } from '$lib/ui/testing/primary';
 import Page from './+page.svelte';
 
 const pack = {
@@ -95,6 +98,47 @@ afterEach(() => {
 	cleanup();
 	vi.unstubAllGlobals();
 	localStorage.removeItem('qinqin.token');
+});
+
+describe('sources in the lighter look (#106)', () => {
+	const source = readFileSync(join(__dirname, '+page.svelte'), 'utf8');
+	const css = source.slice(source.indexOf('<style>'));
+
+	it('every table is a .ui-table inside a named scroll region, and no view has a primary action', async () => {
+		localStorage.setItem('qinqin.token', 'tok');
+		render(Page);
+		await screen.findByRole('heading', { name: 'Themes' });
+		await waitFor(() => expect(document.querySelectorAll('table').length).toBeGreaterThan(2));
+		for (const table of document.querySelectorAll('table')) {
+			expect(table.classList.contains('ui-table')).toBe(true);
+			expect(table.querySelector('th[scope="col"]')).toBeTruthy();
+		}
+		for (const wrap of document.querySelectorAll('.table-wrap')) {
+			expect(wrap.getAttribute('tabindex')).toBe('0');
+			expect(wrap.getAttribute('role')).toBe('region');
+			expect(wrap.getAttribute('aria-labelledby')).toBeTruthy();
+		}
+		expect(primaryActions(document.body)).toHaveLength(0);
+	});
+
+	it('keeps the sections and their ids in today\'s order', async () => {
+		render(Page);
+		await screen.findByRole('heading', { name: 'Frequency lists' });
+		const ids = [...document.querySelectorAll('section h2[id]')].map((h) => h.id);
+		const order = ['sources-dictionaries', 'sources-frequency', 'sources-levels', 'sources-grammar', 'sources-core'];
+		const seen = ids.filter((id) => order.includes(id));
+		expect(seen).toEqual(order);
+	});
+
+	it('links are underlined reading-colour text links, tables have no box, credits are hairline rows', () => {
+		expect(css).toMatch(/a\s*\{[^}]*color:\s*var\(--reading-accent\)/);
+		expect(css).toMatch(/a\s*\{[^}]*text-decoration:\s*underline/);
+		expect(css).not.toMatch(/text-transform:\s*uppercase/);
+		expect(css).toMatch(/\.table-wrap\s*\{[^}]*overflow-x:\s*auto/);
+		expect(css).not.toMatch(/\.table-wrap\s*\{[^}]*border:/);
+		expect(css).toMatch(/\.credit\s*\+\s*\.credit\s*\{[^}]*border-top:\s*1px solid var\(--hair\)/);
+		expect(css).toMatch(/\.notes dd\s*\{[^}]*border-inline-start:\s*1px solid var\(--hair\)/);
+	});
 });
 
 describe('sources page: character components', () => {

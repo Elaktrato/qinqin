@@ -24,7 +24,7 @@
 		type ExtraChoices
 	} from '$lib/study/cardTypesMemory';
 	import DeckCardTypes from '$lib/study/DeckCardTypes.svelte';
-	import { enabledKinds, type DeckSettings } from '$lib/study/deckSettings';
+	import { cleanCardTypes, enabledKinds, type DeckSettings } from '$lib/study/deckSettings';
 	import { buriedLevelEntries, buriedNow } from '$lib/study/siblings';
 	import { DEFAULT_W } from '$lib/study/fsrs/params';
 	import {
@@ -41,12 +41,14 @@ import { vacationBanner, vacationStatus } from '$lib/settings/vacationForm';
 import { startTodayText } from '$lib/study/limitsText';
 import { limitsOf } from '$lib/study/scheduler';
 	import { currentStudyDay } from '$lib/time/zone';
+	import { STUDY_ALL_LIMIT } from '$lib/study/session';
 	import { hasStrokeData } from '$lib/study/strokeIndex';
 	import { getFrequencyPacks } from '$lib/api/frequency';
 	import type { FrequencyPack } from '$lib/api/types';
 	import { resolveSessionOrder } from '$lib/study/newOrder';
 	import { mixedNote, decodeOrder, encodeOrder, sessionOrderChoices } from '$lib/study/newOrderView';
 	import { deckOrdersOf } from '$lib/study/sessionOrder';
+	import { Button, Field, Section, Select } from '$lib/ui';
 	import {
 		CARD_TYPES,
 		loadConfig,
@@ -63,7 +65,8 @@ import { limitsOf } from '$lib/study/scheduler';
 		activeWeights,
 		deleteDeck,
 		loadStudyData,
-		renameDeck
+		renameDeck,
+		saveDeckCardTypesForDecks
 	} from '$lib/study/store';
 	import {
 		CARD_KINDS,
@@ -146,6 +149,10 @@ import { limitsOf } from '$lib/study/scheduler';
 	let schemeCharactersSeq = 0;
 	// The language's character rows (variants), the Stats map's universe.
 	let universeRows = $state.raw<CharRow[]>([]);
+
+	let advancedOpen = $state(false);
+	let typeSaving = $state<string | null>(null);
+	let typeError = $state('');
 
 	let deckName = $state('');
 	let creating = $state(false);
@@ -428,7 +435,7 @@ import { limitsOf } from '$lib/study/scheduler';
 		CARD_TYPES.filter(
 			(type) =>
 				(type.id !== 'tone' || isChinese(workspaceLanguage ?? '')) &&
-				(!isOptIn(type.id) || enabledOptIn.has(type.id as OptInKind))
+				(mode === 'decks' || !isOptIn(type.id))
 		)
 	);
 
@@ -479,6 +486,32 @@ import { limitsOf } from '$lib/study/scheduler';
 
 	const deckCounts = $derived({ due: deckPlan.due, fresh: deckPlan.fresh });
 
+	// What Study all would contain: the same plan without any daily limits.
+	const noLimitCtx = $derived({
+		...ctx,
+		limits: { ...ctx.limits, workspace: null, decks: {} }
+	});
+	const deckAllPlan = $derived.by(() => {
+		const empty = { due: 0, fresh: 0, byKind: { vocab: 0, sentence: 0, writing: 0, tone: 0, reverse: 0, cloze: 0 } };
+		if (selectedDeckIds.length === 0 || selectedKinds.length === 0) return empty;
+		const items = deckSessionItems({
+			cards,
+			reviews,
+			deckIds: selectedDeckIds,
+			kinds: selectedKinds,
+			newLimit: STUDY_ALL_LIMIT,
+			reviewLimit: STUDY_ALL_LIMIT,
+			now: new Date(),
+			w: weights,
+			language: workspaceLanguage ?? '',
+			deckSettings,
+			ctx: noLimitCtx,
+			skip: activeWorkspaceId === null ? undefined : loadIneligible(activeWorkspaceId)
+		});
+		return sessionCounts(items, reviews);
+	});
+	const deckAllCounts = $derived({ due: deckAllPlan.due, fresh: deckAllPlan.fresh });
+
 	// Planned companions are candidates, not promises: whether a word has
 	// a sentence, stroke data or a clean pinyin reading is only known when
 	// it comes up, and unsuitable words are skipped then.
@@ -522,6 +555,28 @@ import { limitsOf } from '$lib/study/scheduler';
 		});
 	});
 
+	const levelAllCounts = $derived.by(() => {
+		if (levelSelection === null || levelEntries.length === 0 || !levelUsable(levelUnit, levelKinds)) {
+			return { due: 0, fresh: 0, items: 0, unitLabel: levelUnit === 'character' ? 'characters' : 'words' } as const;
+		}
+		return levelPlanCounts({
+			entries: levelEntries,
+			cards,
+			reviews,
+			now: new Date(),
+			w: weights,
+			unit: levelUnit,
+			kinds: levelKinds,
+			ctx: noLimitCtx,
+			hasStrokes: hasStrokeData,
+			excludeEntries: buriedLevelEntries(
+				buriedNow({ cards, reviews, now: new Date(), studyDay: ctx.day }),
+				cards
+			),
+			skip: activeWorkspaceId === null ? undefined : loadIneligible(activeWorkspaceId)
+		});
+	});
+
 	// Selected types that have nothing to study: a warning, not a block,
 	// as long as another selected type has cards.
 	const typeWarnings = $derived.by((): string[] => {
@@ -536,6 +591,7 @@ import { limitsOf } from '$lib/study/scheduler';
 	});
 
 	const counts = $derived(mode === 'levels' ? levelCounts : deckCounts);
+	const allCounts = $derived(mode === 'levels' ? levelAllCounts : deckAllCounts);
 	const levelEntryTotal = $derived(levelEntryCount(levelEntries, levelUnit));
 	const levelNoun = $derived(
 		levelUnit === 'character'
@@ -607,6 +663,8 @@ import { limitsOf } from '$lib/study/scheduler';
 		return '';
 	});
 
+	const studyAllBlocked = $derived(starting || (guidance !== '' && allCounts.due + allCounts.fresh === 0));
+
 	function toggleDeck(id: string): void {
 		errors = [];
 		selectedDeckIds = selectedDeckIds.includes(id)
@@ -614,17 +672,63 @@ import { limitsOf } from '$lib/study/scheduler';
 			: [...selectedDeckIds, id];
 	}
 
-	function toggleCardType(id: string): void {
+	async function toggleCardType(id: string): Promise<void> {
 		errors = [];
+		typeError = '';
 		if (isOptIn(id)) {
-			const next = !extraKinds.includes(id as OptInKind);
-			extraChoices = { ...extraChoices, [id]: next };
-			if (activeWorkspaceId !== null) rememberExtraChoice(activeWorkspaceId, id as OptInKind, next);
+			const kind = id as OptInKind;
+			const next = !extraKinds.includes(kind);
+			const previousSettings = deckSettings;
+			const previousChoices = extraChoices;
+			// Optimistic: the checkbox and the counts follow the click at once.
+			const optimistic: Record<string, DeckSettings> = { ...deckSettings };
+			for (const deck of allDecks) {
+				const stored = optimistic[deck.id];
+				const current = cleanCardTypes(stored?.cardTypes ?? []);
+				optimistic[deck.id] = {
+					deckId: deck.id,
+					cardTypes: next ? cleanCardTypes([...current, kind]) : current.filter((value) => value !== kind),
+					...(stored?.newOrder ? { newOrder: stored.newOrder } : {}),
+					extra: stored?.extra ?? {}
+				};
+			}
+			deckSettings = optimistic;
+			extraChoices = { ...extraChoices, [kind]: next };
+			if (activeWorkspaceId !== null) rememberExtraChoice(activeWorkspaceId, kind, next);
+			typeSaving = id;
+			try {
+				const saved = await saveDeckCardTypesForDecks(
+					allDecks.map((deck) => deck.id),
+					kind,
+					next
+				);
+				deckSettings = { ...deckSettings, ...saved };
+			} catch (err) {
+				deckSettings = previousSettings;
+				extraChoices = previousChoices;
+				if (activeWorkspaceId !== null) rememberExtraChoice(activeWorkspaceId, kind, !next);
+				typeError = message(err, t('study.types.saveFailed'));
+			} finally {
+				typeSaving = null;
+			}
 			return;
 		}
 		cardTypes = cardTypes.includes(id)
 			? cardTypes.filter((type) => type !== id)
 			: [...cardTypes, id];
+	}
+
+	/** A per-deck switch under Advanced can enable a kind the global list shows. */
+	function deckTypesSaved(deckId: string, saved: DeckSettings): void {
+		deckSettings = { ...deckSettings, [deckId]: saved };
+		let next = extraChoices;
+		for (const kind of OPT_IN_KINDS) {
+			if (saved.cardTypes.includes(kind) && next[kind] !== true) {
+				next = { ...next, [kind]: true };
+				if (activeWorkspaceId !== null) rememberExtraChoice(activeWorkspaceId, kind, true);
+			}
+		}
+		extraChoices = next;
 	}
 
 	async function addDeck(event: SubmitEvent): Promise<void> {
@@ -719,7 +823,7 @@ import { limitsOf } from '$lib/study/scheduler';
 	);
 	// A value the current mode does not offer (switched mode, pack removed) is the default.
 	const orderValue = $derived(
-		orderView.choices.some((choice) => choice.value === newOrderValue) ? newOrderValue : 'deck'
+		orderView.choices.some((choice) => choice.value === newOrderValue) ? newOrderValue : 'random'
 	);
 	const ordersMixed = $derived(
 		mode === 'decks' &&
@@ -732,8 +836,9 @@ import { limitsOf } from '$lib/study/scheduler';
 		mode = next;
 	}
 
-	function start(): void {
+	function start(studyAll = false): void {
 		const config: StudySessionConfig = {
+			...(studyAll ? { studyAll: true } : {}),
 			mode,
 			// Keep both modes' fields so switching back restores the
 			// selection; validateConfig reads only the active mode's.
@@ -745,8 +850,10 @@ import { limitsOf } from '$lib/study/scheduler';
 			// Existing kinds as set up (hidden ones stay), plus the checked opt-in kinds.
 			cardTypes: [...cardTypes.filter((kind) => !isOptIn(kind)), ...extraKinds]
 		};
-		const order = decodeOrder(orderValue);
-		if (order !== 'deck') config.newOrder = order;
+		// Always stored: absent means random, and 'deck' is a choice of its own.
+		config.newOrder = decodeOrder(orderValue);
+		// Fixes the shuffle of this session, so a reload shows the same order.
+		config.seed = Math.floor(Math.random() * 0x7fffffff);
 		// Validate what the session will actually use: a type hidden in
 		// this workspace does not count towards "at least one".
 		errors = validateConfig({ ...config, cardTypes: [...selectedKinds] });
@@ -787,220 +894,9 @@ import { limitsOf } from '$lib/study/scheduler';
 	{:else if loading}
 		<p class="hint" role="status">{t('study.guide.loading')}</p>
 	{:else}
-		<section aria-labelledby="mode-heading">
-			<h2 id="mode-heading">{t('study.setup.source')}</h2>
-			<div class="modes" role="radiogroup" aria-labelledby="mode-heading">
-				<label class="inline">
-					<input
-						type="radio"
-						name="session-mode"
-						value="decks"
-						checked={mode === 'decks'}
-						onchange={() => selectMode('decks')}
-					/>
-					{t('study.setup.myDecks')}
-				</label>
-				<label class="inline">
-					<input
-						type="radio"
-						name="session-mode"
-						value="levels"
-						checked={mode === 'levels'}
-						onchange={() => selectMode('levels')}
-					/>
-					{t('study.setup.byLevel')}
-				</label>
-			</div>
-		</section>
 
-		{#if mode === 'decks'}
-			<section aria-labelledby="decks-heading">
-				<h2 id="decks-heading">{t('study.decks.title')}</h2>
 
-				{#if decks.length === 0}
-					<div class="empty">
-						<h3>{t('study.decks.none')}</h3>
-						<p>{t('study.decks.noneText')}</p>
-					</div>
-				{/if}
-
-				<ul class="decks">
-					{#each allDecks as deck (deck.id)}
-						<li class="deck">
-							{#if renamingId === deck.id}
-								<form class="rename" onsubmit={(event) => submitRename(event, deck.id)}>
-									<input
-										bind:value={renameName}
-										aria-label={t('study.decks.newName', { deck: deck.name })}
-										maxlength="80"
-										required
-									/>
-									<button type="submit">{t('common.action.save')}</button>
-									<button type="button" class="secondary" onclick={cancelRename}>{t('common.action.cancel')}</button>
-								</form>
-							{:else}
-								<label class="deck-choice">
-									<input
-										type="checkbox"
-										checked={selectedDeckIds.includes(deck.id)}
-										onchange={() => toggleDeck(deck.id)}
-									/>
-									<span class="deck-name">{deck.name}</span>
-									{#if deck.id === GENERAL_DECK_ID}
-										<span class="tag">{t('study.decks.default')}</span>
-									{/if}
-								</label>
-
-								{#if deck.id !== GENERAL_DECK_ID}
-									<div class="deck-actions">
-										<button type="button" class="secondary" onclick={() => beginRename(deck)}>
-											{t('study.decks.rename')}
-										</button>
-										<button
-											type="button"
-											class="danger"
-											disabled={deletingId === deck.id}
-											onclick={() => removeDeck(deck)}
-										>
-											{deletingId === deck.id ? t('study.decks.deleting') : t('common.action.delete')}
-										</button>
-									</div>
-								{/if}
-								<div class="deck-types">
-									<DeckCardTypes
-										deckId={deck.id}
-										deckName={deck.name}
-										cardTypes={deckSettings[deck.id]?.cardTypes ?? []}
-										onSaved={(saved) => (deckSettings = { ...deckSettings, [deck.id]: saved })}
-									/>
-								</div>
-							{/if}
-						</li>
-					{/each}
-				</ul>
-
-				<form class="create" onsubmit={addDeck}>
-					<label>
-						{t('study.decks.new')}
-						<input
-							bind:value={deckName}
-							placeholder={t('study.decks.newPlaceholder')}
-							maxlength="80"
-							autocomplete="off"
-							required
-						/>
-					</label>
-					<button type="submit" disabled={creating}>
-						{creating ? t('study.decks.creating') : t('study.decks.create')}
-					</button>
-				</form>
-
-				{#if deckError}
-					<p class="error" role="alert">{deckError}</p>
-				{/if}
-			</section>
-
-			<CardManager {cards} decks={allDecks} onchanged={refreshData} />
-		{:else}
-			<section aria-labelledby="levels-heading">
-				<h2 id="levels-heading">{t('study.level.title')}</h2>
-				<p class="hint">{t('study.level.intro')}</p>
-
-				{#if schemeError}
-					<p class="error" role="alert">{schemeError}</p>
-				{:else if !schemesLoaded}
-					<p class="hint" role="status">{t('study.level.loadingSchemes')}</p>
-				{:else if schemesForLanguage.length === 0}
-					<p class="hint">{t('study.level.noSchemes')}</p>
-				{:else}
-					<div class="levels">
-						<label>
-							{t('study.level.scheme')}
-							<select bind:value={schemeId}>
-								{#each schemesForLanguage as scheme (scheme.id)}
-									<option value={scheme.id}>{scheme.name}</option>
-								{/each}
-							</select>
-						</label>
-						<label>
-							{t('study.level.level')}
-							<select bind:value={levelName}>
-								{#each schemeLevels as level (level.id)}
-									<option value={level.name}>{levelOptionLabel(level.name)}</option>
-								{/each}
-							</select>
-						</label>
-					</div>
-
-					{#if levelEntriesError}
-						<p class="error" role="alert">{levelEntriesError}</p>
-					{:else if levelEntriesLoading}
-						<p class="hint" role="status">{t('study.guide.loadingLevel')}</p>
-					{/if}
-				{/if}
-			</section>
-		{/if}
-
-		<section aria-labelledby="limits-heading">
-			<h2 id="limits-heading">{t('study.limitsSection.title')}</h2>
-			<p class="hint">{t('study.limitsSection.intro')}</p>
-
-			<div class="limits">
-				<label>
-					{t('study.limitsSection.newCards')}
-					<input type="number" min="1" max="999" step="1" bind:value={newLimit} />
-				</label>
-				<label>
-					{t('study.limitsSection.reviews')}
-					<input type="number" min="1" max="999" step="1" bind:value={reviewLimit} />
-				</label>
-			</div>
-			<label class="order">
-				{t('study.limitsSection.order')}
-				<select
-					value={orderValue}
-					onchange={(event) => (newOrderValue = (event.currentTarget as HTMLSelectElement).value)}
-				>
-					{#each orderView.choices as choice (choice.value)}
-						<option value={choice.value}>{choice.label}</option>
-					{/each}
-				</select>
-			</label>
-			{#if ordersMixed}
-				<p class="hint" role="status">{mixedNote()}</p>
-			{/if}
-			{#if orderView.hint !== null}
-				<p class="hint">{orderView.hint}</p>
-			{/if}
-			<p class="hint">
-				<a href="/study/scheduling">{t('study.limitsSection.scheduling', { label: schedulingLabel })}</a>
-			</p>
-		</section>
-
-		<section aria-labelledby="types-heading">
-			<h2 id="types-heading">{t('study.types.title')}</h2>
-
-			<p class="hint">{t('study.types.intro')}</p>
-			<ul class="types">
-				{#each visibleTypes as type (type.id)}
-					<li>
-						<label class="type-choice">
-							<input
-								type="checkbox"
-								checked={isChecked(type.id)}
-								aria-describedby={`type-${type.id}-info`}
-								onchange={() => toggleCardType(type.id)}
-							/>
-							<span class="type-label">{type.label}</span>
-							<span class="type-info" id={`type-${type.id}-info`}>{TYPE_INFO[type.id]}</span>
-						</label>
-					</li>
-				{/each}
-			</ul>
-		</section>
-
-		<section class="summary" aria-labelledby="summary-heading">
-			<h2 id="summary-heading">{t('study.summary.title')}</h2>
+		<Section title={t('study.summary.title')} headingId="summary-heading">
 			{#if vacationText === null}
 				<p class="today">{startTodayText(counts.due, counts.fresh, noDailyLimit)}</p>
 			{/if}
@@ -1050,260 +946,373 @@ import { limitsOf } from '$lib/study/scheduler';
 			{/if}
 
 			{#if vacationText === null}
-				<button type="button" class="start" disabled={starting || guidance !== ''} onclick={start}>
-					{starting ? t('study.summary.starting') : t('study.summary.start')}
-				</button>
+				<div class="start-actions">
+					<Button
+						variant="primary"
+						disabled={starting || guidance !== ''}
+						onclick={() => start()}
+					>
+						{starting ? t('study.summary.starting') : t('study.summary.start')}
+					</Button>
+					<Button variant="secondary" disabled={studyAllBlocked} onclick={() => start(true)}>
+						{t('study.summary.startAll')}
+					</Button>
+				</div>
+				<p class="hint">{t('study.summary.startAllHint')}</p>
 			{/if}
 
 			{#if guidance && vacationText === null}
 				<p class="hint" role="status">{guidance}</p>
 			{/if}
-		</section>
+		</Section>
+
+		<Section title={t('study.limitsSection.title')} headingId="limits-heading">
+			<p class="hint">{t('study.limitsSection.intro')}</p>
+
+			<div class="limits">
+				<Field
+					label={t('study.limitsSection.newCards')}
+					type="number"
+					min={1}
+					max={999}
+					step={1}
+					value={String(newLimit)}
+					oninput={(event) => (newLimit = Number(event.currentTarget.value))}
+				/>
+				<Field
+					label={t('study.limitsSection.reviews')}
+					type="number"
+					min={1}
+					max={999}
+					step={1}
+					value={String(reviewLimit)}
+					oninput={(event) => (reviewLimit = Number(event.currentTarget.value))}
+				/>
+			</div>
+			<Select
+				label={t('study.limitsSection.order')}
+				value={orderValue}
+				onchange={(event) => (newOrderValue = (event.currentTarget as HTMLSelectElement).value)}
+				options={orderView.choices.map((choice) => ({ value: choice.value, label: choice.label }))}
+			/>
+			{#if ordersMixed}
+				<p class="hint" role="status">{mixedNote()}</p>
+			{/if}
+			{#if orderView.hint !== null}
+				<p class="hint">{orderView.hint}</p>
+			{/if}
+			<p class="hint">
+				<a href="/study/scheduling">{t('study.limitsSection.scheduling', { label: schedulingLabel })}</a>
+			</p>
+		</Section>
+
+		<Section title={t('study.setup.source')} headingId="mode-heading">
+			<div class="modes" role="radiogroup" aria-labelledby="mode-heading">
+				<label class="inline">
+					<input
+						type="radio"
+						name="session-mode"
+						value="decks"
+						checked={mode === 'decks'}
+						onchange={() => selectMode('decks')}
+					/>
+					{t('study.setup.myDecks')}
+				</label>
+				<label class="inline">
+					<input
+						type="radio"
+						name="session-mode"
+						value="levels"
+						checked={mode === 'levels'}
+						onchange={() => selectMode('levels')}
+					/>
+					{t('study.setup.byLevel')}
+				</label>
+			</div>
+		</Section>
+
+		{#if mode === 'decks'}
+			<Section title={t('study.decks.title')} headingId="decks-heading">
+
+				{#if decks.length === 0}
+					<div class="empty">
+						<h3>{t('study.decks.none')}</h3>
+						<p>{t('study.decks.noneText')}</p>
+					</div>
+				{/if}
+
+				<ul class="decks">
+					{#each allDecks as deck (deck.id)}
+						<li class="deck">
+							{#if renamingId === deck.id}
+								<form class="rename" onsubmit={(event) => submitRename(event, deck.id)}>
+									<Field
+										label={t('study.decks.newName', { deck: deck.name })}
+										hideLabel
+										bind:value={renameName}
+										maxlength={80}
+										required
+									/>
+									<Button type="submit">{t('common.action.save')}</Button>
+									<Button onclick={cancelRename}>{t('common.action.cancel')}</Button>
+								</form>
+							{:else}
+								<label class="deck-choice">
+									<input
+										type="checkbox"
+										checked={selectedDeckIds.includes(deck.id)}
+										onchange={() => toggleDeck(deck.id)}
+									/>
+									<span class="deck-name">{deck.name}</span>
+									{#if deck.id === GENERAL_DECK_ID}
+										<span class="tag">{t('study.decks.default')}</span>
+									{/if}
+								</label>
+
+								{#if deck.id !== GENERAL_DECK_ID}
+									<div class="deck-actions">
+										<Button onclick={() => beginRename(deck)}>{t('study.decks.rename')}</Button>
+										<Button
+											tone="danger"
+											disabled={deletingId === deck.id}
+											onclick={() => removeDeck(deck)}
+										>
+											{deletingId === deck.id ? t('study.decks.deleting') : t('common.action.delete')}
+										</Button>
+									</div>
+								{/if}
+							{/if}
+						</li>
+					{/each}
+				</ul>
+
+				<form class="create" onsubmit={addDeck}>
+					<Field
+						label={t('study.decks.new')}
+						bind:value={deckName}
+						placeholder={t('study.decks.newPlaceholder')}
+						maxlength={80}
+						autocomplete="off"
+						required
+					/>
+					<Button type="submit" disabled={creating}>
+						{creating ? t('study.decks.creating') : t('study.decks.create')}
+					</Button>
+				</form>
+
+				{#if deckError}
+					<p class="error" role="alert">{deckError}</p>
+				{/if}
+			</Section>
+
+			<CardManager {cards} decks={allDecks} onchanged={refreshData} />
+		{:else}
+			<Section title={t('study.level.title')} headingId="levels-heading">
+				<p class="hint">{t('study.level.intro')}</p>
+
+				{#if schemeError}
+					<p class="error" role="alert">{schemeError}</p>
+				{:else if !schemesLoaded}
+					<p class="hint" role="status">{t('study.level.loadingSchemes')}</p>
+				{:else if schemesForLanguage.length === 0}
+					<p class="hint">{t('study.level.noSchemes')}</p>
+				{:else}
+					<div class="levels">
+						<Select
+							label={t('study.level.scheme')}
+							value={schemeId === null ? '' : String(schemeId)}
+							onchange={(event) => (schemeId = Number(event.currentTarget.value))}
+							options={schemesForLanguage.map((scheme) => ({ value: String(scheme.id), label: scheme.name }))}
+						/>
+						<Select
+							label={t('study.level.level')}
+							value={levelName ?? ''}
+							onchange={(event) => (levelName = event.currentTarget.value)}
+							options={schemeLevels.map((level) => ({ value: level.name, label: levelOptionLabel(level.name) }))}
+						/>
+					</div>
+
+					{#if levelEntriesError}
+						<p class="error" role="alert">{levelEntriesError}</p>
+					{:else if levelEntriesLoading}
+						<p class="hint" role="status">{t('study.guide.loadingLevel')}</p>
+					{/if}
+				{/if}
+			</Section>
+		{/if}
+
+
+		<Section title={t('study.types.title')} headingId="types-heading">
+
+			<p class="hint">{t('study.types.intro')}</p>
+			<ul class="types">
+				{#each visibleTypes as type (type.id)}
+					<li>
+						<label class="type-choice">
+							<input
+								type="checkbox"
+								checked={isChecked(type.id)}
+								disabled={typeSaving !== null}
+								aria-describedby={`type-${type.id}-info`}
+								onchange={() => void toggleCardType(type.id)}
+							/>
+							<span class="type-label">{type.label}</span>
+							<span class="type-info" id={`type-${type.id}-info`}>{TYPE_INFO[type.id]}</span>
+						</label>
+					</li>
+				{/each}
+			</ul>
+			{#if typeError}
+				<p class="error" role="alert">{typeError}</p>
+			{/if}
+		</Section>
+
+		{#if mode === 'decks'}
+			<Section title={t('study.advanced.title')} headingId="advanced-heading">
+				<p class="hint">{t('study.advanced.intro')}</p>
+				<Button
+					variant="secondary"
+					icon={advancedOpen ? 'expand-down' : 'forward'}
+					aria-expanded={advancedOpen}
+					onclick={() => (advancedOpen = !advancedOpen)}
+				>{t('study.advanced.toggle')}</Button>
+				{#if advancedOpen}
+					<ul class="advanced-decks">
+						{#each allDecks as deck (deck.id)}
+							<li>
+								<span class="advanced-name">{deck.name}</span>
+								<DeckCardTypes
+									deckId={deck.id}
+									deckName={deck.name}
+									cardTypes={deckSettings[deck.id]?.cardTypes ?? []}
+									onSaved={(saved) => deckTypesSaved(deck.id, saved)}
+								/>
+							</li>
+						{/each}
+					</ul>
+				{/if}
+			</Section>
+		{/if}
+
 	{/if}
 </div>
 
 <style>
-	.setup {
-		margin: 0 auto;
-		max-width: 48rem;
-		padding: 2.5rem 1.5rem;
-	}
-
-	.setup section {
-		margin-top: 2rem;
-	}
-
+	/* .page-body is the only page column (#106); the setup brings no second one. */
 	h1,
-	h2,
 	h3 {
-		margin-bottom: 0.5rem;
+		margin-bottom: var(--space-2);
+	}
+
+	.modes,
+	.decks,
+	.levels,
+	.limits,
+	.types {
+		display: grid;
+		gap: var(--space-2);
+	}
+
+	.start-actions {
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--space-3);
+		align-items: center;
+	}
+
+	.advanced-decks {
+		list-style: none;
+		margin: var(--space-4) 0 0;
+		padding: 0;
+		display: grid;
+		gap: var(--space-3);
+	}
+
+	.advanced-decks li {
+		padding-top: var(--space-2);
+		border-top: 1px solid var(--hair);
+	}
+
+	.advanced-name {
+		font-weight: var(--weight-medium);
+	}
+
+	.inline,
+	.deck-choice,
+	.type-choice {
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--space-2);
+		align-items: center;
+		min-height: var(--hit);
+	}
+
+	.decks {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+	}
+
+	.deck {
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--space-2);
+		align-items: center;
+		padding-block: var(--space-2);
+	}
+
+	.deck + .deck {
+		border-top: 1px solid var(--hair);
+	}
+
+
+	.deck-actions {
+		display: flex;
+		gap: var(--space-2);
+		margin-inline-start: auto;
+	}
+
+	.rename,
+	.create {
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--space-2);
+		align-items: end;
+	}
+
+	.rename :global(.field),
+	.create :global(.field) {
+		flex: 1 1 14rem;
+	}
+
+	.types {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+	}
+
+	.types li + li {
+		border-top: 1px solid var(--hair);
+	}
+
+	.limits {
+		grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+		max-width: 28rem;
+	}
+
+	.error {
+		color: var(--readable-bad);
+		padding-inline-start: var(--space-2);
+		border-inline-start: 3px solid var(--bad);
 	}
 
 	.hint {
 		color: var(--readable-muted);
 	}
 
-	.empty {
-		border: 1px dashed color-mix(in srgb, currentColor 30%, transparent);
-		border-radius: 0.4rem;
-		padding: 0.75rem 1rem;
-		margin-bottom: 1rem;
-	}
-
-	.empty h3 {
-		margin: 0 0 0.35rem;
-	}
-
-	.empty p {
-		margin: 0;
-		color: var(--readable-muted);
-	}
-
-	.decks,
-	.types {
-		list-style: none;
-		margin: 0;
-		padding: 0;
-		display: grid;
-		gap: 0.5rem;
-	}
-
-	.type-choice {
-		display: grid;
-		grid-template-columns: auto 1fr;
-		column-gap: 0.55rem;
-		row-gap: 0.1rem;
-		align-items: center;
-		border: 1px solid color-mix(in srgb, currentColor 18%, transparent);
-		border-radius: 0.4rem;
-		padding: 0.55rem 0.75rem;
-		cursor: pointer;
-	}
-
-	.type-choice:focus-within {
-		border-color: var(--accent);
-	}
-
-	.type-label {
-		font-weight: 600;
-	}
-
-	.type-info {
-		grid-column: 2;
-		font-size: 0.9rem;
-		color: var(--readable-muted);
-	}
-
-	.warnings {
-		margin: 0 0 1rem;
-		padding-left: 1.25rem;
-		/* Warnings: --text with the --warn bar as the cue. */
-		border-inline-start: 3px solid var(--warn);
-	}
-
-	.deck {
-		display: flex;
-		flex-wrap: wrap;
-		align-items: center;
-		justify-content: space-between;
-		gap: 0.5rem;
-		border: 1px solid color-mix(in srgb, currentColor 18%, transparent);
-		border-radius: 0.4rem;
-		padding: 0.6rem 0.75rem;
-	}
-
-	.deck-types {
-		flex-basis: 100%;
-	}
-
-	.deck-choice,
-	.inline {
-		display: flex;
-		align-items: center;
-		gap: 0.45rem;
-	}
-
-	.deck-name {
-		font-weight: 600;
-	}
-
-	.deck-actions {
-		display: flex;
-		gap: 0.5rem;
-	}
-
-	.deck-actions button,
-	.rename button {
-		padding: 0.3rem 0.6rem;
-	}
-
-	.tag {
-		font-size: 0.75rem;
-		border: 1px solid currentColor;
-		border-radius: 999px;
-		padding: 0.02rem 0.45rem;
-		color: var(--readable-muted);
-	}
-
-	.rename {
-		display: flex;
-		flex-wrap: wrap;
-		align-items: center;
-		gap: 0.5rem;
-		width: 100%;
-	}
-
-	.create {
-		display: flex;
-		flex-wrap: wrap;
-		align-items: end;
-		gap: 0.75rem;
-		margin-top: 0.75rem;
-	}
-
-	.create label,
-	.limits label,
-	.order,
-	.levels label {
-		display: grid;
-		gap: 0.35rem;
-		font-weight: 600;
-	}
-
-	.limits {
-		display: flex;
-		flex-wrap: wrap;
-		gap: 1rem;
-	}
-
-	.order {
-		margin-top: 0.75rem;
-		max-width: 100%;
-	}
-
-	.order select {
-		max-width: 100%;
-	}
-
-	.modes,
-	.levels {
-		display: flex;
-		flex-wrap: wrap;
-		gap: 1rem;
-	}
-
-	.modes {
-		gap: 1.5rem;
-	}
-
-	.create input,
-	.limits input,
-	.levels select,
-	.order select,
-	.rename input,
-	.setup button {
-		font: inherit;
-	}
-
-	.create input,
-	.limits input,
-	.levels select,
-	.order select,
-	.rename input {
-		padding: 0.4rem 0.55rem;
-		border: 1px solid color-mix(in srgb, currentColor 35%, transparent);
-		border-radius: 0.4rem;
-		background: transparent;
-		color: inherit;
-	}
-
-	.limits input {
-		width: 5rem;
-	}
-
-	.setup button {
-		padding: 0.45rem 0.85rem;
-		border: 0;
-		border-radius: 0.4rem;
-		background: var(--accent);
-		color: var(--on-accent);
-		font-weight: 600;
-		cursor: pointer;
-	}
-
-	.setup button.secondary {
-		background: transparent;
-		color: inherit;
-		border: 1px solid color-mix(in srgb, currentColor 35%, transparent);
-	}
-
-	.setup button.danger {
-		background: transparent;
-		color: var(--readable-bad);
-		border: 1px solid currentColor;
-	}
-
-	.setup button:disabled {
-		opacity: 0.6;
-		cursor: not-allowed;
-	}
-
 	.stats {
-		margin: 0.5rem 0 1rem;
-	}
-
-	.errors {
-		margin: 0 0 1rem;
-		padding-left: 1.25rem;
-		color: var(--readable-bad);
-		font-weight: 600;
-	}
-
-	.error {
-		margin: 0.5rem 0 0;
-		color: var(--readable-bad);
-		font-weight: 600;
-		padding-inline-start: var(--space-2);
-		border-inline-start: 3px solid var(--bad);
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--space-1) var(--space-2);
 	}
 </style>

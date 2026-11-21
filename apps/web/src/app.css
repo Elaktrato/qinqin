@@ -21,7 +21,7 @@
 	   --accent-14/32/58/100, the
 	   washes, --mastery-0..4) and the person's --radius and --space are set
 	   on :root by lib/theme/apply.ts (app.html paints this device's last
-	   ones before the app loads; the compiled-in Catppuccin Latte/Mocha
+	   ones before the app loads; the compiled-in qinqin Day/Night
 	   otherwise). docs/contracts/themes/README.md lists them. */
 	--radius: 10px;
 	--space: 1;
@@ -76,6 +76,24 @@
 	}
 }
 
+/* A theme switch cross-fades the colours for a moment (#108). apply.ts adds
+   the class only for a person-initiated switch. For those 240ms it wins
+   over a component's own transition list on the six paint properties; a
+   tooltip or menu opened in the same moment finishes without its usual
+   opacity/translate curve. --motion-medium is 0ms under reduced motion. */
+html.theme-anim,
+html.theme-anim *,
+html.theme-anim *::before,
+html.theme-anim *::after {
+	transition:
+		background-color var(--motion-medium) var(--ease-standard),
+		border-color var(--motion-medium) var(--ease-standard),
+		color var(--motion-medium) var(--ease-standard),
+		fill var(--motion-medium) var(--ease-standard),
+		stroke var(--motion-medium) var(--ease-standard),
+		box-shadow var(--motion-medium) var(--ease-standard);
+}
+
 body {
 	margin: 0;
 	background: var(--panel);
@@ -90,41 +108,18 @@ body {
 	padding: 3rem 1.5rem;
 }
 
+/* The signed-out and forced pages (#106): one narrow column at the panel's
+   start. The frame's panel is the only box; the controls are the base
+   components, so .auth brings no box of its own. */
+.page-body.auth {
+	max-width: 24rem;
+	margin-inline: 0;
+}
+
 .auth form {
 	display: grid;
-	gap: 1rem;
-	max-width: 22rem;
-}
-
-.auth label {
-	display: grid;
-	gap: 0.35rem;
-	font-weight: 600;
-}
-
-.auth input {
-	font: inherit;
-	padding: 0.55rem 0.7rem;
-	border: 1px solid color-mix(in srgb, currentColor 35%, transparent);
-	border-radius: 0.4rem;
-	background: transparent;
-	color: inherit;
-}
-
-.auth button {
-	font: inherit;
-	font-weight: 600;
-	padding: 0.6rem 1rem;
-	border: 0;
-	border-radius: 0.4rem;
-	background: var(--accent);
-	color: var(--on-accent);
-	cursor: pointer;
-}
-
-.auth button:disabled {
-	opacity: 0.6;
-	cursor: progress;
+	gap: var(--space-4);
+	max-width: 100%;
 }
 
 /* Error text in --readable-bad (--bad only where it reads, else --text);
@@ -223,4 +218,160 @@ button.link:disabled {
 	.w-learning {
 		text-decoration-style: dotted;
 	}
+}
+
+/* Restyle base elements (#106): shared, token-only rules every page may rely on. */
+b,
+strong {
+	font-weight: var(--weight-strong);
+}
+
+input[type='radio'],
+input[type='range'],
+progress {
+	accent-color: var(--accent);
+}
+
+/* Round checkboxes with a tick that reaches just past the circle (#95). */
+input[type='checkbox'] {
+	appearance: none;
+	box-sizing: border-box;
+	inline-size: 1.15rem;
+	block-size: 1.15rem;
+	margin: 0;
+	border: 1.5px solid var(--line);
+	border-radius: 50%;
+	background: transparent;
+	display: inline-grid;
+	place-content: center;
+	position: relative;
+	overflow: visible;
+	flex: none;
+	cursor: pointer;
+	vertical-align: middle;
+}
+input[type='checkbox']::after {
+	content: '';
+	position: absolute;
+	top: -0.14rem;
+	left: 0.06rem;
+	inline-size: 0.8rem;
+	block-size: 0.42rem;
+	border-inline-start: 2px solid var(--accent);
+	border-block-end: 2px solid var(--accent);
+	transform: rotate(-45deg) scale(0);
+	transform-origin: center;
+	transition: transform var(--motion-fast) var(--ease-standard);
+}
+input[type='checkbox']:checked {
+	border-color: var(--accent);
+}
+input[type='checkbox']:checked::after {
+	transform: rotate(-45deg) scale(1);
+}
+input[type='checkbox']:focus-visible {
+	outline: var(--focus-ring);
+	outline-offset: var(--focus-ring-offset);
+}
+input[type='checkbox']:disabled {
+	opacity: 0.55;
+	cursor: not-allowed;
+}
+@media (prefers-reduced-motion: reduce) {
+	input[type='checkbox']::after {
+		transition: none;
+	}
+}
+@media (forced-colors: active) {
+	input[type='checkbox'] {
+		border-color: CanvasText;
+	}
+	input[type='checkbox']:checked {
+		border-color: Highlight;
+	}
+	input[type='checkbox']::after {
+		border-color: Highlight;
+	}
+}
+
+fieldset {
+	margin: 0;
+	padding: 0;
+	border: 0;
+}
+
+legend {
+	font-size: var(--font-size-label);
+	font-weight: var(--weight-medium);
+	color: var(--readable-muted);
+}
+
+/* The one-time code input is the one text control the pages keep raw (#106,
+   allowed): it owns its sanitised value (spaces, letters, recovery grouping),
+   so it is not Field. It still reads as Field's underline, with the label
+   style above it. */
+input[autocomplete='one-time-code'] {
+	box-sizing: border-box;
+	display: block;
+	width: 100%;
+	min-height: 2.25rem;
+	padding: var(--space-1) 0;
+	border: 0;
+	border-bottom: 1px solid var(--line);
+	border-radius: 0;
+	background: transparent;
+	color: var(--text);
+	font: inherit;
+	line-height: var(--line-body);
+}
+
+input[autocomplete='one-time-code']:focus {
+	outline: none;
+	border-bottom-color: var(--accent);
+	box-shadow: 0 1px 0 0 var(--accent);
+}
+
+label:has(> input[autocomplete='one-time-code']) {
+	display: grid;
+	gap: var(--space-1);
+	font-size: var(--font-size-label);
+	color: var(--readable-muted);
+}
+
+@media (forced-colors: active) {
+	input[autocomplete='one-time-code']:focus {
+		outline: 2px solid Highlight;
+		outline-offset: 2px;
+	}
+}
+
+/* An opt-in table: hairline rows, label-style headers, no outer border or zebra. */
+.ui-table {
+	width: 100%;
+	border-collapse: collapse;
+}
+
+.ui-table caption {
+	text-align: start;
+	color: var(--readable-muted);
+	font-size: var(--font-size-label);
+	padding-bottom: var(--space-1);
+}
+
+.ui-table th,
+.ui-table td {
+	padding: var(--space-1) var(--space-2);
+	border-bottom: 1px solid var(--hair);
+	text-align: start;
+	vertical-align: top;
+}
+
+.ui-table th {
+	font-size: var(--font-size-label);
+	font-weight: var(--weight-medium);
+	color: var(--readable-muted);
+}
+
+.ui-table .num {
+	font-variant-numeric: tabular-nums;
 }

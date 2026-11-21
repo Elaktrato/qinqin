@@ -6,6 +6,7 @@
 	import { HIDDEN_DICTIONARIES_KEY, hiddenDictionaries } from '$lib/dictionaryVisibility';
 	import { languageLabel } from '$lib/languages';
 	import { setSettings } from '$lib/workspaces';
+	import { Button } from '$lib/ui';
 
 	// Inline panel choosing which dictionaries of the workspace's language
 	// its entries and lookups show. `dictionaries` are already filtered to
@@ -90,9 +91,9 @@
 	{/if}
 	<div class="actions">
 		{#if dictionaries.length > 0}
-			<button type="submit" class="primary" aria-busy={saving}>{saving ? t('common.state.saving') : t('common.action.save')}</button>
+			<Button type="submit" busy={saving}>{saving ? t('common.state.saving') : t('common.action.save')}</Button>
 		{/if}
-		<button type="button" class="secondary" onclick={onclose}>{t('common.action.cancel')}</button>
+		<Button type="button" onclick={onclose}>{t('common.action.cancel')}</Button>
 	</div>
 	{#if error}<p class="error" role="alert">{error}</p>{/if}
 </form>
@@ -100,56 +101,37 @@
 <style>
 	.panel {
 		display: grid;
-		gap: 0.4rem;
-		margin-top: 0.5rem;
-		padding: 0.6rem 0.75rem;
-		border: 1px solid color-mix(in srgb, currentColor 25%, transparent);
-		border-radius: 0.5rem;
+		gap: var(--space-2);
+		margin-top: var(--space-3);
+		padding-block: var(--space-3);
+		padding-inline-start: var(--space-3);
+		border-inline-start: 1px solid var(--hair);
 	}
 
 	h4 {
 		margin: 0;
-		font-size: 0.9rem;
+		font-size: var(--font-size-label);
+		font-weight: var(--weight-strong);
+		color: var(--text);
 	}
 
 	.choice {
 		display: flex;
 		align-items: center;
-		gap: 0.5rem;
-		min-height: 44px;
+		gap: var(--space-2);
+		min-height: var(--hit);
 	}
 
 	.version {
 		color: var(--readable-muted);
-		font-size: 0.8rem;
-		margin-left: 0.25rem;
+		font-size: var(--font-size-label);
+		margin-left: var(--space-1);
 	}
 
 	.actions {
 		display: flex;
-		gap: 0.5rem;
+		gap: var(--space-2);
 		flex-wrap: wrap;
-	}
-
-	button {
-		font: inherit;
-		min-height: 44px;
-		padding: 0.4rem 0.8rem;
-		border-radius: 0.4rem;
-		cursor: pointer;
-	}
-
-	.primary {
-		border: 0;
-		background: var(--accent);
-		color: var(--on-accent);
-		font-weight: 600;
-	}
-
-	.secondary {
-		border: 1px solid color-mix(in srgb, currentColor 35%, transparent);
-		background: transparent;
-		color: inherit;
 	}
 
 	.hint {
@@ -160,7 +142,6 @@
 	.error {
 		margin: 0;
 		color: var(--readable-bad);
-		font-weight: 600;
 		padding-inline-start: var(--space-2);
 		border-inline-start: 3px solid var(--bad);
 	}

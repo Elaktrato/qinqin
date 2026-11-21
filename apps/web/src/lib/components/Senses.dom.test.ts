@@ -1,6 +1,6 @@
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/svelte';
 import { afterEach, describe, expect, it } from 'vitest';
-import type { SenseView } from '$lib/api/types';
+import type { SenseGroup, SenseView } from '$lib/api/types';
 import { workspaces } from '$lib/workspaces';
 import Senses from './Senses.svelte';
 
@@ -47,7 +47,7 @@ describe('Senses with hidden dictionaries', () => {
 		hide([2]);
 		render(Senses, { senses });
 		await fireEvent.click(screen.getByRole('button', { name: 'Show 1 from hidden dictionaries' }));
-		await waitFor(() => expect(document.activeElement).toBe(screen.getByRole('heading', { name: 'Senses' })));
+		await waitFor(() => expect(document.activeElement).toBe(screen.getByRole('heading', { name: 'Meanings · CEDICT' })));
 	});
 
 	it('does not leak the revealed state to another entry when keyed', async () => {
@@ -72,5 +72,55 @@ describe('Senses licence', () => {
 		render(Senses, { senses: [{ ...sense(1, 'Test', 'hello'), license: 'Unicode License v3 (fixture)' }] });
 		expect(screen.getByText('Unicode License v3 (fixture)')).toBeTruthy();
 		expect(screen.queryByRole('link')).toBeNull();
+	});
+});
+
+
+describe('Senses as Meanings (#104)', () => {
+	const senses = [sense(1, 'CEDICT', 'diligent; industrious'), sense(1, 'CEDICT', 'diligence'), sense(2, 'Unihan', 'hard work')];
+	const groups: SenseGroup[] = [
+		{
+			dictionaryId: 1,
+			dictionaryName: 'CEDICT',
+			packId: 'cedict',
+			license: 'CC BY-SA 4.0',
+			attribution: 'MDBG',
+			pos: ['adj'],
+			tags: [],
+			glosses: ['diligent; industrious', 'diligence'],
+			xrefs: []
+		},
+		{
+			dictionaryId: 2,
+			dictionaryName: 'Unihan',
+			packId: 'unihan',
+			license: '',
+			attribution: '',
+			pos: ['n'],
+			tags: [],
+			glosses: ['hard work'],
+			xrefs: []
+		}
+	];
+
+	it('renders one Meanings · dictionary heading per dictionary, not "Senses"', () => {
+		render(Senses, { senses, senseGroups: groups });
+		expect(screen.getByRole('heading', { name: 'Meanings · CEDICT' })).toBeTruthy();
+		expect(screen.getByRole('heading', { name: 'Meanings · Unihan' })).toBeTruthy();
+		expect(screen.queryByRole('heading', { name: 'Senses' })).toBeNull();
+	});
+
+	it('keeps the numbered glosses and shows the part of speech muted', () => {
+		const { container } = render(Senses, { senses, senseGroups: groups });
+		const first = container.querySelector('ol')!;
+		expect(first.tagName).toBe('OL');
+		expect(first.querySelectorAll('li')).toHaveLength(2);
+		expect(first.querySelector('li .pos')?.textContent).toBe('adj');
+		expect(container.textContent).toContain('diligence');
+	});
+
+	it('has no uppercase section label', async () => {
+		const source = (await import('./Senses.svelte?raw')).default as string;
+		expect(source).not.toMatch(/text-transform:\s*uppercase/);
 	});
 });

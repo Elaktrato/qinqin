@@ -1,10 +1,12 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { parseAppearance } from './appearance';
 import {
 	LAST_TOKENS_KEY,
+	THEME_ANIM_CLASS,
 	adjustmentVars,
+	animateThemeChange,
 	applyLastTokens,
 	applySlot,
 	applyStartupTheme,
@@ -23,6 +25,7 @@ const mocha = fallbackTheme('dark');
 function clearRoot(root: HTMLElement): void {
 	root.removeAttribute('style');
 	root.removeAttribute('data-scheme');
+	root.classList.remove(THEME_ANIM_CLASS);
 }
 
 function memoryStorage(): Storage {
@@ -50,13 +53,33 @@ const root = document.documentElement;
 beforeEach(() => clearRoot(root));
 afterEach(() => clearRoot(root));
 
+describe('theme switch animation', () => {
+	it('holds the colour transition class for the switch, then removes it', () => {
+		vi.useFakeTimers();
+		try {
+			animateThemeChange(root);
+			expect(root.classList.contains(THEME_ANIM_CLASS)).toBe(true);
+			vi.advanceTimersByTime(239);
+			expect(root.classList.contains(THEME_ANIM_CLASS)).toBe(true);
+			vi.advanceTimersByTime(1);
+			expect(root.classList.contains(THEME_ANIM_CLASS)).toBe(false);
+		} finally {
+			vi.useRealTimers();
+		}
+	});
+
+	it('does nothing without a root', () => {
+		expect(() => animateThemeChange(null)).not.toThrow();
+	});
+});
+
 describe('slotTokens / applySlot', () => {
 	it('sets every token of the README table, the adjustments and color-scheme', () => {
-		const slot = slotTokens(mocha, 'blue');
+		const slot = slotTokens(mocha, 'sky');
 		applySlot(slot, adjustmentVars(parseAppearance(null)), root);
 		for (const name of TOKEN_NAMES) expect(root.style.getPropertyValue(name)).not.toBe('');
-		expect(root.style.getPropertyValue('--panel')).toBe('#1e1e2e');
-		expect(root.style.getPropertyValue('--accent')).toBe('#89b4fa');
+		expect(root.style.getPropertyValue('--panel')).toBe('#252446');
+		expect(root.style.getPropertyValue('--accent')).toBe('#7ab8ff');
 		expect(root.style.getPropertyValue('--radius')).toBe('10px');
 		expect(root.style.getPropertyValue('--space')).toBe('1');
 		expect(root.style.colorScheme).toBe('dark');
@@ -76,13 +99,13 @@ describe('slotTokens / applySlot', () => {
 		meta.content = '#0b6bcb';
 		document.head.append(meta);
 		applySlot(slotTokens(latte, null), adjustmentVars(parseAppearance(null)), root);
-		expect(meta.content).toBe('#dce0e8');
+		expect(meta.content).toBe('#e3f4fa');
 		meta.remove();
 	});
 });
 
 describe('last tokens', () => {
-	const last = lastTokensFor(parseAppearance({ version: 1, mode: 'dark', corners: 'round' }), latte, 'mauve', mocha, 'pink');
+	const last = lastTokensFor(parseAppearance({ version: 1, mode: 'dark', corners: 'round' }), latte, 'azure', mocha, 'pink');
 
 	it('round-trips through storage under the device key', () => {
 		const s = memoryStorage();
@@ -116,10 +139,10 @@ describe('last tokens', () => {
 
 	it('paints the slot the mode and the device choose', () => {
 		applyLastTokens({ ...last, mode: 'system' }, false, root);
-		expect(root.style.getPropertyValue('--panel')).toBe('#eff1f5');
+		expect(root.style.getPropertyValue('--panel')).toBe('#ffffff');
 		applyLastTokens({ ...last, mode: 'system' }, true, root);
-		expect(root.style.getPropertyValue('--panel')).toBe('#1e1e2e');
-		expect(root.style.getPropertyValue('--accent')).toBe('#f5c2e7');
+		expect(root.style.getPropertyValue('--panel')).toBe('#252446');
+		expect(root.style.getPropertyValue('--accent')).toBe('#ff7ab8');
 		applyLastTokens(last, false, root);
 		expect(root.style.colorScheme).toBe('dark');
 		expect(root.style.getPropertyValue('--radius')).toBe('16px');
@@ -131,14 +154,14 @@ describe('applyStartupTheme (before the app mounts)', () => {
 		const s = memoryStorage();
 		saveLastTokens(lastTokensFor(parseAppearance({ version: 1, mode: 'light' }), FALLBACK_THEMES[0], 'teal', mocha, null), s);
 		expect(applyStartupTheme(s, true, root)).toBe('last');
-		expect(root.style.getPropertyValue('--accent')).toBe('#179299');
+		expect(root.style.getPropertyValue('--accent')).toBe('#00808a');
 	});
 
-	it('falls back to the compiled-in Latte or Mocha by the device preference', () => {
+	it('falls back to the compiled-in qinqin Day or Night by the device preference', () => {
 		expect(applyStartupTheme(memoryStorage(), false, root)).toBe('fallback');
-		expect(root.style.getPropertyValue('--panel')).toBe('#eff1f5');
+		expect(root.style.getPropertyValue('--panel')).toBe('#ffffff');
 		expect(applyStartupTheme(throwingStorage(), true, root)).toBe('fallback');
-		expect(root.style.getPropertyValue('--panel')).toBe('#1e1e2e');
+		expect(root.style.getPropertyValue('--panel')).toBe('#252446');
 	});
 });
 
@@ -161,7 +184,7 @@ describe('the first-paint script in app.html', () => {
 	}
 
 	it('paints exactly what applyLastTokens paints', () => {
-		const last: LastTokens = lastTokensFor(parseAppearance({ version: 1, corners: 'sharp', spacing: 'compact' }), latte, 'blue', mocha, 'pink');
+		const last: LastTokens = lastTokensFor(parseAppearance({ version: 1, corners: 'sharp', spacing: 'compact' }), latte, 'azure', mocha, 'pink');
 		for (const dark of [false, true]) {
 			clearRoot(root);
 			applyLastTokens(last, dark, root);
@@ -190,7 +213,7 @@ describe('the first-paint script in app.html', () => {
 	});
 
 	it('paints nothing when the stored names are not exactly TOKEN_NAMES (as loadLastTokens)', () => {
-		const last: LastTokens = lastTokensFor(parseAppearance(null), latte, 'mauve', mocha, 'mauve');
+		const last: LastTokens = lastTokensFor(parseAppearance(null), latte, 'azure', mocha, 'cyan');
 		const extra = { ...last, dark: { ...last.dark, vars: { ...last.dark.vars, '--evil': '#000000' } } };
 		runScript(JSON.stringify(extra), true);
 		expect(root.getAttribute('style')).toBeNull();

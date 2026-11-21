@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { pageTitle } from '$lib/pageTitle';
 	import { t } from '$lib/i18n';
-	import { glossLang, studyLang, wordReadingLang, readingLang } from '$lib/i18n/lang';
 	import { get } from 'svelte/store';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
@@ -20,16 +19,28 @@
 		reconcileFilters,
 		schemesForLanguage,
 		searchHref,
+		selectedFromParams,
 		setKind,
 		setLevel,
 		setScheme,
+		submitHref,
 		type SearchFilters
 	} from '$lib/searchFilters';
-	import { onMount } from 'svelte';
+	import { onMount, tick } from 'svelte';
 	import { listLanguages } from '$lib/api/languages';
 	import { dictionaryHint } from '$lib/coverage';
+	import { hiddenDictionaries } from '$lib/dictionaryVisibility';
 	import { languageLabel, usesHan } from '$lib/languages';
 	import { user } from '$lib/auth';
+	import { FRAME_PHONE_BREAKPOINT, PHONE_MEDIA_QUERY } from '$lib/frame/breakpoint';
+	import Field from '$lib/ui/Field.svelte';
+	import Button from '$lib/ui/Button.svelte';
+	import Icon from '$lib/ui/Icon.svelte';
+	import IconButton from '$lib/ui/IconButton.svelte';
+	import Menu from '$lib/ui/Menu.svelte';
+	import MenuItem from '$lib/ui/MenuItem.svelte';
+	import ResultRow from './ResultRow.svelte';
+	import EntryView from '$lib/entry/EntryView.svelte';
 
 	// The server's default result cap (lexicon.defaultSearchLimit).
 	const RESULT_CAP = 50;
@@ -44,17 +55,110 @@
 	let activeQuery = $state('');
 
 	const lang = $derived($currentLanguage);
+	const hidden = $derived(hiddenDictionaries($workspaces.current));
 	const urlQuery = $derived(page.url.searchParams.get('q') ?? '');
+	const selected = $derived(selectedFromParams(page.url.searchParams));
+	// The URL's e is the detail's entry even when the visible hits do not
+	// contain it (a shared link, a filter that hides it, the result cap):
+	// a preview only fills in when nothing is selected.
+	const detailId = $derived(selected ?? hits[0]?.id ?? null);
+	// The written form the URL's entry loaded with, so the document title
+	// names that entry and never a preview or a stale load.
+	let titledEntry = $state<{ id: number; written: string } | null>(null);
+	const titleWord = $derived(
+		selected !== null && titledEntry?.id === selected ? titledEntry.written : ''
+	);
+
+	function titled(written: string): void {
+		if (selected === null || detailId !== selected) return;
+		titledEntry = { id: detailId, written };
+	}
 
 	// Guards against a slow earlier request overwriting a newer result.
 	let requestSeq = 0;
+
+	// The result row that is the list's single tab stop; ArrowUp/Down move
+	// between rows, Home/End jump, and Back to results returns here.
+	let activeId = $state<number | null>(null);
+	// Set by a phone selection so the entry heading takes focus once it loads.
+	let focusDetail = $state(false);
+	let lastSelected: number | null = null;
+
+	$effect(() => {
+		const ids = hits.map((h) => h.id);
+		if (activeId === null || !ids.includes(activeId)) activeId = ids[0] ?? null;
+	});
+
+	// Leaving a selection (Back to results) remembers its row; the list is
+	// re-rendered by a fresh search, so focus waits until it is back.
+	let returnFocusId = $state<number | null>(null);
+	$effect(() => {
+		const id = selected;
+		if (id !== null) {
+			lastSelected = id;
+			returnFocusId = null;
+			return;
+		}
+		if (lastSelected === null) return;
+		returnFocusId = lastSelected;
+		lastSelected = null;
+		focusDetail = false;
+	});
+	$effect(() => {
+		const id = returnFocusId;
+		const busy = loading;
+		const present = hits.some((h) => h.id === id);
+		if (id === null || busy || selected !== null || !present) return;
+		// The URL change also starts a fresh search; wait one flush for it so
+		// focus lands on the row once the list is rendered again.
+		void tick().then(() => {
+			if (returnFocusId !== id || loading || selected !== null) return;
+			const row = document.getElementById(`hit-row-${id}`);
+			if (row === null) return;
+			returnFocusId = null;
+			activeId = id;
+			row.focus();
+		});
+	});
+
+	function rowKeys(event: KeyboardEvent): void {
+		const key = event.key;
+		if (key !== 'ArrowDown' && key !== 'ArrowUp' && key !== 'Home' && key !== 'End') return;
+		const target = event.target instanceof Element ? event.target.closest('a[data-row-id]') : null;
+		const current = Number(target?.getAttribute('data-row-id') ?? activeId);
+		const index = hits.findIndex((h) => h.id === current);
+		if (index < 0) return;
+		event.preventDefault();
+		const next =
+			key === 'Home'
+				? 0
+				: key === 'End'
+					? hits.length - 1
+					: key === 'ArrowDown'
+						? Math.min(index + 1, hits.length - 1)
+						: Math.max(index - 1, 0);
+		const id = hits[next]?.id;
+		if (id === undefined) return;
+		activeId = id;
+		document.getElementById(`hit-row-${id}`)?.focus();
+	}
 
 	let allSchemes = $state<Scheme[]>([]);
 	let schemesFailed = $state(false);
 	const filters = $derived(filtersFromParams(page.url.searchParams));
 	const schemes = $derived(schemesForLanguage(allSchemes, lang));
-	const activeScheme = $derived(schemes.find((s) => s.packId === filters.scheme));
 	let schemesLoaded = $state(false);
+	// The form, so the icon-only submit button can submit it (IconButton is
+	// always type=button; Enter in the field submits natively too).
+	let searchForm = $state<HTMLFormElement | null>(null);
+	// The frame's one layout switch: the detail preview exists only beside
+	// the list, never as a hidden fetch on the phone.
+	let wide = $state(true);
+	const levelText = $derived(
+		t('search.filters.levelMenu', {
+			level: filters.level || t('search.filters.anyLevel')
+		})
+	);
 
 	// Languages with installed dictionary data; null until loaded.
 	let installedCodes = $state<Set<string> | null>(null);
@@ -63,6 +167,15 @@
 	);
 
 	onMount(() => {
+		let media: MediaQueryList | null = null;
+		const change = (e: MediaQueryListEvent): void => {
+			wide = e.matches;
+		};
+		if (typeof window.matchMedia === 'function') {
+			media = window.matchMedia(`(min-width: ${FRAME_PHONE_BREAKPOINT}px)`);
+			wide = media.matches;
+			media.addEventListener('change', change);
+		}
 		listLanguages().then(
 			(list) => (installedCodes = new Set(list.filter((l) => l.installed).map((l) => l.code.toLowerCase()))),
 			() => {}
@@ -74,12 +187,13 @@
 			},
 			() => (schemesFailed = true)
 		);
+		return () => media?.removeEventListener('change', change);
 	});
 
 	// Chips act on the committed search (the URL query), not on text still
 	// being typed: a chip never silently submits a half-typed query.
 	function applyFilters(next: SearchFilters): void {
-		goto(searchHref(urlQuery.trim(), next), { keepFocus: true, noScroll: true }).catch(() => {});
+		goto(searchHref(urlQuery.trim(), next, selected), { keepFocus: true, noScroll: true }).catch(() => {});
 	}
 
 	// After a workspace/language switch, a scheme or level of another
@@ -88,7 +202,7 @@
 		if (!schemesLoaded || lang === null) return;
 		const next = reconcileFilters(filters, schemes);
 		if (next !== filters) {
-			goto(searchHref(urlQuery.trim(), next), {
+			goto(searchHref(urlQuery.trim(), next, selected), {
 				replaceState: true,
 				keepFocus: true,
 				noScroll: true
@@ -110,6 +224,31 @@
 		recordLookup(get(workspaces).current?.id, { entryId, source: 'search' });
 	}
 
+	/** Choosing a result: desktop replaces the entry in place; a phone pushes, so Back returns to the list. */
+	function choose(event: MouseEvent, entryId: number): void {
+		// A middle click / modified click opens the real href in another tab:
+		// record the lookup, but never cancel the browser's own action or
+		// navigate this one.
+		if (event.type === 'auxclick' || event.button === 1 || event.metaKey || event.ctrlKey || event.shiftKey) {
+			openedHit(entryId);
+			return;
+		}
+		event.preventDefault();
+		openedHit(entryId);
+		// The clicked row is the list's tab stop when the reader comes back.
+		activeId = entryId;
+		const wide =
+			typeof window.matchMedia !== 'function' || !window.matchMedia(PHONE_MEDIA_QUERY).matches;
+		// A phone push scrolls to the top and moves focus to the entry once
+		// it loads; a wide selection keeps the reader's place on the row.
+		focusDetail = !wide;
+		void goto(searchHref(activeQuery, filters, entryId), {
+			replaceState: wide,
+			keepFocus: wide,
+			noScroll: wide
+		});
+	}
+
 	// What a screen reader hears once a search settles; empty while it runs
 	// or when there is nothing to say (the visible hint covers those).
 	const announcement = $derived.by(() => {
@@ -117,10 +256,6 @@
 		if (hits.length === 0) return t('search.noResults', { query: activeQuery });
 		return t('search.resultsAnnounce', { count: hits.length, query: activeQuery });
 	});
-
-	function sourceLabel(source: string): string {
-		return source === 'written' ? t('search.matchedWritten') : source;
-	}
 
 	async function runSearch(q: string, language: string, f: SearchFilters): Promise<void> {
 		const seq = ++requestSeq;
@@ -150,10 +285,12 @@
 		const q = query.trim();
 		// Show the query that is searched, not the untrimmed text typed.
 		query = q;
-		const href = searchHref(q, filters);
+		const href = submitHref(q, filters);
 		// The same search again does not change the URL, so the effect below
 		// would not run: treat it as a refresh instead of a silent no-op.
-		if (q && lang && q === urlQuery.trim() && href === searchHref(urlQuery.trim(), filters)) {
+		// The comparison includes everything in the URL (the selected entry
+		// too), so resubmitting a query with e drops e.
+		if (q && lang && href === page.url.pathname + page.url.search) {
 			void runSearch(q, lang, filters);
 			return;
 		}
@@ -192,36 +329,56 @@
 </script>
 
 <svelte:head>
-	<title>{pageTitle(t('search.title'))}</title>
+	<title>{pageTitle(titleWord, t('search.title'))}</title>
 </svelte:head>
 
 <div class="page-body search-page">
 	<h1>{t('search.title')}</h1>
 
-	<form class="search" role="search" onsubmit={submit}>
-		<input
-			name="q"
-			type="search"
-			bind:value={query}
-			aria-label={t('search.input.label')}
-			placeholder={lang !== null
-				? t('search.input.placeholder')
-				: $workspacesLoaded
-					? t('search.input.selectWorkspace')
-					: t('search.input.loadingWorkspaces')}
-			disabled={lang === null}
-		/>
-		<button type="submit" disabled={lang === null}>{t('search.submit')}</button>
+	<div class="split" class:has-selection={selected !== null}>
+		<div class="list-pane">
+
+	<form class="search" role="search" onsubmit={submit} bind:this={searchForm}>
+		<div class="sfield">
+			<span class="sfield-icon" aria-hidden="true"><Icon name="search" size="s" /></span>
+			<Field
+				label={t('search.input.label')}
+				hideLabel
+				name="q"
+				type="search"
+				bind:value={query}
+				placeholder={lang !== null
+					? t('search.input.placeholder')
+					: $workspacesLoaded
+						? t('search.input.selectWorkspace')
+						: t('search.input.loadingWorkspaces')}
+				disabled={lang === null}
+			/>
+			<IconButton
+				label={t('search.submit')}
+				icon="search"
+				disabled={lang === null}
+				onclick={() => searchForm?.requestSubmit()}
+			/>
+			{#if lang !== null && usesHan(lang)}
+				<IconButton label={t('search.byParts')} icon="parts" href="/search/parts" />
+			{/if}
+		</div>
 	</form>
 
-	{#if lang !== null && usesHan(lang)}
-		<p class="parts-link"><a href="/search/parts">{t('search.partsLink')}</a></p>
-	{/if}
 	<p class="parts-link"><a href="/lookups">{t('search.lookupsLink')}</a></p>
 
 	{#if lang !== null}
 		<div class="filters" role="group" aria-label={t('search.filters.label')}>
 			<div class="chips" role="group" aria-label={t('search.filters.kind')}>
+				<button
+					type="button"
+					class="chip"
+					aria-pressed={filters.kind === ''}
+					onclick={() => applyFilters({ ...filters, kind: '' })}
+				>
+					{t('search.filters.all')}
+				</button>
 				{#each KINDS as kind (kind)}
 					<button
 						type="button"
@@ -234,45 +391,34 @@
 				{/each}
 			</div>
 			{#if schemes.length > 0}
-				<div class="chips" role="group" aria-label={t('search.filters.scheme')}>
+				<Menu label={t('search.filters.level')} text={levelText} menuLabel={t('search.filters.level')} align="start">
+					<MenuItem
+						checked={filters.scheme === '' && filters.level === ''}
+						onselect={() => applyFilters({ ...filters, scheme: '', level: '' })}
+					>
+						{t('search.filters.anyLevelItem')}
+					</MenuItem>
 					{#each schemes as scheme (scheme.id)}
-						<button
-							type="button"
-							class="chip"
-							aria-pressed={filters.scheme === scheme.packId}
-							onclick={() => applyFilters(setScheme(filters, scheme.packId ?? ''))}
-						>
-							{scheme.name}
-						</button>
+						{#each scheme.levels as level (`${scheme.id}:${level.id}`)}
+							<MenuItem
+								checked={filters.scheme === scheme.packId && filters.level === level.name}
+								onselect={() => applyFilters(setLevel(setScheme(filters, scheme.packId ?? ''), level.name))}
+							>
+								{t('search.filters.schemeLevel', { scheme: scheme.name, level: level.name })}
+							</MenuItem>
+						{/each}
 					{/each}
-				</div>
+				</Menu>
 			{:else if schemesFailed}
 				<p class="note">{t('search.filters.levelsUnavailable')}</p>
 			{:else if !schemesLoaded}
 				<div class="chips placeholder" aria-hidden="true"></div>
 			{/if}
-			{#if activeScheme}
-				<div class="chips" role="group" aria-label={t('search.filters.level')}>
-					{#each activeScheme.levels as level (level.id)}
-						<button
-							type="button"
-							class="chip"
-							aria-pressed={filters.level === level.name}
-							onclick={() => applyFilters(setLevel(filters, level.name))}
-						>
-							{level.name}
-						</button>
-					{/each}
-				</div>
+			{#if hasFilters(filters)}
+				<button type="button" class="clear" onclick={() => applyFilters(clearFilters())}>
+					{t('search.filters.clear')}
+				</button>
 			{/if}
-			<button
-				type="button"
-				class="clear"
-				disabled={!hasFilters(filters)}
-				onclick={() => applyFilters(clearFilters())}
-			>
-				{t('search.filters.clear')}
-			</button>
 		</div>
 	{/if}
 
@@ -300,29 +446,22 @@
 				: t('search.noResults', { query: activeQuery })}
 		</p>
 	{:else if hits.length > 0}
+		<p class="scount">{t('search.count', { count: hits.length, query: activeQuery })}</p>
 		{#if hits.length >= RESULT_CAP}
-			<p class="note">
-				{t('search.capped', { count: RESULT_CAP })}
-			</p>
+			<p class="note">{t('search.capped', { count: RESULT_CAP })}</p>
 		{/if}
 		<ul class="results" aria-label={t('search.results')}>
 			{#each hits as hit (hit.id)}
-				<li class="result">
-					<a class="written" href={`/entry/${hit.id}`} onclick={() => openedHit(hit.id)}
-						onauxclick={(e) => e.button === 1 && openedHit(hit.id)}
-						lang={studyLang(hit.language)}>{hit.written}</a
-					>
-
-					<div class="details">
-						{#if hit.readings.length > 0}
-							<span class="readings">
-								{#each hit.readings as reading (reading.ord)}
-									<span class="reading" data-type={reading.type} lang={readingLang(reading.type, hit.language)}>{reading.value}</span>
-								{/each}
-							</span>
-						{/if}
-						<span class="source">{t('search.matched', { source: sourceLabel(hit.source) })}</span>
-					</div>
+				<li>
+					<ResultRow
+						{hit}
+						href={searchHref(activeQuery, filters, hit.id)}
+						selected={selected === hit.id}
+						tabstop={hit.id === activeId}
+						hidden={hidden}
+						onactivate={(event) => choose(event, hit.id)}
+						onkey={rowKeys}
+					/>
 				</li>
 			{/each}
 		</ul>
@@ -331,175 +470,130 @@
 			{hasFilters(filters) ? t('search.enterQueryFiltered') : t('search.enterQuery')}
 		</p>
 	{/if}
+		</div>
+
+		<div class="detail-pane">
+			{#if selected !== null}
+				<div class="back-to-results"><Button variant="secondary" href={searchHref(activeQuery, filters)}>{t('search.backToResults')}</Button></div>
+			{/if}
+			{#if detailId !== null && (wide || selected !== null)}
+				<EntryView
+					entryId={detailId}
+					headingLevel={2}
+					recordView={selected !== null && detailId === selected}
+					focusOnLoad={focusDetail && selected !== null && detailId === selected}
+					backHref={searchHref(activeQuery, filters)}
+					ontitle={titled}
+				/>
+			{:else}
+				<p class="hint">{t('search.detail')}</p>
+			{/if}
+		</div>
+	</div>
 </div>
 
 <style>
-	.parts-link {
-		margin: 0.6rem 0 0;
+	/* Text links stay recognisable without colour (#106): theme-aware accent
+	   text and an underline. */
+	.parts-link a {
+		color: var(--reading-accent);
+		text-decoration: underline;
+		text-underline-offset: 0.15em;
 	}
 
-	.filters {
+	.split {
 		display: grid;
-		gap: 0.6rem;
-		margin-top: 1rem;
-		max-width: 40rem;
+		grid-template-columns: minmax(0, 1fr);
+		gap: var(--space-5);
+		align-items: start;
 	}
-
+	.list-pane,
+	.detail-pane {
+		min-width: 0;
+		display: grid;
+		gap: var(--space-3);
+		align-content: start;
+	}
+	.sfield {
+		display: flex;
+		align-items: center;
+		gap: var(--space-1);
+	}
+	.sfield :global(.field) {
+		flex: 1 1 auto;
+		min-width: 0;
+	}
+	.sfield-icon {
+		display: inline-grid;
+		place-items: center;
+		color: var(--readable-muted);
+	}
+	.filters {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: var(--space-1) var(--space-4);
+	}
 	.chips {
 		display: flex;
 		flex-wrap: wrap;
-		gap: 0.4rem;
+		gap: var(--space-1) var(--space-3);
 	}
-
 	.chip,
 	.clear {
 		font: inherit;
-		font-size: 0.9rem;
-		min-height: 2.75rem;
-		padding: 0.3rem 0.85rem;
-		border: 1px solid color-mix(in srgb, currentColor 35%, transparent);
-		border-radius: 999px;
+		font-size: var(--font-size-label);
+		padding: var(--space-1) 0;
+		border: 0;
+		border-radius: 0;
 		background: transparent;
-		color: inherit;
+		color: var(--readable-muted);
 		cursor: pointer;
+		box-shadow: inset 0 -1.5px 0 transparent;
 	}
-
-	.placeholder {
-		min-height: 2.75rem;
-	}
-
-	.clear:disabled {
-		opacity: 0.45;
-		cursor: default;
-	}
-
 	.chip[aria-pressed='true'] {
-		background: var(--accent);
-		border-color: var(--accent);
-		color: var(--on-accent);
+		color: var(--text);
+		box-shadow: inset 0 -1.5px 0 var(--accent);
 	}
-
 	.chip:focus-visible,
 	.clear:focus-visible {
-		outline: 2px solid var(--focus-colour);
-		outline-offset: 2px;
+		outline: var(--focus-ring);
+		outline-offset: var(--focus-ring-offset);
 	}
-
-	.clear {
-		justify-self: start;
-		border-style: dashed;
-	}
-
-	.note {
+	.note,
+	.scount {
 		margin: 0;
-		font-size: 0.85rem;
+		font-size: var(--font-size-label);
 		color: var(--readable-muted);
 	}
-
-	.search {
-		display: flex;
-		gap: 0.5rem;
-		max-width: 32rem;
-	}
-
-	.search input {
-		flex: 1;
-		min-width: 0;
-		font: inherit;
-		padding: 0.55rem 0.7rem;
-		border: 1px solid color-mix(in srgb, currentColor 35%, transparent);
-		border-radius: 0.4rem;
-		background: transparent;
-		color: inherit;
-	}
-
-	.search button {
-		font: inherit;
-		font-weight: 600;
-		padding: 0.6rem 1rem;
-		border: 0;
-		border-radius: 0.4rem;
-		background: var(--accent);
-		color: var(--on-accent);
-		cursor: pointer;
-	}
-
-	.hint {
-		margin-top: 1.5rem;
-		color: var(--readable-muted);
-	}
-
-	.error {
-		margin-top: 1.5rem;
-		color: var(--readable-bad);
-		font-weight: 600;
-		padding-inline-start: var(--space-2);
-		border-inline-start: 3px solid var(--bad);
-	}
-
-	.retry {
-		margin-top: 0.75rem;
-		font: inherit;
-		padding: 0.45rem 0.85rem;
-		border: 1px solid color-mix(in srgb, currentColor 35%, transparent);
-		border-radius: 0.4rem;
-		background: transparent;
-		color: inherit;
-		cursor: pointer;
-	}
-
 	.results {
-		list-style: none;
-		margin: 1.5rem 0 0;
+		margin: 0;
 		padding: 0;
+		list-style: none;
 		display: grid;
-		gap: 0.5rem;
+		gap: 1px;
 	}
-
-	.result {
-		display: flex;
-		flex-wrap: wrap;
-		align-items: baseline;
-		gap: 0.75rem 1rem;
-		padding: 0.65rem 0.85rem;
-		border: 1px solid color-mix(in srgb, currentColor 18%, transparent);
-		border-radius: 0.4rem;
-	}
-
-	.written {
-		font-size: 1.6rem;
-		line-height: 1.2;
-		font-weight: 600;
-		text-decoration: none;
-	}
-
-	.written:hover,
-	.written:focus-visible {
-		text-decoration: underline;
-	}
-
-	.details {
-		display: flex;
-		flex-wrap: wrap;
-		align-items: baseline;
-		gap: 0.35rem 0.85rem;
-	}
-
-	.readings {
-		display: flex;
-		flex-wrap: wrap;
-		gap: 0.35rem;
-	}
-
-	.reading {
-		font-size: 1rem;
-	}
-
-	.source {
-		font-size: 0.8rem;
+	.hint {
 		color: var(--readable-muted);
-		border: 1px solid color-mix(in srgb, currentColor 30%, transparent);
-		border-radius: 999px;
-		padding: 0.05rem 0.5rem;
+	}
+	.error {
+		color: var(--readable-bad);
+	}
+	.back-to-results {
+		justify-self: start;
+	}
+	@media (max-width: 719.98px) {
+		.split.has-selection .list-pane,
+		.split:not(.has-selection) .detail-pane {
+			display: none;
+		}
+	}
+	@media (min-width: 720px) {
+		.split {
+			grid-template-columns: minmax(18rem, 24rem) minmax(0, 1fr);
+		}
+		.back-to-results {
+			display: none;
+		}
 	}
 </style>

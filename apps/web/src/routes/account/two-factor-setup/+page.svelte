@@ -6,6 +6,7 @@
 	import { pageTitle } from '$lib/pageTitle';
 	import { t } from '$lib/i18n';
 	import TwoFactorSetup from '$lib/account/TwoFactorSetup.svelte';
+	import { Button } from '$lib/ui';
 
 	// Where a session that must enrol a second factor lands (the layout guard
 	// sends it here). Finishing makes the session a full one.
@@ -31,5 +32,5 @@
 	<h1>{t('auth.forced.mfaTitle')}</h1>
 	<p>{t('auth.forced.mfaIntro')}</p>
 	<TwoFactorSetup {options} forced onfinished={finished} />
-	<p class="hint"><button type="button" class="link" onclick={() => logout()}>{t('auth.forced.signOutInstead')}</button></p>
+	<p class="hint"><Button variant="plain" onclick={() => logout()}>{t('auth.forced.signOutInstead')}</Button></p>
 </div>

@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { t } from '$lib/i18n';
 	import type { ParamSet } from '$lib/study/fsrs/params';
+	import { Button, Section } from '$lib/ui';
 
 	let {
 		sets,
@@ -25,26 +26,27 @@
 	const active = (name: string, on: boolean): string => (on ? t('flashcards.sched.active', { name }) : name);
 </script>
 
-<section aria-labelledby="sets-heading">
-	<h2 id="sets-heading">{t('flashcards.sched.savedSets')}</h2>
+<Section title={t('flashcards.sched.savedSets')}>
 	<ul>
 		<li>
 			<span>{active(t('flashcards.sched.defaults'), activeId === null)}</span>
 			{#if activeId !== null}
-				<button type="button" disabled={busy} onclick={onDefaults}>{t('flashcards.sched.useDefaults')}</button>
+				<Button disabled={busy} onclick={onDefaults}>{t('flashcards.sched.useDefaults')}</Button>
 			{/if}
 		</li>
 		{#each sets as set (set.id)}
 			<li>
 				<span>{active(label(set), set.id === activeId)}</span>
 				{#if set.id !== activeId}
-					<button type="button" disabled={busy} onclick={() => onUse(set.id)}>{t('flashcards.sched.use')}</button>
-					<button type="button" disabled={busy} onclick={() => onDelete(set.id)}>{t('flashcards.sched.delete')}</button>
+					<Button disabled={busy} onclick={() => onUse(set.id)}>{t('flashcards.sched.use')}</Button>
+					<Button tone="danger" disabled={busy} onclick={() => onDelete(set.id)}
+						>{t('flashcards.sched.delete')}</Button
+					>
 				{/if}
 			</li>
 		{/each}
 	</ul>
-</section>
+</Section>
 
 <style>
 	ul {
@@ -53,21 +55,20 @@
 		margin: 0;
 	}
 
+	/* One hairline row per saved set (#106). */
 	li {
 		display: flex;
 		flex-wrap: wrap;
 		align-items: center;
-		gap: 0.5rem 0.75rem;
-		padding: 0.25rem 0;
+		gap: var(--space-2) var(--space-3);
+		min-height: var(--hit);
+	}
+
+	li + li {
+		border-top: 1px solid var(--hair);
 	}
 
 	li span {
 		flex: 1 1 12rem;
-	}
-
-	button {
-		min-height: 44px;
-		min-width: 44px;
-		padding: 0 1rem;
 	}
 </style>

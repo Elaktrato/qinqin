@@ -2,6 +2,7 @@
 	import { onMount, tick } from 'svelte';
 	import Button from '$lib/ui/Button.svelte';
 	import Dialog from '$lib/ui/Dialog.svelte';
+	import Field from '$lib/ui/Field.svelte';
 	import { downloadMyData } from '$lib/api/backup';
 	import { accountDeletionPreview, deleteAccount, type SelfDeletionPreview } from '$lib/api/account';
 	import { apiErrorBody } from '$lib/api/client';
@@ -17,7 +18,7 @@
 	let { username, ondone, onclose }: { username: string; ondone: () => void; onclose: () => void } = $props();
 
 	const uid = $props.id();
-	let input = $state<HTMLInputElement | null>(null);
+	let input = $state<HTMLInputElement | undefined>(undefined);
 	let password = $state('');
 	let typed = $state('');
 	let code = $state('');
@@ -82,26 +83,26 @@
 			{/if}
 			<p>
 				<Msg key="settings.account.delete.cannotUndo"
-					>{#snippet download(text: string)}<button
-							type="button"
+					>{#snippet download(text: string)}<Button
+							variant="plain"
 							onclick={() => void downloadMyData().catch(() => (error = t('settings.account.delete.downloadFailed')))}
-							>{text}</button
+							>{text}</Button
 						>{/snippet}</Msg
 				>
 			</p>
 		</div>
-		<label>
-			{t('account.field.yourPassword')}
-			<input bind:this={input} type="password" autocomplete="current-password" bind:value={password} />
-		</label>
-		<label>
-			<span
-				><Msg key="settings.account.delete.typeToConfirm" args={{ name: username }}
-					>{#snippet strong(text: string)}<strong>{text}</strong>{/snippet}</Msg
-				></span
-			>
-			<input bind:value={typed} autocomplete="off" />
-		</label>
+		<Field
+			label={t('account.field.yourPassword')}
+			type="password"
+			autocomplete="current-password"
+			bind:element={input}
+			bind:value={password}
+		/>
+		<Field
+			label={t('settings.account.delete.typeToConfirm', { name: username }).replace(/<[^>]+>/g, '')}
+			bind:value={typed}
+			autocomplete="off"
+		/>
 		{#if $user?.mfa?.totp}
 			<label>
 				{t('settings.account.email.code')}
@@ -112,25 +113,15 @@
 	</form>
 	{#snippet actions()}
 		<Button onclick={finish} disabled={busy}>{t('common.action.cancel')}</Button>
-		<Button type="submit" form="{uid}-form" tone="danger" disabled={!ready} {busy}
+		<Button type="submit" form="{uid}-form" variant="primary" tone="danger" disabled={!ready} {busy}
 			>{busy ? t('settings.account.delete.deleting') : t('settings.account.delete.submit')}</Button
 		>
 	{/snippet}
 </Dialog>
 
 <style>
-	label {
-		display: grid;
-		gap: 0.3rem;
-		margin-top: 0.8rem;
-	}
-	input {
-		font: inherit;
-		padding: 0.45rem 0.6rem;
-	}
 	.error {
 		color: var(--readable-bad);
-		font-weight: 600;
 		padding-inline-start: var(--space-2);
 		border-inline-start: 3px solid var(--bad);
 	}

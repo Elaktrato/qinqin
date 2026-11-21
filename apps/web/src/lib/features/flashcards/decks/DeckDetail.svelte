@@ -38,6 +38,7 @@
 	import { deckLeftText } from '$lib/study/limitsText';
 	import { limitsLeftToday } from './DeckLimitsSlot';
 	import { deckSessionConfig, sessionKinds } from './studyStart';
+	import { Button, Chip, Field, Select } from '$lib/ui';
 
 	let { deckId }: { deckId: string } = $props();
 
@@ -289,7 +290,7 @@
 		<p role="status">{t('flashcards.deck.noWorkspace')}</p>
 	{:else if store.status === 'error'}
 		<p role="alert">{store.error}</p>
-		<button type="button" onclick={() => void store.load(workspaceId, true)}>{t('flashcards.deck.tryAgain')}</button>
+		<Button onclick={() => void store.load(workspaceId, true)}>{t('flashcards.deck.tryAgain')}</Button>
 	{:else if deck === null || numbers === null}
 		<p role="status">{t('flashcards.deck.notFound')}</p>
 		<a href={flashcardsHref({ view: 'list' })}>{t('flashcards.deck.backToDecks')}</a>
@@ -321,8 +322,8 @@
 				<p class="left">{leftText}</p>
 			{/if}
 			<div class="actions">
-				<button type="button" class="primary" onclick={study}>{t('flashcards.deck.study')}</button>
-				<a href={flashcardsHref({ view: 'settings', deckId })}>{t('flashcards.deck.settings')}</a>
+				<Button variant="primary" onclick={study}>{t('flashcards.deck.study')}</Button>
+				<Button href={flashcardsHref({ view: 'settings', deckId })}>{t('flashcards.deck.settings')}</Button>
 			</div>
 		</section>
 
@@ -330,43 +331,41 @@
 			<p class="hint">{t('flashcards.deck.empty')}</p>
 		{:else}
 			<div class="filters">
-				<label>
-					{t('flashcards.deck.search')}
-					<input
+				<div class="search">
+					<Field
+						label={t('flashcards.deck.search')}
 						type="search"
-						aria-label={t('flashcards.deck.search')}
 						value={text}
 						oninput={(e) => onSearch(e.currentTarget.value)}
 						placeholder={t('flashcards.deck.searchPlaceholder')}
 					/>
-				</label>
-				<label>
-					{t('flashcards.deck.state')}
-					<select bind:value={stateFilter}>
-						<option value="all">{t('flashcards.deck.all')}</option>
-						{#each WORD_STATES as s (s.state)}
-							<option value={s.state}>{s.label}</option>
-						{/each}
-					</select>
-				</label>
-				<label>
-					{t('flashcards.deck.kind')}
-					<select bind:value={kind}>
-						<option value="all">{t('flashcards.deck.all')}</option>
-						{#each CARD_KINDS as k (k)}
-							<option value={k}>{kindLabel(k)}</option>
-						{/each}
-					</select>
-				</label>
+				</div>
+				<Select
+					label={t('flashcards.deck.state')}
+					bind:value={stateFilter}
+					options={[
+						{ value: 'all', label: t('flashcards.deck.all') },
+						...WORD_STATES.map((s) => ({ value: s.state, label: s.label }))
+					]}
+				/>
+				<Select
+					label={t('flashcards.deck.kind')}
+					bind:value={kind}
+					options={[
+						{ value: 'all', label: t('flashcards.deck.all') },
+						...CARD_KINDS.map((k) => ({ value: k, label: kindLabel(k) }))
+					]}
+				/>
 				<label class="check"><input type="checkbox" bind:checked={dueNow} /> {t('flashcards.deck.dueNow')}</label>
-				<label>
-					{t('flashcards.deck.sort')}
-					<select bind:value={sort}>
-						<option value="added">{t('flashcards.deck.sortAdded')}</option>
-						<option value="due">{t('flashcards.deck.sortDue')}</option>
-						<option value="state">{t('flashcards.deck.sortState')}</option>
-					</select>
-				</label>
+				<Select
+					label={t('flashcards.deck.sort')}
+					bind:value={sort}
+					options={[
+						{ value: 'added', label: t('flashcards.deck.sortAdded') },
+						{ value: 'due', label: t('flashcards.deck.sortDue') },
+						{ value: 'state', label: t('flashcards.deck.sortState') }
+					]}
+				/>
 			</div>
 			{#if basesFailed}
 				<p class="hint">{t('flashcards.deck.basesFailed')}</p>
@@ -385,23 +384,22 @@
 					{t('flashcards.deck.all')}
 				</label>
 				<span>{t('flashcards.deck.selected', { count: chosen.length })}</span>
-				<label>
-					{t('flashcards.deck.moveTo')}
-					<select bind:value={target} disabled={chosen.length === 0 || controller.busy}>
-						<option value="">{t('flashcards.deck.chooseDeck')}</option>
-						{#each moveTargets as d (d.id)}
-							<option value={d.id}>{d.name}</option>
-						{/each}
-					</select>
-				</label>
-				<button type="button" disabled={chosen.length === 0 || target === '' || controller.busy} onclick={openMoveConfirm}>
-					{t('flashcards.deck.move')}
-				</button>
-				<button
-					type="button"
-					class="danger"
+				<Select
+					label={t('flashcards.deck.moveTo')}
+					bind:value={target}
 					disabled={chosen.length === 0 || controller.busy}
-					onclick={openConfirm}>{t('flashcards.deck.delete')}</button
+					options={[
+						{ value: '', label: t('flashcards.deck.chooseDeck') },
+						...moveTargets.map((d) => ({ value: d.id, label: d.name }))
+					]}
+				/>
+				<Button disabled={chosen.length === 0 || target === '' || controller.busy} onclick={openMoveConfirm}>
+					{t('flashcards.deck.move')}
+				</Button>
+				<Button
+					tone="danger"
+					disabled={chosen.length === 0 || controller.busy}
+					onclick={openConfirm}>{t('flashcards.deck.delete')}</Button
 				>
 			</div>
 
@@ -417,8 +415,8 @@
 						{t('flashcards.deck.moveQuestion', { count: chosen.length, deck: targetName })}
 						{t('flashcards.deck.moveNote')}
 					</p>
-					<button type="button" onclick={move}>{t('flashcards.deck.moveWords', { count: chosen.length })}</button>
-					<button type="button" class="secondary" onclick={() => (confirmingMove = false)}>{t('common.action.cancel')}</button>
+					<Button variant="primary" onclick={move}>{t('flashcards.deck.moveWords', { count: chosen.length })}</Button>
+					<Button onclick={() => (confirmingMove = false)}>{t('common.action.cancel')}</Button>
 				</div>
 			{/if}
 
@@ -427,8 +425,8 @@
 					<p>
 						{t('flashcards.deck.deleteQuestion', { count: chosen.length })}
 					</p>
-					<button type="button" class="danger" onclick={remove}>{t('flashcards.deck.deleteWords', { count: chosen.length })}</button>
-					<button type="button" class="secondary" onclick={() => (confirming = false)}>{t('common.action.cancel')}</button>
+					<Button variant="primary" tone="danger" onclick={remove}>{t('flashcards.deck.deleteWords', { count: chosen.length })}</Button>
+					<Button onclick={() => (confirming = false)}>{t('common.action.cancel')}</Button>
 				</div>
 			{/if}
 
@@ -454,18 +452,21 @@
 							<span class="chips">
 								{#each chips(row) as chip (chip.kind)}
 									<span class="chip" class:off={chip.off}
-										>{chip.off ? t('flashcards.deck.kindOff', { kind: kindLabel(chip.kind) }) : kindLabel(chip.kind)}</span
+										><Chip
+											>{chip.off
+												? t('flashcards.deck.kindOff', { kind: kindLabel(chip.kind) })
+												: kindLabel(chip.kind)}</Chip
+										></span
 									>
 								{/each}
 							</span>
 							<span class="due">{dueText(row)}</span>
-							<button
-								type="button"
+							<Button
 								class="more"
 								aria-expanded={expanded.includes(row.entryId)}
 								aria-label={t('flashcards.deck.cardsOf', { word: row.written })}
 								onclick={() => (expanded = toggleNum(expanded, row.entryId))}
-								>{expanded.includes(row.entryId) ? '▴' : '▾'}</button
+								>{expanded.includes(row.entryId) ? '▴' : '▾'}</Button
 							>
 						</div>
 						{#if expanded.includes(row.entryId)}
@@ -479,25 +480,22 @@
 												: t('flashcards.deck.kindCard', { kind: kindLabel(k) })}</span
 										>
 										{#if row.skipped.includes(k)}
-											<button
-												type="button"
+											<Button
 												disabled={controller.busy}
 												aria-label={t('flashcards.deck.turnBackOnNamed', { kind: kindLabel(k) })}
-												onclick={() => void actions.unskip(row.entryId, k)}>{t('flashcards.deck.turnBackOn')}</button
+												onclick={() => void actions.unskip(row.entryId, k)}>{t('flashcards.deck.turnBackOn')}</Button
 											>
 										{:else if ids.length > 0}
-											<button
-												type="button"
+											<Button
 												disabled={controller.busy}
 												aria-label={t('flashcards.deck.removeNamed', { kind: kindLabel(k) })}
-												onclick={() => void actions.dropKind(ids)}>{t('flashcards.deck.remove')}</button
+												onclick={() => void actions.dropKind(ids)}>{t('flashcards.deck.remove')}</Button
 											>
 										{:else if row.vocab !== null}
-											<button
-												type="button"
+											<Button
 												disabled={controller.busy}
 												aria-label={t('flashcards.deck.removeNamed', { kind: kindLabel(k) })}
-												onclick={() => void actions.skip(row.entryId, k)}>{t('flashcards.deck.remove')}</button
+												onclick={() => void actions.skip(row.entryId, k)}>{t('flashcards.deck.remove')}</Button
 											>
 										{/if}
 									</li>
@@ -511,8 +509,8 @@
 				{/each}
 			</ul>
 			{#if remaining > 0}
-				<button type="button" class="moreRows" onclick={() => (pages += 1)}
-					>{t('flashcards.deck.showMore', { count: Math.min(PAGE_SIZE, remaining) })}</button
+				<Button onclick={() => (pages += 1)}
+					>{t('flashcards.deck.showMore', { count: Math.min(PAGE_SIZE, remaining) })}</Button
 				>
 			{/if}
 		{/if}
@@ -532,7 +530,7 @@
 				onfocusout={() => actions.resumeTimer()}
 			>
 				<span>{controller.undo.text}</span>
-				<button type="button" disabled={controller.busy} onclick={() => void actions.undo()}>{t('flashcards.deck.undo')}</button>
+				<Button disabled={controller.busy} onclick={() => void actions.undo()}>{t('flashcards.deck.undo')}</Button>
 			</div>
 		{/if}
 	</div>
@@ -553,11 +551,14 @@
 		margin: 0.5rem 0;
 	}
 
-	.filters label,
-	.bar label {
-		display: grid;
-		gap: 0.15rem;
-		font-size: 0.85rem;
+	.filters :global(.field),
+	.bar :global(.field) {
+		min-width: 8rem;
+		flex: 0 1 12rem;
+	}
+
+	.filters .search {
+		flex: 1 1 14rem;
 	}
 
 	label.check {
@@ -565,26 +566,6 @@
 		align-items: center;
 		gap: 0.4rem;
 		min-height: 44px;
-	}
-
-	button,
-	.actions a {
-		min-height: 44px;
-		display: inline-flex;
-		align-items: center;
-	}
-
-	.primary {
-		padding: 0 1rem;
-		border: 1px solid var(--accent);
-		border-radius: 999px;
-		background: var(--accent);
-		color: var(--on-accent);
-		font-weight: 600;
-	}
-
-	.danger {
-		color: var(--readable-bad);
 	}
 
 	.source {
@@ -607,12 +588,12 @@
 	}
 
 	.rows > li {
-		padding: 0.25rem 0.5rem;
-		border-bottom: 1px solid color-mix(in srgb, currentColor 14%, transparent);
+		padding-block: var(--space-2);
+		border-bottom: 1px solid var(--hair);
 	}
 
 	.rows > li.picked {
-		background: color-mix(in srgb, var(--accent) 12%, transparent);
+		background: var(--primary-wash);
 	}
 
 	.line {
@@ -628,8 +609,8 @@
 	}
 
 	.word {
-		font-size: 1.1rem;
-		font-weight: 600;
+		font-size: var(--font-size-xl);
+		font-family: var(--font-hanzi);
 	}
 
 	.reading,
@@ -640,24 +621,13 @@
 	}
 
 	.chip {
-		font-size: 0.75rem;
-		padding: 0.05rem 0.45rem;
-		margin-right: 0.25rem;
-		border: 1px solid color-mix(in srgb, currentColor 35%, transparent);
-		border-radius: 999px;
+		display: inline-flex;
+		margin-right: var(--space-1);
 	}
 
-	.chip.off {
+	.chip.off :global(.chip) {
 		color: var(--readable-muted);
 		text-decoration: line-through;
-	}
-
-	.more {
-		margin-left: auto;
-		min-width: 44px;
-		justify-content: center;
-		border: 0;
-		background: transparent;
 	}
 
 	.kinds li {
@@ -669,10 +639,9 @@
 	}
 
 	.confirm {
-		margin: 0.5rem 0;
-		padding: 0.75rem;
-		border: 1px solid var(--bad);
-		border-radius: 0.5rem;
+		margin-block: var(--space-2);
+		padding-block: var(--space-3);
+		border-top: 1px solid var(--bad);
 	}
 
 	.error {

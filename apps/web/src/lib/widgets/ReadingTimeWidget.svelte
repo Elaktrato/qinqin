@@ -5,6 +5,7 @@
 	import { errorMessage } from '$lib/stats/errors';
 	import { formatDuration, readingTotals, topBooks, type ReadingTotals } from '$lib/stats/readingTime';
 	import { currentStudyDay, onStudyDayChange } from '$lib/time/zone';
+	import Button from '$lib/ui/Button.svelte';
 	import { workspaces } from '$lib/workspaces';
 	import WidgetCard from './WidgetCard.svelte';
 	import type { WidgetStatus } from './types';
@@ -105,7 +106,7 @@
 	emptyText={t('widgets.reading.empty')}
 >
 	{#snippet actions()}
-		<a class="open" href="/reader">{t('widgets.reading.open')}</a>
+		<Button variant="plain" href="/reader">{t('widgets.reading.open')}</Button>
 	{/snippet}
 
 	{#if totals !== null}
@@ -142,16 +143,6 @@
 </WidgetCard>
 
 <style>
-	.open {
-		font-size: 0.8rem;
-		padding: 0.2rem 0.65rem;
-		border: 1px solid var(--accent);
-		border-radius: 999px;
-		color: var(--reading-accent);
-		font-weight: 600;
-		text-decoration: none;
-	}
-
 	.totals {
 		display: grid;
 		grid-template-columns: repeat(auto-fit, minmax(6.5rem, 1fr));

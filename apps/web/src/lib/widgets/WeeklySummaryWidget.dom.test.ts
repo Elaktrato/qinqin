@@ -32,6 +32,7 @@ function view(reviews: number | null = 12, activityError: string | null = null):
 			reviews: null,
 			points: null
 		})),
+		previousDays: [],
 		daysActive: { active: 3, of: 3, localOnly: reviews === null },
 		streak: 4,
 		mature: null,

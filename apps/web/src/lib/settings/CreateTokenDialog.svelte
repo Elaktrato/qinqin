@@ -2,6 +2,10 @@
 	import { tick } from 'svelte';
 	import Button from '$lib/ui/Button.svelte';
 	import Dialog from '$lib/ui/Dialog.svelte';
+	import Field from '$lib/ui/Field.svelte';
+	import IconButton from '$lib/ui/IconButton.svelte';
+	import Panel from '$lib/ui/Panel.svelte';
+	import Select from '$lib/ui/Select.svelte';
 	import { errorText } from '$lib/api/apiErrors';
 	import { t } from '$lib/i18n';
 	import Msg from '$lib/i18n/Msg.svelte';
@@ -18,8 +22,8 @@
 	}: { workspaces: { id: number; name: string }[]; oncreated: (t: TokenDto) => void; onclose: () => void } = $props();
 
 	const uid = $props.id();
-	let nameInput = $state<HTMLInputElement | null>(null);
-	let passwordInput = $state<HTMLInputElement | null>(null);
+	let nameInput = $state<HTMLInputElement | undefined>(undefined);
+	let passwordInput = $state<HTMLInputElement | undefined>(undefined);
 	let name = $state('');
 	let scope = $state<'read' | 'write'>('read');
 	let workspace = $state('');
@@ -93,53 +97,65 @@
 >
 	{#if token}
 		<div class="stack">
-			<label>
-				{t('settings.tokens.created.title')}
-				<input class="mono" readonly value={token} onfocus={(e) => (e.currentTarget as HTMLInputElement).select()} />
-			</label>
+			<Panel raised class="token-panel">
+				<Field
+					label={t('settings.tokens.created.title')}
+					readonly
+					value={token}
+					onfocus={(e) => (e.currentTarget as HTMLInputElement).select()}
+				/>
+				<div class="buttons">
+					<IconButton icon="copy" label={t('common.action.copy')} onclick={copy} />
+					<span role="status">{copied ? t('common.action.copied') : ''}</span>
+				</div>
+			</Panel>
 			<p class="warn">
 				<Msg key="settings.tokens.created.once">{#snippet strong(text: string)}<strong>{text}</strong>{/snippet}</Msg>
 			</p>
-			<div class="buttons">
-				<Button onclick={copy}>{t('common.action.copy')}</Button>
-				<span role="status">{copied ? t('common.action.copied') : ''}</span>
-			</div>
 			{#if error}<p class="error" role="alert">{error}</p>{/if}
 			<p>{t('settings.tokens.created.tryIt')}</p>
 			<pre class="mono">{exampleCommand(location.origin, token)}</pre>
 		</div>
 	{:else}
 		<form id="{uid}-form" onsubmit={submit} class="stack">
-			<label>
-				{t('settings.tokens.colName')}
-				<input bind:this={nameInput} bind:value={name} maxlength="64" autocomplete="off" />
-			</label>
+			<Field
+				label={t('settings.tokens.colName')}
+				bind:element={nameInput}
+				bind:value={name}
+				maxlength={64}
+				autocomplete="off"
+			/>
 			<fieldset>
 				<legend>{t('settings.tokens.colAccess')}</legend>
 				<label class="check"><input type="radio" name="{uid}-scope" value="read" bind:group={scope} /> {scopeText('read')}</label>
 				<label class="check"><input type="radio" name="{uid}-scope" value="write" bind:group={scope} /> {scopeText('write')}</label>
 			</fieldset>
-			<label>
-				{t('settings.tokens.create.workspace')}
-				<select bind:value={workspace}>
-					<option value="">{t('settings.tokens.allWorkspaces')}</option>
-					{#each workspaces as ws (ws.id)}
-						<option value={String(ws.id)}>{ws.name.trim() || t('settings.tokens.workspaceN', { id: ws.id })}</option>
-					{/each}
-				</select>
-			</label>
-			<label>
-				{t('settings.tokens.create.expiresAfter')}
-				<select bind:value={days}>
-					{#each EXPIRY_CHOICES as d (d)}
-						<option value={String(d)}>{t('settings.tokens.create.days', { count: d })}</option>
-					{/each}
-				</select>
-			</label>
-			<label>
-				{t('account.field.yourPassword')}
-				<input bind:this={passwordInput} type="password" autocomplete="current-password" bind:value={password} />
-			</label>
+			<Select
+				label={t('settings.tokens.create.workspace')}
+				bind:value={workspace}
+				options={[
+					{ value: '', label: t('settings.tokens.allWorkspaces') },
+					...workspaces.map((ws) => ({
+						value: String(ws.id),
+						label: ws.name.trim() || t('settings.tokens.workspaceN', { id: ws.id })
+					}))
+				]}
+			/>
+			<Select
+				label={t('settings.tokens.create.expiresAfter')}
+				bind:value={days}
+				options={EXPIRY_CHOICES.map((d) => ({
+					value: String(d),
+					label: t('settings.tokens.create.days', { count: d })
+				}))}
+			/>
+			<Field
+				label={t('account.field.yourPassword')}
+				type="password"
+				autocomplete="current-password"
+				bind:element={passwordInput}
+				bind:value={password}
+			/>
 			{#if error}<p class="error" role="alert">{error}</p>{/if}
 		</form>
 	{/if}
@@ -158,54 +174,49 @@
 <style>
 	.stack {
 		display: grid;
-		gap: 0.8rem;
+		gap: var(--space-3);
 	}
-	label {
-		display: grid;
-		gap: 0.3rem;
-	}
+
 	label.check {
 		display: flex;
-		gap: 0.5rem;
+		gap: var(--space-2);
 		align-items: center;
+		min-height: var(--hit);
 	}
+
 	fieldset {
-		border: 0;
-		padding: 0;
-		margin: 0;
 		display: grid;
-		gap: 0.3rem;
+		gap: var(--space-1);
 	}
-	input,
-	select {
-		font: inherit;
-		padding: 0.45rem 0.6rem;
-	}
+
 	.mono {
 		font-family: ui-monospace, monospace;
 		word-break: break-all;
 		white-space: pre-wrap;
 	}
+
 	pre {
 		margin: 0;
-		padding: 0.6rem;
+		padding: var(--space-2);
 		border: 1px solid var(--hair);
-		border-radius: 0.4rem;
+		border-radius: var(--radius);
 	}
+
 	.warn,
 	.error {
 		margin: 0;
 	}
+
 	.error {
 		color: var(--readable-bad);
-		font-weight: 600;
 		padding-inline-start: var(--space-2);
 		border-inline-start: 3px solid var(--bad);
 	}
+
 	.buttons {
 		display: flex;
 		flex-wrap: wrap;
-		gap: 0.6rem;
+		gap: var(--space-2);
 		align-items: center;
 	}
 </style>

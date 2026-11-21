@@ -81,10 +81,10 @@ describe('NavDrawer', () => {
 		const { drawer } = await openDrawer('reader');
 		const nav = within(drawer).getByRole('navigation', { name: 'Main' });
 		const links = within(nav).getAllByRole('link');
-		expect(links.map((l) => l.textContent?.trim())).toEqual(['Home', 'Decks', 'Reader', 'Journal', 'Grammar', 'Search', 'Stats']);
+		expect(links.map((l) => l.textContent?.trim())).toEqual(['Home', 'Search', 'Decks', 'Reader', 'Journal', 'Grammar', 'Stats']);
 		expect(links[0].getAttribute('href')).toBe('/');
 		for (const link of links) expect(link.querySelector('svg')).not.toBeNull();
-		expect(links.map((l) => l.getAttribute('aria-current'))).toEqual([null, null, 'page', null, null, null, null]);
+		expect(links.map((l) => l.getAttribute('aria-current'))).toEqual([null, null, null, 'page', null, null, null]);
 	});
 
 	it('following a link closes the drawer', async () => {

@@ -29,15 +29,23 @@ export interface StudySessionConfig {
 	reviewLimit: number;
 	cardTypes: string[];
 	/**
-	 * The order of new cards (#75). Absent = 'deck': the selected decks'
-	 * own order (level order in a level session).
+	 * The order of new cards (#75). Absent = 'random', the default: a
+	 * shuffle ('deck' follows the selected decks' own orders, level order
+	 * in a level session).
 	 */
 	newOrder?: SessionNewOrder;
+	/**
+	 * Fixes the shuffle of a started session: drawn once when it starts, so
+	 * a reload of the same session shows the same order.
+	 */
+	seed?: number;
+	/** Ignore the session and deck daily limits for this one session. */
+	studyAll?: boolean;
 }
 
-/** sessionNewOrder is the setup's order of new cards, 'deck' by default. */
+/** sessionNewOrder is the setup's order of new cards, random by default. */
 export function sessionNewOrder(config: StudySessionConfig): SessionNewOrder {
-	return config.newOrder ?? 'deck';
+	return config.newOrder ?? 'random';
 }
 
 /** sessionStorage key of the setup. */
@@ -67,6 +75,9 @@ export const DEFAULT_CONFIG: StudySessionConfig = {
 // The server and the scheduler both treat limits as small counts; a
 // four-digit limit is almost certainly a typo, not a study plan.
 const MAX_LIMIT = 999;
+
+/** The cap a study-all session uses in place of a person's limits. */
+export const STUDY_ALL_LIMIT = 1_000_000;
 
 function isRecord(value: unknown): value is Record<string, unknown> {
 	return typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -117,12 +128,14 @@ export function validateConfig(config: StudySessionConfig): string[] {
 		errors.push(t('study.config.selectDeck'));
 	}
 
-	if (!isPositiveLimit(config.newLimit)) {
-		errors.push(t('study.config.newLimit', { max: MAX_LIMIT }));
-	}
+	if (config.studyAll !== true) {
+		if (!isPositiveLimit(config.newLimit)) {
+			errors.push(t('study.config.newLimit', { max: MAX_LIMIT }));
+		}
 
-	if (!isPositiveLimit(config.reviewLimit)) {
-		errors.push(t('study.config.reviewLimit', { max: MAX_LIMIT }));
+		if (!isPositiveLimit(config.reviewLimit)) {
+			errors.push(t('study.config.reviewLimit', { max: MAX_LIMIT }));
+		}
 	}
 
 	if (
@@ -159,7 +172,7 @@ function parseConfig(raw: string): StudySessionConfig | null {
 	}
 
 	if (!isRecord(parsed)) return null;
-	const { mode, schemeId, levelName, deckIds, newLimit, reviewLimit, cardTypes, newOrder } = parsed;
+	const { mode, schemeId, levelName, deckIds, newLimit, reviewLimit, cardTypes, newOrder, studyAll, seed } = parsed;
 	if (!isStringArray(deckIds) || !isStringArray(cardTypes)) return null;
 	if (typeof newLimit !== 'number' || typeof reviewLimit !== 'number') return null;
 
@@ -174,11 +187,16 @@ function parseConfig(raw: string): StudySessionConfig | null {
 		deckIds: [...deckIds],
 		newLimit,
 		reviewLimit,
-		cardTypes: [...cardTypes]
+		cardTypes: [...cardTypes],
+		...(studyAll === true ? { studyAll: true } : {}),
+		...(typeof seed === 'number' && Number.isFinite(seed) ? { seed } : {})
 	};
-	// A missing or unreadable order is the deck setting; it never discards the setup.
-	const order = parseNewOrder(newOrder);
-	if (order !== null) config.newOrder = order;
+	// A missing or unreadable order is the default (random); it never discards the setup.
+	if (newOrder === 'deck' || newOrder === 'random') config.newOrder = newOrder;
+	else {
+		const order = parseNewOrder(newOrder);
+		if (order !== null) config.newOrder = order;
+	}
 	return validateConfig(config).length === 0 ? config : null;
 }
 

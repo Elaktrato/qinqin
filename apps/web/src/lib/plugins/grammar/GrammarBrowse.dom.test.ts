@@ -1,0 +1,60 @@
+import { cleanup, render, screen } from '@testing-library/svelte';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
+vi.mock('$app/state', () => import('$lib/testing/appState.svelte'));
+vi.mock('./api', () => ({ listGrammar: vi.fn(async () => []) }));
+vi.mock('$lib/api/schemes', () => ({ getSchemes: vi.fn(async () => []) }));
+vi.mock('./progress', () => ({ loadProgress: vi.fn(async () => new Map()) }));
+vi.mock('./browse', () => ({ browseSections: vi.fn() }));
+
+import { browseSections } from './browse';
+import { pluginStates } from '$lib/plugins/states';
+import { workspaces } from '$lib/workspaces';
+import { primaryActions } from '$lib/ui/testing/primary';
+import GrammarBrowse from './GrammarBrowse.svelte';
+
+const ws = { id: 1, language: 'ja', name: '', settings: {}, updatedAt: '' } as never;
+
+beforeEach(() => {
+	workspaces.set({ list: [ws], current: ws });
+	pluginStates.set({ list: [], status: 'ready' });
+	vi.mocked(browseSections).mockReturnValue([
+		{
+			packId: 'basics',
+			packName: 'Basic grammar',
+			credits: { license: 'CC BY-SA 4.0', attribution: 'Someone' },
+			levels: [
+				{
+					id: 'n5',
+					name: 'N5',
+					badges: ['HSK 2'],
+					lessons: [
+						{
+							id: 'l1',
+							title: 'The は particle',
+							summary: 'Topic marker',
+							progress: { best: 8, total: 10 }
+						}
+					]
+				}
+			]
+		}
+	] as never);
+});
+afterEach(() => {
+	cleanup();
+	vi.clearAllMocks();
+	workspaces.set({ list: [], current: null });
+	pluginStates.set({ list: [], status: 'idle' });
+});
+
+describe('grammar browse in the lighter look (#106)', () => {
+	it('packs are Sections, levels carry Chips, points are rows, and there is no primary action', async () => {
+		render(GrammarBrowse);
+		expect(await screen.findByRole('heading', { name: 'Basic grammar' })).toBeTruthy();
+		expect(screen.getByText('HSK 2')).toBeTruthy();
+		expect(screen.getByRole('link', { name: /The は particle/ })).toBeTruthy();
+		expect(screen.getByText('8/10')).toBeTruthy();
+		expect(primaryActions(document.body)).toHaveLength(0);
+	});
+});

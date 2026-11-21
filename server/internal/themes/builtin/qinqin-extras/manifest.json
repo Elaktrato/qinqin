@@ -1,0 +1,10 @@
+{
+	"id": "qinqin-extras",
+	"name": "qinqin extras",
+	"version": "1.0",
+	"type": "theme",
+	"license": "MIT",
+	"attribution": "© 2026 qinqin",
+	"notice": "Three further qinqin directions, each light and dark: Neon (ink-grey surfaces, neon accents), Pigments (Celadon and Indigo with the painter's accents 胭脂 rouge, 朱 vermilion, 藤黄 gamboge, 石绿 malachite, 群青 ultramarine and 紫 violet) and Pop (Bubblegum and Grape, tinted surfaces and clashing complementaries).",
+	"format": "themes-json"
+}

@@ -9,6 +9,7 @@
 	import type { SectionStats } from '$lib/study/charGroups';
 	import { STAGE_INFO, formatCount, learnedSummary } from '$lib/study/mapGrid';
 	import { MASTERY_THRESHOLD } from '$lib/study/mastery';
+	import Button from '$lib/ui/Button.svelte';
 	import { workspaces } from '$lib/workspaces';
 	import WidgetCard from './WidgetCard.svelte';
 	import type { WidgetStatus } from './types';
@@ -112,7 +113,7 @@
 	>
 		{#snippet actions()}
 			{#if status === 'ready'}
-				<a class="open" href="/stats/characters">{t('widgets.characters.open')}</a>
+				<Button variant="plain" href="/stats/characters">{t('widgets.characters.open')}</Button>
 			{/if}
 		{/snippet}
 
@@ -158,17 +159,6 @@
 		--st-mature-bar: var(--mastery-3);
 		--st-learned-bar: var(--mastery-4);
 	}
-
-	.open {
-		font-size: 0.8rem;
-		padding: 0.2rem 0.65rem;
-		border: 1px solid var(--accent);
-		border-radius: 999px;
-		color: var(--reading-accent);
-		font-weight: 600;
-		text-decoration: none;
-	}
-
 
 	.total {
 		margin: 0.9rem 0 0.5rem;

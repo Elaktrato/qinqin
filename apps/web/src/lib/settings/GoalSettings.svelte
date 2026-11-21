@@ -13,6 +13,7 @@
 	import { currentStudyDay } from '$lib/time/zone';
 	import { workspaces } from '$lib/workspaces';
 	import { formFrom, limitHint, planForm, type GoalFormState } from './goalForm';
+	import { Button, Field, Section, Select } from '$lib/ui';
 
 	let day = $state.raw(currentStudyDay());
 	$effect(() => onContextStale(() => (day = currentStudyDay())));
@@ -148,14 +149,13 @@
 	}
 </script>
 
-<section class="goal">
-	<h2>{t('settings.goal.title')}</h2>
+<Section title={t('settings.goal.title')}>
 	<p class="hint">{t('settings.goal.hint')}</p>
 	{#if sourcesFailed}
 		<p class="note" role="status">
 			{t('settings.goal.sourcesFailed')}
-			<button type="button" onclick={() => workspaceId !== null && void loadSources(workspaceId)}
-				>{t('common.action.retry')}</button
+			<Button onclick={() => workspaceId !== null && void loadSources(workspaceId)}
+				>{t('common.action.retry')}</Button
 			>
 		</p>
 	{/if}
@@ -165,30 +165,39 @@
 		</p>
 	{/if}
 	<form novalidate onsubmit={save} aria-label={t('settings.goal.formLabel')}>
-		<span class="field">
-			<label for="goal-metric">{t('settings.goal.count')}</label>
-			<select id="goal-metric" bind:value={form.metric} {disabled}>
-				<option value="">{t('settings.goal.none')}</option>
-				{#each options as option (option.metric)}
-					<option value={option.metric}>{option.label}</option>
-				{/each}
-			</select>
-		</span>
+		<div class="field">
+			<Select
+				label={t('settings.goal.count')}
+				id="goal-metric"
+				bind:value={form.metric}
+				{disabled}
+				options={[
+					{ value: '', label: t('settings.goal.none') },
+					...options.map((option) => ({ value: option.metric, label: option.label }))
+				]}
+			/>
+		</div>
 		{#if form.metric !== ''}
-			<span class="field">
-				<label for="goal-target">{t('settings.goal.target')}</label>
-				<input id="goal-target" type="text" inputmode="numeric" bind:value={form.target} {disabled} size="6" />
+			<div class="field target">
+				<Field
+					label={t('settings.goal.target')}
+					id="goal-target"
+					type="number"
+					value={form.target}
+					oninput={(event) => (form.target = event.currentTarget.value)}
+					{disabled}
+				/>
 				<span class="unit">{unit === 'minutes' ? t('settings.goal.unitMinutes') : t('settings.goal.unitPerDay')}</span>
-			</span>
+			</div>
 		{/if}
 		<label class="check">
 			<input type="checkbox" bind:checked={form.showStreak} {disabled} />
 			{t('settings.goal.showStreak')}
 		</label>
 		<div class="actions">
-			<button type="submit" {disabled}>{t('settings.goal.save')}</button>
+			<Button type="submit" variant="primary" {disabled}>{t('settings.goal.save')}</Button>
 			{#if hasGoal}
-				<button type="button" {disabled} onclick={() => void remove()}>{t('settings.goal.remove')}</button>
+				<Button tone="danger" {disabled} onclick={() => void remove()}>{t('settings.goal.remove')}</Button>
 			{/if}
 			{#if message}<span role="status">{message}</span>{/if}
 		</div>
@@ -200,38 +209,63 @@
 		<p class="error" role="alert">
 			{error}
 			{#if loadFailed}
-				<button type="button" onclick={() => void load(workspaceId, true)}>{t('common.action.retry')}</button>
+				<Button onclick={() => void load(workspaceId, true)}>{t('common.action.retry')}</Button>
 			{/if}
 		</p>
 	{/if}
-</section>
+</Section>
 
 <style>
 	form {
 		display: flex;
 		flex-wrap: wrap;
-		gap: 0.75rem 1.25rem;
-		align-items: center;
-		margin-block: 0.75rem;
+		gap: var(--space-3) var(--space-4);
+		align-items: end;
+		margin-block: var(--space-3);
 	}
-	.field,
+
+	.field {
+		flex: 1 1 12rem;
+	}
+
+	.target {
+		display: flex;
+		align-items: end;
+		gap: var(--space-2);
+	}
+
+	.target :global(.field) {
+		flex: 1 1 6rem;
+	}
+
 	.check {
 		display: inline-flex;
-		gap: 0.4rem;
+		gap: var(--space-1);
 		align-items: center;
+		min-height: var(--hit);
 	}
+
 	.actions {
 		display: flex;
 		flex-wrap: wrap;
-		gap: 0.5rem;
+		gap: var(--space-2);
 		align-items: center;
 		width: 100%;
 	}
+
 	.unit {
 		color: var(--readable-muted);
+		padding-block: var(--space-2);
 	}
+
 	.error,
 	.note {
-		margin-block: 0.5rem;
+		margin-block: var(--space-2);
+	}
+
+	.error {
+		color: var(--readable-bad);
+		padding-inline-start: var(--space-2);
+		border-inline-start: 3px solid var(--bad);
 	}
 </style>

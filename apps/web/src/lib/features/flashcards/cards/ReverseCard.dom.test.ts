@@ -42,6 +42,33 @@ function setup(over: { revealed?: boolean } = {}) {
 	return { onDone, ...view, component: (view.component as unknown as { cardInstance: () => unknown }).cardInstance() };
 }
 
+describe('ReverseCard answer readings', () => {
+	it('joins several readings of one kind with " | " under one label', () => {
+		render(CardHarness, {
+			card: ReverseCard,
+			cardProps: {
+				item,
+				entry: entry({
+					readings: [
+						{ type: 'pinyin', value: 'xǐ huan', plain: 'xihuan', ord: 0 },
+						{ type: 'pinyin', value: 'xǐ huān', plain: 'xihuan', ord: 1 }
+					]
+				}),
+				revealed: true,
+				language: 'zh',
+				onDone: vi.fn()
+			}
+		});
+		const table = screen.getByRole('table', { name: 'Readings' });
+		expect(table.textContent?.replace(/\s+/g, ' ').trim()).toBe('Pinyin xǐ huan | xǐ huān');
+	});
+
+	it('a single reading shows the label and the value', () => {
+		setup({ revealed: true });
+		expect(screen.getByRole('table', { name: 'Readings' }).textContent?.replace(/\s+/g, ' ').trim()).toBe('Pinyin xi3 huan5');
+	});
+});
+
 describe('ReverseCard', () => {
 	it('shows the meaning but never the written form on the front', () => {
 		setup();

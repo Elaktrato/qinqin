@@ -67,6 +67,65 @@ func TestBuiltinPacks(t *testing.T) {
 	}
 }
 
+// The house themes lead the picker (design §7a, issue #108): qinqin's three
+// themes first, then the extras, before the third-party families.
+func TestHouseThemesLead(t *testing.T) {
+	got := Builtin()
+	if len(got) < 2 || got[0].Manifest.ID != "qinqin" || got[1].Manifest.ID != "qinqin-extras" {
+		var ids []string
+		for _, p := range got {
+			ids = append(ids, p.Manifest.ID)
+		}
+		t.Fatalf("built-in packs start %v, want qinqin then qinqin-extras", ids)
+	}
+	var house, extras []string
+	for _, th := range got[0].Themes {
+		house = append(house, th.ID)
+	}
+	for _, th := range got[1].Themes {
+		extras = append(extras, th.ID)
+	}
+	if want := "qinqin-day,qinqin-night,qinqin-deep"; strings.Join(house, ",") != want {
+		t.Errorf("qinqin themes %v, want %s", house, want)
+	}
+	if want := "qinqin-neon-light,qinqin-neon-dark,qinqin-pigment-light,qinqin-pigment-dark,qinqin-pop-light,qinqin-pop-dark"; strings.Join(extras, ",") != want {
+		t.Errorf("qinqin extras %v, want %s", extras, want)
+	}
+	if got[0].Themes[0].Family != "qinqin" || got[0].Themes[0].DefaultAccent != "azure" ||
+		got[0].Themes[1].DefaultAccent != "cyan" {
+		t.Errorf("house defaults changed: %+v %+v", got[0].Themes[0], got[0].Themes[1])
+	}
+}
+
+// Every house theme passes the whole upload review, not just the two
+// built-in minimums (design §7a: the files were checked against the
+// contract on 2026-11-18).
+func TestHouseThemesPassTheReview(t *testing.T) {
+	house := map[string]bool{"qinqin": true, "qinqin-extras": true}
+	seen := 0
+	for _, p := range Builtin() {
+		if !house[p.Manifest.ID] {
+			continue
+		}
+		seen++
+		for _, th := range p.Themes {
+			if len(Review(th)) == 0 {
+				t.Errorf("%s: the review has no checks", th.ID)
+			}
+			if checks := Review(th); Failing(checks) != 0 {
+				for _, c := range checks {
+					if !c.Pass {
+						t.Errorf("%s: %s on %s %.2f:1, the review needs %.1f", th.ID, c.FG, c.BG, c.Ratio, c.Min)
+					}
+				}
+			}
+		}
+	}
+	if seen != 2 {
+		t.Fatalf("%d house packs, want qinqin and qinqin-extras", seen)
+	}
+}
+
 // The eight themes of the approved design take the mockup's values, except
 // where the mockup used another variant's value for a role (corrected to
 // the upstream palette; docs/sources.md "Themes").

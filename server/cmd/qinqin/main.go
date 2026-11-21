@@ -166,6 +166,11 @@ func serveCmd(args []string) error {
 	}
 	defer sqlDB.Close()
 
+	// A fresh instance gets its admin here (when configured), before the
+	// port opens, so first registration never decides who is admin.
+	if err := bootstrapAdminFromEnv(context.Background(), sqlDB, os.Getenv, log.Printf); err != nil {
+		return err
+	}
 	if err := registerBuiltinPlugins(context.Background(), sqlDB); err != nil {
 		return err
 	}
@@ -209,6 +214,13 @@ func serveCmd(args []string) error {
 		log.Printf("offline OCR: tesseract 5.x, languages: %s", strings.Join(tess.Languages(), ", "))
 	} else {
 		log.Printf("offline OCR: not available (tesseract not found)")
+	}
+
+	// First start: install the bundled packs (not the demos) when nothing is
+	// installed yet; synchronous, before the listener. A failure is logged and
+	// the server starts anyway (the next start retries; `qinqin seed` works).
+	if err := autoSeed(ctx, sqlDB, *data, defaultPacks(), os.Getenv, log.Printf); err != nil {
+		log.Printf("%v", err)
 	}
 
 	// Stroke data: install the bundled strokes pack when none is installed

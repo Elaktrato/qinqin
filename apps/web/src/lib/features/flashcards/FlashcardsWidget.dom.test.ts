@@ -6,7 +6,10 @@ vi.mock('$lib/goals/loadGoal', () => ({ loadGoalStatus: vi.fn() }));
 
 import type { GoalView } from '$lib/goals/loadGoal';
 import { loadGoalStatus } from '$lib/goals/loadGoal';
+import { levelProgress, xpFromReviews } from '$lib/study/exp';
 import { loadStudyHistory } from '$lib/study/history';
+import type { ReviewEvent } from '$lib/study/types';
+import { currentStudyDay } from '$lib/time/zone';
 import { workspaces } from '$lib/workspaces';
 import FlashcardsWidget from './FlashcardsWidget.svelte';
 
@@ -81,9 +84,35 @@ describe('FlashcardsWidget goal ring', () => {
 		const container = await ready();
 		await new Promise((r) => setTimeout(r, 0));
 		expect(text(container)).toBe(
-			'Flashcards Study Nothing due today · Level 1 · 0 XP 🔥 0 days streak · study today to start one'
+			'Flashcards Study Nothing due today · Level 1 · 0 / 100 XP 🔥 0 days streak · study today to start one'
 		);
 		expect(screen.queryByRole('progressbar', { name: 'Daily goal' })).toBeNull();
+	});
+
+	it('above level 1 the XP line shows the XP into the level, not the cumulative total', async () => {
+		// Twenty vocab reviews at grade 3, one on each of twenty learner days:
+		// 20 × (10 base + 5 grade) + 20 × 10 daily bonus = 500 XP, which is
+		// level 3 with 200 XP into a 300-XP level.
+		const reviews: ReviewEvent[] = Array.from({ length: 20 }, (_, i) => ({
+			id: `level-${i}`,
+			workspaceId: 1,
+			device: 'test',
+			ts: new Date(Date.UTC(2026, 9, 30 + i, 12)).toISOString(),
+			type: 'review',
+			payload: { cardId: `c${i}`, mode: 'vocab', grade: 3 }
+		}));
+		vi.mocked(loadStudyHistory).mockResolvedValue({ decks: [], cards: [], reviews, merged: 0 });
+		vi.mocked(loadGoalStatus).mockResolvedValue(NO_GOAL);
+		const total = xpFromReviews(reviews, currentStudyDay().dayOf);
+		const progress = levelProgress(total);
+		expect(progress).toEqual({ level: 3, xpInto: 200, xpForNext: 300 });
+
+		const container = await ready();
+		const bar = screen.getByRole('progressbar', { name: 'Progress to the next level' });
+		expect(bar.getAttribute('aria-valuenow')).toBe('200');
+		expect(bar.getAttribute('aria-valuemax')).toBe('300');
+		expect(text(container)).toContain('Level 3 · 200 / 300 XP');
+		expect(text(container)).not.toContain('500 / 300');
 	});
 
 	it('shows the small ring and the goal streak beside the review streak', async () => {

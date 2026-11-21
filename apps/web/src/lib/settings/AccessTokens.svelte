@@ -6,6 +6,7 @@
 	import { tokenRows, type TokenDto } from '$lib/account/tokensView';
 	import { workspaces } from '$lib/workspaces';
 	import CreateTokenDialog from './CreateTokenDialog.svelte';
+	import { Button, Section } from '$lib/ui';
 
 	// Settings → Account → Access tokens: the list, revoke (one or all, each
 	// confirmed) and "New token". oncount tells the page how many exist, for
@@ -70,14 +71,13 @@
 	onMount(() => void load());
 </script>
 
-<section aria-labelledby="account-tokens-heading" class="block">
-	<h2 id="account-tokens-heading">{t('settings.tokens.title')}</h2>
+<Section title={t('settings.tokens.title')}>
 	<p class="hint">{t('settings.tokens.intro')}</p>
 	{#if error}<p class="error" role="alert">{error}</p>{/if}
 	{#if loaded && rows.length === 0 && !error}
 		<p>{t('settings.tokens.none')}</p>
 	{:else if rows.length > 0}
-		<table aria-label={t('settings.tokens.title')}>
+		<table class="ui-table" aria-label={t('settings.tokens.title')}>
 			<thead>
 				<tr>
 					<th scope="col">{t('settings.tokens.colName')}</th>
@@ -95,14 +95,14 @@
 						<td>{row.expiryText}</td>
 						<td>{row.lastUsedText}</td>
 						<td>
-							<button type="button" disabled={busy} aria-label={t('settings.tokens.revokeNamed', { name: row.name })} onclick={() => (confirmOne = row.id)}
-								>{t('settings.tokens.revoke')}</button
+							<Button disabled={busy} aria-label={t('settings.tokens.revokeNamed', { name: row.name })} onclick={() => (confirmOne = row.id)}
+								>{t('settings.tokens.revoke')}</Button
 							>
 							{#if confirmOne === row.id}
 								<div class="confirm" role="group" aria-label={t('settings.tokens.confirmRevokeNamed', { name: row.name })}>
 									<p>{t('settings.tokens.confirmRevokeText', { name: row.name })}</p>
-									<button type="button" disabled={busy} onclick={() => revokeOne(row.id)}>{t('settings.tokens.confirmRevokeYes')}</button>
-									<button type="button" disabled={busy} onclick={() => (confirmOne = null)}>{t('common.action.cancel')}</button>
+									<Button tone="danger" disabled={busy} onclick={() => revokeOne(row.id)}>{t('settings.tokens.confirmRevokeYes')}</Button>
+									<Button disabled={busy} onclick={() => (confirmOne = null)}>{t('common.action.cancel')}</Button>
 								</div>
 							{/if}
 						</td>
@@ -112,19 +112,19 @@
 		</table>
 	{/if}
 	<div class="actions">
-		<button type="button" disabled={busy} onclick={() => (creating = true)}>{t('settings.tokens.new')}</button>
+		<Button disabled={busy} onclick={() => (creating = true)}>{t('settings.tokens.new')}</Button>
 		{#if rows.length > 0}
-			<button type="button" disabled={busy} onclick={() => (confirmAll = true)}>{t('settings.tokens.revokeAll')}</button>
+			<Button tone="danger" disabled={busy} onclick={() => (confirmAll = true)}>{t('settings.tokens.revokeAll')}</Button>
 		{/if}
 	</div>
 	{#if confirmAll}
 		<div class="confirm" role="group" aria-label={t('settings.tokens.confirmRevokeAll')}>
 			<p>{t('settings.tokens.confirmRevokeAllText')}</p>
-			<button type="button" disabled={busy} onclick={revokeEvery}>{t('settings.tokens.confirmRevokeAllYes')}</button>
-			<button type="button" disabled={busy} onclick={() => (confirmAll = false)}>{t('common.action.cancel')}</button>
+			<Button tone="danger" disabled={busy} onclick={revokeEvery}>{t('settings.tokens.confirmRevokeAllYes')}</Button>
+			<Button disabled={busy} onclick={() => (confirmAll = false)}>{t('common.action.cancel')}</Button>
 		</div>
 	{/if}
-</section>
+</Section>
 
 {#if creating}
 	<CreateTokenDialog
@@ -138,68 +138,39 @@
 {/if}
 
 <style>
-	.block {
-		margin-bottom: 2rem;
-	}
 	.hint {
 		margin: 0;
 		color: var(--readable-muted);
 	}
+
 	.error {
 		margin: 0;
 		color: var(--readable-bad);
-		font-weight: 600;
 		padding-inline-start: var(--space-2);
 		border-inline-start: 3px solid var(--bad);
 	}
-	table {
-		border-collapse: collapse;
-		width: 100%;
-		margin: 0.75rem 0;
-	}
-	th,
-	td {
-		text-align: left;
-		padding: 0.45rem 0.6rem;
-		border-bottom: 1px solid color-mix(in srgb, currentColor 18%, transparent);
-		vertical-align: top;
-	}
-	tbody th {
-		font-weight: 600;
-	}
+
 	code {
-		font-weight: 400;
-		font-size: 0.85em;
+		font-size: var(--font-size-label);
 	}
+
 	.actions {
 		display: flex;
 		flex-wrap: wrap;
-		gap: 0.6rem;
-		margin-top: 0.6rem;
+		gap: var(--space-2);
+		margin-top: var(--space-2);
 	}
-	button {
-		font: inherit;
-		padding: 0.45rem 0.9rem;
-		border: 1px solid color-mix(in srgb, currentColor 40%, transparent);
-		border-radius: 0.4rem;
-		background: transparent;
-		color: inherit;
-		cursor: pointer;
-	}
-	button:disabled {
-		opacity: 0.55;
-		cursor: not-allowed;
-	}
+
 	.confirm {
-		margin-top: 0.6rem;
-		padding: 0.6rem;
-		border: 1px solid color-mix(in srgb, currentColor 35%, transparent);
-		border-radius: 0.5rem;
+		margin-top: var(--space-2);
+		padding-top: var(--space-2);
+		border-top: 1px solid var(--hair);
 		display: flex;
 		flex-wrap: wrap;
-		gap: 0.5rem;
+		gap: var(--space-2);
 		align-items: center;
 	}
+
 	.confirm p {
 		flex-basis: 100%;
 		margin: 0;

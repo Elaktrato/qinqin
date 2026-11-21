@@ -11,6 +11,7 @@
 		canApply, clearLocalAfterRestore, errorText, formatBytes, needsDropAck, nextPollDelay, replaceSentence,
 		restoreSentence, stageProblem, unresolvedLines, type StageView
 	} from './backupView';
+	import { Button, Field, Section } from '$lib/ui';
 
 	// Settings -> Account -> Your data: download everything you own, or
 	// replace it all from such a download. The restore is staged (uploaded
@@ -21,7 +22,6 @@
 		storage = typeof localStorage === 'undefined' ? null : localStorage
 	}: { reload?: () => void; assign?: (url: string) => void; storage?: Pick<Storage, 'getItem' | 'removeItem'> | null } = $props();
 
-	let heading = $state<HTMLHeadingElement | null>(null);
 	let error = $state('');
 	let busy = $state(false);
 	let progress = $state<number | null>(null);
@@ -43,7 +43,7 @@
 
 	async function focusHeading(): Promise<void> {
 		await tick();
-		heading?.focus();
+		document.getElementById('account-data-heading')?.focus();
 	}
 
 	async function download(): Promise<void> {
@@ -165,10 +165,9 @@
 	onDestroy(stopPolling);
 </script>
 
-<section aria-labelledby="account-data-heading" class="block">
-	<h2 id="account-data-heading" tabindex="-1" bind:this={heading}>{t('account.data.title')}</h2>
+<Section title={t('account.data.title')} headingId="account-data-heading" focusable>
 	<p class="hint">{t('account.data.downloadHint')}</p>
-	<button type="button" disabled={busy} onclick={download}>{t('account.data.download')}</button>
+	<Button disabled={busy} onclick={download}>{t('account.data.download')}</Button>
 	<p class="hint">
 		<Msg key="account.data.lookupsHint">{#snippet link(text: string)}<a href="/lookups">{text}</a>{/snippet}</Msg>
 	</p>
@@ -210,16 +209,21 @@
 				<label><input type="checkbox" bind:checked={ackDrop} /> {t('account.data.dropAck')}</label>
 			</div>
 		{/if}
-		<p><button type="button" disabled={busy} onclick={downloadCurrent}>{t('account.data.downloadCurrent')}</button></p>
+		<p><Button disabled={busy} onclick={downloadCurrent}>{t('account.data.downloadCurrent')}</Button></p>
 		<form onsubmit={restore} class="stack">
-			<label>{t('account.field.yourPassword')} <input type="password" autocomplete="current-password" bind:value={password} /></label>
+			<Field
+				label={t('account.field.yourPassword')}
+				type="password"
+				autocomplete="current-password"
+				bind:value={password}
+			/>
 			{#if hasTotp}
 				<label>{t('account.data.code')} <input autocomplete="one-time-code" bind:value={code} /></label>
 			{/if}
-			<label>{t('account.data.typeUsername', { username })} <input autocomplete="off" bind:value={typed} /></label>
-			<div>
-				<button type="submit" disabled={!ok}>{t('account.data.restore')}</button>
-				<button type="button" disabled={busy} onclick={cancel}>{t('common.action.cancel')}</button>
+			<Field label={t('account.data.typeUsername', { username })} autocomplete="off" bind:value={typed} />
+			<div class="actions">
+				<Button type="submit" variant="primary" disabled={!ok}>{t('account.data.restore')}</Button>
+				<Button disabled={busy} onclick={cancel}>{t('common.action.cancel')}</Button>
 			</div>
 		</form>
 	{/if}
@@ -232,9 +236,9 @@
 			{#if droppedReviews}{t('account.data.droppedReviews', { count: droppedReviews })}{/if}
 			{t('account.data.reloadSoon')}
 		</p>
-		<p>
-			<button type="button" onclick={reload}>{t('account.data.reloadNow')}</button>
-			<button type="button" onclick={safety}>{t('account.data.downloadBefore')}</button>
+		<p class="actions">
+			<Button onclick={reload}>{t('account.data.reloadNow')}</Button>
+			<Button onclick={safety}>{t('account.data.downloadBefore')}</Button>
 		</p>
 	{/if}
 	{#if view?.status === 'failed'}
@@ -242,12 +246,27 @@
 	{/if}
 	{#if error}<p role="alert">{error}</p>{/if}
 	{#if view?.report}<p class="hint">{t('account.data.size', { size: formatBytes(view.report.bytes) })}</p>{/if}
-</section>
+</Section>
 
 <style>
-	.block { margin-bottom: 2rem; }
-	.stack { display: grid; gap: 0.9rem; max-width: 24rem; }
-	label { display: grid; gap: 0.25rem; }
-	.file { max-width: 24rem; margin: 0.5rem 0; }
-	.hint { color: var(--readable-muted); }
+	.stack {
+		display: grid;
+		gap: var(--space-3);
+		max-width: 24rem;
+	}
+
+	.file {
+		max-width: 24rem;
+		margin-block: var(--space-2);
+	}
+
+	.hint {
+		color: var(--readable-muted);
+	}
+
+	.actions {
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--space-2);
+	}
 </style>

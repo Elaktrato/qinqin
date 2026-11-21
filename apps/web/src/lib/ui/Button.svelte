@@ -42,10 +42,13 @@
 		onclick,
 		element = $bindable(),
 		children,
+		class: className = '',
 		...rest
 	}: Props = $props();
 
-	const classes = $derived(`button ${variant}${tone === 'danger' ? ' danger' : ''}`);
+	const classes = $derived(
+		`button ${variant}${tone === 'danger' ? ' danger' : ''}${className ? ` ${className}` : ''}`
+	);
 </script>
 
 {#if href}

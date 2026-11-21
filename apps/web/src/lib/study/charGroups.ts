@@ -96,7 +96,7 @@ function primarySubtag(code: string): string {
  * (sample)", "JLPT N5 mini (sample)"), so a user's own pack that happens
  * to be called "HSK Mini" stays visible.
  */
-function isSampleScheme(scheme: Scheme): boolean {
+export function isSampleScheme(scheme: Scheme): boolean {
 	if (scheme.packId !== undefined) return SAMPLE_PACK_IDS.has(scheme.packId);
 	const slug = scheme.name
 		.toLowerCase()

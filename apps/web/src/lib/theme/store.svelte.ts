@@ -2,7 +2,7 @@
 // `appearance` row, the device's light/dark preference, and an optional live
 // preview (Settings → Appearance). It paints only once both the themes and
 // the row are known, so the first paint (app.html: this device's last
-// tokens, else the compiled-in Latte/Mocha) is never overwritten by a guess;
+// tokens, else the compiled-in qinqin Day/Night) is never overwritten by a guess;
 // every real paint is kept as this device's last tokens. Offline without the
 // list, what is painted stays and a device switch repaints from the stored
 // tokens. A theme that is gone paints the slot default; the row is never
@@ -24,6 +24,7 @@ import {
 } from './appearance';
 import {
 	adjustmentVars,
+	animateThemeChange,
 	applyLastTokens,
 	applySlot,
 	lastTokensFor,
@@ -80,7 +81,7 @@ const defaultDeps: ThemeStoreDeps = {
 const COMPILED_IN: ListedTheme[] = FALLBACK_THEMES.map((t) => ({
 	...t,
 	family: t.family ?? '',
-	packId: 'catppuccin',
+	packId: 'qinqin',
 	builtin: true
 }));
 
@@ -100,7 +101,7 @@ export function createThemeStore(overrides: Partial<ThemeStoreDeps> = {}) {
 	let media: MediaQueryList | null = null;
 	const onMedia = (e: { matches: boolean }) => {
 		prefersDark = e.matches;
-		if (!paint()) {
+		if (!paint(true)) {
 			const last = loadLastTokens(deps.storage());
 			const root = deps.root();
 			if (last !== null && root !== null) applyLastTokens(last, prefersDark, root);
@@ -133,13 +134,18 @@ export function createThemeStore(overrides: Partial<ThemeStoreDeps> = {}) {
 		return themeOf(r.theme) ?? fallbackTheme(r.slot);
 	}
 
-	/** paint: true when it painted (the themes and the row, or a preview, are known). */
-	function paint(): boolean {
+	/**
+	 * paint: true when it painted (the themes and the row, or a preview, are known).
+	 * animate: a person-initiated switch cross-fades the colours; the first
+	 * paint and a row/theme-list load do not.
+	 */
+	function paint(animate = false): boolean {
 		const root = deps.root();
 		if (root === null || !themesLoaded || (!rowLoaded && preview === null)) return false;
 		const a = preview ?? appearance;
 		const pair = resolveFor(a);
 		const current = pair[pair.slot];
+		if (animate) animateThemeChange(root);
 		applySlot(slotTokens(painted(current), current.accent), adjustmentVars(a), root);
 		if (preview === null) {
 			const last = lastTokensFor(a, painted(pair.light), pair.light.accent, painted(pair.dark), pair.dark.accent);
@@ -231,7 +237,7 @@ export function createThemeStore(overrides: Partial<ThemeStoreDeps> = {}) {
 		/** setPreview paints a choice without saving it; null returns to the saved one. */
 		setPreview(a: Appearance | null): void {
 			preview = a;
-			if (!paint() && a === null) {
+			if (!paint(true) && a === null) {
 				const last = loadLastTokens(deps.storage());
 				const root = deps.root();
 				if (last !== null && root !== null) applyLastTokens(last, prefersDark, root);
@@ -259,7 +265,7 @@ export function createThemeStore(overrides: Partial<ThemeStoreDeps> = {}) {
 			await deps.saveRow(next);
 			row = next;
 			rowLoaded = true;
-			paint();
+			paint(true);
 		}
 	};
 }

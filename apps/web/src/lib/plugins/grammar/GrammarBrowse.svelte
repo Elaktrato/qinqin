@@ -12,6 +12,7 @@
 	import { grammarHref } from './route';
 	import type { PackInfo, Progress } from './types';
 	import type { Scheme } from '$lib/api/types';
+	import { Chip, Section } from '$lib/ui';
 
 	const workspace = $derived($workspaces.current);
 
@@ -73,12 +74,11 @@
 		</p>
 	{:else}
 		{#each sections as section (section.packId)}
-			<section aria-labelledby={`pack-${section.packId}`}>
-				<h2 id={`pack-${section.packId}`} class="pack">{section.packName}</h2>
+			<Section title={section.packName}>
 				{#each section.levels as level (level.id)}
 					<h3 class="level">
 						{level.name}
-						{#each level.badges as badge (badge)}<span class="badge">{badge}</span>{/each}
+						{#each level.badges as badge (badge)}<Chip>{badge}</Chip>{/each}
 					</h3>
 					<ul class="lessons">
 						{#each level.lessons as lesson (lesson.id)}
@@ -106,80 +106,62 @@
 				<p class="credits">
 					{section.credits.license} · {section.credits.attribution}
 				</p>
-			</section>
+			</Section>
 		{/each}
 	{/if}
 </div>
 
 <style>
-	.grammar {
-		max-width: 46rem;
-		margin: 0 auto;
-		padding: 1rem;
-	}
-
+		/* No second page container: .page-body owns the column (#106). */
 	.lang {
-		font-weight: 400;
+		font-weight: var(--weight-regular);
 		color: var(--readable-muted);
-	}
-
-	.pack {
-		margin: 1.5rem 0 0;
-		font-size: 1rem;
-		color: var(--readable-muted);
-		font-weight: 600;
 	}
 
 	.level {
 		display: flex;
 		flex-wrap: wrap;
 		align-items: center;
-		gap: 0.5rem;
-		margin: 1rem 0 0.4rem;
-		font-size: 1.15rem;
+		gap: var(--space-2);
+		margin-block: var(--space-4) var(--space-1);
+		font-size: var(--font-size-l);
 	}
 
-	.badge {
-		padding: 0.05rem 0.5rem;
-		border-radius: 999px;
-		border: 1px solid color-mix(in srgb, currentColor 35%, transparent);
-		font-size: 0.8rem;
-		font-weight: 600;
-	}
-
+	/* Points are hairline rows, not cards (#106). */
 	.lessons {
 		list-style: none;
 		margin: 0;
 		padding: 0;
-		display: grid;
-		gap: 0.4rem;
+	}
+
+	.lessons li + li {
+		border-top: 1px solid var(--hair);
 	}
 
 	.lesson {
 		display: flex;
 		align-items: center;
-		gap: 0.75rem;
-		min-height: 44px;
-		padding: 0.5rem 0.75rem;
-		border: 1px solid color-mix(in srgb, currentColor 22%, transparent);
-		border-radius: 0.5rem;
+		gap: var(--space-3);
+		min-height: var(--hit);
+		padding-block: var(--space-2);
 		color: inherit;
 		text-decoration: none;
 	}
 
-	.lesson:hover {
-		border-color: var(--accent);
+	.lesson:hover .title {
+		text-decoration: underline;
+		text-underline-offset: 0.15em;
 	}
 
 	.lesson:focus-visible {
-		outline: 2px solid var(--focus-colour);
-		outline-offset: 2px;
+		outline: var(--focus-ring);
+		outline-offset: var(--focus-ring-offset);
 	}
 
 	.done {
 		width: 1.25rem;
 		color: var(--good);
-		font-weight: 700;
+		font-weight: var(--weight-strong);
 		text-align: center;
 	}
 
@@ -190,27 +172,28 @@
 	}
 
 	.title {
-		font-weight: 600;
+		font-weight: var(--weight-medium);
 	}
 
 	.summary {
-		font-size: 0.9rem;
+		font-size: var(--font-size-s);
 		color: var(--readable-muted);
 	}
 
 	.score {
 		font-variant-numeric: tabular-nums;
-		font-weight: 600;
+		font-weight: var(--weight-medium);
 	}
 
 	.credits {
-		margin: 1rem 0 0;
-		font-size: 0.85rem;
+		margin-block: var(--space-4) 0;
+		font-size: var(--font-size-label);
 		color: var(--readable-muted);
 	}
 
 	.error {
 		color: var(--readable-bad);
+		font-weight: var(--weight-medium);
 		padding-inline-start: var(--space-2);
 		border-inline-start: 3px solid var(--bad);
 	}

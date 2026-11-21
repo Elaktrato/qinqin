@@ -35,6 +35,7 @@
 	import type { MessageKey } from '$lib/i18n';
 	import { allWidgets } from '$lib/widgets/registry';
 	import { currentLanguage } from '$lib/workspaces';
+	import { Button, Chip, Panel, Section } from '$lib/ui';
 
 	// The layout as the editor shows it (null = nothing stored, so the
 	// default) and the last one the server confirmed, for Discard.
@@ -47,8 +48,8 @@
 	let saveError = $state('');
 	let announcement = $state('');
 	let confirmingReset = $state(false);
-	let resetButton = $state<HTMLButtonElement | null>(null);
-	let resetConfirm = $state<HTMLButtonElement | null>(null);
+	let resetButton = $state<HTMLElement | undefined>(undefined);
+	let resetConfirm = $state<HTMLElement | undefined>(undefined);
 
 	// The home heatmap's layout (the `widget-options` row, separate from the
 	// layout): saved on change, re-read before the write so other keys survive.
@@ -345,7 +346,7 @@
 	<p>{t('settings.home.loading')}</p>
 {:else if loadStatus === 'error'}
 	<p class="error" role="alert">{loadError}</p>
-	<button type="button" onclick={load}>{t('settings.home.retry')}</button>
+	<Button onclick={load}>{t('settings.home.retry')}</Button>
 {:else}
 	<div class="toolbar">
 		<span class="save-status" class:failed={saveStatus === 'error'}>
@@ -358,27 +359,21 @@
 		{#if confirmingReset}
 			<span class="confirm" role="group" aria-label={t('settings.home.resetLabel')}>
 				<span>{t('settings.home.resetConfirm', { widgets: defaultTitles })}</span>
-				<button type="button" bind:this={resetConfirm} onclick={() => closeReset(true)}>{t('settings.home.reset')}</button>
-				<button type="button" class="secondary" onclick={() => closeReset(false)}>{t('common.action.cancel')}</button>
+				<Button bind:element={resetConfirm} onclick={() => closeReset(true)}>{t('settings.home.reset')}</Button>
+				<Button variant="plain" onclick={() => closeReset(false)}>{t('common.action.cancel')}</Button>
 			</span>
 		{:else}
-			<button
-				type="button"
-				class="secondary"
-				bind:this={resetButton}
-				disabled={isDefault}
-				onclick={askReset}
-			>
+			<Button bind:element={resetButton} disabled={isDefault} onclick={askReset}>
 				{t('settings.home.resetLabel')}
-			</button>
+			</Button>
 		{/if}
 	</div>
 
 	{#if saveStatus === 'error'}
 		<div class="save-error" role="alert">
 			<p>{t('settings.home.saveFailed', { reason: saveError })}</p>
-			<button type="button" onclick={persist}>{t('settings.home.retry')}</button>
-			<button type="button" class="secondary" onclick={discard}>{t('settings.home.discard')}</button>
+			<Button onclick={persist}>{t('settings.home.retry')}</Button>
+			<Button variant="plain" onclick={discard}>{t('settings.home.discard')}</Button>
 		</div>
 	{/if}
 
@@ -387,28 +382,30 @@
 	{:else if $pluginStates.status === 'error'}
 		<p class="error">
 			{t('settings.home.pluginsFailed')}
-			<button type="button" class="secondary" onclick={loadPluginStates}>{t('settings.home.retry')}</button>
+			<Button variant="plain" onclick={loadPluginStates}>{t('settings.home.retry')}</Button>
 		</p>
 	{/if}
 
-	<h3 id="home-on-heading">{t('settings.home.on')}</h3>
-	{#if onItems.length === 0}
-		<p class="hint">{t('settings.home.noWidgets')}</p>
-	{:else}
-		<ol class="items" aria-labelledby="home-on-heading">
-			{#each onItems as item, index (item.widget.id)}
-				{@render row(item, index)}
-			{/each}
-		</ol>
-	{/if}
+	<Section title={t('settings.home.on')} level={3}>
+		{#if onItems.length === 0}
+			<p class="hint">{t('settings.home.noWidgets')}</p>
+		{:else}
+			<ol class="items">
+				{#each onItems as item, index (item.widget.id)}
+					{@render row(item, index)}
+				{/each}
+			</ol>
+		{/if}
+	</Section>
 
 	{#if offItems.length > 0}
-		<h3 id="home-off-heading">{t('settings.home.off')}</h3>
-		<ul class="items" aria-labelledby="home-off-heading">
-			{#each offItems as item, index (item.widget.id)}
-				{@render row(item, index)}
-			{/each}
-		</ul>
+		<Section title={t('settings.home.off')} level={3}>
+			<ul class="items">
+				{#each offItems as item, index (item.widget.id)}
+					{@render row(item, index)}
+				{/each}
+			</ul>
+		</Section>
 	{/if}
 
 	{#if parked.length > 0}
@@ -419,19 +416,23 @@
 		</p>
 	{/if}
 
-	<h3 id="home-preview-heading">{t('settings.home.preview')}</h3>
-	<p class="hint">
-		{language ? t('settings.home.previewHintLanguage', { language }) : t('settings.home.previewHint')}
-	</p>
-	{#if preview.length === 0}
-		<p class="preview-empty">{t('settings.home.previewEmpty')}</p>
-	{:else}
-		<ol class="preview" aria-labelledby="home-preview-heading">
-			{#each preview as { widget, span } (widget.id)}
-				<li class:span>{widget.title}</li>
-			{/each}
-		</ol>
-	{/if}
+	<Section title={t('settings.home.preview')} level={3}>
+		<p class="hint">
+			{language ? t('settings.home.previewHintLanguage', { language }) : t('settings.home.previewHint')}
+		</p>
+		{#if preview.length === 0}
+			<p class="preview-empty">{t('settings.home.previewEmpty')}</p>
+		{:else}
+			<!-- Panel raised: the arrangement preview is a separate object (#106). -->
+			<Panel raised>
+				<ol class="preview">
+					{#each preview as { widget, span } (widget.id)}
+						<li class:span>{widget.title}</li>
+					{/each}
+				</ol>
+			</Panel>
+		{/if}
+	</Section>
 {/if}
 
 {#snippet row(item: EditorItem, index: number)}
@@ -466,7 +467,7 @@
 		<div class="text">
 			<div class="title-row">
 				<strong id="widget-title-{id}">{item.widget.title}</strong>
-				<span class="owner">{ownerLabel(item.widget.owner)}</span>
+				<Chip>{ownerLabel(item.widget.owner)}</Chip>
 				{#if item.position !== null}
 					<span class="position">{t('settings.home.position', { position: item.position, count: item.onCount })}</span>
 				{/if}
@@ -523,21 +524,19 @@
 			</label>
 			{#if item.on}
 				<span class="moves">
-					<button
-						type="button"
-						class="secondary move"
+					<Button
+						variant="plain"
 						id="widget-up-{id}"
 						disabled={item.position === 1}
 						aria-label={t('settings.home.moveUpLabel', { widget: item.widget.title })}
-						onclick={() => move(item, -1)}>{t('settings.home.moveUp')}</button
+						onclick={() => move(item, -1)}>{t('settings.home.moveUp')}</Button
 					>
-					<button
-						type="button"
-						class="secondary move"
+					<Button
+						variant="plain"
 						id="widget-down-{id}"
 						disabled={item.position === item.onCount}
 						aria-label={t('settings.home.moveDownLabel', { widget: item.widget.title })}
-						onclick={() => move(item, 1)}>{t('settings.home.moveDown')}</button
+						onclick={() => move(item, 1)}>{t('settings.home.moveDown')}</Button
 					>
 				</span>
 			{/if}
@@ -600,18 +599,13 @@
 		margin: 0;
 	}
 
-	h3 {
-		margin: 1.5rem 0 0.5rem;
-		font-size: 1rem;
-	}
-
 	.toolbar {
 		display: flex;
 		flex-wrap: wrap;
 		align-items: center;
 		justify-content: flex-end;
-		gap: 0.5rem 0.75rem;
-		min-height: 2.75rem;
+		gap: var(--space-2) var(--space-3);
+		min-height: var(--hit);
 	}
 
 	.save-status {
@@ -623,15 +617,14 @@
 		display: flex;
 		flex-wrap: wrap;
 		align-items: center;
-		gap: 0.5rem;
+		gap: var(--space-2);
 	}
 
+	/* One hairline row per widget, not a card (#106). */
 	.items {
 		list-style: none;
 		margin: 0;
 		padding: 0;
-		display: grid;
-		gap: 0.5rem;
 	}
 
 	.item {
@@ -639,15 +632,16 @@
 		display: flex;
 		flex-wrap: wrap;
 		align-items: flex-start;
-		gap: 0.5rem 0.75rem;
-		border: 1px solid color-mix(in srgb, currentColor 18%, transparent);
-		border-radius: 0.4rem;
-		padding: 0.6rem 0.75rem;
-		background: var(--panel);
+		gap: var(--space-2) var(--space-3);
+		padding-block: var(--space-3);
 	}
 
-	.item.off {
-		border-style: dashed;
+	.item + .item {
+		border-top: 1px solid var(--hair);
+	}
+
+	.item.off .title-row {
+		color: var(--readable-muted);
 	}
 
 	.item.dragging {
@@ -679,7 +673,7 @@
 		align-items: center;
 		justify-content: center;
 		width: 1.75rem;
-		min-height: 2.75rem;
+		min-height: var(--hit);
 		margin-left: -0.35rem;
 		cursor: grab;
 		touch-action: none;
@@ -699,25 +693,17 @@
 		display: flex;
 		flex-wrap: wrap;
 		align-items: baseline;
-		gap: 0.25rem 0.5rem;
-	}
-
-	.owner,
-	.position {
-		font-size: 0.8rem;
-		border: 1px solid color-mix(in srgb, currentColor 35%, transparent);
-		border-radius: 999px;
-		padding: 0.05rem 0.5rem;
+		gap: var(--space-1) var(--space-2);
 	}
 
 	.position {
-		border-color: transparent;
+		font-size: var(--font-size-label);
 		color: var(--readable-muted);
 	}
 
 	.description,
 	.reason {
-		margin: 0.25rem 0 0;
+		margin: var(--space-1) 0 0;
 	}
 
 	.description {
@@ -726,7 +712,7 @@
 
 	/* Why the widget does not apply: --text with the --warn bar as the cue. */
 	.reason {
-		font-size: 0.9rem;
+		font-size: var(--font-size-s);
 		padding-inline-start: var(--space-2);
 		border-inline-start: 3px solid var(--warn);
 	}
@@ -735,21 +721,21 @@
 		display: flex;
 		flex-wrap: wrap;
 		align-items: center;
-		gap: 0.5rem;
+		gap: var(--space-2);
 	}
 
 	/* The two move buttons wrap as a pair. */
 	.moves {
 		display: flex;
-		gap: 0.5rem;
+		gap: var(--space-2);
 	}
 
 	.switch {
 		position: relative;
 		display: inline-flex;
 		align-items: center;
-		gap: 0.5rem;
-		min-height: 2.75rem;
+		gap: var(--space-2);
+		min-height: var(--hit);
 		cursor: pointer;
 	}
 
@@ -773,8 +759,8 @@
 		width: 2.5rem;
 		height: 1.4rem;
 		border-radius: 999px;
-		background: color-mix(in srgb, currentColor 30%, transparent);
-		transition: background 0.15s;
+		background: var(--line);
+		transition: background var(--motion-fast) var(--ease-standard);
 	}
 
 	.track::after {
@@ -786,7 +772,7 @@
 		height: 1.1rem;
 		border-radius: 50%;
 		background: var(--panel);
-		transition: transform 0.15s;
+		transition: transform var(--motion-fast) var(--ease-standard);
 	}
 
 	.switch input:checked + .track {
@@ -798,43 +784,15 @@
 	}
 
 	.switch input:focus-visible + .track {
-		outline: 2px solid var(--focus-colour);
-		outline-offset: 2px;
-	}
-
-	button {
-		font: inherit;
-		padding: 0.45rem 0.85rem;
-		border: 0;
-		border-radius: 0.4rem;
-		background: var(--accent);
-		color: var(--on-accent);
-		font-weight: 600;
-		cursor: pointer;
-	}
-
-	button.secondary {
-		border: 1px solid color-mix(in srgb, currentColor 35%, transparent);
-		background: transparent;
-		color: inherit;
-		font-weight: 500;
-	}
-
-	button:disabled {
-		opacity: 0.45;
-		cursor: default;
-	}
-
-	button.move {
-		min-height: 2.75rem;
-		min-width: 2.75rem;
+		outline: var(--focus-ring);
+		outline-offset: var(--focus-ring-offset);
 	}
 
 	.error,
 	.save-error p {
-		margin: 0.5rem 0;
+		margin-block: var(--space-2);
 		color: var(--readable-bad);
-		font-weight: 600;
+		font-weight: var(--weight-medium);
 		padding-inline-start: var(--space-2);
 		border-inline-start: 3px solid var(--bad);
 	}
@@ -843,8 +801,8 @@
 		display: flex;
 		flex-wrap: wrap;
 		align-items: center;
-		gap: 0.5rem;
-		margin: 0.5rem 0;
+		gap: var(--space-2);
+		margin-block: var(--space-2);
 	}
 
 	.save-error p {
@@ -852,28 +810,26 @@
 	}
 
 	.parked {
-		margin-top: 0.75rem;
+		margin-top: var(--space-3);
 	}
 
 	.preview {
 		list-style: none;
 		margin: 0;
-		padding: 0.5rem;
+		padding: 0;
 		display: grid;
 		grid-template-columns: repeat(2, minmax(0, 1fr));
-		gap: 0.4rem;
+		gap: var(--space-1);
 		max-width: 28rem;
-		border: 1px solid color-mix(in srgb, currentColor 18%, transparent);
-		border-radius: 0.4rem;
 		counter-reset: preview;
 	}
 
 	.preview li {
 		counter-increment: preview;
-		padding: 0.6rem 0.5rem;
-		border-radius: 0.3rem;
-		background: color-mix(in srgb, var(--accent) 14%, transparent);
-		font-size: 0.9rem;
+		padding: var(--space-2);
+		border-radius: var(--radius);
+		background: var(--accent-14);
+		font-size: var(--font-size-s);
 		overflow-wrap: anywhere;
 	}
 

@@ -617,6 +617,75 @@ mark.hl { background: color-mix(in srgb, var(--warn) 24%, transparent); color: i
 .sp-week b { font-weight: 600; font-size: 14px; }
 .sp-week .ib[disabled] { opacity: .35; }
 .sp-wbars { gap: 8px; height: 100px; }
+
+/* ---------- lotus sketch ---------- */
+.lotus-row { display: flex; gap: 14px; flex-wrap: wrap; }
+.lotus-row .ls { display: grid; justify-items: center; gap: 6px; text-align: center; }
+.lotus-row .ls .t { display: grid; place-items: center; border-radius: calc(var(--r) * .7); background: color-mix(in srgb, var(--raised) 55%, transparent); }
+.lotus-row.big .ls .t { width: 86px; height: 86px; }
+.lotus-row.big .ls .t svg { width: 70px; height: 70px; }
+.lotus-row .ls b { font-size: 13px; font-weight: 600; }
+.lotus-row .ls small { color: var(--muted); font-size: 11.5px; display: block; }
+.lotus-row.s24 { gap: 4px; }
+.lotus-row.s24 .t, .lotus-row.s40 .t { display: grid; place-items: center; border-radius: 5px; background: color-mix(in srgb, var(--raised) 55%, transparent); }
+.lotus-row.s24 .t { width: 28px; height: 28px; }
+.lotus-row.s24 .t svg { width: 24px; height: 24px; }
+.lotus-row.s40 { gap: 6px; }
+.lotus-row.s40 .t { width: 48px; height: 48px; }
+.lotus-row.s40 .t svg { width: 40px; height: 40px; }
+.lotus-sizes { display: flex; gap: 36px; flex-wrap: wrap; }
+.lotus-sizes > div { display: grid; gap: 8px; }
+.lotus-sizes .muted { font-size: 12.5px; }
+.lotus-themes { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 10px; }
+.lt { border-radius: var(--r); padding: 10px 12px; display: grid; gap: 6px; background: var(--panel); color: var(--text); box-shadow: 0 0 0 1px var(--line); }
+.lt p { font-size: 12px; color: var(--muted); }
+.lt .lotus-row { gap: 3px; }
+.lt .t { width: 34px; height: 34px; border-radius: 6px; display: grid; place-items: center; background: color-mix(in srgb, var(--raised) 60%, transparent); }
+.lt .t svg { width: 28px; height: 28px; }
+.lotus-notes { margin: 0; padding-left: 1.1em; display: grid; gap: 6px; color: var(--muted); max-width: 75ch; }
+.lotus-notes b { color: var(--text); font-weight: 600; }
+
+/* ---------- house theme comparison ---------- */
+.pal { display: flex; gap: 0; border-radius: var(--r); overflow: hidden; box-shadow: 0 0 0 1px var(--line); max-width: 640px; }
+.pal-s { flex: 1; height: 54px; display: flex; align-items: flex-end; padding: 4px 6px; }
+.pal-s small { font-size: 10.5px; font-family: ui-monospace, monospace; color: #fff; mix-blend-mode: difference; }
+.house-grid { display: grid; gap: 22px; }
+.hdir { display: grid; gap: 10px; }
+.hdir-h { display: flex; gap: 12px; align-items: baseline; flex-wrap: wrap; }
+.hdir-h h3 { font-size: 1.05rem; }
+.hpair { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 12px; }
+.hp { background: var(--chrome); color: var(--text); border-radius: 14px; padding: 8px; display: grid; gap: 0; box-shadow: 0 0 0 1px var(--line); font-size: 13px; }
+.hp-bar { display: flex; align-items: center; gap: 10px; padding: 4px 8px 10px; }
+.hp-bar .b { font-family: var(--brand); font-weight: 900; font-size: 18px; color: var(--text); }
+.hp-bar .ic { display: flex; gap: 12px; margin: 0 auto; }
+.hp-bar .ic i { width: 14px; height: 14px; border-radius: 4px; box-shadow: inset 0 0 0 1.5px var(--muted); opacity: .8; }
+.hp-bar .ic i.on { box-shadow: inset 0 0 0 1.5px var(--accent); opacity: 1; }
+.hp-bar .av { width: 20px; height: 20px; border-radius: 50%; background: color-mix(in srgb, var(--accent) 22%, transparent); color: var(--accent); font-size: 10px; font-weight: 700; display: grid; place-items: center; }
+.hp-body { background: var(--panel); border-radius: 10px; box-shadow: 0 0 0 1px color-mix(in srgb, var(--line) 55%, transparent); padding: 14px 16px; display: grid; gap: 12px; }
+.hp-greet { display: flex; gap: 8px; align-items: baseline; }
+.hp-greet b { font-size: 16px; font-weight: 600; }
+.hp-greet span { color: var(--muted); font-size: 12px; }
+.hp-row { display: flex; gap: 18px; align-items: center; flex-wrap: wrap; }
+.hp-num b { font-size: 24px; font-weight: 400; letter-spacing: -0.02em; }
+.hp-num span { color: var(--muted); font-size: 11.5px; margin-left: 3px; }
+.hp-btn { margin-left: auto; background: color-mix(in srgb, var(--accent) 14%, transparent); color: var(--accent); font-weight: 600; border-radius: 8px; padding: 6px 12px; font-size: 12.5px; }
+.hp-week { display: flex; gap: 4px; }
+.hp-week .t { flex: 1; aspect-ratio: 1; max-width: 40px; border-radius: 7px; display: grid; place-items: center; background: color-mix(in srgb, var(--raised) 60%, transparent); }
+.hp-week .t svg { width: 82%; height: 82%; }
+.hp-week .t.today { box-shadow: 0 0 0 1.5px var(--accent); }
+.hp-read { font-family: var(--cjk); font-size: 16px; line-height: 2; }
+.hp-read rt { font-family: var(--ui); font-size: 9px; color: var(--muted); }
+.hp-read .n { background: linear-gradient(var(--accent), var(--accent)) 0 92% / 100% 1.5px no-repeat; }
+.hp-read .l { background: repeating-linear-gradient(90deg, var(--warn) 0 3px, transparent 3px 6px) 0 92% / 100% 1.5px no-repeat; }
+.hp-read mark { background: color-mix(in srgb, var(--warn) 24%, transparent); color: inherit; }
+.hp-grades { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; text-align: center; font-weight: 600; font-size: 12.5px; }
+.hp-grades span { padding: 5px 0 6px; box-shadow: inset 0 -2px 0 color-mix(in srgb, currentColor 35%, transparent); }
+.hp-grades span.s { box-shadow: inset 0 -2px 0 currentColor; background: color-mix(in srgb, currentColor 10%, transparent); }
+.hp-acc { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; font-size: 11px; color: var(--muted); }
+.hp-acc i { width: 14px; height: 14px; border-radius: 50%; }
+.hp-try { font: inherit; font-size: 12.5px; font-weight: 600; border: 0; cursor: pointer; background: transparent; color: var(--accent); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--line) 70%, transparent); border-radius: 8px; padding: 5px 10px; justify-self: start; }
+.hp-foot { display: flex; gap: 8px; align-items: center; padding: 8px 6px 2px; flex-wrap: wrap; }
+.hp-foot small { color: var(--muted); font-size: 11.5px; }
 @media (prefers-reduced-motion: no-preference) {
 	.tile.today svg { animation: sway 3.2s ease-in-out infinite; transform-origin: 50% 85%; }
 	@keyframes sway { 0%, 100% { transform: rotate(-3deg); } 50% { transform: rotate(3deg); } }
@@ -654,15 +723,15 @@ mark.hl { background: color-mix(in srgb, var(--warn) 24%, transparent); color: i
 
 <div class="page">
 	<header class="intro">
-		<span class="eyebrow">Visual rework · round 6</span>
-		<h1>Reader, journal, search, entries and stats</h1>
-		<p class="lede">The reader, journal, search, dictionary entries and stats in the lighter design. The reader shows a chapter of Lu Xun's 故乡 (public domain) with the lookup open; the journal shows an entry while writing and after the AI review, with its corrections. Everything further down is decided, including the lighter weight (the Weight switch still compares it with round 3). Tell me in the chat what you think of them.</p>
+		<span class="eyebrow">Visual rework · house theme</span>
+		<h1>qinqin Day, Night and Deep</h1>
+		<p class="lede">The house theme built from your seven colours: qinqin Day (light), qinqin Night (dark, on the violet-indigo) and qinqin Deep (dark, on the navy). The page now starts on Day or Night, matching your device, so every mock below is already in it. Your palette has no red, orange or green, so the grade and state colours are picked to sit beside the blues. Everything passes the contrast checks. The three earlier directions stay as extra themes.</p>
 	</header>
 
 	<section aria-labelledby="themes-h">
 		<div class="sechead">
 			<h2 id="themes-h">Themes and your own adjustments</h2>
-			<p>A theme is a named set of colours. On top of it, each person can change the accent, the corner style, the spacing and the font used for hanzi and kanji. The page starts on Catppuccin Latte or Mocha, matching your device's light or dark setting.</p>
+			<p>A theme is a named set of colours. On top of it, each person can change the accent, the corner style, the spacing and the font used for hanzi and kanji. The page starts on qinqin Day or qinqin Night, matching your device's light or dark setting.</p>
 		</div>
 		<div class="controls">
 			<div class="ctl-row"><span class="lbl">Weight</span>
@@ -675,6 +744,50 @@ mark.hl { background: color-mix(in srgb, var(--warn) 24%, transparent); color: i
 				<div class="seg" id="density"><button type="button" data-v="0.75">Compact</button><button type="button" data-v="1" aria-pressed="true">Comfortable</button></div></div>
 			<div class="ctl-row"><span class="lbl">Hanzi font</span>
 				<div class="seg" id="cjk"><button type="button" data-v="sans" aria-pressed="true">Sans</button><button type="button" data-v="serif">Serif</button><button type="button" data-v="kai">Brush (kai)</button></div></div>
+		</div>
+	</section>
+
+	<section aria-labelledby="house-h">
+		<div class="sechead">
+			<h2 id="house-h">The house theme</h2>
+			<div class="pal"><span class="pal-s" style="background:#ffffff"><small>#ffffff</small></span><span class="pal-s" style="background:#0ce6f2"><small>#0ce6f2</small></span><span class="pal-s" style="background:#0098db"><small>#0098db</small></span><span class="pal-s" style="background:#1e579c"><small>#1e579c</small></span><span class="pal-s" style="background:#203562"><small>#203562</small></span><span class="pal-s" style="background:#252446"><small>#252446</small></span><span class="pal-s" style="background:#201533"><small>#201533</small></span></div>
+			<p>Below the house theme, the three earlier directions, kept as extra themes. <b>A · Ink &amp; neon:</b> plain ink-grey surfaces like the logo's brush on paper, with neon accents (magenta, cyan, lime). Calm until something is coloured.
+			<b>B · Pigments:</b> the traditional painter's pigments (胭脂 rouge, 朱 vermilion, 藤黄 gamboge, 石绿 malachite, 群青 ultramarine) on an indigo night and a pale celadon day. Saturated, and rooted in the two languages; the accent names carry the hanzi.
+			<b>C · Pop clash:</b> the wildest. Tinted surfaces (grape purple at night, bubblegum pink by day) with clashing complementaries (acid yellow on purple, cream text). Closest to the funky colours you like.</p>
+		</div>
+		<div class="house-grid" id="house-grid"></div>
+	</section>
+
+	<section aria-labelledby="lotus-h">
+		<div class="sechead">
+			<h2 id="lotus-h">Lotus stages</h2>
+			<p>Each stage uses four colour areas the app recolours from the theme: petals in the accent colour, the pad and stem in the theme's green, the seed pod in the warning yellow, and the water in the line colour. Petals that sit further back are the same colour with less opacity, so no outlines are needed.</p>
+		</div>
+		<div class="hcard">
+			<h3>Large (week strip, about 70 px)</h3>
+			<div class="lotus-row big" id="lotus-big"></div>
+		</div>
+		<div class="hcard">
+			<h3>Actual heatmap sizes</h3>
+			<div class="lotus-sizes">
+				<div><p class="muted">Garden grid tile, 24 px</p><div class="lotus-row s24" id="lotus-24"></div></div>
+				<div><p class="muted">Month calendar, 40 px</p><div class="lotus-row s40" id="lotus-40"></div></div>
+			</div>
+		</div>
+		<div class="hcard">
+			<h3>In every theme</h3>
+			<div class="lotus-themes" id="lotus-themes"></div>
+		</div>
+		<div class="hcard">
+			<h3>Notes for drawing</h3>
+			<ul class="lotus-notes">
+				<li><b>Grid:</b> 24 × 24 units; keep the water line near the bottom (y ≈ 19–20) so every stage stands on the same base.</li>
+				<li><b>Colour areas only:</b> flat fills, no gradients, no outlines, no baked-in colours. Mark each shape as petal, pad/stem, seed pod or water; the app colours them.</li>
+				<li><b>Depth by opacity:</b> back petals about 70%, middle about 85%, front 100%.</li>
+				<li><b>Read at 24 px:</b> the bud and the open bloom must be told apart by silhouette alone (tall and narrow vs wide), not by detail.</li>
+				<li><b>Resting:</b> a closed flower, quieter than the bud (lower opacity), with a small moon. It should not look wilted or sad.</li>
+				<li><b>Tone:</b> cheerful and colourful. Avoid a lone white lotus on a dark ground (the funerary look).</li>
+			</ul>
 		</div>
 	</section>
 
@@ -1142,6 +1255,15 @@ mark.hl { background: color-mix(in srgb, var(--warn) 24%, transparent); color: i
 		accents: { mauve: c.mauve, pink: c.pink, red: c.red, peach: c.peach, yellow: c.yellow, green: c.green, teal: c.teal, sky: c.sky, blue: c.blue, lavender: c.lavender },
 		grades: [c.red, c.peach, c.green, c.blue], accent: 'mauve' });
 	const THEMES = {
+		hDl: {"name": "qinqin Day", "group": "qinqin", "dark": false, "chrome": "#e3f4fa", "panel": "#ffffff", "raised": "#eef9fd", "line": "#c6e2ee", "text": "#201533", "muted": "#4b4d73", "board": "#e3f4fa", "good": "#0b8457", "warn": "#946500", "bad": "#d2294f", "accents": {"azure": "#0077b3", "blue": "#1e579c", "navy": "#203562", "teal": "#00808a", "violet": "#6b3fd6", "pink": "#c4237a"}, "grades": ["#d2294f", "#bd5200", "#0b8457", "#0077b3"], "accent": "azure"},
+		hDd: {"name": "qinqin Night", "group": "qinqin", "dark": true, "chrome": "#201533", "panel": "#252446", "raised": "#203562", "line": "#1e579c", "text": "#ffffff", "muted": "#aebbdb", "board": "#201533", "good": "#5fe39a", "warn": "#ffc857", "bad": "#ff6b8b", "accents": {"cyan": "#0ce6f2", "azure": "#0098db", "sky": "#7ab8ff", "violet": "#b69cff", "pink": "#ff7ab8", "gold": "#ffd166"}, "grades": ["#ff6b8b", "#ffa45c", "#5fe39a", "#0098db"], "accent": "cyan"},
+		hDp: {"name": "qinqin Deep", "group": "qinqin", "dark": true, "chrome": "#201533", "panel": "#203562", "raised": "#284373", "line": "#1e579c", "text": "#ffffff", "muted": "#b8c6e6", "board": "#201533", "good": "#6ee7a5", "warn": "#ffcf66", "bad": "#ff7b96", "accents": {"cyan": "#0ce6f2", "sky": "#5cc6ff", "periwinkle": "#9fb4ff", "violet": "#c2a8ff", "pink": "#ff8cc2", "gold": "#ffd166"}, "grades": ["#ff7b96", "#ffab66", "#6ee7a5", "#5cc6ff"], "accent": "cyan"},
+		hAl: {"name": "Neon Day", "group": "House draft A · Ink & neon", "dark": false, "chrome": "#e7e7ec", "panel": "#fafafc", "raised": "#f0f0f4", "line": "#d4d4dc", "text": "#18181d", "muted": "#5a5a65", "board": "#e7e7ec", "good": "#13803a", "warn": "#9a6200", "bad": "#cc1a3f", "accents": {"magenta": "#c7128f", "violet": "#6a3fe0", "cyan": "#00799a", "tangerine": "#bb4f00", "lime": "#4a7d00"}, "grades": ["#cc1a3f", "#c25200", "#13803a", "#0068b3"], "accent": "magenta"},
+		hAd: {"name": "Neon Night", "group": "House draft A · Ink & neon", "dark": true, "chrome": "#0b0b0e", "panel": "#151518", "raised": "#222227", "line": "#35353d", "text": "#ededf2", "muted": "#a5a5b0", "board": "#0b0b0e", "good": "#4ade80", "warn": "#facc15", "bad": "#ff4d6d", "accents": {"magenta": "#ff4fd8", "violet": "#a98bff", "cyan": "#2ee6ff", "tangerine": "#ff8a2e", "lime": "#c6ff3d"}, "grades": ["#ff4d6d", "#ff8a2e", "#4ade80", "#2ee6ff"], "accent": "magenta"},
+		hBl: {"name": "Celadon", "group": "House draft B · Pigments", "dark": false, "chrome": "#dfe9e3", "panel": "#f3f8f5", "raised": "#e8f0eb", "line": "#c3d2ca", "text": "#1b2331", "muted": "#4f5b69", "board": "#dfe9e3", "good": "#0b7f57", "warn": "#9a6a00", "bad": "#c8321f", "accents": {"rouge 胭脂": "#c42a62", "vermilion 朱": "#c8321f", "gamboge 藤黄": "#926400", "malachite 石绿": "#0b7f57", "ultramarine 群青": "#3446c9", "violet 紫": "#7b35c9"}, "grades": ["#c8321f", "#b85a00", "#0b7f57", "#3446c9"], "accent": "rouge 胭脂"},
+		hBd: {"name": "Indigo", "group": "House draft B · Pigments", "dark": true, "chrome": "#0d1222", "panel": "#151c31", "raised": "#212a45", "line": "#343f60", "text": "#e9e7f1", "muted": "#aab0c9", "board": "#0d1222", "good": "#3fd6a0", "warn": "#ffc93d", "bad": "#ff6a5c", "accents": {"rouge 胭脂": "#ff6b9a", "vermilion 朱": "#ff7a52", "gamboge 藤黄": "#ffc93d", "malachite 石绿": "#3fd6a0", "ultramarine 群青": "#8394ff", "violet 紫": "#c48cff"}, "grades": ["#ff6a5c", "#ffa94d", "#3fd6a0", "#8394ff"], "accent": "rouge 胭脂"},
+		hCl: {"name": "Bubblegum", "group": "House draft C · Pop clash", "dark": false, "chrome": "#ffd6eb", "panel": "#fff3f9", "raised": "#ffe5f2", "line": "#f1bcd7", "text": "#2a1446", "muted": "#664a86", "board": "#ffd6eb", "good": "#007a6c", "warn": "#9c5a00", "bad": "#cc1f45", "accents": {"violet": "#7224e6", "teal": "#007a6c", "tangerine": "#bd4700", "hot pink": "#c81d6a", "cobalt": "#1f56c7"}, "grades": ["#cc1f45", "#c44a00", "#007a6c", "#1f56c7"], "accent": "violet"},
+		hCd: {"name": "Grape", "group": "House draft C · Pop clash", "dark": true, "chrome": "#170c2b", "panel": "#22143d", "raised": "#311f55", "line": "#4a3575", "text": "#fff1d6", "muted": "#cdbbea", "board": "#170c2b", "good": "#2de2c4", "warn": "#f4ff3c", "bad": "#ff5470", "accents": {"hot pink": "#ff4fa8", "acid yellow": "#f4ff3c", "teal": "#2de2c4", "tangerine": "#ff8c2f", "sky": "#63b9ff"}, "grades": ["#ff5470", "#ff8c2f", "#2de2c4", "#63b9ff"], "accent": "hot pink"},
 		latte: ctp('Latte', { crust:'#dce0e8', mantle:'#e6e9ef', base:'#eff1f5', surface0:'#e6e9ef', surface1:'#ccd0da', text:'#4c4f69', subtext0:'#6c6f85',
 			mauve:'#8839ef', pink:'#ea76cb', red:'#d20f39', peach:'#fe640b', yellow:'#df8e1d', green:'#40a02b', teal:'#179299', sky:'#04a5e5', blue:'#1e66f5', lavender:'#7287fd' }, false),
 		frappe: ctp('Frappé', { crust:'#232634', mantle:'#292c3c', base:'#303446', surface0:'#414559', surface1:'#51576d', text:'#c6d0f5', subtext0:'#a5adce',
@@ -1238,12 +1360,12 @@ mark.hl { background: color-mix(in srgb, var(--warn) 24%, transparent); color: i
 		DATA[k] = { amount: amt };
 	}
 	const STAGES = [
-		{ id: 'soil', name: 'Nothing yet', note: 'no reviews' },
-		{ id: 'sprout', name: 'Sprout', note: 'under a third' },
+		{ id: 'soil', name: 'Still water', note: 'no reviews' },
+		{ id: 'sprout', name: 'Lily pad', note: 'under a third' },
 		{ id: 'bud', name: 'Bud', note: 'a third or more' },
 		{ id: 'open', name: 'Opening', note: 'two thirds or more' },
 		{ id: 'bloom', name: 'In bloom', note: 'goal reached' },
-		{ id: 'rest', name: 'Resting', note: 'vacation day' }
+		{ id: 'rest', name: 'Closed for the night', note: 'vacation day' }
 	];
 	function stageOf(v) {
 		if (v.vacation) return 'rest';
@@ -1254,7 +1376,35 @@ mark.hl { background: color-mix(in srgb, var(--warn) 24%, transparent); color: i
 		if (r >= 1 / 3) return 'bud';
 		return 'sprout';
 	}
-	function flower(stage) {
+	function lotus(stage) {
+		const water = '<path d="M3 20c1.5-.9 3-.9 4.5 0s3 .9 4.5 0 3-.9 4.5 0 3 .9 4.5 0" stroke="var(--line)" stroke-width="1.3" stroke-linecap="round" fill="none"/>';
+		const pad = '<path d="M12 18.6 18.6 18.6A6.6 1.9 0 1 1 17.7 17.65Z" fill="var(--good)"/>';
+		const stem = (top) => '<path d="M12 18.2V' + top + '" stroke="var(--good)" stroke-width="1.4" stroke-linecap="round"/>';
+		const bud = (o) => '<path d="M12 5.4c2.1 1.9 2.9 3.8 2.5 5.4-.3 1.3-1.3 2-2.5 2s-2.2-.7-2.5-2c-.4-1.6.4-3.5 2.5-5.4Z" fill="var(--accent)"' + (o ? ' opacity="' + o + '"' : '') + '/>';
+		const P = (d, o) => '<path d="' + d + '" fill="var(--accent)" opacity="' + o + '"/>';
+		const svg = (inner) => '<svg viewBox="0 0 24 24" aria-hidden="true">' + inner + '</svg>';
+		switch (stage) {
+			case 'soil': return svg(water + '<path d="M7 17.2c1.1-.6 2.2-.6 3.3 0" stroke="var(--line)" stroke-width="1.1" stroke-linecap="round" fill="none" opacity=".7"/>');
+			case 'sprout': return svg(water + pad);
+			case 'bud': return svg(water + stem(12) + pad + bud());
+			case 'open': return svg(water + stem(13) + pad +
+				P('M12 12.8c-2.7-.1-4.8-1.8-5.3-4.7 2.5.2 4.5 1.8 5.3 4.7Z', .75) +
+				P('M12 12.8c2.7-.1 4.8-1.8 5.3-4.7-2.5.2-4.5 1.8-5.3 4.7Z', .75) + bud());
+			case 'bloom': return svg(water + stem(13.4) + pad +
+				P('M12 13.2c-3.7.7-6.8-.5-8.3-3.1 3.3-.9 6.4.2 8.3 3.1Z', .62) +
+				P('M12 13.2c3.7.7 6.8-.5 8.3-3.1-3.3-.9-6.4.2-8.3 3.1Z', .62) +
+				P('M12 13.2c-2.5-.9-4-3.1-3.8-6 2.3 1.1 3.7 3.3 3.8 6Z', .82) +
+				P('M12 13.2c2.5-.9 4-3.1 3.8-6-2.3 1.1-3.7 3.3-3.8 6Z', .82) +
+				P('M12 5.2c1.7 1.7 2.3 3.6 1.9 5.2-.3 1.4-1 2.4-1.9 2.6-.9-.2-1.6-1.2-1.9-2.6-.4-1.6.2-3.5 1.9-5.2Z', 1) +
+				'<ellipse cx="12" cy="11.2" rx="1.8" ry=".8" fill="var(--warn)"/>');
+			case 'rest': return svg(water + stem(12.4) + pad +
+				'<path d="M12 6.6c1.5 1.6 2 3.2 1.7 4.5-.2 1-.9 1.6-1.7 1.6s-1.5-.6-1.7-1.6c-.3-1.3.2-2.9 1.7-4.5Z" fill="var(--accent)" opacity=".5"/>' +
+				'<path d="M18.6 3.4a2.6 2.6 0 1 0 1.9 4.2 2.1 2.1 0 0 1-1.9-4.2Z" fill="var(--muted)" opacity=".8"/>');
+		}
+		return '';
+	}
+	function flower(stage) { return lotus(stage); }
+	function flowerOld(stage) {
 		const soil = '<ellipse cx="12" cy="20.5" rx="5.5" ry="1.7" fill="var(--line)"/>';
 		const stem = (top) => '<path d="M12 20.3V' + top + '" stroke="var(--good)" stroke-width="1.6" stroke-linecap="round" fill="none"/>';
 		const leaves = (y) => '<path d="M12 ' + y + 'c-2.6-.2-4.2-1.6-4.6-3.6 2.4 0 4.1 1.2 4.6 3.6Z" fill="var(--good)"/><path d="M12 ' + (y - 1.6) + 'c2.4-.1 3.9-1.4 4.3-3.3-2.2 0-3.8 1.1-4.3 3.3Z" fill="var(--good)"/>';
@@ -1409,8 +1559,62 @@ mark.hl { background: color-mix(in srgb, var(--warn) 24%, transparent); color: i
 	seg('fc-moment', (v) => { fcState.after = v === '1'; renderFc(); });
 		renderFc();
 
+
+
+	// ---------- house theme comparison ----------
+	(function () {
+		const DIRS = [
+			['qinqin · house', 'Your palette: Day, Night and Deep.', ['hDl', 'hDd', 'hDp']],
+			['A · Ink & neon', 'Calm ink-grey surfaces, neon accents.', ['hAl', 'hAd']],
+			['B · Pigments', 'Painter\'s pigments on indigo and celadon.', ['hBl', 'hBd']],
+			['C · Pop clash', 'Tinted surfaces, clashing complementaries.', ['hCl', 'hCd']]
+		];
+		const week = ['bloom', 'bloom', 'open', 'bloom', 'rest', 'bloom', 'bud'];
+		function mini(key) {
+			const t = THEMES[key];
+			const vars = ['chrome', 'panel', 'raised', 'line', 'text', 'muted', 'good', 'warn', 'bad']
+				.map((k) => '--' + k + ':' + t[k]).join(';') + ';--accent:' + t.accents[t.accent] +
+				';--g-again:' + t.grades[0] + ';--g-hard:' + t.grades[1] + ';--g-good:' + t.grades[2] + ';--g-easy:' + t.grades[3];
+			return '<div class="hp" style="' + vars + '">' +
+				'<div class="hp-bar"><span class="b">勤</span><span class="ic"><i class="on"></i><i></i><i></i><i></i><i></i></span><span class="av">L</span></div>' +
+				'<div class="hp-body">' +
+				'<div class="hp-greet"><b>Good evening</b><span>' + t.name + ' · ' + (t.dark ? 'dark' : 'light') + '</span></div>' +
+				'<div class="hp-row"><span class="hp-num"><b>42</b><span>reviews</span></span><span class="hp-num"><b>8</b><span>new</span></span><span class="hp-btn">Start studying</span></div>' +
+				'<div class="hp-week">' + week.map((st, i) => '<span class="t' + (i === 6 ? ' today' : '') + '">' + lotus(st) + '</span>').join('') + '</div>' +
+				'<p class="hp-read">冷风吹进<span class="l">船舱</span>中，<mark>苍黄的天底下</mark>，几个<ruby class="n">萧索<rt>xiāosuǒ</rt></ruby>的荒村。</p>' +
+				'<div class="hp-grades"><span style="color:var(--g-again)">Again</span><span style="color:var(--g-hard)">Hard</span><span class="s" style="color:var(--g-good)">Good</span><span style="color:var(--g-easy)">Easy</span></div>' +
+				'<div class="hp-acc">' + Object.entries(t.accents).map(([n, v]) => '<i style="background:' + v + '" title="' + n + '"></i>').join('') + '<span>accents</span></div>' +
+				'</div>' +
+				'<div class="hp-foot"><button type="button" class="hp-try" data-try="' + key + '">Try on the whole page</button><small>default accent: ' + t.accent + '</small></div>' +
+				'</div>';
+		}
+		document.getElementById('house-grid').innerHTML = DIRS.map(([n, d, ks]) =>
+			'<div class="hdir"><div class="hdir-h"><h3>' + n + '</h3><span class="muted">' + d + '</span></div><div class="hpair">' + ks.map(mini).join('') + '</div></div>').join('');
+		document.getElementById('house-grid').addEventListener('click', (e) => {
+			const b = e.target.closest('[data-try]'); if (!b) return;
+			applyTheme(b.dataset.try);
+			document.getElementById('themes-h').scrollIntoView({ behavior: 'smooth', block: 'start' });
+		});
+	})();
+
+	// ---------- lotus sketch sheet ----------
+	(function () {
+		const L = [['soil', 'Still water', 'nothing yet'], ['sprout', 'Lily pad', 'under a third'], ['bud', 'Bud', 'a third or more'],
+			['open', 'Opening', 'two thirds or more'], ['bloom', 'In bloom', 'goal reached'], ['rest', 'Closed for the night', 'vacation day']];
+		document.getElementById('lotus-big').innerHTML = L.map(([k, n, d]) => '<div class="ls"><span class="t">' + lotus(k) + '</span><span><b>' + n + '</b><small>' + d + '</small></span></div>').join('');
+		const small = L.map(([k, n]) => '<span class="t" title="' + n + '">' + lotus(k) + '</span>').join('');
+		document.getElementById('lotus-24').innerHTML = small;
+		document.getElementById('lotus-40').innerHTML = small;
+		document.getElementById('lotus-themes').innerHTML = Object.values(THEMES).map((t) => {
+			const vars = '--panel:' + t.panel + ';--raised:' + t.raised + ';--line:' + t.line + ';--text:' + t.text + ';--muted:' + t.muted +
+				';--accent:' + t.accents[t.accent] + ';--good:' + t.good + ';--warn:' + t.warn;
+			return '<div class="lt" style="' + vars + '"><p>' + (t.group === 'Catppuccin' ? 'Catppuccin ' : '') + t.name + '</p><div class="lotus-row">' +
+				L.map(([k, n]) => '<span class="t" title="' + n + '">' + lotus(k) + '</span>').join('') + '</div></div>';
+		}).join('');
+	})();
+
 	let dark = false;
 	try { dark = root.dataset.theme === 'dark' || (root.dataset.theme !== 'light' && matchMedia('(prefers-color-scheme: dark)').matches); } catch (e) {}
-	applyTheme(dark ? 'mocha' : 'latte');
+	applyTheme(dark ? 'hDd' : 'hDl');
 })();
 </script>

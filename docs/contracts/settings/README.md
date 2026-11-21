@@ -63,7 +63,7 @@ last write wins; `sync/`).
   unknown, unavailable (plugin off, another language) or not on the surface. Skipped ids **stay stored**.
 - Write (`serializeLayout`): always `version: 1` with the ids as given.
 - Widget ids the web registry knows (`widgets`): `activity-heatmap`, `character-map-summary`, `daily-goal`,
-  `weekly-summary`, `flashcards-summary`, `word-states`, `reading-time`.
+  `summary-numbers`, `reviews-per-day`, `weekly-summary`, `flashcards-summary`, `word-states`, `reading-time`.
 
 Ruling: Android shares `home-layout` with the web (one per user) and keeps every widget id it does not know
 stored, in place — a per-platform key would be a new row type and the web already keeps unknown ids — cost: a

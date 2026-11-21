@@ -21,6 +21,11 @@ export function weekRange(monday: string, locale?: string): string {
 	return formatDayRange(monday, addDays(monday, 6), { day: 'numeric', month: 'long', year: 'numeric' }, locale);
 }
 
+/** weekRangeShort: "16–22 Nov", for legends and labels that already sit under a dated heading. */
+export function weekRangeShort(monday: string, locale?: string): string {
+	return formatDayRange(monday, addDays(monday, 6), { day: 'numeric', month: 'short' }, locale);
+}
+
 /** weekHeading: "This week (16–22 November 2026)", "Last week (…)", "Week of …". */
 export function weekHeading(monday: string, today: string, locale?: string): string {
 	const range = weekRange(monday, locale);
@@ -30,18 +35,44 @@ export function weekHeading(monday: string, today: string, locale?: string): str
 	return t('weekly.heading.of', { range });
 }
 
-/** compareText: "12 more than last week"; seconds compare in the whole minutes shown. */
-export function compareText(value: number, previous: number, unit: 'count' | 'seconds'): string {
+/**
+ * compareText: "12 more than last week"; seconds compare in the whole minutes
+ * shown. `inProgress` is false for a browsed past week, whose comparison is
+ * the week before the shown one — never "last week" relative to today.
+ */
+export function compareText(
+	value: number,
+	previous: number,
+	unit: 'count' | 'seconds',
+	inProgress = true
+): string {
+	const same = inProgress ? 'weekly.compare.same' : 'weekly.compare.sameBefore';
 	if (unit === 'seconds') {
 		const diff = Math.floor(value / 60) - Math.floor(previous / 60);
-		if (diff === 0) return t('weekly.compare.same');
+		if (diff === 0) return t(same);
 		const time = formatDuration(Math.abs(diff) * 60);
-		return diff > 0 ? t('weekly.compare.moreTime', { time }) : t('weekly.compare.lessTime', { time });
+		const key =
+			diff > 0
+				? inProgress
+					? 'weekly.compare.moreTime'
+					: 'weekly.compare.moreTimeBefore'
+				: inProgress
+					? 'weekly.compare.lessTime'
+					: 'weekly.compare.lessTimeBefore';
+		return t(key, { time });
 	}
 	const diff = value - previous;
-	if (diff === 0) return t('weekly.compare.same');
+	if (diff === 0) return t(same);
 	const count = Math.abs(diff);
-	return diff > 0 ? t('weekly.compare.more', { count }) : t('weekly.compare.fewer', { count });
+	const key =
+		diff > 0
+			? inProgress
+				? 'weekly.compare.more'
+				: 'weekly.compare.moreBefore'
+			: inProgress
+				? 'weekly.compare.fewer'
+				: 'weekly.compare.fewerBefore';
+	return t(key, { count });
 }
 
 function weekdayLong(day: string, locale?: string): string {
@@ -53,7 +84,7 @@ export function compareWindowText(
 	s: Pick<WeekSummary, 'inProgress' | 'today' | 'nothingToCompare'>,
 	locale?: string
 ): string {
-	if (s.nothingToCompare) return t('weekly.window.nothing');
+	if (s.nothingToCompare) return t(s.inProgress ? 'weekly.window.nothing' : 'weekly.window.nothingBefore');
 	if (!s.inProgress) return t('weekly.window.weekBefore');
 	const monday = weekOf(s.today);
 	if (s.today === addDays(monday, 6)) return t('weekly.window.lastWeek');
@@ -149,14 +180,15 @@ function countLine(
 	id: string,
 	term: string,
 	row: Pick<CountRow, 'value' | 'previous' | 'unit'>,
-	nothingToCompare: boolean
+	nothingToCompare: boolean,
+	inProgress: boolean
 ): SummaryLine {
 	const comparable = row.value !== null && row.previous !== null && !nothingToCompare;
 	return {
 		id,
 		term,
 		value: rowValue(row),
-		comparison: comparable ? compareText(row.value!, row.previous!, row.unit) : null,
+		comparison: comparable ? compareText(row.value!, row.previous!, row.unit, inProgress) : null,
 		trend: comparable ? trendOf(row.value!, row.previous!, row.unit) : null
 	};
 }
@@ -194,24 +226,24 @@ export function summaryLines(
 		const lines: SummaryLine[] = [];
 		for (const key of ['reviews', 'newCards'] as const) {
 			const row = byKey.get(key);
-			if (row !== undefined) lines.push(countLine(key, rowLabel(row, sources), row, s.nothingToCompare));
+			if (row !== undefined) lines.push(countLine(key, rowLabel(row, sources), row, s.nothingToCompare, s.inProgress));
 		}
 		// Offline the reading time is unknown: the flashcard time alone, said so, without a comparison.
 		const timeLine =
 			time.value === null && flash !== undefined && flash.value !== null
 				? plain('time', t('weekly.term.studyTime'), t('weekly.term.flashcardsOnly', { time: formatDuration(flash.value) }))
-				: countLine('time', t('weekly.term.studyTime'), time, s.nothingToCompare);
+				: countLine('time', t('weekly.term.studyTime'), time, s.nothingToCompare, s.inProgress);
 		return [...lines, timeLine, ...tail];
 	}
-	const lines = s.rows.map((row) => countLine(row.key, rowLabel(row, sources), row, s.nothingToCompare));
+	const lines = s.rows.map((row) => countLine(row.key, rowLabel(row, sources), row, s.nothingToCompare, s.inProgress));
 	lines.push(...tail);
 	if (s.mature !== null) {
-		lines.push(countLine('mature', t('weekly.term.mature'), { ...s.mature, unit: 'count' }, s.nothingToCompare));
+		lines.push(countLine('mature', t('weekly.term.mature'), { ...s.mature, unit: 'count' }, s.nothingToCompare, s.inProgress));
 	}
 	if (characters === 'pending') lines.push(plain('characters', t('weekly.term.characters'), t('weekly.term.counting')));
 	else if (characters === 'unavailable') lines.push(plain('characters', t('weekly.term.characters'), offline()));
 	else if (characters !== null) {
-		lines.push(countLine('characters', t('weekly.term.characters'), { ...characters, unit: 'count' }, s.nothingToCompare));
+		lines.push(countLine('characters', t('weekly.term.characters'), { ...characters, unit: 'count' }, s.nothingToCompare, s.inProgress));
 	}
 	if (s.goal !== null) lines.push(plain('goal', t('weekly.term.goal'), goalText(s.goal, s.inProgress)));
 	return lines;

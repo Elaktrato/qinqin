@@ -6,6 +6,7 @@
 	import type { Variant } from './variants';
 	import { themeStore } from '$lib/theme/store.svelte';
 	import type { HanziFont } from '$lib/theme/appearance';
+	import Select from '$lib/ui/Select.svelte';
 
 	// `default` follows the app-wide hanzi font (#97); its label names the current one.
 	const APP_FONT_LABELS: Record<HanziFont, MessageKey> = {
@@ -68,14 +69,16 @@
 		{#if notice}<p class="notice" role="status">{notice}</p>{/if}
 		{#if script}
 			<div class="script">
-				<label class="field">
-					<span class="label">{t('reader.book.script')}</span>
-					<select value={script.value} onchange={(e) => script.onchange(e.currentTarget.value as Variant)}>
-						<option value="original">{t('reader.book.original')}</option>
-						<option value="simplified">{t('reader.book.simplified')}</option>
-						<option value="traditional">{t('reader.book.traditional')}</option>
-					</select>
-				</label>
+				<Select
+					label={t('reader.book.script')}
+					value={script.value}
+					onchange={(event) => script.onchange(event.currentTarget.value as Variant)}
+					options={[
+						{ value: 'original', label: t('reader.book.original') },
+						{ value: 'simplified', label: t('reader.book.simplified') },
+						{ value: 'traditional', label: t('reader.book.traditional') }
+					]}
+				/>
 				{#if script.error}<p class="error" role="alert">{script.error}</p>{/if}
 			</div>
 		{/if}
@@ -217,18 +220,6 @@
 	}
 
 	legend,
-	.label {
-		padding: 0;
-		font-weight: var(--weight-strong);
-		margin-bottom: var(--space-1);
-	}
-
-	.field {
-		display: flex;
-		flex-direction: column;
-		align-items: flex-start;
-	}
-
 	.row {
 		display: inline-flex;
 		align-items: center;

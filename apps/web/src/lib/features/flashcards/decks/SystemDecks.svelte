@@ -3,19 +3,37 @@
 	import { getSchemes } from '$lib/api/schemes';
 	import { errorMessage } from '$lib/stats/errors';
 	import { flashcardsHref } from '../route';
+	import { Button, Section } from '$lib/ui';
+	import type { EntryBase } from '$lib/api/types';
+	import { addDeckFromOverview } from './addDeckFromOverview';
 	import { loadLevelItems } from './systemDeckItems';
-	import { levelDecks, type LevelDeck } from './systemDecks';
+	import { levelDecks, ownedLevelDeckId, type LevelDeck } from './systemDecks';
 
 	// Level decks of the installed level packs, grouped by scheme and
 	// collapsed. Nothing here is stored or editable: a level's items are
 	// loaded when its scheme is expanded, to show how many are already yours.
-	let { language, ownedEntryIds }: { language: string; ownedEntryIds: ReadonlySet<number> } = $props();
+	let {
+		language,
+		ownedEntryIds,
+		workspaceId = null,
+		deckIds = new Set<string>(),
+		onchanged = () => {}
+	}: {
+		language: string;
+		ownedEntryIds: ReadonlySet<number>;
+		workspaceId?: number | null;
+		deckIds?: ReadonlySet<string>;
+		onchanged?: () => void;
+	} = $props();
 
 	let decks = $state.raw<LevelDeck[] | null>(null);
 	let loadError = $state('');
 	let expanded = $state<number[]>([]);
-	// Per level: the item entry ids, or a failure.
-	let items = $state.raw<Record<string, number[] | 'error' | undefined>>({});
+	// Per level: its items, or a failure.
+	let items = $state.raw<Record<string, EntryBase[] | 'error' | undefined>>({});
+	let adding = $state<string | null>(null);
+	let notes = $state<Record<string, string>>({});
+	let errors = $state<Record<string, string>>({});
 
 	const groups = $derived.by(() => {
 		const out: { schemeId: number; name: string; packId: string; levels: LevelDeck[] }[] = [];
@@ -53,7 +71,7 @@
 		const current = items[key];
 		if (Array.isArray(current)) return;
 		loadLevelItems(deck).then(
-			(list) => (items = { ...items, [key]: list.map((e) => e.id) }),
+			(list) => (items = { ...items, [key]: list }),
 			() => (items = { ...items, [key]: 'error' })
 		);
 	}
@@ -67,13 +85,60 @@
 		for (const deck of group.levels) loadLevel(deck);
 	}
 
-	function ownedOf(list: number[]): number {
-		return list.filter((id) => ownedEntryIds.has(id)).length;
+	function ownedOf(list: readonly EntryBase[]): number {
+		return list.filter((entry) => ownedEntryIds.has(entry.id)).length;
+	}
+
+	function targetOf(deck: LevelDeck): { id: string; name: string; source: { type: 'level'; packId: string; level: string } } {
+		return {
+			id: ownedLevelDeckId(deck.packId, deck.level),
+			name: `${deck.schemeName} · ${deck.level}`,
+			source: { type: 'level', packId: deck.packId, level: deck.level }
+		};
+	}
+
+	async function add(deck: LevelDeck, list: readonly EntryBase[]): Promise<void> {
+		if (workspaceId === null) return;
+		const key = keyOf(deck);
+		const target = targetOf(deck);
+		adding = key;
+		notes = { ...notes, [key]: '' };
+		errors = { ...errors, [key]: '' };
+		try {
+			const plan = await addDeckFromOverview({
+				workspaceId,
+				items: list.map((entry) => ({
+					entryId: entry.id,
+					written: entry.written,
+					...(deck.unit === 'character' ? { entryKind: 'character' as const } : {})
+				})),
+				target
+			});
+			notes = {
+				...notes,
+				[key]:
+					plan.created + plan.joined === 0
+						? t('flashcards.system.nothingNew', { name: target.name })
+						: t('flashcards.system.added', {
+								items: t(
+									deck.unit === 'character'
+										? 'flashcards.system.characters'
+										: 'flashcards.system.words',
+									{ count: plan.created + plan.joined }
+								),
+								name: target.name
+							})
+			};
+			onchanged();
+		} catch (err) {
+			errors = { ...errors, [key]: errorMessage(err, t('flashcards.system.addFailed')) };
+		} finally {
+			adding = null;
+		}
 	}
 </script>
 
-<section aria-labelledby="system-decks-heading">
-	<h2 id="system-decks-heading">{t('flashcards.system.title')}</h2>
+<Section title={t('flashcards.system.title')}>
 	<p class="hint">{t('flashcards.system.listIntro')}</p>
 	{#if loadError}
 		<p role="alert">{loadError}</p>
@@ -85,16 +150,16 @@
 		<ul class="groups">
 			{#each groups as group (group.schemeId)}
 				<li>
-					<button
-						type="button"
+					<Button
+						variant="secondary"
 						class="toggle"
+						icon={expanded.includes(group.schemeId) ? 'expand-down' : 'forward'}
 						aria-expanded={expanded.includes(group.schemeId)}
 						onclick={() => toggle(group)}
 					>
-						<span aria-hidden="true">{expanded.includes(group.schemeId) ? '▾' : '▸'}</span>
 						{group.name}
 						<span class="count">{t('flashcards.system.levels', { count: group.levels.length })}</span>
-					</button>
+					</Button>
 					{#if expanded.includes(group.schemeId)}
 						<ul class="levels">
 							{#each group.levels as deck (deck.level)}
@@ -112,6 +177,33 @@
 											{t('flashcards.system.owned', { owned: ownedOf(loaded), total: loaded.length })}
 										{/if}
 									</span>
+									{#if Array.isArray(loaded)}
+										{@const target = targetOf(deck)}
+										{#if deckIds.has(target.id)}
+											<Button
+												href={flashcardsHref({ view: 'deck', deckId: target.id })}
+												variant="secondary"
+												aria-label={t('flashcards.system.openCopyNamed', { name: `${deck.schemeName} · ${deck.level}` })}
+												>{t('flashcards.system.openCopy')}</Button
+											>
+										{:else}
+											<Button
+												variant="secondary"
+												aria-label={t('flashcards.system.addNamed', { name: `${deck.schemeName} · ${deck.level}` })}
+												disabled={adding === keyOf(deck)}
+												onclick={() => void add(deck, loaded)}
+												>{adding === keyOf(deck)
+													? t('flashcards.system.addingShort')
+													: t('flashcards.system.addShort')}</Button
+											>
+										{/if}
+										{#if notes[keyOf(deck)]}
+											<span class="note" role="status">{notes[keyOf(deck)]}</span>
+										{/if}
+										{#if errors[keyOf(deck)]}
+											<span class="note error" role="alert">{errors[keyOf(deck)]}</span>
+										{/if}
+									{/if}
 								</li>
 							{/each}
 						</ul>
@@ -120,7 +212,7 @@
 			{/each}
 		</ul>
 	{/if}
-</section>
+</Section>
 
 <style>
 	.groups,
@@ -134,23 +226,17 @@
 		padding-left: 1.5rem;
 	}
 
-	.toggle {
-		min-height: 44px;
-		width: 100%;
-		display: flex;
-		gap: 0.5rem;
-		align-items: center;
-		text-align: left;
-		border: 0;
-		background: transparent;
-		font-weight: 600;
-	}
 
 	.count,
 	.owned,
-	.hint {
+	.hint,
+	.note {
 		font-weight: 400;
 		color: var(--readable-muted);
+	}
+
+	.note.error {
+		color: var(--readable-bad);
 	}
 
 	.levels li {

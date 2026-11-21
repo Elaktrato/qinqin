@@ -17,6 +17,7 @@
 	import ReauthFields from './ReauthFields.svelte';
 	import { settingsPatchNeedsReauth, type SettingsPatch } from './adminReauthRules';
 	import { reauthBody, reauthError, reauthFocus, reauthNeedsCode, reauthReady, type Reauth } from './reauth';
+	import { Button, Section } from '$lib/ui';
 
 	let settings = $state<AuthSettings | null>(null);
 	let error = $state('');
@@ -120,8 +121,7 @@
 	}
 </script>
 
-<section aria-labelledby="admin-security-heading">
-	<h2 id="admin-security-heading">{t('admin.security.title')}</h2>
+<Section title={t('admin.security.title')}>
 	{#if error}<p class="error" role="alert">{error}</p>{/if}
 	<p class="ok" role="status">{status}</p>
 
@@ -137,8 +137,10 @@
 		>
 			<p>{t('admin.security.confirm.text')}</p>
 			<ReauthFields bind:this={fields} bind:password={ownPassword} bind:code={ownCode} {needsCode} passwordLabel={t('admin.security.confirm.ownPassword')} />
-			<button type="submit" disabled={busy || !reauthReady(ownPassword, needsCode, ownCode)}>{t('admin.security.confirm.submit')}</button>
-			<button type="button" onclick={cancelPending}>{t('common.action.cancel')}</button>
+			<Button type="submit" variant="primary" disabled={busy || !reauthReady(ownPassword, needsCode, ownCode)}
+				>{t('admin.security.confirm.submit')}</Button
+			>
+			<Button onclick={cancelPending}>{t('common.action.cancel')}</Button>
 		</form>
 	{/if}
 
@@ -225,49 +227,68 @@
 			{/each}
 		</ul>
 		{#if next !== null}
-			<button type="button" onclick={() => loadAudit(next ?? undefined)}>{t('admin.security.loadOlder')}</button>
+			<Button onclick={() => loadAudit(next ?? undefined)}>{t('admin.security.loadOlder')}</Button>
 		{/if}
 	{:else}
 		<p class="hint">{t('admin.security.nothingYet')}</p>
 	{/if}
-</section>
+</Section>
 
 <style>
 	fieldset {
-		margin: 0 0 1.2rem;
-		border: 1px solid color-mix(in srgb, currentColor 25%, transparent);
-		border-radius: 0.5rem;
+		margin: 0 0 var(--space-5);
 		display: grid;
-		gap: 0.6rem;
+		gap: var(--space-2);
 		max-width: 40rem;
 	}
+
 	.choice {
 		display: flex;
-		gap: 0.6rem;
+		gap: var(--space-2);
 		align-items: flex-start;
+		min-height: var(--hit);
 	}
+
+	.confirm {
+		display: grid;
+		gap: var(--space-3);
+		margin-block: var(--space-4);
+		padding-block: var(--space-4);
+		border-top: 1px solid var(--hair);
+		max-width: 40rem;
+	}
+
+	h3 {
+		margin: var(--space-5) 0 var(--space-2);
+		font-size: var(--font-size-l);
+		font-weight: var(--weight-strong);
+	}
+
 	.audit {
 		list-style: none;
-		margin: 0 0 1rem;
+		margin: 0 0 var(--space-4);
 		padding: 0;
 		display: grid;
-		gap: 0.3rem;
+		gap: var(--space-1);
 	}
+
 	time {
 		color: var(--readable-muted);
-		margin-right: 0.5rem;
+		margin-right: var(--space-2);
 	}
+
 	.hint {
 		color: var(--readable-muted);
 	}
+
 	.error {
 		color: var(--readable-bad);
-		font-weight: 600;
 		padding-inline-start: var(--space-2);
 		border-inline-start: 3px solid var(--bad);
 	}
+
 	.ok {
 		min-height: 1.2em;
-		margin: 0.4rem 0;
+		margin-block: var(--space-1);
 	}
 </style>

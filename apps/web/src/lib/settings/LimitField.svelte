@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { t } from '$lib/i18n';
 	import type { FieldState } from './limitsForm';
+	import Field from '$lib/ui/Field.svelte';
 
 	// One limit field: "use workspace" (decks only), an own number, or unlimited.
 	let {
@@ -25,15 +26,20 @@
 	<label class="own">
 		<input type="radio" {name} value="value" bind:group={state.mode} />
 		<span class="sr-only">{t('settings.limitField.own', { legend })}</span>
-		<input
-			type="text"
-			inputmode="numeric"
-			pattern="[0-9]*"
-			aria-label={t('settings.limitField.value', { legend })}
-			disabled={state.mode !== 'value'}
-			bind:value={state.value}
-		/>
 	</label>
+	<div class="value">
+		<Field
+			label={t('settings.limitField.value', { legend })}
+			hideLabel
+			type="number"
+			min="0"
+			max="9999"
+			step="1"
+			disabled={state.mode !== 'value'}
+			value={state.value}
+			oninput={(event) => (state.value = event.currentTarget.value)}
+		/>
+	</div>
 	<label><input type="radio" {name} value="unlimited" bind:group={state.mode} /> {t('settings.limitField.unlimited')}</label>
 </fieldset>
 
@@ -41,26 +47,18 @@
 	.field {
 		display: flex;
 		flex-wrap: wrap;
-		gap: 0.5rem 1rem;
+		gap: var(--space-2) var(--space-4);
 		align-items: center;
-		margin-block: 0.5rem;
-		border: 1px solid var(--border, currentColor);
-		border-radius: 0.5rem;
+		margin-block: var(--space-2);
 	}
+
 	.own {
 		display: inline-flex;
-		gap: 0.4rem;
+		gap: var(--space-1);
 		align-items: center;
 	}
-	.own input[type='text'] {
+
+	.value {
 		width: 6rem;
-	}
-	.sr-only {
-		position: absolute;
-		width: 1px;
-		height: 1px;
-		overflow: hidden;
-		clip-path: inset(50%);
-		white-space: nowrap;
 	}
 </style>

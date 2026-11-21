@@ -10,6 +10,7 @@
 	import { apiErrorBody } from '$lib/api/client';
 	import { aiErrorView } from '$lib/plugins/journal/aiErrors';
 	import { t } from '$lib/i18n';
+	import { Button, Field, Select } from '$lib/ui';
 
 	let {
 		endpoints,
@@ -149,22 +150,25 @@
 					</div>
 					{#if editing === p.id}
 						<form class="editform" onsubmit={saveEdit}>
-							<label>
-								<span>{t('settings.ai.custom.defaultModelFor', { name: p.name })}</span>
-								<input bind:value={editModel} autocomplete="off" spellcheck="false" />
-							</label>
+							<Field
+								label={t('settings.ai.custom.defaultModelFor', { name: p.name })}
+								bind:value={editModel}
+								autocomplete="off"
+								spellcheck="false"
+							/>
 							<label class="check"><input type="checkbox" bind:checked={editVision} /> {t('settings.ai.readsPhotos')}</label>
-							<label>
-								<span>{t('settings.ai.custom.structuredFor', { name: p.name })}</span>
-								<select bind:value={editStructured}>
-									<option value="json_schema">{t('settings.ai.custom.modeSchema')}</option>
-									<option value="json_object">{t('settings.ai.structured.jsonObject')}</option>
-									<option value="prompt">{t('settings.ai.custom.modePrompt')}</option>
-								</select>
-							</label>
+							<Select
+								label={t('settings.ai.custom.structuredFor', { name: p.name })}
+								bind:value={editStructured}
+								options={[
+									{ value: 'json_schema', label: t('settings.ai.custom.modeSchema') },
+									{ value: 'json_object', label: t('settings.ai.structured.jsonObject') },
+									{ value: 'prompt', label: t('settings.ai.custom.modePrompt') }
+								]}
+							/>
 							<div class="actions">
-								<button type="submit" disabled={busy || editModel.trim() === ''}>{t('settings.ai.custom.save')}</button>
-								<button type="button" class="secondary" onclick={() => (editing = null)}>{t('common.action.cancel')}</button>
+								<Button type="submit" disabled={busy || editModel.trim() === ''}>{t('settings.ai.custom.save')}</Button>
+								<Button onclick={() => (editing = null)}>{t('common.action.cancel')}</Button>
 							</div>
 						</form>
 					{:else if removing === p.id}
@@ -177,23 +181,22 @@
 							onkeydown={(e) => e.key === 'Escape' && cancelRemove(p.id)}
 						>
 							{t('settings.ai.custom.removeConfirm', { name: p.name })}
-							<button type="button" class="secondary danger" onclick={() => remove(p.id)} disabled={busy}>{t('settings.ai.removeYes')}</button>
-							<button type="button" class="secondary" onclick={() => cancelRemove(p.id)}>{t('common.action.cancel')}</button>
+							<Button tone="danger" onclick={() => remove(p.id)} disabled={busy}>{t('settings.ai.removeYes')}</Button>
+							<Button onclick={() => cancelRemove(p.id)}>{t('common.action.cancel')}</Button>
 						</span>
 					{:else}
 						<div class="actions">
-							<button type="button" class="secondary" aria-label={t('settings.ai.custom.editNamed', { name: p.name })} onclick={() => edit(p)}
-								>{t('settings.ai.custom.edit')}</button
+							<Button aria-label={t('settings.ai.custom.editNamed', { name: p.name })} onclick={() => edit(p)}
+								>{t('settings.ai.custom.edit')}</Button
 							>
-							<button
-								type="button"
+							<Button
 								id={`remove-endpoint-${p.id}`}
-								class="secondary danger"
+								tone="danger"
 								aria-label={t('settings.ai.custom.removeNamed', { name: p.name })}
 								onclick={() => (removing = p.id)}
 							>
 								{t('common.action.remove')}
-							</button>
+							</Button>
 						</div>
 					{/if}
 				</li>
@@ -202,39 +205,35 @@
 	{/if}
 
 	<form class="addform" onsubmit={add}>
-		<label>
-			<span>{t('settings.ai.custom.name')}</span>
-			<input bind:value={name} maxlength="40" autocomplete="off" />
-		</label>
-		<label>
-			<span>{t('settings.ai.custom.baseUrl')}</span>
-			<input
-				type="url"
-				bind:value={baseUrl}
-				placeholder="https://llm.example.com/v1"
-				autocomplete="off"
-				spellcheck="false"
-				aria-invalid={urlError ? 'true' : undefined}
-				aria-describedby={urlError ? 'custom-url-error' : undefined}
-			/>
-		</label>
-		{#if urlError}<p id="custom-url-error" class="error" role="alert">{urlError}</p>{/if}
-		<label>
-			<span>{t('settings.ai.custom.defaultModel')}</span>
-			<input bind:value={defaultModel} autocomplete="off" spellcheck="false" />
-		</label>
+		<Field label={t('settings.ai.custom.name')} bind:value={name} maxlength={40} autocomplete="off" />
+		<Field
+			label={t('settings.ai.custom.baseUrl')}
+			type="url"
+			bind:value={baseUrl}
+			placeholder="https://llm.example.com/v1"
+			autocomplete="off"
+			spellcheck="false"
+			error={urlError}
+		/>
+		<Field
+			label={t('settings.ai.custom.defaultModel')}
+			bind:value={defaultModel}
+			autocomplete="off"
+			spellcheck="false"
+		/>
 		<label class="check"><input type="checkbox" bind:checked={vision} /> {t('settings.ai.readsPhotos')}</label>
 		<label class="check"><input type="checkbox" bind:checked={keyRequired} /> {t('settings.ai.custom.needsKey')}</label>
-		<label>
-			<span>{t('settings.ai.custom.structured')}</span>
-			<select bind:value={structured}>
-				<option value="json_object">{t('settings.ai.custom.modeObjectHint')}</option>
-				<option value="json_schema">{t('settings.ai.custom.modeSchemaHint')}</option>
-				<option value="prompt">{t('settings.ai.custom.modePrompt')}</option>
-			</select>
-		</label>
+		<Select
+			label={t('settings.ai.custom.structured')}
+			bind:value={structured}
+			options={[
+				{ value: 'json_object', label: t('settings.ai.custom.modeObjectHint') },
+				{ value: 'json_schema', label: t('settings.ai.custom.modeSchemaHint') },
+				{ value: 'prompt', label: t('settings.ai.custom.modePrompt') }
+			]}
+		/>
 		<div class="actions">
-			<button type="submit" disabled={!canAdd}>{busy ? t('settings.ai.add.working') : t('settings.ai.custom.add')}</button>
+			<Button type="submit" disabled={!canAdd}>{busy ? t('settings.ai.add.working') : t('settings.ai.custom.add')}</Button>
 		</div>
 	</form>
 	{#if message}<p class="hint">{message}</p>{/if}
@@ -243,70 +242,47 @@
 
 <style>
 	.custom {
-		margin-top: 1.5rem;
+		margin-top: var(--space-6);
 	}
 
 	h3 {
-		margin: 0 0 0.5rem;
+		margin: 0 0 var(--space-2);
+		font-size: var(--font-size-l);
+		font-weight: var(--weight-strong);
 	}
 
 	.addform,
 	.editform {
 		display: grid;
-		gap: 0.9rem;
+		gap: var(--space-3);
 		max-width: 28rem;
-		margin: 1rem 0;
-	}
-
-	label {
-		display: grid;
-		gap: 0.3rem;
-		font-weight: 600;
+		margin-block: var(--space-4);
 	}
 
 	label.check {
 		display: flex;
 		align-items: center;
-		gap: 0.5rem;
-		min-height: 2.75rem;
-	}
-
-	input:not([type='checkbox']),
-	select {
-		font: inherit;
-		font-weight: 400;
-		min-height: 2.75rem;
-		padding: 0.4rem 0.6rem;
-		border: 1px solid color-mix(in srgb, currentColor 35%, transparent);
-		border-radius: 0.4rem;
-		background: transparent;
-		color: inherit;
-		box-sizing: border-box;
-		width: 100%;
-	}
-
-	input[type='checkbox'] {
-		width: 1.4rem;
-		height: 1.4rem;
+		gap: var(--space-2);
+		min-height: var(--hit);
 	}
 
 	.endpoints {
 		list-style: none;
 		padding: 0;
-		display: grid;
-		gap: 0.75rem;
 	}
 
 	.endpoints li {
-		padding: 0.6rem 0.75rem;
-		border: 1px solid color-mix(in srgb, currentColor 25%, transparent);
-		border-radius: 0.5rem;
+		padding-block: var(--space-3);
+	}
+
+	.endpoints li + li {
+		border-top: 1px solid var(--hair);
 	}
 
 	.line {
 		display: flex;
 		flex-wrap: wrap;
-		gap: 0.25rem 0.75rem;
+		gap: var(--space-1) var(--space-3);
 		align-items: baseline;
 	}
 
@@ -321,28 +297,11 @@
 		display: flex;
 		flex-wrap: wrap;
 		align-items: center;
-		gap: 0.5rem 0.75rem;
+		gap: var(--space-2);
 	}
 
-	button {
-		min-height: 2.75rem;
-		min-width: 2.75rem;
-	}
-
-	button.secondary {
-		border: 1px solid color-mix(in srgb, currentColor 35%, transparent);
-		background: transparent;
-		color: inherit;
-		font-weight: 500;
-	}
-
-	button.secondary.danger,
 	.error {
 		color: var(--readable-bad);
-	}
-
-	.error {
-		font-weight: 600;
 		margin: 0;
 	}
 </style>
