@@ -724,9 +724,9 @@
           },
           {
             "id": "n2-nai-koto-wa-nai-6",
-            "text": "そんなに心配することはないよ。",
-            "reading": "そんなにしんぱいすることはないよ。",
-            "translation": "There’s no need to worry so much.",
+            "text": "まだ時間があるから、急ぐことはないよ。",
+            "reading": "まだじかんがあるから、いそぐことはないよ。",
+            "translation": "There's still time, so there's no need to hurry.",
             "focus": "ことはない",
             "distractors": [
               "ないことはない",
@@ -880,7 +880,7 @@
         "body": [
           "Attach にあたって to a noun (開会, 契約) or a dictionary-form verb (留学する, 引っ越す). The event is a significant start, such as a new business, a ceremony or a move, and the main clause says what is done in preparation or at that moment. にあたり is more formal still, and にあたっての links to a noun (契約にあたっての注意点). It is typical of speeches, notices and business writing.",
           "A common mistake is to use it with the past form (引っ越したにあたって) or for small everyday actions; it points to a coming, notable occasion.",
-          "The contrast example uses 最中に (会議の最中に、電話が鳴った), which means in the middle of an ongoing activity, often with an interruption. にあたって looks at the start of something and is not about interruption."
+          "The contrast example uses 最中に (食事の最中に、友だちが来た), which means in the middle of an ongoing activity, often with an interruption. にあたって looks at the start of something and is not about interruption."
         ],
         "examples": [
           {
@@ -970,9 +970,9 @@
           },
           {
             "id": "n2-ni-atatte-6",
-            "text": "会議の最中に、電話が鳴った。",
-            "reading": "かいぎのさいちゅうに、でんわがなった。",
-            "translation": "The phone rang in the middle of the meeting.",
+            "text": "食事の最中に、友だちが来た。",
+            "reading": "しょくじのさいちゅうに、ともだちがきた。",
+            "translation": "A friend came round right in the middle of the meal.",
             "focus": "最中に",
             "distractors": [
               "にあたって",
@@ -1265,7 +1265,7 @@
         "body": [
           "Attach にかけては to a noun for a skill or quality: 料理, 足の速さ, 交渉, 記憶力. The main clause praises it or claims the top place: 誰にも負けない, クラスで一番だ, 自信がある, 右に出る者はいない. It is used for positive evaluations, often of other people, or with 自信がある for oneself.",
           "A common mistake is to use it for weaknesses or for a neutral topic; 交渉にかけては一番下手だ sounds wrong. For a neutral topic use について.",
-          "The contrast example uses にとって (私にとって、家族が一番大切だ), which gives the point of view from which something is judged. にかけては names the field of a skill, not a person’s viewpoint."
+          "The contrast example uses にとって (学生にとって、試験は大事だ), which gives the point of view from which something is judged. にかけては names the field of a skill, not a person’s viewpoint."
         ],
         "examples": [
           {
@@ -1356,9 +1356,9 @@
           },
           {
             "id": "n2-ni-kakete-wa-6",
-            "text": "私にとって、家族が一番大切だ。",
-            "reading": "わたしにとって、かぞくがいちばんたいせつだ。",
-            "translation": "For me, family is the most important thing.",
+            "text": "学生にとって、試験は大事だ。",
+            "reading": "がくせいにとって、しけんはだいじだ。",
+            "translation": "For students, exams are important.",
             "focus": "にとって",
             "distractors": [
               "にかけては",

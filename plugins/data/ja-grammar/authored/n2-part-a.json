@@ -721,9 +721,9 @@
           },
           {
             "id": "n2-kagiri-6",
-            "text": "若いうちに、いろいろな国へ行きたい。",
-            "reading": "わかいうちに、いろいろなくにへいきたい。",
-            "translation": "I want to visit lots of countries while I am still young.",
+            "text": "明るいうちに、家に帰りましょう。",
+            "reading": "あかるいうちに、いえにかえりましょう。",
+            "translation": "Let's go home while it is still light.",
             "focus": "うちに",
             "distractors": [
               "までに",

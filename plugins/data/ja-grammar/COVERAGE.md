@@ -105,63 +105,63 @@ exercises are qinqin’s own.
 
 | # | Grammar point (qinqin’s selection) | Lesson(s) |
 |---|-------------------------------|-----------|
-| 1 |  | not authored yet |
-| 2 |  | not authored yet |
-| 3 |  | not authored yet |
-| 4 |  | not authored yet |
-| 5 |  | not authored yet |
-| 6 |  | not authored yet |
-| 7 |  | not authored yet |
-| 8 |  | not authored yet |
-| 9 |  | not authored yet |
-| 10 |  | not authored yet |
-| 11 |  | not authored yet |
-| 12 |  | not authored yet |
-| 13 |  | not authored yet |
-| 14 |  | not authored yet |
-| 15 |  | not authored yet |
-| 16 |  | not authored yet |
-| 17 |  | not authored yet |
-| 18 |  | not authored yet |
-| 19 |  | not authored yet |
-| 20 |  | not authored yet |
-| 21 |  | not authored yet |
-| 22 |  | not authored yet |
-| 23 |  | not authored yet |
-| 24 |  | not authored yet |
-| 25 |  | not authored yet |
-| 26 |  | not authored yet |
-| 27 |  | not authored yet |
-| 28 |  | not authored yet |
-| 29 |  | not authored yet |
-| 30 |  | not authored yet |
-| 31 |  | not authored yet |
-| 32 |  | not authored yet |
-| 33 |  | not authored yet |
-| 34 |  | not authored yet |
-| 35 |  | not authored yet |
-| 36 |  | not authored yet |
-| 37 |  | not authored yet |
-| 38 |  | not authored yet |
-| 39 |  | not authored yet |
-| 40 |  | not authored yet |
-| 41 |  | not authored yet |
-| 42 |  | not authored yet |
-| 43 |  | not authored yet |
-| 44 |  | not authored yet |
-| 45 |  | not authored yet |
-| 46 |  | not authored yet |
-| 47 |  | not authored yet |
-| 48 |  | not authored yet |
-| 49 |  | not authored yet |
-| 50 |  | not authored yet |
-| 51 |  | not authored yet |
-| 52 |  | not authored yet |
-| 53 |  | not authored yet |
-| 54 |  | not authored yet |
-| 55 |  | not authored yet |
-| 56 |  | not authored yet |
-| 57 |  | not authored yet |
+| 1 | わけだ (that explains it) | n3-wake-da |
+| 2 | わけではない (it is not that) | n3-wake-dewa-nai |
+| 3 | わけがない / はずがない (cannot be) | n3-wake-ga-nai |
+| 4 | ことになっている / ことにしている (rules and habits) | n3-koto-ni-natteiru |
+| 5 | ように言う / 頼む (indirect requests) | n3-you-ni-iu |
+| 6 | させてください / させていただく (let me) | n3-sasete-kudasai |
+| 7 | させられる (causative passive) | n3-saserareru |
+| 8 | 尊敬語 verbs (いらっしゃる, おっしゃる, 召し上がる, ご覧になる) | n3-sonkeigo |
+| 9 | 謙譲語 verbs (参る, 申す, いたす, いただく, 拝見する) | n3-kenjougo |
+| 10 | として (as) | n3-toshite |
+| 11 | について / に関して (about) | n3-ni-tsuite |
+| 12 | によって (by, depending on) | n3-ni-yotte |
+| 13 | にとって (for, from the viewpoint of) | n3-ni-totte |
+| 14 | に対して (toward, in contrast to) | n3-ni-taishite |
+| 15 | によると / によれば (according to) | n3-ni-yoru-to |
+| 16 | たびに (every time) | n3-tabi-ni |
+| 17 | うちに (while, before it changes) | n3-uchi-ni |
+| 18 | 最中に (right in the middle of) | n3-saichuu-ni |
+| 19 | ところだった (nearly happened) | n3-tokoro-datta |
+| 20 | おかげで / せいで (thanks to, because of) | n3-okage-de |
+| 21 | ため(に) (because of) | n3-tame-ni-cause |
+| 22 | ばいい / たらいい (advice) | n3-ba-ii |
+| 23 | Question word + ても (no matter) | n3-question-temo |
+| 24 | ば〜ほど (the more … the more) | n3-ba-hodo |
+| 25 | ほど / くらい (degree) | n3-hodo-kurai |
+| 26 | こそ (precisely, this very) | n3-koso |
+| 27 | さえ and さえ〜ば (even, if only) | n3-sae |
+| 28 | なんか / なんて (things like, the likes of) | n3-nanka-nante |
+| 29 | ばかり (nothing but) | n3-bakari |
+| 30 | てばかりいる (always doing) | n3-te-bakari-iru |
+| 31 | まま (unchanged state) | n3-mama |
+| 32 | ずに and ないで (without doing) | n3-zuni-naide |
+| 33 | 代わりに (instead of) | n3-kawari-ni |
+| 34 | ついでに (while at it) | n3-tsuideni |
+| 35 | とおり(に) (as, in the way) | n3-toori-ni |
+| 36 | っけ (asking to recall) | n3-kke |
+| 37 | って (quoting and topic in speech) | n3-tte |
+| 38 | とか (listing examples) | n3-toka |
+| 39 | わりに (considering) | n3-wari-ni |
+| 40 | 一方だ (keeps on …ing) | n3-ippou-da |
+| 41 | ことはない (no need to) | n3-koto-wa-nai |
+| 42 | しかない (no choice but) | n3-shika-nai |
+| 43 | べきだ and べきではない (should) | n3-beki-da |
+| 44 | ようとする and ようとしない (try to, refuse to) | n3-you-to-suru |
+| 45 | かける and かけの (half-done) | n3-kakeru |
+| 46 | きる and きれない (completely, cannot finish) | n3-kiru |
+| 47 | 出す, 始める, 続ける, 終わる (compound verbs of phase) | n3-phase-verbs |
+| 48 | たとたん(に) (the moment) | n3-totan-ni |
+| 49 | てからでないと (not until) | n3-te-kara-de-nai-to |
+| 50 | に違いない (must be) | n3-ni-chigai-nai |
+| 51 | とは限らない (not necessarily) | n3-towa-kagiranai |
+| 52 | くせに (even though, with blame) | n3-kuse-ni |
+| 53 | ほど〜ない (not as … as) | n3-hodo-nai |
+| 54 | っぽい and らしい (-ish, typical of) | n3-ppoi-rashii |
+| 55 | 気がする and 感じがする (feel that) | n3-ki-ga-suru |
+| 56 | まるで〜ようだ (as if, just like) | n3-marude-you-da |
+| 57 | ことか (how …!) / ものか (no way!) | n3-koto-ka, n3-mono-ka |
 
 ## Level N2 · Nuance and attitude
 

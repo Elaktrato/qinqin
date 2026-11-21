@@ -1,0 +1,3724 @@
+{
+  "level": {
+    "id": "n3"
+  },
+  "rows": [
+    {
+      "row": 29,
+      "label": "ばかり (nothing but)",
+      "lesson": {
+        "id": "n3-bakari",
+        "level": "n3",
+        "title": "ばかり: nothing but, all",
+        "summary": "N + ばかり says that something is all one kind, or that someone does only one thing, often with a note of criticism.",
+        "pattern": [
+          "N ばかり V",
+          "N ばかり だ"
+        ],
+        "body": [
+          "ばかり follows a noun and means nothing but or all. It can stand for を or が (甘いものばかり食べる) and can be followed by other particles (猫にばかり話しかける). With だ at the end it describes a group that is all one kind: このクラスは女の子ばかりだ. The speaker usually feels the amount is too much or one-sided, so ばかり often sounds like a complaint.",
+          "The contrast example uses だけ, which means only in a neutral, limiting way: 参加したのは私だけだった (I was the only one). ばかり does not fit there, because it describes a large amount of the same thing, not a single limit.",
+          "A common mistake is to use しか with an affirmative verb. しか must be followed by a negative (甘いものしか食べない); ばかり takes the affirmative (甘いものばかり食べる)."
+        ],
+        "examples": [
+          {
+            "id": "n3-bakari-1",
+            "text": "弟は甘いものばかり食べている。",
+            "reading": "おとうとはあまいものばかりたべている。",
+            "translation": "My little brother eats nothing but sweets.",
+            "focus": "ばかり",
+            "distractors": [
+              "しか",
+              "ので",
+              "より"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n3-bakari-2",
+            "text": "このクラスは女の子ばかりだ。",
+            "reading": "このクラスはおんなのこばかりだ。",
+            "translation": "This class is all girls.",
+            "focus": "ばかり",
+            "distractors": [
+              "しか",
+              "ずつ",
+              "ほど"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n3-bakari-3",
+            "text": "最近は雨の日ばかりで、洗濯ができない。",
+            "reading": "さいきんはあめのひばかりで、せんたくができない。",
+            "translation": "It has been nothing but rainy days lately, so I can't do the laundry.",
+            "focus": "ばかり",
+            "distractors": [
+              "しか",
+              "ずつ",
+              "さえ"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n3-bakari-4",
+            "text": "彼はいつも文句ばかり言う。",
+            "reading": "かれはいつももんくばかりいう。",
+            "translation": "He does nothing but complain.",
+            "focus": "ばかり",
+            "distractors": [
+              "しか",
+              "ずつ",
+              "ほど"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ],
+            "noOrder": true
+          },
+          {
+            "id": "n3-bakari-5",
+            "text": "彼女は自分のことばかり話す。",
+            "reading": "かのじょはじぶんのことばかりはなす。",
+            "translation": "She talks only about herself.",
+            "focus": "ばかり",
+            "distractors": [
+              "しか",
+              "ずつ",
+              "より"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n3-bakari-6",
+            "text": "参加したのは私だけだった。",
+            "reading": "さんかしたのはわたしだけだった。",
+            "translation": "I was the only one who took part.",
+            "focus": "だけ",
+            "distractors": [
+              "ばかり",
+              "しか",
+              "ほど"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "row": 30,
+      "label": "てばかりいる (always doing)",
+      "lesson": {
+        "id": "n3-te-bakari-iru",
+        "level": "n3",
+        "title": "てばかりいる: doing nothing but",
+        "summary": "V-て + ばかりいる says that someone keeps doing the same thing all the time, usually with criticism.",
+        "pattern": [
+          "V-て ばかり いる",
+          "V-て ばかり だ"
+        ],
+        "body": [
+          "Attach ばかりいる to the て form of a verb: 寝てばかりいる, 遊んでばかりいる. いる conjugates as usual (ばかりいた, ばかりいないで), and in short form ばかりだ is also used. The sentence means that the person does only this, again and again, and the speaker is not happy about it.",
+          "The contrast example uses たばかり (have just done), which attaches to the た form: 来たばかり (just arrived). The two look alike but mean different things: 来たばかり is about time, 寝てばかりいる is about repetition.",
+          "A common mistake is to attach ばかりいる to the た form or the dictionary form. 泣いたばかりいた and 泣くばかりいた are wrong; it must be 泣いてばかりいた."
+        ],
+        "examples": [
+          {
+            "id": "n3-te-bakari-iru-1",
+            "text": "兄は毎日ゲームをしてばかりいる。",
+            "reading": "あにはまいにちゲームをしてばかりいる。",
+            "translation": "My older brother does nothing but play games every day.",
+            "focus": "ばかり",
+            "distractors": [
+              "しか",
+              "ほど",
+              "から"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ],
+            "noOrder": true
+          },
+          {
+            "id": "n3-te-bakari-iru-2",
+            "text": "寝てばかりいないで、少し手伝って。",
+            "reading": "ねてばかりいないで、すこしてつだって。",
+            "translation": "Stop lying around sleeping and help a little.",
+            "focus": "ばかり",
+            "distractors": [
+              "しか",
+              "ほど",
+              "まま"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n3-te-bakari-iru-3",
+            "text": "彼女は泣いてばかりいた。",
+            "reading": "かのじょはないてばかりいた。",
+            "translation": "She did nothing but cry.",
+            "focus": "泣いて",
+            "distractors": [
+              "泣いた",
+              "泣く",
+              "泣き"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n3-te-bakari-iru-4",
+            "text": "遊んでばかりだと、試験に落ちるよ。",
+            "reading": "あそんでばかりだと、しけんにおちるよ。",
+            "translation": "If you do nothing but play, you'll fail the exam.",
+            "focus": "ばかり",
+            "distractors": [
+              "しか",
+              "ほど",
+              "まで"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n3-te-bakari-iru-5",
+            "text": "田中さんは会議中、スマホを見てばかりいた。",
+            "reading": "たなかさんはかいぎちゅう、スマホをみてばかりいた。",
+            "translation": "Tanaka kept looking at his phone all through the meeting.",
+            "focus": "ばかりいた",
+            "distractors": [
+              "ばかりした",
+              "しかいた",
+              "ほどいた"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ],
+            "noOrder": true
+          },
+          {
+            "id": "n3-te-bakari-iru-6",
+            "text": "日本に来たばかりで、まだ友達がいない。",
+            "reading": "にほんにきたばかりで、まだともだちがいない。",
+            "translation": "I've only just come to Japan, so I don't have any friends yet.",
+            "focus": "来た",
+            "distractors": [
+              "来て",
+              "来る",
+              "来"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "row": 31,
+      "label": "まま (unchanged state)",
+      "lesson": {
+        "id": "n3-mama",
+        "level": "n3",
+        "title": "まま: as it is, with … still",
+        "summary": "まま says that a state stays unchanged while something else happens: with the window open, with shoes on, raw.",
+        "pattern": [
+          "V-た / V-ない まま",
+          "N の まま",
+          "い-A まま / な-A な まま"
+        ],
+        "body": [
+          "まま follows the た form (開けたまま), the ない form (言わないまま), a noun with の (生のまま) or an adjective (熱いまま, きれいなまま). It describes a state that is left as it is while the main action happens, often when that is unusual or not expected: 窓を開けたまま寝てしまった. ままにする means to leave something in that state.",
+          "The contrast example uses ながら, which joins two actions done at the same time by the same person (歌を歌いながら料理をする). まま is about a state that continues, not a second action, and it does not attach to the ます stem.",
+          "A common mistake is to use the て form or the dictionary form: 靴をはいてまま and 靴をはくまま are wrong; say 靴をはいたまま."
+        ],
+        "examples": [
+          {
+            "id": "n3-mama-1",
+            "text": "窓を開けたまま寝てしまった。",
+            "reading": "まどをあけたままねてしまった。",
+            "translation": "I fell asleep with the window open.",
+            "focus": "まま",
+            "distractors": [
+              "ながら",
+              "ばかり",
+              "ほど"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n3-mama-2",
+            "text": "靴をはいたまま部屋に入らないでください。",
+            "reading": "くつをはいたままへやにはいらないでください。",
+            "translation": "Please don't come into the room with your shoes on.",
+            "focus": "はいた",
+            "distractors": [
+              "はいて",
+              "はく",
+              "はき"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n3-mama-3",
+            "text": "野菜は生のまま食べてもおいしい。",
+            "reading": "やさいはなまのままたべてもおいしい。",
+            "translation": "Vegetables taste good even raw.",
+            "focus": "のまま",
+            "distractors": [
+              "なまま",
+              "でまま",
+              "にまま"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n3-mama-4",
+            "text": "部屋はきれいなままにしておいてね。",
+            "reading": "へやはきれいなままにしておいてね。",
+            "translation": "Keep the room clean, okay?",
+            "focus": "なまま",
+            "distractors": [
+              "だまま",
+              "でまま",
+              "いまま"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n3-mama-5",
+            "text": "彼は何も言わないまま帰っていった。",
+            "reading": "かれはなにもいわないままかえっていった。",
+            "translation": "He went home without saying anything.",
+            "focus": "まま",
+            "distractors": [
+              "ながら",
+              "ばかり",
+              "しか"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n3-mama-6",
+            "text": "歌を歌いながら料理をする。",
+            "reading": "うたをうたいながらりょうりをする。",
+            "translation": "I cook while singing.",
+            "focus": "ながら",
+            "distractors": [
+              "まま",
+              "ばかり",
+              "たまま"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "row": 32,
+      "label": "ずに and ないで (without doing)",
+      "lesson": {
+        "id": "n3-zuni-naide",
+        "level": "n3",
+        "title": "ずに and ないで: without doing",
+        "summary": "V-ない stem + ずに and V-ない + で both mean without doing; ずに is a little more written, and only ないで makes requests.",
+        "pattern": [
+          "V-ない stem + ずに (する → せずに)",
+          "V-ない + で"
+        ],
+        "body": [
+          "Take the ない form, drop ない and add ずに: 食べない → 食べずに, 使わない → 使わずに. The one exception is する, which becomes せずに. ないで is the ない form plus で: 持たないで. Both describe doing the main action without doing the first one: 朝ご飯を食べずに家を出た. ずに sounds slightly more written or formal; ないで is everyday speech. Only ないで can make a request: 吸わないでください.",
+          "The contrast example uses なくて, which gives a reason or a following state and also attaches to adjectives: 難しくなくて、安心した. ずに and ないで cannot attach to an adjective, and they mean without doing, not because something was not so.",
+          "A common mistake is しずに for する. The correct form is せずに: 宿題をせずに寝た."
+        ],
+        "examples": [
+          {
+            "id": "n3-zuni-naide-1",
+            "text": "朝ご飯を食べずに家を出た。",
+            "reading": "あさごはんをたべずにいえをでた。",
+            "translation": "I left the house without eating breakfast.",
+            "focus": "ずに",
+            "distractors": [
+              "ないに",
+              "ずで",
+              "ばかり"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n3-zuni-naide-2",
+            "text": "辞書を使わずに読んでみてください。",
+            "reading": "じしょをつかわずによんでみてください。",
+            "translation": "Try reading it without using a dictionary.",
+            "focus": "使わず",
+            "distractors": [
+              "使いず",
+              "使わなず",
+              "使うず"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n3-zuni-naide-3",
+            "text": "宿題をせずに寝てしまった。",
+            "reading": "しゅくだいをせずにねてしまった。",
+            "translation": "I went to bed without doing my homework.",
+            "focus": "せずに",
+            "distractors": [
+              "しずに",
+              "さずに",
+              "すずに"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n3-zuni-naide-4",
+            "text": "傘を持たないで出かけた。",
+            "reading": "かさをもたないででかけた。",
+            "translation": "I went out without an umbrella.",
+            "focus": "ないで",
+            "distractors": [
+              "ないに",
+              "なくで",
+              "ずで"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n3-zuni-naide-5",
+            "text": "ここで大きな声を出さないでください。",
+            "reading": "ここでおおきなこえをださないでください。",
+            "translation": "Please do not raise your voice here.",
+            "focus": "ないで",
+            "distractors": [
+              "ずに",
+              "なくて",
+              "ずで"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n3-zuni-naide-6",
+            "text": "テストは難しくなくて、安心した。",
+            "reading": "テストはむずかしくなくて、あんしんした。",
+            "translation": "The test wasn't difficult, so I was relieved.",
+            "focus": "なくて",
+            "distractors": [
+              "ずに",
+              "なくで",
+              "ないに"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "row": 33,
+      "label": "代わりに (instead of)",
+      "lesson": {
+        "id": "n3-kawari-ni",
+        "level": "n3",
+        "title": "代わりに: instead of, in exchange for",
+        "summary": "代わりに says that one thing or person takes the place of another, or that one fact is balanced by another.",
+        "pattern": [
+          "N の 代わりに",
+          "V-dict / A 代わりに"
+        ],
+        "body": [
+          "After a noun use の代わりに: 部長の代わりに (in place of the manager), 米の代わりに (instead of rice). After a verb or adjective in plain form, 代わりに means instead of doing (電話する代わりに、メールを送った) or in exchange for (英語を教える代わりに、日本語を教えてもらった). With adjectives it often balances a bad point with a good one: 駅から遠い代わりに、家賃が安い.",
+          "The contrast example uses ために, which gives a purpose: 試験に合格するために、毎晩勉強している. ために says what something is for; 代わりに says what something replaces.",
+          "A common mistake is to drop の after a noun. 部長代わりに is not the usual form; say 部長の代わりに."
+        ],
+        "examples": [
+          {
+            "id": "n3-kawari-ni-1",
+            "text": "部長の代わりに私が会議に出ます。",
+            "reading": "ぶちょうのかわりにわたしがかいぎにでます。",
+            "translation": "I'll attend the meeting in place of the manager.",
+            "focus": "代わりに",
+            "distractors": [
+              "ついでに",
+              "とおりに",
+              "くせに"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ],
+            "noOrder": true
+          },
+          {
+            "id": "n3-kawari-ni-2",
+            "text": "米の代わりにパンを食べた。",
+            "reading": "こめのかわりにパンをたべた。",
+            "translation": "I ate bread instead of rice.",
+            "focus": "代わりに",
+            "distractors": [
+              "とおりに",
+              "ついでに",
+              "うちに"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n3-kawari-ni-3",
+            "text": "英語を教える代わりに、日本語を教えてもらった。",
+            "reading": "えいごをおしえるかわりに、にほんごをおしえてもらった。",
+            "translation": "In exchange for teaching English, I got lessons in Japanese.",
+            "focus": "教える",
+            "distractors": [
+              "教えて",
+              "教え",
+              "教えに"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n3-kawari-ni-4",
+            "text": "このアパートは駅から遠い代わりに、家賃が安い。",
+            "reading": "このアパートはえきからとおいかわりに、やちんがやすい。",
+            "translation": "This apartment is far from the station, but the rent is cheap to make up for it.",
+            "focus": "代わりに",
+            "distractors": [
+              "ついでに",
+              "とおりに",
+              "までに"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n3-kawari-ni-5",
+            "text": "電話する代わりに、メールを送った。",
+            "reading": "でんわするかわりに、メールをおくった。",
+            "translation": "Instead of calling, I sent an email.",
+            "focus": "代わりに",
+            "distractors": [
+              "とおりに",
+              "くせに",
+              "ばかりに"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n3-kawari-ni-6",
+            "text": "試験に合格するために、毎晩勉強している。",
+            "reading": "しけんにごうかくするために、まいばんべんきょうしている。",
+            "translation": "I'm studying every night so that I can pass the exam.",
+            "focus": "ために",
+            "distractors": [
+              "ついでに",
+              "とおりに",
+              "ばかりに"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "row": 34,
+      "label": "ついでに (while at it)",
+      "lesson": {
+        "id": "n3-tsuideni",
+        "level": "n3",
+        "title": "ついでに: while you are at it",
+        "summary": "ついでに says that you use the chance of one activity to do something else as well.",
+        "pattern": [
+          "V-dict / V-た ついでに",
+          "N の ついでに"
+        ],
+        "body": [
+          "ついでに follows a verb in the dictionary or た form (駅へ行くついでに, 散歩したついでに) or a noun with の (買い物のついでに). The first part is the main activity; the second part is an extra thing done because you are already doing the first: 買い物のついでに、郵便局に寄った. It is common in requests: 行くついでに、これを出してくれる.",
+          "The contrast example uses ながら, which joins two actions done at exactly the same time (テレビを見ながらご飯を食べる). ついでに is about taking an opportunity, and the two actions usually happen one after the other.",
+          "A common mistake is to drop の after a noun: 買い物ついでに exists as a set phrase, but in the normal pattern say 買い物のついでに. Never use ついでに with the ます stem: 見ついでに is wrong."
+        ],
+        "examples": [
+          {
+            "id": "n3-tsuideni-1",
+            "text": "買い物のついでに、郵便局に寄った。",
+            "reading": "かいもののついでに、ゆうびんきょくによった。",
+            "translation": "While I was out shopping, I stopped by the post office.",
+            "focus": "ついでに",
+            "distractors": [
+              "ながら",
+              "まま",
+              "ばかり"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n3-tsuideni-2",
+            "text": "駅へ行くついでに、この手紙を出してくれる？",
+            "reading": "えきへいくついでに、このてがみをだしてくれる？",
+            "translation": "Since you're going to the station anyway, could you mail this letter?",
+            "focus": "行く",
+            "distractors": [
+              "行き",
+              "行って",
+              "行こう"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n3-tsuideni-3",
+            "text": "散歩したついでに、パンを買ってきた。",
+            "reading": "さんぽしたついでに、パンをかってきた。",
+            "translation": "I picked up some bread while I was out for a walk.",
+            "focus": "した",
+            "distractors": [
+              "して",
+              "しよう",
+              "し"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n3-tsuideni-4",
+            "text": "京都旅行のついでに、大阪にも行った。",
+            "reading": "きょうとりょこうのついでに、おおさかにもいった。",
+            "translation": "On my trip to Kyoto, I went to Osaka as well.",
+            "focus": "の",
+            "distractors": [
+              "な",
+              "に",
+              "を"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n3-tsuideni-5",
+            "text": "掃除のついでに、窓もふいた。",
+            "reading": "そうじのついでに、まどもふいた。",
+            "translation": "While I was cleaning, I wiped the windows too.",
+            "focus": "ついでに",
+            "distractors": [
+              "ながら",
+              "うちに",
+              "ままに"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n3-tsuideni-6",
+            "text": "テレビを見ながらご飯を食べる。",
+            "reading": "テレビをみながらごはんをたべる。",
+            "translation": "I eat while watching TV.",
+            "focus": "ながら",
+            "distractors": [
+              "ついでに",
+              "まま",
+              "ばかり"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "row": 35,
+      "label": "とおり(に) (as, in the way)",
+      "lesson": {
+        "id": "n3-toori-ni",
+        "level": "n3",
+        "title": "とおり(に): just as, in the way",
+        "summary": "とおり(に) says that something is done or happens exactly as said, written, planned or thought.",
+        "pattern": [
+          "V-dict / V-た とおり(に)",
+          "N の とおり(に)",
+          "N どおり(に)"
+        ],
+        "body": [
+          "とおり follows a verb in the dictionary or た form (書いてあるとおりに, 言ったとおり), or a noun with の (地図のとおりに). Directly after a noun it becomes どおり: 計画どおり, 予定どおり. With に it describes how an action is done (説明書のとおりに組み立てる); with だ it confirms that a result matched (先生の言ったとおりだった). At the start of a sentence, 思ったとおり means just as I thought.",
+          "The contrast example uses ように for a purpose: 遅れないように、早く出た. ように can also mean as (言ったように), but only ように expresses so that; とおりに always means in exactly that way.",
+          "A common mistake is 計画とおり without の. After a bare noun the sound changes: 計画どおり, or 計画のとおり."
+        ],
+        "examples": [
+          {
+            "id": "n3-toori-ni-1",
+            "text": "説明書に書いてあるとおりに組み立てた。",
+            "reading": "せつめいしょにかいてあるとおりにくみたてた。",
+            "translation": "I put it together exactly as the manual says.",
+            "focus": "とおりに",
+            "distractors": [
+              "ついでに",
+              "代わりに",
+              "までに"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n3-toori-ni-2",
+            "text": "先生の言ったとおりだった。",
+            "reading": "せんせいのいったとおりだった。",
+            "translation": "It was just as the teacher said.",
+            "focus": "とおり",
+            "distractors": [
+              "ついで",
+              "代わり",
+              "うち"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n3-toori-ni-3",
+            "text": "地図のとおりに行けば、すぐ着きます。",
+            "reading": "ちずのとおりにいけば、すぐつきます。",
+            "translation": "If you follow the map, you'll get there quickly.",
+            "focus": "の",
+            "distractors": [
+              "な",
+              "が",
+              "で"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n3-toori-ni-4",
+            "text": "計画どおりに進んでいる。",
+            "reading": "けいかくどおりにすすんでいる。",
+            "translation": "Things are going according to plan.",
+            "focus": "どおり",
+            "distractors": [
+              "とおり",
+              "ばかり",
+              "しか"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n3-toori-ni-5",
+            "text": "思ったとおり、彼は来なかった。",
+            "reading": "おもったとおり、かれはこなかった。",
+            "translation": "Just as I thought, he didn't come.",
+            "focus": "思った",
+            "distractors": [
+              "思って",
+              "思い",
+              "思おう"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n3-toori-ni-6",
+            "text": "遅れないように、早く出た。",
+            "reading": "おくれないように、はやくでた。",
+            "translation": "I left early so as not to be late.",
+            "focus": "ように",
+            "distractors": [
+              "とおりに",
+              "ついでに",
+              "最中に"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "row": 36,
+      "label": "っけ (asking to recall)",
+      "lesson": {
+        "id": "n3-kke",
+        "level": "n3",
+        "title": "っけ: what was it again?",
+        "summary": "っけ at the end of a casual sentence asks someone to confirm something you have forgotten, or recalls the past fondly.",
+        "pattern": [
+          "plain form (だ / だった) + っけ",
+          "V-た っけ",
+          "〜でしたっけ (polite)"
+        ],
+        "body": [
+          "Add っけ to a plain sentence, usually after だ, だった or a た form: 何時からだっけ, 何だったっけ, どこに置いたっけ. In polite speech use でしたっけ or ましたっけ. It means I knew this but forgot, can you remind me, and it is spoken, not written. With a past verb and no question, it can also be a fond memory: よくこの公園で遊んだっけ.",
+          "The contrast example uses かな, which wonders about something unknown, often in the future: 明日は晴れるかな. っけ only fits facts you once knew and have forgotten; for something you never knew, use かな.",
+          "A common mistake is to add っけ to a guess such as だろう or でしょう. 何だろうっけ is wrong; say 何だっけ or 何でしたっけ."
+        ],
+        "examples": [
+          {
+            "id": "n3-kke-1",
+            "text": "会議は何時からだっけ？",
+            "reading": "かいぎはなんじからだっけ？",
+            "translation": "What time does the meeting start again?",
+            "focus": "っけ",
+            "distractors": [
+              "ぞ",
+              "わけ",
+              "さ"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n3-kke-2",
+            "text": "あの人、名前は何だったっけ？",
+            "reading": "あのひと、なまえはなんだったっけ？",
+            "translation": "That person, what was their name again?",
+            "focus": "だった",
+            "distractors": [
+              "だろう",
+              "でしょう",
+              "なの"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n3-kke-3",
+            "text": "田中さんも来るんでしたっけ？",
+            "reading": "たなかさんもくるんでしたっけ？",
+            "translation": "Is Tanaka coming too? I've forgotten.",
+            "focus": "っけ",
+            "distractors": [
+              "ぞ",
+              "さ",
+              "ほど"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n3-kke-4",
+            "text": "子どもの頃、よくこの公園で遊んだっけ。",
+            "reading": "こどものころ、よくこのこうえんであそんだっけ。",
+            "translation": "I used to play in this park a lot as a kid.",
+            "focus": "遊んだ",
+            "distractors": [
+              "遊ぶ",
+              "遊ぼう",
+              "遊んで"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n3-kke-5",
+            "text": "宿題、どこに置いたっけ。",
+            "reading": "しゅくだい、どこにおいたっけ。",
+            "translation": "Where did I put my homework again?",
+            "focus": "っけ",
+            "distractors": [
+              "ぞ",
+              "さ",
+              "わけ"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n3-kke-6",
+            "text": "明日は晴れるかな。",
+            "reading": "あしたははれるかな。",
+            "translation": "I wonder if it will be sunny tomorrow.",
+            "focus": "かな",
+            "distractors": [
+              "だっけ",
+              "だろうっけ",
+              "ほど"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "row": 37,
+      "label": "って (quoting and topic in speech)",
+      "lesson": {
+        "id": "n3-tte",
+        "level": "n3",
+        "title": "って: they say, and as for",
+        "summary": "In casual speech って replaces と for quoting (休むって = he says he's taking the day off) and は or というのは for a topic.",
+        "pattern": [
+          "plain form + って (言っていた)",
+          "N って 〜 (topic)"
+        ],
+        "body": [
+          "As a quote marker, って follows a plain sentence and stands for と or と言っていた: 明日は雨が降るって言ってたよ. At the end of a sentence it reports what someone said: 田中さん、今日は休むって. As a topic marker, って follows a noun and means as for or what is: 日本の夏って、本当に暑いね, 「ハンコ」って何ですか. In 山田さんって人 it means a person called Yamada.",
+          "The contrast example uses と, the neutral quote marker of written and polite speech: 部長は明日来ると言いました. って means the same but is casual, so it is avoided in formal writing.",
+          "A common mistake is to use って in a formal report or essay. Use と or というのは there."
+        ],
+        "examples": [
+          {
+            "id": "n3-tte-1",
+            "text": "田中さん、今日は休むって。",
+            "reading": "たなかさん、きょうはやすむって。",
+            "translation": "Tanaka says he's taking today off.",
+            "focus": "って",
+            "distractors": [
+              "ほど",
+              "ばかり",
+              "まま"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n3-tte-2",
+            "text": "明日は雨が降るって言ってたよ。",
+            "reading": "あしたはあめがふるっていってたよ。",
+            "translation": "They said it's going to rain tomorrow.",
+            "focus": "降るって",
+            "distractors": [
+              "降るを",
+              "降るが",
+              "降るに"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n3-tte-3",
+            "text": "「ハンコ」って何ですか？",
+            "reading": "「ハンコ」ってなんですか？",
+            "translation": "What's a hanko?",
+            "focus": "って",
+            "distractors": [
+              "を",
+              "に",
+              "で"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n3-tte-4",
+            "text": "日本の夏って、本当に暑いね。",
+            "reading": "にほんのなつって、ほんとうにあついね。",
+            "translation": "Summers in Japan are really hot, aren't they?",
+            "focus": "って",
+            "distractors": [
+              "を",
+              "の",
+              "と"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n3-tte-5",
+            "text": "山田さんって人から電話があったよ。",
+            "reading": "やまださんってひとからでんわがあったよ。",
+            "translation": "You got a call from someone called Yamada.",
+            "focus": "って",
+            "distractors": [
+              "を",
+              "が",
+              "で"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n3-tte-6",
+            "text": "部長は明日来ると言いました。",
+            "reading": "ぶちょうはあしたくるといいました。",
+            "translation": "The manager said he would come tomorrow.",
+            "focus": "と",
+            "distractors": [
+              "を",
+              "が",
+              "に"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "row": 38,
+      "label": "とか (listing examples)",
+      "lesson": {
+        "id": "n3-toka",
+        "level": "n3",
+        "title": "とか: things like, or something",
+        "summary": "とか lists one or more examples out of many, in casual speech; at the end of a sentence it can also pass on something you heard.",
+        "pattern": [
+          "N とか (N とか)",
+          "V-dict とか V-dict とか する",
+          "plain form + とか (I hear)"
+        ],
+        "body": [
+          "とか follows nouns (野菜とか果物とか) and also verbs in plain form (お風呂に入るとか、早く寝るとか), which や cannot do. It says these are only examples and there are others. The last とか is often kept before a particle or before する. At the end of a sentence, plain form + とか means I heard something like: 来月結婚するとか.",
+          "The contrast example uses や, which lists nouns in written and neutral speech: 本やノートがある. や only joins nouns; とか is more casual and also joins verbs and quotes.",
+          "A common mistake is to use とか in a formal essay. In writing, use や for nouns and たり for actions."
+        ],
+        "examples": [
+          {
+            "id": "n3-toka-1",
+            "text": "休みの日は映画とか見ています。",
+            "reading": "やすみのひはえいがとかみています。",
+            "translation": "On days off I watch movies and things.",
+            "focus": "とか",
+            "distractors": [
+              "ほど",
+              "ずつ",
+              "の"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n3-toka-2",
+            "text": "野菜とか果物とか、もっと食べたほうがいいよ。",
+            "reading": "やさいとかくだものとか、もっとたべたほうがいいよ。",
+            "translation": "You should eat more things like vegetables and fruit.",
+            "focus": "果物とか",
+            "distractors": [
+              "果物ほど",
+              "果物まま",
+              "果物ずつ"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ],
+            "noOrder": true
+          },
+          {
+            "id": "n3-toka-3",
+            "text": "疲れたときは、お風呂に入るとか、早く寝るとかしたら？",
+            "reading": "つかれたときは、おふろにはいるとか、はやくねるとかしたら？",
+            "translation": "When you're tired, why not take a bath or go to bed early or something?",
+            "focus": "寝るとか",
+            "distractors": [
+              "寝ても",
+              "寝るほど",
+              "寝るまで"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ],
+            "noOrder": true
+          },
+          {
+            "id": "n3-toka-4",
+            "text": "鈴木さん、来月結婚するとか。",
+            "reading": "すずきさん、らいげつけっこんするとか。",
+            "translation": "I hear Suzuki is getting married next month.",
+            "focus": "とか",
+            "distractors": [
+              "ほど",
+              "ずつ",
+              "ながら"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n3-toka-5",
+            "text": "「すみません」とか言えばいいのに。",
+            "reading": "「すみません」とかいえばいいのに。",
+            "translation": "You could at least say something like sorry.",
+            "focus": "とか",
+            "distractors": [
+              "ほど",
+              "ずつ",
+              "まま"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n3-toka-6",
+            "text": "机の上に本やノートがある。",
+            "reading": "つくえのうえにほんやノートがある。",
+            "translation": "There are books, notebooks and so on on the desk.",
+            "focus": "や",
+            "distractors": [
+              "を",
+              "で",
+              "が"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ],
+            "noOrder": true
+          }
+        ]
+      }
+    },
+    {
+      "row": 39,
+      "label": "わりに (considering)",
+      "lesson": {
+        "id": "n3-wari-ni",
+        "level": "n3",
+        "title": "わりに: for, considering",
+        "summary": "わりに says that a result is not what you would expect from a certain degree: tasty for the price, energetic for his age.",
+        "pattern": [
+          "plain form + わりに",
+          "N の わりに / な-A な わりに"
+        ],
+        "body": [
+          "わりに (or わりには) follows a plain verb or い-adjective (勉強したわりに, 細いわりに), a noun with の (値段のわりに, 年のわりに) or a な-adjective with な (丈夫なわりに). The first part names a degree or amount, and the second part is better or worse than that degree would lead you to expect. It can praise (値段のわりにおいしい) or complain (勉強したわりに点数が悪かった).",
+          "The contrast example uses のに, which expresses a simple although with surprise or regret: 約束したのに、彼は来なかった. のに works with any fact; わりに needs something with a degree that can be measured against the result.",
+          "A common mistake is to drop の after a noun: 年わりに is wrong; say 年のわりに."
+        ],
+        "examples": [
+          {
+            "id": "n3-wari-ni-1",
+            "text": "この店は値段のわりにおいしい。",
+            "reading": "このみせはねだんのわりにおいしい。",
+            "translation": "This place is tasty for the price.",
+            "focus": "わりに",
+            "distractors": [
+              "ついでに",
+              "代わりに",
+              "とおりに"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n3-wari-ni-2",
+            "text": "祖父は年のわりに元気だ。",
+            "reading": "そふはとしのわりにげんきだ。",
+            "translation": "My grandfather is energetic for his age.",
+            "focus": "の",
+            "distractors": [
+              "な",
+              "が",
+              "で"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n3-wari-ni-3",
+            "text": "よく勉強したわりに、点数が悪かった。",
+            "reading": "よくべんきょうしたわりに、てんすうがわるかった。",
+            "translation": "For all the studying I did, my score was poor.",
+            "focus": "わりに",
+            "distractors": [
+              "代わりに",
+              "とおりに",
+              "ついでに"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n3-wari-ni-4",
+            "text": "彼は細いわりに、よく食べる。",
+            "reading": "かれはほそいわりに、よくたべる。",
+            "translation": "He eats a lot for someone so thin.",
+            "focus": "細い",
+            "distractors": [
+              "細く",
+              "細くて",
+              "細さ"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n3-wari-ni-5",
+            "text": "このかばんは丈夫なわりに軽い。",
+            "reading": "このかばんはじょうぶなわりにかるい。",
+            "translation": "This bag is light for how sturdy it is.",
+            "focus": "なわりに",
+            "distractors": [
+              "のわりに",
+              "でわりに",
+              "だわりに"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n3-wari-ni-6",
+            "text": "約束したのに、彼は来なかった。",
+            "reading": "やくそくしたのに、かれはこなかった。",
+            "translation": "He promised, but he didn't come.",
+            "focus": "のに",
+            "distractors": [
+              "ついでに",
+              "うちに",
+              "最中に"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "row": 40,
+      "label": "一方だ (keeps on …ing)",
+      "lesson": {
+        "id": "n3-ippou-da",
+        "level": "n3",
+        "title": "一方だ: keeps getting more and more",
+        "summary": "V-dict + 一方だ says that a change keeps going in one direction and does not stop, usually a change for the worse.",
+        "pattern": [
+          "V-dict 一方だ",
+          "〜くなる / 〜になる 一方だ"
+        ],
+        "body": [
+          "一方だ follows the dictionary form of a verb of change: 増える, 減る, 上がる, 悪くなる, 強くなる. It means the change only goes one way and shows no sign of stopping: 物の値段は上がる一方だ. It is often used for problems (stress, prices, illness), and it can also be followed by なのに or なので.",
+          "The contrast example uses ようになる for a change in ability or habit: 自転車に乗れるようになった. ようになる reports that a new state has been reached; 一方だ describes a trend that is still going on.",
+          "A common mistake is to attach 一方だ to a past or て form: 増えた一方 and 増えて一方 are wrong; say 増える一方だ."
+        ],
+        "examples": [
+          {
+            "id": "n3-ippou-da-1",
+            "text": "物の値段は上がる一方だ。",
+            "reading": "もののねだんはあがるいっぽうだ。",
+            "translation": "Prices just keep going up.",
+            "focus": "一方",
+            "distractors": [
+              "まま",
+              "ほど",
+              "うち"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n3-ippou-da-2",
+            "text": "東京の人口は増える一方です。",
+            "reading": "とうきょうのじんこうはふえるいっぽうです。",
+            "translation": "Tokyo's population keeps growing.",
+            "focus": "増える",
+            "distractors": [
+              "増えた",
+              "増えて",
+              "増え"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n3-ippou-da-3",
+            "text": "彼の病気は悪くなる一方だった。",
+            "reading": "かれのびょうきはわるくなるいっぽうだった。",
+            "translation": "His illness just kept getting worse.",
+            "focus": "なる一方",
+            "distractors": [
+              "なった一方",
+              "なって一方",
+              "なり一方"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n3-ippou-da-4",
+            "text": "最近、ストレスがたまる一方だ。",
+            "reading": "さいきん、ストレスがたまるいっぽうだ。",
+            "translation": "Lately my stress just keeps building up.",
+            "focus": "一方だ",
+            "distractors": [
+              "ままだ",
+              "うちだ",
+              "ほどだ"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ],
+            "noOrder": true
+          },
+          {
+            "id": "n3-ippou-da-5",
+            "text": "雨が強くなる一方なので、早く帰ろう。",
+            "reading": "あめがつよくなるいっぽうなので、はやくかえろう。",
+            "translation": "The rain keeps getting heavier, so let's head home early.",
+            "focus": "一方",
+            "distractors": [
+              "まま",
+              "うち",
+              "ほど"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n3-ippou-da-6",
+            "text": "やっと自転車に乗れるようになった。",
+            "reading": "やっとじてんしゃにのれるようになった。",
+            "translation": "I've finally learned to ride a bike.",
+            "focus": "ように",
+            "distractors": [
+              "一方に",
+              "ままに",
+              "とおりに"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "row": 41,
+      "label": "ことはない (no need to)",
+      "lesson": {
+        "id": "n3-koto-wa-nai",
+        "level": "n3",
+        "title": "ことはない: there is no need to",
+        "summary": "V-dict + ことはない tells someone that there is no need to do something, often to reassure them.",
+        "pattern": [
+          "V-dict ことはない",
+          "V-dict ことはなかった (didn't need to)"
+        ],
+        "body": [
+          "ことはない follows the dictionary form: 心配することはない, 急ぐことはない. It is softer than してはいけない; it reassures or advises rather than forbids. In the past, ことはなかった means it wasn't necessary, often with a slight complaint: わざわざ来ることはなかったのに.",
+          "The contrast example uses たことがない (have never done), which attaches to the た form: 富士山に登ったことがない. The two differ in form (dictionary form vs た form) and in meaning (no need vs no experience).",
+          "A common mistake is to use the た form when you mean no need: 急いだことはない means I have never hurried, not there is no need to hurry."
+        ],
+        "examples": [
+          {
+            "id": "n3-koto-wa-nai-1",
+            "text": "そんなに心配することはないよ。",
+            "reading": "そんなにしんぱいすることはないよ。",
+            "translation": "There's no need to worry that much.",
+            "focus": "ことは",
+            "distractors": [
+              "ものは",
+              "ためは",
+              "ままは"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n3-koto-wa-nai-2",
+            "text": "時間はあるから、急ぐことはない。",
+            "reading": "じかんはあるから、いそぐことはない。",
+            "translation": "There's time, so there's no need to hurry.",
+            "focus": "急ぐ",
+            "distractors": [
+              "急いで",
+              "急ぎ",
+              "急ご"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n3-koto-wa-nai-3",
+            "text": "わざわざ来ることはなかったのに。",
+            "reading": "わざわざくることはなかったのに。",
+            "translation": "You didn't have to go to the trouble of coming.",
+            "focus": "来る",
+            "distractors": [
+              "来て",
+              "来よう",
+              "来い"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n3-koto-wa-nai-4",
+            "text": "一回失敗しても、あきらめることはない。",
+            "reading": "いっかいしっぱいしても、あきらめることはない。",
+            "translation": "Even if you fail once, there's no need to give up.",
+            "focus": "ことはない",
+            "distractors": [
+              "ためはない",
+              "ままはない",
+              "ものはない"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n3-koto-wa-nai-5",
+            "text": "君が謝ることはないよ。",
+            "reading": "きみがあやまることはないよ。",
+            "translation": "There's no need for you to apologize.",
+            "focus": "ことは",
+            "distractors": [
+              "ものは",
+              "ためは",
+              "ままは"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n3-koto-wa-nai-6",
+            "text": "私は富士山に登ったことがない。",
+            "reading": "わたしはふじさんにのぼったことがない。",
+            "translation": "I have never climbed Mt. Fuji.",
+            "focus": "ことが",
+            "distractors": [
+              "ものが",
+              "ほどが",
+              "ためが"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "row": 42,
+      "label": "しかない (no choice but)",
+      "lesson": {
+        "id": "n3-shika-nai",
+        "level": "n3",
+        "title": "しかない: have no choice but to",
+        "summary": "V-dict + しかない says that there is only one thing left to do, so you have to do it.",
+        "pattern": [
+          "V-dict しかない",
+          "V-dict しかなかった"
+        ],
+        "body": [
+          "しかない follows the dictionary form of a verb: 歩いて帰るしかない, 謝るしかない. It means there is no other option. The tone is often resigned but can also be determined (頑張るしかない). In the past, しかなかった means all I could do was.",
+          "The contrast example uses N しか with a negative verb: 朝はコーヒーしか飲まない (I drink only coffee). That pattern limits a noun; V-dict しかない limits the choices of action, and there ない stands alone.",
+          "A common mistake is to use another form before しかない: 決めたしかない and 決めてしかない are wrong; say 決めるしかない."
+        ],
+        "examples": [
+          {
+            "id": "n3-shika-nai-1",
+            "text": "電車がないから、歩いて帰るしかない。",
+            "reading": "でんしゃがないから、あるいてかえるしかない。",
+            "translation": "There are no trains, so I have no choice but to walk home.",
+            "focus": "しか",
+            "distractors": [
+              "だけ",
+              "ばかり",
+              "ほど"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n3-shika-nai-2",
+            "text": "自分で決めるしかないよ。",
+            "reading": "じぶんできめるしかないよ。",
+            "translation": "You'll just have to decide for yourself.",
+            "focus": "決める",
+            "distractors": [
+              "決めて",
+              "決め",
+              "決めた"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n3-shika-nai-3",
+            "text": "誰も手伝ってくれないなら、一人でやるしかない。",
+            "reading": "だれもてつだってくれないなら、ひとりでやるしかない。",
+            "translation": "If nobody will help, I'll just have to do it alone.",
+            "focus": "しかない",
+            "distractors": [
+              "しかある",
+              "だけない",
+              "ほどない"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n3-shika-nai-4",
+            "text": "こうなったら、謝るしかない。",
+            "reading": "こうなったら、あやまるしかない。",
+            "translation": "Now that it has come to this, all I can do is apologize.",
+            "focus": "しか",
+            "distractors": [
+              "だけ",
+              "ほど",
+              "ばかり"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n3-shika-nai-5",
+            "text": "薬を飲んで寝るしかなかった。",
+            "reading": "くすりをのんでねるしかなかった。",
+            "translation": "All I could do was take some medicine and sleep.",
+            "focus": "しかなかった",
+            "distractors": [
+              "しかあった",
+              "だけなかった",
+              "ままなかった"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n3-shika-nai-6",
+            "text": "朝はコーヒーしか飲まない。",
+            "reading": "あさはコーヒーしかのまない。",
+            "translation": "In the morning I drink only coffee.",
+            "focus": "しか",
+            "distractors": [
+              "ので",
+              "ずつ",
+              "の"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "row": 43,
+      "label": "べきだ and べきではない (should)",
+      "lesson": {
+        "id": "n3-beki-da",
+        "level": "n3",
+        "title": "べきだ / べきではない: should, should not",
+        "summary": "V-dict + べきだ says what is right or proper to do; べきではない says what one should not do.",
+        "pattern": [
+          "V-dict べきだ (する → すべき / するべき)",
+          "V-dict べきではない",
+          "N / な-A であるべきだ"
+        ],
+        "body": [
+          "べき follows the dictionary form: 守るべきだ, 行くべきだった (should have gone). For する, both するべき and すべき are used. After a noun or な-adjective, use であるべきだ: 公平であるべきだ. The negative is べきではない, never べきない. べきだ is a strong statement about duty or what is right, so it can sound preachy when you give advice to a person directly.",
+          "The contrast example uses ほうがいい, which is friendly, practical advice: 夜遅いから、タクシーで帰ったほうがいい. ほうがいい usually follows the た form; べきだ never does.",
+          "A common mistake is しべき for する. The forms are すべき or するべき."
+        ],
+        "examples": [
+          {
+            "id": "n3-beki-da-1",
+            "text": "約束は守るべきだ。",
+            "reading": "やくそくはまもるべきだ。",
+            "translation": "Promises should be kept.",
+            "focus": "べき",
+            "distractors": [
+              "まま",
+              "うち",
+              "ついで"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n3-beki-da-2",
+            "text": "困ったときは、先生に相談すべきだ。",
+            "reading": "こまったときは、せんせいにそうだんすべきだ。",
+            "translation": "When you're in trouble, you should talk to your teacher.",
+            "focus": "すべき",
+            "distractors": [
+              "しべき",
+              "さべき",
+              "すれべき"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n3-beki-da-3",
+            "text": "人の悪口を言うべきではない。",
+            "reading": "ひとのわるぐちをいうべきではない。",
+            "translation": "You shouldn't speak ill of others.",
+            "focus": "べきではない",
+            "distractors": [
+              "べきくない",
+              "べきない",
+              "べくない"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n3-beki-da-4",
+            "text": "もっと早く病院に行くべきだった。",
+            "reading": "もっとはやくびょういんにいくべきだった。",
+            "translation": "I should have gone to the hospital sooner.",
+            "focus": "行く",
+            "distractors": [
+              "行った",
+              "行って",
+              "行か"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n3-beki-da-5",
+            "text": "リーダーは公平であるべきだ。",
+            "reading": "リーダーはこうへいであるべきだ。",
+            "translation": "A leader should be fair.",
+            "focus": "である",
+            "distractors": [
+              "だ",
+              "な",
+              "の"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n3-beki-da-6",
+            "text": "夜遅いから、タクシーで帰ったほうがいい。",
+            "reading": "よるおそいから、タクシーでかえったほうがいい。",
+            "translation": "It's late, so you'd better take a taxi home.",
+            "focus": "ほうが",
+            "distractors": [
+              "べきが",
+              "はずが",
+              "ためが"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "row": 44,
+      "label": "ようとする and ようとしない (try to, refuse to)",
+      "lesson": {
+        "id": "n3-you-to-suru",
+        "level": "n3",
+        "title": "ようとする / ようとしない: try to, be about to, won't",
+        "summary": "Volitional + とする means try to or be about to do; ようとしない means someone won't do it, refuses to.",
+        "pattern": [
+          "V-volitional とする",
+          "V-volitional としない",
+          "V-volitional としたとき (just as)"
+        ],
+        "body": [
+          "Use the volitional form (食べよう, 話そう, しよう) plus とする. With effort it means try to (寝ようとしたが、眠れなかった); with ときに or とした瞬間 it means be just about to (家を出ようとしたとき、電話が鳴った). ようとして describes an attempt that leads to something (持ち上げようとして、腰を痛めた). ようとしない describes another person's refusal: 弟は野菜を食べようとしない.",
+          "The contrast example uses てみる (try something out to see what it is like): 新しいパン屋のパンを食べてみた. てみる is about trying an experience; ようとする is about an attempt that may fail or an action about to start.",
+          "A common mistake is a wrong volitional form for う-verbs: 話よう and 話しよう are wrong; the form is 話そう."
+        ],
+        "examples": [
+          {
+            "id": "n3-you-to-suru-1",
+            "text": "家を出ようとしたとき、電話が鳴った。",
+            "reading": "いえをでようとしたとき、でんわがなった。",
+            "translation": "Just as I was about to leave the house, the phone rang.",
+            "focus": "よう",
+            "distractors": [
+              "ます",
+              "ろう",
+              "て"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n3-you-to-suru-2",
+            "text": "弟は野菜を食べようとしない。",
+            "reading": "おとうとはやさいをたべようとしない。",
+            "translation": "My little brother refuses to eat vegetables.",
+            "focus": "としない",
+            "distractors": [
+              "としなく",
+              "にしない",
+              "をしない"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n3-you-to-suru-3",
+            "text": "寝ようとしたが、なかなか眠れなかった。",
+            "reading": "ねようとしたが、なかなかねむれなかった。",
+            "translation": "I tried to sleep, but I just couldn't drop off.",
+            "focus": "寝よう",
+            "distractors": [
+              "寝る",
+              "寝て",
+              "寝た"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n3-you-to-suru-4",
+            "text": "彼は何度聞いても、理由を話そうとしなかった。",
+            "reading": "かれはなんどきいても、りゆうをはなそうとしなかった。",
+            "translation": "No matter how many times I asked, he wouldn't tell me why.",
+            "focus": "話そう",
+            "distractors": [
+              "話よう",
+              "話しよう",
+              "話すよう"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ],
+            "noOrder": true
+          },
+          {
+            "id": "n3-you-to-suru-5",
+            "text": "重い荷物を持ち上げようとして、腰を痛めた。",
+            "reading": "おもいにもつをもちあげようとして、こしをいためた。",
+            "translation": "I hurt my back trying to lift a heavy bag.",
+            "focus": "として",
+            "distractors": [
+              "にして",
+              "とみて",
+              "をして"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n3-you-to-suru-6",
+            "text": "新しいパン屋のパンを食べてみた。",
+            "reading": "あたらしいパンやのパンをたべてみた。",
+            "translation": "I tried the bread from the new bakery.",
+            "focus": "みた",
+            "distractors": [
+              "とした",
+              "ようとした",
+              "みった"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "row": 45,
+      "label": "かける and かけの (half-done)",
+      "lesson": {
+        "id": "n3-kakeru",
+        "level": "n3",
+        "title": "かける / かけの: half done, about to",
+        "summary": "V-ます stem + かける means start doing something without finishing it, or nearly do it; かけの + N is a half-done thing.",
+        "pattern": [
+          "V-ます stem + かける",
+          "V-ます stem + かけの N / かけた N"
+        ],
+        "body": [
+          "Attach かける to the ます stem: 読みかける, 言いかける, 死にかける. It means an action was started and is not finished (宿題をやりかけたまま), or that something almost happened (死にかけた). It conjugates like a ru-verb: かけて, かけた. Before a noun, かけの or かけた says the thing is half done: 読みかけの本, 食べかけのケーキ.",
+          "The contrast example uses ところだ for something about to happen: これから晩ご飯を作るところです. ところだ follows a full dictionary form and is about timing; かける attaches to a stem and is about an unfinished action.",
+          "A common mistake is to attach かける to the dictionary form or the て form: 食べるかけ and 食べてかけ are wrong; say 食べかけ."
+        ],
+        "examples": [
+          {
+            "id": "n3-kakeru-1",
+            "text": "読みかけの本が机の上にある。",
+            "reading": "よみかけのほんがつくえのうえにある。",
+            "translation": "There's a half-read book on the desk.",
+            "focus": "かけの",
+            "distractors": [
+              "かけな",
+              "かけて",
+              "かけに"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ],
+            "noOrder": true
+          },
+          {
+            "id": "n3-kakeru-2",
+            "text": "彼は何か言いかけて、やめた。",
+            "reading": "かれはなにかいいかけて、やめた。",
+            "translation": "He started to say something, then stopped.",
+            "focus": "かけて",
+            "distractors": [
+              "かけの",
+              "かけな",
+              "かけに"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n3-kakeru-3",
+            "text": "食べかけのケーキを冷蔵庫に入れた。",
+            "reading": "たべかけのケーキをれいぞうこにいれた。",
+            "translation": "I put the half-eaten cake in the fridge.",
+            "focus": "食べ",
+            "distractors": [
+              "食べる",
+              "食べて",
+              "食べた"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n3-kakeru-4",
+            "text": "事故で死にかけたことがある。",
+            "reading": "じこでしにかけたことがある。",
+            "translation": "I once nearly died in an accident.",
+            "focus": "かけた",
+            "distractors": [
+              "かけの",
+              "かけな",
+              "かけて"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n3-kakeru-5",
+            "text": "宿題をやりかけたまま、寝てしまった。",
+            "reading": "しゅくだいをやりかけたまま、ねてしまった。",
+            "translation": "I fell asleep with my homework half done.",
+            "focus": "やり",
+            "distractors": [
+              "やる",
+              "やって",
+              "やった"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n3-kakeru-6",
+            "text": "これから晩ご飯を作るところです。",
+            "reading": "これからばんごはんをつくるところです。",
+            "translation": "I'm just about to make dinner.",
+            "focus": "ところ",
+            "distractors": [
+              "かけ",
+              "まま",
+              "うち"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "row": 46,
+      "label": "きる and きれない (completely, cannot finish)",
+      "lesson": {
+        "id": "n3-kiru",
+        "level": "n3",
+        "title": "きる / きれない: all the way, too much to",
+        "summary": "V-ます stem + きる means do something completely; きれない means you cannot finish it because there is too much.",
+        "pattern": [
+          "V-ます stem + きる",
+          "V-ます stem + きれない / きれる"
+        ],
+        "body": [
+          "Attach きる to the ます stem: 読みきる (read to the end), 疲れきる (be completely exhausted), 言いきる (say flatly). It conjugates like a godan verb: きった, きって. The potential きれる / きれない says whether you can do it all: 一人では食べきれない, 星が多すぎて数えきれない. きれない is very common for too many or too much.",
+          "The contrast example uses てしまう, which marks completion or regret after the て form: 傘を電車に忘れてしまった. てしまう says something is done (often by accident); きる says it is done fully, to the end.",
+          "A common mistake is to attach きる to the て form or dictionary form: 食べてきれない and 食べるきれない are wrong; say 食べきれない."
+        ],
+        "examples": [
+          {
+            "id": "n3-kiru-1",
+            "text": "一晩でこの本を読みきった。",
+            "reading": "ひとばんでこのほんをよみきった。",
+            "translation": "I read this whole book in one night.",
+            "focus": "きった",
+            "distractors": [
+              "きって",
+              "きり",
+              "きれ"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ],
+            "noOrder": true
+          },
+          {
+            "id": "n3-kiru-2",
+            "text": "こんなにたくさん、一人では食べきれない。",
+            "reading": "こんなにたくさん、ひとりではたべきれない。",
+            "translation": "I can't eat this much on my own.",
+            "focus": "きれない",
+            "distractors": [
+              "かけない",
+              "きて",
+              "きりない"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n3-kiru-3",
+            "text": "マラソンの後、疲れきって動けなかった。",
+            "reading": "マラソンのあと、つかれきってうごけなかった。",
+            "translation": "After the marathon I was so exhausted I couldn't move.",
+            "focus": "疲れ",
+            "distractors": [
+              "疲れて",
+              "疲れる",
+              "疲れた"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n3-kiru-4",
+            "text": "星が多すぎて、数えきれない。",
+            "reading": "ほしがおおすぎて、かぞえきれない。",
+            "translation": "There are too many stars to count.",
+            "focus": "きれない",
+            "distractors": [
+              "きない",
+              "きれる",
+              "きらず"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n3-kiru-5",
+            "text": "彼は「絶対に勝つ」と言いきった。",
+            "reading": "かれは「ぜったいにかつ」といいきった。",
+            "translation": "He flatly declared that they would definitely win.",
+            "focus": "言い",
+            "distractors": [
+              "言う",
+              "言って",
+              "言った"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n3-kiru-6",
+            "text": "傘を電車に忘れてしまった。",
+            "reading": "かさをでんしゃにわすれてしまった。",
+            "translation": "I left my umbrella on the train.",
+            "focus": "しまった",
+            "distractors": [
+              "きった",
+              "かけた",
+              "きれた"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "row": 47,
+      "label": "出す, 始める, 続ける, 終わる (compound verbs of phase)",
+      "lesson": {
+        "id": "n3-phase-verbs",
+        "level": "n3",
+        "title": "出す, 始める, 続ける, 終わる: start, keep on, finish",
+        "summary": "Four verbs attach to the ます stem to mark the phase of an action: 出す (burst into), 始める (begin), 続ける (keep on), 終わる (finish).",
+        "pattern": [
+          "V-ます stem + 出す / 始める",
+          "V-ます stem + 続ける",
+          "V-ます stem + 終わる"
+        ],
+        "body": [
+          "All four attach to the ます stem: 降り出す, 書き始める, 話し続ける, 読み終わる. 始める is the neutral begin; 出す is a sudden or uncontrolled start, so it often comes with 急に (急に雨が降り出した, 笑い出した). 続ける means keep on doing, also over a long time (十年間通い続けている). 終わる (or 終える) means finish doing.",
+          "Use the transitive forms 始める and 続ける in these compounds even when the subject is rain or a feeling: 書き始めた, not 書き始まった; 話し続けた, not 話し続いた.",
+          "The contrast example uses ている for an ongoing state: 朝からずっと雨が降っている. ている follows the て form and simply says the action is in progress; 続ける follows the stem and stresses that it goes on and on."
+        ],
+        "examples": [
+          {
+            "id": "n3-phase-verbs-1",
+            "text": "急に雨が降り出した。",
+            "reading": "きゅうにあめがふりだした。",
+            "translation": "It suddenly started to rain.",
+            "focus": "出した",
+            "distractors": [
+              "出る",
+              "出った",
+              "出かけた"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n3-phase-verbs-2",
+            "text": "去年から日記を書き始めた。",
+            "reading": "きょねんからにっきをかきはじめた。",
+            "translation": "I started keeping a diary last year.",
+            "focus": "始めた",
+            "distractors": [
+              "始まった",
+              "出た",
+              "始めって"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n3-phase-verbs-3",
+            "text": "彼は三時間も話し続けた。",
+            "reading": "かれはさんじかんもはなしつづけた。",
+            "translation": "He kept talking for three whole hours.",
+            "focus": "続けた",
+            "distractors": [
+              "続いた",
+              "始まった",
+              "出た"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n3-phase-verbs-4",
+            "text": "その本、読み終わったら貸してね。",
+            "reading": "そのほん、よみおわったらかしてね。",
+            "translation": "Lend me that book when you've finished reading it.",
+            "focus": "終わった",
+            "distractors": [
+              "終えった",
+              "終わして",
+              "始まった"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n3-phase-verbs-5",
+            "text": "映画の途中で、隣の人が笑い出した。",
+            "reading": "えいがのとちゅうで、となりのひとがわらいだした。",
+            "translation": "Halfway through the movie, the person next to me burst out laughing.",
+            "focus": "笑い",
+            "distractors": [
+              "笑って",
+              "笑う",
+              "笑った"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n3-phase-verbs-6",
+            "text": "十年間、同じ店に通い続けている。",
+            "reading": "じゅうねんかん、おなじみせにかよいつづけている。",
+            "translation": "I've been going to the same shop for ten years.",
+            "focus": "通い",
+            "distractors": [
+              "通って",
+              "通う",
+              "通った"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ],
+            "noOrder": true
+          },
+          {
+            "id": "n3-phase-verbs-7",
+            "text": "朝からずっと雨が降っている。",
+            "reading": "あさからずっとあめがふっている。",
+            "translation": "It has been raining ever since this morning.",
+            "focus": "いる",
+            "distractors": [
+              "続ける",
+              "出す",
+              "始める"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "row": 48,
+      "label": "たとたん(に) (the moment)",
+      "lesson": {
+        "id": "n3-totan-ni",
+        "level": "n3",
+        "title": "たとたん(に): the moment, just as",
+        "summary": "V-た + とたん(に) says that something unexpected happened right at the moment of another action.",
+        "pattern": [
+          "V-た とたん(に)"
+        ],
+        "body": [
+          "とたん always follows the た form: 立ち上がったとたん, 窓を開けたとたんに. に is optional. The second part is something that happened at once and was not planned, often a surprise: バスを降りたとたん、財布がないことに気づいた. Because the second event is a surprise, it is not the speaker's own intention, and the sentence is in the past.",
+          "The contrast example uses たら + すぐ for something you will do on purpose right after another action: 家に帰ったら、すぐお風呂に入りなさい. Commands, requests and plans need たら or てすぐ; とたん cannot be used with them.",
+          "A common mistake is the dictionary form: 開けるとたん is wrong; say 開けたとたん."
+        ],
+        "examples": [
+          {
+            "id": "n3-totan-ni-1",
+            "text": "立ち上がったとたん、めまいがした。",
+            "reading": "たちあがったとたん、めまいがした。",
+            "translation": "The moment I stood up, I felt dizzy.",
+            "focus": "とたん",
+            "distractors": [
+              "ついでに",
+              "うちに",
+              "わりに"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n3-totan-ni-2",
+            "text": "窓を開けたとたんに、虫が入ってきた。",
+            "reading": "まどをあけたとたんに、むしがはいってきた。",
+            "translation": "The instant I opened the window, a bug flew in.",
+            "focus": "開けた",
+            "distractors": [
+              "開ける",
+              "開けて",
+              "開け"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n3-totan-ni-3",
+            "text": "バスを降りたとたん、財布がないことに気づいた。",
+            "reading": "バスをおりたとたん、さいふがないことにきづいた。",
+            "translation": "The moment I got off the bus, I realised my wallet was gone.",
+            "focus": "とたん",
+            "distractors": [
+              "ばかり",
+              "ほど",
+              "くせ"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n3-totan-ni-4",
+            "text": "彼女は僕の顔を見たとたんに、泣き出した。",
+            "reading": "かのじょはぼくのかおをみたとたんに、なきだした。",
+            "translation": "As soon as she saw my face, she burst into tears.",
+            "focus": "とたんに",
+            "distractors": [
+              "うちに",
+              "ついでに",
+              "とおりに"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n3-totan-ni-5",
+            "text": "有名になったとたん、友達が増えた。",
+            "reading": "ゆうめいになったとたん、ともだちがふえた。",
+            "translation": "The moment he became famous, he suddenly had lots of friends.",
+            "focus": "なった",
+            "distractors": [
+              "なる",
+              "なって",
+              "なり"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n3-totan-ni-6",
+            "text": "家に帰ったら、すぐお風呂に入りなさい。",
+            "reading": "いえにかえったら、すぐおふろにはいりなさい。",
+            "translation": "When you get home, take a bath right away.",
+            "focus": "たら",
+            "distractors": [
+              "たとたん",
+              "たうちに",
+              "たまま"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "row": 49,
+      "label": "てからでないと (not until)",
+      "lesson": {
+        "id": "n3-te-kara-de-nai-to",
+        "level": "n3",
+        "title": "てからでないと: not until, only after",
+        "summary": "V-て + からでないと / からでなければ says that something cannot happen until another thing has been done first.",
+        "pattern": [
+          "V-て からでないと 〜ない",
+          "V-て からでなければ 〜ない"
+        ],
+        "body": [
+          "Attach からでないと or からでなければ to the て form: 相談してからでないと, 見てからでなければ. The second part is negative or a difficulty: 決められません, 入れない, だめだ, 何とも言えない. The sentence means first A, and only then B is possible. からでなければ is a little more formal.",
+          "The contrast example uses てから alone, which simply orders two actions: 宿題をしてから遊びに行く. てから says what comes first; てからでないと adds that the second part is impossible without the first.",
+          "A common mistake is to finish with a positive predicate: 払ってからでないと、入れます is wrong. The end must be negative or mean not possible."
+        ],
+        "examples": [
+          {
+            "id": "n3-te-kara-de-nai-to-1",
+            "text": "親と相談してからでないと、決められません。",
+            "reading": "おやとそうだんしてからでないと、きめられません。",
+            "translation": "I can't decide until I've talked it over with my parents.",
+            "focus": "からでないと",
+            "distractors": [
+              "からないと",
+              "ばかりでないと",
+              "まででないと"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n3-te-kara-de-nai-to-2",
+            "text": "お金を払ってからでないと、入れません。",
+            "reading": "おかねをはらってからでないと、はいれません。",
+            "translation": "You can't go in until you've paid.",
+            "focus": "払って",
+            "distractors": [
+              "払う",
+              "払った",
+              "払い"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n3-te-kara-de-nai-to-3",
+            "text": "実際に見てからでなければ、何とも言えない。",
+            "reading": "じっさいにみてからでなければ、なんともいえない。",
+            "translation": "I can't say anything until I've actually seen it.",
+            "focus": "でなければ",
+            "distractors": [
+              "ないと",
+              "でなくて",
+              "でなけれ"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n3-te-kara-de-nai-to-4",
+            "text": "手を洗ってからでないと、おやつはだめよ。",
+            "reading": "てをあらってからでないと、おやつはだめよ。",
+            "translation": "No snacks until you've washed your hands.",
+            "focus": "から",
+            "distractors": [
+              "まで",
+              "ばかり",
+              "まま"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n3-te-kara-de-nai-to-5",
+            "text": "熱が下がってからでないと、学校に行ってはいけない。",
+            "reading": "ねつがさがってからでないと、がっこうにいってはいけない。",
+            "translation": "You can't go to school until your fever has gone down.",
+            "focus": "下がって",
+            "distractors": [
+              "下がる",
+              "下がった",
+              "下がり"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n3-te-kara-de-nai-to-6",
+            "text": "宿題をしてから遊びに行く。",
+            "reading": "しゅくだいをしてからあそびにいく。",
+            "translation": "I'll go out to play after I've done my homework.",
+            "focus": "てから",
+            "distractors": [
+              "てからでないと",
+              "てばかり",
+              "てまま"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "row": 50,
+      "label": "に違いない (must be)",
+      "lesson": {
+        "id": "n3-ni-chigai-nai",
+        "level": "n3",
+        "title": "に違いない: must be, I'm sure",
+        "summary": "Plain form + に違いない says the speaker is sure of something from evidence or a strong feeling.",
+        "pattern": [
+          "plain form + に違いない",
+          "N / な-A + に違いない (no だ)"
+        ],
+        "body": [
+          "に違いない follows the plain form of verbs and い-adjectives (いるに違いない, おいしいに違いない, 高かったに違いない). After a noun or な-adjective, drop だ: 犯人に違いない, 元気に違いない. It expresses strong conviction, stronger than だろう and close to きっと. It is a little written; in speech people often say きっと〜だ.",
+          "The contrast example uses かもしれない (might), which is a weak guess: もしかしたら、明日は雪が降るかもしれない. With もしかしたら only かもしれない fits, because に違いない says you are sure.",
+          "A common mistake is to keep だ after a noun: 犯人だに違いない is wrong; say 犯人に違いない."
+        ],
+        "examples": [
+          {
+            "id": "n3-ni-chigai-nai-1",
+            "text": "電気がついているから、彼は家にいるに違いない。",
+            "reading": "でんきがついているから、かれはいえにいるにちがいない。",
+            "translation": "The lights are on, so he must be home.",
+            "focus": "違いない",
+            "distractors": [
+              "違わない",
+              "違う",
+              "ちがえない"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n3-ni-chigai-nai-2",
+            "text": "あの人は犯人に違いない。",
+            "reading": "あのひとははんにんにちがいない。",
+            "translation": "That person must be the culprit.",
+            "focus": "に",
+            "distractors": [
+              "だに",
+              "なに",
+              "のに"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n3-ni-chigai-nai-3",
+            "text": "彼女の料理だから、おいしいに違いない。",
+            "reading": "かのじょのりょうりだから、おいしいにちがいない。",
+            "translation": "It's her cooking, so it must be delicious.",
+            "focus": "おいしい",
+            "distractors": [
+              "おいしく",
+              "おいしくて",
+              "おいしさ"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n3-ni-chigai-nai-4",
+            "text": "このかばんは高かったに違いない。",
+            "reading": "このかばんはたかかったにちがいない。",
+            "translation": "This bag must have been expensive.",
+            "focus": "高かった",
+            "distractors": [
+              "高く",
+              "高くて",
+              "高かっ"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n3-ni-chigai-nai-5",
+            "text": "田中さんは今ごろ、空港に着いたに違いない。",
+            "reading": "たなかさんはいまごろ、くうこうについたにちがいない。",
+            "translation": "Tanaka must have reached the airport by now.",
+            "focus": "着いた",
+            "distractors": [
+              "着いて",
+              "着き",
+              "着こう"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ],
+            "noOrder": true
+          },
+          {
+            "id": "n3-ni-chigai-nai-6",
+            "text": "もしかしたら、明日は雪が降るかもしれない。",
+            "reading": "もしかしたら、あしたはゆきがふるかもしれない。",
+            "translation": "It might possibly snow tomorrow.",
+            "focus": "かもしれない",
+            "distractors": [
+              "に違いない",
+              "はずがない",
+              "わけだ"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ],
+            "noOrder": true
+          }
+        ]
+      }
+    },
+    {
+      "row": 51,
+      "label": "とは限らない (not necessarily)",
+      "lesson": {
+        "id": "n3-towa-kagiranai",
+        "level": "n3",
+        "title": "とは限らない: not necessarily, not always",
+        "summary": "Plain form + とは限らない says that something is not always true, even if people expect it to be.",
+        "pattern": [
+          "plain form + とは限らない",
+          "必ずしも / いつも 〜 とは限らない"
+        ],
+        "body": [
+          "とは限らない follows a plain sentence: いい物とは限らない, 当たるとは限らない, 好きだとは限らない. It denies a general expectation: it is not the case that A is always true. Words like 必ずしも, いつも, 必ず and みんな often come earlier in the sentence and make the meaning clearer.",
+          "The contrast example uses はずがない (there's no way), which denies something completely: あんなに練習したのだから、負けるはずがない. とは限らない leaves room for exceptions; はずがない allows none.",
+          "A common mistake is to use a negative adverb such as 決して or 全然 before とは限らない. Use 必ずしも, いつも or 必ず instead."
+        ],
+        "examples": [
+          {
+            "id": "n3-towa-kagiranai-1",
+            "text": "高い物がいい物とは限らない。",
+            "reading": "たかいものがいいものとはかぎらない。",
+            "translation": "Expensive things aren't necessarily good things.",
+            "focus": "とは",
+            "distractors": [
+              "では",
+              "がは",
+              "をは"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n3-towa-kagiranai-2",
+            "text": "若い人がみんなスマホに詳しいとは限らない。",
+            "reading": "わかいひとがみんなスマホにくわしいとはかぎらない。",
+            "translation": "Not all young people are good with smartphones.",
+            "focus": "限らない",
+            "distractors": [
+              "限る",
+              "限れない",
+              "限らず"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n3-towa-kagiranai-3",
+            "text": "天気予報が必ず当たるとは限らない。",
+            "reading": "てんきよほうがかならずあたるとはかぎらない。",
+            "translation": "Weather forecasts aren't always right.",
+            "focus": "必ず",
+            "distractors": [
+              "決して",
+              "全然",
+              "少しも"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n3-towa-kagiranai-4",
+            "text": "先生の言うことがいつも正しいとは限らない。",
+            "reading": "せんせいのいうことがいつもただしいとはかぎらない。",
+            "translation": "What the teacher says isn't always right.",
+            "focus": "正しい",
+            "distractors": [
+              "正しく",
+              "正しくて",
+              "正しさ"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ],
+            "noOrder": true
+          },
+          {
+            "id": "n3-towa-kagiranai-5",
+            "text": "毎日練習しても、勝てるとは限らない。",
+            "reading": "まいにちれんしゅうしても、かてるとはかぎらない。",
+            "translation": "Even if you practice every day, you won't necessarily win.",
+            "focus": "勝てる",
+            "distractors": [
+              "勝て",
+              "勝って",
+              "勝てて"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n3-towa-kagiranai-6",
+            "text": "あんなに練習したのだから、負けるはずがない。",
+            "reading": "あんなにれんしゅうしたのだから、まけるはずがない。",
+            "translation": "After all that practice, there's no way we'll lose.",
+            "focus": "はず",
+            "distractors": [
+              "ため",
+              "まま",
+              "ほど"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "row": 52,
+      "label": "くせに (even though, with blame)",
+      "lesson": {
+        "id": "n3-kuse-ni",
+        "level": "n3",
+        "title": "くせに: even though (with criticism)",
+        "summary": "Plain form + くせに says although, while blaming or looking down on the person for the gap between A and B.",
+        "pattern": [
+          "plain form + くせに",
+          "N の くせに / な-A な くせに"
+        ],
+        "body": [
+          "くせに follows a plain verb or い-adjective (知っているくせに, 大きいくせに), a noun with の (子どものくせに) or a な-adjective with な (下手なくせに). Both halves are about the same person, and the speaker criticizes or is annoyed: you know, yet you won't tell me. It is emotional and casual, so it can sound rude; it is not used about yourself in a neutral way.",
+          "The contrast example uses のに, a neutral although that also works with things and other subjects: 雨が降っているのに、試合は続いた. くせに needs a person to blame, so it does not fit rain or a match.",
+          "A common mistake is to use くせに in polite or formal speech to a superior. Use のに there."
+        ],
+        "examples": [
+          {
+            "id": "n3-kuse-ni-1",
+            "text": "知っているくせに、教えてくれない。",
+            "reading": "しっているくせに、おしえてくれない。",
+            "translation": "He knows, but he won't tell me.",
+            "focus": "くせに",
+            "distractors": [
+              "ついでに",
+              "代わりに",
+              "最中に"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n3-kuse-ni-2",
+            "text": "子どものくせに、生意気なことを言うな。",
+            "reading": "こどものくせに、なまいきなことをいうな。",
+            "translation": "Don't talk so cheekily when you're just a kid.",
+            "focus": "のくせに",
+            "distractors": [
+              "なくせに",
+              "だくせに",
+              "でくせに"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n3-kuse-ni-3",
+            "text": "下手なくせに、いつも歌いたがる。",
+            "reading": "へたなくせに、いつもうたいたがる。",
+            "translation": "He's a bad singer, yet he always wants to sing.",
+            "focus": "な",
+            "distractors": [
+              "だ",
+              "で",
+              "に"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n3-kuse-ni-4",
+            "text": "自分でやるって言ったくせに、何もしていない。",
+            "reading": "じぶんでやるっていったくせに、なにもしていない。",
+            "translation": "You said you'd do it yourself, but you haven't done a thing.",
+            "focus": "言った",
+            "distractors": [
+              "言って",
+              "言い",
+              "言おう"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n3-kuse-ni-5",
+            "text": "弟は体が大きいくせに、虫が怖い。",
+            "reading": "おとうとはからだがおおきいくせに、むしがこわい。",
+            "translation": "My little brother is big, yet he's scared of bugs.",
+            "focus": "くせに",
+            "distractors": [
+              "ついでに",
+              "とおりに",
+              "最中に"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n3-kuse-ni-6",
+            "text": "雨が降っているのに、試合は続いた。",
+            "reading": "あめがふっているのに、しあいはつづいた。",
+            "translation": "Even though it was raining, the match went on.",
+            "focus": "のに",
+            "distractors": [
+              "くせに",
+              "とおりに",
+              "ついでに"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "row": 53,
+      "label": "ほど〜ない (not as … as)",
+      "lesson": {
+        "id": "n3-hodo-nai",
+        "level": "n3",
+        "title": "ほど〜ない: not as … as",
+        "summary": "A は B ほど〜ない says that A does not reach the level of B: this summer isn't as hot as last year.",
+        "pattern": [
+          "A は B ほど 〜ない",
+          "V-dict / V-た ほど 〜ない"
+        ],
+        "body": [
+          "ほど follows the thing you compare with (去年ほど, 父ほど) or a clause (思ったほど, 店の人が言うほど), and the predicate must be negative: 暑くない, 難しくなかった, 見ない. The meaning is A is less than B, but often only slightly. 思ったほど〜ない is a very common way to say it wasn't as … as I expected.",
+          "The contrast example uses より with an affirmative predicate: 今日は昨日より寒い. より compares in either direction; ほど in this pattern needs a negative.",
+          "A common mistake is ほど with a positive adjective to mean more than: 昨日ほど寒い does not mean colder than yesterday. Use より for that."
+        ],
+        "examples": [
+          {
+            "id": "n3-hodo-nai-1",
+            "text": "今年の夏は去年ほど暑くない。",
+            "reading": "ことしのなつはきょねんほどあつくない。",
+            "translation": "This summer isn't as hot as last year.",
+            "focus": "ほど",
+            "distractors": [
+              "まで",
+              "しか",
+              "ばかり"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n3-hodo-nai-2",
+            "text": "試験は思ったほど難しくなかった。",
+            "reading": "しけんはおもったほどむずかしくなかった。",
+            "translation": "The exam wasn't as hard as I'd expected.",
+            "focus": "思った",
+            "distractors": [
+              "思って",
+              "思い",
+              "思おう"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n3-hodo-nai-3",
+            "text": "兄は父ほど背が高くない。",
+            "reading": "あにはちちほどせがたかくない。",
+            "translation": "My older brother isn't as tall as my father.",
+            "focus": "父ほど",
+            "distractors": [
+              "父しか",
+              "父ずつ",
+              "父まで"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ],
+            "noOrder": true
+          },
+          {
+            "id": "n3-hodo-nai-4",
+            "text": "このラーメンは、店の人が言うほど辛くない。",
+            "reading": "このラーメンは、みせのひとがいうほどからくない。",
+            "translation": "This ramen isn't as spicy as the staff said.",
+            "focus": "ほど",
+            "distractors": [
+              "まで",
+              "しか",
+              "ずつ"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ],
+            "noOrder": true
+          },
+          {
+            "id": "n3-hodo-nai-5",
+            "text": "最近は前ほどテレビを見ない。",
+            "reading": "さいきんはまえほどテレビをみない。",
+            "translation": "These days I don't watch as much TV as I used to.",
+            "focus": "見ない",
+            "distractors": [
+              "見る",
+              "見た",
+              "見て"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ],
+            "noOrder": true
+          },
+          {
+            "id": "n3-hodo-nai-6",
+            "text": "今日は昨日より寒い。",
+            "reading": "きょうはきのうよりさむい。",
+            "translation": "Today is colder than yesterday.",
+            "focus": "より",
+            "distractors": [
+              "ほど",
+              "まで",
+              "しか"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "row": 54,
+      "label": "っぽい and らしい (-ish, typical of)",
+      "lesson": {
+        "id": "n3-ppoi-rashii",
+        "level": "n3",
+        "title": "っぽい / らしい: -ish, like, typical of",
+        "summary": "っぽい means -ish or tends to (白っぽい, 忘れっぽい, 子どもっぽい); N + らしい means having the typical, proper qualities of N (春らしい, 君らしい).",
+        "pattern": [
+          "N / V-ます stem / A-stem + っぽい",
+          "N らしい / らしくない"
+        ],
+        "body": [
+          "っぽい attaches to nouns (子どもっぽい, 白っぽい), to the ます stem of a few verbs (忘れっぽい, 怒りっぽい) and conjugates like an い-adjective (忘れっぽくなった). It is casual and often negative: it looks or feels like something it should not, or someone tends to do something. N + らしい says something has the qualities expected of N, usually as praise: 春らしい暖かい日, and らしくない says it is out of character: 君らしくない.",
+          "The contrast example uses そうだ for appearance after an adjective stem: このケーキはおいしそうだ. そうだ is a guess from how something looks right now; っぽい and らしい describe a quality or tendency.",
+          "A common mistake is to confuse 子どもっぽい (childish, criticism of an adult) with 子どもらしい (as a child should be, praise of a child)."
+        ],
+        "examples": [
+          {
+            "id": "n3-ppoi-rashii-1",
+            "text": "最近、忘れっぽくなった。",
+            "reading": "さいきん、わすれっぽくなった。",
+            "translation": "I've become forgetful lately.",
+            "focus": "っぽく",
+            "distractors": [
+              "らしく",
+              "みたいに",
+              "っぽい"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n3-ppoi-rashii-2",
+            "text": "彼は三十歳なのに、考え方が子どもっぽい。",
+            "reading": "かれはさんじゅっさいなのに、かんがえかたがこどもっぽい。",
+            "translation": "He's thirty, but he thinks like a child.",
+            "focus": "っぽい",
+            "distractors": [
+              "っぽく",
+              "そう",
+              "やすい"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n3-ppoi-rashii-3",
+            "text": "白っぽいシャツを着ている人が田中さんです。",
+            "reading": "しろっぽいシャツをきているひとがたなかさんです。",
+            "translation": "The person in the whitish shirt is Mr. Tanaka.",
+            "focus": "っぽい",
+            "distractors": [
+              "らしい",
+              "そうな",
+              "やすい"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n3-ppoi-rashii-4",
+            "text": "今日は春らしい暖かい日だ。",
+            "reading": "きょうははるらしいあたたかいひだ。",
+            "translation": "Today is a warm, springlike day.",
+            "focus": "らしい",
+            "distractors": [
+              "そうな",
+              "やすい",
+              "ような"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n3-ppoi-rashii-5",
+            "text": "文句を言うなんて、君らしくないね。",
+            "reading": "もんくをいうなんて、きみらしくないね。",
+            "translation": "Complaining isn't like you.",
+            "focus": "らしく",
+            "distractors": [
+              "そうで",
+              "やすく",
+              "ように"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n3-ppoi-rashii-6",
+            "text": "このケーキはおいしそうだ。",
+            "reading": "このケーキはおいしそうだ。",
+            "translation": "This cake looks delicious.",
+            "focus": "そう",
+            "distractors": [
+              "っぽい",
+              "らしい",
+              "やすい"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "row": 55,
+      "label": "気がする and 感じがする (feel that)",
+      "lesson": {
+        "id": "n3-ki-ga-suru",
+        "level": "n3",
+        "title": "気がする / 感じがする: I feel that, it feels",
+        "summary": "Plain form + 気がする says I have a feeling that; 感じがする says something gives a certain impression.",
+        "pattern": [
+          "plain form + 気がする / 気がしない",
+          "plain form / N の / な-A な + 感じがする"
+        ],
+        "body": [
+          "気がする follows a plain sentence: 見られている気がする, 聞いたことがある気がする. It is a vague feeling without clear proof, softer than と思う. The negative 気がしない means it doesn't feel like: 初めて会った気がしない. 感じがする describes an impression given by a thing, place or person: 明るい感じがする, 高級な感じがする. Before 感じ, な-adjectives keep な and nouns take の.",
+          "The contrast example uses 気になる (be on your mind, be anxious about): テストの結果が気になる. 気がする takes が and する; 気になる takes に and なる and means something bothers you.",
+          "A common mistake is 気にする in place of 気がする: 見られている気にする is wrong."
+        ],
+        "examples": [
+          {
+            "id": "n3-ki-ga-suru-1",
+            "text": "誰かに見られている気がする。",
+            "reading": "だれかにみられているきがする。",
+            "translation": "I feel like someone is watching me.",
+            "focus": "気が",
+            "distractors": [
+              "気に",
+              "気を",
+              "気で"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n3-ki-ga-suru-2",
+            "text": "この曲、どこかで聞いたことがある気がする。",
+            "reading": "このきょく、どこかできいたことがあるきがする。",
+            "translation": "I feel like I've heard this song somewhere before.",
+            "focus": "ある",
+            "distractors": [
+              "あって",
+              "あり",
+              "あろう"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n3-ki-ga-suru-3",
+            "text": "彼とは初めて会った気がしない。",
+            "reading": "かれとははじめてあったきがしない。",
+            "translation": "It doesn't feel like I'm meeting him for the first time.",
+            "focus": "しない",
+            "distractors": [
+              "しなく",
+              "させない",
+              "されない"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n3-ki-ga-suru-4",
+            "text": "この部屋は明るい感じがする。",
+            "reading": "このへやはあかるいかんじがする。",
+            "translation": "This room feels bright.",
+            "focus": "感じ",
+            "distractors": [
+              "感じる",
+              "感じて",
+              "感じた"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n3-ki-ga-suru-5",
+            "text": "あの店は高級な感じがして、入りにくい。",
+            "reading": "あのみせはこうきゅうなかんじがして、はいりにくい。",
+            "translation": "That shop feels so upscale that it's hard to go in.",
+            "focus": "な",
+            "distractors": [
+              "だ",
+              "で",
+              "に"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n3-ki-ga-suru-6",
+            "text": "テストの結果が気になる。",
+            "reading": "テストのけっかがきになる。",
+            "translation": "I'm anxious about the test results.",
+            "focus": "気に",
+            "distractors": [
+              "気が",
+              "気を",
+              "気で"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "row": 56,
+      "label": "まるで〜ようだ (as if, just like)",
+      "lesson": {
+        "id": "n3-marude-you-da",
+        "level": "n3",
+        "title": "まるで〜ようだ: just like, as if",
+        "summary": "まるで + plain form + ようだ / みたいだ compares something to something it is not: cold as ice, like a dream.",
+        "pattern": [
+          "まるで N の ようだ / N みたいだ",
+          "まるで plain form + ようだ",
+          "ような N / ように V"
+        ],
+        "body": [
+          "ようだ follows a noun with の (氷のようだ) or a plain verb (知らないようだ); みたいだ is the casual form and follows a noun directly (夏みたいだ). Before a noun use ような / みたいな (知らないような顔), before a verb or adjective use ように / みたいに (氷のように冷たかった). まるで at the front makes it clear that this is a comparison, not a guess: it is like X, though it really isn't X.",
+          "The contrast example uses そうだ after a verb stem: 今にも雨が降りそうだ. そうだ is a guess about what is about to happen, from how things look; まるで〜ようだ is an image or comparison.",
+          "A common mistake is to drop の before ようだ: 氷ように is wrong; say 氷のように, or 氷みたいに."
+        ],
+        "examples": [
+          {
+            "id": "n3-marude-you-da-1",
+            "text": "彼女の手は、まるで氷のように冷たかった。",
+            "reading": "かのじょのては、まるでこおりのようにつめたかった。",
+            "translation": "Her hands were as cold as ice.",
+            "focus": "のように",
+            "distractors": [
+              "なように",
+              "そうに",
+              "らしく"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n3-marude-you-da-2",
+            "text": "今日はまるで夏みたいだ。",
+            "reading": "きょうはまるでなつみたいだ。",
+            "translation": "Today feels just like summer.",
+            "focus": "みたい",
+            "distractors": [
+              "そう",
+              "よう",
+              "ほど"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n3-marude-you-da-3",
+            "text": "彼は、まるで何も知らないような顔をしていた。",
+            "reading": "かれは、まるでなにもしらないようなかおをしていた。",
+            "translation": "He looked as if he knew nothing at all.",
+            "focus": "ような",
+            "distractors": [
+              "ように",
+              "ようだ",
+              "そうな"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n3-marude-you-da-4",
+            "text": "夢を見ているみたいで、信じられない。",
+            "reading": "ゆめをみているみたいで、しんじられない。",
+            "translation": "It's like I'm dreaming; I can't believe it.",
+            "focus": "みたいで",
+            "distractors": [
+              "みたいな",
+              "らしいで",
+              "みたいの"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n3-marude-you-da-5",
+            "text": "まるで子どものように、はしゃいでいた。",
+            "reading": "まるでこどものように、はしゃいでいた。",
+            "translation": "He was romping around just like a child.",
+            "focus": "まるで",
+            "distractors": [
+              "決して",
+              "全然",
+              "少しも"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n3-marude-you-da-6",
+            "text": "今にも雨が降りそうだ。",
+            "reading": "いまにもあめがふりそうだ。",
+            "translation": "It looks like it's going to rain any minute.",
+            "focus": "そう",
+            "distractors": [
+              "よう",
+              "みたい",
+              "らしい"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "row": 57,
+      "label": "ことか (how …!)",
+      "lesson": {
+        "id": "n3-koto-ka",
+        "level": "n3",
+        "title": "ことか: how very …!",
+        "summary": "Question word + plain form + ことか is an exclamation of strong feeling: how happy I was, how many times I called.",
+        "pattern": [
+          "どんなに / なんと / どれだけ + plain form + ことか",
+          "何度 V-た ことか"
+        ],
+        "body": [
+          "ことか follows a plain verb or い-adjective (長いことか, うれしかったことか); a な-adjective takes な or である. It is almost always paired with a degree word such as どんなに, なんと, どれだけ, どれほど or 何度. It is not a real question: it means the feeling was so strong that it cannot be put into words. The tone is a little written or dramatic.",
+          "The contrast example uses ことがある (sometimes does): たまに朝ご飯を食べないことがある. Both use the noun こと, but ことがある simply reports that something happens now and then, with no emotion.",
+          "A common mistake is to leave out the degree word. うれしかったことか alone sounds incomplete; say どんなにうれしかったことか."
+        ],
+        "examples": [
+          {
+            "id": "n3-koto-ka-1",
+            "text": "合格の知らせを聞いて、どんなにうれしかったことか。",
+            "reading": "ごうかくのしらせをきいて、どんなにうれしかったことか。",
+            "translation": "How happy I was to hear that I'd passed!",
+            "focus": "ことか",
+            "distractors": [
+              "ことが",
+              "わけか",
+              "ことに"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n3-koto-ka-2",
+            "text": "一人で過ごす夜は、なんと長いことか。",
+            "reading": "ひとりですごすよるは、なんとながいことか。",
+            "translation": "How long the nights are when you spend them alone!",
+            "focus": "長い",
+            "distractors": [
+              "長く",
+              "長さ",
+              "長くて"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n3-koto-ka-3",
+            "text": "何度電話したことか。",
+            "reading": "なんどでんわしたことか。",
+            "translation": "I can't tell you how many times I called!",
+            "focus": "何度",
+            "distractors": [
+              "一度",
+              "少し",
+              "全然"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n3-koto-ka-4",
+            "text": "家族の笑顔に、どれだけ助けられたことか。",
+            "reading": "かぞくのえがおに、どれだけたすけられたことか。",
+            "translation": "How much my family's smiles have helped me!",
+            "focus": "どれだけ",
+            "distractors": [
+              "少しも",
+              "決して",
+              "まったく"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ],
+            "noOrder": true
+          },
+          {
+            "id": "n3-koto-ka-5",
+            "text": "たまに朝ご飯を食べないことがある。",
+            "reading": "たまにあさごはんをたべないことがある。",
+            "translation": "Sometimes I skip breakfast.",
+            "focus": "ことが",
+            "distractors": [
+              "ことか",
+              "ものか",
+              "わけか"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "row": 57,
+      "label": "ものか (no way!)",
+      "lesson": {
+        "id": "n3-mono-ka",
+        "level": "n3",
+        "title": "ものか: no way, as if I would",
+        "summary": "V-dict / plain form + ものか (casual もんか, polite ものですか) is a strong denial: I'll never, as if!",
+        "pattern": [
+          "V-dict ものか / もんか",
+          "plain form + ものですか (polite)",
+          "誰が 〜 ものか"
+        ],
+        "body": [
+          "ものか follows the plain form of a verb or い-adjective (行くものか, 信じるものか); a noun or な-adjective takes な (平気なものか). It looks like a question but means the opposite strongly: 二度と行くものか means I'll never go again. もんか is more casual, ものですか (often もんですか) is polite but still emotional. With 誰が it means nobody would: 誰がそんなことをするものですか. After a negative adjective, add ある: 寂しくなんかあるものか.",
+          "The contrast example uses もの at the end of a casual sentence to give an excuse or reason, often with だって: だって、知らなかったんだもの. Without か, もの explains; with か, it denies.",
+          "A common mistake is to use the volitional or て form before ものか: 信じようものか is wrong; say 信じるものか."
+        ],
+        "examples": [
+          {
+            "id": "n3-mono-ka-1",
+            "text": "あんな店、二度と行くものか。",
+            "reading": "あんなみせ、にどといくものか。",
+            "translation": "I'll never go to that shop again!",
+            "focus": "ものか",
+            "distractors": [
+              "ことか",
+              "わけか",
+              "ものが"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n3-mono-ka-2",
+            "text": "あんなやつに、負けるもんか。",
+            "reading": "あんなやつに、まけるもんか。",
+            "translation": "As if I'd lose to a guy like that!",
+            "focus": "もんか",
+            "distractors": [
+              "もんが",
+              "ことか",
+              "もんに"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n3-mono-ka-3",
+            "text": "彼の言うことなんか、信じるものか。",
+            "reading": "かれのいうことなんか、しんじるものか。",
+            "translation": "As if I'd believe anything he says!",
+            "focus": "信じる",
+            "distractors": [
+              "信じて",
+              "信じ",
+              "信じよう"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n3-mono-ka-4",
+            "text": "寂しくなんかあるものか。",
+            "reading": "さびしくなんかあるものか。",
+            "translation": "Lonely? Not one bit!",
+            "focus": "ある",
+            "distractors": [
+              "いる",
+              "です",
+              "だ"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n3-mono-ka-5",
+            "text": "誰がそんなことをするものですか。",
+            "reading": "だれがそんなことをするものですか。",
+            "translation": "Who would ever do such a thing?",
+            "focus": "ものですか",
+            "distractors": [
+              "ことですか",
+              "ものがですか",
+              "ものにですか"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n3-mono-ka-6",
+            "text": "だって、知らなかったんだもの。",
+            "reading": "だって、しらなかったんだもの。",
+            "translation": "Well, I didn't know!",
+            "focus": "もの",
+            "distractors": [
+              "こと",
+              "わけ",
+              "はず"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}

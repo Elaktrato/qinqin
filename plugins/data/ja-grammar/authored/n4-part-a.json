@@ -1520,9 +1520,9 @@
           },
           {
             "id": "n4-ba-conditional-4",
-            "text": "どうすればいいですか。",
-            "reading": "どうすればいいですか。",
-            "translation": "What should I do?",
+            "text": "毎日練習すれば、上手になります。",
+            "reading": "まいにちれんしゅうすれば、じょうずになります。",
+            "translation": "If you practise every day, you will get good at it.",
             "focus": "すれば",
             "distractors": [
               "するば",

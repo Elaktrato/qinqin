@@ -146,7 +146,7 @@ func TestBundledJapaneseGrammarPack(t *testing.T) {
 			}
 		}
 	}
-	for _, id := range []string{"n5", "n4", "n2"} {
+	for _, id := range []string{"n5", "n4", "n3", "n2"} {
 		if perLevel[id] == 0 {
 			t.Errorf("level %s has no lessons", id)
 		}
