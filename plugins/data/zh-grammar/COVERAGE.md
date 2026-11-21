@@ -190,52 +190,52 @@ and no syllabus text is reproduced. The syllabus grants no reuse licence.
 
 | # | Syllabus row (qinqin’s words) | Lesson(s) |
 |---|-------------------------------|-----------|
-| 1 |  | not authored yet |
-| 2 |  | not authored yet |
-| 3 |  | not authored yet |
-| 4 |  | not authored yet |
-| 5 |  | not authored yet |
-| 6 |  | not authored yet |
-| 7 |  | not authored yet |
-| 8 |  | not authored yet |
-| 9 |  | not authored yet |
-| 10 |  | not authored yet |
-| 11 |  | not authored yet |
-| 12 |  | not authored yet |
-| 13 |  | not authored yet |
-| 14 |  | not authored yet |
-| 15 |  | not authored yet |
-| 16 |  | not authored yet |
-| 17 |  | not authored yet |
-| 18 |  | not authored yet |
-| 19 |  | not authored yet |
-| 20 |  | not authored yet |
-| 21 |  | not authored yet |
-| 22 |  | not authored yet |
-| 23 |  | not authored yet |
-| 24 |  | not authored yet |
-| 25 |  | not authored yet |
-| 26 |  | not authored yet |
-| 27 |  | not authored yet |
-| 28 |  | not authored yet |
-| 29 |  | not authored yet |
-| 30 |  | not authored yet |
-| 31 |  | not authored yet |
-| 32 |  | not authored yet |
-| 33 |  | not authored yet |
-| 34 |  | not authored yet |
-| 35 |  | not authored yet |
-| 36 |  | not authored yet |
-| 37 |  | not authored yet |
-| 38 |  | not authored yet |
-| 39 |  | not authored yet |
-| 40 |  | not authored yet |
-| 41 |  | not authored yet |
-| 42 |  | not authored yet |
-| 43 |  | not authored yet |
-| 44 |  | not authored yet |
-| 45 |  | not authored yet |
-| 46 |  | not authored yet |
+| 1 | 能愿动词 (敢) | hsk4-gan |
+| 2 | 指示代词 (各, 各位, 各种, 任何, 此) | hsk4-ge-renhe |
+| 3 | 专用名量词 (打, 袋, 棵, 台, 幅) / 借用名量词 (脸, 手, 盒, 屋子, 桌子) | hsk4-measure-words-special, hsk4-measure-words-borrowed |
+| 4 | 动量词 (场, 顿, 趟) | hsk4-verbal-measures |
+| 5 | 程度副词 (十分, 更加, 稍, 稍微, 尤其, 多么) | hsk4-degree-adverbs |
+| 6 | 范围副词 (共, 全, 光, 仅, 仅仅, 至少) | hsk4-scope-adverbs |
+| 7 | 时间副词 (按时, 从来, 从, 本来, 已) / 时间副词 (赶紧, 赶快, 忽然, 将, 将要) | hsk4-time-adverbs-habit, hsk4-time-adverbs-soon |
+| 8 | 频率副词 (重新, 往往, 偶尔, 再次, 老) | hsk4-frequency-adverbs |
+| 9 | 方式副词 (故意, 互相, 相互) | hsk4-manner-adverbs |
+| 10 | 关联副词 (却) | hsk4-que |
+| 11 | 情态副词 (也许, 恐怕) | hsk4-yexu-kongpa |
+| 12 | 语气副词 (才, 就, 并, 还) / 语气副词 (竟然, 究竟, 到底, 难道) / 语气副词 (正好, 千万, 确实, 只好, 差点儿) | hsk4-mood-cai-jiu-bing-hai, hsk4-mood-jingran-daodi, hsk4-mood-zhenghao-qianwan |
+| 13 | 介词: 引出时间、处所 (自, 当, 由, 随着, 等) | hsk4-prep-zi-dang-suizhe |
+| 14 | 介词: 引出施事、受事 (将, 由, 叫, 让) | hsk4-prep-jiang-you-jiao-rang |
+| 15 | 介词: 引出原因 (由于) | hsk4-youyu-prep |
+| 16 | 介词: 引出对象 (对于, 与) | hsk4-duiyu-yu |
+| 17 | 介词: 引出凭借、依据 (作为, 按, 按照) | hsk4-zuowei-anzhao |
+| 18 | 连词: 连接词或词组 (并, 而, 与) | hsk4-conj-bing-er-yu |
+| 19 | 连词: 连接分句 (此外, 而, 既然, 甚至, 不过, 并且) | hsk4-conj-clauses-ciwai |
+| 20 | 连词: 连接分句 (不光, 不仅, 另外, 要是, 因此, 由于, 加) | hsk4-conj-clauses-bujin |
+| 21 | 其他助词 (等, 者, 之, 就是) | hsk4-particles-deng-zhe-zhi |
+| 22 | 叹词 (啊, 嗯) | hsk4-interjections-a-ng |
+| 23 | 结构类型 (数词 + 形容词 + 量词) | hsk4-num-adj-measure |
+| 24 | 四字格 (一A一B, 无A无B, 有A有B) | hsk4-four-char-frames |
+| 25 | 固定短语 (来得及/来不及, 有的是, 说不定, 不怎么, 就是说/这就是说) | hsk4-fixed-phrases |
+| 26 | 固定格式: 一+量词+比+一+量词, 在……方面, 够……的, 拿……来说, 为了……而…… / 固定格式: 再也不/没……, 怎么都/也+不/没……, 说什么/怎么（着）也得X, X也得X，不X也得X / 固定格式: 动词+一X是一X, （没）有什么（好）X的, X是X，Y是Y, X就是了, X是X / 固定格式: 还X呢, 你X你的吧, 让/叫你X你就X, X就X（点儿）吧 | hsk4-frames-degree-scope, hsk4-frames-emphatic, hsk4-frames-acceptance, hsk4-frames-colloquial |
+| 27 | 程度补语2 (Adj / 心理动词 + 死了, + 得厉害) | hsk4-degree-sile-lihai |
+| 28 | 可能补语2 (V + 得了 / 不了) | hsk4-potential-liao |
+| 29 | 反问句2: 难道……吗？ / 反问句2: 疑问代词反问句 (谁, 哪儿, 什么, 怎么) | hsk4-rhetorical-nandao, hsk4-rhetorical-wh |
+| 30 | 把字句2: 把 + O + V(一/了)V, 把 + O + V + 了 / 把字句2: 把 + O + V + 动量/时量补语, 把 + O + 状语 + V | hsk4-ba-reduplicated-le, hsk4-ba-measure-adverbial |
+| 31 | 被动句2 (主语 + 叫/让 + 宾语 + V + 其他成分) | hsk4-passive-jiao-rang |
+| 32 | 兼语句2: 表扬/批评 + O1 + V + O2, 收/选 + O1 + 做/当/为 + O2 / 兼语句2: 使/让 + 人称代词 + 动词短语 (致使) | hsk4-pivot-praise-choose, hsk4-pivot-causative |
+| 33 | 比较句3 (A 不如 B (+ Adj), 跟……相比) | hsk4-comparison-buru |
+| 34 | 双重否定句 (不得不, 不能不, 没有……不……, 不是不……) | hsk4-double-negation |
+| 35 | 并列复句 (不是……，而是……, 既……又/也……, 一方面……，另一方面……) | hsk4-coordinate-clauses |
+| 36 | 承接复句 (首先……，其次……, 首先……，然后……, ……，于是……) | hsk4-sequence-clauses |
+| 37 | 递进复句: 不仅/不光……，还/而且……, ……，并且…… / 递进复句: ……，甚至……, 连……也/都……，……更…… | hsk4-progressive-bujin, hsk4-progressive-shenzhi-lian |
+| 38 | 选择复句 (不是……，就是……) | hsk4-choice-bushi-jiushi |
+| 39 | 转折复句 (尽管……，但是/可是……, ……，然而……, ……，不过……, X是X，就是/不过……) | hsk4-adversative-clauses |
+| 40 | 假设复句 (……，否则……, 要是……，就……, 要是……，（就）……，否则……) | hsk4-conditional-yaoshi-fouze |
+| 41 | 条件复句 (不管……，都/也……, 无论……，都/也……) | hsk4-condition-buguan-wulun |
+| 42 | 因果复句 (既然……，就……, （由于）……，因此……) | hsk4-cause-jiran-yinci |
+| 43 | 目的复句 (……，好……) | hsk4-purpose-hao |
+| 44 | 让步复句 (即使……，也……, 就是……，也……) | hsk4-concession-jishi-jiushi |
+| 45 | 紧缩复句 (无标记, 不……也……) | hsk4-contracted-sentences |
+| 46 | 概数3 (数词 + 来 + 量词, 大约, 左右, 前后) / 数的表示法 (小数, 分数, 百分数, 倍数) | hsk4-approx-numbers, hsk4-decimals-fractions |
 
 ## Level 5 · Nuance and attitude
 
