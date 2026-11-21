@@ -128,63 +128,63 @@ and no syllabus text is reproduced. The syllabus grants no reuse licence.
 
 | # | Syllabus row (qinqin’s words) | Lesson(s) |
 |---|-------------------------------|-----------|
-| 1 |  | not authored yet |
-| 2 |  | not authored yet |
-| 3 |  | not authored yet |
-| 4 |  | not authored yet |
-| 5 |  | not authored yet |
-| 6 |  | not authored yet |
-| 7 |  | not authored yet |
-| 8 |  | not authored yet |
-| 9 |  | not authored yet |
-| 10 |  | not authored yet |
-| 11 |  | not authored yet |
-| 12 |  | not authored yet |
-| 13 |  | not authored yet |
-| 14 |  | not authored yet |
-| 15 |  | not authored yet |
-| 16 |  | not authored yet |
-| 17 |  | not authored yet |
-| 18 |  | not authored yet |
-| 19 |  | not authored yet |
-| 20 |  | not authored yet |
-| 21 |  | not authored yet |
-| 22 |  | not authored yet |
-| 23 |  | not authored yet |
-| 24 |  | not authored yet |
-| 25 |  | not authored yet |
-| 26 |  | not authored yet |
-| 27 |  | not authored yet |
-| 28 |  | not authored yet |
-| 29 |  | not authored yet |
-| 30 |  | not authored yet |
-| 31 |  | not authored yet |
-| 32 |  | not authored yet |
-| 33 |  | not authored yet |
-| 34 |  | not authored yet |
-| 35 |  | not authored yet |
-| 36 |  | not authored yet |
-| 37 |  | not authored yet |
-| 38 |  | not authored yet |
-| 39 |  | not authored yet |
-| 40 |  | not authored yet |
-| 41 |  | not authored yet |
-| 42 |  | not authored yet |
-| 43 |  | not authored yet |
-| 44 |  | not authored yet |
-| 45 |  | not authored yet |
-| 46 |  | not authored yet |
-| 47 |  | not authored yet |
-| 48 |  | not authored yet |
-| 49 |  | not authored yet |
-| 50 |  | not authored yet |
-| 51 |  | not authored yet |
-| 52 |  | not authored yet |
-| 53 |  | not authored yet |
-| 54 |  | not authored yet |
-| 55 |  | not authored yet |
-| 56 |  | not authored yet |
-| 57 |  | not authored yet |
+| 1 | 前缀 (老-) | hsk3-prefix-lao |
+| 2 | 后缀 (-家, -子, -员) | hsk3-suffixes-jia-zi-yuan |
+| 3 | 方位名词 (东, 南, 西, 北, 北方, 东方, 南方, 西方, 中间) | hsk3-compass-directions |
+| 4 | 能愿动词 (需要, 该, 应该, 愿意, 得) | hsk3-modal-verbs |
+| 5 | 离合词 (放假, 见面, 结婚, 洗澡; 离开, 完成, 分开) | hsk3-separable-verbs |
+| 6 | 疑问代词 (怎样) / 疑问代词的非疑问用法 (任指, 不定指) | hsk3-question-zenyang, hsk3-question-words-indefinite |
+| 7 | 人称代词 (别人, 咱们) | hsk3-bieren-zanmen |
+| 8 | 指示代词 (别的, 其他) | hsk3-biede-qita |
+| 9 | 名量词 (把, 双, 张, 种, 层, 封, 页, 辆, 节, 所, 班, 段, 头, 句) / 名量词 (公斤, 斤, 角, 毛, 刻, 米; 借用 碗, 盘) | hsk3-measure-words-objects, hsk3-measure-words-units |
+| 10 | 动量词 (口, 回, 遍, 声) | hsk3-verbal-measures |
+| 11 | 量词重叠 (个个, 张张) | hsk3-measure-reduplication |
+| 12 | 程度副词 (比较, 更, 还, 越) / 程度副词 (特别, 挺, 有些, 极) | hsk3-degree-adverbs-comparative, hsk3-degree-adverbs-intensity |
+| 13 | 范围副词 (就, 一块儿, 一共, 只, 到处, 只是) | hsk3-scope-adverbs |
+| 14 | 时间副词 (才, 马上, 先, 一会儿, 刚, 刚刚, 一直) | hsk3-time-adverbs |
+| 15 | 频率副词 (总, 总是, 又, 常常) | hsk3-frequency-adverbs |
+| 16 | 关联副词 (一边) | hsk3-yibian |
+| 17 | 情态副词 (大概, 必须, 差不多, 一定, 好像, 几乎) | hsk3-modal-adverbs |
+| 18 | 语气副词 (当然, 其实, 终于, 才, 就) | hsk3-mood-adverbs |
+| 19 | 否定副词 (不必, 不用) | hsk3-bubi-buyong |
+| 20 | 介词: 引出对象 (为, 向, 关于) | hsk3-wei-xiang-guanyu |
+| 21 | 介词: 引出方向、路径 (向) | hsk3-xiang-direction |
+| 22 | 介词: 引出目的、原因 (为了, 为) | hsk3-weile-wei |
+| 23 | 介词: 引出施事、受事 (把, 被) | hsk3-ba-bei-prepositions |
+| 24 | 介词: 引出凭借、依据 (根据) | hsk3-genju |
+| 25 | 连词: 连接词或短语 (或, 或者) | hsk3-huo-huozhe |
+| 26 | 连词: 连接分句 (只有, 只要, 如果) / 连词: 连接分句 (不但, 而且, 可, 可是, 然后) | hsk3-zhiyou-zhiyao-ruguo, hsk3-budan-erqie-keshi-ranhou |
+| 27 | 助词 (的话) | hsk3-dehua |
+| 28 | 短语: 其他结构类型 (同位短语, 动补短语2, 数量重叠) | hsk3-phrase-types-more |
+| 29 | 四字格 (不A不B: 不大不小, 不多不少, 不冷不热, 不见不散) | hsk3-bu-a-bu-b |
+| 30 | 固定短语: 不一会儿, 越来越, 一般来说, 不怎么样 / 固定短语: 看来, 在……看来, 看起来, 看上去 | hsk3-fixed-phrases-time-degree, hsk3-fixed-phrases-kan |
+| 31 | 固定格式: 除了……(以外), 从……起, 对……来说, (在)……以前/以后/前/后 / 固定格式: 一……也/都不(没), 一点儿也不, 越……越…… / 固定格式: X什么(啊), 该……了, 在……上/下/中 | hsk3-fixed-formats-scope, hsk3-fixed-formats-emphasis, hsk3-fixed-formats-misc |
+| 32 | 主语 (动词性/形容词性短语作主语; 主谓短语作主语) | hsk3-phrase-subjects |
+| 33 | 定语 (多项定语) | hsk3-multiple-attributives |
+| 34 | 结果补语2 (到, 住, 走, 上) | hsk3-result-complements-2 |
+| 35 | 趋向补语2: 引申用法, 结果意义 (V + 出, 起, 下) / 趋向补语2: 引申用法, 开始与持续 (V + 上, 起来; V + 下去, 下来) | hsk3-directional-result, hsk3-directional-start-continue |
+| 36 | 可能补语1 (V + 得/不 + 结果/趋向补语) | hsk3-potential-complement |
+| 37 | 程度补语1 (Adj + 得很; Adj/V + 极了, 坏了) | hsk3-degree-complements |
+| 38 | 数量补语3 (动作结束到现在的时间: V(+O) + 时量 + 了) | hsk3-time-since-action |
+| 39 | 疑问句 (怎样 + V 特指问句) | hsk3-zenyang-questions |
+| 40 | 反问句1 (不是……吗？) | hsk3-bushi-ma |
+| 41 | "把"字句1: 把 + O + V + 在/到 + 处所; 把 + O1 + V(给) + O2 / "把"字句1: 把 + O + V + 结果/趋向/状态补语 | hsk3-ba-place-recipient, hsk3-ba-complements |
+| 42 | 被动句1 (主语 + 被 (+ 施事) + V + 其他成分) | hsk3-bei-passive |
+| 43 | 连动句2 (V1 + 着 + V2: 动作的伴随) | hsk3-zhe-accompanying |
+| 44 | 比较句2: A比B + 更/还 + Adj; A不比B + Adj / 比较句2: A跟B一样 (+ Adj); A比B + 多/少/早/晚 + V + 数量 | hsk3-comparison-geng-bubi, hsk3-comparison-yiyang-duo |
+| 45 | 存现句3 (处所 + V + 趋向/结果补语 + 了 + 数量 + 人/物: 出现与消失) | hsk3-existential-appear-vanish |
+| 46 | "是……的"句2 (强调说话人的看法或态度) | hsk3-shi-de-attitude |
+| 47 | 重动句 (S + V + O + V + 补语) | hsk3-verb-copying |
+| 48 | 承接复句 (先……，再/然后……) | hsk3-xian-zai-ranhou |
+| 49 | 选择复句 (或者……，或者……) | hsk3-huozhe-huozhe |
+| 50 | 并列复句: 又……又……, 一边……一边…… / 并列复句: 一会儿……，一会儿…… | hsk3-you-you-yibian, hsk3-yihuir-yihuir |
+| 51 | 递进复句 (不但……，而且……) | hsk3-budan-erqie |
+| 52 | 转折复句 (虽然……，可是……) | hsk3-suiran-keshi |
+| 53 | 假设复句 (如果……，就……; ……的话，就……) | hsk3-ruguo-jiu |
+| 54 | 条件复句 (只有……，才……; 只要……，就……) | hsk3-zhiyou-zhiyao |
+| 55 | 目的复句 (为了……，……) | hsk3-weile-purpose |
+| 56 | 紧缩复句 (V1 + 了 + O + (就) + V2) | hsk3-le-jiu-contracted |
+| 57 | 概数表达法2 (大概 + 数量; 相邻数词连用: 两三, 七八, 十五六) | hsk3-approx-numbers-2 |
 
 ## Level 4 · Connected speech
 

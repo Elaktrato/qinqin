@@ -1,0 +1,4436 @@
+{
+ "level": {
+  "id": "hsk-3"
+ },
+ "rows": [
+  {
+   "row": 1,
+   "label": "前缀 (老-)",
+   "lesson": {
+    "id": "hsk3-prefix-lao",
+    "level": "hsk-3",
+    "title": "老-: a prefix for familiar names, birth order and some nouns",
+    "summary": "老 before a surname makes a friendly form of address, before a number gives birth order among siblings, and is a fixed part of some nouns such as 老师 and 老虎.",
+    "pattern": [
+     "老 + surname",
+     "老 + 大 / 二 / 三 …",
+     "老 + noun root (老师, 老虎, 老家)"
+    ],
+    "body": [
+     "老 (lǎo) is a prefix with three common jobs. Before a one-syllable surname it makes a friendly, familiar way to address or mention someone of your age or older: 老王, 老张, 老李. Before 大, 二, 三 and so on it gives the order of children in a family: 老大 is the eldest, 老二 the second, 老三 the third. In some nouns it is simply part of the word and adds no idea of age: 老师 (teacher), 老虎 (tiger, even a baby one), 老家 (hometown), 老板 (boss).",
+     "The contrast example uses 小 (Level 1): 小李. 小 + surname is the friendly form for someone younger than you; 老 + surname is for someone your age or older. Both attach to the surname only.",
+     "Common mistake: putting 老 before a full name or a given name (老王小明). Say 老王, or the full name without 老."
+    ],
+    "examples": [
+     {
+      "id": "hsk3-prefix-lao-1",
+      "text": "老张是我们的经理。",
+      "reading": "Lǎo Zhāng shì wǒmen de jīnglǐ.",
+      "translation": "Old Zhang is our manager.",
+      "focus": "老",
+      "distractors": [
+       "第",
+       "们",
+       "很"
+      ],
+      "contrast": false,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ]
+     },
+     {
+      "id": "hsk3-prefix-lao-2",
+      "text": "他是家里的老大。",
+      "reading": "tā shì jiā li de lǎodà.",
+      "translation": "He is the eldest child in the family.",
+      "focus": "老",
+      "distractors": [
+       "第",
+       "子",
+       "吗"
+      ],
+      "contrast": false,
+      "kinds": [
+       "clearly-wrong"
+      ]
+     },
+     {
+      "id": "hsk3-prefix-lao-3",
+      "text": "我妹妹是老三。",
+      "reading": "wǒ mèimei shì lǎosān.",
+      "translation": "My younger sister is the third-born.",
+      "focus": "老",
+      "distractors": [
+       "们",
+       "吗",
+       "很"
+      ],
+      "contrast": false,
+      "kinds": [
+       "clearly-wrong"
+      ]
+     },
+     {
+      "id": "hsk3-prefix-lao-4",
+      "text": "老虎在山上睡觉。",
+      "reading": "lǎohǔ zài shān shang shuìjiào.",
+      "translation": "The tiger is sleeping on the mountain.",
+      "focus": "老",
+      "distractors": [
+       "第",
+       "们",
+       "的"
+      ],
+      "contrast": false,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ]
+     },
+     {
+      "id": "hsk3-prefix-lao-5",
+      "text": "我的老家在南方。",
+      "reading": "wǒ de lǎojiā zài nánfāng.",
+      "translation": "My hometown is in the south.",
+      "focus": "老",
+      "distractors": [
+       "第",
+       "们",
+       "很"
+      ],
+      "contrast": false,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ]
+     },
+     {
+      "id": "hsk3-prefix-lao-6",
+      "text": "小李是新来的同事。",
+      "reading": "Xiǎo Lǐ shì xīn lái de tóngshì.",
+      "translation": "Xiao Li is the colleague who just joined.",
+      "focus": "小",
+      "distractors": [
+       "第",
+       "们",
+       "很"
+      ],
+      "contrast": true,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "row": 2,
+   "label": "后缀 (-家, -子, -员)",
+   "lesson": {
+    "id": "hsk3-suffixes-jia-zi-yuan",
+    "level": "hsk-3",
+    "title": "Suffixes -家, -子 and -员: experts, everyday nouns and staff",
+    "summary": "-家 marks an expert or artist, -子 is a common noun ending, and -员 marks a person who does a job or belongs to a group.",
+    "pattern": [
+     "field + 家 (画家, 科学家)",
+     "root + 子 (桌子, 帽子, 儿子)",
+     "activity + 员 (服务员, 运动员)"
+    ],
+    "body": [
+     "A suffix attaches to the back of a word. 家 (jiā) after a field names a recognised expert or artist: 画家 (painter), 科学家 (scientist), 音乐家 (musician), 作家 (writer). 子 (zi, neutral tone) is a common ending of everyday nouns: 桌子, 椅子, 帽子, 儿子, 孩子, 筷子. 员 (yuán) names a person who does a job or is a member: 服务员 (waiter), 运动员 (athlete), 演员 (actor), 售货员 (shop assistant).",
+     "The contrast example uses 们 (Level 1), which makes a person-noun plural: 演员们. 们 can follow a noun that already has 员 or 家; it adds the idea of many people, not a job.",
+     "Common mistake: swapping the suffixes. 家 is for a respected expert (科学家, not 科学员); 员 is for a staff member or player (服务员, not 服务家)."
+    ],
+    "examples": [
+     {
+      "id": "hsk3-suffixes-jia-zi-yuan-1",
+      "text": "他爸爸是一位画家。",
+      "reading": "tā bàba shì yí wèi huàjiā.",
+      "translation": "His father is a painter.",
+      "focus": "家",
+      "distractors": [
+       "员",
+       "子",
+       "们"
+      ],
+      "contrast": false,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ]
+     },
+     {
+      "id": "hsk3-suffixes-jia-zi-yuan-2",
+      "text": "我想当科学家。",
+      "reading": "wǒ xiǎng dāng kēxuéjiā.",
+      "translation": "I want to be a scientist.",
+      "focus": "家",
+      "distractors": [
+       "员",
+       "子",
+       "边"
+      ],
+      "contrast": false,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ]
+     },
+     {
+      "id": "hsk3-suffixes-jia-zi-yuan-3",
+      "text": "服务员，请给我一双筷子。",
+      "reading": "fúwùyuán, qǐng gěi wǒ yì shuāng kuàizi.",
+      "translation": "Waiter, please give me a pair of chopsticks.",
+      "focus": "员",
+      "distractors": [
+       "家",
+       "子",
+       "们"
+      ],
+      "contrast": false,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ]
+     },
+     {
+      "id": "hsk3-suffixes-jia-zi-yuan-4",
+      "text": "她是一名游泳运动员。",
+      "reading": "tā shì yì míng yóuyǒng yùndòngyuán.",
+      "translation": "She is a swimmer (a swimming athlete).",
+      "focus": "员",
+      "distractors": [
+       "家",
+       "子",
+       "边"
+      ],
+      "contrast": false,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ]
+     },
+     {
+      "id": "hsk3-suffixes-jia-zi-yuan-5",
+      "text": "我的帽子在哪儿？",
+      "reading": "wǒ de màozi zài nǎr?",
+      "translation": "Where is my hat?",
+      "focus": "子",
+      "distractors": [
+       "家",
+       "员",
+       "们"
+      ],
+      "contrast": false,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ]
+     },
+     {
+      "id": "hsk3-suffixes-jia-zi-yuan-6",
+      "text": "他们的儿子今年五岁。",
+      "reading": "tāmen de érzi jīnnián wǔ suì.",
+      "translation": "Their son is five this year.",
+      "focus": "子",
+      "distractors": [
+       "家",
+       "员",
+       "面"
+      ],
+      "contrast": false,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ]
+     },
+     {
+      "id": "hsk3-suffixes-jia-zi-yuan-7",
+      "text": "演员们都很累。",
+      "reading": "yǎnyuánmen dōu hěn lèi.",
+      "translation": "The actors are all very tired.",
+      "focus": "们",
+      "distractors": [
+       "子",
+       "边",
+       "吗"
+      ],
+      "contrast": true,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "row": 3,
+   "label": "方位名词 (东, 南, 西, 北, 北方, 东方, 南方, 西方, 中间)",
+   "lesson": {
+    "id": "hsk3-compass-directions",
+    "level": "hsk-3",
+    "title": "Compass words: 东 南 西 北, 北方 南方 东方 西方, and 中间",
+    "summary": "东, 南, 西 and 北 combine with 边 for a side of a place and with 方 for a direction or region; 中间 means in the middle or between.",
+    "pattern": [
+     "N + 的 + 东边 / 南边 / 西边 / 北边",
+     "东方 / 南方 / 西方 / 北方 (+ 的 + N)",
+     "在 + A 和 B + 中间"
+    ],
+    "body": [
+     "东 (dōng, east), 南 (nán, south), 西 (xī, west) and 北 (běi, north) are bound words. After a place noun they take 边: 学校的东边, 城市的北边. With 方 they name a direction or a large region: 北方 (the north of a country), 南方, 东方 (the east; also the East), 西方 (the west; also the West, Western countries). Compound directions put east or west first: 东南, 西北.",
+     "中间 (zhōngjiān) is the middle of something or the space between two things: 在超市和书店中间. 中 alone does not work as a place word here.",
+     "The contrast example uses 右 (Level 2): 往右走. 左 and 右 give direction relative to the speaker, while the compass words give a fixed direction. Common mistake: using a bare compass word or 方 for a side of a small place (中国的北, 超市东方). Use 北方 for a region and 东边 for the side of a building."
+    ],
+    "examples": [
+     {
+      "id": "hsk3-compass-directions-1",
+      "text": "太阳从东边出来了。",
+      "reading": "tàiyáng cóng dōngbian chūlai le.",
+      "translation": "The sun has come up in the east.",
+      "focus": "东",
+      "distractors": [
+       "中",
+       "们",
+       "很"
+      ],
+      "contrast": false,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ]
+     },
+     {
+      "id": "hsk3-compass-directions-2",
+      "text": "我家在城市的北边。",
+      "reading": "wǒ jiā zài chéngshì de běibian.",
+      "translation": "My home is on the north side of the city.",
+      "focus": "北",
+      "distractors": [
+       "中",
+       "们",
+       "吗"
+      ],
+      "contrast": false,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ]
+     },
+     {
+      "id": "hsk3-compass-directions-3",
+      "text": "北方的冬天非常冷。",
+      "reading": "běifāng de dōngtiān fēicháng lěng.",
+      "translation": "Winters in the north are very cold.",
+      "focus": "北方",
+      "distractors": [
+       "北",
+       "中",
+       "们"
+      ],
+      "contrast": false,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ]
+     },
+     {
+      "id": "hsk3-compass-directions-4",
+      "text": "南方人喜欢吃米饭。",
+      "reading": "nánfāng rén xǐhuan chī mǐfàn.",
+      "translation": "Southerners like eating rice.",
+      "focus": "南方",
+      "distractors": [
+       "南",
+       "左",
+       "边"
+      ],
+      "contrast": false,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ]
+     },
+     {
+      "id": "hsk3-compass-directions-5",
+      "text": "西方的节日跟中国的不一样。",
+      "reading": "xīfāng de jiérì gēn Zhōngguó de bù yíyàng.",
+      "translation": "Western holidays are different from Chinese ones.",
+      "focus": "西方",
+      "distractors": [
+       "西",
+       "里",
+       "边"
+      ],
+      "contrast": false,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ]
+     },
+     {
+      "id": "hsk3-compass-directions-6",
+      "text": "东方的天已经亮了。",
+      "reading": "dōngfāng de tiān yǐjīng liàng le.",
+      "translation": "The sky in the east is already light.",
+      "focus": "东方",
+      "distractors": [
+       "东",
+       "中",
+       "们"
+      ],
+      "contrast": false,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ]
+     },
+     {
+      "id": "hsk3-compass-directions-7",
+      "text": "银行在超市和书店中间。",
+      "reading": "yínháng zài chāoshì hé shūdiàn zhōngjiān.",
+      "translation": "The bank is between the supermarket and the bookshop.",
+      "focus": "中间",
+      "distractors": [
+       "东方",
+       "南方",
+       "们"
+      ],
+      "contrast": false,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ],
+      "noOrder": true
+     },
+     {
+      "id": "hsk3-compass-directions-8",
+      "text": "请往右走，银行就在那儿。",
+      "reading": "qǐng wǎng yòu zǒu, yínháng jiù zài nàr.",
+      "translation": "Please go right; the bank is just there.",
+      "focus": "右",
+      "distractors": [
+       "中",
+       "们",
+       "的"
+      ],
+      "contrast": true,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "row": 4,
+   "label": "能愿动词 (需要, 该, 应该, 愿意, 得)",
+   "lesson": {
+    "id": "hsk3-modal-verbs",
+    "level": "hsk-3",
+    "title": "Modal verbs 需要, 应该/该, 愿意 and 得 (děi)",
+    "summary": "需要 says something is needed, 应该 and 该 say what is right or expected, 愿意 says someone is willing, and 得 (děi) says you have to.",
+    "pattern": [
+     "A + 需要 + V / N",
+     "A + 应该 / 该 / 得 + V",
+     "A + (很) 愿意 + V"
+    ],
+    "body": [
+     "需要 (xūyào) means need. It can take a verb (你需要多休息) or a noun (我需要一张地图), and its subject can be a thing: 这个问题需要好好想一想. 应该 (yīnggāi) and the shorter, more spoken 该 (gāi) say what is right or expected: 你应该早点儿告诉我, 你不该这么晚才回家. 愿意 (yuànyì) says a person is willing, and it can take 很: 我很愿意帮助你.",
+     "得 (děi) is spoken and means have to: 我得早点儿睡. It is written like the particle 得 (de) but read děi and stands before a verb. Its negative is 不用 (no need), not 不得.",
+     "The contrast example uses 会 (Level 1) for a prediction: 明天会下雨吗？ 会 can talk about weather; 愿意 cannot, because weather has no will. Common mistake: using 愿意 with a thing as subject, or saying 不得 for no need to."
+    ],
+    "examples": [
+     {
+      "id": "hsk3-modal-verbs-1",
+      "text": "我需要一张地图。",
+      "reading": "wǒ xūyào yì zhāng dìtú.",
+      "translation": "I need a map.",
+      "focus": "需要",
+      "distractors": [
+       "应该",
+       "愿意",
+       "很"
+      ],
+      "contrast": false,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ]
+     },
+     {
+      "id": "hsk3-modal-verbs-2",
+      "text": "这个问题需要好好想一想。",
+      "reading": "zhège wèntí xūyào hǎohǎo xiǎng yi xiǎng.",
+      "translation": "This problem needs careful thought.",
+      "focus": "需要",
+      "distractors": [
+       "愿意",
+       "很",
+       "的"
+      ],
+      "contrast": false,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ]
+     },
+     {
+      "id": "hsk3-modal-verbs-3",
+      "text": "你不该这么晚才回家。",
+      "reading": "nǐ bù gāi zhème wǎn cái huí jiā.",
+      "translation": "You shouldn't come home so late.",
+      "focus": "该",
+      "distractors": [
+       "很",
+       "了",
+       "把"
+      ],
+      "contrast": false,
+      "kinds": [
+       "clearly-wrong"
+      ]
+     },
+     {
+      "id": "hsk3-modal-verbs-4",
+      "text": "你应该早点儿告诉我。",
+      "reading": "nǐ yīnggāi zǎo diǎnr gàosu wǒ.",
+      "translation": "You should have told me earlier.",
+      "focus": "应该",
+      "distractors": [
+       "很",
+       "过",
+       "着"
+      ],
+      "contrast": false,
+      "kinds": [
+       "clearly-wrong"
+      ]
+     },
+     {
+      "id": "hsk3-modal-verbs-5",
+      "text": "我很愿意帮助你。",
+      "reading": "wǒ hěn yuànyì bāngzhù nǐ.",
+      "translation": "I am very willing to help you.",
+      "focus": "愿意",
+      "distractors": [
+       "得",
+       "吗",
+       "过"
+      ],
+      "contrast": false,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ]
+     },
+     {
+      "id": "hsk3-modal-verbs-6",
+      "text": "明天要考试，我得早点儿睡。",
+      "reading": "míngtiān yào kǎoshì, wǒ děi zǎo diǎnr shuì.",
+      "translation": "There's an exam tomorrow, so I have to go to bed early.",
+      "focus": "得",
+      "distractors": [
+       "的",
+       "地",
+       "很"
+      ],
+      "contrast": false,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ]
+     },
+     {
+      "id": "hsk3-modal-verbs-7",
+      "text": "明天会下雨吗？",
+      "reading": "míngtiān huì xià yǔ ma?",
+      "translation": "Will it rain tomorrow?",
+      "focus": "会",
+      "distractors": [
+       "愿意",
+       "很",
+       "过"
+      ],
+      "contrast": true,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "row": 5,
+   "label": "离合词 (放假, 见面, 结婚, 洗澡; 离开, 完成, 分开)",
+   "lesson": {
+    "id": "hsk3-separable-verbs",
+    "level": "hsk-3",
+    "title": "Separable verbs: 放假 见面 结婚 洗澡 and 离开 完成 分开",
+    "summary": "Verb-object words like 见面 open up for 了, 过, a measure or 的; verb-complement words like 离开 open up for 得 or 不.",
+    "pattern": [
+     "V + 了 / 过 / 个 / number + measure + O (见过一次面)",
+     "V + 得 / 不 + C (离不开, 完得成)",
+     "跟 + person + 见面"
+    ],
+    "body": [
+     "Verb-object separable words have a verb part and an object part. 放假 (have a holiday), 见面 (meet), 结婚 (marry) and 洗澡 (take a bath) let other words go between the two parts: 放了一个星期的假, 见过一次面, 是去年结的婚, 洗个澡. Because the word already contains an object, it cannot take another one: say 跟他见面, not 见面他.",
+     "Verb-complement words have a verb and a result: 离开 (leave), 完成 (finish), 分开 (separate). 得 or 不 goes between the parts to say can or cannot: 离得开 / 离不开, 完得成 / 完不成, 分不开.",
+     "The contrast example uses 帮助, an ordinary verb that takes an object directly: 他经常帮助我. 帮忙 (Level 2) is separable and cannot: 他经常帮忙我 is wrong, 他经常帮我的忙 is right. Common mistake: putting the object or the measure after the whole word, as in 见面他 or 见面一次."
+    ],
+    "examples": [
+     {
+      "id": "hsk3-separable-verbs-1",
+      "text": "学校放了一个星期的假。",
+      "reading": "xuéxiào fàng le yí ge xīngqī de jià.",
+      "translation": "The school had a week's holiday.",
+      "focus": "了",
+      "distractors": [
+       "着",
+       "在",
+       "很"
+      ],
+      "contrast": false,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ]
+     },
+     {
+      "id": "hsk3-separable-verbs-2",
+      "text": "我们俩只见过两次面。",
+      "reading": "wǒmen liǎ zhǐ jiàn guo liǎng cì miàn.",
+      "translation": "The two of us have only met twice.",
+      "focus": "过",
+      "distractors": [
+       "在",
+       "得",
+       "吗"
+      ],
+      "contrast": false,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ]
+     },
+     {
+      "id": "hsk3-separable-verbs-3",
+      "text": "他们是去年结的婚。",
+      "reading": "tāmen shì qùnián jié de hūn.",
+      "translation": "They got married last year.",
+      "focus": "的",
+      "distractors": [
+       "得",
+       "地",
+       "着"
+      ],
+      "contrast": false,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ]
+     },
+     {
+      "id": "hsk3-separable-verbs-4",
+      "text": "累了一天，快去洗个澡吧。",
+      "reading": "lèi le yì tiān, kuài qù xǐ ge zǎo ba.",
+      "translation": "You've had a tiring day; go and have a bath.",
+      "focus": "个",
+      "distractors": [
+       "们",
+       "张",
+       "的"
+      ],
+      "contrast": false,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ]
+     },
+     {
+      "id": "hsk3-separable-verbs-5",
+      "text": "我离不开这个城市。",
+      "reading": "wǒ lí bu kāi zhège chéngshì.",
+      "translation": "I can't leave this city.",
+      "focus": "开",
+      "distractors": [
+       "完",
+       "见",
+       "着"
+      ],
+      "contrast": false,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ]
+     },
+     {
+      "id": "hsk3-separable-verbs-6",
+      "text": "作业太多了，我完不成。",
+      "reading": "zuòyè tài duō le, wǒ wán bu chéng.",
+      "translation": "There's too much homework; I can't finish it.",
+      "focus": "成",
+      "distractors": [
+       "开",
+       "见",
+       "着"
+      ],
+      "contrast": false,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ]
+     },
+     {
+      "id": "hsk3-separable-verbs-7",
+      "text": "他们俩感情很好，分不开。",
+      "reading": "tāmen liǎ gǎnqíng hěn hǎo, fēn bu kāi.",
+      "translation": "The two of them are very close; they can't be separated.",
+      "focus": "不",
+      "distractors": [
+       "没",
+       "很",
+       "了"
+      ],
+      "contrast": false,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ]
+     },
+     {
+      "id": "hsk3-separable-verbs-8",
+      "text": "他经常帮助我。",
+      "reading": "tā jīngcháng bāngzhù wǒ.",
+      "translation": "He often helps me.",
+      "focus": "帮助",
+      "distractors": [
+       "帮忙",
+       "见面",
+       "很"
+      ],
+      "contrast": true,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "row": 6,
+   "label": "疑问代词 (怎样)",
+   "lesson": {
+    "id": "hsk3-question-zenyang",
+    "level": "hsk-3",
+    "title": "怎样: asking how, in what way and what kind",
+    "summary": "怎样 asks about manner before a verb, about a state at the end of a sentence, and about kind before 的 + noun.",
+    "pattern": [
+     "A + 怎样 + V？",
+     "A + 怎样？",
+     "一个怎样的 + N？"
+    ],
+    "body": [
+     "怎样 (zěnyàng) is a slightly more formal partner of 怎么 and 怎么样. Before a verb it asks how something is done: 这个字怎样写？ 我们应该怎样学好汉语？ At the end of a sentence it asks about a state or an opinion: 你最近身体怎样？ 你看这件衣服怎样？ Before 的 and a noun it asks what kind: 他是一个怎样的人？",
+     "The contrast example uses 怎么 for surprise or why: 你怎么又迟到了？ 怎么 can ask why or how come; 怎样 only asks how or what kind, so 你怎样又迟到了 is wrong.",
+     "Common mistake: using 怎么 before 的 (一个怎么的人). Before 的 + noun use 怎样 or 怎么样."
+    ],
+    "examples": [
+     {
+      "id": "hsk3-question-zenyang-1",
+      "text": "这个字怎样写？",
+      "reading": "zhège zì zěnyàng xiě?",
+      "translation": "How do you write this character?",
+      "focus": "怎样",
+      "distractors": [
+       "什么",
+       "多少",
+       "吗"
+      ],
+      "contrast": false,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ]
+     },
+     {
+      "id": "hsk3-question-zenyang-2",
+      "text": "你最近身体怎样？",
+      "reading": "nǐ zuìjìn shēntǐ zěnyàng?",
+      "translation": "How has your health been lately?",
+      "focus": "怎样",
+      "distractors": [
+       "什么",
+       "哪儿",
+       "吗"
+      ],
+      "contrast": false,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ],
+      "noOrder": true
+     },
+     {
+      "id": "hsk3-question-zenyang-3",
+      "text": "他是一个怎样的人？",
+      "reading": "tā shì yí ge zěnyàng de rén?",
+      "translation": "What kind of person is he?",
+      "focus": "怎样",
+      "distractors": [
+       "怎么",
+       "哪",
+       "吗"
+      ],
+      "contrast": false,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ]
+     },
+     {
+      "id": "hsk3-question-zenyang-4",
+      "text": "我们应该怎样学好汉语？",
+      "reading": "wǒmen yīnggāi zěnyàng xuéhǎo Hànyǔ?",
+      "translation": "How should we learn Chinese well?",
+      "focus": "怎样",
+      "distractors": [
+       "什么",
+       "哪",
+       "的"
+      ],
+      "contrast": false,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ]
+     },
+     {
+      "id": "hsk3-question-zenyang-5",
+      "text": "你看这件衣服怎样？",
+      "reading": "nǐ kàn zhè jiàn yīfu zěnyàng?",
+      "translation": "What do you think of this piece of clothing?",
+      "focus": "怎样",
+      "distractors": [
+       "什么",
+       "谁",
+       "吗"
+      ],
+      "contrast": false,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ]
+     },
+     {
+      "id": "hsk3-question-zenyang-6",
+      "text": "你怎么又迟到了？",
+      "reading": "nǐ zěnme yòu chídào le?",
+      "translation": "How come you're late again?",
+      "focus": "怎么",
+      "distractors": [
+       "怎样",
+       "什么",
+       "哪"
+      ],
+      "contrast": true,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "row": 6,
+   "label": "疑问代词的非疑问用法 (任指, 不定指)",
+   "lesson": {
+    "id": "hsk3-question-words-indefinite",
+    "level": "hsk-3",
+    "title": "Question words without a question: anything, anyone, anywhere and something",
+    "summary": "A question word followed by 都 or 也 means any or every (什么都, 谁都); the same word twice links two clauses; and in a statement a question word can mean something, somewhere or someone.",
+    "pattern": [
+     "QW + 都 / 也 + (不 / 没) + V",
+     "…QW…, 就…QW…",
+     "V + 点儿 + 什么 / 在哪儿 + V"
+    ],
+    "body": [
+     "A question word does not always ask a question. Before 都 or 也 it means any or every, and with 不 or 没 it means nothing, nobody or nowhere: 他什么都不想吃, 谁都知道这件事, 周末我哪儿也没去, 怎么走都可以. The question word comes before 都 or 也, in front of the verb.",
+     "The same question word can appear in two clauses, linked by 就, and the two refer to the same thing: 你想吃什么就吃什么 (eat whatever you want). In a statement a question word can also stand for something, somewhere or someone not named: 吃点儿什么吧, 我好像在哪儿见过他.",
+     "The contrast example is an ordinary question: 你周末去哪儿了？ Here 哪儿 asks for a place and needs an answer. With 都 or 也, in the double pattern, or in a statement, the question word asks nothing. Common mistake: leaving the question word after the verb (我都不想吃什么); say 我什么都不想吃."
+    ],
+    "examples": [
+     {
+      "id": "hsk3-question-words-indefinite-1",
+      "text": "他什么都不想吃。",
+      "reading": "tā shénme dōu bù xiǎng chī.",
+      "translation": "He doesn't want to eat anything.",
+      "focus": "都",
+      "distractors": [
+       "还",
+       "很",
+       "吗"
+      ],
+      "contrast": false,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ]
+     },
+     {
+      "id": "hsk3-question-words-indefinite-2",
+      "text": "周末我哪儿也没去。",
+      "reading": "zhōumò wǒ nǎr yě méi qù.",
+      "translation": "I didn't go anywhere at the weekend.",
+      "focus": "哪儿",
+      "distractors": [
+       "什么",
+       "谁",
+       "几"
+      ],
+      "contrast": false,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ],
+      "noOrder": true
+     },
+     {
+      "id": "hsk3-question-words-indefinite-3",
+      "text": "谁都知道这件事。",
+      "reading": "shéi dōu zhīdào zhè jiàn shì.",
+      "translation": "Everyone knows about this.",
+      "focus": "谁",
+      "distractors": [
+       "什么",
+       "哪儿",
+       "几"
+      ],
+      "contrast": false,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ],
+      "noOrder": true
+     },
+     {
+      "id": "hsk3-question-words-indefinite-4",
+      "text": "你想吃什么就吃什么。",
+      "reading": "nǐ xiǎng chī shénme jiù chī shénme.",
+      "translation": "Eat whatever you like.",
+      "focus": "就",
+      "distractors": [
+       "才",
+       "都",
+       "很"
+      ],
+      "contrast": false,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ]
+     },
+     {
+      "id": "hsk3-question-words-indefinite-5",
+      "text": "去车站怎么走都可以。",
+      "reading": "qù chēzhàn zěnme zǒu dōu kěyǐ.",
+      "translation": "Any way to the station is fine.",
+      "focus": "怎么",
+      "distractors": [
+       "什么",
+       "为什么",
+       "吗"
+      ],
+      "contrast": false,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ]
+     },
+     {
+      "id": "hsk3-question-words-indefinite-6",
+      "text": "我好像在哪儿见过他。",
+      "reading": "wǒ hǎoxiàng zài nǎr jiàn guo tā.",
+      "translation": "I seem to have seen him somewhere.",
+      "focus": "哪儿",
+      "distractors": [
+       "什么",
+       "谁",
+       "几"
+      ],
+      "contrast": false,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ],
+      "noOrder": true
+     },
+     {
+      "id": "hsk3-question-words-indefinite-7",
+      "text": "你饿了就吃点儿什么吧。",
+      "reading": "nǐ è le jiù chī diǎnr shénme ba.",
+      "translation": "If you're hungry, eat something.",
+      "focus": "什么",
+      "distractors": [
+       "哪儿",
+       "谁",
+       "怎么"
+      ],
+      "contrast": false,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ]
+     },
+     {
+      "id": "hsk3-question-words-indefinite-8",
+      "text": "你周末去哪儿了？",
+      "reading": "nǐ zhōumò qù nǎr le?",
+      "translation": "Where did you go at the weekend?",
+      "focus": "哪儿",
+      "distractors": [
+       "什么",
+       "谁",
+       "吗"
+      ],
+      "contrast": true,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ],
+      "noOrder": true
+     }
+    ]
+   }
+  },
+  {
+   "row": 7,
+   "label": "人称代词 (别人, 咱们)",
+   "lesson": {
+    "id": "hsk3-bieren-zanmen",
+    "level": "hsk-3",
+    "title": "别人 (other people) and 咱们 (we, including you)",
+    "summary": "别人 means other people and stands alone as a pronoun; 咱们 means we and always includes the person you are speaking to.",
+    "pattern": [
+     "别人 (+ 的 + N)",
+     "V + 别人",
+     "咱们 + V (+ 吧)"
+    ],
+    "body": [
+     "别人 (biéren) means other people, anyone except the person in question. It works like a pronoun: as subject (别人都走了), as object (他总是想着别人) and before 的 (别人的东西). 咱们 (zánmen) means we and always includes the listener; it is common in spoken northern Chinese: 咱们一起去吃饭吧, 咱们班.",
+     "The contrast example uses 我们 (Level 1): 老师，我们先走了，您慢慢吃. The speakers leave and the teacher stays, so the listener is not included and 咱们 is wrong; 我们 can include or exclude the listener.",
+     "Common mistake: using 别的 for people on its own (别的都走了 for other people left). 别的 needs a noun or means other things; for people say 别人 or 别的人."
+    ],
+    "examples": [
+     {
+      "id": "hsk3-bieren-zanmen-1",
+      "text": "这是别人的东西，你不能拿。",
+      "reading": "zhè shì biéren de dōngxi, nǐ bù néng ná.",
+      "translation": "This belongs to someone else; you can't take it.",
+      "focus": "别人",
+      "distractors": [
+       "吗",
+       "很",
+       "着"
+      ],
+      "contrast": false,
+      "kinds": [
+       "clearly-wrong"
+      ]
+     },
+     {
+      "id": "hsk3-bieren-zanmen-2",
+      "text": "咱们一起去吃饭吧。",
+      "reading": "zánmen yìqǐ qù chī fàn ba.",
+      "translation": "Let's go and eat together.",
+      "focus": "咱们",
+      "distractors": [
+       "别的",
+       "这些",
+       "吗"
+      ],
+      "contrast": false,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ]
+     },
+     {
+      "id": "hsk3-bieren-zanmen-3",
+      "text": "别人都走了，只有他还在。",
+      "reading": "biéren dōu zǒu le, zhǐyǒu tā hái zài.",
+      "translation": "Everyone else has left; only he is still here.",
+      "focus": "别人",
+      "distractors": [
+       "别的",
+       "吗",
+       "很"
+      ],
+      "contrast": false,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ]
+     },
+     {
+      "id": "hsk3-bieren-zanmen-4",
+      "text": "咱们班的同学都很友好。",
+      "reading": "zánmen bān de tóngxué dōu hěn yǒuhǎo.",
+      "translation": "The students in our class are all friendly.",
+      "focus": "咱们",
+      "distractors": [
+       "它们",
+       "吗",
+       "很"
+      ],
+      "contrast": false,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ]
+     },
+     {
+      "id": "hsk3-bieren-zanmen-5",
+      "text": "你要多听听别人的意见。",
+      "reading": "nǐ yào duō tīngting biéren de yìjiàn.",
+      "translation": "You should listen more to other people's opinions.",
+      "focus": "别人",
+      "distractors": [
+       "这么",
+       "们",
+       "很"
+      ],
+      "contrast": false,
+      "kinds": [
+       "clearly-wrong"
+      ]
+     },
+     {
+      "id": "hsk3-bieren-zanmen-6",
+      "text": "老师，我们先走了，您慢慢吃。",
+      "reading": "lǎoshī, wǒmen xiān zǒu le, nín mànmàn chī.",
+      "translation": "Teacher, we're leaving now; take your time eating.",
+      "focus": "我们",
+      "distractors": [
+       "咱们",
+       "这些",
+       "吗"
+      ],
+      "contrast": true,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "row": 8,
+   "label": "指示代词 (别的, 其他)",
+   "lesson": {
+    "id": "hsk3-biede-qita",
+    "level": "hsk-3",
+    "title": "别的 and 其他: other things, other people",
+    "summary": "别的 and 其他 both mean other; 别的 can stand alone for other things, and 其他 often means the rest of a known group.",
+    "pattern": [
+     "别的 + N / 别的 (alone)",
+     "其他 + N / 其他的",
+     "除了 A，其他 + N + 都…"
+    ],
+    "body": [
+     "别的 (bié de) means other. It goes before a noun (别的颜色) or stands alone for other things (你还想要别的吗？). 其他 (qítā) also means other and usually points to the rest of a known group: 其他同学都回家了, 除了小王，其他人都来了. Used alone it takes 的: 其他的都没买.",
+     "The contrast example uses 别人 (row 7): 我没有把这件事告诉别人. For other people, 别人 is the pronoun; 别的 and 其他 need a noun such as 人 to mean people.",
+     "Common mistake: putting 别人 before a noun as if it meant other (别人颜色). Use 别的颜色 or 其他颜色."
+    ],
+    "examples": [
+     {
+      "id": "hsk3-biede-qita-1",
+      "text": "你还想要别的吗？",
+      "reading": "nǐ hái xiǎng yào bié de ma?",
+      "translation": "Would you like anything else?",
+      "focus": "别的",
+      "distractors": [
+       "别",
+       "这么",
+       "很"
+      ],
+      "contrast": false,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ]
+     },
+     {
+      "id": "hsk3-biede-qita-2",
+      "text": "我不喜欢这个颜色，有别的颜色吗？",
+      "reading": "wǒ bù xǐhuan zhège yánsè, yǒu bié de yánsè ma?",
+      "translation": "I don't like this colour; do you have another colour?",
+      "focus": "别的",
+      "distractors": [
+       "别人",
+       "别",
+       "们"
+      ],
+      "contrast": false,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ]
+     },
+     {
+      "id": "hsk3-biede-qita-3",
+      "text": "其他同学都回家了。",
+      "reading": "qítā tóngxué dōu huí jiā le.",
+      "translation": "The other students have all gone home.",
+      "focus": "其他",
+      "distractors": [
+       "别人",
+       "别",
+       "吗"
+      ],
+      "contrast": false,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ]
+     },
+     {
+      "id": "hsk3-biede-qita-4",
+      "text": "除了小王，其他人都来了。",
+      "reading": "chúle Xiǎo Wáng, qítā rén dōu lái le.",
+      "translation": "Everyone except Xiao Wang has come.",
+      "focus": "其他",
+      "distractors": [
+       "别人",
+       "那么",
+       "吗"
+      ],
+      "contrast": false,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ]
+     },
+     {
+      "id": "hsk3-biede-qita-5",
+      "text": "我只买了水果，其他的都没买。",
+      "reading": "wǒ zhǐ mǎi le shuǐguǒ, qítā de dōu méi mǎi.",
+      "translation": "I only bought fruit and nothing else.",
+      "focus": "其他",
+      "distractors": [
+       "吗",
+       "很",
+       "在"
+      ],
+      "contrast": false,
+      "kinds": [
+       "clearly-wrong"
+      ]
+     },
+     {
+      "id": "hsk3-biede-qita-6",
+      "text": "我没有把这件事告诉别人。",
+      "reading": "wǒ méiyǒu bǎ zhè jiàn shì gàosu biéren.",
+      "translation": "I didn't tell anyone else about this.",
+      "focus": "别人",
+      "distractors": [
+       "别的",
+       "其他",
+       "们"
+      ],
+      "contrast": true,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "row": 9,
+   "label": "名量词 (把, 双, 张, 种, 层, 封, 页, 辆, 节, 所, 班, 段, 头, 句)",
+   "lesson": {
+    "id": "hsk3-measure-words-objects",
+    "level": "hsk-3",
+    "title": "Measure words for objects, places, vehicles and speech: 把 双 张 种 层 封 页 辆 节 所 班 段 头 句",
+    "summary": "Each measure word goes between a number or 这/那 and a noun, and fits a kind of thing: 把 for things with handles, 张 for flat things, 辆 for vehicles, 句 for sentences.",
+    "pattern": [
+     "number / 这 / 那 + measure + N",
+     "一把雨伞, 两张票, 几辆车, 一句话"
+    ],
+    "body": [
+     "把 (bǎ) is for things you hold by a handle: 一把雨伞, 一把椅子. 双 (shuāng) is a pair: 一双鞋, 一双筷子. 张 (zhāng) is for flat things: 一张票, 一张纸, 一张桌子. 种 (zhǒng) is a kind: 这种楼. 层 (céng) is a floor or layer: 六层. 封 (fēng) is for letters, 页 (yè) for pages: 一封三页的信. 辆 (liàng) is for vehicles: 几辆车.",
+     "节 (jié) counts class periods: 这节课. 所 (suǒ) is for schools and hospitals: 那所大学. 班 (bān) counts scheduled runs of a bus, train or plane: 下一班车. 段 (duàn) is a stretch or section: 这段路, 这段话. 头 (tóu) is for large animals: 一头牛. 句 (jù) counts sentences: 一句话.",
+     "The contrast example uses 位 (Level 2), the polite measure for people: 一位新同学. In the same sentence 班 is a noun (a class of students), not the measure word for runs of a bus. Common mistake: using 个 or the wrong measure for vehicles and animals (一个车, 一张牛); say 一辆车, 一头牛."
+    ],
+    "examples": [
+     {
+      "id": "hsk3-measure-words-objects-1",
+      "text": "外面下雨了，你带一把雨伞吧。",
+      "reading": "wàimian xià yǔ le, nǐ dài yì bǎ yǔsǎn ba.",
+      "translation": "It's raining outside; take an umbrella.",
+      "focus": "把",
+      "distractors": [
+       "本",
+       "头",
+       "封"
+      ],
+      "contrast": false,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ]
+     },
+     {
+      "id": "hsk3-measure-words-objects-2",
+      "text": "我买了两张下一班车的票。",
+      "reading": "wǒ mǎi le liǎng zhāng xià yì bān chē de piào.",
+      "translation": "I bought two tickets for the next bus.",
+      "focus": "班",
+      "distractors": [
+       "双",
+       "封",
+       "页"
+      ],
+      "contrast": false,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ]
+     },
+     {
+      "id": "hsk3-measure-words-objects-3",
+      "text": "这种楼一般有六层。",
+      "reading": "zhè zhǒng lóu yìbān yǒu liù céng.",
+      "translation": "This kind of building usually has six floors.",
+      "focus": "层",
+      "distractors": [
+       "节",
+       "页",
+       "把"
+      ],
+      "contrast": false,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ]
+     },
+     {
+      "id": "hsk3-measure-words-objects-4",
+      "text": "第一节课八点开始。",
+      "reading": "dì yī jié kè bā diǎn kāishǐ.",
+      "translation": "The first class starts at eight.",
+      "focus": "节",
+      "distractors": [
+       "辆",
+       "封",
+       "头"
+      ],
+      "contrast": false,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ]
+     },
+     {
+      "id": "hsk3-measure-words-objects-5",
+      "text": "这封信有三页，是那所大学寄来的。",
+      "reading": "zhè fēng xìn yǒu sān yè, shì nà suǒ dàxué jìlai de.",
+      "translation": "This letter is three pages long; that university sent it.",
+      "focus": "封",
+      "distractors": [
+       "张",
+       "双",
+       "辆"
+      ],
+      "contrast": false,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ]
+     },
+     {
+      "id": "hsk3-measure-words-objects-6",
+      "text": "路上有一头牛，后面的几辆车都停下来了。",
+      "reading": "lù shang yǒu yì tóu niú, hòumian de jǐ liàng chē dōu tíng xiàlai le.",
+      "translation": "There was a cow on the road, and the cars behind it all stopped.",
+      "focus": "头",
+      "distractors": [
+       "张",
+       "把",
+       "封"
+      ],
+      "contrast": false,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ]
+     },
+     {
+      "id": "hsk3-measure-words-objects-7",
+      "text": "这段话里有一句我不懂。",
+      "reading": "zhè duàn huà li yǒu yí jù wǒ bù dǒng.",
+      "translation": "There is one sentence in this passage I don't understand.",
+      "focus": "段",
+      "distractors": [
+       "双",
+       "辆",
+       "把"
+      ],
+      "contrast": false,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ]
+     },
+     {
+      "id": "hsk3-measure-words-objects-8",
+      "text": "我们班有一位新同学。",
+      "reading": "wǒmen bān yǒu yí wèi xīn tóngxué.",
+      "translation": "There is a new student in our class.",
+      "focus": "位",
+      "distractors": [
+       "头",
+       "把",
+       "辆"
+      ],
+      "contrast": true,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "row": 9,
+   "label": "名量词 (公斤, 斤, 角, 毛, 刻, 米; 借用 碗, 盘)",
+   "lesson": {
+    "id": "hsk3-measure-words-units",
+    "level": "hsk-3",
+    "title": "Units and borrowed measures: 公斤 斤 角 毛 刻 米, 碗 盘",
+    "summary": "公斤 and 斤 weigh, 角 and 毛 count tenths of a yuan, 刻 is a quarter of an hour, 米 is a metre, and 碗 and 盘 borrow a bowl and a plate as measures.",
+    "pattern": [
+     "number + 公斤 / 斤 / 米 (+ N)",
+     "…块 / 元 + number + 毛 / 角",
+     "number + 碗 / 盘 + N"
+    ],
+    "body": [
+     "公斤 (gōngjīn) is a kilogram and 斤 (jīn) is half a kilogram, the usual unit in Chinese markets: 两斤苹果. 米 (mǐ) is a metre; height is said 一米八 (1.8 metres). 刻 (kè) is a quarter of an hour: 三点一刻 (3:15), 三点三刻 (3:45).",
+     "Money: 1 元 = 10 角 = 100 分. In speech 块 replaces 元 and 毛 replaces 角: 三块五毛 in speech, 三元五角 in writing. Borrowed measures use a container: 一碗米饭, 一盘饺子.",
+     "The contrast example uses 分钟 (Level 1): 二十分钟. 分 counts minutes and goes with any number; 刻 only counts quarters, so you say 一刻 or 三刻, never 二十刻. Common mistake: mixing spoken and written money words (三元五毛). Keep 块 with 毛 and 元 with 角."
+    ],
+    "examples": [
+     {
+      "id": "hsk3-measure-words-units-1",
+      "text": "我想买两斤苹果。",
+      "reading": "wǒ xiǎng mǎi liǎng jīn píngguǒ.",
+      "translation": "I'd like to buy a kilo of apples.",
+      "focus": "斤",
+      "distractors": [
+       "米",
+       "刻",
+       "张"
+      ],
+      "contrast": false,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ]
+     },
+     {
+      "id": "hsk3-measure-words-units-2",
+      "text": "这个箱子有二十公斤。",
+      "reading": "zhège xiāngzi yǒu èrshí gōngjīn.",
+      "translation": "This suitcase weighs twenty kilos.",
+      "focus": "公斤",
+      "distractors": [
+       "刻",
+       "角",
+       "双"
+      ],
+      "contrast": false,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ]
+     },
+     {
+      "id": "hsk3-measure-words-units-3",
+      "text": "一个面包三块五毛。",
+      "reading": "yí ge miànbāo sān kuài wǔ máo.",
+      "translation": "A loaf of bread costs three yuan fifty.",
+      "focus": "毛",
+      "distractors": [
+       "刻",
+       "米",
+       "斤"
+      ],
+      "contrast": false,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ]
+     },
+     {
+      "id": "hsk3-measure-words-units-4",
+      "text": "这张票三元五角。",
+      "reading": "zhè zhāng piào sān yuán wǔ jiǎo.",
+      "translation": "This ticket costs 3.50 yuan.",
+      "focus": "角",
+      "distractors": [
+       "刻",
+       "米",
+       "碗"
+      ],
+      "contrast": false,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ]
+     },
+     {
+      "id": "hsk3-measure-words-units-5",
+      "text": "现在是三点一刻。",
+      "reading": "xiànzài shì sān diǎn yí kè.",
+      "translation": "It is a quarter past three.",
+      "focus": "刻",
+      "distractors": [
+       "毛",
+       "米",
+       "斤"
+      ],
+      "contrast": false,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ]
+     },
+     {
+      "id": "hsk3-measure-words-units-6",
+      "text": "他有一米八高。",
+      "reading": "tā yǒu yì mǐ bā gāo.",
+      "translation": "He is 1.8 metres tall.",
+      "focus": "米",
+      "distractors": [
+       "斤",
+       "刻",
+       "公斤"
+      ],
+      "contrast": false,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ]
+     },
+     {
+      "id": "hsk3-measure-words-units-7",
+      "text": "他吃了一碗米饭和一盘饺子。",
+      "reading": "tā chī le yì wǎn mǐfàn hé yì pán jiǎozi.",
+      "translation": "He ate a bowl of rice and a plate of dumplings.",
+      "focus": "盘",
+      "distractors": [
+       "张",
+       "双",
+       "把"
+      ],
+      "contrast": false,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ],
+      "noOrder": true
+     },
+     {
+      "id": "hsk3-measure-words-units-8",
+      "text": "我等了你二十分钟。",
+      "reading": "wǒ děng le nǐ èrshí fēnzhōng.",
+      "translation": "I waited twenty minutes for you.",
+      "focus": "分",
+      "distractors": [
+       "刻",
+       "毛",
+       "米"
+      ],
+      "contrast": true,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "row": 10,
+   "label": "动量词 (口, 回, 遍, 声)",
+   "lesson": {
+    "id": "hsk3-verbal-measures",
+    "level": "hsk-3",
+    "title": "Measures for actions: 口, 回, 遍 and 声",
+    "summary": "After a verb, 口 counts mouthfuls, 回 counts times, 遍 counts complete runs from start to end, and 声 counts sounds or short spoken words.",
+    "pattern": [
+     "V + (了) + number + 口 / 回 / 遍 / 声 (+ O)",
+     "V + pronoun + 一声"
+    ],
+    "body": [
+     "A verbal measure counts how many times an action happens. 口 (kǒu) counts mouthfuls: 喝了一口茶, 尝了一口. 回 (huí) is a spoken word for times, like 次: 我去过两回. 遍 (biàn) counts a complete run from beginning to end: 读三遍, 看了两遍. 声 (shēng) counts a sound or a short word: 笑了一声, 跟我说一声 (let me know).",
+     "The number and measure follow the verb (and 了 or 过). A noun object usually comes after them (喝了一口茶), but a pronoun comes before them: 叫了我一声.",
+     "The contrast example uses 次 (Level 2): 游三次泳. 次 simply counts occurrences; 遍 adds the idea of doing the whole thing through, so 游三遍泳 is wrong. Common mistake: using 遍 for going somewhere (去过两遍上海); say 两次 or 两回."
+    ],
+    "examples": [
+     {
+      "id": "hsk3-verbal-measures-1",
+      "text": "他喝了一口茶。",
+      "reading": "tā hē le yì kǒu chá.",
+      "translation": "He took a sip of tea.",
+      "focus": "口",
+      "distractors": [
+       "页",
+       "声",
+       "张"
+      ],
+      "contrast": false,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ]
+     },
+     {
+      "id": "hsk3-verbal-measures-2",
+      "text": "老师让我们把课文读三遍。",
+      "reading": "lǎoshī ràng wǒmen bǎ kèwén dú sān biàn.",
+      "translation": "The teacher had us read the text three times.",
+      "focus": "遍",
+      "distractors": [
+       "口",
+       "声",
+       "张"
+      ],
+      "contrast": false,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ]
+     },
+     {
+      "id": "hsk3-verbal-measures-3",
+      "text": "那家饭馆我去过两回。",
+      "reading": "nà jiā fànguǎn wǒ qù guo liǎng huí.",
+      "translation": "I've been to that restaurant twice.",
+      "focus": "回",
+      "distractors": [
+       "遍",
+       "口",
+       "声"
+      ],
+      "contrast": false,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ],
+      "noOrder": true
+     },
+     {
+      "id": "hsk3-verbal-measures-4",
+      "text": "到家了跟我说一声。",
+      "reading": "dào jiā le gēn wǒ shuō yì shēng.",
+      "translation": "Let me know when you get home.",
+      "focus": "声",
+      "distractors": [
+       "口",
+       "张",
+       "双"
+      ],
+      "contrast": false,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ]
+     },
+     {
+      "id": "hsk3-verbal-measures-5",
+      "text": "她笑了一声，没说话。",
+      "reading": "tā xiào le yì shēng, méi shuō huà.",
+      "translation": "She gave a laugh and said nothing.",
+      "focus": "声",
+      "distractors": [
+       "口",
+       "遍",
+       "张"
+      ],
+      "contrast": false,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ]
+     },
+     {
+      "id": "hsk3-verbal-measures-6",
+      "text": "我尝了一口，太辣了。",
+      "reading": "wǒ cháng le yì kǒu, tài là le.",
+      "translation": "I had a taste; it was too spicy.",
+      "focus": "口",
+      "distractors": [
+       "声",
+       "页",
+       "张"
+      ],
+      "contrast": false,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ]
+     },
+     {
+      "id": "hsk3-verbal-measures-7",
+      "text": "我每个星期游三次泳。",
+      "reading": "wǒ měi ge xīngqī yóu sān cì yǒng.",
+      "translation": "I go swimming three times a week.",
+      "focus": "次",
+      "distractors": [
+       "口",
+       "声",
+       "遍"
+      ],
+      "contrast": true,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ],
+      "noOrder": true
+     }
+    ]
+   }
+  },
+  {
+   "row": 11,
+   "label": "量词重叠 (个个, 张张)",
+   "lesson": {
+    "id": "hsk3-measure-reduplication",
+    "level": "hsk-3",
+    "title": "Doubled measure words: 个个, 张张 mean every single one",
+    "summary": "A doubled measure word such as 个个 or 张张 means every one of them; it stands before the verb, usually with 都.",
+    "pattern": [
+     "N + MM + 都 + predicate",
+     "个个 / 张张 / 本本 / 样样 / 天天"
+    ],
+    "body": [
+     "Doubling a measure word gives the meaning every single one: 同学个个都很努力, 照片张张都很好看. The same works with other measures: 本本 (every book), 样样 (every kind), 件件 (every piece). Time words double the same way: 天天 (every day). The doubled measure comes after the thing it counts and before the verb, and it usually goes with 都.",
+     "The contrast example uses 每 (Level 2): 每个人都有自己的爱好. 每 needs a measure word after it and goes before the noun; the doubled measure replaces 每 + measure and follows the noun.",
+     "Common mistake: putting the doubled measure after the verb (我喜欢张张照片). Say 这些照片我张张都喜欢 or 每张照片我都喜欢."
+    ],
+    "examples": [
+     {
+      "id": "hsk3-measure-reduplication-1",
+      "text": "我们班的同学个个都很努力。",
+      "reading": "wǒmen bān de tóngxué gègè dōu hěn nǔlì.",
+      "translation": "Every student in our class works hard.",
+      "focus": "个个",
+      "distractors": [
+       "个",
+       "每",
+       "张张"
+      ],
+      "contrast": false,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ]
+     },
+     {
+      "id": "hsk3-measure-reduplication-2",
+      "text": "这些照片张张都很好看。",
+      "reading": "zhèxiē zhàopiàn zhāngzhāng dōu hěn hǎokàn.",
+      "translation": "Every one of these photos is lovely.",
+      "focus": "张张",
+      "distractors": [
+       "张",
+       "本本",
+       "每"
+      ],
+      "contrast": false,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ]
+     },
+     {
+      "id": "hsk3-measure-reduplication-3",
+      "text": "他做的菜样样都好吃。",
+      "reading": "tā zuò de cài yàngyàng dōu hǎochī.",
+      "translation": "Every dish he makes is delicious.",
+      "focus": "样样",
+      "distractors": [
+       "样",
+       "每",
+       "张张"
+      ],
+      "contrast": false,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ]
+     },
+     {
+      "id": "hsk3-measure-reduplication-4",
+      "text": "书架上的书本本都是新的。",
+      "reading": "shūjià shang de shū běnběn dōu shì xīn de.",
+      "translation": "Every book on the shelf is new.",
+      "focus": "本本",
+      "distractors": [
+       "张张",
+       "每",
+       "本"
+      ],
+      "contrast": false,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ]
+     },
+     {
+      "id": "hsk3-measure-reduplication-5",
+      "text": "他天天早上去跑步。",
+      "reading": "tā tiāntiān zǎoshang qù pǎobù.",
+      "translation": "He goes running every morning.",
+      "focus": "天天",
+      "distractors": [
+       "天",
+       "每",
+       "张张"
+      ],
+      "contrast": false,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ],
+      "noOrder": true
+     },
+     {
+      "id": "hsk3-measure-reduplication-6",
+      "text": "每个人都有自己的爱好。",
+      "reading": "měi ge rén dōu yǒu zìjǐ de àihào.",
+      "translation": "Everyone has their own hobbies.",
+      "focus": "每",
+      "distractors": [
+       "个个",
+       "张张",
+       "很"
+      ],
+      "contrast": true,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "row": 12,
+   "label": "程度副词 (比较, 更, 还, 越)",
+   "lesson": {
+    "id": "hsk3-degree-adverbs-comparative",
+    "level": "hsk-3",
+    "title": "Degree adverbs that compare: 比较, 更, 还 and 越",
+    "summary": "比较 means fairly or relatively, 更 means even more, 还 means even more in a 比 sentence or passably before 不错, and 越……越 means the more … the more.",
+    "pattern": [
+     "A + 比较 / 更 + Adj / V",
+     "A + 比 B + 还 + Adj；A + 还 + 不错 / 可以",
+     "A + 越 + V + 越 + Adj"
+    ],
+    "body": [
+     "比较 (bǐjiào) gives a mild degree, fairly or relatively: 今天比较冷. 更 (gèng) means even more and implies a comparison with something already mentioned: 我喜欢春天，更喜欢秋天. 还 (hái) as a degree adverb has two uses: in a 比 sentence it means even more, often with surprise (今天比昨天还热); before 不错 or 可以 it means passably, not bad (这个饭馆的菜还不错).",
+     "越 (yuè) is used twice: 越 + verb + 越 + adjective says one thing grows with another: 他的汉语越说越好. The fixed phrase 越来越 (more and more) is taught with the fixed phrases.",
+     "The contrast example uses 最 (Level 2): 他跑得最快. 最 picks the top one in a group; 更 and 还 compare with one other thing. Common mistake: putting 很 or 非常 in a 比 sentence (今天比昨天很热). After 比 use 更 or 还, or nothing."
+    ],
+    "examples": [
+     {
+      "id": "hsk3-degree-adverbs-comparative-1",
+      "text": "今天比较冷，多穿点儿衣服。",
+      "reading": "jīntiān bǐjiào lěng, duō chuān diǎnr yīfu.",
+      "translation": "It's fairly cold today; put on more clothes.",
+      "focus": "比较",
+      "distractors": [
+       "越",
+       "了",
+       "吗"
+      ],
+      "contrast": false,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ]
+     },
+     {
+      "id": "hsk3-degree-adverbs-comparative-2",
+      "text": "我喜欢春天，更喜欢秋天。",
+      "reading": "wǒ xǐhuan chūntiān, gèng xǐhuan qiūtiān.",
+      "translation": "I like spring, and I like autumn even more.",
+      "focus": "更",
+      "distractors": [
+       "越",
+       "了",
+       "有"
+      ],
+      "contrast": false,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ]
+     },
+     {
+      "id": "hsk3-degree-adverbs-comparative-3",
+      "text": "这个饭馆的菜还不错。",
+      "reading": "zhège fànguǎn de cài hái búcuò.",
+      "translation": "The food at this restaurant is not bad.",
+      "focus": "还",
+      "distractors": [
+       "越",
+       "吗",
+       "了"
+      ],
+      "contrast": false,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ]
+     },
+     {
+      "id": "hsk3-degree-adverbs-comparative-4",
+      "text": "今天比昨天还热。",
+      "reading": "jīntiān bǐ zuótiān hái rè.",
+      "translation": "Today is even hotter than yesterday.",
+      "focus": "还",
+      "distractors": [
+       "很",
+       "非常",
+       "越"
+      ],
+      "contrast": false,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ]
+     },
+     {
+      "id": "hsk3-degree-adverbs-comparative-5",
+      "text": "他的汉语越说越好。",
+      "reading": "tā de Hànyǔ yuè shuō yuè hǎo.",
+      "translation": "The more he speaks Chinese, the better it gets.",
+      "focus": "越好",
+      "distractors": [
+       "更好",
+       "很好",
+       "好极"
+      ],
+      "contrast": false,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ]
+     },
+     {
+      "id": "hsk3-degree-adverbs-comparative-6",
+      "text": "我们三个人里，他跑得最快。",
+      "reading": "wǒmen sān ge rén li, tā pǎo de zuì kuài.",
+      "translation": "Of the three of us, he runs the fastest.",
+      "focus": "最",
+      "distractors": [
+       "越",
+       "吗",
+       "在"
+      ],
+      "contrast": true,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "row": 12,
+   "label": "程度副词 (特别, 挺, 有些, 极)",
+   "lesson": {
+    "id": "hsk3-degree-adverbs-intensity",
+    "level": "hsk-3",
+    "title": "Degree adverbs for strength: 特别, 挺, 有些 and 极",
+    "summary": "特别 means especially or particularly, 挺 is a spoken quite, 有些 means a bit (usually of something unwelcome), and 极 means extremely, before an adjective or in Adj + 极了.",
+    "pattern": [
+     "A + 特别 / 挺 / 有些 / 极 + Adj / V",
+     "A + 挺 + Adj + 的",
+     "Adj + 极了；…，特别是 + N"
+    ],
+    "body": [
+     "特别 (tèbié) means very or particularly: 他对我们特别好. 特别是 + noun picks out one member of a group: 我喜欢水果，特别是苹果. 挺 (tǐng) is spoken and means quite; it often has 的 at the end: 这本书挺有意思的.",
+     "有些 (yǒuxiē) as an adverb means a bit, like 有点儿, usually for something unwelcome: 我有些担心他. 极 (jí) means extremely. Before an adjective it is formal (这一点极重要); after an adjective, 极了 is spoken and strong: 好极了.",
+     "The contrast example uses 有些 as a pronoun (Level 1), meaning some: 有些人不喜欢吃辣的. Before a noun 有些 means some; before an adjective or verb it means a bit. Common mistake: putting 了 after 极 + adjective (极好了). Say 极好 or 好极了."
+    ],
+    "examples": [
+     {
+      "id": "hsk3-degree-adverbs-intensity-1",
+      "text": "我喜欢水果，特别是苹果。",
+      "reading": "wǒ xǐhuan shuǐguǒ, tèbié shì píngguǒ.",
+      "translation": "I like fruit, especially apples.",
+      "focus": "特别",
+      "distractors": [
+       "挺",
+       "极",
+       "很"
+      ],
+      "contrast": false,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ]
+     },
+     {
+      "id": "hsk3-degree-adverbs-intensity-2",
+      "text": "他对我们特别好。",
+      "reading": "tā duì wǒmen tèbié hǎo.",
+      "translation": "He is especially good to us.",
+      "focus": "特别",
+      "distractors": [
+       "越",
+       "吗",
+       "了"
+      ],
+      "contrast": false,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ]
+     },
+     {
+      "id": "hsk3-degree-adverbs-intensity-3",
+      "text": "这本书挺有意思的。",
+      "reading": "zhè běn shū tǐng yǒu yìsi de.",
+      "translation": "This book is quite interesting.",
+      "focus": "挺",
+      "distractors": [
+       "越",
+       "着",
+       "吗"
+      ],
+      "contrast": false,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ]
+     },
+     {
+      "id": "hsk3-degree-adverbs-intensity-4",
+      "text": "我有些担心他。",
+      "reading": "wǒ yǒuxiē dānxīn tā.",
+      "translation": "I'm a bit worried about him.",
+      "focus": "有些",
+      "distractors": [
+       "越",
+       "吗",
+       "了"
+      ],
+      "contrast": false,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ]
+     },
+     {
+      "id": "hsk3-degree-adverbs-intensity-5",
+      "text": "你的主意好极了！",
+      "reading": "nǐ de zhǔyi hǎo jí le!",
+      "translation": "Your idea is excellent!",
+      "focus": "极",
+      "distractors": [
+       "特别",
+       "挺",
+       "很"
+      ],
+      "contrast": false,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ]
+     },
+     {
+      "id": "hsk3-degree-adverbs-intensity-6",
+      "text": "这一点极重要。",
+      "reading": "zhè yì diǎn jí zhòngyào.",
+      "translation": "This point is extremely important.",
+      "focus": "极",
+      "distractors": [
+       "越",
+       "着",
+       "吗"
+      ],
+      "contrast": false,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ]
+     },
+     {
+      "id": "hsk3-degree-adverbs-intensity-7",
+      "text": "有些人不喜欢吃辣的。",
+      "reading": "yǒuxiē rén bù xǐhuan chī là de.",
+      "translation": "Some people don't like spicy food.",
+      "focus": "有些",
+      "distractors": [
+       "特别",
+       "挺",
+       "极"
+      ],
+      "contrast": true,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "row": 13,
+   "label": "范围副词 (就, 一块儿, 一共, 只, 到处, 只是)",
+   "lesson": {
+    "id": "hsk3-scope-adverbs",
+    "level": "hsk-3",
+    "title": "Scope adverbs: 就 (only), 一块儿, 一共, 只, 到处 and 只是",
+    "summary": "就 and 只 limit to only, 只是 means merely, 一共 adds up a total, 一块儿 means together, and 到处 means everywhere.",
+    "pattern": [
+     "就 + N / pronoun / number；A + 只 + V",
+     "A + 一共 + number / 多少",
+     "A + 一块儿 + V；到处 + 都 + …"
+    ],
+    "body": [
+     "就 (jiù) can mean only and stands before a noun, a pronoun or a number: 今天就我一个人在家. 只 (zhǐ) means only and stands before the verb: 我只有一百块钱. 只是 (zhǐshì) means merely, just: 我只是问问. Between clauses 只是 can also mean it's just that, a soft but.",
+     "一共 (yígòng) means in total and goes with a number or 多少: 这些东西一共多少钱？ 一块儿 (yíkuàir) is a spoken word for together, like 一起: 咱们一块儿去爬山吧. 到处 (dàochù) means everywhere and usually goes with 都: 到处都是花.",
+     "The contrast example uses 都 (Level 1): 这些菜我都喜欢吃. 都 says each of the things mentioned before it; 一共 adds things up to a number, so it needs a number or 多少 after it. Common mistake: putting 只 before a subject (只我知道). Say 只有我知道 or 就我知道."
+    ],
+    "examples": [
+     {
+      "id": "hsk3-scope-adverbs-1",
+      "text": "今天就我一个人在家。",
+      "reading": "jīntiān jiù wǒ yí ge rén zài jiā.",
+      "translation": "Today I'm the only one at home.",
+      "focus": "就",
+      "distractors": [
+       "都",
+       "着",
+       "很"
+      ],
+      "contrast": false,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ]
+     },
+     {
+      "id": "hsk3-scope-adverbs-2",
+      "text": "咱们一块儿去爬山吧。",
+      "reading": "zánmen yíkuàir qù pá shān ba.",
+      "translation": "Let's go climbing together.",
+      "focus": "一块儿",
+      "distractors": [
+       "一共",
+       "一边",
+       "很"
+      ],
+      "contrast": false,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ]
+     },
+     {
+      "id": "hsk3-scope-adverbs-3",
+      "text": "这些东西一共多少钱？",
+      "reading": "zhèxiē dōngxi yígòng duōshao qián?",
+      "translation": "How much are these things altogether?",
+      "focus": "一共",
+      "distractors": [
+       "到处",
+       "一边",
+       "很"
+      ],
+      "contrast": false,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ]
+     },
+     {
+      "id": "hsk3-scope-adverbs-4",
+      "text": "我只有一百块钱。",
+      "reading": "wǒ zhǐ yǒu yìbǎi kuài qián.",
+      "translation": "I only have a hundred yuan.",
+      "focus": "只",
+      "distractors": [
+       "到处",
+       "很",
+       "在"
+      ],
+      "contrast": false,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ]
+     },
+     {
+      "id": "hsk3-scope-adverbs-5",
+      "text": "春天到了，到处都是花。",
+      "reading": "chūntiān dào le, dàochù dōu shì huā.",
+      "translation": "Spring has come and there are flowers everywhere.",
+      "focus": "到处",
+      "distractors": [
+       "一共",
+       "只是",
+       "一块儿"
+      ],
+      "contrast": false,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ]
+     },
+     {
+      "id": "hsk3-scope-adverbs-6",
+      "text": "我只是问问，不想买。",
+      "reading": "wǒ zhǐshì wènwen, bù xiǎng mǎi.",
+      "translation": "I'm just asking; I don't want to buy it.",
+      "focus": "只是",
+      "distractors": [
+       "一共",
+       "到处",
+       "很"
+      ],
+      "contrast": false,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ]
+     },
+     {
+      "id": "hsk3-scope-adverbs-7",
+      "text": "这些菜我都喜欢吃。",
+      "reading": "zhèxiē cài wǒ dōu xǐhuan chī.",
+      "translation": "I like all of these dishes.",
+      "focus": "都",
+      "distractors": [
+       "一共",
+       "到处",
+       "很"
+      ],
+      "contrast": true,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ],
+      "noOrder": true
+     }
+    ]
+   }
+  },
+  {
+   "row": 14,
+   "label": "时间副词 (才, 马上, 先, 一会儿, 刚, 刚刚, 一直)",
+   "lesson": {
+    "id": "hsk3-time-adverbs",
+    "level": "hsk-3",
+    "title": "Time adverbs: 才, 马上, 先, 一会儿, 刚, 刚刚 and 一直",
+    "summary": "才 says later than expected, 马上 right away, 先 first, 一会儿 in a moment, 刚 and 刚刚 just now, and 一直 all along.",
+    "pattern": [
+     "A + time + 才 + V",
+     "A + 马上 / 一会儿 + (就) + V",
+     "A + 刚 / 刚刚 / 一直 / 先 + V"
+    ],
+    "body": [
+     "才 (cái) after a time word says the action happened later than expected: 他七点半才到. 马上 (mǎshàng) means right away, often with 就 or 就要: 电影马上就要开始了. 先 (xiān) means first: 你先坐一下. 一会儿 (yíhuìr) before a verb means in a moment: 我一会儿就来; after a verb it means for a while.",
+     "刚 (gāng) and 刚刚 (gānggāng) mean just, a very short time ago: 我刚到家. 刚 is an adverb and stays after the subject; 刚刚 can also be a time word and stand before the subject: 刚刚你去哪儿了？ 一直 (yìzhí) means continuously, all along: 雨一直下了三天.",
+     "The contrast example uses 已经 (Level 2): 我们已经认识很多年了. 已经 says a point has been reached, however long ago; 刚 says something happened only a moment ago, so it cannot go with 很多年. Common mistake: ending a 刚 sentence with 了 (我刚到家了). Say 我刚到家."
+    ],
+    "examples": [
+     {
+      "id": "hsk3-time-adverbs-1",
+      "text": "电影七点开始，他七点半才到。",
+      "reading": "diànyǐng qī diǎn kāishǐ, tā qī diǎn bàn cái dào.",
+      "translation": "The film started at seven, but he didn't arrive until half past.",
+      "focus": "才",
+      "distractors": [
+       "都",
+       "很",
+       "过"
+      ],
+      "contrast": false,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ],
+      "noOrder": true
+     },
+     {
+      "id": "hsk3-time-adverbs-2",
+      "text": "电影马上就要开始了。",
+      "reading": "diànyǐng mǎshàng jiù yào kāishǐ le.",
+      "translation": "The film is about to start.",
+      "focus": "马上",
+      "distractors": [
+       "刚",
+       "一直",
+       "常常"
+      ],
+      "contrast": false,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ]
+     },
+     {
+      "id": "hsk3-time-adverbs-3",
+      "text": "你先坐一下，我去倒茶。",
+      "reading": "nǐ xiān zuò yíxià, wǒ qù dào chá.",
+      "translation": "Have a seat first; I'll go and pour some tea.",
+      "focus": "先",
+      "distractors": [
+       "刚",
+       "已经",
+       "一直"
+      ],
+      "contrast": false,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ]
+     },
+     {
+      "id": "hsk3-time-adverbs-4",
+      "text": "你等一下，我一会儿就来。",
+      "reading": "nǐ děng yíxià, wǒ yíhuìr jiù lái.",
+      "translation": "Wait a moment; I'll be there shortly.",
+      "focus": "一会儿",
+      "distractors": [
+       "刚",
+       "一直",
+       "很"
+      ],
+      "contrast": false,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ]
+     },
+     {
+      "id": "hsk3-time-adverbs-5",
+      "text": "我刚到家，你就打电话来了。",
+      "reading": "wǒ gāng dào jiā, nǐ jiù dǎ diànhuà lái le.",
+      "translation": "I had only just got home when you called.",
+      "focus": "刚",
+      "distractors": [
+       "一直",
+       "一会儿",
+       "很"
+      ],
+      "contrast": false,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ]
+     },
+     {
+      "id": "hsk3-time-adverbs-6",
+      "text": "刚刚你去哪儿了？",
+      "reading": "gānggāng nǐ qù nǎr le?",
+      "translation": "Where did you go just now?",
+      "focus": "刚刚",
+      "distractors": [
+       "一直",
+       "先",
+       "很"
+      ],
+      "contrast": false,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ],
+      "noOrder": true
+     },
+     {
+      "id": "hsk3-time-adverbs-7",
+      "text": "雨一直下了三天。",
+      "reading": "yǔ yìzhí xià le sān tiān.",
+      "translation": "It rained non-stop for three days.",
+      "focus": "一直",
+      "distractors": [
+       "马上",
+       "一会儿",
+       "很"
+      ],
+      "contrast": false,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ]
+     },
+     {
+      "id": "hsk3-time-adverbs-8",
+      "text": "我们已经认识很多年了。",
+      "reading": "wǒmen yǐjīng rènshi hěn duō nián le.",
+      "translation": "We have known each other for many years.",
+      "focus": "已经",
+      "distractors": [
+       "刚",
+       "马上",
+       "一会儿"
+      ],
+      "contrast": true,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "row": 15,
+   "label": "频率副词 (总, 总是, 又, 常常)",
+   "lesson": {
+    "id": "hsk3-frequency-adverbs",
+    "level": "hsk-3",
+    "title": "Frequency adverbs: 总, 总是, 常常 and 又",
+    "summary": "总 and 总是 mean always, 常常 means often, and 又 means again for something that has happened or that comes round regularly.",
+    "pattern": [
+     "A + 总 / 总是 / 常常 + V",
+     "A + 又 + V + 了",
+     "又 + 是 + time + 了"
+    ],
+    "body": [
+     "总 (zǒng) and 总是 (zǒngshì) mean always, every time: 他总是忘带钥匙, 周末他总在家看书. 总 is shorter and more spoken. 常常 (chángcháng) means often, less than always: 我常常跟朋友一起去游泳. Its negative is 不常.",
+     "又 (yòu) means again for something that has already happened, usually with 了: 他昨天又迟到了. It is also used for something that comes round regularly: 明天又是星期一了.",
+     "The contrast example uses 再 (Level 1): 我想再看一遍. 再 is again for something that has not happened yet; 又 is again for something that has. Common mistake: using 又 for a future wish (我想又看一遍) or 再 for a past event (他昨天再迟到了)."
+    ],
+    "examples": [
+     {
+      "id": "hsk3-frequency-adverbs-1",
+      "text": "他总是忘带钥匙。",
+      "reading": "tā zǒngshì wàng dài yàoshi.",
+      "translation": "He always forgets to bring his keys.",
+      "focus": "总是",
+      "distractors": [
+       "再",
+       "已经",
+       "很"
+      ],
+      "contrast": false,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ]
+     },
+     {
+      "id": "hsk3-frequency-adverbs-2",
+      "text": "他昨天又迟到了。",
+      "reading": "tā zuótiān yòu chídào le.",
+      "translation": "He was late again yesterday.",
+      "focus": "又",
+      "distractors": [
+       "再",
+       "总是",
+       "常常"
+      ],
+      "contrast": false,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ],
+      "noOrder": true
+     },
+     {
+      "id": "hsk3-frequency-adverbs-3",
+      "text": "周末他总在家看书。",
+      "reading": "zhōumò tā zǒng zài jiā kàn shū.",
+      "translation": "At weekends he is always at home reading.",
+      "focus": "总",
+      "distractors": [
+       "再",
+       "吗",
+       "了"
+      ],
+      "contrast": false,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ],
+      "noOrder": true
+     },
+     {
+      "id": "hsk3-frequency-adverbs-4",
+      "text": "我常常跟朋友一起去游泳。",
+      "reading": "wǒ chángcháng gēn péngyou yìqǐ qù yóuyǒng.",
+      "translation": "I often go swimming with friends.",
+      "focus": "常常",
+      "distractors": [
+       "很",
+       "吗",
+       "了"
+      ],
+      "contrast": false,
+      "kinds": [
+       "clearly-wrong"
+      ]
+     },
+     {
+      "id": "hsk3-frequency-adverbs-5",
+      "text": "明天又是星期一了。",
+      "reading": "míngtiān yòu shì xīngqīyī le.",
+      "translation": "Tomorrow is Monday again.",
+      "focus": "又",
+      "distractors": [
+       "再",
+       "常常",
+       "总是"
+      ],
+      "contrast": false,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ]
+     },
+     {
+      "id": "hsk3-frequency-adverbs-6",
+      "text": "这个电影很好看，我想再看一遍。",
+      "reading": "zhège diànyǐng hěn hǎokàn, wǒ xiǎng zài kàn yí biàn.",
+      "translation": "This film is great; I want to see it again.",
+      "focus": "再",
+      "distractors": [
+       "又",
+       "总是",
+       "常常"
+      ],
+      "contrast": true,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "row": 16,
+   "label": "关联副词 (一边)",
+   "lesson": {
+    "id": "hsk3-yibian",
+    "level": "hsk-3",
+    "title": "一边……一边……: doing two things at once",
+    "summary": "一边 before each of two verbs says one person does both actions at the same time.",
+    "pattern": [
+     "A + 一边 + V1 (+ O)，一边 + V2 (+ O)",
+     "A + 边 + V1 + 边 + V2"
+    ],
+    "body": [
+     "一边 (yìbiān) is used in pairs: 一边 + verb, 一边 + verb. It says one subject does two actions at the same time: 他一边听音乐，一边写作业. Both verbs must be actions that last for a while, such as 听, 看, 走, 唱, 聊. With one-syllable verbs and no objects, speech often shortens it to 边走边聊.",
+     "The contrast example uses 着 (Level 2) between two verbs: 孩子们唱着歌回家了. With V1 + 着 + V2 the first action is only the manner of the main one; with 一边……一边…… the two actions have equal weight.",
+     "Common mistake: using 一边 with two different subjects (我一边做饭，他一边看电视) or with an action that is over in a moment (一边到, 一边开门). Use 一边……一边…… for one person and two lasting actions."
+    ],
+    "examples": [
+     {
+      "id": "hsk3-yibian-1",
+      "text": "他一边听音乐，一边写作业。",
+      "reading": "tā yìbiān tīng yīnyuè, yìbiān xiě zuòyè.",
+      "translation": "He listens to music while doing his homework.",
+      "focus": "一边写",
+      "distractors": [
+       "一起写",
+       "一下写",
+       "写一边"
+      ],
+      "contrast": false,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ],
+      "noOrder": true
+     },
+     {
+      "id": "hsk3-yibian-2",
+      "text": "我们一边走一边聊吧。",
+      "reading": "wǒmen yìbiān zǒu yìbiān liáo ba.",
+      "translation": "Let's chat as we walk.",
+      "focus": "一边走",
+      "distractors": [
+       "一下走",
+       "走一边",
+       "很走"
+      ],
+      "contrast": false,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ],
+      "noOrder": true
+     },
+     {
+      "id": "hsk3-yibian-3",
+      "text": "妈妈一边做饭，一边唱歌。",
+      "reading": "māma yìbiān zuò fàn, yìbiān chàng gē.",
+      "translation": "Mum sings while she cooks.",
+      "focus": "一边唱",
+      "distractors": [
+       "一起唱",
+       "一下唱",
+       "唱一边"
+      ],
+      "contrast": false,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ],
+      "noOrder": true
+     },
+     {
+      "id": "hsk3-yibian-4",
+      "text": "不要一边吃饭一边看手机。",
+      "reading": "búyào yìbiān chī fàn yìbiān kàn shǒujī.",
+      "translation": "Don't look at your phone while you eat.",
+      "focus": "一边吃",
+      "distractors": [
+       "一起吃",
+       "一下吃",
+       "吃一边"
+      ],
+      "contrast": false,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ],
+      "noOrder": true
+     },
+     {
+      "id": "hsk3-yibian-5",
+      "text": "他一边开车，一边打电话，太危险了。",
+      "reading": "tā yìbiān kāichē, yìbiān dǎ diànhuà, tài wēixiǎn le.",
+      "translation": "He was on the phone while driving; that's too dangerous.",
+      "focus": "一边打",
+      "distractors": [
+       "一起打",
+       "一下打",
+       "打一边"
+      ],
+      "contrast": false,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ],
+      "noOrder": true
+     },
+     {
+      "id": "hsk3-yibian-6",
+      "text": "孩子们唱着歌回家了。",
+      "reading": "háizimen chàng zhe gē huí jiā le.",
+      "translation": "The children went home singing.",
+      "focus": "着",
+      "distractors": [
+       "得",
+       "地",
+       "在"
+      ],
+      "contrast": true,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "row": 17,
+   "label": "情态副词 (大概, 必须, 差不多, 一定, 好像, 几乎)",
+   "lesson": {
+    "id": "hsk3-modal-adverbs",
+    "level": "hsk-3",
+    "title": "Adverbs of likelihood and necessity: 大概, 必须, 差不多, 一定, 好像, 几乎",
+    "summary": "大概 means probably, 必须 must, 差不多 about the same or almost, 一定 certainly, 好像 seems, and 几乎 almost.",
+    "pattern": [
+     "A + 大概 / 好像 / 一定 + V",
+     "A + 必须 + V",
+     "A + 差不多；A + 几乎 + 没 / 每…"
+    ],
+    "body": [
+     "大概 (dàgài) means probably: 他大概已经到家了. 好像 (hǎoxiàng) means it seems: 外面好像下雨了. 一定 (yídìng) means certainly; with a person's plan it is a promise (我一定来), and with a guess it means must be (他一定很累了). 必须 (bìxū) means must, have to: 开车的时候必须小心. Its negative is 不用 or 不必, never 不必须.",
+     "差不多 (chàbuduō) as a predicate means about the same: 颜色差不多; before a verb it means almost: 饭差不多做好了. 几乎 (jīhū) means almost, nearly, and often goes with 没 or 每: 他几乎没吃东西.",
+     "The contrast example uses 可能 (Level 2): 他今天可能不来了. 可能 says something may happen; 必须 says it has to, and 几乎 says it nearly did. Common mistake: using 差不多 or 几乎 as a guess about the future (我差不多明天来). Use 大概 or 可能."
+    ],
+    "examples": [
+     {
+      "id": "hsk3-modal-adverbs-1",
+      "text": "他大概已经到家了。",
+      "reading": "tā dàgài yǐjīng dào jiā le.",
+      "translation": "He has probably got home already.",
+      "focus": "大概",
+      "distractors": [
+       "必须",
+       "很",
+       "吗"
+      ],
+      "contrast": false,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ],
+      "noOrder": true
+     },
+     {
+      "id": "hsk3-modal-adverbs-2",
+      "text": "开车的时候必须小心。",
+      "reading": "kāichē de shíhou bìxū xiǎoxīn.",
+      "translation": "You must be careful when driving.",
+      "focus": "必须",
+      "distractors": [
+       "好像",
+       "几乎",
+       "大概"
+      ],
+      "contrast": false,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ]
+     },
+     {
+      "id": "hsk3-modal-adverbs-3",
+      "text": "这两件衣服的颜色差不多。",
+      "reading": "zhè liǎng jiàn yīfu de yánsè chàbuduō.",
+      "translation": "These two pieces of clothing are about the same colour.",
+      "focus": "差不多",
+      "distractors": [
+       "几乎",
+       "必须",
+       "大概"
+      ],
+      "contrast": false,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ]
+     },
+     {
+      "id": "hsk3-modal-adverbs-4",
+      "text": "你放心，我一定来。",
+      "reading": "nǐ fàngxīn, wǒ yídìng lái.",
+      "translation": "Don't worry, I'll definitely come.",
+      "focus": "一定",
+      "distractors": [
+       "好像",
+       "几乎",
+       "很"
+      ],
+      "contrast": false,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ]
+     },
+     {
+      "id": "hsk3-modal-adverbs-5",
+      "text": "外面好像下雨了。",
+      "reading": "wàimian hǎoxiàng xià yǔ le.",
+      "translation": "It seems to be raining outside.",
+      "focus": "好像",
+      "distractors": [
+       "必须",
+       "几乎",
+       "很"
+      ],
+      "contrast": false,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ],
+      "noOrder": true
+     },
+     {
+      "id": "hsk3-modal-adverbs-6",
+      "text": "他几乎没吃东西。",
+      "reading": "tā jīhū méi chī dōngxi.",
+      "translation": "He ate almost nothing.",
+      "focus": "几乎",
+      "distractors": [
+       "必须",
+       "很",
+       "吗"
+      ],
+      "contrast": false,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ]
+     },
+     {
+      "id": "hsk3-modal-adverbs-7",
+      "text": "他今天可能不来了。",
+      "reading": "tā jīntiān kěnéng bù lái le.",
+      "translation": "He probably isn't coming today.",
+      "focus": "可能",
+      "distractors": [
+       "差不多",
+       "几乎",
+       "很"
+      ],
+      "contrast": true,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ],
+      "noOrder": true
+     }
+    ]
+   }
+  },
+  {
+   "row": 18,
+   "label": "语气副词 (当然, 其实, 终于, 才, 就)",
+   "lesson": {
+    "id": "hsk3-mood-adverbs",
+    "level": "hsk-3",
+    "title": "Attitude adverbs: 当然, 其实, 终于, emphatic 才 and 就",
+    "summary": "当然 means of course, 其实 actually, 终于 at last; 才 can mean only (a small amount) or stress a strong denial, and 就 can stress that something is exactly so.",
+    "pattern": [
+     "A + 当然 / 其实 / 终于 + V",
+     "才 + number；A + 才 + 不 + V + 呢；这才是…",
+     "A + 就 + 在 / 是…"
+    ],
+    "body": [
+     "当然 (dāngrán) means of course: 你当然要帮他. 其实 (qíshí) means actually, in fact, and corrects what people think: 其实他是日本人. 终于 (zhōngyú) means at last, after a long wait: 车终于来了.",
+     "才 (cái) has two attitude uses. Before a number it means only, a small amount: 现在才七点. In 才不……呢 or 这才是 it stresses the speaker's view strongly: 我才不相信他的话呢, 这才是真正的朋友. 就 (jiù) can stress that something is exactly so or very near: 我家就在学校旁边.",
+     "The contrast example uses 就 as a link between clauses (Level 2): 你不去，我就一个人去. That 就 means then, in that case; the attitude 就 stresses a fact. Common mistake: using 终于 for something that came quickly. 终于 needs a wait or an effort before it."
+    ],
+    "examples": [
+     {
+      "id": "hsk3-mood-adverbs-1",
+      "text": "他是你的朋友，你当然要帮他。",
+      "reading": "tā shì nǐ de péngyou, nǐ dāngrán yào bāng tā.",
+      "translation": "He's your friend; of course you should help him.",
+      "focus": "当然",
+      "distractors": [
+       "几乎",
+       "很",
+       "吗"
+      ],
+      "contrast": false,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ],
+      "noOrder": true
+     },
+     {
+      "id": "hsk3-mood-adverbs-2",
+      "text": "大家都以为他是中国人，其实他是日本人。",
+      "reading": "dàjiā dōu yǐwéi tā shì Zhōngguó rén, qíshí tā shì Rìběn rén.",
+      "translation": "Everyone thought he was Chinese, but actually he is Japanese.",
+      "focus": "其实",
+      "distractors": [
+       "当然",
+       "终于",
+       "几乎"
+      ],
+      "contrast": false,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ],
+      "noOrder": true
+     },
+     {
+      "id": "hsk3-mood-adverbs-3",
+      "text": "等了一个小时，车终于来了。",
+      "reading": "děng le yí ge xiǎoshí, chē zhōngyú lái le.",
+      "translation": "After an hour's wait the bus finally came.",
+      "focus": "终于",
+      "distractors": [
+       "几乎",
+       "很",
+       "吗"
+      ],
+      "contrast": false,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ]
+     },
+     {
+      "id": "hsk3-mood-adverbs-4",
+      "text": "现在才七点，你再睡一会儿吧。",
+      "reading": "xiànzài cái qī diǎn, nǐ zài shuì yíhuìr ba.",
+      "translation": "It's only seven; sleep a bit longer.",
+      "focus": "才",
+      "distractors": [
+       "都",
+       "终于",
+       "很"
+      ],
+      "contrast": false,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ]
+     },
+     {
+      "id": "hsk3-mood-adverbs-5",
+      "text": "我才不相信他的话呢！",
+      "reading": "wǒ cái bù xiāngxìn tā de huà ne!",
+      "translation": "I don't believe a word he says!",
+      "focus": "才",
+      "distractors": [
+       "终于",
+       "刚",
+       "在"
+      ],
+      "contrast": false,
+      "kinds": [
+       "clearly-wrong"
+      ]
+     },
+     {
+      "id": "hsk3-mood-adverbs-6",
+      "text": "这才是真正的朋友。",
+      "reading": "zhè cái shì zhēnzhèng de péngyou.",
+      "translation": "Now that is a true friend.",
+      "focus": "才",
+      "distractors": [
+       "刚",
+       "在",
+       "着"
+      ],
+      "contrast": false,
+      "kinds": [
+       "clearly-wrong"
+      ]
+     },
+     {
+      "id": "hsk3-mood-adverbs-7",
+      "text": "我家就在学校旁边。",
+      "reading": "wǒ jiā jiù zài xuéxiào pángbiān.",
+      "translation": "My home is right next to the school.",
+      "focus": "就",
+      "distractors": [
+       "终于",
+       "刚",
+       "才"
+      ],
+      "contrast": false,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ]
+     },
+     {
+      "id": "hsk3-mood-adverbs-8",
+      "text": "你不去，我就一个人去。",
+      "reading": "nǐ bú qù, wǒ jiù yí ge rén qù.",
+      "translation": "If you won't go, I'll go on my own.",
+      "focus": "就",
+      "distractors": [
+       "才",
+       "终于",
+       "刚"
+      ],
+      "contrast": true,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "row": 19,
+   "label": "否定副词 (不必, 不用)",
+   "lesson": {
+    "id": "hsk3-bubi-buyong",
+    "level": "hsk-3",
+    "title": "不用 and 不必: there is no need to",
+    "summary": "不用 and 不必 both say there is no need; 不用 is spoken, 不必 a little more formal, and both are the negative of 必须, 得 and 要.",
+    "pattern": [
+     "A + 不用 / 不必 + V",
+     "不用了 / 不必了"
+    ],
+    "body": [
+     "不用 (búyòng) and 不必 (búbì) say something is not necessary: 你不用担心, 大家不必等我. 不用 is the everyday spoken form; 不必 is slightly more formal. Either can stand alone with 了 to turn down an offer politely: 不用了，谢谢.",
+     "They are the negative of 必须 (must), 得 (děi, have to) and 要 (need to): 明天不用上班. The negative of 必须 is never 不必须.",
+     "The contrast example uses 别 (Level 2): 你别忘了带钥匙. 别 forbids or warns (don't); 不用 and 不必 only say there is no need, and nobody ever needs to forget, so 你不用忘了 makes no sense. Common mistake: saying 不必须 for no need."
+    ],
+    "examples": [
+     {
+      "id": "hsk3-bubi-buyong-1",
+      "text": "你不用担心，我自己能去。",
+      "reading": "nǐ búyòng dānxīn, wǒ zìjǐ néng qù.",
+      "translation": "Don't worry; I can go by myself.",
+      "focus": "不用",
+      "distractors": [
+       "没用",
+       "不了",
+       "很"
+      ],
+      "contrast": false,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ]
+     },
+     {
+      "id": "hsk3-bubi-buyong-2",
+      "text": "你不必为这件事着急。",
+      "reading": "nǐ búbì wèi zhè jiàn shì zháojí.",
+      "translation": "There's no need for you to worry about this.",
+      "focus": "不必",
+      "distractors": [
+       "不必须",
+       "不了",
+       "没用"
+      ],
+      "contrast": false,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ]
+     },
+     {
+      "id": "hsk3-bubi-buyong-3",
+      "text": "不用了，谢谢。",
+      "reading": "búyòng le, xièxie.",
+      "translation": "No need, thank you.",
+      "focus": "不用",
+      "distractors": [
+       "不必须",
+       "不是",
+       "很"
+      ],
+      "contrast": false,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ]
+     },
+     {
+      "id": "hsk3-bubi-buyong-4",
+      "text": "大家不必等我，先吃吧。",
+      "reading": "dàjiā búbì děng wǒ, xiān chī ba.",
+      "translation": "No need to wait for me, everyone; go ahead and eat.",
+      "focus": "不必",
+      "distractors": [
+       "不必须",
+       "不了",
+       "很"
+      ],
+      "contrast": false,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ]
+     },
+     {
+      "id": "hsk3-bubi-buyong-5",
+      "text": "明天是星期六，不用上班。",
+      "reading": "míngtiān shì xīngqīliù, búyòng shàngbān.",
+      "translation": "Tomorrow is Saturday, so there's no need to go to work.",
+      "focus": "不用",
+      "distractors": [
+       "不必须",
+       "不了",
+       "没用"
+      ],
+      "contrast": false,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ]
+     },
+     {
+      "id": "hsk3-bubi-buyong-6",
+      "text": "你别忘了带钥匙。",
+      "reading": "nǐ bié wàng le dài yàoshi.",
+      "translation": "Don't forget to bring your keys.",
+      "focus": "别",
+      "distractors": [
+       "不用",
+       "不必",
+       "不"
+      ],
+      "contrast": true,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "row": 20,
+   "label": "介词: 引出对象 (为, 向, 关于)",
+   "lesson": {
+    "id": "hsk3-wei-xiang-guanyu",
+    "level": "hsk-3",
+    "title": "为, 向 and 关于: for someone, to someone, about something",
+    "summary": "为 introduces the person who benefits, 向 the person an action is aimed at, and 关于 the topic something is about.",
+    "pattern": [
+     "A + 为 + person + V",
+     "A + 向 + person + V",
+     "关于 + topic (+ 的 + N)；关于 + topic，…"
+    ],
+    "body": [
+     "为 (wèi) introduces the person who benefits from an action, for: 妈妈为我们做了一桌子菜, 医生为病人看病. 向 (xiàng) introduces the person an action is directed at, to or from: 你应该向他学习, 他向大家介绍了自己的家乡.",
+     "关于 (guānyú) introduces a topic, about or concerning. It can go before 的 and a noun (一个关于长城的故事) or open a sentence with a comma (关于这件事，大家还有什么问题吗？).",
+     "The contrast example uses 对 (Level 1): 老师对学生很热情. 对 shows an attitude towards someone; 向 is for an action aimed at someone, 为 for a benefit and 关于 for a topic. Common mistake: using 关于 after the subject before a verb, as in 我关于这个问题有意见. Put 关于 at the start of the sentence or before 的 + noun, or use 对."
+    ],
+    "examples": [
+     {
+      "id": "hsk3-wei-xiang-guanyu-1",
+      "text": "妈妈为我们做了一桌子菜。",
+      "reading": "māma wèi wǒmen zuò le yì zhuōzi cài.",
+      "translation": "Mum made a whole table of dishes for us.",
+      "focus": "为",
+      "distractors": [
+       "向",
+       "关于",
+       "被"
+      ],
+      "contrast": false,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ]
+     },
+     {
+      "id": "hsk3-wei-xiang-guanyu-2",
+      "text": "你应该向他学习。",
+      "reading": "nǐ yīnggāi xiàng tā xuéxí.",
+      "translation": "You should learn from him.",
+      "focus": "向",
+      "distractors": [
+       "关于",
+       "把",
+       "往"
+      ],
+      "contrast": false,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ]
+     },
+     {
+      "id": "hsk3-wei-xiang-guanyu-3",
+      "text": "他向大家介绍了自己的家乡。",
+      "reading": "tā xiàng dàjiā jièshào le zìjǐ de jiāxiāng.",
+      "translation": "He told everyone about his hometown.",
+      "focus": "向",
+      "distractors": [
+       "关于",
+       "往",
+       "被"
+      ],
+      "contrast": false,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ]
+     },
+     {
+      "id": "hsk3-wei-xiang-guanyu-4",
+      "text": "他给我们讲了一个关于长城的故事。",
+      "reading": "tā gěi wǒmen jiǎng le yí ge guānyú Chángchéng de gùshi.",
+      "translation": "He told us a story about the Great Wall.",
+      "focus": "关于",
+      "distractors": [
+       "为",
+       "向",
+       "跟"
+      ],
+      "contrast": false,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ]
+     },
+     {
+      "id": "hsk3-wei-xiang-guanyu-5",
+      "text": "关于这件事，大家还有什么问题吗？",
+      "reading": "guānyú zhè jiàn shì, dàjiā hái yǒu shénme wèntí ma?",
+      "translation": "Does anyone have any other questions about this?",
+      "focus": "关于",
+      "distractors": [
+       "向",
+       "把",
+       "被"
+      ],
+      "contrast": false,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ]
+     },
+     {
+      "id": "hsk3-wei-xiang-guanyu-6",
+      "text": "医生为病人看病。",
+      "reading": "yīshēng wèi bìngrén kànbìng.",
+      "translation": "The doctor treats the patients.",
+      "focus": "为",
+      "distractors": [
+       "向",
+       "关于",
+       "被"
+      ],
+      "contrast": false,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ]
+     },
+     {
+      "id": "hsk3-wei-xiang-guanyu-7",
+      "text": "老师对学生很热情。",
+      "reading": "lǎoshī duì xuéshēng hěn rèqíng.",
+      "translation": "The teacher is very warm towards the students.",
+      "focus": "对",
+      "distractors": [
+       "关于",
+       "向",
+       "被"
+      ],
+      "contrast": true,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "row": 21,
+   "label": "介词: 引出方向、路径 (向)",
+   "lesson": {
+    "id": "hsk3-xiang-direction",
+    "level": "hsk-3",
+    "title": "向 for direction: towards a direction, a place or a person",
+    "summary": "向 before a direction word or a person says which way an action goes; in writing it can also follow a verb of motion, as in 飞向.",
+    "pattern": [
+     "向 + 前 / 后 / 左 / 右 / 东… + V",
+     "向 + person + V (+ 过来 / 过去)",
+     "V + 向 + place (written)"
+    ],
+    "body": [
+     "向 (xiàng) says which way an action goes. Before a direction word it works like 往 (Level 2): 一直向前走, 向右转, 河水向东流. In writing it can follow a one-syllable verb of motion: 飞向北京, 走向门口.",
+     "向 can also take a person as the target of a movement: 他向我走过来. 往 is most natural with a place or a direction word, so with a person say 往我这儿走; 向 or 朝 takes the person directly.",
+     "The contrast example uses 从 (Level 2): 我们从这个门进去吧. 从 marks the starting point or the route; 向 marks the direction of the movement. Common mistake: using 在 for direction (在右转). Say 向右转 or 往右转."
+    ],
+    "examples": [
+     {
+      "id": "hsk3-xiang-direction-1",
+      "text": "一直向前走就到了。",
+      "reading": "yìzhí xiàng qián zǒu jiù dào le.",
+      "translation": "Go straight ahead and you'll be there.",
+      "focus": "向",
+      "distractors": [
+       "对",
+       "关于",
+       "为"
+      ],
+      "contrast": false,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ]
+     },
+     {
+      "id": "hsk3-xiang-direction-2",
+      "text": "到了路口向右转。",
+      "reading": "dào le lùkǒu xiàng yòu zhuǎn.",
+      "translation": "Turn right when you reach the crossing.",
+      "focus": "向",
+      "distractors": [
+       "对",
+       "为",
+       "在"
+      ],
+      "contrast": false,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ]
+     },
+     {
+      "id": "hsk3-xiang-direction-3",
+      "text": "河水向东流。",
+      "reading": "héshuǐ xiàng dōng liú.",
+      "translation": "The river flows east.",
+      "focus": "向",
+      "distractors": [
+       "对",
+       "为",
+       "关于"
+      ],
+      "contrast": false,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ]
+     },
+     {
+      "id": "hsk3-xiang-direction-4",
+      "text": "飞机飞向北京。",
+      "reading": "fēijī fēi xiàng Běijīng.",
+      "translation": "The plane is flying towards Beijing.",
+      "focus": "向",
+      "distractors": [
+       "对",
+       "为",
+       "在"
+      ],
+      "contrast": false,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ]
+     },
+     {
+      "id": "hsk3-xiang-direction-5",
+      "text": "他向我走过来。",
+      "reading": "tā xiàng wǒ zǒu guòlai.",
+      "translation": "He walked over towards me.",
+      "focus": "向",
+      "distractors": [
+       "对",
+       "关于",
+       "被"
+      ],
+      "contrast": false,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ]
+     },
+     {
+      "id": "hsk3-xiang-direction-6",
+      "text": "我们从这个门进去吧。",
+      "reading": "wǒmen cóng zhège mén jìnqu ba.",
+      "translation": "Let's go in through this door.",
+      "focus": "从",
+      "distractors": [
+       "对",
+       "为",
+       "关于"
+      ],
+      "contrast": true,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "row": 22,
+   "label": "介词: 引出目的、原因 (为了, 为)",
+   "lesson": {
+    "id": "hsk3-weile-wei",
+    "level": "hsk-3",
+    "title": "为了 and 为: for a purpose, because of a cause",
+    "summary": "为了 introduces a purpose, in order to or for the sake of; 为 introduces the cause of a feeling, as in 为你高兴.",
+    "pattern": [
+     "为了 + purpose，A + V",
+     "A + 是为了 + purpose",
+     "A + 为 + cause + 高兴 / 着急 / 生气"
+    ],
+    "body": [
+     "为了 (wèile) introduces a purpose: in order to, for the sake of. It can open the sentence (为了学好汉语，他每天听中文歌) or follow 是 at the end (他跑步是为了身体健康). It can take a verb phrase or a noun: 为了孩子.",
+     "为 (wèi) can introduce the cause of a feeling, with verbs such as 高兴, 着急, 担心 and 生气: 大家都为你感到高兴, 别为这点儿小事生气.",
+     "The contrast example uses 因为 (Level 2): 因为感冒了，他没去上班. 因为 gives a reason that already exists; 为了 gives a goal. Nobody catches a cold on purpose, so 为了感冒了 is wrong. Common mistake: using 为了 for a cause (为了下雨，我们没去). Use 因为."
+    ],
+    "examples": [
+     {
+      "id": "hsk3-weile-wei-1",
+      "text": "为了学好汉语，他每天听中文歌。",
+      "reading": "wèile xuéhǎo Hànyǔ, tā měitiān tīng Zhōngwén gē.",
+      "translation": "He listens to Chinese songs every day to learn Chinese well.",
+      "focus": "为了",
+      "distractors": [
+       "因为",
+       "关于",
+       "向"
+      ],
+      "contrast": false,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ],
+      "noOrder": true
+     },
+     {
+      "id": "hsk3-weile-wei-2",
+      "text": "他这样做都是为了你。",
+      "reading": "tā zhèyàng zuò dōu shì wèile nǐ.",
+      "translation": "He is doing all this for you.",
+      "focus": "为了",
+      "distractors": [
+       "向",
+       "被",
+       "把"
+      ],
+      "contrast": false,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ]
+     },
+     {
+      "id": "hsk3-weile-wei-3",
+      "text": "大家都为你感到高兴。",
+      "reading": "dàjiā dōu wèi nǐ gǎndào gāoxìng.",
+      "translation": "Everyone is happy for you.",
+      "focus": "为",
+      "distractors": [
+       "向",
+       "关于",
+       "被"
+      ],
+      "contrast": false,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ]
+     },
+     {
+      "id": "hsk3-weile-wei-4",
+      "text": "别为这点儿小事生气。",
+      "reading": "bié wèi zhè diǎnr xiǎo shì shēngqì.",
+      "translation": "Don't get angry over such a small thing.",
+      "focus": "为",
+      "distractors": [
+       "向",
+       "关于",
+       "把"
+      ],
+      "contrast": false,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ]
+     },
+     {
+      "id": "hsk3-weile-wei-5",
+      "text": "为了孩子，她换了一份离家近的工作。",
+      "reading": "wèile háizi, tā huàn le yí fèn lí jiā jìn de gōngzuò.",
+      "translation": "For her child's sake, she changed to a job close to home.",
+      "focus": "为了",
+      "distractors": [
+       "关于",
+       "向",
+       "对"
+      ],
+      "contrast": false,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ],
+      "noOrder": true
+     },
+     {
+      "id": "hsk3-weile-wei-6",
+      "text": "他跑步是为了身体健康。",
+      "reading": "tā pǎobù shì wèile shēntǐ jiànkāng.",
+      "translation": "He runs to stay healthy.",
+      "focus": "为了",
+      "distractors": [
+       "关于",
+       "向",
+       "把"
+      ],
+      "contrast": false,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ]
+     },
+     {
+      "id": "hsk3-weile-wei-7",
+      "text": "因为感冒了，他没去上班。",
+      "reading": "yīnwèi gǎnmào le, tā méi qù shàngbān.",
+      "translation": "He didn't go to work because he had a cold.",
+      "focus": "因为",
+      "distractors": [
+       "为了",
+       "关于",
+       "向"
+      ],
+      "contrast": true,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ],
+      "noOrder": true
+     }
+    ]
+   }
+  },
+  {
+   "row": 23,
+   "label": "介词: 引出施事、受事 (把, 被)",
+   "lesson": {
+    "id": "hsk3-ba-bei-prepositions",
+    "level": "hsk-3",
+    "title": "把 and 被: bringing the object forward, naming the doer",
+    "summary": "把 puts the object before the verb to say what is done to it; 被 makes the affected thing the subject and names the doer after 被.",
+    "pattern": [
+     "A + 把 + O + V + extra (了 / 在… / 给… / result)",
+     "O + 被 + (doer) + V + extra"
+    ],
+    "body": [
+     "把 (bǎ) brings the object in front of the verb to say what happens to it: 请把门关上, 我把作业忘在家里了, 你把这本书带给他吧. The verb cannot stand alone; it needs something after it, such as a result (关上), a place (在家里) or a receiver (给他).",
+     "被 (bèi) turns the sentence round: the thing affected becomes the subject, and the doer follows 被: 他被老师批评了, 蛋糕被弟弟吃完了. The doer can be a vague 人: 我的自行车被人借走了. 被 sentences often describe something unwelcome. Negatives and modal verbs go before 把 and 被: 没把, 不能被.",
+     "The contrast example uses 给 (Level 2): 我给妈妈写了一封信. 给 introduces the person who receives something; it does not move the object or mark a doer. Common mistake: a bare verb after 把 or 被 (我把书看). Add a result or 了: 我把书看完了."
+    ],
+    "examples": [
+     {
+      "id": "hsk3-ba-bei-prepositions-1",
+      "text": "请把门关上。",
+      "reading": "qǐng bǎ mén guānshang.",
+      "translation": "Please shut the door.",
+      "focus": "把",
+      "distractors": [
+       "被",
+       "对",
+       "向"
+      ],
+      "contrast": false,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ]
+     },
+     {
+      "id": "hsk3-ba-bei-prepositions-2",
+      "text": "我把作业忘在家里了。",
+      "reading": "wǒ bǎ zuòyè wàng zài jiā li le.",
+      "translation": "I left my homework at home.",
+      "focus": "把",
+      "distractors": [
+       "被",
+       "对",
+       "向"
+      ],
+      "contrast": false,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ]
+     },
+     {
+      "id": "hsk3-ba-bei-prepositions-3",
+      "text": "我的自行车被人借走了。",
+      "reading": "wǒ de zìxíngchē bèi rén jiè zǒu le.",
+      "translation": "Someone has borrowed my bike.",
+      "focus": "被",
+      "distractors": [
+       "把",
+       "对",
+       "向"
+      ],
+      "contrast": false,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ]
+     },
+     {
+      "id": "hsk3-ba-bei-prepositions-4",
+      "text": "他被老师批评了。",
+      "reading": "tā bèi lǎoshī pīpíng le.",
+      "translation": "He was told off by the teacher.",
+      "focus": "被",
+      "distractors": [
+       "对",
+       "为",
+       "在"
+      ],
+      "contrast": false,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ]
+     },
+     {
+      "id": "hsk3-ba-bei-prepositions-5",
+      "text": "蛋糕被弟弟吃完了。",
+      "reading": "dàngāo bèi dìdi chī wán le.",
+      "translation": "The cake has been eaten up by my little brother.",
+      "focus": "被",
+      "distractors": [
+       "把",
+       "对",
+       "向"
+      ],
+      "contrast": false,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ]
+     },
+     {
+      "id": "hsk3-ba-bei-prepositions-6",
+      "text": "你把这本书带给他吧。",
+      "reading": "nǐ bǎ zhè běn shū dài gěi tā ba.",
+      "translation": "Take this book to him, will you?",
+      "focus": "把",
+      "distractors": [
+       "被",
+       "对",
+       "向"
+      ],
+      "contrast": false,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ]
+     },
+     {
+      "id": "hsk3-ba-bei-prepositions-7",
+      "text": "我给妈妈写了一封信。",
+      "reading": "wǒ gěi māma xiě le yì fēng xìn.",
+      "translation": "I wrote a letter to Mum.",
+      "focus": "给",
+      "distractors": [
+       "把",
+       "被",
+       "关于"
+      ],
+      "contrast": true,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "row": 24,
+   "label": "介词: 引出凭借、依据 (根据)",
+   "lesson": {
+    "id": "hsk3-genju",
+    "level": "hsk-3",
+    "title": "根据: according to, on the basis of",
+    "summary": "根据 introduces the basis for a statement or a decision, according to; as a noun it means grounds or basis.",
+    "pattern": [
+     "根据 + basis，A + V",
+     "A + 根据 + basis + V",
+     "有 / 没有 + 根据"
+    ],
+    "body": [
+     "根据 (gēnjù) introduces the information or rule something is based on: 根据这张地图，前面就是火车站. It can open the sentence with a comma or follow the subject before the verb: 老师根据我们的水平分了班, 我们要根据自己的情况来选择. It often appears in 是根据……的: 这个电影是根据他自己的故事拍的.",
+     "根据 is also a noun meaning grounds, evidence: 你这么说有什么根据？",
+     "The contrast example uses 关于 (row 20): 一本关于熊猫的书. 关于 gives the topic, what the book is about; 根据 gives the source or basis, what something follows. Common mistake: using 关于 for a basis (关于这张地图，前面就是火车站). Use 根据."
+    ],
+    "examples": [
+     {
+      "id": "hsk3-genju-1",
+      "text": "根据这张地图，前面就是火车站。",
+      "reading": "gēnjù zhè zhāng dìtú, qiánmian jiù shì huǒchēzhàn.",
+      "translation": "According to this map, the railway station is just ahead.",
+      "focus": "根据",
+      "distractors": [
+       "关于",
+       "为了",
+       "被"
+      ],
+      "contrast": false,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ]
+     },
+     {
+      "id": "hsk3-genju-2",
+      "text": "我们要根据自己的情况来选择。",
+      "reading": "wǒmen yào gēnjù zìjǐ de qíngkuàng lái xuǎnzé.",
+      "translation": "We should choose according to our own situation.",
+      "focus": "根据",
+      "distractors": [
+       "关于",
+       "向",
+       "被"
+      ],
+      "contrast": false,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ]
+     },
+     {
+      "id": "hsk3-genju-3",
+      "text": "这个电影是根据他自己的故事拍的。",
+      "reading": "zhège diànyǐng shì gēnjù tā zìjǐ de gùshi pāi de.",
+      "translation": "This film is based on his own story.",
+      "focus": "根据",
+      "distractors": [
+       "关于",
+       "为了",
+       "向"
+      ],
+      "contrast": false,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ]
+     },
+     {
+      "id": "hsk3-genju-4",
+      "text": "你这么说有什么根据？",
+      "reading": "nǐ zhème shuō yǒu shénme gēnjù?",
+      "translation": "What grounds do you have for saying that?",
+      "focus": "根据",
+      "distractors": [
+       "关于",
+       "为了",
+       "向"
+      ],
+      "contrast": false,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ]
+     },
+     {
+      "id": "hsk3-genju-5",
+      "text": "老师根据我们的水平分了班。",
+      "reading": "lǎoshī gēnjù wǒmen de shuǐpíng fēn le bān.",
+      "translation": "The teacher divided us into classes by level.",
+      "focus": "根据",
+      "distractors": [
+       "关于",
+       "向",
+       "被"
+      ],
+      "contrast": false,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ]
+     },
+     {
+      "id": "hsk3-genju-6",
+      "text": "这是一本关于熊猫的书。",
+      "reading": "zhè shì yì běn guānyú xióngmāo de shū.",
+      "translation": "This is a book about pandas.",
+      "focus": "关于",
+      "distractors": [
+       "根据",
+       "为了",
+       "向"
+      ],
+      "contrast": true,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "row": 25,
+   "label": "连词: 连接词或短语 (或, 或者)",
+   "lesson": {
+    "id": "hsk3-huo-huozhe",
+    "level": "hsk-3",
+    "title": "或 and 或者: or, in statements",
+    "summary": "或者 and its shorter written form 或 join two choices in a statement; in a question that asks the listener to choose, use 还是.",
+    "pattern": [
+     "A + 或者 / 或 + B",
+     "A 或者 B + 都 + 可以 / 行",
+     "question: A + 还是 + B？"
+    ],
+    "body": [
+     "或者 (huòzhě) joins two choices, either of which is possible, in a statement: 你可以坐地铁或者坐公共汽车去. It can join nouns, verb phrases or whole clauses: 你可以给王老师打电话，或者给他发电子邮件. 或 (huò) is the shorter, more written form, often between two short words: 星期六或星期天.",
+     "With 都 after it the sentence says any of the choices is fine: 喝茶或者喝咖啡都可以.",
+     "The contrast example uses 还是 (Level 2) in a question: 你今天去还是明天去呢？ 还是 asks the listener to pick one; 或者 only lists options in a statement. Common mistake: using 或者 in a choice question (你喝茶或者喝咖啡？). Use 还是."
+    ],
+    "examples": [
+     {
+      "id": "hsk3-huo-huozhe-1",
+      "text": "你可以坐地铁或者坐公共汽车去。",
+      "reading": "nǐ kěyǐ zuò dìtiě huòzhě zuò gōnggòng qìchē qù.",
+      "translation": "You can go by underground or by bus.",
+      "focus": "或者",
+      "distractors": [
+       "还是",
+       "但是",
+       "吗"
+      ],
+      "contrast": false,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ],
+      "noOrder": true
+     },
+     {
+      "id": "hsk3-huo-huozhe-2",
+      "text": "你可以给王老师打电话，或者给他发电子邮件。",
+      "reading": "nǐ kěyǐ gěi Wáng lǎoshī dǎ diànhuà, huòzhě gěi tā fā diànzǐ yóujiàn.",
+      "translation": "You can phone Mr Wang or send him an email.",
+      "focus": "或者",
+      "distractors": [
+       "还是",
+       "可是",
+       "吗"
+      ],
+      "contrast": false,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ]
+     },
+     {
+      "id": "hsk3-huo-huozhe-3",
+      "text": "我们星期六或星期天去看你。",
+      "reading": "wǒmen xīngqīliù huò xīngqītiān qù kàn nǐ.",
+      "translation": "We'll come and see you on Saturday or Sunday.",
+      "focus": "或",
+      "distractors": [
+       "还是",
+       "但",
+       "吗"
+      ],
+      "contrast": false,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ],
+      "noOrder": true
+     },
+     {
+      "id": "hsk3-huo-huozhe-4",
+      "text": "喝茶或者喝咖啡都可以。",
+      "reading": "hē chá huòzhě hē kāfēi dōu kěyǐ.",
+      "translation": "Tea or coffee, either is fine.",
+      "focus": "或者",
+      "distractors": [
+       "可是",
+       "而且",
+       "吗"
+      ],
+      "contrast": false,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ],
+      "noOrder": true
+     },
+     {
+      "id": "hsk3-huo-huozhe-5",
+      "text": "这本书你可以借，或者买一本。",
+      "reading": "zhè běn shū nǐ kěyǐ jiè, huòzhě mǎi yì běn.",
+      "translation": "You can borrow this book, or buy a copy.",
+      "focus": "或者",
+      "distractors": [
+       "还是",
+       "可是",
+       "吗"
+      ],
+      "contrast": false,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ]
+     },
+     {
+      "id": "hsk3-huo-huozhe-6",
+      "text": "你今天去还是明天去呢？",
+      "reading": "nǐ jīntiān qù háishi míngtiān qù ne?",
+      "translation": "Are you going today or tomorrow?",
+      "focus": "还是",
+      "distractors": [
+       "或者",
+       "可是",
+       "而且"
+      ],
+      "contrast": true,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ],
+      "noOrder": true
+     }
+    ]
+   }
+  },
+  {
+   "row": 26,
+   "label": "连词: 连接分句 (只有, 只要, 如果)",
+   "lesson": {
+    "id": "hsk3-zhiyou-zhiyao-ruguo",
+    "level": "hsk-3",
+    "title": "只要, 只有 and 如果: conditions between clauses",
+    "summary": "只要 gives a condition that is enough (with 就), 只有 gives the only condition that works (with 才), and 如果 gives a supposition (with 就).",
+    "pattern": [
+     "只要 + condition，(A) + 就 + result",
+     "只有 + condition，(A) + 才 + result",
+     "如果 + supposition，(A) + 就 + result"
+    ],
+    "body": [
+     "只要 (zhǐyào) says the condition is enough, as long as; the result clause takes 就: 只要你努力，就一定能学好. 只有 (zhǐyǒu) says this is the only condition that works, only if; the result clause takes 才: 只有多练习，才能说得好, 只有周末，我们才有时间一起吃饭.",
+     "如果 (rúguǒ) introduces a supposition, if; the result clause often takes 就: 如果明天下雨，我们就不去了. 如果 can be followed by ……的话 at the end of its clause.",
+     "The contrast example uses 因为……所以…… (Level 2): 因为太累了，所以他很早就睡了. 因为 gives a real cause, not a condition. Common mistake: mixing the pairs (只有……就, 只要……才). Keep 只要 with 就 and 只有 with 才."
+    ],
+    "examples": [
+     {
+      "id": "hsk3-zhiyou-zhiyao-ruguo-1",
+      "text": "只要你努力，就一定能学好。",
+      "reading": "zhǐyào nǐ nǔlì, jiù yídìng néng xuéhǎo.",
+      "translation": "As long as you work hard, you will learn it well.",
+      "focus": "只要",
+      "distractors": [
+       "只有",
+       "但是",
+       "而且"
+      ],
+      "contrast": false,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ]
+     },
+     {
+      "id": "hsk3-zhiyou-zhiyao-ruguo-2",
+      "text": "只有多练习，才能说得好。",
+      "reading": "zhǐyǒu duō liànxí, cái néng shuō de hǎo.",
+      "translation": "Only with plenty of practice can you speak well.",
+      "focus": "只有",
+      "distractors": [
+       "只要",
+       "可是",
+       "然后"
+      ],
+      "contrast": false,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ]
+     },
+     {
+      "id": "hsk3-zhiyou-zhiyao-ruguo-3",
+      "text": "只要有时间，我就去看你。",
+      "reading": "zhǐyào yǒu shíjiān, wǒ jiù qù kàn nǐ.",
+      "translation": "Whenever I have time, I'll come and see you.",
+      "focus": "就",
+      "distractors": [
+       "才",
+       "很",
+       "过"
+      ],
+      "contrast": false,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ]
+     },
+     {
+      "id": "hsk3-zhiyou-zhiyao-ruguo-4",
+      "text": "只有周末，我们才有时间一起吃饭。",
+      "reading": "zhǐyǒu zhōumò, wǒmen cái yǒu shíjiān yìqǐ chī fàn.",
+      "translation": "Only at weekends do we have time to eat together.",
+      "focus": "才",
+      "distractors": [
+       "就",
+       "很",
+       "过"
+      ],
+      "contrast": false,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ]
+     },
+     {
+      "id": "hsk3-zhiyou-zhiyao-ruguo-5",
+      "text": "如果明天下雨，我们就不去了。",
+      "reading": "rúguǒ míngtiān xià yǔ, wǒmen jiù bú qù le.",
+      "translation": "If it rains tomorrow, we won't go.",
+      "focus": "如果",
+      "distractors": [
+       "只有",
+       "可是",
+       "然后"
+      ],
+      "contrast": false,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ],
+      "noOrder": true
+     },
+     {
+      "id": "hsk3-zhiyou-zhiyao-ruguo-6",
+      "text": "因为太累了，所以他很早就睡了。",
+      "reading": "yīnwèi tài lèi le, suǒyǐ tā hěn zǎo jiù shuì le.",
+      "translation": "He was so tired that he went to bed early.",
+      "focus": "所以",
+      "distractors": [
+       "只要",
+       "如果",
+       "然后"
+      ],
+      "contrast": true,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "row": 26,
+   "label": "连词: 连接分句 (不但, 而且, 可, 可是, 然后)",
+   "lesson": {
+    "id": "hsk3-budan-erqie-keshi-ranhou",
+    "level": "hsk-3",
+    "title": "不但……而且, 可/可是 and 然后: adding, contrasting and sequencing clauses",
+    "summary": "不但……而且 adds a further point, 可是 and the shorter 可 turn to a contrast, and 然后 says what happens next.",
+    "pattern": [
+     "A + 不但 + X，而且 + Y",
+     "X，可是 / 可 + Y",
+     "X，然后 + Y"
+    ],
+    "body": [
+     "不但 (búdàn) … 而且 (érqiě) … means not only … but also: 我哥哥不但会做饭，而且做得很好吃. 而且 can also be used alone to add a point. 可是 (kěshì) means but, like 但是: 我很想去，可是没有时间. 可 (kě) is a shorter spoken form and stands after the subject or at the start of the clause: 他说今天来，可到现在也没来.",
+     "然后 (ránhòu) means then, afterwards, and links actions in time order: 下了课我去图书馆，然后回家. It often follows a first step with 先 in the first clause.",
+     "The contrast example uses 也 (Level 1): 他会唱歌，也会跳舞. 也 simply adds a similar fact; 不但……而且 adds a stronger or further point, and 然后 adds a later action, not a second fact. Common mistake: using 然后 for and in a list of facts (他很高，然后很帅). Use 而且 or 也."
+    ],
+    "examples": [
+     {
+      "id": "hsk3-budan-erqie-keshi-ranhou-1",
+      "text": "我哥哥不但会做饭，而且做得很好吃。",
+      "reading": "wǒ gēge búdàn huì zuò fàn, érqiě zuò de hěn hǎochī.",
+      "translation": "My elder brother not only can cook, his cooking is delicious.",
+      "focus": "不但",
+      "distractors": [
+       "虽然",
+       "如果",
+       "但是"
+      ],
+      "contrast": false,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ]
+     },
+     {
+      "id": "hsk3-budan-erqie-keshi-ranhou-2",
+      "text": "这家饭馆的菜不但便宜，而且好吃。",
+      "reading": "zhè jiā fànguǎn de cài búdàn piányi, érqiě hǎochī.",
+      "translation": "The food at this restaurant is not only cheap but also tasty.",
+      "focus": "而且",
+      "distractors": [
+       "可是",
+       "然后",
+       "所以"
+      ],
+      "contrast": false,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ]
+     },
+     {
+      "id": "hsk3-budan-erqie-keshi-ranhou-3",
+      "text": "我很想去，可是没有时间。",
+      "reading": "wǒ hěn xiǎng qù, kěshì méiyǒu shíjiān.",
+      "translation": "I'd love to go, but I don't have time.",
+      "focus": "可是",
+      "distractors": [
+       "而且",
+       "然后",
+       "所以"
+      ],
+      "contrast": false,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ]
+     },
+     {
+      "id": "hsk3-budan-erqie-keshi-ranhou-4",
+      "text": "他说今天来，可到现在也没来。",
+      "reading": "tā shuō jīntiān lái, kě dào xiànzài yě méi lái.",
+      "translation": "He said he'd come today, but he still hasn't.",
+      "focus": "可",
+      "distractors": [
+       "而且",
+       "然后",
+       "所以"
+      ],
+      "contrast": false,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ]
+     },
+     {
+      "id": "hsk3-budan-erqie-keshi-ranhou-5",
+      "text": "下了课我去图书馆，然后回家。",
+      "reading": "xià le kè wǒ qù túshūguǎn, ránhòu huí jiā.",
+      "translation": "After class I go to the library and then home.",
+      "focus": "然后",
+      "distractors": [
+       "而且",
+       "可是",
+       "所以"
+      ],
+      "contrast": false,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ],
+      "noOrder": true
+     },
+     {
+      "id": "hsk3-budan-erqie-keshi-ranhou-6",
+      "text": "他起床以后喝了一杯水，然后去跑步了。",
+      "reading": "tā qǐchuáng yǐhòu hē le yì bēi shuǐ, ránhòu qù pǎobù le.",
+      "translation": "After getting up he drank a glass of water, then went running.",
+      "focus": "然后",
+      "distractors": [
+       "而且",
+       "可是",
+       "因为"
+      ],
+      "contrast": false,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ]
+     },
+     {
+      "id": "hsk3-budan-erqie-keshi-ranhou-7",
+      "text": "他会唱歌，也会跳舞。",
+      "reading": "tā huì chàng gē, yě huì tiàowǔ.",
+      "translation": "He can sing, and he can dance too.",
+      "focus": "也",
+      "distractors": [
+       "可是",
+       "然后",
+       "所以"
+      ],
+      "contrast": true,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ],
+      "noOrder": true
+     }
+    ]
+   }
+  },
+  {
+   "row": 27,
+   "label": "助词 (的话)",
+   "lesson": {
+    "id": "hsk3-dehua",
+    "level": "hsk-3",
+    "title": "……的话: if, at the end of a condition",
+    "summary": "的话 closes a condition clause and means if; it can be used alone or together with 如果 at the start.",
+    "pattern": [
+     "condition + 的话，(A) + (就) + result",
+     "如果 + condition + 的话，…"
+    ],
+    "body": [
+     "的话 (de huà) goes at the end of a clause and makes it a condition: 明天下雨的话，我们就在家看电影, 有时间的话，来我家玩儿吧. The result clause often has 就. 的话 is common in speech and can be used alone or with 如果 at the start: 如果你有问题的话，可以问我.",
+     "The contrast example uses 的时候 (Level 2): 我到家的时候，妈妈正在做饭. 的时候 says when something really happened; 的话 says if something happens. A real past event takes 的时候, not 的话.",
+     "Common mistake: putting 的话 at the start of the clause (的话明天下雨). It always comes at the end of the condition, before the comma."
+    ],
+    "examples": [
+     {
+      "id": "hsk3-dehua-1",
+      "text": "明天下雨的话，我们就在家看电影。",
+      "reading": "míngtiān xià yǔ de huà, wǒmen jiù zài jiā kàn diànyǐng.",
+      "translation": "If it rains tomorrow, we'll watch a film at home.",
+      "focus": "的话",
+      "distractors": [
+       "如果",
+       "说话",
+       "吗"
+      ],
+      "contrast": false,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ]
+     },
+     {
+      "id": "hsk3-dehua-2",
+      "text": "如果你有问题的话，可以问我。",
+      "reading": "rúguǒ nǐ yǒu wèntí de huà, kěyǐ wèn wǒ.",
+      "translation": "If you have any questions, you can ask me.",
+      "focus": "如果",
+      "distractors": [
+       "只有",
+       "虽然",
+       "因为"
+      ],
+      "contrast": false,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ],
+      "noOrder": true
+     },
+     {
+      "id": "hsk3-dehua-3",
+      "text": "你不想去的话，就别去了。",
+      "reading": "nǐ bù xiǎng qù de huà, jiù bié qù le.",
+      "translation": "If you don't want to go, then don't.",
+      "focus": "的话",
+      "distractors": [
+       "如果",
+       "着",
+       "过"
+      ],
+      "contrast": false,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ]
+     },
+     {
+      "id": "hsk3-dehua-4",
+      "text": "有时间的话，来我家玩儿吧。",
+      "reading": "yǒu shíjiān de huà, lái wǒ jiā wánr ba.",
+      "translation": "Come over to my place if you have time.",
+      "focus": "的话",
+      "distractors": [
+       "如果",
+       "过",
+       "着"
+      ],
+      "contrast": false,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ]
+     },
+     {
+      "id": "hsk3-dehua-5",
+      "text": "不舒服的话，就请假吧。",
+      "reading": "bù shūfu de huà, jiù qǐngjià ba.",
+      "translation": "If you're not feeling well, take the day off.",
+      "focus": "的话",
+      "distractors": [
+       "如果",
+       "说话",
+       "着"
+      ],
+      "contrast": false,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ]
+     },
+     {
+      "id": "hsk3-dehua-6",
+      "text": "我到家的时候，妈妈正在做饭。",
+      "reading": "wǒ dào jiā de shíhou, māma zhèngzài zuò fàn.",
+      "translation": "When I got home, Mum was cooking.",
+      "focus": "的时候",
+      "distractors": [
+       "的话",
+       "如果",
+       "吗"
+      ],
+      "contrast": true,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "row": 28,
+   "label": "短语: 其他结构类型 (同位短语, 动补短语2, 数量重叠)",
+   "lesson": {
+    "id": "hsk3-phrase-types-more",
+    "level": "hsk-3",
+    "title": "More phrase types: appositives, 得/不 complements and doubled number-measures",
+    "summary": "An appositive phrase puts two names for the same thing side by side (我们俩); a verb can take 得 or 不 before its complement (听不懂); and a doubled number + measure (一个一个) means one after another.",
+    "pattern": [
+     "pronoun + 俩 / number + 个 / 大家；N + name (首都北京)",
+     "V + 得 / 不 + complement",
+     "一 + M + 一 + M (+ 地) + V"
+    ],
+    "body": [
+     "In an appositive phrase two parts name the same people or thing: 我们俩, 你们两个, 他们大家, 首都北京, 我的朋友小王. 俩 (liǎ) already means two people, so it never takes 个.",
+     "Verb-complement phrases at this level put 得 or 不 between the verb and its complement to say can or cannot (听得懂, 听不懂), or put 得 before a description of how the action turned out (说得太快, 写得很漂亮). A doubled number + measure means one after another, step by step: 一个一个进来, 一口一口地喝, 一天一天长大.",
+     "The contrast example uses 个个 (row 11): 这些苹果个个都很甜. A doubled measure without a number means every one, all of them; 一个一个 with the number describes the manner, one at a time. Common mistake: 我们俩个. Say 我们俩 or 我们两个."
+    ],
+    "examples": [
+     {
+      "id": "hsk3-phrase-types-more-1",
+      "text": "我们俩是好朋友。",
+      "reading": "wǒmen liǎ shì hǎo péngyou.",
+      "translation": "The two of us are good friends.",
+      "focus": "俩",
+      "distractors": [
+       "两",
+       "二",
+       "们"
+      ],
+      "contrast": false,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ]
+     },
+     {
+      "id": "hsk3-phrase-types-more-2",
+      "text": "你们两个跟我来。",
+      "reading": "nǐmen liǎng ge gēn wǒ lái.",
+      "translation": "You two, come with me.",
+      "focus": "两",
+      "distractors": [
+       "二",
+       "俩",
+       "第"
+      ],
+      "contrast": false,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ]
+     },
+     {
+      "id": "hsk3-phrase-types-more-3",
+      "text": "他们大家都同意了。",
+      "reading": "tāmen dàjiā dōu tóngyì le.",
+      "translation": "They all agreed.",
+      "focus": "大家",
+      "distractors": [
+       "别人",
+       "每",
+       "吗"
+      ],
+      "contrast": false,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ]
+     },
+     {
+      "id": "hsk3-phrase-types-more-4",
+      "text": "老师说得太快，我听不懂。",
+      "reading": "lǎoshī shuō de tài kuài, wǒ tīng bu dǒng.",
+      "translation": "The teacher speaks too fast; I can't understand.",
+      "focus": "不",
+      "distractors": [
+       "没",
+       "别",
+       "很"
+      ],
+      "contrast": false,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ]
+     },
+     {
+      "id": "hsk3-phrase-types-more-5",
+      "text": "请大家一个一个进来。",
+      "reading": "qǐng dàjiā yí ge yí ge jìnlai.",
+      "translation": "Please come in one at a time, everyone.",
+      "focus": "一个一个",
+      "distractors": [
+       "一个",
+       "一些",
+       "每个"
+      ],
+      "contrast": false,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ]
+     },
+     {
+      "id": "hsk3-phrase-types-more-6",
+      "text": "他一口一口地把药喝完了。",
+      "reading": "tā yì kǒu yì kǒu de bǎ yào hē wán le.",
+      "translation": "He drank the medicine down mouthful by mouthful.",
+      "focus": "一口一口",
+      "distractors": [
+       "一口",
+       "口口",
+       "一下"
+      ],
+      "contrast": false,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ]
+     },
+     {
+      "id": "hsk3-phrase-types-more-7",
+      "text": "他的汉字写得很漂亮。",
+      "reading": "tā de Hànzì xiě de hěn piàoliang.",
+      "translation": "His Chinese characters are beautifully written.",
+      "focus": "得",
+      "distractors": [
+       "地",
+       "了",
+       "吗"
+      ],
+      "contrast": false,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ]
+     },
+     {
+      "id": "hsk3-phrase-types-more-8",
+      "text": "这些苹果个个都很甜。",
+      "reading": "zhèxiē píngguǒ gègè dōu hěn tián.",
+      "translation": "Every one of these apples is sweet.",
+      "focus": "个个",
+      "distractors": [
+       "一个",
+       "每",
+       "一下"
+      ],
+      "contrast": true,
+      "kinds": [
+       "similar",
+       "clearly-wrong"
+      ]
+     }
+    ]
+   }
+  }
+ ]
+}
