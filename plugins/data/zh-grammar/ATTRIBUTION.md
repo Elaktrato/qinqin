@@ -49,7 +49,16 @@ syllabus, and the conventions it follows.
   several independent constructions is split into pattern-family lessons; the
   coverage index then lists every lesson for that row. In HSK 1 the 语气助词
   row is split into two lessons (questions/suggestions with 吗 and 吧;
-  sentence-final 了 and 呢).
+  sentence-final 了 and 呢). Higher levels split long rows (adverb lists,
+  fixed formats, 四字格, discourse markers, multi-form sentence patterns) into
+  families of 2–6 patterns. HSK 4's long list of clause conjunctions is
+  counted as two rows. Every listed member appears in an example or, for a
+  few members of the longest HSK 7–9 lists, is named and explained in the
+  body.
+- The row lists for HSK 3 to 7–9 were taken from a public transcription of
+  the outline's table, cross-checked against the HSK 1 and 2 rows authored
+  from the PDF; a final row-by-row check of `COVERAGE.md` against the PDF is
+  still open.
 - The levels are qinqin's estimates ("≈ HSK N"), not official HSK levels.
 
 ## Pinyin conventions
@@ -57,7 +66,8 @@ syllabus, and the conventions it follows.
 - Hanyu Pinyin with tone marks, as in the HSK word list pack (`hsk-words`):
   不 and 一 are written as they are spoken (不是 bú shì, 一个 yí ge),
   third-tone sandhi is not marked (nǐ hǎo), neutral tones are unmarked
-  (朋友 péngyou, 桌子 zhuōzi).
+  (朋友 péngyou, 桌子 zhuōzi). 一 keeps its own tone in ordinals and
+  enumeration (第一本 dì-yī běn, 一来 yī lái).
 - Readings are lower case; only proper nouns (Zhōngguó, Hànyǔ) start with a
   capital. Sentence-final punctuation is kept.
 
@@ -81,6 +91,22 @@ syllabus, and the conventions it follows.
   contrastive point wherever one can be wrong there. No distractor is another
   correct answer, and none is correct under a different reading. Distractors
   are authored, never generated.
+
+## Word-order exercises
+
+- Every example also yields a word-order exercise, except examples marked
+  `noOrder`: their words have a second correct order (a time word or clause
+  that can stand before or after the subject, two halves that can swap), and
+  an exact-order check would mark a correct answer wrong. Those examples keep
+  the fill-the-gap exercise.
+
+## Review status
+
+- Every level was checked by the build script (`scripts/build-grammar-pack.mjs`)
+  and then read in full, example by example, by an AI model prompted as a
+  Chinese grammar teacher (Chinese-language review: naturalness, distractors,
+  pinyin, translations, word order, duplicates); its findings were fixed. This
+  is not a native-speaker review.
 
 ## Native-review status
 

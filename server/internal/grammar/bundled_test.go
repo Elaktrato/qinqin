@@ -28,8 +28,17 @@ func TestBundledGrammarPack(t *testing.T) {
 	if len(data.Levels) != 7 {
 		t.Fatalf("levels = %d, want 7", len(data.Levels))
 	}
-	if len(data.Lessons) < 48 || len(data.Lessons) > 500 {
-		t.Fatalf("lessons = %d, want 48..500", len(data.Lessons))
+	if len(data.Lessons) < 300 || len(data.Lessons) > 500 {
+		t.Fatalf("lessons = %d, want 300..500", len(data.Lessons))
+	}
+	perLevel := map[string]int{}
+	for _, l := range data.Lessons {
+		perLevel[l.Level]++
+	}
+	for _, id := range []string{"hsk-1", "hsk-2", "hsk-3", "hsk-4", "hsk-5", "hsk-6", "hsk-7-9"} {
+		if perLevel[id] == 0 {
+			t.Errorf("level %s has no lessons", id)
+		}
 	}
 	for _, l := range data.Lessons {
 		if n := len(l.Examples); n < 4 || n > 8 {
@@ -87,6 +96,9 @@ func TestBundledGrammarPack(t *testing.T) {
 	packs, err := grammar.ListPacks(ctx, sqlDB, "zh")
 	if err != nil || len(packs) != 1 || packs[0].PackID != "zh-grammar" {
 		t.Fatalf("ListPacks = %+v, %v", packs, err)
+	}
+	if len(packs[0].Lessons) != len(data.Lessons) {
+		t.Fatalf("imported %d lessons, want %d", len(packs[0].Lessons), len(data.Lessons))
 	}
 	for _, summary := range packs[0].Lessons {
 		if _, err := grammar.LessonByID(ctx, sqlDB, "zh-grammar", summary.ID); err != nil {
