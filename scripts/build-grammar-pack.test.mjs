@@ -202,15 +202,15 @@ test('LEVELS is the seven binding levels', () => {
 		[
 			['hsk-1', 48],
 			['hsk-2', 61],
-			['hsk-3', 56],
+			['hsk-3', 57],
 			['hsk-4', 46],
-			['hsk-5', 38],
-			['hsk-6', 30],
-			['hsk-7-9', 27]
+			['hsk-5', 39],
+			['hsk-6', 31],
+			['hsk-7-9', 40]
 		]
 	);
 	assert.equal(LEVELS[6].schemeLevel, 'HSK 7–9');
-	assert.equal(LEVELS.reduce((n, l) => n + l.rows, 0), 306);
+	assert.equal(LEVELS.reduce((n, l) => n + l.rows, 0), 322);
 });
 
 test('--check validates without writing, and PackError is the failure type', async () => {

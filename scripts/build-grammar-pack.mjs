@@ -24,17 +24,19 @@ function fail(message) {
 
 // The pack's seven levels in difficulty order. The row counts are the
 // corrected, binding syllabus row counts (the original plan under-counted
-// HSK 1 by 数词, 连接词语或短语 and 叹词, and HSK 2 by one row). A level's
+// HSK 1 by 数词, 连接词语或短语 and 叹词, and HSK 2 by one row; HSK 3–7–9
+// follow the outline's 细目 rows, with HSK 4's long 连接分句或句子 list
+// counted as two rows). A level's
 // `rows` is a floor: a fragment may author rows above it (the syllabus may
 // have more), and --complete requires rows 1..rows but allows extras.
 export const LEVELS = [
 	{ id: 'hsk-1', name: 'Level 1 · First sentences', schemeLevel: 'HSK 1', rows: 48 },
 	{ id: 'hsk-2', name: 'Level 2 · Everyday basics', schemeLevel: 'HSK 2', rows: 61 },
-	{ id: 'hsk-3', name: 'Level 3 · Getting around', schemeLevel: 'HSK 3', rows: 56 },
+	{ id: 'hsk-3', name: 'Level 3 · Getting around', schemeLevel: 'HSK 3', rows: 57 },
 	{ id: 'hsk-4', name: 'Level 4 · Connected speech', schemeLevel: 'HSK 4', rows: 46 },
-	{ id: 'hsk-5', name: 'Level 5 · Nuance and attitude', schemeLevel: 'HSK 5', rows: 38 },
-	{ id: 'hsk-6', name: 'Level 6 · Formal ground', schemeLevel: 'HSK 6', rows: 30 },
-	{ id: 'hsk-7-9', name: 'Level 7 · Mastery', schemeLevel: 'HSK 7–9', rows: 27 }
+	{ id: 'hsk-5', name: 'Level 5 · Nuance and attitude', schemeLevel: 'HSK 5', rows: 39 },
+	{ id: 'hsk-6', name: 'Level 6 · Formal ground', schemeLevel: 'HSK 6', rows: 31 },
+	{ id: 'hsk-7-9', name: 'Level 7 · Mastery', schemeLevel: 'HSK 7–9', rows: 40 }
 ];
 
 // Every grammar level badges against the hsk-words scheme.
