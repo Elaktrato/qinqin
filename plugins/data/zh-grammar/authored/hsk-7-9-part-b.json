@@ -1,0 +1,4327 @@
+{
+  "level": {
+    "id": "hsk-7-9"
+  },
+  "rows": [
+    {
+      "row": 25,
+      "label": "四字格: 半A半B, 不A不B, 非A非B, 不A而B",
+      "lesson": {
+        "id": "hsk79-sizige-ban-bu-fei",
+        "level": "hsk-7-9",
+        "title": "Four-character frames 半A半B, 不A不B, 非A非B, 不A而B: half-and-half, neither-nor, without",
+        "summary": "Fixed four-character shells take two single syllables: 半A半B is partly both, 不A不B just right or emphatic, 非A非B neither, 不A而B B without A.",
+        "pattern": [
+          "半 + A + 半 + B (半信半疑)",
+          "不 + A + 不 + B / 非 + A + 非 + B (不多不少, 非亲非故)",
+          "不 + A + 而 + B (不约而同)"
+        ],
+        "body": [
+          "Four-character frames (四字格) fill two slots of a fixed shell with a pair of single syllables and work like set phrases. 半A半B says something is partly A and partly B, usually with a pair of opposites: 半信半疑 (half believing, half doubting), 半真半假, 半工半读. 不A不B with two opposites means just right, neither extreme (不大不小, 不多不少, 不冷不热); with two similar words it is an emphatic negative (不慌不忙, calm and unhurried; 不知不觉, without noticing).",
+          "非A非B means neither A nor B: 非亲非故 (neither relative nor friend), 非驴非马 (neither one thing nor the other). 不A而B says that B comes about without A: 不约而同 (do the same thing without arranging it), 不劳而获 (gain without working), 不言而喻 (go without saying). The shell words cannot be swapped: 半信非疑 or 不约又同 do not exist.",
+          "The contrast example uses 既A又B, an ordinary pattern for both A and B (既省钱又省时间). It takes whole verb phrases and is not a fixed set; do not confuse it with 不A不B, which usually means neither extreme. A common mistake is to build new four-character forms freely: use the established phrases and check that the second half repeats the right shell word (半信半疑, not 半信不疑)."
+        ],
+        "examples": [
+          {
+            "id": "hsk79-sizige-ban-bu-fei-1",
+            "text": "他的解释让人半信半疑。",
+            "reading": "tā de jiěshì ràng rén bàn xìn bàn yí.",
+            "translation": "His explanation leaves people only half convinced.",
+            "focus": "半疑",
+            "distractors": [
+              "不疑",
+              "而疑",
+              "无疑"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk79-sizige-ban-bu-fei-2",
+            "text": "这双鞋不大不小，正合适。",
+            "reading": "zhè shuāng xié bú dà bù xiǎo, zhèng héshì.",
+            "translation": "These shoes are neither too big nor too small; they fit just right.",
+            "focus": "不小",
+            "distractors": [
+              "又小",
+              "半小",
+              "而小"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk79-sizige-ban-bu-fei-3",
+            "text": "他不慌不忙地把问题解释清楚了。",
+            "reading": "tā bù huāng bù máng de bǎ wèntí jiěshì qīngchu le.",
+            "translation": "Calmly and unhurriedly, he explained the problem clearly.",
+            "focus": "不忙",
+            "distractors": [
+              "又忙",
+              "而忙",
+              "非忙"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk79-sizige-ban-bu-fei-4",
+            "text": "我们非亲非故，他却一直在帮我。",
+            "reading": "wǒmen fēi qīn fēi gù, tā què yìzhí zài bāng wǒ.",
+            "translation": "We're neither relatives nor friends, yet he keeps helping me.",
+            "focus": "非故",
+            "distractors": [
+              "不故",
+              "而故",
+              "半故"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk79-sizige-ban-bu-fei-5",
+            "text": "会议一结束，大家不约而同地站了起来。",
+            "reading": "huìyì yì jiéshù, dàjiā bù yuē ér tóng de zhàn le qǐlai.",
+            "translation": "As soon as the meeting ended, everyone stood up as if on cue.",
+            "focus": "而",
+            "distractors": [
+              "又",
+              "就",
+              "不"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk79-sizige-ban-bu-fei-6",
+            "text": "不劳而获的钱，他一分也不要。",
+            "reading": "bù láo ér huò de qián, tā yì fēn yě bú yào.",
+            "translation": "He won't take a cent of money he hasn't worked for.",
+            "focus": "不劳",
+            "distractors": [
+              "半劳",
+              "非劳",
+              "无劳"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk79-sizige-ban-bu-fei-7",
+            "text": "这个办法既省钱又省时间。",
+            "reading": "zhège bànfǎ jì shěng qián yòu shěng shíjiān.",
+            "translation": "This method saves both money and time.",
+            "focus": "既",
+            "distractors": [
+              "而",
+              "非",
+              "半"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "row": 25,
+      "label": "四字格: 忽A忽B, 时A时B, 或A或B, 东A西B, 七A八B",
+      "lesson": {
+        "id": "hsk79-sizige-hu-shi-dong-qi",
+        "level": "hsk-7-9",
+        "title": "Four-character frames 忽A忽B, 时A时B, 或A或B, 东A西B, 七A八B: alternation and disorder",
+        "summary": "忽A忽B and 时A时B swing between opposites, 或A或B means one way or another, 东A西B is here and there, 七A八B is many and in a muddle.",
+        "pattern": [
+          "忽 + A + 忽 + B / 时 + A + 时 + B (忽冷忽热, 时好时坏)",
+          "或 + A + 或 + B (或多或少)",
+          "东 + V + 西 + V / 七 + A + 八 + B (东张西望, 七嘴八舌)"
+        ],
+        "body": [
+          "This family describes things that alternate or are scattered. 忽A忽B and 时A时B put two opposites in alternation: 忽冷忽热 (now cold, now hot), 忽高忽低; 时好时坏 (sometimes good, sometimes bad), 时多时少. 忽 suggests sudden swings, 时 a looser on-and-off pattern. 或A或B means to some degree or one way or the other: 或多或少 (more or less), 或早或晚 (sooner or later).",
+          "东A西B uses two related verbs for actions done here and there, in all directions: 东张西望 (look around everywhere), 东奔西走 (rush about). 七A八B, with two related nouns or verbs, means many and in disorder: 七嘴八舌 (everyone talking at once), 七手八脚 (many hands in a bustle), 七上八下 (a heart pounding with worry).",
+          "The contrast example uses 忽然, the ordinary adverb suddenly (灯忽然灭了). In 忽冷忽热 the syllable 忽 is a bound part of the frame and cannot stand alone before a verb, and neither can 时 or 或. A common mistake is to break the pairing: the numbers and directions are fixed (七……八……, 东……西……), so 七嘴九舌 or 东张东望 are wrong."
+        ],
+        "examples": [
+          {
+            "id": "hsk79-sizige-hu-shi-dong-qi-1",
+            "text": "最近的天气忽冷忽热，很容易感冒。",
+            "reading": "zuìjìn de tiānqì hū lěng hū rè, hěn róngyì gǎnmào.",
+            "translation": "Lately the weather keeps swinging between cold and hot, so it's easy to catch a cold.",
+            "focus": "忽热",
+            "distractors": [
+              "不热",
+              "而热",
+              "非热"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk79-sizige-hu-shi-dong-qi-2",
+            "text": "他的成绩时好时坏，很不稳定。",
+            "reading": "tā de chéngjì shí hǎo shí huài, hěn bù wěndìng.",
+            "translation": "His grades are sometimes good and sometimes bad; they're very unsteady.",
+            "focus": "时坏",
+            "distractors": [
+              "而坏",
+              "不坏",
+              "无坏"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk79-sizige-hu-shi-dong-qi-3",
+            "text": "他的话或多或少有些道理。",
+            "reading": "tā de huà huò duō huò shǎo yǒu xiē dàolǐ.",
+            "translation": "What he says makes some sense, more or less.",
+            "focus": "或少",
+            "distractors": [
+              "而少",
+              "非少",
+              "不少"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk79-sizige-hu-shi-dong-qi-4",
+            "text": "他在门口东张西望，好像在找人。",
+            "reading": "tā zài ménkǒu dōng zhāng xī wàng, hǎoxiàng zài zhǎo rén.",
+            "translation": "He is looking all around at the door, as if searching for someone.",
+            "focus": "西望",
+            "distractors": [
+              "东望",
+              "南望",
+              "而望"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk79-sizige-hu-shi-dong-qi-5",
+            "text": "他东奔西走，忙得连饭都顾不上吃。",
+            "reading": "tā dōng bēn xī zǒu, máng de lián fàn dōu gù bu shàng chī.",
+            "translation": "He rushes about everywhere, too busy even to eat.",
+            "focus": "东奔",
+            "distractors": [
+              "西奔",
+              "北奔",
+              "忽奔"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk79-sizige-hu-shi-dong-qi-6",
+            "text": "大家七嘴八舌地讨论起来。",
+            "reading": "dàjiā qī zuǐ bā shé de tǎolùn qǐlai.",
+            "translation": "Everyone started talking about it at once.",
+            "focus": "八舌",
+            "distractors": [
+              "九舌",
+              "八嘴",
+              "而舌"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk79-sizige-hu-shi-dong-qi-7",
+            "text": "这个消息让他心里七上八下的。",
+            "reading": "zhège xiāoxi ràng tā xīnli qī shàng bā xià de.",
+            "translation": "The news has his heart in turmoil.",
+            "focus": "八下",
+            "distractors": [
+              "九下",
+              "七下",
+              "东下"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk79-sizige-hu-shi-dong-qi-8",
+            "text": "灯忽然灭了。",
+            "reading": "dēng hūrán miè le.",
+            "translation": "The light suddenly went out.",
+            "focus": "忽然",
+            "distractors": [
+              "时",
+              "或",
+              "东"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "row": 25,
+      "label": "四字格: 无A不B, 无A可B, 可A可B, 连A带B, 自A自B",
+      "lesson": {
+        "id": "hsk79-sizige-wu-ke-lian-zi",
+        "level": "hsk-7-9",
+        "title": "Four-character frames 无A不B, 无A可B, 可A可B, 连A带B, 自A自B: totality, choice and self",
+        "summary": "无A不B means every without exception, 无A可B there is nothing to B, 可A可B either way, 连A带B both at once, 自A自B by or to oneself.",
+        "pattern": [
+          "无 + A + 不 + B / 无 + A + 可 + B (无话不谈, 无话可说)",
+          "可 + A + 可 + B (可有可无)",
+          "连 + A + 带 + B / 自 + A + 自 + B (连蹦带跳, 自言自语)"
+        ],
+        "body": [
+          "These frames express totality, choice or doing something oneself. 无A不B is a double negative meaning every, without exception: 无话不谈 (talk about everything), 无所不知 (know everything), 无恶不作 (stop at no evil). 无A可B means there is no A that one could B: 无话可说 (have nothing to say), 无家可归 (homeless), 无路可走. The two look alike but are opposites: 无话不谈 is close friendship, 无话可说 is having nothing left to say.",
+          "可A可B, often with a word and its opposite, means either way is fine, so it does not matter much: 可有可无 (dispensable), 可大可小. 连A带B joins two actions or things done or taken together: 连蹦带跳 (skipping and jumping), 连吃带喝, 连人带车. 自A自B says the person does both to or by himself: 自言自语 (talk to oneself), 自作自受 (reap what one sows), 自给自足 (self-sufficient).",
+          "The contrast example uses 自己, the ordinary word oneself (你得自己决定). The 自 of 自言自语 is a bound shell syllable and cannot replace 自己 before a verb. A common mistake is to mix up 不 and 可 in the 无 frames, which reverses the meaning."
+        ],
+        "examples": [
+          {
+            "id": "hsk79-sizige-wu-ke-lian-zi-1",
+            "text": "他俩是知心朋友，无话不谈。",
+            "reading": "tā liǎ shì zhīxīn péngyou, wú huà bù tán.",
+            "translation": "The two of them are close friends who talk about everything.",
+            "focus": "不谈",
+            "distractors": [
+              "可谈",
+              "而谈",
+              "非谈"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk79-sizige-wu-ke-lian-zi-2",
+            "text": "证据摆在面前，他无话可说。",
+            "reading": "zhèngjù bǎi zài miànqián, tā wú huà kě shuō.",
+            "translation": "With the evidence in front of him, he had nothing to say.",
+            "focus": "可说",
+            "distractors": [
+              "而说",
+              "非说",
+              "自说"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk79-sizige-wu-ke-lian-zi-3",
+            "text": "这些装饰可有可无，去掉也行。",
+            "reading": "zhèxiē zhuāngshì kě yǒu kě wú, qùdiào yě xíng.",
+            "translation": "These decorations are not essential; you can take them off.",
+            "focus": "可无",
+            "distractors": [
+              "不无",
+              "而无",
+              "自无"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk79-sizige-wu-ke-lian-zi-4",
+            "text": "孩子们连蹦带跳地跑进了教室。",
+            "reading": "háizimen lián bèng dài tiào de pǎo jìn le jiàoshì.",
+            "translation": "The children came skipping and jumping into the classroom.",
+            "focus": "带",
+            "distractors": [
+              "和",
+              "而",
+              "又"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk79-sizige-wu-ke-lian-zi-5",
+            "text": "他一个人坐在那儿自言自语。",
+            "reading": "tā yí ge rén zuò zài nàr zì yán zì yǔ.",
+            "translation": "He is sitting there alone, talking to himself.",
+            "focus": "自语",
+            "distractors": [
+              "而语",
+              "不语",
+              "无语"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk79-sizige-wu-ke-lian-zi-6",
+            "text": "他什么都懂，好像无所不知。",
+            "reading": "tā shénme dōu dǒng, hǎoxiàng wú suǒ bù zhī.",
+            "translation": "He understands everything; he seems to know it all.",
+            "focus": "不知",
+            "distractors": [
+              "可知",
+              "而知",
+              "自知"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk79-sizige-wu-ke-lian-zi-7",
+            "text": "这是你自作自受，怪不了别人。",
+            "reading": "zhè shì nǐ zì zuò zì shòu, guài bu liǎo biérén.",
+            "translation": "You brought this on yourself; you can't blame anyone else.",
+            "focus": "自受",
+            "distractors": [
+              "他受",
+              "而受",
+              "无受"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk79-sizige-wu-ke-lian-zi-8",
+            "text": "这件事你得自己决定。",
+            "reading": "zhè jiàn shì nǐ děi zìjǐ juédìng.",
+            "translation": "You have to decide this yourself.",
+            "focus": "自己",
+            "distractors": [
+              "自言",
+              "自",
+              "连"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "row": 26,
+      "label": "话语标记: 不瞒你说, 老实说, 说真的, 要（让）我说, （你）还别说",
+      "lesson": {
+        "id": "hsk79-marker-frankness",
+        "level": "hsk-7-9",
+        "title": "Discourse markers for frankness and opinion: 不瞒你说, 老实说, 说真的, 要我说, 你还别说",
+        "summary": "Set phrases at the head of a sentence signal a frank admission, an honest opinion, a piece of advice or a grudging admission that something works.",
+        "pattern": [
+          "不瞒你说 / 老实说 / 说真的，+ 句子",
+          "要（让）我说，+ 建议",
+          "（你）还别说，+ 句子"
+        ],
+        "body": [
+          "Discourse markers (话语标记) are set phrases that stand at the head of a sentence, usually followed by a comma, and tell the listener how to take what comes next. This group signals frankness or a personal view. 不瞒你说 (to be honest with you) admits something the speaker had kept quiet; 老实说 and 说真的 (honestly, to tell the truth) announce a frank opinion; 要我说 or 让我说 (if you ask me) offers advice; 你还别说, or just 还别说 (you know what, actually), admits with some surprise that something is better than expected.",
+          "They are fixed in form: you cannot change the person (不瞒我说), drop a word (说老实) or swap the order (真的说). They also need a following clause; on their own they say nothing.",
+          "The contrast example uses 老实 as an ordinary adjective, honest (一个很老实的人). Only 老实说, with 说, works as a marker, and a marker cannot modify a noun. A common mistake is to put a conjunction such as 虽然 or 由于 in the marker's slot: those need a second clause linked by 但是 or 所以 and do not introduce a frank remark."
+        ],
+        "examples": [
+          {
+            "id": "hsk79-marker-frankness-1",
+            "text": "不瞒你说，这家公司我早就不想待了。",
+            "reading": "bù mán nǐ shuō, zhè jiā gōngsī wǒ zǎo jiù bù xiǎng dāi le.",
+            "translation": "To be honest with you, I've wanted to leave this company for ages.",
+            "focus": "不瞒你说",
+            "distractors": [
+              "不瞒我说",
+              "不是我说你",
+              "虽然"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk79-marker-frankness-2",
+            "text": "老实说，你这篇文章写得不怎么样。",
+            "reading": "lǎoshi shuō, nǐ zhè piān wénzhāng xiě de bù zěnmeyàng.",
+            "translation": "Honestly, this article of yours isn't very good.",
+            "focus": "老实说",
+            "distractors": [
+              "老实地",
+              "说老实",
+              "由于"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ],
+            "noOrder": true
+          },
+          {
+            "id": "hsk79-marker-frankness-3",
+            "text": "说真的，我挺羡慕你的。",
+            "reading": "shuō zhēn de, wǒ tǐng xiànmù nǐ de.",
+            "translation": "To tell the truth, I rather envy you.",
+            "focus": "说真的",
+            "distractors": [
+              "真的说",
+              "说真地",
+              "因为"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ],
+            "noOrder": true
+          },
+          {
+            "id": "hsk79-marker-frankness-4",
+            "text": "要我说，这件事你就别管了。",
+            "reading": "yào wǒ shuō, zhè jiàn shì nǐ jiù bié guǎn le.",
+            "translation": "If you ask me, you should just stay out of this.",
+            "focus": "要我说",
+            "distractors": [
+              "把我说",
+              "被我说",
+              "虽然"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk79-marker-frankness-5",
+            "text": "让我说，你应该先跟他道个歉。",
+            "reading": "ràng wǒ shuō, nǐ yīnggāi xiān gēn tā dào ge qiàn.",
+            "translation": "If you ask me, you should apologize to him first.",
+            "focus": "让我说",
+            "distractors": [
+              "让说我",
+              "我让说",
+              "因为"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk79-marker-frankness-6",
+            "text": "你还别说，这个办法真管用。",
+            "reading": "nǐ hái bié shuō, zhège bànfǎ zhēn guǎnyòng.",
+            "translation": "You know what, this method really works.",
+            "focus": "还别说",
+            "distractors": [
+              "还不说",
+              "别还说",
+              "还没说"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk79-marker-frankness-7",
+            "text": "他是个很老实的人。",
+            "reading": "tā shì ge hěn lǎoshi de rén.",
+            "translation": "He is a very honest person.",
+            "focus": "老实",
+            "distractors": [
+              "老实说",
+              "说真的",
+              "不瞒你说"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "row": 26,
+      "label": "话语标记: 换句话说, 反过来（说）, 简（而）言之, 总的来说, 总而言之, 概括来说, 综上所述, 归根到底",
+      "lesson": {
+        "id": "hsk79-marker-summing-up",
+        "level": "hsk-7-9",
+        "title": "Discourse markers for restating and summing up: 换句话说, 反过来说, 简而言之, 总而言之, 综上所述…",
+        "summary": "Restate with 换句话说, flip the view with 反过来说, shorten with 简而言之, and close with 总的来说, 总而言之, 概括来说, 综上所述 or 归根到底.",
+        "pattern": [
+          "换句话说 / 反过来（说） / 简（而）言之，+ 句子",
+          "总的来说 / 总而言之 / 概括来说 / 综上所述，+ 结论",
+          "A + 归根到底 + 是 + B"
+        ],
+        "body": [
+          "These markers restate or sum up. 换句话说 (in other words) says the same thing another way; 反过来 or 反过来说 (conversely, the other way round) looks at it from the opposite side; 简而言之, also 简言之 (in brief), shortens it.",
+          "To close a passage, 总的来说 (on the whole) and 总而言之 (all in all) give a general judgment; 概括来说 (to summarize) condenses the main points; 综上所述 (to sum up the above) is formal and written, used at the end of a report or essay; 归根到底 (in the final analysis) goes to the root cause and often stands before the verb: ……归根到底是…….",
+          "The contrast example uses 概括 as an ordinary verb, summarize (概括一下内容); only 概括来说 is the marker. A common mistake is to scramble the four-character forms, which are classical in shape: 总而言之 and 简而言之 both follow the shell A而言之 and cannot become 总而说之."
+        ],
+        "examples": [
+          {
+            "id": "hsk79-marker-summing-up-1",
+            "text": "他从来不迟到，换句话说，他很守时。",
+            "reading": "tā cónglái bù chídào, huàn jù huà shuō, tā hěn shǒushí.",
+            "translation": "He is never late; in other words, he is very punctual.",
+            "focus": "换句话说",
+            "distractors": [
+              "换话句说",
+              "反过来说",
+              "虽然"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk79-marker-summing-up-2",
+            "text": "工作太累会影响健康，反过来说，身体不好也影响工作。",
+            "reading": "gōngzuò tài lèi huì yǐngxiǎng jiànkāng, fǎn guòlai shuō, shēntǐ bù hǎo yě yǐngxiǎng gōngzuò.",
+            "translation": "Overwork affects your health; conversely, poor health also affects your work.",
+            "focus": "反过来说",
+            "distractors": [
+              "换句话说",
+              "过来反说",
+              "虽然"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk79-marker-summing-up-3",
+            "text": "总的来说，这次旅行还是很愉快的。",
+            "reading": "zǒng de lái shuō, zhè cì lǚxíng háishi hěn yúkuài de.",
+            "translation": "On the whole, this trip was quite enjoyable.",
+            "focus": "总的来说",
+            "distractors": [
+              "总来的说",
+              "总是",
+              "由于"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ],
+            "noOrder": true
+          },
+          {
+            "id": "hsk79-marker-summing-up-4",
+            "text": "简而言之，我们需要更多的时间。",
+            "reading": "jiǎn ér yán zhī, wǒmen xūyào gèng duō de shíjiān.",
+            "translation": "In short, we need more time.",
+            "focus": "简而言之",
+            "distractors": [
+              "简而说之",
+              "简直",
+              "因为"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk79-marker-summing-up-5",
+            "text": "综上所述，这个方案是可行的。",
+            "reading": "zōng shàng suǒ shù, zhège fāng'àn shì kěxíng de.",
+            "translation": "To sum up, this plan is feasible.",
+            "focus": "综上所述",
+            "distractors": [
+              "上述",
+              "所述综上",
+              "因为"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk79-marker-summing-up-6",
+            "text": "这些问题归根到底是钱的问题。",
+            "reading": "zhèxiē wèntí guī gēn dào dǐ shì qián de wèntí.",
+            "translation": "In the final analysis, these problems are all about money.",
+            "focus": "归根到底",
+            "distractors": [
+              "归纳",
+              "到底归根",
+              "虽然"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk79-marker-summing-up-7",
+            "text": "总而言之，安全最重要。",
+            "reading": "zǒng ér yán zhī, ānquán zuì zhòngyào.",
+            "translation": "All in all, safety comes first.",
+            "focus": "总而言之",
+            "distractors": [
+              "总算",
+              "言而总之",
+              "虽然"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk79-marker-summing-up-8",
+            "text": "请你概括一下这篇文章的主要内容。",
+            "reading": "qǐng nǐ gàikuò yíxià zhè piān wénzhāng de zhǔyào nèiróng.",
+            "translation": "Please summarize the main content of this article.",
+            "focus": "概括",
+            "distractors": [
+              "概括来说",
+              "总而言之",
+              "综上所述"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "row": 26,
+      "label": "话语标记: 可不（是嘛）, 这不, 不是, 不是我说你, 你看你, 说到哪儿去了, 真是的",
+      "lesson": {
+        "id": "hsk79-marker-reacting",
+        "level": "hsk-7-9",
+        "title": "Discourse markers for agreeing, objecting and reproaching: 可不是嘛, 这不, 不是, 你看你, 真是的…",
+        "summary": "可不是嘛 agrees, 这不 brings in proof, 不是 objects, and 不是我说你, 你看你, 说到哪儿去了 and 真是的 reproach or wave something away.",
+        "pattern": [
+          "可不（是嘛） / 这不，+ 句子",
+          "不是，+ 反对",
+          "不是我说你 / 你看你 / 你说到哪儿去了 / 真是的"
+        ],
+        "body": [
+          "These markers react to what someone else has said or done. 可不是嘛, or just 可不, agrees warmly (isn't it just, exactly). 这不 (see, just look) brings in a fresh fact that proves what was just said. 不是 at the head of a reply objects or interrupts (no, wait; hold on).",
+          "The others reproach. 不是我说你 (I hate to say it, but) softens a criticism that follows; 你看你 (look at you) scolds someone for a slip; 你说到哪儿去了 (what are you talking about) politely rejects an apology, thanks or a suspicion as uncalled for; 真是的 (honestly, really) shows annoyance and can stand at the start or the end of a remark.",
+          "The contrast example uses 不是 in its ordinary sense inside a sentence: 我不是不想去 (it's not that I don't want to go). As a marker, 不是 stands alone before a comma. A common mistake is to take these markers literally: 你说到哪儿去了 does not ask where, and 可不是嘛 is agreement, not a negative question."
+        ],
+        "examples": [
+          {
+            "id": "hsk79-marker-reacting-1",
+            "text": "可不是嘛，今天热得要命。",
+            "reading": "kě bú shì ma, jīntiān rè de yàomìng.",
+            "translation": "Isn't it just! It's terribly hot today.",
+            "focus": "可不是嘛",
+            "distractors": [
+              "可是不嘛",
+              "难道",
+              "虽然"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk79-marker-reacting-2",
+            "text": "他最近特别忙，这不，周末又去加班了。",
+            "reading": "tā zuìjìn tèbié máng, zhè bù, zhōumò yòu qù jiābān le.",
+            "translation": "He's been really busy lately; see, he's gone in to work again this weekend.",
+            "focus": "这不",
+            "distractors": [
+              "这是",
+              "不这",
+              "因为"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk79-marker-reacting-3",
+            "text": "不是，你先听我把话说完。",
+            "reading": "bú shì, nǐ xiān tīng wǒ bǎ huà shuō wán.",
+            "translation": "No, wait, let me finish first.",
+            "focus": "不是",
+            "distractors": [
+              "没是",
+              "别是",
+              "因为"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk79-marker-reacting-4",
+            "text": "不是我说你，你也太粗心了。",
+            "reading": "bú shì wǒ shuō nǐ, nǐ yě tài cūxīn le.",
+            "translation": "I hate to say it, but you're far too careless.",
+            "focus": "不是我说你",
+            "distractors": [
+              "不是你说我",
+              "是我不说你",
+              "虽然"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk79-marker-reacting-5",
+            "text": "你看你，又把衣服弄脏了。",
+            "reading": "nǐ kàn nǐ, yòu bǎ yīfu nòngzāng le.",
+            "translation": "Look at you, you've got your clothes dirty again.",
+            "focus": "你看你",
+            "distractors": [
+              "看你说的",
+              "看你你",
+              "因为"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk79-marker-reacting-6",
+            "text": "你说到哪儿去了，我怎么会怪你呢？",
+            "reading": "nǐ shuō dào nǎr qù le, wǒ zěnme huì guài nǐ ne?",
+            "translation": "What are you talking about? How could I blame you?",
+            "focus": "哪儿",
+            "distractors": [
+              "这儿",
+              "什么",
+              "谁"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk79-marker-reacting-7",
+            "text": "真是的，他怎么又迟到了！",
+            "reading": "zhēn shì de, tā zěnme yòu chídào le!",
+            "translation": "Honestly, how can he be late again!",
+            "focus": "真是的",
+            "distractors": [
+              "真是地",
+              "认真",
+              "因为"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ],
+            "noOrder": true
+          },
+          {
+            "id": "hsk79-marker-reacting-8",
+            "text": "我不是不想去，是没时间。",
+            "reading": "wǒ bú shì bù xiǎng qù, shì méi shíjiān.",
+            "translation": "It's not that I don't want to go; I just don't have time.",
+            "focus": "不是",
+            "distractors": [
+              "没是",
+              "别",
+              "不有"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "row": 26,
+      "label": "话语标记: 话是这么说, 话（又）说回来, 退一步说, 无论如何, 这样一来",
+      "lesson": {
+        "id": "hsk79-marker-concession",
+        "level": "hsk-7-9",
+        "title": "Discourse markers for conceding, turning and drawing consequences: 话又说回来, 退一步说, 无论如何…",
+        "summary": "话是这么说 and 话又说回来 grant a point and turn, 退一步说 concedes for argument's sake, 无论如何 holds firm, and 这样一来 draws the result.",
+        "pattern": [
+          "话是这么说，可 / 但……",
+          "……，话（又）说回来，…… / 退一步说，就算……也……",
+          "无论如何，…… / ……，这样一来，……"
+        ],
+        "body": [
+          "These markers concede a point and then turn, or draw a consequence. 话是这么说 (that's true, but) grants what was said and is followed by 可 or 但; 话又说回来, also 话说回来 (then again, having said that), brings in the other side after a criticism or a claim; 退一步说 (even supposing the worst) concedes for the sake of argument and is often followed by 就算 or 即使.",
+          "无论如何 (no matter what, in any case) states a firm decision whatever happens; 这样一来 (that way, as a result) draws the consequence of the fact just mentioned.",
+          "The contrast example uses 无论 as an ordinary conjunction followed by a question clause and 都 (无论天气怎么样，……都……). The marker 无论如何 is complete in itself and stands before a comma. A common mistake is to break these set phrases: 话又说回来 uses 回来 (coming back to the other side), not 过来 or 下去, and 退一步说 cannot become 下一步 (the next step)."
+        ],
+        "examples": [
+          {
+            "id": "hsk79-marker-concession-1",
+            "text": "话是这么说，可真做起来并不容易。",
+            "reading": "huà shì zhème shuō, kě zhēn zuò qǐlai bìng bù róngyì.",
+            "translation": "That's true, but actually doing it isn't easy at all.",
+            "focus": "话是这么说",
+            "distractors": [
+              "话这么是说",
+              "说话",
+              "因为"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk79-marker-concession-2",
+            "text": "他脾气不好，话又说回来，人还是挺好的。",
+            "reading": "tā píqi bù hǎo, huà yòu shuō huílai, rén háishi tǐng hǎo de.",
+            "translation": "He has a bad temper; then again, he's a decent person.",
+            "focus": "说回来",
+            "distractors": [
+              "说出来",
+              "说下去",
+              "回来说"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk79-marker-concession-3",
+            "text": "话说回来，这也不全是他的错。",
+            "reading": "huà shuō huílai, zhè yě bù quán shì tā de cuò.",
+            "translation": "Having said that, it isn't entirely his fault.",
+            "focus": "话说回来",
+            "distractors": [
+              "话回来说",
+              "说话回来",
+              "因为"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk79-marker-concession-4",
+            "text": "退一步说，就算失败了，也能学到东西。",
+            "reading": "tuì yí bù shuō, jiùsuàn shībài le, yě néng xuédào dōngxi.",
+            "translation": "Even supposing we fail, we'll still learn something.",
+            "focus": "退一步说",
+            "distractors": [
+              "下一步",
+              "一步退说",
+              "因为"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk79-marker-concession-5",
+            "text": "无论如何，你都得把他找回来。",
+            "reading": "wúlùn rúhé, nǐ dōu děi bǎ tā zhǎo huílai.",
+            "translation": "No matter what, you have to find him and bring him back.",
+            "focus": "如何",
+            "distractors": [
+              "什么",
+              "谁",
+              "哪儿"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ],
+            "noOrder": true
+          },
+          {
+            "id": "hsk79-marker-concession-6",
+            "text": "地铁修好了，这样一来，上班方便多了。",
+            "reading": "dìtiě xiū hǎo le, zhèyàng yì lái, shàngbān fāngbiàn duō le.",
+            "translation": "The subway line is finished; as a result, commuting is much easier.",
+            "focus": "这样一来",
+            "distractors": [
+              "一来",
+              "一来这样",
+              "虽然"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk79-marker-concession-7",
+            "text": "无论天气怎么样，比赛都照常进行。",
+            "reading": "wúlùn tiānqì zěnmeyàng, bǐsài dōu zhàocháng jìnxíng.",
+            "translation": "Whatever the weather, the match will go ahead as usual.",
+            "focus": "无论",
+            "distractors": [
+              "虽然",
+              "因为",
+              "如何"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ],
+            "noOrder": true
+          }
+        ]
+      }
+    },
+    {
+      "row": 27,
+      "label": "固定格式: X到这个地步/份上, X得要命/要死, 别提（有）多……了, 不知X是/才好, 你说你一个X",
+      "lesson": {
+        "id": "hsk79-format-strong-feeling",
+        "level": "hsk-7-9",
+        "title": "Fixed formats for strong feeling: 到这个地步, 得要命, 别提多……了, 不知……才好, 你说你一个X",
+        "summary": "Colloquial formats stress how far a situation has gone, an extreme degree, a helpless feeling or a reproach.",
+        "pattern": [
+          "X + 到这个地步 / 份上",
+          "Adj + 得要命 / 要死；别提（有）多 + Adj + 了",
+          "不知 + X + 是好 / 才好；你说你一个 + N，……"
+        ],
+        "body": [
+          "These colloquial formats express strong feeling. X到这个地步 or X到这个份上 (to have reached such a point) stresses that a situation has gone so far, usually badly: 闹到这个地步, 说到这个份上. X得要命 and X得要死 (terribly, to death) put an extreme degree after an adjective or a feeling verb with 得: 重得要命, 饿得要死. 别提（有）多 + Adj + 了 (you can't imagine how) is an exclamation of degree: 别提多美了, 别提有多高兴了.",
+          "不知X是好 or 不知X才好 (not know what on earth to do) shows helplessness; X is usually a question phrase: 不知说什么才好, 不知如何是好. 你说你一个X，…… (look at you, a grown X, and yet …) reproaches someone for not living up to what they are: 你说你一个大学生，连这个都不会？",
+          "The contrast example uses 极了, which follows the adjective directly without 得 (好吃极了). 要命 and 要死 need 得 in front: 好吃得要命, never 好吃要命. A common mistake is to drop the final 了 of 别提多……了, which the exclamation needs."
+        ],
+        "examples": [
+          {
+            "id": "hsk79-format-strong-feeling-1",
+            "text": "事情已经闹到这个地步，再后悔也没用了。",
+            "reading": "shìqing yǐjīng nào dào zhège dìbù, zài hòuhuǐ yě méi yòng le.",
+            "translation": "Things have already come to this; regretting it now is no use.",
+            "focus": "地步",
+            "distractors": [
+              "地点",
+              "面子",
+              "样子上"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk79-format-strong-feeling-2",
+            "text": "都说到这个份上了，你还不明白吗？",
+            "reading": "dōu shuō dào zhège fèn shang le, nǐ hái bù míngbai ma?",
+            "translation": "I've spelled it out this far, and you still don't get it?",
+            "focus": "份上",
+            "distractors": [
+              "份下",
+              "地上",
+              "面上"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk79-format-strong-feeling-3",
+            "text": "这个箱子重得要命，我一个人搬不动。",
+            "reading": "zhège xiāngzi zhòng de yàomìng, wǒ yí ge rén bān bu dòng.",
+            "translation": "This box is terribly heavy; I can't move it by myself.",
+            "focus": "要命",
+            "distractors": [
+              "要紧",
+              "要求",
+              "命要"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk79-format-strong-feeling-4",
+            "text": "我一天没吃饭，饿得要死。",
+            "reading": "wǒ yì tiān méi chī fàn, è de yàosǐ.",
+            "translation": "I haven't eaten all day; I'm starving to death.",
+            "focus": "要死",
+            "distractors": [
+              "要命死",
+              "死要",
+              "要活"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk79-format-strong-feeling-5",
+            "text": "那里的风景别提多美了！",
+            "reading": "nàli de fēngjǐng bié tí duō měi le!",
+            "translation": "You can't imagine how beautiful the scenery there is!",
+            "focus": "别提",
+            "distractors": [
+              "不提",
+              "没提",
+              "别看"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk79-format-strong-feeling-6",
+            "text": "他哭得这么伤心，我真不知说什么才好。",
+            "reading": "tā kū de zhème shāngxīn, wǒ zhēn bù zhī shuō shénme cái hǎo.",
+            "translation": "He's crying so hard that I really don't know what to say.",
+            "focus": "才好",
+            "distractors": [
+              "才坏",
+              "刚好",
+              "很好"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk79-format-strong-feeling-7",
+            "text": "你说你一个大学生，连这个都不会？",
+            "reading": "nǐ shuō nǐ yí ge dàxuéshēng, lián zhège dōu bú huì?",
+            "translation": "Look at you, a university student, and you can't even do this?",
+            "focus": "你说你",
+            "distractors": [
+              "说你你",
+              "你和你",
+              "因为"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk79-format-strong-feeling-8",
+            "text": "这个菜好吃极了。",
+            "reading": "zhège cài hǎochī jí le.",
+            "translation": "This dish is extremely tasty.",
+            "focus": "极了",
+            "distractors": [
+              "要命",
+              "要死",
+              "别提"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "row": 27,
+      "label": "固定格式: 不亚于, 仅次于, 莫过于, 何至于, 谈何……, 有何X",
+      "lesson": {
+        "id": "hsk79-format-compare-rhetorical",
+        "level": "hsk-7-9",
+        "title": "Fixed formats for comparing and rhetorical questions: 不亚于, 仅次于, 莫过于, 何至于, 谈何容易, 有何",
+        "summary": "Formal formats compare (不亚于, 仅次于, 莫过于) or ask rhetorically (何至于, 谈何, 有何) to deny something.",
+        "pattern": [
+          "A + 不亚于 / 仅次于 + B；最…… + 莫过于 + B",
+          "何至于 + V；…… + 谈何容易",
+          "有何 + X (有何不可)"
+        ],
+        "body": [
+          "These formal formats compare or ask rhetorically. 不亚于 (no less than, not inferior to) says A is at least as good as B; 仅次于 (second only to) ranks A just below B; 莫过于 (nothing surpasses) names the most extreme case, often after 最: 最大的快乐莫过于…….",
+          "何至于 (why go so far as to) says a reaction is out of proportion; 谈何 (how can one talk of), almost always in 谈何容易, says something is far from easy; 有何 + X (what X is there) is a written 有什么: 有何不可 (why not), 有何意见, 有何区别. All of them are rhetorical: 这样做有何不可？ means it is perfectly fine.",
+          "The contrast example uses 何况 (let alone), which adds a stronger case after a first one (大人都搬不动，何况孩子呢). It does not question the degree of a reaction like 何至于. A common mistake is to drop 于 in 不亚于, 仅次于 and 莫过于: the 于 links the compared item and cannot be left out."
+        ],
+        "examples": [
+          {
+            "id": "hsk79-format-compare-rhetorical-1",
+            "text": "她的中文水平不亚于中国人。",
+            "reading": "tā de Zhōngwén shuǐpíng bú yà yú Zhōngguó rén.",
+            "translation": "Her Chinese is no worse than a native speaker's.",
+            "focus": "不亚于",
+            "distractors": [
+              "不如于",
+              "不比于",
+              "仅次"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk79-format-compare-rhetorical-2",
+            "text": "他的成绩仅次于班长，排第二。",
+            "reading": "tā de chéngjì jǐn cì yú bānzhǎng, pái dì èr.",
+            "translation": "His grades are second only to the class monitor's; he ranks second.",
+            "focus": "仅次于",
+            "distractors": [
+              "莫过于",
+              "次于仅",
+              "仅于次"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk79-format-compare-rhetorical-3",
+            "text": "人生最大的快乐莫过于帮助别人。",
+            "reading": "rénshēng zuì dà de kuàilè mò guò yú bāngzhù biérén.",
+            "translation": "The greatest joy in life is helping others.",
+            "focus": "莫过于",
+            "distractors": [
+              "过于",
+              "不过于",
+              "仅次于"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk79-format-compare-rhetorical-4",
+            "text": "一点小事，何至于发这么大的火？",
+            "reading": "yìdiǎn xiǎo shì, hé zhìyú fā zhème dà de huǒ?",
+            "translation": "It's such a small thing; why get so angry?",
+            "focus": "何至于",
+            "distractors": [
+              "何况",
+              "至于何",
+              "莫过于"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk79-format-compare-rhetorical-5",
+            "text": "没有资金，开公司谈何容易？",
+            "reading": "méiyǒu zījīn, kāi gōngsī tán hé róngyì?",
+            "translation": "Without money, starting a company is anything but easy.",
+            "focus": "谈何",
+            "distractors": [
+              "说何",
+              "谈谁",
+              "不亚于"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk79-format-compare-rhetorical-6",
+            "text": "这样做有何不可？",
+            "reading": "zhèyàng zuò yǒu hé bù kě?",
+            "translation": "What's wrong with doing it this way?",
+            "focus": "有何",
+            "distractors": [
+              "有什",
+              "没何",
+              "何有"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk79-format-compare-rhetorical-7",
+            "text": "大人都搬不动，何况孩子呢？",
+            "reading": "dàrén dōu bān bu dòng, hékuàng háizi ne?",
+            "translation": "Even adults can't move it, let alone a child.",
+            "focus": "何况",
+            "distractors": [
+              "何至于",
+              "谈何",
+              "有何"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "row": 27,
+      "label": "固定格式: 没什么/有什么+V+头儿, 没什么好+V+的, 无非/不过/只是……罢了/而已",
+      "lesson": {
+        "id": "hsk79-format-not-worth",
+        "level": "hsk-7-9",
+        "title": "Fixed formats for playing things down: 没什么看头儿, 没什么好说的, 无非……罢了, 不过……而已",
+        "summary": "没什么 / 有什么 + V + 头儿 and 没什么好 + V + 的 say something is not worth doing; 无非 / 不过 / 只是 …… 罢了 / 而已 say it is only that.",
+        "pattern": [
+          "没什么 / 有什么 + V + 头儿",
+          "没什么好 + V + 的",
+          "无非 / 不过 / 只是 + …… + 罢了 / 而已"
+        ],
+        "body": [
+          "These formats play something down. 没什么 + V + 头儿 (there's nothing worth V-ing) uses a verb turned into a noun with 头儿: 没什么看头儿, 没什么吃头儿. 有什么 + V + 头儿 is the rhetorical version, a question that means the same: 这种游戏有什么玩头儿？ 没什么好 + V + 的 (there's nothing to V about) dismisses talk or worry: 没什么好说的, 没什么好怕的.",
+          "无非, 不过 or 只是 before the predicate and 罢了 or 而已 at the end frame something as merely that much: 他无非是想多赚点儿钱罢了 (he only wants to earn a bit more, that's all). Either end can be used alone, but together they stress how little it is.",
+          "The contrast example uses 而且 (moreover), which adds a further point between two clauses; it looks like 而已 but does the opposite, adding rather than limiting. A common mistake is to drop 头儿 or 的: 没什么看 and 没什么好说 are incomplete."
+        ],
+        "examples": [
+          {
+            "id": "hsk79-format-not-worth-1",
+            "text": "这部电影没什么看头儿。",
+            "reading": "zhè bù diànyǐng méi shénme kàntour.",
+            "translation": "This film isn't worth watching.",
+            "focus": "看头儿",
+            "distractors": [
+              "看着",
+              "看看",
+              "看过"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk79-format-not-worth-2",
+            "text": "这种游戏有什么玩头儿？",
+            "reading": "zhè zhǒng yóuxì yǒu shénme wántour?",
+            "translation": "What's the fun in a game like this?",
+            "focus": "有什么",
+            "distractors": [
+              "有多么",
+              "有哪个",
+              "有怎么"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk79-format-not-worth-3",
+            "text": "这点小伤没什么好担心的。",
+            "reading": "zhè diǎn xiǎo shāng méi shénme hǎo dānxīn de.",
+            "translation": "This little injury is nothing to worry about.",
+            "focus": "好",
+            "distractors": [
+              "很",
+              "坏",
+              "太"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk79-format-not-worth-4",
+            "text": "他无非是想多赚点儿钱罢了。",
+            "reading": "tā wúfēi shì xiǎng duō zhuàn diǎnr qián bàle.",
+            "translation": "All he wants is to earn a bit more money, that's all.",
+            "focus": "罢了",
+            "distractors": [
+              "而且",
+              "了罢",
+              "算了"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk79-format-not-worth-5",
+            "text": "我不过是随便问问而已。",
+            "reading": "wǒ búguò shì suíbiàn wènwen éryǐ.",
+            "translation": "I was only asking casually, that's all.",
+            "focus": "而已",
+            "distractors": [
+              "而且",
+              "已而",
+              "罢"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk79-format-not-worth-6",
+            "text": "这只是我的个人看法罢了。",
+            "reading": "zhè zhǐshì wǒ de gèrén kànfǎ bàle.",
+            "translation": "This is just my personal opinion, nothing more.",
+            "focus": "只是",
+            "distractors": [
+              "只有",
+              "不只",
+              "既然"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk79-format-not-worth-7",
+            "text": "这家店不但便宜，而且服务好。",
+            "reading": "zhè jiā diàn búdàn piányi, érqiě fúwù hǎo.",
+            "translation": "This shop is not only cheap, but the service is good too.",
+            "focus": "而且",
+            "distractors": [
+              "而已",
+              "罢了",
+              "无非"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "row": 27,
+      "label": "固定格式: X都不/没X, X就X个Y, 动词+个X, 动词+得个……, 动不动就……",
+      "lesson": {
+        "id": "hsk79-format-verb-frames",
+        "level": "hsk-7-9",
+        "title": "Fixed verb formats: 看都不看, 玩就玩个痛快, 说个不停, 落得个……, 动不动就……",
+        "summary": "Repeat or extend a verb to say someone did not even do it, should do it fully, did it non-stop, ended up with a result, or does it at the slightest thing.",
+        "pattern": [
+          "V + 都 / 也 + 不 / 没 + V",
+          "V + 就 + V + 个 + Y；V + 个 + X / V + 得个 + 结果",
+          "动不动就 + V"
+        ],
+        "body": [
+          "These colloquial formats are built on a verb. X都不X and X都没X (not even X) repeat the verb around 都 to say someone did not even do the easiest part: 看都不看 (would not even look), 试都没试 (did not even try it on). 也 can replace 都. X就X个Y (if you're going to X, X to the full) urges doing something thoroughly: 玩就玩个痛快, 吃就吃个饱.",
+          "V + 个 + X adds a lively result or state with 个: 说个不停 (talk non-stop), 玩个痛快, 问个明白. V + 得个 + ……, often with 落 or 闹, names a usually bad outcome someone ends up with: 落得个两手空空 (end up with nothing). 动不动就 + V (at the slightest thing) describes an annoying habit: 动不动就发脾气.",
+          "The contrast example uses the ordinary degree complement V + 得 + 很 + Adj (唱得很好听). 个 cannot take 很 after it: 说个不停 is fine, but 唱个很好听 is wrong. A common mistake is to use 不 for something that did not happen in X都不X: for a past non-event use 没 (试都没试)."
+        ],
+        "examples": [
+          {
+            "id": "hsk79-format-verb-frames-1",
+            "text": "他看都不看就把信扔了。",
+            "reading": "tā kàn dōu bú kàn jiù bǎ xìn rēng le.",
+            "translation": "He threw the letter away without even looking at it.",
+            "focus": "都",
+            "distractors": [
+              "就",
+              "才",
+              "还"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk79-format-verb-frames-2",
+            "text": "这件衣服她试都没试就买了。",
+            "reading": "zhè jiàn yīfu tā shì dōu méi shì jiù mǎi le.",
+            "translation": "She bought this dress without even trying it on.",
+            "focus": "没",
+            "distractors": [
+              "别",
+              "无",
+              "非"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ],
+            "noOrder": true
+          },
+          {
+            "id": "hsk79-format-verb-frames-3",
+            "text": "周末要玩就玩个痛快。",
+            "reading": "zhōumò yào wán jiù wán ge tòngkuai.",
+            "translation": "At the weekend, if you're going to have fun, have it to the full.",
+            "focus": "个",
+            "distractors": [
+              "了",
+              "着",
+              "过"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk79-format-verb-frames-4",
+            "text": "吃就吃个饱，今天我请客。",
+            "reading": "chī jiù chī ge bǎo, jīntiān wǒ qǐngkè.",
+            "translation": "If you're going to eat, eat your fill; it's my treat today.",
+            "focus": "就",
+            "distractors": [
+              "都",
+              "才",
+              "还"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ],
+            "noOrder": true
+          },
+          {
+            "id": "hsk79-format-verb-frames-5",
+            "text": "他辛苦了一辈子，最后落得个两手空空。",
+            "reading": "tā xīnkǔ le yí bèizi, zuìhòu luò de ge liǎng shǒu kōngkōng.",
+            "translation": "He worked hard all his life and ended up with nothing.",
+            "focus": "得",
+            "distractors": [
+              "着",
+              "过",
+              "地"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk79-format-verb-frames-6",
+            "text": "他一回家就说个不停。",
+            "reading": "tā yì huí jiā jiù shuō ge bù tíng.",
+            "translation": "As soon as he gets home he talks non-stop.",
+            "focus": "个",
+            "distractors": [
+              "了",
+              "着",
+              "过"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk79-format-verb-frames-7",
+            "text": "他动不动就发脾气。",
+            "reading": "tā dòngbudòng jiù fā píqi.",
+            "translation": "He loses his temper at the slightest thing.",
+            "focus": "动不动",
+            "distractors": [
+              "动没动",
+              "不动动",
+              "一动不动"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk79-format-verb-frames-8",
+            "text": "她唱得很好听。",
+            "reading": "tā chàng de hěn hǎotīng.",
+            "translation": "She sings very nicely.",
+            "focus": "得",
+            "distractors": [
+              "个",
+              "了",
+              "过"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "row": 27,
+      "label": "固定格式: X了Y，Y了X, X也好，Y也罢, 该X（就）X，该Y（就）Y, 要X有/没X，要Y有/没Y, 什么A的B的, 看在X的面子上",
+      "lesson": {
+        "id": "hsk79-format-paired",
+        "level": "hsk-7-9",
+        "title": "Paired fixed formats: 吃了睡，睡了吃, X也好，Y也罢, 该X就X, 要什么有什么, 什么A的B的, 看在……的面子上",
+        "summary": "Paired colloquial formats describe a dull routine, alternatives with the same outcome, acting as the moment requires, full supply or lack, dismissive lists, and favours granted for someone's sake.",
+        "pattern": [
+          "X了Y，Y了X；X也好，Y也罢",
+          "该X（就）X，该Y（就）Y；要X有/没X，要Y有/没Y",
+          "什么A的B的；看在 + N + 的面子上"
+        ],
+        "body": [
+          "These formats come in pairs. X了Y，Y了X (do X then Y, then X again) describes a dull, repeated routine: 吃了睡，睡了吃. X也好，Y也罢 (whether X or Y) lists alternatives and says the outcome is the same, usually followed by 都: 成功也好，失败也罢，我都不后悔. 该X（就）X，该Y（就）Y (do X when it's time for X) says to act as the situation calls for: 该吃就吃，该喝就喝.",
+          "要X有X，要Y有Y (has whatever X or Y you could want) praises full supply, and 要X没X，要Y没Y says something lacks everything; with a question word it becomes 要什么有什么. 什么A的B的 (A, B and the like) lists examples dismissively: 什么房子车子的. 看在X的面子上 (for X's sake, out of regard for X) asks or grants a favour because of someone: 看在我的面子上帮帮他.",
+          "The contrast example uses 不管……都 (no matter whether), the ordinary conditional with an alternative question (不管你去不去，我都去). 也好……也罢 does the same job in a colloquial pair of clauses. A common mistake is to put 也罢 in the first clause: the usual order is X也好，Y也罢, or 也好 twice."
+        ],
+        "examples": [
+          {
+            "id": "hsk79-format-paired-1",
+            "text": "他每天吃了睡，睡了吃，什么也不干。",
+            "reading": "tā měitiān chī le shuì, shuì le chī, shénme yě bú gàn.",
+            "translation": "Every day he eats and sleeps, sleeps and eats, and does nothing else.",
+            "focus": "睡了吃",
+            "distractors": [
+              "睡着吃",
+              "睡过吃",
+              "睡就吃"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ],
+            "noOrder": true
+          },
+          {
+            "id": "hsk79-format-paired-2",
+            "text": "成功也好，失败也罢，我都不后悔。",
+            "reading": "chénggōng yě hǎo, shībài yě bà, wǒ dōu bù hòuhuǐ.",
+            "translation": "Whether I succeed or fail, I won't regret it.",
+            "focus": "也罢",
+            "distractors": [
+              "也不",
+              "罢了",
+              "也好了"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ],
+            "noOrder": true
+          },
+          {
+            "id": "hsk79-format-paired-3",
+            "text": "你别客气，该吃就吃，该喝就喝。",
+            "reading": "nǐ bié kèqi, gāi chī jiù chī, gāi hē jiù hē.",
+            "translation": "Don't be shy; eat and drink as you like.",
+            "focus": "该喝",
+            "distractors": [
+              "该了喝",
+              "喝该",
+              "着喝"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ],
+            "noOrder": true
+          },
+          {
+            "id": "hsk79-format-paired-4",
+            "text": "这家店要什么有什么。",
+            "reading": "zhè jiā diàn yào shénme yǒu shénme.",
+            "translation": "This shop has whatever you could want.",
+            "focus": "有",
+            "distractors": [
+              "对",
+              "在",
+              "了"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk79-format-paired-5",
+            "text": "他只关心什么房子车子的。",
+            "reading": "tā zhǐ guānxīn shénme fángzi chēzi de.",
+            "translation": "All he cares about is houses, cars and the like.",
+            "focus": "什么",
+            "distractors": [
+              "哪些",
+              "这么",
+              "怎么"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk79-format-paired-6",
+            "text": "请你看在我的面子上帮帮他。",
+            "reading": "qǐng nǐ kàn zài wǒ de miànzi shang bāngbang tā.",
+            "translation": "Please help him, for my sake.",
+            "focus": "面子",
+            "distractors": [
+              "脸色",
+              "样子",
+              "面前"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk79-format-paired-7",
+            "text": "不管你去不去，我都去。",
+            "reading": "bùguǎn nǐ qù bu qù, wǒ dōu qù.",
+            "translation": "Whether you go or not, I'm going.",
+            "focus": "不管",
+            "distractors": [
+              "也好",
+              "也罢",
+              "什么"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ],
+            "noOrder": true
+          }
+        ]
+      }
+    },
+    {
+      "row": 27,
+      "label": "固定格式: 视……而定, 因……而……, 想X之所想，急X之所急, 向……致以……, （在）……之余, 值此……之际",
+      "lesson": {
+        "id": "hsk79-format-formal",
+        "level": "hsk-7-9",
+        "title": "Formal fixed formats: 视……而定, 因……而……, 想X之所想, 向……致以……, ……之余, 值此……之际",
+        "summary": "Written formats say what something depends on, why it varies, how to serve others, and how to open greetings and thanks on formal occasions.",
+        "pattern": [
+          "视 + N + 而定；因 + N + 而 + V",
+          "想X之所想，急X之所急；向 + N + 致以 + N",
+          "（在）……之余；值此 + …… + 之际，……"
+        ],
+        "body": [
+          "These formats belong to formal and written Chinese. 视……而定 (depend on) says a decision will be made according to something: 视天气而定, 视情况而定. 因……而…… (vary or happen because of) links a cause to a result inside one clause: 因地区而不同, 因人而异.",
+          "想X之所想，急X之所急 (think what X thinks and worry about what X worries about) is a service slogan for putting oneself in someone's place. 向……致以…… (extend to) carries greetings or thanks in speeches and letters: 向大家致以衷心的感谢. （在）……之余 (in the time left over from, besides) marks time beside a main activity: 工作之余. 值此……之际 (on the occasion of) opens a formal greeting: 值此新年到来之际.",
+          "The contrast example uses 因为……所以……, the everyday cause and result across two clauses. 因……而…… stays inside one clause and uses 而, not 所以. A common mistake is to write 致以 as 以致, which means so that, or to replace 之 with 的 in 之余 and 之际."
+        ],
+        "examples": [
+          {
+            "id": "hsk79-format-formal-1",
+            "text": "具体时间视天气而定。",
+            "reading": "jùtǐ shíjiān shì tiānqì ér dìng.",
+            "translation": "The exact time will depend on the weather.",
+            "focus": "视",
+            "distractors": [
+              "看见",
+              "让",
+              "被"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk79-format-formal-2",
+            "text": "价格因地区而不同。",
+            "reading": "jiàgé yīn dìqū ér bùtóng.",
+            "translation": "Prices vary from region to region.",
+            "focus": "而",
+            "distractors": [
+              "就",
+              "才",
+              "又"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk79-format-formal-3",
+            "text": "我们要想顾客之所想，急顾客之所急。",
+            "reading": "wǒmen yào xiǎng gùkè zhī suǒ xiǎng, jí gùkè zhī suǒ jí.",
+            "translation": "We should think as our customers think and care about what worries them.",
+            "focus": "之所急",
+            "distractors": [
+              "的所急",
+              "之急",
+              "所之急"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk79-format-formal-4",
+            "text": "我们向全体员工致以衷心的感谢。",
+            "reading": "wǒmen xiàng quántǐ yuángōng zhì yǐ zhōngxīn de gǎnxiè.",
+            "translation": "We extend our heartfelt thanks to all our staff.",
+            "focus": "致以",
+            "distractors": [
+              "致到",
+              "送以",
+              "以致"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk79-format-formal-5",
+            "text": "他把工作之余的时间都用来读书。",
+            "reading": "tā bǎ gōngzuò zhī yú de shíjiān dōu yònglái dúshū.",
+            "translation": "He spends all his time outside work reading.",
+            "focus": "之余",
+            "distractors": [
+              "余之",
+              "之后余",
+              "之所余"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk79-format-formal-6",
+            "text": "值此新年到来之际，祝大家身体健康。",
+            "reading": "zhí cǐ xīnnián dàolái zhī jì, zhù dàjiā shēntǐ jiànkāng.",
+            "translation": "As the New Year arrives, we wish everyone good health.",
+            "focus": "之际",
+            "distractors": [
+              "之余",
+              "的际",
+              "之间"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk79-format-formal-7",
+            "text": "因为下雨，所以比赛推迟了。",
+            "reading": "yīnwèi xià yǔ, suǒyǐ bǐsài tuīchí le.",
+            "translation": "Because it rained, the match was postponed.",
+            "focus": "所以",
+            "distractors": [
+              "而",
+              "却",
+              "不但"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "row": 28,
+      "label": "比较句5: A+形容词+于/过+B",
+      "lesson": {
+        "id": "hsk79-compare-adj-yu-guo",
+        "level": "hsk-7-9",
+        "title": "Comparison with 于 and 过: A + Adj + 于 / 过 + B (高于去年, 大过我)",
+        "summary": "In formal Chinese the adjective comes before the compared item with 于 (高于去年); in speech 过 can do the same (大过我).",
+        "pattern": [
+          "A + Adj + 于 + B (高于, 多于, 重于)",
+          "A + Adj + 过 + B (大过, 高过)",
+          "A + 远 / 略 + Adj + 于 + B"
+        ],
+        "body": [
+          "In formal and written Chinese a comparison can put the adjective first and the compared item after 于: A + Adj + 于 + B (A is more Adj than B): 今年的产量高于去年, 健康重于一切. Common adjectives are 高, 低, 大, 小, 多, 少, 重 and 强; degree words such as 远 or 略 stand before the adjective: 远大于, 略高于. In speech, especially in the south, 过 does the same job: 他的力气大过我, 电费高过上个月.",
+          "The contrast example uses the everyday 比 comparison, A + 比 + B + Adj (今年夏天比去年热). With 比 the adjective comes last; with 于 or 过 it comes right before B. A common mistake is to mix the two: 高比去年 or 比去年高于 are wrong."
+        ],
+        "examples": [
+          {
+            "id": "hsk79-compare-adj-yu-guo-1",
+            "text": "今年的产量高于去年。",
+            "reading": "jīnnián de chǎnliàng gāo yú qùnián.",
+            "translation": "This year's output is higher than last year's.",
+            "focus": "于",
+            "distractors": [
+              "比",
+              "在",
+              "对"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk79-compare-adj-yu-guo-2",
+            "text": "健康重于一切。",
+            "reading": "jiànkāng zhòng yú yíqiè.",
+            "translation": "Health matters more than anything.",
+            "focus": "重于",
+            "distractors": [
+              "重比",
+              "比重",
+              "重对"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk79-compare-adj-yu-guo-3",
+            "text": "这次的困难远大于我们的想象。",
+            "reading": "zhè cì de kùnnan yuǎn dà yú wǒmen de xiǎngxiàng.",
+            "translation": "The difficulties this time are far greater than we imagined.",
+            "focus": "大于",
+            "distractors": [
+              "大比",
+              "比大",
+              "大对"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk79-compare-adj-yu-guo-4",
+            "text": "女生人数多于男生。",
+            "reading": "nǚshēng rénshù duō yú nánshēng.",
+            "translation": "There are more female students than male students.",
+            "focus": "多于",
+            "distractors": [
+              "多比",
+              "比多",
+              "多在"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk79-compare-adj-yu-guo-5",
+            "text": "他的力气大过我。",
+            "reading": "tā de lìqi dà guò wǒ.",
+            "translation": "He is stronger than me.",
+            "focus": "过",
+            "distractors": [
+              "了",
+              "比",
+              "着"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk79-compare-adj-yu-guo-6",
+            "text": "这个月的电费高过上个月。",
+            "reading": "zhège yuè de diànfèi gāo guò shàng ge yuè.",
+            "translation": "This month's electricity bill is higher than last month's.",
+            "focus": "高过",
+            "distractors": [
+              "高了",
+              "比高",
+              "高着"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk79-compare-adj-yu-guo-7",
+            "text": "今年夏天比去年热。",
+            "reading": "jīnnián xiàtiān bǐ qùnián rè.",
+            "translation": "This summer is hotter than last year's.",
+            "focus": "比",
+            "distractors": [
+              "于",
+              "过",
+              "对"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "row": 29,
+      "label": "并列复句: 一来……，二来……，三来……; 一则……，二则……，三则……",
+      "lesson": {
+        "id": "hsk79-yilai-yize",
+        "level": "hsk-7-9",
+        "title": "Listing reasons: 一来……，二来……，三来…… and formal 一则……，二则……，三则……",
+        "summary": "一来……二来……(三来……) lists reasons or purposes one by one; 一则……二则……(三则……) does the same in formal style.",
+        "pattern": [
+          "……，一来 + A，二来 + B（，三来 + C）",
+          "……，一则 + A，二则 + B（，三则 + C）"
+        ],
+        "body": [
+          "一来……，二来……（，三来……） (for one thing … for another …) lists reasons or purposes, usually after the decision they explain: 我不想去，一来太远，二来也没时间. 一则……，二则……（，三则……） means the same and is more formal and written. In both series 一 is read yī, because it counts the items. The reasons themselves can usually be listed in any order.",
+          "Keep the series consistent: 一来 goes with 二来 and 三来, 一则 with 二则 and 三则. The contrast example uses 一 + 来 in the frame 一……就…… (as soon as): 他一来，会议就开始了. There 来 is the verb come, 一 is read yì and means as soon as, and the second clause needs 就, not 二来. A common mistake is to mix the series, as in 一来……二则……."
+        ],
+        "examples": [
+          {
+            "id": "hsk79-yilai-yize-1",
+            "text": "一来太远，二来也没时间，所以我不想去。",
+            "reading": "yī lái tài yuǎn, èr lái yě méi shíjiān, suǒyǐ wǒ bù xiǎng qù.",
+            "translation": "For one thing it's too far, and for another I have no time, so I don't want to go.",
+            "focus": "二来",
+            "distractors": [
+              "二则",
+              "二去",
+              "第二来"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk79-yilai-yize-2",
+            "text": "选这家公司，一来工资高，二来离家近，三来同事好相处。",
+            "reading": "xuǎn zhè jiā gōngsī, yī lái gōngzī gāo, èr lái lí jiā jìn, sān lái tóngshì hǎo xiāngchǔ.",
+            "translation": "I chose this company because the pay is good, it's close to home, and the colleagues are easy to get along with.",
+            "focus": "三来",
+            "distractors": [
+              "三去",
+              "最后来",
+              "第三来"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ],
+            "noOrder": true
+          },
+          {
+            "id": "hsk79-yilai-yize-3",
+            "text": "这次旅行一来可以放松，二来还能见见老朋友。",
+            "reading": "zhè cì lǚxíng yī lái kěyǐ fàngsōng, èr lái hái néng jiànjian lǎo péngyou.",
+            "translation": "This trip lets me relax, and on top of that I can see some old friends.",
+            "focus": "一来",
+            "distractors": [
+              "一去",
+              "一则",
+              "一下"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk79-yilai-yize-4",
+            "text": "我拒绝了，一则身体不好，二则也缺乏经验。",
+            "reading": "wǒ jùjué le, yī zé shēntǐ bù hǎo, èr zé yě quēfá jīngyàn.",
+            "translation": "I declined: first, my health is poor; second, I also lack experience.",
+            "focus": "二则",
+            "distractors": [
+              "二来",
+              "二则来",
+              "二去"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk79-yilai-yize-5",
+            "text": "这个计划一则成本太高，二则风险太大，三则时间不够。",
+            "reading": "zhège jìhuà yī zé chéngběn tài gāo, èr zé fēngxiǎn tài dà, sān zé shíjiān bú gòu.",
+            "translation": "This plan costs too much, carries too much risk, and there isn't enough time.",
+            "focus": "三则",
+            "distractors": [
+              "三来",
+              "三去",
+              "三来则"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ],
+            "noOrder": true
+          },
+          {
+            "id": "hsk79-yilai-yize-6",
+            "text": "他一来，会议就开始了。",
+            "reading": "tā yì lái, huìyì jiù kāishǐ le.",
+            "translation": "As soon as he arrived, the meeting began.",
+            "focus": "就",
+            "distractors": [
+              "二来",
+              "二则",
+              "却"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "row": 30,
+      "label": "解说复句: 所谓……，就是……",
+      "lesson": {
+        "id": "hsk79-suowei-jiushi",
+        "level": "hsk-7-9",
+        "title": "Explaining a term: 所谓……，就是…… (what is called X is …)",
+        "summary": "所谓 introduces a term or a familiar phrase, and 就是, 指的是 or a negative 并不是 explains what it really means.",
+        "pattern": [
+          "所谓 + 词语，就是 / 指的是 + 解释",
+          "所谓 + 词语，并不是 + ……"
+        ],
+        "body": [
+          "所谓……，就是…… (what is called X is …; X means …) introduces a term or a familiar phrase and then explains it: 所谓双赢，就是双方都得到好处. 就是 can be replaced by 指的是 or 是指, and the explanation can be negative, correcting a common idea: 所谓休息，并不是整天睡觉.",
+          "The contrast example uses 所谓的 before a noun, so-called, which often sounds doubtful or ironic (那些所谓的专家). There 所谓 does not introduce a definition and no 就是 follows. A common mistake is to confuse 所谓 with 所以 (so) or 所有 (all), which look alike."
+        ],
+        "examples": [
+          {
+            "id": "hsk79-suowei-jiushi-1",
+            "text": "所谓低碳生活，就是少浪费能源。",
+            "reading": "suǒwèi dī tàn shēnghuó, jiùshì shǎo làngfèi néngyuán.",
+            "translation": "A low-carbon lifestyle simply means wasting less energy.",
+            "focus": "所谓",
+            "distractors": [
+              "所以",
+              "所有",
+              "以为"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk79-suowei-jiushi-2",
+            "text": "所谓双赢，就是双方都得到好处。",
+            "reading": "suǒwèi shuāngyíng, jiùshì shuāngfāng dōu dédào hǎochu.",
+            "translation": "Win-win means that both sides benefit.",
+            "focus": "就是",
+            "distractors": [
+              "而是",
+              "可是",
+              "还是"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk79-suowei-jiushi-3",
+            "text": "所谓代沟，指的是两代人之间的差距。",
+            "reading": "suǒwèi dàigōu, zhǐ de shì liǎng dài rén zhījiān de chājù.",
+            "translation": "The generation gap refers to the distance between two generations.",
+            "focus": "指的是",
+            "distractors": [
+              "指着是",
+              "的指是",
+              "指得是"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk79-suowei-jiushi-4",
+            "text": "所谓朋友，就是在你困难的时候帮你的人。",
+            "reading": "suǒwèi péngyou, jiùshì zài nǐ kùnnan de shíhou bāng nǐ de rén.",
+            "translation": "A friend is someone who helps you when you're in trouble.",
+            "focus": "所谓",
+            "distractors": [
+              "所以",
+              "以为",
+              "那么"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk79-suowei-jiushi-5",
+            "text": "所谓休息，并不是整天睡觉。",
+            "reading": "suǒwèi xiūxi, bìng bú shì zhěngtiān shuìjiào.",
+            "translation": "Resting doesn't mean sleeping all day.",
+            "focus": "并不是",
+            "distractors": [
+              "并没是",
+              "而不是",
+              "并别是"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk79-suowei-jiushi-6",
+            "text": "那些所谓的专家，其实什么都不懂。",
+            "reading": "nàxiē suǒwèi de zhuānjiā, qíshí shénme dōu bù dǒng.",
+            "translation": "Those so-called experts actually know nothing.",
+            "focus": "所谓的",
+            "distractors": [
+              "所以的",
+              "以为的",
+              "可谓的"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "row": 31,
+      "label": "选择复句: 或……，或……",
+      "lesson": {
+        "id": "hsk79-huo-huo",
+        "level": "hsk-7-9",
+        "title": "Listing alternatives in writing: 或……，或…… (some … others; either … or)",
+        "summary": "或……，或…… sets alternatives or different cases side by side in a statement: 人们或站或坐.",
+        "pattern": [
+          "或 + V1 / Adj1，或 + V2 / Adj2",
+          "或 + A + 或 + B (或站或坐, 或大或小)"
+        ],
+        "body": [
+          "或……，或…… (some … others …; either … or …) is a written way to list alternatives or different cases side by side: 人们或站或坐 (some standing, some sitting). Each 或 stands directly before its verb or adjective, with no subject in between, and the sentence is a statement, not a question. 或者……，或者…… is the plainer spoken form.",
+          "The contrast example uses 还是 in an alternative question (你喝茶还是喝咖啡). In a question that asks the listener to choose, use 还是, not 或. A common mistake is to use 或 only once and link the second item with 和: 或站或坐, not 或站和坐."
+        ],
+        "examples": [
+          {
+            "id": "hsk79-huo-huo-1",
+            "text": "人们或站或坐，安静地等着。",
+            "reading": "rénmen huò zhàn huò zuò, ānjìng de děng zhe.",
+            "translation": "People waited quietly, some standing, some sitting.",
+            "focus": "或坐",
+            "distractors": [
+              "和坐",
+              "还坐",
+              "被坐"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ],
+            "noOrder": true
+          },
+          {
+            "id": "hsk79-huo-huo-2",
+            "text": "大家或唱歌，或跳舞，玩得很开心。",
+            "reading": "dàjiā huò chàng gē, huò tiàowǔ, wán de hěn kāixīn.",
+            "translation": "Some sang, some danced; everyone had a great time.",
+            "focus": "或跳舞",
+            "distractors": [
+              "还跳舞",
+              "和跳舞",
+              "而跳舞"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ],
+            "noOrder": true
+          },
+          {
+            "id": "hsk79-huo-huo-3",
+            "text": "这些问题或大或小，都要认真对待。",
+            "reading": "zhèxiē wèntí huò dà huò xiǎo, dōu yào rènzhēn duìdài.",
+            "translation": "Big or small, these problems must all be taken seriously.",
+            "focus": "或小",
+            "distractors": [
+              "和小",
+              "又小",
+              "而小"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk79-huo-huo-4",
+            "text": "他每天或骑车或步行去上班，从不开车。",
+            "reading": "tā měitiān huò qí chē huò bùxíng qù shàngbān, cóng bù kāi chē.",
+            "translation": "Every day he either cycles or walks to work; he never drives.",
+            "focus": "或步行",
+            "distractors": [
+              "和步行",
+              "还步行",
+              "而步行"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ],
+            "noOrder": true
+          },
+          {
+            "id": "hsk79-huo-huo-5",
+            "text": "你喝茶还是喝咖啡？",
+            "reading": "nǐ hē chá háishi hē kāfēi?",
+            "translation": "Would you like tea or coffee?",
+            "focus": "还是",
+            "distractors": [
+              "和",
+              "而",
+              "并且"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "row": 31,
+      "label": "选择复句: 宁可/宁愿……，也不……; 与其……，宁愿/宁可……",
+      "lesson": {
+        "id": "hsk79-ningke-yuqi",
+        "level": "hsk-7-9",
+        "title": "Preferring one choice: 宁可……，也不…… and 与其……，宁可……",
+        "summary": "宁可 / 宁愿 …，也不 … accepts a hard choice to avoid a worse one; 与其 …，宁可 / 宁愿 … names the rejected option first.",
+        "pattern": [
+          "宁可 / 宁愿 + A，也不 + B",
+          "与其 + A，宁可 / 宁愿 + B"
+        ],
+        "body": [
+          "宁可 or 宁愿 …，也不…… (would rather … than …) says the speaker accepts the first, unpleasant choice in order to avoid the second: 我宁可走路，也不坐他的车. 宁可 and 宁愿 are interchangeable here.",
+          "与其……，宁可 / 宁愿…… (rather than …, would sooner …) turns it round: the rejected option comes first after 与其 and the preferred one second: 与其在这儿等，宁可自己走回去.",
+          "The contrast example uses 与其……不如…… (it is better to say or do B than A), which compares two judgments or options without the idea of sacrifice (与其说他聪明，不如说他勤奋). A common mistake is to put the preferred option after 与其: 与其 always marks the option you reject."
+        ],
+        "examples": [
+          {
+            "id": "hsk79-ningke-yuqi-1",
+            "text": "我宁可走路，也不坐他的车。",
+            "reading": "wǒ nìngkě zǒu lù, yě bú zuò tā de chē.",
+            "translation": "I'd rather walk than ride in his car.",
+            "focus": "也不",
+            "distractors": [
+              "就不",
+              "还是",
+              "却不"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk79-ningke-yuqi-2",
+            "text": "她宁愿自己吃苦，也不让孩子受委屈。",
+            "reading": "tā nìngyuàn zìjǐ chī kǔ, yě bú ràng háizi shòu wěiqu.",
+            "translation": "She would rather suffer herself than let her child be wronged.",
+            "focus": "宁愿",
+            "distractors": [
+              "与其",
+              "虽然",
+              "因为"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk79-ningke-yuqi-3",
+            "text": "我宁可少赚点儿，也不愿意天天加班。",
+            "reading": "wǒ nìngkě shǎo zhuàn diǎnr, yě bú yuànyì tiāntiān jiābān.",
+            "translation": "I'd rather earn a bit less than work overtime every day.",
+            "focus": "宁可",
+            "distractors": [
+              "与其",
+              "虽然",
+              "不管"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk79-ningke-yuqi-4",
+            "text": "与其在这儿等，宁可自己走回去。",
+            "reading": "yǔqí zài zhèr děng, nìngkě zìjǐ zǒu huíqu.",
+            "translation": "Rather than wait here, I'd sooner walk back myself.",
+            "focus": "与其",
+            "distractors": [
+              "宁愿",
+              "虽然",
+              "不但"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk79-ningke-yuqi-5",
+            "text": "与其花钱买新的，我宁愿把旧的修一修。",
+            "reading": "yǔqí huā qián mǎi xīn de, wǒ nìngyuàn bǎ jiù de xiū yi xiū.",
+            "translation": "Rather than spend money on a new one, I'd prefer to fix the old one.",
+            "focus": "宁愿",
+            "distractors": [
+              "也不",
+              "虽然",
+              "而且"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ],
+            "noOrder": true
+          },
+          {
+            "id": "hsk79-ningke-yuqi-6",
+            "text": "与其说他聪明，不如说他勤奋。",
+            "reading": "yǔqí shuō tā cōngming, bùrú shuō tā qínfèn.",
+            "translation": "It's not so much that he's clever as that he's hard-working.",
+            "focus": "不如",
+            "distractors": [
+              "宁可",
+              "也不",
+              "而且"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "row": 32,
+      "label": "转折复句: X（倒）是X（了），……",
+      "lesson": {
+        "id": "hsk79-x-dao-shi-x",
+        "level": "hsk-7-9",
+        "title": "Conceding with a repeated word: X（倒）是X（了），就是 / 可是…… (X, yes, but …)",
+        "summary": "Repeat a word around 是, optionally with 倒, to grant a point, then turn to a reservation with 就是, 可是, 但 or 可惜.",
+        "pattern": [
+          "X + （倒）是 + X，就是 / 可是 / 但 + ……",
+          "V + 是 + V + 了，可是 + ……"
+        ],
+        "body": [
+          "X（倒）是X（了），…… (X, yes, but …) repeats a word around 是 to grant a point and then turn to a reservation, which follows with 就是, 可是, 但(是) or 可惜: 好是好，可惜太大了. Adding 倒 (好看倒是好看) makes the concession sound more reluctant. With a verb, 了 shows that it did happen: 我去是去了，可是没见到他.",
+          "The contrast example uses 倒 on its own before a verb or comparison, meaning contrary to what you would expect (弟弟倒比哥哥高). In the concession frame 倒 stands before 是, between two copies of the same word. A common mistake is to repeat two different words (好是漂亮): the two X must be the same."
+        ],
+        "examples": [
+          {
+            "id": "hsk79-x-dao-shi-x-1",
+            "text": "这件衣服好看倒是好看，就是太贵了。",
+            "reading": "zhè jiàn yīfu hǎokàn dào shì hǎokàn, jiùshì tài guì le.",
+            "translation": "This dress is nice-looking, sure, but it's too expensive.",
+            "focus": "倒",
+            "distractors": [
+              "才",
+              "都",
+              "被"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk79-x-dao-shi-x-2",
+            "text": "这东西好是好，可惜太大了。",
+            "reading": "zhè dōngxi hǎo shì hǎo, kěxī tài dà le.",
+            "translation": "It's good, all right, but unfortunately it's too big.",
+            "focus": "是",
+            "distractors": [
+              "不",
+              "就",
+              "很"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk79-x-dao-shi-x-3",
+            "text": "我去是去了，可是没见到他。",
+            "reading": "wǒ qù shì qù le, kěshì méi jiàn dào tā.",
+            "translation": "I did go, but I didn't get to see him.",
+            "focus": "去了",
+            "distractors": [
+              "去着",
+              "去吗",
+              "去呢"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk79-x-dao-shi-x-4",
+            "text": "这个办法简单倒是简单，但效果不好。",
+            "reading": "zhège bànfǎ jiǎndān dào shì jiǎndān, dàn xiàoguǒ bù hǎo.",
+            "translation": "This method is simple enough, but it doesn't work well.",
+            "focus": "但",
+            "distractors": [
+              "而且",
+              "所以",
+              "因为"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk79-x-dao-shi-x-5",
+            "text": "他聪明是聪明，就是不太用功。",
+            "reading": "tā cōngming shì cōngming, jiùshì bú tài yònggōng.",
+            "translation": "He's clever, all right, but he doesn't work very hard.",
+            "focus": "就是",
+            "distractors": [
+              "而且",
+              "所以",
+              "于是"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk79-x-dao-shi-x-6",
+            "text": "弟弟倒比哥哥高。",
+            "reading": "dìdi dào bǐ gēge gāo.",
+            "translation": "The younger brother is actually taller than the older one.",
+            "focus": "倒",
+            "distractors": [
+              "了",
+              "着",
+              "过"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "row": 32,
+      "label": "转折复句: 别看……，……; 虽说……，但/可……",
+      "lesson": {
+        "id": "hsk79-biekan-suishuo",
+        "level": "hsk-7-9",
+        "title": "Conceding an appearance: 别看……，…… and 虽说……，但 / 可……",
+        "summary": "别看 admits an appearance before a surprising fact; 虽说 is a spoken although followed by 但, 可 or 却.",
+        "pattern": [
+          "别看 + 小句，（可 / 却）+ 小句",
+          "虽说 + 小句，但 / 可 + 小句"
+        ],
+        "body": [
+          "别看……，…… (don't judge by …; it may seem … but) admits an appearance in the first clause and then gives the surprising fact, often with 可, 却 or 倒: 别看他年纪小，懂的事可不少. 虽说……，但 / 可…… (although, it's true that) is a spoken concession close to 虽然; the second clause usually has 但, 可, 可是 or 却: 虽说下着大雨，可大家还是来了. 虽说 can also follow the subject: 这个方法虽说麻烦了点儿…….",
+          "The contrast example uses 别看 in its literal sense, don't look at (别看手机了). In the concession frame 别看 is followed by a whole clause and a turn. A common mistake is to follow 别看 or 虽说 with 所以 or 因此: the second clause turns against the first, it does not follow from it."
+        ],
+        "examples": [
+          {
+            "id": "hsk79-biekan-suishuo-1",
+            "text": "别看他年纪小，懂的事可不少。",
+            "reading": "bié kàn tā niánjì xiǎo, dǒng de shì kě bù shǎo.",
+            "translation": "He may be young, but he knows a lot.",
+            "focus": "别看",
+            "distractors": [
+              "不看",
+              "看见",
+              "因为"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ],
+            "noOrder": true
+          },
+          {
+            "id": "hsk79-biekan-suishuo-2",
+            "text": "别看这家店不大，生意却特别好。",
+            "reading": "bié kàn zhè jiā diàn bú dà, shēngyi què tèbié hǎo.",
+            "translation": "This shop may be small, but business is excellent.",
+            "focus": "却",
+            "distractors": [
+              "所以",
+              "因为",
+              "因此"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ],
+            "noOrder": true
+          },
+          {
+            "id": "hsk79-biekan-suishuo-3",
+            "text": "虽说下着大雨，可大家还是准时来了。",
+            "reading": "suīshuō xià zhe dà yǔ, kě dàjiā háishi zhǔnshí lái le.",
+            "translation": "Although it was pouring with rain, everyone still came on time.",
+            "focus": "虽说",
+            "distractors": [
+              "因为",
+              "所以",
+              "不但"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk79-biekan-suishuo-4",
+            "text": "虽说只学了半年，但她的发音已经很标准了。",
+            "reading": "suīshuō zhǐ xué le bàn nián, dàn tā de fāyīn yǐjīng hěn biāozhǔn le.",
+            "translation": "She has only studied for half a year, but her pronunciation is already very good.",
+            "focus": "但",
+            "distractors": [
+              "所以",
+              "而且",
+              "就"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk79-biekan-suishuo-5",
+            "text": "这个方法虽说麻烦了点儿，效果却很好。",
+            "reading": "zhège fāngfǎ suīshuō máfan le diǎnr, xiàoguǒ què hěn hǎo.",
+            "translation": "This method is a bit troublesome, but it works very well.",
+            "focus": "虽说",
+            "distractors": [
+              "所以",
+              "因为",
+              "不仅"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ],
+            "noOrder": true
+          },
+          {
+            "id": "hsk79-biekan-suishuo-6",
+            "text": "别看手机了，快吃饭吧。",
+            "reading": "bié kàn shǒujī le, kuài chī fàn ba.",
+            "translation": "Stop looking at your phone and eat.",
+            "focus": "别",
+            "distractors": [
+              "没",
+              "无",
+              "非"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "row": 33,
+      "label": "条件复句: 无论……与否，都……",
+      "lesson": {
+        "id": "hsk79-wulun-yufou",
+        "level": "hsk-7-9",
+        "title": "Whether or not: 无论……与否，都…… (formal condition)",
+        "summary": "无论 + V / Adj + 与否 states a formal either-way condition, and 都 in the main clause says the result holds regardless.",
+        "pattern": [
+          "无论 + V / Adj + 与否，都 + ……",
+          "N / V + 与否，+ 取决于 / 关系到 + ……"
+        ],
+        "body": [
+          "无论……与否，都…… (whether or not …, …) is a formal condition: 与否 (or not) after a verb or adjective replaces the spoken V不V, and 都 in the main clause says the result holds either way: 无论成功与否，我们都要试一试. 与否 can also be used without 无论, after a subject phrase: 考试通过与否，取决于你的努力.",
+          "The contrast example uses spoken 不管 + V不V (不管去不去，你都得告诉我). The formal 与否 and the spoken V不V are not combined with each other: do not write 无论去不去与否. A common mistake is to drop 都 from the main clause."
+        ],
+        "examples": [
+          {
+            "id": "hsk79-wulun-yufou-1",
+            "text": "无论成功与否，我们都要试一试。",
+            "reading": "wúlùn chénggōng yǔfǒu, wǒmen dōu yào shì yi shì.",
+            "translation": "Whether or not we succeed, we have to give it a try.",
+            "focus": "与否",
+            "distractors": [
+              "不否",
+              "与不",
+              "是否"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ],
+            "noOrder": true
+          },
+          {
+            "id": "hsk79-wulun-yufou-2",
+            "text": "无论你同意与否，这件事都已经定了。",
+            "reading": "wúlùn nǐ tóngyì yǔfǒu, zhè jiàn shì dōu yǐjīng dìng le.",
+            "translation": "Whether you agree or not, the matter has already been settled.",
+            "focus": "都",
+            "distractors": [
+              "就",
+              "才",
+              "却"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ],
+            "noOrder": true
+          },
+          {
+            "id": "hsk79-wulun-yufou-3",
+            "text": "无论参加与否，都请在周五前回复。",
+            "reading": "wúlùn cānjiā yǔfǒu, dōu qǐng zài zhōuwǔ qián huífù.",
+            "translation": "Whether or not you will attend, please reply by Friday.",
+            "focus": "无论",
+            "distractors": [
+              "虽然",
+              "因为",
+              "既然"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk79-wulun-yufou-4",
+            "text": "考试通过与否，取决于你的努力。",
+            "reading": "kǎoshì tōngguò yǔfǒu, qǔjué yú nǐ de nǔlì.",
+            "translation": "Whether you pass the exam depends on your effort.",
+            "focus": "与否",
+            "distractors": [
+              "与非",
+              "与不",
+              "否与"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk79-wulun-yufou-5",
+            "text": "不管去不去，你都得告诉我。",
+            "reading": "bùguǎn qù bu qù, nǐ dōu děi gàosu wǒ.",
+            "translation": "Whether you go or not, you have to tell me.",
+            "focus": "不管",
+            "distractors": [
+              "与否",
+              "虽然",
+              "因为"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ],
+            "noOrder": true
+          }
+        ]
+      }
+    },
+    {
+      "row": 33,
+      "label": "条件复句: 凡……（者），均（可）……",
+      "lesson": {
+        "id": "hsk79-fan-jun",
+        "level": "hsk-7-9",
+        "title": "Rules for everyone in a group: 凡……（者），均（可）……",
+        "summary": "凡 or 凡是 opens a subject covering every member of a group, 者 can close it, and 均, 都 or 一律 in the main clause sums them up.",
+        "pattern": [
+          "凡 / 凡是 + N / VP（+ 者），均 / 都 + （可 / 须）+ V",
+          "凡 + VP + 者，一律 + V"
+        ],
+        "body": [
+          "凡……（者），均（可）…… (all who …; every … may) states a rule that covers every member of a group, as in notices and regulations. 凡 or 凡是 opens the subject; 者 (one who) can close a verb phrase to make it a noun: 凡年满十八岁者. 均 (all, the written 都) or 一律 (without exception) in the main clause sums them up, often with 可 (may) or 须 (must).",
+          "The contrast example uses 只要 (as long as), which sets a sufficient condition for a single case rather than covering a whole group (只要你愿意，……). A common mistake is to leave out 均 or 都: 凡 needs a summing word in the main clause."
+        ],
+        "examples": [
+          {
+            "id": "hsk79-fan-jun-1",
+            "text": "凡年满十八岁者，均可报名参加。",
+            "reading": "fán nián mǎn shíbā suì zhě, jūn kě bàomíng cānjiā.",
+            "translation": "Anyone aged eighteen or over may sign up.",
+            "focus": "均",
+            "distractors": [
+              "才",
+              "却",
+              "虽"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk79-fan-jun-2",
+            "text": "凡是会员，都可以享受八折优惠。",
+            "reading": "fánshì huìyuán, dōu kěyǐ xiǎngshòu bā zhé yōuhuì.",
+            "translation": "All members get twenty percent off.",
+            "focus": "凡是",
+            "distractors": [
+              "只是",
+              "但是",
+              "可是"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk79-fan-jun-3",
+            "text": "凡参加比赛的选手，均须提前报到。",
+            "reading": "fán cānjiā bǐsài de xuǎnshǒu, jūn xū tíqián bàodào.",
+            "translation": "All competitors must register in advance.",
+            "focus": "凡",
+            "distractors": [
+              "但",
+              "即",
+              "若"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk79-fan-jun-4",
+            "text": "凡违反规定者，一律取消资格。",
+            "reading": "fán wéifǎn guīdìng zhě, yílǜ qǔxiāo zīgé.",
+            "translation": "Anyone who breaks the rules will be disqualified, without exception.",
+            "focus": "者",
+            "distractors": [
+              "们",
+              "家",
+              "了"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk79-fan-jun-5",
+            "text": "只要你愿意，我们随时欢迎。",
+            "reading": "zhǐyào nǐ yuànyì, wǒmen suíshí huānyíng.",
+            "translation": "As long as you're willing, you're welcome any time.",
+            "focus": "只要",
+            "distractors": [
+              "凡",
+              "均",
+              "凡者"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ],
+            "noOrder": true
+          }
+        ]
+      }
+    },
+    {
+      "row": 34,
+      "label": "假设复句: 假若/假使……，……; 纵然/纵使……，也……",
+      "lesson": {
+        "id": "hsk79-jiaruo-zongran",
+        "level": "hsk-7-9",
+        "title": "Written hypotheses: 假若 / 假使 (if) and 纵然 / 纵使……，也…… (even if)",
+        "summary": "假若 and 假使 are written words for if; 纵然 and 纵使 are written words for even if and need 也 in the main clause.",
+        "pattern": [
+          "假若 / 假使 + 条件，（就）+ 结果",
+          "纵然 / 纵使 + 极端情况，也 + 结果"
+        ],
+        "body": [
+          "假若 and 假使 (if, supposing) are written equivalents of 如果, often for something unlikely or contrary to fact: 假使没有你的帮助，我不可能成功. The main clause may take 就, 那么 or 会.",
+          "纵然 and 纵使 (even if, even though) are written equivalents of 即使: the first clause gives an extreme case and the main clause, with 也, says the result does not change: 纵然困难再大，也要坚持下去. The contrast example uses 即使……也……, the common form of the same idea; 纵然 and 纵使 sound more literary. A common mistake is to use 就 after 纵然: the concession needs 也."
+        ],
+        "examples": [
+          {
+            "id": "hsk79-jiaruo-zongran-1",
+            "text": "假若下雨，比赛就改到下周。",
+            "reading": "jiǎruò xià yǔ, bǐsài jiù gǎi dào xià zhōu.",
+            "translation": "If it rains, the match will be moved to next week.",
+            "focus": "假若",
+            "distractors": [
+              "虽然",
+              "纵然",
+              "尽管"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk79-jiaruo-zongran-2",
+            "text": "假使没有你的帮助，我不可能成功。",
+            "reading": "jiǎshǐ méiyǒu nǐ de bāngzhù, wǒ bù kěnéng chénggōng.",
+            "translation": "Without your help, I could never have succeeded.",
+            "focus": "假使",
+            "distractors": [
+              "尽管",
+              "虽然",
+              "不但"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk79-jiaruo-zongran-3",
+            "text": "纵然困难再大，也要坚持下去。",
+            "reading": "zòngrán kùnnan zài dà, yě yào jiānchí xiàqu.",
+            "translation": "However great the difficulties, we must keep going.",
+            "focus": "也",
+            "distractors": [
+              "就",
+              "才",
+              "却"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk79-jiaruo-zongran-4",
+            "text": "纵使失败一百次，他的决心也不会改变。",
+            "reading": "zòngshǐ shībài yì bǎi cì, tā de juéxīn yě bú huì gǎibiàn.",
+            "translation": "Even if he failed a hundred times, his resolve wouldn't change.",
+            "focus": "纵使",
+            "distractors": [
+              "因为",
+              "所以",
+              "既然"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk79-jiaruo-zongran-5",
+            "text": "即使下雨，我们也去。",
+            "reading": "jíshǐ xià yǔ, wǒmen yě qù.",
+            "translation": "Even if it rains, we'll still go.",
+            "focus": "即使",
+            "distractors": [
+              "幸亏",
+              "否则",
+              "所以"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ],
+            "noOrder": true
+          }
+        ]
+      }
+    },
+    {
+      "row": 34,
+      "label": "假设复句: 幸亏/幸好……，不然/否则……",
+      "lesson": {
+        "id": "hsk79-xingkui-buran",
+        "level": "hsk-7-9",
+        "title": "Lucky escapes: 幸亏 / 幸好……，不然 / 否则…… (luckily …, otherwise …)",
+        "summary": "幸亏 or 幸好 names a lucky fact, and 不然, 否则 or 要不 introduces the bad result that would have followed without it.",
+        "pattern": [
+          "幸亏 / 幸好 + 事实，不然 / 否则 / 要不 + （就）+ 结果"
+        ],
+        "body": [
+          "幸亏 or 幸好 (luckily, fortunately) …，不然 / 否则 …… names a lucky fact and then, after 不然 or 否则 (otherwise), the bad result that would have followed without it: 幸亏你提醒我，不然我就忘了. 要不 is a spoken alternative to 不然. The second clause often has 就 or 早就 and ends in 了.",
+          "The contrast example uses 可惜 (it's a pity) with 不然: it regrets a fact and imagines the good result that was missed (可惜他没来，不然大家会更开心). With 幸亏 the imagined result is bad; with 可惜 it is good. A common mistake is to put 所以 after 幸亏: the second clause describes what did not happen, so it needs 不然 or 否则."
+        ],
+        "examples": [
+          {
+            "id": "hsk79-xingkui-buran-1",
+            "text": "幸亏你提醒我，不然我就忘了。",
+            "reading": "xìngkuī nǐ tíxǐng wǒ, bùrán wǒ jiù wàng le.",
+            "translation": "Luckily you reminded me, or I'd have forgotten.",
+            "focus": "不然",
+            "distractors": [
+              "所以",
+              "因此",
+              "而且"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk79-xingkui-buran-2",
+            "text": "幸好带了伞，否则全身都湿了。",
+            "reading": "xìnghǎo dài le sǎn, fǒuzé quán shēn dōu shī le.",
+            "translation": "Good thing I brought an umbrella, or I'd be soaked.",
+            "focus": "幸好",
+            "distractors": [
+              "虽然",
+              "即使",
+              "假若"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk79-xingkui-buran-3",
+            "text": "幸亏抢救及时，否则后果不堪设想。",
+            "reading": "xìngkuī qiǎngjiù jíshí, fǒuzé hòuguǒ bùkān shèxiǎng.",
+            "translation": "Fortunately the emergency treatment came in time; otherwise the consequences would have been unthinkable.",
+            "focus": "否则",
+            "distractors": [
+              "所以",
+              "于是",
+              "而且"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk79-xingkui-buran-4",
+            "text": "幸好出发得早，要不就赶不上飞机了。",
+            "reading": "xìnghǎo chūfā de zǎo, yàobù jiù gǎn bu shàng fēijī le.",
+            "translation": "Luckily we set off early, or we'd have missed the plane.",
+            "focus": "要不",
+            "distractors": [
+              "要是",
+              "可是",
+              "于是"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk79-xingkui-buran-5",
+            "text": "幸亏他会游泳，不然早就出事了。",
+            "reading": "xìngkuī tā huì yóuyǒng, bùrán zǎo jiù chūshì le.",
+            "translation": "Luckily he can swim, or something terrible would have happened.",
+            "focus": "幸亏",
+            "distractors": [
+              "即使",
+              "虽然",
+              "只要"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ],
+            "noOrder": true
+          },
+          {
+            "id": "hsk79-xingkui-buran-6",
+            "text": "可惜他没来，不然大家会更开心。",
+            "reading": "kěxī tā méi lái, bùrán dàjiā huì gèng kāixīn.",
+            "translation": "It's a pity he didn't come; everyone would have been even happier.",
+            "focus": "可惜",
+            "distractors": [
+              "幸亏",
+              "否则",
+              "既然"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "row": 35,
+      "label": "因果复句: （因）……，故……; ……，以至（于）……",
+      "lesson": {
+        "id": "hsk79-gu-yizhiyu",
+        "level": "hsk-7-9",
+        "title": "Formal cause and result: （因）……，故…… and ……，以至（于）…… (so much so that)",
+        "summary": "故 is the written therefore after a cause with 因; 以至于 says a situation went so far that a further result followed.",
+        "pattern": [
+          "（因）+ 原因，故 + 结果",
+          "……（太 / 很 + Adj），以至（于）+ 结果"
+        ],
+        "body": [
+          "（因）……，故…… (because …, therefore …) is a formal, written cause-and-result frame, common in notices, letters and reports: 因天气原因，故航班推迟起飞. 因 can be left out, and 故 stands at the head of the result clause, often before a verb or a modal word: 此药有副作用，故不宜长期服用.",
+          "……，以至（于）…… (so much so that, to the point that) says a situation went so far that a further, often unexpected, result followed: 他太专心了，以至于没听见有人叫他. The first clause usually has a degree word such as 太, 很 or 得很大.",
+          "The contrast example uses 所以, the everyday result word (他病了，所以没来上课). 故 is its written counterpart, and 以至于 adds the idea of degree. A common mistake is to confuse 以至于 with 以便 (so that, in order to) or 以免 (so as to avoid), which state purposes, not results."
+        ],
+        "examples": [
+          {
+            "id": "hsk79-gu-yizhiyu-1",
+            "text": "因天气原因，故航班推迟起飞。",
+            "reading": "yīn tiānqì yuányīn, gù hángbān tuīchí qǐfēi.",
+            "translation": "Owing to the weather, the flight's departure has been delayed.",
+            "focus": "故",
+            "distractors": [
+              "但",
+              "而且",
+              "却"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk79-gu-yizhiyu-2",
+            "text": "因身体不适，故申请请假一天。",
+            "reading": "yīn shēntǐ búshì, gù shēnqǐng qǐngjià yì tiān.",
+            "translation": "Being unwell, I request one day's leave.",
+            "focus": "因",
+            "distractors": [
+              "虽",
+              "即",
+              "若"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk79-gu-yizhiyu-3",
+            "text": "此药有副作用，故不宜长期服用。",
+            "reading": "cǐ yào yǒu fùzuòyòng, gù bù yí chángqī fúyòng.",
+            "translation": "This medicine has side effects and should therefore not be taken for long periods.",
+            "focus": "故",
+            "distractors": [
+              "虽",
+              "若",
+              "即使"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk79-gu-yizhiyu-4",
+            "text": "他太专心了，以至于没听见有人叫他。",
+            "reading": "tā tài zhuānxīn le, yǐzhìyú méi tīngjiàn yǒu rén jiào tā.",
+            "translation": "He was so absorbed that he didn't hear someone calling him.",
+            "focus": "以至于",
+            "distractors": [
+              "以便",
+              "以免",
+              "至于"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk79-gu-yizhiyu-5",
+            "text": "雨下得很大，以至交通完全中断。",
+            "reading": "yǔ xià de hěn dà, yǐzhì jiāotōng wánquán zhōngduàn.",
+            "translation": "It rained so heavily that traffic came to a complete halt.",
+            "focus": "以至",
+            "distractors": [
+              "以便",
+              "以免",
+              "以为"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk79-gu-yizhiyu-6",
+            "text": "他病了，所以没来上课。",
+            "reading": "tā bìng le, suǒyǐ méi lái shàngkè.",
+            "translation": "He was ill, so he didn't come to class.",
+            "focus": "所以",
+            "distractors": [
+              "但是",
+              "而且",
+              "虽然"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "row": 36,
+      "label": "递进复句: 别说……，都/也……; ……不说，还……",
+      "lesson": {
+        "id": "hsk79-bieshuo-bushuo",
+        "level": "hsk-7-9",
+        "title": "Let alone and not only: 别说……，都 / 也…… and ……不说，还……",
+        "summary": "别说 dismisses a harder case before saying even an easier one fails; ……不说，还…… adds a second, usually worse, fact.",
+        "pattern": [
+          "别说 + 难的情况，（连）+ 容易的情况 + 都 / 也 + ……",
+          "A + 不说，还 + B"
+        ],
+        "body": [
+          "别说……，都 / 也…… (let alone, not to mention) names a harder or bigger case first and dismisses it, then says that even an easier case fails, or holds: 别说一百块，十块钱我都没有. The second clause usually has 都 or 也, often with 连 or 就是: 别说是你，就是老师也答不上来.",
+          "……不说，还…… (not only …, but also) follows a first fact with 不说 and adds a second, usually worse, fact with 还: 他迟到不说，还找了一堆借口. It is colloquial and often complains, though it can also praise: 菜好吃不说，价格还便宜.",
+          "The contrast example uses 不但……而且…… (not only … but also), the neutral way of adding a point. 不说 comes after its clause, while 不但 comes before it. A common mistake is to put the easier case after 别说: the case after 别说 is the one that is even further out of reach."
+        ],
+        "examples": [
+          {
+            "id": "hsk79-bieshuo-bushuo-1",
+            "text": "别说一百块，连十块钱都拿不出来。",
+            "reading": "bié shuō yì bǎi kuài, lián shí kuài qián dōu ná bu chūlai.",
+            "translation": "I can't even come up with ten yuan, let alone a hundred.",
+            "focus": "别说",
+            "distractors": [
+              "别看",
+              "除了",
+              "虽然"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk79-bieshuo-bushuo-2",
+            "text": "别说跑步了，他连走路都困难。",
+            "reading": "bié shuō pǎobù le, tā lián zǒu lù dōu kùnnan.",
+            "translation": "Forget running; he can hardly even walk.",
+            "focus": "都",
+            "distractors": [
+              "就",
+              "才",
+              "却"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ],
+            "noOrder": true
+          },
+          {
+            "id": "hsk79-bieshuo-bushuo-3",
+            "text": "别说是你，就是老师也答不上来。",
+            "reading": "bié shuō shì nǐ, jiùshì lǎoshī yě dá bu shànglai.",
+            "translation": "Not just you; even the teacher couldn't answer it.",
+            "focus": "别说",
+            "distractors": [
+              "别看",
+              "除了",
+              "虽然"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk79-bieshuo-bushuo-4",
+            "text": "这家餐厅菜好吃不说，价格还便宜。",
+            "reading": "zhè jiā cāntīng cài hǎochī bù shuō, jiàgé hái piányi.",
+            "translation": "This restaurant's food is not only tasty but also cheap.",
+            "focus": "不说",
+            "distractors": [
+              "别说",
+              "不但",
+              "没说"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk79-bieshuo-bushuo-5",
+            "text": "他迟到不说，还找了一堆借口。",
+            "reading": "tā chídào bù shuō, hái zhǎo le yì duī jièkǒu.",
+            "translation": "Not only was he late, he also came up with a pile of excuses.",
+            "focus": "还",
+            "distractors": [
+              "才",
+              "就",
+              "却"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk79-bieshuo-bushuo-6",
+            "text": "他不但会说英语，而且会说法语。",
+            "reading": "tā búdàn huì shuō Yīngyǔ, érqiě huì shuō Fǎyǔ.",
+            "translation": "He can speak not only English but also French.",
+            "focus": "不但",
+            "distractors": [
+              "不说",
+              "别说",
+              "只要"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "row": 36,
+      "label": "递进复句: 连……都……，更不用说……了; ……尚且……，（更）何况……; ……，更不用说……了",
+      "lesson": {
+        "id": "hsk79-geng-buyong-shuo",
+        "level": "hsk-7-9",
+        "title": "Even …, let alone …: 连……都……，更不用说……了 and ……尚且……，更何况……",
+        "summary": "Argue from a stronger case to a weaker one: if even the first fails, the second certainly does; 尚且……何况 is the written form.",
+        "pattern": [
+          "连 + A + 都 + ……，更不用说 + B + 了",
+          "A + 尚且 + ……，（更）何况 + B（呢）"
+        ],
+        "body": [
+          "These frames argue from one case to a harder one. 连……都……，更不用说……了 (even …, let alone …) says that if even the simple case fails, the harder one certainly does: 他连自己的名字都写不好，更不用说写文章了. The second half can also follow any clause on its own: ……，更不用说……了.",
+          "……尚且……，（更）何况…… (even …, how much more or less …) is the written version: 尚且 marks the first, stronger case and 何况, often with 更 and a final 呢, asks rhetorically about the second: 专家尚且解决不了，何况我们呢？",
+          "The contrast example uses 况且 (besides, moreover), which simply adds another reason (天已经黑了，况且又下着雨). It does not compare a stronger and a weaker case like 尚且……何况. A common mistake is to drop the final 了 of 更不用说……了 or to put 尚且 in the second clause."
+        ],
+        "examples": [
+          {
+            "id": "hsk79-geng-buyong-shuo-1",
+            "text": "他连自己的名字都写不好，更不用说写文章了。",
+            "reading": "tā lián zìjǐ de míngzi dōu xiě bu hǎo, gèng búyòng shuō xiě wénzhāng le.",
+            "translation": "He can't even write his own name properly, let alone an essay.",
+            "focus": "更不用说",
+            "distractors": [
+              "更不说",
+              "不用更说",
+              "但是"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk79-geng-buyong-shuo-2",
+            "text": "这里连水都没有，更不用说电了。",
+            "reading": "zhèlǐ lián shuǐ dōu méiyǒu, gèng búyòng shuō diàn le.",
+            "translation": "There isn't even water here, let alone electricity.",
+            "focus": "连",
+            "distractors": [
+              "别",
+              "就",
+              "把"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk79-geng-buyong-shuo-3",
+            "text": "最近连周末都没空，更不用说平时了。",
+            "reading": "zuìjìn lián zhōumò dōu méi kòng, gèng búyòng shuō píngshí le.",
+            "translation": "Lately I'm not even free at weekends, let alone on weekdays.",
+            "focus": "了",
+            "distractors": [
+              "过",
+              "着",
+              "吗"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk79-geng-buyong-shuo-4",
+            "text": "这个问题专家尚且解决不了，何况我们呢？",
+            "reading": "zhège wèntí zhuānjiā shàngqiě jiějué bu liǎo, hékuàng wǒmen ne?",
+            "translation": "Even the experts can't solve this problem, so how could we?",
+            "focus": "尚且",
+            "distractors": [
+              "何况",
+              "而且",
+              "况且"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ],
+            "noOrder": true
+          },
+          {
+            "id": "hsk79-geng-buyong-shuo-5",
+            "text": "大人尚且觉得累，更何况孩子？",
+            "reading": "dàrén shàngqiě juéde lèi, gèng hékuàng háizi?",
+            "translation": "Even adults find it tiring, let alone children.",
+            "focus": "何况",
+            "distractors": [
+              "况且",
+              "而且",
+              "尚且"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk79-geng-buyong-shuo-6",
+            "text": "天已经黑了，况且又下着雨，你别走了。",
+            "reading": "tiān yǐjīng hēi le, kuàngqiě yòu xià zhe yǔ, nǐ bié zǒu le.",
+            "translation": "It's already dark, and besides it's raining, so don't leave.",
+            "focus": "况且",
+            "distractors": [
+              "尚且",
+              "更不用说",
+              "连"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "row": 37,
+      "label": "目的复句: 为（了）……起见，……; ……，以……",
+      "lesson": {
+        "id": "hsk79-qijian-yi",
+        "level": "hsk-7-9",
+        "title": "Purpose in formal style: 为（了）……起见，…… and ……，以……",
+        "summary": "为……起见 names a purpose such as safety or convenience at the head of a sentence; 以 links a second clause that states what the action aims to achieve.",
+        "pattern": [
+          "为（了）+ 安全 / 保险 / 方便 + 起见，……",
+          "……，以 + VP"
+        ],
+        "body": [
+          "为（了）……起见，…… (for the sake of …, to be on the safe side) names a purpose such as safety or convenience at the head of the sentence: 为安全起见，请系好安全带. The slot usually holds a short abstract word: 安全, 保险, 方便, 慎重. Without 起见 the sentence becomes a plain 为了 purpose phrase.",
+          "……，以…… (in order to, so as to) is the written purpose link at the head of the second clause; 以 is followed directly by a verb phrase: 我们要努力学习，以适应社会的需要.",
+          "The contrast example uses 以免 (so as to avoid), which introduces what you want to prevent (以免感冒), while 以 introduces what you want to achieve. A common mistake is to put a bad outcome after 以: say 以免感冒, not 以感冒."
+        ],
+        "examples": [
+          {
+            "id": "hsk79-qijian-yi-1",
+            "text": "为安全起见，请系好安全带。",
+            "reading": "wèi ānquán qǐjiàn, qǐng jì hǎo ānquándài.",
+            "translation": "For your safety, please fasten your seat belt.",
+            "focus": "起见",
+            "distractors": [
+              "看见",
+              "意见",
+              "以后"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk79-qijian-yi-2",
+            "text": "为了保险起见，最好再检查一遍。",
+            "reading": "wèile bǎoxiǎn qǐjiàn, zuìhǎo zài jiǎnchá yí biàn.",
+            "translation": "To be on the safe side, it's best to check it once more.",
+            "focus": "为了",
+            "distractors": [
+              "对于",
+              "所以",
+              "因此"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk79-qijian-yi-3",
+            "text": "为方便起见，会议改在线上进行。",
+            "reading": "wèi fāngbiàn qǐjiàn, huìyì gǎi zài xiànshàng jìnxíng.",
+            "translation": "For convenience, the meeting will be held online instead.",
+            "focus": "为",
+            "distractors": [
+              "从",
+              "被",
+              "对"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ],
+            "noOrder": true
+          },
+          {
+            "id": "hsk79-qijian-yi-4",
+            "text": "我们要努力学习，以适应社会的需要。",
+            "reading": "wǒmen yào nǔlì xuéxí, yǐ shìyìng shèhuì de xūyào.",
+            "translation": "We must study hard so as to meet the needs of society.",
+            "focus": "以",
+            "distractors": [
+              "对",
+              "被",
+              "从"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk79-qijian-yi-5",
+            "text": "公司降低了价格，以吸引更多顾客。",
+            "reading": "gōngsī jiàngdī le jiàgé, yǐ xīyǐn gèng duō gùkè.",
+            "translation": "The company lowered its prices to attract more customers.",
+            "focus": "以",
+            "distractors": [
+              "而且",
+              "可是",
+              "把"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk79-qijian-yi-6",
+            "text": "出门多穿点儿，以免感冒。",
+            "reading": "chūmén duō chuān diǎnr, yǐmiǎn gǎnmào.",
+            "translation": "Wear more when you go out so you don't catch a cold.",
+            "focus": "以免",
+            "distractors": [
+              "以",
+              "以便",
+              "为了起见"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "row": 38,
+      "label": "紧缩复句: 非得……才……; 任……也……",
+      "lesson": {
+        "id": "hsk79-feidei-ren",
+        "level": "hsk-7-9",
+        "title": "Contracted sentences: 非得……才…… (only if) and 任……也…… (no matter how)",
+        "summary": "非得……才…… says only this condition will work; 任……也…… says whatever someone does, the result stays the same.",
+        "pattern": [
+          "非得 + 条件 + 才 + 行 / 能 + V",
+          "任 + N（+ 怎么）+ V，也 + 结果"
+        ],
+        "body": [
+          "Contracted complex sentences (紧缩复句) squeeze two clauses into one, usually without a pause. 非得……才…… (only if …, must … before …) says that only this condition will work: 这件事非得你亲自去才行. 才 is followed by 行, 能 or a verb.",
+          "任……也…… (no matter how, let … as it may) says that whatever someone or something does, the result stays the same: 任你怎么劝，他也不听. 任 is followed by a person or a thing and often a question word such as 怎么, or a vivid phrase such as 风吹雨打; 也 marks the unchanged result.",
+          "The contrast example uses 非……不可 (must, have to), which closes the sentence with a double negative instead of 才 (我非去不可). A common mistake is to use 就 instead of 才 after 非得: the condition is a must, not merely enough."
+        ],
+        "examples": [
+          {
+            "id": "hsk79-feidei-ren-1",
+            "text": "这件事非得你亲自去才行。",
+            "reading": "zhè jiàn shì fēiděi nǐ qīnzì qù cái xíng.",
+            "translation": "This will only work if you go in person.",
+            "focus": "才",
+            "distractors": [
+              "就",
+              "也",
+              "都"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk79-feidei-ren-2",
+            "text": "这种病非得做手术才能治好。",
+            "reading": "zhè zhǒng bìng fēiděi zuò shǒushù cái néng zhì hǎo.",
+            "translation": "This illness can only be cured by surgery.",
+            "focus": "非得",
+            "distractors": [
+              "只要",
+              "虽然",
+              "即使"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk79-feidei-ren-3",
+            "text": "任你怎么劝，他也不听。",
+            "reading": "rèn nǐ zěnme quàn, tā yě bù tīng.",
+            "translation": "No matter how you try to persuade him, he won't listen.",
+            "focus": "任",
+            "distractors": [
+              "被",
+              "把",
+              "对"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ],
+            "noOrder": true
+          },
+          {
+            "id": "hsk79-feidei-ren-4",
+            "text": "任他说得多好听，我也不信。",
+            "reading": "rèn tā shuō de duō hǎotīng, wǒ yě bú xìn.",
+            "translation": "However nicely he puts it, I won't believe him.",
+            "focus": "也",
+            "distractors": [
+              "就",
+              "才",
+              "却"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk79-feidei-ren-5",
+            "text": "任风吹雨打，这棵树也没倒。",
+            "reading": "rèn fēng chuī yǔ dǎ, zhè kē shù yě méi dǎo.",
+            "translation": "Whatever the wind and rain did, this tree never fell.",
+            "focus": "任",
+            "distractors": [
+              "把",
+              "对",
+              "往"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ],
+            "noOrder": true
+          },
+          {
+            "id": "hsk79-feidei-ren-6",
+            "text": "这个会我非去不可。",
+            "reading": "zhège huì wǒ fēi qù bù kě.",
+            "translation": "I simply have to go to this meeting.",
+            "focus": "不可",
+            "distractors": [
+              "才",
+              "也",
+              "不行了"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ],
+            "noOrder": true
+          }
+        ]
+      }
+    },
+    {
+      "row": 39,
+      "label": "多重复句: 多重并列, 多重转折, 多重假设, 多重因果, 多重递进",
+      "lesson": {
+        "id": "hsk79-multiple-clauses",
+        "level": "hsk-7-9",
+        "title": "Multiple complex sentences (多重复句): layered parallel, turning, hypothetical, causal and climbing clauses",
+        "summary": "A long sentence can have two or more layers of clause links; read it by finding the top-level connective first, then the ones inside each part.",
+        "pattern": [
+          "一方面……，另一方面……，同时……",
+          "虽然……，但是……，可…… / 由于……，……，因此……",
+          "只要……，即使……，也…… / 不但……，而且……，甚至……"
+        ],
+        "body": [
+          "A multiple complex sentence (多重复句) has three or more clauses in at least two layers: the first split divides the sentence into two big parts, and one part is itself a complex sentence. Layered parallel sentences (多重并列) list several parts (一方面……另一方面……同时……); layered turning sentences (多重转折) turn more than once (虽然……但是……可……); layered hypotheses (多重假设) set two conditions side by side (如果……就……；要是……就……); layered causal sentences (多重因果) chain causes and results (由于……，……，因此……); layered climbing sentences (多重递进) go up step by step (不但……而且……甚至……).",
+          "To read such a sentence, find the connective that makes the first split, then the ones inside each part. In 只要大家齐心协力，即使困难再多，我们也能完成任务, 只要 governs the whole sentence, and 即使……也…… is a concession inside its main part. Each connective must match its partner: 由于 goes with 因此, 即使 with 也.",
+          "The contrast example is a simple complex sentence with one layer only (虽然下雨了，但是比赛照常进行). A common mistake in long sentences is to stack two connectives of the same layer, such as 因为……所以……因此……: each level needs its own link."
+        ],
+        "examples": [
+          {
+            "id": "hsk79-multiple-clauses-1",
+            "text": "一方面要发展经济，另一方面要保护环境，同时还要改善民生。",
+            "reading": "yì fāngmiàn yào fāzhǎn jīngjì, lìng yì fāngmiàn yào bǎohù huánjìng, tóngshí hái yào gǎishàn mínshēng.",
+            "translation": "We must develop the economy on the one hand and protect the environment on the other, while also improving people's livelihoods.",
+            "focus": "另一方面",
+            "distractors": [
+              "反而",
+              "于是",
+              "因为"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk79-multiple-clauses-2",
+            "text": "虽然他很努力，但是成绩一直不好，可他从来没有放弃。",
+            "reading": "suīrán tā hěn nǔlì, dànshì chéngjì yìzhí bù hǎo, kě tā cónglái méiyǒu fàngqì.",
+            "translation": "Although he worked hard, his grades stayed poor, yet he never gave up.",
+            "focus": "可",
+            "distractors": [
+              "既然",
+              "如果",
+              "因为"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk79-multiple-clauses-3",
+            "text": "如果明天不下雨，我们就去爬山；要是下雨，就在家看电影。",
+            "reading": "rúguǒ míngtiān bú xià yǔ, wǒmen jiù qù pá shān; yàoshi xià yǔ, jiù zài jiā kàn diànyǐng.",
+            "translation": "If it doesn't rain tomorrow, we'll go hiking; if it does, we'll watch a film at home.",
+            "focus": "要是",
+            "distractors": [
+              "虽然",
+              "因为",
+              "不但"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ],
+            "noOrder": true
+          },
+          {
+            "id": "hsk79-multiple-clauses-4",
+            "text": "由于天气不好，航班推迟了，因此我们只好在机场过夜。",
+            "reading": "yóuyú tiānqì bù hǎo, hángbān tuīchí le, yīncǐ wǒmen zhǐhǎo zài jīchǎng guòyè.",
+            "translation": "Because of bad weather the flight was delayed, so we had to spend the night at the airport.",
+            "focus": "因此",
+            "distractors": [
+              "虽然",
+              "尽管",
+              "不但"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk79-multiple-clauses-5",
+            "text": "这本书不但内容丰富，而且语言生动，甚至连小学生都看得懂。",
+            "reading": "zhè běn shū búdàn nèiróng fēngfù, érqiě yǔyán shēngdòng, shènzhì lián xiǎoxuéshēng dōu kàn de dǒng.",
+            "translation": "This book is rich in content and lively in style; even primary school pupils can understand it.",
+            "focus": "甚至",
+            "distractors": [
+              "但是",
+              "虽然",
+              "既然"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk79-multiple-clauses-6",
+            "text": "只要大家齐心协力，即使困难再多，我们也能完成任务。",
+            "reading": "zhǐyào dàjiā qíxīn xiélì, jíshǐ kùnnan zài duō, wǒmen yě néng wánchéng rènwu.",
+            "translation": "As long as we all pull together, we can finish the task however many difficulties there are.",
+            "focus": "即使",
+            "distractors": [
+              "因为",
+              "所以",
+              "不但"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk79-multiple-clauses-7",
+            "text": "虽然下雨了，但是比赛照常进行。",
+            "reading": "suīrán xià yǔ le, dànshì bǐsài zhàocháng jìnxíng.",
+            "translation": "Although it rained, the match went ahead as usual.",
+            "focus": "但是",
+            "distractors": [
+              "所以",
+              "因此",
+              "而且"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "row": 40,
+      "label": "语段（句群）: 时间顺序, 空间顺序, 逻辑顺序",
+      "lesson": {
+        "id": "hsk79-text-order",
+        "level": "hsk-7-9",
+        "title": "Text cohesion by order: time order, space order and logical order in a passage",
+        "summary": "A passage holds together when it follows one clear order, signalled by time words, place words or words for steps and results.",
+        "pattern": [
+          "先……，然后……，最后…… / 起初……，后来……，如今……",
+          "……左边……，右边…… / 山脚下……，半山腰……，山顶上……",
+          "首先……，其次……，最后…… / ……，于是……"
+        ],
+        "body": [
+          "A text segment (语段 or 句群) is a group of clauses or sentences about one topic. It holds together when its parts follow a clear order, signalled by linking words. Time order (时间顺序) uses 先, 然后, 接着, 最后, or 起初, 后来, 如今. Space order (空间顺序) moves from one place to the next with words such as 左边, 右边, 前面, 山脚下, 半山腰, 山顶上.",
+          "Logical order (逻辑顺序) follows steps of reasoning: 首先, 其次, 最后 or 第一, 第二 for points; 于是, 因此, 随之 for causes and effects; 总之 for a conclusion. Choose one kind of order and keep it, so the reader always knows where the text is going.",
+          "The contrast example uses 以前 and 现在 to compare two periods (我以前住在北京，现在住在上海) rather than to tell a sequence of events. A common mistake is to confuse 其次 (secondly) with 其实 (actually) or 尤其 (especially), which do not mark a step."
+        ],
+        "examples": [
+          {
+            "id": "hsk79-text-order-1",
+            "text": "他先去了银行，然后去超市买菜，最后才回家。",
+            "reading": "tā xiān qù le yínháng, ránhòu qù chāoshì mǎi cài, zuìhòu cái huí jiā.",
+            "translation": "He went to the bank first, then to the supermarket for groceries, and only then went home.",
+            "focus": "然后",
+            "distractors": [
+              "虽然",
+              "既然",
+              "可是"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk79-text-order-2",
+            "text": "起初大家都反对，后来慢慢接受了，如今已经离不开它了。",
+            "reading": "qǐchū dàjiā dōu fǎnduì, hòulái mànman jiēshòu le, rújīn yǐjīng lí bu kāi tā le.",
+            "translation": "At first everyone was against it, later they slowly accepted it, and now they can't do without it.",
+            "focus": "后来",
+            "distractors": [
+              "因为",
+              "既然",
+              "假如"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk79-text-order-3",
+            "text": "进门是客厅，客厅左边是厨房，右边是卧室。",
+            "reading": "jìn mén shì kètīng, kètīng zuǒbian shì chúfáng, yòubian shì wòshì.",
+            "translation": "Through the door is the living room; to its left is the kitchen and to its right the bedroom.",
+            "focus": "左边",
+            "distractors": [
+              "以后",
+              "然后",
+              "上次"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ],
+            "noOrder": true
+          },
+          {
+            "id": "hsk79-text-order-4",
+            "text": "山脚下是一条小河，半山腰有几户人家，山顶上是一片树林。",
+            "reading": "shānjiǎo xià shì yì tiáo xiǎo hé, bàn shānyāo yǒu jǐ hù rénjiā, shāndǐng shang shì yí piàn shùlín.",
+            "translation": "At the foot of the mountain is a small river, halfway up are a few households, and on the top is a wood.",
+            "focus": "半山腰",
+            "distractors": [
+              "半天",
+              "半年",
+              "一半"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ],
+            "noOrder": true
+          },
+          {
+            "id": "hsk79-text-order-5",
+            "text": "首先要明确目标，其次要制订计划，最后要坚持执行。",
+            "reading": "shǒuxiān yào míngquè mùbiāo, qícì yào zhìdìng jìhuà, zuìhòu yào jiānchí zhíxíng.",
+            "translation": "First set a clear goal, next make a plan, and finally stick to carrying it out.",
+            "focus": "其次",
+            "distractors": [
+              "其实",
+              "尤其",
+              "其中"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk79-text-order-6",
+            "text": "城市人口越来越多，于是住房越来越紧张，房价也随之上涨。",
+            "reading": "chéngshì rénkǒu yuè lái yuè duō, yúshì zhùfáng yuè lái yuè jǐnzhāng, fángjià yě suí zhī shàngzhǎng.",
+            "translation": "The city's population keeps growing, so housing gets tighter and prices rise with it.",
+            "focus": "于是",
+            "distractors": [
+              "然而",
+              "尽管",
+              "既然"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk79-text-order-7",
+            "text": "我以前住在北京，现在住在上海。",
+            "reading": "wǒ yǐqián zhù zài Běijīng, xiànzài zhù zài Shànghǎi.",
+            "translation": "I used to live in Beijing; now I live in Shanghai.",
+            "focus": "以前",
+            "distractors": [
+              "然后",
+              "最后",
+              "首先"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ],
+            "noOrder": true
+          }
+        ]
+      }
+    },
+    {
+      "row": 40,
+      "label": "语段（句群）: 话题延伸, 话题转换, 承前省略, 蒙后省略",
+      "lesson": {
+        "id": "hsk79-text-topic-ellipsis",
+        "level": "hsk-7-9",
+        "title": "Text cohesion by topic and ellipsis: topic extension, topic shift, and omitting what is clear",
+        "summary": "Clauses chain by taking up a word from the last comment or by shifting with 至于; a subject already clear before or after is left out.",
+        "pattern": [
+          "A 有 B，B + ……，B 的一部分 + …… (话题延伸)",
+          "……，至于 + 新话题，…… (话题转换)",
+          "主语 + V1，（ ）V2，（ ）V3 / （ ）V1，主语 + V2 (省略)"
+        ],
+        "body": [
+          "A text also holds together through how its topics are linked. In topic extension (话题延伸) a word from the comment of one clause becomes the topic of the next: 我家附近有个公园，公园里有个湖，湖边常有人钓鱼. In topic shift (话题转换) the speaker closes one topic and opens another with a marker such as 至于 (as for) or 另外 (in addition), or a phrase like 说完了……，再来看看…….",
+          "Chinese often leaves out a subject or object that is clear from context. In ellipsis based on what came before (承前省略), later clauses drop what was already mentioned: 他吃完饭，洗了碗，又出门了 (he does all three). In ellipsis based on what comes after (蒙后省略), an earlier clause drops a subject that is named only later: 看到妈妈回来，孩子高兴地跑了过去. Words such as 那里 can also point back to a place already named.",
+          "The contrast example names the subject again with a pronoun (小李发烧了，他没来上班). That is correct, but within one sentence Chinese prefers to drop the subject once it is clear; repeating 他 in every clause sounds heavy. A common mistake is the opposite: dropping a subject when it changes. If a different person does the next action, name that person."
+        ],
+        "examples": [
+          {
+            "id": "hsk79-text-topic-ellipsis-1",
+            "text": "我家附近有个公园，公园里有个湖，湖边常有人钓鱼。",
+            "reading": "wǒ jiā fùjìn yǒu ge gōngyuán, gōngyuán li yǒu ge hú, hú biān cháng yǒu rén diào yú.",
+            "translation": "There's a park near my home; in the park there's a lake, and people often fish by the lake.",
+            "focus": "湖边",
+            "distractors": [
+              "湖水",
+              "一边",
+              "时候"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk79-text-topic-ellipsis-2",
+            "text": "她买了一条裙子，裙子是红色的，颜色特别鲜艳。",
+            "reading": "tā mǎi le yì tiáo qúnzi, qúnzi shì hóngsè de, yánsè tèbié xiānyàn.",
+            "translation": "She bought a skirt; the skirt is red, and the colour is really bright.",
+            "focus": "颜色",
+            "distractors": [
+              "时间",
+              "地方",
+              "以后"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk79-text-topic-ellipsis-3",
+            "text": "工作的事就说到这儿，至于下周的旅行，明天再商量吧。",
+            "reading": "gōngzuò de shì jiù shuō dào zhèr, zhìyú xià zhōu de lǚxíng, míngtiān zài shāngliang ba.",
+            "translation": "That's all on work; as for next week's trip, let's discuss it tomorrow.",
+            "focus": "至于",
+            "distractors": [
+              "因为",
+              "所以",
+              "尽管"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk79-text-topic-ellipsis-4",
+            "text": "说完了经济，再来看看教育方面的问题。",
+            "reading": "shuō wán le jīngjì, zài lái kànkan jiàoyù fāngmiàn de wèntí.",
+            "translation": "Having covered the economy, let's now look at education.",
+            "focus": "再来",
+            "distractors": [
+              "因此",
+              "既然",
+              "虽然"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk79-text-topic-ellipsis-5",
+            "text": "他吃完饭，洗了碗，又出门了。",
+            "reading": "tā chī wán fàn, xǐ le wǎn, yòu chūmén le.",
+            "translation": "He finished eating, washed the dishes and went out again.",
+            "focus": "又",
+            "distractors": [
+              "才",
+              "被",
+              "在"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk79-text-topic-ellipsis-6",
+            "text": "看到妈妈回来，孩子高兴地跑了过去。",
+            "reading": "kàndào māma huílai, háizi gāoxìng de pǎo le guòqu.",
+            "translation": "Seeing his mother come home, the child ran over happily.",
+            "focus": "孩子",
+            "distractors": [
+              "这儿",
+              "以后",
+              "他们的"
+            ],
+            "contrast": false,
+            "kinds": [
+              "clearly-wrong"
+            ],
+            "noOrder": true
+          },
+          {
+            "id": "hsk79-text-topic-ellipsis-7",
+            "text": "虽然没去过上海，但他对那里很了解。",
+            "reading": "suīrán méi qù guo Shànghǎi, dàn tā duì nàli hěn liǎojiě.",
+            "translation": "Although he has never been to Shanghai, he knows a lot about it.",
+            "focus": "那里",
+            "distractors": [
+              "这么",
+              "那样",
+              "怎么"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ],
+            "noOrder": true
+          },
+          {
+            "id": "hsk79-text-topic-ellipsis-8",
+            "text": "小李发烧了，他没来上班。",
+            "reading": "Xiǎo Lǐ fāshāo le, tā méi lái shàngbān.",
+            "translation": "Xiao Li has a fever; he didn't come to work.",
+            "focus": "他",
+            "distractors": [
+              "它",
+              "她们",
+              "这"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}

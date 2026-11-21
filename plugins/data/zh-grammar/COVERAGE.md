@@ -321,44 +321,44 @@ and no syllabus text is reproduced. The syllabus grants no reuse licence.
 
 | # | Syllabus row (qinqin’s words) | Lesson(s) |
 |---|-------------------------------|-----------|
-| 1 |  | not authored yet |
-| 2 |  | not authored yet |
-| 3 |  | not authored yet |
-| 4 |  | not authored yet |
-| 5 |  | not authored yet |
-| 6 |  | not authored yet |
-| 7 |  | not authored yet |
-| 8 |  | not authored yet |
-| 9 |  | not authored yet |
-| 10 |  | not authored yet |
-| 11 |  | not authored yet |
-| 12 |  | not authored yet |
-| 13 |  | not authored yet |
-| 14 |  | not authored yet |
-| 15 |  | not authored yet |
-| 16 |  | not authored yet |
-| 17 |  | not authored yet |
-| 18 |  | not authored yet |
-| 19 |  | not authored yet |
-| 20 |  | not authored yet |
-| 21 |  | not authored yet |
-| 22 |  | not authored yet |
-| 23 |  | not authored yet |
-| 24 |  | not authored yet |
-| 25 |  | not authored yet |
-| 26 |  | not authored yet |
-| 27 |  | not authored yet |
-| 28 |  | not authored yet |
-| 29 |  | not authored yet |
-| 30 |  | not authored yet |
-| 31 |  | not authored yet |
-| 32 |  | not authored yet |
-| 33 |  | not authored yet |
-| 34 |  | not authored yet |
-| 35 |  | not authored yet |
-| 36 |  | not authored yet |
-| 37 |  | not authored yet |
-| 38 |  | not authored yet |
-| 39 |  | not authored yet |
-| 40 |  | not authored yet |
+| 1 | 类前缀 (后-, 亲-) | hsk79-prefix-hou-qin |
+| 2 | 类后缀 (-观, -鬼, -界, -然, -坛, -为, -制) | hsk79-suffixes-guan-jie |
+| 3 | 动词 (巴不得, 恨不得, 犯不着, 犯得着, 免不了, 除外) / 动词 (并非, 可否, 可谓, 所谓, 有所, 予以) | hsk79-verbs-budebude, hsk79-verbs-formal |
+| 4 | 人称代词 (我 = our side: 我国, 我校, 我方) | hsk79-pronoun-wo |
+| 5 | 指示代词 (彼, 这么着, 兹) | hsk79-demonstratives |
+| 6 | 疑问代词 (何, 怎么着) | hsk79-question-he-zenmezhe |
+| 7 | 数量代词 (若干) | hsk79-ruogan |
+| 8 | 名量词 (重, 截, 缕, 码, 枚, 摊, 丸, 则, 幢, 宗) | hsk79-measure-nouns |
+| 9 | 动量词 (通) | hsk79-measure-tong |
+| 10 | 复合量词 (人次) | hsk79-measure-renci |
+| 11 | 程度副词 (大为, 分外, 何等, 极度, 万分, 尤为, 颇) / 程度副词 (略, 略微, 稍稍, 微, 愈加, 越发, 极力) | hsk79-degree-high, hsk79-degree-slight |
+| 12 | 范围副词 (皆, 均, 尽, 概, 一概, 通通, 统统) / 范围副词 (唯, 唯独, 唯有, 无非, 大体) | hsk79-scope-all, hsk79-scope-only |
+| 13 | 时间副词 (姑且, 暂且, 尽早, 早日, 届时, 即时) / 时间副词 (即, 随即, 一经, 就此, 历来, 向来, 尚) | hsk79-time-fornow, hsk79-time-sequence |
+| 14 | 频率副词 (连连, 一连, 屡次, 屡屡, 频, 相继) / 频率副词 (时而, 时时, 一个劲儿, 再度) | hsk79-freq-repeated, hsk79-freq-intermittent |
+| 15 | 方式副词 (刻意, 有意, 竭力, 拼命, 百般, 执意, 毅然, 断然) / 方式副词 (擅自, 私自, 强行, 任意, 公然, 大肆, 瞎, 尽情) / 方式副词 (照常, 照例, 照样, 如期, 按理, 按说, 不由得, 骤然, 日趋, 截然) / 方式副词 (趁机, 趁早, 火速, 就近, 专程, 一并, 一举, 一手, 逐一, 特此) | hsk79-manner-will, hsk79-manner-unchecked, hsk79-manner-usual, hsk79-manner-occasion |
+| 16 | 否定副词 (不见得, 绝不, 无从, 无须, 无可, 勿) | hsk79-negation-adverbs |
+| 17 | 语气副词 (必定, 必将, 势必, 终究, 务必, 切, 万万, 非得) / 语气副词 (幸好, 幸亏, 好在, 碰巧, 恰巧, 怪不得, 难怪, 果真, 分明) / 语气副词 (竟, 愣, 偏偏, 反倒, 莫非, 不免, 未免, 索性) / 语气副词 (不妨, 何不, 何必, 何苦, 何尝, 宁可, 宁愿, 情愿) | hsk79-modal-certainty, hsk79-modal-luck, hsk79-modal-contrary, hsk79-modal-rhetorical |
+| 18 | 判断副词 (乃) | hsk79-judgement-nai |
+| 19 | 介词: 引出时间、处所 (打) | hsk79-prep-da |
+| 20 | 介词: 引出对象 (当着, 就) | hsk79-prep-dangzhe-jiu |
+| 21 | 介词: 引出凭借、依据 (本着, 基于, 鉴于, 经, 依) | hsk79-prep-basis |
+| 22 | 连词: 连接分句 (鉴于, 况且, 免得, 若, 倘若, 以防) | hsk79-conj-clauses |
+| 23 | 连词: 连接词语及分句 (加之, 乃至, 且) | hsk79-conj-jiazhi-naizhi-qie |
+| 24 | 语气助词 (罢了, 也罢, 矣) and 爱A不A | hsk79-particles-baile |
+| 25 | 四字格: 半A半B, 不A不B, 非A非B, 不A而B / 四字格: 忽A忽B, 时A时B, 或A或B, 东A西B, 七A八B / 四字格: 无A不B, 无A可B, 可A可B, 连A带B, 自A自B | hsk79-sizige-ban-bu-fei, hsk79-sizige-hu-shi-dong-qi, hsk79-sizige-wu-ke-lian-zi |
+| 26 | 话语标记: 不瞒你说, 老实说, 说真的, 要（让）我说, （你）还别说 / 话语标记: 换句话说, 反过来（说）, 简（而）言之, 总的来说, 总而言之, 概括来说, 综上所述, 归根到底 / 话语标记: 可不（是嘛）, 这不, 不是, 不是我说你, 你看你, 说到哪儿去了, 真是的 / 话语标记: 话是这么说, 话（又）说回来, 退一步说, 无论如何, 这样一来 | hsk79-marker-frankness, hsk79-marker-summing-up, hsk79-marker-reacting, hsk79-marker-concession |
+| 27 | 固定格式: X到这个地步/份上, X得要命/要死, 别提（有）多……了, 不知X是/才好, 你说你一个X / 固定格式: 不亚于, 仅次于, 莫过于, 何至于, 谈何……, 有何X / 固定格式: 没什么/有什么+V+头儿, 没什么好+V+的, 无非/不过/只是……罢了/而已 / 固定格式: X都不/没X, X就X个Y, 动词+个X, 动词+得个……, 动不动就…… / 固定格式: X了Y，Y了X, X也好，Y也罢, 该X（就）X，该Y（就）Y, 要X有/没X，要Y有/没Y, 什么A的B的, 看在X的面子上 / 固定格式: 视……而定, 因……而……, 想X之所想，急X之所急, 向……致以……, （在）……之余, 值此……之际 | hsk79-format-strong-feeling, hsk79-format-compare-rhetorical, hsk79-format-not-worth, hsk79-format-verb-frames, hsk79-format-paired, hsk79-format-formal |
+| 28 | 比较句5: A+形容词+于/过+B | hsk79-compare-adj-yu-guo |
+| 29 | 并列复句: 一来……，二来……，三来……; 一则……，二则……，三则…… | hsk79-yilai-yize |
+| 30 | 解说复句: 所谓……，就是…… | hsk79-suowei-jiushi |
+| 31 | 选择复句: 或……，或…… / 选择复句: 宁可/宁愿……，也不……; 与其……，宁愿/宁可…… | hsk79-huo-huo, hsk79-ningke-yuqi |
+| 32 | 转折复句: X（倒）是X（了），…… / 转折复句: 别看……，……; 虽说……，但/可…… | hsk79-x-dao-shi-x, hsk79-biekan-suishuo |
+| 33 | 条件复句: 无论……与否，都…… / 条件复句: 凡……（者），均（可）…… | hsk79-wulun-yufou, hsk79-fan-jun |
+| 34 | 假设复句: 假若/假使……，……; 纵然/纵使……，也…… / 假设复句: 幸亏/幸好……，不然/否则…… | hsk79-jiaruo-zongran, hsk79-xingkui-buran |
+| 35 | 因果复句: （因）……，故……; ……，以至（于）…… | hsk79-gu-yizhiyu |
+| 36 | 递进复句: 别说……，都/也……; ……不说，还…… / 递进复句: 连……都……，更不用说……了; ……尚且……，（更）何况……; ……，更不用说……了 | hsk79-bieshuo-bushuo, hsk79-geng-buyong-shuo |
+| 37 | 目的复句: 为（了）……起见，……; ……，以…… | hsk79-qijian-yi |
+| 38 | 紧缩复句: 非得……才……; 任……也…… | hsk79-feidei-ren |
+| 39 | 多重复句: 多重并列, 多重转折, 多重假设, 多重因果, 多重递进 | hsk79-multiple-clauses |
+| 40 | 语段（句群）: 时间顺序, 空间顺序, 逻辑顺序 / 语段（句群）: 话题延伸, 话题转换, 承前省略, 蒙后省略 | hsk79-text-order, hsk79-text-topic-ellipsis |
 
