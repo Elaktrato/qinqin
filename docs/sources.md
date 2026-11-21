@@ -85,14 +85,6 @@ unverified facts marked unverified) must stay the same in both places.
 
 ## Grammar lessons
 
-- **Chinese grammar demo (A1)** (`zh-grammar-demo`, type `grammar`; bundled):
-  ten short beginner lessons with 40 example sentences, readings,
-  translations and exercise answers, **written for qinqin by the project and
-  released under CC0 1.0** (`plugins/data/zh-grammar-demo`, with `LICENSE` and
-  `ATTRIBUTION.md`). Nothing is taken from a textbook, a syllabus or another
-  grammar resource; the A1 levels are the author's own estimates (the link to
-  "HSK 1" is a rough orientation only). It is **demo content that has not been
-  reviewed by a native speaker**; errors are possible.
 - **Chinese grammar (HSK-aligned)** (`zh-grammar`, type `grammar`; bundled):
   grammar lessons level by level (≈ HSK 1 to 7–9), each syllabus grammar point
   taught with 4–8 example sentences, readings, translations and exercise
@@ -355,12 +347,15 @@ byte.
   "reproduced from (or quoted from) the Chinese Test Service Website"), and
   that reproducing or quoting it is permitted only as reasonable, good-faith
   quoting for news or informative, free public information. The syllabus PDF
-  carries a copy-protection flag (copy: no, change: no). The project includes
-  only the vocabulary (word) list and the list of characters to recognise
-  (认读字), as plain lists of words and characters with their levels (and the
-  words' pinyin as lookup readings); it does not include the syllabus's other
-  content (grammar points, task and topic descriptions, the lists of
-  characters to write, explanatory text). It includes these lists with
+  carries a copy-protection flag (copy: no, change: no). The `hsk-words`
+  pack includes only the vocabulary (word) list and the `hsk-chars` pack only
+  the list of characters to recognise (认读字), as plain lists of words and
+  characters with their levels (and the words' pinyin as lookup readings);
+  neither includes the syllabus's descriptions, task and topic lists, the
+  lists of characters to write or explanatory text. The Chinese grammar pack
+  (`zh-grammar`), when installed, is listed separately under Grammar lessons
+  and uses the syllabus's grammar outline as a topic index, reproducing no
+  syllabus text. It includes these lists with
   attribution at the project owner's decision; the legal status of including
   these lists has not been verified (this is not a legal opinion), and no
   licence or public-domain status is claimed. The packs therefore have no `LICENSE` file. Their `manifest.json`

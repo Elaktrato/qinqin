@@ -50,7 +50,6 @@ Committed (small, hand-written, CC0 — a sample):
 | Pack | Type | Language | Shows |
 |------|------|----------|-------|
 | `es-demo` | dictionary | es | a runtime-added, data-only language (no code pack); install it from Settings → Data to try a data-only language |
-| `zh-grammar-demo` | grammar | zh | ten A1 lessons with 40 exercises, written for qinqin, CC0; demo content not reviewed by a native speaker |
 | `zh-grammar` | grammar | zh | HSK-aligned grammar lessons (≈ HSK 1 to 7–9), 4–8 examples per syllabus point, written for qinqin, CC0; topic coverage follows the HSK 3.0 grammar outline (CLEC/CTI, 2025-11/2026-07) as a topic index only, no syllabus text reproduced, no reuse licence granted; not reviewed by a native speaker |
 
 Components pack format (`format: components-tsv`): `components.tsv` holds one
@@ -169,8 +168,10 @@ indicated, and permits reproduction only as reasonable, good-faith quoting for
 informative public use; the PDF carries a copy-protection flag. The packs
 hold only the vocabulary (word) list and the list of characters to recognise
 (认读字), as plain lists with levels (and the words' pinyin as lookup
-readings), and none of the syllabus's other content (grammar points,
-descriptions, the lists of characters to write, explanatory text). They are
+readings), and none of the syllabus's descriptions, task and topic lists,
+lists of characters to write or explanatory text. The `zh-grammar` pack uses
+the syllabus's grammar outline as a topic index only (no syllabus text
+reproduced). They are
 included with attribution at the project owner's decision; the legal status
 of including these lists has not been verified (see each pack's
 `ATTRIBUTION.md`). Its part "HSK 词汇大纲" is a table: serial number, level
