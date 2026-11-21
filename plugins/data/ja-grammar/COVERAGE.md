@@ -227,64 +227,64 @@ exercises are qinqin’s own.
 
 | # | Grammar point (qinqin’s selection) | Lesson(s) |
 |---|-------------------------------|-----------|
-| 1 |  | not authored yet |
-| 2 |  | not authored yet |
-| 3 |  | not authored yet |
-| 4 |  | not authored yet |
-| 5 |  | not authored yet |
-| 6 |  | not authored yet |
-| 7 |  | not authored yet |
-| 8 |  | not authored yet |
-| 9 |  | not authored yet |
-| 10 |  | not authored yet |
-| 11 |  | not authored yet |
-| 12 |  | not authored yet |
-| 13 |  | not authored yet |
-| 14 |  | not authored yet |
-| 15 |  | not authored yet |
-| 16 |  | not authored yet |
-| 17 |  | not authored yet |
-| 18 |  | not authored yet |
-| 19 |  | not authored yet |
-| 20 |  | not authored yet |
-| 21 |  | not authored yet |
-| 22 |  | not authored yet |
-| 23 |  | not authored yet |
-| 24 |  | not authored yet |
-| 25 |  | not authored yet |
-| 26 |  | not authored yet |
-| 27 |  | not authored yet |
-| 28 |  | not authored yet |
-| 29 |  | not authored yet |
-| 30 |  | not authored yet |
-| 31 |  | not authored yet |
-| 32 |  | not authored yet |
-| 33 |  | not authored yet |
-| 34 |  | not authored yet |
-| 35 |  | not authored yet |
-| 36 |  | not authored yet |
-| 37 |  | not authored yet |
-| 38 |  | not authored yet |
-| 39 |  | not authored yet |
-| 40 |  | not authored yet |
-| 41 |  | not authored yet |
-| 42 |  | not authored yet |
-| 43 |  | not authored yet |
-| 44 |  | not authored yet |
-| 45 |  | not authored yet |
-| 46 |  | not authored yet |
-| 47 |  | not authored yet |
-| 48 |  | not authored yet |
-| 49 |  | not authored yet |
-| 50 |  | not authored yet |
-| 51 |  | not authored yet |
-| 52 |  | not authored yet |
-| 53 |  | not authored yet |
-| 54 |  | not authored yet |
-| 55 |  | not authored yet |
-| 56 |  | not authored yet |
-| 57 |  | not authored yet |
-| 58 |  | not authored yet |
-| 59 |  | not authored yet |
-| 60 |  | not authored yet |
+| 1 | あっての (B exists only thanks to A) | n1-atteno |
+| 2 | いかんで / いかんによらず (depending on / regardless of) | n1-ikan |
+| 3 | (よ)うが〜まいが (whether or not) | n1-ouga-maiga |
+| 4 | (よ)うにも〜ない (want to but cannot) | n1-ounimo-nai |
+| 5 | かたがた / がてら (while also, on the occasion of) | n1-katagata-gatera |
+| 6 | かたわら (alongside one’s main work) | n1-katawara |
+| 7 | が早いか / や否や (as soon as) | n1-gahayaika-yainaya |
+| 8 | きらいがある (have a bad tendency) | n1-kirai-ga-aru |
+| 9 | 極まる / 極まりない (extremely) | n1-kiwamaru |
+| 10 | ごとき / ごとく (like, as if) | n1-gotoki-gotoku |
+| 11 | こととて (because, as it was) | n1-kototote |
+| 12 | ことなしに / なくして(は) (without) | n1-kotonashini |
+| 13 | 始末だ (end up, come to such a state) | n1-shimatsuda |
+| 14 | ずくめ (nothing but, entirely) | n1-zukume |
+| 15 | ずにはおかない / ずにはすまない (will certainly / cannot get away without) | n1-zuniha-okanai |
+| 16 | すら / だに (even) | n1-sura-dani |
+| 17 | そばから (no sooner than, again and again) | n1-sobakara |
+| 18 | たが最後 (once you do, there is no going back) | n1-taga-saigo |
+| 19 | たところで (even if, it would be no use) | n1-tatokorode |
+| 20 | たりとも (not even one) | n1-taritomo |
+| 21 | たる (as one who is) | n1-taru |
+| 22 | つ〜つ (back and forth) | n1-tsu-tsu |
+| 23 | であれ / であろうと (whether, even if it is) | n1-deare |
+| 24 | てやまない (never cease to) | n1-teyamanai |
+| 25 | と相まって (combined with) | n1-to-aimatte |
+| 26 | とあって (because it is such an occasion) / とあれば (if it is for, if that is the case) | n1-toatte, n1-toareba |
+| 27 | といえども (even though, even) | n1-toiedomo |
+| 28 | といったらない (indescribably, extremely) | n1-toittaranai |
+| 29 | と思いきや (contrary to expectation) | n1-toomoikiya |
+| 30 | ときたら (when it comes to, critical) | n1-tokitara |
+| 31 | ところを (at a time when; despite the situation) | n1-tokoro-wo |
+| 32 | とはいえ (although, that said) | n1-towaie |
+| 33 | とばかりに / んばかり (as if to say; as if about to) | n1-tobakarini |
+| 34 | ともなると / ともなれば (when it comes to, once one is) | n1-tomonaruto |
+| 35 | ないまでも (even if not as far as) | n1-naimademo |
+| 36 | ながらも (although, while) | n1-nagaramo |
+| 37 | ならでは (unique to, only X could) | n1-naradewa |
+| 38 | なり (as soon as) | n1-nari |
+| 39 | なりに (in one's own way) | n1-narini |
+| 40 | にあって (in, at a time of) | n1-niatte |
+| 41 | に至って / に至るまで (only when it came to; right down to) | n1-niitatte |
+| 42 | にかこつけて (using as a pretext) | n1-nikakotsukete |
+| 43 | に即して (in line with, based on) | n1-nisokushite |
+| 44 | にたえない / にたえる (cannot bear; is worth) | n1-nitaenai |
+| 45 | に足る (worthy of, enough to) | n1-nitaru |
+| 46 | にひきかえ (in contrast to) | n1-nihikikae |
+| 47 | にもまして (even more than) | n1-nimomashite |
+| 48 | の至り / の極み (the height of) | n1-no-itari |
+| 49 | はおろか (let alone) | n1-waoroka |
+| 50 | べからず (must not) / べく (in order to) | n1-bekarazu, n1-beku |
+| 51 | まじき (unacceptable for) | n1-majiki |
+| 52 | までもない / までだ (no need to; will simply) | n1-mademonai |
+| 53 | もさることながら (not only, but also) | n1-mosarukotonagara |
+| 54 | ものを (if only; and yet) | n1-monowo |
+| 55 | ゆえ(に) (because of, due to) | n1-yueni |
+| 56 | をおいて (other than, no one but) | n1-wooite |
+| 57 | を皮切りに (starting with) | n1-wokawakirini |
+| 58 | を禁じ得ない (cannot help feeling) | n1-wokinjienai |
+| 59 | を余儀なくされる (be forced to) | n1-woyoginakusareru |
+| 60 | をものともせず (undaunted by) / んがため (in order to) | n1-womonotomosezu, n1-ngatame |
 

@@ -126,10 +126,8 @@ func TestBundledJapaneseGrammarPack(t *testing.T) {
 	if len(data.Levels) != 5 {
 		t.Fatalf("levels = %d, want 5", len(data.Levels))
 	}
-	// The levels are committed as their review passes; the floor rises to
-	// 250 and every level must be populated once all five are in.
-	if len(data.Lessons) < 50 || len(data.Lessons) > 500 {
-		t.Fatalf("lessons = %d, want 50..500", len(data.Lessons))
+	if len(data.Lessons) < 250 || len(data.Lessons) > 500 {
+		t.Fatalf("lessons = %d, want 250..500", len(data.Lessons))
 	}
 	perLevel := map[string]int{}
 	for _, l := range data.Lessons {
@@ -146,7 +144,7 @@ func TestBundledJapaneseGrammarPack(t *testing.T) {
 			}
 		}
 	}
-	for _, id := range []string{"n5", "n4", "n3", "n2"} {
+	for _, id := range []string{"n5", "n4", "n3", "n2", "n1"} {
 		if perLevel[id] == 0 {
 			t.Errorf("level %s has no lessons", id)
 		}
