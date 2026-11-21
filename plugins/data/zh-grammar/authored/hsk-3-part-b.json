@@ -395,7 +395,7 @@
         "body": [
           "除了……(以外) works with an adverb in the next clause. With 都 it excludes: 除了星期天以外，他每天都上班 (every day except Sunday). With 还 or 也 it adds: 除了英语，他还会说法语 (besides English). 以外 can be dropped.",
           "从……起 marks the starting point of something that continues: 从下个月起. 对……来说 means for someone or from someone's point of view: 对孩子来说，这本书有点儿难. (在)……以前 / 以后 / 前 / 后 put a time word or a whole clause before the main event: 妈妈回来以后，我们就吃饭; 在吃饭前，要先洗手. 在 is optional.",
-          "The contrast example uses 一……就…… (他一回家就睡觉了), which says the second action happened immediately. ……以后 only says after, with no idea of right away. A second contrast uses 从……到……, which gives both ends of a period, while 从……起 gives only the start.",
+          "The contrast example uses 一……就…… (她一下班就回家了), which says the second action happened immediately. ……以后 only says after, with no idea of right away. A second contrast uses 从……到……, which gives both ends of a period, while 从……起 gives only the start.",
           "A common mistake is to put 以前 or 以后 in front of the event (以后下课). In Chinese these words follow the event they refer to: 下课以后."
         ],
         "examples": [
@@ -506,9 +506,9 @@
           },
           {
             "id": "hsk3-fixed-formats-scope-7",
-            "text": "他一回家就睡觉了。",
-            "reading": "tā yì huí jiā jiù shuìjiào le.",
-            "translation": "He went to bed as soon as he got home.",
+            "text": "她一下班就回家了。",
+            "reading": "tā yí xiàbān jiù huí jiā le.",
+            "translation": "She went home as soon as she finished work.",
             "focus": "就",
             "distractors": [
               "才",
