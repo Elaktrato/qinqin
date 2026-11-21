@@ -74,3 +74,39 @@ row once someone has the PDF.
 - HSK 1 still has a few repeated sentences across its own lessons (deliberately
   not polished, as before).
 - Some HSK 2 words are above the level (感兴趣, 质量, 取消, 流利, 衬衫, 包裹).
+
+# Japanese grammar pack (`ja-grammar`), ≈ JLPT N5–N1
+
+Issues #119–#123. Design and point lists:
+`docs/superpowers/specs/2026-11-21-ja-grammar-pack-design.md`.
+
+| Level | Points | Lessons |
+|---|---:|---:|
+| N5 | 40 | 41 |
+| N4 | 46 | 48 |
+| N3 | 57 | 58 |
+| N2 | 55 | 55 |
+| N1 | 60 | 63 |
+| **Total** | **258** | **265** |
+
+- The JLPT publishes no grammar list; the point lists are qinqin's own
+  selection (#111 rule). **Open: the owner's sign-off on the lists** (a "done
+  when" item in every level issue) and the native-speaker review.
+- Readings are the whole sentence in kana; badges use the bundled
+  `jlpt-kanji` scheme ("≈ N5" …).
+- Built with `node scripts/build-grammar-pack.mjs --pack ja` (the script now
+  has a per-pack table; `--pack zh` is unchanged). `--complete` passes.
+- Every level was authored by AI agents in two halves, then read in full by an
+  AI model prompted as a Japanese teacher; its fixes were applied (distractors a
+  native speaker would accept, made-up wrong forms, duplicates, noOrder). No
+  example sentence repeats in the pack.
+- Verified 2026-11-21: seed with `jmdict` + `jlpt-kanji` + `ja-grammar` gives
+  265 lessons; `/api/grammar?language=ja` 5 levels / 265 lessons; `/p/grammar`
+  shows five levels with ≈ N5 … ≈ N1 badges; the first N5 lesson's practice:
+  6/6 fill-the-gaps and a word-order exercise correct; `/sources` shows the
+  credit and the unreviewed note. `TestBundledJapaneseGrammarPack` requires
+  250–500 lessons in all five levels.
+- Reviewer doubts left open: the noOrder rule for "clause + topic" swaps is
+  applied linguistically (tile boundaries come from the dictionary segmenter,
+  e.g. 山田 splits into 山 / 田 without a name entry); some distractors are wrong
+  only by meaning; N3 ことにしています with 始まる; 三十歳 read さんじゅっさい.
