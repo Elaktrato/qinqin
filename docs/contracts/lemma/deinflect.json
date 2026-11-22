@@ -1,0 +1,472 @@
+{
+ "version": 1,
+ "rule": "lemma/deinflect",
+ "table": "ja.rules.json",
+ "cases": [
+  {
+   "name": "ichidan past",
+   "surface": "食べた",
+   "expect": [
+    {
+     "form": "食べる",
+     "class": "v1",
+     "reasons": [
+      "past"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "ichidan negative",
+   "surface": "食べない",
+   "expect": [
+    {
+     "form": "食べる",
+     "class": "v1",
+     "reasons": [
+      "negative"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "godan polite past",
+   "surface": "飲みました",
+   "expect": [
+    {
+     "form": "飲む",
+     "class": "v5",
+     "reasons": [
+      "past",
+      "polite"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "godan negative past",
+   "surface": "書かなかった",
+   "expect": [
+    {
+     "form": "書く",
+     "class": "v5",
+     "reasons": [
+      "negative past"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "godan potential",
+   "surface": "行ける",
+   "expect": [
+    {
+     "form": "行く",
+     "class": "v5",
+     "reasons": [
+      "potential"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "godan passive",
+   "surface": "読まれる",
+   "expect": [
+    {
+     "form": "読む",
+     "class": "v5",
+     "reasons": [
+      "passive"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "i-adjective past",
+   "surface": "高かった",
+   "expect": [
+    {
+     "form": "高い",
+     "class": "adj-i",
+     "reasons": [
+      "past"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "i-adjective negative",
+   "surface": "高くない",
+   "expect": [
+    {
+     "form": "高い",
+     "class": "adj-i",
+     "reasons": [
+      "negative"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "volitional",
+   "surface": "行こう",
+   "expect": [
+    {
+     "form": "行く",
+     "class": "v5",
+     "reasons": [
+      "volitional"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "conditional",
+   "surface": "食べれば",
+   "expect": [
+    {
+     "form": "食べる",
+     "class": "v1",
+     "reasons": [
+      "conditional"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "causative passive negative past",
+   "surface": "食べさせられなかった",
+   "expect": [
+    {
+     "form": "食べる",
+     "class": "v1",
+     "reasons": [
+      "negative past",
+      "passive",
+      "causative"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "godan te-form",
+   "surface": "泳いで",
+   "expect": [
+    {
+     "form": "泳ぐ",
+     "class": "v5",
+     "reasons": [
+      "te-form"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "する stem",
+   "surface": "し",
+   "expect": [
+    {
+     "form": "する",
+     "class": "vs",
+     "reasons": [
+      "stem"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "する past",
+   "surface": "した",
+   "expect": [
+    {
+     "form": "する",
+     "class": "vs",
+     "reasons": [
+      "past"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "する polite",
+   "surface": "します",
+   "expect": [
+    {
+     "form": "する",
+     "class": "vs",
+     "reasons": [
+      "polite"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "する passive",
+   "surface": "される",
+   "expect": [
+    {
+     "form": "する",
+     "class": "vs",
+     "reasons": [
+      "passive"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "する compound",
+   "surface": "勉強した",
+   "expect": [
+    {
+     "form": "勉強する",
+     "class": "vs",
+     "reasons": [
+      "past"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "来る written",
+   "surface": "来ました",
+   "expect": [
+    {
+     "form": "来る",
+     "class": "vk",
+     "reasons": [
+      "past",
+      "polite"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "くる kana",
+   "surface": "きた",
+   "expect": [
+    {
+     "form": "くる",
+     "class": "vk",
+     "reasons": [
+      "past"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "行く irregular past",
+   "surface": "行った",
+   "expect": [
+    {
+     "form": "行く",
+     "class": "v5",
+     "reasons": [
+      "past"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "いく kana",
+   "surface": "いった",
+   "expect": [
+    {
+     "form": "いく",
+     "class": "v5",
+     "reasons": [
+      "past"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "progressive",
+   "surface": "している",
+   "expect": [
+    {
+     "form": "する",
+     "class": "vs",
+     "reasons": [
+      "progressive",
+      "te-form"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "progressive polite of a compound",
+   "surface": "勉強しています",
+   "expect": [
+    {
+     "form": "勉強する",
+     "class": "vs",
+     "reasons": [
+      "polite",
+      "progressive",
+      "te-form"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "progressive past",
+   "surface": "行っていた",
+   "expect": [
+    {
+     "form": "行く",
+     "class": "v5",
+     "reasons": [
+      "past",
+      "progressive",
+      "te-form"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "contracted progressive",
+   "surface": "読んでる",
+   "expect": [
+    {
+     "form": "読む",
+     "class": "v5",
+     "reasons": [
+      "progressive",
+      "te-form"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "desire past",
+   "surface": "行きたかった",
+   "expect": [
+    {
+     "form": "行く",
+     "class": "v5",
+     "reasons": [
+      "past",
+      "desire"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "ichidan imperative",
+   "surface": "見ろ",
+   "expect": [
+    {
+     "form": "見る",
+     "class": "v1",
+     "reasons": [
+      "imperative"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "literary imperative",
+   "surface": "考えよ",
+   "expect": [
+    {
+     "form": "考える",
+     "class": "v1",
+     "reasons": [
+      "imperative"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "two classes of one form",
+   "surface": "いれば",
+   "expect": [
+    {
+     "form": "いる",
+     "class": "v1",
+     "reasons": [
+      "conditional"
+     ]
+    },
+    {
+     "form": "いる",
+     "class": "v5",
+     "reasons": [
+      "conditional"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "kana stem too short for ろ",
+   "surface": "いろ",
+   "expect": [],
+   "reject": [
+    "いる"
+   ],
+   "none": false
+  },
+  {
+   "name": "kana stem too short for たい",
+   "surface": "いたい",
+   "expect": [],
+   "reject": [
+    "いる"
+   ],
+   "none": false
+  },
+  {
+   "name": "みたい is not 見る desire",
+   "surface": "みたい",
+   "expect": [],
+   "reject": [
+    "みる"
+   ],
+   "none": false
+  },
+  {
+   "name": "よ after a te-form",
+   "surface": "見てよ",
+   "expect": [],
+   "reject": [
+    "見てる"
+   ],
+   "none": false
+  },
+  {
+   "name": "よ after kana",
+   "surface": "これよ",
+   "expect": [],
+   "reject": [
+    "これる"
+   ],
+   "none": false
+  },
+  {
+   "name": "godan imperative not deinflected",
+   "surface": "届け",
+   "expect": [],
+   "reject": [
+    "届く"
+   ],
+   "none": false
+  },
+  {
+   "name": "godan imperative not deinflected",
+   "surface": "行け",
+   "expect": [],
+   "reject": [
+    "行く"
+   ],
+   "none": false
+  },
+  {
+   "name": "noun",
+   "surface": "猫",
+   "expect": [],
+   "reject": [],
+   "none": true
+  }
+ ]
+}
