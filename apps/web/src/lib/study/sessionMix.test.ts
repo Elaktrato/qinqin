@@ -52,6 +52,41 @@ describe('spaceOut', () => {
 		expect(ids(spaceOut(['a1', 'a2', 'a3', 'a4'].map(it_), 1))).toEqual(['a1', 'a2', 'a3', 'a4']);
 	});
 
+	it('starts a word early enough to keep the full gap at the end of a block', () => {
+		// Without it: b1 c1 a1 d1 a2 (one card between a1 and a2).
+		expect(ids(spaceOut(['b1', 'c1', 'd1', 'a1', 'a2'].map(it_), 2))).toEqual(['a1', 'b1', 'c1', 'd1', 'a2']);
+	});
+
+	it('keeps the full gap in a long block whenever it fits (property)', () => {
+		let state = 777;
+		const next = (n: number) => {
+			state = (Math.imul(state, 1103515245) + 12345) >>> 0;
+			return state % n;
+		};
+		let misses = 0;
+		for (let round = 0; round < 500; round += 1) {
+			// Sessions like a deck session: many words with one to three cards each.
+			const words = 8 + next(10);
+			const items: Item[] = [];
+			for (let w = 0; w < words; w += 1) {
+				const count = 1 + next(3);
+				for (let k = 0; k < count; k += 1) items.push({ id: `${w}-${k}`, entryId: w });
+			}
+			for (let i = items.length - 1; i > 0; i -= 1) {
+				const j = next(i + 1);
+				[items[i], items[j]] = [items[j], items[i]];
+			}
+			const out = spaceOut(items, 3);
+			const last = new Map<number, number>();
+			out.forEach((item, at) => {
+				const before = last.get(item.entryId);
+				if (before !== undefined && at - before - 1 < 3) misses += 1;
+				last.set(item.entryId, at);
+			});
+		}
+		expect(misses).toBe(0);
+	});
+
 	it('takes the first item that keeps the full gap', () => {
 		expect(ids(spaceOut(['a1', 'a2', 'b1', 'c1'].map(it_), 2))).toEqual(['a1', 'b1', 'c1', 'a2']);
 	});

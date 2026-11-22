@@ -61,6 +61,13 @@ export function typeGap(n: number): number {
 }
 
 /**
+ * How early (in items) spaceOut starts a word that needs the rest of the
+ * block to keep the gap. 2 kept the full gap in every feasible simulated
+ * deck session with the least change of order (spec, Ruling).
+ */
+export const PRESSURE_SLACK = 2;
+
+/**
  * spaceOut places the items one by one so that two items of one word
  * (`entryId`) are at least `gap` other items apart where it can, keeping
  * the incoming order otherwise. Per step, with R items left:
@@ -68,7 +75,12 @@ export function typeGap(n: number): number {
  * 1. an item whose word holds r of them with 2r - 1 >= R, and whose word
  *    was not placed last, goes now: later, that word could only end back
  *    to back;
- * 2. else the first item whose word was placed at least `need` items ago,
+ * 2. else (gap > 1), among the items whose word has r >= 2 left, was
+ *    placed at least `gap` items ago and nearly needs every slot left to
+ *    keep the gap, (r - 1) * (gap + 1) + 1 >= R - PRESSURE_SLACK, the first
+ *    of the word with the most left goes now: later, the gap could no
+ *    longer hold at the end of the block;
+ * 3. else the first item whose word was placed at least `need` items ago,
  *    for need = gap down to 0 (0 always matches: the best effort when a
  *    block cannot hold the gap, e.g. one word's four types).
  *
@@ -96,6 +108,21 @@ export function spaceOut<T extends { entryId: number }>(
 		let pick = rest.findIndex(
 			(item) => 2 * (left.get(item.entryId) ?? 0) - 1 >= remaining && sep(item.entryId) >= 1
 		);
+		if (pick < 0 && gap > 1) {
+			let most = 0;
+			rest.forEach((item, at) => {
+				const r = left.get(item.entryId) ?? 0;
+				if (
+					r >= 2 &&
+					r > most &&
+					sep(item.entryId) >= gap &&
+					(r - 1) * (gap + 1) + 1 >= remaining - PRESSURE_SLACK
+				) {
+					most = r;
+					pick = at;
+				}
+			});
+		}
 		for (let need = gap; pick < 0 && need >= 0; need -= 1) {
 			pick = rest.findIndex((item) => sep(item.entryId) >= need);
 		}
@@ -143,9 +170,7 @@ function mixBlock<T extends MixItem>(block: readonly T[], seed: number, placed: 
 		const jitter = perKind.size > 1 ? MIX_SPREAD * mixKey(seed, item.cardId) : 0;
 		return { item, j, key: position + jitter };
 	});
-	keyed.sort(
-		(a, b) => a.key - b.key || kindRank(a.item.kind) - kindRank(b.item.kind) || a.j - b.j
-	);
+	keyed.sort((a, b) => a.key - b.key || kindRank(a.item.kind) - kindRank(b.item.kind) || a.j - b.j);
 	return spaceOut(
 		keyed.map(({ item }) => item),
 		typeGap(size),

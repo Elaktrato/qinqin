@@ -57,6 +57,9 @@ For one block of `N` items:
    left and `r` of them belonging to one word:
    - if some item's word has `2r - 1 >= R` and `sep >= 1`, the first such item goes now (otherwise that word
      would have to end back to back);
+   - else, when `gap > 1`: among the items whose word has `r >= 2`, `sep >= gap` and
+     `(r - 1) * (gap + 1) + 1 >= R - 2` (`PRESSURE_SLACK = 2`: the word nearly needs the rest of the block to
+     keep the gap), the first item of the word with the most items left goes now;
    - else, for `need = gap, gap - 1, …, 0`, the first item whose word has `sep >= need` goes now.
 4. `gap = typeGap(N)`: 1 when `N < 8`, 2 when `N < 16`, else 3 (other cards between two cards of one word).
 
@@ -78,6 +81,12 @@ sessions are not reshuffled, which the random new order (#129) already does for 
 Ruling: the gap scales with the block length (1 / 2 / 3 at `N < 8` / `< 16` / otherwise) — a short block cannot
 hold a large gap, and a gap the block cannot hold would push same-word cards together at its end — cost if
 wrong: a gap one card too small or too large in mid-sized sessions.
+
+Ruling: the pressure step (`PRESSURE_SLACK = 2`) was added after the real-app check, where a 20-card new block
+ended with one card between two cards of one word although the gap of 3 fitted. In a simulation of 4,000
+seeded deck-like blocks it kept the full gap in every block where a greedy "most cards left first" spacer can
+(0 misses against 42–256 without it, 54 with slack 1), moving cards on average 0.6 places from the jitter order
+(the most-left-first spacer: 2.8) — cost if wrong: a slightly more ordered tail of long blocks.
 
 Ruling: when the gap cannot be met (e.g. a session of one word's four types) the result is a deterministic best
 effort: the first item in jitter order whose word is furthest away within the gap, ending in plain jitter order

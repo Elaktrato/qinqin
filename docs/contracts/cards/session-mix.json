@@ -614,6 +614,191 @@
    ]
   },
   {
+   "name": "mixed: a long new block keeps the full gap to its end",
+   "note": "the queue of the real-app check (#132): 5 due, 20 new, gap 3 in the new block",
+   "seed": 11,
+   "order": "mixed",
+   "items": [
+    {
+     "cardId": "c-vocab-30954",
+     "kind": "vocab",
+     "entryId": 30954,
+     "review": true
+    },
+    {
+     "cardId": "c-vocab-3251",
+     "kind": "vocab",
+     "entryId": 3251,
+     "review": true
+    },
+    {
+     "cardId": "c-vocab-53821",
+     "kind": "vocab",
+     "entryId": 53821,
+     "review": true
+    },
+    {
+     "cardId": "c-writing-30954",
+     "kind": "writing",
+     "entryId": 30954,
+     "review": true
+    },
+    {
+     "cardId": "c-writing-53821",
+     "kind": "writing",
+     "entryId": 53821,
+     "review": true
+    },
+    {
+     "cardId": "c-vocab-86284",
+     "kind": "vocab",
+     "entryId": 86284,
+     "review": false
+    },
+    {
+     "cardId": "c-vocab-22051",
+     "kind": "vocab",
+     "entryId": 22051,
+     "review": false
+    },
+    {
+     "cardId": "c-vocab-113720",
+     "kind": "vocab",
+     "entryId": 113720,
+     "review": false
+    },
+    {
+     "cardId": "c-vocab-30941",
+     "kind": "vocab",
+     "entryId": 30941,
+     "review": false
+    },
+    {
+     "cardId": "c-vocab-19212",
+     "kind": "vocab",
+     "entryId": 19212,
+     "review": false
+    },
+    {
+     "cardId": "c-writing-3251",
+     "kind": "writing",
+     "entryId": 3251,
+     "review": false
+    },
+    {
+     "cardId": "c-writing-86284",
+     "kind": "writing",
+     "entryId": 86284,
+     "review": false
+    },
+    {
+     "cardId": "companion:sentence:30954",
+     "kind": "sentence",
+     "entryId": 30954,
+     "review": false
+    },
+    {
+     "cardId": "companion:writing:22051",
+     "kind": "writing",
+     "entryId": 22051,
+     "review": false
+    },
+    {
+     "cardId": "companion:tone:30954",
+     "kind": "tone",
+     "entryId": 30954,
+     "review": false
+    },
+    {
+     "cardId": "companion:sentence:53821",
+     "kind": "sentence",
+     "entryId": 53821,
+     "review": false
+    },
+    {
+     "cardId": "companion:writing:113720",
+     "kind": "writing",
+     "entryId": 113720,
+     "review": false
+    },
+    {
+     "cardId": "companion:tone:53821",
+     "kind": "tone",
+     "entryId": 53821,
+     "review": false
+    },
+    {
+     "cardId": "companion:sentence:3251",
+     "kind": "sentence",
+     "entryId": 3251,
+     "review": false
+    },
+    {
+     "cardId": "companion:writing:30941",
+     "kind": "writing",
+     "entryId": 30941,
+     "review": false
+    },
+    {
+     "cardId": "companion:tone:3251",
+     "kind": "tone",
+     "entryId": 3251,
+     "review": false
+    },
+    {
+     "cardId": "companion:sentence:86284",
+     "kind": "sentence",
+     "entryId": 86284,
+     "review": false
+    },
+    {
+     "cardId": "companion:writing:19212",
+     "kind": "writing",
+     "entryId": 19212,
+     "review": false
+    },
+    {
+     "cardId": "companion:tone:86284",
+     "kind": "tone",
+     "entryId": 86284,
+     "review": false
+    },
+    {
+     "cardId": "companion:sentence:22051",
+     "kind": "sentence",
+     "entryId": 22051,
+     "review": false
+    }
+   ],
+   "expect": [
+    "c-vocab-30954",
+    "c-vocab-3251",
+    "c-writing-53821",
+    "c-writing-30954",
+    "c-vocab-53821",
+    "c-writing-3251",
+    "c-writing-86284",
+    "companion:sentence:30954",
+    "companion:sentence:53821",
+    "c-vocab-22051",
+    "c-vocab-86284",
+    "companion:tone:30954",
+    "companion:tone:53821",
+    "companion:writing:22051",
+    "companion:writing:113720",
+    "companion:tone:3251",
+    "c-vocab-30941",
+    "companion:sentence:86284",
+    "companion:writing:19212",
+    "c-vocab-113720",
+    "companion:sentence:3251",
+    "companion:writing:30941",
+    "companion:tone:86284",
+    "c-vocab-19212",
+    "companion:sentence:22051"
+   ]
+  },
+  {
    "name": "mixed: a word with three types among few others",
    "note": "2r - 1 >= R starts the crowded word first",
    "seed": 5,

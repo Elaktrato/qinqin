@@ -138,8 +138,10 @@ reserve and burying are unchanged. Web: `lib/study/sessionMix.ts` (`mixSession`,
      (its incoming order stays); sort ascending, ties by kind order, then `j`;
   3. spacing, one item per step; `sep(word)` = items placed since that word's (`entryId`) last item, infinite if
      none, the due block's output counting for the new block. With `R` items left and `r` of a word's: the first
-     item whose word has `2r - 1 >= R` and `sep >= 1` goes now; else, for `need = gap … 0`, the first item whose
-     word has `sep >= need`;
+     item whose word has `2r - 1 >= R` and `sep >= 1` goes now; else, when `gap > 1`, among the items whose word
+     has `r >= 2`, `sep >= gap` and `(r - 1) * (gap + 1) + 1 >= R - 2`, the first item of the word with the most
+     left (strictly more wins, so ties keep the earliest); else, for `need = gap … 0`, the first item whose word
+     has `sep >= need`;
   4. `gap = typeGap(N)` = 1 if `N < 8`, 2 if `N < 16`, else 3.
 - `mixKey(seed, cardId) = randomKey(seed)(fnv1a32(cardId))`: FNV-1a 32 over the UTF-8 bytes (offset `0x811c9dc5`,
   prime `0x01000193`, unsigned), passed to `randomKey` (`frequency/` new order: `seed | 0`, `id | 0`, the
