@@ -344,7 +344,10 @@ func rankKeys(pack lang.Pack, language string, m *match) candidate {
 		pri:        e.Pri,
 		headword:   displayTerm(language, m),
 		entryID:    e.ID,
-		weakKana:   m.reading >= 0 && len(e.Forms) > 0 && !e.UK,
+		// A reading match is strong only when the reading is the probe text
+		// itself (not just its plain form: アメ for あめ) and the word is
+		// usually written that way (no written form, or usually kana).
+		weakKana: m.reading >= 0 && (e.Readings[m.reading].Value != term || len(e.Forms) > 0 && !e.UK),
 	}
 	// Primary: the text that matched the dictionary is the headword — the
 	// first reading or first form. A traditional form (CC-CEDICT's trad

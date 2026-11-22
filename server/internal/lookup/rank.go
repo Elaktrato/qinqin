@@ -18,8 +18,9 @@ type candidate struct {
 	// expressionSense: a sense of the entry is an expression (an
 	// expression never makes another one yield: として and とする).
 	expressionSense bool
-	// weakKana: matched through a reading, of an entry that has written
-	// forms and is not usually kana (揣摩 read しま, 使用 read しよう).
+	// weakKana: matched through a reading that is not the probe text as
+	// written (アメ for あめ), or of an entry that has written forms and is
+	// not usually kana (揣摩 read しま, 使用 read しよう).
 	weakKana bool
 	// freqRank is the entry's rank in the ranking pack (see
 	// rankingRanks); 0 when that pack has no data for the entry.

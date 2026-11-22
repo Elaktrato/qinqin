@@ -410,6 +410,49 @@
     "ichi1"
    ],
    "uk": false
+  },
+  {
+   "forms": [
+    "雨"
+   ],
+   "readings": [
+    "あめ"
+   ],
+   "pos": [
+    "n"
+   ],
+   "pri": [
+    "ichi1",
+    "news1",
+    "nf01"
+   ],
+   "uk": false
+  },
+  {
+   "forms": [
+    "飴"
+   ],
+   "readings": [
+    "あめ"
+   ],
+   "pos": [
+    "n"
+   ],
+   "pri": [
+    "ichi1"
+   ],
+   "uk": false
+  },
+  {
+   "forms": [],
+   "readings": [
+    "アメ"
+   ],
+   "pos": [
+    "pref"
+   ],
+   "pri": [],
+   "uk": false
   }
  ],
  "cases": [
@@ -723,6 +766,20 @@
       "passive"
      ],
      "head": "居る"
+    }
+   ]
+  },
+  {
+   "name": "hiragana text: a katakana-only entry is no better fit than a kanji word",
+   "text": "あめ",
+   "tokens": [
+    {
+     "surface": "あめ",
+     "start": 0,
+     "end": 2,
+     "lemma": "あめ",
+     "reasons": [],
+     "head": "雨"
     }
    ]
   }

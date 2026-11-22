@@ -85,8 +85,10 @@ headword. The two keys from this item, language-neutral and parameterised by `hi
   has a tag in `expressionPos` ranks after the same-length inflected candidates when one of them has an
   entry with a priority > 0 and ≥ its own and no sense tagged `expressionPos` (すれば → する; として stays
   before とする).
-- **Kana fit**: a match through a reading, of an entry that has written forms and is not usually-kana, is
-  weak; everything else is strong; strong first (kana しよう → する before 使用).
+- **Kana fit**: a match through a reading is **strong** only when the reading's value equals the matched
+  text exactly (same script: アメ does not fit あめ, although both share the plain form あめ) and the entry
+  has no written form or is usually-kana; every other reading match is **weak**; a match by a written form
+  is strong. Strong first (kana しよう → する before 使用; あめ → 雨/飴 before the katakana-only アメ).
 
 Segmentation is greedy longest match. **Boundary rule**: when the match at a position is exact, its first
 entry has priority 0 and its senses all carry an `expressionPos` tag, the shortest proper prefix of it that has a match has a
