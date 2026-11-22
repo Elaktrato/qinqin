@@ -1,0 +1,833 @@
+{
+  "version": 1,
+  "rule": "events/review-replace",
+  "note": "Over the review events a client holds: a valid review E links to T when E.payload.replaces equals T.id (T.id != E.id), both are valid reviews (review-parse.json) of the same workspace and cardId, and their instants fall in the same whole second. Links join reviews into families (connected components); in each family only the greatest id (plain string comparison) counts, every other member is replaced and counts nowhere. live: the ids that count, in (instant, id) order; replaced: the replaced ids, sorted.",
+  "cases": [
+    {
+      "name": "a misclick replaced by the intended grade",
+      "note": "Again, then Good replacing it with the same ts: only Good counts; another card is unaffected",
+      "events": [
+        {
+          "id": "01KAPZ00000000000000000001",
+          "workspaceId": 7,
+          "device": "web",
+          "ts": "2026-11-22T09:00:00Z",
+          "type": "review",
+          "payload": {
+            "cardId": "c1",
+            "mode": "vocab",
+            "grade": 1
+          }
+        },
+        {
+          "id": "01KAPZ00000000000000000002",
+          "workspaceId": 7,
+          "device": "web",
+          "ts": "2026-11-22T09:00:00Z",
+          "type": "review",
+          "payload": {
+            "cardId": "c1",
+            "mode": "vocab",
+            "grade": 3,
+            "replaces": "01KAPZ00000000000000000001"
+          }
+        },
+        {
+          "id": "01KAPZ00000000000000000003",
+          "workspaceId": 7,
+          "device": "web",
+          "ts": "2026-11-22T09:00:05Z",
+          "type": "review",
+          "payload": {
+            "cardId": "c2",
+            "mode": "vocab",
+            "grade": 3
+          }
+        }
+      ],
+      "live": [
+        "01KAPZ00000000000000000002",
+        "01KAPZ00000000000000000003"
+      ],
+      "replaced": [
+        "01KAPZ00000000000000000001"
+      ]
+    },
+    {
+      "name": "a replacement with the same grade",
+      "note": "harmless: the target is replaced by an equal review",
+      "events": [
+        {
+          "id": "01KAPZ00000000000000000001",
+          "workspaceId": 7,
+          "device": "web",
+          "ts": "2026-11-22T09:00:00Z",
+          "type": "review",
+          "payload": {
+            "cardId": "c1",
+            "mode": "vocab",
+            "grade": 3
+          }
+        },
+        {
+          "id": "01KAPZ00000000000000000002",
+          "workspaceId": 7,
+          "device": "web",
+          "ts": "2026-11-22T09:00:00Z",
+          "type": "review",
+          "payload": {
+            "cardId": "c1",
+            "mode": "vocab",
+            "grade": 3,
+            "replaces": "01KAPZ00000000000000000001"
+          }
+        }
+      ],
+      "live": [
+        "01KAPZ00000000000000000002"
+      ],
+      "replaced": [
+        "01KAPZ00000000000000000001"
+      ]
+    },
+    {
+      "name": "two devices replace the same review",
+      "note": "one family of three; the greatest id survives",
+      "events": [
+        {
+          "id": "01KAPZ00000000000000000001",
+          "workspaceId": 7,
+          "device": "web",
+          "ts": "2026-11-22T09:00:00Z",
+          "type": "review",
+          "payload": {
+            "cardId": "c1",
+            "mode": "vocab",
+            "grade": 1
+          }
+        },
+        {
+          "id": "01KAPZ00000000000000000002",
+          "workspaceId": 7,
+          "device": "web",
+          "ts": "2026-11-22T09:00:00Z",
+          "type": "review",
+          "payload": {
+            "cardId": "c1",
+            "mode": "vocab",
+            "grade": 2,
+            "replaces": "01KAPZ00000000000000000001"
+          }
+        },
+        {
+          "id": "01KAPZ00000000000000000003",
+          "workspaceId": 7,
+          "device": "android",
+          "ts": "2026-11-22T09:00:00Z",
+          "type": "review",
+          "payload": {
+            "cardId": "c1",
+            "mode": "vocab",
+            "grade": 3,
+            "replaces": "01KAPZ00000000000000000001"
+          }
+        }
+      ],
+      "live": [
+        "01KAPZ00000000000000000003"
+      ],
+      "replaced": [
+        "01KAPZ00000000000000000001",
+        "01KAPZ00000000000000000002"
+      ]
+    },
+    {
+      "name": "a chain of replacements",
+      "note": "a replacement of a replacement: the last survives, the first stays replaced",
+      "events": [
+        {
+          "id": "01KAPZ00000000000000000001",
+          "workspaceId": 7,
+          "device": "web",
+          "ts": "2026-11-22T09:00:00Z",
+          "type": "review",
+          "payload": {
+            "cardId": "c1",
+            "mode": "vocab",
+            "grade": 1
+          }
+        },
+        {
+          "id": "01KAPZ00000000000000000002",
+          "workspaceId": 7,
+          "device": "web",
+          "ts": "2026-11-22T09:00:00Z",
+          "type": "review",
+          "payload": {
+            "cardId": "c1",
+            "mode": "vocab",
+            "grade": 4,
+            "replaces": "01KAPZ00000000000000000001"
+          }
+        },
+        {
+          "id": "01KAPZ00000000000000000003",
+          "workspaceId": 7,
+          "device": "web",
+          "ts": "2026-11-22T09:00:00Z",
+          "type": "review",
+          "payload": {
+            "cardId": "c1",
+            "mode": "vocab",
+            "grade": 3,
+            "replaces": "01KAPZ00000000000000000002"
+          }
+        }
+      ],
+      "live": [
+        "01KAPZ00000000000000000003"
+      ],
+      "replaced": [
+        "01KAPZ00000000000000000001",
+        "01KAPZ00000000000000000002"
+      ]
+    },
+    {
+      "name": "a fork of a chain",
+      "note": "one device replaced its replacement, another replaced the original: the greatest id of the whole family survives, never two",
+      "events": [
+        {
+          "id": "01KAPZ00000000000000000001",
+          "workspaceId": 7,
+          "device": "web",
+          "ts": "2026-11-22T09:00:00Z",
+          "type": "review",
+          "payload": {
+            "cardId": "c1",
+            "mode": "vocab",
+            "grade": 1
+          }
+        },
+        {
+          "id": "01KAPZ00000000000000000002",
+          "workspaceId": 7,
+          "device": "web",
+          "ts": "2026-11-22T09:00:00Z",
+          "type": "review",
+          "payload": {
+            "cardId": "c1",
+            "mode": "vocab",
+            "grade": 2,
+            "replaces": "01KAPZ00000000000000000001"
+          }
+        },
+        {
+          "id": "01KAPZ00000000000000000003",
+          "workspaceId": 7,
+          "device": "web",
+          "ts": "2026-11-22T09:00:00Z",
+          "type": "review",
+          "payload": {
+            "cardId": "c1",
+            "mode": "vocab",
+            "grade": 3,
+            "replaces": "01KAPZ00000000000000000002"
+          }
+        },
+        {
+          "id": "01KAPZ00000000000000000004",
+          "workspaceId": 7,
+          "device": "android",
+          "ts": "2026-11-22T09:00:00Z",
+          "type": "review",
+          "payload": {
+            "cardId": "c1",
+            "mode": "vocab",
+            "grade": 4,
+            "replaces": "01KAPZ00000000000000000001"
+          }
+        }
+      ],
+      "live": [
+        "01KAPZ00000000000000000004"
+      ],
+      "replaced": [
+        "01KAPZ00000000000000000001",
+        "01KAPZ00000000000000000002",
+        "01KAPZ00000000000000000003"
+      ]
+    },
+    {
+      "name": "a replacement held before its target",
+      "note": "the target has not arrived: the reference dangles and the replacement counts as an ordinary review",
+      "events": [
+        {
+          "id": "01KAPZ00000000000000000002",
+          "workspaceId": 7,
+          "device": "web",
+          "ts": "2026-11-22T09:00:00Z",
+          "type": "review",
+          "payload": {
+            "cardId": "c1",
+            "mode": "vocab",
+            "grade": 3,
+            "replaces": "01KAPZ00000000000000000001"
+          }
+        }
+      ],
+      "live": [
+        "01KAPZ00000000000000000002"
+      ],
+      "replaced": []
+    },
+    {
+      "name": "the target arrives after its replacement",
+      "note": "the rule reads the set, not the arrival order: the late target is replaced",
+      "events": [
+        {
+          "id": "01KAPZ00000000000000000002",
+          "workspaceId": 7,
+          "device": "web",
+          "ts": "2026-11-22T09:00:00Z",
+          "type": "review",
+          "payload": {
+            "cardId": "c1",
+            "mode": "vocab",
+            "grade": 3,
+            "replaces": "01KAPZ00000000000000000001"
+          }
+        },
+        {
+          "id": "01KAPZ00000000000000000001",
+          "workspaceId": 7,
+          "device": "web",
+          "ts": "2026-11-22T09:00:00Z",
+          "type": "review",
+          "payload": {
+            "cardId": "c1",
+            "mode": "vocab",
+            "grade": 1
+          }
+        }
+      ],
+      "live": [
+        "01KAPZ00000000000000000002"
+      ],
+      "replaced": [
+        "01KAPZ00000000000000000001"
+      ]
+    },
+    {
+      "name": "a dangling reference",
+      "note": "a target that never arrives (lost, or another user's id) voids nothing",
+      "events": [
+        {
+          "id": "01KAPZ00000000000000000001",
+          "workspaceId": 7,
+          "device": "web",
+          "ts": "2026-11-22T09:00:00Z",
+          "type": "review",
+          "payload": {
+            "cardId": "c2",
+            "mode": "vocab",
+            "grade": 3
+          }
+        },
+        {
+          "id": "01KAPZ00000000000000000002",
+          "workspaceId": 7,
+          "device": "web",
+          "ts": "2026-11-22T09:00:00Z",
+          "type": "review",
+          "payload": {
+            "cardId": "c1",
+            "mode": "vocab",
+            "grade": 3,
+            "replaces": "01KAPZ00000000000000000009"
+          }
+        }
+      ],
+      "live": [
+        "01KAPZ00000000000000000001",
+        "01KAPZ00000000000000000002"
+      ],
+      "replaced": []
+    },
+    {
+      "name": "a reference to another card is ignored",
+      "note": "a link needs the same cardId",
+      "events": [
+        {
+          "id": "01KAPZ00000000000000000001",
+          "workspaceId": 7,
+          "device": "web",
+          "ts": "2026-11-22T09:00:00Z",
+          "type": "review",
+          "payload": {
+            "cardId": "c1",
+            "mode": "vocab",
+            "grade": 1
+          }
+        },
+        {
+          "id": "01KAPZ00000000000000000002",
+          "workspaceId": 7,
+          "device": "web",
+          "ts": "2026-11-22T09:00:00Z",
+          "type": "review",
+          "payload": {
+            "cardId": "c2",
+            "mode": "vocab",
+            "grade": 3,
+            "replaces": "01KAPZ00000000000000000001"
+          }
+        }
+      ],
+      "live": [
+        "01KAPZ00000000000000000001",
+        "01KAPZ00000000000000000002"
+      ],
+      "replaced": []
+    },
+    {
+      "name": "a reference to another workspace is ignored",
+      "note": "a link needs the same workspace",
+      "events": [
+        {
+          "id": "01KAPZ00000000000000000001",
+          "workspaceId": 7,
+          "device": "web",
+          "ts": "2026-11-22T09:00:00Z",
+          "type": "review",
+          "payload": {
+            "cardId": "c1",
+            "mode": "vocab",
+            "grade": 1
+          }
+        },
+        {
+          "id": "01KAPZ00000000000000000002",
+          "workspaceId": 8,
+          "device": "web",
+          "ts": "2026-11-22T09:00:00Z",
+          "type": "review",
+          "payload": {
+            "cardId": "c1",
+            "mode": "vocab",
+            "grade": 3,
+            "replaces": "01KAPZ00000000000000000001"
+          }
+        }
+      ],
+      "live": [
+        "01KAPZ00000000000000000001",
+        "01KAPZ00000000000000000002"
+      ],
+      "replaced": []
+    },
+    {
+      "name": "a reference to another second is ignored",
+      "note": "a link needs the same whole second: the replacement copies the target's ts",
+      "events": [
+        {
+          "id": "01KAPZ00000000000000000001",
+          "workspaceId": 7,
+          "device": "web",
+          "ts": "2026-11-22T09:00:00Z",
+          "type": "review",
+          "payload": {
+            "cardId": "c1",
+            "mode": "vocab",
+            "grade": 1
+          }
+        },
+        {
+          "id": "01KAPZ00000000000000000002",
+          "workspaceId": 7,
+          "device": "web",
+          "ts": "2026-11-22T09:00:01Z",
+          "type": "review",
+          "payload": {
+            "cardId": "c1",
+            "mode": "vocab",
+            "grade": 3,
+            "replaces": "01KAPZ00000000000000000001"
+          }
+        }
+      ],
+      "live": [
+        "01KAPZ00000000000000000001",
+        "01KAPZ00000000000000000002"
+      ],
+      "replaced": []
+    },
+    {
+      "name": "a millisecond copy is the same second",
+      "note": "the web's outbox copy keeps milliseconds and an offset; the server copy is whole UTC seconds: floor(instant / 1000 ms) is compared",
+      "events": [
+        {
+          "id": "01KAPZ00000000000000000001",
+          "workspaceId": 7,
+          "device": "web",
+          "ts": "2026-11-22T10:00:00.750+01:00",
+          "type": "review",
+          "payload": {
+            "cardId": "c1",
+            "mode": "vocab",
+            "grade": 1
+          }
+        },
+        {
+          "id": "01KAPZ00000000000000000002",
+          "workspaceId": 7,
+          "device": "web",
+          "ts": "2026-11-22T09:00:00Z",
+          "type": "review",
+          "payload": {
+            "cardId": "c1",
+            "mode": "vocab",
+            "grade": 3,
+            "replaces": "01KAPZ00000000000000000001"
+          }
+        },
+        {
+          "id": "01KAPZ00000000000000000003",
+          "workspaceId": 7,
+          "device": "web",
+          "ts": "2026-11-22T09:00:00.999Z",
+          "type": "review",
+          "payload": {
+            "cardId": "c2",
+            "mode": "vocab",
+            "grade": 1
+          }
+        },
+        {
+          "id": "01KAPZ00000000000000000004",
+          "workspaceId": 7,
+          "device": "web",
+          "ts": "2026-11-22T09:00:00.001Z",
+          "type": "review",
+          "payload": {
+            "cardId": "c2",
+            "mode": "vocab",
+            "grade": 3,
+            "replaces": "01KAPZ00000000000000000003"
+          }
+        }
+      ],
+      "live": [
+        "01KAPZ00000000000000000002",
+        "01KAPZ00000000000000000004"
+      ],
+      "replaced": [
+        "01KAPZ00000000000000000001",
+        "01KAPZ00000000000000000003"
+      ]
+    },
+    {
+      "name": "two reviews naming each other",
+      "note": "a cycle is one family with one survivor",
+      "events": [
+        {
+          "id": "01KAPZ00000000000000000001",
+          "workspaceId": 7,
+          "device": "web",
+          "ts": "2026-11-22T09:00:00Z",
+          "type": "review",
+          "payload": {
+            "cardId": "c1",
+            "mode": "vocab",
+            "grade": 3,
+            "replaces": "01KAPZ00000000000000000002"
+          }
+        },
+        {
+          "id": "01KAPZ00000000000000000002",
+          "workspaceId": 7,
+          "device": "web",
+          "ts": "2026-11-22T09:00:00Z",
+          "type": "review",
+          "payload": {
+            "cardId": "c1",
+            "mode": "vocab",
+            "grade": 1,
+            "replaces": "01KAPZ00000000000000000001"
+          }
+        }
+      ],
+      "live": [
+        "01KAPZ00000000000000000002"
+      ],
+      "replaced": [
+        "01KAPZ00000000000000000001"
+      ]
+    },
+    {
+      "name": "a reference to itself is ignored",
+      "note": "T.id must differ from E.id",
+      "events": [
+        {
+          "id": "01KAPZ00000000000000000001",
+          "workspaceId": 7,
+          "device": "web",
+          "ts": "2026-11-22T09:00:00Z",
+          "type": "review",
+          "payload": {
+            "cardId": "c1",
+            "mode": "vocab",
+            "grade": 3,
+            "replaces": "01KAPZ00000000000000000001"
+          }
+        }
+      ],
+      "live": [
+        "01KAPZ00000000000000000001"
+      ],
+      "replaced": []
+    },
+    {
+      "name": "a target that is not a review is ignored",
+      "note": "grade 0 does not parse: the replacement counts alone",
+      "events": [
+        {
+          "id": "01KAPZ00000000000000000001",
+          "workspaceId": 7,
+          "device": "web",
+          "ts": "2026-11-22T09:00:00Z",
+          "type": "review",
+          "payload": {
+            "cardId": "c1",
+            "mode": "vocab",
+            "grade": 0
+          }
+        },
+        {
+          "id": "01KAPZ00000000000000000002",
+          "workspaceId": 7,
+          "device": "web",
+          "ts": "2026-11-22T09:00:00Z",
+          "type": "review",
+          "payload": {
+            "cardId": "c1",
+            "mode": "vocab",
+            "grade": 3,
+            "replaces": "01KAPZ00000000000000000001"
+          }
+        }
+      ],
+      "live": [
+        "01KAPZ00000000000000000002"
+      ],
+      "replaced": []
+    },
+    {
+      "name": "a replacement whose ts does not parse is not a review",
+      "note": "it is never valid, so it links nothing: the target counts",
+      "events": [
+        {
+          "id": "01KAPZ00000000000000000001",
+          "workspaceId": 7,
+          "device": "web",
+          "ts": "2026-11-22T09:00:00Z",
+          "type": "review",
+          "payload": {
+            "cardId": "c1",
+            "mode": "vocab",
+            "grade": 1
+          }
+        },
+        {
+          "id": "01KAPZ00000000000000000002",
+          "workspaceId": 7,
+          "device": "web",
+          "ts": "not a time",
+          "type": "review",
+          "payload": {
+            "cardId": "c1",
+            "mode": "vocab",
+            "grade": 3,
+            "replaces": "01KAPZ00000000000000000001"
+          }
+        }
+      ],
+      "live": [
+        "01KAPZ00000000000000000001"
+      ],
+      "replaced": []
+    },
+    {
+      "name": "a non-string replaces is dropped",
+      "note": "the review stays an ordinary review",
+      "events": [
+        {
+          "id": "01KAPZ00000000000000000001",
+          "workspaceId": 7,
+          "device": "web",
+          "ts": "2026-11-22T09:00:00Z",
+          "type": "review",
+          "payload": {
+            "cardId": "c1",
+            "mode": "vocab",
+            "grade": 1
+          }
+        },
+        {
+          "id": "01KAPZ00000000000000000002",
+          "workspaceId": 7,
+          "device": "web",
+          "ts": "2026-11-22T09:00:00Z",
+          "type": "review",
+          "payload": {
+            "cardId": "c1",
+            "mode": "vocab",
+            "grade": 3,
+            "replaces": 1
+          }
+        }
+      ],
+      "live": [
+        "01KAPZ00000000000000000001",
+        "01KAPZ00000000000000000002"
+      ],
+      "replaced": []
+    },
+    {
+      "name": "an empty replaces is dropped",
+      "note": "an empty string names nothing",
+      "events": [
+        {
+          "id": "01KAPZ00000000000000000001",
+          "workspaceId": 7,
+          "device": "web",
+          "ts": "2026-11-22T09:00:00Z",
+          "type": "review",
+          "payload": {
+            "cardId": "c1",
+            "mode": "vocab",
+            "grade": 1
+          }
+        },
+        {
+          "id": "01KAPZ00000000000000000002",
+          "workspaceId": 7,
+          "device": "web",
+          "ts": "2026-11-22T09:00:00Z",
+          "type": "review",
+          "payload": {
+            "cardId": "c1",
+            "mode": "vocab",
+            "grade": 3,
+            "replaces": ""
+          }
+        }
+      ],
+      "live": [
+        "01KAPZ00000000000000000001",
+        "01KAPZ00000000000000000002"
+      ],
+      "replaced": []
+    },
+    {
+      "name": "one card corrected in two sessions",
+      "note": "families are per target: a correction on day 1 and a later ordinary review on day 2 both count",
+      "events": [
+        {
+          "id": "01KAPZ00000000000000000001",
+          "workspaceId": 7,
+          "device": "web",
+          "ts": "2026-11-22T09:00:00Z",
+          "type": "review",
+          "payload": {
+            "cardId": "c1",
+            "mode": "vocab",
+            "grade": 1
+          }
+        },
+        {
+          "id": "01KAPZ00000000000000000002",
+          "workspaceId": 7,
+          "device": "web",
+          "ts": "2026-11-22T09:00:00Z",
+          "type": "review",
+          "payload": {
+            "cardId": "c1",
+            "mode": "vocab",
+            "grade": 3,
+            "replaces": "01KAPZ00000000000000000001"
+          }
+        },
+        {
+          "id": "01KAPZ00000000000000000003",
+          "workspaceId": 7,
+          "device": "web",
+          "ts": "2026-11-23T08:00:00Z",
+          "type": "review",
+          "payload": {
+            "cardId": "c1",
+            "mode": "vocab",
+            "grade": 2
+          }
+        }
+      ],
+      "live": [
+        "01KAPZ00000000000000000002",
+        "01KAPZ00000000000000000003"
+      ],
+      "replaced": [
+        "01KAPZ00000000000000000001"
+      ]
+    },
+    {
+      "name": "a replacement of a replaced review",
+      "note": "naming a member that is no longer the survivor still joins the family: the greatest id survives",
+      "events": [
+        {
+          "id": "01KAPZ00000000000000000001",
+          "workspaceId": 7,
+          "device": "web",
+          "ts": "2026-11-22T09:00:00Z",
+          "type": "review",
+          "payload": {
+            "cardId": "c1",
+            "mode": "vocab",
+            "grade": 1
+          }
+        },
+        {
+          "id": "01KAPZ00000000000000000002",
+          "workspaceId": 7,
+          "device": "web",
+          "ts": "2026-11-22T09:00:00Z",
+          "type": "review",
+          "payload": {
+            "cardId": "c1",
+            "mode": "vocab",
+            "grade": 2,
+            "replaces": "01KAPZ00000000000000000001"
+          }
+        },
+        {
+          "id": "01KAPZ00000000000000000003",
+          "workspaceId": 7,
+          "device": "web",
+          "ts": "2026-11-22T09:00:00Z",
+          "type": "review",
+          "payload": {
+            "cardId": "c1",
+            "mode": "vocab",
+            "grade": 3,
+            "replaces": "01KAPZ00000000000000000001"
+          }
+        }
+      ],
+      "live": [
+        "01KAPZ00000000000000000003"
+      ],
+      "replaced": [
+        "01KAPZ00000000000000000001",
+        "01KAPZ00000000000000000002"
+      ]
+    }
+  ]
+}
