@@ -160,3 +160,22 @@ func TestCompoundStemLengthByScript(t *testing.T) {
 	wantPrefix(t, run(t, s, "ja", "メモした", 0), "メモ[past]")
 	wantPrefix(t, run(t, s, "ja", "愛した", 0), "愛[past]")
 }
+
+// Kana fit reads usually-kana on the first sense (the table's
+// usuallyReadingTag): 仕手 carries uk only on its second sense, so bare
+// して is する's te-form without a frequency pack.
+func TestKanaFitUsesTheFirstSense(t *testing.T) {
+	sqlDB, _ := openDB(t)
+	importJMdict(t, sqlDB, jaWords+`<entry>
+<ent_seq>1305990</ent_seq>
+<k_ele><keb>仕手</keb><ke_pri>ichi1</ke_pri><ke_pri>nf08</ke_pri></k_ele>
+<r_ele><reb>して</reb><re_pri>ichi1</re_pri><re_pri>nf08</re_pri></r_ele>
+<sense><pos>&n;</pos><gloss>doer</gloss></sense>
+<sense><pos>&n;</pos><misc>&uk;</misc><gloss>protagonist (noh)</gloss></sense>
+</entry>
+`)
+	s := service(sqlDB)
+	wantPrefix(t, run(t, s, "ja", "して", 0), "為る[te-form]", "仕手")
+	wantPrefix(t, run(t, s, "ja", "こと", 0), "事")
+	wantPrefix(t, run(t, s, "ja", "いる", 0), "居る")
+}

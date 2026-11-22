@@ -256,7 +256,7 @@ func (s Service) Lookup(ctx context.Context, language, text string, offset int, 
 	}
 	out := make([]Result, len(cands))
 	for i, c := range cands {
-		out[i] = result(language, matches[c.at], freqs[c.at], names, window, offset)
+		out[i] = result(language, hints, matches[c.at], freqs[c.at], names, window, offset)
 	}
 	if s.WithLevels {
 		ids := make([]int64, len(out))
@@ -315,10 +315,17 @@ func hasClass(rules *lemma.Table, e lexicon.Entry, class string) bool {
 // weakReading reports whether m is a weak reading match: a reading match
 // is strong only when the reading is the probe text itself (not just its
 // plain form: アメ for あめ) and the word is usually written that way (no
-// written form, or usually kana).
-func weakReading(m *match) bool {
+// written form, or its first sense carries the table's usuallyReadingTag:
+// JMdict uk, as the display-form rule reads it).
+func weakReading(m *match, tag string) bool {
 	e := m.entry
-	return m.reading >= 0 && (e.Readings[m.reading].Value != m.probe.term || len(e.Forms) > 0 && !e.UK)
+	return m.reading >= 0 && (e.Readings[m.reading].Value != m.probe.term || len(e.Forms) > 0 && !firstSenseTagged(e, tag))
+}
+
+// firstSenseTagged reports whether e's first sense has tag (never for an
+// empty tag).
+func firstSenseTagged(e lexicon.Entry, tag string) bool {
+	return tag != "" && len(e.Senses) > 0 && slices.Contains(e.Senses[0].Tags, tag)
 }
 
 // readingPlain is the plain reading form text is also looked up by, when
@@ -363,7 +370,7 @@ func rankKeys(pack lang.Pack, hints lemma.Hints, language string, m *match) cand
 		pri:        e.Pri,
 		headword:   displayTerm(language, m),
 		entryID:    e.ID,
-		weakKana:   weakReading(m),
+		weakKana:   weakReading(m, hints.UsuallyReadingTag),
 	}
 	// Primary: the text that matched the dictionary is the headword — the
 	// first reading or first form. A traditional form (CC-CEDICT's trad
@@ -411,7 +418,7 @@ func displayTerm(language string, m *match) string {
 const flagSearchOnly = "sK"
 
 // result renders a ranked match.
-func result(language string, m *match, freqs []Frequency, names map[int64]string, window []rune, offset int) Result {
+func result(language string, hints lemma.Hints, m *match, freqs []Frequency, names map[int64]string, window []rune, offset int) Result {
 	e := m.entry
 	r := Result{
 		EntryID:     e.ID,
@@ -429,7 +436,7 @@ func result(language string, m *match, freqs []Frequency, names map[int64]string
 		Pri:         e.Pri,
 		Lemma:       m.probe.form,
 		ViaReading:  m.reading >= 0,
-		WeakReading: weakReading(m),
+		WeakReading: weakReading(m, hints.UsuallyReadingTag),
 	}
 	if m.probe.term != m.probe.form {
 		r.Stem = m.probe.term

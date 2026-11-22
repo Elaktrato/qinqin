@@ -14,7 +14,7 @@
   "te": {}
  },
  "compounds": [{"suffix": "する", "class": "vs", "stem": {"anyOf": [{"minRunes": 2}, {"notOnly": "kana"}]}}],
- "hints": {"expressionPos": ["exp"], "particlePos": ["prt"], "readingScript": "kana", "readingType": "kana",
+ "hints": {"expressionPos": ["exp"], "particlePos": ["prt"], "readingScript": "kana", "readingType": "kana", "usuallyReadingTag": "uk",
   "keepWhole": ["にもとづいて", "をとおして", "によれば", "におうじて", "にそって", "をめぐって", "をおいて", "にすぎない", "にはんして", "にあたって", "にあたり", "にわたり", "にかけては", "にひきかえ", "にいたっては", "にたいし", "にかんし", "にして", "によらず", "にもまして", "とおもったら", "ときたら", "というと", "といえど", "といえども", "といったらない", "がはやいか", "であれ", "であろう", "ですら", "でない", "となく", "もさることながら", "しかねない"]},
  "rules": [
   {"from": "行った", "to": "行く", "reason": "past", "out": "v5", "match": "suffix-or-whole"},
