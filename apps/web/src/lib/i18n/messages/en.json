@@ -443,6 +443,7 @@
 	"apiError.emailUnverified": "Confirm your email address first. Addresses must also be in use on this server.",
 	"apiError.empty": "There is no text to work with yet.",
 	"apiError.endpointBlocked": "That address is not allowed.",
+	"apiError.eventsPageInvalid": "The study history request is not valid. Reload the page.",
 	"apiError.exportRunning": "An export of your data is already running.",
 	"apiError.forbidden": "Administrator access is required.",
 	"apiError.imageTooLarge": "This photo has too many pixels.",

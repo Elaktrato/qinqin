@@ -128,6 +128,7 @@
   },
   {
    "type": "sentences",
+   "_doc": "pinyin may be \"\": a pack sentence without a reading (the pack left it out rather than guess one, e.g. a word with several readings); a client shows no reading line for it.",
    "tables": [
     {
      "name": "sentences",

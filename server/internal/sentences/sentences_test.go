@@ -507,7 +507,6 @@ func TestImportRejectsInvalidPacks(t *testing.T) {
 		"no entries":     `{"entries":[]}`,
 		"blank word":     `{"entries":[{"word":"  ","sentences":[{"hanzi":"你好！","pinyin":"nǐ hǎo!","translation":"Hi!"}]}]}`,
 		"blank hanzi":    `{"entries":[{"word":"你好","sentences":[{"hanzi":" ","pinyin":"nǐ hǎo!","translation":"Hi!"}]}]}`,
-		"no pinyin":      `{"entries":[{"word":"你好","sentences":[{"hanzi":"你好！","translation":"Hi!"}]}]}`,
 		"no translation": `{"entries":[{"word":"你好","sentences":[{"hanzi":"你好！","pinyin":"nǐ hǎo!"}]}]}`,
 		"malformed json": `{"entries":`,
 		"empty array":    `{"entries":[{"word":"你好","sentences":[]}]}`,
@@ -524,6 +523,34 @@ func TestImportRejectsInvalidPacks(t *testing.T) {
 	}
 	if _, err := sentences.ImportPack(ctx, sqlDB, buildPackFormat(t, "cedict-format", "cedict", `{"entries":[]}`)); !errors.Is(err, dict.ErrInvalidPack) {
 		t.Errorf("import cedict-format sentences pack err = %v, want ErrInvalidPack", err)
+	}
+}
+
+// TestImportAcceptsSentencesWithoutReading: a pack sentence's reading
+// is optional (a generated reading is left out rather than guessed), so
+// a missing or blank pinyin imports as an empty reading.
+func TestImportAcceptsSentencesWithoutReading(t *testing.T) {
+	sqlDB := newDB(t)
+	ctx := context.Background()
+	nihao, _ := seedWords(t, sqlDB)
+	pack := `{"entries":[{"word":"你好","sentences":[
+		{"hanzi":"你好！","translation":"Hi!"},
+		{"hanzi":"你好吗？","pinyin":"  ","translation":"How are you?"}]}]}`
+	res, err := sentences.ImportPack(ctx, sqlDB, buildPack(t, "no-reading", pack))
+	if err != nil {
+		t.Fatalf("import without readings: %v", err)
+	}
+	if res.Sentences != 2 {
+		t.Errorf("Result.Sentences = %d, want 2", res.Sentences)
+	}
+	list, err := sentences.ForEntry(ctx, sqlDB, nihao, 0)
+	if err != nil || len(list) != 2 {
+		t.Fatalf("ForEntry = %+v, %v; want 2 sentences", list, err)
+	}
+	for _, s := range list {
+		if s.Pinyin != "" {
+			t.Errorf("sentence %q reading = %q, want empty", s.Hanzi, s.Pinyin)
+		}
 	}
 }
 

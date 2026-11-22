@@ -79,6 +79,7 @@ export const API_ERROR_KEYS: Readonly<Record<string, MessageKey>> = {
 	study_row_invalid: 'apiError.studyRowInvalid',
 	sync_collection_moved: 'apiError.syncCollectionMoved',
 	sync_page_invalid: 'apiError.syncPageInvalid',
+	events_page_invalid: 'apiError.eventsPageInvalid',
 	sync_cursor_expired: 'apiError.syncCursorExpired',
 	package_not_found: 'apiError.packageNotFound',
 	package_revision_gone: 'apiError.packageRevisionGone',

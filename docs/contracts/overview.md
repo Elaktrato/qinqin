@@ -119,8 +119,8 @@ Every folder, in dependency order (this page's sync model and Events sections af
   nothing of the batch. `envelope.json`.
 - Order everything by `(ts, id)`. **Android sends `ts` already truncated to whole seconds (UTC)** so its local
   copy equals the server copy byte for byte (Ruling in `events/README.md`).
-- Reading events: the paged pull's `events` collection (every type except `lookup`). `GET /api/events` is
-  unpaged (follow-up #110).
+- Reading events: the paged pull's `events` collection (every type except `lookup`, with a delta cursor), or
+  `GET /api/events?limit=` in pages (`(ts, id)` order, every type, no cursor; `events/page.json`, #110).
 - Types and payloads (`payloads.json`): `session` `null` (once per workspace per learner day; optional for
   Android), `view` `{entryId}` (once per entry page visit; optional), `lookup` never written (legacy
   `{query}`), `review` `{cardId, mode, grade, meta?, replaces?}` (`review-parse.json`: parse, validity, order;
@@ -288,8 +288,6 @@ preparation marks (`qinqin.pwa.*`), the current workspace and the session token.
 Nothing Android needs for #34–#38 that today's code defines is missing above. These are left out deliberately,
 each with its owner:
 
-- **Paging `GET /api/events`** — a route change; read events from the paged pull's `events` collection
-  meanwhile (#110).
 - **Grade suggestions** (writing, tone, reverse, word salad), **tone gestures and the writing engine** — the
   learner confirms every grade, so a different suggestion never changes stored data; the native engines are
   #38's own work.
