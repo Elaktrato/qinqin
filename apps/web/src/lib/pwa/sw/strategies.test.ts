@@ -171,6 +171,22 @@ describe('api: network-first, partitioned by credential', () => {
 		expect((await caches.keys()).length).toBe(2);
 	});
 
+	it('a walk of event log pages is served offline page by page (#110)', async () => {
+		const first = '/api/events?limit=2000&since=1970-01-01T00%3A00%3A00Z&workspace=2';
+		const second = '/api/events?page=e1.k&workspace=2';
+		const p1 = { events: [{ id: '1', type: 'review' }, { id: '2', type: 'lookup' }], more: true, next: 'e1.k' };
+		const p2 = { events: [{ id: '3', type: 'review' }], more: false, next: null };
+		fetchMock.mockResolvedValueOnce(json(p1)).mockResolvedValueOnce(json(p2));
+		await run(request(first, { auth: 'Bearer a' }));
+		await run(request(second, { auth: 'Bearer a' }));
+		fetchMock.mockRejectedValue(new TypeError('offline'));
+		const o1 = await run(request(first, { auth: 'Bearer a' }));
+		expect(o1.headers.get(OFFLINE_HEADER)).toBe('1');
+		expect(await o1.json()).toEqual({ events: [{ id: '1', type: 'review' }], more: true, next: 'e1.k' });
+		const o2 = await run(request(second, { auth: 'Bearer a' }));
+		expect(await o2.json()).toEqual(p2);
+	});
+
 	it('query order does not matter for the saved copy', async () => {
 		fetchMock.mockResolvedValueOnce(json(['events']));
 		await run(request('/api/events?workspace=2&since=1970-01-01T00:00:00Z', { auth: 'Bearer a' }));

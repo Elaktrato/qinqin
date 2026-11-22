@@ -34,9 +34,10 @@ type eventsPageFixture struct {
 		Page json.RawMessage `json:"page"`
 	} `json:"valid"`
 	Invalid []struct {
-		Name   string          `json:"name"`
-		Page   json.RawMessage `json:"page"`
-		Reason string          `json:"reason"`
+		Name          string          `json:"name"`
+		Page          json.RawMessage `json:"page"`
+		Reason        string          `json:"reason"`
+		ReaderAccepts bool            `json:"readerAccepts"`
 	} `json:"invalid"`
 	Requests []struct {
 		Name   string `json:"name"`

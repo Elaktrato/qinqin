@@ -19,7 +19,18 @@ describe("docs/contracts/events/page.json", () => {
       expect(parseEventsPage(v.page)).not.toBeNull();
     });
   }
-  for (const v of fixture.invalid) {
+  for (const v of fixture.invalid as {
+    name: string;
+    page: unknown;
+    reason: string;
+    readerAccepts?: boolean;
+  }[]) {
+    if (v.readerAccepts) {
+      it(`follows what a saved copy can hold: ${v.name}`, () => {
+        expect(parseEventsPage(v.page)).not.toBeNull();
+      });
+      continue;
+    }
     it(`refuses the invalid page: ${v.name} (${v.reason})`, () => {
       expect(parseEventsPage(v.page)).toBeNull();
     });

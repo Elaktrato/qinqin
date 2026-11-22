@@ -66,7 +66,8 @@ export function parseEventsPage(raw: unknown): EventsPage | null {
     more ? typeof next !== "string" || !next.startsWith("e1.") : next !== null
   )
     return null;
-  if (more && events.length === 0) return null;
+  // No "at least one row while more" check: a page saved by the service
+  // worker loses its lookup events and can be empty (page.json readerAccepts).
   let prevTs = "";
   let prevId = "";
   for (const e of events) {

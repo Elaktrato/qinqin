@@ -1,7 +1,7 @@
 {
  "version": 1,
  "rule": "events/page",
- "_doc": "GET /api/events in pages (#110). limit (1..2000) or page selects the paged form; without both the route answers the legacy array (streamed, Deprecation: true). valid pages decode and invalid ones are refused for the reason given; items are the legacy items exactly. requests run against a server where the caller has 5 events in $ws (so limit=2 has 3 pages), 1 in $otherWs and another user owns $bobWs; $next is the next token of the caller's first page with limit=2&workspace=$ws. error is the JSON code of {error, message}; text is the plain-text body (without its newline). Tokens are opaque: only the e1. prefix is a contract. Decoded by server/internal/api/contract_events_page_test.go and apps/web/src/lib/eventPages.test.ts.",
+ "_doc": "GET /api/events in pages (#110). limit (1..2000) or page selects the paged form; without both the route answers the legacy array (streamed, Deprecation: true). valid pages decode and invalid ones are refused for the reason given; items are the legacy items exactly. requests run against a server where the caller has 5 events in $ws (so limit=2 has 3 pages), 1 in $otherWs and another user owns $bobWs; $next is the next token of the caller's first page with limit=2&workspace=$ws. error is the JSON code of {error, message}; text is the plain-text body (without its newline). readerAccepts marks an answer the server never sends but a reader must still follow: a page saved by the web service worker loses its lookup events, so a saved page can be empty with more true. Tokens are opaque: only the e1. prefix is a contract. Decoded by server/internal/api/contract_events_page_test.go and apps/web/src/lib/eventPages.test.ts.",
  "budget": {
   "maxLimit": 2000,
   "maxPageBytes": 4194304,
@@ -262,7 +262,8 @@
     "more": true,
     "next": "e1.x"
    },
-   "reason": "a page holds at least one row while rows remain"
+   "reason": "a page holds at least one row while rows remain",
+   "readerAccepts": true
   },
   {
    "name": "events not an array",

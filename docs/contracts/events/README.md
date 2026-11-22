@@ -95,7 +95,9 @@ GET /api/events?page=<next>[&workspace=<id>]                          continuati
   `since`/`limit`, an empty `page`, a parameter given twice, a `limit` outside 1..2000 → 400 JSON
   `{"error": "events_page_invalid", "message": …}` (`auth/errors.json`): read again from the first page. A
   bad `since` or `workspace` and a foreign workspace keep the plain-text answers below, on every page.
-- Web reader: `apps/web/src/lib/eventPages.ts` (`limit=2000`, strict decode, at most 1000 pages).
+- Web reader: `apps/web/src/lib/eventPages.ts` (`limit=2000`, strict decode, at most 1000 pages). It follows
+  an empty page with `more` true (`readerAccepts` in `page.json`): the server never sends one, but a page the
+  service worker saved has lost its `lookup` events and may be empty.
 
 ## Errors
 

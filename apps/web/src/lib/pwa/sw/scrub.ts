@@ -1,7 +1,7 @@
 // What a saved API copy may hold (#72): the lookup history never reaches
 // Cache Storage. A whole-account pull keeps every row except the
-// qinqin-core `lookups` / `lookupcfg` rows, and an event log every event
-// except `lookup` events (older web clients stored search queries in them).
+// qinqin-core `lookups` / `lookupcfg` rows, and an event log (the array or a
+// page's `events`) every event except `lookup` events (older web clients stored search queries in them).
 // Shared by the worker (before cache.put) and the page (scrubbing copies
 // saved by an older worker). Pure.
 
@@ -42,9 +42,16 @@ export function scrubForCache(pathname: string, text: string): string | null {
 		return null;
 	}
 	if (path === '/api/events') {
-		if (!Array.isArray(body)) return null;
-		const kept = body.filter((e) => (e as { type?: unknown } | null)?.type !== 'lookup');
-		return kept.length === body.length ? text : JSON.stringify(kept);
+		const notLookup = (e: unknown) => (e as { type?: unknown } | null)?.type !== 'lookup';
+		if (Array.isArray(body)) {
+			const kept = body.filter(notLookup);
+			return kept.length === body.length ? text : JSON.stringify(kept);
+		}
+		// A page of the paged form (#110): {events, more, next}.
+		const page = body as { events?: unknown } | null;
+		if (typeof page !== 'object' || page === null || !Array.isArray(page.events)) return null;
+		const kept = page.events.filter(notLookup);
+		return kept.length === page.events.length ? text : JSON.stringify({ ...page, events: kept });
 	}
 	if (typeof body !== 'object' || body === null || Array.isArray(body)) return null;
 	const pull = body as { pluginData?: unknown; collections?: unknown };

@@ -112,8 +112,25 @@ function apiAllowed(url: URL): boolean {
 		const list = all[0].split(',');
 		return list.length > 0 && list.every((c) => PULL_COLLECTIONS.has(c));
 	}
-	if (pathname === '/api/events') return (searchParams.get('workspace') ?? '') !== '';
+	if (pathname === '/api/events') return eventsAllowed(searchParams);
 	return false;
+}
+
+/**
+ * An event log read of one workspace: the legacy form or a first page with
+ * `workspace=`, or a continuation of exactly `page=e1.<token>&workspace=<id>`
+ * (docs/contracts/events/, #110). The token holds no clock, so its URL is a
+ * stable cache key.
+ */
+function eventsAllowed(params: URLSearchParams): boolean {
+	if (!params.has('page')) return (params.get('workspace') ?? '') !== '';
+	const keys = [...params.keys()];
+	return (
+		keys.length === 2 &&
+		params.getAll('page').length === 1 &&
+		/^[0-9]+$/.test(params.get('workspace') ?? '') &&
+		/^e1\.[A-Za-z0-9_-]+$/.test(params.get('page') ?? '')
+	);
 }
 
 const HANZI = /^\/hanzi\/U[0-9A-F]+\.json$/;
