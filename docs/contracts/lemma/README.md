@@ -103,10 +103,9 @@ headword. The two keys from this item, language-neutral and parameterised by `hi
 
 - **Expression yields**: an exact match (empty chain) of an entry without written forms whose every sense
   has a tag in `expressionPos` *yields* when a same-length inflected candidate has an entry with a priority
-  > 0 and ≥ its own and no sense tagged `expressionPos` (すれば → する; として stays before とする). An
-  unwritten entry whose **first** sense has a `particlePos` tag yields the same way, but only to a strictly
-  higher priority (bare して, the priority-0 literary particle, → する's te-form; し, 60, keeps its place
-  against する's stem, 60). A
+  > 0 and ≥ its own and no sense tagged `expressionPos` (すれば → する; として stays before とする). Particles
+  never yield (にて is not 煮る, たって is not 立つ); an entry that is all `expressionPos` is an expression for
+  this rule even when its first sense also carries a `particlePos` tag (には). A
   yielding candidate ranks after **every** same-length candidate that does not yield (also after 掏る, a
   priority-0 conditional of すれば), whatever the later keys say.
 - **Kana fit**: a match through a reading is **strong** only when the reading's value equals the matched

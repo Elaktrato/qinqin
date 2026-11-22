@@ -113,30 +113,20 @@ func compareCandidates(a, b candidate) int {
 	return cmp.Compare(a.entryID, b.entryID)
 }
 
-// Kinds of unwritten exact matches that may yield (markYields).
-const (
-	yieldNone       = iota
-	yieldExpression // every sense an expression: yields to priority >= its own
-	yieldParticle   // first sense a particle: yields to strictly higher priority
-)
-
 // markYields sets yields on every exact candidate of an unwritten
-// expression or particle (kinds[i], from the rule table's hints) when a
-// same-length inflected candidate's entry has a priority above 0 — at
-// least the expression's, strictly above the particle's — and is no
-// expression itself (とする does not make として yield; し keeps its
-// place against する's stem, して yields to its te-form).
-func markYields(cs []candidate, kinds []int) {
+// expression (expression[i]: every sense tagged with the rule table's
+// expressionPos) when a same-length inflected candidate's entry has a
+// priority above 0 and at least the expression's, and is no expression
+// itself (とする does not make として yield). Particles never yield (#177
+// review: にて and たって are not 煮る and 立つ).
+func markYields(cs []candidate, expression []bool) {
 	for i := range cs {
 		c := &cs[i]
-		if kinds[i] == yieldNone || c.chainLen != 0 {
+		if !expression[i] || c.chainLen != 0 {
 			continue
 		}
 		c.yields = slices.ContainsFunc(cs, func(d candidate) bool {
-			if d.matchedLen != c.matchedLen || d.chainLen == 0 || d.expressionSense || d.pri <= 0 {
-				return false
-			}
-			return d.pri > c.pri || kinds[i] == yieldExpression && d.pri == c.pri
+			return d.matchedLen == c.matchedLen && d.chainLen > 0 && !d.expressionSense && d.pri > 0 && d.pri >= c.pri
 		})
 	}
 }

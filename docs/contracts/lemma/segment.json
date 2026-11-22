@@ -1101,6 +1101,104 @@
      "uk": false
     }
    ]
+  },
+  {
+   "forms": [],
+   "readings": [
+    "にて"
+   ],
+   "pos": [
+    "prt"
+   ],
+   "pri": [
+    "spec1"
+   ],
+   "uk": false
+  },
+  {
+   "forms": [
+    "煮る",
+    "烹る"
+   ],
+   "readings": [
+    "にる"
+   ],
+   "pos": [
+    "v1",
+    "vt"
+   ],
+   "pri": [
+    "ichi1",
+    "news2",
+    "nf15"
+   ],
+   "uk": false
+  },
+  {
+   "forms": [
+    "東京"
+   ],
+   "readings": [
+    "とうきょう"
+   ],
+   "pos": [
+    "n"
+   ],
+   "pri": [
+    "ichi1",
+    "news1",
+    "nf01"
+   ],
+   "uk": false
+  },
+  {
+   "forms": [
+    "開催"
+   ],
+   "readings": [
+    "かいさい"
+   ],
+   "pos": [
+    "n",
+    "vs"
+   ],
+   "pri": [
+    "ichi1",
+    "news1",
+    "nf02"
+   ],
+   "uk": false
+  },
+  {
+   "forms": [],
+   "readings": [
+    "たって"
+   ],
+   "pos": [
+    "prt"
+   ],
+   "pri": [
+    "spec1"
+   ],
+   "uk": false
+  },
+  {
+   "forms": [
+    "立つ"
+   ],
+   "readings": [
+    "たつ"
+   ],
+   "pos": [
+    "v5t",
+    "vi"
+   ],
+   "pri": [
+    "ichi1",
+    "news1",
+    "nf03"
+   ],
+   "uk": false
   }
  ],
  "cases": [
@@ -1818,6 +1916,50 @@
      "lemma": "め",
      "reasons": [],
      "head": "目"
+    }
+   ]
+  },
+  {
+   "name": "a particle never yields to a verb's inflection (にて is not 煮る)",
+   "text": "東京にて開催",
+   "tokens": [
+    {
+     "surface": "東京",
+     "start": 0,
+     "end": 2,
+     "lemma": "東京",
+     "reasons": [],
+     "head": "東京"
+    },
+    {
+     "surface": "にて",
+     "start": 2,
+     "end": 4,
+     "lemma": "にて",
+     "reasons": [],
+     "head": "にて"
+    },
+    {
+     "surface": "開催",
+     "start": 4,
+     "end": 6,
+     "lemma": "開催",
+     "reasons": [],
+     "head": "開催"
+    }
+   ]
+  },
+  {
+   "name": "a particle never yields to a verb's inflection (たって is not 立つ)",
+   "text": "たって",
+   "tokens": [
+    {
+     "surface": "たって",
+     "start": 0,
+     "end": 3,
+     "lemma": "たって",
+     "reasons": [],
+     "head": "たって"
     }
    ]
   }
