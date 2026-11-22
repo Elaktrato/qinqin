@@ -36,3 +36,52 @@ export function typeGap(n: number): number {
 	if (n < 16) return 2;
 	return 3;
 }
+
+/**
+ * spaceOut places the items one by one so that two items of one word
+ * (`entryId`) are at least `gap` other items apart where it can, keeping
+ * the incoming order otherwise. Per step, with R items left:
+ *
+ * 1. an item whose word holds r of them with 2r - 1 >= R, and whose word
+ *    was not placed last, goes now: later, that word could only end back
+ *    to back;
+ * 2. else the first item whose word was placed at least `need` items ago,
+ *    for need = gap down to 0 (0 always matches: the best effort when a
+ *    block cannot hold the gap, e.g. one word's four types).
+ *
+ * `placed` lists the words of the items already placed before (an earlier
+ * block), oldest first. The input is not changed.
+ */
+export function spaceOut<T extends { entryId: number }>(
+	items: readonly T[],
+	gap: number,
+	placed: readonly number[] = []
+): T[] {
+	const lastAt = new Map<number, number>();
+	placed.forEach((entryId, at) => lastAt.set(entryId, at));
+	const left = new Map<number, number>();
+	for (const item of items) left.set(item.entryId, (left.get(item.entryId) ?? 0) + 1);
+	const rest = [...items];
+	const out: T[] = [];
+	let position = placed.length;
+	const sep = (entryId: number): number => {
+		const at = lastAt.get(entryId);
+		return at === undefined ? Infinity : position - at - 1;
+	};
+	while (rest.length > 0) {
+		const remaining = rest.length;
+		let pick = rest.findIndex(
+			(item) => 2 * (left.get(item.entryId) ?? 0) - 1 >= remaining && sep(item.entryId) >= 1
+		);
+		for (let need = gap; pick < 0 && need >= 0; need -= 1) {
+			pick = rest.findIndex((item) => sep(item.entryId) >= need);
+		}
+		if (pick < 0) pick = 0;
+		const [item] = rest.splice(pick, 1);
+		out.push(item);
+		lastAt.set(item.entryId, position);
+		left.set(item.entryId, (left.get(item.entryId) ?? 1) - 1);
+		position += 1;
+	}
+	return out;
+}
