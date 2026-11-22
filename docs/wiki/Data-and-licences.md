@@ -88,14 +88,14 @@ Font packs (Sans, Serif and Kai faces: Noto Sans/Serif SC, TC and JP, LXGW WenKa
 
 Tatoeba states that sentence text is CC BY 2.0 FR and that some sentences are also CC0 1.0. The tool keeps only sentences the export lists under those licences (and their English translations under the same test), drops orphaned, flagged, negatively reviewed, unsuitable, duplicate, too short or too long sentences, prefers sentences by native speakers and keeps at most a few per word; every threshold is in `server/tools/tatoeba/rules.json`. Readings are generated, never guessed: pinyin from CC-CEDICT, left out of a sentence when one of its words has several readings (a short list of defaults settles particles such as 了 and 的); kana from JMdict only where every word has one certain reading. The Sources page shows each pack's notice ("filtered by a program, readings generated, may contain errors"); each pack's `credits.tsv` lists every sentence's Tatoeba id and page and its owner as listed by Tatoeba, and the manifest attribution links the published copy of that file (a credit next to each sentence in the app is not there yet). Tatoeba's audio is not used.
 
-**Producing the packs** (maintainers, from `server/`, with access to downloads.tatoeba.org): re-read Tatoeba's downloads page and terms of use and note what they say in `server/tools/tatoeba/pin.json`, then
+**Producing the packs** (maintainers, from `server/`, with access to downloads.tatoeba.org): re-read Tatoeba's downloads page and terms of use and replace the placeholder `licence.statement` in `server/tools/tatoeba/pin.json` with what they say (confirming that every row of `sentences_detailed` is CC BY 2.0 FR; `pin` and `build` refuse the placeholder), then
 
 ```sh
 go run ./tools/tatoeba pin --licence-checked <YYYY-MM-DD>   # downloads into plugins/upstream/tatoeba/, records SHA-256 and dates
 go run ./tools/tatoeba build                                 # writes plugins/data/{zh,ja}-sentences-tatoeba and a report
 ```
 
-Review `plugins/upstream/tatoeba/sample-*.tsv` and `report-*.txt` (match rate, readings share, pack sizes), tune `rules.json`, rebuild, run `node scripts/check-sources.mjs` and commit `pin.json`, `rules.json` and both packs. The same pinned export, rules and dictionaries always give the same files; keep the downloaded archives, because Tatoeba replaces its export every week. A build without a pin is refused. Details: `docs/sources.md`, "Example sentences (Tatoeba)".
+Review `plugins/upstream/tatoeba/sample-*.tsv` and `report-*.txt` (match rate, readings share, pack sizes), tune `rules.json`, rebuild, run `node scripts/check-sources.mjs` and commit `pin.json`, `rules.json` and both packs. The same pinned export, rules and dictionaries always give the same files; keep the downloaded archives, because Tatoeba replaces its export every week. A build without a pin is refused, and so is a pack file above 24 MiB unless `--allow-size` is given (recorded in `ATTRIBUTION.md`). Once `pin.json` is pinned, `node scripts/check-sources.mjs` requires both packs at the pinned export date. Details: `docs/sources.md`, "Example sentences (Tatoeba)".
 
 ## Credits and the Sources page
 
