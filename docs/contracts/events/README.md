@@ -28,7 +28,9 @@ Fixtures:
   Decoded by `apps/web/src/lib/study/reviewParse.test.ts`, `study/scheduler.test.ts` (`isValidReview`,
   `sortedReviews`) and `study/exp.test.ts` (XP counts exactly the valid ones).
 - `review-replace.json` — replaced reviews (#131): which reviews of a set count when some name the review they
-  replace (`live`, in replay order) and which are replaced. Decoded by `apps/web/src/lib/study/replaced.test.ts`
+  replace (`live`, in replay order) and which are replaced; hand-written `cases` plus a `generated` block of 300
+  seeded random families (`scripts/contracts/gen-review-replace.mjs`, seed 131, expected ids from an oracle written
+  from the rule text; regenerate, never edit it by hand; `--check` exits 1 when it is stale). Decoded by `apps/web/src/lib/study/replaced.test.ts`
   (`liveReviews`) and `server/internal/events/replaced_contract_test.go` (`events.Replaced`).
 - `page.json` — the paged `GET /api/events`: valid and invalid pages (shape, order, `next` rule) and request
   cases (query → status, JSON code or plain-text body). Decoded by

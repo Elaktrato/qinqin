@@ -12,7 +12,8 @@ Fixture formats:
   `overlays/overlay.json`); each folder's README says which.
 - **Named examples** (`auth/`): maps from an example name to a request and its answer.
 - **Generated files** carry `generator` (the script) and `tsFsrs`; regenerate, never edit by hand, and check them
-  with the script's `--check` (`scheduler/vacation-schedule.json`, `optimizer-steps.json`, `fsrs.json`, `next-intervals.json`).
+  with the script's `--check` (`scheduler/vacation-schedule.json`, `optimizer-steps.json`, `fsrs.json`, `next-intervals.json`;
+  the `generated` block of `events/review-replace.json`, `scripts/contracts/gen-review-replace.mjs`).
 
 Go tests read the files with `os.ReadFile` (relative to the test's package); web tests import the JSON directly
 (`resolveJsonModule`), or read it with `JSON.parse` where a value such as `1e999` (Infinity) must survive. A

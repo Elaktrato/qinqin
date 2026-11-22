@@ -17,6 +17,7 @@ interface Case {
 }
 
 const cases = (fixture as unknown as { rule: string; cases: Case[] }).cases;
+const generated = (fixture as unknown as { generated: { generator: string; seed: number; cases: Case[] } }).generated;
 
 function parsed(events: readonly StudyEvent[]): ReviewEvent[] {
 	return events.map(parseReview).filter((e): e is ReviewEvent => e !== null);
@@ -41,6 +42,26 @@ describe('docs/contracts/events/review-replace.json: liveReviews', () => {
 			expect(gone).toEqual(c.replaced);
 		});
 	}
+});
+
+describe('docs/contracts/events/review-replace.json: generated families (review fix 5)', () => {
+	it('holds the seeded block', () => {
+		expect(generated.generator).toBe('scripts/contracts/gen-review-replace.mjs');
+		expect(generated.seed).toBe(131);
+		expect(generated.cases).toHaveLength(300);
+	});
+	it('every generated case', () => {
+		for (const [n, c] of generated.cases.entries()) {
+			const reviews = parsed(c.events);
+			const live = liveReviews(reviews);
+			const kept = new Set(live.map((r) => r.id));
+			expect(sortedReviews(live.filter(isValidReview)).map((r) => r.id), `case ${n}`).toEqual(c.live);
+			expect(
+				reviews.filter((r) => isValidReview(r) && !kept.has(r.id)).map((r) => r.id).sort(),
+				`case ${n}`
+			).toEqual(c.replaced);
+		}
+	});
 });
 
 describe('liveReviews', () => {
