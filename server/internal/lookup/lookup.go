@@ -101,6 +101,10 @@ type Result struct {
 	// Stem is the compound stem the entry matched (勉強 for 勉強した,
 	// lemma 勉強する); empty otherwise. Not part of the lookup wire format.
 	Stem string
+	// WeakReading is the kana fit key's weak match (see rank.go): matched
+	// through a reading not as written, or of a word usually written in
+	// kanji. Not part of the lookup wire format.
+	WeakReading bool
 }
 
 // Service looks text up in the lexicon and ranks it with the frequency
@@ -308,6 +312,15 @@ func hasClass(rules *lemma.Table, e lexicon.Entry, class string) bool {
 	return rules != nil && slices.ContainsFunc(e.Senses, func(s lexicon.Sense) bool { return rules.ClassMatches(class, s.POS) })
 }
 
+// weakReading reports whether m is a weak reading match: a reading match
+// is strong only when the reading is the probe text itself (not just its
+// plain form: アメ for あめ) and the word is usually written that way (no
+// written form, or usually kana).
+func weakReading(m *match) bool {
+	e := m.entry
+	return m.reading >= 0 && (e.Readings[m.reading].Value != m.probe.term || len(e.Forms) > 0 && !e.UK)
+}
+
 // readingPlain is the plain reading form text is also looked up by, when
 // the rule table's hints say text in its script is (Japanese: kana-only
 // text, by the plain form of its kana readings).
@@ -350,10 +363,7 @@ func rankKeys(pack lang.Pack, hints lemma.Hints, language string, m *match) cand
 		pri:        e.Pri,
 		headword:   displayTerm(language, m),
 		entryID:    e.ID,
-		// A reading match is strong only when the reading is the probe text
-		// itself (not just its plain form: アメ for あめ) and the word is
-		// usually written that way (no written form, or usually kana).
-		weakKana: m.reading >= 0 && (e.Readings[m.reading].Value != term || len(e.Forms) > 0 && !e.UK),
+		weakKana:   weakReading(m),
 	}
 	// Primary: the text that matched the dictionary is the headword — the
 	// first reading or first form. A traditional form (CC-CEDICT's trad
@@ -419,6 +429,7 @@ func result(language string, m *match, freqs []Frequency, names map[int64]string
 		Pri:         e.Pri,
 		Lemma:       m.probe.form,
 		ViaReading:  m.reading >= 0,
+		WeakReading: weakReading(m),
 	}
 	if m.probe.term != m.probe.form {
 		r.Stem = m.probe.term

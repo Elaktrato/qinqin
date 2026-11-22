@@ -636,3 +636,22 @@ func TestBoundaryWithAnExactHomographAfterTheParticle(t *testing.T) {
 		t.Errorf("tokens = %q, want %q", got, want)
 	}
 }
+
+// TestBoundaryKeepsAnExpressionOverAWeakInflection: かねない stays one
+// token: the inflection after か (ねない of 寝る) is reached only through
+// the kana reading of a word written in kanji, too weak to split it.
+func TestBoundaryKeepsAnExpressionOverAWeakInflection(t *testing.T) {
+	words := append([]jw{
+		{readings: []string{"か"}, pos: []string{"prt"}, pri: []string{"spec1"}},
+		{readings: []string{"かねない"}, pos: []string{"exp"}},
+		{kanji: []string{"寝る"}, readings: []string{"ねる"}, pos: []string{"v1", "vi"}, pri: []string{"ichi1"}},
+	}, jaWords...)
+	svc, _ := jaService(t, words, "")
+	ms, err := svc.Segment(context.Background(), "ja", "かねない")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(ms) != 1 || ms[0].Surface != "かねない" {
+		t.Errorf("matches = %+v, want the expression かねない", ms)
+	}
+}
