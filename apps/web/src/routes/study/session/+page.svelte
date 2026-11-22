@@ -1086,9 +1086,14 @@ import type { Run } from '$lib/study/vacation';
 				if (result.created && !cards.some((card) => card.id === result.card.id)) {
 					cards = [...cards, result.card];
 				}
-				// The recorded event itself, so Back can name it (#131).
-				recorded = result.review ?? sessionReview(result.card, value, workspaceId, item.kind, meta);
-				sessionReviews = [...sessionReviews, recorded];
+				// The recorded event itself, so Back can name it (#131). A review
+				// that was not kept (its workspace is gone) has no id to name: its
+				// step changes the session only, like practice.
+				recorded = result.review ?? null;
+				sessionReviews = [
+					...sessionReviews,
+					recorded ?? sessionReview(result.card, value, workspaceId, item.kind, meta)
+				];
 			}
 			const gradedItem =
 				result === null ? item : { ...item, cardId: result.card.id, virtual: false, card: result.card };

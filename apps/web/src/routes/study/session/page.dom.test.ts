@@ -880,6 +880,20 @@ describe('Back: change a misclicked grade (#131)', () => {
 		expect(screen.getByText('2')).toBeTruthy();
 	});
 
+	it('a grade whose review was not kept is changed in the session only (review fix 8)', async () => {
+		vi.mocked(recordReview).mockResolvedValueOnce(null);
+		configureDecks();
+		history([word(11), word(12), word(13)], []);
+		render(Page);
+		await gradeShown(/^Again/);
+		expect(await screen.findByText('2 / 3, 1 to repeat')).toBeTruthy();
+		await fireEvent.keyDown(window, { key: 'z' });
+		expect(await screen.findByText('Graded Again')).toBeTruthy();
+		await fireEvent.click(gradeButton('Good'));
+		expect(await screen.findByText('2 / 3')).toBeTruthy();
+		expect(recordReplacement).not.toHaveBeenCalled();
+	});
+
 	it('no Back before the first grade', async () => {
 		configureDecks();
 		history([word(11)], []);
