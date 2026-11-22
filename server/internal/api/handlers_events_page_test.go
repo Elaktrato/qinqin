@@ -1,15 +1,23 @@
 package api_test
 
 import (
+	"context"
+	"database/sql"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"io"
 	"net/http"
+	"net/http/httptest"
 	"net/url"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"testing"
 	"time"
 
+	"qinqin/internal/api"
+	"qinqin/internal/db"
 	"qinqin/internal/events"
 	chinsync "qinqin/internal/sync"
 
@@ -206,5 +214,65 @@ func TestEventsPagedHandler(t *testing.T) {
 func TestEventsPageBudgetIsThePulls(t *testing.T) {
 	if events.MaxPageLimit != chinsync.MaxPageLimit || events.MaxPageBytes != chinsync.MaxPageBytes {
 		t.Errorf("events budget %d/%d, pull %d/%d", events.MaxPageLimit, events.MaxPageBytes, chinsync.MaxPageLimit, chinsync.MaxPageBytes)
+	}
+}
+
+// legacyStreamServer serves the API with a legacy event stream that writes
+// rows bytes and then fails.
+func legacyStreamServer(t *testing.T, rows int) (*httptest.Server, string) {
+	t.Helper()
+	sqlDB, err := db.Open(filepath.Join(t.TempDir(), "test.db"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { sqlDB.Close() })
+	fail := func(ctx context.Context, w io.Writer, db *sql.DB, user int64, since time.Time, ws *int64) error {
+		if rows > 0 {
+			chunk := []byte("[" + strings.Repeat(`{"id":"x"},`, 4000))
+			for i := 0; i < rows; i++ {
+				if _, err := w.Write(chunk); err != nil {
+					return err
+				}
+			}
+		}
+		return errors.New("disk read failed")
+	}
+	ts := httptest.NewServer(api.New(sqlDB, t.TempDir(), nil, api.WithEventStream(fail)))
+	t.Cleanup(ts.Close)
+	return ts, registerUser(t, ts.URL, "alice", "")
+}
+
+// A legacy stream that fails before its first byte is a 500 JSON internal,
+// without the deprecation headers.
+func TestLegacyEventStreamFailsBeforeFirstByte(t *testing.T) {
+	ts, alice := legacyStreamServer(t, 0)
+	st, h, body := get(t, ts.URL, "/api/events", alice)
+	if st != http.StatusInternalServerError {
+		t.Fatalf("status %d %s, want 500", st, body)
+	}
+	if code, _ := jsonError(t, body); code != "internal" {
+		t.Errorf("code %q, want internal", code)
+	}
+	if h.Get("Deprecation") != "" || h.Get("Link") != "" {
+		t.Errorf("error answer carries Deprecation %q Link %q", h.Get("Deprecation"), h.Get("Link"))
+	}
+}
+
+// A legacy stream that fails after bytes went out resets the connection:
+// the client sees a broken transfer, never a complete-looking body.
+func TestLegacyEventStreamFailsMidStream(t *testing.T) {
+	ts, alice := legacyStreamServer(t, 20)
+	req, _ := http.NewRequest(http.MethodGet, ts.URL+"/api/events", nil)
+	req.Header.Set("Authorization", "Bearer "+alice)
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		t.Fatalf("request: %v", err)
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != 200 {
+		t.Fatalf("status %d, want 200 (the stream had started)", resp.StatusCode)
+	}
+	if _, err := io.ReadAll(resp.Body); err == nil {
+		t.Error("the body read to a clean end; want a reset connection (unexpected EOF)")
 	}
 }

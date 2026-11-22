@@ -144,16 +144,23 @@ func (s *server) handleListEvents(w http.ResponseWriter, r *http.Request) {
 	h.Set("Link", `</api/events?limit=500>; rel="successor-version"`)
 	// A stalled client is cut one window after the last bytes went out.
 	out := &countingWriter{w: newDeadlineWriter(w, http.NewResponseController(w), legacyPullWindow, time.Now)}
-	if err := events.StreamSince(r.Context(), out, s.db, u.ID, req.Since, workspace); err != nil && r.Context().Err() == nil {
+	stream := s.streamEvents
+	if stream == nil {
+		stream = events.StreamSince
+	}
+	if err := stream(r.Context(), out, s.db, u.ID, req.Since, workspace); err != nil && r.Context().Err() == nil {
 		if out.n == 0 {
 			h.Del("Deprecation")
 			h.Del("Link")
 			writeInternal(w, r)
 			return
 		}
-		// The status and part of the body are out: the JSON stays
-		// truncated and the client retries, as after a network cut.
+		// The status and part of the body are out. Reset the connection
+		// (the server aborts without the chunked terminator), so no client
+		// can take the cut array for a complete one; it retries, as after
+		// a network cut.
 		log.Printf("event list (legacy) of user %d: %v", u.ID, err)
+		panic(http.ErrAbortHandler)
 	}
 }
 
