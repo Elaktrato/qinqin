@@ -25,12 +25,15 @@ installed font pack's (docs/contracts/fonts/README.md, "Choosing a face") or els
 
 `POST /api/segment {lang, text, readings: true}` (signed in) adds `reading: {type, value}` to each match:
 the first candidate's reading (Japanese form match: the entry's first reading; reading match: the matched
-one), with the caller's own edited readings applied. Without the flag the response is unchanged. `value`
+one), with the caller's own edited readings applied. Without the flag the response is unchanged. Every match may
+carry `stem` (only when the first entry matched the stem of a compound lemma, see `docs/contracts/lemma/`); the
+lemma of a Japanese match folds kana te-form auxiliaries (食べてしまった → 食べる) and contractions. `value`
 is the display form (`nǐ hǎo`, `たべる`). This `reading` object is unrelated to the boolean
 `entries[].reading` ("matched by a kana reading").
 
 - zh: the reading is shown over the whole match (matches containing a Han character).
-- ja (`furigana-align.json`): `alignFurigana(surface, lemma, reading)` splits the lemma into kanji runs
+- ja (`furigana-align.json`): `alignFurigana(surface, stem ?? lemma, reading)` — `stem` is the match's optional
+  compound stem (勉強 for 勉強しています, lemma 勉強する; `docs/contracts/lemma/`), so べんきょう sits over 勉強 — splits the lemma into kanji runs
   and kana runs, matches the kana-folded reading against that pattern and applies each kanji run's reading
   to the kanji at the start of the surface (inflection only changes the trailing kana). Katakana is folded
   to hiragana; the long-vowel mark `ー` is literal; `々` and `〆` belong to kanji runs. Null (no furigana)

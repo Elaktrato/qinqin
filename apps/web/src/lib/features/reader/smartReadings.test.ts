@@ -34,6 +34,7 @@ function toMatch(m: (typeof fixture.cases)[number]['matches'][number]): SegmentM
 		start: m.start,
 		end: m.end,
 		lemma: m.lemma,
+		...('stem' in m && m.stem ? { stem: m.stem } : {}),
 		reason: '',
 		entries: m.entries.map((id) => ({ id, kind: 'word' as const })),
 		...(m.reading ? { reading: m.reading } : {})

@@ -98,6 +98,9 @@ type Result struct {
 	// ViaReading is true when the entry matched by one of its readings
 	// rather than by a written form. Not part of the lookup wire format.
 	ViaReading bool
+	// Stem is the compound stem the entry matched (勉強 for 勉強した,
+	// lemma 勉強する); empty otherwise. Not part of the lookup wire format.
+	Stem string
 }
 
 // Service looks text up in the lexicon and ranks it with the frequency
@@ -398,6 +401,9 @@ func result(language string, m *match, freqs []Frequency, names map[int64]string
 		Pri:         e.Pri,
 		Lemma:       m.probe.form,
 		ViaReading:  m.reading >= 0,
+	}
+	if m.probe.term != m.probe.form {
+		r.Stem = m.probe.term
 	}
 	switch {
 	case m.reading >= 0:

@@ -93,7 +93,7 @@ export function annotateParagraph(
 			if (bookSpans.some((b) => m.start < b.end && b.start < m.end)) continue;
 			const concealed = knownMatch.get(m) === true;
 			if (lang === 'ja') {
-				const aligned = alignFurigana(m.surface, m.lemma, m.reading.value);
+				const aligned = alignFurigana(m.surface, m.stem ?? m.lemma, m.reading.value);
 				if (!aligned) continue;
 				let at = m.start;
 				for (const part of aligned) {

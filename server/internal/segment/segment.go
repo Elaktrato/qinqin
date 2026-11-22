@@ -35,6 +35,10 @@ type Match struct {
 	End     int    `json:"end"`     // code-point offset, exclusive
 	Lemma   string `json:"lemma"`   // dictionary form (== Surface unless deinflected)
 	Reason  string `json:"reason"`  // "" or deinflection reason, e.g. "past"
+	// Stem is set when the first entry matched the stem of a compound
+	// lemma (勉強 for 勉強しています, lemma 勉強する): the dictionary-side
+	// text furigana aligns against (docs/contracts/reader/).
+	Stem string `json:"stem,omitempty"`
 	// Entries are the entries matching Surface, in ranking order, at most
 	// MaxReadingCandidates. Only Entries[0] corresponds to Lemma and
 	// Reason; later candidates are other readings or entries with the
@@ -191,7 +195,7 @@ func (s Service) matchOf(results []lookup.Result, surface string, offset int) *M
 			best = r
 			m = &Match{
 				Surface: r.Matched, Start: offset + r.Start, End: offset + r.End,
-				Lemma: r.Lemma, Reason: lang.ReasonOf(r.Reasons),
+				Lemma: r.Lemma, Reason: lang.ReasonOf(r.Reasons), Stem: r.Stem,
 			}
 		}
 		if len(m.Entries) == MaxReadingCandidates {

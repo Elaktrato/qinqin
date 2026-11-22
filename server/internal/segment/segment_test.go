@@ -596,3 +596,17 @@ func TestSegmentReadingsJapanese(t *testing.T) {
 		t.Errorf("さくじつ = %+v, %v, want the matched reading さくじつ", ms, err)
 	}
 }
+
+// TestSegmentStemOfCompound: a する compound found by its noun reports the
+// noun as Stem (furigana aligns against it); other matches have none.
+func TestSegmentStemOfCompound(t *testing.T) {
+	words := append([]jw{{kanji: []string{"勉強"}, readings: []string{"べんきょう"}, pos: []string{"n", "vs"}, pri: []string{"ichi1"}}}, jaWords...)
+	svc, _ := jaService(t, words, "")
+	ms, err := svc.Segment(context.Background(), "ja", "勉強しています。食べた")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(ms) != 2 || ms[0].Lemma != "勉強する" || ms[0].Stem != "勉強" || ms[1].Lemma != "食べる" || ms[1].Stem != "" {
+		t.Errorf("matches = %+v, want 勉強しています (stem 勉強) and 食べた (no stem)", ms)
+	}
+}
