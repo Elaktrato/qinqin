@@ -150,6 +150,12 @@ a bound so the history cannot grow with a long session; 20 is more than a learne
 Ruling: the key is Z, not Backspace — Backspace clears a tone on the tone card and deletes text in typed
 answers; Z is free in the session (Anki's undo is Ctrl+Z; the session ignores modified keys) — cost: none.
 
+Ruling: going Back unmounts the current card and returning mounts it again (review fix 7): the reveal (`done`,
+the suggestion, the interval preview) is kept by the page, but a partly done exercise (typed text, placed tiles
+or tones, drawn strokes) is discarded — keeping six card components alive and hidden behind the Back view would
+need a second face per kind and focus/key isolation between them; Back is used right after a misclick, before
+work on the next card has started — cost: a learner who goes Back mid-exercise redoes that exercise.
+
 Ruling: Escape returns from a Back view — it is unused in the session and is the expected "leave this view"
 key — cost: none.
 
