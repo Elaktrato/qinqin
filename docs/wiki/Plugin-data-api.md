@@ -11,6 +11,7 @@ A plugin that declares `owns-data` ([Plugin format](Plugin-format)) stores JSON 
 
 Rules:
 
+- Keys from the web SDK may not be empty, `.` or `..`; a string value that is itself valid JSON text reads back decoded ([Plugin format](Plugin-format#the-web-sdk)).
 - Scope: without `?workspace=<id>` a row is user-global; with it, the row belongs to that workspace. A non-integer id is 400, an id that is not the caller's workspace is 404.
 - `PUT` and `DELETE` on an unknown plugin are 404; on a plugin whose manifest lacks `owns-data` they are 403. Invalid JSON in a `PUT` is 400.
 - The same rows travel through `POST /api/sync/push` and `GET /api/sync/pull`, last write wins. Key conventions of the built-in plugins are in `docs/contracts/overview.md`.

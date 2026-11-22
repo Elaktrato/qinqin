@@ -2,7 +2,7 @@
 
 A personal access token lets your own scripts call the qinqin API without your password and without copying a
 web session into a file: a cron job that pushes study events, a reader export, a quick `curl` lookup. Create one
-in **Settings, Account, Access tokens**.
+in **Settings → Account → Access tokens**; creating one asks for your password again.
 
 **Treat a token like a password.** It acts as you, on your data, until it expires or you revoke it. Never paste
 it into a chat, a public repository or a shared script.
@@ -27,7 +27,7 @@ qq_pat_[0-9a-f]{64}
   use routes that take `?workspace=<id>` with exactly that id, and the dictionary and content reads that belong to
   no workspace. Routes that span workspaces or address objects by id (sync, the workspace list, a book by id) answer
   403 `token_workspace`.
-- **Expiry**: 7, 30, 90 (default) or 365 days. Every token expires; there are no permanent ones. An expired token
+- **Expiry**: 7, 30, 90 (default) or 365 days in the app (the API, `POST /api/account/tokens`, takes 1 to 365). Every token expires; there are no permanent ones. An expired token
   stays in the list, marked expired, for 30 days.
 - At most 20 live tokens per account (409 `token_limit`).
 - A token never does more than you could: it reaches only your own data, through the same checks as your
@@ -41,8 +41,8 @@ Which routes take a token, and how a workspace-limited token fares on each, is t
 Sign-in and account routes (`/api/auth/…`, `/api/account/…`: password, email, two-step sign-in, sessions, the
 token routes themselves, export, restore, account deletion), every administrator route (an administrator's token
 is an ordinary user token), backups and download tickets, AI keys and providers, the journal and its photos,
-creating, renaming or deleting workspaces, changing your time zone, importing from online libraries, and the
-health check. They all answer 403 `token_not_allowed`, before the token is even looked up. Use the app for those.
+creating, renaming or deleting workspaces, changing your time zone or interface language, importing from online
+libraries, and the health check. They all answer 403 `token_not_allowed`, before the token is even looked up. Use the app for those.
 To check that a token works, call `GET /api/workspaces`. Deleting your lookup history's old search records
 (`DELETE /api/events/lookups`) also needs the app.
 

@@ -1,54 +1,123 @@
 # Deploying with Docker or Portainer
 
-qinqin is a single container: a Go server with SQLite and the embedded web app, listening on port 8080. The authoritative instructions are the README sections "Quick start" and "Deploying with Portainer", and the file `docker-compose.yml`. This page summarises them.
+qinqin is one container: a Go server with a SQLite database and the embedded web app, listening on port 8080. The repository has **one compose file**, `docker-compose.yml`, for plain `docker compose up -d`, for Portainer (web editor, or Repository with compose path `docker-compose.yml`) and for anything else that reads standard compose. The comments at the top of that file list every variable; [Environment variables](Admin-environment-variables) explains them.
 
-## Images
+## Quick start with Docker Compose
 
-CI publishes `ghcr.io/elaktrato/qinqin` on pushes to `main` and on `v*` tags. Tags are `latest` (newest `main` build), `v<version>` and `sha-<commit>`. For production pin a `v*` tag in `QINQIN_IMAGE`, so a redeploy never changes the version by surprise. The published image includes Tesseract OCR (about 193 MB) and the Kanji alive audio (about 70 MB); self-builds can leave them out with `--build-arg WITH_OCR=0` and `WITH_AUDIO=0`. Stroke-order data is a pack in the image (`/opt/qinqin/strokes`, about 13 MB), no longer part of the web app.
-
-A new GitHub container package is private: `docker pull` fails with `unauthorized` until you make the package public, or give Portainer a registry login with a token that has only the `read:packages` scope.
-
-## Docker Compose (quick start)
+You need Docker with the Compose plugin. In a checkout of the repository (or a folder holding only `docker-compose.yml`):
 
 ```sh
 docker compose up -d
 docker compose exec qinqin qinqin adduser --admin --username you
 ```
 
-Then open `http://localhost:8080`. Data lives in the named volume `qinqin-data`. Upgrading from the old quick start, which used `./data`? Set `QINQIN_DATA_VOLUME=./data` to keep using it, or you start on an empty instance. If no reverse proxy sits in front, set `QINQIN_TRUSTED_PROXIES=none` ([Reverse proxy, rate limiting and trusted proxies](Admin-proxy-and-rate-limiting)).
+`adduser` asks for a password (10 to 256 characters, not the username). Then open `http://localhost:8080`.
 
-The first start installs the bundled packs by itself before it listens (about 2 minutes; the health check waits up to 300 s). Create the admin account **before** exposing the port beyond your LAN: while no user exists, the first registration over the API becomes the administrator, whoever makes it.
+- **No reverse proxy in front?** Set `QINQIN_TRUSTED_PROXIES=none` (in a `.env` file next to `docker-compose.yml`, or in the stack's environment). The default trusts the `X-Forwarded-For` header of private-network peers, which a LAN client could forge to dodge the per-client sign-in limits ([Reverse proxy, rate limiting and trusted proxies](Admin-proxy-and-rate-limiting)).
+- **The first start seeds itself.** Before it listens, a fresh instance installs the bundled packs (about 2 minutes, once; the health check waits up to 300 s). See [the auto-seed](#the-auto-seed-on-the-first-start) below.
+- **Create the admin before you expose the port beyond your LAN.** While no user exists, the first registration over the API becomes the administrator, whoever makes it. `QINQIN_BOOTSTRAP_ADMIN` (below) closes that window completely.
+- **Where the data lives.** In the named volume `qinqin-data`. Set `QINQIN_DATA_VOLUME=./data` (or an absolute path such as `/srv/qinqin/data`) to bind-mount a host directory instead. `QINQIN_PORT` changes the published port, `QINQIN_IMAGE` pins an image. `QINQIN_SECRET` is optional: empty means the AI features, authenticator apps and a stored mail password are unavailable, and everything else works ([AI providers and offline OCR](Admin-AI-and-OCR)).
+- **Upgrading from the old quick start?** It kept the data in `./data`; the compose file now defaults to a named volume, so without a change you would start on an empty instance. Set `QINQIN_DATA_VOLUME=./data` to keep using it.
 
-## Portainer
+### The auto-seed on the first start
 
-Portainer uses the same `docker-compose.yml` (plain compose): a named volume, log rotation and `no-new-privileges`; memory and CPU caps are commented out in the file. The image runs as root and writes to `/tmp`, so the root filesystem is not read-only. Stacks that used the compose path `docker-compose.yml` must change it to `docker-compose.yml`.
+The first start of a fresh instance installs the bundled packs by itself before the server listens: the upstream dictionaries, the Jiten frequency list, the HSK 3.0 character, HSK 3.0 word and JLPT kanji level lists, the stroke data and the Kanji alive audio when present. It takes about 2 minutes (126 s measured on a busy machine; the first start only), and the compose health check allows 300 s.
 
-1. Generate the secret and keep it in a password manager: `head -c 32 /dev/urandom | base64`. Back it up separately from the data volume; it is never written to `/data`.
-2. Portainer, Stacks, Add stack: paste `docker-compose.yml`, or use the repository URL `https://github.com/Elaktrato/qinqin` with compose path `docker-compose.yml`.
-3. Set the environment variables ([Environment variables](Admin-environment-variables)): `QINQIN_SECRET` (optional; empty = AI off), `QINQIN_IMAGE`, `QINQIN_PORT`, optionally `QINQIN_DATA_VOLUME` as an absolute host path.
-4. Before exposing the port: in the container console run `qinqin adduser --username <name> --admin`. The first start has already installed the bundled packs (about 2 minutes, before the port opens). This auto-seed runs once, only while no pack is installed, and leaves out the demo pack `es-demo`; it logs `auto-seed failed` and retries at the next start if a pack fails, and `QINQIN_AUTO_SEED=0` turns it off. `qinqin seed` (idempotent; run it while nobody uses the app) installs everything the image ships, demos included, and is how you add local packs or refresh after an image update.
-   Instead of `adduser` you can set `QINQIN_BOOTSTRAP_ADMIN` (and optionally `QINQIN_BOOTSTRAP_PASSWORD`): the first start then creates that admin, who must set a new password at the first sign-in. Without a password the server generates one and prints it once in the container log (Portainer: Containers, `qinqin`, Logs). Later starts ignore both variables.
-5. Put a reverse proxy with HTTPS in front, then run the checklist below.
+- It runs once per database and only on a fresh instance, that is while no pack of any type is installed. An upgraded or curated instance is never touched, and packs an administrator uninstalled stay uninstalled (a marker in the database records that it ran).
+- It leaves out the demo pack `es-demo`.
+- A pack that fails to import is logged (`auto-seed failed ...`); the server starts anyway and the next start tries again.
+- `QINQIN_AUTO_SEED=0` (or `false`, `off`) turns it off.
+
+`qinqin seed` is for what the auto-seed does not do: the demo pack `es-demo` (it installs everything the image ships, demos included), local packs, and re-seeding after an image update that ships newer packs.
+
+### What `qinqin seed` does
+
+It installs the bundled packs from the image (CC-CEDICT, Unihan, JMdict, KANJIDIC2, the Jiten frequency list, the HSK 3.0 character and word lists, the jōyō grades, the 通用规范汉字表, the approximate JLPT kanji levels, the KanjiVG components, a small Spanish demo dictionary and a Chinese grammar demo, the Kanji alive audio when the image has it, and the stroke-order data), then builds their data packages before it returns. The whole bundle takes under a minute (about 45 s measured). It is idempotent: running it again replaces each pack's own rows and touches nothing else (an unchanged dictionary writes no rows; frequency rows are replaced).
+
+Run it while the server is idle: each pack is one write transaction, JMdict holds the database write lock for about 20 s, and the server waits at most 5 s (`busy_timeout`) before a write fails. Packages it builds and those the running server builds take turns through a lock file, so a seed next to a running server is safe; the second one waits.
+
+Options: `--data <dir>` (default `$QINQIN_DATA`, else `./data`) and `--packs <dir>[,<dir>...]` (pack roots, comma-separated or repeated; default `$QINQIN_PACKS`, which the image sets to its own packs). Under Docker the command sees only the image's packs, not a host folder such as `plugins/data-local`: mount it (for example `./plugins/data-local:/opt/qinqin/local:ro`) and run `qinqin seed --packs /opt/qinqin/packs,/opt/qinqin/audio,/opt/qinqin/strokes,/opt/qinqin/local`. More on packs: [Data packs on the server](Admin-data-packs).
+
+## Release images and versions
+
+CI publishes the image `ghcr.io/elaktrato/qinqin` on pushes to `main` and on `v*` tags; pushes to `develop` only run the tests. Image tags:
+
+| Tag | What it is |
+|---|---|
+| `latest` | The newest build of `main` |
+| `v<version>` | A release tag, for example `v0.4.1` |
+| `sha-<commit>` | One exact commit |
+
+**For production pin a `v*` tag** in `QINQIN_IMAGE` rather than `latest`, so a redeploy never changes the version by surprise.
+
+Every `v*` tag also gets a **GitHub Release** on the repository's Releases page, created automatically once the image is pushed. Its text is `docs/releases/<tag>.md` when that file exists, otherwise GitHub's generated notes; a tag with a hyphen (for example `v0.5.0-rc1`) becomes a pre-release. Read a release's notes before upgrading to it ([Upgrading](Admin-upgrading)).
+
+The published image is the full build:
+
+- Tesseract OCR with the Chinese, Japanese and English models (about +193 MB), for reading journal photos offline.
+- The Kanji alive example-word audio (about +70 MB, 10,156 Japanese clips, CC BY 4.0).
+- The stroke-order data pack (`/opt/qinqin/strokes`, about 13 MB). It is a pack, not part of the web app, whose build shrank from about 50 MB to about 3 MB.
+
+Self-builds can leave the first two out with `docker build --build-arg WITH_OCR=0 .` and `--build-arg WITH_AUDIO=0`; the server starts normally and the features show as unavailable. Details in [AI providers and offline OCR](Admin-AI-and-OCR) and [Development](Development).
+
+The project's package `ghcr.io/elaktrato/qinqin` is public: `docker pull` needs no login. Check from the server with `docker pull ghcr.io/elaktrato/qinqin:v0.4.1`.
+
+**Your own fork's package starts private.** GitHub creates a new container package as private, so a `docker pull` or a Portainer deployment of an image your fork's CI published fails with `unauthorized` until you either
+
+- make the package public: GitHub profile, Packages, `qinqin`, Package settings, Change visibility, Public; or
+- keep it private and give Portainer a login: Registries, Add registry, GitHub Container Registry, your GitHub username and a personal access token with only the `read:packages` scope; then select that registry when you create the stack.
+
+## Deploying with Portainer
+
+Portainer needs no special file: `docker-compose.yml` is plain compose. It uses a named volume (relative bind mounts depend on where Portainer checks the stack out), rotates the logs (3 files of 10 MB) and sets `no-new-privileges`. It sets neither `user:` nor `read_only:`: the image has no `USER` (it runs as root) and the server writes temporary files to `/tmp` (OCR input, pack uploads and staging), so a read-only root filesystem is not enabled. Memory and CPU caps are in the file, commented out on purpose: the first seed and OCR can need more than a guessed limit, and an out-of-memory kill during setup is worse than none. Measure first.
+
+**Upgrading an old stack:** a stack that used the compose path `deploy/portainer-stack.yml` must change it to `docker-compose.yml` (the old file no longer exists). The variables are the same, and `QINQIN_SECRET` is now optional.
+
+1. **Generate the secret** (optional; without it AI, authenticator apps and a stored mail password are unavailable) and keep it in a password manager: `head -c 32 /dev/urandom | base64`. Back it up **separately** from the data volume; it is never written to `/data`.
+2. **Add the stack.** Portainer: Stacks, Add stack. Either *Web editor* and paste `docker-compose.yml`, or *Repository* with the URL `https://github.com/Elaktrato/qinqin`, reference `refs/heads/main` (or a tag) and compose path `docker-compose.yml`.
+3. **Environment variables** (stack form): `QINQIN_SECRET`, `QINQIN_IMAGE` (for example `ghcr.io/elaktrato/qinqin:v0.4.1`), `QINQIN_PORT` (host port, default 8080). Optional: `QINQIN_DATA_VOLUME` as an absolute host path such as `/srv/qinqin/data` (the directory must exist and be writable by root), `QINQIN_TRUSTED_PROXIES` (**`none` if nothing reverse-proxies to qinqin**), `QINQIN_AI_PROVIDERS`, `QINQIN_AI_ALLOW_PRIVATE`, `QINQIN_SMTP_ALLOW_PRIVATE`, `QINQIN_BOOTSTRAP_ADMIN`, and `QINQIN_SECRET_PREVIOUS` only while rotating the secret. The full list: [Environment variables](Admin-environment-variables). Deploy the stack.
+4. **First run, before exposing the port beyond your LAN.** Containers, `qinqin`, Console, command `/bin/sh`, Connect. Then:
+
+   ```sh
+   qinqin adduser --username <name> --admin
+   ```
+
+   `adduser` asks for the password and needs a terminal; Portainer's console provides one (the typed password is echoed). The first start has already installed the bundled packs before it opened the port ([the auto-seed](#the-auto-seed-on-the-first-start)); the demo packs are not installed, `qinqin seed` adds them and local packs.
+
+   **Or create the admin automatically.** Set `QINQIN_BOOTSTRAP_ADMIN` to the admin's username. On the first start, while no user exists, the server creates that administrator before it opens the port, so nobody can claim the first registration. The admin must choose a new password at the first sign-in; until then the session can do nothing else. Set `QINQIN_BOOTSTRAP_PASSWORD` to choose the initial password (10 to 256 characters, not the username), or leave it empty: the server then generates one (20 characters) and prints it **once** in the container log (Portainer: Containers, `qinqin`, Logs; the line starts `bootstrap: initial password`). A supplied password is never logged. Later starts ignore both variables, so remove the password from the stack after the first sign-in. A username or password that breaks the rules stops the server from starting, with the reason in the log. This replaces `adduser`.
+5. Put a reverse proxy with HTTPS in front ([Reverse proxy, rate limiting and trusted proxies](Admin-proxy-and-rate-limiting)), then run the checklist below.
 
 ## Data directory
 
-Everything is in `/data`: `qinqin.db` (with `-wal` and `-shm`), `packs/`, `audio/`, `packages/`, `books/<user id>/`, `journal/<user id>/` (photo drafts), `backups/`, `tmp/` (emptied at start) and `cache/sources/` (safe to delete). The bundled packs stay in the image.
+Everything lives in `/data` (the volume):
 
-`packages/` holds the data packages clients download (`<id>/r<revision>.qqpkg`): one per language lexicon and per installed pack, built by the server from the database after every pack install or removal and at start. The first start builds them all in the background (about a minute for Chinese and Japanese; the app works meanwhile). Plan disk space roughly the size of the installed data compressed (CC-CEDICT's lexicon is about 15 MB, the stroke data about 13 MB, the audio pack its clips); a replaced revision is kept 7 days. Builds take turns through the lock file `packages/.lock`, so `qinqin seed` may run while the server runs (the one that comes second waits). The directory is not backed up: a restored server rebuilds it.
+| Path | Content |
+|---|---|
+| `qinqin.db` (with `-wal` and `-shm`) | The SQLite database: users, entries, dictionaries, flashcards, journal, plugin data |
+| `packs/` | Packs an administrator installed through the web app (`packs/<type>/<id>/<version>/`); staged uploads wait in `packs/.stage-<token>/` |
+| `audio/` | Audio clips imported by `seed` or audio packs |
+| `fonts/` | The WOFF2 slices of installed font packs |
+| `packages/` | Data packages clients download (`<id>/r<revision>.qqpkg`), built by the server; not backed up, rebuilt at start when missing |
+| `books/<user id>/` | Uploaded and imported library books |
+| `journal/<user id>/` | Photos of open journal drafts, deleted when the draft ends |
+| `backups/` | Safety exports taken before a personal restore (`backups/pre-restore/<user id>/`) and, if you choose, CLI backups |
+| `tmp/` | Staged restore uploads and database snapshots; emptied at start |
+| `cache/sources/` | Cache of the Aozora Bunko and Gutenberg imports; safe to delete |
+
+The bundled packs themselves stay in the image (`/opt/qinqin/packs`, `/opt/qinqin/audio`, `/opt/qinqin/strokes`). At start the server also removes the book and photo folders of users that no longer exist.
+
+`packages/` grows with the installed packs: one file per package, roughly the size of the pack's data compressed (CC-CEDICT's `lexicon.zh` is about 15 MB, the stroke data about 13 MB, an audio pack its clips), and a replaced revision is kept 7 days so clients can finish a download. See [Data packs on the server](Admin-data-packs).
 
 ## Checklist after deploying
 
-- `curl http://<host>:<port>/healthz` answers `ok`.
-- Sign in as the admin; search `好` and get results (the first-start seed ran).
-- The log shows `AI: QINQIN_SECRET ok` if you set a secret.
-- Over HTTPS, `/service-worker.js` has `Cache-Control: no-cache` and `/manifest.webmanifest` is `application/manifest+json`.
+- `curl http://<host>:<port>/healthz` answers `ok`; Portainer shows the container `healthy` (the compose healthcheck runs `wget` against `/healthz` every 30 s, with a 300 s start period that covers the first start's auto-seed).
+- Sign in as the admin from step 4.
+- Search `好`: results appear (the first-start seed ran).
+- Create a deck and a flashcard.
+- If you set `QINQIN_SECRET`, the container log shows `AI: QINQIN_SECRET ok`. With `QINQIN_AI_PROVIDER` unset, Settings → AI lists the providers and shows a key as storable; saving a key makes it the active provider, and a journal review works.
+- Over HTTPS, `curl -sI https://<host>/service-worker.js` shows `Cache-Control: no-cache` and a JavaScript content type, and `/manifest.webmanifest` is `application/manifest+json`. A proxy that caches or rewrites them breaks installing the app and updates.
+- Settings → Data lists the installed packs, each with its data package ("revision …, ready"); right after the first start it may say "Packages are being built" for about a minute.
 
-## Upgrading
+## Next
 
-Back up first ([Backup, recovery and the command line](Admin-backup-and-recovery)). Change the tag in `QINQIN_IMAGE` and redeploy with "Pull latest image". Migrations are embedded and run at start. They are one-way: **downgrading is not supported**, and that includes running an older binary on an upgraded database; going back needs the pre-upgrade backup. (If a v0.3 binary did run on a v0.4 database, the flashcards rows it wrote are taken over at the next start of v0.4, except changes to rows v0.4 already holds.) After an upgrade the log may say `pack <id>: stored ... differs`: run `qinqin seed` to refresh. Upgrading to data packages (migration 039): the first start installs the image's stroke-order pack (log: `strokes: installed the bundled stroke data ...`) and builds `packages/`; the log line `pack <id>: no licence texts stored; run "qinqin seed"` means a pack was installed before licence files were kept: run `qinqin seed` once so its package carries them (a new revision). Scripts that read dictionary collections from the sync pull must switch to packages ([API access tokens](API-Access-tokens)). A backup taken before migration 032 contains old plaintext session tokens: keep it private and delete it after upgrading.
-
-Upgrading from v0.1.0 or an early development database is not supported for entry data: start from a fresh data directory and seed again.
-
-## Problems
-
-[Troubleshooting](Troubleshooting).
+[Upgrading](Admin-upgrading), [Backup, recovery and the command line](Admin-backup-and-recovery), [Troubleshooting](Troubleshooting).

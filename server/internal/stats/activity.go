@@ -9,8 +9,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"sort"
+	"strings"
 	"time"
 
+	"qinqin/internal/events"
 	"qinqin/internal/plugins"
 	"qinqin/internal/studyday"
 )
@@ -64,6 +66,14 @@ func Activity(ctx context.Context, sqlDB *sql.DB, userID int64, windows []studyd
 	for _, r := range rules {
 		query := ruleQuery(r.Rule, workspace != nil)
 		args := ruleArgs(r.Rule, userID, r.Type, fromS, toS, workspace, string(encoded))
+		if r.Type == reviewType {
+			voided, err := replacedReviews(ctx, sqlDB, userID, fromS, toS)
+			if err != nil {
+				return nil, err
+			}
+			query = withoutReplaced(query)
+			args = append(args, voided)
+		}
 		rows, err := sqlDB.QueryContext(ctx, query, args...)
 		if err != nil {
 			return nil, fmt.Errorf("stats: activity of %s: %w", r.Type, err)
@@ -174,4 +184,75 @@ func ruleArgs(rule plugins.ActivityRule, userID int64, typ, from, to string, wor
 		args[5] = rule.DistinctBy
 	}
 	return args
+}
+
+// reviewType is the core review event: a changed grade (#131) replaces an
+// earlier review, which then scores nothing (events.Replaced).
+const reviewType = "review"
+
+// withoutReplaced narrows a rule statement to events not listed in ?11
+// (a JSON array of ids).
+func withoutReplaced(query string) string {
+	return strings.Replace(query, window, window+` AND study_events.id NOT IN (SELECT value FROM json_each(?11))`, 1)
+}
+
+// replacedReviews returns, as a JSON array, the ids of the user's reviews
+// in [from, to) that a changed grade replaced (docs/contracts/events/
+// review-replace.json). A link needs the same second, so a family never
+// leaves the window: the replacements in it are read first, then their
+// targets by id, always of this user only. The LIKE prefilter skips the
+// JSON parse of every review that has no "replaces" text at all (a payload
+// writing the key with escapes is not a replacement any client writes).
+func replacedReviews(ctx context.Context, sqlDB *sql.DB, userID int64, from, to string) (string, error) {
+	scan := func(rows *sql.Rows, list []events.Review) ([]events.Review, error) {
+		defer rows.Close()
+		for rows.Next() {
+			var r events.Review
+			var payload string
+			if err := rows.Scan(&r.ID, &r.WorkspaceID, &r.TS, &payload); err != nil {
+				return nil, err
+			}
+			r.Type, r.Payload = reviewType, json.RawMessage(payload)
+			list = append(list, r)
+		}
+		return list, rows.Err()
+	}
+	rows, err := sqlDB.QueryContext(ctx, `SELECT id, workspace_id, ts, payload FROM study_events INDEXED BY idx_study_events_user_type_ts
+		WHERE user_id = ? AND type = 'review' AND ts >= ? AND ts < ?
+		AND payload LIKE '%"replaces"%' AND json_valid(payload) AND json_type(payload, '$.replaces') = 'text'`, userID, from, to)
+	if err != nil {
+		return "", fmt.Errorf("stats: replaced reviews: %w", err)
+	}
+	list, err := scan(rows, nil)
+	if err != nil {
+		return "", fmt.Errorf("stats: replaced reviews: %w", err)
+	}
+	if len(list) == 0 {
+		return "[]", nil
+	}
+	targets := []string{}
+	for _, r := range list {
+		var p struct {
+			Replaces string `json:"replaces"`
+		}
+		if json.Unmarshal(r.Payload, &p) == nil && p.Replaces != "" {
+			targets = append(targets, p.Replaces)
+		}
+	}
+	ids, _ := json.Marshal(targets)
+	rows, err = sqlDB.QueryContext(ctx, `SELECT id, workspace_id, ts, payload FROM study_events
+		WHERE user_id = ? AND type = 'review' AND id IN (SELECT value FROM json_each(?))`, userID, string(ids))
+	if err != nil {
+		return "", fmt.Errorf("stats: replaced review targets: %w", err)
+	}
+	if list, err = scan(rows, list); err != nil {
+		return "", fmt.Errorf("stats: replaced review targets: %w", err)
+	}
+	voided := []string{}
+	for id := range events.Replaced(list) {
+		voided = append(voided, id)
+	}
+	sort.Strings(voided)
+	out, _ := json.Marshal(voided)
+	return string(out), nil
 }

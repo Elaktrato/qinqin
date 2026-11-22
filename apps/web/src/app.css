@@ -63,8 +63,23 @@
 	--focus-ring: 2px solid var(--focus-colour);
 	--focus-ring-offset: 2px;
 	--hit: 2.75rem;
+	/* The phone bottom bar (#188): the height of its items, without the
+	   safe area. --bottom-bar-space is what the bar covers at the bottom of
+	   the window: 0 unless the bar shows (below). */
+	--bottom-bar-height: 3.5rem;
+	--bottom-bar-space: 0px;
 	--layer-float: 50;
 	--layer-modal: 100;
+}
+
+/* The phone bottom bar shows (routes/+layout.svelte sets the attribute;
+   phone frame only, lib/frame/breakpoint.ts): fixed elements and scrolling
+   to a focused field or a fragment keep clear of it. */
+@media (max-width: 719.98px) {
+	:root[data-bottom-bar]:not([data-keyboard]) {
+		--bottom-bar-space: calc(var(--bottom-bar-height) + env(safe-area-inset-bottom, 0px));
+		scroll-padding-bottom: var(--bottom-bar-space);
+	}
 }
 
 /* Every component animates with the motion tokens, so this one block

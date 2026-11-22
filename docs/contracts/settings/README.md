@@ -16,6 +16,11 @@ Fixtures:
   `parse` (`value` → the heatmap layout read) and `write` (`stored` + `layout` → the row written) (web:
   `lib/widgets/options.test.ts`; Go: `cmd/qinqin/core_widget_options_test.go`,
   `internal/backup/widget_options_test.go`).
+- `nav-layout.json` — the user-global row `nav-layout` of plugin `qinqin-core` (the phone navigation): `row` (an
+  example), `parse` (`value` → `{phone, bar}` read), `write` (`stored` + `change` → the row written) and `items`
+  (visible section ids + `bar` → the bottom bar's items, the More rows and the current item; `bar: null` is the
+  default pins) (web: `lib/frame/navLayout.test.ts`, `lib/frame/barItems.test.ts`; Go:
+  `cmd/qinqin/core_nav_layout_test.go`, `internal/backup/nav_layout_test.go`).
 
 ## Workspace settings
 
@@ -103,6 +108,42 @@ rewrites the whole row (`serializeLayout`) and would drop added fields — cost:
 
 Ruling: Android reads and writes `widget-options` the same way (lenient read, unknown keys kept, re-read before
 write) — cost: none.
+
+**`nav-layout`** — `{"version": 1, "phone": "bar" | "drawer", "bar": [section id, ...]}`: the phone frame's
+navigation (below 720 px) and the sections pinned to its bottom bar, in order. Design:
+`docs/superpowers/specs/2026-11-22-phone-bottom-bar-design.md` (issue #188). No row = `{phone: "bar", bar: ["home",
+"flashcards", "reader", "search"]}`. Desktop and tablet widths ignore it. Section ids are the frame's
+(`lib/frame/sections.ts`): `home`, `search`, a core feature's slug (`flashcards`, `reader`), a plugin page's slug
+(`journal`, `grammar`, …), `stats`.
+
+- Read (`parseNavLayout`): an object with an integer `version` ≥ 1; a **newer version is read leniently** (its
+  `phone` and `bar` count). A non-object row, or a missing, non-integer or below-1 `version`, is the defaults.
+  `phone` other than `"bar"` or `"drawer"` (missing, unknown, not a string) is `"bar"`. `bar`: only non-empty
+  strings count, each once (the first wins); a missing or non-list `bar` is the default pins; an empty list stays
+  empty (every section under More).
+- Show (`barItems`, the `items` cases): pins count when the section is visible; ids not visible (switched off,
+  unknown, a removed plugin) are **skipped and stay stored**, so they return in their place when the section does.
+  At most **five items**: when all visible sections fit (five or fewer), all are shown — the pins in their order,
+  then the others in frame order — and there is no More. Otherwise the first **four** visible pins, then **More**,
+  whose rows are the remaining pins in their order, then the unpinned sections in frame order (Home first). The
+  current item is the current section's, or More when the section is one of its rows, or none (Settings, Sources,
+  the account pages).
+- Write (`withNavLayout`): the stored object with only the changed members (`phone`, `bar`) replaced. **Every
+  other key is kept**; `version` is kept when it is an integer ≥ 1 (so a newer version is never written back as
+  1), else 1; a non-object row is replaced by a fresh version 1 row. A member not changed is not added (changing
+  only `phone` on no row writes no `bar`, which keeps reading as the default pins). The written `bar` holds
+  non-empty strings, each once.
+- Re-read before write (`saveNavLayout`): like `widget-options`, a writer reads the row fresh (`find`) right
+  before it `put`s. Last write wins between two writes that race.
+- The server stores the row like any user-global plugin row (no code of its own); it syncs, and a restore brings
+  it back unchanged.
+
+Ruling: the five-item rule fills nothing: with more than five visible sections and fewer than four visible pins,
+the bar shows those pins and More — cost: a person who unpins a lot gets a short bar (the editor's preview shows
+it); filling the gaps would bring back a section the person just took out.
+
+Ruling: Android reads and writes `nav-layout` the same way (its phone frame follows `phone` and `bar`; lenient
+read, unknown keys kept, re-read before write) — cost: none.
 
 **`appearance`** — the person's theme, accent and adjustments: a third user-global `qinqin-core` row, specified
 with the themes in [`themes/README.md`](../themes/README.md) ("The `appearance` row", fixture `themes/appearance.json`).

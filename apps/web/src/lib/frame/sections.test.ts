@@ -96,3 +96,17 @@ describe('currentSection', () => {
 		expect(currentSection('/study/session', without)).toBeNull();
 	});
 });
+
+describe('frame ids stay unique', () => {
+	it('a plugin page never takes an id the frame uses (home, search, stats, more, a core feature)', () => {
+		const page = (slug: string) =>
+			({ manifest: { id: `qinqin-${slug}`, name: slug }, pages: [{ title: slug, nav: true }] }) as unknown as WebPlugin;
+		const plugins = ['more', 'home', 'stats', 'reader', 'notes'].map(page);
+		const states = ready(plugins.map((p) => state(p.manifest.id, 0)));
+		const ids = frameSections(states, plugins).map((s) => s.id);
+		expect(new Set(ids).size).toBe(ids.length);
+		expect(ids.filter((id) => id === 'more')).toEqual([]);
+		expect(ids).toContain('notes');
+	});
+});
+

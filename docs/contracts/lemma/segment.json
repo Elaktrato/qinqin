@@ -1,0 +1,2465 @@
+{
+ "version": 1,
+ "rule": "lemma/segment",
+ "language": "ja",
+ "table": "ja.rules.json",
+ "lexicon": [
+  {
+   "forms": [
+    "為る"
+   ],
+   "readings": [
+    "する"
+   ],
+   "pos": [
+    "vs-i",
+    "vt"
+   ],
+   "pri": [
+    "ichi1"
+   ],
+   "uk": true
+  },
+  {
+   "forms": [
+    "仕事"
+   ],
+   "readings": [
+    "しごと"
+   ],
+   "pos": [
+    "n",
+    "vs"
+   ],
+   "pri": [
+    "ichi1"
+   ],
+   "uk": false
+  },
+  {
+   "forms": [],
+   "readings": [
+    "を"
+   ],
+   "pos": [
+    "prt"
+   ],
+   "pri": [
+    "spec1"
+   ],
+   "uk": false
+  },
+  {
+   "forms": [],
+   "readings": [
+    "をして"
+   ],
+   "pos": [
+    "exp"
+   ],
+   "pri": [],
+   "uk": false
+  },
+  {
+   "forms": [
+    "居る"
+   ],
+   "readings": [
+    "いる"
+   ],
+   "pos": [
+    "v1",
+    "vi"
+   ],
+   "pri": [
+    "ichi1"
+   ],
+   "uk": true
+  },
+  {
+   "forms": [
+    "勉強"
+   ],
+   "readings": [
+    "べんきょう"
+   ],
+   "pos": [
+    "n",
+    "vs",
+    "vt"
+   ],
+   "pri": [
+    "ichi1"
+   ],
+   "uk": false
+  },
+  {
+   "forms": [
+    "食べる"
+   ],
+   "readings": [
+    "たべる"
+   ],
+   "pos": [
+    "v1",
+    "vt"
+   ],
+   "pri": [
+    "ichi1"
+   ],
+   "uk": false
+  },
+  {
+   "forms": [
+    "仕舞う"
+   ],
+   "readings": [
+    "しまう"
+   ],
+   "pos": [
+    "v5u",
+    "vt"
+   ],
+   "pri": [
+    "ichi1"
+   ],
+   "uk": true
+  },
+  {
+   "forms": [
+    "置く"
+   ],
+   "readings": [
+    "おく"
+   ],
+   "pos": [
+    "v5k",
+    "vt"
+   ],
+   "pri": [
+    "ichi1"
+   ],
+   "uk": true
+  },
+  {
+   "forms": [
+    "奥"
+   ],
+   "readings": [
+    "おく"
+   ],
+   "pos": [
+    "n"
+   ],
+   "pri": [
+    "ichi1"
+   ],
+   "uk": false
+  },
+  {
+   "forms": [
+    "下さい"
+   ],
+   "readings": [
+    "ください"
+   ],
+   "pos": [
+    "exp"
+   ],
+   "pri": [
+    "ichi1"
+   ],
+   "uk": true
+  },
+  {
+   "forms": [
+    "然し"
+   ],
+   "readings": [
+    "しかし"
+   ],
+   "pos": [
+    "conj"
+   ],
+   "pri": [
+    "ichi1"
+   ],
+   "uk": true
+  },
+  {
+   "forms": [
+    "揣摩"
+   ],
+   "readings": [
+    "しま"
+   ],
+   "pos": [
+    "n",
+    "vs"
+   ],
+   "pri": [],
+   "uk": false
+  },
+  {
+   "forms": [],
+   "readings": [
+    "すれば"
+   ],
+   "pos": [
+    "exp"
+   ],
+   "pri": [
+    "spec1"
+   ],
+   "uk": false
+  },
+  {
+   "forms": [],
+   "readings": [
+    "に"
+   ],
+   "pos": [
+    "prt"
+   ],
+   "pri": [
+    "spec1"
+   ],
+   "uk": false
+  },
+  {
+   "forms": [
+    "取る"
+   ],
+   "readings": [
+    "とる"
+   ],
+   "pos": [
+    "v5r",
+    "vt"
+   ],
+   "pri": [
+    "ichi1"
+   ],
+   "uk": false
+  },
+  {
+   "forms": [
+    "に取って"
+   ],
+   "readings": [
+    "にとって"
+   ],
+   "pos": [
+    "exp"
+   ],
+   "pri": [
+    "ichi1"
+   ],
+   "uk": true
+  },
+  {
+   "forms": [
+    "私"
+   ],
+   "readings": [
+    "わたし"
+   ],
+   "pos": [
+    "pn"
+   ],
+   "pri": [
+    "ichi1"
+   ],
+   "uk": false
+  },
+  {
+   "forms": [
+    "寒い"
+   ],
+   "readings": [
+    "さむい"
+   ],
+   "pos": [
+    "adj-i"
+   ],
+   "pri": [
+    "ichi1"
+   ],
+   "uk": false
+  },
+  {
+   "forms": [
+    "成る"
+   ],
+   "readings": [
+    "なる"
+   ],
+   "pos": [
+    "v5r",
+    "vi"
+   ],
+   "pri": [
+    "ichi1"
+   ],
+   "uk": true
+  },
+  {
+   "forms": [
+    "来る"
+   ],
+   "readings": [
+    "くる"
+   ],
+   "pos": [
+    "vk",
+    "vi"
+   ],
+   "pri": [
+    "ichi1"
+   ],
+   "uk": false
+  },
+  {
+   "forms": [
+    "窓"
+   ],
+   "readings": [
+    "まど"
+   ],
+   "pos": [
+    "n"
+   ],
+   "pri": [
+    "ichi1"
+   ],
+   "uk": false
+  },
+  {
+   "forms": [
+    "開ける"
+   ],
+   "readings": [
+    "あける"
+   ],
+   "pos": [
+    "v1",
+    "vt"
+   ],
+   "pri": [
+    "ichi1"
+   ],
+   "uk": false
+  },
+  {
+   "forms": [
+    "本"
+   ],
+   "readings": [
+    "ほん"
+   ],
+   "pos": [
+    "n"
+   ],
+   "pri": [
+    "ichi1"
+   ],
+   "uk": false
+  },
+  {
+   "forms": [
+    "読む"
+   ],
+   "readings": [
+    "よむ"
+   ],
+   "pos": [
+    "v5m",
+    "vt"
+   ],
+   "pri": [
+    "ichi1"
+   ],
+   "uk": false
+  },
+  {
+   "forms": [],
+   "readings": [
+    "には"
+   ],
+   "pos": [
+    "exp",
+    "prt"
+   ],
+   "pri": [
+    "spec1"
+   ],
+   "uk": false
+  },
+  {
+   "forms": [
+    "入る"
+   ],
+   "readings": [
+    "はいる"
+   ],
+   "pos": [
+    "v5r",
+    "vi"
+   ],
+   "pri": [
+    "ichi1"
+   ],
+   "uk": false
+  },
+  {
+   "forms": [
+    "雨"
+   ],
+   "readings": [
+    "あめ"
+   ],
+   "pos": [
+    "n"
+   ],
+   "pri": [
+    "ichi1",
+    "news1",
+    "nf01"
+   ],
+   "uk": false
+  },
+  {
+   "forms": [
+    "飴"
+   ],
+   "readings": [
+    "あめ"
+   ],
+   "pos": [
+    "n"
+   ],
+   "pri": [
+    "ichi1"
+   ],
+   "uk": false
+  },
+  {
+   "forms": [],
+   "readings": [
+    "アメ"
+   ],
+   "pos": [
+    "pref"
+   ],
+   "pri": [],
+   "uk": false
+  },
+  {
+   "forms": [
+    "帰る"
+   ],
+   "readings": [
+    "かえる"
+   ],
+   "pos": [
+    "v5r",
+    "vi"
+   ],
+   "pri": [
+    "ichi1"
+   ],
+   "uk": false
+  },
+  {
+   "forms": [
+    "宿題"
+   ],
+   "readings": [
+    "しゅくだい"
+   ],
+   "pos": [
+    "n"
+   ],
+   "pri": [
+    "ichi1"
+   ],
+   "uk": false
+  },
+  {
+   "forms": [],
+   "readings": [
+    "も"
+   ],
+   "pos": [
+    "prt"
+   ],
+   "pri": [
+    "spec1"
+   ],
+   "uk": false
+  },
+  {
+   "forms": [],
+   "readings": [
+    "をしても"
+   ],
+   "pos": [
+    "exp"
+   ],
+   "pri": [],
+   "uk": false
+  },
+  {
+   "forms": [
+    "貰う"
+   ],
+   "readings": [
+    "もらう"
+   ],
+   "pos": [
+    "v5u",
+    "vt"
+   ],
+   "pri": [
+    "ichi1"
+   ],
+   "uk": true
+  },
+  {
+   "forms": [],
+   "readings": [
+    "から"
+   ],
+   "pos": [
+    "prt"
+   ],
+   "pri": [
+    "spec1"
+   ],
+   "uk": false
+  },
+  {
+   "forms": [
+    "に基づいて"
+   ],
+   "readings": [
+    "にもとづいて"
+   ],
+   "pos": [
+    "exp"
+   ],
+   "pri": [],
+   "uk": false
+  },
+  {
+   "forms": [
+    "基づく"
+   ],
+   "readings": [
+    "もとづく"
+   ],
+   "pos": [
+    "v5k",
+    "vi"
+   ],
+   "pri": [
+    "ichi1"
+   ],
+   "uk": false
+  },
+  {
+   "forms": [
+    "法律"
+   ],
+   "readings": [
+    "ほうりつ"
+   ],
+   "pos": [
+    "n"
+   ],
+   "pri": [
+    "ichi1"
+   ],
+   "uk": false
+  },
+  {
+   "forms": [
+    "判断"
+   ],
+   "readings": [
+    "はんだん"
+   ],
+   "pos": [
+    "n",
+    "vs"
+   ],
+   "pri": [
+    "ichi1"
+   ],
+   "uk": false
+  },
+  {
+   "forms": [
+    "に沿って"
+   ],
+   "readings": [
+    "にそって"
+   ],
+   "pos": [
+    "exp",
+    "adv"
+   ],
+   "pri": [],
+   "uk": false
+  },
+  {
+   "forms": [
+    "沿う"
+   ],
+   "readings": [
+    "そう"
+   ],
+   "pos": [
+    "v5u",
+    "vi"
+   ],
+   "pri": [
+    "ichi1"
+   ],
+   "uk": false
+  },
+  {
+   "forms": [
+    "計画"
+   ],
+   "readings": [
+    "けいかく"
+   ],
+   "pos": [
+    "n",
+    "vs"
+   ],
+   "pri": [
+    "ichi1"
+   ],
+   "uk": false
+  },
+  {
+   "forms": [
+    "進める"
+   ],
+   "readings": [
+    "すすめる"
+   ],
+   "pos": [
+    "v1",
+    "vt"
+   ],
+   "pri": [
+    "ichi1"
+   ],
+   "uk": false
+  },
+  {
+   "forms": [
+    "仕兼ねない",
+    "し兼ねない"
+   ],
+   "readings": [
+    "しかねない"
+   ],
+   "pos": [
+    "exp",
+    "adj-i"
+   ],
+   "pri": [],
+   "uk": true
+  },
+  {
+   "forms": [],
+   "readings": [
+    "し"
+   ],
+   "pos": [
+    "prt",
+    "conj"
+   ],
+   "pri": [
+    "spec1"
+   ],
+   "uk": false
+  },
+  {
+   "forms": [
+    "兼ねる"
+   ],
+   "readings": [
+    "かねる"
+   ],
+   "pos": [
+    "v1",
+    "vt"
+   ],
+   "pri": [
+    "ichi1"
+   ],
+   "uk": true
+  },
+  {
+   "forms": [
+    "兼ねない"
+   ],
+   "readings": [
+    "かねない"
+   ],
+   "pos": [
+    "exp",
+    "suf"
+   ],
+   "pri": [],
+   "uk": true
+  },
+  {
+   "forms": [
+    "と言って"
+   ],
+   "readings": [
+    "といって"
+   ],
+   "pos": [
+    "exp",
+    "conj"
+   ],
+   "pri": [],
+   "uk": false
+  },
+  {
+   "forms": [],
+   "readings": [
+    "と"
+   ],
+   "pos": [
+    "prt"
+   ],
+   "pri": [
+    "spec1"
+   ],
+   "uk": false
+  },
+  {
+   "forms": [
+    "言う"
+   ],
+   "readings": [
+    "いう"
+   ],
+   "pos": [
+    "v5u",
+    "vt"
+   ],
+   "pri": [
+    "ichi1"
+   ],
+   "uk": false
+  },
+  {
+   "forms": [
+    "彼"
+   ],
+   "readings": [
+    "かれ"
+   ],
+   "pos": [
+    "pn"
+   ],
+   "pri": [
+    "ichi1"
+   ],
+   "uk": false
+  },
+  {
+   "forms": [
+    "行く"
+   ],
+   "readings": [
+    "いく"
+   ],
+   "pos": [
+    "v5k-s",
+    "vi"
+   ],
+   "pri": [
+    "ichi1"
+   ],
+   "uk": false
+  },
+  {
+   "forms": [],
+   "readings": [
+    "は"
+   ],
+   "pos": [
+    "prt"
+   ],
+   "pri": [
+    "spec1"
+   ],
+   "uk": false
+  },
+  {
+   "forms": [
+    "忘れる"
+   ],
+   "readings": [
+    "わすれる"
+   ],
+   "pos": [
+    "v1",
+    "vt"
+   ],
+   "pri": [
+    "ichi1"
+   ],
+   "uk": false
+  },
+  {
+   "forms": [],
+   "readings": [
+    "ね"
+   ],
+   "pos": [
+    "prt"
+   ],
+   "pri": [
+    "spec1"
+   ],
+   "uk": false
+  },
+  {
+   "forms": [],
+   "readings": [
+    "です"
+   ],
+   "pos": [
+    "cop"
+   ],
+   "pri": [
+    "spec1"
+   ],
+   "uk": false
+  },
+  {
+   "forms": [
+    "見る",
+    "観る"
+   ],
+   "readings": [
+    "みる"
+   ],
+   "pri": [
+    "ichi1",
+    "news1",
+    "nf14"
+   ],
+   "senses": [
+    {
+     "pos": [
+      "v1",
+      "vt"
+     ],
+     "uk": false
+    },
+    {
+     "pos": [
+      "v1",
+      "vt"
+     ],
+     "uk": false
+    },
+    {
+     "pos": [
+      "v1",
+      "vt"
+     ],
+     "uk": true
+    }
+   ]
+  },
+  {
+   "forms": [
+    "海松",
+    "水松"
+   ],
+   "readings": [
+    "みる"
+   ],
+   "pri": [],
+   "senses": [
+    {
+     "pos": [
+      "n"
+     ],
+     "uk": true
+    }
+   ]
+  },
+  {
+   "forms": [
+    "来る",
+    "來る"
+   ],
+   "readings": [
+    "くる"
+   ],
+   "pri": [
+    "ichi1",
+    "news1",
+    "nf16"
+   ],
+   "senses": [
+    {
+     "pos": [
+      "vk",
+      "vi"
+     ],
+     "uk": false
+    },
+    {
+     "pos": [
+      "aux-v",
+      "vk"
+     ],
+     "uk": true
+    }
+   ]
+  },
+  {
+   "forms": [
+    "佝僂",
+    "痀瘻"
+   ],
+   "readings": [
+    "くる"
+   ],
+   "pri": [],
+   "senses": [
+    {
+     "pos": [
+      "n"
+     ],
+     "uk": true
+    },
+    {
+     "pos": [
+      "n"
+     ],
+     "uk": true
+    }
+   ]
+  },
+  {
+   "forms": [
+    "所",
+    "処"
+   ],
+   "readings": [
+    "ところ"
+   ],
+   "pri": [
+    "ichi1",
+    "news1"
+   ],
+   "senses": [
+    {
+     "pos": [
+      "n",
+      "adv"
+     ],
+     "uk": false
+    },
+    {
+     "pos": [
+      "n",
+      "suf"
+     ],
+     "uk": true
+    }
+   ]
+  },
+  {
+   "forms": [
+    "野老"
+   ],
+   "readings": [
+    "ところ"
+   ],
+   "pri": [],
+   "senses": [
+    {
+     "pos": [
+      "n"
+     ],
+     "uk": true
+    },
+    {
+     "pos": [
+      "n"
+     ],
+     "uk": false
+    }
+   ]
+  },
+  {
+   "forms": [
+    "上げる",
+    "騰げる"
+   ],
+   "readings": [
+    "あげる"
+   ],
+   "pri": [
+    "ichi1",
+    "news1"
+   ],
+   "senses": [
+    {
+     "pos": [
+      "v1",
+      "vt"
+     ],
+     "uk": false
+    },
+    {
+     "pos": [
+      "v1",
+      "vt"
+     ],
+     "uk": false
+    },
+    {
+     "pos": [
+      "v1",
+      "vt"
+     ],
+     "uk": true
+    }
+   ]
+  },
+  {
+   "forms": [
+    "目",
+    "眼"
+   ],
+   "readings": [
+    "め"
+   ],
+   "pri": [
+    "ichi1",
+    "news1",
+    "nf16"
+   ],
+   "senses": [
+    {
+     "pos": [
+      "n"
+     ],
+     "uk": false
+    },
+    {
+     "pos": [
+      "n"
+     ],
+     "uk": false
+    },
+    {
+     "pos": [
+      "n"
+     ],
+     "uk": true
+    }
+   ]
+  },
+  {
+   "forms": [
+    "奴"
+   ],
+   "readings": [
+    "め"
+   ],
+   "pri": [],
+   "senses": [
+    {
+     "pos": [
+      "suf"
+     ],
+     "uk": true
+    },
+    {
+     "pos": [
+      "suf"
+     ],
+     "uk": false
+    }
+   ]
+  },
+  {
+   "forms": [],
+   "readings": [
+    "にて"
+   ],
+   "pos": [
+    "prt"
+   ],
+   "pri": [
+    "spec1"
+   ],
+   "uk": false
+  },
+  {
+   "forms": [
+    "煮る",
+    "烹る"
+   ],
+   "readings": [
+    "にる"
+   ],
+   "pos": [
+    "v1",
+    "vt"
+   ],
+   "pri": [
+    "ichi1",
+    "news2",
+    "nf15"
+   ],
+   "uk": false
+  },
+  {
+   "forms": [
+    "東京"
+   ],
+   "readings": [
+    "とうきょう"
+   ],
+   "pos": [
+    "n"
+   ],
+   "pri": [
+    "ichi1",
+    "news1",
+    "nf01"
+   ],
+   "uk": false
+  },
+  {
+   "forms": [
+    "開催"
+   ],
+   "readings": [
+    "かいさい"
+   ],
+   "pos": [
+    "n",
+    "vs"
+   ],
+   "pri": [
+    "ichi1",
+    "news1",
+    "nf02"
+   ],
+   "uk": false
+  },
+  {
+   "forms": [],
+   "readings": [
+    "たって"
+   ],
+   "pos": [
+    "prt"
+   ],
+   "pri": [
+    "spec1"
+   ],
+   "uk": false
+  },
+  {
+   "forms": [
+    "立つ"
+   ],
+   "readings": [
+    "たつ"
+   ],
+   "pos": [
+    "v5t",
+    "vi"
+   ],
+   "pri": [
+    "ichi1",
+    "news1",
+    "nf03"
+   ],
+   "uk": false
+  },
+  {
+   "forms": [
+    "荷物"
+   ],
+   "readings": [
+    "にもつ"
+   ],
+   "pos": [
+    "n"
+   ],
+   "pri": [
+    "ichi1"
+   ],
+   "uk": false
+  },
+  {
+   "forms": [
+    "を措いて"
+   ],
+   "readings": [
+    "をおいて"
+   ],
+   "pos": [
+    "exp"
+   ],
+   "pri": [],
+   "uk": true
+  },
+  {
+   "forms": [],
+   "readings": [
+    "サラダ"
+   ],
+   "pos": [
+    "n"
+   ],
+   "pri": [
+    "gai1"
+   ],
+   "uk": false
+  },
+  {
+   "forms": [],
+   "readings": [
+    "にして"
+   ],
+   "pos": [
+    "exp"
+   ],
+   "pri": [],
+   "uk": false
+  },
+  {
+   "forms": [
+    "部屋"
+   ],
+   "readings": [
+    "へや"
+   ],
+   "pos": [
+    "n"
+   ],
+   "pri": [
+    "ichi1"
+   ],
+   "uk": false
+  },
+  {
+   "forms": [
+    "綺麗"
+   ],
+   "readings": [
+    "きれい"
+   ],
+   "pos": [
+    "adj-na"
+   ],
+   "pri": [
+    "ichi1"
+   ],
+   "uk": true
+  },
+  {
+   "forms": [
+    "此処"
+   ],
+   "readings": [
+    "ここ"
+   ],
+   "pos": [
+    "pn"
+   ],
+   "pri": [
+    "ichi1"
+   ],
+   "uk": true
+  },
+  {
+   "forms": [],
+   "readings": [
+    "であれ"
+   ],
+   "pos": [
+    "exp"
+   ],
+   "pri": [],
+   "uk": false
+  },
+  {
+   "forms": [],
+   "readings": [
+    "で"
+   ],
+   "pos": [
+    "prt"
+   ],
+   "pri": [
+    "spec1"
+   ],
+   "uk": false
+  },
+  {
+   "forms": [
+    "彼此"
+   ],
+   "readings": [
+    "あれこれ"
+   ],
+   "pos": [
+    "adv",
+    "n"
+   ],
+   "pri": [
+    "ichi1"
+   ],
+   "uk": true
+  },
+  {
+   "forms": [
+    "考える"
+   ],
+   "readings": [
+    "かんがえる"
+   ],
+   "pos": [
+    "v1",
+    "vt"
+   ],
+   "pri": [
+    "ichi1"
+   ],
+   "uk": false
+  },
+  {
+   "forms": [
+    "家"
+   ],
+   "readings": [
+    "いえ"
+   ],
+   "pos": [
+    "n"
+   ],
+   "pri": [
+    "ichi1"
+   ],
+   "uk": false
+  },
+  {
+   "forms": [],
+   "readings": [
+    "でない"
+   ],
+   "pos": [
+    "exp",
+    "adj-i"
+   ],
+   "pri": [],
+   "uk": false
+  },
+  {
+   "forms": [
+    "泣く"
+   ],
+   "readings": [
+    "なく"
+   ],
+   "pos": [
+    "v5k",
+    "vi"
+   ],
+   "pri": [
+    "ichi1"
+   ],
+   "uk": false
+  },
+  {
+   "forms": [
+    "と来たら"
+   ],
+   "readings": [
+    "ときたら"
+   ],
+   "pos": [
+    "exp"
+   ],
+   "pri": [],
+   "uk": true
+  }
+ ],
+ "cases": [
+  {
+   "name": "an expression never cuts a longer word",
+   "text": "仕事をしている",
+   "tokens": [
+    {
+     "surface": "仕事",
+     "start": 0,
+     "end": 2,
+     "lemma": "仕事",
+     "reasons": [],
+     "head": "仕事"
+    },
+    {
+     "surface": "を",
+     "start": 2,
+     "end": 3,
+     "lemma": "を",
+     "reasons": [],
+     "head": "を"
+    },
+    {
+     "surface": "している",
+     "start": 3,
+     "end": 7,
+     "lemma": "する",
+     "reasons": [
+      "progressive",
+      "te-form"
+     ],
+     "head": "為る"
+    }
+   ]
+  },
+  {
+   "name": "an unprioritised expression yields to an inflected word ending with it",
+   "text": "仕事をして",
+   "tokens": [
+    {
+     "surface": "仕事",
+     "start": 0,
+     "end": 2,
+     "lemma": "仕事",
+     "reasons": [],
+     "head": "仕事"
+    },
+    {
+     "surface": "を",
+     "start": 2,
+     "end": 3,
+     "lemma": "を",
+     "reasons": [],
+     "head": "を"
+    },
+    {
+     "surface": "して",
+     "start": 3,
+     "end": 5,
+     "lemma": "する",
+     "reasons": [
+      "te-form"
+     ],
+     "head": "為る"
+    }
+   ]
+  },
+  {
+   "name": "a common verb beats a rare noun read by its kana",
+   "text": "しました",
+   "tokens": [
+    {
+     "surface": "しました",
+     "start": 0,
+     "end": 4,
+     "lemma": "する",
+     "reasons": [
+      "past",
+      "polite"
+     ],
+     "head": "為る"
+    }
+   ]
+  },
+  {
+   "name": "contraction ちゃう",
+   "text": "しちゃった",
+   "tokens": [
+    {
+     "surface": "しちゃった",
+     "start": 0,
+     "end": 5,
+     "lemma": "する",
+     "reasons": [
+      "past",
+      "completion",
+      "te-form"
+     ],
+     "head": "為る"
+    }
+   ]
+  },
+  {
+   "name": "てしまう folds into the verb",
+   "text": "食べてしまった",
+   "tokens": [
+    {
+     "surface": "食べてしまった",
+     "start": 0,
+     "end": 7,
+     "lemma": "食べる",
+     "reasons": [
+      "past",
+      "completion",
+      "te-form"
+     ],
+     "head": "食べる"
+    }
+   ]
+  },
+  {
+   "name": "ておく on a する compound",
+   "text": "勉強しておきます",
+   "tokens": [
+    {
+     "surface": "勉強しておきます",
+     "start": 0,
+     "end": 8,
+     "lemma": "勉強する",
+     "reasons": [
+      "polite",
+      "in advance",
+      "te-form"
+     ],
+     "head": "勉強"
+    }
+   ]
+  },
+  {
+   "name": "ておく then てください",
+   "text": "窓を開けておいてください",
+   "tokens": [
+    {
+     "surface": "窓",
+     "start": 0,
+     "end": 1,
+     "lemma": "窓",
+     "reasons": [],
+     "head": "窓"
+    },
+    {
+     "surface": "を",
+     "start": 1,
+     "end": 2,
+     "lemma": "を",
+     "reasons": [],
+     "head": "を"
+    },
+    {
+     "surface": "開けておいてください",
+     "start": 2,
+     "end": 12,
+     "lemma": "開ける",
+     "reasons": [
+      "request",
+      "te-form",
+      "in advance",
+      "te-form"
+     ],
+     "head": "開ける"
+    }
+   ]
+  },
+  {
+   "name": "ください alone is the expression",
+   "text": "ください",
+   "tokens": [
+    {
+     "surface": "ください",
+     "start": 0,
+     "end": 4,
+     "lemma": "ください",
+     "reasons": [],
+     "head": "下さい"
+    }
+   ]
+  },
+  {
+   "name": "しかし is the conjunction",
+   "text": "しかし",
+   "tokens": [
+    {
+     "surface": "しかし",
+     "start": 0,
+     "end": 3,
+     "lemma": "しかし",
+     "reasons": [],
+     "head": "然し"
+    }
+   ]
+  },
+  {
+   "name": "すれば is the conditional of する",
+   "text": "すれば",
+   "tokens": [
+    {
+     "surface": "すれば",
+     "start": 0,
+     "end": 3,
+     "lemma": "する",
+     "reasons": [
+      "conditional"
+     ],
+     "head": "為る"
+    }
+   ]
+  },
+  {
+   "name": "a prioritised particle expression stays",
+   "text": "私にとって",
+   "tokens": [
+    {
+     "surface": "私",
+     "start": 0,
+     "end": 1,
+     "lemma": "私",
+     "reasons": [],
+     "head": "私"
+    },
+    {
+     "surface": "にとって",
+     "start": 1,
+     "end": 5,
+     "lemma": "にとって",
+     "reasons": [],
+     "head": "に取って"
+    }
+   ]
+  },
+  {
+   "name": "adverbial く and てくる",
+   "text": "寒くなってきた",
+   "tokens": [
+    {
+     "surface": "寒く",
+     "start": 0,
+     "end": 2,
+     "lemma": "寒い",
+     "reasons": [
+      "adverbial"
+     ],
+     "head": "寒い"
+    },
+    {
+     "surface": "なってきた",
+     "start": 2,
+     "end": 7,
+     "lemma": "なる",
+     "reasons": [
+      "past",
+      "coming",
+      "te-form"
+     ],
+     "head": "成る"
+    }
+   ]
+  },
+  {
+   "name": "contracted progressive",
+   "text": "本を読んでる",
+   "tokens": [
+    {
+     "surface": "本",
+     "start": 0,
+     "end": 1,
+     "lemma": "本",
+     "reasons": [],
+     "head": "本"
+    },
+    {
+     "surface": "を",
+     "start": 1,
+     "end": 2,
+     "lemma": "を",
+     "reasons": [],
+     "head": "を"
+    },
+    {
+     "surface": "読んでる",
+     "start": 2,
+     "end": 6,
+     "lemma": "読む",
+     "reasons": [
+      "progressive",
+      "te-form"
+     ],
+     "head": "読む"
+    }
+   ]
+  },
+  {
+   "name": "a prioritised particle expression is not split (には, not に + 入る)",
+   "text": "にはいられない",
+   "tokens": [
+    {
+     "surface": "には",
+     "start": 0,
+     "end": 2,
+     "lemma": "には",
+     "reasons": [],
+     "head": "には"
+    },
+    {
+     "surface": "いられない",
+     "start": 2,
+     "end": 7,
+     "lemma": "いる",
+     "reasons": [
+      "negative",
+      "passive"
+     ],
+     "head": "居る"
+    }
+   ]
+  },
+  {
+   "name": "hiragana text: a katakana-only entry is no better fit than a kanji word",
+   "text": "あめ",
+   "tokens": [
+    {
+     "surface": "あめ",
+     "start": 0,
+     "end": 2,
+     "lemma": "あめ",
+     "reasons": [],
+     "head": "雨"
+    }
+   ]
+  },
+  {
+   "name": "をして then a verb",
+   "text": "仕事をして帰った",
+   "tokens": [
+    {
+     "surface": "仕事",
+     "start": 0,
+     "end": 2,
+     "lemma": "仕事",
+     "reasons": [],
+     "head": "仕事"
+    },
+    {
+     "surface": "を",
+     "start": 2,
+     "end": 3,
+     "lemma": "を",
+     "reasons": [],
+     "head": "を"
+    },
+    {
+     "surface": "して",
+     "start": 3,
+     "end": 5,
+     "lemma": "する",
+     "reasons": [
+      "te-form"
+     ],
+     "head": "為る"
+    },
+    {
+     "surface": "帰った",
+     "start": 5,
+     "end": 8,
+     "lemma": "帰る",
+     "reasons": [
+      "past"
+     ],
+     "head": "帰る"
+    }
+   ]
+  },
+  {
+   "name": "をして then a particle",
+   "text": "宿題をしてから",
+   "tokens": [
+    {
+     "surface": "宿題",
+     "start": 0,
+     "end": 2,
+     "lemma": "宿題",
+     "reasons": [],
+     "head": "宿題"
+    },
+    {
+     "surface": "を",
+     "start": 2,
+     "end": 3,
+     "lemma": "を",
+     "reasons": [],
+     "head": "を"
+    },
+    {
+     "surface": "して",
+     "start": 3,
+     "end": 5,
+     "lemma": "する",
+     "reasons": [
+      "te-form"
+     ],
+     "head": "為る"
+    },
+    {
+     "surface": "から",
+     "start": 5,
+     "end": 7,
+     "lemma": "から",
+     "reasons": [],
+     "head": "から"
+    }
+   ]
+  },
+  {
+   "name": "the particle is the shortest shorter match (を, not the expression をして) (をしても is a test-only expression)",
+   "text": "宿題をしてもらった",
+   "tokens": [
+    {
+     "surface": "宿題",
+     "start": 0,
+     "end": 2,
+     "lemma": "宿題",
+     "reasons": [],
+     "head": "宿題"
+    },
+    {
+     "surface": "を",
+     "start": 2,
+     "end": 3,
+     "lemma": "を",
+     "reasons": [],
+     "head": "を"
+    },
+    {
+     "surface": "してもらった",
+     "start": 3,
+     "end": 9,
+     "lemma": "する",
+     "reasons": [
+      "past",
+      "receiving favour",
+      "te-form"
+     ],
+     "head": "為る"
+    }
+   ]
+  },
+  {
+   "name": "a grammar expression the table keeps whole (に基づいて)",
+   "text": "法律に基づいて判断する",
+   "tokens": [
+    {
+     "surface": "法律",
+     "start": 0,
+     "end": 2,
+     "lemma": "法律",
+     "reasons": [],
+     "head": "法律"
+    },
+    {
+     "surface": "に基づいて",
+     "start": 2,
+     "end": 7,
+     "lemma": "に基づいて",
+     "reasons": [],
+     "head": "に基づいて"
+    },
+    {
+     "surface": "判断",
+     "start": 7,
+     "end": 9,
+     "lemma": "判断",
+     "reasons": [],
+     "head": "判断"
+    },
+    {
+     "surface": "する",
+     "start": 9,
+     "end": 11,
+     "lemma": "する",
+     "reasons": [],
+     "head": "為る"
+    }
+   ]
+  },
+  {
+   "name": "a grammar expression the table keeps whole (に沿って)",
+   "text": "計画に沿って進める",
+   "tokens": [
+    {
+     "surface": "計画",
+     "start": 0,
+     "end": 2,
+     "lemma": "計画",
+     "reasons": [],
+     "head": "計画"
+    },
+    {
+     "surface": "に沿って",
+     "start": 2,
+     "end": 6,
+     "lemma": "に沿って",
+     "reasons": [],
+     "head": "に沿って"
+    },
+    {
+     "surface": "進める",
+     "start": 6,
+     "end": 9,
+     "lemma": "進める",
+     "reasons": [],
+     "head": "進める"
+    }
+   ]
+  },
+  {
+   "name": "しかねない stays one token (its し is no particle)",
+   "text": "しかねない",
+   "tokens": [
+    {
+     "surface": "しかねない",
+     "start": 0,
+     "end": 5,
+     "lemma": "しかねない",
+     "reasons": [],
+     "head": "仕兼ねない"
+    }
+   ]
+  },
+  {
+   "name": "quotation と言って is not kept whole",
+   "text": "彼は行くと言っていました",
+   "tokens": [
+    {
+     "surface": "彼",
+     "start": 0,
+     "end": 1,
+     "lemma": "彼",
+     "reasons": [],
+     "head": "彼"
+    },
+    {
+     "surface": "は",
+     "start": 1,
+     "end": 2,
+     "lemma": "は",
+     "reasons": [],
+     "head": "は"
+    },
+    {
+     "surface": "行く",
+     "start": 2,
+     "end": 4,
+     "lemma": "行く",
+     "reasons": [],
+     "head": "行く"
+    },
+    {
+     "surface": "と",
+     "start": 4,
+     "end": 5,
+     "lemma": "と",
+     "reasons": [],
+     "head": "と"
+    },
+    {
+     "surface": "言っていました",
+     "start": 5,
+     "end": 12,
+     "lemma": "言う",
+     "reasons": [
+      "past",
+      "polite",
+      "progressive",
+      "te-form"
+     ],
+     "head": "言う"
+    }
+   ]
+  },
+  {
+   "name": "negative request",
+   "text": "食べないでください",
+   "tokens": [
+    {
+     "surface": "食べないでください",
+     "start": 0,
+     "end": 9,
+     "lemma": "食べる",
+     "reasons": [
+      "request",
+      "te-form",
+      "negative"
+     ],
+     "head": "食べる"
+    }
+   ]
+  },
+  {
+   "name": "a polite negative adjective keeps です apart (no ないで)",
+   "text": "寒くないです",
+   "tokens": [
+    {
+     "surface": "寒くない",
+     "start": 0,
+     "end": 4,
+     "lemma": "寒い",
+     "reasons": [
+      "negative"
+     ],
+     "head": "寒い"
+    },
+    {
+     "surface": "です",
+     "start": 4,
+     "end": 6,
+     "lemma": "です",
+     "reasons": [],
+     "head": "です"
+    }
+   ]
+  },
+  {
+   "name": "prohibition",
+   "text": "してはいけない",
+   "tokens": [
+    {
+     "surface": "してはいけない",
+     "start": 0,
+     "end": 7,
+     "lemma": "する",
+     "reasons": [
+      "prohibition",
+      "te-form"
+     ],
+     "head": "為る"
+    }
+   ]
+  },
+  {
+   "name": "usually-kana on a later sense still counts (みる is 見る, not 海松)",
+   "text": "みる",
+   "tokens": [
+    {
+     "surface": "みる",
+     "start": 0,
+     "end": 2,
+     "lemma": "みる",
+     "reasons": [],
+     "head": "見る"
+    }
+   ]
+  },
+  {
+   "name": "usually-kana on a later sense still counts (くる is 来る, not 佝僂)",
+   "text": "くる",
+   "tokens": [
+    {
+     "surface": "くる",
+     "start": 0,
+     "end": 2,
+     "lemma": "くる",
+     "reasons": [],
+     "head": "来る"
+    }
+   ]
+  },
+  {
+   "name": "usually-kana on a later sense still counts (ところ is 所, not 野老)",
+   "text": "ところ",
+   "tokens": [
+    {
+     "surface": "ところ",
+     "start": 0,
+     "end": 3,
+     "lemma": "ところ",
+     "reasons": [],
+     "head": "所"
+    }
+   ]
+  },
+  {
+   "name": "usually-kana on a later sense still counts (あげた is 上げる)",
+   "text": "あげた",
+   "tokens": [
+    {
+     "surface": "あげた",
+     "start": 0,
+     "end": 3,
+     "lemma": "あげる",
+     "reasons": [
+      "past"
+     ],
+     "head": "上げる"
+    }
+   ]
+  },
+  {
+   "name": "usually-kana on a later sense still counts (め is 目, not 奴)",
+   "text": "め",
+   "tokens": [
+    {
+     "surface": "め",
+     "start": 0,
+     "end": 1,
+     "lemma": "め",
+     "reasons": [],
+     "head": "目"
+    }
+   ]
+  },
+  {
+   "name": "a particle never yields to a verb's inflection (にて is not 煮る)",
+   "text": "東京にて開催",
+   "tokens": [
+    {
+     "surface": "東京",
+     "start": 0,
+     "end": 2,
+     "lemma": "東京",
+     "reasons": [],
+     "head": "東京"
+    },
+    {
+     "surface": "にて",
+     "start": 2,
+     "end": 4,
+     "lemma": "にて",
+     "reasons": [],
+     "head": "にて"
+    },
+    {
+     "surface": "開催",
+     "start": 4,
+     "end": 6,
+     "lemma": "開催",
+     "reasons": [],
+     "head": "開催"
+    }
+   ]
+  },
+  {
+   "name": "a particle never yields to a verb's inflection (たって is not 立つ)",
+   "text": "たって",
+   "tokens": [
+    {
+     "surface": "たって",
+     "start": 0,
+     "end": 3,
+     "lemma": "たって",
+     "reasons": [],
+     "head": "たって"
+    }
+   ]
+  },
+  {
+   "name": "an unlisted expression (をおいて) yields to a longer word",
+   "text": "荷物をおいてください",
+   "tokens": [
+    {
+     "surface": "荷物",
+     "start": 0,
+     "end": 2,
+     "lemma": "荷物",
+     "reasons": [],
+     "head": "荷物"
+    },
+    {
+     "surface": "を",
+     "start": 2,
+     "end": 3,
+     "lemma": "を",
+     "reasons": [],
+     "head": "を"
+    },
+    {
+     "surface": "おいてください",
+     "start": 3,
+     "end": 10,
+     "lemma": "おく",
+     "reasons": [
+      "request",
+      "te-form"
+     ],
+     "head": "置く"
+    }
+   ]
+  },
+  {
+   "name": "an unlisted expression (をおいて) yields to a longer word (2)",
+   "text": "本をおいていった",
+   "tokens": [
+    {
+     "surface": "本",
+     "start": 0,
+     "end": 1,
+     "lemma": "本",
+     "reasons": [],
+     "head": "本"
+    },
+    {
+     "surface": "を",
+     "start": 1,
+     "end": 2,
+     "lemma": "を",
+     "reasons": [],
+     "head": "を"
+    },
+    {
+     "surface": "おいていった",
+     "start": 2,
+     "end": 8,
+     "lemma": "おく",
+     "reasons": [
+      "past",
+      "going",
+      "te-form"
+     ],
+     "head": "置く"
+    }
+   ]
+  },
+  {
+   "name": "にして is not kept whole",
+   "text": "サラダにしてください",
+   "tokens": [
+    {
+     "surface": "サラダ",
+     "start": 0,
+     "end": 3,
+     "lemma": "サラダ",
+     "reasons": [],
+     "head": "サラダ"
+    },
+    {
+     "surface": "に",
+     "start": 3,
+     "end": 4,
+     "lemma": "に",
+     "reasons": [],
+     "head": "に"
+    },
+    {
+     "surface": "してください",
+     "start": 4,
+     "end": 10,
+     "lemma": "する",
+     "reasons": [
+      "request",
+      "te-form"
+     ],
+     "head": "為る"
+    }
+   ]
+  },
+  {
+   "name": "にして is not kept whole (2)",
+   "text": "部屋をきれいにしておいてね",
+   "tokens": [
+    {
+     "surface": "部屋",
+     "start": 0,
+     "end": 2,
+     "lemma": "部屋",
+     "reasons": [],
+     "head": "部屋"
+    },
+    {
+     "surface": "を",
+     "start": 2,
+     "end": 3,
+     "lemma": "を",
+     "reasons": [],
+     "head": "を"
+    },
+    {
+     "surface": "きれい",
+     "start": 3,
+     "end": 6,
+     "lemma": "きれい",
+     "reasons": [],
+     "head": "綺麗"
+    },
+    {
+     "surface": "に",
+     "start": 6,
+     "end": 7,
+     "lemma": "に",
+     "reasons": [],
+     "head": "に"
+    },
+    {
+     "surface": "しておいて",
+     "start": 7,
+     "end": 12,
+     "lemma": "する",
+     "reasons": [
+      "te-form",
+      "in advance",
+      "te-form"
+     ],
+     "head": "為る"
+    },
+    {
+     "surface": "ね",
+     "start": 12,
+     "end": 13,
+     "lemma": "ね",
+     "reasons": [],
+     "head": "ね"
+    }
+   ]
+  },
+  {
+   "name": "a listed expression still yields to a word running past it (であれ)",
+   "text": "ここであれこれ考えた",
+   "tokens": [
+    {
+     "surface": "ここ",
+     "start": 0,
+     "end": 2,
+     "lemma": "ここ",
+     "reasons": [],
+     "head": "此処"
+    },
+    {
+     "surface": "で",
+     "start": 2,
+     "end": 3,
+     "lemma": "で",
+     "reasons": [],
+     "head": "で"
+    },
+    {
+     "surface": "あれこれ",
+     "start": 3,
+     "end": 7,
+     "lemma": "あれこれ",
+     "reasons": [],
+     "head": "彼此"
+    },
+    {
+     "surface": "考えた",
+     "start": 7,
+     "end": 10,
+     "lemma": "考える",
+     "reasons": [
+      "past"
+     ],
+     "head": "考える"
+    }
+   ]
+  },
+  {
+   "name": "a listed expression still yields to a word running past it (でない)",
+   "text": "家でないていた",
+   "tokens": [
+    {
+     "surface": "家",
+     "start": 0,
+     "end": 1,
+     "lemma": "家",
+     "reasons": [],
+     "head": "家"
+    },
+    {
+     "surface": "で",
+     "start": 1,
+     "end": 2,
+     "lemma": "で",
+     "reasons": [],
+     "head": "で"
+    },
+    {
+     "surface": "ないていた",
+     "start": 2,
+     "end": 7,
+     "lemma": "なく",
+     "reasons": [
+      "past",
+      "progressive",
+      "te-form"
+     ],
+     "head": "泣く"
+    }
+   ]
+  },
+  {
+   "name": "a listed expression still yields to a word running past it (に基づいて)",
+   "text": "計画に基づいている",
+   "tokens": [
+    {
+     "surface": "計画",
+     "start": 0,
+     "end": 2,
+     "lemma": "計画",
+     "reasons": [],
+     "head": "計画"
+    },
+    {
+     "surface": "に",
+     "start": 2,
+     "end": 3,
+     "lemma": "に",
+     "reasons": [],
+     "head": "に"
+    },
+    {
+     "surface": "基づいている",
+     "start": 3,
+     "end": 9,
+     "lemma": "基づく",
+     "reasons": [
+      "progressive",
+      "te-form"
+     ],
+     "head": "基づく"
+    }
+   ]
+  },
+  {
+   "name": "keepWhole matches the surface: と来たら as written is と + 来たら",
+   "text": "と来たら",
+   "tokens": [
+    {
+     "surface": "と",
+     "start": 0,
+     "end": 1,
+     "lemma": "と",
+     "reasons": [],
+     "head": "と"
+    },
+    {
+     "surface": "来たら",
+     "start": 1,
+     "end": 4,
+     "lemma": "来る",
+     "reasons": [
+      "conditional"
+     ],
+     "head": "来る"
+    }
+   ]
+  }
+ ]
+}

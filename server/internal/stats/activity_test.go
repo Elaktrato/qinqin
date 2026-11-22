@@ -58,11 +58,17 @@ var seq int
 func add(t testing.TB, sqlDB *sql.DB, user, ws int64, ts, typ, payload string) {
 	t.Helper()
 	seq++
+	addID(t, sqlDB, user, ws, fmt.Sprintf("ev-%08d", seq), ts, typ, payload)
+}
+
+// addID stores one event with a given id (a replacement names its target by id).
+func addID(t testing.TB, sqlDB *sql.DB, user, ws int64, id, ts, typ, payload string) {
+	t.Helper()
 	parsed, err := time.Parse(time.RFC3339, ts)
 	if err != nil {
 		t.Fatal(err)
 	}
-	ev := model.StudyEvent{ID: fmt.Sprintf("ev-%08d", seq), UserID: user, WorkspaceID: ws, Device: "d", TS: parsed, Type: typ}
+	ev := model.StudyEvent{ID: id, UserID: user, WorkspaceID: ws, Device: "d", TS: parsed, Type: typ}
 	if payload != "" {
 		ev.Payload = json.RawMessage(payload)
 	}
@@ -224,5 +230,59 @@ func TestActivityWindowAndFilter(t *testing.T) {
 	got = run(t, sqlDB, u, "2026-11-10", "2026-11-12", &ws, rules)
 	if !reflect.DeepEqual(got, want[1:2]) {
 		t.Errorf("workspace 2: %+v", got)
+	}
+}
+
+// TestActivityReplacedIsolation: a replacement counts only against the
+// caller's own reviews (#131). Bob's review that names Alice's review id
+// voids nothing of Alice's, and Alice's replacement of her own misclick
+// leaves Bob's count alone.
+func TestActivityReplacedIsolation(t *testing.T) {
+	sqlDB := newDB(t)
+	rules := builtinRules(t, sqlDB)
+	alice, bob := newUser(t, sqlDB, "a"), newUser(t, sqlDB, "b")
+	const ts = "2026-11-13T08:00:00Z"
+	addID(t, sqlDB, alice, 1, "01KAPZ000000000000000000A1", ts, "review", `{"cardId":"c1","mode":"vocab","grade":1}`)
+	addID(t, sqlDB, alice, 1, "01KAPZ000000000000000000A2", ts, "review", `{"cardId":"c1","mode":"vocab","grade":3,"replaces":"01KAPZ000000000000000000A1"}`)
+	addID(t, sqlDB, bob, 1, "01KAPZ000000000000000000B1", ts, "review", `{"cardId":"c1","mode":"vocab","grade":1}`)
+	addID(t, sqlDB, bob, 1, "01KAPZ000000000000000000B2", ts, "review", `{"cardId":"c1","mode":"vocab","grade":3,"replaces":"01KAPZ000000000000000000A2"}`)
+	count := func(u int64) int64 {
+		var n int64
+		for _, c := range run(t, sqlDB, u, "2026-11-01", "2026-11-15", nil, rules) {
+			if c.Type == "review" {
+				n += c.Points
+			}
+		}
+		return n
+	}
+	if got := count(alice); got != 1 {
+		t.Errorf("alice counts %d reviews, want 1 (her misclick replaced)", got)
+	}
+	if got := count(bob); got != 2 {
+		t.Errorf("bob counts %d reviews, want 2 (his reference to alice's id dangles)", got)
+	}
+}
+
+// TestActivityReplacedTargetOfAnotherUser: the targets of a replacement are
+// read for the caller only (review fix 6). Alice's review naming Bob's id
+// (same card, workspace number and second, a greater id) must not join Bob's
+// review: read without the user filter, Bob's greater id would win the family
+// and Alice's own review would stop counting.
+func TestActivityReplacedTargetOfAnotherUser(t *testing.T) {
+	sqlDB := newDB(t)
+	rules := builtinRules(t, sqlDB)
+	alice, bob := newUser(t, sqlDB, "a"), newUser(t, sqlDB, "b")
+	const ts = "2026-11-13T08:00:00Z"
+	addID(t, sqlDB, bob, 1, "01KAPZ000000000000000000B9", ts, "review", `{"cardId":"c1","mode":"vocab","grade":1}`)
+	addID(t, sqlDB, alice, 1, "01KAPZ000000000000000000A1", ts, "review", `{"cardId":"c2","mode":"vocab","grade":3}`)
+	addID(t, sqlDB, alice, 1, "01KAPZ000000000000000000A2", ts, "review", `{"cardId":"c1","mode":"vocab","grade":3,"replaces":"01KAPZ000000000000000000B9"}`)
+	var n int64
+	for _, c := range run(t, sqlDB, alice, "2026-11-01", "2026-11-15", nil, rules) {
+		if c.Type == "review" {
+			n += c.Points
+		}
+	}
+	if n != 2 {
+		t.Errorf("alice counts %d reviews, want 2 (her reference to bob's id dangles)", n)
 	}
 }

@@ -51,7 +51,12 @@ export function frameSections(state: PluginStatesValue, plugins: WebPlugin[] = w
 						match: FEATURE_MATCH[f.slug] ?? [f.href]
 					}))
 			: [];
-	const pages: FrameSection[] = visibleNavPages(plugins, state).map((p) => ({
+	// A plugin page never takes an id the frame uses itself (Home, Search,
+	// Stats, a core feature, the bottom bar's More): ids stay unique.
+	const taken = new Set<string>(['home', 'search', 'stats', 'more', ...features.map((f) => f.id)]);
+	const pages: FrameSection[] = visibleNavPages(plugins, state)
+		.filter((p) => !taken.has(p.slug))
+		.map((p) => ({
 		id: p.slug,
 		label: p.title,
 		href: p.href,

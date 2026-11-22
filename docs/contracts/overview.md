@@ -18,8 +18,8 @@ where the rule is implemented today.
 | Time | `study-day/` (the learner's day, zone history) is the base of everything below |
 | Study events | `events/` (the envelope and how the server stores it, the payload of every type and when it is written, review parsing and replay order, heatmap activity scoring) |
 | Typed study data | `study/` (cards, decks, deck settings, limits, FSRS sets, the active set: wire shapes, last-write-wins, tombstones, the legacy codec and the legacy view for old web shells; the duplicate-card merge), `library/` (reader books, bookmarks, highlights, positions, the deletion log) |
-| Cards and study | `cards/` (ids, kinds, burying, cloze, the deck session plan), `levels/` (level sessions), `scheduler/` (the FSRS pin, XP and levels, vacation, study clock, due, streak, daily limits), `decks/` (deck numbers, system deck ids, add-to-deck, character mastery), `frequency/` (frequency order of new cards, starter decks, the known-word predicate, the display form of an entry), `goals/` (daily goal, day status, goal streak), `weekly/` (weekly summary; nothing stored), `stats/` (the Overview's four summary numbers and reviews per day; nothing stored), `milestones/` (weekly milestones: catalogue, reached rule, the `milestone:<id>` seen rows, card plan) |
-| Reader | `reader/` (display settings, furigana, smart readings, word states, coverage) |
+| Cards and study | `cards/` (ids, kinds, burying, cloze, the deck session plan, the session mix of card types), `levels/` (level sessions), `scheduler/` (the FSRS pin, XP and levels, vacation, study clock, due, streak, daily limits), `decks/` (deck numbers, system deck ids, add-to-deck, character mastery), `frequency/` (frequency order of new cards, starter decks, the known-word predicate, the display form of an entry), `goals/` (daily goal, day status, goal streak), `weekly/` (weekly summary; nothing stored), `stats/` (the Overview's four summary numbers and reviews per day; nothing stored), `milestones/` (weekly milestones: catalogue, reached rule, the `milestone:<id>` seen rows, card plan) |
+| Reader | `lemma/` (rule tables of the lemmatizer: deinflection, ranking keys, token boundaries), `reader/` (display settings, furigana, smart readings, word states, coverage) |
 | Personal data on entries | `notes/` (notes and the answer-side switch), `lookups/` (lookup history and its switch), `overlays/` (a user's edits of a shared entry), `journal/` (review documents and their mistake/suggestion kind) |
 | Lookup | `radicals/` (Kangxi table, `k` in the character universe, components index, radical and part lookup) |
 | Settings | `settings/` (workspace settings keys and their merge; the `qinqin-core` user rows `home-layout`, `activity-view` and `widget-options`) |
@@ -32,7 +32,7 @@ where the rule is implemented today.
 Every folder, in dependency order (this page's sync model and Events sections after `sync/`):
 
 `auth/` → `study-day/` → `packages/` → `sync/` → `events/` → `study/` → `cards/` → `scheduler/` → `decks/` →
-`levels/` → `frequency/` → `goals/` → `weekly/` → `stats/` → `milestones/` → `reader/` → `library/` → `notes/` → `lookups/` →
+`levels/` → `frequency/` → `goals/` → `weekly/` → `stats/` → `milestones/` → `lemma/` → `reader/` → `library/` → `notes/` → `lookups/` →
 `radicals/` → `journal/` → `settings/` → `themes/` → `fonts/` → `overlays/` → `backup/` → `pwa/` → `i18n/`
 
 ## Sync model
@@ -119,11 +119,13 @@ Every folder, in dependency order (this page's sync model and Events sections af
   nothing of the batch. `envelope.json`.
 - Order everything by `(ts, id)`. **Android sends `ts` already truncated to whole seconds (UTC)** so its local
   copy equals the server copy byte for byte (Ruling in `events/README.md`).
-- Reading events: the paged pull's `events` collection (every type except `lookup`). `GET /api/events` is
-  unpaged (follow-up #110).
+- Reading events: the paged pull's `events` collection (every type except `lookup`, with a delta cursor), or
+  `GET /api/events?limit=` in pages (`(ts, id)` order, every type, no cursor; `events/page.json`, #110).
 - Types and payloads (`payloads.json`): `session` `null` (once per workspace per learner day; optional for
   Android), `view` `{entryId}` (once per entry page visit; optional), `lookup` never written (legacy
-  `{query}`), `review` `{cardId, mode, grade, meta?}` (`review-parse.json`: parse, validity, order), `read`
+  `{query}`), `review` `{cardId, mode, grade, meta?, replaces?}` (`review-parse.json`: parse, validity, order;
+  `review-replace.json`: a changed grade names the review it replaces and only one review of such a family counts,
+  everywhere), `read`
   `{bookId, seconds}` (one per reading-timer flush of ≥ 30 whole seconds; consumers ignore `seconds` under 30 (it counts 0),
   cap it at 7200, and count a `read` without `bookId`), `journal` `{entryId: string}` (once per journal entry per learner day
   when its text changed). `read` and `journal` are written exactly so by every client.
@@ -166,7 +168,7 @@ fixture or the contract text that fixes the shape.
 | `notecfg` (plugin **`qinqin-core`**) | workspace | `{version:1, onAnswer: bool, ...unknown kept}`; missing, deleted, other version or non-boolean = on | `notes/notes.ts` | `notes/note-rows.json` |
 | `lookups` (plugin **`qinqin-core`**) | workspace | `{version:1, clearedAt: RFC 3339 \| null, items: [{entryId: int, count: int 1..1000000, firstAt, lastAt, sources: {reader?, lesson?, search?: int}, books: int[≤3]}], ...unknown kept}`; one row per workspace, at most 500 items newest first; written only by read-merge-write in one flush (10-minute dedupe); Clear = `PUT` with `items: []` and `clearedAt` (never a `DELETE`); restore remaps item entries and books, merges duplicates, drops a row that is not version 1 | `lookups/lookups.ts`, `lookups/recorder.ts`, `lookups/store.ts`; restore: `server/internal/backup/remap.go` | `lookups/lookup-rows.json`, `lookups/lookup-merge.json`, `lookups/lookup-prompt.json`, `backup/remap.json` |
 | `lookupcfg` (plugin **`qinqin-core`**) | **user-global** (`workspaceId: null`) | `{version:1, record: bool, ...unknown kept}`; missing, deleted, other version or non-boolean = recording on | `lookups/lookups.ts` | `lookups/lookup-rows.json` |
-| `review` event | workspace (events table, not a row) | `payload {cardId, mode: card kind, grade 1..4, meta?: {tier?: 0\|1\|2, mistakes?, hints?, durationMs?}}`; an unknown `mode` reads as `vocab` | `study/types.ts` `ReviewPayload`, `study/reviewParse.ts`, `server/internal/events` | `events/review-parse.json`, `pwa/outbox-v2.json`, `scheduler/*`, `decks/deck-stats.json` |
+| `review` event | workspace (events table, not a row) | `payload {cardId, mode: card kind, grade 1..4, meta?: {tier?: 0\|1\|2, mistakes?, hints?, durationMs?}, replaces?: <review id>}`; an unknown `mode` reads as `vocab`; `replaces` (a changed grade, #131) copies the target's `cardId`, `mode`, `meta` and `ts`, and a family of linked reviews counts only its greatest id, before the duplicate-card merge and before anything counts | `study/types.ts` `ReviewPayload`, `study/reviewParse.ts`, `study/replaced.ts`, `server/internal/events` (`Replaced`), `server/internal/stats`, `server/internal/backup` (restore relinks) | `events/review-parse.json`, `events/review-replace.json`, `events/activity.json`, `pwa/outbox-v2.json`, `scheduler/*`, `decks/deck-stats.json` |
 | workspace settings key `reader` | workspace row of `workspaces.settings` (not plugin data) | `{version:1, bookRuby: bool, readings: never\|always\|smart, smartThreshold: 10..100, rubyScale: 0.45\|0.55\|0.65\|0.75, font: default\|sans\|serif\|kai, highlightWords: bool}`; written via `PUT /api/workspaces/{id}` with `settings` merged as RFC 7396 (merged object ≤ 64 KiB); unknown keys kept | `features/reader/displaySettings.ts` | `reader/display-settings.json`, `settings/workspace-settings.json` |
 | workspace settings keys `hiddenDictionaries`, `audioAutoplay`, `audioDeviceVoice` | workspace row of `workspaces.settings` | `hiddenDictionaries`: positive integer dictionary ids (others ignored); `audioAutoplay`: bool, default false; `audioDeviceVoice`: bool, default true; same merge | `dictionaryVisibility.ts`, `audio/settings.ts` | `settings/workspace-settings.json` |
 | `home-layout` (plugin **`qinqin-core`**) | **user-global** | `{version: 1, widgets: [widget id]}`; a newer version is read leniently; unknown ids are kept stored, in place; no row = the default layout | `widgets/layout.ts` | `settings/core-rows.json` |
@@ -286,8 +288,6 @@ preparation marks (`qinqin.pwa.*`), the current workspace and the session token.
 Nothing Android needs for #34–#38 that today's code defines is missing above. These are left out deliberately,
 each with its owner:
 
-- **Paging `GET /api/events`** — a route change; read events from the paged pull's `events` collection
-  meanwhile (#110).
 - **Grade suggestions** (writing, tone, reverse, word salad), **tone gestures and the writing engine** — the
   learner confirms every grade, so a different suggestion never changes stored data; the native engines are
   #38's own work.

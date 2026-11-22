@@ -62,6 +62,13 @@ most 32 parts remain. The optional `parts.tsv` gives a part's stroke count
 with its line number; a line is at most 4 KiB and each file at most 8 MiB. The
 pack's `language` is stored as its primary subtag (`zh-tw` becomes `zh`).
 
+Sentences pack format (`format: json`): `sentences.json` is `{"entries": [{"word",
+"sentences": [{"hanzi", "pinyin", "translation"}]}]}`. Each group's `word` is linked
+to the best word entry with that written form (or kana reading); unknown words are
+skipped and reported. `hanzi` (the sentence) and `translation` are required; the
+reading `pinyin` (pinyin, or kana for Japanese) is optional and left out rather
+than guessed.
+
 Grammar pack format (`format: json`): `lessons.json` is `{"levels": [{"id",
 "name", "schemeLevels": [{"scheme": "<levels pack id>", "level": "<level name>"}]}],
 "lessons": [{"id", "level", "title", "summary", "pattern": [...], "body": [...],
@@ -151,8 +158,8 @@ qinqin seed --packs plugins/data,plugins/data-local
 The converter fails with a clear message if one of the six files is missing.
 Under Docker, put the output on a host directory, mount it (for example
 `./plugins/data-local:/opt/qinqin/local:ro`) and run
-`docker compose exec qinqin qinqin seed --packs /opt/qinqin/packs,/opt/qinqin/local`
-(see the README). Once seeded, the
+`docker compose exec qinqin qinqin seed --packs /opt/qinqin/packs,/opt/qinqin/audio,/opt/qinqin/strokes,/opt/qinqin/local`
+(see the wiki page `docs/wiki/Admin-deploying.md`, "What `qinqin seed` does"). Once seeded, the
 map's "Group by" and the Sources page pick it up like any installed scheme. The
 generated `ATTRIBUTION.md` quotes the README chain, names the pinned upstream
 commit, records the SHA-256 of the input files and says "not bundled, local use

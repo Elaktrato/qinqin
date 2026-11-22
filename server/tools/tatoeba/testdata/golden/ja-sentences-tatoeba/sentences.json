@@ -1,0 +1,13 @@
+{"entries":[
+{"word":"これ","sentences":[{"hanzi":"これは本です。","pinyin":"これはほんです。","translation":"This is a book."}]},
+{"word":"今日","sentences":[{"hanzi":"今日は本です。","pinyin":"きょうはほんです。","translation":"Today is a book."}]},
+{"word":"勉強","sentences":[{"hanzi":"日本語を勉強しています。","pinyin":"にほんごをべんきょうしています。","translation":"I am studying Japanese."}]},
+{"word":"学校","sentences":[{"hanzi":"私は学校に行きました。","pinyin":"わたしはがっこうにいきました。","translation":"I went to school."},{"hanzi":"学校に来ます。","translation":"I come to school."}]},
+{"word":"日本語","sentences":[{"hanzi":"日本語を勉強しています。","pinyin":"にほんごをべんきょうしています。","translation":"I am studying Japanese."}]},
+{"word":"本","sentences":[{"hanzi":"これは本です。","pinyin":"これはほんです。","translation":"This is a book."},{"hanzi":"今日は本です。","pinyin":"きょうはほんです。","translation":"Today is a book."}]},
+{"word":"来る","sentences":[{"hanzi":"学校に来ます。","translation":"I come to school."}]},
+{"word":"水","sentences":[{"hanzi":"水を飲んだ。","pinyin":"みずをのんだ。","translation":"I drank water."}]},
+{"word":"私","sentences":[{"hanzi":"私は学校に行きました。","pinyin":"わたしはがっこうにいきました。","translation":"I went to school."}]},
+{"word":"行く","sentences":[{"hanzi":"私は学校に行きました。","pinyin":"わたしはがっこうにいきました。","translation":"I went to school."}]},
+{"word":"飲む","sentences":[{"hanzi":"水を飲んだ。","pinyin":"みずをのんだ。","translation":"I drank water."}]}
+]}

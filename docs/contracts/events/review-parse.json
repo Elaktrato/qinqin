@@ -450,6 +450,76 @@
       "valid": true
     },
     {
+      "name": "replaces is kept",
+      "note": "a non-empty string names the review this one replaces (review-replace.json)",
+      "event": {
+        "id": "01KA0000000000000000000002",
+        "workspaceId": 7,
+        "device": "web",
+        "ts": "2026-11-17T09:00:00Z",
+        "type": "review",
+        "payload": {
+          "cardId": "c1",
+          "mode": "vocab",
+          "grade": 3,
+          "replaces": "01KA0000000000000000000001"
+        }
+      },
+      "parsed": {
+        "cardId": "c1",
+        "mode": "vocab",
+        "grade": 3,
+        "replaces": "01KA0000000000000000000001"
+      },
+      "valid": true
+    },
+    {
+      "name": "a non-string replaces is dropped",
+      "note": "the review stays, as an ordinary review",
+      "event": {
+        "id": "01KA0000000000000000000002",
+        "workspaceId": 7,
+        "device": "web",
+        "ts": "2026-11-17T09:00:00Z",
+        "type": "review",
+        "payload": {
+          "cardId": "c1",
+          "mode": "vocab",
+          "grade": 3,
+          "replaces": 1
+        }
+      },
+      "parsed": {
+        "cardId": "c1",
+        "mode": "vocab",
+        "grade": 3
+      },
+      "valid": true
+    },
+    {
+      "name": "an empty replaces is dropped",
+      "note": "an empty string names nothing",
+      "event": {
+        "id": "01KA0000000000000000000002",
+        "workspaceId": 7,
+        "device": "web",
+        "ts": "2026-11-17T09:00:00Z",
+        "type": "review",
+        "payload": {
+          "cardId": "c1",
+          "mode": "vocab",
+          "grade": 3,
+          "replaces": ""
+        }
+      },
+      "parsed": {
+        "cardId": "c1",
+        "mode": "vocab",
+        "grade": 3
+      },
+      "valid": true
+    },
+    {
       "name": "a non-object payload is rejected",
       "note": "null, arrays and scalars are not review payloads",
       "event": {

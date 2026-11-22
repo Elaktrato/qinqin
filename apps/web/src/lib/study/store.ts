@@ -14,7 +14,7 @@ import { newUlid } from "../ulid";
 import { t } from "../i18n";
 import { V2_STUDY_COLLECTIONS, firstPageUrl, pullAll } from "../sync/pager";
 import { workspaces } from "../workspaces";
-import { fullLogPath, type StudyEvent } from "../events";
+import { fetchFullLog, type StudyEvent } from "../events";
 import { canonicalCards, cleanSkipKinds, compareCanonical, newCardId } from "./canonical";
 import {
   DEFAULT_W,
@@ -27,6 +27,7 @@ import {
 } from "./deckSettings";
 import type { NewOrder } from "./newOrder";
 import { cardKey, parseReview } from "./reviewParse";
+import { liveReviews } from "./replaced";
 import {
   STUDY_COLLECTIONS,
   activeOf,
@@ -580,21 +581,26 @@ async function deleteData(workspaceId: number, key: string): Promise<void> {
 }
 
 /** fetchEvents reads the workspace's whole event log, uncached. */
-async function fetchEvents(workspaceId: number): Promise<StudyEvent[]> {
-  const events = await api<StudyEvent[]>(fullLogPath(workspaceId));
-  return Array.isArray(events) ? events : [];
+function fetchEvents(workspaceId: number): Promise<StudyEvent[]> {
+  return fetchFullLog(workspaceId);
 }
 
-/** reviewsOf keeps the workspace's review events of an event log. */
+/**
+ * reviewsOf keeps the workspace's review events of an event log, without
+ * the replaced ones (a changed grade, #131: `liveReviews`), on the stored
+ * card ids, before the duplicate-card merge.
+ */
 function reviewsOf(
   workspaceId: number,
   events: readonly StudyEvent[],
 ): ReviewEvent[] {
-  return events
-    .map((event) =>
-      event.workspaceId === workspaceId ? parseReview(event) : null,
-    )
-    .filter((event): event is ReviewEvent => event !== null);
+  return liveReviews(
+    events
+      .map((event) =>
+        event.workspaceId === workspaceId ? parseReview(event) : null,
+      )
+      .filter((event): event is ReviewEvent => event !== null),
+  );
 }
 
 /**

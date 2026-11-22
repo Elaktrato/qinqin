@@ -433,6 +433,223 @@
    ]
   },
   {
+   "name": "review: a replaced review is not counted",
+   "note": "a changed grade (review-replace.json): the misclick and its replacement count once; ids are given where a replacement names them",
+   "history": [],
+   "from": "2026-11-01",
+   "to": "2026-11-03",
+   "events": [
+    {
+     "id": "01KAPZ00000000000000000001",
+     "payload": {
+      "cardId": "c1",
+      "mode": "vocab",
+      "grade": 1
+     },
+     "ts": "2026-11-01T09:00:00Z",
+     "type": "review"
+    },
+    {
+     "id": "01KAPZ00000000000000000002",
+     "payload": {
+      "cardId": "c1",
+      "mode": "vocab",
+      "grade": 3,
+      "replaces": "01KAPZ00000000000000000001"
+     },
+     "ts": "2026-11-01T09:00:00Z",
+     "type": "review"
+    },
+    {
+     "id": "01KAPZ00000000000000000003",
+     "payload": {
+      "cardId": "c2",
+      "mode": "vocab",
+      "grade": 3
+     },
+     "ts": "2026-11-01T09:10:00Z",
+     "type": "review"
+    }
+   ],
+   "cells": [
+    {
+     "day": "2026-11-01",
+     "workspace": 1,
+     "type": "review",
+     "points": 2,
+     "raw": 2
+    }
+   ]
+  },
+  {
+   "name": "review: forks and chains count once",
+   "note": "two devices replaced the misclick and one replaced its replacement: one family, one review",
+   "history": [],
+   "from": "2026-11-01",
+   "to": "2026-11-03",
+   "events": [
+    {
+     "id": "01KAPZ00000000000000000001",
+     "payload": {
+      "cardId": "c1",
+      "mode": "vocab",
+      "grade": 1
+     },
+     "ts": "2026-11-01T09:00:00Z",
+     "type": "review"
+    },
+    {
+     "id": "01KAPZ00000000000000000002",
+     "payload": {
+      "cardId": "c1",
+      "mode": "vocab",
+      "grade": 2,
+      "replaces": "01KAPZ00000000000000000001"
+     },
+     "ts": "2026-11-01T09:00:00Z",
+     "type": "review"
+    },
+    {
+     "id": "01KAPZ00000000000000000003",
+     "payload": {
+      "cardId": "c1",
+      "mode": "vocab",
+      "grade": 3,
+      "replaces": "01KAPZ00000000000000000001"
+     },
+     "ts": "2026-11-01T09:00:00Z",
+     "type": "review"
+    },
+    {
+     "id": "01KAPZ00000000000000000004",
+     "payload": {
+      "cardId": "c1",
+      "mode": "vocab",
+      "grade": 4,
+      "replaces": "01KAPZ00000000000000000002"
+     },
+     "ts": "2026-11-01T09:00:00Z",
+     "type": "review"
+    }
+   ],
+   "cells": [
+    {
+     "day": "2026-11-01",
+     "workspace": 1,
+     "type": "review",
+     "points": 1,
+     "raw": 1
+    }
+   ]
+  },
+  {
+   "name": "review: a dangling or invalid replacement voids nothing",
+   "note": "a reference to an unknown id, and a replacement that is not a valid review (grade 0), void nothing; the count still counts every review event",
+   "history": [],
+   "from": "2026-11-01",
+   "to": "2026-11-03",
+   "events": [
+    {
+     "id": "01KAPZ00000000000000000001",
+     "payload": {
+      "cardId": "c1",
+      "mode": "vocab",
+      "grade": 1
+     },
+     "ts": "2026-11-01T09:00:00Z",
+     "type": "review"
+    },
+    {
+     "id": "01KAPZ00000000000000000002",
+     "payload": {
+      "cardId": "c1",
+      "mode": "vocab",
+      "grade": 3,
+      "replaces": "01KAPZ00000000000000000099"
+     },
+     "ts": "2026-11-01T09:00:00Z",
+     "type": "review"
+    },
+    {
+     "id": "01KAPZ00000000000000000003",
+     "payload": {
+      "cardId": "c2",
+      "mode": "vocab",
+      "grade": 1
+     },
+     "ts": "2026-11-01T09:00:00Z",
+     "type": "review"
+    },
+    {
+     "id": "01KAPZ00000000000000000004",
+     "payload": {
+      "cardId": "c2",
+      "mode": "vocab",
+      "grade": 0,
+      "replaces": "01KAPZ00000000000000000003"
+     },
+     "ts": "2026-11-01T09:00:00Z",
+     "type": "review"
+    }
+   ],
+   "cells": [
+    {
+     "day": "2026-11-01",
+     "workspace": 1,
+     "type": "review",
+     "points": 4,
+     "raw": 4
+    }
+   ]
+  },
+  {
+   "name": "review: a link across workspaces is ignored",
+   "note": "a link needs the same workspace: both count, in their own cells",
+   "history": [],
+   "from": "2026-11-01",
+   "to": "2026-11-03",
+   "events": [
+    {
+     "id": "01KAPZ00000000000000000001",
+     "payload": {
+      "cardId": "c1",
+      "mode": "vocab",
+      "grade": 1
+     },
+     "ts": "2026-11-01T09:00:00Z",
+     "type": "review"
+    },
+    {
+     "id": "01KAPZ00000000000000000002",
+     "payload": {
+      "cardId": "c1",
+      "mode": "vocab",
+      "grade": 3,
+      "replaces": "01KAPZ00000000000000000001"
+     },
+     "ts": "2026-11-01T09:00:00Z",
+     "type": "review",
+     "workspace": 2
+    }
+   ],
+   "cells": [
+    {
+     "day": "2026-11-01",
+     "workspace": 1,
+     "type": "review",
+     "points": 1,
+     "raw": 1
+    },
+    {
+     "day": "2026-11-01",
+     "workspace": 2,
+     "type": "review",
+     "points": 1,
+     "raw": 1
+    }
+   ]
+  },
+  {
    "name": "session, view, lookup and unknown types score nothing",
    "note": "only types with an activity rule make cells",
    "history": [],

@@ -16,6 +16,12 @@ reverse, cloze) is a plugin-data write and is only planned online. `PUT
 /api/sync/push` is last-write-wins per row key, so the offline path never writes
 rows and cannot create duplicate cards.
 
+A changed grade (#131) is a new review event with `replaces: <id>` (`events/review-replace.json`), recorded the
+same way. Outbox items are never rewritten or dropped to change a grade: an item may already have reached the
+server while its answer was lost, so a rewritten item (same id) would be a duplicate the server ignores and a
+dropped one would leave the stored wrong grade in place. Items flush oldest first, so a replacement normally
+arrives after its target; if not, the rule still holds (the late target is replaced when it arrives).
+
 ## Outbox v2 (`outbox-v2.json`)
 
 `localStorage['qinqin.study.pending.v2']` = `[{userId, queuedAt, event}]`.
@@ -52,7 +58,7 @@ study reads the same pages in the same order; "Prepare offline" reads the round
 through the study read and its receipt counts the pages. Legacy (no `v`): `collections` a
 subset of the same set, so a cached v0.3.x or v0.4 old shell keeps working (the
 typed study rows of `docs/contracts/study/` and the keyed `goals:*`, `known:*` and
-`vacation:*` rows travel in both), `/api/plugins/{id}/data` and `/data/{key}`, `/api/events` with `workspace=`,
+`vacation:*` rows travel in both), `/api/plugins/{id}/data` and `/data/{key}`, `/api/events` with `workspace=` (the legacy array or a first page with `limit`, and a page continuation of exactly `page=e1.<token>&workspace=<id>`: the token holds no clock, so the URL is a stable cache key; each page is its own saved copy; after a complete read the page deletes the saved continuations of the workspace that no saved first page leads to, `events/` Paging),
 `/api/entries/{id}` and the theme list `/api/themes` (public and not personal, but cached per credential like every other read; signed out, the web paints from its stored tokens and the compiled-in fallback, `themes/`); plus stroke data `/hanzi/U<HEX>.json` without credentials (served from the
 installed strokes package; 404 when none is installed). The font list `/api/fonts` and the font slices `/fonts/<sha256>.woff2` (#97) are not cached by the worker yet (`bypass`): the web does not use them until it registers pack faces, which adds them (slices cache-first in a shared, content-addressed cache) together with their consumer. The package catalogue and package downloads
 (`/api/packages…`) are never cached by the worker: the web reads the catalogue only for Settings and
@@ -61,9 +67,11 @@ Everything else (every non-GET request, admin, account, auth except `me`, AI,
 journal photos, audio, lookups, search) is never touched. The lookup history (#72,
 `../lookups/`) never reaches the cache: `qinqin-core` data reads of `lookup*` keys (or with a `prefix` that can
 match one; paths are compared decoded) are not cached, and a saved pull (legacy body or any v2 page's `collections.pluginData`) loses its `qinqin-core` `lookup*` rows
-and a saved event log its `lookup` events before it is stored (`apps/web/src/lib/pwa/sw/scrub.ts`); after a
+and a saved event log (the array, or a page's `events`) its `lookup` events before it is stored (`apps/web/src/lib/pwa/sw/scrub.ts`); after a
 Clear or Remove the page filters copies saved earlier the same way. Only `200` responses are
-stored; a 401 deletes the partition; a 4xx or 5xx other than 502/503/504 is
+stored, and never one whose `Cache-Control` says `no-store` (the paged reads answer `private, no-cache` so that
+their pages are saved: `cacheControl` in `events/page.json` and `sync/pull-page.json`, which the worker tests
+build their responses with); a 401 deletes the partition; a 4xx or 5xx other than 502/503/504 is
 passed through.
 
 The cache of an API response is named `qinqin-api-v1-` + the first 32 hex digits of

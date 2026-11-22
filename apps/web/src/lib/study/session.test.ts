@@ -4,9 +4,12 @@ import {
 	CARD_TYPES,
 	DEFAULT_CONFIG,
 	SESSION_CONFIG_KEY,
+	SESSION_SEED_KEY,
 	loadConfig,
+	sessionSeedOf,
 	saveConfig,
 	sessionNewOrder,
+	sessionTypeOrder,
 	validateConfig,
 	type StudySessionConfig
 } from './session';
@@ -320,5 +323,62 @@ describe('newOrder in the setup (#75)', () => {
 			expect(loaded.newLimit).toBe(7);
 			expect(sessionNewOrder(loaded)).toBe('random');
 		}
+	});
+});
+
+describe('typeOrder in the setup (#132)', () => {
+	beforeEach(() => {
+		vi.stubGlobal('sessionStorage', fakeStorage());
+	});
+	afterEach(() => {
+		vi.unstubAllGlobals();
+	});
+
+	it('defaults to mixed', () => {
+		expect(sessionTypeOrder(DEFAULT_CONFIG)).toBe('mixed');
+		expect(sessionTypeOrder(config())).toBe('mixed');
+	});
+
+	it('round-trips grouped and mixed', () => {
+		for (const typeOrder of ['grouped', 'mixed'] as const) {
+			saveConfig(config({ typeOrder }));
+			expect(loadConfig()).toEqual(config({ typeOrder }));
+			expect(sessionTypeOrder(loadConfig())).toBe(typeOrder);
+		}
+	});
+
+	it('an unknown value loads as mixed and keeps the setup', () => {
+		for (const typeOrder of ['random', 7, null, { by: 'kind' }]) {
+			sessionStorage.setItem(SESSION_CONFIG_KEY, JSON.stringify({ ...config({ newLimit: 9 }), typeOrder }));
+			const loaded = loadConfig();
+			expect(loaded.newLimit).toBe(9);
+			expect(loaded.typeOrder).toBeUndefined();
+			expect(sessionTypeOrder(loaded)).toBe('mixed');
+		}
+	});
+});
+
+describe('sessionSeedOf (#132 review)', () => {
+	beforeEach(() => {
+		vi.stubGlobal('sessionStorage', fakeStorage());
+	});
+	afterEach(() => {
+		vi.unstubAllGlobals();
+	});
+
+	it('uses the setup seed', () => {
+		expect(sessionSeedOf(config({ seed: 42 }))).toBe(42);
+	});
+
+	it('without one draws a seed once and keeps it for the reloads of this tab', () => {
+		const first = sessionSeedOf(config());
+		expect(Number.isInteger(first)).toBe(true);
+		expect(sessionSeedOf(config())).toBe(first);
+		expect(sessionStorage.getItem(SESSION_SEED_KEY)).toBe(String(first));
+	});
+
+	it('still gives a seed when storage is unavailable', () => {
+		vi.stubGlobal('sessionStorage', undefined);
+		expect(Number.isInteger(sessionSeedOf(config()))).toBe(true);
 	});
 });

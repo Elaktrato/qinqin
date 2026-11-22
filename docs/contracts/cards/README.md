@@ -1,7 +1,8 @@
-# Card ids, burying, cloze and deck sessions (reverse and cloze cards, #65)
+# Card ids, burying, cloze, deck sessions and the session mix (reverse and cloze cards, #65; #132)
 
 Rules every client implements identically. Fixtures: `{"version":1,"rule":"cards/<name>","cases":[...]}`;
-`deck-session.json` has three case lists instead: `plans`, `steps`, `eligible`.
+`deck-session.json` has three case lists instead: `plans`, `steps`, `eligible`; `session-mix.json` has `keys`,
+`gaps`, `queues`.
 
 ## Card kinds and ids
 
@@ -31,7 +32,8 @@ Fixture: `card-ids.json` (`kind`, `entryId`, `sentenceId?`, `id`, `cardKey`, `vi
 
 ## Burying (`burying.json`)
 
-Card C is buried at `now` iff some other live card S of the same entry has a recorded review R with
+Card C is buried at `now` iff some other live card S of the same entry has a recorded review R (not replaced,
+`events/review-replace.json`; a replacement keeps the target's `ts`, so a changed grade buries the same) with
 `day(R.ts) === day(now)` (the learner's day, `docs/contracts/study-day/`) and `buries(S.kind, C.kind)`,
 where `buries(a, b) = a in {reverse, cloze} or b in {reverse, cloze}`. The four existing kinds never bury
 each other. Reviews of cards that no longer exist bury nothing; a card is never buried by its own reviews;
@@ -119,3 +121,50 @@ Ruling: the fixture pins the **plan** and eligibility, not which sentence a sent
 virtual item is graded — sentence choice and cloze are already pinned (`cloze.json`), grade suggestions are
 deferred (spec D2) — cost: none.
 
+
+## Session mix (`session-mix.json`, #132)
+
+The order of the card types inside a session, applied **after** the plan (deck sessions above, level sessions
+`levels/`): it reorders the planned queue and never adds, drops or re-admits an item, so limits, caps, the
+reserve and burying are unchanged. Web: `lib/study/sessionMix.ts` (`mixSession`, `mixFlowQueue`), decoded by
+`apps/web/src/lib/study/sessionMix.test.ts`. Spec: `docs/superpowers/specs/2026-11-22-mix-card-types-design.md`.
+
+- **Blocks**: the due block (a real card with a valid review) and the new block (never reviewed or virtual), each
+  keeping its items; output `[...due, ...new]`.
+- **Order** (the session setup's `typeOrder`, absent = `mixed`): `grouped` sorts each block stably by kind order
+  (`vocab, sentence, writing, tone, reverse, cloze`), incoming order inside a kind, then runs the spacing of step 4
+  below with `gap = 1` (so a word is not back to back at a seam between two groups; vocab first applies); no seed.
+- **Vocab first** (`vocabFirst`, deck sessions only): in the new block a non-vocab item may not go while a vocab
+  item of its word is left in the block, so a new word's Recognise card comes before its other types. Items that
+  may not go take no part in any step below (the counts `r` still count them). Level sessions leave it off: a
+  character level gates new writing by learner day itself (`levels/README.md`).
+- **Mixed**, per block of `N` items:
+  1. position `p`: in the **due block** `p = i`, the item's 0-based index in the block (due order, so the most
+     overdue cards stay early whatever their kind); in the **new block** item `j` (0-based, incoming order) of a
+     kind with `n` items gets `p = ((j + 0.5) / n) * N` (the kinds spread evenly);
+  2. `key = p + 8 * mixKey(seed, cardId)` (`MIX_SPREAD = 8`), or `key = p` when the block holds a single kind
+     (its incoming order stays); sort ascending, ties by kind order, then `j`;
+  3. `gap = typeGap(N)` = 1 if `N < 8`, 2 if `N < 16`, else 3;
+  4. spacing, one item per step; `sep(word)` = items placed since that word's (`entryId`) last item, infinite if
+     none, the due block's output counting for the new block. With `R` items left and `r` of a word's: the first
+     item whose word has `2r - 1 >= R` and `sep >= 1` goes now; else, when `gap > 1`, among the items whose word
+     has `r >= 2`, `sep >= gap` and `(r - 1) * (gap + 1) + 1 >= R - 2`, the first item of the word with the most
+     left (strictly more wins, so ties keep the earliest); else, for `need = gap … 0`, the first item whose word
+     has `sep >= need`.
+- `mixKey(seed, cardId) = randomKey(seed)(fnv1a32(cardId))`: FNV-1a 32 over the UTF-8 bytes (offset `0x811c9dc5`,
+  prime `0x01000193`, unsigned), passed to `randomKey` (`frequency/` new order: `seed | 0`, `id | 0`, the
+  `0x9e3779b1`/`0x85ebca6b` mix, result `/ 2^32`). Doubles throughout; evaluate `p` exactly as written.
+- `seed` is the session's seed, drawn fresh at every Start (the setup page and a deck's or level's Study button
+  alike; the same one the random new order uses) and kept in the tab's setup, so a reload of the same session gives
+  the same queue for the same items and the next session another one. A setup without a seed gets one drawn once
+  per tab (`qinqin.study.sessionSeed`), never one per load.
+- Never back to back, per block: when nothing was placed before the block, no two neighbours in it share a word
+  whenever no word holds more than `ceil(R / 2)` of its `R` items. After a placed prefix (the new block after the
+  due block) the same holds, the seam to the prefix included, when moreover the word placed last holds at most
+  `floor(R / 2)` of them; otherwise the seam is best effort. Vocab first never breaks it (a word's vocab item can
+  always go). When the gap cannot be met (one word's four types) the result is the deterministic best effort above.
+- Unchanged: Again re-shows (`requeueAfterGrade`, after 4 other cards), reserve replacements (appended at the
+  end), burying in the session (`bury` steps above: only when an opt-in kind is on either side).
+
+Case: `keys`: `{cardId, seed, fnv, key}` (exact doubles); `gaps`: `{n, gap}`; `queues`: `{name, note?, seed, order,
+vocabFirst, items: [{cardId, kind, entryId, review}], expect: [cardId]}` (`items` in plan order).

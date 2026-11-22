@@ -77,7 +77,7 @@
 <style>
 	.tip {
 		position: fixed;
-		z-index: 40;
+		z-index: var(--layer-float);
 		max-width: min(18rem, calc(100vw - 16px));
 		padding: var(--space-2) var(--space-3);
 		border-radius: var(--radius);

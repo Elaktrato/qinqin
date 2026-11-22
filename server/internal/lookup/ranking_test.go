@@ -228,10 +228,11 @@ func TestKanaTermOnlyWhenTheFormsHaveNoHit(t *testing.T) {
 
 func TestFirstPackWithAnyDataRanks(t *testing.T) {
 	// Pack a has data for 舌 only; pack b for all three. Pack a ranks:
-	// 舌 first, the rest fall through to the chain (exact 下 before 為る).
+	// 舌 first, the rest fall through to kana fit (為る, usually kana,
+	// before 下, a kanji word matched by its reading; issue #165).
 	s, _ := altService(t, "a", "舌,した,100\n", "b", "為る,する,15\n下,した,600\n舌,した,5000\n")
 	rs := run(t, s, "ja", "宿題をした", 3)
-	wantPrefix(t, rs, "舌", "下", "為る[past]")
+	wantPrefix(t, rs, "舌", "為る[past]", "下")
 	want := map[string][]int{"舌": {100, 5000}, "下": {600}, "為る": {15}}
 	for _, r := range rs[:3] {
 		var ranks []int
@@ -253,7 +254,7 @@ func TestFrequencyFailureDegrades(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Lookup with a broken frequency table: %v", err)
 	}
-	wantPrefix(t, rs, "下", "舌", "為る[past]")
+	wantPrefix(t, rs, "為る[past]", "下", "舌") // the no-frequency order (kana fit)
 	for _, r := range rs {
 		if len(r.Frequencies) != 0 {
 			t.Errorf("%s frequencies = %+v, want none", r.Term, r.Frequencies)

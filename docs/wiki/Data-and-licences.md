@@ -1,57 +1,112 @@
 # Data and licences
 
-qinqin bundles dictionaries and level lists so a fresh install seeds offline (`qinqin seed`). Every sense, frequency rank and level badge keeps its source, licence and attribution. The app's **Sources** page (`/sources`, open to everyone, signed in or not) is the live source of truth; it is built from the installed packs' manifests, the plugins' declared sources, and the app's own credits. The human overview is `docs/sources.md` in the repository. Nothing here is legal advice.
+qinqin bundles dictionaries and level lists so a fresh install seeds offline: by itself on the first start ([auto-seed](Admin-deploying#the-auto-seed-on-the-first-start)), or with `qinqin seed`. Every sense, frequency rank and level badge keeps its source, licence and attribution. Two places are the licence reference, and this page only summarises them:
+
+- the app's **Sources** page (`/sources`, open to everyone, signed in or not), built from what the server has actually installed;
+- [`docs/sources.md`](https://github.com/Elaktrato/qinqin/blob/develop/docs/sources.md) in the repository: attributions, upstream links, pinned versions and the redistribution decision for every source.
+
+Nothing here is legal advice. Installing and removing packs: [Data packs on the server](Admin-data-packs).
 
 ## Bundled packs
 
+The image ships these under `/opt/qinqin/packs` (source: `plugins/data/`):
+
 | Pack | Provides | Licence |
 |---|---|---|
-| CC-CEDICT | Mandarin to English words | CC BY-SA 4.0 |
-| Unihan | Radical-stroke counts, variants, character definitions | Unicode License v3 |
-| JMdict | Japanese to English words | CC BY-SA 4.0 (EDRDG) |
-| KANJIDIC2 | Kanji readings, meanings, strokes, radicals | CC BY-SA 4.0 (EDRDG) |
-| Jiten frequency list | Japanese word frequency ranks, ranks unmodified | CC BY-SA 4.0 (Jitensoft) |
-| HSK 3.0 characters and words (`hsk-chars`, `hsk-words`) | The official character and word lists by level | No reuse licence granted; see below |
-| Jōyō grades (`joyo-grades`) | The 2,136 jōyō kanji by school grade, derived from KANJIDIC2 | CC BY-SA 4.0 (EDRDG) |
-| 通用规范汉字表 (`tgh-chars`) | The standard characters list in three levels, derived from Unihan | Unicode License v3 |
-| JLPT kanji (`jlpt-kanji`) | Approximate N5 to N1 kanji levels from kanjiapi.dev plus levels derived from KANJIDIC2 | MIT and CC BY-SA 4.0 |
-| KanjiVG components (`kanjivg-components`) | The parts each kanji is drawn from, for the radical and part lookup, derived from KanjiVG | CC BY-SA 3.0 (© Ulrich Apel); the derived index under the same licence |
-| Hanzi Writer stroke data (`hanzi-writer-strokes`) | Stroke-order animation data for Chinese and Japanese characters (`hanzi-writer-data`, from the Make Me a Hanzi dataset), built into the image as a pack, not committed | Arphic Public License |
+| [CC-CEDICT](https://cc-cedict.org) (`cedict`) | Mandarin–English words and meanings | CC BY-SA 4.0 |
+| [Unihan](https://www.unicode.org/reports/tr38/) (`unihan`) | Radical-stroke counts, variant mappings, character definitions | Unicode License v3 |
+| [JMdict](https://www.edrdg.org/) (`jmdict`) | Japanese–English words and meanings | CC BY-SA 4.0 (EDRDG) |
+| [KANJIDIC2](https://www.edrdg.org/wiki/index.php/KANJIDIC_Project) (`kanjidic2`) | Kanji readings, meanings, stroke counts, radicals | CC BY-SA 4.0 (EDRDG) |
+| [Jiten frequency list](https://jiten.moe/frequency-dictionaries) (`jiten-frequency`) | Japanese word frequency ranks (converted to CSV, ranks unmodified) | CC BY-SA 4.0 (Jitensoft) |
+| [KanjiVG](https://kanjivg.tagaini.net) (`kanjivg-components`) | The parts each kanji is drawn from (6,312 kanji), derived from KanjiVG r20260714, for the radical and part lookup | CC BY-SA 3.0 (© Ulrich Apel); the derived index under the same licence |
+| HSK 3.0 characters (`hsk-chars`) | The official characters to recognise (认读字) per level, HSK 1–6 and 7–9 (3,088 characters) | No reuse licence granted; see "The HSK lists" |
+| HSK 3.0 words (`hsk-words`) | The official word list, HSK 1–6 and 7–9 (11,000 rows, 10,959 entries; edition 2025-11, effective 2026-07) | No reuse licence granted; see "The HSK lists" |
+| Jōyō grades (`joyo-grades`) | The 2,136 jōyō kanji by school grade (Grade 1–6, Secondary), derived from KANJIDIC2 | CC BY-SA 4.0 (EDRDG) |
+| 通用规范汉字表 (`tgh-chars`) | The 2013 standard characters list in three levels (3,500 / 3,000 / 1,605), derived from Unihan's `kTGH` | Unicode License v3 |
+| JLPT kanji (`jlpt-kanji`) | Approximate N5–N1 kanji levels: kanjiapi.dev's list (of unstated provenance) plus levels derived from KANJIDIC2 for the 176 kanji it omits (分, 可, 無, 的 …) | MIT (© 2023 Iridium Szreter) and CC BY-SA 4.0 (EDRDG) |
+| Spanish–English demo dictionary (`es-demo`) | A hand-written sample | CC0 1.0 |
+| Chinese grammar (HSK-aligned) (`zh-grammar`) | Grammar lessons ≈ HSK 1 to 7–9, written for qinqin; the HSK 3.0 syllabus grammar outline is used as a topic index only, no syllabus text is reproduced | CC0 1.0 (the lessons) |
+| Japanese grammar (≈ JLPT levels) (`ja-grammar`) | Grammar lessons ≈ N5 to N1, written for qinqin; the choice and order of points are qinqin's own | CC0 1.0 |
 
-The dictionary files are redistributed unmodified. Stroke-order data is a pack like the others: it is listed in the Sources page's stroke data section with its licence and attribution, an administrator can uninstall it, and a repository checkout builds it with `node scripts/prepare-strokes-pack.mjs --out plugins/data-strokes/hanzi-writer-strokes` (after `npm --prefix apps/web ci`). Also credited on the Sources page: the stroke player `hanzi-writer`, the FSRS library, the script converter `opencc-js`, the interface font Figtree (SIL Open Font License 1.1, shipped unmodified with its licence text and never loaded from another host), and Kanji alive example-word audio (CC BY 4.0, Japanese clips) in the published image.
+The dictionary files are redistributed **unmodified**; the Jiten list is a conversion of the published file with unmodified ranks; the level lists are converted from pinned upstream files by `scripts/prepare-level-packs.mjs` and `scripts/prepare-standard-levels.mjs` and, for HSK, from the official syllabus by `scripts/prepare-hsk-syllabus.mjs`.
 
-Hanzi and kanji **font packs** (Sans, Serif and Kai faces: Noto Sans/Serif SC, TC and JP, LXGW WenKai, Klee One, all SIL Open Font License 1.1) are never committed or built into the image: an administrator builds one with `node scripts/prepare-font-pack.mjs --source <id> --out plugins/data-fonts/<id>` (after `npm --prefix scripts/fonts ci`), from a pinned upstream file whose hash and licence text the script checks, and installs it like any pack. The slices are modified versions under the OFL, so they are renamed `qinqin <Face> <SC|TC|JP>`; each pack carries the original licence text and an attribution, and the Sources page credits it. Details: `docs/sources.md`, "Hanzi and kanji font packs".
+**Generated by a tool, then committed (issue #133):** the example sentences on entry pages and in "Fill the gap" and "Build the sentence" cards. `server/tools/tatoeba` makes them from a pinned [Tatoeba](https://tatoeba.org) export; they are absent until the maintainer generates them (see "Example sentences (Tatoeba)" below), and then ship and seed like the packs above.
+
+| Pack | Provides | Licence |
+|---|---|---|
+| Tatoeba example sentences, Mandarin (`zh-sentences-tatoeba`) | Sentences with an English translation and generated pinyin, filed under CC-CEDICT words | CC BY 2.0 FR; some sentences CC0 1.0; readings CC BY-SA 4.0 (CC-CEDICT) |
+| Tatoeba example sentences, Japanese (`ja-sentences-tatoeba`) | Sentences (including the Tanaka corpus) with an English translation and, where certain, generated kana, filed under JMdict words | CC BY 2.0 FR; some sentences CC0 1.0; readings CC BY-SA 4.0 (JMdict, EDRDG) |
+
+**Built into the image, not committed:**
+
+- **Stroke-order data** (`hanzi-writer-strokes`): `hanzi-writer-data`, derived from the Make Me a Hanzi dataset, **Arphic Public License**; built by `scripts/prepare-strokes-pack.mjs` (into the image, or locally into the gitignored `plugins/data-strokes/`). It is a pack like the others: listed in the Sources page's stroke data section, and an administrator can uninstall it.
+- **Kanji alive example-word audio** (`kanjialive-audio`): 10,156 Japanese clips, CC BY 4.0, fetched and checksum-checked at build time ([AI providers and offline OCR](Admin-AI-and-OCR#audio-in-the-image)).
+
+**Credited on the Sources page as part of the app:** the stroke player `hanzi-writer`, the FSRS library `ts-fsrs`, the Reader's script converter `opencc-js` (MIT code with Apache-2.0 dictionary data; both licence texts ship as `/OPENCC-JS-LICENSE.TXT` and `/OPENCC-APACHE-2.0.TXT`), the interface font Figtree (SIL Open Font License 1.1, shipped unmodified with its licence text `/FIGTREE-OFL.TXT`, never loaded from another host), and the icon set. Every data package a client downloads carries the licence texts of its packs ([Data packs on the server](Admin-data-packs#licence-texts-in-packages)).
 
 ## The HSK lists
 
-No reuse licence is granted by the publisher (Chinese Testing International). Its Legal Notice requires the source to be indicated and permits reasonable, good-faith quoting. The HSK packs include only the word list and the characters-to-recognise list with levels (and word pinyin as lookup readings), none of the syllabus's descriptions, task and topic lists or explanatory text; the Chinese grammar pack (`zh-grammar`), listed separately, uses the syllabus's grammar outline as a topic index only and reproduces no syllabus text. The project shows the required source line on the Sources page and the character map. The inclusion is a decision of the project owner; **its legal status has not been verified** (no legal opinion). The official PDF and any text extracted from it are never committed.
+The official syllabus 《HSK 考试大纲》 (Syllabus for the Chinese Proficiency Test, published 2025-11, effective 2026-07) is issued by 中外语言交流合作中心 (CLEC) and distributed by Chinese Testing International (CTI) at [chinesetest.cn](https://www.chinesetest.cn). **No reuse licence is granted**: the site's [Legal Notice](https://www.chinesetest.cn/legal-notice) says its content is copyrighted by CTI or the content providers, requires the source to be indicated ("Source: www.chinesetest.cn"), and permits reproduction only as reasonable, good-faith quoting for informative public use; the PDF carries a copy-protection flag.
 
-## JLPT levels
+The HSK packs include only the word list and the list of characters to recognise, as plain lists with their levels (and the words' pinyin as lookup readings), and none of the syllabus's descriptions, task and topic lists, lists of characters to write or explanatory text. The Chinese grammar pack (`zh-grammar`), listed separately, uses the syllabus's grammar outline as a topic index only, with attribution; its lessons are qinqin's own and reproduce no syllabus text. The Sources page and the character map show the required source line. The inclusion is a decision of the project owner; **its legal status has not been verified** (no legal opinion). The PDF and any text extracted from it are never committed; `scripts/prepare-hsk-syllabus.mjs` converts its `pdftotext -tsv` output (steps in the script's header). The older community-compiled hsk30 packs that `prepare-level-packs.mjs --hsk` generates locally are superseded by the official lists.
 
-The JLPT has published no official kanji list since 2010, so the kanji levels are approximate and labelled that way. **JLPT vocabulary is not bundled**: its upstream licence chain could not be verified. It is an optional pack you can generate for local use only.
+## JLPT levels and vocabulary
+
+The JLPT has published no official kanji list since 2010, so the kanji levels are approximate and labelled that way.
+
+**JLPT vocabulary is not bundled**: its upstream licence chain could not be verified (open-anki-jlpt-decks is labelled MIT, but says its data came from other decks based on the tanos.co.uk lists, described as CC BY; that page could not be reached). You can generate it for your own server as a local-only pack, from the repository root:
+
+```sh
+mkdir /tmp/jlpt-vocab && cd /tmp/jlpt-vocab
+base=https://raw.githubusercontent.com/jamsinclair/open-anki-jlpt-decks/1ad66734417aca9dbcca6b2d5ee440cb13ab3ba0
+for n in n5 n4 n3 n2 n1; do curl -fsSLo $n.csv $base/src/$n.csv; done
+curl -fsSLo LICENSE $base/LICENSE
+cd -
+node scripts/prepare-level-packs.mjs --jlpt-vocab /tmp/jlpt-vocab   # writes plugins/data-local/
+qinqin seed --packs plugins/data,plugins/data-local
+```
+
+Under Docker mount `plugins/data-local` and name it in `--packs` ([Data packs on the server](Admin-data-packs)). The character map's "Group by" and the Sources page pick it up once installed.
 
 ## Local-only packs
 
-Data with an unclear or restrictive licence is never committed or bundled. Put it in the gitignored `plugins/data-local/` folder; `qinqin seed` imports it after the bundled packs. A pack is a directory with a `manifest.json` (`id`, `name`, `version`, `type`, `language`, `format`, `license`, `attribution`; `license` and `attribution` are required) plus its data file. Level packs use `"type": "levels"` and a `levels.json`; frequency packs use `yomitan-freq` or `freq-csv`. Under Docker, mount the folder and pass it with `--packs` ([Backup, recovery and the command line](Admin-backup-and-recovery)). Details: `plugins/data/README.md` and `docs/sources.md`.
-
-Administrators can also install a dictionary pack as a zip in Settings, Data.
+Data with an unclear or restrictive licence is never committed or bundled. Put it in the gitignored `plugins/data-local/` folder; `qinqin seed` imports it after the bundled packs. A pack is a folder with a `manifest.json` (`license` and `attribution` are required) plus its data file ([Data pack format](Data-pack-format)). Details: `plugins/data/README.md` and `docs/sources.md`, "Local-only data".
 
 ## Radicals and character components
 
-The radical lookup uses data already bundled: Unihan's radical numbers (Chinese) and KANJIDIC2's classical radicals (Japanese). The parts come from **components packs**. The bundled Japanese one is derived from KanjiVG (tag r20260714, CC BY-SA 3.0, © Ulrich Apel, https://kanjivg.tagaini.net): for each kanji, the elements of its stroke-order drawing. It carries KanjiVG's licence text and is credited on the Sources page. Chinese decompositions (CHISE IDS and cjkvi-ids: GPL; Make Me a Hanzi: LGPL with an unverified chain) are **not bundled**; an operator can prepare a local-only pack with `scripts/prepare-ids-components.mjs` into `plugins/data-local/`. EDRDG's KRADFILE is a later option once its current licence statement has been checked.
+The radical lookup uses data already bundled: Unihan's radical numbers (Chinese) and KANJIDIC2's classical radicals (Japanese). The parts come from **components packs**. The bundled Japanese one is derived from KanjiVG: for each kanji, the elements of its stroke-order drawing; it carries KanjiVG's licence text. Chinese decompositions (CHISE IDS and cjkvi-ids: GPL; Make Me a Hanzi: LGPL with an unverified chain) are **not bundled**; an operator can prepare a local-only pack with `scripts/prepare-ids-components.mjs` into `plugins/data-local/`. EDRDG's KRADFILE is a later option once its current licence statement has been checked.
 
 ## Frequency order and starter decks
 
-"Most frequent first" and the starter decks (Top 500/1000/2000) are computed at request time from the frequency packs installed on the server; nothing extra is bundled for them. Japanese uses the bundled Jiten list (CC BY-SA 4.0, with attribution, shown on every starter deck). For Chinese no word frequency list with a clearly compatible licence was found (checked 2026-11-16): wordfreq's Chinese data includes word lists of unknown provenance, jieba's counts have no stated source, SUBTLEX-CH has unclear terms and the Leiden Weibo corpus is non-commercial, so these are local-only packs an operator may add for their own server. Unihan's character readings counts and KANJIDIC2's newspaper ranks are character data, not word ranks, and are not used here.
+"Most frequent first" and the starter decks (Top 500/1000/2000) are computed at request time from the frequency packs installed on the server. Japanese uses the bundled Jiten list (attribution shown on every starter deck). For Chinese no word frequency list with a clearly compatible licence was found (checked 2026-11-16): wordfreq's Chinese data includes word lists of unknown provenance, jieba's counts have no stated source, SUBTLEX-CH has unclear terms and the Leiden Weibo corpus is non-commercial, so these are local-only packs an operator may add. Unihan's and KANJIDIC2's character counts are character data, not word ranks, and are not used for this.
 
-## Data packages carry their licences
+## Hanzi and kanji font packs
 
-The server turns installed packs into data packages that clients download (see [API overview](API-Overview#data-packages)). Every package holds a `NOTICE.md` (per source pack: name, version, licence, attribution, notice) and the pack's own licence files verbatim under `LICENSES/<pack id>/` (`LICENSE*`, `LICENCE*`, `ATTRIBUTION*`, `NOTICE*`, `COPYING*`, kept at import). A package contains exactly what the server has installed, so nothing reaches a client that the server does not already serve. Packs installed by an older release have no licence files stored; until an administrator runs `qinqin seed` once their packages carry only the licence name and attribution (the catalogue says `licenseTexts: false`).
+Font packs (Sans, Serif and Kai faces: Noto Sans/Serif SC, TC and JP, LXGW WenKai, Klee One, all SIL Open Font License 1.1) are never committed or built into the image. An administrator builds one with `npm --prefix scripts/fonts ci` and then `node scripts/prepare-font-pack.mjs --source <id> --out plugins/data-fonts/<id>`, from a pinned upstream file whose hash and licence text the script checks, and installs it like any pack (upload in Settings → Data, or `qinqin seed --packs plugins/data-fonts`). The slices are modified versions under the OFL, so they are renamed `qinqin <Face> <SC|TC|JP>`; each pack carries the original licence text and an attribution, and the Sources page credits it. Details: `docs/sources.md`, "Hanzi and kanji font packs".
 
-## Adding a credit
+## Example sentences (Tatoeba)
 
-Packs: `license`, `attribution` and an optional `notice` (plain text, links only as `[text](https://...)`, at most 4,000 bytes) in the manifest, plus a row in `docs/sources.md`. `node scripts/check-sources.mjs` (run in CI) keeps manifests and docs in agreement.
+Tatoeba states that sentence text is CC BY 2.0 FR and that some sentences are also CC0 1.0. The tool keeps only sentences the export lists under those licences (and their English translations under the same test), drops orphaned, flagged, negatively reviewed, unsuitable, duplicate, too short or too long sentences, prefers sentences by native speakers and keeps at most a few per word; every threshold is in `server/tools/tatoeba/rules.json`. Readings are generated, never guessed: pinyin from CC-CEDICT, left out of a sentence when one of its words has several readings (a short list of defaults settles particles such as 了 and 的); kana from JMdict only where every word has one certain reading. The Sources page shows each pack's notice ("filtered by a program, readings generated, may contain errors"); each pack's `credits.tsv` lists every sentence's Tatoeba id and page and its owner as listed by Tatoeba, and the manifest attribution links the published copy of that file (a credit next to each sentence in the app is not there yet). Tatoeba's audio is not used.
+
+**Producing the packs** (maintainers, from `server/`, with access to downloads.tatoeba.org): re-read Tatoeba's downloads page and terms of use and replace the placeholder `licence.statement` in `server/tools/tatoeba/pin.json` with what they say (confirming that every row of `sentences_detailed` is CC BY 2.0 FR; `pin` and `build` refuse the placeholder), then
+
+```sh
+go run ./tools/tatoeba pin --licence-checked <YYYY-MM-DD>   # downloads into plugins/upstream/tatoeba/, records SHA-256 and dates
+go run ./tools/tatoeba build                                 # writes plugins/data/{zh,ja}-sentences-tatoeba and a report
+```
+
+Review `plugins/upstream/tatoeba/sample-*.tsv` and `report-*.txt` (match rate, readings share, pack sizes), tune `rules.json`, rebuild, run `node scripts/check-sources.mjs` and commit `pin.json`, `rules.json` and both packs. The same pinned export, rules and dictionaries always give the same files; keep the downloaded archives, because Tatoeba replaces its export every week. A build without a pin is refused, and so is a pack file above 24 MiB unless `--allow-size` is given (recorded in `ATTRIBUTION.md`). Once `pin.json` is pinned, `node scripts/check-sources.mjs` requires both packs at the pinned export date. Details: `docs/sources.md`, "Example sentences (Tatoeba)".
+
+## Credits and the Sources page
+
+The Sources page is public because the CTI Legal Notice asks that the source be shown where the content is, and every credit should be reachable by anyone; its API calls (`GET /api/dictionaries`, `/api/frequency-packs`, `/api/schemes` and the other pack lists) are public too. It is built from data, not hard-coded text:
+
+- **Packs**: each installed pack's manifest `license`, `attribution` and optional `notice`. The notice is plain text: paragraphs separated by a blank line, links only as `[text](https://…)` (https only; anything else stays plain text), at most 4,000 bytes. The server validates it on import (`server/internal/dict/notice.go`) and the page renders it with `apps/web/src/lib/sources/notice.ts` (no HTML).
+- **Plugins**: a web plugin lists the third-party material it ships or fetches in the optional `sources` array of its manifest (`PluginManifest.sources` in `apps/web/src/lib/plugins/index.ts`), each a `SourceCredit` with `name` and optional `url`, `license`, `attribution`, `notice`, `licenseTexts` and `lang` (`apps/web/src/lib/sources/credits.ts`). The page shows them under "Plugins".
+- **Core**: material built into the app itself, shared by several features, is listed once in `apps/web/src/lib/sources/coreCredits.ts`. A licence text that ships with the app goes into `apps/web/static/` and is named in the credit's `licenseTexts`.
+
+**Adding a credit:** for a pack, set `license` and `attribution` (and a `notice` if one line is not enough) in its `manifest.json` and add a row to `docs/sources.md`; for a plugin, add an entry to its manifest's `sources`; for the app itself, add it to `coreCredits.ts`. `node scripts/check-sources.mjs` keeps packs and docs honest (every pack has a non-empty `license` and `attribution`, every bundled pack is named in `docs/sources.md`, every pack the docs name exists, every `notice` is valid); CI runs it with the scripts' tests (`node --test scripts/*.test.mjs`).
 
 ## Related
 
-[Searching and entries](Searching-and-entries), [Stats and heatmap](Stats-and-heatmap).
+[Dictionary data model](Dictionary-data-model), [Searching and entries](Searching-and-entries), [Stats and heatmap](Stats-and-heatmap).

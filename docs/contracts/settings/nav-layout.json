@@ -1,0 +1,284 @@
+{
+ "version": 1,
+ "rule": "settings/nav-layout",
+ "pluginId": "qinqin-core",
+ "key": "nav-layout",
+ "scope": "user-global",
+ "defaults": {
+  "phone": "bar",
+  "bar": ["home", "flashcards", "reader", "search"]
+ },
+ "phoneModes": ["bar", "drawer"],
+ "maxItems": 5,
+ "row": {
+  "version": 1,
+  "phone": "bar",
+  "bar": ["home", "reader", "journal", "flashcards"]
+ },
+ "parse": [
+  {
+   "name": "a version 1 row",
+   "value": { "version": 1, "phone": "drawer", "bar": ["reader", "home"] },
+   "expect": { "phone": "drawer", "bar": ["reader", "home"] }
+  },
+  {
+   "name": "no row",
+   "note": "a never-saved row reads as the defaults",
+   "value": null,
+   "expect": { "phone": "bar", "bar": ["home", "flashcards", "reader", "search"] }
+  },
+  {
+   "name": "not an object",
+   "value": "drawer",
+   "expect": { "phone": "bar", "bar": ["home", "flashcards", "reader", "search"] }
+  },
+  {
+   "name": "an array",
+   "value": [{ "version": 1, "phone": "drawer" }],
+   "expect": { "phone": "bar", "bar": ["home", "flashcards", "reader", "search"] }
+  },
+  {
+   "name": "version missing",
+   "value": { "phone": "drawer", "bar": ["reader"] },
+   "expect": { "phone": "bar", "bar": ["home", "flashcards", "reader", "search"] }
+  },
+  {
+   "name": "version 0",
+   "value": { "version": 0, "phone": "drawer", "bar": ["reader"] },
+   "expect": { "phone": "bar", "bar": ["home", "flashcards", "reader", "search"] }
+  },
+  {
+   "name": "version as a string",
+   "value": { "version": "1", "phone": "drawer", "bar": ["reader"] },
+   "expect": { "phone": "bar", "bar": ["home", "flashcards", "reader", "search"] }
+  },
+  {
+   "name": "a newer version is read leniently",
+   "note": "its phone and bar count when they read as version 1 would",
+   "value": { "version": 4, "phone": "drawer", "bar": ["stats"], "tablet": "rail" },
+   "expect": { "phone": "drawer", "bar": ["stats"] }
+  },
+  {
+   "name": "an unknown phone mode reads as bar",
+   "value": { "version": 1, "phone": "rail", "bar": ["reader"] },
+   "expect": { "phone": "bar", "bar": ["reader"] }
+  },
+  {
+   "name": "phone missing reads as bar",
+   "value": { "version": 1, "bar": ["reader"] },
+   "expect": { "phone": "bar", "bar": ["reader"] }
+  },
+  {
+   "name": "phone not a string reads as bar",
+   "value": { "version": 1, "phone": true },
+   "expect": { "phone": "bar", "bar": ["home", "flashcards", "reader", "search"] }
+  },
+  {
+   "name": "bar missing is the default pins",
+   "value": { "version": 1, "phone": "drawer" },
+   "expect": { "phone": "drawer", "bar": ["home", "flashcards", "reader", "search"] }
+  },
+  {
+   "name": "bar not a list is the default pins",
+   "value": { "version": 1, "bar": "home" },
+   "expect": { "phone": "bar", "bar": ["home", "flashcards", "reader", "search"] }
+  },
+  {
+   "name": "an empty bar stays empty",
+   "note": "the person took every section out of the bar: all of them are under More",
+   "value": { "version": 1, "bar": [] },
+   "expect": { "phone": "bar", "bar": [] }
+  },
+  {
+   "name": "only non-empty strings count, the first of a duplicate wins",
+   "value": { "version": 1, "bar": ["reader", 7, "", null, "home", "reader", "future-plugin"] },
+   "expect": { "phone": "bar", "bar": ["reader", "home", "future-plugin"] }
+  }
+ ],
+ "write": [
+  {
+   "name": "phone on no row",
+   "note": "bar is not written: a missing bar keeps reading as the default pins",
+   "stored": null,
+   "change": { "phone": "drawer" },
+   "expect": { "version": 1, "phone": "drawer" }
+  },
+  {
+   "name": "bar on no row",
+   "stored": null,
+   "change": { "bar": ["reader", "home"] },
+   "expect": { "version": 1, "bar": ["reader", "home"] }
+  },
+  {
+   "name": "phone keeps the bar and unknown keys",
+   "stored": { "version": 1, "phone": "bar", "bar": ["stats"], "tablet": "rail" },
+   "change": { "phone": "drawer" },
+   "expect": { "version": 1, "phone": "drawer", "bar": ["stats"], "tablet": "rail" }
+  },
+  {
+   "name": "bar keeps phone and unknown keys",
+   "stored": { "version": 1, "phone": "drawer", "tablet": "rail" },
+   "change": { "bar": ["journal", "home"] },
+   "expect": { "version": 1, "phone": "drawer", "bar": ["journal", "home"], "tablet": "rail" }
+  },
+  {
+   "name": "a newer version is kept",
+   "note": "never written back as version 1",
+   "stored": { "version": 3, "phone": "bar", "future": { "x": 1 } },
+   "change": { "phone": "drawer" },
+   "expect": { "version": 3, "phone": "drawer", "future": { "x": 1 } }
+  },
+  {
+   "name": "a missing or bad version becomes 1",
+   "stored": { "version": "2", "tablet": "rail" },
+   "change": { "phone": "bar" },
+   "expect": { "version": 1, "phone": "bar", "tablet": "rail" }
+  },
+  {
+   "name": "a malformed row is replaced",
+   "stored": [1, 2],
+   "change": { "phone": "drawer" },
+   "expect": { "version": 1, "phone": "drawer" }
+  },
+  {
+   "name": "the written bar has each id once, strings only",
+   "stored": { "version": 1 },
+   "change": { "bar": ["home", "home", "", "reader"] },
+   "expect": { "version": 1, "bar": ["home", "reader"] }
+  },
+  {
+   "name": "ids of sections switched off stay in the written bar",
+   "note": "the editor changes the stored list; it never drops what it cannot show",
+   "stored": { "version": 1, "bar": ["home", "journal", "reader"] },
+   "change": { "bar": ["reader", "journal", "home"] },
+   "expect": { "version": 1, "bar": ["reader", "journal", "home"] }
+  }
+ ],
+ "items": [
+  {
+   "name": "default pins, everything fits",
+   "note": "four visible sections: all shown, pins first, no More",
+   "visible": ["home", "search", "flashcards", "reader"],
+   "bar": null,
+   "current": "reader",
+   "expect": { "items": ["home", "flashcards", "reader", "search"], "more": [], "current": "reader" }
+  },
+  {
+   "name": "default pins, five fit",
+   "note": "Stats is not pinned but five fit, so it is shown after the pins",
+   "visible": ["home", "search", "flashcards", "reader", "stats"],
+   "bar": null,
+   "current": "stats",
+   "expect": { "items": ["home", "flashcards", "reader", "search", "stats"], "more": [], "current": "stats" }
+  },
+  {
+   "name": "default pins with Journal on",
+   "visible": ["home", "search", "flashcards", "reader", "journal", "stats"],
+   "bar": null,
+   "current": "home",
+   "expect": { "items": ["home", "flashcards", "reader", "search", "more"], "more": ["journal", "stats"], "current": "home" }
+  },
+  {
+   "name": "More is current for one of its rows",
+   "visible": ["home", "search", "flashcards", "reader", "journal", "grammar", "stats"],
+   "bar": null,
+   "current": "grammar",
+   "expect": {
+    "items": ["home", "flashcards", "reader", "search", "more"],
+    "more": ["journal", "grammar", "stats"],
+    "current": "more"
+   }
+  },
+  {
+   "name": "a page of no section: nothing is current",
+   "visible": ["home", "search", "flashcards", "reader", "journal", "grammar", "stats"],
+   "bar": null,
+   "current": null,
+   "expect": {
+    "items": ["home", "flashcards", "reader", "search", "more"],
+    "more": ["journal", "grammar", "stats"],
+    "current": null
+   }
+  },
+  {
+   "name": "hidden and unknown ids are skipped",
+   "visible": ["home", "search", "reader", "journal", "grammar", "stats"],
+   "bar": ["flashcards", "removed-plugin", "journal", "home", "stats"],
+   "current": "search",
+   "expect": {
+    "items": ["journal", "home", "stats", "more"],
+    "more": ["search", "reader", "grammar"],
+    "current": "more"
+   }
+  },
+  {
+   "name": "a section switched on later comes back in its place",
+   "visible": ["home", "search", "flashcards", "reader", "journal", "grammar", "stats"],
+   "bar": ["flashcards", "removed-plugin", "journal", "home", "stats"],
+   "current": "flashcards",
+   "expect": {
+    "items": ["flashcards", "journal", "home", "stats", "more"],
+    "more": ["search", "reader", "grammar"],
+    "current": "flashcards"
+   }
+  },
+  {
+   "name": "pins beyond four go first under More",
+   "visible": ["home", "search", "flashcards", "reader", "journal", "grammar", "stats"],
+   "bar": ["stats", "grammar", "journal", "reader", "home", "search"],
+   "current": "home",
+   "expect": {
+    "items": ["stats", "grammar", "journal", "reader", "more"],
+    "more": ["home", "search", "flashcards"],
+    "current": "more"
+   }
+  },
+  {
+   "name": "duplicates: the first wins",
+   "visible": ["home", "search", "flashcards", "reader", "journal", "stats"],
+   "bar": ["reader", "home", "reader", "home"],
+   "current": "reader",
+   "expect": {
+    "items": ["reader", "home", "more"],
+    "more": ["search", "flashcards", "journal", "stats"],
+    "current": "reader"
+   }
+  },
+  {
+   "name": "an empty bar: everything under More",
+   "visible": ["home", "search", "flashcards", "reader", "journal", "stats"],
+   "bar": [],
+   "current": "journal",
+   "expect": {
+    "items": ["more"],
+    "more": ["home", "search", "flashcards", "reader", "journal", "stats"],
+    "current": "more"
+   }
+  },
+  {
+   "name": "an empty bar where everything fits: all shown in frame order",
+   "visible": ["home", "search", "stats"],
+   "bar": [],
+   "current": "search",
+   "expect": { "items": ["home", "search", "stats"], "more": [], "current": "search" }
+  },
+  {
+   "name": "one section",
+   "visible": ["home"],
+   "bar": null,
+   "current": "home",
+   "expect": { "items": ["home"], "more": [], "current": "home" }
+  },
+  {
+   "name": "eight sections",
+   "visible": ["home", "search", "flashcards", "reader", "journal", "grammar", "cards-plus", "stats"],
+   "bar": null,
+   "current": "cards-plus",
+   "expect": {
+    "items": ["home", "flashcards", "reader", "search", "more"],
+    "more": ["journal", "grammar", "cards-plus", "stats"],
+    "current": "more"
+   }
+  }
+ ]
+}

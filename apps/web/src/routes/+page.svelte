@@ -101,7 +101,7 @@
 				{emptyReason === 'none-chosen'
 					? t('app.home.noWidgets')
 					: t('app.home.noWidgetsHere')}
-				<Msg key="app.home.chooseWidgets">{#snippet link(text: string)}<a href="/settings?tab=home">{text}</a>{/snippet}</Msg>
+				<Msg key="app.home.chooseWidgets">{#snippet link(text: string)}<a href="/settings?tab=layout">{text}</a>{/snippet}</Msg>
 			</p>
 		{/if}
 	{/if}

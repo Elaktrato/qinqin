@@ -9,7 +9,10 @@
 	import WorkspaceCreateForm from '$lib/components/WorkspaceCreateForm.svelte';
 	import { auth, loadMe, restriction, user } from '$lib/auth';
 	import AccountMenu from '$lib/frame/AccountMenu.svelte';
-	import { currentSection, frameSections } from '$lib/frame/sections';
+	import { currentSection, frameSections, homeSection } from '$lib/frame/sections';
+	import { barHiddenOn } from '$lib/frame/barItems';
+	import BottomBar from '$lib/frame/BottomBar.svelte';
+	import { navLayoutStore } from '$lib/frame/navLayoutStore.svelte';
 	import PhoneBar from '$lib/frame/PhoneBar.svelte';
 	import TopBar from '$lib/frame/TopBar.svelte';
 	import Icon from '$lib/ui/Icon.svelte';
@@ -81,6 +84,18 @@
 	// The frame (window frame, bar, raised panel) shows with a bar: signed
 	// in, or signed out on an open page. Sign-in pages stay plain.
 	const framed = $derived(signedIn || openSignedOut);
+	// The phone navigation (#188, the person's nav-layout row): the bottom bar
+	// (default) or the side menu. Desktop and tablet widths ignore it: the
+	// bar is in the phone-only wrapper and every rule for it is phone-only.
+	const phoneMode = $derived(navLayoutStore.phone);
+	const barSections = $derived([homeSection(), ...sections]);
+	const bottomBar = $derived(signedIn && !restricted && phoneMode === 'bar' && !barHiddenOn(path));
+	$effect(() => {
+		// :root carries the switch, so the page's scroll padding (app.css) and
+		// fixed elements (--bottom-bar-space) keep clear of the bar.
+		document.documentElement.toggleAttribute('data-bottom-bar', bottomBar);
+		return () => document.documentElement.removeAttribute('data-bottom-bar');
+	});
 	const noWorkspaces = $derived(
 		$workspacesLoaded && !workspaceError && $workspaces.list.length === 0
 	);
@@ -194,9 +209,19 @@
 		if (id === themeUser) return;
 		themeUser = id;
 		void themeStore.setUser(id);
+		void navLayoutStore.setUser(id);
 		// The installed font pack faces (#97): the list needs a session.
 		if (id === null) packFaces.clear();
 		else void packFaces.load();
+	});
+
+	// Back to the front: another device may have changed the phone navigation.
+	$effect(() => {
+		const onVisible = () => {
+			if (document.visibilityState === 'visible') void navLayoutStore.resume();
+		};
+		document.addEventListener('visibilitychange', onVisible);
+		return () => document.removeEventListener('visibilitychange', onVisible);
 	});
 
 	// The app-wide hanzi font (#97): the saved choice (or the Appearance
@@ -252,7 +277,7 @@
 			     so it is out of the accessibility tree and the tab order. -->
 			<header class="bar">
 				<div class="desktop" data-frame="desktop"><TopBar {sections} {current} /></div>
-				<div class="phone" data-frame="phone"><PhoneBar {sections} {current} /></div>
+				<div class="phone" data-frame="phone"><PhoneBar {sections} {current} mode={phoneMode} /></div>
 			</header>
 		{:else if framed}
 			<!-- A restricted session (forced password change, MFA enrolment)
@@ -268,7 +293,7 @@
 								href={signedIn ? '/' : '/login'}
 								aria-label={signedIn
 									? t('nav.brand.home', { app: APP_NAME })
-									: t('nav.brand.signIn', { app: APP_NAME })}><Logo size={26} /></a
+									: t('nav.brand.signIn', { app: APP_NAME })}><Logo /></a
 							>
 						{/snippet}
 					</Tooltip>
@@ -321,6 +346,15 @@
 				{@render children()}
 			</main>
 		</div>
+
+		{#if bottomBar}
+			<!-- The phone bottom bar (#188), after the page in the reading order
+			     (a nav landmark of its own). Phone only: the wrapper is display:
+			     none at 720px and wider. -->
+			<div class="phone" data-frame="phone-nav">
+				<BottomBar sections={barSections} bar={navLayoutStore.bar} {current} />
+			</div>
+		{/if}
 	</div>
 {:else}
 	<p class="booting">{t('app.loading')}</p>
@@ -333,6 +367,9 @@
 	   page, scroll restoration and fragment jumps keep working. */
 	.frame {
 		box-sizing: border-box;
+		/* viewport-fit=cover (app.html, for the bottom bar's safe area): keep
+		   clear of a notch or the status bar; every inset is 0 on desktop. */
+		padding: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px) 0 env(safe-area-inset-left, 0px);
 		display: flex;
 		flex-direction: column;
 		min-height: 100vh;
@@ -371,7 +408,7 @@
 	.skip-link {
 		position: absolute;
 		top: 0.5rem;
-		left: 0.5rem;
+		left: calc(0.5rem + env(safe-area-inset-left, 0px));
 		z-index: var(--layer-modal);
 		padding: 0.5rem 0.9rem;
 		border-radius: var(--radius);
@@ -404,8 +441,8 @@
 	.brand {
 		display: inline-grid;
 		place-items: center;
-		width: 2.25rem;
-		height: 2.25rem;
+		width: 2.5rem;
+		height: 2.5rem;
 		border-radius: var(--radius);
 		color: var(--accent);
 	}
@@ -494,6 +531,11 @@
 		.framed .panel {
 			margin: 0;
 			border-radius: 0;
+		}
+		/* The bottom bar is fixed over the page's end: the page ends above it
+		   (app.css sets --bottom-bar-space with the bar, safe area included). */
+		.framed .panel {
+			padding-bottom: var(--bottom-bar-space);
 		}
 	}
 

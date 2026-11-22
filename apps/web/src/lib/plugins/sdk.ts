@@ -6,6 +6,7 @@
 import { ApiError, api } from '../api/client';
 import type { StudyEventBody } from '../api/types';
 import { postEvents, type StudyEvent } from '../events';
+import { readAllEvents } from '../eventPages';
 import { newUlid } from '../ulid';
 import type { ContractManifest, Permission } from './contract';
 import { registerStudyEventHandler } from './hooks';
@@ -155,13 +156,11 @@ export function createPluginSdk(manifest: ContractManifest): PluginSdk {
 		events: {
 			list(opts) {
 				need('read:study-events');
-				const query = [`since=${encodeURIComponent(opts.since ?? EPOCH)}`];
-				if (opts.workspace !== undefined) query.push(`workspace=${opts.workspace}`);
 				const types = opts.types;
-				return api<StudyEvent[] | undefined>(`/api/events?${query.join('&')}`).then((events) => {
-					const list = Array.isArray(events) ? events : [];
-					return types ? list.filter((e) => types.includes(e.type)) : list;
-				});
+				// Every page of the log (#110); the type filter stays client-side.
+				return readAllEvents((path) => api<unknown>(path), { since: opts.since ?? EPOCH, workspace: opts.workspace }).then(
+					(list) => (types ? list.filter((e) => types.includes(e.type)) : list)
+				);
 			},
 			record(type, workspace, payload = null, at = new Date()) {
 				need('write:study-events');

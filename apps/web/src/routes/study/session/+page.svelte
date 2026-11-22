@@ -39,7 +39,15 @@
 		type CardResult,
 		type FlowItem
 	} from '$lib/study/cardFlow';
-	import { flushPendingReviews, recordReview } from '$lib/study/events';
+	import { flushPendingReviews, recordReplacement, recordReview } from '$lib/study/events';
+	import {
+		backFrom,
+		pushStep,
+		regradeAction,
+		regradeQueue,
+		replaceSessionReview,
+		type GradedStep
+	} from '$lib/study/regrade';
 	import { ineligibleKey, loadIneligible, rememberIneligible } from '$lib/study/ineligible';
 	import {
 		acceptedClozeAnswers,
@@ -68,8 +76,9 @@ import type { Run } from '$lib/study/vacation';
 	import { getFrequencyPacks } from '$lib/api/frequency';
 	import { loadRanks } from '$lib/study/frequencyRanks';
 	import { loadLevelKeys } from '$lib/study/levelKeys';
-	import { sessionNewOrder } from '$lib/study/session';
+	import { sessionNewOrder, sessionSeedOf, sessionTypeOrder } from '$lib/study/session';
 	import { candidateNewEntries, deckOrdersOf, sessionNewKey } from '$lib/study/sessionOrder';
+	import { mixFlowQueue } from '$lib/study/sessionMix';
 	import {
 		CARD_KINDS,
 		type ReviewEvent,
@@ -138,10 +147,18 @@ import type { Run } from '$lib/study/vacation';
 	// The SPA has no SSR, so the tab's setup is readable during init.
 	const config = loadConfig();
 	// The shuffle's seed lives in the saved setup, so a reload of the same
-	// session keeps its order. A setup saved before seeds existed has none:
-	// it is shuffled afresh on each load.
-	const sessionSeed = config.seed ?? Math.floor(Math.random() * 0x7fffffff);
+	// session keeps its order; a setup without one gets a seed drawn once
+	// per tab (sessionSeedOf), never a new one per load.
+	const sessionSeed = sessionSeedOf(config);
 	const kinds: StudyCardKind[] = CARD_KINDS.filter((kind) => config.cardTypes.includes(kind));
+	// The order of card types (#132): the same seed, so a reload keeps the mix.
+	// Deck sessions show a new word's Recognise card before its other types;
+	// a character level gates writing itself.
+	const mixOptions = {
+		seed: sessionSeed,
+		order: sessionTypeOrder(config),
+		vocabFirst: config.mode === 'decks'
+	};
 
 	/**
 	 * A queue item once it can be shown: its entry is loaded and its kind
@@ -250,6 +267,10 @@ import type { Run } from '$lib/study/vacation';
 	let sessionClock = $state.raw<StudyClock>(IDENTITY_CLOCK);
 	let sessionVacation = $state.raw<readonly Run[]>([]);
 	let sessionReviews = $state.raw<ReviewEvent[]>([]);
+	// Back (#131): the graded showings of this session (newest last) and the
+	// one shown again, if any (an index into `steps`; null: the current card).
+	let steps = $state.raw<GradedStep<Resolved>[]>([]);
+	let backAt = $state<number | null>(null);
 	let index = $state(0);
 	// Re-shows answered this session; practice only, never recorded.
 	let reshown = $state(0);
@@ -339,6 +360,11 @@ import type { Run } from '$lib/study/vacation';
 	}
 
 	const currentItem = $derived(queue[index]);
+	// The step shown by Back, and what the face shows: that step's card
+	// (answer side, the exercise not replayed) or the current card.
+	const viewing = $derived(backAt === null ? null : (steps[backAt] ?? null));
+	const shownCard = $derived(viewing !== null ? viewing.shown : resolved);
+	const shownDone = $derived(viewing !== null || done);
 	const queueProgress = $derived(progressOf(queue, index));
 	const currentEntry = $derived(
 		currentItem === undefined ? undefined : entries[currentItem.entryId]
@@ -412,6 +438,8 @@ import type { Run } from '$lib/study/vacation';
 		backfillLeft = 0;
 		reviews = [];
 		sessionReviews = [];
+		steps = [];
+		backAt = null;
 		index = 0;
 		reshown = 0;
 		buryNote = '';
@@ -518,7 +546,8 @@ import type { Run } from '$lib/study/vacation';
 					newKey: keyOf ?? undefined,
 					studyAll: config.studyAll === true
 				});
-				queue = levelSessionItems(plan.queue, data.cards, kinds, buried);
+				// The order of card types (#132): due first, kinds interleaved.
+				queue = mixFlowQueue(levelSessionItems(plan.queue, data.cards, kinds, buried), history, mixOptions);
 				reserve = levelSessionItems(plan.reserve, data.cards, kinds, buried);
 				backfillLeft = config.studyAll === true ? STUDY_ALL_LIMIT : backfillLimit(config.newLimit);
 			} else {
@@ -540,7 +569,7 @@ import type { Run } from '$lib/study/vacation';
 					newKey: keyOf === null ? undefined : (card) => keyOf(card.entryId),
 					studyAll: config.studyAll === true
 				});
-				queue = plan.queue;
+				queue = mixFlowQueue(plan.queue, history, mixOptions);
 				reserve = plan.reserve;
 				backfillLeft = plan.backfillLeft;
 			}
@@ -756,8 +785,8 @@ import type { Run } from '$lib/study/vacation';
 
 	const audioSettings = $derived(readAudioSettings($workspaces.current?.settings));
 	const currentAudio = $derived(
-		resolved !== null && hasWordAudio(resolved.item)
-			? cardAudio(resolved.entry, audioMap[String(resolved.item.entryId)], audioSettings)
+		shownCard !== null && hasWordAudio(shownCard.item)
+			? cardAudio(shownCard.entry, audioMap[String(shownCard.item.entryId)], audioSettings)
 			: null
 	);
 	let autoplayedFor: string | null = null;
@@ -851,6 +880,86 @@ import type { Run } from '$lib/study/vacation';
 		);
 	});
 
+	/**
+	 * The intervals of a step shown by Back: the same preview, from the
+	 * history without the step's own review, at the moment it was finished.
+	 * A practice step (a re-show) has none.
+	 */
+	const backIntervals = $derived.by((): Record<ReviewGrade, number> | null => {
+		if (viewing === null || viewing.review === null) return null;
+		const own = viewing.review.id;
+		return nextIntervals(
+			viewing.item.cardId,
+			[...reviews, ...sessionReviews.filter((review) => review.id !== own)],
+			new Date(viewing.finishedAt),
+			weights,
+			sessionClock
+		);
+	});
+
+	/** goBack shows the card graded before the one shown (Back, key Z). */
+	async function goBack(): Promise<void> {
+		if (grading) return;
+		const at = backFrom(steps.length, backAt);
+		if (at === null) return;
+		backAt = at;
+		await tick();
+		faceHeading?.focus();
+	}
+
+	/** leaveBack returns to the current card without a change (Return, Escape). */
+	async function leaveBack(): Promise<void> {
+		if (backAt === null) return;
+		backAt = null;
+		await tick();
+		faceHeading?.focus();
+	}
+
+	/**
+	 * regrade changes the grade of the step shown by Back: the same grade
+	 * changes nothing; a recorded step gets a replacing review (the outbox
+	 * keeps it on failure), a practice step only its queue effect; both
+	 * undo the old grade's re-show and apply the new one (regradeQueue).
+	 * Then the current card is shown again.
+	 */
+	async function regrade(value: ReviewGrade): Promise<void> {
+		const at = backAt;
+		const workspaceId = sessionWorkspaceId;
+		if (at === null || grading || workspaceId === null) return;
+		const step = steps[at];
+		if (step === undefined) return;
+		const action = regradeAction(step, value);
+		if (action === 'none') {
+			await leaveBack();
+			return;
+		}
+		const shownIntervals = backIntervals;
+		grading = true;
+		try {
+			let review = step.review;
+			if (action === 'replace' && review !== null) {
+				const next = await recordReplacement(review, value);
+				if (sessionWorkspaceId !== workspaceId) return;
+				// Not kept (its workspace was deleted): the notice said so.
+				if (next === null) return;
+				sessionReviews = replaceSessionReview(sessionReviews, review.id, next);
+				review = next;
+			}
+			queue = regradeQueue(queue, index, step, value);
+			steps = steps.map((other, i) => (i === at ? { ...other, grade: value, review } : other));
+			gradedMessage =
+				shownIntervals === null
+					? t('study.session.regrade.changedPractice', { grade: GRADE_NAMES[value] })
+					: t('study.session.regrade.changed', { grade: GRADE_NAMES[value], when: longInterval(shownIntervals[value]) });
+			backAt = null;
+			ensureEntry(queue[index]);
+			await tick();
+			faceHeading?.focus();
+		} finally {
+			grading = false;
+		}
+	}
+
 	/** deckLevelText: the card's first deck (General for general) and the level, "General · JLPT kanji N5". */
 	function deckLevelText(item: FlowItem): string | null {
 		const deckId = (item.card?.deckIds ?? item.deckIds ?? [])[0];
@@ -884,6 +993,15 @@ import type { Run } from '$lib/study/vacation';
 				suggestionFocusedAt = Date.now();
 			}
 		}
+	}
+
+	// The card face's onDone: the current card finishes; a card shown by Back is already done.
+	const onCardShown = (result: CardResult): Promise<void> => onCardDone(result);
+	const noop = (): void => {};
+
+	/** withBackKey adds "Z goes back" to the key line once something was graded. */
+	function withBackKey(keys: string): string {
+		return steps.length > 0 ? t('study.session.regrade.keysWithBack', { keys }) : keys;
 	}
 
 	function revealByKey(): void {
@@ -958,6 +1076,7 @@ import type { Run } from '$lib/study/vacation';
 			if (sessionWorkspaceId !== workspaceId) return;
 
 			const result = step.recorded;
+			let recorded: ReviewEvent | null = null;
 			if (result === null) {
 				// A re-show is practice: no review event, so FSRS, XP, streak and
 				// the log count the card once.
@@ -967,11 +1086,27 @@ import type { Run } from '$lib/study/vacation';
 				if (result.created && !cards.some((card) => card.id === result.card.id)) {
 					cards = [...cards, result.card];
 				}
+				// The recorded event itself, so Back can name it (#131). A review
+				// that was not kept (its workspace is gone) has no id to name: its
+				// step changes the session only, like practice.
+				recorded = result.review ?? null;
 				sessionReviews = [
 					...sessionReviews,
-					sessionReview(result.card, value, workspaceId, item.kind, meta)
+					recorded ?? sessionReview(result.card, value, workspaceId, item.kind, meta)
 				];
 			}
+			const gradedItem =
+				result === null ? item : { ...item, cardId: result.card.id, virtual: false, card: result.card };
+			steps = pushStep(steps, {
+				pos: index,
+				item: gradedItem,
+				grade: value,
+				suggested,
+				finishedAt: finishedAt ?? Date.now(),
+				review: recorded,
+				tier: current.tier,
+				shown: { ...current, item: gradedItem }
+			});
 			gradedMessage =
 				shownIntervals === null
 					? t('study.session.gradedPractice', { grade: GRADE_NAMES[value] })
@@ -1034,6 +1169,28 @@ import type { Run } from '$lib/study/vacation';
 	function onKeydown(event: KeyboardEvent): void {
 		if (event.defaultPrevented || event.repeat) return;
 		if (event.metaKey || event.ctrlKey || event.altKey) return;
+		// Back (#131): Z steps back, Escape returns; never into a field or a card's input.
+		if (!blocksGradeKeys(event.target)) {
+			if ((event.key === 'z' || event.key === 'Z') && steps.length > 0 && !grading) {
+				event.preventDefault();
+				void goBack();
+				return;
+			}
+			if (event.key === 'Escape' && viewing !== null) {
+				event.preventDefault();
+				void leaveBack();
+				return;
+			}
+		}
+		if (viewing !== null) {
+			if (blocksGradeKeys(event.target)) return;
+			const value = GRADE_KEYS[event.key];
+			if (value !== undefined) {
+				event.preventDefault();
+				void regrade(value);
+			}
+			return;
+		}
 		const current = resolved;
 		if (current === null || complete) return;
 
@@ -1083,7 +1240,7 @@ import type { Run } from '$lib/study/vacation';
 
 <svelte:window onkeydown={onKeydown} />
 
-<div class="page-body session" class:open={currentItem !== undefined && !complete}>
+<div class="page-body session" class:open={viewing !== null || (currentItem !== undefined && !complete)}>
 	{#if missingConfig || workspaceMismatch || loadError || noWorkspace || loading || queue.length === 0}
 		<!-- The face and the summary carry their own h1; every state between them keeps the page outline. -->
 		<h1 class="visually-hidden">{t('study.session.title')}</h1>
@@ -1115,7 +1272,7 @@ import type { Run } from '$lib/study/vacation';
 			<p class="hint">{t('study.session.emptyText')}</p>
 			<div class="actions"><Button href="/study">{t('study.session.back')}</Button></div>
 		</Section>
-	{:else if complete}
+	{:else if complete && viewing === null}
 		<h1 class="summary-title">{t('study.session.complete')}</h1>
 		<Section>
 			<div class="stats">
@@ -1156,10 +1313,15 @@ import type { Run } from '$lib/study/vacation';
 				{t('study.session.streakDays', { count: streak.current })}
 			</p>
 			<Mascot level={progress.level} streak={streak.current} todayDone={streak.todayDone} size={72} />
-			<div class="actions"><Button variant="primary" href="/study">{t('study.session.back')}</Button></div>
+			<div class="actions">
+				<Button variant="primary" href="/study">{t('study.session.back')}</Button>
+				{#if steps.length > 0}
+					<Button aria-keyshortcuts="z" onclick={() => void goBack()}>{t('study.session.regrade.summaryBack')}</Button>
+				{/if}
+			</div>
 		</Section>
-	{:else if currentItem !== undefined}
-		{@const item = resolved?.item ?? currentItem}
+	{:else if viewing !== null || currentItem !== undefined}
+		{@const item = shownCard?.item ?? viewing?.item ?? currentItem!}
 		{@const kindLabel = KIND_TASK_LABELS[item.kind]}
 		<StudyFace
 			{kindLabel}
@@ -1178,15 +1340,22 @@ import type { Run } from '$lib/study/vacation';
 						count: queueProgress.pending
 					})
 				: t('study.session.count', { position: queueProgress.position, total: queueProgress.total })}
-			done={done && resolved !== null}
-			keys={done && canSound(currentAudio)
-				? t('study.session.keysPlays', { keys: KEY_HINTS[item.kind] })
-				: KEY_HINTS[item.kind]}
+			done={shownDone && shownCard !== null}
+			keys={viewing !== null
+				? t('study.session.regrade.keys')
+				: withBackKey(
+						done && canSound(currentAudio)
+							? t('study.session.keysPlays', { keys: KEY_HINTS[item.kind] })
+							: KEY_HINTS[item.kind]
+					)}
 			bind:heading={faceHeading}
 		>
 			{#snippet chips()}
-				{#if item.kind === 'sentence' && resolved !== null}
-					<Chip>{TIER_LABELS[resolved.tier]}</Chip>
+				{#if viewing !== null}
+					<Chip>{t('study.session.regrade.chip', { grade: GRADE_NAMES[viewing.grade] })}</Chip>
+				{/if}
+				{#if item.kind === 'sentence' && shownCard !== null}
+					<Chip>{TIER_LABELS[shownCard.tier]}</Chip>
 				{/if}
 				{#if item.reshow !== undefined}
 					<Chip>{t('study.session.again', { n: item.reshow + 1, max: MAX_RESHOWS + 1 })}</Chip>
@@ -1196,8 +1365,8 @@ import type { Run } from '$lib/study/vacation';
 				{/if}
 			{/snippet}
 			{#snippet note()}
-				{#if resolved !== null}
-					<NoteAnswer text={done && !offlineSession ? sessionNotes.get(resolved.item.entryId) : undefined} />
+				{#if shownCard !== null}
+					<NoteAnswer text={shownDone && !offlineSession ? sessionNotes.get(shownCard.item.entryId) : undefined} />
 				{/if}
 			{/snippet}
 			{#snippet status()}
@@ -1215,13 +1384,39 @@ import type { Run } from '$lib/study/vacation';
 				{/if}
 			{/snippet}
 			{#snippet grades()}
-				<GradeBar
-					{intervals}
-					{suggested}
-					busy={grading}
-					ongrade={(grade, source) => void submitGrade(grade, source)}
-					bind:buttons={gradeButtons}
-				/>
+				{#if viewing !== null}
+					<GradeBar
+						intervals={backIntervals}
+						suggested={viewing.suggested}
+						chosen={viewing.grade}
+						busy={grading}
+						ongrade={(grade) => void regrade(grade)}
+					/>
+				{:else}
+					<GradeBar
+						{intervals}
+						{suggested}
+						busy={grading}
+						ongrade={(grade, source) => void submitGrade(grade, source)}
+						bind:buttons={gradeButtons}
+					/>
+				{/if}
+			{/snippet}
+			{#snippet aux()}
+				{#if steps.length > 0}
+					<Button
+						variant="plain"
+						aria-label={t('study.session.regrade.backLabel')}
+						aria-keyshortcuts="z"
+						disabled={grading || backAt === 0}
+						onclick={() => void goBack()}>{t('study.session.regrade.back')}</Button
+					>
+				{/if}
+				{#if viewing !== null}
+					<Button variant="plain" aria-keyshortcuts="Escape" onclick={() => void leaveBack()}
+						>{t('study.session.regrade.return')}</Button
+					>
+				{/if}
 			{/snippet}
 
 			{#if entryError}
@@ -1229,11 +1424,13 @@ import type { Run } from '$lib/study/vacation';
 					<p class="error" role="alert">{entryError}</p>
 					<Button onclick={retryEntry}>{t('study.session.retry')}</Button>
 				</div>
-			{:else if resolved === null}
+			{:else if shownCard === null}
 				<p class="hint loading-card" role="status">{t('study.session.loadingCard')}</p>
 			{:else}
-				{@const current = resolved}
-				{#key index}
+				{@const current = shownCard}
+				{@const done = shownDone}
+				{@const onCardDone = viewing === null ? onCardShown : noop}
+				{#key viewing === null ? index : `back:${backAt}`}
 					{#if current.item.kind === 'vocab'}
 						<VocabCard
 							item={current.item}

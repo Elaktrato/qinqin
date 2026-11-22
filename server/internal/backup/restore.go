@@ -5,6 +5,7 @@ import (
 	crand "crypto/rand"
 	"database/sql"
 	"encoding/hex"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -492,10 +493,11 @@ func applyRestore(ctx context.Context, tx *sql.Tx, d RestoreDeps, userID, keepSe
 	// by another user gets a new ULID of the same millisecond; ts is normalised
 	// to UTC whole seconds like a normal push.
 	batch := make([]Event, 0, eventChunk)
+	reidentified := map[string]string{}
 	flush := func() error {
 		for len(batch) > 0 {
 			n := min(eventStmtRows, len(batch))
-			if err := insertEvents(ctx, tx, userID, batch[:n], res); err != nil {
+			if err := insertEvents(ctx, tx, userID, batch[:n], res, reidentified); err != nil {
 				return err
 			}
 			batch = batch[n:]
@@ -525,6 +527,9 @@ func applyRestore(ctx context.Context, tx *sql.Tx, d RestoreDeps, userID, keepSe
 	if err := flush(); err != nil {
 		return nil, err
 	}
+	if err := relinkReplacements(ctx, tx, userID, reidentified); err != nil {
+		return nil, err
+	}
 	// 9. other devices must reload instead of pushing stale rows into the restored state
 	rv, err := tx.ExecContext(ctx, `DELETE FROM sessions WHERE user_id = ? AND id <> ?`, userID, keepSession)
 	if err != nil {
@@ -552,7 +557,7 @@ var (
 // insertEvents writes up to eventStmtRows events with one statement. Rows whose
 // id is taken are looked up: the user's own duplicate is skipped, another
 // user's id is re-identified.
-func insertEvents(ctx context.Context, tx *sql.Tx, userID int64, evs []Event, res *Result) error {
+func insertEvents(ctx context.Context, tx *sql.Tx, userID int64, evs []Event, res *Result, reidentified map[string]string) error {
 	if len(evs) == 0 {
 		return nil
 	}
@@ -599,6 +604,61 @@ func insertEvents(ctx context.Context, tx *sql.Tx, userID int64, evs []Event, re
 		}
 		res.Restored.Events++
 		res.ReidentifiedEvents++
+		reidentified[e.ID] = newID.String()
+	}
+	return nil
+}
+
+// relinkReplacements points every restored review whose "replaces" names a
+// re-identified event id at that event's new id (a changed grade, #131:
+// docs/contracts/events/review-replace.json), other members byte for byte.
+// Only the restoring user's rows are read and written.
+func relinkReplacements(ctx context.Context, tx *sql.Tx, userID int64, reidentified map[string]string) error {
+	if len(reidentified) == 0 {
+		return nil
+	}
+	old := make([]string, 0, len(reidentified))
+	for id := range reidentified {
+		old = append(old, id)
+	}
+	ids, _ := json.Marshal(old)
+	rs, err := tx.QueryContext(ctx, `SELECT id, payload FROM study_events WHERE user_id = ? AND type = 'review'
+		AND json_valid(payload) AND json_type(payload, '$.replaces') = 'text'
+		AND payload->>'replaces' IN (SELECT value FROM json_each(?))`, userID, string(ids))
+	if err != nil {
+		return fmt.Errorf("backup: replacement links: %w", err)
+	}
+	type row struct{ id, payload string }
+	var list []row
+	for rs.Next() {
+		var r row
+		if err := rs.Scan(&r.id, &r.payload); err != nil {
+			rs.Close()
+			return fmt.Errorf("backup: replacement links: %w", err)
+		}
+		list = append(list, r)
+	}
+	if err := closeRows(rs); err != nil {
+		return err
+	}
+	for _, r := range list {
+		v, ok := member(json.RawMessage(r.payload), "replaces")
+		if !ok {
+			continue
+		}
+		var target string
+		if json.Unmarshal(v, &target) != nil {
+			continue
+		}
+		to, ok := reidentified[target]
+		if !ok {
+			continue
+		}
+		b, _ := json.Marshal(to)
+		next := rewriteObject(json.RawMessage(r.payload), map[string]json.RawMessage{"replaces": b})
+		if _, err := tx.ExecContext(ctx, `UPDATE study_events SET payload = ? WHERE user_id = ? AND id = ?`, string(next), userID, r.id); err != nil {
+			return fmt.Errorf("backup: replacement link: %w", err)
+		}
 	}
 	return nil
 }

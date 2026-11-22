@@ -9,7 +9,8 @@ vi.mock('$lib/api/schemes', () => ({ getSchemes: vi.fn(), getSchemeEntries: vi.f
 vi.mock('$lib/api/audio', () => ({ resolveAudio: vi.fn(async () => ({})) }));
 vi.mock('$lib/study/events', () => ({
 	flushPendingReviews: vi.fn(async () => {}),
-	recordReview: vi.fn(async () => {})
+	recordReview: vi.fn(async () => null),
+	recordReplacement: vi.fn(async () => null)
 }));
 vi.mock('$lib/study/store', async (importOriginal) => ({
 	...(await importOriginal<typeof import('$lib/study/store')>()),
@@ -35,6 +36,10 @@ vi.mock('$lib/notes/store', () => ({
 }));
 vi.mock('$lib/features/flashcards/Mascot.svelte', () => ({ default: () => ({}) }));
 vi.mock('$lib/components/PlayButton.svelte', () => ({ default: () => ({}) }));
+vi.mock('$lib/study/sessionMix', async (importOriginal) => {
+	const real = await importOriginal<typeof import('$lib/study/sessionMix')>();
+	return { ...real, mixFlowQueue: vi.fn(real.mixFlowQueue) };
+});
 vi.mock('$lib/time/zone', () => ({
 	currentStudyDay: vi.fn(),
 	currentStudyHistory: vi.fn(() => []),
@@ -44,8 +49,9 @@ vi.mock('$lib/time/zone', () => ({
 import { getEntry } from '$lib/api/entries';
 import { loadNoteCfg, loadNotes } from '$lib/notes/store';
 import { getSchemeEntries, getSchemes } from '$lib/api/schemes';
-import { recordReview } from '$lib/study/events';
+import { recordReplacement, recordReview } from '$lib/study/events';
 import { SESSION_CONFIG_KEY } from '$lib/study/session';
+import { mixFlowQueue } from '$lib/study/sessionMix';
 import { addCard, loadStudyData } from '$lib/study/store';
 import { usableChars } from '$lib/study/writing';
 import { studyDay } from '$lib/time/studyDay';
@@ -430,6 +436,7 @@ describe('the open page (#101)', () => {
 			| undefined;
 		vi.mocked(recordReview).mockImplementationOnce(async (workspaceId, cardId, grade, mode) => {
 			recorded = { workspaceId, cardId, grade, mode, at: new Date() };
+			return null;
 		});
 		render(Page);
 		await screen.findByLabelText('Recognise card');
@@ -596,5 +603,304 @@ describe('the session loads once (#101, found in the real-app check)', () => {
 		expect(loadStudyData).toHaveBeenCalledTimes(1);
 		expect(screen.getByLabelText('Recognise card')).toBeTruthy();
 		resetOffline();
+	});
+});
+
+describe('order of card types (#132)', () => {
+	const at = (minutes: number) => new Date(Date.UTC(2026, 0, 1, 0, minutes)).toISOString();
+	const card = (kind: 'vocab' | 'writing', entryId: number, minutes: number): StudyCard => ({
+		id: `c-${kind}-${entryId}`,
+		kind,
+		entryId,
+		written: GLYPHS[entryId],
+		deckIds: ['general'],
+		createdAt: at(minutes)
+	});
+	// In the order added the two writing cards come first.
+	const cards = [card('writing', 11, 1), card('writing', 12, 2), card('vocab', 11, 3), card('vocab', 12, 4)];
+	const plan = cards.map((c) => ({ cardId: c.id, kind: c.kind, entryId: c.entryId, virtual: false, card: c }));
+
+	function start(extra: Record<string, unknown>): void {
+		sessionStorage.setItem(
+			SESSION_CONFIG_KEY,
+			JSON.stringify({
+				mode: 'decks',
+				schemeId: null,
+				levelName: null,
+				deckIds: ['general'],
+				newLimit: 20,
+				reviewLimit: 100,
+				cardTypes: ['vocab', 'writing'],
+				newOrder: { by: 'added' },
+				...extra
+			})
+		);
+		history(cards, []);
+	}
+
+	it('grouped by type shows the vocab cards first', async () => {
+		start({ typeOrder: 'grouped', seed: 1 });
+		render(Page);
+		expect(await screen.findByLabelText('Recognise card')).toBeTruthy();
+	});
+
+	it('mixed follows the session seed, Recognise first for a new word', async () => {
+		const { mixFlowQueue: real } = await vi.importActual<typeof import('$lib/study/sessionMix')>('$lib/study/sessionMix');
+		const first = (seed: number) => real(plan, [], { seed, order: 'mixed', vocabFirst: true })[0];
+		const seeds = Array.from({ length: 60 }, (_, i) => i + 1);
+		// A new word's writing card waits for its vocab card: the first card is always a vocab card.
+		expect(seeds.every((seed) => first(seed).kind === 'vocab')).toBe(true);
+		const sunSeed = seeds.find((seed) => first(seed).entryId === 11)!;
+		const moonSeed = seeds.find((seed) => first(seed).entryId === 12)!;
+		expect(sunSeed).toBeDefined();
+		expect(moonSeed).toBeDefined();
+
+		start({ seed: sunSeed });
+		render(Page);
+		expect(await screen.findByLabelText('Recognise card')).toBeTruthy();
+		expect(await screen.findByText('日')).toBeTruthy();
+		expect(vi.mocked(mixFlowQueue).mock.calls[0][2]).toEqual({ seed: sunSeed, order: 'mixed', vocabFirst: true });
+		cleanup();
+
+		start({ seed: moonSeed });
+		render(Page);
+		expect(await screen.findByLabelText('Recognise card')).toBeTruthy();
+		expect(await screen.findByText('月')).toBeTruthy();
+	});
+});
+
+describe('the mix on the page (#132 review)', () => {
+	const ids = (call: unknown[]) => (call[0] as { cardId: string }[]).map((item) => item.cardId);
+
+	it('a level session shows the mixed order', async () => {
+		configure(['vocab']);
+		// Reverse the queue: the page must show what the mix returns.
+		vi.mocked(mixFlowQueue).mockImplementationOnce((queue) => [...queue].reverse());
+		render(Page);
+		expect(await screen.findByLabelText('Recognise card')).toBeTruthy();
+		const call = vi.mocked(mixFlowQueue).mock.calls[0];
+		expect(ids(call)).toEqual(['level:11', 'level:12', 'level:13']);
+		await waitFor(() => expect(screen.getByText('火')).toBeTruthy());
+	});
+
+	it('the same setup gives the same seed and queue on a reload', async () => {
+		sessionStorage.setItem(
+			SESSION_CONFIG_KEY,
+			JSON.stringify({ mode: 'levels', schemeId: 3, levelName: 'N5', deckIds: ['general'], newLimit: 20, reviewLimit: 100, cardTypes: ['vocab'], seed: 4321 })
+		);
+		render(Page);
+		await screen.findByLabelText('Recognise card');
+		cleanup();
+		render(Page);
+		await screen.findByLabelText('Recognise card');
+		const calls = vi.mocked(mixFlowQueue).mock.calls;
+		expect(calls).toHaveLength(2);
+		expect(calls[0][2]).toEqual({ seed: 4321, order: 'mixed', vocabFirst: false });
+		expect(calls[1][2]).toEqual(calls[0][2]);
+		expect(vi.mocked(mixFlowQueue).mock.results.map((r) => (r.value as { cardId: string }[]).map((i) => i.cardId))).toEqual([
+			expect.any(Array),
+			(vi.mocked(mixFlowQueue).mock.results[0].value as { cardId: string }[]).map((i) => i.cardId)
+		]);
+	});
+
+	it('a setup without a seed keeps one seed across reloads', async () => {
+		configure(['vocab']);
+		render(Page);
+		await screen.findByLabelText('Recognise card');
+		cleanup();
+		render(Page);
+		await screen.findByLabelText('Recognise card');
+		const calls = vi.mocked(mixFlowQueue).mock.calls;
+		expect(calls).toHaveLength(2);
+		expect(Number.isInteger((calls[0][2] as { seed: number }).seed)).toBe(true);
+		expect(calls[1][2]).toEqual(calls[0][2]);
+	});
+});
+
+describe('Back: change a misclicked grade (#131)', () => {
+	function configureDecks(): void {
+		sessionStorage.setItem(
+			SESSION_CONFIG_KEY,
+			JSON.stringify({ mode: 'decks', schemeId: null, levelName: null, deckIds: ['general'], newLimit: 20, reviewLimit: 100, cardTypes: ['vocab'], newOrder: 'deck', typeOrder: 'grouped' })
+		);
+	}
+	const word = (id: number): StudyCard => ({ id: `v${id}`, kind: 'vocab', entryId: id, written: GLYPHS[id], deckIds: ['general'], createdAt: '2026-01-01T00:00:00.000Z' });
+	let seq = 0;
+	const recorded: ReviewEvent[] = [];
+
+	beforeEach(() => {
+		seq = 0;
+		recorded.length = 0;
+		vi.mocked(recordReview).mockImplementation(async (workspaceId, cardId, grade, mode = 'vocab', meta) => {
+			const event: ReviewEvent = {
+				id: `01KAPZ0000000000000000000${++seq}`,
+				workspaceId,
+				device: 'web',
+				ts: '2026-11-22T09:00:00.000Z',
+				type: 'review',
+				payload: { cardId, mode, grade, ...(meta ? { meta } : {}) }
+			};
+			recorded.push(event);
+			return event;
+		});
+		vi.mocked(recordReplacement).mockImplementation(async (target, grade) => ({
+			...target,
+			id: `01KAPZ000000000000000000R${++seq}`,
+			payload: { ...target.payload, grade, replaces: target.id }
+		}));
+	});
+
+	async function gradeShown(name: RegExp): Promise<void> {
+		await fireEvent.click(await screen.findByRole('button', { name: 'Show answer' }));
+		await fireEvent.click(screen.getByRole('button', { name }));
+	}
+
+	function gradeButton(name: string): HTMLElement {
+		return screen.getAllByRole('button').find((b) => b.querySelector('.name')?.textContent === name)!;
+	}
+
+	it('goes back to the card graded Again and changes it to Good: one replacement, no re-show', async () => {
+		configureDecks();
+		history([word(11), word(12), word(13)], []);
+		render(Page);
+		expect(await screen.findByText('日')).toBeTruthy();
+		await gradeShown(/^Again/);
+		expect(await screen.findByText('月')).toBeTruthy();
+		expect(screen.getByText('2 / 3, 1 to repeat')).toBeTruthy();
+
+		await fireEvent.click(screen.getByRole('button', { name: /^Back to the card graded before/ }));
+		expect(await screen.findByText('日')).toBeTruthy();
+		// The answer side as it was left, the previous grade marked.
+		expect(screen.getByLabelText('Readings')).toBeTruthy();
+		expect(screen.getByText('Graded Again')).toBeTruthy();
+		expect(gradeButton('Again').getAttribute('aria-pressed')).toBe('true');
+		expect(gradeButton('Good').getAttribute('aria-pressed')).toBe('false');
+
+		await fireEvent.click(gradeButton('Good'));
+		await waitFor(() => expect(recordReplacement).toHaveBeenCalledWith(recorded[0], 3));
+		expect(recordReview).toHaveBeenCalledTimes(1);
+		// Back on the current card; the Again's re-show is gone.
+		expect(await screen.findByText('月')).toBeTruthy();
+		expect(screen.getByText('2 / 3')).toBeTruthy();
+		expect(screen.queryByText('Graded Again')).toBeNull();
+	});
+
+	it('choosing the same grade records nothing', async () => {
+		configureDecks();
+		history([word(11), word(12)], []);
+		render(Page);
+		await gradeShown(/^Good/);
+		expect(await screen.findByText('月')).toBeTruthy();
+		await fireEvent.keyDown(window, { key: 'z' });
+		expect(await screen.findByText('Graded Good')).toBeTruthy();
+		await fireEvent.keyDown(window, { key: '3' });
+		await waitFor(() => expect(screen.queryByText('Graded Good')).toBeNull());
+		expect(recordReplacement).not.toHaveBeenCalled();
+		expect(screen.getByText('月')).toBeTruthy();
+	});
+
+	it('Z goes further back, Escape returns without a change', async () => {
+		configureDecks();
+		history([word(11), word(12), word(13)], []);
+		render(Page);
+		await gradeShown(/^Good/);
+		expect(await screen.findByText('月')).toBeTruthy();
+		await gradeShown(/^Hard/);
+		expect(await screen.findByText('火')).toBeTruthy();
+		await fireEvent.keyDown(window, { key: 'z' });
+		expect(await screen.findByText('Graded Hard')).toBeTruthy();
+		await fireEvent.keyDown(window, { key: 'Z' });
+		expect(await screen.findByText('Graded Good')).toBeTruthy();
+		expect(screen.getByText('日')).toBeTruthy();
+		await fireEvent.keyDown(window, { key: 'Escape' });
+		expect(await screen.findByText('火')).toBeTruthy();
+		expect(screen.queryByText(/^Graded/)).toBeNull();
+		expect(recordReplacement).not.toHaveBeenCalled();
+	});
+
+	it('from the summary: the last card changed to Again comes back as a re-show', async () => {
+		configureDecks();
+		history([word(11)], []);
+		render(Page);
+		await gradeShown(/^Good/);
+		expect(await screen.findByText('Session complete')).toBeTruthy();
+		await fireEvent.click(screen.getByRole('button', { name: 'Change the last grade' }));
+		expect(await screen.findByText('Graded Good')).toBeTruthy();
+		await fireEvent.click(gradeButton('Again'));
+		await waitFor(() => expect(recordReplacement).toHaveBeenCalledWith(recorded[0], 1));
+		expect(await screen.findByText('Again, look 2 of 4')).toBeTruthy();
+		expect(screen.queryByText('Session complete')).toBeNull();
+	});
+
+	it('Z typed into a field or a card input never goes back (review fix 3)', async () => {
+		configureDecks();
+		history([word(11), word(12)], []);
+		render(Page);
+		await gradeShown(/^Good/);
+		expect(await screen.findByText('月')).toBeTruthy();
+		const field = document.createElement('input');
+		const pad = document.createElement('div');
+		pad.setAttribute('data-card-input', '');
+		pad.tabIndex = 0;
+		document.body.append(field, pad);
+		try {
+			for (const target of [field, pad]) {
+				target.focus();
+				await fireEvent.keyDown(target, { key: 'z' });
+				await new Promise((r) => setTimeout(r, 0));
+				expect(screen.queryByText(/^Graded/)).toBeNull();
+			}
+			// The same key outside them does go back.
+			field.blur();
+			await fireEvent.keyDown(window, { key: 'z' });
+			expect(await screen.findByText('Graded Good')).toBeTruthy();
+		} finally {
+			field.remove();
+			pad.remove();
+		}
+	});
+
+	it('the summary counts the changed grade: XP and reviews (review fix 4)', async () => {
+		configureDecks();
+		history([word(11), word(12)], []);
+		render(Page);
+		await gradeShown(/^Good/);
+		expect(await screen.findByText('月')).toBeTruthy();
+		await gradeShown(/^Good/);
+		expect(await screen.findByText('Session complete')).toBeTruthy();
+		// Two Good vocab reviews: 2 x (10 + 5) + the daily bonus 10.
+		expect(screen.getByText('+40')).toBeTruthy();
+		await fireEvent.click(screen.getByRole('button', { name: 'Change the last grade' }));
+		await fireEvent.click(gradeButton('Easy'));
+		await waitFor(() => expect(recordReplacement).toHaveBeenCalledWith(recorded[1], 4));
+		expect(await screen.findByText('Session complete')).toBeTruthy();
+		// Easy replaces Good: + 5 more, still two reviews.
+		expect(screen.getByText('+45')).toBeTruthy();
+		expect(screen.getByText('+35')).toBeTruthy();
+		expect(screen.getByText('2')).toBeTruthy();
+	});
+
+	it('a grade whose review was not kept is changed in the session only (review fix 8)', async () => {
+		vi.mocked(recordReview).mockResolvedValueOnce(null);
+		configureDecks();
+		history([word(11), word(12), word(13)], []);
+		render(Page);
+		await gradeShown(/^Again/);
+		expect(await screen.findByText('2 / 3, 1 to repeat')).toBeTruthy();
+		await fireEvent.keyDown(window, { key: 'z' });
+		expect(await screen.findByText('Graded Again')).toBeTruthy();
+		await fireEvent.click(gradeButton('Good'));
+		expect(await screen.findByText('2 / 3')).toBeTruthy();
+		expect(recordReplacement).not.toHaveBeenCalled();
+	});
+
+	it('no Back before the first grade', async () => {
+		configureDecks();
+		history([word(11)], []);
+		render(Page);
+		expect(await screen.findByText('日')).toBeTruthy();
+		expect(screen.queryByRole('button', { name: /^Back to the card graded before/ })).toBeNull();
+		await fireEvent.keyDown(window, { key: 'z' });
+		expect(screen.queryByText(/^Graded/)).toBeNull();
 	});
 });

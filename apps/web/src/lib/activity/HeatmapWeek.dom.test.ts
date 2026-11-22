@@ -11,11 +11,12 @@ vi.mock('$lib/activity/viewPrefs', async (importOriginal) => ({
 	saveActivityView: vi.fn(() => Promise.resolve())
 }));
 
+import { HEATMAP_DAYS } from '$lib/activity/activity';
 import { fetchActivity, type ActivityResponse } from '$lib/api/stats';
 import ActivityHeatmap from '$lib/components/ActivityHeatmap.svelte';
 import { loadStudyHistory } from '$lib/study/history';
 import { getStudyData } from '$lib/study/studyData';
-import { studyDay } from '$lib/time/studyDay';
+import { addDays, studyDay } from '$lib/time/studyDay';
 import { currentStudyDay, onStudyDayChange } from '$lib/time/zone';
 import { workspaces } from '$lib/workspaces';
 
@@ -65,13 +66,16 @@ const CELLS = [
 ];
 
 describe('HeatmapWeek', () => {
-	it('shows seven large tiles Monday..Sunday with weekday names, from the 13-week response', async () => {
+	it('shows seven large tiles Monday..Sunday with weekday names, from the 52-week response', async () => {
 		render(ActivityHeatmap, { layout: 'week' });
 		await waitFor(() => expect(document.querySelectorAll('.week-days .tile')).toHaveLength(7));
 		const names = [...document.querySelectorAll('.week-days .wd')].map((e) => e.textContent);
 		expect(names).toEqual(['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']);
 		expect(vi.mocked(fetchActivity)).toHaveBeenCalledTimes(1);
-		expect(vi.mocked(fetchActivity).mock.calls[0]).toEqual(['2026-08-20', '2026-11-18']);
+		expect(vi.mocked(fetchActivity).mock.calls[0]).toEqual([
+			addDays('2026-11-18', -(HEATMAP_DAYS - 1)),
+			'2026-11-18'
+		]);
 	});
 
 	it('shows "21/50" under each past or today tile with a goal, else the points', async () => {

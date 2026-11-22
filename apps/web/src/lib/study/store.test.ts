@@ -414,7 +414,7 @@ describe("study store", () => {
       expect("written" in data.cards[2]!).toBe(false);
       expect(calls().map(([url]) => String(url))).toEqual([
         `/api/sync/pull?collections=pluginStates%2CpluginData%2Ccards%2Cdecks%2CdeckSettings%2Climits%2CfsrsSets%2CfsrsActive&tombstones=1&v=2&workspace=${WORKSPACE_ID}`,
-        `/api/events?since=1970-01-01T00:00:00Z&workspace=${WORKSPACE_ID}`,
+        `/api/events?limit=2000&since=1970-01-01T00%3A00%3A00Z&workspace=${WORKSPACE_ID}`,
       ]);
     });
 
@@ -509,8 +509,29 @@ describe("study store", () => {
       expect(data.cards.map((c) => c.id)).toEqual(["card-1"]);
       expect(data.reviews.map((r) => r.id)).toEqual(["r1"]);
       expect(calls().map(([url]) => String(url))).toContain(
-        "/api/events?since=1970-01-01T00:00:00Z&workspace=9",
+        "/api/events?limit=2000&since=1970-01-01T00%3A00%3A00Z&workspace=9",
       );
+    });
+
+    it("reads every page of the event log (#110)", async () => {
+      const ev = (id: string) => ({
+        ...reviewEvent(id, "card-1", 9),
+        userId: 1,
+        ts: "2026-02-01T00:00:00Z",
+      });
+      vi.mocked(fetch).mockImplementation(async (input) => {
+        const url = String(input);
+        if (url === "/api/events?limit=2000&since=1970-01-01T00%3A00%3A00Z&workspace=9")
+          return jsonResponse({ events: [ev("r1")], more: true, next: "e1.k" });
+        if (url === "/api/events?page=e1.k&workspace=9")
+          return jsonResponse({ events: [ev("r2")], more: false, next: null });
+        if (url.startsWith("/api/events")) return jsonResponse({ error: "unexpected" }, 500);
+        return rawResponse(pagedPull({ pluginData: [] }));
+      });
+
+      const data = await loadStudyData(9);
+
+      expect(data.reviews.map((r) => r.id)).toEqual(["r1", "r2"]);
     });
 
     it("keeps only well-formed reviews of the workspace", async () => {
@@ -1029,8 +1050,9 @@ describe("study store", () => {
     // addCard reads the workspace's cards before writing so a repeat
     // add returns the existing card; the pull must be answered too.
     function respondWith(rows: unknown[]): void {
-      vi.mocked(fetch).mockImplementation(async (_input, init) => {
+      vi.mocked(fetch).mockImplementation(async (input, init) => {
         if (init?.method === "PUT") return jsonResponse({ version: 1 });
+        if (String(input).startsWith("/api/events")) return jsonResponse([]);
         return jsonResponse({ pluginData: rows });
       });
     }
@@ -1553,8 +1575,8 @@ describe("study store", () => {
     });
 
     it("a tombstoned card no longer loads", async () => {
-      vi.mocked(fetch).mockImplementation(async () =>
-        jsonResponse({
+      vi.mocked(fetch).mockImplementation(async (input) =>
+        String(input).startsWith("/api/events") ? jsonResponse([]) : jsonResponse({
           pluginData: [
             pluginRow("card:c-vocab-42", vocab, {
               deletedAt: "2026-02-01T00:00:00Z",
@@ -2336,6 +2358,31 @@ describe("queued reviews count in the loaded history", () => {
     const data = await loadStudyData();
 
     expect(data.reviews.map((r) => r.id)).toEqual(["S1"]);
+  });
+
+  // #131: a changed grade replaces the misclick everywhere the history is read.
+  function replacing(id: string, target: string): StudyEvent {
+    const base = reviewEvent(id, "card-1");
+    return { ...base, payload: { ...(base.payload as object), grade: 3, replaces: target } };
+  }
+
+  it("a replaced review is dropped from the history (#131)", async () => {
+    const misclick = { ...reviewEvent("R1", "card-1"), payload: { cardId: "card-1", mode: "vocab", grade: 1 } };
+    respondPull(pull, [misclick, replacing("R2", "R1")]);
+
+    const data = await loadStudyData();
+
+    expect(data.reviews.map((r) => r.id)).toEqual(["R2"]);
+    expect(data.reviews[0].payload.replaces).toBe("R1");
+  });
+
+  it("a queued replacement replaces a stored review (#131)", async () => {
+    respondPull(pull, [reviewEvent("R1", "card-1")]);
+    queue(1, replacing("R2", "R1"));
+
+    const data = await loadStudyData();
+
+    expect(data.reviews.map((r) => r.id)).toEqual(["R2"]);
   });
 
   it("nothing is merged while no user is known", async () => {

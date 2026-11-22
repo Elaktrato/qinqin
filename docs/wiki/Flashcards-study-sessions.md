@@ -1,35 +1,64 @@
 # Flashcards: study sessions
 
-Flashcards are part of the app (you can switch them off for yourself in [Settings → Features](Settings-tour#features)). To add a word open any word or character entry and press **Add to study**; the card joins the General deck.
+Flashcards are part of the app (you can switch them off for yourself in [Settings → Features](Settings-tour#features)). To add a word, open any word or character entry and press **Add to deck**; the card joins the General deck and keeps the entry's first example sentence for context (**Choose a deck** picks another deck). Words also come in from the Reader popup, the Reader's Words tab, the lookup history, and the starter and level decks on the [Decks page](Flashcards-decks-limits-vacation).
 
 ## Starting a session
 
-`/study` is the session setup. It opens with **This session** and **Limits** at the top: the counts, the limits for new cards and reviews, the order of new cards, **Start studying** and **Study all**. **Study all** ignores the limits and each deck's daily limit for that one session, so every due review and new card is included. Then choose the decks or level, and the card types. At least one type must be selected. A session only queues the types you selected (a Tone-only session never shows a vocab card). Your last choice is preselected in new tabs of the same workspace, and the home widget counts the same types.
+A session starts from **Study** on a deck of the Decks page, from the flashcards widget on the home page, or from the study setup (`/study`).
 
-You can also draw from a level instead of a deck: choose **By level**, pick an installed scheme (HSK, JLPT, a curriculum pack) and one of its levels. A word that already has a card reuses it; the rest get a card in the General deck when you first grade them, so abandoning a level session creates nothing.
+The setup opens with **This session** and **Limits** at the top: what the session will hold ("Today: 18 reviews and 5 new"), the limits for new cards and reviews (a session stops after these counts, reviews first), the **Order of new cards**, the **Order of card types**, **Start studying** and **Study all**. **Study all** ignores the limits and each deck's daily limit for that one session, so every due review and new card is included. The line **Scheduling: …** opens the [scheduling page](Scheduling-and-FSRS).
 
-**Order of new cards** (under Limits) decides which new cards come first; reviews always come first and in due order, and the daily limits are unchanged. The default is **Random**: the new cards (and, in a level session, the words or characters of the level) are shuffled, so you do not meet them in dictionary or list order. The shuffle is fixed when you press Start: reloading the same session shows the same order. Levels themselves stay in sequence, since a level session studies one level. Other choices: in a deck session "As each deck is set" (each deck's own setting, deck Settings, New cards), "In the order added", "Most frequent first (<list name>)" or "By level: <scheme>"; in a level session **Level order** or, for a word scheme, **Most frequent first** (word frequency does not rank kanji). When the selected decks use different orders and you chose "As each deck is set", the session uses the order added and says so. The frequency choice appears only when a frequency list of the workspace language is installed. The ranks need the server: offline, or when the request fails, the session keeps the order added and shows "Frequency order needs a connection; using the order added". A deck's own setting is unchanged: its default is still the order added.
+Below that:
+
+- **Session source**: **My decks** (choose the decks to draw from) or **By level** (see below).
+- **Card types**: pick at least one. A session queues only the types you selected, so a Tone-only session never shows a vocab card, and a type with nothing to study says so ("Tone: nothing to study in the selected decks right now"). Your last choice is preselected in new tabs of the same workspace, and the home widget counts the same types.
+- **Advanced settings → Per-deck card types**: the Reverse and Cloze switches of a single deck.
+- **Decks**: **Create deck**, **Rename** and delete your decks (a deleted deck's cards stay in your other decks, or move to General).
+- **Manage cards**: every card of the workspace, filtered by deck, to **Move** or **Delete** several at once. Deleting a word removes it from every deck with its sentence, writing and tone cards; moving puts it and those cards in the chosen deck only. A ten-second **Undo** follows both.
+
+### Order of new cards
+
+The order decides which new cards come first; reviews always come first and in due order (kept roughly when they mix card types, see below), and the daily limits are unchanged. The default is **Random**: the new cards (and, in a level session, the words or characters of the level) are shuffled, so you do not meet them in dictionary or list order. The shuffle is fixed when you press Start: reloading the same session shows the same order. Levels themselves stay in sequence, since a level session studies one level. Other choices: in a deck session "As each deck is set" (each deck's own setting, deck Settings, New cards), "In the order added", "Most frequent first (<list name>)" or "By level: <scheme>"; in a level session **Level order** or, for a word scheme, **Most frequent first** (word frequency does not rank kanji). When the selected decks use different orders and you chose "As each deck is set", the session uses the order added and says so. The frequency choice appears only when a frequency list of the workspace language is installed. The ranks need the server: offline, or when the request fails, the session keeps the order added and shows "Frequency order needs a connection; using the order added". A deck's own setting is unchanged: its default is still the order added.
+
+### Order of card types
+
+A session mixes its card types: instead of all the Vocab cards and then a block of Writing, Tone or Cloze cards, you meet the types interleaved (on the card they are named by what you do, Recognise for Vocab, Write for Writing and so on; see [The session screen](#the-session-screen)). Two cards of the same word are kept apart, so a word's Vocab card straight before its Writing card does not give the answer away: never back to back when the session allows it, and a few cards apart in longer sessions (at least one other card between them when the reviews, or the new cards, of a session number fewer than 8, two below 16, three from 16). A session that cannot keep them apart (say only one word's four types) still starts, as close to that as it can. In a deck session a new word always starts with its Vocab card; its other types follow later in the session. Reviews still come first and in due order (a card moves only a few places, so the most overdue ones stay at the front whatever their type), and an order you chose for new cards (**Most frequent first**, **Level order**) still holds roughly. A session of a single card type keeps its order exactly. The mix is fixed when the session starts, from the study setup or a deck's or level's **Study** button, so reloading the same session keeps it; the next session is mixed differently. Limits, burying and the re-show of Again cards are unchanged.
+
+Choose **Grouped by type** to drill one type at a time: reviews first, then the new cards, each grouped in the order Vocab, Word Salad, Writing, Tone, Reverse, Cloze (a card may move one place so a word is not back to back where one group ends and the next begins). Like the order of new cards, the choice belongs to the setup of this tab. The rule is specified in `docs/contracts/cards/` (Session mix).
+
+### Level sessions
+
+Choose **By level**, pick an installed scheme (HSK, JLPT, Jōyō grades, a curriculum pack) and one of its levels; each level shows how far you are ("HSK 2 — 3 of 80 learned", by the same rule as Stats → Characters). A word that already has a card reuses it; the rest get a card in the General deck when you first grade them, so abandoning a level session creates nothing.
+
+- **Word levels** study vocab cards only; the other card types apply to deck sessions.
+- **Character levels** (JLPT kanji, Jōyō grades, 通用规范汉字表) have two cards per character: **Vocab** (recognition: the glyph alone, then its readings and meanings) and **Writing** (the readings and meanings, then write the glyph). A character's writing card joins a session only from the learner day after its recognition card was first reviewed; a writing-only session has no such wait. Characters without stroke data or meanings get no writing card. The new-card limit counts cards, not characters.
 
 ## Card types
 
 | Type | What you do | Needs |
 |---|---|---|
 | Vocab | See the word; press **Show answer** for its reading (with play), meanings and the example sentence with the word blanked | any word |
-| Word Salad | Rebuild the example sentence from shuffled tiles, then **Check** (or **Show answer**) | an example sentence |
-| Writing | Draw each Han character stroke by stroke (order and direction are checked); **Show strokes** reveals the current character | Han characters with stroke data from the installed strokes pack |
+| Word Salad | Rebuild the example sentence from shuffled tiles: tap a tile to place it, tap a placed tile to remove it, **Undo**, then **Check** (or **Show answer**) | an example sentence |
+| Writing | Draw each Han character stroke by stroke (order and direction are checked); **Show strokes** reveals the current character; kana stay visible | Han characters with stroke data from the installed strokes pack |
 | Tone | Swipe the tone's shape on each syllable pad, use the tone buttons, or press 1 to 5 | a Chinese word with pinyin (Chinese workspaces only) |
 | Reverse | See the meaning, recall the word; optional **Show reading** hint and typing, then **Show answer** | a word (not a character) with a meaning |
-| Cloze | Fill the gap in an example sentence of the word (choose at first, type once learned) | a word with an example sentence that contains it |
+| Cloze | Fill the gap in an example sentence of the word (choose at first, type once learned); the translation is shown, the reading after the answer | a word with an example sentence that contains it |
 
-Sentence, writing and tone cards are **companions** of vocab cards: a companion is created only when you grade it for the first time, so abandoning a session creates nothing. A word that does not qualify (no sentence, no drawable character, no pinyin) is skipped silently.
+- **Word Salad** gets harder as a card settles: new or short-memory cards (stability under 4 days) show word tiles with the translation; middle cards (under 21 days) hide the translation behind **Show translation**, which counts as a hint; long-memory cards (21 days or more) split every word into single characters. The tier is named on the card. If the sentence cannot be cut into words, each character becomes a tile.
+- **Writing** shows the character's outline as a hint after 3 misses on one stroke; each new character starts again without it.
+- **Tone** swipes: up = 1; up-right or right = 2; down then back up = 3; down-right, down, down-left or left = 4; a tap = neutral (5). A character with several readings accepts any of them (行 can be háng or xíng).
+
+### Companion cards
+
+Sentence (Word Salad), writing and tone cards are **companions** of the vocab cards in the chosen decks. They share the new-card limit and each one is created only when you grade it for the first time, so abandoning a session creates nothing. A word that does not qualify (no sentence, no drawable character, no pinyin) is skipped silently and the next planned companion takes its place (at most `max(30, 2 × new-card limit)` times per session); the tab remembers such words and skips them in later sessions. A word gets at most one sentence card, built from its first example sentence (if that sentence later disappears, its first sentence is used instead). Companions are planned in deck sessions only.
 
 ### Reverse and cloze cards
 
-They appear once in the setup's **Card types** list. Checking one enables it on every deck at once; **Advanced settings → Per-deck card types** has the switches for a single deck. A deck with neither enabled behaves as before. After you answer a reverse or cloze card of a word, its other cards are buried until your next learner day (they stay due but are left out of the queue and counts); vocab, sentence, writing and tone cards do not bury each other. Reverse and cloze reviews give XP and count for streaks and the heatmap but not for character mastery.
+They appear once in the setup's **Card types** list. Checking one enables it on every deck at once; **Advanced settings → Per-deck card types** has the switches for a single deck. A deck with neither enabled behaves as before. They are created the first time you grade them, at most one reverse or cloze card per word and session (reverse first). After you answer a reverse or cloze card of a word, the word's other cards are buried until your next learner day, and the other way round ("2 related cards are buried until tomorrow"): they stay due but are left out of the queue and counts. Vocab, sentence, writing and tone cards do not bury each other. Reverse and cloze reviews give XP and count for streaks and the heatmap but not for character mastery.
 
 ## The session screen
 
-A session is an open page, not a card in a box. At the top: a close button (back to `/study`), a thin progress line and the count. Every card type then has the same four parts in the same places: the **task name** in the accent colour (with the deck and level on the right, and small labels such as the Word Salad tier, "Again, look 2 of 3" on a re-show, or "new"), the **prompt**, the **answer area** (nothing, an underlined field, choices, word tiles, the writing pad or the tone pads) and, below a thin line, the **answer** (reading and play button, meanings and source, your note). The card types are not colour-coded.
+A session is an open page, not a card in a box. At the top: a close button (back to the study setup), a thin progress line and the count ("4 / 20", with "3 to repeat" when cards come back). Every card type then has the same four parts in the same places: the **task name** in the accent colour (with the deck and level on the right, and small labels such as the Word Salad tier, "Again, look 2 of 3" on a re-show, or "new"), the **prompt**, the **answer area** (nothing, an underlined field, choices, word tiles, the writing pad or the tone pads) and, below a thin line, the **answer** (reading and play button, meanings and source, your note). The card types are not colour-coded.
 
 The session names each exercise by what you do; settings, decks and the XP breakdown keep the card type names:
 
@@ -42,11 +71,23 @@ The session names each exercise by what you do; settings, decks and the XP break
 | Write | Writing |
 | Tones | Tone |
 
-The actions sit at the bottom of the screen. Before the answer there is one button: **Show answer** (Recognise; Recall while the field is empty; Fill the gap when choosing, where picking a choice is the answer), **Check** (Recall once something is typed, Fill the gap when typing, Build the sentence, Tones) or **Show strokes** (Write; only once the character's stroke data has loaded). After the answer the four grade buttons take its place.
+The actions sit at the bottom of the screen. Before the answer there is one button: **Show answer** (Recognise; Recall while the field is empty; Fill the gap when choosing, where picking a choice is the answer), **Check** (Recall once something is typed, Fill the gap when typing, Build the sentence, Tones) or **Show strokes** (Write; only once the character's stroke data has loaded). After the answer the four grade buttons take its place. **End session** stops early; what you graded is kept.
+
+### Keys
+
+| Card | Keys |
+|---|---|
+| Recognise | Space or Enter shows the answer, then 1 to 4 grade; P plays the word after the answer |
+| Recall | type the word and press Enter to check; Space or Enter outside the field shows the answer; 1 to 4 grade |
+| Fill the gap | 1 to 4 pick a choice, or type the word and press Enter; then 1 to 4 grade |
+| Build the sentence | tap the tiles in order (or Tab and Enter), then **Check**; 1 to 4 grade once checked |
+| Write | draw with mouse, pen or touch; 1 to 4 grade once every character is done |
+| Tones | 1 to 5 set the highlighted syllable's tone (5 is neutral), ← and → move, Backspace clears, Enter checks; then 1 to 4 grade |
+| Every card, once one was graded | Z goes back to the card graded before (see [Changing a grade](#changing-a-grade)); there 1 to 4 change its grade and Esc returns |
 
 ## Your notes on the answer side
 
-When a card's answer is shown, your note on the word (see [Searching and entries](Searching-and-entries)) appears below the card, for every card type, level sessions included. It never shows before the answer, since a mnemonic often gives it away. Notes are loaded once when a session starts, so a note edited meanwhile in another tab appears in the next session; an offline session shows none, and a session never waits for them. Turn them off per workspace in Settings, Study: **Show my notes on the answer side**.
+When a card's answer is shown, your note on the word (see [Searching and entries](Searching-and-entries#your-note)) appears below the card, for every card type, level sessions included. It never shows before the answer, since a mnemonic often gives it away. Notes are loaded once when a session starts, so a note edited meanwhile in another tab appears in the next session; an offline session shows none, and a session never waits for them. Turn them off per workspace in Settings → Study: **Show my notes on the answer side**.
 
 ## Grading
 
@@ -60,15 +101,35 @@ After a check the exercise suggests a grade: the suggested button gets a faint w
 | Writing | no mistakes | mistakes on at most 25 % of the strokes | more mistakes, or a revealed character |
 | Tone | all tones right | one tone wrong | two or more wrong |
 
-Keys (unchanged): Space or Enter shows a Recognise answer (and a Recall answer outside the field); P plays the word after the answer; in Tone 1 to 5 set the highlighted syllable's tone (5 is neutral), arrow keys move, Backspace clears, Enter checks.
+## Changing a grade
 
-Word Salad gets harder as a card settles: new or short-memory cards show word tiles with the translation, middle cards hide the translation behind a reveal (counts as a hint), and long-memory cards (stability of 21 days or more) split words into single characters.
+Clicked **Again** when you meant **Good**? Press **Back** (next to the grade buttons, or the key Z) and the card you graded last comes back with its answer showing, your grade marked ("your grade") and the suggested grade as before; the exercise itself is not repeated. Press Back again to go further: up to the last 20 cards of this session. Choose another grade and it replaces the old one, then you are back on the card you were on; choosing the same grade, or **Return to the current card** (Esc), changes nothing. The card you were on starts again when you come back: an answer you had already revealed stays revealed, but a half-typed answer, half-placed tiles or tones, or a half-drawn character are cleared. On the summary screen **Change the last grade** does the same for the last card.
+
+A changed grade undoes what the old one did in the session: an Again card's re-show is taken out again (unless you already saw it), and changing to Again queues one, a few cards later. The schedule, XP, streak, the daily counts, the heatmap, goals, milestones, Stats and the optimizer's training data all count the card once, with the new grade, and on the same day as before. Burying and the daily limits do not depend on the grade, so they stay as they were.
+
+Back belongs to the open session: after a reload, a workspace switch or a new session the earlier grades stay as they are. It works offline too; the change is sent with the other queued reviews. Nothing is ever edited or deleted: the new grade is a new review that names the one it replaces, so another device (or an older copy of the app that does not know about it yet) sees both until it catches up.
+
+## The end of a session
+
+**Session complete** shows the reviews you made (and re-shows, which are practice and not counted), the XP this session by card type and the daily bonus, the progress to your next level and your streak.
 
 ## Scheduling, XP and streaks
 
-Each grade is written to your study-event log; the next due date is derived from the card's whole review history with FSRS (see [Scheduling and the FSRS optimizer](Scheduling-and-FSRS)). Nothing schedule-shaped is stored, so two devices merge cleanly.
+Each grade is written to your study history; the next due date is derived from the card's whole review history with FSRS (see [Scheduling and the FSRS optimizer](Scheduling-and-FSRS)). Nothing schedule-shaped is stored, so two devices merge cleanly.
 
-XP, level and streak are derived from the log per workspace: base XP per review (Vocab 10, Word Salad 15, Writing 20, Tone 8) plus a grade bonus (Good +5, Easy +10) and a daily bonus of +10 for each day with a review. Level L to L+1 costs 100 x L XP. A study-buddy mascot appears in the widget and summary; its art is a placeholder.
+XP, level and streak are derived from the history per workspace:
+
+- base XP per review: Vocab 10, Word Salad 15, Writing 20, Tone 8 (Reverse and Cloze count too);
+- a grade bonus: Good +5, Easy +10, Again and Hard nothing;
+- a daily bonus of +10 for each learner day with at least one review.
+
+Level L to L+1 costs 100 × L XP, so level 2 starts at 100 XP, level 3 at 300 and level 4 at 600. The streak counts the learner days in a row with a review (vacation days neither extend nor break it). All days are your days in your time zone ([Settings tour](Settings-tour#study)).
+
+A study-buddy mascot appears in the flashcards widget and the session summary: it grows at levels 5, 10 and 20, and its mood (sleepy, happy, cheering, proud) follows your streak. Its drawings are placeholders for now.
+
+## For client implementers
+
+Card kinds, review parsing, XP and levels, burying and the session plan are specified in `docs/contracts/cards/`, `docs/contracts/study/` and `docs/contracts/scheduler/`. A changed grade is a `review` with `replaces: <id>`; which reviews then count (one per family, the greatest id) is `docs/contracts/events/review-replace.json`. A new card has a deterministic id, `c-<kind>-<entryId>` (for example `c-vocab-42`), so two devices that add the same word offline write the same row. Older cards with random ids can exist twice; every page reads cards through one loader that merges such duplicates at read time (the earliest card survives, the others' reviews and decks join it), without rewriting anything stored.
 
 ## Related
 

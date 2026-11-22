@@ -6,9 +6,10 @@ these rows on the client or the server. This folder pins how a client writes an 
 with it, and what each type's payload means. Design: `docs/superpowers/specs/2026-11-17-v040p-contract-gaps-design.md`
 (Q1–Q4, Q9; issue #109).
 
-Owner code: `server/internal/api/handlers_events.go`, `server/internal/events/events.go`,
+Owner code: `server/internal/api/handlers_events.go`, `server/internal/events/events.go` (`page.go`,
+`page_list.go`: paging),
 `server/internal/sync/sync.go` (push), `server/internal/sync/page_collections.go` (pull v2). Web:
-`apps/web/src/lib/events.ts`, `apps/web/src/lib/study/scheduler.ts` (`sortedReviews`).
+`apps/web/src/lib/events.ts`, `apps/web/src/lib/eventPages.ts`, `apps/web/src/lib/study/scheduler.ts` (`sortedReviews`).
 
 Fixtures:
 
@@ -26,6 +27,15 @@ Fixtures:
   `parseReview` reads, or `null`), `valid` (`isValidReview`: counted by replay and XP) and the replay `order`.
   Decoded by `apps/web/src/lib/study/reviewParse.test.ts`, `study/scheduler.test.ts` (`isValidReview`,
   `sortedReviews`) and `study/exp.test.ts` (XP counts exactly the valid ones).
+- `review-replace.json` — replaced reviews (#131): which reviews of a set count when some name the review they
+  replace (`live`, in replay order) and which are replaced; hand-written `cases` plus a `generated` block of 300
+  seeded random families (`scripts/contracts/gen-review-replace.mjs`, seed 131, expected ids from an oracle written
+  from the rule text; regenerate, never edit it by hand; `--check` exits 1 when it is stale). Decoded by `apps/web/src/lib/study/replaced.test.ts`
+  (`liveReviews`) and `server/internal/events/replaced_contract_test.go` (`events.Replaced`).
+- `page.json` — the paged `GET /api/events`: valid and invalid pages (shape, order, `next` rule) and request
+  cases (query → status, JSON code or plain-text body). Decoded by
+  `server/internal/api/contract_events_page_test.go` (every request against the server, every page through
+  the shape check) and `apps/web/src/lib/eventPages.test.ts` (the web's strict decoder).
 - `activity.json` — heatmap cells of the built-in activity rules over a case's events (zone history, window
   `from`..`to`). Decoded by `server/internal/stats/contract_activity_test.go` (every cell) and
   `apps/web/src/lib/stats/readingTime.test.ts` (the `read` cells through `readingPoints`/`readSeconds`).
@@ -57,11 +67,47 @@ Fixtures:
   errors are pinned in `sync/push-result.json`.
 - `GET /api/events[?since=<RFC 3339>][&workspace=<id>]` → the caller's events with `ts >= since`, all
   workspaces or one, ordered by `ts`, then `id`. `since` is cut to its whole second before comparing, so an
-  event of that second is included (`since=…09:00:00.500Z` includes `09:00:00Z`). Unpaged: a second client reads
-  the log from the pull v2 `events` collection instead (`sync/`), which is paged.
+  event of that second is included (`since=…09:00:00.500Z` includes `09:00:00Z`). With `limit` or `page` it
+  answers in pages (Paging below); without them it is the **legacy form**: one array, streamed, with
+  `Deprecation: true` and `Link: </api/events?limit=500>; rel="successor-version"` (kept at least until v0.5.0
+  for cached older web shells and scripts). A second client may read the log from the pull v2 `events`
+  collection instead (`sync/`), which pages by `updatedAt` and leaves `lookup` out.
 - Pull v2 `events` ships every type **except `lookup`**.
 - `DELETE /api/events/lookups?workspace=<id>` → `{"deleted": n}`: the only deletion of events (the lookup
   history's Clear, #72). No other event is ever changed or deleted.
+
+## Paging (`page.json`, #110)
+
+```
+GET /api/events?limit=1..2000[&since=<RFC 3339>][&workspace=<id>]     first page
+GET /api/events?page=<next>[&workspace=<id>]                          continuation
+→ 200 {"events": [ /* legacy items */ ], "more": bool, "next": "e1.…" | null}     Cache-Control: private, no-cache
+```
+
+- Items are the legacy items exactly (`{id, userId, workspaceId, device, ts, type, payload}`, `lookup`
+  included), in `(ts, id)` order; a walk keys on the last shipped `(ts, id)`, so the pages of a walk
+  concatenate to the legacy answer for the same `since` and `workspace` when nothing is written meanwhile.
+  An event appended mid-walk with a `ts` before the position is in the next read, not this one.
+- A page stops at `limit` rows or before the row that would take its items past 4 MiB (the encoded bytes of
+  the items alone; the envelope and the commas between items are not counted), but always holds at least one
+  row while rows remain (the pull's budget). `more` is false exactly when no row remains (the
+  server reads ahead), so only an empty log has an empty page; `next` is a string exactly when `more`.
+- The continuation carries the first page's `workspace` again, exactly (absent when the first page had none;
+  a workspace-limited access token needs it, `tokReadWS`), and neither `since` nor `limit`. The token is
+  opaque; only `e1.` is a contract. It binds the user, workspace, `since`, `limit` and the position, and
+  contains no clock: the same position gives the same URL (the web's service worker caches pages by URL).
+- No cursor: this is a from-scratch read; deltas are the pull's job.
+- Errors: a token that is garbled or another user's, a continuation with another (or no) workspace or with
+  `since`/`limit`, an empty `page`, a parameter given twice (paged form only: the legacy form keeps reading the
+  first `since`), a `limit` outside 1..2000 → 400 JSON
+  `{"error": "events_page_invalid", "message": …}` (`auth/errors.json`): read again from the first page. A
+  bad `since` or `workspace` and a foreign workspace keep the plain-text answers below, on every page.
+- Web reader: `apps/web/src/lib/eventPages.ts` (`limit=2000`, strict decode, at most 1000 pages). It follows
+  an empty page with `more` true (`readerAccepts` in `page.json`): the server never sends one, but a page the
+  service worker saved has lost its `lookup` events and may be empty. A continuation that cannot be reached at
+  all (offline, and not saved: the page boundaries moved since the pages were saved) ends the read with the
+  events so far, marked incomplete; after a complete read the web drops the saved continuations of that
+  workspace that no saved first page leads to (`apps/web/src/lib/pwa/eventPageCache.ts`).
 
 ## Errors
 
@@ -78,8 +124,9 @@ before anything is stored; the first failing check answers and **nothing of the 
 | a workspace not the caller's (unknown or another user's) | 404 | `workspace not found` |
 | body over 4 MiB | 413 | `request body too large` |
 
-`GET /api/events` answers `400` text for a bad `since` or `workspace` and `404 workspace not found` for a
-foreign workspace.
+`GET /api/events` answers `400` text for a bad `since` (`since must be RFC 3339`) or `workspace`
+(`workspace must be an integer`) and `404 workspace not found` for a foreign workspace, in both forms; the
+paged form adds `events_page_invalid` (Paging).
 
 ## Order and the `ts` rule
 
@@ -166,6 +213,38 @@ An event counts as a review exactly when it parses and is valid. Replay order is
 instant, not the text (`10:00:00+01:00` and `09:00:00Z` tie and the id decides); see Order above for why the
 stored whole-second copy is the one to order.
 
+## Replaced reviews (`review-replace.json`)
+
+A changed grade (#131, the study session's Back) is a new `review` that names the review it replaces:
+`{cardId, mode, grade, meta?, replaces: "<id>"}`. Design: `docs/superpowers/specs/2026-11-22-regrade-design.md`.
+
+- **Parse**: `replaces` is kept when it is a non-empty string, else dropped (the review stays an ordinary review).
+- **Link**: a valid review E links to T when `E.payload.replaces === T.id`, `T.id !== E.id`, T is a valid review of
+  the same workspace and the same `cardId`, and both instants fall in the same whole second
+  (`floor(instant / 1000 ms)`: the web's millisecond outbox copy and the server's whole-second copy are one second).
+  Any other reference is ignored: dangling (the target never arrived, was lost, or belongs to another user),
+  another card, workspace or second, itself, a target that is not a valid review.
+- **Families**: links join reviews into families (connected components, both directions; a cycle is one family).
+  In each family exactly one review counts, the **greatest id** (plain string comparison); every other member is
+  **replaced** and counts nowhere: replay, next intervals, XP, streak, daily limits, burying, goals, milestones,
+  the weekly summary, Stats, deck numbers, the optimizer data and the heatmap cells.
+- The rule reads the set a client holds, never the arrival order: a replacement that arrives before its target
+  counts alone until the target arrives, which is then replaced. Two devices replacing the same review, a chain
+  (replacing a replacement) and a fork of a chain all leave the greatest id of the family.
+- Apply it to the stored `cardId`s **before** the duplicate-card merge (`study/canonical.json`), as the server
+  does (it has no merge).
+- **Writing one**: copy the target's `cardId`, `mode`, `meta` and `ts` (the same instant; Android: whole UTC
+  seconds), set `grade` and `replaces` (the id of the family's current survivor), and give it a fresh ULID that
+  **must sort above the id it names**: its time is at least the target's ULID time + 1 ms, even when the device
+  clock is behind (web: `newUlid(max(now, ulidTime(target) + 1))`). A replacement with a smaller id loses to its
+  target (fixture case "a replacement whose id sorts below its target loses"). Never
+  write one with the same grade (it changes nothing), never edit or drop an outbox item instead (an item may be
+  mid-flight: a rewritten id is a duplicate the server ignores).
+
+Ruling: one event with `replaces`, not a separate void event; the replacement carries the target's `ts`; the
+survivor is the family's greatest id; a link needs the same workspace, card and second — reasons and costs in the
+design (`2026-11-22-regrade-design.md`). Cost if a client ignores the rule: it counts both reviews of the card.
+
 ## Activity scoring (`activity.json`)
 
 The heatmap, goals and the weekly summary read cells `{day, workspace, type, points, raw}` from
@@ -175,7 +254,8 @@ members; `rules` in the fixture lists the built-in ones). A client that scores o
 - Events are bucketed by the **learner day** of their stored `ts` (zone history, `study-day/`) and their
   workspace; one cell per day, workspace and type with points > 0, sorted by day, workspace, type. Types without
   a rule (`session`, `view`, `lookup`, unknown types) make no cells.
-- **count** (`review`): points = raw = the number of events; the payload is not read.
+- **count** (`review`): points = raw = the number of events, except replaced reviews (`review-replace.json`:
+  the payload is read only for that); otherwise the payload is not read.
 - **measure** (`read`: field `seconds`, min 30, max 7200, `pointsPer` 300): the field must be a JSON number
   (integer or real), else the event is ignored; values below `min` are ignored; each event counts
   `r = min(value, max)`; points = the sum over events of `ceil(r / pointsPer)` (per event, not from the day's

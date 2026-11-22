@@ -37,14 +37,14 @@ group issues by release, labels by area (`backend`, `web`, `mobile`, `flashcards
 - ~~[#57](https://github.com/Elaktrato/qinqin/issues/57) level sessions for character-unit schemes (JLPT kanji, Jōyō grades, 通用规范汉字表)~~ — done (v0.3.0; recognition and writing cards, writing unlocks the next learner day; `docs/contracts/levels/`)
 - ~~[#26](https://github.com/Elaktrato/qinqin/issues/26) map backfill performance~~ — done (develop)
 
-Order: web first. Most features ship on web before the Android build starts.
+Order: web first. The Android client is unscheduled (Future); it starts when the web build is satisfactory.
 
 ## v0.3.0 — journal and AI, web (milestone)
 
 - [#46](https://github.com/Elaktrato/qinqin/issues/46) Journal plugin: AI corrections, overall review, topic suggestions, photo upload with OCR;
   the app calls the AI with the user's own provider API key. Merged to develop; implemented and
   checked against the fake provider, never run against the real API (owner tests with a real key; set `QINQIN_SECRET`).
-  Pending: a check with a real key, vertical Japanese OCR (no `jpn_vert` on Alpine), Android parity (v0.4.0).
+  Pending: a check with a real key, vertical Japanese OCR (no `jpn_vert` on Alpine), Android parity (Future).
 - [#87](https://github.com/Elaktrato/qinqin/issues/87) Choose any AI provider: Anthropic, OpenAI, Google Gemini, DeepSeek,
   Mistral, xAI, Groq, OpenRouter and admin-registered OpenAI-compatible endpoints (SSRF-guarded), one key per provider and an
   active selection per user. On `feature/ai-providers`; implemented and checked against fake servers only, never against a
@@ -57,7 +57,7 @@ Direction: `docs/superpowers/directions/2026-11-15-v0.3.0-web-build.md`. Collect
 - Done on develop (merged via `feature/v0.3.0` and the topic branches): ~~[#86](https://github.com/Elaktrato/qinqin/issues/86) login rate limiting~~, ~~[#84](https://github.com/Elaktrato/qinqin/issues/84) the learner's local day~~, ~~[#57](https://github.com/Elaktrato/qinqin/issues/57) level sessions~~, ~~[#64](https://github.com/Elaktrato/qinqin/issues/64) accounts (sessions, invites, SMTP, MFA)~~, ~~[#65](https://github.com/Elaktrato/qinqin/issues/65) reverse and cloze cards~~, ~~[#90](https://github.com/Elaktrato/qinqin/issues/90) decks view~~ (merge 0764d27), ~~[#88](https://github.com/Elaktrato/qinqin/issues/88) vacation mode and [#89](https://github.com/Elaktrato/qinqin/issues/89) daily limits~~ (merge b3548b2), ~~[#61](https://github.com/Elaktrato/qinqin/issues/61) backup~~ (merge 0a3884f), ~~[#79](https://github.com/Elaktrato/qinqin/issues/79) installable app and offline study~~ (merge 97e0053), ~~[#78](https://github.com/Elaktrato/qinqin/issues/78) reader display settings~~ (merge 3d05ae0).
 - `docs/contracts/` for the Android client: done, entry point `docs/contracts/overview.md` (gaps listed there).
 - Stretch (`feature/v0.3.0-stretch`, brief `docs/superpowers/directions/2026-11-16-v0.3.0-stretch-agent-brief.md`): ~~[#67](https://github.com/Elaktrato/qinqin/issues/67) daily goals~~ (merge 93f70f9, `docs/contracts/goals/`), ~~[#75](https://github.com/Elaktrato/qinqin/issues/75) frequency-ordered new words and starter decks~~ (merge ed99015, `docs/contracts/frequency/`; no new data bundled, no clearly licensed Chinese word list exists), ~~[#77](https://github.com/Elaktrato/qinqin/issues/77) personal notes and mnemonics~~ (merge ab1352b, `docs/contracts/notes/`), ~~[#71](https://github.com/Elaktrato/qinqin/issues/71) radical and component lookup~~ (merge d91bf90, `docs/contracts/radicals/`; KanjiVG components bundled, Chinese components local-only), ~~[#68](https://github.com/Elaktrato/qinqin/issues/68) unknown-word highlighting and text coverage~~ (merge f0ab056, `docs/contracts/reader/`), ~~[#83](https://github.com/Elaktrato/qinqin/issues/83) personal access tokens~~ (merge f10435e, `docs/contracts/auth/tokens*.json`, wiki `API-Access-tokens.md`), ~~[#81](https://github.com/Elaktrato/qinqin/issues/81) weekly summary~~ (merge 78ce8de, in-app only, `docs/contracts/weekly/`; milestones deferred), ~~[#72](https://github.com/Elaktrato/qinqin/issues/72) lookup history~~ (merge ef0e450, `docs/contracts/lookups/`). Handoff: `docs/superpowers/handoffs/2026-11-16-v0.3.0-stretch-handoff.md`.
-- Stretch still open: [#80](https://github.com/Elaktrato/qinqin/issues/80) (wiki source kept current in `docs/wiki/`; publishing is the owner's step).
+- [#80](https://github.com/Elaktrato/qinqin/issues/80) wiki: `docs/wiki/` brought up to date with the code and the README's chapters folded in; README shortened to a front page; `.github/workflows/wiki.yml` publishes on pushes to `main` (needs `WIKI_TOKEN`). Not yet published — owner steps in `docs/superpowers/handoffs/2026-11-18-wiki-handoff.md`.
 
 ## v0.4.0 prep — web and server ready for Android (done — items 1–8 on develop; handoff `docs/superpowers/handoffs/2026-11-17-v0.4.0-prep-handoff.md`)
 
@@ -97,19 +97,24 @@ Design: `docs/superpowers/specs/2026-11-16-visual-rework-design.md`; mockups:
   and links use the base components and theme tokens.
 - Open: [#107](https://github.com/Elaktrato/qinqin/issues/107) the owner's lotus stages, level
   badges and day markers. #95 closes when those drawings land.
+- ~~[#188](https://github.com/Elaktrato/qinqin/issues/188) phone bottom bar~~ (design
+  `docs/superpowers/specs/2026-11-22-phone-bottom-bar-design.md`; row `nav-layout`,
+  `docs/contracts/settings/nav-layout.json`; handoff `docs/superpowers/handoffs/2026-11-22-phone-bottom-bar.md`):
+  phones get a bottom bar of up to five sections (four pins plus More) by default, the side menu stays as an
+  option, both chosen in Settings → Layout (was Home). Owner to try it on a real phone (handoff §3).
 - Owner checks: every page at 360 and 1440 px in light and dark and in at least three themes;
   the qinqin Day, Night and Deep themes on a real device; a real screen reader, touch and
   200 % zoom pass.
 
-## v0.4.0 — Android client (milestone)
+## Study batch (2026-11-22, on develop)
 
-Native Kotlin (Jetpack Compose, Room), Android only — replaces the earlier Flutter plan.
+Handoff: `docs/superpowers/handoffs/2026-11-22-study-batch-handoff.md`.
 
-- [#34](https://github.com/Elaktrato/qinqin/issues/34) Kotlin scaffold, auth, workspaces
-- [#35](https://github.com/Elaktrato/qinqin/issues/35) offline-first store and sync engine
-- [#36](https://github.com/Elaktrato/qinqin/issues/36) core views parity (entry, search, strokes)
-- [#37](https://github.com/Elaktrato/qinqin/issues/37) entry editing
-- [#38](https://github.com/Elaktrato/qinqin/issues/38) feature-plugin host (Kotlin) and study parity incl. native writing
+- ~~[#132](https://github.com/Elaktrato/qinqin/issues/132) mix card types within a session~~ (`docs/contracts/cards/session-mix.json`)
+- ~~[#131](https://github.com/Elaktrato/qinqin/issues/131) go back and change a misclicked grade~~ (`docs/contracts/events/review-replace.json`)
+- ~~[#110](https://github.com/Elaktrato/qinqin/issues/110) page `GET /api/events`~~ (also fixed offline caching of event and pull v2 pages)
+- ~~[#165](https://github.com/Elaktrato/qinqin/issues/165) language-agnostic lemmatizer, Japanese table~~ (`docs/contracts/lemma/`); follow-up [#176](https://github.com/Elaktrato/qinqin/issues/176) rule tables as a data pack
+- [#133](https://github.com/Elaktrato/qinqin/issues/133) Tatoeba example sentences: tooling done; packs to be built by the owner
 
 ## Future (milestone)
 
@@ -124,6 +129,19 @@ Native Kotlin (Jetpack Compose, Room), Android only — replaces the earlier Flu
 - ~~[#44](https://github.com/Elaktrato/qinqin/issues/44) FSRS optimizer UI~~ — done (design `docs/superpowers/specs/2026-11-15-fsrs-optimizer-design.md`; Scheduling page at `/study/scheduling`)
 - ~~[#47](https://github.com/Elaktrato/qinqin/issues/47) grammar lessons content type + reader UI~~ — done (design `docs/superpowers/specs/2026-11-15-grammar-lessons-design.md`; page `/p/grammar`). The ten-lesson demo was replaced by the HSK-aligned pack `zh-grammar` (design `docs/superpowers/specs/2026-11-18-grammar-hsk-pack-design.md`, [#111](https://github.com/Elaktrato/qinqin/issues/111)–[#118](https://github.com/Elaktrato/qinqin/issues/118)): seven levels ≈ HSK 1 to 7–9, one lesson per row of the HSK 3.0 grammar outline, used as a topic index with attribution (this supersedes #111's earlier "nothing from the grammar outline" rule); native-speaker review of the pack open. The Japanese pack `ja-grammar` (design `docs/superpowers/specs/2026-11-21-ja-grammar-pack-design.md`, [#119](https://github.com/Elaktrato/qinqin/issues/119)–[#123](https://github.com/Elaktrato/qinqin/issues/123)) has five levels ≈ N5 to N1 with qinqin's own selection of points; the owner's sign-off on the point lists and the native-speaker review are open
 - ~~[#48](https://github.com/Elaktrato/qinqin/issues/48) core activity statistics~~ — done (design `docs/superpowers/specs/2026-11-15-core-stats-design.md`; `GET /api/stats/activity`, heatmap filters and combined view). Follow-up: ~~[#84](https://github.com/Elaktrato/qinqin/issues/84) local-time days~~ — done in v0.3.0 (design `docs/superpowers/specs/2026-11-15-v030-study-day-design.md`; per-user zone history, Settings → Study, `docs/contracts/study-day/`)
+
+### Android client (unscheduled)
+
+Native Kotlin (Jetpack Compose, Room), Android only — replaces the earlier Flutter plan. v0.4.0 shipped without the client; it starts when the web build is satisfactory.
+
+- [#34](https://github.com/Elaktrato/qinqin/issues/34) Kotlin scaffold, auth, workspaces
+- [#35](https://github.com/Elaktrato/qinqin/issues/35) offline-first store and sync engine
+- [#36](https://github.com/Elaktrato/qinqin/issues/36) core views parity (entry, search, strokes)
+- [#37](https://github.com/Elaktrato/qinqin/issues/37) entry editing
+- [#38](https://github.com/Elaktrato/qinqin/issues/38) feature-plugin host (Kotlin) and study parity incl. native writing
+- [#147](https://github.com/Elaktrato/qinqin/issues/147) release path — CI, signing and store presence
+  ([#148](https://github.com/Elaktrato/qinqin/issues/148) CI and signed artifacts,
+  [#149](https://github.com/Elaktrato/qinqin/issues/149) Play Store and F-Droid; blocked by #36 and #38)
 
 ### Ideas, not scheduled (Future)
 
@@ -169,13 +187,13 @@ Captured 2026-11-14/15; each issue holds the detail. Order is not a commitment.
 - [#58](https://github.com/Elaktrato/qinqin/issues/58) browser add-on, reader-like lookup on any site (after the first Android build)
 - [#79](https://github.com/Elaktrato/qinqin/issues/79) installable PWA with offline study
 - [#73](https://github.com/Elaktrato/qinqin/issues/73) UI languages
-- [#80](https://github.com/Elaktrato/qinqin/issues/80) user and API documentation as the GitHub wiki
+- [#80](https://github.com/Elaktrato/qinqin/issues/80) user and API documentation as the GitHub wiki (source and workflow ready on develop; publishing pending)
 
 Engineering debt (#1–#22) was worked through in themed batches (backend hardening, web polish, CI and serving);
 what remains open is listed in the handoff `docs/superpowers/handoffs/2026-11-15-web-build-handoff.md`
 (#12, #17, #18 leftovers, #55 zombie CI runs; #86 login rate limiting is done on the v0.3.0 branch).
 
-Note: the Android client (v0.4.0) does not read the `fsrs:*` plugin data yet, so once a set is active on the web its due counts differ from Android's until the Kotlin scheduler reads the same rows.
+Note: the Android client (Future) does not read the `fsrs:*` plugin data yet, so once a set is active on the web its due counts differ from Android's until the Kotlin scheduler reads the same rows.
 
 Design documents: `docs/superpowers/specs/`; plans: `docs/superpowers/plans/`.
 Branching and releases: `docs/git-flow.md`.
