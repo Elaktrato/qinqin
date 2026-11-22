@@ -1077,20 +1077,6 @@
    ]
   },
   {
-   "name": "negative te-form",
-   "surface": "食べないで",
-   "expect": [
-    {
-     "form": "食べる",
-     "class": "v1",
-     "reasons": [
-      "te-form",
-      "negative"
-     ]
-    }
-   ]
-  },
-  {
    "name": "prohibition",
    "surface": "してはいけない",
    "expect": [
@@ -1174,6 +1160,22 @@
       "negative"
      ]
     }
+   ]
+  },
+  {
+   "name": "ないで alone is no te-form (高くないです is ない + です)",
+   "surface": "高くないで",
+   "expect": [],
+   "reject": [
+    "高くない"
+   ]
+  },
+  {
+   "name": "くて after a contracted progressive is not an adjective (痛くてたまらない)",
+   "surface": "痛くてた",
+   "expect": [],
+   "reject": [
+    "痛い"
    ]
   }
  ]

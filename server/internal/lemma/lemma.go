@@ -19,7 +19,8 @@ import (
 
 // Format is the newest table format this engine implements; it reads
 // every format from 1 up to it. It changes when a rule field, hint, match
-// mode or stem predicate is added (2: hints keepWhole, usuallyReadingTag).
+// mode or stem predicate is added (2: hints keepWhole, usuallyReadingTag;
+// rule chainOnly).
 const Format = 2
 
 // Match modes of a rule.
@@ -117,6 +118,10 @@ type Rule struct {
 	Match  string   `json:"match,omitempty"`
 	// Stem, when set, must accept the text the rule leaves before From.
 	Stem *Pred `json:"stem,omitempty"`
+	// ChainOnly (format 2): the rule never rewrites the surface itself,
+	// only a form an earlier rule produced (ないで of ないでください, not
+	// the ないで of ないです).
+	ChainOnly bool `json:"chainOnly,omitempty"`
 }
 
 // Pred is a declarative stem predicate. Every key set must hold.
@@ -278,7 +283,7 @@ func (t *Table) Deinflect(surface string) []Candidate {
 		for _, n := range level {
 			for i := range t.Rules {
 				r := &t.Rules[i]
-				if depth > 0 && !slices.Contains(r.In, n.class) {
+				if depth > 0 && !slices.Contains(r.In, n.class) || depth == 0 && r.ChainOnly {
 					continue
 				}
 				if !strings.HasSuffix(n.form, r.From) {

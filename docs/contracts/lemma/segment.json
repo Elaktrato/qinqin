@@ -834,6 +834,19 @@
     "spec1"
    ],
    "uk": false
+  },
+  {
+   "forms": [],
+   "readings": [
+    "です"
+   ],
+   "pos": [
+    "cop"
+   ],
+   "pri": [
+    "spec1"
+   ],
+   "uk": false
   }
  ],
  "cases": [
@@ -1442,27 +1455,26 @@
    ]
   },
   {
-   "name": "negative te-form before a particle",
-   "text": "忘れないでね",
+   "name": "a polite negative adjective keeps です apart (no ないで)",
+   "text": "寒くないです",
    "tokens": [
     {
-     "surface": "忘れないで",
+     "surface": "寒くない",
      "start": 0,
-     "end": 5,
-     "lemma": "忘れる",
+     "end": 4,
+     "lemma": "寒い",
      "reasons": [
-      "te-form",
       "negative"
      ],
-     "head": "忘れる"
+     "head": "寒い"
     },
     {
-     "surface": "ね",
-     "start": 5,
+     "surface": "です",
+     "start": 4,
      "end": 6,
-     "lemma": "ね",
+     "lemma": "です",
      "reasons": [],
-     "head": "ね"
+     "head": "です"
     }
    ]
   },

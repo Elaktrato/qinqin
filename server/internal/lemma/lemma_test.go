@@ -247,3 +247,18 @@ func TestFormat2Hints(t *testing.T) {
 		t.Error("an empty keepWhole entry parsed")
 	}
 }
+
+// A chainOnly rule (format 2) never rewrites the surface itself, only a
+// form an earlier rule produced.
+func TestChainOnlyRule(t *testing.T) {
+	tb := parse(t, `{"format": 2, "language": "xo", "version": "t", "maxDepth": 2,
+	 "classes": {"t": {}, "w": {"any": true}}, "hints": {},
+	 "rules": [{"from": "xreq", "to": "x", "reason": "request", "out": "t"},
+	           {"from": "nax", "to": "na", "reason": "te-form", "in": ["t"], "out": "w", "chainOnly": true}]}`)
+	if got := render(tb.Deinflect("tabenaxreq")); !slices.Equal(got, []string{"tabenax/t/request", "tabena/w/request,te-form"}) {
+		t.Errorf("chained: %q", got)
+	}
+	if got := tb.Deinflect("tabenax"); len(got) != 0 {
+		t.Errorf("surface: %q, want none", render(got))
+	}
+}
