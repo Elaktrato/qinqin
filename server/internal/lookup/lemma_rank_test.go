@@ -111,3 +111,23 @@ func TestCompoundStemNeedsMoreThanOneKana(t *testing.T) {
 		}
 	}
 }
+
+// An expression never yields to an inflected word without priority: かれば
+// (an unwritten expression, priority 0) stays before 狩る (priority 0) in
+// the conditional.
+func TestExpressionKeepsItsPlaceAgainstAnUnprioritisedVerb(t *testing.T) {
+	sqlDB, _ := openDB(t)
+	importJMdict(t, sqlDB, jaWords+`<entry>
+<ent_seq>2900100</ent_seq>
+<r_ele><reb>かれば</reb></r_ele>
+<sense><pos>&exp;</pos><gloss>test expression</gloss></sense>
+</entry>
+<entry>
+<ent_seq>2900101</ent_seq>
+<k_ele><keb>狩る</keb></k_ele>
+<r_ele><reb>かる</reb></r_ele>
+<sense><pos>&v5r;</pos><pos>&vt;</pos><misc>&uk;</misc><gloss>to hunt</gloss></sense>
+</entry>
+`)
+	wantPrefix(t, run(t, service(sqlDB), "ja", "かれば", 0), "かれば", "狩る[conditional]")
+}

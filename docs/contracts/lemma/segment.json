@@ -497,6 +497,46 @@
     "spec1"
    ],
    "uk": false
+  },
+  {
+   "forms": [],
+   "readings": [
+    "をしても"
+   ],
+   "pos": [
+    "exp"
+   ],
+   "pri": [],
+   "uk": false
+  },
+  {
+   "forms": [
+    "貰う"
+   ],
+   "readings": [
+    "もらう"
+   ],
+   "pos": [
+    "v5u",
+    "vt"
+   ],
+   "pri": [
+    "ichi1"
+   ],
+   "uk": true
+  },
+  {
+   "forms": [],
+   "readings": [
+    "から"
+   ],
+   "pos": [
+    "prt"
+   ],
+   "pri": [
+    "spec1"
+   ],
+   "uk": false
   }
  ],
  "cases": [
@@ -881,7 +921,7 @@
   },
   {
    "name": "をして then a particle",
-   "text": "宿題をしても",
+   "text": "宿題をしてから",
    "tokens": [
     {
      "surface": "宿題",
@@ -910,12 +950,46 @@
      "head": "為る"
     },
     {
-     "surface": "も",
+     "surface": "から",
      "start": 5,
-     "end": 6,
-     "lemma": "も",
+     "end": 7,
+     "lemma": "から",
      "reasons": [],
-     "head": "も"
+     "head": "から"
+    }
+   ]
+  },
+  {
+   "name": "the particle is the shortest shorter match (を, not the expression をして) (をしても is a test-only expression)",
+   "text": "宿題をしてもらった",
+   "tokens": [
+    {
+     "surface": "宿題",
+     "start": 0,
+     "end": 2,
+     "lemma": "宿題",
+     "reasons": [],
+     "head": "宿題"
+    },
+    {
+     "surface": "を",
+     "start": 2,
+     "end": 3,
+     "lemma": "を",
+     "reasons": [],
+     "head": "を"
+    },
+    {
+     "surface": "してもらった",
+     "start": 3,
+     "end": 9,
+     "lemma": "する",
+     "reasons": [
+      "past",
+      "receiving favour",
+      "te-form"
+     ],
+     "head": "為る"
     }
    ]
   }
