@@ -10,19 +10,19 @@
       "name": "sentences_detailed",
       "url": "https://downloads.example.invalid/exports/sentences_detailed.tar.bz2",
       "member": "sentences_detailed.csv",
-      "sha256": "bcaa4162d188a6b40572db084b44cc4cc0c76baa67ca09975aff1b3caee47b94"
+      "sha256": "222ea21584c68b0c5bb1489ae4b0fe042897dfdfff69542da989c9e91191dff7"
     },
     {
       "name": "sentences_CC0",
       "url": "https://downloads.example.invalid/exports/sentences_CC0.tar.bz2",
       "member": "sentences_CC0.csv",
-      "sha256": "8424616fab038f976f7df24187ba5677313aa258f809321dd9e6ba503f373f53"
+      "sha256": "f80b5084c7d59cbfad4d70a2cc1cef6b46bfe2cc518719a709a2e936cc045087"
     },
     {
       "name": "links",
       "url": "https://downloads.example.invalid/exports/links.csv.bz2",
       "member": "links.csv",
-      "sha256": "c0a45284ab7b2428728970706cbc2438a26f12389f17363f88d7346dee5139d2"
+      "sha256": "f3fd3fd27ae15e12249d82cfdfc5e986a809dfe0923cadd00bc2107c9cee0c05"
     },
     {
       "name": "tags",

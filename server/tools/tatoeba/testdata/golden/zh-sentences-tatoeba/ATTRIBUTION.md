@@ -15,9 +15,9 @@ its contributors.
   CC-CEDICT (https://cc-cedict.org), by MDBG and the CC-CEDICT community, CC BY-SA 4.0
   (https://creativecommons.org/licenses/by-sa/4.0/).
 - Source: Tatoeba's export of 2000-01-02 (https://downloads.example.invalid/exports/), files and SHA-256:
-  - sentences_detailed.tar.bz2 (sentences_detailed.csv): bcaa4162d188a6b40572db084b44cc4cc0c76baa67ca09975aff1b3caee47b94
-  - sentences_CC0.tar.bz2 (sentences_CC0.csv): 8424616fab038f976f7df24187ba5677313aa258f809321dd9e6ba503f373f53
-  - links.csv.bz2 (links.csv): c0a45284ab7b2428728970706cbc2438a26f12389f17363f88d7346dee5139d2
+  - sentences_detailed.tar.bz2 (sentences_detailed.csv): 222ea21584c68b0c5bb1489ae4b0fe042897dfdfff69542da989c9e91191dff7
+  - sentences_CC0.tar.bz2 (sentences_CC0.csv): f80b5084c7d59cbfad4d70a2cc1cef6b46bfe2cc518719a709a2e936cc045087
+  - links.csv.bz2 (links.csv): f3fd3fd27ae15e12249d82cfdfc5e986a809dfe0923cadd00bc2107c9cee0c05
   - tags.tar.bz2 (tags.csv): 061a3292ee2ad087464d232973b08ede1d95c50037ef7fd5a6bb13d3f4cf4709
   - user_languages.tar.bz2 (user_languages.csv): 0fe76cbc337a91c97067186a0d4557c21a8ec335379f743ffcecc78ca3c4a300
   - users_sentences.csv (users_sentences.csv): 6184b19a8e3f99e700eb05ce639c3ca8759691bc316dd220f45d5dac3e27df46

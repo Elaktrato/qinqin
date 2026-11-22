@@ -212,8 +212,10 @@ Ruling (review fix, size guard): `build` fails when `sentences.json` or `credits
 gzip (≈ clone growth) about a quarter of that. The report gives the real numbers; lower the cap first — cost if
 wrong: one rebuild with a lower cap.
 
-Ruling: the tool writes only into a staging directory and swaps it into `plugins/data/<id>` at the end — cost
-if wrong: none.
+Ruling: the tool writes each pack into a staging directory under the git-ignored `plugins/upstream/tatoeba/`
+(review fix: never a hidden directory in `plugins/data`, where an interrupted build would leave it for `seed`) and
+moves it into `plugins/data/<id>` at the end (copying when the two are on different file systems) — cost if
+wrong: none.
 
 ## 7. Seed, checks, credits
 

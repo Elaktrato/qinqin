@@ -7,6 +7,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"regexp"
 	"slices"
 	"strings"
 	"testing"
@@ -107,9 +108,27 @@ func TestBuildIsDeterministic(t *testing.T) {
 	if ra, rb := readTree(t, rep1), readTree(t, rep2); len(ra) == 0 || !mapsEqual(ra, rb) {
 		t.Error("two builds wrote different reports")
 	}
-	for _, body := range a {
-		if strings.Contains(body, "2026-") || strings.Contains(body, "\r") {
-			t.Error("a pack file carries a build-time date or a CR")
+	// No timestamp of the build: no RFC 3339 / ISO date-time anywhere, and
+	// the only dates are the pinned export and licence-check dates.
+	stamp := regexp.MustCompile(`\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}`)
+	date := regexp.MustCompile(`\d{4}-\d{2}-\d{2}`)
+	for name, body := range a {
+		if stamp.MatchString(body) || strings.Contains(body, "\r") {
+			t.Errorf("%s carries a date-time or a CR", name)
+		}
+		for _, d := range date.FindAllString(body, -1) {
+			if d != "2000-01-02" && d != "2000-01-03" {
+				t.Errorf("%s carries the date %s, which is not a pinned one", name, d)
+			}
+		}
+	}
+	// The staging directory never lands in the pack folder.
+	for _, out := range []string{out1, out2} {
+		entries, _ := os.ReadDir(out)
+		for _, e := range entries {
+			if strings.HasPrefix(e.Name(), ".") {
+				t.Errorf("leftover %s in the pack folder", e.Name())
+			}
 		}
 	}
 }
@@ -365,5 +384,27 @@ func TestSizeGuard(t *testing.T) {
 	attr, _ := os.ReadFile(filepath.Join(out, "zh-sentences-tatoeba", "ATTRIBUTION.md"))
 	if !strings.Contains(string(attr), "--allow-size") {
 		t.Error("ATTRIBUTION.md does not record --allow-size")
+	}
+}
+
+// TestStagingIsOutsideThePackFolder: a pack is assembled under the report
+// (upstream) folder, never as a hidden directory in plugins/data, where an
+// interrupted build would leave it for seed to trip over.
+func TestStagingIsOutsideThePackFolder(t *testing.T) {
+	var stages []string
+	afterStage = func(dir string) { stages = append(stages, dir) }
+	defer func() { afterStage = nil }()
+	var reports string
+	out, _ := buildFixture(t, func(c *buildConfig) { reports = c.ReportDir })
+	if len(stages) != 2 {
+		t.Fatalf("stages %v, want one per pack", stages)
+	}
+	for _, s := range stages {
+		if !strings.HasPrefix(s, reports+string(filepath.Separator)) || strings.HasPrefix(s, out) {
+			t.Errorf("stage %s is not under the report folder %s", s, reports)
+		}
+		if _, err := os.Stat(s); !os.IsNotExist(err) {
+			t.Errorf("stage %s left behind", s)
+		}
 	}
 }

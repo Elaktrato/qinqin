@@ -90,13 +90,19 @@ func notice(code, packID, exportDate string) string {
 		" The selection, the readings and the links to dictionary words were made automatically and may contain errors."
 }
 
+// afterStage, when set (tests), sees each staging directory once its
+// files are written.
+var afterStage func(dir string)
+
 // writePack writes the language's pack into a staging directory under
-// cfg.OutDir and swaps it in for <OutDir>/<pack id> once complete.
+// cfg.ReportDir (the git-ignored upstream folder, never the pack folder,
+// where an interrupted build would leave a directory for seed to find) and
+// moves it to <OutDir>/<pack id> once complete.
 func writePack(cfg buildConfig, res *langResult) (string, error) {
-	if err := os.MkdirAll(cfg.OutDir, 0o755); err != nil {
+	if err := os.MkdirAll(cfg.ReportDir, 0o755); err != nil {
 		return "", err
 	}
-	stage, err := os.MkdirTemp(cfg.OutDir, "."+res.rules.PackID+".")
+	stage, err := os.MkdirTemp(cfg.ReportDir, ".stage-"+res.rules.PackID+"-")
 	if err != nil {
 		return "", err
 	}
@@ -168,12 +174,27 @@ func writePack(cfg buildConfig, res *langResult) (string, error) {
 			return "", err
 		}
 	}
+	if afterStage != nil {
+		afterStage(stage)
+	}
+	if err := os.MkdirAll(cfg.OutDir, 0o755); err != nil {
+		return "", err
+	}
 	dir := filepath.Join(cfg.OutDir, res.rules.PackID)
 	if err := os.RemoveAll(dir); err != nil {
 		return "", err
 	}
-	if err := os.Rename(stage, dir); err != nil {
+	if err := os.Rename(stage, dir); err == nil {
+		return dir, nil
+	}
+	// Another file system: copy the finished files instead.
+	if err := os.Mkdir(dir, 0o755); err != nil {
 		return "", err
+	}
+	for name, data := range files {
+		if err := os.WriteFile(filepath.Join(dir, name), data, 0o644); err != nil {
+			return "", err
+		}
 	}
 	return dir, nil
 }

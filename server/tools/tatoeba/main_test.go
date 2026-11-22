@@ -152,6 +152,23 @@ func TestBuildCommand(t *testing.T) {
 		t.Errorf("rebuild: %v, %d new downloads", err, es.hits.Load()-hits)
 	}
 
+	// A missing archive that downloads with another hash is refused and
+	// not kept (no file, no part file).
+	if err := os.Remove(filepath.Join(export, "tags.tar.bz2")); err != nil {
+		t.Fatal(err)
+	}
+	es.override["tags.tar.bz2"] = []byte("a newer export")
+	err = run(context.Background(), append(base, "--pin", pinned), &log)
+	if err == nil || !strings.Contains(err.Error(), "SHA-256") {
+		t.Errorf("build fetching a changed archive = %v, want a SHA-256 refusal", err)
+	}
+	for _, f := range []string{"tags.tar.bz2", "tags.tar.bz2.part"} {
+		if _, err := os.Stat(filepath.Join(export, f)); !os.IsNotExist(err) {
+			t.Errorf("%s kept after a refused download", f)
+		}
+	}
+	delete(es.override, "tags.tar.bz2")
+
 	// An archive that is not the pinned one stops the build; nothing changes.
 	if err := os.WriteFile(filepath.Join(export, "tags.tar.bz2"), []byte("tampered"), 0o644); err != nil {
 		t.Fatal(err)

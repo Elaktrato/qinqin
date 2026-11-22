@@ -54,9 +54,17 @@ func TestLoadExportClassifiesLicences(t *testing.T) {
 		}
 	}
 	// Only the pack languages and their linked English translations are
-	// kept: not yue, and no English sentence nobody links to.
+	// kept: not yue, not a linked French translation, and no English
+	// sentence nobody links to.
 	if ex.sentences[1020] != nil {
 		t.Error("a yue sentence was loaded")
+	}
+	if ex.sentences[5001] != nil {
+		t.Error("the linked French sentence 5001 was loaded as a translation")
+	}
+	// sentences_CC0 lists 2001's text under another language: not CC0.
+	if ex.sentences[2001].Licence != licenceBY {
+		t.Error("a CC0 row of another language made 2001 CC0")
 	}
 	if ex.sentences[1007] == nil || ex.sentences[1007].Owner != "" {
 		t.Error("orphan 1007 should load with an empty owner")
