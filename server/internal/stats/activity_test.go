@@ -262,3 +262,27 @@ func TestActivityReplacedIsolation(t *testing.T) {
 		t.Errorf("bob counts %d reviews, want 2 (his reference to alice's id dangles)", got)
 	}
 }
+
+// TestActivityReplacedTargetOfAnotherUser: the targets of a replacement are
+// read for the caller only (review fix 6). Alice's review naming Bob's id
+// (same card, workspace number and second, a greater id) must not join Bob's
+// review: read without the user filter, Bob's greater id would win the family
+// and Alice's own review would stop counting.
+func TestActivityReplacedTargetOfAnotherUser(t *testing.T) {
+	sqlDB := newDB(t)
+	rules := builtinRules(t, sqlDB)
+	alice, bob := newUser(t, sqlDB, "a"), newUser(t, sqlDB, "b")
+	const ts = "2026-11-13T08:00:00Z"
+	addID(t, sqlDB, bob, 1, "01KAPZ000000000000000000B9", ts, "review", `{"cardId":"c1","mode":"vocab","grade":1}`)
+	addID(t, sqlDB, alice, 1, "01KAPZ000000000000000000A1", ts, "review", `{"cardId":"c2","mode":"vocab","grade":3}`)
+	addID(t, sqlDB, alice, 1, "01KAPZ000000000000000000A2", ts, "review", `{"cardId":"c1","mode":"vocab","grade":3,"replaces":"01KAPZ000000000000000000B9"}`)
+	var n int64
+	for _, c := range run(t, sqlDB, alice, "2026-11-01", "2026-11-15", nil, rules) {
+		if c.Type == "review" {
+			n += c.Points
+		}
+	}
+	if n != 2 {
+		t.Errorf("alice counts %d reviews, want 2 (her reference to bob's id dangles)", n)
+	}
+}

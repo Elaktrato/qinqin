@@ -537,6 +537,10 @@ func TestRestoreKeepsReplacementLinks(t *testing.T) {
 	tg.DB.QueryRow(`SELECT id FROM workspaces WHERE user_id = ?`, carol).Scan(&cw)
 	exec(t, tg.DB, `INSERT INTO sentences (entry_id, source_pack, user_id, hanzi, pinyin, translation, updated_at) VALUES (?, 'tatoeba', NULL, 'packsatz', 'p', 't', 't')`, tg.E2)
 	exec(t, tg.DB, `INSERT INTO study_events (id, user_id, workspace_id, device, ts, type, payload, updated_at) VALUES (?, ?, ?, 'd', '2026-11-10T09:00:00Z', 'review', '{"cardId":"x","grade":3}', 't')`, target, carol, cw)
+	// Carol's own replacement of her review names the same id: only the
+	// restoring user's rows are relinked (review fix 6).
+	carolRepl := fmt.Sprintf(`{"cardId":"x","grade":2,"replaces":"%s"}`, target)
+	exec(t, tg.DB, `INSERT INTO study_events (id, user_id, workspace_id, device, ts, type, payload, updated_at) VALUES ('01JD0000000000000000CAROL1', ?, ?, 'd', '2026-11-10T09:00:00Z', 'review', ?, 't')`, carol, cw, carolRepl)
 	res, _, err := Restore(context.Background(), deps(tg.baseWorld), tg.UID, 0, a, Options{})
 	if err != nil {
 		t.Fatal(err)
@@ -559,5 +563,9 @@ func TestRestoreKeepsReplacementLinks(t *testing.T) {
 	tg.DB.QueryRow(`SELECT payload FROM study_events WHERE id = ? AND user_id = ?`, target, carol).Scan(&carolPayload)
 	if carolPayload != `{"cardId":"x","grade":3}` {
 		t.Errorf("carol's event changed: %q", carolPayload)
+	}
+	tg.DB.QueryRow(`SELECT payload FROM study_events WHERE id = '01JD0000000000000000CAROL1'`).Scan(&carolPayload)
+	if carolPayload != carolRepl {
+		t.Errorf("carol's replacement changed: %q", carolPayload)
 	}
 }
