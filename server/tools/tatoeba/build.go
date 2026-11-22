@@ -22,8 +22,16 @@ type buildConfig struct {
 	Langs      []string
 	Workers    int
 	MaxPerWord int // overrides Rules.MaxPerWord when > 0
-	Log        io.Writer
+	// MaxFileBytes caps each pack file (0: defaultMaxFileBytes); a larger
+	// file stops the build unless AllowSize, which ATTRIBUTION.md records.
+	MaxFileBytes int64
+	AllowSize    bool
+	Log          io.Writer
 }
+
+// defaultMaxFileBytes is the per-file cap of a pack: 24 MiB keeps every
+// committed file well under GitHub's 50 MB warning and 100 MB limit.
+const defaultMaxFileBytes = 24 << 20
 
 // langResult is everything one language's build produced, for the pack
 // files and the report.
@@ -56,6 +64,9 @@ func build(ctx context.Context, cfg buildConfig) error {
 		if err := a.verify(cfg.ExportDir); err != nil {
 			return err
 		}
+	}
+	if cfg.MaxFileBytes <= 0 {
+		cfg.MaxFileBytes = defaultMaxFileBytes
 	}
 	if cfg.Workers < 1 {
 		cfg.Workers = 1

@@ -36,7 +36,7 @@ func main() {
 
 const usage = `usage (from server/):
   go run ./tools/tatoeba pin --licence-checked YYYY-MM-DD [--repin] [--export-date YYYY-MM-DD]
-  go run ./tools/tatoeba build [--lang zh,ja] [--max-per-word N] [--workers N]
+  go run ./tools/tatoeba build [--lang zh,ja] [--max-per-word N] [--workers N] [--allow-size]
 common flags: --root (repository root, default ..), --pin, --export, --rules, --out, --reports`
 
 func run(ctx context.Context, args []string, log io.Writer) error {
@@ -69,11 +69,12 @@ func run(ctx context.Context, args []string, log io.Writer) error {
 		langs := fs.String("lang", "zh,ja", "languages to build")
 		maxPerWord := fs.Int("max-per-word", 0, "sentences per word (default: the rules' maxPerWord)")
 		workers := fs.Int("workers", runtime.NumCPU(), "parallel segmenters")
+		allowSize := fs.Bool("allow-size", false, "write pack files above the 24 MiB per-file cap (recorded in ATTRIBUTION.md)")
 		if err := fs.Parse(rest); err != nil {
 			return err
 		}
 		pinFile, export := paths(*root, *pinPath, *exportDir)
-		cfg := buildConfig{Root: *root, ExportDir: export, OutDir: *out, ReportDir: *reports, MaxPerWord: *maxPerWord, Workers: *workers, Log: log}
+		cfg := buildConfig{Root: *root, ExportDir: export, OutDir: *out, ReportDir: *reports, MaxPerWord: *maxPerWord, Workers: *workers, AllowSize: *allowSize, Log: log}
 		if *rules == "" {
 			*rules = filepath.Join(*root, "server", "tools", "tatoeba", "rules.json")
 		}

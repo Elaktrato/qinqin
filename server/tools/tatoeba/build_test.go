@@ -339,3 +339,31 @@ func TestEmbeddedCC0MatchesTheRepositoryCopy(t *testing.T) {
 		t.Error("templates/CC0-1.0.txt is not the legal code of plugins/data/zh-grammar/LICENSE")
 	}
 }
+
+// TestSizeGuard: a pack file above the cap stops the build (nothing is
+// written) unless the size is allowed, which ATTRIBUTION.md records.
+func TestSizeGuard(t *testing.T) {
+	if defaultMaxFileBytes != 24<<20 {
+		t.Errorf("default cap %d, want 24 MiB", defaultMaxFileBytes)
+	}
+	p, _ := loadPin(fixturePin)
+	r, _ := loadRules(fixtureRules)
+	out := t.TempDir()
+	cfg := buildConfig{Root: ".", ExportDir: fixtureExport, Pin: p, Rules: r, OutDir: out, ReportDir: t.TempDir(),
+		Langs: []string{"zh"}, Workers: 1, Log: io.Discard, MaxFileBytes: 1000}
+	err := build(context.Background(), cfg)
+	if err == nil || !strings.Contains(err.Error(), "--allow-size") {
+		t.Fatalf("build over the cap = %v, want a refusal naming --allow-size", err)
+	}
+	if entries, _ := os.ReadDir(out); len(entries) != 0 {
+		t.Errorf("a refused build left %v", entries)
+	}
+	cfg.AllowSize = true
+	if err := build(context.Background(), cfg); err != nil {
+		t.Fatalf("build with --allow-size: %v", err)
+	}
+	attr, _ := os.ReadFile(filepath.Join(out, "zh-sentences-tatoeba", "ATTRIBUTION.md"))
+	if !strings.Contains(string(attr), "--allow-size") {
+		t.Error("ATTRIBUTION.md does not record --allow-size")
+	}
+}

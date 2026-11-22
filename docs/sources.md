@@ -177,7 +177,7 @@ commits them from a pinned export (they are absent until then, and
      `plugins/data/zh-sentences-tatoeba` and `plugins/data/ja-sentences-tatoeba`,
      plus `report-*.txt` (counts, match rate, readings share, pack sizes),
      `review-*.tsv` (words whose reading was left out) and `sample-*.tsv` in the
-     export folder. `--max-per-word N` overrides the cap; `--lang zh` builds one.
+     export folder. `--max-per-word N` overrides the cap; `--lang zh` builds one. A pack file above 24 MiB stops the build (lower the cap, or pass `--allow-size`, which `ATTRIBUTION.md` records).
   4. Review the samples, tune `rules.json` and rebuild; then run
      `node scripts/check-sources.mjs` and commit `pin.json`, `rules.json` and
      both pack folders. A build without a pin is refused.

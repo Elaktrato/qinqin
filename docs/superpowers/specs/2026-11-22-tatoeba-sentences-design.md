@@ -195,6 +195,13 @@ group per line), `credits.tsv`, `ATTRIBUTION.md`, `LICENSE`. Reports (export fol
 pack sizes raw and gzip ≈ clone growth, image growth = raw), `review-<lang>.tsv`, `sample-<lang>.tsv`
 (every n-th sentence, 200 lines, for the owner's review).
 
+Ruling (review fix, size guard): `build` fails when `sentences.json` or `credits.tsv` of a pack exceeds
+**24 MiB** (well under GitHub's 50 MB warning and 100 MB limit) unless `--allow-size` is given, which
+`ATTRIBUTION.md` then records. Expected sizes (estimates, not measured — the export is unreachable here): with
+`maxPerWord` 5, Mandarin about 30–60k sentence rows ≈ 5–10 MB raw, Japanese about 80–120k rows ≈ 12–20 MB raw;
+gzip (≈ clone growth) about a quarter of that. The report gives the real numbers; lower the cap first — cost if
+wrong: one rebuild with a lower cap.
+
 Ruling: the tool writes only into a staging directory and swaps it into `plugins/data/<id>` at the end — cost
 if wrong: none.
 

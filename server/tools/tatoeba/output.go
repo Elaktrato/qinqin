@@ -149,6 +149,12 @@ func writePack(cfg buildConfig, res *langResult) (string, error) {
 			c.s.ID, sentenceURL, c.s.ID, c.s.Licence, c.s.Owner, c.tr.ID, sentenceURL, c.tr.ID, c.tr.Licence, c.tr.Owner)
 	}
 	files["credits.tsv"] = []byte(credits.String())
+	for _, name := range []string{"sentences.json", "credits.tsv"} {
+		if n := int64(len(files[name])); n > cfg.MaxFileBytes && !cfg.AllowSize {
+			return "", fmt.Errorf("%s/%s is %d bytes, above the %d-byte cap: lower maxPerWord (or --max-per-word), or pass --allow-size to commit it anyway (ATTRIBUTION.md records that)",
+				res.rules.PackID, name, n, cfg.MaxFileBytes)
+		}
+	}
 
 	attribution, err := renderAttribution(cfg, res)
 	if err != nil {
@@ -234,6 +240,9 @@ its contributors.
   selection, the readings and the filing were made by a program and may
   contain errors.
 - Contents: {{.Sentences}} sentences under {{.Words}} words.
+{{- if .AllowSize}}
+- Size: built with --allow-size; the per-file cap of {{.MaxFileBytes}} bytes was lifted.
+{{- end}}
 `))
 
 type attributionData struct {
@@ -241,6 +250,8 @@ type attributionData struct {
 	CreditsURL, ReadingName, ReadingLink, ReadingPublisher             string
 	Archives                                                           []attributionArchive
 	MaxPerWord, Sentences, Words                                       int
+	AllowSize                                                          bool
+	MaxFileBytes                                                       int64
 }
 
 type attributionArchive struct{ File, Member, SHA256 string }
@@ -250,6 +261,7 @@ func renderAttribution(cfg buildConfig, res *langResult) ([]byte, error) {
 		Name: res.rules.Name, ExportDate: cfg.Pin.ExportDate, Source: cfg.Pin.Source,
 		Checked: cfg.Pin.Licence.Checked, Statement: cfg.Pin.Licence.Statement, RulesSum: cfg.Rules.sum,
 		Dictionary: res.dict, MaxPerWord: cfg.Rules.MaxPerWord, Sentences: len(res.bundled), Words: len(res.groups),
+		AllowSize: cfg.AllowSize, MaxFileBytes: cfg.MaxFileBytes,
 		CreditsURL: creditsURL(res.rules.PackID), ReadingName: readingSources[res.code].name,
 		ReadingLink: readingSources[res.code].link, ReadingPublisher: readingSources[res.code].publisher,
 	}
