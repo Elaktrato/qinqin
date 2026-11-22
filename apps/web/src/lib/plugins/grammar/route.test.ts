@@ -5,14 +5,14 @@ describe('parseGrammarRoute', () => {
 	it('routes the three views', () => {
 		expect(parseGrammarRoute('')).toEqual({ view: 'browse' });
 		expect(parseGrammarRoute('/')).toEqual({ view: 'browse' });
-		expect(parseGrammarRoute('zh-grammar-demo/shi')).toEqual({
+		expect(parseGrammarRoute('zh-grammar/shi')).toEqual({
 			view: 'lesson',
-			pack: 'zh-grammar-demo',
+			pack: 'zh-grammar',
 			lesson: 'shi'
 		});
-		expect(parseGrammarRoute('zh-grammar-demo/shi/practice/')).toEqual({
+		expect(parseGrammarRoute('zh-grammar/shi/practice/')).toEqual({
 			view: 'practice',
-			pack: 'zh-grammar-demo',
+			pack: 'zh-grammar',
 			lesson: 'shi'
 		});
 	});

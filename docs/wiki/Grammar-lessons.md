@@ -6,7 +6,12 @@
 
 Lessons come from **grammar packs** installed on the server. The page lists the packs for the language of the current workspace ("Grammar · Chinese"), each as a section, and inside it the levels with their lessons. A level can carry a badge such as "≈ HSK 1" when the matching level list is installed; the "≈" says the match is approximate. Each section ends with the pack's licence and attribution.
 
-qinqin ships one pack: **Chinese grammar demo (A1)**, ten short lessons for beginners (是, 不, 吗, 很 + adjective, 的, 也 and 都, 个, 在, 有 and 没有, 了) written for qinqin and released under CC0 1.0. Its levels are the author's own estimates (roughly HSK 1), and it has not been reviewed by a native speaker. For a language without a pack the page says "No grammar lessons for this language yet" and links to the Sources page, which lists the packs that are installed. An administrator can install more packs ([installing packs](Admin-data-packs); format: [Data pack format](Data-pack-format)).
+qinqin ships two packs, both written for qinqin and released under CC0 1.0, and both installed on the first start:
+
+- **Chinese grammar (HSK-aligned)**: 386 lessons in seven levels, ≈ HSK 1 to 7–9. The topics follow the grammar outline of the HSK 3.0 syllabus, used as a topic index only; the explanations, examples and exercises are qinqin's own.
+- **Japanese grammar (≈ JLPT levels)**: 265 lessons in five levels, ≈ N5 to N1. The JLPT publishes no grammar list, so the choice and order of points are qinqin's own.
+
+Each point has 4–8 example sentences with readings and translations. The levels are qinqin's estimates, not official HSK or JLPT levels, and neither pack has been reviewed by a native speaker yet. For a language without a pack the page says "No grammar lessons for this language yet" and links to the Sources page, which lists the packs that are installed. An administrator can install more packs ([installing packs](Admin-data-packs); format: [Data pack format](Data-pack-format)).
 
 ## A lesson
 

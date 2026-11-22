@@ -14,7 +14,7 @@ import (
 
 // demoPacks are the example packs of plugins/data: `qinqin seed` imports
 // them, the first-start auto-seed does not.
-var demoPacks = map[string]bool{"es-demo": true, "zh-grammar-demo": true}
+var demoPacks = map[string]bool{"es-demo": true}
 
 // autoSeedKey is the server_meta key whose value "done" stops serve from
 // auto-seeding again on this database.

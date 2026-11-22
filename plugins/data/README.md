@@ -50,7 +50,8 @@ Committed (small, hand-written, CC0 — a sample):
 | Pack | Type | Language | Shows |
 |------|------|----------|-------|
 | `es-demo` | dictionary | es | a runtime-added, data-only language (no code pack); install it from Settings → Data to try a data-only language |
-| `zh-grammar-demo` | grammar | zh | ten A1 lessons with 40 exercises, written for qinqin, CC0; demo content not reviewed by a native speaker |
+| `zh-grammar` | grammar | zh | HSK-aligned grammar lessons (≈ HSK 1 to 7–9), 4–8 examples per syllabus point, written for qinqin, CC0; topic coverage follows the HSK 3.0 grammar outline (CLEC/CTI, 2025-11/2026-07) as a topic index only, no syllabus text reproduced, no reuse licence granted; not reviewed by a native speaker |
+| `ja-grammar` | grammar | ja | Japanese grammar lessons (≈ JLPT N5 to N1), 4–8 examples per grammar point with kana readings, written for qinqin, CC0; qinqin's own selection and order of points (the JLPT publishes no grammar list); not reviewed by a native speaker |
 
 Components pack format (`format: components-tsv`): `components.tsv` holds one
 character per line, the character, a tab and its parts separated by spaces
@@ -61,13 +62,25 @@ most 32 parts remain. The optional `parts.tsv` gives a part's stroke count
 with its line number; a line is at most 4 KiB and each file at most 8 MiB. The
 pack's `language` is stored as its primary subtag (`zh-tw` becomes `zh`).
 
+Sentences pack format (`format: json`): `sentences.json` is `{"entries": [{"word",
+"sentences": [{"hanzi", "pinyin", "translation"}]}]}`. Each group's `word` is linked
+to the best word entry with that written form (or kana reading); unknown words are
+skipped and reported. `hanzi` (the sentence) and `translation` are required; the
+reading `pinyin` (pinyin, or kana for Japanese) is optional and left out rather
+than guessed.
+
 Grammar pack format (`format: json`): `lessons.json` is `{"levels": [{"id",
 "name", "schemeLevels": [{"scheme": "<levels pack id>", "level": "<level name>"}]}],
 "lessons": [{"id", "level", "title", "summary", "pattern": [...], "body": [...],
-"examples": [{"id", "text", "reading", "translation", "focus", "distractors": [...]}]}]}`.
+"examples": [{"id", "text", "reading", "translation", "focus", "distractors": [...],
+"noOrder"}]}]}`.
 Lesson text is plain text. `focus` (a part of `text`) and at least two
 `distractors` that are wrong in that sentence give a fill-the-gap exercise.
-The full limits are enforced by `server/internal/grammar/schema.go`.
+The optional `noOrder: true` on an example skips its word-order exercise for a
+sentence whose tokens have a second legal order (time-adverb fronting, `A和B`
+symmetry, `都` object fronting); its fill-the-gap exercise still runs. Absent
+means false. The full limits are enforced by
+`server/internal/grammar/schema.go`.
 
 The other hand-written samples live in `plugins/samples/`, outside the default
 seed root. The DICTIONARIES `zh-mini` (pinyin → bopomofo, traditional
@@ -163,8 +176,10 @@ indicated, and permits reproduction only as reasonable, good-faith quoting for
 informative public use; the PDF carries a copy-protection flag. The packs
 hold only the vocabulary (word) list and the list of characters to recognise
 (认读字), as plain lists with levels (and the words' pinyin as lookup
-readings), and none of the syllabus's other content (grammar points,
-descriptions, the lists of characters to write, explanatory text). They are
+readings), and none of the syllabus's descriptions, task and topic lists,
+lists of characters to write or explanatory text. The `zh-grammar` pack uses
+the syllabus's grammar outline as a topic index only (no syllabus text
+reproduced). They are
 included with attribution at the project owner's decision; the legal status
 of including these lists has not been verified (see each pack's
 `ATTRIBUTION.md`). Its part "HSK 词汇大纲" is a table: serial number, level

@@ -44,6 +44,26 @@ func TestReadDataValid(t *testing.T) {
 	}
 }
 
+func TestNoOrder(t *testing.T) {
+	// Present and true decodes.
+	withFlag := strings.Replace(validJSON, `"focus": "吗"`, `"focus": "吗", "noOrder": true`, 1)
+	d, err := grammar.ReadData(write(t, withFlag))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !d.Lessons[0].Examples[0].NoOrder {
+		t.Errorf("NoOrder = false, want true")
+	}
+	// Absent means false.
+	d, err = grammar.ReadData(write(t, validJSON))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if d.Lessons[0].Examples[0].NoOrder {
+		t.Errorf("NoOrder = true, want false when absent")
+	}
+}
+
 func TestReadDataRules(t *testing.T) {
 	long := func(n int) string { return strings.Repeat("字", n) }
 	cases := []struct {

@@ -85,14 +85,105 @@ unverified facts marked unverified) must stay the same in both places.
 
 ## Grammar lessons
 
-- **Chinese grammar demo (A1)** (`zh-grammar-demo`, type `grammar`; bundled):
-  ten short beginner lessons with 40 example sentences, readings,
-  translations and exercise answers, **written for qinqin by the project and
-  released under CC0 1.0** (`plugins/data/zh-grammar-demo`, with `LICENSE` and
-  `ATTRIBUTION.md`). Nothing is taken from a textbook, a syllabus or another
-  grammar resource; the A1 levels are the author's own estimates (the link to
-  "HSK 1" is a rough orientation only). It is **demo content that has not been
-  reviewed by a native speaker**; errors are possible.
+- **Chinese grammar (HSK-aligned)** (`zh-grammar`, type `grammar`; bundled):
+  grammar lessons level by level (≈ HSK 1 to 7–9), each syllabus grammar point
+  taught with 4–8 example sentences, readings, translations and exercise
+  answers, **written for qinqin by the project and released under CC0 1.0**
+  (`plugins/data/zh-grammar`, with `LICENSE` and `ATTRIBUTION.md`). Topic
+  coverage follows the grammar outline (语法大纲) of the 《HSK 考试大纲》 /
+  Syllabus for the Chinese Proficiency Test (CLEC/CTI, edition 2025-11,
+  effective 2026-07;
+  https://hsk.cn-bj.ufileos.com/3.0/%E6%96%B0%E7%89%88HSK%E8%80%83%E8%AF%95%E5%A4%A7%E7%BA%B21219.pdf),
+  used as a **topic index only**: the lesson grouping and order, explanations,
+  examples and exercises are qinqin's own, and no syllabus text is reproduced.
+  The syllabus grants no reuse licence. The levels are qinqin's estimates, not
+  official HSK levels. It **has not been reviewed by a native speaker**; errors
+  are possible.
+- **Japanese grammar (≈ JLPT levels)** (`ja-grammar`, type `grammar`; bundled):
+  grammar lessons in five levels (≈ N5 to N1), each grammar point taught with
+  4–8 example sentences, kana readings, translations and exercise answers,
+  **written for qinqin by the project and released under CC0 1.0**
+  (`plugins/data/ja-grammar`, with `LICENSE` and `ATTRIBUTION.md`). The JLPT
+  publishes no grammar list; the choice and order of points per level are
+  qinqin's own (`docs/superpowers/specs/2026-11-21-ja-grammar-pack-design.md`),
+  not taken from JLPT preparation books or other published lists. The levels
+  are qinqin's estimates, not official JLPT levels. It **has not been reviewed
+  by a native speaker**; errors are possible.
+
+## Example sentences (Tatoeba)
+
+The example sentences on entry pages and in "Fill the gap" and "Build the
+sentence" cards come from **Tatoeba** (<https://tatoeba.org>), a collection of
+sentences and translations written by its contributors. Two packs are bundled
+in `plugins/data/` **once generated** (issue #133): the repository holds the
+tool that makes them, `server/tools/tatoeba`, and the owner generates and
+commits them from a pinned export (they are absent until then, and
+`scripts/check-sources.mjs` accepts that through its `GENERATED_PACKS` list).
+
+| Pack | Provides | License | Upstream |
+|---|---|---|---|
+| **Tatoeba example sentences (Mandarin)** (`zh-sentences-tatoeba`) | Mandarin sentences with an English translation and generated pinyin, filed under the CC-CEDICT words they contain | Sentence text CC BY 2.0 FR; some sentences CC0 1.0 (as stated by Tatoeba; re-checked at every pin); generated readings CC BY-SA 4.0 (CC-CEDICT) | https://tatoeba.org/en/downloads |
+| **Tatoeba example sentences (Japanese)** (`ja-sentences-tatoeba`) | Japanese sentences (including the Tanaka corpus) with an English translation and, where certain, generated kana readings, filed under JMdict words | Sentence text CC BY 2.0 FR; some sentences CC0 1.0 (as stated by Tatoeba; re-checked at every pin); generated readings CC BY-SA 4.0 (JMdict, EDRDG) | https://tatoeba.org/en/downloads |
+
+- **Licence.** Tatoeba states that sentence text is CC BY 2.0 FR and that the
+  sentences in its `sentences_CC0` export are CC0 1.0; both fit the project's
+  rule. The tool keeps a sentence only when it is in the export's sentence file,
+  and marks it CC0 only when the CC0 file lists the same id, language and text;
+  its English translation must pass the same test. The export's column layout is
+  checked strictly: a new column (which could carry licence information) stops
+  the build. **Audio is not used** (see "Audio": Tatoeba's recordings have
+  varying licences).
+- **Attribution.** Tatoeba asks that reused sentences credit Tatoeba with a link
+  and, for CC BY, the sentence's author (wording to re-read at each pin; not
+  verified from this environment). Each pack carries `credits.tsv`: for every
+  sentence its Tatoeba id, page (`https://tatoeba.org/en/sentences/show/<id>`),
+  licence and owner (the Tatoeba username listed for it, which is not always the
+  original author), and the same for its translation (columns `sentence`, `url`,
+  `licence`, `owner`, `translation`, `translation_url`, `translation_licence`,
+  `translation_owner`). The manifest `attribution` and the Sources page `notice`
+  link the published copy of that file
+  (`https://github.com/Elaktrato/qinqin/blob/main/plugins/data/<pack id>/credits.tsv`),
+  so the per-sentence credits are one click from the app; the app does not show
+  a credit next to each sentence yet (deferred, see the spec's Ruling).
+  `ATTRIBUTION.md` gives the export date, archive hashes, licence check and what
+  was changed; `LICENSE` gives the CC BY 2.0 FR URI (which that licence allows
+  instead of a copy) and the CC0 1.0 legal code.
+- **Readings.** The `pinyin` field and the filing of sentences under words are
+  generated from **CC-CEDICT** (MDBG, <https://cc-cedict.org>) or **JMdict**
+  (EDRDG, <https://www.edrdg.org/>), both **CC BY-SA 4.0**
+  (<https://creativecommons.org/licenses/by-sa/4.0/>); the manifest `license`,
+  `LICENSE`, `ATTRIBUTION.md` and the notice say so. Pinyin is left out where a
+  word has several readings; kana is given only where every word has one certain
+  reading. The notice says the selection and readings were made by a program and
+  may contain errors.
+- **Filtering** (all thresholds in `server/tools/tatoeba/rules.json`): an English
+  translation is required; orphaned sentences, sentences tagged as unreliable or
+  unsuitable, negatively reviewed ones, too short or long ones, deny-listed ones,
+  near-duplicates and sentences with too little dictionary coverage or no word
+  that links are dropped; sentences by self-declared native speakers rank first;
+  each word keeps at most `maxPerWord` sentences. Chinese single-character words
+  are character entries, to which the importer links no sentences.
+- **How to produce the packs** (from `server/`, with access to
+  downloads.tatoeba.org):
+  1. Re-read <https://tatoeba.org/en/downloads> and
+     <https://tatoeba.org/en/terms_of_use>; replace the placeholder
+     `licence.statement` of `server/tools/tatoeba/pin.json` with what they state,
+     confirming that every row of `sentences_detailed` is CC BY 2.0 FR (`pin` and
+     `build` refuse the placeholder).
+  2. `go run ./tools/tatoeba pin --licence-checked <YYYY-MM-DD>` downloads the
+     export into the git-ignored `plugins/upstream/tatoeba/` and records the
+     archives' SHA-256 and the export date in `pin.json`. Keep those archives:
+     Tatoeba overwrites its export weekly, and the packs can be re-created byte
+     for byte only from the pinned files.
+  3. `go run ./tools/tatoeba build` verifies the archives and writes
+     `plugins/data/zh-sentences-tatoeba` and `plugins/data/ja-sentences-tatoeba`,
+     plus `report-*.txt` (counts, match rate, readings share, pack sizes),
+     `review-*.tsv` (words whose reading was left out) and `sample-*.tsv` in the
+     export folder. `--max-per-word N` overrides the cap; `--lang zh` builds one. A pack file above 24 MiB stops the build (lower the cap, or pass `--allow-size`, which `ATTRIBUTION.md` records).
+  4. Review the samples, tune `rules.json` and rebuild; then run
+     `node scripts/check-sources.mjs` and commit `pin.json`, `rules.json` and
+     both pack folders together: once `pin.json` is pinned, `check-sources` requires
+     both packs at the pinned export date. A build without a pin is refused.
 
 ## Frequency data
 
@@ -341,12 +432,15 @@ byte.
   "reproduced from (or quoted from) the Chinese Test Service Website"), and
   that reproducing or quoting it is permitted only as reasonable, good-faith
   quoting for news or informative, free public information. The syllabus PDF
-  carries a copy-protection flag (copy: no, change: no). The project includes
-  only the vocabulary (word) list and the list of characters to recognise
-  (认读字), as plain lists of words and characters with their levels (and the
-  words' pinyin as lookup readings); it does not include the syllabus's other
-  content (grammar points, task and topic descriptions, the lists of
-  characters to write, explanatory text). It includes these lists with
+  carries a copy-protection flag (copy: no, change: no). The `hsk-words`
+  pack includes only the vocabulary (word) list and the `hsk-chars` pack only
+  the list of characters to recognise (认读字), as plain lists of words and
+  characters with their levels (and the words' pinyin as lookup readings);
+  neither includes the syllabus's descriptions, task and topic lists, the
+  lists of characters to write or explanatory text. The Chinese grammar pack
+  (`zh-grammar`), when installed, is listed separately under Grammar lessons
+  and uses the syllabus's grammar outline as a topic index, reproducing no
+  syllabus text. It includes these lists with
   attribution at the project owner's decision; the legal status of including
   these lists has not been verified (this is not a legal opinion), and no
   licence or public-domain status is claimed. The packs therefore have no `LICENSE` file. Their `manifest.json`

@@ -10,30 +10,41 @@ import {
 	type ExtraChoices
 } from '$lib/study/cardTypesMemory';
 import { enabledKinds, type DeckSettings } from '$lib/study/deckSettings';
-import { loadConfig, type StudySessionConfig } from '$lib/study/session';
+import { loadConfig, newSessionSeed, type StudySessionConfig } from '$lib/study/session';
 import { OPT_IN_KINDS, type OptInKind, type StudyCardKind } from '$lib/study/types';
 
-/** A session over this deck only: the saved limits and the deck's effective kinds. */
-export function deckSessionConfig(
-	base: StudySessionConfig,
-	deckId: string,
-	kinds: readonly string[]
-): StudySessionConfig {
-	return { ...base, mode: 'decks', deckIds: [deckId], cardTypes: [...kinds] };
+/** The saved setup without what belongs to the session it started: its seed and Study all. */
+function fresh(base: StudySessionConfig, seed: number): StudySessionConfig {
+	const { seed: _oldSeed, studyAll: _oldStudyAll, ...rest } = base;
+	return { ...rest, seed };
 }
 
 /**
- * A level session. It always studies vocab (without it the level queue is
+ * A session over this deck only: the saved limits and the deck's effective
+ * kinds, with a fresh seed (a new session is shuffled and mixed anew).
+ */
+export function deckSessionConfig(
+	base: StudySessionConfig,
+	deckId: string,
+	kinds: readonly string[],
+	seed: number = newSessionSeed()
+): StudySessionConfig {
+	return { ...fresh(base, seed), mode: 'decks', deckIds: [deckId], cardTypes: [...kinds] };
+}
+
+/**
+ * A level session, with a fresh seed. It always studies vocab (without it the level queue is
  * empty) and never plans reverse or cloze cards.
  */
 export function levelSessionConfig(
 	base: StudySessionConfig,
 	schemeId: number,
-	levelName: string
+	levelName: string,
+	seed: number = newSessionSeed()
 ): StudySessionConfig {
 	const kept = base.cardTypes.filter((kind) => !OPT_IN_KINDS.includes(kind as OptInKind));
 	return {
-		...base,
+		...fresh(base, seed),
 		mode: 'levels',
 		schemeId,
 		levelName,
