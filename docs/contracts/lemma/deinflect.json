@@ -467,6 +467,493 @@
    "expect": [],
    "reject": [],
    "none": true
+  },
+  {
+   "name": "contraction ちゃう of する",
+   "surface": "しちゃった",
+   "expect": [
+    {
+     "form": "する",
+     "class": "vs",
+     "reasons": [
+      "past",
+      "completion",
+      "te-form"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "contraction ちゃう of an ichidan verb",
+   "surface": "食べちゃった",
+   "expect": [
+    {
+     "form": "食べる",
+     "class": "v1",
+     "reasons": [
+      "past",
+      "completion",
+      "te-form"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "contraction じゃう",
+   "surface": "飲んじゃう",
+   "expect": [
+    {
+     "form": "飲む",
+     "class": "v5",
+     "reasons": [
+      "completion",
+      "te-form"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "contraction ちゃう of 行く",
+   "surface": "行っちゃった",
+   "expect": [
+    {
+     "form": "行く",
+     "class": "v5",
+     "reasons": [
+      "past",
+      "completion",
+      "te-form"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "contraction ちゃう of 来る",
+   "surface": "来ちゃった",
+   "expect": [
+    {
+     "form": "来る",
+     "class": "vk",
+     "reasons": [
+      "past",
+      "completion",
+      "te-form"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "contraction ちまう",
+   "surface": "食べちまった",
+   "expect": [
+    {
+     "form": "食べる",
+     "class": "v1",
+     "reasons": [
+      "past",
+      "completion",
+      "te-form"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "contraction ちゃう polite past of a compound",
+   "surface": "勉強しちゃいました",
+   "expect": [
+    {
+     "form": "勉強する",
+     "class": "vs",
+     "reasons": [
+      "past",
+      "polite",
+      "completion",
+      "te-form"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "てしまう",
+   "surface": "してしまった",
+   "expect": [
+    {
+     "form": "する",
+     "class": "vs",
+     "reasons": [
+      "past",
+      "completion",
+      "te-form"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "でしまう polite past",
+   "surface": "飲んでしまいました",
+   "expect": [
+    {
+     "form": "飲む",
+     "class": "v5",
+     "reasons": [
+      "past",
+      "polite",
+      "completion",
+      "te-form"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "ておく",
+   "surface": "しておく",
+   "expect": [
+    {
+     "form": "する",
+     "class": "vs",
+     "reasons": [
+      "in advance",
+      "te-form"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "ておく polite",
+   "surface": "書いておきます",
+   "expect": [
+    {
+     "form": "書く",
+     "class": "v5",
+     "reasons": [
+      "polite",
+      "in advance",
+      "te-form"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "contraction とく",
+   "surface": "書いとく",
+   "expect": [
+    {
+     "form": "書く",
+     "class": "v5",
+     "reasons": [
+      "in advance",
+      "te-form"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "contraction どく past",
+   "surface": "読んどいた",
+   "expect": [
+    {
+     "form": "読む",
+     "class": "v5",
+     "reasons": [
+      "past",
+      "in advance",
+      "te-form"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "ておく then てください",
+   "surface": "開けておいてください",
+   "expect": [
+    {
+     "form": "開ける",
+     "class": "v1",
+     "reasons": [
+      "request",
+      "te-form",
+      "in advance",
+      "te-form"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "てみる",
+   "surface": "見てみる",
+   "expect": [
+    {
+     "form": "見る",
+     "class": "v1",
+     "reasons": [
+      "trying",
+      "te-form"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "てみる polite past",
+   "surface": "使ってみました",
+   "expect": [
+    {
+     "form": "使う",
+     "class": "v5",
+     "reasons": [
+      "past",
+      "polite",
+      "trying",
+      "te-form"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "ていく",
+   "surface": "走っていく",
+   "expect": [
+    {
+     "form": "走る",
+     "class": "v5",
+     "reasons": [
+      "going",
+      "te-form"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "ていく past",
+   "surface": "帰っていった",
+   "expect": [
+    {
+     "form": "帰る",
+     "class": "v5",
+     "reasons": [
+      "past",
+      "going",
+      "te-form"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "てくる past",
+   "surface": "帰ってきた",
+   "expect": [
+    {
+     "form": "帰る",
+     "class": "v5",
+     "reasons": [
+      "past",
+      "coming",
+      "te-form"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "でくる past",
+   "surface": "飲んできた",
+   "expect": [
+    {
+     "form": "飲む",
+     "class": "v5",
+     "reasons": [
+      "past",
+      "coming",
+      "te-form"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "てくる then てください",
+   "surface": "持ってきてください",
+   "expect": [
+    {
+     "form": "持つ",
+     "class": "v5",
+     "reasons": [
+      "request",
+      "te-form",
+      "coming",
+      "te-form"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "てください",
+   "surface": "待ってください",
+   "expect": [
+    {
+     "form": "待つ",
+     "class": "v5",
+     "reasons": [
+      "request",
+      "te-form"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "てあげる",
+   "surface": "教えてあげる",
+   "expect": [
+    {
+     "form": "教える",
+     "class": "v1",
+     "reasons": [
+      "for someone",
+      "te-form"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "てくれる past",
+   "surface": "手伝ってくれた",
+   "expect": [
+    {
+     "form": "手伝う",
+     "class": "v5",
+     "reasons": [
+      "past",
+      "favour",
+      "te-form"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "てもらう polite past",
+   "surface": "教えてもらいました",
+   "expect": [
+    {
+     "form": "教える",
+     "class": "v1",
+     "reasons": [
+      "past",
+      "polite",
+      "receiving favour",
+      "te-form"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "contracted progressive of an ichidan verb",
+   "surface": "寝てる",
+   "expect": [
+    {
+     "form": "寝る",
+     "class": "v1",
+     "reasons": [
+      "progressive",
+      "te-form"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "five steps",
+   "surface": "食べてしまっていた",
+   "expect": [
+    {
+     "form": "食べる",
+     "class": "v1",
+     "reasons": [
+      "past",
+      "progressive",
+      "te-form",
+      "completion",
+      "te-form"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "ながら on する",
+   "surface": "しながら",
+   "expect": [
+    {
+     "form": "する",
+     "class": "vs",
+     "reasons": [
+      "while"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "ながら on an ichidan verb",
+   "surface": "食べながら",
+   "expect": [
+    {
+     "form": "食べる",
+     "class": "v1",
+     "reasons": [
+      "while"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "ながら on a godan verb",
+   "surface": "飲みながら",
+   "expect": [
+    {
+     "form": "飲む",
+     "class": "v5",
+     "reasons": [
+      "while"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "ながら on 来る",
+   "surface": "来ながら",
+   "expect": [
+    {
+     "form": "来る",
+     "class": "vk",
+     "reasons": [
+      "while"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "adverbial く",
+   "surface": "寒く",
+   "expect": [
+    {
+     "form": "寒い",
+     "class": "adj-i",
+     "reasons": [
+      "adverbial"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "kanji 行く after a te-form is not folded",
+   "surface": "走って行く",
+   "expect": [],
+   "reject": [
+    "走る"
+   ]
+  },
+  {
+   "name": "ちゃ (ては) is not deinflected",
+   "surface": "おちゃ",
+   "expect": [],
+   "reject": [
+    "おる",
+    "おて"
+   ]
   }
  ]
 }
