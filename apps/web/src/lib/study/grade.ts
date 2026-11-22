@@ -8,7 +8,7 @@
 import { ApiError } from '../api/client';
 import { t } from '../i18n';
 import { GENERAL_DECK_ID } from './store';
-import type { ReviewGrade, ReviewMeta, StudyCard, StudyCardKind } from './types';
+import type { ReviewEvent, ReviewGrade, ReviewMeta, StudyCard, StudyCardKind } from './types';
 
 /** One queue item as both session modes represent it. */
 export interface GradeableItem {
@@ -44,14 +44,17 @@ export type AddCard = (
 	}
 ) => Promise<StudyCard>;
 
-/** The event append a graded item needs; injected for the same reason. */
+/**
+ * The event append a graded item needs; injected for the same reason. It
+ * resolves with the recorded event (the session's Back names it, #131).
+ */
 export type RecordReview = (
 	workspaceId: number,
 	cardId: string,
 	grade: ReviewGrade,
 	mode: StudyCardKind,
 	meta?: ReviewMeta
-) => Promise<void>;
+) => Promise<ReviewEvent | null | void>;
 
 export interface GradeItemInput {
 	item: GradeableItem;
@@ -69,7 +72,13 @@ export interface GradeItemInput {
 }
 
 export type GradeItemResult =
-	| { ok: true; card: StudyCard; created: boolean }
+	| {
+			ok: true;
+			card: StudyCard;
+			created: boolean;
+			/** The recorded review event; absent when the recorder kept none. */
+			review?: ReviewEvent;
+	  }
 	| { ok: false; error: string };
 
 function message(err: unknown, fallback: string): string {
@@ -111,8 +120,8 @@ export async function gradeItem({
 		if (item.card === null) {
 			return { ok: false, error: t('study.grade.cardGone') };
 		}
-		await recordReview(workspaceId, item.card.id, grade, mode ?? item.card.kind, meta);
-		return { ok: true, card: item.card, created: false };
+		const review = await recordReview(workspaceId, item.card.id, grade, mode ?? item.card.kind, meta);
+		return { ok: true, card: item.card, created: false, ...(review ? { review } : {}) };
 	}
 
 	if (entry === undefined || entry === null) {
@@ -142,6 +151,6 @@ export async function gradeItem({
 		};
 	}
 
-	await recordReview(workspaceId, card.id, grade, mode ?? kind, meta);
-	return { ok: true, card, created: true };
+	const review = await recordReview(workspaceId, card.id, grade, mode ?? kind, meta);
+	return { ok: true, card, created: true, ...(review ? { review } : {}) };
 }

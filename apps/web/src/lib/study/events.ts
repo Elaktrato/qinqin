@@ -162,8 +162,9 @@ export function clearPending(userId: number): void {
 }
 
 /**
- * recordReview appends one review event. It resolves even when the POST
- * fails; the event is then persisted to the pending queue instead.
+ * recordReview appends one review event and resolves with it, posted or
+ * queued for retry (the session's Back names it, #131); null when it was
+ * not kept (its workspace was deleted). It never rejects.
  */
 export async function recordReview(
 	workspaceId: number,
@@ -171,18 +172,41 @@ export async function recordReview(
 	grade: ReviewGrade,
 	mode: StudyCardKind = 'vocab',
 	meta?: ReviewMeta
-): Promise<void> {
+): Promise<ReviewEvent | null> {
 	const payload: ReviewPayload = { cardId, mode, grade };
 	if (meta !== undefined) payload.meta = meta;
-	const event: ReviewEvent = {
+	return recordEvent({
 		id: newUlid(),
 		workspaceId,
 		device: DEVICE,
 		ts: new Date().toISOString(),
 		type: 'review',
 		payload
-	};
+	});
+}
 
+/**
+ * recordReplacement records a changed grade (#131,
+ * docs/contracts/events/review-replace.json): a new review with a fresh id
+ * that copies the target's card, mode, meta, workspace and ts and names
+ * it in `replaces`. Recorded like any review (outbox on failure); the
+ * outbox item of the target is never touched.
+ */
+export async function recordReplacement(target: ReviewEvent, grade: ReviewGrade): Promise<ReviewEvent | null> {
+	const payload: ReviewPayload = { cardId: target.payload.cardId, mode: target.payload.mode, grade };
+	if (target.payload.meta !== undefined) payload.meta = target.payload.meta;
+	payload.replaces = target.id;
+	return recordEvent({
+		id: newUlid(),
+		workspaceId: target.workspaceId,
+		device: DEVICE,
+		ts: target.ts,
+		type: 'review',
+		payload
+	});
+}
+
+async function recordEvent(event: ReviewEvent): Promise<ReviewEvent | null> {
 	try {
 		await postEvents([event]);
 		const owner = outboxUser();
@@ -193,11 +217,12 @@ export async function recordReview(
 		if (isWorkspaceGone(err)) {
 			console.warn('review not recorded; its workspace was deleted', err);
 			showNotice(t('study.outbox.notSaved'));
-			return;
+			return null;
 		}
 		enqueue(event);
 		console.warn('review not recorded; queued for retry', err);
 	}
+	return event;
 }
 
 function isWorkspaceGone(err: unknown): boolean {

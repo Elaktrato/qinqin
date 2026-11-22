@@ -13,6 +13,7 @@ import {
 	flushPendingReviews,
 	pendingCount,
 	pendingReviews,
+	recordReplacement,
 	recordReview,
 	resetOutboxForTests,
 	startReviewOutbox
@@ -131,13 +132,15 @@ describe('recordReview', () => {
 	it('enqueues a failed review and never rejects', async () => {
 		vi.mocked(fetch).mockRejectedValue(new Error('offline'));
 
-		await expect(recordReview(7, 'card-1', 1)).resolves.toBeUndefined();
+		const queuedEvent = await recordReview(7, 'card-1', 1);
 
 		const attempted = JSON.parse(String(vi.mocked(fetch).mock.calls[0][1]?.body)).events[0];
 		const queued = pending();
 		expect(queued).toHaveLength(1);
 		expect(queued[0].id).toBe(attempted.id);
 		expect(queued[0]).toMatchObject({ type: 'review', workspaceId: 7 });
+		// The queued event is the one handed back (#131: Back names it).
+		expect(queuedEvent).toEqual(queued[0]);
 	});
 
 	it('does not queue a review of a deleted workspace, and says so', async () => {
@@ -145,7 +148,7 @@ describe('recordReview', () => {
 		const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
 		vi.mocked(fetch).mockResolvedValue(new Response('workspace not found', { status: 404 }));
 
-		await expect(recordReview(7, 'card-1', 2)).resolves.toBeUndefined();
+		await expect(recordReview(7, 'card-1', 2)).resolves.toBeNull();
 
 		expect(pending()).toEqual([]);
 		expect(get(notice)).toBe('This review was not saved: its workspace was deleted.');
@@ -155,7 +158,7 @@ describe('recordReview', () => {
 	it('enqueues on a non-2xx response too', async () => {
 		vi.mocked(fetch).mockResolvedValue(new Response('boom', { status: 500 }));
 
-		await expect(recordReview(7, 'card-1', 2)).resolves.toBeUndefined();
+		await expect(recordReview(7, 'card-1', 2)).resolves.toMatchObject({ type: 'review' });
 		expect(pending()).toHaveLength(1);
 	});
 
@@ -173,8 +176,76 @@ describe('recordReview', () => {
 		});
 		vi.mocked(fetch).mockRejectedValue(new Error('offline'));
 
-		await expect(recordReview(7, 'card-1', 3)).resolves.toBeUndefined();
+		await expect(recordReview(7, 'card-1', 3)).resolves.toMatchObject({ type: 'review' });
 		await expect(flushPendingReviews()).resolves.toBeUndefined();
+	});
+
+	it('resolves with the event it posted', async () => {
+		const event = await recordReview(7, 'card-1', 3, 'tone', { mistakes: 1 });
+
+		expect(event).toEqual(lastBatch().events[0]);
+	});
+});
+
+describe('recordReplacement (#131)', () => {
+	beforeEach(() => {
+		setOutboxUser(1, 'secret');
+		vi.stubGlobal('localStorage', fakeStorage());
+		vi.stubGlobal('fetch', vi.fn());
+		vi.useFakeTimers({ toFake: ['Date'] });
+		vi.setSystemTime(new Date('2026-03-15T08:35:00Z'));
+		vi.mocked(fetch).mockResolvedValue(jsonResponse({ accepted: 1, duplicates: 0 }));
+	});
+
+	afterEach(() => {
+		vi.unstubAllGlobals();
+		vi.useRealTimers();
+	});
+
+	const target = {
+		id: '01KAPZ00000000000000000001',
+		workspaceId: 7,
+		device: 'web',
+		ts: '2026-03-15T08:30:00.123Z',
+		type: 'review' as const,
+		payload: { cardId: 'card-1', mode: 'writing' as const, grade: 1 as const, meta: { mistakes: 3, durationMs: 9000 } }
+	};
+
+	it("copies the target's card, mode, meta and ts and names it", async () => {
+		const event = await recordReplacement(target, 3);
+
+		const [sent] = lastBatch().events;
+		expect(sent).toEqual(event);
+		expect(sent).toMatchObject({
+			workspaceId: 7,
+			device: 'web',
+			ts: '2026-03-15T08:30:00.123Z',
+			type: 'review',
+			payload: {
+				cardId: 'card-1',
+				mode: 'writing',
+				grade: 3,
+				meta: { mistakes: 3, durationMs: 9000 },
+				replaces: '01KAPZ00000000000000000001'
+			}
+		});
+		expect(sent.id).toMatch(ULID);
+		expect(sent.id).not.toBe(target.id);
+	});
+
+	it('omits meta when the target had none', async () => {
+		const { meta: _meta, ...payload } = target.payload;
+		await recordReplacement({ ...target, payload }, 2);
+
+		expect(lastBatch().events[0].payload).toEqual({ cardId: 'card-1', mode: 'writing', grade: 2, replaces: target.id });
+	});
+
+	it('is queued like a review when the POST fails', async () => {
+		vi.mocked(fetch).mockRejectedValue(new Error('offline'));
+
+		const event = await recordReplacement(target, 3);
+
+		expect(pending()).toEqual([event]);
 	});
 });
 
