@@ -134,7 +134,8 @@ reserve and burying are unchanged. Web: `lib/study/sessionMix.ts` (`mixSession`,
   (`vocab, sentence, writing, tone, reverse, cloze`), incoming order inside a kind; no seed, no spacing.
 - **Mixed**, per block of `N` items:
   1. item `j` (0-based, incoming order) of a kind with `n` items gets `p = ((j + 0.5) / n) * N`;
-  2. `key = p + 8 * mixKey(seed, cardId)` (`MIX_SPREAD = 8`); sort ascending, ties by kind order, then `j`;
+  2. `key = p + 8 * mixKey(seed, cardId)` (`MIX_SPREAD = 8`), or `key = p` when the block holds a single kind
+     (its incoming order stays); sort ascending, ties by kind order, then `j`;
   3. spacing, one item per step; `sep(word)` = items placed since that word's (`entryId`) last item, infinite if
      none, the due block's output counting for the new block. With `R` items left and `r` of a word's: the first
      item whose word has `2r - 1 >= R` and `sep >= 1` goes now; else, for `need = gap … 0`, the first item whose

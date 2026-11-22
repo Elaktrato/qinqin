@@ -525,6 +525,95 @@
    ]
   },
   {
+   "name": "mixed: a block of one kind keeps its incoming order (nothing to interleave)",
+   "note": "the new block is vocab only: level or due order stays",
+   "seed": 77,
+   "order": "mixed",
+   "items": [
+    {
+     "cardId": "c-vocab-9",
+     "kind": "vocab",
+     "entryId": 9,
+     "review": true
+    },
+    {
+     "cardId": "c-writing-8",
+     "kind": "writing",
+     "entryId": 8,
+     "review": true
+    },
+    {
+     "cardId": "c-vocab-7",
+     "kind": "vocab",
+     "entryId": 7,
+     "review": true
+    },
+    {
+     "cardId": "level:11",
+     "kind": "vocab",
+     "entryId": 11,
+     "review": false
+    },
+    {
+     "cardId": "level:12",
+     "kind": "vocab",
+     "entryId": 12,
+     "review": false
+    },
+    {
+     "cardId": "level:13",
+     "kind": "vocab",
+     "entryId": 13,
+     "review": false
+    },
+    {
+     "cardId": "level:14",
+     "kind": "vocab",
+     "entryId": 14,
+     "review": false
+    }
+   ],
+   "expect": [
+    "c-vocab-9",
+    "c-vocab-7",
+    "c-writing-8",
+    "level:11",
+    "level:12",
+    "level:13",
+    "level:14"
+   ]
+  },
+  {
+   "name": "mixed: one kind still spaces a word's cards (two sentence cards of a word, one with an older random id)",
+   "seed": 4,
+   "order": "mixed",
+   "items": [
+    {
+     "cardId": "c-sentence-1",
+     "kind": "sentence",
+     "entryId": 1,
+     "review": false
+    },
+    {
+     "cardId": "01HZSENTENCECARD0000000001",
+     "kind": "sentence",
+     "entryId": 1,
+     "review": false
+    },
+    {
+     "cardId": "c-sentence-2",
+     "kind": "sentence",
+     "entryId": 2,
+     "review": false
+    }
+   ],
+   "expect": [
+    "c-sentence-1",
+    "c-sentence-2",
+    "01HZSENTENCECARD0000000001"
+   ]
+  },
+  {
    "name": "mixed: a word with three types among few others",
    "note": "2r - 1 >= R starts the crowded word first",
    "seed": 5,

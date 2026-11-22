@@ -49,8 +49,9 @@ For one block of `N` items:
 1. **Even merge by kind.** Per kind, the items keep their incoming order (due order, or the session's new order);
    item `j` (0-based) of a kind with `n` items gets the position `p = ((j + 0.5) / n) * N`. The kinds are thus
    spread evenly over the block instead of following each other in blocks.
-2. **Jitter.** `key = p + MIX_SPREAD * u`, `MIX_SPREAD = 8`, `u = mixKey(seed, cardId)` in `[0, 1)`. Sort by
-   `key` ascending; ties by kind order (`vocab, sentence, writing, tone, reverse, cloze`), then `j`.
+2. **Jitter.** `key = p + MIX_SPREAD * u`, `MIX_SPREAD = 8`, `u = mixKey(seed, cardId)` in `[0, 1)`; a block
+   holding a single kind takes `key = p` (nothing to interleave). Sort by `key` ascending; ties by kind order
+   (`vocab, sentence, writing, tone, reverse, cloze`), then `j`.
 3. **Spacing.** Walk the sorted list (`spaceOut`), placing one item per step. `sep(word)` = cards placed since
    that word's last card (infinite if none; the due block's output counts for the new block). With `R` items
    left and `r` of them belonging to one word:
@@ -68,6 +69,11 @@ most about `MIX_SPREAD` places from its even-merge position, so "Most frequent f
 order still hold for the session's start, while the random default (words already random by #129) gets types
 interleaved within a few cards — cost if wrong: a learner expecting a full shuffle of the new cards sees the word
 order kept roughly; changing `MIX_SPREAD` is a one-constant contract change.
+
+Ruling: a block of one kind keeps its incoming order (still spaced by word, e.g. two sentence cards of one
+word) — a vocab-only session has no types to mix, so its due order and its new order (level order, most frequent
+first) stay exactly as before; found while wiring the page (level-order tests) — cost if wrong: single-kind
+sessions are not reshuffled, which the random new order (#129) already does for words.
 
 Ruling: the gap scales with the block length (1 / 2 / 3 at `N < 8` / `< 16` / otherwise) — a short block cannot
 hold a large gap, and a gap the block cannot hold would push same-word cards together at its end — cost if

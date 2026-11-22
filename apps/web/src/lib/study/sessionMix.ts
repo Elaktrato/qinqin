@@ -125,7 +125,8 @@ function groupByKind<T extends MixItem>(block: readonly T[]): T[] {
 /**
  * mixBlock interleaves the kinds of one block: item j of a kind with n
  * items is placed evenly at ((j + 0.5) / n) * N, moved by up to
- * MIX_SPREAD places by its mixKey, then spaced apart by word (spaceOut).
+ * MIX_SPREAD places by its mixKey when the block holds more than one kind,
+ * then spaced apart by word (spaceOut).
  */
 function mixBlock<T extends MixItem>(block: readonly T[], seed: number, placed: readonly number[]): T[] {
 	const size = block.length;
@@ -138,7 +139,9 @@ function mixBlock<T extends MixItem>(block: readonly T[], seed: number, placed: 
 	const keyed = ranked.map(({ item, j }) => {
 		const n = perKind.get(item.kind) ?? 1;
 		const position = ((j + 0.5) / n) * size;
-		return { item, j, key: position + MIX_SPREAD * mixKey(seed, item.cardId) };
+		// One kind has nothing to interleave: its order (due, level, frequency) stays.
+		const jitter = perKind.size > 1 ? MIX_SPREAD * mixKey(seed, item.cardId) : 0;
+		return { item, j, key: position + jitter };
 	});
 	keyed.sort(
 		(a, b) => a.key - b.key || kindRank(a.item.kind) - kindRank(b.item.kind) || a.j - b.j
