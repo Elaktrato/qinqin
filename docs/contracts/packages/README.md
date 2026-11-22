@@ -24,7 +24,7 @@ Fixtures:
 | --- | --- | --- | --- |
 | `lexicon` | `lexicon.<lang>` | every live entry of the language (forms, readings), its links, the senses of every live dictionary of the language, those dictionaries | — |
 | `levels` | `levels.<packId>` | one level scheme, its levels and members | `lexicon.<lang>` |
-| `sentences` | `sentences.<packId>` | the pack's live sentences | `lexicon.<lang>` |
+| `sentences` | `sentences.<packId>` | the pack's live sentences; `pinyin` may be `""` (no reading: the pack left it out rather than guess; show no reading line) | `lexicon.<lang>` |
 | `frequency` | `frequency.<packId>` | the pack's frequency rows | — |
 | `components` | `components.<packId>` | the pack's component index | — |
 | `audio` | `audio.<packId>` | the pack's clips (index and files); `optional: true` | — |
