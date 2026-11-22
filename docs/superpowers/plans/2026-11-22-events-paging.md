@@ -143,3 +143,46 @@ Not verified: the web against the real server in a browser (no browser automatio
 service worker are covered by unit and worker tests); an old v0.4 PWA shell itself (its request, the legacy
 `since=&workspace=` array, is covered by the byte-identity check and the classify tests); `-race` (no concurrency
 changed); Android (it reads the pull, untouched).
+
+### Review fixes (the one fix wave, 2026-11-22)
+
+`feature/study-batch` merged in first (`5d675733`, no conflicts). Each finding test-first unless noted.
+
+1. MUST — `692af60c`. The paged answers said `Cache-Control: no-store` and the service worker never saves a
+   `no-store` answer, so no event log page was ever saved. The same gap broke offline study from the pull v2
+   pages since v0.4.0 prep item 5 (`handlers_sync.go` sent `no-store` while `classify.ts` allows v2 pages): a real,
+   older bug, fixed here too (Ruling in the spec). The header value is now a contract field
+   (`cacheControl` in `events/page.json` and `sync/pull-page.json`); the Go handler tests compare the real header
+   with it and two new worker tests build their responses with it. Red first: with the fixture holding today's
+   `no-store`, both worker tests failed (nothing served offline); with `private, no-cache` in the fixture the Go
+   tests failed until both handlers sent it (`pageCacheControl`). Docs: `events/`, `sync/`, `pwa/` READMEs, spec.
+2. SHOULD — `644c1123`. The spec's cut-walk Ruling was wrong (a moved page boundary is a new continuation URL
+   that was never saved, so the old reader threw and offline there was no log at all); corrected in the spec.
+   `readEventLog` ends a walk whose continuation is unreachable (a network error, `TypeError`) with the events so
+   far and `complete: false`; first-page, HTTP and contract failures still throw; the plugin SDK keeps the strict
+   reader. The widgets' cache does not keep an incomplete log. After a complete walk the page prunes the
+   workspace's saved continuations that no saved first page's `next` chain reaches (`pwa/eventPageCache.ts`).
+   Tests failed first (missing exports/module, the cut walk threw), then passed.
+3. SHOULD — `b5acbd62`. A legacy stream failing after its first bytes now logs and `panic(http.ErrAbortHandler)`
+   (connection reset, no chunked terminator). Test with an injected stream (`WithEventStream` test hook) that
+   writes ~880 KB then fails: failed (body ended cleanly), then passed.
+4. SHOULD — same commit. The 500-before-first-byte branch: test with an injected stream failing before any byte →
+   500 JSON `internal`, no `Deprecation`/`Link`. It passed on the existing code; checked by mutation (disabling the
+   branch made it fail with 200).
+5. NIT — `33d65acc`. Repeated `since`/`limit`/`page` are refused only in the paged form; the legacy form reads the
+   first `since` again. Test failed, then passed.
+6. NIT — `eb061d8c`. A bare array on a page after the first is refused (both readers). Passed on the existing code;
+   checked by mutation (dropping `n === 1` made it fail).
+7. NIT — `56a64c98`. `page.json`, the events README and the spec say the 4 MiB budget counts the items' bytes
+   alone.
+
+Also `66e9079a`: gofmt of two files the earlier fix commits left unformatted (struct alignment); noticed by
+`gofmt -l` right after the commits, fixed in its own commit rather than rewriting them.
+
+Gates after the fix wave: targeted Go (`events`, `api`, `sync`) exit 0; web `check` exit 0 (1656 files, 0 errors),
+`test` (Node 22) exit 1 with the same 5 Node-22-only failures as before (12 184 passed / 2 skipped of 12 191),
+`build` exit 0, Node 26 full vitest exit 0 (565 files, 12 189 passed, 2 skipped); `gen-api-docs --check` 0; one
+full Go run: 46 packages ok, 3 without tests, 1 FAIL = the known `internal/ai`
+`TestHostnameResolvingToEmbeddedFormIsRefused`. Not re-run: the real-app memory measurement (the handler's paging
+and streaming code is unchanged apart from the abort path and the header); not verified in a browser that a
+real HTTP cache honours `private, no-cache` as assumed.
