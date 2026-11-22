@@ -86,6 +86,11 @@ tab-separated `.csv` file, `\N` for null:
 | `user_languages.tar.bz2` / `user_languages.csv` | lang, skill level (0–5, 5 = native; `\N`), username, details |
 | `users_sentences.tar.bz2` / `users_sentences.csv` | username, sentence id, review (-1/0/1), dates |
 
+Ruling (review fix): fields are unescaped MySQL-style once (`\N` alone is NULL; `\\`, `\t`, `\n`, `\r`, `\0`,
+`\b`, `\Z`; a backslash before another character stands for it), and a sentence or translation whose text then
+holds a control character is dropped (step "control characters in the text") — whether Tatoeba escapes
+this way is **not verified** — cost if wrong: a sentence with a literal backslash sequence loses the backslash.
+
 Ruling: the archive URLs, member names and hashes are **data** in `server/tools/tatoeba/pin.json`, and the
 reader accepts `.tar.bz2` (the named member), `.bz2` and plain files, so a switch to the per-language exports
 is a pin edit plus a test, not a rewrite — cost if wrong: small.

@@ -214,3 +214,21 @@ func TestCheckCreditsRefusesAnUnownedCCBYSentence(t *testing.T) {
 		}
 	}
 }
+
+// TestFilterDropsControlCharacters: a sentence whose unescaped text holds a
+// tab, line break or other control character is dropped; so is such a
+// translation.
+func TestFilterDropsControlCharacters(t *testing.T) {
+	ex, r := fixture(t)
+	ex.sentences[1001].Text = "我喜欢\t学习汉语。"
+	ex.sentences[2003].Text = "He went\nto the bank."
+	kept, _, drops := filterLanguage(ex, r, r.Languages["zh"])
+	if drops.n[stepControl] != 1 {
+		t.Errorf("control-character drops = %d, want 1", drops.n[stepControl])
+	}
+	for _, c := range kept {
+		if c.s.ID == 1001 || c.s.ID == 1003 {
+			t.Errorf("sentence %d kept (its text or only translation has a control character)", c.s.ID)
+		}
+	}
+}

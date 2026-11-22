@@ -80,9 +80,7 @@ func readRows(r io.Reader, what string, n int, fn func(cols []string) error) err
 				return fmt.Errorf("%s line %d: %d columns, want %d; the export format changed: re-check the export's licence information and update the tool", what, line, len(cols), n)
 			}
 			for i, c := range cols {
-				if c == `\N` {
-					cols[i] = ""
-				}
+				cols[i] = unescapeField(c)
 			}
 			if err := fn(cols); err != nil {
 				return fmt.Errorf("%s line %d: %w", what, line, err)
@@ -92,4 +90,42 @@ func readRows(r io.Reader, what string, n int, fn func(cols []string) error) err
 			return nil
 		}
 	}
+}
+
+// unescapeField undoes the export's MySQL-style escaping: a whole field
+// \N is NULL (empty); \0 \b \n \r \t \Z are NUL, backspace, line feed,
+// carriage return, tab and Ctrl-Z; a backslash before any other character
+// stands for that character (\\ is a backslash).
+func unescapeField(s string) string {
+	if s == `\N` {
+		return ""
+	}
+	if !strings.Contains(s, `\`) {
+		return s
+	}
+	var b strings.Builder
+	for i := 0; i < len(s); i++ {
+		if s[i] != '\\' || i == len(s)-1 {
+			b.WriteByte(s[i])
+			continue
+		}
+		i++
+		switch s[i] {
+		case '0':
+			b.WriteByte(0)
+		case 'b':
+			b.WriteByte('\b')
+		case 'n':
+			b.WriteByte('\n')
+		case 'r':
+			b.WriteByte('\r')
+		case 't':
+			b.WriteByte('\t')
+		case 'Z':
+			b.WriteByte(0x1a)
+		default:
+			b.WriteByte(s[i])
+		}
+	}
+	return b.String()
 }

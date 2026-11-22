@@ -16,6 +16,7 @@ const (
 	stepTag         = "unreliable tag"
 	stepDenyTag     = "deny tag"
 	stepReview      = "negative review"
+	stepControl     = "control characters in the text"
 	stepLength      = "length out of bounds"
 	stepDenyWord    = "deny word"
 	stepTranslation = "no usable English translation"
@@ -57,7 +58,7 @@ func (c *counter) add(step string, k int) {
 // order, the number read and the drop counts.
 func filterLanguage(ex *export, rules Rules, lr LangRules) ([]*candidate, int, *counter) {
 	drops := newCounter()
-	for _, step := range []string{stepOrphan, stepNativeOnly, stepTag, stepDenyTag, stepReview, stepLength, stepDenyWord, stepTranslation, stepDuplicate} {
+	for _, step := range []string{stepOrphan, stepNativeOnly, stepTag, stepDenyTag, stepReview, stepControl, stepLength, stepDenyWord, stepTranslation, stepDuplicate} {
 		drops.add(step, 0)
 	}
 	dropTags := lowerSet(rules.DropTags)
@@ -95,6 +96,8 @@ func filterLanguage(ex *export, rules Rules, lr LangRules) ([]*candidate, int, *
 			drops.add(stepDenyTag, 1)
 		case rules.DropNegativeReviews && ex.negative[id]:
 			drops.add(stepReview, 1)
+		case hasControl(s.Text):
+			drops.add(stepControl, 1)
 		case n < lr.MinRunes || n > lr.MaxRunes:
 			drops.add(stepLength, 1)
 		case containsAny(s.Text, lr.DenyWords):
@@ -143,7 +146,7 @@ func bestTranslation(ex *export, rules Rules, id int64, dropTags, denyTags map[s
 		for _, tag := range ex.tags[tid] {
 			bad = bad || dropTags[tag] || denyTags[tag]
 		}
-		if bad || (rules.DropNegativeReviews && ex.negative[tid]) || utf8.RuneCountInString(t.Text) > rules.MaxTranslationRunes || strings.TrimSpace(t.Text) == "" {
+		if bad || (rules.DropNegativeReviews && ex.negative[tid]) || utf8.RuneCountInString(t.Text) > rules.MaxTranslationRunes || strings.TrimSpace(t.Text) == "" || hasControl(t.Text) {
 			continue
 		}
 		native := t.Owner != "" && ex.skill(t.Lang, t.Owner) == rules.NativeSkill
@@ -196,6 +199,17 @@ func lowerSet(list []string) map[string]bool {
 func containsAny(text string, words []string) bool {
 	for _, w := range words {
 		if w != "" && strings.Contains(text, w) {
+			return true
+		}
+	}
+	return false
+}
+
+// hasControl reports a control character (tab, line break, NUL …): an
+// unescaped export field that holds one is no clean sentence.
+func hasControl(s string) bool {
+	for _, r := range s {
+		if unicode.IsControl(r) {
 			return true
 		}
 	}

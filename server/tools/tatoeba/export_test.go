@@ -4,6 +4,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"testing"
 )
@@ -83,5 +84,19 @@ func TestReadRowsIsStrict(t *testing.T) {
 	got = nil
 	if err := readRows(strings.NewReader("1\t2\r\n3\t4"), "links", 2, func(c []string) error { got = append(got, c); return nil }); err != nil || len(got) != 2 || got[0][1] != "2" {
 		t.Errorf("rows = %q, %v", got, err)
+	}
+}
+
+// TestReadRowsUnescapes: the export is written MySQL-style (\N for NULL,
+// backslash escapes); a field is unescaped once.
+func TestReadRowsUnescapes(t *testing.T) {
+	var got []string
+	in := "1\t" + `a\\b` + "\n2\t" + `tab\there` + "\n3\t" + `line\nbreak` + "\n4\t" + `\N` + "\n5\t" + `x\Ny` + "\n6\t" + `quote\'s` + "\n"
+	if err := readRows(strings.NewReader(in), "test", 2, func(c []string) error { got = append(got, c[1]); return nil }); err != nil {
+		t.Fatal(err)
+	}
+	want := []string{`a\b`, "tab\there", "line\nbreak", "", "xNy", "quote's"}
+	if !slices.Equal(got, want) {
+		t.Errorf("fields %q, want %q", got, want)
 	}
 }
