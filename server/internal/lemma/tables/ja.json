@@ -13,7 +13,7 @@
   "masu": {},
   "te": {}
  },
- "compounds": [{"suffix": "する", "class": "vs", "stem": {"anyOf": [{"minRunes": 2}, {"notOnly": "kana"}]}}],
+ "compounds": [{"suffix": "する", "class": "vs", "stem": {"anyOf": [{"minRunes": 3}, {"allOf": [{"minRunes": 2}, {"notOnly": "hiragana"}]}, {"notOnly": "kana"}]}}],
  "hints": {"expressionPos": ["exp"], "particlePos": ["prt"], "readingScript": "kana", "readingType": "kana"},
  "rules": [
   {"from": "行った", "to": "行く", "reason": "past", "out": "v5", "match": "suffix-or-whole"},

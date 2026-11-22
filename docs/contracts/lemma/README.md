@@ -35,7 +35,8 @@ Go: `server/internal/lemma/contract_test.go`, `server/internal/segment/contract_
     "w":  {"any": true},              // every entry (dictionaries without POS); not with tags/prefixes
     "masu": {}                        // intermediate: no POS ever matches
   },
-  "compounds": [{"suffix": "する", "class": "vs", "stem": {"anyOf": [{"minRunes": 2}, {"notOnly": "kana"}]}}],
+  "compounds": [{"suffix": "する", "class": "vs",
+                 "stem": {"anyOf": [{"minRunes": 3}, {"allOf": [{"minRunes": 2}, {"notOnly": "hiragana"}]}, {"notOnly": "kana"}]}}],
   "hints": {"expressionPos": ["exp"], "particlePos": ["prt"],   // POS tags the ranking/boundary rules read
             "readingScript": "kana", "readingType": "kana"},  // text only in this script is also looked up by reading
   "rules": [{"from": "ました", "to": "ます", "reason": "past", "out": "masu"}] }
@@ -74,7 +75,9 @@ least one code point outside the script (so false for an empty stem). `notSuffix
 
 For a candidate of a compound's `class` whose form ends in its `suffix` with a non-empty stem that satisfies
 the compound's optional `stem` predicate, the stem is looked up too, with the same class requirement: 勉強しています → 勉強する → 勉強 (JMdict tags `vs` on the
-noun). The match's `lemma` stays 勉強する; `/api/segment` reports `stem: "勉強"` (`reader/` contract).
+noun). The Japanese stem predicate admits a kanji stem of any length (愛する), a katakana stem of two
+(メモする) and a hiragana stem of three or more (ちゃんとする), not すし (す + し) or こうしている (稿 + している).
+The match's `lemma` stays 勉強する; `/api/segment` reports `stem: "勉強"` (`reader/` contract).
 
 ## Reading lookups
 
