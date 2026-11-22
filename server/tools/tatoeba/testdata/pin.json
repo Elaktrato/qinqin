@@ -1,0 +1,46 @@
+{
+  "source": "https://downloads.example.invalid/exports/",
+  "exportDate": "2000-01-02",
+  "licence": {
+    "checked": "2000-01-03",
+    "statement": "Fixture: invented export, stated CC BY 2.0 FR with a CC0 subset."
+  },
+  "archives": [
+    {
+      "name": "sentences_detailed",
+      "url": "https://downloads.example.invalid/exports/sentences_detailed.tar.bz2",
+      "member": "sentences_detailed.csv",
+      "sha256": "bcaa4162d188a6b40572db084b44cc4cc0c76baa67ca09975aff1b3caee47b94"
+    },
+    {
+      "name": "sentences_CC0",
+      "url": "https://downloads.example.invalid/exports/sentences_CC0.tar.bz2",
+      "member": "sentences_CC0.csv",
+      "sha256": "8424616fab038f976f7df24187ba5677313aa258f809321dd9e6ba503f373f53"
+    },
+    {
+      "name": "links",
+      "url": "https://downloads.example.invalid/exports/links.csv.bz2",
+      "member": "links.csv",
+      "sha256": "c0a45284ab7b2428728970706cbc2438a26f12389f17363f88d7346dee5139d2"
+    },
+    {
+      "name": "tags",
+      "url": "https://downloads.example.invalid/exports/tags.tar.bz2",
+      "member": "tags.csv",
+      "sha256": "061a3292ee2ad087464d232973b08ede1d95c50037ef7fd5a6bb13d3f4cf4709"
+    },
+    {
+      "name": "user_languages",
+      "url": "https://downloads.example.invalid/exports/user_languages.tar.bz2",
+      "member": "user_languages.csv",
+      "sha256": "0fe76cbc337a91c97067186a0d4557c21a8ec335379f743ffcecc78ca3c4a300"
+    },
+    {
+      "name": "users_sentences",
+      "url": "https://downloads.example.invalid/exports/users_sentences.csv",
+      "member": "users_sentences.csv",
+      "sha256": "6184b19a8e3f99e700eb05ce639c3ca8759691bc316dd220f45d5dac3e27df46"
+    }
+  ]
+}
