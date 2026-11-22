@@ -1,6 +1,6 @@
 // Package lookup resolves the text at a cursor to a ranked list of
 // dictionary entries, the way Yomitan does: every prefix of the text
-// from the cursor (and, for Japanese, every part-of-speech-checked
+// from the cursor (and, for a language with a lemmatizer rule table, every part-of-speech-checked
 // deinflection of it) is looked up, each matching entry is kept once
 // with its best match, and the entries are ordered by the sort chain in
 // rank.go. Offsets are Unicode code points.
@@ -17,6 +17,7 @@ import (
 
 	"qinqin/internal/freq"
 	"qinqin/internal/lang"
+	"qinqin/internal/lemma"
 	"qinqin/internal/lexicon"
 )
 
@@ -117,7 +118,7 @@ type probe struct {
 	form    string   // dictionary form of the prefix: the prefix or the deinflected form
 	length  int      // code points of source text it accounts for
 	reasons []string // inflection chain; nil when exact
-	class   string   // word class an entry must have (lang.ClassMatches); "" = any
+	class   string   // word class an entry must have (lemma.Table.ClassMatches); "" = any
 }
 
 // match is an entry's best probe.
@@ -136,11 +137,12 @@ type match struct {
 // Candidates are the prefixes of 1..MaxWindowRunes code points from the
 // offset, looked up by written form (CC-CEDICT stores simplified and
 // traditional forms, so either script matches) and, for Japanese
-// kana-only text, by the plain form of a word's readings. Japanese
-// prefixes also yield their deinflections, kept only when a sense of the
-// entry has the deinflection's word class. A する compound (勉強した →
-// 勉強する) is also looked up by its stem (勉強), accepted when the stem
-// is a する noun (JMdict tags vs on the noun). Each category is one
+// kana-only text, by the plain form of a word's readings. For a
+// language with a lemmatizer rule table (lang.Deinflector) prefixes also
+// yield their deinflections, kept only when a sense of the entry has the
+// deinflection's word class. A compound of the table (勉強した → 勉強する)
+// is also looked up by its stem (勉強), accepted when the stem has the
+// compound's class (JMdict tags vs on the noun). Each category is one
 // batched store call, whatever the window length. An entry whose senses
 // all belonged to uninstalled dictionaries is not a result.
 func (s Service) Lookup(ctx context.Context, language, text string, offset int, kinds []string) ([]Result, error) {
@@ -151,6 +153,10 @@ func (s Service) Lookup(ctx context.Context, language, text string, offset int, 
 	window := runes[offset:min(offset+MaxWindowRunes, len(runes))]
 	pack := lang.For(language)
 	probes := buildProbes(pack, window)
+	var rules *lemma.Table
+	if d, ok := pack.(lang.Deinflector); ok {
+		rules = d.Rules()
+	}
 
 	var forms, plains []string
 	for _, p := range probes {
@@ -183,7 +189,7 @@ func (s Service) Lookup(ctx context.Context, language, text string, offset int, 
 	best := map[int64]*match{}
 	var order []int64
 	consider := func(e lexicon.Entry, p probe, reading int) {
-		if len(kinds) > 0 && !slices.Contains(kinds, e.Kind) || !hasClass(e, p.class) {
+		if len(kinds) > 0 && !slices.Contains(kinds, e.Kind) || !hasClass(rules, e, p.class) {
 			return
 		}
 		cur := best[e.ID]
@@ -256,7 +262,8 @@ func (s Service) Lookup(ctx context.Context, language, text string, offset int, 
 
 // buildProbes lists the probes of every prefix of window, shortest
 // prefix first: the prefix itself, then its deinflections (when the
-// language deinflects), each followed by its する-compound stem probe.
+// language has a rule table), each followed by the stem probe of every
+// compound of the table it ends in (勉強する -> 勉強).
 func buildProbes(pack lang.Pack, window []rune) []probe {
 	deinflector, _ := pack.(lang.Deinflector)
 	var probes []probe
@@ -266,26 +273,29 @@ func buildProbes(pack lang.Pack, window []rune) []probe {
 		if deinflector == nil {
 			continue
 		}
+		compounds := deinflector.Rules().Compounds
 		for _, d := range deinflector.Deinflect(prefix) {
 			p := probe{term: d.Form, form: d.Form, length: n, reasons: d.Reasons, class: d.Class}
 			probes = append(probes, p)
 			// JMdict tags vs on the noun (勉強: n, vs), not on 勉強する.
-			if stem, ok := strings.CutSuffix(d.Form, "する"); ok && stem != "" && d.Class == lang.ClassVs {
-				p.term = stem
-				probes = append(probes, p)
+			for _, c := range compounds {
+				if stem, ok := strings.CutSuffix(d.Form, c.Suffix); ok && stem != "" && d.Class == c.Class {
+					p.term = stem
+					probes = append(probes, p)
+				}
 			}
 		}
 	}
 	return probes
 }
 
-// hasClass reports whether any sense of e has a part of speech of class;
-// the empty class (an exact match) always holds.
-func hasClass(e lexicon.Entry, class string) bool {
+// hasClass reports whether any sense of e has a part of speech of class
+// in the rule table rules; the empty class (an exact match) always holds.
+func hasClass(rules *lemma.Table, e lexicon.Entry, class string) bool {
 	if class == "" {
 		return true
 	}
-	return slices.ContainsFunc(e.Senses, func(s lexicon.Sense) bool { return lang.ClassMatches(class, s.POS) })
+	return rules != nil && slices.ContainsFunc(e.Senses, func(s lexicon.Sense) bool { return rules.ClassMatches(class, s.POS) })
 }
 
 // rankKeys computes the sort keys of m except the frequency rank.
