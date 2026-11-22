@@ -85,14 +85,30 @@ unverified facts marked unverified) must stay the same in both places.
 
 ## Grammar lessons
 
-- **Chinese grammar demo (A1)** (`zh-grammar-demo`, type `grammar`; bundled):
-  ten short beginner lessons with 40 example sentences, readings,
-  translations and exercise answers, **written for qinqin by the project and
-  released under CC0 1.0** (`plugins/data/zh-grammar-demo`, with `LICENSE` and
-  `ATTRIBUTION.md`). Nothing is taken from a textbook, a syllabus or another
-  grammar resource; the A1 levels are the author's own estimates (the link to
-  "HSK 1" is a rough orientation only). It is **demo content that has not been
-  reviewed by a native speaker**; errors are possible.
+- **Chinese grammar (HSK-aligned)** (`zh-grammar`, type `grammar`; bundled):
+  grammar lessons level by level (≈ HSK 1 to 7–9), each syllabus grammar point
+  taught with 4–8 example sentences, readings, translations and exercise
+  answers, **written for qinqin by the project and released under CC0 1.0**
+  (`plugins/data/zh-grammar`, with `LICENSE` and `ATTRIBUTION.md`). Topic
+  coverage follows the grammar outline (语法大纲) of the 《HSK 考试大纲》 /
+  Syllabus for the Chinese Proficiency Test (CLEC/CTI, edition 2025-11,
+  effective 2026-07;
+  https://hsk.cn-bj.ufileos.com/3.0/%E6%96%B0%E7%89%88HSK%E8%80%83%E8%AF%95%E5%A4%A7%E7%BA%B21219.pdf),
+  used as a **topic index only**: the lesson grouping and order, explanations,
+  examples and exercises are qinqin's own, and no syllabus text is reproduced.
+  The syllabus grants no reuse licence. The levels are qinqin's estimates, not
+  official HSK levels. It **has not been reviewed by a native speaker**; errors
+  are possible.
+- **Japanese grammar (≈ JLPT levels)** (`ja-grammar`, type `grammar`; bundled):
+  grammar lessons in five levels (≈ N5 to N1), each grammar point taught with
+  4–8 example sentences, kana readings, translations and exercise answers,
+  **written for qinqin by the project and released under CC0 1.0**
+  (`plugins/data/ja-grammar`, with `LICENSE` and `ATTRIBUTION.md`). The JLPT
+  publishes no grammar list; the choice and order of points per level are
+  qinqin's own (`docs/superpowers/specs/2026-11-21-ja-grammar-pack-design.md`),
+  not taken from JLPT preparation books or other published lists. The levels
+  are qinqin's estimates, not official JLPT levels. It **has not been reviewed
+  by a native speaker**; errors are possible.
 
 ## Frequency data
 
@@ -341,12 +357,15 @@ byte.
   "reproduced from (or quoted from) the Chinese Test Service Website"), and
   that reproducing or quoting it is permitted only as reasonable, good-faith
   quoting for news or informative, free public information. The syllabus PDF
-  carries a copy-protection flag (copy: no, change: no). The project includes
-  only the vocabulary (word) list and the list of characters to recognise
-  (认读字), as plain lists of words and characters with their levels (and the
-  words' pinyin as lookup readings); it does not include the syllabus's other
-  content (grammar points, task and topic descriptions, the lists of
-  characters to write, explanatory text). It includes these lists with
+  carries a copy-protection flag (copy: no, change: no). The `hsk-words`
+  pack includes only the vocabulary (word) list and the `hsk-chars` pack only
+  the list of characters to recognise (认读字), as plain lists of words and
+  characters with their levels (and the words' pinyin as lookup readings);
+  neither includes the syllabus's descriptions, task and topic lists, the
+  lists of characters to write or explanatory text. The Chinese grammar pack
+  (`zh-grammar`), when installed, is listed separately under Grammar lessons
+  and uses the syllabus's grammar outline as a topic index, reproducing no
+  syllabus text. It includes these lists with
   attribution at the project owner's decision; the legal status of including
   these lists has not been verified (this is not a legal opinion), and no
   licence or public-domain status is claimed. The packs therefore have no `LICENSE` file. Their `manifest.json`
