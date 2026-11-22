@@ -1177,6 +1177,106 @@
    "reject": [
     "痛い"
    ]
+  },
+  {
+   "name": "prohibition, past",
+   "surface": "行ってはいけなかった",
+   "expect": [
+    {
+     "form": "行く",
+     "class": "v5",
+     "reasons": [
+      "past",
+      "prohibition",
+      "te-form"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "prohibition, polite past",
+   "surface": "行ってはいけませんでした",
+   "expect": [
+    {
+     "form": "行く",
+     "class": "v5",
+     "reasons": [
+      "polite past",
+      "prohibition",
+      "te-form"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "permission, かまいません",
+   "surface": "見てもかまいません",
+   "expect": [
+    {
+     "form": "見る",
+     "class": "v1",
+     "reasons": [
+      "permission",
+      "te-form"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "permission, よかった",
+   "surface": "帰ってもよかった",
+   "expect": [
+    {
+     "form": "帰る",
+     "class": "v5",
+     "reasons": [
+      "permission",
+      "te-form"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "prohibition, ちゃだめ",
+   "surface": "食べちゃだめ",
+   "expect": [
+    {
+     "form": "食べる",
+     "class": "v1",
+     "reasons": [
+      "prohibition",
+      "te-form"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "prohibition, ちゃいけない",
+   "surface": "行っちゃいけない",
+   "expect": [
+    {
+     "form": "行く",
+     "class": "v5",
+     "reasons": [
+      "prohibition",
+      "te-form"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "prohibition, じゃいけない",
+   "surface": "読んじゃいけない",
+   "expect": [
+    {
+     "form": "読む",
+     "class": "v5",
+     "reasons": [
+      "prohibition",
+      "te-form"
+     ]
+    }
+   ]
   }
  ]
 }
