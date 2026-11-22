@@ -93,6 +93,8 @@ func (r Rules) check() error {
 		return fmt.Errorf("translationLanguage is required")
 	case r.MaxTranslationRunes < 1:
 		return fmt.Errorf("maxTranslationRunes must be at least 1")
+	case !r.DropOrphans:
+		return fmt.Errorf("dropOrphans must be true: an orphaned CC BY sentence has no owner to credit")
 	case r.MaxPerWord < 1:
 		return fmt.Errorf("maxPerWord must be at least 1")
 	case r.SampleSize < 0:

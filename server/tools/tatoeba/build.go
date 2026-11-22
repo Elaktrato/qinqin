@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strings"
 	"sync"
 )
 
@@ -183,5 +184,21 @@ func buildLanguage(ctx context.Context, cfg buildConfig, ex *export, code string
 		res.bundled = append(res.bundled, c)
 	}
 	sort.Slice(res.bundled, func(i, j int) bool { return res.bundled[i].s.ID < res.bundled[j].s.ID })
+	if err := checkCredits(res.bundled); err != nil {
+		return nil, err
+	}
 	return res, nil
+}
+
+// checkCredits refuses a bundled CC BY sentence or translation without an
+// owner: CC BY needs the author credited, and credits.tsv would be empty.
+func checkCredits(bundled []*candidate) error {
+	for _, c := range bundled {
+		for _, s := range []*sentence{c.s, c.tr} {
+			if s.Licence == licenceBY && strings.TrimSpace(s.Owner) == "" {
+				return fmt.Errorf("sentence %d is CC BY 2.0 FR but has no owner to credit; it must not be bundled", s.ID)
+			}
+		}
+	}
+	return nil
 }

@@ -2,6 +2,7 @@ package main
 
 import (
 	"slices"
+	"strings"
 	"testing"
 )
 
@@ -142,5 +143,74 @@ func TestDupKey(t *testing.T) {
 	}
 	if dupKey("我喜欢") == dupKey("我喜歡") {
 		t.Error("dupKey must not merge different characters")
+	}
+}
+
+// TestBestTranslationRules: a translation must itself pass the orphan,
+// tag, review and length rules; each failing one alone leaves none.
+func TestBestTranslationRules(t *testing.T) {
+	_, r := fixture(t)
+	r.MaxTranslationRunes = 20
+	mk := func(extra ...*sentence) *export {
+		ex := &export{sentences: map[int64]*sentence{1: {ID: 1, Lang: "cmn", Text: "我们", Owner: "lin", Licence: licenceBY}},
+			links: map[int64][]int64{}, tags: map[int64][]string{12: {"@change"}, 16: {"vulgar"}}, skills: map[string]string{}, negative: map[int64]bool{13: true}}
+		for _, s := range extra {
+			ex.sentences[s.ID] = s
+			ex.links[1] = append(ex.links[1], s.ID)
+		}
+		return ex
+	}
+	eng := func(id int64, owner, text string) *sentence {
+		return &sentence{ID: id, Lang: "eng", Text: text, Owner: owner, Licence: licenceBY}
+	}
+	bad := map[string]*sentence{
+		"orphan":          eng(11, "", "We."),
+		"unreliable tag":  eng(12, "tom", "We."),
+		"negative review": eng(13, "tom", "We."),
+		"too long":        eng(14, "tom", "We, all of us, together, always."),
+		"deny tag":        eng(16, "tom", "We."),
+		"other language":  {ID: 17, Lang: "fra", Text: "Nous.", Owner: "tom", Licence: licenceBY},
+	}
+	dropTags, denyTags := lowerSet(r.DropTags), lowerSet(r.DenyTags)
+	for name, s := range bad {
+		if got := bestTranslation(mk(s), r, 1, dropTags, denyTags); got != nil {
+			t.Errorf("%s translation %d was used", name, got.ID)
+		}
+	}
+	var all []*sentence
+	for _, s := range bad {
+		all = append(all, s)
+	}
+	good := eng(15, "tom", "We.")
+	if got := bestTranslation(mk(append(all, good)...), r, 1, dropTags, denyTags); got == nil || got.ID != 15 {
+		t.Errorf("with one usable translation got %v, want 15", got)
+	}
+}
+
+func TestRulesRefuseKeepingOrphans(t *testing.T) {
+	r, err := loadRules(fixtureRules)
+	if err != nil {
+		t.Fatal(err)
+	}
+	r.DropOrphans = false
+	if err := r.check(); err == nil || !strings.Contains(err.Error(), "dropOrphans") {
+		t.Errorf("check with dropOrphans false = %v, want a refusal", err)
+	}
+}
+
+// TestCheckCreditsRefusesAnUnownedCCBYSentence: CC BY needs the author;
+// a bundled CC BY sentence or translation without an owner stops the build.
+func TestCheckCreditsRefusesAnUnownedCCBYSentence(t *testing.T) {
+	ok := &candidate{s: &sentence{ID: 1, Owner: "lin", Licence: licenceBY}, tr: &sentence{ID: 2, Owner: "", Licence: licenceCC0}}
+	if err := checkCredits([]*candidate{ok}); err != nil {
+		t.Errorf("a CC0 translation without owner is fine: %v", err)
+	}
+	for _, c := range []*candidate{
+		{s: &sentence{ID: 3, Owner: "", Licence: licenceBY}, tr: &sentence{ID: 4, Owner: "emma", Licence: licenceBY}},
+		{s: &sentence{ID: 5, Owner: "lin", Licence: licenceBY}, tr: &sentence{ID: 6, Owner: " ", Licence: licenceBY}},
+	} {
+		if err := checkCredits([]*candidate{ok, c}); err == nil || !strings.Contains(err.Error(), "owner") {
+			t.Errorf("checkCredits(%d) = %v, want a refusal", c.s.ID, err)
+		}
 	}
 }
