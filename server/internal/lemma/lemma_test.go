@@ -154,7 +154,7 @@ func TestTableMetadata(t *testing.T) {
 	if !slices.Equal(tb.Hints.ExpressionPOS, []string{"exp"}) || !slices.Equal(tb.Hints.ParticlePOS, []string{"prt"}) {
 		t.Errorf("hints = %+v", tb.Hints)
 	}
-	if len(tb.Compounds) != 1 || tb.Compounds[0] != (lemma.Compound{Suffix: "ar", Class: "ar"}) {
+	if len(tb.Compounds) != 1 || tb.Compounds[0].Suffix != "ar" || tb.Compounds[0].Class != "ar" || tb.Compounds[0].Stem != nil {
 		t.Errorf("compounds = %+v", tb.Compounds)
 	}
 }
@@ -184,5 +184,25 @@ func TestParseRejects(t *testing.T) {
 		if _, err := lemma.Parse([]byte(src)); err == nil {
 			t.Errorf("%s: Parse succeeded, want an error", name)
 		}
+	}
+}
+
+func TestCompoundStemPredicate(t *testing.T) {
+	tb := parse(t, `{"format": 1, "language": "xc", "version": "t", "maxDepth": 1,
+	 "classes": {"vs": {"tags": ["vs"]}}, "hints": {},
+	 "compounds": [{"suffix": "する", "class": "vs", "stem": {"anyOf": [{"minRunes": 2}, {"notOnly": "kana"}]}}],
+	 "rules": []}`)
+	c := tb.Compounds[0]
+	for stem, want := range map[string]bool{"勉強": true, "す": false, "ちゃんと": true, "愛": true} {
+		if got := c.StemOK(stem); got != want {
+			t.Errorf("StemOK(%q) = %v, want %v", stem, got, want)
+		}
+	}
+	if !(lemma.Compound{Suffix: "する", Class: "vs"}).StemOK("す") {
+		t.Error("a compound without a predicate refuses a stem")
+	}
+	if _, err := lemma.Parse([]byte(`{"format": 1, "language": "xc", "version": "t", "maxDepth": 1,
+	 "classes": {"vs": {}}, "hints": {}, "compounds": [{"suffix": "する", "class": "vs", "stem": {}}], "rules": []}`)); err == nil {
+		t.Error("an empty compound stem predicate parsed")
 	}
 }

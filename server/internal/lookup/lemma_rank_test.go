@@ -49,6 +49,28 @@ const lemmaWords = `<entry>
 <r_ele><reb>しかし</reb><re_pri>ichi1</re_pri></r_ele>
 <sense><pos>&conj;</pos><misc>&uk;</misc><gloss>however</gloss></sense>
 </entry>
+<entry>
+<ent_seq>1008340</ent_seq>
+<r_ele><reb>として</reb><re_pri>spec1</re_pri></r_ele>
+<sense><pos>&exp;</pos><gloss>as (i.e. in the role of)</gloss></sense>
+</entry>
+<entry>
+<ent_seq>2136890</ent_seq>
+<r_ele><reb>とする</reb><re_pri>spec1</re_pri></r_ele>
+<sense><pos>&exp;</pos><pos>&vs-i;</pos><gloss>to try to</gloss></sense>
+</entry>
+<entry>
+<ent_seq>1288770</ent_seq>
+<k_ele><keb>寿司</keb><ke_pri>ichi1</ke_pri></k_ele>
+<r_ele><reb>すし</reb><re_pri>ichi1</re_pri></r_ele>
+<sense><pos>&n;</pos><gloss>sushi</gloss></sense>
+</entry>
+<entry>
+<ent_seq>2269880</ent_seq>
+<k_ele><keb>為</keb></k_ele>
+<r_ele><reb>す</reb></r_ele>
+<sense><pos>&vs-c;</pos><misc>&uk;</misc><gloss>to do (archaic)</gloss></sense>
+</entry>
 `
 
 // Without a frequency pack (the issue's measurement), a common verb the
@@ -72,7 +94,20 @@ func TestLemmaRankingWithoutFrequency(t *testing.T) {
 		{"した", []string{"為る[past]", "下", "舌"}},
 		{"する", []string{"為る", "掏る"}},
 		{"いる", []string{"居る", "要る", "射る"}},
+		{"として", []string{"として"}}, // とする is itself an expression: として does not yield to it
+		{"すし", []string{"寿司"}},   // a one-kana stem is no する compound (為 read す)
 	} {
 		wantPrefix(t, run(t, s, "ja", c.text, 0), c.want...)
+	}
+}
+
+// A one-kana stem never makes a する compound: すし is not す (為) + し.
+func TestCompoundStemNeedsMoreThanOneKana(t *testing.T) {
+	sqlDB, _ := openDB(t)
+	importJMdict(t, sqlDB, jaWords+lemmaWords)
+	for _, r := range run(t, service(sqlDB), "ja", "すし", 0) {
+		if label(r) == "為" && r.Matched == "すし" {
+			t.Errorf("すし found %+v, want no す compound", r)
+		}
 	}
 }

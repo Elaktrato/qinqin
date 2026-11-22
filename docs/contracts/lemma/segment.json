@@ -380,6 +380,36 @@
     "ichi1"
    ],
    "uk": false
+  },
+  {
+   "forms": [],
+   "readings": [
+    "には"
+   ],
+   "pos": [
+    "exp",
+    "prt"
+   ],
+   "pri": [
+    "spec1"
+   ],
+   "uk": false
+  },
+  {
+   "forms": [
+    "入る"
+   ],
+   "readings": [
+    "はいる"
+   ],
+   "pos": [
+    "v5r",
+    "vi"
+   ],
+   "pri": [
+    "ichi1"
+   ],
+   "uk": false
   }
  ],
  "cases": [
@@ -668,6 +698,31 @@
       "te-form"
      ],
      "head": "読む"
+    }
+   ]
+  },
+  {
+   "name": "a prioritised particle expression is not split (には, not に + 入る)",
+   "text": "にはいられない",
+   "tokens": [
+    {
+     "surface": "には",
+     "start": 0,
+     "end": 2,
+     "lemma": "には",
+     "reasons": [],
+     "head": "には"
+    },
+    {
+     "surface": "いられない",
+     "start": 2,
+     "end": 7,
+     "lemma": "いる",
+     "reasons": [
+      "negative",
+      "passive"
+     ],
+     "head": "居る"
     }
    ]
   }

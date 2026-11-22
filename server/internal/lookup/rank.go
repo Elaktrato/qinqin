@@ -15,6 +15,9 @@ type candidate struct {
 	// same-length inflection of a word with at least its priority (すれば
 	// of する); set by markYields from the rule table's hints.
 	yields bool
+	// expressionSense: a sense of the entry is an expression (an
+	// expression never makes another one yield: として and とする).
+	expressionSense bool
 	// weakKana: matched through a reading, of an entry that has written
 	// forms and is not usually kana (揣摩 read しま, 使用 read しよう).
 	weakKana bool
@@ -112,7 +115,8 @@ func compareCandidates(a, b candidate) int {
 // markYields sets yields on every exact candidate of an expression: an
 // entry without written forms whose every sense has a part-of-speech tag
 // in expressionPos, when a same-length inflected candidate's entry has a
-// priority above 0 and at least the expression's. expression[i] says
+// priority above 0 and at least the expression's, and that is no
+// expression itself (とする does not make として yield). expression[i] says
 // whether cs[i] is such an entry.
 func markYields(cs []candidate, expression []bool) {
 	for i := range cs {
@@ -121,7 +125,7 @@ func markYields(cs []candidate, expression []bool) {
 			continue
 		}
 		c.yields = slices.ContainsFunc(cs, func(d candidate) bool {
-			return d.matchedLen == c.matchedLen && d.chainLen > 0 && d.pri > 0 && d.pri >= c.pri
+			return d.matchedLen == c.matchedLen && d.chainLen > 0 && !d.expressionSense && d.pri > 0 && d.pri >= c.pri
 		})
 	}
 }

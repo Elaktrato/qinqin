@@ -241,6 +241,7 @@ func (s Service) Lookup(ctx context.Context, language, text string, offset int, 
 		cands[i].freqRank = ranks[i]
 		cands[i].at = i
 		expression[i] = len(m.entry.Forms) == 0 && allSensesTagged(m.entry, hints.ExpressionPOS)
+		cands[i].expressionSense = anySenseTagged(m.entry, hints.ExpressionPOS)
 	}
 	markYields(cands, expression)
 	sortCandidates(cands)
@@ -289,7 +290,7 @@ func buildProbes(pack lang.Pack, window []rune) []probe {
 			probes = append(probes, p)
 			// JMdict tags vs on the noun (勉強: n, vs), not on 勉強する.
 			for _, c := range compounds {
-				if stem, ok := strings.CutSuffix(d.Form, c.Suffix); ok && stem != "" && d.Class == c.Class {
+				if stem, ok := strings.CutSuffix(d.Form, c.Suffix); ok && d.Class == c.Class && c.StemOK(stem) {
 					p.term = stem
 					probes = append(probes, p)
 				}
@@ -313,6 +314,14 @@ func hasClass(rules *lemma.Table, e lexicon.Entry, class string) bool {
 func allSensesTagged(e lexicon.Entry, tags []string) bool {
 	return len(tags) > 0 && len(e.Senses) > 0 && !slices.ContainsFunc(e.Senses, func(s lexicon.Sense) bool {
 		return !slices.ContainsFunc(s.POS, func(p string) bool { return slices.Contains(tags, p) })
+	})
+}
+
+// anySenseTagged reports whether a sense of e has a part-of-speech tag in
+// tags.
+func anySenseTagged(e lexicon.Entry, tags []string) bool {
+	return slices.ContainsFunc(e.Senses, func(s lexicon.Sense) bool {
+		return slices.ContainsFunc(s.POS, func(p string) bool { return slices.Contains(tags, p) })
 	})
 }
 

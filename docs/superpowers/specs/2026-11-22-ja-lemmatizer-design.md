@@ -70,7 +70,7 @@ Ruling: all of today's stem guards are **declarative predicates**, no named Go p
 registry would make a table unportable to Android without code — cost if wrong: a future language needs a
 new primitive in both engines (the format version says which primitives exist).
 
-Ruling: the table is **flat** (godan rows written out, ~230 rules) — templates would need an expansion step
+Ruling: the table is **flat** (godan rows written out, 225 rules) — templates would need an expansion step
 in every engine; the contract copy is the generated file — cost if wrong: editing godan rows is verbose.
 
 Ruling: the contract copy `docs/contracts/lemma/ja.rules.json` must be **byte-identical** to the embedded table
@@ -115,10 +115,11 @@ writes those words in kanji, so kana しよう is the verb — cost if wrong: a 
 no-frequency case of した (now する before 下/舌), deliberately: the test documenting the old order is updated.
 
 Ruling: new key **expression yields**, right after matched length (before frequency): an exact match of a
-word whose every sense has an `expressionPos` tag, that has no written form, ranks after a same-length
-inflected candidate whose word has a JMdict priority ≥ its own (> 0). すれば (exp, 60) is the conditional of
-する (60): the token is する; ください (no competing inflection), しかし (conj), でしょう, という (written form)
-are untouched — cost if wrong: an expression shown second in the popup.
+word whose every sense has an `expressionPos` tag, that has no written form, ranks after the same-length
+inflected candidates when one of them has a JMdict priority ≥ its own (> 0) and is no expression itself.
+すれば (exp, 60) is the conditional of する (60): the token is する; ください (no competing inflection), しかし
+(conj), でしょう, という (written form) are untouched; として (exp, 60) keeps its place against とする (exp + vs-i,
+found in the real-app corpus check) — cost if wrong: an expression shown second in the popup.
 
 Ruling: the expression key sits **before frequency** — it is lexical evidence, not usage, and the result must
 not depend on whether a frequency pack is installed — cost if wrong: a frequency pack cannot rescue an
@@ -127,11 +128,17 @@ expression.
 ## Segmentation boundary (`server/internal/segment`)
 
 Ruling: an **expression must not cut a longer word**: when the best match at a position is an exact match whose
-first candidate's senses all carry `expressionPos`, its shortest proper prefix with a match has a first
-candidate tagged `particlePos`, and the match starting right after that particle ends strictly past the
-expression's end, the segmenter emits the particle alone. 仕事をしている → 仕事 | を | している; にとって,
-によれば, をして帰る (nothing longer starts after the particle) stay — cost if wrong: one extra lookup per
-expression match (rare) and a particle-led expression split where a learner wanted it whole.
+first candidate is an expression **without priority** (all senses carry `expressionPos`, JMdict priority 0),
+its shortest proper prefix with a match has a first candidate tagged `particlePos`, and the match starting
+right after that particle ends strictly past the expression's end, the segmenter emits the particle alone.
+仕事をしている → 仕事 | を | している, をもらいました → を | もらいました, と言いました → と | 言いました; には, にも,
+にとって (priority 60) and をして帰る (nothing longer starts after the particle) stay. The priority condition
+came from the real-app corpus check: without it 泣かずにはいられない split into に | はいられない (入る) — cost if
+wrong: one extra lookup per unprioritised expression match (rare) and a split where a learner wanted the
+expression whole. `GET /api/segment/at` (a single position) is unchanged: it returns the longest match.
+
+Ruling: a **compound stem needs two code points or a non-kana one** (`compounds[].stem`): すし was す (為, an
+archaic vs-c) + し in the corpus check — cost if wrong: a one-kana する noun (none common) is not found.
 
 ## Furigana for folded and compound tokens
 

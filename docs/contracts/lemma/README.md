@@ -35,7 +35,7 @@ Go: `server/internal/lemma/contract_test.go`, `server/internal/segment/contract_
     "w":  {"any": true},              // every entry (dictionaries without POS); not with tags/prefixes
     "masu": {}                        // intermediate: no POS ever matches
   },
-  "compounds": [{"suffix": "する", "class": "vs"}],
+  "compounds": [{"suffix": "する", "class": "vs", "stem": {"anyOf": [{"minRunes": 2}, {"notOnly": "kana"}]}}],
   "hints": {"expressionPos": ["exp"], "particlePos": ["prt"]},
   "rules": [{"from": "ました", "to": "ます", "reason": "past", "out": "masu"}] }
 ```
@@ -71,8 +71,8 @@ least one code point outside the script (so false for an empty stem). `notSuffix
 
 ## Compounds
 
-For a candidate of a compound's `class` whose form ends in its `suffix` with a non-empty stem, the stem is
-looked up too, with the same class requirement: 勉強しています → 勉強する → 勉強 (JMdict tags `vs` on the
+For a candidate of a compound's `class` whose form ends in its `suffix` with a non-empty stem that satisfies
+the compound's optional `stem` predicate, the stem is looked up too, with the same class requirement: 勉強しています → 勉強する → 勉強 (JMdict tags `vs` on the
 noun). The match's `lemma` stays 勉強する; `/api/segment` reports `stem: "勉強"` (`reader/` contract).
 
 ## Ranking keys and the boundary rule
@@ -82,15 +82,17 @@ yields**; frequency; primary; **kana fit**; chain length; exact matches; diction
 headword. The two keys from this item, language-neutral and parameterised by `hints`:
 
 - **Expression yields**: an exact match (empty chain) of an entry without written forms whose every sense
-  has a tag in `expressionPos` ranks after any same-length inflected candidate whose entry has a priority
-  > 0 and ≥ its own (すれば → する).
+  has a tag in `expressionPos` ranks after the same-length inflected candidates when one of them has an
+  entry with a priority > 0 and ≥ its own and no sense tagged `expressionPos` (すれば → する; として stays
+  before とする).
 - **Kana fit**: a match through a reading, of an entry that has written forms and is not usually-kana, is
   weak; everything else is strong; strong first (kana しよう → する before 使用).
 
 Segmentation is greedy longest match. **Boundary rule**: when the match at a position is exact, its first
-entry's senses all carry an `expressionPos` tag, the shortest proper prefix of it that has a match has a
+entry has priority 0 and its senses all carry an `expressionPos` tag, the shortest proper prefix of it that has a match has a
 first entry with a `particlePos` tag, and the match starting right after that prefix ends strictly
-after the expression, the token is the particle (仕事をしている → 仕事 | を | している).
+after the expression, the token is the particle (仕事をしている → 仕事 | を | している; には and にとって,
+with priority, stay). Priority is the entry score the server derives from JMdict's priority tags (`pri`).
 
 ## Japanese table (`ja.rules.json`)
 

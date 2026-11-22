@@ -115,7 +115,8 @@ func hintsOf(language string) lemma.Hints {
 
 // splitParticle applies the boundary rule (docs/contracts/lemma/README.md):
 // when m, the match at offset, is an exact match whose first entry is an
-// expression (every sense tagged with hints.ExpressionPOS), the shortest
+// expression without priority (every sense tagged with
+// hints.ExpressionPOS; には and にとって keep theirs), the shortest
 // shorter match at offset is a particle (its first entry has a sense
 // tagged with hints.ParticlePOS) and the match right after that particle
 // ends strictly past m, the token is the particle: 仕事をしている is
@@ -123,7 +124,7 @@ func hintsOf(language string) lemma.Hints {
 // apply.
 func (s Service) splitParticle(ctx context.Context, language string, runes []rune, offset int, m *Match, results []lookup.Result, hints lemma.Hints) (*Match, error) {
 	best := results[0]
-	if len(hints.ExpressionPOS) == 0 || len(hints.ParticlePOS) == 0 || len(best.Reasons) > 0 || !everySense(best, hints.ExpressionPOS) {
+	if len(hints.ExpressionPOS) == 0 || len(hints.ParticlePOS) == 0 || len(best.Reasons) > 0 || best.Pri > 0 || !everySense(best, hints.ExpressionPOS) {
 		return nil, nil
 	}
 	short := -1

@@ -58,6 +58,14 @@ type Class struct {
 type Compound struct {
 	Suffix string `json:"suffix"`
 	Class  string `json:"class"`
+	// Stem, when set, must accept the stem (すし is not す + し).
+	Stem *Pred `json:"stem,omitempty"`
+}
+
+// StemOK reports whether stem may be looked up as this compound's stem:
+// non-empty and accepted by Stem.
+func (c Compound) StemOK(stem string) bool {
+	return stem != "" && (c.Stem == nil || c.Stem.holds(stem))
 }
 
 // Hints are the dictionary part-of-speech tags the ranking and
@@ -151,6 +159,11 @@ func (t *Table) validate() error {
 		}
 		if _, ok := t.Classes[c.Class]; !ok {
 			return fmt.Errorf("compound %q: unknown class %q", c.Suffix, c.Class)
+		}
+		if c.Stem != nil {
+			if err := c.Stem.validate(); err != nil {
+				return fmt.Errorf("compound %q: %w", c.Suffix, err)
+			}
 		}
 	}
 	for i, r := range t.Rules {
