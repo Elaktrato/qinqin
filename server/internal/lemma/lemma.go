@@ -172,6 +172,8 @@ func (t *Table) validate() error {
 		return fmt.Errorf("format %d, want 1..%d", t.Format, Format)
 	case slices.Contains(t.Hints.KeepWhole, ""):
 		return errors.New("hints: empty keepWhole entry")
+	case t.Format < 2 && (len(t.Hints.KeepWhole) > 0 || slices.ContainsFunc(t.Rules, func(r Rule) bool { return r.ChainOnly })):
+		return errors.New("keepWhole and chainOnly need format 2")
 	case t.Language == "":
 		return errors.New("no language")
 	case t.MaxDepth < 1 || t.MaxDepth > 8:

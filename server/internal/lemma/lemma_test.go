@@ -262,3 +262,19 @@ func TestChainOnlyRule(t *testing.T) {
 		t.Errorf("surface: %q, want none", render(got))
 	}
 }
+
+// A format-1 table may not use format-2 fields.
+func TestFormat1RejectsFormat2Fields(t *testing.T) {
+	for name, src := range map[string]string{
+		"keepWhole": `{"format": 1, "language": "xg", "version": "t", "maxDepth": 1, "classes": {}, "hints": {"keepWhole": ["a"]}, "rules": []}`,
+		"chainOnly": `{"format": 1, "language": "xg", "version": "t", "maxDepth": 1, "classes": {"a": {}}, "hints": {},
+		 "rules": [{"from": "x", "to": "a", "reason": "r", "out": "a", "chainOnly": true}]}`,
+	} {
+		if _, err := lemma.Parse([]byte(src)); err == nil {
+			t.Errorf("%s in a format-1 table parsed", name)
+		}
+		if _, err := lemma.Parse([]byte(strings.Replace(src, `"format": 1`, `"format": 2`, 1))); err != nil {
+			t.Errorf("%s in a format-2 table: %v", name, err)
+		}
+	}
+}

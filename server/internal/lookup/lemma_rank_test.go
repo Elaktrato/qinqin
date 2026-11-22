@@ -181,7 +181,6 @@ func TestBareShiteWithoutFrequencyIsTheNoun(t *testing.T) {
 	wantPrefix(t, run(t, s, "ja", "いる", 0), "居る")
 }
 
-
 // An expression with a written form never yields: しかねない (仕兼ねない)
 // stays before する's possibility form of the same text.
 func TestWrittenExpressionDoesNotYield(t *testing.T) {

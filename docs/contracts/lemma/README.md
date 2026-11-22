@@ -45,7 +45,7 @@ Go: `server/internal/lemma/contract_test.go`, `server/internal/segment/contract_
 Unknown keys, an unknown class in `out`/`in`/`compounds`, an unknown `match` or script, an empty predicate,
 an empty `from` or `reason`, an empty `keepWhole` entry, `maxDepth` outside 1..8 or a `format` outside 1..2 reject
 the whole table. An engine reads every format from 1 up to its own: format 2 added `hints.keepWhole` and the rule
-flag `chainOnly`; a format-1 table stays valid.
+flag `chainOnly`; a format-1 table stays valid, and a format-1 table that uses either is rejected.
 
 ## Rules and chaining
 
