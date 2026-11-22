@@ -242,13 +242,9 @@ Ruling: **てはいけない / てもいい fold like てください** (reasons
 reach the verb (making the general くて rule chainable instead read 痛くてたまらない as a contracted progressive). — cost if wrong: てもいい's いい is not
 counted as a word in coverage.
 
-Ruling: **kana fit's usually-kana is the first sense's tag** (`hints.usuallyReadingTag`: `uk` on the entry's
-first sense, the display-form rule of `frequency/`), not "some sense": 仕手 carries `uk` only on its second
-sense — and an unwritten particle (first sense `prt`) yields to a same-length inflection of a word of strictly
-higher priority, so bare して (the priority-0 literary particle) is する without a frequency pack, while し (60)
-stays the particle against する's stem (60); する, いる, こと, ある keep `uk` on their first sense. One
-definition for display and ranking — cost if wrong: a word whose minor first sense lacks `uk` ranks weak by
-reading.
+Ruling (superseded in the #177 review, see below): kana fit's usually-kana was briefly the first sense's tag;
+display and ranking do **not** share one definition — display uses the first sense (`frequency/`), ranking
+the entry flag (any sense).
 
 Ruling: **format 2**: the new hints and `chainOnly` are format-2 fields; an engine reads every format up to its own, so format-1
 tables stay valid — cost if wrong: none (no format-1-only client exists yet).

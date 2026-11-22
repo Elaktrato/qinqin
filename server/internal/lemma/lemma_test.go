@@ -231,8 +231,8 @@ func TestReadingHintsAndInScript(t *testing.T) {
 
 func TestFormat2Hints(t *testing.T) {
 	tb := parse(t, `{"format": 2, "language": "xf", "version": "t", "maxDepth": 1, "classes": {},
-	 "hints": {"keepWhole": ["にもとづいて", "を通して"], "usuallyReadingTag": "uk"}, "rules": []}`)
-	if tb.Hints.UsuallyReadingTag != "uk" || len(tb.Hints.KeepWhole) != 2 {
+	 "hints": {"keepWhole": ["にもとづいて", "を通して"]}, "rules": []}`)
+	if len(tb.Hints.KeepWhole) != 2 {
 		t.Errorf("hints = %+v", tb.Hints)
 	}
 	if !tb.Hints.KeepsWhole("に基づいて", "にもとづいて") || !tb.Hints.KeepsWhole("を通して") || tb.Hints.KeepsWhole("をして", "") {

@@ -38,15 +38,14 @@ Go: `server/internal/lemma/contract_test.go`, `server/internal/segment/contract_
   "compounds": [{"suffix": "する", "class": "vs", "stem": {"anyOf": [{"minRunes": 2}, {"notOnly": "kana"}]}}],
   "hints": {"expressionPos": ["exp"], "particlePos": ["prt"],   // POS tags the ranking/boundary rules read
             "readingScript": "kana", "readingType": "kana",   // text only in this script is also looked up by reading
-            "usuallyReadingTag": "uk",                         // format 2: first-sense tag for kana fit
             "keepWhole": ["にもとづいて", "しかねない"]},         // format 2: expressions the boundary rule never splits
   "rules": [{"from": "ました", "to": "ます", "reason": "past", "out": "masu"}] }
 ```
 
 Unknown keys, an unknown class in `out`/`in`/`compounds`, an unknown `match` or script, an empty predicate,
 an empty `from` or `reason`, an empty `keepWhole` entry, `maxDepth` outside 1..8 or a `format` outside 1..2 reject
-the whole table. An engine reads every format from 1 up to its own: format 2 added `hints.keepWhole`,
-`hints.usuallyReadingTag` and the rule flag `chainOnly`; a format-1 table stays valid.
+the whole table. An engine reads every format from 1 up to its own: format 2 added `hints.keepWhole` and the rule
+flag `chainOnly`; a format-1 table stays valid.
 
 ## Rules and chaining
 
@@ -112,16 +111,16 @@ headword. The two keys from this item, language-neutral and parameterised by `hi
   priority-0 conditional of すれば), whatever the later keys say.
 - **Kana fit**: a match through a reading is **strong** only when the reading's value equals the matched
   text exactly (same script: アメ does not fit あめ, although both share the plain form あめ) and the entry
-  has no written form or is **usually-kana** (its first sense carries `hints.usuallyReadingTag`; no hint:
-  never); every other reading match is **weak**; a match by a written form
+  has no written form or is **usually-kana**; every other reading match is **weak**; a match by a written form
   is strong. Strong first (kana しよう → する before 使用; あめ → 雨/飴 before the katakana-only アメ).
 
 **Priority** is the entry's score `pri` (0–100), as the lexicon package carries it (`packages/`): the JMdict
 importer maps priority tags by max — nf01…nf24 → 101 − NN, news1/ichi1/spec1/gai1 → 60, nf25…nf48 → 78 − NN,
 news2/ichi2/spec2/gai2 → 30, anything else 0 — rare/outdated/irregular/search-only forms lose 40, floored at 0
-(`server/internal/dict/jmdict.go`, `priorityScore`). **Usually-kana** (kana fit) is the table's
-`usuallyReadingTag` on the entry's **first** sense — Japanese: JMdict `uk`, the same test as the display-form
-rule of `frequency/display-form.json` (仕手 has `uk` only on its second sense, so it is weak for して).
+(`server/internal/dict/jmdict.go`, `priorityScore`). **Usually-kana** (kana fit) is the lexicon's entry flag `uk`: **some** sense of the word carries JMdict
+`uk`. This is deliberately not the display-form rule of `frequency/display-form.json` (first sense only):
+ranking by the first sense let 海松, 佝僂, 野老 and 奴 beat みる, くる, ところ and め without a frequency pack
+(#177 review). Consequence: bare して is 仕手 (`uk` on its second sense, priority 92) without a frequency pack.
 
 Segmentation is greedy longest match. **Boundary rule**: when the match at a position is exact, its first
 entry has priority 0, its senses all carry an `expressionPos` tag and none of its forms and readings is in

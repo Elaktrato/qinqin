@@ -19,8 +19,7 @@ import (
 
 // Format is the newest table format this engine implements; it reads
 // every format from 1 up to it. It changes when a rule field, hint, match
-// mode or stem predicate is added (2: hints keepWhole, usuallyReadingTag;
-// rule chainOnly).
+// mode or stem predicate is added (2: hints keepWhole, rule chainOnly).
 const Format = 2
 
 // Match modes of a rule.
@@ -86,10 +85,6 @@ type Hints struct {
 	// rule never splits, compared with an entry's written forms and
 	// readings.
 	KeepWhole []string `json:"keepWhole,omitempty"`
-	// UsuallyReadingTag (format 2) is the sense tag that marks a word
-	// usually written as its reading (JMdict uk); the kana fit key reads it
-	// on the entry's first sense.
-	UsuallyReadingTag string `json:"usuallyReadingTag,omitempty"`
 }
 
 // KeepsWhole reports whether any of texts (an entry's forms and
