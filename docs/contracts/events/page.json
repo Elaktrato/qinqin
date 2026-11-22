@@ -1,0 +1,620 @@
+{
+ "version": 1,
+ "rule": "events/page",
+ "_doc": "GET /api/events in pages (#110). limit (1..2000) or page selects the paged form; without both the route answers the legacy array (streamed, Deprecation: true). valid pages decode and invalid ones are refused for the reason given; items are the legacy items exactly. requests run against a server where the caller has 5 events in $ws (so limit=2 has 3 pages), 1 in $otherWs and another user owns $bobWs; $next is the next token of the caller's first page with limit=2&workspace=$ws. error is the JSON code of {error, message}; text is the plain-text body (without its newline). Tokens are opaque: only the e1. prefix is a contract. Decoded by server/internal/api/contract_events_page_test.go and apps/web/src/lib/eventPages.test.ts.",
+ "budget": {
+  "maxLimit": 2000,
+  "maxPageBytes": 4194304,
+  "tokenPrefix": "e1.",
+  "itemKeys": [
+   "id",
+   "userId",
+   "workspaceId",
+   "device",
+   "ts",
+   "type",
+   "payload"
+  ]
+ },
+ "valid": [
+  {
+   "name": "first of two pages",
+   "page": {
+    "events": [
+     {
+      "id": "01JC0000000000000000000001",
+      "userId": 3,
+      "workspaceId": 7,
+      "device": "web",
+      "ts": "2026-11-01T09:00:00Z",
+      "type": "review",
+      "payload": {
+       "cardId": "c1",
+       "mode": "vocab",
+       "grade": 3
+      }
+     },
+     {
+      "id": "01JC0000000000000000000002",
+      "userId": 3,
+      "workspaceId": 7,
+      "device": "web",
+      "ts": "2026-11-01T09:00:01Z",
+      "type": "review",
+      "payload": {
+       "cardId": "c2",
+       "mode": "vocab",
+       "grade": 3
+      }
+     }
+    ],
+    "more": true,
+    "next": "e1.eyJ1IjozfQ"
+   }
+  },
+  {
+   "name": "last page",
+   "page": {
+    "events": [
+     {
+      "id": "01JC0000000000000000000003",
+      "userId": 3,
+      "workspaceId": 7,
+      "device": "web",
+      "ts": "2026-11-01T09:00:00Z",
+      "type": "read",
+      "payload": {
+       "bookId": 4,
+       "seconds": 60
+      }
+     }
+    ],
+    "more": false,
+    "next": null
+   }
+  },
+  {
+   "name": "empty log",
+   "page": {
+    "events": [],
+    "more": false,
+    "next": null
+   }
+  },
+  {
+   "name": "a lookup event (legacy content is kept; caches scrub it)",
+   "page": {
+    "events": [
+     {
+      "id": "01JC0000000000000000000004",
+      "userId": 3,
+      "workspaceId": 7,
+      "device": "web",
+      "ts": "2026-11-01T09:00:00Z",
+      "type": "lookup",
+      "payload": {
+       "query": "x"
+      }
+     }
+    ],
+    "more": false,
+    "next": null
+   }
+  },
+  {
+   "name": "payload null",
+   "page": {
+    "events": [
+     {
+      "id": "01JC0000000000000000000005",
+      "userId": 3,
+      "workspaceId": 7,
+      "device": "web",
+      "ts": "2026-11-01T09:00:00Z",
+      "type": "session",
+      "payload": null
+     }
+    ],
+    "more": false,
+    "next": null
+   }
+  }
+ ],
+ "invalid": [
+  {
+   "name": "a bare array is not a page",
+   "page": [
+    {
+     "id": "01JC0000000000000000000001",
+     "userId": 3,
+     "workspaceId": 7,
+     "device": "web",
+     "ts": "2026-11-01T09:00:00Z",
+     "type": "review",
+     "payload": {
+      "cardId": "c1",
+      "mode": "vocab",
+      "grade": 3
+     }
+    }
+   ],
+   "reason": "not an object"
+  },
+  {
+   "name": "missing next",
+   "page": {
+    "events": [
+     {
+      "id": "01JC0000000000000000000001",
+      "userId": 3,
+      "workspaceId": 7,
+      "device": "web",
+      "ts": "2026-11-01T09:00:00Z",
+      "type": "review",
+      "payload": {
+       "cardId": "c1",
+       "mode": "vocab",
+       "grade": 3
+      }
+     }
+    ],
+    "more": false
+   },
+   "reason": "keys"
+  },
+  {
+   "name": "extra key",
+   "page": {
+    "events": [
+     {
+      "id": "01JC0000000000000000000001",
+      "userId": 3,
+      "workspaceId": 7,
+      "device": "web",
+      "ts": "2026-11-01T09:00:00Z",
+      "type": "review",
+      "payload": {
+       "cardId": "c1",
+       "mode": "vocab",
+       "grade": 3
+      }
+     }
+    ],
+    "more": false,
+    "next": null,
+    "cursor": null
+   },
+   "reason": "keys"
+  },
+  {
+   "name": "more without next",
+   "page": {
+    "events": [
+     {
+      "id": "01JC0000000000000000000001",
+      "userId": 3,
+      "workspaceId": 7,
+      "device": "web",
+      "ts": "2026-11-01T09:00:00Z",
+      "type": "review",
+      "payload": {
+       "cardId": "c1",
+       "mode": "vocab",
+       "grade": 3
+      }
+     }
+    ],
+    "more": true,
+    "next": null
+   },
+   "reason": "next must be a string exactly when more"
+  },
+  {
+   "name": "next on the last page",
+   "page": {
+    "events": [
+     {
+      "id": "01JC0000000000000000000001",
+      "userId": 3,
+      "workspaceId": 7,
+      "device": "web",
+      "ts": "2026-11-01T09:00:00Z",
+      "type": "review",
+      "payload": {
+       "cardId": "c1",
+       "mode": "vocab",
+       "grade": 3
+      }
+     }
+    ],
+    "more": false,
+    "next": "e1.x"
+   },
+   "reason": "next must be a string exactly when more"
+  },
+  {
+   "name": "next of another route",
+   "page": {
+    "events": [
+     {
+      "id": "01JC0000000000000000000001",
+      "userId": 3,
+      "workspaceId": 7,
+      "device": "web",
+      "ts": "2026-11-01T09:00:00Z",
+      "type": "review",
+      "payload": {
+       "cardId": "c1",
+       "mode": "vocab",
+       "grade": 3
+      }
+     }
+    ],
+    "more": true,
+    "next": "p2.x"
+   },
+   "reason": "next starts with e1."
+  },
+  {
+   "name": "an empty page with more",
+   "page": {
+    "events": [],
+    "more": true,
+    "next": "e1.x"
+   },
+   "reason": "a page holds at least one row while rows remain"
+  },
+  {
+   "name": "events not an array",
+   "page": {
+    "events": null,
+    "more": false,
+    "next": null
+   },
+   "reason": "events is an array"
+  },
+  {
+   "name": "item missing userId",
+   "page": {
+    "events": [
+     {
+      "id": "01JC0000000000000000000001",
+      "workspaceId": 7,
+      "device": "web",
+      "ts": "2026-11-01T09:00:00Z",
+      "type": "review",
+      "payload": {
+       "cardId": "c1",
+       "mode": "vocab",
+       "grade": 3
+      }
+     }
+    ],
+    "more": false,
+    "next": null
+   },
+   "reason": "item keys"
+  },
+  {
+   "name": "item with updatedAt (a pull row)",
+   "page": {
+    "events": [
+     {
+      "id": "01JC0000000000000000000001",
+      "userId": 3,
+      "workspaceId": 7,
+      "device": "web",
+      "ts": "2026-11-01T09:00:00Z",
+      "type": "review",
+      "payload": {
+       "cardId": "c1",
+       "mode": "vocab",
+       "grade": 3
+      },
+      "updatedAt": "2026-11-01T09:00:00Z"
+     }
+    ],
+    "more": false,
+    "next": null
+   },
+   "reason": "item keys"
+  },
+  {
+   "name": "ts with a fraction",
+   "page": {
+    "events": [
+     {
+      "id": "01JC0000000000000000000001",
+      "userId": 3,
+      "workspaceId": 7,
+      "device": "web",
+      "ts": "2026-11-01T09:00:00.5Z",
+      "type": "review",
+      "payload": {
+       "cardId": "c1",
+       "mode": "vocab",
+       "grade": 3
+      }
+     }
+    ],
+    "more": false,
+    "next": null
+   },
+   "reason": "ts is UTC whole seconds"
+  },
+  {
+   "name": "ts with an offset",
+   "page": {
+    "events": [
+     {
+      "id": "01JC0000000000000000000001",
+      "userId": 3,
+      "workspaceId": 7,
+      "device": "web",
+      "ts": "2026-11-01T10:00:00+01:00",
+      "type": "review",
+      "payload": {
+       "cardId": "c1",
+       "mode": "vocab",
+       "grade": 3
+      }
+     }
+    ],
+    "more": false,
+    "next": null
+   },
+   "reason": "ts is UTC whole seconds"
+  },
+  {
+   "name": "workspaceId not an integer",
+   "page": {
+    "events": [
+     {
+      "id": "01JC0000000000000000000001",
+      "userId": 3,
+      "workspaceId": "7",
+      "device": "web",
+      "ts": "2026-11-01T09:00:00Z",
+      "type": "review",
+      "payload": {
+       "cardId": "c1",
+       "mode": "vocab",
+       "grade": 3
+      }
+     }
+    ],
+    "more": false,
+    "next": null
+   },
+   "reason": "workspaceId is an integer"
+  },
+  {
+   "name": "id empty",
+   "page": {
+    "events": [
+     {
+      "id": "",
+      "userId": 3,
+      "workspaceId": 7,
+      "device": "web",
+      "ts": "2026-11-01T09:00:00Z",
+      "type": "review",
+      "payload": {
+       "cardId": "c1",
+       "mode": "vocab",
+       "grade": 3
+      }
+     }
+    ],
+    "more": false,
+    "next": null
+   },
+   "reason": "id is a non-empty string"
+  },
+  {
+   "name": "type not a string",
+   "page": {
+    "events": [
+     {
+      "id": "01JC0000000000000000000001",
+      "userId": 3,
+      "workspaceId": 7,
+      "device": "web",
+      "ts": "2026-11-01T09:00:00Z",
+      "type": 1,
+      "payload": {
+       "cardId": "c1",
+       "mode": "vocab",
+       "grade": 3
+      }
+     }
+    ],
+    "more": false,
+    "next": null
+   },
+   "reason": "type is a string"
+  },
+  {
+   "name": "out of order",
+   "page": {
+    "events": [
+     {
+      "id": "01JC0000000000000000000002",
+      "userId": 3,
+      "workspaceId": 7,
+      "device": "web",
+      "ts": "2026-11-01T09:00:01Z",
+      "type": "review",
+      "payload": {
+       "cardId": "c2",
+       "mode": "vocab",
+       "grade": 3
+      }
+     },
+     {
+      "id": "01JC0000000000000000000001",
+      "userId": 3,
+      "workspaceId": 7,
+      "device": "web",
+      "ts": "2026-11-01T09:00:00Z",
+      "type": "review",
+      "payload": {
+       "cardId": "c1",
+       "mode": "vocab",
+       "grade": 3
+      }
+     }
+    ],
+    "more": false,
+    "next": null
+   },
+   "reason": "items are in (ts, id) order"
+  },
+  {
+   "name": "same ts, ids out of order",
+   "page": {
+    "events": [
+     {
+      "id": "01JC0000000000000000000002",
+      "userId": 3,
+      "workspaceId": 7,
+      "device": "web",
+      "ts": "2026-11-01T09:00:00Z",
+      "type": "review",
+      "payload": {
+       "cardId": "c2",
+       "mode": "vocab",
+       "grade": 3
+      }
+     },
+     {
+      "id": "01JC0000000000000000000001",
+      "userId": 3,
+      "workspaceId": 7,
+      "device": "web",
+      "ts": "2026-11-01T09:00:00Z",
+      "type": "review",
+      "payload": {
+       "cardId": "c1",
+       "mode": "vocab",
+       "grade": 3
+      }
+     }
+    ],
+    "more": false,
+    "next": null
+   },
+   "reason": "items are in (ts, id) order"
+  }
+ ],
+ "requests": [
+  {
+   "name": "legacy: no limit, no page",
+   "query": "since=1970-01-01T00:00:00Z&workspace=$ws",
+   "status": 200,
+   "form": "legacy"
+  },
+  {
+   "name": "first page",
+   "query": "limit=2&since=1970-01-01T00:00:00Z&workspace=$ws",
+   "status": 200,
+   "form": "page"
+  },
+  {
+   "name": "first page, combined view",
+   "query": "limit=2",
+   "status": 200,
+   "form": "page"
+  },
+  {
+   "name": "continuation repeats the workspace",
+   "query": "page=$next&workspace=$ws",
+   "status": 200,
+   "form": "page"
+  },
+  {
+   "name": "limit 0",
+   "query": "limit=0&workspace=$ws",
+   "status": 400,
+   "error": "events_page_invalid"
+  },
+  {
+   "name": "limit 2001",
+   "query": "limit=2001",
+   "status": 400,
+   "error": "events_page_invalid"
+  },
+  {
+   "name": "limit not a number",
+   "query": "limit=all",
+   "status": 400,
+   "error": "events_page_invalid"
+  },
+  {
+   "name": "limit twice",
+   "query": "limit=2&limit=3",
+   "status": 400,
+   "error": "events_page_invalid"
+  },
+  {
+   "name": "empty page",
+   "query": "page=&workspace=$ws",
+   "status": 400,
+   "error": "events_page_invalid"
+  },
+  {
+   "name": "garbled page",
+   "query": "page=e1.garbled&workspace=$ws",
+   "status": 400,
+   "error": "events_page_invalid"
+  },
+  {
+   "name": "page of the pull",
+   "query": "page=p2.x&workspace=$ws",
+   "status": 400,
+   "error": "events_page_invalid"
+  },
+  {
+   "name": "continuation without its workspace",
+   "query": "page=$next",
+   "status": 400,
+   "error": "events_page_invalid"
+  },
+  {
+   "name": "continuation with another own workspace",
+   "query": "page=$next&workspace=$otherWs",
+   "status": 400,
+   "error": "events_page_invalid"
+  },
+  {
+   "name": "continuation repeats since",
+   "query": "page=$next&workspace=$ws&since=1970-01-01T00:00:00Z",
+   "status": 400,
+   "error": "events_page_invalid"
+  },
+  {
+   "name": "continuation repeats limit",
+   "query": "page=$next&workspace=$ws&limit=2",
+   "status": 400,
+   "error": "events_page_invalid"
+  },
+  {
+   "name": "another user's workspace",
+   "query": "limit=2&workspace=$bobWs",
+   "status": 404,
+   "text": "workspace not found"
+  },
+  {
+   "name": "since not RFC 3339",
+   "query": "limit=2&since=today",
+   "status": 400,
+   "text": "since must be RFC 3339"
+  },
+  {
+   "name": "workspace not an integer",
+   "query": "limit=2&workspace=seven",
+   "status": 400,
+   "text": "workspace must be an integer"
+  }
+ ]
+}
