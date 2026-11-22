@@ -69,13 +69,16 @@ A rule `{from, to, reason, in?, out, match?, stem?}` rewrites a form ending in `
 An object; every key present must hold. `minRunes n`: at least n code points. `notOnly <script>`: at
 least one code point outside the script (so false for an empty stem). `notSuffix [s...]`: ends in none.
 `allOf [p...]`, `anyOf [p...]`: nested predicates. Scripts: `kana` (hiragana, katakana, `ー`), `hiragana`,
-`katakana` (with `ー`), `han`, `latin`.
+`katakana` (with `ー`), `han`, `latin`. The script list is fixed by the engine (format 1), not by a table:
+a language needing another script (Hangul, Cyrillic) needs an engine change in every client and a format bump.
 
 ## Compounds
 
-For a candidate of a compound's `class` whose form ends in its `suffix` with a non-empty stem that satisfies
-the compound's optional `stem` predicate, the stem is looked up too, with the same class requirement: 勉強しています → 勉強する → 勉強 (JMdict tags `vs` on the
-noun). The Japanese stem predicate admits a kanji stem of any length (愛する), a katakana stem of two
+For a **deinflected** candidate of a compound's `class` whose form ends in its `suffix` with a non-empty stem
+that satisfies the compound's optional `stem` predicate, the stem is looked up too, with the same class
+requirement: 勉強しています → 勉強する → 勉強 (JMdict tags `vs` on the noun). The dictionary form itself is not
+folded: 勉強する as written is 勉強 + する, two tokens (an exact compound would compete at chain length 0 with
+real する-verb entries such as 愛する and 察する). The Japanese stem predicate admits a kanji stem of any length (愛する), a katakana stem of two
 (メモする) and a hiragana stem of three or more (ちゃんとする), not すし (す + し) or こうしている (稿 + している).
 The match's `lemma` stays 勉強する; `/api/segment` reports `stem: "勉強"` (`reader/` contract).
 
@@ -95,20 +98,29 @@ yields**; frequency; primary; **kana fit**; chain length; exact matches; diction
 headword. The two keys from this item, language-neutral and parameterised by `hints`:
 
 - **Expression yields**: an exact match (empty chain) of an entry without written forms whose every sense
-  has a tag in `expressionPos` ranks after the same-length inflected candidates when one of them has an
-  entry with a priority > 0 and ≥ its own and no sense tagged `expressionPos` (すれば → する; として stays
-  before とする).
+  has a tag in `expressionPos` *yields* when a same-length inflected candidate has an entry with a priority
+  > 0 and ≥ its own and no sense tagged `expressionPos` (すれば → する; として stays before とする). A
+  yielding candidate ranks after **every** same-length candidate that does not yield (also after 掏る, a
+  priority-0 conditional of すれば), whatever the later keys say.
 - **Kana fit**: a match through a reading is **strong** only when the reading's value equals the matched
   text exactly (same script: アメ does not fit あめ, although both share the plain form あめ) and the entry
-  has no written form or is usually-kana; every other reading match is **weak**; a match by a written form
+  has no written form or is **usually-kana**; every other reading match is **weak**; a match by a written form
   is strong. Strong first (kana しよう → する before 使用; あめ → 雨/飴 before the katakana-only アメ).
+
+**Priority** is the entry's score `pri` (0–100), as the lexicon package carries it (`packages/`): the JMdict
+importer maps priority tags by max — nf01…nf24 → 101 − NN, news1/ichi1/spec1/gai1 → 60, nf25…nf48 → 78 − NN,
+news2/ichi2/spec2/gai2 → 30, anything else 0 — rare/outdated/irregular/search-only forms lose 40, floored at 0
+(`server/internal/dict/jmdict.go`, `priorityScore`). **Usually-kana** is the entry flag `uk`: some sense of the
+word carries JMdict `uk` (this is not the display-form rule of `frequency/display-form.json`, which looks at
+the first sense only).
 
 Segmentation is greedy longest match. **Boundary rule**: when the match at a position is exact, its first
 entry has priority 0 and its senses all carry an `expressionPos` tag, the shortest proper prefix of it that has a match has a
 first entry with a `particlePos` tag, and the match starting right after that prefix either ends strictly after the expression, or ends exactly with
 it and is an inflected match (non-empty chain) whose first entry has priority > 0, the token is the particle
 (仕事をしている → 仕事 | を | している; 仕事をして帰った → 仕事 | を | して | 帰った; には and にとって, with priority,
-stay). Priority is the entry score the server derives from JMdict's priority tags (`pri`).
+stay). The rule reads only the lookup's ranked results at that position, which are capped at 30 entries
+(`MaxEntries`); a particle ranked below the cap is not seen.
 
 ## Japanese table (`ja.rules.json`)
 

@@ -172,8 +172,34 @@ and after on the same machine, recorded in the plan.
 - `deinflect.json`: `{surface, expect: [{form, class, reasons}], reject: [{form}]}` cases.
 - `segment.json`: a small lexicon (forms, readings, POS, priority, usually-kana) and texts →
   tokens (surface, start, end, lemma, reasons, first headword).
-Go decodes all three (`lemma`, `segment` tests). The web does not run the engine and does not decode them;
-it decodes `reader/smart-readings.json`, which gains a `stem` case.
+Go decodes all three (`lemma`, `segment` tests).
+
+Ruling: **the web does not decode the `lemma/` fixtures** — it never runs the engine (it reads `/api/segment`
+and `/api/lookup`), so a web decoder would test nothing the web does; it decodes `reader/smart-readings.json`,
+which gains a `stem` case — cost if wrong: a web-side engine later needs its own decoder test.
+
+Ruling (review): **the dictionary form of a compound is not folded** — 勉強する as written stays 勉強 + する; an
+exact stem probe would compete at chain length 0 with real する-verb entries (愛する, 察する) — cost if wrong:
+coverage counts 勉強する as two words where 勉強した is one.
+
+## Review fixes (2026-11-22)
+
+Ruling: **kana fit compares the reading as written**: a reading match is strong only when the reading's value
+is the matched text itself (アメ does not fit あめ, though both fold to あめ) — the plain-form comparison let
+katakana-only entries beat 雨, 着る, 買う and でした in hiragana text — cost if wrong: katakana text matching
+a hiragana-only word by its folded reading ranks it weak.
+
+Ruling: **adj-ix is its own class** inflecting only on its よ form (かっこよくない → かっこよい, a JMdict reading
+of かっこいい), and the adverbial く needs a stem of two code points or a non-kana one — いく, なく, しく were
+いい, ない, しい — cost if wrong: an adj-ix word whose entry lacks the よい reading is not deinflected.
+
+Ruling: **a hiragana-only compound stem needs three code points** (katakana two, kanji one): こうしている was
+稿 + している and しました reached 揣摩 through しま — cost if wrong: a two-hiragana する noun (none common) is
+not found as a compound.
+
+Ruling: **reading lookups are table-driven** (`hints.readingScript`, `hints.readingType`), replacing the
+`language == "ja"` checks; selection (which letters start a word) and the Japanese headword display rule stay
+with the language code, documented in the contract — cost if wrong: none for Japanese (same behaviour).
 
 ## Not in scope
 
