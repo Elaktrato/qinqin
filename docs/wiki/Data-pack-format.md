@@ -36,7 +36,7 @@ A data pack carries content: a dictionary, a level list, a frequency list, sente
 | `dictionary` | `cedict`, `unihan`, `jmdict`, `kanjidic2` | the upstream file of that format |
 | `frequency` | `yomitan-freq` or `freq-csv` | A Yomitan frequency dictionary (the downloaded `.zip`, or its unpacked `index.json` and `term_meta_bank_*.json`), or `freq.csv` / `freq.csv.gz` with the header `term,reading,rank` |
 | `levels` | `json` | `levels.json` |
-| `sentences` | `json` | `sentences.json` |
+| `sentences` | `json` | `sentences.json`: `{"entries": [{"word", "sentences": [{"hanzi", "pinyin", "translation"}]}]}`; `hanzi` (the sentence) and `translation` are required, `pinyin` (the reading: pinyin, or kana for Japanese) is optional |
 | `grammar` | `json` | `lessons.json` (format described in `plugins/data/README.md`) |
 | `audio` | `audio-index` | `index.tsv` plus clips under `audio/` (`.opus`, `.ogg` or `.mp3`) |
 | `components` | `components-tsv` | `components.tsv` (`語<TAB>言 口 吾 五 二`) and an optional `parts.tsv` (`言<TAB>7`) |

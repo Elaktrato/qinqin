@@ -298,7 +298,8 @@ type packEntry struct {
 	Sentences []packSentence `json:"sentences"`
 }
 
-// packSentence is one sentence of a word group.
+// packSentence is one sentence of a word group. Pinyin is its reading
+// (pinyin, or kana for Japanese) and may be empty.
 type packSentence struct {
 	Hanzi       string `json:"hanzi"`
 	Pinyin      string `json:"pinyin"`
@@ -306,7 +307,8 @@ type packSentence struct {
 }
 
 // readPack reads and validates the sentences.json in dir, rejecting
-// malformed packs before anything is written.
+// malformed packs before anything is written: every sentence needs a
+// hanzi (its text) and a translation; its reading is optional.
 func readPack(dir string) ([]packEntry, error) {
 	data, err := os.ReadFile(filepath.Join(dir, sentencesFile))
 	if err != nil {
@@ -327,9 +329,15 @@ func readPack(dir string) ([]packEntry, error) {
 			return nil, fmt.Errorf("%w: %s of %s: entry %d (%s) lists no sentences", dict.ErrInvalidPack, sentencesFile, dir, i, g.Word)
 		}
 		for j, s := range g.Sentences {
-			if strings.TrimSpace(s.Hanzi) == "" || strings.TrimSpace(s.Pinyin) == "" || strings.TrimSpace(s.Translation) == "" {
-				return nil, fmt.Errorf("%w: %s of %s: sentence %d of %s needs a hanzi, pinyin, and translation",
+			if strings.TrimSpace(s.Hanzi) == "" || strings.TrimSpace(s.Translation) == "" {
+				return nil, fmt.Errorf("%w: %s of %s: sentence %d of %s needs a hanzi and a translation",
 					dict.ErrInvalidPack, sentencesFile, dir, j, g.Word)
+			}
+			// The reading is optional: a pack leaves it out rather than
+			// guess one (a generated reading of an ambiguous word). A
+			// blank one is stored empty.
+			if strings.TrimSpace(s.Pinyin) == "" {
+				p.Entries[i].Sentences[j].Pinyin = ""
 			}
 		}
 	}
