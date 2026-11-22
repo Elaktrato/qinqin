@@ -60,6 +60,52 @@ export function typeGap(n: number): number {
 	return 3;
 }
 
+/** A binary min-heap of item indices. */
+class MinHeap {
+	private readonly data: number[] = [];
+
+	size(): number {
+		return this.data.length;
+	}
+
+	peek(): number {
+		return this.data[0];
+	}
+
+	push(value: number): void {
+		const data = this.data;
+		data.push(value);
+		let at = data.length - 1;
+		while (at > 0) {
+			const parent = (at - 1) >> 1;
+			if (data[parent] <= value) break;
+			data[at] = data[parent];
+			at = parent;
+		}
+		data[at] = value;
+	}
+
+	pop(): number {
+		const data = this.data;
+		const top = data[0];
+		const last = data.pop() as number;
+		if (data.length > 0) {
+			let at = 0;
+			for (;;) {
+				const left = 2 * at + 1;
+				if (left >= data.length) break;
+				const right = left + 1;
+				const child = right < data.length && data[right] < data[left] ? right : left;
+				if (data[child] >= last) break;
+				data[at] = data[child];
+				at = child;
+			}
+			data[at] = last;
+		}
+		return top;
+	}
+}
+
 /**
  * How early (in items) spaceOut starts a word that needs the rest of the
  * block to keep the gap. 2 kept the full gap in every feasible simulated
@@ -85,53 +131,148 @@ export const PRESSURE_SLACK = 2;
  *    block cannot hold the gap, e.g. one word's four types).
  *
  * `placed` lists the words of the items already placed before (an earlier
- * block), oldest first. The input is not changed.
+ * block), oldest first. The input is not changed. O(n log n): words are
+ * bucketed by how many items they have left and their first items kept in
+ * a heap, so a Study all session of thousands of cards spaces at once; the
+ * output equals the plain step-by-step form (testing/spaceOutReference.ts).
  */
 export function spaceOut<T extends { entryId: number }>(
 	items: readonly T[],
 	gap: number,
 	placed: readonly number[] = []
 ): T[] {
-	const lastAt = new Map<number, number>();
-	placed.forEach((entryId, at) => lastAt.set(entryId, at));
-	const left = new Map<number, number>();
-	for (const item of items) left.set(item.entryId, (left.get(item.entryId) ?? 0) + 1);
-	const rest = [...items];
+	const total = items.length;
 	const out: T[] = [];
-	let position = placed.length;
+	const history = [...placed];
+	const lastAt = new Map<number, number>();
+	history.forEach((entryId, at) => lastAt.set(entryId, at));
 	const sep = (entryId: number): number => {
 		const at = lastAt.get(entryId);
-		return at === undefined ? Infinity : position - at - 1;
+		return at === undefined ? Infinity : history.length - at - 1;
 	};
-	while (rest.length > 0) {
-		const remaining = rest.length;
-		let pick = rest.findIndex(
-			(item) => 2 * (left.get(item.entryId) ?? 0) - 1 >= remaining && sep(item.entryId) >= 1
-		);
-		if (pick < 0 && gap > 1) {
-			let most = 0;
-			rest.forEach((item, at) => {
-				const r = left.get(item.entryId) ?? 0;
-				if (
-					r >= 2 &&
-					r > most &&
-					sep(item.entryId) >= gap &&
-					(r - 1) * (gap + 1) + 1 >= remaining - PRESSURE_SLACK
-				) {
-					most = r;
-					pick = at;
-				}
-			});
+
+	// Per word: its items' indices in order, a cursor past the taken ones and
+	// how many are left; words bucketed by that count, so the most-left count
+	// is known without a scan.
+	const indices = new Map<number, number[]>();
+	items.forEach((item, at) => {
+		const list = indices.get(item.entryId);
+		if (list === undefined) indices.set(item.entryId, [at]);
+		else list.push(at);
+	});
+	const cursor = new Map<number, number>();
+	const left = new Map<number, number>();
+	const buckets: Set<number>[] = [];
+	for (const [entryId, list] of indices) {
+		cursor.set(entryId, 0);
+		left.set(entryId, list.length);
+		(buckets[list.length] ??= new Set()).add(entryId);
+	}
+	// The non-empty counts as a linked list, highest first (`most`): a count
+	// only ever drops by one, so a word moves to the neighbouring count.
+	const lower: number[] = [];
+	const higher: number[] = [];
+	let most = 0;
+	for (let r = 1; r < buckets.length; r += 1) {
+		if ((buckets[r]?.size ?? 0) === 0) continue;
+		lower[r] = most;
+		higher[r] = 0;
+		if (most > 0) higher[most] = r;
+		most = r;
+	}
+	const decrement = (entryId: number, r: number): void => {
+		if (r - 1 > 0 && (buckets[r - 1]?.size ?? 0) === 0) {
+			lower[r - 1] = lower[r];
+			higher[r - 1] = r;
+			if (lower[r] > 0) higher[lower[r]] = r - 1;
+			lower[r] = r - 1;
 		}
-		for (let need = gap; pick < 0 && need >= 0; need -= 1) {
-			pick = rest.findIndex((item) => sep(item.entryId) >= need);
+		if (r - 1 > 0) (buckets[r - 1] ??= new Set()).add(entryId);
+		buckets[r].delete(entryId);
+		if (buckets[r].size === 0) {
+			const up = higher[r];
+			const down = lower[r];
+			if (up > 0) lower[up] = down;
+			else most = down;
+			if (down > 0) higher[down] = up;
 		}
-		if (pick < 0) pick = 0;
-		const [item] = rest.splice(pick, 1);
+	};
+	const taken = new Uint8Array(total);
+	let head = 0;
+	// The first item left of every word, earliest first (an item taken is
+	// skipped when it surfaces; the word's next item is pushed on taking).
+	const firsts = new MinHeap();
+	for (const list of indices.values()) firsts.push(list[0]);
+
+	const firstOf = (entryId: number): number => {
+		const list = indices.get(entryId) ?? [];
+		let at = cursor.get(entryId) ?? 0;
+		while (at < list.length && taken[list[at]] === 1) at += 1;
+		cursor.set(entryId, at);
+		return at < list.length ? list[at] : -1;
+	};
+	const take = (at: number): void => {
+		const item = items[at];
+		taken[at] = 1;
 		out.push(item);
-		lastAt.set(item.entryId, position);
-		left.set(item.entryId, (left.get(item.entryId) ?? 1) - 1);
-		position += 1;
+		lastAt.set(item.entryId, history.length);
+		history.push(item.entryId);
+		const r = left.get(item.entryId) ?? 1;
+		left.set(item.entryId, r - 1);
+		decrement(item.entryId, r);
+		const next = firstOf(item.entryId);
+		if (next >= 0) firsts.push(next);
+		while (head < total && taken[head] === 1) head += 1;
+	};
+	/** Whether every item left belongs to a word placed fewer than `need` items ago. */
+	const allRecent = (remaining: number, need: number): boolean => {
+		if (need === 0) return false;
+		const recent = new Set(history.slice(Math.max(0, history.length - need)));
+		let count = 0;
+		for (const entryId of recent) count += left.get(entryId) ?? 0;
+		return count === remaining;
+	};
+
+	while (out.length < total) {
+		const remaining = total - out.length;
+		let pick = -1;
+		// 1. A word with 2r - 1 >= R (at most one can have it) goes now.
+		if (2 * most - 1 >= remaining) {
+			for (const entryId of buckets[most] ?? []) {
+				if (sep(entryId) >= 1) pick = firstOf(entryId);
+			}
+		}
+		// 2. The word with the most left that nearly needs the rest of the block.
+		if (pick < 0 && gap > 1) {
+			for (let r = most; r >= 2 && (r - 1) * (gap + 1) + 1 >= remaining - PRESSURE_SLACK; r = lower[r]) {
+				for (const entryId of buckets[r] ?? []) {
+					if (sep(entryId) < gap) continue;
+					const at = firstOf(entryId);
+					if (at >= 0 && (pick < 0 || at < pick)) pick = at;
+				}
+				if (pick >= 0) break;
+			}
+		}
+		// 3. The first item whose word was placed at least `need` items ago:
+		// the earliest word head in the heap that is not too recent.
+		for (let need = gap; pick < 0 && need >= 0; need -= 1) {
+			if (allRecent(remaining, need)) continue;
+			const aside: number[] = [];
+			while (firsts.size() > 0) {
+				const at = firsts.peek();
+				if (taken[at] === 1) {
+					firsts.pop();
+					continue;
+				}
+				if (sep(items[at].entryId) >= need) {
+					pick = at;
+					break;
+				}
+				aside.push(firsts.pop());
+			}
+			for (const at of aside) firsts.push(at);
+		}
+		take(pick < 0 ? head : pick);
 	}
 	return out;
 }

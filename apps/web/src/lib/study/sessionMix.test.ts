@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import fixture from '../../../../../docs/contracts/cards/session-mix.json';
 import type { FlowItem } from './cardFlow';
 import type { ReviewEvent, StudyCardKind } from './types';
+import { spaceOutReference } from './testing/spaceOutReference';
 import { fnv1a32, mixFlowQueue, mixKey, mixSession, spaceOut, typeGap, type TypeOrder } from './sessionMix';
 
 describe('docs/contracts/cards/session-mix.json keys', () => {
@@ -126,7 +127,9 @@ describe('spaceOut', () => {
 			const feasible = Math.max(...counts.values()) <= Math.ceil(size / 2);
 			if (!feasible) continue;
 			for (let i = 1; i < out.length; i += 1) {
-				expect(out[i].entryId, `round ${round} at ${i}: ${JSON.stringify(ids(out))}`).not.toBe(out[i - 1].entryId);
+				expect(out[i].entryId, `round ${round} at ${i}: ${JSON.stringify(ids(out))}`).not.toBe(
+					out[i - 1].entryId
+				);
 			}
 		}
 	});
@@ -182,7 +185,10 @@ describe('mixSession', () => {
 	it('no longer puts every companion after the word cards', () => {
 		for (const seed of [1, 2, 3, 4, 5]) {
 			const out = mixed(seed);
-			expect(out.slice(0, 3).some((id) => id.startsWith('companion:')), `seed ${seed}: ${out.join(' ')}`).toBe(true);
+			expect(
+				out.slice(0, 3).some((id) => id.startsWith('companion:')),
+				`seed ${seed}: ${out.join(' ')}`
+			).toBe(true);
 		}
 	});
 
@@ -225,5 +231,58 @@ describe('mixFlowQueue', () => {
 		];
 		const out = mixFlowQueue(queue, [review('c-vocab-2')], { seed: 4, order: 'grouped' });
 		expect(out.map((item) => item.cardId)).toEqual(['c-vocab-2', 'c-vocab-1', 'companion:writing:3']);
+	});
+});
+
+describe('spaceOut performance (#132 review)', () => {
+	function lcg(seed: number) {
+		let state = seed;
+		return (n: number) => {
+			state = (Math.imul(state, 1103515245) + 12345) >>> 0;
+			return state % n;
+		};
+	}
+
+	it('gives exactly the reference output on random blocks', () => {
+		const next = lcg(4242);
+		for (let round = 0; round < 1500; round += 1) {
+			const size = 1 + next(60);
+			const words = 1 + next(20);
+			const items = Array.from({ length: size }, (_, i) => ({ id: String(i), entryId: next(words) }));
+			const gap = 1 + next(3);
+			const placed = Array.from({ length: next(4) }, () => next(words));
+			expect(ids(spaceOut(items, gap, placed)), `round ${round}`).toEqual(
+				ids(spaceOutReference(items, gap, placed))
+			);
+		}
+	});
+
+	const timed = (items: Item[]) => {
+		const started = performance.now();
+		const out = spaceOut(items, 3);
+		const ms = performance.now() - started;
+		expect(out).toHaveLength(items.length);
+		return ms;
+	};
+
+	it('spaces 20,000 items of a Study all session quickly', () => {
+		const next = lcg(9);
+		const items: Item[] = [];
+		for (let w = 0; items.length < 20_000; w += 1) {
+			const count = 1 + next(4);
+			for (let k = 0; k < count && items.length < 20_000; k += 1) items.push({ id: `${w}-${k}`, entryId: w });
+		}
+		for (let i = items.length - 1; i > 0; i -= 1) {
+			const j = next(i + 1);
+			[items[i], items[j]] = [items[j], items[i]];
+		}
+		expect(timed(items)).toBeLessThan(1500);
+	});
+
+	it('stays quick when one or two words hold the block', () => {
+		const one = Array.from({ length: 20_000 }, (_, i) => ({ id: String(i), entryId: 1 }));
+		const two = Array.from({ length: 20_000 }, (_, i) => ({ id: String(i), entryId: i < 10_000 ? 1 : 2 }));
+		expect(timed(one)).toBeLessThan(1500);
+		expect(timed(two)).toBeLessThan(1500);
 	});
 });
