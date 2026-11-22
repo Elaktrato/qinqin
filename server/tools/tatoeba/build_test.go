@@ -290,12 +290,12 @@ func TestGoldenPacksInstall(t *testing.T) {
 }
 
 func TestEmbeddedCC0MatchesTheRepositoryCopy(t *testing.T) {
-	data, err := os.ReadFile("../../../plugins/data/zh-grammar-demo/LICENSE")
+	data, err := os.ReadFile("../../../plugins/data/zh-grammar/LICENSE")
 	if err != nil {
 		t.Fatal(err)
 	}
 	i := bytes.Index(data, []byte("Creative Commons Legal Code"))
 	if i < 0 || string(data[i:]) != cc0Text {
-		t.Error("templates/CC0-1.0.txt is not the legal code of plugins/data/zh-grammar-demo/LICENSE")
+		t.Error("templates/CC0-1.0.txt is not the legal code of plugins/data/zh-grammar/LICENSE")
 	}
 }

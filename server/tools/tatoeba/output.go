@@ -12,7 +12,7 @@ import (
 )
 
 // cc0Text is the CC0 1.0 legal code, verbatim (the copy in
-// plugins/data/zh-grammar-demo/LICENSE; a test keeps them equal).
+// plugins/data/zh-grammar/LICENSE; a test keeps them equal).
 //
 //go:embed templates/CC0-1.0.txt
 var cc0Text string

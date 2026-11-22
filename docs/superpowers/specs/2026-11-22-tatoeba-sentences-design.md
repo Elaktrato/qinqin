@@ -49,7 +49,7 @@ added to the pack format later (the importer ignores unknown fields today, so it
 
 Ruling (LICENSE): `LICENSE` names CC BY 2.0 FR with its URI (CC BY 2.0 §4a allows "a copy of, or the Uniform
 Resource Identifier for, this License") and carries the CC0 1.0 legal code verbatim, copied from
-`plugins/data/zh-grammar-demo/LICENSE` — the CC site is blocked here — cost if wrong: add the French legal
+`plugins/data/zh-grammar/LICENSE` — the CC site is blocked here — cost if wrong: add the French legal
 code text once the owner can fetch it.
 
 Pack notices (manifest `notice`, Sources page) say: from Tatoeba, export date, the licences, **filtered by a
@@ -138,7 +138,7 @@ several → the rules' `zh.defaultReadings` (reviewed defaults for particles: �
 names one of them, else the sentence gets **no reading** and the word goes to `review-zh.tsv` (count,
 word, readings). An unmatched Han character also drops the reading. Format: CC-CEDICT citation tones (no
 sandhi marking, like the dictionary), lower case, syllables of a word joined with `'` before a, o, e
-(Hanyu Pinyin orthography, like `zh-grammar-demo`), words separated by spaces, Chinese punctuation mapped
+(Hanyu Pinyin orthography, like the grammar packs), words separated by spaces, Chinese punctuation mapped
 to ASCII (`，` → `, `), digits and Latin kept.
 
 **Japanese.** A kana-only token is its own reading. A token with kanji is reliable only when every *word*
