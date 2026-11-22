@@ -1,0 +1,11 @@
+{
+  "id": "ja-grammar",
+  "name": "Japanese grammar (≈ JLPT levels)",
+  "version": "1.0",
+  "type": "grammar",
+  "language": "ja",
+  "license": "CC0-1.0",
+  "attribution": "Japanese grammar lessons written for qinqin; CC0 1.0. The selection and order of grammar points per level are qinqin's own (the JLPT publishes no grammar list; nothing is taken from JLPT preparation books or published lists). Levels are estimates. Not reviewed by a native speaker.",
+  "format": "json",
+  "notice": "Japanese grammar lessons written for qinqin, released under [CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/).\n\nThe JLPT publishes no grammar list. The choice of grammar points per level and their order are qinqin's own, not taken from JLPT preparation books or other published lists; the explanations, example sentences, readings, translations and exercise answers are written for qinqin.\n\nThe levels are qinqin's estimates (\"≈ N5\" to \"≈ N1\"), not official JLPT levels. The content has not been reviewed by a native speaker; corrections are welcome."
+}
