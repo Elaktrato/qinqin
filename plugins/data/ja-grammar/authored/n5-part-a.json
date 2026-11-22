@@ -1,0 +1,2687 @@
+{
+  "level": {
+    "id": "n5"
+  },
+  "rows": [
+    {
+      "row": 1,
+      "label": "AはBです / だ (the copula)",
+      "lesson": {
+        "id": "n5-desu",
+        "level": "n5",
+        "title": "です and だ: A is B",
+        "summary": "A は B です says that A is B; です is the polite copula and だ is its plain form.",
+        "pattern": [
+          "A は N です",
+          "A は N だ (plain)"
+        ],
+        "body": [
+          "です follows a noun and makes a polite statement: 私は学生です, I am a student. は (read wa) marks A, the topic: what the sentence is about. です does not change for person or number, so the same form works for I, you, he and they. In plain, casual speech です becomes だ: 明日はテストだ.",
+          "Use です with people you do not know well, at work and in class; use だ with family and close friends. Questions add か after です (学生ですか), which a later lesson covers.",
+          "The contrast example uses ます, which ends a verb (食べます), not a noun. A common mistake is to put です after a verb (食べです) or ます after a noun (学生ます): nouns take です, verbs take ます."
+        ],
+        "examples": [
+          {
+            "id": "n5-desu-1",
+            "text": "私は学生です。",
+            "reading": "わたしはがくせいです。",
+            "translation": "I am a student.",
+            "focus": "です",
+            "distractors": [
+              "ます",
+              "を",
+              "が"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n5-desu-2",
+            "text": "山口さんは先生です。",
+            "reading": "やまぐちさんはせんせいです。",
+            "translation": "Mr Yamaguchi is a teacher.",
+            "focus": "は",
+            "distractors": [
+              "を",
+              "に",
+              "で"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n5-desu-3",
+            "text": "これは本だ。",
+            "reading": "これはほんだ。",
+            "translation": "This is a book.",
+            "focus": "だ",
+            "distractors": [
+              "ます",
+              "を",
+              "に"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n5-desu-4",
+            "text": "中島さんは会社員です。",
+            "reading": "なかじまさんはかいしゃいんです。",
+            "translation": "Ms Nakajima is an office worker.",
+            "focus": "です",
+            "distractors": [
+              "ます",
+              "を",
+              "ません"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n5-desu-5",
+            "text": "明日はテストだ。",
+            "reading": "あしたはテストだ。",
+            "translation": "Tomorrow is the test.",
+            "focus": "だ",
+            "distractors": [
+              "ます",
+              "を",
+              "が"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n5-desu-6",
+            "text": "私はパンを食べます。",
+            "reading": "わたしはパンをたべます。",
+            "translation": "I eat bread.",
+            "focus": "ます",
+            "distractors": [
+              "です",
+              "だ",
+              "を"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "row": 2,
+      "label": "ではありません / じゃない, でした (negative and past copula)",
+      "lesson": {
+        "id": "n5-dewa-arimasen",
+        "level": "n5",
+        "title": "ではありません and でした: is not, was",
+        "summary": "ではありません (casual じゃない) says that A is not B; でした says that A was B, and でしたか asks about the past.",
+        "pattern": [
+          "N ではありません / じゃありません",
+          "N じゃない (plain)",
+          "N でした / でしたか / ではありませんでした"
+        ],
+        "body": [
+          "The negative of です is ではありません. In speech では often shortens to じゃ: じゃありません, and in plain speech じゃない. The past of です is でした, and the past negative is ではありませんでした. A question adds か: 学生でしたか.",
+          "These forms attach to nouns and to な-adjectives (静かではありません). ではありません is neutral and polite, じゃない is casual and used with friends.",
+          "The contrast example uses くない, the negative of an い-adjective such as 高い. い-adjectives do not take ではありません: say 高くないです, not 高いではありません. A common mistake is to say でしません or to put ません straight after a noun."
+        ],
+        "examples": [
+          {
+            "id": "n5-dewa-arimasen-1",
+            "text": "私は先生ではありません。",
+            "reading": "わたしはせんせいではありません。",
+            "translation": "I am not a teacher.",
+            "focus": "ではありません",
+            "distractors": [
+              "ません",
+              "くありません",
+              "がありません"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n5-dewa-arimasen-2",
+            "text": "これは私のかばんじゃない。",
+            "reading": "これはわたしのかばんじゃない。",
+            "translation": "This is not my bag.",
+            "focus": "じゃない",
+            "distractors": [
+              "くない",
+              "ません",
+              "いない"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n5-dewa-arimasen-3",
+            "text": "昨日は雨でした。",
+            "reading": "きのうはあめでした。",
+            "translation": "It was rainy yesterday.",
+            "focus": "でした",
+            "distractors": [
+              "ました",
+              "かった",
+              "ません"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n5-dewa-arimasen-4",
+            "text": "山口さんは学生でしたか。",
+            "reading": "やまぐちさんはがくせいでしたか。",
+            "translation": "Was Mr Yamaguchi a student?",
+            "focus": "でしたか",
+            "distractors": [
+              "ましたか",
+              "かったか",
+              "ませんか"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n5-dewa-arimasen-5",
+            "text": "土曜日は休みではありませんでした。",
+            "reading": "どようびはやすみではありませんでした。",
+            "translation": "Saturday was not a day off.",
+            "focus": "ではありませんでした",
+            "distractors": [
+              "くありませんでした",
+              "ではありませんだった",
+              "ではなかったでした"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n5-dewa-arimasen-6",
+            "text": "この店は高くないです。",
+            "reading": "このみせはたかくないです。",
+            "translation": "This shop is not expensive.",
+            "focus": "くない",
+            "distractors": [
+              "じゃない",
+              "ではない",
+              "いない"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "row": 3,
+      "label": "か and question words (何, 誰, どこ, いつ, どれ, いくら)",
+      "lesson": {
+        "id": "n5-ka-question-words",
+        "level": "n5",
+        "title": "か and question words: asking questions",
+        "summary": "Add か to the end of a statement to make a question; put a question word such as 何, どこ or いつ where the answer goes.",
+        "pattern": [
+          "statement + か",
+          "A は question word ですか"
+        ],
+        "body": [
+          "A yes/no question is a statement with か at the end: 学生です becomes 学生ですか. The word order does not change, and a question mark is optional in Japanese writing. A question word sits where the answer would sit: 何 (what), 誰 (who), どこ (where), いつ (when), どれ (which one), いくら (how much).",
+          "何 is read なに before を and most words (何を), and なん before です and counters (何ですか). These questions are polite with ですか or ますか; in casual speech the か is often dropped and the voice rises.",
+          "The contrast example uses が after a question word that is the subject: 誰が来ましたか. A question word never takes は, so 誰は来ましたか is wrong. A common mistake is to forget か in a polite question."
+        ],
+        "examples": [
+          {
+            "id": "n5-ka-question-words-1",
+            "text": "キムさんは学生ですか。",
+            "reading": "キムさんはがくせいですか。",
+            "translation": "Is Ms Kim a student?",
+            "focus": "か",
+            "distractors": [
+              "を",
+              "に",
+              "で"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n5-ka-question-words-2",
+            "text": "トイレはどこですか。",
+            "reading": "トイレはどこですか。",
+            "translation": "Where is the toilet?",
+            "focus": "どこ",
+            "distractors": [
+              "誰",
+              "どなた",
+              "を"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n5-ka-question-words-3",
+            "text": "朝ご飯に何を食べましたか。",
+            "reading": "あさごはんになにをたべましたか。",
+            "translation": "What did you eat for breakfast?",
+            "focus": "何",
+            "distractors": [
+              "誰",
+              "いつ",
+              "か"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n5-ka-question-words-4",
+            "text": "誕生日はいつですか。",
+            "reading": "たんじょうびはいつですか。",
+            "translation": "When is your birthday?",
+            "focus": "いつ",
+            "distractors": [
+              "誰",
+              "いくら",
+              "を"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n5-ka-question-words-5",
+            "text": "このりんごはいくらですか。",
+            "reading": "このりんごはいくらですか。",
+            "translation": "How much is this apple?",
+            "focus": "いくら",
+            "distractors": [
+              "誰",
+              "いつ",
+              "を"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n5-ka-question-words-6",
+            "text": "中島さんの傘はどれですか。",
+            "reading": "なかじまさんのかさはどれですか。",
+            "translation": "Which umbrella is Ms Nakajima's?",
+            "focus": "どれ",
+            "distractors": [
+              "誰",
+              "いつ",
+              "を"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n5-ka-question-words-7",
+            "text": "誰が来ましたか。",
+            "reading": "だれがきましたか。",
+            "translation": "Who came?",
+            "focus": "が",
+            "distractors": [
+              "は",
+              "を",
+              "で"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "row": 4,
+      "label": "の between nouns (possession, type, place)",
+      "lesson": {
+        "id": "n5-no",
+        "level": "n5",
+        "title": "の: linking two nouns",
+        "summary": "N1 の N2 makes N1 describe N2: whose it is (私の本), what kind it is (日本語の先生) or where it is from (東京のホテル).",
+        "pattern": [
+          "N1 の N2",
+          "N の です (it is N's)"
+        ],
+        "body": [
+          "の joins two nouns; the first noun describes the second. It shows the owner (母のかばん, my mother's bag), the kind or topic (日本語の先生, a Japanese teacher) and the place (東京のホテル, a hotel in Tokyo). The main noun always comes last.",
+          "When the second noun is clear, it can be left out: あの車は先生のです, that car is the teacher's. Pronouns work the same way: 私の (my, mine), あなたの (your).",
+          "The contrast example uses な after a な-adjective (便利な辞書). Adjectives do not take の: say 便利な辞書, not 便利の辞書. A common mistake is to reverse the nouns, as in 本の私."
+        ],
+        "examples": [
+          {
+            "id": "n5-no-1",
+            "text": "私の名前はアンナです。",
+            "reading": "わたしのなまえはアンナです。",
+            "translation": "My name is Anna.",
+            "focus": "の",
+            "distractors": [
+              "を",
+              "に",
+              "で"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n5-no-2",
+            "text": "日本語の先生はやさしいです。",
+            "reading": "にほんごのせんせいはやさしいです。",
+            "translation": "The Japanese teacher is kind.",
+            "focus": "の",
+            "distractors": [
+              "を",
+              "だ",
+              "ます"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n5-no-3",
+            "text": "東京のホテルは高いです。",
+            "reading": "とうきょうのホテルはたかいです。",
+            "translation": "Hotels in Tokyo are expensive.",
+            "focus": "の",
+            "distractors": [
+              "を",
+              "です",
+              "に"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n5-no-4",
+            "text": "母のかばんは赤いです。",
+            "reading": "ははのかばんはあかいです。",
+            "translation": "My mother's bag is red.",
+            "focus": "の",
+            "distractors": [
+              "を",
+              "が",
+              "で"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n5-no-5",
+            "text": "あの車は先生のです。",
+            "reading": "あのくるまはせんせいのです。",
+            "translation": "That car is the teacher's.",
+            "focus": "のです",
+            "distractors": [
+              "なです",
+              "をです",
+              "がです"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n5-no-6",
+            "text": "これは便利な辞書です。",
+            "reading": "これはべんりなじしょです。",
+            "translation": "This is a handy dictionary.",
+            "focus": "な",
+            "distractors": [
+              "の",
+              "を",
+              "に"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "row": 5,
+      "label": "も (also, too)",
+      "lesson": {
+        "id": "n5-mo",
+        "level": "n5",
+        "title": "も: also, too",
+        "summary": "も after a noun means also or too; it takes the place of は, が or を, and AもBも means both A and B.",
+        "pattern": [
+          "N も ...",
+          "N1 も N2 も ...",
+          "N に も / N で も"
+        ],
+        "body": [
+          "も adds a noun to something already said: 私も学生です, I am a student too. It replaces は, が and を: say 私も, not 私はも, and コーヒーも飲みます, not コーヒーをも. Other particles stay and も comes after them: 大阪にも行きました, I went to Osaka too.",
+          "Two nouns with も each mean both: 肉も魚も食べます, I eat both meat and fish. With a negative verb, AもBも means neither.",
+          "The contrast example uses と, which lists nouns inside one sentence (パンと卵). と joins nouns; も says the noun is in addition to something else. A common mistake is to keep は or を in front of も."
+        ],
+        "examples": [
+          {
+            "id": "n5-mo-1",
+            "text": "リンさんも中国人です。",
+            "reading": "リンさんもちゅうごくじんです。",
+            "translation": "Lin is Chinese too.",
+            "focus": "も",
+            "distractors": [
+              "を",
+              "に",
+              "で"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n5-mo-2",
+            "text": "山口さんも行きます。",
+            "reading": "やまぐちさんもいきます。",
+            "translation": "Mr Yamaguchi is going too.",
+            "focus": "も",
+            "distractors": [
+              "を",
+              "で",
+              "の"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n5-mo-3",
+            "text": "姉は英語も話します。",
+            "reading": "あねはえいごもはなします。",
+            "translation": "My older sister speaks English too.",
+            "focus": "も",
+            "distractors": [
+              "の",
+              "が",
+              "へ"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n5-mo-4",
+            "text": "肉も魚も食べます。",
+            "reading": "にくもさかなもたべます。",
+            "translation": "I eat both meat and fish.",
+            "focus": "肉も",
+            "distractors": [
+              "肉を",
+              "肉に",
+              "肉の"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ],
+            "noOrder": true
+          },
+          {
+            "id": "n5-mo-5",
+            "text": "大阪にも行きました。",
+            "reading": "おおさかにもいきました。",
+            "translation": "I went to Osaka too.",
+            "focus": "にも",
+            "distractors": [
+              "もに",
+              "をも",
+              "がも"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n5-mo-6",
+            "text": "パンと卵を食べました。",
+            "reading": "パンとたまごをたべました。",
+            "translation": "I ate bread and eggs.",
+            "focus": "と",
+            "distractors": [
+              "も",
+              "を",
+              "が"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ],
+            "noOrder": true
+          }
+        ]
+      }
+    },
+    {
+      "row": 6,
+      "label": "こ・そ・あ・ど: これ / この (things)",
+      "lesson": {
+        "id": "n5-kore-kono",
+        "level": "n5",
+        "title": "これ and この: this, that, which",
+        "summary": "これ, それ, あれ and どれ stand alone for things; この, その, あの and どの must come before a noun.",
+        "pattern": [
+          "これ / それ / あれ / どれ + は / が ...",
+          "この / その / あの / どの + N"
+        ],
+        "body": [
+          "The こ words point near the speaker, the そ words near the listener, the あ words far from both, and the ど words ask which. これ, それ, あれ and どれ are pronouns: これはペンです. この, その, あの and どの are not words on their own; a noun must follow: その人, この料理.",
+          "どれ and どの ask which one among three or more. Like any question word, どれ never takes は: say どれが, not どれは.",
+          "The contrast example uses あそこ, a place word from the same family (here, there, over there). A common mistake is to drop the noun after この (このはペンです) or to put a noun after これ (これ本)."
+        ],
+        "examples": [
+          {
+            "id": "n5-kore-kono-1",
+            "text": "これはペンです。",
+            "reading": "これはペンです。",
+            "translation": "This is a pen.",
+            "focus": "これ",
+            "distractors": [
+              "この",
+              "どの",
+              "あの"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n5-kore-kono-2",
+            "text": "その人は私の兄です。",
+            "reading": "そのひとはわたしのあにです。",
+            "translation": "That person is my older brother.",
+            "focus": "その",
+            "distractors": [
+              "それ",
+              "そこ",
+              "どれ"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n5-kore-kono-3",
+            "text": "あれは何ですか。",
+            "reading": "あれはなんですか。",
+            "translation": "What is that over there?",
+            "focus": "あれ",
+            "distractors": [
+              "あの",
+              "どの",
+              "どれ"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n5-kore-kono-4",
+            "text": "どの人が山口さんですか。",
+            "reading": "どのひとがやまぐちさんですか。",
+            "translation": "Which person is Mr Yamaguchi?",
+            "focus": "どの",
+            "distractors": [
+              "どれ",
+              "どこ",
+              "あれ"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n5-kore-kono-5",
+            "text": "この料理はおいしいです。",
+            "reading": "このりょうりはおいしいです。",
+            "translation": "This dish is delicious.",
+            "focus": "この",
+            "distractors": [
+              "これ",
+              "ここ",
+              "どれ"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n5-kore-kono-6",
+            "text": "あそこに銀行があります。",
+            "reading": "あそこにぎんこうがあります。",
+            "translation": "There is a bank over there.",
+            "focus": "あそこ",
+            "distractors": [
+              "あの",
+              "あれ",
+              "どの"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "row": 6,
+      "label": "こ・そ・あ・ど: ここ / こちら (places and directions)",
+      "lesson": {
+        "id": "n5-koko-kochira",
+        "level": "n5",
+        "title": "ここ and こちら: here, there, where",
+        "summary": "ここ, そこ, あそこ and どこ name places; こちら, そちら, あちら and どちら are their polite forms and also politely point to people.",
+        "pattern": [
+          "ここ / そこ / あそこ / どこ",
+          "こちら / そちら / あちら / どちら"
+        ],
+        "body": [
+          "ここ is here (near me), そこ is there (near you), あそこ is over there (far from us both), and どこ is where. They work like nouns: ここは私の部屋です, 駅はあそこです.",
+          "こちら, そちら, あちら and どちら are polite versions used by shop staff and in careful speech: エレベーターはあちらです. こちら also introduces a person politely: こちらは山口さんです. Never use ここ for a person.",
+          "The contrast example uses これ, which points to a thing, not a place. A common mistake is to introduce a person who is present with これ (これは山口さんです) instead of こちら, or to put a noun straight after どちら (どちら国) where どの or どちらの is needed."
+        ],
+        "examples": [
+          {
+            "id": "n5-koko-kochira-1",
+            "text": "ここは私の部屋です。",
+            "reading": "ここはわたしのへやです。",
+            "translation": "This is my room.",
+            "focus": "ここ",
+            "distractors": [
+              "この",
+              "どの",
+              "どこ"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n5-koko-kochira-2",
+            "text": "駅はあそこです。",
+            "reading": "えきはあそこです。",
+            "translation": "The station is over there.",
+            "focus": "あそこ",
+            "distractors": [
+              "あの",
+              "どの",
+              "この"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n5-koko-kochira-3",
+            "text": "そこは中島さんの席です。",
+            "reading": "そこはなかじまさんのせきです。",
+            "translation": "That is Ms Nakajima's seat.",
+            "focus": "そこ",
+            "distractors": [
+              "その",
+              "どの",
+              "どこ"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n5-koko-kochira-4",
+            "text": "こちらは山口さんです。",
+            "reading": "こちらはやまぐちさんです。",
+            "translation": "This is Mr Yamaguchi.",
+            "focus": "こちら",
+            "distractors": [
+              "この",
+              "どこ",
+              "どちら"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n5-koko-kochira-5",
+            "text": "お国はどちらですか。",
+            "reading": "おくにはどちらですか。",
+            "translation": "Which country are you from?",
+            "focus": "どちら",
+            "distractors": [
+              "いつ",
+              "どの",
+              "誰"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n5-koko-kochira-6",
+            "text": "エレベーターはあちらです。",
+            "reading": "エレベーターはあちらです。",
+            "translation": "The lift is over there.",
+            "focus": "あちら",
+            "distractors": [
+              "あの",
+              "どの",
+              "あちらの"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n5-koko-kochira-7",
+            "text": "これは駅の地図です。",
+            "reading": "これはえきのちずです。",
+            "translation": "This is a map of the station.",
+            "focus": "これ",
+            "distractors": [
+              "この",
+              "どこ",
+              "あの"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "row": 7,
+      "label": "あります / います (existence)",
+      "lesson": {
+        "id": "n5-arimasu-imasu",
+        "level": "n5",
+        "title": "あります and います: there is, I have",
+        "summary": "あります says that a thing or plant exists or that you have it; います is used for people and animals.",
+        "pattern": [
+          "N が あります (things)",
+          "N が います (people, animals)",
+          "N が ありません / いません"
+        ],
+        "body": [
+          "Japanese has two verbs of existence. あります is for objects, plants and events: 牛乳があります. います is for people and animals, anything that moves by itself: 犬がいます. The thing that exists is marked with が. Both also express having: 時間がありますか, do you have time; 弟が一人います, I have a younger brother.",
+          "The negatives are ありません and いません. Questions add か: ありますか, いますか.",
+          "The contrast example uses です, which says what something is (あれは私の猫です), not that it is there. A common mistake is to use あります for a person or a pet, as in 犬があります."
+        ],
+        "examples": [
+          {
+            "id": "n5-arimasu-imasu-1",
+            "text": "公園に犬がいます。",
+            "reading": "こうえんにいぬがいます。",
+            "translation": "There is a dog in the park.",
+            "focus": "います",
+            "distractors": [
+              "あります",
+              "です",
+              "ます"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n5-arimasu-imasu-2",
+            "text": "冷蔵庫に牛乳があります。",
+            "reading": "れいぞうこにぎゅうにゅうがあります。",
+            "translation": "There is milk in the fridge.",
+            "focus": "あります",
+            "distractors": [
+              "います",
+              "です",
+              "ます"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n5-arimasu-imasu-3",
+            "text": "教室に学生が三人います。",
+            "reading": "きょうしつにがくせいがさんにんいます。",
+            "translation": "There are three students in the classroom.",
+            "focus": "います",
+            "distractors": [
+              "あります",
+              "ます",
+              "いるます"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n5-arimasu-imasu-4",
+            "text": "明日、時間がありますか。",
+            "reading": "あした、じかんがありますか。",
+            "translation": "Do you have time tomorrow?",
+            "focus": "あります",
+            "distractors": [
+              "います",
+              "です",
+              "あるます"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n5-arimasu-imasu-5",
+            "text": "今日はお金がありません。",
+            "reading": "きょうはおかねがありません。",
+            "translation": "I have no money today.",
+            "focus": "ありません",
+            "distractors": [
+              "いません",
+              "じゃありません",
+              "ません"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n5-arimasu-imasu-6",
+            "text": "あれは私の猫です。",
+            "reading": "あれはわたしのねこです。",
+            "translation": "That is my cat.",
+            "focus": "です",
+            "distractors": [
+              "います",
+              "あります",
+              "ます"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "row": 8,
+      "label": "Place に + あります / います; Nの上 / 中 / 前 / 横",
+      "lesson": {
+        "id": "n5-ni-arimasu-position",
+        "level": "n5",
+        "title": "Place に あります: where things are",
+        "summary": "Place に N が あります / います says where something is; position words such as 上, 中, 前 and 横 follow a noun with の.",
+        "pattern": [
+          "Place に N が あります / います",
+          "N の 上 / 中 / 前 / 横 / 下 に ...",
+          "N は Place に あります / います"
+        ],
+        "body": [
+          "The place where something exists is marked with に: 公園に犬がいます. To be more exact, add a position word after the noun with の: 机の上 (on the desk), かばんの中 (in the bag), 駅の前 (in front of the station), 山口さんの横 (next to Mr Yamaguchi), いすの下 (under the chair). The whole phrase then takes に.",
+          "Two orders are common. Place に N が あります introduces something new. N は Place に あります answers where a known thing is: 猫はいすの下にいます.",
+          "The contrast example uses で, which marks the place where an action happens (駅の前で待ちます). Existence takes に, actions take で. A common mistake is 机の上であります."
+        ],
+        "examples": [
+          {
+            "id": "n5-ni-arimasu-position-1",
+            "text": "机の上にかぎがあります。",
+            "reading": "つくえのうえにかぎがあります。",
+            "translation": "There is a key on the desk.",
+            "focus": "上に",
+            "distractors": [
+              "上で",
+              "上を",
+              "上が"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n5-ni-arimasu-position-2",
+            "text": "かばんの中に財布があります。",
+            "reading": "かばんのなかにさいふがあります。",
+            "translation": "There is a wallet in the bag.",
+            "focus": "中に",
+            "distractors": [
+              "中で",
+              "中へ",
+              "中を"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n5-ni-arimasu-position-3",
+            "text": "駅の前に大きい本屋があります。",
+            "reading": "えきのまえにおおきいほんやがあります。",
+            "translation": "There is a big bookshop in front of the station.",
+            "focus": "駅の",
+            "distractors": [
+              "駅が",
+              "駅を",
+              "駅で"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n5-ni-arimasu-position-4",
+            "text": "山口さんは中島さんの横にいます。",
+            "reading": "やまぐちさんはなかじまさんのよこにいます。",
+            "translation": "Mr Yamaguchi is next to Ms Nakajima.",
+            "focus": "横に",
+            "distractors": [
+              "横で",
+              "横を",
+              "横が"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n5-ni-arimasu-position-5",
+            "text": "猫はいすの下にいます。",
+            "reading": "ねこはいすのしたにいます。",
+            "translation": "The cat is under the chair.",
+            "focus": "にいます",
+            "distractors": [
+              "にあります",
+              "でいます",
+              "をいます"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n5-ni-arimasu-position-6",
+            "text": "駅の前で友だちを待ちます。",
+            "reading": "えきのまえでともだちをまちます。",
+            "translation": "I will wait for my friend in front of the station.",
+            "focus": "で",
+            "distractors": [
+              "を",
+              "が",
+              "へ"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "row": 9,
+      "label": "Verb ます form: ます, ません",
+      "lesson": {
+        "id": "n5-masu",
+        "level": "n5",
+        "title": "ます and ません: polite verbs",
+        "summary": "Polite verbs end in ます (do, will do) and ません (do not, will not); the same form covers habits and the future.",
+        "pattern": [
+          "V-ます stem + ます",
+          "V-ます stem + ません"
+        ],
+        "body": [
+          "Polite verbs are made from the ます stem. Group 1 verbs change the last u sound to i: 飲む becomes 飲みます, 働く becomes 働きます. Group 2 verbs drop る: 見る becomes 見ます, 食べる becomes 食べます. The two irregular verbs are する (します) and 来る (来ます).",
+          "ます covers habits (毎朝コーヒーを飲みます) and the future (明日友だちが来ます). The negative replaces ます with ません. This is the normal style for talking to people you do not know well.",
+          "The contrast example uses です after an adjective (おもしろいです). Adjectives and nouns end with です, verbs with ます. A common mistake is to add ます to the dictionary form, as in 見るます or 来るます."
+        ],
+        "examples": [
+          {
+            "id": "n5-masu-1",
+            "text": "毎朝コーヒーを飲みます。",
+            "reading": "まいあさコーヒーをのみます。",
+            "translation": "I drink coffee every morning.",
+            "focus": "ます",
+            "distractors": [
+              "です",
+              "だ",
+              "る"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ],
+            "noOrder": true
+          },
+          {
+            "id": "n5-masu-2",
+            "text": "私は肉を食べません。",
+            "reading": "わたしはにくをたべません。",
+            "translation": "I do not eat meat.",
+            "focus": "ません",
+            "distractors": [
+              "くないです",
+              "じゃありません",
+              "ではない"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n5-masu-3",
+            "text": "日曜日は働きません。",
+            "reading": "にちようびははたらきません。",
+            "translation": "I do not work on Sundays.",
+            "focus": "働きません",
+            "distractors": [
+              "働くません",
+              "働いません",
+              "働きないです"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n5-masu-4",
+            "text": "毎晩テレビを見ます。",
+            "reading": "まいばんテレビをみます。",
+            "translation": "I watch TV every night.",
+            "focus": "見ます",
+            "distractors": [
+              "見ります",
+              "見るます",
+              "見きます"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ],
+            "noOrder": true
+          },
+          {
+            "id": "n5-masu-5",
+            "text": "明日友だちが来ます。",
+            "reading": "あしたともだちがきます。",
+            "translation": "A friend is coming tomorrow.",
+            "focus": "来ます",
+            "distractors": [
+              "来ります",
+              "来るます",
+              "来ました"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ],
+            "noOrder": true
+          },
+          {
+            "id": "n5-masu-6",
+            "text": "夜、日本語を勉強します。",
+            "reading": "よる、にほんごをべんきょうします。",
+            "translation": "I study Japanese in the evening.",
+            "focus": "します",
+            "distractors": [
+              "すます",
+              "しるます",
+              "さます"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n5-masu-7",
+            "text": "日本語はおもしろいです。",
+            "reading": "にほんごはおもしろいです。",
+            "translation": "Japanese is interesting.",
+            "focus": "です",
+            "distractors": [
+              "ます",
+              "ません",
+              "だです"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "row": 10,
+      "label": "Past polite: ました, ませんでした",
+      "lesson": {
+        "id": "n5-mashita",
+        "level": "n5",
+        "title": "ました and ませんでした: did, did not",
+        "summary": "Replace ます with ました for the polite past and ません with ませんでした for the polite past negative.",
+        "pattern": [
+          "V-ます stem + ました",
+          "V-ます stem + ませんでした",
+          "V-ます stem + ましたか"
+        ],
+        "body": [
+          "The past tense of a polite verb changes only the ending: 見ます becomes 見ました (saw), 行きます becomes 行きました (went), します becomes しました (did). The negative ません becomes ませんでした: 食べませんでした, did not eat. A question adds か: しましたか.",
+          "Past time words such as 昨日, 先週, 去年 and 今朝 go with these forms, never with ます. 何も (nothing) needs a negative verb: 何も食べませんでした.",
+          "The contrast example uses でした, the past of です, which follows nouns and な-adjectives (学生でした). Verbs take ました. A common mistake is to say 行きでした or 食べないでした."
+        ],
+        "examples": [
+          {
+            "id": "n5-mashita-1",
+            "text": "昨日、友だちに会いました。",
+            "reading": "きのう、ともだちにあいました。",
+            "translation": "I met a friend yesterday.",
+            "focus": "ました",
+            "distractors": [
+              "ます",
+              "でした",
+              "ません"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n5-mashita-2",
+            "text": "今朝は何も食べませんでした。",
+            "reading": "けさはなにもたべませんでした。",
+            "translation": "I did not eat anything this morning.",
+            "focus": "ませんでした",
+            "distractors": [
+              "ました",
+              "ませんだった",
+              "ないでした"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n5-mashita-3",
+            "text": "先週、京都へ行きました。",
+            "reading": "せんしゅう、きょうとへいきました。",
+            "translation": "I went to Kyoto last week.",
+            "focus": "行きました",
+            "distractors": [
+              "行くました",
+              "行いました",
+              "行きでした"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n5-mashita-4",
+            "text": "去年、日本に来ました。",
+            "reading": "きょねん、にほんにきました。",
+            "translation": "I came to Japan last year.",
+            "focus": "来ました",
+            "distractors": [
+              "来ます",
+              "来るました",
+              "来りました"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n5-mashita-5",
+            "text": "宿題をしましたか。",
+            "reading": "しゅくだいをしましたか。",
+            "translation": "Did you do your homework?",
+            "focus": "しました",
+            "distractors": [
+              "すました",
+              "しるました",
+              "しでした"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n5-mashita-6",
+            "text": "先月まで学生でした。",
+            "reading": "せんげつまでがくせいでした。",
+            "translation": "I was a student until last month.",
+            "focus": "でした",
+            "distractors": [
+              "ました",
+              "ます",
+              "だでした"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "row": 11,
+      "label": "を (the direct object)",
+      "lesson": {
+        "id": "n5-wo",
+        "level": "n5",
+        "title": "を: marking the object",
+        "summary": "を marks the direct object, the thing a verb acts on: 水を飲みます, I drink water.",
+        "pattern": [
+          "N を V",
+          "N を V-ます / V-ました"
+        ],
+        "body": [
+          "を (read o) comes right after the noun that receives the action: 新聞を読みます, I read the newspaper; 写真を撮りました, I took a photo. The verb comes at the end of the sentence, after its object.",
+          "を is written with its own kana, not お, even though it sounds the same. Time words and places can come before the object, but を always stays attached to its noun.",
+          "The contrast example uses が with ほしい (時計がほしいです). Words of wanting, liking and ability such as ほしい, 好き and 分かる take が, not を. A common mistake is to put が on the object of an ordinary verb, as in 水が飲みます."
+        ],
+        "examples": [
+          {
+            "id": "n5-wo-1",
+            "text": "水を飲みます。",
+            "reading": "みずをのみます。",
+            "translation": "I drink water.",
+            "focus": "を",
+            "distractors": [
+              "が",
+              "へ",
+              "の"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n5-wo-2",
+            "text": "私は毎日新聞を読みます。",
+            "reading": "わたしはまいにちしんぶんをよみます。",
+            "translation": "I read the newspaper every day.",
+            "focus": "を",
+            "distractors": [
+              "に",
+              "へ",
+              "が"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ],
+            "noOrder": true
+          },
+          {
+            "id": "n5-wo-3",
+            "text": "手紙を送りました。",
+            "reading": "てがみをおくりました。",
+            "translation": "I sent a letter.",
+            "focus": "を",
+            "distractors": [
+              "が",
+              "へ",
+              "の"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n5-wo-4",
+            "text": "写真を撮りました。",
+            "reading": "しゃしんをとりました。",
+            "translation": "I took a photo.",
+            "focus": "を",
+            "distractors": [
+              "が",
+              "へ",
+              "か"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n5-wo-5",
+            "text": "電車の中で音楽を聞きます。",
+            "reading": "でんしゃのなかでおんがくをききます。",
+            "translation": "I listen to music on the train.",
+            "focus": "音楽を",
+            "distractors": [
+              "音楽が",
+              "音楽へ",
+              "音楽に"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ],
+            "noOrder": true
+          },
+          {
+            "id": "n5-wo-6",
+            "text": "新しい時計がほしいです。",
+            "reading": "あたらしいとけいがほしいです。",
+            "translation": "I want a new watch.",
+            "focus": "が",
+            "distractors": [
+              "で",
+              "へ",
+              "に"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "row": 12,
+      "label": "に for time and destination; へ for direction",
+      "lesson": {
+        "id": "n5-ni-he",
+        "level": "n5",
+        "title": "に and へ: at a time, to a place",
+        "summary": "に marks a point in time (七時に) and a destination (東京に行きます); へ marks the direction of movement and also works with go, come and return.",
+        "pattern": [
+          "time に V",
+          "place に / へ 行きます / 来ます / 帰ります"
+        ],
+        "body": [
+          "に after a clock time, day or month says when: 七時に起きます, 三月に来ました. Relative time words such as 今日, 明日, 毎日 and 来週 take no に: 来週、東京に行きます.",
+          "With verbs of movement, に marks the goal and へ (read e) marks the direction. With 行きます, 来ます, 帰ります and 入ります both are correct: 国へ帰ります and 国に帰ります mean the same.",
+          "The contrast example uses で, which marks where an action takes place (図書館で本を読みます). A common mistake is to use に for an action place, as in 図書館に本を読みます, or to add に after 明日."
+        ],
+        "examples": [
+          {
+            "id": "n5-ni-he-1",
+            "text": "十時に寝ます。",
+            "reading": "じゅうじにねます。",
+            "translation": "I go to bed at ten.",
+            "focus": "に",
+            "distractors": [
+              "で",
+              "を",
+              "へ"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n5-ni-he-2",
+            "text": "来週、東京に行きます。",
+            "reading": "らいしゅう、とうきょうにいきます。",
+            "translation": "I am going to Tokyo next week.",
+            "focus": "に",
+            "distractors": [
+              "を",
+              "で",
+              "が"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n5-ni-he-3",
+            "text": "三月に日本へ来ました。",
+            "reading": "さんがつににほんへきました。",
+            "translation": "I came to Japan in March.",
+            "focus": "へ",
+            "distractors": [
+              "を",
+              "で",
+              "が"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ],
+            "noOrder": true
+          },
+          {
+            "id": "n5-ni-he-4",
+            "text": "夏休みに国へ帰ります。",
+            "reading": "なつやすみにくにへかえります。",
+            "translation": "I will go back to my country in the summer holidays.",
+            "focus": "夏休みに",
+            "distractors": [
+              "夏休みへ",
+              "夏休みを",
+              "夏休みが"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ],
+            "noOrder": true
+          },
+          {
+            "id": "n5-ni-he-5",
+            "text": "山口さんは部屋へ入りました。",
+            "reading": "やまぐちさんはへやへはいりました。",
+            "translation": "Mr Yamaguchi went into the room.",
+            "focus": "へ",
+            "distractors": [
+              "の",
+              "で",
+              "が"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n5-ni-he-6",
+            "text": "図書館で本を読みます。",
+            "reading": "としょかんでほんをよみます。",
+            "translation": "I read books at the library.",
+            "focus": "で",
+            "distractors": [
+              "に",
+              "へ",
+              "が"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ],
+            "noOrder": true
+          }
+        ]
+      }
+    },
+    {
+      "row": 13,
+      "label": "で (place of an action, means and tool)",
+      "lesson": {
+        "id": "n5-de",
+        "level": "n5",
+        "title": "で: where and with what",
+        "summary": "で marks the place where an action happens (レストランで食べます) and the means or tool used (バスで, はしで, 英語で).",
+        "pattern": [
+          "place で V",
+          "means / tool で V"
+        ],
+        "body": [
+          "で after a place says where something is done: レストランで昼ご飯を食べました, コンビニでパンを買いました. で after a vehicle, tool or language says how: バスで行きます (by bus), はしで食べます (with chopsticks), 英語で書きました (in English).",
+          "The place of an action and the place of existence are different: actions take で, あります and います take に.",
+          "The contrast example uses に with あります (駅の近くにあります). A common mistake is 駅の近くであります; another is using を for a vehicle, as in バスを行きます."
+        ],
+        "examples": [
+          {
+            "id": "n5-de-1",
+            "text": "子どもたちは公園で遊びます。",
+            "reading": "こどもたちはこうえんであそびます。",
+            "translation": "The children play in the park.",
+            "focus": "で",
+            "distractors": [
+              "に",
+              "を",
+              "へ"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n5-de-2",
+            "text": "バスで学校へ行きます。",
+            "reading": "バスでがっこうへいきます。",
+            "translation": "I go to school by bus.",
+            "focus": "で",
+            "distractors": [
+              "を",
+              "に",
+              "へ"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ],
+            "noOrder": true
+          },
+          {
+            "id": "n5-de-3",
+            "text": "はしでご飯を食べます。",
+            "reading": "はしでごはんをたべます。",
+            "translation": "I eat rice with chopsticks.",
+            "focus": "で",
+            "distractors": [
+              "を",
+              "に",
+              "が"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ],
+            "noOrder": true
+          },
+          {
+            "id": "n5-de-4",
+            "text": "メールは英語で書きました。",
+            "reading": "メールはえいごでかきました。",
+            "translation": "I wrote the email in English.",
+            "focus": "で",
+            "distractors": [
+              "に",
+              "が",
+              "へ"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n5-de-5",
+            "text": "コンビニでパンを買いました。",
+            "reading": "コンビニでパンをかいました。",
+            "translation": "I bought bread at the convenience store.",
+            "focus": "コンビニで",
+            "distractors": [
+              "コンビニに",
+              "コンビニを",
+              "コンビニへ"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ],
+            "noOrder": true
+          },
+          {
+            "id": "n5-de-6",
+            "text": "銀行は駅の近くにあります。",
+            "reading": "ぎんこうはえきのちかくにあります。",
+            "translation": "The bank is near the station.",
+            "focus": "に",
+            "distractors": [
+              "で",
+              "を",
+              "へ"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "row": 14,
+      "label": "と (and; with a partner)",
+      "lesson": {
+        "id": "n5-to",
+        "level": "n5",
+        "title": "と: and, with",
+        "summary": "と joins nouns into a complete list (りんごとみかん) and marks the person you do something with (妹と行きました).",
+        "pattern": [
+          "N1 と N2",
+          "person と V"
+        ],
+        "body": [
+          "Between nouns, と means and, and it lists all the items: りんごとみかんを買いました means apples and mandarins, nothing else. It joins nouns only, never verbs, adjectives or sentences.",
+          "After a person, と means with, together with: 妹と公園へ行きました, 山口さんと話しました. For alone, Japanese uses 一人で instead.",
+          "The contrast example uses や, which lists examples and implies other things too (本や雑誌, books, magazines and so on). と gives the whole list, や gives a sample. A common mistake is to use と to join two sentences, the way English and does."
+        ],
+        "examples": [
+          {
+            "id": "n5-to-1",
+            "text": "りんごとみかんを買いました。",
+            "reading": "りんごとみかんをかいました。",
+            "translation": "I bought apples and mandarins.",
+            "focus": "と",
+            "distractors": [
+              "も",
+              "を",
+              "が"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ],
+            "noOrder": true
+          },
+          {
+            "id": "n5-to-2",
+            "text": "日曜日は妹と出かけました。",
+            "reading": "にちようびはいもうととでかけました。",
+            "translation": "On Sunday I went out with my younger sister.",
+            "focus": "と",
+            "distractors": [
+              "を",
+              "で",
+              "へ"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n5-to-3",
+            "text": "山口さんと話しました。",
+            "reading": "やまぐちさんとはなしました。",
+            "translation": "I talked with Mr Yamaguchi.",
+            "focus": "と",
+            "distractors": [
+              "を",
+              "で",
+              "の"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n5-to-4",
+            "text": "父と母は元気です。",
+            "reading": "ちちとはははげんきです。",
+            "translation": "My father and mother are well.",
+            "focus": "と",
+            "distractors": [
+              "を",
+              "で",
+              "に"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ],
+            "noOrder": true
+          },
+          {
+            "id": "n5-to-5",
+            "text": "兄とテニスをしました。",
+            "reading": "あにとテニスをしました。",
+            "translation": "I played tennis with my older brother.",
+            "focus": "兄と",
+            "distractors": [
+              "兄を",
+              "兄で",
+              "兄へ"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ],
+            "noOrder": true
+          },
+          {
+            "id": "n5-to-6",
+            "text": "週末は本や雑誌を読みます。",
+            "reading": "しゅうまつはほんやざっしをよみます。",
+            "translation": "At weekends I read books, magazines and so on.",
+            "focus": "や",
+            "distractors": [
+              "を",
+              "で",
+              "が"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ],
+            "noOrder": true
+          }
+        ]
+      }
+    },
+    {
+      "row": 15,
+      "label": "から and まで (from, until)",
+      "lesson": {
+        "id": "n5-kara-made",
+        "level": "n5",
+        "title": "から and まで: from and until",
+        "summary": "から marks a starting point in time or space, まで an end point: 九時から五時まで, 東京から大阪まで.",
+        "pattern": [
+          "N1 から N2 まで",
+          "time から です / time まで です"
+        ],
+        "body": [
+          "から follows the start and まで follows the end. They work for time (月曜日から金曜日まで, Monday to Friday) and for places (家から駅まで, from home to the station). Either one can be used alone: 授業は九時からです, class starts at nine; 銀行は三時までです, the bank is open until three.",
+          "Both can end a sentence with です, or come before a verb: 家から駅まで歩きます.",
+          "The contrast example uses に for a single point in time (八時に家を出ます). に says when something happens; から and まで mark the edges of a span. A common mistake is to use に for the end of a span, as in 五時に働きます for until five."
+        ],
+        "examples": [
+          {
+            "id": "n5-kara-made-1",
+            "text": "授業は九時からです。",
+            "reading": "じゅぎょうはくじからです。",
+            "translation": "Class starts at nine.",
+            "focus": "から",
+            "distractors": [
+              "を",
+              "が",
+              "で"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n5-kara-made-2",
+            "text": "銀行は三時までです。",
+            "reading": "ぎんこうはさんじまでです。",
+            "translation": "The bank is open until three.",
+            "focus": "まで",
+            "distractors": [
+              "を",
+              "が",
+              "で"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n5-kara-made-3",
+            "text": "駅から会社まで二十分かかります。",
+            "reading": "えきからかいしゃまでにじゅっぷんかかります。",
+            "translation": "It takes twenty minutes from the station to the office.",
+            "focus": "会社まで",
+            "distractors": [
+              "会社から",
+              "会社を",
+              "会社が"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n5-kara-made-4",
+            "text": "月曜日から金曜日まで働きます。",
+            "reading": "げつようびからきんようびまではたらきます。",
+            "translation": "I work from Monday to Friday.",
+            "focus": "から",
+            "distractors": [
+              "まで",
+              "を",
+              "が"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n5-kara-made-5",
+            "text": "家から駅まで歩きます。",
+            "reading": "いえからえきまであるきます。",
+            "translation": "I walk from home to the station.",
+            "focus": "まで",
+            "distractors": [
+              "から",
+              "が",
+              "で"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n5-kara-made-6",
+            "text": "八時に家を出ます。",
+            "reading": "はちじにいえをでます。",
+            "translation": "I leave home at eight.",
+            "focus": "八時に",
+            "distractors": [
+              "八時を",
+              "八時が",
+              "八時へ"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ],
+            "noOrder": true
+          }
+        ]
+      }
+    },
+    {
+      "row": 16,
+      "label": "い-adjectives: present, くない, かった, くなかった",
+      "lesson": {
+        "id": "n5-i-adjectives",
+        "level": "n5",
+        "title": "い-adjectives: 高い, 高くない, 高かった",
+        "summary": "い-adjectives change their own ending for negative and past: 高い, 高くない, 高かった, 高くなかった; です only adds politeness.",
+        "pattern": [
+          "A-い です",
+          "A-くない です / A-かった です",
+          "A-くなかった です"
+        ],
+        "body": [
+          "An い-adjective ends in い and conjugates by itself. Drop the final い and add くない for the negative (寒くない), かった for the past (暑かった) and くなかった for the past negative (難しくなかった). Add です at the end to be polite: 暑かったです.",
+          "いい (good) is irregular: its forms come from よい, so the past is よかった and the negative is よくない.",
+          "The contrast example uses 静か, a な-adjective, whose past is 静かでした. な-adjectives use じゃない and でした like nouns. A common mistake is to treat an い-adjective like a noun, as in 暑いでした or いいでした; the past belongs on the adjective: 暑かったです."
+        ],
+        "examples": [
+          {
+            "id": "n5-i-adjectives-1",
+            "text": "このかばんは軽いです。",
+            "reading": "このかばんはかるいです。",
+            "translation": "This bag is light.",
+            "focus": "軽い",
+            "distractors": [
+              "軽な",
+              "軽だ",
+              "軽く"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n5-i-adjectives-2",
+            "text": "今日はあまり寒くないです。",
+            "reading": "きょうはあまりさむくないです。",
+            "translation": "It is not very cold today.",
+            "focus": "寒くない",
+            "distractors": [
+              "寒いない",
+              "寒じゃない",
+              "寒くありない"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n5-i-adjectives-3",
+            "text": "昨日は暑かったです。",
+            "reading": "きのうはあつかったです。",
+            "translation": "It was hot yesterday.",
+            "focus": "暑かった",
+            "distractors": [
+              "暑いだった",
+              "暑くでした",
+              "暑くです"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n5-i-adjectives-4",
+            "text": "テストは難しくなかったです。",
+            "reading": "テストはむずかしくなかったです。",
+            "translation": "The test was not difficult.",
+            "focus": "くなかった",
+            "distractors": [
+              "くないだった",
+              "いなかった",
+              "じゃなかった"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n5-i-adjectives-5",
+            "text": "天気がよかったです。",
+            "reading": "てんきがよかったです。",
+            "translation": "The weather was good.",
+            "focus": "よかった",
+            "distractors": [
+              "いいだった",
+              "よいだ",
+              "よくた"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n5-i-adjectives-6",
+            "text": "町は静かでした。",
+            "reading": "まちはしずかでした。",
+            "translation": "The town was quiet.",
+            "focus": "でした",
+            "distractors": [
+              "かった",
+              "くなかった",
+              "いでした"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "row": 17,
+      "label": "な-adjectives: な before nouns, じゃない, でした",
+      "lesson": {
+        "id": "n5-na-adjectives",
+        "level": "n5",
+        "title": "な-adjectives: きれいな, きれいじゃない, きれいでした",
+        "summary": "な-adjectives take な before a noun (きれいな町) and use じゃない and でした like nouns as predicates.",
+        "pattern": [
+          "A な + N",
+          "A です / A じゃないです / A でした",
+          "A じゃなかったです"
+        ],
+        "body": [
+          "A な-adjective such as きれい, 静か, 親切, 大変, 有名 or にぎやか does not change its own form. Before a noun it takes な: 親切な人, a kind person. At the end of a sentence it works like a noun: 大変です, 大変じゃないです, 親切でした, にぎやかじゃなかったです.",
+          "きれい and 嫌い end in い but are な-adjectives, so say きれいな町 and きれいじゃない, never きれくない.",
+          "The contrast example uses 古い, an い-adjective, which goes straight before a noun without な (古いカメラ). A common mistake is 有名の歌手 or 静かい町: な-adjectives need な before a noun and nothing else."
+        ],
+        "examples": [
+          {
+            "id": "n5-na-adjectives-1",
+            "text": "京都はきれいな町です。",
+            "reading": "きょうとはきれいなまちです。",
+            "translation": "Kyoto is a beautiful city.",
+            "focus": "な",
+            "distractors": [
+              "の",
+              "い",
+              "だ"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n5-na-adjectives-2",
+            "text": "この仕事は大変じゃないです。",
+            "reading": "このしごとはたいへんじゃないです。",
+            "translation": "This job is not hard.",
+            "focus": "じゃない",
+            "distractors": [
+              "くない",
+              "なじゃない",
+              "だない"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n5-na-adjectives-3",
+            "text": "駅の人はとても親切でした。",
+            "reading": "えきのひとはとてもしんせつでした。",
+            "translation": "The station staff were very kind.",
+            "focus": "でした",
+            "distractors": [
+              "かった",
+              "だでした",
+              "なでした"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n5-na-adjectives-4",
+            "text": "山口さんは有名な歌手です。",
+            "reading": "やまぐちさんはゆうめいなかしゅです。",
+            "translation": "Ms Yamaguchi is a famous singer.",
+            "focus": "有名な",
+            "distractors": [
+              "有名い",
+              "有名の",
+              "有名だ"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n5-na-adjectives-5",
+            "text": "パーティーはにぎやかじゃなかったです。",
+            "reading": "パーティーはにぎやかじゃなかったです。",
+            "translation": "The party was not lively.",
+            "focus": "じゃなかった",
+            "distractors": [
+              "くなかった",
+              "なじゃなかった",
+              "じゃないかった"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n5-na-adjectives-6",
+            "text": "古いカメラを使います。",
+            "reading": "ふるいカメラをつかいます。",
+            "translation": "I use an old camera.",
+            "focus": "古い",
+            "distractors": [
+              "古な",
+              "古の",
+              "古いな"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "row": 18,
+      "label": "Adjectives before nouns and as predicates",
+      "lesson": {
+        "id": "n5-adjective-positions",
+        "level": "n5",
+        "title": "Adjectives: before a noun or at the end",
+        "summary": "An adjective can describe a noun directly (赤いりんご, 静かな公園) or stand at the end as the predicate (冬は寒いです, 部屋はきれいです).",
+        "pattern": [
+          "A-い + N / A な + N",
+          "N は A-い です / N は A です"
+        ],
+        "body": [
+          "Before a noun, an い-adjective is used as it is (赤いりんご, 新しい先生) and a な-adjective adds な (静かな公園). The adjective always comes before the noun it describes.",
+          "At the end of a sentence, an い-adjective plus です is polite (寒いです), with nothing in between. A な-adjective drops な and takes です directly (きれいです, not きれいなです).",
+          "The contrast example uses の to join two nouns (英語の本). Nouns need の before another noun; adjectives never take の. A common mistake is to keep な at the end, as in この部屋はきれいなです."
+        ],
+        "examples": [
+          {
+            "id": "n5-adjective-positions-1",
+            "text": "赤いりんごを食べました。",
+            "reading": "あかいりんごをたべました。",
+            "translation": "I ate a red apple.",
+            "focus": "赤い",
+            "distractors": [
+              "赤いな",
+              "赤な",
+              "赤いの"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n5-adjective-positions-2",
+            "text": "北海道の冬は寒いです。",
+            "reading": "ほっかいどうのふゆはさむいです。",
+            "translation": "Winter in Hokkaido is cold.",
+            "focus": "寒いです",
+            "distractors": [
+              "寒なです",
+              "寒いだです",
+              "寒くです"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n5-adjective-positions-3",
+            "text": "近くに静かな公園があります。",
+            "reading": "ちかくにしずかなこうえんがあります。",
+            "translation": "There is a quiet park nearby.",
+            "focus": "静かな",
+            "distractors": [
+              "静かの",
+              "静かい",
+              "静かだ"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n5-adjective-positions-4",
+            "text": "この部屋はきれいです。",
+            "reading": "このへやはきれいです。",
+            "translation": "This room is clean.",
+            "focus": "きれいです",
+            "distractors": [
+              "きれいなです",
+              "きれくです",
+              "きれいいです"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n5-adjective-positions-5",
+            "text": "新しい先生はとてもやさしいです。",
+            "reading": "あたらしいせんせいはとてもやさしいです。",
+            "translation": "The new teacher is very kind.",
+            "focus": "新しい",
+            "distractors": [
+              "新しいな",
+              "新しな",
+              "新しいの"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n5-adjective-positions-6",
+            "text": "あれは英語の本です。",
+            "reading": "あれはえいごのほんです。",
+            "translation": "That is an English book.",
+            "focus": "の",
+            "distractors": [
+              "な",
+              "い",
+              "だ"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "row": 19,
+      "label": "が好き / 嫌い / 上手 / 下手 / 分かる",
+      "lesson": {
+        "id": "n5-ga-suki",
+        "level": "n5",
+        "title": "が好き and が分かる: likes, skills, understanding",
+        "summary": "好き, 嫌い, 上手 and 下手 are な-adjectives and 分かる is a verb; the thing liked, done well or understood takes が, not を.",
+        "pattern": [
+          "person は N が 好き / 嫌い です",
+          "person は N が 上手 / 下手 です",
+          "N が 分かります"
+        ],
+        "body": [
+          "In English like and understand take an object, but in Japanese the thing is marked with が: 猫が好きです, I like cats; 日本語が少し分かります, I understand a little Japanese. The person who likes or understands is the topic with は.",
+          "好き (like), 嫌い (dislike), 上手 (good at) and 下手 (bad at) are な-adjectives, so they take です, じゃない and でした. 上手 praises others; about yourself, it sounds like boasting, so people say 下手です or use a different word.",
+          "The contrast example uses を with an ordinary verb (歌を歌います). Action verbs take を; these likes and skills words take が. A common mistake is to say 分かるます or 上手いです for 上手です."
+        ],
+        "examples": [
+          {
+            "id": "n5-ga-suki-1",
+            "text": "私は猫が好きです。",
+            "reading": "わたしはねこがすきです。",
+            "translation": "I like cats.",
+            "focus": "が",
+            "distractors": [
+              "で",
+              "に",
+              "へ"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n5-ga-suki-2",
+            "text": "弟は野菜が嫌いです。",
+            "reading": "おとうとはやさいがきらいです。",
+            "translation": "My younger brother does not like vegetables.",
+            "focus": "嫌い",
+            "distractors": [
+              "嫌く",
+              "嫌いな",
+              "嫌かった"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n5-ga-suki-3",
+            "text": "中島さんは料理が上手です。",
+            "reading": "なかじまさんはりょうりがじょうずです。",
+            "translation": "Ms Nakajima is good at cooking.",
+            "focus": "上手",
+            "distractors": [
+              "上手な",
+              "上手だ",
+              "上手の"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n5-ga-suki-4",
+            "text": "私は歌が下手です。",
+            "reading": "わたしはうたがへたです。",
+            "translation": "I am bad at singing.",
+            "focus": "歌が",
+            "distractors": [
+              "歌を",
+              "歌で",
+              "歌へ"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n5-ga-suki-5",
+            "text": "日本語が少し分かります。",
+            "reading": "にほんごがすこしわかります。",
+            "translation": "I understand a little Japanese.",
+            "focus": "分かります",
+            "distractors": [
+              "分かるます",
+              "分かいます",
+              "分かりです"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ],
+            "noOrder": true
+          },
+          {
+            "id": "n5-ga-suki-6",
+            "text": "週末、カラオケで歌を歌います。",
+            "reading": "しゅうまつ、カラオケでうたをうたいます。",
+            "translation": "At weekends I sing songs at karaoke.",
+            "focus": "を",
+            "distractors": [
+              "が",
+              "へ",
+              "に"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ],
+            "noOrder": true
+          }
+        ]
+      }
+    },
+    {
+      "row": 20,
+      "label": "は and が (topic and new information)",
+      "lesson": {
+        "id": "n5-wa-ga",
+        "level": "n5",
+        "title": "は and が: topic and subject",
+        "summary": "は marks the topic, what the sentence is about; が marks a subject that is new, the answer to who or what, or the subject inside AはBが.",
+        "pattern": [
+          "A は ... (topic)",
+          "N が V (new information)",
+          "A は B が A-い / A です"
+        ],
+        "body": [
+          "は sets the topic and the rest of the sentence comments on it: 東京は大きい町です. が presents the subject as new information, often for something you see happen: あ、バスが来ました. It also marks the subject that answers a question: どれが山口さんのかばんですか.",
+          "Question words always take が as subject, never は: 誰が, どれが, 何が. In AはBが sentences, は gives the topic and が the part being described: 兄は背が高いです, my brother is tall (his height is high).",
+          "The contrast example uses を after a question word that is the object (誰を呼びましたか). Who as a subject is 誰が, who as an object is 誰を. A common mistake is どれは or 誰は in a question."
+        ],
+        "examples": [
+          {
+            "id": "n5-wa-ga-1",
+            "text": "あ、バスが来ました。",
+            "reading": "あ、バスがきました。",
+            "translation": "Oh, the bus has come.",
+            "focus": "が",
+            "distractors": [
+              "を",
+              "で",
+              "の"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n5-wa-ga-2",
+            "text": "このケーキは私が作りました。",
+            "reading": "このケーキはわたしがつくりました。",
+            "translation": "I made this cake.",
+            "focus": "が",
+            "distractors": [
+              "を",
+              "へ",
+              "の"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n5-wa-ga-3",
+            "text": "東京は大きい町です。",
+            "reading": "とうきょうはおおきいまちです。",
+            "translation": "Tokyo is a big city.",
+            "focus": "は",
+            "distractors": [
+              "を",
+              "で",
+              "に"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n5-wa-ga-4",
+            "text": "夜、雨が降りました。",
+            "reading": "よる、あめがふりました。",
+            "translation": "It rained in the night.",
+            "focus": "が",
+            "distractors": [
+              "を",
+              "へ",
+              "で"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n5-wa-ga-5",
+            "text": "どれが山口さんのかばんですか。",
+            "reading": "どれがやまぐちさんのかばんですか。",
+            "translation": "Which one is Mr Yamaguchi's bag?",
+            "focus": "どれが",
+            "distractors": [
+              "どれは",
+              "どれを",
+              "どれで"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n5-wa-ga-6",
+            "text": "兄は背が高いです。",
+            "reading": "あにはせがたかいです。",
+            "translation": "My older brother is tall.",
+            "focus": "背が",
+            "distractors": [
+              "背を",
+              "背で",
+              "背へ"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n5-wa-ga-7",
+            "text": "誰を呼びましたか。",
+            "reading": "だれをよびましたか。",
+            "translation": "Who did you call?",
+            "focus": "を",
+            "distractors": [
+              "は",
+              "で",
+              "へ"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}

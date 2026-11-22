@@ -1,0 +1,3346 @@
+{
+  "level": {
+    "id": "n2"
+  },
+  "rows": [
+    {
+      "row": 1,
+      "label": "あげく (after much …, in the end)",
+      "lesson": {
+        "id": "n2-ageku",
+        "level": "n2",
+        "title": "あげく: after all that, in the end",
+        "summary": "V-た / Nの + あげく says that a long, tiring process finally ended in a result, usually a bad or disappointing one.",
+        "pattern": [
+          "V-た + あげく(に)",
+          "N の + あげく(に)"
+        ],
+        "body": [
+          "あげく attaches to the た form of a verb (迷ったあげく) or to a noun with の (口論のあげく). The first clause describes something that went on for a long time, often stressed with 散々, さんざん, 何度も or a doubled verb (悩みに悩んだ); the second clause gives the final outcome. The speaker usually feels the outcome was bad, pointless or annoying: after all that effort or trouble, this is what happened.",
+          "The contrast example uses 末に, which also means \"after a long process\" but is neutral and fits a good result such as passing an exam (努力した末に、ついに合格した). あげく does not suit a happy ending like that. A common mistake is to attach あげく to the dictionary form (迷うあげく): the process must already be finished, so use the た form."
+        ],
+        "examples": [
+          {
+            "id": "n2-ageku-1",
+            "text": "三時間も迷ったあげく、何も買わなかった。",
+            "reading": "さんじかんもまよったあげく、なにもかわなかった。",
+            "translation": "After dithering for three whole hours, I ended up buying nothing.",
+            "focus": "あげく",
+            "distractors": [
+              "うちに",
+              "ついでに",
+              "とたん"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n2-ageku-2",
+            "text": "彼は散々文句を言ったあげく、会社を辞めた。",
+            "reading": "かれはさんざんもんくをいったあげく、かいしゃをやめた。",
+            "translation": "After complaining endlessly, he finally quit the company.",
+            "focus": "言ったあげく",
+            "distractors": [
+              "言うあげく",
+              "言ってあげく",
+              "言いあげく"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n2-ageku-3",
+            "text": "口論のあげく、二人は別れてしまった。",
+            "reading": "こうろんのあげく、ふたりはわかれてしまった。",
+            "translation": "After all the arguing, the two of them ended up breaking up.",
+            "focus": "口論のあげく",
+            "distractors": [
+              "口論するあげく",
+              "口論なあげく",
+              "口論のとたん"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n2-ageku-4",
+            "text": "悩みに悩んだあげく、留学をやめることにした。",
+            "reading": "なやみになやんだあげく、りゅうがくをやめることにした。",
+            "translation": "After agonizing over it again and again, I decided to give up studying abroad.",
+            "focus": "あげく",
+            "distractors": [
+              "くせに",
+              "ばかりか",
+              "とおりに"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n2-ageku-5",
+            "text": "何度も修理に出したあげく、結局新しいのを買った。",
+            "reading": "なんどもしゅうりにだしたあげく、けっきょくあたらしいのをかった。",
+            "translation": "After sending it for repair again and again, I ended up buying a new one anyway.",
+            "focus": "出した",
+            "distractors": [
+              "出す",
+              "出して",
+              "出そう"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n2-ageku-6",
+            "text": "努力した末に、ついに合格した。",
+            "reading": "どりょくしたすえに、ついにごうかくした。",
+            "translation": "After a long effort, I finally passed.",
+            "focus": "末に",
+            "distractors": [
+              "あげく",
+              "うちに",
+              "ところに"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "row": 2,
+      "label": "以上(は) / からには (now that, since)",
+      "lesson": {
+        "id": "n2-ijou-karaniwa",
+        "level": "n2",
+        "title": "以上(は) and からには: now that, since",
+        "summary": "Plain form + 以上(は) / からには: \"now that this is the case, then naturally …\"; the second half states a resolve, a duty or a strong judgment.",
+        "pattern": [
+          "plain form + 以上(は)",
+          "plain form + からには",
+          "N + である + 以上(は) / からには"
+        ],
+        "body": [
+          "Both patterns attach to the plain form of verbs and adjectives (引き受けた以上, 約束したからには). With nouns and な-adjectives use である (学生である以上, 日本人であるからには). The first half states a fact or a commitment the speaker accepts; the second half says what must follow from it: a resolve (最後までやる), an obligation (従うべきだ, なければならない), or a firm conclusion (もう取り消せない).",
+          "以上(は) sounds a little more formal and written; からには is common in speech too. They are near-synonyms, so the exercises never offer one as the wrong answer for the other. The contrast example uses plain から for an everyday reason (雨が降っているから、傘を持っていこう): からには would sound too heavy there, because nothing is being committed to. A common mistake is to finish the sentence with a neutral statement of fact; after 以上 or からには the speaker always takes a stance."
+        ],
+        "examples": [
+          {
+            "id": "n2-ijou-karaniwa-1",
+            "text": "引き受けた以上、最後までやるつもりだ。",
+            "reading": "ひきうけたいじょう、さいごまでやるつもりだ。",
+            "translation": "Now that I have taken it on, I intend to see it through to the end.",
+            "focus": "以上",
+            "distractors": [
+              "ところで",
+              "くせに",
+              "とたん"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n2-ijou-karaniwa-2",
+            "text": "約束したからには、必ず守ります。",
+            "reading": "やくそくしたからには、かならずまもります。",
+            "translation": "Since I promised, I will keep my word without fail.",
+            "focus": "からには",
+            "distractors": [
+              "わりには",
+              "ところで",
+              "ばかりに"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n2-ijou-karaniwa-3",
+            "text": "学生である以上、校則には従うべきだ。",
+            "reading": "がくせいであるいじょう、こうそくにはしたがうべきだ。",
+            "translation": "As long as you are a student, you should follow the school rules.",
+            "focus": "である",
+            "distractors": [
+              "な",
+              "の",
+              "に"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n2-ijou-karaniwa-4",
+            "text": "日本に来たからには、日本語を話せるようになりたい。",
+            "reading": "にほんにきたからには、にほんごをはなせるようになりたい。",
+            "translation": "Now that I have come to Japan, I want to become able to speak Japanese.",
+            "focus": "からには",
+            "distractors": [
+              "かわりに",
+              "うちに",
+              "とたんに"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n2-ijou-karaniwa-5",
+            "text": "契約書にサインした以上は、もう取り消せない。",
+            "reading": "けいやくしょにサインしたいじょうは、もうとりけせない。",
+            "translation": "Once you have signed the contract, you can no longer cancel it.",
+            "focus": "以上は",
+            "distractors": [
+              "以上に",
+              "以外は",
+              "以下は"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n2-ijou-karaniwa-6",
+            "text": "雨が降っているから、傘を持っていこう。",
+            "reading": "あめがふっているから、かさをもっていこう。",
+            "translation": "It is raining, so let us take an umbrella.",
+            "focus": "から",
+            "distractors": [
+              "のに",
+              "ても",
+              "ば"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "row": 3,
+      "label": "うえ(に) (on top of, besides)",
+      "lesson": {
+        "id": "n2-ueni",
+        "level": "n2",
+        "title": "うえ(に): on top of, not only … but also",
+        "summary": "Plain form + うえ(に) adds a second fact of the same kind to a first one: \"not only A, but also B\", both good or both bad.",
+        "pattern": [
+          "V / い-A plain + うえ(に)",
+          "な-A + な + うえ(に)",
+          "N + の + うえ(に)"
+        ],
+        "body": [
+          "うえに attaches to the plain form of verbs and い-adjectives (安いうえに, 迷ったうえに), to な-adjectives with な (静かなうえに) and to nouns with の (寝不足のうえ). に may be dropped in writing (遅刻したうえ). The second clause usually carries も: 安いうえに、味もいい. Both facts point in the same direction, both pluses or both minuses; for a contrast (cheap but bad) use のに or が instead.",
+          "The contrast example uses だけでなく, the neutral everyday way to say \"not only … but also\"; it attaches directly to a noun (英語だけでなく) without の. A common mistake is to write 静かだうえに or 静かうえに: a な-adjective needs な before うえに. Do not confuse it with V-たうえで, which means \"after doing\" and is a separate lesson."
+        ],
+        "examples": [
+          {
+            "id": "n2-ueni-1",
+            "text": "この店は安いうえに、味もいい。",
+            "reading": "このみせはやすいうえに、あじもいい。",
+            "translation": "This restaurant is cheap, and the food is good too.",
+            "focus": "うえに",
+            "distractors": [
+              "くせに",
+              "ものの",
+              "とたんに"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n2-ueni-2",
+            "text": "この町は静かなうえに、空気もきれいだ。",
+            "reading": "このまちはしずかなうえに、くうきもきれいだ。",
+            "translation": "This town is quiet, and the air is clean as well.",
+            "focus": "静かな",
+            "distractors": [
+              "静かの",
+              "静か",
+              "静かだ"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n2-ueni-3",
+            "text": "道に迷ったうえに、雨にも降られた。",
+            "reading": "みちにまよったうえに、あめにもふられた。",
+            "translation": "On top of getting lost, I got caught in the rain too.",
+            "focus": "うえに",
+            "distractors": [
+              "うえで",
+              "ほどに",
+              "ように"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n2-ueni-4",
+            "text": "寝不足のうえ、朝ご飯も食べていない。",
+            "reading": "ねぶそくのうえ、あさごはんもたべていない。",
+            "translation": "On top of not getting enough sleep, I have not even eaten breakfast.",
+            "focus": "寝不足の",
+            "distractors": [
+              "寝不足が",
+              "寝不足を",
+              "寝不足で"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n2-ueni-5",
+            "text": "彼は遅刻したうえ、宿題も忘れてきた。",
+            "reading": "かれはちこくしたうえ、しゅくだいもわすれてきた。",
+            "translation": "He was late, and on top of that he forgot his homework.",
+            "focus": "うえ",
+            "distractors": [
+              "まま",
+              "ほど",
+              "すえ"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n2-ueni-6",
+            "text": "彼は英語だけでなく、中国語も話せる。",
+            "reading": "かれはえいごだけでなく、ちゅうごくごもはなせる。",
+            "translation": "He can speak not only English but Chinese as well.",
+            "focus": "だけでなく",
+            "distractors": [
+              "だけで",
+              "しかなく",
+              "ばかりで"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "row": 4,
+      "label": "うえで (when doing, after doing)",
+      "lesson": {
+        "id": "n2-uede",
+        "level": "n2",
+        "title": "うえで: after doing (first), in doing",
+        "summary": "V-たうえで means \"after first doing A (carefully), then B\"; V-dict / Nの + うえで means \"in doing A, for the purpose of A\".",
+        "pattern": [
+          "V-た + うえで (after doing first)",
+          "V-dict + うえで (in doing)",
+          "N + の + うえで"
+        ],
+        "body": [
+          "With the た form, うえで marks a necessary first step: do A properly, and only then B (相談したうえで決めます, 確認したうえでサインしてください). It is formal and common in business, instructions and official explanations. With the dictionary form or a noun with の, it means \"in the area of, when it comes to doing\": 外国語を学ぶうえで大切なのは…, 仕事のうえで困ったこと.",
+          "The contrast example uses てから, the plain way to give an order of actions (手を洗ってから食べてください). たうえで adds the idea that the first step is a careful precondition, so it sounds stiff for everyday routines. A common mistake is to mix up うえで and うえに: うえに means \"on top of\", so 相談したうえに決めます is wrong."
+        ],
+        "examples": [
+          {
+            "id": "n2-uede-1",
+            "text": "両親と相談したうえで、決めます。",
+            "reading": "りょうしんとそうだんしたうえで、きめます。",
+            "translation": "I will decide after talking it over with my parents.",
+            "focus": "うえで",
+            "distractors": [
+              "うえに",
+              "あげく",
+              "くせに"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n2-uede-2",
+            "text": "内容を確認したうえで、サインしてください。",
+            "reading": "ないようをかくにんしたうえで、サインしてください。",
+            "translation": "Please sign after checking the contents.",
+            "focus": "確認した",
+            "distractors": [
+              "確認する",
+              "確認して",
+              "確認しない"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n2-uede-3",
+            "text": "外国語を学ぶうえで、大切なのは毎日続けることだ。",
+            "reading": "がいこくごをまなぶうえで、たいせつなのはまいにちつづけることだ。",
+            "translation": "In learning a foreign language, what matters is keeping at it every day.",
+            "focus": "学ぶ",
+            "distractors": [
+              "学ぼう",
+              "学べ",
+              "学んで"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n2-uede-4",
+            "text": "仕事のうえで、困ったことはありませんか。",
+            "reading": "しごとのうえで、こまったことはありませんか。",
+            "translation": "Have you had any problems in your work?",
+            "focus": "仕事のうえで",
+            "distractors": [
+              "仕事のうえに",
+              "仕事なうえで",
+              "仕事うえで"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n2-uede-5",
+            "text": "よく考えたうえでの決断なら、反対しない。",
+            "reading": "よくかんがえたうえでのけつだんなら、はんたいしない。",
+            "translation": "If it is a decision you made after careful thought, I will not oppose it.",
+            "focus": "うえでの",
+            "distractors": [
+              "うえにの",
+              "うえでな",
+              "うえだの"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n2-uede-6",
+            "text": "手を洗ってから、食べてください。",
+            "reading": "てをあらってから、たべてください。",
+            "translation": "Please wash your hands before you eat.",
+            "focus": "てから",
+            "distractors": [
+              "てまで",
+              "ても",
+              "ては"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "row": 5,
+      "label": "おそれがある (there is a risk that)",
+      "lesson": {
+        "id": "n2-osoregaaru",
+        "level": "n2",
+        "title": "おそれがある: there is a risk that",
+        "summary": "V-dict / Nの + おそれがある warns that something bad may happen; it is formal and typical of news, forecasts and official notices.",
+        "pattern": [
+          "V-dict + おそれがある",
+          "N + の + おそれがある"
+        ],
+        "body": [
+          "おそれがある attaches to the dictionary form of a verb (上陸するおそれがある) or to a noun with の (絶滅のおそれがある). The thing that might happen is always undesirable: disasters, side effects, damage, extinction. The tone is objective and formal, as in weather warnings, medicine labels and reports. おそれ is written 恐れ or 虞 in some texts; kana is common.",
+          "The contrast example uses かもしれない, the neutral everyday \"may\" (明日は晴れるかもしれないね). Because the outcome there is good and the tone is casual, おそれがある would be wrong. A common mistake is to use the た form (あふれたおそれ) or to warn about something pleasant: おそれがある looks ahead to a bad event."
+        ],
+        "examples": [
+          {
+            "id": "n2-osoregaaru-1",
+            "text": "台風が上陸するおそれがあります。",
+            "reading": "たいふうがじょうりくするおそれがあります。",
+            "translation": "There is a risk that the typhoon will make landfall.",
+            "focus": "おそれ",
+            "distractors": [
+              "つもり",
+              "ところ",
+              "ため"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n2-osoregaaru-2",
+            "text": "この薬は眠くなるおそれがあるので、運転しないでください。",
+            "reading": "このくすりはねむくなるおそれがあるので、うんてんしないでください。",
+            "translation": "This medicine may cause drowsiness, so please do not drive.",
+            "focus": "おそれがある",
+            "distractors": [
+              "わけがない",
+              "はずがない",
+              "ものがある"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n2-osoregaaru-3",
+            "text": "このままでは、絶滅のおそれがある動物もいる。",
+            "reading": "このままでは、ぜつめつのおそれがあるどうぶつもいる。",
+            "translation": "If things go on like this, some animals are at risk of extinction.",
+            "focus": "絶滅の",
+            "distractors": [
+              "絶滅な",
+              "絶滅が",
+              "絶滅で"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n2-osoregaaru-4",
+            "text": "大雨で川があふれるおそれがある。",
+            "reading": "おおあめでかわがあふれるおそれがある。",
+            "translation": "There is a danger that the river will overflow because of the heavy rain.",
+            "focus": "あふれる",
+            "distractors": [
+              "あふれた",
+              "あふれて",
+              "あふれよう"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n2-osoregaaru-5",
+            "text": "個人情報が外部に漏れるおそれはありません。",
+            "reading": "こじんじょうほうががいぶにもれるおそれはありません。",
+            "translation": "There is no risk of personal information leaking outside.",
+            "focus": "おそれは",
+            "distractors": [
+              "おそれを",
+              "おそれで",
+              "おそれに"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n2-osoregaaru-6",
+            "text": "明日は晴れるかもしれないね。",
+            "reading": "あしたははれるかもしれないね。",
+            "translation": "It might be sunny tomorrow.",
+            "focus": "かもしれない",
+            "distractors": [
+              "おそれがある",
+              "かねない",
+              "はずがある"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "row": 6,
+      "label": "かぎり (as long as, as far as)",
+      "lesson": {
+        "id": "n2-kagiri",
+        "level": "n2",
+        "title": "かぎり: as long as, as far as, as much as",
+        "summary": "V-dict / V-ている / V-ない + かぎり sets a condition or a limit: \"as long as A holds\", \"as far as A goes\", \"unless A\".",
+        "pattern": [
+          "V-dict / V-ている + かぎり",
+          "V-ない + かぎり (unless)",
+          "N + である + かぎり"
+        ],
+        "body": [
+          "かぎり (限り) marks the boundary inside which the main clause is true. With a continuing state it means \"as long as\": 生きているかぎり, 社員である限り. With a negative it means \"unless, as long as … not\": 雨が降らないかぎり、試合は行われます. With verbs of knowing or seeing it means \"as far as\": 私の知るかぎり (note の for が in this set phrase). できるかぎり means \"as much as possible\".",
+          "The contrast example uses うちに, \"while it is still the case, before it changes\" (若いうちに). うちに urges acting within a window that will close; かぎり states a condition that keeps the main clause true. Verbs of knowing take the dictionary form (知るかぎり), while verbs of seeing and hearing often take the た form (私が見たかぎり). A common mistake is to use うちに where the condition never runs out: 生きているうちに means \"before I die\", not \"as long as I live\"."
+        ],
+        "examples": [
+          {
+            "id": "n2-kagiri-1",
+            "text": "私の知るかぎり、彼はうそをつく人ではない。",
+            "reading": "わたしのしるかぎり、かれはうそをつくひとではない。",
+            "translation": "As far as I know, he is not the kind of person who lies.",
+            "focus": "知る",
+            "distractors": [
+              "知って",
+              "知ろう",
+              "知れ"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n2-kagiri-2",
+            "text": "雨が降らないかぎり、試合は行われます。",
+            "reading": "あめがふらないかぎり、しあいはおこなわれます。",
+            "translation": "Unless it rains, the match will be held.",
+            "focus": "かぎり",
+            "distractors": [
+              "あまり",
+              "ばかりに",
+              "くせに"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n2-kagiri-3",
+            "text": "生きているかぎり、このご恩は忘れません。",
+            "reading": "いきているかぎり、このごおんはわすれません。",
+            "translation": "As long as I live, I will never forget your kindness.",
+            "focus": "ている",
+            "distractors": [
+              "てある",
+              "ておく",
+              "てしまう"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n2-kagiri-4",
+            "text": "できるかぎり早くお返事します。",
+            "reading": "できるかぎりはやくおへんじします。",
+            "translation": "I will reply as soon as I possibly can.",
+            "focus": "かぎり",
+            "distractors": [
+              "までに",
+              "うえ",
+              "すえ"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n2-kagiri-5",
+            "text": "社員である限り、規則は守らなければならない。",
+            "reading": "しゃいんであるかぎり、きそくはまもらなければならない。",
+            "translation": "As long as you are an employee, you have to follow the rules.",
+            "focus": "である",
+            "distractors": [
+              "な",
+              "の",
+              "に"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n2-kagiri-6",
+            "text": "明るいうちに、家に帰りましょう。",
+            "reading": "あかるいうちに、いえにかえりましょう。",
+            "translation": "Let's go home while it is still light.",
+            "focus": "うちに",
+            "distractors": [
+              "までに",
+              "ところに",
+              "とたんに"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "row": 7,
+      "label": "かねない (could well, might)",
+      "lesson": {
+        "id": "n2-kanenai",
+        "level": "n2",
+        "title": "かねない: could well happen (something bad)",
+        "summary": "V-ます stem + かねない says that a bad result could easily happen; it expresses the speaker’s worry or warning.",
+        "pattern": [
+          "V-ます stem + かねない"
+        ],
+        "body": [
+          "かねない attaches to the ます stem (起こしかねない, 招きかねない, なりかねない). Despite the negative ending it has a positive meaning: \"it is quite possible that\". The outcome is always bad, and the sentence often names a cause: そんな運転をしたら, 無理をすると, このままでは. It is used in speech and writing.",
+          "The contrast example uses おそれがある, which attaches to the dictionary form or Nの (津波のおそれがあります) and sounds objective, like an official warning; かねない sounds more like a personal judgment about a risky action. Do not confuse かねない with かねる (\"cannot, will not\"), which is the next lesson: 誤解を招きかねる is wrong. A common mistake is to attach かねない to the dictionary form (起こすかねない)."
+        ],
+        "examples": [
+          {
+            "id": "n2-kanenai-1",
+            "text": "そんな運転をしたら、事故を起こしかねない。",
+            "reading": "そんなうんてんをしたら、じこをおこしかねない。",
+            "translation": "If you drive like that, you could well cause an accident.",
+            "focus": "かねない",
+            "distractors": [
+              "かねる",
+              "っこない",
+              "ようがない"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n2-kanenai-2",
+            "text": "彼の一言が誤解を招きかねない。",
+            "reading": "かれのひとことがごかいをまねきかねない。",
+            "translation": "That remark of his could easily cause a misunderstanding.",
+            "focus": "招き",
+            "distractors": [
+              "招く",
+              "招いて",
+              "招か"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n2-kanenai-3",
+            "text": "無理をすると、体を壊しかねないよ。",
+            "reading": "むりをすると、からだをこわしかねないよ。",
+            "translation": "If you overdo it, you might ruin your health.",
+            "focus": "壊しかねない",
+            "distractors": [
+              "壊すかねない",
+              "壊しかねる",
+              "壊れっこない"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n2-kanenai-4",
+            "text": "小さなミスが大きな問題になりかねない。",
+            "reading": "ちいさなミスがおおきなもんだいになりかねない。",
+            "translation": "A small mistake could turn into a big problem.",
+            "focus": "なりかねない",
+            "distractors": [
+              "なるおそれだ",
+              "なりかねる",
+              "なりっこない"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n2-kanenai-5",
+            "text": "このままでは、会社が倒産しかねない。",
+            "reading": "このままでは、かいしゃがとうさんしかねない。",
+            "translation": "If things go on like this, the company could go bankrupt.",
+            "focus": "倒産し",
+            "distractors": [
+              "倒産する",
+              "倒産して",
+              "倒産しよう"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n2-kanenai-6",
+            "text": "地震による津波のおそれがあります。",
+            "reading": "じしんによるつなみのおそれがあります。",
+            "translation": "There is a risk of a tsunami caused by the earthquake.",
+            "focus": "おそれ",
+            "distractors": [
+              "かね",
+              "はず",
+              "つもり"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "row": 8,
+      "label": "かねる (cannot, find it hard to)",
+      "lesson": {
+        "id": "n2-kaneru",
+        "level": "n2",
+        "title": "かねる: cannot (bring oneself to), politely unable",
+        "summary": "V-ます stem + かねる says that one cannot do something for reasons of position, feeling or principle; かねます is a polite refusal in service language.",
+        "pattern": [
+          "V-ます stem + かねる / かねます",
+          "見るに見かねて (cannot stand by and watch)"
+        ],
+        "body": [
+          "かねる attaches to the ます stem: お答えしかねます, 納得しかねる, 決めかねている. It does not mean lack of ability but unwillingness or difficulty: the speaker would like to but cannot, because of rules, feelings or a hard choice. In shops and offices, お〜しかねます is a soft, polite way to refuse a customer. The set phrase 見るに見かねて means \"unable to just stand by and watch\".",
+          "The contrast example uses かねない, which looks similar but means the opposite kind of thing: \"could well happen\" (病気につながりかねない). かねる is \"cannot\", かねない is \"may well\". A common mistake is to use かねる for physical inability, such as 重くて持ちかねる; for that, use 持てない."
+        ],
+        "examples": [
+          {
+            "id": "n2-kaneru-1",
+            "text": "申し訳ありませんが、そのご要望にはお応えしかねます。",
+            "reading": "もうしわけありませんが、そのごようぼうにはおこたえしかねます。",
+            "translation": "I am sorry, but we are unable to meet that request.",
+            "focus": "かねます",
+            "distractors": [
+              "かねません",
+              "がちです",
+              "っこないです"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n2-kaneru-2",
+            "text": "個人情報なので、電話ではお教えしかねます。",
+            "reading": "こじんじょうほうなので、でんわではおおしえしかねます。",
+            "translation": "Since it is personal information, I am afraid I cannot tell you over the phone.",
+            "focus": "お教えし",
+            "distractors": [
+              "お教え",
+              "お教えて",
+              "お教えする"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n2-kaneru-3",
+            "text": "彼の態度には、納得しかねる点がある。",
+            "reading": "かれのたいどには、なっとくしかねるてんがある。",
+            "translation": "There are things about his attitude that I find hard to accept.",
+            "focus": "かねる",
+            "distractors": [
+              "かねない",
+              "っこない",
+              "ようとする"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n2-kaneru-4",
+            "text": "見るに見かねて、手を貸した。",
+            "reading": "みるにみかねて、てをかした。",
+            "translation": "Unable to just stand by and watch, I lent a hand.",
+            "focus": "見かねて",
+            "distractors": [
+              "見かねなくて",
+              "見かねずに",
+              "見かけて"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n2-kaneru-5",
+            "text": "決めかねているなら、もう少し待ちましょう。",
+            "reading": "きめかねているなら、もうすこしまちましょう。",
+            "translation": "If you cannot make up your mind, let us wait a little longer.",
+            "focus": "決めかねて",
+            "distractors": [
+              "決めかねなくて",
+              "決めかねないで",
+              "決めっこなくて"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n2-kaneru-6",
+            "text": "甘いものの食べすぎは、病気につながりかねない。",
+            "reading": "あまいもののたべすぎは、びょうきにつながりかねない。",
+            "translation": "Eating too many sweets can easily lead to illness.",
+            "focus": "かねない",
+            "distractors": [
+              "かねる",
+              "かねます",
+              "がたい"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "row": 9,
+      "label": "からこそ (precisely because)",
+      "lesson": {
+        "id": "n2-karakoso",
+        "level": "n2",
+        "title": "からこそ: precisely because",
+        "summary": "Plain form + からこそ stresses that this reason, and no other, is why something is so; it often reverses what one might expect.",
+        "pattern": [
+          "plain form + からこそ",
+          "N / な-A + だ + からこそ"
+        ],
+        "body": [
+          "からこそ is から (because) with こそ (exactly this one). It attaches to the plain form; nouns and な-adjectives take だ (健康だからこそ). The sentence often ends in のだ or んだ, and the reason is often surprising: someone is strict because they care, a failure taught you a lot. からこそ cannot be used with polite ます before it in ordinary style; keep the first half plain.",
+          "The contrast example uses こそ on its own after a noun (忙しいときこそ): it singles out a time or thing, \"this is exactly when\". A common mistake is to use からこそ for an ordinary reason with no emphasis, as in 雨だからこそ傘を持っていく; plain から is enough there. Do not confuse からこそ with からには, which needs a resolve or duty in the main clause."
+        ],
+        "examples": [
+          {
+            "id": "n2-karakoso-1",
+            "text": "君のことを思うからこそ、厳しく言うんだ。",
+            "reading": "きみのことをおもうからこそ、きびしくいうんだ。",
+            "translation": "It is precisely because I care about you that I am being strict.",
+            "focus": "からこそ",
+            "distractors": [
+              "くせに",
+              "ものの",
+              "わりに"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n2-karakoso-2",
+            "text": "失敗したからこそ、学べたことも多い。",
+            "reading": "しっぱいしたからこそ、まなべたこともおおい。",
+            "translation": "There is a lot I could learn precisely because I failed.",
+            "focus": "こそ",
+            "distractors": [
+              "さえ",
+              "しか",
+              "まで"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n2-karakoso-3",
+            "text": "健康だからこそ、毎日働ける。",
+            "reading": "けんこうだからこそ、まいにちはたらける。",
+            "translation": "It is precisely because I am healthy that I can work every day.",
+            "focus": "健康だからこそ",
+            "distractors": [
+              "健康なからこそ",
+              "健康のからこそ",
+              "健康でからこそ"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n2-karakoso-4",
+            "text": "苦しい時期があったからこそ、今の幸せがある。",
+            "reading": "くるしいじきがあったからこそ、いまのしあわせがある。",
+            "translation": "Today’s happiness exists precisely because there was a hard time.",
+            "focus": "からこそ",
+            "distractors": [
+              "からには",
+              "からといって",
+              "からして"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n2-karakoso-5",
+            "text": "信じているからこそ、彼に任せたのです。",
+            "reading": "しんじているからこそ、かれにまかせたのです。",
+            "translation": "It is exactly because I trust him that I left it to him.",
+            "focus": "信じている",
+            "distractors": [
+              "信じて",
+              "信じよう",
+              "信じれば"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n2-karakoso-6",
+            "text": "忙しいときこそ、休みが必要だ。",
+            "reading": "いそがしいときこそ、やすみがひつようだ。",
+            "translation": "It is when you are busy that you most need a break.",
+            "focus": "こそ",
+            "distractors": [
+              "しか",
+              "を",
+              "まで"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "row": 10,
+      "label": "からといって (just because … does not mean)",
+      "lesson": {
+        "id": "n2-karatoitte",
+        "level": "n2",
+        "title": "からといって: just because … does not mean",
+        "summary": "Plain form + からといって, followed by a negative, says that a reason does not justify the conclusion one might draw from it.",
+        "pattern": [
+          "plain form + からといって + negative",
+          "plain form + からって (casual)"
+        ],
+        "body": [
+          "からといって attaches to the plain form; nouns and な-adjectives take だ (日本人だからといって). The second half denies the expected conclusion, very often with とは限らない, わけではない, ことはない or a prohibition (てはいけない, のはよくない). In casual speech it shortens to からって.",
+          "The contrast example uses ても, which concedes a condition (安くても、要らないものは買わない: even if it is cheap). からといって works with a reason someone is relying on, and says that the reason is not enough. A common mistake is to end the sentence with a positive conclusion (高いからといって品質がいい): からといって needs a denial in the main clause."
+        ],
+        "examples": [
+          {
+            "id": "n2-karatoitte-1",
+            "text": "高いからといって、品質がいいとは限らない。",
+            "reading": "たかいからといって、ひんしつがいいとはかぎらない。",
+            "translation": "Just because something is expensive does not mean it is good quality.",
+            "focus": "からといって",
+            "distractors": [
+              "からこそ",
+              "からには",
+              "ことから"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n2-karatoitte-2",
+            "text": "日本人だからといって、敬語が完璧なわけではない。",
+            "reading": "にほんじんだからといって、けいごがかんぺきなわけではない。",
+            "translation": "Being Japanese does not mean you use honorifics perfectly.",
+            "focus": "わけではない",
+            "distractors": [
+              "わけだ",
+              "はずだ",
+              "ことだ"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n2-karatoitte-3",
+            "text": "一度失敗したからといって、あきらめることはない。",
+            "reading": "いちどしっぱいしたからといって、あきらめることはない。",
+            "translation": "You do not need to give up just because you failed once.",
+            "focus": "ことはない",
+            "distractors": [
+              "ことにする",
+              "ことになる",
+              "ことがある"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n2-karatoitte-4",
+            "text": "好きだからって、毎日食べるのはよくないよ。",
+            "reading": "すきだからって、まいにちたべるのはよくないよ。",
+            "translation": "Just because you like it, it is not good to eat it every day.",
+            "focus": "からって",
+            "distractors": [
+              "からで",
+              "からには",
+              "からも"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n2-karatoitte-5",
+            "text": "暇だからといって、遊んでばかりいてはいけない。",
+            "reading": "ひまだからといって、あそんでばかりいてはいけない。",
+            "translation": "Having free time does not mean you should do nothing but play.",
+            "focus": "といって",
+            "distractors": [
+              "とって",
+              "でも",
+              "として"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n2-karatoitte-6",
+            "text": "安くても、要らないものは買わない。",
+            "reading": "やすくても、いらないものはかわない。",
+            "translation": "Even if it is cheap, I do not buy things I do not need.",
+            "focus": "ても",
+            "distractors": [
+              "ので",
+              "から",
+              "たら"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "row": 11,
+      "label": "気味 / がち (slightly, tending to)",
+      "lesson": {
+        "id": "n2-gimi-gachi",
+        "level": "n2",
+        "title": "気味 and がち: a touch of, tending to",
+        "summary": "N / V-ます stem + 気味 says a state is slightly present right now; N / V-ます stem + がち says something tends to happen often, usually something bad.",
+        "pattern": [
+          "N / V-ます stem + 気味(だ / の / な)",
+          "N / V-ます stem + がち(だ / の / な)"
+        ],
+        "body": [
+          "気味 (ぎみ) means \"a slight touch of\" a state the speaker notices now: 風邪気味, 疲れ気味, 太り気味. It works like a noun: 気味だ, 気味の人, 風邪気味なので. がち means \"prone to, tends to\": something happens often or easily, and it is usually unwelcome: 休みがち, 忘れがち, 運動不足になりがち, 曇りがちの天気. がちな / がちの both occur before nouns, and がちに works as an adverb (遠慮がちに).",
+          "The difference: 気味 is about the degree of a present state, がち about frequency or tendency. The contrast example uses っぽい (忘れっぽい性格), which describes a person’s typical trait and attaches to a few verb stems and nouns; 忘れがち says it happens often, 忘れっぽい says that is what the person is like. A common mistake is to attach がち to the dictionary form (なるがち): use the ます stem."
+        ],
+        "examples": [
+          {
+            "id": "n2-gimi-gachi-1",
+            "text": "最近、少し疲れ気味だ。",
+            "reading": "さいきん、すこしつかれぎみだ。",
+            "translation": "I have been feeling a bit tired lately.",
+            "focus": "気味",
+            "distractors": [
+              "っぽさ",
+              "ぶり",
+              "ほど"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n2-gimi-gachi-2",
+            "text": "風邪気味なので、今日は早く寝ます。",
+            "reading": "かぜぎみなので、きょうははやくねます。",
+            "translation": "I think I am coming down with a cold, so I will go to bed early today.",
+            "focus": "気味な",
+            "distractors": [
+              "気味の",
+              "っぽいな",
+              "気味だ"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n2-gimi-gachi-3",
+            "text": "彼は学校を休みがちだ。",
+            "reading": "かれはがっこうをやすみがちだ。",
+            "translation": "He is often absent from school.",
+            "focus": "がち",
+            "distractors": [
+              "きり",
+              "っぽい",
+              "次第"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n2-gimi-gachi-4",
+            "text": "冬は運動不足になりがちです。",
+            "reading": "ふゆはうんどうぶそくになりがちです。",
+            "translation": "In winter people tend not to get enough exercise.",
+            "focus": "なりがち",
+            "distractors": [
+              "なるがち",
+              "なってがち",
+              "なりきり"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n2-gimi-gachi-5",
+            "text": "曇りがちの天気が続いている。",
+            "reading": "くもりがちのてんきがつづいている。",
+            "translation": "We have been having mostly cloudy weather.",
+            "focus": "がちの",
+            "distractors": [
+              "がちだ",
+              "っぽいの",
+              "がちで"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n2-gimi-gachi-6",
+            "text": "あの子は遠慮がちに話した。",
+            "reading": "あのこはえんりょがちにはなした。",
+            "translation": "That child spoke hesitantly.",
+            "focus": "がちに",
+            "distractors": [
+              "がちな",
+              "気味だ",
+              "がちの"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n2-gimi-gachi-7",
+            "text": "彼は忘れっぽい性格だ。",
+            "reading": "かれはわすれっぽいせいかくだ。",
+            "translation": "He is the forgetful type.",
+            "focus": "っぽい",
+            "distractors": [
+              "気味な",
+              "らしい",
+              "ような"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "row": 12,
+      "label": "きり / っきり (only, since, all alone)",
+      "lesson": {
+        "id": "n2-kiri",
+        "level": "n2",
+        "title": "きり and っきり: only, ever since, nothing more",
+        "summary": "V-たきり says that after an action nothing further happened; N + きり / っきり means \"only, just\" (二人きり, 一度っきり).",
+        "pattern": [
+          "V-た + きり (ever since, and nothing more)",
+          "N + きり / っきり (only)"
+        ],
+        "body": [
+          "After the た form, きり means the action happened and then the situation stayed frozen: 会ったきり連絡を取っていない (I met him and that was it), 出かけたきりまだ帰ってこない. The second clause is usually negative or describes an unchanged state. 寝たきり is a set word for \"bedridden\". After numbers and some nouns, きり means \"only\": 二人きり, 一度きり; っきり is the more emphatic, spoken variant (一度っきり).",
+          "The contrast example uses まま, which says a state is left as it is while something else happens (窓を開けたまま寝てしまった). まま focuses on the unchanged state during another action; たきり stresses that nothing followed. A common mistake is to use きり with the dictionary form (出かけるきり): in the \"since\" meaning it always takes the た form."
+        ],
+        "examples": [
+          {
+            "id": "n2-kiri-1",
+            "text": "彼とは去年会ったきり、連絡を取っていない。",
+            "reading": "かれとはきょねんあったきり、れんらくをとっていない。",
+            "translation": "I met him last year, and we have not been in touch since.",
+            "focus": "きり",
+            "distractors": [
+              "ばかり",
+              "うちに",
+              "ほど"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n2-kiri-2",
+            "text": "父は朝出かけたきり、まだ帰ってこない。",
+            "reading": "ちちはあさでかけたきり、まだかえってこない。",
+            "translation": "My father went out this morning and still has not come back.",
+            "focus": "出かけた",
+            "distractors": [
+              "出かける",
+              "出かけて",
+              "出かけない"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n2-kiri-3",
+            "text": "部屋で二人きりになった。",
+            "reading": "へやでふたりきりになった。",
+            "translation": "The two of us ended up alone together in the room.",
+            "focus": "きり",
+            "distractors": [
+              "しか",
+              "さえ",
+              "こそ"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n2-kiri-4",
+            "text": "一度っきりの人生だから、楽しもう。",
+            "reading": "いちどっきりのじんせいだから、たのしもう。",
+            "translation": "You only live once, so let us enjoy it.",
+            "focus": "っきり",
+            "distractors": [
+              "っぽい",
+              "しか",
+              "ばかり"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n2-kiri-5",
+            "text": "祖母は寝たきりの生活を送っている。",
+            "reading": "そぼはねたきりのせいかつをおくっている。",
+            "translation": "My grandmother is bedridden.",
+            "focus": "寝たきり",
+            "distractors": [
+              "寝るきり",
+              "寝てきり",
+              "寝ないきり"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n2-kiri-6",
+            "text": "窓を開けたまま、寝てしまった。",
+            "reading": "まどをあけたまま、ねてしまった。",
+            "translation": "I fell asleep with the window open.",
+            "focus": "まま",
+            "distractors": [
+              "ほど",
+              "うえ",
+              "すえ"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "row": 13,
+      "label": "ことから (from the fact that)",
+      "lesson": {
+        "id": "n2-kotokara",
+        "level": "n2",
+        "title": "ことから: from the fact that, which is why",
+        "summary": "Plain form + ことから gives a fact as the basis for a conclusion, a judgment or the origin of a name.",
+        "pattern": [
+          "plain form + ことから",
+          "な-A + な / である + ことから",
+          "N + である + ことから"
+        ],
+        "body": [
+          "ことから attaches to the plain form; な-adjectives take な or である, nouns take である. It is a written, explanatory pattern with three common uses: a clue leading to a conclusion (道路がぬれていることから、雨が降ったとわかる), the origin of a name (〜ことから、〜と呼ばれている / その名がついた), and a cause in reports (目撃者が多かったことから、事件はすぐに解決した).",
+          "The contrast example uses ことだから after a person (真面目な彼のことだから): \"knowing what he is like\". It attaches to N + の, not to a clause, and predicts behaviour from someone’s character. A common mistake is to use ことから for a personal everyday reason (お腹がすいたことから、ご飯を食べた); use から or ので for that."
+        ],
+        "examples": [
+          {
+            "id": "n2-kotokara-1",
+            "text": "道路がぬれていることから、夜中に雨が降ったとわかる。",
+            "reading": "どうろがぬれていることから、よなかにあめがふったとわかる。",
+            "translation": "From the fact that the road is wet, we can tell it rained during the night.",
+            "focus": "ことから",
+            "distractors": [
+              "ことには",
+              "ものから",
+              "ことに"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n2-kotokara-2",
+            "text": "富士山が見えることから、この坂は富士見坂と呼ばれている。",
+            "reading": "ふじさんがみえることから、このさかはふじみざかとよばれている。",
+            "translation": "Because you can see Mt Fuji from it, this slope is called Fujimi-zaka.",
+            "focus": "見えることから",
+            "distractors": [
+              "見えることに",
+              "見えるところに",
+              "見えることなく"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n2-kotokara-3",
+            "text": "形が星に似ていることから、その名がついた。",
+            "reading": "かたちがほしににていることから、そのながついた。",
+            "translation": "It got that name because its shape looks like a star.",
+            "focus": "似ている",
+            "distractors": [
+              "似ていて",
+              "似ようと",
+              "似させ"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n2-kotokara-4",
+            "text": "目撃者が多かったことから、事件はすぐに解決した。",
+            "reading": "もくげきしゃがおおかったことから、じけんはすぐにかいけつした。",
+            "translation": "Because there were many witnesses, the case was solved quickly.",
+            "focus": "多かった",
+            "distractors": [
+              "多くて",
+              "多かろう",
+              "多く"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n2-kotokara-5",
+            "text": "漢字が読めないことから、誤解が生まれた。",
+            "reading": "かんじがよめないことから、ごかいがうまれた。",
+            "translation": "The misunderstanding arose from not being able to read the kanji.",
+            "focus": "ことから",
+            "distractors": [
+              "ことなく",
+              "ことだから",
+              "ことに"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n2-kotokara-6",
+            "text": "真面目な彼のことだから、遅れずに来るだろう。",
+            "reading": "まじめなかれのことだから、おくれずにくるだろう。",
+            "translation": "He is so conscientious that he will surely come on time.",
+            "focus": "ことだから",
+            "distractors": [
+              "ことから",
+              "ことに",
+              "ことなく"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "row": 14,
+      "label": "ことだ (you should, the best thing is)",
+      "lesson": {
+        "id": "n2-kotoda",
+        "level": "n2",
+        "title": "ことだ: the best thing to do is",
+        "summary": "V-dict / V-ない + ことだ gives direct advice: \"the thing to do is\", \"you should (not)\". It is said to someone of equal or lower status.",
+        "pattern": [
+          "V-dict + ことだ",
+          "V-ない + ことだ"
+        ],
+        "body": [
+          "ことだ attaches to the dictionary form (練習することだ) or to the ない form (無理をしないことだ). It states, from experience or authority, what the listener should do to reach a goal or avoid trouble. A condition often comes first: 上手になりたければ, 合格したいなら, 風邪のときは. ことです is the polite form, and ことだね / ことだよ soften it in conversation. Because it sounds like a senior giving advice, do not use it to a teacher or boss.",
+          "The contrast example uses ことにした, which reports a decision the speaker made (来年から自炊することにした). Both start with こと, but ことだ is advice to someone else, while ことにする is one’s own choice. A common mistake is to use the た form (固めたことです): advice looks ahead, so use the dictionary or ない form."
+        ],
+        "examples": [
+          {
+            "id": "n2-kotoda-1",
+            "text": "上手になりたければ、毎日練習することだ。",
+            "reading": "じょうずになりたければ、まいにちれんしゅうすることだ。",
+            "translation": "If you want to get better, the thing to do is practise every day.",
+            "focus": "ことだ",
+            "distractors": [
+              "ことか",
+              "ものか",
+              "ことから"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n2-kotoda-2",
+            "text": "風邪のときは、無理をしないことだ。",
+            "reading": "かぜのときは、むりをしないことだ。",
+            "translation": "When you have a cold, you should not push yourself.",
+            "focus": "しない",
+            "distractors": [
+              "しなく",
+              "しないで",
+              "しよう"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n2-kotoda-3",
+            "text": "合格したいなら、まず基礎を固めることです。",
+            "reading": "ごうかくしたいなら、まずきそをかためることです。",
+            "translation": "If you want to pass, first make sure you have a solid grasp of the basics.",
+            "focus": "固める",
+            "distractors": [
+              "固めた",
+              "固めて",
+              "固めろ"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n2-kotoda-4",
+            "text": "他人と比べず、自分のペースで進むことだね。",
+            "reading": "たにんとくらべず、じぶんのペースですすむことだね。",
+            "translation": "Do not compare yourself with others; just go at your own pace.",
+            "focus": "ことだ",
+            "distractors": [
+              "ことか",
+              "ことに",
+              "ことから"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n2-kotoda-5",
+            "text": "迷ったら、専門家に聞いてみることだ。",
+            "reading": "まよったら、せんもんかにきいてみることだ。",
+            "translation": "If you are unsure, your best bet is to ask an expert.",
+            "focus": "みる",
+            "distractors": [
+              "みた",
+              "みて",
+              "み"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n2-kotoda-6",
+            "text": "来年から自炊することにした。",
+            "reading": "らいねんからじすいすることにした。",
+            "translation": "I have decided to start cooking for myself from next year.",
+            "focus": "ことにした",
+            "distractors": [
+              "ことがした",
+              "ことをした",
+              "ことにいた"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "row": 15,
+      "label": "ことなく (without)",
+      "lesson": {
+        "id": "n2-kotonaku",
+        "level": "n2",
+        "title": "ことなく: without (ever) doing",
+        "summary": "V-dict + ことなく means \"without doing\"; it is a written, formal way to say that something never happened throughout.",
+        "pattern": [
+          "V-dict + ことなく"
+        ],
+        "body": [
+          "ことなく attaches to the dictionary form: 休むことなく, 相談することなく, 恐れることなく. It means the same as ずに or ないで but is more formal and often stresses persistence: the action did not happen even once over a long time (一日も休むことなく働き続けた, 途絶えることなく受け継がれている). It is common in writing, speeches and narration.",
+          "The contrast example uses ずに (傘を持たずに出かけた), the everyday \"without\" that attaches to the ない stem. For a small single action like forgetting an umbrella, ことなく would sound overdone. A common mistake is to put a negative before ことなく (相談しないことなく): ことなく already contains the negation."
+        ],
+        "examples": [
+          {
+            "id": "n2-kotonaku-1",
+            "text": "彼は一日も休むことなく、働き続けた。",
+            "reading": "かれはいちにちもやすむことなく、はたらきつづけた。",
+            "translation": "He kept working without taking a single day off.",
+            "focus": "ことなく",
+            "distractors": [
+              "ことから",
+              "ことに",
+              "ことだ"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n2-kotonaku-2",
+            "text": "彼女は誰にも相談することなく、会社を辞めた。",
+            "reading": "かのじょはだれにもそうだんすることなく、かいしゃをやめた。",
+            "translation": "She quit the company without consulting anyone.",
+            "focus": "相談する",
+            "distractors": [
+              "相談した",
+              "相談して",
+              "相談しない"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n2-kotonaku-3",
+            "text": "失敗を恐れることなく、挑戦してほしい。",
+            "reading": "しっぱいをおそれることなく、ちょうせんしてほしい。",
+            "translation": "I want you to take on challenges without fearing failure.",
+            "focus": "なく",
+            "distractors": [
+              "ないで",
+              "ずに",
+              "なくて"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n2-kotonaku-4",
+            "text": "列車は止まることなく、終点まで走った。",
+            "reading": "れっしゃはとまることなく、しゅうてんまではしった。",
+            "translation": "The train ran all the way to the last stop without stopping.",
+            "focus": "止まる",
+            "distractors": [
+              "止まって",
+              "止まり",
+              "止まろう"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n2-kotonaku-5",
+            "text": "この伝統は途絶えることなく、今も受け継がれている。",
+            "reading": "このでんとうはとだえることなく、いまもうけつがれている。",
+            "translation": "This tradition has never died out and is still handed down today.",
+            "focus": "ことなく",
+            "distractors": [
+              "ことから",
+              "ことにより",
+              "うえで"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n2-kotonaku-6",
+            "text": "傘を持たずに出かけた。",
+            "reading": "かさをもたずにでかけた。",
+            "translation": "I went out without taking an umbrella.",
+            "focus": "ずに",
+            "distractors": [
+              "ないに",
+              "なくに",
+              "ずで"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "row": 16,
+      "label": "ことに (emotion: to my regret, surprise)",
+      "lesson": {
+        "id": "n2-kotoni",
+        "level": "n2",
+        "title": "ことに: (much) to my regret, surprise, delight",
+        "summary": "Emotion word + ことに opens a sentence by saying how the speaker feels about the fact that follows: 残念なことに, うれしいことに, 驚いたことに.",
+        "pattern": [
+          "い-A + ことに",
+          "な-A + な + ことに",
+          "V-た + ことに"
+        ],
+        "body": [
+          "ことに follows a word of feeling: い-adjectives in the plain form (うれしいことに), な-adjectives with な (残念なことに, 不思議なことに), and verbs of feeling in the た form (驚いたことに, 困ったことに). The whole phrase comes at the start and colours the fact that follows: \"To my regret, the match was cancelled.\" It is slightly written in tone but common in narration and speeches.",
+          "The contrast example uses ことにしている, which has nothing to do with emotion: after a verb in the dictionary form it means a habit one has decided on (毎朝走ることにしている). A common mistake is to use ことに with a verb that is not a feeling (読んだことに) or to drop な after a な-adjective (残念ことに)."
+        ],
+        "examples": [
+          {
+            "id": "n2-kotoni-1",
+            "text": "残念なことに、試合は中止になった。",
+            "reading": "ざんねんなことに、しあいはちゅうしになった。",
+            "translation": "Unfortunately, the match was cancelled.",
+            "focus": "残念な",
+            "distractors": [
+              "残念の",
+              "残念だ",
+              "残念"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n2-kotoni-2",
+            "text": "うれしいことに、全員が合格した。",
+            "reading": "うれしいことに、ぜんいんがごうかくした。",
+            "translation": "To our delight, everyone passed.",
+            "focus": "ことに",
+            "distractors": [
+              "ことから",
+              "ことなく",
+              "ことを"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n2-kotoni-3",
+            "text": "驚いたことに、彼はもう結婚していた。",
+            "reading": "おどろいたことに、かれはもうけっこんしていた。",
+            "translation": "To my surprise, he was already married.",
+            "focus": "驚いた",
+            "distractors": [
+              "驚いて",
+              "驚き",
+              "驚かせ"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n2-kotoni-4",
+            "text": "不思議なことに、その日の記憶がまったくない。",
+            "reading": "ふしぎなことに、そのひのきおくがまったくない。",
+            "translation": "Strangely enough, I have no memory of that day at all.",
+            "focus": "ことに",
+            "distractors": [
+              "ものに",
+              "ことを",
+              "ことが"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n2-kotoni-5",
+            "text": "困ったことに、財布を家に忘れてきた。",
+            "reading": "こまったことに、さいふをいえにわすれてきた。",
+            "translation": "Annoyingly, I left my wallet at home.",
+            "focus": "ことに",
+            "distractors": [
+              "ことか",
+              "ことから",
+              "ことなく"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n2-kotoni-6",
+            "text": "毎朝走ることにしている。",
+            "reading": "まいあさはしることにしている。",
+            "translation": "I make a point of running every morning.",
+            "focus": "ことにしている",
+            "distractors": [
+              "ことをしている",
+              "ことにいる",
+              "ことでしている"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "row": 17,
+      "label": "際(に) / に際して (on the occasion of)",
+      "lesson": {
+        "id": "n2-sai-nisaishite",
+        "level": "n2",
+        "title": "際(に) and に際して: when, on the occasion of",
+        "summary": "V-dict / V-た / Nの + 際(に) is a formal \"when\"; N / V-dict + に際して means \"on the occasion of, at the start of\" a special event.",
+        "pattern": [
+          "V-dict / V-た / N の + 際(に / は)",
+          "N / V-dict + に際して / に際し"
+        ],
+        "body": [
+          "際 (さい) is a formal word for とき, used in announcements, instructions and business: お降りの際は, 入場の際に, 引っ越しする際は. It takes the dictionary or た form of verbs and nouns with の. に際して (written に際し) attaches directly to a noun or a dictionary-form verb and marks a special, one-time occasion, often the start of something: 帰国に際して, 開会に際し.",
+          "The contrast example uses plain とき for a long period of life (学生のとき). 際 is for a specific occasion, not a stage of life, and it is too formal for chat. A common mistake is to put の before に際して (帰国のに際して): に際して follows the noun directly."
+        ],
+        "examples": [
+          {
+            "id": "n2-sai-nisaishite-1",
+            "text": "お降りの際は、足元にご注意ください。",
+            "reading": "おおりのさいは、あしもとにごちゅういください。",
+            "translation": "Please watch your step when getting off.",
+            "focus": "際",
+            "distractors": [
+              "間",
+              "うち",
+              "末"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n2-sai-nisaishite-2",
+            "text": "入場の際に、チケットを見せてください。",
+            "reading": "にゅうじょうのさいに、チケットをみせてください。",
+            "translation": "Please show your ticket when you enter.",
+            "focus": "入場の際に",
+            "distractors": [
+              "入場な際に",
+              "入場に際に",
+              "入場の末に"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n2-sai-nisaishite-3",
+            "text": "帰国に際して、お世話になった方々に挨拶をした。",
+            "reading": "きこくにさいして、おせわになったかたがたにあいさつをした。",
+            "translation": "Before returning home, I said goodbye to the people who had helped me.",
+            "focus": "に際して",
+            "distractors": [
+              "に対して",
+              "にとって",
+              "について"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n2-sai-nisaishite-4",
+            "text": "引っ越しする際は、役所に届けを出す必要がある。",
+            "reading": "ひっこしするさいは、やくしょにとどけをだすひつようがある。",
+            "translation": "When you move house, you need to file a notice with the local office.",
+            "focus": "する",
+            "distractors": [
+              "して",
+              "しよう",
+              "すれ"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n2-sai-nisaishite-5",
+            "text": "開会に際し、一言ご挨拶申し上げます。",
+            "reading": "かいかいにさいし、ひとことごあいさつもうしあげます。",
+            "translation": "On the opening of this meeting, allow me to say a few words.",
+            "focus": "に際し",
+            "distractors": [
+              "にとって",
+              "によって",
+              "に反し"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n2-sai-nisaishite-6",
+            "text": "学生のとき、毎日自転車で通学した。",
+            "reading": "がくせいのとき、まいにちじてんしゃでつうがくした。",
+            "translation": "When I was a student, I cycled to school every day.",
+            "focus": "とき",
+            "distractors": [
+              "際",
+              "際して",
+              "最中"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "row": 18,
+      "label": "次第 (as soon as)",
+      "lesson": {
+        "id": "n2-shidai-assoonas",
+        "level": "n2",
+        "title": "次第: as soon as",
+        "summary": "V-ます stem / N + 次第 means \"as soon as A happens, B will be done\"; it is formal and points to the future.",
+        "pattern": [
+          "V-ます stem + 次第",
+          "N (action noun) + 次第"
+        ],
+        "body": [
+          "次第 (しだい) attaches to the ます stem (でき次第, 分かり次第, やみ次第) or to an action noun (入荷次第, 到着次第). The second half is a planned action, a promise or a request: 出発します, ご連絡いたします, 発送いたします. It is common in business and announcements, and cannot describe something that already happened by chance.",
+          "The contrast example uses たとたん, which describes a past event that happened suddenly, right after another one (ドアを開けたとたん、猫が飛び出した). 次第 looks ahead to a deliberate action; とたん looks back at a surprise. A common mistake is to use 次第 with the dictionary or た form (分かる次第)."
+        ],
+        "examples": [
+          {
+            "id": "n2-shidai-assoonas-1",
+            "text": "準備ができ次第、出発します。",
+            "reading": "じゅんびができしだい、しゅっぱつします。",
+            "translation": "We will leave as soon as we are ready.",
+            "focus": "次第",
+            "distractors": [
+              "とたん",
+              "ながら",
+              "まま"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n2-shidai-assoonas-2",
+            "text": "結果が分かり次第、ご連絡いたします。",
+            "reading": "けっかがわかりしだい、ごれんらくいたします。",
+            "translation": "We will contact you as soon as the results are known.",
+            "focus": "分かり",
+            "distractors": [
+              "分かる",
+              "分かった",
+              "分かって"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n2-shidai-assoonas-3",
+            "text": "雨がやみ次第、試合を再開します。",
+            "reading": "あめがやみしだい、しあいをさいかいします。",
+            "translation": "The match will resume as soon as the rain stops.",
+            "focus": "やみ次第",
+            "distractors": [
+              "やんだとたん",
+              "やむ次第",
+              "やんで次第"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n2-shidai-assoonas-4",
+            "text": "商品は入荷次第、発送いたします。",
+            "reading": "しょうひんはにゅうかしだい、はっそういたします。",
+            "translation": "We will ship the item as soon as it comes in.",
+            "focus": "入荷",
+            "distractors": [
+              "入荷の",
+              "入荷して",
+              "入荷した"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n2-shidai-assoonas-5",
+            "text": "駅に着き次第、電話をください。",
+            "reading": "えきにつきしだい、でんわをください。",
+            "translation": "Please call me as soon as you get to the station.",
+            "focus": "着き",
+            "distractors": [
+              "着く",
+              "着いた",
+              "着いて"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n2-shidai-assoonas-6",
+            "text": "ドアを開けたとたん、猫が飛び出した。",
+            "reading": "ドアをあけたとたん、ねこがとびだした。",
+            "translation": "The moment I opened the door, the cat dashed out.",
+            "focus": "とたん",
+            "distractors": [
+              "次第",
+              "うちに",
+              "ながら"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "row": 19,
+      "label": "次第だ (depends on)",
+      "lesson": {
+        "id": "n2-shidaida",
+        "level": "n2",
+        "title": "次第だ / 次第で: it depends on",
+        "summary": "N + 次第だ / 次第で says that an outcome depends entirely on N: 努力次第だ, 天気次第で.",
+        "pattern": [
+          "N + 次第だ",
+          "N + 次第で / 次第では + result"
+        ],
+        "body": [
+          "Here 次第 attaches directly to a noun: 君の努力次第だ, 天気次第で, やる気次第では. 次第だ ends a sentence (\"it is up to N\"); 次第で links to a result that changes with N; 次第では picks out one possible result (\"depending on N, it could even…\"). The subject is often a question introduced by かどうかは or a topic such as 料理の味は.",
+          "The contrast example uses the adverb 次第に, \"gradually\" (空が次第に明るくなってきた), which has nothing to do with dependence. The previous lesson, V-ます stem + 次第, means \"as soon as\". A common mistake is to put の between the noun and 次第 (天気の次第で)."
+        ],
+        "examples": [
+          {
+            "id": "n2-shidaida-1",
+            "text": "合格できるかどうかは、君の努力次第だ。",
+            "reading": "ごうかくできるかどうかは、きみのどりょくしだいだ。",
+            "translation": "Whether you pass depends on how hard you work.",
+            "focus": "次第だ",
+            "distractors": [
+              "次第に",
+              "ばかりだ",
+              "しかない"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n2-shidaida-2",
+            "text": "天気次第で、予定を変えるかもしれない。",
+            "reading": "てんきしだいで、よていをかえるかもしれない。",
+            "translation": "Depending on the weather, we may change our plans.",
+            "focus": "次第で",
+            "distractors": [
+              "次第に",
+              "次第の",
+              "次第だ"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n2-shidaida-3",
+            "text": "料理の味は材料次第だ。",
+            "reading": "りょうりのあじはざいりょうしだいだ。",
+            "translation": "How a dish tastes depends on its ingredients.",
+            "focus": "次第",
+            "distractors": [
+              "ほど",
+              "くらい",
+              "しか"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n2-shidaida-4",
+            "text": "やる気次第では、一年で話せるようになる。",
+            "reading": "やるきしだいでは、いちねんではなせるようになる。",
+            "translation": "Depending on your motivation, you can learn to speak it in a year.",
+            "focus": "では",
+            "distractors": [
+              "には",
+              "とは",
+              "へは"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n2-shidaida-5",
+            "text": "値段は交渉次第で、安くなることもある。",
+            "reading": "ねだんはこうしょうしだいで、やすくなることもある。",
+            "translation": "Depending on how you negotiate, the price can come down.",
+            "focus": "交渉次第",
+            "distractors": [
+              "交渉の次第",
+              "交渉する次第",
+              "交渉で次第"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n2-shidaida-6",
+            "text": "空が次第に明るくなってきた。",
+            "reading": "そらがしだいにあかるくなってきた。",
+            "translation": "The sky gradually grew lighter.",
+            "focus": "次第に",
+            "distractors": [
+              "次第で",
+              "次第だ",
+              "次第の"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "row": 20,
+      "label": "末(に) (after a long process)",
+      "lesson": {
+        "id": "n2-sueni",
+        "level": "n2",
+        "title": "末(に): after a long … , finally",
+        "summary": "V-た / Nの + 末(に) says that a result came at the end of a long effort, struggle or deliberation.",
+        "pattern": [
+          "V-た + 末(に)",
+          "N + の + 末(に)"
+        ],
+        "body": [
+          "末 (すえ) means \"the end\". It attaches to the た form of a verb (考えた末に, 迷った末) or to a noun with の (話し合いの末, 戦いの末に). The first half is a long or difficult process; the second half is the outcome, often with ようやく, やっと or ついに. The outcome may be good, bad or neutral. In writing に is often dropped (研究の末、新薬が完成した).",
+          "The contrast example uses あげく, which also comes after a long process but implies a bad, pointless or annoying outcome (散々待たされたあげく、会議は中止になった). 末に is neutral and fits happy endings; あげく does not. A common mistake is to use the dictionary form (考える末に): the process is finished, so use the た form."
+        ],
+        "examples": [
+          {
+            "id": "n2-sueni-1",
+            "text": "長い話し合いの末、ようやく結論が出た。",
+            "reading": "ながいはなしあいのすえ、ようやくけつろんがでた。",
+            "translation": "After a long discussion, we finally reached a conclusion.",
+            "focus": "末",
+            "distractors": [
+              "前",
+              "くせ",
+              "まま"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n2-sueni-2",
+            "text": "何度も考えた末に、転職を決めた。",
+            "reading": "なんどもかんがえたすえに、てんしょくをきめた。",
+            "translation": "After thinking it over many times, I decided to change jobs.",
+            "focus": "考えた",
+            "distractors": [
+              "考える",
+              "考えて",
+              "考え"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n2-sueni-3",
+            "text": "激しい戦いの末に、日本が勝った。",
+            "reading": "はげしいたたかいのすえに、にほんがかった。",
+            "translation": "After a fierce battle, Japan won.",
+            "focus": "末に",
+            "distractors": [
+              "くせに",
+              "とたんに",
+              "ついでに"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n2-sueni-4",
+            "text": "三年間の研究の末、新薬が完成した。",
+            "reading": "さんねんかんのけんきゅうのすえ、しんやくがかんせいした。",
+            "translation": "After three years of research, the new drug was completed.",
+            "focus": "研究の末",
+            "distractors": [
+              "研究する末",
+              "研究に末",
+              "研究で末"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n2-sueni-5",
+            "text": "迷った末、赤いほうを選んだ。",
+            "reading": "まよったすえ、あかいほうをえらんだ。",
+            "translation": "After some hesitation, I chose the red one.",
+            "focus": "末",
+            "distractors": [
+              "くせ",
+              "とたん",
+              "うちに"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n2-sueni-6",
+            "text": "散々待たされたあげく、会議は中止になった。",
+            "reading": "さんざんまたされたあげく、かいぎはちゅうしになった。",
+            "translation": "After we were kept waiting for ages, the meeting was called off.",
+            "focus": "あげく",
+            "distractors": [
+              "ついでに",
+              "くせに",
+              "次第"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "row": 21,
+      "label": "ずにはいられない (cannot help doing)",
+      "lesson": {
+        "id": "n2-zunihairarenai",
+        "level": "n2",
+        "title": "ずにはいられない: cannot help doing",
+        "summary": "V-ない stem + ずにはいられない says that a feeling is so strong the speaker cannot stop themselves from doing something.",
+        "pattern": [
+          "V-ない stem + ずにはいられない",
+          "する → せずにはいられない"
+        ],
+        "body": [
+          "The pattern attaches ず to the ない stem: 泣かずに, 言わずに, 笑わずに; する becomes せず (電話せずには). It describes the speaker’s own urge, triggered by something seen, heard or felt: その話を聞いて、泣かずにはいられなかった. ないではいられない means the same and is a little more conversational. For a third person, add ようだ or らしい.",
+          "The contrast example uses ざるを得ない, \"have no choice but to\" (雨なので、中止せざるを得ない). That pattern is about outside circumstances forcing a decision, not about an emotional urge, so ずにはいられない is wrong there. A common mistake is the form of する: write せず, not しず."
+        ],
+        "examples": [
+          {
+            "id": "n2-zunihairarenai-1",
+            "text": "その話を聞いて、泣かずにはいられなかった。",
+            "reading": "そのはなしをきいて、なかずにはいられなかった。",
+            "translation": "When I heard that story, I could not help crying.",
+            "focus": "ずには",
+            "distractors": [
+              "ずにも",
+              "ずでは",
+              "なくには"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n2-zunihairarenai-2",
+            "text": "彼の失礼な態度に、一言言わずにはいられない。",
+            "reading": "かれのしつれいなたいどに、ひとこといわずにはいられない。",
+            "translation": "His rude attitude makes me feel I have to say something.",
+            "focus": "言わ",
+            "distractors": [
+              "言い",
+              "言う",
+              "言え"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n2-zunihairarenai-3",
+            "text": "この写真を見ると、笑わずにはいられない。",
+            "reading": "このしゃしんをみると、わらわずにはいられない。",
+            "translation": "Whenever I look at this photo, I cannot help laughing.",
+            "focus": "いられない",
+            "distractors": [
+              "いられる",
+              "ならない",
+              "いけない"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n2-zunihairarenai-4",
+            "text": "心配で、毎晩電話せずにはいられない。",
+            "reading": "しんぱいで、まいばんでんわせずにはいられない。",
+            "translation": "I am so worried that I cannot help calling every night.",
+            "focus": "せず",
+            "distractors": [
+              "しず",
+              "さず",
+              "すず"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n2-zunihairarenai-5",
+            "text": "あまりの美しさに、写真を撮らずにはいられなかった。",
+            "reading": "あまりのうつくしさに、しゃしんをとらずにはいられなかった。",
+            "translation": "It was so beautiful that I could not resist taking a photo.",
+            "focus": "撮らず",
+            "distractors": [
+              "撮りず",
+              "撮るず",
+              "撮れず"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n2-zunihairarenai-6",
+            "text": "雨なので、中止せざるを得ない。",
+            "reading": "あめなので、ちゅうしせざるをえない。",
+            "translation": "Because of the rain, we have no choice but to cancel.",
+            "focus": "ざるを得ない",
+            "distractors": [
+              "ずにはいられない",
+              "ざるがない",
+              "ずを得ない"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "row": 22,
+      "label": "せいか (perhaps because)",
+      "lesson": {
+        "id": "n2-seika",
+        "level": "n2",
+        "title": "せいか: perhaps because",
+        "summary": "Plain form / Nの + せいか gives a cause the speaker is not sure about, usually for a bad or unwelcome result.",
+        "pattern": [
+          "plain form + せいか",
+          "な-A + な + せいか",
+          "N + の + せいか"
+        ],
+        "body": [
+          "せいか is せい (fault, cause) with the question particle か: \"maybe it is because of\". It attaches to the plain form (飲んだせいか, 悪いせいか), to な-adjectives with な, and to nouns with の (年のせいか). The result is usually negative (tired, headache, few customers). 気のせいか is a set phrase: \"maybe it is just my imagination, but\".",
+          "The contrast example uses おかげか for a good result that the speaker thinks may be thanks to something (練習したおかげか、少し上手になった). せいか leans toward bad results, おかげか toward good ones. A common mistake is to use the dictionary form for a cause that is already over (薬を飲むせいか): the cause happened first, so use the た form."
+        ],
+        "examples": [
+          {
+            "id": "n2-seika-1",
+            "text": "年のせいか、最近疲れやすい。",
+            "reading": "としのせいか、さいきんつかれやすい。",
+            "translation": "Maybe it is my age, but I tire easily these days.",
+            "focus": "せいか",
+            "distractors": [
+              "くせに",
+              "とおり",
+              "うちに"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n2-seika-2",
+            "text": "気のせいか、彼女は元気がないように見える。",
+            "reading": "きのせいか、かのじょはげんきがないようにみえる。",
+            "translation": "Maybe it is just me, but she seems a bit down.",
+            "focus": "気のせいか",
+            "distractors": [
+              "気なせいか",
+              "気がせいか",
+              "気のくせに"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n2-seika-3",
+            "text": "薬を飲んだせいか、眠くなってきた。",
+            "reading": "くすりをのんだせいか、ねむくなってきた。",
+            "translation": "Perhaps because I took the medicine, I am getting sleepy.",
+            "focus": "飲んだ",
+            "distractors": [
+              "飲む",
+              "飲んで",
+              "飲み"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n2-seika-4",
+            "text": "天気が悪いせいか、今日は客が少ない。",
+            "reading": "てんきがわるいせいか、きょうはきゃくがすくない。",
+            "translation": "Maybe because of the bad weather, there are few customers today.",
+            "focus": "せいか",
+            "distractors": [
+              "ことか",
+              "せいだ",
+              "わけか"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ],
+            "noOrder": true
+          },
+          {
+            "id": "n2-seika-5",
+            "text": "緊張したせいか、うまく話せなかった。",
+            "reading": "きんちょうしたせいか、うまくはなせなかった。",
+            "translation": "Perhaps because I was nervous, I could not speak well.",
+            "focus": "した",
+            "distractors": [
+              "して",
+              "しよう",
+              "し"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n2-seika-6",
+            "text": "練習したおかげか、少し上手になった。",
+            "reading": "れんしゅうしたおかげか、すこしじょうずになった。",
+            "translation": "Maybe thanks to the practice, I have got a little better.",
+            "focus": "おかげか",
+            "distractors": [
+              "くせに",
+              "ものの",
+              "とたん"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "row": 23,
+      "label": "だけあって / だけに (as you would expect, all the more because)",
+      "lesson": {
+        "id": "n2-dakeatte-dakeni",
+        "level": "n2",
+        "title": "だけあって and だけに: as expected of, all the more because",
+        "summary": "Plain form + だけあって praises a result that matches what one expects; だけに says that because of A, B is all the more so, for good or bad.",
+        "pattern": [
+          "plain form + だけあって (as you would expect)",
+          "plain form + だけに (all the more because)",
+          "N / な-A (な) + だけあって / だけに"
+        ],
+        "body": [
+          "Both attach to the plain form; nouns attach directly (プロだけあって, 旅行だけに) and な-adjectives take な. だけあって means \"as one would expect from A\": the result is positive and fits A’s reputation or effort, often with さすが (さすがプロだけあって、料理がうまい). だけに means \"precisely because of A, all the more\": it can be positive or negative, and is common with disappointment (期待していただけに、がっかりした).",
+          "Where the result is good and expected, both often work, so the exercises do not test them against each other there; for a disappointment, only だけに fits. The contrast example uses わりに, which marks a result that does not match expectations (このホテルは高いわりに、サービスがよくない). A common mistake is to use だけあって for a bad result."
+        ],
+        "examples": [
+          {
+            "id": "n2-dakeatte-dakeni-1",
+            "text": "さすがプロだけあって、料理がうまい。",
+            "reading": "さすがプロだけあって、りょうりがうまい。",
+            "translation": "As you would expect from a professional, the cooking is excellent.",
+            "focus": "だけあって",
+            "distractors": [
+              "くせに",
+              "わりに",
+              "ばかりに"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n2-dakeatte-dakeni-2",
+            "text": "十年も住んでいただけあって、彼は町に詳しい。",
+            "reading": "じゅうねんもすんでいただけあって、かれはまちにくわしい。",
+            "translation": "Having lived there for ten years, he naturally knows the town well.",
+            "focus": "住んでいた",
+            "distractors": [
+              "住んで",
+              "住もう",
+              "住め"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ],
+            "noOrder": true
+          },
+          {
+            "id": "n2-dakeatte-dakeni-3",
+            "text": "期待していただけに、がっかりした。",
+            "reading": "きたいしていただけに、がっかりした。",
+            "translation": "Because I had been looking forward to it, I was all the more disappointed.",
+            "focus": "だけに",
+            "distractors": [
+              "だけあって",
+              "くせに",
+              "ばかりか"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n2-dakeatte-dakeni-4",
+            "text": "有名な店だけに、いつも混んでいる。",
+            "reading": "ゆうめいなみせだけに、いつもこんでいる。",
+            "translation": "Being a famous restaurant, it is always crowded.",
+            "focus": "だけに",
+            "distractors": [
+              "くせに",
+              "わりに",
+              "ばかりか"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n2-dakeatte-dakeni-5",
+            "text": "苦労しただけあって、いい作品に仕上がった。",
+            "reading": "くろうしただけあって、いいさくひんにしあがった。",
+            "translation": "All that hard work paid off, and it turned out to be a fine piece.",
+            "focus": "だけ",
+            "distractors": [
+              "ほど",
+              "しか",
+              "さえ"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n2-dakeatte-dakeni-6",
+            "text": "このホテルは高いわりに、サービスがよくない。",
+            "reading": "このホテルはたかいわりに、サービスがよくない。",
+            "translation": "For such an expensive hotel, the service is not good.",
+            "focus": "わりに",
+            "distractors": [
+              "だけあって",
+              "だけに",
+              "からこそ"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "row": 24,
+      "label": "たところ (when I did, it turned out)",
+      "lesson": {
+        "id": "n2-tatokoro",
+        "level": "n2",
+        "title": "たところ: when I did …, it turned out that",
+        "summary": "V-た + ところ says that the speaker did something and then found out or got a result: 相談したところ、親切に教えてくれた.",
+        "pattern": [
+          "V-た + ところ, result / discovery"
+        ],
+        "body": [
+          "たところ follows the た form. The first half is an action someone took (calling, asking, checking, going); the second half is what they found or what happened in response, in the past tense: 駅に電話したところ、財布が届いていた. The result can be good, bad or surprising, and the speaker does not control it. It is a little formal, common in reports and narratives.",
+          "The contrast example uses たところで, \"even if you do\" (今から急いだところで、間に合わない): it says an action would be useless, and the main clause is negative or dismissive. A common mistake is to use たところ for a result the speaker chose (店に行ったところ、パンを買った); たところ is for what you discovered, not your next action. Do not confuse it with V-たところだ, \"have just done\"."
+        ],
+        "examples": [
+          {
+            "id": "n2-tatokoro-1",
+            "text": "先生に相談したところ、親切に教えてくれた。",
+            "reading": "せんせいにそうだんしたところ、しんせつにおしえてくれた。",
+            "translation": "When I asked my teacher for advice, she kindly explained it to me.",
+            "focus": "ところ",
+            "distractors": [
+              "ところで",
+              "ところに",
+              "ばかり"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n2-tatokoro-2",
+            "text": "駅に電話したところ、財布が届いていた。",
+            "reading": "えきにでんわしたところ、さいふがとどいていた。",
+            "translation": "When I called the station, it turned out my wallet had been handed in.",
+            "focus": "したところ",
+            "distractors": [
+              "するところ",
+              "しているところ",
+              "したばかり"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n2-tatokoro-3",
+            "text": "調べてみたところ、意外な事実が分かった。",
+            "reading": "しらべてみたところ、いがいなじじつがわかった。",
+            "translation": "When I looked into it, I found out something unexpected.",
+            "focus": "みた",
+            "distractors": [
+              "みる",
+              "みて",
+              "みよう"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n2-tatokoro-4",
+            "text": "店に行ったところ、休みだった。",
+            "reading": "みせにいったところ、やすみだった。",
+            "translation": "When I went to the shop, it was closed.",
+            "focus": "ところ",
+            "distractors": [
+              "うえで",
+              "ところで",
+              "すえに"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n2-tatokoro-5",
+            "text": "母に話したところ、すぐに賛成してくれた。",
+            "reading": "ははにはなしたところ、すぐにさんせいしてくれた。",
+            "translation": "When I told my mother, she agreed right away.",
+            "focus": "話した",
+            "distractors": [
+              "話す",
+              "話して",
+              "話そう"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n2-tatokoro-6",
+            "text": "今から急いだところで、間に合わない。",
+            "reading": "いまからいそいだところで、まにあわない。",
+            "translation": "Even if we hurry now, we will not make it.",
+            "focus": "ところで",
+            "distractors": [
+              "ところ",
+              "ところに",
+              "うえで"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "row": 25,
+      "label": "っこない (no way, not a chance)",
+      "lesson": {
+        "id": "n2-kkonai",
+        "level": "n2",
+        "title": "っこない: there is no way",
+        "summary": "V-ます stem + っこない is a casual, emphatic \"there is no way that will happen\", often with a potential verb.",
+        "pattern": [
+          "V-ます stem + っこない",
+          "potential stem + っこない (できっこない, 勝てっこない)"
+        ],
+        "body": [
+          "っこない attaches to the ます stem and is mostly used with potential verbs and a few others: 解けっこない, 覚えられっこない, 勝てっこない, 分かりっこない, できっこない. It is strongly subjective and casual, so it appears in conversation with よ or さ, not in formal writing or polite speech to superiors.",
+          "The contrast example uses わけがない (彼がそんなことを言うわけがない), which means the same \"there is no way\" but attaches to the plain form and works in a wider range of registers. A common mistake is to attach っこない to the dictionary form (分かるっこない) or to use it in a formal report."
+        ],
+        "examples": [
+          {
+            "id": "n2-kkonai-1",
+            "text": "こんな難しい問題、解けっこないよ。",
+            "reading": "こんなむずかしいもんだい、とけっこないよ。",
+            "translation": "There is no way I can solve a problem this hard.",
+            "focus": "っこない",
+            "distractors": [
+              "かねない",
+              "がちだ",
+              "っぽい"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n2-kkonai-2",
+            "text": "一日で全部覚えられっこない。",
+            "reading": "いちにちでぜんぶおぼえられっこない。",
+            "translation": "There is no way I can memorize it all in one day.",
+            "focus": "覚えられ",
+            "distractors": [
+              "覚えられる",
+              "覚えられて",
+              "覚えられた"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n2-kkonai-3",
+            "text": "あのチームに勝てっこないさ。",
+            "reading": "あのチームにかてっこないさ。",
+            "translation": "We do not stand a chance against that team.",
+            "focus": "勝て",
+            "distractors": [
+              "勝つ",
+              "勝った",
+              "勝って"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n2-kkonai-4",
+            "text": "いくら言っても、分かりっこない。",
+            "reading": "いくらいっても、わかりっこない。",
+            "translation": "No matter how much you tell him, he will never understand.",
+            "focus": "分かりっこない",
+            "distractors": [
+              "分かるっこない",
+              "分かりっこある",
+              "分かりこない"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n2-kkonai-5",
+            "text": "そんな大金、払えっこないじゃない。",
+            "reading": "そんなたいきん、はらえっこないじゃない。",
+            "translation": "There is no way I could pay that much money, is there?",
+            "focus": "払え",
+            "distractors": [
+              "払う",
+              "払って",
+              "払った"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n2-kkonai-6",
+            "text": "彼がそんなことを言うわけがない。",
+            "reading": "かれがそんなことをいうわけがない。",
+            "translation": "There is no way he would say such a thing.",
+            "focus": "わけがない",
+            "distractors": [
+              "っこない",
+              "わけにない",
+              "わけもある"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "row": 26,
+      "label": "つつ / つつある (while; in the process of)",
+      "lesson": {
+        "id": "n2-tsutsu",
+        "level": "n2",
+        "title": "つつ and つつある: while doing; is steadily becoming",
+        "summary": "V-ます stem + つつ means \"while doing\" or, with も, \"although\"; V-ます stem + つつある means a change is steadily under way.",
+        "pattern": [
+          "V-ます stem + つつ (while)",
+          "V-ます stem + つつ(も) (although)",
+          "V-ます stem + つつある (in the process of)"
+        ],
+        "body": [
+          "つつ attaches to the ます stem and is a written counterpart of ながら. It means two actions at once (音楽を聴きつつ勉強する) or, more often, a contradiction: knowing or thinking one thing while doing another (体に悪いと知りつつ, 悪いと思いつつも). つつも makes the \"although\" sense explicit.",
+          "つつある describes a change that is progressing toward a result: 上がりつつある, 回復しつつあります. It is used for gradual change in society, nature or the economy, and is formal. The contrast examples use ている, the everyday form for a current state (部屋で寝ている), and ながら for two simultaneous actions in speech (聞きながら). A common mistake is to use つつある with an action that has no end point (食べつつある), or to attach つつ to the dictionary form (知るつつ)."
+        ],
+        "examples": [
+          {
+            "id": "n2-tsutsu-1",
+            "text": "音楽を聴きつつ、勉強する。",
+            "reading": "おんがくをききつつ、べんきょうする。",
+            "translation": "I study while listening to music.",
+            "focus": "つつ",
+            "distractors": [
+              "かけ",
+              "がち",
+              "すぎ"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n2-tsutsu-2",
+            "text": "体に悪いと知りつつ、たばこをやめられない。",
+            "reading": "からだにわるいとしりつつ、たばこをやめられない。",
+            "translation": "I know it is bad for me, yet I cannot quit smoking.",
+            "focus": "知りつつ",
+            "distractors": [
+              "知るつつ",
+              "知ってつつ",
+              "知りつつある"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n2-tsutsu-3",
+            "text": "地球の温度は上がりつつある。",
+            "reading": "ちきゅうのおんどはあがりつつある。",
+            "translation": "The earth’s temperature is steadily rising.",
+            "focus": "つつある",
+            "distractors": [
+              "つつ",
+              "つつも",
+              "かけない"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n2-tsutsu-4",
+            "text": "景気は回復しつつあります。",
+            "reading": "けいきはかいふくしつつあります。",
+            "translation": "The economy is gradually recovering.",
+            "focus": "回復し",
+            "distractors": [
+              "回復する",
+              "回復して",
+              "回復"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n2-tsutsu-5",
+            "text": "悪いと思いつつも、友達の手紙を読んでしまった。",
+            "reading": "わるいとおもいつつも、ともだちのてがみをよんでしまった。",
+            "translation": "Although I knew it was wrong, I read my friend’s letter.",
+            "focus": "つつも",
+            "distractors": [
+              "つつある",
+              "次第",
+              "ずに"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n2-tsutsu-6",
+            "text": "弟は今、部屋で寝ている。",
+            "reading": "おとうとはいま、へやでねている。",
+            "translation": "My younger brother is sleeping in his room right now.",
+            "focus": "ている",
+            "distractors": [
+              "つつ",
+              "てある",
+              "ておく"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ],
+            "noOrder": true
+          },
+          {
+            "id": "n2-tsutsu-7",
+            "text": "音楽を聞きながら、宿題をしています。",
+            "reading": "おんがくをききながら、しゅくだいをしています。",
+            "translation": "I am doing my homework while listening to music.",
+            "focus": "ながら",
+            "distractors": [
+              "つつある",
+              "がち",
+              "たまま"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "row": 27,
+      "label": "て以来 (ever since)",
+      "lesson": {
+        "id": "n2-teirai",
+        "level": "n2",
+        "title": "て以来: ever since",
+        "summary": "V-て / N + 以来 says that a state has continued from a past event up to now: 日本に来て以来, あの事故以来.",
+        "pattern": [
+          "V-て + 以来",
+          "N + 以来"
+        ],
+        "body": [
+          "以来 (いらい) attaches to the て form of a verb (来て以来, 卒業して以来) or directly to a noun for an event or time (入院以来, あの事故以来). The main clause is a state or habit that has continued since then and still holds: ずっと住んでいる, 一度も会っていない, 怖くなった. It is a little formal; in speech てから is common.",
+          "The contrast example uses てから for a simple order of two actions in the future (宿題をしてから、遊びに行く). て以来 needs a past starting point and a lasting state, so it is wrong there. A common mistake is to attach 以来 to the た form (卒業した以来) or to put の after a noun (事故の以来)."
+        ],
+        "examples": [
+          {
+            "id": "n2-teirai-1",
+            "text": "日本に来て以来、ずっとこの町に住んでいる。",
+            "reading": "にほんにきていらい、ずっとこのまちにすんでいる。",
+            "translation": "Ever since I came to Japan, I have lived in this town.",
+            "focus": "以来",
+            "distractors": [
+              "以上",
+              "以外",
+              "以内"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n2-teirai-2",
+            "text": "卒業して以来、彼とは一度も会っていない。",
+            "reading": "そつぎょうしていらい、かれとはいちどもあっていない。",
+            "translation": "I have not seen him once since we graduated.",
+            "focus": "して",
+            "distractors": [
+              "した",
+              "する",
+              "しない"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ],
+            "noOrder": true
+          },
+          {
+            "id": "n2-teirai-3",
+            "text": "入院以来、父はお酒を飲まなくなった。",
+            "reading": "にゅういんいらい、ちちはおさけをのまなくなった。",
+            "translation": "Since his stay in hospital, my father has stopped drinking.",
+            "focus": "以来",
+            "distractors": [
+              "以上",
+              "まで",
+              "ごろ"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ],
+            "noOrder": true
+          },
+          {
+            "id": "n2-teirai-4",
+            "text": "あの事故以来、車の運転が怖くなった。",
+            "reading": "あのじこいらい、くるまのうんてんがこわくなった。",
+            "translation": "Since that accident, I have been afraid of driving.",
+            "focus": "事故以来",
+            "distractors": [
+              "事故の以来",
+              "事故して以来",
+              "事故で以来"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n2-teirai-5",
+            "text": "その歌を聞いて以来、彼女のファンになった。",
+            "reading": "そのうたをきいていらい、かのじょのファンになった。",
+            "translation": "Ever since I heard that song, I have been a fan of hers.",
+            "focus": "聞いて",
+            "distractors": [
+              "聞いた",
+              "聞く",
+              "聞き"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n2-teirai-6",
+            "text": "宿題をしてから、遊びに行く。",
+            "reading": "しゅくだいをしてから、あそびにいく。",
+            "translation": "I will go out to play after I do my homework.",
+            "focus": "てから",
+            "distractors": [
+              "て以来",
+              "てまで",
+              "てばかり"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}

@@ -1,0 +1,3965 @@
+{
+  "level": {
+    "id": "n1"
+  },
+  "rows": [
+    {
+      "row": 31,
+      "label": "ところを (at a time when; despite the situation)",
+      "lesson": {
+        "id": "n1-tokoro-wo",
+        "level": "n1",
+        "title": "ところを: at a moment when, while someone is in a situation",
+        "summary": "ところを marks the situation someone is in when another person acts on them, as in an apology for interrupting, thanks for coming, or being caught or rescued at that moment.",
+        "pattern": [
+          "V-ている / V-dict / A ところを + verb acting on that person",
+          "N の ところを (お忙しいところを, お休みのところを)"
+        ],
+        "body": [
+          "ところを follows a plain-form clause or N の. It names the situation a person is in, and the following verb acts on that person at that moment: someone is caught (見つかる), rescued (助ける) or interrupted, or, in the polite set phrases お忙しいところを and お休みのところを, troubled despite their circumstances, which opens an apology or a thank-you. A frequent formal use is べきところを: what one ought to have done, used before admitting a lesser way (I should visit, but I write instead).",
+          "The register is polite and written; in business speech the を is often dropped (お忙しいところ、ありがとうございます). The clause describes the other person's circumstances, which makes the following action an imposition or a lucky intervention.",
+          "The contrast example uses ところに: something arrives or happens at the moment of a situation (出かけようとしたところに電話がかかってきた); ところへ is used the same way. With a plain happening such as a phone call, ところを sounds wrong to most speakers, because nothing acts on the person; ところを fits when the following verb catches, helps, troubles or interrupts someone. A common mistake is ところを with such a happening (出かけようとしたところを電話がかかってきた)."
+        ],
+        "examples": [
+          {
+            "id": "n1-tokoro-wo-1",
+            "text": "お忙しいところをお越しいただき、ありがとうございます。",
+            "reading": "おいそがしいところをおこしいただき、ありがとうございます。",
+            "translation": "Thank you for coming when you are so busy.",
+            "focus": "ところを",
+            "distractors": [
+              "とたんに",
+              "ばかりに",
+              "あげく"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n1-tokoro-wo-2",
+            "text": "万引きしているところを店員に見つかった。",
+            "reading": "まんびきしているところをてんいんにみつかった。",
+            "translation": "He was caught by a clerk in the act of shoplifting.",
+            "focus": "ところを",
+            "distractors": [
+              "とたんに",
+              "ばかりに",
+              "ものの"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n1-tokoro-wo-3",
+            "text": "危ないところを通りがかりの人に助けられた。",
+            "reading": "あぶないところをとおりがかりのひとにたすけられた。",
+            "translation": "I was rescued by a passer-by when I was in danger.",
+            "focus": "ところを",
+            "distractors": [
+              "とたんに",
+              "あまり",
+              "くせに"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n1-tokoro-wo-4",
+            "text": "お休みのところを申し訳ございません。",
+            "reading": "おやすみのところをもうしわけございません。",
+            "translation": "I am sorry to disturb you on your day off.",
+            "focus": "ところを",
+            "distractors": [
+              "くせに",
+              "ついでに",
+              "あまり"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n1-tokoro-wo-5",
+            "text": "本来なら直接伺うべきところを、メールで失礼いたします。",
+            "reading": "ほんらいならちょくせつうかがうべきところを、メールでしつれいいたします。",
+            "translation": "I really ought to visit you in person; please forgive me for writing by email.",
+            "focus": "ところを",
+            "distractors": [
+              "ばかりに",
+              "とたんに",
+              "ものなら"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n1-tokoro-wo-6",
+            "text": "出かけようとしたところに電話がかかってきた。",
+            "reading": "でかけようとしたところにでんわがかかってきた。",
+            "translation": "Just as I was about to go out, the phone rang.",
+            "focus": "ところに",
+            "distractors": [
+              "ところを",
+              "くせに",
+              "あまり"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "row": 32,
+      "label": "とはいえ (although, that said)",
+      "lesson": {
+        "id": "n1-towaie",
+        "level": "n1",
+        "title": "とはいえ: although it is true that, even so",
+        "summary": "とはいえ admits a fact and then says that the expected consequence does not fully follow: although it is spring, it is still cold.",
+        "pattern": [
+          "N / plain form + とはいえ、…",
+          "Sentence. とはいえ、… (at the start of a sentence)"
+        ],
+        "body": [
+          "とはいえ attaches directly to a noun or to the plain form of a verb or adjective (春とはいえ, 勝ったとはいえ, 便利になったとはいえ). It can also open a new sentence as a conjunction: 締め切りは延びた。とはいえ、油断はできない. The first part is accepted as true; the second limits or corrects what one would expect from it.",
+          "It is written and formal-neutral, common in essays, news and careful speech. といえども (point 27) is stiffer and favours extreme cases; けれども is the plain everyday equivalent.",
+          "The contrast example uses ものの (資格は取ったものの、生かせる仕事がない). ものの also means although, but it follows only verbs and adjectives (or N である), never a bare noun, and it cannot start a sentence. A common mistake is to use とはいえ for a pure reason (because it is spring): it always introduces a reservation."
+        ],
+        "examples": [
+          {
+            "id": "n1-towaie-1",
+            "text": "春とはいえ、朝晩はまだ冷える。",
+            "reading": "はるとはいえ、あさばんはまだひえる。",
+            "translation": "It may be spring, but mornings and evenings are still cold.",
+            "focus": "とはいえ",
+            "distractors": [
+              "とあって",
+              "ならでは",
+              "ばかりか"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ],
+            "noOrder": true
+          },
+          {
+            "id": "n1-towaie-2",
+            "text": "冗談とはいえ、言っていいことと悪いことがある。",
+            "reading": "じょうだんとはいえ、いっていいこととわるいことがある。",
+            "translation": "Joke or not, there are things you should not say.",
+            "focus": "とはいえ",
+            "distractors": [
+              "とあって",
+              "だけあって",
+              "ゆえに"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n1-towaie-3",
+            "text": "勝ったとはいえ、内容には課題が残る試合だった。",
+            "reading": "かったとはいえ、ないようにはかだいがのこるしあいだった。",
+            "translation": "We won, but it was a game that left problems in how we played.",
+            "focus": "とはいえ",
+            "distractors": [
+              "からこそ",
+              "とあって",
+              "あげく"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n1-towaie-4",
+            "text": "便利になったとはいえ、手作業がなくなったわけではない。",
+            "reading": "べんりになったとはいえ、てさぎょうがなくなったわけではない。",
+            "translation": "Things have become convenient, but that does not mean manual work has disappeared.",
+            "focus": "とはいえ",
+            "distractors": [
+              "ゆえに",
+              "ばかりに",
+              "ならでは"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n1-towaie-5",
+            "text": "新人とはいえ、お客様から見ればプロだ。",
+            "reading": "しんじんとはいえ、おきゃくさまからみればプロだ。",
+            "translation": "You may be new, but in the customer's eyes you are a professional.",
+            "focus": "とはいえ",
+            "distractors": [
+              "ならでは",
+              "とあって",
+              "ばかりか"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n1-towaie-6",
+            "text": "資格は取ったものの、それを生かせる仕事がない。",
+            "reading": "しかくはとったものの、それをいかせるしごとがない。",
+            "translation": "I got the qualification, but there is no job where I can use it.",
+            "focus": "ものの",
+            "distractors": [
+              "ものを",
+              "ものなら",
+              "ばかりか"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "row": 33,
+      "label": "とばかりに / んばかり (as if to say; as if about to)",
+      "lesson": {
+        "id": "n1-tobakarini",
+        "level": "n1",
+        "title": "とばかりに and んばかり: as if to say, as if about to",
+        "summary": "とばかりに describes an action that seems to say the quoted words; V-ない stem + んばかり describes a state so intense that something seems about to happen.",
+        "pattern": [
+          "「quote」/ plain form + とばかりに + action",
+          "V-ない stem + んばかりに / んばかりの N / んばかりだ (する → せんばかり)"
+        ],
+        "body": [
+          "とばかりに follows a quotation or a plain-form utterance (早くしろ, 遊んでくれ) and describes someone else's gesture that silently says it: as if to say. The speaker reads the meaning from the behaviour, so it is not used for one's own actions.",
+          "んばかり is the old negative-volitional ん after the ない stem (泣き出さ, 割れ, 怒鳴ら; する becomes せ): the state is so strong that the action looks about to happen. It takes の before a noun (割れんばかりの拍手), に before a verb, or だ at the end. Both are written and literary; set phrases such as あふれんばかりの and 割れんばかりの are common.",
+          "The contrast example uses ばかりに (just because, with a bad result: 一言多かったばかりに、怒らせてしまった). It follows a plain-form clause of cause and has nothing of as if. A common mistake is to write the dictionary form before んばかり (割れるんばかり): it needs the ない stem."
+        ],
+        "examples": [
+          {
+            "id": "n1-tobakarini-1",
+            "text": "「待ってました」とばかりに、観客から拍手が起こった。",
+            "reading": "「まってました」とばかりに、かんきゃくからはくしゅがおこった。",
+            "translation": "Applause broke out from the audience as if to say, We have been waiting for this.",
+            "focus": "とばかりに",
+            "distractors": [
+              "とあって",
+              "どころか",
+              "ものの"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n1-tobakarini-2",
+            "text": "早くしろとばかりに、後ろから舌打ちされた。",
+            "reading": "はやくしろとばかりに、うしろからしたうちされた。",
+            "translation": "Someone behind me clicked their tongue as if to say, Hurry up.",
+            "focus": "とばかりに",
+            "distractors": [
+              "とあれば",
+              "とはいえ",
+              "ながらも"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n1-tobakarini-3",
+            "text": "泣き出さんばかりの顔で謝られた。",
+            "reading": "なきださんばかりのかおであやまられた。",
+            "translation": "He apologized to me looking as if he would burst into tears.",
+            "focus": "んばかり",
+            "distractors": [
+              "んがため",
+              "ずくめ",
+              "まじき"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n1-tobakarini-4",
+            "text": "割れんばかりの拍手が会場に響いた。",
+            "reading": "われんばかりのはくしゅがかいじょうにひびいた。",
+            "translation": "Thunderous applause rang through the hall.",
+            "focus": "割れんばかり",
+            "distractors": [
+              "割れがち",
+              "割れまじき",
+              "割れずくめ"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n1-tobakarini-5",
+            "text": "母は今にも怒鳴らんばかりの勢いだった。",
+            "reading": "はははいまにもどならんばかりのいきおいだった。",
+            "translation": "My mother looked ready to start shouting at any moment.",
+            "focus": "んばかり",
+            "distractors": [
+              "ないまでも",
+              "かたがた",
+              "んがため"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n1-tobakarini-6",
+            "text": "犬は遊んでくれとばかりにボールをくわえてきた。",
+            "reading": "いぬはあそんでくれとばかりにボールをくわえてきた。",
+            "translation": "The dog came with a ball in its mouth as if to say, Play with me.",
+            "focus": "とばかりに",
+            "distractors": [
+              "とあって",
+              "ともなると",
+              "とはいえ"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ],
+            "noOrder": true
+          },
+          {
+            "id": "n1-tobakarini-7",
+            "text": "一言多かったばかりに、彼女を怒らせてしまった。",
+            "reading": "ひとことおおかったばかりに、かのじょをおこらせてしまった。",
+            "translation": "Just because I said one word too many, I made her angry.",
+            "focus": "ばかりに",
+            "distractors": [
+              "とばかりに",
+              "んばかりに",
+              "ものを"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "row": 34,
+      "label": "ともなると / ともなれば (when it comes to, once one is)",
+      "lesson": {
+        "id": "n1-tomonaruto",
+        "level": "n1",
+        "title": "ともなると and ともなれば: once it comes to, at the level of",
+        "summary": "N + ともなると / ともなれば says that once a person, time or event reaches a certain higher level, what follows is naturally expected of it.",
+        "pattern": [
+          "N + ともなると / ともなれば、(natural consequence)",
+          "V-dict + ともなると (留学するともなると)"
+        ],
+        "body": [
+          "ともなると and ともなれば follow a noun (or a dictionary-form verb) that names a rank, an age, a season or an occasion that stands out: 社長, 大学生, プロ, 十二月, 結婚式. The main clause states what is naturally the case at that level. The two forms are interchangeable; ともなれば sounds slightly more conditional.",
+          "The sentence is a general observation, so the main clause is usually in the non-past (自由な時間はほとんどない), not a single past event. It is formal but also used in careful speech; となると is the plainer cousin.",
+          "The contrast example uses とあって (久しぶりの晴天とあって、公園は家族連れでにぎわっていた): because it is X, a particular situation actually occurred. とあって reports a real, often past, event; ともなると states a general expectation tied to a level. A common mistake is ともなると after an ordinary noun with no sense of a special level (水曜日ともなると)."
+        ],
+        "examples": [
+          {
+            "id": "n1-tomonaruto-1",
+            "text": "社長ともなると、自由な時間はほとんどない。",
+            "reading": "しゃちょうともなると、じゆうなじかんはほとんどない。",
+            "translation": "Once you are company president, you have almost no free time.",
+            "focus": "ともなると",
+            "distractors": [
+              "ならでは",
+              "たりとも",
+              "をおいて"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n1-tomonaruto-2",
+            "text": "十二月ともなれば、街はどこもにぎやかになる。",
+            "reading": "じゅうにがつともなれば、まちはどこもにぎやかになる。",
+            "translation": "When December comes, the town gets lively everywhere.",
+            "focus": "ともなれば",
+            "distractors": [
+              "ともあれ",
+              "をおいて",
+              "ずくめ"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ],
+            "noOrder": true
+          },
+          {
+            "id": "n1-tomonaruto-3",
+            "text": "プロともなれば、道具選びにも妥協しない。",
+            "reading": "プロともなれば、どうぐえらびにもだきょうしない。",
+            "translation": "Professionals do not compromise even on choosing their tools.",
+            "focus": "ともなれば",
+            "distractors": [
+              "ならでは",
+              "たる",
+              "までもなく"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n1-tomonaruto-4",
+            "text": "大学生ともなると、親に頼ってばかりはいられない。",
+            "reading": "だいがくせいともなると、おやにたよってばかりはいられない。",
+            "translation": "Once you are a university student, you cannot keep relying on your parents.",
+            "focus": "ともなると",
+            "distractors": [
+              "ならでは",
+              "ずくめ",
+              "ごとき"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n1-tomonaruto-5",
+            "text": "結婚式ともなれば、普段着というわけにはいかない。",
+            "reading": "けっこんしきともなれば、ふだんぎというわけにはいかない。",
+            "translation": "When it is a wedding, you cannot go in everyday clothes.",
+            "focus": "ともなれば",
+            "distractors": [
+              "をおいて",
+              "ならでは",
+              "たりとも"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n1-tomonaruto-6",
+            "text": "久しぶりの晴天とあって、公園は家族連れでにぎわっていた。",
+            "reading": "ひさしぶりのせいてんとあって、こうえんはかぞくづれでにぎわっていた。",
+            "translation": "With fine weather for the first time in a while, the park was full of families.",
+            "focus": "とあって",
+            "distractors": [
+              "ならでは",
+              "までもなく",
+              "たりとも"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ],
+            "noOrder": true
+          }
+        ]
+      }
+    },
+    {
+      "row": 35,
+      "label": "ないまでも (even if not as far as)",
+      "lesson": {
+        "id": "n1-naimademo",
+        "level": "n1",
+        "title": "ないまでも: even if not as much as X, at least Y",
+        "summary": "V-ない + までも names a high standard that is not expected, then a lower level that should at least be reached: not every day, but at least once a week.",
+        "pattern": [
+          "V-ない + までも、(lower level) は / くらいは …",
+          "N とは言わないまでも / N とはいかないまでも"
+        ],
+        "body": [
+          "ないまでも follows the ない form of a verb. The first part is a high level the speaker does not demand or expect (満点は取れない, 毎日とは言わない); the second is a lower level that is still wanted, so it often ends in たい, ほしい, べきだ or is marked with は or くらいは. Fixed frames are とは言わないまでも and とはいかないまでも.",
+          "It is formal-neutral and common in writing and careful speech. The meaning is a sliding scale, not a contrast of opposites.",
+          "The contrast example uses までもない (改めて説明するまでもない): there is no need to go as far as doing something. It follows the dictionary form and has no lower level after it. A common mistake is to mix the two and attach までも to the dictionary form (言うまでも、…) when ないまでも is meant."
+        ],
+        "examples": [
+          {
+            "id": "n1-naimademo-1",
+            "text": "毎日とは言わないまでも、週に一度は連絡してほしい。",
+            "reading": "まいにちとはいわないまでも、しゅうにいちどはれんらくしてほしい。",
+            "translation": "I won't say every day, but I'd like you to get in touch at least once a week.",
+            "focus": "ないまでも",
+            "distractors": [
+              "ないことには",
+              "までもなく",
+              "ないばかりか"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n1-naimademo-2",
+            "text": "満点は取れないまでも、平均点は超えたい。",
+            "reading": "まんてんはとれないまでも、へいきんてんはこえたい。",
+            "translation": "Even if I can't get full marks, I want to beat the average.",
+            "focus": "ないまでも",
+            "distractors": [
+              "ないことには",
+              "ずくめで",
+              "ないばかりか"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n1-naimademo-3",
+            "text": "優勝とはいかないまでも、上位に入れば十分だ。",
+            "reading": "ゆうしょうとはいかないまでも、じょういにはいればじゅうぶんだ。",
+            "translation": "Even if we don't win, finishing near the top is enough.",
+            "focus": "ないまでも",
+            "distractors": [
+              "ないことには",
+              "ないばかりか",
+              "ないかぎり"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n1-naimademo-4",
+            "text": "プロ並みとは言えないまでも、なかなかの腕前だ。",
+            "reading": "プロなみとはいえないまでも、なかなかのうでまえだ。",
+            "translation": "It may not be professional level, but it is quite a skill.",
+            "focus": "までも",
+            "distractors": [
+              "ことには",
+              "ばかりか",
+              "かぎり"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n1-naimademo-5",
+            "text": "謝罪はしないまでも、説明くらいはするべきだ。",
+            "reading": "しゃざいはしないまでも、せつめいくらいはするべきだ。",
+            "translation": "Even if they won't apologize, they should at least explain.",
+            "focus": "しないまでも",
+            "distractors": [
+              "しないことには",
+              "しないばかりか",
+              "せずにはおかない"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n1-naimademo-6",
+            "text": "彼の実力は改めて説明するまでもない。",
+            "reading": "かれのじつりょくはあらためてせつめいするまでもない。",
+            "translation": "There is no need to explain his ability all over again.",
+            "focus": "までもない",
+            "distractors": [
+              "ないまでも",
+              "ずくめだ",
+              "がてらだ"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "row": 36,
+      "label": "ながらも (although, while)",
+      "lesson": {
+        "id": "n1-nagaramo",
+        "level": "n1",
+        "title": "ながらも: although, even while",
+        "summary": "ながらも joins two facts that sit uneasily together: small though it is, the room is sunny; complaining all the while, he still helped.",
+        "pattern": [
+          "V-ます stem / い-A / な-A stem / N + ながらも、…",
+          "わずかながらも / 残念ながら (set phrases)"
+        ],
+        "body": [
+          "ながらも attaches to the ます stem of a verb (言いながらも, 抱えながらも), the dictionary form of an い-adjective (狭いながらも), the stem of a な-adjective (わずかながらも) or a noun (子どもながらも). The first part is a fact, and the second is something one would not expect from it. With verbs, the subject of both parts is the same.",
+          "It is written or careful speech. ながら alone can also be concessive (知っていながら), and も makes the concession explicit.",
+          "The contrast example uses plain ながら for two actions at the same time (ラジオを聞きながら運転する). That ながら takes only action verbs and has no sense of although. A common mistake is to read every ながら after a stative verb or adjective as simultaneous: 狭いながらも cannot mean while it is narrow in time."
+        ],
+        "examples": [
+          {
+            "id": "n1-nagaramo-1",
+            "text": "狭いながらも、日当たりのいい部屋だ。",
+            "reading": "せまいながらも、ひあたりのいいへやだ。",
+            "translation": "Small though it is, the room gets plenty of sun.",
+            "focus": "ながらも",
+            "distractors": [
+              "ばかりか",
+              "とあって",
+              "かたわら"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n1-nagaramo-2",
+            "text": "文句を言いながらも、最後まで手伝ってくれた。",
+            "reading": "もんくをいいながらも、さいごまでてつだってくれた。",
+            "translation": "Though he grumbled, he helped me right to the end.",
+            "focus": "ながらも",
+            "distractors": [
+              "ついでに",
+              "かたがた",
+              "そばから"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n1-nagaramo-3",
+            "text": "子どもながらも、彼女の演奏には説得力があった。",
+            "reading": "こどもながらも、かのじょのえんそうにはせっとくりょくがあった。",
+            "translation": "Though she was a child, her playing was convincing.",
+            "focus": "ながらも",
+            "distractors": [
+              "がてら",
+              "ならでは",
+              "ともなると"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ],
+            "noOrder": true
+          },
+          {
+            "id": "n1-nagaramo-4",
+            "text": "わずかながらも、売り上げは回復しつつある。",
+            "reading": "わずかながらも、うりあげはかいふくしつつある。",
+            "translation": "Sales are recovering, if only slightly.",
+            "focus": "ながらも",
+            "distractors": [
+              "ばかりか",
+              "とあって",
+              "ならでは"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ],
+            "noOrder": true
+          },
+          {
+            "id": "n1-nagaramo-5",
+            "text": "不安を抱えながらも、新しい道を選んだ。",
+            "reading": "ふあんをかかえながらも、あたらしいみちをえらんだ。",
+            "translation": "Despite my worries, I chose a new path.",
+            "focus": "ながらも",
+            "distractors": [
+              "がてら",
+              "そばから",
+              "かたがた"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n1-nagaramo-6",
+            "text": "ラジオを聞きながら運転するのが習慣だ。",
+            "reading": "ラジオをききながらうんてんするのがしゅうかんだ。",
+            "translation": "It's my habit to listen to the radio while driving.",
+            "focus": "ながら",
+            "distractors": [
+              "そばから",
+              "かたわら",
+              "ずくめ"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "row": 37,
+      "label": "ならでは (unique to, only X could)",
+      "lesson": {
+        "id": "n1-naradewa",
+        "level": "n1",
+        "title": "ならでは: something only X has or can do",
+        "summary": "N + ならではの N praises a quality that belongs to X alone: a technique only a craftsman has, a flavour you only find locally.",
+        "pattern": [
+          "N + ならではの + N",
+          "N + ならではだ (sentence end)"
+        ],
+        "body": [
+          "ならでは follows a noun and is almost always followed by の and another noun (職人ならではの技, 地元ならではの味); at the end of a sentence it takes だ or です. The meaning is positive: the thing is typical of X and cannot be found elsewhere. It is common in advertising, reviews and written commentary.",
+          "Because it praises, it is unnatural with plainly negative qualities. The older pattern Nならでは〜ない (only X can) survives in fixed writing.",
+          "The contrast example uses らしい meaning typical of (春らしい暖かい日). らしい is an adjective that attaches directly to the noun and says that something has the usual character of X; ならでは says that only X has it. A common mistake is to drop the の: 職人ならでは技 is wrong."
+        ],
+        "examples": [
+          {
+            "id": "n1-naradewa-1",
+            "text": "これは職人ならではの技だ。",
+            "reading": "これはしょくにんならではのわざだ。",
+            "translation": "This is a skill that only a craftsman has.",
+            "focus": "ならでは",
+            "distractors": [
+              "ずくめ",
+              "たりとも",
+              "をおいて"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n1-naradewa-2",
+            "text": "地元ならではの味を楽しんでください。",
+            "reading": "じもとならではのあじをたのしんでください。",
+            "translation": "Please enjoy flavours you can only find here.",
+            "focus": "ならではの",
+            "distractors": [
+              "ずくめの",
+              "ともなると",
+              "とはいえ"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n1-naradewa-3",
+            "text": "子どもならではの自由な発想に驚かされた。",
+            "reading": "こどもならではのじゆうなはっそうにおどろかされた。",
+            "translation": "I was struck by the free thinking that only a child has.",
+            "focus": "ならではの",
+            "distractors": [
+              "ながらも",
+              "までもない",
+              "ともなれば"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n1-naradewa-4",
+            "text": "雪国ならではの暮らしの知恵がある。",
+            "reading": "ゆきぐにならではのくらしのちえがある。",
+            "translation": "There is everyday wisdom found only in snow country.",
+            "focus": "ならでは",
+            "distractors": [
+              "たる",
+              "がてら",
+              "をおいて"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n1-naradewa-5",
+            "text": "少人数ならではのきめ細かい指導が魅力だ。",
+            "reading": "しょうにんずうならではのきめこまかいしどうがみりょくだ。",
+            "translation": "The appeal is the careful teaching that only small classes allow.",
+            "focus": "ならではの",
+            "distractors": [
+              "ずくめの",
+              "ともなると",
+              "をものともせず"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n1-naradewa-6",
+            "text": "今日は夏らしい天気だ。",
+            "reading": "きょうはなつらしいてんきだ。",
+            "translation": "Today is real summer weather.",
+            "focus": "らしい",
+            "distractors": [
+              "ならでは",
+              "ずくめ",
+              "がてら"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "row": 38,
+      "label": "なり (as soon as)",
+      "lesson": {
+        "id": "n1-nari",
+        "level": "n1",
+        "title": "なり: as soon as, and immediately",
+        "summary": "V-dict + なり says that someone did something unexpected the instant they did the first action: as soon as he got home, he shut himself in his room.",
+        "pattern": [
+          "V-dict + なり、(unexpected action, past)"
+        ],
+        "body": [
+          "なり follows the dictionary form of a verb. Both actions belong to the same person, the second follows at once, and it is usually surprising or abrupt (泣き出した, 飛び出した, 顔をしかめた). The main clause is in the past, describing what someone else did; it is not used for the speaker's own plans, requests or commands.",
+          "It is written and narrative in tone. Similar patterns are や否や and が早いか (point 7); unlike なり, they also allow a different subject in the second clause.",
+          "The contrast example uses や否や (幕が開くや否や、客席から歓声が上がった), where the curtain and the cheering have different subjects. なり needs one subject for both actions, so 幕が開くなり、歓声が上がった sounds wrong to most speakers. Another common mistake is なり after the た form: 出かけたなり means went out and never came back, a different pattern."
+        ],
+        "examples": [
+          {
+            "id": "n1-nari-1",
+            "text": "店に入るなり、メニューも見ずに注文した。",
+            "reading": "みせにはいるなり、メニューもみずにちゅうもんした。",
+            "translation": "As soon as he walked into the restaurant, he ordered without even looking at the menu.",
+            "focus": "なり",
+            "distractors": [
+              "そばから",
+              "なりに",
+              "ながらも"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n1-nari-2",
+            "text": "娘は私の顔を見るなり、泣き出した。",
+            "reading": "むすめはわたしのかおをみるなり、なきだした。",
+            "translation": "The moment my daughter saw my face, she burst into tears.",
+            "focus": "なり",
+            "distractors": [
+              "なりに",
+              "かたわら",
+              "がてら"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ],
+            "noOrder": true
+          },
+          {
+            "id": "n1-nari-3",
+            "text": "席に着くなり、資料を読み始めた。",
+            "reading": "せきにつくなり、しりょうをよみはじめた。",
+            "translation": "The moment he sat down, he started reading the documents.",
+            "focus": "着くなり",
+            "distractors": [
+              "着くなりに",
+              "着くとあって",
+              "着くともなると"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n1-nari-4",
+            "text": "電話を切るなり、家を飛び出していった。",
+            "reading": "でんわをきるなり、いえをとびだしていった。",
+            "translation": "The moment she hung up, she rushed out of the house.",
+            "focus": "なり",
+            "distractors": [
+              "なりに",
+              "かたわら",
+              "ないまでも"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n1-nari-5",
+            "text": "一口食べるなり、父は顔をしかめた。",
+            "reading": "ひとくちたべるなり、ちちはかおをしかめた。",
+            "translation": "My father grimaced as soon as he took a bite.",
+            "focus": "なり",
+            "distractors": [
+              "なりに",
+              "がてら",
+              "ずくめで"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ],
+            "noOrder": true
+          },
+          {
+            "id": "n1-nari-6",
+            "text": "幕が開くや否や、客席から歓声が上がった。",
+            "reading": "まくがあくやいなや、きゃくせきからかんせいがあがった。",
+            "translation": "The moment the curtain rose, cheers went up from the audience.",
+            "focus": "や否や",
+            "distractors": [
+              "がてら",
+              "かたわら",
+              "ながらも"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "row": 39,
+      "label": "なりに (in one's own way)",
+      "lesson": {
+        "id": "n1-narini",
+        "level": "n1",
+        "title": "なりに: in one's own way, as far as X allows",
+        "summary": "N + なりに / なりの says that someone does what they can within their own limits or position: I thought it over in my own way.",
+        "pattern": [
+          "N / A + なりに + verb",
+          "N / A + なりの + N",
+          "X は X なりに"
+        ],
+        "body": [
+          "なりに follows a noun or an adjective (私なりに, 下手なりに, 安い店なりの) and means within the limits or character of X. It admits that X is not ideal but credits what X does. Before a noun it becomes なりの. The doubled frame X は X なりに (子どもは子どもなりに) is common: children, too, in their own way.",
+          "It is neutral and used both in speech and writing. When used of oneself it sounds modest; used of others it can sound slightly condescending.",
+          "The contrast example uses なり meaning as soon as (姉は封筒を開けるなり、飛び上がって喜んだ). That なり follows a dictionary-form verb and has nothing to do with one's own way; なりに follows nouns and adjectives. A common mistake is to confuse なりに with ならでは: ならでは praises something only X has, なりに concedes limits."
+        ],
+        "examples": [
+          {
+            "id": "n1-narini-1",
+            "text": "私なりに考えて出した結論です。",
+            "reading": "わたしなりにかんがえてだしたけつろんです。",
+            "translation": "It's a conclusion I reached after thinking it through in my own way.",
+            "focus": "なりに",
+            "distractors": [
+              "ならでは",
+              "ずくめに",
+              "たりとも"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n1-narini-2",
+            "text": "子どもは子どもなりに悩みを抱えている。",
+            "reading": "こどもはこどもなりになやみをかかえている。",
+            "translation": "Children have their own worries too, in their own way.",
+            "focus": "なりに",
+            "distractors": [
+              "ならでは",
+              "ずくめで",
+              "をおいて"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n1-narini-3",
+            "text": "安い店には安い店なりの工夫がある。",
+            "reading": "やすいみせにはやすいみせなりのくふうがある。",
+            "translation": "Cheap shops have their own kinds of ingenuity.",
+            "focus": "なりの",
+            "distractors": [
+              "ずくめの",
+              "をおいての",
+              "までもない"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n1-narini-4",
+            "text": "下手なりに精一杯練習を重ねてきた。",
+            "reading": "へたなりにせいいっぱいれんしゅうをかさねてきた。",
+            "translation": "Poor as I am, I have kept practising as hard as I can.",
+            "focus": "なりに",
+            "distractors": [
+              "ならでは",
+              "ずくめに",
+              "がてら"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n1-narini-5",
+            "text": "初心者なりの視点が、意外に役立つこともある。",
+            "reading": "しょしんしゃなりのしてんが、いがいにやくだつこともある。",
+            "translation": "A beginner's own way of seeing things can sometimes be surprisingly useful.",
+            "focus": "なりの",
+            "distractors": [
+              "ずくめの",
+              "かたがたの",
+              "までもない"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n1-narini-6",
+            "text": "姉は封筒を開けるなり、飛び上がって喜んだ。",
+            "reading": "あねはふうとうをあけるなり、とびあがってよろこんだ。",
+            "translation": "The moment my sister opened the envelope, she jumped for joy.",
+            "focus": "なり",
+            "distractors": [
+              "なりに",
+              "かたわら",
+              "がてら"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ],
+            "noOrder": true
+          }
+        ]
+      }
+    },
+    {
+      "row": 40,
+      "label": "にあって (in, at a time of)",
+      "lesson": {
+        "id": "n1-niatte",
+        "level": "n1",
+        "title": "にあって: in a situation, in a position",
+        "summary": "N + にあって places an action or attitude within a special situation, period or position: even in a recession, some companies grow.",
+        "pattern": [
+          "N (situation / position / period) + にあって(は / も)、…"
+        ],
+        "body": [
+          "にあって follows a noun naming a situation, an era or a position: 不況, 極限状態, 情報化社会, 戦時下, 大臣という立場. にあっては means in such a situation (as a general matter), にあっても means even in such a situation. It is a formal written expression, a stiff form of にいて or の中で.",
+          "The noun is a circumstance someone lives through or a role someone holds, not a mere location of an event.",
+          "The contrast example uses において (会議は本社において行われる): において marks the place or field where an event takes place. にあって cannot mark the venue of an event; it is used for a person or group living in a situation. A common mistake is にあって after a plain place name (東京にあって会議を開く)."
+        ],
+        "examples": [
+          {
+            "id": "n1-niatte-1",
+            "text": "不況にあって、売り上げを伸ばす企業もある。",
+            "reading": "ふきょうにあって、うりあげをのばすきぎょうもある。",
+            "translation": "Even in a recession, some companies are increasing their sales.",
+            "focus": "にあって",
+            "distractors": [
+              "を皮切りに",
+              "をおいて",
+              "にたえない"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n1-niatte-2",
+            "text": "極限状態にあっても冷静さを失わないのが、彼の強みだ。",
+            "reading": "きょくげんじょうたいにあってもれいせいさをうしなわないのが、かれのつよみだ。",
+            "translation": "His strength is that he stays calm even in extreme conditions.",
+            "focus": "にあっても",
+            "distractors": [
+              "にかこつけても",
+              "に足りても",
+              "をおいても"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n1-niatte-3",
+            "text": "情報化社会にあって、正確な判断力がますます求められている。",
+            "reading": "じょうほうかしゃかいにあって、せいかくなはんだんりょくがますますもとめられている。",
+            "translation": "In an information society, sound judgment is needed more and more.",
+            "focus": "にあって",
+            "distractors": [
+              "にかこつけて",
+              "にたえない",
+              "をものともせず"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ],
+            "noOrder": true
+          },
+          {
+            "id": "n1-niatte-4",
+            "text": "戦時下にあって、人々は互いに支え合って生きた。",
+            "reading": "せんじかにあって、ひとびとはたがいにささえあっていきた。",
+            "translation": "In wartime, people lived by supporting one another.",
+            "focus": "にあって",
+            "distractors": [
+              "にかこつけて",
+              "にたえず",
+              "をおいて"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ],
+            "noOrder": true
+          },
+          {
+            "id": "n1-niatte-5",
+            "text": "大臣という重い立場にあって、軽率な発言は許されない。",
+            "reading": "だいじんというおもいたちばにあって、けいそつなはつげんはゆるされない。",
+            "translation": "For someone in the weighty position of minister, careless remarks are unacceptable.",
+            "focus": "にあって",
+            "distractors": [
+              "にかこつけて",
+              "を皮切りに",
+              "をおいて"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n1-niatte-6",
+            "text": "会議は本社において行われる。",
+            "reading": "かいぎはほんしゃにおいておこなわれる。",
+            "translation": "The meeting will be held at head office.",
+            "focus": "において",
+            "distractors": [
+              "にあって",
+              "にかこつけて",
+              "をおいて"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "row": 41,
+      "label": "に至って / に至るまで (only when it came to; right down to)",
+      "lesson": {
+        "id": "n1-niitatte",
+        "level": "n1",
+        "title": "に至って and に至るまで: only when it reached; all the way to",
+        "summary": "に至って says that only when things reached an extreme stage did something happen; に至っては singles out an extreme case; から〜に至るまで stresses how wide a range is.",
+        "pattern": [
+          "V-dict / N + に至って(はじめて / ようやく)…",
+          "N + に至っては (the extreme case)",
+          "N1 から N2 に至るまで"
+        ],
+        "body": [
+          "に至って follows a dictionary-form verb or a noun that names a serious stage (死者が出る, ここ). The main clause, often with ようやく or はじめて, reports a reaction that came only then, implying it was late. に至っては picks the most extreme member of a group (弟に至っては): as for X, it is even worse.",
+          "から〜に至るまで lists the two ends of a range, the second usually the most unexpected or detailed one (服装から言葉遣いに至るまで). It is stronger than から〜まで and is formal.",
+          "The contrast example uses にわたって (工事は三か月にわたって続いた): it states the extent of a time or area over which something continues. に至るまで lists the ends of a range of items to stress thoroughness, and に至って marks a stage that was reached. A common mistake is に至るまで with a plain duration (三か月に至るまで続いた)."
+        ],
+        "examples": [
+          {
+            "id": "n1-niitatte-1",
+            "text": "死者が出るに至って、ようやく対策が講じられた。",
+            "reading": "ししゃがでるにいたって、ようやくたいさくがこうじられた。",
+            "translation": "Only when people died were measures finally taken.",
+            "focus": "に至って",
+            "distractors": [
+              "に至るまで",
+              "にかこつけて",
+              "をおいて"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ],
+            "noOrder": true
+          },
+          {
+            "id": "n1-niitatte-2",
+            "text": "事態がここに至っては、もう隠すことはできない。",
+            "reading": "じたいがここにいたっては、もうかくすことはできない。",
+            "translation": "Now that things have come to this, it can no longer be hidden.",
+            "focus": "に至っては",
+            "distractors": [
+              "に至るまで",
+              "にひきかえ",
+              "に即しては"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n1-niitatte-3",
+            "text": "服装から言葉遣いに至るまで、厳しく指導された。",
+            "reading": "ふくそうからことばづかいにいたるまで、きびしくしどうされた。",
+            "translation": "We were strictly coached on everything from dress to the way we spoke.",
+            "focus": "に至るまで",
+            "distractors": [
+              "に至って",
+              "にあって",
+              "をおいて"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n1-niitatte-4",
+            "text": "子どもから高齢者に至るまで、幅広い層に愛されている。",
+            "reading": "こどもからこうれいしゃにいたるまで、はばひろいそうにあいされている。",
+            "translation": "It is loved by a wide range of people, from children to the elderly.",
+            "focus": "に至るまで",
+            "distractors": [
+              "に至って",
+              "にひきかえ",
+              "にもまして"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n1-niitatte-5",
+            "text": "弟に至っては、一度も宿題を出したことがない。",
+            "reading": "おとうとにいたっては、いちどもしゅくだいをだしたことがない。",
+            "translation": "As for my younger brother, he has never once handed in his homework.",
+            "focus": "に至っては",
+            "distractors": [
+              "にかこつけては",
+              "にたえては",
+              "に即しては"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n1-niitatte-6",
+            "text": "工事は三か月にわたって続いた。",
+            "reading": "こうじはさんかげつにわたってつづいた。",
+            "translation": "The construction went on for three months.",
+            "focus": "にわたって",
+            "distractors": [
+              "に至って",
+              "をおいて",
+              "にあって"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ],
+            "noOrder": true
+          }
+        ]
+      }
+    },
+    {
+      "row": 42,
+      "label": "にかこつけて (using as a pretext)",
+      "lesson": {
+        "id": "n1-nikakotsukete",
+        "level": "n1",
+        "title": "にかこつけて: using something as an excuse",
+        "summary": "N + にかこつけて says that someone uses a situation as a pretext to do what they really want: sightseeing on the pretext of a business trip.",
+        "pattern": [
+          "N + にかこつけて、(what one really wants to do)",
+          "N + にかこつけた + N"
+        ],
+        "body": [
+          "にかこつけて follows a noun naming an official or plausible reason (出張, 仕事, 雨, 誕生日, 受験勉強). The main clause is what the person actually wants: to sightsee, skip something, ask for a present, avoid chores. The real cause and the stated reason do not match, and the speaker usually disapproves.",
+          "It is written or critical speech; it is rarely used of oneself unless joking. Before a noun it becomes にかこつけた.",
+          "The contrast example uses をきっかけに (留学をきっかけに、環境問題に関心を持った): an event that genuinely triggered a change. をきっかけに is neutral and honest; にかこつけて implies the reason is only an excuse. A common mistake is to use にかこつけて for a real cause, which makes the sentence sound like an accusation."
+        ],
+        "examples": [
+          {
+            "id": "n1-nikakotsukete-1",
+            "text": "出張にかこつけて観光ばかりするのは問題だ。",
+            "reading": "しゅっちょうにかこつけてかんこうばかりするのはもんだいだ。",
+            "translation": "It is a problem to do nothing but sightsee on the pretext of a business trip.",
+            "focus": "にかこつけて",
+            "distractors": [
+              "に即して",
+              "に足る",
+              "をおいて"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n1-nikakotsukete-2",
+            "text": "仕事にかこつけて、同窓会を欠席した。",
+            "reading": "しごとにかこつけて、どうそうかいをけっせきした。",
+            "translation": "He skipped the reunion, using work as an excuse.",
+            "focus": "にかこつけて",
+            "distractors": [
+              "にあって",
+              "にもまして",
+              "に足りて"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n1-nikakotsukete-3",
+            "text": "雨にかこつけて、練習を休む部員がいる。",
+            "reading": "あめにかこつけて、れんしゅうをやすむぶいんがいる。",
+            "translation": "Some club members use the rain as an excuse to skip practice.",
+            "focus": "にかこつけて",
+            "distractors": [
+              "にあって",
+              "を皮切りに",
+              "にたえず"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n1-nikakotsukete-4",
+            "text": "誕生日にかこつけて、娘に高い鞄をねだられた。",
+            "reading": "たんじょうびにかこつけて、むすめにたかいかばんをねだられた。",
+            "translation": "Using her birthday as an excuse, my daughter talked me into an expensive bag.",
+            "focus": "かこつけて",
+            "distractors": [
+              "即して",
+              "至って",
+              "たえて"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n1-nikakotsukete-5",
+            "text": "受験勉強にかこつけて家事を一切手伝わない弟に、母はあきれている。",
+            "reading": "じゅけんべんきょうにかこつけてかじをいっさいてつだわないおとうとに、はははあきれている。",
+            "translation": "My mother is fed up with my brother, who uses exam study as an excuse never to help with chores.",
+            "focus": "にかこつけて",
+            "distractors": [
+              "にあって",
+              "をおいて",
+              "にもまして"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n1-nikakotsukete-6",
+            "text": "留学をきっかけに、環境問題に関心を持った。",
+            "reading": "りゅうがくをきっかけに、かんきょうもんだいにかんしんをもった。",
+            "translation": "Studying abroad got me interested in environmental issues.",
+            "focus": "をきっかけに",
+            "distractors": [
+              "にかこつけて",
+              "をおいて",
+              "にたえず"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "row": 43,
+      "label": "に即して (in line with, based on)",
+      "lesson": {
+        "id": "n1-nisokushite",
+        "level": "n1",
+        "title": "に即して: in line with facts, rules or reality",
+        "summary": "N + に即して means acting in close accordance with facts, laws, reality or a particular situation, without departing from them.",
+        "pattern": [
+          "N (事実 / 実態 / 法律 / 状況) + に即して + V",
+          "N + に即した + N"
+        ],
+        "body": [
+          "に即して follows a noun that is a standard of reality: 事実, 実態, 現実, 法律, 時代, 状況. It says that a report, a judgment or a measure follows that standard closely. Before a noun it becomes に即した (実態に即した対策). It is a formal written expression, common in official and academic texts.",
+          "It is close to に基づいて (based on) and に応じて (in response to), but stresses fitting the actual case rather than starting from it or changing with it.",
+          "The contrast example uses に沿って (川に沿って桜並木が続いている). に沿って can mean along a physical line as well as following a plan; に即して is never physical. A common mistake is に即して with a road or river."
+        ],
+        "examples": [
+          {
+            "id": "n1-nisokushite-1",
+            "text": "事実に即して報告してください。",
+            "reading": "じじつにそくしてほうこくしてください。",
+            "translation": "Please report in line with the facts.",
+            "focus": "に即して",
+            "distractors": [
+              "にかこつけて",
+              "に至って",
+              "をおいて"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n1-nisokushite-2",
+            "text": "現場の実態に即した対策が求められている。",
+            "reading": "げんばのじったいにそくしたたいさくがもとめられている。",
+            "translation": "Measures that fit the actual conditions on site are needed.",
+            "focus": "即した",
+            "distractors": [
+              "至った",
+              "かこつけた",
+              "足りた"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n1-nisokushite-3",
+            "text": "法律に即して、公正に判断しなければならない。",
+            "reading": "ほうりつにそくして、こうせいにはんだんしなければならない。",
+            "translation": "We must judge fairly, in accordance with the law.",
+            "focus": "に即して",
+            "distractors": [
+              "にかこつけて",
+              "にひきかえ",
+              "を皮切りに"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n1-nisokushite-4",
+            "text": "時代に即した教育のあり方を考える。",
+            "reading": "じだいにそくしたきょういくのありかたをかんがえる。",
+            "translation": "We consider what kind of education fits the times.",
+            "focus": "に即した",
+            "distractors": [
+              "にあっての",
+              "に足る",
+              "をおいた"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n1-nisokushite-5",
+            "text": "個々の状況に即して、柔軟に対応する。",
+            "reading": "ここのじょうきょうにそくして、じゅうなんにたいおうする。",
+            "translation": "We respond flexibly, in line with each individual situation.",
+            "focus": "に即して",
+            "distractors": [
+              "にかこつけて",
+              "をものともせず",
+              "にたえず"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n1-nisokushite-6",
+            "text": "川に沿って桜並木が続いている。",
+            "reading": "かわにそってさくらなみきがつづいている。",
+            "translation": "A row of cherry trees runs along the river.",
+            "focus": "に沿って",
+            "distractors": [
+              "に即して",
+              "にかこつけて",
+              "にあって"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ],
+            "noOrder": true
+          }
+        ]
+      }
+    },
+    {
+      "row": 44,
+      "label": "にたえない / にたえる (cannot bear; is worth)",
+      "lesson": {
+        "id": "n1-nitaenai",
+        "level": "n1",
+        "title": "にたえない and にたえる: unbearable to; deeply; worth doing",
+        "summary": "V-dict + にたえない means too bad to watch or hear; emotion noun + にたえない means deeply feeling it; N / V-dict + にたえる means good enough to withstand or be worth.",
+        "pattern": [
+          "見る / 聞く + にたえない (unbearable)",
+          "感謝 / 憂慮 + にたえない (deeply)",
+          "N / V-dict + にたえる (worth, stands up to)"
+        ],
+        "body": [
+          "にたえない has two uses. After 見る, 聞く or 読む it says something is so bad one cannot bear to watch, hear or read it (聞くにたえない演説). After an emotion noun such as 感謝, 憂慮 or 感激 it is a formal intensifier: 感謝にたえません means I am deeply grateful. The second use belongs to speeches and letters.",
+          "にたえる, the positive form, says something is good enough to withstand an evaluation: 大人の鑑賞にたえる作品 is a work worth adults' attention. It is written and evaluative. たえる here is 堪える, usually written in kana.",
+          "The contrast example uses に足りない (恐れるに足りない): not worth doing, because it is too small. に足る and its negative judge whether something deserves an action; にたえない says it is unbearable. A common mistake is にたえない after any verb: it combines with only a few verbs of perception."
+        ],
+        "examples": [
+          {
+            "id": "n1-nitaenai-1",
+            "text": "暴言ばかりで、聞くにたえない演説だった。",
+            "reading": "ぼうげんばかりで、きくにたえないえんぜつだった。",
+            "translation": "It was a speech full of abuse, unbearable to listen to.",
+            "focus": "にたえない",
+            "distractors": [
+              "にかこつけた",
+              "そばからの",
+              "がてらの"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n1-nitaenai-2",
+            "text": "皆様のご支援には感謝にたえません。",
+            "reading": "みなさまのごしえんにはかんしゃにたえません。",
+            "translation": "I am deeply grateful for everyone's support.",
+            "focus": "にたえません",
+            "distractors": [
+              "に足りません",
+              "をおきません",
+              "までもありません"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n1-nitaenai-3",
+            "text": "彼の作品は専門家の批評にもたえる完成度だ。",
+            "reading": "かれのさくひんはせんもんかのひひょうにもたえるかんせいどだ。",
+            "translation": "His work is polished enough to stand up even to experts' criticism.",
+            "focus": "たえる",
+            "distractors": [
+              "即する",
+              "至る",
+              "かこつける"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n1-nitaenai-4",
+            "text": "この映画は大人の鑑賞にたえる作品だ。",
+            "reading": "このえいがはおとなのかんしょうにたえるさくひんだ。",
+            "translation": "This film is a work worth watching for adults too.",
+            "focus": "にたえる",
+            "distractors": [
+              "にかこつける",
+              "をおいて",
+              "に至って"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n1-nitaenai-5",
+            "text": "このような事件が続くのは、憂慮にたえない。",
+            "reading": "このようなじけんがつづくのは、ゆうりょにたえない。",
+            "translation": "That incidents like this keep happening is deeply worrying.",
+            "focus": "にたえない",
+            "distractors": [
+              "を余儀なくされない",
+              "にかこつけない",
+              "をおかない"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n1-nitaenai-6",
+            "text": "この程度の失敗は、恐れるに足りない。",
+            "reading": "このていどのしっぱいは、おそれるにたりない。",
+            "translation": "A failure of this size is nothing to fear.",
+            "focus": "に足りない",
+            "distractors": [
+              "にたえない",
+              "にかこつけない",
+              "をおかない"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "row": 45,
+      "label": "に足る (worthy of, enough to)",
+      "lesson": {
+        "id": "n1-nitaru",
+        "level": "n1",
+        "title": "に足る: worth doing, deserving",
+        "summary": "V-dict / N + に足る says that something has enough value to deserve an action: a person worthy of trust; 取るに足らない means trivial.",
+        "pattern": [
+          "V-dict / N + に足る + N",
+          "V-dict + に足らない / に足りない (not worth)"
+        ],
+        "body": [
+          "に足る follows a dictionary-form verb or a noun of evaluation (信頼, 注目, 評価する, 納得させる) and says that something is good or important enough to deserve it. It mostly stands before a noun (信頼に足る人物) or ends in ものだ. The negative に足らない / に足りない says it is not worth it; 取るに足らない is a fixed phrase for trivial.",
+          "It is a formal written expression. に値する (deserving of) is very close and also formal, typically with a noun of praise.",
+          "The contrast example uses に値する (この本は一読に値する). に値する usually follows a noun such as 一読, 称賛 or 注目 and is almost always positive; に足る prefers a verb and often appears in the negative. A common mistake is the ない form of the verb before it (信頼しないに足る): only the dictionary form or a noun fits."
+        ],
+        "examples": [
+          {
+            "id": "n1-nitaru-1",
+            "text": "彼は信頼に足る人物だ。",
+            "reading": "かれはしんらいにたるじんぶつだ。",
+            "translation": "He is a person worthy of trust.",
+            "focus": "に足る",
+            "distractors": [
+              "にかこつけた",
+              "をおいた",
+              "ずくめの"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n1-nitaru-2",
+            "text": "論文として評価するに足る内容ではない。",
+            "reading": "ろんぶんとしてひょうかするにたるないようではない。",
+            "translation": "The content does not deserve to be assessed as a paper.",
+            "focus": "に足る",
+            "distractors": [
+              "にかこつけた",
+              "そばからの",
+              "をおいた"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n1-nitaru-3",
+            "text": "取るに足らない問題で悩む必要はない。",
+            "reading": "とるにたらないもんだいでなやむひつようはない。",
+            "translation": "There's no need to worry over a trivial problem.",
+            "focus": "足らない",
+            "distractors": [
+              "たえない",
+              "かこつけない",
+              "即さない"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n1-nitaru-4",
+            "text": "彼の説明は、私たちを納得させるに足るものだった。",
+            "reading": "かれのせつめいは、わたしたちをなっとくさせるにたるものだった。",
+            "translation": "His explanation was enough to convince us.",
+            "focus": "に足る",
+            "distractors": [
+              "にたえない",
+              "がてらの",
+              "をおいた"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n1-nitaru-5",
+            "text": "これは注目するに足る研究成果だ。",
+            "reading": "これはちゅうもくするにたるけんきゅうせいかだ。",
+            "translation": "This is a research result worth paying attention to.",
+            "focus": "に足る",
+            "distractors": [
+              "にたえない",
+              "ずくめの",
+              "がてらの"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n1-nitaru-6",
+            "text": "この本は一読に値する。",
+            "reading": "このほんはいちどくにあたいする。",
+            "translation": "This book is worth reading.",
+            "focus": "値する",
+            "distractors": [
+              "かこつける",
+              "即する",
+              "至る"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "row": 46,
+      "label": "にひきかえ (in contrast to)",
+      "lesson": {
+        "id": "n1-nihikikae",
+        "level": "n1",
+        "title": "にひきかえ: in contrast to, unlike",
+        "summary": "N + にひきかえ contrasts two people or things that are opposite, usually with a judgement that one is better: unlike his brother, he is hardworking.",
+        "pattern": [
+          "N / plain form + の + にひきかえ、(the opposite)"
+        ],
+        "body": [
+          "にひきかえ follows a noun or a clause turned into a noun with の (練習しているのにひきかえ). It sets up two things of the same kind, a brother and a sister, last summer and this one, and says the second is the opposite of the first. The sentence carries the speaker's evaluation, often praise of one and criticism of the other.",
+          "It is written or careful speech. に比べて is a neutral comparison of degree; にひきかえ stresses opposite qualities.",
+          "The contrast example uses に反して (予想に反して、試験は簡単だった): contrary to an expectation, a wish or a rule. に反して compares a result with what was expected; にひきかえ compares two real things. A common mistake is にひきかえ with an expectation (予想にひきかえ)."
+        ],
+        "examples": [
+          {
+            "id": "n1-nihikikae-1",
+            "text": "兄にひきかえ、弟はまじめで努力家だ。",
+            "reading": "あににひきかえ、おとうとはまじめでどりょくかだ。",
+            "translation": "Unlike his older brother, the younger one is serious and hardworking.",
+            "focus": "にひきかえ",
+            "distractors": [
+              "にかこつけて",
+              "に即して",
+              "をおいて"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n1-nihikikae-2",
+            "text": "去年の猛暑にひきかえ、今年の夏は過ごしやすい。",
+            "reading": "きょねんのもうしょにひきかえ、ことしのなつはすごしやすい。",
+            "translation": "Unlike last year's heatwave, this summer is pleasant.",
+            "focus": "にひきかえ",
+            "distractors": [
+              "にかこつけて",
+              "に至って",
+              "に足りて"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n1-nihikikae-3",
+            "text": "前の担当者にひきかえ、新しい人は対応が丁寧だ。",
+            "reading": "まえのたんとうしゃにひきかえ、あたらしいひとはたいおうがていねいだ。",
+            "translation": "Unlike the person before, the new one deals with us courteously.",
+            "focus": "にひきかえ",
+            "distractors": [
+              "を皮切りに",
+              "にかこつけて",
+              "にあって"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n1-nihikikae-4",
+            "text": "活発だった姉にひきかえ、私は内気な子どもだった。",
+            "reading": "かっぱつだったあねにひきかえ、わたしはうちきなこどもだった。",
+            "translation": "Unlike my lively older sister, I was a shy child.",
+            "focus": "にひきかえ",
+            "distractors": [
+              "を皮切りに",
+              "をおいて",
+              "にかこつけて"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n1-nihikikae-5",
+            "text": "彼女が毎日練習しているのにひきかえ、私は何もしていない。",
+            "reading": "かのじょがまいにちれんしゅうしているのにひきかえ、わたしはなにもしていない。",
+            "translation": "While she practises every day, I'm doing nothing at all.",
+            "focus": "にひきかえ",
+            "distractors": [
+              "にもまして",
+              "にかこつけて",
+              "を皮切りに"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n1-nihikikae-6",
+            "text": "予想に反して、試験は簡単だった。",
+            "reading": "よそうにはんして、しけんはかんたんだった。",
+            "translation": "Contrary to my expectations, the exam was easy.",
+            "focus": "に反して",
+            "distractors": [
+              "にひきかえ",
+              "にかこつけて",
+              "に即して"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ],
+            "noOrder": true
+          }
+        ]
+      }
+    },
+    {
+      "row": 47,
+      "label": "にもまして (even more than)",
+      "lesson": {
+        "id": "n1-nimomashite",
+        "level": "n1",
+        "title": "にもまして: even more than, above all",
+        "summary": "N + にもまして says that something is even greater than another thing that was already considerable: even hotter than usual years; 何にもまして means above all.",
+        "pattern": [
+          "N + にもまして + A / V",
+          "何にもまして / 誰にもまして (above all, more than anyone)"
+        ],
+        "body": [
+          "にもまして follows a noun: a time (例年, 以前, 前回, かつて) or a thing already at a high level. It says the present case goes beyond it. With a question word it becomes above all: 何にもまして大切なのは… or 誰にもまして. It is formal and written; in speech people say よりもっと.",
+          "The も implies that the compared item is already high: 例年にもまして暑い means usual years are hot too, and this year is hotter.",
+          "The contrast example uses plain より (思ったより早く片付いた). より compares any two things or a clause; にもまして needs a noun and implies the base is already high. A common mistake is にもまして after a verb clause (思ったにもまして)."
+        ],
+        "examples": [
+          {
+            "id": "n1-nimomashite-1",
+            "text": "例年にもまして暑い夏になった。",
+            "reading": "れいねんにもましてあついなつになった。",
+            "translation": "It has turned into a summer even hotter than usual.",
+            "focus": "にもまして",
+            "distractors": [
+              "にかこつけて",
+              "に即して",
+              "をおいて"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n1-nimomashite-2",
+            "text": "仕事は以前にもまして忙しくなった。",
+            "reading": "しごとはいぜんにもましていそがしくなった。",
+            "translation": "Work has become even busier than before.",
+            "focus": "にもまして",
+            "distractors": [
+              "にかこつけて",
+              "に至って",
+              "にあって"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ],
+            "noOrder": true
+          },
+          {
+            "id": "n1-nimomashite-3",
+            "text": "何にもまして大切なのは、家族の健康だ。",
+            "reading": "なににもましてたいせつなのは、かぞくのけんこうだ。",
+            "translation": "What matters above all is my family's health.",
+            "focus": "にもまして",
+            "distractors": [
+              "をおいて",
+              "にひきかえ",
+              "にかこつけて"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n1-nimomashite-4",
+            "text": "前回にもまして素晴らしい演奏だった。",
+            "reading": "ぜんかいにもましてすばらしいえんそうだった。",
+            "translation": "It was an even better performance than last time.",
+            "focus": "にもまして",
+            "distractors": [
+              "にかこつけて",
+              "に即して",
+              "に足りて"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n1-nimomashite-5",
+            "text": "防災への関心は、かつてにもまして高まっている。",
+            "reading": "ぼうさいへのかんしんは、かつてにもましてたかまっている。",
+            "translation": "Interest in disaster preparedness is higher than ever.",
+            "focus": "にもまして",
+            "distractors": [
+              "にかこつけて",
+              "にあって",
+              "を皮切りに"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ],
+            "noOrder": true
+          },
+          {
+            "id": "n1-nimomashite-6",
+            "text": "思ったより早く仕事が片付いた。",
+            "reading": "おもったよりはやくしごとがかたづいた。",
+            "translation": "The work got done sooner than I expected.",
+            "focus": "より",
+            "distractors": [
+              "にもまして",
+              "にひきかえ",
+              "ゆえ"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ],
+            "noOrder": true
+          }
+        ]
+      }
+    },
+    {
+      "row": 48,
+      "label": "の至り / の極み (the height of)",
+      "lesson": {
+        "id": "n1-no-itari",
+        "level": "n1",
+        "title": "の至り and の極み: the height of, utmost",
+        "summary": "N + の至り and N + の極み express the highest degree of a feeling or state: 光栄の至り (a great honour), 贅沢の極み (the height of luxury).",
+        "pattern": [
+          "N (光栄 / 恐縮 / 若気) + の至り",
+          "N (感激 / 贅沢 / 疲労) + の極み"
+        ],
+        "body": [
+          "の至り follows a small set of nouns, mainly 光栄, 恐縮 and 感激, and is used in formal speeches and letters: 光栄の至りです means it is the greatest honour. 若気の至り is a fixed phrase for youthful folly, used to excuse past mistakes.",
+          "の極み is wider: it follows nouns of feeling or state, positive or negative (感激, 贅沢, 疲労, 無責任), and is also formal. Both are attached to a noun with の and usually end in だ / です or take に / で. The two overlap with 光栄 and 感激; elsewhere they are not interchangeable.",
+          "The contrast example uses のあまり (驚きのあまり、声も出なかった): a feeling so strong it caused something. のあまり is followed by a result; の至り and の極み simply name the peak and end the thought. A common mistake is の至り after any noun (疲労の至り): its nouns are few and fixed."
+        ],
+        "examples": [
+          {
+            "id": "n1-no-itari-1",
+            "text": "このような賞をいただき、光栄の至りです。",
+            "reading": "このようなしょうをいただき、こうえいのいたりです。",
+            "translation": "It is a great honour to receive such an award.",
+            "focus": "の至り",
+            "distractors": [
+              "のずくめ",
+              "のあまり",
+              "のごとき"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n1-no-itari-2",
+            "text": "若気の至りで、無茶なことをしたものだ。",
+            "reading": "わかげのいたりで、むちゃなことをしたものだ。",
+            "translation": "In my youthful folly, I did some reckless things.",
+            "focus": "の至り",
+            "distractors": [
+              "の極み",
+              "のゆえ",
+              "ずくめ"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n1-no-itari-3",
+            "text": "世界的な指揮者と共演でき、感激の極みだ。",
+            "reading": "せかいてきなしきしゃときょうえんでき、かんげきのきわみだ。",
+            "translation": "Being able to perform with a world-class conductor is the greatest thrill.",
+            "focus": "の極み",
+            "distractors": [
+              "のあまり",
+              "のごとき",
+              "までもない"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n1-no-itari-4",
+            "text": "露天風呂から海を眺めるとは、贅沢の極みだ。",
+            "reading": "ろてんぶろからうみをながめるとは、ぜいたくのきわみだ。",
+            "translation": "Gazing at the sea from an open-air bath is the height of luxury.",
+            "focus": "の極み",
+            "distractors": [
+              "のかたわら",
+              "のあまり",
+              "のごとき"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n1-no-itari-5",
+            "text": "疲労の極みに達し、その場に倒れ込んでしまった。",
+            "reading": "ひろうのきわみにたっし、そのばにたおれこんでしまった。",
+            "translation": "Utterly exhausted, I collapsed on the spot.",
+            "focus": "の極み",
+            "distractors": [
+              "の至り",
+              "のあまり",
+              "ずくめ"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n1-no-itari-6",
+            "text": "驚きのあまり、声も出なかった。",
+            "reading": "おどろきのあまり、こえもでなかった。",
+            "translation": "I was so surprised I couldn't make a sound.",
+            "focus": "のあまり",
+            "distractors": [
+              "の至り",
+              "ずくめ",
+              "のごとき"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "row": 49,
+      "label": "はおろか (let alone)",
+      "lesson": {
+        "id": "n1-waoroka",
+        "level": "n1",
+        "title": "はおろか: not to mention, let alone",
+        "summary": "N + はおろか、M も / さえ … names an obvious case and then an even more basic one, usually negative: I can't read hiragana, let alone kanji.",
+        "pattern": [
+          "N1 + はおろか、N2 も / さえ / まで + (negative)",
+          "V-dict こと + はおろか"
+        ],
+        "body": [
+          "はおろか follows a noun or V-dict こと. The first item is the more demanding case, so obviously excluded; the second, marked with も, さえ or まで, is a more basic case, and the sentence says even that is not so. The predicate is mostly negative (読めない, ない, 行ったことがない) and the tone is one of surprise or complaint.",
+          "It is written and formal-neutral. The main clause is a statement of fact, not a request, a wish or an order.",
+          "The contrast example uses どころか (雨はやむどころか、ますます強くなった): far from X, the opposite happened. どころか can follow a verb directly and introduces a reversal; はおろか lists two cases on the same scale. A common mistake is はおろか in a positive sentence of praise, where もちろん is natural."
+        ],
+        "examples": [
+          {
+            "id": "n1-waoroka-1",
+            "text": "漢字はおろか、ひらがなもまだ読めない。",
+            "reading": "かんじはおろか、ひらがなもまだよめない。",
+            "translation": "I can't even read hiragana yet, let alone kanji.",
+            "focus": "はおろか",
+            "distractors": [
+              "をおいて",
+              "にひきかえ",
+              "ならでは"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ],
+            "noOrder": true
+          },
+          {
+            "id": "n1-waoroka-2",
+            "text": "海外はおろか、隣の県にも行ったことがない。",
+            "reading": "かいがいはおろか、となりのけんにもいったことがない。",
+            "translation": "I've never even been to the next prefecture, let alone abroad.",
+            "focus": "はおろか",
+            "distractors": [
+              "に至って",
+              "にもまして",
+              "をものともせず"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n1-waoroka-3",
+            "text": "忙しくて、休日はおろか睡眠時間さえない。",
+            "reading": "いそがしくて、きゅうじつはおろかすいみんじかんさえない。",
+            "translation": "I'm so busy I don't even have time to sleep, never mind days off.",
+            "focus": "はおろか",
+            "distractors": [
+              "にひきかえ",
+              "をおいて",
+              "ならでは"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n1-waoroka-4",
+            "text": "骨折して、走ることはおろか歩くこともできない。",
+            "reading": "こっせつして、はしることはおろかあるくこともできない。",
+            "translation": "With a broken bone, I can't even walk, let alone run.",
+            "focus": "はおろか",
+            "distractors": [
+              "にもまして",
+              "をおいて",
+              "にかこつけて"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n1-waoroka-5",
+            "text": "その村には病院はおろか、コンビニさえない。",
+            "reading": "そのむらにはびょういんはおろか、コンビニさえない。",
+            "translation": "That village does not even have a convenience store, let alone a hospital.",
+            "focus": "はおろか",
+            "distractors": [
+              "にひきかえ",
+              "ならでは",
+              "とあって"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n1-waoroka-6",
+            "text": "雨はやむどころか、ますます強くなった。",
+            "reading": "あめはやむどころか、ますますつよくなった。",
+            "translation": "Far from stopping, the rain got even heavier.",
+            "focus": "どころか",
+            "distractors": [
+              "はおろか",
+              "ばかりか",
+              "にひきかえ"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "row": 50,
+      "label": "べからず (must not)",
+      "lesson": {
+        "id": "n1-bekarazu",
+        "level": "n1",
+        "title": "べからず: must not, do not",
+        "summary": "V-dict + べからず is a written prohibition found on signs and in sayings: 芝生に入るべからず (keep off the grass); before a noun it becomes べからざる.",
+        "pattern": [
+          "V-dict + べからず (する → するべからず / すべからず)",
+          "V-dict + べからざる + N (must not be …)"
+        ],
+        "body": [
+          "べからず follows the dictionary form of a verb (する can be するべからず or すべからず) and forbids the action. It is classical in form and appears on notices and in rules; old sayings such as 初心忘るべからず (never forget the spirit you started with) use it too. Its noun-modifying form is べからざる: 忘れるべからざる功績 is an achievement that must not be forgotten.",
+          "Because it is a command to everyone, it does not address a particular person and is not used in conversation, except as a joke.",
+          "The contrast example uses べきだ (謝るべきだと思う), which states what one should do and is ordinary written and spoken Japanese. べからず is its old negative used as a prohibition; it cannot take だ. A common mistake is to write べからずだ or to put べからず before a noun instead of べからざる."
+        ],
+        "examples": [
+          {
+            "id": "n1-bekarazu-1",
+            "text": "芝生に入るべからず。",
+            "reading": "しばふにはいるべからず。",
+            "translation": "Keep off the grass.",
+            "focus": "べからず",
+            "distractors": [
+              "まじき",
+              "べく",
+              "ずくめ"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n1-bekarazu-2",
+            "text": "関係者以外、立ち入るべからず。",
+            "reading": "かんけいしゃいがい、たちいるべからず。",
+            "translation": "No entry except for authorized persons.",
+            "focus": "べからず",
+            "distractors": [
+              "べく",
+              "まじき",
+              "べきで"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n1-bekarazu-3",
+            "text": "展示品に手を触れるべからず。",
+            "reading": "てんじひんにてをふれるべからず。",
+            "translation": "Do not touch the exhibits.",
+            "focus": "べからず",
+            "distractors": [
+              "べく",
+              "まじき",
+              "ずくめ"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n1-bekarazu-4",
+            "text": "許可なく撮影すべからず。",
+            "reading": "きょかなくさつえいすべからず。",
+            "translation": "No photography without permission.",
+            "focus": "べからず",
+            "distractors": [
+              "べく",
+              "まじき",
+              "がてら"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n1-bekarazu-5",
+            "text": "彼の功績は、決して忘れるべからざるものだ。",
+            "reading": "かれのこうせきは、けっしてわすれるべからざるものだ。",
+            "translation": "His achievements are something that must never be forgotten.",
+            "focus": "べからざる",
+            "distractors": [
+              "べからず",
+              "べく",
+              "まじく"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n1-bekarazu-6",
+            "text": "君は彼に謝るべきだと思う。",
+            "reading": "きみはかれにあやまるべきだとおもう。",
+            "translation": "I think you should apologize to him.",
+            "focus": "べきだ",
+            "distractors": [
+              "べからずだ",
+              "べくだ",
+              "まじきだ"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "row": 50,
+      "label": "べく (in order to)",
+      "lesson": {
+        "id": "n1-beku",
+        "level": "n1",
+        "title": "べく: in order to, with the aim of",
+        "summary": "V-dict + べく states the purpose of a deliberate action in formal writing: he went to America alone in order to realize his dream.",
+        "pattern": [
+          "V-dict + べく、(deliberate action) (する → するべく / すべく)",
+          "V-dict + べくして + V-た (was bound to happen)"
+        ],
+        "body": [
+          "べく follows the dictionary form of a verb; する usually becomes すべく. It gives the purpose of a deliberate, often serious, effort by the subject (渡米した, 調査委員会が設置された, 全力を尽くします). It belongs to news, reports and formal speeches. The main clause cannot be a request or a command (べく…してください is wrong).",
+          "The fixed phrase V べくして V-た (起こるべくして起こった) means something happened as it was bound to.",
+          "The contrast example uses ために (家を買うために、毎月貯金している), the everyday way to state a purpose. べく means the same but is formal and literary, and only follows verbs. A common mistake is to confuse べく with べからず: べく states an aim, べからず forbids."
+        ],
+        "examples": [
+          {
+            "id": "n1-beku-1",
+            "text": "夢を実現すべく、単身で渡米した。",
+            "reading": "ゆめをじつげんすべく、たんしんでとべいした。",
+            "translation": "To make his dream come true, he went to America on his own.",
+            "focus": "すべく",
+            "distractors": [
+              "すべからず",
+              "すべき",
+              "するまじき"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n1-beku-2",
+            "text": "事故の原因を究明すべく、調査委員会が設置された。",
+            "reading": "じこのげんいんをきゅうめいすべく、ちょうさいいんかいがせっちされた。",
+            "translation": "An investigative committee was set up to find the cause of the accident.",
+            "focus": "べく",
+            "distractors": [
+              "べからず",
+              "べき",
+              "まじき"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n1-beku-3",
+            "text": "期待に応えるべく、全力を尽くします。",
+            "reading": "きたいにこたえるべく、ぜんりょくをつくします。",
+            "translation": "I will do my utmost to live up to your expectations.",
+            "focus": "べく",
+            "distractors": [
+              "べからず",
+              "まじく",
+              "ばかりに"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n1-beku-4",
+            "text": "彼に会うべく駅で待ったが、ついに現れなかった。",
+            "reading": "かれにあうべくえきでまったが、ついにあらわれなかった。",
+            "translation": "I waited at the station to meet him, but he never showed up.",
+            "focus": "べく",
+            "distractors": [
+              "べからず",
+              "まじく",
+              "がてら"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n1-beku-5",
+            "text": "起こるべくして起こった事故だ。",
+            "reading": "おこるべくしておこったじこだ。",
+            "translation": "It was an accident that was bound to happen.",
+            "focus": "べくして",
+            "distractors": [
+              "べからずして",
+              "まじくして",
+              "ばかりにして"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n1-beku-6",
+            "text": "家を買うために、毎月貯金している。",
+            "reading": "いえをかうために、まいつきちょきんしている。",
+            "translation": "I'm saving every month to buy a house.",
+            "focus": "ために",
+            "distractors": [
+              "べからず",
+              "まじき",
+              "そばから"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "row": 51,
+      "label": "まじき (unacceptable for)",
+      "lesson": {
+        "id": "n1-majiki",
+        "level": "n1",
+        "title": "まじき: conduct unacceptable for someone",
+        "summary": "N にあるまじき + N condemns behaviour that someone in a role must never show: conduct unbecoming of a teacher.",
+        "pattern": [
+          "N(role) + にあるまじき + N (行為 / 発言 / 態度)",
+          "N として + V-dict + まじき + N"
+        ],
+        "body": [
+          "まじき is the attributive form of classical まじ (must not). It follows the dictionary form of a verb and stands before a noun. The most frequent frame is N にあるまじき N: 教師にあるまじき行為, 政治家にあるまじき暴言. With として, other verbs are possible: 公務員として言うまじき発言. 許すまじき means unforgivable.",
+          "It is a strong written condemnation, used in news, editorials and formal criticism; it is never used of oneself in praise.",
+          "The contrast example uses たる (裁判官たる者): N たる N means one who is worthy of being N, used to state what such a person should be. たる sets the ideal; まじき names the conduct that betrays it. A common mistake is to end a sentence with まじき: it must stand before a noun."
+        ],
+        "examples": [
+          {
+            "id": "n1-majiki-1",
+            "text": "教師にあるまじき行為だ。",
+            "reading": "きょうしにあるまじきこういだ。",
+            "translation": "That is conduct unbecoming of a teacher.",
+            "focus": "まじき",
+            "distractors": [
+              "べからず",
+              "べく",
+              "まい"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n1-majiki-2",
+            "text": "患者の情報を漏らすとは、医師としてあるまじきことだ。",
+            "reading": "かんじゃのじょうほうをもらすとは、いしとしてあるまじきことだ。",
+            "translation": "Leaking patient information is unacceptable for a doctor.",
+            "focus": "あるまじき",
+            "distractors": [
+              "あるべく",
+              "あるべからず",
+              "あるならでは"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n1-majiki-3",
+            "text": "政治家にあるまじき暴言が批判を浴びた。",
+            "reading": "せいじかにあるまじきぼうげんがひはんをあびた。",
+            "translation": "An outburst unworthy of a politician drew heavy criticism.",
+            "focus": "まじき",
+            "distractors": [
+              "べからず",
+              "べく",
+              "たる"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n1-majiki-4",
+            "text": "許すまじき裏切り行為だ。",
+            "reading": "ゆるすまじきうらぎりこういだ。",
+            "translation": "It is an unforgivable act of betrayal.",
+            "focus": "まじき",
+            "distractors": [
+              "べからず",
+              "べく",
+              "んばかりの"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n1-majiki-5",
+            "text": "公務員として言うまじき発言だった。",
+            "reading": "こうむいんとしていうまじきはつげんだった。",
+            "translation": "It was a remark a public servant should never make.",
+            "focus": "まじき",
+            "distractors": [
+              "べからず",
+              "べく",
+              "がてらの"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n1-majiki-6",
+            "text": "裁判官たる者、私情を挟むべきではない。",
+            "reading": "さいばんかんたるもの、しじょうをはさむべきではない。",
+            "translation": "A judge must never let personal feelings interfere.",
+            "focus": "たる",
+            "distractors": [
+              "まじき",
+              "ならでは",
+              "ずくめの"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "row": 52,
+      "label": "までもない / までだ (no need to; will simply)",
+      "lesson": {
+        "id": "n1-mademonai",
+        "level": "n1",
+        "title": "までもない and までだ: no need to; I will simply, I merely",
+        "summary": "V-dict + までもない says an action is unnecessary because the matter is obvious or small; V-dict + までだ says that one will simply take the remaining course; V-た + までだ says one merely did something.",
+        "pattern": [
+          "V-dict + までもない / までもなく",
+          "V-dict + までだ (resolve: I will just …)",
+          "V-た + までだ (I only did …)"
+        ],
+        "body": [
+          "までもない follows the dictionary form: the action is not needed because the point is clear or minor (病院に行くまでもない). 言うまでもない and 言うまでもなく (needless to say) are the commonest forms; までもなく links to a following clause.",
+          "までだ after the dictionary form shows resolve: if nothing else works, I will just do this (一から挑戦するまでだ), often after ても or なら. After the た form it plays down one's own action: I merely did it, nothing more (事実を述べたまでです). Both are formal-neutral.",
+          "The contrast example uses しかない (歩いて帰るしかない): there is no other choice, said with resignation. までだ shares the sense but adds calm determination. A common mistake is to use the ない form before までもない (言わないまでもない): that belongs to ないまでも, a different pattern."
+        ],
+        "examples": [
+          {
+            "id": "n1-mademonai-1",
+            "text": "わざわざ言うまでもないが、遅刻は厳禁だ。",
+            "reading": "わざわざいうまでもないが、ちこくはげんきんだ。",
+            "translation": "It hardly needs saying, but lateness is strictly forbidden.",
+            "focus": "までもない",
+            "distractors": [
+              "ないまでも",
+              "がてらだ",
+              "ずくめだ"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n1-mademonai-2",
+            "text": "この程度の傷なら、病院に行くまでもない。",
+            "reading": "このていどのきずなら、びょういんにいくまでもない。",
+            "translation": "A cut this small doesn't need a trip to the hospital.",
+            "focus": "までもない",
+            "distractors": [
+              "ないまでも",
+              "ずくめだ",
+              "かたわらだ"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n1-mademonai-3",
+            "text": "確認するまでもなく、答えは明らかだった。",
+            "reading": "かくにんするまでもなく、こたえはあきらかだった。",
+            "translation": "The answer was obvious without even checking.",
+            "focus": "までもなく",
+            "distractors": [
+              "ないまでも",
+              "がてら",
+              "そばから"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n1-mademonai-4",
+            "text": "反対されても、自分の道を進むまでだ。",
+            "reading": "はんたいされても、じぶんのみちをすすむまでだ。",
+            "translation": "Even if they oppose me, I'll simply go my own way.",
+            "focus": "までだ",
+            "distractors": [
+              "ないまでも",
+              "ずくめだ",
+              "がてらだ"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n1-mademonai-5",
+            "text": "だめなら、また一から挑戦するまでだ。",
+            "reading": "だめなら、またいちからちょうせんするまでだ。",
+            "translation": "If it fails, I'll just try again from scratch.",
+            "focus": "までだ",
+            "distractors": [
+              "ないまでも",
+              "かたわらだ",
+              "ずくめだ"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n1-mademonai-6",
+            "text": "私は事実を述べたまでです。",
+            "reading": "わたしはじじつをのべたまでです。",
+            "translation": "I merely stated the facts.",
+            "focus": "までです",
+            "distractors": [
+              "までもないです",
+              "ずくめです",
+              "がてらです"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n1-mademonai-7",
+            "text": "終電を逃したので、歩いて帰るしかない。",
+            "reading": "しゅうでんをのがしたので、あるいてかえるしかない。",
+            "translation": "I missed the last train, so I have no choice but to walk home.",
+            "focus": "しかない",
+            "distractors": [
+              "ないまでも",
+              "かたわらだ",
+              "ずくめだ"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "row": 53,
+      "label": "もさることながら (not only, but also)",
+      "lesson": {
+        "id": "n1-mosarukotonagara",
+        "level": "n1",
+        "title": "もさることながら: X, of course, but even more Y",
+        "summary": "N1 + もさることながら、N2 + も / が … grants that N1 matters and then stresses N2 even more: the taste is good, of course, but the atmosphere is wonderful too.",
+        "pattern": [
+          "N1 + もさることながら、N2 + も / が + (evaluation)"
+        ],
+        "body": [
+          "もさることながら follows a noun. The first item is acknowledged as good or important; the second is the one the speaker really wants to highlight, marked with も or with が. Both items belong to the same thing being judged (a restaurant's taste and atmosphere, a candidate's ability and character).",
+          "It is written and formal-neutral, at home in reviews, speeches and essays, and the tone is usually positive or evaluative, not a plain list of facts.",
+          "The contrast example uses はもちろん (週末はもちろん、平日も混んでいる): X goes without saying, and Y as well. はもちろん is a neutral addition and fits plain facts; もさることながら weighs two qualities and leans on the second. A common mistake is to confuse it with はおろか, which mostly comes before a negative predicate and stresses how little is true."
+        ],
+        "examples": [
+          {
+            "id": "n1-mosarukotonagara-1",
+            "text": "味もさることながら、店の雰囲気も素晴らしい。",
+            "reading": "あじもさることながら、みせのふんいきもすばらしい。",
+            "translation": "The food is good, of course, but the atmosphere of the place is wonderful too.",
+            "focus": "もさることながら",
+            "distractors": [
+              "をよそに",
+              "にひきかえ",
+              "ならでは"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n1-mosarukotonagara-2",
+            "text": "能力もさることながら、彼の人柄が評価された。",
+            "reading": "のうりょくもさることながら、かれのひとがらがひょうかされた。",
+            "translation": "His ability counted, but it was his character above all that was valued.",
+            "focus": "もさることながら",
+            "distractors": [
+              "をよそに",
+              "にかこつけて",
+              "をおいて"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n1-mosarukotonagara-3",
+            "text": "デザインもさることながら、使いやすさにこだわった。",
+            "reading": "デザインもさることながら、つかいやすさにこだわった。",
+            "translation": "Design mattered, of course, but we paid special attention to ease of use.",
+            "focus": "もさることながら",
+            "distractors": [
+              "をよそに",
+              "にひきかえ",
+              "とばかりに"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n1-mosarukotonagara-4",
+            "text": "成績もさることながら、日々の努力を大切にしてほしい。",
+            "reading": "せいせきもさることながら、ひびのどりょくをたいせつにしてほしい。",
+            "translation": "Grades matter, but I want you to value your daily effort even more.",
+            "focus": "もさることながら",
+            "distractors": [
+              "をよそに",
+              "をおいて",
+              "ならでは"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n1-mosarukotonagara-5",
+            "text": "選手の努力もさることながら、監督の采配が光った試合だった。",
+            "reading": "せんしゅのどりょくもさることながら、かんとくのさいはいがひかったしあいだった。",
+            "translation": "The players worked hard, but it was the coach's tactics that shone in this match.",
+            "focus": "もさることながら",
+            "distractors": [
+              "をよそに",
+              "をおいて",
+              "ならでは"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n1-mosarukotonagara-6",
+            "text": "この店は週末はもちろん、平日も混んでいる。",
+            "reading": "このみせはしゅうまつはもちろん、へいじつもこんでいる。",
+            "translation": "This shop is crowded not only at weekends but on weekdays too.",
+            "focus": "はもちろん",
+            "distractors": [
+              "をよそに",
+              "にひきかえ",
+              "をおいて"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "row": 54,
+      "label": "ものを (if only; and yet)",
+      "lesson": {
+        "id": "n1-monowo",
+        "level": "n1",
+        "title": "ものを: if only, it would have been fine to …, and yet",
+        "summary": "Plain form + ものを expresses regret or reproach that something easy was not done: if you had only asked me; an apology would have settled it, and yet he kept being stubborn.",
+        "pattern": [
+          "V-ば / V-たら + よかった / 済んだ + ものを。",
+          "plain form + ものを、(what actually happened)"
+        ],
+        "body": [
+          "ものを follows a plain form, typically a counterfactual with ば (相談してくれればよかった, 謝れば済んだ, 言ってくれれば手伝った). It says the better outcome was within reach, and the speaker is frustrated or regretful that it did not happen. It can end the sentence, leaving the complaint unsaid, or lead into what really happened.",
+          "It is literary and emotional; in speech のに is the everyday equivalent (相談してくれればよかったのに).",
+          "The contrast example uses ものの (大学には入ったものの、授業についていけない): although a real fact is true, the expected result does not follow. ものの concedes a fact; ものを laments or reproaches, usually about a better outcome that was within reach. A common mistake is ものを in a neutral \"although\" sentence with no regret or reproach."
+        ],
+        "examples": [
+          {
+            "id": "n1-monowo-1",
+            "text": "一言相談してくれればよかったものを。",
+            "reading": "ひとことそうだんしてくれればよかったものを。",
+            "translation": "If only you had said a word to me about it.",
+            "focus": "ものを",
+            "distractors": [
+              "ものの",
+              "ものなら",
+              "ところを"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n1-monowo-2",
+            "text": "謝れば済んだものを、意地を張り続けた。",
+            "reading": "あやまればすんだものを、いじをはりつづけた。",
+            "translation": "An apology would have settled it, yet he kept up his stubbornness.",
+            "focus": "ものを",
+            "distractors": [
+              "ものなら",
+              "ばかりに",
+              "とたんに"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n1-monowo-3",
+            "text": "黙っていればいいものを、余計なことを言ってしまった。",
+            "reading": "だまっていればいいものを、よけいなことをいってしまった。",
+            "translation": "I should have kept quiet, but I went and said something unnecessary.",
+            "focus": "ものを",
+            "distractors": [
+              "ものなら",
+              "ばかりに",
+              "そばから"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n1-monowo-4",
+            "text": "もっと早く病院に行っていれば、すぐに治ったものを。",
+            "reading": "もっとはやくびょういんにいっていれば、すぐになおったものを。",
+            "translation": "If he had gone to the hospital sooner, he would have got better quickly.",
+            "focus": "ものを",
+            "distractors": [
+              "ものの",
+              "ものなら",
+              "ばかりに"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n1-monowo-5",
+            "text": "少し待てば安く買えたものを、焦って買ってしまった。",
+            "reading": "すこしまてばやすくかえたものを、あせってかってしまった。",
+            "translation": "If I had waited a little I could have bought it cheaper, but I rushed into it.",
+            "focus": "ものを",
+            "distractors": [
+              "ものなら",
+              "とたんに",
+              "ばかりか"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n1-monowo-6",
+            "text": "大学には入ったものの、授業についていけない。",
+            "reading": "だいがくにはいったものの、じゅぎょうについていけない。",
+            "translation": "I got into university, but I can't keep up with the classes.",
+            "focus": "ものの",
+            "distractors": [
+              "ものを",
+              "ものなら",
+              "ばかりか"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "row": 55,
+      "label": "ゆえ(に) (because of, due to)",
+      "lesson": {
+        "id": "n1-yueni",
+        "level": "n1",
+        "title": "ゆえ(に): because of, owing to",
+        "summary": "N / plain form + ゆえ(に) gives a reason in formal written style; ゆえの + N names something caused by it: a mistake born of youth.",
+        "pattern": [
+          "N + ゆえ(に)、… / N + ゆえの + N",
+          "plain form (な-A / N である) + が + ゆえに"
+        ],
+        "body": [
+          "ゆえ follows a noun directly (若さゆえ, 貧しさゆえに, 経験不足ゆえに) or a plain-form clause, often with が in between (立場であるがゆえに, 愛するがゆえに). ゆえに links to a following clause, ゆえの to a noun. It also appears alone at the start of a sentence as therefore in logic and mathematics.",
+          "It is old-fashioned and formal, used in essays, speeches and literary writing. がゆえに stresses precisely because.",
+          "The contrast example uses ため (大雪のため、列車が運休した), the standard written way to give a cause, common in announcements. ため needs の after a noun; ゆえ attaches to the noun directly. A common mistake is ゆえ in casual speech, where it sounds theatrical."
+        ],
+        "examples": [
+          {
+            "id": "n1-yueni-1",
+            "text": "若さゆえの過ちだった。",
+            "reading": "わかさゆえのあやまちだった。",
+            "translation": "It was a mistake born of youth.",
+            "focus": "ゆえの",
+            "distractors": [
+              "ながらの",
+              "ずくめの",
+              "とあっての"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n1-yueni-2",
+            "text": "経験不足ゆえに、判断を誤ってしまった。",
+            "reading": "けいけんぶそくゆえに、はんだんをあやまってしまった。",
+            "translation": "Owing to my lack of experience, I made the wrong call.",
+            "focus": "ゆえに",
+            "distractors": [
+              "かたわら",
+              "にひきかえ",
+              "ならでは"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n1-yueni-3",
+            "text": "貧しさゆえに、進学をあきらめた。",
+            "reading": "まずしさゆえに、しんがくをあきらめた。",
+            "translation": "Because of poverty, he gave up on further education.",
+            "focus": "ゆえに",
+            "distractors": [
+              "ながらも",
+              "はおろか",
+              "ならでは"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n1-yueni-4",
+            "text": "責任ある立場であるがゆえに、発言には慎重さが求められる。",
+            "reading": "せきにんあるたちばであるがゆえに、はつげんにはしんちょうさがもとめられる。",
+            "translation": "Precisely because the position carries responsibility, care is needed in what one says.",
+            "focus": "がゆえに",
+            "distractors": [
+              "がてらに",
+              "がゆえの",
+              "とばかりに"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n1-yueni-5",
+            "text": "愛するがゆえに、あえて厳しく接した。",
+            "reading": "あいするがゆえに、あえてきびしくせっした。",
+            "translation": "It was precisely because I loved them that I chose to be strict.",
+            "focus": "がゆえに",
+            "distractors": [
+              "がてら",
+              "そばから",
+              "かたわら"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n1-yueni-6",
+            "text": "大雪のため、列車が運休した。",
+            "reading": "おおゆきのため、れっしゃがうんきゅうした。",
+            "translation": "Because of heavy snow, the trains were cancelled.",
+            "focus": "のため",
+            "distractors": [
+              "ならでは",
+              "をおいて",
+              "がてら"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ],
+            "noOrder": true
+          }
+        ]
+      }
+    },
+    {
+      "row": 56,
+      "label": "をおいて (other than, no one but)",
+      "lesson": {
+        "id": "n1-wooite",
+        "level": "n1",
+        "title": "をおいて: apart from X, there is no other",
+        "summary": "N + をおいてほかに〜ない says that X is the only possible choice: no one but him can take this role.",
+        "pattern": [
+          "N + をおいて(ほかに) + (いない / ない)",
+          "何をおいても (before anything else)"
+        ],
+        "body": [
+          "をおいて follows a noun, usually a person, place or time held in high regard, and is typically followed by ほかに and a negative of existence (ほかにいない, ほかにない) or by a rhetorical question (彼をおいてほかに誰がいるだろうか). The meaning is X is the only one. It is formal and evaluative, used to praise or to stress a unique chance (今をおいて、チャンスはない).",
+          "The idiom 何をおいても means putting everything else aside, first of all.",
+          "The contrast example uses を除いて (日曜を除いて、毎日営業しています): excluding X from a group, a neutral statement of exception. をおいて does the opposite: it singles X out as the only possible choice. A common mistake is to use をおいて for a simple exception (日曜をおいて毎日営業), where を除いて or 以外 is needed."
+        ],
+        "examples": [
+          {
+            "id": "n1-wooite-1",
+            "text": "この役を任せられるのは、彼をおいてほかにいない。",
+            "reading": "このやくをまかせられるのは、かれをおいてほかにいない。",
+            "translation": "No one but him can be trusted with this role.",
+            "focus": "をおいて",
+            "distractors": [
+              "を皮切りに",
+              "をものともせず",
+              "にひきかえ"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n1-wooite-2",
+            "text": "日本の伝統文化を学ぶなら、京都をおいてほかにない。",
+            "reading": "にほんのでんとうぶんかをまなぶなら、きょうとをおいてほかにない。",
+            "translation": "If you want to learn traditional Japanese culture, there's no place like Kyoto.",
+            "focus": "をおいて",
+            "distractors": [
+              "を皮切りに",
+              "にかこつけて",
+              "ならでは"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n1-wooite-3",
+            "text": "今をおいて、改革のチャンスはない。",
+            "reading": "いまをおいて、かいかくのチャンスはない。",
+            "translation": "If not now, there will be no chance for reform.",
+            "focus": "をおいて",
+            "distractors": [
+              "を皮切りに",
+              "をものともせず",
+              "にかこつけて"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ],
+            "noOrder": true
+          },
+          {
+            "id": "n1-wooite-4",
+            "text": "何をおいても、まず家族の安全を確認した。",
+            "reading": "なにをおいても、まずかぞくのあんぜんをかくにんした。",
+            "translation": "Before anything else, I first made sure my family was safe.",
+            "focus": "をおいても",
+            "distractors": [
+              "を皮切りにも",
+              "にかこつけても",
+              "をものともせず"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n1-wooite-5",
+            "text": "日曜を除いて、毎日営業しています。",
+            "reading": "にちようをのぞいて、まいにちえいぎょうしています。",
+            "translation": "We are open every day except Sunday.",
+            "focus": "を除いて",
+            "distractors": [
+              "をおいて",
+              "にひきかえ",
+              "をものともせず"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "row": 57,
+      "label": "を皮切りに (starting with)",
+      "lesson": {
+        "id": "n1-wokawakirini",
+        "level": "n1",
+        "title": "を皮切りに: starting with, beginning with",
+        "summary": "N + を皮切りに names the first of a series of events that then spread or continue: starting in Tokyo, a nationwide tour begins.",
+        "pattern": [
+          "N + を皮切りに(して)、(series of events)",
+          "N + を皮切りとして"
+        ],
+        "body": [
+          "を皮切りに follows a noun naming the first event, place or act in a series (東京公演, 彼の発言, 大阪店の開店, 沖縄). The main clause describes how the series continues or spreads, often with 次々と, 各地で or 全国. It is formal-neutral and common in news and business writing.",
+          "The series is usually something lively or expanding: tours, openings, statements, releases.",
+          "The contrast example uses をきっかけに (入院したのをきっかけに、たばこをやめた): an event that triggered a single change. をきっかけに does not need a series; を皮切りに marks the first of many. A common mistake is を皮切りに for one personal change, where it sounds odd."
+        ],
+        "examples": [
+          {
+            "id": "n1-wokawakirini-1",
+            "text": "東京公演を皮切りに、全国ツアーが始まる。",
+            "reading": "とうきょうこうえんをかわきりに、ぜんこくツアーがはじまる。",
+            "translation": "The nationwide tour begins with a show in Tokyo.",
+            "focus": "を皮切りに",
+            "distractors": [
+              "をおいて",
+              "にかこつけて",
+              "をものともせず"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n1-wokawakirini-2",
+            "text": "彼の発言を皮切りに、次々と反対意見が出た。",
+            "reading": "かれのはつげんをかわきりに、つぎつぎとはんたいいけんがでた。",
+            "translation": "Starting with his comment, objections came one after another.",
+            "focus": "を皮切りに",
+            "distractors": [
+              "をおいて",
+              "にひきかえ",
+              "に即して"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ],
+            "noOrder": true
+          },
+          {
+            "id": "n1-wokawakirini-3",
+            "text": "大阪店の開店を皮切りに、海外にも出店する予定だ。",
+            "reading": "おおさかてんのかいてんをかわきりに、かいがいにもしゅってんするよていだ。",
+            "translation": "Starting with the opening of the Osaka store, they plan to open shops abroad too.",
+            "focus": "を皮切りに",
+            "distractors": [
+              "をおいて",
+              "にあって",
+              "にたえず"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n1-wokawakirini-4",
+            "text": "この作品を皮切りに、ヒット作が次々と生まれた。",
+            "reading": "このさくひんをかわきりに、ヒットさくがつぎつぎとうまれた。",
+            "translation": "Beginning with this work, one hit followed another.",
+            "focus": "を皮切りに",
+            "distractors": [
+              "をおいて",
+              "にもまして",
+              "に足る"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ],
+            "noOrder": true
+          },
+          {
+            "id": "n1-wokawakirini-5",
+            "text": "沖縄を皮切りに、各地で梅雨入りが発表された。",
+            "reading": "おきなわをかわきりに、かくちでつゆいりがはっぴょうされた。",
+            "translation": "Starting with Okinawa, the start of the rainy season was announced region by region.",
+            "focus": "を皮切りに",
+            "distractors": [
+              "をおいて",
+              "にかこつけて",
+              "に至って"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n1-wokawakirini-6",
+            "text": "入院したのをきっかけに、たばこをやめた。",
+            "reading": "にゅういんしたのをきっかけに、たばこをやめた。",
+            "translation": "Being hospitalized was what made me quit smoking.",
+            "focus": "をきっかけに",
+            "distractors": [
+              "を皮切りに",
+              "をおいて",
+              "にひきかえ"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "row": 58,
+      "label": "を禁じ得ない (cannot help feeling)",
+      "lesson": {
+        "id": "n1-wokinjienai",
+        "level": "n1",
+        "title": "を禁じ得ない: cannot suppress a feeling",
+        "summary": "Emotion noun + を禁じ得ない says that the speaker cannot hold back a feeling such as tears, anger, surprise or sympathy, in formal written style.",
+        "pattern": [
+          "N (涙 / 怒り / 驚き / 同情) + を禁じ得ない"
+        ],
+        "body": [
+          "を禁じ得ない follows a noun of emotion (涙, 怒り, 驚き, 同情, 寂しさ) and literally means cannot forbid. The cause is usually stated first with に or には (彼の対応には, 突然の訃報に). The past is 禁じ得なかった. It is used for the speaker's own feelings, in speeches, editorials and formal writing.",
+          "Because 得る is read え here (禁じ得ない, きんじえない), the form belongs to written style; in speech people say つい泣いてしまった or 怒らずにはいられない.",
+          "The contrast example uses ずにはいられない (抗議せずにはいられなかった): it follows the ない stem of a verb and means one cannot keep from doing it. を禁じ得ない needs an emotion noun with を. A common mistake is to attach を禁じ得ない to a verb (笑うを禁じ得ない)."
+        ],
+        "examples": [
+          {
+            "id": "n1-wokinjienai-1",
+            "text": "被害者の話を聞き、涙を禁じ得なかった。",
+            "reading": "ひがいしゃのはなしをきき、なみだをきんじえなかった。",
+            "translation": "Hearing the victim's story, I could not hold back my tears.",
+            "focus": "を禁じ得なかった",
+            "distractors": [
+              "を余儀なくされた",
+              "をものともしなかった",
+              "にたえなかった"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n1-wokinjienai-2",
+            "text": "彼の無責任な対応には、怒りを禁じ得ない。",
+            "reading": "かれのむせきにんなたいおうには、いかりをきんじえない。",
+            "translation": "I cannot help feeling angry at his irresponsible response.",
+            "focus": "禁じ得ない",
+            "distractors": [
+              "余儀なくされない",
+              "ものともしない",
+              "皮切りにしない"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n1-wokinjienai-3",
+            "text": "突然の訃報に、驚きを禁じ得ない。",
+            "reading": "とつぜんのふほうに、おどろきをきんじえない。",
+            "translation": "I cannot hide my shock at the sudden news of his death.",
+            "focus": "を禁じ得ない",
+            "distractors": [
+              "を余儀なくされる",
+              "をおいてない",
+              "にたえる"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n1-wokinjienai-4",
+            "text": "地方の衰退ぶりには、一抹の寂しさを禁じ得ない。",
+            "reading": "ちほうのすいたいぶりには、いちまつのさびしさをきんじえない。",
+            "translation": "I can't help feeling a touch of sadness at how the regions are declining.",
+            "focus": "得ない",
+            "distractors": [
+              "得る",
+              "かねない",
+              "がてら"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n1-wokinjienai-5",
+            "text": "家族を失った彼の境遇には、同情を禁じ得ない。",
+            "reading": "かぞくをうしなったかれのきょうぐうには、どうじょうをきんじえない。",
+            "translation": "I can't help feeling sympathy for him, having lost his family.",
+            "focus": "を禁じ得ない",
+            "distractors": [
+              "を余儀なくされる",
+              "をものともせず",
+              "を皮切りに"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n1-wokinjienai-6",
+            "text": "あまりの理不尽さに、抗議せずにはいられなかった。",
+            "reading": "あまりのりふじんさに、こうぎせずにはいられなかった。",
+            "translation": "It was so unfair that I could not help protesting.",
+            "focus": "ずにはいられなかった",
+            "distractors": [
+              "を禁じ得なかった",
+              "ずくめだった",
+              "ないまでもなかった"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "row": 59,
+      "label": "を余儀なくされる (be forced to)",
+      "lesson": {
+        "id": "n1-woyoginakusareru",
+        "level": "n1",
+        "title": "を余儀なくされる: be forced to, have no choice but",
+        "summary": "Action noun + を余儀なくされる says that circumstances beyond one's control forced someone to do something unwanted: the tournament was forced to be cancelled.",
+        "pattern": [
+          "N (中止 / 引退 / 避難生活) + を余儀なくされる",
+          "cause + が + N + を余儀なくさせる (forces someone to)"
+        ],
+        "body": [
+          "を余儀なくされる follows a noun of action, often a verbal noun (中止, 閉鎖, 引退, 変更, 避難生活) or V-dict こと. The cause is outside the subject's control and usually stated with で, により or のため: a typhoon, a crisis, an injury. The active を余儀なくさせる takes the cause as subject: 資金難が見直しを余儀なくさせた.",
+          "It is formal and common in news reports; the tone is matter-of-fact but implies regret.",
+          "The contrast example uses ざるを得ない (外出は控えざるを得ない): it follows the ない stem of a verb and states the speaker's own judgement that there is no other way. を余儀なくされる takes a noun and reports something imposed from outside. A common mistake is to use を余儀なくされる for a free decision one simply made."
+        ],
+        "examples": [
+          {
+            "id": "n1-woyoginakusareru-1",
+            "text": "台風の影響で、大会の中止を余儀なくされた。",
+            "reading": "たいふうのえいきょうで、たいかいのちゅうしをよぎなくされた。",
+            "translation": "Because of the typhoon, they were forced to cancel the tournament.",
+            "focus": "を余儀なくされた",
+            "distractors": [
+              "を禁じ得なかった",
+              "をものともしなかった",
+              "を皮切りにした"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n1-woyoginakusareru-2",
+            "text": "資金難が、計画の見直しを余儀なくさせた。",
+            "reading": "しきんなんが、けいかくのみなおしをよぎなくさせた。",
+            "translation": "Financial difficulties forced a review of the plan.",
+            "focus": "させた",
+            "distractors": [
+              "された",
+              "させられた",
+              "なった"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n1-woyoginakusareru-3",
+            "text": "度重なるけがで、引退を余儀なくされた。",
+            "reading": "たびかさなるけがで、いんたいをよぎなくされた。",
+            "translation": "Repeated injuries forced him to retire.",
+            "focus": "余儀なくされた",
+            "distractors": [
+              "禁じ得なかった",
+              "ものともしなかった",
+              "おいてなかった"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n1-woyoginakusareru-4",
+            "text": "住民たちは長期間の避難生活を余儀なくされている。",
+            "reading": "じゅうみんたちはちょうきかんのひなんせいかつをよぎなくされている。",
+            "translation": "Residents have been forced to live as evacuees for a long time.",
+            "focus": "を余儀なくされている",
+            "distractors": [
+              "を禁じ得ない",
+              "を皮切りにしている",
+              "をおいてない"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n1-woyoginakusareru-5",
+            "text": "吹雪のため、車内で一夜を明かすことを余儀なくされた。",
+            "reading": "ふぶきのため、しゃないでいちやをあかすことをよぎなくされた。",
+            "translation": "Because of a blizzard, we had to spend the night on the train.",
+            "focus": "余儀なく",
+            "distractors": [
+              "禁じ得ず",
+              "ものともせず",
+              "皮切りに"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n1-woyoginakusareru-6",
+            "text": "雨がひどいので、外出は控えざるを得ない。",
+            "reading": "あめがひどいので、がいしゅつはひかえざるをえない。",
+            "translation": "The rain is so heavy that I have no choice but to stay in.",
+            "focus": "ざるを得ない",
+            "distractors": [
+              "を余儀なくされる",
+              "ずにはおかない",
+              "ずくめだ"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "row": 60,
+      "label": "をものともせず (undaunted by)",
+      "lesson": {
+        "id": "n1-womonotomosezu",
+        "level": "n1",
+        "title": "をものともせず: undaunted by, in defiance of",
+        "summary": "N + をものともせず praises someone who goes ahead despite a serious obstacle such as injury, storms or opposition, without being daunted by it.",
+        "pattern": [
+          "N (obstacle) + をものともせず(に)、(brave action)"
+        ],
+        "body": [
+          "をものともせず follows a noun naming a hardship or obstacle: 大けが, 激しい雨, 周囲の反対, 危険. The main clause is a determined action that succeeds or is admired. The speaker describes another person's courage, so it is not normally used about oneself.",
+          "It is written, narrative and admiring, common in sports reports and news.",
+          "The contrast example uses にもかかわらず (体調が悪いにもかかわらず、出勤した): despite, a neutral concession that follows nouns or clauses and carries no praise. をものともせず follows only a noun of obstacle and admires the person. A common mistake is をものともせず for a minor inconvenience or for one's own actions."
+        ],
+        "examples": [
+          {
+            "id": "n1-womonotomosezu-1",
+            "text": "大けがをものともせず、最後まで試合に出続けた。",
+            "reading": "おおけがをものともせず、さいごまでしあいにでつづけた。",
+            "translation": "Undaunted by a serious injury, he kept playing to the end.",
+            "focus": "をものともせず",
+            "distractors": [
+              "を余儀なくされ",
+              "をおいて",
+              "を禁じ得ず"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n1-womonotomosezu-2",
+            "text": "激しい雨をものともせず、ゴールまで走り抜いた。",
+            "reading": "はげしいあめをものともせず、ゴールまではしりぬいた。",
+            "translation": "Despite the pouring rain, she ran all the way to the finish.",
+            "focus": "をものともせず",
+            "distractors": [
+              "を皮切りに",
+              "をおいて",
+              "にかこつけて"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n1-womonotomosezu-3",
+            "text": "周囲の反対をものともせず、起業に踏み切った。",
+            "reading": "しゅういのはんたいをものともせず、きぎょうにふみきった。",
+            "translation": "Ignoring the objections of those around her, she went ahead and started a business.",
+            "focus": "をものともせず",
+            "distractors": [
+              "をおいて",
+              "に即して",
+              "を余儀なくされ"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n1-womonotomosezu-4",
+            "text": "救助隊は危険をものともせず、現場へ向かった。",
+            "reading": "きゅうじょたいはきけんをものともせず、げんばへむかった。",
+            "translation": "The rescue team headed to the scene, undaunted by the danger.",
+            "focus": "をものともせず",
+            "distractors": [
+              "を禁じ得ず",
+              "を皮切りに",
+              "に足らず"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ],
+            "noOrder": true
+          },
+          {
+            "id": "n1-womonotomosezu-5",
+            "text": "体調が悪いにもかかわらず、出勤した。",
+            "reading": "たいちょうがわるいにもかかわらず、しゅっきんした。",
+            "translation": "I went to work even though I felt unwell.",
+            "focus": "にもかかわらず",
+            "distractors": [
+              "をものともせず",
+              "をおいて",
+              "にひきかえ"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "row": 60,
+      "label": "んがため (in order to)",
+      "lesson": {
+        "id": "n1-ngatame",
+        "level": "n1",
+        "title": "んがため: in order to, for the sole purpose of",
+        "summary": "V-ない stem + んがため(に) states a strong, single-minded purpose in literary style: he stopped at nothing in order to win.",
+        "pattern": [
+          "V-ない stem + んがため(に) (する → せんがため)",
+          "V-ない stem + んがための + N"
+        ],
+        "body": [
+          "んがため is the old volitional ん plus が and ため. It follows the ない stem of a verb (勝た, 養わ, 集め); する becomes せ (明らかにせんがため, 合格せんがため). It stresses a strong goal for which the subject makes a great or extreme effort. Before a noun it becomes んがための, which is often critical (注目を集めんがための発言).",
+          "It is literary and rare in speech; ために is the everyday form, べく the formal one.",
+          "The contrast example uses んばかり (あふれんばかりの笑顔): the same ない stem and ん, but meaning as if about to overflow, a description of intensity, not a purpose. A common mistake is to put the dictionary form before んがため (勝つんがため)."
+        ],
+        "examples": [
+          {
+            "id": "n1-ngatame-1",
+            "text": "勝たんがため、手段を選ばなかった。",
+            "reading": "かたんがため、しゅだんをえらばなかった。",
+            "translation": "In order to win, he stopped at nothing.",
+            "focus": "んがため",
+            "distractors": [
+              "んばかり",
+              "ずくめ",
+              "まじき"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n1-ngatame-2",
+            "text": "家族を養わんがために、昼も夜も働いた。",
+            "reading": "かぞくをやしなわんがために、ひるもよるもはたらいた。",
+            "translation": "To support his family, he worked day and night.",
+            "focus": "んがために",
+            "distractors": [
+              "んばかりに",
+              "まじく",
+              "べからず"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n1-ngatame-3",
+            "text": "真実を明らかにせんがため、証言台に立った。",
+            "reading": "しんじつをあきらかにせんがため、しょうげんだいにたった。",
+            "translation": "She took the witness stand in order to bring the truth to light.",
+            "focus": "せんがため",
+            "distractors": [
+              "しんがため",
+              "せんばかり",
+              "すまじき"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n1-ngatame-4",
+            "text": "合格せんがために、睡眠時間を削って勉強した。",
+            "reading": "ごうかくせんがために、すいみんじかんをけずってべんきょうした。",
+            "translation": "To pass, I cut back on sleep and studied.",
+            "focus": "がために",
+            "distractors": [
+              "ばかりに",
+              "がてら",
+              "そばから"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n1-ngatame-5",
+            "text": "注目を集めんがための発言としか思えない。",
+            "reading": "ちゅうもくをあつめんがためのはつげんとしかおもえない。",
+            "translation": "I can only see it as a remark made to grab attention.",
+            "focus": "んがための",
+            "distractors": [
+              "まじき",
+              "ずくめの",
+              "べからず"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "n1-ngatame-6",
+            "text": "あふれんばかりの笑顔で迎えてくれた。",
+            "reading": "あふれんばかりのえがおでむかえてくれた。",
+            "translation": "They welcomed us with beaming smiles.",
+            "focus": "んばかり",
+            "distractors": [
+              "んがため",
+              "ずくめ",
+              "まじき"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}

@@ -24,7 +24,7 @@ Set them in a `.env` file next to `docker-compose.yml`, in the shell, or (Portai
 | `QINQIN_AI_ALLOW_PRIVATE` | `1` or `true`: administrators may register custom AI endpoints on loopback and private addresses (Ollama on your LAN). Off by default; enable it only if you trust every administrator, since their endpoints can then reach your network |
 | `QINQIN_AI_PROVIDER` | Legacy. Unset: real providers, all allowed (subject to `QINQIN_AI_PROVIDERS`). `anthropic` means `QINQIN_AI_PROVIDERS=anthropic` (a log line says so), so an upgrade never sends text to a provider you did not allow. `fake` is for testing only: a deterministic provider that replaces every adapter, never contacts an AI service, and shows "Test provider — no real AI" in the app. Anything else disables AI |
 | `QINQIN_TESSERACT` | Path of the `tesseract` binary for offline photo reading. Empty: `tesseract` from `PATH` (the image has one). `TESSDATA_PREFIX` is passed through to it |
-| `QINQIN_AUTO_SEED` | `0`, `false` or `off` (any case) stops the first start of a fresh instance from installing the bundled packs; the demo packs are never installed this way. Default on: it runs once, on a fresh instance with no pack installed. `qinqin seed` still works ([Deploying](Admin-deploying#the-auto-seed-on-the-first-start)) |
+| `QINQIN_AUTO_SEED` | `0`, `false` or `off` (any case) stops the first start of a fresh instance from installing the bundled packs; the demo pack `es-demo` is never installed this way. Default on: it runs once, on a fresh instance with no pack installed. `qinqin seed` still works ([Deploying](Admin-deploying#the-auto-seed-on-the-first-start)) |
 
 ## Set by the image
 

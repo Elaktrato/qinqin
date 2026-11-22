@@ -56,6 +56,15 @@ describe('buildExercises', () => {
 		expect(ex.filter((e) => e.kind === 'order')).toHaveLength(2);
 	});
 
+	it('skips the order exercise for a noOrder example but keeps its cloze', () => {
+		const l = lesson([example('a', { noOrder: true }), example('b')]);
+		const ex = buildExercises(l, 'seed');
+		expect(ex.filter((e) => e.kind === 'cloze')).toHaveLength(2);
+		const orders = ex.filter((e) => e.kind === 'order');
+		expect(orders).toHaveLength(1);
+		expect(orders[0].example.id).toBe('b');
+	});
+
 	it('choices hold focus and distractors, stable per seed', () => {
 		const a = buildExercises(four, 'x')[0];
 		const b = buildExercises(four, 'x')[0];
