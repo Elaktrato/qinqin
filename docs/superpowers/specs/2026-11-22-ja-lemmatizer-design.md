@@ -222,29 +222,33 @@ followed by a longer word loses that word's folding (計画に基づいている
 
 Ruling: **the Japanese list is derived, then reviewed**: JMdict `exp` entries (every sense `exp`) with priority 0
 that start with a particle and whose form or reading occurs in a lesson title, pattern or example focus of the
-bundled `ja-grammar` pack (73 candidates, of which the 41 with priority 0 can be split at all), each kept or
+bundled `ja-grammar` pack (73 candidates, of which the 44 with priority 0 can be split at all), each kept or
 dropped by hand; the committed list is the reviewed result in the table, not a build step. Kept whole (taught
 as units): に基づいて, を通して, によれば, に応じて, に沿って, をめぐって, をおいて, にすぎない, に反して, にあたって,
 にあたり, にわたり, にかけては, にひきかえ, に至っては, に対し, に関し, にして, によらず, にもまして, と思ったら,
-ときたら, というと, といえど, といえども, といったらない, が早いか, であれ, であろう, ですら, でない, となく — and
+ときたら, というと, といえど, といえども, といったらない, が早いか, であれ, であろう, ですら, でない, となく, もさることながら — and
 しかねない (its し is する's stem, not a particle; N2 grammar). Split (the learner meets the verb): と言って and
 と言い (quotation + 言う: と言っていました folds 言う's progressive), をして (+ する). — cost if wrong: a grammar
 expression outside the pack's points is still split.
 
-Ruling: **ないで is the negative te-form** (`ないで` → `ない`, in te): 食べないでください → 食べる with reasons
-[request, te-form, negative] ("negative te-form request"), 忘れないでね → 忘れる + ね, 食べないで寝た → 食べる.
-— cost if wrong: none known; a word ending in ないで that is no verb is gated by class.
+Ruling: **ないで is the negative te-form inside a chain only** (`ないで` → `ない`, in te, `chainOnly`, a format-2
+rule flag): 食べないでください → 食べる with reasons [request, te-form, negative] ("negative te-form request").
+As a surface rule it cut 高くないです and どころではないでしょう into ないで + す in the corpus check, so
+standalone ないで (忘れないでね, 触らないで) stays ない + で — cost if wrong: those standalone forms keep two
+tokens.
 
 Ruling: **てはいけない / てもいい fold like てください** (reasons `prohibition`, `permission`; で- variants,
-いけません): してはいけない → する, 食べなくてもいい → 食べる; the i-adjective te-form くて now also applies to a
-te-form produced by a rule (in: te) so the negative chain reaches the verb. — cost if wrong: てもいい's いい is not
+いけません): してはいけない → する, 食べなくてもいい → 食べる; a chainOnly なくて → ない lets the negative chain
+reach the verb (making the general くて rule chainable instead read 痛くてたまらない as a contracted progressive). — cost if wrong: てもいい's いい is not
 counted as a word in coverage.
 
 Ruling: **kana fit's usually-kana is the first sense's tag** (`hints.usuallyReadingTag`: `uk` on the entry's
 first sense, the display-form rule of `frequency/`), not "some sense": 仕手 carries `uk` only on its second
-sense, so bare して is する without a frequency pack; する, いる, こと, ある keep `uk` on their first sense. One
+sense — and an unwritten particle (first sense `prt`) yields to a same-length inflection of a word of strictly
+higher priority, so bare して (the priority-0 literary particle) is する without a frequency pack, while し (60)
+stays the particle against する's stem (60); する, いる, こと, ある keep `uk` on their first sense. One
 definition for display and ranking — cost if wrong: a word whose minor first sense lacks `uk` ranks weak by
 reading.
 
-Ruling: **format 2**: the new hints are format-2 fields; an engine reads every format up to its own, so format-1
+Ruling: **format 2**: the new hints and `chainOnly` are format-2 fields; an engine reads every format up to its own, so format-1
 tables stay valid — cost if wrong: none (no format-1-only client exists yet).
