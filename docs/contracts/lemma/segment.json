@@ -453,6 +453,50 @@
    ],
    "pri": [],
    "uk": false
+  },
+  {
+   "forms": [
+    "帰る"
+   ],
+   "readings": [
+    "かえる"
+   ],
+   "pos": [
+    "v5r",
+    "vi"
+   ],
+   "pri": [
+    "ichi1"
+   ],
+   "uk": false
+  },
+  {
+   "forms": [
+    "宿題"
+   ],
+   "readings": [
+    "しゅくだい"
+   ],
+   "pos": [
+    "n"
+   ],
+   "pri": [
+    "ichi1"
+   ],
+   "uk": false
+  },
+  {
+   "forms": [],
+   "readings": [
+    "も"
+   ],
+   "pos": [
+    "prt"
+   ],
+   "pri": [
+    "spec1"
+   ],
+   "uk": false
   }
  ],
  "cases": [
@@ -490,7 +534,7 @@
    ]
   },
   {
-   "name": "the expression stays when nothing longer follows its particle",
+   "name": "an unprioritised expression yields to an inflected word ending with it",
    "text": "仕事をして",
    "tokens": [
     {
@@ -502,12 +546,22 @@
      "head": "仕事"
     },
     {
-     "surface": "をして",
+     "surface": "を",
      "start": 2,
-     "end": 5,
-     "lemma": "をして",
+     "end": 3,
+     "lemma": "を",
      "reasons": [],
-     "head": "をして"
+     "head": "を"
+    },
+    {
+     "surface": "して",
+     "start": 3,
+     "end": 5,
+     "lemma": "する",
+     "reasons": [
+      "te-form"
+     ],
+     "head": "為る"
     }
    ]
   },
@@ -780,6 +834,88 @@
      "lemma": "あめ",
      "reasons": [],
      "head": "雨"
+    }
+   ]
+  },
+  {
+   "name": "をして then a verb",
+   "text": "仕事をして帰った",
+   "tokens": [
+    {
+     "surface": "仕事",
+     "start": 0,
+     "end": 2,
+     "lemma": "仕事",
+     "reasons": [],
+     "head": "仕事"
+    },
+    {
+     "surface": "を",
+     "start": 2,
+     "end": 3,
+     "lemma": "を",
+     "reasons": [],
+     "head": "を"
+    },
+    {
+     "surface": "して",
+     "start": 3,
+     "end": 5,
+     "lemma": "する",
+     "reasons": [
+      "te-form"
+     ],
+     "head": "為る"
+    },
+    {
+     "surface": "帰った",
+     "start": 5,
+     "end": 8,
+     "lemma": "帰る",
+     "reasons": [
+      "past"
+     ],
+     "head": "帰る"
+    }
+   ]
+  },
+  {
+   "name": "をして then a particle",
+   "text": "宿題をしても",
+   "tokens": [
+    {
+     "surface": "宿題",
+     "start": 0,
+     "end": 2,
+     "lemma": "宿題",
+     "reasons": [],
+     "head": "宿題"
+    },
+    {
+     "surface": "を",
+     "start": 2,
+     "end": 3,
+     "lemma": "を",
+     "reasons": [],
+     "head": "を"
+    },
+    {
+     "surface": "して",
+     "start": 3,
+     "end": 5,
+     "lemma": "する",
+     "reasons": [
+      "te-form"
+     ],
+     "head": "為る"
+    },
+    {
+     "surface": "も",
+     "start": 5,
+     "end": 6,
+     "lemma": "も",
+     "reasons": [],
+     "head": "も"
     }
    ]
   }

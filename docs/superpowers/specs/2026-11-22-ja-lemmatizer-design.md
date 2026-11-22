@@ -130,9 +130,10 @@ expression.
 Ruling: an **expression must not cut a longer word**: when the best match at a position is an exact match whose
 first candidate is an expression **without priority** (all senses carry `expressionPos`, JMdict priority 0),
 its shortest proper prefix with a match has a first candidate tagged `particlePos`, and the match starting
-right after that particle ends strictly past the expression's end, the segmenter emits the particle alone.
+right after that particle ends strictly past the expression's end — or ends with it and is an inflection of a
+word with priority (review fix: 仕事をして帰った, 宿題をしても, 宿題をしてから) — the segmenter emits the particle alone.
 仕事をしている → 仕事 | を | している, をもらいました → を | もらいました, と言いました → と | 言いました; には, にも,
-にとって (priority 60) and をして帰る (nothing longer starts after the particle) stay. The priority condition
+にとって (priority 60) stay. The priority condition
 came from the real-app corpus check: without it 泣かずにはいられない split into に | はいられない (入る) — cost if
 wrong: one extra lookup per unprioritised expression match (rare) and a split where a learner wanted the
 expression whole. `GET /api/segment/at` (a single position) is unchanged: it returns the longest match.
