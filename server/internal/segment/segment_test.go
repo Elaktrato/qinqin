@@ -43,6 +43,14 @@ type jw struct {
 	pos             []string // entity names, e.g. "v1"
 	pri             []string // priority tags on the first form (or reading)
 	uk              bool
+	// senses, when set, replaces pos/uk: one sense each, in order.
+	senses []jwSense
+}
+
+// jwSense is one sense of an in-test word.
+type jwSense struct {
+	pos []string
+	uk  bool
 }
 
 // jmdictXML renders words as a JMdict file, ent_seq in order.
@@ -69,14 +77,21 @@ func jmdictXML(words []jw) string {
 			}
 			b.WriteString("</r_ele>\n")
 		}
-		b.WriteString("<sense>")
-		for _, p := range w.pos {
-			b.WriteString("<pos>&" + p + ";</pos>")
+		senses := w.senses
+		if len(senses) == 0 {
+			senses = []jwSense{{pos: w.pos, uk: w.uk}}
 		}
-		if w.uk {
-			b.WriteString("<misc>&uk;</misc>")
+		for j, sn := range senses {
+			b.WriteString("<sense>")
+			for _, p := range sn.pos {
+				b.WriteString("<pos>&" + p + ";</pos>")
+			}
+			if sn.uk {
+				b.WriteString("<misc>&uk;</misc>")
+			}
+			fmt.Fprintf(&b, "<gloss>gloss %d.%d</gloss></sense>\n", i, j)
 		}
-		fmt.Fprintf(&b, "<gloss>gloss %d</gloss></sense>\n</entry>\n", i)
+		b.WriteString("</entry>\n")
 	}
 	b.WriteString("</JMdict>\n")
 	return b.String()

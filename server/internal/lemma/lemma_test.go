@@ -164,7 +164,8 @@ func TestParseRejects(t *testing.T) {
 	for name, src := range map[string]string{
 		"not json":          `{`,
 		"unknown key":       `{` + base + `, "rules": [], "extra": 1}`,
-		"format 2":          strings.Replace(`{`+base+`, "rules": []}`, `"format": 1`, `"format": 2`, 1),
+		"format 3":          strings.Replace(`{`+base+`, "rules": []}`, `"format": 1`, `"format": 3`, 1),
+		"format 0":          strings.Replace(`{`+base+`, "rules": []}`, `"format": 1`, `"format": 0`, 1),
 		"depth 0":           strings.Replace(`{`+base+`, "rules": []}`, `"maxDepth": 2`, `"maxDepth": 0`, 1),
 		"depth 9":           strings.Replace(`{`+base+`, "rules": []}`, `"maxDepth": 2`, `"maxDepth": 9`, 1),
 		"no language":       strings.Replace(`{`+base+`, "rules": []}`, `"language": "xx"`, `"language": ""`, 1),
@@ -225,5 +226,55 @@ func TestReadingHintsAndInScript(t *testing.T) {
 	if _, err := lemma.Parse([]byte(`{"format": 1, "language": "xh", "version": "t", "maxDepth": 1, "classes": {},
 	 "hints": {"readingScript": "kana"}, "rules": []}`)); err == nil {
 		t.Error("a reading script without a reading type parsed")
+	}
+}
+
+func TestFormat2Hints(t *testing.T) {
+	tb := parse(t, `{"format": 2, "language": "xf", "version": "t", "maxDepth": 1, "classes": {},
+	 "hints": {"keepWhole": ["にもとづいて", "を通して"]}, "rules": []}`)
+	if len(tb.Hints.KeepWhole) != 2 {
+		t.Errorf("hints = %+v", tb.Hints)
+	}
+	if !tb.Hints.KeepsWhole("に基づいて", "にもとづいて") || !tb.Hints.KeepsWhole("を通して") || tb.Hints.KeepsWhole("をして", "") {
+		t.Error("KeepsWhole")
+	}
+	// format 1 tables stay valid; a format newer than the engine's is refused
+	parse(t, `{"format": 1, "language": "xf", "version": "t", "maxDepth": 1, "classes": {}, "hints": {}, "rules": []}`)
+	if _, err := lemma.Parse([]byte(`{"format": 3, "language": "xf", "version": "t", "maxDepth": 1, "classes": {}, "hints": {}, "rules": []}`)); err == nil {
+		t.Error("format 3 parsed")
+	}
+	if _, err := lemma.Parse([]byte(`{"format": 2, "language": "xf", "version": "t", "maxDepth": 1, "classes": {}, "hints": {"keepWhole": [""]}, "rules": []}`)); err == nil {
+		t.Error("an empty keepWhole entry parsed")
+	}
+}
+
+// A chainOnly rule (format 2) never rewrites the surface itself, only a
+// form an earlier rule produced.
+func TestChainOnlyRule(t *testing.T) {
+	tb := parse(t, `{"format": 2, "language": "xo", "version": "t", "maxDepth": 2,
+	 "classes": {"t": {}, "w": {"any": true}}, "hints": {},
+	 "rules": [{"from": "xreq", "to": "x", "reason": "request", "out": "t"},
+	           {"from": "nax", "to": "na", "reason": "te-form", "in": ["t"], "out": "w", "chainOnly": true}]}`)
+	if got := render(tb.Deinflect("tabenaxreq")); !slices.Equal(got, []string{"tabenax/t/request", "tabena/w/request,te-form"}) {
+		t.Errorf("chained: %q", got)
+	}
+	if got := tb.Deinflect("tabenax"); len(got) != 0 {
+		t.Errorf("surface: %q, want none", render(got))
+	}
+}
+
+// A format-1 table may not use format-2 fields.
+func TestFormat1RejectsFormat2Fields(t *testing.T) {
+	for name, src := range map[string]string{
+		"keepWhole": `{"format": 1, "language": "xg", "version": "t", "maxDepth": 1, "classes": {}, "hints": {"keepWhole": ["a"]}, "rules": []}`,
+		"chainOnly": `{"format": 1, "language": "xg", "version": "t", "maxDepth": 1, "classes": {"a": {}}, "hints": {},
+		 "rules": [{"from": "x", "to": "a", "reason": "r", "out": "a", "chainOnly": true}]}`,
+	} {
+		if _, err := lemma.Parse([]byte(src)); err == nil {
+			t.Errorf("%s in a format-1 table parsed", name)
+		}
+		if _, err := lemma.Parse([]byte(strings.Replace(src, `"format": 1`, `"format": 2`, 1))); err != nil {
+			t.Errorf("%s in a format-2 table: %v", name, err)
+		}
 	}
 }

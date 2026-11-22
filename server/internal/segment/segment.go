@@ -119,8 +119,9 @@ func hintsOf(language string) lemma.Hints {
 // hints.ExpressionPOS; には and にとって keep theirs), the shortest
 // shorter match at offset is a particle (its first entry has a sense
 // tagged with hints.ParticlePOS) and the match right after that particle
-// ends strictly past m — or ends with m and has a candidate that is a
-// strong inflection of a word with priority — the token is the particle: 仕事をしている is
+// ends strictly past m — or ends with m, has a candidate that is a
+// strong inflection of a word with priority and m's surface is not in
+// hints.KeepWhole — the token is the particle: 仕事をしている is
 // 仕事 | を | している, not 仕事 | をして | いる, and 仕事をして帰った is
 // 仕事 | を | して | 帰った. Nil when the rule does not apply.
 func (s Service) splitParticle(ctx context.Context, language string, runes []rune, offset int, m *Match, results []lookup.Result, hints lemma.Hints) (*Match, error) {
@@ -145,9 +146,11 @@ func (s Service) splitParticle(ctx context.Context, language string, runes []run
 	// when one of its candidates is a strong (kana fit) inflection of a
 	// word with priority: して of する, even where the noun 仕手 ranks
 	// first, but not ねない of 寝る in かねない.
-	if next.End == m.End && !slices.ContainsFunc(nextResults, func(r lookup.Result) bool {
+	// A word ending with the expression never splits one the table keeps
+	// whole, as written (hints.KeepWhole against the matched surface).
+	if next.End == m.End && (hints.KeepsWhole(m.Surface) || !slices.ContainsFunc(nextResults, func(r lookup.Result) bool {
 		return r.Matched == next.Surface && len(r.Reasons) > 0 && r.Pri > 0 && !r.WeakReading
-	}) {
+	})) {
 		return nil, nil
 	}
 	return s.matchOf(results, results[short].Matched, offset), nil

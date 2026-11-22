@@ -113,12 +113,12 @@ func compareCandidates(a, b candidate) int {
 	return cmp.Compare(a.entryID, b.entryID)
 }
 
-// markYields sets yields on every exact candidate of an expression: an
-// entry without written forms whose every sense has a part-of-speech tag
-// in expressionPos, when a same-length inflected candidate's entry has a
-// priority above 0 and at least the expression's, and that is no
-// expression itself (とする does not make として yield). expression[i] says
-// whether cs[i] is such an entry.
+// markYields sets yields on every exact candidate of an unwritten
+// expression (expression[i]: every sense tagged with the rule table's
+// expressionPos) when a same-length inflected candidate's entry has a
+// priority above 0 and at least the expression's, and is no expression
+// itself (とする does not make として yield). Particles never yield (#177
+// review: にて and たって are not 煮る and 立つ).
 func markYields(cs []candidate, expression []bool) {
 	for i := range cs {
 		c := &cs[i]
