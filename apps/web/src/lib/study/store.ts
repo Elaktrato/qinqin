@@ -27,6 +27,7 @@ import {
 } from "./deckSettings";
 import type { NewOrder } from "./newOrder";
 import { cardKey, parseReview } from "./reviewParse";
+import { liveReviews } from "./replaced";
 import {
   STUDY_COLLECTIONS,
   activeOf,
@@ -585,16 +586,22 @@ async function fetchEvents(workspaceId: number): Promise<StudyEvent[]> {
   return Array.isArray(events) ? events : [];
 }
 
-/** reviewsOf keeps the workspace's review events of an event log. */
+/**
+ * reviewsOf keeps the workspace's review events of an event log, without
+ * the replaced ones (a changed grade, #131: `liveReviews`), on the stored
+ * card ids, before the duplicate-card merge.
+ */
 function reviewsOf(
   workspaceId: number,
   events: readonly StudyEvent[],
 ): ReviewEvent[] {
-  return events
-    .map((event) =>
-      event.workspaceId === workspaceId ? parseReview(event) : null,
-    )
-    .filter((event): event is ReviewEvent => event !== null);
+  return liveReviews(
+    events
+      .map((event) =>
+        event.workspaceId === workspaceId ? parseReview(event) : null,
+      )
+      .filter((event): event is ReviewEvent => event !== null),
+  );
 }
 
 /**
