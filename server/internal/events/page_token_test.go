@@ -25,6 +25,9 @@ func TestParsePageRequest(t *testing.T) {
 		{query: "page=e1.abc", want: PageRequest{Paged: true, Page: "e1.abc"}},
 		{query: "page=e1.abc&workspace=4", want: PageRequest{Paged: true, Page: "e1.abc"}},
 		{query: "since=yesterday", err: ErrSinceInvalid},
+		// The legacy form keeps its first-value semantics for a repeated since.
+		{query: "since=2026-11-01T09:00:00Z&since=yesterday", want: PageRequest{Since: since}},
+		{query: "since=2026-11-01T09:00:00Z&since=2026-01-01T00:00:00Z&limit=5", err: ErrPageInvalid},
 		{query: "limit=0", err: ErrPageInvalid},
 		{query: "limit=2001", err: ErrPageInvalid},
 		{query: "limit=ten", err: ErrPageInvalid},

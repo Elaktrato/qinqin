@@ -50,11 +50,14 @@ type PageRequest struct {
 
 // ParsePageRequest reads since, limit and page (workspace is the caller's
 // business: it needs an ownership check). A continuation may repeat
-// neither since nor limit; a parameter given twice is invalid.
+// neither since nor limit; in the paged form a parameter given twice is
+// invalid, while the legacy form keeps reading the first since.
 func ParsePageRequest(q url.Values) (PageRequest, error) {
-	for _, name := range []string{"since", "limit", "page"} {
-		if len(q[name]) > 1 {
-			return PageRequest{}, fmt.Errorf("%w: %s given twice", ErrPageInvalid, name)
+	if q.Has("limit") || q.Has("page") {
+		for _, name := range []string{"since", "limit", "page"} {
+			if len(q[name]) > 1 {
+				return PageRequest{}, fmt.Errorf("%w: %s given twice", ErrPageInvalid, name)
+			}
 		}
 	}
 	if q.Has("page") {

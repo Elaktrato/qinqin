@@ -92,7 +92,8 @@ GET /api/events?page=<next>[&workspace=<id>]                          continuati
   contains no clock: the same position gives the same URL (the web's service worker caches pages by URL).
 - No cursor: this is a from-scratch read; deltas are the pull's job.
 - Errors: a token that is garbled or another user's, a continuation with another (or no) workspace or with
-  `since`/`limit`, an empty `page`, a parameter given twice, a `limit` outside 1..2000 → 400 JSON
+  `since`/`limit`, an empty `page`, a parameter given twice (paged form only: the legacy form keeps reading the
+  first `since`), a `limit` outside 1..2000 → 400 JSON
   `{"error": "events_page_invalid", "message": …}` (`auth/errors.json`): read again from the first page. A
   bad `since` or `workspace` and a foreign workspace keep the plain-text answers below, on every page.
 - Web reader: `apps/web/src/lib/eventPages.ts` (`limit=2000`, strict decode, at most 1000 pages). It follows
