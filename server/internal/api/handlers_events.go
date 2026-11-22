@@ -5,6 +5,8 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
+	"io"
+	"log"
 	"net/http"
 	"strconv"
 	"time"
@@ -81,26 +83,27 @@ func (s *server) handleEventBatch(w http.ResponseWriter, r *http.Request) {
 }
 
 // handleListEvents serves GET /api/events with the caller's events
-// only, from the since instant (RFC 3339, inclusive) onward. Without
-// workspace the list spans all the caller's workspaces — the combined
-// view; with one it lists that workspace's events. Unknown and foreign
-// workspaces are invisible: both are 404.
+// only, from the since instant (RFC 3339, inclusive) onward, in (ts, id)
+// order. Without workspace the list spans all the caller's workspaces —
+// the combined view; with one it lists that workspace's events. Unknown
+// and foreign workspaces are invisible: both are 404 (checked on every
+// page). With limit or page it answers one page (events.ListPage,
+// docs/contracts/events/page.json); a continuation repeats the first
+// page's workspace (the access token gate reads it) and nothing else.
+// Without them it streams the whole legacy array (deprecated; old shells).
 func (s *server) handleListEvents(w http.ResponseWriter, r *http.Request) {
 	u := s.requireUser(w, r)
 	if u == nil {
 		return
 	}
-	var since time.Time
-	if raw := r.URL.Query().Get("since"); raw != "" {
-		t, err := time.Parse(time.RFC3339, raw)
-		if err != nil {
-			http.Error(w, "since must be RFC 3339", http.StatusBadRequest)
-			return
-		}
-		since = t
+	q := r.URL.Query()
+	req, err := events.ParsePageRequest(q)
+	if errors.Is(err, events.ErrSinceInvalid) {
+		http.Error(w, "since must be RFC 3339", http.StatusBadRequest)
+		return
 	}
 	var workspace *int64
-	if raw := r.URL.Query().Get("workspace"); raw != "" {
+	if raw := q.Get("workspace"); raw != "" {
 		id, err := strconv.ParseInt(raw, 10, 64)
 		if err != nil {
 			http.Error(w, "workspace must be an integer", http.StatusBadRequest)
@@ -116,13 +119,42 @@ func (s *server) handleListEvents(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		workspace = &id
+		req.Workspace = id
 	}
-	evts, err := events.Since(r.Context(), s.db, u.ID, since, workspace)
-	if err != nil {
-		http.Error(w, "internal error", http.StatusInternalServerError)
+	if err == nil && req.Paged {
+		var page events.Page
+		if page, err = events.ListPage(r.Context(), s.db, u.ID, req); err == nil {
+			w.Header().Set("Cache-Control", "no-store")
+			writeJSON(w, http.StatusOK, page)
+			return
+		}
+	}
+	if errors.Is(err, events.ErrPageInvalid) {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "events_page_invalid",
+			"message": "Read the log again from its first page. " + err.Error()})
 		return
 	}
-	writeJSON(w, http.StatusOK, evts)
+	if err != nil {
+		writeInternal(w, r)
+		return
+	}
+	h := w.Header()
+	h.Set("Content-Type", "application/json")
+	h.Set("Deprecation", "true")
+	h.Set("Link", `</api/events?limit=500>; rel="successor-version"`)
+	// A stalled client is cut one window after the last bytes went out.
+	out := &countingWriter{w: newDeadlineWriter(w, http.NewResponseController(w), legacyPullWindow, time.Now)}
+	if err := events.StreamSince(r.Context(), out, s.db, u.ID, req.Since, workspace); err != nil && r.Context().Err() == nil {
+		if out.n == 0 {
+			h.Del("Deprecation")
+			h.Del("Link")
+			writeInternal(w, r)
+			return
+		}
+		// The status and part of the body are out: the JSON stays
+		// truncated and the client retries, as after a network cut.
+		log.Printf("event list (legacy) of user %d: %v", u.ID, err)
+	}
 }
 
 // handleDeleteLookupEvents serves DELETE /api/events/lookups?workspace=:
@@ -176,4 +208,17 @@ func (s *server) workspaceOwned(ctx context.Context, userID, workspaceID int64) 
 		return false, err
 	}
 	return true, nil
+}
+
+// countingWriter counts the bytes that went out, so a stream that failed
+// before its first byte can still answer an error status.
+type countingWriter struct {
+	w io.Writer
+	n int
+}
+
+func (c *countingWriter) Write(p []byte) (int, error) {
+	n, err := c.w.Write(p)
+	c.n += n
+	return n, err
 }
