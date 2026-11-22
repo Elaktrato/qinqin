@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Hand-written test entries in the JMdict format (not copied from JMdict). -->
+<!DOCTYPE JMdict [
+<!ENTITY pn "pronoun">
+<!ENTITY n "noun (common) (futsuumeishi)">
+<!ENTITY v5k-s "Godan verb - Iku/Yuku special class">
+<!ENTITY v5m "Godan verb with 'mu' ending">
+<!ENTITY vk "Kuru verb - special class">
+<!ENTITY vs "noun or participle which takes the aux. verb suru">
+<!ENTITY vs-i "suru verb - included">
+<!ENTITY v1 "Ichidan verb">
+<!ENTITY prt "particle">
+<!ENTITY cop "copula">
+]>
+<JMdict>
+<entry>
+<ent_seq>9000001</ent_seq>
+<k_ele><keb>私</keb></k_ele>
+<r_ele><reb>わたし</reb></r_ele>
+<r_ele><reb>わたくし</reb></r_ele>
+<sense><pos>&pn;</pos><gloss>gloss 0</gloss></sense>
+</entry>
+<entry>
+<ent_seq>9000002</ent_seq>
+<k_ele><keb>学校</keb></k_ele>
+<r_ele><reb>がっこう</reb></r_ele>
+<sense><pos>&n;</pos><gloss>gloss 1</gloss></sense>
+</entry>
+<entry>
+<ent_seq>9000003</ent_seq>
+<k_ele><keb>行く</keb></k_ele>
+<k_ele><keb>往く</keb></k_ele>
+<r_ele><reb>いく</reb></r_ele>
+<r_ele><reb>ゆく</reb></r_ele>
+<sense><pos>&v5k-s;</pos><gloss>gloss 2</gloss></sense>
+</entry>
+<entry>
+<ent_seq>9000004</ent_seq>
+<k_ele><keb>水</keb></k_ele>
+<r_ele><reb>みず</reb></r_ele>
+<sense><pos>&n;</pos><gloss>gloss 3</gloss></sense>
+</entry>
+<entry>
+<ent_seq>9000005</ent_seq>
+<k_ele><keb>飲む</keb></k_ele>
+<r_ele><reb>のむ</reb></r_ele>
+<sense><pos>&v5m;</pos><gloss>gloss 4</gloss></sense>
+</entry>
+<entry>
+<ent_seq>9000006</ent_seq>
+<k_ele><keb>来る</keb></k_ele>
+<r_ele><reb>くる</reb></r_ele>
+<sense><pos>&vk;</pos><gloss>gloss 5</gloss></sense>
+</entry>
+<entry>
+<ent_seq>9000007</ent_seq>
+<k_ele><keb>本</keb></k_ele>
+<r_ele><reb>ほん</reb></r_ele>
+<sense><pos>&n;</pos><gloss>gloss 6</gloss></sense>
+</entry>
+<entry>
+<ent_seq>9000008</ent_seq>
+<k_ele><keb>今日</keb></k_ele>
+<r_ele><reb>きょう</reb></r_ele>
+<r_ele><reb>こんにち</reb></r_ele>
+<sense><pos>&n;</pos><gloss>gloss 7</gloss></sense>
+</entry>
+<entry>
+<ent_seq>9000009</ent_seq>
+<k_ele><keb>日本語</keb></k_ele>
+<r_ele><reb>にほんご</reb></r_ele>
+<sense><pos>&n;</pos><gloss>gloss 8</gloss></sense>
+</entry>
+<entry>
+<ent_seq>9000010</ent_seq>
+<k_ele><keb>勉強</keb></k_ele>
+<r_ele><reb>べんきょう</reb></r_ele>
+<sense><pos>&n;</pos><pos>&vs;</pos><gloss>gloss 9</gloss></sense>
+</entry>
+<entry>
+<ent_seq>9000011</ent_seq>
+<r_ele><reb>する</reb></r_ele>
+<sense><pos>&vs-i;</pos><gloss>gloss 10</gloss></sense>
+</entry>
+<entry>
+<ent_seq>9000012</ent_seq>
+<r_ele><reb>いる</reb></r_ele>
+<sense><pos>&v1;</pos><gloss>gloss 11</gloss></sense>
+</entry>
+<entry>
+<ent_seq>9000013</ent_seq>
+<r_ele><reb>これ</reb></r_ele>
+<sense><pos>&pn;</pos><gloss>gloss 12</gloss></sense>
+</entry>
+<entry>
+<ent_seq>9000014</ent_seq>
+<r_ele><reb>は</reb></r_ele>
+<sense><pos>&prt;</pos><gloss>gloss 13</gloss></sense>
+</entry>
+<entry>
+<ent_seq>9000015</ent_seq>
+<r_ele><reb>に</reb></r_ele>
+<sense><pos>&prt;</pos><gloss>gloss 14</gloss></sense>
+</entry>
+<entry>
+<ent_seq>9000016</ent_seq>
+<r_ele><reb>を</reb></r_ele>
+<sense><pos>&prt;</pos><gloss>gloss 15</gloss></sense>
+</entry>
+<entry>
+<ent_seq>9000017</ent_seq>
+<r_ele><reb>です</reb></r_ele>
+<sense><pos>&cop;</pos><gloss>gloss 16</gloss></sense>
+</entry>
+</JMdict>
