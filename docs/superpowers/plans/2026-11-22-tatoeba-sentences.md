@@ -87,4 +87,57 @@ deterministic), plus the seed integration, checks and credits. The packs themsel
 
 ## Execution record
 
-(filled in at the end)
+Built in one session by one implementer (no per-task subagents, no separate review). **The packs were not
+produced**: downloads.tatoeba.org, tatoeba.org and creativecommons.org are blocked here (proxy 403) and the owner
+declined to open them. Everything else is built; the owner runs the command sequence below.
+
+| Task | Commit | Test-first evidence / deviation |
+|---|---|---|
+| Spec + plan | `d4e25a60` | — |
+| 1 Optional reading | `11e368c3` | `TestImportAcceptsSentencesWithoutReading` failed ("needs a hanzi, pinyin, and translation"), then passed; "no pinyin" moved out of the invalid table. |
+| 2 Pin and rules | `36038081` | Build failure (undefined `Pin`, `loadRules`), then pass. |
+| 3 Export readers | `db9f3451` | Build failure (undefined `readRows`), then pass. Deviation: `export.go` was written before the test run and held outside the package until the failing run. Fixture archives built once by `testdata/make-export.sh` (GNU tar + bzip2) and committed. |
+| 4 Filters | `6abce0d3` | Build failure (undefined `filterLanguage`), then all filter tests passed on the first implementation run. |
+| 5 Readings | `6f44cce7` | Build failure, then 2 real failures (the fixture rules carry the shipped default 今日 → きょう, so the test case moved to the no-defaults analyzer; ーを filed as a word → `word()` now tries only the entry's own forms/readings/headword and honours skipWords on all of them), then pass. Implementation written before the failing run, held aside (as in Task 3). |
+| 6 Build, output, report | `74f1a583` | Build failure (undefined `buildConfig`, `cc0Text`), then everything but the golden tests passed; golden packs generated with `UPDATE_GOLDEN=1`, reviewed by eye (listed in the commit), then all passed. |
+| 7 CLI and download | `3e7a4cf0` | Build failure (undefined `run`), then pass (httptest TLS server: pin records the fixture hashes and the Last-Modified date; a changed upstream needs `--repin`; build refuses unpinned before any request; a tampered archive stops the build and writes nothing). |
+| 8 Seed integration | `4412cd6b` | Seed/auto-seed tests passed after a wrong expected row count (13, not 14: the importer counts entry × sentence once) — they verify existing behaviour, no code change was needed (sentences are type order 3; absent packs are simply absent). `TestCommittedPackNotices` failed (generated packs "not found"), then tolerated absence. Checked once with the golden packs copied into `plugins/data` (removed again): notice test and `TestBundledTatoebaPacksParse` passed, and check-sources then demanded the docs rows. |
+| 9 Credits and docs | `71a52128` | `check-sources.test.mjs` failed (no `GENERATED_PACKS` export), then 25/25 passed. Wiki doc tests (`wikiDocs`, `readmeDocs`) passed. |
+| 9b Real-dictionary refinement | `e8cc00e1` | A run of the tool over the real `plugins/data/jmdict` (fixture export) gave readings for 2 of 7 Japanese sentences and junk kana groups; tests for `preferCommonReadings` and kana-token filing failed (undefined field), then passed after a fixture fix (both readings of 私/今日/行く marked common). Spec gained two Rulings. |
+| 10 Gates, record | (this commit) | see below; also `Project-layout` wiki row. |
+
+**Gates (final):** `node --test scripts/*.test.mjs` exit 0 (131 tests: 130 pass, 1 skipped — the font-pack
+build needs `npm --prefix scripts/fonts ci`, pre-existing); `node scripts/check-sources.mjs` exit 0 without the
+packs (and, in a temporary check, it correctly demanded docs rows when packs were present, before Task 9);
+full Go run (`gofmt -l .` empty, `go vet ./...` clean, `go test -count=1 -p 2 ./...`): 46 packages ok, 1 FAIL — only the known environment failure `internal/ai` `TestHostnameResolvingToEmbeddedFormIsRefused` (no IPv6 sockets here). Web: no web code changed; `npx vitest run src/lib/wikiDocs.test.ts src/lib/readmeDocs.test.ts`
+passed (docs only), the full web suite was not run.
+
+**Real-dictionary smoke (not a pack):** the tool over the committed CC-CEDICT and JMdict with the fixture export,
+`--root ..`: CEDICT import 27 s, JMdict 60 s; segmentation measured at about 1.4 ms (zh) and 3.3 ms (ja) per
+sentence per worker. Estimated full run on the real export: tens of minutes (not measured; export size unknown).
+
+**Owner commands (from `server/`, with access to downloads.tatoeba.org):**
+
+```sh
+# 1. re-read https://tatoeba.org/en/downloads and https://tatoeba.org/en/terms_of_use;
+#    write what they state into licence.statement of server/tools/tatoeba/pin.json
+go run ./tools/tatoeba pin --licence-checked <YYYY-MM-DD>
+go run ./tools/tatoeba build
+# 2. review ../plugins/upstream/tatoeba/{report,review,sample}-*.{txt,tsv}; tune tools/tatoeba/rules.json; rebuild
+cd .. && node scripts/check-sources.mjs
+(cd server && go test ./internal/sentences ./cmd/qinqin ./tools/tatoeba)
+git add server/tools/tatoeba/pin.json server/tools/tatoeba/rules.json plugins/data/zh-sentences-tatoeba plugins/data/ja-sentences-tatoeba
+```
+
+Keep `plugins/upstream/tatoeba/*.tar.bz2`: Tatoeba overwrites its export weekly; byte-for-byte re-creation needs
+the pinned archives.
+
+**Not verified:** the export file names, member names and column layouts (from documentation/memory; the strict
+column check fails loudly if wrong); that every sentence in `sentences_detailed` is CC BY 2.0 FR and the CC0 file's
+semantics; Tatoeba's requested attribution wording; tag names (`@needs native check` …) and that skill 5 means
+native; the real match rate, readings share, pack sizes, clone/image growth and `qinqin seed` time; whether the
+packs fit comfortably in the repository with `maxPerWord` 5 (the report shows sizes; lower the cap if needed);
+entry examples, cloze and word-tile cards in a running app with the real packs (the server path is tested with the
+golden packs; no browser/app run was done). Known limitations: Chinese single-character words are character
+entries and get no pack sentences (existing importer behaviour); Japanese segmentation is the server's (an
+expression such as 今日は can win over 今日 + は).
