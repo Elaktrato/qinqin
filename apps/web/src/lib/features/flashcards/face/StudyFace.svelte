@@ -7,7 +7,7 @@
 	// FaceAnswer and registers its primary action (cardFace.svelte.ts); the
 	// session provides the face and passes the grade bar.
 	//
-	// API: <StudyFace kindLabel deckLevel cardLabel headingLabel progress countText done keys chips? note? grades? bind:heading>card</StudyFace>
+	// API: <StudyFace kindLabel deckLevel cardLabel headingLabel progress countText done keys chips? note? grades? aux? bind:heading>card</StudyFace>
 	import type { Snippet } from 'svelte';
 	import ActionDock from './ActionDock.svelte';
 	import FaceHeader from './FaceHeader.svelte';
@@ -26,6 +26,7 @@
 		note,
 		status,
 		grades,
+		aux,
 		heading = $bindable(),
 		children
 	}: {
@@ -41,6 +42,8 @@
 		note?: Snippet;
 		status?: Snippet;
 		grades?: Snippet;
+		/** The session's Back controls in the action dock (#131). */
+		aux?: Snippet;
 		heading?: HTMLElement;
 		children: Snippet;
 	} = $props();
@@ -54,7 +57,7 @@
 		{@render children()}
 		{#if note}{@render note()}{/if}
 	</article>
-	<ActionDock {done} {grades} {keys} />
+	<ActionDock {done} {grades} {aux} {keys} />
 </div>
 
 <style>

@@ -83,4 +83,17 @@ describe('GradeBar (#101)', () => {
 		expect(style).toMatch(/@media \(forced-colors: active\)[\s\S]*ButtonText[\s\S]*Highlight/);
 		expect(style).toMatch(/tabular-nums/);
 	});
+
+	it('Back (#131): the previous grade is pressed and says "your grade"', () => {
+		render(GradeBar, { intervals: NEW_CARD, suggested: 3, chosen: 1, busy: false, ongrade: vi.fn() });
+		const buttons = screen.getAllByRole('button');
+		expect(buttons.map((b) => b.getAttribute('aria-pressed'))).toEqual(['true', 'false', 'false', 'false']);
+		expect(buttons[0].textContent).toContain('your grade');
+		expect(buttons[1].textContent).not.toContain('your grade');
+	});
+
+	it('without a previous grade the buttons are not toggles', () => {
+		render(GradeBar, { intervals: NEW_CARD, suggested: null, busy: false, ongrade: vi.fn() });
+		expect(screen.getAllByRole('button').every((b) => !b.hasAttribute('aria-pressed'))).toBe(true);
+	});
 });
