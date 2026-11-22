@@ -7,8 +7,10 @@ package segment
 import (
 	"context"
 	"fmt"
+	"slices"
 
 	"qinqin/internal/lang"
+	"qinqin/internal/lemma"
 	"qinqin/internal/lookup"
 )
 
@@ -71,12 +73,15 @@ func (s Service) MatchAt(ctx context.Context, language, text string, offset int)
 }
 
 // Segment returns the non-overlapping matches of text in ascending order;
-// runs without a match are skipped.
+// runs without a match are skipped. A match is the longest one at its
+// position, except that an expression never cuts a longer word
+// (splitParticle).
 func (s Service) Segment(ctx context.Context, language, text string) ([]Match, error) {
 	runes := []rune(text)
 	matches := []Match{}
+	hints := hintsOf(language)
 	for i := 0; i < len(runes); {
-		m, err := s.matchAt(ctx, language, runes, i)
+		m, results, err := s.lookupAt(ctx, language, runes, i)
 		if err != nil {
 			return nil, err
 		}
@@ -84,36 +89,112 @@ func (s Service) Segment(ctx context.Context, language, text string) ([]Match, e
 			i++
 			continue
 		}
+		if p, err := s.splitParticle(ctx, language, runes, i, m, results, hints); err != nil {
+			return nil, err
+		} else if p != nil {
+			m = p
+		}
 		matches = append(matches, *m)
 		i = m.End
 	}
 	return matches, nil
 }
 
+// hintsOf returns the ranking hints of the language's rule table; none
+// for a language without one.
+func hintsOf(language string) lemma.Hints {
+	if d, ok := lang.For(language).(lang.Deinflector); ok {
+		return d.Rules().Hints
+	}
+	return lemma.Hints{}
+}
+
+// splitParticle applies the boundary rule (docs/contracts/lemma/README.md):
+// when m, the match at offset, is an exact match whose first entry is an
+// expression (every sense tagged with hints.ExpressionPOS), the shortest
+// shorter match at offset is a particle (its first entry has a sense
+// tagged with hints.ParticlePOS) and the match right after that particle
+// ends strictly past m, the token is the particle: 仕事をしている is
+// 仕事 | を | している, not 仕事 | をして | いる. Nil when the rule does not
+// apply.
+func (s Service) splitParticle(ctx context.Context, language string, runes []rune, offset int, m *Match, results []lookup.Result, hints lemma.Hints) (*Match, error) {
+	best := results[0]
+	if len(hints.ExpressionPOS) == 0 || len(hints.ParticlePOS) == 0 || len(best.Reasons) > 0 || !everySense(best, hints.ExpressionPOS) {
+		return nil, nil
+	}
+	short := -1
+	for i, r := range results {
+		if n := r.End - r.Start; n < best.End-best.Start && (short < 0 || n < results[short].End-results[short].Start) {
+			short = i
+		}
+	}
+	if short < 0 || !anySense(results[short], hints.ParticlePOS) {
+		return nil, nil
+	}
+	next, _, err := s.lookupAt(ctx, language, runes, offset+results[short].End-results[short].Start)
+	if err != nil || next == nil || next.End <= m.End {
+		return nil, err
+	}
+	return s.matchOf(results, results[short].Matched, offset), nil
+}
+
+// everySense reports whether r has senses and each has a tag in tags.
+func everySense(r lookup.Result, tags []string) bool {
+	return len(r.Senses) > 0 && !slices.ContainsFunc(r.Senses, func(sn lookup.SenseOut) bool {
+		return !slices.ContainsFunc(sn.POS, func(p string) bool { return slices.Contains(tags, p) })
+	})
+}
+
+// anySense reports whether a sense of r has a tag in tags.
+func anySense(r lookup.Result, tags []string) bool {
+	return slices.ContainsFunc(r.Senses, func(sn lookup.SenseOut) bool {
+		return slices.ContainsFunc(sn.POS, func(p string) bool { return slices.Contains(tags, p) })
+	})
+}
+
 // matchAt looks up the window of lookup.MaxWindowRunes code points from
 // offset — all the engine reads — and shifts the match back to offsets
 // of runes.
 func (s Service) matchAt(ctx context.Context, language string, runes []rune, offset int) (*Match, error) {
+	m, _, err := s.lookupAt(ctx, language, runes, offset)
+	return m, err
+}
+
+// lookupAt is matchAt that also returns the ranked lookup results.
+func (s Service) lookupAt(ctx context.Context, language string, runes []rune, offset int) (*Match, []lookup.Result, error) {
 	if offset < 0 || offset >= len(runes) {
-		return nil, nil
+		return nil, nil, nil
 	}
 	window := string(runes[offset:min(offset+lookup.MaxWindowRunes, len(runes))])
 	results, err := s.Lookup.Lookup(ctx, language, window, 0, nil)
 	if err != nil {
-		return nil, fmt.Errorf("segment: %w", err)
+		return nil, nil, fmt.Errorf("segment: %w", err)
 	}
 	if len(results) == 0 {
-		return nil, nil
+		return nil, nil, nil
 	}
 	// The lookup ranks by matched length first, so the longest match
 	// leads and every result of that length follows it.
-	best := results[0]
-	m := &Match{
-		Surface: best.Matched, Start: offset + best.Start, End: offset + best.End,
-		Lemma: best.Lemma, Reason: lang.ReasonOf(best.Reasons),
-	}
+	return s.matchOf(results, results[0].Matched, offset), results, nil
+}
+
+// matchOf is the match of the results that matched surface (the first
+// of them is its best), at offset.
+func (s Service) matchOf(results []lookup.Result, surface string, offset int) *Match {
+	var m *Match
+	var best lookup.Result
 	for _, r := range results {
-		if r.Matched != best.Matched || len(m.Entries) == MaxReadingCandidates {
+		if r.Matched != surface {
+			continue
+		}
+		if m == nil {
+			best = r
+			m = &Match{
+				Surface: r.Matched, Start: offset + r.Start, End: offset + r.End,
+				Lemma: r.Lemma, Reason: lang.ReasonOf(r.Reasons),
+			}
+		}
+		if len(m.Entries) == MaxReadingCandidates {
 			break
 		}
 		m.Entries = append(m.Entries, Candidate{ID: r.EntryID, Kind: r.Kind, Reading: r.ViaReading})
@@ -121,7 +202,7 @@ func (s Service) matchAt(ctx context.Context, language string, runes []rune, off
 	if s.WithReadings {
 		m.Reading = readingOf(best)
 	}
-	return m, nil
+	return m
 }
 
 // readingOf is the reading lookup reports for r (the matched one, else
