@@ -6,6 +6,7 @@
     "app.workspaces.picker.new",
     "app.workspaces.picker.noWorkspace",
     "nav.brand.homeTitle",
-    "nav.footer"
+    "nav.footer",
+    "settings.tabs.home"
   ]
 }

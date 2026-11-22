@@ -4,7 +4,7 @@ import { t } from '$lib/i18n';
 
 export const SETTINGS_TABS = [
 	'workspaces',
-	'home',
+	'layout',
 	'appearance',
 	'study',
 	'features',
@@ -20,8 +20,8 @@ export const SETTINGS_TAB_LABELS: Readonly<Record<SettingsTab, string>> = {
 	get workspaces() {
 		return t('settings.tabs.workspaces');
 	},
-	get home() {
-		return t('settings.tabs.home');
+	get layout() {
+		return t('settings.tabs.layout');
 	},
 	get appearance() {
 		return t('settings.tabs.appearance');
@@ -99,10 +99,19 @@ export function adminSectionHref(section: AdminSection): string {
 }
 
 /**
+ * Old `?tab=` values and the tab they are now (#188: Home became Layout,
+ * holding the home widgets and the phone navigation). The page replaces
+ * the URL, so old links and bookmarks keep working.
+ */
+export const RENAMED_TABS: Readonly<Record<string, SettingsTab>> = { home: 'layout' };
+
+/**
  * parseSettingsTab reads `?tab=`; a missing or unknown value, or a tab
- * the viewer may not see, is the first tab.
+ * the viewer may not see, is the first tab. A renamed tab's old value is
+ * the new tab.
  */
 export function parseSettingsTab(value: string | null, admin = false): SettingsTab {
+	if (value !== null && Object.hasOwn(RENAMED_TABS, value)) value = RENAMED_TABS[value];
 	return (visibleSettingsTabs(admin) as readonly string[]).includes(value ?? '')
 		? (value as SettingsTab)
 		: 'workspaces';

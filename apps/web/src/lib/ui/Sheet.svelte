@@ -229,7 +229,8 @@
 		min-height: 0;
 		overflow-y: auto;
 		overscroll-behavior: contain;
-		padding: 0 var(--space-4) var(--space-5);
+		/* viewport-fit=cover: the last rows stay above the home indicator. */
+		padding: 0 var(--space-4) calc(var(--space-5) + env(safe-area-inset-bottom, 0px));
 		touch-action: pan-y;
 	}
 	@keyframes sheet-in {

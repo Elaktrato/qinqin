@@ -62,10 +62,10 @@ describe('features tab', () => {
 
 describe('account tab', () => {
 	it('is visible to everyone, between AI and Data', () => {
-		expect(visibleSettingsTabs(false)).toEqual(['workspaces', 'home', 'appearance', 'study', 'features', 'plugins', 'ai', 'account']);
+		expect(visibleSettingsTabs(false)).toEqual(['workspaces', 'layout', 'appearance', 'study', 'features', 'plugins', 'ai', 'account']);
 		expect(visibleSettingsTabs(true)).toEqual([
 			'workspaces',
-			'home',
+			'layout',
 			'appearance',
 			'study',
 			'features',
@@ -84,7 +84,7 @@ describe('account tab', () => {
 describe('settingsTabHref', () => {
 	it('keeps the default tab out of the URL', () => {
 		expect(settingsTabHref('workspaces')).toBe('/settings');
-		expect(settingsTabHref('home')).toBe('/settings?tab=home');
+		expect(settingsTabHref('layout')).toBe('/settings?tab=layout');
 		expect(settingsTabHref('plugins')).toBe('/settings?tab=plugins');
 		expect(settingsTabHref('ai')).toBe('/settings?tab=ai');
 		expect(settingsTabHref('data')).toBe('/settings?tab=data');
@@ -157,7 +157,7 @@ describe('settingsTitleParts', () => {
 describe('the Appearance tab', () => {
 	it('is personal (every user), right after Home', () => {
 		expect(visibleSettingsTabs(false)).toContain('appearance');
-		expect(SETTINGS_TABS.indexOf('appearance')).toBe(SETTINGS_TABS.indexOf('home') + 1);
+		expect(SETTINGS_TABS.indexOf('appearance')).toBe(SETTINGS_TABS.indexOf('layout') + 1);
 		expect(parseSettingsTab('appearance')).toBe('appearance');
 		expect(SETTINGS_TAB_LABELS.appearance).toBe('Appearance');
 		expect(settingsTabHref('appearance')).toBe('/settings?tab=appearance');

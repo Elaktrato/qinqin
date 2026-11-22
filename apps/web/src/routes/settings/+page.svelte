@@ -23,6 +23,7 @@
 	import AudioSettings from '$lib/settings/AudioSettings.svelte';
 	import AppearanceSettings from '$lib/settings/AppearanceSettings.svelte';
 	import HomeLayoutEditor from '$lib/settings/HomeLayoutEditor.svelte';
+	import NavLayoutSettings from '$lib/settings/NavLayoutSettings.svelte';
 	import StudyDaySettings from '$lib/settings/StudyDaySettings.svelte';
 	import StudySettings from '$lib/settings/StudySettings.svelte';
 	import LanguageManager from '$lib/settings/LanguageManager.svelte';
@@ -31,6 +32,7 @@
 	import { isDataPackPlugin } from '$lib/plugins/dataPacks';
 	import { user } from '$lib/auth';
 	import {
+		RENAMED_TABS,
 		SETTINGS_TAB_LABELS,
 		parseSettingsTab,
 		settingsTabHref,
@@ -60,6 +62,14 @@
 	const admin = $derived($user?.admin === true);
 	const tabs = $derived(visibleSettingsTabs(admin));
 	const activeTab = $derived(parseSettingsTab(page.url.searchParams.get('tab'), admin));
+	// A renamed tab's old link (`?tab=home`) lands on the new tab, and the
+	// URL follows (the fragment kept).
+	$effect(() => {
+		const raw = page.url.searchParams.get('tab');
+		if (raw !== null && Object.hasOwn(RENAMED_TABS, raw)) {
+			void goto(`${settingsTabHref(RENAMED_TABS[raw])}${page.url.hash}`, { replaceState: true, keepFocus: true, noScroll: true });
+		}
+	});
 	async function selectTab(tab: SettingsTab): Promise<void> {
 		if (tab !== activeTab) {
 			await goto(settingsTabHref(tab), { replaceState: true, keepFocus: true, noScroll: true });
@@ -367,8 +377,9 @@
 		<WorkspaceCreateForm idPrefix="settings-new" />
 			</div>
 
-			<div class="group" hidden={activeTab !== 'home'}>
+			<div class="group" hidden={activeTab !== 'layout'}>
 				<HomeLayoutEditor />
+				<NavLayoutSettings />
 			</div>
 
 			<div class="group" hidden={activeTab !== 'study'}>

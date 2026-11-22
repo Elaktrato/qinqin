@@ -208,6 +208,6 @@ describe('home with a feature switched off', () => {
 		await waitFor(() => expect(screen.getByText(/None of your home widgets is available in this workspace/)).toBeTruthy());
 		expect(document.querySelector('[data-widget="flashcards-summary"]')).toBeNull();
 		const link = screen.getByRole('link', { name: 'Choose widgets in Settings' });
-		expect(link.getAttribute('href')).toBe('/settings?tab=home');
+		expect(link.getAttribute('href')).toBe('/settings?tab=layout');
 	});
 });

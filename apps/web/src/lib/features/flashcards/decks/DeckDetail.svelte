@@ -653,7 +653,9 @@
 
 	.toast-region {
 		position: fixed;
-		inset: auto 1rem 1rem 1rem;
+		/* Above the phone bottom bar (#188) and the safe area. */
+		inset: auto 1rem calc(1rem + max(var(--bottom-bar-space, 0px), env(safe-area-inset-bottom, 0px))) 1rem;
+		z-index: var(--layer-float);
 		display: flex;
 		justify-content: center;
 		pointer-events: none;

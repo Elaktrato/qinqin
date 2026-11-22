@@ -97,6 +97,11 @@ Design: `docs/superpowers/specs/2026-11-16-visual-rework-design.md`; mockups:
   and links use the base components and theme tokens.
 - Open: [#107](https://github.com/Elaktrato/qinqin/issues/107) the owner's lotus stages, level
   badges and day markers. #95 closes when those drawings land.
+- ~~[#188](https://github.com/Elaktrato/qinqin/issues/188) phone bottom bar~~ (design
+  `docs/superpowers/specs/2026-11-22-phone-bottom-bar-design.md`; row `nav-layout`,
+  `docs/contracts/settings/nav-layout.json`; handoff `docs/superpowers/handoffs/2026-11-22-phone-bottom-bar.md`):
+  phones get a bottom bar of up to five sections (four pins plus More) by default, the side menu stays as an
+  option, both chosen in Settings → Layout (was Home). Owner to try it on a real phone (handoff §3).
 - Owner checks: every page at 360 and 1440 px in light and dark and in at least three themes;
   the qinqin Day, Night and Deep themes on a real device; a real screen reader, touch and
   200 % zoom pass.
