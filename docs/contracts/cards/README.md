@@ -1,7 +1,8 @@
-# Card ids, burying, cloze and deck sessions (reverse and cloze cards, #65)
+# Card ids, burying, cloze, deck sessions and the session mix (reverse and cloze cards, #65; #132)
 
 Rules every client implements identically. Fixtures: `{"version":1,"rule":"cards/<name>","cases":[...]}`;
-`deck-session.json` has three case lists instead: `plans`, `steps`, `eligible`.
+`deck-session.json` has three case lists instead: `plans`, `steps`, `eligible`; `session-mix.json` has `keys`,
+`gaps`, `queues`.
 
 ## Card kinds and ids
 
@@ -119,3 +120,36 @@ Ruling: the fixture pins the **plan** and eligibility, not which sentence a sent
 virtual item is graded — sentence choice and cloze are already pinned (`cloze.json`), grade suggestions are
 deferred (spec D2) — cost: none.
 
+
+## Session mix (`session-mix.json`, #132)
+
+The order of the card types inside a session, applied **after** the plan (deck sessions above, level sessions
+`levels/`): it reorders the planned queue and never adds, drops or re-admits an item, so limits, caps, the
+reserve and burying are unchanged. Web: `lib/study/sessionMix.ts` (`mixSession`, `mixFlowQueue`), decoded by
+`apps/web/src/lib/study/sessionMix.test.ts`. Spec: `docs/superpowers/specs/2026-11-22-mix-card-types-design.md`.
+
+- **Blocks**: the due block (a real card with a valid review) and the new block (never reviewed or virtual), each
+  keeping its items; output `[...due, ...new]`.
+- **Order** (the session setup's `typeOrder`, absent = `mixed`): `grouped` sorts each block stably by kind order
+  (`vocab, sentence, writing, tone, reverse, cloze`), incoming order inside a kind; no seed, no spacing.
+- **Mixed**, per block of `N` items:
+  1. item `j` (0-based, incoming order) of a kind with `n` items gets `p = ((j + 0.5) / n) * N`;
+  2. `key = p + 8 * mixKey(seed, cardId)` (`MIX_SPREAD = 8`); sort ascending, ties by kind order, then `j`;
+  3. spacing, one item per step; `sep(word)` = items placed since that word's (`entryId`) last item, infinite if
+     none, the due block's output counting for the new block. With `R` items left and `r` of a word's: the first
+     item whose word has `2r - 1 >= R` and `sep >= 1` goes now; else, for `need = gap … 0`, the first item whose
+     word has `sep >= need`;
+  4. `gap = typeGap(N)` = 1 if `N < 8`, 2 if `N < 16`, else 3.
+- `mixKey(seed, cardId) = randomKey(seed)(fnv1a32(cardId))`: FNV-1a 32 over the UTF-8 bytes (offset `0x811c9dc5`,
+  prime `0x01000193`, unsigned), passed to `randomKey` (`frequency/` new order: `seed | 0`, `id | 0`, the
+  `0x9e3779b1`/`0x85ebca6b` mix, result `/ 2^32`). Doubles throughout; evaluate `p` exactly as written.
+- `seed` is the session's seed (drawn when the setup's Start is pressed, the same one the random new order uses),
+  so a reload of the same session gives the same queue for the same items, and the next session another one.
+- Never back to back: whenever no word holds more than `ceil(R / 2)` of a block's `R` items, no two neighbours in
+  the block share a word. When the gap cannot be met (one word's four types) the result is the deterministic best
+  effort above.
+- Unchanged: Again re-shows (`requeueAfterGrade`, after 4 other cards), reserve replacements (appended at the
+  end), burying in the session (`bury` steps above: only when an opt-in kind is on either side).
+
+Case: `keys`: `{cardId, seed, fnv, key}` (exact doubles); `gaps`: `{n, gap}`; `queues`: `{name, note?, seed, order,
+items: [{cardId, kind, entryId, review}], expect: [cardId]}` (`items` in plan order).

@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import fixture from '../../../../../docs/contracts/cards/session-mix.json';
-import { fnv1a32, mixKey, spaceOut, typeGap } from './sessionMix';
+import type { FlowItem } from './cardFlow';
+import type { ReviewEvent, StudyCardKind } from './types';
+import { fnv1a32, mixFlowQueue, mixKey, mixSession, spaceOut, typeGap, type TypeOrder } from './sessionMix';
 
 describe('docs/contracts/cards/session-mix.json keys', () => {
 	it('pins the rule name', () => {
@@ -92,5 +94,101 @@ describe('spaceOut', () => {
 				expect(out[i].entryId, `round ${round} at ${i}: ${JSON.stringify(ids(out))}`).not.toBe(out[i - 1].entryId);
 			}
 		}
+	});
+});
+
+type FixtureItem = { cardId: string; kind: string; entryId: number; review: boolean };
+const asItems = (items: readonly FixtureItem[]) =>
+	items.map((item) => ({ ...item, kind: item.kind as StudyCardKind }));
+
+describe('docs/contracts/cards/session-mix.json queues', () => {
+	it('has cases', () => {
+		expect(fixture.queues.length).toBeGreaterThan(5);
+	});
+
+	for (const c of fixture.queues) {
+		it(c.name, () => {
+			const items = asItems(c.items);
+			const out = mixSession(items, {
+				seed: c.seed,
+				order: c.order as TypeOrder,
+				isReview: (item) => item.review
+			});
+			expect(out.map((item) => item.cardId)).toEqual(c.expect);
+			// Same set, due block first.
+			expect([...out].map((item) => item.cardId).sort()).toEqual(items.map((item) => item.cardId).sort());
+			const dueCount = items.filter((item) => item.review).length;
+			expect(out.slice(0, dueCount).every((item) => item.review)).toBe(true);
+		});
+	}
+});
+
+describe('mixSession', () => {
+	const items = asItems([
+		{ cardId: 'c-vocab-1', kind: 'vocab', entryId: 1, review: false },
+		{ cardId: 'c-vocab-2', kind: 'vocab', entryId: 2, review: false },
+		{ cardId: 'c-vocab-3', kind: 'vocab', entryId: 3, review: false },
+		{ cardId: 'companion:writing:1', kind: 'writing', entryId: 1, review: false },
+		{ cardId: 'companion:writing:2', kind: 'writing', entryId: 2, review: false },
+		{ cardId: 'companion:tone:3', kind: 'tone', entryId: 3, review: false }
+	]);
+	const mixed = (seed: number) =>
+		mixSession(items, { seed, order: 'mixed', isReview: () => false }).map((item) => item.cardId);
+
+	it('gives the same queue for the same seed (a reload)', () => {
+		expect(mixed(11)).toEqual(mixed(11));
+	});
+
+	it('differs between sessions (seeds)', () => {
+		const orders = new Set([1, 2, 3, 4, 5, 6, 7, 8].map((seed) => mixed(seed).join(' ')));
+		expect(orders.size).toBeGreaterThan(1);
+	});
+
+	it('no longer puts every companion after the word cards', () => {
+		for (const seed of [1, 2, 3, 4, 5]) {
+			const out = mixed(seed);
+			expect(out.slice(0, 3).some((id) => id.startsWith('companion:')), `seed ${seed}: ${out.join(' ')}`).toBe(true);
+		}
+	});
+
+	it('grouped ignores the seed', () => {
+		const grouped = (seed: number) =>
+			mixSession(items, { seed, order: 'grouped', isReview: () => false }).map((item) => item.cardId);
+		expect(grouped(1)).toEqual(grouped(2));
+		expect(grouped(1)).toEqual(items.map((item) => item.cardId));
+	});
+
+	it('does not change its input and handles an empty queue', () => {
+		const copy = items.map((item) => ({ ...item }));
+		mixSession(items, { seed: 1, order: 'mixed', isReview: () => false });
+		expect(items).toEqual(copy);
+		expect(mixSession([], { seed: 1, order: 'mixed', isReview: () => false })).toEqual([]);
+	});
+});
+
+describe('mixFlowQueue', () => {
+	const flow = (cardId: string, kind: StudyCardKind, entryId: number, virtual = false): FlowItem => ({
+		cardId,
+		kind,
+		entryId,
+		virtual,
+		card: null
+	});
+	const review = (cardId: string): ReviewEvent =>
+		({
+			id: `r-${cardId}`,
+			type: 'review',
+			ts: '2026-11-01T09:00:00Z',
+			payload: { cardId, grade: 3, mode: 'vocab' }
+		}) as unknown as ReviewEvent;
+
+	it('puts the real cards with a valid review first (the due block)', () => {
+		const queue = [
+			flow('c-vocab-1', 'vocab', 1),
+			flow('c-vocab-2', 'vocab', 2),
+			flow('companion:writing:3', 'writing', 3, true)
+		];
+		const out = mixFlowQueue(queue, [review('c-vocab-2')], { seed: 4, order: 'grouped' });
+		expect(out.map((item) => item.cardId)).toEqual(['c-vocab-2', 'c-vocab-1', 'companion:writing:3']);
 	});
 });
