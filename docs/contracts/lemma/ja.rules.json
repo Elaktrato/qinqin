@@ -62,7 +62,7 @@
   {"from": "くなかった", "to": "い", "reason": "negative past", "out": "adj-i"},
   {"from": "かった", "to": "い", "reason": "past", "out": "adj-i"},
   {"from": "くない", "to": "い", "reason": "negative", "in": ["adj-i"], "out": "adj-i"},
-  {"from": "くて", "to": "い", "reason": "te-form", "out": "adj-i"},
+  {"from": "くて", "to": "い", "reason": "te-form", "in": ["te"], "out": "adj-i"},
   {"from": "ければ", "to": "い", "reason": "conditional", "out": "adj-i"},
   {"from": "わなかった", "to": "う", "reason": "negative past", "out": "v5"},
   {"from": "わない", "to": "う", "reason": "negative", "in": ["adj-i"], "out": "v5"},
@@ -245,8 +245,15 @@
   {"from": "よくなかった", "to": "よい", "reason": "negative past", "out": "adj-ix"},
   {"from": "よかった", "to": "よい", "reason": "past", "out": "adj-ix"},
   {"from": "よくない", "to": "よい", "reason": "negative", "in": ["adj-i"], "out": "adj-ix"},
-  {"from": "よくて", "to": "よい", "reason": "te-form", "out": "adj-ix"},
+  {"from": "よくて", "to": "よい", "reason": "te-form", "in": ["te"], "out": "adj-ix"},
   {"from": "よければ", "to": "よい", "reason": "conditional", "out": "adj-ix"},
-  {"from": "よく", "to": "よい", "reason": "adverbial", "out": "adj-ix"}
+  {"from": "よく", "to": "よい", "reason": "adverbial", "out": "adj-ix"},
+  {"from": "ないで", "to": "ない", "reason": "te-form", "in": ["te"], "out": "adj-i"},
+  {"from": "てはいけない", "to": "て", "reason": "prohibition", "out": "te"},
+  {"from": "てはいけません", "to": "て", "reason": "prohibition", "out": "te"},
+  {"from": "てもいい", "to": "て", "reason": "permission", "out": "te"},
+  {"from": "ではいけない", "to": "で", "reason": "prohibition", "out": "te"},
+  {"from": "ではいけません", "to": "で", "reason": "prohibition", "out": "te"},
+  {"from": "でもいい", "to": "で", "reason": "permission", "out": "te"}
  ]
 }

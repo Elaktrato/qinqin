@@ -1030,6 +1030,151 @@
      ]
     }
    ]
+  },
+  {
+   "name": "negative request (ichidan)",
+   "surface": "食べないでください",
+   "expect": [
+    {
+     "form": "食べる",
+     "class": "v1",
+     "reasons": [
+      "request",
+      "te-form",
+      "negative"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "negative request (godan)",
+   "surface": "行かないでください",
+   "expect": [
+    {
+     "form": "行く",
+     "class": "v5",
+     "reasons": [
+      "request",
+      "te-form",
+      "negative"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "negative request (する compound)",
+   "surface": "心配しないでください",
+   "expect": [
+    {
+     "form": "心配する",
+     "class": "vs",
+     "reasons": [
+      "request",
+      "te-form",
+      "negative"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "negative te-form",
+   "surface": "食べないで",
+   "expect": [
+    {
+     "form": "食べる",
+     "class": "v1",
+     "reasons": [
+      "te-form",
+      "negative"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "prohibition",
+   "surface": "してはいけない",
+   "expect": [
+    {
+     "form": "する",
+     "class": "vs",
+     "reasons": [
+      "prohibition",
+      "te-form"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "prohibition, polite",
+   "surface": "撮ってはいけません",
+   "expect": [
+    {
+     "form": "撮る",
+     "class": "v5",
+     "reasons": [
+      "prohibition",
+      "te-form"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "prohibition after で",
+   "surface": "読んではいけない",
+   "expect": [
+    {
+     "form": "読む",
+     "class": "v5",
+     "reasons": [
+      "prohibition",
+      "te-form"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "permission",
+   "surface": "食べてもいい",
+   "expect": [
+    {
+     "form": "食べる",
+     "class": "v1",
+     "reasons": [
+      "permission",
+      "te-form"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "permission of a negative",
+   "surface": "食べなくてもいい",
+   "expect": [
+    {
+     "form": "食べる",
+     "class": "v1",
+     "reasons": [
+      "permission",
+      "te-form",
+      "negative"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "permission of a negative する",
+   "surface": "しなくてもいい",
+   "expect": [
+    {
+     "form": "する",
+     "class": "vs",
+     "reasons": [
+      "permission",
+      "te-form",
+      "negative"
+     ]
+    }
+   ]
   }
  ]
 }

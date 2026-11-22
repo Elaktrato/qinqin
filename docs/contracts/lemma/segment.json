@@ -805,6 +805,35 @@
     "spec1"
    ],
    "uk": false
+  },
+  {
+   "forms": [
+    "忘れる"
+   ],
+   "readings": [
+    "わすれる"
+   ],
+   "pos": [
+    "v1",
+    "vt"
+   ],
+   "pri": [
+    "ichi1"
+   ],
+   "uk": false
+  },
+  {
+   "forms": [],
+   "readings": [
+    "ね"
+   ],
+   "pos": [
+    "prt"
+   ],
+   "pri": [
+    "spec1"
+   ],
+   "uk": false
   }
  ],
  "cases": [
@@ -1391,6 +1420,66 @@
       "te-form"
      ],
      "head": "言う"
+    }
+   ]
+  },
+  {
+   "name": "negative request",
+   "text": "食べないでください",
+   "tokens": [
+    {
+     "surface": "食べないでください",
+     "start": 0,
+     "end": 9,
+     "lemma": "食べる",
+     "reasons": [
+      "request",
+      "te-form",
+      "negative"
+     ],
+     "head": "食べる"
+    }
+   ]
+  },
+  {
+   "name": "negative te-form before a particle",
+   "text": "忘れないでね",
+   "tokens": [
+    {
+     "surface": "忘れないで",
+     "start": 0,
+     "end": 5,
+     "lemma": "忘れる",
+     "reasons": [
+      "te-form",
+      "negative"
+     ],
+     "head": "忘れる"
+    },
+    {
+     "surface": "ね",
+     "start": 5,
+     "end": 6,
+     "lemma": "ね",
+     "reasons": [],
+     "head": "ね"
+    }
+   ]
+  },
+  {
+   "name": "prohibition",
+   "text": "してはいけない",
+   "tokens": [
+    {
+     "surface": "してはいけない",
+     "start": 0,
+     "end": 7,
+     "lemma": "する",
+     "reasons": [
+      "prohibition",
+      "te-form"
+     ],
+     "head": "為る"
     }
    ]
   }
