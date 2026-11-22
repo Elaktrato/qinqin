@@ -8,7 +8,8 @@
   "v5": {"prefixes": ["v5"]},
   "vs": {"tags": ["vs", "vs-i", "vs-s", "vs-c"]},
   "vk": {"tags": ["vk"]},
-  "adj-i": {"tags": ["adj-i", "adj-ix"]},
+  "adj-i": {"tags": ["adj-i"]},
+  "adj-ix": {"tags": ["adj-ix"]},
   "masu": {},
   "te": {}
  },
@@ -239,6 +240,12 @@
   {"from": "びながら", "to": "ぶ", "reason": "while", "out": "v5"},
   {"from": "みながら", "to": "む", "reason": "while", "out": "v5"},
   {"from": "りながら", "to": "る", "reason": "while", "out": "v5"},
-  {"from": "く", "to": "い", "reason": "adverbial", "out": "adj-i"}
+  {"from": "く", "to": "い", "reason": "adverbial", "out": "adj-i", "stem": {"anyOf": [{"minRunes": 2}, {"notOnly": "kana"}]}},
+  {"from": "よくなかった", "to": "よい", "reason": "negative past", "out": "adj-ix"},
+  {"from": "よかった", "to": "よい", "reason": "past", "out": "adj-ix"},
+  {"from": "よくない", "to": "よい", "reason": "negative", "in": ["adj-i"], "out": "adj-ix"},
+  {"from": "よくて", "to": "よい", "reason": "te-form", "out": "adj-ix"},
+  {"from": "よければ", "to": "よい", "reason": "conditional", "out": "adj-ix"},
+  {"from": "よく", "to": "よい", "reason": "adverbial", "out": "adj-ix"}
  ]
 }

@@ -954,6 +954,82 @@
     "おる",
     "おて"
    ]
+  },
+  {
+   "name": "いく is not the adverbial of いい",
+   "surface": "いく",
+   "expect": [],
+   "reject": [
+    "いい"
+   ]
+  },
+  {
+   "name": "なく is not the adverbial of a one-kana stem",
+   "surface": "なく",
+   "expect": [],
+   "reject": [
+    "ない"
+   ]
+  },
+  {
+   "name": "しく is not the adverbial of a one-kana stem",
+   "surface": "しく",
+   "expect": [],
+   "reject": [
+    "しい"
+   ]
+  },
+  {
+   "name": "adverbial of a kana adjective",
+   "surface": "おおきく",
+   "expect": [
+    {
+     "form": "おおきい",
+     "class": "adj-i",
+     "reasons": [
+      "adverbial"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "adj-ix negative conjugates on よ",
+   "surface": "かっこよくない",
+   "expect": [
+    {
+     "form": "かっこよい",
+     "class": "adj-ix",
+     "reasons": [
+      "negative"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "adj-ix past",
+   "surface": "かっこよかった",
+   "expect": [
+    {
+     "form": "かっこよい",
+     "class": "adj-ix",
+     "reasons": [
+      "past"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "adj-ix adverbial",
+   "surface": "かっこよく",
+   "expect": [
+    {
+     "form": "かっこよい",
+     "class": "adj-ix",
+     "reasons": [
+      "adverbial"
+     ]
+    }
+   ]
   }
  ]
 }

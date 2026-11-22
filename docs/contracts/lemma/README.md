@@ -98,7 +98,9 @@ with priority, stay). Priority is the entry score the server derives from JMdict
 
 ## Japanese table (`ja.rules.json`)
 
-Classes `v1`, `v5`, `vs`, `vk`, `adj-i` (dictionary forms), `masu`, `te` (intermediate). Kana te-form
+Classes `v1`, `v5`, `vs`, `vk`, `adj-i`, `adj-ix` (dictionary forms), `masu`, `te` (intermediate). `adj-ix`
+(いい, かっこいい) inflects only on its よ form (かっこよくない → かっこよい, which JMdict lists as a reading);
+the adverbial く needs a stem of two code points or a non-kana one (いく, なく, しく are not adverbials). Kana te-form
 auxiliaries fold into the verb (ている/てる, ておく/とく, てしまう/ちゃう/ちまう, てみる, ていく, てくる,
 てください, てあげる, てくれる, てもらう; で- variants): the lemma is the main verb, the auxiliary a reason.
 Godan imperatives are deliberately not deinflected (届け, 構え are nouns far more often).

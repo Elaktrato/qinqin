@@ -34,7 +34,9 @@ func TestClassMatches(t *testing.T) {
 		{lang.ClassVk, []string{"vk"}, true},
 		{lang.ClassVk, []string{"v1"}, false},
 		{lang.ClassAdjI, []string{"adj-i"}, true},
-		{lang.ClassAdjI, []string{"adj-ix"}, true},
+		{lang.ClassAdjI, []string{"adj-ix"}, false}, // いい/かっこいい conjugate on よ: class adj-ix
+		{"adj-ix", []string{"adj-ix"}, true},
+		{"adj-ix", []string{"adj-i"}, false},
 		{lang.ClassAdjI, []string{"adj-na", "adj-no"}, false},
 		{lang.ClassV1, nil, false},
 		{"", []string{"v1"}, false},

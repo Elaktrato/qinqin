@@ -7,5 +7,5 @@ const (
 	ClassV5   = "v5"    // godan verb: any v5* (v5r, v5k-s, v5aru, v5r-i, …)
 	ClassVs   = "vs"    // する verb: vs, vs-i, vs-s, vs-c
 	ClassVk   = "vk"    // 来る: vk
-	ClassAdjI = "adj-i" // i-adjective: adj-i, adj-ix
+	ClassAdjI = "adj-i" // i-adjective: adj-i (adj-ix, いい/かっこいい, is class "adj-ix": it conjugates on よ)
 )
