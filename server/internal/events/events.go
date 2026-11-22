@@ -5,10 +5,12 @@
 package events
 
 import (
+	"bufio"
 	"context"
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"io"
 	"time"
 
 	"qinqin/internal/model"
@@ -91,18 +93,7 @@ func DeleteLookups(ctx context.Context, sqlDB *sql.DB, userID, workspaceID int64
 // workspaces — the combined cross-language view; a non-nil one returns
 // that workspace's events alone.
 func Since(ctx context.Context, sqlDB *sql.DB, userID int64, since time.Time, workspaceID *int64) ([]model.StudyEvent, error) {
-	// Timestamps are stored uniformly as UTC RFC 3339, so comparing the
-	// text columns is chronological.
-	query := `SELECT id, user_id, workspace_id, device, ts, type, payload
-		FROM study_events
-		WHERE user_id = ? AND ts >= ?`
-	args := []any{userID, since.UTC().Format(time.RFC3339)}
-	if workspaceID != nil {
-		query += ` AND workspace_id = ?`
-		args = append(args, *workspaceID)
-	}
-	query += ` ORDER BY ts, id`
-
+	query, args := sinceQuery(userID, since, workspaceID)
 	rows, err := sqlDB.QueryContext(ctx, query, args...)
 	if err != nil {
 		return nil, fmt.Errorf("read study events of user %d: %w", userID, err)
@@ -111,26 +102,88 @@ func Since(ctx context.Context, sqlDB *sql.DB, userID int64, since time.Time, wo
 
 	list := make([]model.StudyEvent, 0)
 	for rows.Next() {
-		var (
-			ev      model.StudyEvent
-			ts      string
-			payload string
-		)
-		if err := rows.Scan(&ev.ID, &ev.UserID, &ev.WorkspaceID, &ev.Device, &ts, &ev.Type, &payload); err != nil {
-			return nil, fmt.Errorf("scan study event of user %d: %w", userID, err)
-		}
-		parsed, err := time.Parse(time.RFC3339, ts)
+		ev, err := scanEvent(rows, userID)
 		if err != nil {
-			return nil, fmt.Errorf("scan study event %s of user %d: %w", ev.ID, userID, err)
+			return nil, err
 		}
-		ev.TS = parsed
-		ev.Payload = json.RawMessage(payload)
 		list = append(list, ev)
 	}
 	if err := rows.Err(); err != nil {
 		return nil, fmt.Errorf("read study events of user %d: %w", userID, err)
 	}
 	return list, nil
+}
+
+// sinceQuery is the scan of Since and StreamSince. Timestamps are stored
+// uniformly as UTC RFC 3339, so comparing the text columns is chronological.
+func sinceQuery(userID int64, since time.Time, workspaceID *int64) (string, []any) {
+	query := `SELECT id, user_id, workspace_id, device, ts, type, payload
+		FROM study_events
+		WHERE user_id = ? AND ts >= ?`
+	args := []any{userID, since.UTC().Format(time.RFC3339)}
+	if workspaceID != nil {
+		query += ` AND workspace_id = ?`
+		args = append(args, *workspaceID)
+	}
+	return query + ` ORDER BY ts, id`, args
+}
+
+// StreamSince writes Since's list as the JSON array json.Marshal would
+// give, row by row (the legacy form of GET /api/events): memory stays one
+// row and a write buffer however long the log. A write error ends the
+// stream with that error; the array is then truncated.
+func StreamSince(ctx context.Context, w io.Writer, sqlDB *sql.DB, userID int64, since time.Time, workspaceID *int64) error {
+	query, args := sinceQuery(userID, since, workspaceID)
+	rows, err := sqlDB.QueryContext(ctx, query, args...)
+	if err != nil {
+		return fmt.Errorf("read study events of user %d: %w", userID, err)
+	}
+	defer rows.Close()
+	out := bufio.NewWriterSize(w, 32<<10)
+	out.WriteByte('[')
+	first := true
+	for rows.Next() {
+		ev, err := scanEvent(rows, userID)
+		if err != nil {
+			return err
+		}
+		raw, err := json.Marshal(ev)
+		if err != nil {
+			return fmt.Errorf("encode study event %s: %w", ev.ID, err)
+		}
+		if !first {
+			out.WriteByte(',')
+		}
+		first = false
+		if _, err := out.Write(raw); err != nil {
+			return err
+		}
+	}
+	if err := rows.Err(); err != nil {
+		return fmt.Errorf("read study events of user %d: %w", userID, err)
+	}
+	out.WriteByte(']')
+	return out.Flush()
+}
+
+// scanEvent reads one row of id, user_id, workspace_id, device, ts, type,
+// payload (the select list of Since, ListPage and StreamSince).
+func scanEvent(rows *sql.Rows, userID int64) (model.StudyEvent, error) {
+	var (
+		ev      model.StudyEvent
+		ts      string
+		payload string
+	)
+	if err := rows.Scan(&ev.ID, &ev.UserID, &ev.WorkspaceID, &ev.Device, &ts, &ev.Type, &payload); err != nil {
+		return model.StudyEvent{}, fmt.Errorf("scan study event of user %d: %w", userID, err)
+	}
+	parsed, err := time.Parse(time.RFC3339, ts)
+	if err != nil {
+		return model.StudyEvent{}, fmt.Errorf("scan study event %s of user %d: %w", ev.ID, userID, err)
+	}
+	ev.TS = parsed
+	ev.Payload = json.RawMessage(payload)
+	return ev, nil
 }
 
 // payloadOf returns the event's payload as stored text, normalizing an

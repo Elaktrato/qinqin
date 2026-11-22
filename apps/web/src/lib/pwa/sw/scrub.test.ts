@@ -44,6 +44,15 @@ describe('scrubForCache (#72)', () => {
 		expect(JSON.parse(scrubForCache('/api/events', JSON.stringify(evs)) as string).map((e: { id: string }) => e.id)).toEqual(['1', '3']);
 	});
 
+	it('drops lookup events from a saved page of the event log (#110)', () => {
+		const page = { events: [{ id: '1', type: 'review' }, { id: '2', type: 'lookup', payload: { query: 'ma' } }], more: true, next: 'e1.x' };
+		expect(JSON.parse(scrubForCache('/api/events', JSON.stringify(page)) as string)).toEqual({ events: [{ id: '1', type: 'review' }], more: true, next: 'e1.x' });
+		const clean = JSON.stringify({ events: [{ id: '1', type: 'review' }], more: false, next: null });
+		expect(scrubForCache('/api/events', clean)).toBe(clean);
+		expect(scrubForCache('/api/events', JSON.stringify({ events: 'x', more: false, next: null }))).toBeNull();
+		expect(scrubForCache('/api/events', JSON.stringify({ more: false }))).toBeNull();
+	});
+
 	it('leaves other reads byte for byte, refuses an unreadable body of a scrubbed path', () => {
 		expect(scrubForCache('/api/workspaces', '[ 1 ]')).toBe('[ 1 ]');
 		expect(scrubForCache('/api/sync/pull', '{oops')).toBeNull();
