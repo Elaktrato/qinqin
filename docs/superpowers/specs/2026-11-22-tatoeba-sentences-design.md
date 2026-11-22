@@ -170,6 +170,11 @@ differ only in script (わたし/ワタシ) are one — found by a run over the 
 gave 2 readings in 7 test sentences — cost if wrong: a rare reading meant by the writer is shown as the
 common one; turn the flag off in `rules.json`.
 
+Ruling (review fix, sentence identity): the importer identifies a pack sentence by entry, text and translation
+(no longer the reading): a rebuild that only changes, adds or drops a reading updates the row in place, keeping
+its id (sentence cards keep pointing at it) and restamping it for sync; a text or translation change is still a
+new sentence — cost if wrong: two pack sentences differing only in reading collapse to one (the first wins).
+
 Ruling: a sentence reading is all-or-nothing — the pack format has one reading per sentence; a partial
 reading would be a guess presented as fact — cost if wrong: fewer readings in Japanese; the report gives the
 share.

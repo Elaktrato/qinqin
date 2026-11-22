@@ -91,7 +91,7 @@ func ImportPack(ctx context.Context, sqlDB *sql.DB, pack dict.Pack) (Result, err
 	var (
 		rows    []sentenceRow
 		skipped []string
-		written = map[sentenceRow]bool{}
+		written = map[[3]string]bool{} // entry, text, translation: a sentence's identity
 	)
 	for _, g := range groups {
 		e, err := store.BestWord(ctx, m.Language, g.Word)
@@ -103,11 +103,12 @@ func ImportPack(ctx context.Context, sqlDB *sql.DB, pack dict.Pack) (Result, err
 			return Result{}, fmt.Errorf("import sentences %s: %w", m.ID, err)
 		}
 		for _, s := range g.Sentences {
-			// The same sentence listed twice for an entry is one row.
-			k := sentenceRow{entryID: e.ID, sentence: s}
-			if !written[k] {
-				written[k] = true
-				rows = append(rows, k)
+			// The same sentence listed twice for an entry is one row (the
+			// first reading wins).
+			id := [3]string{fmt.Sprint(e.ID), s.Hanzi, s.Translation}
+			if !written[id] {
+				written[id] = true
+				rows = append(rows, sentenceRow{entryID: e.ID, sentence: s})
 			}
 		}
 	}
@@ -360,17 +361,20 @@ func writePack(ctx context.Context, sqlDB *sql.DB, m dict.Manifest, rows []sente
 		return err
 	}
 
-	// Diff against the pack's stored sentences — identified by entry and
-	// text — and write only the difference: an unchanged sentence keeps
-	// its row and stamp, one returning from a tombstone is revived, a new
-	// one inserted, and one the pack dropped tombstoned. An identical
-	// re-import therefore writes nothing.
+	// Diff against the pack's stored sentences — identified by entry,
+	// text and translation — and write only the difference: an unchanged
+	// sentence keeps its row and stamp, one whose reading alone changed is
+	// updated in place (its id, which sentence cards keep, stays), one
+	// returning from a tombstone is revived, a new one inserted, and one
+	// the pack dropped tombstoned. An identical re-import therefore writes
+	// nothing.
 	type key struct {
-		entryID                  int64
-		hanzi, pinyin, translate string
+		entryID          int64
+		hanzi, translate string
 	}
 	type stored struct {
 		id     int64
+		pinyin string
 		active bool
 	}
 	cur, err := tx.QueryContext(ctx, `
@@ -387,7 +391,7 @@ func writePack(ctx context.Context, sqlDB *sql.DB, m dict.Manifest, rows []sente
 			k key
 			s stored
 		)
-		if err := cur.Scan(&s.id, &k.entryID, &k.hanzi, &k.pinyin, &k.translate, &s.active); err != nil {
+		if err := cur.Scan(&s.id, &k.entryID, &k.hanzi, &s.pinyin, &k.translate, &s.active); err != nil {
 			cur.Close()
 			return fmt.Errorf("read sentences of pack %s: %w", m.ID, err)
 		}
@@ -407,24 +411,25 @@ func writePack(ctx context.Context, sqlDB *sql.DB, m dict.Manifest, rows []sente
 
 	wanted := make(map[key]bool, len(rows))
 	for _, r := range rows {
-		k := key{r.entryID, r.sentence.Hanzi, r.sentence.Pinyin, r.sentence.Translation}
+		k := key{r.entryID, r.sentence.Hanzi, r.sentence.Translation}
 		if wanted[k] {
-			continue
+			continue // the same sentence twice (with another reading): the first wins
 		}
 		wanted[k] = true
+		pinyin := r.sentence.Pinyin
 		switch have, ok := existing[k]; {
 		case !ok:
 			if _, err := tx.ExecContext(ctx, `
 				INSERT INTO sentences (entry_id, source_pack, user_id, hanzi, pinyin, translation, updated_at)
 				VALUES (?, ?, NULL, ?, ?, ?, ?)`,
-				r.entryID, m.ID, k.hanzi, k.pinyin, k.translate, stamp); err != nil {
+				r.entryID, m.ID, k.hanzi, pinyin, k.translate, stamp); err != nil {
 				return fmt.Errorf("insert sentence of pack %s: %w", m.ID, err)
 			}
-		case !have.active:
+		case !have.active || have.pinyin != pinyin:
 			if _, err := tx.ExecContext(ctx, `
-				UPDATE sentences SET deleted_at = NULL, updated_at = ? WHERE id = ?`,
-				stamp, have.id); err != nil {
-				return fmt.Errorf("revive sentence %d of pack %s: %w", have.id, m.ID, err)
+				UPDATE sentences SET deleted_at = NULL, pinyin = ?, updated_at = ? WHERE id = ?`,
+				pinyin, stamp, have.id); err != nil {
+				return fmt.Errorf("update sentence %d of pack %s: %w", have.id, m.ID, err)
 			}
 		}
 	}
