@@ -76,7 +76,7 @@ Fixtures:
 ```
 GET /api/events?limit=1..2000[&since=<RFC 3339>][&workspace=<id>]     first page
 GET /api/events?page=<next>[&workspace=<id>]                          continuation
-→ 200 {"events": [ /* legacy items */ ], "more": bool, "next": "e1.…" | null}     Cache-Control: no-store
+→ 200 {"events": [ /* legacy items */ ], "more": bool, "next": "e1.…" | null}     Cache-Control: private, no-cache
 ```
 
 - Items are the legacy items exactly (`{id, userId, workspaceId, device, ts, type, payload}`, `lookup`

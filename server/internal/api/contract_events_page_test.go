@@ -21,8 +21,9 @@ import (
 
 type eventsPageFixture struct {
 	Version int    `json:"version"`
-	Rule    string `json:"rule"`
-	Doc     string `json:"_doc"`
+	Rule         string `json:"rule"`
+	CacheControl string `json:"cacheControl"`
+	Doc          string `json:"_doc"`
 	Budget  struct {
 		MaxLimit     int      `json:"maxLimit"`
 		MaxPageBytes int      `json:"maxPageBytes"`
@@ -204,4 +205,21 @@ func TestEventsPageContractRequests(t *testing.T) {
 	if !foreign {
 		t.Error("the fixture has no foreign-workspace case")
 	}
+}
+
+// contractCacheControl is the cacheControl of a contract fixture: the
+// header the web's service worker tests build their responses with.
+func contractCacheControl(t *testing.T, dir, name string) string {
+	t.Helper()
+	raw, err := os.ReadFile(filepath.Join("..", "..", "..", "docs", "contracts", dir, name))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var f struct {
+		CacheControl string `json:"cacheControl"`
+	}
+	if err := json.Unmarshal(raw, &f); err != nil || f.CacheControl == "" {
+		t.Fatalf("%s/%s: no cacheControl (%v)", dir, name, err)
+	}
+	return f.CacheControl
 }

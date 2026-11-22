@@ -71,15 +71,16 @@ func (s *server) handleSyncPull(w http.ResponseWriter, r *http.Request) {
 // own rows (docs/contracts/sync/). Errors are JSON {error, message}:
 // sync_page_invalid and sync_collection_moved 400, not_found 404 for a
 // workspace= the caller does not own, sync_cursor_expired 410. Pages are
-// never cached by intermediaries (no-store); the service worker keeps its
-// own copies.
+// never kept by shared caches and always revalidated (pageCacheControl),
+// but they may be stored: the service worker keeps its own copies for
+// offline study (a no-store answer it would never save).
 func (s *server) handleSyncPullV2(w http.ResponseWriter, r *http.Request, p *auth.Principal) {
 	req, err := chinsync.ParsePageRequest(r.URL.Query())
 	if err == nil {
 		var page chinsync.Page
 		page, err = chinsync.PullPage(r.Context(), s.db, p.User.ID, req, s.syncCatalogueETag(p))
 		if err == nil {
-			w.Header().Set("Cache-Control", "no-store")
+			w.Header().Set("Cache-Control", pageCacheControl)
 			writeJSON(w, http.StatusOK, page)
 			return
 		}

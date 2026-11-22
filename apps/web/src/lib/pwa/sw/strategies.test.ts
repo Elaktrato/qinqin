@@ -3,6 +3,8 @@ import { FakeCacheStorage } from '../../testing/fakeCaches';
 import { classify } from './classify';
 import { FONT_CACHE, FONT_CAP, HANZI_CACHE, HANZI_CAP, OFFLINE_HEADER, SAVED_AT_HEADER, handleFetch, type Deps } from './strategies';
 import { partitionName } from './partition';
+import eventsPageFixture from '../../../../../../docs/contracts/events/page.json';
+import pullPageFixture from '../../../../../../docs/contracts/sync/pull-page.json';
 
 const ORIGIN = 'https://qinqin.example';
 const SHELL = 'qinqin-shell-v1';
@@ -185,6 +187,42 @@ describe('api: network-first, partitioned by credential', () => {
 		expect(await o1.json()).toEqual({ events: [{ id: '1', type: 'review' }], more: true, next: 'e1.k' });
 		const o2 = await run(request(second, { auth: 'Bearer a' }));
 		expect(await o2.json()).toEqual(p2);
+	});
+
+	// The headers the server really sends with a page (the contracts pin them): a page
+	// that says no-store is never saved, and offline study would have no data.
+	function withServerHeaders(body: unknown, cacheControl: string): Response {
+		return new Response(JSON.stringify(body), { status: 200, headers: { 'content-type': 'application/json', 'cache-control': cacheControl } });
+	}
+
+	it("event log pages with the server's Cache-Control are saved and served offline (#110)", async () => {
+		const first = '/api/events?limit=2000&since=1970-01-01T00%3A00%3A00Z&workspace=2';
+		const second = '/api/events?page=e1.k&workspace=2';
+		const p1 = { events: [{ id: '1', type: 'review' }], more: true, next: 'e1.k' };
+		const p2 = { events: [{ id: '2', type: 'review' }], more: false, next: null };
+		fetchMock
+			.mockResolvedValueOnce(withServerHeaders(p1, eventsPageFixture.cacheControl))
+			.mockResolvedValueOnce(withServerHeaders(p2, eventsPageFixture.cacheControl));
+		await run(request(first, { auth: 'Bearer a' }));
+		await run(request(second, { auth: 'Bearer a' }));
+		fetchMock.mockRejectedValue(new TypeError('offline'));
+		expect(await (await run(request(first, { auth: 'Bearer a' }))).json()).toEqual(p1);
+		expect(await (await run(request(second, { auth: 'Bearer a' }))).json()).toEqual(p2);
+	});
+
+	it("pull v2 pages with the server's Cache-Control are saved and served offline", async () => {
+		const first = '/api/sync/pull?collections=pluginData&tombstones=1&v=2&workspace=3';
+		const second = '/api/sync/pull?page=p2.abc&v=2';
+		const p1 = { format: 2, collections: { pluginData: [] }, more: true, next: 'p2.abc', cursor: null };
+		const p2 = { format: 2, collections: { pluginData: [] }, more: false, next: null, cursor: 'c2.x' };
+		fetchMock
+			.mockResolvedValueOnce(withServerHeaders(p1, pullPageFixture.cacheControl))
+			.mockResolvedValueOnce(withServerHeaders(p2, pullPageFixture.cacheControl));
+		await run(request(first, { auth: 'Bearer a' }));
+		await run(request(second, { auth: 'Bearer a' }));
+		fetchMock.mockRejectedValue(new TypeError('offline'));
+		expect(await (await run(request(first, { auth: 'Bearer a' }))).json()).toEqual(p1);
+		expect(await (await run(request(second, { auth: 'Bearer a' }))).json()).toEqual(p2);
 	});
 
 	it('query order does not matter for the saved copy', async () => {

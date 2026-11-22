@@ -124,7 +124,7 @@ func (s *server) handleListEvents(w http.ResponseWriter, r *http.Request) {
 	if err == nil && req.Paged {
 		var page events.Page
 		if page, err = events.ListPage(r.Context(), s.db, u.ID, req); err == nil {
-			w.Header().Set("Cache-Control", "no-store")
+			w.Header().Set("Cache-Control", pageCacheControl)
 			writeJSON(w, http.StatusOK, page)
 			return
 		}
@@ -222,3 +222,10 @@ func (c *countingWriter) Write(p []byte) (int, error) {
 	c.n += n
 	return n, err
 }
+
+// pageCacheControl is the Cache-Control of a paged answer (the events
+// pages and the v2 pull pages): no shared cache keeps it and a browser
+// revalidates it, but it may be stored — the web service worker saves the
+// pages for offline study and skips anything that says no-store.
+// Pinned by docs/contracts/events/page.json and sync/pull-page.json.
+const pageCacheControl = "private, no-cache"

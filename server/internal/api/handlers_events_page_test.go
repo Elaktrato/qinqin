@@ -52,8 +52,8 @@ func walkEvents(t *testing.T, tsURL, token, first, workspace string) (string, in
 		if st != 200 {
 			t.Fatalf("page %d %s: %d %s", n, path, st, body)
 		}
-		if cc := h.Get("Cache-Control"); cc != "no-store" {
-			t.Errorf("page %d Cache-Control %q, want no-store", n, cc)
+		if cc, want := h.Get("Cache-Control"), contractCacheControl(t, "events", "page.json"); cc != want {
+			t.Errorf("page %d Cache-Control %q, want %q (events/page.json)", n, cc, want)
 		}
 		var p eventsPage
 		dec := json.NewDecoder(strings.NewReader(string(body)))

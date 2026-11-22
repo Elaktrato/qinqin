@@ -63,7 +63,9 @@ journal photos, audio, lookups, search) is never touched. The lookup history (#7
 match one; paths are compared decoded) are not cached, and a saved pull (legacy body or any v2 page's `collections.pluginData`) loses its `qinqin-core` `lookup*` rows
 and a saved event log (the array, or a page's `events`) its `lookup` events before it is stored (`apps/web/src/lib/pwa/sw/scrub.ts`); after a
 Clear or Remove the page filters copies saved earlier the same way. Only `200` responses are
-stored; a 401 deletes the partition; a 4xx or 5xx other than 502/503/504 is
+stored, and never one whose `Cache-Control` says `no-store` (the paged reads answer `private, no-cache` so that
+their pages are saved: `cacheControl` in `events/page.json` and `sync/pull-page.json`, which the worker tests
+build their responses with); a 401 deletes the partition; a 4xx or 5xx other than 502/503/504 is
 passed through.
 
 The cache of an API response is named `qinqin-api-v1-` + the first 32 hex digits of
