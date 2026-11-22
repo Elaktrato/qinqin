@@ -19,6 +19,8 @@ export interface Example {
 	translation: string;
 	focus: string;
 	distractors: string[];
+	/** When true, the sentence has a second legal order, so no word-order exercise is built (the cloze still is). */
+	noOrder?: boolean;
 }
 
 export interface Lesson {

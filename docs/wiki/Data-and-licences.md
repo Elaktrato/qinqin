@@ -24,7 +24,7 @@ Hanzi and kanji **font packs** (Sans, Serif and Kai faces: Noto Sans/Serif SC, T
 
 ## The HSK lists
 
-No reuse licence is granted by the publisher (Chinese Testing International). Its Legal Notice requires the source to be indicated and permits reasonable, good-faith quoting. The project includes only the word list and the characters-to-recognise list with levels (and word pinyin as lookup readings), none of the syllabus's other content, and shows the required source line on the Sources page and the character map. The inclusion is a decision of the project owner; **its legal status has not been verified** (no legal opinion). The official PDF and any text extracted from it are never committed.
+No reuse licence is granted by the publisher (Chinese Testing International). Its Legal Notice requires the source to be indicated and permits reasonable, good-faith quoting. The HSK packs include only the word list and the characters-to-recognise list with levels (and word pinyin as lookup readings), none of the syllabus's descriptions, task and topic lists or explanatory text; the Chinese grammar pack (`zh-grammar`), listed separately, uses the syllabus's grammar outline as a topic index only and reproduces no syllabus text. The project shows the required source line on the Sources page and the character map. The inclusion is a decision of the project owner; **its legal status has not been verified** (no legal opinion). The official PDF and any text extracted from it are never committed.
 
 ## JLPT levels
 

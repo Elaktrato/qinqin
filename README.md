@@ -230,8 +230,7 @@ docker compose exec qinqin qinqin adduser --admin --username you
 The auto-seed runs once per database and only on a fresh instance, that is
 while no pack of any type is installed. An upgraded or curated instance is
 never touched, and packs an administrator uninstalled stay uninstalled (a marker
-in the database records that it ran). It leaves out the demo packs `es-demo`
-and `zh-grammar-demo`. A pack that fails to import is logged
+in the database records that it ran). It leaves out the demo pack `es-demo`. A pack that fails to import is logged
 (`auto-seed failed ...`), the server starts anyway, and the next start tries
 again. `QINQIN_AUTO_SEED=0` (or `false`, `off`) turns it off.
 
@@ -1912,11 +1911,14 @@ says its content is copyrighted by CTI or the content providers, requires
 the source to be indicated ("Source: www.chinesetest.cn", "reproduced from
 the Chinese Test Service Website"), and permits reproduction only as
 reasonable, good-faith quoting for informative public use; the syllabus PDF
-carries a copy-protection flag. The project includes only the vocabulary
-(word) list and the list of characters to recognise (认读字), as plain lists of
-words and characters with their levels (and the words' pinyin as lookup
-readings), and none of the syllabus's other content (grammar points,
-descriptions, the lists of characters to write, explanatory text). It
+carries a copy-protection flag. The HSK packs include only the
+vocabulary (word) list and the list of characters to recognise (认读字), as
+plain lists of words and characters with their levels (and the words' pinyin
+as lookup readings), and none of the syllabus's descriptions, task and topic
+lists, lists of characters to write or explanatory text. The Chinese grammar
+pack (`zh-grammar`) uses the syllabus's grammar outline as a topic index
+only, with attribution; its lessons are qinqin's own and reproduce no
+syllabus text. It
 includes these lists with attribution at the project owner's decision; the
 legal status of including these lists has not been verified (no legal
 opinion). The
