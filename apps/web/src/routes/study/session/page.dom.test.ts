@@ -642,23 +642,28 @@ describe('order of card types (#132)', () => {
 		expect(await screen.findByLabelText('Recognise card')).toBeTruthy();
 	});
 
-	it('mixed follows the session seed', async () => {
-		const { mixFlowQueue } = await import('$lib/study/sessionMix');
-		const first = (seed: number) => mixFlowQueue(plan, [], { seed, order: 'mixed' })[0].kind;
+	it('mixed follows the session seed, Recognise first for a new word', async () => {
+		const { mixFlowQueue: real } = await vi.importActual<typeof import('$lib/study/sessionMix')>('$lib/study/sessionMix');
+		const first = (seed: number) => real(plan, [], { seed, order: 'mixed', vocabFirst: true })[0];
 		const seeds = Array.from({ length: 60 }, (_, i) => i + 1);
-		const vocabSeed = seeds.find((seed) => first(seed) === 'vocab')!;
-		const writingSeed = seeds.find((seed) => first(seed) === 'writing')!;
-		expect(vocabSeed).toBeDefined();
-		expect(writingSeed).toBeDefined();
+		// A new word's writing card waits for its vocab card: the first card is always a vocab card.
+		expect(seeds.every((seed) => first(seed).kind === 'vocab')).toBe(true);
+		const sunSeed = seeds.find((seed) => first(seed).entryId === 11)!;
+		const moonSeed = seeds.find((seed) => first(seed).entryId === 12)!;
+		expect(sunSeed).toBeDefined();
+		expect(moonSeed).toBeDefined();
 
-		start({ seed: vocabSeed });
+		start({ seed: sunSeed });
 		render(Page);
 		expect(await screen.findByLabelText('Recognise card')).toBeTruthy();
+		expect(await screen.findByText('日')).toBeTruthy();
+		expect(vi.mocked(mixFlowQueue).mock.calls[0][2]).toEqual({ seed: sunSeed, order: 'mixed', vocabFirst: true });
 		cleanup();
 
-		start({ seed: writingSeed });
+		start({ seed: moonSeed });
 		render(Page);
-		expect(await screen.findByLabelText('Write card')).toBeTruthy();
+		expect(await screen.findByLabelText('Recognise card')).toBeTruthy();
+		expect(await screen.findByText('月')).toBeTruthy();
 	});
 });
 
@@ -688,7 +693,7 @@ describe('the mix on the page (#132 review)', () => {
 		await screen.findByLabelText('Recognise card');
 		const calls = vi.mocked(mixFlowQueue).mock.calls;
 		expect(calls).toHaveLength(2);
-		expect(calls[0][2]).toEqual({ seed: 4321, order: 'mixed' });
+		expect(calls[0][2]).toEqual({ seed: 4321, order: 'mixed', vocabFirst: false });
 		expect(calls[1][2]).toEqual(calls[0][2]);
 		expect(vi.mocked(mixFlowQueue).mock.results.map((r) => (r.value as { cardId: string }[]).map((i) => i.cardId))).toEqual([
 			expect.any(Array),

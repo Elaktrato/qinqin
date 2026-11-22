@@ -130,6 +130,9 @@ export const PRESSURE_SLACK = 2;
  *    for need = gap down to 0 (0 always matches: the best effort when a
  *    block cannot hold the gap, e.g. one word's four types).
  *
+ * With `leads`, a word's other items wait until none of its lead items
+ * is left (only the items that may go take part in each step).
+ *
  * `placed` lists the words of the items already placed before (an earlier
  * block), oldest first. The input is not changed. O(n log n): words are
  * bucketed by how many items they have left and their first items kept in
@@ -139,9 +142,18 @@ export const PRESSURE_SLACK = 2;
 export function spaceOut<T extends { entryId: number }>(
 	items: readonly T[],
 	gap: number,
-	placed: readonly number[] = []
+	placed: readonly number[] = [],
+	options: { leads?: (item: T) => boolean } = {}
 ): T[] {
 	const total = items.length;
+	const leads = options.leads;
+	// Per word, how many of its lead items are left: its other items wait.
+	const leadsLeft = new Map<number, number>();
+	if (leads !== undefined) {
+		for (const item of items) {
+			if (leads(item)) leadsLeft.set(item.entryId, (leadsLeft.get(item.entryId) ?? 0) + 1);
+		}
+	}
 	const out: T[] = [];
 	const history = [...placed];
 	const lastAt = new Map<number, number>();
@@ -202,18 +214,24 @@ export function spaceOut<T extends { entryId: number }>(
 	// The first item left of every word, earliest first (an item taken is
 	// skipped when it surfaces; the word's next item is pushed on taking).
 	const firsts = new MinHeap();
-	for (const list of indices.values()) firsts.push(list[0]);
 
+	/** The word's first item that may go now: its first left, or its first lead left. */
 	const firstOf = (entryId: number): number => {
 		const list = indices.get(entryId) ?? [];
 		let at = cursor.get(entryId) ?? 0;
 		while (at < list.length && taken[list[at]] === 1) at += 1;
 		cursor.set(entryId, at);
-		return at < list.length ? list[at] : -1;
+		if (leads === undefined || (leadsLeft.get(entryId) ?? 0) === 0) return at < list.length ? list[at] : -1;
+		for (let next = at; next < list.length; next += 1) {
+			if (taken[list[next]] === 0 && leads(items[list[next]])) return list[next];
+		}
+		return -1;
 	};
+	for (const entryId of indices.keys()) firsts.push(firstOf(entryId));
 	const take = (at: number): void => {
 		const item = items[at];
 		taken[at] = 1;
+		if (leads?.(item)) leadsLeft.set(item.entryId, (leadsLeft.get(item.entryId) ?? 1) - 1);
 		out.push(item);
 		lastAt.set(item.entryId, history.length);
 		history.push(item.entryId);
@@ -260,7 +278,8 @@ export function spaceOut<T extends { entryId: number }>(
 			const aside: number[] = [];
 			while (firsts.size() > 0) {
 				const at = firsts.peek();
-				if (taken[at] === 1) {
+				// Stale: taken, or no longer its word's first item that may go.
+				if (taken[at] === 1 || firstOf(items[at].entryId) !== at) {
 					firsts.pop();
 					continue;
 				}
@@ -291,12 +310,19 @@ function groupByKind<T extends MixItem>(block: readonly T[]): T[] {
 }
 
 /**
- * mixBlock interleaves the kinds of one block: item j of a kind with n
- * items is placed evenly at ((j + 0.5) / n) * N, moved by up to
- * MIX_SPREAD places by its mixKey when the block holds more than one kind,
- * then spaced apart by word (spaceOut).
+ * mixBlock interleaves the kinds of one block, then spaces it apart by word
+ * (spaceOut). A new block places item j of a kind with n items evenly at
+ * ((j + 0.5) / n) * N; a due block keeps each item at its due position i,
+ * so the most overdue cards stay early whatever their kind. Either is moved
+ * by up to MIX_SPREAD places by its mixKey when the block holds more than
+ * one kind.
  */
-function mixBlock<T extends MixItem>(block: readonly T[], seed: number, placed: readonly number[]): T[] {
+function mixBlock<T extends MixItem>(
+	block: readonly T[],
+	seed: number,
+	placed: readonly number[],
+	options: { due: boolean; vocabFirst: boolean }
+): T[] {
 	const size = block.length;
 	const perKind = new Map<StudyCardKind, number>();
 	const ranked = block.map((item) => {
@@ -304,9 +330,9 @@ function mixBlock<T extends MixItem>(block: readonly T[], seed: number, placed: 
 		perKind.set(item.kind, j + 1);
 		return { item, j };
 	});
-	const keyed = ranked.map(({ item, j }) => {
+	const keyed = ranked.map(({ item, j }, i) => {
 		const n = perKind.get(item.kind) ?? 1;
-		const position = ((j + 0.5) / n) * size;
+		const position = options.due ? i : ((j + 0.5) / n) * size;
 		// One kind has nothing to interleave: its order (due, level, frequency) stays.
 		const jitter = perKind.size > 1 ? MIX_SPREAD * mixKey(seed, item.cardId) : 0;
 		return { item, j, key: position + jitter };
@@ -315,29 +341,56 @@ function mixBlock<T extends MixItem>(block: readonly T[], seed: number, placed: 
 	return spaceOut(
 		keyed.map(({ item }) => item),
 		typeGap(size),
-		placed
+		placed,
+		options.vocabFirst ? { leads: isVocab } : {}
 	);
+}
+
+function isVocab(item: MixItem): boolean {
+	return item.kind === 'vocab';
+}
+
+/** The options of mixSession. */
+export interface MixOptions<T> {
+	seed: number;
+	order: TypeOrder;
+	isReview: (item: T) => boolean;
+	/**
+	 * Deck sessions: in the new block a word's other types wait for its new
+	 * vocab card (Recognise first). Level sessions leave it off: a character
+	 * level gates writing by learner day itself.
+	 */
+	vocabFirst?: boolean;
 }
 
 /**
  * mixSession orders a planned session: the due block (isReview) first,
  * then the new block, each keeping its items. Mixed interleaves the kinds
- * and keeps two cards of one word apart (the gap counts across the block
- * boundary); grouped puts one kind after another in kind order. The same
- * seed and items give the same queue. The input is not changed.
+ * and keeps two cards of one word apart; grouped puts one kind after
+ * another in kind order, only keeping a word apart at a seam between two
+ * groups (gap 1). The gap counts across the block boundary. The same seed
+ * and items give the same queue. The input is not changed.
  */
-export function mixSession<T extends MixItem>(
-	items: readonly T[],
-	options: { seed: number; order: TypeOrder; isReview: (item: T) => boolean }
-): T[] {
+export function mixSession<T extends MixItem>(items: readonly T[], options: MixOptions<T>): T[] {
 	const due = items.filter((item) => options.isReview(item));
 	const fresh = items.filter((item) => !options.isReview(item));
-	if (options.order === 'grouped') return [...groupByKind(due), ...groupByKind(fresh)];
-	const dueMixed = mixBlock(due, options.seed, []);
+	const leads = options.vocabFirst === true ? { leads: isVocab } : {};
+	if (options.order === 'grouped') {
+		const dueGrouped = spaceOut(groupByKind(due), 1);
+		const freshGrouped = spaceOut(
+			groupByKind(fresh),
+			1,
+			dueGrouped.map((item) => item.entryId),
+			leads
+		);
+		return [...dueGrouped, ...freshGrouped];
+	}
+	const dueMixed = mixBlock(due, options.seed, [], { due: true, vocabFirst: false });
 	const freshMixed = mixBlock(
 		fresh,
 		options.seed,
-		dueMixed.map((item) => item.entryId)
+		dueMixed.map((item) => item.entryId),
+		{ due: false, vocabFirst: options.vocabFirst === true }
 	);
 	return [...dueMixed, ...freshMixed];
 }
@@ -350,7 +403,7 @@ export function mixSession<T extends MixItem>(
 export function mixFlowQueue(
 	queue: readonly FlowItem[],
 	reviews: readonly ReviewEvent[],
-	options: { seed: number; order: TypeOrder }
+	options: { seed: number; order: TypeOrder; vocabFirst?: boolean }
 ): FlowItem[] {
 	const reviewed = new Set<string>();
 	for (const review of reviews) if (isValidReview(review)) reviewed.add(review.payload.cardId);

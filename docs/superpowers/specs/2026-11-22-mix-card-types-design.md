@@ -46,9 +46,9 @@ wants new cards among reviews gets them only after the reviews (as today).
 
 For one block of `N` items:
 
-1. **Even merge by kind.** Per kind, the items keep their incoming order (due order, or the session's new order);
-   item `j` (0-based) of a kind with `n` items gets the position `p = ((j + 0.5) / n) * N`. The kinds are thus
-   spread evenly over the block instead of following each other in blocks.
+1. **Position.** In the due block `p = i`, the item's index in the block (due order). In the new block, per kind
+   the items keep their incoming order (the session's new order) and item `j` (0-based) of a kind with `n` items
+   gets `p = ((j + 0.5) / n) * N`: the kinds are spread evenly instead of following each other in blocks.
 2. **Jitter.** `key = p + MIX_SPREAD * u`, `MIX_SPREAD = 8`, `u = mixKey(seed, cardId)` in `[0, 1)`; a block
    holding a single kind takes `key = p` (nothing to interleave). Sort by `key` ascending; ties by kind order
    (`vocab, sentence, writing, tone, reverse, cloze`), then `j`.
@@ -61,6 +61,9 @@ For one block of `N` items:
      `(r - 1) * (gap + 1) + 1 >= R - 2` (`PRESSURE_SLACK = 2`: the word nearly needs the rest of the block to
      keep the gap), the first item of the word with the most items left goes now;
    - else, for `need = gap, gap - 1, …, 0`, the first item whose word has `sep >= need` goes now.
+
+   In a deck session's new block (`vocabFirst`) a non-vocab item may not go while a vocab item of its word is
+   left: only the items that may go take part in each step (the counts `r` include the waiting ones).
 4. `gap = typeGap(N)`: 1 when `N < 8`, 2 when `N < 16`, else 3 (other cards between two cards of one word).
 
 `mixKey(seed, cardId) = randomKey(seed)(fnv1a32(cardId))`: FNV-1a 32 over the UTF-8 bytes of the card id
@@ -88,11 +91,30 @@ seeded deck-like blocks it kept the full gap in every block where a greedy "most
 (0 misses against 42–256 without it, 54 with slack 1), moving cards on average 0.6 places from the jitter order
 (the most-left-first spacer: 2.8) — cost if wrong: a slightly more ordered tail of long blocks.
 
+Ruling (review): the due block uses its due index, not the even merge — with the even merge the 10 most overdue
+cards, all writing, were spread over a 100-card due block, so a learner stopping early skipped most of them;
+with `p = i` plus jitter they stay within the first 20 — cost: the due block's kinds are interleaved only as far
+as the jitter and the spacing move them.
+
+Ruling (review): vocab first in a deck session's new block — a new word's companion types (writing, tone, Word
+Salad, cloze) could come before its first Recognise card, testing a word the learner has never seen. A
+non-vocab item waits while a vocab item of its word is left in the block. Level sessions are exempt: a word
+level studies vocab only and a character level only plans new writing once recognition was reviewed on an
+earlier learner day — cost: in a deck session a new word's types sit after its vocab card, so its first card
+is always Recognise.
+
 Ruling: when the gap cannot be met (e.g. a session of one word's four types) the result is a deterministic best
 effort: the first item in jitter order whose word is furthest away within the gap, ending in plain jitter order
-when every item belongs to the same word. The "never back to back" promise holds whenever the block allows it
-(no word holds more than `ceil(R / 2)` of `R` items; the `2r - 1 >= R` step keeps it so) — a property test pins
-it — cost if wrong: none beyond an odd order in degenerate sessions.
+when every item belongs to the same word. The "never back to back" promise holds per block whenever the block allows it:
+with nothing placed before, when no word holds more than `ceil(R / 2)` of `R` items; after a placed prefix (the
+new block after the due block), when moreover the word placed last holds at most `floor(R / 2)` (the seam is
+then kept too); vocab first never breaks it, since a word's vocab item can always go. Property tests pin both —
+cost if wrong: none beyond an odd order in degenerate sessions.
+
+Ruling (review): `spaceOut` runs in O(n log n) — words bucketed by items left (non-empty counts linked), each
+word's first item that may go kept in a heap — because Study all allows sessions of thousands of cards (the
+first, quadratic form took 9.7 s for 20,000 items; now well under a second, tests budget 1.5 s). Its output
+equals the step-by-step form (`testing/spaceOutReference.ts`) on random blocks, with and without vocab first.
 
 Ruling: the gap is measured across the block boundary (the new block starts after the due block's last
 cards) but a block's items never leave their block — cost: the first new card may be the word of the last due
@@ -101,8 +123,12 @@ card when nothing else fits.
 ### Grouped by type
 
 Each block is stably sorted by kind order (`vocab, sentence, writing, tone, reverse, cloze`), keeping the
-incoming order inside a kind (due order; the session's new order, then planning order for companions). No seed
-and no spacing: two types of a word land in different groups. Due still first.
+incoming order inside a kind (due order; the session's new order, then planning order for companions), then
+spaced with `gap = 1` (vocab first applies in a deck session's new block). No seed. Due still first.
+
+Ruling (review): grouped mode spaces with gap 1 so a word is not back to back at the seam between two groups
+(its last vocab card straight before its first sentence card) — cost: an item may move a place inside its group
+or across a seam.
 
 ### Interaction with today's rules
 
@@ -117,7 +143,10 @@ and no spacing: two types of a word land in different groups. Due still first.
   sit next to another type of its word.
 - **Reserve** — Ruling: a replacement from the reserve (`dropItem`) is still appended at the end, unmixed —
   cost: rare adjacency at the very end of a session.
-- **Reload** — Ruling: the setup draws `seed` at Start (unchanged) and the mix uses it, so the same input gives
+- **Seed per session** — Ruling (review): every Start draws a fresh seed, also a deck's or a level's Study button
+  (`studyStart.ts`, which also drops a stale Study all of the saved setup); a setup without a seed gets one drawn
+  once per tab and kept (`sessionSeedOf`, `qinqin.study.sessionSeed`), so a reload never reshuffles — cost: none.
+- **Reload** — Ruling: the setup draws `seed` at Start and the mix uses it, so the same input gives
   the same queue; after some cards are answered a reload re-mixes the remaining ones with the same keys, so the
   order stays close but may shift by a few places — cost: a few cards swap places after a reload.
 
@@ -126,7 +155,7 @@ and no spacing: two types of a word land in different groups. Due still first.
 `StudySessionConfig.typeOrder?: 'mixed' | 'grouped'` (absent = mixed), stored with the per-tab setup in
 sessionStorage (`qinqin.study.session`) like the order of new cards; an unknown value reads as absent and never
 discards the setup. The setup page shows a select **Order of card types** with **Mixed** and **Grouped by
-type** under the order of new cards. Strings in `en.json`: `study.limitsSection.typeOrder`,
+type** under the order of new cards and its hints. Strings in `en.json`: `study.limitsSection.typeOrder`,
 `study.typeOrder.mixed`, `study.typeOrder.grouped`.
 
 Ruling: per tab, not synced, not remembered across tabs — it is a session choice like the order of new cards;

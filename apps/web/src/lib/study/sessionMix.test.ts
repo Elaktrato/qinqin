@@ -62,7 +62,7 @@ describe('spaceOut', () => {
 		let state = 777;
 		const next = (n: number) => {
 			state = (Math.imul(state, 1103515245) + 12345) >>> 0;
-			return state % n;
+			return (state >>> 16) % n;
 		};
 		let misses = 0;
 		for (let round = 0; round < 500; round += 1) {
@@ -113,7 +113,7 @@ describe('spaceOut', () => {
 		let state = 12345;
 		const next = (n: number) => {
 			state = (Math.imul(state, 1103515245) + 12345) >>> 0;
-			return state % n;
+			return (state >>> 16) % n;
 		};
 		for (let round = 0; round < 3000; round += 1) {
 			const size = 1 + next(30);
@@ -150,7 +150,8 @@ describe('docs/contracts/cards/session-mix.json queues', () => {
 			const out = mixSession(items, {
 				seed: c.seed,
 				order: c.order as TypeOrder,
-				isReview: (item) => item.review
+				isReview: (item) => item.review,
+				vocabFirst: c.vocabFirst
 			});
 			expect(out.map((item) => item.cardId)).toEqual(c.expect);
 			// Same set, due block first.
@@ -239,7 +240,8 @@ describe('spaceOut performance (#132 review)', () => {
 		let state = seed;
 		return (n: number) => {
 			state = (Math.imul(state, 1103515245) + 12345) >>> 0;
-			return state % n;
+			// The high bits: an LCG's low bits repeat with a short period.
+			return (state >>> 16) % n;
 		};
 	}
 
@@ -284,5 +286,108 @@ describe('spaceOut performance (#132 review)', () => {
 		const two = Array.from({ length: 20_000 }, (_, i) => ({ id: String(i), entryId: i < 10_000 ? 1 : 2 }));
 		expect(timed(one)).toBeLessThan(1500);
 		expect(timed(two)).toBeLessThan(1500);
+	});
+});
+
+describe('review fixes (#132)', () => {
+	function lcg(seed: number) {
+		let state = seed;
+		return (n: number) => {
+			state = (Math.imul(state, 1103515245) + 12345) >>> 0;
+			// The high bits: an LCG's low bits repeat with a short period.
+			return (state >>> 16) % n;
+		};
+	}
+	type Kinded = Item & { kind: StudyCardKind; cardId: string };
+	const KINDS: StudyCardKind[] = ['vocab', 'sentence', 'writing', 'tone', 'reverse', 'cloze'];
+
+	it('spaceOut with lead items equals the reference on random blocks', () => {
+		const next = lcg(5151);
+		for (let round = 0; round < 1500; round += 1) {
+			const size = 1 + next(50);
+			const words = 1 + next(15);
+			const items: Kinded[] = Array.from({ length: size }, (_, i) => {
+				const kind = KINDS[next(4)];
+				return { id: String(i), cardId: String(i), entryId: next(words), kind };
+			});
+			const gap = 1 + next(3);
+			const placed = Array.from({ length: next(4) }, () => next(words));
+			const leads = (item: Kinded) => item.kind === 'vocab';
+			expect(ids(spaceOut(items, gap, placed, { leads })), `round ${round}`).toEqual(
+				ids(spaceOutReference(items, gap, placed, { leads }))
+			);
+		}
+	});
+
+	it('deck sessions: a new word meets Recognise before its other types (vocab first)', () => {
+		const next = lcg(77);
+		for (let round = 0; round < 300; round += 1) {
+			const items: Kinded[] = [];
+			const words = 3 + next(12);
+			for (let w = 0; w < words; w += 1) {
+				for (const kind of KINDS) {
+					if (kind === 'vocab' ? next(3) > 0 : next(3) === 0) {
+						items.push({ id: `${kind}-${w}`, cardId: `c-${kind}-${w}`, entryId: w, kind });
+					}
+				}
+			}
+			const out = mixSession(items, { seed: round, order: 'mixed', isReview: () => false, vocabFirst: true });
+			const vocabAt = new Map<number, number>();
+			out.forEach((item, at) => {
+				if (item.kind === 'vocab') vocabAt.set(item.entryId, at);
+			});
+			out.forEach((item, at) => {
+				const first = vocabAt.get(item.entryId);
+				if (item.kind !== 'vocab' && first !== undefined) {
+					expect(first, `round ${round}: ${item.cardId}`).toBeLessThan(at);
+				}
+			});
+		}
+	});
+
+	it('the due block keeps the due order across kinds (the most overdue stay early)', () => {
+		// The 10 most overdue cards are writing cards, then 90 vocab cards.
+		const items = [
+			...Array.from({ length: 10 }, (_, i) => ({ cardId: `c-writing-${i}`, kind: 'writing' as const, entryId: i })),
+			...Array.from({ length: 90 }, (_, i) => ({ cardId: `c-vocab-${100 + i}`, kind: 'vocab' as const, entryId: 100 + i }))
+		];
+		for (const seed of [1, 2, 3, 4, 5]) {
+			const out = mixSession(items, { seed, order: 'mixed', isReview: () => true });
+			const writing = out.flatMap((item, at) => (item.kind === 'writing' ? [at] : []));
+			expect(Math.max(...writing), `seed ${seed}`).toBeLessThan(20);
+		}
+	});
+
+	it('grouped by type keeps a word apart at the seam between two groups', () => {
+		const items = [
+			{ cardId: 'c-vocab-1', kind: 'vocab' as const, entryId: 1 },
+			{ cardId: 'c-vocab-2', kind: 'vocab' as const, entryId: 2 },
+			{ cardId: 'c-sentence-2', kind: 'sentence' as const, entryId: 2 },
+			{ cardId: 'c-sentence-3', kind: 'sentence' as const, entryId: 3 }
+		];
+		const out = mixSession(items, { seed: 1, order: 'grouped', isReview: () => false });
+		expect(out.map((item) => item.cardId)).toEqual(['c-vocab-1', 'c-vocab-2', 'c-sentence-3', 'c-sentence-2']);
+	});
+
+	it('never back to back inside a block after a placed prefix, when the block allows it (property)', () => {
+		const next = lcg(31337);
+		for (let round = 0; round < 3000; round += 1) {
+			const size = 1 + next(30);
+			const words = 1 + next(8);
+			const items = Array.from({ length: size }, (_, i) => ({ id: String(i), entryId: next(words) }));
+			const placed = Array.from({ length: 1 + next(4) }, () => next(words));
+			const out = spaceOut(items, 1 + next(3), placed);
+			const counts = new Map<number, number>();
+			for (const item of items) counts.set(item.entryId, (counts.get(item.entryId) ?? 0) + 1);
+			const last = placed[placed.length - 1];
+			// Feasible: no word above ceil(R / 2), the word placed last at most floor(R / 2).
+			const feasible =
+				Math.max(...counts.values()) <= Math.ceil(size / 2) && (counts.get(last) ?? 0) <= Math.floor(size / 2);
+			if (!feasible) continue;
+			expect(out[0].entryId, `round ${round}: seam`).not.toBe(last);
+			for (let i = 1; i < out.length; i += 1) {
+				expect(out[i].entryId, `round ${round} at ${i}`).not.toBe(out[i - 1].entryId);
+			}
+		}
 	});
 });

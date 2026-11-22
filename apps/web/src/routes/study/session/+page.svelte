@@ -144,7 +144,13 @@ import type { Run } from '$lib/study/vacation';
 	const sessionSeed = sessionSeedOf(config);
 	const kinds: StudyCardKind[] = CARD_KINDS.filter((kind) => config.cardTypes.includes(kind));
 	// The order of card types (#132): the same seed, so a reload keeps the mix.
-	const mixOptions = { seed: sessionSeed, order: sessionTypeOrder(config) };
+	// Deck sessions show a new word's Recognise card before its other types;
+	// a character level gates writing itself.
+	const mixOptions = {
+		seed: sessionSeed,
+		order: sessionTypeOrder(config),
+		vocabFirst: config.mode === 'decks'
+	};
 
 	/**
 	 * A queue item once it can be shown: its entry is loaded and its kind
