@@ -57,6 +57,7 @@ import { limitsOf } from '$lib/study/scheduler';
 		saveConfig,
 		sessionNewOrder,
 		sessionTypeOrder,
+		newSessionSeed,
 		validateConfig,
 		type StudySessionConfig,
 		type StudySessionMode
@@ -859,7 +860,7 @@ import { limitsOf } from '$lib/study/scheduler';
 		config.newOrder = decodeOrder(orderValue);
 		config.typeOrder = typeOrder;
 		// Fixes the shuffle of this session, so a reload shows the same order.
-		config.seed = Math.floor(Math.random() * 0x7fffffff);
+		config.seed = newSessionSeed();
 		// Validate what the session will actually use: a type hidden in
 		// this workspace does not count towards "at least one".
 		errors = validateConfig({ ...config, cardTypes: [...selectedKinds] });

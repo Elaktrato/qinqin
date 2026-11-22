@@ -59,6 +59,15 @@ export function sessionTypeOrder(config: StudySessionConfig): TypeOrder {
 	return config.typeOrder ?? 'mixed';
 }
 
+/**
+ * newSessionSeed draws the seed of a session being started (#129, #132):
+ * every Start, from any entry point, gets a fresh one, so each session is
+ * shuffled and mixed differently and a reload of it is not.
+ */
+export function newSessionSeed(): number {
+	return Math.floor(Math.random() * 0x7fffffff);
+}
+
 /** sessionStorage key of the setup. */
 export const SESSION_CONFIG_KEY = 'qinqin.study.session';
 
@@ -247,4 +256,31 @@ export function saveConfig(config: StudySessionConfig): void {
 	} catch {
 		// Private mode or a full quota: the session still starts.
 	}
+}
+
+/** sessionStorage key of the seed drawn for a setup that carries none. */
+export const SESSION_SEED_KEY = 'qinqin.study.sessionSeed';
+
+/**
+ * sessionSeedOf is the seed a session runs with: the setup's, else one
+ * drawn once per tab and kept, so a reload of the session keeps its order
+ * even for a setup saved before seeds existed (or none at all). The setup
+ * itself is not rewritten: a tab without a setup keeps having none.
+ */
+export function sessionSeedOf(config: StudySessionConfig): number {
+	if (typeof config.seed === 'number' && Number.isFinite(config.seed)) return config.seed;
+	const store = storage();
+	try {
+		const raw = store?.getItem(SESSION_SEED_KEY) ?? null;
+		if (raw !== null && /^\d+$/.test(raw)) return Number(raw);
+	} catch {
+		// Blocked storage: a seed for this load only.
+	}
+	const seed = newSessionSeed();
+	try {
+		store?.setItem(SESSION_SEED_KEY, String(seed));
+	} catch {
+		// Private mode or a full quota: the session still starts.
+	}
+	return seed;
 }

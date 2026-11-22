@@ -4,7 +4,9 @@ import {
 	CARD_TYPES,
 	DEFAULT_CONFIG,
 	SESSION_CONFIG_KEY,
+	SESSION_SEED_KEY,
 	loadConfig,
+	sessionSeedOf,
 	saveConfig,
 	sessionNewOrder,
 	sessionTypeOrder,
@@ -353,5 +355,30 @@ describe('typeOrder in the setup (#132)', () => {
 			expect(loaded.typeOrder).toBeUndefined();
 			expect(sessionTypeOrder(loaded)).toBe('mixed');
 		}
+	});
+});
+
+describe('sessionSeedOf (#132 review)', () => {
+	beforeEach(() => {
+		vi.stubGlobal('sessionStorage', fakeStorage());
+	});
+	afterEach(() => {
+		vi.unstubAllGlobals();
+	});
+
+	it('uses the setup seed', () => {
+		expect(sessionSeedOf(config({ seed: 42 }))).toBe(42);
+	});
+
+	it('without one draws a seed once and keeps it for the reloads of this tab', () => {
+		const first = sessionSeedOf(config());
+		expect(Number.isInteger(first)).toBe(true);
+		expect(sessionSeedOf(config())).toBe(first);
+		expect(sessionStorage.getItem(SESSION_SEED_KEY)).toBe(String(first));
+	});
+
+	it('still gives a seed when storage is unavailable', () => {
+		vi.stubGlobal('sessionStorage', undefined);
+		expect(Number.isInteger(sessionSeedOf(config()))).toBe(true);
 	});
 });

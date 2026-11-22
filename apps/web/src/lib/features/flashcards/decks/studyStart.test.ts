@@ -46,6 +46,31 @@ describe('levelSessionConfig', () => {
 	});
 });
 
+describe('a fresh seed per started session (#132 review)', () => {
+	const old: StudySessionConfig = { ...BASE, seed: 111, studyAll: true };
+
+	it('deckSessionConfig draws a new seed and drops a stale study-all', () => {
+		const config = deckSessionConfig(old, 'd1', ['vocab'], 222);
+		expect(config.seed).toBe(222);
+		expect(config.studyAll).toBeUndefined();
+	});
+
+	it('levelSessionConfig draws a new seed and drops a stale study-all', () => {
+		const config = levelSessionConfig(old, 5, 'HSK 2', 333);
+		expect(config.seed).toBe(333);
+		expect(config.studyAll).toBeUndefined();
+	});
+
+	it('draws a random seed when none is given, also without a saved setup', () => {
+		const a = deckSessionConfig(DEFAULT_CONFIG, 'd1', ['vocab']);
+		const b = levelSessionConfig(DEFAULT_CONFIG, 5, 'HSK 2');
+		for (const config of [a, b]) {
+			expect(Number.isInteger(config.seed)).toBe(true);
+			expect(config.seed).toBeGreaterThanOrEqual(0);
+		}
+	});
+});
+
 describe('deckKinds', () => {
 	const settings: Record<string, DeckSettings> = {
 		d1: { deckId: 'd1', cardTypes: ['reverse'], extra: {} }
