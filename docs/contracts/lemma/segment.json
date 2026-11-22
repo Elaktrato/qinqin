@@ -537,6 +537,274 @@
     "spec1"
    ],
    "uk": false
+  },
+  {
+   "forms": [
+    "に基づいて"
+   ],
+   "readings": [
+    "にもとづいて"
+   ],
+   "pos": [
+    "exp"
+   ],
+   "pri": [],
+   "uk": false
+  },
+  {
+   "forms": [
+    "基づく"
+   ],
+   "readings": [
+    "もとづく"
+   ],
+   "pos": [
+    "v5k",
+    "vi"
+   ],
+   "pri": [
+    "ichi1"
+   ],
+   "uk": false
+  },
+  {
+   "forms": [
+    "法律"
+   ],
+   "readings": [
+    "ほうりつ"
+   ],
+   "pos": [
+    "n"
+   ],
+   "pri": [
+    "ichi1"
+   ],
+   "uk": false
+  },
+  {
+   "forms": [
+    "判断"
+   ],
+   "readings": [
+    "はんだん"
+   ],
+   "pos": [
+    "n",
+    "vs"
+   ],
+   "pri": [
+    "ichi1"
+   ],
+   "uk": false
+  },
+  {
+   "forms": [
+    "に沿って"
+   ],
+   "readings": [
+    "にそって"
+   ],
+   "pos": [
+    "exp",
+    "adv"
+   ],
+   "pri": [],
+   "uk": false
+  },
+  {
+   "forms": [
+    "沿う"
+   ],
+   "readings": [
+    "そう"
+   ],
+   "pos": [
+    "v5u",
+    "vi"
+   ],
+   "pri": [
+    "ichi1"
+   ],
+   "uk": false
+  },
+  {
+   "forms": [
+    "計画"
+   ],
+   "readings": [
+    "けいかく"
+   ],
+   "pos": [
+    "n",
+    "vs"
+   ],
+   "pri": [
+    "ichi1"
+   ],
+   "uk": false
+  },
+  {
+   "forms": [
+    "進める"
+   ],
+   "readings": [
+    "すすめる"
+   ],
+   "pos": [
+    "v1",
+    "vt"
+   ],
+   "pri": [
+    "ichi1"
+   ],
+   "uk": false
+  },
+  {
+   "forms": [
+    "仕兼ねない",
+    "し兼ねない"
+   ],
+   "readings": [
+    "しかねない"
+   ],
+   "pos": [
+    "exp",
+    "adj-i"
+   ],
+   "pri": [],
+   "uk": true
+  },
+  {
+   "forms": [],
+   "readings": [
+    "し"
+   ],
+   "pos": [
+    "prt",
+    "conj"
+   ],
+   "pri": [
+    "spec1"
+   ],
+   "uk": false
+  },
+  {
+   "forms": [
+    "兼ねる"
+   ],
+   "readings": [
+    "かねる"
+   ],
+   "pos": [
+    "v1",
+    "vt"
+   ],
+   "pri": [
+    "ichi1"
+   ],
+   "uk": true
+  },
+  {
+   "forms": [
+    "兼ねない"
+   ],
+   "readings": [
+    "かねない"
+   ],
+   "pos": [
+    "exp",
+    "suf"
+   ],
+   "pri": [],
+   "uk": true
+  },
+  {
+   "forms": [
+    "と言って"
+   ],
+   "readings": [
+    "といって"
+   ],
+   "pos": [
+    "exp",
+    "conj"
+   ],
+   "pri": [],
+   "uk": false
+  },
+  {
+   "forms": [],
+   "readings": [
+    "と"
+   ],
+   "pos": [
+    "prt"
+   ],
+   "pri": [
+    "spec1"
+   ],
+   "uk": false
+  },
+  {
+   "forms": [
+    "言う"
+   ],
+   "readings": [
+    "いう"
+   ],
+   "pos": [
+    "v5u",
+    "vt"
+   ],
+   "pri": [
+    "ichi1"
+   ],
+   "uk": false
+  },
+  {
+   "forms": [
+    "彼"
+   ],
+   "readings": [
+    "かれ"
+   ],
+   "pos": [
+    "pn"
+   ],
+   "pri": [
+    "ichi1"
+   ],
+   "uk": false
+  },
+  {
+   "forms": [
+    "行く"
+   ],
+   "readings": [
+    "いく"
+   ],
+   "pos": [
+    "v5k-s",
+    "vi"
+   ],
+   "pri": [
+    "ichi1"
+   ],
+   "uk": false
+  },
+  {
+   "forms": [],
+   "readings": [
+    "は"
+   ],
+   "pos": [
+    "prt"
+   ],
+   "pri": [
+    "spec1"
+   ],
+   "uk": false
   }
  ],
  "cases": [
@@ -990,6 +1258,139 @@
       "te-form"
      ],
      "head": "為る"
+    }
+   ]
+  },
+  {
+   "name": "a grammar expression the table keeps whole (に基づいて)",
+   "text": "法律に基づいて判断する",
+   "tokens": [
+    {
+     "surface": "法律",
+     "start": 0,
+     "end": 2,
+     "lemma": "法律",
+     "reasons": [],
+     "head": "法律"
+    },
+    {
+     "surface": "に基づいて",
+     "start": 2,
+     "end": 7,
+     "lemma": "に基づいて",
+     "reasons": [],
+     "head": "に基づいて"
+    },
+    {
+     "surface": "判断",
+     "start": 7,
+     "end": 9,
+     "lemma": "判断",
+     "reasons": [],
+     "head": "判断"
+    },
+    {
+     "surface": "する",
+     "start": 9,
+     "end": 11,
+     "lemma": "する",
+     "reasons": [],
+     "head": "為る"
+    }
+   ]
+  },
+  {
+   "name": "a grammar expression the table keeps whole (に沿って)",
+   "text": "計画に沿って進める",
+   "tokens": [
+    {
+     "surface": "計画",
+     "start": 0,
+     "end": 2,
+     "lemma": "計画",
+     "reasons": [],
+     "head": "計画"
+    },
+    {
+     "surface": "に沿って",
+     "start": 2,
+     "end": 6,
+     "lemma": "に沿って",
+     "reasons": [],
+     "head": "に沿って"
+    },
+    {
+     "surface": "進める",
+     "start": 6,
+     "end": 9,
+     "lemma": "進める",
+     "reasons": [],
+     "head": "進める"
+    }
+   ]
+  },
+  {
+   "name": "しかねない stays one token (its し is no particle)",
+   "text": "しかねない",
+   "tokens": [
+    {
+     "surface": "しかねない",
+     "start": 0,
+     "end": 5,
+     "lemma": "しかねない",
+     "reasons": [],
+     "head": "仕兼ねない"
+    }
+   ]
+  },
+  {
+   "name": "quotation と言って is not kept whole",
+   "text": "彼は行くと言っていました",
+   "tokens": [
+    {
+     "surface": "彼",
+     "start": 0,
+     "end": 1,
+     "lemma": "彼",
+     "reasons": [],
+     "head": "彼"
+    },
+    {
+     "surface": "は",
+     "start": 1,
+     "end": 2,
+     "lemma": "は",
+     "reasons": [],
+     "head": "は"
+    },
+    {
+     "surface": "行く",
+     "start": 2,
+     "end": 4,
+     "lemma": "行く",
+     "reasons": [],
+     "head": "行く"
+    },
+    {
+     "surface": "と",
+     "start": 4,
+     "end": 5,
+     "lemma": "と",
+     "reasons": [],
+     "head": "と"
+    },
+    {
+     "surface": "言っていました",
+     "start": 5,
+     "end": 12,
+     "lemma": "言う",
+     "reasons": [
+      "past",
+      "polite",
+      "progressive",
+      "te-form"
+     ],
+     "head": "言う"
     }
    ]
   }
