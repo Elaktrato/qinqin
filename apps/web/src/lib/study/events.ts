@@ -8,7 +8,7 @@ import { ApiError, getToken, isRestrictionResponse, isWorkspaceGoneResponse } fr
 import { t } from '../i18n';
 import { showNotice } from '../notices';
 import { postEvents } from '../events';
-import { newUlid } from '../ulid';
+import { newUlid, ulidTime } from '../ulid';
 import { notifyAllSent, setQueued } from '../pwa/offlineState';
 import { flushable, settle, type OutboxItem, type OutboxState } from './outbox';
 import { onOutboxUser, outboxToken, outboxUser, resetOutboxUserForTests } from './outboxUser';
@@ -196,8 +196,12 @@ export async function recordReplacement(target: ReviewEvent, grade: ReviewGrade)
 	const payload: ReviewPayload = { cardId: target.payload.cardId, mode: target.payload.mode, grade };
 	if (target.payload.meta !== undefined) payload.meta = target.payload.meta;
 	payload.replaces = target.id;
+	// The id must sort above the id it names (the family's greatest id
+	// survives): never earlier than the target's time + 1 ms, whatever this
+	// device's clock says.
+	const after = ulidTime(target.id);
 	return recordEvent({
-		id: newUlid(),
+		id: newUlid(after === null ? Date.now() : Math.max(Date.now(), after + 1)),
 		workspaceId: target.workspaceId,
 		device: DEVICE,
 		ts: target.ts,

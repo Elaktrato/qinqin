@@ -232,7 +232,10 @@ A changed grade (#131, the study session's Back) is a new `review` that names th
 - Apply it to the stored `cardId`s **before** the duplicate-card merge (`study/canonical.json`), as the server
   does (it has no merge).
 - **Writing one**: copy the target's `cardId`, `mode`, `meta` and `ts` (the same instant; Android: whole UTC
-  seconds), set `grade` and `replaces` (the id of the family's current survivor), and give it a fresh ULID. Never
+  seconds), set `grade` and `replaces` (the id of the family's current survivor), and give it a fresh ULID that
+  **must sort above the id it names**: its time is at least the target's ULID time + 1 ms, even when the device
+  clock is behind (web: `newUlid(max(now, ulidTime(target) + 1))`). A replacement with a smaller id loses to its
+  target (fixture case "a replacement whose id sorts below its target loses"). Never
   write one with the same grade (it changes nothing), never edit or drop an outbox item instead (an item may be
   mid-flight: a rewritten id is a duplicate the server ignores).
 

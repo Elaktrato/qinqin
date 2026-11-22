@@ -20,6 +20,7 @@ import {
 } from './events';
 import { setOutboxUser } from './outboxUser';
 import { recentSentReviews } from './recentSent';
+import { newUlid, ulidTime } from '../ulid';
 
 beforeEach(() => {
 	resetOutboxForTests();
@@ -238,6 +239,21 @@ describe('recordReplacement (#131)', () => {
 		await recordReplacement({ ...target, payload }, 2);
 
 		expect(lastBatch().events[0].payload).toEqual({ cardId: 'card-1', mode: 'writing', grade: 2, replaces: target.id });
+	});
+
+	it('sorts above its target even when the device clock is behind it (#131)', async () => {
+		// The target was made one hour "later" than this device's clock now reads.
+		const ahead = newUlid(Date.parse('2026-03-15T09:35:00Z'));
+		const event = await recordReplacement({ ...target, id: ahead }, 3);
+
+		expect(event!.id > ahead).toBe(true);
+		expect(ulidTime(event!.id)).toBe(ulidTime(ahead)! + 1);
+	});
+
+	it('uses the clock when it is ahead of its target', async () => {
+		const event = await recordReplacement(target, 3);
+
+		expect(ulidTime(event!.id)).toBe(Date.parse('2026-03-15T08:35:00Z'));
 	});
 
 	it('is queued like a review when the POST fails', async () => {

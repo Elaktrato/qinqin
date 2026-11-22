@@ -76,8 +76,9 @@ across workspaces, cards or seconds is ignored; a replacement with the same grad
 
 Ruling: the survivor is the greatest id of the family, not the head of the longest chain — ULIDs grow with
 creation time, so the newest decision wins on every device whatever the shape (fork, chain, fork of a chain),
-and one rule covers all of them in a union-find — cost: a writer with a clock far behind can lose to an older
-decision; it is still the same answer everywhere.
+and one rule covers all of them in a union-find — cost: none, because a writer must give the replacement an id
+above the one it names (time at least the target's ULID time + 1 ms, whatever its clock says; review fix 1); a
+writer that breaks this loses to its target, the same answer everywhere.
 
 Ruling: a link needs the same workspace, card and second — a buggy or hostile writer can then only void a
 review of the very card at the very second it claims to stand in for, never unrelated history, and the server

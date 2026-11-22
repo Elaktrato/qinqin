@@ -828,6 +828,43 @@
         "01KAPZ00000000000000000001",
         "01KAPZ00000000000000000002"
       ]
+    },
+    {
+      "name": "a replacement whose id sorts below its target loses",
+      "note": "the greatest id survives, whichever names which: a writer whose clock is behind must still give the replacement an id above the one it names (ulidTime(target) + 1 at least), else the misclick keeps counting",
+      "events": [
+        {
+          "id": "01KAPZ00000000000000000009",
+          "workspaceId": 7,
+          "device": "web",
+          "ts": "2026-11-22T09:00:00Z",
+          "type": "review",
+          "payload": {
+            "cardId": "c1",
+            "mode": "vocab",
+            "grade": 1
+          }
+        },
+        {
+          "id": "01KAPZ00000000000000000001",
+          "workspaceId": 7,
+          "device": "web",
+          "ts": "2026-11-22T09:00:00Z",
+          "type": "review",
+          "payload": {
+            "cardId": "c1",
+            "mode": "vocab",
+            "grade": 3,
+            "replaces": "01KAPZ00000000000000000009"
+          }
+        }
+      ],
+      "live": [
+        "01KAPZ00000000000000000009"
+      ],
+      "replaced": [
+        "01KAPZ00000000000000000001"
+      ]
     }
   ]
 }
