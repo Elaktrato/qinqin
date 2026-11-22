@@ -247,7 +247,7 @@ func (s Service) Lookup(ctx context.Context, language, text string, offset int, 
 		case len(m.entry.Forms) > 0:
 		case allSensesTagged(m.entry, hints.ExpressionPOS):
 			yieldKinds[i] = yieldExpression
-		case allSensesTagged(m.entry, hints.ParticlePOS):
+		case len(m.entry.Senses) > 0 && slices.ContainsFunc(m.entry.Senses[0].POS, func(p string) bool { return slices.Contains(hints.ParticlePOS, p) }):
 			yieldKinds[i] = yieldParticle
 		}
 		cands[i].expressionSense = anySenseTagged(m.entry, hints.ExpressionPOS)

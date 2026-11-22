@@ -117,7 +117,7 @@ func compareCandidates(a, b candidate) int {
 const (
 	yieldNone       = iota
 	yieldExpression // every sense an expression: yields to priority >= its own
-	yieldParticle   // every sense a particle: yields to strictly higher priority
+	yieldParticle   // first sense a particle: yields to strictly higher priority
 )
 
 // markYields sets yields on every exact candidate of an unwritten
