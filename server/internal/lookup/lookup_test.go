@@ -630,3 +630,24 @@ func TestTableOnlyLanguageLookup(t *testing.T) {
 		t.Errorf("Lookup(cantaba) = %+v", rs)
 	}
 }
+
+// TestTableDrivenReadingProbes: which text is also looked up by reading
+// is the rule table's hint, not a language check — here Latin text in a
+// table-only language finds a word by its reading.
+func TestTableDrivenReadingProbes(t *testing.T) {
+	tb, err := lemma.Parse([]byte(`{"format": 1, "language": "xk", "version": "t", "maxDepth": 1,
+	 "classes": {"w": {"any": true}}, "hints": {"readingScript": "latin", "readingType": "latin"}, "rules": []}`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	lemma.Register(tb)
+	sqlDB, _ := openDB(t)
+	importPack(t, sqlDB, dict.Manifest{
+		ID: "xk-test", Name: "xk", Version: "1", Type: "dictionary", Language: "xk",
+		License: "CC0-1.0", Attribution: "test", Format: "json",
+	}, "dictionary.json", `{"entries": [{"written": "Haus", "kind": "word", "readings": [{"type": "latin", "value": "haus"}], "glosses": ["house"]}]}`)
+	rs := run(t, service(sqlDB), "xk", "haus", 0)
+	if len(rs) != 1 || !rs[0].ViaReading || rs[0].Matched != "haus" {
+		t.Errorf("Lookup(haus) = %+v, want Haus by its reading", rs)
+	}
+}

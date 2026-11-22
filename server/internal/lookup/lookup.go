@@ -139,8 +139,9 @@ type match struct {
 //
 // Candidates are the prefixes of 1..MaxWindowRunes code points from the
 // offset, looked up by written form (CC-CEDICT stores simplified and
-// traditional forms, so either script matches) and, for Japanese
-// kana-only text, by the plain form of a word's readings. For a
+// traditional forms, so either script matches) and, when the
+// language's rule table names a reading script (Japanese: kana), text
+// written only in it also by the plain form of a word's readings. For a
 // language with a lemmatizer rule table (lang.Deinflector) prefixes also
 // yield their deinflections, kept only when a sense of the entry has the
 // deinflection's word class. A compound of the table (勉強した → 勉強する)
@@ -157,8 +158,10 @@ func (s Service) Lookup(ctx context.Context, language, text string, offset int, 
 	pack := lang.For(language)
 	probes := buildProbes(pack, window)
 	var rules *lemma.Table
+	var hints lemma.Hints
 	if d, ok := pack.(lang.Deinflector); ok {
 		rules = d.Rules()
+		hints = rules.Hints
 	}
 
 	var forms, plains []string
@@ -166,8 +169,8 @@ func (s Service) Lookup(ctx context.Context, language, text string, offset int, 
 		if !slices.Contains(forms, p.term) {
 			forms = append(forms, p.term)
 		}
-		if language == "ja" && kanaOnly(p.term) {
-			if pl := pack.NormalizeReading("kana", p.term); !slices.Contains(plains, pl) {
+		if pl, ok := readingPlain(pack, hints, p.term); ok {
+			if !slices.Contains(plains, pl) {
 				plains = append(plains, pl)
 			}
 		}
@@ -207,10 +210,10 @@ func (s Service) Lookup(ctx context.Context, language, text string, offset int, 
 		for _, e := range byForm[p.term] {
 			consider(e, p, -1)
 		}
-		if language != "ja" || !kanaOnly(p.term) {
+		pl, ok := readingPlain(pack, hints, p.term)
+		if !ok {
 			continue
 		}
-		pl := pack.NormalizeReading("kana", p.term)
 		for _, e := range byReading[pl] {
 			consider(e, p, slices.IndexFunc(e.Readings, func(r lexicon.Reading) bool { return r.Plain == pl }))
 		}
@@ -232,12 +235,8 @@ func (s Service) Lookup(ctx context.Context, language, text string, offset int, 
 
 	cands := make([]candidate, len(matches))
 	expression := make([]bool, len(matches))
-	var hints lemma.Hints
-	if rules != nil {
-		hints = rules.Hints
-	}
 	for i, m := range matches {
-		cands[i] = rankKeys(pack, language, m)
+		cands[i] = rankKeys(pack, hints, language, m)
 		cands[i].freqRank = ranks[i]
 		cands[i].at = i
 		expression[i] = len(m.entry.Forms) == 0 && allSensesTagged(m.entry, hints.ExpressionPOS)
@@ -309,6 +308,16 @@ func hasClass(rules *lemma.Table, e lexicon.Entry, class string) bool {
 	return rules != nil && slices.ContainsFunc(e.Senses, func(s lexicon.Sense) bool { return rules.ClassMatches(class, s.POS) })
 }
 
+// readingPlain is the plain reading form text is also looked up by, when
+// the rule table's hints say text in its script is (Japanese: kana-only
+// text, by the plain form of its kana readings).
+func readingPlain(pack lang.Pack, hints lemma.Hints, text string) (string, bool) {
+	if hints.ReadingScript == "" || !lemma.InScript(hints.ReadingScript, text) {
+		return "", false
+	}
+	return pack.NormalizeReading(hints.ReadingType, text), true
+}
+
 // allSensesTagged reports whether e has senses and every one has a
 // part-of-speech tag in tags.
 func allSensesTagged(e lexicon.Entry, tags []string) bool {
@@ -327,12 +336,9 @@ func anySenseTagged(e lexicon.Entry, tags []string) bool {
 
 // rankKeys computes the sort keys of m except the frequency rank and
 // yields (markYields).
-func rankKeys(pack lang.Pack, language string, m *match) candidate {
+func rankKeys(pack lang.Pack, hints lemma.Hints, language string, m *match) candidate {
 	e, term := m.entry, m.probe.term
-	plain := ""
-	if kanaOnly(term) {
-		plain = pack.NormalizeReading("kana", term)
-	}
+	plain, _ := readingPlain(pack, hints, term)
 	readingIs := func(r lexicon.Reading) bool {
 		return r.Value == term || plain != "" && r.Plain == plain
 	}
@@ -516,20 +522,6 @@ func (s Service) dictionaryNames(ctx context.Context, cands []candidate, matches
 		return nil, fmt.Errorf("lookup: dictionary names: %w", err)
 	}
 	return names, nil
-}
-
-// kanaOnly reports whether s is non-empty and made of hiragana, katakana
-// and the prolonged sound mark only.
-func kanaOnly(s string) bool {
-	if s == "" {
-		return false
-	}
-	for _, r := range s {
-		if r != 'ー' && !unicode.In(r, unicode.Hiragana, unicode.Katakana) {
-			return false
-		}
-	}
-	return true
 }
 
 // wordStart reports whether r can begin a word: a letter, except Latin

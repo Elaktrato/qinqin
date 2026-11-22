@@ -206,3 +206,24 @@ func TestCompoundStemPredicate(t *testing.T) {
 		t.Error("an empty compound stem predicate parsed")
 	}
 }
+
+func TestReadingHintsAndInScript(t *testing.T) {
+	tb := parse(t, `{"format": 1, "language": "xh", "version": "t", "maxDepth": 1, "classes": {},
+	 "hints": {"readingScript": "kana", "readingType": "kana"}, "rules": []}`)
+	if tb.Hints.ReadingScript != "kana" || tb.Hints.ReadingType != "kana" {
+		t.Errorf("hints = %+v", tb.Hints)
+	}
+	for s, want := range map[string]bool{"あめ": true, "アメー": true, "雨": false, "": false, "aめ": false} {
+		if got := lemma.InScript("kana", s); got != want {
+			t.Errorf("InScript(kana, %q) = %v, want %v", s, got, want)
+		}
+	}
+	if _, err := lemma.Parse([]byte(`{"format": 1, "language": "xh", "version": "t", "maxDepth": 1, "classes": {},
+	 "hints": {"readingScript": "runic", "readingType": "x"}, "rules": []}`)); err == nil {
+		t.Error("an unknown reading script parsed")
+	}
+	if _, err := lemma.Parse([]byte(`{"format": 1, "language": "xh", "version": "t", "maxDepth": 1, "classes": {},
+	 "hints": {"readingScript": "kana"}, "rules": []}`)); err == nil {
+		t.Error("a reading script without a reading type parsed")
+	}
+}

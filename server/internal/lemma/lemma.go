@@ -75,6 +75,18 @@ type Hints struct {
 	ExpressionPOS []string `json:"expressionPos,omitempty"`
 	// ParticlePOS marks a particle (JMdict prt).
 	ParticlePOS []string `json:"particlePos,omitempty"`
+	// ReadingScript: text written only in this script (kana for
+	// Japanese) is also looked up by the plain form of the dictionary's
+	// readings of type ReadingType. Empty: no reading lookups.
+	ReadingScript string `json:"readingScript,omitempty"`
+	ReadingType   string `json:"readingType,omitempty"`
+}
+
+// InScript reports whether s is non-empty and every code point is in
+// the script (one of the engine's script names; unknown: false).
+func InScript(script, s string) bool {
+	in := scripts[script]
+	return in != nil && s != "" && !strings.ContainsFunc(s, func(r rune) bool { return !in(r) })
 }
 
 // Rule rewrites the suffix From of a form to To, producing a form of class
@@ -147,6 +159,9 @@ func (t *Table) validate() error {
 		return errors.New("no language")
 	case t.MaxDepth < 1 || t.MaxDepth > 8:
 		return fmt.Errorf("maxDepth %d outside 1..8", t.MaxDepth)
+	}
+	if t.Hints.ReadingScript != "" && (scripts[t.Hints.ReadingScript] == nil || t.Hints.ReadingType == "") {
+		return fmt.Errorf("hints: reading script %q needs a known script and a reading type", t.Hints.ReadingScript)
 	}
 	for name, c := range t.Classes {
 		if c.Any && (len(c.Tags) > 0 || len(c.Prefixes) > 0) {

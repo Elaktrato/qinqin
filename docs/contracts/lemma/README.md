@@ -36,7 +36,8 @@ Go: `server/internal/lemma/contract_test.go`, `server/internal/segment/contract_
     "masu": {}                        // intermediate: no POS ever matches
   },
   "compounds": [{"suffix": "する", "class": "vs", "stem": {"anyOf": [{"minRunes": 2}, {"notOnly": "kana"}]}}],
-  "hints": {"expressionPos": ["exp"], "particlePos": ["prt"]},
+  "hints": {"expressionPos": ["exp"], "particlePos": ["prt"],   // POS tags the ranking/boundary rules read
+            "readingScript": "kana", "readingType": "kana"},  // text only in this script is also looked up by reading
   "rules": [{"from": "ました", "to": "ます", "reason": "past", "out": "masu"}] }
 ```
 
@@ -74,6 +75,15 @@ least one code point outside the script (so false for an empty stem). `notSuffix
 For a candidate of a compound's `class` whose form ends in its `suffix` with a non-empty stem that satisfies
 the compound's optional `stem` predicate, the stem is looked up too, with the same class requirement: 勉強しています → 勉強する → 勉強 (JMdict tags `vs` on the
 noun). The match's `lemma` stays 勉強する; `/api/segment` reports `stem: "勉強"` (`reader/` contract).
+
+## Reading lookups
+
+When `hints.readingScript` is set, a prefix written only in that script (engine script list above) is also
+looked up by `NormalizeReading(readingType, prefix)` against the plain form of the dictionary's readings of
+that type (Japanese: kana text by kana readings, katakana folded to hiragana). Without it a language matches
+written forms only. Two rules outside the table stay with the language code (they are about selection and
+display, not lemmatization): which letters can start a word (Latin letters never in zh/ja) and that a
+Japanese form match shows the matched written form as the headword.
 
 ## Ranking keys and the boundary rule
 
