@@ -422,10 +422,11 @@ func TestMatchAtShitaFollowsFrequency(t *testing.T) {
 			t.Errorf("candidate %+v, want a word matched by reading", c)
 		}
 	}
-	// Without frequency data the exact nouns win.
+	// Without frequency data kana fit decides the same way (issue #165):
+	// 下 and 舌 are kanji words matched only by their reading.
 	svc, _ = jaService(t, jaWords, "")
-	if m := matchAt(t, svc, "ja", "した", 0); m == nil || m.Lemma != "した" || m.Reason != "" {
-		t.Errorf("no-frequency match = %+v, want exact した", m)
+	if m := matchAt(t, svc, "ja", "した", 0); m == nil || m.Lemma != "する" || m.Reason != "past" {
+		t.Errorf("no-frequency match = %+v, want する (past)", m)
 	}
 }
 
@@ -593,5 +594,64 @@ func TestSegmentReadingsJapanese(t *testing.T) {
 	ms, err = svc.Segment(context.Background(), "ja", "さくじつ")
 	if err != nil || len(ms) != 1 || ms[0].Reading == nil || ms[0].Reading.Value != "さくじつ" {
 		t.Errorf("さくじつ = %+v, %v, want the matched reading さくじつ", ms, err)
+	}
+}
+
+// TestSegmentStemOfCompound: a する compound found by its noun reports the
+// noun as Stem (furigana aligns against it); other matches have none.
+func TestSegmentStemOfCompound(t *testing.T) {
+	words := append([]jw{{kanji: []string{"勉強"}, readings: []string{"べんきょう"}, pos: []string{"n", "vs"}, pri: []string{"ichi1"}}}, jaWords...)
+	svc, _ := jaService(t, words, "")
+	ms, err := svc.Segment(context.Background(), "ja", "勉強しています。食べた")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(ms) != 2 || ms[0].Lemma != "勉強する" || ms[0].Stem != "勉強" || ms[1].Lemma != "食べる" || ms[1].Stem != "" {
+		t.Errorf("matches = %+v, want 勉強しています (stem 勉強) and 食べた (no stem)", ms)
+	}
+}
+
+// TestBoundaryWithAnExactHomographAfterTheParticle: without a frequency
+// pack the usually-kana noun 仕手 (read して) ranks before する's te-form,
+// yet をして still yields: some candidate of the match after the particle
+// is an inflection of a word with priority.
+func TestBoundaryWithAnExactHomographAfterTheParticle(t *testing.T) {
+	words := append([]jw{
+		{kanji: []string{"仕事"}, readings: []string{"しごと"}, pos: []string{"n", "vs"}, pri: []string{"ichi1"}},
+		{readings: []string{"を"}, pos: []string{"prt"}, pri: []string{"spec1"}},
+		{readings: []string{"をして"}, pos: []string{"exp"}},
+		{kanji: []string{"仕手"}, readings: []string{"して"}, pos: []string{"n"}, pri: []string{"ichi1", "nf08"}, uk: true},
+		{kanji: []string{"帰る"}, readings: []string{"かえる"}, pos: []string{"v5r", "vi"}, pri: []string{"ichi1"}},
+	}, jaWords...)
+	svc, _ := jaService(t, words, "")
+	ms, err := svc.Segment(context.Background(), "ja", "仕事をして帰った")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var got []string
+	for _, m := range ms {
+		got = append(got, m.Surface)
+	}
+	if want := []string{"仕事", "を", "して", "帰った"}; !slices.Equal(got, want) {
+		t.Errorf("tokens = %q, want %q", got, want)
+	}
+}
+
+// TestBoundaryKeepsAnExpressionOverAWeakInflection: かねない stays one
+// token: the inflection after か (ねない of 寝る) is reached only through
+// the kana reading of a word written in kanji, too weak to split it.
+func TestBoundaryKeepsAnExpressionOverAWeakInflection(t *testing.T) {
+	words := append([]jw{
+		{readings: []string{"か"}, pos: []string{"prt"}, pri: []string{"spec1"}},
+		{readings: []string{"かねない"}, pos: []string{"exp"}},
+		{kanji: []string{"寝る"}, readings: []string{"ねる"}, pos: []string{"v1", "vi"}, pri: []string{"ichi1"}},
+	}, jaWords...)
+	svc, _ := jaService(t, words, "")
+	ms, err := svc.Segment(context.Background(), "ja", "かねない")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(ms) != 1 || ms[0].Surface != "かねない" {
+		t.Errorf("matches = %+v, want the expression かねない", ms)
 	}
 }

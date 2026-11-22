@@ -11,6 +11,17 @@ import (
 type candidate struct {
 	// matchedLen is the length of the matched source text in code points.
 	matchedLen int
+	// yields: an exact match of an unwritten expression that is a
+	// same-length inflection of a word with at least its priority (すれば
+	// of する); set by markYields from the rule table's hints.
+	yields bool
+	// expressionSense: a sense of the entry is an expression (an
+	// expression never makes another one yield: として and とする).
+	expressionSense bool
+	// weakKana: matched through a reading that is not the probe text as
+	// written (アメ for あめ), or of an entry that has written forms and is
+	// not usually kana (揣摩 read しま, 使用 read しよう).
+	weakKana bool
 	// freqRank is the entry's rank in the ranking pack (see
 	// rankingRanks); 0 when that pack has no data for the entry.
 	freqRank int
@@ -41,20 +52,27 @@ type candidate struct {
 // through to the next on a tie:
 //
 //  1. matched source text length, longest first;
-//  2. frequency order: lower rank first, entries with data in the
+//  2. expression yields: an unwritten expression that is the inflection
+//     of a same-length candidate of at least its priority goes after
+//     every inflected candidate (issue #165; before frequency, so the
+//     result does not depend on a frequency pack being installed);
+//  3. frequency order: lower rank first, entries with data in the
 //     ranking pack before those without (with no frequency data at all
 //     every rank is 0 and the key is a no-op);
-//  3. primary reading match, true first. It only breaks ties: a word
+//  4. primary reading match, true first. It only breaks ties: a word
 //     found by an alternative form or reading (子ども for 子供) still
 //     beats a shorter headword match (子), and a frequent word that has
 //     the matched reading second (行く: いく, ゆく) beats a rarer one
 //     reading it first (征く) — merged JMdict entries lack Yomitan's
 //     per-reading headwords, so frequency must be able to decide;
-//  4. inflection chain length, shortest first;
-//  5. exact source-term matches, most first;
-//  6. dictionary order, lowest dictionary id first;
-//  7. entry score: usually kana with priority first, then priority;
-//  8. headword text, ascending, then entry id: fully deterministic.
+//  5. kana fit: a strong match (a form, a usually-kana word, a word
+//     without written forms) before a weak one (a kanji word matched only
+//     by its kana reading; issue #165);
+//  6. inflection chain length, shortest first;
+//  7. exact source-term matches, most first;
+//  8. dictionary order, lowest dictionary id first;
+//  9. entry score: usually kana with priority first, then priority;
+//  10. headword text, ascending, then entry id: fully deterministic.
 //
 // Frequency deliberately outranks the inflection chain (Yomitan puts it
 // after), so a frequent deinflected verb beats a rare exact homophone.
@@ -62,10 +80,16 @@ func compareCandidates(a, b candidate) int {
 	if c := cmp.Compare(b.matchedLen, a.matchedLen); c != 0 {
 		return c
 	}
+	if c := cmpTrueFirst(b.yields, a.yields); c != 0 {
+		return c
+	}
 	if c := cmpRank(a.freqRank, b.freqRank); c != 0 {
 		return c
 	}
 	if c := cmpTrueFirst(a.primary, b.primary); c != 0 {
+		return c
+	}
+	if c := cmpTrueFirst(b.weakKana, a.weakKana); c != 0 {
 		return c
 	}
 	if c := cmp.Compare(a.chainLen, b.chainLen); c != 0 {
@@ -87,6 +111,24 @@ func compareCandidates(a, b candidate) int {
 		return c
 	}
 	return cmp.Compare(a.entryID, b.entryID)
+}
+
+// markYields sets yields on every exact candidate of an expression: an
+// entry without written forms whose every sense has a part-of-speech tag
+// in expressionPos, when a same-length inflected candidate's entry has a
+// priority above 0 and at least the expression's, and that is no
+// expression itself (とする does not make として yield). expression[i] says
+// whether cs[i] is such an entry.
+func markYields(cs []candidate, expression []bool) {
+	for i := range cs {
+		c := &cs[i]
+		if !expression[i] || c.chainLen != 0 {
+			continue
+		}
+		c.yields = slices.ContainsFunc(cs, func(d candidate) bool {
+			return d.matchedLen == c.matchedLen && d.chainLen > 0 && !d.expressionSense && d.pri > 0 && d.pri >= c.pri
+		})
+	}
 }
 
 // sortCandidates orders cs best first by compareCandidates.

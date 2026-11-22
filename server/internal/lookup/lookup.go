@@ -1,6 +1,6 @@
 // Package lookup resolves the text at a cursor to a ranked list of
 // dictionary entries, the way Yomitan does: every prefix of the text
-// from the cursor (and, for Japanese, every part-of-speech-checked
+// from the cursor (and, for a language with a lemmatizer rule table, every part-of-speech-checked
 // deinflection of it) is looked up, each matching entry is kept once
 // with its best match, and the entries are ordered by the sort chain in
 // rank.go. Offsets are Unicode code points.
@@ -17,6 +17,7 @@ import (
 
 	"qinqin/internal/freq"
 	"qinqin/internal/lang"
+	"qinqin/internal/lemma"
 	"qinqin/internal/lexicon"
 )
 
@@ -97,6 +98,13 @@ type Result struct {
 	// ViaReading is true when the entry matched by one of its readings
 	// rather than by a written form. Not part of the lookup wire format.
 	ViaReading bool
+	// Stem is the compound stem the entry matched (勉強 for 勉強した,
+	// lemma 勉強する); empty otherwise. Not part of the lookup wire format.
+	Stem string
+	// WeakReading is the kana fit key's weak match (see rank.go): matched
+	// through a reading not as written, or of a word usually written in
+	// kanji. Not part of the lookup wire format.
+	WeakReading bool
 }
 
 // Service looks text up in the lexicon and ranks it with the frequency
@@ -117,7 +125,7 @@ type probe struct {
 	form    string   // dictionary form of the prefix: the prefix or the deinflected form
 	length  int      // code points of source text it accounts for
 	reasons []string // inflection chain; nil when exact
-	class   string   // word class an entry must have (lang.ClassMatches); "" = any
+	class   string   // word class an entry must have (lemma.Table.ClassMatches); "" = any
 }
 
 // match is an entry's best probe.
@@ -135,12 +143,14 @@ type match struct {
 //
 // Candidates are the prefixes of 1..MaxWindowRunes code points from the
 // offset, looked up by written form (CC-CEDICT stores simplified and
-// traditional forms, so either script matches) and, for Japanese
-// kana-only text, by the plain form of a word's readings. Japanese
-// prefixes also yield their deinflections, kept only when a sense of the
-// entry has the deinflection's word class. A する compound (勉強した →
-// 勉強する) is also looked up by its stem (勉強), accepted when the stem
-// is a する noun (JMdict tags vs on the noun). Each category is one
+// traditional forms, so either script matches) and, when the
+// language's rule table names a reading script (Japanese: kana), text
+// written only in it also by the plain form of a word's readings. For a
+// language with a lemmatizer rule table (lang.Deinflector) prefixes also
+// yield their deinflections, kept only when a sense of the entry has the
+// deinflection's word class. A compound of the table (勉強した → 勉強する)
+// is also looked up by its stem (勉強), accepted when the stem has the
+// compound's class (JMdict tags vs on the noun). Each category is one
 // batched store call, whatever the window length. An entry whose senses
 // all belonged to uninstalled dictionaries is not a result.
 func (s Service) Lookup(ctx context.Context, language, text string, offset int, kinds []string) ([]Result, error) {
@@ -151,14 +161,20 @@ func (s Service) Lookup(ctx context.Context, language, text string, offset int, 
 	window := runes[offset:min(offset+MaxWindowRunes, len(runes))]
 	pack := lang.For(language)
 	probes := buildProbes(pack, window)
+	var rules *lemma.Table
+	var hints lemma.Hints
+	if d, ok := pack.(lang.Deinflector); ok {
+		rules = d.Rules()
+		hints = rules.Hints
+	}
 
 	var forms, plains []string
 	for _, p := range probes {
 		if !slices.Contains(forms, p.term) {
 			forms = append(forms, p.term)
 		}
-		if language == "ja" && kanaOnly(p.term) {
-			if pl := pack.NormalizeReading("kana", p.term); !slices.Contains(plains, pl) {
+		if pl, ok := readingPlain(pack, hints, p.term); ok {
+			if !slices.Contains(plains, pl) {
 				plains = append(plains, pl)
 			}
 		}
@@ -183,7 +199,7 @@ func (s Service) Lookup(ctx context.Context, language, text string, offset int, 
 	best := map[int64]*match{}
 	var order []int64
 	consider := func(e lexicon.Entry, p probe, reading int) {
-		if len(kinds) > 0 && !slices.Contains(kinds, e.Kind) || !hasClass(e, p.class) {
+		if len(kinds) > 0 && !slices.Contains(kinds, e.Kind) || !hasClass(rules, e, p.class) {
 			return
 		}
 		cur := best[e.ID]
@@ -198,10 +214,10 @@ func (s Service) Lookup(ctx context.Context, language, text string, offset int, 
 		for _, e := range byForm[p.term] {
 			consider(e, p, -1)
 		}
-		if language != "ja" || !kanaOnly(p.term) {
+		pl, ok := readingPlain(pack, hints, p.term)
+		if !ok {
 			continue
 		}
-		pl := pack.NormalizeReading("kana", p.term)
 		for _, e := range byReading[pl] {
 			consider(e, p, slices.IndexFunc(e.Readings, func(r lexicon.Reading) bool { return r.Plain == pl }))
 		}
@@ -222,11 +238,15 @@ func (s Service) Lookup(ctx context.Context, language, text string, offset int, 
 	ranks := rankingRanks(packIDs, freqs)
 
 	cands := make([]candidate, len(matches))
+	expression := make([]bool, len(matches))
 	for i, m := range matches {
-		cands[i] = rankKeys(pack, language, m)
+		cands[i] = rankKeys(pack, hints, language, m)
 		cands[i].freqRank = ranks[i]
 		cands[i].at = i
+		expression[i] = len(m.entry.Forms) == 0 && allSensesTagged(m.entry, hints.ExpressionPOS)
+		cands[i].expressionSense = anySenseTagged(m.entry, hints.ExpressionPOS)
 	}
+	markYields(cands, expression)
 	sortCandidates(cands)
 	cands = cands[:min(len(cands), MaxEntries)]
 
@@ -256,7 +276,8 @@ func (s Service) Lookup(ctx context.Context, language, text string, offset int, 
 
 // buildProbes lists the probes of every prefix of window, shortest
 // prefix first: the prefix itself, then its deinflections (when the
-// language deinflects), each followed by its する-compound stem probe.
+// language has a rule table), each followed by the stem probe of every
+// compound of the table it ends in (勉強する -> 勉強).
 func buildProbes(pack lang.Pack, window []rune) []probe {
 	deinflector, _ := pack.(lang.Deinflector)
 	var probes []probe
@@ -266,35 +287,71 @@ func buildProbes(pack lang.Pack, window []rune) []probe {
 		if deinflector == nil {
 			continue
 		}
+		compounds := deinflector.Rules().Compounds
 		for _, d := range deinflector.Deinflect(prefix) {
 			p := probe{term: d.Form, form: d.Form, length: n, reasons: d.Reasons, class: d.Class}
 			probes = append(probes, p)
 			// JMdict tags vs on the noun (勉強: n, vs), not on 勉強する.
-			if stem, ok := strings.CutSuffix(d.Form, "する"); ok && stem != "" && d.Class == lang.ClassVs {
-				p.term = stem
-				probes = append(probes, p)
+			for _, c := range compounds {
+				if stem, ok := strings.CutSuffix(d.Form, c.Suffix); ok && d.Class == c.Class && c.StemOK(stem) {
+					p.term = stem
+					probes = append(probes, p)
+				}
 			}
 		}
 	}
 	return probes
 }
 
-// hasClass reports whether any sense of e has a part of speech of class;
-// the empty class (an exact match) always holds.
-func hasClass(e lexicon.Entry, class string) bool {
+// hasClass reports whether any sense of e has a part of speech of class
+// in the rule table rules; the empty class (an exact match) always holds.
+func hasClass(rules *lemma.Table, e lexicon.Entry, class string) bool {
 	if class == "" {
 		return true
 	}
-	return slices.ContainsFunc(e.Senses, func(s lexicon.Sense) bool { return lang.ClassMatches(class, s.POS) })
+	return rules != nil && slices.ContainsFunc(e.Senses, func(s lexicon.Sense) bool { return rules.ClassMatches(class, s.POS) })
 }
 
-// rankKeys computes the sort keys of m except the frequency rank.
-func rankKeys(pack lang.Pack, language string, m *match) candidate {
-	e, term := m.entry, m.probe.term
-	plain := ""
-	if kanaOnly(term) {
-		plain = pack.NormalizeReading("kana", term)
+// weakReading reports whether m is a weak reading match: a reading match
+// is strong only when the reading is the probe text itself (not just its
+// plain form: アメ for あめ) and the word is usually written that way (no
+// written form, or usually kana).
+func weakReading(m *match) bool {
+	e := m.entry
+	return m.reading >= 0 && (e.Readings[m.reading].Value != m.probe.term || len(e.Forms) > 0 && !e.UK)
+}
+
+// readingPlain is the plain reading form text is also looked up by, when
+// the rule table's hints say text in its script is (Japanese: kana-only
+// text, by the plain form of its kana readings).
+func readingPlain(pack lang.Pack, hints lemma.Hints, text string) (string, bool) {
+	if hints.ReadingScript == "" || !lemma.InScript(hints.ReadingScript, text) {
+		return "", false
 	}
+	return pack.NormalizeReading(hints.ReadingType, text), true
+}
+
+// allSensesTagged reports whether e has senses and every one has a
+// part-of-speech tag in tags.
+func allSensesTagged(e lexicon.Entry, tags []string) bool {
+	return len(tags) > 0 && len(e.Senses) > 0 && !slices.ContainsFunc(e.Senses, func(s lexicon.Sense) bool {
+		return !slices.ContainsFunc(s.POS, func(p string) bool { return slices.Contains(tags, p) })
+	})
+}
+
+// anySenseTagged reports whether a sense of e has a part-of-speech tag in
+// tags.
+func anySenseTagged(e lexicon.Entry, tags []string) bool {
+	return slices.ContainsFunc(e.Senses, func(s lexicon.Sense) bool {
+		return slices.ContainsFunc(s.POS, func(p string) bool { return slices.Contains(tags, p) })
+	})
+}
+
+// rankKeys computes the sort keys of m except the frequency rank and
+// yields (markYields).
+func rankKeys(pack lang.Pack, hints lemma.Hints, language string, m *match) candidate {
+	e, term := m.entry, m.probe.term
+	plain, _ := readingPlain(pack, hints, term)
 	readingIs := func(r lexicon.Reading) bool {
 		return r.Value == term || plain != "" && r.Plain == plain
 	}
@@ -306,6 +363,7 @@ func rankKeys(pack lang.Pack, language string, m *match) candidate {
 		pri:        e.Pri,
 		headword:   displayTerm(language, m),
 		entryID:    e.ID,
+		weakKana:   weakReading(m),
 	}
 	// Primary: the text that matched the dictionary is the headword — the
 	// first reading or first form. A traditional form (CC-CEDICT's trad
@@ -371,6 +429,10 @@ func result(language string, m *match, freqs []Frequency, names map[int64]string
 		Pri:         e.Pri,
 		Lemma:       m.probe.form,
 		ViaReading:  m.reading >= 0,
+		WeakReading: weakReading(m),
+	}
+	if m.probe.term != m.probe.form {
+		r.Stem = m.probe.term
 	}
 	switch {
 	case m.reading >= 0:
@@ -471,20 +533,6 @@ func (s Service) dictionaryNames(ctx context.Context, cands []candidate, matches
 		return nil, fmt.Errorf("lookup: dictionary names: %w", err)
 	}
 	return names, nil
-}
-
-// kanaOnly reports whether s is non-empty and made of hiragana, katakana
-// and the prolonged sound mark only.
-func kanaOnly(s string) bool {
-	if s == "" {
-		return false
-	}
-	for _, r := range s {
-		if r != 'ー' && !unicode.In(r, unicode.Hiragana, unicode.Katakana) {
-			return false
-		}
-	}
-	return true
 }
 
 // wordStart reports whether r can begin a word: a letter, except Latin

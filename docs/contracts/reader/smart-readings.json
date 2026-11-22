@@ -1386,6 +1386,44 @@
     1,
     2
    ]
+  },
+  {
+   "name": "ja: a する compound aligns its reading against the noun (stem)",
+   "lang": "ja",
+   "readings": "always",
+   "bookRuby": true,
+   "smartThreshold": 80,
+   "runs": [
+    {
+     "text": "勉強しています"
+    }
+   ],
+   "matches": [
+    {
+     "start": 0,
+     "end": 7,
+     "surface": "勉強しています",
+     "lemma": "勉強する",
+     "stem": "勉強",
+     "entries": [
+      6
+     ],
+     "reading": {
+      "type": "kana",
+      "value": "べんきょう"
+     }
+    }
+   ],
+   "scores": {},
+   "expect": [
+    {
+     "start": 0,
+     "end": 2,
+     "rt": "べんきょう",
+     "concealed": false,
+     "source": "dict"
+    }
+   ]
   }
  ]
 }

@@ -112,11 +112,11 @@ func TestJaDeinflectShortKanaStemsAreNotImperativeOrDesire(t *testing.T) {
 	}
 }
 
-func TestJaDeinflectDepthAtMostFour(t *testing.T) {
-	for _, s := range []string{"していませんでした", "食べさせられていなかった", "行きたくなかった"} {
+func TestJaDeinflectDepthAtMostFive(t *testing.T) {
+	for _, s := range []string{"していませんでした", "食べさせられていなかった", "行きたくなかった", "食べさせてしまっていなかった"} {
 		for _, d := range (lang.Ja{}).Deinflect(s) {
-			if len(d.Reasons) > 4 {
-				t.Errorf("Deinflect(%q): %+v chains more than 4 rules", s, d)
+			if len(d.Reasons) > 5 {
+				t.Errorf("Deinflect(%q): %+v chains more than 5 rules", s, d)
 			}
 		}
 	}

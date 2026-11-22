@@ -327,6 +327,8 @@ export interface SegmentMatch {
 	start: number;
 	end: number;
 	lemma: string;
+	/** Set when the first entry matched a compound's stem (勉強 for 勉強しています): furigana aligns against it. */
+	stem?: string;
 	reason: string;
 	entries: SegmentCandidate[];
 	/** Only with `readings: true`: the best candidate's reading, the caller's overlay applied. */
