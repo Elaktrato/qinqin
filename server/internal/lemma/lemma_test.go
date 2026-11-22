@@ -164,7 +164,8 @@ func TestParseRejects(t *testing.T) {
 	for name, src := range map[string]string{
 		"not json":          `{`,
 		"unknown key":       `{` + base + `, "rules": [], "extra": 1}`,
-		"format 2":          strings.Replace(`{`+base+`, "rules": []}`, `"format": 1`, `"format": 2`, 1),
+		"format 3":          strings.Replace(`{`+base+`, "rules": []}`, `"format": 1`, `"format": 3`, 1),
+		"format 0":          strings.Replace(`{`+base+`, "rules": []}`, `"format": 1`, `"format": 0`, 1),
 		"depth 0":           strings.Replace(`{`+base+`, "rules": []}`, `"maxDepth": 2`, `"maxDepth": 0`, 1),
 		"depth 9":           strings.Replace(`{`+base+`, "rules": []}`, `"maxDepth": 2`, `"maxDepth": 9`, 1),
 		"no language":       strings.Replace(`{`+base+`, "rules": []}`, `"language": "xx"`, `"language": ""`, 1),
@@ -225,5 +226,24 @@ func TestReadingHintsAndInScript(t *testing.T) {
 	if _, err := lemma.Parse([]byte(`{"format": 1, "language": "xh", "version": "t", "maxDepth": 1, "classes": {},
 	 "hints": {"readingScript": "kana"}, "rules": []}`)); err == nil {
 		t.Error("a reading script without a reading type parsed")
+	}
+}
+
+func TestFormat2Hints(t *testing.T) {
+	tb := parse(t, `{"format": 2, "language": "xf", "version": "t", "maxDepth": 1, "classes": {},
+	 "hints": {"keepWhole": ["にもとづいて", "を通して"], "usuallyReadingTag": "uk"}, "rules": []}`)
+	if tb.Hints.UsuallyReadingTag != "uk" || len(tb.Hints.KeepWhole) != 2 {
+		t.Errorf("hints = %+v", tb.Hints)
+	}
+	if !tb.Hints.KeepsWhole("に基づいて", "にもとづいて") || !tb.Hints.KeepsWhole("を通して") || tb.Hints.KeepsWhole("をして", "") {
+		t.Error("KeepsWhole")
+	}
+	// format 1 tables stay valid; a format newer than the engine's is refused
+	parse(t, `{"format": 1, "language": "xf", "version": "t", "maxDepth": 1, "classes": {}, "hints": {}, "rules": []}`)
+	if _, err := lemma.Parse([]byte(`{"format": 3, "language": "xf", "version": "t", "maxDepth": 1, "classes": {}, "hints": {}, "rules": []}`)); err == nil {
+		t.Error("format 3 parsed")
+	}
+	if _, err := lemma.Parse([]byte(`{"format": 2, "language": "xf", "version": "t", "maxDepth": 1, "classes": {}, "hints": {"keepWhole": [""]}, "rules": []}`)); err == nil {
+		t.Error("an empty keepWhole entry parsed")
 	}
 }
