@@ -434,6 +434,16 @@ describe('study setup, order of card types (#132)', () => {
 		expect(JSON.parse(sessionStorage.getItem(SESSION_CONFIG_KEY)!).typeOrder).toBe('grouped');
 	});
 
+	it('sits after the hints of the new-card order', async () => {
+		vi.mocked(getFrequencyPacks).mockResolvedValue([]);
+		render(Page);
+		const hint = await screen.findByText(
+			'No frequency list is installed for Japanese. An administrator can add one in Settings, Data; see Data and licences.'
+		);
+		const select = typeOrderSelect();
+		expect(hint.compareDocumentPosition(select) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+	});
+
 	it('preselects the saved choice', async () => {
 		sessionStorage.setItem(
 			SESSION_CONFIG_KEY,

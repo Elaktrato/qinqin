@@ -348,8 +348,16 @@ describe('review fixes (#132)', () => {
 	it('the due block keeps the due order across kinds (the most overdue stay early)', () => {
 		// The 10 most overdue cards are writing cards, then 90 vocab cards.
 		const items = [
-			...Array.from({ length: 10 }, (_, i) => ({ cardId: `c-writing-${i}`, kind: 'writing' as const, entryId: i })),
-			...Array.from({ length: 90 }, (_, i) => ({ cardId: `c-vocab-${100 + i}`, kind: 'vocab' as const, entryId: 100 + i }))
+			...Array.from({ length: 10 }, (_, i) => ({
+				cardId: `c-writing-${i}`,
+				kind: 'writing' as const,
+				entryId: i
+			})),
+			...Array.from({ length: 90 }, (_, i) => ({
+				cardId: `c-vocab-${100 + i}`,
+				kind: 'vocab' as const,
+				entryId: 100 + i
+			}))
 		];
 		for (const seed of [1, 2, 3, 4, 5]) {
 			const out = mixSession(items, { seed, order: 'mixed', isReview: () => true });
@@ -366,7 +374,12 @@ describe('review fixes (#132)', () => {
 			{ cardId: 'c-sentence-3', kind: 'sentence' as const, entryId: 3 }
 		];
 		const out = mixSession(items, { seed: 1, order: 'grouped', isReview: () => false });
-		expect(out.map((item) => item.cardId)).toEqual(['c-vocab-1', 'c-vocab-2', 'c-sentence-3', 'c-sentence-2']);
+		expect(out.map((item) => item.cardId)).toEqual([
+			'c-vocab-1',
+			'c-vocab-2',
+			'c-sentence-3',
+			'c-sentence-2'
+		]);
 	});
 
 	it('never back to back inside a block after a placed prefix, when the block allows it (property)', () => {
@@ -382,7 +395,8 @@ describe('review fixes (#132)', () => {
 			const last = placed[placed.length - 1];
 			// Feasible: no word above ceil(R / 2), the word placed last at most floor(R / 2).
 			const feasible =
-				Math.max(...counts.values()) <= Math.ceil(size / 2) && (counts.get(last) ?? 0) <= Math.floor(size / 2);
+				Math.max(...counts.values()) <= Math.ceil(size / 2) &&
+				(counts.get(last) ?? 0) <= Math.floor(size / 2);
 			if (!feasible) continue;
 			expect(out[0].entryId, `round ${round}: seam`).not.toBe(last);
 			for (let i = 1; i < out.length; i += 1) {

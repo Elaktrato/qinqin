@@ -1002,18 +1002,18 @@ import { limitsOf } from '$lib/study/scheduler';
 				onchange={(event) => (newOrderValue = (event.currentTarget as HTMLSelectElement).value)}
 				options={orderView.choices.map((choice) => ({ value: choice.value, label: choice.label }))}
 			/>
-			<Select
-				label={t('study.limitsSection.typeOrder')}
-				value={typeOrder}
-				onchange={(event) => (typeOrder = parseTypeOrder((event.currentTarget as HTMLSelectElement).value))}
-				options={typeOrderChoices()}
-			/>
 			{#if ordersMixed}
 				<p class="hint" role="status">{mixedNote()}</p>
 			{/if}
 			{#if orderView.hint !== null}
 				<p class="hint">{orderView.hint}</p>
 			{/if}
+			<Select
+				label={t('study.limitsSection.typeOrder')}
+				value={typeOrder}
+				onchange={(event) => (typeOrder = parseTypeOrder((event.currentTarget as HTMLSelectElement).value))}
+				options={typeOrderChoices()}
+			/>
 			<p class="hint">
 				<a href="/study/scheduling">{t('study.limitsSection.scheduling', { label: schedulingLabel })}</a>
 			</p>
