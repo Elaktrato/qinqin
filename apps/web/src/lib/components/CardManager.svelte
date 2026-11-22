@@ -369,7 +369,7 @@
 
 	.toast-region {
 		position: fixed;
-		inset: auto 0 calc(1rem + env(safe-area-inset-bottom, 0px)) 0;
+		inset: auto 0 calc(1rem + max(var(--bottom-bar-space, 0px), env(safe-area-inset-bottom, 0px))) 0;
 		display: flex;
 		justify-content: center;
 		pointer-events: none;

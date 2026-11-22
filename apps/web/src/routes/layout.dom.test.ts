@@ -24,6 +24,7 @@ import { select, workspaces } from '$lib/workspaces';
 import { api } from '$lib/api/client';
 import { auth } from '$lib/auth';
 import { setUrl } from '$lib/testing/appState.svelte';
+import { navLayoutStore } from '$lib/frame/navLayoutStore.svelte';
 import Layout from './+layout.svelte';
 
 /** The desktop bar (both bars are in the DOM; CSS shows one, and jsdom has no CSS). */
@@ -33,18 +34,20 @@ function desktop(container: HTMLElement): HTMLElement {
 
 const children = createRawSnippet(() => ({ render: () => '<p>page body</p>' }));
 
-function mountAt(path: string, token: string | null) {
+function mountAt(path: string, token: string | null, navLayout: unknown = null) {
 	setUrl(path);
 	localStorage.clear();
 	if (token) localStorage.setItem('qinqin.token', token);
 	vi.mocked(api).mockImplementation((async (url: string) => {
 		if (url === '/api/auth/me') return { id: 1, username: 'u', admin: false };
+		if (navLayout !== null && url.includes('prefix=nav-layout')) return [{ key: 'nav-layout', workspaceId: null, data: navLayout }];
 		return [];
 	}) as never);
 	return render(Layout, { children });
 }
 
 beforeEach(() => {
+	void navLayoutStore.setUser(null);
 	auth.set({ token: null, user: null });
 	workspaces.set({ list: [], current: null });
 });
@@ -117,9 +120,10 @@ describe('layout auth guard', () => {
 		expect(mains[0].textContent).toContain('page body');
 	});
 
-	it('the phone bar: the menu button, the title and the flag; no nav until the drawer opens', async () => {
-		const { findByText, container } = mountAt('/stats/week', 'tok');
+	it('the phone bar in side-menu mode: the menu button, the title and the flag; no nav until the drawer opens', async () => {
+		const { findByText, container } = mountAt('/stats/week', 'tok', { version: 1, phone: 'drawer' });
 		await findByText('page body');
+		await waitFor(() => expect(navLayoutStore.phone).toBe('drawer'));
 		const phone = container.querySelector('[data-frame="phone"]') as HTMLElement;
 		expect(phone.closest('header')).toBe(desktop(container).closest('header'));
 		expect(within(phone).getByRole('button', { name: 'Open menu' })).toBeTruthy();
@@ -127,6 +131,50 @@ describe('layout auth guard', () => {
 		expect(within(phone).queryByRole('navigation')).toBeNull();
 		// Only the desktop nav exists (CSS hides it on the phone).
 		expect(container.querySelectorAll('nav[aria-label="Main"]')).toHaveLength(1);
+		expect(container.querySelector('[data-frame="phone-nav"]')).toBeNull();
+		expect(document.documentElement.hasAttribute('data-bottom-bar')).toBe(false);
+	});
+
+	it('the phone frame in bottom-bar mode (the default): no menu button, the avatar, the bar after the page', async () => {
+		const { findByText, container } = mountAt('/search', 'tok');
+		await findByText('page body');
+		const phone = container.querySelector('[data-frame="phone"]') as HTMLElement;
+		expect(within(phone).queryByRole('button', { name: 'Open menu' })).toBeNull();
+		expect(within(phone).getByRole('button', { name: 'Account menu' })).toBeTruthy();
+		expect(phone.querySelector('.title')?.textContent).toBe('Search');
+		const nav = container.querySelector('[data-frame="phone-nav"]') as HTMLElement;
+		expect(nav.classList.contains('phone')).toBe(true);
+		// After the page in the reading order, outside the banner.
+		const main = container.querySelector('#main-content') as HTMLElement;
+		expect(main.compareDocumentPosition(nav) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+		expect(nav.closest('header')).toBeNull();
+		const bar = within(nav).getByRole('navigation', { name: 'Main' });
+		expect(within(bar).getByRole('link', { name: 'Search' }).getAttribute('aria-current')).toBe('page');
+		expect(document.documentElement.hasAttribute('data-bottom-bar')).toBe(true);
+	});
+
+	it('the study session hides the bottom bar (it has its own docked buttons)', async () => {
+		const { findByText, container } = mountAt('/study/session', 'tok');
+		await findByText('page body');
+		expect(container.querySelector('[data-frame="phone-nav"]')).toBeNull();
+		expect(document.documentElement.hasAttribute('data-bottom-bar')).toBe(false);
+		// The top bar stays in bar mode (no menu button).
+		const phone = container.querySelector('[data-frame="phone"]') as HTMLElement;
+		expect(within(phone).queryByRole('button', { name: 'Open menu' })).toBeNull();
+	});
+
+	it('desktop and tablet do not change: the desktop bar is the same in both phone modes', async () => {
+		const bar = mountAt('/reader', 'tok');
+		await bar.findByText('page body');
+		// Generated ids differ between two mounts; everything else must not.
+		const markup = (el: HTMLElement) => el.innerHTML.replace(/ (id|for|aria-controls|aria-describedby|aria-labelledby)="[^"]*"/g, '');
+		const withBar = markup(desktop(bar.container));
+		cleanup();
+		void navLayoutStore.setUser(null);
+		const drawer = mountAt('/reader', 'tok', { version: 1, phone: 'drawer' });
+		await drawer.findByText('page body');
+		await waitFor(() => expect(navLayoutStore.phone).toBe('drawer'));
+		expect(markup(desktop(drawer.container))).toBe(withBar);
 	});
 
 	it('signed out on /sources: the logo links to /login, a Sign in link shows, no nav', async () => {

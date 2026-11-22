@@ -51,3 +51,14 @@ export function barItems(
 	const mark = shown.some((s) => s.id === current) ? current : more.some((s) => s.id === current) ? 'more' : null;
 	return { items: [...shown, MORE], more, current: mark };
 }
+
+/**
+ * Pages without the bottom bar (whole path segments): the study session,
+ * which has its own docked grade buttons and an exit.
+ */
+export const BAR_HIDDEN_PATHS: readonly string[] = ['/study/session'];
+
+/** barHiddenOn: true on a page that hides the bottom bar. */
+export function barHiddenOn(path: string): boolean {
+	return BAR_HIDDEN_PATHS.some((prefix) => path === prefix || path.startsWith(`${prefix}/`));
+}

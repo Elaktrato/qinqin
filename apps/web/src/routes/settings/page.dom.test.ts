@@ -8,6 +8,7 @@ vi.mock('$lib/api/client', async (importOriginal) => ({
 	api: vi.fn()
 }));
 
+import { goto } from '$app/navigation';
 import { api } from '$lib/api/client';
 import { setUrl } from '$lib/testing/appState.svelte';
 import { auth } from '$lib/auth';
@@ -42,7 +43,7 @@ describe('the settings tab row in the lighter look (#106)', () => {
 		const list = screen.getByRole('tablist', { name: 'Settings' });
 		expect([...list.querySelectorAll('[role="tab"]')].map((tab) => tab.textContent?.trim())).toEqual([
 			'Workspaces',
-			'Home',
+			'Layout',
 			'Appearance',
 			'Study',
 			'Features',
@@ -63,14 +64,23 @@ describe('the settings tab row in the lighter look (#106)', () => {
 		expect(screen.getByRole('tab', { name: 'Data' }).getAttribute('aria-selected')).toBe('true');
 	});
 
+	it('the old Home tab link lands on Layout, and the URL follows (the fragment kept)', async () => {
+		setUrl('/settings?tab=home#bottom-bar');
+		render(Page);
+		expect(screen.getByRole('tab', { name: 'Layout' }).getAttribute('aria-selected')).toBe('true');
+		await waitFor(() =>
+			expect(goto).toHaveBeenCalledWith('/settings?tab=layout#bottom-bar', { replaceState: true, keepFocus: true, noScroll: true })
+		);
+	});
+
 	it('arrow keys move focus and selection (automatic activation, as today)', async () => {
 		render(Page);
 		const workspaces = screen.getByRole('tab', { name: 'Workspaces' });
 		workspaces.focus();
 		await fireEvent.keyDown(workspaces, { key: 'ArrowRight' });
-		const home = screen.getByRole('tab', { name: 'Home' });
-		expect(home.getAttribute('aria-selected')).toBe('true');
-		expect(document.activeElement).toBe(home);
+		const layout = screen.getByRole('tab', { name: 'Layout' });
+		expect(layout.getAttribute('aria-selected')).toBe('true');
+		expect(document.activeElement).toBe(layout);
 	});
 
 	it('the wrapped row shows a deep-linked far tab without a sideways scroll', async () => {
@@ -157,8 +167,9 @@ describe('the plugin list in the lighter look (#106)', () => {
 	it('shows the version as a chip and saves with a secondary Button; no primary', async () => {
 		setUrl('/settings?tab=plugins');
 		render(Page);
-		const row = (await screen.findByText('Journal')).closest('li')!;
-		expect(within(row).getByText('1.2.3')).toBeTruthy();
+		// "Journal" is also a section row of Settings → Layout (hidden panel).
+		const row = (await screen.findByText('1.2.3')).closest('li')!;
+		expect(within(row).getByText('Journal')).toBeTruthy();
 		const save = within(row).getByRole('button', { name: 'Save' });
 		expect(save.className).toContain('secondary');
 		expect(primaryActions(document.body)).toHaveLength(0);

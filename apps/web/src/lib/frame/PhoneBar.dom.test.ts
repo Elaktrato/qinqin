@@ -117,3 +117,37 @@ describe('PhoneBar', () => {
 		expect(await screen.findByRole('dialog', { name: 'Menu' })).toBeTruthy();
 	});
 });
+
+describe('PhoneBar in bottom-bar mode (#188)', () => {
+	it('title, page actions, flag, avatar: no menu button and no drawer', async () => {
+		const { container } = render(PhoneHarness, { sections, current: 'reader', page: true, mode: 'bar' });
+		const order = [...container.querySelector('.phone-bar')!.querySelectorAll('button')].map(
+			(b) => b.getAttribute('aria-label') ?? b.textContent
+		);
+		expect(order).toEqual(['Add to deck', 'Workspace: Chinese', 'Account menu']);
+		expect(screen.queryByRole('button', { name: 'Open menu' })).toBeNull();
+		expect(container.querySelector('.title')?.textContent).toBe('Reader');
+	});
+
+	it('the avatar opens the account menu (Settings within reach without the drawer)', async () => {
+		render(PhoneHarness, { sections, current: null, mode: 'bar' });
+		await fireEvent.click(screen.getByRole('button', { name: 'Account menu' }));
+		expect(screen.getByRole('menuitem', { name: 'Settings' }).getAttribute('href')).toBe('/settings');
+	});
+
+	it('side-menu mode is unchanged: menu button first, no avatar in the bar', () => {
+		const { container } = render(PhoneHarness, { sections, current: 'reader', mode: 'drawer' });
+		const order = [...container.querySelector('.phone-bar')!.querySelectorAll('button')].map(
+			(b) => b.getAttribute('aria-label') ?? b.textContent
+		);
+		expect(order).toEqual(['Open menu', 'Workspace: Chinese']);
+	});
+
+	it('switching to bottom-bar mode closes an open drawer', async () => {
+		const { rerender } = render(PhoneHarness, { sections, current: 'reader', mode: 'drawer' });
+		await fireEvent.click(screen.getByRole('button', { name: 'Open menu' }));
+		await screen.findByRole('dialog', { name: 'Menu' });
+		await rerender({ sections, current: 'reader', mode: 'bar' });
+		await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Menu' })).toBeNull());
+	});
+});
