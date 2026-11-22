@@ -24,7 +24,11 @@ Entry ids are stable per server, so user data that names an entry (cards, edits,
 
 A frequency pack is a word-frequency list whose ranks order lookup results and appear as a chip in the popup. It lives in `frequency`, one row per term (optionally tied to one reading) with its rank, grouped by pack in `frequency_packs`.
 
-Frequency order is optional: with no pack, ranking falls back to the inflection chain length and the priority score. Packs are ranked by priority (the order first imported): the first pack that has data for any of the entries decides the frequency order, and every pack's rank is shown. The bundled pack is the Jiten list (Japanese); Chinese frequency packs are local-only ([Data and licences](Data-and-licences#frequency-order-and-starter-decks)). The pack file formats are on [Data pack format](Data-pack-format).
+Frequency order is optional: with no pack, ranking falls back to the kana fit (a kanji word matched only by its kana reading ranks below a kana word), the inflection chain length and the priority score. Two keys apply with or without a pack: longer matches first, and a dictionary phrase without a written form that is just a same-length inflection of a word of at least its priority (すれば of する) comes after it. Packs are ranked by priority (the order first imported): the first pack that has data for any of the entries decides the frequency order, and every pack's rank is shown. The bundled pack is the Jiten list (Japanese); Chinese frequency packs are local-only ([Data and licences](Data-and-licences#frequency-order-and-starter-decks)). The pack file formats are on [Data pack format](Data-pack-format).
+
+## Inflection rule tables
+
+Deinflection (食べちゃった → 食べる) is data, not code: one engine runs a rule table per language (`server/internal/lemma/tables/<lang>.json`, built into the server; Japanese is the first). A table lists suffix rules with word classes, the dictionary part-of-speech tags of each class, compound suffixes (勉強する found by 勉強) and the tags the ranking reads. A language with a table but no code of its own gets deinflection from the table alone. The format and the Japanese table are shared with other clients in `docs/contracts/lemma/`.
 
 ## Character components
 
