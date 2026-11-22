@@ -85,7 +85,7 @@ func TestLemmaRankingWithoutFrequency(t *testing.T) {
 		text string
 		want []string
 	}{
-		{"しました", []string{"為る[past polite]", "揣摩"}}, // 揣摩 only as しま: a two-hiragana stem is no compound
+		{"しました", []string{"為る[past polite]", "揣摩[past]"}},
 		{"しよう", []string{"為る[volitional]", "使用"}},
 		{"すれば", []string{"為る[conditional]", "掏る[conditional]", "すれば"}},
 		{"できれば", []string{"できれば", "出来る[conditional]"}}, // the expression has the higher priority
@@ -132,16 +132,16 @@ func TestExpressionKeepsItsPlaceAgainstAnUnprioritisedVerb(t *testing.T) {
 	wantPrefix(t, run(t, service(sqlDB), "ja", "かれば", 0), "かれば", "狩る[conditional]")
 }
 
-// A hiragana-only compound stem needs three code points (こう is far more
-// often the adverb than 稿 + する); katakana stems of two (メモする) and
-// kanji stems of one (愛する) still compound.
+// A compound stem needs two code points or a non-kana one: けが (怪我
+// written in kana) + している is 怪我 in the progressive, メモ and 愛
+// compound too; a one-kana stem never does (すし).
 func TestCompoundStemLengthByScript(t *testing.T) {
 	sqlDB, _ := openDB(t)
 	importJMdict(t, sqlDB, jaWords+`<entry>
 <ent_seq>2900200</ent_seq>
-<k_ele><keb>稿</keb></k_ele>
-<r_ele><reb>こう</reb></r_ele>
-<sense><pos>&n;</pos><pos>&vs;</pos><gloss>draft</gloss></sense>
+<k_ele><keb>怪我</keb><ke_pri>ichi1</ke_pri></k_ele>
+<r_ele><reb>けが</reb><re_pri>ichi1</re_pri></r_ele>
+<sense><pos>&n;</pos><pos>&vs;</pos><gloss>injury</gloss></sense>
 </entry>
 <entry>
 <ent_seq>2900201</ent_seq>
@@ -156,11 +156,7 @@ func TestCompoundStemLengthByScript(t *testing.T) {
 </entry>
 `)
 	s := service(sqlDB)
-	for _, r := range run(t, s, "ja", "こうしている", 0) {
-		if label(r) == "稿" && r.Matched != "こう" {
-			t.Errorf("こうしている found %+v, want no 稿 compound", r)
-		}
-	}
+	wantPrefix(t, run(t, s, "ja", "けがしている", 0), "怪我[progressive te-form]")
 	wantPrefix(t, run(t, s, "ja", "メモした", 0), "メモ[past]")
 	wantPrefix(t, run(t, s, "ja", "愛した", 0), "愛[past]")
 }

@@ -35,8 +35,7 @@ Go: `server/internal/lemma/contract_test.go`, `server/internal/segment/contract_
     "w":  {"any": true},              // every entry (dictionaries without POS); not with tags/prefixes
     "masu": {}                        // intermediate: no POS ever matches
   },
-  "compounds": [{"suffix": "する", "class": "vs",
-                 "stem": {"anyOf": [{"minRunes": 3}, {"allOf": [{"minRunes": 2}, {"notOnly": "hiragana"}]}, {"notOnly": "kana"}]}}],
+  "compounds": [{"suffix": "する", "class": "vs", "stem": {"anyOf": [{"minRunes": 2}, {"notOnly": "kana"}]}}],
   "hints": {"expressionPos": ["exp"], "particlePos": ["prt"],   // POS tags the ranking/boundary rules read
             "readingScript": "kana", "readingType": "kana"},  // text only in this script is also looked up by reading
   "rules": [{"from": "ました", "to": "ます", "reason": "past", "out": "masu"}] }

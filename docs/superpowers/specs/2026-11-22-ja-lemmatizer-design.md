@@ -193,9 +193,10 @@ Ruling: **adj-ix is its own class** inflecting only on its よ form (かっこ�
 of かっこいい), and the adverbial く needs a stem of two code points or a non-kana one — いく, なく, しく were
 いい, ない, しい — cost if wrong: an adj-ix word whose entry lacks the よい reading is not deinflected.
 
-Ruling: **a hiragana-only compound stem needs three code points** (katakana two, kanji one): こうしている was
-稿 + している and しました reached 揣摩 through しま — cost if wrong: a two-hiragana する noun (none common) is
-not found as a compound.
+Ruling (review nit 8, declined after measuring): **a kana compound stem keeps the two-code-point minimum** —
+requiring three hiragana fixed こうしている (稿 + している) but broke けがしていて (怪我 written in kana became 汚す)
+in the corpus re-check; こうしている resolves to the expression こうする anyway when JMdict lists it — cost if
+wrong: a rare two-kana する noun can still take a kana phrase (こう → 稿 without a frequency pack).
 
 Ruling: **reading lookups are table-driven** (`hints.readingScript`, `hints.readingType`), replacing the
 `language == "ja"` checks; selection (which letters start a word) and the Japanese headword display rule stay
