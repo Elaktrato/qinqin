@@ -6,6 +6,7 @@
 
 import { t } from '$lib/i18n';
 import { parseNewOrder, type SessionNewOrder } from './newOrder';
+import type { TypeOrder } from './sessionMix';
 import { CARD_KINDS } from './types';
 
 /**
@@ -41,11 +42,30 @@ export interface StudySessionConfig {
 	seed?: number;
 	/** Ignore the session and deck daily limits for this one session. */
 	studyAll?: boolean;
+	/**
+	 * The order of card types (#132, sessionMix.ts). Absent = 'mixed', the
+	 * default: kinds interleaved, a word's cards kept apart.
+	 */
+	typeOrder?: TypeOrder;
 }
 
 /** sessionNewOrder is the setup's order of new cards, random by default. */
 export function sessionNewOrder(config: StudySessionConfig): SessionNewOrder {
 	return config.newOrder ?? 'random';
+}
+
+/** sessionTypeOrder is the setup's order of card types, mixed by default. */
+export function sessionTypeOrder(config: StudySessionConfig): TypeOrder {
+	return config.typeOrder ?? 'mixed';
+}
+
+/**
+ * newSessionSeed draws the seed of a session being started (#129, #132):
+ * every Start, from any entry point, gets a fresh one, so each session is
+ * shuffled and mixed differently and a reload of it is not.
+ */
+export function newSessionSeed(): number {
+	return Math.floor(Math.random() * 0x7fffffff);
 }
 
 /** sessionStorage key of the setup. */
@@ -172,7 +192,8 @@ function parseConfig(raw: string): StudySessionConfig | null {
 	}
 
 	if (!isRecord(parsed)) return null;
-	const { mode, schemeId, levelName, deckIds, newLimit, reviewLimit, cardTypes, newOrder, studyAll, seed } = parsed;
+	const { mode, schemeId, levelName, deckIds, newLimit, reviewLimit, cardTypes, newOrder, studyAll, seed, typeOrder } =
+		parsed;
 	if (!isStringArray(deckIds) || !isStringArray(cardTypes)) return null;
 	if (typeof newLimit !== 'number' || typeof reviewLimit !== 'number') return null;
 
@@ -189,7 +210,9 @@ function parseConfig(raw: string): StudySessionConfig | null {
 		reviewLimit,
 		cardTypes: [...cardTypes],
 		...(studyAll === true ? { studyAll: true } : {}),
-		...(typeof seed === 'number' && Number.isFinite(seed) ? { seed } : {})
+		...(typeof seed === 'number' && Number.isFinite(seed) ? { seed } : {}),
+		// An unknown order of card types is the default (mixed); it never discards the setup.
+		...(typeOrder === 'mixed' || typeOrder === 'grouped' ? { typeOrder } : {})
 	};
 	// A missing or unreadable order is the default (random); it never discards the setup.
 	if (newOrder === 'deck' || newOrder === 'random') config.newOrder = newOrder;
@@ -233,4 +256,31 @@ export function saveConfig(config: StudySessionConfig): void {
 	} catch {
 		// Private mode or a full quota: the session still starts.
 	}
+}
+
+/** sessionStorage key of the seed drawn for a setup that carries none. */
+export const SESSION_SEED_KEY = 'qinqin.study.sessionSeed';
+
+/**
+ * sessionSeedOf is the seed a session runs with: the setup's, else one
+ * drawn once per tab and kept, so a reload of the session keeps its order
+ * even for a setup saved before seeds existed (or none at all). The setup
+ * itself is not rewritten: a tab without a setup keeps having none.
+ */
+export function sessionSeedOf(config: StudySessionConfig): number {
+	if (typeof config.seed === 'number' && Number.isFinite(config.seed)) return config.seed;
+	const store = storage();
+	try {
+		const raw = store?.getItem(SESSION_SEED_KEY) ?? null;
+		if (raw !== null && /^\d+$/.test(raw)) return Number(raw);
+	} catch {
+		// Blocked storage: a seed for this load only.
+	}
+	const seed = newSessionSeed();
+	try {
+		store?.setItem(SESSION_SEED_KEY, String(seed));
+	} catch {
+		// Private mode or a full quota: the session still starts.
+	}
+	return seed;
 }
