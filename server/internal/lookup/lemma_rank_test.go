@@ -179,3 +179,25 @@ func TestKanaFitUsesTheFirstSense(t *testing.T) {
 	wantPrefix(t, run(t, s, "ja", "こと", 0), "事")
 	wantPrefix(t, run(t, s, "ja", "いる", 0), "居る")
 }
+
+// An unwritten particle yields to a same-length inflection of a word of
+// strictly higher priority: bare して (the literary particle, priority 0)
+// is する's te-form; し (the conjunctive particle, priority 60) keeps its
+// place against する's stem (60).
+func TestParticleYieldsOnlyToAHigherPriority(t *testing.T) {
+	sqlDB, _ := openDB(t)
+	importJMdict(t, sqlDB, jaWords+`<entry>
+<ent_seq>2086960</ent_seq>
+<r_ele><reb>して</reb></r_ele>
+<sense><pos>&prt;</pos><gloss>by means of</gloss></sense>
+</entry>
+<entry>
+<ent_seq>2086961</ent_seq>
+<r_ele><reb>し</reb><re_pri>spec1</re_pri></r_ele>
+<sense><pos>&prt;</pos><pos>&conj;</pos><gloss>and (moreover)</gloss></sense>
+</entry>
+`)
+	s := service(sqlDB)
+	wantPrefix(t, run(t, s, "ja", "して", 0), "為る[te-form]", "して")
+	wantPrefix(t, run(t, s, "ja", "し", 0), "し", "為る[stem]")
+}

@@ -238,15 +238,21 @@ func (s Service) Lookup(ctx context.Context, language, text string, offset int, 
 	ranks := rankingRanks(packIDs, freqs)
 
 	cands := make([]candidate, len(matches))
-	expression := make([]bool, len(matches))
+	yieldKinds := make([]int, len(matches))
 	for i, m := range matches {
 		cands[i] = rankKeys(pack, hints, language, m)
 		cands[i].freqRank = ranks[i]
 		cands[i].at = i
-		expression[i] = len(m.entry.Forms) == 0 && allSensesTagged(m.entry, hints.ExpressionPOS)
+		switch {
+		case len(m.entry.Forms) > 0:
+		case allSensesTagged(m.entry, hints.ExpressionPOS):
+			yieldKinds[i] = yieldExpression
+		case allSensesTagged(m.entry, hints.ParticlePOS):
+			yieldKinds[i] = yieldParticle
+		}
 		cands[i].expressionSense = anySenseTagged(m.entry, hints.ExpressionPOS)
 	}
-	markYields(cands, expression)
+	markYields(cands, yieldKinds)
 	sortCandidates(cands)
 	cands = cands[:min(len(cands), MaxEntries)]
 
