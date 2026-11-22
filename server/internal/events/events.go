@@ -111,26 +111,36 @@ func Since(ctx context.Context, sqlDB *sql.DB, userID int64, since time.Time, wo
 
 	list := make([]model.StudyEvent, 0)
 	for rows.Next() {
-		var (
-			ev      model.StudyEvent
-			ts      string
-			payload string
-		)
-		if err := rows.Scan(&ev.ID, &ev.UserID, &ev.WorkspaceID, &ev.Device, &ts, &ev.Type, &payload); err != nil {
-			return nil, fmt.Errorf("scan study event of user %d: %w", userID, err)
-		}
-		parsed, err := time.Parse(time.RFC3339, ts)
+		ev, err := scanEvent(rows, userID)
 		if err != nil {
-			return nil, fmt.Errorf("scan study event %s of user %d: %w", ev.ID, userID, err)
+			return nil, err
 		}
-		ev.TS = parsed
-		ev.Payload = json.RawMessage(payload)
 		list = append(list, ev)
 	}
 	if err := rows.Err(); err != nil {
 		return nil, fmt.Errorf("read study events of user %d: %w", userID, err)
 	}
 	return list, nil
+}
+
+// scanEvent reads one row of id, user_id, workspace_id, device, ts, type,
+// payload (the select list of Since, ListPage and StreamSince).
+func scanEvent(rows *sql.Rows, userID int64) (model.StudyEvent, error) {
+	var (
+		ev      model.StudyEvent
+		ts      string
+		payload string
+	)
+	if err := rows.Scan(&ev.ID, &ev.UserID, &ev.WorkspaceID, &ev.Device, &ts, &ev.Type, &payload); err != nil {
+		return model.StudyEvent{}, fmt.Errorf("scan study event of user %d: %w", userID, err)
+	}
+	parsed, err := time.Parse(time.RFC3339, ts)
+	if err != nil {
+		return model.StudyEvent{}, fmt.Errorf("scan study event %s of user %d: %w", ev.ID, userID, err)
+	}
+	ev.TS = parsed
+	ev.Payload = json.RawMessage(payload)
+	return ev, nil
 }
 
 // payloadOf returns the event's payload as stored text, normalizing an
