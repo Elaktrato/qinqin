@@ -60,15 +60,22 @@ export function createNavLayoutStore(overrides: Partial<NavLayoutStoreDeps> = {}
 	let loadedAt = 0;
 	// Bumped by every set: a slower load never overwrites a newer choice.
 	let generation = 0;
+	// Saves in flight (Settings): a read that lands meanwhile may predate
+	// the write, so it is dropped.
+	let saving = 0;
+	// Counts saves begun: a read that overlapped any save is dropped too.
+	let saveEpoch = 0;
 
 	async function refresh(): Promise<void> {
 		if (user === null) return;
 		const forUser = user;
 		const asked = ++generation;
+		// A read begun during a save may predate the write: count it as overlapping.
+		const epoch = saving > 0 ? -1 : saveEpoch;
 		loadedAt = deps.now();
 		try {
 			const next = await deps.load();
-			if (user !== forUser || asked !== generation) return;
+			if (user !== forUser || asked !== generation || saving > 0 || epoch !== saveEpoch) return;
 			layout = next;
 			writeCache(deps.storage(), forUser, next);
 		} catch {
@@ -104,11 +111,27 @@ export function createNavLayoutStore(overrides: Partial<NavLayoutStoreDeps> = {}
 			if (user === null || deps.now() - loadedAt < REFRESH_EVERY) return Promise.resolve();
 			return refresh();
 		},
-		/** set: a value just saved (Settings), shown at once. */
-		set(next: NavLayout): void {
+		/** reload: re-read the row now (Settings opens, a failed save is abandoned). */
+		reload(): Promise<void> {
+			return refresh();
+		},
+		/**
+		 * set: show a value at once. `confirmed` (the server has it) also keeps it
+		 * on the device; an optimistic value is not cached, so a failed save never
+		 * outlives a reload.
+		 */
+		set(next: NavLayout, confirmed = true): void {
 			generation++;
 			layout = next;
-			writeCache(deps.storage(), user, next);
+			if (confirmed) writeCache(deps.storage(), user, next);
+		},
+		/** beginSave / endSave bracket a write: reads landing meanwhile are dropped. */
+		beginSave(): void {
+			saving++;
+			saveEpoch++;
+		},
+		endSave(): void {
+			saving = Math.max(0, saving - 1);
 		}
 	};
 }

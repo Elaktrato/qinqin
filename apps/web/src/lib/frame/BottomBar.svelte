@@ -16,6 +16,7 @@
 	import Icon from '$lib/ui/Icon.svelte';
 	import Sheet from '$lib/ui/Sheet.svelte';
 	import { barItems, MORE } from './barItems';
+	import { onLeavePhoneFrame } from './breakpoint';
 	import { watchKeyboard } from './keyboard';
 	import type { FrameSection } from './sections';
 
@@ -49,7 +50,25 @@
 		if (layout.more.length === 0) open = false;
 	});
 
-	$effect(() => watchKeyboard((isOpen) => (keyboard = isOpen)));
+	// Leaving the phone frame (a rotation, a resize) hides the bar with the
+	// sheet still modal: close it, and focus goes to the page.
+	$effect(() => {
+		if (!open) return;
+		return onLeavePhoneFrame(() => {
+			open = false;
+			setTimeout(() => document.getElementById('main-content')?.focus());
+		});
+	});
+
+	// While the keyboard is open the bar is hidden, and :root says so, so
+	// --bottom-bar-space drops to 0 (app.css) and toasts do not float above nothing.
+	$effect(() =>
+		watchKeyboard((isOpen) => {
+			keyboard = isOpen;
+			document.documentElement.toggleAttribute('data-keyboard', isOpen);
+		})
+	);
+	$effect(() => () => document.documentElement.removeAttribute('data-keyboard'));
 </script>
 
 <nav class="bottom-bar" class:keyboard aria-label={t('nav.main')} data-bottom-bar>

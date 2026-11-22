@@ -7,7 +7,7 @@
 	// live preview of the bar, Reset to default. Changes show at once (the
 	// frame follows navLayoutStore); saves queue one at a time and a failed
 	// save says so and offers Retry / Discard.
-	import { onMount, tick } from 'svelte';
+	import { onDestroy, onMount, tick } from 'svelte';
 	import { t } from '$lib/i18n';
 	import { barItems, MORE } from '$lib/frame/barItems';
 	import {
@@ -59,15 +59,24 @@
 	let announcement = $state('');
 	let saveStatus = $state<'idle' | 'saving' | 'saved' | 'error'>('idle');
 
+	// Set by the first change: the mount read below never overwrites it.
+	let touched = false;
+
 	onMount(() => {
 		if ($pluginStates.status === 'idle') void loadPluginStates();
 		// Fresh from the server: another device may have changed it.
 		load().then(
 			(fresh) => {
-				if (pending === null && !inFlight) store.set(fresh);
+				if (!touched) store.set(fresh);
 			},
 			() => {}
 		);
+	});
+
+	// Leaving with a change that did not save: the frame goes back to what
+	// the server has, instead of showing the unsaved value until a reload.
+	onDestroy(() => {
+		if (unsaved !== null || pending !== null) void store.reload();
 	});
 
 	// One save at a time; changes made meanwhile are merged and sent next.
@@ -80,6 +89,7 @@
 		saveStatus = 'saving';
 		if (inFlight) return;
 		inFlight = true;
+		store.beginSave();
 		try {
 			while (pending !== null) {
 				const next: NavLayoutChange = { ...unsaved, ...pending };
@@ -93,13 +103,17 @@
 			}
 		} finally {
 			inFlight = false;
+			store.endSave();
 		}
+		// Saved: keep it on the device too (an optimistic value is not cached).
+		if (unsaved === null) store.set(store.layout);
 		saveStatus = unsaved === null ? 'saved' : 'error';
 		if (unsaved !== null) announcement = t('settings.navLayout.saveFailed');
 	}
 
 	function apply(change: NavLayoutChange, said: string): void {
-		store.set({ phone: change.phone ?? store.phone, bar: change.bar ? [...change.bar] : [...store.bar] });
+		touched = true;
+		store.set({ phone: change.phone ?? store.phone, bar: change.bar ? [...change.bar] : [...store.bar] }, false);
 		announcement = said;
 		void persist(change);
 	}
@@ -113,7 +127,8 @@
 		saveStatus = 'idle';
 		announcement = t('settings.navLayout.discarded');
 		try {
-			store.set(await load());
+			const fresh = await load();
+			if (unsaved === null && pending === null && !inFlight) store.set(fresh);
 		} catch {
 			// Offline: what shows stays; the next change saves it all again.
 		}

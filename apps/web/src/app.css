@@ -76,7 +76,7 @@
    phone frame only, lib/frame/breakpoint.ts): fixed elements and scrolling
    to a focused field or a fragment keep clear of it. */
 @media (max-width: 719.98px) {
-	:root[data-bottom-bar] {
+	:root[data-bottom-bar]:not([data-keyboard]) {
 		--bottom-bar-space: calc(var(--bottom-bar-height) + env(safe-area-inset-bottom, 0px));
 		scroll-padding-bottom: var(--bottom-bar-space);
 	}

@@ -139,4 +139,19 @@ describe('BottomBar', () => {
 			field.remove();
 		}
 	});
+
+	it('leaving the phone frame (rotation, resize) closes the More sheet', async () => {
+		const listeners: ((e: { matches: boolean }) => void)[] = [];
+		vi.stubGlobal('matchMedia', () => ({
+			matches: true,
+			addEventListener: (_: string, fn: (e: { matches: boolean }) => void) => listeners.push(fn),
+			removeEventListener() {}
+		}));
+		setUrl('/');
+		render(BottomBar, { sections: seven, bar: DEFAULT_BAR, current: 'home' });
+		await fireEvent.click(screen.getByRole('button', { name: 'More' }));
+		await screen.findByRole('dialog', { name: 'More' });
+		for (const fn of listeners) fn({ matches: false });
+		await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+	});
 });

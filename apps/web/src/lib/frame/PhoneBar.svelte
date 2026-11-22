@@ -44,8 +44,12 @@
 	// is hidden with the bar then, so focus goes to the page instead (after
 	// the drawer's own focus return to the button).
 	// Switching to the bottom bar (Settings, another device) closes the drawer.
+	// The menu button goes with the drawer, so focus goes to the page.
 	$effect(() => {
-		if (mode === 'bar') open = false;
+		if (mode === 'bar' && open) {
+			open = false;
+			setTimeout(() => document.getElementById('main-content')?.focus());
+		}
 	});
 
 	$effect(() => {

@@ -169,4 +169,29 @@ describe('Settings → Layout: the bottom bar', () => {
 		await waitFor(() => expect(saved).toHaveLength(2));
 		expect(saved[1]).toEqual({ bar: [...DEFAULT_BAR, 'stats'] });
 	});
+
+	it('leaving Settings with an unsaved change re-reads the row, so the frame shows what is saved', async () => {
+		const { store, unmount } = setup(undefined, async () => {
+			throw new Error('offline');
+		});
+		const reload = vi.spyOn(store, 'reload');
+		await fireEvent.click(screen.getByRole('radio', { name: 'Side menu' }));
+		await screen.findByRole('alert');
+		unmount();
+		expect(reload).toHaveBeenCalledTimes(1);
+	});
+
+	it('the mount read never overwrites a change made before it lands', async () => {
+		let answer: (v: NavLayout) => void = () => {};
+		const store = createNavLayoutStore({ load: async () => ({ phone: 'bar', bar: [...DEFAULT_BAR] }), storage: () => null });
+		render(NavLayoutSettings, {
+			store,
+			load: () => new Promise<NavLayout>((resolve) => (answer = resolve)),
+			save: async (c: NavLayoutChange) => ({ phone: c.phone ?? 'bar', bar: [...DEFAULT_BAR] })
+		});
+		await fireEvent.click(screen.getByRole('radio', { name: 'Side menu' }));
+		answer({ phone: 'bar', bar: [...DEFAULT_BAR] });
+		await new Promise((r) => setTimeout(r));
+		expect(store.phone).toBe('drawer');
+	});
 });

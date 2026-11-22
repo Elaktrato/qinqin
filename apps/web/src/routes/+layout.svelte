@@ -408,7 +408,7 @@
 	.skip-link {
 		position: absolute;
 		top: 0.5rem;
-		left: 0.5rem;
+		left: calc(0.5rem + env(safe-area-inset-left, 0px));
 		z-index: var(--layer-modal);
 		padding: 0.5rem 0.9rem;
 		border-radius: var(--radius);

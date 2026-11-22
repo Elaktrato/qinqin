@@ -54,7 +54,7 @@ describe('the bottom bar token', () => {
 		expect(outsidePhone(appCss)).toMatch(/--bottom-bar-space:\s*0px;/);
 		const phone = mediaBlocks(appCss, PHONE_MEDIA_QUERY).join('\n');
 		expect(phone).toMatch(
-			/:root\[data-bottom-bar\]\s*\{[^}]*--bottom-bar-space:\s*calc\(var\(--bottom-bar-height\) \+ env\(safe-area-inset-bottom, 0px\)\)/
+			/:root\[data-bottom-bar\]:not\(\[data-keyboard\]\)\s*\{[^}]*--bottom-bar-space:\s*calc\(var\(--bottom-bar-height\) \+ env\(safe-area-inset-bottom, 0px\)\)/
 		);
 	});
 });
@@ -65,7 +65,7 @@ describe('pages keep clear of the bar (phone frame, bar showing)', () => {
 		expect(hits.map((path) => path.slice(src.length + 1))).toEqual(['app.css']);
 		expect(outsidePhone(appCss)).not.toContain('scroll-padding-bottom');
 		expect(mediaBlocks(appCss, PHONE_MEDIA_QUERY).join('\n')).toMatch(
-			/:root\[data-bottom-bar\]\s*\{[^}]*scroll-padding-bottom:\s*var\(--bottom-bar-space\)/
+			/:root\[data-bottom-bar\]:not\(\[data-keyboard\]\)\s*\{[^}]*scroll-padding-bottom:\s*var\(--bottom-bar-space\)/
 		);
 	});
 

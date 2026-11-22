@@ -82,4 +82,36 @@ describe('navLayoutStore', () => {
 		await store.resume();
 		expect(load).toHaveBeenCalledTimes(2);
 	});
+
+	it('an optimistic value shows but is not cached; a confirmed one is', async () => {
+		const storage = memoryStorage();
+		const store = createNavLayoutStore({ load: async () => ({ phone: 'bar', bar: [] }), storage: () => storage, now: () => 0 });
+		await store.setUser(7);
+		store.set(drawer, false);
+		expect(store.layout).toEqual(drawer);
+		expect(JSON.parse(storage.getItem(NAV_LAYOUT_CACHE_KEY)!).layout).toEqual({ phone: 'bar', bar: [] });
+		store.set(drawer);
+		expect(JSON.parse(storage.getItem(NAV_LAYOUT_CACHE_KEY)!).layout).toEqual(drawer);
+	});
+
+	it('a read that overlaps a save never reverts the value being saved', async () => {
+		let answer: (v: NavLayout) => void = () => {};
+		let now = 0;
+		const store = createNavLayoutStore({
+			load: () => new Promise((resolve) => (answer = resolve)),
+			storage: () => null,
+			now: () => now
+		});
+		const first = store.setUser(7);
+		answer({ phone: 'bar', bar: [] });
+		await first;
+		store.set(drawer, false);
+		store.beginSave();
+		now = 120_000;
+		const reading = store.resume();
+		store.endSave(); // the save failed: no confirmed set follows
+		answer({ phone: 'bar', bar: ['stale'] });
+		await reading;
+		expect(store.layout).toEqual(drawer);
+	});
 });
