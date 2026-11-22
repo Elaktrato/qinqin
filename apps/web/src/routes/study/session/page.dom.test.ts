@@ -832,6 +832,54 @@ describe('Back: change a misclicked grade (#131)', () => {
 		expect(screen.queryByText('Session complete')).toBeNull();
 	});
 
+	it('Z typed into a field or a card input never goes back (review fix 3)', async () => {
+		configureDecks();
+		history([word(11), word(12)], []);
+		render(Page);
+		await gradeShown(/^Good/);
+		expect(await screen.findByText('月')).toBeTruthy();
+		const field = document.createElement('input');
+		const pad = document.createElement('div');
+		pad.setAttribute('data-card-input', '');
+		pad.tabIndex = 0;
+		document.body.append(field, pad);
+		try {
+			for (const target of [field, pad]) {
+				target.focus();
+				await fireEvent.keyDown(target, { key: 'z' });
+				await new Promise((r) => setTimeout(r, 0));
+				expect(screen.queryByText(/^Graded/)).toBeNull();
+			}
+			// The same key outside them does go back.
+			field.blur();
+			await fireEvent.keyDown(window, { key: 'z' });
+			expect(await screen.findByText('Graded Good')).toBeTruthy();
+		} finally {
+			field.remove();
+			pad.remove();
+		}
+	});
+
+	it('the summary counts the changed grade: XP and reviews (review fix 4)', async () => {
+		configureDecks();
+		history([word(11), word(12)], []);
+		render(Page);
+		await gradeShown(/^Good/);
+		expect(await screen.findByText('月')).toBeTruthy();
+		await gradeShown(/^Good/);
+		expect(await screen.findByText('Session complete')).toBeTruthy();
+		// Two Good vocab reviews: 2 x (10 + 5) + the daily bonus 10.
+		expect(screen.getByText('+40')).toBeTruthy();
+		await fireEvent.click(screen.getByRole('button', { name: 'Change the last grade' }));
+		await fireEvent.click(gradeButton('Easy'));
+		await waitFor(() => expect(recordReplacement).toHaveBeenCalledWith(recorded[1], 4));
+		expect(await screen.findByText('Session complete')).toBeTruthy();
+		// Easy replaces Good: + 5 more, still two reviews.
+		expect(screen.getByText('+45')).toBeTruthy();
+		expect(screen.getByText('+35')).toBeTruthy();
+		expect(screen.getByText('2')).toBeTruthy();
+	});
+
 	it('no Back before the first grade', async () => {
 		configureDecks();
 		history([word(11)], []);
