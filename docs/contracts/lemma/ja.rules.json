@@ -273,6 +273,21 @@
   {"from": "じゃいけない", "to": "で", "reason": "prohibition", "in": ["adj-i"], "out": "te"},
   {"from": "じゃいけません", "to": "で", "reason": "prohibition", "out": "te"},
   {"from": "じゃだめ", "to": "で", "reason": "prohibition", "out": "te"},
-  {"from": "じゃダメ", "to": "で", "reason": "prohibition", "out": "te"}
+  {"from": "じゃダメ", "to": "で", "reason": "prohibition", "out": "te"},
+  {"from": "てほしい", "to": "て", "reason": "wish", "in": ["adj-i"], "out": "te"},
+  {"from": "でほしい", "to": "で", "reason": "wish", "in": ["adj-i"], "out": "te"},
+  {"from": "しかねない", "to": "する", "reason": "possibility", "out": "vs", "match": "suffix-or-whole"},
+  {"from": "きかねない", "to": "くる", "reason": "possibility", "out": "vk", "match": "whole"},
+  {"from": "来かねない", "to": "来る", "reason": "possibility", "out": "vk", "match": "suffix-or-whole"},
+  {"from": "かねない", "to": "る", "reason": "possibility", "out": "v1"},
+  {"from": "いかねない", "to": "う", "reason": "possibility", "out": "v5"},
+  {"from": "きかねない", "to": "く", "reason": "possibility", "out": "v5"},
+  {"from": "ぎかねない", "to": "ぐ", "reason": "possibility", "out": "v5"},
+  {"from": "しかねない", "to": "す", "reason": "possibility", "out": "v5"},
+  {"from": "ちかねない", "to": "つ", "reason": "possibility", "out": "v5"},
+  {"from": "にかねない", "to": "ぬ", "reason": "possibility", "out": "v5"},
+  {"from": "びかねない", "to": "ぶ", "reason": "possibility", "out": "v5"},
+  {"from": "みかねない", "to": "む", "reason": "possibility", "out": "v5"},
+  {"from": "りかねない", "to": "る", "reason": "possibility", "out": "v5"}
  ]
 }

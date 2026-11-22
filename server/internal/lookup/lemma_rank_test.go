@@ -181,3 +181,17 @@ func TestBareShiteWithoutFrequencyIsTheNoun(t *testing.T) {
 	wantPrefix(t, run(t, s, "ja", "いる", 0), "居る")
 }
 
+
+// An expression with a written form never yields: しかねない (仕兼ねない)
+// stays before する's possibility form of the same text.
+func TestWrittenExpressionDoesNotYield(t *testing.T) {
+	sqlDB, _ := openDB(t)
+	importJMdict(t, sqlDB, jaWords+`<entry>
+<ent_seq>1305000</ent_seq>
+<k_ele><keb>仕兼ねない</keb></k_ele>
+<r_ele><reb>しかねない</reb></r_ele>
+<sense><pos>&exp;</pos><misc>&uk;</misc><gloss>might do</gloss></sense>
+</entry>
+`)
+	wantPrefix(t, run(t, service(sqlDB), "ja", "しかねない", 0), "仕兼ねない", "為る[possibility]")
+}

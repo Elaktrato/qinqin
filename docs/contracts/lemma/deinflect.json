@@ -1277,6 +1277,75 @@
      ]
     }
    ]
+  },
+  {
+   "name": "wish",
+   "surface": "行ってほしい",
+   "expect": [
+    {
+     "form": "行く",
+     "class": "v5",
+     "reasons": [
+      "wish",
+      "te-form"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "negative wish",
+   "surface": "行かないでほしい",
+   "expect": [
+    {
+     "form": "行く",
+     "class": "v5",
+     "reasons": [
+      "wish",
+      "te-form",
+      "negative"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "possibility on a passive",
+   "surface": "誤解されかねない",
+   "expect": [
+    {
+     "form": "誤解する",
+     "class": "vs",
+     "reasons": [
+      "possibility",
+      "passive"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "possibility on a godan verb",
+   "surface": "起こりかねない",
+   "expect": [
+    {
+     "form": "起こる",
+     "class": "v5",
+     "reasons": [
+      "possibility"
+     ]
+    }
+   ]
+  },
+  {
+   "name": "possibility on する",
+   "surface": "しかねない",
+   "expect": [
+    {
+     "form": "する",
+     "class": "vs",
+     "reasons": [
+      "possibility"
+     ]
+    }
+   ]
   }
  ]
 }
