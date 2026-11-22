@@ -6,6 +6,7 @@
 
 import { t } from '$lib/i18n';
 import { parseNewOrder, type SessionNewOrder } from './newOrder';
+import type { TypeOrder } from './sessionMix';
 import { CARD_KINDS } from './types';
 
 /**
@@ -41,11 +42,21 @@ export interface StudySessionConfig {
 	seed?: number;
 	/** Ignore the session and deck daily limits for this one session. */
 	studyAll?: boolean;
+	/**
+	 * The order of card types (#132, sessionMix.ts). Absent = 'mixed', the
+	 * default: kinds interleaved, a word's cards kept apart.
+	 */
+	typeOrder?: TypeOrder;
 }
 
 /** sessionNewOrder is the setup's order of new cards, random by default. */
 export function sessionNewOrder(config: StudySessionConfig): SessionNewOrder {
 	return config.newOrder ?? 'random';
+}
+
+/** sessionTypeOrder is the setup's order of card types, mixed by default. */
+export function sessionTypeOrder(config: StudySessionConfig): TypeOrder {
+	return config.typeOrder ?? 'mixed';
 }
 
 /** sessionStorage key of the setup. */
@@ -172,7 +183,8 @@ function parseConfig(raw: string): StudySessionConfig | null {
 	}
 
 	if (!isRecord(parsed)) return null;
-	const { mode, schemeId, levelName, deckIds, newLimit, reviewLimit, cardTypes, newOrder, studyAll, seed } = parsed;
+	const { mode, schemeId, levelName, deckIds, newLimit, reviewLimit, cardTypes, newOrder, studyAll, seed, typeOrder } =
+		parsed;
 	if (!isStringArray(deckIds) || !isStringArray(cardTypes)) return null;
 	if (typeof newLimit !== 'number' || typeof reviewLimit !== 'number') return null;
 
@@ -189,7 +201,9 @@ function parseConfig(raw: string): StudySessionConfig | null {
 		reviewLimit,
 		cardTypes: [...cardTypes],
 		...(studyAll === true ? { studyAll: true } : {}),
-		...(typeof seed === 'number' && Number.isFinite(seed) ? { seed } : {})
+		...(typeof seed === 'number' && Number.isFinite(seed) ? { seed } : {}),
+		// An unknown order of card types is the default (mixed); it never discards the setup.
+		...(typeOrder === 'mixed' || typeOrder === 'grouped' ? { typeOrder } : {})
 	};
 	// A missing or unreadable order is the default (random); it never discards the setup.
 	if (newOrder === 'deck' || newOrder === 'random') config.newOrder = newOrder;

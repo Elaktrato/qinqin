@@ -7,6 +7,7 @@ import {
 	loadConfig,
 	saveConfig,
 	sessionNewOrder,
+	sessionTypeOrder,
 	validateConfig,
 	type StudySessionConfig
 } from './session';
@@ -319,6 +320,38 @@ describe('newOrder in the setup (#75)', () => {
 			const loaded = loadConfig();
 			expect(loaded.newLimit).toBe(7);
 			expect(sessionNewOrder(loaded)).toBe('random');
+		}
+	});
+});
+
+describe('typeOrder in the setup (#132)', () => {
+	beforeEach(() => {
+		vi.stubGlobal('sessionStorage', fakeStorage());
+	});
+	afterEach(() => {
+		vi.unstubAllGlobals();
+	});
+
+	it('defaults to mixed', () => {
+		expect(sessionTypeOrder(DEFAULT_CONFIG)).toBe('mixed');
+		expect(sessionTypeOrder(config())).toBe('mixed');
+	});
+
+	it('round-trips grouped and mixed', () => {
+		for (const typeOrder of ['grouped', 'mixed'] as const) {
+			saveConfig(config({ typeOrder }));
+			expect(loadConfig()).toEqual(config({ typeOrder }));
+			expect(sessionTypeOrder(loadConfig())).toBe(typeOrder);
+		}
+	});
+
+	it('an unknown value loads as mixed and keeps the setup', () => {
+		for (const typeOrder of ['random', 7, null, { by: 'kind' }]) {
+			sessionStorage.setItem(SESSION_CONFIG_KEY, JSON.stringify({ ...config({ newLimit: 9 }), typeOrder }));
+			const loaded = loadConfig();
+			expect(loaded.newLimit).toBe(9);
+			expect(loaded.typeOrder).toBeUndefined();
+			expect(sessionTypeOrder(loaded)).toBe('mixed');
 		}
 	});
 });
