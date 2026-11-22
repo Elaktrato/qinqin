@@ -7,7 +7,7 @@ import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { after, test } from 'node:test';
 import { fileURLToPath } from 'node:url';
-import { FETCHED_PACKS, LOCAL_ONLY_PACKS, checkSources, docPackIds, noticeProblems } from './check-sources.mjs';
+import { FETCHED_PACKS, GENERATED_PACKS, LOCAL_ONLY_PACKS, checkSources, docPackIds, noticeProblems } from './check-sources.mjs';
 
 const script = fileURLToPath(new URL('./check-sources.mjs', import.meta.url));
 const dirs = [];
@@ -70,6 +70,22 @@ test('a doc id that matches no pack is reported unless allow-listed', () => {
 	const out = checkSources(repo(okPacks(), doc));
 	assert.equal(out.length, 1);
 	assert.match(out[0], /names pack "ghost-pack"/);
+});
+
+test('generated sentence packs may be named while absent, and are checked once present', () => {
+	assert.deepEqual([...GENERATED_PACKS].sort(), ['ja-sentences-tatoeba', 'zh-sentences-tatoeba']);
+	const doc = DOC + '| Pack | Provides |\n|---|---|\n| **T** (`zh-sentences-tatoeba`) | x |\n| **U** (`ja-sentences-tatoeba`) | x |\n';
+	// Before server/tools/tatoeba ran: the docs describe them, nothing is wrong.
+	assert.deepEqual(checkSources(repo(okPacks(), doc)), []);
+	// Generated: they are bundled packs like any other.
+	const p = okPacks();
+	p['plugins/data/zh-sentences-tatoeba'] = { id: 'zh-sentences-tatoeba', ...GOOD, notice: 'From [Tatoeba](https://tatoeba.org).' };
+	p['plugins/data/ja-sentences-tatoeba'] = { id: 'ja-sentences-tatoeba', license: '', attribution: 'x' };
+	const out = checkSources(repo(p, doc)).join('\n');
+	assert.match(out, /ja-sentences-tatoeba\/manifest\.json: "license" is missing or empty/);
+	assert.doesNotMatch(out, /zh-sentences-tatoeba/);
+	// Present but not in the docs: reported.
+	assert.match(checkSources(repo(p)).join('\n'), /bundled pack "zh-sentences-tatoeba"/);
 });
 
 test('fetched and local-only audio packs the docs name are accepted', () => {

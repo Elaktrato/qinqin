@@ -15,7 +15,8 @@
 //   c. every pack id docs/sources.md names in a "Pack" table row or in a
 //      "- **Name** (`id`" list item exists under plugins/data or
 //      plugins/samples, or is one of the optional local-only packs the docs
-//      describe (LOCAL_ONLY_PACKS) or a fetched, redistributable pack (FETCHED_PACKS);
+//      describe (LOCAL_ONLY_PACKS), a fetched, redistributable pack (FETCHED_PACKS)
+//      or a pack a tool generates into plugins/data, before it ran (GENERATED_PACKS);
 //   d. a manifest `notice` follows the server's rules (dict.ValidateNotice,
 //      after the loader trims it): at most 4,000 bytes, no control
 //      characters but \n and \t, no bidi embedding/override/isolate
@@ -65,6 +66,13 @@ export const FETCHED_PACKS = [
 	'lxgw-wenkai',
 	'klee-one'
 ];
+/**
+ * Packs a maintainer tool generates into plugins/data, documented before
+ * they exist: server/tools/tatoeba writes the example sentence packs from a
+ * pinned Tatoeba export. The docs may name them while they are absent; once
+ * generated they are bundled packs and every rule applies.
+ */
+export const GENERATED_PACKS = ['zh-sentences-tatoeba', 'ja-sentences-tatoeba'];
 export const MAX_NOTICE_BYTES = 4000;
 /** The theme packs built into the server binary (server/internal/themes). */
 export const BUILTIN_THEMES = 'server/internal/themes/builtin';
@@ -294,7 +302,7 @@ const fontProblems = (root, doc) => namedWithLicence(root, doc, fontFiles(root),
 export function checkSources(root) {
 	const problems = [];
 	const bundled = new Map(); // manifest id -> dir (plugins/data)
-	const known = new Set([...LOCAL_ONLY_PACKS, ...FETCHED_PACKS]);
+	const known = new Set([...LOCAL_ONLY_PACKS, ...FETCHED_PACKS, ...GENERATED_PACKS]);
 
 	for (const base of ['plugins/data', 'plugins/samples', BUILTIN_THEMES]) {
 		for (const name of packDirs(join(root, base))) {

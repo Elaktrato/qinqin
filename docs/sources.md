@@ -94,6 +94,67 @@ unverified facts marked unverified) must stay the same in both places.
   "HSK 1" is a rough orientation only). It is **demo content that has not been
   reviewed by a native speaker**; errors are possible.
 
+## Example sentences (Tatoeba)
+
+The example sentences on entry pages and in "Fill the gap" and "Build the
+sentence" cards come from **Tatoeba** (<https://tatoeba.org>), a collection of
+sentences and translations written by its contributors. Two packs are bundled
+in `plugins/data/` **once generated** (issue #133): the repository holds the
+tool that makes them, `server/tools/tatoeba`, and the owner generates and
+commits them from a pinned export (they are absent until then, and
+`scripts/check-sources.mjs` accepts that through its `GENERATED_PACKS` list).
+
+| Pack | Provides | License | Upstream |
+|---|---|---|---|
+| **Tatoeba example sentences (Mandarin)** (`zh-sentences-tatoeba`) | Mandarin sentences with an English translation and generated pinyin, filed under the CC-CEDICT words they contain | Sentence text CC BY 2.0 FR; some sentences CC0 1.0 (as stated by Tatoeba; re-checked at every pin) | https://tatoeba.org/en/downloads |
+| **Tatoeba example sentences (Japanese)** (`ja-sentences-tatoeba`) | Japanese sentences (including the Tanaka corpus) with an English translation and, where certain, generated kana readings, filed under JMdict words | Sentence text CC BY 2.0 FR; some sentences CC0 1.0 (as stated by Tatoeba; re-checked at every pin) | https://tatoeba.org/en/downloads |
+
+- **Licence.** Tatoeba states that sentence text is CC BY 2.0 FR and that the
+  sentences in its `sentences_CC0` export are CC0 1.0; both fit the project's
+  rule. The tool keeps a sentence only when it is in the export's sentence file,
+  and marks it CC0 only when the CC0 file lists the same id, language and text;
+  its English translation must pass the same test. The export's column layout is
+  checked strictly: a new column (which could carry licence information) stops
+  the build. **Audio is not used** (see "Audio": Tatoeba's recordings have
+  varying licences).
+- **Attribution.** Tatoeba asks that reused sentences credit Tatoeba with a link
+  and, for CC BY, the sentence's author (wording to re-read at each pin; not
+  verified from this environment). Each pack carries `credits.tsv` (every
+  sentence's Tatoeba id, licence and author, and the same for its translation;
+  a sentence's page is `https://tatoeba.org/en/sentences/show/<id>`),
+  `ATTRIBUTION.md` (export date, archive hashes, licence check, what was changed)
+  and `LICENSE` (the CC BY 2.0 FR URI, which that licence allows instead of a
+  copy, and the CC0 1.0 legal code). The manifest `attribution` names Tatoeba,
+  its contributors and `credits.tsv`; the `notice` on the Sources page says that
+  the sentences were filtered by a program, that the readings were generated
+  (pinyin from CC-CEDICT, left out where a word has several; kana from JMdict,
+  only where every word has one certain reading) and that both may contain errors.
+- **Filtering** (all thresholds in `server/tools/tatoeba/rules.json`): an English
+  translation is required; orphaned sentences, sentences tagged as unreliable or
+  unsuitable, negatively reviewed ones, too short or long ones, deny-listed ones,
+  near-duplicates and sentences with too little dictionary coverage or no word
+  that links are dropped; sentences by self-declared native speakers rank first;
+  each word keeps at most `maxPerWord` sentences. Chinese single-character words
+  are character entries, to which the importer links no sentences.
+- **How to produce the packs** (from `server/`, with access to
+  downloads.tatoeba.org):
+  1. Re-read <https://tatoeba.org/en/downloads> and
+     <https://tatoeba.org/en/terms_of_use>; write what they state into
+     `licence.statement` of `server/tools/tatoeba/pin.json`.
+  2. `go run ./tools/tatoeba pin --licence-checked <YYYY-MM-DD>` downloads the
+     export into the git-ignored `plugins/upstream/tatoeba/` and records the
+     archives' SHA-256 and the export date in `pin.json`. Keep those archives:
+     Tatoeba overwrites its export weekly, and the packs can be re-created byte
+     for byte only from the pinned files.
+  3. `go run ./tools/tatoeba build` verifies the archives and writes
+     `plugins/data/zh-sentences-tatoeba` and `plugins/data/ja-sentences-tatoeba`,
+     plus `report-*.txt` (counts, match rate, readings share, pack sizes),
+     `review-*.tsv` (words whose reading was left out) and `sample-*.tsv` in the
+     export folder. `--max-per-word N` overrides the cap; `--lang zh` builds one.
+  4. Review the samples, tune `rules.json` and rebuild; then run
+     `node scripts/check-sources.mjs` and commit `pin.json`, `rules.json` and
+     both pack folders. A build without a pin is refused.
+
 ## Frequency data
 
 **Jiten** (<https://jiten.moe>, published by Jitensoft) builds word
