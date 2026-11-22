@@ -16,6 +16,12 @@ reverse, cloze) is a plugin-data write and is only planned online. `PUT
 /api/sync/push` is last-write-wins per row key, so the offline path never writes
 rows and cannot create duplicate cards.
 
+A changed grade (#131) is a new review event with `replaces: <id>` (`events/review-replace.json`), recorded the
+same way. Outbox items are never rewritten or dropped to change a grade: an item may already have reached the
+server while its answer was lost, so a rewritten item (same id) would be a duplicate the server ignores and a
+dropped one would leave the stored wrong grade in place. Items flush oldest first, so a replacement normally
+arrives after its target; if not, the rule still holds (the late target is replaced when it arrives).
+
 ## Outbox v2 (`outbox-v2.json`)
 
 `localStorage['qinqin.study.pending.v2']` = `[{userId, queuedAt, event}]`.
