@@ -1,0 +1,5339 @@
+{
+  "level": {
+    "id": "hsk-1"
+  },
+  "rows": [
+    {
+      "row": 1,
+      "label": "前缀 (小-, 第-)",
+      "lesson": {
+        "id": "hsk1-prefixes",
+        "level": "hsk-1",
+        "title": "Prefixes 小- and 第-",
+        "summary": "小- makes a friendly or young form of a name or noun; 第- makes an ordinal number.",
+        "pattern": [
+          "小 + name / noun",
+          "第 + number"
+        ],
+        "body": [
+          "A prefix attaches to the front of a word. 小 (xiǎo) before a surname or a noun makes a friendly, often younger form: 小王, 小朋友, 小学生. 第 (dì) before a number makes an ordinal: 第一 (first), 第二 (second).",
+          "The contrast example uses the suffix 们, which attaches to the back of a word (同学们). Prefixes go in front, suffixes go behind; used as prefixes, they are bound to the word they attach to."
+        ],
+        "examples": [
+          {
+            "id": "hsk1-prefixes-1",
+            "text": "他是小学生。",
+            "reading": "tā shì xiǎoxuéshēng.",
+            "translation": "He is a primary-school pupil.",
+            "focus": "小",
+            "distractors": [
+              "第",
+              "很",
+              "吗"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk1-prefixes-2",
+            "text": "小王是我的同学。",
+            "reading": "Xiǎo Wáng shì wǒ de tóngxué.",
+            "translation": "Xiao Wang is my classmate.",
+            "focus": "小",
+            "distractors": [
+              "第",
+              "很",
+              "吗"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk1-prefixes-3",
+            "text": "这是我的第一本书。",
+            "reading": "zhè shì wǒ de dì-yī běn shū.",
+            "translation": "This is my first book.",
+            "focus": "第",
+            "distractors": [
+              "小",
+              "很",
+              "吗"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk1-prefixes-4",
+            "text": "小朋友们在唱歌。",
+            "reading": "xiǎopéngyoumen zài chànggē.",
+            "translation": "The children are singing.",
+            "focus": "小",
+            "distractors": [
+              "第",
+              "很",
+              "吗"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk1-prefixes-5",
+            "text": "同学们好！",
+            "reading": "tóngxuémen hǎo!",
+            "translation": "Hello, classmates!",
+            "focus": "们",
+            "distractors": [
+              "第",
+              "吗",
+              "在"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "row": 2,
+      "label": "后缀 (-们, -边)",
+      "lesson": {
+        "id": "hsk1-suffixes",
+        "level": "hsk-1",
+        "title": "Suffixes -们 and -边",
+        "summary": "-们 makes a plural for people; -边 turns a position word into a place word.",
+        "pattern": [
+          "pronoun / person-noun + 们",
+          "上 / 下 / 里 / 外 / 前 / 后 + 边"
+        ],
+        "body": [
+          "A suffix attaches to the back of a word. 们 (men) makes pronouns and person-nouns plural: 我们, 你们, 他们, 同学们, 老师们. It is not used after a number (say 三个学生, not 三个学生们).",
+          "边 (bian) attaches to a position word to make a place word: 上边, 下边, 里边, 外边, 前边, 后边. The contrast example uses the prefix 小-, which goes in front (小学生); suffixes go behind."
+        ],
+        "examples": [
+          {
+            "id": "hsk1-suffixes-1",
+            "text": "老师们好！",
+            "reading": "lǎoshīmen hǎo!",
+            "translation": "Hello, teachers!",
+            "focus": "们",
+            "distractors": [
+              "在",
+              "吗",
+              "第"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk1-suffixes-2",
+            "text": "孩子们喜欢狗。",
+            "reading": "háizimen xǐhuan gǒu.",
+            "translation": "The children like dogs.",
+            "focus": "们",
+            "distractors": [
+              "的",
+              "吗",
+              "边"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk1-suffixes-3",
+            "text": "书在桌子上边。",
+            "reading": "shū zài zhuōzi shàngbian.",
+            "translation": "The book is on top of the table.",
+            "focus": "边",
+            "distractors": [
+              "们",
+              "在",
+              "很"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk1-suffixes-4",
+            "text": "学校外边有一个商店。",
+            "reading": "xuéxiào wàibian yǒu yí ge shāngdiàn.",
+            "translation": "There is a shop outside the school.",
+            "focus": "边",
+            "distractors": [
+              "们",
+              "的",
+              "很"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk1-suffixes-5",
+            "text": "我妹妹是小学生。",
+            "reading": "wǒ mèimei shì xiǎoxuéshēng.",
+            "translation": "My younger sister is a primary-school pupil.",
+            "focus": "小",
+            "distractors": [
+              "们",
+              "边",
+              "吗"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "row": 3,
+      "label": "方位名词 (上, 下, 里, 外, 前, 后)",
+      "lesson": {
+        "id": "hsk1-location-nouns",
+        "level": "hsk-1",
+        "title": "Position nouns: 上 下 里 外 前 后",
+        "summary": "Attach a position word to a noun to say where something is.",
+        "pattern": [
+          "noun + 上 / 下 / 里 / 外 / 前 / 后",
+          "在 + noun + position"
+        ],
+        "body": [
+          "上 (shàng, on), 下 (xià, under), 里 (lǐ, in), 外 (wài, outside), 前 (qián, front) and 后 (hòu, back) attach to a noun to make a place phrase: 桌子上, 椅子下, 家里, 学校外边. 前边 and 后边 stand alone as place words. With 在 they say where someone or something is: 书在桌子上.",
+          "The contrast example uses 在, the word that introduces the place phrase. Without 在, 我学校 is not a sentence; 在 links the subject to the place (我在学校)."
+        ],
+        "examples": [
+          {
+            "id": "hsk1-location-nouns-1",
+            "text": "书在桌子上。",
+            "reading": "shū zài zhuōzi shàng.",
+            "translation": "The book is on the table.",
+            "focus": "上",
+            "distractors": [
+              "们",
+              "很",
+              "在"
+            ],
+            "contrast": false,
+            "kinds": [
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk1-location-nouns-2",
+            "text": "猫在椅子下。",
+            "reading": "māo zài yǐzi xià.",
+            "translation": "The cat is under the chair.",
+            "focus": "下",
+            "distractors": [
+              "们",
+              "很",
+              "在"
+            ],
+            "contrast": false,
+            "kinds": [
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk1-location-nouns-3",
+            "text": "妈妈在家里。",
+            "reading": "māma zài jiā li.",
+            "translation": "Mum is at home.",
+            "focus": "里",
+            "distractors": [
+              "们",
+              "很",
+              "第"
+            ],
+            "contrast": false,
+            "kinds": [
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk1-location-nouns-4",
+            "text": "学校外边很冷。",
+            "reading": "xuéxiào wàibian hěn lěng.",
+            "translation": "It is cold outside the school.",
+            "focus": "外",
+            "distractors": [
+              "们",
+              "吗",
+              "第"
+            ],
+            "contrast": false,
+            "kinds": [
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk1-location-nouns-5",
+            "text": "前边有一个书店。",
+            "reading": "qiánbian yǒu yí ge shūdiàn.",
+            "translation": "There is a bookshop in front.",
+            "focus": "前",
+            "distractors": [
+              "们",
+              "很",
+              "吗"
+            ],
+            "contrast": false,
+            "kinds": [
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk1-location-nouns-6",
+            "text": "我在学校。",
+            "reading": "wǒ zài xuéxiào.",
+            "translation": "I am at school.",
+            "focus": "在",
+            "distractors": [
+              "是",
+              "很",
+              "吗"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "row": 4,
+      "label": "能愿动词 (会, 能, 想, 要, 可以)",
+      "lesson": {
+        "id": "hsk1-modal-verbs",
+        "level": "hsk-1",
+        "title": "Modal verbs: 会 能 想 要 可以",
+        "summary": "Put a modal before the verb to say ability, wish, need or permission.",
+        "pattern": [
+          "subject + 会 / 能 / 想 / 要 / 可以 + verb"
+        ],
+        "body": [
+          "会 (huì) is a learned skill (我会说汉语); 能 (néng) is ability or possibility (他能吃十个饺子); 想 (xiǎng) is a wish (我想去中国); 要 (yào) is a need or want, and can take a thing directly (我要一杯茶); 可以 (kěyǐ) is permission (你可以坐出租车).",
+          "To negate a modal, put 不 before it: 不想, 不会, 不能. The contrast example shows this. 没 cannot negate 会 (you cannot say 没会开车); at this level negate modals with 不. Above this level you will meet 没能, did not manage to. 没 negates 有 and past events."
+        ],
+        "examples": [
+          {
+            "id": "hsk1-modal-verbs-1",
+            "text": "我会说汉语。",
+            "reading": "wǒ huì shuō Hànyǔ.",
+            "translation": "I can speak Chinese.",
+            "focus": "会",
+            "distractors": [
+              "第",
+              "吗",
+              "的"
+            ],
+            "contrast": false,
+            "kinds": [
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk1-modal-verbs-2",
+            "text": "我要一杯茶。",
+            "reading": "wǒ yào yì bēi chá.",
+            "translation": "I would like a cup of tea.",
+            "focus": "要",
+            "distractors": [
+              "会",
+              "能",
+              "很",
+              "吗"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk1-modal-verbs-3",
+            "text": "我想去中国。",
+            "reading": "wǒ xiǎng qù Zhōngguó.",
+            "translation": "I want to go to China.",
+            "focus": "想",
+            "distractors": [
+              "吗",
+              "的",
+              "很"
+            ],
+            "contrast": false,
+            "kinds": [
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk1-modal-verbs-4",
+            "text": "你可以坐出租车。",
+            "reading": "nǐ kěyǐ zuò chūzūchē.",
+            "translation": "You may take a taxi.",
+            "focus": "可以",
+            "distractors": [
+              "吗",
+              "的",
+              "很"
+            ],
+            "contrast": false,
+            "kinds": [
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk1-modal-verbs-5",
+            "text": "他能吃十个饺子。",
+            "reading": "tā néng chī shí ge jiǎozi.",
+            "translation": "He can eat ten dumplings.",
+            "focus": "能",
+            "distractors": [
+              "吗",
+              "的",
+              "第"
+            ],
+            "contrast": false,
+            "kinds": [
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk1-modal-verbs-6",
+            "text": "我不会开车。",
+            "reading": "wǒ bú huì kāi chē.",
+            "translation": "I cannot drive.",
+            "focus": "不",
+            "distractors": [
+              "没",
+              "吗",
+              "的"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "row": 5,
+      "label": "离合词 (看病, 睡觉, 说话, 上课, 下课, 上班, 下班, 生病)",
+      "lesson": {
+        "id": "hsk1-separable-verbs",
+        "level": "hsk-1",
+        "title": "Separable verbs: 看病 睡觉 说话 上课 上班…",
+        "summary": "These verbs already contain an object, so they cannot take another one.",
+        "pattern": [
+          "verb + object inside one word: 睡 + 觉, 看 + 病, 上 + 班"
+        ],
+        "body": [
+          "看病, 睡觉, 说话, 上课, 下课, 上班, 下班 and 生病 are verb-plus-object compounds: 睡 (sleep) + 觉, 看 (see) + 病 (illness), 上 (go to) + 班 (work). Because the object is already inside, they cannot take another object or a duration after the whole word.",
+          "Put a duration or 了 inside: 睡了八个小时 (not 睡觉了八个小时), 上了课, 看了病. To add an object, use the plain verb: 看医生, not 看病医生. The contrast example shows the plain verb 看 taking the object 医生."
+        ],
+        "examples": [
+          {
+            "id": "hsk1-separable-verbs-1",
+            "text": "爸爸今天上班。",
+            "reading": "bàba jīntiān shàngbān.",
+            "translation": "Dad is going to work today.",
+            "focus": "上班",
+            "distractors": [
+              "很",
+              "吗",
+              "第"
+            ],
+            "contrast": false,
+            "kinds": [
+              "clearly-wrong"
+            ],
+            "noOrder": true
+          },
+          {
+            "id": "hsk1-separable-verbs-2",
+            "text": "我睡了八个小时。",
+            "reading": "wǒ shuì le bā ge xiǎoshí.",
+            "translation": "I slept for eight hours.",
+            "focus": "睡",
+            "distractors": [
+              "睡觉",
+              "看病",
+              "吗"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk1-separable-verbs-3",
+            "text": "他生病了。",
+            "reading": "tā shēngbìng le.",
+            "translation": "He has fallen ill.",
+            "focus": "生病",
+            "distractors": [
+              "很",
+              "吗",
+              "第"
+            ],
+            "contrast": false,
+            "kinds": [
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk1-separable-verbs-4",
+            "text": "我们在上课。",
+            "reading": "wǒmen zài shàngkè.",
+            "translation": "We are in class.",
+            "focus": "上课",
+            "distractors": [
+              "很",
+              "吗",
+              "第"
+            ],
+            "contrast": false,
+            "kinds": [
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk1-separable-verbs-5",
+            "text": "妈妈去医院看病。",
+            "reading": "māma qù yīyuàn kànbìng.",
+            "translation": "Mum goes to the hospital to see a doctor.",
+            "focus": "看病",
+            "distractors": [
+              "生病",
+              "很",
+              "吗"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk1-separable-verbs-6",
+            "text": "我去看医生。",
+            "reading": "wǒ qù kàn yīshēng.",
+            "translation": "I am going to see a doctor.",
+            "focus": "看",
+            "distractors": [
+              "看病",
+              "睡觉",
+              "吗"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "row": 6,
+      "label": "疑问代词 (多, 多少, 几, 哪, 哪儿, 哪里, 哪些, 什么, 谁, 怎么, 怎么样)",
+      "lesson": {
+        "id": "hsk1-question-words",
+        "level": "hsk-1",
+        "title": "Question words: 什么 谁 哪 几 多少 怎么…",
+        "summary": "Ask with a question word in the position of the answer; the word order does not change.",
+        "pattern": [
+          "… + 什么 / 谁 / 哪 / 几 / 多少 / 怎么 / 哪儿 + …？"
+        ],
+        "body": [
+          "什么 (what), 谁 (who), 哪 (which), 哪儿 / 哪里 (where), 哪些 (which ones), 几 (how many, small), 多少 (how many, any), 多 (how, before an adjective: 多大), 怎么 (how) and 怎么样 (how about) ask for a specific answer. The question word stays where the answer would go: 你叫什么名字？",
+          "几 is for small numbers and needs a measure word (几口人); 多少 is for any number (多少钱). The contrast example uses 吗, which makes a yes-no question instead; do not add 吗 to a question that already has a question word (you cannot say 你叫什么吗？)."
+        ],
+        "examples": [
+          {
+            "id": "hsk1-question-words-1",
+            "text": "你叫什么名字？",
+            "reading": "nǐ jiào shénme míngzi?",
+            "translation": "What is your name?",
+            "focus": "什么",
+            "distractors": [
+              "哪",
+              "吗",
+              "很"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk1-question-words-2",
+            "text": "你家有几口人？",
+            "reading": "nǐ jiā yǒu jǐ kǒu rén?",
+            "translation": "How many people are there in your family?",
+            "focus": "几",
+            "distractors": [
+              "哪",
+              "什么",
+              "吗"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk1-question-words-3",
+            "text": "这本书多少钱？",
+            "reading": "zhè běn shū duōshao qián?",
+            "translation": "How much is this book?",
+            "focus": "多少",
+            "distractors": [
+              "几",
+              "什么",
+              "吗"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk1-question-words-4",
+            "text": "你是哪国人？",
+            "reading": "nǐ shì nǎ guó rén?",
+            "translation": "Which country are you from?",
+            "focus": "哪",
+            "distractors": [
+              "谁",
+              "吗",
+              "很"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk1-question-words-5",
+            "text": "谁在打电话？",
+            "reading": "shéi zài dǎ diànhuà?",
+            "translation": "Who is on the phone?",
+            "focus": "谁",
+            "distractors": [
+              "哪",
+              "吗",
+              "很"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk1-question-words-6",
+            "text": "我们怎么去学校？",
+            "reading": "wǒmen zěnme qù xuéxiào?",
+            "translation": "How do we get to school?",
+            "focus": "怎么",
+            "distractors": [
+              "什么",
+              "吗",
+              "很"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk1-question-words-7",
+            "text": "你去哪儿？",
+            "reading": "nǐ qù nǎr?",
+            "translation": "Where are you going?",
+            "focus": "哪儿",
+            "distractors": [
+              "什么",
+              "谁",
+              "很"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk1-question-words-8",
+            "text": "你是学生吗？",
+            "reading": "nǐ shì xuéshēng ma?",
+            "translation": "Are you a student?",
+            "focus": "吗",
+            "distractors": [
+              "什么",
+              "谁",
+              "很"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "row": 7,
+      "label": "人称代词 (我, 你, 您, 他, 她, 我们, 你们, 他们, 她们, 它, 它们, 大家)",
+      "lesson": {
+        "id": "hsk1-personal-pronouns",
+        "level": "hsk-1",
+        "title": "Personal pronouns: 我 你 您 他 她 它 大家…",
+        "summary": "Pronouns stand for people and things; 您 is polite, 它 is for things, 大家 addresses everyone.",
+        "pattern": [
+          "我 / 你 / 您 / 他 / 她 / 它 (+ 们)",
+          "大家"
+        ],
+        "body": [
+          "我 (I), 你 (you), 您 (you, polite), 他 (he), 她 (she), 它 (it) and their plurals with 们 (我们, 你们, 他们, 她们, 它们) stand for people and things. 您 shows respect (to a teacher or an older person). 它 is for things and animals. 大家 means everyone.",
+          "A singular pronoun cannot be summed up by 都: say 我们都去, not 我都去. The contrast example uses the suffix 们, which makes the plural (同学们); a number already gives the plural, so do not add 们 after it (三个学生, not 三个学生们)."
+        ],
+        "examples": [
+          {
+            "id": "hsk1-personal-pronouns-1",
+            "text": "我们都是学生。",
+            "reading": "wǒmen dōu shì xuéshēng.",
+            "translation": "We are all students.",
+            "focus": "我们",
+            "distractors": [
+              "我",
+              "他",
+              "吗"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk1-personal-pronouns-2",
+            "text": "他们都很忙。",
+            "reading": "tāmen dōu hěn máng.",
+            "translation": "They are all busy.",
+            "focus": "他们",
+            "distractors": [
+              "他",
+              "她",
+              "吗"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk1-personal-pronouns-3",
+            "text": "老师，您好！",
+            "reading": "lǎoshī, nín hǎo!",
+            "translation": "Hello, teacher!",
+            "focus": "您",
+            "distractors": [
+              "吗",
+              "的",
+              "们"
+            ],
+            "contrast": false,
+            "kinds": [
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk1-personal-pronouns-4",
+            "text": "我有一只猫，它很漂亮。",
+            "reading": "wǒ yǒu yì zhī māo, tā hěn piàoliang.",
+            "translation": "I have a cat; it is pretty.",
+            "focus": "它",
+            "distractors": [
+              "吗",
+              "的",
+              "们"
+            ],
+            "contrast": false,
+            "kinds": [
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk1-personal-pronouns-5",
+            "text": "我姐姐是医生，她在医院工作。",
+            "reading": "wǒ jiějie shì yīshēng, tā zài yīyuàn gōngzuò.",
+            "translation": "My older sister is a doctor; she works in a hospital.",
+            "focus": "她",
+            "distractors": [
+              "他",
+              "吗",
+              "的"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk1-personal-pronouns-6",
+            "text": "同学们都喜欢他。",
+            "reading": "tóngxuémen dōu xǐhuan tā.",
+            "translation": "The classmates all like him.",
+            "focus": "们",
+            "distractors": [
+              "的",
+              "吗",
+              "第"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "row": 8,
+      "label": "指示代词 (这, 那, 这儿, 那儿, 这里, 那里, 这些, 那些, 有的, 这个, 那个, 有些)",
+      "lesson": {
+        "id": "hsk1-demonstratives",
+        "level": "hsk-1",
+        "title": "Demonstratives: 这 那 这儿 这些 有的…",
+        "summary": "Point near (这) or far (那); 这儿/那儿 are places, 这些/那些 plural, 有的/有些 mean some.",
+        "pattern": [
+          "这 / 那 (+ 个 / 些 / 儿 / 里)",
+          "有的 / 有些 + noun"
+        ],
+        "body": [
+          "这 (zhè, this) points near, 那 (nà, that) points far. 这儿 / 这里 and 那儿 / 那里 are places; 这个 / 那个 and 这些 / 那些 point to one or several things; 有的 and 有些 mean some (有的学生). A measure word usually follows 这 / 那 before a noun: 这本书, 那个电影.",
+          "The contrast example uses the question word 哪 (which), which asks rather than points and also needs a measure word (哪本书). 这 / 那 point; 哪 asks."
+        ],
+        "examples": [
+          {
+            "id": "hsk1-demonstratives-1",
+            "text": "这是我的书。",
+            "reading": "zhè shì wǒ de shū.",
+            "translation": "This is my book.",
+            "focus": "这",
+            "distractors": [
+              "吗",
+              "很",
+              "的"
+            ],
+            "contrast": false,
+            "kinds": [
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk1-demonstratives-2",
+            "text": "那些苹果很便宜。",
+            "reading": "nàxiē píngguǒ hěn piányi.",
+            "translation": "Those apples are cheap.",
+            "focus": "那些",
+            "distractors": [
+              "哪",
+              "吗",
+              "很"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk1-demonstratives-3",
+            "text": "这儿有一个书店。",
+            "reading": "zhèr yǒu yí ge shūdiàn.",
+            "translation": "There is a bookshop here.",
+            "focus": "这儿",
+            "distractors": [
+              "吗",
+              "很",
+              "的"
+            ],
+            "contrast": false,
+            "kinds": [
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk1-demonstratives-4",
+            "text": "有的学生喜欢看书。",
+            "reading": "yǒude xuéshēng xǐhuan kàn shū.",
+            "translation": "Some students like reading.",
+            "focus": "有的",
+            "distractors": [
+              "吗",
+              "很",
+              "的"
+            ],
+            "contrast": false,
+            "kinds": [
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk1-demonstratives-5",
+            "text": "那个电影很好看。",
+            "reading": "nàge diànyǐng hěn hǎokàn.",
+            "translation": "That film is good.",
+            "focus": "那个",
+            "distractors": [
+              "哪",
+              "吗",
+              "很"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk1-demonstratives-6",
+            "text": "你要买哪本书？",
+            "reading": "nǐ yào mǎi nǎ běn shū?",
+            "translation": "Which book do you want to buy?",
+            "focus": "哪",
+            "distractors": [
+              "什么",
+              "吗",
+              "很"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "row": 9,
+      "label": "数词 (一, 二/两, 三, 四, 五, 六, 七, 八, 九, 零, 十, 百, 半, 千)",
+      "lesson": {
+        "id": "hsk1-numerals",
+        "level": "hsk-1",
+        "title": "Numerals: 一 二/两 三…十 百 千 半 零",
+        "summary": "Count with numerals; use 两 (not 二) before a measure word, and 半 for half.",
+        "pattern": [
+          "numeral (+ measure word) + noun",
+          "半 + measure word + noun"
+        ],
+        "body": [
+          "一, 二, 三, 四, 五, 六, 七, 八, 九, 十, 百, 千 and 零 are the numerals. Before a measure word, two is 两, not 二: 两个人, 两本书. 二 is used inside numbers: 十二, 二十. 半 (bàn) means half: 半个苹果, 两点半. 零 marks an empty digit.",
+          "The contrast example uses the prefix 第, which makes an ordinal (第一 = first), not a count. 一 reads yī alone, at the end of a number (十一) and in ordinals (第一 dì-yī, 第一本 dì-yī běn, 第一个 dì-yī ge); before another syllable in a count it changes: yí before a fourth tone (一个 yí ge), yì before other tones (一本 yì běn)."
+        ],
+        "examples": [
+          {
+            "id": "hsk1-numerals-1",
+            "text": "我有两个姐姐。",
+            "reading": "wǒ yǒu liǎng ge jiějie.",
+            "translation": "I have two older sisters.",
+            "focus": "两",
+            "distractors": [
+              "二",
+              "吗",
+              "很"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk1-numerals-2",
+            "text": "我妹妹十二岁。",
+            "reading": "wǒ mèimei shí'èr suì.",
+            "translation": "My younger sister is twelve.",
+            "focus": "二",
+            "distractors": [
+              "两",
+              "吗",
+              "很"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk1-numerals-3",
+            "text": "我吃了半个苹果。",
+            "reading": "wǒ chī le bàn ge píngguǒ.",
+            "translation": "I ate half an apple.",
+            "focus": "半",
+            "distractors": [
+              "二",
+              "吗",
+              "很"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk1-numerals-4",
+            "text": "这个手机一千元。",
+            "reading": "zhège shǒujī yì qiān yuán.",
+            "translation": "This phone costs a thousand yuan.",
+            "focus": "千",
+            "distractors": [
+              "吗",
+              "很",
+              "的"
+            ],
+            "contrast": false,
+            "kinds": [
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk1-numerals-5",
+            "text": "我一天吃三个苹果。",
+            "reading": "wǒ yì tiān chī sān ge píngguǒ.",
+            "translation": "I eat three apples a day.",
+            "focus": "一",
+            "distractors": [
+              "吗",
+              "很",
+              "的"
+            ],
+            "contrast": false,
+            "kinds": [
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk1-numerals-6",
+            "text": "他是我的第一个朋友。",
+            "reading": "tā shì wǒ de dì-yī ge péngyou.",
+            "translation": "He is my first friend.",
+            "focus": "第",
+            "distractors": [
+              "小",
+              "吗",
+              "很"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "row": 10,
+      "label": "名量词 (本, 个, 家, 口, 块, 件, 只, 元; 借用 杯)",
+      "lesson": {
+        "id": "hsk1-measure-words",
+        "level": "hsk-1",
+        "title": "Measure words: 本 个 家 口 块 件 只 元 杯",
+        "summary": "A number or 这/那 needs a measure word before the noun; each noun takes its own.",
+        "pattern": [
+          "numeral / 这 / 那 + measure word + noun"
+        ],
+        "body": [
+          "Between a number (or 这, 那, 几) and a noun, Chinese needs a measure word: 本 for books (一本书), 个 the general one (一个人), 家 for shops and families (两家饭店), 口 for family members (三口人), 块 for money and pieces (二十块), 件 for clothes and matters (一件衣服), 只 for animals (一只猫), 元 for money (formal). 杯 is borrowed from 杯子 for cups of drink (一杯茶).",
+          "The contrast example shows 两 before a measure word: before a measure word, two is 两, not 二 (两本书, not 二本书)."
+        ],
+        "examples": [
+          {
+            "id": "hsk1-measure-words-1",
+            "text": "我买一本书。",
+            "reading": "wǒ mǎi yì běn shū.",
+            "translation": "I'll buy a book.",
+            "focus": "本",
+            "distractors": [
+              "件",
+              "只",
+              "吗"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk1-measure-words-2",
+            "text": "他家有三只猫。",
+            "reading": "tā jiā yǒu sān zhī māo.",
+            "translation": "His family has three cats.",
+            "focus": "只",
+            "distractors": [
+              "本",
+              "口",
+              "吗"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk1-measure-words-3",
+            "text": "我家有三口人。",
+            "reading": "wǒ jiā yǒu sān kǒu rén.",
+            "translation": "There are three people in my family.",
+            "focus": "口",
+            "distractors": [
+              "只",
+              "本",
+              "吗"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk1-measure-words-4",
+            "text": "这件衣服很漂亮。",
+            "reading": "zhè jiàn yīfu hěn piàoliang.",
+            "translation": "This dress is very pretty.",
+            "focus": "件",
+            "distractors": [
+              "本",
+              "只",
+              "吗"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk1-measure-words-5",
+            "text": "我喝了一杯茶。",
+            "reading": "wǒ hē le yì bēi chá.",
+            "translation": "I drank a cup of tea.",
+            "focus": "杯",
+            "distractors": [
+              "本",
+              "件",
+              "吗"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk1-measure-words-6",
+            "text": "我有一个弟弟。",
+            "reading": "wǒ yǒu yí ge dìdi.",
+            "translation": "I have a younger brother.",
+            "focus": "个",
+            "distractors": [
+              "本",
+              "只",
+              "吗"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk1-measure-words-7",
+            "text": "这里有两家饭店。",
+            "reading": "zhèlǐ yǒu liǎng jiā fàndiàn.",
+            "translation": "There are two restaurants here.",
+            "focus": "家",
+            "distractors": [
+              "口",
+              "只",
+              "吗"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk1-measure-words-8",
+            "text": "我买两本书。",
+            "reading": "wǒ mǎi liǎng běn shū.",
+            "translation": "I'll buy two books.",
+            "focus": "两",
+            "distractors": [
+              "二",
+              "吗",
+              "很"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "row": 11,
+      "label": "时量词 (日, 号, 岁, 点, 分, 年, 天)",
+      "lesson": {
+        "id": "hsk1-time-measures",
+        "level": "hsk-1",
+        "title": "Time measure words: 日 号 岁 点 分 年 天",
+        "summary": "Count dates, ages, clock time and durations with time measure words.",
+        "pattern": [
+          "numeral + 岁 / 点 / 分 / 年 / 天 / 号 / 日"
+        ],
+        "body": [
+          "岁 (suì) counts age (五岁); 号 and 日 name the day of the month (三月五号 / 三月五日); 点 and 分 tell the clock (八点, 八点十分); 年 and 天 count duration (一年, 三天). After a number, 年 and 天 need no extra measure word, but 月 takes 个 (三个月).",
+          "The contrast example uses 半 (half): 八点半 is half past eight, 半小时 is half an hour. 半 is a numeral, not a measure word."
+        ],
+        "examples": [
+          {
+            "id": "hsk1-time-measures-1",
+            "text": "我妹妹五岁。",
+            "reading": "wǒ mèimei wǔ suì.",
+            "translation": "My younger sister is five.",
+            "focus": "岁",
+            "distractors": [
+              "个",
+              "只",
+              "吗"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk1-time-measures-2",
+            "text": "今天三月五号。",
+            "reading": "jīntiān sān yuè wǔ hào.",
+            "translation": "Today is the fifth of March.",
+            "focus": "号",
+            "distractors": [
+              "岁",
+              "个",
+              "吗"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk1-time-measures-3",
+            "text": "现在八点。",
+            "reading": "xiànzài bā diǎn.",
+            "translation": "It is eight o'clock.",
+            "focus": "点",
+            "distractors": [
+              "第",
+              "分",
+              "吗"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk1-time-measures-4",
+            "text": "我学了一年汉语。",
+            "reading": "wǒ xué le yì nián Hànyǔ.",
+            "translation": "I studied Chinese for a year.",
+            "focus": "年",
+            "distractors": [
+              "岁",
+              "号",
+              "吗"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ],
+            "noOrder": true
+          },
+          {
+            "id": "hsk1-time-measures-5",
+            "text": "我一天工作八个小时。",
+            "reading": "wǒ yì tiān gōngzuò bā ge xiǎoshí.",
+            "translation": "I work eight hours a day.",
+            "focus": "天",
+            "distractors": [
+              "岁",
+              "吗",
+              "很"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk1-time-measures-6",
+            "text": "现在八点半。",
+            "reading": "xiànzài bā diǎn bàn.",
+            "translation": "It is half past eight.",
+            "focus": "半",
+            "distractors": [
+              "分",
+              "岁",
+              "吗"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "row": 12,
+      "label": "程度副词 (非常, 很, 太, 真, 有(一)点儿)",
+      "lesson": {
+        "id": "hsk1-degree-adverbs",
+        "level": "hsk-1",
+        "title": "Degree adverbs: 非常 很 太 真 有点儿",
+        "summary": "Put a degree adverb before an adjective; 太…了 exclamates, 有点儿 often signals a complaint.",
+        "pattern": [
+          "subject + 非常 / 很 / 太 / 真 / 有点儿 + adjective",
+          "太 + adjective + 了！"
+        ],
+        "body": [
+          "非常 (fēicháng, very), 很 (hěn, very), 太 (tài, too), 真 (zhēn, really) and 有点儿 (yǒudiǎnr, a bit) go before an adjective: 非常热, 很好, 太贵了, 真好, 有点儿忙. 太 usually pairs with 了 to exclaim. 有点儿 often marks something unwanted.",
+          "The contrast example uses 一点儿, which measures a quantity of a thing (喝一点儿水) or follows a verb; it does not go before an adjective (you cannot say 一点儿忙). 有点儿 goes before an adjective; 一点儿 goes with a noun."
+        ],
+        "examples": [
+          {
+            "id": "hsk1-degree-adverbs-1",
+            "text": "今天非常热。",
+            "reading": "jīntiān fēicháng rè.",
+            "translation": "It is very hot today.",
+            "focus": "非常",
+            "distractors": [
+              "吗",
+              "在",
+              "们"
+            ],
+            "contrast": false,
+            "kinds": [
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk1-degree-adverbs-2",
+            "text": "这个电影很好看。",
+            "reading": "zhège diànyǐng hěn hǎokàn.",
+            "translation": "This film is good.",
+            "focus": "很",
+            "distractors": [
+              "吗",
+              "们",
+              "在"
+            ],
+            "contrast": false,
+            "kinds": [
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk1-degree-adverbs-3",
+            "text": "太贵了！",
+            "reading": "tài guì le!",
+            "translation": "Too expensive!",
+            "focus": "太",
+            "distractors": [
+              "在",
+              "吗",
+              "的"
+            ],
+            "contrast": false,
+            "kinds": [
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk1-degree-adverbs-4",
+            "text": "你真好！",
+            "reading": "nǐ zhēn hǎo!",
+            "translation": "You are really kind!",
+            "focus": "真",
+            "distractors": [
+              "吗",
+              "第",
+              "在"
+            ],
+            "contrast": false,
+            "kinds": [
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk1-degree-adverbs-5",
+            "text": "我有点儿忙。",
+            "reading": "wǒ yǒudiǎnr máng.",
+            "translation": "I am a bit busy.",
+            "focus": "有点儿",
+            "distractors": [
+              "一点儿",
+              "吗",
+              "第"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk1-degree-adverbs-6",
+            "text": "我想喝一点儿水。",
+            "reading": "wǒ xiǎng hē yìdiǎnr shuǐ.",
+            "translation": "I would like to drink a little water.",
+            "focus": "一点儿",
+            "distractors": [
+              "有点儿",
+              "吗",
+              "很"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "row": 13,
+      "label": "范围副词 (都)",
+      "lesson": {
+        "id": "hsk1-dou",
+        "level": "hsk-1",
+        "title": "都: all, both",
+        "summary": "都 sums up the plural subject or the object placed before it; it comes before the verb.",
+        "pattern": [
+          "plural subject + 都 + verb",
+          "object + subject + 都 + verb"
+        ],
+        "body": [
+          "都 (dōu, all, both) sums up what comes before it: a plural subject (我们都去) or an object moved to the front (这些书我都看了). It stands after the subject and before the verb, never at the end.",
+          "The contrast example uses 也 (also), which adds one more rather than summing up all. With a singular subject, 都 is wrong (他都很忙 is not said); 也 is fine (他也很忙). When both appear, 也 comes first: 我们也都去."
+        ],
+        "examples": [
+          {
+            "id": "hsk1-dou-1",
+            "text": "我们都是学生。",
+            "reading": "wǒmen dōu shì xuéshēng.",
+            "translation": "We are all students.",
+            "focus": "都",
+            "distractors": [
+              "很",
+              "吗",
+              "在"
+            ],
+            "contrast": false,
+            "kinds": [
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk1-dou-2",
+            "text": "他们都很忙。",
+            "reading": "tāmen dōu hěn máng.",
+            "translation": "They are all busy.",
+            "focus": "都",
+            "distractors": [
+              "很",
+              "吗",
+              "在"
+            ],
+            "contrast": false,
+            "kinds": [
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk1-dou-3",
+            "text": "这些书我都看了。",
+            "reading": "zhèxiē shū wǒ dōu kàn le.",
+            "translation": "I have read all these books.",
+            "focus": "都",
+            "distractors": [
+              "很",
+              "吗",
+              "的"
+            ],
+            "contrast": false,
+            "kinds": [
+              "clearly-wrong"
+            ],
+            "noOrder": true
+          },
+          {
+            "id": "hsk1-dou-4",
+            "text": "大家都不认识他。",
+            "reading": "dàjiā dōu bú rènshi tā.",
+            "translation": "Nobody knows him.",
+            "focus": "都",
+            "distractors": [
+              "很",
+              "吗",
+              "在"
+            ],
+            "contrast": false,
+            "kinds": [
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk1-dou-5",
+            "text": "他也很忙。",
+            "reading": "tā yě hěn máng.",
+            "translation": "He is busy too.",
+            "focus": "也",
+            "distractors": [
+              "都",
+              "很",
+              "吗"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "row": 14,
+      "label": "时间副词 (在, 正在)",
+      "lesson": {
+        "id": "hsk1-zai-zhengzai",
+        "level": "hsk-1",
+        "title": "在 and 正在: action in progress",
+        "summary": "Put 在 or 正在 before the verb to say an action is happening now.",
+        "pattern": [
+          "subject + 在 / 正在 + verb"
+        ],
+        "body": [
+          "在 (zài) and 正在 (zhèngzài) before a verb mark an action in progress: 我在吃饭, 妈妈正在做饭. 正在 stresses right now. This 在 is an adverb, different from the 在 that says where someone is (我在家).",
+          "The contrast example uses sentence-final 呢, which also marks an ongoing action (我吃饭呢) and can stand without 在. 了 marks a completed action, not an ongoing one."
+        ],
+        "examples": [
+          {
+            "id": "hsk1-zai-zhengzai-1",
+            "text": "我在吃饭。",
+            "reading": "wǒ zài chī fàn.",
+            "translation": "I am eating.",
+            "focus": "在",
+            "distractors": [
+              "很",
+              "吗",
+              "的"
+            ],
+            "contrast": false,
+            "kinds": [
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk1-zai-zhengzai-2",
+            "text": "妈妈正在做饭。",
+            "reading": "māma zhèngzài zuò fàn.",
+            "translation": "Mum is cooking.",
+            "focus": "正在",
+            "distractors": [
+              "很",
+              "吗",
+              "的"
+            ],
+            "contrast": false,
+            "kinds": [
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk1-zai-zhengzai-3",
+            "text": "他在看书。",
+            "reading": "tā zài kàn shū.",
+            "translation": "He is reading.",
+            "focus": "在",
+            "distractors": [
+              "很",
+              "吗",
+              "都"
+            ],
+            "contrast": false,
+            "kinds": [
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk1-zai-zhengzai-4",
+            "text": "弟弟正在睡觉。",
+            "reading": "dìdi zhèngzài shuìjiào.",
+            "translation": "My younger brother is sleeping.",
+            "focus": "正在",
+            "distractors": [
+              "很",
+              "吗",
+              "的"
+            ],
+            "contrast": false,
+            "kinds": [
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk1-zai-zhengzai-5",
+            "text": "我吃饭呢。",
+            "reading": "wǒ chī fàn ne.",
+            "translation": "I am eating.",
+            "focus": "呢",
+            "distractors": [
+              "吗",
+              "很",
+              "在"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "row": 15,
+      "label": "频率副词 (再)",
+      "lesson": {
+        "id": "hsk1-zai-again",
+        "level": "hsk-1",
+        "title": "再: again, once more",
+        "summary": "再 before a verb says an action will happen again; it is for future repeats.",
+        "pattern": [
+          "subject + 再 + verb"
+        ],
+        "body": [
+          "再 (zài, again) before a verb says the action will repeat: 请再说一下, 我明天再来. It is used for future or intended repeats, not for a state that continues.",
+          "The contrast example uses 还 (still, more), which says a state continues or something is added. For still or in addition want, use 还, not 再: 我还想买一本书. 再 is for a future repeat of an action (再来, 再说一下). Do not confuse 再 with 在, which marks an action in progress."
+        ],
+        "examples": [
+          {
+            "id": "hsk1-zai-again-1",
+            "text": "请再说一下。",
+            "reading": "qǐng zài shuō yíxià.",
+            "translation": "Please say it again.",
+            "focus": "再",
+            "distractors": [
+              "在",
+              "吗",
+              "很"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk1-zai-again-2",
+            "text": "我明天再来。",
+            "reading": "wǒ míngtiān zài lái.",
+            "translation": "I will come again tomorrow.",
+            "focus": "再",
+            "distractors": [
+              "在",
+              "吗",
+              "很"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ],
+            "noOrder": true
+          },
+          {
+            "id": "hsk1-zai-again-3",
+            "text": "你再吃一个包子吧。",
+            "reading": "nǐ zài chī yí ge bāozi ba.",
+            "translation": "Have another bun.",
+            "focus": "再",
+            "distractors": [
+              "吗",
+              "很",
+              "的"
+            ],
+            "contrast": false,
+            "kinds": [
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk1-zai-again-4",
+            "text": "我们再看一个电影。",
+            "reading": "wǒmen zài kàn yí ge diànyǐng.",
+            "translation": "Let us watch another film.",
+            "focus": "再",
+            "distractors": [
+              "吗",
+              "很",
+              "的"
+            ],
+            "contrast": false,
+            "kinds": [
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk1-zai-again-5",
+            "text": "我还想买一本书。",
+            "reading": "wǒ hái xiǎng mǎi yì běn shū.",
+            "translation": "I still want to buy a book.",
+            "focus": "还",
+            "distractors": [
+              "再",
+              "吗",
+              "的"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "row": 16,
+      "label": "关联副词 (还, 也)",
+      "lesson": {
+        "id": "hsk1-hai-ye",
+        "level": "hsk-1",
+        "title": "还 and 也: also, still, more",
+        "summary": "也 adds (also); 还 adds more or says still; both come before the verb.",
+        "pattern": [
+          "subject + 也 / 还 + verb"
+        ],
+        "body": [
+          "也 (yě, also) adds one more of the same: 我也喜欢猫. 还 (hái, still, more) says a state continues or something is added: 他还有一个妹妹, 我还想喝茶. Both stand after the subject and before the verb.",
+          "The contrast example uses 都 (all), which sums up every member rather than adding one. When 也 and 都 appear together, 也 comes first: 我们也都想去. Do not put 也 or 还 after the verb or at the end of the sentence."
+        ],
+        "examples": [
+          {
+            "id": "hsk1-hai-ye-1",
+            "text": "我也喜欢猫。",
+            "reading": "wǒ yě xǐhuan māo.",
+            "translation": "I like cats too.",
+            "focus": "也",
+            "distractors": [
+              "再",
+              "吗",
+              "在"
+            ],
+            "contrast": false,
+            "kinds": [
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk1-hai-ye-2",
+            "text": "他还有一个妹妹。",
+            "reading": "tā hái yǒu yí ge mèimei.",
+            "translation": "He also has a younger sister.",
+            "focus": "还",
+            "distractors": [
+              "再",
+              "吗",
+              "很"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk1-hai-ye-3",
+            "text": "我们也都想去。",
+            "reading": "wǒmen yě dōu xiǎng qù.",
+            "translation": "We all want to go too.",
+            "focus": "也",
+            "distractors": [
+              "吗",
+              "很",
+              "的"
+            ],
+            "contrast": false,
+            "kinds": [
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk1-hai-ye-4",
+            "text": "苹果很好吃，饺子也很好吃。",
+            "reading": "píngguǒ hěn hǎochī, jiǎozi yě hěn hǎochī.",
+            "translation": "Apples are tasty, and dumplings are tasty too.",
+            "focus": "也",
+            "distractors": [
+              "吗",
+              "很",
+              "在"
+            ],
+            "contrast": false,
+            "kinds": [
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk1-hai-ye-5",
+            "text": "同学们都来了。",
+            "reading": "tóngxuémen dōu lái le.",
+            "translation": "The classmates have all come.",
+            "focus": "都",
+            "distractors": [
+              "很",
+              "吗",
+              "再"
+            ],
+            "contrast": true,
+            "kinds": [
+              "clearly-wrong"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "row": 17,
+      "label": "否定副词 (不, 没(有), 不要)",
+      "lesson": {
+        "id": "hsk1-negation",
+        "level": "hsk-1",
+        "title": "Negation: 不 没(有) 不要",
+        "summary": "不 negates verbs and adjectives; 没(有) negates 有 and past events; 不要 forbids.",
+        "pattern": [
+          "subject + 不 + verb / adjective",
+          "subject + 没(有) + verb / 有",
+          "不要 + verb"
+        ],
+        "body": [
+          "不 (bù) negates a verb or adjective (我不喝茶, 今天不冷); before a fourth tone it is said bú (不是 bú shì). 没 / 没有 (méi / méiyǒu) negates 有 (我没有手机) and says a past event did not happen (昨天我没去学校). 不要 (bú yào) forbids: 请不要说话.",
+          "For a past event use 没, not 不, and drop 了 (我没吃饭, not 没吃了饭). The contrast example uses sentence-final 了 with 不 to mark a change of plan: 我不去了 (I am not going anymore). Do not put 了 right after a verb negated with 没. (不 occasionally appears in a past context with a refusing meaning, but at this level always use 没 for the past.)"
+        ],
+        "examples": [
+          {
+            "id": "hsk1-negation-1",
+            "text": "我明天不喝茶。",
+            "reading": "wǒ míngtiān bù hē chá.",
+            "translation": "I will not drink tea tomorrow.",
+            "focus": "不",
+            "distractors": [
+              "没",
+              "吗",
+              "很"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ],
+            "noOrder": true
+          },
+          {
+            "id": "hsk1-negation-2",
+            "text": "昨天我没去学校。",
+            "reading": "zuótiān wǒ méi qù xuéxiào.",
+            "translation": "I did not go to school yesterday.",
+            "focus": "没",
+            "distractors": [
+              "不",
+              "吗",
+              "很"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ],
+            "noOrder": true
+          },
+          {
+            "id": "hsk1-negation-3",
+            "text": "请不要说话。",
+            "reading": "qǐng bú yào shuōhuà.",
+            "translation": "Please do not talk.",
+            "focus": "不要",
+            "distractors": [
+              "不",
+              "吗",
+              "很"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk1-negation-4",
+            "text": "他没有手机。",
+            "reading": "tā méiyǒu shǒujī.",
+            "translation": "He does not have a phone.",
+            "focus": "没有",
+            "distractors": [
+              "不有",
+              "吗",
+              "很"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk1-negation-5",
+            "text": "我今天不想上班。",
+            "reading": "wǒ jīntiān bù xiǎng shàngbān.",
+            "translation": "I do not want to go to work today.",
+            "focus": "不",
+            "distractors": [
+              "吗",
+              "们",
+              "的"
+            ],
+            "contrast": false,
+            "kinds": [
+              "clearly-wrong"
+            ],
+            "noOrder": true
+          },
+          {
+            "id": "hsk1-negation-6",
+            "text": "我不去了。",
+            "reading": "wǒ bú qù le.",
+            "translation": "I am not going anymore.",
+            "focus": "了",
+            "distractors": [
+              "吗",
+              "很",
+              "在"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "row": 18,
+      "label": "介词: 引出时间、处所 (在)",
+      "lesson": {
+        "id": "hsk1-zai-preposition",
+        "level": "hsk-1",
+        "title": "在: introducing time and place",
+        "summary": "在 + place comes before the verb to say where an action happens; time words also come before the verb.",
+        "pattern": [
+          "subject + 在 + place + verb",
+          "subject + time + 在 + place + verb"
+        ],
+        "body": [
+          "The preposition 在 (zài) introduces a place before the verb: 我在家吃饭, 他在学校学习. A time word also comes before the verb: 我上午在医院看病. The place and time go before the action, not after it.",
+          "The contrast example uses the adverb 正在, which marks an action in progress (姐姐正在看电视), not a place. 在 can also be the verb to be at (我在家); here it is a preposition introducing where the action happens."
+        ],
+        "examples": [
+          {
+            "id": "hsk1-zai-preposition-1",
+            "text": "我在家吃饭。",
+            "reading": "wǒ zài jiā chī fàn.",
+            "translation": "I eat at home.",
+            "focus": "在",
+            "distractors": [
+              "是",
+              "很",
+              "吗"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk1-zai-preposition-2",
+            "text": "他在学校学习。",
+            "reading": "tā zài xuéxiào xuéxí.",
+            "translation": "He studies at school.",
+            "focus": "在",
+            "distractors": [
+              "是",
+              "很",
+              "吗"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk1-zai-preposition-3",
+            "text": "我们在饭店吃晚饭。",
+            "reading": "wǒmen zài fàndiàn chī wǎnfàn.",
+            "translation": "We have dinner at a restaurant.",
+            "focus": "在",
+            "distractors": [
+              "是",
+              "很",
+              "都"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk1-zai-preposition-4",
+            "text": "我上午在医院看病。",
+            "reading": "wǒ shàngwǔ zài yīyuàn kànbìng.",
+            "translation": "I see a doctor at the hospital in the morning.",
+            "focus": "在",
+            "distractors": [
+              "是",
+              "很",
+              "吗"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ],
+            "noOrder": true
+          },
+          {
+            "id": "hsk1-zai-preposition-5",
+            "text": "姐姐正在看电视。",
+            "reading": "jiějie zhèngzài kàn diànshì.",
+            "translation": "My older sister is watching TV.",
+            "focus": "正在",
+            "distractors": [
+              "很",
+              "吗",
+              "的"
+            ],
+            "contrast": true,
+            "kinds": [
+              "clearly-wrong"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "row": 19,
+      "label": "介词: 引出对象 (和, 对)",
+      "lesson": {
+        "id": "hsk1-he-dui",
+        "level": "hsk-1",
+        "title": "Prepositions 和 and 对: introducing a person",
+        "summary": "和 introduces a companion (with); 对 introduces the target of an attitude (toward).",
+        "pattern": [
+          "subject + 和 + person + verb",
+          "subject + 对 + person + adjective / verb"
+        ],
+        "body": [
+          "The preposition 和 (hé, with) introduces a companion before the verb: 我和他一起去学校. 对 (duì, toward) introduces the target of an attitude: 妈妈对我很好. Both come before the verb or adjective.",
+          "The contrast example uses 和 as a conjunction joining two nouns (苹果和饺子). As a preposition 和 means with and is followed by a verb phrase (我和朋友去); as a conjunction it joins two things into one unit (我喜欢苹果和饺子)."
+        ],
+        "examples": [
+          {
+            "id": "hsk1-he-dui-1",
+            "text": "我和他一起去学校。",
+            "reading": "wǒ hé tā yìqǐ qù xuéxiào.",
+            "translation": "I go to school with him.",
+            "focus": "和",
+            "distractors": [
+              "对",
+              "很",
+              "吗"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ],
+            "noOrder": true
+          },
+          {
+            "id": "hsk1-he-dui-2",
+            "text": "妈妈对我很好。",
+            "reading": "māma duì wǒ hěn hǎo.",
+            "translation": "Mum is very kind to me.",
+            "focus": "对",
+            "distractors": [
+              "吗",
+              "很",
+              "的"
+            ],
+            "contrast": false,
+            "kinds": [
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk1-he-dui-3",
+            "text": "我和姐姐住一个房间。",
+            "reading": "wǒ hé jiějie zhù yí ge fángjiān.",
+            "translation": "I share a room with my older sister.",
+            "focus": "和",
+            "distractors": [
+              "对",
+              "吗",
+              "很"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ],
+            "noOrder": true
+          },
+          {
+            "id": "hsk1-he-dui-4",
+            "text": "老师对我们很好。",
+            "reading": "lǎoshī duì wǒmen hěn hǎo.",
+            "translation": "The teacher is very kind to us.",
+            "focus": "对",
+            "distractors": [
+              "吗",
+              "很",
+              "的"
+            ],
+            "contrast": false,
+            "kinds": [
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk1-he-dui-5",
+            "text": "我喜欢苹果和饺子。",
+            "reading": "wǒ xǐhuan píngguǒ hé jiǎozi.",
+            "translation": "I like apples and dumplings.",
+            "focus": "和",
+            "distractors": [
+              "对",
+              "吗",
+              "很"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ],
+            "noOrder": true
+          }
+        ]
+      }
+    },
+    {
+      "row": 20,
+      "label": "连词: 连接词语或短语 (和)",
+      "lesson": {
+        "id": "hsk1-he-conjunction",
+        "level": "hsk-1",
+        "title": "和: joining words and phrases",
+        "summary": "The conjunction 和 joins two nouns or phrases into one unit; it does not join sentences.",
+        "pattern": [
+          "noun / phrase + 和 + noun / phrase"
+        ],
+        "body": [
+          "The conjunction 和 (hé, and) joins two nouns or phrases into one unit: 我和妹妹都喜欢猫, 我喜欢看书和写字. The joined unit acts as one subject or object.",
+          "The contrast example uses 和 as a preposition meaning with (我和朋友去电影院 = I go with friends). As a conjunction 和 joins two equal things; as a preposition it introduces a companion before a verb. 和 does not join two sentences (you cannot say 我去商店和我买书)."
+        ],
+        "examples": [
+          {
+            "id": "hsk1-he-conjunction-1",
+            "text": "我和妹妹都喜欢猫。",
+            "reading": "wǒ hé mèimei dōu xǐhuan māo.",
+            "translation": "My younger sister and I both like cats.",
+            "focus": "和",
+            "distractors": [
+              "对",
+              "很",
+              "吗"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ],
+            "noOrder": true
+          },
+          {
+            "id": "hsk1-he-conjunction-2",
+            "text": "爸爸和妈妈都在公司工作。",
+            "reading": "bàba hé māma dōu zài gōngsī gōngzuò.",
+            "translation": "Dad and Mum both work at a company.",
+            "focus": "和",
+            "distractors": [
+              "对",
+              "很",
+              "吗"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ],
+            "noOrder": true
+          },
+          {
+            "id": "hsk1-he-conjunction-3",
+            "text": "我喜欢看书和写字。",
+            "reading": "wǒ xǐhuan kàn shū hé xiě zì.",
+            "translation": "I like reading and writing.",
+            "focus": "和",
+            "distractors": [
+              "对",
+              "吗",
+              "很"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ],
+            "noOrder": true
+          },
+          {
+            "id": "hsk1-he-conjunction-4",
+            "text": "这本书和那本书都很好。",
+            "reading": "zhè běn shū hé nà běn shū dōu hěn hǎo.",
+            "translation": "This book and that book are both good.",
+            "focus": "和",
+            "distractors": [
+              "对",
+              "吗",
+              "很"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ],
+            "noOrder": true
+          },
+          {
+            "id": "hsk1-he-conjunction-5",
+            "text": "我和朋友去电影院。",
+            "reading": "wǒ hé péngyou qù diànyǐngyuàn.",
+            "translation": "I go to the cinema with a friend.",
+            "focus": "和",
+            "distractors": [
+              "对",
+              "吗",
+              "很"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ],
+            "noOrder": true
+          }
+        ]
+      }
+    },
+    {
+      "row": 21,
+      "label": "结构助词 (的)",
+      "lesson": {
+        "id": "hsk1-de",
+        "level": "hsk-1",
+        "title": "的: linking a modifier to a noun",
+        "summary": "的 links an owner, adjective or clause to the noun it modifies.",
+        "pattern": [
+          "owner / modifier + 的 + noun"
+        ],
+        "body": [
+          "的 (de) links a modifier to a noun: possession (我的书), an adjective (大的苹果), or a clause (他写的字). With close people and groups it is often left out: 我妈妈, 我们学校.",
+          "The contrast example uses 得, which links a verb to a complement describing how the action is done (他说得很好). 的 goes before a noun; 得 goes after a verb. Do not use 的 to introduce a complement (说得好, not 说的很好)."
+        ],
+        "examples": [
+          {
+            "id": "hsk1-de-1",
+            "text": "这是我的书。",
+            "reading": "zhè shì wǒ de shū.",
+            "translation": "This is my book.",
+            "focus": "的",
+            "distractors": [
+              "得",
+              "地",
+              "吗"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk1-de-2",
+            "text": "老师的电脑很新。",
+            "reading": "lǎoshī de diànnǎo hěn xīn.",
+            "translation": "The teacher's computer is new.",
+            "focus": "的",
+            "distractors": [
+              "得",
+              "地",
+              "吗"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk1-de-3",
+            "text": "我喜欢大的苹果，不喜欢小苹果。",
+            "reading": "wǒ xǐhuan dà de píngguǒ, bù xǐhuan xiǎo píngguǒ.",
+            "translation": "I like big apples, not small ones.",
+            "focus": "的",
+            "distractors": [
+              "得",
+              "地",
+              "吗"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk1-de-4",
+            "text": "这是妈妈的电话。",
+            "reading": "zhè shì māma de diànhuà.",
+            "translation": "This is Mum's phone.",
+            "focus": "的",
+            "distractors": [
+              "得",
+              "地",
+              "吗"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk1-de-5",
+            "text": "他写的字很好看。",
+            "reading": "tā xiě de zì hěn hǎokàn.",
+            "translation": "The characters he writes look nice.",
+            "focus": "的",
+            "distractors": [
+              "得",
+              "地",
+              "吗"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk1-de-6",
+            "text": "他说得很好。",
+            "reading": "tā shuō de hěn hǎo.",
+            "translation": "He speaks well.",
+            "focus": "得",
+            "distractors": [
+              "的",
+              "地",
+              "吗"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "row": 22,
+      "label": "动态助词 (了)",
+      "lesson": {
+        "id": "hsk1-le",
+        "level": "hsk-1",
+        "title": "了: a completed action",
+        "summary": "了 after a verb marks that the action happened or is complete.",
+        "pattern": [
+          "subject + verb + 了 + (object)"
+        ],
+        "body": [
+          "了 (le) right after a verb marks a completed action: 我买了一本书, 他吃了三个饺子. To say it did not happen, use 没 and drop 了: 我没买.",
+          "The contrast example uses 过, which marks experience rather than a specific completed event (我没去过中国 = I have never been to China). After 没 use 过 for never (没去过), not 了 (you cannot say 没去了中国). 了 is for a specific finished action; 过 is for life experience."
+        ],
+        "examples": [
+          {
+            "id": "hsk1-le-1",
+            "text": "我买了一本书。",
+            "reading": "wǒ mǎi le yì běn shū.",
+            "translation": "I bought a book.",
+            "focus": "了",
+            "distractors": [
+              "吗",
+              "很",
+              "在"
+            ],
+            "contrast": false,
+            "kinds": [
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk1-le-2",
+            "text": "他吃了三个饺子。",
+            "reading": "tā chī le sān ge jiǎozi.",
+            "translation": "He ate three dumplings.",
+            "focus": "了",
+            "distractors": [
+              "吗",
+              "很",
+              "在"
+            ],
+            "contrast": false,
+            "kinds": [
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk1-le-3",
+            "text": "我们看了一个电影。",
+            "reading": "wǒmen kàn le yí ge diànyǐng.",
+            "translation": "We watched a film.",
+            "focus": "了",
+            "distractors": [
+              "吗",
+              "很",
+              "在"
+            ],
+            "contrast": false,
+            "kinds": [
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk1-le-4",
+            "text": "妹妹喝了一杯牛奶。",
+            "reading": "mèimei hē le yì bēi niúnǎi.",
+            "translation": "My younger sister drank a glass of milk.",
+            "focus": "了",
+            "distractors": [
+              "吗",
+              "很",
+              "在"
+            ],
+            "contrast": false,
+            "kinds": [
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk1-le-5",
+            "text": "我没去过中国。",
+            "reading": "wǒ méi qùguo Zhōngguó.",
+            "translation": "I have never been to China.",
+            "focus": "过",
+            "distractors": [
+              "了",
+              "吗",
+              "很"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "row": 23,
+      "label": "语气助词 (吗, 吧: questions and suggestions)",
+      "lesson": {
+        "id": "hsk1-particles-ma-ba",
+        "level": "hsk-1",
+        "title": "Particles 吗 and 吧: questions and suggestions",
+        "summary": "吗 makes a yes-no question; 吧 makes a suggestion or a guess.",
+        "pattern": [
+          "statement + 吗？",
+          "statement + 吧！",
+          "statement + 吧？"
+        ],
+        "body": [
+          "吗 (ma) turns a statement into a yes-no question without changing the word order: 你是学生吗？ 吧 (ba) makes a suggestion (我们回家吧！= let us go home) or a guess (你是老师吧？= you are a teacher, right?).",
+          "The contrast example uses 呢, which cannot make a yes-no question. 呢 asks what about someone or something after a noun (我很好，你呢？= I am fine, and you?). Use 吗 for a yes-no question, 吧 for a suggestion or guess, 呢 for a follow-up."
+        ],
+        "examples": [
+          {
+            "id": "hsk1-particles-ma-ba-1",
+            "text": "他是你哥哥吗？",
+            "reading": "tā shì nǐ gēge ma?",
+            "translation": "Is he your older brother?",
+            "focus": "吗",
+            "distractors": [
+              "呢",
+              "很",
+              "在"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk1-particles-ma-ba-2",
+            "text": "你喜欢猫吗？",
+            "reading": "nǐ xǐhuan māo ma?",
+            "translation": "Do you like cats?",
+            "focus": "吗",
+            "distractors": [
+              "呢",
+              "很",
+              "在"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk1-particles-ma-ba-3",
+            "text": "我们回家吧！",
+            "reading": "wǒmen huí jiā ba!",
+            "translation": "Let us go home!",
+            "focus": "吧",
+            "distractors": [
+              "吗",
+              "很",
+              "在"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk1-particles-ma-ba-4",
+            "text": "你是老师吧？",
+            "reading": "nǐ shì lǎoshī ba?",
+            "translation": "You are a teacher, right?",
+            "focus": "吧",
+            "distractors": [
+              "呢",
+              "很",
+              "在"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk1-particles-ma-ba-5",
+            "text": "我很好，你呢？",
+            "reading": "wǒ hěn hǎo, nǐ ne?",
+            "translation": "I am fine, and you?",
+            "focus": "呢",
+            "distractors": [
+              "吗",
+              "吧",
+              "很"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "row": 23,
+      "label": "语气助词 (sentence-final 了 and 呢)",
+      "lesson": {
+        "id": "hsk1-particles-le-ne",
+        "level": "hsk-1",
+        "title": "Particles 了 and 呢: change and ongoing",
+        "summary": "Sentence-final 了 announces a new situation; 呢 marks an ongoing action or softens a question.",
+        "pattern": [
+          "statement + 了。",
+          "subject + verb + 呢。",
+          "question-word … + 呢？"
+        ],
+        "body": [
+          "At the end of a sentence 了 (le) announces that the situation has changed or come about: 下雨了 (it has started raining), 他会开车了 (he can drive now). 呢 (ne) marks an ongoing action (我吃饭呢 = I am eating) or softens a question with a question word (你在做什么呢？).",
+          "The contrast example uses 吗, which asks a yes-no question (你是医生吗？). 吗 does not combine with a question word or with 呢 (you cannot say 你在做什么吗？). Sentence-final 了 states a change; 呢 marks ongoing or a follow-up; 吗 asks yes-no."
+        ],
+        "examples": [
+          {
+            "id": "hsk1-particles-le-ne-1",
+            "text": "下雨了。",
+            "reading": "xià yǔ le.",
+            "translation": "It has started raining.",
+            "focus": "了",
+            "distractors": [
+              "吗",
+              "很",
+              "在"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk1-particles-le-ne-2",
+            "text": "他会开车了。",
+            "reading": "tā huì kāi chē le.",
+            "translation": "He can drive now.",
+            "focus": "了",
+            "distractors": [
+              "吗",
+              "很",
+              "在"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk1-particles-le-ne-3",
+            "text": "他打电话呢。",
+            "reading": "tā dǎ diànhuà ne.",
+            "translation": "He is on the phone.",
+            "focus": "呢",
+            "distractors": [
+              "吗",
+              "很",
+              "在"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk1-particles-le-ne-4",
+            "text": "你在做什么呢？",
+            "reading": "nǐ zài zuò shénme ne?",
+            "translation": "What are you doing?",
+            "focus": "呢",
+            "distractors": [
+              "吗",
+              "吧",
+              "很"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk1-particles-le-ne-5",
+            "text": "妹妹睡觉呢。",
+            "reading": "mèimei shuìjiào ne.",
+            "translation": "My younger sister is sleeping.",
+            "focus": "呢",
+            "distractors": [
+              "吗",
+              "很",
+              "在"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk1-particles-le-ne-6",
+            "text": "你是医生吗？",
+            "reading": "nǐ shì yīshēng ma?",
+            "translation": "Are you a doctor?",
+            "focus": "吗",
+            "distractors": [
+              "呢",
+              "很",
+              "在"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "row": 24,
+      "label": "叹词 (喂)",
+      "lesson": {
+        "id": "hsk1-wei",
+        "level": "hsk-1",
+        "title": "喂: hello on the phone",
+        "summary": "喂 is an interjection used to answer the phone or get someone's attention; it stands alone.",
+        "pattern": [
+          "喂，…"
+        ],
+        "body": [
+          "喂 (wèi) is an interjection: it answers the phone or calls for attention (喂，你好！). It stands at the start, separated by a comma, and is not part of the sentence that follows. When answering the phone, many speakers say it with a rising tone, wéi; the dictionary lists wèi, and both are accepted.",
+          "The contrast example uses 请, which makes a polite request (请坐 = please sit). 喂 calls for attention; 请 asks someone politely to do something. Neither is a verb inside the sentence."
+        ],
+        "examples": [
+          {
+            "id": "hsk1-wei-1",
+            "text": "喂，你好！",
+            "reading": "wèi, nǐ hǎo!",
+            "translation": "Hello! (on the phone)",
+            "focus": "喂",
+            "distractors": [
+              "吗",
+              "很",
+              "的"
+            ],
+            "contrast": false,
+            "kinds": [
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk1-wei-2",
+            "text": "喂，请问他在吗？",
+            "reading": "wèi, qǐngwèn tā zài ma?",
+            "translation": "Hello, may I ask if he is in?",
+            "focus": "喂",
+            "distractors": [
+              "吗",
+              "很",
+              "的"
+            ],
+            "contrast": false,
+            "kinds": [
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk1-wei-3",
+            "text": "喂，你找谁？",
+            "reading": "wèi, nǐ zhǎo shéi?",
+            "translation": "Hello, who are you looking for?",
+            "focus": "喂",
+            "distractors": [
+              "吗",
+              "很",
+              "呢"
+            ],
+            "contrast": false,
+            "kinds": [
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk1-wei-4",
+            "text": "喂，我们明天见！",
+            "reading": "wèi, wǒmen míngtiān jiàn!",
+            "translation": "Hey, see you tomorrow!",
+            "focus": "喂",
+            "distractors": [
+              "吗",
+              "很",
+              "的"
+            ],
+            "contrast": false,
+            "kinds": [
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk1-wei-5",
+            "text": "请坐。",
+            "reading": "qǐng zuò.",
+            "translation": "Please sit.",
+            "focus": "请",
+            "distractors": [
+              "吗",
+              "很",
+              "喂"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "row": 25,
+      "label": "短语: 基本结构类型 (联合, 偏正, 动宾, 主谓)",
+      "lesson": {
+        "id": "hsk1-phrase-types",
+        "level": "hsk-1",
+        "title": "Basic phrase types: coordinate, modifier-head, verb-object, subject-predicate",
+        "summary": "Phrases combine words: A和B, modifier+的+noun, verb+object, and subject+predicate.",
+        "pattern": [
+          "A 和 B (coordinate)",
+          "modifier + 的 + noun (modifier-head)",
+          "verb + object; subject + predicate"
+        ],
+        "body": [
+          "Four basic phrase types: coordinate (我和妹妹, joined by 和), modifier-head (我的新书, a modifier before a noun), verb-object (看电影, a verb plus its object), and subject-predicate (他很好, a subject plus a predicate). Phrases combine into sentences.",
+          "The contrast example uses a preposition-object phrase (在家), which is an other type (next lesson): a preposition plus its object, used before a verb. The four basic types build the core of a sentence; preposition-object and place phrases modify it."
+        ],
+        "examples": [
+          {
+            "id": "hsk1-phrase-types-1",
+            "text": "我和妹妹去学校。",
+            "reading": "wǒ hé mèimei qù xuéxiào.",
+            "translation": "My younger sister and I go to school.",
+            "focus": "和",
+            "distractors": [
+              "对",
+              "吗",
+              "很"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ],
+            "noOrder": true
+          },
+          {
+            "id": "hsk1-phrase-types-2",
+            "text": "这是我的新书。",
+            "reading": "zhè shì wǒ de xīn shū.",
+            "translation": "This is my new book.",
+            "focus": "的",
+            "distractors": [
+              "得",
+              "地",
+              "吗"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk1-phrase-types-3",
+            "text": "我喜欢看电影。",
+            "reading": "wǒ xǐhuan kàn diànyǐng.",
+            "translation": "I like watching films.",
+            "focus": "看",
+            "distractors": [
+              "吗",
+              "很",
+              "在"
+            ],
+            "contrast": false,
+            "kinds": [
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk1-phrase-types-4",
+            "text": "我觉得他很好。",
+            "reading": "wǒ juéde tā hěn hǎo.",
+            "translation": "I think he is very good.",
+            "focus": "觉得",
+            "distractors": [
+              "吗",
+              "很",
+              "的"
+            ],
+            "contrast": false,
+            "kinds": [
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk1-phrase-types-5",
+            "text": "妈妈在家看电视。",
+            "reading": "māma zài jiā kàn diànshì.",
+            "translation": "Mum watches TV at home.",
+            "focus": "在",
+            "distractors": [
+              "是",
+              "很",
+              "吗"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "row": 26,
+      "label": "短语: 其他结构类型 (数量, 介宾, 方位)",
+      "lesson": {
+        "id": "hsk1-phrase-types-other",
+        "level": "hsk-1",
+        "title": "Other phrase types: numeral-measure, preposition-object, place",
+        "summary": "A numeral-measure phrase counts; a preposition-object phrase and a place phrase modify the verb.",
+        "pattern": [
+          "numeral + measure word (+ noun)",
+          "preposition + object",
+          "noun + position"
+        ],
+        "body": [
+          "Three other phrase types: numeral-measure (三本书, a number plus a measure word), preposition-object (在学校, 对我, a preposition plus its object), and place (桌子上, 家里, a noun plus a position word). They usually modify the verb or count a noun.",
+          "The contrast example uses a modifier-head phrase (弟弟的杯子), a basic type: a modifier before a noun. A numeral-measure phrase counts a noun; a modifier-head phrase describes whose or which noun it is."
+        ],
+        "examples": [
+          {
+            "id": "hsk1-phrase-types-other-1",
+            "text": "我买三本书。",
+            "reading": "wǒ mǎi sān běn shū.",
+            "translation": "I'll buy three books.",
+            "focus": "本",
+            "distractors": [
+              "只",
+              "吗",
+              "很"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk1-phrase-types-other-2",
+            "text": "他在学校看书。",
+            "reading": "tā zài xuéxiào kàn shū.",
+            "translation": "He reads at school.",
+            "focus": "在",
+            "distractors": [
+              "是",
+              "很",
+              "吗"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk1-phrase-types-other-3",
+            "text": "手机在桌子上。",
+            "reading": "shǒujī zài zhuōzi shàng.",
+            "translation": "The phone is on the table.",
+            "focus": "上",
+            "distractors": [
+              "们",
+              "很",
+              "吗"
+            ],
+            "contrast": false,
+            "kinds": [
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk1-phrase-types-other-4",
+            "text": "我家有五口人。",
+            "reading": "wǒ jiā yǒu wǔ kǒu rén.",
+            "translation": "There are five people in my family.",
+            "focus": "口",
+            "distractors": [
+              "只",
+              "本",
+              "吗"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk1-phrase-types-other-5",
+            "text": "那是弟弟的杯子。",
+            "reading": "nà shì dìdi de bēizi.",
+            "translation": "That is my younger brother's cup.",
+            "focus": "的",
+            "distractors": [
+              "得",
+              "地",
+              "吗"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "row": 27,
+      "label": "句子成分: 主语",
+      "lesson": {
+        "id": "hsk1-subject",
+        "level": "hsk-1",
+        "title": "The subject: who or what the sentence is about",
+        "summary": "A noun, pronoun or noun phrase can be the subject, before the predicate.",
+        "pattern": [
+          "noun / pronoun / noun phrase + predicate"
+        ],
+        "body": [
+          "The subject is who or what the sentence is about. A noun (爸爸), a pronoun (我) or a noun phrase (我的老师, 这个商店) can be the subject. It comes before the predicate.",
+          "The contrast example uses the adverb 都, which is not part of the subject: it comes after the subject and before the verb (我们都喜欢他). Do not put 都 before the subject."
+        ],
+        "examples": [
+          {
+            "id": "hsk1-subject-1",
+            "text": "我是学生。",
+            "reading": "wǒ shì xuéshēng.",
+            "translation": "I am a student.",
+            "focus": "我",
+            "distractors": [
+              "吗",
+              "很",
+              "的"
+            ],
+            "contrast": false,
+            "kinds": [
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk1-subject-2",
+            "text": "爸爸喜欢喝茶。",
+            "reading": "bàba xǐhuan hē chá.",
+            "translation": "Dad likes drinking tea.",
+            "focus": "爸爸",
+            "distractors": [
+              "吗",
+              "们",
+              "的"
+            ],
+            "contrast": false,
+            "kinds": [
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk1-subject-3",
+            "text": "我的老师很忙。",
+            "reading": "wǒ de lǎoshī hěn máng.",
+            "translation": "My teacher is busy.",
+            "focus": "我的老师",
+            "distractors": [
+              "吗",
+              "很",
+              "在"
+            ],
+            "contrast": false,
+            "kinds": [
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk1-subject-4",
+            "text": "这个商店很大。",
+            "reading": "zhège shāngdiàn hěn dà.",
+            "translation": "This shop is big.",
+            "focus": "这个商店",
+            "distractors": [
+              "吗",
+              "很",
+              "在"
+            ],
+            "contrast": false,
+            "kinds": [
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk1-subject-5",
+            "text": "我们都喜欢他。",
+            "reading": "wǒmen dōu xǐhuan tā.",
+            "translation": "We all like him.",
+            "focus": "都",
+            "distractors": [
+              "再",
+              "吗",
+              "在"
+            ],
+            "contrast": true,
+            "kinds": [
+              "clearly-wrong"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "row": 28,
+      "label": "句子成分: 谓语",
+      "lesson": {
+        "id": "hsk1-predicate",
+        "level": "hsk-1",
+        "title": "The predicate: what the subject does or is",
+        "summary": "A verb, adjective or numeral-measure phrase can be the predicate; a noun predicate needs 是.",
+        "pattern": [
+          "subject + verb / adjective / numeral-measure phrase",
+          "subject + 是 + noun"
+        ],
+        "body": [
+          "The predicate says what the subject does or is. A verb or verb phrase (吃米饭, 学习汉语), an adjective or adjective phrase (很冷), or a numeral-measure phrase (三岁) can be the predicate without 是.",
+          "The contrast example uses 是 for a noun predicate (他是医生). A noun cannot be the predicate on its own (you cannot say 他医生); it needs 是. An adjective does not take 是 (you cannot say 我是忙)."
+        ],
+        "examples": [
+          {
+            "id": "hsk1-predicate-1",
+            "text": "我吃米饭。",
+            "reading": "wǒ chī mǐfàn.",
+            "translation": "I eat rice.",
+            "focus": "吃",
+            "distractors": [
+              "吗",
+              "很",
+              "在"
+            ],
+            "contrast": false,
+            "kinds": [
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk1-predicate-2",
+            "text": "今天很冷。",
+            "reading": "jīntiān hěn lěng.",
+            "translation": "It is cold today.",
+            "focus": "冷",
+            "distractors": [
+              "吗",
+              "的",
+              "在"
+            ],
+            "contrast": false,
+            "kinds": [
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk1-predicate-3",
+            "text": "我妹妹三岁。",
+            "reading": "wǒ mèimei sān suì.",
+            "translation": "My younger sister is three.",
+            "focus": "三岁",
+            "distractors": [
+              "吗",
+              "很",
+              "第"
+            ],
+            "contrast": false,
+            "kinds": [
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk1-predicate-4",
+            "text": "他学习汉语。",
+            "reading": "tā xuéxí Hànyǔ.",
+            "translation": "He studies Chinese.",
+            "focus": "学习",
+            "distractors": [
+              "吗",
+              "很",
+              "在"
+            ],
+            "contrast": false,
+            "kinds": [
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk1-predicate-5",
+            "text": "他是医生。",
+            "reading": "tā shì yīshēng.",
+            "translation": "He is a doctor.",
+            "focus": "是",
+            "distractors": [
+              "很",
+              "在",
+              "吗"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "row": 29,
+      "label": "句子成分: 宾语",
+      "lesson": {
+        "id": "hsk1-object",
+        "level": "hsk-1",
+        "title": "The object: what the action reaches",
+        "summary": "A noun, pronoun or noun phrase can be the object, after the verb.",
+        "pattern": [
+          "verb + noun / pronoun / noun phrase"
+        ],
+        "body": [
+          "The object is what the action reaches. A noun (书), a pronoun (我) or a noun phrase (我的学校) can be the object. It comes after the verb: 看书, 认识我, 喜欢我的学校.",
+          "The contrast example uses a place phrase with 在, which comes before the verb, not as an object (弟弟在房间睡觉, not 弟弟睡觉在房间). Some verbs (睡觉, 上班) already contain their object and cannot take another."
+        ],
+        "examples": [
+          {
+            "id": "hsk1-object-1",
+            "text": "我看书。",
+            "reading": "wǒ kàn shū.",
+            "translation": "I read.",
+            "focus": "书",
+            "distractors": [
+              "吗",
+              "很",
+              "们"
+            ],
+            "contrast": false,
+            "kinds": [
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk1-object-2",
+            "text": "他认识我。",
+            "reading": "tā rènshi wǒ.",
+            "translation": "He knows me.",
+            "focus": "我",
+            "distractors": [
+              "吗",
+              "很",
+              "们"
+            ],
+            "contrast": false,
+            "kinds": [
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk1-object-3",
+            "text": "我喜欢我的学校。",
+            "reading": "wǒ xǐhuan wǒ de xuéxiào.",
+            "translation": "I like my school.",
+            "focus": "我的学校",
+            "distractors": [
+              "吗",
+              "很",
+              "在"
+            ],
+            "contrast": false,
+            "kinds": [
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk1-object-4",
+            "text": "妈妈做晚饭。",
+            "reading": "māma zuò wǎnfàn.",
+            "translation": "Mum makes dinner.",
+            "focus": "晚饭",
+            "distractors": [
+              "吗",
+              "很",
+              "在"
+            ],
+            "contrast": false,
+            "kinds": [
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk1-object-5",
+            "text": "弟弟在房间睡觉。",
+            "reading": "dìdi zài fángjiān shuìjiào.",
+            "translation": "My younger brother sleeps in the room.",
+            "focus": "在",
+            "distractors": [
+              "是",
+              "很",
+              "吗"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "row": 30,
+      "label": "句子成分: 定语",
+      "lesson": {
+        "id": "hsk1-attributive",
+        "level": "hsk-1",
+        "title": "The attributive: modifying a noun",
+        "summary": "A noun word, adjective or numeral-measure phrase can modify a noun, often with 的.",
+        "pattern": [
+          "attributive (+ 的) + noun"
+        ],
+        "body": [
+          "The attributive modifies a noun: a noun word with 的 (我的书), an adjective (大苹果), or a numeral-measure phrase (两个姐姐). Some noun attributives drop 的 (汉语书, 我妈妈).",
+          "The contrast example uses 得, which introduces a complement after a verb (他汉语说得很好), not an attributive before a noun. 的 links a modifier to a noun; 得 links a verb to a complement."
+        ],
+        "examples": [
+          {
+            "id": "hsk1-attributive-1",
+            "text": "那是妈妈的新衣服。",
+            "reading": "nà shì māma de xīn yīfu.",
+            "translation": "Those are Mum's new clothes.",
+            "focus": "的",
+            "distractors": [
+              "得",
+              "地",
+              "吗"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk1-attributive-2",
+            "text": "我喜欢大苹果。",
+            "reading": "wǒ xǐhuan dà píngguǒ.",
+            "translation": "I like big apples.",
+            "focus": "大",
+            "distractors": [
+              "很",
+              "吗",
+              "在"
+            ],
+            "contrast": false,
+            "kinds": [
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk1-attributive-3",
+            "text": "他有两个姐姐。",
+            "reading": "tā yǒu liǎng ge jiějie.",
+            "translation": "He has two older sisters.",
+            "focus": "两个",
+            "distractors": [
+              "二个",
+              "吗",
+              "很"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk1-attributive-4",
+            "text": "这是汉语书。",
+            "reading": "zhè shì Hànyǔ shū.",
+            "translation": "This is a Chinese-language book.",
+            "focus": "汉语",
+            "distractors": [
+              "吗",
+              "很",
+              "的"
+            ],
+            "contrast": false,
+            "kinds": [
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk1-attributive-5",
+            "text": "他汉语说得很好。",
+            "reading": "tā Hànyǔ shuō de hěn hǎo.",
+            "translation": "He speaks Chinese well.",
+            "focus": "得",
+            "distractors": [
+              "的",
+              "地",
+              "吗"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "row": 31,
+      "label": "句子成分: 状语",
+      "lesson": {
+        "id": "hsk1-adverbial",
+        "level": "hsk-1",
+        "title": "The adverbial: modifying the verb",
+        "summary": "An adverb, time word or place phrase can modify the verb, before it.",
+        "pattern": [
+          "adverbial + verb",
+          "time / place + verb"
+        ],
+        "body": [
+          "The adverbial modifies the verb or adjective: an adverb (很忙, 非常喜欢), a time word (明天去), or a place phrase (在家吃饭). It comes before the verb.",
+          "The contrast example uses 的, which links an attributive to a noun (姐姐的新手机), not an adverbial to a verb. An adverbial modifies the action; an attributive modifies a thing. Do not put the time or place after the verb."
+        ],
+        "examples": [
+          {
+            "id": "hsk1-adverbial-1",
+            "text": "我很忙。",
+            "reading": "wǒ hěn máng.",
+            "translation": "I am busy.",
+            "focus": "很",
+            "distractors": [
+              "吗",
+              "第",
+              "边"
+            ],
+            "contrast": false,
+            "kinds": [
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk1-adverbial-2",
+            "text": "我明天去学校。",
+            "reading": "wǒ míngtiān qù xuéxiào.",
+            "translation": "I go to school tomorrow.",
+            "focus": "明天",
+            "distractors": [
+              "吗",
+              "很",
+              "的"
+            ],
+            "contrast": false,
+            "kinds": [
+              "clearly-wrong"
+            ],
+            "noOrder": true
+          },
+          {
+            "id": "hsk1-adverbial-3",
+            "text": "我们在家吃饭。",
+            "reading": "wǒmen zài jiā chī fàn.",
+            "translation": "We eat at home.",
+            "focus": "在",
+            "distractors": [
+              "是",
+              "很",
+              "吗"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk1-adverbial-4",
+            "text": "他非常喜欢猫。",
+            "reading": "tā fēicháng xǐhuan māo.",
+            "translation": "He likes cats very much.",
+            "focus": "非常",
+            "distractors": [
+              "吗",
+              "的",
+              "再"
+            ],
+            "contrast": false,
+            "kinds": [
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk1-adverbial-5",
+            "text": "这是姐姐的新手机。",
+            "reading": "zhè shì jiějie de xīn shǒujī.",
+            "translation": "This is my older sister's new phone.",
+            "focus": "的",
+            "distractors": [
+              "得",
+              "地",
+              "吗"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "row": 32,
+      "label": "句子成分: 数量补语1 (动词+动量补语)",
+      "lesson": {
+        "id": "hsk1-action-measure",
+        "level": "hsk-1",
+        "title": "Action-measure complement: counting an action",
+        "summary": "一下 (and 一次) after a verb counts how many times the action happens.",
+        "pattern": [
+          "verb + (了) + 一下 / 一次"
+        ],
+        "body": [
+          "An action-measure complement counts occurrences of an action: 看一下, 问了一下. 一下 means once, a short try; 了 goes between the verb and 一下 (我看了一下). 一次 also means one time.",
+          "The contrast example uses 一点儿, which measures a quantity of a thing (喝一点儿水), not occurrences of an action. 一下 counts the action; 一点儿 measures the thing."
+        ],
+        "examples": [
+          {
+            "id": "hsk1-action-measure-1",
+            "text": "我看了一下。",
+            "reading": "wǒ kàn le yíxià.",
+            "translation": "I took a look.",
+            "focus": "一下",
+            "distractors": [
+              "吗",
+              "很",
+              "在"
+            ],
+            "contrast": false,
+            "kinds": [
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk1-action-measure-2",
+            "text": "你来看一下。",
+            "reading": "nǐ lái kàn yíxià.",
+            "translation": "Come and take a look.",
+            "focus": "一下",
+            "distractors": [
+              "吗",
+              "很",
+              "在"
+            ],
+            "contrast": false,
+            "kinds": [
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk1-action-measure-3",
+            "text": "我问了一下老师。",
+            "reading": "wǒ wèn le yíxià lǎoshī.",
+            "translation": "I asked the teacher.",
+            "focus": "一下",
+            "distractors": [
+              "吗",
+              "很",
+              "的"
+            ],
+            "contrast": false,
+            "kinds": [
+              "clearly-wrong"
+            ],
+            "noOrder": true
+          },
+          {
+            "id": "hsk1-action-measure-4",
+            "text": "我去了一次医院。",
+            "reading": "wǒ qù le yí cì yīyuàn.",
+            "translation": "I went to the hospital once.",
+            "focus": "一次",
+            "distractors": [
+              "吗",
+              "很",
+              "第"
+            ],
+            "contrast": false,
+            "kinds": [
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk1-action-measure-5",
+            "text": "我喝一点儿水。",
+            "reading": "wǒ hē yìdiǎnr shuǐ.",
+            "translation": "I drink a little water.",
+            "focus": "一点儿",
+            "distractors": [
+              "有点儿",
+              "吗",
+              "很"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "row": 33,
+      "label": "句型: 单句 (动词/形容词/名词/非主谓谓语句)",
+      "lesson": {
+        "id": "hsk1-sentence-types",
+        "level": "hsk-1",
+        "title": "Simple sentences: four predicate types",
+        "summary": "A simple sentence has a verb, adjective, noun or no-subject predicate.",
+        "pattern": [
+          "subject + verb (verb-predicate)",
+          "subject + adjective / noun; (no subject) + verb"
+        ],
+        "body": [
+          "Four simple-sentence types by predicate: verb-predicate (他喜欢狗), adjective-predicate (今天天气很好), noun-predicate (今天星期三 — no 是 needed for dates and age), and non-subject-predicate (下雨了 — no subject).",
+          "The contrast example uses 是 for an identity sentence (我是学生). A noun-predicate sentence about date or age needs no 是; an identity or category sentence does need 是."
+        ],
+        "examples": [
+          {
+            "id": "hsk1-sentence-types-1",
+            "text": "他喜欢狗。",
+            "reading": "tā xǐhuan gǒu.",
+            "translation": "He likes dogs.",
+            "focus": "喜欢",
+            "distractors": [
+              "吗",
+              "很",
+              "在"
+            ],
+            "contrast": false,
+            "kinds": [
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk1-sentence-types-2",
+            "text": "今天天气很好。",
+            "reading": "jīntiān tiānqì hěn hǎo.",
+            "translation": "The weather is fine today.",
+            "focus": "好",
+            "distractors": [
+              "吗",
+              "的",
+              "在"
+            ],
+            "contrast": false,
+            "kinds": [
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk1-sentence-types-3",
+            "text": "今天星期三。",
+            "reading": "jīntiān xīngqīsān.",
+            "translation": "Today is Wednesday.",
+            "focus": "星期三",
+            "distractors": [
+              "吗",
+              "很",
+              "第"
+            ],
+            "contrast": false,
+            "kinds": [
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk1-sentence-types-4",
+            "text": "下雨了。",
+            "reading": "xià yǔ le.",
+            "translation": "It is raining.",
+            "focus": "下雨",
+            "distractors": [
+              "吗",
+              "很",
+              "的"
+            ],
+            "contrast": false,
+            "kinds": [
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk1-sentence-types-5",
+            "text": "我是学生。",
+            "reading": "wǒ shì xuéshēng.",
+            "translation": "I am a student.",
+            "focus": "是",
+            "distractors": [
+              "很",
+              "在",
+              "吗"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "row": 34,
+      "label": "句类: 陈述句",
+      "lesson": {
+        "id": "hsk1-declarative",
+        "level": "hsk-1",
+        "title": "Declarative sentences: stating a fact",
+        "summary": "A declarative states a fact with normal word order and ends in a period.",
+        "pattern": [
+          "subject + predicate。"
+        ],
+        "body": [
+          "A declarative sentence states a fact: 我是学生, 他喜欢喝茶, 今天不冷. The word order is subject then predicate, and it ends in a period (。).",
+          "The contrast example uses 吗, which turns the same statement into a yes-no question (你会开车吗？) ending in a question mark. Adding 吗 changes a fact into a question; do not add it to a sentence you mean as a statement."
+        ],
+        "examples": [
+          {
+            "id": "hsk1-declarative-1",
+            "text": "我妹妹是学生。",
+            "reading": "wǒ mèimei shì xuéshēng.",
+            "translation": "My younger sister is a student.",
+            "focus": "是",
+            "distractors": [
+              "吗",
+              "很",
+              "在"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk1-declarative-2",
+            "text": "他喜欢喝茶。",
+            "reading": "tā xǐhuan hē chá.",
+            "translation": "He likes drinking tea.",
+            "focus": "喜欢",
+            "distractors": [
+              "吗",
+              "的",
+              "很"
+            ],
+            "contrast": false,
+            "kinds": [
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk1-declarative-3",
+            "text": "今天不冷。",
+            "reading": "jīntiān bù lěng.",
+            "translation": "It is not cold today.",
+            "focus": "不",
+            "distractors": [
+              "吗",
+              "在",
+              "第"
+            ],
+            "contrast": false,
+            "kinds": [
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk1-declarative-4",
+            "text": "我没有弟弟。",
+            "reading": "wǒ méiyǒu dìdi.",
+            "translation": "I do not have a younger brother.",
+            "focus": "没有",
+            "distractors": [
+              "不有",
+              "吗",
+              "很"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk1-declarative-5",
+            "text": "你会开车吗？",
+            "reading": "nǐ huì kāi chē ma?",
+            "translation": "Can you drive?",
+            "focus": "吗",
+            "distractors": [
+              "呢",
+              "很",
+              "在"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "row": 35,
+      "label": "句类: 疑问句 (是非问, 特指问, 正反问)",
+      "lesson": {
+        "id": "hsk1-question-types",
+        "level": "hsk-1",
+        "title": "Question types: yes-no, wh-, affirmative-negative",
+        "summary": "Ask with 吗 (yes-no), a question word (wh-), or verb-not-verb (affirmative-negative).",
+        "pattern": [
+          "statement + 吗？",
+          "… question-word …？",
+          "verb + 不 + verb？"
+        ],
+        "body": [
+          "Three question types: yes-no with 吗 (你是老师吗？), wh- with a question word in the answer position (你喝什么？, 这是谁的书？), and affirmative-negative with verb-not-verb (你去不去学校？). The affirmative-negative form does not take 吗.",
+          "The contrast example uses 呢 for a follow-up question (我喜欢猫，你呢？= and you?). 呢 asks what about someone; it is not a yes-no, wh- or affirmative-negative question. Do not add 吗 to a wh- or affirmative-negative question."
+        ],
+        "examples": [
+          {
+            "id": "hsk1-question-types-1",
+            "text": "你是老师吗？",
+            "reading": "nǐ shì lǎoshī ma?",
+            "translation": "Are you a teacher?",
+            "focus": "吗",
+            "distractors": [
+              "呢",
+              "很",
+              "在"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk1-question-types-2",
+            "text": "你喝什么？",
+            "reading": "nǐ hē shénme?",
+            "translation": "What will you drink?",
+            "focus": "什么",
+            "distractors": [
+              "谁",
+              "很",
+              "在"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk1-question-types-3",
+            "text": "你去不去学校？",
+            "reading": "nǐ qù bu qù xuéxiào?",
+            "translation": "Are you going to school?",
+            "focus": "去不去",
+            "distractors": [
+              "吗",
+              "很",
+              "第"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk1-question-types-4",
+            "text": "这是谁的书？",
+            "reading": "zhè shì shéi de shū?",
+            "translation": "Whose book is this?",
+            "focus": "谁",
+            "distractors": [
+              "吗",
+              "很",
+              "什么"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk1-question-types-5",
+            "text": "我喜欢猫，你呢？",
+            "reading": "wǒ xǐhuan māo, nǐ ne?",
+            "translation": "I like cats; what about you?",
+            "focus": "呢",
+            "distractors": [
+              "吗",
+              "吧",
+              "很"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "row": 36,
+      "label": "句类: 祈使句",
+      "lesson": {
+        "id": "hsk1-imperative",
+        "level": "hsk-1",
+        "title": "Imperative sentences: requests and commands",
+        "summary": "请 + verb makes a polite request; 不要 + verb forbids; the subject is often omitted.",
+        "pattern": [
+          "请 + verb",
+          "不要 + verb"
+        ],
+        "body": [
+          "An imperative gives a command or request. 请 (qǐng, please) makes it polite: 请大家坐, 请喝茶. 不要 (bú yào, do not) forbids: 不要说话, 不要看电视. The subject is usually left out.",
+          "The contrast example uses 吧, which softens a command into a suggestion (我们吃饭吧！= let us eat). 请 and 不要 address the listener directly; 吧 proposes doing something together."
+        ],
+        "examples": [
+          {
+            "id": "hsk1-imperative-1",
+            "text": "请大家坐。",
+            "reading": "qǐng dàjiā zuò.",
+            "translation": "Please sit down, everyone.",
+            "focus": "请",
+            "distractors": [
+              "吗",
+              "很",
+              "的"
+            ],
+            "contrast": false,
+            "kinds": [
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk1-imperative-2",
+            "text": "不要说话。",
+            "reading": "bú yào shuōhuà.",
+            "translation": "Do not talk.",
+            "focus": "不要",
+            "distractors": [
+              "吗",
+              "很",
+              "的"
+            ],
+            "contrast": false,
+            "kinds": [
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk1-imperative-3",
+            "text": "请喝茶。",
+            "reading": "qǐng hē chá.",
+            "translation": "Please have some tea.",
+            "focus": "请",
+            "distractors": [
+              "吗",
+              "很",
+              "的"
+            ],
+            "contrast": false,
+            "kinds": [
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk1-imperative-4",
+            "text": "不要看电视。",
+            "reading": "bú yào kàn diànshì.",
+            "translation": "Do not watch television.",
+            "focus": "不要",
+            "distractors": [
+              "吗",
+              "很",
+              "的"
+            ],
+            "contrast": false,
+            "kinds": [
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk1-imperative-5",
+            "text": "我们吃饭吧！",
+            "reading": "wǒmen chī fàn ba!",
+            "translation": "Let's eat!",
+            "focus": "吧",
+            "distractors": [
+              "吗",
+              "很",
+              "在"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "row": 37,
+      "label": "句类: 感叹句",
+      "lesson": {
+        "id": "hsk1-exclamative",
+        "level": "hsk-1",
+        "title": "Exclamative sentences: strong feeling",
+        "summary": "太…了！, 真…！ and 好…！ express strong feeling and end in an exclamation mark.",
+        "pattern": [
+          "太 + adjective + 了！",
+          "真 / 好 + adjective！"
+        ],
+        "body": [
+          "An exclamative expresses strong feeling: 太 + adjective + 了 (太好了！, 太热了！), 真 + adjective (真漂亮！), or 好 + adjective (好大的苹果！). It ends in an exclamation mark (！).",
+          "The contrast example uses 很 in a plain statement (今天很热。), which just describes without strong feeling. 太 usually needs 了 to exclaim; a bare 太热 is incomplete. 很 states a degree; 太 and 真 exclaim."
+        ],
+        "examples": [
+          {
+            "id": "hsk1-exclamative-1",
+            "text": "太好了！",
+            "reading": "tài hǎo le!",
+            "translation": "Great!",
+            "focus": "太",
+            "distractors": [
+              "在",
+              "吗",
+              "的"
+            ],
+            "contrast": false,
+            "kinds": [
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk1-exclamative-2",
+            "text": "真漂亮！",
+            "reading": "zhēn piàoliang!",
+            "translation": "How pretty!",
+            "focus": "真",
+            "distractors": [
+              "吗",
+              "的",
+              "在"
+            ],
+            "contrast": false,
+            "kinds": [
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk1-exclamative-3",
+            "text": "太热了！",
+            "reading": "tài rè le!",
+            "translation": "Too hot!",
+            "focus": "太",
+            "distractors": [
+              "在",
+              "吗",
+              "的"
+            ],
+            "contrast": false,
+            "kinds": [
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk1-exclamative-4",
+            "text": "好大的苹果！",
+            "reading": "hǎo dà de píngguǒ!",
+            "translation": "What a big apple!",
+            "focus": "好",
+            "distractors": [
+              "吗",
+              "的",
+              "在"
+            ],
+            "contrast": false,
+            "kinds": [
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk1-exclamative-5",
+            "text": "今天很热。",
+            "reading": "jīntiān hěn rè.",
+            "translation": "It is hot today.",
+            "focus": "很",
+            "distractors": [
+              "吗",
+              "们",
+              "在"
+            ],
+            "contrast": true,
+            "kinds": [
+              "clearly-wrong"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "row": 38,
+      "label": "\"是\"字句1 (等同或类属)",
+      "lesson": {
+        "id": "hsk1-shi",
+        "level": "hsk-1",
+        "title": "是: A is B (identity or category)",
+        "summary": "是 links two nouns to say A is B; its negative is 不是.",
+        "pattern": [
+          "A + 是 + B",
+          "A + 不是 + B"
+        ],
+        "body": [
+          "是 (shì) links two nouns to say A is B, an identity or category: 我是学生, 他是医生, 这是我的书. To negate, put 不 before it: 不是 (bú shì).",
+          "The contrast example uses 很 with an adjective (今天很冷). An adjective is a predicate on its own and does not take 是 (you cannot say 我是忙); 是 is for linking nouns, 很 is for describing with an adjective."
+        ],
+        "examples": [
+          {
+            "id": "hsk1-shi-1",
+            "text": "他是我的同学。",
+            "reading": "tā shì wǒ de tóngxué.",
+            "translation": "He is my classmate.",
+            "focus": "是",
+            "distractors": [
+              "很",
+              "在",
+              "吗"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk1-shi-2",
+            "text": "我是中国人。",
+            "reading": "wǒ shì Zhōngguórén.",
+            "translation": "I am Chinese.",
+            "focus": "是",
+            "distractors": [
+              "很",
+              "在",
+              "吗"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk1-shi-3",
+            "text": "这是我的书。",
+            "reading": "zhè shì wǒ de shū.",
+            "translation": "This is my book.",
+            "focus": "是",
+            "distractors": [
+              "很",
+              "在",
+              "吗"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk1-shi-4",
+            "text": "她不是老师。",
+            "reading": "tā bú shì lǎoshī.",
+            "translation": "She is not a teacher.",
+            "focus": "是",
+            "distractors": [
+              "很",
+              "在",
+              "吗"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk1-shi-5",
+            "text": "今天很冷。",
+            "reading": "jīntiān hěn lěng.",
+            "translation": "It is cold today.",
+            "focus": "很",
+            "distractors": [
+              "吗",
+              "们",
+              "在"
+            ],
+            "contrast": true,
+            "kinds": [
+              "clearly-wrong"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "row": 39,
+      "label": "\"有\"字句1 (领有)",
+      "lesson": {
+        "id": "hsk1-you",
+        "level": "hsk-1",
+        "title": "有: possession",
+        "summary": "有 says someone has something; its negative is 没有, never 不有.",
+        "pattern": [
+          "subject + 有 + thing",
+          "subject + 没有 + thing"
+        ],
+        "body": [
+          "有 (yǒu) says someone has something: 我有一个哥哥, 她有两只猫. Its negative is 没有 (méiyǒu), never 不有.",
+          "The contrast example uses 是 for identity (他是学生 = he is a student). 有 says what someone has (我有书); 是 says what someone or something is (这是书). Do not use 是 for possession or 有 for identity."
+        ],
+        "examples": [
+          {
+            "id": "hsk1-you-1",
+            "text": "我有一个哥哥。",
+            "reading": "wǒ yǒu yí ge gēge.",
+            "translation": "I have an older brother.",
+            "focus": "有",
+            "distractors": [
+              "在",
+              "很",
+              "吗"
+            ],
+            "contrast": false,
+            "kinds": [
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk1-you-2",
+            "text": "他没有车。",
+            "reading": "tā méiyǒu chē.",
+            "translation": "He does not have a car.",
+            "focus": "没有",
+            "distractors": [
+              "不有",
+              "吗",
+              "很"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk1-you-3",
+            "text": "我家有五口人。",
+            "reading": "wǒ jiā yǒu wǔ kǒu rén.",
+            "translation": "There are five people in my family.",
+            "focus": "有",
+            "distractors": [
+              "在",
+              "很",
+              "吗"
+            ],
+            "contrast": false,
+            "kinds": [
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk1-you-4",
+            "text": "她有两只猫。",
+            "reading": "tā yǒu liǎng zhī māo.",
+            "translation": "She has two cats.",
+            "focus": "有",
+            "distractors": [
+              "在",
+              "很",
+              "吗"
+            ],
+            "contrast": false,
+            "kinds": [
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk1-you-5",
+            "text": "她是我姐姐。",
+            "reading": "tā shì wǒ jiějie.",
+            "translation": "She is my older sister.",
+            "focus": "是",
+            "distractors": [
+              "很",
+              "在",
+              "吗"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "row": 40,
+      "label": "存现句1 (处所+是+名词; 处所+有+数量+名词)",
+      "lesson": {
+        "id": "hsk1-existential",
+        "level": "hsk-1",
+        "title": "Existential sentences: what is at a place",
+        "summary": "Place + 是 + noun identifies; place + 有 + numeral-measure + noun says what exists there.",
+        "pattern": [
+          "place + 是 + noun",
+          "place + 有 + numeral-measure + noun"
+        ],
+        "body": [
+          "An existential sentence introduces what is at a place. Place + 是 + noun identifies it (前边是一个书店); place + 有 + numeral-measure + noun says what exists there (桌子上有三本书).",
+          "The contrast example uses 在 with the thing first (书在桌子上), which says where the book is. An existential sentence puts the place first and introduces the thing; a 在 sentence puts the thing first and gives its place."
+        ],
+        "examples": [
+          {
+            "id": "hsk1-existential-1",
+            "text": "前边是一个书店。",
+            "reading": "qiánbian shì yí ge shūdiàn.",
+            "translation": "In front is a bookshop.",
+            "focus": "是",
+            "distractors": [
+              "很",
+              "吗",
+              "在"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk1-existential-2",
+            "text": "前边有一个老师。",
+            "reading": "qiánbian yǒu yí ge lǎoshī.",
+            "translation": "There is a teacher in front.",
+            "focus": "有",
+            "distractors": [
+              "很",
+              "吗",
+              "在"
+            ],
+            "contrast": false,
+            "kinds": [
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk1-existential-3",
+            "text": "桌子上有三本书。",
+            "reading": "zhuōzi shàng yǒu sān běn shū.",
+            "translation": "There are three books on the table.",
+            "focus": "有",
+            "distractors": [
+              "很",
+              "吗",
+              "在"
+            ],
+            "contrast": false,
+            "kinds": [
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk1-existential-4",
+            "text": "学校外边有一个商店。",
+            "reading": "xuéxiào wàibian yǒu yí ge shāngdiàn.",
+            "translation": "There is a shop outside the school.",
+            "focus": "有",
+            "distractors": [
+              "很",
+              "吗",
+              "在"
+            ],
+            "contrast": false,
+            "kinds": [
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk1-existential-5",
+            "text": "书在桌子上。",
+            "reading": "shū zài zhuōzi shàng.",
+            "translation": "The book is on the table.",
+            "focus": "在",
+            "distractors": [
+              "是",
+              "很",
+              "有"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "row": 41,
+      "label": "连动句1 (目的或方式)",
+      "lesson": {
+        "id": "hsk1-serial-verbs",
+        "level": "hsk-1",
+        "title": "Serial-verb sentences: purpose or manner",
+        "summary": "Two verbs share one subject: the second is the purpose of the first, or the first is the manner of the second.",
+        "pattern": [
+          "subject + V1 (+ place) + V2 (purpose)",
+          "subject + V1 (manner) + V2"
+        ],
+        "body": [
+          "In a serial-verb sentence two verbs share one subject and happen in order. The second action is the purpose of the first (我去商店买书 = I go to the shop to buy books); or the first is the manner of the second (他坐出租车去学校 = he goes to school by taxi).",
+          "The contrast example uses the preposition 和 (我和朋友去书店 = I go with a friend), which introduces a companion, not a second action. A serial-verb sentence has two actions by one subject; a 和 phrase has one action with a companion."
+        ],
+        "examples": [
+          {
+            "id": "hsk1-serial-verbs-1",
+            "text": "我去商店买书。",
+            "reading": "wǒ qù shāngdiàn mǎi shū.",
+            "translation": "I go to the shop to buy books.",
+            "focus": "买",
+            "distractors": [
+              "吗",
+              "很",
+              "的"
+            ],
+            "contrast": false,
+            "kinds": [
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk1-serial-verbs-2",
+            "text": "他坐出租车去学校。",
+            "reading": "tā zuò chūzūchē qù xuéxiào.",
+            "translation": "He goes to school by taxi.",
+            "focus": "坐",
+            "distractors": [
+              "吗",
+              "很",
+              "第"
+            ],
+            "contrast": false,
+            "kinds": [
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk1-serial-verbs-3",
+            "text": "妈妈去医院看病。",
+            "reading": "māma qù yīyuàn kànbìng.",
+            "translation": "Mum goes to the hospital to see a doctor.",
+            "focus": "看",
+            "distractors": [
+              "吗",
+              "很",
+              "在"
+            ],
+            "contrast": false,
+            "kinds": [
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk1-serial-verbs-4",
+            "text": "他开车去公司。",
+            "reading": "tā kāi chē qù gōngsī.",
+            "translation": "He drives to the company.",
+            "focus": "开",
+            "distractors": [
+              "吗",
+              "很",
+              "第"
+            ],
+            "contrast": false,
+            "kinds": [
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk1-serial-verbs-5",
+            "text": "我和朋友去书店。",
+            "reading": "wǒ hé péngyou qù shūdiàn.",
+            "translation": "I go to the bookshop with a friend.",
+            "focus": "和",
+            "distractors": [
+              "对",
+              "吗",
+              "很"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ],
+            "noOrder": true
+          }
+        ]
+      }
+    },
+    {
+      "row": 42,
+      "label": "双宾语句1 (主语+动词+宾语1+宾语2)",
+      "lesson": {
+        "id": "hsk1-double-object",
+        "level": "hsk-1",
+        "title": "Double-object sentences: verb + person + thing",
+        "summary": "Some verbs take two objects: a person first, then a thing (给我一本书).",
+        "pattern": [
+          "subject + verb + person + thing"
+        ],
+        "body": [
+          "Some verbs take two objects: a person (the receiver) first, then a thing (what is given or asked). 给 (gěi, give): 我给你一本书. 问 (wèn, ask): 老师问我问题. The person comes before the thing.",
+          "The contrast example uses the preposition 对 (爸爸对我很好), which introduces the target of an attitude, not a transferred thing. A double-object verb transfers or asks something; 对 just points to whom an attitude is directed."
+        ],
+        "examples": [
+          {
+            "id": "hsk1-double-object-1",
+            "text": "我给你一本书。",
+            "reading": "wǒ gěi nǐ yì běn shū.",
+            "translation": "I'll give you a book.",
+            "focus": "给",
+            "distractors": [
+              "吗",
+              "很",
+              "的"
+            ],
+            "contrast": false,
+            "kinds": [
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk1-double-object-2",
+            "text": "我问你一件事。",
+            "reading": "wǒ wèn nǐ yí jiàn shì.",
+            "translation": "Let me ask you something.",
+            "focus": "问",
+            "distractors": [
+              "吗",
+              "很",
+              "的"
+            ],
+            "contrast": false,
+            "kinds": [
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk1-double-object-3",
+            "text": "爸爸给我钱。",
+            "reading": "bàba gěi wǒ qián.",
+            "translation": "Dad gives me money.",
+            "focus": "给",
+            "distractors": [
+              "吗",
+              "很",
+              "的"
+            ],
+            "contrast": false,
+            "kinds": [
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk1-double-object-4",
+            "text": "他问我叫什么名字。",
+            "reading": "tā wèn wǒ jiào shénme míngzi.",
+            "translation": "He asks me what my name is.",
+            "focus": "问",
+            "distractors": [
+              "吗",
+              "很",
+              "的"
+            ],
+            "contrast": false,
+            "kinds": [
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk1-double-object-5",
+            "text": "爸爸对我很好。",
+            "reading": "bàba duì wǒ hěn hǎo.",
+            "translation": "Dad is very kind to me.",
+            "focus": "对",
+            "distractors": [
+              "给",
+              "吗",
+              "很"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "row": 43,
+      "label": "复句: 并列 (…也…, …还…)",
+      "lesson": {
+        "id": "hsk1-coordinate-clauses",
+        "level": "hsk-1",
+        "title": "Coordinate clauses: …也…, …还…",
+        "summary": "Two statements are joined by a comma with 也 or 还 in the second; no conjunction is needed.",
+        "pattern": [
+          "clause 1，也 + clause 2",
+          "clause 1，还 + clause 2"
+        ],
+        "body": [
+          "A coordinate complex sentence joins two equal statements with a comma and 也 (also) or 还 (more) in the second: 我喜欢看书，也喜欢看电影; 他会说汉语，还会写汉字. No conjunction like and is needed.",
+          "The contrast example uses 和 to join two words inside one clause (我有哥哥和姐姐). 也 / 还 join two clauses; 和 joins words or phrases within one clause. Do not use 和 to join two sentences."
+        ],
+        "examples": [
+          {
+            "id": "hsk1-coordinate-clauses-1",
+            "text": "我喜欢看书，也喜欢看电影。",
+            "reading": "wǒ xǐhuan kàn shū, yě xǐhuan kàn diànyǐng.",
+            "translation": "I like reading, and I also like watching films.",
+            "focus": "也",
+            "distractors": [
+              "都",
+              "吗",
+              "在"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk1-coordinate-clauses-2",
+            "text": "他会说汉语，还会写汉字。",
+            "reading": "tā huì shuō Hànyǔ, hái huì xiě Hànzì.",
+            "translation": "He can speak Chinese, and he can also write characters.",
+            "focus": "还",
+            "distractors": [
+              "再",
+              "吗",
+              "在"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk1-coordinate-clauses-3",
+            "text": "今天很冷，还下雨。",
+            "reading": "jīntiān hěn lěng, hái xià yǔ.",
+            "translation": "It is cold today, and it is also raining.",
+            "focus": "还",
+            "distractors": [
+              "再",
+              "吗",
+              "很"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk1-coordinate-clauses-4",
+            "text": "我是学生，他也是学生。",
+            "reading": "wǒ shì xuéshēng, tā yě shì xuéshēng.",
+            "translation": "I am a student, and he is a student too.",
+            "focus": "也",
+            "distractors": [
+              "都",
+              "吗",
+              "很"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk1-coordinate-clauses-5",
+            "text": "我有哥哥和姐姐。",
+            "reading": "wǒ yǒu gēge hé jiějie.",
+            "translation": "I have an older brother and an older sister.",
+            "focus": "和",
+            "distractors": [
+              "对",
+              "吗",
+              "很"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ],
+            "noOrder": true
+          }
+        ]
+      }
+    },
+    {
+      "row": 44,
+      "label": "动作的态: 完成态 (了1)",
+      "lesson": {
+        "id": "hsk1-le-completed",
+        "level": "hsk-1",
+        "title": "Completed aspect: 了1",
+        "summary": "了1 right after the verb marks a completed action; negate with 没 and drop 了.",
+        "pattern": [
+          "subject + verb + 了1 + object",
+          "subject + 没 + verb (no 了)"
+        ],
+        "body": [
+          "了1 (le) right after the verb marks the action as completed: 我吃了两个苹果, 他写了一个字. It is about the action finishing, not about a change of situation.",
+          "The contrast example shows the negative: 我没吃饭. To say a completed action did not happen, use 没 and drop 了 (you cannot say 没吃了饭). 不 is for habits or the future, not for a past completed action."
+        ],
+        "examples": [
+          {
+            "id": "hsk1-le-completed-1",
+            "text": "我吃了两个苹果。",
+            "reading": "wǒ chī le liǎng ge píngguǒ.",
+            "translation": "I ate two apples.",
+            "focus": "了",
+            "distractors": [
+              "吗",
+              "很",
+              "在"
+            ],
+            "contrast": false,
+            "kinds": [
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk1-le-completed-2",
+            "text": "他写了一个字。",
+            "reading": "tā xiě le yí ge zì.",
+            "translation": "He wrote a character.",
+            "focus": "了",
+            "distractors": [
+              "吗",
+              "很",
+              "在"
+            ],
+            "contrast": false,
+            "kinds": [
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk1-le-completed-3",
+            "text": "我们喝了一杯茶。",
+            "reading": "wǒmen hē le yì bēi chá.",
+            "translation": "We drank a cup of tea.",
+            "focus": "了",
+            "distractors": [
+              "吗",
+              "很",
+              "在"
+            ],
+            "contrast": false,
+            "kinds": [
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk1-le-completed-4",
+            "text": "妹妹穿了一件新衣服。",
+            "reading": "mèimei chuān le yí jiàn xīn yīfu.",
+            "translation": "My younger sister put on new clothes.",
+            "focus": "了",
+            "distractors": [
+              "吗",
+              "很",
+              "在"
+            ],
+            "contrast": false,
+            "kinds": [
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk1-le-completed-5",
+            "text": "我没吃饭。",
+            "reading": "wǒ méi chī fàn.",
+            "translation": "I have not eaten.",
+            "focus": "没",
+            "distractors": [
+              "吗",
+              "很",
+              "的"
+            ],
+            "contrast": true,
+            "kinds": [
+              "clearly-wrong"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "row": 45,
+      "label": "动作的态: 变化态 (了2)",
+      "lesson": {
+        "id": "hsk1-le-change",
+        "level": "hsk-1",
+        "title": "Change aspect: 了2",
+        "summary": "Sentence-final 了2 marks a new situation or a change: it is so now.",
+        "pattern": [
+          "statement + 了2。",
+          "不 … + 了2 (not anymore)"
+        ],
+        "body": [
+          "了2 (le) at the end of a sentence marks a new situation or change: 天冷了 (it has got cold), 我会说汉语了 (I can speak Chinese now), 他不去学校了 (he is not going to school anymore). It is about the situation now, not about one finished action.",
+          "The contrast example uses 了1 right after the verb (我买了一个苹果), which marks a completed action. 了1 follows the verb and marks completion; 了2 ends the sentence and marks change. Both can appear together, but they do different jobs."
+        ],
+        "examples": [
+          {
+            "id": "hsk1-le-change-1",
+            "text": "天冷了。",
+            "reading": "tiān lěng le.",
+            "translation": "It has got cold.",
+            "focus": "了",
+            "distractors": [
+              "吗",
+              "很",
+              "在"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk1-le-change-2",
+            "text": "我会说汉语了。",
+            "reading": "wǒ huì shuō Hànyǔ le.",
+            "translation": "I can speak Chinese now.",
+            "focus": "了",
+            "distractors": [
+              "吗",
+              "很",
+              "在"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk1-le-change-3",
+            "text": "他不去学校了。",
+            "reading": "tā bú qù xuéxiào le.",
+            "translation": "He is not going to school anymore.",
+            "focus": "了",
+            "distractors": [
+              "吗",
+              "很",
+              "在"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk1-le-change-4",
+            "text": "现在十二点了。",
+            "reading": "xiànzài shí'èr diǎn le.",
+            "translation": "It's already twelve o'clock.",
+            "focus": "了",
+            "distractors": [
+              "吗",
+              "很",
+              "的"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk1-le-change-5",
+            "text": "我买了一个苹果。",
+            "reading": "wǒ mǎi le yí ge píngguǒ.",
+            "translation": "I bought an apple.",
+            "focus": "了",
+            "distractors": [
+              "吗",
+              "很",
+              "在"
+            ],
+            "contrast": true,
+            "kinds": [
+              "clearly-wrong"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "row": 46,
+      "label": "动作的态: 进行态 (在/正在+动词; …呢)",
+      "lesson": {
+        "id": "hsk1-progressive",
+        "level": "hsk-1",
+        "title": "Progressive aspect: 在/正在…呢",
+        "summary": "在/正在 before the verb, or 呢 at the end, marks an action in progress.",
+        "pattern": [
+          "subject + 在 / 正在 + verb",
+          "subject + verb + 呢",
+          "subject + 在 + verb + 呢"
+        ],
+        "body": [
+          "The progressive marks an action in progress: 在 / 正在 before the verb (我在看书, 爸爸正在打电话), 呢 at the end (他吃饭呢), or both (妹妹在睡觉呢).",
+          "The contrast example uses 了1 (我吃了两个包子), which marks a completed action. The progressive says the action is happening now; 了 says it is finished. They mark different aspects and are not used for the same meaning."
+        ],
+        "examples": [
+          {
+            "id": "hsk1-progressive-1",
+            "text": "我在看书。",
+            "reading": "wǒ zài kàn shū.",
+            "translation": "I am reading.",
+            "focus": "在",
+            "distractors": [
+              "很",
+              "吗",
+              "的"
+            ],
+            "contrast": false,
+            "kinds": [
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk1-progressive-2",
+            "text": "爸爸正在打电话。",
+            "reading": "bàba zhèngzài dǎ diànhuà.",
+            "translation": "Dad is on the phone.",
+            "focus": "正在",
+            "distractors": [
+              "很",
+              "吗",
+              "的"
+            ],
+            "contrast": false,
+            "kinds": [
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk1-progressive-3",
+            "text": "他吃饭呢。",
+            "reading": "tā chī fàn ne.",
+            "translation": "He is eating.",
+            "focus": "呢",
+            "distractors": [
+              "吗",
+              "很",
+              "在"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk1-progressive-4",
+            "text": "妹妹在睡觉呢。",
+            "reading": "mèimei zài shuìjiào ne.",
+            "translation": "My younger sister is sleeping.",
+            "focus": "呢",
+            "distractors": [
+              "吗",
+              "很",
+              "们"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk1-progressive-5",
+            "text": "我吃了两个包子。",
+            "reading": "wǒ chī le liǎng ge bāozi.",
+            "translation": "I ate two buns.",
+            "focus": "了",
+            "distractors": [
+              "吗",
+              "很",
+              "在"
+            ],
+            "contrast": true,
+            "kinds": [
+              "clearly-wrong"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "row": 47,
+      "label": "特殊表达法: 数的表达法 (钱数; 第+数词)",
+      "lesson": {
+        "id": "hsk1-number-expressions",
+        "level": "hsk-1",
+        "title": "Number expressions: money and ordinals",
+        "summary": "Money is number + 块 (spoken) or 元 (formal); ordinals are 第 + number.",
+        "pattern": [
+          "number + 块 / 元",
+          "第 + number"
+        ],
+        "body": [
+          "Money: number + 块 (kuài, spoken) or 元 (yuán, formal): 二十块, 一千元. Ordinals: 第 + number: 第一 (first), 第二 (second). 第 makes an order, not a count.",
+          "The contrast example uses 两 before a measure word (我有两个哥哥). Before a measure word, two is 两, not 二; 第 + number is an ordinal, while a bare number counts."
+        ],
+        "examples": [
+          {
+            "id": "hsk1-number-expressions-1",
+            "text": "这本书二十块。",
+            "reading": "zhè běn shū èrshí kuài.",
+            "translation": "This book is twenty kuai.",
+            "focus": "块",
+            "distractors": [
+              "吗",
+              "很",
+              "个"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk1-number-expressions-2",
+            "text": "这个手机一千元。",
+            "reading": "zhège shǒujī yì qiān yuán.",
+            "translation": "This phone is a thousand yuan.",
+            "focus": "元",
+            "distractors": [
+              "吗",
+              "很",
+              "个"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk1-number-expressions-3",
+            "text": "这是我第一天上班。",
+            "reading": "zhè shì wǒ dì-yī tiān shàngbān.",
+            "translation": "This is my first day at work.",
+            "focus": "第",
+            "distractors": [
+              "吗",
+              "很",
+              "小"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk1-number-expressions-4",
+            "text": "一杯茶十元。",
+            "reading": "yì bēi chá shí yuán.",
+            "translation": "A cup of tea is ten yuan.",
+            "focus": "元",
+            "distractors": [
+              "吗",
+              "很",
+              "个"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk1-number-expressions-5",
+            "text": "我有两个哥哥。",
+            "reading": "wǒ yǒu liǎng ge gēge.",
+            "translation": "I have two older brothers.",
+            "focus": "两",
+            "distractors": [
+              "二",
+              "吗",
+              "很"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "row": 48,
+      "label": "特殊表达法: 时间表示法 (年月日星期; 钟点)",
+      "lesson": {
+        "id": "hsk1-time-expressions",
+        "level": "hsk-1",
+        "title": "Time expressions: dates, weekdays and clock time",
+        "summary": "Dates run year-month-day, weekdays are 星期 + number, and clock time is number + 点 + 分.",
+        "pattern": [
+          "year + 月 + 日 / 号",
+          "星期 + number",
+          "number + 点 + number + 分"
+        ],
+        "body": [
+          "Dates run from big to small: year + 月 + 日 / 号 (三月五号). Weekdays are 星期 + number (星期一 to 星期六, 星期日 / 星期天). Clock time is number + 点 + number + 分 (八点十分). 号 is spoken, 日 is written.",
+          "The contrast example uses 半 (half): 现在两点半 (it is half past two). 半 marks the half hour; 分 marks minutes. Both come after 点."
+        ],
+        "examples": [
+          {
+            "id": "hsk1-time-expressions-1",
+            "text": "今天星期几？",
+            "reading": "jīntiān xīngqī jǐ?",
+            "translation": "What day is it today?",
+            "focus": "星期",
+            "distractors": [
+              "吗",
+              "很",
+              "的"
+            ],
+            "contrast": false,
+            "kinds": [
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk1-time-expressions-2",
+            "text": "现在八点十分。",
+            "reading": "xiànzài bā diǎn shí fēn.",
+            "translation": "It is ten past eight.",
+            "focus": "分",
+            "distractors": [
+              "岁",
+              "吗",
+              "个"
+            ],
+            "contrast": false,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          },
+          {
+            "id": "hsk1-time-expressions-3",
+            "text": "我明年去中国。",
+            "reading": "wǒ míngnián qù Zhōngguó.",
+            "translation": "I am going to China next year.",
+            "focus": "明年",
+            "distractors": [
+              "吗",
+              "很",
+              "的"
+            ],
+            "contrast": false,
+            "kinds": [
+              "clearly-wrong"
+            ],
+            "noOrder": true
+          },
+          {
+            "id": "hsk1-time-expressions-4",
+            "text": "他上午上课。",
+            "reading": "tā shàngwǔ shàngkè.",
+            "translation": "He has class in the morning.",
+            "focus": "上午",
+            "distractors": [
+              "吗",
+              "很",
+              "的"
+            ],
+            "contrast": false,
+            "kinds": [
+              "clearly-wrong"
+            ],
+            "noOrder": true
+          },
+          {
+            "id": "hsk1-time-expressions-5",
+            "text": "现在两点半。",
+            "reading": "xiànzài liǎng diǎn bàn.",
+            "translation": "It is half past two.",
+            "focus": "半",
+            "distractors": [
+              "分",
+              "吗",
+              "很"
+            ],
+            "contrast": true,
+            "kinds": [
+              "similar",
+              "clearly-wrong"
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}

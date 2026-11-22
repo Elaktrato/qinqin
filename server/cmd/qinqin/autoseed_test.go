@@ -50,7 +50,7 @@ func TestAutoSeedFreshInstanceSkipsDemos(t *testing.T) {
 			t.Errorf("%s not installed: %v", want, ids)
 		}
 	}
-	for _, demo := range []string{"es-demo", "zh-grammar-demo"} {
+	for _, demo := range []string{"es-demo"} {
 		if ids[demo] {
 			t.Errorf("demo pack %s installed", demo)
 		}

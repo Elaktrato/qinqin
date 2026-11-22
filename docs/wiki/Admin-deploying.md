@@ -24,11 +24,11 @@ docker compose exec qinqin qinqin adduser --admin --username you
 The first start of a fresh instance installs the bundled packs by itself before the server listens: the upstream dictionaries, the Jiten frequency list, the HSK 3.0 character, HSK 3.0 word and JLPT kanji level lists, the stroke data and the Kanji alive audio when present. It takes about 2 minutes (126 s measured on a busy machine; the first start only), and the compose health check allows 300 s.
 
 - It runs once per database and only on a fresh instance, that is while no pack of any type is installed. An upgraded or curated instance is never touched, and packs an administrator uninstalled stay uninstalled (a marker in the database records that it ran).
-- It leaves out the demo packs `es-demo` and `zh-grammar-demo`.
+- It leaves out the demo pack `es-demo`.
 - A pack that fails to import is logged (`auto-seed failed ...`); the server starts anyway and the next start tries again.
 - `QINQIN_AUTO_SEED=0` (or `false`, `off`) turns it off.
 
-`qinqin seed` is for what the auto-seed does not do: the demo packs (it installs everything the image ships, demos included), local packs, and re-seeding after an image update that ships newer packs.
+`qinqin seed` is for what the auto-seed does not do: the demo pack `es-demo` (it installs everything the image ships, demos included), local packs, and re-seeding after an image update that ships newer packs.
 
 ### What `qinqin seed` does
 

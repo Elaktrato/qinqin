@@ -43,7 +43,10 @@ export function buildExercises(lesson: Lesson, seed: string): Exercise[] {
 		example,
 		choices: shuffleTokens([example.focus, ...example.distractors], seed + example.id)
 	}));
-	const orders: Exercise[] = shuffleTokens(lesson.examples, seed).map((example) => ({
+	const orders: Exercise[] = shuffleTokens(
+		lesson.examples.filter((e) => !e.noOrder),
+		seed
+	).map((example) => ({
 		kind: 'order',
 		example
 	}));
