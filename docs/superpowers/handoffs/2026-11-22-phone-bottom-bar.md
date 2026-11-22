@@ -70,6 +70,32 @@ Nothing went to `main`, no tag, no release.
    in landscape, nothing under the notch.
 8. Desktop and tablet: nothing changed.
 
-## 4. Gates
+## 4. Review and fix wave
 
-See the merge commit and §5 of this file for the final run.
+One independent review on the strongest model (accessibility, focus, the five-item rule, sync of the row), then
+one fix wave (`00e50c31`):
+
+- The More sheet closes (focus to the page) when the window leaves the phone frame; before, a rotation to 720 px
+  or wider left an invisible modal sheet.
+- The deck page's toast and the heatmap's cell tips sit above the bar; the bottom sheet's last rows and the skip
+  link keep clear of the safe area (a consequence of `viewport-fit=cover`).
+- The store: an optimistic value from Settings is shown but cached on the device only once saved; a read that
+  overlaps a save is dropped; Settings' own fresh read never overwrites a change made meanwhile; leaving Settings
+  with an unsaved change re-reads the row, so the frame shows what the server has.
+- Switching to the bar (another device) while the drawer is open moves focus to the page.
+- The keyboard state is mirrored on `:root[data-keyboard]`, so `--bottom-bar-space` drops to 0 while the bar is
+  hidden.
+- A plugin page never takes an id the frame uses (`home`, `search`, `stats`, `more`, a core feature's slug).
+
+Not changed: Settings → Layout reads the row and the plugin states on every Settings visit (cheap); Reset to
+default writes the four default pins, dropping pins of sections that are switched off (a reset is a reset).
+
+## 5. Gates
+
+On the final branch: web check 0 errors; full vitest under Node 22: everything passes except the five
+`AccountSettings.dom` / `BookView.dom` cases known to fail on this machine's Node 22 on the untouched base (they
+pass under Node 26, which CI uses); web build ok; embed smoke test ok; `check-sources` and script tests ok; Go
+vet and tests green apart from two sandbox-only `internal/ai` netguard tests (the agent proxy and no IPv6).
+Visual check with Playwright at 360 and 390 px in qinqin Day and Night, both modes, 4, 5 and 7 sections, More
+open, the study session without the bar, a long page scrolled to the bottom, and desktop at 1024 px (unchanged);
+the scratch screenshots were deleted. CI on `develop` after the merge: see the #188 closing comment.
