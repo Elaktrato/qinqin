@@ -610,3 +610,29 @@ func TestSegmentStemOfCompound(t *testing.T) {
 		t.Errorf("matches = %+v, want 勉強しています (stem 勉強) and 食べた (no stem)", ms)
 	}
 }
+
+// TestBoundaryWithAnExactHomographAfterTheParticle: without a frequency
+// pack the usually-kana noun 仕手 (read して) ranks before する's te-form,
+// yet をして still yields: some candidate of the match after the particle
+// is an inflection of a word with priority.
+func TestBoundaryWithAnExactHomographAfterTheParticle(t *testing.T) {
+	words := append([]jw{
+		{kanji: []string{"仕事"}, readings: []string{"しごと"}, pos: []string{"n", "vs"}, pri: []string{"ichi1"}},
+		{readings: []string{"を"}, pos: []string{"prt"}, pri: []string{"spec1"}},
+		{readings: []string{"をして"}, pos: []string{"exp"}},
+		{kanji: []string{"仕手"}, readings: []string{"して"}, pos: []string{"n"}, pri: []string{"ichi1", "nf08"}, uk: true},
+		{kanji: []string{"帰る"}, readings: []string{"かえる"}, pos: []string{"v5r", "vi"}, pri: []string{"ichi1"}},
+	}, jaWords...)
+	svc, _ := jaService(t, words, "")
+	ms, err := svc.Segment(context.Background(), "ja", "仕事をして帰った")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var got []string
+	for _, m := range ms {
+		got = append(got, m.Surface)
+	}
+	if want := []string{"仕事", "を", "して", "帰った"}; !slices.Equal(got, want) {
+		t.Errorf("tokens = %q, want %q", got, want)
+	}
+}

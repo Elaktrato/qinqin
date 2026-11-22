@@ -117,7 +117,8 @@ the first sense only).
 Segmentation is greedy longest match. **Boundary rule**: when the match at a position is exact, its first
 entry has priority 0 and its senses all carry an `expressionPos` tag, the shortest proper prefix of it that has a match has a
 first entry with a `particlePos` tag, and the match starting right after that prefix either ends strictly after the expression, or ends exactly with
-it and is an inflected match (non-empty chain) whose first entry has priority > 0, the token is the particle
+it and has, among its same-length results, an inflected match (non-empty chain) of an entry with priority > 0
+(して of する, even where the noun 仕手 ranks first without a frequency pack), the token is the particle
 (仕事をしている → 仕事 | を | している; 仕事をして帰った → 仕事 | を | して | 帰った; には and にとって, with priority,
 stay). The rule reads only the lookup's ranked results at that position, which are capped at 30 entries
 (`MaxEntries`); a particle ranked below the cap is not seen.

@@ -119,8 +119,8 @@ func hintsOf(language string) lemma.Hints {
 // hints.ExpressionPOS; には and にとって keep theirs), the shortest
 // shorter match at offset is a particle (its first entry has a sense
 // tagged with hints.ParticlePOS) and the match right after that particle
-// ends strictly past m — or ends with m and is an inflection of a word
-// with priority — the token is the particle: 仕事をしている is
+// ends strictly past m — or ends with m and has a candidate that is an
+// inflection of a word with priority — the token is the particle: 仕事をしている is
 // 仕事 | を | している, not 仕事 | をして | いる, and 仕事をして帰った is
 // 仕事 | を | して | 帰った. Nil when the rule does not apply.
 func (s Service) splitParticle(ctx context.Context, language string, runes []rune, offset int, m *Match, results []lookup.Result, hints lemma.Hints) (*Match, error) {
@@ -142,8 +142,11 @@ func (s Service) splitParticle(ctx context.Context, language string, runes []run
 		return nil, err
 	}
 	// Ending with the expression, the word after the particle wins only
-	// when it is an inflection of a word with priority (して of する).
-	if next.End == m.End && (len(nextResults[0].Reasons) == 0 || nextResults[0].Pri == 0) {
+	// when one of its candidates is an inflection of a word with priority
+	// (して of する, even where the noun 仕手 ranks first).
+	if next.End == m.End && !slices.ContainsFunc(nextResults, func(r lookup.Result) bool {
+		return r.Matched == next.Surface && len(r.Reasons) > 0 && r.Pri > 0
+	}) {
 		return nil, nil
 	}
 	return s.matchOf(results, results[short].Matched, offset), nil
