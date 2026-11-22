@@ -35,6 +35,10 @@ vi.mock('$lib/notes/store', () => ({
 }));
 vi.mock('$lib/features/flashcards/Mascot.svelte', () => ({ default: () => ({}) }));
 vi.mock('$lib/components/PlayButton.svelte', () => ({ default: () => ({}) }));
+vi.mock('$lib/study/sessionMix', async (importOriginal) => {
+	const real = await importOriginal<typeof import('$lib/study/sessionMix')>();
+	return { ...real, mixFlowQueue: vi.fn(real.mixFlowQueue) };
+});
 vi.mock('$lib/time/zone', () => ({
 	currentStudyDay: vi.fn(),
 	currentStudyHistory: vi.fn(() => []),
@@ -46,6 +50,7 @@ import { loadNoteCfg, loadNotes } from '$lib/notes/store';
 import { getSchemeEntries, getSchemes } from '$lib/api/schemes';
 import { recordReview } from '$lib/study/events';
 import { SESSION_CONFIG_KEY } from '$lib/study/session';
+import { mixFlowQueue } from '$lib/study/sessionMix';
 import { addCard, loadStudyData } from '$lib/study/store';
 import { usableChars } from '$lib/study/writing';
 import { studyDay } from '$lib/time/studyDay';
@@ -596,5 +601,116 @@ describe('the session loads once (#101, found in the real-app check)', () => {
 		expect(loadStudyData).toHaveBeenCalledTimes(1);
 		expect(screen.getByLabelText('Recognise card')).toBeTruthy();
 		resetOffline();
+	});
+});
+
+describe('order of card types (#132)', () => {
+	const at = (minutes: number) => new Date(Date.UTC(2026, 0, 1, 0, minutes)).toISOString();
+	const card = (kind: 'vocab' | 'writing', entryId: number, minutes: number): StudyCard => ({
+		id: `c-${kind}-${entryId}`,
+		kind,
+		entryId,
+		written: GLYPHS[entryId],
+		deckIds: ['general'],
+		createdAt: at(minutes)
+	});
+	// In the order added the two writing cards come first.
+	const cards = [card('writing', 11, 1), card('writing', 12, 2), card('vocab', 11, 3), card('vocab', 12, 4)];
+	const plan = cards.map((c) => ({ cardId: c.id, kind: c.kind, entryId: c.entryId, virtual: false, card: c }));
+
+	function start(extra: Record<string, unknown>): void {
+		sessionStorage.setItem(
+			SESSION_CONFIG_KEY,
+			JSON.stringify({
+				mode: 'decks',
+				schemeId: null,
+				levelName: null,
+				deckIds: ['general'],
+				newLimit: 20,
+				reviewLimit: 100,
+				cardTypes: ['vocab', 'writing'],
+				newOrder: { by: 'added' },
+				...extra
+			})
+		);
+		history(cards, []);
+	}
+
+	it('grouped by type shows the vocab cards first', async () => {
+		start({ typeOrder: 'grouped', seed: 1 });
+		render(Page);
+		expect(await screen.findByLabelText('Recognise card')).toBeTruthy();
+	});
+
+	it('mixed follows the session seed, Recognise first for a new word', async () => {
+		const { mixFlowQueue: real } = await vi.importActual<typeof import('$lib/study/sessionMix')>('$lib/study/sessionMix');
+		const first = (seed: number) => real(plan, [], { seed, order: 'mixed', vocabFirst: true })[0];
+		const seeds = Array.from({ length: 60 }, (_, i) => i + 1);
+		// A new word's writing card waits for its vocab card: the first card is always a vocab card.
+		expect(seeds.every((seed) => first(seed).kind === 'vocab')).toBe(true);
+		const sunSeed = seeds.find((seed) => first(seed).entryId === 11)!;
+		const moonSeed = seeds.find((seed) => first(seed).entryId === 12)!;
+		expect(sunSeed).toBeDefined();
+		expect(moonSeed).toBeDefined();
+
+		start({ seed: sunSeed });
+		render(Page);
+		expect(await screen.findByLabelText('Recognise card')).toBeTruthy();
+		expect(await screen.findByText('日')).toBeTruthy();
+		expect(vi.mocked(mixFlowQueue).mock.calls[0][2]).toEqual({ seed: sunSeed, order: 'mixed', vocabFirst: true });
+		cleanup();
+
+		start({ seed: moonSeed });
+		render(Page);
+		expect(await screen.findByLabelText('Recognise card')).toBeTruthy();
+		expect(await screen.findByText('月')).toBeTruthy();
+	});
+});
+
+describe('the mix on the page (#132 review)', () => {
+	const ids = (call: unknown[]) => (call[0] as { cardId: string }[]).map((item) => item.cardId);
+
+	it('a level session shows the mixed order', async () => {
+		configure(['vocab']);
+		// Reverse the queue: the page must show what the mix returns.
+		vi.mocked(mixFlowQueue).mockImplementationOnce((queue) => [...queue].reverse());
+		render(Page);
+		expect(await screen.findByLabelText('Recognise card')).toBeTruthy();
+		const call = vi.mocked(mixFlowQueue).mock.calls[0];
+		expect(ids(call)).toEqual(['level:11', 'level:12', 'level:13']);
+		await waitFor(() => expect(screen.getByText('火')).toBeTruthy());
+	});
+
+	it('the same setup gives the same seed and queue on a reload', async () => {
+		sessionStorage.setItem(
+			SESSION_CONFIG_KEY,
+			JSON.stringify({ mode: 'levels', schemeId: 3, levelName: 'N5', deckIds: ['general'], newLimit: 20, reviewLimit: 100, cardTypes: ['vocab'], seed: 4321 })
+		);
+		render(Page);
+		await screen.findByLabelText('Recognise card');
+		cleanup();
+		render(Page);
+		await screen.findByLabelText('Recognise card');
+		const calls = vi.mocked(mixFlowQueue).mock.calls;
+		expect(calls).toHaveLength(2);
+		expect(calls[0][2]).toEqual({ seed: 4321, order: 'mixed', vocabFirst: false });
+		expect(calls[1][2]).toEqual(calls[0][2]);
+		expect(vi.mocked(mixFlowQueue).mock.results.map((r) => (r.value as { cardId: string }[]).map((i) => i.cardId))).toEqual([
+			expect.any(Array),
+			(vi.mocked(mixFlowQueue).mock.results[0].value as { cardId: string }[]).map((i) => i.cardId)
+		]);
+	});
+
+	it('a setup without a seed keeps one seed across reloads', async () => {
+		configure(['vocab']);
+		render(Page);
+		await screen.findByLabelText('Recognise card');
+		cleanup();
+		render(Page);
+		await screen.findByLabelText('Recognise card');
+		const calls = vi.mocked(mixFlowQueue).mock.calls;
+		expect(calls).toHaveLength(2);
+		expect(Number.isInteger((calls[0][2] as { seed: number }).seed)).toBe(true);
+		expect(calls[1][2]).toEqual(calls[0][2]);
 	});
 });

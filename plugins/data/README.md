@@ -62,6 +62,13 @@ most 32 parts remain. The optional `parts.tsv` gives a part's stroke count
 with its line number; a line is at most 4 KiB and each file at most 8 MiB. The
 pack's `language` is stored as its primary subtag (`zh-tw` becomes `zh`).
 
+Sentences pack format (`format: json`): `sentences.json` is `{"entries": [{"word",
+"sentences": [{"hanzi", "pinyin", "translation"}]}]}`. Each group's `word` is linked
+to the best word entry with that written form (or kana reading); unknown words are
+skipped and reported. `hanzi` (the sentence) and `translation` are required; the
+reading `pinyin` (pinyin, or kana for Japanese) is optional and left out rather
+than guessed.
+
 Grammar pack format (`format: json`): `lessons.json` is `{"levels": [{"id",
 "name", "schemeLevels": [{"scheme": "<levels pack id>", "level": "<level name>"}]}],
 "lessons": [{"id", "level", "title", "summary", "pattern": [...], "body": [...],

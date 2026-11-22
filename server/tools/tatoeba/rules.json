@@ -1,0 +1,100 @@
+{
+  "notes": [
+    "The one tunable file of server/tools/tatoeba (spec docs/superpowers/specs/2026-11-22-tatoeba-sentences-design.md).",
+    "Change a value, run `go run ./tools/tatoeba build`, review plugins/upstream/tatoeba/report-*.txt and sample-*.tsv, commit rules and packs together.",
+    "Tag names and the native skill level follow Tatoeba's conventions as documented; not verified against the live export."
+  ],
+  "translationLanguage": "eng",
+  "maxTranslationRunes": 200,
+  "dropOrphans": true,
+  "dropNegativeReviews": true,
+  "nativeOnly": false,
+  "nativeSkill": "5",
+  "dropTags": [
+    "@change",
+    "@check",
+    "@delete",
+    "@duplicate",
+    "@fragment",
+    "@needs native check",
+    "@not a sentence",
+    "@translation check"
+  ],
+  "denyTags": [
+    "insult",
+    "offensive",
+    "profanity",
+    "sexual",
+    "slur",
+    "vulgar"
+  ],
+  "maxPerWord": 5,
+  "sampleSize": 200,
+  "languages": {
+    "ja": {
+      "tatoeba": "jpn",
+      "packId": "ja-sentences-tatoeba",
+      "name": "Tatoeba example sentences (Japanese)",
+      "dictionary": "plugins/data/jmdict",
+      "readingType": "kana",
+      "preferCommonReadings": true,
+      "minRunes": 5,
+      "maxRunes": 40,
+      "minCoverage": 0.9,
+      "denyWords": [],
+      "skipWords": ["か", "が", "だ", "で", "です", "と", "な", "に", "ね", "の", "は", "へ", "ます", "も", "や", "よ", "を"],
+      "defaultReadings": {
+        "一人": "ひとり",
+        "上手": "じょうず",
+        "下手": "へた",
+        "人": "ひと",
+        "今日": "きょう",
+        "大人": "おとな",
+        "日本": "にほん",
+        "明日": "あした",
+        "本": "ほん",
+        "昨日": "きのう",
+        "私": "わたし",
+        "行く": "いく"
+      }
+    },
+    "zh": {
+      "tatoeba": "cmn",
+      "packId": "zh-sentences-tatoeba",
+      "name": "Tatoeba example sentences (Mandarin)",
+      "dictionary": "plugins/data/cedict",
+      "readingType": "pinyin",
+      "preferCommonReadings": false,
+      "minRunes": 4,
+      "maxRunes": 30,
+      "minCoverage": 1,
+      "denyWords": [],
+      "skipWords": [],
+      "defaultReadings": {
+        "一": "yī",
+        "不": "bù",
+        "个": "gè",
+        "中": "zhōng",
+        "了": "le",
+        "会": "huì",
+        "们": "men",
+        "吗": "ma",
+        "吧": "ba",
+        "呢": "ne",
+        "和": "hé",
+        "啊": "a",
+        "大": "dà",
+        "好": "hǎo",
+        "看": "kàn",
+        "着": "zhe",
+        "说": "shuō",
+        "要": "yào",
+        "这": "zhè",
+        "那": "nà",
+        "都": "dōu",
+        "的": "de",
+        "没": "méi"
+      }
+    }
+  }
+}

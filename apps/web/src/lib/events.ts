@@ -2,7 +2,9 @@
 // keys on a client-generated ULID. Recording is fire-and-forget — a
 // failed POST must never break the page the user is on.
 
-import { api } from './api/client';
+import { api, getToken } from './api/client';
+import { firstEventsPageUrl, readEventLog } from './eventPages';
+import { pruneSavedEventPages, type PageCachesLike } from './pwa/eventPageCache';
 import { sessionPayload } from './eventPayloads';
 import { logChangingTypes } from './plugins/contract';
 import { emitStudyEvents } from './plugins/hooks';
@@ -14,7 +16,8 @@ import { createWorkspaceCache } from './workspaceCache';
 
 export type EventType = 'session' | 'view' | 'lookup' | 'review' | 'read' | 'journal';
 
-// StudyEvent is one event as GET /api/events serves it: the row the
+// StudyEvent is one event as GET /api/events serves it (an item of a page,
+// lib/eventPages.ts): the row the
 // server stored, with the caller's own timestamp stored as UTC whole
 // seconds (fraction truncated; docs/contracts/events/).
 export interface StudyEvent {
@@ -51,16 +54,41 @@ export async function postEvents(events: StudyEventBody[]): Promise<void> {
 // Home -> Stats hop, not more. Joining the read in flight is the main gain.
 export const WORKSPACE_EVENTS_TTL_MS = 8_000;
 
-/** The whole event log of one workspace; the study load and offline preparation share it. */
+const EPOCH = '1970-01-01T00:00:00Z';
+
+/** The first page of the whole event log of one workspace; the study load and offline preparation share it. */
 export function fullLogPath(workspaceId: number): string {
-	return `/api/events?since=1970-01-01T00:00:00Z&workspace=${workspaceId}`;
+	return firstEventsPageUrl({ since: EPOCH, workspace: workspaceId });
+}
+
+/**
+ * fetchFullLog reads every page of one workspace's event log, uncached (#110).
+ * A walk cut offline (a continuation neither the server nor the saved copy
+ * has) gives the events read so far and `onIncomplete` is called; callers
+ * treat it like any other offline copy. A complete walk drops the saved pages
+ * no saved first page leads to any more (pwa/eventPageCache.ts).
+ */
+export async function fetchFullLog(
+	workspaceId: number,
+	onIncomplete: () => void = () => undefined
+): Promise<StudyEvent[]> {
+	const log = await readEventLog((path) => api<unknown>(path), { since: EPOCH, workspace: workspaceId });
+	if (!log.complete) {
+		console.warn(`event log of workspace ${workspaceId}: read offline up to a page that was not saved`);
+		onIncomplete();
+	} else {
+		void pruneSavedEventPages(workspaceId, {
+			caches: typeof caches === 'undefined' ? undefined : (caches as unknown as PageCachesLike),
+			token: getToken()
+		});
+	}
+	return log.events;
 }
 
 const eventLog = createWorkspaceCache(
-	async (workspaceId: number): Promise<StudyEvent[]> => {
-		const events = await api<StudyEvent[]>(fullLogPath(workspaceId));
-		return Array.isArray(events) ? events : [];
-	},
+	// An incomplete log is not kept: the next read walks again.
+	(workspaceId: number): Promise<StudyEvent[]> =>
+		fetchFullLog(workspaceId, () => setTimeout(() => eventLog.invalidate(workspaceId), 0)),
 	() => Date.now(),
 	WORKSPACE_EVENTS_TTL_MS
 );

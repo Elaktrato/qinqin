@@ -46,6 +46,8 @@ import { limitsOf } from '$lib/study/scheduler';
 	import { getFrequencyPacks } from '$lib/api/frequency';
 	import type { FrequencyPack } from '$lib/api/types';
 	import { resolveSessionOrder } from '$lib/study/newOrder';
+	import type { TypeOrder } from '$lib/study/sessionMix';
+	import { parseTypeOrder, typeOrderChoices } from '$lib/study/typeOrderView';
 	import { mixedNote, decodeOrder, encodeOrder, sessionOrderChoices } from '$lib/study/newOrderView';
 	import { deckOrdersOf } from '$lib/study/sessionOrder';
 	import { Button, Field, Section, Select } from '$lib/ui';
@@ -54,6 +56,8 @@ import { limitsOf } from '$lib/study/scheduler';
 		loadConfig,
 		saveConfig,
 		sessionNewOrder,
+		sessionTypeOrder,
+		newSessionSeed,
 		validateConfig,
 		type StudySessionConfig,
 		type StudySessionMode
@@ -127,6 +131,8 @@ import { limitsOf } from '$lib/study/scheduler';
 	let levelName = $state<string | null>(saved.levelName);
 	// The order of new cards (#75), as a select value; see newOrderView.ts.
 	let newOrderValue = $state(encodeOrder(sessionNewOrder(saved)));
+	// The order of card types (#132): mixed by default; see sessionMix.ts.
+	let typeOrder = $state<TypeOrder>(sessionTypeOrder(saved));
 	let frequencyPacks = $state.raw<FrequencyPack[]>([]);
 
 	// Schemes are global, so they are filtered by the language of the
@@ -852,8 +858,9 @@ import { limitsOf } from '$lib/study/scheduler';
 		};
 		// Always stored: absent means random, and 'deck' is a choice of its own.
 		config.newOrder = decodeOrder(orderValue);
+		config.typeOrder = typeOrder;
 		// Fixes the shuffle of this session, so a reload shows the same order.
-		config.seed = Math.floor(Math.random() * 0x7fffffff);
+		config.seed = newSessionSeed();
 		// Validate what the session will actually use: a type hidden in
 		// this workspace does not count towards "at least one".
 		errors = validateConfig({ ...config, cardTypes: [...selectedKinds] });
@@ -1001,6 +1008,12 @@ import { limitsOf } from '$lib/study/scheduler';
 			{#if orderView.hint !== null}
 				<p class="hint">{orderView.hint}</p>
 			{/if}
+			<Select
+				label={t('study.limitsSection.typeOrder')}
+				value={typeOrder}
+				onchange={(event) => (typeOrder = parseTypeOrder((event.currentTarget as HTMLSelectElement).value))}
+				options={typeOrderChoices()}
+			/>
 			<p class="hint">
 				<a href="/study/scheduling">{t('study.limitsSection.scheduling', { label: schedulingLabel })}</a>
 			</p>

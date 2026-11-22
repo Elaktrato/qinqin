@@ -18,7 +18,7 @@ where the rule is implemented today.
 | Time | `study-day/` (the learner's day, zone history) is the base of everything below |
 | Study events | `events/` (the envelope and how the server stores it, the payload of every type and when it is written, review parsing and replay order, heatmap activity scoring) |
 | Typed study data | `study/` (cards, decks, deck settings, limits, FSRS sets, the active set: wire shapes, last-write-wins, tombstones, the legacy codec and the legacy view for old web shells; the duplicate-card merge), `library/` (reader books, bookmarks, highlights, positions, the deletion log) |
-| Cards and study | `cards/` (ids, kinds, burying, cloze, the deck session plan), `levels/` (level sessions), `scheduler/` (the FSRS pin, XP and levels, vacation, study clock, due, streak, daily limits), `decks/` (deck numbers, system deck ids, add-to-deck, character mastery), `frequency/` (frequency order of new cards, starter decks, the known-word predicate, the display form of an entry), `goals/` (daily goal, day status, goal streak), `weekly/` (weekly summary; nothing stored), `stats/` (the Overview's four summary numbers and reviews per day; nothing stored), `milestones/` (weekly milestones: catalogue, reached rule, the `milestone:<id>` seen rows, card plan) |
+| Cards and study | `cards/` (ids, kinds, burying, cloze, the deck session plan, the session mix of card types), `levels/` (level sessions), `scheduler/` (the FSRS pin, XP and levels, vacation, study clock, due, streak, daily limits), `decks/` (deck numbers, system deck ids, add-to-deck, character mastery), `frequency/` (frequency order of new cards, starter decks, the known-word predicate, the display form of an entry), `goals/` (daily goal, day status, goal streak), `weekly/` (weekly summary; nothing stored), `stats/` (the Overview's four summary numbers and reviews per day; nothing stored), `milestones/` (weekly milestones: catalogue, reached rule, the `milestone:<id>` seen rows, card plan) |
 | Reader | `lemma/` (rule tables of the lemmatizer: deinflection, ranking keys, token boundaries), `reader/` (display settings, furigana, smart readings, word states, coverage) |
 | Personal data on entries | `notes/` (notes and the answer-side switch), `lookups/` (lookup history and its switch), `overlays/` (a user's edits of a shared entry), `journal/` (review documents and their mistake/suggestion kind) |
 | Lookup | `radicals/` (Kangxi table, `k` in the character universe, components index, radical and part lookup) |
@@ -119,8 +119,8 @@ Every folder, in dependency order (this page's sync model and Events sections af
   nothing of the batch. `envelope.json`.
 - Order everything by `(ts, id)`. **Android sends `ts` already truncated to whole seconds (UTC)** so its local
   copy equals the server copy byte for byte (Ruling in `events/README.md`).
-- Reading events: the paged pull's `events` collection (every type except `lookup`). `GET /api/events` is
-  unpaged (follow-up #110).
+- Reading events: the paged pull's `events` collection (every type except `lookup`, with a delta cursor), or
+  `GET /api/events?limit=` in pages (`(ts, id)` order, every type, no cursor; `events/page.json`, #110).
 - Types and payloads (`payloads.json`): `session` `null` (once per workspace per learner day; optional for
   Android), `view` `{entryId}` (once per entry page visit; optional), `lookup` never written (legacy
   `{query}`), `review` `{cardId, mode, grade, meta?}` (`review-parse.json`: parse, validity, order), `read`
@@ -286,8 +286,6 @@ preparation marks (`qinqin.pwa.*`), the current workspace and the session token.
 Nothing Android needs for #34–#38 that today's code defines is missing above. These are left out deliberately,
 each with its owner:
 
-- **Paging `GET /api/events`** — a route change; read events from the paged pull's `events` collection
-  meanwhile (#110).
 - **Grade suggestions** (writing, tone, reverse, word salad), **tone gestures and the writing engine** — the
   learner confirms every grade, so a different suggestion never changes stored data; the native engines are
   #38's own work.

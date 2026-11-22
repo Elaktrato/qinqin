@@ -50,8 +50,10 @@ type server struct {
 	clock      func() time.Time                                          // nil: time.Now (tests set it)
 	importDone chan string                                               // test hook: receives a stage token when its import job ends
 	importPack func(context.Context, *sql.DB, dict.Pack) (string, error) // nil: packs.Import
-	sweepCtx   context.Context
-	sweepEvery time.Duration
+	// streamEvents writes the legacy GET /api/events array; nil: events.StreamSince.
+	streamEvents func(ctx context.Context, w io.Writer, db *sql.DB, user int64, since time.Time, ws *int64) error
+	sweepCtx     context.Context
+	sweepEvery   time.Duration
 
 	chars charactersCache    // GET /api/characters payloads
 	comps componentsPayloads // GET /api/components payloads
