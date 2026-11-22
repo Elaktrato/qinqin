@@ -1,7 +1,7 @@
-sentence	licence	author	translation	translation_licence	translation_author
-3001	CC BY 2.0 FR	yuki	4001	CC BY 2.0 FR	emma
-3002	CC BY 2.0 FR	yuki	4002	CC0 1.0	emma
-3003	CC BY 2.0 FR	ken	4004	CC BY 2.0 FR	tom
-3004	CC BY 2.0 FR	ken	4005	CC BY 2.0 FR	emma
-3005	CC BY 2.0 FR	yuki	4006	CC BY 2.0 FR	emma
-3006	CC BY 2.0 FR	yuki	4007	CC BY 2.0 FR	emma
+sentence	url	licence	owner	translation	translation_url	translation_licence	translation_owner
+3001	https://tatoeba.org/en/sentences/show/3001	CC BY 2.0 FR	yuki	4001	https://tatoeba.org/en/sentences/show/4001	CC BY 2.0 FR	emma
+3002	https://tatoeba.org/en/sentences/show/3002	CC BY 2.0 FR	yuki	4002	https://tatoeba.org/en/sentences/show/4002	CC0 1.0	emma
+3003	https://tatoeba.org/en/sentences/show/3003	CC BY 2.0 FR	ken	4004	https://tatoeba.org/en/sentences/show/4004	CC BY 2.0 FR	tom
+3004	https://tatoeba.org/en/sentences/show/3004	CC BY 2.0 FR	ken	4005	https://tatoeba.org/en/sentences/show/4005	CC BY 2.0 FR	emma
+3005	https://tatoeba.org/en/sentences/show/3005	CC BY 2.0 FR	yuki	4006	https://tatoeba.org/en/sentences/show/4006	CC BY 2.0 FR	emma
+3006	https://tatoeba.org/en/sentences/show/3006	CC BY 2.0 FR	yuki	4007	https://tatoeba.org/en/sentences/show/4007	CC BY 2.0 FR	emma

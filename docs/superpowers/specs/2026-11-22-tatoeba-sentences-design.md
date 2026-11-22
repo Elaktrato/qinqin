@@ -47,6 +47,22 @@ the format; the manifest `attribution` names Tatoeba, its contributors and `cred
 shows it with the notice — cost if wrong: if per-sentence credit is required in the UI, a `source` field is
 added to the pack format later (the importer ignores unknown fields today, so it is not added speculatively).
 
+Ruling (review fix): `credits.tsv` has the columns `sentence, url, licence, owner, translation, translation_url,
+translation_licence, translation_owner` ("owner" is the Tatoeba username listed for the sentence, which is not
+always its original author), and the manifest `attribution` and notice link its published copy on GitHub
+(`…/blob/main/plugins/data/<id>/credits.tsv`), so the per-sentence credits are reachable from the Sources page.
+A credit next to each sentence in the app is **deferred** — cost if wrong: if Tatoeba or CC BY 2.0 FR is read to
+require credit where the sentence is shown, a `source` field (id, owner) must be added to the pack format, the
+importer, the sync contract and the sentence views; until then the risk is a credit one click away, not beside
+the text.
+
+Ruling (review fix): the readings (`pinyin` field) and the filing under words derive from CC-CEDICT (MDBG) or
+JMdict (EDRDG), CC BY-SA 4.0; the manifest `license` reads "CC BY 2.0 FR (some sentences CC0 1.0); readings from
+<dictionary>, CC BY-SA 4.0", and `LICENSE`, `ATTRIBUTION.md` and the notice name the dictionary, its publisher,
+its link and the licence URI. Sentence text and readings keep their own licences in one collection — cost if
+wrong: if the combination is held to be one adaptation, the whole pack would need CC BY-SA 4.0 terms (CC BY 2.0
+permits that; only the licence string changes).
+
 Ruling (LICENSE): `LICENSE` names CC BY 2.0 FR with its URI (CC BY 2.0 §4a allows "a copy of, or the Uniform
 Resource Identifier for, this License") and carries the CC0 1.0 legal code verbatim, copied from
 `plugins/data/zh-grammar/LICENSE` — the CC site is blocked here — cost if wrong: add the French legal

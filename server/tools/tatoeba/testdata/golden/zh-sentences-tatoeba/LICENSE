@@ -1,5 +1,7 @@
 Applies to: the sentences and translations in this directory (sentences.json,
-credits.tsv), which come from Tatoeba (https://tatoeba.org).
+credits.tsv), which come from Tatoeba (https://tatoeba.org), and the readings
+(the "pinyin" field of sentences.json) and the filing of the sentences under
+dictionary words, which qinqin generated from CC-CEDICT.
 
 Sentence text on Tatoeba is licensed under the Creative Commons Attribution
 2.0 France licence (CC BY 2.0 FR). As that licence allows (section 4a), this
@@ -7,9 +9,18 @@ file gives its Uniform Resource Identifier instead of a copy:
 
     https://creativecommons.org/licenses/by/2.0/fr/legalcode
 
-The authors of each sentence are listed in credits.tsv. Sentences marked
-"CC0 1.0" there were also released by Tatoeba under CC0 1.0 Universal, whose
-legal code follows, verbatim from
+The owner of each sentence (as listed by Tatoeba) and its page are in
+credits.tsv. Sentences marked "CC0 1.0" there were also released by Tatoeba
+under CC0 1.0 Universal, whose legal code is at the end of this file.
+
+The readings ("pinyin" field) and the word filing derive from CC-CEDICT
+(https://cc-cedict.org), by MDBG and the CC-CEDICT community, licensed under the
+Creative Commons Attribution-ShareAlike 4.0 International licence
+(CC BY-SA 4.0): https://creativecommons.org/licenses/by-sa/4.0/
+The full CC BY-SA 4.0 text ships with that dictionary pack
+(plugins/data/cedict/LICENSE).
+
+CC0 1.0 Universal, verbatim from
 https://creativecommons.org/publicdomain/zero/1.0/legalcode.txt
 
 Creative Commons Legal Code

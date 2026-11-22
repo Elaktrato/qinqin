@@ -17,11 +17,38 @@ import (
 //go:embed templates/CC0-1.0.txt
 var cc0Text string
 
-// The pack's licence and attribution as the manifest states them.
+// readingSource is the dictionary a language's readings and word filing
+// derive from, with its publisher and link; both are CC BY-SA 4.0.
+type readingSource struct{ name, publisher, link string }
+
+var readingSources = map[string]readingSource{
+	"zh": {"CC-CEDICT", "MDBG and the CC-CEDICT community", "https://cc-cedict.org"},
+	"ja": {"JMdict", "the Electronic Dictionary Research and Development Group (EDRDG)", "https://www.edrdg.org/"},
+}
+
 const (
-	packLicence     = "CC BY 2.0 FR (some sentences CC0 1.0)"
-	packAttribution = "Tatoeba (https://tatoeba.org) and its contributors; each sentence's author and link are in credits.tsv"
+	byURI       = "https://creativecommons.org/licenses/by/2.0/fr/"
+	bySAURI     = "https://creativecommons.org/licenses/by-sa/4.0/"
+	sentenceURL = "https://tatoeba.org/en/sentences/show/"
 )
+
+// packLicence is the manifest licence: the sentences', plus the readings'.
+func packLicence(code string) string {
+	return "CC BY 2.0 FR (some sentences CC0 1.0); readings from " + readingSources[code].name + ", CC BY-SA 4.0"
+}
+
+// creditsURL is the published copy of a pack's credits.tsv: the manifest
+// attribution names it so the per-sentence credits are one click from the
+// Sources page.
+func creditsURL(packID string) string {
+	return "https://github.com/Elaktrato/qinqin/blob/main/plugins/data/" + packID + "/credits.tsv"
+}
+
+func packAttribution(code, packID string) string {
+	rs := readingSources[code]
+	return "Tatoeba (https://tatoeba.org) and its contributors; each sentence's owner and Tatoeba page: " + creditsURL(packID) +
+		"; readings from " + rs.name + " (" + rs.link + ")"
+}
 
 // manifest is the pack manifest in a fixed field order.
 type manifest struct {
@@ -49,15 +76,15 @@ type outGroup struct {
 
 // readingNote is the notice's sentence on the readings, per language.
 var readingNote = map[string]string{
-	"zh": "The pinyin was generated from CC-CEDICT ([CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/)) and is left out where a word has several readings.",
-	"ja": "The kana readings were generated from JMdict ([CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/), EDRDG) and are given only where every word has one certain reading.",
+	"zh": "The pinyin and the filing under words were generated from [CC-CEDICT](https://cc-cedict.org) (MDBG, [CC BY-SA 4.0](" + bySAURI + ")); a reading is left out where a word has several.",
+	"ja": "The kana readings and the filing under words were generated from [JMdict](https://www.edrdg.org/) (EDRDG, [CC BY-SA 4.0](" + bySAURI + ")); a reading is given only where every word has one certain reading.",
 }
 
-func notice(code, exportDate string) string {
+func notice(code, packID, exportDate string) string {
 	return "Example sentences from [Tatoeba](https://tatoeba.org), export of " + exportDate +
-		", written by Tatoeba's contributors and shared under [CC BY 2.0 FR](https://creativecommons.org/licenses/by/2.0/fr/); " +
+		", written by Tatoeba's contributors and shared under [CC BY 2.0 FR](" + byURI + "); " +
 		"some are [CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/). " +
-		"Each sentence's author and its page on Tatoeba are listed in the pack's credits.tsv.\n\n" +
+		"Each sentence's owner (as listed by Tatoeba) and its page on Tatoeba are listed in the pack's [credits.tsv](" + creditsURL(packID) + ").\n\n" +
 		"qinqin chose these sentences with a program: it kept sentences with an English translation, preferred native speakers, " +
 		"and dropped flagged, duplicate and unsuitable ones. " + readingNote[code] +
 		" The selection, the readings and the links to dictionary words were made automatically and may contain errors."
@@ -81,8 +108,8 @@ func writePack(cfg buildConfig, res *langResult) (string, error) {
 
 	m := manifest{
 		ID: res.rules.PackID, Name: res.rules.Name, Version: cfg.Pin.ExportDate, Type: "sentences",
-		Language: res.code, Format: "json", License: packLicence, Attribution: packAttribution,
-		Notice: notice(res.code, cfg.Pin.ExportDate),
+		Language: res.code, Format: "json", License: packLicence(res.code), Attribution: packAttribution(res.code, res.rules.PackID),
+		Notice: notice(res.code, res.rules.PackID, cfg.Pin.ExportDate),
 	}
 	var buf bytes.Buffer
 	enc := json.NewEncoder(&buf)
@@ -116,9 +143,10 @@ func writePack(cfg buildConfig, res *langResult) (string, error) {
 	files["sentences.json"] = append([]byte(nil), buf.Bytes()...)
 
 	var credits strings.Builder
-	credits.WriteString("sentence\tlicence\tauthor\ttranslation\ttranslation_licence\ttranslation_author\n")
+	credits.WriteString("sentence\turl\tlicence\towner\ttranslation\ttranslation_url\ttranslation_licence\ttranslation_owner\n")
 	for _, c := range res.bundled {
-		fmt.Fprintf(&credits, "%d\t%s\t%s\t%d\t%s\t%s\n", c.s.ID, c.s.Licence, c.s.Owner, c.tr.ID, c.tr.Licence, c.tr.Owner)
+		fmt.Fprintf(&credits, "%d\t%s%d\t%s\t%s\t%d\t%s%d\t%s\t%s\n",
+			c.s.ID, sentenceURL, c.s.ID, c.s.Licence, c.s.Owner, c.tr.ID, sentenceURL, c.tr.ID, c.tr.Licence, c.tr.Owner)
 	}
 	files["credits.tsv"] = []byte(credits.String())
 
@@ -127,7 +155,7 @@ func writePack(cfg buildConfig, res *langResult) (string, error) {
 		return "", err
 	}
 	files["ATTRIBUTION.md"] = attribution
-	files["LICENSE"] = []byte(licenceText)
+	files["LICENSE"] = []byte(licenceText(res.code))
 
 	for name, data := range files {
 		if err := os.WriteFile(filepath.Join(stage, name), data, 0o644); err != nil {
@@ -144,8 +172,12 @@ func writePack(cfg buildConfig, res *langResult) (string, error) {
 	return dir, nil
 }
 
-var licenceText = `Applies to: the sentences and translations in this directory (sentences.json,
-credits.tsv), which come from Tatoeba (https://tatoeba.org).
+func licenceText(code string) string {
+	rs := readingSources[code]
+	return `Applies to: the sentences and translations in this directory (sentences.json,
+credits.tsv), which come from Tatoeba (https://tatoeba.org), and the readings
+(the "pinyin" field of sentences.json) and the filing of the sentences under
+dictionary words, which qinqin generated from ` + rs.name + `.
 
 Sentence text on Tatoeba is licensed under the Creative Commons Attribution
 2.0 France licence (CC BY 2.0 FR). As that licence allows (section 4a), this
@@ -153,12 +185,22 @@ file gives its Uniform Resource Identifier instead of a copy:
 
     https://creativecommons.org/licenses/by/2.0/fr/legalcode
 
-The authors of each sentence are listed in credits.tsv. Sentences marked
-"CC0 1.0" there were also released by Tatoeba under CC0 1.0 Universal, whose
-legal code follows, verbatim from
+The owner of each sentence (as listed by Tatoeba) and its page are in
+credits.tsv. Sentences marked "CC0 1.0" there were also released by Tatoeba
+under CC0 1.0 Universal, whose legal code is at the end of this file.
+
+The readings ("pinyin" field) and the word filing derive from ` + rs.name + `
+(` + rs.link + `), by ` + rs.publisher + `, licensed under the
+Creative Commons Attribution-ShareAlike 4.0 International licence
+(CC BY-SA 4.0): ` + bySAURI + `
+The full CC BY-SA 4.0 text ships with that dictionary pack
+(plugins/data/` + map[string]string{"zh": "cedict", "ja": "jmdict"}[code] + `/LICENSE).
+
+CC0 1.0 Universal, verbatim from
 https://creativecommons.org/publicdomain/zero/1.0/legalcode.txt
 
 ` + cc0Text
+}
 
 var attributionTemplate = template.Must(template.New("attribution").Parse(`# {{.Name}}
 
@@ -169,10 +211,13 @@ its contributors.
 - Licence: sentence text CC BY 2.0 FR
   (https://creativecommons.org/licenses/by/2.0/fr/); sentences Tatoeba also
   releases under CC0 1.0 are marked "CC0 1.0" in credits.tsv. See LICENSE.
-- Authors: credits.tsv lists every sentence of this pack with its Tatoeba id,
-  licence and author (the contributor's Tatoeba username), and the same for
-  its English translation. A sentence's page on Tatoeba is
-  https://tatoeba.org/en/sentences/show/<id>.
+- Owners: credits.tsv lists every sentence of this pack with its Tatoeba id,
+  page (https://tatoeba.org/en/sentences/show/<id>), licence and owner (the
+  Tatoeba username listed for it), and the same for its English translation.
+  Published copy: {{.CreditsURL}}
+- Readings: the "pinyin" field and the filing under words were generated from
+  {{.ReadingName}} ({{.ReadingLink}}), by {{.ReadingPublisher}}, CC BY-SA 4.0
+  (https://creativecommons.org/licenses/by-sa/4.0/).
 - Source: Tatoeba's export of {{.ExportDate}} ({{.Source}}), files and SHA-256:
 {{- range .Archives}}
   - {{.File}} ({{.Member}}): {{.SHA256}}
@@ -193,6 +238,7 @@ its contributors.
 
 type attributionData struct {
 	Name, ExportDate, Source, Checked, Statement, RulesSum, Dictionary string
+	CreditsURL, ReadingName, ReadingLink, ReadingPublisher             string
 	Archives                                                           []attributionArchive
 	MaxPerWord, Sentences, Words                                       int
 }
@@ -204,6 +250,8 @@ func renderAttribution(cfg buildConfig, res *langResult) ([]byte, error) {
 		Name: res.rules.Name, ExportDate: cfg.Pin.ExportDate, Source: cfg.Pin.Source,
 		Checked: cfg.Pin.Licence.Checked, Statement: cfg.Pin.Licence.Statement, RulesSum: cfg.Rules.sum,
 		Dictionary: res.dict, MaxPerWord: cfg.Rules.MaxPerWord, Sentences: len(res.bundled), Words: len(res.groups),
+		CreditsURL: creditsURL(res.rules.PackID), ReadingName: readingSources[res.code].name,
+		ReadingLink: readingSources[res.code].link, ReadingPublisher: readingSources[res.code].publisher,
 	}
 	for _, a := range cfg.Pin.Archives {
 		d.Archives = append(d.Archives, attributionArchive{File: a.file(), Member: a.Member, SHA256: a.SHA256})

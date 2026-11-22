@@ -122,8 +122,8 @@ commits them from a pinned export (they are absent until then, and
 
 | Pack | Provides | License | Upstream |
 |---|---|---|---|
-| **Tatoeba example sentences (Mandarin)** (`zh-sentences-tatoeba`) | Mandarin sentences with an English translation and generated pinyin, filed under the CC-CEDICT words they contain | Sentence text CC BY 2.0 FR; some sentences CC0 1.0 (as stated by Tatoeba; re-checked at every pin) | https://tatoeba.org/en/downloads |
-| **Tatoeba example sentences (Japanese)** (`ja-sentences-tatoeba`) | Japanese sentences (including the Tanaka corpus) with an English translation and, where certain, generated kana readings, filed under JMdict words | Sentence text CC BY 2.0 FR; some sentences CC0 1.0 (as stated by Tatoeba; re-checked at every pin) | https://tatoeba.org/en/downloads |
+| **Tatoeba example sentences (Mandarin)** (`zh-sentences-tatoeba`) | Mandarin sentences with an English translation and generated pinyin, filed under the CC-CEDICT words they contain | Sentence text CC BY 2.0 FR; some sentences CC0 1.0 (as stated by Tatoeba; re-checked at every pin); generated readings CC BY-SA 4.0 (CC-CEDICT) | https://tatoeba.org/en/downloads |
+| **Tatoeba example sentences (Japanese)** (`ja-sentences-tatoeba`) | Japanese sentences (including the Tanaka corpus) with an English translation and, where certain, generated kana readings, filed under JMdict words | Sentence text CC BY 2.0 FR; some sentences CC0 1.0 (as stated by Tatoeba; re-checked at every pin); generated readings CC BY-SA 4.0 (JMdict, EDRDG) | https://tatoeba.org/en/downloads |
 
 - **Licence.** Tatoeba states that sentence text is CC BY 2.0 FR and that the
   sentences in its `sentences_CC0` export are CC0 1.0; both fit the project's
@@ -135,16 +135,27 @@ commits them from a pinned export (they are absent until then, and
   varying licences).
 - **Attribution.** Tatoeba asks that reused sentences credit Tatoeba with a link
   and, for CC BY, the sentence's author (wording to re-read at each pin; not
-  verified from this environment). Each pack carries `credits.tsv` (every
-  sentence's Tatoeba id, licence and author, and the same for its translation;
-  a sentence's page is `https://tatoeba.org/en/sentences/show/<id>`),
-  `ATTRIBUTION.md` (export date, archive hashes, licence check, what was changed)
-  and `LICENSE` (the CC BY 2.0 FR URI, which that licence allows instead of a
-  copy, and the CC0 1.0 legal code). The manifest `attribution` names Tatoeba,
-  its contributors and `credits.tsv`; the `notice` on the Sources page says that
-  the sentences were filtered by a program, that the readings were generated
-  (pinyin from CC-CEDICT, left out where a word has several; kana from JMdict,
-  only where every word has one certain reading) and that both may contain errors.
+  verified from this environment). Each pack carries `credits.tsv`: for every
+  sentence its Tatoeba id, page (`https://tatoeba.org/en/sentences/show/<id>`),
+  licence and owner (the Tatoeba username listed for it, which is not always the
+  original author), and the same for its translation (columns `sentence`, `url`,
+  `licence`, `owner`, `translation`, `translation_url`, `translation_licence`,
+  `translation_owner`). The manifest `attribution` and the Sources page `notice`
+  link the published copy of that file
+  (`https://github.com/Elaktrato/qinqin/blob/main/plugins/data/<pack id>/credits.tsv`),
+  so the per-sentence credits are one click from the app; the app does not show
+  a credit next to each sentence yet (deferred, see the spec's Ruling).
+  `ATTRIBUTION.md` gives the export date, archive hashes, licence check and what
+  was changed; `LICENSE` gives the CC BY 2.0 FR URI (which that licence allows
+  instead of a copy) and the CC0 1.0 legal code.
+- **Readings.** The `pinyin` field and the filing of sentences under words are
+  generated from **CC-CEDICT** (MDBG, <https://cc-cedict.org>) or **JMdict**
+  (EDRDG, <https://www.edrdg.org/>), both **CC BY-SA 4.0**
+  (<https://creativecommons.org/licenses/by-sa/4.0/>); the manifest `license`,
+  `LICENSE`, `ATTRIBUTION.md` and the notice say so. Pinyin is left out where a
+  word has several readings; kana is given only where every word has one certain
+  reading. The notice says the selection and readings were made by a program and
+  may contain errors.
 - **Filtering** (all thresholds in `server/tools/tatoeba/rules.json`): an English
   translation is required; orphaned sentences, sentences tagged as unreliable or
   unsuitable, negatively reviewed ones, too short or long ones, deny-listed ones,

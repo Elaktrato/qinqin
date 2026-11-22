@@ -34,8 +34,8 @@ The dictionary files are redistributed **unmodified**; the Jiten list is a conve
 
 | Pack | Provides | Licence |
 |---|---|---|
-| Tatoeba example sentences, Mandarin (`zh-sentences-tatoeba`) | Sentences with an English translation and generated pinyin, filed under CC-CEDICT words | CC BY 2.0 FR; some sentences CC0 1.0 |
-| Tatoeba example sentences, Japanese (`ja-sentences-tatoeba`) | Sentences (including the Tanaka corpus) with an English translation and, where certain, generated kana, filed under JMdict words | CC BY 2.0 FR; some sentences CC0 1.0 |
+| Tatoeba example sentences, Mandarin (`zh-sentences-tatoeba`) | Sentences with an English translation and generated pinyin, filed under CC-CEDICT words | CC BY 2.0 FR; some sentences CC0 1.0; readings CC BY-SA 4.0 (CC-CEDICT) |
+| Tatoeba example sentences, Japanese (`ja-sentences-tatoeba`) | Sentences (including the Tanaka corpus) with an English translation and, where certain, generated kana, filed under JMdict words | CC BY 2.0 FR; some sentences CC0 1.0; readings CC BY-SA 4.0 (JMdict, EDRDG) |
 
 **Built into the image, not committed:**
 
@@ -86,7 +86,7 @@ Font packs (Sans, Serif and Kai faces: Noto Sans/Serif SC, TC and JP, LXGW WenKa
 
 ## Example sentences (Tatoeba)
 
-Tatoeba states that sentence text is CC BY 2.0 FR and that some sentences are also CC0 1.0. The tool keeps only sentences the export lists under those licences (and their English translations under the same test), drops orphaned, flagged, negatively reviewed, unsuitable, duplicate, too short or too long sentences, prefers sentences by native speakers and keeps at most a few per word; every threshold is in `server/tools/tatoeba/rules.json`. Readings are generated, never guessed: pinyin from CC-CEDICT, left out of a sentence when one of its words has several readings (a short list of defaults settles particles such as 了 and 的); kana from JMdict only where every word has one certain reading. The Sources page shows each pack's notice ("filtered by a program, readings generated, may contain errors"); each pack's `credits.tsv` names every sentence's author and Tatoeba id, as CC BY asks. Tatoeba's audio is not used.
+Tatoeba states that sentence text is CC BY 2.0 FR and that some sentences are also CC0 1.0. The tool keeps only sentences the export lists under those licences (and their English translations under the same test), drops orphaned, flagged, negatively reviewed, unsuitable, duplicate, too short or too long sentences, prefers sentences by native speakers and keeps at most a few per word; every threshold is in `server/tools/tatoeba/rules.json`. Readings are generated, never guessed: pinyin from CC-CEDICT, left out of a sentence when one of its words has several readings (a short list of defaults settles particles such as 了 and 的); kana from JMdict only where every word has one certain reading. The Sources page shows each pack's notice ("filtered by a program, readings generated, may contain errors"); each pack's `credits.tsv` lists every sentence's Tatoeba id and page and its owner as listed by Tatoeba, and the manifest attribution links the published copy of that file (a credit next to each sentence in the app is not there yet). Tatoeba's audio is not used.
 
 **Producing the packs** (maintainers, from `server/`, with access to downloads.tatoeba.org): re-read Tatoeba's downloads page and terms of use and note what they say in `server/tools/tatoeba/pin.json`, then
 

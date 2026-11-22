@@ -7,10 +7,13 @@ its contributors.
 - Licence: sentence text CC BY 2.0 FR
   (https://creativecommons.org/licenses/by/2.0/fr/); sentences Tatoeba also
   releases under CC0 1.0 are marked "CC0 1.0" in credits.tsv. See LICENSE.
-- Authors: credits.tsv lists every sentence of this pack with its Tatoeba id,
-  licence and author (the contributor's Tatoeba username), and the same for
-  its English translation. A sentence's page on Tatoeba is
-  https://tatoeba.org/en/sentences/show/<id>.
+- Owners: credits.tsv lists every sentence of this pack with its Tatoeba id,
+  page (https://tatoeba.org/en/sentences/show/<id>), licence and owner (the
+  Tatoeba username listed for it), and the same for its English translation.
+  Published copy: https://github.com/Elaktrato/qinqin/blob/main/plugins/data/ja-sentences-tatoeba/credits.tsv
+- Readings: the "pinyin" field and the filing under words were generated from
+  JMdict (https://www.edrdg.org/), by the Electronic Dictionary Research and Development Group (EDRDG), CC BY-SA 4.0
+  (https://creativecommons.org/licenses/by-sa/4.0/).
 - Source: Tatoeba's export of 2000-01-02 (https://downloads.example.invalid/exports/), files and SHA-256:
   - sentences_detailed.tar.bz2 (sentences_detailed.csv): bcaa4162d188a6b40572db084b44cc4cc0c76baa67ca09975aff1b3caee47b94
   - sentences_CC0.tar.bz2 (sentences_CC0.csv): 8424616fab038f976f7df24187ba5677313aa258f809321dd9e6ba503f373f53

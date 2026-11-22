@@ -193,13 +193,14 @@ func TestBuildGroupsCapsAndCredits(t *testing.T) {
 		t.Fatal(err)
 	}
 	lines := strings.Split(strings.TrimSuffix(string(credits), "\n"), "\n")
-	if lines[0] != "sentence\tlicence\tauthor\ttranslation\ttranslation_licence\ttranslation_author" {
+	if lines[0] != "sentence\turl\tlicence\towner\ttranslation\ttranslation_url\ttranslation_licence\ttranslation_owner" {
 		t.Errorf("credits header %q", lines[0])
 	}
-	if !slices.Contains(lines, "1011\tCC0 1.0\twei\t2011\tCC0 1.0\ttom") {
+	show := "https://tatoeba.org/en/sentences/show/"
+	if !slices.Contains(lines, "1011\t"+show+"1011\tCC0 1.0\twei\t2011\t"+show+"2011\tCC0 1.0\ttom") {
 		t.Errorf("credits lack the CC0 line of 1011: %q", lines)
 	}
-	if !slices.Contains(lines, "1013\tCC BY 2.0 FR\twei\t2015\tCC BY 2.0 FR\temma") {
+	if !slices.Contains(lines, "1013\t"+show+"1013\tCC BY 2.0 FR\twei\t2015\t"+show+"2015\tCC BY 2.0 FR\temma") {
 		t.Errorf("credits lack 1013 with its native translation: %q", lines)
 	}
 	for _, l := range lines[1:] {
@@ -230,6 +231,45 @@ func TestBuildGroupsCapsAndCredits(t *testing.T) {
 	}
 	if _, err := os.Stat(filepath.Join(reports, "sample-ja.tsv")); err != nil {
 		t.Errorf("sample-ja.tsv: %v", err)
+	}
+}
+
+// TestPackCreditsTheDictionaryReadings: the readings and the filing under
+// words derive from CC-CEDICT or JMdict (CC BY-SA 4.0): LICENSE,
+// ATTRIBUTION.md and the manifest say so, and the attribution names a
+// reachable copy of credits.tsv.
+func TestPackCreditsTheDictionaryReadings(t *testing.T) {
+	out, _ := buildFixture(t, nil)
+	for _, tc := range []struct{ id, dict, link string }{
+		{"zh-sentences-tatoeba", "CC-CEDICT", "https://cc-cedict.org"},
+		{"ja-sentences-tatoeba", "JMdict", "https://www.edrdg.org/"},
+	} {
+		dir := filepath.Join(out, tc.id)
+		p, err := dict.LoadPack(dir)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !strings.Contains(p.License, "CC BY-SA 4.0") || !strings.Contains(p.License, tc.dict) {
+			t.Errorf("%s license %q does not name the readings' licence", tc.id, p.License)
+		}
+		credits := "https://github.com/Elaktrato/qinqin/blob/main/plugins/data/" + tc.id + "/credits.tsv"
+		if !strings.Contains(p.Attribution, credits) {
+			t.Errorf("%s attribution %q lacks %s", tc.id, p.Attribution, credits)
+		}
+		if !strings.Contains(p.Notice, tc.link) || !strings.Contains(p.Notice, "https://creativecommons.org/licenses/by-sa/4.0/") {
+			t.Errorf("%s notice lacks %s or the CC BY-SA 4.0 link", tc.id, tc.link)
+		}
+		for _, f := range []string{"LICENSE", "ATTRIBUTION.md"} {
+			data, err := os.ReadFile(filepath.Join(dir, f))
+			if err != nil {
+				t.Fatal(err)
+			}
+			for _, want := range []string{tc.dict, tc.link, "https://creativecommons.org/licenses/by-sa/4.0/", "pinyin"} {
+				if !strings.Contains(string(data), want) {
+					t.Errorf("%s/%s lacks %q", tc.id, f, want)
+				}
+			}
+		}
 	}
 }
 
