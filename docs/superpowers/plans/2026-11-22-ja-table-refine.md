@@ -99,3 +99,59 @@ vet clean, 47 packages ok, exit 1 only for the known `internal/ai` `TestHostname
 (no IPv6). No web code changed; the docs-reading web tests ran in the full Node 26 vitest run: exit 0, 567
 files, 12 268 passed, 8 skipped. Node 22 `npm test`, `check` and `build` were not run (no web change). The
 scratch servers and data were deleted afterwards.
+
+## Review fixes (2026-11-22, the one fix wave)
+
+**Correction to the record above.** "No other token changed" compared token spans only; counting changes of
+the first entry on an unchanged span, the first round changed 149 tokens of the corpus in the JMdict-only
+configuration (9 distinct, all from the first-sense kana fit: ところ → 野老, みる → 海松, …) and 23 of the 130
+at-risk readings (priority ≥ 60, `uk` only on a later sense). Fixture counts in the first round: `deinflect.json`
+78 → 89 cases, `segment.json` 18 → 25 (not "+12 / +8").
+
+Each finding test-first, failing run seen before the fix:
+
+| Finding | Test that failed first | Commit |
+| --- | --- | --- |
+| 1 first-sense kana fit broke みる, くる, ところ, め | `segment.json` cases みる, くる, ところ, め (the fixture lexicon gained `senses`, so `uk` can sit on a later sense; あげた passed already); `TestKanaFitUsesTheFirstSense` became `TestBareShiteWithoutFrequencyIsTheNoun` (仕手 first, recorded) | `398284d7` (revert to the entry flag; `usuallyReadingTag` removed; no narrow して rule: 仕手 has priority 92 > する 60, Ruling) |
+| 2 particle-yields rule (にて → 煮る, たって → 立つ) | `segment.json` 東京にて開催, たって (にて needed a fixture 煮る of priority 86 to fail) | `e90bdcb0` (rule and its test removed) |
+| 3 keepWhole blocked better splits | `segment.json` 荷物をおいてください, 本をおいていった, サラダにしてください, 部屋をきれいにしておいてね, ここであれこれ考えた, 家でないていた, 計画に基づいている (now に + 基づいている), と来たら | `b85c4690` |
+| 4, 5 prohibition / permission forms | 7 `deinflect.json` cases | `e46e8cb7` |
+| 6, 7 てほしい / ないでほしい, かねない; M9 | 5 `deinflect.json` cases; `TestWrittenExpressionDoesNotYield` | `2d2e0ef5` |
+| 8 format 1 with format-2 fields | `TestFormat1RejectsFormat2Fields` | `f4f40b2a` (also gofmt of a test file) |
+| 9, 10, 11, 12, M6 | — (M6: the と来たら / 法律に基づいて cases fail if keepWhole matched entry texts instead of the surface) | `600411de` docs, README in the commits above |
+
+Fixture counts now: `deinflect.json` 101 cases, `segment.json` 40.
+
+**Re-measured** (fresh scratch servers; `develop` 979d67ee = "base", the branch before this wave = "pre",
+the final build = "post"; J = JMdict only, JF = JMdict + Jiten). Corpus (27 522 code points), compared per
+token position including the first entry:
+
+| | tokens | span changes (distinct) | same-span entry changes |
+| --- | --- | --- | --- |
+| J base → post | 10 438 → 10 351 | 55 (44) | **0** |
+| JF base → post | 10 435 → 10 351 | 53 (43) | **0** |
+| J pre → post | 10 361 → 10 351 | 15 (13) | 149 (the first-sense reverts) |
+
+Every distinct base → post span change is one of: a kept-whole expression (に沿って 5, に応じて 4, をめぐって 3,
+によれば 2 (J), に反して 2, に基づいて, にすぎない, を通して, と思ったら), ないでください (11 verbs), てはいけない /
+てはいけません (9), てもいい / てもかまいません (13; です/ですか become one token), かねない on a verb (起こしかねない,
+招きかねない, 体を壊しかねない, なりかねない, 倒産しかねない, つながりかねない), てほしい (挑戦してほしい, 来てほしい,
+連絡してほしい, 大切にしてほしい). The 130 at-risk readings: 0 changes base → post in J and JF (23 / 5 changed
+base → pre). Sentences (343: the 188 of the first round, the reviewer's 36 rows of this wave, the 130 at-risk
+readings — overlapping): 32 rows change base → post in each configuration, all of them the forms above or the
+#177 issue rows (ないでください, てはいけない, てもいい, しかねない, the expressions).
+
+Reviewer rows, post (J / JF): みる 見る, くる 来る, きた 来る, ところ 所, あげた 上げる, め 目 (both);
+会場にて受付を行います and 東京にて開催: にて (J) / 似る (JF, unchanged from base: frequency); たって: たって (J) /
+立つ (JF, as base); 荷物をおいてください → を + 置く; 本をおいていった → を + 置く; サラダにしてください → に + する;
+部屋をきれいにしておいてね → きれい + に + する + ね; ここであれこれ考えた: で + あれこれ in JF, であれ + これ in J
+(the first JMdict entry of で is the conjunction, so the particle test fails; unchanged from base); 家でないていた:
+でない + ていた in both (J: で's first entry is no particle; JF: でない is 出る's negative; unchanged from base,
+not solved); 計画に基づいている → に + 基づく; 少ないです, 危ないです unchanged; 頭に当たって → に + 当たる;
+と来たら → と + 来る; して / してから / 仕事をして帰った: 仕手 in J (Ruling), する in JF; 忘れないでね unchanged
+(standalone ないで, Ruling); the prohibition, permission, ほしい and かねない rows fold as listed.
+
+**Gates of the wave.** Targeted Go (`lemma lang lookup segment`) green after every finding. One full Go run:
+gofmt clean, vet clean, 47 packages ok, exit 1 only for the known `internal/ai`
+`TestHostnameResolvingToEmbeddedFormIsRefused`. Node 26 vitest (docs-reading tests; no web code changed):
+exit 0, 567 files, 12 268 passed, 8 skipped. Scratch servers and data deleted afterwards.
