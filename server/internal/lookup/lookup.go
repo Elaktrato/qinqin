@@ -228,11 +228,18 @@ func (s Service) Lookup(ctx context.Context, language, text string, offset int, 
 	ranks := rankingRanks(packIDs, freqs)
 
 	cands := make([]candidate, len(matches))
+	expression := make([]bool, len(matches))
+	var hints lemma.Hints
+	if rules != nil {
+		hints = rules.Hints
+	}
 	for i, m := range matches {
 		cands[i] = rankKeys(pack, language, m)
 		cands[i].freqRank = ranks[i]
 		cands[i].at = i
+		expression[i] = len(m.entry.Forms) == 0 && allSensesTagged(m.entry, hints.ExpressionPOS)
 	}
+	markYields(cands, expression)
 	sortCandidates(cands)
 	cands = cands[:min(len(cands), MaxEntries)]
 
@@ -298,7 +305,16 @@ func hasClass(rules *lemma.Table, e lexicon.Entry, class string) bool {
 	return rules != nil && slices.ContainsFunc(e.Senses, func(s lexicon.Sense) bool { return rules.ClassMatches(class, s.POS) })
 }
 
-// rankKeys computes the sort keys of m except the frequency rank.
+// allSensesTagged reports whether e has senses and every one has a
+// part-of-speech tag in tags.
+func allSensesTagged(e lexicon.Entry, tags []string) bool {
+	return len(tags) > 0 && len(e.Senses) > 0 && !slices.ContainsFunc(e.Senses, func(s lexicon.Sense) bool {
+		return !slices.ContainsFunc(s.POS, func(p string) bool { return slices.Contains(tags, p) })
+	})
+}
+
+// rankKeys computes the sort keys of m except the frequency rank and
+// yields (markYields).
 func rankKeys(pack lang.Pack, language string, m *match) candidate {
 	e, term := m.entry, m.probe.term
 	plain := ""
@@ -316,6 +332,7 @@ func rankKeys(pack lang.Pack, language string, m *match) candidate {
 		pri:        e.Pri,
 		headword:   displayTerm(language, m),
 		entryID:    e.ID,
+		weakKana:   m.reading >= 0 && len(e.Forms) > 0 && !e.UK,
 	}
 	// Primary: the text that matched the dictionary is the headword — the
 	// first reading or first form. A traditional form (CC-CEDICT's trad

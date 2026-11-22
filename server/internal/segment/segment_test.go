@@ -422,10 +422,11 @@ func TestMatchAtShitaFollowsFrequency(t *testing.T) {
 			t.Errorf("candidate %+v, want a word matched by reading", c)
 		}
 	}
-	// Without frequency data the exact nouns win.
+	// Without frequency data kana fit decides the same way (issue #165):
+	// 下 and 舌 are kanji words matched only by their reading.
 	svc, _ = jaService(t, jaWords, "")
-	if m := matchAt(t, svc, "ja", "した", 0); m == nil || m.Lemma != "した" || m.Reason != "" {
-		t.Errorf("no-frequency match = %+v, want exact した", m)
+	if m := matchAt(t, svc, "ja", "した", 0); m == nil || m.Lemma != "する" || m.Reason != "past" {
+		t.Errorf("no-frequency match = %+v, want する (past)", m)
 	}
 }
 

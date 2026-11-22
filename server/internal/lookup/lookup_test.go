@@ -337,9 +337,12 @@ func TestShitaWithFrequencyRanksSuruFirst(t *testing.T) {
 	}
 }
 
-func TestShitaWithoutFrequencyRanksExactFirst(t *testing.T) {
+// Without frequency data kana fit decides (issue #165): 下 and 舌 are
+// written in kanji and matched only by their reading, する is usually
+// kana, so the verb leads (before #165 the exact nouns did).
+func TestShitaWithoutFrequencyRanksSuruByKanaFit(t *testing.T) {
 	rs := run(t, jaService(t, false), "ja", "宿題をした", 3)
-	wantPrefix(t, rs, "下", "舌", "為る[past]")
+	wantPrefix(t, rs, "為る[past]", "下", "舌")
 	for _, r := range rs {
 		if len(r.Frequencies) != 0 {
 			t.Errorf("%s frequencies = %+v, want none", r.Term, r.Frequencies)

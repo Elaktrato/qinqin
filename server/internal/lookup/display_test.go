@@ -24,7 +24,7 @@ func TestKanaMatchShowsTheDisplayForm(t *testing.T) {
 		{"の", "の", "乃"},
 		{"する", "する", "為る"},
 		{"こと", "こと", "事"},
-		{"した", "下", "下"}, // not usually kana: the written form
+		{"しゅくだい", "宿題", "宿題"}, // not usually kana: the written form
 	} {
 		rs := run(t, s, "ja", tt.text, 0)
 		if len(rs) == 0 || rs[0].Term != tt.term || rs[0].Forms[0].Text != tt.form {
