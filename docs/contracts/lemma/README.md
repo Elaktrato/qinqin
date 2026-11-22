@@ -38,7 +38,7 @@ Go: `server/internal/lemma/contract_test.go`, `server/internal/segment/contract_
   "compounds": [{"suffix": "する", "class": "vs", "stem": {"anyOf": [{"minRunes": 2}, {"notOnly": "kana"}]}}],
   "hints": {"expressionPos": ["exp"], "particlePos": ["prt"],   // POS tags the ranking/boundary rules read
             "readingScript": "kana", "readingType": "kana",   // text only in this script is also looked up by reading
-            "keepWhole": ["にもとづいて", "しかねない"]},         // format 2: expressions the boundary rule never splits
+            "keepWhole": ["に基づいて", "にもとづいて"]},       // format 2: surfaces the boundary rule keeps whole
   "rules": [{"from": "ました", "to": "ます", "reason": "past", "out": "masu"}] }
 ```
 
@@ -122,14 +122,18 @@ ranking by the first sense let 海松, 佝僂, 野老 and 奴 beat みる, く�
 (#177 review). Consequence: bare して is 仕手 (`uk` on its second sense, priority 92) without a frequency pack.
 
 Segmentation is greedy longest match. **Boundary rule**: when the match at a position is exact, its first
-entry has priority 0, its senses all carry an `expressionPos` tag and none of its forms and readings is in
-`hints.keepWhole`, the shortest proper prefix of it that has a match has a
+entry has priority 0 and its senses all carry an `expressionPos` tag, the shortest proper prefix of it that
+has a match has a
 first entry with a `particlePos` tag, and the match starting right after that prefix either ends strictly after the expression, or ends exactly with
 it and has, among its same-length results, an inflected match (non-empty chain) of an entry with priority > 0
 that is strong by kana fit (して of する, even where the noun 仕手 ranks first without a frequency pack; not ねない
-of 寝る, a word written in kanji, so かねない, さえない, よければ stay), the token is the particle
+of 寝る, a word written in kanji, so かねない, さえない, よければ stay) **and the expression's matched surface is not
+in `hints.keepWhole`**, the token is the particle
 (仕事をしている → 仕事 | を | している; 仕事をして帰った → 仕事 | を | して | 帰った; には and にとって, with priority,
-stay). The rule reads only the lookup's ranked results at that position, which are capped at 30 entries
+stay; 法律に基づいて判断する keeps に基づいて, but 計画に基づいている is に | 基づいている: a word running past a listed
+expression still splits it). `keepWhole` is compared with the surface as written, so a list holds every
+spelling that marks the grammar use (に基づいて and にもとづいて) and leaves out literal spellings (と来たら is と +
+来たら; ときたら is listed). The rule reads only the lookup's ranked results at that position, which are capped at 30 entries
 (`MaxEntries`); a particle ranked below the cap is not seen.
 
 ## Japanese table (`ja.rules.json`)
@@ -139,9 +143,10 @@ Classes `v1`, `v5`, `vs`, `vk`, `adj-i`, `adj-ix` (dictionary forms), `masu`, `t
 the adverbial く needs a stem of two code points or a non-kana one (いく, なく, しく are not adverbials). Kana te-form
 auxiliaries fold into the verb (ている/てる, ておく/とく, てしまう/ちゃう/ちまう, てみる, ていく, てくる,
 てください, てあげる, てくれる, てもらう; で- variants): the lemma is the main verb, the auxiliary a reason.
-`keepWhole` lists 34 reviewed grammar expressions (に基づいて, を通して, によれば, に応じて, に沿って,
-をめぐって, をおいて, にすぎない, と思ったら, …, しかねない; the spec's "Refinements (#177)" says how it was
-derived); quotation と言って / と言い and をして are not listed. ないで (te-form of ない, chainOnly),
+`keepWhole` lists the surfaces of reviewed grammar expressions (に基づいて/にもとづいて, を通して/をとおして, によれば,
+に応じて, に沿って, をめぐって/を巡って, にすぎない/に過ぎない, と思ったら, ときたら, であれ, でない, …, しかねない; the
+spec's "Refinements (#177)" says how it was derived); quotation と言って / と言い, をして, をおいて, にして,
+にあたって and にあたり are not listed (荷物をおいてください, サラダにしてください, 頭に当たって split). ないで (te-form of ない, chainOnly),
 てはいけない / てはいけません (`prohibition`) and てもいい (`permission`) fold like てください:
 食べないでください → 食べる [request, te-form, negative]; 食べなくてもいい → 食べる [permission, te-form, negative].
 Godan imperatives are deliberately not deinflected (届け, 構え are nouns far more often).
