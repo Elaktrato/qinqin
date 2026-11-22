@@ -85,6 +85,9 @@ type analysis struct {
 	ambiguous []string // "word\treadings" of the words that left the reading out
 	coverage  float64  // share of Han/kana code points inside matches
 	words     []string // the words the sentence's groups link to, in order
+	tokens    []string // every word-kind match that is not a skip word (its first try)
+	unlinked  []string // the tokens that did not link
+	chars     int      // matches whose best entry is a character entry
 }
 
 // analyze segments text and builds its analysis.
@@ -140,8 +143,18 @@ func (a *analyzer) analyze(ctx context.Context, text string) (analysis, error) {
 				b.kana(rd)
 			}
 			reliable = reliable && ok
-			if w := a.word(ctx, m, byID); w != "" && !contains(out.words, w) {
+			w, label := a.word(ctx, m, byID)
+			if w != "" && !contains(out.words, w) {
 				out.words = append(out.words, w)
+			}
+			if label != "" {
+				out.tokens = append(out.tokens, label)
+				if w == "" {
+					out.unlinked = append(out.unlinked, label)
+				}
+			}
+			if len(m.Entries) > 0 && m.Entries[0].Kind == "character" {
+				out.chars++
 			}
 			i = m.End
 			continue
@@ -267,10 +280,11 @@ func (a *analyzer) jaReading(m segment.Match, byID map[int64]lexicon.Entry, out 
 // sharing the surface's prefix, then its headword. A try listed in the
 // rules' skipWords skips the match; otherwise the first try that
 // BestWord — what the importer calls — resolves to one of the match's
-// candidates is the word.
-func (a *analyzer) word(ctx context.Context, m segment.Match, byID map[int64]lexicon.Entry) string {
+// candidates is the word. label names the token for the report (its
+// first try; "" for a character entry or a skip word).
+func (a *analyzer) word(ctx context.Context, m segment.Match, byID map[int64]lexicon.Entry) (word, label string) {
 	if len(m.Entries) == 0 || m.Entries[0].Kind != "word" {
-		return ""
+		return "", ""
 	}
 	e := byID[m.Entries[0].ID]
 	valid := map[string]bool{}
@@ -293,9 +307,12 @@ func (a *analyzer) word(ctx context.Context, m segment.Match, byID map[int64]lex
 	if hw := e.Headword(); hw != "" && !contains(tries, hw) {
 		tries = append(tries, hw)
 	}
+	if len(tries) == 0 {
+		return "", ""
+	}
 	for _, w := range tries {
 		if contains(a.rules.SkipWords, w) {
-			return ""
+			return "", ""
 		}
 	}
 	for _, w := range tries {
@@ -305,11 +322,11 @@ func (a *analyzer) word(ctx context.Context, m segment.Match, byID map[int64]lex
 		}
 		for _, c := range m.Entries {
 			if c.ID == id {
-				return w
+				return w, tries[0]
 			}
 		}
 	}
-	return ""
+	return "", tries[0]
 }
 
 func (a *analyzer) bestWord(ctx context.Context, w string) (int64, error) {

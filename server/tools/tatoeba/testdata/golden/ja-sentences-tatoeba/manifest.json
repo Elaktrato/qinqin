@@ -1,0 +1,11 @@
+{
+  "id": "ja-sentences-tatoeba",
+  "name": "Tatoeba example sentences (Japanese)",
+  "version": "2000-01-02",
+  "type": "sentences",
+  "language": "ja",
+  "format": "json",
+  "license": "CC BY 2.0 FR (some sentences CC0 1.0)",
+  "attribution": "Tatoeba (https://tatoeba.org) and its contributors; each sentence's author and link are in credits.tsv",
+  "notice": "Example sentences from [Tatoeba](https://tatoeba.org), export of 2000-01-02, written by Tatoeba's contributors and shared under [CC BY 2.0 FR](https://creativecommons.org/licenses/by/2.0/fr/); some are [CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/). Each sentence's author and its page on Tatoeba are listed in the pack's credits.tsv.\n\nqinqin chose these sentences with a program: it kept sentences with an English translation, preferred native speakers, and dropped flagged, duplicate and unsuitable ones. The kana readings were generated from JMdict ([CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/), EDRDG) and are given only where every word has one certain reading. The selection, the readings and the links to dictionary words were made automatically and may contain errors."
+}
