@@ -208,3 +208,75 @@ with the language code, documented in the contract — cost if wrong: none for J
 pack type (follow-up), a Spanish table (the engine test uses a synthetic table; es-demo has no inflected
 data worth a table yet), the pre-existing kana-reading branches of lookup (`language == "ja"` for reading
 matches; not lemmatization).
+
+## Refinements (#177, 2026-11-22)
+
+Follow-up to the trade-offs recorded above, measured on JMdict-only and JMdict + Jiten scratch servers built
+from `develop` (979d67ee). All changes are table data or generic, table-driven engine features (format 2).
+
+Ruling: **a table may list expressions the boundary rule keeps whole** (`hints.keepWhole`: texts compared
+with the first entry's written forms and readings) — an expression in the list is never split into particle +
+word. A declarative list beats a heuristic: the pri-0 particle-led JMdict expressions include taught grammar
+(に基づいて) and plain quotation (と言って) that no tag tells apart — cost if wrong: a listed expression
+(superseded by review fix 3 below: the list only blocks a split by a word *ending with* the expression, so
+計画に基づいている is に + 基づいている → 基づく).
+
+Ruling: **the Japanese list is derived, then reviewed**: JMdict `exp` entries (every sense `exp`) with priority 0
+that start with a particle and whose form or reading occurs in a lesson title, pattern or example focus of the
+bundled `ja-grammar` pack (73 candidates, of which the 44 with priority 0 can be split at all), each kept or
+dropped by hand; the committed list is the reviewed result in the table, not a build step. Kept whole (taught
+as units): に基づいて, を通して, によれば, に応じて, に沿って, をめぐって, をおいて, にすぎない, に反して, にあたって,
+にあたり, にわたり, にかけては, にひきかえ, に至っては, に対し, に関し, にして, によらず, にもまして, と思ったら,
+ときたら, というと, といえど, といえども, といったらない, が早いか, であれ, であろう, ですら, でない, となく, もさることながら — and
+しかねない (its し is する's stem, not a particle; N2 grammar). Split (the learner meets the verb): と言って and
+と言い (quotation + 言う: と言っていました folds 言う's progressive), をして (+ する). — cost if wrong: a grammar
+expression outside the pack's points is still split.
+
+Ruling: **ないで is the negative te-form inside a chain only** (`ないで` → `ない`, in te, `chainOnly`, a format-2
+rule flag): 食べないでください → 食べる with reasons [request, te-form, negative] ("negative te-form request").
+As a surface rule it cut 高くないです and どころではないでしょう into ないで + す in the corpus check, so
+standalone ないで (忘れないでね, 触らないで) stays ない + で — cost if wrong: those standalone forms keep two
+tokens.
+
+Ruling: **てはいけない / てもいい fold like てください** (reasons `prohibition`, `permission`; で- variants,
+いけません): してはいけない → する, 食べなくてもいい → 食べる; a chainOnly なくて → ない lets the negative chain
+reach the verb (making the general くて rule chainable instead read 痛くてたまらない as a contracted progressive). — cost if wrong: てもいい's いい is not
+counted as a word in coverage.
+
+Ruling (superseded in the #177 review, see below): kana fit's usually-kana was briefly the first sense's tag;
+display and ranking do **not** share one definition — display uses the first sense (`frequency/`), ranking
+the entry flag (any sense).
+
+Ruling: **format 2**: `hints.keepWhole` and `chainOnly` are format-2 fields (a format-1 table using them is
+rejected); an engine reads every format up to its own, so format-1
+tables stay valid — cost if wrong: none (no format-1-only client exists yet).
+
+## Review fixes (#177, 2026-11-22)
+
+Ruling: **kana fit's usually-kana is the entry flag `uk` (any sense) again**; the first-sense test let 海松,
+佝僂, 野老, 奴 beat みる, くる, ところ, め (23 of the 130 priority-≥ 60 readings with `uk` only on a later sense
+changed without a frequency pack). `hints.usuallyReadingTag` is removed. Display (first sense, `frequency/`)
+and ranking (any sense) deliberately differ — cost if wrong: none measured (0 same-span entry changes on the
+corpus and the 130 at-risk readings against `develop`).
+
+Ruling: **bare して stays 仕手 without a frequency pack** — 仕手 has priority 92 against する's 60, so no rule
+that respects priority makes it yield; a rule that ignores priority would be a special case — cost if wrong:
+して, してから, 仕事をして帰った show 仕手 first in a JMdict-only install (the wiki says so; Jiten fixes it).
+
+Ruling: **particles never yield** — the particle-yields rule existed only for して and made formal にて (煮る)
+and たって (立つ) wrong; withdrawn — cost if wrong: none known.
+
+Ruling: **`keepWhole` only blocks a split by a word ending with the expression, and is compared with the
+matched surface**: a word running past it still splits (計画に基づいている → に + 基づいている, ここであれこれ with
+a frequency pack); the list holds the grammar spellings (に基づいて and にもとづいて, ときたら but not と来たら);
+をおいて, にして, にあたって, にあたり are dropped (荷物をおいてください, サラダにしてください, 頭に当たって) — cost if
+wrong: a grammar expression written in an unlisted spelling may be split.
+
+Ruling: **more prohibition and permission forms**, **てほしい** and **かねない on every verb** (masu-stem rules
+like ながら; reason `possibility`): 行ってはいけなかった, 行ってはいけませんでした, 見てもかまいません, 帰ってもよかった,
+食べちゃだめ, 行っちゃいけない, 行かないでほしい, 誤解されかねない, 起こりかねない. しかねない stays the JMdict
+expression without a frequency pack (it has a written form, so it does not yield) and stays in `keepWhole`
+(its し would otherwise be split off as a particle) — cost if wrong: ほしい is no word of its own in coverage
+after a te-form.
+
+Ruling: **standalone ないで stays unfolded** (chainOnly kept): widening it cuts 少ないです and 危ないです.

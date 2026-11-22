@@ -22,10 +22,10 @@ Fixtures:
 
 Go: `server/internal/lemma/contract_test.go`, `server/internal/segment/contract_lemma_test.go`.
 
-## Table format (`format: 1`)
+## Table format (`format: 2`)
 
 ```jsonc
-{ "format": 1,                 // engine format; a new field, match mode or predicate bumps it
+{ "format": 2,                 // engine format; a new field, match mode or predicate bumps it
   "language": "ja",            // language code; the file is tables/<language>.json
   "version": "2026-11-22",     // table version (informational)
   "maxDepth": 5,               // rules chained on one surface, 1..8
@@ -37,21 +37,26 @@ Go: `server/internal/lemma/contract_test.go`, `server/internal/segment/contract_
   },
   "compounds": [{"suffix": "する", "class": "vs", "stem": {"anyOf": [{"minRunes": 2}, {"notOnly": "kana"}]}}],
   "hints": {"expressionPos": ["exp"], "particlePos": ["prt"],   // POS tags the ranking/boundary rules read
-            "readingScript": "kana", "readingType": "kana"},  // text only in this script is also looked up by reading
+            "readingScript": "kana", "readingType": "kana",   // text only in this script is also looked up by reading
+            "keepWhole": ["に基づいて", "にもとづいて"]},       // format 2: surfaces the boundary rule keeps whole
   "rules": [{"from": "ました", "to": "ます", "reason": "past", "out": "masu"}] }
 ```
 
 Unknown keys, an unknown class in `out`/`in`/`compounds`, an unknown `match` or script, an empty predicate,
-an empty `from` or `reason`, `maxDepth` outside 1..8 or another `format` reject the whole table.
+an empty `from` or `reason`, an empty `keepWhole` entry, `maxDepth` outside 1..8 or a `format` outside 1..2 reject
+the whole table. An engine reads every format from 1 up to its own: format 2 added `hints.keepWhole` and the rule
+flag `chainOnly`; a format-1 table stays valid, and a format-1 table that uses either is rejected.
 
 ## Rules and chaining
 
-A rule `{from, to, reason, in?, out, match?, stem?}` rewrites a form ending in `from` to
+A rule `{from, to, reason, in?, out, match?, stem?, chainOnly?}` rewrites a form ending in `from` to
 `stem + to`, where `stem` is the form without `from`; the new form has class `out`.
 
 - `match`: `suffix` (default) needs a non-empty stem; `suffix-or-whole` also matches the whole form;
   `whole` matches only the whole form.
 - `stem`: a predicate the stem must satisfy (below).
+- `chainOnly` (format 2): the rule never applies at depth 0 (to the surface), only to a form an earlier
+  rule produced: ないで → ない applies inside 食べないでください but not to the ないで of 高くないです.
 - `in`: at depth > 0 a rule applies to a form only when the form's class is in `in`. At depth 0 (the
   surface) every rule applies; a rule without `in` therefore applies only to the surface.
 - **Deinflect(surface)**: breadth-first from the surface. Depth d (0-based, d < `maxDepth`) applies every
@@ -68,7 +73,7 @@ A rule `{from, to, reason, in?, out, match?, stem?}` rewrites a form ending in `
 An object; every key present must hold. `minRunes n`: at least n code points. `notOnly <script>`: at
 least one code point outside the script (so false for an empty stem). `notSuffix [s...]`: ends in none.
 `allOf [p...]`, `anyOf [p...]`: nested predicates. Scripts: `kana` (hiragana, katakana, `ー`), `hiragana`,
-`katakana` (with `ー`), `han`, `latin`. The script list is fixed by the engine (format 1), not by a table:
+`katakana` (with `ー`), `han`, `latin`. The script list is fixed by the engine (formats 1 and 2), not by a table:
 a language needing another script (Hangul, Cyrillic) needs an engine change in every client and a format bump.
 
 ## Compounds
@@ -98,7 +103,9 @@ headword. The two keys from this item, language-neutral and parameterised by `hi
 
 - **Expression yields**: an exact match (empty chain) of an entry without written forms whose every sense
   has a tag in `expressionPos` *yields* when a same-length inflected candidate has an entry with a priority
-  > 0 and ≥ its own and no sense tagged `expressionPos` (すれば → する; として stays before とする). A
+  > 0 and ≥ its own and no sense tagged `expressionPos` (すれば → する; として stays before とする). Particles
+  never yield (にて is not 煮る, たって is not 立つ); an entry that is all `expressionPos` is an expression for
+  this rule even when its first sense also carries a `particlePos` tag (には). A
   yielding candidate ranks after **every** same-length candidate that does not yield (also after 掏る, a
   priority-0 conditional of すれば), whatever the later keys say.
 - **Kana fit**: a match through a reading is **strong** only when the reading's value equals the matched
@@ -109,18 +116,24 @@ headword. The two keys from this item, language-neutral and parameterised by `hi
 **Priority** is the entry's score `pri` (0–100), as the lexicon package carries it (`packages/`): the JMdict
 importer maps priority tags by max — nf01…nf24 → 101 − NN, news1/ichi1/spec1/gai1 → 60, nf25…nf48 → 78 − NN,
 news2/ichi2/spec2/gai2 → 30, anything else 0 — rare/outdated/irregular/search-only forms lose 40, floored at 0
-(`server/internal/dict/jmdict.go`, `priorityScore`). **Usually-kana** is the entry flag `uk`: some sense of the
-word carries JMdict `uk` (this is not the display-form rule of `frequency/display-form.json`, which looks at
-the first sense only).
+(`server/internal/dict/jmdict.go`, `priorityScore`). **Usually-kana** (kana fit) is the lexicon's entry flag `uk`: **some** sense of the word carries JMdict
+`uk`. This is deliberately not the display-form rule of `frequency/display-form.json` (first sense only):
+ranking by the first sense let 海松, 佝僂, 野老 and 奴 beat みる, くる, ところ and め without a frequency pack
+(#177 review). Consequence: bare して is 仕手 (`uk` on its second sense, priority 92) without a frequency pack.
 
 Segmentation is greedy longest match. **Boundary rule**: when the match at a position is exact, its first
-entry has priority 0 and its senses all carry an `expressionPos` tag, the shortest proper prefix of it that has a match has a
+entry has priority 0 and its senses all carry an `expressionPos` tag, the shortest proper prefix of it that
+has a match has a
 first entry with a `particlePos` tag, and the match starting right after that prefix either ends strictly after the expression, or ends exactly with
 it and has, among its same-length results, an inflected match (non-empty chain) of an entry with priority > 0
 that is strong by kana fit (して of する, even where the noun 仕手 ranks first without a frequency pack; not ねない
-of 寝る, a word written in kanji, so かねない, さえない, よければ stay), the token is the particle
+of 寝る, a word written in kanji, so かねない, さえない, よければ stay) **and the expression's matched surface is not
+in `hints.keepWhole`**, the token is the particle
 (仕事をしている → 仕事 | を | している; 仕事をして帰った → 仕事 | を | して | 帰った; には and にとって, with priority,
-stay). The rule reads only the lookup's ranked results at that position, which are capped at 30 entries
+stay; 法律に基づいて判断する keeps に基づいて, but 計画に基づいている is に | 基づいている: a word running past a listed
+expression still splits it). `keepWhole` is compared with the surface as written, so a list holds every
+spelling that marks the grammar use (に基づいて and にもとづいて) and leaves out literal spellings (と来たら is と +
+来たら; ときたら is listed). The rule reads only the lookup's ranked results at that position, which are capped at 30 entries
 (`MaxEntries`); a particle ranked below the cap is not seen.
 
 ## Japanese table (`ja.rules.json`)
@@ -130,6 +143,12 @@ Classes `v1`, `v5`, `vs`, `vk`, `adj-i`, `adj-ix` (dictionary forms), `masu`, `t
 the adverbial く needs a stem of two code points or a non-kana one (いく, なく, しく are not adverbials). Kana te-form
 auxiliaries fold into the verb (ている/てる, ておく/とく, てしまう/ちゃう/ちまう, てみる, ていく, てくる,
 てください, てあげる, てくれる, てもらう; で- variants): the lemma is the main verb, the auxiliary a reason.
+`keepWhole` lists the surfaces of reviewed grammar expressions (に基づいて/にもとづいて, を通して/をとおして, によれば,
+に応じて, に沿って, をめぐって/を巡って, にすぎない/に過ぎない, と思ったら, ときたら, であれ, でない, …, しかねない; the
+spec's "Refinements (#177)" says how it was derived); quotation と言って / と言い, をして, をおいて, にして,
+にあたって and にあたり are not listed (荷物をおいてください, サラダにしてください, 頭に当たって split). ないで (te-form of ない, chainOnly),
+てはいけない / てはいけません (`prohibition`) and てもいい (`permission`) fold like てください:
+食べないでください → 食べる [request, te-form, negative]; 食べなくてもいい → 食べる [permission, te-form, negative].
 Godan imperatives are deliberately not deinflected (届け, 構え are nouns far more often).
 
 ## Android notes

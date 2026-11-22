@@ -17,9 +17,10 @@ import (
 	"unicode/utf8"
 )
 
-// Format is the table format this engine implements. It changes when a
-// rule field, match mode or stem predicate is added.
-const Format = 1
+// Format is the newest table format this engine implements; it reads
+// every format from 1 up to it. It changes when a rule field, hint, match
+// mode or stem predicate is added (2: hints keepWhole, rule chainOnly).
+const Format = 2
 
 // Match modes of a rule.
 const (
@@ -80,6 +81,16 @@ type Hints struct {
 	// readings of type ReadingType. Empty: no reading lookups.
 	ReadingScript string `json:"readingScript,omitempty"`
 	ReadingType   string `json:"readingType,omitempty"`
+	// KeepWhole (format 2) lists expressions the segmentation boundary
+	// rule never splits, compared with an entry's written forms and
+	// readings.
+	KeepWhole []string `json:"keepWhole,omitempty"`
+}
+
+// KeepsWhole reports whether any of texts (an entry's forms and
+// readings) is in KeepWhole.
+func (h Hints) KeepsWhole(texts ...string) bool {
+	return slices.ContainsFunc(texts, func(t string) bool { return t != "" && slices.Contains(h.KeepWhole, t) })
 }
 
 // InScript reports whether s is non-empty and every code point is in
@@ -102,6 +113,10 @@ type Rule struct {
 	Match  string   `json:"match,omitempty"`
 	// Stem, when set, must accept the text the rule leaves before From.
 	Stem *Pred `json:"stem,omitempty"`
+	// ChainOnly (format 2): the rule never rewrites the surface itself,
+	// only a form an earlier rule produced (ないで of ないでください, not
+	// the ないで of ないです).
+	ChainOnly bool `json:"chainOnly,omitempty"`
 }
 
 // Pred is a declarative stem predicate. Every key set must hold.
@@ -153,8 +168,12 @@ func Parse(data []byte) (*Table, error) {
 
 func (t *Table) validate() error {
 	switch {
-	case t.Format != Format:
-		return fmt.Errorf("format %d, want %d", t.Format, Format)
+	case t.Format < 1 || t.Format > Format:
+		return fmt.Errorf("format %d, want 1..%d", t.Format, Format)
+	case slices.Contains(t.Hints.KeepWhole, ""):
+		return errors.New("hints: empty keepWhole entry")
+	case t.Format < 2 && (len(t.Hints.KeepWhole) > 0 || slices.ContainsFunc(t.Rules, func(r Rule) bool { return r.ChainOnly })):
+		return errors.New("keepWhole and chainOnly need format 2")
 	case t.Language == "":
 		return errors.New("no language")
 	case t.MaxDepth < 1 || t.MaxDepth > 8:
@@ -261,7 +280,7 @@ func (t *Table) Deinflect(surface string) []Candidate {
 		for _, n := range level {
 			for i := range t.Rules {
 				r := &t.Rules[i]
-				if depth > 0 && !slices.Contains(r.In, n.class) {
+				if depth > 0 && !slices.Contains(r.In, n.class) || depth == 0 && r.ChainOnly {
 					continue
 				}
 				if !strings.HasSuffix(n.form, r.From) {

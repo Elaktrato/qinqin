@@ -160,3 +160,37 @@ func TestCompoundStemLengthByScript(t *testing.T) {
 	wantPrefix(t, run(t, s, "ja", "メモした", 0), "メモ[past]")
 	wantPrefix(t, run(t, s, "ja", "愛した", 0), "愛[past]")
 }
+
+// Kana fit's usually-kana is the entry flag (uk on any sense; #177 review:
+// the first-sense test broke みる, くる, ところ and め). So without a
+// frequency pack bare して stays 仕手 (uk on its second sense, priority 92)
+// — recorded; the Jiten pack puts する first.
+func TestBareShiteWithoutFrequencyIsTheNoun(t *testing.T) {
+	sqlDB, _ := openDB(t)
+	importJMdict(t, sqlDB, jaWords+`<entry>
+<ent_seq>1305990</ent_seq>
+<k_ele><keb>仕手</keb><ke_pri>ichi1</ke_pri><ke_pri>nf08</ke_pri></k_ele>
+<r_ele><reb>して</reb><re_pri>ichi1</re_pri><re_pri>nf08</re_pri></r_ele>
+<sense><pos>&n;</pos><gloss>doer</gloss></sense>
+<sense><pos>&n;</pos><misc>&uk;</misc><gloss>protagonist (noh)</gloss></sense>
+</entry>
+`)
+	s := service(sqlDB)
+	wantPrefix(t, run(t, s, "ja", "して", 0), "仕手", "為る[te-form]")
+	wantPrefix(t, run(t, s, "ja", "こと", 0), "事")
+	wantPrefix(t, run(t, s, "ja", "いる", 0), "居る")
+}
+
+// An expression with a written form never yields: しかねない (仕兼ねない)
+// stays before する's possibility form of the same text.
+func TestWrittenExpressionDoesNotYield(t *testing.T) {
+	sqlDB, _ := openDB(t)
+	importJMdict(t, sqlDB, jaWords+`<entry>
+<ent_seq>1305000</ent_seq>
+<k_ele><keb>仕兼ねない</keb></k_ele>
+<r_ele><reb>しかねない</reb></r_ele>
+<sense><pos>&exp;</pos><misc>&uk;</misc><gloss>might do</gloss></sense>
+</entry>
+`)
+	wantPrefix(t, run(t, service(sqlDB), "ja", "しかねない", 0), "仕兼ねない", "為る[possibility]")
+}

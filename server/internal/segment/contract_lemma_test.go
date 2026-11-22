@@ -23,6 +23,11 @@ type segmentFixture struct {
 		POS      []string `json:"pos"`
 		Pri      []string `json:"pri"`
 		UK       bool     `json:"uk"`
+		// Senses, when present, replaces pos/uk: one sense each.
+		Senses []struct {
+			POS []string `json:"pos"`
+			UK  bool     `json:"uk"`
+		} `json:"senses"`
 	} `json:"lexicon"`
 	Cases []struct {
 		Name   string `json:"name"`
@@ -55,6 +60,9 @@ func TestContractLemmaSegment(t *testing.T) {
 	words := make([]jw, len(fx.Lexicon))
 	for i, w := range fx.Lexicon {
 		words[i] = jw{kanji: w.Forms, readings: w.Readings, pos: w.POS, pri: w.Pri, uk: w.UK}
+		for _, sn := range w.Senses {
+			words[i].senses = append(words[i].senses, jwSense{pos: sn.POS, uk: sn.UK})
+		}
 	}
 	svc, sqlDB := jaService(t, words, "")
 	for _, c := range fx.Cases {

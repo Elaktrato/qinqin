@@ -315,7 +315,7 @@ func hasClass(rules *lemma.Table, e lexicon.Entry, class string) bool {
 // weakReading reports whether m is a weak reading match: a reading match
 // is strong only when the reading is the probe text itself (not just its
 // plain form: アメ for あめ) and the word is usually written that way (no
-// written form, or usually kana).
+// written form, or usually kana: the entry flag uk, set when any sense is).
 func weakReading(m *match) bool {
 	e := m.entry
 	return m.reading >= 0 && (e.Readings[m.reading].Value != m.probe.term || len(e.Forms) > 0 && !e.UK)
