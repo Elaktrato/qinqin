@@ -32,7 +32,7 @@ Rules of the paged form:
 - Order `(ts, id)` (the legacy order and the replay order of `events/README.md`); keyset on the last shipped
   `(ts, id)`. The concatenation of a walk's pages equals the legacy answer for the same `since`/`workspace`
   when nothing is written meanwhile.
-- A page stops at `limit` rows or before the row that would take its encoded items past 4 MiB, but always
+- A page stops at `limit` rows or before the row that would take its encoded items (their bytes alone, no envelope or commas) past 4 MiB, but always
   holds at least one row while rows remain (the pull v2 budget, `sync.MaxPageLimit`/`MaxPageBytes`). `more` is
   false exactly when no row remains (the server reads one row ahead), so only an empty log ends on an empty
   page.

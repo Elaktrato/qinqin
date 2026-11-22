@@ -83,8 +83,9 @@ GET /api/events?page=<next>[&workspace=<id>]                          continuati
   included), in `(ts, id)` order; a walk keys on the last shipped `(ts, id)`, so the pages of a walk
   concatenate to the legacy answer for the same `since` and `workspace` when nothing is written meanwhile.
   An event appended mid-walk with a `ts` before the position is in the next read, not this one.
-- A page stops at `limit` rows or before the row that would take its items past 4 MiB, but always holds at
-  least one row while rows remain (the pull's budget). `more` is false exactly when no row remains (the
+- A page stops at `limit` rows or before the row that would take its items past 4 MiB (the encoded bytes of
+  the items alone; the envelope and the commas between items are not counted), but always holds at least one
+  row while rows remain (the pull's budget). `more` is false exactly when no row remains (the
   server reads ahead), so only an empty log has an empty page; `next` is a string exactly when `more`.
 - The continuation carries the first page's `workspace` again, exactly (absent when the first page had none;
   a workspace-limited access token needs it, `tokReadWS`), and neither `since` nor `limit`. The token is
