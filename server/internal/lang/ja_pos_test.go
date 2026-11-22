@@ -34,14 +34,16 @@ func TestClassMatches(t *testing.T) {
 		{lang.ClassVk, []string{"vk"}, true},
 		{lang.ClassVk, []string{"v1"}, false},
 		{lang.ClassAdjI, []string{"adj-i"}, true},
-		{lang.ClassAdjI, []string{"adj-ix"}, true},
+		{lang.ClassAdjI, []string{"adj-ix"}, false}, // いい/かっこいい conjugate on よ: class adj-ix
+		{"adj-ix", []string{"adj-ix"}, true},
+		{"adj-ix", []string{"adj-i"}, false},
 		{lang.ClassAdjI, []string{"adj-na", "adj-no"}, false},
 		{lang.ClassV1, nil, false},
 		{"", []string{"v1"}, false},
 		{"masu", []string{"v1", "v5r", "vs", "vk", "adj-i"}, false},
 	}
 	for _, c := range cases {
-		if got := lang.ClassMatches(c.class, c.pos); got != c.want {
+		if got := (lang.Ja{}).Rules().ClassMatches(c.class, c.pos); got != c.want {
 			t.Errorf("ClassMatches(%q, %q) = %v, want %v", c.class, c.pos, got, c.want)
 		}
 	}
@@ -196,7 +198,7 @@ func TestJaDeinflectClassGating(t *testing.T) {
 	pos := map[string][]string{"話する": {"n"}, "話す": {"v5s", "vt"}}
 	var accepted []string
 	for _, d := range (lang.Ja{}).Deinflect("話した") {
-		if p, ok := pos[d.Form]; ok && lang.ClassMatches(d.Class, p) {
+		if p, ok := pos[d.Form]; ok && (lang.Ja{}).Rules().ClassMatches(d.Class, p) {
 			accepted = append(accepted, d.Form)
 		}
 	}

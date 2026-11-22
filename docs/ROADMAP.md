@@ -101,6 +101,16 @@ Design: `docs/superpowers/specs/2026-11-16-visual-rework-design.md`; mockups:
   the qinqin Day, Night and Deep themes on a real device; a real screen reader, touch and
   200 % zoom pass.
 
+## Study batch (2026-11-22, on develop)
+
+Handoff: `docs/superpowers/handoffs/2026-11-22-study-batch-handoff.md`.
+
+- ~~[#132](https://github.com/Elaktrato/qinqin/issues/132) mix card types within a session~~ (`docs/contracts/cards/session-mix.json`)
+- ~~[#131](https://github.com/Elaktrato/qinqin/issues/131) go back and change a misclicked grade~~ (`docs/contracts/events/review-replace.json`)
+- ~~[#110](https://github.com/Elaktrato/qinqin/issues/110) page `GET /api/events`~~ (also fixed offline caching of event and pull v2 pages)
+- ~~[#165](https://github.com/Elaktrato/qinqin/issues/165) language-agnostic lemmatizer, Japanese table~~ (`docs/contracts/lemma/`); follow-up [#176](https://github.com/Elaktrato/qinqin/issues/176) rule tables as a data pack
+- [#133](https://github.com/Elaktrato/qinqin/issues/133) Tatoeba example sentences: tooling done; packs to be built by the owner
+
 ## Future (milestone)
 
 - ~~[#39](https://github.com/Elaktrato/qinqin/issues/39) feature-plugin SDK~~ — done (strict manifest contract, permissions, embedded built-in manifests, web SDK, study-event hook; design `docs/superpowers/specs/2026-11-15-plugin-sdk-design.md`). Follow-up: ~~[#85](https://github.com/Elaktrato/qinqin/issues/85) move flashcards and reader onto the SDK~~ — reworked: they became core features (v0.4.0 prep)

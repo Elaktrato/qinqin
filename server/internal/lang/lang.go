@@ -11,6 +11,7 @@ import (
 	"strings"
 	"sync"
 
+	"qinqin/internal/lemma"
 	"qinqin/internal/model"
 )
 
@@ -40,16 +41,19 @@ type Deinflection struct {
 	// negative past, passive, causative for 食べさせられなかった.
 	Reasons []string
 	// Class is the word class Form must have to be this deinflection
-	// (ClassV1, ClassV5, …); see ClassMatches. An intermediate form that
+	// (ClassV1, ClassV5, …); see lemma.Table.ClassMatches. An intermediate form that
 	// is no dictionary form (飲みます) has a class no POS tag matches.
 	Class string
 }
 
-// Deinflector is implemented by packs whose surface forms inflect.
-// Deinflect returns possible dictionary forms for surface (never surface
-// itself), most specific first.
+// Deinflector is implemented by packs whose surface forms inflect: every
+// pack with a lemmatizer rule table (docs/contracts/lemma/). Deinflect
+// returns possible dictionary forms for surface (never surface itself),
+// most specific first; Rules is the table behind it, whose word classes,
+// compounds and ranking hints the lookup and the segmenter read.
 type Deinflector interface {
 	Deinflect(surface string) []Deinflection
+	Rules() *lemma.Table
 }
 
 var (
@@ -99,7 +103,9 @@ func Codes() []string {
 }
 
 // For returns the pack registered under code, matched case-insensitively.
-// Unknown codes fall back to the generic pack.
+// Unknown codes fall back to the generic pack — with deinflection when
+// the language has a lemmatizer rule table (lemma.For), so a language
+// gets lemmatization from its table alone.
 func For(code string) Pack {
 	mu.RLock()
 	p, ok := packs[strings.ToLower(code)]
@@ -107,8 +113,26 @@ func For(code string) Pack {
 	if ok {
 		return p
 	}
+	if t := lemma.For(code); t != nil {
+		return tablePack{t: t}
+	}
 	return Generic{}
 }
+
+// tablePack is the generic pack of a language that has a rule table.
+type tablePack struct {
+	Generic
+	t *lemma.Table
+}
+
+// Code is the table's language.
+func (p tablePack) Code() string { return p.t.Language }
+
+// Deinflect runs the language's rule table.
+func (p tablePack) Deinflect(surface string) []Deinflection { return deinflect(p.t, surface) }
+
+// Rules is the language's rule table.
+func (p tablePack) Rules() *lemma.Table { return p.t }
 
 // Generic is the fallback pack for languages without a code pack: plain
 // forms and search queries are lowercased, and readings never derive
