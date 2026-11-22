@@ -558,3 +558,39 @@ func TestBuildAudioCarriesClips(t *testing.T) {
 		t.Error("Build of an audio package without its clip files succeeded")
 	}
 }
+
+// TestSentencesPackageKeepsAnEmptyReading: a pack sentence may have no
+// reading (the pack left it out rather than guess); the package carries it
+// as "" and the contract says so (clients show no reading line).
+func TestSentencesPackageKeepsAnEmptyReading(t *testing.T) {
+	s := seedAll(t)
+	if _, err := s.db.Exec(`UPDATE sentences SET pinyin = '' WHERE hanzi = '你好！'`); err != nil {
+		t.Fatal(err)
+	}
+	sp := openPackage(t, build(t, s, "sentences.zh-sent", 1).Path)
+	if got := sp.strings(t, `SELECT pinyin FROM sentences WHERE hanzi = '你好！'`); !slices.Equal(got, []string{""}) {
+		t.Errorf("pinyin = %q, want one empty reading", got)
+	}
+	raw, err := os.ReadFile(filepath.Join("..", "..", "..", "docs", "contracts", "packages", "schemas.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var fx struct {
+		Cases []struct {
+			Type string `json:"type"`
+			Doc  string `json:"_doc"`
+		} `json:"cases"`
+	}
+	if err := json.Unmarshal(raw, &fx); err != nil {
+		t.Fatal(err)
+	}
+	for _, c := range fx.Cases {
+		if c.Type == "sentences" && !strings.Contains(c.Doc, `pinyin may be ""`) {
+			t.Errorf("schemas.json sentences case _doc = %q; it must say that pinyin may be \"\"", c.Doc)
+		}
+	}
+	readme, err := os.ReadFile(filepath.Join("..", "..", "..", "docs", "contracts", "packages", "README.md"))
+	if err != nil || !strings.Contains(string(readme), "`pinyin` may be `\"\"`") {
+		t.Errorf("packages README does not say that a pack sentence's pinyin may be empty (%v)", err)
+	}
+}
