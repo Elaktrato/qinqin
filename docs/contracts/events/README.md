@@ -27,6 +27,11 @@ Fixtures:
   `parseReview` reads, or `null`), `valid` (`isValidReview`: counted by replay and XP) and the replay `order`.
   Decoded by `apps/web/src/lib/study/reviewParse.test.ts`, `study/scheduler.test.ts` (`isValidReview`,
   `sortedReviews`) and `study/exp.test.ts` (XP counts exactly the valid ones).
+- `review-replace.json` — replaced reviews (#131): which reviews of a set count when some name the review they
+  replace (`live`, in replay order) and which are replaced; hand-written `cases` plus a `generated` block of 300
+  seeded random families (`scripts/contracts/gen-review-replace.mjs`, seed 131, expected ids from an oracle written
+  from the rule text; regenerate, never edit it by hand; `--check` exits 1 when it is stale). Decoded by `apps/web/src/lib/study/replaced.test.ts`
+  (`liveReviews`) and `server/internal/events/replaced_contract_test.go` (`events.Replaced`).
 - `page.json` — the paged `GET /api/events`: valid and invalid pages (shape, order, `next` rule) and request
   cases (query → status, JSON code or plain-text body). Decoded by
   `server/internal/api/contract_events_page_test.go` (every request against the server, every page through
@@ -208,6 +213,38 @@ An event counts as a review exactly when it parses and is valid. Replay order is
 instant, not the text (`10:00:00+01:00` and `09:00:00Z` tie and the id decides); see Order above for why the
 stored whole-second copy is the one to order.
 
+## Replaced reviews (`review-replace.json`)
+
+A changed grade (#131, the study session's Back) is a new `review` that names the review it replaces:
+`{cardId, mode, grade, meta?, replaces: "<id>"}`. Design: `docs/superpowers/specs/2026-11-22-regrade-design.md`.
+
+- **Parse**: `replaces` is kept when it is a non-empty string, else dropped (the review stays an ordinary review).
+- **Link**: a valid review E links to T when `E.payload.replaces === T.id`, `T.id !== E.id`, T is a valid review of
+  the same workspace and the same `cardId`, and both instants fall in the same whole second
+  (`floor(instant / 1000 ms)`: the web's millisecond outbox copy and the server's whole-second copy are one second).
+  Any other reference is ignored: dangling (the target never arrived, was lost, or belongs to another user),
+  another card, workspace or second, itself, a target that is not a valid review.
+- **Families**: links join reviews into families (connected components, both directions; a cycle is one family).
+  In each family exactly one review counts, the **greatest id** (plain string comparison); every other member is
+  **replaced** and counts nowhere: replay, next intervals, XP, streak, daily limits, burying, goals, milestones,
+  the weekly summary, Stats, deck numbers, the optimizer data and the heatmap cells.
+- The rule reads the set a client holds, never the arrival order: a replacement that arrives before its target
+  counts alone until the target arrives, which is then replaced. Two devices replacing the same review, a chain
+  (replacing a replacement) and a fork of a chain all leave the greatest id of the family.
+- Apply it to the stored `cardId`s **before** the duplicate-card merge (`study/canonical.json`), as the server
+  does (it has no merge).
+- **Writing one**: copy the target's `cardId`, `mode`, `meta` and `ts` (the same instant; Android: whole UTC
+  seconds), set `grade` and `replaces` (the id of the family's current survivor), and give it a fresh ULID that
+  **must sort above the id it names**: its time is at least the target's ULID time + 1 ms, even when the device
+  clock is behind (web: `newUlid(max(now, ulidTime(target) + 1))`). A replacement with a smaller id loses to its
+  target (fixture case "a replacement whose id sorts below its target loses"). Never
+  write one with the same grade (it changes nothing), never edit or drop an outbox item instead (an item may be
+  mid-flight: a rewritten id is a duplicate the server ignores).
+
+Ruling: one event with `replaces`, not a separate void event; the replacement carries the target's `ts`; the
+survivor is the family's greatest id; a link needs the same workspace, card and second — reasons and costs in the
+design (`2026-11-22-regrade-design.md`). Cost if a client ignores the rule: it counts both reviews of the card.
+
 ## Activity scoring (`activity.json`)
 
 The heatmap, goals and the weekly summary read cells `{day, workspace, type, points, raw}` from
@@ -217,7 +254,8 @@ members; `rules` in the fixture lists the built-in ones). A client that scores o
 - Events are bucketed by the **learner day** of their stored `ts` (zone history, `study-day/`) and their
   workspace; one cell per day, workspace and type with points > 0, sorted by day, workspace, type. Types without
   a rule (`session`, `view`, `lookup`, unknown types) make no cells.
-- **count** (`review`): points = raw = the number of events; the payload is not read.
+- **count** (`review`): points = raw = the number of events, except replaced reviews (`review-replace.json`:
+  the payload is read only for that); otherwise the payload is not read.
 - **measure** (`read`: field `seconds`, min 30, max 7200, `pointsPer` 300): the field must be a JSON number
   (integer or real), else the event is ignored; values below `min` are ignored; each event counts
   `r = min(value, max)`; points = the sum over events of `ceil(r / pointsPer)` (per event, not from the day's

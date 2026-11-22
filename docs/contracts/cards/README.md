@@ -32,7 +32,8 @@ Fixture: `card-ids.json` (`kind`, `entryId`, `sentenceId?`, `id`, `cardKey`, `vi
 
 ## Burying (`burying.json`)
 
-Card C is buried at `now` iff some other live card S of the same entry has a recorded review R with
+Card C is buried at `now` iff some other live card S of the same entry has a recorded review R (not replaced,
+`events/review-replace.json`; a replacement keeps the target's `ts`, so a changed grade buries the same) with
 `day(R.ts) === day(now)` (the learner's day, `docs/contracts/study-day/`) and `buries(S.kind, C.kind)`,
 where `buries(a, b) = a in {reverse, cloze} or b in {reverse, cloze}`. The four existing kinds never bury
 each other. Reviews of cards that no longer exist bury nothing; a card is never buried by its own reviews;

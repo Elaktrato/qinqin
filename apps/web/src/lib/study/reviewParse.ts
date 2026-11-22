@@ -44,7 +44,7 @@ export function parseReview(event: StudyEvent): ReviewEvent | null {
 	if (event.type !== 'review') return null;
 	const payload = event.payload;
 	if (typeof payload !== 'object' || payload === null) return null;
-	const { cardId, grade, mode, meta } = payload as Record<string, unknown>;
+	const { cardId, grade, mode, meta, replaces } = payload as Record<string, unknown>;
 	if (typeof cardId !== 'string' || cardId === '') return null;
 	if (typeof grade !== 'number' || !Number.isInteger(grade) || grade < 1 || grade > 4) {
 		return null;
@@ -59,6 +59,8 @@ export function parseReview(event: StudyEvent): ReviewEvent | null {
 	};
 	const parsedMeta = parseMeta(meta);
 	if (parsedMeta !== undefined) parsed.payload.meta = parsedMeta;
+	// A changed grade names the review it replaces (#131, review-replace.json).
+	if (typeof replaces === 'string' && replaces !== '') parsed.payload.replaces = replaces;
 	return parsed;
 }
 

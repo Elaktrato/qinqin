@@ -354,3 +354,39 @@ describe('gradeItem', () => {
 		expect(recordReview).not.toHaveBeenCalled();
 	});
 });
+
+describe('gradeItem hands back the recorded review (#131)', () => {
+	const recorded = {
+		id: '01KAPZ00000000000000000001',
+		workspaceId: 7,
+		device: 'web',
+		ts: '2026-11-22T09:00:00.000Z',
+		type: 'review' as const,
+		payload: { cardId: 'real-1', mode: 'vocab' as const, grade: 1 as const }
+	};
+
+	it('for a real card', async () => {
+		const real = card('real-1', 42, '猫');
+		const result = await gradeItem({
+			item: item({ cardId: 'real-1', virtual: false, card: real }),
+			grade: 1,
+			workspaceId: 7,
+			addCard: vi.fn(),
+			recordReview: vi.fn(async () => recorded)
+		});
+		expect(result).toEqual({ ok: true, card: real, created: false, review: recorded });
+	});
+
+	it('for a virtual item, after creating its card', async () => {
+		const created = card('real-1', 42, '猫');
+		const result = await gradeItem({
+			item: item({ cardId: 'level:42', virtual: true, card: null }),
+			grade: 1,
+			workspaceId: 7,
+			entry: ENTRY,
+			addCard: vi.fn(async () => created),
+			recordReview: vi.fn(async () => recorded)
+		});
+		expect(result).toEqual({ ok: true, card: created, created: true, review: recorded });
+	});
+});

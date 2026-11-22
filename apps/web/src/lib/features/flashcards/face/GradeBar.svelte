@@ -6,7 +6,10 @@
 	// readable grade tokens (a grade colour below 4.5:1 reads in --text),
 	// lines in the raw grade colour. A re-show (intervals null) is practice.
 	//
-	// API: <GradeBar intervals suggested busy ongrade bind:buttons />
+	// Back (#131): `chosen` is the grade the card got; the buttons become
+	// toggles (aria-pressed) and the chosen one says "your grade".
+	//
+	// API: <GradeBar intervals suggested chosen? busy ongrade bind:buttons />
 	import { t } from '$lib/i18n';
 	import { longInterval, shortInterval } from '$lib/study/intervalText';
 	import type { ReviewGrade } from '$lib/study/types';
@@ -16,12 +19,14 @@
 	let {
 		intervals,
 		suggested,
+		chosen = null,
 		busy,
 		ongrade,
 		buttons = $bindable([])
 	}: {
 		intervals: Record<ReviewGrade, number> | null;
 		suggested: ReviewGrade | null;
+		chosen?: ReviewGrade | null;
 		busy: boolean;
 		ongrade: (grade: ReviewGrade, source: Source) => void;
 		buttons?: (HTMLButtonElement | null)[];
@@ -54,6 +59,8 @@
 			type="button"
 			class="gb {option.key}"
 			class:sugg={suggested === option.grade}
+			class:mine={chosen === option.grade}
+			aria-pressed={chosen === null ? undefined : chosen === option.grade ? 'true' : 'false'}
 			data-suggested={suggested === option.grade ? '' : undefined}
 			bind:this={buttons[option.grade - 1]}
 			disabled={busy}
@@ -66,6 +73,7 @@
 			<span class="when"
 				>{intervals === null ? t('study.session.practice') : shortInterval(intervals[option.grade])}</span
 			>
+			{#if chosen === option.grade}<span class="yours">{t('study.session.regrade.yourGrade')}</span>{/if}
 		</button>
 	{/each}
 </div>
@@ -113,6 +121,16 @@
 	.gb.sugg {
 		box-shadow: inset 0 -2px 0 var(--line-colour);
 		background: color-mix(in srgb, var(--line-colour) 10%, transparent);
+	}
+	.gb.mine .name {
+		text-decoration: underline;
+		text-decoration-thickness: 2px;
+		text-underline-offset: 0.2em;
+	}
+	.yours {
+		color: var(--readable-muted);
+		font-size: var(--font-size-xs);
+		font-weight: var(--weight-regular);
 	}
 	.gb:hover:not(:disabled) .name {
 		text-decoration: underline;

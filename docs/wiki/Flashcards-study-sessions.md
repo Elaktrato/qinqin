@@ -83,6 +83,7 @@ The actions sit at the bottom of the screen. Before the answer there is one butt
 | Build the sentence | tap the tiles in order (or Tab and Enter), then **Check**; 1 to 4 grade once checked |
 | Write | draw with mouse, pen or touch; 1 to 4 grade once every character is done |
 | Tones | 1 to 5 set the highlighted syllable's tone (5 is neutral), ← and → move, Backspace clears, Enter checks; then 1 to 4 grade |
+| Every card, once one was graded | Z goes back to the card graded before (see [Changing a grade](#changing-a-grade)); there 1 to 4 change its grade and Esc returns |
 
 ## Your notes on the answer side
 
@@ -99,6 +100,14 @@ After a check the exercise suggests a grade: the suggested button gets a faint w
 | Word Salad | right on the first check | right after 1 to 2 wrong checks | 3 or more wrong checks, or Show answer |
 | Writing | no mistakes | mistakes on at most 25 % of the strokes | more mistakes, or a revealed character |
 | Tone | all tones right | one tone wrong | two or more wrong |
+
+## Changing a grade
+
+Clicked **Again** when you meant **Good**? Press **Back** (next to the grade buttons, or the key Z) and the card you graded last comes back with its answer showing, your grade marked ("your grade") and the suggested grade as before; the exercise itself is not repeated. Press Back again to go further: up to the last 20 cards of this session. Choose another grade and it replaces the old one, then you are back on the card you were on; choosing the same grade, or **Return to the current card** (Esc), changes nothing. The card you were on starts again when you come back: an answer you had already revealed stays revealed, but a half-typed answer, half-placed tiles or tones, or a half-drawn character are cleared. On the summary screen **Change the last grade** does the same for the last card.
+
+A changed grade undoes what the old one did in the session: an Again card's re-show is taken out again (unless you already saw it), and changing to Again queues one, a few cards later. The schedule, XP, streak, the daily counts, the heatmap, goals, milestones, Stats and the optimizer's training data all count the card once, with the new grade, and on the same day as before. Burying and the daily limits do not depend on the grade, so they stay as they were.
+
+Back belongs to the open session: after a reload, a workspace switch or a new session the earlier grades stay as they are. It works offline too; the change is sent with the other queued reviews. Nothing is ever edited or deleted: the new grade is a new review that names the one it replaces, so another device (or an older copy of the app that does not know about it yet) sees both until it catches up.
 
 ## The end of a session
 
@@ -120,7 +129,7 @@ A study-buddy mascot appears in the flashcards widget and the session summary: i
 
 ## For client implementers
 
-Card kinds, review parsing, XP and levels, burying and the session plan are specified in `docs/contracts/cards/`, `docs/contracts/study/` and `docs/contracts/scheduler/`. A new card has a deterministic id, `c-<kind>-<entryId>` (for example `c-vocab-42`), so two devices that add the same word offline write the same row. Older cards with random ids can exist twice; every page reads cards through one loader that merges such duplicates at read time (the earliest card survives, the others' reviews and decks join it), without rewriting anything stored.
+Card kinds, review parsing, XP and levels, burying and the session plan are specified in `docs/contracts/cards/`, `docs/contracts/study/` and `docs/contracts/scheduler/`. A changed grade is a `review` with `replaces: <id>`; which reviews then count (one per family, the greatest id) is `docs/contracts/events/review-replace.json`. A new card has a deterministic id, `c-<kind>-<entryId>` (for example `c-vocab-42`), so two devices that add the same word offline write the same row. Older cards with random ids can exist twice; every page reads cards through one loader that merges such duplicates at read time (the earliest card survives, the others' reviews and decks join it), without rewriting anything stored.
 
 ## Related
 
