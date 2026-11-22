@@ -196,3 +196,51 @@ deleted afterwards.
 **Follow-up (not filed: agents do not write to GitHub):** a `lemma-rules` data-pack type (format
 `rules-json`) that `lemma.Register`s a table at startup and is served as a package for Android, so a new
 study language gets rules without a server release; `ないで` (negative te-form) + ください.
+
+## Review fixes (2026-11-22, the one fix wave)
+
+`feature/study-batch` (#132, #133, #110) merged first (`8a0bacac`; one conflict in `docs/contracts/overview.md`,
+both rows kept). Each finding test-first, failing run seen before the fix:
+
+| Finding | Test that failed first | Fix commit |
+| --- | --- | --- |
+| 1 kana fit let katakana-only entries win (あめ → アメ) | `segment.json` case あめ (head アメ, want 雨) | `f43e6463`: strong only when the reading's value is the probe text |
+| 2 adverbial く (いく → いい, なく → ない, しく → しい); adj-ix | `deinflect.json` rejects いく/なく/しく, adj-ix expects; `TestClassMatches` | `01819ae0`: stem guard, class `adj-ix` with よ-form rules |
+| 3 をして kept before して | `segment.json` 仕事をして帰った, 宿題をしてから; then `TestBoundaryWithAnExactHomographAfterTheParticle` (仕手 first without frequency) | `3f4949ef`, `42eaeb45` |
+| 3b (found in the corpus re-check) かねない, さえない, しかねない, よければ split after a one-kana particle | `TestBoundaryKeepsAnExpressionOverAWeakInflection` | `bba23b51`: only a kana-fit strong inflection splits an expression it ends with |
+| 4 reading probes keyed on `language == "ja"` | `TestTableDrivenReadingProbes` (Latin reading in a table-only language; failed against the old `lookup.go`), `TestReadingHintsAndInScript` (vet) | `17477f0e`: `hints.readingScript` / `readingType` |
+| 6 survivors | `TestExpressionKeepsItsPlaceAgainstAnUnprioritisedVerb`, `segment.json` 宿題をしてもらった — both pass on the code and each fails with its mutant applied (`d.pri > 0` dropped; the longest shorter prefix) | `244380db` |
+| 8 two-kana compound stems | `TestCompoundStemLengthByScript` (こうしている) | `9685c709`, then **reverted by Ruling** in `ba4c48ee`: the corpus re-check showed けがしていて → 汚す; the test now pins けが/メモ/愛 |
+| 5, 7, 9, 10, 11 docs | — | `25e603d7` (priority formula, usually-kana = entry flag `uk` (any sense), compounds only on deinflected candidates with a Ruling, the 30-result cap, engine-fixed script list, yields ordering, wiki qualified, 書いとく dropped, web-fixture Ruling) |
+
+**Re-measured** on fresh scratch servers (JMdict only; JMdict + Jiten), the branch before the fix wave
+("pre") against the final build ("post"), on the issue table, every reviewer row (61) and the reviewer's
+must-fix rows. Unchanged rows: every issue-table row (しました, 仕事をしている, しちゃった, してしまった, しておく,
+すれば, しよう, しながら → する; 勉強しています → 勉強する with `stem`; させられた/されている → させる/される
+without frequency, → する with it) and all other reviewer rows. Changed:
+
+| Text | pre JMdict | post JMdict | pre +Jiten | post +Jiten |
+| --- | --- | --- | --- | --- |
+| あめ | アメ | あめ (雨) | あめ | same |
+| きる / かう | キル / カウ | きる / かう | きる / かう | same |
+| きれいでした | でし (デシ) | でし (弟子) | でし (弟子) | same |
+| いく | いく | same | いい (adverbial) | いく |
+| なく | ない (adverbial) | なく | ない (adverbial) | なく |
+| しく | しい (adverbial) | しく | しく | same |
+| 仕事をして帰った | をして + 帰った | を + して (仕手) + 帰った | をして + 帰った | を + して → する + 帰った |
+| 宿題をしても / 宿題をしてから寝る | をして | を + して (仕手) | をして | を + して → する |
+
+Without a frequency pack the bare して is the noun 仕手 (usually kana, high priority) — pre-existing, now
+said in the wiki. Corpus (27 522 code points): 10 408 → 10 438 tokens (JMdict) / 10 435 (+Jiten); the
+remaining distinct changes are particle-led unprioritised grammar expressions now split by finding 3
+(にすぎない → に + すぎる, に基づいて → に + 基づく, を通して, をめぐって, によれば, に応じて, に沿って, をおいて,
+と言って, と思ったら), なく no longer ない, and one mild regression without frequency: しかねない → し +
+かねない. Segment time over the corpus, single passes on the loaded machine: 16.0 → 14.3–18.3 s (JMdict),
+25.7 → 21.7–23.0 s (+Jiten): no measurable change.
+
+Gates of the fix wave: targeted Go (`lemma lang lookup segment`) green after every finding. One full Go
+run: gofmt clean, vet clean, 47 packages ok, exit 1 only for the known `internal/ai`
+`TestHostnameResolvingToEmbeddedFormIsRefused` (no IPv6). Web: `npm ci` 0, `check` 0, `build` 0, Node 26
+vitest 0 (565 files, 12 195 passed, 2 skipped); Node 22 `npm test` 1 with the same 5 Node 22-only failures
+as before the wave (`BookView.dom.test.ts` 4, `AccountSettings.dom.test.ts` 1; no web code changed in this
+wave). The scratch servers and data were deleted afterwards.
