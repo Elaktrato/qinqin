@@ -3,6 +3,7 @@
 // failed POST must never break the page the user is on.
 
 import { api } from './api/client';
+import { firstEventsPageUrl, readAllEvents } from './eventPages';
 import { sessionPayload } from './eventPayloads';
 import { logChangingTypes } from './plugins/contract';
 import { emitStudyEvents } from './plugins/hooks';
@@ -14,7 +15,8 @@ import { createWorkspaceCache } from './workspaceCache';
 
 export type EventType = 'session' | 'view' | 'lookup' | 'review' | 'read' | 'journal';
 
-// StudyEvent is one event as GET /api/events serves it: the row the
+// StudyEvent is one event as GET /api/events serves it (an item of a page,
+// lib/eventPages.ts): the row the
 // server stored, with the caller's own timestamp stored as UTC whole
 // seconds (fraction truncated; docs/contracts/events/).
 export interface StudyEvent {
@@ -51,16 +53,20 @@ export async function postEvents(events: StudyEventBody[]): Promise<void> {
 // Home -> Stats hop, not more. Joining the read in flight is the main gain.
 export const WORKSPACE_EVENTS_TTL_MS = 8_000;
 
-/** The whole event log of one workspace; the study load and offline preparation share it. */
+const EPOCH = '1970-01-01T00:00:00Z';
+
+/** The first page of the whole event log of one workspace; the study load and offline preparation share it. */
 export function fullLogPath(workspaceId: number): string {
-	return `/api/events?since=1970-01-01T00:00:00Z&workspace=${workspaceId}`;
+	return firstEventsPageUrl({ since: EPOCH, workspace: workspaceId });
+}
+
+/** fetchFullLog reads every page of one workspace's event log, uncached (#110). */
+export function fetchFullLog(workspaceId: number): Promise<StudyEvent[]> {
+	return readAllEvents((path) => api<unknown>(path), { since: EPOCH, workspace: workspaceId });
 }
 
 const eventLog = createWorkspaceCache(
-	async (workspaceId: number): Promise<StudyEvent[]> => {
-		const events = await api<StudyEvent[]>(fullLogPath(workspaceId));
-		return Array.isArray(events) ? events : [];
-	},
+	(workspaceId: number): Promise<StudyEvent[]> => fetchFullLog(workspaceId),
 	() => Date.now(),
 	WORKSPACE_EVENTS_TTL_MS
 );

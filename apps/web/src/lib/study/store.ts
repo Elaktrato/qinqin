@@ -14,7 +14,7 @@ import { newUlid } from "../ulid";
 import { t } from "../i18n";
 import { V2_STUDY_COLLECTIONS, firstPageUrl, pullAll } from "../sync/pager";
 import { workspaces } from "../workspaces";
-import { fullLogPath, type StudyEvent } from "../events";
+import { fetchFullLog, type StudyEvent } from "../events";
 import { canonicalCards, cleanSkipKinds, compareCanonical, newCardId } from "./canonical";
 import {
   DEFAULT_W,
@@ -580,9 +580,8 @@ async function deleteData(workspaceId: number, key: string): Promise<void> {
 }
 
 /** fetchEvents reads the workspace's whole event log, uncached. */
-async function fetchEvents(workspaceId: number): Promise<StudyEvent[]> {
-  const events = await api<StudyEvent[]>(fullLogPath(workspaceId));
-  return Array.isArray(events) ? events : [];
+function fetchEvents(workspaceId: number): Promise<StudyEvent[]> {
+  return fetchFullLog(workspaceId);
 }
 
 /** reviewsOf keeps the workspace's review events of an event log. */

@@ -269,7 +269,19 @@ describe('loadWorkspaceEvents', () => {
 
 		expect(a).toBe(b);
 		expect(a).toEqual(log);
-		expect(logReads()).toEqual(['/api/events?since=1970-01-01T00:00:00Z&workspace=7']);
+		expect(logReads()).toEqual(['/api/events?limit=2000&since=1970-01-01T00%3A00%3A00Z&workspace=7']);
+	});
+
+	it('follows the pages of the log (GET /api/events in pages, #110)', async () => {
+		const item = (id: string) => ({ id, userId: 1, workspaceId: 7, device: 'web', ts: '2026-01-01T00:00:00Z', type: 'review', payload: null });
+		vi.mocked(fetch).mockImplementation(async (input: RequestInfo | URL) => {
+			const url = String(input);
+			if (url === '/api/events?limit=2000&since=1970-01-01T00%3A00%3A00Z&workspace=7') return jsonResponse({ events: [item('a')], more: true, next: 'e1.x' });
+			if (url === '/api/events?page=e1.x&workspace=7') return jsonResponse({ events: [item('b')], more: false, next: null });
+			return jsonResponse({ error: 'unexpected' }, 500);
+		});
+		expect((await loadWorkspaceEvents(7)).map((e) => e.id)).toEqual(['a', 'b']);
+		expect(logReads()).toEqual(['/api/events?limit=2000&since=1970-01-01T00%3A00%3A00Z&workspace=7', '/api/events?page=e1.x&workspace=7']);
 	});
 
 	it('reads again after the TTL', async () => {
@@ -294,8 +306,8 @@ describe('loadWorkspaceEvents', () => {
 		await loadWorkspaceEvents(7);
 
 		expect(logReads()).toEqual([
-			'/api/events?since=1970-01-01T00:00:00Z&workspace=7',
-			'/api/events?since=1970-01-01T00:00:00Z&workspace=8'
+			'/api/events?limit=2000&since=1970-01-01T00%3A00%3A00Z&workspace=7',
+			'/api/events?limit=2000&since=1970-01-01T00%3A00%3A00Z&workspace=8'
 		]);
 	});
 
