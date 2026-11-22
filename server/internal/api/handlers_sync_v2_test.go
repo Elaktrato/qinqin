@@ -111,8 +111,8 @@ func TestSyncPullV2Handler(t *testing.T) {
 		if string(top["format"]) != "2" || top["more"] == nil || top["entries"] != nil {
 			t.Errorf("v=2 answer is not a page: %s", body[:min(len(body), 200)])
 		}
-		if cc := h.Get("Cache-Control"); cc != "no-store" {
-			t.Errorf("Cache-Control %q, want no-store", cc)
+		if cc, want := h.Get("Cache-Control"), contractCacheControl(t, "sync", "pull-page.json"); cc != want {
+			t.Errorf("Cache-Control %q, want %q (sync/pull-page.json)", cc, want)
 		}
 		if ct := h.Get("Content-Type"); ct != "application/json" {
 			t.Errorf("Content-Type %q", ct)

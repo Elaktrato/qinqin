@@ -80,6 +80,9 @@ describe('classify: spec table', () => {
 			'/api/plugins/qinqin-flashcards/data',
 			'/api/plugins/qinqin-flashcards/data/vacation%3A01ABC',
 			'/api/events?since=1970-01-01T00:00:00Z&workspace=3',
+			'/api/events?limit=2000&since=1970-01-01T00%3A00%3A00Z&workspace=3',
+			'/api/events?page=e1.eyJ1IjozfQ&workspace=3',
+			'/api/events?workspace=3&page=e1.abc_-',
 			'/api/entries/12'
 		]) {
 			expect(kind(url), url).toBe('api');
@@ -204,6 +207,16 @@ describe('classify: spec table', () => {
 
 	it('events need a workspace; entry sub-routes and lookalikes are bypass', () => {
 		expect(kind('/api/events?since=1970-01-01T00:00:00Z')).toBe('bypass');
+		expect(kind('/api/events?limit=2000')).toBe('bypass');
+		// A continuation (#110): exactly page=e1.<token> and the workspace.
+		expect(kind('/api/events?page=e1.abc')).toBe('bypass');
+		expect(kind('/api/events?page=e1.abc&workspace=3&since=1970-01-01T00:00:00Z')).toBe('bypass');
+		expect(kind('/api/events?page=e1.abc&workspace=3&limit=5')).toBe('bypass');
+		expect(kind('/api/events?page=p2.abc&workspace=3')).toBe('bypass');
+		expect(kind('/api/events?page=e1.a%2Fb&workspace=3')).toBe('bypass');
+		expect(kind('/api/events?page=&workspace=3')).toBe('bypass');
+		expect(kind('/api/events?page=e1.a&page=e1.b&workspace=3')).toBe('bypass');
+		expect(kind('/api/events?page=e1.a&workspace=x')).toBe('bypass');
 		expect(kind('/api/entries/12/chars')).toBe('bypass');
 		expect(kind('/api/entries/bases')).toBe('bypass');
 		expect(kind('/api/workspaces/3')).toBe('bypass');

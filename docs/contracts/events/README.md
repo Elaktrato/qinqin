@@ -6,9 +6,10 @@ these rows on the client or the server. This folder pins how a client writes an 
 with it, and what each type's payload means. Design: `docs/superpowers/specs/2026-11-17-v040p-contract-gaps-design.md`
 (Q1–Q4, Q9; issue #109).
 
-Owner code: `server/internal/api/handlers_events.go`, `server/internal/events/events.go`,
+Owner code: `server/internal/api/handlers_events.go`, `server/internal/events/events.go` (`page.go`,
+`page_list.go`: paging),
 `server/internal/sync/sync.go` (push), `server/internal/sync/page_collections.go` (pull v2). Web:
-`apps/web/src/lib/events.ts`, `apps/web/src/lib/study/scheduler.ts` (`sortedReviews`).
+`apps/web/src/lib/events.ts`, `apps/web/src/lib/eventPages.ts`, `apps/web/src/lib/study/scheduler.ts` (`sortedReviews`).
 
 Fixtures:
 
@@ -26,6 +27,10 @@ Fixtures:
   `parseReview` reads, or `null`), `valid` (`isValidReview`: counted by replay and XP) and the replay `order`.
   Decoded by `apps/web/src/lib/study/reviewParse.test.ts`, `study/scheduler.test.ts` (`isValidReview`,
   `sortedReviews`) and `study/exp.test.ts` (XP counts exactly the valid ones).
+- `page.json` — the paged `GET /api/events`: valid and invalid pages (shape, order, `next` rule) and request
+  cases (query → status, JSON code or plain-text body). Decoded by
+  `server/internal/api/contract_events_page_test.go` (every request against the server, every page through
+  the shape check) and `apps/web/src/lib/eventPages.test.ts` (the web's strict decoder).
 - `activity.json` — heatmap cells of the built-in activity rules over a case's events (zone history, window
   `from`..`to`). Decoded by `server/internal/stats/contract_activity_test.go` (every cell) and
   `apps/web/src/lib/stats/readingTime.test.ts` (the `read` cells through `readingPoints`/`readSeconds`).
@@ -57,11 +62,47 @@ Fixtures:
   errors are pinned in `sync/push-result.json`.
 - `GET /api/events[?since=<RFC 3339>][&workspace=<id>]` → the caller's events with `ts >= since`, all
   workspaces or one, ordered by `ts`, then `id`. `since` is cut to its whole second before comparing, so an
-  event of that second is included (`since=…09:00:00.500Z` includes `09:00:00Z`). Unpaged: a second client reads
-  the log from the pull v2 `events` collection instead (`sync/`), which is paged.
+  event of that second is included (`since=…09:00:00.500Z` includes `09:00:00Z`). With `limit` or `page` it
+  answers in pages (Paging below); without them it is the **legacy form**: one array, streamed, with
+  `Deprecation: true` and `Link: </api/events?limit=500>; rel="successor-version"` (kept at least until v0.5.0
+  for cached older web shells and scripts). A second client may read the log from the pull v2 `events`
+  collection instead (`sync/`), which pages by `updatedAt` and leaves `lookup` out.
 - Pull v2 `events` ships every type **except `lookup`**.
 - `DELETE /api/events/lookups?workspace=<id>` → `{"deleted": n}`: the only deletion of events (the lookup
   history's Clear, #72). No other event is ever changed or deleted.
+
+## Paging (`page.json`, #110)
+
+```
+GET /api/events?limit=1..2000[&since=<RFC 3339>][&workspace=<id>]     first page
+GET /api/events?page=<next>[&workspace=<id>]                          continuation
+→ 200 {"events": [ /* legacy items */ ], "more": bool, "next": "e1.…" | null}     Cache-Control: private, no-cache
+```
+
+- Items are the legacy items exactly (`{id, userId, workspaceId, device, ts, type, payload}`, `lookup`
+  included), in `(ts, id)` order; a walk keys on the last shipped `(ts, id)`, so the pages of a walk
+  concatenate to the legacy answer for the same `since` and `workspace` when nothing is written meanwhile.
+  An event appended mid-walk with a `ts` before the position is in the next read, not this one.
+- A page stops at `limit` rows or before the row that would take its items past 4 MiB (the encoded bytes of
+  the items alone; the envelope and the commas between items are not counted), but always holds at least one
+  row while rows remain (the pull's budget). `more` is false exactly when no row remains (the
+  server reads ahead), so only an empty log has an empty page; `next` is a string exactly when `more`.
+- The continuation carries the first page's `workspace` again, exactly (absent when the first page had none;
+  a workspace-limited access token needs it, `tokReadWS`), and neither `since` nor `limit`. The token is
+  opaque; only `e1.` is a contract. It binds the user, workspace, `since`, `limit` and the position, and
+  contains no clock: the same position gives the same URL (the web's service worker caches pages by URL).
+- No cursor: this is a from-scratch read; deltas are the pull's job.
+- Errors: a token that is garbled or another user's, a continuation with another (or no) workspace or with
+  `since`/`limit`, an empty `page`, a parameter given twice (paged form only: the legacy form keeps reading the
+  first `since`), a `limit` outside 1..2000 → 400 JSON
+  `{"error": "events_page_invalid", "message": …}` (`auth/errors.json`): read again from the first page. A
+  bad `since` or `workspace` and a foreign workspace keep the plain-text answers below, on every page.
+- Web reader: `apps/web/src/lib/eventPages.ts` (`limit=2000`, strict decode, at most 1000 pages). It follows
+  an empty page with `more` true (`readerAccepts` in `page.json`): the server never sends one, but a page the
+  service worker saved has lost its `lookup` events and may be empty. A continuation that cannot be reached at
+  all (offline, and not saved: the page boundaries moved since the pages were saved) ends the read with the
+  events so far, marked incomplete; after a complete read the web drops the saved continuations of that
+  workspace that no saved first page leads to (`apps/web/src/lib/pwa/eventPageCache.ts`).
 
 ## Errors
 
@@ -78,8 +119,9 @@ before anything is stored; the first failing check answers and **nothing of the 
 | a workspace not the caller's (unknown or another user's) | 404 | `workspace not found` |
 | body over 4 MiB | 413 | `request body too large` |
 
-`GET /api/events` answers `400` text for a bad `since` or `workspace` and `404 workspace not found` for a
-foreign workspace.
+`GET /api/events` answers `400` text for a bad `since` (`since must be RFC 3339`) or `workspace`
+(`workspace must be an integer`) and `404 workspace not found` for a foreign workspace, in both forms; the
+paged form adds `events_page_invalid` (Paging).
 
 ## Order and the `ts` rule
 

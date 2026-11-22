@@ -3,6 +3,7 @@ package api
 import (
 	"context"
 	"database/sql"
+	"io"
 	"time"
 
 	"qinqin/internal/auth"
@@ -75,3 +76,8 @@ func WithStageDone(ch chan int64) Option { return func(s *server) { s.stageDone 
 
 // WithExportCap lowers the largest export this server will produce.
 func WithExportCap(n int64) Option { return func(s *server) { s.exportCap = n } }
+
+// WithEventStream replaces events.StreamSince in the legacy GET /api/events.
+func WithEventStream(f func(ctx context.Context, w io.Writer, db *sql.DB, user int64, since time.Time, ws *int64) error) Option {
+	return func(s *server) { s.streamEvents = f }
+}

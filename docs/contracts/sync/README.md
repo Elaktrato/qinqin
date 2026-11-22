@@ -27,7 +27,9 @@ GET /api/sync/pull?v=2[&since=<cursor>][&limit=1..2000][&collections=a,b][&works
 GET /api/sync/pull?v=2&page=<next>          continuation: nothing else may be repeated
 ```
 
-Signed-in users and personal access tokens as before (`tokReadAny`). Answers `Cache-Control: no-store`.
+Signed-in users and personal access tokens as before (`tokReadAny`). Answers `Cache-Control: private, no-cache` (`cacheControl` in `pull-page.json`): no shared cache keeps a page and a
+browser revalidates it, but it may be stored — the web service worker saves pages for offline study and never saves
+an answer that says `no-store` (before this fix the pages said `no-store`, so offline study had no saved pages).
 
 ### Collections and the round
 
