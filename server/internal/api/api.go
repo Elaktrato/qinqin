@@ -52,8 +52,8 @@ type server struct {
 	importPack func(context.Context, *sql.DB, dict.Pack) (string, error) // nil: packs.Import
 	// streamEvents writes the legacy GET /api/events array; nil: events.StreamSince.
 	streamEvents func(ctx context.Context, w io.Writer, db *sql.DB, user int64, since time.Time, ws *int64) error
-	sweepCtx   context.Context
-	sweepEvery time.Duration
+	sweepCtx     context.Context
+	sweepEvery   time.Duration
 
 	chars charactersCache    // GET /api/characters payloads
 	comps componentsPayloads // GET /api/components payloads

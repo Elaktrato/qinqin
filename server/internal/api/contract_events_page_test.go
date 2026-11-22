@@ -20,11 +20,11 @@ import (
 // GET /api/events and what each request answers.
 
 type eventsPageFixture struct {
-	Version int    `json:"version"`
+	Version      int    `json:"version"`
 	Rule         string `json:"rule"`
 	CacheControl string `json:"cacheControl"`
 	Doc          string `json:"_doc"`
-	Budget  struct {
+	Budget       struct {
 		MaxLimit     int      `json:"maxLimit"`
 		MaxPageBytes int      `json:"maxPageBytes"`
 		TokenPrefix  string   `json:"tokenPrefix"`
