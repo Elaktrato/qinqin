@@ -157,19 +157,20 @@
 		outline-offset: calc(-1 * var(--focus-ring-offset) - 2px);
 		border-radius: var(--radius);
 	}
-	/* The current place: accent icon and label, and a short accent mark on
-	   the top edge (a shape cue as well as the colour). */
+	/* The current place: accent icon and label, and a short accent mark
+	   under the label (a shape cue as well as the colour; on the top edge it
+	   read as an underline of the page text scrolling behind the bar). */
 	.item[aria-current] {
 		color: var(--accent);
 	}
 	.item[aria-current]::before {
 		content: '';
 		position: absolute;
-		inset-block-start: -1px;
+		inset-block-end: 0.25rem;
 		left: 50%;
-		width: 1.5rem;
+		width: 1rem;
 		height: 2px;
-		border-radius: 0 0 1px 1px;
+		border-radius: 1px;
 		background: var(--accent);
 		translate: -50% 0;
 	}
