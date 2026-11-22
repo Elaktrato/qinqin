@@ -1,0 +1,10 @@
+{
+  "id": "jmdict-fixture",
+  "name": "JMdict-format fixture",
+  "version": "1",
+  "type": "dictionary",
+  "language": "ja",
+  "format": "jmdict",
+  "license": "CC0-1.0",
+  "attribution": "Hand-written test entries in the JMdict format"
+}

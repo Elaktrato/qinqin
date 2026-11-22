@@ -1,0 +1,10 @@
+{
+  "id": "cedict-fixture",
+  "name": "CC-CEDICT-format fixture",
+  "version": "1",
+  "type": "dictionary",
+  "language": "zh",
+  "format": "cedict",
+  "license": "CC0-1.0",
+  "attribution": "Hand-written test lines in the CC-CEDICT format"
+}

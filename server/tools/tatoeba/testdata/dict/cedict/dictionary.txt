@@ -1,0 +1,51 @@
+# Hand-written test lines in the CC-CEDICT format (not copied from CC-CEDICT).
+我 我 [wo3] /I; me/
+你 你 [ni3] /you/
+他 他 [ta1] /he/
+好 好 [hao3] /good/
+很 很 [hen3] /very/
+是 是 [shi4] /to be/
+不 不 [bu4] /not/
+個 个 [ge4] /measure word/
+去 去 [qu4] /to go/
+們 们 [men5] /plural suffix/
+了 了 [le5] /completed action particle/
+了 了 [liao3] /to finish/
+吧 吧 [ba1] /bar (loanword)/
+吧 吧 [ba5] /suggestion particle/
+的 的 [de5] /possessive particle/
+的 的 [di2] /really and truly/
+行 行 [hang2] /row/
+行 行 [xing2] /to walk/
+長 长 [chang2] /long/
+長 长 [zhang3] /to grow/
+銀 银 [yin2] /silver/
+笨 笨 [ben4] /stupid/
+蛋 蛋 [dan4] /egg/
+喜 喜 [xi3] /happy/
+歡 欢 [huan1] /joyful/
+學 学 [xue2] /to learn/
+習 习 [xi2] /to practise/
+漢 汉 [han4] /Han/
+語 语 [yu3] /language/
+吃 吃 [chi1] /to eat/
+飯 饭 [fan4] /meal/
+一 一 [yi1] /one/
+起 起 [qi3] /to rise/
+西 西 [xi1] /west/
+安 安 [an1] /peace/
+朋 朋 [peng2] /friend/
+友 友 [you3] /friend/
+書 书 [shu1] /book/
+你好 你好 [ni3 hao3] /hello/
+我們 我们 [wo3 men5] /we/
+他們 他们 [ta1 men5] /they/
+喜歡 喜欢 [xi3 huan5] /to like/
+學習 学习 [xue2 xi2] /to study/
+漢語 汉语 [Han4 yu3] /Chinese language/
+銀行 银行 [yin2 hang2] /bank/
+吃飯 吃饭 [chi1 fan4] /to eat a meal/
+一起 一起 [yi1 qi3] /together/
+西安 西安 [Xi1 an1] /Xi'an (city)/
+朋友 朋友 [peng2 you5] /friend/
+笨蛋 笨蛋 [ben4 dan4] /fool/

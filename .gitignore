@@ -6,6 +6,9 @@
 /plugins/data-local/
 /plugins/data-audio/
 /plugins/data-strokes/
+# upstream downloads of data tooling (the pinned Tatoeba export of
+# server/tools/tatoeba, its reports and review samples; never committed)
+/plugins/upstream/
 # font packs built by scripts/prepare-font-pack.mjs (large; never committed)
 /plugins/data-fonts/
 # build-time tools of scripts/prepare-font-pack.mjs
