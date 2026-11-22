@@ -598,3 +598,61 @@ describe('the session loads once (#101, found in the real-app check)', () => {
 		resetOffline();
 	});
 });
+
+describe('order of card types (#132)', () => {
+	const at = (minutes: number) => new Date(Date.UTC(2026, 0, 1, 0, minutes)).toISOString();
+	const card = (kind: 'vocab' | 'writing', entryId: number, minutes: number): StudyCard => ({
+		id: `c-${kind}-${entryId}`,
+		kind,
+		entryId,
+		written: GLYPHS[entryId],
+		deckIds: ['general'],
+		createdAt: at(minutes)
+	});
+	// In the order added the two writing cards come first.
+	const cards = [card('writing', 11, 1), card('writing', 12, 2), card('vocab', 11, 3), card('vocab', 12, 4)];
+	const plan = cards.map((c) => ({ cardId: c.id, kind: c.kind, entryId: c.entryId, virtual: false, card: c }));
+
+	function start(extra: Record<string, unknown>): void {
+		sessionStorage.setItem(
+			SESSION_CONFIG_KEY,
+			JSON.stringify({
+				mode: 'decks',
+				schemeId: null,
+				levelName: null,
+				deckIds: ['general'],
+				newLimit: 20,
+				reviewLimit: 100,
+				cardTypes: ['vocab', 'writing'],
+				newOrder: { by: 'added' },
+				...extra
+			})
+		);
+		history(cards, []);
+	}
+
+	it('grouped by type shows the vocab cards first', async () => {
+		start({ typeOrder: 'grouped', seed: 1 });
+		render(Page);
+		expect(await screen.findByLabelText('Recognise card')).toBeTruthy();
+	});
+
+	it('mixed follows the session seed', async () => {
+		const { mixFlowQueue } = await import('$lib/study/sessionMix');
+		const first = (seed: number) => mixFlowQueue(plan, [], { seed, order: 'mixed' })[0].kind;
+		const seeds = Array.from({ length: 60 }, (_, i) => i + 1);
+		const vocabSeed = seeds.find((seed) => first(seed) === 'vocab')!;
+		const writingSeed = seeds.find((seed) => first(seed) === 'writing')!;
+		expect(vocabSeed).toBeDefined();
+		expect(writingSeed).toBeDefined();
+
+		start({ seed: vocabSeed });
+		render(Page);
+		expect(await screen.findByLabelText('Recognise card')).toBeTruthy();
+		cleanup();
+
+		start({ seed: writingSeed });
+		render(Page);
+		expect(await screen.findByLabelText('Write card')).toBeTruthy();
+	});
+});

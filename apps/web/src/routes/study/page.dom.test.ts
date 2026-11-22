@@ -412,3 +412,43 @@ describe('study setup, new-card order (#75)', () => {
 		expect([...orderSelect().options].map((o) => o.value)).toEqual(['random', 'deck', 'added']);
 	});
 });
+
+describe('study setup, order of card types (#132)', () => {
+	const typeOrderSelect = () => screen.getByLabelText('Order of card types') as HTMLSelectElement;
+
+	beforeEach(() => {
+		vi.mocked(getSchemes).mockResolvedValue([]);
+	});
+
+	it('offers Mixed (the default) and Grouped by type and saves the choice', async () => {
+		render(Page);
+		await waitFor(() => expect(typeOrderSelect()).toBeTruthy());
+		expect([...typeOrderSelect().options].map((o) => [o.value, o.textContent])).toEqual([
+			['mixed', 'Mixed'],
+			['grouped', 'Grouped by type']
+		]);
+		expect(typeOrderSelect().value).toBe('mixed');
+		await fireEvent.change(typeOrderSelect(), { target: { value: 'grouped' } });
+		await fireEvent.click(screen.getByRole('button', { name: /start/i }));
+		await waitFor(() => expect(goto).toHaveBeenCalledWith('/study/session'));
+		expect(JSON.parse(sessionStorage.getItem(SESSION_CONFIG_KEY)!).typeOrder).toBe('grouped');
+	});
+
+	it('preselects the saved choice', async () => {
+		sessionStorage.setItem(
+			SESSION_CONFIG_KEY,
+			JSON.stringify({
+				mode: 'decks',
+				schemeId: null,
+				levelName: null,
+				deckIds: ['general'],
+				newLimit: 20,
+				reviewLimit: 100,
+				cardTypes: ['vocab'],
+				typeOrder: 'grouped'
+			})
+		);
+		render(Page);
+		await waitFor(() => expect(typeOrderSelect().value).toBe('grouped'));
+	});
+});
