@@ -1,0 +1,1097 @@
+{
+ "version": 1,
+ "rule": "cards/session-mix",
+ "keys": [
+  {
+   "cardId": "a",
+   "seed": 1,
+   "fnv": 3826002220,
+   "key": 0.38308091065846384
+  },
+  {
+   "cardId": "foobar",
+   "seed": 1,
+   "fnv": 3214735720,
+   "key": 0.048454699805006385
+  },
+  {
+   "cardId": "c-vocab-1",
+   "seed": 7,
+   "fnv": 2992167934,
+   "key": 0.8942518758121878
+  },
+  {
+   "cardId": "c-writing-1",
+   "seed": 7,
+   "fnv": 144669677,
+   "key": 0.338833324611187
+  },
+  {
+   "cardId": "companion:tone:42",
+   "seed": 123456789,
+   "fnv": 3710647423,
+   "key": 0.7940226208884269
+  },
+  {
+   "cardId": "level:writing:9",
+   "seed": 0,
+   "fnv": 27518850,
+   "key": 0.8275533949490637
+  },
+  {
+   "cardId": "",
+   "seed": 1,
+   "fnv": 2166136261,
+   "key": 0.23521388601511717
+  },
+  {
+   "cardId": "c-vocab-中",
+   "seed": -5,
+   "fnv": 693236390,
+   "key": 0.5381576584186405
+  },
+  {
+   "cardId": "01HXYZABCDEF",
+   "seed": 2147483646,
+   "fnv": 2460823174,
+   "key": 0.9985865254420787
+  }
+ ],
+ "gaps": [
+  {
+   "n": 0,
+   "gap": 1
+  },
+  {
+   "n": 1,
+   "gap": 1
+  },
+  {
+   "n": 7,
+   "gap": 1
+  },
+  {
+   "n": 8,
+   "gap": 2
+  },
+  {
+   "n": 15,
+   "gap": 2
+  },
+  {
+   "n": 16,
+   "gap": 3
+  },
+  {
+   "n": 40,
+   "gap": 3
+  }
+ ],
+ "queues": [
+  {
+   "name": "grouped: due first, kinds grouped in kind order, a word kept apart at a seam",
+   "note": "incoming order inside a kind, except that c-vocab-2 moves ahead so word 2 is not back to back at the vocab/writing seam",
+   "seed": 1,
+   "order": "grouped",
+   "vocabFirst": true,
+   "items": [
+    {
+     "cardId": "c-writing-2",
+     "kind": "writing",
+     "entryId": 2,
+     "review": true
+    },
+    {
+     "cardId": "c-vocab-1",
+     "kind": "vocab",
+     "entryId": 1,
+     "review": true
+    },
+    {
+     "cardId": "c-vocab-2",
+     "kind": "vocab",
+     "entryId": 2,
+     "review": true
+    },
+    {
+     "cardId": "c-vocab-3",
+     "kind": "vocab",
+     "entryId": 3,
+     "review": false
+    },
+    {
+     "cardId": "companion:writing:1",
+     "kind": "writing",
+     "entryId": 1,
+     "review": false
+    },
+    {
+     "cardId": "companion:tone:4",
+     "kind": "tone",
+     "entryId": 4,
+     "review": false
+    },
+    {
+     "cardId": "c-vocab-5",
+     "kind": "vocab",
+     "entryId": 5,
+     "review": false
+    },
+    {
+     "cardId": "companion:sentence:6",
+     "kind": "sentence",
+     "entryId": 6,
+     "review": false
+    }
+   ],
+   "expect": [
+    "c-vocab-2",
+    "c-vocab-1",
+    "c-writing-2",
+    "c-vocab-3",
+    "c-vocab-5",
+    "companion:sentence:6",
+    "companion:writing:1",
+    "companion:tone:4"
+   ]
+  },
+  {
+   "name": "mixed: one word's four types cannot be spaced (best effort: jitter order)",
+   "seed": 42,
+   "order": "mixed",
+   "vocabFirst": true,
+   "items": [
+    {
+     "cardId": "c-vocab-1",
+     "kind": "vocab",
+     "entryId": 1,
+     "review": false
+    },
+    {
+     "cardId": "c-sentence-1",
+     "kind": "sentence",
+     "entryId": 1,
+     "review": false
+    },
+    {
+     "cardId": "c-writing-1",
+     "kind": "writing",
+     "entryId": 1,
+     "review": false
+    },
+    {
+     "cardId": "c-tone-1",
+     "kind": "tone",
+     "entryId": 1,
+     "review": false
+    }
+   ],
+   "expect": [
+    "c-vocab-1",
+    "c-tone-1",
+    "c-sentence-1",
+    "c-writing-1"
+   ]
+  },
+  {
+   "name": "mixed: two words with vocab and writing, never back to back",
+   "seed": 7,
+   "order": "mixed",
+   "vocabFirst": true,
+   "items": [
+    {
+     "cardId": "c-vocab-1",
+     "kind": "vocab",
+     "entryId": 1,
+     "review": false
+    },
+    {
+     "cardId": "c-vocab-2",
+     "kind": "vocab",
+     "entryId": 2,
+     "review": false
+    },
+    {
+     "cardId": "companion:writing:1",
+     "kind": "writing",
+     "entryId": 1,
+     "review": false
+    },
+    {
+     "cardId": "companion:writing:2",
+     "kind": "writing",
+     "entryId": 2,
+     "review": false
+    }
+   ],
+   "expect": [
+    "c-vocab-2",
+    "c-vocab-1",
+    "companion:writing:2",
+    "companion:writing:1"
+   ]
+  },
+  {
+   "name": "mixed: the same items with another seed",
+   "seed": 8,
+   "order": "mixed",
+   "vocabFirst": true,
+   "items": [
+    {
+     "cardId": "c-vocab-1",
+     "kind": "vocab",
+     "entryId": 1,
+     "review": false
+    },
+    {
+     "cardId": "c-vocab-2",
+     "kind": "vocab",
+     "entryId": 2,
+     "review": false
+    },
+    {
+     "cardId": "companion:writing:1",
+     "kind": "writing",
+     "entryId": 1,
+     "review": false
+    },
+    {
+     "cardId": "companion:writing:2",
+     "kind": "writing",
+     "entryId": 2,
+     "review": false
+    }
+   ],
+   "expect": [
+    "c-vocab-1",
+    "c-vocab-2",
+    "companion:writing:1",
+    "companion:writing:2"
+   ]
+  },
+  {
+   "name": "mixed: the gap holds across the block boundary",
+   "note": "the new block starts with the word the due block did not end on",
+   "seed": 3,
+   "order": "mixed",
+   "vocabFirst": true,
+   "items": [
+    {
+     "cardId": "c-vocab-1",
+     "kind": "vocab",
+     "entryId": 1,
+     "review": true
+    },
+    {
+     "cardId": "c-writing-1",
+     "kind": "writing",
+     "entryId": 1,
+     "review": false
+    },
+    {
+     "cardId": "c-vocab-2",
+     "kind": "vocab",
+     "entryId": 2,
+     "review": false
+    }
+   ],
+   "expect": [
+    "c-vocab-1",
+    "c-vocab-2",
+    "c-writing-1"
+   ]
+  },
+  {
+   "name": "mixed: deck session, companions spread among the new words and due types of one word apart",
+   "seed": 2026,
+   "order": "mixed",
+   "vocabFirst": true,
+   "items": [
+    {
+     "cardId": "c-vocab-10",
+     "kind": "vocab",
+     "entryId": 10,
+     "review": true
+    },
+    {
+     "cardId": "c-writing-10",
+     "kind": "writing",
+     "entryId": 10,
+     "review": true
+    },
+    {
+     "cardId": "c-vocab-11",
+     "kind": "vocab",
+     "entryId": 11,
+     "review": true
+    },
+    {
+     "cardId": "c-vocab-12",
+     "kind": "vocab",
+     "entryId": 12,
+     "review": true
+    },
+    {
+     "cardId": "c-tone-11",
+     "kind": "tone",
+     "entryId": 11,
+     "review": true
+    },
+    {
+     "cardId": "c-vocab-1",
+     "kind": "vocab",
+     "entryId": 1,
+     "review": false
+    },
+    {
+     "cardId": "c-vocab-2",
+     "kind": "vocab",
+     "entryId": 2,
+     "review": false
+    },
+    {
+     "cardId": "c-vocab-3",
+     "kind": "vocab",
+     "entryId": 3,
+     "review": false
+    },
+    {
+     "cardId": "c-vocab-4",
+     "kind": "vocab",
+     "entryId": 4,
+     "review": false
+    },
+    {
+     "cardId": "c-vocab-5",
+     "kind": "vocab",
+     "entryId": 5,
+     "review": false
+    },
+    {
+     "cardId": "c-vocab-6",
+     "kind": "vocab",
+     "entryId": 6,
+     "review": false
+    },
+    {
+     "cardId": "c-vocab-7",
+     "kind": "vocab",
+     "entryId": 7,
+     "review": false
+    },
+    {
+     "cardId": "c-vocab-8",
+     "kind": "vocab",
+     "entryId": 8,
+     "review": false
+    },
+    {
+     "cardId": "companion:sentence:13",
+     "kind": "sentence",
+     "entryId": 13,
+     "review": false
+    },
+    {
+     "cardId": "companion:writing:13",
+     "kind": "writing",
+     "entryId": 13,
+     "review": false
+    },
+    {
+     "cardId": "companion:tone:14",
+     "kind": "tone",
+     "entryId": 14,
+     "review": false
+    },
+    {
+     "cardId": "companion:writing:15",
+     "kind": "writing",
+     "entryId": 15,
+     "review": false
+    },
+    {
+     "cardId": "companion:reverse:16",
+     "kind": "reverse",
+     "entryId": 16,
+     "review": false
+    },
+    {
+     "cardId": "companion:tone:13",
+     "kind": "tone",
+     "entryId": 13,
+     "review": false
+    }
+   ],
+   "expect": [
+    "c-vocab-12",
+    "c-writing-10",
+    "c-vocab-11",
+    "c-vocab-10",
+    "c-tone-11",
+    "c-vocab-1",
+    "c-vocab-2",
+    "companion:tone:14",
+    "c-vocab-3",
+    "companion:writing:13",
+    "c-vocab-4",
+    "companion:reverse:16",
+    "companion:sentence:13",
+    "c-vocab-5",
+    "c-vocab-7",
+    "companion:writing:15",
+    "c-vocab-6",
+    "c-vocab-8",
+    "companion:tone:13"
+   ]
+  },
+  {
+   "name": "mixed: character level, new writing and recognition interleaved",
+   "seed": 99,
+   "order": "mixed",
+   "vocabFirst": false,
+   "items": [
+    {
+     "cardId": "c-vocab-1",
+     "kind": "vocab",
+     "entryId": 1,
+     "review": true
+    },
+    {
+     "cardId": "c-writing-1",
+     "kind": "writing",
+     "entryId": 1,
+     "review": true
+    },
+    {
+     "cardId": "level:writing:2",
+     "kind": "writing",
+     "entryId": 2,
+     "review": false
+    },
+    {
+     "cardId": "level:writing:3",
+     "kind": "writing",
+     "entryId": 3,
+     "review": false
+    },
+    {
+     "cardId": "level:writing:4",
+     "kind": "writing",
+     "entryId": 4,
+     "review": false
+    },
+    {
+     "cardId": "level:writing:5",
+     "kind": "writing",
+     "entryId": 5,
+     "review": false
+    },
+    {
+     "cardId": "level:6",
+     "kind": "vocab",
+     "entryId": 6,
+     "review": false
+    },
+    {
+     "cardId": "level:7",
+     "kind": "vocab",
+     "entryId": 7,
+     "review": false
+    },
+    {
+     "cardId": "level:8",
+     "kind": "vocab",
+     "entryId": 8,
+     "review": false
+    },
+    {
+     "cardId": "level:9",
+     "kind": "vocab",
+     "entryId": 9,
+     "review": false
+    },
+    {
+     "cardId": "level:2",
+     "kind": "vocab",
+     "entryId": 2,
+     "review": false
+    }
+   ],
+   "expect": [
+    "c-vocab-1",
+    "c-writing-1",
+    "level:6",
+    "level:writing:2",
+    "level:7",
+    "level:writing:4",
+    "level:writing:3",
+    "level:9",
+    "level:8",
+    "level:writing:5",
+    "level:2"
+   ]
+  },
+  {
+   "name": "mixed: a block of one kind keeps its incoming order (nothing to interleave)",
+   "note": "the new block is vocab only: level or due order stays",
+   "seed": 77,
+   "order": "mixed",
+   "vocabFirst": false,
+   "items": [
+    {
+     "cardId": "c-vocab-9",
+     "kind": "vocab",
+     "entryId": 9,
+     "review": true
+    },
+    {
+     "cardId": "c-writing-8",
+     "kind": "writing",
+     "entryId": 8,
+     "review": true
+    },
+    {
+     "cardId": "c-vocab-7",
+     "kind": "vocab",
+     "entryId": 7,
+     "review": true
+    },
+    {
+     "cardId": "level:11",
+     "kind": "vocab",
+     "entryId": 11,
+     "review": false
+    },
+    {
+     "cardId": "level:12",
+     "kind": "vocab",
+     "entryId": 12,
+     "review": false
+    },
+    {
+     "cardId": "level:13",
+     "kind": "vocab",
+     "entryId": 13,
+     "review": false
+    },
+    {
+     "cardId": "level:14",
+     "kind": "vocab",
+     "entryId": 14,
+     "review": false
+    }
+   ],
+   "expect": [
+    "c-vocab-9",
+    "c-vocab-7",
+    "c-writing-8",
+    "level:11",
+    "level:12",
+    "level:13",
+    "level:14"
+   ]
+  },
+  {
+   "name": "mixed: one kind still spaces a word's cards (two sentence cards of a word, one with an older random id)",
+   "seed": 4,
+   "order": "mixed",
+   "vocabFirst": true,
+   "items": [
+    {
+     "cardId": "c-sentence-1",
+     "kind": "sentence",
+     "entryId": 1,
+     "review": false
+    },
+    {
+     "cardId": "01HZSENTENCECARD0000000001",
+     "kind": "sentence",
+     "entryId": 1,
+     "review": false
+    },
+    {
+     "cardId": "c-sentence-2",
+     "kind": "sentence",
+     "entryId": 2,
+     "review": false
+    }
+   ],
+   "expect": [
+    "c-sentence-1",
+    "c-sentence-2",
+    "01HZSENTENCECARD0000000001"
+   ]
+  },
+  {
+   "name": "mixed: a long new block keeps the full gap to its end",
+   "note": "the queue of the real-app check (#132): 5 due, 20 new, gap 3 in the new block",
+   "seed": 11,
+   "order": "mixed",
+   "vocabFirst": true,
+   "items": [
+    {
+     "cardId": "c-vocab-30954",
+     "kind": "vocab",
+     "entryId": 30954,
+     "review": true
+    },
+    {
+     "cardId": "c-vocab-3251",
+     "kind": "vocab",
+     "entryId": 3251,
+     "review": true
+    },
+    {
+     "cardId": "c-vocab-53821",
+     "kind": "vocab",
+     "entryId": 53821,
+     "review": true
+    },
+    {
+     "cardId": "c-writing-30954",
+     "kind": "writing",
+     "entryId": 30954,
+     "review": true
+    },
+    {
+     "cardId": "c-writing-53821",
+     "kind": "writing",
+     "entryId": 53821,
+     "review": true
+    },
+    {
+     "cardId": "c-vocab-86284",
+     "kind": "vocab",
+     "entryId": 86284,
+     "review": false
+    },
+    {
+     "cardId": "c-vocab-22051",
+     "kind": "vocab",
+     "entryId": 22051,
+     "review": false
+    },
+    {
+     "cardId": "c-vocab-113720",
+     "kind": "vocab",
+     "entryId": 113720,
+     "review": false
+    },
+    {
+     "cardId": "c-vocab-30941",
+     "kind": "vocab",
+     "entryId": 30941,
+     "review": false
+    },
+    {
+     "cardId": "c-vocab-19212",
+     "kind": "vocab",
+     "entryId": 19212,
+     "review": false
+    },
+    {
+     "cardId": "c-writing-3251",
+     "kind": "writing",
+     "entryId": 3251,
+     "review": false
+    },
+    {
+     "cardId": "c-writing-86284",
+     "kind": "writing",
+     "entryId": 86284,
+     "review": false
+    },
+    {
+     "cardId": "companion:sentence:30954",
+     "kind": "sentence",
+     "entryId": 30954,
+     "review": false
+    },
+    {
+     "cardId": "companion:writing:22051",
+     "kind": "writing",
+     "entryId": 22051,
+     "review": false
+    },
+    {
+     "cardId": "companion:tone:30954",
+     "kind": "tone",
+     "entryId": 30954,
+     "review": false
+    },
+    {
+     "cardId": "companion:sentence:53821",
+     "kind": "sentence",
+     "entryId": 53821,
+     "review": false
+    },
+    {
+     "cardId": "companion:writing:113720",
+     "kind": "writing",
+     "entryId": 113720,
+     "review": false
+    },
+    {
+     "cardId": "companion:tone:53821",
+     "kind": "tone",
+     "entryId": 53821,
+     "review": false
+    },
+    {
+     "cardId": "companion:sentence:3251",
+     "kind": "sentence",
+     "entryId": 3251,
+     "review": false
+    },
+    {
+     "cardId": "companion:writing:30941",
+     "kind": "writing",
+     "entryId": 30941,
+     "review": false
+    },
+    {
+     "cardId": "companion:tone:3251",
+     "kind": "tone",
+     "entryId": 3251,
+     "review": false
+    },
+    {
+     "cardId": "companion:sentence:86284",
+     "kind": "sentence",
+     "entryId": 86284,
+     "review": false
+    },
+    {
+     "cardId": "companion:writing:19212",
+     "kind": "writing",
+     "entryId": 19212,
+     "review": false
+    },
+    {
+     "cardId": "companion:tone:86284",
+     "kind": "tone",
+     "entryId": 86284,
+     "review": false
+    },
+    {
+     "cardId": "companion:sentence:22051",
+     "kind": "sentence",
+     "entryId": 22051,
+     "review": false
+    }
+   ],
+   "expect": [
+    "c-vocab-30954",
+    "c-vocab-3251",
+    "c-writing-53821",
+    "c-writing-30954",
+    "c-vocab-53821",
+    "c-writing-3251",
+    "c-vocab-86284",
+    "companion:sentence:30954",
+    "companion:sentence:53821",
+    "c-vocab-22051",
+    "c-writing-86284",
+    "companion:tone:30954",
+    "companion:tone:53821",
+    "companion:writing:22051",
+    "companion:tone:3251",
+    "c-vocab-113720",
+    "c-vocab-30941",
+    "companion:sentence:86284",
+    "c-vocab-19212",
+    "companion:writing:113720",
+    "companion:sentence:3251",
+    "companion:writing:30941",
+    "companion:tone:86284",
+    "companion:writing:19212",
+    "companion:sentence:22051"
+   ]
+  },
+  {
+   "name": "mixed: a word with three types among few others",
+   "note": "2r - 1 >= R starts the crowded word first",
+   "seed": 5,
+   "order": "mixed",
+   "vocabFirst": true,
+   "items": [
+    {
+     "cardId": "c-vocab-2",
+     "kind": "vocab",
+     "entryId": 2,
+     "review": false
+    },
+    {
+     "cardId": "c-vocab-1",
+     "kind": "vocab",
+     "entryId": 1,
+     "review": false
+    },
+    {
+     "cardId": "c-writing-1",
+     "kind": "writing",
+     "entryId": 1,
+     "review": false
+    },
+    {
+     "cardId": "c-tone-1",
+     "kind": "tone",
+     "entryId": 1,
+     "review": false
+    },
+    {
+     "cardId": "c-vocab-3",
+     "kind": "vocab",
+     "entryId": 3,
+     "review": false
+    }
+   ],
+   "expect": [
+    "c-vocab-1",
+    "c-vocab-2",
+    "c-tone-1",
+    "c-vocab-3",
+    "c-writing-1"
+   ]
+  },
+  {
+   "name": "mixed: deck new block, a new word meets Recognise before its other types (vocab first)",
+   "note": "c-writing-1 and companion:tone:1 wait for c-vocab-1",
+   "seed": 7,
+   "order": "mixed",
+   "vocabFirst": true,
+   "items": [
+    {
+     "cardId": "c-writing-1",
+     "kind": "writing",
+     "entryId": 1,
+     "review": false
+    },
+    {
+     "cardId": "c-vocab-2",
+     "kind": "vocab",
+     "entryId": 2,
+     "review": false
+    },
+    {
+     "cardId": "c-vocab-1",
+     "kind": "vocab",
+     "entryId": 1,
+     "review": false
+    },
+    {
+     "cardId": "c-vocab-3",
+     "kind": "vocab",
+     "entryId": 3,
+     "review": false
+    },
+    {
+     "cardId": "companion:tone:1",
+     "kind": "tone",
+     "entryId": 1,
+     "review": false
+    },
+    {
+     "cardId": "companion:sentence:4",
+     "kind": "sentence",
+     "entryId": 4,
+     "review": false
+    }
+   ],
+   "expect": [
+    "c-vocab-2",
+    "c-vocab-1",
+    "companion:sentence:4",
+    "c-writing-1",
+    "c-vocab-3",
+    "companion:tone:1"
+   ]
+  },
+  {
+   "name": "mixed: level session, vocab first is off (a character level gates writing itself)",
+   "seed": 2,
+   "order": "mixed",
+   "vocabFirst": false,
+   "note": "with vocab first on, level:writing:1 would wait for level:1",
+   "items": [
+    {
+     "cardId": "level:writing:1",
+     "kind": "writing",
+     "entryId": 1,
+     "review": false
+    },
+    {
+     "cardId": "level:2",
+     "kind": "vocab",
+     "entryId": 2,
+     "review": false
+    },
+    {
+     "cardId": "level:1",
+     "kind": "vocab",
+     "entryId": 1,
+     "review": false
+    },
+    {
+     "cardId": "level:3",
+     "kind": "vocab",
+     "entryId": 3,
+     "review": false
+    },
+    {
+     "cardId": "level:writing:4",
+     "kind": "writing",
+     "entryId": 4,
+     "review": false
+    },
+    {
+     "cardId": "level:5",
+     "kind": "vocab",
+     "entryId": 5,
+     "review": false
+    }
+   ],
+   "expect": [
+    "level:3",
+    "level:2",
+    "level:writing:4",
+    "level:writing:1",
+    "level:5",
+    "level:1"
+   ]
+  },
+  {
+   "name": "mixed: the due block keeps the due order across kinds",
+   "note": "the four most overdue are writing cards; they stay near the front",
+   "seed": 2,
+   "order": "mixed",
+   "vocabFirst": true,
+   "items": [
+    {
+     "cardId": "c-writing-1",
+     "kind": "writing",
+     "entryId": 1,
+     "review": true
+    },
+    {
+     "cardId": "c-writing-2",
+     "kind": "writing",
+     "entryId": 2,
+     "review": true
+    },
+    {
+     "cardId": "c-writing-3",
+     "kind": "writing",
+     "entryId": 3,
+     "review": true
+    },
+    {
+     "cardId": "c-writing-4",
+     "kind": "writing",
+     "entryId": 4,
+     "review": true
+    },
+    {
+     "cardId": "c-vocab-11",
+     "kind": "vocab",
+     "entryId": 11,
+     "review": true
+    },
+    {
+     "cardId": "c-vocab-12",
+     "kind": "vocab",
+     "entryId": 12,
+     "review": true
+    },
+    {
+     "cardId": "c-vocab-13",
+     "kind": "vocab",
+     "entryId": 13,
+     "review": true
+    },
+    {
+     "cardId": "c-vocab-14",
+     "kind": "vocab",
+     "entryId": 14,
+     "review": true
+    },
+    {
+     "cardId": "c-vocab-15",
+     "kind": "vocab",
+     "entryId": 15,
+     "review": true
+    },
+    {
+     "cardId": "c-vocab-16",
+     "kind": "vocab",
+     "entryId": 16,
+     "review": true
+    },
+    {
+     "cardId": "c-vocab-17",
+     "kind": "vocab",
+     "entryId": 17,
+     "review": true
+    },
+    {
+     "cardId": "c-vocab-18",
+     "kind": "vocab",
+     "entryId": 18,
+     "review": true
+    }
+   ],
+   "expect": [
+    "c-writing-1",
+    "c-writing-4",
+    "c-writing-2",
+    "c-writing-3",
+    "c-vocab-11",
+    "c-vocab-12",
+    "c-vocab-14",
+    "c-vocab-17",
+    "c-vocab-15",
+    "c-vocab-13",
+    "c-vocab-16",
+    "c-vocab-18"
+   ]
+  },
+  {
+   "name": "grouped: a word is kept apart at the seam between two groups (gap 1)",
+   "seed": 1,
+   "order": "grouped",
+   "vocabFirst": true,
+   "items": [
+    {
+     "cardId": "c-vocab-1",
+     "kind": "vocab",
+     "entryId": 1,
+     "review": false
+    },
+    {
+     "cardId": "c-vocab-2",
+     "kind": "vocab",
+     "entryId": 2,
+     "review": false
+    },
+    {
+     "cardId": "c-sentence-2",
+     "kind": "sentence",
+     "entryId": 2,
+     "review": false
+    },
+    {
+     "cardId": "c-sentence-3",
+     "kind": "sentence",
+     "entryId": 3,
+     "review": false
+    }
+   ],
+   "expect": [
+    "c-vocab-1",
+    "c-vocab-2",
+    "c-sentence-3",
+    "c-sentence-2"
+   ]
+  }
+ ]
+}

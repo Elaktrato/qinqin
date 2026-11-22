@@ -35,6 +35,9 @@ real id, never duplicated. Fixture: `level-card-ids.json`.
    included only if the entry's recognition card has a valid review whose learner day (`dayOf`, zone
    history) is before today's learner day. With `writing` alone there is no gating.
 5. `strokeData: false` on an entry means its glyph has no stroke data: it never gets a writing item (recognition is unaffected and still takes its slot).
+6. The session then orders the queue by the session mix (`cards/README.md`, `session-mix.json`): due first, the
+   kinds interleaved inside each block and a character's two kinds kept apart (or grouped by kind when the setup
+   asks for it). The plan above and its fixture are the order before the mix.
 
 Inputs use `history` (zone changes, see `study-day/`), `now`, `entries`, `cards`, `reviews`
 (`cardId`, `grade`, `ts`), `newLimit`, `reviewLimit`; `weights: "default"` means the FSRS default weights.

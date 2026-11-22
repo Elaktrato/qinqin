@@ -68,8 +68,9 @@ import type { Run } from '$lib/study/vacation';
 	import { getFrequencyPacks } from '$lib/api/frequency';
 	import { loadRanks } from '$lib/study/frequencyRanks';
 	import { loadLevelKeys } from '$lib/study/levelKeys';
-	import { sessionNewOrder } from '$lib/study/session';
+	import { sessionNewOrder, sessionSeedOf, sessionTypeOrder } from '$lib/study/session';
 	import { candidateNewEntries, deckOrdersOf, sessionNewKey } from '$lib/study/sessionOrder';
+	import { mixFlowQueue } from '$lib/study/sessionMix';
 	import {
 		CARD_KINDS,
 		type ReviewEvent,
@@ -138,10 +139,18 @@ import type { Run } from '$lib/study/vacation';
 	// The SPA has no SSR, so the tab's setup is readable during init.
 	const config = loadConfig();
 	// The shuffle's seed lives in the saved setup, so a reload of the same
-	// session keeps its order. A setup saved before seeds existed has none:
-	// it is shuffled afresh on each load.
-	const sessionSeed = config.seed ?? Math.floor(Math.random() * 0x7fffffff);
+	// session keeps its order; a setup without one gets a seed drawn once
+	// per tab (sessionSeedOf), never a new one per load.
+	const sessionSeed = sessionSeedOf(config);
 	const kinds: StudyCardKind[] = CARD_KINDS.filter((kind) => config.cardTypes.includes(kind));
+	// The order of card types (#132): the same seed, so a reload keeps the mix.
+	// Deck sessions show a new word's Recognise card before its other types;
+	// a character level gates writing itself.
+	const mixOptions = {
+		seed: sessionSeed,
+		order: sessionTypeOrder(config),
+		vocabFirst: config.mode === 'decks'
+	};
 
 	/**
 	 * A queue item once it can be shown: its entry is loaded and its kind
@@ -518,7 +527,8 @@ import type { Run } from '$lib/study/vacation';
 					newKey: keyOf ?? undefined,
 					studyAll: config.studyAll === true
 				});
-				queue = levelSessionItems(plan.queue, data.cards, kinds, buried);
+				// The order of card types (#132): due first, kinds interleaved.
+				queue = mixFlowQueue(levelSessionItems(plan.queue, data.cards, kinds, buried), history, mixOptions);
 				reserve = levelSessionItems(plan.reserve, data.cards, kinds, buried);
 				backfillLeft = config.studyAll === true ? STUDY_ALL_LIMIT : backfillLimit(config.newLimit);
 			} else {
@@ -540,7 +550,7 @@ import type { Run } from '$lib/study/vacation';
 					newKey: keyOf === null ? undefined : (card) => keyOf(card.entryId),
 					studyAll: config.studyAll === true
 				});
-				queue = plan.queue;
+				queue = mixFlowQueue(plan.queue, history, mixOptions);
 				reserve = plan.reserve;
 				backfillLeft = plan.backfillLeft;
 			}
