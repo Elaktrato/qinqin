@@ -58,7 +58,7 @@ export function regradeAction(step: GradedStep, grade: ReviewGrade): 'none' | 'r
  * the new one, with `frontier` the current card's index. An Again's
  * pending re-show (at or after the current card) is removed; one already
  * shown stays. A new Again queues a re-show as requeueAfterGrade would
- * have at the card's own position, but never before the current card:
+ * have at the card's own position, but never before or at the current card:
  * REQUEUE_GAP after it, FIFO behind other re-shows, none for a last card
  * while others exist, none beyond MAX_RESHOWS, none when the card already
  * appears after its position. The input is never mutated; the same array
@@ -90,7 +90,11 @@ export function regradeQueue(
 		reshow: count + 1,
 		...(step.tier === undefined ? {} : { tier: step.tier })
 	};
-	let at = Math.max(Math.min(pos + 1 + REQUEUE_GAP, next.length), Math.min(frontier, next.length));
+	// Never before or in place of the current card (its answer may already
+	// show): right after it at the earliest; at the summary (no current
+	// card) the re-show is appended.
+	const earliest = frontier < next.length ? frontier + 1 : next.length;
+	let at = Math.max(Math.min(pos + 1 + REQUEUE_GAP, next.length), earliest);
 	while (at < next.length && next[at].reshow !== undefined) at += 1;
 	return [...next.slice(0, at), again, ...next.slice(at)];
 }

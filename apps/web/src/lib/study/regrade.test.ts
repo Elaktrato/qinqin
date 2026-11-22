@@ -110,10 +110,17 @@ describe('regradeQueue', () => {
 		expect(next[5]).toMatchObject({ cardId: 'c0', reshow: 1, virtual: false });
 	});
 
-	it('never before the current card', () => {
+	it('never before or in place of the current card: right after it', () => {
 		const queue = many(10);
+		// c7 is the current card (its answer may already show): it stays where it is.
 		const next = regradeQueue(queue, 7, step(0, queue, 3), 1);
-		expect(ids(next)).toEqual(['c0', 'c1', 'c2', 'c3', 'c4', 'c5', 'c6', 'c0*1', 'c7', 'c8', 'c9']);
+		expect(ids(next)).toEqual(['c0', 'c1', 'c2', 'c3', 'c4', 'c5', 'c6', 'c7', 'c0*1', 'c8', 'c9']);
+		expect(next[7]).toBe(queue[7]);
+	});
+
+	it('right after the current card when it is the last one', () => {
+		const queue = many(10);
+		expect(ids(regradeQueue(queue, 9, step(0, queue, 3), 1))).toEqual([...ids(queue), 'c0*1']);
 	});
 
 	it('behind re-shows already queued at that spot', () => {

@@ -131,7 +131,7 @@ in every state — cost: one extra event per changed grade.
   changed ("Changed to Good. Next review in 10 minutes.").
 - **Effects undone** (pure `regradeQueue`): an Again's pending re-show of the card (one still ahead of or at the
   current card) is removed; a new Again queues a re-show the way `requeueAfterGrade` would have at the card's
-  own position (`REQUEUE_GAP` after it, never before the current card, FIFO behind other re-shows, none when the
+  own position (`REQUEUE_GAP` after it, never before or in place of the current card — right after it at the earliest, review fix 2; appended at the summary — FIFO behind other re-shows, none when the
   card was the last one and others exist, none beyond `MAX_RESHOWS`, none when the card already appears after
   its position). A re-show already shown stays shown (practice). Burying depends on the kind, not the grade,
   and the daily new/review counts on the card, not the grade: a regrade keeps both. XP, level and streak are
