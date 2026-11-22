@@ -284,6 +284,24 @@ describe('loadWorkspaceEvents', () => {
 		expect(logReads()).toEqual(['/api/events?limit=2000&since=1970-01-01T00%3A00%3A00Z&workspace=7', '/api/events?page=e1.x&workspace=7']);
 	});
 
+	it('a walk cut offline gives the events read so far and is not kept (#110 review)', async () => {
+		const item = (id: string) => ({ id, userId: 1, workspaceId: 7, device: 'web', ts: '2026-01-01T00:00:00Z', type: 'review', payload: null });
+		let cut = true;
+		vi.mocked(fetch).mockImplementation(async (input: RequestInfo | URL) => {
+			const url = String(input);
+			if (url.startsWith('/api/events?limit=')) return jsonResponse({ events: [item('a')], more: true, next: 'e1.x' });
+			if (url === '/api/events?page=e1.x&workspace=7') {
+				if (cut) throw new TypeError('Failed to fetch');
+				return jsonResponse({ events: [item('b')], more: false, next: null });
+			}
+			return jsonResponse({ error: 'unexpected' }, 500);
+		});
+		expect((await loadWorkspaceEvents(7)).map((e) => e.id)).toEqual(['a']);
+		cut = false;
+		await new Promise((r) => setTimeout(r, 0));
+		expect((await loadWorkspaceEvents(7)).map((e) => e.id)).toEqual(['a', 'b']);
+	});
+
 	it('reads again after the TTL', async () => {
 		vi.useFakeTimers({ now: new Date('2026-05-01T00:00:00Z'), toFake: ['Date'] });
 		await loadWorkspaceEvents(7);

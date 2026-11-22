@@ -21,7 +21,7 @@ Two forms on the same route, chosen by the query:
   - first page `GET /api/events?limit=1..2000[&since=<RFC 3339>][&workspace=<id>]`
   - continuation `GET /api/events?page=<next>[&workspace=<id>]` — the `workspace` of the first page, repeated
     exactly (absent when the first page had none); `since` and `limit` may not be repeated.
-  - answer `200 {"events": [...], "more": bool, "next": "e1.…" | null}`, `Cache-Control: no-store`. Items are
+  - answer `200 {"events": [...], "more": bool, "next": "e1.…" | null}`, `Cache-Control: private, no-cache`. Items are
     the legacy items byte for byte (`{id, userId, workspaceId, device, ts, type, payload}`); `next` is a string
     exactly when `more` is true.
 - **Legacy** (neither): the unchanged array, now **streamed** row by row, with `Deprecation: true` and
@@ -85,8 +85,29 @@ pages with an error; a bare array answer is accepted as the whole log (a server 
 Ruling: the service worker caches first pages (as today: `workspace=` set) and continuations
 `page=e1.<token>&workspace=<id>` (nothing else); first pages are only cached with `workspace=` — offline study
 needs the whole per-workspace log, and the token makes the URL a stable cache key (no clock in it: the same
-position gives the same URL) — cost: a walk cut mid-way offline mixes a new first page with older later pages;
-those miss at most the events of the cut walk, as an older full copy would.
+position gives the same URL) — cost: see the next Ruling.
+
+Ruling (review fix, corrects the cost above, which claimed a cut walk only misses the cut walk's events): page
+boundaries move whenever the events before them change (an offline review arriving late with an old `ts`, a lookup
+Clear, the last page filling up), and a moved boundary is a new continuation URL. An online walk cut after its
+first page saves a first page whose `next` was never saved, so offline the old reader threw and the study load and
+the widgets had no log at all. Now (1) the web's log reader (`readEventLog`) ends a walk whose continuation cannot
+be reached at all (a network error: no server, no saved copy) with the events read so far, `complete: false`; the
+callers treat that like any offline copy and the widgets' cache does not keep it; a failed first page, an HTTP
+error or a page off the contract still throws; the plugin SDK keeps the strict reader. (2) After a complete walk
+the page drops the workspace's saved continuations that no saved first page's chain of `next` tokens reaches
+(`pwa/eventPageCache.ts`), so old boundaries do not pile up — cost: a cut walk offline shows the log up to the cut
+(the newest events missing: cards reviewed after the cut may show as due again until the device is online), which
+is better than no log; the outbox still adds the reviews this device has not sent.
+
+Ruling (review fix): paged answers — these pages and the pull v2 pages — say `Cache-Control: private, no-cache`,
+not `no-store` — the service worker never saves a `no-store` answer, so with `no-store` neither the event log
+pages nor (a bug since v0.4.0 prep item 5) the v2 study pull pages were ever saved, and offline study had no
+data; `private` keeps shared caches out, `no-cache` makes a browser revalidate, the requests carry
+`Authorization`, and the worker partitions by credential. The value is pinned as `cacheControl` in
+`events/page.json` and `sync/pull-page.json`; the Go handler tests compare it with the real header and the worker
+tests build their responses with it — cost if wrong: a browser's own HTTP cache may now hold these pages on disk
+for the signed-in user, as the worker's Cache Storage already does.
 
 Ruling: the plugin SDK's `events.list` reads the paged form too (same reader), its result unchanged (an array,
 `types` filtered client-side) — cost: a plugin reading a huge combined log makes several requests.

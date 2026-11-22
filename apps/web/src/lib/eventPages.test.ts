@@ -8,6 +8,7 @@ import {
   nextEventsPageUrl,
   parseEventsPage,
   readAllEvents,
+  readEventLog,
 } from "./eventPages";
 
 describe("docs/contracts/events/page.json", () => {
@@ -136,5 +137,55 @@ describe("readAllEvents", () => {
       throw new Error("offline");
     });
     await expect(readAllEvents(get, {})).rejects.toThrow("offline");
+  });
+});
+
+describe("readEventLog (a walk that may be cut offline)", () => {
+  const first = "/api/events?limit=2000&since=1970-01-01T00%3A00%3A00Z&workspace=7";
+  it("is complete when every page answers", async () => {
+    const get = vi.fn(async (path: string) =>
+      path === first
+        ? { events: [item(1)], more: true, next: "e1.a" }
+        : { events: [item(2)], more: false, next: null },
+    );
+    expect(await readEventLog(get, { since: "1970-01-01T00:00:00Z", workspace: 7 })).toEqual({
+      events: [item(1), item(2)],
+      complete: true,
+    });
+  });
+  it("returns the events read so far when a continuation cannot be reached (no server, no saved copy)", async () => {
+    const get = vi.fn(async (path: string) => {
+      if (path === first) return { events: [item(1)], more: true, next: "e1.a" };
+      throw new TypeError("Failed to fetch");
+    });
+    expect(await readEventLog(get, { since: "1970-01-01T00:00:00Z", workspace: 7 })).toEqual({
+      events: [item(1)],
+      complete: false,
+    });
+  });
+  it("still throws when the first page cannot be read", async () => {
+    const get = vi.fn(async () => {
+      throw new TypeError("Failed to fetch");
+    });
+    await expect(readEventLog(get, { workspace: 7 })).rejects.toThrow("Failed to fetch");
+  });
+  it("still throws on a server error or a bad page in a continuation", async () => {
+    class HttpError extends Error {}
+    const failing = vi.fn(async (path: string) => {
+      if (path.includes("limit=")) return { events: [item(1)], more: true, next: "e1.a" };
+      throw new HttpError("HTTP 500");
+    });
+    await expect(readEventLog(failing, { workspace: 7 })).rejects.toThrow("HTTP 500");
+    const bad = vi.fn(async (path: string) =>
+      path.includes("limit=") ? { events: [item(1)], more: true, next: "e1.a" } : { events: "x" },
+    );
+    await expect(readEventLog(bad, { workspace: 7 })).rejects.toThrow(/contract/);
+  });
+  it("the strict readAllEvents keeps throwing on a cut walk", async () => {
+    const get = vi.fn(async (path: string) => {
+      if (path.includes("limit=")) return { events: [item(1)], more: true, next: "e1.a" };
+      throw new TypeError("Failed to fetch");
+    });
+    await expect(readAllEvents(get, { workspace: 7 })).rejects.toThrow("Failed to fetch");
   });
 });

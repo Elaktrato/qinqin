@@ -111,28 +111,85 @@ export function nextEventsPageUrl(
 }
 
 /**
+ * readEventLog follows a walk like readAllEvents, but a continuation that
+ * cannot be reached at all (a network error: no server and no saved copy —
+ * an offline walk whose page boundaries moved since its pages were saved)
+ * ends the walk with the events read so far and `complete: false`. A failed
+ * first page, an HTTP error or a page off the contract still throws.
+ * `isUnreachable` tells a network error apart (fetch rejects with a TypeError).
+ */
+export async function readEventLog(
+  get: (path: string) => Promise<unknown>,
+  opts: { since?: string; workspace?: number; limit?: number },
+  limits: {
+    maxPages?: number;
+    isUnreachable?: (err: unknown) => boolean;
+  } = {},
+): Promise<{ events: StudyEvent[]; complete: boolean }> {
+  const unreachable =
+    limits.isUnreachable ?? ((err: unknown) => err instanceof TypeError);
+  const out: StudyEvent[] = [];
+  let cut = false;
+  await walkEvents(
+    async (path, n) => {
+      try {
+        return await get(path);
+      } catch (err) {
+        if (n > 1 && unreachable(err)) {
+          cut = true;
+          return CUT;
+        }
+        throw err;
+      }
+    },
+    opts,
+    limits.maxPages,
+    out,
+  );
+  return { events: out, complete: !cut };
+}
+
+/**
  * readAllEvents follows a walk to its last page and returns the events in
  * page order ((ts, id)). A bare array answer is the whole log: a server
- * without paging ignores `limit`.
+ * without paging ignores `limit`. Any failure throws (the plugin SDK).
  */
 export async function readAllEvents(
   get: (path: string) => Promise<unknown>,
   opts: { since?: string; workspace?: number; limit?: number },
   limits: { maxPages?: number } = {},
 ): Promise<StudyEvent[]> {
-  const maxPages = limits.maxPages ?? EVENTS_MAX_PAGES;
   const out: StudyEvent[] = [];
+  await walkEvents((path) => get(path), opts, limits.maxPages, out);
+  return out;
+}
+
+/** The answer of a get that could not reach a continuation: the walk ends there. */
+const CUT: unique symbol = Symbol("cut");
+
+/** walkEvents appends every page's events to out; a get answering CUT ends the walk. */
+async function walkEvents(
+  get: (path: string, n: number) => Promise<unknown>,
+  opts: { since?: string; workspace?: number; limit?: number },
+  maxPagesOpt: number | undefined,
+  out: StudyEvent[],
+): Promise<void> {
+  const maxPages = maxPagesOpt ?? EVENTS_MAX_PAGES;
   let path = firstEventsPageUrl(opts);
   for (let n = 1; ; n++) {
     if (n > maxPages)
       throw new Error(`event log: more than ${maxPages} pages (maxPages)`);
-    const raw = await get(path);
-    if (n === 1 && Array.isArray(raw)) return raw as StudyEvent[];
+    const raw = await get(path, n);
+    if (raw === CUT) return;
+    if (n === 1 && Array.isArray(raw)) {
+      for (const e of raw as StudyEvent[]) out.push(e);
+      return;
+    }
     const page = parseEventsPage(raw);
     if (page === null)
       throw new Error("event log: a page does not match the contract");
     for (const e of page.events) out.push(e);
-    if (!page.more) return out;
+    if (!page.more) return;
     path = nextEventsPageUrl(page.next as string, opts.workspace);
   }
 }

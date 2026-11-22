@@ -2,8 +2,9 @@
 // keys on a client-generated ULID. Recording is fire-and-forget — a
 // failed POST must never break the page the user is on.
 
-import { api } from './api/client';
-import { firstEventsPageUrl, readAllEvents } from './eventPages';
+import { api, getToken } from './api/client';
+import { firstEventsPageUrl, readEventLog } from './eventPages';
+import { pruneSavedEventPages, type PageCachesLike } from './pwa/eventPageCache';
 import { sessionPayload } from './eventPayloads';
 import { logChangingTypes } from './plugins/contract';
 import { emitStudyEvents } from './plugins/hooks';
@@ -60,13 +61,34 @@ export function fullLogPath(workspaceId: number): string {
 	return firstEventsPageUrl({ since: EPOCH, workspace: workspaceId });
 }
 
-/** fetchFullLog reads every page of one workspace's event log, uncached (#110). */
-export function fetchFullLog(workspaceId: number): Promise<StudyEvent[]> {
-	return readAllEvents((path) => api<unknown>(path), { since: EPOCH, workspace: workspaceId });
+/**
+ * fetchFullLog reads every page of one workspace's event log, uncached (#110).
+ * A walk cut offline (a continuation neither the server nor the saved copy
+ * has) gives the events read so far and `onIncomplete` is called; callers
+ * treat it like any other offline copy. A complete walk drops the saved pages
+ * no saved first page leads to any more (pwa/eventPageCache.ts).
+ */
+export async function fetchFullLog(
+	workspaceId: number,
+	onIncomplete: () => void = () => undefined
+): Promise<StudyEvent[]> {
+	const log = await readEventLog((path) => api<unknown>(path), { since: EPOCH, workspace: workspaceId });
+	if (!log.complete) {
+		console.warn(`event log of workspace ${workspaceId}: read offline up to a page that was not saved`);
+		onIncomplete();
+	} else {
+		void pruneSavedEventPages(workspaceId, {
+			caches: typeof caches === 'undefined' ? undefined : (caches as unknown as PageCachesLike),
+			token: getToken()
+		});
+	}
+	return log.events;
 }
 
 const eventLog = createWorkspaceCache(
-	(workspaceId: number): Promise<StudyEvent[]> => fetchFullLog(workspaceId),
+	// An incomplete log is not kept: the next read walks again.
+	(workspaceId: number): Promise<StudyEvent[]> =>
+		fetchFullLog(workspaceId, () => setTimeout(() => eventLog.invalidate(workspaceId), 0)),
 	() => Date.now(),
 	WORKSPACE_EVENTS_TTL_MS
 );

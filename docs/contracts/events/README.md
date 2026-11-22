@@ -97,7 +97,10 @@ GET /api/events?page=<next>[&workspace=<id>]                          continuati
   bad `since` or `workspace` and a foreign workspace keep the plain-text answers below, on every page.
 - Web reader: `apps/web/src/lib/eventPages.ts` (`limit=2000`, strict decode, at most 1000 pages). It follows
   an empty page with `more` true (`readerAccepts` in `page.json`): the server never sends one, but a page the
-  service worker saved has lost its `lookup` events and may be empty.
+  service worker saved has lost its `lookup` events and may be empty. A continuation that cannot be reached at
+  all (offline, and not saved: the page boundaries moved since the pages were saved) ends the read with the
+  events so far, marked incomplete; after a complete read the web drops the saved continuations of that
+  workspace that no saved first page leads to (`apps/web/src/lib/pwa/eventPageCache.ts`).
 
 ## Errors
 
