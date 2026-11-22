@@ -200,7 +200,9 @@ func withoutReplaced(query string) string {
 // in [from, to) that a changed grade replaced (docs/contracts/events/
 // review-replace.json). A link needs the same second, so a family never
 // leaves the window: the replacements in it are read first, then their
-// targets by id, always of this user only.
+// targets by id, always of this user only. The LIKE prefilter skips the
+// JSON parse of every review that has no "replaces" text at all (a payload
+// writing the key with escapes is not a replacement any client writes).
 func replacedReviews(ctx context.Context, sqlDB *sql.DB, userID int64, from, to string) (string, error) {
 	scan := func(rows *sql.Rows, list []events.Review) ([]events.Review, error) {
 		defer rows.Close()
@@ -217,7 +219,7 @@ func replacedReviews(ctx context.Context, sqlDB *sql.DB, userID int64, from, to 
 	}
 	rows, err := sqlDB.QueryContext(ctx, `SELECT id, workspace_id, ts, payload FROM study_events INDEXED BY idx_study_events_user_type_ts
 		WHERE user_id = ? AND type = 'review' AND ts >= ? AND ts < ?
-		AND json_valid(payload) AND json_type(payload, '$.replaces') = 'text'`, userID, from, to)
+		AND payload LIKE '%"replaces"%' AND json_valid(payload) AND json_type(payload, '$.replaces') = 'text'`, userID, from, to)
 	if err != nil {
 		return "", fmt.Errorf("stats: replaced reviews: %w", err)
 	}
