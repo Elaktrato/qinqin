@@ -64,7 +64,7 @@ func TestLoadPinRejectsIncompleteArchives(t *testing.T) {
 }
 
 func TestRequirePinnedRefusesAnUnpinnedRun(t *testing.T) {
-	ok := Pin{ExportDate: "2000-01-02", Licence: Licence{Checked: "2000-01-03"},
+	ok := Pin{ExportDate: "2000-01-02", Licence: Licence{Checked: "2000-01-03", Statement: "stated CC BY 2.0 FR"},
 		Archives: []Archive{{Name: "a", URL: "https://x/a", Member: "a", SHA256: strings.Repeat("ab", 32)}}}
 	if err := ok.requirePinned(); err != nil {
 		t.Fatalf("pinned: %v", err)
@@ -75,6 +75,8 @@ func TestRequirePinnedRefusesAnUnpinnedRun(t *testing.T) {
 		"no licence date": func(p *Pin) { p.Licence.Checked = "" },
 		"bad licence":     func(p *Pin) { p.Licence.Checked = "soon" },
 		"no export date":  func(p *Pin) { p.ExportDate = "" },
+		"no statement":    func(p *Pin) { p.Licence.Statement = " " },
+		"placeholder":     func(p *Pin) { p.Licence.Statement = "To fill at pin time: what the pages say" },
 	}
 	for name, mutate := range cases {
 		p := ok
@@ -104,8 +106,12 @@ func TestVerifyArchive(t *testing.T) {
 }
 
 func TestRecordPinFillsOnlyEmptyHashes(t *testing.T) {
-	p := Pin{Archives: []Archive{{Name: "a", URL: "https://x/a"}, {Name: "b", URL: "https://x/b"}}}
+	p := Pin{Licence: Licence{Statement: "To fill at pin time"}, Archives: []Archive{{Name: "a", URL: "https://x/a"}, {Name: "b", URL: "https://x/b"}}}
 	sums := map[string]string{"a": sha("A"), "b": sha("B")}
+	if err := p.record(sums, "2000-01-02", "2000-01-03", false); err == nil || !strings.Contains(err.Error(), "statement") {
+		t.Fatalf("record with the placeholder statement = %v, want a refusal naming the statement", err)
+	}
+	p.Licence.Statement = "stated CC BY 2.0 FR"
 	if err := p.record(sums, "2000-01-02", "2000-01-03", false); err != nil {
 		t.Fatalf("record: %v", err)
 	}

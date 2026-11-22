@@ -119,6 +119,16 @@ func (p Pin) archive(name string) (Archive, bool) {
 	return Archive{}, false
 }
 
+// statementProblem reports a licence statement that does not record what
+// the owner read: empty, or still the shipped "To fill …" placeholder.
+func statementProblem(s string) error {
+	s = strings.TrimSpace(s)
+	if s == "" || strings.HasPrefix(strings.ToLower(s), "to fill") {
+		return fmt.Errorf("licence.statement in pin.json is %q: replace it with what Tatoeba's downloads page and terms of use state (confirm that every row of sentences_detailed is CC BY 2.0 FR and sentences_CC0 is CC0 1.0, and the attribution asked for)", s)
+	}
+	return nil
+}
+
 // errUnpinned tells the owner to run the pin step.
 var errUnpinned = errors.New("the export is not pinned: run `go run ./tools/tatoeba pin --licence-checked YYYY-MM-DD` first, after re-reading Tatoeba's downloads page and terms of use")
 
@@ -130,6 +140,9 @@ func (p Pin) requirePinned() error {
 	}
 	if !validDate(p.ExportDate) {
 		return fmt.Errorf("%w (exportDate is %q)", errUnpinned, p.ExportDate)
+	}
+	if err := statementProblem(p.Licence.Statement); err != nil {
+		return fmt.Errorf("%w (%v)", errUnpinned, err)
 	}
 	for _, a := range p.Archives {
 		if !hexSum.MatchString(a.SHA256) {
@@ -147,6 +160,9 @@ func (p *Pin) record(sums map[string]string, exportDate, licenceChecked string, 
 	}
 	if !validDate(exportDate) {
 		return fmt.Errorf("pin: export date %q is not a YYYY-MM-DD date", exportDate)
+	}
+	if err := statementProblem(p.Licence.Statement); err != nil {
+		return fmt.Errorf("pin: %w", err)
 	}
 	for _, a := range p.Archives {
 		sum, ok := sums[a.Name]

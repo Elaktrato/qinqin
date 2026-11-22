@@ -63,6 +63,9 @@ func pinCmd(ctx context.Context, pinFile, dir, licenceChecked, exportDate string
 	if err != nil {
 		return err
 	}
+	if err := statementProblem(p.Licence.Statement); err != nil {
+		return fmt.Errorf("pin: %w", err)
+	}
 	sums := map[string]string{}
 	parts := map[string]string{}
 	defer func() {

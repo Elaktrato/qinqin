@@ -78,6 +78,17 @@ func TestPinDownloadsAndRecords(t *testing.T) {
 	if err := run(context.Background(), append([]string{"pin"}, args...), &out); err == nil || !strings.Contains(err.Error(), "licence-checked") {
 		t.Fatalf("pin without --licence-checked = %v, want a refusal", err)
 	}
+	// The shipped placeholder statement is refused before any download.
+	placeholder, _ := loadPin(pinPath)
+	placeholder.Licence.Statement = "To fill at pin time: what the pages say."
+	phPath := filepath.Join(dir, "placeholder.json")
+	if err := placeholder.save(phPath); err != nil {
+		t.Fatal(err)
+	}
+	err := run(context.Background(), []string{"pin", "--licence-checked", "2000-01-03", "--pin", phPath, "--export", export}, &out)
+	if err == nil || !strings.Contains(err.Error(), "statement") || es.hits.Load() != 0 {
+		t.Fatalf("pin with the placeholder statement = %v after %d downloads; want a refusal before any", err, es.hits.Load())
+	}
 	if err := run(context.Background(), append([]string{"pin", "--licence-checked", "2000-01-03"}, args...), &out); err != nil {
 		t.Fatalf("pin: %v", err)
 	}
