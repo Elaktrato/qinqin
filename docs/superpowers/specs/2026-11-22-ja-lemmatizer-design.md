@@ -208,3 +208,43 @@ with the language code, documented in the contract — cost if wrong: none for J
 pack type (follow-up), a Spanish table (the engine test uses a synthetic table; es-demo has no inflected
 data worth a table yet), the pre-existing kana-reading branches of lookup (`language == "ja"` for reading
 matches; not lemmatization).
+
+## Refinements (#177, 2026-11-22)
+
+Follow-up to the trade-offs recorded above, measured on JMdict-only and JMdict + Jiten scratch servers built
+from `develop` (979d67ee). All changes are table data or generic, table-driven engine features (format 2).
+
+Ruling: **a table may list expressions the boundary rule keeps whole** (`hints.keepWhole`: texts compared
+with the first entry's written forms and readings) — an expression in the list is never split into particle +
+word. A declarative list beats a heuristic: the pri-0 particle-led JMdict expressions include taught grammar
+(に基づいて) and plain quotation (と言って) that no tag tells apart — cost if wrong: a listed expression
+followed by a longer word loses that word's folding (計画に基づいている → に基づいて + いる).
+
+Ruling: **the Japanese list is derived, then reviewed**: JMdict `exp` entries (every sense `exp`) with priority 0
+that start with a particle and whose form or reading occurs in a lesson title, pattern or example focus of the
+bundled `ja-grammar` pack (73 candidates, of which the 41 with priority 0 can be split at all), each kept or
+dropped by hand; the committed list is the reviewed result in the table, not a build step. Kept whole (taught
+as units): に基づいて, を通して, によれば, に応じて, に沿って, をめぐって, をおいて, にすぎない, に反して, にあたって,
+にあたり, にわたり, にかけては, にひきかえ, に至っては, に対し, に関し, にして, によらず, にもまして, と思ったら,
+ときたら, というと, といえど, といえども, といったらない, が早いか, であれ, であろう, ですら, でない, となく — and
+しかねない (its し is する's stem, not a particle; N2 grammar). Split (the learner meets the verb): と言って and
+と言い (quotation + 言う: と言っていました folds 言う's progressive), をして (+ する). — cost if wrong: a grammar
+expression outside the pack's points is still split.
+
+Ruling: **ないで is the negative te-form** (`ないで` → `ない`, in te): 食べないでください → 食べる with reasons
+[request, te-form, negative] ("negative te-form request"), 忘れないでね → 忘れる + ね, 食べないで寝た → 食べる.
+— cost if wrong: none known; a word ending in ないで that is no verb is gated by class.
+
+Ruling: **てはいけない / てもいい fold like てください** (reasons `prohibition`, `permission`; で- variants,
+いけません): してはいけない → する, 食べなくてもいい → 食べる; the i-adjective te-form くて now also applies to a
+te-form produced by a rule (in: te) so the negative chain reaches the verb. — cost if wrong: てもいい's いい is not
+counted as a word in coverage.
+
+Ruling: **kana fit's usually-kana is the first sense's tag** (`hints.usuallyReadingTag`: `uk` on the entry's
+first sense, the display-form rule of `frequency/`), not "some sense": 仕手 carries `uk` only on its second
+sense, so bare して is する without a frequency pack; する, いる, こと, ある keep `uk` on their first sense. One
+definition for display and ranking — cost if wrong: a word whose minor first sense lacks `uk` ranks weak by
+reading.
+
+Ruling: **format 2**: the new hints are format-2 fields; an engine reads every format up to its own, so format-1
+tables stay valid — cost if wrong: none (no format-1-only client exists yet).
