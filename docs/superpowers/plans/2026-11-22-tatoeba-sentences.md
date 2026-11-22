@@ -141,3 +141,46 @@ entry examples, cloze and word-tile cards in a running app with the real packs (
 golden packs; no browser/app run was done). Known limitations: Chinese single-character words are character
 entries and get no pack sentences (existing importer behaviour); Japanese segmentation is the server's (an
 expression such as 今日は can win over 今日 + は).
+
+## Review fixes (the one fix wave after the independent licence/data-safety review)
+
+`dd9b376b` merges `feature/study-batch` (develop with main's grammar work). The one conflict, in the
+"Bundled" row of `docs/wiki/Admin-data-packs.md`, was resolved by keeping both additions. `0bce09df`: the merge
+renamed `zh-grammar-demo` to `zh-grammar`, so the CC0 copy check points at `plugins/data/zh-grammar/LICENSE`.
+
+| Finding | Commit | Test-first evidence |
+|---|---|---|
+| 1 (must) licence statement unchecked | `f3704c22` | `requirePinned`, `record` and the pin command accepted the placeholder (3 tests failed; the command made 6 downloads first), then refused it before any download. The `pin.json` template now asks the owner to confirm that every `sentences_detailed` row is CC BY 2.0 FR (also finding 10b). |
+| 2–4 readings licence, credits URLs, reachable credits | `2a04d738` | `TestPackCreditsTheDictionaryReadings` and the new credits header failed, then passed. Manifest licence: "…; readings from CC-CEDICT/JMdict, CC BY-SA 4.0". LICENSE, ATTRIBUTION.md and the notice name MDBG/EDRDG, their links and the BY-SA URI. `credits.tsv` gains `url`/`translation_url` columns and `owner` naming. The attribution and notice link `https://github.com/Elaktrato/qinqin/blob/main/plugins/data/<id>/credits.tsv`. Rulings in the spec: per-sentence in-app credit deferred, with the risk stated; licence combination. |
+| 5 translation rules untested; uncredited CC BY | `1cdf3642` | `TestBestTranslationRules` (orphan, tagged, deny-tagged, -1 review, too long, other language) kills M4–M6. `checkCredits` failed (undefined), then passed; the build stops on a bundled CC BY sentence or translation without an owner. Rules refuse `dropOrphans: false`. |
+| 6 GENERATED_PACKS tied to the pin | `a4e5cc0e` | New `check-sources` test failed (25/26), then passed: pinned means both packs are required at version = export date; unpinned means they must be absent. Go: `TestGeneratedPacksFollowThePin`. Its helper lives in the test file and was written together with its table test, so it is not strictly test-first. |
+| 7 size guard | `6e09e832` | `TestSizeGuard` failed (no `AllowSize`), then passed. Cap: 24 MiB per `sentences.json`/`credits.tsv`; `--allow-size` is recorded in ATTRIBUTION.md. Expected sizes are in the spec (estimates). |
+| 8 packages contract | `557f4f02` | `TestSentencesPackageKeepsAnEmptyReading` failed on the missing contract text, then passed. The behaviour itself (empty pinyin in the package) already worked. |
+| 9 sentence identity | `215417d9` | `TestReimportUpdatesAReadingInPlace` failed (3 rows, 2 restamped), then passed. Identity is (entry, text, translation); the reading is updated in place and the id is kept. `internal/sync` and `internal/backup` tests passed. |
+| 10 export escapes | `1f88ef54` | Chose to unescape (MySQL-style) and to drop texts with control characters. `TestReadRowsUnescapes` / `TestFilterDropsControlCharacters` failed, then passed. Whether Tatoeba escapes this way is not verified. |
+| NITs M2, M3, M11, dates, staging | `1ddf1ff9` | Fixture rows added (a CC0 row of another language, a linked French sentence); archives and the fixture pin regenerated, golden ATTRIBUTION hashes updated. The refused-download check kills M11. The determinism test rejects any date-time and any unpinned date. `TestStagingIsOutsideThePackFolder` failed (undefined hook), then passed: packs are staged under `plugins/upstream/tatoeba/`. |
+| docs | `f52a5b78` | Owner steps in `docs/sources.md` and Data-and-licences updated. |
+
+Mutation check: the reviewer's 16 mutants (`/tmp/claude-0/review-133/scripts/mut.py`, re-rooted at this
+worktree) are all KILLED now.
+
+**Changed owner sequence:** before `pin`, the placeholder `licence.statement` must be replaced; and `pin.json`
+(once pinned) and both packs must be committed together, because `check-sources` now requires the packs once the pin is recorded.
+
+```sh
+# edit server/tools/tatoeba/pin.json: licence.statement := what the downloads page and terms of use state
+cd server
+go run ./tools/tatoeba pin --licence-checked <YYYY-MM-DD>
+go run ./tools/tatoeba build            # add --allow-size only after deciding a file > 24 MiB is acceptable
+cd .. && node scripts/check-sources.mjs && (cd server && go test ./internal/sentences ./cmd/qinqin ./tools/tatoeba/...)
+git add server/tools/tatoeba/pin.json server/tools/tatoeba/rules.json plugins/data/zh-sentences-tatoeba plugins/data/ja-sentences-tatoeba
+```
+
+**Gates after the fixes:**
+
+- `go test ./tools/tatoeba/... ./internal/sentences ./cmd/qinqin`: exit 0.
+- `node scripts/check-sources.mjs`: exit 0 (no packs, pin not pinned).
+- `node --test scripts/*.test.mjs`: exit 0 (157 tests: 156 pass, 1 skipped font-pack test).
+- Wiki and readme doc tests (`npx vitest run src/lib/wikiDocs.test.ts src/lib/readmeDocs.test.ts`): 183 passed.
+- One full Go run: `gofmt -l .` empty, `go vet ./...` clean, 46 packages ok, 1 FAIL. The failure is only the known environment failure `internal/ai` `TestHostnameResolvingToEmbeddedFormIsRefused` (no IPv6 sockets).
+- The full web suite was not run: no web code changed.
