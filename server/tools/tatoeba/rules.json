@@ -37,6 +37,7 @@
       "name": "Tatoeba example sentences (Japanese)",
       "dictionary": "plugins/data/jmdict",
       "readingType": "kana",
+      "preferCommonReadings": true,
       "minRunes": 5,
       "maxRunes": 40,
       "minCoverage": 0.9,
@@ -51,6 +52,7 @@
         "大人": "おとな",
         "日本": "にほん",
         "明日": "あした",
+        "本": "ほん",
         "昨日": "きのう",
         "私": "わたし",
         "行く": "いく"
@@ -62,6 +64,7 @@
       "name": "Tatoeba example sentences (Mandarin)",
       "dictionary": "plugins/data/cedict",
       "readingType": "pinyin",
+      "preferCommonReadings": false,
       "minRunes": 4,
       "maxRunes": 30,
       "minCoverage": 1,

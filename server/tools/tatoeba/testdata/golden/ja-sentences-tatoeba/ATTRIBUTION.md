@@ -21,7 +21,7 @@ its contributors.
 - Licence check: Tatoeba's downloads page and terms of use re-read on
   2000-01-03: Fixture: invented export, stated CC BY 2.0 FR with a CC0 subset.
 - Changes: qinqin's tool server/tools/tatoeba selected the sentences with
-  rules.json (SHA-256 05b8103444d3c5584c5fcad497d89f3a406333df3649d05b97e0eb43979cdca1): only sentences with an English
+  rules.json (SHA-256 2b0b7cdd912ffdb99a67e22ce86d4387e2247ded28979e633156dd7a528d012a): only sentences with an English
   translation; orphaned, flagged, negatively reviewed, deny-listed,
   near-duplicate and too short or long sentences dropped; native speakers
   preferred; at most 2 sentences per word. The readings were

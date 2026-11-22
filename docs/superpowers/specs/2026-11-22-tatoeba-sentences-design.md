@@ -148,6 +148,12 @@ tail must be kana (行きました: 行く/いく → い + きました); `ja.d
 settles listed forms; 来る/來る inflections are never derived (irregular stem). Anything else drops the
 whole sentence's reading (review list `review-ja.tsv`). Kana readings keep the punctuation, no spaces.
 
+Ruling (`preferCommonReadings`, ja on): when some candidate reading carries a JMdict priority mark, the
+unmarked ones do not count (水: みず, not the rare すい; 日本語: にほんご, not にっぽんご); readings that
+differ only in script (わたし/ワタシ) are one — found by a run over the real JMdict, where the strict rule
+gave 2 readings in 7 test sentences — cost if wrong: a rare reading meant by the writer is shown as the
+common one; turn the flag off in `rules.json`.
+
 Ruling: a sentence reading is all-or-nothing — the pack format has one reading per sentence; a partial
 reading would be a guess presented as fact — cost if wrong: fewer readings in Japanese; the report gives the
 share.
@@ -159,6 +165,12 @@ group is kept only when `BestWord(language, word)` resolves to one of the match'
 single-character words are `character` entries, which the importer never links (existing behaviour;
 recorded as a limitation, possible follow-up). `skipWords` (particles such as は, を, の) are matched but get
 no group. Each word keeps at most `maxPerWord` sentences (rules, default 5; `--max-per-word`).
+
+Ruling: a Japanese kana-only token gets a group only when it is a JMdict-common word as written — the server's
+segmenter matches kana runs through kana folding (りま → リマ) and splits unknown runs into rare words
+(があ, すか); the kana is still its own reading — cost if wrong: fewer groups for rare kana words.
+Segmentation itself is the server's (`internal/segment`, as in the Reader): an expression such as 今日は
+(こんにちは) can win over 今日 + は; such groups are visible in the sample for review.
 
 Output per pack (deterministic: groups sorted by word in code-point order, sentences by rank, `credits.tsv` by
 sentence id, no timestamps, the version is the pinned export date): `manifest.json`, `sentences.json` (one

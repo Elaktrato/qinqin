@@ -104,6 +104,17 @@ func TestJapaneseReadings(t *testing.T) {
 		// Kana the dictionary lacks is still its own reading, but the
 		// coverage is partial.
 		{text: "コーヒーを飲む。", reading: "コーヒーをのむ。", words: []string{"飲む"}},
+		// A kana token that matches a word only through kana folding (りま
+		// for リマ), or an uncommon one, is no word to file a sentence under;
+		// its reading is still the kana itself.
+		{text: "りまを飲む。", reading: "りまをのむ。", words: []string{"飲む"}, fullCoverage: true},
+	})
+
+	// 水 is also すい (an uncommon entry): only the JMdict-common reading
+	// counts while preferCommonReadings is set.
+	noCommon := fixtureAnalyzer(t, "ja", func(l *LangRules) { l.PreferCommonReadings = false })
+	checkReadings(t, noCommon, []readingCase{
+		{text: "水を飲んだ。", reading: "", ambiguous: "水", fullCoverage: true},
 	})
 
 	noDefaults := fixtureAnalyzer(t, "ja", func(l *LangRules) { l.DefaultReadings = nil })

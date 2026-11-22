@@ -213,25 +213,25 @@ func (a *analyzer) zhReading(m segment.Match, byID map[int64]lexicon.Entry, out 
 // surface with kanji is read from its word candidates, each form that
 // shares a prefix with it giving entry reading minus the form's kana tail
 // plus the surface's kana tail. It is reliable only when exactly one
-// reading results (the rules' default settles a listed form) and no
-// candidate is an inflected 来る.
+// reading results and no candidate is an inflected 来る: the rules'
+// default settles a listed form; otherwise, with PreferCommonReadings,
+// readings without a JMdict priority mark do not count when some reading
+// has one (水: みず, not the rare すい).
 func (a *analyzer) jaReading(m segment.Match, byID map[int64]lexicon.Entry, out *analysis) (string, bool) {
 	surface := []rune(m.Surface)
 	if allKana(surface) {
 		return m.Surface, true
 	}
-	all, preferred := map[string]bool{}, map[string]bool{}
+	type derived struct {
+		full              string
+		common, isDefault bool
+	}
+	var found []derived
 	irregular := false
 	for _, c := range m.Entries {
 		e := byID[c.ID]
 		if e.Kind != "word" {
 			continue
-		}
-		var readings []string
-		for _, rd := range e.Readings {
-			if rd.Type == "kana" {
-				readings = append(readings, rd.Value)
-			}
 		}
 		for _, f := range e.Forms {
 			form := []rune(f.Text)
@@ -245,24 +245,43 @@ func (a *analyzer) jaReading(m segment.Match, byID map[int64]lexicon.Entry, out 
 				continue
 			}
 			d, hasDefault := a.rules.DefaultReadings[f.Text]
-			for _, rd := range readings {
-				if !strings.HasSuffix(rd, formTail) || len(rd) == len(formTail) {
+			for _, rd := range e.Readings {
+				if rd.Type != "kana" || !strings.HasSuffix(rd.Value, formTail) || len(rd.Value) == len(formTail) {
 					continue
 				}
-				full := strings.TrimSuffix(rd, formTail) + surfaceTail
-				all[full] = true
-				if hasDefault && rd == d {
-					preferred[full] = true
-				}
+				found = append(found, derived{
+					full:      strings.TrimSuffix(rd.Value, formTail) + surfaceTail,
+					common:    rd.Pri > 0,
+					isDefault: hasDefault && rd.Value == d,
+				})
 			}
 		}
 	}
-	pick := all
-	if len(preferred) > 0 {
-		pick = preferred
+	// Readings that differ only in script (ワタシ, わたし) are one; the
+	// hiragana spelling is kept.
+	collect := func(keep func(derived) bool) map[string]string {
+		out := map[string]string{}
+		for _, d := range found {
+			if !keep(d) {
+				continue
+			}
+			key := lang.ToHiragana(d.full)
+			if prev, ok := out[key]; !ok || prev != key {
+				out[key] = d.full
+			}
+		}
+		return out
+	}
+	all := collect(func(derived) bool { return true })
+	pick := collect(func(d derived) bool { return d.isDefault })
+	if len(pick) == 0 && a.rules.PreferCommonReadings {
+		pick = collect(func(d derived) bool { return d.common })
+	}
+	if len(pick) == 0 {
+		pick = all
 	}
 	if !irregular && len(pick) == 1 {
-		for v := range pick {
+		for _, v := range pick {
 			return v, true
 		}
 	}
@@ -293,6 +312,12 @@ func (a *analyzer) word(ctx context.Context, m segment.Match, byID map[int64]lex
 	}
 	for _, r := range e.Readings {
 		valid[r.Value] = true
+	}
+	// A kana token is filed only when it is a common word as written: the
+	// tokenizer also matches kana runs through kana folding (りま for リマ)
+	// and splits unknown runs into rare words.
+	if a.code == "ja" && allKana([]rune(m.Surface)) && m.Lemma == m.Surface && (!valid[m.Surface] || e.Pri <= 0) {
+		return "", ""
 	}
 	var tries []string
 	if valid[m.Lemma] || m.Lemma != m.Surface {

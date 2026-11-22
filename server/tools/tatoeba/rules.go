@@ -57,6 +57,9 @@ type LangRules struct {
 	DenyWords []string `json:"denyWords"`
 	// SkipWords are matched (they count for coverage) but get no group.
 	SkipWords []string `json:"skipWords"`
+	// PreferCommonReadings: when some candidate reading carries a JMdict
+	// priority mark, the unmarked ones (rare variants) do not count.
+	PreferCommonReadings bool `json:"preferCommonReadings"`
 	// DefaultReadings settles a word with several readings: written form
 	// (or dictionary form) → the reading to use, when it is one of them.
 	DefaultReadings map[string]string `json:"defaultReadings"`
