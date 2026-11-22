@@ -37,7 +37,8 @@ type Level struct {
 
 // Example is one example sentence of a lesson. Focus is the grammar word
 // in Text; with at least two Distractors the example also yields a
-// fill-the-gap exercise.
+// fill-the-gap exercise. NoOrder skips the word-order exercise for a
+// sentence whose tokens have a second legal order.
 type Example struct {
 	ID          string   `json:"id"`
 	Text        string   `json:"text"`
@@ -45,6 +46,7 @@ type Example struct {
 	Translation string   `json:"translation"`
 	Focus       string   `json:"focus"`
 	Distractors []string `json:"distractors"`
+	NoOrder     bool     `json:"noOrder,omitempty"`
 }
 
 // Lesson is one grammar lesson. All text is plain text.

@@ -1,0 +1,361 @@
+#!/usr/bin/env node
+// Build and validate the zh-grammar pack: merge the per-level authored
+// fragments under plugins/data/zh-grammar/authored into the shipped
+// lessons.json and a reviewable COVERAGE.md.
+//
+// Usage:
+//
+//   node scripts/build-grammar-pack.mjs [--pack zh|ja] [--check] [--complete]
+//       [--authored <dir>] [--out <dir>]
+//
+// --pack picks the pack (default zh: plugins/data/zh-grammar; ja:
+// plugins/data/ja-grammar). Defaults: --authored <pack dir>/authored and
+// --out <pack dir>. --check validates and writes nothing; --complete
+// additionally requires every level's fragment, every row 1..level.rows to
+// appear at least once, and the pack's total lesson range.
+import { mkdir, readdir, readFile, writeFile } from 'node:fs/promises';
+import { join, resolve } from 'node:path';
+import { fileURLToPath, pathToFileURL } from 'node:url';
+
+export class PackError extends Error {}
+
+function fail(message) {
+	throw new PackError(message);
+}
+
+// The Chinese pack's seven levels in difficulty order. The row counts are the
+// corrected, binding syllabus row counts (the original plan under-counted
+// HSK 1 by 数词, 连接词语或短语 and 叹词, and HSK 2 by one row; HSK 3–7–9
+// follow the outline's 细目 rows, with HSK 4's long 连接分句或句子 list
+// counted as two rows). A level's
+// `rows` is a floor: a fragment may author rows above it (the syllabus may
+// have more), and --complete requires rows 1..rows but allows extras.
+export const LEVELS = [
+	{ id: 'hsk-1', name: 'Level 1 · First sentences', schemeLevel: 'HSK 1', rows: 48 },
+	{ id: 'hsk-2', name: 'Level 2 · Everyday basics', schemeLevel: 'HSK 2', rows: 61 },
+	{ id: 'hsk-3', name: 'Level 3 · Getting around', schemeLevel: 'HSK 3', rows: 57 },
+	{ id: 'hsk-4', name: 'Level 4 · Connected speech', schemeLevel: 'HSK 4', rows: 46 },
+	{ id: 'hsk-5', name: 'Level 5 · Nuance and attitude', schemeLevel: 'HSK 5', rows: 39 },
+	{ id: 'hsk-6', name: 'Level 6 · Formal ground', schemeLevel: 'HSK 6', rows: 31 },
+	{ id: 'hsk-7-9', name: 'Level 7 · Mastery', schemeLevel: 'HSK 7–9', rows: 40 }
+];
+
+// The Japanese pack's five levels. A level's `rows` is the number of points
+// qinqin's own selection gives it (docs/superpowers/specs/
+// 2026-11-21-ja-grammar-pack-design.md); like the HSK rows it is a floor.
+export const JA_LEVELS = [
+	{ id: 'n5', name: 'Level N5 · First sentences', schemeLevel: 'N5', rows: 40 },
+	{ id: 'n4', name: 'Level N4 · Everyday Japanese', schemeLevel: 'N4', rows: 46 },
+	{ id: 'n3', name: 'Level N3 · Connected speech', schemeLevel: 'N3', rows: 57 },
+	{ id: 'n2', name: 'Level N2 · Nuance and attitude', schemeLevel: 'N2', rows: 55 },
+	{ id: 'n1', name: 'Level N1 · Mastery', schemeLevel: 'N1', rows: 60 }
+];
+
+const ZH_SOURCE =
+	'Topic coverage follows the grammar outline (语法大纲) of the 《HSK 考试大纲》 / Syllabus for the\n' +
+	'Chinese Proficiency Test, CLEC/CTI, 2025-11 (effective 2026-07). The outline is used as a topic\n' +
+	'index only: the lesson grouping and order, explanations, examples and exercises are qinqin\u2019s own,\n' +
+	'and no syllabus text is reproduced. The syllabus grants no reuse licence.';
+
+const JA_SOURCE =
+	'The JLPT publishes no grammar list. The selection and order of grammar points per level are\n' +
+	'qinqin\u2019s own (docs/superpowers/specs/2026-11-21-ja-grammar-pack-design.md), not taken from JLPT\n' +
+	'preparation books or other published lists; the levels are estimates. Explanations, examples and\n' +
+	'exercises are qinqin\u2019s own.';
+
+// PACKS describes each grammar pack the script builds: its directory, its
+// levels, the level scheme its badges use, its COVERAGE.md heading and
+// source paragraph, and the lesson range --complete requires.
+export const PACKS = {
+	zh: {
+		dir: 'zh-grammar',
+		levels: LEVELS,
+		scheme: 'hsk-words',
+		heading: '# Chinese grammar — HSK coverage',
+		source: ZH_SOURCE,
+		rowColumn: 'Syllabus row (qinqin\u2019s words)',
+		minLessons: 300,
+		maxLessons: 500
+	},
+	ja: {
+		dir: 'ja-grammar',
+		levels: JA_LEVELS,
+		scheme: 'jlpt-kanji',
+		heading: '# Japanese grammar — coverage',
+		source: JA_SOURCE,
+		rowColumn: 'Grammar point (qinqin\u2019s selection)',
+		minLessons: 250,
+		maxLessons: 500
+	}
+};
+const ID = /^[a-z0-9]+(-[a-z0-9]+)*$/;
+const KINDS = new Set(['similar', 'clearly-wrong']);
+const HTML_OR_MARKDOWN = /[<>[\]*`]/;
+
+const runes = (s) => Array.from(s).length;
+
+function checkText(path, s, required, max) {
+	if (required && (typeof s !== 'string' || s.trim() === '')) fail(`${path}: is required`);
+	if (typeof s === 'string' && runes(s) > max) fail(`${path}: ${runes(s)} characters, at most ${max}`);
+}
+
+function checkID(path, id) {
+	if (typeof id !== 'string' || !ID.test(id)) {
+		fail(`${path}: ${JSON.stringify(id)} is not a valid id (lowercase letters, digits and single hyphens)`);
+	}
+}
+
+// readFragment returns the merged rows of a level's authored fragment(s):
+// <id>.json and any <id>-part-*.json, in filename order. It returns null
+// when the level has no fragment yet.
+async function readFragment(authoredDir, id) {
+	let entries;
+	try {
+		entries = await readdir(authoredDir);
+	} catch (err) {
+		if (err.code === 'ENOENT') return null; // nothing authored yet
+		throw err;
+	}
+	const files = entries
+		.filter((f) => f === `${id}.json` || (f.startsWith(`${id}-part-`) && f.endsWith('.json')))
+		.sort();
+	if (files.length === 0) return null;
+	const rows = [];
+	let level;
+	for (const f of files) {
+		let frag;
+		try {
+			frag = JSON.parse(await readFile(join(authoredDir, f), 'utf8'));
+		} catch (err) {
+			fail(`${f}: not valid JSON: ${err.message}`);
+		}
+		if (level === undefined) level = frag.level;
+		for (const row of frag.rows ?? []) rows.push(row);
+	}
+	return { level, rows };
+}
+
+// validateLesson checks one lesson against the schema and the pack's content
+// rules, pushing its example ids and its contrast count. The path is the
+// row's prefix, for example "hsk-1 rows[3]".
+function validateLesson(path, lesson, levelId, lessonIds, exampleIds) {
+	checkID(`${path}.lesson.id`, lesson.id);
+	if (lessonIds.has(lesson.id)) fail(`${path}.lesson.id: ${JSON.stringify(lesson.id)} is used twice`);
+	lessonIds.add(lesson.id);
+	if (lesson.level !== levelId) fail(`${path}.lesson.level: ${JSON.stringify(lesson.level)} != ${JSON.stringify(levelId)}`);
+
+	checkText(`${path}.lesson.title`, lesson.title, true, 120);
+	checkText(`${path}.lesson.summary`, lesson.summary, true, 300);
+
+	if (!Array.isArray(lesson.pattern) || lesson.pattern.length < 1 || lesson.pattern.length > 3) {
+		fail(`${path}.lesson.pattern: ${Array.isArray(lesson.pattern) ? lesson.pattern.length : 0} lines, want 1 to 3`);
+	}
+	lesson.pattern.forEach((line, j) => checkText(`${path}.lesson.pattern[${j}]`, line, true, 120));
+
+	if (!Array.isArray(lesson.body) || lesson.body.length < 1 || lesson.body.length > 4) {
+		fail(`${path}.lesson.body: ${Array.isArray(lesson.body) ? lesson.body.length : 0} paragraphs, want 1 to 4`);
+	}
+	lesson.body.forEach((para, j) => {
+		checkText(`${path}.lesson.body[${j}]`, para, true, 2000);
+		if (typeof para === 'string' && HTML_OR_MARKDOWN.test(para)) fail(`${path}.lesson.body[${j}]: no HTML or Markdown`);
+	});
+
+	const examples = lesson.examples;
+	if (!Array.isArray(examples) || examples.length < 4 || examples.length > 8) {
+		fail(`${path}.lesson.examples: ${Array.isArray(examples) ? examples.length : 0} examples, want 4 to 8`);
+	}
+	let contrasts = 0;
+	examples.forEach((ex, j) => {
+		const ep = `${path}.lesson.examples[${j}]`;
+		checkID(`${ep}.id`, ex.id);
+		if (exampleIds.has(ex.id)) fail(`${ep}.id: ${JSON.stringify(ex.id)} is used twice`);
+		exampleIds.add(ex.id);
+		checkText(`${ep}.text`, ex.text, true, 500);
+		checkText(`${ep}.reading`, ex.reading, true, 500);
+		checkText(`${ep}.translation`, ex.translation, true, 500);
+		checkText(`${ep}.focus`, ex.focus, true, 500);
+		if (typeof ex.focus === 'string' && typeof ex.text === 'string' && count(ex.text, ex.focus) !== 1) {
+			fail(`${ep}.focus: ${JSON.stringify(ex.focus)} occurs ${count(ex.text, ex.focus)} times in text, want 1`);
+		}
+		const distractors = ex.distractors;
+		if (!Array.isArray(distractors) || distractors.length < 2 || distractors.length > 4) {
+			fail(`${ep}.distractors: ${Array.isArray(distractors) ? distractors.length : 0} distractors, want 2 to 4`);
+		}
+		const seen = new Set();
+		distractors.forEach((d, k) => {
+			const dp = `${ep}.distractors[${k}]`;
+			if (typeof d !== 'string' || d.trim() === '') fail(`${dp}: must not be empty`);
+			if (d === ex.focus) fail(`${dp}: ${JSON.stringify(d)} equals focus`);
+			if (seen.has(d)) fail(`${dp}: ${JSON.stringify(d)} is listed twice`);
+			seen.add(d);
+		});
+		if (typeof ex.contrast !== 'boolean') fail(`${ep}.contrast: must be a boolean`);
+		if (ex.contrast) contrasts++;
+		if (ex.noOrder !== undefined && typeof ex.noOrder !== 'boolean') fail(`${ep}.noOrder: must be a boolean`);
+		if (!Array.isArray(ex.kinds) || !ex.kinds.includes('clearly-wrong')) {
+			fail(`${ep}.kinds: must include "clearly-wrong"`);
+		}
+		for (const kind of ex.kinds) if (!KINDS.has(kind)) fail(`${ep}.kinds: ${JSON.stringify(kind)} is not a valid kind`);
+	});
+	if (contrasts < 1 || contrasts > 2) fail(`${path}.lesson: ${contrasts} contrast examples, want 1 to 2`);
+}
+
+function count(haystack, needle) {
+	if (needle === '') return 0;
+	return haystack.split(needle).length - 1;
+}
+
+// renderLessons is the lessons.json object: the pack's levels in their
+// order and the lessons in level/row/split order, with the authoring
+// metadata (contrast, kinds) stripped.
+export function renderLessons(levels, lessons, pack = PACKS.zh) {
+	const index = new Map(levels.map((lv, i) => [lv.id, i]));
+	const ordered = lessons
+		.map((l, i) => ({ ...l, i }))
+		.sort((a, b) => index.get(a.levelId) - index.get(b.levelId) || a.row - b.row || a.i - b.i);
+	return {
+		levels: levels.map((lv) => ({ id: lv.id, name: lv.name, schemeLevels: [{ scheme: pack.scheme, level: lv.schemeLevel }] })),
+		lessons: ordered.map(({ lesson }) => ({
+			id: lesson.id,
+			level: lesson.level,
+			title: lesson.title,
+			summary: lesson.summary,
+			pattern: lesson.pattern,
+			body: lesson.body,
+			examples: lesson.examples.map(({ contrast, kinds, ...example }) => example)
+		}))
+	};
+}
+
+// renderCoverage is COVERAGE.md: a heading, the source paragraph, then one
+// table per level mapping every syllabus row to its lesson id (or ids).
+export function renderCoverage(levels, lessons, pack = PACKS.zh) {
+	const byLevel = new Map();
+	for (const l of lessons) {
+		if (!byLevel.has(l.levelId)) byLevel.set(l.levelId, new Map());
+		const byRow = byLevel.get(l.levelId);
+		if (!byRow.has(l.row)) byRow.set(l.row, []);
+		byRow.get(l.row).push(l);
+	}
+	const lines = [pack.heading, '', pack.source, ''];
+	for (const lv of levels) {
+		const byRow = byLevel.get(lv.id) ?? new Map();
+		lines.push(`## ${lv.name}`, '', `| # | ${pack.rowColumn} | Lesson(s) |`, '|---|-------------------------------|-----------|');
+		let maxRow = lv.rows;
+		for (const row of byRow.keys()) if (row > maxRow) maxRow = row;
+		for (let row = 1; row <= maxRow; row++) {
+			const entries = byRow.get(row) ?? [];
+			const label = entries.map((l) => l.label).join(' / ');
+			const ids = entries.map((l) => l.lesson.id).join(', ');
+			lines.push(`| ${row} | ${label} | ${entries.length ? ids : 'not authored yet'} |`);
+		}
+		lines.push('');
+	}
+	return lines.join('\n') + '\n';
+}
+
+function json(value) {
+	return `${JSON.stringify(value, null, 2)}\n`;
+}
+
+// buildGrammarPack reads the authored fragments in LEVELS order, validates
+// them against the schema and the pack's content rules, and — unless
+// check — writes lessons.json and COVERAGE.md. It returns the covered row
+// count and the lesson count.
+export async function buildGrammarPack({ authoredDir, outDir, levels, pack = PACKS.zh, check = false, complete = false }) {
+	levels ??= pack.levels;
+	const lessons = [];
+	const lessonIds = new Set();
+	const exampleIds = new Set();
+	const covered = new Map();
+	let rows = 0;
+
+	for (const lv of levels) {
+		const fragment = await readFragment(authoredDir, lv.id);
+		if (!fragment) {
+			if (complete) fail(`${lv.id}: no authored fragment (--complete requires every level)`);
+			continue;
+		}
+		rows += lv.rows;
+		covered.set(lv.id, new Set());
+		if (fragment.level?.id !== lv.id) {
+			fail(`${lv.id}: fragment level ${JSON.stringify(fragment.level?.id)} != ${JSON.stringify(lv.id)}`);
+		}
+		const labelsByRow = new Map();
+		fragment.rows.forEach((entry, i) => {
+			const path = `${lv.id} rows[${i}]`;
+			const row = entry?.row;
+			if (!Number.isInteger(row) || row < 1) fail(`${path}: row must be a positive integer`);
+			const label = entry?.label;
+			if (typeof label !== 'string' || label.trim() === '') fail(`${path}.label: is required`);
+			if (labelsByRow.has(row)) {
+				if (labelsByRow.get(row).has(label)) fail(`${path}: row ${row} appears twice with the same label`);
+				labelsByRow.get(row).add(label);
+			} else {
+				labelsByRow.set(row, new Set([label]));
+			}
+			const lesson = entry?.lesson;
+			if (!lesson || typeof lesson !== 'object' || Array.isArray(lesson)) fail(`${path}.lesson: is required`);
+			validateLesson(path, lesson, lv.id, lessonIds, exampleIds);
+			covered.get(lv.id).add(row);
+			lessons.push({ lesson, levelId: lv.id, row, label });
+		});
+	}
+
+	if (lessons.length === 0) fail('no lessons authored (write at least one authored fragment)');
+
+	if (complete) {
+		for (const lv of levels) {
+			const seen = covered.get(lv.id);
+			if (!seen) fail(`${lv.id}: no authored fragment (--complete requires every level)`);
+			for (let row = 1; row <= lv.rows; row++) {
+				if (!seen.has(row)) fail(`${lv.id}: row ${row} is not authored`);
+			}
+		}
+		if (lessons.length < pack.minLessons || lessons.length > pack.maxLessons) {
+			fail(`lessons: ${lessons.length} lessons, want ${pack.minLessons} to ${pack.maxLessons}`);
+		}
+	}
+
+	if (!check) {
+		await mkdir(outDir, { recursive: true });
+		await writeFile(join(outDir, 'lessons.json'), json(renderLessons(levels, lessons, pack)));
+		await writeFile(join(outDir, 'COVERAGE.md'), renderCoverage(levels, lessons, pack));
+	}
+	return { rows, lessons: lessons.length };
+}
+
+async function main(argv) {
+	const args = [...argv];
+	const flag = (name) => {
+		const i = args.indexOf(name);
+		if (i < 0) return '';
+		const value = args[i + 1] ?? '';
+		if (!value) fail(`${name} needs a value`);
+		args.splice(i, 2);
+		return value;
+	};
+	const packName = flag('--pack') || 'zh';
+	const pack = PACKS[packName];
+	if (!pack) fail(`--pack: ${JSON.stringify(packName)} is not a pack (zh, ja)`);
+	const authored = flag('--authored');
+	const out = flag('--out');
+	const check = args.includes('--check');
+	const complete = args.includes('--complete');
+	if (args.some((a) => a !== '--check' && a !== '--complete')) {
+		fail('usage: node scripts/build-grammar-pack.mjs [--pack zh|ja] [--check] [--complete] [--authored <dir>] [--out <dir>]');
+	}
+	const root = fileURLToPath(new URL('..', import.meta.url));
+	const authoredDir = authored ? resolve(authored) : join(root, 'plugins', 'data', pack.dir, 'authored');
+	const outDir = out ? resolve(out) : join(root, 'plugins', 'data', pack.dir);
+	const result = await buildGrammarPack({ authoredDir, outDir, pack, check, complete });
+	console.log(`${result.rows} rows, ${result.lessons} lessons`);
+	if (!check) console.log(`wrote ${join(outDir, 'lessons.json')} and ${join(outDir, 'COVERAGE.md')}`);
+}
+
+if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
+	main(process.argv.slice(2)).catch((err) => {
+		console.error(err instanceof PackError ? `build-grammar-pack: ${err.message}` : err);
+		process.exit(1);
+	});
+}

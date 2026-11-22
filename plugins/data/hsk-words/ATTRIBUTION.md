@@ -25,12 +25,14 @@ permitted only as reasonable, good-faith quoting for news or informative,
 free public information. The syllabus PDF carries a copy-protection flag
 (copy: no, change: no).
 
-The project includes only two lists from the syllabus: the vocabulary
-(word) list and the list of characters to recognise (认读字), as plain lists
-of words and characters with their levels (and the words' pinyin, used as
-lookup readings). It does not include the syllabus's other content: the
-grammar points, the task and topic descriptions, the lists of characters to
-write (书写字; only their sizes are reported) and the explanatory text.
+This pack includes only the vocabulary (word) list, as a plain list of
+words with their levels and pinyin readings (used as lookup readings). It
+does not include the syllabus's descriptions, task and topic lists, or
+explanatory text. The sibling `hsk-chars` pack holds the list of characters
+to recognise (认读字). The Chinese grammar pack (`zh-grammar`), when
+installed, is listed separately in the Sources page's Grammar lessons section
+and uses the syllabus's grammar outline as a topic index; it reproduces no
+syllabus text.
 
 The project includes these lists with this attribution at the project
 owner's decision. The legal status of including these lists has not been

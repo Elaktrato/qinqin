@@ -68,10 +68,10 @@ COPY --from=build /out/qinqin /usr/local/bin/qinqin
 # The bundled seed packs (CC-CEDICT, Unihan, JMdict, KANJIDIC2, the Jiten
 # frequency list, the HSK 3.0 character and word level lists, the
 # approximate JLPT kanji level list, the KanjiVG component index
-# (kanjivg-components, CC BY-SA 3.0, about 190 KB) and the demo packs es-demo
-# and zh-grammar-demo), so a fresh stack installs them offline: the first
-# `serve` seeds everything but the demos (QINQIN_AUTO_SEED=0 turns that off);
-# the demos, and a refresh after an image update, come from
+# (kanjivg-components, CC BY-SA 3.0, about 190 KB), the Chinese and
+# Japanese grammar packs zh-grammar and ja-grammar, and the demo pack es-demo), so a fresh stack installs them
+# offline: the first `serve` seeds everything but the demo
+# (QINQIN_AUTO_SEED=0 turns that off); the demo, and a refresh after an image update, come from
 #   docker compose exec qinqin qinqin seed
 # The samples in plugins/samples (dictionaries and level packs) are not
 # shipped. Packs on the

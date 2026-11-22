@@ -63,4 +63,31 @@ describe('browseSections', () => {
 		expect(section.levels.map((l) => l.id)).toEqual(['l1']);
 		expect(section.credits).toEqual({ license: 'CC0-1.0', attribution: 'me', version: '1' });
 	});
+	it('groups a full seven-level pack of 350 lessons', () => {
+		const names = ['HSK 1', 'HSK 2', 'HSK 3', 'HSK 4', 'HSK 5', 'HSK 6', 'HSK 7–9'];
+		const full: PackInfo = {
+			...pack,
+			packId: 'zh-grammar',
+			levels: names.map((name, i) => ({
+				id: `hsk-${i + 1}`,
+				name: `Level ${i + 1}`,
+				schemeLevels: [{ scheme: 'hsk-words', level: name }]
+			})),
+			lessons: names.flatMap((_, i) =>
+				Array.from({ length: 50 }, (_, j) => ({
+					id: `l${i + 1}-${j}`,
+					level: `hsk-${i + 1}`,
+					title: `Lesson ${j}`,
+					summary: '',
+					examples: 5
+				}))
+			)
+		};
+		const scheme = [{ packId: 'hsk-words', levels: names.map((name) => ({ name })) }];
+		const [section] = browseSections([full], scheme, () => true, new Map());
+		expect(section.levels).toHaveLength(7);
+		expect(section.levels.flatMap((l) => l.lessons)).toHaveLength(350);
+		expect(section.levels[0].badges).toEqual(['≈ HSK 1']);
+		expect(section.levels[6].badges).toEqual(['≈ HSK 7–9']);
+	});
 });
