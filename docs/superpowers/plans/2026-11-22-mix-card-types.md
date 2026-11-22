@@ -130,3 +130,40 @@ Gates (exit codes read):
 - `npm --prefix apps/web run build` 0.
 - Node 26.13.1 full `npx vitest run` 0: 563 files, 12,115 passed, 2 skipped.
 - Go: not run; nothing under `server/` changed (the server builds no queues).
+
+### Review fixes (the one fix wave, 2026-11-22)
+
+Merged `feature/study-batch` (develop plus main's grammar work) first: `89952acc`, no conflicts; `npm ci` again;
+study, routes/study, i18n, contractsDocs and wikiDocs tests 0 (100 files, 2,730 passed). Then, test-first per
+finding (each new test seen failing against the code before the fix, then passing):
+
+- **1 (must) seed per session** `2b109c4c`: `deckSessionConfig`/`levelSessionConfig` (`studyStart.ts`) draw a
+  fresh seed (`newSessionSeed`, also used by /study Start) and drop a stale Study all; `sessionSeedOf` keeps a seed
+  per tab (`qinqin.study.sessionSeed`) for a setup without one instead of `Math.random()` per load. Tests:
+  `studyStart.test.ts` (3), `session.test.ts` (3), and the page tests below.
+- **6, 7 page tests** (same commit): `mixFlowQueue` is wrapped in a spy; a level session must show the order the
+  mix returns (reversed queue → 火 first); the same setup renders twice with the same seed, options and queue; a
+  setup without a seed keeps one across reloads. Mutants checked by hand: dropping `mixFlowQueue` in the level
+  path fails all 3; the old `config.seed ?? Math.random()` fails the no-seed test; ignoring `config.seed` fails 2.
+- **4 performance** `39315e29`: bucketed per-word counts (non-empty counts linked), a heap of each word's first
+  item; perf tests (20,000 items realistic, one word, two words; budget 1.5 s) failed at 21.6 s and 12.6 s,
+  now 59 ms and 91 ms. Output equal to the step-by-step reference (`testing/spaceOutReference.ts`) on 1,500 random
+  blocks with a placed prefix; all fixtures unchanged.
+- **3 due order, 2 vocab first, 9 grouped seams, 5 scope, 10 wiki names** `4ee8586a`: the due block uses
+  `p = i` (+ jitter); deck new blocks run with `leads` = vocab (`vocabFirst`, set by the page for deck sessions
+  only); grouped spaces with gap 1; README/spec scope "never back to back" per block, with the prefix condition.
+  Tests seen failing: due-order (10 overdue writing cards must stay in the first 20 of 100), vocab-first property
+  (300 deck-like blocks), grouped seam, fast-vs-reference equality with leads. Found on the way: the property
+  tests' LCG used the low bits (period 4 for `% 4`), so the first equality test with leads passed vacuously; all
+  generators now use the high bits, and the older properties still hold. Fixture regenerated from a new
+  independent reference written from the spec (scratch, deleted): 15 queue cases, each with `vocabFirst`; new cases
+  for vocab first, its level exemption, due order and the grouped seam. The page test now expects Recognise first
+  for both seeds' first word.
+- **8 select position** `447ec3d4`: the select follows the order hints (jsdom document-order test).
+
+Gates after the fixes (exit codes read): `npm run check` 0 (1651 files, 0 errors); `npm test` (Node 22) 1:
+563 files, 12,134 passed, 2 skipped, 5 failed. These are the same 5 known base failures (`BookView.dom.test.ts` 4,
+`AccountSettings.dom.test.ts` 1). `npm run build` 0; Node 26.13.1 full vitest 0: 563 files, 12,139 passed,
+2 skipped (during it the sandbox reported an out-of-memory kill of some process under the shared limit; the
+run itself completed with exit 0). Go not run: nothing under `server/` changed. The real-app check was not
+repeated after the fixes; the real queue is a fixture case and the module output equals the new reference there.
