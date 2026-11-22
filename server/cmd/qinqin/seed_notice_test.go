@@ -1,6 +1,8 @@
 package main
 
 import (
+	"encoding/json"
+	"os"
 	"slices"
 	"strings"
 	"testing"
@@ -56,11 +58,92 @@ func TestCommittedPackNotices(t *testing.T) {
 		}
 	}
 	// Packs a maintainer tool generates into plugins/data: their notice is
-	// required once they exist, their absence is fine until then.
-	generated := []string{"zh-sentences-tatoeba", "ja-sentences-tatoeba"}
+	// required once they exist; whether they must exist follows the tool's
+	// pin (TestGeneratedPacksFollowThePin).
 	for id := range needNotice {
-		if !slices.Contains(seen, id) && !slices.Contains(generated, id) {
+		if !slices.Contains(seen, id) && !slices.Contains(generatedPacks, id) {
 			t.Errorf("%s: expected a committed pack with a notice, not found", id)
 		}
+	}
+}
+
+// generatedPacks are written by server/tools/tatoeba from the export its
+// pin.json records.
+var generatedPacks = []string{"zh-sentences-tatoeba", "ja-sentences-tatoeba"}
+
+const tatoebaPin = "../../tools/tatoeba/pin.json"
+
+// generatedPackProblems: a pinned export (every archive hash recorded)
+// needs both packs at manifest version = the export date; an unpinned one
+// needs them absent. versions maps pack id to version for present packs.
+func generatedPackProblems(pinJSON []byte, versions map[string]string) []string {
+	var pin struct {
+		ExportDate string `json:"exportDate"`
+		Archives   []struct {
+			SHA256 string `json:"sha256"`
+		} `json:"archives"`
+	}
+	if err := json.Unmarshal(pinJSON, &pin); err != nil {
+		return []string{"pin.json: " + err.Error()}
+	}
+	pinned := len(pin.Archives) > 0
+	for _, a := range pin.Archives {
+		pinned = pinned && len(a.SHA256) == 64
+	}
+	var out []string
+	for _, id := range generatedPacks {
+		v, present := versions[id]
+		switch {
+		case !pinned && present:
+			out = append(out, id+": present but pin.json is not pinned")
+		case pinned && !present:
+			out = append(out, id+": pin.json pins "+pin.ExportDate+" but the pack is missing")
+		case pinned && v != pin.ExportDate:
+			out = append(out, id+": version "+v+" is not the pinned export date "+pin.ExportDate)
+		}
+	}
+	return out
+}
+
+func TestGeneratedPacksFollowThePin(t *testing.T) {
+	unpinned := []byte(`{"exportDate": "", "archives": [{"sha256": ""}]}`)
+	pinned := []byte(`{"exportDate": "2000-01-02", "archives": [{"sha256": "` + strings.Repeat("ab", 32) + `"}]}`)
+	both := func(v string) map[string]string {
+		return map[string]string{"zh-sentences-tatoeba": v, "ja-sentences-tatoeba": v}
+	}
+	for name, tc := range map[string]struct {
+		pin      []byte
+		versions map[string]string
+		problems int
+	}{
+		"unpinned, absent":   {unpinned, nil, 0},
+		"unpinned, present":  {unpinned, both("2000-01-02"), 2},
+		"pinned, absent":     {pinned, nil, 2},
+		"pinned, one":        {pinned, map[string]string{"zh-sentences-tatoeba": "2000-01-02"}, 1},
+		"pinned, stale":      {pinned, both("1999-12-31"), 2},
+		"pinned, up to date": {pinned, both("2000-01-02"), 0},
+	} {
+		if got := generatedPackProblems(tc.pin, tc.versions); len(got) != tc.problems {
+			t.Errorf("%s: %q, want %d problems", name, got, tc.problems)
+		}
+	}
+
+	// The repository as it stands.
+	data, err := os.ReadFile(tatoebaPin)
+	if err != nil {
+		t.Fatal(err)
+	}
+	packs, err := findPacksIn(committedPacks)
+	if err != nil {
+		t.Fatal(err)
+	}
+	versions := map[string]string{}
+	for _, p := range packs {
+		if slices.Contains(generatedPacks, p.pack.ID) {
+			versions[p.pack.ID] = p.pack.Version
+		}
+	}
+	for _, p := range generatedPackProblems(data, versions) {
+		t.Error(p)
 	}
 }

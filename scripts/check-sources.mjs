@@ -70,9 +70,45 @@ export const FETCHED_PACKS = [
  * Packs a maintainer tool generates into plugins/data, documented before
  * they exist: server/tools/tatoeba writes the example sentence packs from a
  * pinned Tatoeba export. The docs may name them while they are absent; once
- * generated they are bundled packs and every rule applies.
+ * generated they are bundled packs and every rule applies, and they must
+ * match the tool's pin (generatedProblems).
  */
 export const GENERATED_PACKS = ['zh-sentences-tatoeba', 'ja-sentences-tatoeba'];
+/** The pin file of the tool that generates GENERATED_PACKS. */
+export const TATOEBA_PIN = 'server/tools/tatoeba/pin.json';
+
+/**
+ * generatedProblems ties GENERATED_PACKS to the tool's pin: once pin.json
+ * records the export (every archive hash), both packs must exist with
+ * manifest version = the pinned export date; while it is not pinned, the
+ * packs must be absent. versions maps pack id to manifest version (or
+ * undefined when absent).
+ */
+function generatedProblems(root, versions) {
+	const file = join(root, TATOEBA_PIN);
+	let pin = { exportDate: '', archives: [] };
+	if (existsSync(file)) {
+		try {
+			pin = JSON.parse(readFileSync(file, 'utf8'));
+		} catch (e) {
+			return [`${TATOEBA_PIN}: not valid JSON (${e.message})`];
+		}
+	}
+	const archives = Array.isArray(pin.archives) ? pin.archives : [];
+	const pinned = archives.length > 0 && archives.every((a) => /^[0-9a-f]{64}$/.test(a?.sha256 ?? ''));
+	const out = [];
+	for (const id of GENERATED_PACKS) {
+		const present = versions.has(id);
+		if (!pinned && present) {
+			out.push(`${id}: plugins/data/${id} exists but ${TATOEBA_PIN} is not pinned; run the tool's pin step (or remove the pack)`);
+		} else if (pinned && !present) {
+			out.push(`${id}: ${TATOEBA_PIN} pins the export of ${pin.exportDate} but plugins/data/${id} is missing; run \`go run ./tools/tatoeba build\` and commit the pack`);
+		} else if (pinned && versions.get(id) !== pin.exportDate) {
+			out.push(`${id}: manifest version "${versions.get(id)}" is not the pinned export date ${pin.exportDate}; rebuild the pack`);
+		}
+	}
+	return out;
+}
 export const MAX_NOTICE_BYTES = 4000;
 /** The theme packs built into the server binary (server/internal/themes). */
 export const BUILTIN_THEMES = 'server/internal/themes/builtin';
@@ -302,6 +338,7 @@ const fontProblems = (root, doc) => namedWithLicence(root, doc, fontFiles(root),
 export function checkSources(root) {
 	const problems = [];
 	const bundled = new Map(); // manifest id -> dir (plugins/data)
+	const versions = new Map(); // manifest id -> version (plugins/data)
 	const known = new Set([...LOCAL_ONLY_PACKS, ...FETCHED_PACKS, ...GENERATED_PACKS]);
 
 	for (const base of ['plugins/data', 'plugins/samples', BUILTIN_THEMES]) {
@@ -324,6 +361,7 @@ export function checkSources(root) {
 			else {
 				known.add(id);
 				if (base !== 'plugins/samples') bundled.set(id, rel);
+				if (base === 'plugins/data') versions.set(id, m.version);
 			}
 			if (base === BUILTIN_THEMES) {
 				const lic = join(root, rel, 'LICENSE');
@@ -349,6 +387,8 @@ export function checkSources(root) {
 			}
 		}
 	}
+
+	problems.push(...generatedProblems(root, versions));
 
 	const docFile = join(root, 'docs/sources.md');
 	if (!existsSync(docFile)) {

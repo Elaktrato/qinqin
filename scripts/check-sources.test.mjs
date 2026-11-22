@@ -77,15 +77,48 @@ test('generated sentence packs may be named while absent, and are checked once p
 	const doc = DOC + '| Pack | Provides |\n|---|---|\n| **T** (`zh-sentences-tatoeba`) | x |\n| **U** (`ja-sentences-tatoeba`) | x |\n';
 	// Before server/tools/tatoeba ran: the docs describe them, nothing is wrong.
 	assert.deepEqual(checkSources(repo(okPacks(), doc)), []);
-	// Generated: they are bundled packs like any other.
+	// Generated (and pinned): they are bundled packs like any other.
 	const p = okPacks();
-	p['plugins/data/zh-sentences-tatoeba'] = { id: 'zh-sentences-tatoeba', ...GOOD, notice: 'From [Tatoeba](https://tatoeba.org).' };
-	p['plugins/data/ja-sentences-tatoeba'] = { id: 'ja-sentences-tatoeba', license: '', attribution: 'x' };
-	const out = checkSources(repo(p, doc)).join('\n');
+	p['plugins/data/zh-sentences-tatoeba'] = { id: 'zh-sentences-tatoeba', version: '2000-01-02', ...GOOD, notice: 'From [Tatoeba](https://tatoeba.org).' };
+	p['plugins/data/ja-sentences-tatoeba'] = { id: 'ja-sentences-tatoeba', version: '2000-01-02', license: '', attribution: 'x' };
+	const pinned = (root) => {
+		mkdirSync(join(root, 'server/tools/tatoeba'), { recursive: true });
+		writeFileSync(join(root, 'server/tools/tatoeba/pin.json'), JSON.stringify({ exportDate: '2000-01-02', archives: [{ sha256: 'cd'.repeat(32) }] }));
+		return root;
+	};
+	const out = checkSources(pinned(repo(p, doc))).join('\n');
 	assert.match(out, /ja-sentences-tatoeba\/manifest\.json: "license" is missing or empty/);
 	assert.doesNotMatch(out, /zh-sentences-tatoeba/);
 	// Present but not in the docs: reported.
-	assert.match(checkSources(repo(p)).join('\n'), /bundled pack "zh-sentences-tatoeba"/);
+	assert.match(checkSources(pinned(repo(p))).join('\n'), /bundled pack "zh-sentences-tatoeba"/);
+});
+
+test('generated packs follow server/tools/tatoeba/pin.json', () => {
+	const doc = DOC + '| Pack | Provides |\n|---|---|\n| **T** (`zh-sentences-tatoeba`) | x |\n| **U** (`ja-sentences-tatoeba`) | x |\n';
+	const pin = (pinned, date = '2000-01-02') => ({
+		exportDate: pinned ? date : '',
+		archives: [{ name: 'a', sha256: pinned ? 'ab'.repeat(32) : '' }]
+	});
+	const withPin = (packs, p) => {
+		const root = repo(packs, doc);
+		mkdirSync(join(root, 'server/tools/tatoeba'), { recursive: true });
+		writeFileSync(join(root, 'server/tools/tatoeba/pin.json'), JSON.stringify(p));
+		return root;
+	};
+	const gen = (version) => ({
+		...okPacks(),
+		'plugins/data/zh-sentences-tatoeba': { id: 'zh-sentences-tatoeba', version, ...GOOD },
+		'plugins/data/ja-sentences-tatoeba': { id: 'ja-sentences-tatoeba', version, ...GOOD }
+	});
+	// Not pinned: absence is fine; packs without a pin are not.
+	assert.deepEqual(checkSources(withPin(okPacks(), pin(false))), []);
+	assert.match(checkSources(withPin(gen('2000-01-02'), pin(false))).join('\n'), /zh-sentences-tatoeba.*pin\.json is not pinned/);
+	// Pinned: both packs must exist, at the pinned export date.
+	const missing = checkSources(withPin(okPacks(), pin(true))).join('\n');
+	assert.match(missing, /zh-sentences-tatoeba: server\/tools\/tatoeba\/pin\.json pins the export of 2000-01-02 but plugins\/data\/zh-sentences-tatoeba is missing/);
+	assert.match(missing, /ja-sentences-tatoeba: server\/tools\/tatoeba\/pin\.json pins/);
+	assert.deepEqual(checkSources(withPin(gen('2000-01-02'), pin(true))), []);
+	assert.match(checkSources(withPin(gen('1999-12-31'), pin(true))).join('\n'), /version "1999-12-31".*export date 2000-01-02/);
 });
 
 test('fetched and local-only audio packs the docs name are accepted', () => {
