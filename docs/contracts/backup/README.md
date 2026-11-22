@@ -89,7 +89,10 @@ Unresolved references are dropped, never guessed. Card ids `c-<kind>-<entryId>` 
 card's `entryId` are rewritten with the new entry id in one simultaneous pass; review events follow
 (`payload.cardId`); a card of an unresolved entry or sentence is dropped and its reviews keep the
 history under `orphan:<oldId>`. `read` events: `payload.bookId` through the book map; `view` events:
-`payload.entryId` (unresolved: field removed). Workspace ids inside `vacation:*` rows
+`payload.entryId` (unresolved: field removed). Event ids are kept; an id another user owns on the target gets a
+new ULID, and every restored `review` whose `replaces` (a changed grade, `events/review-replace.json`) names such
+an id is rewritten to the new id (other members byte for byte), so the replaced review stays replaced; only the
+restoring user's rows are read or written (Go: `restore_test.go` `TestRestoreKeepsReplacementLinks`). Workspace ids inside `vacation:*` rows
 (`scope.workspaces`) and `hiddenDictionaries` (by dictionary pack id) are remapped; a vacation whose
 workspace list becomes empty is dropped (`"all"` stays). Workspace and book ids are always new.
 

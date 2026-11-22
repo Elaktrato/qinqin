@@ -61,6 +61,23 @@ function encodeRandom(): string {
  * sort lexicographically; the last sixteen are random. Two ids made in
  * the same millisecond sort arbitrarily but never collide in practice.
  */
+/**
+ * ulidTime reads the millisecond time of a ULID (case-insensitive); null
+ * when the first ten characters are not a ULID time. A replacing review
+ * is made after its target's time (#131), so its id sorts above it even
+ * when this device's clock is behind.
+ */
+export function ulidTime(id: string): number | null {
+	if (id.length < TIME_LENGTH) return null;
+	let time = 0;
+	for (const char of id.slice(0, TIME_LENGTH).toUpperCase()) {
+		const digit = ENCODING.indexOf(char);
+		if (digit < 0) return null;
+		time = time * 32 + digit;
+	}
+	return time > TIME_MAX ? null : time;
+}
+
 export function newUlid(now: number = Date.now()): string {
 	return encodeTime(now) + encodeRandom();
 }

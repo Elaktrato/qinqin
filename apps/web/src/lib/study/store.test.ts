@@ -2360,6 +2360,31 @@ describe("queued reviews count in the loaded history", () => {
     expect(data.reviews.map((r) => r.id)).toEqual(["S1"]);
   });
 
+  // #131: a changed grade replaces the misclick everywhere the history is read.
+  function replacing(id: string, target: string): StudyEvent {
+    const base = reviewEvent(id, "card-1");
+    return { ...base, payload: { ...(base.payload as object), grade: 3, replaces: target } };
+  }
+
+  it("a replaced review is dropped from the history (#131)", async () => {
+    const misclick = { ...reviewEvent("R1", "card-1"), payload: { cardId: "card-1", mode: "vocab", grade: 1 } };
+    respondPull(pull, [misclick, replacing("R2", "R1")]);
+
+    const data = await loadStudyData();
+
+    expect(data.reviews.map((r) => r.id)).toEqual(["R2"]);
+    expect(data.reviews[0].payload.replaces).toBe("R1");
+  });
+
+  it("a queued replacement replaces a stored review (#131)", async () => {
+    respondPull(pull, [reviewEvent("R1", "card-1")]);
+    queue(1, replacing("R2", "R1"));
+
+    const data = await loadStudyData();
+
+    expect(data.reviews.map((r) => r.id)).toEqual(["R2"]);
+  });
+
   it("nothing is merged while no user is known", async () => {
     respondPull(pull, []);
     queue(1, reviewEvent("Q1", "card-1"));

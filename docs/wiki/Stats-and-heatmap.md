@@ -31,7 +31,7 @@ The [Daily goal](Daily-goals) widget and the **This week** widget ([Weekly summa
 
 ## The activity heatmap
 
-One cell per day over the last 52 weeks, coloured by points. A flashcard review is one point; reading is one point per started 5 minutes (at most 24 for one stretch); journal entries also count, and so does activity from plugins that declare it. Other events (sessions, views, lookups) do not count. Hover a cell for the day's points per source.
+One cell per day over the last 52 weeks, coloured by points. A flashcard review is one point (a grade you changed with Back counts once); reading is one point per started 5 minutes (at most 24 for one stretch); journal entries also count, and so does activity from plugins that declare it. Other events (sessions, views, lookups) do not count. Hover a cell for the day's points per source.
 
 - It shows the active workspace by default; **All workspaces** switches to the combined view (tooltips name each workspace).
 - A chip per activity type hides or shows that type. The choice is remembered per user on every device.

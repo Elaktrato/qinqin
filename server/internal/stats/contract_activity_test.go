@@ -14,6 +14,7 @@ type activityCase struct {
 	dayFixtureCase
 	Note   string `json:"note"`
 	Events []struct {
+		ID        string          `json:"id"`
 		TS        string          `json:"ts"`
 		Type      string          `json:"type"`
 		Workspace int64           `json:"workspace"`
@@ -67,6 +68,10 @@ func TestContractActivity(t *testing.T) {
 				payload := string(ev.Payload)
 				if payload == "null" {
 					payload = ""
+				}
+				if ev.ID != "" {
+					addID(t, sqlDB, u, ws, ev.ID, ev.TS, ev.Type, payload)
+					continue
 				}
 				add(t, sqlDB, u, ws, ev.TS, ev.Type, payload)
 			}

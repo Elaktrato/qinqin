@@ -517,3 +517,55 @@ func TestRestoreVersusDeleteUserNeverLeavesDataOrBusy(t *testing.T) {
 		}
 	}
 }
+
+// TestRestoreKeepsReplacementLinks: a changed grade (#131) names the review
+// it replaces by id. When that review's id belongs to another user on the
+// target and is re-identified, the restored replacement names the new id,
+// other members byte for byte, and the other user's event is untouched.
+func TestRestoreKeepsReplacementLinks(t *testing.T) {
+	src := newWorld(t)
+	uid := src.AliceUID
+	target := evID(uid, "A")
+	repl := evID(uid, "R")
+	exec(t, src.DB, `INSERT INTO study_events (id, user_id, workspace_id, device, ts, type, payload, updated_at) VALUES (?, ?, ?, 'web', '2026-11-10T09:00:00Z', 'review', ?, 't')`,
+		repl, uid, src.Alice.WS1, fmt.Sprintf(`{"cardId":"c-vocab-%d","mode":"vocab","grade":1,"replaces":"%s","x":[1,2]}`, src.E1, target))
+	a := openExport(t, src, uid)
+	tg := newTarget(t, nil)
+	carol := mkUser(t, tg.DB, "carol")
+	exec(t, tg.DB, `INSERT INTO workspaces (user_id, language, name, settings, updated_at) VALUES (?, 'zh', '', '{}', 't')`, carol)
+	var cw int64
+	tg.DB.QueryRow(`SELECT id FROM workspaces WHERE user_id = ?`, carol).Scan(&cw)
+	exec(t, tg.DB, `INSERT INTO sentences (entry_id, source_pack, user_id, hanzi, pinyin, translation, updated_at) VALUES (?, 'tatoeba', NULL, 'packsatz', 'p', 't', 't')`, tg.E2)
+	exec(t, tg.DB, `INSERT INTO study_events (id, user_id, workspace_id, device, ts, type, payload, updated_at) VALUES (?, ?, ?, 'd', '2026-11-10T09:00:00Z', 'review', '{"cardId":"x","grade":3}', 't')`, target, carol, cw)
+	// Carol's own replacement of her review names the same id: only the
+	// restoring user's rows are relinked (review fix 6).
+	carolRepl := fmt.Sprintf(`{"cardId":"x","grade":2,"replaces":"%s"}`, target)
+	exec(t, tg.DB, `INSERT INTO study_events (id, user_id, workspace_id, device, ts, type, payload, updated_at) VALUES ('01JD0000000000000000CAROL1', ?, ?, 'd', '2026-11-10T09:00:00Z', 'review', ?, 't')`, carol, cw, carolRepl)
+	res, _, err := Restore(context.Background(), deps(tg.baseWorld), tg.UID, 0, a, Options{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if res.ReidentifiedEvents != 1 {
+		t.Fatalf("result %+v", res)
+	}
+	var newID string
+	tg.DB.QueryRow(`SELECT id FROM study_events WHERE user_id = ? AND ts = '2026-11-10T09:00:00Z' AND id <> ?`, tg.UID, repl).Scan(&newID)
+	if newID == "" || newID == target {
+		t.Fatalf("target restored as %q", newID)
+	}
+	var payload string
+	tg.DB.QueryRow(`SELECT payload FROM study_events WHERE user_id = ? AND id = ?`, tg.UID, repl).Scan(&payload)
+	want := fmt.Sprintf(`{"cardId":"c-vocab-%d","mode":"vocab","grade":1,"replaces":"%s","x":[1,2]}`, tg.E1, newID)
+	if payload != want {
+		t.Errorf("replacement payload %s, want %s", payload, want)
+	}
+	var carolPayload string
+	tg.DB.QueryRow(`SELECT payload FROM study_events WHERE id = ? AND user_id = ?`, target, carol).Scan(&carolPayload)
+	if carolPayload != `{"cardId":"x","grade":3}` {
+		t.Errorf("carol's event changed: %q", carolPayload)
+	}
+	tg.DB.QueryRow(`SELECT payload FROM study_events WHERE id = '01JD0000000000000000CAROL1'`).Scan(&carolPayload)
+	if carolPayload != carolRepl {
+		t.Errorf("carol's replacement changed: %q", carolPayload)
+	}
+}

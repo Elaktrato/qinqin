@@ -7,7 +7,8 @@
 	import Button from '$lib/ui/Button.svelte';
 	import { useCardFace } from './cardFace.svelte';
 
-	let { done, grades, keys }: { done: boolean; grades?: Snippet; keys: string } = $props();
+	// `aux` (#131): the session's Back controls, beside the actions.
+	let { done, grades, aux, keys }: { done: boolean; grades?: Snippet; aux?: Snippet; keys: string } = $props();
 
 	const face = useCardFace();
 	let sentinel = $state<HTMLElement>();
@@ -46,10 +47,16 @@
 			>
 		</div>
 	{/if}
+	{#if aux}<div class="aux">{@render aux()}</div>{/if}
 	<p class="keys">{keys}</p>
 </div>
 
 <style>
+	.aux {
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--space-2);
+	}
 	.sentinel {
 		height: 1px;
 	}

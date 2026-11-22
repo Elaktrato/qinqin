@@ -83,7 +83,7 @@ a plugin under a reserved id (409).
 
 ## The web SDK
 
-`apps/web/src/lib/plugins/sdk.ts` (`createPluginSdk(manifest)`) wraps plugin data (per user or per workspace) and study events, and throws a `PermissionError` for anything the manifest did not declare; `sdk.onStudyEvent` delivers posted events to a plugin while it is enabled. Permissions are a contract that catches mistakes and tells the user what a plugin does, **not a sandbox**: all plugin code ships in one bundle. The journal and the home layout use the SDK.
+`apps/web/src/lib/plugins/sdk.ts` (`createPluginSdk(manifest)`) wraps plugin data (per user or per workspace) and study events, and throws a `PermissionError` for anything the manifest did not declare; `sdk.onStudyEvent` delivers posted events to a plugin while it is enabled. `events.list` returns the raw log: a plugin that counts `review` events must drop the replaced ones (a changed grade is a new review with `replaces: <id>`, `docs/contracts/events/review-replace.json`), and a replacement carries the time of the review it replaces, so a reader that pages with `since` must read from before that second. Permissions are a contract that catches mistakes and tells the user what a plugin does, **not a sandbox**: all plugin code ships in one bundle. The journal and the home layout use the SDK.
 
 SDK data keys may not be empty, `.` or `..`. A plain string value round-trips (`put('k', 'hello')` reads back `'hello'`); a string that is itself valid JSON text (`'123'`) reads back decoded, so store objects instead of such strings.
 

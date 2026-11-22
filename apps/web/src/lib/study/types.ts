@@ -61,6 +61,8 @@ export interface ReviewPayload {
 	mode: StudyCardKind;
 	grade: ReviewGrade;
 	meta?: ReviewMeta;
+	/** The id of the review this one replaces (a changed grade, #131). */
+	replaces?: string;
 }
 
 /**

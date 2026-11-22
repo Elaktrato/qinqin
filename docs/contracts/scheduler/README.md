@@ -69,7 +69,8 @@ Grades map 1 Again, 2 Hard, 3 Good, 4 Easy. States: 0 New, 1 Learning, 2 Review,
 - **Active set** (`resolve` cases; `resolveState`): sets are listed newest first (`createdAt` descending, then
   `id` descending). `fsrs:active {setId}` names the active set; a missing row, a `setId` that is not a string, or a
   `setId` naming no valid set means the default weights (`pointer` still reports a string `setId`).
-- **Replay** (`replay` cases): a card's valid reviews in `(instant, id)` order (`order` lists the ids) are fed to
+- **Replay** (`replay` cases): a card's valid reviews (without replaced ones: `events/review-replace.json`; every
+  count in this folder — XP, streak, limits, due — reads the same set) in `(instant, id)` order (`order` lists the ids) are fed to
   `createEmptyCard(t_0)` and `next(card, t_i, grade)` with the case's weights (`"default"` = `default_w`; a
   migrated set gives the 21 migrated weights and the list it came `from`). `points` is the card after **every**
   review: `due`, `stability`, `difficulty`, `state`, `reps`, `lapses`, `scheduled_days`, `learning_steps`. The
