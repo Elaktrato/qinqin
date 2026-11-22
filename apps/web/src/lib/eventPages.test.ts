@@ -110,6 +110,13 @@ describe("readAllEvents", () => {
     expect(await readAllEvents(get, { workspace: 7 })).toEqual([item(1)]);
     expect(get).toHaveBeenCalledTimes(1);
   });
+  it("refuses a bare array after the first page", async () => {
+    const get = vi.fn(async (path: string) =>
+      path.includes("limit=") ? { events: [item(1)], more: true, next: "e1.a" } : [item(2)],
+    );
+    await expect(readAllEvents(get, { workspace: 7 })).rejects.toThrow(/contract/);
+    await expect(readEventLog(get, { workspace: 7 })).rejects.toThrow(/contract/);
+  });
   it("refuses a page that does not match the contract", async () => {
     const get = vi.fn(async () => ({
       events: [item(1)],
