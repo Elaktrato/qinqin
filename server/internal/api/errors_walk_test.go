@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
-	"sort"
 	"strings"
 	"testing"
 )
@@ -16,17 +15,6 @@ import (
 // unknown workspace; then unmatched paths and wrong methods. Every answer
 // with an error status must be application/json with a catalogue code and
 // a message.
-
-// walkPending lists the patterns whose handlers are not migrated yet (the
-// plan's migration tasks empty it; it is then removed).
-var walkPending = map[string]bool{
-	"GET /api/lookup":     true,
-	"GET /api/search":     true,
-	"GET /api/segment/at": true,
-	"GET /fonts/{file}":   true,
-	"GET /hanzi/{file}":   true,
-	"POST /api/segment":   true,
-}
 
 type walkFailure struct{ pattern, what string }
 
@@ -78,7 +66,6 @@ func TestEveryErrorAnswerIsCodedJSON(t *testing.T) {
 	cat := errorCatalogue(t)
 	s, h, fresh, _, _ := newGateServerFresh(t)
 	var failures []walkFailure
-	failed := map[string]bool{}
 	for _, rt := range s.routes() {
 		method, path, _ := strings.Cut(rt.pattern, " ")
 		bodies := []string{""}
@@ -93,10 +80,7 @@ func TestEveryErrorAnswerIsCodedJSON(t *testing.T) {
 					for _, b := range bodies {
 						w := walkRequest(h, method, p+q, b, tok)
 						if what := checkErrorAnswer(cat, w); what != "" {
-							failed[rt.pattern] = true
-							if !walkPending[rt.pattern] {
-								failures = append(failures, walkFailure{rt.pattern, method + " " + p + q + " body " + b + ": " + what})
-							}
+							failures = append(failures, walkFailure{rt.pattern, method + " " + p + q + " body " + b + ": " + what})
 						}
 					}
 				}
@@ -109,15 +93,5 @@ func TestEveryErrorAnswerIsCodedJSON(t *testing.T) {
 			reported[f.pattern] = true
 			t.Errorf("%s: %s", f.pattern, f.what)
 		}
-	}
-	var stale []string
-	for p := range walkPending {
-		if !failed[p] {
-			stale = append(stale, p)
-		}
-	}
-	sort.Strings(stale)
-	if len(stale) > 0 {
-		t.Errorf("walkPending lists routes that answer coded JSON now (remove them): %q", stale)
 	}
 }

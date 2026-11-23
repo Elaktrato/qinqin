@@ -20,6 +20,9 @@ func errorBody(t *testing.T, w *httptest.ResponseRecorder) map[string]any {
 	if err := json.Unmarshal(w.Body.Bytes(), &body); err != nil {
 		t.Fatalf("body %q is not JSON: %v", w.Body.String(), err)
 	}
+	if w.Header().Get("X-Content-Type-Options") != "nosniff" {
+		t.Fatalf("error answer without nosniff")
+	}
 	if code, _ := body["error"].(string); code == "" {
 		t.Fatalf("body %q has no error code", w.Body.String())
 	}

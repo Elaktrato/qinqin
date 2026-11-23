@@ -50,7 +50,7 @@ func (s *server) handleGetTimeZone(w http.ResponseWriter, r *http.Request) {
 	}
 	_, changes, err := studyday.Load(r.Context(), s.db, u.ID)
 	if err != nil {
-		http.Error(w, "internal error", http.StatusInternalServerError)
+		writeInternal(w, r)
 		return
 	}
 	writeJSON(w, http.StatusOK, timeZoneBody(changes))
@@ -84,7 +84,7 @@ func (s *server) handlePutTimeZone(w http.ResponseWriter, r *http.Request) {
 	case errors.Is(err, studyday.ErrTooManyChanges):
 		writeError(w, http.StatusConflict, "too_many_changes", "too many time zone changes")
 	case err != nil:
-		http.Error(w, "internal error", http.StatusInternalServerError)
+		writeInternal(w, r)
 	default:
 		writeJSON(w, http.StatusOK, timeZoneBody(changes))
 	}

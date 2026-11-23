@@ -8,7 +8,6 @@ import (
 	"os"
 	"path/filepath"
 	"slices"
-	"sort"
 	"strconv"
 	"strings"
 	"testing"
@@ -86,18 +85,6 @@ var documentedStatuses = map[string][]int{
 	"code_invalid":      {401},
 	"challenge_expired": {401},
 	"bad_request":       {422},
-}
-
-// errorsPending lists the handler files not yet moved to writeError (the
-// plan's migration tasks empty it; it is then removed).
-var errorsPending = map[string]bool{
-	"api.go":                true,
-	"handlers_fonts.go":     true,
-	"handlers_lookup.go":    true,
-	"handlers_search.go":    true,
-	"handlers_segment.go":   true,
-	"handlers_strokes.go":   true,
-	"handlers_time_zone.go": true,
 }
 
 type errorViolation struct{ file, what string }
@@ -226,23 +213,8 @@ func hasErrorKey(e ast.Expr) bool {
 func TestEveryErrorGoesThroughWriteError(t *testing.T) {
 	cat := errorCatalogue(t)
 	violations, sites := scanErrorWrites(t, cat)
-	stillPending := map[string]bool{}
 	for _, v := range violations {
-		if errorsPending[v.file] {
-			stillPending[v.file] = true
-			continue
-		}
 		t.Error(v.what)
-	}
-	var stale []string
-	for f := range errorsPending {
-		if !stillPending[f] {
-			stale = append(stale, f)
-		}
-	}
-	sort.Strings(stale)
-	if len(stale) > 0 {
-		t.Errorf("errorsPending lists files that are migrated (remove them): %v", stale)
 	}
 	if sites < 100 {
 		t.Errorf("only %d writeError call sites with a literal code; the scan is broken", sites)

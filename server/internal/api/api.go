@@ -414,8 +414,8 @@ func handleHealthz(w http.ResponseWriter, r *http.Request) {
 func writeJSON(w http.ResponseWriter, status int, v any) {
 	body, err := json.Marshal(v)
 	if err != nil {
-		http.Error(w, "internal error", http.StatusInternalServerError)
-		return
+		// The error body is a constant: writeError itself goes through here.
+		status, body = http.StatusInternalServerError, []byte(`{"error":"internal","message":"Internal server error."}`)
 	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)

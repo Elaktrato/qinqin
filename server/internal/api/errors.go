@@ -24,6 +24,7 @@ func writeError(w http.ResponseWriter, status int, code, message string, extra .
 	}
 	body["error"] = code
 	body["message"] = message
+	w.Header().Set("X-Content-Type-Options", "nosniff") // as http.Error did
 	writeJSON(w, status, body)
 }
 
