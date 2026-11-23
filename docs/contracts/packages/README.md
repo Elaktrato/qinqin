@@ -1,7 +1,7 @@
 # Data packages
 
 Every data set a client needs (dictionaries per language, level lists, pack sentences, frequency, components,
-audio, grammar, stroke data) is a versioned, checksummed **package** the server builds from its own database
+audio, grammar, stroke data, lemmatizer rules) is a versioned, checksummed **package** the server builds from its own database
 and serves for download. A package is read-only data: it never holds user rows. Design:
 `docs/superpowers/specs/2026-11-16-v040p-packages-design.md` (issue #93). User data travels in the paged pull
 (`docs/contracts/sync/`).
@@ -32,6 +32,7 @@ Fixtures:
 | `audio` | `audio.<packId>` | the pack's clips (index and files); `optional: true` | — |
 | `grammar` | `grammar.<packId>` | the pack's lessons and its levels | — |
 | `strokes` | `strokes.<packId>` | the pack's stroke-order data; `languages: ["ja", "zh"]` | — |
+| `lemma-rules` | `lemma-rules.<packId>` | the pack's lemmatizer rule table: one `lemma_rules` row, `rules_json` byte for byte as imported (`docs/contracts/lemma/README.md`, Rule-table packs) | — |
 
 An id matches `catalogue.json` `idPattern`. `.` separates type and pack id (pack ids and language codes have
 no dot). A lexicon package exists per language that has at least one live dictionary; installing or removing

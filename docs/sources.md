@@ -3,8 +3,8 @@
 The app's **Sources page** (`/sources`) is the live source of truth for
 credits. It is public: anyone can open it without signing in. It is built at runtime from three places: the installed packs'
 manifests (`license`, `attribution` and the optional `notice`, served by
-`GET /api/dictionaries`, `/api/frequency-packs`, `/api/schemes` and
-`/api/component-packs`), the
+`GET /api/dictionaries`, `/api/frequency-packs`, `/api/schemes`,
+`/api/component-packs` and `/api/lemma-packs`), the
 `sources` that a web plugin declares in its manifest, and the app's own
 credits (`apps/web/src/lib/sources/coreCredits.ts`). This file is the human
 overview of the same material: the per-language tables and the notes on
@@ -109,6 +109,19 @@ unverified facts marked unverified) must stay the same in both places.
   not taken from JLPT preparation books or other published lists. The levels
   are qinqin's estimates, not official JLPT levels. It **has not been reviewed
   by a native speaker**; errors are possible.
+
+## Lemmatizer rules
+
+- **Japanese lemmatizer rules** (`ja-lemma`, type `lemma-rules`; bundled): the
+  rule table that turns inflected Japanese (食べました, 勉強しています,
+  しちゃった) into dictionary forms for the Reader and lookups, **written for
+  qinqin by the project and released under CC0 1.0**
+  (`plugins/data/ja-lemma`, with `LICENSE` and `ATTRIBUTION.md`; issues #165,
+  #177, #176). The same table is built into the server
+  (`server/internal/lemma/tables/ja.json`) and is the contract fixture
+  `docs/contracts/lemma/ja.rules.json`; the pack serves it to clients as the
+  data package `lemma-rules.ja-lemma`. Installed lemma-rules packs are credited
+  on the Sources page (`GET /api/lemma-packs`).
 
 ## Example sentences (Tatoeba)
 

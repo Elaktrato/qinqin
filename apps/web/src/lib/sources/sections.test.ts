@@ -36,7 +36,7 @@ const READER_V030_SOURCES: SourceCredit[] = [
 import { fixtureManifest } from '$lib/plugins/fixtures';
 import { coreCredits } from './coreCredits';
 import { localLicensePath } from './credits';
-import { componentsSection, creditView, fontsSection, packTable, pluginCredits, sentencePackSources, strokesSection, themesSection } from './sections';
+import { componentsSection, creditView, fontsSection, lemmaSection, packTable, pluginCredits, sentencePackSources, strokesSection, themesSection } from './sections';
 
 describe('packTable', () => {
 	it('builds rows and a note per pack with a notice, with unique ids', () => {
@@ -334,6 +334,24 @@ describe('componentsSection', () => {
 	});
 	it('shows on an error so the retry is reachable', () => {
 		expect(componentsSection([], 'down').show).toBe(true);
+	});
+});
+
+describe('lemmaSection', () => {
+	const pack = { packId: 'ja-lemma', name: 'Japanese lemmatizer rules', version: '2026-11-22', language: 'ja', license: 'CC0-1.0', attribution: 'Written for qinqin', notice: 'Written for qinqin, [CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/).' };
+	it('is hidden without packs and without an error', () => {
+		expect(lemmaSection([], '').show).toBe(false);
+	});
+	it('shows the stated credits and the notice of each pack', () => {
+		const s = lemmaSection([pack], '');
+		expect(s.show).toBe(true);
+		expect(s.table.rows.map((r) => [r.name, r.language, r.version, r.license, r.attribution])).toEqual([
+			['Japanese lemmatizer rules', 'ja', '2026-11-22', 'CC0-1.0', 'Written for qinqin']
+		]);
+		expect(s.table.notes[0].id).toBe('note-lemma-0');
+	});
+	it('shows on an error so the retry is reachable', () => {
+		expect(lemmaSection([], 'down').show).toBe(true);
 	});
 });
 

@@ -32,10 +32,12 @@ import (
 	"qinqin/internal/db"
 	"qinqin/internal/journal"
 	"qinqin/internal/lang"
+	"qinqin/internal/lemmapack"
 	"qinqin/internal/lexicon"
 	"qinqin/internal/library/sources"
 	"qinqin/internal/library/sources/aozora"
 	"qinqin/internal/library/sources/gutenberg"
+	"qinqin/internal/packs"
 	"qinqin/internal/plugins"
 	"qinqin/internal/study"
 	"qinqin/internal/webdist"
@@ -81,6 +83,10 @@ func registerLanguages() {
 	lang.Register(lang.Zh{})
 	lang.Register(lang.Ja{})
 }
+
+// lemmaWatchEvery is how often serve checks for rule tables another
+// process changed (lemmapack.Watch); tests shorten it.
+var lemmaWatchEvery = 30 * time.Second
 
 // defaultData is the --data default of every command: $QINQIN_DATA
 // (set by the compose stack) or ./data.
@@ -255,6 +261,9 @@ func serve(ctx context.Context, data string, listen func() (net.Listener, error)
 		close(mailDone)
 	}()
 	runJanitor(func() { auth.RunJanitor(bg, sqlDB, time.Hour, log.Printf) })
+	// Rule tables changed by another process (`qinqin seed` while serving)
+	// take effect within half a minute (#176).
+	runJanitor(func() { lemmapack.Watch(bg, sqlDB, lemmaWatchEvery, nil) })
 	// Files of users that no longer exist (a deletion whose file removal failed).
 	if n, err := auth.SweepOrphanUserDirs(ctx, sqlDB, data); err != nil {
 		log.Printf("startup sweep of orphan user directories: %v", err)
@@ -296,6 +305,11 @@ func serve(ctx context.Context, data string, listen func() (net.Listener, error)
 	// Data packages: one builder goroutine; the startup reconcile builds what
 	// is missing or stale in the background (the catalogue says building).
 	pkgs, pkgsDone := startPackages(bg, sqlDB, data, log.Printf)
+
+	// Lemmatizer rule tables: sync the bundled lemma-rules packs (a changed
+	// one kicks its package), then load every installed table over the
+	// built-in ones (#176).
+	loadLemmaTables(ctx, sqlDB, defaultPacks(), log.Printf, packs.WithOnChange(pkgs.PackChanged))
 
 	var apiJobs api.Jobs
 	if ctx.Err() != nil {

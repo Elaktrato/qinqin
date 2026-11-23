@@ -14,6 +14,7 @@ export const PACK_TYPES: readonly PackType[] = [
 	'audio',
 	'components',
 	'strokes',
+	'lemma-rules',
 	'theme',
 	'font'
 ];

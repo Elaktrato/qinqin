@@ -26,7 +26,7 @@ The first start of a fresh instance installs the bundled packs by itself before 
 - It runs once per database and only on a fresh instance, that is while no pack of any type is installed. An upgraded or curated instance is never touched, and packs an administrator uninstalled stay uninstalled (a marker in the database records that it ran).
 - It leaves out the demo pack `es-demo`.
 - A pack that fails to import is logged (`auto-seed failed ...`); the server starts anyway and the next start tries again. The same holds when the container is stopped during the seed: the next start installs the bundled packs again (already installed ones are replaced as they are) and finishes.
-- `QINQIN_AUTO_SEED=0` (or `false`, `off`) turns it off.
+- `QINQIN_AUTO_SEED=0` (or `false`, `off`) turns it off. Two packs install themselves at start even then, like before the setting existed: the stroke data when no strokes pack is installed, and the Japanese lemmatizer rules `ja-lemma` when it was never installed and no other Japanese rule table is (the server also updates an installed `ja-lemma` from a newer image; see [Data packs](Admin-data-packs#lemmatizer-rule-tables)). An uninstalled one stays uninstalled.
 
 `qinqin seed` is for what the auto-seed does not do: the demo pack `es-demo` (it installs everything the image ships, demos included), local packs, and re-seeding after an image update that ships newer packs.
 

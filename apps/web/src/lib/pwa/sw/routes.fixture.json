@@ -260,6 +260,10 @@
 		"access": "public"
 	},
 	{
+		"pattern": "GET /api/lemma-packs",
+		"access": "public"
+	},
+	{
 		"pattern": "GET /api/library/books",
 		"access": "user"
 	},

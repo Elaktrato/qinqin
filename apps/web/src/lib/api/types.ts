@@ -232,6 +232,19 @@ export interface ComponentPack {
 	notice?: string;
 }
 
+// LemmaPack is one element of GET /api/lemma-packs: an installed
+// lemmatizer rule-table pack's credit line (#176).
+export interface LemmaPack {
+	packId: string;
+	name: string;
+	version: string;
+	language: string;
+	license: string;
+	attribution: string;
+	/** The pack's notice mini-markup (lib/sources/notice.ts); '' when none. */
+	notice?: string;
+}
+
 // FrequencyPack is one element of GET /api/frequency-packs: an installed
 // word-frequency pack's credit line, in priority order.
 export interface FrequencyPack {

@@ -1,6 +1,6 @@
 // Package packs is the one place that imports, uninstalls and lists data
 // packs of every type — dictionaries, frequency lists, level lists,
-// sentence, grammar, audio, components, strokes, theme and font packs. The seed CLI and the admin API both go through it, so
+// sentence, grammar, audio, components, strokes, lemma-rules, theme and font packs. The seed CLI and the admin API both go through it, so
 // a pack installs, shows up and goes away the same way however it
 // arrived.
 package packs
@@ -19,6 +19,7 @@ import (
 	"qinqin/internal/fonts"
 	"qinqin/internal/freq"
 	"qinqin/internal/grammar"
+	"qinqin/internal/lemmapack"
 	"qinqin/internal/levels"
 	"qinqin/internal/packtype"
 	"qinqin/internal/sentences"
@@ -285,6 +286,18 @@ var operations = map[string]operation{
 			return strokes.Uninstall(ctx, sqlDB, packID)
 		},
 	},
+	dict.TypeLemmaRules: {
+		importPack: func(ctx context.Context, sqlDB *sql.DB, pack dict.Pack, _ options) (string, error) {
+			r, err := lemmapack.Import(ctx, sqlDB, pack)
+			if err != nil {
+				return "", err
+			}
+			return fmt.Sprintf("%d rules (%s)", r.Rules, r.Language), nil
+		},
+		uninstall: func(ctx context.Context, sqlDB *sql.DB, packID string, _ options) error {
+			return lemmapack.Uninstall(ctx, sqlDB, packID)
+		},
+	},
 	dict.TypeTheme: {
 		importPack: func(ctx context.Context, sqlDB *sql.DB, pack dict.Pack, _ options) (string, error) {
 			r, err := themes.Import(ctx, sqlDB, pack)
@@ -322,7 +335,7 @@ func notFound(err error) bool {
 	return errors.Is(err, ErrNotFound) || errors.Is(err, grammar.ErrNotFound) || errors.Is(err, dict.ErrNotFound) ||
 		errors.Is(err, freq.ErrNotFound) || errors.Is(err, levels.ErrNotFound) || errors.Is(err, sentences.ErrNotFound) ||
 		errors.Is(err, audio.ErrPackNotFound) || errors.Is(err, components.ErrNotFound) || errors.Is(err, strokes.ErrNotFound) ||
-		errors.Is(err, themes.ErrNotFound) || errors.Is(err, fonts.ErrNotFound)
+		errors.Is(err, themes.ErrNotFound) || errors.Is(err, fonts.ErrNotFound) || errors.Is(err, lemmapack.ErrNotFound)
 }
 
 // Uninstall removes the live pack of type typ with registry id packID and
@@ -389,7 +402,7 @@ func Find(ctx context.Context, sqlDB *sql.DB, typ, packID string) (Installed, er
 
 // List returns every live pack of every type, ordered by type
 // (dictionary, frequency, levels, sentences, grammar, audio,
-// components, strokes, theme, font), then name, then pack id. Built-in theme
+// components, strokes, lemma-rules, theme, font), then name, then pack id. Built-in theme
 // packs live in the binary and are not listed (GET /api/themes credits
 // them).
 // Sentence packs imported before the registry existed list with only

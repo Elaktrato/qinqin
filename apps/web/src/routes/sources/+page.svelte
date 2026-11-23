@@ -6,8 +6,8 @@
 	import { onMount } from 'svelte';
 	import { api } from '$lib/api/client';
 	import { Button } from '$lib/ui';
-	import type { ComponentPack, Dictionary, FrequencyPack, Scheme, StrokePack } from '$lib/api/types';
-	import { getComponentPacks } from '$lib/api/components';
+	import type { ComponentPack, Dictionary, FrequencyPack, LemmaPack, Scheme, StrokePack } from '$lib/api/types';
+	import { getComponentPacks, getLemmaPacks } from '$lib/api/components';
 	import { getStrokePacks } from '$lib/api/packages';
 	import { getFonts, type FontList } from '$lib/api/fonts';
 	import { audioSection, type AudioPackInfo } from '$lib/sources/audioSection';
@@ -21,6 +21,7 @@
 	import { getThemes, type ThemesAnswer } from '$lib/api/themes';
 	import {
 		componentsSection,
+		lemmaSection,
 		creditView,
 		fontsSection,
 		packTable,
@@ -112,6 +113,21 @@
 	let componentPacks = $state<ComponentPack[]>([]);
 	let componentsError = $state('');
 	const components = $derived(componentsSection(componentPacks, componentsError));
+
+	// The Lemmatizer rules section exists only while a rule-table pack is installed.
+	let lemmaPacks = $state<LemmaPack[]>([]);
+	let lemmaError = $state('');
+	const lemmaRules = $derived(lemmaSection(lemmaPacks, lemmaError));
+
+	async function loadLemma(): Promise<void> {
+		lemmaError = '';
+		try {
+			lemmaPacks = await getLemmaPacks();
+		} catch (err) {
+			lemmaPacks = [];
+			lemmaError = message(err, t('sources.error.lemma'));
+		}
+	}
 
 	async function loadComponents(): Promise<void> {
 		componentsError = '';
@@ -218,6 +234,7 @@
 		loadAudio();
 		loadSchemes();
 		loadComponents();
+		loadLemma();
 		loadStrokes();
 		loadThemes();
 		loadFonts();
@@ -490,6 +507,48 @@
 			{/if}
 			<p class="notice">
 				{t('sources.components.notice')}
+			</p>
+		</section>
+	{/if}
+
+	{#if lemmaRules.show}
+		<section>
+			<h2 id="sources-lemma">{t('sources.lemma.title')}</h2>
+			{#if lemmaError}
+				<p class="error" role="alert">{lemmaError}</p>
+				<Button onclick={loadLemma}>{t('sources.retry')}</Button>
+			{:else}
+				<!-- svelte-ignore a11y_no_noninteractive_tabindex (a scrollable region is keyboard reachable, WCAG 2.1.1) -->
+				<div class="table-wrap" tabindex="0" role="region" aria-labelledby="sources-lemma">
+					<table class="ui-table" aria-labelledby="sources-lemma">
+						<thead>
+							<tr>
+								<th scope="col">{t('sources.col.name')}</th>
+								{@render noteHeader(lemmaRules.table)}
+								<th scope="col">{t('sources.col.language')}</th>
+								<th scope="col">{t('sources.col.version')}</th>
+								<th scope="col">{t('sources.license')}</th>
+								<th scope="col">{t('sources.attribution')}</th>
+							</tr>
+						</thead>
+						<tbody>
+							{#each lemmaRules.table.rows as row (row.key)}
+								<tr>
+									<th scope="row" class="name">{@render cell(row.name, row.language)}</th>
+									{@render noteCell(lemmaRules.table, row.noteId, row.name)}
+									<td title={row.language}>{languageLabel(row.language)}</td>
+									<td>{row.version}</td>
+									<td>{@render cell(row.license, row.language)}</td>
+									<td>{@render cell(row.attribution, row.language)}</td>
+								</tr>
+							{/each}
+						</tbody>
+					</table>
+				</div>
+				{@render notes(lemmaRules.table)}
+			{/if}
+			<p class="notice">
+				{t('sources.lemma.notice')}
 			</p>
 		</section>
 	{/if}

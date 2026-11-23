@@ -29,7 +29,35 @@ const (
 	MaxWindowRunes = 12
 	// MaxEntries caps the results of one lookup, after ranking.
 	MaxEntries = 30
+	// MaxWindowWork is the Deinflect work (lemma.MaxWork units) all
+	// prefixes of one window share: each prefix's call gets what is left,
+	// at most lemma.MaxWork (docs/contracts/lemma/README.md, Lookup bounds).
+	MaxWindowWork = 8192
+	// MaxCompoundWork is the predicate work the compound stem checks of one
+	// window share (lemma.Compound.StemOK).
+	MaxCompoundWork = 4096
+	// MaxProbes caps the probes of one window; later probes are dropped.
+	MaxProbes = 128
+	// ProbeCost is what each probe beyond a prefix itself (a deinflected
+	// form, a compound stem) costs the request budget: the dictionary query
+	// it adds.
+	ProbeCost = 16
+	// MaxRequestWork is the work (Deinflect and compound units) all windows
+	// of one segmentation request share (Budget): once it is spent, the rest
+	// of the text is matched exactly, without deinflection.
+	MaxRequestWork = 16_000_000
 )
+
+// Budget is the work left to one request (MaxRequestWork); windows draw on
+// it in text order. The zero value is spent; nil in Lang means unlimited
+// (a single lookup has its window budgets only).
+type Budget struct{ left int }
+
+// NewBudget returns a request budget of n units.
+func NewBudget(n int) *Budget { return &Budget{left: n} }
+
+// Left is the units not yet spent.
+func (b *Budget) Left() int { return b.left }
 
 // tagUsuallyKana marks an entry JMdict says is usually written in kana.
 const tagUsuallyKana = "usually kana"
@@ -126,6 +154,34 @@ type probe struct {
 	length  int      // code points of source text it accounts for
 	reasons []string // inflection chain; nil when exact
 	class   string   // word class an entry must have (lemma.Table.ClassMatches); "" = any
+	// compound: the probe is a compound's stem (term is the stem of form).
+	compound bool
+}
+
+// compoundKey is a compound stem probe of one prefix length.
+type compoundKey struct {
+	stem, class string
+	length      int
+}
+
+// Lang is a language with the code pack and the rule table in effect,
+// taken once: one request reads one table even when the tables are
+// reloaded meanwhile (a lemma-rules install).
+type Lang struct {
+	Code  string
+	Pack  lang.Pack
+	Rules *lemma.Table // nil: no deinflection
+	// Budget, when set, is the request's shared work budget.
+	Budget *Budget
+}
+
+// LangOf takes the pack and rule table of language now.
+func LangOf(language string) Lang {
+	l := Lang{Code: language, Pack: lang.For(language)}
+	if d, ok := l.Pack.(lang.Deinflector); ok {
+		l.Rules = d.Rules()
+	}
+	return l
 }
 
 // match is an entry's best probe.
@@ -154,29 +210,41 @@ type match struct {
 // batched store call, whatever the window length. An entry whose senses
 // all belonged to uninstalled dictionaries is not a result.
 func (s Service) Lookup(ctx context.Context, language, text string, offset int, kinds []string) ([]Result, error) {
+	return s.LookupIn(ctx, LangOf(language), text, offset, kinds)
+}
+
+// LookupIn is Lookup with the language's pack and table taken already.
+func (s Service) LookupIn(ctx context.Context, l Lang, text string, offset int, kinds []string) ([]Result, error) {
+	language := l.Code
 	runes := []rune(text)
 	if offset < 0 || offset >= len(runes) || !wordStart(language, runes[offset]) {
 		return []Result{}, nil
 	}
 	window := runes[offset:min(offset+MaxWindowRunes, len(runes))]
-	pack := lang.For(language)
-	probes := buildProbes(pack, window)
-	var rules *lemma.Table
+	pack, rules := l.Pack, l.Rules
+	limit := MaxWindowWork + MaxCompoundWork
+	if l.Budget != nil {
+		limit = l.Budget.left
+	}
+	probes, work := buildProbes(rules, window, limit)
+	if l.Budget != nil {
+		l.Budget.left = max(0, l.Budget.left-work)
+	}
 	var hints lemma.Hints
-	if d, ok := pack.(lang.Deinflector); ok {
-		rules = d.Rules()
+	if rules != nil {
 		hints = rules.Hints
 	}
 
 	var forms, plains []string
+	seenForm, seenPlain := map[string]bool{}, map[string]bool{}
 	for _, p := range probes {
-		if !slices.Contains(forms, p.term) {
+		if !seenForm[p.term] {
+			seenForm[p.term] = true
 			forms = append(forms, p.term)
 		}
-		if pl, ok := readingPlain(pack, hints, p.term); ok {
-			if !slices.Contains(plains, pl) {
-				plains = append(plains, pl)
-			}
+		if pl, ok := readingPlain(pack, hints, p.term); ok && !seenPlain[pl] {
+			seenPlain[pl] = true
+			plains = append(plains, pl)
 		}
 	}
 	byForm, err := s.Lexicon.ByForm(ctx, language, forms)
@@ -277,30 +345,59 @@ func (s Service) Lookup(ctx context.Context, language, text string, offset int, 
 // buildProbes lists the probes of every prefix of window, shortest
 // prefix first: the prefix itself, then its deinflections (when the
 // language has a rule table), each followed by the stem probe of every
-// compound of the table it ends in (勉強する -> 勉強).
-func buildProbes(pack lang.Pack, window []rune) []probe {
-	deinflector, _ := pack.(lang.Deinflector)
+// compound of the table it ends in (勉強する -> 勉強), at most one per
+// (stem, class) of a prefix. The window's Deinflect calls share MaxWindowWork, its
+// compound checks MaxCompoundWork, and at most MaxProbes probes are kept
+// (docs/contracts/lemma/README.md, Lookup bounds); limit (the request's
+// units left) caps both budgets. It also returns the work spent, Deinflect
+// and compound units together.
+func buildProbes(rules *lemma.Table, window []rune, limit int) ([]probe, int) {
 	var probes []probe
+	work := 0
+	deinflectMax := min(MaxWindowWork, max(0, limit))
+	compoundWork := lemma.NewWork(min(MaxCompoundWork, max(0, limit)))
+	seenCompound := map[compoundKey]bool{}
+	extra := 0 // probes beyond the prefixes themselves
+	add := func(p probe) bool {
+		if len(probes) >= MaxProbes {
+			return false
+		}
+		if p.reasons != nil || p.compound || p.term != p.form {
+			extra++
+		}
+		probes = append(probes, p)
+		return true
+	}
 	for n := 1; n <= len(window); n++ {
 		prefix := string(window[:n])
-		probes = append(probes, probe{term: prefix, form: prefix, length: n})
-		if deinflector == nil {
+		if !add(probe{term: prefix, form: prefix, length: n}) {
+			break
+		}
+		if rules == nil || work >= deinflectMax {
 			continue
 		}
-		compounds := deinflector.Rules().Compounds
-		for _, d := range deinflector.Deinflect(prefix) {
+		cs, spent := rules.DeinflectBudget(prefix, min(lemma.MaxWork, deinflectMax-work))
+		work += spent
+		for _, d := range cs {
 			p := probe{term: d.Form, form: d.Form, length: n, reasons: d.Reasons, class: d.Class}
-			probes = append(probes, p)
+			if !add(p) {
+				return probes, work + compoundWork.Used() + ProbeCost*extra
+			}
 			// JMdict tags vs on the noun (勉強: n, vs), not on 勉強する.
-			for _, c := range compounds {
-				if stem, ok := strings.CutSuffix(d.Form, c.Suffix); ok && d.Class == c.Class && c.StemOK(stem) {
-					p.term = stem
-					probes = append(probes, p)
+			for _, c := range rules.Compounds {
+				stem, ok := strings.CutSuffix(d.Form, c.Suffix)
+				if !ok || d.Class != c.Class || seenCompound[compoundKey{stem, c.Class, n}] || !c.StemOK(stem, compoundWork) {
+					continue
+				}
+				seenCompound[compoundKey{stem, c.Class, n}] = true
+				p.term, p.compound = stem, true
+				if !add(p) {
+					return probes, work + compoundWork.Used() + ProbeCost*extra
 				}
 			}
 		}
 	}
-	return probes
+	return probes, work + compoundWork.Used() + ProbeCost*extra
 }
 
 // hasClass reports whether any sense of e has a part of speech of class
