@@ -10,7 +10,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"qinqin/internal/db"
+	"qinqin/internal/dbtest"
 	"qinqin/internal/dict"
 	"qinqin/internal/lemma"
 	"qinqin/internal/packs"
@@ -21,16 +21,6 @@ import (
 const jaRules = `{"format": 2, "language": "ja", "version": "t", "maxDepth": 1,
  "classes": {"v1": {"tags": ["v1"]}}, "hints": {},
  "rules": [{"from": "た", "to": "る", "reason": "past", "out": "v1"}]}`
-
-func newDB(t *testing.T) *sql.DB {
-	t.Helper()
-	sqlDB, err := db.Open(filepath.Join(t.TempDir(), "test.db"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(func() { sqlDB.Close() })
-	return sqlDB
-}
 
 // writePack writes a pack directory (manifest fields plus files) and loads it.
 func writePack(t *testing.T, manifest map[string]any, files map[string][]byte) dict.Pack {
@@ -87,7 +77,7 @@ func seedAll(t *testing.T) seeded {
 	t.Helper()
 	t.Cleanup(func() { lemma.SetInstalled(nil) }) // ja-rules overlays the built-in table
 	ctx := context.Background()
-	s := seeded{db: newDB(t), audioDir: t.TempDir()}
+	s := seeded{db: dbtest.Open(t), audioDir: t.TempDir()}
 	for _, p := range []dict.Pack{
 		writePack(t, map[string]any{"id": "zh-a", "name": "Zh A", "type": "dictionary", "language": "zh", "license": "CC0-1.0", "format": "json", "notice": "Zh A notice."},
 			map[string][]byte{

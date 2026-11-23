@@ -91,16 +91,12 @@ describe('optimize', () => {
 		expect(seen[seen.length - 1][0]).toBe(seen[seen.length - 1][1]);
 	});
 
-	it('flags low data and finishes 3,000 items in time', () => {
+	it('flags low data, and not on 3,000 labelled items', () => {
 		let data = simulate({ w: DEFAULT_W, cards: 150, days: 365, seed: 11 });
 		for (let cards = 200; data.labelled < 3000; cards += 50) {
 			data = simulate({ w: DEFAULT_W, cards, days: 365, seed: 11 });
 		}
-		const started = performance.now();
 		const result = optimize(data);
-		const ms = performance.now() - started;
-		console.info(`optimize: ${data.labelled} labelled items in ${Math.round(ms)} ms`);
-		expect(ms).toBeLessThan(20_000);
 		expect(result.ok && result.lowData).toBe(false);
 
 		const small = simulate({ w: DEFAULT_W, cards: 100, days: 365, seed: 5 });

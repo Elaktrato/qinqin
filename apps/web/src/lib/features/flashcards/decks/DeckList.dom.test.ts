@@ -21,30 +21,23 @@ import { workspaces } from '$lib/workspaces';
 import { currentStudyDay } from '$lib/time/zone';
 import { primaryActions } from '$lib/ui/testing/primary';
 import DeckList from './DeckList.svelte';
+import * as build from '$lib/testing/study';
 
 const verbs: Deck = { id: 'd1', name: 'Verbs', createdAt: '2026-01-01T00:00:00.000Z' };
 
 function card(n: number, deckIds: string[]): StudyCard {
-	return { id: `c-vocab-${n}`, kind: 'vocab', entryId: n, written: `w${n}`, deckIds, createdAt: `2026-01-0${n}T00:00:00.000Z` };
+	return build.card({ id: `c-vocab-${n}`, entryId: n, written: `w${n}`, deckIds, createdAt: `2026-01-0${n}T00:00:00.000Z` });
 }
 function review(cardId: string): ReviewEvent {
-	return {
-		id: `r-${cardId}`,
-		workspaceId: 1,
-		device: 'd',
-		ts: '2026-01-01T09:00:00.000Z',
-		type: 'review',
-		payload: { cardId, mode: 'vocab', grade: 3 }
-	};
+	return build.review({ cardId, id: `r-${cardId}`, device: 'd', ts: '2026-01-01T09:00:00.000Z' });
 }
 function history(over: Partial<StudyHistory> = {}): StudyHistory {
-	return {
+	return build.history({
 		decks: [verbs],
 		cards: [card(1, ['general']), card(2, ['d1']), card(3, ['d1'])],
 		reviews: [review('c-vocab-1')],
-		merged: 0,
 		...over
-	};
+	});
 }
 
 beforeEach(() => {

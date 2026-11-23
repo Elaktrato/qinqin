@@ -20,6 +20,7 @@ import (
 	_ "modernc.org/sqlite"
 
 	"qinqin/internal/datapkg"
+	"qinqin/internal/dbtest"
 	"qinqin/internal/packs"
 )
 
@@ -418,7 +419,7 @@ func TestContentHashStableAndSensitive(t *testing.T) {
 // entry ids fall, so the server's row order differs from the forward copy.
 func synthLexicon(t *testing.T, n, glossLen int, reverse bool) seeded {
 	t.Helper()
-	s := seeded{db: newDB(t), audioDir: t.TempDir()}
+	s := seeded{db: dbtest.Open(t), audioDir: t.TempDir()}
 	tx, err := s.db.Begin()
 	if err != nil {
 		t.Fatal(err)

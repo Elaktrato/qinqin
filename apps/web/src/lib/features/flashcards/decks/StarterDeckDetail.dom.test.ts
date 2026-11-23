@@ -16,7 +16,7 @@ vi.mock('$lib/study/store', async (importOriginal) => ({
 import { getFrequencyPacks, getStarterEntries } from '$lib/api/frequency';
 import { loadStudyHistory } from '$lib/study/history';
 import { loadRawStudyData, pushStudy } from '$lib/study/store';
-import { toLegacy } from '$lib/study/testing/legacyCodec';
+import { toLegacy } from '$lib/testing/legacyCodec';
 import type { StudyWrite } from '$lib/study/store';
 
 /** The typed writes as the legacy rows they stand for (test codec). */
@@ -24,11 +24,11 @@ function keyed(writes: readonly StudyWrite[]): { key: string; data: unknown; kno
 	return writes.map((w) => ({ ...toLegacy(w.collection, w.row), ...(w.knownAt === undefined ? {} : { knownAt: w.knownAt }) }));
 }
 import type { Deck, StudyCard } from '$lib/study/types';
-import { strongReviews } from '$lib/testing/reviews';
 import { workspaces } from '$lib/workspaces';
 import { clearStarterCache } from './starterDecks';
 import { primaryActions } from '$lib/ui/testing/primary';
 import StarterDeckDetail from './StarterDeckDetail.svelte';
+import * as build from '$lib/testing/study';
 
 const jiten = {
 	id: 3,
@@ -85,7 +85,7 @@ beforeEach(() => {
 	vi.mocked(loadStudyHistory).mockImplementation(async () => ({
 		decks: structuredClone(decks),
 		cards: structuredClone(cards),
-		reviews: strongReviews('c-vocab-4'),
+		reviews: build.strongReviews('c-vocab-4'),
 		merged: 0
 	}));
 	vi.mocked(loadRawStudyData).mockImplementation(async () => ({

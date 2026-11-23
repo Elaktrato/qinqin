@@ -11,7 +11,8 @@ vi.mock('../time/zone', async () => {
 
 import { invalidateStudyHistory } from '../study/history';
 import { loadGoalStatus } from './loadGoal';
-import { pagedPull } from '../study/testing/legacyCodec';
+import { pagedPull } from '$lib/testing/legacyCodec';
+import * as build from '$lib/testing/study';
 
 const NOW = Date.parse('2026-11-16T12:00:00Z');
 const json = (body: unknown) =>
@@ -26,14 +27,7 @@ const row = (key: string, data: unknown) => ({
 	updatedAt: '2026-01-01T00:00:00Z',
 	deletedAt: null
 });
-const review = (id: string, ts: string, cardId: string) => ({
-	id,
-	workspaceId: 3,
-	device: 'web',
-	ts,
-	type: 'review',
-	payload: { cardId, mode: 'vocab', grade: 3 }
-});
+const review = (id: string, ts: string, cardId: string) => build.review({ id, ts, cardId, workspaceId: 3 });
 
 beforeEach(() => {
 	const store = new Map<string, string>();

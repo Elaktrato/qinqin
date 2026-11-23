@@ -13,6 +13,7 @@ import { DEFAULT_W } from './fsrs/params';
 import { nextIntervals, scheduleFor } from './scheduler';
 import { clockFromRuns, IDENTITY_CLOCK } from './studyClock';
 import type { ReviewEvent, ReviewGrade } from './types';
+import * as build from '$lib/testing/study';
 
 interface Case {
 	name: string;
@@ -28,14 +29,7 @@ const fixture = JSON.parse(
 ) as { cases: Case[] };
 
 function review(cardId: string, grade: ReviewGrade, ts: string, n: number): ReviewEvent {
-	return {
-		id: `01JTEST${String(n).padStart(19, '0')}`,
-		workspaceId: 7,
-		device: 'web',
-		ts,
-		type: 'review',
-		payload: { cardId, mode: 'vocab', grade }
-	};
+	return build.review({ id: build.eventId(n), cardId, grade, ts, workspaceId: 7 });
 }
 
 const GRADES: ReviewGrade[] = [1, 2, 3, 4];

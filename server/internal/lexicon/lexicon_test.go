@@ -3,23 +3,18 @@ package lexicon_test
 import (
 	"context"
 	"errors"
-	"path/filepath"
 	"reflect"
 	"testing"
 	"time"
 
-	"qinqin/internal/db"
+	"qinqin/internal/dbtest"
 	"qinqin/internal/lexicon"
 )
 
 // newStore opens a fresh migrated database and returns the lexicon store on it.
 func newStore(t *testing.T) lexicon.Store {
 	t.Helper()
-	sqlDB, err := db.Open(filepath.Join(t.TempDir(), "test.db"))
-	if err != nil {
-		t.Fatalf("db.Open: %v", err)
-	}
-	t.Cleanup(func() { sqlDB.Close() })
+	sqlDB := dbtest.Open(t)
 	return lexicon.Store{DB: sqlDB}
 }
 

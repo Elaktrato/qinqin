@@ -10,19 +10,9 @@ import (
 	"strings"
 	"testing"
 
-	"qinqin/internal/db"
+	"qinqin/internal/dbtest"
 	"qinqin/internal/dict"
 )
-
-func newDB(t *testing.T) *sql.DB {
-	t.Helper()
-	sqlDB, err := db.Open(filepath.Join(t.TempDir(), "test.db"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(func() { sqlDB.Close() })
-	return sqlDB
-}
 
 // testTheme is a valid theme with the given id.
 func testTheme(id string) map[string]any {
@@ -69,7 +59,7 @@ func storedIDs(t *testing.T, sqlDB *sql.DB) string {
 }
 
 func TestImportListUninstall(t *testing.T) {
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	ctx := context.Background()
 	r, err := Import(ctx, sqlDB, themePack(t, "night", "1", []any{testTheme("night-a"), testTheme("night-b")}))
 	if err != nil || r.Themes != 2 {
@@ -136,7 +126,7 @@ func TestImportListUninstall(t *testing.T) {
 }
 
 func TestImportRefusesInvalidFilesAndBuiltinIDs(t *testing.T) {
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	ctx := context.Background()
 	bad := testTheme("x")
 	bad["colors"].(map[string]string)["panel"] = "#FFFFFF"

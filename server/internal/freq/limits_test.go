@@ -12,6 +12,7 @@ import (
 	"strings"
 	"testing"
 
+	"qinqin/internal/dbtest"
 	"qinqin/internal/dict"
 	"qinqin/internal/freq"
 )
@@ -20,7 +21,7 @@ import (
 // mentioning every want, and that nothing was written.
 func importFails(t *testing.T, name string, p *dict.Pack, want ...string) {
 	t.Helper()
-	sqlDB := openDB(t)
+	sqlDB := dbtest.Open(t)
 	_, err := freq.Import(context.Background(), sqlDB, p)
 	if err == nil {
 		t.Errorf("%s: import succeeded, want an error", name)
@@ -120,6 +121,6 @@ func TestTooManyRows(t *testing.T) {
 		"term_meta_bank_1.json", "row 3", "rows")
 
 	// Exactly at the cap is fine.
-	sqlDB := openDB(t)
+	sqlDB := dbtest.Open(t)
 	mustImport(t, sqlDB, csvPack(t, "ok", "a,,1\nb,,2\nc,,3\n"))
 }

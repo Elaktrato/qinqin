@@ -208,6 +208,7 @@ func TestPluginStateRoute(t *testing.T) {
 }
 
 func TestPluginDataRoute(t *testing.T) {
+	lang.Register(lang.Zh{}) // the workspace below; no reliance on another test registering it
 	ts, sqlDB := newServer(t)
 	admin := registerUser(t, ts.URL, "root", "")
 	alice := registerUser(t, ts.URL, "alice", admin)

@@ -5,19 +5,14 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"net/http"
-	"path/filepath"
 	"testing"
 
 	"qinqin/internal/auth"
-	"qinqin/internal/db"
+	"qinqin/internal/dbtest"
 )
 
 func TestSessionStoresOnlyTheHash(t *testing.T) {
-	sqlDB, err := db.Open(filepath.Join(t.TempDir(), "t.db"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer sqlDB.Close()
+	sqlDB := dbtest.Open(t)
 	u, err := auth.CreateUser(context.Background(), sqlDB, "alice", "secret-pass-1", false)
 	if err != nil {
 		t.Fatal(err)
@@ -69,11 +64,7 @@ func TestRestriction(t *testing.T) {
 }
 
 func TestRevokeAndList(t *testing.T) {
-	sqlDB, err := db.Open(filepath.Join(t.TempDir(), "t.db"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer sqlDB.Close()
+	sqlDB := dbtest.Open(t)
 	ctx := context.Background()
 	a, _ := auth.CreateUser(ctx, sqlDB, "alice", "secret-pass-1", false)
 	b, _ := auth.CreateUser(ctx, sqlDB, "bobby", "secret-pass-1", false)
@@ -112,11 +103,7 @@ func TestRevokeAndList(t *testing.T) {
 // The revoke and its audit row are one transaction: when the audit write
 // fails nothing is revoked.
 func TestRevokeAndAuditAreAtomic(t *testing.T) {
-	sqlDB, err := db.Open(filepath.Join(t.TempDir(), "t.db"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer sqlDB.Close()
+	sqlDB := dbtest.Open(t)
 	ctx := context.Background()
 	a, _ := auth.CreateUser(ctx, sqlDB, "alice", "secret-pass-1", false)
 	for i := 0; i < 3; i++ {

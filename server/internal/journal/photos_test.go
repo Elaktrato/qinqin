@@ -12,16 +12,12 @@ import (
 	"testing"
 	"time"
 
-	"qinqin/internal/db"
+	"qinqin/internal/dbtest"
 )
 
 func newPhotos(t *testing.T, now *time.Time) Photos {
 	t.Helper()
-	sqlDB, err := db.Open(filepath.Join(t.TempDir(), "t.db"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(func() { sqlDB.Close() })
+	sqlDB := dbtest.Open(t)
 	return Photos{DB: sqlDB, Dir: filepath.Join(t.TempDir(), "journal"), Now: func() time.Time { return *now }}
 }
 

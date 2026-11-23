@@ -9,6 +9,7 @@ import (
 	"strings"
 	"testing"
 
+	"qinqin/internal/dbtest"
 	"qinqin/internal/study"
 	"qinqin/internal/study/rows"
 	chinsync "qinqin/internal/sync"
@@ -52,7 +53,7 @@ func TestContractPushThroughPush(t *testing.T) {
 		ran++
 		t.Run(c.Name, func(t *testing.T) {
 			ctx := context.Background()
-			sqlDB := newDB(t)
+			sqlDB := dbtest.Open(t)
 			registerReserved(t, sqlDB)
 			alice, bob := newUser(t, sqlDB, "alice"), newUser(t, sqlDB, "bob")
 			ws, bobWS := newWorkspace(t, sqlDB, alice), newWorkspace(t, sqlDB, bob)

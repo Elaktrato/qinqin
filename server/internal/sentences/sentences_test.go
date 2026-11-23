@@ -19,7 +19,7 @@ import (
 
 	"qinqin/internal/api"
 	"qinqin/internal/auth"
-	"qinqin/internal/db"
+	"qinqin/internal/dbtest"
 	"qinqin/internal/dict"
 	"qinqin/internal/lang"
 	"qinqin/internal/model"
@@ -29,17 +29,6 @@ import (
 // zhMini is the shared sentences pack fixture, relative to this
 // package's test working directory.
 const zhMini = "testdata/zh-mini"
-
-// newDB opens a fresh migrated database.
-func newDB(t *testing.T) *sql.DB {
-	t.Helper()
-	sqlDB, err := db.Open(filepath.Join(t.TempDir(), "test.db"))
-	if err != nil {
-		t.Fatalf("db.Open: %v", err)
-	}
-	t.Cleanup(func() { sqlDB.Close() })
-	return sqlDB
-}
 
 // importDictionary writes a dictionary pack (manifest m plus one data
 // file) into a temp directory and imports it into the lexicon with the
@@ -141,7 +130,7 @@ func buildPack(t *testing.T, id, sentencesJSON string) dict.Pack {
 // newServer opens a fresh migrated database and serves the API on it.
 func newServer(t *testing.T) (*httptest.Server, *sql.DB) {
 	t.Helper()
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	ts := httptest.NewServer(api.New(sqlDB, t.TempDir(), nil))
 	t.Cleanup(ts.Close)
 	return ts, sqlDB
@@ -209,7 +198,7 @@ func TestSentencePackImport(t *testing.T) {
 	// Entries carry readings normalized through the zh pack.
 	lang.Register(lang.Zh{})
 
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	ctx := context.Background()
 	// 你 is a character entry only: a pack sentence for the word 你
 	// must not match it.
@@ -350,7 +339,7 @@ func TestReimportKeepsUserSentences(t *testing.T) {
 	// Entries carry readings normalized through the zh pack.
 	lang.Register(lang.Zh{})
 
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	ctx := context.Background()
 	importCedict(t, sqlDB, lineNihao) // no 谢谢: the fixture's group for it is skipped
 	nihao := lexID(t, sqlDB, "zh", "word", "你好")
@@ -433,7 +422,7 @@ func TestReimportKeepsUserSentences(t *testing.T) {
 
 func TestSharedFormLinksToBestRankedWord(t *testing.T) {
 	lang.Register(lang.Ja{})
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	ctx := context.Background()
 	// Two JMdict words are written 下; the second carries priority.
 	importDictionary(t, sqlDB, dict.Manifest{
@@ -491,7 +480,7 @@ func TestImportRejectsInvalidPacks(t *testing.T) {
 	// Entries carry readings normalized through the zh pack.
 	lang.Register(lang.Zh{})
 
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	ctx := context.Background()
 
 	// A dictionary pack is not a sentences pack.
@@ -530,7 +519,7 @@ func TestImportRejectsInvalidPacks(t *testing.T) {
 // is optional (a generated reading is left out rather than guessed), so
 // a missing or blank pinyin imports as an empty reading.
 func TestImportAcceptsSentencesWithoutReading(t *testing.T) {
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	ctx := context.Background()
 	nihao, _ := seedWords(t, sqlDB)
 	pack := `{"entries":[{"word":"你好","sentences":[
@@ -562,7 +551,7 @@ const dupPack = `{"entries":[
   {"hanzi":"你好吗？","pinyin":"nǐ hǎo ma?","translation":"How are you?"}]}]}`
 
 func TestResultCountsDistinctSentences(t *testing.T) {
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	nihao, _ := seedWords(t, sqlDB)
 	res, err := sentences.ImportPack(context.Background(), sqlDB, buildPack(t, "dups", dupPack))
 	if err != nil {
@@ -578,7 +567,7 @@ func TestResultCountsDistinctSentences(t *testing.T) {
 }
 
 func TestForEntryListsPackSentencesBeforeUserOnes(t *testing.T) {
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	ctx := context.Background()
 	nihao, _ := seedWords(t, sqlDB)
 	uid := int64(1)
@@ -601,7 +590,7 @@ func TestForEntryListsPackSentencesBeforeUserOnes(t *testing.T) {
 }
 
 func TestGetReturnsOneVisibleSentence(t *testing.T) {
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	ctx := context.Background()
 	nihao, _ := seedWords(t, sqlDB)
 	if _, err := sqlDB.Exec(`INSERT INTO users (id, username, hash, updated_at) VALUES (1, 'u', 'x', '2026-01-01T00:00:00Z'), (2, 'v', 'x', '2026-01-01T00:00:00Z')`); err != nil {

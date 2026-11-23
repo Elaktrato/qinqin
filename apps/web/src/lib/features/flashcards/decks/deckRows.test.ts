@@ -5,12 +5,13 @@ import type { Schedule } from '$lib/study/scheduler';
 import type { StudyCard, StudyCardKind } from '$lib/study/types';
 import { PAGE_SIZE, deckRows, filterRows, visibleCount, type RowQuery } from './deckRows';
 import type { ScheduleIndex } from './deckStats';
+import * as build from '$lib/testing/study';
 
 const NOW = new Date('2026-03-10T12:00:00.000Z');
 const ALL: RowQuery = { text: '', state: 'all', kind: 'all', dueNow: false, sort: 'added' };
 
 function card(kind: StudyCardKind, entryId: number, deckIds = ['d1'], extra: Partial<StudyCard> = {}): StudyCard {
-	return {
+	return build.card({
 		id: `c-${kind}-${entryId}`,
 		kind,
 		entryId,
@@ -18,7 +19,7 @@ function card(kind: StudyCardKind, entryId: number, deckIds = ['d1'], extra: Par
 		deckIds,
 		createdAt: `2026-01-01T00:00:${String(entryId % 60).padStart(2, '0')}.000Z`,
 		...extra
-	};
+	});
 }
 function sched(state: number, stability: number, due: string): Schedule {
 	return { state, stability, difficulty: 5, due };

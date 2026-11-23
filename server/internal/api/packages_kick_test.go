@@ -10,7 +10,7 @@ import (
 
 	"qinqin/internal/api"
 	"qinqin/internal/datapkg"
-	"qinqin/internal/db"
+	"qinqin/internal/dbtest"
 )
 
 // TestAdminPackChangesKickPackageBuilds: an admin install, the generic
@@ -19,11 +19,7 @@ import (
 func TestAdminPackChangesKickPackageBuilds(t *testing.T) {
 	ctx := context.Background()
 	e := &packEnv{now: time.Now(), done: make(chan string, 8), dataDir: t.TempDir()}
-	sqlDB, err := db.Open(filepath.Join(t.TempDir(), "test.db"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(func() { sqlDB.Close() })
+	sqlDB := dbtest.Open(t)
 	e.db = sqlDB
 	b := datapkg.NewBuilder(datapkg.Registry{DB: sqlDB, Dir: filepath.Join(e.dataDir, "packages"), AudioDir: filepath.Join(e.dataDir, "audio")}, t.Logf)
 	rctx, cancel := context.WithCancel(ctx)

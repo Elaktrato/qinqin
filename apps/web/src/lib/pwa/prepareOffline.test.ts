@@ -19,6 +19,7 @@ import {
 	receiptKey,
 	type PrepareDeps
 } from './prepareOffline';
+import * as build from '$lib/testing/study';
 
 // The first page of the study pull the web makes (v=2, store.ts).
 const SYNC_PULL_PATH = firstPageUrl({ collections: V2_STUDY_COLLECTIONS, workspace: 3, tombstones: true });
@@ -26,7 +27,7 @@ const SYNC_PULL_PATH = firstPageUrl({ collections: V2_STUDY_COLLECTIONS, workspa
 const now = new Date('2026-03-01T12:00:00Z');
 
 function card(id: string, kind: StudyCardKind, entryId: number, written = '学习', createdAt = '2026-01-01T00:00:00.000Z'): StudyCard {
-	return { id, kind, entryId, written, deckIds: ['general'], createdAt };
+	return build.card({ id, kind, entryId, written, createdAt });
 }
 
 const vocab = [1, 2, 3, 4, 5, 6].map((n) => card(`v${n}`, 'vocab', n, '学习', `2026-01-0${n}T00:00:00.000Z`));

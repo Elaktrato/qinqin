@@ -8,6 +8,8 @@ import (
 	"path/filepath"
 	"slices"
 	"testing"
+
+	"qinqin/internal/dbtest"
 )
 
 // openExport exports uid of w and opens the archive.
@@ -33,7 +35,7 @@ type targetWorld struct {
 
 func newTarget(t *testing.T, mod func(w *baseWorld)) *targetWorld {
 	t.Helper()
-	w := &baseWorld{DB: newTestDB(t), Data: t.TempDir()}
+	w := &baseWorld{DB: dbtest.Open(t), Data: t.TempDir()}
 	mkLang(t, w.DB, "zh", "ja")
 	for i := 0; i < 50; i++ {
 		mkEntry(t, w.DB, "zh", "word", "dummy"+string(rune('a'+i%26))+string(rune('a'+i/26)), "dummy"+string(rune('a'+i%26)))

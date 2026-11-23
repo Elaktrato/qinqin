@@ -4,12 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"path/filepath"
 	"strings"
 	"testing"
 	"time"
 
-	"qinqin/internal/db"
+	"qinqin/internal/dbtest"
 	"qinqin/internal/events"
 	"qinqin/internal/journal"
 	"qinqin/internal/lexicon"
@@ -21,11 +20,7 @@ import (
 
 func TestSuggestionInput(t *testing.T) {
 	ctx := context.Background()
-	sqlDB, err := db.Open(filepath.Join(t.TempDir(), "t.db"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer sqlDB.Close()
+	sqlDB := dbtest.Open(t)
 	exec := func(q string, a ...any) int64 {
 		t.Helper()
 		var id int64

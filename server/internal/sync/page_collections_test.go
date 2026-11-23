@@ -5,24 +5,19 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
-	"path/filepath"
 	"slices"
 	"strings"
 	"testing"
 	"time"
 
-	"qinqin/internal/db"
+	"qinqin/internal/dbtest"
 	"qinqin/internal/study"
 	"qinqin/internal/study/rows"
 )
 
 func newWorld(t *testing.T) *world {
 	t.Helper()
-	sqlDB, err := db.Open(filepath.Join(t.TempDir(), "v2.db"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(func() { sqlDB.Close() })
+	sqlDB := dbtest.Open(t)
 	return &world{t: t, db: sqlDB, users: map[string]int64{}, ws: map[string]int64{}, wsLang: map[int64]string{},
 		entries: map[string]int64{}, plugin: "qinqin-core", rowsByRef: map[string]placed{}, refOf: map[string]string{}}
 }

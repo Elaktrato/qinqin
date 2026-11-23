@@ -16,6 +16,7 @@ import (
 	"time"
 
 	"qinqin/internal/datapkg"
+	"qinqin/internal/dbtest"
 	"qinqin/internal/packs"
 )
 
@@ -36,7 +37,7 @@ func importAll(t *testing.T, e *pkgEnv, ps ...string) {
 func TestRetentionKeepsThePreviousRevisionSevenDays(t *testing.T) {
 	ctx := context.Background()
 	clock := &testClock{now: time.Date(2026, 11, 16, 10, 0, 0, 0, time.UTC)}
-	e := newPkgEnv(t, newDB(t), clock)
+	e := newPkgEnv(t, dbtest.Open(t), clock)
 	importAll(t, e, "cedict/v1", "cedict/v2")
 	if got := revisionFiles(t, e.reg.Dir, "lexicon.zh"); !slices.Equal(got, []int{1, 2}) {
 		t.Fatalf("files %v, want [1 2]", got)
@@ -107,7 +108,7 @@ func TestRetentionKeepsThePreviousRevisionSevenDays(t *testing.T) {
 }
 
 func TestKickCoalescesAndWaitDrains(t *testing.T) {
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	clock := &testClock{now: time.Date(2026, 11, 16, 10, 0, 0, 0, time.UTC)}
 	reg := datapkg.Registry{DB: sqlDB, Dir: filepath.Join(t.TempDir(), "packages"), AudioDir: t.TempDir(), Now: clock.Now}
 	if _, err := packs.Import(context.Background(), sqlDB, versionPack(t, "dictionary", "cedict", "zh", "v1")); err != nil {
@@ -278,7 +279,7 @@ func TestCatalogueLanguagesAdminETagInstance(t *testing.T) {
 func TestKickAndCatalogueConcurrently(t *testing.T) {
 	ctx := context.Background()
 	clock := &testClock{now: time.Date(2026, 11, 16, 10, 0, 0, 0, time.UTC)}
-	e := newPkgEnv(t, newDB(t), clock)
+	e := newPkgEnv(t, dbtest.Open(t), clock)
 	importAll(t, e, "cedict/v1", "hsk-words")
 	var wg sync.WaitGroup
 	for g := range 4 {
@@ -311,7 +312,7 @@ func TestKickAndCatalogueConcurrently(t *testing.T) {
 
 func TestBuildingWhileBusy(t *testing.T) {
 	ctx := context.Background()
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	clock := &testClock{now: time.Date(2026, 11, 16, 10, 0, 0, 0, time.UTC)}
 	reg := datapkg.Registry{DB: sqlDB, Dir: filepath.Join(t.TempDir(), "packages"), Now: clock.Now}
 	b := datapkg.NewBuilder(reg, t.Logf)
@@ -355,7 +356,7 @@ func sorted(in []string) []string {
 // temporary files and every ready row matches the file on disk.
 func TestTwoRegistriesBuildOneDirectoryInTurn(t *testing.T) {
 	ctx := context.Background()
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	clock := &testClock{now: time.Date(2026, 11, 16, 10, 0, 0, 0, time.UTC)}
 	dir := filepath.Join(t.TempDir(), "packages")
 	if _, err := packs.Import(ctx, sqlDB, versionPack(t, "dictionary", "cedict", "zh", "v1")); err != nil {

@@ -6,10 +6,11 @@ import (
 	"testing"
 
 	"qinqin/internal/audio"
+	"qinqin/internal/dbtest"
 )
 
 func TestUninstallRemovesRowsAndUnsharedBlobs(t *testing.T) {
-	ctx, sqlDB, store := context.Background(), newDB(t), t.TempDir()
+	ctx, sqlDB, store := context.Background(), dbtest.Open(t), t.TempDir()
 	files, index := twoRowPack(t)
 	if _, err := audio.Import(ctx, sqlDB, makePack(t, "p1", "ja", "CC0", index, files), store); err != nil {
 		t.Fatal(err)
@@ -35,7 +36,7 @@ func TestUninstallRemovesRowsAndUnsharedBlobs(t *testing.T) {
 }
 
 func TestUninstallKeepsBlobSharedWithAnotherPack(t *testing.T) {
-	ctx, sqlDB, store := context.Background(), newDB(t), t.TempDir()
+	ctx, sqlDB, store := context.Background(), dbtest.Open(t), t.TempDir()
 	shared := []clipFile{{"s.opus", oggClip("shared")}}
 	row := []string{"term\t風\tかぜ\taudio/s.opus\t\t\t"}
 	for _, id := range []string{"p1", "p2"} {
@@ -61,7 +62,7 @@ func TestUninstallKeepsBlobSharedWithAnotherPack(t *testing.T) {
 }
 
 func TestUninstallUnknownOrAlreadyRemovedPack(t *testing.T) {
-	ctx, sqlDB, store := context.Background(), newDB(t), t.TempDir()
+	ctx, sqlDB, store := context.Background(), dbtest.Open(t), t.TempDir()
 	if _, err := audio.Uninstall(ctx, sqlDB, "nope", store); !errors.Is(err, audio.ErrPackNotFound) {
 		t.Errorf("unknown pack err = %v, want ErrPackNotFound", err)
 	}
@@ -78,7 +79,7 @@ func TestUninstallUnknownOrAlreadyRemovedPack(t *testing.T) {
 }
 
 func TestReimportRevivesAnUninstalledPack(t *testing.T) {
-	ctx, sqlDB, store := context.Background(), newDB(t), t.TempDir()
+	ctx, sqlDB, store := context.Background(), dbtest.Open(t), t.TempDir()
 	files, index := twoRowPack(t)
 	p := makePack(t, "p1", "ja", "CC0", index, files)
 	if _, err := audio.Import(ctx, sqlDB, p, store); err != nil {

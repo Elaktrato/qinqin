@@ -10,6 +10,7 @@ import (
 	"sync/atomic"
 	"testing"
 
+	"qinqin/internal/dbtest"
 	"qinqin/internal/dict"
 	"qinqin/internal/levels"
 	"qinqin/internal/lookup"
@@ -63,7 +64,7 @@ func levelsOf(r *lookup.Result) []string {
 }
 
 func TestLookupLevelsLowestPerScheme(t *testing.T) {
-	sqlDB, _ := openDB(t)
+	sqlDB := dbtest.Open(t)
 	importCedict(t, sqlDB)
 	importLevels(t, sqlDB, "hsk-test", "HSK", hskLevels)
 	s := service(sqlDB)
@@ -85,7 +86,7 @@ func TestLookupLevelsLowestPerScheme(t *testing.T) {
 }
 
 func TestLookupLevelsEmptyArray(t *testing.T) {
-	sqlDB, _ := openDB(t)
+	sqlDB := dbtest.Open(t)
 	importCedict(t, sqlDB)
 	importLevels(t, sqlDB, "hsk-test", "HSK", hskLevels)
 	s := service(sqlDB)
@@ -104,7 +105,7 @@ func TestLookupLevelsEmptyArray(t *testing.T) {
 // TestLookupLevelsOneQuery: the levels of every result come from one
 // batched statement, however many results there are.
 func TestLookupLevelsOneQuery(t *testing.T) {
-	seeded, path := openDB(t)
+	seeded, path := dbtest.OpenPath(t)
 	importCedict(t, seeded)
 	importLevels(t, seeded, "hsk-test", "HSK", hskLevels)
 
@@ -134,7 +135,7 @@ func TestLookupLevelsOneQuery(t *testing.T) {
 // TestLookupWithoutLevelsRunsNoLevelsQuery: the segmenter's lookups (one
 // per token) do not ask for levels and pay nothing for them.
 func TestLookupWithoutLevelsRunsNoLevelsQuery(t *testing.T) {
-	seeded, path := openDB(t)
+	seeded, path := dbtest.OpenPath(t)
 	importCedict(t, seeded)
 	importLevels(t, seeded, "hsk-test", "HSK", hskLevels)
 	var count, levelQueries atomic.Int64

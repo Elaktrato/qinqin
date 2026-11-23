@@ -15,7 +15,7 @@ import (
 	"time"
 
 	"qinqin/internal/api"
-	"qinqin/internal/db"
+	"qinqin/internal/dbtest"
 	"qinqin/internal/lang"
 )
 
@@ -29,11 +29,7 @@ type backupEnv struct {
 func newBackupEnv(t *testing.T, opts ...api.Option) *backupEnv {
 	t.Helper()
 	lang.Register(lang.Zh{})
-	sqlDB, err := db.Open(filepath.Join(t.TempDir(), "test.db"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(func() { sqlDB.Close() })
+	sqlDB := dbtest.Open(t)
 	e := &backupEnv{db: sqlDB, data: t.TempDir(), done: make(chan int64, 16)}
 	p := api.DefaultAuthPolicy()
 	p.Client.Burst = 5000

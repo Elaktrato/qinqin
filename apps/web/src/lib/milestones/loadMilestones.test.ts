@@ -26,6 +26,7 @@ import { levelMilestoneId } from './catalogue';
 import { flushOnOnline, loadMilestones, markSeen, resetMilestonesForTests } from './loadMilestones';
 import { addPending, readPending } from './seen';
 import { endSession } from '$lib/session/sessionEnd';
+import * as build from '$lib/testing/study';
 
 const NOW = Date.parse('2026-11-17T12:00:00Z');
 const WS = 3;
@@ -44,35 +45,26 @@ function fakeStorage(): Storage {
 	} as Storage;
 }
 
-const card = (e: number, written?: string): StudyCard => ({
-	id: `c-vocab-${e}`,
-	kind: 'vocab',
-	entryId: e,
-	deckIds: ['general'],
-	createdAt: 't',
-	...(written === undefined ? {} : { written })
-});
+const card = (e: number, written?: string): StudyCard => build.card({ id: `c-vocab-${e}`, entryId: e, createdAt: 't', written });
 
 /** 100 reviews on 10 cards over the last 10 days (reviews:100, words-studied:10, streak:3/7, days-active:10). */
 function reviews(ws = WS): ReviewEvent[] {
-	return Array.from({ length: 100 }, (_, i) => ({
-		id: `r${String(i).padStart(4, '0')}`,
-		workspaceId: ws,
-		device: 'web',
-		ts: new Date(NOW - (10 - Math.floor(i / 10)) * 86_400_000 + (i % 10) * 60_000).toISOString(),
-		type: 'review',
-		payload: { cardId: `c-vocab-${(i % 10) + 1}`, mode: 'vocab', grade: 3 }
-	})) as ReviewEvent[];
+	return Array.from({ length: 100 }, (_, i) =>
+		build.review({
+			id: `r${String(i).padStart(4, '0')}`,
+			workspaceId: ws,
+			ts: new Date(NOW - (10 - Math.floor(i / 10)) * 86_400_000 + (i % 10) * 60_000).toISOString(),
+			cardId: `c-vocab-${(i % 10) + 1}`
+		})
+	);
 }
 
 function history(extra: Partial<StudyHistory> = {}): StudyHistory {
-	return {
-		decks: [],
+	return build.history({
 		cards: Array.from({ length: 10 }, (_, i) => card(i + 1, '一二三四五六七八九十'[i])),
 		reviews: reviews(),
-		merged: 0,
 		...extra
-	};
+	});
 }
 
 const event = (id: string, type: string, payload: unknown, ws = WS): StudyEvent => ({

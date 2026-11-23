@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"qinqin/internal/db"
+	"qinqin/internal/dbtest"
 	"qinqin/internal/plugins"
 	"qinqin/internal/stats"
 	"qinqin/internal/studyday"
@@ -19,6 +20,7 @@ import (
 
 type largeFixture struct {
 	db    *sql.DB
+	path  string
 	user  int64
 	rules []plugins.RuleOf
 	rows  int
@@ -49,6 +51,7 @@ func seedLarge(tb testing.TB) largeFixture {
 			tb.Fatal(err)
 		}
 		largeDir = dir
+		dbtest.File(tb, filepath.Join(dir, "large.db"))
 		sqlDB, err := db.Open(filepath.Join(dir, "large.db"))
 		if err != nil {
 			tb.Fatal(err)
@@ -95,7 +98,7 @@ func seedLarge(tb testing.TB) largeFixture {
 		if err := tx.Commit(); err != nil {
 			tb.Fatal(err)
 		}
-		large = largeFixture{db: sqlDB, user: u1, rules: rules, rows: own}
+		large = largeFixture{db: sqlDB, path: filepath.Join(dir, "large.db"), user: u1, rules: rules, rows: own}
 	})
 	return large
 }
@@ -134,8 +137,22 @@ func TestActivityLargeLog(t *testing.T) {
 	if len(cells) == 0 {
 		t.Error("no cells")
 	}
-	if elapsed > 2*time.Second && !raceEnabled {
-		t.Errorf("Activity took %v, want < 2s", elapsed)
+
+	// The bound is a statement count, not a time (0005-test-conventions):
+	// the same few statements for 7 or 91 days, none per day or per cell.
+	counted, n := dbtest.Counting(t, f.path)
+	if _, err := stats.Activity(context.Background(), counted, f.user, windows, nil, f.rules); err != nil {
+		t.Fatal(err)
+	}
+	for91 := n.Statements()
+	n.Reset()
+	if _, err := stats.Activity(context.Background(), counted, f.user, windows[len(windows)-7:], nil, f.rules); err != nil {
+		t.Fatal(err)
+	}
+	for7 := n.Statements()
+	t.Logf("Activity statements: %d for 91 days, %d for 7", for91, for7)
+	if for91 != for7 || for91 > 4 {
+		t.Errorf("Activity ran %d statements for 91 days and %d for 7, want the same few", for91, for7)
 	}
 }
 

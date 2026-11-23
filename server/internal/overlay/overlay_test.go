@@ -10,7 +10,7 @@ import (
 	"testing"
 
 	"qinqin/internal/auth"
-	"qinqin/internal/db"
+	"qinqin/internal/dbtest"
 	"qinqin/internal/dict"
 	"qinqin/internal/lang"
 	"qinqin/internal/lexicon"
@@ -22,17 +22,6 @@ import (
 // for the server; entries normalize and derive readings through it.
 func init() {
 	lang.Register(lang.Zh{})
-}
-
-// newDB opens a fresh migrated database for overlay tests.
-func newDB(t *testing.T) *sql.DB {
-	t.Helper()
-	sqlDB, err := db.Open(filepath.Join(t.TempDir(), "test.db"))
-	if err != nil {
-		t.Fatalf("db.Open: %v", err)
-	}
-	t.Cleanup(func() { sqlDB.Close() })
-	return sqlDB
 }
 
 // createUser creates a user directly in the database, failing the test
@@ -161,7 +150,7 @@ func findReading(e model.EntryBase, readType string) *model.Reading {
 
 func TestPatchMergesForOwnerOnly(t *testing.T) {
 	ctx := context.Background()
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 
 	// 发 carries its shared pinyin reading plus the bopomofo the zh
 	// pack derives from it.
@@ -254,7 +243,7 @@ func TestPatchMergesForOwnerOnly(t *testing.T) {
 
 func TestReimportPreservesOverlay(t *testing.T) {
 	ctx := context.Background()
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 
 	// Import a pack carrying 发 with the gloss "to issue".
 	if res := importPack(t, ctx, sqlDB, overlayManifest, faJSON("to issue")); res.Entries != 1 || res.Senses != 1 {
@@ -311,7 +300,7 @@ func TestReimportPreservesOverlay(t *testing.T) {
 // their copy of the patch.
 func TestAllNilPatchRevertsAndKeepsMarker(t *testing.T) {
 	ctx := context.Background()
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	importPack(t, ctx, sqlDB, overlayManifest, faJSON("to issue"))
 	fa := entryID(t, sqlDB, "发")
 	alice := createUser(t, sqlDB, "alice")
@@ -337,7 +326,7 @@ func TestAllNilPatchRevertsAndKeepsMarker(t *testing.T) {
 
 func TestReadingsBatch(t *testing.T) {
 	ctx := context.Background()
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	alice, bob := createUser(t, sqlDB, "alice"), createUser(t, sqlDB, "bob")
 	importPack(t, ctx, sqlDB, overlayManifest, faJSON("to send"))
 	id := entryID(t, sqlDB, "发")
@@ -400,7 +389,7 @@ func TestContractOverlayApply(t *testing.T) {
 	for _, c := range file.Apply {
 		t.Run(c.Name, func(t *testing.T) {
 			ctx := context.Background()
-			sqlDB := newDB(t)
+			sqlDB := dbtest.Open(t)
 			alice := createUser(t, sqlDB, "alice")
 			const entry = 42
 			if c.Row != nil {

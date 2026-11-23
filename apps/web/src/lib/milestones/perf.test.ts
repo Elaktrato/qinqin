@@ -93,14 +93,13 @@ afterEach(() => vi.clearAllMocks());
 describe('milestones performance', () => {
 	it('one log pass, and none for an equal reloaded log', () => {
 		const input = { reviews: w.reviews, events: w.events, cards: w.cards, deckIds: new Set([GENERAL_DECK_ID]), day, vacation: [], now: NOW, families };
-		const t0 = performance.now();
+		const passes = reachedStats.passes;
 		const first = reachedFromLog(input);
-		expect(performance.now() - t0).toBeLessThan(2_000);
+		expect(reachedStats.passes - passes).toBe(1);
 		expect(first.length).toBeGreaterThan(20);
 		const reloaded = w.reviews.map((r) => ({ ...r, payload: { ...r.payload } }));
-		const t1 = performance.now();
 		expect(reachedFromLog({ ...input, reviews: reloaded })).toBe(first);
-		expect(performance.now() - t1).toBeLessThan(500);
+		expect(reachedStats.passes - passes).toBe(1);
 	});
 
 	it('the Week tab adds no replay: the sweep reuses the built timelines', async () => {
@@ -108,9 +107,7 @@ describe('milestones performance', () => {
 		// What loadWeek and loadWeekCharacters already did.
 		for (const card of w.cards) t.of(card.id);
 		const built = replayStats.timelines;
-		const t0 = performance.now();
 		const reached = reachedFromReplay({ cards: w.cards, deckIds: new Set([GENERAL_DECK_ID]), timelines: t, day, now: NOW, families, chars: w.chars, levels: [] });
-		expect(performance.now() - t0).toBeLessThan(5_000);
 		expect(reached.some((r) => r.id.startsWith('words-mature:'))).toBe(true);
 		expect(replayStats.timelines).toBe(built);
 

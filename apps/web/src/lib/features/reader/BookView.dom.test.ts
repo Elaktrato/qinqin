@@ -1,4 +1,4 @@
-import { pagedPull } from '$lib/study/testing/legacyCodec';
+import { pagedPull } from '$lib/testing/legacyCodec';
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/svelte';
 import { tick } from 'svelte';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';

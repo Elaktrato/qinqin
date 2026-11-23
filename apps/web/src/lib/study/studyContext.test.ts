@@ -10,12 +10,13 @@ import { DEFAULT_W } from './fsrs/params';
 import { clockFromRuns } from './studyClock';
 import { contextFor, isDueNow, UTC_CONTEXT, type StudyContext } from './studyContext';
 import type { ReviewEvent, StudyCard } from './types';
+import * as build from '$lib/testing/study';
 
 const NOW = new Date('2026-06-10T12:00:00Z');
 const VAC: StudyContext = { ...UTC_CONTEXT, vacationToday: true };
 
 function ev(n: number, cardId: string, ts: string): ReviewEvent {
-	return { id: `01JT${String(n).padStart(22, '0')}`, workspaceId: 1, device: 'w', ts, type: 'review', payload: { cardId, mode: 'vocab', grade: 3 } };
+	return build.review({ id: build.eventId(n, '01JT'), device: 'w', ts, cardId });
 }
 const cards: StudyCard[] = [1, 2, 3].map((n) => ({ id: `c${n}`, kind: 'vocab', entryId: n, deckIds: ['general'], createdAt: '2026-01-01T00:00:00Z' }));
 const reviews = [ev(1, 'c1', '2026-05-01T09:00:00Z')];

@@ -8,6 +8,7 @@ import (
 	"sync"
 	"testing"
 
+	"qinqin/internal/dbtest"
 	"qinqin/internal/plugins"
 )
 
@@ -31,7 +32,7 @@ func TestParseManifestRefusesTrailingData(t *testing.T) {
 }
 
 func TestRegisterStoresNothingForTrailingData(t *testing.T) {
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	err := plugins.Register(context.Background(), sqlDB, []byte(validManifest("trailing-x", "")+" garbage"))
 	if !errors.Is(err, plugins.ErrInvalidManifest) {
 		t.Fatalf("err = %v", err)
@@ -58,7 +59,7 @@ func TestParseManifestAcceptsNullActivity(t *testing.T) {
 }
 
 func TestListForSkipsRowsThatAreNotJSON(t *testing.T) {
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	ctx := context.Background()
 	uid := newUser(t, sqlDB, "alice")
 	mustRegister(t, sqlDB, validManifest("good-one", ""))
@@ -79,7 +80,7 @@ func TestListForSkipsRowsThatAreNotJSON(t *testing.T) {
 }
 
 func TestRegisterRefusesBuiltinIDs(t *testing.T) {
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	for _, id := range plugins.BuiltinIDs() {
 		err := plugins.Register(context.Background(), sqlDB, []byte(validManifest(id, "")))
 		if !errors.Is(err, plugins.ErrBuiltinID) {
@@ -92,7 +93,7 @@ func TestRegisterRefusesBuiltinIDs(t *testing.T) {
 
 func TestRegisterConcurrentClaimsOneWinner(t *testing.T) {
 	for round := 0; round < 10; round++ {
-		sqlDB := newDB(t)
+		sqlDB := dbtest.Open(t)
 		const n = 4
 		errs := make([]error, n)
 		var wg sync.WaitGroup

@@ -13,9 +13,10 @@ vi.mock('$lib/study/store', async (importOriginal) => ({
 import { PartialCardsError, deleteCards, moveCards, restoreCards } from '$lib/study/store';
 import type { Deck, StudyCard } from '$lib/study/types';
 import CardManager from './CardManager.svelte';
+import * as build from '$lib/testing/study';
 
 function card(entryId: number, written: string, deckIds = ['general']): StudyCard {
-	return { id: `c-vocab-${entryId}`, kind: 'vocab', entryId, written, deckIds, createdAt: `2026-01-0${entryId}T00:00:00.000Z` };
+	return build.card({ id: `c-vocab-${entryId}`, entryId, written, deckIds, createdAt: `2026-01-0${entryId}T00:00:00.000Z` });
 }
 const CARDS = [card(1, '好'), card(2, '喜欢'), card(3, '你')];
 const DECKS: Deck[] = [{ id: 'verbs', name: 'Verbs', createdAt: '2026-01-01T00:00:00.000Z' }];

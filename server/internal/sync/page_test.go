@@ -6,13 +6,12 @@ import (
 	"encoding/json"
 	"errors"
 	"net/url"
-	"path/filepath"
 	"slices"
 	"strings"
 	"testing"
 	"time"
 
-	"qinqin/internal/db"
+	"qinqin/internal/dbtest"
 )
 
 // The core tests page over two fake tables, alpha_rows and beta_rows, so the
@@ -21,11 +20,7 @@ import (
 
 func coreDB(t *testing.T) *sql.DB {
 	t.Helper()
-	sqlDB, err := db.Open(filepath.Join(t.TempDir(), "core.db"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(func() { sqlDB.Close() })
+	sqlDB := dbtest.Open(t)
 	for _, tb := range []string{"alpha_rows", "beta_rows"} {
 		if _, err := sqlDB.Exec(`CREATE TABLE ` + tb + ` (user_id INTEGER NOT NULL, v TEXT NOT NULL,
 			updated_at TEXT NOT NULL, deleted_at TEXT);

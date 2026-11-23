@@ -4,11 +4,10 @@ import (
 	"context"
 	"database/sql"
 	"database/sql/driver"
-	"path/filepath"
 	"sync/atomic"
 	"testing"
 
-	"qinqin/internal/db"
+	"qinqin/internal/dbtest"
 	"qinqin/internal/lang"
 	"qinqin/internal/levels"
 )
@@ -63,12 +62,7 @@ func (c countingConn) ExecContext(ctx context.Context, query string, args []driv
 // of ids (and none at all for no ids).
 func TestLowestPerSchemeBatched(t *testing.T) {
 	lang.Register(lang.Zh{})
-	path := filepath.Join(t.TempDir(), "test.db")
-	sqlDB, err := db.Open(path)
-	if err != nil {
-		t.Fatalf("db.Open: %v", err)
-	}
-	t.Cleanup(func() { sqlDB.Close() })
+	sqlDB, path := dbtest.OpenPath(t)
 	importCedict(t, sqlDB,
 		"好 好 [hao3] /good/",
 		"好人 好人 [hao3 ren2] /good person/",

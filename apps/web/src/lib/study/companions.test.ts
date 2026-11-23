@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { COMPANION_PREFIX, isCompanionId, planCompanions } from './companions';
 import { studyDay } from '../time/studyDay';
 import type { StudyCard, StudyCardKind } from './types';
+import * as build from '$lib/testing/study';
 
 function card(
 	id: string,
@@ -10,15 +11,8 @@ function card(
 	entryId: number,
 	opts: { deckIds?: string[]; createdAt?: string; written?: string | null } = {}
 ): StudyCard {
-	const result: StudyCard = {
-		id,
-		kind,
-		entryId,
-		deckIds: opts.deckIds ?? ['general'],
-		createdAt: opts.createdAt ?? '2026-01-01T00:00:00.000Z'
-	};
-	if (opts.written !== null) result.written = opts.written ?? `w${entryId}`;
-	return result;
+	const written = opts.written === null ? undefined : (opts.written ?? `w${entryId}`);
+	return build.card({ id, kind, entryId, deckIds: opts.deckIds, createdAt: opts.createdAt, written });
 }
 
 describe('planCompanions', () => {

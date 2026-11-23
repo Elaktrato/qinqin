@@ -17,6 +17,7 @@ import streakFixture from '../../../../../docs/contracts/scheduler/streak.json';
 import xpFixture from '../../../../../docs/contracts/scheduler/xp.json';
 import { studyDay, type ZoneChange } from '../time/studyDay';
 import type { ReviewEvent, ReviewGrade, StudyCardKind } from './types';
+import * as build from '$lib/testing/study';
 
 // Read with JSON.parse, not imported: a JSON import turns 1e999 into null, the
 // fixture means Infinity (what JSON.parse makes of a stored 1e999).
@@ -33,14 +34,7 @@ function ev(
 	grade: ReviewGrade = 1,
 	mode: StudyCardKind = 'vocab'
 ): ReviewEvent {
-	return {
-		id: `01JTEST${String(n).padStart(19, '0')}`,
-		workspaceId: 1,
-		device: 'web',
-		ts,
-		type: 'review',
-		payload: { cardId: `c${n}`, mode, grade }
-	};
+	return build.review({ id: build.eventId(n), cardId: `c${n}`, ts, grade, mode });
 }
 
 describe('BASE_XP', () => {

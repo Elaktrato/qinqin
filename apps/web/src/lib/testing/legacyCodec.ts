@@ -13,7 +13,7 @@ import {
 	type StudyCollection,
 	type StudyRow,
 	type StudyRowBody
-} from '../rows';
+} from '../study/rows';
 
 type Obj = Record<string, unknown>;
 

@@ -13,7 +13,7 @@ import {
 	hasCard,
 	invalidateStudyData
 } from './studyData';
-import { pagedPull } from './testing/legacyCodec';
+import { pagedPull } from '$lib/testing/legacyCodec';
 import type { StudyCard, StudyData } from './types';
 
 function data(entryIds: number[] = []): StudyData {

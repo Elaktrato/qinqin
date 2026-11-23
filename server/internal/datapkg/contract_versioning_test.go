@@ -16,6 +16,7 @@ import (
 
 	"qinqin/internal/datapkg"
 	"qinqin/internal/db"
+	"qinqin/internal/dbtest"
 	"qinqin/internal/dict"
 	"qinqin/internal/packs"
 )
@@ -155,7 +156,7 @@ func TestVersioningServerCases(t *testing.T) {
 func runVersioningCase(t *testing.T, c versioningCase) {
 	ctx := context.Background()
 	clock := &testClock{now: time.Date(2026, 11, 16, 10, 0, 0, 0, time.UTC)}
-	e := newPkgEnv(t, newDB(t), clock)
+	e := newPkgEnv(t, dbtest.Open(t), clock)
 	labels := map[string]string{"": ""}
 	for i, st := range c.Steps {
 		clock.Add(time.Minute)

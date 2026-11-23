@@ -9,6 +9,7 @@ import (
 	"strings"
 	"testing"
 
+	"qinqin/internal/dbtest"
 	"qinqin/internal/dict"
 )
 
@@ -44,7 +45,7 @@ func goodCedictLines(n int) string {
 // lines; an import skips them, counts them in Result.Skipped, and keeps
 // going rather than aborting the whole file.
 func TestCedictImportSkipsMalformedLines(t *testing.T) {
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	text := goodCedictLines(40) + "this is not an entry\n" + "你好 你好 [ni3 hao3] //\n"
 	pack := cedictPackFromText(t, text)
 	res, err := dict.ImportLexicon(context.Background(), sqlDB, &pack)
@@ -63,7 +64,7 @@ func TestCedictImportSkipsMalformedLines(t *testing.T) {
 // page, a truncated download), not CEDICT with a few odd lines: the
 // import fails instead of silently installing nothing.
 func TestCedictImportRejectsMostlyMalformedFile(t *testing.T) {
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	text := goodCedictLines(1) + strings.Repeat("<html>not cedict</html>\n", 5)
 	pack := cedictPackFromText(t, text)
 	_, err := dict.ImportLexicon(context.Background(), sqlDB, &pack)

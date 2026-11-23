@@ -33,10 +33,10 @@ import { studyDay } from '$lib/time/studyDay';
 import { currentStudyDay } from '$lib/time/zone';
 import { workspaces } from '$lib/workspaces';
 import { unreadableRows } from '$lib/study/unreadable';
-import { strongReviews } from '$lib/testing/reviews';
 import { SESSION_CONFIG_KEY } from '$lib/study/session';
 import { primaryActions } from '$lib/ui/testing/primary';
 import Page from './+page.svelte';
+import * as build from '$lib/testing/study';
 
 const charScheme: Scheme = {
 	id: 3,
@@ -180,7 +180,7 @@ describe('study setup, level sessions', () => {
 					createdAt: '2025-01-01T00:00:00Z'
 				}
 			],
-			reviews: strongReviews('c-vocab-11'),
+			reviews: build.strongReviews('c-vocab-11'),
 			merged: 0
 		});
 		render(Page);

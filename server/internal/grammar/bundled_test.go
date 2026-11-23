@@ -5,6 +5,7 @@ import (
 	"strings"
 	"testing"
 
+	"qinqin/internal/dbtest"
 	"qinqin/internal/dict"
 	"qinqin/internal/grammar"
 )
@@ -88,7 +89,7 @@ func TestBundledGrammarPack(t *testing.T) {
 			t.Errorf("%s: want NoOrder false", id)
 		}
 	}
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	ctx := t.Context()
 	if _, err := grammar.Import(ctx, sqlDB, pack); err != nil {
 		t.Fatal(err)
@@ -149,7 +150,7 @@ func TestBundledJapaneseGrammarPack(t *testing.T) {
 			t.Errorf("level %s has no lessons", id)
 		}
 	}
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	ctx := t.Context()
 	if _, err := grammar.Import(ctx, sqlDB, pack); err != nil {
 		t.Fatal(err)

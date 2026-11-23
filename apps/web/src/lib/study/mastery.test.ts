@@ -6,6 +6,7 @@ import { DEFAULT_W } from './fsrs/params';
 import { cardScore, masteryForChars, masteryFromSchedules, MASTERY_KINDS, MAX_STABILITY_DAYS, stageOf, type CharMastery } from './mastery';
 import { scheduleFor, type Schedule } from './scheduler';
 import type { ReviewEvent, ReviewGrade, StudyCard } from './types';
+import * as build from '$lib/testing/study';
 
 /** One character scored on its own: the per-character view of the batch API. */
 function masteryForChar(
@@ -21,9 +22,7 @@ const DAY = 86_400_000;
 const BASE = Date.parse('2025-01-01T00:00:00.000Z');
 const NOW = new Date('2026-06-01T00:00:00.000Z');
 
-function eventId(n: number): string {
-	return `01JMASTERY${String(n).padStart(17, '0')}`;
-}
+const eventId = (n: number): string => build.eventId(n, '01JMASTERY', 27);
 
 function review(
 	cardId: string,
@@ -31,14 +30,7 @@ function review(
 	ts: string,
 	id = eventId(1)
 ): ReviewEvent {
-	return {
-		id,
-		workspaceId: 7,
-		device: 'web',
-		ts,
-		type: 'review',
-		payload: { cardId, mode: 'vocab', grade }
-	};
+	return build.review({ id, cardId, grade, ts, workspaceId: 7 });
 }
 
 // The event log is only validated for id/ts server-side, so a stored
@@ -55,15 +47,7 @@ function malformedReview(cardId: string, grade: number, ts: string): ReviewEvent
 }
 
 function card(id: string, written?: string): StudyCard {
-	const result: StudyCard = {
-		id,
-		kind: 'vocab',
-		entryId: 1,
-		deckIds: ['general'],
-		createdAt: '2025-01-01T00:00:00.000Z'
-	};
-	if (written !== undefined) result.written = written;
-	return result;
+	return build.card({ id, written, createdAt: '2025-01-01T00:00:00.000Z' });
 }
 
 // Grades Good at increasing day offsets, as a learner answering at the

@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"qinqin/internal/dbtest"
 	chinsync "qinqin/internal/sync"
 )
 
@@ -15,7 +16,7 @@ import (
 // path. A client reads any dataSkipped as "the server holds newer data".
 func TestTypedPushOfEqualContentIsAccepted(t *testing.T) {
 	ctx := context.Background()
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	alice := newUser(t, sqlDB, "alice")
 	ws := newWorkspace(t, sqlDB, alice)
 	item := func(at time.Time) json.RawMessage {

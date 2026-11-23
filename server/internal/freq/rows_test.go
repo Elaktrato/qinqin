@@ -6,11 +6,12 @@ import (
 	"strings"
 	"testing"
 
+	"qinqin/internal/dbtest"
 	"qinqin/internal/freq"
 )
 
 func TestRowsOrderedByPackPriorityAcrossChunks(t *testing.T) {
-	sqlDB := openDB(t)
+	sqlDB := dbtest.Open(t)
 	// 600 terms span two IN chunks; the second pack has two of them.
 	var body strings.Builder
 	var terms []string
@@ -40,7 +41,7 @@ func TestRowsOrderedByPackPriorityAcrossChunks(t *testing.T) {
 }
 
 func TestBestHitsAcrossTermsAndReadings(t *testing.T) {
-	sqlDB := openDB(t)
+	sqlDB := dbtest.Open(t)
 	mustImport(t, sqlDB, csvPack(t, "a", "為る,する,40\n為る,なる,5\n爲る,,30\n"))
 	mustImport(t, sqlDB, csvPack(t, "b", "為る,なる,2\n"))
 	rows, err := freq.Store{DB: sqlDB}.Rows(context.Background(), []string{"為る", "爲る"})

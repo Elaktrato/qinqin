@@ -128,9 +128,8 @@ describe('parseNotice', () => {
 		expect(parts[parts.length - 1]).toEqual(link('end', 'https://e.example/'));
 
 		const hostile = '['.repeat(50000) + '('.repeat(50000) + ']'.repeat(10);
-		const started = Date.now();
+		// A backtracking regression shows as a test timeout, not a time assertion.
 		const result = parseNotice(hostile);
-		expect(Date.now() - started).toBeLessThan(2000);
 		expect(result[0].parts).toEqual([text(hostile)]);
 	});
 });

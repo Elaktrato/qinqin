@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"os"
 	"testing"
+
+	"qinqin/internal/dbtest"
 )
 
 // docs/contracts/events/activity.json: the heatmap cells of the built-in
@@ -42,7 +44,7 @@ func TestContractActivity(t *testing.T) {
 		t.Fatalf("rule %q, %d cases", f.Rule, len(f.Cases))
 	}
 	// The fixture lists the built-in rules it was derived from.
-	rules := builtinRules(t, newDB(t))
+	rules := builtinRules(t, dbtest.Open(t))
 	if len(rules) != len(f.Rules) {
 		t.Fatalf("%d built-in rules, fixture lists %d", len(rules), len(f.Rules))
 	}
@@ -57,7 +59,7 @@ func TestContractActivity(t *testing.T) {
 			if c.Note == "" {
 				t.Error("case without note")
 			}
-			sqlDB := newDB(t)
+			sqlDB := dbtest.Open(t)
 			rules := builtinRules(t, sqlDB)
 			u := newUser(t, sqlDB, "a")
 			for _, ev := range c.Events {

@@ -3,13 +3,12 @@ package api_test
 import (
 	"net/http"
 	"net/http/httptest"
-	"path/filepath"
 	"sync"
 	"testing"
 	"time"
 
 	"qinqin/internal/api"
-	"qinqin/internal/db"
+	"qinqin/internal/dbtest"
 	"qinqin/internal/lang"
 	"qinqin/internal/ratelimit"
 )
@@ -17,11 +16,7 @@ import (
 func limitServer(t *testing.T, opts ...api.Option) *httptest.Server {
 	t.Helper()
 	lang.Register(lang.Zh{})
-	sqlDB, err := db.Open(filepath.Join(t.TempDir(), "test.db"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(func() { sqlDB.Close() })
+	sqlDB := dbtest.Open(t)
 	ts := httptest.NewServer(api.New(sqlDB, t.TempDir(), nil, opts...))
 	t.Cleanup(ts.Close)
 	return ts

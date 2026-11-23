@@ -12,7 +12,7 @@ import (
 	"strings"
 	"testing"
 
-	"qinqin/internal/db"
+	"qinqin/internal/dbtest"
 	"qinqin/internal/dict"
 	"qinqin/internal/sentences"
 )
@@ -326,10 +326,7 @@ func TestGoldenPacksInstall(t *testing.T) {
 				t.Errorf("%s notice lacks %q", tc.id, want)
 			}
 		}
-		sqlDB, err := db.Open(filepath.Join(t.TempDir(), "q.db"))
-		if err != nil {
-			t.Fatal(err)
-		}
+		sqlDB := dbtest.Open(t)
 		dp, err := dict.LoadPack(tc.dict)
 		if err != nil {
 			t.Fatal(err)

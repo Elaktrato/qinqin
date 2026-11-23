@@ -9,10 +9,12 @@ import (
 
 	"qinqin/internal/auth"
 	"qinqin/internal/db"
+	"qinqin/internal/dbtest"
 )
 
 func TestRecoverResetsPasswordAndSessions(t *testing.T) {
 	dir := t.TempDir()
+	dbtest.File(t, filepath.Join(dir, "qinqin.db"))
 	sqlDB, err := db.Open(filepath.Join(dir, "qinqin.db"))
 	if err != nil {
 		t.Fatal(err)
@@ -85,6 +87,7 @@ func TestRecoverResetsPasswordAndSessions(t *testing.T) {
 
 func TestRecoverAdminOnDisabledNeedsEnable(t *testing.T) {
 	dir := t.TempDir()
+	dbtest.File(t, filepath.Join(dir, "qinqin.db"))
 	sqlDB, _ := db.Open(filepath.Join(dir, "qinqin.db"))
 	ctx := context.Background()
 	u, _ := auth.CreateUser(ctx, sqlDB, "alice", "old-password-123", false)

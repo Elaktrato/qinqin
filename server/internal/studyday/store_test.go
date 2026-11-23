@@ -4,28 +4,17 @@ import (
 	"context"
 	"database/sql"
 	"errors"
-	"path/filepath"
 	"sync"
 	"testing"
 	"time"
 
-	"qinqin/internal/db"
+	"qinqin/internal/dbtest"
 )
-
-func openDB(t *testing.T) *sql.DB {
-	t.Helper()
-	sqlDB, err := db.Open(filepath.Join(t.TempDir(), "q.db"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(func() { sqlDB.Close() })
-	return sqlDB
-}
 
 var t0 = time.Date(2026, 11, 15, 10, 0, 0, 0, time.UTC)
 
 func TestSetFirstWritesSeqZeroWithNullFrom(t *testing.T) {
-	sqlDB := openDB(t)
+	sqlDB := dbtest.Open(t)
 	ch, err := Set(context.Background(), sqlDB, 1, "Europe/Berlin", false, t0.Add(123*time.Millisecond))
 	if err != nil {
 		t.Fatal(err)
@@ -44,14 +33,14 @@ func TestSetFirstWritesSeqZeroWithNullFrom(t *testing.T) {
 }
 
 func TestSetUTCFirstIsAZone(t *testing.T) {
-	ch, err := Set(context.Background(), openDB(t), 1, "UTC", false, t0)
+	ch, err := Set(context.Background(), dbtest.Open(t), 1, "UTC", false, t0)
 	if err != nil || len(ch) != 1 || ch[0].Zone != "UTC" {
 		t.Fatalf("%+v %v", ch, err)
 	}
 }
 
 func TestSetSameZoneAndIfUnsetAddNoRow(t *testing.T) {
-	sqlDB := openDB(t)
+	sqlDB := dbtest.Open(t)
 	ctx := context.Background()
 	Set(ctx, sqlDB, 1, "Asia/Tokyo", false, t0)
 	for _, c := range []struct {
@@ -66,7 +55,7 @@ func TestSetSameZoneAndIfUnsetAddNoRow(t *testing.T) {
 }
 
 func TestSetSecondZoneFromNowTruncated(t *testing.T) {
-	sqlDB := openDB(t)
+	sqlDB := dbtest.Open(t)
 	ctx := context.Background()
 	Set(ctx, sqlDB, 1, "Asia/Tokyo", false, t0)
 	ch, err := Set(ctx, sqlDB, 1, "America/New_York", false, t0.Add(time.Hour+999*time.Millisecond))
@@ -84,7 +73,7 @@ func TestSetSecondZoneFromNowTruncated(t *testing.T) {
 }
 
 func TestSetSameSecondGetsPlusOneSecond(t *testing.T) {
-	sqlDB := openDB(t)
+	sqlDB := dbtest.Open(t)
 	ctx := context.Background()
 	Set(ctx, sqlDB, 1, "Asia/Tokyo", false, t0)
 	Set(ctx, sqlDB, 1, "America/New_York", false, t0.Add(time.Hour))
@@ -104,7 +93,7 @@ func TestSetSameSecondGetsPlusOneSecond(t *testing.T) {
 
 func TestSetFromAfterFirstEvenAtSeqZero(t *testing.T) {
 	// seq 0 has no from; the second row just takes now.
-	sqlDB := openDB(t)
+	sqlDB := dbtest.Open(t)
 	Set(context.Background(), sqlDB, 1, "Asia/Tokyo", false, t0)
 	ch, _ := Set(context.Background(), sqlDB, 1, "UTC", false, t0)
 	if !ch[1].From.Equal(t0) {
@@ -113,7 +102,7 @@ func TestSetFromAfterFirstEvenAtSeqZero(t *testing.T) {
 }
 
 func TestSetTooManyChanges(t *testing.T) {
-	sqlDB := openDB(t)
+	sqlDB := dbtest.Open(t)
 	ctx := context.Background()
 	zones := []string{"Asia/Tokyo", "Europe/Berlin"}
 	for i := 0; i < MaxChanges; i++ {
@@ -135,7 +124,7 @@ func TestSetTooManyChanges(t *testing.T) {
 }
 
 func TestSetInvalidNames(t *testing.T) {
-	sqlDB := openDB(t)
+	sqlDB := dbtest.Open(t)
 	long := ""
 	for i := 0; i < 65; i++ {
 		long += "A"
@@ -161,7 +150,7 @@ func TestSetInvalidNames(t *testing.T) {
 }
 
 func TestUsersAreIsolated(t *testing.T) {
-	sqlDB := openDB(t)
+	sqlDB := dbtest.Open(t)
 	ctx := context.Background()
 	Set(ctx, sqlDB, 1, "Asia/Tokyo", false, t0)
 	Set(ctx, sqlDB, 2, "Europe/Berlin", false, t0)
@@ -184,7 +173,7 @@ func TestUsersAreIsolated(t *testing.T) {
 }
 
 func TestLoadOrdersBySeq(t *testing.T) {
-	sqlDB := openDB(t)
+	sqlDB := dbtest.Open(t)
 	ctx := context.Background()
 	for i, z := range []string{"Asia/Tokyo", "Europe/Berlin", "America/New_York", "UTC"} {
 		Set(ctx, sqlDB, 1, z, false, t0.Add(time.Duration(i)*time.Hour))
@@ -201,7 +190,7 @@ func TestLoadOrdersBySeq(t *testing.T) {
 }
 
 func TestLoadRejectsCorruptRows(t *testing.T) {
-	sqlDB := openDB(t)
+	sqlDB := dbtest.Open(t)
 	sqlDB.Exec(`INSERT INTO user_time_zones (user_id, seq, zone, effective_from, created_at) VALUES (1, 0, 'Mars/Base', NULL, 'x')`)
 	if _, _, err := Load(context.Background(), sqlDB, 1); err == nil {
 		t.Error("corrupt zone accepted")
@@ -209,7 +198,7 @@ func TestLoadRejectsCorruptRows(t *testing.T) {
 }
 
 func TestConcurrentSetsKeepConsecutiveSeqs(t *testing.T) {
-	sqlDB := openDB(t)
+	sqlDB := dbtest.Open(t)
 	ctx := context.Background()
 	Set(ctx, sqlDB, 1, "UTC", false, t0)
 	zones := []string{"Asia/Tokyo", "Europe/Berlin", "America/New_York", "Australia/Sydney", "Asia/Kolkata", "Europe/London"}
