@@ -45,7 +45,7 @@ node scripts/check-sources.mjs && node --test scripts/*.test.mjs
 ```
 
 - A slow opt-in test seeds the real bundled packs and checks lookups against them: `QINQIN_REAL_DATA_TESTS=1 go test ./cmd/qinqin -run RealPacks -v` (from `server/`). Other test-only switches: `QINQIN_REQUIRE_TESSERACT=1` (the OCR test fails instead of skipping when the binary is missing; CI sets it), `QINQIN_BIG_TESTS`, `QINQIN_PERF_BUDGET_MS`.
-- Doc checks: `cd apps/web && npx vitest run src/lib/wikiDocs.test.ts src/lib/contractsDocs.test.ts src/lib/readmeGallery.test.ts src/lib/readmeDocs.test.ts` and `node scripts/gen-api-docs.mjs --check` (every wiki page is in `_Sidebar.md`, every link resolves, the generated API pages are current; every wiki link in `README.md` points at an existing `docs/wiki` page and heading).
+- Doc checks: `cd apps/web && npx vitest run src/lib/wikiDocs.test.ts src/lib/contractsDocs.test.ts src/lib/readmeGallery.test.ts src/lib/readmeDocs.test.ts src/lib/architectureDocs.test.ts` and `node scripts/gen-api-docs.mjs --check` (every wiki page is in `_Sidebar.md`, every link resolves, the generated API pages are current; every wiki link in `README.md` points at an existing `docs/wiki` page and heading; every architecture record follows the template of `docs/architecture/README.md` and is in its index).
 - Timing tests (icons, weekly and milestone performance, schedule timeline, reader readings) can fail on a loaded machine and pass alone. Concurrent builds in one worktree clobber `.svelte-kit`.
 
 ## How the build fits together
@@ -55,6 +55,14 @@ node scripts/check-sources.mjs && node --test scripts/*.test.mjs
 The Dockerfile has four stages: `web` (the SPA and the stroke pack), `build` (the static Go binary), `audio` (the Kanji alive pack; `--build-arg WITH_AUDIO=0` skips it, and `KANJIALIVE_*` build arguments override the pins in `scripts/fetch-audio-kanjialive.sh`) and the Alpine runtime (Tesseract unless `--build-arg WITH_OCR=0`; Alpine, not scratch, because the healthcheck needs `wget`). The image has no `USER`, sets `QINQIN_DATA=/data` and `QINQIN_PACKS`, and runs `qinqin serve`.
 
 **Mascot art.** The flashcards mascot looks for `/mascot/<stage>-<mood>.svg` (stages 1 to 4, moods `sleepy`, `happy`, `proud`, `cheering`) and draws a built-in placeholder when the file is missing. No art is bundled; a build that adds the files under `apps/web/static/mascot/` shows them (the files are embedded in the binary, so they cannot be dropped into a running container).
+
+## Architecture records
+
+The rules of the code's structure (what the API layer may do, where web code lives, how errors are answered and
+shown, how unreadable sync rows are handled, test conventions, core features instead of code plugins) are
+written down as architecture records in [`docs/architecture/`](https://github.com/Elaktrato/qinqin/tree/develop/docs/architecture),
+each with how it is enforced. The data rules every client shares are the contracts in `docs/contracts/`. Read
+the record before changing the structure it covers; an issue that changes a rule updates its record.
 
 ## When you add a route
 

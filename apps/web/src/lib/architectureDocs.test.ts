@@ -132,3 +132,16 @@ describe('the architecture records', () => {
 		for (const p of paths) expect(existsSync(resolve(root, p.replace(/[:#].*$/, ''))), p).toBe(true);
 	});
 });
+
+describe('links to the architecture records', () => {
+	it('the README development section links docs/architecture/README.md', () => {
+		const front = readFileSync(resolve(root, 'README.md'), 'utf8');
+		const dev = front.slice(front.indexOf('## Development'));
+		expect(dev).toContain('](docs/architecture/README.md)');
+	});
+
+	it.each(['Development.md', 'Project-layout.md'])('the wiki page %s links docs/architecture', (page) => {
+		const text = readFileSync(resolve(root, 'docs/wiki', page), 'utf8');
+		expect(text).toContain('](https://github.com/Elaktrato/qinqin/tree/develop/docs/architecture)');
+	});
+});

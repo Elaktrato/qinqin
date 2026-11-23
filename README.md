@@ -161,8 +161,9 @@ npm --prefix apps/web run build
 cd server && go vet ./... && go test ./...
 ```
 
-Branches follow git-flow ([`docs/git-flow.md`](docs/git-flow.md)). More, including the doc checks and the
-repository layout: [Development](https://github.com/Elaktrato/qinqin/wiki/Development),
+Branches follow git-flow ([`docs/git-flow.md`](docs/git-flow.md)). The code-structure rules (layers, folders,
+errors, tests) are the architecture records in [`docs/architecture/`](docs/architecture/README.md). More,
+including the doc checks and the repository layout: [Development](https://github.com/Elaktrato/qinqin/wiki/Development),
 [Project layout](https://github.com/Elaktrato/qinqin/wiki/Project-layout),
 [Translating qinqin](https://github.com/Elaktrato/qinqin/wiki/Translating-qinqin).
 
