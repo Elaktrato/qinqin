@@ -106,6 +106,7 @@ The lemmatizer turns inflected words into dictionary forms (勉強していま�
 
 - **Bundled:** `ja-lemma` is the built-in Japanese table as a pack, so clients can download the exact table the server runs (`lemma-rules.ja-lemma`). A fresh instance installs it with the other bundled packs; at every start the server also installs it when it was never installed and no other Japanese table is, and **updates it from the image** when the image's copy differs (log: `lemma-rules: updated the bundled rule table ja-lemma ...`). An uninstalled `ja-lemma` stays uninstalled.
 - **Your own table:** give it its own pack id (for example `ja-lemma-custom`), uninstall `ja-lemma` first (one live table per language), then upload it in Settings → Data. A table uploaded under the id `ja-lemma` is replaced by the image's copy at the next start.
+- **Seeding while the server runs:** a table installed or removed by `qinqin seed` in a separate process applies within about 30 seconds; uploads and uninstalls in Settings → Data apply at once.
 - **Checks:** the review refuses a table that does not parse, breaks the contract's limits, names another language than the manifest, or is for a language that already has a live table. Only administrators can upload.
 - **Backup:** installed tables are server data. They are not in a user's backup export; a server backup carries them with the database.
 

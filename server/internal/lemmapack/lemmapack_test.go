@@ -12,6 +12,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	"qinqin/internal/db"
 	"qinqin/internal/dict"
@@ -258,4 +259,38 @@ func TestStored(t *testing.T) {
 	if !bytes.Equal([]byte(lemmapack.Hash(nil)), []byte(lemmapack.Hash([]byte{}))) {
 		t.Error("Hash differs for nil and empty")
 	}
+}
+
+// Watch reloads when another process (`qinqin seed` while the server runs)
+// changed the live packs, and only then.
+func TestWatchReloadsOnOutsideChanges(t *testing.T) {
+	sqlDB := newDB(t)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	reloads := make(chan struct{}, 8)
+	done := make(chan struct{})
+	go func() {
+		lemmapack.Watch(ctx, sqlDB, 5*time.Millisecond, func() { reloads <- struct{}{} })
+		close(done)
+	}()
+	// Another process writes the row; this one's overlay knows nothing of it.
+	if _, err := sqlDB.Exec(`INSERT INTO lemma_rule_packs (pack_id, name, version, language, license, attribution, rules_json, content_hash, updated_at)
+		VALUES ('xa-rules', 'X', '1', 'xa', 'CC0-1.0', 'a', ?, 'h', 't')`, table("xa", "1")); err != nil {
+		t.Fatal(err)
+	}
+	select {
+	case <-reloads:
+	case <-time.After(5 * time.Second):
+		t.Fatal("no reload after an outside change")
+	}
+	if lemma.For("xa") == nil {
+		t.Fatal("the watcher did not install the table")
+	}
+	select {
+	case <-reloads:
+		t.Fatal("reloaded without a change")
+	case <-time.After(50 * time.Millisecond):
+	}
+	cancel()
+	<-done
 }

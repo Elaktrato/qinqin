@@ -119,7 +119,14 @@ request.
 `lemmapack.Reload(ctx, db)` reads every live row, parses it and installs the overlay; it is serialised by a
 mutex so two reloads cannot interleave a stale read with a newer one. `lemmapack.Import` and `Uninstall`
 call it after their transaction commits, so the admin upload, the admin uninstall, `qinqin seed` and the
-first-start auto-seed all take effect immediately. `qinqin serve` calls it once before listening.
+first-start auto-seed all take effect immediately in the process that made the change. `qinqin serve` calls it
+once before listening, and a watcher (`lemmapack.Watch`, every 30 s) reloads when the live rows differ from what
+the last reload installed — `qinqin seed` run as a separate process while the server serves writes only the
+database.
+
+Ruling: poll a fingerprint (pack id, hash and stamp of every live row) every 30 s rather than require a restart
+after a seed — one cheap query, found missing in the real-app check — cost if wrong: up to 30 s until a seeded
+table applies.
 
 Ruling: there is no enabled toggle for a `lemma-rules` pack. Data packs have no server-wide enable flag; the
 per-user plugin state exists only for the legacy plugin rows (#169), which no new type gets. A per-user

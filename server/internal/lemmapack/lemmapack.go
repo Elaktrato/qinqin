@@ -200,8 +200,12 @@ func Uninstall(ctx context.Context, sqlDB *sql.DB, packID string) error {
 }
 
 // reloadMu serialises Reload, so a reload that read older rows never
-// installs them after a newer one.
-var reloadMu sync.Mutex
+// installs them after a newer one; loaded is the fingerprint of the rows the
+// last successful Reload installed (Watch compares against it).
+var (
+	reloadMu sync.Mutex
+	loaded   string
+)
 
 // Reload reads every live pack's table and installs them as the overlay
 // (lemma.SetInstalled). A stored table that no longer parses (a binary
@@ -210,6 +214,10 @@ var reloadMu sync.Mutex
 func Reload(ctx context.Context, q Querier) error {
 	reloadMu.Lock()
 	defer reloadMu.Unlock()
+	fp, err := fingerprint(ctx, q)
+	if err != nil {
+		return fmt.Errorf("lemmapack: reload: %w", err)
+	}
 	rows, err := q.QueryContext(ctx, `SELECT pack_id, language, rules_json FROM lemma_rule_packs
 		WHERE deleted_at IS NULL ORDER BY pack_id`)
 	if err != nil {
@@ -240,7 +248,49 @@ func Reload(ctx context.Context, q Querier) error {
 		return fmt.Errorf("lemmapack: reload: %w", err)
 	}
 	lemma.SetInstalled(tables)
+	loaded = fp
 	return nil
+}
+
+// fingerprint identifies the state of the live packs: it changes with
+// every import, re-import and uninstall.
+func fingerprint(ctx context.Context, q Querier) (string, error) {
+	var fp string
+	err := q.QueryRowContext(ctx, `SELECT COALESCE(group_concat(pack_id || ':' || content_hash || ':' || updated_at, ','), '')
+		FROM (SELECT pack_id, content_hash, updated_at FROM lemma_rule_packs WHERE deleted_at IS NULL ORDER BY pack_id)`).Scan(&fp)
+	return fp, err
+}
+
+// Watch reloads the overlay whenever the live packs differ from what the
+// last Reload installed — `qinqin seed` run while the server serves writes
+// the database, not this process's overlay — checking every interval until
+// ctx ends. Changes made through Import and Uninstall in this process
+// reloaded already and cost nothing more. onReload, when set, runs after
+// each reload it made (tests).
+func Watch(ctx context.Context, q Querier, every time.Duration, onReload func()) {
+	tick := time.NewTicker(every)
+	defer tick.Stop()
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-tick.C:
+		}
+		fp, err := fingerprint(ctx, q)
+		reloadMu.Lock()
+		same := fp == loaded
+		reloadMu.Unlock()
+		if err != nil || same {
+			continue
+		}
+		if err := Reload(ctx, q); err != nil {
+			log.Printf("lemmapack: watch: %v", err)
+			continue
+		}
+		if onReload != nil {
+			onReload()
+		}
+	}
 }
 
 // Pack is one live lemma-rules pack with its credits.

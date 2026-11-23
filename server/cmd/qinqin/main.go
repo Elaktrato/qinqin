@@ -32,6 +32,7 @@ import (
 	"qinqin/internal/db"
 	"qinqin/internal/journal"
 	"qinqin/internal/lang"
+	"qinqin/internal/lemmapack"
 	"qinqin/internal/lexicon"
 	"qinqin/internal/library/sources"
 	"qinqin/internal/library/sources/aozora"
@@ -255,6 +256,9 @@ func serve(ctx context.Context, data string, listen func() (net.Listener, error)
 		close(mailDone)
 	}()
 	runJanitor(func() { auth.RunJanitor(bg, sqlDB, time.Hour, log.Printf) })
+	// Rule tables changed by another process (`qinqin seed` while serving)
+	// take effect within half a minute (#176).
+	runJanitor(func() { lemmapack.Watch(bg, sqlDB, 30*time.Second, nil) })
 	// Files of users that no longer exist (a deletion whose file removal failed).
 	if n, err := auth.SweepOrphanUserDirs(ctx, sqlDB, data); err != nil {
 		log.Printf("startup sweep of orphan user directories: %v", err)

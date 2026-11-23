@@ -187,8 +187,8 @@ A table also ships as a data pack: manifest `type: lemma-rules`, `format: rules-
 - **Validation:** `Parse` as above (strict keys, Limits) at upload review and import; a table for a language whose
   code pack does not run tables (zh) is refused. A stored table that no longer parses (an older engine) is skipped
   and the built-in applies.
-- **Effect:** immediate. The server swaps the table set after every install or uninstall; segmentation and lookups
-  read it per request. `/api/segment`, `/api/segment/at` and `/api/lookup` serve a language with a code pack or
+- **Effect:** immediate. The server swaps the table set after every install or uninstall (and within 30 s of a
+  change another process, `qinqin seed`, made); segmentation and lookups read it per request. `/api/segment`, `/api/segment/at` and `/api/lookup` serve a language with a code pack or
   with a table in effect.
 - **Package:** `lemma-rules.<packId>` (`docs/contracts/packages/`), table
   `lemma_rules (language TEXT PRIMARY KEY, rules_json TEXT NOT NULL)`, one row with `rules.json` byte for byte.
