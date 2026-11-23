@@ -195,12 +195,18 @@ func TestCompoundStemPredicate(t *testing.T) {
 	 "rules": []}`)
 	c := tb.Compounds[0]
 	for stem, want := range map[string]bool{"勉強": true, "す": false, "ちゃんと": true, "愛": true} {
-		if got := c.StemOK(stem); got != want {
+		if got := c.StemOK(stem, lemma.NewWork(lemma.MaxWork)); got != want {
 			t.Errorf("StemOK(%q) = %v, want %v", stem, got, want)
 		}
 	}
-	if !(lemma.Compound{Suffix: "する", Class: "vs"}).StemOK("す") {
+	if !(lemma.Compound{Suffix: "する", Class: "vs"}).StemOK("す", lemma.NewWork(0)) {
 		t.Error("a compound without a predicate refuses a stem")
+	}
+	// The shared budget: 勉強 costs one unit (minRunes holds); a spent
+	// budget accepts nothing.
+	w := lemma.NewWork(1)
+	if !c.StemOK("勉強", w) || w.Used() != 1 || c.StemOK("勉強", w) {
+		t.Errorf("budgeted StemOK: used %d", w.Used())
 	}
 	if _, err := lemma.Parse([]byte(`{"format": 1, "language": "xc", "version": "t", "maxDepth": 1,
 	 "classes": {"vs": {}}, "hints": {}, "compounds": [{"suffix": "する", "class": "vs", "stem": {}}], "rules": []}`)); err == nil {

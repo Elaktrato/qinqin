@@ -1,0 +1,227 @@
+{
+ "version": 1,
+ "rule": "lemma/budget",
+ "_doc": "The work budget of one Deinflect call (README.md, Rules and chaining, Bound). work is the number of work units the call spent: one per (form, rule) pair considered (before the class and chainOnly gating) and one per predicate leaf evaluated (minRunes, notOnly, each notSuffix entry), in the evaluation order of the README. A case without budget runs with maxWork; forms are the candidates' forms in output order.",
+ "maxWork": 16384,
+ "cases": [
+  {
+   "name": "suffix checks and predicate leaves are counted",
+   "surface": "zza",
+   "table": {
+    "format": 2,
+    "language": "xb",
+    "version": "t",
+    "maxDepth": 1,
+    "classes": {
+     "w": {
+      "any": true
+     }
+    },
+    "hints": {},
+    "rules": [
+     {
+      "from": "a",
+      "to": "b",
+      "reason": "r1",
+      "out": "w",
+      "stem": {
+       "minRunes": 2,
+       "notSuffix": [
+        "x",
+        "y"
+       ]
+      }
+     },
+     {
+      "from": "c",
+      "to": "",
+      "reason": "r2",
+      "out": "w"
+     }
+    ]
+   },
+   "work": 5,
+   "forms": [
+    "zzb"
+   ]
+  },
+  {
+   "name": "the budget stops before the third suffix check",
+   "surface": "xa",
+   "budget": 2,
+   "table": {
+    "format": 2,
+    "language": "xb",
+    "version": "t",
+    "maxDepth": 1,
+    "classes": {
+     "w": {
+      "any": true
+     }
+    },
+    "hints": {},
+    "rules": [
+     {
+      "from": "a",
+      "to": "b",
+      "reason": "r1",
+      "out": "w"
+     },
+     {
+      "from": "a",
+      "to": "c",
+      "reason": "r2",
+      "out": "w"
+     },
+     {
+      "from": "a",
+      "to": "d",
+      "reason": "r3",
+      "out": "w"
+     }
+    ]
+   },
+   "work": 2,
+   "forms": [
+    "xb",
+    "xc"
+   ]
+  },
+  {
+   "name": "a predicate cut short by the budget produces nothing, and the call stops",
+   "surface": "xa",
+   "budget": 3,
+   "table": {
+    "format": 2,
+    "language": "xb",
+    "version": "t",
+    "maxDepth": 1,
+    "classes": {
+     "w": {
+      "any": true
+     }
+    },
+    "hints": {},
+    "rules": [
+     {
+      "from": "a",
+      "to": "b",
+      "reason": "r1",
+      "out": "w",
+      "stem": {
+       "notSuffix": [
+        "p",
+        "q",
+        "r"
+       ]
+      }
+     },
+     {
+      "from": "a",
+      "to": "c",
+      "reason": "r2",
+      "out": "w"
+     }
+    ]
+   },
+   "work": 3,
+   "forms": []
+  },
+  {
+   "name": "allOf stops at the first false child, anyOf at the first true one",
+   "surface": "kka",
+   "table": {
+    "format": 2,
+    "language": "xb",
+    "version": "t",
+    "maxDepth": 1,
+    "classes": {
+     "w": {
+      "any": true
+     }
+    },
+    "hints": {},
+    "rules": [
+     {
+      "from": "a",
+      "to": "b",
+      "reason": "r1",
+      "out": "w",
+      "stem": {
+       "allOf": [
+        {
+         "minRunes": 5
+        },
+        {
+         "notSuffix": [
+          "k"
+         ]
+        }
+       ]
+      }
+     },
+     {
+      "from": "a",
+      "to": "c",
+      "reason": "r2",
+      "out": "w",
+      "stem": {
+       "anyOf": [
+        {
+         "minRunes": 1
+        },
+        {
+         "notSuffix": [
+          "k"
+         ]
+        }
+       ]
+      }
+     }
+    ]
+   },
+   "work": 4,
+   "forms": [
+    "kkc"
+   ]
+  },
+  {
+   "name": "chained depths count every (form, rule) pair considered, also one the class gating skips",
+   "surface": "xab",
+   "table": {
+    "format": 2,
+    "language": "xb",
+    "version": "t",
+    "maxDepth": 2,
+    "classes": {
+     "w": {
+      "any": true
+     }
+    },
+    "hints": {},
+    "rules": [
+     {
+      "from": "b",
+      "to": "",
+      "reason": "r1",
+      "out": "w"
+     },
+     {
+      "from": "a",
+      "to": "o",
+      "reason": "r2",
+      "out": "w",
+      "in": [
+       "w"
+      ]
+     }
+    ]
+   },
+   "work": 4,
+   "forms": [
+    "xa",
+    "xo"
+   ]
+  }
+ ]
+}

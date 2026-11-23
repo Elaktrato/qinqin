@@ -208,7 +208,7 @@ func repeat(s string, n int) []any {
 // MaxCandidates, keeping the first ones in output order.
 func TestDeinflectStopsAtMaxCandidates(t *testing.T) {
 	m := base()
-	m["maxDepth"] = 8
+	m["maxDepth"] = 3 // without the bound: 100 + 10,000 + 1,000,000 candidates, a quick failure
 	var rs []any
 	for i := range 100 {
 		r := rule("a", fmt.Sprintf("a%c", 'A'+rune(i%26))+strings.Repeat("a", i/26+1), "r", "v")
@@ -237,23 +237,11 @@ func TestDeinflectStopsAtMaxCandidates(t *testing.T) {
 // 12 code points of the contract fixtures yields at most 16 candidates.
 func TestJapaneseTableStaysUnderTheBound(t *testing.T) {
 	ja := lemma.For("ja")
-	script := regexp.MustCompile(`[ぁ-んァ-ヶ一-龯ー々]+`)
 	most, calls := 0, 0
-	for _, name := range []string{"deinflect.json", "segment.json"} {
-		raw, err := os.ReadFile(filepath.Join(contractDir, name))
-		if err != nil {
-			t.Fatal(err)
-		}
-		for _, run := range script.FindAllString(string(raw), -1) {
-			r := []rune(run)
-			for i := range r {
-				for n := 1; n <= 12 && i+n <= len(r); n++ {
-					calls++
-					most = max(most, len(ja.Deinflect(string(r[i:i+n]))))
-				}
-			}
-		}
-	}
+	forEachFixtureSubstring(t, func(s string) {
+		calls++
+		most = max(most, len(ja.Deinflect(s)))
+	})
 	if calls < 1000 || most > 16 || most >= lemma.MaxCandidates {
 		t.Errorf("%d calls, at most %d candidates (bound %d)", calls, most, lemma.MaxCandidates)
 	}
@@ -289,5 +277,26 @@ func TestInstalledOverlay(t *testing.T) {
 	}
 	if b := lemma.Builtin("ja"); b != builtin {
 		t.Error("Builtin(ja) is not the embedded table")
+	}
+}
+
+// forEachFixtureSubstring calls fn with every substring of up to 12 code
+// points of the Japanese runs in the contract fixtures.
+func forEachFixtureSubstring(t *testing.T, fn func(string)) {
+	t.Helper()
+	script := regexp.MustCompile(`[ぁ-んァ-ヶ一-龯ー々]+`)
+	for _, name := range []string{"deinflect.json", "segment.json"} {
+		raw, err := os.ReadFile(filepath.Join(contractDir, name))
+		if err != nil {
+			t.Fatal(err)
+		}
+		for _, run := range script.FindAllString(string(raw), -1) {
+			r := []rune(run)
+			for i := range r {
+				for n := 1; n <= 12 && i+n <= len(r); n++ {
+					fn(string(r[i : i+n]))
+				}
+			}
+		}
 	}
 }

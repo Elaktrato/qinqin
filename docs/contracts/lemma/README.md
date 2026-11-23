@@ -17,10 +17,12 @@ Fixtures:
 - `deinflect.json` — Japanese table cases: each `expect` candidate (`form`, `class`, `reasons` in
   application order) must be among `Deinflect(surface)`, no candidate may have a form in `reject`, and
   `none: true` means no candidate at all.
+- `budget.json` — the work budget of one Deinflect call, counted unit for unit, and where a smaller budget
+  stops it ("Bound").
 - `segment.json` — a small lexicon and texts with the tokens the server must produce (boundaries, lemma,
   reason chain, first entry).
 
-Go: `server/internal/lemma/contract_test.go`, `server/internal/segment/contract_lemma_test.go`.
+Go: `server/internal/lemma/contract_test.go`, `server/internal/lemma/budget_test.go`, `server/internal/segment/contract_lemma_test.go`.
 
 ## Table format (`format: 2`)
 
@@ -65,10 +67,15 @@ A rule `{from, to, reason, in?, out, match?, stem?, chainOnly?}` rewrites a form
   depth, then the order of the form it came from, then rule order. Each candidate carries `reasons`, the
   reasons of its chain in application order (the rule applied to the surface first); the server's
   single `reason` string joins them innermost first (`polite past` for `[past, polite]`).
-- **Bound:** one Deinflect call stops as soon as it has produced **64 candidates** (`MaxCandidates`) and
-  returns those, the first 64 in the output order above. Every format; no table field. The Japanese table
-  produces at most 16 on the fixture texts, so the bound never changes its output; it exists so that a table
-  whose rules keep matching what earlier rules produced cannot multiply its candidates at every depth.
+- **Bound:** one Deinflect call stops as soon as it has produced **64 candidates** (`MaxCandidates`), or when
+  it has spent its **work budget of 16,384 units** (`MaxWork`), and returns the candidates produced so far, in
+  the output order above. Every format; no table field. A unit is one (form, rule) pair considered (before the
+  class and `chainOnly` gating) and one predicate leaf evaluated: a `minRunes` test, a `notOnly` test, one
+  `notSuffix` entry. A predicate is evaluated in this order and stops early: `minRunes`, `notOnly`, each
+  `notSuffix` entry, the `allOf` children until one is false, the `anyOf` children until one is true. A unit
+  that cannot be spent stops the call at once; a predicate cut short produces no candidate. The Japanese table
+  produces at most 16 candidates and spends at most 4,352 units on the fixture texts, so neither bound changes
+  its output. `budget.json` pins the counting unit for unit (an engine takes the budget as a parameter for it).
 - A candidate is a dictionary form only when an entry's sense has a POS tag of its class
   (`classes`); intermediate classes never match.
 
@@ -96,11 +103,19 @@ them too). Lengths count code points.
 | `from`, `to`, a compound `suffix`, a `notSuffix` or `keepWhole` entry | 32 |
 | `hints.keepWhole` | 2,048 entries |
 | `hints.expressionPos`, `hints.particlePos` | 64 entries each, each 32; `readingType` 32 |
-| stem predicate | nesting 4 levels (a predicate alone is level 1); `notSuffix` 256 entries; `minRunes` 0..64 |
+| stem predicate | nesting 4 levels (a predicate alone is level 1); `allOf`, `anyOf` 16 children each; `notSuffix` 256 entries; `minRunes` 0..64 |
+| all predicates of a table (rules and compounds) | 4,096 predicates (each nested one counts) and 4,096 `notSuffix` entries in total |
 
 A rule-table pack's `rules.json` is at most 1 MiB ("Rule-table packs" below).
 
 ## Compounds
+
+**Lookup bounds.** One lookup window (up to 12 code points, every prefix) is bounded too: the Deinflect calls
+of its prefixes share **32,768 units** (each prefix's call gets what is left, at most `MaxWork`; once spent,
+the remaining prefixes are looked up exactly only), the compound stem checks of the window share **4,096
+predicate units**, a prefix gets at most one compound probe per (stem, class), and the window keeps at most
+**256 probes** (later ones are dropped). The Japanese table needs at most 44 probes and 11,696 units per window
+on the fixture texts.
 
 For a **deinflected** candidate of a compound's `class` whose form ends in its `suffix` with a non-empty stem
 that satisfies the compound's optional `stem` predicate, the stem is looked up too, with the same class

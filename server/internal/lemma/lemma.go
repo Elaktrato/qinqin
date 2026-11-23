@@ -14,6 +14,7 @@ import (
 	"regexp"
 	"slices"
 	"strings"
+	"sync/atomic"
 	"unicode"
 	"unicode/utf8"
 )
@@ -40,6 +41,10 @@ const (
 	MaxPredDepth   = 4    // nesting of stem predicates (a predicate alone is 1)
 	MaxNotSuffix   = 256  // notSuffix entries of one predicate
 	MaxMinRunes    = 64   // minRunes
+
+	MaxPredChildren   = 16   // children of one allOf or anyOf
+	MaxTableNotSuffix = 4096 // notSuffix entries of all predicates of a table
+	MaxTablePredNodes = 4096 // predicates (every nested one counts) of a table
 )
 
 // MaxCandidates bounds one Deinflect call: it stops once it has produced
@@ -47,6 +52,38 @@ const (
 // whose rules keep matching what earlier rules produced would otherwise
 // multiply its candidates at every depth.
 const MaxCandidates = 64
+
+// MaxWork bounds the work of one Deinflect call: one unit per (form, rule)
+// pair considered and one per predicate leaf evaluated (a minRunes or
+// notOnly test, one notSuffix entry). When the budget is spent the call
+// stops and returns the candidates produced so far; a predicate cut short
+// produces nothing. The order of evaluation is fixed
+// (docs/contracts/lemma/README.md, "Bound"), so every engine stops at the
+// same place.
+const MaxWork = 16384
+
+// workDone counts the work of every Deinflect call (WorkDone).
+var workDone atomic.Int64
+
+// WorkDone is the total work units every Deinflect call of this process
+// has spent (tests measure whole segmentations with it).
+func WorkDone() int64 { return workDone.Load() }
+
+// budget is the work left to one call.
+type budget struct {
+	used, max int
+	out       bool
+}
+
+// spend takes one unit; false (and out) when none is left.
+func (b *budget) spend() bool {
+	if b.used >= b.max {
+		b.out = true
+		return false
+	}
+	b.used++
+	return true
+}
 
 // Match modes of a rule.
 const (
@@ -90,10 +127,28 @@ type Compound struct {
 }
 
 // StemOK reports whether stem may be looked up as this compound's stem:
-// non-empty and accepted by Stem.
-func (c Compound) StemOK(stem string) bool {
-	return stem != "" && (c.Stem == nil || c.Stem.holds(stem))
+// non-empty and accepted by Stem. Its predicate leaves are counted in w,
+// the lookup's compound budget (NewWork); a spent budget accepts nothing.
+func (c Compound) StemOK(stem string, w *Work) bool {
+	if stem == "" {
+		return false
+	}
+	if c.Stem == nil {
+		return true
+	}
+	ok := c.Stem.holds(stem, &w.b)
+	return ok && !w.b.out
 }
+
+// Work is a work budget shared by several predicate checks: a lookup's
+// compound stem checks (lookup.MaxCompoundWork).
+type Work struct{ b budget }
+
+// NewWork returns a budget of n units.
+func NewWork(n int) *Work { return &Work{b: budget{max: n}} }
+
+// Used is the units spent.
+func (w *Work) Used() int { return w.b.used }
 
 // Hints are the dictionary part-of-speech tags the ranking and
 // segmentation rules read (docs/contracts/lemma/README.md, "Ranking").
@@ -143,7 +198,13 @@ type Rule struct {
 	// only a form an earlier rule produced (ないで of ないでください, not
 	// the ないで of ないです).
 	ChainOnly bool `json:"chainOnly,omitempty"`
+
+	// in is In as a set (Parse).
+	in map[string]bool
 }
+
+// takes reports whether class is in the rule's In.
+func (r *Rule) takes(class string) bool { return r.in[class] }
 
 // Pred is a declarative stem predicate. Every key set must hold.
 type Pred struct {
@@ -232,6 +293,12 @@ func (t *Table) validate() error {
 			}
 		}
 	}
+	for i := range t.Rules {
+		t.Rules[i].in = map[string]bool{}
+		for _, c := range t.Rules[i].In {
+			t.Rules[i].in[c] = true
+		}
+	}
 	for i, r := range t.Rules {
 		if r.From == "" || r.Reason == "" {
 			return fmt.Errorf("rule %d: empty from or reason", i)
@@ -266,6 +333,8 @@ func (p Pred) validateAt(depth int) error {
 		return fmt.Errorf("stem predicate nested deeper than %d", MaxPredDepth)
 	case p.MinRunes < 0 || p.MinRunes > MaxMinRunes:
 		return fmt.Errorf("stem predicate minRunes %d outside 0..%d", p.MinRunes, MaxMinRunes)
+	case len(p.AllOf) > MaxPredChildren || len(p.AnyOf) > MaxPredChildren:
+		return fmt.Errorf("stem predicate has more than %d allOf or anyOf children", MaxPredChildren)
 	case len(p.NotSuffix) > MaxNotSuffix:
 		return fmt.Errorf("stem predicate has %d notSuffix entries, at most %d", len(p.NotSuffix), MaxNotSuffix)
 	}
@@ -341,6 +410,33 @@ func (t *Table) checkLimits() error {
 			return fmt.Errorf("compound suffix longer than %d code points", MaxAffixRunes)
 		}
 	}
+	nodes, notSuffix := 0, 0
+	var size func(p *Pred)
+	size = func(p *Pred) {
+		if p == nil {
+			return
+		}
+		nodes++
+		notSuffix += len(p.NotSuffix)
+		for i := range p.AllOf {
+			size(&p.AllOf[i])
+		}
+		for i := range p.AnyOf {
+			size(&p.AnyOf[i])
+		}
+	}
+	for i := range t.Rules {
+		size(t.Rules[i].Stem)
+	}
+	for i := range t.Compounds {
+		size(t.Compounds[i].Stem)
+	}
+	switch {
+	case nodes > MaxTablePredNodes:
+		return fmt.Errorf("%d predicate nodes, at most %d per table", nodes, MaxTablePredNodes)
+	case notSuffix > MaxTableNotSuffix:
+		return fmt.Errorf("%d notSuffix entries, at most %d per table", notSuffix, MaxTableNotSuffix)
+	}
 	for i, r := range t.Rules {
 		switch {
 		case longer(r.From, MaxAffixRunes):
@@ -356,32 +452,61 @@ func (t *Table) checkLimits() error {
 	return nil
 }
 
-// holds reports whether stem satisfies p.
-func (p Pred) holds(stem string) bool {
-	if p.MinRunes > 0 && utf8.RuneCountInString(stem) < p.MinRunes {
+// holds reports whether stem satisfies p, spending one unit of b per leaf
+// test in this order: minRunes, notOnly, each notSuffix entry, then the
+// allOf children (stopping at the first false), then the anyOf children
+// (stopping at the first true). A spent budget makes it false.
+func (p Pred) holds(stem string, b *budget) bool {
+	if p.MinRunes > 0 && (!b.spend() || utf8.RuneCountInString(stem) < p.MinRunes) {
 		return false
 	}
-	if p.NotOnly != "" && !strings.ContainsFunc(stem, func(r rune) bool { return !scripts[p.NotOnly](r) }) {
+	if p.NotOnly != "" && (!b.spend() || !strings.ContainsFunc(stem, func(r rune) bool { return !scripts[p.NotOnly](r) })) {
 		return false
 	}
 	for _, s := range p.NotSuffix {
-		if strings.HasSuffix(stem, s) {
+		if !b.spend() || strings.HasSuffix(stem, s) {
 			return false
 		}
 	}
 	for _, q := range p.AllOf {
-		if !q.holds(stem) {
+		if !q.holds(stem, b) {
 			return false
 		}
 	}
-	return len(p.AnyOf) == 0 || slices.ContainsFunc(p.AnyOf, func(q Pred) bool { return q.holds(stem) })
+	if len(p.AnyOf) == 0 {
+		return true
+	}
+	for _, q := range p.AnyOf {
+		if q.holds(stem, b) {
+			return true
+		}
+		if b.out {
+			return false
+		}
+	}
+	return false
 }
 
 // Deinflect returns the possible dictionary forms of surface,
 // breadth-first: shallowest chain first, then the order of the forms
 // they came from, then rule order; never the surface itself, and each
-// (form, class) pair once. It stops at MaxCandidates.
+// (form, class) pair once. It stops at MaxCandidates candidates or when
+// MaxWork is spent.
 func (t *Table) Deinflect(surface string) []Candidate {
+	out, _ := t.DeinflectBudget(surface, MaxWork)
+	return out
+}
+
+// DeinflectBudget is Deinflect with a budget of max work units; it also
+// returns the units spent (docs/contracts/lemma/budget.json).
+func (t *Table) DeinflectBudget(surface string, max int) ([]Candidate, int) {
+	b := budget{max: max}
+	out := t.deinflect(surface, &b)
+	workDone.Add(int64(b.used))
+	return out, b.used
+}
+
+func (t *Table) deinflect(surface string, b *budget) []Candidate {
 	type key struct{ form, class string }
 	type node struct {
 		key
@@ -395,7 +520,10 @@ func (t *Table) Deinflect(surface string) []Candidate {
 		for _, n := range level {
 			for i := range t.Rules {
 				r := &t.Rules[i]
-				if depth > 0 && !slices.Contains(r.In, n.class) || depth == 0 && r.ChainOnly {
+				if !b.spend() {
+					return out
+				}
+				if depth > 0 && !r.takes(n.class) || depth == 0 && r.ChainOnly {
 					continue
 				}
 				if !strings.HasSuffix(n.form, r.From) {
@@ -414,7 +542,10 @@ func (t *Table) Deinflect(surface string) []Candidate {
 					}
 				}
 				stem := n.form[:len(n.form)-len(r.From)]
-				if r.Stem != nil && !r.Stem.holds(stem) {
+				if r.Stem != nil && !r.Stem.holds(stem, b) {
+					if b.out {
+						return out
+					}
 					continue
 				}
 				k := key{stem + r.To, r.Out}

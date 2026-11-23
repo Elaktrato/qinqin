@@ -73,7 +73,7 @@ type Service struct {
 // reason come from the best-ranked result of that length, and its
 // entries are the results of that length in ranking order.
 func (s Service) MatchAt(ctx context.Context, language, text string, offset int) (*Match, error) {
-	return s.matchAt(ctx, language, []rune(text), offset)
+	return s.matchAt(ctx, lookup.LangOf(language), []rune(text), offset)
 }
 
 // Segment returns the non-overlapping matches of text in ascending order;
@@ -83,9 +83,11 @@ func (s Service) MatchAt(ctx context.Context, language, text string, offset int)
 func (s Service) Segment(ctx context.Context, language, text string) ([]Match, error) {
 	runes := []rune(text)
 	matches := []Match{}
-	hints := hintsOf(language)
+	// One table for the whole text, even if the tables reload meanwhile.
+	l := lookup.LangOf(language)
+	hints := hintsOf(l)
 	for i := 0; i < len(runes); {
-		m, results, err := s.lookupAt(ctx, language, runes, i)
+		m, results, err := s.lookupAt(ctx, l, runes, i)
 		if err != nil {
 			return nil, err
 		}
@@ -93,7 +95,7 @@ func (s Service) Segment(ctx context.Context, language, text string) ([]Match, e
 			i++
 			continue
 		}
-		if p, err := s.splitParticle(ctx, language, runes, i, m, results, hints); err != nil {
+		if p, err := s.splitParticle(ctx, l, runes, i, m, results, hints); err != nil {
 			return nil, err
 		} else if p != nil {
 			m = p
@@ -106,9 +108,9 @@ func (s Service) Segment(ctx context.Context, language, text string) ([]Match, e
 
 // hintsOf returns the ranking hints of the language's rule table; none
 // for a language without one.
-func hintsOf(language string) lemma.Hints {
-	if d, ok := lang.For(language).(lang.Deinflector); ok {
-		return d.Rules().Hints
+func hintsOf(l lookup.Lang) lemma.Hints {
+	if l.Rules != nil {
+		return l.Rules.Hints
 	}
 	return lemma.Hints{}
 }
@@ -124,7 +126,7 @@ func hintsOf(language string) lemma.Hints {
 // hints.KeepWhole — the token is the particle: 仕事をしている is
 // 仕事 | を | している, not 仕事 | をして | いる, and 仕事をして帰った is
 // 仕事 | を | して | 帰った. Nil when the rule does not apply.
-func (s Service) splitParticle(ctx context.Context, language string, runes []rune, offset int, m *Match, results []lookup.Result, hints lemma.Hints) (*Match, error) {
+func (s Service) splitParticle(ctx context.Context, language lookup.Lang, runes []rune, offset int, m *Match, results []lookup.Result, hints lemma.Hints) (*Match, error) {
 	best := results[0]
 	if len(hints.ExpressionPOS) == 0 || len(hints.ParticlePOS) == 0 || len(best.Reasons) > 0 || best.Pri > 0 || !everySense(best, hints.ExpressionPOS) {
 		return nil, nil
@@ -173,18 +175,18 @@ func anySense(r lookup.Result, tags []string) bool {
 // matchAt looks up the window of lookup.MaxWindowRunes code points from
 // offset — all the engine reads — and shifts the match back to offsets
 // of runes.
-func (s Service) matchAt(ctx context.Context, language string, runes []rune, offset int) (*Match, error) {
+func (s Service) matchAt(ctx context.Context, language lookup.Lang, runes []rune, offset int) (*Match, error) {
 	m, _, err := s.lookupAt(ctx, language, runes, offset)
 	return m, err
 }
 
 // lookupAt is matchAt that also returns the ranked lookup results.
-func (s Service) lookupAt(ctx context.Context, language string, runes []rune, offset int) (*Match, []lookup.Result, error) {
+func (s Service) lookupAt(ctx context.Context, language lookup.Lang, runes []rune, offset int) (*Match, []lookup.Result, error) {
 	if offset < 0 || offset >= len(runes) {
 		return nil, nil, nil
 	}
 	window := string(runes[offset:min(offset+lookup.MaxWindowRunes, len(runes))])
-	results, err := s.Lookup.Lookup(ctx, language, window, 0, nil)
+	results, err := s.Lookup.LookupIn(ctx, language, window, 0, nil)
 	if err != nil {
 		return nil, nil, fmt.Errorf("segment: %w", err)
 	}

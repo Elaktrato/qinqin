@@ -14,8 +14,11 @@ validated, licensed and credited like any pack, and served to clients as a data 
   rule table in the contract format. The table's `language` must equal the manifest's.
 - Store: `internal/lemmapack` (import, uninstall, check, list, reload); registry table `lemma_rule_packs`
   (migration 043) holding the raw table bytes and their sha256.
-- Engine: the installed tables overlay the built-in ones (`lemma.SetInstalled`); hard limits on a table and
-  a bound on one `Deinflect` call, so no table can crash or hang the segmenter.
+- Engine: the installed tables overlay the built-in ones (`lemma.SetInstalled`); hard limits on a table, and a
+  candidate bound and a work budget on one `Deinflect` call and on one lookup window. A table cannot crash the
+  segmenter, and its cost per lookup window is bounded by a fixed number of work units; a table at the limits
+  can still make a long text several times slower to segment than Japanese (measured: 5,000 runes of a
+  pathological text in about 4 s), not hang it.
 - Hot reload: every committed import or uninstall reloads the overlay; `qinqin serve` loads it at start.
 - The bundled Japanese table also ships as the seed pack `plugins/data/ja-lemma` (CC0, byte-identical to the
   embedded table), so the package system serves it to Android.
@@ -89,10 +92,30 @@ enforces limits (contract README "Limits"), on every table including the built-i
 
 The engine has no regular expressions, so there is no regex blow-up; the remaining risk is a combinatorial
 one: rules that keep matching what earlier rules produced multiply the candidates at every depth (100 rules
-on one suffix, depth 8: 10¹⁶ forms). **Bound:** one `Deinflect` call stops once it has produced
-**64 candidates** (`lemma.MaxCandidates`), keeping the first 64 in output order. The Japanese table produces at
-most 16 on the fixture corpora (pinned by a test), so the bound never changes its output. With at most 1,024
-rules and 64 forms expanded, one call does at most 65,536 suffix checks.
+on one suffix, depth 8: 10¹⁶ forms), and predicates that fail late can cost thousands of tests per rule.
+**Bounds** (contract README, "Bound" and "Lookup bounds"): one `Deinflect` call stops at **64 candidates** or
+after **16,384 work units** (one per (form, rule) pair considered and per predicate leaf, in a fixed order);
+the prefixes of one lookup window share **32,768 units**, its compound checks **4,096**, and it keeps at most
+**256 probes** with one compound probe per (stem, class) of a prefix. Predicates are capped per table at 16
+children per `allOf`/`anyOf`, 4,096 predicates and 4,096 `notSuffix` entries. Measured (fix wave): the review's
+worst tables segment 5,000 runes of "a" in about 3.6 s (heavy) and 4.3 s (compounds) instead of 188 s and
+51 s; the Japanese table spends at most 4,352 units per call and 11,696 per window, 44 probes.
+
+Ruling (fix wave): a deterministic work budget per call and per window, counted in units every engine counts
+the same way (`docs/contracts/lemma/budget.json`), rather than a time limit — a time limit would make results
+depend on load and differ between server and Android — cost if wrong: a very productive future language would
+need the budgets raised in every client (the Japanese table uses about a quarter of the call budget and a third
+of the window budget).
+
+Ruling (fix wave): table-wide predicate caps 16 children per `allOf`/`anyOf`, 4,096 predicates and 4,096
+`notSuffix` entries — the Japanese table uses 15 predicates, 2 `notSuffix` entries and 2 children, so the caps
+leave two orders of magnitude of headroom while keeping one predicate evaluation small — cost if wrong: a table
+needing longer exception lists is refused (raise the cap in every client).
+
+Ruling (fix wave): compound probes are de-duplicated per (stem, class) of one prefix length, not per (stem,
+class) of the window as the review suggested — the same stem at a longer prefix is a different probe (勉強し vs
+勉強した) and collapsing them broke Japanese lookups (seven tests) — cost if wrong: none; 64 identical compounds
+still yield one probe per prefix.
 
 Ruling: the candidate bound is part of the engine contract (every client stops at 64 in the same order),
 not a table field, and needs no format bump: no valid table that worked before reaches it — cost if wrong: a
