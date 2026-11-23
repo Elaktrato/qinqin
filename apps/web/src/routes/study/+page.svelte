@@ -1,4 +1,5 @@
 <script lang="ts">
+	import UnreadableRowsNotice from '$lib/study/UnreadableRowsNotice.svelte';
 	import { pageTitle } from '$lib/pageTitle';
 	import { t } from '$lib/i18n';
 	import { goto } from '$app/navigation';
@@ -890,6 +891,7 @@ import { limitsOf } from '$lib/study/scheduler';
 		<p class="vacation" role="status">{vacationText}. <a href="/settings?tab=study">{t('study.setup.change')}</a></p>
 	{/if}
 	<p class="hint">{t('study.setup.intro')}</p>
+	<UnreadableRowsNotice workspaceId={activeWorkspaceId} />
 	{#if $workspaces.current && usesHan($workspaces.current.language)}
 		<p class="hint"><a href="/stats/characters">{t('study.setup.masteryMap')}</a></p>
 	{/if}

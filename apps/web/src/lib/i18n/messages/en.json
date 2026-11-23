@@ -2848,6 +2848,7 @@
 	"study.types.intro": "Pick at least one. Reverse and Cloze apply to all decks; Advanced settings can fine-tune a deck. Sentence, writing and tone cards are made from the words in your decks the first time you study them.",
 	"study.types.saveFailed": "Could not save the card type. Try again.",
 	"study.types.title": "Card types",
+	"study.unreadable.notice": "{count, plural, one {# saved study item could not be read by this version of qinqin and was left out. It is kept unchanged; updating the app should show it.} other {# saved study items could not be read by this version of qinqin and were left out. They are kept unchanged; updating the app should show them.}}",
 	"weekly.badge.allVacation": "On vacation all week",
 	"weekly.badge.inProgress": "In progress",
 	"weekly.bars.day": "{day}: {now} this week, {last} last week",

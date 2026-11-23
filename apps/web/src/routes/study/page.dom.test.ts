@@ -31,6 +31,7 @@ import { loadStudyData, saveDeckCardTypesForDecks } from '$lib/study/store';
 import { studyDay } from '$lib/time/studyDay';
 import { currentStudyDay } from '$lib/time/zone';
 import { workspaces } from '$lib/workspaces';
+import { unreadableRows } from '$lib/study/unreadable';
 import { strongReviews } from '$lib/testing/reviews';
 import { SESSION_CONFIG_KEY } from '$lib/study/session';
 import { primaryActions } from '$lib/ui/testing/primary';
@@ -302,6 +303,20 @@ describe('study setup on a vacation day', () => {
 		const banner = await screen.findByText(/Vacation until/);
 		expect(banner.textContent).toMatch(/^Vacation until \d+ \w+/);
 		expect(screen.queryByRole('button', { name: /start studying/i })).toBeNull();
+	});
+});
+
+describe('study setup with rows this version cannot read (#167)', () => {
+	it('shows the notice of the loaded workspace and still offers the session', async () => {
+		setup(charScheme, ['vocab']);
+		vi.mocked(loadStudyData).mockImplementation(async (id) => {
+			unreadableRows.set({ workspaceId: id as number, counts: { cards: 1 }, total: 1 });
+			return { decks: [], cards: [], reviews: [], merged: 0 };
+		});
+		render(Page);
+		expect(await screen.findByText(/1 saved study item could not be read/)).toBeTruthy();
+		expect(screen.getByRole('button', { name: /start studying/i })).toBeTruthy();
+		unreadableRows.set(null);
 	});
 });
 

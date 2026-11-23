@@ -5,6 +5,7 @@
 // report: collection, count and identities only, never row data.
 
 import { writable } from 'svelte/store';
+import { t } from '../i18n';
 import type { StudyCollection } from './rows';
 
 /** Unreadable rows per collection (typed collections and pluginData). */
@@ -66,4 +67,10 @@ export function reportUnreadable(workspaceId: number, counts: UnreadableCounts, 
 export function clearUnreadableReport(): void {
 	unreadableRows.set(null);
 	lastWarned = '';
+}
+
+/** unreadableNotice: the study page's text for the shown workspace, or null. */
+export function unreadableNotice(report: UnreadableReport | null, workspaceId: number | null): string | null {
+	if (report === null || workspaceId === null || report.workspaceId !== workspaceId || report.total === 0) return null;
+	return t('study.unreadable.notice', { count: report.total });
 }
