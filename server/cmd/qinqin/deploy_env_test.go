@@ -50,7 +50,13 @@ func readRepoFile(t *testing.T, rel string) string {
 // workers (#170); the compose file must allow both with a margin.
 func TestComposeAllowsTheShutdown(t *testing.T) {
 	compose := readRepoFile(t, "docker-compose.yml")
-	m := regexp.MustCompile(`(?m)^\s+stop_grace_period:\s*(\d+)s\s*$`).FindStringSubmatch(compose)
+	// The qinqin service's own block: from "  qinqin:" to the next line at
+	// the same or a lower indent.
+	block := regexp.MustCompile(`(?ms)^  qinqin:\n(.*?)(?:^\S|^  \S|\z)`).FindStringSubmatch(compose)
+	if block == nil {
+		t.Fatal("docker-compose.yml has no qinqin service")
+	}
+	m := regexp.MustCompile(`(?m)^    stop_grace_period:\s*(\d+)s\s*$`).FindStringSubmatch(block[1])
 	if m == nil {
 		t.Fatal("docker-compose.yml sets no stop_grace_period (Docker's default 10 s kills serve mid-shutdown)")
 	}

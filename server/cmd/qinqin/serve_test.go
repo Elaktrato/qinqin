@@ -17,8 +17,10 @@ func TestNewHTTPServerTimeouts(t *testing.T) {
 	if srv.ReadHeaderTimeout != 10*time.Second {
 		t.Errorf("ReadHeaderTimeout = %v, want 10s", srv.ReadHeaderTimeout)
 	}
-	if srv.IdleTimeout != 120*time.Second {
-		t.Errorf("IdleTimeout = %v, want 120s", srv.IdleTimeout)
+	// Longer than Caddy's default 2-minute keep-alive towards upstreams, so
+	// the proxy, not qinqin, closes an idle connection first.
+	if srv.IdleTimeout != 125*time.Second {
+		t.Errorf("IdleTimeout = %v, want 125s", srv.IdleTimeout)
 	}
 	if srv.ReadTimeout != 0 || srv.WriteTimeout != 0 {
 		t.Errorf("ReadTimeout %v, WriteTimeout %v, want none", srv.ReadTimeout, srv.WriteTimeout)

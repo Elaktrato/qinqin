@@ -400,14 +400,15 @@ func waitStep(name string, done <-chan struct{}, deadline time.Time, logf func(s
 
 // newHTTPServer is the HTTP server of serve (#170): a client gets 10 s to
 // send its request headers and an idle keep-alive connection is closed after
-// 120 s, so slow-header connections cannot pile up. There is deliberately no
+// 125 s (longer than Caddy's 2-minute upstream keep-alive, so the proxy
+// closes first), so slow-header connections cannot pile up. There is deliberately no
 // ReadTimeout or WriteTimeout: uploads, package downloads and the streamed
 // legacy pull set their own deadlines (api stream_deadline.go).
 func newHTTPServer(h http.Handler) *http.Server {
 	return &http.Server{
 		Handler:           h,
 		ReadHeaderTimeout: 10 * time.Second,
-		IdleTimeout:       120 * time.Second,
+		IdleTimeout:       125 * time.Second,
 	}
 }
 

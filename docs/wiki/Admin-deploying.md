@@ -44,7 +44,7 @@ Options: `--data <dir>` (default `$QINQIN_DATA`, else `./data`) and `--packs <di
 
 What is cut short is safe: a package build in progress is started again on the next start, a pack upload still being imported, or a personal-backup restore still running, is cancelled and rolled back (one transaction; nothing of the pack is installed, so upload it again), and mails still queued are not sent (the log says how many; a reset or verification mail can be requested again). An AI review running after its browser left is lost and can be repeated.
 
-The server also closes connections that take more than 10 s to send their request headers and keep-alive connections idle for 2 minutes. It sets no overall request timeout: uploads, downloads and long requests are limited by the proxy in front ([Reverse proxy](Admin-proxy-and-rate-limiting)).
+The server also closes connections that take more than 10 s to send their request headers and keep-alive connections idle for 125 seconds. It sets no overall request timeout: uploads, downloads and long requests are limited by the proxy in front ([Reverse proxy](Admin-proxy-and-rate-limiting)).
 
 ## Release images and versions
 

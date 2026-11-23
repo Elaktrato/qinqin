@@ -50,7 +50,7 @@ that no client writes plugin data under a pack id); move the grammar pack switch
 process mid mail or package build and no deferred cleanup ran (as PID 1 in the container a Go program without a
 SIGTERM handler is not even stopped by SIGTERM; Docker kills it after its 10 s).
 
-- `newHTTPServer(handler)` returns `http.Server{ReadHeaderTimeout: 10s, IdleTimeout: 120s}`, no `ReadTimeout` and
+- `newHTTPServer(handler)` returns `http.Server{ReadHeaderTimeout: 10s, IdleTimeout: 125s}`, no `ReadTimeout` and
   no `WriteTimeout`: uploads, downloads and the streamed legacy pull set their own deadlines
   (`stream_deadline.go`, `http.ResponseController`).
 - `serveCmd` wraps the work in `signal.NotifyContext(SIGINT, SIGTERM)` and calls `serve(ctx, data, listen)`.
