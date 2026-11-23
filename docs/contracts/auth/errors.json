@@ -11,7 +11,7 @@
   "invalid_email": {"status": 422, "meaning": "Not a usable email address (one @, a dotted domain, at most 254 bytes)."},
   "email_taken": {"status": 409, "meaning": "Another account already uses that email address (compared case-insensitively)."},
   "mail_unavailable": {"status": 409, "meaning": "The setting needs a working mail server and none is configured."},
-  "invalid_language": {"status": 422, "meaning": "The interface language is neither empty (follow the browser) nor a language tag in canonical case (language, optional script, optional region: en, zh-Hant, pt-BR; see i18n/language-tags.json). Syntax only: an unsupported but well-formed tag is stored."},
+  "invalid_language": {"status": 422, "meaning": "A language code that is not well formed: a workspace or admin language that is not like es or pt-br, or an interface language that is neither empty (follow the browser) nor a language tag in canonical case (language, optional script, optional region: en, zh-Hant, pt-BR; see i18n/language-tags.json). Syntax only: an unsupported but well-formed tag is stored."},
   "invalid_host": {"status": 422, "meaning": "The mail server host name is empty, too long, or has a scheme, path or space."},
   "smtp_host_blocked": {"status": 422, "meaning": "The mail server address is never allowed (metadata, link-local) or private and QINQIN_SMTP_ALLOW_PRIVATE is off."},
   "invalid_port": {"status": 422, "meaning": "The mail server port is outside 1-65535."},

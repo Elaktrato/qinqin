@@ -111,14 +111,11 @@ var errorsPending = map[string]bool{
 	"handlers_lookup.go":          true,
 	"handlers_packs.go":           true,
 	"handlers_packs_install.go":   true,
-	"handlers_plugins.go":         true,
-	"handlers_plugins_legacy.go":  true,
 	"handlers_search.go":          true,
 	"handlers_segment.go":         true,
 	"handlers_sources.go":         true,
 	"handlers_strokes.go":         true,
 	"handlers_time_zone.go":       true,
-	"handlers_workspaces.go":      true,
 }
 
 type errorViolation struct{ file, what string }
