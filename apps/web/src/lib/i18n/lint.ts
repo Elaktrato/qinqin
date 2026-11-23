@@ -409,3 +409,22 @@ export function intlFindings(src: string, svelte = false): Finding[] {
 	}
 	return out.sort((a, b) => a.line - b.line);
 }
+
+/** The text of a caught error: `err.message` (also `e`, `error`, `ex`, `reason`, `cause`) or `String(err)`. */
+const ERR_MESSAGE = /\b(?:err|e|error|ex|reason|cause)\??\.message\b(?!s)|\bString\((?:err|e|error|ex|reason|cause)\)/g;
+
+/**
+ * Where a caught error's own text is read (#168, the `errmsg` rule): screens show `errorText(err, fallback)`, never
+ * the server's English `message` or an `Error`'s developer text. Comments are skipped; a .svelte file is checked in
+ * its script and its markup.
+ */
+export function errMessageFindings(src: string, svelte: boolean): Finding[] {
+	const code = svelte ? blankComments(scriptOnly(src)) : blankComments(src);
+	const out: Finding[] = [];
+	for (const m of code.matchAll(ERR_MESSAGE)) out.push({ line: lineAt(code, m.index ?? 0), text: m[0] });
+	if (svelte) {
+		const markup = markupOnly(src);
+		for (const m of markup.matchAll(ERR_MESSAGE)) out.push({ line: lineAt(markup, m.index ?? 0), text: m[0] });
+	}
+	return out.sort((a, b) => a.line - b.line);
+}

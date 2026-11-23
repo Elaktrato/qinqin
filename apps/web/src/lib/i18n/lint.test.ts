@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { intlFindings, langFindings, markupFindings, tsFindings } from './lint';
+import { errMessageFindings, intlFindings, langFindings, markupFindings, tsFindings } from './lint';
 
 // Unit cases of the hard-coded-string heuristic (spec "Lint against new hard-coded strings"). The walk over
 // src/ with the allowlist and the pending baseline is hardcoded.test.ts.
@@ -116,5 +116,22 @@ new Intl.PluralRules('en'); Intl.supportedValuesOf('timeZone');`;
 	it('finds literal lang attributes in markup, not expressions or script', () => {
 		const src = `<script lang="ts">let a = 1;</script><span lang="zh">勤</span><span lang={studyLang(x)}>x</span>`;
 		expect(texts(langFindings(src))).toEqual(['lang="zh"']);
+	});
+});
+
+describe('errMessageFindings (#168)', () => {
+	it('finds the text of a caught error flowing anywhere, in code and in markup', () => {
+		const src = `try { x(); } catch (err) { error = err instanceof Error ? err.message : t('a.b'); }
+const m = (e: unknown) => (e as Error)?.message;
+log(error.message, String(err), \`\${reason.message}\`);`;
+		expect(texts(errMessageFindings(src, false))).toEqual(['err.message', 'error.message', 'String(err)', 'reason.message']);
+		const svelte = `<script>let e = 1;</script>\n<p>{err.message}</p>`;
+		expect(errMessageFindings(svelte, true)).toEqual([{ line: 2, text: 'err.message' }]);
+	});
+
+	it('ignores other members and other names, and comments', () => {
+		const src = `const a = body.message; m.message; errorText(err, f); // err.message in a comment
+/* String(err) */ const b = message(err); x.errMessage; err.messages;`;
+		expect(errMessageFindings(src, false)).toEqual([]);
 	});
 });
