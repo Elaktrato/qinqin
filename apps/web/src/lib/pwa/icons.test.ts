@@ -98,7 +98,10 @@ describe('committed icons', () => {
 			expect(committed.height).toBe(icon.size);
 			expect([...committed.rgba]).toEqual([...fresh]);
 		}
-	});
+		// About 2 s on an idle machine (four rasterizations, two of them 512 px):
+		// the default 5 s timeout failed it on a loaded one. This is a hang
+		// backstop, not a time limit (docs/architecture/0005-test-conventions.md).
+	}, 60_000);
 
 	it('maskable icon is full-bleed (opaque corners)', async () => {
 		const m = await decodePng(fromDataUrl(maskable512));

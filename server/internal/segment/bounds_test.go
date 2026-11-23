@@ -91,9 +91,6 @@ func TestSegmentationWorkIsBounded(t *testing.T) {
 		if work > limit {
 			t.Errorf("%s: %d work units, over %d", name, work, limit)
 		}
-		if took > 2*time.Minute {
-			t.Errorf("%s: %v for 5,000 runes", name, took)
-		}
 	}
 }
 
@@ -140,9 +137,6 @@ func TestSegmentationRequestWorkIsBounded(t *testing.T) {
 	t.Logf("notOnly table: %d work units in %v", work, took)
 	if work > requestWorkLimit {
 		t.Errorf("%d work units, over the request budget %d", work, requestWorkLimit)
-	}
-	if took > 2*time.Minute {
-		t.Errorf("%v for 5,000 runes", took)
 	}
 }
 

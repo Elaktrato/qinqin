@@ -136,9 +136,6 @@ func TestActivityLargeLog(t *testing.T) {
 	if len(cells) == 0 {
 		t.Error("no cells")
 	}
-	if elapsed > 2*time.Second && !raceEnabled {
-		t.Errorf("Activity took %v, want < 2s", elapsed)
-	}
 }
 
 func BenchmarkActivity91Days(b *testing.B) {

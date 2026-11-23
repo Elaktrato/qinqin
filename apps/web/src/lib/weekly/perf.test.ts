@@ -9,7 +9,7 @@ import { MAX_WEEKS_BACK, weekOf } from './week';
 
 // A guard against an accidental per-week replay: 53 weeks (current + 52
 // back) of a large history replay each reviewed card exactly once. The
-// time bound is generous on purpose; the count is the real check.
+// replay count is the check; no wall-clock limit (0005-test-conventions).
 const CARDS = 5000;
 const REVIEWS = 50_000;
 const NOW = Date.parse('2026-11-18T12:00:00Z');
@@ -45,7 +45,6 @@ describe('weekly summary performance', () => {
 		const day = studyDay([]);
 		const decks = new Set(['general']);
 		const before = replayStats.timelines;
-		const t0 = performance.now();
 		const current = weekOf(day.today(NOW));
 		for (let k = 0; k <= MAX_WEEKS_BACK; k++) {
 			const t = timelinesFor(reviews, DEFAULT_W, IDENTITY_CLOCK);
@@ -61,9 +60,7 @@ describe('weekly summary performance', () => {
 				mature: (b, a) => wordsReachingMature(cards, decks, t, b, a)
 			});
 		}
-		const elapsed = performance.now() - t0;
 		expect(replayStats.timelines - before).toBe(CARDS);
-		expect(elapsed).toBeLessThan(10_000);
 
 		// After the study history's TTL the page gets a new, equal history
 		// object: browsing on replays nothing and repeats no log pass.
