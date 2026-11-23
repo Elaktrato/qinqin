@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { errorText } from '$lib/api/apiErrors';
 	import { t } from '$lib/i18n';
 	import { goto } from '$app/navigation';
 	import type { Component } from 'svelte';
@@ -83,7 +84,7 @@
 			message = t('flashcards.settings.saved');
 			await store.load(workspaceId, true);
 		} catch (err) {
-			error = err instanceof Error && err.message ? err.message : t('flashcards.settings.orderFailed');
+			error = errorText(err, t('flashcards.settings.orderFailed'));
 		} finally {
 			busy = false;
 		}
@@ -112,7 +113,7 @@
 			message = t('flashcards.settings.renamed');
 			await store.load(workspaceId, true);
 		} catch (err) {
-			error = err instanceof Error && err.message ? err.message : t('flashcards.settings.renameFailed');
+			error = errorText(err, t('flashcards.settings.renameFailed'));
 		} finally {
 			busy = false;
 		}
@@ -133,7 +134,7 @@
 			await deleteDeck(ws, deckId);
 			await goto(flashcardsHref({ view: 'list' }));
 		} catch (err) {
-			error = err instanceof Error && err.message ? err.message : t('flashcards.settings.deleteFailed');
+			error = errorText(err, t('flashcards.settings.deleteFailed'));
 			confirming = false;
 		} finally {
 			busy = false;

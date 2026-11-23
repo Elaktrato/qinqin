@@ -51,7 +51,7 @@ func (s *server) handleAdminResetLink(w http.ResponseWriter, r *http.Request) {
 		ttl = time.Duration(*req.ExpiresInHours) * time.Hour
 	}
 	if ttl < time.Hour || ttl > auth.MaxResetTTL {
-		writeAuthError(w, http.StatusUnprocessableEntity, "invalid_request", "The link may last 1 to 168 hours.")
+		writeError(w, http.StatusUnprocessableEntity, "invalid_request", "The link may last 1 to 168 hours.")
 		return
 	}
 	if !s.requireAdminReauth(w, r, admin.ID, req.CurrentPassword, req.Code) {
@@ -60,7 +60,7 @@ func (s *server) handleAdminResetLink(w http.ResponseWriter, r *http.Request) {
 	token, expires, err := s.users.IssueReset(r.Context(), admin.ID, id, ttl)
 	switch {
 	case errors.Is(err, auth.ErrResetInput):
-		writeAuthError(w, http.StatusUnprocessableEntity, "invalid_request", err.Error())
+		writeError(w, http.StatusUnprocessableEntity, "invalid_request", err.Error())
 	case err != nil && writeUserError(w, err):
 	case err != nil:
 		writeInternal(w, r)
@@ -83,7 +83,7 @@ func (s *server) handleResetCheck(w http.ResponseWriter, r *http.Request) {
 	username, expires, err := auth.CheckReset(r.Context(), s.db, req.Token)
 	switch {
 	case errors.Is(err, auth.ErrTokenInvalid):
-		writeAuthError(w, http.StatusBadRequest, "token_invalid", tokenInvalidMessage)
+		writeError(w, http.StatusBadRequest, "token_invalid", tokenInvalidMessage)
 	case err != nil:
 		writeInternal(w, r)
 	default:
@@ -110,7 +110,7 @@ func (s *server) handleReset(w http.ResponseWriter, r *http.Request) {
 	}
 	username, _, err := auth.CheckReset(r.Context(), s.db, req.Token)
 	if errors.Is(err, auth.ErrTokenInvalid) {
-		writeAuthError(w, http.StatusBadRequest, "token_invalid", tokenInvalidMessage)
+		writeError(w, http.StatusBadRequest, "token_invalid", tokenInvalidMessage)
 		return
 	}
 	if err != nil {
@@ -118,7 +118,7 @@ func (s *server) handleReset(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err := auth.CheckPassword(username, req.Password); err != nil {
-		writeAuthError(w, http.StatusUnprocessableEntity, "weak_password", auth.PolicyReason(err))
+		writeError(w, http.StatusUnprocessableEntity, "weak_password", auth.PolicyReason(err))
 		return
 	}
 	var digest string
@@ -136,7 +136,7 @@ func (s *server) handleReset(w http.ResponseWriter, r *http.Request) {
 	case errors.Is(err, errHashBusy):
 		writeBusy(w)
 	case errors.Is(err, auth.ErrTokenInvalid):
-		writeAuthError(w, http.StatusBadRequest, "token_invalid", tokenInvalidMessage)
+		writeError(w, http.StatusBadRequest, "token_invalid", tokenInvalidMessage)
 	case err != nil:
 		writeInternal(w, r)
 	default:
@@ -197,7 +197,7 @@ func identKey(login string) string { return strings.ToLower(strings.TrimSpace(lo
 // Without mail the route answers 409 mail_unavailable (an instance fact).
 func (s *server) handleResetRequest(w http.ResponseWriter, r *http.Request) {
 	if !s.mailConfigured(r.Context()) {
-		writeAuthError(w, http.StatusConflict, "mail_unavailable", "Password reset by email is not set up. Ask an administrator for a reset link.")
+		writeError(w, http.StatusConflict, "mail_unavailable", "Password reset by email is not set up. Ask an administrator for a reset link.")
 		return
 	}
 	if _, ok := s.clientTake(w, r, "attempts"); !ok {
@@ -214,7 +214,7 @@ func (s *server) handleResetRequest(w http.ResponseWriter, r *http.Request) {
 	}
 	login := strings.TrimSpace(req.Login)
 	if login == "" || len(login) > 320 {
-		writeAuthError(w, http.StatusBadRequest, "bad_request", "Enter your username or email address.")
+		writeError(w, http.StatusBadRequest, "bad_request", "Enter your username or email address.")
 		return
 	}
 	if ok, retry := s.authLimiter("ident").Allow(identKey(login)); !ok {

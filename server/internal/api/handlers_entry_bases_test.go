@@ -73,7 +73,7 @@ func TestEntryBasesRejectsBadIDLists(t *testing.T) {
 		resp := postBases(t, ts.URL, alice, body)
 		text, _ := io.ReadAll(resp.Body)
 		resp.Body.Close()
-		if resp.StatusCode != http.StatusBadRequest || !strings.Contains(string(text), "ids must be 1 to 500 entry ids") {
+		if resp.StatusCode != http.StatusBadRequest || errorCode(t, text) != "bad_request" || !strings.Contains(string(text), "1 to 500 entry ids") {
 			t.Errorf("%s: status = %d body %q, want 400 with the ids message", name, resp.StatusCode, text)
 		}
 	}

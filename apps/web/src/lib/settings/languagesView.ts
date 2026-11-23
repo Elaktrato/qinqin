@@ -1,3 +1,5 @@
+import { ApiError } from '$lib/api/client';
+import { t } from '$lib/i18n';
 import type { InstalledPack } from '$lib/api/packs';
 import type { Language } from '$lib/api/types';
 import { languageLabel } from '$lib/languages';
@@ -48,4 +50,25 @@ export function languageRows(
 			removable: l.kind === 'data' && own.length === 0 && workspaces === 0 && !l.installed
 		};
 	});
+}
+
+/** The counts of a 409 language_in_use that mean "installed packs" (docs/contracts/auth/errors.json). */
+const PACK_COUNTS = ['dictionaries', 'levelLists', 'frequencyPacks', 'sentencePacks', 'grammarPacks', 'audioPacks', 'legacySentences'];
+
+/**
+ * inUseLines are the lines under a refused language removal: how many workspaces and installed packs still use
+ * the language, from the `usage` counts of a 409 `language_in_use`. Empty for any other error or unreadable counts.
+ */
+export function inUseLines(err: unknown): string[] {
+	if (!(err instanceof ApiError) || err.code !== 'language_in_use') return [];
+	const usage = err.body?.usage;
+	if (typeof usage !== 'object' || usage === null) return [];
+	const counts = usage as Record<string, unknown>;
+	if (Object.values(counts).some((v) => typeof v !== 'number')) return [];
+	const n = (k: string): number => (typeof counts[k] === 'number' ? (counts[k] as number) : 0);
+	const packs = PACK_COUNTS.reduce((sum, k) => sum + n(k), 0);
+	const lines: string[] = [];
+	if (n('workspaces') > 0) lines.push(t('settings.languages.inUseWorkspaces', { count: n('workspaces') }));
+	if (packs > 0) lines.push(t('settings.languages.inUsePacks', { count: packs }));
+	return lines;
 }

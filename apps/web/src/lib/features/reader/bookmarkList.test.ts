@@ -208,7 +208,7 @@ describe('BookmarkList rename and delete', () => {
 		const list = await loaded(api);
 		await list.rename(4, 'new');
 		expect(list.items[0].label).toBe('old');
-		expect(list.error).toBe('label too long');
+		expect(list.error).toBe('Could not save the bookmark.'); // never the server's text (#168)
 	});
 
 	it('skips a rename that changes nothing', async () => {

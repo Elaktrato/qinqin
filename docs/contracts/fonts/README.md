@@ -60,7 +60,7 @@ point an earlier range of the same face already covers). Fixtures: `faces-valid.
 
 The pack is then checked against its files, in `faces.json` order: each slice file exists as a regular file (not a
 symlink), is at most **2 MiB**, starts with `wOF2`, and its sha256 is the one in its name. A pack failing any rule
-is refused (`400 invalid pack: faces.json: <code> at <path>` on upload, `invalid pack: <file>: <reason>` for a
+is refused (400 `pack_invalid` with the message `invalid pack: faces.json: <code> at <path>` on upload, `invalid pack: <file>: <reason>` for a
 file) and nothing is stored.
 
 **One pack per face.** On a server, at most one installed pack provides a given (`face`, `script`, `style`) with

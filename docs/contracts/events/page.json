@@ -604,19 +604,19 @@
    "name": "another user's workspace",
    "query": "limit=2&workspace=$bobWs",
    "status": 404,
-   "text": "workspace not found"
+   "error": "workspace_not_found"
   },
   {
    "name": "since not RFC 3339",
    "query": "limit=2&since=today",
    "status": 400,
-   "text": "since must be RFC 3339"
+   "error": "bad_request"
   },
   {
    "name": "workspace not an integer",
    "query": "limit=2&workspace=seven",
    "status": 400,
-   "text": "workspace must be an integer"
+   "error": "bad_request"
   }
  ]
 }

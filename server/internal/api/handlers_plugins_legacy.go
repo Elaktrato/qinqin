@@ -32,14 +32,14 @@ func legacyKey(pluginID, key string, workspaceID *int64) bool {
 func (s *server) legacyGet(w http.ResponseWriter, r *http.Request, userID, workspaceID int64, key string) bool {
 	row, held, live, err := study.LegacyGet(r.Context(), s.db, userID, workspaceID, key)
 	if err != nil {
-		http.Error(w, "internal error", http.StatusInternalServerError)
+		writeInternal(w, r)
 		return true
 	}
 	if !held {
 		return false
 	}
 	if !live {
-		http.Error(w, "plugin data not found", http.StatusNotFound)
+		writeError(w, http.StatusNotFound, "not_found", "Plugin data not found.")
 		return true
 	}
 	writeJSON(w, http.StatusOK, row)
@@ -68,13 +68,13 @@ func (s *server) mergeLegacyList(r *http.Request, userID, workspaceID int64, pre
 // legacy row. Data the codec refuses is 400 study_row_invalid.
 func (s *server) legacyPut(w http.ResponseWriter, r *http.Request, userID int64, workspaceID *int64, key string, body []byte) {
 	if workspaceID == nil {
-		writeAuthError(w, http.StatusBadRequest, "study_row_invalid", "Study rows of this key belong to a workspace: send ?workspace=.")
+		writeError(w, http.StatusBadRequest, "study_row_invalid", "Study rows of this key belong to a workspace: send ?workspace=.")
 		return
 	}
 	row := model.PluginData{PluginID: rows.Namespace, Key: key, UserID: userID, WorkspaceID: workspaceID, Data: json.RawMessage(body)}
 	_, err := study.ApplyLegacy(r.Context(), s.db, userID, row, study.Now())
 	if errors.Is(err, rows.ErrUnreadable) || errors.Is(err, rows.ErrInvalid) {
-		writeAuthError(w, http.StatusBadRequest, "study_row_invalid", "The data is not a readable study row for this key.")
+		writeError(w, http.StatusBadRequest, "study_row_invalid", "The data is not a readable study row for this key.")
 		return
 	}
 	if errors.Is(err, study.ErrUnreadableStored) {
@@ -82,12 +82,12 @@ func (s *server) legacyPut(w http.ResponseWriter, r *http.Request, userID int64,
 		return
 	}
 	if err != nil {
-		http.Error(w, "internal error", http.StatusInternalServerError)
+		writeInternal(w, r)
 		return
 	}
 	stored, held, live, err := study.LegacyGet(r.Context(), s.db, userID, *workspaceID, key)
 	if err != nil || !held || !live {
-		http.Error(w, "internal error", http.StatusInternalServerError)
+		writeInternal(w, r)
 		return
 	}
 	writeJSON(w, http.StatusOK, stored)
@@ -109,11 +109,11 @@ func (s *server) legacyDelete(w http.ResponseWriter, r *http.Request, userID, wo
 		return true
 	}
 	if err != nil {
-		http.Error(w, "internal error", http.StatusInternalServerError)
+		writeInternal(w, r)
 		return true
 	}
 	if !applied {
-		http.Error(w, "plugin data not found", http.StatusNotFound)
+		writeError(w, http.StatusNotFound, "not_found", "Plugin data not found.")
 		return true
 	}
 	w.WriteHeader(http.StatusNoContent)

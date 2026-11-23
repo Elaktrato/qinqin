@@ -42,11 +42,10 @@ member): the patch must be a JSON object and is merged into the stored object by
 `json_patch`): a member replaces the stored value, a new member is added, a `null` member deletes its key, an
 object value is merged recursively, an array or scalar value replaces. `{}` changes nothing (the stamp still
 moves). The **merged** object (the bytes of its JSON text) may be at most 64 KiB (`maxSettingsBytes`): above
-it the answer is `413 {"error": "workspace settings too large"}` and nothing changes; deleting keys in the
-same patch makes room. A non-object patch is `400 settings must be an object` (plain text); `settings: null`
-without a name is `400 name or settings required`. Unknown and foreign workspaces are 404. The request body
-itself is at most 16 KiB (`maxWorkspaceBody`): above it the answer is `413 {"error": "request body too large"}`
-(JSON) and nothing changes — a settings object larger than one request is built by several patches.
+it the answer is 413 `too_large` and nothing changes; deleting keys in the same patch makes room. A
+non-object patch, and `settings: null` without a name, are 400 `bad_request`. Unknown and foreign workspaces
+are 404 `workspace_not_found`. The request body itself is at most 16 KiB (`maxWorkspaceBody`): above it the
+answer is 413 `too_large` and nothing changes — a settings object larger than one request is built by several patches.
 
 Before the merge the server decodes the patch into a JSON object and encodes it again (Go `map[string]any`):
 members come out in alphabetical order, numbers pass through a 64-bit float (an integer above 2^53 loses

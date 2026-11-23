@@ -1,6 +1,6 @@
 // Starts the optimizer worker and turns its messages into a promise.
 
-import { t } from '$lib/i18n';
+import { UserError } from '$lib/api/userError';
 import type { Dataset } from './dataset';
 import type { OptimizeResult } from './optimize';
 import type { Preview } from './preview';
@@ -30,7 +30,7 @@ export function runOptimizer(data: Dataset, opts: RunOptions = {}): Promise<Opti
 		try {
 			worker = (opts.createWorker ?? defaultWorker)();
 		} catch {
-			reject(new Error('The optimizer could not start in this browser.'));
+			reject(new UserError('study.fsrs.optimizerNoStart'));
 			return;
 		}
 		const finish = (): void => {
@@ -55,7 +55,7 @@ export function runOptimizer(data: Dataset, opts: RunOptions = {}): Promise<Opti
 		};
 		worker.onerror = () => {
 			finish();
-			reject(new Error('The optimizer stopped unexpectedly.'));
+			reject(new UserError('study.fsrs.optimizerStopped'));
 		};
 		if (opts.signal?.aborted === true) {
 			onAbort();
@@ -66,7 +66,7 @@ export function runOptimizer(data: Dataset, opts: RunOptions = {}): Promise<Opti
 			worker.postMessage({ type: 'run', data, current: opts.current });
 		} catch {
 			finish();
-			reject(new Error('The optimizer could not start in this browser.'));
+			reject(new UserError('study.fsrs.optimizerNoStart'));
 		}
 	});
 }
@@ -90,7 +90,7 @@ export function runPreview(
 		try {
 			worker = (opts.createWorker ?? defaultWorker)();
 		} catch {
-			reject(new Error('The preview could not start in this browser.'));
+			reject(new UserError('study.fsrs.previewNoStart'));
 			return;
 		}
 		const finish = (): void => {
@@ -99,7 +99,7 @@ export function runPreview(
 		};
 		const onAbort = (): void => {
 			finish();
-			reject(new Error('The preview was cancelled.'));
+			reject(new UserError('study.fsrs.previewCancelled'));
 		};
 		worker.onmessage = (event: MessageEvent<{ type: string; preview?: Preview; message?: string }>) => {
 			const m = event.data;
@@ -108,12 +108,13 @@ export function runPreview(
 				resolve(m.preview);
 			} else if (m.type === 'error') {
 				finish();
-				reject(new Error(m.message ?? t('study.fsrs.previewFailed')));
+				// The worker's text is for the console; the screen shows its own sentence.
+				reject(new Error(m.message ?? 'preview failed'));
 			}
 		};
 		worker.onerror = () => {
 			finish();
-			reject(new Error('The preview stopped unexpectedly.'));
+			reject(new UserError('study.fsrs.previewStopped'));
 		};
 		if (opts.signal?.aborted === true) {
 			onAbort();
@@ -134,7 +135,7 @@ export function runPreview(
 			});
 		} catch {
 			finish();
-			reject(new Error('The preview could not start in this browser.'));
+			reject(new UserError('study.fsrs.previewNoStart'));
 		}
 	});
 }

@@ -1,9 +1,9 @@
 <script lang="ts">
+	import { errorText } from '$lib/api/apiErrors';
 	import { onMount } from 'svelte';
 	import { get } from 'svelte/store';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
-	import { ApiError } from '$lib/api/client';
 	import { APP_NAME } from '$lib/app';
 	import { t } from '$lib/i18n';
 	import WorkspaceCreateForm from '$lib/components/WorkspaceCreateForm.svelte';
@@ -100,12 +100,6 @@
 		$workspacesLoaded && !workspaceError && $workspaces.list.length === 0
 	);
 
-	function message(err: unknown, fallback: string): string {
-		if (err instanceof ApiError && err.message) return err.message;
-		if (err instanceof Error && err.message) return err.message;
-		return fallback;
-	}
-
 	// A guard redirect replaces the history entry it leaves: Back from
 	// home after signing in must not land on /login only to be sent home
 	// again (a trap that also swallows the page before /login).
@@ -133,13 +127,13 @@
 		try {
 			await loadWorkspaces();
 		} catch (err) {
-			workspacesLoadError.set(message(err, t('app.workspaces.loadFailed')));
+			workspacesLoadError.set(errorText(err, t('app.workspaces.loadFailed')));
 		}
 	}
 
 	onMount(async () => {
 		// A workspace deleted in another tab or on another device: the
-		// first "workspace not found" reloads the list and falls back.
+		// first workspace_not_found reloads the list and falls back.
 		watchDeletedWorkspaces();
 		// Installable app: a no-op outside secure contexts (see lib/pwa/register.ts).
 		void registerWorker();

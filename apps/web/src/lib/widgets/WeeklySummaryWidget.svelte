@@ -3,7 +3,7 @@
 	// same weekday, day by day, and a link to Stats → Week. No mature
 	// words or characters here (no replay, no character universe). All
 	// logic lives in lib/weekly (loadWeek.ts is the load).
-	import { errorMessage } from '$lib/stats/errors';
+	import { errorText } from '$lib/api/apiErrors';
 	import { t } from '$lib/i18n';
 	import { onContextStale } from '$lib/study/currentContext';
 	import { currentStudyDay } from '$lib/time/zone';
@@ -43,7 +43,7 @@
 		} catch (err) {
 			if (seq !== requestSeq) return;
 			view = null;
-			error = errorMessage(err, t('widgets.week.loadFailed'));
+			error = errorText(err, t('widgets.week.loadFailed'));
 		} finally {
 			if (seq === requestSeq) loading = false;
 		}

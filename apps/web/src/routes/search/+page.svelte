@@ -1,10 +1,10 @@
 <script lang="ts">
+	import { errorText } from '$lib/api/apiErrors';
 	import { pageTitle } from '$lib/pageTitle';
 	import { t } from '$lib/i18n';
 	import { get } from 'svelte/store';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
-	import { ApiError } from '$lib/api/client';
 	import { search } from '$lib/api/search';
 	import type { SearchHit } from '$lib/api/types';
 	import { recordLookup } from '$lib/lookups/sink';
@@ -210,11 +210,6 @@
 		}
 	});
 
-	function message(err: unknown, fallback: string): string {
-		if (err instanceof ApiError && err.message) return err.message;
-		if (err instanceof Error && err.message) return err.message;
-		return fallback;
-	}
 
 	// Opening a result is the look-up (#72): it goes to the lookup history
 	// of the current workspace (a click, Enter, Ctrl/Cmd-click or a middle
@@ -274,7 +269,7 @@
 		} catch (err) {
 			if (seq !== requestSeq) return;
 			hits = [];
-			error = message(err, t('search.failed'));
+			error = errorText(err, t('search.failed'));
 		} finally {
 			if (seq === requestSeq) loading = false;
 		}

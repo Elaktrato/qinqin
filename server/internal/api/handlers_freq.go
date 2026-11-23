@@ -24,7 +24,7 @@ type frequencyPackBody struct {
 func (s *server) handleListFrequencyPacks(w http.ResponseWriter, r *http.Request) {
 	packs, err := freq.Store{DB: s.db}.Packs(r.Context())
 	if err != nil {
-		http.Error(w, "internal error", http.StatusInternalServerError)
+		writeInternal(w, r)
 		return
 	}
 	list := make([]frequencyPackBody, 0, len(packs))

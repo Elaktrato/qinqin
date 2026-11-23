@@ -9,6 +9,8 @@
 // no workspace (docs/contracts/scheduler/).
 // The daily goal is goals:workspace (docs/contracts/goals/).
 
+import { errorText } from "$lib/api/apiErrors";
+import { ShownError } from "$lib/api/userError";
 import { ApiError, api } from "../api/client";
 import { newUlid } from "../ulid";
 import { t } from "../i18n";
@@ -210,11 +212,11 @@ function newSnapshot(): StudySnapshot {
  * UnreadableRowError: a write would replace a stored row this version cannot
  * read (docs/contracts/sync/, "Reading rows"); nothing was sent.
  */
-export class UnreadableRowError extends Error {
+export class UnreadableRowError extends ShownError {
   key: string;
 
   constructor(key: string) {
-    super(t("study.store.unreadableRow"));
+    super(t("study.store.unreadableRow")); // interface text: errorText shows it
     this.name = "UnreadableRowError";
     this.key = key;
   }
@@ -486,7 +488,7 @@ async function putData(
  * (e.g. a later tombstone) or refused them. Re-planning and trying again writes
  * only what is still missing.
  */
-export class PartialPushError extends Error {
+export class PartialPushError extends ShownError {
   done: number;
   skipped: number;
 
@@ -631,7 +633,7 @@ async function pushChunks(
     try {
       result = await sendPush(bodyOf(i, i + count, Date.now()));
     } catch (err) {
-      throw new PartialPushError(errorMessage(err, t("study.store.writeFailed")), done);
+      throw new PartialPushError(errorText(err, t("study.store.writeFailed")), done);
     } finally {
       // A failed write may still have landed: stale caches are dropped either way.
       notifyWrite(workspaceId);
@@ -1142,7 +1144,7 @@ function rowsOfCards(
  * moveCards the rows that DID change (their previous state, for undo);
  * after restoreCards the rows still NOT written (for a retry).
  */
-export class PartialCardsError extends Error {
+export class PartialCardsError extends ShownError {
   rows: StudyCard[];
   cause: unknown;
 
@@ -1152,10 +1154,6 @@ export class PartialCardsError extends Error {
     this.rows = rows;
     this.cause = cause;
   }
-}
-
-function errorMessage(err: unknown, fallback: string): string {
-  return err instanceof Error && err.message ? err.message : fallback;
 }
 
 /**
@@ -1192,7 +1190,7 @@ export async function deleteCards(
       if (await pushOptional(workspaceId, write)) removed.push(row);
     } catch (err) {
       throw new PartialCardsError(
-        errorMessage(err, t("study.store.deleteFailed")),
+        errorText(err, t("study.store.deleteFailed")),
         removed,
         err,
       );
@@ -1227,7 +1225,7 @@ export async function restoreCards(
     }
   } catch (err) {
     throw new PartialCardsError(
-      errorMessage(err, t("study.store.undoFailed")),
+      errorText(err, t("study.store.undoFailed")),
       [...rows],
       err,
     );
@@ -1238,7 +1236,7 @@ export async function restoreCards(
       if (write !== null) await pushStudy(workspaceId, [write]);
     } catch (err) {
       throw new PartialCardsError(
-        errorMessage(err, t("study.store.undoFailed")),
+        errorText(err, t("study.store.undoFailed")),
         todo.slice(i).reverse(),
         err,
       );
@@ -1282,7 +1280,7 @@ export async function moveCards(
       moved.push(row);
     } catch (err) {
       throw new PartialCardsError(
-        errorMessage(err, t("study.store.moveFailed")),
+        errorText(err, t("study.store.moveFailed")),
         moved,
         err,
       );
@@ -1323,7 +1321,7 @@ async function rewriteSkips(
       changed.push(row);
     } catch (err) {
       throw new PartialCardsError(
-        errorMessage(err, t("study.store.updateFailed")),
+        errorText(err, t("study.store.updateFailed")),
         changed,
         err,
       );
@@ -1422,7 +1420,7 @@ export async function dropSiblingCards(
       );
     } catch (err) {
       if (err instanceof PartialCardsError) {
-        throw new PartialCardsError(err.message, [...previous, ...err.rows], err.cause);
+        throw new PartialCardsError(err.text, [...previous, ...err.rows], err.cause);
       }
       throw err;
     }
@@ -1434,7 +1432,7 @@ export async function dropSiblingCards(
       if (await pushOptional(workspaceId, write)) previous.push(row);
     } catch (err) {
       throw new PartialCardsError(
-        errorMessage(err, t("study.store.removeFailed")),
+        errorText(err, t("study.store.removeFailed")),
         previous,
         err,
       );

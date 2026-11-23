@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { errorText } from '$lib/api/apiErrors';
 	import { t } from '$lib/i18n';
 	import { cleanCardTypes, type DeckSettings } from './deckSettings';
 	import { saveDeckCardTypes } from './store';
@@ -38,7 +39,7 @@
 			const saved = await saveDeckCardTypes(ws, deckId, next);
 			onSaved?.(saved);
 		} catch (err) {
-			error = err instanceof Error && err.message ? err.message : t('study.deckTypes.saveFailed');
+			error = errorText(err, t('study.deckTypes.saveFailed'));
 		} finally {
 			pending = null;
 			saving = false;

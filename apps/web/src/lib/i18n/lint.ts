@@ -409,3 +409,40 @@ export function intlFindings(src: string, svelte = false): Finding[] {
 	}
 	return out.sort((a, b) => a.line - b.line);
 }
+
+/** The names a caught error goes by in this code base. */
+const ERR = String.raw`(?:err|e|error|ex|reason|cause)`;
+/**
+ * The ways to the text of a caught error or an error body: `err.message` (also `e`, `error`, `ex`, `reason`,
+ * `cause`), `(x as Error).message`, `body.message` / `body?.message`, `String(err)`, `${err}`, `err.toString()`,
+ * `'' + err`, and destructuring `{ message } = err`.
+ */
+const ERR_MESSAGE = new RegExp(
+	[
+		String.raw`\b${ERR}\??\.message\b(?!s)`,
+		String.raw`\(\s*\w+\s+as\s+\w*Error\s*\)\??\.message\b`,
+		String.raw`\bbody\??\.message\b`,
+		String.raw`\bString\(${ERR}\)`,
+		String.raw`\$\{\s*${ERR}\s*\}`,
+		String.raw`\b${ERR}\??\.toString\(`,
+		String.raw`(['"])\1\s*\+\s*${ERR}\b`,
+		String.raw`\{[^{}]*\bmessage\b[^{}]*\}\s*=\s*${ERR}\b`
+	].join('|'),
+	'g'
+);
+
+/**
+ * Where a caught error's own text is read (#168, the `errmsg` rule): screens show `errorText(err, fallback)`, never
+ * the server's English `message` or an `Error`'s developer text. Comments are skipped; a .svelte file is checked in
+ * its script and its markup.
+ */
+export function errMessageFindings(src: string, svelte: boolean): Finding[] {
+	const code = svelte ? blankComments(scriptOnly(src)) : blankComments(src);
+	const out: Finding[] = [];
+	for (const m of code.matchAll(ERR_MESSAGE)) out.push({ line: lineAt(code, m.index ?? 0), text: m[0] });
+	if (svelte) {
+		const markup = markupOnly(src);
+		for (const m of markup.matchAll(ERR_MESSAGE)) out.push({ line: lineAt(markup, m.index ?? 0), text: m[0] });
+	}
+	return out.sort((a, b) => a.line - b.line);
+}

@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { t } from '$lib/i18n';
-	import { errorMessage } from '$lib/stats/errors';
+	import { errorText } from '$lib/api/apiErrors';
 	import { formatPercent } from '$lib/i18n/format';
 	import { Button, Select, Stat } from '$lib/ui';
 	import type { Deck } from '$lib/study/types';
@@ -123,7 +123,7 @@
 		try {
 			await run();
 		} catch (err) {
-			error = errorMessage(err, t('reader.words.saveFailed'));
+			error = errorText(err, t('reader.words.saveFailed'));
 		} finally {
 			busy = false;
 		}

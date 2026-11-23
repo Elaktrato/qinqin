@@ -104,43 +104,43 @@
       ]
     },
     {
-      "name": "validation errors are plain-text 400s and store nothing of the batch",
-      "note": "the events are checked in order before anything is stored; the first failing check answers (text/plain, trailing newline); a valid event ahead of the bad one is not stored either",
+      "name": "validation errors are 400 bad_request and store nothing of the batch",
+      "note": "the events are checked in order before anything is stored; the first failing check answers (JSON bad_request, the message names the check); a valid event ahead of the bad one is not stored either",
       "steps": [
         {
           "post": {"events": [
             {"id": "01KA000000000000000000000A", "workspaceId": "$ws", "device": "web", "ts": "2026-11-17T08:00:00Z", "type": "session"},
             {"id": "not-a-ulid", "workspaceId": "$ws", "device": "web", "ts": "2026-11-17T08:00:00Z", "type": "session"}
           ]},
-          "expect": {"status": 400, "text": "event id must be a ULID\n"}
+          "expect": {"status": 400, "error": "bad_request"}
         },
         {
           "post": {"events": [
             {"id": "81KA000000000000000000000A", "workspaceId": "$ws", "device": "web", "ts": "2026-11-17T08:00:00Z", "type": "session"}
           ]},
-          "expect": {"status": 400, "text": "event id must be a ULID\n"}
+          "expect": {"status": 400, "error": "bad_request"}
         },
         {
           "post": {"events": [
             {"id": "01KA000000000000000000000A", "workspaceId": "$ws", "device": "web", "type": "session"}
           ]},
-          "expect": {"status": 400, "text": "event ts is required\n"}
+          "expect": {"status": 400, "error": "bad_request"}
         },
         {
           "post": {"events": [
             {"id": "01KA000000000000000000000A", "workspaceId": "$ws", "device": "web", "ts": "2026-11-17T08:00:00", "type": "session"}
           ]},
-          "expect": {"status": 400, "text": "malformed request body\n"}
+          "expect": {"status": 400, "json": {"error": "bad_request", "message": "Malformed request body."}}
         },
         {
           "post": {"events": [
             {"id": "01KA000000000000000000000A", "workspaceId": 0, "device": "web", "ts": "2026-11-17T08:00:00Z", "type": "session"}
           ]},
-          "expect": {"status": 400, "text": "event workspaceId is required\n"}
+          "expect": {"status": 400, "error": "bad_request"}
         },
         {
           "post": {},
-          "expect": {"status": 400, "text": "events array required\n"}
+          "expect": {"status": 400, "error": "bad_request"}
         }
       ],
       "stored": []
@@ -154,7 +154,7 @@
             {"id": "01KA000000000000000000000B", "workspaceId": "$ws", "device": "web", "ts": "2026-11-17T08:00:00Z", "type": "session"},
             {"id": "01KA000000000000000000000C", "workspaceId": "$bobWs", "device": "web", "ts": "2026-11-17T08:00:00Z", "type": "session"}
           ]},
-          "expect": {"status": 404, "text": "workspace not found\n"}
+          "expect": {"status": 404, "error": "workspace_not_found"}
         }
       ],
       "stored": []
@@ -189,7 +189,7 @@
         },
         {
           "list": "?workspace=$bobWs",
-          "expect": {"status": 404, "text": "workspace not found\n"}
+          "expect": {"status": 404, "error": "workspace_not_found"}
         }
       ],
       "stored": [

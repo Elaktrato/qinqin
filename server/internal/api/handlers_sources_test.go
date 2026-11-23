@@ -324,7 +324,7 @@ func TestSourcesImportChecksCatalogLanguageFirst(t *testing.T) {
 
 	resp := doJSON(t, http.MethodPost, ts.URL, path, alice, importBody("zh-work", ja))
 	body := bodyOf(t, resp)
-	if resp.StatusCode != http.StatusUnprocessableEntity || !strings.Contains(body, "workspace language is ja, book is zh") {
+	if resp.StatusCode != http.StatusUnprocessableEntity || errorCode(t, []byte(body)) != "language_mismatch" || !strings.Contains(body, `"workspaceLanguage":"ja"`) || !strings.Contains(body, "workspace language is ja, book is zh") {
 		t.Errorf("zh work into ja: status = %d, body %q, want 422 with the reason", resp.StatusCode, body)
 	}
 	if n := src.fetchCount(); n != 0 {
@@ -392,7 +392,7 @@ func TestSourcesImportWorkspace(t *testing.T) {
 	// A fetched book of another language is refused with the reason.
 	resp = doJSON(t, http.MethodPost, ts.URL, path, alice, importBody("1", zh))
 	body := bodyOf(t, resp)
-	if resp.StatusCode != http.StatusUnprocessableEntity || !strings.Contains(body, "workspace language is zh, book is ja") {
+	if resp.StatusCode != http.StatusUnprocessableEntity || errorCode(t, []byte(body)) != "language_mismatch" || !strings.Contains(body, `"bookLanguage":"ja"`) || !strings.Contains(body, "workspace language is zh, book is ja") {
 		t.Errorf("ja book into zh: status = %d, body %q, want 422 with the reason", resp.StatusCode, body)
 	}
 	var n int

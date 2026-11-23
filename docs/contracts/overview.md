@@ -74,7 +74,7 @@ Every folder, in dependency order (this page's sync model and Events sections af
   links, senses, levelMembers, sentences, pluginData, pluginStates, overlays, dictionaries, schemes, levels,
   cards, decks, deckSettings, limits, fsrsSets, fsrsActive}` with `Deprecation: true`. The lexicon
   collections are always `[]` and naming one is 400 `sync_collection_moved`; `sentences` are the caller's
-  own; an unknown name or a bad cursor is a plain-text 400. Its cursor lags 30 s and its second is
+  own; an unknown name or a bad cursor is 400 `bad_request`. Its cursor lags 30 s and its second is
   inclusive. Android never uses it.
 - Push: `POST /api/sync/push {events: [...], pluginData: [...], cards: [...], decks: [...], deckSettings: [...],
   limits: [...], fsrsSets: [...], fsrsActive: [...]}` (`server/internal/sync/sync.go`, `sync/push-result.json`). The whole
@@ -119,8 +119,8 @@ Every folder, in dependency order (this page's sync model and Events sections af
 - Envelope `{id (ULID), workspaceId, device, ts (RFC 3339), type, payload}`. The server stores `ts` as UTC
   whole seconds (`10:00:00.789+01:00` → `09:00:00Z`), any `type` and any JSON `payload` (absent = `null`,
   returned compact); a repeated id is a duplicate, never an error, and the first copy stays. Batch errors are
-  plain-text 400 (`id` not a ULID, `ts` or `workspaceId` missing) and 404 (foreign workspace), and store
-  nothing of the batch. `envelope.json`.
+  400 `bad_request` (`id` not a ULID, `ts` or `workspaceId` missing; the message names the check) and 404
+  `workspace_not_found` (foreign workspace), and store nothing of the batch. `envelope.json`.
 - Order everything by `(ts, id)`. **Android sends `ts` already truncated to whole seconds (UTC)** so its local
   copy equals the server copy byte for byte (Ruling in `events/README.md`).
 - Reading events: the paged pull's `events` collection (every type except `lookup`, with a delta cursor), or
@@ -191,7 +191,9 @@ Study-day inputs are not rows: the learner's zone history is `GET/PUT /api/me/ti
   secure storage. The server keeps only its SHA-256; idle 90 days ends a session. `POST /api/auth/logout`
   ends that session.
 - 401 `unauthorized` = session gone (drop the token). 403 never means that; branch on the `error` code in
-  `{error, message}` bodies, never the message. The full catalogue: `auth/errors.json`.
+  `{error, message}` bodies, never the message. Every route answers every error in this shape (no text bodies
+  since #168; unknown paths 404 `not_found`); the one catalogue for all routes: `auth/errors.json`, and its
+  changelog in `auth/README.md`.
 - Restricted sessions: `GET /api/auth/me` returns `restriction` `""|"password_change"|"mfa_enrollment"`. A
   restricted token may call only `me`, `logout` and the route that lifts the restriction; all else is 403
   `password_change_required` / `mfa_enrollment_required` and the token stays valid.

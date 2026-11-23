@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { errorMessage } from '$lib/stats/errors';
+	import { errorText } from '$lib/api/apiErrors';
 	import { t } from '$lib/i18n';
 	import Msg from '$lib/i18n/Msg.svelte';
 	import GoalRing from '$lib/goals/GoalRing.svelte';
@@ -139,7 +139,7 @@
 			decks = [];
 			cards = [];
 			reviews = [];
-			error = errorMessage(err, t('flashcards.widget.loadError'));
+			error = errorText(err, t('flashcards.widget.loadError'));
 		} finally {
 			if (seq === requestSeq) loading = false;
 		}

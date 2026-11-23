@@ -107,7 +107,7 @@ func (s *server) handleFontFile(w http.ResponseWriter, r *http.Request) {
 	m := fontFile.FindStringSubmatch(r.PathValue("file"))
 	w.Header().Set("X-Content-Type-Options", "nosniff")
 	if m == nil {
-		http.NotFound(w, r)
+		writeError(w, http.StatusNotFound, "not_found", "No such font file.")
 		return
 	}
 	ok, err := fonts.Installed(r.Context(), s.db, m[1])
@@ -116,12 +116,12 @@ func (s *server) handleFontFile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if !ok {
-		http.NotFound(w, r)
+		writeError(w, http.StatusNotFound, "not_found", "No such font file.")
 		return
 	}
 	f, err := os.Open(fonts.BlobPath(filepath.Join(s.dataDir, "fonts"), m[1]))
 	if err != nil {
-		http.NotFound(w, r) // the row outlived its file: nothing to serve
+		writeError(w, http.StatusNotFound, "not_found", "No such font file.") // the row outlived its file: nothing to serve
 		return
 	}
 	defer f.Close()
@@ -129,5 +129,5 @@ func (s *server) handleFontFile(w http.ResponseWriter, r *http.Request) {
 	h.Set("Content-Type", "font/woff2")
 	h.Set("Cache-Control", "public, max-age=31536000, immutable")
 	h.Set("ETag", `"`+m[1]+`"`)
-	http.ServeContent(w, r, "", time.Time{}, f)
+	serveContent(w, r, time.Time{}, f)
 }
