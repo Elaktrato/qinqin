@@ -2,7 +2,7 @@
 // ToLegacy), mirrored so web tests can describe study state as the v0.3.0
 // plugin rows it was and get the typed pull a migrated server serves for it
 // (`typedPull`). Production code never imports this file: the web reads and
-// writes typed rows only. Pinned by docs/contracts/study/legacy-codec.json
+// writes typed rows only. Pinned by docs/contracts/backup/study-rows.json
 // (legacyCodec.test.ts).
 
 import {

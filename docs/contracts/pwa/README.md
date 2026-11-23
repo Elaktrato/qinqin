@@ -28,8 +28,9 @@ arrives after its target; if not, the rule still holds (the late target is repla
 
 - An item belongs to the user who was signed in when the review was recorded
   (`userId` null: no user was known yet, adopted by the next user to flush).
-- The pre-v2 queue (`qinqin.study.pending`, bare events) is adopted by the first
-  signed-in user and removed.
+- The pre-v2 queue (`qinqin.study.pending`, bare events, v0.3.x) is neither read nor removed (#198):
+  open the app online on every device before upgrading from v0.3.x, so an old copy sends its reviews first.
+  A restore clears the v2 queue (its workspace ids are gone).
 - A flush sends only the current user's items, oldest first, one event per request.
   A 401 (revoked or expired session) or a 403 whose body names a restriction
   (`password_change_required`, `mfa_enrollment_required`) stops the flush and keeps
@@ -55,10 +56,8 @@ page with `workspace=<id>` and `collections` a non-empty subset of
 (nothing else in the query; the token carries its filters, the server validates
 them, and the URL is the cache key). Each page is a separate saved copy, so offline
 study reads the same pages in the same order; "Prepare offline" reads the round
-through the study read and its receipt counts the pages. Legacy (no `v`): `collections` a
-subset of the same set, so a cached v0.3.x or v0.4 old shell keeps working (the
-typed study rows of `docs/contracts/study/` and the keyed `goals:*`, `known:*` and
-`vacation:*` rows travel in both), `/api/plugins/{id}/data` and `/data/{key}`, `/api/events` with `workspace=` (the legacy array or a first page with `limit`, and a page continuation of exactly `page=e1.<token>&workspace=<id>`: the token holds no clock, so the URL is a stable cache key; each page is its own saved copy; after a complete read the page deletes the saved continuations of the workspace that no saved first page leads to, `events/` Paging),
+through the study read and its receipt counts the pages. A pull without `v=2` (the removed legacy form, #198)
+is never cached. Also `/api/plugins/{id}/data` and `/data/{key}`, `/api/events` with `workspace=` (the legacy array or a first page with `limit`, and a page continuation of exactly `page=e1.<token>&workspace=<id>`: the token holds no clock, so the URL is a stable cache key; each page is its own saved copy; after a complete read the page deletes the saved continuations of the workspace that no saved first page leads to, `events/` Paging),
 `/api/entries/{id}` and the theme list `/api/themes` (public and not personal, but cached per credential like every other read; signed out, the web paints from its stored tokens and the compiled-in fallback, `themes/`); plus stroke data `/hanzi/U<HEX>.json` without credentials (served from the
 installed strokes package; 404 when none is installed). The font list `/api/fonts` and the font slices `/fonts/<sha256>.woff2` (#97) are not cached by the worker yet (`bypass`): the web does not use them until it registers pack faces, which adds them (slices cache-first in a shared, content-addressed cache) together with their consumer. The package catalogue and package downloads
 (`/api/packages…`) are never cached by the worker: the web reads the catalogue only for Settings and
@@ -66,7 +65,7 @@ installs no packages.
 Everything else (every non-GET request, admin, account, auth except `me`, AI,
 journal photos, audio, lookups, search) is never touched. The lookup history (#72,
 `../lookups/`) never reaches the cache: `qinqin-core` data reads of `lookup*` keys (or with a `prefix` that can
-match one; paths are compared decoded) are not cached, and a saved pull (legacy body or any v2 page's `collections.pluginData`) loses its `qinqin-core` `lookup*` rows
+match one; paths are compared decoded) are not cached, and a saved pull (any v2 page's `collections.pluginData`, or the body of a legacy pull an older worker saved) loses its `qinqin-core` `lookup*` rows
 and a saved event log (the array, or a page's `events`) its `lookup` events before it is stored (`apps/web/src/lib/pwa/sw/scrub.ts`); after a
 Clear or Remove the page filters copies saved earlier the same way. Only `200` responses are
 stored, and never one whose `Cache-Control` says `no-store` (the paged reads answer `private, no-cache` so that

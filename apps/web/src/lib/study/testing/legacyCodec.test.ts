@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import fixture from '../../../../../../docs/contracts/study/legacy-codec.json';
+import fixture from '../../../../../../docs/contracts/backup/study-rows.json';
 import { parseRow, bodyOf, type StudyCollection } from '../rows';
 import { fromLegacy, legacyFamily, toLegacy, typedPull } from './legacyCodec';
 
@@ -15,7 +15,7 @@ interface Case {
 const meta = { workspaceId: 7, version: 1, updatedAt: '2026-11-12T10:00:00Z', deletedAt: null };
 
 // The test helper mirrors the server codec; the fixture keeps the two equal.
-describe('test-only legacy codec (docs/contracts/study/legacy-codec.json)', () => {
+describe('test-only legacy codec (docs/contracts/backup/study-rows.json)', () => {
 	for (const c of fixture.cases as Case[]) {
 		it(c.name, () => {
 			const got = fromLegacy(c.key, c.data);
