@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { errorText } from '$lib/api/apiErrors';
 	import { pageTitle } from '$lib/pageTitle';
 	import { t } from '$lib/i18n';
 	import { onMount, tick } from 'svelte';
@@ -103,12 +104,6 @@
 	let pluginsLoading = $state(true);
 	let pluginsError = $state('');
 
-	function message(err: unknown, fallback: string): string {
-		if (err instanceof ApiError && err.message) return err.message;
-		if (err instanceof Error && err.message) return err.message;
-		return fallback;
-	}
-
 	function pluginName(plugin: PluginInfo): string {
 		const name = plugin.manifest?.name;
 		return manifestPluginName({ id: plugin.id, name: typeof name === 'string' && name.trim() ? name : plugin.id });
@@ -132,7 +127,7 @@
 				error: ''
 			}));
 		} catch (err) {
-			pluginsError = message(err, t('settings.plugins.loadFailed'));
+			pluginsError = errorText(err, t('settings.plugins.loadFailed'));
 		} finally {
 			pluginsLoading = false;
 		}
@@ -204,7 +199,7 @@
 			renameError =
 				err instanceof ApiError && err.status === 409
 					? t('settings.workspaces.nameTaken')
-					: message(err, t('settings.workspaces.renameFailed'));
+					: errorText(err, t('settings.workspaces.renameFailed'));
 		} finally {
 			renameSaving = false;
 		}
@@ -225,7 +220,7 @@
 			// The shell nav and /p/<plugin> read the shared store.
 			void loadPluginStates();
 		} catch (err) {
-			row.error = message(err, t('settings.plugins.saveFailed'));
+			row.error = errorText(err, t('settings.plugins.saveFailed'));
 		} finally {
 			row.saving = false;
 		}
@@ -256,7 +251,7 @@
 				onclick={() => {
 					workspacesLoadError.set('');
 					loadWorkspaces().catch((err) =>
-						workspacesLoadError.set(message(err, t('app.workspaces.loadFailed')))
+						workspacesLoadError.set(errorText(err, t('app.workspaces.loadFailed')))
 					);
 				}}>{t('common.action.retry')}</Button
 			>

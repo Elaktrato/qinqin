@@ -1,7 +1,7 @@
 <script lang="ts">
+	import { errorText } from '$lib/api/apiErrors';
 	import { onMount, tick } from 'svelte';
 	import { t } from '$lib/i18n';
-	import { ApiError } from '$lib/api/client';
 	import { languageUsage, registerLanguage, removeLanguage } from '$lib/api/adminLanguages';
 	import { listLanguages } from '$lib/api/languages';
 	import { listPacks } from '$lib/api/packs';
@@ -47,7 +47,7 @@
 			const [langs, packs, usage] = await Promise.all([listLanguages(), listPacks(), languageUsage()]);
 			rows = languageRows(langs, packs, usage);
 		} catch (err) {
-			loadError = err instanceof ApiError ? err.message : t('settings.languages.loadFailed');
+			loadError = errorText(err, t('settings.languages.loadFailed'));
 		} finally {
 			loading = false;
 		}
@@ -81,7 +81,7 @@
 			code = '';
 			await load();
 		} catch (err) {
-			error = err instanceof ApiError ? err.message : t('settings.languages.addFailed');
+			error = errorText(err, t('settings.languages.addFailed'));
 		} finally {
 			adding = false;
 		}
@@ -95,7 +95,7 @@
 			notice = t('settings.languages.removed', { language: row.label, code: row.code });
 			await load();
 		} catch (err) {
-			error = err instanceof ApiError ? err.message : t('settings.languages.removeFailed');
+			error = errorText(err, t('settings.languages.removeFailed'));
 		} finally {
 			confirmCode = null;
 			heading?.focus();

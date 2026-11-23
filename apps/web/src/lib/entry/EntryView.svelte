@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { errorText } from '$lib/api/apiErrors';
 	import Msg from '$lib/i18n/Msg.svelte';
 	import { t } from '$lib/i18n';
 	import { formatNumber } from '$lib/i18n/format';
@@ -98,12 +99,6 @@
 	// The phone bar's Add to deck is the first action the entry offers there.
 	setPageActions(phoneActions);
 
-	function message(err: unknown, fallback: string): string {
-		if (err instanceof ApiError && err.message) return err.message;
-		if (err instanceof Error && err.message) return err.message;
-		return fallback;
-	}
-
 	async function load(id: number): Promise<void> {
 		const seq = ++requestSeq;
 		loading = true;
@@ -129,7 +124,7 @@
 				notFound = true;
 				onstate?.('notfound');
 			} else {
-				error = message(err, t('entry.page.loadFailed'));
+				error = errorText(err, t('entry.page.loadFailed'));
 				onstate?.('error');
 			}
 		} finally {

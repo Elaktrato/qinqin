@@ -1,7 +1,7 @@
 <script lang="ts">
+	import { errorText } from '$lib/api/apiErrors';
 	import { untrack } from 'svelte';
 	import { t } from '$lib/i18n';
-	import { ApiError } from '$lib/api/client';
 	import { getSharedEntry } from '$lib/api/entries';
 	import { buildPatch, updateEntry, type EntryPatchReading } from '$lib/api/edit';
 	import type { EntryDetail } from '$lib/api/types';
@@ -68,7 +68,7 @@
 				if (!cancelled) baseline = shared;
 			})
 			.catch((err) => {
-				if (!cancelled) baselineError = message(err, t('entry.editor.prepareFailed'));
+				if (!cancelled) baselineError = errorText(err, t('entry.editor.prepareFailed'));
 			});
 		return () => {
 			cancelled = true;
@@ -113,12 +113,6 @@
 		rows = toRows(baseline);
 	}
 
-	function message(err: unknown, fallback: string): string {
-		if (err instanceof ApiError && err.message) return err.message;
-		if (err instanceof Error && err.message) return err.message;
-		return fallback;
-	}
-
 	function addRow(): void {
 		clearMessages();
 		rows = [...rows, { key: nextKey++, type: '', value: '' }];
@@ -151,7 +145,7 @@
 			saved = t('common.state.saved');
 			onSaved(updated);
 		} catch (err) {
-			error = message(err, t('entry.editor.saveFailed'));
+			error = errorText(err, t('entry.editor.saveFailed'));
 		} finally {
 			saving = false;
 		}

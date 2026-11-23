@@ -474,7 +474,7 @@
 	"apiError.inviteInvalid": "This invite link is no longer valid.",
 	"apiError.keyRejected": "The provider rejected the API key.",
 	"apiError.keyUndecryptable": "Your key can no longer be read. Enter it again in Settings → AI.",
-	"apiError.languageBuiltIn": "Built-in languages cannot be removed.",
+	"apiError.languageBuiltIn": "This language is built in: it is always there and cannot be added or removed.",
 	"apiError.languageInUse": "A workspace still uses this language.",
 	"apiError.languageMismatch": "This book is in another language than the workspace.",
 	"apiError.languageUnknown": "This language is not set up on the server. Ask an administrator to add it.",

@@ -75,9 +75,9 @@ describe('EntryEditor baseline and overlay', () => {
 		vi.mocked(getSharedEntry).mockRejectedValueOnce(new Error('boom'));
 		vi.mocked(getSharedEntry).mockResolvedValueOnce(entry());
 		render(EntryEditor, { entry: entry(), onSaved: vi.fn(), onCancel: vi.fn() });
-		await screen.findByText('boom');
+		await screen.findByText('Could not prepare the editor.');
 		await fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
-		await waitFor(() => expect(screen.queryByText('boom')).toBeNull());
+		await waitFor(() => expect(screen.queryByText('Could not prepare the editor.')).toBeNull());
 		expect(getSharedEntry).toHaveBeenCalledTimes(2);
 	});
 

@@ -44,7 +44,9 @@ describe('LanguageManager', () => {
 
 	it('previews the label, registers the normalized code and shows server errors', async () => {
 		setup();
-		vi.mocked(registerLanguage).mockRejectedValue(new ApiError(409, 'zh is built in'));
+		vi.mocked(registerLanguage).mockRejectedValue(
+			new ApiError(409, JSON.stringify({ error: 'language_built_in', message: 'zh is built in.' }))
+		);
 		render(LanguageManager);
 		await screen.findByText('Portuguese');
 		const input = screen.getByLabelText('Language code');
@@ -52,7 +54,7 @@ describe('LanguageManager', () => {
 		expect(screen.getByText('Brazilian Portuguese')).toBeTruthy();
 		await fireEvent.click(screen.getByRole('button', { name: 'Add language' }));
 		await waitFor(() => expect(registerLanguage).toHaveBeenCalledWith('pt-br'));
-		expect((await screen.findByRole('alert')).textContent).toContain('zh is built in');
+		expect((await screen.findByRole('alert')).textContent).toContain('This language is built in');
 	});
 
 	it('disables Add for an invalid code', async () => {
