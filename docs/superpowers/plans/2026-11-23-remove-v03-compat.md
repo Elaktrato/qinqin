@@ -89,6 +89,12 @@ form (not in the issue), the plugin manifest vocabulary (`hook` surface, `study-
   `GET /api/plugins` (`isHiddenBuiltin`), the `legacySentences` usage count of `language_in_use`, and the
   test-only codec mirror `lib/study/testing/legacyCodec.ts` (test data builders; #197 replaces them) — cost if
   wrong: a follow-up removal.
+- Ruling (fix wave S2): pre-v0.2.0 sentence packs without a registry row keep blocking a language delete
+  (`legacySentences`), and the 409 message names each such pack (at most ten) with its removal route
+  `DELETE /api/admin/sentences/{pack}`, which still removes them; users' own sentences (`source_pack = ''`) no
+  longer count (an older bug). The admin list stays registry-only — the count is true data that blocks a
+  delete, and the route already exists, so no new UI is needed — cost if wrong: the web shows the count, not the
+  names; the admin reads them from the API message or the wiki (Admin-upgrading).
 - Ruling: the release-notes draft is `docs/releases/NEXT.md`; no test enumerates `docs/releases` and the
   release workflow only reads `docs/releases/<tag>.md`, so the draft is never published by accident; it is
   renamed at tagging — cost if wrong: none.

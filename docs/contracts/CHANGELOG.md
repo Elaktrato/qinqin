@@ -24,7 +24,9 @@ v0.3.x clients are no longer supported.
 - **Plugins and packs:** `GET /api/plugins` lists registry plugins only (no synthesized row per data pack,
   #169); a data pack's id is an unknown plugin for `PUT /api/plugins/{id}/state`, the data routes and a push.
   `packages/pack-types.json` drops its `legacyPluginRow` column. `GET /api/admin/packs` no longer lists
-  sentences without a registry row (a pre-v0.2.0 import).
+  sentences without a registry row (a pre-v0.2.0 import); `language_in_use` still counts them as
+  `legacySentences` (own sentences, `source_pack = ''`, no longer count) and its message names each such
+  pack with its removal route `DELETE /api/admin/sentences/{pack}`.
 - **Web storage:** the v0.3.x review queue `qinqin.study.pending` is neither read nor removed;
   `pwa/outbox-v2.json` drops its `legacy` member and the adoption case. A pull without `v=2` is never cached
   by the service worker.

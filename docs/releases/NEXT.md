@@ -13,6 +13,9 @@ https://github.com/Elaktrato/qinqin/wiki
   app from before v0.4.0 that was never opened online keeps its unsent reviews in that browser only.
 - Personal backups from every earlier version, v0.3 included, still restore.
 - Every installed grammar pack now shows on the Grammar page; manage packs in Settings → Data.
+- Settings → Data (`GET /api/admin/packs`) no longer lists sentences imported before v0.2.0 without a registry
+  row. Removing a language that still has such sentences answers 409 naming each pack and its removal route,
+  `DELETE /api/admin/sentences/<pack>`.
 
 ## What's new
 

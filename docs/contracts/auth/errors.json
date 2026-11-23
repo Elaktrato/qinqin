@@ -118,7 +118,7 @@
   "last_workspace": {"status": 409, "meaning": "The workspace is the user's only one; keep at least one."},
   "language_unknown": {"status": 422, "meaning": "The workspace language is not registered on this server; an administrator adds it under Admin, Languages."},
   "language_built_in": {"status": 409, "meaning": "Admin languages: a built-in language cannot be removed."},
-  "language_in_use": {"status": 409, "meaning": "Admin languages: workspaces or installed packs still use the language. The body carries usage, counts only (never who): {workspaces, dictionaries, levelLists, frequencyPacks, sentencePacks, grammarPacks, audioPacks, legacySentences}, each an integer (dictionaries and legacySentences 0 or 1)."},
+  "language_in_use": {"status": 409, "meaning": "Admin languages: workspaces or installed packs still use the language. The body carries usage, counts only (never who): {workspaces, dictionaries, levelLists, frequencyPacks, sentencePacks, grammarPacks, audioPacks, legacySentences}, each an integer (dictionaries and legacySentences 0 or 1). legacySentences: shared sentences without a registry row (imported before v0.2.0; GET /api/admin/packs does not list them); the message names each such pack with its removal route DELETE /api/admin/sentences/{pack}."},
   "pack_invalid": {"status": 400, "meaning": "The uploaded pack is not a valid pack; the message names the rule it breaks (never a server path)."},
   "pack_type_unsupported": {"status": 422, "meaning": "The pack's type is unknown or cannot be installed through this route (audio packs are installed on the host)."},
   "pack_staged": {"status": 429, "meaning": "A pack is already staged for review: install or discard it first."},

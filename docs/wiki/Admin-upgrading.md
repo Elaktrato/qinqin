@@ -28,6 +28,7 @@ In the Portainer console the seed is `qinqin seed`; with plain compose `docker c
 - The old sync form (`GET /api/sync/pull` without `v=2`) is gone and answers 404; scripts use the paged pull ([API access tokens](API-Access-tokens)). The plugin-data routes no longer serve or accept cards, decks, deck settings, limits or FSRS sets under their old `qinqin-flashcards` keys.
 - `GET /api/plugins` no longer lists a row per installed data pack. Every installed grammar pack now shows on the Grammar page (manage packs in Settings → Data).
 - Personal backups from every earlier version, v0.3 included, still restore.
+- `GET /api/admin/packs` (Settings → Data) no longer lists sentences imported before v0.2.0 without a registry row. If removing a language answers 409 "sentences from an older pack", the message names each such pack: remove it with `DELETE /api/admin/sentences/<pack>`.
 
 ### To v0.5.0
 
