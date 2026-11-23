@@ -2827,6 +2827,7 @@
 	"study.store.partialPush": "{count, plural, one {# row was not written because the server holds newer data for it. Try again.} other {# rows were not written because the server holds newer data for them. Try again.}}",
 	"study.store.removeFailed": "Could not remove the cards.",
 	"study.store.undoFailed": "Could not undo.",
+	"study.store.unreadableRow": "This item was saved by a newer version of qinqin and cannot be changed here. Update the app to change it.",
 	"study.store.updateFailed": "Could not update the word.",
 	"study.store.writeFailed": "Could not write the cards.",
 	"study.summary.cardsIn": "{count, plural, one {card in} other {cards in}}",

@@ -13,6 +13,7 @@ import { ApiError, api } from "../api/client";
 import { newUlid } from "../ulid";
 import { t } from "../i18n";
 import { V2_STUDY_COLLECTIONS, firstPageUrl, pullAll } from "../sync/pager";
+import { readableRow } from "../sync/rows";
 import { workspaces } from "../workspaces";
 import { fetchFullLog, type StudyEvent } from "../events";
 import { canonicalCards, cleanSkipKinds, compareCanonical, newCardId } from "./canonical";
@@ -59,6 +60,7 @@ import {
   type StudyRowBody,
 } from "./rows";
 import { VACATION_PREFIX, parseVacation, type VacationPeriod } from "./vacation";
+import { rawIdentity, reportUnreadable, type UnreadableCounts } from "./unreadable";
 import type { LimitPair } from "./limits";
 import { GOALS_KEY, parseGoalsRow, type GoalsRow, type ParsedGoals } from "../goals/goals";
 import { pendingReviews } from "./events";
@@ -172,22 +174,42 @@ function newestOf(times: readonly unknown[]): string | undefined {
  * What the server holds for the rows of one workspace, read with the study
  * data, so a write can be planned against it (studyWrite): `knownAt` is the
  * newest time per row (`<collection>:<identity>` for typed rows, the plugin
- * key for keyed rows), `stored` every typed row, tombstones included.
+ * key for keyed rows), `stored` every typed row, tombstones included, and
+ * `unreadable` the keys of typed rows this version cannot read (malformed,
+ * or written by a newer client): never rewritten (docs/contracts/sync/,
+ * "Reading rows").
  */
 export interface StudySnapshot {
   knownAt: Map<string, string>;
   stored: Map<string, StudyRow>;
+  unreadable: Set<string>;
 }
 
 function newSnapshot(): StudySnapshot {
-  return { knownAt: new Map(), stored: new Map() };
+  return { knownAt: new Map(), stored: new Map(), unreadable: new Set() };
+}
+
+/**
+ * UnreadableRowError: a write would replace a stored row this version cannot
+ * read (docs/contracts/sync/, "Reading rows"); nothing was sent.
+ */
+export class UnreadableRowError extends Error {
+  key: string;
+
+  constructor(key: string) {
+    super(t("study.store.unreadableRow"));
+    this.name = "UnreadableRowError";
+    this.key = key;
+  }
 }
 
 /**
  * fetchStudyData pulls every synced row and keeps the live flashcard rows
  * of one workspace. Rows of other plugins, other (or no) workspaces,
- * tombstones, and keys outside `deck:`/`card:` are ignored; a malformed
- * payload is skipped rather than failing the whole page.
+ * tombstones, and keys outside `deck:`/`card:` are ignored. A row that does
+ * not decode (docs/contracts/sync/, "Reading rows") is skipped, counted and
+ * reported (unreadable.ts); a typed one's identity goes into
+ * `snap.unreadable` so no write replaces it.
  */
 async function fetchStudyData(
   workspaceId: number,
@@ -207,13 +229,27 @@ async function fetchStudyData(
   let goals: ParsedGoals = null;
   const known: number[] = [];
   const milestoneRows: { key: string; data: unknown; deletedAt: string | null; updatedAt?: string }[] = [];
+  const unreadable: UnreadableCounts = {};
+  const unreadableKeys: string[] = [];
 
   for (const collection of STUDY_COLLECTIONS) {
     const list = delta?.[collection];
     for (const raw of Array.isArray(list) ? list : []) {
-      // A row the strict parse refuses is skipped rather than failing the page.
       const row = parseRow(collection, raw);
-      if (row === null || row.workspaceId !== workspaceId) continue;
+      if (row === null) {
+        const where = isRecord(raw) ? raw.workspaceId : undefined;
+        // Another workspace's row is not this load's business, readable or not.
+        if (typeof where === "number" && where !== workspaceId) continue;
+        unreadable[collection] = (unreadable[collection] ?? 0) + 1;
+        const identity = rawIdentity(collection, raw);
+        if (identity !== null) {
+          const key = studyKey(collection, identity);
+          unreadableKeys.push(key);
+          snap?.unreadable.add(key);
+        }
+        continue;
+      }
+      if (row.workspaceId !== workspaceId) continue;
       if (knownAt !== undefined) {
         const newest = newestOf([row.updatedAt, row.deletedAt]);
         if (newest !== undefined) knownAt.set(studyKey(collection, identityOf(collection, row)), newest);
@@ -251,9 +287,13 @@ async function fetchStudyData(
   }
 
   for (const value of rows) {
-    const row = asPluginDataRow(value);
-    if (row === null) continue;
-    if (row.pluginId !== FLASHCARDS_PLUGIN_ID) continue;
+    const foreign = isRecord(value) && typeof value.pluginId === "string" && value.pluginId !== FLASHCARDS_PLUGIN_ID;
+    if (foreign) continue;
+    const row = readableRow("pluginData", value) ? asPluginDataRow(value) : null;
+    if (row === null) {
+      unreadable.pluginData = (unreadable.pluginData ?? 0) + 1;
+      continue;
+    }
     // A typed-family key in pluginData is a leftover the server could not
     // read (or an old server's legacy view): never study state.
     if (legacyFamily(row.key) !== null) continue;
@@ -289,6 +329,7 @@ async function fetchStudyData(
     }
   }
 
+  reportUnreadable(workspaceId, unreadable, unreadableKeys);
   const seenMilestones = parseSeenRows(milestoneRows);
   const milestoneTombstones = tombstoneStamps(milestoneRows);
   // Absent (not empty) without any deckcfg row: workspaces that never
@@ -331,12 +372,21 @@ export async function loadRawStudyData(
   knownAt: Map<string, string>;
   /** Every typed row of the workspace, tombstones included. */
   stored: Map<string, StudyRow>;
+  /** The keys of typed rows this version cannot read: studyWrite refuses them. */
+  unreadable: Set<string>;
   /** The live deck settings rows, by deck id (always set by the store). */
   deckSettings?: Record<string, DeckSettings>;
 }> {
   const snap = newSnapshot();
   const { decks, cards, deckSettings } = await fetchStudyData(workspaceId, snap);
-  return { decks, cards, knownAt: snap.knownAt, stored: snap.stored, deckSettings: deckSettings ?? {} };
+  return {
+    decks,
+    cards,
+    knownAt: snap.knownAt,
+    stored: snap.stored,
+    unreadable: snap.unreadable,
+    deckSettings: deckSettings ?? {},
+  };
 }
 
 // Called after every write with the workspace it touched, so caches of
@@ -430,7 +480,8 @@ export function extraOf(snap: Snap, collection: StudyCollection, identity: strin
  * when it would change nothing (the live row is equal, or a tombstone of a
  * row that is absent or already deleted) - the server would skip it, and a
  * skipped item reads as "the server holds newer data". A tombstone carries
- * the stored row's last data.
+ * the stored row's last data. A row this version cannot read is never
+ * replaced: UnreadableRowError.
  */
 export function studyWrite(
   snap: Snap,
@@ -439,6 +490,7 @@ export function studyWrite(
   opts: { deleted?: boolean } = {},
 ): StudyWrite | null {
   const key = studyKey(collection, identityOf(collection, row));
+  if (snap?.unreadable?.has(key) === true) throw new UnreadableRowError(key);
   const stored = snap?.stored?.get(key);
   const live = stored !== undefined && stored.deletedAt === null;
   const knownAt = snap?.knownAt?.get(key);
@@ -945,7 +997,7 @@ export async function addCard(
   const deckIds = opts.deckIds ?? [GENERAL_DECK_ID];
   const chosen = [...new Set(deckIds.filter((id) => id !== ""))];
   const card: StudyCard = {
-    id: freshCardId(cards, kind, entryId, opts.sentenceId),
+    id: freshCardId(cards, snap.unreadable, kind, entryId, opts.sentenceId),
     kind,
     entryId,
     deckIds: chosen.length === 0 ? [GENERAL_DECK_ID] : chosen,
@@ -970,16 +1022,19 @@ export async function addCard(
  * freshCardId picks the id of a new card. The derived id (`newCardId`)
  * makes two devices adding the same card at once write one key. It can
  * only be taken by a card with another cardKey for sentence cards (one
- * per sentence once existed); then the sentence joins the id, and a ULID
- * is the last resort, so an existing card is never overwritten.
+ * per sentence once existed), or by a stored card this version cannot read;
+ * then the sentence joins the id, and a ULID is the last resort, so an
+ * existing card is never overwritten.
  */
 function freshCardId(
   cards: readonly StudyCard[],
+  unreadable: ReadonlySet<string>,
   kind: StudyCardKind,
   entryId: number,
   sentenceId?: number,
 ): string {
-  const taken = new Set(cards.map((card) => card.id));
+  const ids = new Set(cards.map((card) => card.id));
+  const taken = { has: (id: string) => ids.has(id) || unreadable.has(studyRowKey.card(id)) };
   const base = newCardId(kind, entryId);
   if (!taken.has(base)) return base;
   if (kind === "sentence" && sentenceId !== undefined) {
