@@ -128,6 +128,16 @@ The session mix (#132) is unchanged and still applied after the plan.
   planner's input without changing any result; #193 rebuilds the data layer around it — cost: none.
 - Ruling: **unreadable rows (#167) need no builder rule** — they are absent from `cards`, planning writes
   nothing, and a created card takes `freshCardId`; the contract says so in one line — cost: none.
+- Ruling: **offline preparation also covers Study all, up to 200 more entries** (`planOffline`'s third pass,
+  `STUDY_ALL_EXTRA`, due cards first, within the existing 500-entry cap) — the preparation never passed
+  `studyAll`, so an offline Study all session held cards whose entries were never saved; 200 keeps one
+  preparation (throttled to once per 30 minutes) at a few hundred small entry requests — cost if wrong: an
+  offline Study all session beyond the saved words shows only those, as before for everything past the cap.
+- Ruling: **the setup page shows no separate Study all numbers; the wiki says the button is enabled when that
+  session would hold something** — the "This session" line already shows the session about to start, and a
+  second pair of numbers next to a secondary button adds clutter for a rarely used choice; the numbers exist
+  (`allCounts`) and now match the session, so showing them later is one line — cost: a learner sees the size of
+  a Study all session only after starting it.
 - Ruling: **no Go test** — the server builds no queue — cost: none until a server planner exists.
 
 ## What changes for learners
