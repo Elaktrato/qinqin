@@ -56,6 +56,27 @@ const (
 	FormatFontSlices = "font-slices"
 )
 
+// typeList is the valid types for an error message: "a, b, or c".
+func typeList() string {
+	types := packtype.Types()
+	return strings.Join(types[:len(types)-1], ", ") + ", or " + types[len(types)-1]
+}
+
+// manyTypes names the types that state several languages.
+func manyTypes() string {
+	var out []string
+	for _, d := range packtype.All {
+		if d.Languages == packtype.Many {
+			out = append(out, d.Type)
+		}
+	}
+	return strings.Join(out, ", ")
+}
+
+// lookupPackType reads the pack-type table (a variable so a test can add a
+// type).
+var lookupPackType = packtype.Lookup
+
 // typesOfTable is the set of the pack-type table's types.
 func typesOfTable() map[string]bool {
 	out := map[string]bool{}
@@ -132,7 +153,7 @@ func (m Manifest) Validate() error {
 	case strings.TrimSpace(m.Attribution) == "":
 		return errors.New("manifest: attribution is required — packs without attribution are rejected")
 	case !manifestTypes[m.Type]:
-		return fmt.Errorf("manifest: unknown type %q (want dictionary, levels, sentences, frequency, grammar, audio, components, strokes, theme, or font)", m.Type)
+		return fmt.Errorf("manifest: unknown type %q (want %s)", m.Type, typeList())
 	case !manifestFormats[m.Format]:
 		return fmt.Errorf("manifest: unknown format %q (want json, cedict, unihan, jmdict, kanjidic2, yomitan-freq, freq-csv, audio-index, components-tsv, hanzi-writer-jsonl-gz, themes-json, or font-slices)", m.Format)
 	case (m.Type == TypeTheme) != (m.Format == FormatThemesJSON):
@@ -149,19 +170,22 @@ func (m Manifest) Validate() error {
 	return nil
 }
 
-// validateLanguages checks Language, or Languages for a strokes pack; a
-// theme or font pack states neither.
+// validateLanguages checks the languages by the type's language shape in
+// the pack-type table: one Language, several Languages (strokes), or
+// neither (theme, font).
 func (m Manifest) validateLanguages() error {
-	if m.Type == TypeTheme || m.Type == TypeFont {
+	d, _ := lookupPackType(m.Type)
+	switch d.Languages {
+	case packtype.None:
 		if strings.TrimSpace(m.Language) != "" || len(m.Languages) > 0 {
 			return fmt.Errorf("manifest: a %s pack states no language and no languages", m.Type)
 		}
 		return nil
-	}
-	if m.Type != TypeStrokes {
+	case packtype.Many:
+	default:
 		switch {
 		case len(m.Languages) > 0:
-			return fmt.Errorf("manifest: languages is for strokes packs only; a %s pack states one language", m.Type)
+			return fmt.Errorf("manifest: languages is for packs that serve several languages (%s); a %s pack states one language", manyTypes(), m.Type)
 		case strings.TrimSpace(m.Language) == "":
 			return errors.New("manifest: language is required")
 		case !validLanguage(m.Language):
@@ -171,9 +195,9 @@ func (m Manifest) validateLanguages() error {
 	}
 	switch {
 	case strings.TrimSpace(m.Language) != "":
-		return errors.New("manifest: a strokes pack states its languages in languages, not language")
+		return fmt.Errorf("manifest: a %s pack states its languages in languages, not language", m.Type)
 	case len(m.Languages) == 0:
-		return errors.New("manifest: languages is required for a strokes pack")
+		return fmt.Errorf("manifest: languages is required for a %s pack", m.Type)
 	}
 	seen := map[string]bool{}
 	for _, code := range m.Languages {
