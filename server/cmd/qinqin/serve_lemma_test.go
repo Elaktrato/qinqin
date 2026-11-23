@@ -148,6 +148,7 @@ func TestServeRebuildsTheRefreshedBundledPackage(t *testing.T) {
 	data := t.TempDir()
 	revision := func(want int) {
 		t.Helper()
+		// reopen: serve created it
 		sqlDB, err := db.Open(filepath.Join(data, "qinqin.db"))
 		if err != nil {
 			t.Fatal(err)

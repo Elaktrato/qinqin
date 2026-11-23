@@ -35,7 +35,7 @@ Touched by: #195, #196. A merge from one of these issues that changes what this 
   own `openDB`) and of its frozen steps `server/internal/db/step032` and `server/internal/db/step038`. A
   compatibility test that needs an older schema uses `OpenThrough` in `server/internal/db`. Everything else
   uses `dbtest`; a test that opens an existing file again (after a command wrote it, or a `VACUUM INTO`
-  copy) uses `db.Open` on that path.
+  copy) uses `db.Open` on that path, marked `// reopen` when nothing in the same function wrote it.
 - **Web study builders** live in `apps/web/src/lib/testing/study.ts`: `card`, `review` and `history` take
   overrides (an undefined override keeps the default), plus `eventId` and `strongReviews`. All web test
   support lives in `apps/web/src/lib/testing/`, including the test-only legacy codec mirror
@@ -65,7 +65,8 @@ Touched by: #195, #196. A merge from one of these issues that changes what this 
 Allowed:
 
 - `dbtest.Open(t)`, `OpenPath`, `File` and the fixtures in any Go test outside `server/internal/db`.
-- `db.Open` on a database file that exists already (reopening after a command, a `VACUUM INTO` copy).
+- `db.Open` on a database file that exists already: after `dbtest.File` or a `VACUUM INTO` copy in the
+  same function, or marked `// reopen` (a file a command under test wrote).
 - Builders from `apps/web/src/lib/testing/study.ts`, extended there when a test needs a new variant; a
   one-line local adapter that maps a test's positional arguments onto them.
 - Counting operations (calls, rows, passes, work units) in a performance test; a timeout as a hang backstop.
@@ -79,9 +80,13 @@ Not allowed:
 
 ## Enforcement
 
-- `TestNoTestMigratesItsOwnDatabase` (`server/internal/dbtest/convention_test.go`) walks every Go test
-  file outside `server/internal/db` and fails on a `db.Open` of a new path in `t.TempDir()`
-  (`ownMigrationFindings`, with its own cases in `TestOwnMigrationFindings`).
+- `TestNoTestMigratesItsOwnDatabase` (`server/internal/dbtest/convention_test.go`) parses every Go test
+  file outside `server/internal/db` and fails on a `db.Open` or `db.OpenForSeed` call that, in its top-level
+  function, follows no `dbtest.File`, `dbtest.OpenPath` or `VACUUM INTO`, unless a `// reopen` comment on its
+  line or the line above says it opens a file that exists (written by a command under test, for example).
+  This catches a temp path, a `dir := t.TempDir()` path, a concatenated path and a local helper alike
+  (`ownMigrationFindings`, with its cases in `TestOwnMigrationFindings`); on the tree before #197 it flags
+  81 test files.
 - `apps/web/src/lib/testing/noWallClock.test.ts` scans every web and script test file and fails on a
   measured duration (`wallClockFindings` in `apps/web/src/lib/testing/noWallClock.ts`: `performance.now()`,
   `Date.now()` minus a variable, `process.hrtime`, `console.time`).

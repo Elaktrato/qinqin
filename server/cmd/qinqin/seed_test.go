@@ -278,6 +278,7 @@ func TestAddUser(t *testing.T) {
 	if err := adduserCmd(args, strings.NewReader("s3cret-pw-1234\n"), io.Discard); err != nil {
 		t.Fatalf("adduser: %v", err)
 	}
+	// reopen: adduser created it
 	sqlDB, err := db.Open(filepath.Join(dir, "qinqin.db"))
 	if err != nil {
 		t.Fatalf("reopen db: %v", err)

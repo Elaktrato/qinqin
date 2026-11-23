@@ -107,6 +107,7 @@ func TestBackupUsageErrors(t *testing.T) {
 func TestBackupNeverMigrates(t *testing.T) {
 	dir, closeDB := dataDirWithBooks(t)
 	// an older database: the newest migration never ran
+	// reopen: dataDirWithBooks wrote it
 	sqlDB, _ := db.Open(filepath.Join(dir, "qinqin.db"))
 	sqlDB.Exec(`DROP TABLE user_time_zones`)
 	sqlDB.Exec(`DELETE FROM schema_migrations WHERE version = '035_user_time_zones'`)
@@ -132,7 +133,8 @@ func TestBackupNeverMigrates(t *testing.T) {
 func TestBackupBesideARunningServerIsConsistent(t *testing.T) {
 	dir, closeDB := dataDirWithBooks(t)
 	defer closeDB()
-	live, err := db.Open(filepath.Join(dir, "qinqin.db")) // "the server": WAL, a writer running
+	// reopen: dataDirWithBooks wrote it; "the server": WAL, a writer running
+	live, err := db.Open(filepath.Join(dir, "qinqin.db"))
 	if err != nil {
 		t.Fatal(err)
 	}
