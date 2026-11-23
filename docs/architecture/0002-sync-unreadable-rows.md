@@ -22,9 +22,10 @@ data rule every client follows is the contract: "Reading rows" in
 
 - The pager (`apps/web/src/lib/sync/pager.ts`) checks the page **envelope only** and never inspects a row; an
   envelope fault refuses the page.
-- Each consumer decodes the rows it uses with `readableRow` (`apps/web/src/lib/sync/rows.ts`): typed study rows
-  strictly through `parseRow` and `STUDY_COLLECTIONS` of `apps/web/src/lib/study/rows.ts`, the other
-  collections by their shape. A row that does not decode is **unreadable**.
+- Each consumer decodes the rows it uses. Typed study rows decode strictly with `parseRow` over
+  `STUDY_COLLECTIONS` (`apps/web/src/lib/study/rows.ts`); `readableRow` (`apps/web/src/lib/sync/rows.ts`) does
+  the same for them and decodes the other collections by their shape, and the study load uses it for
+  `pluginData` rows. A row that does not decode is **unreadable**.
 - The study load (`apps/web/src/lib/study/store.ts`) skips and counts unreadable rows, and remembers the
   identity of each unreadable typed row whose identity member is still readable (`rawIdentity`) and each
   unreadable keyed row (goals, known marks, vacations). `apps/web/src/lib/study/unreadable.ts` keeps the count
@@ -61,7 +62,12 @@ Not allowed:
 - Refusing a page, a pull round or a study load because of one row.
 - Rewriting, overwriting, tombstoning or reusing the id of an unreadable row.
 - Logging or showing an unreadable row's data.
-- A second list of typed collections beside `STUDY_COLLECTIONS`.
+- A second list that decides which rows are typed or how they decode: that is `STUDY_COLLECTIONS` and
+  `parseRow`. Two lists name pull collections for another purpose, the scope: `V2_STUDY_COLLECTIONS`
+  (`apps/web/src/lib/sync/pager.ts`, what the study pull asks for; `apps/web/src/lib/sync/pullPage.contract.test.ts`
+  pins it to the fixture only) and `CACHEABLE_PULL_COLLECTIONS` (`apps/web/src/lib/pwa/sw/classify.ts`, what an
+  offline copy may hold; `apps/web/src/lib/pwa/sw/classify.test.ts` pins it to the plugin collections plus
+  `STUDY_COLLECTIONS`).
 
 ## Enforcement
 
@@ -76,3 +82,8 @@ Not allowed:
   (`server/internal/sync/unreadable_stored_test.go`), `TestUnreadableStoredRowOverHTTP`
   (`server/internal/sync/unreadable_http_test.go`).
 - Review: a new consumer of pull rows or a new write path; no test finds one that forgets the rule.
+
+## Open questions
+
+- Derive `V2_STUDY_COLLECTIONS` from `STUDY_COLLECTIONS` (or pin it to them in a test), so a new typed family
+  cannot be left out of the study pull. A follow-up; this record's branch is docs-only.

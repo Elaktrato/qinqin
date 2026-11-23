@@ -47,7 +47,8 @@ Allowed:
 
 Not allowed:
 
-- A new `openDB` / `openTestDB` / `newTestDB` copy, or a new test opening and migrating its own database file.
+- A new `openDB` / `openTestDB` / `newTestDB` copy, or a new test opening and migrating its own database file
+  (except the migration tests of `internal/db`, which test the migrating itself).
 - A new local `card()` / `review()` / `history()` builder in a web test file.
 - A time limit (`performance.now()`, `Date.now()` differences, elapsed milliseconds) asserted in a unit test.
 
@@ -60,8 +61,8 @@ Not allowed:
 - Whether the timing tests keep only operation counts or move to a separate serial perf project. #197 leaves
   both open.
 - Whether the web builders are migrated in one pass or as files are touched. #197 leaves both open.
-- Which tests keep opening and migrating their own database (the migration tests of `internal/db` have to).
-  Decided in #197.
+- Which tests besides the migration tests of `internal/db` keep opening and migrating their own database. Not
+  addressed by #197.
 - Whether a lint or test should guard the conventions (a local builder, a wall-clock assertion, a Go test that
   migrates its own database). Not decided in #197.
 - Whether the legacy codec (`lib/study/testing/legacyCodec.ts`) still has users after the v0.3 compatibility

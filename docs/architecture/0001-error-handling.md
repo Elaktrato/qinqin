@@ -19,7 +19,9 @@ server and the web follow one rule. Design: [the error contract spec](../superpo
 **Server.** Every error answer of `server/internal/api` goes through one writer,
 `writeError(w, status, code, message, extra...)` in `server/internal/api/errors.go`: JSON
 `{"error": code, "message": message}` plus optional members beside the two fixed ones (`attemptsLeft`,
-`existingId`, ...). `code` is a code of `docs/contracts/auth/errors.json` with the status the catalogue gives it.
+`existingId`, ...). `code` is a code of `docs/contracts/auth/errors.json` with the status the catalogue gives it, or a status its
+catalogue entry documents (`documentedStatuses`: `code_invalid` and `challenge_expired` 401 on the anonymous
+sign-in steps, `bad_request` 422 on the AI routes).
 `message` is an English sentence for developers and logs; it never carries a path, SQL, a token, a stack or a
 lower layer's error text (validation messages of our own packages may pass through). Request bodies are read
 with `decodeBody` / `readBody` / `badBody` (413 `too_large`, 400 `bad_request`). Unmatched API paths
@@ -44,16 +46,19 @@ errors stay plain `Error`s.
 
 Allowed:
 
-- `writeError` with a literal catalogue code and its catalogue status; a computed code only in the mapper
-  functions listed in `dynamicCodeWriters` (AI and pack errors), each with the codes it can produce.
+- `writeError` with a literal catalogue code and its catalogue status; a computed code only in the functions
+  listed in `dynamicCodeWriters` (in `server/internal/api/errors_static_test.go`), each listed with every code it
+  can produce: the AI error mapper (`writeAIError`), the mail settings validator and test mail
+  (`writeSMTPInputError`, `handleTestSMTP`), the restricted-session gates (`requirePrincipal`,
+  `requireAdminPrincipal`, `tokenGate`) and backup (`handleExportDownload`, `handleRestoreUpload`). The pack
+  error mapper (`writePackError`) writes literal codes.
 - `writeClientGone` (499 without a body) for a request whose client is gone.
 - One server sentence shown in the interface: `packErrorDetail`, the pack validator's reason under the
   translated `pack_invalid` text, marked as English detail for the administrator.
 
 Not allowed:
 
-- `http.Error`, `http.NotFound`, an error-status `http.Redirect`, or `writeJSON` with an `"error"` member in
-  `server/internal/api`.
+- `http.Error`, `http.NotFound`, or `writeJSON` with an `"error"` member in `server/internal/api`.
 - A new local error writer or body decoder beside the ones above.
 - On the web: `err.message`, `String(err)` or the server's `message` reaching visible state; a user-facing
   `throw new Error('…')`; a local `message(err)` helper.
@@ -72,5 +77,6 @@ Not allowed:
   `apps/web/src/lib/i18n/hardcoded.test.ts`) flags a caught error's own text under `lib/` and `routes/`, with
   exceptions only in `apps/web/src/lib/i18n/allowlist.json`, each with a reason.
 - `node scripts/gen-api-docs.mjs --check` keeps the API errors wiki page equal to the catalogue.
-- Review: whether a validation message of our own package quotes internal state; the lint is a regex and a
-  renamed caught variable slips past it.
+- Review, since no check sees these: a new local error writer or body decoder, a user-facing
+  `throw new Error('…')`, a local `message(err)` helper, an error-status `http.Redirect`; whether a validation
+  message of our own package quotes internal state; a renamed caught variable, which slips past the regex lint.

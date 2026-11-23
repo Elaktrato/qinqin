@@ -31,6 +31,8 @@ on 2026-11-23 to retire the code-plugin system (#199).
   which card kinds and practice modes apply. Features and card kinds switch on by profile, not by special cases
   spread through the code. The profile is a shared contract, so Android uses the same one. A new language means
   its profile, any new reading code and its data packs.
+- **Order.** #199 builds on the study data layer (#193) and the state rewrite (#196): the owner's queue
+  (2026-11-23) runs #193, then #196, then #199.
 - **Migration.** A frozen server migration step (like migration 038 for flashcards and the reader) moves the
   journal and grammar plugin data into the new storage. The backup restore keeps accepting archives with the
   old plugin-data rows, mapped to the new storage. Old routes and plugin ids for journal and grammar are not
@@ -43,7 +45,8 @@ on 2026-11-23 to retire the code-plugin system (#199).
 - Typed storage with contracts replaces the generic plugin-data namespace for the journal and grammar.
 - A language's capabilities are read from its profile; adding a language does not mean finding the special
   cases.
-- The postponed AI features (#185, #186) and the avatar upload (#189) are built as core features after #199.
+- The postponed AI features (#185, #186) and the avatar upload (#189) are built as core features after #199
+  (the owner's queue of 2026-11-23, phase 3).
 
 ## Allowed / Not allowed
 
@@ -70,6 +73,4 @@ plugin or a language special case; until one exists: review.
 
 - Where the remaining `qinqin-core` plugin-data rows go (home layout, widget options, notes, lookups,
   `nav-layout`): typed storage each, or one generic core "settings rows" store. Decided in #199's spec.
-- The order of #199 relative to the study data layer (#193) and the state rewrite (#196), which it builds on.
-  Agreed in the direction file.
 - The form of the language-profile contract under `docs/contracts/`. Decided in #199.
