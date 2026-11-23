@@ -169,3 +169,7 @@ scratch script (`mutate.sh`: apply, run the named test, restore), seen to surviv
   `message(err)` helper or `.message` read in their code survived the errmsg lint.
 - `TestPluginDataRoute` and `TestSourcesImportWorkspace` still fail when run alone (pre-existing, language
   registry order); they pass in the full run.
+- **Final gates after the fix wave** (at 8a7efbb8): `gofmt -l` empty; full Go `./...` 53 packages: 49 ok,
+  3 without test files, 1 FAIL = only the known `internal/ai` `TestHostnameResolvingToEmbeddedFormIsRefused`
+  (no IPv6 here), exit 1 for it; web `check` exit 0 (1690 files, 0 errors, 0 warnings); web `build` exit 0;
+  Node 26 vitest exit 0, 584 files, 12500 passed, 2 skipped.
