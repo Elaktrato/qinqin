@@ -1,3 +1,4 @@
+import { onSessionEnd, sessionEpoch } from './session/sessionEnd';
 import { derived, get, writable } from 'svelte/store';
 import { ApiError, api } from './api/client';
 import type { Workspace } from './api/types';
@@ -25,6 +26,14 @@ export const workspacesLoaded = writable(false);
 // The message of the last failed workspace-list load (the shell sets it and
 // clears it), so pages can offer Try again instead of waiting forever.
 export const workspacesLoadError = writable('');
+
+// The list and the loaded flag belong to the session (the persisted choice
+// is cleared by auth.ts on an explicit sign-out only).
+onSessionEnd(() => {
+	workspaces.set({ list: [], current: null });
+	workspacesLoaded.set(false);
+	workspacesLoadError.set('');
+});
 
 export const currentLanguage = derived(
 	workspaces,
@@ -71,11 +80,13 @@ export function clearSelection(): void {
  */
 export async function load(): Promise<Workspace[]> {
 	const seq = ++loadSeq;
+	const epoch = sessionEpoch();
 	const list = await api<Workspace[]>('/api/workspaces');
 	// A newer load has started since (e.g. create() reloading while the
 	// shell's first load was in flight): its answer is fresher, this one
-	// must not overwrite the list or the selection.
-	if (seq !== loadSeq) return list;
+	// must not overwrite the list or the selection. An answer for a session
+	// that has ended belongs to someone else (#173).
+	if (seq !== loadSeq || epoch !== sessionEpoch()) return list;
 	const persisted = readSelection();
 	const current = list.find((workspace) => workspace.id === persisted) ?? list[0] ?? null;
 	persistSelection(current?.id ?? null);

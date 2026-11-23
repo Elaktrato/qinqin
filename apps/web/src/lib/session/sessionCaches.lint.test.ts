@@ -23,7 +23,6 @@ const ALLOWED: Record<string, string> = {
 	'i18n/message.ts:numberFormats': 'Intl.NumberFormat by locale',
 	'time/studyDay.ts:formatters': 'Intl.DateTimeFormat by zone',
 	'radicals/kangxi.ts:numbers': 'built from the bundled Kangxi table at load',
-	'plugins/hooks.ts:handlers': 'plugin hook registrations, not data',
 	'api/client.ts:memoryToken': 'the credential itself (storage blocked): clearToken drops it on every session end',
 	'workspaceGone.ts:inFlight': 'a shared workspace-list reload in flight; it holds no data and the list store is reset by the layout per token'
 };
