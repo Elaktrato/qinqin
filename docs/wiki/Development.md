@@ -79,16 +79,17 @@ npm run e2e -- --headed --debug    # watch and step through
   the traces locally.
 - The rules: role and text locators, no fixed sleeps (wait for a condition), no retries, data written through
   the API, no network but the local server (a request to any other host fails the test);
-  `tests/conventions.spec.ts` checks the sleeps and the retries.
+  `tests/conventions.spec.ts` checks the sleeps and the retries. `npm run check` type-checks the suite.
 - A failure's trace holds the learner's session token and, in the sign-in tests, the password typed: they
-  belong to the throw-away instance and die with it, but do not reuse those names or passwords anywhere. `npm run check` type-checks the suite.
+  belong to the throw-away instance and die with it, but do not reuse those names or passwords anywhere.
 
 Covered: signing in and out (and a wrong password); registration in open mode; search and adding a word to
 study; switching the workspace; a study session mixing two card types (#132) and changing grades with Z and
-Back (#131), with the reviews the server stores; the reader popup on hover (desktop) and from a selection
-(phone sheet); offline study after the service worker cached the app and today's cards, and the sync of each
-review exactly once when back online and after a reload; the phone bottom bar at 360 px, More, and the side
-menu option of Settings → Layout and back.
+Back (#131), with the reviews the server stores; the reader popup on hover (desktop; the longest match first,
+no stale lookup) and from a selection (phone sheet); offline study after the service worker cached the app and
+today's cards (a deck's reverse cards included), and the sync of each review exactly once, with its grade and
+grading time, when back online and after a reload; the phone bottom bar at 360 px (on the bottom edge while a
+long page scrolls), More, and the side menu option of Settings → Layout, kept for the account, and back.
 
 Not covered, still checked by hand: Firefox and Safari (WebKit), real phones and the installed app (install
 prompt, home-screen app, safe areas, the on-screen keyboard), the update bar after a new version, the stroke
