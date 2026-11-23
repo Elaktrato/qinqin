@@ -91,18 +91,13 @@ var documentedStatuses = map[string][]int{
 // errorsPending lists the handler files not yet moved to writeError (the
 // plan's migration tasks empty it; it is then removed).
 var errorsPending = map[string]bool{
-	"api.go":                     true,
-	"handlers_ai.go":             true,
-	"handlers_ai_custom.go":      true,
-	"handlers_audio.go":          true,
-	"handlers_fonts.go":          true,
-	"handlers_journal.go":        true,
-	"handlers_journal_photos.go": true,
-	"handlers_lookup.go":         true,
-	"handlers_search.go":         true,
-	"handlers_segment.go":        true,
-	"handlers_strokes.go":        true,
-	"handlers_time_zone.go":      true,
+	"api.go":                true,
+	"handlers_fonts.go":     true,
+	"handlers_lookup.go":    true,
+	"handlers_search.go":    true,
+	"handlers_segment.go":   true,
+	"handlers_strokes.go":   true,
+	"handlers_time_zone.go": true,
 }
 
 type errorViolation struct{ file, what string }

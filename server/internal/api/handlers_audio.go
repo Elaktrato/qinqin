@@ -101,7 +101,7 @@ func (s *server) handleAudioEntry(w http.ResponseWriter, r *http.Request) {
 	}
 	out, err := s.resolveEntry(r, e)
 	if err != nil {
-		http.Error(w, "internal error", http.StatusInternalServerError)
+		writeInternal(w, r)
 		return
 	}
 	writeJSON(w, http.StatusOK, out)
@@ -122,11 +122,11 @@ func (s *server) handleAudioResolve(w http.ResponseWriter, r *http.Request) {
 		EntryIDs []int64 `json:"entryIds"`
 	}
 	if err := json.Unmarshal(body, &in); err != nil {
-		http.Error(w, "malformed request body", http.StatusBadRequest)
+		writeError(w, http.StatusBadRequest, "bad_request", "Malformed request body.")
 		return
 	}
 	if len(in.EntryIDs) > maxAudioResolveIDs {
-		writeJSON(w, http.StatusUnprocessableEntity, map[string]string{"error": "too many entryIds (at most 200)"})
+		writeError(w, http.StatusUnprocessableEntity, "invalid_request", "Too many entryIds (at most 200).")
 		return
 	}
 	store := lexicon.Store{DB: s.db}
@@ -137,12 +137,12 @@ func (s *server) handleAudioResolve(w http.ResponseWriter, r *http.Request) {
 			continue
 		}
 		if err != nil {
-			http.Error(w, "internal error", http.StatusInternalServerError)
+			writeInternal(w, r)
 			return
 		}
 		res, err := s.resolveEntry(r, e)
 		if err != nil {
-			http.Error(w, "internal error", http.StatusInternalServerError)
+			writeInternal(w, r)
 			return
 		}
 		out[strconv.FormatInt(id, 10)] = res
@@ -160,7 +160,7 @@ func (s *server) handleAudioClip(w http.ResponseWriter, r *http.Request) {
 	}
 	m := clipFilePattern.FindStringSubmatch(r.PathValue("file"))
 	if m == nil {
-		http.NotFound(w, r)
+		writeError(w, http.StatusNotFound, "not_found", "No such audio clip.")
 		return
 	}
 	sha, ext := m[1], m[2]
@@ -169,22 +169,22 @@ func (s *server) handleAudioClip(w http.ResponseWriter, r *http.Request) {
 		SELECT 1 FROM audio_clips c JOIN audio_packs p ON p.id = c.pack_id
 		WHERE c.sha256 = ? AND c.ext = ? AND p.deleted_at IS NULL LIMIT 1`, sha, ext).Scan(&one)
 	if errors.Is(err, sql.ErrNoRows) {
-		http.NotFound(w, r)
+		writeError(w, http.StatusNotFound, "not_found", "No such audio clip.")
 		return
 	}
 	if err != nil {
-		http.Error(w, "internal error", http.StatusInternalServerError)
+		writeInternal(w, r)
 		return
 	}
 	f, err := os.Open(audio.BlobPath(filepath.Join(s.dataDir, "audio"), sha, ext))
 	if err != nil {
-		http.NotFound(w, r)
+		writeError(w, http.StatusNotFound, "not_found", "No such audio clip.")
 		return
 	}
 	defer f.Close()
 	info, err := f.Stat()
 	if err != nil {
-		http.Error(w, "internal error", http.StatusInternalServerError)
+		writeInternal(w, r)
 		return
 	}
 	h := w.Header()
@@ -203,7 +203,7 @@ func (s *server) handleListAudioPacks(w http.ResponseWriter, r *http.Request) {
 			(SELECT COUNT(*) FROM audio_clips c WHERE c.pack_id = p.id)
 		FROM audio_packs p WHERE p.deleted_at IS NULL ORDER BY p.id`)
 	if err != nil {
-		http.Error(w, "internal error", http.StatusInternalServerError)
+		writeInternal(w, r)
 		return
 	}
 	defer rows.Close()
@@ -221,13 +221,13 @@ func (s *server) handleListAudioPacks(w http.ResponseWriter, r *http.Request) {
 	for rows.Next() {
 		var p packJSON
 		if err := rows.Scan(&p.PackID, &p.Name, &p.Version, &p.Language, &p.License, &p.Attribution, &p.Notice, &p.ClipCount); err != nil {
-			http.Error(w, "internal error", http.StatusInternalServerError)
+			writeInternal(w, r)
 			return
 		}
 		out = append(out, p)
 	}
 	if rows.Err() != nil {
-		http.Error(w, "internal error", http.StatusInternalServerError)
+		writeInternal(w, r)
 		return
 	}
 	writeJSON(w, http.StatusOK, out)
@@ -242,7 +242,7 @@ func (s *server) handleAudioCredits(w http.ResponseWriter, r *http.Request) {
 	if v := q.Get("offset"); v != "" {
 		n, err := strconv.Atoi(v)
 		if err != nil || n < 0 {
-			http.Error(w, "bad offset", http.StatusBadRequest)
+			writeError(w, http.StatusBadRequest, "bad_request", "Bad offset.")
 			return
 		}
 		offset = n
@@ -250,7 +250,7 @@ func (s *server) handleAudioCredits(w http.ResponseWriter, r *http.Request) {
 	if v := q.Get("limit"); v != "" {
 		n, err := strconv.Atoi(v)
 		if err != nil || n < 1 {
-			http.Error(w, "bad limit", http.StatusBadRequest)
+			writeError(w, http.StatusBadRequest, "bad_request", "Bad limit.")
 			return
 		}
 		limit = min(n, maxCreditsLimit)
@@ -258,11 +258,11 @@ func (s *server) handleAudioCredits(w http.ResponseWriter, r *http.Request) {
 	var packRow int64
 	err := s.db.QueryRowContext(r.Context(), `SELECT id FROM audio_packs WHERE pack_id = ? AND deleted_at IS NULL`, r.PathValue("id")).Scan(&packRow)
 	if errors.Is(err, sql.ErrNoRows) {
-		writeJSON(w, http.StatusNotFound, map[string]string{"error": "not_found"})
+		writeError(w, http.StatusNotFound, "not_found", "No such audio pack.")
 		return
 	}
 	if err != nil {
-		http.Error(w, "internal error", http.StatusInternalServerError)
+		writeInternal(w, r)
 		return
 	}
 	type creditJSON struct {
@@ -280,27 +280,27 @@ func (s *server) handleAudioCredits(w http.ResponseWriter, r *http.Request) {
 		Clips  []creditJSON `json:"clips"`
 	}{Offset: offset, Limit: limit, Clips: []creditJSON{}}
 	if err := s.db.QueryRowContext(r.Context(), `SELECT COUNT(*) FROM audio_clips WHERE pack_id = ?`, packRow).Scan(&resp.Total); err != nil {
-		http.Error(w, "internal error", http.StatusInternalServerError)
+		writeInternal(w, r)
 		return
 	}
 	rows, err := s.db.QueryContext(r.Context(), `
 		SELECT kind, form, reading_key, license, attribution, source
 		FROM audio_clips WHERE pack_id = ? ORDER BY id LIMIT ? OFFSET ?`, packRow, limit, offset)
 	if err != nil {
-		http.Error(w, "internal error", http.StatusInternalServerError)
+		writeInternal(w, r)
 		return
 	}
 	defer rows.Close()
 	for rows.Next() {
 		var c creditJSON
 		if err := rows.Scan(&c.Kind, &c.Form, &c.Reading, &c.License, &c.Attribution, &c.Source); err != nil {
-			http.Error(w, "internal error", http.StatusInternalServerError)
+			writeInternal(w, r)
 			return
 		}
 		resp.Clips = append(resp.Clips, c)
 	}
 	if rows.Err() != nil {
-		http.Error(w, "internal error", http.StatusInternalServerError)
+		writeInternal(w, r)
 		return
 	}
 	writeJSON(w, http.StatusOK, resp)

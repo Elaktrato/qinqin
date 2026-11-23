@@ -58,14 +58,14 @@ func (s *server) handleUploadPhoto(w http.ResponseWriter, r *http.Request) {
 		if errors.As(err, &big) {
 			tooBig()
 		} else {
-			http.Error(w, "malformed request body", http.StatusBadRequest)
+			writeError(w, http.StatusBadRequest, "bad_request", "Malformed request body.")
 		}
 		return
 	}
 	defer r.MultipartForm.RemoveAll()
 	wsID, ok := parseWorkspaceID(r.FormValue("workspace"))
 	if !ok {
-		http.Error(w, `form field "workspace" with a workspace id required`, http.StatusBadRequest)
+		writeError(w, http.StatusBadRequest, "bad_request", "Form field \"workspace\" with a workspace id required.")
 		return
 	}
 	if _, ok := s.journalTarget(w, r, u.ID, wsID); !ok {
@@ -84,13 +84,13 @@ func (s *server) handleUploadPhoto(w http.ResponseWriter, r *http.Request) {
 	}
 	file, _, err := r.FormFile("file")
 	if err != nil {
-		http.Error(w, `multipart field "file" with the photo required`, http.StatusBadRequest)
+		writeError(w, http.StatusBadRequest, "bad_request", "Multipart field \"file\" with the photo required.")
 		return
 	}
 	defer file.Close()
 	data, err := io.ReadAll(io.LimitReader(file, maxPhotoBytes+1))
 	if err != nil {
-		http.Error(w, "malformed request body", http.StatusBadRequest)
+		writeError(w, http.StatusBadRequest, "bad_request", "Malformed request body.")
 		return
 	}
 	if len(data) > maxPhotoBytes {
@@ -110,7 +110,7 @@ func (s *server) handleUploadPhoto(w http.ResponseWriter, r *http.Request) {
 		return
 	case err != nil:
 		log.Printf("journal: normalise photo: %v", err)
-		http.Error(w, "internal error", http.StatusInternalServerError)
+		writeInternal(w, r)
 		return
 	}
 	ph, err := s.photos().Create(r.Context(), u.ID, wsID, jpegData)
@@ -120,7 +120,7 @@ func (s *server) handleUploadPhoto(w http.ResponseWriter, r *http.Request) {
 		return
 	case err != nil:
 		log.Printf("journal: store photo: %v", err)
-		http.Error(w, "internal error", http.StatusInternalServerError)
+		writeInternal(w, r)
 		return
 	}
 	writeJSON(w, http.StatusCreated, map[string]string{"photoId": ph.ID})
@@ -128,11 +128,11 @@ func (s *server) handleUploadPhoto(w http.ResponseWriter, r *http.Request) {
 
 func photoNotFound(w http.ResponseWriter, err error) {
 	if errors.Is(err, journal.ErrPhotoNotFound) {
-		http.Error(w, "photo not found", http.StatusNotFound)
+		writeError(w, http.StatusNotFound, "not_found", "Photo not found.")
 		return
 	}
 	log.Printf("journal: photo: %v", err)
-	http.Error(w, "internal error", http.StatusInternalServerError)
+	writeError(w, http.StatusInternalServerError, "internal", "Internal server error.")
 }
 
 // handleGetPhoto serves GET /api/journal/photos/{id}.
@@ -255,7 +255,7 @@ func (s *server) handleJournalTranscribe(w http.ResponseWriter, r *http.Request)
 		Engine      string `json:"engine"`
 	}
 	if json.Unmarshal(body, &req) != nil || req.PhotoID == "" || len(req.PhotoID) > 64 || (req.Engine != "ai" && req.Engine != "offline") {
-		http.Error(w, "malformed request body", http.StatusBadRequest)
+		writeError(w, http.StatusBadRequest, "bad_request", "Malformed request body.")
 		return
 	}
 	t, ok := s.journalTarget(w, r, u.ID, req.WorkspaceID)

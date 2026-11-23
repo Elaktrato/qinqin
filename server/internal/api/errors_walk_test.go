@@ -20,25 +20,12 @@ import (
 // walkPending lists the patterns whose handlers are not migrated yet (the
 // plan's migration tasks empty it; it is then removed).
 var walkPending = map[string]bool{
-	"DELETE /api/journal/photos/{id}":        true,
-	"GET /api/audio-packs/{id}/credits":      true,
-	"GET /api/audio/clips/{file}":            true,
-	"GET /api/journal/capabilities":          true,
-	"GET /api/journal/photos/{id}":           true,
-	"GET /api/lookup":                        true,
-	"GET /api/search":                        true,
-	"GET /api/segment/at":                    true,
-	"GET /fonts/{file}":                      true,
-	"GET /hanzi/{file}":                      true,
-	"POST /api/audio/resolve":                true,
-	"POST /api/journal/photos":               true,
-	"POST /api/journal/review":               true,
-	"POST /api/journal/suggestions":          true,
-	"POST /api/journal/transcribe":           true,
-	"POST /api/segment":                      true,
-	"PUT /api/ai/active":                     true,
-	"PUT /api/ai/keys/{provider}":            true,
-	"PUT /api/journal/photos/{id}/keepalive": true,
+	"GET /api/lookup":     true,
+	"GET /api/search":     true,
+	"GET /api/segment/at": true,
+	"GET /fonts/{file}":   true,
+	"GET /hanzi/{file}":   true,
+	"POST /api/segment":   true,
 }
 
 type walkFailure struct{ pattern, what string }

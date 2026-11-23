@@ -153,7 +153,7 @@ func (s *server) handleAIStatus(w http.ResponseWriter, r *http.Request) {
 	}
 	st, err := s.ai.Status(r.Context(), u.ID)
 	if err != nil {
-		http.Error(w, "internal error", http.StatusInternalServerError)
+		writeInternal(w, r)
 		return
 	}
 	writeJSON(w, http.StatusOK, st)
@@ -188,7 +188,7 @@ func (s *server) handleAIProviders(w http.ResponseWriter, r *http.Request) {
 	}
 	all, err := s.ai.AllProviders(r.Context())
 	if err != nil {
-		http.Error(w, "internal error", http.StatusInternalServerError)
+		writeInternal(w, r)
 		return
 	}
 	for _, p := range all {
@@ -272,7 +272,7 @@ func (s *server) handlePutAIKey(w http.ResponseWriter, r *http.Request) {
 		Model string `json:"model"`
 	}
 	if err := json.Unmarshal(body, &req); err != nil {
-		http.Error(w, "malformed request body", http.StatusBadRequest)
+		writeError(w, http.StatusBadRequest, "bad_request", "Malformed request body.")
 		return
 	}
 	spec, ok := s.aiProvider(w, r)
@@ -286,7 +286,7 @@ func (s *server) handlePutAIKey(w http.ResponseWriter, r *http.Request) {
 	ctx := context.WithoutCancel(r.Context())
 	existing, ierr := s.ai.Keys.Info(ctx, u.ID, spec.ID)
 	if ierr != nil && !errors.Is(ierr, ai.ErrNoKey) {
-		http.Error(w, "internal error", http.StatusInternalServerError)
+		writeInternal(w, r)
 		return
 	}
 	hasKey := ierr == nil
@@ -320,7 +320,7 @@ func (s *server) handlePutAIKey(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err := s.ai.Keys.Put(ctx, u.ID, spec.ID, key, model, ai.PutOptions{AllowEmptyKey: !spec.KeyRequired}); err != nil {
-		http.Error(w, "internal error", http.StatusInternalServerError)
+		writeInternal(w, r)
 		return
 	}
 	if _, err := s.ai.Selection.Active(ctx, u.ID); errors.Is(err, ai.ErrNoSelection) {
@@ -369,7 +369,7 @@ func (s *server) handleSetActiveAI(w http.ResponseWriter, r *http.Request) {
 		Provider string `json:"provider"`
 	}
 	if err := json.Unmarshal(body, &req); err != nil || req.Provider == "" {
-		http.Error(w, "malformed request body", http.StatusBadRequest)
+		writeError(w, http.StatusBadRequest, "bad_request", "Malformed request body.")
 		return
 	}
 	if err := s.aiUsable(); err != nil {
@@ -391,7 +391,7 @@ func (s *server) handleSetActiveAI(w http.ResponseWriter, r *http.Request) {
 func (s *server) writeAIStatus(w http.ResponseWriter, r *http.Request, userID int64) {
 	st, err := s.ai.Status(r.Context(), userID)
 	if err != nil {
-		http.Error(w, "internal error", http.StatusInternalServerError)
+		writeInternal(w, r)
 		return
 	}
 	writeJSON(w, http.StatusOK, st)
@@ -409,7 +409,7 @@ func (s *server) handleDeleteAIKey(w http.ResponseWriter, r *http.Request) {
 	// for a provider that no longer exists.
 	tx, err := s.db.BeginTx(r.Context(), nil)
 	if err != nil {
-		http.Error(w, "internal error", http.StatusInternalServerError)
+		writeInternal(w, r)
 		return
 	}
 	defer tx.Rollback()
@@ -418,12 +418,12 @@ func (s *server) handleDeleteAIKey(w http.ResponseWriter, r *http.Request) {
 		`DELETE FROM ai_selection WHERE user_id = ? AND provider = ?`,
 	} {
 		if _, err := tx.ExecContext(r.Context(), q, u.ID, id); err != nil {
-			http.Error(w, "internal error", http.StatusInternalServerError)
+			writeInternal(w, r)
 			return
 		}
 	}
 	if err := tx.Commit(); err != nil {
-		http.Error(w, "internal error", http.StatusInternalServerError)
+		writeInternal(w, r)
 		return
 	}
 	w.WriteHeader(http.StatusNoContent)
