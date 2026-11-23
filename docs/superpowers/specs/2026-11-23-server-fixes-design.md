@@ -65,8 +65,8 @@ SIGTERM handler is not even stopped by SIGTERM; Docker kills it after its 10 s).
   background context, wait for the mail worker, the package builder and the API's background jobs (stage
   sweeper, staged pack imports, restore validation and restores) in that order, each bounded by one shared 10 s
   deadline, then close the database. Each step logs one line; the last is `shutdown complete`.
-- `api.WithBackground(ctx, wg)` replaces how the sweeper context is passed: the API runs its sweeper and every
-  detached job through `s.goBackground`, counted in `wg`. `WithStageSweeper(ctx, interval)` keeps working.
+- `api.WithBackgroundGroup(wg)` counts the API's background goroutines: the stage sweeper and every detached job
+  run through `s.goBackground`. `WithStageSweeper(ctx, interval)` is unchanged and gets the background context.
 - `docker-compose.yml` gets `stop_grace_period: 30s` (10 s HTTP + up to 10 s background + margin).
 
 Ruling: one shared 10 s deadline for the background waits, then exit anyway — an interrupted package build
