@@ -116,13 +116,14 @@ func (s *server) handleInstallDictionary(w http.ResponseWriter, r *http.Request)
 		writeError(w, http.StatusRequestEntityTooLarge, "too_large", tooLargeMessage)
 		return
 	}
+	// A failure that is not the pack's (a full disk) is 500 internal.
 	if err := dict.ExtractZipAt(ra, header.Size, stage, dict.DefaultZipLimits); err != nil {
-		writeError(w, http.StatusBadRequest, "pack_invalid", "Invalid pack zip.")
+		writePackError(w, r, err, stage, s.dataDir)
 		return
 	}
 	pack, err := dict.LoadExtracted(stage)
 	if err != nil {
-		writeError(w, http.StatusBadRequest, "pack_invalid", "Invalid pack.")
+		writePackError(w, r, err, stage, s.dataDir)
 		return
 	}
 	if pack.Manifest.Type != dict.TypeDictionary {
