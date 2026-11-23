@@ -45,7 +45,7 @@ func (s *server) handleListDictionaries(w http.ResponseWriter, r *http.Request) 
 		WHERE deleted_at IS NULL
 		ORDER BY id`)
 	if err != nil {
-		http.Error(w, "internal error", http.StatusInternalServerError)
+		writeInternal(w, r)
 		return
 	}
 	defer rows.Close()
@@ -53,13 +53,13 @@ func (s *server) handleListDictionaries(w http.ResponseWriter, r *http.Request) 
 	for rows.Next() {
 		d, err := scanDictionary(rows)
 		if err != nil {
-			http.Error(w, "internal error", http.StatusInternalServerError)
+			writeInternal(w, r)
 			return
 		}
 		list = append(list, d)
 	}
 	if err := rows.Err(); err != nil {
-		http.Error(w, "internal error", http.StatusInternalServerError)
+		writeInternal(w, r)
 		return
 	}
 	writeJSON(w, http.StatusOK, list)
@@ -80,30 +80,30 @@ func (s *server) handleInstallDictionary(w http.ResponseWriter, r *http.Request)
 	if err := r.ParseMultipartForm(maxPackMemory); err != nil {
 		var tooBig *http.MaxBytesError
 		if errors.As(err, &tooBig) {
-			http.Error(w, tooLargeMessage, http.StatusRequestEntityTooLarge)
+			writeError(w, http.StatusRequestEntityTooLarge, "too_large", tooLargeMessage)
 			return
 		}
-		http.Error(w, "multipart form with a pack zip required", http.StatusBadRequest)
+		writeError(w, http.StatusBadRequest, "bad_request", "Multipart form with a pack zip required.")
 		return
 	}
 	defer r.MultipartForm.RemoveAll()
 	file, header, err := r.FormFile("pack")
 	if err != nil {
-		http.Error(w, `multipart field "pack" with the pack zip required`, http.StatusBadRequest)
+		writeError(w, http.StatusBadRequest, "bad_request", "Multipart field \"pack\" with the pack zip required.")
 		return
 	}
 	defer file.Close()
 
 	packsDir := filepath.Join(s.dataDir, "packs")
 	if err := os.MkdirAll(packsDir, 0o755); err != nil {
-		http.Error(w, "internal error", http.StatusInternalServerError)
+		writeInternal(w, r)
 		return
 	}
 	// The extraction stages inside packsDir, so moving the pack into its
 	// installed place is a same-directory rename.
 	stage, err := os.MkdirTemp(packsDir, ".stage-")
 	if err != nil {
-		http.Error(w, "internal error", http.StatusInternalServerError)
+		writeInternal(w, r)
 		return
 	}
 	defer func() {
@@ -113,24 +113,24 @@ func (s *server) handleInstallDictionary(w http.ResponseWriter, r *http.Request)
 	}()
 	ra, ok := file.(io.ReaderAt)
 	if !ok || header.Size > maxPackUpload {
-		http.Error(w, tooLargeMessage, http.StatusRequestEntityTooLarge)
+		writeError(w, http.StatusRequestEntityTooLarge, "too_large", tooLargeMessage)
 		return
 	}
 	if err := dict.ExtractZipAt(ra, header.Size, stage, dict.DefaultZipLimits); err != nil {
-		http.Error(w, "invalid pack zip", http.StatusBadRequest)
+		writeError(w, http.StatusBadRequest, "pack_invalid", "Invalid pack zip.")
 		return
 	}
 	pack, err := dict.LoadExtracted(stage)
 	if err != nil {
-		http.Error(w, "invalid pack", http.StatusBadRequest)
+		writeError(w, http.StatusBadRequest, "pack_invalid", "Invalid pack.")
 		return
 	}
 	if pack.Manifest.Type != dict.TypeDictionary {
-		http.Error(w, "only dictionary packs install here", http.StatusBadRequest)
+		writeError(w, http.StatusBadRequest, "pack_invalid", "Only dictionary packs install here.")
 		return
 	}
 	if _, err := packDir(packsDir, pack.Manifest); err != nil {
-		http.Error(w, "invalid pack", http.StatusBadRequest)
+		writeError(w, http.StatusBadRequest, "pack_invalid", "Invalid pack.")
 		return
 	}
 	s.packMu.Lock()
@@ -138,10 +138,10 @@ func (s *server) handleInstallDictionary(w http.ResponseWriter, r *http.Request)
 	// One transaction: a failed import leaves nothing behind.
 	if _, err := dict.ImportLexicon(r.Context(), s.db, &pack); err != nil {
 		if errors.Is(err, dict.ErrInvalidPack) {
-			http.Error(w, "invalid pack", http.StatusBadRequest)
+			writeError(w, http.StatusBadRequest, "pack_invalid", "Invalid pack.")
 			return
 		}
-		http.Error(w, "internal error", http.StatusInternalServerError)
+		writeInternal(w, r)
 		return
 	}
 	registryID, _, _ := dict.RegistryTerms(pack.Manifest)
@@ -159,7 +159,7 @@ func (s *server) handleInstallDictionary(w http.ResponseWriter, r *http.Request)
 		SELECT id, name, version, license, attribution, notice, pack_id, language FROM dictionaries
 		WHERE pack_id = ? AND deleted_at IS NULL`, pack.Manifest.ID))
 	if err != nil {
-		http.Error(w, "internal error", http.StatusInternalServerError)
+		writeInternal(w, r)
 		return
 	}
 	writeJSON(w, http.StatusCreated, d)
@@ -174,7 +174,7 @@ func (s *server) handleUninstallDictionary(w http.ResponseWriter, r *http.Reques
 	}
 	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
 	if err != nil {
-		http.Error(w, "dictionary not found", http.StatusNotFound)
+		writeError(w, http.StatusNotFound, "not_found", "Dictionary not found.")
 		return
 	}
 	s.packMu.Lock()
@@ -184,10 +184,10 @@ func (s *server) handleUninstallDictionary(w http.ResponseWriter, r *http.Reques
 	s.db.QueryRowContext(r.Context(), `SELECT pack_id, language FROM dictionaries WHERE id = ?`, id).Scan(&packID, &language)
 	if err := dict.Uninstall(r.Context(), s.db, id); err != nil {
 		if errors.Is(err, dict.ErrNotFound) {
-			http.Error(w, "dictionary not found", http.StatusNotFound)
+			writeError(w, http.StatusNotFound, "not_found", "Dictionary not found.")
 			return
 		}
-		http.Error(w, "internal error", http.StatusInternalServerError)
+		writeInternal(w, r)
 		return
 	}
 	s.packChanged(dict.TypeDictionary, packID, language)

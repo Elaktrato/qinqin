@@ -120,7 +120,7 @@ func knownLanguages(ctx context.Context, db queryer) ([]languageInfo, error) {
 func (s *server) handleListLanguages(w http.ResponseWriter, r *http.Request) {
 	list, err := knownLanguages(r.Context(), s.db)
 	if err != nil {
-		http.Error(w, "internal error", http.StatusInternalServerError)
+		writeInternal(w, r)
 		return
 	}
 	writeJSON(w, http.StatusOK, list)

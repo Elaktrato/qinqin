@@ -23,7 +23,7 @@ func adminLang(t *testing.T, method, tsURL, path, token string, body any) (int, 
 	resp := doJSON(t, method, tsURL, path, token, body)
 	defer resp.Body.Close()
 	b, _ := io.ReadAll(resp.Body)
-	return resp.StatusCode, strings.TrimSpace(string(b))
+	return resp.StatusCode, errorText(b)
 }
 
 func mustExec(t *testing.T, sqlDB *sql.DB, stmts ...string) {
@@ -63,13 +63,13 @@ func TestAdminLanguageRoutes(t *testing.T) {
 	if st, _ := adminLang(t, http.MethodPost, ts.URL, "/api/admin/languages", admin, map[string]string{"code": "pt-br"}); st != http.StatusOK {
 		t.Errorf("POST again = %d, want 200", st)
 	}
-	if st, msg := adminLang(t, http.MethodPost, ts.URL, "/api/admin/languages", admin, map[string]string{"code": "zh"}); st != http.StatusConflict || msg != "zh is built in" {
+	if st, msg := adminLang(t, http.MethodPost, ts.URL, "/api/admin/languages", admin, map[string]string{"code": "zh"}); st != http.StatusConflict || msg != "language_built_in: zh is built in." {
 		t.Errorf("POST zh = %d %q", st, msg)
 	}
 	if st, _ := adminLang(t, http.MethodPost, ts.URL, "/api/admin/languages", admin, map[string]string{"code": "x"}); st != http.StatusUnprocessableEntity {
 		t.Errorf("POST x = %d, want 422", st)
 	}
-	if st, msg := adminLang(t, http.MethodDelete, ts.URL, "/api/admin/languages/zh", admin, nil); st != http.StatusConflict || msg != "zh is built in" {
+	if st, msg := adminLang(t, http.MethodDelete, ts.URL, "/api/admin/languages/zh", admin, nil); st != http.StatusConflict || msg != "language_built_in: zh is built in." {
 		t.Errorf("DELETE zh = %d %q", st, msg)
 	}
 	if st, _ := adminLang(t, http.MethodDelete, ts.URL, "/api/admin/languages/nope", admin, nil); st != http.StatusNotFound {
@@ -82,7 +82,7 @@ func TestAdminLanguageRoutes(t *testing.T) {
 
 func TestDeleteLanguageBlockers(t *testing.T) {
 	lang.Register(lang.Zh{})
-	const blocked = "still used by:"
+	const blocked = "language_in_use: The language is still used by:"
 	cases := []struct {
 		name string
 		stmt []string
@@ -199,7 +199,7 @@ func TestDeleteLanguageBodyNamesBlockers(t *testing.T) {
 		}
 	}
 	st, msg := adminLang(t, http.MethodDelete, ts.URL, "/api/admin/languages/es", admin, nil)
-	want := "still used by: 2 workspaces, a sentence pack"
+	want := "language_in_use: The language is still used by: 2 workspaces, a sentence pack."
 	if st != http.StatusConflict || msg != want {
 		t.Errorf("DELETE = %d %q, want 409 %q", st, msg, want)
 	}

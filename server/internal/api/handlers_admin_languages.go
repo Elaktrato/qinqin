@@ -30,29 +30,29 @@ func (s *server) handleRegisterLanguage(w http.ResponseWriter, r *http.Request) 
 		Code string `json:"code"`
 	}
 	if err := json.NewDecoder(bytes.NewReader(body)).Decode(&req); err != nil {
-		http.Error(w, "malformed request body", http.StatusBadRequest)
+		writeError(w, http.StatusBadRequest, "bad_request", "Malformed request body.")
 		return
 	}
 	code, valid := lang.ValidCode(req.Code)
 	if !valid {
-		http.Error(w, "language must be a code like es or pt-br", http.StatusUnprocessableEntity)
+		writeError(w, http.StatusUnprocessableEntity, "invalid_language", "language must be a code like es or pt-br.")
 		return
 	}
 	if lang.Registered(code) {
-		http.Error(w, code+" is built in", http.StatusConflict)
+		writeError(w, http.StatusConflict, "language_built_in", code+" is built in.")
 		return
 	}
 	res, err := s.db.ExecContext(r.Context(), `
 		INSERT INTO languages (code, name, updated_at) VALUES (?, ?, ?)
 		ON CONFLICT (code) DO NOTHING`, code, code, now())
 	if err != nil {
-		http.Error(w, "internal error", http.StatusInternalServerError)
+		writeInternal(w, r)
 		return
 	}
 	created, _ := res.RowsAffected()
 	list, err := knownLanguages(r.Context(), s.db)
 	if err != nil {
-		http.Error(w, "internal error", http.StatusInternalServerError)
+		writeInternal(w, r)
 		return
 	}
 	status := http.StatusOK
@@ -65,7 +65,7 @@ func (s *server) handleRegisterLanguage(w http.ResponseWriter, r *http.Request) 
 			return
 		}
 	}
-	http.Error(w, "internal error", http.StatusInternalServerError)
+	writeInternal(w, r)
 }
 
 // usageCountsSQL counts what depends on language ?1 (compared exactly),
@@ -161,18 +161,18 @@ func (s *server) handleDeleteLanguage(w http.ResponseWriter, r *http.Request) {
 		LIMIT 1`, code).Scan(&stored)
 	if errors.Is(err, sql.ErrNoRows) {
 		if lang.Registered(code) {
-			http.Error(w, strings.ToLower(code)+" is built in", http.StatusConflict)
+			writeError(w, http.StatusConflict, "language_built_in", strings.ToLower(code)+" is built in.")
 			return
 		}
-		http.Error(w, "language not found", http.StatusNotFound)
+		writeError(w, http.StatusNotFound, "not_found", "No such language.")
 		return
 	}
 	if err != nil {
-		http.Error(w, "internal error", http.StatusInternalServerError)
+		writeInternal(w, r)
 		return
 	}
 	if lang.Registered(stored) {
-		http.Error(w, stored+" is built in", http.StatusConflict)
+		writeError(w, http.StatusConflict, "language_built_in", stored+" is built in.")
 		return
 	}
 	res, err := s.db.ExecContext(r.Context(), `
@@ -180,20 +180,20 @@ func (s *server) handleDeleteLanguage(w http.ResponseWriter, r *http.Request) {
 			SELECT workspaces + installed + levels + freq + sentences + grammar + audio + legacy
 			FROM (`+usageCountsSQL+`)) = 0`, stored)
 	if err != nil {
-		http.Error(w, "internal error", http.StatusInternalServerError)
+		writeInternal(w, r)
 		return
 	}
 	if n, _ := res.RowsAffected(); n == 0 {
 		use, err := s.languageUse(r.Context(), stored)
 		if err != nil {
-			http.Error(w, "internal error", http.StatusInternalServerError)
+			writeInternal(w, r)
 			return
 		}
 		if msg := use.blockers(); msg != "" {
-			http.Error(w, "still used by: "+msg, http.StatusConflict)
+			writeError(w, http.StatusConflict, "language_in_use", "The language is still used by: "+msg+".")
 			return
 		}
-		http.Error(w, "language not found", http.StatusNotFound)
+		writeError(w, http.StatusNotFound, "not_found", "No such language.")
 		return
 	}
 	w.WriteHeader(http.StatusNoContent)
@@ -208,7 +208,7 @@ func (s *server) handleLanguageUsage(w http.ResponseWriter, r *http.Request) {
 	rows, err := s.db.QueryContext(r.Context(), `
 		SELECT language, COUNT(*) FROM workspaces GROUP BY language ORDER BY language`)
 	if err != nil {
-		http.Error(w, "internal error", http.StatusInternalServerError)
+		writeInternal(w, r)
 		return
 	}
 	defer rows.Close()
@@ -222,13 +222,13 @@ func (s *server) handleLanguageUsage(w http.ResponseWriter, r *http.Request) {
 			Workspaces int    `json:"workspaces"`
 		}
 		if err := rows.Scan(&u.Code, &u.Workspaces); err != nil {
-			http.Error(w, "internal error", http.StatusInternalServerError)
+			writeInternal(w, r)
 			return
 		}
 		list = append(list, u)
 	}
 	if rows.Err() != nil {
-		http.Error(w, "internal error", http.StatusInternalServerError)
+		writeInternal(w, r)
 		return
 	}
 	writeJSON(w, http.StatusOK, list)

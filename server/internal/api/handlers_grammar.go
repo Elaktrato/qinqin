@@ -14,7 +14,7 @@ import (
 func (s *server) handleListGrammar(w http.ResponseWriter, r *http.Request) {
 	packs, err := grammar.ListPacks(r.Context(), s.db, r.URL.Query().Get("language"))
 	if err != nil {
-		http.Error(w, "internal error", http.StatusInternalServerError)
+		writeInternal(w, r)
 		return
 	}
 	writeJSON(w, http.StatusOK, packs)
@@ -26,11 +26,11 @@ func (s *server) handleListGrammar(w http.ResponseWriter, r *http.Request) {
 func (s *server) handleGrammarLesson(w http.ResponseWriter, r *http.Request) {
 	view, err := grammar.LessonByID(r.Context(), s.db, r.PathValue("pack"), r.PathValue("lesson"))
 	if errors.Is(err, grammar.ErrNotFound) {
-		writeJSON(w, http.StatusNotFound, map[string]string{"error": "not_found"})
+		writeError(w, http.StatusNotFound, "not_found", "No such grammar lesson.")
 		return
 	}
 	if err != nil {
-		http.Error(w, "internal error", http.StatusInternalServerError)
+		writeInternal(w, r)
 		return
 	}
 	writeJSON(w, http.StatusOK, view)

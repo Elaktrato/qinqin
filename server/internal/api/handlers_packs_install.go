@@ -33,7 +33,7 @@ func (s *server) handleInstallStaged(w http.ResponseWriter, r *http.Request) {
 		License string `json:"license"`
 	}
 	if err := json.Unmarshal(body, &req); err != nil {
-		http.Error(w, "malformed request body", http.StatusBadRequest)
+		writeError(w, http.StatusBadRequest, "bad_request", "Malformed request body.")
 		return
 	}
 	token := r.PathValue("token")
@@ -41,11 +41,10 @@ func (s *server) handleInstallStaged(w http.ResponseWriter, r *http.Request) {
 	var msg string
 	found := s.stages().with(token, u.ID, s.now(), func(st *stagedPack) {
 		switch {
-		case st.status != stageStaged:
+		case st.status == stageImporting:
 			code, msg = http.StatusConflict, "already importing"
-			if st.status != stageImporting {
-				msg = "already processed"
-			}
+		case st.status != stageStaged:
+			code, msg = http.StatusConflict, "already processed"
 		case req.License != st.license:
 			code, msg = http.StatusConflict, "confirm the pack's licence"
 		default:
@@ -55,9 +54,11 @@ func (s *server) handleInstallStaged(w http.ResponseWriter, r *http.Request) {
 	})
 	switch {
 	case !found:
-		http.Error(w, "staged pack not found", http.StatusNotFound)
+		writeError(w, http.StatusNotFound, "not_found", "Staged pack not found.")
+	case msg == "already importing":
+		writeError(w, http.StatusConflict, "pack_import_running", "This pack is already being imported.")
 	case code != http.StatusAccepted:
-		http.Error(w, msg, code)
+		writeError(w, http.StatusConflict, "conflict", "The staged pack "+msg+".")
 	default:
 		// The job outlives the request: a proxy timeout or a closed tab
 		// must not abort or half-apply the import.
@@ -150,7 +151,7 @@ func (s *server) handleStagedStatus(w http.ResponseWriter, r *http.Request) {
 		out.Status, out.Pack, out.Summary, out.Error, out.Warning = st.status, st.result, st.summary, st.errMsg, st.warning
 	})
 	if !found {
-		http.Error(w, "staged pack not found", http.StatusNotFound)
+		writeError(w, http.StatusNotFound, "not_found", "Staged pack not found.")
 		return
 	}
 	writeJSON(w, http.StatusOK, out)
