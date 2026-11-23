@@ -8,6 +8,7 @@ import { user } from '../auth';
 import { contextForData } from '../study/currentContext';
 import { loadStudyHistory } from '../study/history';
 import { loadConfig } from '../study/session';
+import { hasTabSetup, loadExtraChoices, loadRememberedTypes } from '../study/cardTypesMemory';
 import { activeWeights, studyPullPages } from '../study/store';
 import { fetchStrokeData } from '../study/strokeData';
 import { workspaces } from '../workspaces';
@@ -50,6 +51,9 @@ export async function prepareActiveWorkspace(): Promise<void> {
 		userId: me.id,
 		loadHistory: (id) => loadStudyHistory(id),
 		config: loadConfig,
+		tabTypes: () => (hasTabSetup() ? loadConfig().cardTypes : null),
+		remembered: () => loadRememberedTypes(ws.id),
+		choices: () => loadExtraChoices(ws.id),
 		language: ws.language,
 		contextFor: (data, id, now) => contextForData(data, id, now),
 		weights: (data) => activeWeights(data),

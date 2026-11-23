@@ -166,6 +166,26 @@ describe('prepareOffline', () => {
 		expect(deps.active.max).toBeLessThanOrEqual(2);
 	});
 
+	it('prepares the opt-in kinds the decks switch on, as the Study page selects them, not only the tab setup', async () => {
+		// Word 9 was learned (Easy, not due); its reverse card is new. General switches reverse on, and
+		// this tab has no setup of its own (the default: Vocab only).
+		const learned = card('c-vocab-9', 'vocab', 9, '本', '2026-01-01T00:00:00.000Z');
+		const reverse = card('c-reverse-9', 'reverse', 9, '本', '2026-01-02T00:00:00.000Z');
+		const history = build.history({
+			cards: [learned, reverse],
+			reviews: [build.review({ cardId: 'c-vocab-9', ts: '2026-02-27T10:00:00Z', grade: 4 })],
+			deckSettings: { general: { deckId: 'general', cardTypes: ['reverse'], extra: {} } }
+		});
+		const deps = makeDeps({ loadHistory: async () => history, tabTypes: () => null, remembered: () => null, choices: () => ({}) });
+		expect((await prepareOffline(7, deps)).status).toBe('prepared');
+		expect(deps.calls).toContain(entryPath(9));
+
+		// Unchecked on the setup page in this workspace: not prepared.
+		const off = makeDeps({ loadHistory: async () => history, tabTypes: () => null, remembered: () => null, choices: () => ({ reverse: false }) });
+		await prepareOffline(7, off);
+		expect(off.calls).not.toContain(entryPath(9));
+	});
+
 	it('warms every page of the current workspace round through the study read and counts the pages', async () => {
 		const pages: number[] = [];
 		const loadHistory = vi.fn(async (ws: number) => {

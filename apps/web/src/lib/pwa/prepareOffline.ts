@@ -8,7 +8,9 @@ import { entryPath } from '../api/entries';
 import { deckSessionPlan, type DeckSessionOptions } from '../study/cardFlow';
 import { writableChars } from '../study/writing';
 import type { StudyContext } from '../study/studyContext';
-import { CARD_KINDS, type StudyHistory } from '../study/types';
+import { type StudyCardKind, type StudyHistory } from '../study/types';
+import { effectiveCardTypes, effectiveKinds, type ExtraChoices } from '../study/cardTypesMemory';
+import { enabledKinds } from '../study/deckSettings';
 import type { StudySessionConfig } from '../study/session';
 import type { OfflineState } from './offlineState';
 
@@ -95,6 +97,12 @@ export interface PrepareDeps {
 	userId: number;
 	loadHistory: (workspaceId: number) => Promise<StudyHistory>;
 	config: () => StudySessionConfig;
+	/** This tab's own setup kinds, or null when the tab has none (absent: the config's). */
+	tabTypes?: () => readonly string[] | null;
+	/** The kinds last started in the workspace (cardTypesMemory), or null. */
+	remembered?: () => StudyCardKind[] | null;
+	/** The learner's opt-in checkbox choices in the workspace (cardTypesMemory). */
+	choices?: () => ExtraChoices;
 	language: string;
 	contextFor: (data: StudyHistory, workspaceId: number, now: number) => StudyContext;
 	weights: (data: StudyHistory) => readonly number[];
@@ -199,7 +207,16 @@ export async function prepareOffline(
 		// A levels session cannot run offline (its entries come from the scheme
 		// API); prepare the plain deck session instead.
 		const deckIds = config.mode === 'decks' && config.deckIds.length > 0 ? config.deckIds : ['general'];
-		const kinds = CARD_KINDS.filter((kind) => config.cardTypes.includes(kind));
+		// The kinds a session started now would study: the tab's setup (else the
+		// kinds last started in the workspace, else vocab) plus each opt-in kind
+		// a deck in scope switches on and the learner has not unchecked — the
+		// rule of the Study page, the home widget and the deck start (effectiveKinds).
+		const tabTypes = d.tabTypes ? d.tabTypes() : config.cardTypes;
+		const kinds = effectiveKinds(
+			effectiveCardTypes(tabTypes, d.remembered?.() ?? null),
+			enabledKinds(data.deckSettings, deckIds),
+			d.choices?.() ?? {}
+		);
 		const plan = planOffline(
 			{
 				cards: data.cards,

@@ -92,3 +92,43 @@ test('reviews graded offline are sent once when the browser is back online', asy
 	const after = await learner.api.reviews(ws);
 	expect(after.map((r) => r.id).sort()).toEqual(sent.map((r) => r.id).sort());
 });
+
+test('a reverse card the decks switch on is saved for offline study too', async ({ page, context, learner }) => {
+	// 水 was learned three days ago (not due); its reverse card is new. 私 is a new word.
+	await addCards(
+		learner,
+		'ja',
+		[
+			{ kind: 'vocab', written: '私' },
+			{ kind: 'vocab', written: '水', reviewedDaysAgo: 3 },
+			{ kind: 'reverse', written: '水' }
+		],
+		['reverse']
+	);
+	// The Study page is never opened online in this tab: the preparation must
+	// find the reverse card from the deck settings, not from a saved setup.
+	await prepareOffline(page, 2);
+
+	await context.setOffline(true);
+	await page.goto('/study');
+	await expect(page.getByRole('region', { name: 'This session' })).toContainText(/0\s*due\s*·\s*2\s*new/);
+	await page.getByRole('button', { name: 'Start studying' }).click();
+	const seen: string[] = [];
+	for (let n = 1; n <= 2; n++) {
+		await expect(page.getByText(new RegExp(`^${n} / 2`))).toBeVisible();
+		const article = page.getByRole('article', { name: /^(Recognise|Recall) card$/ });
+		await expect(article).not.toContainText('Could not load this word');
+		seen.push((await article.getAttribute('aria-label')) ?? '');
+		await page.getByRole('button', { name: 'Show answer' }).click();
+		await page.getByRole('button', { name: /^Good\b/ }).click();
+	}
+	await expect(page.getByText('Session complete')).toBeVisible();
+	expect(seen.sort()).toEqual(['Recall card', 'Recognise card']);
+
+	await context.setOffline(false);
+	await expect(page.getByText('All reviews sent.')).toBeVisible();
+	// The two new reviews, after 水's earlier one from the fixture.
+	await expect
+		.poll(async () => (await learner.api.reviews(learner.workspaces.ja)).slice(1).map((r) => r.payload.mode).sort())
+		.toEqual(['reverse', 'vocab']);
+});
