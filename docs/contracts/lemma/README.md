@@ -17,6 +17,8 @@ Fixtures:
 - `deinflect.json` — Japanese table cases: each `expect` candidate (`form`, `class`, `reasons` in
   application order) must be among `Deinflect(surface)`, no candidate may have a form in `reject`, and
   `none: true` means no candidate at all.
+- `parse.json` — whole files a decoder must accept or refuse: one JSON object only (no trailing data), no
+  duplicate key in any object, no unknown key.
 - `budget.json` — the work budget of one Deinflect call, counted unit for unit, and where a smaller budget
   stops it ("Bound").
 - `segment.json` — a small lexicon and texts with the tokens the server must produce (boundaries, lemma,
@@ -44,7 +46,8 @@ Go: `server/internal/lemma/contract_test.go`, `server/internal/lemma/budget_test
   "rules": [{"from": "ました", "to": "ます", "reason": "past", "out": "masu"}] }
 ```
 
-Unknown keys, an unknown class in `out`/`in`/`compounds`, an unknown `match` or script, an empty predicate,
+A table file is exactly one JSON object (whitespace around it is fine; anything after it is refused) and no
+object in it may name a key twice. Unknown keys, an unknown class in `out`/`in`/`compounds`, an unknown `match` or script, an empty predicate,
 an empty `from` or `reason`, an empty `keepWhole` entry, `maxDepth` outside 1..8 or a `format` outside 1..2 reject
 the whole table. An engine reads every format from 1 up to its own: format 2 added `hints.keepWhole` and the rule
 flag `chainOnly`; a format-1 table stays valid, and a format-1 table that uses either is rejected.

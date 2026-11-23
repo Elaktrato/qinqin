@@ -11,6 +11,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"regexp"
 	"slices"
 	"strings"
@@ -248,10 +249,66 @@ func Parse(data []byte) (*Table, error) {
 	if err := dec.Decode(&t); err != nil {
 		return nil, fmt.Errorf("lemma: %w", err)
 	}
+	if err := dec.Decode(&struct{}{}); err != io.EOF {
+		return nil, errors.New("lemma: trailing data after the table")
+	}
+	if err := noDuplicateKeys(data); err != nil {
+		return nil, fmt.Errorf("lemma: %w", err)
+	}
 	if err := t.validate(); err != nil {
 		return nil, fmt.Errorf("lemma: table %q: %w", t.Language, err)
 	}
 	return &t, nil
+}
+
+// noDuplicateKeys reports a key named twice in one object of data (one
+// well-formed JSON value; encoding/json keeps the last silently).
+func noDuplicateKeys(data []byte) error {
+	dec := json.NewDecoder(bytes.NewReader(data))
+	type frame struct {
+		object bool
+		keys   map[string]bool
+		key    bool // the next token of an object is a key
+	}
+	var stack []*frame
+	for {
+		tok, err := dec.Token()
+		if err == io.EOF {
+			return nil
+		}
+		if err != nil {
+			return err
+		}
+		var top *frame
+		if len(stack) > 0 {
+			top = stack[len(stack)-1]
+		}
+		if d, ok := tok.(json.Delim); ok {
+			switch d {
+			case '{', '[':
+				if top != nil && top.object {
+					top.key = true // the value of a key is done once it closes
+				}
+				stack = append(stack, &frame{object: d == '{', keys: map[string]bool{}, key: d == '{'})
+			default:
+				stack = stack[:len(stack)-1]
+			}
+			continue
+		}
+		if top == nil || !top.object {
+			continue
+		}
+		if top.key {
+			k := tok.(string)
+			if top.keys[k] {
+				return fmt.Errorf("duplicate key %q", k)
+			}
+			top.keys[k] = true
+			top.key = false
+		} else {
+			top.key = true
+		}
+	}
 }
 
 func (t *Table) validate() error {
