@@ -293,6 +293,10 @@ func serve(ctx context.Context, data string, listen func() (net.Listener, error)
 		log.Printf("%v", err)
 	}
 
+	// Lemmatizer rule tables: sync the bundled lemma-rules packs, then load
+	// every installed table over the built-in ones (#176).
+	loadLemmaTables(ctx, sqlDB, defaultPacks(), log.Printf)
+
 	// Data packages: one builder goroutine; the startup reconcile builds what
 	// is missing or stale in the background (the catalogue says building).
 	pkgs, pkgsDone := startPackages(bg, sqlDB, data, log.Printf)
