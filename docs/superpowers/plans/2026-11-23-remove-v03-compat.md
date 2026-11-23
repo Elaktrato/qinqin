@@ -77,9 +77,13 @@ form (not in the issue), the plugin manifest vocabulary (`hook` surface, `study-
   (regenerated with `gen-scheduler-fixtures.mjs`): they pinned the keyed `fsrs:set:*` / `limits:*` parsers the
   issue removes; the typed rows are pinned by `study/rows.json`. `frequency/deckcfg-new-order.json` stays: its
   `newOrder` member rule is still `parseNewOrder`'s and the backup codec's — cost if wrong: re-adding cases.
-- Ruling: the restore cleanup (`clearLocalAfterRestore`) clears the v2 outbox key; it still read only the v1
-  key, so a restore left the v2 queue of the old workspace ids behind (found while removing the v1 key) —
-  cost if wrong: none.
+- Ruling: the restore cleanup (`clearLocalAfterRestore`) works on the v2 outbox key (it still read only the
+  v1 key, so a restore left the v2 queue of the old workspace ids behind). Fix wave M1: it drops only the
+  restoring user's items and unowned ones (which that user's next flush would adopt, with pre-restore
+  workspace ids), writes every other user's items back, counts only what it dropped, and with no known user
+  drops nothing — the first fix cleared the whole queue, which on a shared browser lost another user's unsent
+  reviews — cost if wrong: an unowned item recorded by another user before sign-in is dropped (rare: an item is
+  unowned only while no user was known).
 - Ruling: kept although v0.3-related, because the issue does not list them: `study.AdoptLeftovers` (a
   downgraded binary's rows), the full-array `GET /api/events` form, the unhidden core feature rows in
   `GET /api/plugins` (`isHiddenBuiltin`), the `legacySentences` usage count of `language_in_use`, and the

@@ -30,7 +30,8 @@ arrives after its target; if not, the rule still holds (the late target is repla
   (`userId` null: no user was known yet, adopted by the next user to flush).
 - The pre-v2 queue (`qinqin.study.pending`, bare events, v0.3.x) is neither read nor removed (#198):
   open the app online on every device before upgrading from v0.3.x, so an old copy sends its reviews first.
-  A restore clears the v2 queue (its workspace ids are gone).
+  A restore drops the restoring user's items and unowned ones from the v2 queue (their workspace ids are gone);
+  another user's items on the same browser stay.
 - A flush sends only the current user's items, oldest first, one event per request.
   A 401 (revoked or expired session) or a 403 whose body names a restriction
   (`password_change_required`, `mfa_enrollment_required`) stops the flush and keeps

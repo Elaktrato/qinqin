@@ -13,6 +13,7 @@ vi.mock('$lib/api/backup', () => ({
 import * as api from '$lib/api/backup';
 import { primaryActions } from '$lib/ui/testing/primary';
 import YourData from './YourData.svelte';
+import { setOutboxUser } from '$lib/study/outboxUser';
 
 const zero = { workspaces: 0, events: 0, cards: 0, pluginData: 0, overlays: 0, sentences: 0, books: 0, bookmarks: 0, highlights: 0 };
 const ready = (unresolved = 0) => ({
@@ -66,7 +67,9 @@ describe('YourData', () => {
 		vi.mocked(api.restoreStatus).mockResolvedValueOnce(ready() as never);
 		vi.mocked(api.applyRestore).mockResolvedValue({ status: 'running' });
 		const reload = vi.fn();
-		const storage = { getItem: (k: string) => (k === 'qinqin.study.pending.v2' ? '[1,2,3]' : null), removeItem: vi.fn() };
+		setOutboxUser(1, 'tok');
+		const queue = JSON.stringify([{ userId: 1, queuedAt: 't', event: { id: 'a', workspaceId: 7, ts: 't', type: 'review', device: 'web', payload: {} } }, { userId: 1, queuedAt: 't', event: { id: 'b', workspaceId: 7, ts: 't', type: 'review', device: 'web', payload: {} } }, { userId: 2, queuedAt: 't', event: { id: 'bob', workspaceId: 7, ts: 't', type: 'review', device: 'web', payload: {} } }, { userId: 1, queuedAt: 't', event: { id: 'c', workspaceId: 7, ts: 't', type: 'review', device: 'web', payload: {} } }]);
+		const storage = { getItem: (k: string) => (k === 'qinqin.study.pending.v2' ? queue : null), setItem: vi.fn(), removeItem: vi.fn() };
 		render(YourData, { reload, storage });
 		await choose();
 		expect(api.uploadRestore).toHaveBeenCalled();
@@ -83,6 +86,9 @@ describe('YourData', () => {
 		expect(await screen.findByText(/Your data was restored/, {}, { timeout: 3000 })).toBeTruthy();
 		expect(screen.getByRole('status').textContent).toContain('3 reviews waiting on this device');
 		expect(storage.removeItem).toHaveBeenCalledWith('qinqin.workspace');
+		// bob's unsent review stays (#198 review, M1)
+		expect(JSON.parse(vi.mocked(storage.setItem).mock.calls[0][1]).map((i: { event: { id: string } }) => i.event.id)).toEqual(['bob']);
+		setOutboxUser(null, null);
 		await fireEvent.click(screen.getByRole('button', { name: 'Reload now' }));
 		expect(reload).toHaveBeenCalled();
 	});
