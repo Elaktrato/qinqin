@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import fixture from '../../../../../docs/contracts/packages/pack-types.json';
 import { PACK_TYPES, isDataPackPlugin } from './dataPacks';
-import { PACK_TYPE_LABELS } from '$lib/settings/packsView';
+import { PACK_TYPE_LABELS, groupPacks } from '$lib/settings/packsView';
+import type { InstalledPack, PackType } from '$lib/api/packs';
 
 // docs/contracts/packages/pack-types.json: the web knows every pack type the
 // server has (#172), and leaves every one out of Settings → Plugins (#169).
@@ -19,7 +20,12 @@ describe('pack-types.json', () => {
 		expect(Object.keys(PACK_TYPE_LABELS).sort()).toEqual([...types].sort());
 	});
 
-	it('hides the legacy rows: no client relies on them', () => {
+	it('groups the Data list in the contract order', () => {
+		const list = [...types].reverse().map((type) => ({ type: type as PackType, packId: type }) as InstalledPack);
+		expect(groupPacks(list).map((g) => g.type)).toEqual(types);
+	});
+
+	it('marks the legacy rows (hidden; the web reads only a grammar pack\'s enabled state from them, until #169 "Later")', () => {
 		const legacy = fixture.types.filter((t) => t.legacyPluginRow).map((t) => t.type);
 		expect(legacy).toEqual(['dictionary', 'frequency', 'levels', 'sentences', 'grammar', 'audio']);
 	});

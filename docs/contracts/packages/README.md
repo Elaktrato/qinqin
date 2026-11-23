@@ -51,8 +51,10 @@ not know only in admin and Sources views; it shows it by its `type` string.
 
 **Never rely on the data-pack rows of `GET /api/plugins`.** For v0.3.x web shells the server still lists one
 plugin row per live pack of the types marked `legacyPluginRow` (dictionary, frequency, levels, sentences,
-grammar, audio), with a synthesized manifest and `hidden: true`. They are not plugins: their switch changes
-nothing a client should honour, and they go away when the v0.3.x shells are retired. Packs are listed by
+grammar, audio), with a synthesized manifest and `hidden: true`. They are not plugins and go away when the
+v0.3.x shells are retired. One exception remains until then: the web's Grammar page still honours a grammar
+pack's `enabled` from this list (no UI changes it; only `PUT /api/plugins/{id}/state` does). New clients take
+neither the rows nor their state. Packs are listed by
 their own routes (`GET /api/dictionaries`, `/api/frequency-packs`, `/api/sentence-packs`, `/api/audio-packs`, ...;
 `docs/wiki/API-Routes.md`) and, for administrators, `GET /api/admin/packs`; their data by this catalogue.
 

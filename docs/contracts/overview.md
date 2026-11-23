@@ -284,7 +284,9 @@ preparation marks (`qinqin.pwa.*`), the current workspace and the session token.
   that fails a check is discarded, and a package database is opened read-only and replaced as a whole.
 - Do not treat the rows of `GET /api/plugins` whose manifest `type` is a pack type as plugins (they carry
   `hidden: true`; v0.3.x compatibility only, see `packages/README.md`, "Pack types"): leave every hidden row
-  out of plugin lists and never read a data pack's enabled state from them.
+  out of plugin lists and do not take a data pack's enabled state from them. (Until the "Later" part of #169
+  lands, the web's Grammar page still honours a grammar pack's enabled state from this list; nothing in the
+  web UI can change it, only `PUT /api/plugins/{id}/state`. Android does not need to copy that.)
 
 ## Not specified (on purpose)
 
