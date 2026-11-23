@@ -265,12 +265,11 @@ func (s *server) handleTestSMTP(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusOK, map[string]bool{"sent": true})
 	case errors.As(err, &se):
 		log.Printf("mail: test failed category=%s", se.Category)
-		body := map[string]any{"error": "smtp_test_failed", "category": se.Category,
-			"message": "The test mail could not be sent (" + se.Category + ")."}
+		extra := map[string]any{"category": se.Category}
 		if se.Code != 0 {
-			body["smtpCode"] = se.Code
+			extra["smtpCode"] = se.Code
 		}
-		writeJSON(w, http.StatusBadGateway, body)
+		writeError(w, http.StatusBadGateway, "smtp_test_failed", "The test mail could not be sent ("+se.Category+").", extra)
 	default:
 		writeInternal(w, r)
 	}

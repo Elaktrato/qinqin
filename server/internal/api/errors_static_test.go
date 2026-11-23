@@ -54,6 +54,50 @@ var statusNames = map[string]int{
 	"StatusUnprocessableEntity": 422, "StatusTooManyRequests": 429, "StatusInternalServerError": 500,
 	"StatusNotImplemented": 501, "StatusBadGateway": 502, "StatusServiceUnavailable": 503,
 	"StatusInsufficientStorage": 507,
+	// Success and redirect statuses: never errors.
+	"StatusOK": 200, "StatusCreated": 201, "StatusAccepted": 202, "StatusNoContent": 204,
+	"StatusPartialContent": 206, "StatusNotModified": 304,
+}
+
+// passThroughStatus are the functions that forward a status they were
+// given (the writers themselves); their status argument is not checked.
+var passThroughStatus = map[string]bool{"writeError": true, "writeJSON": true, "WriteHeader": true}
+
+// statusValues resolves a status argument to the net/http constants it can
+// hold: an http.StatusX constant, or a local variable every assignment of
+// which (in fn) is one. ok is false for anything else (a literal, a field,
+// a parameter).
+func statusValues(fn *ast.FuncDecl, e ast.Expr) (vals []int, ok bool) {
+	if sel, isSel := e.(*ast.SelectorExpr); isSel {
+		v, known := statusNames[sel.Sel.Name]
+		return []int{v}, isHTTPConst(sel) && known
+	}
+	id, isIdent := e.(*ast.Ident)
+	if !isIdent {
+		return nil, false
+	}
+	ok = true
+	ast.Inspect(fn.Body, func(n ast.Node) bool {
+		as, isAssign := n.(*ast.AssignStmt)
+		if !isAssign {
+			return true
+		}
+		for i, l := range as.Lhs {
+			if lid, isID := l.(*ast.Ident); isID && lid.Name == id.Name && i < len(as.Rhs) {
+				sel, isSel := as.Rhs[i].(*ast.SelectorExpr)
+				v, known := 0, false
+				if isSel && isHTTPConst(sel) {
+					v, known = statusNames[sel.Sel.Name]
+				}
+				if !known {
+					ok = false
+				}
+				vals = append(vals, v)
+			}
+		}
+		return true
+	})
+	return vals, ok && len(vals) > 0
 }
 
 // dynamicCodeWriters are the functions that pass a computed code to
@@ -122,9 +166,18 @@ func scanErrorWrites(t *testing.T, cat map[string]int) (violations []errorViolat
 					if x, ok := fun.X.(*ast.Ident); ok && x.Name == "http" && fun.Sel.Name == "ServeContent" && fn.Name.Name != "serveContent" {
 						bad(call, "http.ServeContent answers its errors in text: use serveContent")
 					}
-					if fun.Sel.Name == "WriteHeader" && len(call.Args) == 1 {
-						if sel, ok := call.Args[0].(*ast.SelectorExpr); ok && statusNames[sel.Sel.Name] >= 400 {
-							bad(call, "WriteHeader("+sel.Sel.Name+") answers an error without a body: use writeError")
+					if fun.Sel.Name == "WriteHeader" && len(call.Args) == 1 && !passThroughStatus[fn.Name.Name] {
+						if lit, isLit := call.Args[0].(*ast.BasicLit); isLit && lit.Value == "499" && fn.Name.Name == "writeClientGone" {
+							break
+						}
+						vals, known := statusValues(fn, call.Args[0])
+						if !known {
+							bad(call, "WriteHeader with a status that is not a net/http success constant")
+						}
+						for _, v := range vals {
+							if v >= 400 {
+								bad(call, "WriteHeader with an error status answers without a coded body: use writeError")
+							}
 						}
 					}
 				case *ast.Ident:
@@ -134,6 +187,17 @@ func scanErrorWrites(t *testing.T, cat map[string]int) (violations []errorViolat
 					case "writeJSON":
 						if len(call.Args) == 3 && hasErrorKey(call.Args[2]) {
 							bad(call, `writeJSON with an "error" member: use writeError`)
+						}
+						if len(call.Args) == 3 && !passThroughStatus[fn.Name.Name] {
+							vals, known := statusValues(fn, call.Args[1])
+							if !known {
+								bad(call, "writeJSON with a status that is not a net/http constant")
+							}
+							for _, v := range vals {
+								if v < 200 || v > 299 {
+									bad(call, "writeJSON with a non-2xx status: errors go through writeError")
+								}
+							}
 						}
 					case "writeError":
 						if len(call.Args) < 4 {
@@ -163,11 +227,15 @@ func scanErrorWrites(t *testing.T, cat map[string]int) (violations []errorViolat
 							bad(call, "error code "+strconv.Quote(code)+" is not in errors.json")
 							return true
 						}
-						if sel, ok := call.Args[1].(*ast.SelectorExpr); ok && isHTTPConst(sel) {
-							want, known := statusNames[sel.Sel.Name]
-							if !known {
-								bad(call, "unknown status constant "+sel.Sel.Name+" (add it to statusNames)")
-							} else if want != st && !slices.Contains(documentedStatuses[code], want) {
+						if _, dyn := dynamicCodeWriters[fn.Name.Name]; dyn || fn.Name.Name == "answer" {
+							return true // a forwarded status: the unit tests of these mappers check it
+						}
+						vals, known := statusValues(fn, call.Args[1])
+						if !known {
+							bad(call, "writeError with a status that is not a net/http constant (or a local variable of them)")
+						}
+						for _, want := range vals {
+							if want != st && !slices.Contains(documentedStatuses[code], want) {
 								bad(call, strconv.Quote(code)+" written with "+strconv.Itoa(want)+", errors.json says "+strconv.Itoa(st))
 							}
 						}
