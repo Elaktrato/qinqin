@@ -61,7 +61,7 @@ func (s *server) handleInstallStaged(w http.ResponseWriter, r *http.Request) {
 	default:
 		// The job outlives the request: a proxy timeout or a closed tab
 		// must not abort or half-apply the import.
-		go s.runStagedImport(context.WithoutCancel(r.Context()), token, u.ID)
+		s.goBackground(func() { s.runStagedImport(context.WithoutCancel(r.Context()), token, u.ID) })
 		writeJSON(w, http.StatusAccepted, map[string]string{"status": stageImporting})
 	}
 }

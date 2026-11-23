@@ -198,3 +198,23 @@ func TestEnqueueTruncatesAcceptLanguage(t *testing.T) {
 		t.Fatalf("short header changed to %q", got.AcceptLanguage)
 	}
 }
+
+// Pending counts the queued mails the worker has not taken yet; serve logs
+// it when the worker stops at shutdown (#170).
+func TestPendingCountsQueuedMails(t *testing.T) {
+	fake, _ := mailtest.New(mailtest.Options{})
+	defer fake.Close()
+	s := svcFor(t, fake, &logSink{}) // no worker
+	if n := s.Pending(); n != 0 {
+		t.Fatalf("Pending = %d on an empty queue", n)
+	}
+	s.Enqueue(Job{Kind: KindReset, UserID: 1, To: "bob@example.com"})
+	s.Enqueue(Job{Kind: KindReset, UserID: 2, To: "eve@example.com"})
+	if n := s.Pending(); n != 2 {
+		t.Fatalf("Pending = %d, want 2", n)
+	}
+	var nilSvc *Service
+	if nilSvc.Pending() != 0 {
+		t.Fatal("a nil service has pending mail")
+	}
+}

@@ -84,6 +84,27 @@ type server struct {
 	packages   *datapkg.Builder // nil: no data packages (pack changes kick nothing)
 	downloads  downloadSlots    // running package downloads per user
 	bg         context.Context  // lives as long as the server; background jobs run under it
+	bgGroup    *sync.WaitGroup  // counts the background goroutines (WithBackgroundGroup); nil: not counted
+}
+
+// WithBackgroundGroup counts every background goroutine of the server (the
+// stage sweeper, staged pack imports, restore validations and restores) in
+// wg, so serve can wait for them to end before it closes the database
+// (#170).
+func WithBackgroundGroup(wg *sync.WaitGroup) Option { return func(s *server) { s.bgGroup = wg } }
+
+// goBackground runs fn in its own goroutine, counted in the background
+// group when there is one.
+func (s *server) goBackground(fn func()) {
+	if s.bgGroup == nil {
+		go fn()
+		return
+	}
+	s.bgGroup.Add(1)
+	go func() {
+		defer s.bgGroup.Done()
+		fn()
+	}()
 }
 
 // Option configures optional parts of the server.
@@ -151,7 +172,7 @@ func newServer(sqlDB *sql.DB, dataDir string, srcs []sources.Source, opts ...Opt
 	s.mfa = &auth.MFA{DB: sqlDB, Current: s.sealCur, Previous: s.sealPrev}
 	auth.Warm() // the first unknown-user login must cost one argon2 run, like the rest
 	if s.sweepCtx != nil && s.sweepEvery > 0 {
-		go s.runStageSweeper()
+		s.goBackground(s.runStageSweeper)
 	}
 	return s
 }
