@@ -1465,6 +1465,54 @@
     "reserve": [],
     "backfillLeft": 40
    }
+  },
+  {
+   "name": "a due card the review limit leaves out does not block its word's opt-in companion",
+   "note": "v1 is due but reviewLimit 0 leaves it out, so no real item of word 1 is queued: the reverse companion is planned and admitted as a new item (the opt-in exclusion counts queued real cards only)",
+   "history": [],
+   "now": "2026-03-10T12:00:00Z",
+   "language": "zh",
+   "deckIds": [
+    "general"
+   ],
+   "kinds": [
+    "vocab",
+    "reverse"
+   ],
+   "newLimit": 5,
+   "reviewLimit": 0,
+   "weights": "default",
+   "deckSettings": {
+    "general": [
+     "reverse"
+    ]
+   },
+   "cards": [
+    {
+     "id": "v1",
+     "kind": "vocab",
+     "entryId": 1,
+     "written": "学习",
+     "deckIds": [
+      "general"
+     ],
+     "createdAt": "2026-01-01T00:00:00Z"
+    }
+   ],
+   "reviews": [
+    {
+     "cardId": "v1",
+     "ts": "2026-03-01T00:00:00Z",
+     "grade": 1
+    }
+   ],
+   "expect": {
+    "queue": [
+     "companion:reverse:1"
+    ],
+    "reserve": [],
+    "backfillLeft": 30
+   }
   }
  ],
  "steps": [
