@@ -229,17 +229,19 @@ export async function apiBlob(path: string, options: ApiOptions = {}): Promise<B
 	return response.blob();
 }
 
+/** What a screen may read of an API error: its code and the attempts left of a one-time code. */
+export interface ApiErrorInfo {
+	error: string;
+	attemptsLeft?: number;
+}
+
 /**
- * apiErrorBody is the `{error, message}` body of an ApiError (every API
- * route answers it); null for any other error or a body that is not one.
+ * apiErrorBody is the code (and attemptsLeft) of an ApiError's `{error, message}` body; null for any other error
+ * or a body that is not one. The English `message` is not handed out: screens show the code's text (#168).
  */
-export function apiErrorBody(err: unknown): { error: string; message: string; attemptsLeft?: number } | null {
+export function apiErrorBody(err: unknown): ApiErrorInfo | null {
 	if (!(err instanceof ApiError) || err.body === undefined || err.code === undefined) return null;
-	const { message, attemptsLeft } = err.body;
-	const out: { error: string; message: string; attemptsLeft?: number } = {
-		error: err.code,
-		message: typeof message === 'string' ? message : ''
-	};
-	if (typeof attemptsLeft === 'number') out.attemptsLeft = attemptsLeft;
+	const out: ApiErrorInfo = { error: err.code };
+	if (typeof err.body.attemptsLeft === 'number') out.attemptsLeft = err.body.attemptsLeft;
 	return out;
 }

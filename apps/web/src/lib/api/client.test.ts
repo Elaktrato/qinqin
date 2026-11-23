@@ -318,10 +318,8 @@ describe('apiBlob and apiErrorBody', () => {
 	});
 
 	it('apiErrorBody parses the JSON body and returns null for plain text', () => {
-		expect(apiErrorBody(new ApiError(409, '{"error":"no_key","message":"Add a key."}'))).toEqual({
-			error: 'no_key',
-			message: 'Add a key.'
-		});
+		// The English message is not handed out (#168 review): screens show the code's text.
+		expect(apiErrorBody(new ApiError(409, '{"error":"no_key","message":"Add a key."}'))).toStrictEqual({ error: 'no_key' });
 		expect(apiErrorBody(new ApiError(500, 'internal error'))).toBeNull();
 		expect(apiErrorBody(new Error('x'))).toBeNull();
 		expect(apiErrorBody(new ApiError(400, '{"foo":1}'))).toBeNull();
@@ -390,9 +388,8 @@ describe('ApiError parses its body once (#168)', () => {
 	});
 
 	it('apiErrorBody reads the parsed body, attemptsLeft included', () => {
-		expect(apiErrorBody(new ApiError(401, body('code_invalid', 'No.', { attemptsLeft: 2 })))).toEqual({
+		expect(apiErrorBody(new ApiError(401, body('code_invalid', 'No.', { attemptsLeft: 2 })))).toStrictEqual({
 			error: 'code_invalid',
-			message: 'No.',
 			attemptsLeft: 2
 		});
 		expect(apiErrorBody(new ApiError(404, 'not found'))).toBeNull();

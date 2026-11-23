@@ -124,13 +124,31 @@ describe('errMessageFindings (#168)', () => {
 		const src = `try { x(); } catch (err) { error = err instanceof Error ? err.message : t('a.b'); }
 const m = (e: unknown) => (e as Error)?.message;
 log(error.message, String(err), \`\${reason.message}\`);`;
-		expect(texts(errMessageFindings(src, false))).toEqual(['err.message', 'error.message', 'String(err)', 'reason.message']);
+		expect(texts(errMessageFindings(src, false))).toEqual(['err.message', '(e as Error)?.message', 'error.message', 'String(err)', 'reason.message']);
 		const svelte = `<script>let e = 1;</script>\n<p>{err.message}</p>`;
 		expect(errMessageFindings(svelte, true)).toEqual([{ line: 2, text: 'err.message' }]);
 	});
 
+	it('finds the other ways to reach an error\'s text (#168 review)', () => {
+		const cases: [string, string][] = [
+			['x = (err as Error).message;', '(err as Error).message'],
+			['x = (e as ApiError)?.message;', '(e as ApiError)?.message'],
+			['x = err.body?.message;', 'body?.message'],
+			['x = apiError.body.message;', 'body.message'],
+			['x = `failed: ${err}`;', '${err}'],
+			['x = `${ e }`;', '${ e }'],
+			['x = `${error}`;', '${error}'],
+			['x = err.toString();', 'err.toString('],
+			["x = '' + err;", "'' + err"],
+			['x = "" + error;', '"" + error'],
+			['const { message } = err;', '{ message } = err'],
+			['const { status, message: m } = error;', '{ status, message: m } = error']
+		];
+		for (const [src, text] of cases) expect(texts(errMessageFindings(src, false)), src).toEqual([text]);
+	});
+
 	it('ignores other members and other names, and comments', () => {
-		const src = `const a = body.message; m.message; errorText(err, f); // err.message in a comment
+		const src = `const a = m.message; errorText(err, f); \`\${count}\`; x.toString(); 'a' + b; const { status } = err; // err.message in a comment
 /* String(err) */ const b = message(err); x.errMessage; err.messages;`;
 		expect(errMessageFindings(src, false)).toEqual([]);
 	});

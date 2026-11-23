@@ -410,8 +410,26 @@ export function intlFindings(src: string, svelte = false): Finding[] {
 	return out.sort((a, b) => a.line - b.line);
 }
 
-/** The text of a caught error: `err.message` (also `e`, `error`, `ex`, `reason`, `cause`) or `String(err)`. */
-const ERR_MESSAGE = /\b(?:err|e|error|ex|reason|cause)\??\.message\b(?!s)|\bString\((?:err|e|error|ex|reason|cause)\)/g;
+/** The names a caught error goes by in this code base. */
+const ERR = String.raw`(?:err|e|error|ex|reason|cause)`;
+/**
+ * The ways to the text of a caught error or an error body: `err.message` (also `e`, `error`, `ex`, `reason`,
+ * `cause`), `(x as Error).message`, `body.message` / `body?.message`, `String(err)`, `${err}`, `err.toString()`,
+ * `'' + err`, and destructuring `{ message } = err`.
+ */
+const ERR_MESSAGE = new RegExp(
+	[
+		String.raw`\b${ERR}\??\.message\b(?!s)`,
+		String.raw`\(\s*\w+\s+as\s+\w*Error\s*\)\??\.message\b`,
+		String.raw`\bbody\??\.message\b`,
+		String.raw`\bString\(${ERR}\)`,
+		String.raw`\$\{\s*${ERR}\s*\}`,
+		String.raw`\b${ERR}\??\.toString\(`,
+		String.raw`(['"])\1\s*\+\s*${ERR}\b`,
+		String.raw`\{[^{}]*\bmessage\b[^{}]*\}\s*=\s*${ERR}\b`
+	].join('|'),
+	'g'
+);
 
 /**
  * Where a caught error's own text is read (#168, the `errmsg` rule): screens show `errorText(err, fallback)`, never

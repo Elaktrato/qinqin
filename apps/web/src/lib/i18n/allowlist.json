@@ -98,5 +98,10 @@
 		"file": "lib/study/fsrs/optimizer.worker.ts",
 		"text": "String(e)",
 		"reason": "The worker posts its failure to optimizerClient.ts for the console; the screen shows its own sentence (errorText fallback)."
+	},
+	{
+		"file": "lib/api/apiErrors.ts",
+		"text": "body?.message",
+		"reason": "packErrorDetail: the one ruled exception (spec 2026-11-23-error-contract-design.md, Ruling in section 5): the pack validator's English reason of a pack_invalid answer, shown to the administrator under the translated text as English detail."
 	}
 ]
