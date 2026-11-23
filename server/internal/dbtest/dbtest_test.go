@@ -124,7 +124,30 @@ func TestOpenPathCanBeReopened(t *testing.T) {
 	}
 }
 
-func TestFileWritesAMigratedDatabaseAtAPath(t *testing.T) {
+// versions lists the applied migrations of a database.
+func versions(t *testing.T, sqlDB *sql.DB) []string {
+	t.Helper()
+	rows, err := sqlDB.Query(`SELECT version FROM schema_migrations ORDER BY version`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer rows.Close()
+	var out []string
+	for rows.Next() {
+		var v string
+		if err := rows.Scan(&v); err != nil {
+			t.Fatal(err)
+		}
+		out = append(out, v)
+	}
+	return out
+}
+
+// The template itself is fully migrated: read without migrating
+// (OpenReadOnly), it has every migration a fresh db.Open applies. Open
+// alone would hide a stale template, because db.Open applies what is
+// missing in every test.
+func TestFileWritesAFullyMigratedDatabase(t *testing.T) {
 	dir := filepath.Join(t.TempDir(), "data")
 	if err := os.MkdirAll(dir, 0o755); err != nil {
 		t.Fatal(err)
@@ -136,9 +159,22 @@ func TestFileWritesAMigratedDatabaseAtAPath(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer ro.Close()
-	var n int
-	if err := ro.QueryRow(`SELECT COUNT(*) FROM schema_migrations`).Scan(&n); err != nil || n == 0 {
-		t.Errorf("schema_migrations: %d rows, %v", n, err)
+	fresh, err := db.Open(filepath.Join(t.TempDir(), "fresh.db"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer fresh.Close()
+	got, want := versions(t, ro), versions(t, fresh)
+	if !slices.Equal(got, want) {
+		t.Errorf("template migrations:\n got %v\nwant %v", got, want)
+	}
+	if got, want := schema(t, ro), schema(t, fresh); !slices.Equal(got, want) {
+		t.Errorf("template schema differs from a fresh migration (%d vs %d objects)", len(got), len(want))
+	}
+	// The file is in WAL mode, as db.Open leaves a database.
+	var mode string
+	if err := ro.QueryRow(`PRAGMA journal_mode`).Scan(&mode); err != nil || mode != "wal" {
+		t.Errorf("journal_mode %q, %v; want wal", mode, err)
 	}
 }
 

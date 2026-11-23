@@ -23,7 +23,8 @@ Touched by: #195, #196. A merge from one of these issues that changes what this 
 - **Go test databases** come from one package, `server/internal/dbtest`. `Open` (in
   `server/internal/dbtest/dbtest.go`) writes a copy of a template database to a file of the test's own in
   `t.TempDir()` and opens it with `db.Open`, which finds every migration applied. The template is migrated
-  once per test process (`sync.Once`, then `VACUUM INTO` a single file kept in memory). `OpenPath` also
+  once per test process (`sync.Once`, then `VACUUM INTO` a single file, opened once so it is in WAL mode,
+  kept in memory). `OpenPath` also
   returns the file's path (for a test that closes and reopens it), and `File` writes a migrated file at a
   given path without opening it (for code under test that opens the database itself, such as the serve,
   seed, recover and backup commands). Shared fixtures in `server/internal/dbtest/fixtures.go`: `User` (a
@@ -84,8 +85,11 @@ Not allowed:
 - `apps/web/src/lib/testing/noWallClock.test.ts` scans every web and script test file and fails on a
   measured duration (`wallClockFindings` in `apps/web/src/lib/testing/noWallClock.ts`: `performance.now()`,
   `Date.now()` minus a variable, `process.hrtime`, `console.time`).
-- `apps/web/src/lib/testing/study.test.ts` pins the builders' defaults; `dbtest_test.go` pins that a copy has
-  the schema, migrations and seeded rows of a fresh migration and that the template is built once.
+- `apps/web/src/lib/testing/study.test.ts` pins the builders' defaults.
+  `server/internal/dbtest/dbtest_test.go` pins that the template itself, read without migrating
+  (`OpenReadOnly`), has every migration and the schema of a fresh `db.Open` and is in WAL mode
+  (`TestFileWritesAFullyMigratedDatabase`; a template built only through 042 fails it), that a copy carries
+  the rows the migrations seed, and that the template is built once per process.
 - Review: a local builder that spells out a study row (no check: the literal shapes vary too much to match
   without false positives), and Go time limits on work (the Go suite has legitimate liveness bounds, so
   there is no Go wall-clock guard).

@@ -32,7 +32,7 @@ var (
 )
 
 // buildTemplate migrates a database in a scratch directory and returns a
-// compact single-file copy of it (VACUUM INTO, so no WAL is left behind).
+// compact single-file copy of it in WAL mode (VACUUM INTO, then one db.Open).
 func buildTemplate() ([]byte, error) {
 	templateBuilds++
 	dir, err := os.MkdirTemp("", "qinqin-dbtest-")
@@ -50,6 +50,16 @@ func buildTemplate() ([]byte, error) {
 		return nil, fmt.Errorf("vacuum into template: %w", err)
 	}
 	if err := sqlDB.Close(); err != nil {
+		return nil, err
+	}
+	// VACUUM INTO writes a rollback-journal file; open it once the way
+	// serving does (WAL, every migration already applied: nothing runs) so
+	// each copy is in WAL mode too. Closing checkpoints and removes the WAL.
+	wal, err := db.Open(out)
+	if err != nil {
+		return nil, err
+	}
+	if err := wal.Close(); err != nil {
 		return nil, err
 	}
 	return os.ReadFile(out)
