@@ -15,8 +15,6 @@ import (
 
 	"qinqin/internal/auth"
 	"qinqin/internal/db"
-	"qinqin/internal/dict"
-	"qinqin/internal/grammar"
 	"qinqin/internal/model"
 	"qinqin/internal/plugins"
 )
@@ -163,99 +161,6 @@ func TestRegisterRejectsInvalidManifests(t *testing.T) {
 	}
 	if count != 0 {
 		t.Errorf("plugin_registry rows = %d, want 0 — rejected manifests store nothing", count)
-	}
-}
-
-func TestListForIncludesDataPlugins(t *testing.T) {
-	sqlDB := newDB(t)
-	ctx := context.Background()
-	alice := newUser(t, sqlDB, "alice")
-
-	// Registry rows as the pack imports leave them: a dictionary, a
-	// levels scheme, and a sentences pack — data plugins, registered
-	// by their imports, not by the admin.
-	stamp := time.Now().UTC().Format(time.RFC3339)
-	exec := func(query string, args ...any) {
-		t.Helper()
-		if _, err := sqlDB.ExecContext(ctx, query, args...); err != nil {
-			t.Fatalf("seed: %v", err)
-		}
-	}
-	exec(`INSERT INTO dictionaries (pack_id, name, version, license, attribution, updated_at)
-		VALUES ('mkgloss', 'mkgloss', '1.0', 'MIT', 'test', ?)`, stamp)
-	exec(`INSERT INTO schemes (pack_id, name, unit, language, version, license, attribution, updated_at)
-		VALUES ('hsk', 'HSK', 'word', 'zh', '1.0', 'CC BY-SA 4.0', 'test', ?)`, stamp)
-	exec(`INSERT INTO entries (language, kind, ext_key, updated_at) VALUES ('zh', 'word', '你好', ?)`, stamp)
-	exec(`INSERT INTO frequency_packs (pack_id, name, version, language, license, attribution, ord, updated_at)
-		VALUES ('zh-freq', 'Zh frequency', '2', 'zh', 'CC0', 'test', 0, ?)`, stamp)
-	exec(`INSERT INTO sentences (entry_id, source_pack, user_id, hanzi, pinyin, translation, updated_at)
-		VALUES ((SELECT id FROM entries WHERE ext_key = '你好'), 'zh-mini', NULL, '你好。', 'nǐ hǎo.', 'Hello.', ?)`, stamp)
-
-	mustRegister(t, sqlDB, heatmapManifest)
-
-	list, err := plugins.ListFor(ctx, sqlDB, alice)
-	if err != nil {
-		t.Fatalf("ListFor: %v", err)
-	}
-	manifests := map[string]map[string]any{}
-	for _, p := range list {
-		manifests[p.ID] = manifestObject(t, p.Manifest)
-		if !p.Enabled || p.Order != 0 {
-			t.Errorf("plugin %s = enabled %t, order %d, want the enabled default", p.ID, p.Enabled, p.Order)
-		}
-	}
-	for _, id := range []string{"qinqin-heatmap", "hsk", "mkgloss", "zh-mini", "zh-freq"} {
-		if manifests[id] == nil {
-			t.Errorf("plugin %s missing from list %+v", id, list)
-		}
-	}
-	if m := manifests["mkgloss"]; m["type"] != "dictionary" || m["name"] != "mkgloss" || m["version"] != "1.0" {
-		t.Errorf("mkgloss manifest = %v, want the dictionary registry fields", m)
-	}
-	if m := manifests["hsk"]; m["type"] != "levels" || m["language"] != "zh" {
-		t.Errorf("hsk manifest = %v, want the scheme registry fields", m)
-	}
-	if m := manifests["zh-mini"]; m["type"] != "sentences" {
-		t.Errorf("zh-mini manifest = %v, want a sentences pack manifest", m)
-	}
-
-	if m := manifests["zh-freq"]; m["type"] != "frequency" || m["name"] != "Zh frequency" || m["version"] != "2" || m["language"] != "zh" || m["license"] != "CC0" {
-		t.Errorf("zh-freq manifest = %v, want the frequency pack registry fields", m)
-	}
-	for _, id := range []string{"mkgloss", "hsk", "zh-mini", "zh-freq", "qinqin-heatmap"} {
-		if ok, err := plugins.Exists(ctx, sqlDB, id); err != nil || !ok {
-			t.Errorf("Exists(%s) = %t, %v, want true", id, ok, err)
-		}
-	}
-
-	// A soft-deleted frequency pack drops out of the list and of Exists.
-	exec(`UPDATE frequency_packs SET deleted_at = ? WHERE pack_id = 'zh-freq'`, stamp)
-	if ok, _ := plugins.Exists(ctx, sqlDB, "zh-freq"); ok {
-		t.Error("Exists(zh-freq) after uninstall = true, want false")
-	}
-	exec(`UPDATE frequency_packs SET deleted_at = NULL WHERE pack_id = 'zh-freq'`)
-
-	// A soft-deleted pack drops out of the list.
-	exec(`UPDATE dictionaries SET deleted_at = ? WHERE pack_id = 'mkgloss'`, stamp)
-	list, err = plugins.ListFor(ctx, sqlDB, alice)
-	if err != nil {
-		t.Fatalf("ListFor after uninstall: %v", err)
-	}
-	if len(list) != 4 {
-		t.Errorf("plugins after uninstall = %+v, want the 4 remaining", list)
-	}
-
-	// State left behind by a removed plugin does not leak a phantom
-	// entry into the list.
-	if err := plugins.SetState(ctx, sqlDB, alice, "uninstalled-pack", false, 0); err != nil {
-		t.Fatalf("SetState: %v", err)
-	}
-	list, err = plugins.ListFor(ctx, sqlDB, alice)
-	if err != nil {
-		t.Fatalf("ListFor after ghost state: %v", err)
-	}
-	if len(list) != 4 {
-		t.Errorf("plugins after ghost state = %+v, want still 4 — no phantom entry", list)
 	}
 }
 
@@ -604,43 +509,6 @@ func TestListDataPrefixScopeAndTombstones(t *testing.T) {
 	}
 }
 
-func TestListForIncludesGrammarPacks(t *testing.T) {
-	sqlDB := newDB(t)
-	ctx := context.Background()
-	alice := newUser(t, sqlDB, "alice")
-	pack, err := dict.LoadPack("../grammar/testdata/zh-mini")
-	if err != nil {
-		t.Fatal(err)
-	}
-	if _, err := grammar.Import(ctx, sqlDB, pack); err != nil {
-		t.Fatal(err)
-	}
-	list, err := plugins.ListFor(ctx, sqlDB, alice)
-	if err != nil {
-		t.Fatalf("ListFor: %v", err)
-	}
-	p := find(t, list, "zh-grammar-mini")
-	m := manifestObject(t, p.Manifest)
-	if m["type"] != "grammar" || m["language"] != "zh" || m["license"] != "CC0-1.0" || m["name"] != "Chinese grammar mini" || !p.Enabled {
-		t.Errorf("manifest = %v enabled %t, want the grammar registry fields", m, p.Enabled)
-	}
-	if ok, err := plugins.Exists(ctx, sqlDB, "zh-grammar-mini"); err != nil || !ok {
-		t.Errorf("Exists = %t, %v, want true", ok, err)
-	}
-	if _, err := sqlDB.Exec(`UPDATE grammar_packs SET deleted_at = '2026-01-01T00:00:00Z'`); err != nil {
-		t.Fatal(err)
-	}
-	if ok, _ := plugins.Exists(ctx, sqlDB, "zh-grammar-mini"); ok {
-		t.Error("Exists after removal = true, want false")
-	}
-	list, _ = plugins.ListFor(ctx, sqlDB, alice)
-	for _, p := range list {
-		if p.ID == "zh-grammar-mini" {
-			t.Error("removed grammar pack still listed")
-		}
-	}
-}
-
 func TestCanWriteData(t *testing.T) {
 	sqlDB := newDB(t)
 	ctx := context.Background()
@@ -656,7 +524,7 @@ func TestCanWriteData(t *testing.T) {
 	}{
 		{"with-data", true, true},
 		{"without-data", true, false},
-		{"mkgloss", true, true},
+		{"mkgloss", false, false}, // a data pack is no plugin (#198)
 		{"nobody", false, false},
 	} {
 		exists, allowed, err := plugins.CanWriteData(ctx, sqlDB, tc.id)
@@ -686,33 +554,6 @@ func TestCanWriteDataGrandfathered(t *testing.T) {
 	}
 }
 
-func TestListForIncludesAudioPacks(t *testing.T) {
-	ctx := context.Background()
-	sqlDB := newDB(t)
-	if _, err := sqlDB.Exec(`INSERT INTO audio_packs (pack_id, language, name, version, license, attribution, created_at, updated_at)
-		VALUES ('ja-audio', 'ja', 'Japanese audio', '1', 'CC BY 4.0', 'Kanji alive', '2026-01-01T00:00:00Z', '2026-01-01T00:00:00Z')`); err != nil {
-		t.Fatal(err)
-	}
-	list, err := plugins.ListFor(ctx, sqlDB, newUser(t, sqlDB, "alice"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	p := find(t, list, "ja-audio")
-	m := manifestObject(t, p.Manifest)
-	if m["type"] != "audio" || m["language"] != "ja" || m["license"] != "CC BY 4.0" || !p.Enabled {
-		t.Errorf("manifest = %v enabled %t, want the audio registry fields", m, p.Enabled)
-	}
-	if ok, err := plugins.Exists(ctx, sqlDB, "ja-audio"); err != nil || !ok {
-		t.Errorf("Exists = %v, %v; want true", ok, err)
-	}
-	if _, err := sqlDB.Exec(`UPDATE audio_packs SET deleted_at = '2026-01-01T00:00:00Z'`); err != nil {
-		t.Fatal(err)
-	}
-	if ok, _ := plugins.Exists(ctx, sqlDB, "ja-audio"); ok {
-		t.Error("Exists true after the pack was removed")
-	}
-}
-
 func TestUnparsableRegistryRows(t *testing.T) {
 	sqlDB := newDB(t)
 	ctx := context.Background()
@@ -739,12 +580,10 @@ func TestUnparsableRegistryRows(t *testing.T) {
 	}
 }
 
-// Every row GET /api/plugins synthesizes for a data pack is hidden (#169):
-// clients (the web, v0.3.x shells) leave hidden rows out of Settings →
-// Plugins, where their switch did nothing. The rows keep their ids,
-// manifests and enabled state for the old shells that read them; feature
-// plugins stay unhidden.
-func TestDataPackRowsAreHidden(t *testing.T) {
+// Data packs are no plugins (#198): GET /api/plugins lists registry rows
+// only, whatever is installed and whatever state rows exist, and a pack id
+// takes no plugin state or data.
+func TestDataPacksAreNoPlugins(t *testing.T) {
 	sqlDB := newDB(t)
 	ctx := context.Background()
 	alice := newUser(t, sqlDB, "alice")
@@ -770,29 +609,15 @@ func TestDataPackRowsAreHidden(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	types := map[string]string{"d1": "dictionary", "l1": "levels", "f1": "frequency", "s1": "sentences", "g1": "grammar", "a1": "audio"}
-	seen := 0
-	for _, p := range list {
-		typ, data := types[p.ID]
-		if !data {
-			if p.Hidden {
-				t.Errorf("feature plugin %s hidden", p.ID)
-			}
-			continue
-		}
-		seen++
-		m := manifestObject(t, p.Manifest)
-		if !p.Hidden || m["type"] != typ {
-			t.Errorf("%s: hidden %v, manifest %v; want a hidden %s row", p.ID, p.Hidden, m, typ)
-		}
-		if p.ID == "g1" && (p.Enabled || p.Order != 3) {
-			t.Errorf("g1: the user's state is lost: %+v", p)
-		}
-		if _, ok := m["language"]; p.ID == "d1" && ok {
-			t.Errorf("d1: the dictionary row's manifest changed shape: %v", m)
-		}
+	if len(list) != 1 || list[0].ID != "qinqin-heatmap" {
+		t.Errorf("ListFor = %+v, want the registry plugin only", list)
 	}
-	if seen != len(types) {
-		t.Errorf("%d data-pack rows listed, want %d", seen, len(types))
+	for _, id := range []string{"d1", "l1", "f1", "s1", "g1", "a1"} {
+		if ok, err := plugins.Exists(ctx, sqlDB, id); ok || err != nil {
+			t.Errorf("Exists(%s) = %t, %v; want false", id, ok, err)
+		}
+		if exists, allowed, err := plugins.CanWriteData(ctx, sqlDB, id); exists || allowed || err != nil {
+			t.Errorf("CanWriteData(%s) = %t, %t, %v; want false, false", id, exists, allowed, err)
+		}
 	}
 }

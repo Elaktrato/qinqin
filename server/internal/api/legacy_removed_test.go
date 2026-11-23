@@ -263,10 +263,59 @@ func TestOldFormatBackupRestoresIntoTypedRows(t *testing.T) {
 	wantCoded404(t, "GET card:"+cardID, status, body)
 }
 
+// GET /api/plugins lists registry plugins only: no row per installed data
+// pack (#169), and a data pack's id is no plugin for the state and data
+// routes or a push.
+func TestDataPackPluginRowsAreGone(t *testing.T) {
+	ts, sqlDB := newServer(t)
+	alice := registerUser(t, ts.URL, "alice", "")
+	seedBuiltin(t, sqlDB, validManifest("qinqin-flashcards", ""))
+	ws := createWorkspace(t, ts.URL, alice, "zh", "")
+	for _, q := range []string{
+		`INSERT INTO grammar_packs (pack_id, name, version, language, license, attribution, levels_json, updated_at) VALUES ('zh-grammar', 'n', '1', 'zh', 'l', 'a', '[]', 't')`,
+		`INSERT INTO audio_packs (pack_id, language, name, version, license, attribution, created_at, updated_at) VALUES ('zh-audio', 'zh', 'n', '1', 'l', 'a', 't', 't')`,
+		`INSERT INTO frequency_packs (id, pack_id, name, version, language, license, attribution, ord, updated_at) VALUES (1, 'zh-freq', 'n', '1', 'zh', 'l', 'a', 1, 't')`,
+	} {
+		if _, err := sqlDB.Exec(q); err != nil {
+			t.Fatal(err)
+		}
+	}
+	status, _, body := get(t, ts.URL, "/api/plugins", alice)
+	var list []struct {
+		ID string `json:"id"`
+	}
+	if status != 200 || json.Unmarshal(body, &list) != nil {
+		t.Fatalf("GET /api/plugins = %d %s", status, body)
+	}
+	for _, p := range list {
+		if strings.HasPrefix(p.ID, "zh-") {
+			t.Errorf("GET /api/plugins lists the data pack %s", p.ID)
+		}
+	}
+	for _, id := range []string{"zh-grammar", "zh-audio", "zh-freq"} {
+		r := doRaw(t, "PUT", ts.URL, "/api/plugins/"+id+"/state", alice, `{"enabled":false,"order":0}`)
+		var b bytes.Buffer
+		b.ReadFrom(r.Body)
+		wantCoded404(t, "PUT state of "+id, r.StatusCode, b.Bytes())
+		status, _, body := get(t, ts.URL, "/api/plugins/"+id+"/data?workspace="+itoa(ws), alice)
+		wantCoded404(t, "GET data of "+id, status, body)
+		r = doRaw(t, "PUT", ts.URL, "/api/plugins/"+id+"/data/k?workspace="+itoa(ws), alice, `{}`)
+		b.Reset()
+		b.ReadFrom(r.Body)
+		wantCoded404(t, "PUT data of "+id, r.StatusCode, b.Bytes())
+		r = doJSON(t, "POST", ts.URL, "/api/sync/push", alice, map[string]any{"pluginData": []any{
+			map[string]any{"pluginId": id, "key": "k", "workspaceId": ws, "data": map[string]any{}, "updatedAt": "2026-11-10T08:00:00Z"}}})
+		if r.StatusCode != http.StatusNotFound {
+			t.Errorf("push of %s data = %d, want 404 (an unknown plugin)", id, r.StatusCode)
+		}
+	}
+}
+
 // The removed identifiers stay out of the server's code: a grep guard
 // next to the behaviour tests above.
 func TestLegacyCompatCodeStaysGone(t *testing.T) {
-	banned := []string{"StreamLegacy", "LegacyGet(", "LegacyList(", "ApplyLegacy(", "legacyView", "mergeLegacyList", "legacyPut("}
+	banned := []string{"StreamLegacy", "LegacyGet(", "LegacyList(", "ApplyLegacy(", "legacyView", "mergeLegacyList", "legacyPut(",
+		"legacyRows", "LegacyPluginRow", "sentencePlugins", "warnEntryIDUsers", "dataPlugin("}
 	err := filepath.WalkDir("../..", func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err

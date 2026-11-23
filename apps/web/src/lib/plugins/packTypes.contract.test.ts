@@ -24,9 +24,4 @@ describe('pack-types.json', () => {
 		const list = [...types].reverse().map((type) => ({ type: type as PackType, packId: type }) as InstalledPack);
 		expect(groupPacks(list).map((g) => g.type)).toEqual(types);
 	});
-
-	it('marks the legacy rows (hidden; the web reads only a grammar pack\'s enabled state from them, until #169 "Later")', () => {
-		const legacy = fixture.types.filter((t) => t.legacyPluginRow).map((t) => t.type);
-		expect(legacy).toEqual(['dictionary', 'frequency', 'levels', 'sentences', 'grammar', 'audio']);
-	});
 });

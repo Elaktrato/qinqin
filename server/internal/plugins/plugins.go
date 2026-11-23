@@ -19,7 +19,6 @@ import (
 	"time"
 
 	"qinqin/internal/model"
-	"qinqin/internal/packtype"
 )
 
 // ErrNotFound reports a missing plugin data row: reading one that was
@@ -32,19 +31,6 @@ var ErrInvalidManifest = errors.New("plugins: invalid manifest")
 
 // ErrBuiltinID reports a registration under the id of a built-in plugin.
 var ErrBuiltinID = errors.New("plugins: id belongs to a built-in plugin")
-
-// dataManifest is the manifest of a data plugin as ListFor serves it,
-// synthesized from the pack registry row its import left: the fields
-// that pack kind's registry stores, with type naming the kind.
-type dataManifest struct {
-	ID          string `json:"id"`
-	Name        string `json:"name,omitempty"`
-	Version     string `json:"version,omitempty"`
-	Type        string `json:"type"`
-	Language    string `json:"language,omitempty"`
-	License     string `json:"license,omitempty"`
-	Attribution string `json:"attribution,omitempty"`
-}
 
 // Register validates a feature-plugin manifest against the SDK
 // contract (ParseManifest) and upserts it into the registry, keyed by
@@ -198,28 +184,18 @@ func Unregister(ctx context.Context, sqlDB *sql.DB, pluginID string) error {
 	return nil
 }
 
-// ListFor returns every plugin the user can enable — feature plugins
-// from the registry plus the data plugins registered by pack imports —
-// each with the user's state overlaid: default state, no row in
+// ListFor returns every plugin the user can enable — the registry's
+// feature plugins (data packs are no plugins; they are listed by their own
+// routes) — each with the user's state overlaid: default state, no row in
 // plugin_states, is enabled at order 0. The list is ordered by
 // (order, id), so equal orders stay in a stable, named order. The
 // order is the plugin's position in the Plugins list (Settings) and of
 // its nav links; the home layout is the per-user widget layout in the
 // qinqin-core plugin data, not this order.
 func ListFor(ctx context.Context, sqlDB *sql.DB, userID int64) ([]model.PluginInfo, error) {
-	list := make([]model.PluginInfo, 0)
-	loaders := []func(context.Context, *sql.DB) ([]model.PluginInfo, error){featurePlugins}
-	for _, d := range packtype.All {
-		if row, ok := legacyRows[d.Type]; ok && d.LegacyPluginRow {
-			loaders = append(loaders, row.list)
-		}
-	}
-	for _, load := range loaders {
-		found, err := load(ctx, sqlDB)
-		if err != nil {
-			return nil, err
-		}
-		list = append(list, found...)
+	list, err := featurePlugins(ctx, sqlDB)
+	if err != nil {
+		return nil, err
 	}
 
 	states, err := statesFor(ctx, sqlDB, userID)
@@ -298,115 +274,6 @@ func isHiddenBuiltin(id, manifest string) bool {
 	return json.Unmarshal([]byte(manifest), &m) == nil && len(m.Surfaces) == 0
 }
 
-// legacyRow is how GET /api/plugins synthesizes the hidden plugin rows of
-// one pack type for v0.3.x web shells (#169), and how Exists accepts data
-// under those packs' ids. Exactly the types the pack-type table marks
-// LegacyPluginRow have one (a test checks it); no new type gets one. The
-// whole mechanism goes when the v0.3.x shells are retired.
-type legacyRow struct {
-	list   func(context.Context, *sql.DB) ([]model.PluginInfo, error)
-	exists string // one-row query with the pack id as its only argument
-}
-
-var legacyRows = map[string]legacyRow{
-	// The dictionary row never carried its language: keep the shape.
-	packtype.Dictionary: registryRows(packtype.Dictionary, false),
-	packtype.Levels:     registryRows(packtype.Levels, true),
-	packtype.Frequency:  registryRows(packtype.Frequency, true),
-	// Sentences are listed by the pack ids their shared sentences carry, so
-	// legacy packs imported before the registry (migration 027) count too.
-	packtype.Sentences: {list: sentencePlugins,
-		exists: `SELECT 1 FROM sentences WHERE source_pack = ? AND user_id IS NULL AND deleted_at IS NULL`},
-	packtype.Grammar: registryRows(packtype.Grammar, true),
-	packtype.Audio:   registryRows(packtype.Audio, true),
-}
-
-// registryRows lists the live packs of a type from its registry table (the
-// pack-type table's Registry), with the manifest fields the registry stores.
-func registryRows(typ string, withLanguage bool) legacyRow {
-	d, _ := packtype.Lookup(typ)
-	lang := "''"
-	if withLanguage {
-		lang = "language"
-	}
-	query := `SELECT pack_id, name, version, ` + lang + `, license, attribution FROM ` + d.Registry + ` WHERE deleted_at IS NULL`
-	list := func(ctx context.Context, sqlDB *sql.DB) ([]model.PluginInfo, error) {
-		rows, err := sqlDB.QueryContext(ctx, query)
-		if err != nil {
-			return nil, fmt.Errorf("plugins: read %s packs: %w", typ, err)
-		}
-		defer rows.Close()
-		list := make([]model.PluginInfo, 0)
-		for rows.Next() {
-			m := dataManifest{Type: typ}
-			if err := rows.Scan(&m.ID, &m.Name, &m.Version, &m.Language, &m.License, &m.Attribution); err != nil {
-				return nil, fmt.Errorf("plugins: scan %s pack: %w", typ, err)
-			}
-			info, err := dataPlugin(m)
-			if err != nil {
-				return nil, err
-			}
-			list = append(list, info)
-		}
-		if err := rows.Err(); err != nil {
-			return nil, fmt.Errorf("plugins: read %s packs: %w", typ, err)
-		}
-		return list, nil
-	}
-	return legacyRow{list: list, exists: `SELECT 1 FROM ` + d.Registry + ` WHERE pack_id = ? AND deleted_at IS NULL`}
-}
-
-// sentencePlugins lists the sentences packs by the pack ids their
-// imported sentences carry (legacy packs from before the sentence_packs
-// registry of migration 027 have no other record).
-func sentencePlugins(ctx context.Context, sqlDB *sql.DB) ([]model.PluginInfo, error) {
-	rows, err := sqlDB.QueryContext(ctx, `
-		SELECT DISTINCT source_pack FROM sentences
-		WHERE user_id IS NULL AND deleted_at IS NULL`)
-	if err != nil {
-		return nil, fmt.Errorf("plugins: read sentence packs: %w", err)
-	}
-	defer rows.Close()
-
-	list := make([]model.PluginInfo, 0)
-	for rows.Next() {
-		var pack string
-		if err := rows.Scan(&pack); err != nil {
-			return nil, fmt.Errorf("plugins: scan sentence pack: %w", err)
-		}
-		info, err := dataPlugin(dataManifest{ID: pack, Type: "sentences"})
-		if err != nil {
-			return nil, err
-		}
-		list = append(list, info)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("plugins: read sentence packs: %w", err)
-	}
-	return list, nil
-}
-
-// dataPlugin turns one data-plugin manifest into its listed form:
-// enabled by default, ordered 0 until the user moves it, and hidden: data
-// packs are managed in Settings → Data, and a client leaves hidden rows out
-// of its plugin list (#169).
-func dataPlugin(m dataManifest) (model.PluginInfo, error) {
-	manifest, err := marshalManifest(m)
-	if err != nil {
-		return model.PluginInfo{}, fmt.Errorf("plugins: marshal data manifest %s: %w", m.ID, err)
-	}
-	return model.PluginInfo{
-		ID:       m.ID,
-		Manifest: manifest,
-		Enabled:  true,
-		Hidden:   true,
-	}, nil
-}
-
-// marshalManifest encodes a data manifest; a variable only so a test can
-// make the (practically unreachable) failure happen.
-var marshalManifest = func(v any) ([]byte, error) { return json.Marshal(v) }
-
 // statesFor returns the user's plugin states keyed by plugin id.
 func statesFor(ctx context.Context, sqlDB *sql.DB, userID int64) (map[string]model.PluginState, error) {
 	rows, err := sqlDB.QueryContext(ctx, `
@@ -435,18 +302,11 @@ func statesFor(ctx context.Context, sqlDB *sql.DB, userID int64) (map[string]mod
 }
 
 // Exists reports whether pluginID names a plugin the user can have
-// state or data under: a registered feature plugin or an active data
-// plugin (dictionary, levels scheme, frequency pack, sentences pack, grammar pack, or audio pack).
+// state or data under: a registry row (a built-in or admin-registered
+// feature plugin). A data pack's id is no plugin (#198).
 func Exists(ctx context.Context, sqlDB *sql.DB, pluginID string) (bool, error) {
-	query, args := `SELECT 1 FROM plugin_registry WHERE pack_id = ?`, []any{pluginID}
-	for _, d := range packtype.All {
-		if row, ok := legacyRows[d.Type]; ok && d.LegacyPluginRow {
-			query += "\n\t\tUNION ALL\n\t\t" + row.exists
-			args = append(args, pluginID)
-		}
-	}
 	var one int
-	err := sqlDB.QueryRowContext(ctx, query+"\n\t\tLIMIT 1", args...).Scan(&one)
+	err := sqlDB.QueryRowContext(ctx, `SELECT 1 FROM plugin_registry WHERE pack_id = ?`, pluginID).Scan(&one)
 	if errors.Is(err, sql.ErrNoRows) {
 		return false, nil
 	}
@@ -484,30 +344,25 @@ func UnparsableRows(ctx context.Context, sqlDB *sql.DB) ([]string, error) {
 	return ids, nil
 }
 
-// CanWriteData reports whether pluginID exists and whether its data may
-// be written (PUT/DELETE of plugin data, sync push). Data plugins and
-// registry rows that predate the contract (no sdk, or a manifest that
-// does not parse) are allowed as before; a row that parses as an sdk
-// manifest is allowed only when it declares owns-data. An unknown
-// plugin is (false, false).
+// CanWriteData reports whether pluginID exists (a registry row) and
+// whether its data may be written (PUT/DELETE of plugin data, sync push).
+// Registry rows that predate the contract (no sdk, or a manifest that does
+// not parse) are allowed as before; a row that parses as an sdk manifest is
+// allowed only when it declares owns-data. Any other id is (false, false).
 func CanWriteData(ctx context.Context, sqlDB *sql.DB, pluginID string) (exists, allowed bool, err error) {
 	var raw string
 	err = sqlDB.QueryRowContext(ctx, `SELECT manifest_json FROM plugin_registry WHERE pack_id = ?`, pluginID).Scan(&raw)
-	if err == nil {
-		m, perr := ParseManifest([]byte(raw))
-		if perr != nil {
-			return true, true, nil
-		}
-		return true, m.Has("owns-data"), nil
+	if errors.Is(err, sql.ErrNoRows) {
+		return false, false, nil
 	}
-	if !errors.Is(err, sql.ErrNoRows) {
+	if err != nil {
 		return false, false, fmt.Errorf("plugins: check plugin %s: %w", pluginID, err)
 	}
-	exists, err = Exists(ctx, sqlDB, pluginID)
-	if err != nil {
-		return false, false, err
+	m, perr := ParseManifest([]byte(raw))
+	if perr != nil {
+		return true, true, nil
 	}
-	return exists, exists, nil
+	return true, m.Has("owns-data"), nil
 }
 
 // SetState upserts the user's state for one plugin: whether it is

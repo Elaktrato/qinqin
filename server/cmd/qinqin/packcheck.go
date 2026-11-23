@@ -67,8 +67,7 @@ func warnStalePackTerms(ctx context.Context, sqlDB *sql.DB, roots []string, logf
 			if m.Type == dict.TypeDictionary {
 				id, license, attribution = dict.RegistryTerms(m)
 			}
-			// Uninstalled packs (and legacy sentence packs imported before
-			// migration 027) have no row.
+			// Uninstalled packs have no row.
 			if got, ok := stored[m.Type][id]; ok && got != (storedTerms{license, attribution, m.Notice}) {
 				logf(`pack %s: stored license/attribution/notice differs from %s; run "qinqin seed" to refresh`, m.ID, manifest)
 			}

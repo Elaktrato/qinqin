@@ -29,7 +29,7 @@ import (
 
 // Installed is one installed pack as the admin list shows it. License
 // and Attribution are the strings the pack stated when it was imported,
-// verbatim; a legacy sentence pack carries none of them. A strokes pack
+// verbatim. A strokes pack
 // serves several languages: Language is empty and Languages lists them
 // (sorted); a theme or font pack has neither; every other type has Language and no
 // Languages.
@@ -43,7 +43,7 @@ type Installed struct {
 	License     string   `json:"license"`
 	Attribution string   `json:"attribution"`
 	Notice      string   `json:"notice"`
-	UpdatedAt   string   `json:"updatedAt"` // RFC 3339; "" for a legacy sentence pack
+	UpdatedAt   string   `json:"updatedAt"` // RFC 3339
 }
 
 // ErrNotFound reports a pack that is not installed.
@@ -405,9 +405,6 @@ func Find(ctx context.Context, sqlDB *sql.DB, typ, packID string) (Installed, er
 // components, strokes, lemma-rules, theme, font), then name, then pack id. Built-in theme
 // packs live in the binary and are not listed (GET /api/themes credits
 // them).
-// Sentence packs imported before the registry existed list with only
-// their type and id, after the registered ones: their licence is not
-// recorded, and the list must not make them look like known packs.
 func List(ctx context.Context, sqlDB *sql.DB) ([]Installed, error) {
 	var out []Installed
 	for _, d := range packtype.All {
@@ -445,32 +442,10 @@ func List(ctx context.Context, sqlDB *sql.DB) ([]Installed, error) {
 		}
 	}
 
-	legacy, err := sqlDB.QueryContext(ctx, `
-		SELECT DISTINCT s.source_pack FROM sentences s
-		WHERE s.user_id IS NULL AND s.deleted_at IS NULL AND s.source_pack != ''
-		  AND NOT EXISTS (SELECT 1 FROM sentence_packs p WHERE p.pack_id = s.source_pack AND p.deleted_at IS NULL)`)
-	if err != nil {
-		return nil, fmt.Errorf("packs: list legacy sentence packs: %w", err)
-	}
-	for legacy.Next() {
-		p := Installed{Type: dict.TypeSentences}
-		if err := legacy.Scan(&p.PackID); err != nil {
-			legacy.Close()
-			return nil, fmt.Errorf("packs: list legacy sentence packs: %w", err)
-		}
-		out = append(out, p)
-	}
-	if err := errors.Join(legacy.Err(), legacy.Close()); err != nil {
-		return nil, fmt.Errorf("packs: list legacy sentence packs: %w", err)
-	}
-
 	sort.SliceStable(out, func(i, j int) bool {
 		a, b := out[i], out[j]
 		if a.Type != b.Type {
 			return typeIndex(a.Type) < typeIndex(b.Type)
-		}
-		if (a.Name == "") != (b.Name == "") {
-			return b.Name == "" // unnamed (legacy) last
 		}
 		if a.Name != b.Name {
 			return a.Name < b.Name
