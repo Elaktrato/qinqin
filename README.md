@@ -107,7 +107,7 @@ Portainer step by step, the data directory and the checklist after deploying:
 ## Release images and versions
 
 CI publishes `ghcr.io/elaktrato/qinqin` on pushes to `main` and on `v*` tags (pushes to `develop` only run
-the tests). Tags: `latest` (the newest `main` build), `v<version>` for a release (for example `v0.4.1`) and
+the tests). Tags: `latest` (the newest `main` build), `v<version>` for a release (for example `v0.5.0`) and
 `sha-<commit>`. For production pin a `v*` tag in `QINQIN_IMAGE`, so a redeploy never changes the version by
 surprise. The package is public; an image your own fork publishes starts as a private package (see
 [Deploying](https://github.com/Elaktrato/qinqin/wiki/Admin-deploying#release-images-and-versions)).

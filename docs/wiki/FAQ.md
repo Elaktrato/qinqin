@@ -26,7 +26,7 @@
 
 **Can I downgrade?** No. Migrations are one-way. Keep a backup from before each upgrade ([Upgrading](Admin-upgrading)).
 
-**Which version should I run?** Pin a release tag such as `ghcr.io/elaktrato/qinqin:v0.4.1`; every release has notes on the repository's Releases page ([Deploying](Admin-deploying#release-images-and-versions)).
+**Which version should I run?** Pin a release tag such as `ghcr.io/elaktrato/qinqin:v0.5.0`; every release has notes on the repository's Releases page ([Deploying](Admin-deploying#release-images-and-versions)).
 
 **Can I translate the interface?** Yes: a translation is one catalogue file, written by a person ([Translating qinqin](Translating-qinqin)).
 
