@@ -134,7 +134,7 @@ The API's `message` stays an English sentence for developers and logs. Clients s
 the `error` code: `apiError.<code camelCased>` for every code of `docs/contracts/auth/errors.json` (which also
 lists the AI and journal photo codes), with context wording where a screen needs it; a code the client does not
 know shows a generic text (web `apiError.unknown`, naming the code) or the screen's own fallback — never
-`message`. Routes that still answer uncoded plain text (`http.Error`) have no code to translate.
+`message`. Every API error carries a code (#168): there is no uncoded text answer left to translate.
 
 ## Plugin manifests
 

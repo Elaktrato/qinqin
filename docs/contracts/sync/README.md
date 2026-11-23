@@ -116,8 +116,8 @@ Row shapes (every key always present; `pull-page.json` `shapes`):
 `POST /api/sync/push` is unchanged: body `{events, pluginData, cards, decks, deckSettings, limits, fsrsSets,
 fsrsActive}` (each optional), answer `{eventsAccepted, eventDuplicates, dataAccepted, dataSkipped,
 dataRefused}` with every key always present. The whole body is validated first: a malformed item is 400 and
-a foreign workspace or unknown plugin 404, and then nothing is applied (both plain text, as in v0.3.x). A
-plugin value or typed item above 256 KiB is 413 with a JSON body; a body above 8 MiB is a plain-text 413. A
+a foreign workspace or unknown plugin 404, and then nothing is applied (400 `bad_request` naming the item,
+404 `not_found`). A plugin value or typed item above 256 KiB, or a body above 8 MiB, is 413 `too_large`. A
 row of a plugin without `owns-data` is refused alone (`dataRefused`). Plugin rows and typed rows are
 last-write-wins on the edit time (`docs/contracts/study/README.md`); a typed row equal to the stored one
 counts `dataAccepted` without a write.
@@ -135,4 +135,4 @@ transaction; the truncated JSON makes it retry, as after a network cut.
   `pluginData`.
 - Lexicon collections moved to packages: naming one is 400 `sync_collection_moved` (JSON); a pull without
   `collections` keeps their keys as `[]`. `sentences` carries the caller's own sentences only.
-- Other legacy errors stay plain text (`cursor must be RFC 3339`, an unknown collection).
+- Other legacy errors are 400 `bad_request` (a cursor that is not RFC 3339, an unknown collection).

@@ -9,7 +9,7 @@ examples of its throttling subset and a test checks that both agree on every cod
 
 | File | What it fixes |
 |---|---|
-| `errors.json` | Every auth error code, its status and meaning. Bodies are always `{"error","message"}` |
+| `errors.json` | Every API error code (all routes, not only auth), its status and meaning. Bodies are always `{"error","message"}`, plus the extra members a meaning names |
 | `login-responses.json` | The three answers of `POST /api/auth/login` that carry no throttle code |
 | `me.json` | `GET /api/auth/me`: the user plus the session's `restriction` and the stored `interfaceLanguage` (`''` = follow the browser; set by `PUT /api/me/interface-language`, see `i18n/`) |
 | `sessions.json` | Logout, change password, the session list and revoke routes, and the restricted answer |
@@ -187,3 +187,23 @@ credentials -> [mfa] -> [password change] -> [enrolment] -> full.
   `POST /api/account/mfa/email/confirm {code}` finishes it (and only then ends the restriction).
 - `POST /api/auth/login` may answer 503 `mail_outage` (second step by email while mail is down): retry later.
 - `PUT /api/account/email` also takes `code` (authenticator or recovery code) for accounts with an authenticator.
+
+## Changelog
+
+- **#168 (pre-Android hardening):** every error answer of every route is `{"error", "message"}` with a code from
+  `errors.json`, `Content-Type: application/json` and `X-Content-Type-Options: nosniff`; no route answers text
+  any more. Status codes are unchanged, with one correction: a pack import that fails for a reason other than
+  the pack is 500 `internal` (was 400 with a text). New codes: `conflict`, `method_not_allowed` (a known path
+  with another method), `range_not_satisfiable`, `precondition_failed`, `not_implemented`,
+  `workspace_not_found` (every workspace 404 that answered text; sync and token creation keep `not_found`),
+  `workspace_exists`, `last_workspace`, `language_unknown`, `language_built_in`, `language_in_use`,
+  `pack_invalid`, `pack_type_unsupported`, `pack_staged`, `pack_import_running`, `import_busy`, `book_exists`,
+  `bookmark_limit`, `highlight_limit`, `highlight_overlap` (with `existingId`), `epub_unreadable`,
+  `language_mismatch` (with `workspaceLanguage`, `bookLanguage`), `source_unavailable`,
+  `source_language_unavailable`, `plugin_no_data`, and the existing time-zone codes `unknown_time_zone` and
+  `too_many_changes` joined the catalogue. `invalid_language` now also covers a malformed workspace or admin
+  language code. `bad_request` (400) and `invalid_request` (422) are the generic codes of a malformed and an
+  out-of-range request. An unknown API path is 404 `not_found`. Existing codes, the access-token refusals and
+  the administrator re-authentication answers are unchanged. Server checks: `api/errors_static_test.go` (no
+  other writer, every literal code catalogued with its status), `api/errors_walk_test.go` (every route as
+  anonymous, user and admin with bad bodies, ids and queries answers this shape).
