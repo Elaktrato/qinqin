@@ -69,7 +69,8 @@ import type { Run } from '$lib/study/vacation';
 	import { DEFAULT_W } from '$lib/study/fsrs/params';
 	import { buildLevelPlan, type LevelUnit } from '$lib/study/levelQueue';
 	import { MAX_RESHOWS, applyGrade, progressOf, removeAt } from '$lib/study/requeue';
-	import { SESSION_CONFIG_KEY, STUDY_ALL_LIMIT, loadConfig } from '$lib/study/session';
+	import { SESSION_CONFIG_KEY, loadConfig } from '$lib/study/session';
+	import { NO_LIMIT } from '$lib/study/limits';
 	import { companionNote, sessionStartError, showCompanionNote } from '$lib/study/sessionStart';
 	import { offline } from '$lib/pwa/offlineState';
 	import { activeWeights, addCard, loadStudyData } from '$lib/study/store';
@@ -549,7 +550,7 @@ import type { Run } from '$lib/study/vacation';
 				// The order of card types (#132): due first, kinds interleaved.
 				queue = mixFlowQueue(levelSessionItems(plan.queue, data.cards, kinds, buried), history, mixOptions);
 				reserve = levelSessionItems(plan.reserve, data.cards, kinds, buried);
-				backfillLeft = config.studyAll === true ? STUDY_ALL_LIMIT : backfillLimit(config.newLimit);
+				backfillLeft = config.studyAll === true ? NO_LIMIT : backfillLimit(config.newLimit);
 			} else {
 				const plan = deckSessionPlan({
 					cards: data.cards,

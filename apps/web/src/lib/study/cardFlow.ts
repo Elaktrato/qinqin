@@ -6,9 +6,8 @@ import type { StudyContext } from './studyContext';
 import type { StudyClock } from './studyClock';
 import { planCompanions } from './companions';
 import type { LevelQueueItem } from './levelQueue';
-import { buildQueue, existingDecksOf, limitsOf, scheduleFor } from './scheduler';
-import { STUDY_ALL_LIMIT } from './session';
-import { admit, dayCountsCached, type Candidate } from './limits';
+import { buildQueue, scheduleFor } from './scheduler';
+import { admit, cap, dayCountsCached, existingDecksOf, limitsOf, NO_LIMIT, type Candidate } from './limits';
 import type { ClozeMode } from './cloze';
 import { enabledKinds, type DeckSettings } from './deckSettings';
 import { buriedNow, buries, type Buried } from './siblings';
@@ -16,6 +15,7 @@ import { cleanReadings, eligibleForTone, type Syllable, type Tone } from './tone
 import { tierFor, type SaladTier } from './wordSalad';
 import { isHan, writableChars } from './writing';
 import {
+	GENERAL_DECK_ID,
 	OPT_IN_KINDS,
 	type OptInKind,
 	type ReviewEvent,
@@ -203,8 +203,7 @@ export interface DeckSessionOptions {
  * by one before the session could end.
  */
 export function backfillLimit(newLimit: number): number {
-	const limit = Number.isFinite(newLimit) ? Math.max(0, Math.floor(newLimit)) : 0;
-	return Math.max(30, 2 * limit);
+	return Math.max(30, 2 * cap(newLimit));
 }
 
 /** A deck session: the queue, plus companions held back beyond the budget. */
@@ -293,8 +292,8 @@ export function deckSessionPlan({
 	newKey,
 	studyAll = false
 }: DeckSessionOptions): DeckSessionPlan {
-	const capNew = studyAll ? STUDY_ALL_LIMIT : newLimit;
-	const capReview = studyAll ? STUDY_ALL_LIMIT : reviewLimit;
+	const capNew = studyAll ? NO_LIMIT : newLimit;
+	const capReview = studyAll ? NO_LIMIT : reviewLimit;
 	const backfillLeft = backfillLimit(capNew);
 	const wanted = sessionKinds(kinds, language);
 	if (wanted.length === 0 || ctx.vacationToday) return { queue: [], reserve: [], backfillLeft };
@@ -369,10 +368,7 @@ export function deckSessionPlan({
 	// limit and each deck's daily limit) with the real new cards. The ones
 	// the daily limits still allow beyond the session limit are the reserve.
 	const counts = dayCountsCached(cards, reviews, ctx, now);
-	const caps = {
-		newLimit: Number.isFinite(capNew) ? Math.max(0, Math.floor(capNew)) : 0,
-		reviewLimit: Number.isFinite(capReview) ? Math.max(0, Math.floor(capReview)) : 0
-	};
+	const caps = { newLimit: cap(capNew), reviewLimit: cap(capReview) };
 	const asCandidates: Candidate[] = [
 		...real.map((card) => ({
 			cardId: card.id,
@@ -517,7 +513,7 @@ export function levelSessionItems(
 			entryId: item.entryId,
 			virtual: item.virtual,
 			card: null,
-			...(item.kind === 'vocab' ? {} : { deckIds: ['general'] })
+			...(item.kind === 'vocab' ? {} : { deckIds: [GENERAL_DECK_ID] })
 		});
 	}
 	return out;

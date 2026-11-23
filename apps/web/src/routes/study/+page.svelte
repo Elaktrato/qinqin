@@ -42,7 +42,7 @@ import { vacationBanner, vacationStatus } from '$lib/settings/vacationForm';
 import { startTodayText } from '$lib/study/limitsText';
 import { limitsOf } from '$lib/study/scheduler';
 	import { currentStudyDay } from '$lib/time/zone';
-	import { STUDY_ALL_LIMIT } from '$lib/study/session';
+	import { NO_LIMIT } from '$lib/study/limits';
 	import { hasStrokeData } from '$lib/study/strokeIndex';
 	import { getFrequencyPacks } from '$lib/api/frequency';
 	import type { FrequencyPack } from '$lib/api/types';
@@ -506,8 +506,8 @@ import { limitsOf } from '$lib/study/scheduler';
 			reviews,
 			deckIds: selectedDeckIds,
 			kinds: selectedKinds,
-			newLimit: STUDY_ALL_LIMIT,
-			reviewLimit: STUDY_ALL_LIMIT,
+			newLimit: NO_LIMIT,
+			reviewLimit: NO_LIMIT,
 			now: new Date(),
 			w: weights,
 			language: workspaceLanguage ?? '',

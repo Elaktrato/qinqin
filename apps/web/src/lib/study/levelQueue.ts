@@ -7,12 +7,11 @@
 import { t } from '$lib/i18n';
 import { compareCanonical } from './canonical';
 import { backfillLimit } from './cardFlow';
-import { existingDecksOf, isValidReview, limitsOf, scheduleFor, sortedReviews } from './scheduler';
+import { isValidReview, scheduleFor, sortedReviews } from './scheduler';
 import { orderNew } from './newOrder';
-import { STUDY_ALL_LIMIT } from './session';
-import { admit, dayCountsCached, type Candidate } from './limits';
+import { admit, cap, dayCountsCached, existingDecksOf, limitsOf, NO_LIMIT, type Candidate } from './limits';
 import { isDueNow, type StudyContext } from './studyContext';
-import type { ReviewEvent, StudyCard, StudyCardKind } from './types';
+import { GENERAL_DECK_ID, type ReviewEvent, type StudyCard, type StudyCardKind } from './types';
 
 export type LevelUnit = 'word' | 'character';
 
@@ -97,11 +96,6 @@ function instant(ts: string): number {
 	return Number.isNaN(ms) ? 0 : ms;
 }
 
-function cap(limit: number): number {
-	if (!Number.isFinite(limit)) return 0;
-	return Math.max(0, Math.floor(limit));
-}
-
 /** The prefix of an item that still needs a card row. */
 export const VIRTUAL_CARD_PREFIX = 'level:';
 
@@ -126,7 +120,7 @@ export function buildLevelPlan(options: BuildLevelQueueOptions): LevelPlan {
 }
 
 function reserveSize(options: BuildLevelQueueOptions): number {
-	const limit = options.studyAll ? STUDY_ALL_LIMIT : options.newLimit;
+	const limit = options.studyAll ? NO_LIMIT : options.newLimit;
 	return options.reserve === undefined ? backfillLimit(limit) : cap(options.reserve);
 }
 
@@ -157,7 +151,7 @@ function buildWordPlan(options: BuildLevelQueueOptions): LevelPlan {
 		const card = cardByEntry.get(entry.id);
 		if (card === undefined) {
 			virtual.push({
-				cardId: `${VIRTUAL_CARD_PREFIX}${entry.id}`,
+				cardId: virtualLevelId('vocab', entry.id),
 				entryId: entry.id,
 				virtual: true,
 				kind: 'vocab'
@@ -212,7 +206,7 @@ function admitPlan(
 	const decksOf = new Map(cards.map((card) => [card.id, card.deckIds]));
 	const candidate = (item: LevelQueueItem, bucket: Candidate['bucket']): Candidate => ({
 		cardId: item.cardId,
-		deckIds: item.virtual ? ['general'] : (decksOf.get(item.cardId) ?? ['general']),
+		deckIds: item.virtual ? [GENERAL_DECK_ID] : (decksOf.get(item.cardId) ?? [GENERAL_DECK_ID]),
 		bucket
 	});
 	const candidates = [
@@ -222,7 +216,7 @@ function admitPlan(
 		...fresher.map((item) => candidate(item, 'new'))
 	];
 	const caps = options.studyAll
-		? { newLimit: STUDY_ALL_LIMIT, reviewLimit: STUDY_ALL_LIMIT }
+		? { newLimit: NO_LIMIT, reviewLimit: NO_LIMIT }
 		: { newLimit: cap(options.newLimit), reviewLimit: cap(options.reviewLimit) };
 	const limitsFor = options.studyAll
 		? () => ({ new: null, reviews: null })
@@ -330,15 +324,13 @@ export interface LevelPlanCounts {
 	unitLabel: 'words' | 'characters';
 }
 
-const UNCAPPED = 1_000_000;
-
 /** levelPlanCounts counts what a level session would hold before the new/review caps. */
 export function levelPlanCounts(
 	options: Omit<BuildLevelQueueOptions, 'newLimit' | 'reviewLimit'>
 ): LevelPlanCounts {
-	const due = buildLevelPlan({ ...options, newLimit: 0, reviewLimit: UNCAPPED, reserve: 0 }).queue
+	const due = buildLevelPlan({ ...options, newLimit: 0, reviewLimit: NO_LIMIT, reserve: 0 }).queue
 		.length;
-	const fresh = buildLevelPlan({ ...options, newLimit: UNCAPPED, reviewLimit: 0, reserve: 0 })
+	const fresh = buildLevelPlan({ ...options, newLimit: NO_LIMIT, reviewLimit: 0, reserve: 0 })
 		.queue.length;
 	return {
 		due,

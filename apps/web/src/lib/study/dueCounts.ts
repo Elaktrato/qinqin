@@ -11,17 +11,13 @@ import type { DeckSettings } from './deckSettings';
 import { buriedNow } from './siblings';
 import {
 	buildQueue,
-	existingDecksOf,
-	limitsOf,
 	queueCandidates,
 	type BuildQueueOptions,
 	type Schedule
 } from './scheduler';
 import type { LimitRows, StudyContext } from './studyContext';
-import { admit, dayCountsCached, type Admission, type DayCounts } from './limits';
+import { admit, dayCountsCached, existingDecksOf, limitsOf, NO_LIMIT, type Admission, type DayCounts } from './limits';
 import type { ReviewEvent, StudyCard, StudyCardKind } from './types';
-
-const UNLIMITED = 1_000_000;
 
 /** Limits that never refuse anything. */
 const NO_DAILY_LIMITS: LimitRows = {
@@ -82,8 +78,8 @@ function prepare(input: DueCountsInput): BuildQueueOptions {
 		scheduleOf,
 		ctx,
 		counts: used ?? EMPTY_COUNTS,
-		newLimit: input.newLimit ?? UNLIMITED,
-		reviewLimit: input.reviewLimit ?? UNLIMITED
+		newLimit: input.newLimit ?? NO_LIMIT,
+		reviewLimit: input.reviewLimit ?? NO_LIMIT
 	};
 }
 

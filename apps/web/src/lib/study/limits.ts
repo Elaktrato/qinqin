@@ -12,6 +12,18 @@ export const LIMITS_DECK_PREFIX = 'limits:deck:';
 
 export const MAX_LIMIT = 9999;
 
+/**
+ * NO_LIMIT stands for "no limit" wherever a number is needed: Study all's
+ * session caps, and counts taken before any cap. Larger than any session.
+ */
+export const NO_LIMIT = 1_000_000;
+
+/** cap reads a session cap: a finite number floored, at least 0; anything else is 0. */
+export function cap(limit: number): number {
+	if (!Number.isFinite(limit)) return 0;
+	return Math.max(0, Math.floor(limit));
+}
+
 /** `null` = unlimited. */
 export interface LimitPair {
 	new: number | null;
@@ -52,6 +64,20 @@ export function effectiveLimits(
 ): LimitPair {
 	const base = { ...DEFAULT_LIMITS, ...(workspace ?? {}) };
 	return { ...base, ...(deck ?? {}) };
+}
+
+/** The limits of one deck in a context: its row over the workspace's over the defaults. */
+export function limitsOf(ctx: Pick<StudyContext, 'limits'>, deckId: string): LimitPair {
+	return effectiveLimits(ctx.limits.workspace, ctx.limits.decks[deckId] ?? null);
+}
+
+/** The decks that exist: the context's list, else every deck the candidates name. */
+export function existingDecksOf(
+	ctx: Pick<StudyContext, 'limits'>,
+	candidates: readonly { deckIds: readonly string[] }[]
+): ReadonlySet<string> {
+	if (ctx.limits.existingDecks !== null) return ctx.limits.existingDecks;
+	return new Set(candidates.flatMap((candidate) => candidate.deckIds));
 }
 
 export interface DayCounts {

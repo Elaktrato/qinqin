@@ -82,7 +82,9 @@ import {
 export const FLASHCARDS_PLUGIN_ID = "qinqin-flashcards";
 
 // The implicit deck always exists; it is never written to plugin data.
-export const GENERAL_DECK_ID = "general";
+// Defined in types.ts (#175) so pure modules need not import the store.
+import { GENERAL_DECK_ID } from "./types";
+export { GENERAL_DECK_ID };
 
 // Only the fields the study layer reads; the server sends more.
 interface PluginDataRow {

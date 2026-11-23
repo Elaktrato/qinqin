@@ -12,11 +12,12 @@ import { feedInstants, type StudyClock } from './studyClock';
 import { isDueNow, type StudyContext } from './studyContext';
 import {
 	admit,
+	cap,
 	dayCountsCached,
-	effectiveLimits,
+	existingDecksOf,
+	limitsOf,
 	type Candidate,
-	type DayCounts,
-	type LimitPair
+	type DayCounts
 } from './limits';
 import type { ReviewEvent, ReviewGrade, StudyCard, StudyCardKind } from './types';
 
@@ -260,11 +261,6 @@ export function isDue(schedule: Schedule, now: Date): boolean {
 	return instant(schedule.due) <= now.getTime();
 }
 
-function cap(limit: number): number {
-	if (!Number.isFinite(limit)) return 0;
-	return Math.max(0, Math.floor(limit));
-}
-
 /**
  * buildQueue assembles one session: reviewed cards that are due first,
  * earliest due first, then never-reviewed cards. Reviewed cards that
@@ -356,19 +352,8 @@ export function queueCandidates({
 	return { candidates, byId: map, counts: dayUsed };
 }
 
-/** The limits of one deck in a context: its row over the workspace's over the defaults. */
-export function limitsOf(ctx: StudyContext, deckId: string): LimitPair {
-	return effectiveLimits(ctx.limits.workspace, ctx.limits.decks[deckId] ?? null);
-}
-
-/** The decks that exist: the context's list, else every deck the candidates name. */
-export function existingDecksOf(
-	ctx: StudyContext,
-	candidates: readonly { deckIds: readonly string[] }[]
-): ReadonlySet<string> {
-	if (ctx.limits.existingDecks !== null) return ctx.limits.existingDecks;
-	return new Set(candidates.flatMap((candidate) => candidate.deckIds));
-}
+// Moved to limits.ts (#175); re-exported so existing imports keep working.
+export { existingDecksOf, limitsOf } from './limits';
 
 // XP lives in exp.ts; re-exported so existing imports keep working.
 export { levelFromXp, xpFromReviews } from './exp';
