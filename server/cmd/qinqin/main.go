@@ -234,7 +234,22 @@ func serveCmd(args []string) error {
 	pkgs := startPackages(ctx, sqlDB, *data, log.Printf)
 
 	log.Printf("qinqin listening on %s (data: %s)", *addr, *data)
-	return http.ListenAndServe(*addr, rootHandler(webdist.Dist, api.New(sqlDB, *data, librarySources(*data, sqlDB), api.WithAI(aiSvc), api.WithMail(mailSvc), api.WithSecrets(sec.Current, sec.Previous), api.WithOCR(tess), api.WithStageSweeper(ctx, 5*time.Minute), api.WithTrustedProxies(trusted), api.WithPackages(pkgs))))
+	srv := newHTTPServer(rootHandler(webdist.Dist, api.New(sqlDB, *data, librarySources(*data, sqlDB), api.WithAI(aiSvc), api.WithMail(mailSvc), api.WithSecrets(sec.Current, sec.Previous), api.WithOCR(tess), api.WithStageSweeper(ctx, 5*time.Minute), api.WithTrustedProxies(trusted), api.WithPackages(pkgs))))
+	srv.Addr = *addr
+	return srv.ListenAndServe()
+}
+
+// newHTTPServer is the HTTP server of serve (#170): a client gets 10 s to
+// send its request headers and an idle keep-alive connection is closed after
+// 120 s, so slow-header connections cannot pile up. There is deliberately no
+// ReadTimeout or WriteTimeout: uploads, package downloads and the streamed
+// legacy pull set their own deadlines (api stream_deadline.go).
+func newHTTPServer(h http.Handler) *http.Server {
+	return &http.Server{
+		Handler:           h,
+		ReadHeaderTimeout: 10 * time.Second,
+		IdleTimeout:       120 * time.Second,
+	}
 }
 
 // version is sent in the User-Agent of requests to the text sources; set
