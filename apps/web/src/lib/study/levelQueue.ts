@@ -52,8 +52,6 @@ export interface BuildLevelQueueOptions {
 	kinds?: readonly StudyCardKind[];
 	/** The learner's day (writing unlock), the study clock and vacation state. */
 	ctx: StudyContext;
-	/** How many extra new items to keep as reserve; defaults to the plan's backfillLeft. */
-	reserve?: number;
 	/** `kind:entryId` keys of virtual items already found ineligible (never planned). */
 	skip?: ReadonlySet<string>;
 	/**
@@ -219,8 +217,7 @@ function admitPlan(options: BuildLevelQueueOptions, candidates: LevelCandidates)
 		ctx,
 		counts: dayCountsCached(cards, reviews, ctx, now),
 		caps: { newLimit: options.newLimit, reviewLimit: options.reviewLimit },
-		studyAll: options.studyAll === true,
-		...(options.reserve === undefined ? {} : { reserveSize: options.reserve })
+		studyAll: options.studyAll === true
 	});
 }
 
@@ -324,7 +321,7 @@ export interface LevelPlanCounts {
 export function levelPlanCounts(
 	options: Omit<BuildLevelQueueOptions, 'newLimit' | 'reviewLimit'>
 ): LevelPlanCounts {
-	const full = { ...options, newLimit: NO_LIMIT, reviewLimit: NO_LIMIT, reserve: 0 };
+	const full = { ...options, newLimit: NO_LIMIT, reviewLimit: NO_LIMIT };
 	const candidates = levelCandidates(full);
 	const due = new Set(candidates.due.map((item) => item.cardId));
 	const queue = admitPlan(full, candidates).queue;

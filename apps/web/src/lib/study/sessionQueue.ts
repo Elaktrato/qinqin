@@ -104,25 +104,21 @@ export interface SessionQueue<T> {
 /**
  * buildSessionQueue: the queue is the admitted entries in candidate order;
  * the reserve the entries the allowance admits and the session does not
- * (always new items), at most `reserveSize` (default backfillLeft, all a
- * session can ever draw).
+ * (always new items), at most backfillLeft (all a session can ever draw).
  */
 export function buildSessionQueue<T>({
 	entries,
-	reserveSize,
 	...rest
 }: Omit<AdmitSessionInput, 'candidates'> & {
 	entries: readonly QueueEntry<T>[];
-	reserveSize?: number;
 }): SessionQueue<T> {
 	const { inSession, inAllowance } = admitSession({ ...rest, candidates: entries });
 	const backfillLeft = sessionBackfill(rest.caps.newLimit, rest.studyAll === true);
-	const size = reserveSize === undefined ? backfillLeft : cap(reserveSize);
 	return {
 		queue: entries.filter((entry) => inSession.has(entry.cardId)).map((entry) => entry.item),
 		reserve: entries
 			.filter((entry) => inAllowance.has(entry.cardId) && !inSession.has(entry.cardId))
-			.slice(0, size)
+			.slice(0, backfillLeft)
 			.map((entry) => entry.item),
 		backfillLeft
 	};

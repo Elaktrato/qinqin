@@ -512,7 +512,7 @@ describe('level queues with a new-item key (#75)', () => {
 		expect(buildLevelQueue(base).map((i) => i.cardId)).toEqual(['c3', 'level:1', 'level:2']);
 		expect(buildLevelQueue({ ...base, newKey }).map((i) => i.cardId)).toEqual(['level:4', 'level:2', 'c3']);
 		// The reserve continues in key order; unranked last.
-		const plan = buildLevelPlan({ ...base, newKey, newLimit: 1, reserve: 10 });
+		const plan = buildLevelPlan({ ...base, newKey, newLimit: 1 });
 		expect(plan.reserve.map((i) => i.entryId)).toEqual([2, 3, 1, 5]);
 	});
 
@@ -643,5 +643,21 @@ describe('character levels leave excluded (buried) entries out (#175 review)', (
 
 	it('the setup counts leave it out too', () => {
 		expect(levelPlanCounts(base)).toMatchObject({ due: 0, fresh: 2, items: 2 });
+	});
+});
+
+describe('the level plan has no reserve-size option (#175 review)', () => {
+	it('the reserve is always bounded by backfillLeft', () => {
+		const entries = Array.from({ length: 40 }, (_, i) => entry(i + 1));
+		const ctx = contextFor(UTC_CONTEXT.day, [], NOW.getTime(), [], {
+			workspace: { new: null, reviews: null },
+			decks: {},
+			existingDecks: null
+		});
+		const options = { ctx, w: DEFAULT_W, entries, cards: [], reviews: [], now: NOW, newLimit: 0, reviewLimit: 0 };
+		// @ts-expect-error -- `reserve` was removed: nothing outside the builder sizes the reserve.
+		const plan = buildLevelPlan({ ...options, reserve: 1 });
+		expect(plan.backfillLeft).toBe(30);
+		expect(plan.reserve).toHaveLength(30);
 	});
 });

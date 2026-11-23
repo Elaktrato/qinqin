@@ -67,17 +67,6 @@ describe('buildSessionQueue', () => {
 		expect(plan.reserve).toEqual([{ id: 'c' }, { id: 'd' }]);
 		expect(plan.backfillLeft).toBe(30);
 	});
-
-	it('an explicit reserve size bounds the reserve', () => {
-		const plan = buildSessionQueue({
-			entries,
-			ctx: ctx(),
-			counts: EMPTY,
-			caps: { newLimit: 1, reviewLimit: 0 },
-			reserveSize: 1
-		});
-		expect(plan.reserve).toEqual([{ id: 'b' }]);
-	});
 });
 
 describe('sessionBackfill', () => {

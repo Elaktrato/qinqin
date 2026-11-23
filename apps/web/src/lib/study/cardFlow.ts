@@ -208,15 +208,16 @@ export interface DeckSessionOptions {
 	studyAll?: boolean;
 }
 
-/** A deck session: the queue, plus companions held back beyond the budget. */
+/** A deck session: the queue, plus new items held back beyond the budget. */
 export interface DeckSessionPlan {
 	queue: FlowItem[];
 	/**
-	 * Companions planned beyond the new-card budget, in planning order.
-	 * Eligibility is only known once an entry is loaded, so when the runner
-	 * drops an ineligible companion the next reserve item takes its place
-	 * (see dropItem); otherwise sentence-less old words would use up the
-	 * budget in every session and starve the newer ones.
+	 * New items (real cards, then companions) the daily limits allow beyond
+	 * the session's new-card cap, in queue order, at most backfillLeft
+	 * (sessionQueue.ts). Eligibility is only known once an entry is loaded,
+	 * so when the runner drops an ineligible companion the next reserve item
+	 * takes its place (see dropItem); otherwise sentence-less old words would
+	 * use up the budget in every session and starve the newer ones.
 	 */
 	reserve: FlowItem[];
 	/** Replacements left this session (see backfillLimit). */
