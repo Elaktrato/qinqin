@@ -171,7 +171,31 @@ workspace-gone switch).
 - Personal access tokens and the admin re-authentication answers are unchanged (codes, statuses, bodies); the
   token gate tests and `admin-reauth.json` stay green untouched.
 
-## 7. Docs
+## 7. Rulings made while building
+
+- Ruling: `writeError` sets `X-Content-Type-Options: nosniff` on every error answer, as `http.Error` did — the
+  stroke route tests pinned it and a JSON error body should never be sniffed — cost if wrong: none.
+- Ruling: a request whose client is already gone keeps its 499 without a body (`writeClientGone`) — nobody reads
+  it and the route walk never cancels a request — cost if wrong: none for clients.
+- Ruling: `writeJSON`'s own marshal failure writes a constant coded body instead of calling `writeError` (which
+  goes through `writeJSON`) — no recursion — cost if wrong: none.
+- Ruling: validation messages that start with a field or parameter name keep it lowercase (`since must be RFC
+  3339.`), other sentences are capitalised; the message is for developers — cost if wrong: cosmetic.
+- Ruling: `decodeBody` is introduced and used where the body is decoded in one step; routes with their own
+  two-step or strict decoders (`readAccountBody`, `decodeStrictJSON`, the multipart forms) keep them and answer
+  through `badBody`/`writeError`, so each route keeps its exact strictness — cost if wrong: two decoder shapes
+  stay in the code (both coded).
+- Ruling: the web `UserError`'s `message` is the catalogue text at throw time (for the console and for
+  `toThrow` assertions); `errorText` re-translates from the key. Errors that already carry interface text (the
+  study store's partial-write errors) are `ShownError` and `errorText` shows their `text` — cost if wrong: none.
+- Ruling: library validation refusals (a label or note too long, a bad colour) now show the screen's own
+  sentence instead of the server's English one; the client checks these limits before sending, so this is the
+  rare path — cost if wrong: a less specific sentence on a path a correct client does not reach.
+- Ruling: the staged pack job status (a 200 body with an English `error` for a failed import) is not an HTTP
+  error answer and keeps its text; the pack manager shows it as before — cost if wrong: one more English
+  admin sentence, matching the pack_invalid detail ruling.
+
+## 8. Docs
 
 `docs/wiki/API-Errors.md` is regenerated (`node scripts/gen-api-docs.mjs`) and its intro no longer says some
 routes answer plain text; `docs/wiki/API-Reference.md` and `API-Overview.md` lose the "older routes answer
