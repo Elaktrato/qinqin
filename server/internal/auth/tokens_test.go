@@ -27,19 +27,8 @@ var tokenShape = regexp.MustCompile(`^qq_pat_[0-9a-f]{64}$`)
 func tokenDB(t *testing.T) (sqlDB *sql.DB, path string, u1, u2, ws1, ws2 int64) {
 	t.Helper()
 	sqlDB, path = dbtest.OpenPath(t)
-	ins := func(q string, args ...any) int64 {
-		t.Helper()
-		res, err := sqlDB.Exec(q, args...)
-		if err != nil {
-			t.Fatal(err)
-		}
-		id, _ := res.LastInsertId()
-		return id
-	}
-	u1 = ins(`INSERT INTO users (username, hash, updated_at, created_at) VALUES ('tok-one', 'x', 't', 't')`)
-	u2 = ins(`INSERT INTO users (username, hash, updated_at, created_at) VALUES ('tok-two', 'x', 't', 't')`)
-	ws1 = ins(`INSERT INTO workspaces (user_id, language, name, updated_at) VALUES (?, 'zh', 'w1', 't')`, u1)
-	ws2 = ins(`INSERT INTO workspaces (user_id, language, name, updated_at) VALUES (?, 'zh', 'w2', 't')`, u2)
+	u1, u2 = dbtest.User(t, sqlDB, "tok-one"), dbtest.User(t, sqlDB, "tok-two")
+	ws1, ws2 = dbtest.Workspace(t, sqlDB, u1, "zh"), dbtest.Workspace(t, sqlDB, u2, "zh")
 	return sqlDB, path, u1, u2, ws1, ws2
 }
 

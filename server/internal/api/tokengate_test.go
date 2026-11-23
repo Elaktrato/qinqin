@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"qinqin/internal/auth"
+	"qinqin/internal/dbtest"
 	"qinqin/internal/model"
 	"qinqin/internal/ratelimit"
 )
@@ -36,9 +37,7 @@ func newTokenActors(t *testing.T, sqlDB *sql.DB) tokenActors {
 		}
 		return n
 	}
-	if _, err := sqlDB.Exec(`INSERT INTO users (username, hash, updated_at, created_at) VALUES ('gate-user2', 'x', 't', 't')`); err != nil {
-		t.Fatal(err)
-	}
+	dbtest.User(t, sqlDB, "gate-user2")
 	ws := func(user int64, name string) int64 {
 		res, err := sqlDB.Exec(`INSERT INTO workspaces (user_id, language, name, updated_at) VALUES (?, 'zh', ?, '2026-01-01T00:00:00Z')`, user, name)
 		if err != nil {
