@@ -5,7 +5,9 @@ import (
 	"encoding/json"
 	"errors"
 	"io"
+	"log"
 	"net/http"
+	"runtime/debug"
 	"time"
 )
 
@@ -115,6 +117,22 @@ func (c *codedErrors) Write(b []byte) (int, error) {
 	return c.ResponseWriter.Write(b)
 }
 
+// ReadFrom hands io.Copy on to the wrapped writer (sendfile for a served
+// file) while no error status was swallowed.
+func (c *codedErrors) ReadFrom(r io.Reader) (int64, error) {
+	if c.status != 0 {
+		return io.Copy(io.Discard, r)
+	}
+	if rf, ok := c.ResponseWriter.(io.ReaderFrom); ok {
+		return rf.ReadFrom(r)
+	}
+	return io.Copy(struct{ io.Writer }{c.ResponseWriter}, r)
+}
+
+// Unwrap lets http.ResponseController reach the connection (Flush,
+// deadlines) through the wrapper.
+func (c *codedErrors) Unwrap() http.ResponseWriter { return c.ResponseWriter }
+
 // answer writes the coded error for a swallowed status; false: there was none.
 func (c *codedErrors) answer() bool {
 	if c.status == 0 {
@@ -162,5 +180,55 @@ func codedUnmatched(mux *http.ServeMux) http.Handler {
 		cw := &codedErrors{ResponseWriter: w}
 		mux.ServeHTTP(cw, r)
 		cw.answer()
+	})
+}
+
+// recorded notes whether anything of the response went out yet.
+type recorded struct {
+	http.ResponseWriter
+	wrote bool
+}
+
+func (r *recorded) WriteHeader(status int) {
+	r.wrote = true
+	r.ResponseWriter.WriteHeader(status)
+}
+
+func (r *recorded) Write(b []byte) (int, error) {
+	r.wrote = true
+	return r.ResponseWriter.Write(b)
+}
+
+func (r *recorded) ReadFrom(src io.Reader) (int64, error) {
+	r.wrote = true
+	if rf, ok := r.ResponseWriter.(io.ReaderFrom); ok {
+		return rf.ReadFrom(src)
+	}
+	return io.Copy(struct{ io.Writer }{r.ResponseWriter}, src)
+}
+
+func (r *recorded) Unwrap() http.ResponseWriter { return r.ResponseWriter }
+
+// recoverPanics turns a handler panic into a coded 500 internal when
+// nothing was written yet (afterwards the answer is cut, as net/http
+// would). http.ErrAbortHandler keeps its meaning. The log names the route
+// pattern and the stack, never the path (download tickets live in it).
+func recoverPanics(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		rw := &recorded{ResponseWriter: w}
+		defer func() {
+			p := recover()
+			if p == nil {
+				return
+			}
+			if p == http.ErrAbortHandler {
+				panic(p)
+			}
+			log.Printf("api: panic in %q: %v\n%s", r.Pattern, p, debug.Stack())
+			if !rw.wrote {
+				writeError(w, http.StatusInternalServerError, "internal", "Internal server error.")
+			}
+		}()
+		next.ServeHTTP(rw, r)
 	})
 }

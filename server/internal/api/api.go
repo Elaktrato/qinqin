@@ -215,7 +215,7 @@ func (s *server) handler() http.Handler {
 	for _, rt := range s.routes() {
 		mux.HandleFunc(rt.pattern, s.tokenGate(rt))
 	}
-	return codedUnmatched(mux)
+	return recoverPanics(codedUnmatched(mux))
 }
 
 // access is the route's declared policy, checked against the handler's real

@@ -2,6 +2,8 @@ package api
 
 import (
 	"encoding/json"
+	"io"
+	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
@@ -93,5 +95,71 @@ func TestServeContentErrorsAreCodedJSON(t *testing.T) {
 	}
 	if w := serve(map[string]string{"If-Modified-Since": "Fri, 01 Jan 2027 00:00:00 GMT"}); w.Code != 304 || w.Body.Len() != 0 {
 		t.Fatalf("not modified: %d %q", w.Code, w.Body.String())
+	}
+}
+
+// TestRecoverAnswersCodedInternal: a handler panic before anything was
+// written is a coded 500 internal; after the status went out the
+// connection is left as it is; http.ErrAbortHandler keeps aborting.
+func TestRecoverAnswersCodedInternal(t *testing.T) {
+	cat := errorCatalogue(t)
+	serve := func(h http.HandlerFunc) (w *httptest.ResponseRecorder, panicked any) {
+		w = httptest.NewRecorder()
+		func() {
+			defer func() { panicked = recover() }()
+			recoverPanics(h).ServeHTTP(w, httptest.NewRequest("GET", "/api/x", nil))
+		}()
+		return w, panicked
+	}
+	w, p := serve(func(http.ResponseWriter, *http.Request) { panic("boom") })
+	if p != nil || w.Code != 500 || checkErrorAnswer(cat, w) != "" || !strings.Contains(w.Body.String(), `"internal"`) {
+		t.Fatalf("panic before writing: %v %d %q", p, w.Code, w.Body.String())
+	}
+	w, p = serve(func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(`{"a":`))
+		panic("late")
+	})
+	if p != nil || w.Code != 200 || w.Body.String() != `{"a":` {
+		t.Fatalf("panic after writing: %v %d %q", p, w.Code, w.Body.String())
+	}
+	_, p = serve(func(http.ResponseWriter, *http.Request) { panic(http.ErrAbortHandler) })
+	if p != http.ErrAbortHandler {
+		t.Fatalf("ErrAbortHandler was swallowed: %v", p)
+	}
+}
+
+type flushReaderFrom struct {
+	*httptest.ResponseRecorder
+	readFrom bool
+}
+
+func (f *flushReaderFrom) ReadFrom(r io.Reader) (int64, error) {
+	f.readFrom = true
+	return io.Copy(f.ResponseRecorder, r)
+}
+
+// TestCodedWritersPassThrough: the wrappers unwrap (Flush through a
+// ResponseController) and hand io.ReaderFrom on while no error status was
+// swallowed, so sendfile still works.
+func TestCodedWritersPassThrough(t *testing.T) {
+	under := &flushReaderFrom{ResponseRecorder: httptest.NewRecorder()}
+	cw := &codedErrors{ResponseWriter: under}
+	if err := http.NewResponseController(cw).Flush(); err != nil {
+		t.Fatalf("Flush through codedErrors: %v", err)
+	}
+	if n, err := io.Copy(cw, struct{ io.Reader }{strings.NewReader("abc")}); n != 3 || err != nil || !under.readFrom || under.Body.String() != "abc" {
+		t.Fatalf("ReadFrom: %d %v %v %q", n, err, under.readFrom, under.Body.String())
+	}
+	swallowed := &flushReaderFrom{ResponseRecorder: httptest.NewRecorder()}
+	cw = &codedErrors{ResponseWriter: swallowed}
+	cw.WriteHeader(http.StatusRequestedRangeNotSatisfiable)
+	io.Copy(cw, struct{ io.Reader }{strings.NewReader("text body")})
+	if swallowed.Body.Len() != 0 {
+		t.Fatalf("a swallowed error body reached the client: %q", swallowed.Body.String())
+	}
+	rw := &recorded{ResponseWriter: httptest.NewRecorder()}
+	if err := http.NewResponseController(rw).Flush(); err != nil {
+		t.Fatalf("Flush through the recover writer: %v", err)
 	}
 }
