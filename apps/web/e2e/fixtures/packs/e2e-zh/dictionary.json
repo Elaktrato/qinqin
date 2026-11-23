@@ -1,0 +1,8 @@
+{
+  "entries": [
+    {"written": "你好", "kind": "word", "readings": [{"type": "pinyin", "value": "nǐ hǎo"}], "glosses": ["hello"]},
+    {"written": "学习", "kind": "word", "readings": [{"type": "pinyin", "value": "xué xí"}], "glosses": ["to study"]},
+    {"written": "中国", "kind": "word", "readings": [{"type": "pinyin", "value": "Zhōng guó"}], "glosses": ["China"]},
+    {"written": "好", "kind": "character", "readings": [{"type": "pinyin", "value": "hǎo"}], "glosses": ["good"]}
+  ]
+}

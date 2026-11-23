@@ -1,0 +1,12 @@
+{
+  "entries": [
+    {"written": "私", "kind": "word", "readings": [{"type": "kana", "value": "わたし"}], "glosses": ["I; me"]},
+    {"written": "学校", "kind": "word", "readings": [{"type": "kana", "value": "がっこう"}], "glosses": ["school"]},
+    {"written": "行く", "kind": "word", "readings": [{"type": "kana", "value": "いく"}], "glosses": ["to go"]},
+    {"written": "水", "kind": "word", "readings": [{"type": "kana", "value": "みず"}], "glosses": ["water"]},
+    {"written": "飲む", "kind": "word", "readings": [{"type": "kana", "value": "のむ"}], "glosses": ["to drink"]},
+    {"written": "食べる", "kind": "word", "readings": [{"type": "kana", "value": "たべる"}], "glosses": ["to eat"]},
+    {"written": "本", "kind": "word", "readings": [{"type": "kana", "value": "ほん"}], "glosses": ["book"]},
+    {"written": "読む", "kind": "word", "readings": [{"type": "kana", "value": "よむ"}], "glosses": ["to read"]}
+  ]
+}

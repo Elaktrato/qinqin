@@ -7,10 +7,12 @@
 		"dev": "vite dev",
 		"build": "vite build",
 		"preview": "vite preview",
-		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
-		"test": "vitest run"
+		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json && tsc -p e2e",
+		"test": "vitest run",
+		"e2e": "playwright test -c e2e"
 	},
 	"devDependencies": {
+		"@playwright/test": "1.63.0",
 		"@sveltejs/adapter-static": "^3.0.11",
 		"@sveltejs/kit": "^2.70.4",
 		"@testing-library/svelte": "^5.4.2",

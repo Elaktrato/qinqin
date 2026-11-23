@@ -1,0 +1,10 @@
+{
+  "id": "e2e-ja",
+  "name": "Japanese end-to-end test dictionary",
+  "version": "1",
+  "type": "dictionary",
+  "language": "ja",
+  "license": "CC0-1.0",
+  "attribution": "Qinqin project — hand-written test data",
+  "format": "json"
+}
