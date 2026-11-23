@@ -266,7 +266,7 @@ describe('HighlightList update and remove', () => {
 		const list = await loaded(api);
 		expect(await list.update(4, { note: 'new' })).toBe(false);
 		expect(list.items[0].note).toBe('old');
-		expect(list.error).toBe('note too long');
+		expect(list.error).toBe('Could not save the highlight.'); // never the server's text (#168)
 	});
 
 	it('drops a highlight that is gone on the server when updating it', async () => {
@@ -432,7 +432,7 @@ describe('HighlightList edits are never lost', () => {
 		await flush();
 		// The colour is back to the server's; the note still shows and is sent.
 		expect(list.get(4)).toMatchObject({ color: 'yellow', note: 'new' });
-		expect(list.error).toBe('bad colour');
+		expect(list.error).toBe('Could not save the highlight.');
 		expect(api.update).toHaveBeenLastCalledWith(1, 4, { note: 'new' });
 		up.queue[1].resolve(hl(4, { color: 'yellow', note: 'new' }));
 		expect(await colour).toBe(false);

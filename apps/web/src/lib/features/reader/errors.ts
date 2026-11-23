@@ -1,7 +1,6 @@
 import { ApiError } from '$lib/api/client';
 import { languageLabel } from '$lib/languages';
 import { API_ERROR_KEYS } from '$lib/api/apiErrors';
-import { apiErrorBody } from '$lib/api/client';
 import { t, type MessageKey } from '$lib/i18n';
 
 export type ErrorContext =
@@ -66,23 +65,25 @@ function writeKind(context: ErrorContext): ErrorContext {
 	return context;
 }
 
-// Server text is shown only when it is short and free of markup.
-function isPlain(text: string): boolean {
-	return text.length > 0 && text.length <= 120 && !/[<>]/.test(text) && !text.includes('\n');
+// The library's refusal of a book whose language is not the workspace's:
+// 422 language_mismatch naming both languages.
+function mismatchOf(err: ApiError): { workspace: string; book: string } | null {
+	if (err.code !== 'language_mismatch') return null;
+	const workspace = err.body?.workspaceLanguage;
+	const book = err.body?.bookLanguage;
+	return typeof workspace === 'string' && typeof book === 'string' ? { workspace, book } : null;
 }
-
-// The library's refusal of a book whose language is not the workspace's.
-const MISMATCH = /^workspace language is ([a-z0-9-]+), book is ([a-z0-9-]+)$/i;
 
 /** Turns an API failure into a short, friendly sentence for the UI. */
 export function apiErrorMessage(err: unknown, context: ErrorContext): string {
 	if (err instanceof ApiError) {
 		const kind = writeKind(context);
-		const mismatch = err.status === 422 ? MISMATCH.exec(err.message.trim()) : null;
+		const mismatch = mismatchOf(err);
 		if (mismatch) {
-			const workspace = languageLabel(mismatch[1]);
-			const book = languageLabel(mismatch[2]);
-			return t('reader.error.mismatch', { book, workspace });
+			return t('reader.error.mismatch', {
+				book: languageLabel(mismatch.book),
+				workspace: languageLabel(mismatch.workspace)
+			});
 		}
 		switch (err.status) {
 			case 409:
@@ -118,12 +119,9 @@ export function apiErrorMessage(err: unknown, context: ErrorContext): string {
 				if (context === 'browse') return t('reader.error.noSuggestions');
 				break;
 		}
-		// A coded JSON error shows its catalogue text; an uncoded plain-text refusal of the library routes is shown
-		// as the server words it (short and free of markup only).
-		const code = apiErrorBody(err)?.error;
-		if (code !== undefined) return Object.hasOwn(API_ERROR_KEYS, code) ? t(API_ERROR_KEYS[code]) : t(fallbacks[context]);
-		const text = err.message.trim();
-		if (isPlain(text)) return text;
+		// A known code shows its catalogue text; the server's English message never shows (#168).
+		const code = err.code;
+		if (code !== undefined && Object.hasOwn(API_ERROR_KEYS, code)) return t(API_ERROR_KEYS[code]);
 	}
 	return t(fallbacks[context]);
 }

@@ -1,6 +1,6 @@
 import { ApiError, apiErrorBody } from "$lib/api/client";
 import { t } from "$lib/i18n";
-import { apiErrorText } from "./apiErrors";
+import { apiErrorText, errorText } from "./apiErrors";
 
 /** Which form asks: sign-in says "sign-in attempts", the others "attempts" (rate_limited wording). */
 export type AuthErrorContext = "signIn" | "register" | "reset";
@@ -16,7 +16,8 @@ export function waitText(seconds: number): string {
 /**
  * The text a sign-in, registration or reset failure shows: the catalogue text of the server's `error` code
  * (never its English `message`), with the wait from Retry-After for rate_limited, worded for the caller's
- * form. An older server's plain-text body falls back to the status.
+ * form. An uncoded body falls back to the status; anything else shows `fallback` or a UserError's text, never an
+ * English message (#168).
  */
 export function authErrorMessage(
   err: unknown,
@@ -42,7 +43,6 @@ export function authErrorMessage(
     if (err.status === 401) return apiErrorText("bad_credentials");
     if (err.status === 409) return apiErrorText("username_taken");
     if (err.status === 403) return t("auth.error.adminRequired");
-    return err.message || fallback;
   }
-  return err instanceof Error && err.message ? err.message : fallback;
+  return errorText(err, fallback);
 }

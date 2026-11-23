@@ -18,36 +18,8 @@ import { errMessageFindings, intlFindings, langFindings, markupFindings, tsFindi
 
 const src = resolve(__dirname, '../..');
 
-// Files that still read a caught error's text (the #168 migration empties this list, then it goes).
-const PENDING_ERRMSG: string[] = [
-	'lib/api/authErrors.ts',
-	'lib/api/library.ts',
-	'lib/features/flashcards/decks/DeckList.svelte',
-	'lib/features/flashcards/decks/DeckSettingsView.svelte',
-	'lib/features/flashcards/decks/SystemDeckDetail.svelte',
-	'lib/features/reader/errors.ts',
-	'lib/goals/loadGoal.ts',
-	'lib/i18n/catalogueCheck.ts',
-	'lib/settings/PackManager.svelte',
-	'lib/stats/errors.ts',
-	'lib/study/DeckCardTypes.svelte',
-	'lib/study/cardActions.ts',
-	'lib/study/fsrs/optimizer.worker.ts',
-	'lib/study/grade.ts',
-	'lib/study/store.ts',
-	'lib/weekly/loadWeek.ts',
-	'routes/account/password/+page.svelte',
-	'routes/lookups/+page.svelte',
-	'routes/search/+page.svelte',
-	'routes/search/parts/+page.svelte',
-	'routes/stats/characters/+page.svelte',
-	'routes/study/+page.svelte',
-	'routes/study/scheduling/+page.svelte',
-	'routes/study/session/+page.svelte',
-];
-
 type Rule = 'text' | 'intl' | 'lang' | 'errmsg';
-const pendingFiles: Record<Rule, string[]> = { text: [], intl: [], lang: [], errmsg: PENDING_ERRMSG };
+const pendingFiles: Record<Rule, string[]> = { text: [], intl: [], lang: [], errmsg: [] };
 
 /** Test support never ships: tests, `*.test.svelte` stubs, declaration files and `testing/` folders. */
 const isLinted = (rel: string): boolean =>

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { ApiError } from "$lib/api/client";
 import { authErrorMessage, waitText } from "./authErrors";
+import { UserError } from "./userError";
 
 const json = (error: string, message: string) =>
   JSON.stringify({ error, message });
@@ -105,12 +106,12 @@ describe("authErrorMessage", () => {
     expect(
       authErrorMessage(new ApiError(403, "admin token required\n"), "f"),
     ).toContain("administrator");
-    expect(authErrorMessage(new ApiError(500, "internal error\n"), "f")).toBe(
-      "internal error\n",
-    );
-    expect(authErrorMessage(new Error("network down"), "f")).toBe(
-      "network down",
-    );
+    // Never the server's or an Error's own text (#168): the fallback, or a UserError's catalogue text.
+    expect(authErrorMessage(new ApiError(500, "internal error\n"), "f")).toBe("f");
+    expect(authErrorMessage(new Error("network down"), "f")).toBe("f");
+    expect(
+      authErrorMessage(new UserError("auth.error.secondStepNeeded"), "f"),
+    ).toBe("This account needs a second step: use the sign-in page.");
     expect(authErrorMessage("weird", "Login failed.")).toBe("Login failed.");
   });
 });
