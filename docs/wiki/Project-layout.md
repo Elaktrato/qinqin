@@ -20,6 +20,7 @@ Where things live in the repository ([github.com/Elaktrato/qinqin](https://githu
 | `plugins/data-strokes/`, `plugins/data-audio/`, `plugins/data-fonts/` | Gitignored: the built stroke pack, fetched audio packs and built font packs |
 | `plugins/samples/` | Hand-written samples, not seeded by default: dictionaries `zh-mini` and `ja-mini`, level packs `hsk-mini` and `jlpt-mini` (`qinqin seed --packs plugins/samples`) |
 | `docs/contracts/` | The client contracts with their JSON fixtures ([API overview](API-Overview#contracts-for-client-implementers)) |
+| `docs/architecture/` | The [architecture records](https://github.com/Elaktrato/qinqin/tree/develop/docs/architecture): the rules of the code's structure and how each is enforced ([Development](Development#architecture-records)) |
 | `docs/sources.md` | The data sources and licence decisions |
 | `docs/wiki/` | The source of this wiki |
 | `docs/releases/` | Release notes, used as the GitHub Release text of each tag |
