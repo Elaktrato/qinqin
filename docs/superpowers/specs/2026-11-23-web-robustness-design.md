@@ -109,22 +109,22 @@ Registered (every module-level cache filled at runtime): `study/entriesCache` (`
 `milestones/loadMilestones` (`lastFlush`, `lastPlace`), `plugins/journal/journalEntries` (`cache`),
 `plugins/journal/providerNames`, `api/audio`, `audio/source` (clips, object URLs revoked), `api/entryBases`,
 `api/schemes`, `api/characters`, `api/components`, `study/strokeData`, `study/frequencyRanks`, `study/scheduler`,
-`study/limits` (`memo`), `study/store` (`pulledPages`), `study/recentSent`, `time/zone`, `lookups/store`, and
-`workspaces` (selection, `signOut` only).
+`study/limits` (`memo`), `study/store` (`pulledPages`, the unreadable-rows report), `study/recentSent` (`signOut`
+only, as before), `time/zone` and `lookups/store` (the lookup buffer; it replaces auth's own user-change
+subscription).
 
 Ruling: register every runtime-filled module cache, content caches (characters, schemes, strokes, ranks)
 included — why: "is this per user" is easy to get wrong (pack visibility, overlays applied server-side) and the
 cost of clearing a content cache is one re-fetch after the next sign-in — cost if wrong: that re-fetch.
 
 Ruling: in-memory caches register at module creation; persistent per-device state that is not keyed by user (the
-workspace choice, Cache Storage API partitions, offline receipts) is cleared by `auth.ts` itself or by a module
-that is always loaded (`workspaces`, imported by the root layout) — why: a module that was never loaded has an
-empty in-memory cache, but its disk state exists regardless — cost if wrong: none; user-keyed storage (outbox,
-recently sent reviews, zone mirror) is never read for another user anyway.
+workspace choice, Cache Storage API partitions, offline receipts) is cleared by `auth.ts` itself — why: a module
+that was never loaded has an empty in-memory cache, but its disk state exists regardless — cost if wrong: none;
+user-keyed storage (outbox, recently sent reviews, zone mirror) is never read for another user anyway.
 
-Ruling: `auth.ts` imports no feature module — only `session/sessionEnd`, the API client, `account/`, `i18n`, `pwa`
-partitions/receipts and `study/outboxUser` (the outbox's user follows `auth`) — why: the issue; adding a cache
-must not need an edit in auth — cost if wrong: none.
+Ruling: `auth.ts` imports no feature cache — only `session/sessionEnd`, the API client, `account/`, `i18n`,
+`workspaces` (the device's choice), `pwa` partitions/receipts and `study/outboxUser` (the outbox's user follows
+`auth`) — why: the issue; adding a cache must not need an edit in auth — cost if wrong: none.
 
 Ruling: a lint test (`session/sessionCaches.lint.test.ts`) flags a module-level `new Map()`/`new Set()` without
 initial values, a `create…Cache(` and a `let cache/memo/inflight/pending/loaded… =` in `src/lib` that is not in a

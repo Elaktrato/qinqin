@@ -4,6 +4,7 @@
 // only (no replay); the Week tab passes the timelines and the character
 // universe it already loaded. Rule: docs/contracts/milestones/.
 
+import { onSessionEnd } from '../session/sessionEnd';
 import { get } from 'svelte/store';
 import { fetchSchemeCharacters, getSchemeEntries, getSchemes } from '$lib/api/schemes';
 import type { CharRow } from '$lib/api/types';
@@ -73,6 +74,7 @@ let lastPlace: {
 	tombstones: ReadonlyMap<string, string>;
 } | null = null;
 let onlineHooked = false;
+onSessionEnd(() => resetMilestonesForTests());
 
 /** Test hook: forget the flush throttle and the last place. */
 export function resetMilestonesForTests(): void {

@@ -4,6 +4,7 @@
 // copy is an ordinary deck with a deterministic id (ownedStarterDeckId) and
 // the pack named on it. Contract: docs/contracts/frequency/README.md.
 
+import { onSessionEnd } from '$lib/session/sessionEnd';
 import type { FrequencyPack } from '$lib/api/types';
 import { t } from '$lib/i18n';
 import { getStarterEntries, type StarterEntry } from '$lib/api/frequency';
@@ -103,6 +104,7 @@ export function starterAddedText(plan: AddPlan): string {
 // The server resolves them once per pack content; a pack re-install shows
 // after a reload. Failures are not cached.
 const cache = new Map<string, Promise<StarterEntry[]>>();
+onSessionEnd(() => cache.clear());
 
 /** clearStarterCache forgets every loaded starter deck (tests). */
 export function clearStarterCache(): void {
@@ -118,7 +120,10 @@ export function loadStarterEntries(packNumId: number, size: number): Promise<Sta
 			Array.isArray(body?.entries) ? body.entries : []
 		);
 		cache.set(key, pending);
-		pending.catch(() => cache.delete(key));
+		const mine = pending;
+		mine.catch(() => {
+			if (cache.get(key) === mine) cache.delete(key);
+		});
 	}
 	return pending;
 }

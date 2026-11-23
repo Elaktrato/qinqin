@@ -5,6 +5,7 @@
 // a different ranking pack (re-installed) drops the older ranks. A
 // failure rejects and is not cached; chunks that succeeded stay.
 
+import { onSessionEnd } from '../session/sessionEnd';
 import { getEntryRanks } from '$lib/api/frequency';
 
 export const RANKS_CHUNK = 500;
@@ -21,6 +22,7 @@ interface LanguageRanks {
 }
 
 const byLanguage = new Map<string, LanguageRanks>();
+onSessionEnd(() => clearFrequencyCaches());
 
 /** clearFrequencyCaches forgets every loaded rank (tests). */
 export function clearFrequencyCaches(): void {

@@ -3,6 +3,7 @@
 // server log authoritative and makes a schedule reproducible on any
 // device from the same events.
 
+import { onSessionEnd } from '../session/sessionEnd';
 import { createEmptyCard, fsrs, Rating, type Card, type Grade } from 'ts-fsrs';
 
 import { orderNew } from './newOrder';
@@ -63,6 +64,7 @@ export interface BuildQueueOptions {
 // ts-fsrs default (fuzz off, short-term on).
 const MAX_SCHEDULERS = 16;
 const schedulers = new Map<string, ReturnType<typeof fsrs>>();
+onSessionEnd(() => schedulers.clear());
 
 function schedulerFor(w: readonly number[]): ReturnType<typeof fsrs> {
 	const key = weightsKey(w);

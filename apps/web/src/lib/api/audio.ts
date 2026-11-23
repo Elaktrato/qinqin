@@ -1,3 +1,4 @@
+import { onSessionEnd, sessionEpoch } from '../session/sessionEnd';
 import { api } from './client';
 
 /** One recording with its credit, as the API sends it. */
@@ -27,6 +28,7 @@ const EMPTY: AudioResolution = { terms: [], syllables: null };
 // server does not know is cached as empty, so it is not asked for again.
 const cache = new Map<number, AudioResolution>();
 const pending = new Map<number, Promise<AudioResolution>>();
+onSessionEnd(() => clearAudioCache());
 
 /** clearAudioCache forgets every resolution (sign-out, tests). */
 export function clearAudioCache(): void {
@@ -43,13 +45,18 @@ export function getEntryAudio(id: number): Promise<AudioResolution> {
 	if (hit) return Promise.resolve(hit);
 	let p = pending.get(id);
 	if (!p) {
-		p = api<AudioResolution>(`/api/audio/entries/${id}`)
+		const epoch = sessionEpoch();
+		const mine: Promise<AudioResolution> = api<AudioResolution>(`/api/audio/entries/${id}`)
 			.then((r) => {
-				cache.set(id, r);
+				// An answer for a session that has ended is not kept (#173).
+				if (epoch === sessionEpoch()) cache.set(id, r);
 				return r;
 			})
-			.finally(() => pending.delete(id));
-		pending.set(id, p);
+			.finally(() => {
+				if (pending.get(id) === mine) pending.delete(id);
+			});
+		pending.set(id, mine);
+		p = mine;
 	}
 	return p;
 }
@@ -65,11 +72,13 @@ export async function resolveAudio(ids: number[]): Promise<Record<string, AudioR
 	const missing = unique.filter((id) => !cache.has(id));
 	for (let i = 0; i < missing.length; i += CHUNK) {
 		const chunk = missing.slice(i, i + CHUNK);
+		const epoch = sessionEpoch();
 		try {
 			const got = await api<Record<string, AudioResolution>>('/api/audio/resolve', {
 				method: 'POST',
 				body: { entryIds: chunk }
 			});
+			if (epoch !== sessionEpoch()) return {};
 			for (const id of chunk) cache.set(id, got[String(id)] ?? EMPTY);
 		} catch {
 			// Leave the chunk uncached; the next call tries again.

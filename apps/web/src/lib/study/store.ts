@@ -60,7 +60,8 @@ import {
   type StudyRowBody,
 } from "./rows";
 import { VACATION_PREFIX, parseVacation, type VacationPeriod } from "./vacation";
-import { rawIdentity, reportUnreadable, type UnreadableCounts } from "./unreadable";
+import { clearUnreadableReport, rawIdentity, reportUnreadable, type UnreadableCounts } from "./unreadable";
+import { onSessionEnd, sessionEpoch } from "../session/sessionEnd";
 import type { LimitPair } from "./limits";
 import { GOALS_KEY, parseGoalsRow, type GoalsRow, type ParsedGoals } from "../goals/goals";
 import { pendingReviews } from "./events";
@@ -102,6 +103,10 @@ type SyncDelta = { pluginData?: unknown } & Partial<Record<StudyCollection, unkn
  * collections of one workspace plus user-global rows, merged in page order.
  */
 const pulledPages = new Map<number, number>();
+onSessionEnd(() => {
+  pulledPages.clear();
+  clearUnreadableReport();
+});
 
 /** How many pages the last study pull of a workspace took (the offline receipt counts them). */
 export function studyPullPages(workspaceId: number): number {
@@ -112,8 +117,9 @@ async function pullStudy(workspaceId: number): Promise<SyncDelta> {
   // tombstones=1: the stamps in knownAt must include the server's
   // tombstones, or a re-add from a slower clock loses to them (stampOf).
   const first = firstPageUrl({ collections: V2_STUDY_COLLECTIONS, workspace: workspaceId, tombstones: true });
+  const epoch = sessionEpoch();
   const round = await pullAll((path) => api<unknown>(path), first, V2_STUDY_COLLECTIONS);
-  pulledPages.set(workspaceId, round.pages);
+  if (epoch === sessionEpoch()) pulledPages.set(workspaceId, round.pages);
   return round.collections as SyncDelta;
 }
 

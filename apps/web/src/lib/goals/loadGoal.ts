@@ -4,6 +4,7 @@
 // widget) call this; concurrent calls for the same workspace, learner day
 // and force flag (and signed-in user) share one promise, dropped once it settles.
 
+import { onSessionEnd } from '../session/sessionEnd';
 import { t } from '../i18n';
 import { fetchActivity, type ActivityResponse, type ActivitySource } from '../api/stats';
 import { loadStudyHistory } from '../study/history';
@@ -36,6 +37,7 @@ export interface GoalView {
 }
 
 const inflight = new Map<string, Promise<GoalView>>();
+onSessionEnd(() => inflight.clear());
 
 async function load(workspaceId: number, now: number, force: boolean): Promise<GoalView> {
 	const day = currentStudyDay();

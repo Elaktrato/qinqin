@@ -1,3 +1,4 @@
+import { onSessionEnd } from '../session/sessionEnd';
 import { api } from './client';
 import type { SchemeLevelMembers } from '$lib/study/charGroups';
 import type { EntryBase, Scheme } from './types';
@@ -35,6 +36,7 @@ interface SchemeCharactersBody {
 // `max-age=0, must-revalidate`). Concurrent callers share one request.
 const loadedSchemes = new Map<number, SchemeLevelMembers[]>();
 const pendingSchemes = new Map<number, Promise<SchemeLevelMembers[]>>();
+onSessionEnd(() => clearSchemeCharactersCache());
 
 /** clearSchemeCharactersCache forgets every loaded scheme (tests, sign-out). */
 export function clearSchemeCharactersCache(): void {
