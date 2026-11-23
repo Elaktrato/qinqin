@@ -113,8 +113,26 @@ Handoff: `docs/superpowers/handoffs/2026-11-22-study-batch-handoff.md`.
 - ~~[#132](https://github.com/Elaktrato/qinqin/issues/132) mix card types within a session~~ (`docs/contracts/cards/session-mix.json`)
 - ~~[#131](https://github.com/Elaktrato/qinqin/issues/131) go back and change a misclicked grade~~ (`docs/contracts/events/review-replace.json`)
 - ~~[#110](https://github.com/Elaktrato/qinqin/issues/110) page `GET /api/events`~~ (also fixed offline caching of event and pull v2 pages)
-- ~~[#165](https://github.com/Elaktrato/qinqin/issues/165) language-agnostic lemmatizer, Japanese table~~ (`docs/contracts/lemma/`); follow-up [#176](https://github.com/Elaktrato/qinqin/issues/176) rule tables as a data pack
+- ~~[#165](https://github.com/Elaktrato/qinqin/issues/165) language-agnostic lemmatizer, Japanese table~~ (`docs/contracts/lemma/`); follow-up ~~[#176](https://github.com/Elaktrato/qinqin/issues/176) rule tables as a data pack~~
 - [#133](https://github.com/Elaktrato/qinqin/issues/133) Tatoeba example sentences: tooling done; packs to be built by the owner
+
+## Pre-Android hardening (2026-11-23, on develop)
+
+Tracker [#166](https://github.com/Elaktrato/qinqin/issues/166). Handoff: `docs/superpowers/handoffs/2026-11-23-hardening-handoff.md`.
+
+- ~~[#167](https://github.com/Elaktrato/qinqin/issues/167) unreadable rows are skipped, never overwritten (web and server)~~ (`docs/contracts/sync/unreadable-rows.json`)
+- ~~[#168](https://github.com/Elaktrato/qinqin/issues/168) one error contract: coded JSON everywhere~~ (`docs/contracts/auth/errors.json`)
+- ~~[#169](https://github.com/Elaktrato/qinqin/issues/169) data-pack plugin rows hidden~~ (removed entirely by [#198](https://github.com/Elaktrato/qinqin/issues/198))
+- ~~[#170](https://github.com/Elaktrato/qinqin/issues/170) clean shutdown~~, ~~[#171](https://github.com/Elaktrato/qinqin/issues/171) HTTP timeouts~~, ~~[#172](https://github.com/Elaktrato/qinqin/issues/172) one pack-type table~~ (`docs/contracts/packages/pack-types.json`)
+- ~~[#173](https://github.com/Elaktrato/qinqin/issues/173) sign-out clears every per-user cache~~, ~~[#174](https://github.com/Elaktrato/qinqin/issues/174) explicit workspace in study writes~~
+- ~~[#175](https://github.com/Elaktrato/qinqin/issues/175) one queue builder for deck and level sessions~~ (`docs/contracts/cards/session-queue.json`)
+- ~~[#176](https://github.com/Elaktrato/qinqin/issues/176) lemmatizer rule tables as `lemma-rules` data packs~~ (`docs/contracts/lemma/`)
+
+## Architecture clean-up ([#190](https://github.com/Elaktrato/qinqin/issues/190), next)
+
+- Phase 1, foundations: [#198](https://github.com/Elaktrato/qinqin/issues/198) remove the v0.3 compatibility layer, [#191](https://github.com/Elaktrato/qinqin/issues/191) decision records, [#197](https://github.com/Elaktrato/qinqin/issues/197) test infrastructure, [#157](https://github.com/Elaktrato/qinqin/issues/157) browser end-to-end tests ([#133](https://github.com/Elaktrato/qinqin/issues/133) packs stay owner-side)
+- Phase 2, server: [#192](https://github.com/Elaktrato/qinqin/issues/192) one pack system, [#194](https://github.com/Elaktrato/qinqin/issues/194) domain packages
+- Phase 3, web and features: [#193](https://github.com/Elaktrato/qinqin/issues/193) study data layer, [#196](https://github.com/Elaktrato/qinqin/issues/196) one state model, [#199](https://github.com/Elaktrato/qinqin/issues/199) retire code plugins (journal and grammar become core), then [#185](https://github.com/Elaktrato/qinqin/issues/185) AI conversation partner, [#186](https://github.com/Elaktrato/qinqin/issues/186) AI example sentences, [#189](https://github.com/Elaktrato/qinqin/issues/189) profile picture, and last [#195](https://github.com/Elaktrato/qinqin/issues/195) folder layout
 
 ## Future (milestone)
 
