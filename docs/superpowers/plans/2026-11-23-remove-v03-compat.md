@@ -158,3 +158,34 @@ the `GET /api/events` full-array form (not in the issue), the plugin manifest vo
 - Not verified: nothing in a browser or on a device (the Grammar page and Settings → Plugins were checked by
   unit and dom tests only); the real app ran without seeded packs, so the data-pack check used one inserted
   registry row; the web was not served by the real-app server.
+
+### Fix wave (independent review)
+
+- **M1** (`75bc3bc4`): `clearLocalAfterRestore(storage, userId)` drops only the restoring user's and unowned
+  outbox items, writes every other user's back and counts only the dropped ones (no known user: drops
+  nothing). Test first: `backupView.test.ts` with two users' items and with no user, and
+  `YourData.dom.test.ts` (bob's item survives); both failed before the fix. The Ruling's cost is corrected.
+- **S1** (`f4295156`): the push case loops over every key in `typedKeys` (`DataRefused == len(typedKeys)`,
+  nothing in `plugin_data`, the typed tables unchanged). The mutation "the push refuses only `card:`" was
+  applied to `sync.go` and the test failed on all six other keys; it was then reverted.
+- **S2** (`0babf787`): `language_in_use` ignores own sentences (`source_pack != ''`) and names each pre-v0.2.0
+  pack with `DELETE /api/admin/sentences/{pack}`. Tests first (own sentences do not block; an older pack is
+  named, removed, and then the language deletes); both failed before. `errors.json`, `API-Errors.md`,
+  Admin-upgrading and NEXT.md updated.
+- **S3** (`960b2728`): the comments in `model.go`, `plugins.go`, `serve_test.go`, `stream_deadline_test.go`,
+  `handlers_sync_v2_test.go` (subtest renamed), `pluginRows.ts` and `api/types.ts`, and the wiki pages
+  Plugin-format, Admin-data-packs and API-Reference, plus `events/README.md`. The
+  `licenceNotRecorded` notice stays: it is the generic fallback for any pack with an empty licence, and the
+  wiki now says so. The final grep for "legacy pull", "data plugin", "synthesized" and "older web shells"
+  leaves only intended historical mentions (the CHANGELOG and the guard tests).
+- **S4** (`98eb1cdc`): `AdoptLeftovers`, `ReadableLeftover` and `HasTypedRow` removed (see the Ruling). Test
+  first: `TestExportNeverCarriesTypedFamilyLeftovers` failed (the readable leftover was still exported and
+  counted), then passed.
+- **N1–N3** (`076a1bf3`): N1 is the Ruling above, pinned by `TestRestoreKeepsDataPackPluginRowsInert`; it
+  passed at once, since the behaviour was already there. N2: NEXT.md says plainly that an old copy's unsent
+  reviews are never sent. N3: the stale `paramSet` member is gone from the fixture type.
+- **N4**: recorded as a follow-up Ruling; `isHiddenBuiltin` is not changed.
+- **Gates again:** gofmt clean; full Go `./...` green apart from the known `internal/ai` IPv6 test; web check
+  0 errors and build ok; full vitest under Node 26: 585 files, 12,507 passed, 2 skipped; `gen-api-docs
+  --check`, `check-sources`, the script tests (156) and `gen-scheduler-fixtures --check` ok. The real-app
+  check was not rerun after the fix wave.
