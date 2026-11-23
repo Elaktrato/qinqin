@@ -113,6 +113,14 @@ func (s *server) syncCatalogueETag(p *auth.Principal) chinsync.CatalogueFunc {
 	}
 }
 
+// writeStoredUnreadable answers a write onto a stored study row this server
+// cannot read back (study.ErrUnreadableStored): 409 study_row_unreadable,
+// nothing applied (docs/contracts/sync/README.md, "Reading rows").
+func writeStoredUnreadable(w http.ResponseWriter) {
+	writeJSON(w, http.StatusConflict, map[string]string{"error": "study_row_unreadable",
+		"message": "A stored study row this write would replace was saved in a form this server version cannot read; it is kept unchanged. Update the server or leave the row alone."})
+}
+
 // handleSyncPush serves POST /api/sync/push: a client's offline events,
 // plugin data and typed study rows. Events are idempotent by id; plugin
 // data and typed rows are last-write-wins. A malformed item is 400, a
@@ -150,6 +158,8 @@ func (s *server) handleSyncPush(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 	case errors.Is(err, chinsync.ErrNotFound):
 		http.Error(w, "workspace or plugin not found", http.StatusNotFound)
+	case errors.Is(err, chinsync.ErrStoredUnreadable):
+		writeStoredUnreadable(w)
 	case err != nil:
 		http.Error(w, "internal error", http.StatusInternalServerError)
 	default:

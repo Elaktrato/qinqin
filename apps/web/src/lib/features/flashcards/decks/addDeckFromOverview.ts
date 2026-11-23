@@ -25,6 +25,7 @@ export async function addDeckFromOverview(input: OverviewAddInput): Promise<AddP
 		target: input.target,
 		existingDeck: raw.decks.find((deck) => deck.id === input.target.id) ?? null,
 		rawCards: raw.cards,
+		unreadable: raw.unreadable,
 		now: new Date(),
 		exclude: input.exclude,
 		settings:

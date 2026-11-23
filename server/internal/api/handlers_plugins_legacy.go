@@ -77,6 +77,10 @@ func (s *server) legacyPut(w http.ResponseWriter, r *http.Request, userID int64,
 		writeAuthError(w, http.StatusBadRequest, "study_row_invalid", "The data is not a readable study row for this key.")
 		return
 	}
+	if errors.Is(err, study.ErrUnreadableStored) {
+		writeStoredUnreadable(w)
+		return
+	}
 	if err != nil {
 		http.Error(w, "internal error", http.StatusInternalServerError)
 		return
@@ -99,6 +103,10 @@ func (s *server) legacyDelete(w http.ResponseWriter, r *http.Request, userID, wo
 	applied, err := study.ApplyLegacy(r.Context(), s.db, userID, row, now)
 	if errors.Is(err, study.ErrNoTypedRow) {
 		return false
+	}
+	if errors.Is(err, study.ErrUnreadableStored) {
+		writeStoredUnreadable(w)
+		return true
 	}
 	if err != nil {
 		http.Error(w, "internal error", http.StatusInternalServerError)

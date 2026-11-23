@@ -3,6 +3,9 @@
  * package under /hanzi/ with codepoint names (U597D.json, upper-case hex), so
  * the URL is computed rather than shipped as a map. It is not in the web bundle.
  */
+
+import { onSessionEnd } from '../session/sessionEnd';
+
 export function strokeUrl(ch: string): string {
 	const codepoint = ch.codePointAt(0);
 	if (codepoint === undefined) throw new Error('strokeUrl needs a character');
@@ -19,6 +22,7 @@ export type StrokeResult = { kind: 'ok'; data: unknown } | { kind: 'missing' } |
 // One promise per character; ok and missing results are cached so a known
 // character is not refetched on every render. Transient errors are not.
 const cache = new Map<string, Promise<StrokeResult>>();
+onSessionEnd(() => resetStrokeDataCache());
 
 export function resetStrokeDataCache(): void {
 	cache.clear();

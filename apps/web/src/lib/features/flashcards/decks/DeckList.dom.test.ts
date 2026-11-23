@@ -152,8 +152,24 @@ describe('DeckList', () => {
 		);
 		await fireEvent.input(screen.getByLabelText('New deck name'), { target: { value: 'Nouns' } });
 		await fireEvent.click(screen.getByRole('button', { name: 'Create deck' }));
-		expect(createDeck).toHaveBeenCalledWith('Nouns');
+		expect(createDeck).toHaveBeenCalledWith(1, 'Nouns');
 		await screen.findByRole('link', { name: 'Nouns' });
+	});
+
+	it('after a workspace switch, the created deck does not reload the old workspace into the view (#174)', async () => {
+		let finish: (d: unknown) => void = () => undefined;
+		vi.mocked(createDeck).mockImplementation(() => new Promise((r) => (finish = r)) as never);
+		render(DeckList);
+		await screen.findByRole('link', { name: 'Verbs' });
+		await fireEvent.input(screen.getByLabelText('New deck name'), { target: { value: 'Nouns' } });
+		await fireEvent.click(screen.getByRole('button', { name: 'Create deck' }));
+		expect(createDeck).toHaveBeenCalledWith(1, 'Nouns');
+		workspaces.set({ list: [], current: { id: 2, language: 'zh', name: 'zh2' } as never });
+		await waitFor(() => expect(loadStudyHistory).toHaveBeenCalledWith(2, expect.anything()));
+		vi.mocked(loadStudyHistory).mockClear();
+		finish({ id: 'd2', name: 'Nouns', createdAt: '2026-02-01T00:00:00.000Z' });
+		await new Promise((r) => setTimeout(r, 0));
+		expect(vi.mocked(loadStudyHistory).mock.calls.filter(([ws]) => ws === 1)).toEqual([]);
 	});
 
 	it('refuses an empty deck name', async () => {

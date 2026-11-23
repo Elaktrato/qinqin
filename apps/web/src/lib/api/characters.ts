@@ -1,3 +1,4 @@
+import { onSessionEnd } from '../session/sessionEnd';
 import { api } from './client';
 import type { CharactersResponse, CharRow } from './types';
 
@@ -21,6 +22,7 @@ interface Pending {
 // job: the server sends an ETag with `max-age=0, must-revalidate`.
 const loaded = new Map<string, CharacterList>();
 const inFlight = new Map<string, Pending>();
+onSessionEnd(() => clearCharacterCache());
 
 /** clearCharacterCache forgets every loaded list (tests, sign-out). */
 export function clearCharacterCache(): void {

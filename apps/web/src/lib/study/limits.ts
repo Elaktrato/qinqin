@@ -2,6 +2,7 @@
 // workspace with per-deck overrides, counted from the review log by the
 // learner's day. Pure. Rule and fixtures: docs/contracts/scheduler/.
 
+import { onSessionEnd } from '../session/sessionEnd';
 import { isValidReview, sortedReviews } from './scheduler';
 import type { StudyContext } from './studyContext';
 import type { ReviewEvent, StudyCard } from './types';
@@ -209,6 +210,7 @@ export function admit(
 // Many queues of one workspace (the decks view builds one per deck) share one
 // count: remembered for the last cards/reviews arrays and learner day.
 let memo: { cards: readonly StudyCard[]; reviews: readonly ReviewEvent[]; today: string; counts: DayCounts } | null = null;
+onSessionEnd(() => (memo = null));
 
 /** dayCountsCached is dayCounts, reused while the same arrays and learner day are asked again. */
 export function dayCountsCached(

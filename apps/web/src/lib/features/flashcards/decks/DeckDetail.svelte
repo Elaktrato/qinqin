@@ -207,13 +207,23 @@
 		else root?.querySelector<HTMLElement>('h1')?.focus();
 	}
 
+	/** The workspace of the rows on screen, captured when the user acts (#174). */
+	const shownWorkspace = (): number | null => data?.workspaceId ?? null;
+
 	async function remove(): Promise<void> {
+		const ws = shownWorkspace();
+		if (ws === null) return;
 		const entries = [...chosen];
 		const index = Math.min(...entries.map((id) => filtered.findIndex((r) => r.entryId === id)).filter((i) => i >= 0));
 		confirming = false;
-		await actions.remove(idsOf(entries));
+		await actions.remove(ws, idsOf(entries));
 		selected = selected.filter((id) => !entries.includes(id));
 		await focusRow(Number.isFinite(index) ? index : 0);
+	}
+
+	function act(write: (ws: number) => Promise<void>): Promise<void> {
+		const ws = shownWorkspace();
+		return ws === null ? Promise.resolve() : write(ws);
 	}
 
 	const targetName = $derived(moveTargets.find((d) => d.id === target)?.name ?? target);
@@ -226,11 +236,12 @@
 	}
 
 	async function move(): Promise<void> {
-		if (target === '' || chosen.length === 0) return;
+		const ws = shownWorkspace();
+		if (target === '' || chosen.length === 0 || ws === null) return;
 		const entries = [...chosen];
 		const index = Math.min(...entries.map((id) => filtered.findIndex((r) => r.entryId === id)).filter((i) => i >= 0));
 		confirmingMove = false;
-		await actions.move(idsOf(entries), target, targetName);
+		await actions.move(ws, idsOf(entries), target, targetName);
 		selected = [];
 		await focusRow(Number.isFinite(index) ? index : 0);
 	}
@@ -483,19 +494,19 @@
 											<Button
 												disabled={controller.busy}
 												aria-label={t('flashcards.deck.turnBackOnNamed', { kind: kindLabel(k) })}
-												onclick={() => void actions.unskip(row.entryId, k)}>{t('flashcards.deck.turnBackOn')}</Button
+												onclick={() => void act((ws) => actions.unskip(ws, row.entryId, k))}>{t('flashcards.deck.turnBackOn')}</Button
 											>
 										{:else if ids.length > 0}
 											<Button
 												disabled={controller.busy}
 												aria-label={t('flashcards.deck.removeNamed', { kind: kindLabel(k) })}
-												onclick={() => void actions.dropKind(ids)}>{t('flashcards.deck.remove')}</Button
+												onclick={() => void act((ws) => actions.dropKind(ws, ids))}>{t('flashcards.deck.remove')}</Button
 											>
 										{:else if row.vocab !== null}
 											<Button
 												disabled={controller.busy}
 												aria-label={t('flashcards.deck.removeNamed', { kind: kindLabel(k) })}
-												onclick={() => void actions.skip(row.entryId, k)}>{t('flashcards.deck.remove')}</Button
+												onclick={() => void act((ws) => actions.skip(ws, row.entryId, k))}>{t('flashcards.deck.remove')}</Button
 											>
 										{/if}
 									</li>

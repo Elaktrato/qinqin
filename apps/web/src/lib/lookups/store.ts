@@ -4,6 +4,7 @@
 // in lookups.ts, buffering in recorder.ts. Every write here reads the row
 // first in the same call (docs/contracts/lookups/README.md).
 
+import { onSessionEnd } from '../session/sessionEnd';
 import { api, getToken } from '../api/client';
 import { t } from '../i18n';
 import { invalidateWorkspaceEvents } from '../events';
@@ -89,6 +90,8 @@ export async function removeFromHistory(ws: number, entryIds: number[]): Promise
 export const REPAIR_AFTER_CLEAR_MS = 30_000;
 
 const repairs = new Map<number, ReturnType<typeof setTimeout>>();
+// The buffer and copies (memory only) belong to the session that ended.
+onSessionEnd(() => resetLookupRecorder());
 
 function cancelRepairs(): void {
 	for (const t of repairs.values()) clearTimeout(t);
