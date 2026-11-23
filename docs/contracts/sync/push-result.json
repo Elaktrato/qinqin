@@ -624,7 +624,8 @@
    "expect": {
     "status": 413,
     "json": {
-     "error": "request body too large"
+     "error": "too_large",
+     "message": "Request body too large."
     }
    },
    "stored": {
@@ -659,24 +660,31 @@
    "expect": {
     "status": 413,
     "json": {
-     "error": "request body too large"
+     "error": "too_large",
+     "message": "Request body too large."
     }
    }
   },
   {
-   "name": "a body above 8 MiB is 413 (plain text)",
+   "name": "a body above 8 MiB is 413 too_large",
    "rawBody": "$jsonPadded:8388609",
    "expect": {
     "status": 413,
-    "text": "request body too large"
+    "json": {
+     "error": "too_large",
+     "message": "Request body too large."
+    }
    }
   },
   {
-   "name": "a body that is not JSON is 400 (plain text)",
+   "name": "a body that is not JSON is 400 bad_request",
    "rawBody": "{\"events\": [",
    "expect": {
     "status": 400,
-    "text": "malformed request body"
+    "json": {
+     "error": "bad_request",
+     "message": "Malformed request body."
+    }
    }
   }
  ]

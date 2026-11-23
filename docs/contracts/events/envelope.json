@@ -130,7 +130,7 @@
           "post": {"events": [
             {"id": "01KA000000000000000000000A", "workspaceId": "$ws", "device": "web", "ts": "2026-11-17T08:00:00", "type": "session"}
           ]},
-          "expect": {"status": 400, "text": "malformed request body\n"}
+          "expect": {"status": 400, "json": {"error": "bad_request", "message": "Malformed request body."}}
         },
         {
           "post": {"events": [

@@ -5,7 +5,6 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
-	"errors"
 	"io"
 	"net/http"
 	"net/netip"
@@ -400,40 +399,6 @@ const (
 	maxSegmentAtRunes = 64        // GET /api/segment/at text code points (the client sends <= 16)
 	maxLookupRunes    = 64        // GET /api/lookup text code points
 )
-
-// badBody answers a request body that failed to decode: 413 when it
-// exceeded its cap, 400 when it was malformed.
-func badBody(w http.ResponseWriter, err error) {
-	var tooBig *http.MaxBytesError
-	if errors.As(err, &tooBig) {
-		http.Error(w, "request body too large", http.StatusRequestEntityTooLarge)
-		return
-	}
-	http.Error(w, "malformed request body", http.StatusBadRequest)
-}
-
-// writeTooLarge answers 413 with the JSON error body of the limited
-// routes.
-func writeTooLarge(w http.ResponseWriter) {
-	writeJSON(w, http.StatusRequestEntityTooLarge, map[string]string{"error": "request body too large"})
-}
-
-// readBody reads the whole request body, at most limit bytes. Beyond
-// the cap it stops reading, answers 413 itself (writeTooLarge) and
-// reports false; another read failure is a 400.
-func readBody(w http.ResponseWriter, r *http.Request, limit int64) ([]byte, bool) {
-	body, err := readBodyErr(w, r, limit)
-	if err != nil {
-		var tooBig *http.MaxBytesError
-		if errors.As(err, &tooBig) {
-			writeTooLarge(w)
-		} else {
-			http.Error(w, "malformed request body", http.StatusBadRequest)
-		}
-		return nil, false
-	}
-	return body, true
-}
 
 // readBodyErr reads the whole request body, at most limit bytes, and
 // leaves the error to the caller.
