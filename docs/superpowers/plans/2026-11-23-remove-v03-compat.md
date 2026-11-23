@@ -103,6 +103,11 @@ the `GET /api/events` full-array form (not in the issue), the plugin manifest vo
   longer count (an older bug). The admin list stays registry-only — the count is true data that blocks a
   delete, and the route already exists, so no new UI is needed — cost if wrong: the web shows the count, not the
   names; the admin reads them from the API message or the wiki (Admin-upgrading).
+- Ruling (fix wave N1): per-user `plugin_states` and `plugin_data` rows under a data pack's id (written while
+  packs had synthesized plugin rows) are left as they are: no route serves them (a pack id is an unknown
+  plugin), exports carry them like any plugin row, and a restore keeps them inert, listing the id under
+  "plugins not installed" as it already did (pinned by `TestRestoreKeepsDataPackPluginRowsInert`). No cleanup
+  migration: a frozen step for harmless rows costs more than it saves — cost if wrong: a few bytes per user.
 - Ruling: the release-notes draft is `docs/releases/NEXT.md`; no test enumerates `docs/releases` and the
   release workflow only reads `docs/releases/<tag>.md`, so the draft is never published by accident; it is
   renamed at tagging — cost if wrong: none.

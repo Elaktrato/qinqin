@@ -205,7 +205,6 @@ describe('docs/contracts/scheduler/fsrs.json: weights and the active set', () =>
 		rule: string;
 		parameters: { w: number[] };
 		weights: { name: string; w: unknown; expect: Verdict }[];
-		paramSet: { name: string; key: string; raw: unknown; expect: ParamSet | null }[];
 		resolve: {
 			name: string;
 			sets: ParamSet[];

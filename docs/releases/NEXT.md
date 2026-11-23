@@ -9,8 +9,9 @@ https://github.com/Elaktrato/qinqin/wiki
 - **v0.3.x clients are no longer supported.** The server no longer answers the old sync form or the old
   flashcards keys that a copy of the app from before v0.4.0 used (#198).
 - **Before you upgrade, open the app online on every device** — every browser and every installed copy — and
-  let it sync, so reviews an old copy cached offline are sent first. Afterwards nothing is lost. A copy of the
-  app from before v0.4.0 that was never opened online keeps its unsent reviews in that browser only.
+  let it sync, so reviews an old copy cached offline are sent first. Afterwards nothing is lost. Reviews that a
+  copy from before v0.4.0 cached and never sent are **never** sent once the server is upgraded, even when that
+  browser opens the upgraded app online later: the new app does not read the old copy's queue.
 - Personal backups from every earlier version, v0.3 included, still restore.
 - Every installed grammar pack now shows on the Grammar page; manage packs in Settings → Data.
 - Settings → Data (`GET /api/admin/packs`) no longer lists sentences imported before v0.2.0 without a registry
