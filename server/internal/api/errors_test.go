@@ -129,8 +129,8 @@ func TestErrorMessagesCarryNoPackagePrefix(t *testing.T) {
 	_, h, a, _ := newGateServer(t)
 	for _, c := range []struct{ method, path, body, code string }{
 		{"GET", "/api/sync/pull?v=2&limit=0", "", "sync_page_invalid"},
-		{"GET", "/api/sync/pull?collections=pluginData,levels", "", "sync_collection_moved"},
-		{"GET", "/api/sync/pull?collections=nope", "", "bad_request"},
+		{"GET", "/api/sync/pull?v=2&collections=pluginData,levels", "", "sync_collection_moved"},
+		{"GET", "/api/sync/pull?v=2&collections=nope", "", "sync_page_invalid"},
 		{"POST", "/api/sync/push", `{"events":[{"id":"x"}]}`, "bad_request"},
 		{"GET", "/api/events?limit=0", "", "events_page_invalid"},
 	} {

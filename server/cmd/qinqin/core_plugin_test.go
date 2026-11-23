@@ -91,16 +91,23 @@ func TestCorePluginStoresUserGlobalHomeLayout(t *testing.T) {
 		t.Errorf("read row = %+v, want the stored layout with no workspace", got)
 	}
 
-	resp = do(http.MethodGet, "/api/sync/pull?cursor=1970-01-01T00:00:00Z&collections=pluginData", "")
+	// a paged pull ships rows stamped before its own second
+	if _, err := sqlDB.Exec(`UPDATE plugin_data SET updated_at = '2026-01-01T00:00:00Z'`); err != nil {
+		t.Fatal(err)
+	}
+	resp = do(http.MethodGet, "/api/sync/pull?v=2&collections=pluginData", "")
 	if resp.StatusCode != http.StatusOK {
 		t.Fatalf("sync pull: status = %d, want %d", resp.StatusCode, http.StatusOK)
 	}
-	var delta struct {
-		PluginData []row `json:"pluginData"`
+	var page struct {
+		Collections struct {
+			PluginData []row `json:"pluginData"`
+		} `json:"collections"`
 	}
-	if err := json.NewDecoder(resp.Body).Decode(&delta); err != nil {
+	if err := json.NewDecoder(resp.Body).Decode(&page); err != nil {
 		t.Fatalf("decode sync pull: %v", err)
 	}
+	delta := page.Collections
 	var synced *row
 	for i := range delta.PluginData {
 		if delta.PluginData[i].PluginID == "qinqin-core" && delta.PluginData[i].Key == "home-layout" {

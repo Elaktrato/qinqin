@@ -7,7 +7,7 @@ import { RESERVED_IDS } from '../features';
 import { PERMISSION_LABELS, PERMISSIONS, sdkSupported, type Permission } from '../plugins/contract';
 
 export interface PluginRowInfo {
-	/** Permission labels joined with ` · `; empty for data plugins. */
+	/** Permission labels joined with ` · `; empty when the manifest declares none. */
 	permissions: string;
 	/**
 	 * `app-update`: a feature plugin this build has no module for or whose sdk

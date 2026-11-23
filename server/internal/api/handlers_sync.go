@@ -4,66 +4,26 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"log"
 	"net/http"
-	"time"
 
 	"qinqin/internal/auth"
 	chinsync "qinqin/internal/sync"
 )
 
-// handleSyncPull serves GET /api/sync/pull: the paged form with v=2
-// (handleSyncPullV2), the legacy form otherwise.
-//
-// The legacy form, ?cursor= (deprecated, until v0.5.0): every row of the
-// caller changed at or after the RFC 3339 cursor (absent = live rows
-// only), tombstones included, plus the cursor to pull from next time,
-// streamed row by row (sync.StreamLegacy). The optional collections=
-// (comma-separated Delta collection names) limits the pull to those; the
-// others come back empty. An unknown name or a bad cursor is a plain-text
-// 400; a lexicon collection is 400 sync_collection_moved (JSON). The
-// returned cursor is valid only for the collections requested. Answers
-// carry Deprecation and a Link to the paged form. Authenticated.
+// handleSyncPull serves GET /api/sync/pull: the paged form, v=2
+// (handleSyncPullV2). The legacy streaming form (?cursor=, v0.3.x web
+// shells) was removed in #198: any request without v=2 is 404 not_found.
+// Authenticated.
 func (s *server) handleSyncPull(w http.ResponseWriter, r *http.Request) {
 	p := s.requirePrincipal(w, r)
 	if p == nil {
 		return
 	}
-	u := &p.User
-	q := r.URL.Query()
-	if q.Get("v") == "2" {
-		s.handleSyncPullV2(w, r, p)
+	if r.URL.Query().Get("v") != "2" {
+		writeError(w, http.StatusNotFound, "not_found", "The pull is GET /api/sync/pull?v=2 (docs/contracts/sync/); the legacy form was removed.")
 		return
 	}
-	var cursor time.Time
-	if raw := q.Get("cursor"); raw != "" {
-		t, err := time.Parse(time.RFC3339, raw)
-		if err != nil {
-			writeError(w, http.StatusBadRequest, "bad_request", "cursor must be RFC 3339.")
-			return
-		}
-		cursor = t
-	}
-	only, err := chinsync.ParseCollections(q.Get("collections"))
-	if errors.Is(err, chinsync.ErrMoved) {
-		writeError(w, http.StatusBadRequest, "sync_collection_moved", "The lexicon collections moved to data packages: read GET /api/packages. Moved: "+errDetail(err, chinsync.ErrMoved))
-		return
-	}
-	if err != nil {
-		writeError(w, http.StatusBadRequest, "bad_request", errDetail(err, chinsync.ErrInvalid))
-		return
-	}
-	h := w.Header()
-	h.Set("Content-Type", "application/json")
-	h.Set("Deprecation", "true")
-	h.Set("Link", `</api/sync/pull?v=2>; rel="successor-version"`)
-	// A stalled client is cut one window after the last row went out.
-	out := newDeadlineWriter(w, http.NewResponseController(w), legacyPullWindow, time.Now)
-	if err := chinsync.StreamLegacy(r.Context(), out, s.db, u.ID, cursor, only); err != nil && r.Context().Err() == nil {
-		// The status and part of the body are out: the JSON stays truncated
-		// and the client retries, as after a network cut.
-		log.Printf("sync pull (legacy) of user %d: %v", u.ID, err)
-	}
+	s.handleSyncPullV2(w, r, p)
 }
 
 // handleSyncPullV2 serves GET /api/sync/pull?v=2: one page of the caller's

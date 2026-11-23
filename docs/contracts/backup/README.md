@@ -3,7 +3,8 @@
 A user's own data as a zip of JSON (`qinqin-<username>-<YYYYMMDD-HHMMSS>.zip`). Server routes:
 `POST /api/account/export` (ticket) and the staged restore under `/api/account/restore`; see
 `docs/superpowers/specs/2026-11-15-v030-backup-design.md`. `sample-v1/` is a valid unpacked archive
-(the Go test zips it and restores it); `remap.json` and `reject.json` are fixtures every implementation runs.
+(the Go test zips it and restores it); `remap.json`, `reject.json` and `study-rows.json` are fixtures every
+implementation runs.
 
 ## Entries (Store or Deflate only, no encryption)
 
@@ -39,10 +40,11 @@ global ones included, and a restore writes them back as global rows.
 Cards, decks, deck settings, limits, FSRS sets and the active set live in typed tables on a v0.4 server
 (`docs/contracts/study/`). The archive carries each LIVE typed row as its legacy `qinqin-flashcards` plugin
 row (`card:<id>`, `deck:<id>`, `deckcfg:<deckId>`, `limits:workspace`, `limits:deck:<deckId>`,
-`fsrs:set:<id>`, `fsrs:active`; the study codec's `ToLegacy`: same key, data, `version`, `updatedAt`,
+`fsrs:set:<id>`, `fsrs:active`; the keyed-row codec's `ToLegacy`: same key, data, `version`, `updatedAt`,
 `modifiedAt`), counted under `pluginData`, so a v0.4 archive restores on a v0.3 server and a v0.3 archive on
-a v0.4 one. Typed tombstones are never exported. A leftover `plugin_data` row of a typed family is exported
-only while it is still a readable study row whose key no typed row holds (so keys never repeat).
+a v0.4 or later one. This keyed form exists only in archives: since #198 no route reads or writes it, and
+old-format archives (a v0.3.0 server's, like `sample-v1/`) are still accepted, through the restore only. Typed tombstones are never exported. A leftover `plugin_data` row of a typed family is never exported
+(#198; before, a readable one no typed row shadowed was).
 
 A restore remaps these rows exactly like every plugin row (workspaces, derived card ids, entry and
 sentence ids, `remap.json`), then decodes each with the codec into its typed table: `version` and the edit
@@ -52,6 +54,19 @@ row). A typed-family row the codec cannot read, or one without a workspace, is d
 read. The restore clears the user's typed rows (tombstones included) and the library deletion log
 (`library_deletions`, sync bookkeeping that is never exported); every client pulls in full after a
 restore.
+
+### The keyed-row codec (`study-rows.json`)
+
+`FromLegacy(key, data)` reads a keyed row exactly as the v0.3.0 web parsers did (key/payload agreement,
+`deckIds` cleaned to unique strings, `skipKinds`/`cardTypes` to known kinds in kind order, limits only at
+`version: 1`, members beyond a source or order variant dropped). A row the v0.3.0 parsers ignored is
+`unreadable` (and so is a card whose `entryId` is not an integer in `1..2^53-1`; a `sentenceId` that is not
+one stays in `extra`, since the v0.3.0 web read such a card). `ToLegacy` writes the keyed object back; deck
+settings get `updatedAt` = the row's edit time (`modified_at`). `ToLegacy(FromLegacy(row))` equals the row as
+JSON values except for that cleaning. Fixture: `study-rows.json` (keyed row to typed row, `unreadable`, the
+object written back as `roundTrip`; `families` maps keys to collections). Go: `server/internal/study/rows`
+(`codec_test.go`); migration 038 keeps a frozen copy (`server/internal/db/step038/testdata`). Web: a test-only
+mirror (`apps/web/src/lib/study/testing/legacyCodec.ts`) that builds old-shaped test data.
 
 ## Version rule
 

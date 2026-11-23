@@ -50,12 +50,9 @@ server keeps one table of these (`server/internal/packtype`) and a Go test compa
 test `lib/plugins/packTypes.contract.test.ts` checks the web knows every type. A client meets a pack type it does
 not know only in admin and Sources views; it shows it by its `type` string.
 
-**Never rely on the data-pack rows of `GET /api/plugins`.** For v0.3.x web shells the server still lists one
-plugin row per live pack of the types marked `legacyPluginRow` (dictionary, frequency, levels, sentences,
-grammar, audio), with a synthesized manifest and `hidden: true`. They are not plugins and go away when the
-v0.3.x shells are retired. One exception remains until then: the web's Grammar page still honours a grammar
-pack's `enabled` from this list (no UI changes it; only `PUT /api/plugins/{id}/state` does). New clients take
-neither the rows nor their state. Packs are listed by
+**Data packs are not plugins.** `GET /api/plugins` lists registry plugins only (the per-pack rows it
+synthesized for v0.3.x web shells were removed in #198), and a pack id has no plugin state or plugin data
+(404 `not_found` on `PUT /api/plugins/{id}/state` and the data routes). Packs are listed by
 their own routes (`GET /api/dictionaries`, `/api/frequency-packs`, `/api/sentence-packs`, `/api/audio-packs`, ...;
 `docs/wiki/API-Routes.md`) and, for administrators, `GET /api/admin/packs`; their data by this catalogue.
 

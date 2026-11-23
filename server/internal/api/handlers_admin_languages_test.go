@@ -111,6 +111,40 @@ func TestDeleteLanguageBlockers(t *testing.T) {
 		})
 	}
 
+	// #198 review: own sentences (source_pack '') are no pack.
+	t.Run("own sentences do not block", func(t *testing.T) {
+		ts, sqlDB := newServer(t)
+		admin := registerUser(t, ts.URL, "admin", "")
+		mustExec(t, sqlDB,
+			`INSERT INTO languages (code, name, updated_at) VALUES ('es', 'es', 't')`,
+			`INSERT INTO entries (id, language, kind, ext_key, updated_at) VALUES (7001, 'es', 'word', 'hola', 't')`,
+			`INSERT INTO sentences (entry_id, source_pack, user_id, hanzi, pinyin, translation, updated_at) VALUES (7001, '', (SELECT id FROM users WHERE username = 'admin'), 'h', 'h', 'h', 't')`)
+		if st, msg := adminLang(t, http.MethodDelete, ts.URL, "/api/admin/languages/es", admin, nil); st != http.StatusNoContent {
+			t.Errorf("DELETE = %d %q, want 204", st, msg)
+		}
+	})
+
+	// #198 review: GET /api/admin/packs no longer lists sentences without a
+	// registry row, so the 409 names such a pack and its removal route.
+	t.Run("an older sentence pack is named with its removal route", func(t *testing.T) {
+		ts, sqlDB := newServer(t)
+		admin := registerUser(t, ts.URL, "admin", "")
+		mustExec(t, sqlDB,
+			`INSERT INTO languages (code, name, updated_at) VALUES ('es', 'es', 't')`,
+			`INSERT INTO entries (id, language, kind, ext_key, updated_at) VALUES (7001, 'es', 'word', 'hola', 't')`,
+			`INSERT INTO sentences (entry_id, source_pack, hanzi, pinyin, translation, updated_at) VALUES (7001, 'es-old', 'h', 'h', 'h', 't')`)
+		st, msg := adminLang(t, http.MethodDelete, ts.URL, "/api/admin/languages/es", admin, nil)
+		if st != http.StatusConflict || !strings.Contains(msg, "DELETE /api/admin/sentences/es-old") {
+			t.Fatalf("DELETE = %d %q, want 409 naming DELETE /api/admin/sentences/es-old", st, msg)
+		}
+		if r := doRaw(t, http.MethodDelete, ts.URL, "/api/admin/sentences/es-old", admin, ""); r.StatusCode != http.StatusNoContent {
+			t.Fatalf("remove the older pack = %d, want 204", r.StatusCode)
+		}
+		if st, msg := adminLang(t, http.MethodDelete, ts.URL, "/api/admin/languages/es", admin, nil); st != http.StatusNoContent {
+			t.Errorf("DELETE after the removal = %d %q, want 204", st, msg)
+		}
+	})
+
 	t.Run("dead rows do not block", func(t *testing.T) {
 		ts, sqlDB := newServer(t)
 		admin := registerUser(t, ts.URL, "admin", "")

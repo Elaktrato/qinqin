@@ -45,7 +45,6 @@ import {
   cardOf,
   deckOf,
   identityOf,
-  legacyFamily,
   limitsOf,
   parseRow,
   setOf,
@@ -331,9 +330,6 @@ async function fetchStudyData(
       if (isRecord(value) && typeof value.key === "string") protectKeyed(value.key, where === null);
       continue;
     }
-    // A typed-family key in pluginData is a leftover the server could not
-    // read (or an old server's legacy view): never study state.
-    if (legacyFamily(row.key) !== null) continue;
     if (row.workspaceId === null && row.key.startsWith(VACATION_PREFIX)) {
       if (row.deletedAt != null) continue;
       const period = parseVacation(row.key, decodeData(row.data));
@@ -462,19 +458,11 @@ function notifyWrite(workspaceId: number): void {
   for (const listener of writeListeners) listener(workspaceId);
 }
 
-/** Only the keyed rows (goals, known marks) still use the plugin-data routes. */
-function assertKeyedRow(key: string): void {
-  if (legacyFamily(key) !== null) {
-    throw new Error(`${key}: a typed study row is written through the typed push`);
-  }
-}
-
 async function putData(
   workspaceId: number,
   key: string,
   value: unknown,
 ): Promise<void> {
-  assertKeyedRow(key);
   assertReadableKeyed(workspaceId, key);
   try {
     await api(dataPath(key, workspaceId), { method: "PUT", body: value });
@@ -663,7 +651,6 @@ async function pushKeyedRows(
   opts: { chunk?: number; onProgress?: (done: number, total: number) => void } = {},
 ): Promise<void> {
   for (const row of rows) {
-    assertKeyedRow(row.key);
     assertReadableKeyed(workspaceId, row.key);
   }
   await pushChunks(workspaceId, rows.length, opts, (from, to, nowMs) => ({
@@ -682,7 +669,6 @@ async function pushKeyedRows(
 }
 
 async function deleteData(workspaceId: number, key: string): Promise<void> {
-  assertKeyedRow(key);
   assertReadableKeyed(workspaceId, key);
   try {
     await api(dataPath(key, workspaceId), { method: "DELETE" });

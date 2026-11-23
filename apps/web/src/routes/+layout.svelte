@@ -17,7 +17,6 @@
 	import TopBar from '$lib/frame/TopBar.svelte';
 	import Icon from '$lib/ui/Icon.svelte';
 	import Tooltip from '$lib/ui/Tooltip.svelte';
-	import { setHookStates } from '$lib/plugins/hooks';
 	import { loadPluginStates, pluginStates, resetPluginStates } from '$lib/plugins/states';
 	import { recordSessionWhenSettled } from '$lib/events';
 	import { syncStudyDayUser } from '$lib/time/zone';
@@ -64,10 +63,6 @@
 	// enabled plugin pages in the user's order, Search, Stats.
 	const sections = $derived(frameSections($pluginStates));
 	const current = $derived(currentSection(path, sections));
-	// The study-event hook delivers only to plugins the user enabled.
-	$effect(() => {
-		setHookStates($pluginStates.status === 'ready' ? $pluginStates.list : []);
-	});
 	const signedIn = $derived($auth.token !== null);
 	// An open page (the Sources page) seen signed out gets a minimal
 	// bar: the logo (to sign in) and a sign-in link, nothing private.

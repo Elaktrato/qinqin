@@ -7,7 +7,6 @@ vi.mock('$app/navigation', () => ({ goto }));
 import { get } from 'svelte/store';
 import { dismissNotice, notice } from '../notices';
 import {
-	LEGACY_PENDING_KEY,
 	PENDING_REVIEWS_KEY,
 	clearPending,
 	flushPendingReviews,
@@ -453,7 +452,6 @@ describe('flushPendingReviews', () => {
 
 	it('recovers from malformed stored data', async () => {
 		localStorage.setItem(PENDING_REVIEWS_KEY, 'not json');
-		localStorage.setItem(LEGACY_PENDING_KEY, '{"oops"');
 
 		await expect(flushPendingReviews()).resolves.toBeUndefined();
 		expect(fetch).not.toHaveBeenCalled();
@@ -503,15 +501,19 @@ describe('startReviewOutbox', () => {
 		const addEventListener = vi.fn();
 		vi.stubGlobal('window', { addEventListener });
 		localStorage.setItem(
-			LEGACY_PENDING_KEY,
+			PENDING_REVIEWS_KEY,
 			JSON.stringify([
 				{
-					id: '01ARZ3NDEKTSV4RRFFQ69G5FAV',
-					workspaceId: 7,
-					device: 'web',
-					ts: '2026-03-15T08:30:00.000Z',
-					type: 'review',
-					payload: { cardId: 'card-1', mode: 'vocab', grade: 3 }
+					userId: null,
+					queuedAt: '2026-03-15T08:30:00.000Z',
+					event: {
+						id: '01ARZ3NDEKTSV4RRFFQ69G5FAV',
+						workspaceId: 7,
+						device: 'web',
+						ts: '2026-03-15T08:30:00.000Z',
+						type: 'review',
+						payload: { cardId: 'card-1', mode: 'vocab', grade: 3 }
+					}
 				}
 			])
 		);
@@ -559,7 +561,6 @@ describe('outbox per user', () => {
 		const [item] = pendingItems();
 		expect(item.userId).toBe(5);
 		expect(Number.isNaN(Date.parse(item.queuedAt))).toBe(false);
-		expect(localStorage.getItem(LEGACY_PENDING_KEY)).toBeNull();
 	});
 
 	it("never sends another user's reviews; the owner's next session sends them", async () => {
@@ -624,15 +625,15 @@ describe('outbox per user', () => {
 		expect(pending()).toHaveLength(1);
 	});
 
-	it('adopts the legacy queue for the first signed-in user and removes the key', async () => {
-		localStorage.setItem(
-			LEGACY_PENDING_KEY,
-			JSON.stringify([{ id: 'L1', workspaceId: 7, device: 'web', ts: '2026-03-15T08:30:00.000Z', type: 'review', payload: {} }])
-		);
+	// Ruling (#198): the v0.3.x queue is neither read nor removed.
+	it('ignores the v0.3.x queue', async () => {
+		const v1 = JSON.stringify([{ id: 'L1', workspaceId: 7, device: 'web', ts: '2026-03-15T08:30:00.000Z', type: 'review', payload: {} }]);
+		localStorage.setItem('qinqin.study.pending', v1);
 		vi.mocked(fetch).mockRejectedValue(new Error('offline'));
 		await flushPendingReviews();
-		expect(localStorage.getItem(LEGACY_PENDING_KEY)).toBeNull();
-		expect(pendingItems().map((i) => [i.userId, i.event.id])).toEqual([[1, 'L1']]);
+		expect(fetch).not.toHaveBeenCalled();
+		expect(pendingItems()).toEqual([]);
+		expect(localStorage.getItem('qinqin.study.pending')).toBe(v1);
 	});
 
 	it('stops at a 401 and keeps every item for the same user\'s next sign-in', async () => {

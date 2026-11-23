@@ -20,9 +20,8 @@ import {
 	type PrepareDeps
 } from './prepareOffline';
 
-// The legacy study pull an old shell made (still cacheable); the web itself pages with v=2.
-const SYNC_PULL_PATH =
-	'/api/sync/pull?cursor=1970-01-01T00:00:00Z&collections=pluginData,pluginStates,' + STUDY_COLLECTIONS.join(',');
+// The first page of the study pull the web makes (v=2, store.ts).
+const SYNC_PULL_PATH = firstPageUrl({ collections: V2_STUDY_COLLECTIONS, workspace: 3, tombstones: true });
 
 const now = new Date('2026-03-01T12:00:00Z');
 
@@ -95,7 +94,7 @@ describe('the URLs prepared are the URLs the pages request', () => {
 		expect(classify({ method: 'GET', url: `https://x.test${SYNC_PULL_PATH}`, mode: 'cors', headers: { get: () => 'Bearer t' } }, ctx)).toBe('api');
 		// The study pull the offline copy holds names every typed study collection.
 		const named = new URL(SYNC_PULL_PATH, 'https://x.test').searchParams.get('collections')?.split(',') ?? [];
-		expect(named).toEqual(['pluginData', 'pluginStates', ...STUDY_COLLECTIONS]);
+		expect([...named].sort()).toEqual(['pluginData', 'pluginStates', ...STUDY_COLLECTIONS].sort());
 		expect(classify({ method: 'GET', url: `https://x.test${fullLogPath(3)}`, mode: 'cors', headers: { get: () => 'Bearer t' } }, ctx)).toBe('api');
 		expect(classify({ method: 'GET', url: `https://x.test${entryPath(12)}`, mode: 'cors', headers: { get: () => 'Bearer t' } }, ctx)).toBe('api');
 		expect(classify({ method: 'GET', url: `https://x.test${strokeUrl('猫')}`, mode: 'cors', headers: { get: () => null } }, ctx)).toBe('hanzi');

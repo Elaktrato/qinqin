@@ -33,7 +33,6 @@ const ALLOWED: Record<string, string> = {
 	'features/reader/variants.ts:converters': 'script converters built from bundled tables',
 	'features/reader/variants.ts:loading': 'the converter tables loading, no user data',
 	'frame/pageFrame.svelte.ts:slots': 'layout slots of the mounted page, no data',
-	'plugins/hooks.ts:handlers': 'plugin hook registrations, not data (the states reset at the session end)',
 	'pwa/install.ts:installPrompt': 'the browser install prompt event, device state',
 	'time/zone.ts:pending': 'the zone load in flight; clearStudyDay moves the zone epoch, so a late answer is dropped',
 	'api/client.ts:memoryToken': 'the credential itself (storage blocked): clearToken drops it on every session end',

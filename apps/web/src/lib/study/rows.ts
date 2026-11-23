@@ -384,21 +384,6 @@ export function sameBody(a: StudyRowBody, b: StudyRowBody): boolean {
 	return jsonEqual(bodyOf(a), bodyOf(b));
 }
 
-/**
- * legacyFamily: the typed collection of a legacy qinqin-flashcards key
- * (`card:`, `deck:`, `deckcfg:`, `limits:workspace`, `limits:deck:`,
- * `fsrs:set:`, `fsrs:active`); null for the keyed rows that stay plugin data.
- */
-export function legacyFamily(key: string): StudyCollection | null {
-	if (key.startsWith('card:')) return 'cards';
-	if (key.startsWith('deck:')) return 'decks';
-	if (key.startsWith('deckcfg:')) return 'deckSettings';
-	if (key === 'limits:workspace' || key.startsWith('limits:deck:')) return 'limits';
-	if (key.startsWith('fsrs:set:')) return 'fsrsSets';
-	if (key === 'fsrs:active') return 'fsrsActive';
-	return null;
-}
-
 // ---- typed rows <-> the study layer's shapes
 
 /** cardOf: the study card of a row (optional members only when set). */

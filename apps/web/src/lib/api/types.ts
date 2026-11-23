@@ -282,7 +282,7 @@ export interface Language {
 }
 
 // PluginInfo is one element of GET /api/plugins: the plugin manifest
-// (feature plugins verbatim, pack plugins synthesized) plus the
+// (a registry plugin's manifest verbatim; data packs are no plugins) plus the
 // caller's home state.
 export interface PluginInfo {
 	id: string;

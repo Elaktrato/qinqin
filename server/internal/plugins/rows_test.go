@@ -72,10 +72,9 @@ func TestPutDataRejectsWorkspaceZero(t *testing.T) {
 
 // TestListFlagsSurfacelessBuiltinsHidden: qinqin-core (registered only so its
 // data is accepted) is listed with hidden=true; the reserved rows of the core
-// features flashcards and reader are listed with hidden=false (review fix,
-// phase A, 5): a cached v0.3.x shell drops hidden rows from Settings and would
-// lose the two switches, while new clients know the reserved ids and keep them
-// out of their plugin lists. Built-ins with a surface and admin plugins are not
+// features flashcards and reader are listed with hidden=false (introduced for
+// v0.3.x shells; kept as the documented answer until #199, see the #198 plan),
+// while clients know the reserved ids and keep them out of their plugin lists. Built-ins with a surface and admin plugins are not
 // hidden either.
 func TestListFlagsSurfacelessBuiltinsHidden(t *testing.T) {
 	ctx := context.Background()

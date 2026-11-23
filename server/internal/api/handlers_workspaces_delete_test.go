@@ -281,21 +281,20 @@ func TestDeletedWorkspaceSync(t *testing.T) {
 	}
 
 	// A pull lists nothing of the deleted workspace.
-	pull := doJSON(t, http.MethodGet, ts.URL, "/api/sync/pull?cursor=1970-01-01T00:00:00Z&collections=pluginData", alice, nil)
-	if pull.StatusCode != http.StatusOK {
-		t.Fatalf("pull: status = %d", pull.StatusCode)
+	backdate(t, sqlDB.Exec)
+	status, _, body := get(t, ts.URL, "/api/sync/pull?v=2&tombstones=1&collections=pluginData,cards,decks,deckSettings,limits,fsrsSets,fsrsActive", alice)
+	var page v2Page
+	if status != http.StatusOK || json.Unmarshal(body, &page) != nil {
+		t.Fatalf("pull: status = %d %s", status, body)
 	}
-	var delta struct {
-		PluginData []struct {
+	if len(page.Collections["pluginData"]) != 1 {
+		t.Errorf("pulled %d plugin rows, want the kept workspace's keyed row", len(page.Collections["pluginData"]))
+	}
+	for _, raw := range page.Collections["pluginData"] {
+		var r struct {
 			WorkspaceID *int64 `json:"workspaceId"`
-		} `json:"pluginData"`
-	}
-	decodeJSON(t, pull, &delta)
-	// The keyed row and, through the legacy view, the six typed rows.
-	if len(delta.PluginData) != 7 {
-		t.Errorf("pulled %d plugin rows, want the kept workspace's 7", len(delta.PluginData))
-	}
-	for _, r := range delta.PluginData {
+		}
+		json.Unmarshal(raw, &r)
 		if r.WorkspaceID == nil || *r.WorkspaceID != kept {
 			t.Errorf("pulled a plugin row of workspace %v, want only the kept workspace's rows", r.WorkspaceID)
 		}
@@ -326,18 +325,16 @@ func TestDeletedWorkspaceSync(t *testing.T) {
 		t.Errorf("push typed study rows of deleted workspace: status = %d, want 404", resp.StatusCode)
 	}
 	// The typed pull lists only the kept workspace's rows.
-	tpull := doJSON(t, http.MethodGet, ts.URL, "/api/sync/pull?cursor=1970-01-01T00:00:00Z&collections=cards,decks,deckSettings,limits,fsrsSets,fsrsActive", alice, nil)
-	var typedRaw map[string]json.RawMessage
-	decodeJSON(t, tpull, &typedRaw)
 	for _, name := range []string{"cards", "decks", "deckSettings", "limits", "fsrsSets", "fsrsActive"} {
-		var list []struct {
+		list := page.Collections[name]
+		var row struct {
 			WorkspaceID int64 `json:"workspaceId"`
 		}
-		if err := json.Unmarshal(typedRaw[name], &list); err != nil {
-			t.Fatalf("%s: %v", name, err)
+		if len(list) == 1 {
+			json.Unmarshal(list[0], &row)
 		}
-		if len(list) != 1 || list[0].WorkspaceID != kept {
-			t.Errorf("pulled %s %+v, want only the kept workspace's row", name, list)
+		if len(list) != 1 || row.WorkspaceID != kept {
+			t.Errorf("pulled %s %s, want only the kept workspace's row", name, list)
 		}
 	}
 	for table, n := range workspaceRows(t, sqlDB, gone) {

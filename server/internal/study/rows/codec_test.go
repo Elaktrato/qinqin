@@ -28,7 +28,7 @@ type codecFixture struct {
 
 func TestLegacyCodecFixture(t *testing.T) {
 	var fx codecFixture
-	readFixture(t, "legacy-codec.json", &fx)
+	readFixture(t, "../backup/study-rows.json", &fx)
 	if fx.Namespace != Namespace {
 		t.Fatalf("namespace %q, want %q", fx.Namespace, Namespace)
 	}

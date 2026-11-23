@@ -144,9 +144,8 @@ type StudyEvent struct {
 }
 
 // PluginInfo is one plugin as listed for a user: its manifest and the
-// user's state for it. Feature plugins carry the admin-registered
-// manifest verbatim; data plugins (dictionary, levels, sentences
-// packs) a manifest synthesized from their pack registries. Default
+// user's state for it: a registry row (built-in or admin-registered)
+// with its manifest verbatim. Data packs are no plugins (#198). Default
 // state — no plugin_states row — is enabled at order 0.
 type PluginInfo struct {
 	ID       string          `json:"id"`
@@ -157,8 +156,8 @@ type PluginInfo struct {
 	// no feature (qinqin-core: registered only so its data is accepted).
 	// Clients leave them out of plugin lists; the routes and the state still
 	// work for them. The core features qinqin-flashcards and qinqin-reader
-	// are not hidden (old web shells show their switch from this list); new
-	// clients know those reserved ids and show them as features.
+	// are not hidden; clients know those reserved ids and show them as
+	// features.
 	Hidden bool `json:"hidden"`
 }
 

@@ -22,36 +22,35 @@ const pack: PackInfo = {
 const done: Progress = { completedAt: '2026-01-01T00:00:00Z', best: 3, total: 8 };
 
 describe('browseSections', () => {
-	it('hides a disabled pack', () => {
-		expect(browseSections([pack], [], () => false, new Map())).toEqual([]);
+	// Ruling (#198): every installed pack shows; the pack's old plugin state is not read.
+	it('shows every installed pack', () => {
+		expect(browseSections([pack], [], new Map()).map((s) => s.packId)).toEqual([pack.packId]);
 	});
 	it('shows no sections for no packs', () => {
-		expect(browseSections([], [], () => true, new Map())).toEqual([]);
+		expect(browseSections([], [], new Map())).toEqual([]);
 	});
 	it('attaches progress and drops orphan rows', () => {
 		const progress = new Map([
 			['lesson:p:a', done],
 			['lesson:p:gone', done]
 		]);
-		const [section] = browseSections([pack], [], () => true, progress);
+		const [section] = browseSections([pack], [], progress);
 		expect(section.levels[0].lessons[0].progress).toEqual(done);
 		expect(section.levels[1].lessons[0].progress).toBeNull();
 		expect(section.levels.flatMap((l) => l.lessons)).toHaveLength(2);
 	});
 	it('shows a badge only when the scheme pack and level exist', () => {
-		const without = browseSections([pack], [], () => true, new Map())[0];
+		const without = browseSections([pack], [], new Map())[0];
 		expect(without.levels[0].badges).toEqual([]);
 		const wrongLevel = browseSections(
 			[pack],
 			[{ packId: 'hsk-words', levels: [{ name: 'HSK 2' }] }],
-			() => true,
 			new Map()
 		)[0];
 		expect(wrongLevel.levels[0].badges).toEqual([]);
 		const withScheme = browseSections(
 			[pack],
 			[{ packId: 'hsk-words', levels: [{ name: 'HSK 1' }] }],
-			() => true,
 			new Map()
 		)[0];
 		expect(withScheme.levels[0].badges).toEqual(['≈ HSK 1']);
@@ -59,7 +58,7 @@ describe('browseSections', () => {
 	});
 	it('keeps credits and omits empty levels', () => {
 		const p = { ...pack, lessons: [pack.lessons![0]] };
-		const [section] = browseSections([p], [], () => true, new Map());
+		const [section] = browseSections([p], [], new Map());
 		expect(section.levels.map((l) => l.id)).toEqual(['l1']);
 		expect(section.credits).toEqual({ license: 'CC0-1.0', attribution: 'me', version: '1' });
 	});
@@ -84,7 +83,7 @@ describe('browseSections', () => {
 			)
 		};
 		const scheme = [{ packId: 'hsk-words', levels: names.map((name) => ({ name })) }];
-		const [section] = browseSections([full], scheme, () => true, new Map());
+		const [section] = browseSections([full], scheme, new Map());
 		expect(section.levels).toHaveLength(7);
 		expect(section.levels.flatMap((l) => l.lessons)).toHaveLength(350);
 		expect(section.levels[0].badges).toEqual(['≈ HSK 1']);

@@ -2,14 +2,13 @@
 // ToLegacy), mirrored so web tests can describe study state as the v0.3.0
 // plugin rows it was and get the typed pull a migrated server serves for it
 // (`typedPull`). Production code never imports this file: the web reads and
-// writes typed rows only. Pinned by docs/contracts/study/legacy-codec.json
+// writes typed rows only. Pinned by docs/contracts/backup/study-rows.json
 // (legacyCodec.test.ts).
 
 import {
 	STUDY_COLLECTIONS,
 	bodyOf,
 	identityOf,
-	legacyFamily,
 	parseRow,
 	type StudyCollection,
 	type StudyRow,
@@ -17,6 +16,21 @@ import {
 } from '../rows';
 
 type Obj = Record<string, unknown>;
+
+/**
+ * legacyFamily: the typed collection of a legacy qinqin-flashcards key
+ * (`card:`, `deck:`, `deckcfg:`, `limits:workspace`, `limits:deck:`,
+ * `fsrs:set:`, `fsrs:active`); null for the keyed rows that stay plugin data.
+ */
+export function legacyFamily(key: string): StudyCollection | null {
+	if (key.startsWith('card:')) return 'cards';
+	if (key.startsWith('deck:')) return 'decks';
+	if (key.startsWith('deckcfg:')) return 'deckSettings';
+	if (key === 'limits:workspace' || key.startsWith('limits:deck:')) return 'limits';
+	if (key.startsWith('fsrs:set:')) return 'fsrsSets';
+	if (key === 'fsrs:active') return 'fsrsActive';
+	return null;
+}
 
 const KINDS = ['vocab', 'sentence', 'writing', 'tone', 'reverse', 'cloze'];
 const MAX_ID = 2 ** 53 - 1;

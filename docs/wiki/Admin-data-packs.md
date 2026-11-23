@@ -49,7 +49,7 @@ The API behind this: `POST /api/admin/packs` (multipart field `pack`), `GET` and
 
 ### The installed list
 
-Packs are grouped by type (Dictionaries, Frequency lists, Level lists, Sentences, Grammar lessons, Audio, Character components, Stroke data, Lemmatizer rules, Themes, Fonts). Each shows its licence and attribution as stored ("Licence not recorded — reinstall the pack to record it" for old sentence packs), and one **Package** line per data package built from it, for example "lexicon.zh: revision 3, 15.2 MB, ready", "being built", "build failed" (with the error, which only administrators see) or "removed". "Packages are being built" appears above the list while the server builds. **See all credits on the Sources page** links to `/sources`.
+Packs are grouped by type (Dictionaries, Frequency lists, Level lists, Sentences, Grammar lessons, Audio, Character components, Stroke data, Lemmatizer rules, Themes, Fonts). Each shows its licence and attribution as stored ("Licence not recorded — reinstall the pack to record it" when the server holds no licence for a pack), and one **Package** line per data package built from it, for example "lexicon.zh: revision 3, 15.2 MB, ready", "being built", "build failed" (with the error, which only administrators see) or "removed". "Packages are being built" appears above the list while the server builds. **See all credits on the Sources page** links to `/sources`.
 
 ### Uninstalling
 

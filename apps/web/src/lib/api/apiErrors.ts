@@ -77,7 +77,6 @@ export const API_ERROR_KEYS: Readonly<Record<string, MessageKey>> = {
 	token_not_allowed: 'apiError.tokenNotAllowed',
 	token_read_only: 'apiError.tokenReadOnly',
 	token_workspace: 'apiError.tokenWorkspace',
-	study_row_invalid: 'apiError.studyRowInvalid',
 	study_row_unreadable: 'apiError.studyRowUnreadable',
 	sync_collection_moved: 'apiError.syncCollectionMoved',
 	sync_page_invalid: 'apiError.syncPageInvalid',

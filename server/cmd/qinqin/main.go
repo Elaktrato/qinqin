@@ -39,7 +39,6 @@ import (
 	"qinqin/internal/library/sources/gutenberg"
 	"qinqin/internal/packs"
 	"qinqin/internal/plugins"
-	"qinqin/internal/study"
 	"qinqin/internal/webdist"
 )
 
@@ -223,13 +222,6 @@ func serve(ctx context.Context, data string, listen func() (net.Listener, error)
 	}
 	if err := registerBuiltinPlugins(ctx, sqlDB); err != nil {
 		return stopped(err)
-	}
-	// Study rows an older (downgraded) binary wrote as plugin data after
-	// migration 038 move into the typed tables; idempotent and per row.
-	// A failure is logged, never fatal: the rows stay where the legacy view
-	// serves them, and the next start tries again (also after a signal).
-	if _, err := study.AdoptLeftovers(ctx, sqlDB); err != nil {
-		log.Printf("study: adopting study rows left in plugin_data: %v", err)
 	}
 	// The Sources page shows the stored terms; say when seed is due.
 	warnStalePackTerms(ctx, sqlDB, defaultPacks(), log.Printf)
@@ -417,7 +409,7 @@ func waitStep(name string, done <-chan struct{}, deadline time.Time, logf func(s
 // 125 s (longer than Caddy's 2-minute upstream keep-alive, so the proxy
 // closes first), so slow-header connections cannot pile up. There is deliberately no
 // ReadTimeout or WriteTimeout: uploads, package downloads and the streamed
-// legacy pull set their own deadlines (api stream_deadline.go).
+// full event list set their own deadlines (api stream_deadline.go).
 func newHTTPServer(h http.Handler) *http.Server {
 	return &http.Server{
 		Handler:           h,

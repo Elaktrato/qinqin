@@ -17,8 +17,8 @@ func (f *fakeDeadlines) SetWriteDeadline(t time.Time) error {
 	return f.err
 }
 
-// The legacy pull's writer moves the connection's write deadline forward
-// as rows go out: a client that stops reading is cut one window after the
+// A streamed answer's writer (the full GET /api/events array) moves the
+// connection's write deadline forward as rows go out: a client that stops reading is cut one window after the
 // last refresh, so its read transaction does not stay open.
 func TestDeadlineWriterRefreshesAsRowsGoOut(t *testing.T) {
 	now := time.Date(2026, 11, 17, 10, 0, 0, 0, time.UTC)

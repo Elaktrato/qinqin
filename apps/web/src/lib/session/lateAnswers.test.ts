@@ -1,13 +1,11 @@
 // #173: an answer requested for the session that ended never sets
-// per-user state afterwards: the workspace list, the plugin states and the
-// hook states. And ending the session empties the content-keyed memos.
+// per-user state afterwards: the workspace list and the plugin states. And ending the session empties the content-keyed memos.
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { get } from 'svelte/store';
 
 import { endSession } from './sessionEnd';
 import { load, workspaces, workspacesLoaded, WORKSPACE_KEY } from '../workspaces';
 import { loadPluginStates, pluginStates } from '../plugins/states';
-import { emitStudyEvents, registerStudyEventHandler, setHookStates } from '../plugins/hooks';
 
 function storage(): Storage {
 	const data = new Map<string, string>();
@@ -45,7 +43,6 @@ beforeEach(() => {
 
 afterEach(() => {
 	vi.unstubAllGlobals();
-	setHookStates(null);
 });
 
 describe('late answers after the session ended (#173)', () => {
@@ -66,16 +63,6 @@ describe('late answers after the session ended (#173)', () => {
 		await late;
 		expect(get(pluginStates).list).toEqual([]);
 		expect(get(pluginStates).status).not.toBe('ready');
-	});
-
-	it('the hook states of the ended session run no handler of the next one', () => {
-		const handler = vi.fn();
-		const off = registerStudyEventHandler('qinqin-journal', handler);
-		setHookStates([{ id: 'qinqin-journal', enabled: true } as never]);
-		endSession('switched');
-		emitStudyEvents([]);
-		expect(handler).not.toHaveBeenCalled();
-		off();
 	});
 });
 

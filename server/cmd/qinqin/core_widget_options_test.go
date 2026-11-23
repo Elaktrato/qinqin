@@ -87,15 +87,14 @@ func TestCorePluginWidgetOptionsRow(t *testing.T) {
 	find := func(body []byte) *pulled {
 		t.Helper()
 		var page struct {
-			PluginData  []pulled `json:"pluginData"` // the legacy pull
 			Collections struct {
 				PluginData []pulled `json:"pluginData"`
-			} `json:"collections"` // v=2
+			} `json:"collections"`
 		}
 		if err := json.Unmarshal(body, &page); err != nil {
 			t.Fatalf("decode pull %s: %v", body, err)
 		}
-		rows := append(page.PluginData, page.Collections.PluginData...)
+		rows := page.Collections.PluginData
 		for i := range rows {
 			if rows[i].PluginID == "qinqin-core" && rows[i].Key == "widget-options" {
 				return &rows[i]
@@ -121,7 +120,7 @@ func TestCorePluginWidgetOptionsRow(t *testing.T) {
 		}
 	}
 
-	// Every pull form carries it; a pull narrowed to a workspace too.
+	// The paged pull carries it; a pull narrowed to a workspace too.
 	var ws struct{ ID int64 }
 	if err := sqlDB.QueryRow(`INSERT INTO workspaces (user_id, language, name, updated_at) VALUES (?, 'zh', 'Chinese', '2026-11-17T00:00:00Z') RETURNING id`,
 		aliceID).Scan(&ws.ID); err != nil {
@@ -131,7 +130,6 @@ func TestCorePluginWidgetOptionsRow(t *testing.T) {
 	// let the write's second pass.
 	time.Sleep(1100 * time.Millisecond)
 	for _, q := range []string{
-		"/api/sync/pull?cursor=1970-01-01T00:00:00Z&collections=pluginData",
 		"/api/sync/pull?v=2&collections=pluginData",
 		"/api/sync/pull?v=2&collections=pluginData&workspace=" + jsonNumber(ws.ID),
 	} {

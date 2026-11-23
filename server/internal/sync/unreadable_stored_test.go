@@ -11,9 +11,6 @@ import (
 	"strings"
 	"testing"
 	"time"
-
-	"qinqin/internal/study"
-	"qinqin/internal/study/rows"
 )
 
 // A stored typed row the server cannot read back (a deck source type or a
@@ -128,34 +125,5 @@ func TestPushToAnUnreadableStoredRowIsRefusedWhole(t *testing.T) {
 	// A push that does not touch it goes through.
 	if _, err := Push(context.Background(), w.db, uid, PushBody{Decks: []json.RawMessage{item("d1")}}); err != nil {
 		t.Fatalf("push of a readable row: %v", err)
-	}
-}
-
-func TestLegacyReadsSkipUnreadableStoredRows(t *testing.T) {
-	w, uid, ws := unreadableWorld(t)
-	captureLog(t)
-	list, held, err := study.LegacyList(context.Background(), w.db, uid, ws, "deck:")
-	if err != nil {
-		t.Fatalf("LegacyList: %v", err)
-	}
-	var keys []string
-	for _, r := range list {
-		keys = append(keys, r.Key)
-	}
-	if !slices.Equal(keys, []string{"deck:d1", "deck:d3", "deck:d5"}) {
-		t.Errorf("legacy list %v", keys)
-	}
-	if !held["deck:d2"] {
-		t.Errorf("an unreadable stored row still shadows its legacy key: held %v", held)
-	}
-	var seen []string
-	if err := study.PullEach(context.Background(), w.db, uid, rows.Decks, time.Time{}, false, func(r rows.Row) error {
-		seen = append(seen, r.Identity())
-		return nil
-	}); err != nil {
-		t.Fatalf("PullEach: %v", err)
-	}
-	if !slices.Equal(seen, []string{"d1", "d3", "d5"}) {
-		t.Errorf("PullEach %v", seen)
 	}
 }

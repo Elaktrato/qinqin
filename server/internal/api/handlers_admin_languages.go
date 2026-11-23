@@ -86,12 +86,23 @@ const usageCountsSQL = `
 		(SELECT COUNT(*) FROM audio_packs WHERE language = ?1 AND deleted_at IS NULL) AS audio,
 		EXISTS (
 			SELECT 1 FROM sentences st JOIN entries e ON e.id = st.entry_id
-			WHERE e.language = ?1 AND st.deleted_at IS NULL
+			WHERE e.language = ?1 AND st.deleted_at IS NULL AND st.source_pack != ''
 			AND st.source_pack NOT IN (SELECT pack_id FROM sentence_packs)) AS legacy`
+
+// olderPacksSQL names the source packs of legacy (usageCountsSQL): shared
+// sentences without a registry row, imported before v0.2.0. GET
+// /api/admin/packs does not list them (#198), so the 409 names them with
+// their removal route, DELETE /api/admin/sentences/{pack}.
+const olderPacksSQL = `
+	SELECT DISTINCT st.source_pack FROM sentences st JOIN entries e ON e.id = st.entry_id
+	WHERE e.language = ?1 AND st.deleted_at IS NULL AND st.source_pack != ''
+	AND st.source_pack NOT IN (SELECT pack_id FROM sentence_packs)
+	ORDER BY 1 LIMIT 10`
 
 type languageUse struct {
 	workspaces, levels, freq, sentences, grammar, audio int
 	installed, legacy                                   bool
+	olderPacks                                          []string // the packs of legacy, at most 10
 }
 
 func plural(n int, one, many string) string {
@@ -143,7 +154,15 @@ func (u languageUse) blockers() string {
 		}
 	}
 	if u.legacy {
-		parts = append(parts, "sentences from an older pack")
+		older := "sentences from an older pack without a registry row"
+		if len(u.olderPacks) > 0 {
+			var routes []string
+			for _, p := range u.olderPacks {
+				routes = append(routes, "DELETE /api/admin/sentences/"+p)
+			}
+			older += " (remove with " + strings.Join(routes, ", ") + ")"
+		}
+		parts = append(parts, older)
 	}
 	return strings.Join(parts, ", ")
 }
@@ -152,7 +171,22 @@ func (s *server) languageUse(ctx context.Context, code string) (languageUse, err
 	var u languageUse
 	err := s.db.QueryRowContext(ctx, usageCountsSQL, code).Scan(
 		&u.workspaces, &u.installed, &u.levels, &u.freq, &u.sentences, &u.grammar, &u.audio, &u.legacy)
-	return u, err
+	if err != nil || !u.legacy {
+		return u, err
+	}
+	rs, err := s.db.QueryContext(ctx, olderPacksSQL, code)
+	if err != nil {
+		return u, err
+	}
+	defer rs.Close()
+	for rs.Next() {
+		var p string
+		if err := rs.Scan(&p); err != nil {
+			return u, err
+		}
+		u.olderPacks = append(u.olderPacks, p)
+	}
+	return u, rs.Err()
 }
 
 // handleDeleteLanguage serves DELETE /api/admin/languages/{code}: it

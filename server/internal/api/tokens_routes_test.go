@@ -2,6 +2,7 @@ package api_test
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 	"io"
 	"net/http"
@@ -19,6 +20,7 @@ import (
 // populated too. Tokens are minted directly in the store.
 type tokenWorld struct {
 	url                 string
+	db                  *sql.DB
 	alice, bob          string // sessions
 	aliceID, bobID      int64
 	wsA, wsB, wsC       int64
@@ -31,7 +33,7 @@ func newTokenWorld(t *testing.T) tokenWorld {
 	t.Helper()
 	ts, sqlDB, dataDir := newServerWithDir(t)
 	store := library.Store{DB: sqlDB, Dir: filepath.Join(dataDir, "books")}
-	w := tokenWorld{url: ts.URL}
+	w := tokenWorld{url: ts.URL, db: sqlDB}
 	w.alice = registerUser(t, ts.URL, "alice", "")
 	w.bob = registerUser(t, ts.URL, "bob", w.alice)
 	seedBuiltin(t, sqlDB, deleteTestPlugin)
@@ -89,9 +91,8 @@ func TestLimitedTokenSeesOnlyItsWorkspace(t *testing.T) {
 		WorkspaceID *int64 `json:"workspaceId"`
 	}
 	json.Unmarshal([]byte(b), &rows)
-	// populateWorkspace: one keyed row plus one typed study row of each of
-	// the six families, which the legacy view lists as plugin rows.
-	if st != 200 || len(rows) != 7 {
+	// populateWorkspace: one keyed row (its typed study rows are no plugin data)
+	if st != 200 || len(rows) != 1 {
 		t.Errorf("plugin data list: %d %s", st, b)
 	}
 	for _, r := range rows {
@@ -166,7 +167,8 @@ func TestTokenCannotReachAnotherUsersData(t *testing.T) {
 		t.Errorf("bob's book with bob's token: %d", st)
 	}
 	// alice's pull with her token carries none of bob's rows.
-	_, pull := doJSONBody(t, "GET", w.url, "/api/sync/pull?cursor=1970-01-01T00:00:00Z", w.writeAll)
+	backdate(t, w.db.Exec)
+	_, pull := doJSONBody(t, "GET", w.url, "/api/sync/pull?v=2&tombstones=1", w.writeAll)
 	if strings.Contains(pull, `"workspaceId":`+C) || strings.Contains(pull, `"userId":`+strconv.FormatInt(w.bobID, 10)) {
 		t.Errorf("alice's pull carries bob's rows: %s", pull)
 	}

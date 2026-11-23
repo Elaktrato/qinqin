@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
+	"encoding/json"
 	"strings"
 	"testing"
 )
@@ -176,5 +177,40 @@ func TestRestoreDropsUnreadableTypedRows(t *testing.T) {
 		+ (SELECT COUNT(*) FROM study_decks WHERE id = 'global')`).Scan(&n)
 	if n != 0 {
 		t.Errorf("%d unreadable rows were stored", n)
+	}
+}
+
+// Ruling (#198 review, N1): plugin states and plugin data under a data
+// pack's id (left from when packs had synthesized plugin rows) are inert
+// rows; an archive carrying them restores, and the report lists the id
+// among the plugins not installed, as for any unknown plugin.
+func TestRestoreKeepsDataPackPluginRowsInert(t *testing.T) {
+	files := sampleFiles(t)
+	var acc map[string]any
+	if err := json.Unmarshal(files[NameAccount], &acc); err != nil {
+		t.Fatal(err)
+	}
+	acc["pluginStates"] = append(acc["pluginStates"].([]any), map[string]any{"pluginId": "zh-grammar", "enabled": false, "order": 3})
+	files[NameAccount], _ = json.Marshal(acc)
+	part := PartName(NamePluginData, 1)
+	files[part] = append(files[part], []byte(`{"pluginId":"zh-grammar","workspaceId":null,"key":"k","data":{},"version":1,"updatedAt":"2026-11-10T08:00:00Z","modifiedAt":null}`+"\n")...)
+	a, err := Open(writeZip(t, files, zopts{manifest: func(m map[string]any) {
+		c := m["counts"].(map[string]any)
+		c["pluginData"] = c["pluginData"].(float64) + 1
+	}}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer a.Close()
+	tg, _ := sampleTarget(t)
+	res, _, err := Restore(context.Background(), deps(tg.baseWorld), tg.UID, 0, a, Options{})
+	if err != nil {
+		t.Fatalf("Restore: %v (%+v)", err, res)
+	}
+	var n int
+	tg.DB.QueryRow(`SELECT (SELECT COUNT(*) FROM plugin_states WHERE user_id = ?1 AND pack_id = 'zh-grammar') +
+		(SELECT COUNT(*) FROM plugin_data WHERE user_id = ?1 AND pack_id = 'zh-grammar')`, tg.UID).Scan(&n)
+	if n != 2 {
+		t.Errorf("data-pack plugin rows restored: %d, want 2 (inert)", n)
 	}
 }

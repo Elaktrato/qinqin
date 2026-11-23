@@ -18,8 +18,8 @@ import (
 )
 
 // The paged pull over HTTP (GET /api/sync/pull?v=2, B3): the handler maps
-// the sync package's errors to JSON codes, keeps the token rule of the
-// legacy pull and serves exactly what sync.PullPage answers.
+// the sync package's errors to JSON codes, keeps the route's token rule
+// and serves exactly what sync.PullPage answers.
 
 type v2Page struct {
 	Format      int                          `json:"format"`
@@ -101,7 +101,7 @@ func TestSyncPullV2Handler(t *testing.T) {
 	// workspaces made in the second of the round would miss it.
 	exec(`UPDATE workspaces SET updated_at = '2026-01-01T00:00:00Z'`)
 
-	t.Run("v=2 selects the paged form, without v the legacy form", func(t *testing.T) {
+	t.Run("v=2 selects the paged form; without it the answer is 404", func(t *testing.T) {
 		st, h, body := get(t, ts.URL, "/api/sync/pull?v=2", alice)
 		if st != http.StatusOK {
 			t.Fatalf("v=2: %d %s", st, body)
@@ -117,11 +117,9 @@ func TestSyncPullV2Handler(t *testing.T) {
 		if ct := h.Get("Content-Type"); ct != "application/json" {
 			t.Errorf("Content-Type %q", ct)
 		}
-		st, _, body = get(t, ts.URL, "/api/sync/pull", alice)
-		top = nil
-		json.Unmarshal(body, &top)
-		if st != http.StatusOK || top["format"] != nil || top["pluginData"] == nil {
-			t.Errorf("legacy answer: %d %s", st, body[:min(len(body), 200)])
+		// without v=2: the removed legacy form (legacy_removed_test.go)
+		if st, _, body = get(t, ts.URL, "/api/sync/pull", alice); st != http.StatusNotFound {
+			t.Errorf("legacy form: %d %s, want 404", st, body[:min(len(body), 200)])
 		}
 	})
 
@@ -185,7 +183,7 @@ func TestSyncPullV2Handler(t *testing.T) {
 		}
 		st, _, body := get(t, ts.URL, "/api/sync/pull?v=2&workspace="+strconv.FormatInt(wsZh, 10), limited)
 		if st != http.StatusForbidden {
-			t.Errorf("workspace-limited token: %d %s, want 403 (as the legacy pull)", st, body)
+			t.Errorf("workspace-limited token: %d %s, want 403 (the route's token rule)", st, body)
 		}
 		carol := registerUser(t, ts.URL, "carol", alice)
 		restrict(t, sqlDB, "carol")
