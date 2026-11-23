@@ -179,3 +179,45 @@ Test per family (`study/store.workspace.test.ts`): start the write with the pull
 selected workspace, release the answer: the pull asked for the original workspace and every pushed row carries
 it. Families: decks (create, rename, delete), cards (delete, restore, move), word switches (skip, unskip, drop
 siblings), deck settings (card types, card types for decks, new order), limits (workspace, deck), `addCard`.
+
+## 4. Review fix wave
+
+Ruling: add to deck (`decks/add-to-deck.json`) plans around unreadable rows instead of failing: a new card whose
+derived id an unreadable card holds takes the next free id (`freshCardId`, exported from `study/store.ts`); the deck
+row and the settings row of an unreadable identity are not written and are counted in `plan.unreadable`; cards still
+join the target (its deck row exists on the server) — why: one unreadable card must not block a starter, level,
+reader or lookup add — cost if wrong: words join a deck this version cannot show until it updates.
+
+Ruling: the server-side twin is `study.ErrUnreadableStored` (an `*UnreadableStoredError` naming family, workspace and
+identity, never the data). Reads skip and log it: the paged pull still moves its position past the row's rowid (and
+reads the segment again when skips used up a query's rows), the legacy pull, `ListCards` and the legacy plugin-data
+view skip it (a legacy GET of its key is 404, a leftover plugin row of the key stays hidden). A write onto it is
+**409 `study_row_unreadable`** (`{error, message}`, in `auth/errors.json`): for `POST /api/sync/push` a read-only
+pre-check refuses the whole push before anything applies, as for a malformed item; a legacy PUT or DELETE of its key
+answers the same; an old shell's plugin-data push item of its key is `dataRefused` alone. The backup export still
+fails on such a row — why: a reader must never be blocked by one row, a writer must never replace data it cannot
+read, and a backup must never silently drop a row — cost if wrong: a backup of an account with such a row needs the
+newer server.
+
+Ruling: keyed plugin rows (goals, known marks, vacations) whose row shape or payload does not decode are protected by
+key (`pluginData:<key>` in the snapshot); keyed writes check the last study load of their workspace (vacations:
+user-global) — why: keyed writes are planned from that load and carry no snapshot — cost if wrong: a keyed write with
+no study load before it is not checked.
+
+Ruling: the batch card-type switch skips decks whose stored settings are unreadable, returns them in `unreadable`,
+and the study page keeps their old state and says so; the single-deck write still refuses — why: one row must not
+fail the Reverse switch for every deck — cost if wrong: none.
+
+Ruling: an unreadable tombstone is protected but not counted (nothing to show); a row of another workspace is neither.
+
+Ruling: the workspace list, the plugin states, the hook states, the shell notice, the offline counts and the
+journal editor's sent events reset at the session end, and the loads of the workspace list, the plugin states, the
+study data report and the milestones' flush place drop an answer of an ended session (`sessionEpoch`).
+
+Ruling: the cache lint matches each declaration name to a clear inside an `onSessionEnd` callback (following the
+same-file functions it calls, two levels), also flags module stores and runes and empty `[]` / `{}` literals, and
+scans `<script module>` of Svelte files and `src/routes`; what is not per-user data is allowlisted with a reason.
+
+Ruling: forms save to the workspace they were loaded for (`loadedWorkspace`, set together with the form state) and
+drop a late answer of a workspace no longer selected; the deck list reloads the workspace it wrote only while it is
+still shown (reloading the old one would put its decks under the new selection).

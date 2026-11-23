@@ -144,3 +144,22 @@ caches); the optional shared FNV-1a helper was not built (spec Ruling).
 passed, 0 failed; full vitest under Node 22 after Task 8+9: only the 5 baseline failures; Go: one full `./...` run
 (gofmt clean, vet clean): every package ok except the known environment failure `internal/ai`
 `TestHostnameResolvingToEmbeddedFormIsRefused` (no IPv6 sockets here).
+
+### Review fix wave (one wave, after the independent review)
+
+Rulings: spec §4. Each item written test-first; "red" below is the failing run before the fix.
+
+| Item | Commit | Test-first evidence / deviation |
+|---|---|---|
+| 1 Add to deck around unreadable rows | `429b3a3f` | New `add-to-deck.json` case (ids of a fresh ULID compared as `<ulid>`) failed, and `wordActions.test.ts` "still added, under another id" failed with `UnreadableRowError`; then green. Callers (`addWords`, `addDeckFromOverview`, starter and level deck detail) pass `unreadable`. |
+| 2 Server: stored rows it cannot read | `97d714bc` | `unreadable_stored_test.go` (pull at limits 1, 2 and 500, so a skip that uses up a query's rows is covered; push refused whole; the legacy list and `PullEach`) failed with the 500-class errors, and `unreadable_http_test.go` failed (500 on push, then 500 on the legacy GET); then green. Code **409 `study_row_unreadable`** in `errors.json`, `API-Errors.md` regenerated, a web `apiError` text. Deviation: the push pre-check costs one extra read per typed item. The backup export still fails on such a row (spec Ruling). |
+| 3+4 Batch switch, keyed rows, tombstones, late reports | `fe92738f` | The fixture gained a tombstone of an unknown kind, another workspace's unreadable row and a malformed goals row. Five contract tests failed (counts, protected keys, keyed writes, batch switch, in-flight report); then green. `saveDeckCardTypesForDecks` returns `{saved, unreadable}`; a study-page test covers the notice. The Go check compares "fails Decode" against the reader's count as "at least" (a reader counts fewer: tombstones and other workspaces). |
+| 5 Late answers; memo clears | `88450240` | `lateAnswers.test.ts` (workspace list, plugin states, hook states) and the milestones flush-place test failed; then green. The memo test (M1–M4/M22) was written after the registrations existed, so it was green from the start. It pins them: removing a registration fails it. |
+| 6 Lint per name | `3e9a5675` | The rewritten scanner flagged 16 declarations. The notice, the offline counts, the unreadable report and the journal editor's sent events were registered; 12 were allowlisted with reasons. A test covers the helper-following and the new shapes. |
+| 7 + nits Forms and switch races | `79e63f4e` | StudySettings tests (late answer; save after a switch) and the DeckLimitsEditor and AddToStudy tests failed against the old components (shown with `git stash`); then green. M18: the DeckSettingsView rename test failed against a mutant that reads the selected workspace. M20: the study-page create test failed with the guard removed. The DeckList test passed before the change: the view already reloaded the selected workspace, and the change only stops a reload of the old one. |
+
+M14 (the `pulledPages` epoch) and M16 (another workspace's unreadable rows) are killed by the contract tests in `fe92738f`.
+
+**Gates after the wave:** `npm run check` 0 errors; `npm run build` ok; full vitest under Node 26: 581 files, 12 447
+passed, 0 failed. Go (flock, proxies unset), touched packages `sync`, `study/...`, `api`, `backup`, `journal`: gofmt
+clean, vet clean, all ok.
