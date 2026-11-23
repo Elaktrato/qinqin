@@ -12,6 +12,7 @@ import (
 	"testing"
 
 	"qinqin/internal/db"
+	"qinqin/internal/dbtest"
 )
 
 func tarList(t *testing.T, data []byte) map[string][]byte {
@@ -37,6 +38,7 @@ func tarList(t *testing.T, data []byte) map[string][]byte {
 
 func dataDirWithBooks(t *testing.T) (string, func()) {
 	dir := t.TempDir()
+	dbtest.File(t, filepath.Join(dir, "qinqin.db"))
 	sqlDB, err := db.Open(filepath.Join(dir, "qinqin.db"))
 	if err != nil {
 		t.Fatal(err)

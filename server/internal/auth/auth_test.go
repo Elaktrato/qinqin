@@ -9,7 +9,6 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
-	"path/filepath"
 	"strings"
 	"sync"
 	"testing"
@@ -17,7 +16,7 @@ import (
 
 	"qinqin/internal/api"
 	"qinqin/internal/auth"
-	"qinqin/internal/db"
+	"qinqin/internal/dbtest"
 )
 
 // credentials is the request body of /api/auth/register and /api/auth/login.
@@ -36,11 +35,7 @@ type userJSON struct {
 // newServer opens a fresh migrated database and serves the API on it.
 func newServer(t *testing.T) (*httptest.Server, *sql.DB) {
 	t.Helper()
-	sqlDB, err := db.Open(filepath.Join(t.TempDir(), "test.db"))
-	if err != nil {
-		t.Fatalf("db.Open: %v", err)
-	}
-	t.Cleanup(func() { sqlDB.Close() })
+	sqlDB := dbtest.Open(t)
 	ts := httptest.NewServer(api.New(sqlDB, t.TempDir(), nil))
 	t.Cleanup(ts.Close)
 	return ts, sqlDB
@@ -303,11 +298,7 @@ func TestConcurrentFirstRegisterCreatesOneAdmin(t *testing.T) {
 	// Eight racers all hash: give the gate room so none answers 503.
 	p := api.DefaultAuthPolicy()
 	p.Hashes, p.HashWait = 8, 30*time.Second
-	sqlDB, err := db.Open(filepath.Join(t.TempDir(), "test.db"))
-	if err != nil {
-		t.Fatalf("db.Open: %v", err)
-	}
-	t.Cleanup(func() { sqlDB.Close() })
+	sqlDB := dbtest.Open(t)
 	ts := httptest.NewServer(api.New(sqlDB, t.TempDir(), nil, api.WithAuthPolicy(p)))
 	t.Cleanup(ts.Close)
 

@@ -2,6 +2,8 @@ package lookup_test
 
 import (
 	"testing"
+
+	"qinqin/internal/dbtest"
 )
 
 // lemmaWords are the real JMdict shapes of the issue #165 ranking cases:
@@ -78,7 +80,7 @@ const lemmaWords = `<entry>
 // reading (kana fit) and an unwritten expression of no higher priority
 // that is the verb's own inflection (expression yields).
 func TestLemmaRankingWithoutFrequency(t *testing.T) {
-	sqlDB, _ := openDB(t)
+	sqlDB := dbtest.Open(t)
 	importJMdict(t, sqlDB, jaWords+lemmaWords)
 	s := service(sqlDB)
 	for _, c := range []struct {
@@ -103,7 +105,7 @@ func TestLemmaRankingWithoutFrequency(t *testing.T) {
 
 // A one-kana stem never makes a する compound: すし is not す (為) + し.
 func TestCompoundStemNeedsMoreThanOneKana(t *testing.T) {
-	sqlDB, _ := openDB(t)
+	sqlDB := dbtest.Open(t)
 	importJMdict(t, sqlDB, jaWords+lemmaWords)
 	for _, r := range run(t, service(sqlDB), "ja", "すし", 0) {
 		if label(r) == "為" && r.Matched == "すし" {
@@ -116,7 +118,7 @@ func TestCompoundStemNeedsMoreThanOneKana(t *testing.T) {
 // (an unwritten expression, priority 0) stays before 狩る (priority 0) in
 // the conditional.
 func TestExpressionKeepsItsPlaceAgainstAnUnprioritisedVerb(t *testing.T) {
-	sqlDB, _ := openDB(t)
+	sqlDB := dbtest.Open(t)
 	importJMdict(t, sqlDB, jaWords+`<entry>
 <ent_seq>2900100</ent_seq>
 <r_ele><reb>かれば</reb></r_ele>
@@ -136,7 +138,7 @@ func TestExpressionKeepsItsPlaceAgainstAnUnprioritisedVerb(t *testing.T) {
 // written in kana) + している is 怪我 in the progressive, メモ and 愛
 // compound too; a one-kana stem never does (すし).
 func TestCompoundStemLengthByScript(t *testing.T) {
-	sqlDB, _ := openDB(t)
+	sqlDB := dbtest.Open(t)
 	importJMdict(t, sqlDB, jaWords+`<entry>
 <ent_seq>2900200</ent_seq>
 <k_ele><keb>怪我</keb><ke_pri>ichi1</ke_pri></k_ele>
@@ -166,7 +168,7 @@ func TestCompoundStemLengthByScript(t *testing.T) {
 // frequency pack bare して stays 仕手 (uk on its second sense, priority 92)
 // — recorded; the Jiten pack puts する first.
 func TestBareShiteWithoutFrequencyIsTheNoun(t *testing.T) {
-	sqlDB, _ := openDB(t)
+	sqlDB := dbtest.Open(t)
 	importJMdict(t, sqlDB, jaWords+`<entry>
 <ent_seq>1305990</ent_seq>
 <k_ele><keb>仕手</keb><ke_pri>ichi1</ke_pri><ke_pri>nf08</ke_pri></k_ele>
@@ -184,7 +186,7 @@ func TestBareShiteWithoutFrequencyIsTheNoun(t *testing.T) {
 // An expression with a written form never yields: しかねない (仕兼ねない)
 // stays before する's possibility form of the same text.
 func TestWrittenExpressionDoesNotYield(t *testing.T) {
-	sqlDB, _ := openDB(t)
+	sqlDB := dbtest.Open(t)
 	importJMdict(t, sqlDB, jaWords+`<entry>
 <ent_seq>1305000</ent_seq>
 <k_ele><keb>仕兼ねない</keb></k_ele>

@@ -3,12 +3,11 @@ package main
 import (
 	"context"
 	"fmt"
-	"path/filepath"
 	"strings"
 	"testing"
 
 	"qinqin/internal/auth"
-	"qinqin/internal/db"
+	"qinqin/internal/dbtest"
 )
 
 type bootstrapLog struct {
@@ -23,11 +22,7 @@ func (b *bootstrapLog) all() string { return strings.Join(b.logs, "\n") }
 
 func bootstrapDB(t *testing.T) (*bootstrapLog, func(map[string]string) error, func() int) {
 	t.Helper()
-	sqlDB, err := db.Open(filepath.Join(t.TempDir(), "qinqin.db"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(func() { sqlDB.Close() })
+	sqlDB := dbtest.Open(t)
 	b := &bootstrapLog{}
 	run := func(env map[string]string) error {
 		return bootstrapAdminFromEnv(context.Background(), sqlDB, func(k string) string { return env[k] }, b.logf)

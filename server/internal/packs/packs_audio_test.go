@@ -8,6 +8,7 @@ import (
 	"strings"
 	"testing"
 
+	"qinqin/internal/dbtest"
 	"qinqin/internal/dict"
 	"qinqin/internal/packs"
 )
@@ -51,7 +52,7 @@ func blobCount(t *testing.T, store string) int {
 }
 
 func TestAudioPacksImportListUninstall(t *testing.T) {
-	ctx, sqlDB, store := context.Background(), newDB(t), t.TempDir()
+	ctx, sqlDB, store := context.Background(), dbtest.Open(t), t.TempDir()
 	if !packs.Supported(dict.TypeAudio) {
 		t.Fatal("audio is not a supported pack type")
 	}
@@ -93,7 +94,7 @@ func TestAudioPacksImportListUninstall(t *testing.T) {
 }
 
 func TestAudioNeedsAStoreDirectory(t *testing.T) {
-	ctx, sqlDB := context.Background(), newDB(t)
+	ctx, sqlDB := context.Background(), dbtest.Open(t)
 	if _, err := packs.Import(ctx, sqlDB, audioPack(t, "audio-test")); err == nil || !strings.Contains(err.Error(), "store") {
 		t.Errorf("Import without a store = %v, want an error naming the store", err)
 	}

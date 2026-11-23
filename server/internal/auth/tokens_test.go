@@ -17,7 +17,7 @@ import (
 	"time"
 
 	"qinqin/internal/auth"
-	"qinqin/internal/db"
+	"qinqin/internal/dbtest"
 )
 
 var tokenShape = regexp.MustCompile(`^qq_pat_[0-9a-f]{64}$`)
@@ -26,12 +26,7 @@ var tokenShape = regexp.MustCompile(`^qq_pat_[0-9a-f]{64}$`)
 // workspace for each.
 func tokenDB(t *testing.T) (sqlDB *sql.DB, path string, u1, u2, ws1, ws2 int64) {
 	t.Helper()
-	path = filepath.Join(t.TempDir(), "tokens.db")
-	sqlDB, err := db.Open(path)
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(func() { sqlDB.Close() })
+	sqlDB, path = dbtest.OpenPath(t)
 	ins := func(q string, args ...any) int64 {
 		t.Helper()
 		res, err := sqlDB.Exec(q, args...)

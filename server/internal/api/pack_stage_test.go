@@ -16,7 +16,7 @@ import (
 	"time"
 
 	"qinqin/internal/api"
-	"qinqin/internal/db"
+	"qinqin/internal/dbtest"
 )
 
 // packEnv is a server with a controllable clock and import hook.
@@ -46,11 +46,7 @@ func newPackEnv(t *testing.T, opts ...api.Option) *packEnv {
 func newPackEnvWith(t *testing.T, done chan string, opts ...api.Option) *packEnv {
 	t.Helper()
 	e := &packEnv{now: time.Now(), done: done, dataDir: t.TempDir()}
-	sqlDB, err := db.Open(filepath.Join(t.TempDir(), "test.db"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(func() { sqlDB.Close() })
+	sqlDB := dbtest.Open(t)
 	e.db = sqlDB
 	clock := func() time.Time { e.mu.Lock(); defer e.mu.Unlock(); return e.now }
 	opts = append([]api.Option{api.WithClock(clock), api.WithImportDone(e.done), api.WithPackLock(&e.lock, &e.unlock)}, opts...)

@@ -13,7 +13,6 @@ import (
 	"net/http/httptest"
 	"net/netip"
 	"os"
-	"path/filepath"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -22,7 +21,7 @@ import (
 
 	"qinqin/internal/api"
 	"qinqin/internal/auth"
-	"qinqin/internal/db"
+	"qinqin/internal/dbtest"
 	"qinqin/internal/model"
 	"qinqin/internal/ratelimit"
 )
@@ -57,11 +56,7 @@ func (f *fastLogin) login(ctx context.Context, _ *sql.DB, user, pass string) (st
 // client address.
 func newLimitServer(t *testing.T, opts ...api.Option) (*httptest.Server, *sql.DB, *limitClock) {
 	t.Helper()
-	sqlDB, err := db.Open(filepath.Join(t.TempDir(), "test.db"))
-	if err != nil {
-		t.Fatalf("db.Open: %v", err)
-	}
-	t.Cleanup(func() { sqlDB.Close() })
+	sqlDB := dbtest.Open(t)
 	clk := &limitClock{t: time.Date(2026, 11, 15, 12, 0, 0, 0, time.UTC)}
 	opts = append([]api.Option{api.WithClock(clk.now)}, opts...)
 	ts := httptest.NewServer(api.New(sqlDB, t.TempDir(), nil, opts...))
@@ -648,11 +643,7 @@ func TestAuthLimitCancelledRequest(t *testing.T) {
 	log.SetOutput(&buf)
 	t.Cleanup(func() { log.SetOutput(os.Stderr) })
 	h := &fastLogin{}
-	sqlDB, err := db.Open(filepath.Join(t.TempDir(), "test.db"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(func() { sqlDB.Close() })
+	sqlDB := dbtest.Open(t)
 	handler := api.New(sqlDB, t.TempDir(), nil, api.WithAuthHooks(api.AuthHooks{Login: h.login}))
 	for _, path := range []string{"/api/auth/login", "/api/auth/register"} {
 		for i := 0; i < 4; i++ {

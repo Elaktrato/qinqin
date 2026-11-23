@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"qinqin/internal/db"
+	"qinqin/internal/dbtest"
 	"qinqin/internal/dict"
 	"qinqin/internal/lemma"
 	"qinqin/internal/packs"
@@ -29,6 +30,7 @@ func TestServeUsesInstalledAndOutsideChangedTables(t *testing.T) {
 	registerLanguages()
 	data := t.TempDir()
 	ctx := context.Background()
+	dbtest.File(t, filepath.Join(data, "qinqin.db"))
 	sqlDB, err := db.Open(filepath.Join(data, "qinqin.db"))
 	if err != nil {
 		t.Fatal(err)

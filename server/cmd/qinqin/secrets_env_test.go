@@ -5,13 +5,12 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
-	"path/filepath"
 	"strings"
 	"testing"
 	"time"
 
 	"qinqin/internal/auth"
-	"qinqin/internal/db"
+	"qinqin/internal/dbtest"
 	"qinqin/internal/mail"
 	"qinqin/internal/netguard"
 	"qinqin/internal/secretbox"
@@ -44,11 +43,7 @@ func TestSecretsFromEnv(t *testing.T) {
 }
 
 func TestRotateSecretsReSealsMailAndTOTP(t *testing.T) {
-	sqlDB, err := db.Open(filepath.Join(t.TempDir(), "r.db"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer sqlDB.Close()
+	sqlDB := dbtest.Open(t)
 	ctx := context.Background()
 	get := func(cur, prev string) secrets {
 		m := map[string]string{"QINQIN_SECRET": cur}

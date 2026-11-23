@@ -10,14 +10,13 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
-	"path/filepath"
 	"strconv"
 	"strings"
 	"testing"
 	"time"
 
 	"qinqin/internal/api"
-	"qinqin/internal/db"
+	"qinqin/internal/dbtest"
 	"qinqin/internal/events"
 	chinsync "qinqin/internal/sync"
 
@@ -221,11 +220,7 @@ func TestEventsPageBudgetIsThePulls(t *testing.T) {
 // rows bytes and then fails.
 func legacyStreamServer(t *testing.T, rows int) (*httptest.Server, string) {
 	t.Helper()
-	sqlDB, err := db.Open(filepath.Join(t.TempDir(), "test.db"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(func() { sqlDB.Close() })
+	sqlDB := dbtest.Open(t)
 	fail := func(ctx context.Context, w io.Writer, db *sql.DB, user int64, since time.Time, ws *int64) error {
 		if rows > 0 {
 			chunk := []byte("[" + strings.Repeat(`{"id":"x"},`, 4000))

@@ -7,26 +7,14 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"path/filepath"
 	"strings"
 	"testing"
 	"time"
 
-	"qinqin/internal/db"
+	"qinqin/internal/dbtest"
 )
 
 const testKey = "sk-ant-test-ABCD1234"
-
-func openTestDB(t *testing.T) (*sql.DB, string) {
-	t.Helper()
-	path := filepath.Join(t.TempDir(), "qinqin.db")
-	sqlDB, err := db.Open(path)
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(func() { sqlDB.Close() })
-	return sqlDB, path
-}
 
 func newStore(sqlDB *sql.DB, current, previous byte) *KeyStore {
 	k := &KeyStore{DB: sqlDB, Current: NewSealer(secretBytes(current, 32)), Now: time.Now}
@@ -37,7 +25,7 @@ func newStore(sqlDB *sql.DB, current, previous byte) *KeyStore {
 }
 
 func TestKeyStorePutInfoCredentials(t *testing.T) {
-	sqlDB, _ := openTestDB(t)
+	sqlDB := dbtest.Open(t)
 	ks := newStore(sqlDB, 1, 0)
 	ctx := context.Background()
 	if err := ks.Put(ctx, 1, "anthropic", testKey, "claude-sonnet-5-5", PutOptions{}); err != nil {
@@ -76,7 +64,7 @@ func TestKeyStorePutInfoCredentials(t *testing.T) {
 }
 
 func TestKeyStoreNeverStoresPlaintext(t *testing.T) {
-	sqlDB, path := openTestDB(t)
+	sqlDB, path := dbtest.OpenPath(t)
 	ks := newStore(sqlDB, 1, 0)
 	ctx := context.Background()
 	if err := ks.Put(ctx, 1, "anthropic", testKey, "", PutOptions{}); err != nil {
@@ -121,7 +109,7 @@ func TestKeyStoreNeverStoresPlaintext(t *testing.T) {
 }
 
 func TestKeyStoreOtherSecretIsUndecryptable(t *testing.T) {
-	sqlDB, _ := openTestDB(t)
+	sqlDB := dbtest.Open(t)
 	ctx := context.Background()
 	if err := newStore(sqlDB, 1, 0).Put(ctx, 1, "anthropic", testKey, "", PutOptions{}); err != nil {
 		t.Fatal(err)
@@ -137,7 +125,7 @@ func TestKeyStoreOtherSecretIsUndecryptable(t *testing.T) {
 }
 
 func TestKeyStoreRotate(t *testing.T) {
-	sqlDB, _ := openTestDB(t)
+	sqlDB := dbtest.Open(t)
 	ctx := context.Background()
 	if err := newStore(sqlDB, 1, 0).Put(ctx, 1, "anthropic", testKey, "", PutOptions{}); err != nil {
 		t.Fatal(err)
@@ -168,7 +156,7 @@ func TestKeyStoreRotate(t *testing.T) {
 }
 
 func TestKeyStoreSetModelAndDelete(t *testing.T) {
-	sqlDB, _ := openTestDB(t)
+	sqlDB := dbtest.Open(t)
 	ks := newStore(sqlDB, 1, 0)
 	ctx := context.Background()
 	if err := ks.SetModel(ctx, 1, "anthropic", "claude-haiku-5-5"); !errors.Is(err, ErrNoKey) {
@@ -242,7 +230,7 @@ func TestCredentialsNeverEncodeKey(t *testing.T) {
 }
 
 func TestPutPerProviderIndependent(t *testing.T) {
-	sqlDB, _ := openTestDB(t)
+	sqlDB := dbtest.Open(t)
 	ks := newStore(sqlDB, 1, 0)
 	ctx := context.Background()
 	if err := ks.Put(ctx, 1, "anthropic", testKey, "claude-opus-5-5", PutOptions{}); err != nil {
@@ -282,7 +270,7 @@ func TestPutPerProviderIndependent(t *testing.T) {
 }
 
 func TestKeyOfOtherProviderDoesNotOpen(t *testing.T) {
-	sqlDB, _ := openTestDB(t)
+	sqlDB := dbtest.Open(t)
 	ks := newStore(sqlDB, 1, 0)
 	ctx := context.Background()
 	if err := ks.Put(ctx, 1, "openai", "sk-fake-openai-key-0001", "gpt-6-astra", PutOptions{}); err != nil {
@@ -307,7 +295,7 @@ func TestKeyOfOtherProviderDoesNotOpen(t *testing.T) {
 }
 
 func TestCrossUserRowDoesNotOpen(t *testing.T) {
-	sqlDB, _ := openTestDB(t)
+	sqlDB := dbtest.Open(t)
 	ks := newStore(sqlDB, 1, 0)
 	ctx := context.Background()
 	if err := ks.Put(ctx, 1, "openai", "sk-fake-openai-key-0001", "gpt-6-astra", PutOptions{}); err != nil {
@@ -326,7 +314,7 @@ func TestCrossUserRowDoesNotOpen(t *testing.T) {
 }
 
 func TestCustomKeyBoundToBaseURL(t *testing.T) {
-	sqlDB, _ := openTestDB(t)
+	sqlDB := dbtest.Open(t)
 	ks := newStore(sqlDB, 1, 0)
 	base := "https://a.example/v1"
 	ks.AADFor = func(userID int64, provider string) (string, error) {
@@ -349,7 +337,7 @@ func TestCustomKeyBoundToBaseURL(t *testing.T) {
 }
 
 func TestUnknownProviderAADIsUndecryptableNotPanic(t *testing.T) {
-	sqlDB, _ := openTestDB(t)
+	sqlDB := dbtest.Open(t)
 	ks := newStore(sqlDB, 1, 0)
 	ctx := context.Background()
 	if err := ks.Put(ctx, 1, "custom-abcdefghij", "sk-fake-custom-key-0001", "m", PutOptions{}); err != nil {
@@ -380,7 +368,7 @@ func TestV1AADUnchanged(t *testing.T) {
 }
 
 func TestRotatePerRow(t *testing.T) {
-	sqlDB, _ := openTestDB(t)
+	sqlDB := dbtest.Open(t)
 	ctx := context.Background()
 	old := newStore(sqlDB, 1, 0)
 	for _, p := range []string{"anthropic", "openai"} {
@@ -401,7 +389,7 @@ func TestRotatePerRow(t *testing.T) {
 }
 
 func TestEmptyKeyOnlyWhenAllowed(t *testing.T) {
-	sqlDB, _ := openTestDB(t)
+	sqlDB := dbtest.Open(t)
 	ks := newStore(sqlDB, 1, 0)
 	ctx := context.Background()
 	if err := ks.Put(ctx, 1, "custom-abcdefghij", "", "m", PutOptions{}); err == nil {
@@ -427,7 +415,7 @@ func TestEmptyKeyOnlyWhenAllowed(t *testing.T) {
 }
 
 func TestDeleteProvider(t *testing.T) {
-	sqlDB, _ := openTestDB(t)
+	sqlDB := dbtest.Open(t)
 	ks := newStore(sqlDB, 1, 0)
 	ctx := context.Background()
 	for _, u := range []int64{1, 2} {
@@ -470,7 +458,7 @@ func TestCredentialsNeverFormatted(t *testing.T) {
 // The endpoint is deleted between sealing and inserting: no orphan key row
 // may be left behind.
 func TestPutRechecksProviderAfterInsert(t *testing.T) {
-	sqlDB, _ := openTestDB(t)
+	sqlDB := dbtest.Open(t)
 	ks := newStore(sqlDB, 1, 0)
 	calls := 0
 	ks.AADFor = func(userID int64, provider string) (string, error) {

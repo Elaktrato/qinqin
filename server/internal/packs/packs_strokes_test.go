@@ -11,6 +11,7 @@ import (
 	"slices"
 	"testing"
 
+	"qinqin/internal/dbtest"
 	"qinqin/internal/dict"
 	"qinqin/internal/packs"
 )
@@ -45,7 +46,7 @@ func strokesPack(t *testing.T) dict.Pack {
 }
 
 func TestStrokesPacks(t *testing.T) {
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	ctx := context.Background()
 	importAll(t, sqlDB)
 	got, err := packs.Import(ctx, sqlDB, strokesPack(t))

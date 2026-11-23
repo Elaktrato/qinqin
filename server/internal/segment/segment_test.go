@@ -11,7 +11,7 @@ import (
 	"strings"
 	"testing"
 
-	"qinqin/internal/db"
+	"qinqin/internal/dbtest"
 	"qinqin/internal/dict"
 	"qinqin/internal/freq"
 	"qinqin/internal/lang"
@@ -97,16 +97,6 @@ func jmdictXML(words []jw) string {
 	return b.String()
 }
 
-func openDB(t *testing.T) *sql.DB {
-	t.Helper()
-	sqlDB, err := db.Open(filepath.Join(t.TempDir(), "test.db"))
-	if err != nil {
-		t.Fatalf("db.Open: %v", err)
-	}
-	t.Cleanup(func() { sqlDB.Close() })
-	return sqlDB
-}
-
 // importPack writes the manifest and one data file into a fresh pack
 // directory and imports it with the real importer of its type.
 func importPack(t *testing.T, sqlDB *sql.DB, m dict.Manifest, file, content string) {
@@ -144,7 +134,7 @@ func service(sqlDB *sql.DB) segment.Service {
 // frequency pack of "term,reading,rank" rows.
 func jaService(t *testing.T, words []jw, freqRows string) (segment.Service, *sql.DB) {
 	t.Helper()
-	sqlDB := openDB(t)
+	sqlDB := dbtest.Open(t)
 	importPack(t, sqlDB, dict.Manifest{
 		ID: "jmdict-test", Name: "JMdict test", Version: "1", Type: "dictionary", Language: "ja",
 		License: "CC BY-SA 4.0", Attribution: "EDRDG", Format: "jmdict",
@@ -174,7 +164,7 @@ const zhLines = `我 我 [wo3] /I/
 
 func zhService(t *testing.T) segment.Service {
 	t.Helper()
-	sqlDB := openDB(t)
+	sqlDB := dbtest.Open(t)
 	importPack(t, sqlDB, dict.Manifest{
 		ID: "cedict-test", Name: "CC-CEDICT test", Version: "1", Type: "dictionary", Language: "zh",
 		License: "CC BY-SA 4.0", Attribution: "CC-CEDICT", Format: "cedict",

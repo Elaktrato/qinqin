@@ -11,6 +11,7 @@ import (
 	"testing"
 	"time"
 
+	"qinqin/internal/dbtest"
 	"qinqin/internal/dict"
 	"qinqin/internal/lemma"
 	"qinqin/internal/lookup"
@@ -71,7 +72,7 @@ func worstTables(t *testing.T) map[string]*lemma.Table {
 // not timed; the time bound is only a generous backstop.
 func TestSegmentationWorkIsBounded(t *testing.T) {
 	t.Cleanup(func() { lemma.SetInstalled(nil) })
-	sqlDB := openDB(t)
+	sqlDB := dbtest.Open(t)
 	importPack(t, sqlDB, dict.Manifest{ID: "xq-dict", Name: "xq", Version: "1", Type: "dictionary", Language: "xq",
 		License: "CC0-1.0", Attribution: "test", Format: "json"}, "dictionary.json",
 		`{"entries": [{"written": "aba", "kind": "word", "readings": [{"type": "latin", "value": "aba"}], "glosses": ["x"]}]}`)
@@ -129,7 +130,7 @@ const requestWorkLimit = lookup.MaxRequestWork
 // bound is only a backstop).
 func TestSegmentationRequestWorkIsBounded(t *testing.T) {
 	t.Cleanup(func() { lemma.SetInstalled(nil) })
-	svc := service(openDB(t)) // no dictionary: a window at every rune
+	svc := service(dbtest.Open(t)) // no dictionary: a window at every rune
 	lemma.SetInstalled(map[string]*lemma.Table{"xq": notOnlyTable(t)})
 	before, start := lemma.WorkDone(), time.Now()
 	if _, err := svc.Segment(context.Background(), "xq", strings.Repeat("a", 5000)); err != nil {
@@ -161,7 +162,7 @@ func TestJapaneseRequestStaysFarUnderTheBudget(t *testing.T) {
 		}
 	}
 	text = text[:5000]
-	svc := service(openDB(t))
+	svc := service(dbtest.Open(t))
 	before := lemma.WorkDone()
 	if _, err := svc.Segment(context.Background(), "ja", string(text)); err != nil {
 		t.Fatal(err)

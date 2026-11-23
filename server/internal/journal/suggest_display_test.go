@@ -3,12 +3,11 @@ package journal_test
 import (
 	"context"
 	"encoding/json"
-	"path/filepath"
 	"strings"
 	"testing"
 	"time"
 
-	"qinqin/internal/db"
+	"qinqin/internal/dbtest"
 	"qinqin/internal/events"
 	"qinqin/internal/journal"
 	"qinqin/internal/lexicon"
@@ -22,11 +21,7 @@ import (
 // not the usually-kana 為る.
 func TestSuggestionInputUsesTheDisplayForm(t *testing.T) {
 	ctx := context.Background()
-	sqlDB, err := db.Open(filepath.Join(t.TempDir(), "t.db"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer sqlDB.Close()
+	sqlDB := dbtest.Open(t)
 	exec := func(q string, a ...any) int64 {
 		t.Helper()
 		var id int64

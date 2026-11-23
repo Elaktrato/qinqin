@@ -2,22 +2,17 @@ package dict
 
 import (
 	"context"
-	"path/filepath"
 	"strings"
 	"testing"
 
-	"qinqin/internal/db"
+	"qinqin/internal/dbtest"
 	"qinqin/internal/lexicon"
 )
 
 // A radical outside the Kangxi table is rejected before the first entry is
 // written, not after (the surrounding transaction would hide a late check).
 func TestUnihanRadicalCheckRunsBeforeAnyWrite(t *testing.T) {
-	sqlDB, err := db.Open(filepath.Join(t.TempDir(), "t.db"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(func() { sqlDB.Close() })
+	sqlDB := dbtest.Open(t)
 	ctx := context.Background()
 	tx, err := sqlDB.BeginTx(ctx, nil)
 	if err != nil {

@@ -12,6 +12,7 @@ import (
 	"strings"
 	"testing"
 
+	"qinqin/internal/dbtest"
 	"qinqin/internal/dict"
 	"qinqin/internal/lexicon"
 )
@@ -148,7 +149,7 @@ func cedictLexPack(t *testing.T, content string) *dict.Pack {
 }
 
 func TestLexiconCedictHomographsMergeIntoOneEntry(t *testing.T) {
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	res := importLexiconPack(t, sqlDB, cedictLexPack(t, lexCedict))
 	// 行, 发, 干, 乾, 好, 你好: six simplified forms.
 	if res.Entries != 6 || res.Senses != 8 || res.Skipped != 0 || res.Unconverted != 0 {
@@ -174,7 +175,7 @@ func TestLexiconCedictHomographsMergeIntoOneEntry(t *testing.T) {
 }
 
 func TestLexiconCedictTraditionalForms(t *testing.T) {
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	importLexiconPack(t, sqlDB, cedictLexPack(t, lexCedict))
 	st := lexicon.Store{DB: sqlDB}
 	ctx := context.Background()
@@ -207,7 +208,7 @@ func TestLexiconCedictTraditionalForms(t *testing.T) {
 }
 
 func TestLexiconCedictCountsSkippedAndUnconverted(t *testing.T) {
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	var b strings.Builder
 	for i := 0; i < 40; i++ {
 		fmt.Fprintf(&b, "字%d 字%d [zi4] /letter %d/\n", i, i, i)
@@ -225,7 +226,7 @@ func TestLexiconCedictCountsSkippedAndUnconverted(t *testing.T) {
 }
 
 func TestLexiconCedictMalformedShareAbortsWholePack(t *testing.T) {
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	bad := "好 好 [hao3] /good/\n你好 你好 [ni3 hao3] /hello/\nbroken line one\n"
 	if _, err := dict.ImportLexicon(context.Background(), sqlDB, cedictLexPack(t, bad)); err == nil {
 		t.Fatal("ImportLexicon with 1/3 malformed lines succeeded")
@@ -234,7 +235,7 @@ func TestLexiconCedictMalformedShareAbortsWholePack(t *testing.T) {
 }
 
 func TestLexiconCedictReadingsAreSearchableByPlain(t *testing.T) {
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	importLexiconPack(t, sqlDB, cedictLexPack(t, lexCedict))
 	got, err := lexicon.Store{DB: sqlDB}.ByReading(context.Background(), "zh", []string{"hang"})
 	if err != nil {
@@ -255,7 +256,7 @@ func unihanLexPack(t *testing.T) *dict.Pack {
 }
 
 func TestLexiconUnihanEntriesLinksAndSenses(t *testing.T) {
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	res := importLexiconPack(t, sqlDB, unihanLexPack(t))
 	// 好, 复, 復, 複 are mentioned; the bare radical 女 is not counted.
 	if res.Entries != 4 || res.Senses != 1 {
@@ -329,21 +330,21 @@ func checkMergedChars(t *testing.T, sqlDB *sql.DB) {
 }
 
 func TestLexiconCedictThenUnihanKeepsReadingsAndForms(t *testing.T) {
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	importLexiconPack(t, sqlDB, cedictLexPack(t, lexCedictChars))
 	importLexiconPack(t, sqlDB, unihanLexPack(t))
 	checkMergedChars(t, sqlDB)
 }
 
 func TestLexiconUnihanThenCedictKeepsUnihanSensesAndLinks(t *testing.T) {
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	importLexiconPack(t, sqlDB, unihanLexPack(t))
 	importLexiconPack(t, sqlDB, cedictLexPack(t, lexCedictChars))
 	checkMergedChars(t, sqlDB)
 }
 
 func TestLexiconJSONPack(t *testing.T) {
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	pack := loadFixture(t)
 	res, err := dict.ImportLexicon(context.Background(), sqlDB, &pack)
 	if err != nil {
@@ -373,7 +374,7 @@ func TestLexiconJSONPack(t *testing.T) {
 }
 
 func TestLexiconJSONDataOnlyLanguage(t *testing.T) {
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	m := dict.Manifest{
 		ID: "es-demo", Name: "Demo Spanish dictionary", Version: "1.0", Type: "dictionary", Language: "es",
 		License: "CC0", Attribution: "Qinqin test fixtures", Format: "json",
@@ -395,7 +396,7 @@ func TestLexiconJSONDataOnlyLanguage(t *testing.T) {
 }
 
 func TestLexiconJSONInvalidEntryWritesNothing(t *testing.T) {
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	m := dict.Manifest{
 		ID: "bad-json", Name: "Bad", Version: "1.0", Type: "dictionary", Language: "zh",
 		License: "CC0", Attribution: "t", Format: "json",
@@ -425,7 +426,7 @@ func miniLexPack(t *testing.T, content string) *dict.Pack {
 var xingReadings = []string{"pinyin|xíng|xing", "pinyin|háng|hang", "bopomofo|ㄒㄧㄥˊ|ㄒㄧㄥˊ", "bopomofo|ㄏㄤˊ|ㄏㄤˊ"}
 
 func TestLexiconMergeJSONAfterCedictKeepsCedictReadings(t *testing.T) {
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	importLexiconPack(t, sqlDB, cedictLexPack(t, lexCedict))
 	importLexiconPack(t, sqlDB, miniLexPack(t, lexMiniJSON))
 	xing := lexByKey(t, sqlDB, "zh", "character", "行")
@@ -440,7 +441,7 @@ func TestLexiconMergeJSONAfterCedictKeepsCedictReadings(t *testing.T) {
 }
 
 func TestLexiconMergeCedictAfterJSONOwnsReadings(t *testing.T) {
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	importLexiconPack(t, sqlDB, miniLexPack(t, lexMiniJSON))
 	importLexiconPack(t, sqlDB, cedictLexPack(t, lexCedict))
 	xing := lexByKey(t, sqlDB, "zh", "character", "行")
@@ -455,7 +456,7 @@ func TestLexiconMergeCedictAfterJSONOwnsReadings(t *testing.T) {
 }
 
 func TestLexiconMergeJSONDuplicateWrittenInOnePack(t *testing.T) {
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	res := importLexiconPack(t, sqlDB, miniLexPack(t, `{"entries": [
 		{"written": "行", "kind": "character", "readings": [{"type": "pinyin", "value": "xíng"}], "glosses": ["to walk"]},
 		{"written": "行", "kind": "character", "readings": [{"type": "pinyin", "value": "háng"}], "glosses": ["row"]},
@@ -502,7 +503,7 @@ func TestLexiconReimportsWriteNothing(t *testing.T) {
 		"kanjidic2":           {"kanjidic2"},
 	} {
 		t.Run(name, func(t *testing.T) {
-			sqlDB := newDB(t)
+			sqlDB := dbtest.Open(t)
 			for _, id := range order {
 				importLexiconPack(t, sqlDB, packs[id](t))
 			}
@@ -533,7 +534,7 @@ func TestLexiconReimportsWriteNothing(t *testing.T) {
 // A changed manifest or an uninstalled dictionary still writes the
 // registry row: only an identical re-import skips it.
 func TestLexiconReimportUpdatesChangedDictionaryRow(t *testing.T) {
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	importLexiconPack(t, sqlDB, miniLexPack(t, lexMiniJSON))
 	var id int64
 	if err := sqlDB.QueryRow(`SELECT id FROM dictionaries WHERE pack_id = 'zh-mini-lex'`).Scan(&id); err != nil {

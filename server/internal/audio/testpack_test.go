@@ -1,14 +1,12 @@
 package audio_test
 
 import (
-	"database/sql"
 	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
 
-	"qinqin/internal/db"
 	"qinqin/internal/dict"
 )
 
@@ -48,16 +46,6 @@ func write(t *testing.T, path string, data []byte) {
 	if err := os.WriteFile(path, data, 0o644); err != nil {
 		t.Fatal(err)
 	}
-}
-
-func newDB(t *testing.T) *sql.DB {
-	t.Helper()
-	sqlDB, err := db.Open(filepath.Join(t.TempDir(), "test.db"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(func() { sqlDB.Close() })
-	return sqlDB
 }
 
 // blobs lists every file under the store.

@@ -2,20 +2,15 @@ package stats
 
 import (
 	"context"
-	"path/filepath"
 	"strings"
 	"testing"
 
-	"qinqin/internal/db"
+	"qinqin/internal/dbtest"
 	"qinqin/internal/plugins"
 )
 
 func TestActivityUsesTypeIndex(t *testing.T) {
-	sqlDB, err := db.Open(filepath.Join(t.TempDir(), "t.db"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer sqlDB.Close()
+	sqlDB := dbtest.Open(t)
 	for _, raw := range plugins.Builtin() {
 		if _, err := plugins.RegisterBuiltin(context.Background(), sqlDB, raw); err != nil {
 			t.Fatal(err)

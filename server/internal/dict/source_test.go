@@ -12,6 +12,7 @@ import (
 	"slices"
 	"testing"
 
+	"qinqin/internal/dbtest"
 	"qinqin/internal/dict"
 	"qinqin/internal/lexicon"
 )
@@ -108,9 +109,9 @@ func TestCedictImportReadsGz(t *testing.T) {
 	if err != nil {
 		t.Fatalf("read fixture: %v", err)
 	}
-	plain := importDir(t, newDB(t), writeCompressedPack(t, compressedManifest("cedict", "zh"), "dictionary.txt", raw))
+	plain := importDir(t, dbtest.Open(t), writeCompressedPack(t, compressedManifest("cedict", "zh"), "dictionary.txt", raw))
 
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	res := importDir(t, sqlDB, writeCompressedPack(t, compressedManifest("cedict", "zh"), "dictionary.txt.gz", gzipBytes(t, raw)))
 	if res != plain || res.Entries == 0 {
 		t.Fatalf("gz result = %+v, want the plain file's %+v", res, plain)
@@ -128,7 +129,7 @@ func TestCedictImportReadsGz(t *testing.T) {
 // the upstream member layout: radicals and definitions in the readings
 // sources, variant mappings in the variants file.
 func TestUnihanImportReadsZip(t *testing.T) {
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 
 	var buf bytes.Buffer
 	zw := zip.NewWriter(&buf)
@@ -172,7 +173,7 @@ func TestUnihanImportReadsZip(t *testing.T) {
 // wins. fetch-seeds.sh removes legacy plain payloads so a refreshed pack
 // cannot silently keep importing the old data.
 func TestCedictPlainFileWinsOverGz(t *testing.T) {
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	plain, err := os.ReadFile("testdata/cedict-sample.txt")
 	if err != nil {
 		t.Fatalf("read fixture: %v", err)
@@ -191,7 +192,7 @@ func TestCedictPlainFileWinsOverGz(t *testing.T) {
 // TestJMdictImportReadsGz imports the JMdict fixture from jmdict.xml.gz and
 // checks kana plus derived romaji readings.
 func TestJMdictImportReadsGz(t *testing.T) {
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	raw, err := os.ReadFile("testdata/jmdict-sample.xml")
 	if err != nil {
 		t.Fatalf("read fixture: %v", err)
@@ -212,7 +213,7 @@ func TestJMdictImportReadsGz(t *testing.T) {
 // TestKanjidic2ImportReadsGz imports the KANJIDIC2 fixture from
 // kanjidic2.xml.gz and checks on/kun readings arrive.
 func TestKanjidic2ImportReadsGz(t *testing.T) {
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	raw, err := os.ReadFile("testdata/kanjidic2-sample.xml")
 	if err != nil {
 		t.Fatalf("read fixture: %v", err)

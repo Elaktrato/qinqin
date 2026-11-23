@@ -6,13 +6,14 @@ import (
 	"strings"
 	"testing"
 
+	"qinqin/internal/dbtest"
 	"qinqin/internal/dict"
 )
 
 // Files downloaded or edited on Windows end lines with CRLF; the \r is
 // not part of the line.
 func TestCedictImportAcceptsCRLF(t *testing.T) {
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	text := strings.ReplaceAll(goodCedictLines(30), "\n", "\r\n")
 	pack := cedictPackFromText(t, text)
 	res, err := dict.ImportLexicon(context.Background(), sqlDB, &pack)
@@ -27,7 +28,7 @@ func TestCedictImportAcceptsCRLF(t *testing.T) {
 // A dictionary pack with no entries is a wrong or truncated file, not a
 // dictionary: the import fails rather than installing an empty one.
 func TestCedictImportRejectsEmptyFile(t *testing.T) {
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	for name, text := range map[string]string{
 		"empty":         "",
 		"comments only": "# CC-CEDICT\n#! version=1\n",

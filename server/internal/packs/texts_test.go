@@ -11,6 +11,7 @@ import (
 	"strings"
 	"testing"
 
+	"qinqin/internal/dbtest"
 	"qinqin/internal/dict"
 	"qinqin/internal/packs"
 )
@@ -67,7 +68,7 @@ func texts(t *testing.T, sqlDB *sql.DB, typ, id string) map[string]string {
 }
 
 func TestImportKeepsTheLicenceTextsVerbatim(t *testing.T) {
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	if _, err := packs.Import(context.Background(), sqlDB, smallCedict(t)); err != nil {
 		t.Fatal(err)
 	}
@@ -124,7 +125,7 @@ func storeTexts(t *testing.T, sqlDB *sql.DB, typ, id, dir string) int {
 // LICENSE, LICENCE, ATTRIBUTION, NOTICE or COPYING (any case) are kept, at
 // most 8 per pack in name order; every skipped candidate is logged.
 func TestStoreTextsSkipsWhatItMustNotKeep(t *testing.T) {
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	var logged []string
 	defer packs.SetLogfForTest(func(f string, a ...any) { logged = append(logged, fmt.Sprintf(f, a...)) })()
 
@@ -190,7 +191,7 @@ func anyContains(list []string, s string) bool {
 }
 
 func TestReimportReplacesAndUninstallDeletesTexts(t *testing.T) {
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	ctx := context.Background()
 	p := dictPack(t)
 	writeFiles(t, p.Dir, map[string][]byte{"LICENSE": []byte("v1"), "ATTRIBUTION.md": []byte("by us")})
@@ -233,7 +234,7 @@ func TestReimportReplacesAndUninstallDeletesTexts(t *testing.T) {
 // A pack that ships no licence file is recorded as collected (nothing to
 // keep), unlike a pack imported before texts were kept.
 func TestTextsStoredTellsEmptyFromNeverCollected(t *testing.T) {
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	ctx := context.Background()
 	if _, err := packs.Import(ctx, sqlDB, levelsPackAfterDict(t, sqlDB)); err != nil {
 		t.Fatal(err)

@@ -20,7 +20,7 @@ import (
 	"github.com/oklog/ulid/v2"
 
 	"qinqin/internal/auth"
-	"qinqin/internal/db"
+	"qinqin/internal/dbtest"
 	"qinqin/internal/study"
 	"qinqin/internal/study/rows"
 )
@@ -605,11 +605,7 @@ func TestContractPullRounds(t *testing.T) {
 	pc := loadPageContract(t)
 	for _, tc := range file.Cases {
 		t.Run(tc.Name, func(t *testing.T) {
-			sqlDB, err := db.Open(filepath.Join(t.TempDir(), "rounds.db"))
-			if err != nil {
-				t.Fatal(err)
-			}
-			defer sqlDB.Close()
+			sqlDB := dbtest.Open(t)
 			w := &world{t: t, db: sqlDB, users: map[string]int64{}, ws: map[string]int64{}, wsLang: map[int64]string{},
 				entries: map[string]int64{}, plugin: file.Defaults.Plugin, rowsByRef: map[string]placed{}, refOf: map[string]string{}}
 			for _, u := range []string{"alice", "bob"} {

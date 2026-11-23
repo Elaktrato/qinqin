@@ -15,7 +15,7 @@ import (
 	"strings"
 	"testing"
 
-	"qinqin/internal/db"
+	"qinqin/internal/dbtest"
 	"qinqin/internal/dict"
 	"qinqin/internal/lang"
 )
@@ -41,17 +41,6 @@ var fixtureManifest = dict.Manifest{
 	License:     "CC BY-SA 4.0",
 	Attribution: "Qinqin test fixtures",
 	Format:      "json",
-}
-
-// newDB opens a fresh migrated database for import tests.
-func newDB(t *testing.T) *sql.DB {
-	t.Helper()
-	sqlDB, err := db.Open(filepath.Join(t.TempDir(), "test.db"))
-	if err != nil {
-		t.Fatalf("db.Open: %v", err)
-	}
-	t.Cleanup(func() { sqlDB.Close() })
-	return sqlDB
 }
 
 // mustWriteFile writes data to path, creating parent directories.
@@ -256,7 +245,7 @@ func TestLoadPackZip(t *testing.T) {
 	}
 
 	// A zip-sourced pack imports like a directory-sourced one.
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	res, err := dict.ImportLexicon(context.Background(), sqlDB, &pack)
 	if err != nil {
 		t.Fatalf("ImportLexicon(zip-sourced pack): %v", err)
@@ -349,7 +338,7 @@ func TestExtractZipRejectsUnsafeNames(t *testing.T) {
 
 func TestUninstallSoftDeletesSenses(t *testing.T) {
 	ctx := context.Background()
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	importFixture(t, ctx, sqlDB)
 	dictID := dictionaryID(t, sqlDB, "mkgloss")
 
@@ -402,7 +391,7 @@ func TestUninstallSoftDeletesSenses(t *testing.T) {
 
 func TestImportRejectsNonDictionaryType(t *testing.T) {
 	ctx := context.Background()
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	for _, typ := range []string{"levels", "sentences"} {
 		m := fixtureManifest
 		m.Type = typ
@@ -426,7 +415,7 @@ func TestImportRejectsNonDictionaryType(t *testing.T) {
 
 func TestImportRejectsMissingDataFile(t *testing.T) {
 	ctx := context.Background()
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	for _, format := range []string{"jmdict", "kanjidic2"} {
 		m := fixtureManifest
 		m.Format = format
@@ -457,7 +446,7 @@ func TestImportRejectsMissingDataFile(t *testing.T) {
 // manifest's language (migration 027), for a code-pack language and a
 // data-only one.
 func TestImportSetsDictionaryLanguage(t *testing.T) {
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	ctx := context.Background()
 	importFixture(t, ctx, sqlDB)
 	es, err := dict.LoadPack("../../../plugins/data/es-demo")

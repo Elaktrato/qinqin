@@ -5,12 +5,10 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
-	"github.com/anthropics/anthropic-sdk-go/v2/option"
 	"io"
 	"log"
 	"net/http"
 	"net/http/httptest"
-	"path/filepath"
 	"regexp"
 	"strconv"
 	"strings"
@@ -18,9 +16,11 @@ import (
 	"testing"
 	"time"
 
+	"github.com/anthropics/anthropic-sdk-go/v2/option"
+
 	"qinqin/internal/ai"
 	"qinqin/internal/api"
-	"qinqin/internal/db"
+	"qinqin/internal/dbtest"
 	"qinqin/internal/journal"
 	"qinqin/internal/plugins"
 )
@@ -73,11 +73,7 @@ func newJournalEnvOpts(t *testing.T, p ai.Provider, withKey bool, opts ...api.Op
 // newJournalEnvSvc is newJournalEnvOpts with the AI service built by the test.
 func newJournalEnvSvc(t *testing.T, mk func(*sql.DB) *ai.Service, withKey bool, opts ...api.Option) journalEnv {
 	t.Helper()
-	sqlDB, err := db.Open(filepath.Join(t.TempDir(), "test.db"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(func() { sqlDB.Close() })
+	sqlDB := dbtest.Open(t)
 	svc := mk(sqlDB)
 	dataDir := t.TempDir()
 	ts := httptest.NewServer(api.New(sqlDB, dataDir, nil, append([]api.Option{api.WithAI(svc)}, opts...)...))

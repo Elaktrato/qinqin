@@ -5,6 +5,7 @@ import (
 	"strings"
 	"testing"
 
+	"qinqin/internal/dbtest"
 	"qinqin/internal/dict"
 )
 
@@ -124,7 +125,7 @@ const ukLiftJMdict = `<?xml version="1.0" encoding="UTF-8"?>
 // (oK) forms stay penalized, so they score below the common form even on
 // a uk word.
 func TestJmdictUkLiftExemptsOnlyRareKanji(t *testing.T) {
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	importLexicon(t, sqlDB, ukLiftJMdict)
 	forms := map[string]int{}
 	for _, seq := range []string{"1157170", "1340450"} {

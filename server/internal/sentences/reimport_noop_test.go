@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"testing"
 
+	"qinqin/internal/dbtest"
 	"qinqin/internal/lang"
 	"qinqin/internal/model"
 	"qinqin/internal/sentences"
@@ -27,7 +28,7 @@ func sentenceCount(t *testing.T, sqlDB *sql.DB, where string) int {
 func TestReimportTouchesOnlyChangedSentences(t *testing.T) {
 	lang.Register(lang.Zh{})
 	ctx := context.Background()
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	nihao, _ := seedWords(t, sqlDB)
 
 	const hello = `{"hanzi":"你好，世界。","pinyin":"nǐ hǎo, shì jiè.","translation":"Hello, world."}`
@@ -98,7 +99,7 @@ func TestReimportTouchesOnlyChangedSentences(t *testing.T) {
 func TestReimportUpdatesAReadingInPlace(t *testing.T) {
 	lang.Register(lang.Zh{})
 	ctx := context.Background()
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	nihao, _ := seedWords(t, sqlDB)
 	imp := func(reading string) {
 		t.Helper()

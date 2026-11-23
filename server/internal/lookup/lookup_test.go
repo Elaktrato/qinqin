@@ -11,7 +11,7 @@ import (
 	"strings"
 	"testing"
 
-	"qinqin/internal/db"
+	"qinqin/internal/dbtest"
 	"qinqin/internal/dict"
 	"qinqin/internal/freq"
 	"qinqin/internal/lang"
@@ -182,17 +182,6 @@ const jaFreq = `為る,する,15
 或る,ある,1200
 `
 
-func openDB(t *testing.T) (*sql.DB, string) {
-	t.Helper()
-	path := filepath.Join(t.TempDir(), "qinqin.db")
-	sqlDB, err := db.Open(path)
-	if err != nil {
-		t.Fatalf("db.Open: %v", err)
-	}
-	t.Cleanup(func() { sqlDB.Close() })
-	return sqlDB, path
-}
-
 // importPack writes the manifest and one data file into a fresh pack
 // directory and imports it with the real importer of its type.
 func importPack(t *testing.T, sqlDB *sql.DB, m dict.Manifest, file, content string) {
@@ -254,7 +243,7 @@ func service(sqlDB *sql.DB) lookup.Service {
 // withFreq.
 func jaService(t *testing.T, withFreq bool) lookup.Service {
 	t.Helper()
-	sqlDB, _ := openDB(t)
+	sqlDB := dbtest.Open(t)
 	importJMdict(t, sqlDB, jaWords+hanashi(false))
 	if withFreq {
 		importJaFreq(t, sqlDB)
@@ -393,7 +382,7 @@ func TestHanashitaOffersTheNounOnlyAsSuruVerb(t *testing.T) {
 		}
 	})
 	t.Run("noun with vs", func(t *testing.T) {
-		sqlDB, _ := openDB(t)
+		sqlDB := dbtest.Open(t)
 		importJMdict(t, sqlDB, jaWords+hanashi(true))
 		rs := run(t, service(sqlDB), "ja", "話した", 0)
 		r := find(rs, "話")
@@ -449,7 +438,7 @@ const unihanLines = "U+5B78\tkDefinition\tlearning, knowledge; school\n"
 // zhService seeds CC-CEDICT, then Unihan.
 func zhService(t *testing.T) lookup.Service {
 	t.Helper()
-	sqlDB, _ := openDB(t)
+	sqlDB := dbtest.Open(t)
 	importCedict(t, sqlDB)
 	importPack(t, sqlDB, dict.Manifest{
 		ID: "unihan", Name: "Unihan", Version: "1", Type: "dictionary", Language: "zh",
@@ -464,7 +453,7 @@ func zhService(t *testing.T) lookup.Service {
 // gives senses stays, and an entry that never had senses (a bare Unihan
 // character) is unaffected.
 func TestUninstalledDictionaryWordsDisappear(t *testing.T) {
-	sqlDB, _ := openDB(t)
+	sqlDB := dbtest.Open(t)
 	importCedict(t, sqlDB)
 	importPack(t, sqlDB, dict.Manifest{
 		ID: "zh-extra", Name: "zh extra", Version: "1", Type: "dictionary", Language: "zh",
@@ -554,7 +543,7 @@ func TestKindsFilter(t *testing.T) {
 }
 
 func TestResultsCapped(t *testing.T) {
-	sqlDB, _ := openDB(t)
+	sqlDB := dbtest.Open(t)
 	importJMdict(t, sqlDB, homophones())
 	rs := run(t, service(sqlDB), "ja", "こう", 0)
 	if len(rs) != lookup.MaxEntries {
@@ -620,7 +609,7 @@ func TestTableOnlyLanguageLookup(t *testing.T) {
 		t.Fatal(err)
 	}
 	lemma.Register(tb)
-	sqlDB, _ := openDB(t)
+	sqlDB := dbtest.Open(t)
 	importPack(t, sqlDB, dict.Manifest{
 		ID: "xl-test", Name: "xl", Version: "1", Type: "dictionary", Language: "xl",
 		License: "CC0-1.0", Attribution: "test", Format: "json",
@@ -641,7 +630,7 @@ func TestTableDrivenReadingProbes(t *testing.T) {
 		t.Fatal(err)
 	}
 	lemma.Register(tb)
-	sqlDB, _ := openDB(t)
+	sqlDB := dbtest.Open(t)
 	importPack(t, sqlDB, dict.Manifest{
 		ID: "xk-test", Name: "xk", Version: "1", Type: "dictionary", Language: "xk",
 		License: "CC0-1.0", Attribution: "test", Format: "json",

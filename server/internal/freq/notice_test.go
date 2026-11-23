@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"testing"
 
+	"qinqin/internal/dbtest"
 	"qinqin/internal/dict"
 	"qinqin/internal/freq"
 )
@@ -30,7 +31,7 @@ func packRow(t *testing.T, sqlDB *sql.DB) (notice, updated string) {
 }
 
 func TestImportStoresNoticeWithoutRestamp(t *testing.T) {
-	sqlDB := openDB(t)
+	sqlDB := dbtest.Open(t)
 	mustImport(t, sqlDB, csvPack(t, "p", "猫,,3\n"))
 	if notice, _ := packRow(t, sqlDB); notice != "" {
 		t.Errorf("pack without notice: notice = %q, want ''", notice)
@@ -64,7 +65,7 @@ func TestImportStoresNoticeWithoutRestamp(t *testing.T) {
 }
 
 func TestImportRejectsInvalidNotice(t *testing.T) {
-	sqlDB := openDB(t)
+	sqlDB := dbtest.Open(t)
 	p := csvPack(t, "p", "猫,,3\n")
 	p.Manifest.Notice = "[x](http://example.com)"
 	if _, err := freq.Import(context.Background(), sqlDB, p); !errors.Is(err, dict.ErrInvalidPack) {

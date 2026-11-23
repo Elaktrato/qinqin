@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"qinqin/internal/dbtest"
 	"qinqin/internal/dict"
 )
 
@@ -46,7 +47,7 @@ func importNoticeDir(t *testing.T, sqlDB *sql.DB, dir string) {
 // (trimmed); an identical re-import restamps nothing; a changed notice
 // updates the row and its updated_at.
 func TestImportStoresNoticeWithoutRestamp(t *testing.T) {
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	importFixture(t, context.Background(), sqlDB)
 	if notice, _ := dictionaryRow(t, sqlDB, fixtureManifest.ID); notice != "" {
 		t.Errorf("pack without notice: notice = %q, want ''", notice)
@@ -91,7 +92,7 @@ func TestImportStoresNoticeWithoutRestamp(t *testing.T) {
 // An invalid notice rejects the pack before anything is written, both
 // when loading it and when a pack reaches the importer directly.
 func TestImportRejectsInvalidNotice(t *testing.T) {
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	m := fixtureManifest
 	m.Notice = "[click](javascript:alert)"
 	dir := writePack(t, m, fixtureDictionary(t))

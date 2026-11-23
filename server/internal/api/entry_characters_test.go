@@ -7,13 +7,12 @@ import (
 	"fmt"
 	"net/http/httptest"
 	"os"
-	"path/filepath"
 	"strings"
 	"sync/atomic"
 	"testing"
 
 	"qinqin/internal/api"
-	"qinqin/internal/db"
+	"qinqin/internal/dbtest"
 	"qinqin/internal/dict"
 	"qinqin/internal/lang"
 )
@@ -234,12 +233,7 @@ func (c countingConn) ExecContext(ctx context.Context, query string, args []driv
 // cost the same number of statements (one ByForm, one Radicals, one
 // GetMany for each, one levels query — never one per character).
 func TestEntryCharactersQueriesBounded(t *testing.T) {
-	path := filepath.Join(t.TempDir(), "test.db")
-	sqlDB, err := db.Open(path)
-	if err != nil {
-		t.Fatalf("db.Open: %v", err)
-	}
-	t.Cleanup(func() { sqlDB.Close() })
+	sqlDB, path := dbtest.OpenPath(t)
 	seedEntries(t, sqlDB)
 	var b strings.Builder
 	for _, f := range []string{"一", "二", "三", "四", "五", "六"} {

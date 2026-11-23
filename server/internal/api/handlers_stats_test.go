@@ -5,14 +5,13 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
-	"path/filepath"
 	"reflect"
 	"strings"
 	"testing"
 	"time"
 
 	"qinqin/internal/api"
-	"qinqin/internal/db"
+	"qinqin/internal/dbtest"
 	"qinqin/internal/plugins"
 )
 
@@ -89,11 +88,7 @@ func getActivity(t *testing.T, url, token, query string) (*http.Response, activi
 // statsServerAt is statsServer with the server clock fixed.
 func statsServerAt(t *testing.T, now time.Time) (url, token string, ws int64) {
 	t.Helper()
-	sqlDB, err := db.Open(filepath.Join(t.TempDir(), "test.db"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(func() { sqlDB.Close() })
+	sqlDB := dbtest.Open(t)
 	ts := httptest.NewServer(api.New(sqlDB, t.TempDir(), nil, api.WithClock(func() time.Time { return now })))
 	t.Cleanup(ts.Close)
 	for _, raw := range plugins.Builtin() {

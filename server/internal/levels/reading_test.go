@@ -8,6 +8,7 @@ import (
 	"slices"
 	"testing"
 
+	"qinqin/internal/dbtest"
 	"qinqin/internal/dict"
 	"qinqin/internal/lang"
 	"qinqin/internal/levels"
@@ -82,7 +83,7 @@ func jaWordID(t *testing.T, sqlDB *sql.DB, key string) int64 {
 // A reading no entry of the form has falls back to the form alone.
 func TestEntryWithReading(t *testing.T) {
 	lang.Register(lang.Ja{})
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	ctx := context.Background()
 	importDictionary(t, sqlDB, dict.Manifest{
 		ID: "jmdict-test", Name: "JMdict test", Version: "1", Type: "dictionary", Language: "ja",
@@ -137,7 +138,7 @@ func TestEntryWithReading(t *testing.T) {
 // compared toneless. The second line is synthetic: a word keyed 杭人
 // whose traditional form is 行人, so the form 行人 has two entries.
 func TestZhEntryWithPinyinReading(t *testing.T) {
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	ctx := context.Background()
 	importCedict(t, sqlDB,
 		"行人 行人 [xing2 ren2] /pedestrian/",

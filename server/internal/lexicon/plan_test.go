@@ -4,11 +4,10 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"path/filepath"
 	"strings"
 	"testing"
 
-	"qinqin/internal/db"
+	"qinqin/internal/dbtest"
 )
 
 // The pre-fix match queries, kept as the control: on the same database
@@ -41,11 +40,7 @@ const (
 // (ANALYZE) as a long-lived database would gather them.
 func seededPlanDB(t *testing.T) *sql.DB {
 	t.Helper()
-	sqlDB, err := db.Open(filepath.Join(t.TempDir(), "plan.db"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(func() { sqlDB.Close() })
+	sqlDB := dbtest.Open(t)
 	st := Store{DB: sqlDB}
 	ctx := context.Background()
 	var dictID int64

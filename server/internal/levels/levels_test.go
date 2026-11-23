@@ -11,7 +11,7 @@ import (
 	"strings"
 	"testing"
 
-	"qinqin/internal/db"
+	"qinqin/internal/dbtest"
 	"qinqin/internal/dict"
 	"qinqin/internal/lang"
 	"qinqin/internal/levels"
@@ -21,17 +21,6 @@ import (
 // hskMini is the shared levels pack fixture, relative to this package's
 // test working directory.
 const hskMini = "testdata/hsk-mini"
-
-// newDB opens a fresh migrated database.
-func newDB(t *testing.T) *sql.DB {
-	t.Helper()
-	sqlDB, err := db.Open(filepath.Join(t.TempDir(), "test.db"))
-	if err != nil {
-		t.Fatalf("db.Open: %v", err)
-	}
-	t.Cleanup(func() { sqlDB.Close() })
-	return sqlDB
-}
 
 // importDictionary writes a dictionary pack (manifest m plus one data
 // file) into a temp directory and imports it into the lexicon with the
@@ -157,7 +146,7 @@ func TestSchemeImportAndBadges(t *testing.T) {
 	// Entries carry readings normalized through the zh pack.
 	lang.Register(lang.Zh{})
 
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	ctx := context.Background()
 	fe := seedFixture(t, sqlDB)
 
@@ -273,7 +262,7 @@ func TestSchemeEntryIDs(t *testing.T) {
 	// Entries carry readings normalized through the zh pack.
 	lang.Register(lang.Zh{})
 
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	ctx := context.Background()
 	importCedict(t, sqlDB, lineNihao, lineXiexie, lineNi, lineHao, lineXie)
 	nihao := lexID(t, sqlDB, "word", "你好")
@@ -321,7 +310,7 @@ func TestDerivedLevelKeepsLowest(t *testing.T) {
 	// Entries carry readings normalized through the zh pack.
 	lang.Register(lang.Zh{})
 
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	ctx := context.Background()
 	// 好 is written in a level-1 word (你好) and a level-2 word (好人).
 	importCedict(t, sqlDB, lineNihao, lineHaoren, lineNi, lineHao, lineRen)
@@ -386,7 +375,7 @@ func TestDerivedLevelKeepsLowest(t *testing.T) {
 func TestSingleCharacterWords(t *testing.T) {
 	lang.Register(lang.Zh{})
 
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	ctx := context.Background()
 	importCedict(t, sqlDB, lineNihao, lineHaoren, lineNi, lineHao, lineRen)
 	nihao := lexID(t, sqlDB, "word", "你好")
@@ -433,7 +422,7 @@ func TestSingleCharacterWords(t *testing.T) {
 func TestCharacterResolvesToItsOwnEntry(t *testing.T) {
 	lang.Register(lang.Zh{})
 
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	ctx := context.Background()
 	importCedict(t, sqlDB,
 		"復 复 [fu4] /to return/",
@@ -471,7 +460,7 @@ func TestCharacterResolvesToItsOwnEntry(t *testing.T) {
 func TestOneLevelPerEntry(t *testing.T) {
 	lang.Register(lang.Zh{})
 
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	ctx := context.Background()
 	importCedict(t, sqlDB, lineNihao, lineHaoren, lineNi, lineHao, lineRen)
 	nihao := lexID(t, sqlDB, "word", "你好")
@@ -506,7 +495,7 @@ func TestSkippedUnknownForms(t *testing.T) {
 	// Entries carry readings normalized through the zh pack.
 	lang.Register(lang.Zh{})
 
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	ctx := context.Background()
 	// 电脑 is no entry; the character 谢 is missing too.
 	importCedict(t, sqlDB, lineNihao, lineXiexie, lineNi, lineHao)
@@ -564,7 +553,7 @@ func TestCharacterUnitScheme(t *testing.T) {
 	// Entries carry readings normalized through the zh pack.
 	lang.Register(lang.Zh{})
 
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	ctx := context.Background()
 	importCedict(t, sqlDB, lineHao, lineNi)
 	hao := lexID(t, sqlDB, "character", "好")
@@ -612,7 +601,7 @@ func TestUninstallAndReimportRevives(t *testing.T) {
 	// Entries carry readings normalized through the zh pack.
 	lang.Register(lang.Zh{})
 
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	ctx := context.Background()
 	fe := seedFixture(t, sqlDB)
 
@@ -723,7 +712,7 @@ const sharedFormKanjidic2 = `<?xml version="1.0" encoding="UTF-8"?>
 
 func TestSharedFormResolvesToBestRankedEntry(t *testing.T) {
 	lang.Register(lang.Ja{})
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	ctx := context.Background()
 	importDictionary(t, sqlDB, dict.Manifest{
 		ID: "jmdict-test", Name: "JMdict test", Version: "1", Type: "dictionary", Language: "ja",
@@ -795,7 +784,7 @@ func TestImportRejectsInvalidPacks(t *testing.T) {
 	// Entries carry readings normalized through the zh pack.
 	lang.Register(lang.Zh{})
 
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	ctx := context.Background()
 
 	// A dictionary pack is not a levels pack.
@@ -832,7 +821,7 @@ func TestImportRejectsInvalidPacks(t *testing.T) {
 
 func TestSkippedFormsAreListedOnce(t *testing.T) {
 	lang.Register(lang.Zh{})
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	importCedict(t, sqlDB, lineNihao)
 	pack := buildPack(t, "dup-skipped", `{"unit":"word","levels":[
 		{"name":"1","entries":["电脑","你好","电脑"]},
@@ -848,7 +837,7 @@ func TestSkippedFormsAreListedOnce(t *testing.T) {
 
 func TestUnitErrorNamesCharacter(t *testing.T) {
 	lang.Register(lang.Zh{})
-	_, err := levels.Import(context.Background(), newDB(t),
+	_, err := levels.Import(context.Background(), dbtest.Open(t),
 		buildPack(t, "bad-unit", `{"unit":"syllable","levels":[{"name":"1","entries":["你好"]}]}`))
 	if err == nil || !strings.Contains(err.Error(), "character") {
 		t.Errorf("err = %v, want the message to name character as accepted", err)
@@ -857,7 +846,7 @@ func TestUnitErrorNamesCharacter(t *testing.T) {
 
 func TestLevelNamesAndFormsAreTrimmed(t *testing.T) {
 	lang.Register(lang.Zh{})
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	ctx := context.Background()
 	importCedict(t, sqlDB, lineNihao, lineNi, lineHao)
 	nihao := lexID(t, sqlDB, "word", "你好")

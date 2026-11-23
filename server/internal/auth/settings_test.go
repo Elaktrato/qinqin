@@ -3,20 +3,15 @@ package auth_test
 import (
 	"context"
 	"errors"
-	"path/filepath"
 	"strings"
 	"testing"
 
 	"qinqin/internal/auth"
-	"qinqin/internal/db"
+	"qinqin/internal/dbtest"
 )
 
 func TestSettingsDefaultsAndUpdateAudited(t *testing.T) {
-	sqlDB, err := db.Open(filepath.Join(t.TempDir(), "t.db"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer sqlDB.Close()
+	sqlDB := dbtest.Open(t)
 	ctx := context.Background()
 	admin, _ := auth.CreateUser(ctx, sqlDB, "alice", "secret-pass-1", true)
 	got, err := auth.LoadSettings(ctx, sqlDB)
@@ -58,11 +53,7 @@ func TestSettingsDefaultsAndUpdateAudited(t *testing.T) {
 }
 
 func TestSettingsRejectsUnknownWords(t *testing.T) {
-	sqlDB, err := db.Open(filepath.Join(t.TempDir(), "t.db"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer sqlDB.Close()
+	sqlDB := dbtest.Open(t)
 	bad := "everyone"
 	if _, err := auth.UpdateSettings(context.Background(), sqlDB, 1, auth.SettingsPatch{Registration: &bad}); !errors.Is(err, auth.ErrInvalidSetting) {
 		t.Errorf("registration %q: %v", bad, err)

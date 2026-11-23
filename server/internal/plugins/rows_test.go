@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"testing"
 
+	"qinqin/internal/dbtest"
 	"qinqin/internal/plugins"
 )
 
@@ -13,7 +14,7 @@ import (
 // nanosecond clock reading.
 func TestSetStateRowMatchesStorage(t *testing.T) {
 	ctx := context.Background()
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	alice := newUser(t, sqlDB, "alice")
 
 	st, err := plugins.SetStateRow(ctx, sqlDB, alice, "qinqin-heatmap", false, 3)
@@ -38,7 +39,7 @@ func TestSetStateRowMatchesStorage(t *testing.T) {
 // TestPutDataRowReturnsWrittenRow: the row comes back from the write itself.
 func TestPutDataRowReturnsWrittenRow(t *testing.T) {
 	ctx := context.Background()
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	alice := newUser(t, sqlDB, "alice")
 	mustRegister(t, sqlDB, `{"id":"notes","name":"Notes","version":"1.0","type":"feature","sdk":1,"surfaces":[],"permissions":["owns-data"],"hooks":[],"events":[]}`)
 
@@ -61,7 +62,7 @@ func TestPutDataRowReturnsWrittenRow(t *testing.T) {
 // workspace to 0, so 0 (or less) must never be a real workspace id.
 func TestPutDataRejectsWorkspaceZero(t *testing.T) {
 	ctx := context.Background()
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	alice := newUser(t, sqlDB, "alice")
 	for _, ws := range []int64{0, -1} {
 		if _, err := plugins.PutData(ctx, sqlDB, alice, &ws, "notes", "k", json.RawMessage(`1`)); err == nil {
@@ -78,7 +79,7 @@ func TestPutDataRejectsWorkspaceZero(t *testing.T) {
 // hidden either.
 func TestListFlagsSurfacelessBuiltinsHidden(t *testing.T) {
 	ctx := context.Background()
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	alice := newUser(t, sqlDB, "alice")
 	for _, raw := range plugins.Builtin() {
 		if _, err := plugins.RegisterBuiltin(ctx, sqlDB, raw); err != nil {

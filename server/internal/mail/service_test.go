@@ -4,13 +4,12 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"path/filepath"
 	"strings"
 	"sync"
 	"testing"
 	"time"
 
-	"qinqin/internal/db"
+	"qinqin/internal/dbtest"
 	"qinqin/internal/i18n"
 	"qinqin/internal/mail/mailtest"
 	"qinqin/internal/netguard"
@@ -30,11 +29,7 @@ func (l *logSink) all() string { l.mu.Lock(); defer l.mu.Unlock(); return string
 
 func svcFor(t *testing.T, fake *mailtest.Server, sink *logSink) *Service {
 	t.Helper()
-	sqlDB, err := db.Open(filepath.Join(t.TempDir(), "m.db"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(func() { sqlDB.Close() })
+	sqlDB := dbtest.Open(t)
 	store := &Store{DB: sqlDB, Policy: netguard.GuardPolicy{AllowPrivate: true}}
 	p, err := store.Prepare(context.Background(), Input{Config: Config{Host: fake.Host, Port: fake.Port, TLS: ModeStartTLS,
 		FromAddress: "q@example.org", PublicURL: "https://words.example.org"}})

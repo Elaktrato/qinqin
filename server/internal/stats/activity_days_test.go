@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"qinqin/internal/dbtest"
 	"qinqin/internal/stats"
 	"qinqin/internal/studyday"
 )
@@ -73,7 +74,7 @@ func TestActivityDaysFixtures(t *testing.T) {
 	}
 	for _, c := range f.Cases {
 		t.Run(c.Name, func(t *testing.T) {
-			sqlDB := newDB(t)
+			sqlDB := dbtest.Open(t)
 			rules := builtinRules(t, sqlDB)
 			u := newUser(t, sqlDB, "a")
 			for _, ev := range c.Events {
@@ -96,7 +97,7 @@ func TestActivityDaysFixtures(t *testing.T) {
 // A zone change moves no past day: the cells before the change instant
 // are identical before and after it, whatever the new zone.
 func TestActivityZoneChangeKeepsPast(t *testing.T) {
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	rules := builtinRules(t, sqlDB)
 	u := newUser(t, sqlDB, "a")
 	base := time.Date(2026, 10, 20, 0, 0, 0, 0, time.UTC)
@@ -139,7 +140,7 @@ func TestActivityZoneChangeKeepsPast(t *testing.T) {
 }
 
 func TestActivityEmptyWindowsAndNoWindows(t *testing.T) {
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	rules := builtinRules(t, sqlDB)
 	u := newUser(t, sqlDB, "a")
 	add(t, sqlDB, u, 1, "2011-12-30T10:00:00Z", "review", "")

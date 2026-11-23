@@ -5,11 +5,13 @@ import (
 	"errors"
 	"testing"
 	"time"
+
+	"qinqin/internal/dbtest"
 )
 
 func newTestService(t *testing.T, mut func(*Service)) (*Service, *KeyStore) {
 	t.Helper()
-	sqlDB, _ := openTestDB(t)
+	sqlDB := dbtest.Open(t)
 	keys := newStore(sqlDB, 1, 0)
 	reg := &Registry{Custom: &CustomStore{DB: sqlDB}}
 	keys.AADFor = reg.AADFor

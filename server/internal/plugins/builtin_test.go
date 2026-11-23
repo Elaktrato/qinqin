@@ -7,6 +7,7 @@ import (
 	"strings"
 	"testing"
 
+	"qinqin/internal/dbtest"
 	"qinqin/internal/plugins"
 )
 
@@ -58,7 +59,7 @@ func TestBuiltinManifestsValid(t *testing.T) {
 }
 
 func TestRegisterRejectsOwnedEventType(t *testing.T) {
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	ctx := context.Background()
 	core := plugins.Builtin()[0]
 	if _, err := plugins.RegisterBuiltin(ctx, sqlDB, core); err != nil {
@@ -75,7 +76,7 @@ func TestRegisterRejectsOwnedEventType(t *testing.T) {
 }
 
 func TestRegisterIgnoresUnparsableRowsForOwnership(t *testing.T) {
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	if _, err := sqlDB.Exec(`INSERT INTO plugin_registry (pack_id, manifest_json, updated_at) VALUES ('legacy', '{"id":"legacy","events":"x"}', '2026-01-01T00:00:00Z')`); err != nil {
 		t.Fatal(err)
 	}
@@ -85,7 +86,7 @@ func TestRegisterIgnoresUnparsableRowsForOwnership(t *testing.T) {
 }
 
 func TestRegisterBuiltinWinsConflict(t *testing.T) {
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	ctx := context.Background()
 	other := validManifest("qinqin-other", `"permissions":["write:study-events"],"events":[{"type":"read"}]`)
 	if err := plugins.Register(ctx, sqlDB, []byte(other)); err != nil {
@@ -113,7 +114,7 @@ func TestRegisterBuiltinWinsConflict(t *testing.T) {
 // never conflicts with another built-in's stale row), and afterwards the
 // core owns both event types.
 func TestRegisterBuiltinsOverV030Rows(t *testing.T) {
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	ctx := context.Background()
 	for id, raw := range map[string]string{
 		"qinqin-flashcards": `{"id":"qinqin-flashcards","name":"Flashcards","version":"1.2","type":"feature","sdk":1,"description":"d","surfaces":["home-widget","page"],"permissions":["owns-data","read:entries","read:study-events","write:study-events"],"hooks":[],"events":[{"type":"review","activity":{"label":"Flashcard reviews","describe":{"one":"{n} flashcard review","other":"{n} flashcard reviews"}}}]}`,

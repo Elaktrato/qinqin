@@ -8,14 +8,13 @@ import (
 	"log"
 	"net/http"
 	"net/http/httptest"
-	"path/filepath"
 	"strings"
 	"testing"
 
 	"qinqin/internal/ai"
 	"qinqin/internal/ai/aitest"
 	"qinqin/internal/api"
-	"qinqin/internal/db"
+	"qinqin/internal/dbtest"
 	"qinqin/internal/journal"
 )
 
@@ -28,11 +27,7 @@ type customEnv struct {
 
 func newCustomEnv(t *testing.T, private bool, enabled map[string]bool) customEnv {
 	t.Helper()
-	sqlDB, err := db.Open(filepath.Join(t.TempDir(), "test.db"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(func() { sqlDB.Close() })
+	sqlDB := dbtest.Open(t)
 	svc := testAIService(sqlDB, ai.Fake{}, ai.SecretOK, 7)
 	svc.Fake = true
 	svc.Registry.Custom.Policy = ai.GuardPolicy{AllowPrivate: private}

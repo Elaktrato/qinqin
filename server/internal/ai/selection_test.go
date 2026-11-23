@@ -5,11 +5,13 @@ import (
 	"errors"
 	"testing"
 	"time"
+
+	"qinqin/internal/dbtest"
 )
 
 func newSelection(t *testing.T) (*Selection, *KeyStore) {
 	t.Helper()
-	sqlDB, _ := openTestDB(t)
+	sqlDB := dbtest.Open(t)
 	return &Selection{DB: sqlDB, Now: time.Now}, newStore(sqlDB, 1, 0)
 }
 

@@ -10,20 +10,10 @@ import (
 	"strconv"
 	"testing"
 
-	"qinqin/internal/db"
+	"qinqin/internal/dbtest"
 	"qinqin/internal/study"
 	"qinqin/internal/study/rows"
 )
-
-func newTestDB(t *testing.T) *sql.DB {
-	t.Helper()
-	sqlDB, err := db.Open(filepath.Join(t.TempDir(), "t.db"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(func() { sqlDB.Close() })
-	return sqlDB
-}
 
 func exec(t *testing.T, sqlDB sqlExecer, q string, args ...any) {
 	t.Helper()
@@ -191,7 +181,7 @@ type baseWorld struct {
 
 func newWorld(t *testing.T) *baseWorld {
 	t.Helper()
-	w := &baseWorld{DB: newTestDB(t), Data: t.TempDir()}
+	w := &baseWorld{DB: dbtest.Open(t), Data: t.TempDir()}
 	mkLang(t, w.DB, "zh", "ja")
 	w.E1 = mkEntry(t, w.DB, "zh", "word", "cc-1", "你好")
 	w.E2 = mkEntry(t, w.DB, "zh", "word", "cc-2", "世界")

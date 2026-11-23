@@ -1,22 +1,17 @@
 package api
 
 import (
-	"path/filepath"
 	"strings"
 	"testing"
 
-	"qinqin/internal/db"
+	"qinqin/internal/dbtest"
 )
 
 // TestInstalledLanguagesPlan pins the installed-languages query to index
 // seeks: it runs on every GET /api/languages and on a new user's first
 // GET /api/workspaces, so it must not scan every entry or sense.
 func TestInstalledLanguagesPlan(t *testing.T) {
-	sqlDB, err := db.Open(filepath.Join(t.TempDir(), "plan.db"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(func() { sqlDB.Close() })
+	sqlDB := dbtest.Open(t)
 	rows, err := sqlDB.Query(`EXPLAIN QUERY PLAN ` + installedLanguagesSQL)
 	if err != nil {
 		t.Fatalf("explain: %v", err)

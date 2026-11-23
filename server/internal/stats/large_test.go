@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"qinqin/internal/db"
+	"qinqin/internal/dbtest"
 	"qinqin/internal/plugins"
 	"qinqin/internal/stats"
 	"qinqin/internal/studyday"
@@ -49,6 +50,7 @@ func seedLarge(tb testing.TB) largeFixture {
 			tb.Fatal(err)
 		}
 		largeDir = dir
+		dbtest.File(tb, filepath.Join(dir, "large.db"))
 		sqlDB, err := db.Open(filepath.Join(dir, "large.db"))
 		if err != nil {
 			tb.Fatal(err)

@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"testing"
 
+	"qinqin/internal/dbtest"
 	"qinqin/internal/sentences"
 )
 
@@ -29,7 +30,7 @@ func registryRow(t *testing.T, sqlDB *sql.DB, packID string) (regRow, bool) {
 }
 
 func TestSentencePackRegistry(t *testing.T) {
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	ctx := context.Background()
 	seedWords(t, sqlDB)
 	pack := buildPack(t, "reg-pack", `{"entries":[{"word":"你好","sentences":[{"hanzi":"你好。","pinyin":"nǐ hǎo.","translation":"Hello."}]}]}`)

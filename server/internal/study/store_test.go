@@ -6,22 +6,17 @@ import (
 	"database/sql"
 	"encoding/json"
 	"os"
-	"path/filepath"
 	"testing"
 	"time"
 
-	"qinqin/internal/db"
+	"qinqin/internal/dbtest"
 	"qinqin/internal/study"
 	"qinqin/internal/study/rows"
 )
 
 func openDB(t *testing.T) *sql.DB {
 	t.Helper()
-	sqlDB, err := db.Open(filepath.Join(t.TempDir(), "q.db"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(func() { sqlDB.Close() })
+	sqlDB := dbtest.Open(t)
 	for _, s := range []string{
 		`INSERT INTO users (id, username, hash, admin, updated_at) VALUES (1, 'alice', 'h', 1, 't'), (2, 'bob', 'h', 0, 't')`,
 		`INSERT INTO workspaces (id, user_id, language, name, settings, updated_at) VALUES (7, 1, 'zh', '', '{}', 't'), (8, 1, 'ja', '', '{}', 't'), (9, 2, 'zh', '', '{}', 't')`,

@@ -5,22 +5,17 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
-	"path/filepath"
 	"testing"
 	"time"
 
-	"qinqin/internal/db"
+	"qinqin/internal/dbtest"
 	"qinqin/internal/lexicon"
 )
 
 // A build of one language (held here by its lock) does not block
 // another language's request.
 func TestCharactersCacheLocksPerLanguage(t *testing.T) {
-	sqlDB, err := db.Open(filepath.Join(t.TempDir(), "test.db"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(func() { sqlDB.Close() })
+	sqlDB := dbtest.Open(t)
 	st := lexicon.Store{DB: sqlDB}
 	var c charactersCache
 
@@ -49,11 +44,7 @@ func TestCharactersCacheLocksPerLanguage(t *testing.T) {
 // JLPT field ("j") names the same lexicon version, so it must not match
 // any more: a browser holding the old body gets the new one, not a 304.
 func TestCharactersETagOutlivesOldFormat(t *testing.T) {
-	sqlDB, err := db.Open(filepath.Join(t.TempDir(), "test.db"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(func() { sqlDB.Close() })
+	sqlDB := dbtest.Open(t)
 	var c charactersCache
 	p, err := c.get(context.Background(), lexicon.Store{DB: sqlDB}, "ja")
 	if err != nil {

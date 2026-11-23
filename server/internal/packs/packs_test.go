@@ -9,20 +9,10 @@ import (
 	"path/filepath"
 	"testing"
 
-	"qinqin/internal/db"
+	"qinqin/internal/dbtest"
 	"qinqin/internal/dict"
 	"qinqin/internal/packs"
 )
-
-func newDB(t *testing.T) *sql.DB {
-	t.Helper()
-	sqlDB, err := db.Open(filepath.Join(t.TempDir(), "test.db"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(func() { sqlDB.Close() })
-	return sqlDB
-}
 
 // buildPack writes a pack directory from strings and loads it.
 func buildPack(t *testing.T, typ, id, name, license, format string, files map[string]string) dict.Pack {
@@ -76,7 +66,7 @@ func grammarPack(t *testing.T) dict.Pack {
 }
 
 func TestGrammarPacks(t *testing.T) {
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	ctx := context.Background()
 	got, err := packs.Import(ctx, sqlDB, grammarPack(t))
 	if err != nil || got != "1 lessons" {
@@ -98,7 +88,7 @@ func TestGrammarPacks(t *testing.T) {
 }
 
 func TestImportDispatchesByType(t *testing.T) {
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	ctx := context.Background()
 	for _, tc := range []struct {
 		pack dict.Pack
@@ -131,7 +121,7 @@ func importAll(t *testing.T, sqlDB *sql.DB) {
 }
 
 func TestListAllTypes(t *testing.T) {
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	importAll(t, sqlDB)
 	// Sentences without a registry row (a pre-v0.2.0 import) are no pack (#198).
 	var entryID int64
@@ -183,7 +173,7 @@ func TestListAllTypes(t *testing.T) {
 }
 
 func TestListSortsByNameWithinType(t *testing.T) {
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	ctx := context.Background()
 	for _, id := range []string{"b-dict", "a-dict"} {
 		p := buildPack(t, "dictionary", id, "Same name", "CC0-1.0", "json", map[string]string{"dictionary.json": esDict})
@@ -198,7 +188,7 @@ func TestListSortsByNameWithinType(t *testing.T) {
 }
 
 func TestUninstallEachType(t *testing.T) {
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	ctx := context.Background()
 	importAll(t, sqlDB)
 	for _, k := range [][2]string{
@@ -226,7 +216,7 @@ func TestUninstallEachType(t *testing.T) {
 }
 
 func TestFind(t *testing.T) {
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	importAll(t, sqlDB)
 	p, err := packs.Find(context.Background(), sqlDB, "levels", "es-levels")
 	if err != nil || p.Name != "Levels" || p.License != "CC BY 4.0" {
@@ -243,7 +233,7 @@ func componentsPack(t *testing.T) dict.Pack {
 }
 
 func TestComponentsPacks(t *testing.T) {
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	ctx := context.Background()
 	importAll(t, sqlDB)
 	got, err := packs.Import(ctx, sqlDB, componentsPack(t))

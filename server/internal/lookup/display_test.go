@@ -1,6 +1,10 @@
 package lookup_test
 
-import "testing"
+import (
+	"testing"
+
+	"qinqin/internal/dbtest"
+)
 
 // noEntry is JMdict 1469800, the particle の: both written forms are
 // search-only (sK) and no sense is uk.
@@ -17,7 +21,7 @@ const noEntry = `<entry>
 // form — the kana of a usually-kana word, the reading of a word whose
 // written forms are all search-only — not its first written form.
 func TestKanaMatchShowsTheDisplayForm(t *testing.T) {
-	sqlDB, _ := openDB(t)
+	sqlDB := dbtest.Open(t)
 	importJMdict(t, sqlDB, jaWords+noEntry)
 	s := service(sqlDB)
 	for _, tt := range []struct{ text, term, form string }{
@@ -36,7 +40,7 @@ func TestKanaMatchShowsTheDisplayForm(t *testing.T) {
 // TestSearchOnlyFormMatchShowsTheDisplayForm: a text written with a
 // search-only form (之) finds the word, shown as its display form.
 func TestSearchOnlyFormMatchShowsTheDisplayForm(t *testing.T) {
-	sqlDB, _ := openDB(t)
+	sqlDB := dbtest.Open(t)
 	importJMdict(t, sqlDB, jaWords+noEntry)
 	rs := run(t, service(sqlDB), "ja", "之", 0)
 	if len(rs) == 0 || rs[0].Term != "の" || rs[0].Matched != "之" {
