@@ -1,6 +1,6 @@
 // A workspace deleted in another tab or on another device: this tab
 // still has it selected, and every workspace-scoped call answers 404
-// "workspace not found". The first such answer reloads the workspace
+// `workspace_not_found`. The first such answer reloads the workspace
 // list; when the selected workspace is gone the store falls back to the
 // first one left (load() does that) and the shell shows a one-line
 // notice. Reloads are shared and spaced out, so a burst of stale 404s
@@ -19,9 +19,9 @@ const COOLDOWN_MS = 10_000;
 let inFlight: Promise<void> | null = null;
 let lastReload = Number.NEGATIVE_INFINITY;
 
-/** isWorkspaceGone: the API answered 404 "workspace not found". */
+/** isWorkspaceGone: the API answered 404 `workspace_not_found`. */
 export function isWorkspaceGone(err: unknown): boolean {
-	return err instanceof ApiError && isWorkspaceGoneResponse(err.status, err.message);
+	return err instanceof ApiError && isWorkspaceGoneResponse(err.status, err.code);
 }
 
 function storage(kind: 'localStorage' | 'sessionStorage'): Storage | null {
@@ -37,7 +37,7 @@ async function reload(): Promise<void> {
 	try {
 		await load();
 	} catch {
-		// Offline or signed out: the next "workspace not found" retries.
+		// Offline or signed out: the next workspace_not_found retries.
 		return;
 	} finally {
 		lastReload = Date.now();
@@ -54,8 +54,8 @@ async function reload(): Promise<void> {
 }
 
 /**
- * recoverFromDeletedWorkspace reloads the workspace list after a "workspace
- * not found". Concurrent calls share one reload, and calls within the
+ * recoverFromDeletedWorkspace reloads the workspace list after a
+ * workspace_not_found. Concurrent calls share one reload, and calls within the
  * cooldown after one do nothing. Never throws.
  */
 export function recoverFromDeletedWorkspace(): Promise<void> {

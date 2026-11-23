@@ -2,7 +2,7 @@
 	import { listAllBooks } from '$lib/api/library';
 	import { t } from '$lib/i18n';
 	import { loadWorkspaceEvents } from '$lib/events';
-	import { errorMessage } from '$lib/stats/errors';
+	import { errorText } from '$lib/api/apiErrors';
 	import { formatDuration, readingTotals, topBooks, type ReadingTotals } from '$lib/stats/readingTime';
 	import { currentStudyDay, onStudyDayChange } from '$lib/time/zone';
 	import Button from '$lib/ui/Button.svelte';
@@ -81,7 +81,7 @@
 		} catch (err) {
 			if (seq !== requestSeq) return;
 			totals = null;
-			error = errorMessage(err, t('widgets.reading.loadFailed'));
+			error = errorText(err, t('widgets.reading.loadFailed'));
 		} finally {
 			if (seq === requestSeq) loading = false;
 		}

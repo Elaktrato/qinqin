@@ -135,7 +135,7 @@ describe('DailyGoalWidget', () => {
 		vi.mocked(loadGoalStatus).mockRejectedValueOnce(new Error('offline'));
 		render(DailyGoalWidget);
 		const retry = await screen.findByRole('button', { name: 'Try again' });
-		expect(screen.getByText(/offline/)).toBeTruthy();
+		expect(screen.getByText('Could not load your daily goal.')).toBeTruthy();
 		vi.mocked(loadGoalStatus).mockResolvedValue(view());
 		retry.click();
 		await screen.findByRole('progressbar');

@@ -186,7 +186,7 @@ describe('gradeItem', () => {
 			recordReview
 		});
 
-		expect(result).toEqual({ ok: false, error: 'network down' });
+		expect(result).toEqual({ ok: false, error: 'Could not add this word to your study cards.' });
 		expect(recordReview).not.toHaveBeenCalled();
 	});
 

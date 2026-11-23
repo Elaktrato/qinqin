@@ -230,7 +230,7 @@ async function recordEvent(event: ReviewEvent): Promise<ReviewEvent | null> {
 }
 
 function isWorkspaceGone(err: unknown): boolean {
-	return err instanceof ApiError && isWorkspaceGoneResponse(err.status, err.message);
+	return err instanceof ApiError && isWorkspaceGoneResponse(err.status, err.code);
 }
 
 // One flush at a time: boot, reconnect, and a session load can all ask
@@ -323,7 +323,7 @@ async function flushOnce(): Promise<void> {
 
 /** A 401 (revoked or expired session) or a 403 restriction (password change, MFA enrolment). */
 function isSessionProblem(err: unknown): boolean {
-	return err instanceof ApiError && (err.status === 401 || isRestrictionResponse(err.status, err.message));
+	return err instanceof ApiError && (err.status === 401 || isRestrictionResponse(err.status, err.code));
 }
 
 function removePending(id: string): void {

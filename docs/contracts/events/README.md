@@ -33,7 +33,7 @@ Fixtures:
   from the rule text; regenerate, never edit it by hand; `--check` exits 1 when it is stale). Decoded by `apps/web/src/lib/study/replaced.test.ts`
   (`liveReviews`) and `server/internal/events/replaced_contract_test.go` (`events.Replaced`).
 - `page.json` — the paged `GET /api/events`: valid and invalid pages (shape, order, `next` rule) and request
-  cases (query → status, JSON code or plain-text body). Decoded by
+  cases (query → status and JSON code). Decoded by
   `server/internal/api/contract_events_page_test.go` (every request against the server, every page through
   the shape check) and `apps/web/src/lib/eventPages.test.ts` (the web's strict decoder).
 - `activity.json` — heatmap cells of the built-in activity rules over a case's events (zone history, window
@@ -101,7 +101,7 @@ GET /api/events?page=<next>[&workspace=<id>]                          continuati
   `since`/`limit`, an empty `page`, a parameter given twice (paged form only: the legacy form keeps reading the
   first `since`), a `limit` outside 1..2000 → 400 JSON
   `{"error": "events_page_invalid", "message": …}` (`auth/errors.json`): read again from the first page. A
-  bad `since` or `workspace` and a foreign workspace keep the plain-text answers below, on every page.
+  bad `since` or `workspace` and a foreign workspace keep the answers below, on every page.
 - Web reader: `apps/web/src/lib/eventPages.ts` (`limit=2000`, strict decode, at most 1000 pages). It follows
   an empty page with `more` true (`readerAccepts` in `page.json`): the server never sends one, but a page the
   service worker saved has lost its `lookup` events and may be empty. A continuation that cannot be reached at
@@ -111,22 +111,22 @@ GET /api/events?page=<next>[&workspace=<id>]                          continuati
 
 ## Errors
 
-The batch route answers **plain text** (not JSON), with a trailing newline. The events are checked in order
-before anything is stored; the first failing check answers and **nothing of the batch is stored**:
+Every error is JSON `{error, message}` (`auth/errors.json`; branch on the code, the message is English for
+developers). The events are checked in order before anything is stored; the first failing check answers and
+**nothing of the batch is stored**:
 
-| Check | Status | Body |
+| Check | Status | Code (message) |
 | --- | --- | --- |
-| body not JSON, `ts` not RFC 3339 with a zone | 400 | `malformed request body` |
-| `events` missing | 400 | `events array required` |
-| `id` not a ULID | 400 | `event id must be a ULID` |
-| `ts` missing (zero) | 400 | `event ts is required` |
-| `workspaceId` missing or ≤ 0 | 400 | `event workspaceId is required` |
-| a workspace not the caller's (unknown or another user's) | 404 | `workspace not found` |
-| body over 4 MiB | 413 | `request body too large` |
+| body not JSON, `ts` not RFC 3339 with a zone | 400 | `bad_request` (`Malformed request body.`) |
+| `events` missing | 400 | `bad_request` (`Events array required.`) |
+| `id` not a ULID | 400 | `bad_request` (`Event id must be a ULID.`) |
+| `ts` missing (zero) | 400 | `bad_request` (`Event ts is required.`) |
+| `workspaceId` missing or ≤ 0 | 400 | `bad_request` (`Event workspaceId is required.`) |
+| a workspace not the caller's (unknown or another user's) | 404 | `workspace_not_found` |
+| body over 4 MiB | 413 | `too_large` |
 
-`GET /api/events` answers `400` text for a bad `since` (`since must be RFC 3339`) or `workspace`
-(`workspace must be an integer`) and `404 workspace not found` for a foreign workspace, in both forms; the
-paged form adds `events_page_invalid` (Paging).
+`GET /api/events` answers 400 `bad_request` for a bad `since` or `workspace` and 404 `workspace_not_found`
+for a foreign workspace, in both forms; the paged form adds `events_page_invalid` (Paging).
 
 ## Order and the `ts` rule
 

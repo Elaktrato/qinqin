@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { errorText } from '$lib/api/apiErrors';
 	import { t } from '$lib/i18n';
 	import { AUDIO_AUTOPLAY_KEY, AUDIO_DEVICE_VOICE_KEY, readAudioSettings } from '$lib/audio/settings';
 	import Section from '$lib/ui/Section.svelte';
@@ -26,7 +27,7 @@
 		try {
 			await onChange({ [key]: value });
 		} catch (err) {
-			error = err instanceof Error && err.message ? err.message : t('settings.saveFailed');
+			error = errorText(err, t('settings.saveFailed'));
 		} finally {
 			const { [key]: _done, ...rest } = pending;
 			pending = rest;

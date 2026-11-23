@@ -9,7 +9,7 @@
 	// shows at once, a failed save says so and offers Retry.
 	import { onMount, tick } from 'svelte';
 	import { t } from '$lib/i18n';
-	import { errorMessage } from '$lib/stats/errors';
+	import { errorText } from '$lib/api/apiErrors';
 	import { languageLabel } from '$lib/languages';
 	import { coreFeatures } from '$lib/features';
 	import { pluginState, webPlugins } from '$lib/plugins';
@@ -108,7 +108,7 @@
 			announcement = t('settings.home.layoutSaved', { layout: t(LAYOUT_TEXT[heatmapLayout].label) });
 		} else {
 			heatmapLayout = savedLayout;
-			layoutError = t('settings.home.layoutSaveFailed', { reason: errorMessage(failure, t('settings.home.noAnswer')) });
+			layoutError = t('settings.home.layoutSaveFailed', { reason: errorText(failure, t('settings.home.noAnswer')) });
 			announcement = layoutError;
 		}
 	}
@@ -173,7 +173,7 @@
 			confirmed = stored;
 			loadStatus = 'ready';
 		} catch (err) {
-			loadError = errorMessage(err, t('settings.home.loadFailed'));
+			loadError = errorText(err, t('settings.home.loadFailed'));
 			loadStatus = 'error';
 		}
 	}
@@ -208,7 +208,7 @@
 			saveStatus = 'saved';
 		} catch (err) {
 			pending = false;
-			saveError = errorMessage(err, t('settings.home.noAnswer'));
+			saveError = errorText(err, t('settings.home.noAnswer'));
 			saveStatus = 'error';
 		} finally {
 			inFlight = false;

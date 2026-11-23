@@ -21,21 +21,21 @@ func (s *server) handleSegmentAt(w http.ResponseWriter, r *http.Request) {
 	language, text := params.Get("lang"), params.Get("text")
 	offset, err := strconv.Atoi(params.Get("offset"))
 	if language == "" || text == "" || err != nil {
-		http.Error(w, "lang, text and integer offset required", http.StatusBadRequest)
+		writeError(w, http.StatusBadRequest, "bad_request", "Lang, text and integer offset required.")
 		return
 	}
 	if !lang.Registered(language) {
-		http.Error(w, "unsupported language", http.StatusBadRequest)
+		writeError(w, http.StatusBadRequest, "bad_request", "Unsupported language.")
 		return
 	}
 	if utf8.RuneCountInString(text) > maxSegmentAtRunes {
-		http.Error(w, "text too long", http.StatusRequestEntityTooLarge)
+		writeError(w, http.StatusRequestEntityTooLarge, "too_large", "text too long.")
 		return
 	}
 	svc := s.segmenter()
 	m, err := svc.MatchAt(r.Context(), language, text, offset)
 	if err != nil {
-		http.Error(w, "internal error", http.StatusInternalServerError)
+		writeInternal(w, r)
 		return
 	}
 	writeJSON(w, http.StatusOK, map[string]*segment.Match{"match": m})
@@ -66,15 +66,15 @@ func (s *server) handleSegment(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if req.Lang == "" {
-		http.Error(w, "lang required", http.StatusBadRequest)
+		writeError(w, http.StatusBadRequest, "bad_request", "lang required.")
 		return
 	}
 	if !lang.Registered(req.Lang) {
-		http.Error(w, "unsupported language", http.StatusBadRequest)
+		writeError(w, http.StatusBadRequest, "bad_request", "Unsupported language.")
 		return
 	}
 	if utf8.RuneCountInString(req.Text) > maxSegmentRunes {
-		http.Error(w, "text too long", http.StatusRequestEntityTooLarge)
+		writeError(w, http.StatusRequestEntityTooLarge, "too_large", "text too long.")
 		return
 	}
 	svc := s.segmenter()
@@ -84,7 +84,7 @@ func (s *server) handleSegment(w http.ResponseWriter, r *http.Request) {
 		err = s.overlayReadings(r.Context(), u.ID, matches)
 	}
 	if err != nil {
-		http.Error(w, "internal error", http.StatusInternalServerError)
+		writeInternal(w, r)
 		return
 	}
 	writeJSON(w, http.StatusOK, map[string][]segment.Match{"matches": matches})

@@ -253,7 +253,7 @@ describe('workspace store', () => {
 		const ja = workspace(2, 'ja');
 		workspaces.set({ list: [zh, ja], current: ja });
 		vi.mocked(fetch).mockImplementation(async (_input, init) => {
-			if (init?.method === 'DELETE') return new Response('workspace not found', { status: 404 });
+			if (init?.method === 'DELETE') return new Response('{"error":"workspace_not_found","message":"No such workspace."}', { status: 404 });
 			return jsonResponse([zh]);
 		});
 

@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { errorText } from '$lib/api/apiErrors';
+	import { UserError } from '$lib/api/userError';
 	import { pageTitle } from '$lib/pageTitle';
 	import { t } from '$lib/i18n';
 	import { onMount, tick, untrack } from 'svelte';
@@ -13,7 +15,6 @@
 	import { getPlayer } from '$lib/audio/shared';
 	import { autoplayDue, cardAudio, isPlayKey, preloadClips } from '$lib/study/audioCue';
 	import { getSchemeEntries, getSchemes } from '$lib/api/schemes';
-	import { ApiError } from '$lib/api/client';
 	import type { Entry, EntryBase, SegmentMatch, Sentence } from '$lib/api/types';
 	import ClozeCard from '$lib/features/flashcards/cards/ClozeCard.svelte';
 	import ReverseCard from '$lib/features/flashcards/cards/ReverseCard.svelte';
@@ -188,7 +189,7 @@ import type { Run } from '$lib/study/vacation';
 	 * to another language must abort instead of studying (or writing)
 	 * cards in the wrong workspace.
 	 */
-	class LevelWorkspaceMismatch extends Error {}
+	class LevelWorkspaceMismatch extends UserError {}
 
 	/** The configured level's entries and the unit of its scheme. */
 	interface LevelRequest {
@@ -200,7 +201,7 @@ import type { Run } from '$lib/study/vacation';
 	async function levelEntriesRequest(language: string | null): Promise<LevelRequest> {
 		if (config.mode !== 'levels') return { entries: [], unit: 'word' };
 		if (config.schemeId === null || config.levelName === null) {
-			return Promise.reject(new Error('This level session is missing its scheme or level.'));
+			return Promise.reject(new UserError('study.session.levelUnset'));
 		}
 
 		const schemes = await getSchemes();
@@ -211,14 +212,13 @@ import type { Run } from '$lib/study/vacation';
 			sessionLevel = t('study.session.levelName', { scheme: scheme.name, level: config.levelName });
 		}
 		if (scheme === undefined) {
-			throw new LevelWorkspaceMismatch(
-				t('study.session.schemeMissing')
-			);
+			throw new LevelWorkspaceMismatch('study.session.schemeMissing');
 		}
 		if (!scheme.levels.some((level) => level.name === config.levelName)) {
-			throw new LevelWorkspaceMismatch(
-				t('study.session.levelGone', { level: config.levelName ?? '', scheme: scheme.name })
-			);
+			throw new LevelWorkspaceMismatch('study.session.levelGone', {
+				level: config.levelName ?? '',
+				scheme: scheme.name
+			});
 		}
 		return {
 			entries: await getSchemeEntries(config.schemeId, config.levelName),
@@ -329,11 +329,6 @@ import type { Run } from '$lib/study/vacation';
 	// Guards a slow load from an earlier workspace overwriting the session.
 	let requestSeq = 0;
 
-	function message(err: unknown, fallback: string): string {
-		if (err instanceof ApiError && err.message) return err.message;
-		if (err instanceof Error && err.message) return err.message;
-		return fallback;
-	}
 
 	/**
 	 * sessionReview mirrors the event recordReview builds (with the card's
@@ -407,7 +402,7 @@ import type { Run } from '$lib/study/vacation';
 			entries = { ...entries, [entryId]: entry };
 		} catch (err) {
 			if (seq !== requestSeq) return;
-			entryError = message(err, t('study.session.wordFailed'));
+			entryError = errorText(err, t('study.session.wordFailed'));
 		} finally {
 			if (seq === requestSeq && pendingEntryId === entryId) {
 				pendingEntryId = null;
@@ -579,12 +574,12 @@ import type { Run } from '$lib/study/vacation';
 			queue = [];
 			reserve = [];
 			if (err instanceof LevelWorkspaceMismatch) {
-				workspaceMismatch = err.message;
+				workspaceMismatch = errorText(err, t('study.session.schemeMissing'));
 			} else {
 				loadError = sessionStartError({
 					offline: !$offline.online || err instanceof TypeError,
 					mode: config.mode,
-					fallback: message(err, t('study.session.startFailed'))
+					fallback: errorText(err, t('study.session.startFailed'))
 				});
 			}
 		} finally {

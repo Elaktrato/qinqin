@@ -236,7 +236,7 @@ describe('radical and part lookup page', () => {
 	it('a load error shows a retry that reloads', async () => {
 		vi.mocked(fetchCharacters).mockRejectedValueOnce(new Error('down'));
 		render(Page);
-		expect((await screen.findByRole('alert')).textContent).toContain('down');
+		expect((await screen.findByRole('alert')).textContent).toContain('Could not load.');
 		await fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
 		expect(await screen.findByRole('group', { name: 'Radicals' })).toBeTruthy();
 		expect(fetchCharacters).toHaveBeenCalledTimes(2);

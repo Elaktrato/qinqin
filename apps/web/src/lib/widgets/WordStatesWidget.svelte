@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { errorMessage } from '$lib/stats/errors';
+	import { errorText } from '$lib/api/apiErrors';
 	import { t } from '$lib/i18n';
 	import {
 		WORD_STATES,
@@ -69,7 +69,7 @@
 		} catch (err) {
 			if (seq !== requestSeq) return;
 			result = null;
-			error = errorMessage(err, t('widgets.words.loadFailed'));
+			error = errorText(err, t('widgets.words.loadFailed'));
 		} finally {
 			if (seq === requestSeq) loading = false;
 		}

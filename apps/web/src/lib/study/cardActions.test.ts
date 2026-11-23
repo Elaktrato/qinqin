@@ -102,7 +102,7 @@ describe('createCardActions', () => {
 		const actions = createCardActions(d);
 		const now = snapshot(actions);
 		await actions.move(7, ['a'], 'x', 'X');
-		expect(now().error).toBe('nope');
+		expect(now().error).toBe('That did not work.'); // an Error's own text never shows (#168)
 		expect(now().undo).toBeNull();
 	});
 

@@ -166,7 +166,7 @@ describe('loadRanks', () => {
 			const ids = (opts?.body as { ids: number[] }).ids;
 			return { pack: { ...PACK, id: n }, ranks: ids.map((id) => ({ id, rank: id })) };
 		}) as never);
-		await expect(loadRanks('ja', range(1, 1000))).rejects.toThrow('frequency list changed');
+		await expect(loadRanks('ja', range(1, 1000))).rejects.toThrow('The frequency list changed while loading');
 	});
 
 	it('no ids: no request', async () => {

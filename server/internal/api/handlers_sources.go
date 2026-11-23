@@ -50,7 +50,7 @@ func (s *server) source(w http.ResponseWriter, r *http.Request) (sources.Source,
 			return src, true
 		}
 	}
-	http.Error(w, "unknown source", http.StatusNotFound)
+	writeError(w, http.StatusNotFound, "not_found", "Unknown source.")
 	return nil, false
 }
 
@@ -88,7 +88,7 @@ func (s *server) handleSearchSource(w http.ResponseWriter, r *http.Request) {
 	if r.URL.Query().Has("limit") {
 		n, err := strconv.Atoi(r.URL.Query().Get("limit"))
 		if err != nil || n < 0 {
-			http.Error(w, "limit must be a non-negative integer", http.StatusBadRequest)
+			writeError(w, http.StatusBadRequest, "bad_request", "limit must be a non-negative integer.")
 			return
 		}
 		if n > 0 {
@@ -125,7 +125,7 @@ func (s *server) handleBrowseSource(w http.ResponseWriter, r *http.Request) {
 	}
 	b, ok := src.(sources.Browser)
 	if !ok {
-		http.Error(w, "this source has no browse assortment", http.StatusNotImplemented)
+		writeError(w, http.StatusNotImplemented, "not_implemented", "This source has no browse assortment.")
 		return
 	}
 	q := r.URL.Query()
@@ -133,25 +133,25 @@ func (s *server) handleBrowseSource(w http.ResponseWriter, r *http.Request) {
 	if q.Has("limit") {
 		n, err := strconv.Atoi(q.Get("limit"))
 		if err != nil {
-			http.Error(w, "limit must be an integer", http.StatusBadRequest)
+			writeError(w, http.StatusBadRequest, "bad_request", "limit must be an integer.")
 			return
 		}
 		limit = min(max(n, 1), maxBrowseLimit)
 	}
 	language := q.Get("language")
 	if !validLanguageParam(language) {
-		http.Error(w, "language must be a language code such as ja or zh", http.StatusBadRequest)
+		writeError(w, http.StatusBadRequest, "bad_request", "language must be a language code such as ja or zh.")
 		return
 	}
 	seed := q.Get("seed")
 	if len(seed) > maxBrowseSeedLen {
-		http.Error(w, "seed too long", http.StatusBadRequest)
+		writeError(w, http.StatusBadRequest, "bad_request", "seed too long.")
 		return
 	}
 	if seed == "" {
 		hist, _, err := studyday.Load(r.Context(), s.db, u.ID)
 		if err != nil {
-			http.Error(w, "internal error", http.StatusInternalServerError)
+			writeInternal(w, r)
 			return
 		}
 		seed = hist.DayOf(s.now()).String()
@@ -192,11 +192,11 @@ func validLanguageParam(s string) bool {
 func sourceError(w http.ResponseWriter, err error) {
 	switch {
 	case errors.Is(err, sources.ErrNotFound):
-		http.Error(w, "work not found in source", http.StatusNotFound)
+		writeError(w, http.StatusNotFound, "not_found", "Work not found in source.")
 	case errors.Is(err, epub.ErrInvalid):
-		http.Error(w, "the source's epub is not readable", http.StatusUnprocessableEntity)
+		writeError(w, http.StatusUnprocessableEntity, "epub_unreadable", "The source's epub is not readable.")
 	default:
-		http.Error(w, "the source is unavailable, try again later", http.StatusBadGateway)
+		writeError(w, http.StatusBadGateway, "source_unavailable", "The source is unavailable, try again later.")
 	}
 }
 
@@ -252,11 +252,11 @@ func (s *server) handleImportSource(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if in.SourceID == "" || len(in.SourceID) > maxSourceIDLen {
-		http.Error(w, "sourceId required", http.StatusBadRequest)
+		writeError(w, http.StatusBadRequest, "bad_request", "sourceId required.")
 		return
 	}
 	if in.WorkspaceID <= 0 {
-		http.Error(w, "workspaceId required", http.StatusBadRequest)
+		writeError(w, http.StatusBadRequest, "bad_request", "workspaceId required.")
 		return
 	}
 	store := s.library()
@@ -268,11 +268,11 @@ func (s *server) handleImportSource(w http.ResponseWriter, r *http.Request) {
 	// A source without books of the workspace's language is refused
 	// before anything is downloaded.
 	if !sourceServes(src.ID(), wsLang) {
-		http.Error(w, "this source has no books in the workspace language "+wsLang, http.StatusUnprocessableEntity)
+		writeError(w, http.StatusUnprocessableEntity, "source_language_unavailable", "This source has no books in the workspace language "+wsLang+".")
 		return
 	}
 	if !s.startImport(u.ID) {
-		http.Error(w, "another import is already running", http.StatusTooManyRequests)
+		writeError(w, http.StatusTooManyRequests, "import_busy", "Another import is already running.")
 		return
 	}
 	defer s.endImport(u.ID)

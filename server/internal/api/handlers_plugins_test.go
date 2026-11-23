@@ -130,7 +130,7 @@ func TestPluginRegistrationRoute(t *testing.T) {
 	if resp.StatusCode != http.StatusBadRequest {
 		t.Errorf("register bad version: status = %d, want %d", resp.StatusCode, http.StatusBadRequest)
 	}
-	if body, _ := io.ReadAll(resp.Body); !strings.Contains(string(body), `version "1" must look like`) {
+	if body, _ := io.ReadAll(resp.Body); errorCode(t, body) != "bad_request" || !strings.Contains(string(body), `version \"1\" must look like`) {
 		t.Errorf("400 body = %q, want the version problem", body)
 	}
 	resp.Body.Close()
@@ -395,7 +395,7 @@ func TestPluginDataWriteNeedsOwnsData(t *testing.T) {
 		resp := doRaw(t, method, ts.URL, path, admin, `{"a":1}`)
 		body, _ := io.ReadAll(resp.Body)
 		resp.Body.Close()
-		if resp.StatusCode != http.StatusForbidden || !strings.Contains(string(body), "plugin does not declare owns-data") {
+		if resp.StatusCode != http.StatusForbidden || errorCode(t, body) != "plugin_no_data" {
 			t.Errorf("%s: status = %d body %q, want 403 plugin does not declare owns-data", method, resp.StatusCode, body)
 		}
 	}

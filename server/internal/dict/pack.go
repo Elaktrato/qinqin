@@ -219,10 +219,39 @@ func extractFile(f *zip.File, target string, limit int64) (int64, error) {
 	if err != nil {
 		return 0, fmt.Errorf("create zip entry file: %w", err)
 	}
-	defer dst.Close()
-	n, err := io.Copy(dst, io.LimitReader(src, limit+1))
+	n, err := copyEntry(dst, src, f.Name, limit)
+	if cerr := dst.Close(); err == nil && cerr != nil {
+		return n, fmt.Errorf("write zip entry file: %w", cerr) // the server's disk, not the pack
+	}
+	return n, err
+}
+
+// writeFailure marks an error of the destination, so a full disk is never
+// blamed on the pack.
+type writeFailure struct {
+	w   io.Writer
+	err error
+}
+
+func (wf *writeFailure) Write(b []byte) (int, error) {
+	n, err := wf.w.Write(b)
 	if err != nil {
-		return n, fmt.Errorf("%w: extract zip entry %s: %v", ErrInvalidPack, f.Name, err)
+		wf.err = err
+	}
+	return n, err
+}
+
+// copyEntry copies at most limit bytes of one zip entry. A failing read
+// (a damaged zip) or an entry over the limit is ErrInvalidPack; a failing
+// write (a full disk) is a plain error the API answers 500 internal.
+func copyEntry(dst io.Writer, src io.Reader, name string, limit int64) (int64, error) {
+	wf := &writeFailure{w: dst}
+	n, err := io.Copy(wf, io.LimitReader(src, limit+1))
+	if wf.err != nil {
+		return n, fmt.Errorf("write zip entry %s: %w", name, wf.err)
+	}
+	if err != nil {
+		return n, fmt.Errorf("%w: extract zip entry %s: %v", ErrInvalidPack, name, err)
 	}
 	if n > limit {
 		return n, fmt.Errorf("%w: zip unpacks to more than %d MiB", ErrInvalidPack, mib(limit))

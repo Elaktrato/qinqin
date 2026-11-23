@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { t } from '$lib/i18n';
 	import { getSchemes } from '$lib/api/schemes';
-	import { errorMessage } from '$lib/stats/errors';
+	import { errorText } from '$lib/api/apiErrors';
 	import { flashcardsHref } from '../route';
 	import { Button, Section } from '$lib/ui';
 	import type { EntryBase } from '$lib/api/types';
@@ -57,7 +57,7 @@
 				if (wanted === language) decks = levelDecks(schemes, wanted);
 			},
 			(err) => {
-				loadError = errorMessage(err, t('flashcards.system.loadFailed'));
+				loadError = errorText(err, t('flashcards.system.loadFailed'));
 			}
 		);
 	});
@@ -131,7 +131,7 @@
 			};
 			onchanged();
 		} catch (err) {
-			errors = { ...errors, [key]: errorMessage(err, t('flashcards.system.addFailed')) };
+			errors = { ...errors, [key]: errorText(err, t('flashcards.system.addFailed')) };
 		} finally {
 			adding = null;
 		}

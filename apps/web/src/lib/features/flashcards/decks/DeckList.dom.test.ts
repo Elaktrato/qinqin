@@ -184,7 +184,7 @@ describe('DeckList', () => {
 		vi.mocked(loadStudyHistory).mockRejectedValueOnce(new Error('offline'));
 		render(DeckList);
 		const alert = await screen.findByRole('alert');
-		expect(alert.textContent).toContain('offline');
+		expect(alert.textContent).toContain('Could not load your decks.');
 		await fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
 		await screen.findByRole('link', { name: 'Verbs' });
 	});

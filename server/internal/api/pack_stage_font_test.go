@@ -114,7 +114,7 @@ func TestStageFontPackRefusals(t *testing.T) {
 			nil, "invalid pack: slices/" + strings.Repeat("a", 64) + ".woff2: no such file"},
 	} {
 		resp := uploadZip(t, e, e.admin, zipDirToBytes(t, fontPackDir(t, fontPackManifest, tc.faces, tc.tags...)))
-		if text := bodyText(resp); resp.StatusCode != http.StatusBadRequest || !strings.Contains(text, tc.want) {
+		if text := bodyText(resp); resp.StatusCode != http.StatusBadRequest || !strings.HasPrefix(text, "pack_invalid: ") || !strings.Contains(text, tc.want) {
 			t.Errorf("%s: %d %q, want 400 containing %q", name, resp.StatusCode, text, tc.want)
 		}
 	}

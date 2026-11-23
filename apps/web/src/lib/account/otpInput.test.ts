@@ -32,13 +32,13 @@ describe('otpInput', () => {
 		expect(resendText(0)).toBe('You can ask for a new code now.');
 	});
 	it('puts the attempts in the error and sends an expired challenge back to step one', () => {
-		expect(codeFailure({ error: 'code_invalid', message: 'x', attemptsLeft: 3 }, 'f')).toEqual({ text: 'That code is not right. 3 attempts left.', restart: false });
-		expect(codeFailure({ error: 'code_invalid', message: 'x' }, 'f').text).toBe('That code is not right.');
-		const gone = codeFailure({ error: 'challenge_expired', message: 'x' }, 'f');
+		expect(codeFailure({ error: 'code_invalid', attemptsLeft: 3 }, 'f')).toEqual({ text: 'That code is not right. 3 attempts left.', restart: false });
+		expect(codeFailure({ error: 'code_invalid' }, 'f').text).toBe('That code is not right.');
+		const gone = codeFailure({ error: 'challenge_expired' }, 'f');
 		expect(gone.restart).toBe(true);
 		expect(gone.text).toContain('Enter your details again');
-		expect(codeFailure({ error: 'rate_limited', message: 'Slow down.' }, 'f').text).toBe(apiErrorText('rate_limited'));
-		expect(codeFailure({ error: 'brand_new', message: 'Slow down.' }, 'f').text).toBe('f');
+		expect(codeFailure({ error: 'rate_limited' }, 'f').text).toBe(apiErrorText('rate_limited'));
+		expect(codeFailure({ error: 'brand_new' }, 'f').text).toBe('f');
 		expect(codeFailure(null, 'Could not check the code.').text).toBe('Could not check the code.');
 	});
 });

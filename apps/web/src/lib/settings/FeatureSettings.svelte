@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { errorText } from '$lib/api/apiErrors';
 	// Settings -> Features: switch Decks or the Reader off for yourself.
 	import { pluginStates } from '$lib/plugins/states';
 	import { t } from '$lib/i18n';
@@ -20,7 +21,7 @@
 			saved = id;
 		} catch (err) {
 			box.checked = !enabled;
-			error = err instanceof Error && err.message ? err.message : t('settings.features.saveFailed');
+			error = errorText(err, t('settings.features.saveFailed'));
 		} finally {
 			saving = null;
 		}

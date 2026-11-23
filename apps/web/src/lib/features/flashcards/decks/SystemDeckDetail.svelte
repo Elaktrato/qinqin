@@ -5,7 +5,7 @@
 	import { getSchemes } from '$lib/api/schemes';
 	import type { EntryBase } from '$lib/api/types';
 	import { WORD_STATES, classifySchedule } from '$lib/stats/wordStates';
-	import { errorMessage } from '$lib/stats/errors';
+	import { errorText } from '$lib/api/apiErrors';
 	import { loadConfig, saveConfig } from '$lib/study/session';
 	import { GENERAL_DECK_ID, PartialPushError, loadRawStudyData, pushStudy } from '$lib/study/store';
 	import { workspaces } from '$lib/workspaces';
@@ -52,7 +52,7 @@
 				if (found !== null) items = await loadLevelItems(found);
 			})
 			.catch((err) => {
-				loadError = errorMessage(err, t('flashcards.system.loadDeckFailed'));
+				loadError = errorText(err, t('flashcards.system.loadDeckFailed'));
 			});
 	});
 
@@ -166,14 +166,14 @@
 					retryable = !retrying;
 					error = retrying
 						? t('flashcards.system.serverNewer', { count: err.skipped })
-						: err.message;
+						: err.text;
 				} else {
 					skippedBefore = false;
 					error = t('flashcards.system.addedPartial', { count: Math.max(0, err.done - deckRows) });
 				}
 			} else {
 				skippedBefore = false;
-				error = errorMessage(err, t('flashcards.system.addFailed'));
+				error = errorText(err, t('flashcards.system.addFailed'));
 			}
 		} finally {
 			busy = false;

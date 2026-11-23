@@ -4,7 +4,7 @@
 	import { getFrequencyPacks } from '$lib/api/frequency';
 	import type { StarterEntry } from '$lib/api/frequency';
 	import { WORD_STATES, classifySchedule } from '$lib/stats/wordStates';
-	import { errorMessage } from '$lib/stats/errors';
+	import { errorText } from '$lib/api/apiErrors';
 	import { knownEntries } from '$lib/study/known';
 	import { GENERAL_DECK_ID, PartialPushError, loadRawStudyData, pushStudy } from '$lib/study/store';
 	import { workspaces } from '$lib/workspaces';
@@ -61,7 +61,7 @@
 				if (found !== null) entries = await loadStarterEntries(found.packNumId, found.size);
 			})
 			.catch((err) => {
-				loadError = errorMessage(err, t('flashcards.system.loadDeckFailed'));
+				loadError = errorText(err, t('flashcards.system.loadDeckFailed'));
 			});
 	});
 
@@ -144,7 +144,7 @@
 			error =
 				err instanceof PartialPushError && err.skipped === 0
 					? t('flashcards.system.addedPartial', { count: Math.max(0, err.done - headRows) })
-					: errorMessage(err, t('flashcards.system.addFailed'));
+					: errorText(err, t('flashcards.system.addFailed'));
 		} finally {
 			busy = false;
 			progress = null;

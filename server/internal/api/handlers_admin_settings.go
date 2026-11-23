@@ -70,7 +70,7 @@ func (s *server) handlePatchAuthSettings(w http.ResponseWriter, r *http.Request)
 		return
 	}
 	if !s.mailConfigured(r.Context()) && ((req.MFAEnforced != nil && *req.MFAEnforced) || (req.EmailCodeLogin != nil && *req.EmailCodeLogin)) {
-		writeAuthError(w, http.StatusConflict, "mail_unavailable", "Set up email first: this switch needs a working mail server.")
+		writeError(w, http.StatusConflict, "mail_unavailable", "Set up email first: this switch needs a working mail server.")
 		return
 	}
 	patch := auth.SettingsPatch{Registration: req.Registration, EmailPolicy: req.EmailPolicy, MFAEnforced: req.MFAEnforced, EmailCodeLogin: req.EmailCodeLogin}
@@ -85,7 +85,7 @@ func (s *server) handlePatchAuthSettings(w http.ResponseWriter, r *http.Request)
 	set, err := auth.UpdateSettings(r.Context(), s.db, admin.ID, patch)
 	switch {
 	case errors.Is(err, auth.ErrInvalidSetting):
-		writeAuthError(w, http.StatusUnprocessableEntity, "invalid_setting", err.Error())
+		writeError(w, http.StatusUnprocessableEntity, "invalid_setting", err.Error())
 	case err != nil:
 		writeInternal(w, r)
 	default:

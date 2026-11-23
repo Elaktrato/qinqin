@@ -1,6 +1,7 @@
 <script lang="ts">
+	import { errorText } from '$lib/api/apiErrors';
+	import { UserError } from '$lib/api/userError';
 	import { t } from '$lib/i18n';
-	import { ApiError } from '$lib/api/client';
 	import { GENERAL_DECK_ID, addCard } from '$lib/study/store';
 	import { getStudyData, hasCard } from '$lib/study/studyData';
 	import type { Deck } from '$lib/study/types';
@@ -47,12 +48,6 @@
 	// The phone bar's Add to deck follows this (it is rendered outside this
 	// component's markup).
 	$effect(() => onchange?.(inDeck));
-
-	function message(err: unknown, fallback: string): string {
-		if (err instanceof ApiError && err.message) return err.message;
-		if (err instanceof Error && err.message) return err.message;
-		return fallback;
-	}
 
 	// A failed load must not hide the button: an unavailable workspace or
 	// a flaky pull is reported when the user actually tries to add. Until
@@ -117,7 +112,7 @@
 			// A character card has no sentence and carries the entryKind
 			// snapshot, the same row a level session creates.
 			const isCharacter = kind === 'character';
-			if (ws === null) throw new Error(t('entry.study.noWorkspace'));
+			if (ws === null) throw new UserError('entry.study.noWorkspace');
 			await addCard(ws, entryId, {
 				written,
 				...(isCharacter ? { entryKind: 'character' as const } : { sentenceId }),
@@ -127,7 +122,7 @@
 			justAdded = true;
 			onadded?.();
 		} catch (err) {
-			error = message(err, t('entry.study.addFailed'));
+			error = errorText(err, t('entry.study.addFailed'));
 		} finally {
 			saving = false;
 		}

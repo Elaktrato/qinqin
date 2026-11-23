@@ -44,50 +44,50 @@ func (s *server) handleAddSentence(w http.ResponseWriter, r *http.Request) {
 	}
 	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
 	if err != nil {
-		http.Error(w, "entry not found", http.StatusNotFound)
+		writeError(w, http.StatusNotFound, "not_found", "Entry not found.")
 		return
 	}
 	r.Body = http.MaxBytesReader(w, r.Body, maxSentenceBody)
 	var req sentenceRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		if errors.As(err, new(*http.MaxBytesError)) {
-			http.Error(w, "request body too large", http.StatusRequestEntityTooLarge)
+			writeError(w, http.StatusRequestEntityTooLarge, "too_large", "Request body too large.")
 			return
 		}
-		http.Error(w, "malformed request body", http.StatusBadRequest)
+		writeError(w, http.StatusBadRequest, "bad_request", "Malformed request body.")
 		return
 	}
 	if strings.TrimSpace(req.Hanzi) == "" {
-		http.Error(w, "a sentence needs its text (hanzi)", http.StatusBadRequest)
+		writeError(w, http.StatusBadRequest, "bad_request", "A sentence needs its text (hanzi).")
 		return
 	}
 	for _, field := range []string{req.Hanzi, req.Pinyin, req.Translation} {
 		if utf8.RuneCountInString(field) > maxSentenceRunes {
-			http.Error(w, "sentence fields are limited to 2000 characters", http.StatusUnprocessableEntity)
+			writeError(w, http.StatusUnprocessableEntity, "invalid_request", "Sentence fields are limited to 2000 characters.")
 			return
 		}
 	}
 	_, err = lexicon.Store{DB: s.db}.Get(r.Context(), id)
 	if errors.Is(err, lexicon.ErrNotFound) {
-		http.Error(w, "entry not found", http.StatusNotFound)
+		writeError(w, http.StatusNotFound, "not_found", "Entry not found.")
 		return
 	}
 	if err != nil {
-		http.Error(w, "internal error", http.StatusInternalServerError)
+		writeInternal(w, r)
 		return
 	}
 	sid, err := sentences.AddUser(r.Context(), s.db, u.ID, id, model.Sentence{
 		Hanzi: req.Hanzi, Pinyin: req.Pinyin, Translation: req.Translation,
 	})
 	if err != nil {
-		http.Error(w, "internal error", http.StatusInternalServerError)
+		writeInternal(w, r)
 		return
 	}
 	// The stored row is read back by id so the response carries the
 	// sentence exactly as persisted, timestamps included.
 	stored, err := sentences.Get(r.Context(), s.db, sid, u.ID)
 	if err != nil {
-		http.Error(w, "internal error", http.StatusInternalServerError)
+		writeInternal(w, r)
 		return
 	}
 	writeJSON(w, http.StatusCreated, stored)
@@ -107,10 +107,10 @@ func (s *server) handleUninstallSentences(w http.ResponseWriter, r *http.Request
 	defer s.packMu.Unlock()
 	if err := sentences.Uninstall(r.Context(), s.db, r.PathValue("pack")); err != nil {
 		if errors.Is(err, sentences.ErrNotFound) {
-			http.Error(w, "sentence pack not found", http.StatusNotFound)
+			writeError(w, http.StatusNotFound, "not_found", "Sentence pack not found.")
 			return
 		}
-		http.Error(w, "internal error", http.StatusInternalServerError)
+		writeInternal(w, r)
 		return
 	}
 	s.packChanged(dict.TypeSentences, r.PathValue("pack"), "")

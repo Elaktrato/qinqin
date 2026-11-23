@@ -20,8 +20,10 @@ describe('apiErrorMessage', () => {
 		);
 	});
 
-	it('uses a short plain server message otherwise', () => {
-		expect(apiErrorMessage(new ApiError(400, 'bad query'), 'search')).toBe('bad query');
+	it('never shows the server text (#168): a known code by its catalogue text, else the fallback', () => {
+		expect(apiErrorMessage(new ApiError(400, 'bad query'), 'search')).toMatch(/could not/i);
+		const coded = new ApiError(400, JSON.stringify({ error: 'bad_request', message: 'limit must be an integer.' }));
+		expect(apiErrorMessage(coded, 'search')).not.toContain('limit must');
 	});
 
 	it('hides long or markup-laden server text', () => {
@@ -40,13 +42,25 @@ describe('apiErrorMessage', () => {
 	});
 
 	it('explains a book in another language than the workspace', () => {
-		const err = new ApiError(422, 'workspace language is ja, book is zh');
+		const err = new ApiError(
+			422,
+			JSON.stringify({
+				error: 'language_mismatch',
+				message: 'workspace language is ja, book is zh',
+				workspaceLanguage: 'ja',
+				bookLanguage: 'zh'
+			})
+		);
 		expect(apiErrorMessage(err, 'upload')).toBe(
 			'This book is in Chinese, but this workspace is Japanese. Switch to a Chinese workspace to add it.'
 		);
 		expect(apiErrorMessage(err, 'import')).toBe(
 			'This book is in Chinese, but this workspace is Japanese. Switch to a Chinese workspace to add it.'
 		);
+	});
+
+	it('does not read a mismatch out of plain text any more', () => {
+		expect(apiErrorMessage(new ApiError(422, 'workspace language is ja, book is zh'), 'upload')).toMatch(/could not be read as an epub/);
 	});
 
 	it('has calm messages for browse suggestions', () => {
@@ -114,7 +128,7 @@ describe('apiErrorMessage', () => {
 			);
 		}
 		expect(apiErrorMessage(new ApiError(413, 'x'), 'upload')).toBe('This file is too large (max 20 MB).');
-		expect(apiErrorMessage(new ApiError(422, 'note too long'), 'highlight')).toBe('note too long');
+		expect(apiErrorMessage(new ApiError(422, 'note too long'), 'highlight')).toBe('Could not save the highlight.');
 		expect(apiErrorMessage(new TypeError('Failed to fetch'), 'highlight')).toBe(
 			'Could not save the highlight.'
 		);

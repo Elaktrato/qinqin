@@ -29,14 +29,14 @@ func newGateServer(t *testing.T) (*server, http.Handler, gateActors, *sql.DB) {
 	return s, h, a, sqlDB
 }
 
-func newGateServerFresh(t *testing.T) (*server, http.Handler, func() gateActors, gateActors, *sql.DB) {
+func newGateServerFresh(t *testing.T, opts ...Option) (*server, http.Handler, func() gateActors, gateActors, *sql.DB) {
 	t.Helper()
 	sqlDB, err := db.Open(filepath.Join(t.TempDir(), "gate.db"))
 	if err != nil {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() { sqlDB.Close() })
-	s := newServer(sqlDB, t.TempDir(), nil)
+	s := newServer(sqlDB, t.TempDir(), nil, opts...)
 	ids := map[string]int64{}
 	user := func(name string, admin, mustChange bool) {
 		res, err := sqlDB.Exec(`INSERT INTO users (username, hash, admin, updated_at, created_at, must_change_password, must_change_after)

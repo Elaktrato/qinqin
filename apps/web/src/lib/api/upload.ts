@@ -1,5 +1,5 @@
 import { t } from '../i18n';
-import { ApiError, getToken, isOwnApiPath, notifyUnauthorized } from './client';
+import { ApiError, getToken, isOwnApiPath, notifyErrorAnswer } from './client';
 
 export interface UploadProgress {
 	loaded: number;
@@ -65,8 +65,9 @@ export function uploadWithProgress<T>(path: string, form: FormData | Blob, opts:
 					}
 					return;
 				}
-				if (xhr.status === 401) notifyUnauthorized();
-				reject(new ApiError(xhr.status, xhr.responseText.trim() || `HTTP ${xhr.status}`));
+				const err = new ApiError(xhr.status, xhr.responseText.trim() || `HTTP ${xhr.status}`);
+				notifyErrorAnswer(err);
+				reject(err);
 			});
 		xhr.onerror = () =>
 			finish(() => reject(new ApiError(0, t('common.upload.network'))));

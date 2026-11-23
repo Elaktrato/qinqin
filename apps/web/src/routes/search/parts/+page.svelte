@@ -1,8 +1,8 @@
 <script lang="ts">
+	import { errorText } from '$lib/api/apiErrors';
 	import { goto } from '$app/navigation';
 	import { t } from '$lib/i18n';
 	import { page } from '$app/state';
-	import { ApiError } from '$lib/api/client';
 	import { fetchCharacters } from '$lib/api/characters';
 	import { fetchComponents, type ComponentIndex } from '$lib/api/components';
 	import type { CharRow } from '$lib/api/types';
@@ -54,8 +54,7 @@
 			comps = index;
 		} catch (err) {
 			if (mine !== seq) return;
-			loadError =
-				err instanceof ApiError || err instanceof Error ? err.message || t('search.parts.loadFailed') : t('search.parts.loadFailed');
+			loadError = errorText(err, t('search.parts.loadFailed'));
 		}
 	}
 

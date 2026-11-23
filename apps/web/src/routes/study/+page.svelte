@@ -1,9 +1,9 @@
 <script lang="ts">
+	import { errorText } from '$lib/api/apiErrors';
 	import UnreadableRowsNotice from '$lib/study/UnreadableRowsNotice.svelte';
 	import { pageTitle } from '$lib/pageTitle';
 	import { t } from '$lib/i18n';
 	import { goto } from '$app/navigation';
-	import { ApiError } from '$lib/api/client';
 	import { fetchSchemeCharacters, getSchemeEntries, getSchemes } from '$lib/api/schemes';
 	import { fetchCharacters } from '$lib/api/characters';
 	import type { CharRow } from '$lib/api/types';
@@ -173,11 +173,6 @@ import { limitsOf } from '$lib/study/scheduler';
 	// the data of the one now selected.
 	let requestSeq = 0;
 
-	function message(err: unknown, fallback: string): string {
-		if (err instanceof ApiError && err.message) return err.message;
-		if (err instanceof Error && err.message) return err.message;
-		return fallback;
-	}
 
 	/**
 	 * keepKnownDecks drops decks deleted since the setup was saved (or
@@ -246,7 +241,7 @@ import { limitsOf } from '$lib/study/scheduler';
 			decks = [];
 			cards = [];
 			reviews = [];
-			loadError = message(err, t('study.setup.decksFailed'));
+			loadError = errorText(err, t('study.setup.decksFailed'));
 		} finally {
 			if (seq === requestSeq) loading = false;
 		}
@@ -272,7 +267,7 @@ import { limitsOf } from '$lib/study/scheduler';
 			vacations = data.vacations ?? [];
 			schedulingLabel = describeScheduling(data);
 		} catch (err) {
-			if (seq === requestSeq) deckError = message(err, t('study.setup.reloadFailed'));
+			if (seq === requestSeq) deckError = errorText(err, t('study.setup.reloadFailed'));
 		}
 	}
 
@@ -287,7 +282,7 @@ import { limitsOf } from '$lib/study/scheduler';
 		} catch (err) {
 			if (seq !== requestSeq) return;
 			schemes = [];
-			schemeError = message(err, t('study.setup.schemesFailed'));
+			schemeError = errorText(err, t('study.setup.schemesFailed'));
 		} finally {
 			if (seq === requestSeq) schemesLoaded = true;
 		}
@@ -378,7 +373,7 @@ import { limitsOf } from '$lib/study/scheduler';
 			levelEntries = list;
 		} catch (err) {
 			if (seq !== levelEntriesSeq) return;
-			levelEntriesError = message(err, t('study.setup.levelFailed'));
+			levelEntriesError = errorText(err, t('study.setup.levelFailed'));
 		} finally {
 			if (seq === levelEntriesSeq) levelEntriesLoading = false;
 		}
@@ -727,7 +722,7 @@ import { limitsOf } from '$lib/study/scheduler';
 				if (activeWorkspaceId !== ws) return;
 				deckSettings = previousSettings;
 				extraChoices = previousChoices;
-				typeError = message(err, t('study.types.saveFailed'));
+				typeError = errorText(err, t('study.types.saveFailed'));
 			} finally {
 				typeSaving = null;
 			}
@@ -768,7 +763,7 @@ import { limitsOf } from '$lib/study/scheduler';
 			selectedDeckIds = [...selectedDeckIds, deck.id];
 			deckName = '';
 		} catch (err) {
-			deckError = message(err, t('study.decks.createFailed'));
+			deckError = errorText(err, t('study.decks.createFailed'));
 		} finally {
 			creating = false;
 		}
@@ -802,7 +797,7 @@ import { limitsOf } from '$lib/study/scheduler';
 			decks = decks.map((deck) => (deck.id === id ? renamed : deck));
 			cancelRename();
 		} catch (err) {
-			deckError = message(err, t('study.decks.renameFailed'));
+			deckError = errorText(err, t('study.decks.renameFailed'));
 		}
 	}
 
@@ -833,7 +828,7 @@ import { limitsOf } from '$lib/study/scheduler';
 			});
 			selectedDeckIds = selectedDeckIds.filter((id) => id !== deck.id);
 		} catch (err) {
-			deckError = message(err, t('study.decks.deleteFailed'));
+			deckError = errorText(err, t('study.decks.deleteFailed'));
 		} finally {
 			deletingId = null;
 		}

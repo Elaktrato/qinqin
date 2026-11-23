@@ -17,7 +17,7 @@ const maxHighlightBody = 16 << 10
 
 // decodeHighlightBody reads a highlight write body strictly (see
 // decodeStrictJSON). An oversized body is a 413 with the JSON
-// {"error": "highlight too large"}, other failures a 400.
+// too_large, other failures a 400 bad_request.
 func decodeHighlightBody(w http.ResponseWriter, r *http.Request, v any) bool {
 	err := decodeStrictJSON(w, r, v, maxHighlightBody)
 	if err == nil {
@@ -25,7 +25,7 @@ func decodeHighlightBody(w http.ResponseWriter, r *http.Request, v any) bool {
 	}
 	var tooBig *http.MaxBytesError
 	if errors.As(err, &tooBig) {
-		writeJSON(w, http.StatusRequestEntityTooLarge, map[string]string{"error": "highlight too large"})
+		writeError(w, http.StatusRequestEntityTooLarge, "too_large", "The highlight is too large.")
 		return false
 	}
 	badBody(w, err)
@@ -37,35 +37,31 @@ func decodeHighlightBody(w http.ResponseWriter, r *http.Request, v any) bool {
 func highlightID(w http.ResponseWriter, r *http.Request) (int64, bool) {
 	id, err := strconv.ParseInt(r.PathValue("hid"), 10, 64)
 	if err != nil {
-		http.Error(w, "not found", http.StatusNotFound)
+		writeError(w, http.StatusNotFound, "not_found", "Not found.")
 		return 0, false
 	}
 	return id, true
 }
 
 // highlightError maps a highlight store error to a response: an overlap
-// is a 409 with {error, existingId}, the cap a 409 with {error}, an
+// is 409 highlight_overlap with existingId, the cap 409 highlight_limit, an
 // invalid highlight a 422; anything else goes to libraryError.
 func highlightError(w http.ResponseWriter, err error) {
 	var overlap *library.OverlapError
 	switch {
 	case errors.As(err, &overlap):
-		writeJSON(w, http.StatusConflict, map[string]any{
-			"error":      "the text is already highlighted",
-			"existingId": overlap.ExistingID,
-		})
+		writeError(w, http.StatusConflict, "highlight_overlap", "The text is already highlighted.",
+			map[string]any{"existingId": overlap.ExistingID})
 	case errors.Is(err, library.ErrTooMany):
-		writeJSON(w, http.StatusConflict, map[string]string{
-			"error": fmt.Sprintf("this book already has %d highlights", library.MaxHighlights),
-		})
+		writeError(w, http.StatusConflict, "highlight_limit", fmt.Sprintf("This book already has %d highlights.", library.MaxHighlights))
 	case errors.Is(err, library.ErrHighlightRange):
-		http.Error(w, "highlight range out of bounds", http.StatusUnprocessableEntity)
+		writeError(w, http.StatusUnprocessableEntity, "invalid_request", "Highlight range out of bounds.")
 	case errors.Is(err, library.ErrHighlightColor):
-		http.Error(w, "colour must be yellow, green, blue or pink", http.StatusUnprocessableEntity)
+		writeError(w, http.StatusUnprocessableEntity, "invalid_request", "colour must be yellow, green, blue or pink.")
 	case errors.Is(err, library.ErrHighlightText):
-		http.Error(w, fmt.Sprintf("text must be the range's 1 to %d characters, without leading or trailing whitespace", library.MaxHighlightText), http.StatusUnprocessableEntity)
+		writeError(w, http.StatusUnprocessableEntity, "invalid_request", fmt.Sprintf("text must be the range's 1 to %d characters, without leading or trailing whitespace.", library.MaxHighlightText))
 	case errors.Is(err, library.ErrNoteTooLong):
-		http.Error(w, fmt.Sprintf("note is longer than %d characters", library.MaxNoteLen), http.StatusUnprocessableEntity)
+		writeError(w, http.StatusUnprocessableEntity, "invalid_request", fmt.Sprintf("note is longer than %d characters.", library.MaxNoteLen))
 	default:
 		libraryError(w, err)
 	}
@@ -154,7 +150,7 @@ func (s *server) handleUpdateHighlight(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if in.Color == nil && in.Note == nil {
-		http.Error(w, "color or note required", http.StatusBadRequest)
+		writeError(w, http.StatusBadRequest, "bad_request", "color or note required.")
 		return
 	}
 	h, err := s.library().UpdateHighlight(r.Context(), u.ID, id, hid, in.Color, in.Note)

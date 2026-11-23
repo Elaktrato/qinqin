@@ -129,7 +129,7 @@ func TestStageThemePackRefusals(t *testing.T) {
 		"not an array": {themePackManifest, string(mocha), "themes.json: not-an-array at $"},
 	} {
 		resp := uploadZip(t, e, e.admin, themePackZip(t, tc.manifest, tc.file))
-		if text := bodyText(resp); resp.StatusCode != http.StatusBadRequest || !strings.Contains(text, tc.want) {
+		if text := bodyText(resp); resp.StatusCode != http.StatusBadRequest || !strings.HasPrefix(text, "pack_invalid: ") || !strings.Contains(text, tc.want) {
 			t.Errorf("%s: %d %q, want 400 containing %q", name, resp.StatusCode, text, tc.want)
 		}
 	}

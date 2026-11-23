@@ -62,7 +62,7 @@ export function challengeExpiredText(): string {
 }
 
 /** codeFailure words a refused code from the server's error body. */
-export function codeFailure(body: { error: string; message: string; attemptsLeft?: number } | null, fallback: string): CodeFailure {
+export function codeFailure(body: { error: string; attemptsLeft?: number } | null, fallback: string): CodeFailure {
 	if (!body) return { text: fallback, restart: false };
 	if (body.error === 'challenge_expired') return { text: challengeExpiredText(), restart: true };
 	if (body.error === 'code_invalid') {

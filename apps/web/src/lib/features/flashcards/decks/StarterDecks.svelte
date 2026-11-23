@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { t } from '$lib/i18n';
 	import { getFrequencyPacks } from '$lib/api/frequency';
-	import { errorMessage } from '$lib/stats/errors';
+	import { errorText } from '$lib/api/apiErrors';
 	import { noPackHint } from '$lib/study/newOrderView';
 	import { flashcardsHref } from '../route';
 	import { Button, Section } from '$lib/ui';
@@ -68,7 +68,7 @@
 			},
 			(err) => {
 				// Starter decks are an extra: a failed list is a quiet line, never an alert.
-				loadError = errorMessage(err, t('flashcards.starter.loadFailed'));
+				loadError = errorText(err, t('flashcards.starter.loadFailed'));
 			}
 		);
 	});
@@ -121,7 +121,7 @@
 			};
 			onchanged();
 		} catch (err) {
-			errors = { ...errors, [key]: errorMessage(err, t('flashcards.system.addFailed')) };
+			errors = { ...errors, [key]: errorText(err, t('flashcards.system.addFailed')) };
 		} finally {
 			adding = null;
 		}

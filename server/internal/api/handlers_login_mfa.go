@@ -142,7 +142,7 @@ func (s *server) writeMailOutage(w http.ResponseWriter) {
 		log.Printf("auth: sign-in refused: accounts whose second step is an emailed code cannot sign in while email is not working (fix Admin, Email, or qinqin recover --reset-mfa)")
 	})
 	w.Header().Set("Retry-After", "60")
-	writeAuthError(w, http.StatusServiceUnavailable, "mail_outage", "Two-step sign-in by email is not working right now because the server cannot send mail. Ask an administrator.")
+	writeError(w, http.StatusServiceUnavailable, "mail_outage", "Two-step sign-in by email is not working right now because the server cannot send mail. Ask an administrator.")
 }
 
 // maskEmail shows enough of an address to recognise it: "a•••@e•••.org".
@@ -252,7 +252,7 @@ func (s *server) handleLoginMFAEmail(w http.ResponseWriter, r *http.Request) {
 	// Only what the challenge was issued with may be answered: after a reset
 	// link or an emailed sign-in code the mailbox is never the second step.
 	if !ch.HasMethod("email") {
-		writeAuthError(w, http.StatusConflict, "method_unavailable", "Email codes are not available for this sign-in.")
+		writeError(w, http.StatusConflict, "method_unavailable", "Email codes are not available for this sign-in.")
 		return
 	}
 	st, err := auth.LoadMFAState(r.Context(), s.db, u.ID)
@@ -264,7 +264,7 @@ func (s *server) handleLoginMFAEmail(w http.ResponseWriter, r *http.Request) {
 	// The email method is on offer exactly when the plan said so.
 	eligible := s.emailMethodUsable(r.Context(), u, set) && (st.Email || (!st.TOTP && s.mfaEnforcedEffective(r.Context(), set)))
 	if !eligible {
-		writeAuthError(w, http.StatusConflict, "method_unavailable", "Email codes are not available for this account.")
+		writeError(w, http.StatusConflict, "method_unavailable", "Email codes are not available for this account.")
 		return
 	}
 	code, err := auth.SetCode(r.Context(), s.db, ch.ID)
@@ -300,7 +300,7 @@ func (s *server) handleLoginMFA(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if req.Method != "totp" && req.Method != "recovery" && req.Method != "email" {
-		writeAuthError(w, http.StatusBadRequest, "bad_request", "The method must be totp, recovery or email.")
+		writeError(w, http.StatusBadRequest, "bad_request", "The method must be totp, recovery or email.")
 		return
 	}
 	ch, u, ok := s.mfaChallenge(w, r, req.Challenge)
@@ -308,7 +308,7 @@ func (s *server) handleLoginMFA(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if !ch.HasMethod(req.Method) {
-		writeAuthError(w, http.StatusConflict, "method_unavailable", "That method is not available for this sign-in.")
+		writeError(w, http.StatusConflict, "method_unavailable", "That method is not available for this sign-in.")
 		return
 	}
 	refund, ok := s.codeBudget(w, u.ID)
@@ -377,7 +377,7 @@ func (s *server) emailLoginAvailable(w http.ResponseWriter, r *http.Request) boo
 		return false
 	}
 	if !set.EmailCodeLogin || !s.mailConfigured(r.Context()) {
-		writeAuthError(w, http.StatusConflict, "email_login_unavailable", "Signing in with an emailed code is not turned on here.")
+		writeError(w, http.StatusConflict, "email_login_unavailable", "Signing in with an emailed code is not turned on here.")
 		return false
 	}
 	return true
@@ -409,7 +409,7 @@ func (s *server) handleEmailLoginStart(w http.ResponseWriter, r *http.Request) {
 	}
 	login := strings.TrimSpace(req.Login)
 	if login == "" || len(login) > 320 {
-		writeAuthError(w, http.StatusBadRequest, "bad_request", "Enter your username or email address.")
+		writeError(w, http.StatusBadRequest, "bad_request", "Enter your username or email address.")
 		return
 	}
 	if ok, retry := s.authLimiter("ident").Allow(identKey(login)); !ok {
@@ -500,7 +500,7 @@ func (s *server) handleEmailLoginVerify(w http.ResponseWriter, r *http.Request) 
 	}
 	if ch.UserID == 0 {
 		// A challenge for an unknown identifier can never sign anyone in.
-		writeJSON(w, http.StatusUnauthorized, map[string]any{"error": "code_invalid", "message": "That code is not right.", "attemptsLeft": 0})
+		writeError(w, http.StatusUnauthorized, "code_invalid", "That code is not right.", map[string]any{"attemptsLeft": 0})
 		return
 	}
 	refund()
@@ -515,7 +515,7 @@ func (s *server) handleEmailLoginVerify(w http.ResponseWriter, r *http.Request) 
 	}
 	plan, err := s.planSignIn(r.Context(), u, factorEmailCode)
 	if errors.Is(err, errPasswordRequired) {
-		writeAuthError(w, http.StatusForbidden, "password_login_required", "Two-step sign-in is required here: sign in with your password.")
+		writeError(w, http.StatusForbidden, "password_login_required", "Two-step sign-in is required here: sign in with your password.")
 		return
 	}
 	if err != nil {

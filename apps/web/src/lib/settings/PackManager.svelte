@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { onDestroy, onMount, tick } from 'svelte';
-	import { ApiError } from '$lib/api/client';
+	import { errorText, packErrorDetail } from '$lib/api/apiErrors';
 	import {
 		discardStaged,
 		installStaged,
@@ -66,6 +66,8 @@
 	let { onchange }: { onchange?: () => void } = $props();
 
 	let error = $state('');
+	// The pack validator's English reason under a pack_invalid error (packErrorDetail).
+	let errorDetail = $state('');
 	let upload: AbortController | null = null;
 	let poll: AbortController | null = null;
 
@@ -78,10 +80,6 @@
 	const caution = $derived(staged ? licenceCaution(staged.manifest.license) : null);
 	const replaces = $derived(staged ? replaceLines(staged) : []);
 
-	function message(err: unknown, fallback: string): string {
-		return err instanceof ApiError ? err.message : fallback;
-	}
-
 	async function load(): Promise<void> {
 		loading = true;
 		loadError = '';
@@ -90,7 +88,7 @@
 			void loadCatalogue();
 		} catch (err) {
 			packs = [];
-			loadError = message(err, t('packs.error.load'));
+			loadError = errorText(err, t('packs.error.load'));
 		} finally {
 			loading = false;
 		}
@@ -109,12 +107,14 @@
 	function pick(event: Event): void {
 		file = (event.currentTarget as HTMLInputElement).files?.[0] ?? null;
 		error = '';
+		errorDetail = '';
 		notice = '';
 	}
 
 	async function startUpload(): Promise<void> {
 		if (!file || phase !== 'idle') return;
 		error = '';
+		errorDetail = '';
 		notice = '';
 		progress = { loaded: 0, total: 0 };
 		upload = new AbortController();
@@ -126,7 +126,10 @@
 		} catch (err) {
 			phase = 'idle';
 			if (err instanceof DOMException && err.name === 'AbortError') notice = t('packs.upload.cancelled');
-			else error = message(err, t('packs.upload.failed'));
+			else {
+				error = errorText(err, t('packs.upload.failed'));
+				errorDetail = packErrorDetail(err);
+			}
 		} finally {
 			upload = null;
 		}
@@ -152,7 +155,7 @@
 			await discardStaged(token);
 			notice = t('packs.discarded');
 		} catch (err) {
-			error = message(err, t('packs.error.discard'));
+			error = errorText(err, t('packs.error.discard'));
 		}
 	}
 
@@ -165,7 +168,7 @@
 			// The licence echoed here is the one shown in the review card.
 			await installStaged(token, manifest.license);
 		} catch (err) {
-			error = message(err, t('packs.error.startImport'));
+			error = errorText(err, t('packs.error.startImport'));
 			return;
 		}
 		phase = 'importing';
@@ -183,7 +186,7 @@
 			resetForm();
 		} catch (err) {
 			if (!(err instanceof DOMException && err.name === 'AbortError')) {
-				error = message(err, t('packs.error.lostContact'));
+				error = errorText(err, t('packs.error.lostContact'));
 				resetForm();
 			}
 		} finally {
@@ -211,7 +214,7 @@
 			await load();
 			onchange?.();
 		} catch (err) {
-			error = message(err, t('packs.error.uninstall'));
+			error = errorText(err, t('packs.error.uninstall'));
 		} finally {
 			uninstalling = false;
 			closeDialog();
@@ -364,6 +367,12 @@
 	{/if}
 	{#if error}
 		<p class="error" role="alert">{error}</p>
+		{#if errorDetail}
+			<details class="detail">
+				<summary>{t('packs.error.serverDetail')}</summary>
+				<p>{errorDetail}</p>
+			</details>
+		{/if}
 	{/if}
 
 	{#if catalogue?.building}

@@ -1,4 +1,5 @@
 import { catalogueLanguage, getLanguage } from './i18n';
+import { UserError } from './api/userError';
 import { followServerLanguage } from './i18n/interfaceLanguage';
 import { reloadPage } from './i18n/reloadPage';
 import { derived, get, writable } from 'svelte/store';
@@ -186,7 +187,7 @@ async function settle(response: LoginBody): Promise<SignInResult> {
 	const step = stepFor(response.status, response);
 	// A status this client does not know must not store a session.
 	if (step.kind === 'mfa') return { kind: 'mfa', mfa: step.mfa };
-	if (!hasSession(step) || !response.token) throw new Error('This sign-in step is not supported by this app version.');
+	if (!hasSession(step) || !response.token) throw new UserError('auth.error.stepUnsupported');
 	return { kind: 'session', user: await signInWithToken(response.token), step };
 }
 
@@ -218,7 +219,7 @@ export async function completeEmailLogin(challenge: string, code: string): Promi
  */
 export async function login(username: string, password: string): Promise<User> {
 	const result = await signIn(username, password);
-	if (result.kind === 'mfa') throw new Error('This account needs a second step: use the sign-in page.');
+	if (result.kind === 'mfa') throw new UserError('auth.error.secondStepNeeded');
 	return result.user;
 }
 
