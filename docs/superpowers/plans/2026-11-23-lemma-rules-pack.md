@@ -192,5 +192,9 @@ no longer says words resolve "in the Reader" for any language; the `ja-lemma` at
 and spec is the manifest's; the zh refusal stays exact-code with a Ruling (`zh-tw` is a separate data-only code
 whose table works).
 
+**Fix-wave gates (after the #175 merge):** gofmt clean; `-race` on lemma, lemmapack, lookup ok; full Go `./...`
+under the flock: 50 packages ok, only the known `internal/ai` `TestHostnameResolvingToEmbeddedFormIsRefused`;
+web `check` 0, `build` 0; full vitest under Node 26: 587 files, 12,567 passed, 2 skipped.
+
 **Not verified in the fix wave:** no new real-app run (the serve-level test covers start-up load and the
 watcher); timing numbers come from one loaded machine.
