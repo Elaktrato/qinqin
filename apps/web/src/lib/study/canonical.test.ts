@@ -4,6 +4,7 @@ import { canonicalCards, newCardId } from './canonical';
 import canonicalFixture from '../../../../../docs/contracts/study/canonical.json';
 import { cardKey } from './reviewParse';
 import type { ReviewEvent, ReviewGrade, StudyCard, StudyCardKind } from './types';
+import * as build from '$lib/testing/study';
 
 function card(
 	id: string,
@@ -11,18 +12,11 @@ function card(
 	createdAt: string,
 	extra: Partial<StudyCard> = {}
 ): StudyCard {
-	return { id, kind: 'vocab', entryId, deckIds: ['general'], createdAt, ...extra };
+	return build.card({ id, entryId, createdAt, ...extra });
 }
 
 function review(id: string, cardId: string, grade: ReviewGrade = 3, mode: StudyCardKind = 'vocab'): ReviewEvent {
-	return {
-		id,
-		workspaceId: 7,
-		device: 'web',
-		ts: '2026-02-01T00:00:00.000Z',
-		type: 'review',
-		payload: { cardId, mode, grade }
-	};
+	return build.review({ id, cardId, grade, mode, workspaceId: 7, ts: '2026-02-01T00:00:00.000Z' });
 }
 
 describe('newCardId', () => {

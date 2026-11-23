@@ -24,11 +24,12 @@ import { workspaces } from '$lib/workspaces';
 import { primaryActions } from '$lib/ui/testing/primary';
 import DeckSettingsView from './DeckSettingsView.svelte';
 import LimitsStub from './testing/LimitsStub.svelte';
+import * as build from '$lib/testing/study';
 
 const greetings: Deck = { id: 'd1', name: 'Greetings', createdAt: '2026-01-01T00:00:00.000Z' };
 const verbs: Deck = { id: 'd2', name: 'Verbs', createdAt: '2026-01-02T00:00:00.000Z' };
 function card(n: number, deckIds: string[]): StudyCard {
-	return { id: `c-vocab-${n}`, kind: 'vocab', entryId: n, deckIds, createdAt: '2026-01-01T00:00:00.000Z' };
+	return build.card({ id: `c-vocab-${n}`, entryId: n, deckIds });
 }
 
 beforeEach(() => {

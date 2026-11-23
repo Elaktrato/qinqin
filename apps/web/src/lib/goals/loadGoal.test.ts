@@ -12,6 +12,7 @@ import { loadStudyHistory } from '../study/history';
 import { setOutboxUser } from '../study/outboxUser';
 import type { StudyHistory } from '../study/types';
 import { loadGoalStatus } from './loadGoal';
+import * as build from '$lib/testing/study';
 
 const NOW = Date.parse('2026-11-16T12:00:00Z');
 const REVIEW = {
@@ -23,7 +24,7 @@ const REVIEW = {
 };
 
 function history(extra: Partial<StudyHistory>): StudyHistory {
-	return { decks: [], cards: [], reviews: [], merged: 0, ...extra };
+	return build.history(extra);
 }
 
 function activity(cells: ActivityResponse['cells']): ActivityResponse {

@@ -5,24 +5,18 @@ import type { ReviewEvent, StudyCard } from '../types';
 import { DEFAULT_W } from './params';
 import type { HeldOut } from './optimize';
 import { canApply, isSurge, previewChange } from './preview';
+import * as build from '$lib/testing/study';
 
 const NOW = new Date('2026-06-01T00:00:00.000Z');
 
 function card(id: string): StudyCard {
-	return { id, kind: 'vocab', entryId: 1, deckIds: ['general'], createdAt: '2026-01-01T00:00:00.000Z', written: `字${id}` };
+	return build.card({ id, written: `字${id}` });
 }
 
 let n = 0;
 function review(cardId: string, grade: 1 | 2 | 3 | 4, ts: string): ReviewEvent {
 	n++;
-	return {
-		id: `01JPREV${String(n).padStart(19, '0')}`,
-		workspaceId: 1,
-		device: 'web',
-		ts,
-		type: 'review',
-		payload: { cardId, mode: 'vocab', grade }
-	};
+	return build.review({ id: build.eventId(n, '01JPREV'), cardId, grade, ts });
 }
 
 function history() {

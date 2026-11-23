@@ -18,7 +18,7 @@ Fixtures:
 
 Web: `apps/web/src/lib/study/rows.ts` (strict parse, the study shapes, `sameBody`) and `store.ts` (typed
 pull and push; a write is never sent when it would change nothing). The web decodes `rows.json` and
-`lww.json`; its test-only mirror of the keyed-row codec (`lib/study/testing/legacyCodec.ts`) decodes
+`lww.json`; its test-only mirror of the keyed-row codec (`lib/testing/legacyCodec.ts`) decodes
 `backup/study-rows.json`.
 
 ## Collections

@@ -8,6 +8,7 @@ import { DEFAULT_W } from './fsrs/params';
 import { buriedLevelEntries, buriedNow } from './siblings';
 import { studyDay } from '../time/studyDay';
 import type { OptInKind, ReviewEvent, ReviewGrade, StudyCard, StudyCardKind } from './types';
+import * as build from '$lib/testing/study';
 
 const NOW = new Date('2026-03-01T12:00:00Z');
 
@@ -17,26 +18,11 @@ function card(
 	entryId: number,
 	extra: Partial<StudyCard> = {}
 ): StudyCard {
-	return {
-		id,
-		kind,
-		entryId,
-		written: `字${entryId}`,
-		deckIds: ['general'],
-		createdAt: `2026-01-0${Math.min(entryId, 9)}T00:00:00.000Z`,
-		...extra
-	};
+	return build.card({ id, kind, entryId, written: `字${entryId}`, createdAt: `2026-01-0${Math.min(entryId, 9)}T00:00:00.000Z`, ...extra });
 }
 
 function review(cardId: string, ts: string, grade: ReviewGrade = 3, mode: StudyCardKind = 'vocab'): ReviewEvent {
-	return {
-		id: `${cardId}-${ts}`,
-		workspaceId: 1,
-		device: 'web',
-		ts,
-		type: 'review',
-		payload: { cardId, mode, grade }
-	};
+	return build.review({ cardId, ts, grade, mode });
 }
 
 function cfg(deckId: string, ...cardTypes: OptInKind[]): Record<string, DeckSettings> {

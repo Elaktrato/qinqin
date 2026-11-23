@@ -2,15 +2,10 @@ import { describe, expect, it } from 'vitest';
 
 import type { Deck, StudyCard } from '$lib/study/types';
 import { deleteDeckText } from './deleteText';
+import * as build from '$lib/testing/study';
 
 const deck = (id: string, name: string): Deck => ({ id, name, createdAt: '2026-01-01T00:00:00.000Z' });
-const card = (n: number, deckIds: string[]): StudyCard => ({
-	id: `c-vocab-${n}`,
-	kind: 'vocab',
-	entryId: n,
-	deckIds,
-	createdAt: '2026-01-01T00:00:00.000Z'
-});
+const card = (n: number, deckIds: string[]): StudyCard => build.card({ id: `c-vocab-${n}`, entryId: n, deckIds });
 
 describe('deleteDeckText', () => {
 	const target = deck('d1', 'Greetings');

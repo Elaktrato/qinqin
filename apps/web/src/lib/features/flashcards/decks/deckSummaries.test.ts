@@ -5,17 +5,12 @@ import { DEFAULT_W } from '$lib/study/fsrs/params';
 import type { Deck, StudyCard } from '$lib/study/types';
 import { addDays } from '$lib/time/studyDay';
 import { summarizeDecks } from './deckSummaries';
+import * as build from '$lib/testing/study';
 
 const NOW = new Date('2026-03-10T12:00:00.000Z');
 const day = { dayOf: (ms: number) => new Date(ms).toISOString().slice(0, 10), today: () => '2026-03-10' };
 const deck = (id: string, name: string): Deck => ({ id, name, createdAt: '2026-01-01T00:00:00.000Z' });
-const card = (n: number, deckIds: string[]): StudyCard => ({
-	id: `c-vocab-${n}`,
-	kind: 'vocab',
-	entryId: n,
-	deckIds,
-	createdAt: '2026-01-01T00:00:00.000Z'
-});
+const card = (n: number, deckIds: string[]): StudyCard => build.card({ id: `c-vocab-${n}`, entryId: n, deckIds });
 
 function summarize(cards: StudyCard[], decks: Deck[], settings = {}) {
 	return summarizeDecks({

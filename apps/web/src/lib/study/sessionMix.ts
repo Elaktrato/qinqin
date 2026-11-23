@@ -137,7 +137,7 @@ export const PRESSURE_SLACK = 2;
  * block), oldest first. The input is not changed. O(n log n): words are
  * bucketed by how many items they have left and their first items kept in
  * a heap, so a Study all session of thousands of cards spaces at once; the
- * output equals the plain step-by-step form (testing/spaceOutReference.ts).
+ * output equals the plain step-by-step form (lib/testing/spaceOutReference.ts).
  */
 export function spaceOut<T extends { entryId: number }>(
 	items: readonly T[],

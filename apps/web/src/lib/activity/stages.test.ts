@@ -4,11 +4,12 @@ import { parseGoalsRow, type GoalsRow } from '../goals/goals';
 import type { ReviewEvent } from '../study/types';
 import { studyDay } from '../time/studyDay';
 import { stageAmounts, stagesFor } from './stages';
+import * as build from '$lib/testing/study';
 
 const UTC = studyDay([]);
 
 function review(id: string, ts: string, cardId: string): ReviewEvent {
-	return { id, workspaceId: 3, device: 'web', ts, type: 'review', payload: { cardId, mode: 'vocab', grade: 3 } };
+	return build.review({ id, ts, cardId, workspaceId: 3 });
 }
 
 function row(history: unknown[]): GoalsRow {

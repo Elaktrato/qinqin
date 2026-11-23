@@ -7,29 +7,16 @@ import type { DeckSettings } from './deckSettings';
 import { DEFAULT_W } from './fsrs/params';
 import { buildQueue, scheduleFor } from './scheduler';
 import type { ReviewEvent, ReviewGrade, StudyCard, StudyCardKind } from './types';
+import * as build from '$lib/testing/study';
 
 const NOW = new Date('2026-03-01T12:00:00Z');
 
 function card(id: string, kind: StudyCardKind, entryId: number, extra: Partial<StudyCard> = {}): StudyCard {
-	return {
-		id,
-		kind,
-		entryId,
-		deckIds: ['general'],
-		createdAt: `2026-01-0${entryId}T00:00:00.000Z`,
-		...extra
-	};
+	return build.card({ id, kind, entryId, createdAt: `2026-01-0${entryId}T00:00:00.000Z`, ...extra });
 }
 
 function review(cardId: string, ts: string, grade: ReviewGrade = 3): ReviewEvent {
-	return {
-		id: `${cardId}-${ts}`,
-		workspaceId: 1,
-		device: 'web',
-		ts,
-		type: 'review',
-		payload: { cardId, mode: 'vocab', grade }
-	};
+	return build.review({ cardId, ts, grade });
 }
 
 describe('dueCounts equals the old widget computation without deck settings', () => {

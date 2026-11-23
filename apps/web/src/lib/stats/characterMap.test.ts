@@ -5,6 +5,7 @@ import { DEFAULT_W } from '$lib/study/fsrs/params';
 import type { CharRow } from '$lib/api/types';
 import type { ReviewEvent, ReviewGrade, StudyCard } from '$lib/study/types';
 import { characterSummary } from './characterMap';
+import * as build from '$lib/testing/study';
 
 const NOW = new Date('2026-11-14T12:00:00.000Z');
 
@@ -13,21 +14,13 @@ function row(i: number, c: string, v?: string[]): CharRow {
 }
 
 function card(id: string, written?: string): StudyCard {
-	const base: StudyCard = { id, kind: 'vocab', entryId: 1, deckIds: ['general'], createdAt: '2026-01-01T00:00:00.000Z' };
-	return written === undefined ? base : { ...base, written };
+	return build.card({ id, written });
 }
 
 let seq = 0;
 function review(cardId: string, grade: ReviewGrade, ts: string): ReviewEvent {
 	seq += 1;
-	return {
-		id: `01JTEST${String(seq).padStart(19, '0')}`,
-		workspaceId: 1,
-		device: 'web',
-		ts,
-		type: 'review',
-		payload: { cardId, mode: 'vocab', grade }
-	};
+	return build.review({ id: build.eventId(seq), cardId, grade, ts });
 }
 
 // A long run of Easy reviews: a year-class stability, so the score is learned.

@@ -4,18 +4,12 @@ import type { ReviewEvent } from '../types';
 import steps from '../../../../../../docs/contracts/scheduler/optimizer-steps.json';
 import { buildDataset } from './dataset';
 import { clockFromRuns, IDENTITY_CLOCK } from '../studyClock';
+import * as build from '$lib/testing/study';
 
 let n = 0;
 function review(cardId: string, grade: number, ts: string, id?: string): ReviewEvent {
 	n += 1;
-	return {
-		id: id ?? `01JTEST${String(n).padStart(19, '0')}`,
-		workspaceId: 7,
-		device: 'web',
-		ts,
-		type: 'review',
-		payload: { cardId, mode: 'vocab', grade: grade as 1 }
-	};
+	return build.review({ id: id ?? build.eventId(n), workspaceId: 7, ts, cardId, grade });
 }
 
 describe('buildDataset', () => {

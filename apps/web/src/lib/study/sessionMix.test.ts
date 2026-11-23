@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import fixture from '../../../../../docs/contracts/cards/session-mix.json';
 import type { FlowItem } from './cardFlow';
 import type { ReviewEvent, StudyCardKind } from './types';
-import { spaceOutReference } from './testing/spaceOutReference';
+import { spaceOutReference } from '$lib/testing/spaceOutReference';
 import { fnv1a32, mixFlowQueue, mixKey, mixSession, spaceOut, typeGap, type TypeOrder } from './sessionMix';
 
 describe('docs/contracts/cards/session-mix.json keys', () => {

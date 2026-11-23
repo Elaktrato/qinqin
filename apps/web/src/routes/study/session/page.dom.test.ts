@@ -65,6 +65,7 @@ import { DEFAULT_W } from '$lib/study/fsrs/params';
 import { shortInterval } from '$lib/study/intervalText';
 import { scheduleFor } from '$lib/study/scheduler';
 import { IDENTITY_CLOCK } from '$lib/study/studyClock';
+import * as build from '$lib/testing/study';
 
 // The generated preview of a new card with the default weights (#101): never adjusted to the test.
 const NEW_CARD = (
@@ -124,7 +125,7 @@ function configure(cardTypes: string[], newLimit = 20): void {
 }
 
 function history(cards: StudyCard[], reviews: ReviewEvent[]): void {
-	vi.mocked(loadStudyData).mockResolvedValue({ decks: [], cards, reviews, merged: 0 });
+	vi.mocked(loadStudyData).mockResolvedValue(build.history({ cards, reviews }));
 }
 
 beforeEach(() => {

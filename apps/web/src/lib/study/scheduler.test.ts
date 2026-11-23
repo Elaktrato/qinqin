@@ -29,6 +29,7 @@ import {
 	sortedReviews,
 	xpFromReviews
 } from './scheduler';
+import * as build from '$lib/testing/study';
 
 // Read with JSON.parse, not imported: a JSON import turns 1e999 into null, the
 // fixture means Infinity (what JSON.parse makes of a stored 1e999).
@@ -41,9 +42,7 @@ const reviewParseFixture: unknown = JSON.parse(
 
 // ULIDs are lexicographically sortable: same-instant reviews break ties
 // on the id, exactly like the server's own ordering.
-function eventId(n: number): string {
-	return `01JTEST${String(n).padStart(19, '0')}`;
-}
+const eventId = (n: number): string => build.eventId(n);
 
 function review(
 	cardId: string,
@@ -51,18 +50,11 @@ function review(
 	ts: string,
 	id = eventId(1)
 ): ReviewEvent {
-	return {
-		id,
-		workspaceId: 7,
-		device: 'web',
-		ts,
-		type: 'review',
-		payload: { cardId, mode: 'vocab', grade }
-	};
+	return build.review({ id, cardId, grade, ts, workspaceId: 7 });
 }
 
 function card(id: string, deckIds: string[] = ['general'], createdAt = '2026-01-01T00:00:00.000Z'): StudyCard {
-	return { id, kind: 'vocab', entryId: 1, deckIds, createdAt };
+	return build.card({ id, deckIds, createdAt });
 }
 
 // Event rows are only validated for id/ts server-side, so a payload can
