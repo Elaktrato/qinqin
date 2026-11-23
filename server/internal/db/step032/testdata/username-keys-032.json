@@ -91,11 +91,26 @@
 			"key": "x2"
 		},
 		{
+			"name": "ǰ",
+			"note": "j with caron (U+01F0) has no precomposed upper case: folding decomposes it, the outer NFKC composes it again",
+			"key": "ǰ"
+		},
+		{
+			"name": "J̌",
+			"note": "J + combining caron folds and composes to the same key",
+			"key": "ǰ"
+		},
+		{
+			"name": "ΐ",
+			"note": "iota with dialytika and tonos (U+0390): folding decomposes it, the outer NFKC composes it again",
+			"key": "ΐ"
+		},
+		{
 			"name": "",
 			"note": "empty stays empty",
 			"key": ""
 		}
 	],
-	"note": "Frozen with migration 032 (#171): written once from the live model.UsernameKey on 2026-11-23. Never regenerate; a change means upgrades of old databases would change.",
+	"note": "Frozen with migration 032 (#171): written once from the live model.UsernameKey on 2026-11-23. Never regenerate; a change means upgrades of old databases would change. The three cases of U+01F0 and U+0390 (which only the outer NFKC keeps composed) were added on 2026-11-23 in the review fix wave, with keys from the same, unchanged function.",
 	"version": 1
 }

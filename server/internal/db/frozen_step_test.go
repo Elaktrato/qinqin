@@ -1,15 +1,15 @@
 package db
 
 import (
+	"go/parser"
+	"go/token"
 	"os"
 	"path/filepath"
 	"regexp"
+	"strconv"
 	"strings"
 	"testing"
 )
-
-// importLine matches one import path of a Go file (single or grouped form).
-var importLine = regexp.MustCompile(`(?m)^\s*(?:import\s+)?(?:[A-Za-z_.]+\s+)?"([^"]+)"\s*$`)
 
 // frozenStep is the import path of a frozen migration step package.
 var frozenStep = regexp.MustCompile(`^qinqin/internal/db/step[0-9]{3}$`)
@@ -35,8 +35,11 @@ func TestMigrationCodeImportsNoLiveCode(t *testing.T) {
 			t.Fatal(err)
 		}
 		frozen := strings.HasPrefix(f, "step")
-		for _, m := range importLine.FindAllStringSubmatch(importBlock(string(src)), -1) {
-			path := m[1]
+		paths, err := importsOf(f, src)
+		if err != nil {
+			t.Fatal(err)
+		}
+		for _, path := range paths {
 			switch {
 			case frozen && strings.HasPrefix(path, "qinqin/"):
 				t.Errorf("%s imports %s; a frozen step may not use application code", f, path)
@@ -47,30 +50,38 @@ func TestMigrationCodeImportsNoLiveCode(t *testing.T) {
 	}
 }
 
-// importBlock returns the import declarations of a Go source file: from the
-// first import to the first top-level declaration after it.
-func importBlock(src string) string {
-	i := strings.Index(src, "\nimport")
-	if i < 0 {
-		return ""
+// importsOf lists the import paths of a Go source file.
+func importsOf(name string, src []byte) ([]string, error) {
+	f, err := parser.ParseFile(token.NewFileSet(), name, src, parser.ImportsOnly)
+	if err != nil {
+		return nil, err
 	}
-	rest := src[i:]
-	for _, end := range []string{"\nfunc ", "\nvar ", "\nconst ", "\ntype "} {
-		if j := strings.Index(rest, end); j >= 0 {
-			rest = rest[:j]
+	var out []string
+	for _, imp := range f.Imports {
+		path, err := strconv.Unquote(imp.Path.Value)
+		if err != nil {
+			return nil, err
 		}
+		out = append(out, path)
 	}
-	return rest
+	return out, nil
 }
 
-// The scan itself: a live import is found, a frozen one is allowed.
-func TestImportBlockScan(t *testing.T) {
-	src := "package db\n\nimport (\n\t\"fmt\"\n\n\t\"qinqin/internal/db/step038\"\n\tx \"qinqin/internal/model\"\n)\n\nfunc f() { _ = \"qinqin/internal/nope\" }\n"
-	var got []string
-	for _, m := range importLine.FindAllStringSubmatch(importBlock(src), -1) {
-		got = append(got, m[1])
-	}
-	if strings.Join(got, ",") != "fmt,qinqin/internal/db/step038,qinqin/internal/model" {
-		t.Fatalf("imports %v", got)
+// The scan finds every import form: grouped, aliased, with a trailing
+// comment, and a one-line group (the forms a regex scan missed).
+func TestImportsOfFindsEveryForm(t *testing.T) {
+	for name, src := range map[string]string{
+		"grouped":  "package db\n\nimport (\n\t\"fmt\"\n\n\t\"qinqin/internal/db/step038\"\n\tx \"qinqin/internal/model\"\n)\n\nfunc f() { _ = \"qinqin/internal/nope\" }\n",
+		"comment":  "package db\n\nimport (\n\t\"fmt\"\n\t\"qinqin/internal/db/step038\" // frozen\n\t\"qinqin/internal/model\" // live\n)\n",
+		"one-line": "package db\n\nimport (\"fmt\"; \"qinqin/internal/db/step038\"; \"qinqin/internal/model\")\n",
+		"single":   "package db\n\nimport \"fmt\"\nimport \"qinqin/internal/db/step038\"\nimport m \"qinqin/internal/model\" // x\n",
+	} {
+		got, err := importsOf(name+".go", []byte(src))
+		if err != nil {
+			t.Fatalf("%s: %v", name, err)
+		}
+		if strings.Join(got, ",") != "fmt,qinqin/internal/db/step038,qinqin/internal/model" {
+			t.Errorf("%s: imports %v", name, got)
+		}
 	}
 }
