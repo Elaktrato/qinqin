@@ -69,12 +69,7 @@ func (s *server) handlePutTimeZone(w http.ResponseWriter, r *http.Request) {
 		IfUnset bool   `json:"ifUnset"`
 	}
 	if err := decodeStrictJSON(w, r, &req, maxTimeZoneBody); err != nil {
-		var tooBig *http.MaxBytesError
-		if errors.As(err, &tooBig) {
-			writeError(w, http.StatusRequestEntityTooLarge, "too_large", "request body too large")
-			return
-		}
-		writeError(w, http.StatusBadRequest, "bad_request", "invalid request body")
+		badBody(w, err)
 		return
 	}
 	changes, err := studyday.Set(r.Context(), s.db, u.ID, req.Zone, req.IfUnset, s.now())
