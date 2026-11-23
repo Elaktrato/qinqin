@@ -8,7 +8,7 @@ suffix rewrites, driven by a **rule table** per language. Every language fact li
 Owner code: `server/internal/lemma` (engine, `tables/<lang>.json` embedded in the binary),
 `server/internal/lang` (the `Deinflector` seam: `Ja` runs `ja.json`; a language with a table but no code
 pack gets a generic pack with its table), `server/internal/lookup` (probes, word-class check, compounds,
-ranking keys), `server/internal/segment` (the boundary rule). The web app does not run the engine: it reads
+ranking keys), `server/internal/segment` (the boundary rule), `server/internal/lemmapack` (rule-table packs, below). The web app does not run the engine: it reads
 `/api/segment` and `/api/lookup` (`reader/` contract).
 
 Fixtures:
@@ -174,6 +174,31 @@ spec's "Refinements (#177)" says how it was derived); quotation と言って / �
 てはいけない / てはいけません (`prohibition`) and てもいい (`permission`) fold like てください:
 食べないでください → 食べる [request, te-form, negative]; 食べなくてもいい → 食べる [permission, te-form, negative].
 Godan imperatives are deliberately not deinflected (届け, 構え are nouns far more often).
+
+## Rule-table packs (`lemma-rules`, #176)
+
+A table also ships as a data pack: manifest `type: lemma-rules`, `format: rules-json`, `language` (one), and
+`rules.json`, one table of this format whose `language` equals the manifest's, at most 1 MiB. Design:
+`docs/superpowers/specs/2026-11-23-lemma-rules-pack-design.md`.
+
+- **Precedence:** for a language, the live installed pack's table, else the built-in table, else none. A pack
+  **replaces** the built-in table wholesale (no merging). At most one live pack per language: the server refuses
+  a second pack id for a language with a live pack; the same id again replaces it.
+- **Validation:** `Parse` as above (strict keys, Limits) at upload review and import; a table for a language whose
+  code pack does not run tables (zh) is refused. A stored table that no longer parses (an older engine) is skipped
+  and the built-in applies.
+- **Effect:** immediate. The server swaps the table set after every install or uninstall; segmentation and lookups
+  read it per request. `/api/segment`, `/api/segment/at` and `/api/lookup` serve a language with a code pack or
+  with a table in effect.
+- **Package:** `lemma-rules.<packId>` (`docs/contracts/packages/`), table
+  `lemma_rules (language TEXT PRIMARY KEY, rules_json TEXT NOT NULL)`, one row with `rules.json` byte for byte.
+  A client parses `rules_json` with its engine (a `format` above its own: keep the bundled copy) and prefers it
+  to a bundled copy of the same language.
+- **Bundled:** `plugins/data/ja-lemma/rules.json` is byte-identical to `ja.rules.json` and to the embedded table
+  (tests check all three); the server installs it when absent and refreshes it from the image when it differs,
+  never after an uninstall.
+- **Credits:** `GET /api/lemma-packs` (public) lists `{packId, name, version, language, license, attribution,
+  notice}` of every live pack by pack id.
 
 ## Android notes
 
