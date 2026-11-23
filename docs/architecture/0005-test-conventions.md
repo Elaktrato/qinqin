@@ -90,8 +90,10 @@ Not allowed:
   (`ownMigrationFindings`, with its cases in `TestOwnMigrationFindings`); on the tree before #197 it flags
   81 test files.
 - `apps/web/src/lib/testing/noWallClock.test.ts` scans every web and script test file and fails on a
-  measured duration (`wallClockFindings` in `apps/web/src/lib/testing/noWallClock.ts`: `performance.now()`,
-  `Date.now()` minus a variable, `process.hrtime`, `console.time`).
+  measured duration (`wallClockFindings` in `apps/web/src/lib/testing/noWallClock.ts`): `performance.now()`,
+  `process.hrtime`, `console.time`, `Date.now()` minus a variable (an ALL_CAPS constant is clock
+  arithmetic), and an `expect` on a difference of clock reads or of variables that hold one, on a variable
+  holding such a difference, or on the clock itself (a deadline). Strings and comments are skipped.
 - `apps/web/src/lib/testing/study.test.ts` pins the builders' defaults.
   `server/internal/dbtest/dbtest_test.go` pins that the template itself, read without migrating
   (`OpenReadOnly`), has every migration and the schema of a fresh `db.Open` and is in WAL mode
