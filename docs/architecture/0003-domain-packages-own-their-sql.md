@@ -4,6 +4,8 @@
 
 Accepted, being implemented by #194
 
+Touched by: #194. A merge from one of these issues that changes what this record names updates the record.
+
 ## Context
 
 Several handlers in `server/internal/api` hold domain logic and SQL directly (#194): the workspace handlers

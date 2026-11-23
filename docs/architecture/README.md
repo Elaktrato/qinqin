@@ -19,7 +19,8 @@ reused. The first line is `# NNNN. Title`, then these sections, in this order:
 
 ```md
 ## Status
-One line, one of the status values below.
+One line, one of the status values below; then a line "Touched by: #N, #M." naming the open issues that
+change the code the record describes.
 
 ## Context
 What problem or drift made the decision necessary; the issue that decided it.
@@ -71,7 +72,9 @@ repository path it names in backticks exists.
 
 - A new decision gets the next number, a row in the index and the template's sections; run
   `cd apps/web && npx vitest run src/lib/architectureDocs.test.ts`.
-- The issue that implements a record updates it when it lands (status, names, enforcement). Records still to
+- The issue that implements a record updates it when it lands (status, names, enforcement), and so does
+  every merge from an issue on a record's "Touched by" line that changes the code, paths or names the record
+  describes. A new issue that will change such code is added to the line. Records still to
   write, by the issues that make the decision: the pack system and how to add a pack type (#192), and the web
   state model (#196).
 - A decision that replaces a record is a new record; the old one's status becomes

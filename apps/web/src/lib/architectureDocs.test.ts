@@ -1,6 +1,7 @@
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { mdAnchors } from './testing/mdAnchors';
 
 // Doc check for the architecture records in docs/architecture (#191): every record follows the template of
 // docs/architecture/README.md, carries a known status, is listed once in the README's index with its own title and
@@ -54,13 +55,67 @@ const indexRows = [...readme.matchAll(/^\| \[(\d{4})\]\(([^)\s]+)\) \| (.+?) \| 
 	status: m[4].trim()
 }));
 
-/** Relative link targets of a Markdown text (no scheme, no bare #anchor), outside code blocks and code spans. */
-function relativeLinks(md: string): string[] {
-	const prose = md.replace(/^```[\s\S]*?^```/gm, '').replace(/`[^`\n]*`/g, '');
-	return [...prose.matchAll(/\[[^\]]*\]\(([^)\s]+)\)/g)]
+/** Text outside code blocks and code spans. */
+const prose = (md: string): string => md.replace(/^```[\s\S]*?^```/gm, '').replace(/`[^`\n]*`/g, '');
+
+/** Relative link targets of a Markdown text (no scheme) as path and optional anchor; a bare #anchor has path ''. */
+function linkTargets(md: string): { path: string; anchor?: string }[] {
+	return [...prose(md).matchAll(/\[[^\]]*\]\(([^)\s]+)\)/g)]
 		.map((m) => m[1])
-		.filter((t) => !/^[a-z][a-z0-9+.-]*:/i.test(t) && !t.startsWith('#'))
-		.map((t) => t.split('#')[0]);
+		.filter((t) => !/^[a-z][a-z0-9+.-]*:/i.test(t))
+		.map((t) => {
+			const [path, anchor] = t.split('#');
+			return anchor === undefined ? { path } : { path, anchor };
+		});
+}
+
+/** Relative link targets that name a file (no bare #anchor). */
+const relativeLinks = (md: string): string[] => linkTargets(md).map((t) => t.path).filter((p) => p !== '');
+
+/** Every link of `md` (a file in `from`) with an #anchor into a Markdown file points at a heading there. */
+function expectAnchorsResolve(md: string, self: string): void {
+	for (const { path, anchor } of linkTargets(md)) {
+		if (anchor === undefined) continue;
+		const file = path === '' ? self : resolve(dirname(self), path);
+		if (!file.endsWith('.md') || !existsSync(file)) continue;
+		expect(mdAnchors(readFileSync(file, 'utf8')).has(anchor), `${path}#${anchor}`).toBe(true);
+	}
+}
+
+/** The source text an identifier of an Accepted record must occur in. */
+function sourceBlob(): string {
+	const out: string[] = [];
+	const walk = (d: string, ext: RegExp): void => {
+		if (!existsSync(d)) return;
+		for (const e of readdirSync(d, { withFileTypes: true })) {
+			if (e.name === 'node_modules' || e.name.startsWith('.')) continue;
+			const p = resolve(d, e.name);
+			if (e.isDirectory()) walk(p, ext);
+			else if (ext.test(e.name)) out.push(readFileSync(p, 'utf8'));
+		}
+	};
+	walk(resolve(root, 'server'), /\.go$/);
+	walk(resolve(root, 'apps/web/src'), /\.(ts|svelte)$/);
+	walk(resolve(root, 'scripts'), /\.mjs$/);
+	walk(resolve(root, 'docs/contracts'), /\.json$/);
+	return out.join('\n');
+}
+
+/** Backticked identifiers of a record: `Name`, `name()` or `name(...`. */
+function identifiers(md: string): string[] {
+	const ids = new Set<string>();
+	for (const m of md.matchAll(/`([A-Za-z_][A-Za-z0-9_]*)(?:\(\))?`/g)) ids.add(m[1]);
+	for (const m of md.matchAll(/`([A-Za-z_][A-Za-z0-9_]*)\(/g)) ids.add(m[1]);
+	return [...ids].sort();
+}
+
+/** The body of one `## name` section ('' when missing). */
+function section(md: string, name: string): string {
+	const start = md.indexOf(`\n## ${name}\n`);
+	if (start < 0) return '';
+	const rest = md.slice(start + name.length + 5);
+	const end = rest.search(/^## /m);
+	return end < 0 ? rest : rest.slice(0, end);
 }
 
 describe('docs/architecture/README.md', () => {
@@ -77,6 +132,11 @@ describe('docs/architecture/README.md', () => {
 
 	it('links only files that exist', () => {
 		for (const t of relativeLinks(readme)) expect(existsSync(resolve(dir, t)), t).toBe(true);
+		expectAnchorsResolve(readme, resolve(dir, 'README.md'));
+	});
+
+	it('says that a merge touching a record\'s area updates the record', () => {
+		expect(readme).toMatch(/Touched by/);
 	});
 });
 
@@ -125,18 +185,42 @@ describe('the architecture records', () => {
 		for (const t of relativeLinks(r.text)) expect(existsSync(resolve(dirname(resolve(dir, r.file)), t)), t).toBe(true);
 	});
 
+	it.each(records)('$file links only headings that exist', (r) => {
+		expectAnchorsResolve(r.text, resolve(dir, r.file));
+	});
+
+	it.each(records)('$file names the issues that touch it ("Touched by: #N, ...")', (r) => {
+		expect(section(r.text, 'Status')).toMatch(/^Touched by: #\d+(, #\d+)*\b/m);
+	});
+
 	// A record in force names the code it describes; a renamed or deleted path must update the record.
 	it.each(records.filter((r) => r.status === 'Accepted'))('$file names only repository paths that exist', (r) => {
 		const paths = [...r.text.matchAll(/`((?:server|apps\/web|docs|scripts)\/[^`\s]+)`/g)].map((m) => m[1]);
 		expect(paths.length, 'an Accepted record names the code it describes').toBeGreaterThan(0);
 		for (const p of paths) expect(existsSync(resolve(root, p.replace(/[:#].*$/, ''))), p).toBe(true);
 	});
+
+	const accepted = records.filter((r) => r.status === 'Accepted');
+	const blob = accepted.length > 0 ? sourceBlob() : '';
+
+	// Function, type and constant names drift too: each one an in-force record names must still exist in the code.
+	it.each(accepted)('$file names only identifiers that occur in the code or the contracts', (r) => {
+		const ids = identifiers(r.text);
+		expect(ids.length).toBeGreaterThan(0);
+		for (const id of ids) expect(new RegExp(`\\b${id}\\b`).test(blob), id).toBe(true);
+	});
+
+	it.each(accepted)('$file describes enforcement that exists, not planned enforcement', (r) => {
+		expect(section(r.text, 'Enforcement')).not.toMatch(/planned|being implemented|until then/i);
+	});
 });
 
 describe('links to the architecture records', () => {
 	it('the README development section links docs/architecture/README.md', () => {
 		const front = readFileSync(resolve(root, 'README.md'), 'utf8');
-		const dev = front.slice(front.indexOf('## Development'));
+		const from = front.indexOf('\n## Development\n');
+		const next = front.indexOf('\n## ', from + 1);
+		const dev = front.slice(from, next < 0 ? undefined : next);
 		expect(dev).toContain('](docs/architecture/README.md)');
 	});
 

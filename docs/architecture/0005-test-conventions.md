@@ -4,6 +4,8 @@
 
 Accepted, being implemented by #197
 
+Touched by: #197. A merge from one of these issues that changes what this record names updates the record.
+
 ## Context
 
 #197 found three kinds of drift in the test code:

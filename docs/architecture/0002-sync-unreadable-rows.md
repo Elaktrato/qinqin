@@ -4,6 +4,8 @@
 
 Accepted
 
+Touched by: #193, #195, #196. A merge from one of these issues that changes what this record names updates the record.
+
 ## Context
 
 The web sync pager refused a whole pull page when one typed study row failed its strict parse, so one
@@ -42,6 +44,7 @@ is refused whole (`ErrStoredUnreadable` in `server/internal/sync/sync.go`) and t
 
 - One bad row never blocks studying; the learner sees how many items this version could not read.
 - A row a newer client wrote survives on the server unchanged, so that client still reads it.
+- The notice component sits in the logic folder `lib/study/`; #195 moves it ([0004](0004-web-folder-rules.md)).
 - Every new consumer of pull rows must decode per row; every new write path into typed or keyed study rows must
   check the protected identities.
 

@@ -4,6 +4,8 @@
 
 Accepted, being implemented by #195
 
+Touched by: #195. A merge from one of these issues that changes what this record names updates the record.
+
 ## Context
 
 `apps/web/src/lib/components` is a grab-bag: most of it is used by one feature only. About 20 loose modules sit
@@ -37,6 +39,8 @@ Under `apps/web/src/lib/`:
 - A file's folder says who owns it; a component used by one feature lives with that feature.
 - A widget that gains a second feature moves to `lib/components`; one that loses it moves back.
 - The moves touch many imports, so #195 runs when no other web branch is open.
+- `lib/study/UnreadableRowsNotice.svelte` (from #167, record [0002](0002-sync-unreadable-rows.md)) is also a UI
+  component in a logic folder; #195 moves it with the others.
 - The repository tests move to `apps/web/tests/repo/`, among them this folder's own check
   (`architectureDocs.test.ts`); #195 updates the path named in this folder's README.
 
