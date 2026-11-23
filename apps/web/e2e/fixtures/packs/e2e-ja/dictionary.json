@@ -7,6 +7,8 @@
     {"written": "飲む", "kind": "word", "readings": [{"type": "kana", "value": "のむ"}], "glosses": ["to drink"]},
     {"written": "食べる", "kind": "word", "readings": [{"type": "kana", "value": "たべる"}], "glosses": ["to eat"]},
     {"written": "本", "kind": "word", "readings": [{"type": "kana", "value": "ほん"}], "glosses": ["book"]},
-    {"written": "読む", "kind": "word", "readings": [{"type": "kana", "value": "よむ"}], "glosses": ["to read"]}
+    {"written": "読む", "kind": "word", "readings": [{"type": "kana", "value": "よむ"}], "glosses": ["to read"]},
+    {"written": "学", "kind": "character", "readings": [{"type": "on", "value": "ガク"}], "glosses": ["learning; study"]},
+    {"written": "学生", "kind": "word", "readings": [{"type": "kana", "value": "がくせい"}], "glosses": ["student"]}
   ]
 }
