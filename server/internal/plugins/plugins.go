@@ -19,6 +19,7 @@ import (
 	"time"
 
 	"qinqin/internal/model"
+	"qinqin/internal/packtype"
 )
 
 // ErrNotFound reports a missing plugin data row: reading one that was
@@ -207,9 +208,13 @@ func Unregister(ctx context.Context, sqlDB *sql.DB, pluginID string) error {
 // qinqin-core plugin data, not this order.
 func ListFor(ctx context.Context, sqlDB *sql.DB, userID int64) ([]model.PluginInfo, error) {
 	list := make([]model.PluginInfo, 0)
-	for _, load := range []func(context.Context, *sql.DB) ([]model.PluginInfo, error){
-		featurePlugins, dictionaryPlugins, schemePlugins, frequencyPlugins, sentencePlugins, grammarPlugins, audioPlugins,
-	} {
+	loaders := []func(context.Context, *sql.DB) ([]model.PluginInfo, error){featurePlugins}
+	for _, d := range packtype.All {
+		if row, ok := legacyRows[d.Type]; ok && d.LegacyPluginRow {
+			loaders = append(loaders, row.list)
+		}
+	}
+	for _, load := range loaders {
 		found, err := load(ctx, sqlDB)
 		if err != nil {
 			return nil, err
@@ -293,97 +298,67 @@ func isHiddenBuiltin(id, manifest string) bool {
 	return json.Unmarshal([]byte(manifest), &m) == nil && len(m.Surfaces) == 0
 }
 
-// dictionaryPlugins lists the dictionary packs, active only — an
-// uninstalled dictionary drops out of the list while its entries
-// survive.
-func dictionaryPlugins(ctx context.Context, sqlDB *sql.DB) ([]model.PluginInfo, error) {
-	rows, err := sqlDB.QueryContext(ctx, `
-		SELECT pack_id, name, version, license, attribution
-		FROM dictionaries WHERE deleted_at IS NULL`)
-	if err != nil {
-		return nil, fmt.Errorf("plugins: read dictionaries: %w", err)
-	}
-	defer rows.Close()
-
-	list := make([]model.PluginInfo, 0)
-	for rows.Next() {
-		var m dataManifest
-		if err := rows.Scan(&m.ID, &m.Name, &m.Version, &m.License, &m.Attribution); err != nil {
-			return nil, fmt.Errorf("plugins: scan dictionary: %w", err)
-		}
-		m.Type = "dictionary"
-		info, err := dataPlugin(m)
-		if err != nil {
-			return nil, err
-		}
-		list = append(list, info)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("plugins: read dictionaries: %w", err)
-	}
-	return list, nil
+// legacyRow is how GET /api/plugins synthesizes the hidden plugin rows of
+// one pack type for v0.3.x web shells (#169), and how Exists accepts data
+// under those packs' ids. Exactly the types the pack-type table marks
+// LegacyPluginRow have one (a test checks it); no new type gets one. The
+// whole mechanism goes when the v0.3.x shells are retired.
+type legacyRow struct {
+	list   func(context.Context, *sql.DB) ([]model.PluginInfo, error)
+	exists string // one-row query with the pack id as its only argument
 }
 
-// schemePlugins lists the levels packs, active only.
-func schemePlugins(ctx context.Context, sqlDB *sql.DB) ([]model.PluginInfo, error) {
-	rows, err := sqlDB.QueryContext(ctx, `
-		SELECT pack_id, name, version, language, license, attribution
-		FROM schemes WHERE deleted_at IS NULL`)
-	if err != nil {
-		return nil, fmt.Errorf("plugins: read schemes: %w", err)
-	}
-	defer rows.Close()
-
-	list := make([]model.PluginInfo, 0)
-	for rows.Next() {
-		var m dataManifest
-		if err := rows.Scan(&m.ID, &m.Name, &m.Version, &m.Language, &m.License, &m.Attribution); err != nil {
-			return nil, fmt.Errorf("plugins: scan scheme: %w", err)
-		}
-		m.Type = "levels"
-		info, err := dataPlugin(m)
-		if err != nil {
-			return nil, err
-		}
-		list = append(list, info)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("plugins: read schemes: %w", err)
-	}
-	return list, nil
+var legacyRows = map[string]legacyRow{
+	// The dictionary row never carried its language: keep the shape.
+	packtype.Dictionary: registryRows(packtype.Dictionary, false),
+	packtype.Levels:     registryRows(packtype.Levels, true),
+	packtype.Frequency:  registryRows(packtype.Frequency, true),
+	// Sentences are listed by the pack ids their shared sentences carry, so
+	// legacy packs imported before the registry (migration 027) count too.
+	packtype.Sentences: {list: sentencePlugins,
+		exists: `SELECT 1 FROM sentences WHERE source_pack = ? AND user_id IS NULL AND deleted_at IS NULL`},
+	packtype.Grammar: registryRows(packtype.Grammar, true),
+	packtype.Audio:   registryRows(packtype.Audio, true),
 }
 
-// frequencyPlugins lists the frequency packs, active only.
-func frequencyPlugins(ctx context.Context, sqlDB *sql.DB) ([]model.PluginInfo, error) {
-	rows, err := sqlDB.QueryContext(ctx, `
-		SELECT pack_id, name, version, language, license, attribution
-		FROM frequency_packs WHERE deleted_at IS NULL`)
-	if err != nil {
-		return nil, fmt.Errorf("plugins: read frequency packs: %w", err)
+// registryRows lists the live packs of a type from its registry table (the
+// pack-type table's Registry), with the manifest fields the registry stores.
+func registryRows(typ string, withLanguage bool) legacyRow {
+	d, _ := packtype.Lookup(typ)
+	lang := "''"
+	if withLanguage {
+		lang = "language"
 	}
-	defer rows.Close()
-
-	list := make([]model.PluginInfo, 0)
-	for rows.Next() {
-		var m dataManifest
-		if err := rows.Scan(&m.ID, &m.Name, &m.Version, &m.Language, &m.License, &m.Attribution); err != nil {
-			return nil, fmt.Errorf("plugins: scan frequency pack: %w", err)
-		}
-		m.Type = "frequency"
-		info, err := dataPlugin(m)
+	query := `SELECT pack_id, name, version, ` + lang + `, license, attribution FROM ` + d.Registry + ` WHERE deleted_at IS NULL`
+	list := func(ctx context.Context, sqlDB *sql.DB) ([]model.PluginInfo, error) {
+		rows, err := sqlDB.QueryContext(ctx, query)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("plugins: read %s packs: %w", typ, err)
 		}
-		list = append(list, info)
+		defer rows.Close()
+		list := make([]model.PluginInfo, 0)
+		for rows.Next() {
+			m := dataManifest{Type: typ}
+			if err := rows.Scan(&m.ID, &m.Name, &m.Version, &m.Language, &m.License, &m.Attribution); err != nil {
+				return nil, fmt.Errorf("plugins: scan %s pack: %w", typ, err)
+			}
+			info, err := dataPlugin(m)
+			if err != nil {
+				return nil, err
+			}
+			list = append(list, info)
+		}
+		if err := rows.Err(); err != nil {
+			return nil, fmt.Errorf("plugins: read %s packs: %w", typ, err)
+		}
+		return list, nil
 	}
-	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("plugins: read frequency packs: %w", err)
-	}
-	return list, nil
+	return legacyRow{list: list, exists: `SELECT 1 FROM ` + d.Registry + ` WHERE pack_id = ? AND deleted_at IS NULL`}
 }
 
 // sentencePlugins lists the sentences packs by the pack ids their
-// imported sentences carry — the only registry a sentences pack has.
+// imported sentences carry (legacy packs from before the sentence_packs
+// registry of migration 027 have no other record).
 func sentencePlugins(ctx context.Context, sqlDB *sql.DB) ([]model.PluginInfo, error) {
 	rows, err := sqlDB.QueryContext(ctx, `
 		SELECT DISTINCT source_pack FROM sentences
@@ -411,66 +386,10 @@ func sentencePlugins(ctx context.Context, sqlDB *sql.DB) ([]model.PluginInfo, er
 	return list, nil
 }
 
-// grammarPlugins lists the grammar packs, active only.
-func grammarPlugins(ctx context.Context, sqlDB *sql.DB) ([]model.PluginInfo, error) {
-	rows, err := sqlDB.QueryContext(ctx, `
-		SELECT pack_id, name, version, language, license, attribution
-		FROM grammar_packs WHERE deleted_at IS NULL`)
-	if err != nil {
-		return nil, fmt.Errorf("plugins: read grammar packs: %w", err)
-	}
-	defer rows.Close()
-
-	list := make([]model.PluginInfo, 0)
-	for rows.Next() {
-		var m dataManifest
-		if err := rows.Scan(&m.ID, &m.Name, &m.Version, &m.Language, &m.License, &m.Attribution); err != nil {
-			return nil, fmt.Errorf("plugins: scan grammar pack: %w", err)
-		}
-		m.Type = "grammar"
-		info, err := dataPlugin(m)
-		if err != nil {
-			return nil, err
-		}
-		list = append(list, info)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("plugins: read grammar packs: %w", err)
-	}
-	return list, nil
-}
-
-// audioPlugins lists the audio packs, active only.
-func audioPlugins(ctx context.Context, sqlDB *sql.DB) ([]model.PluginInfo, error) {
-	rows, err := sqlDB.QueryContext(ctx, `
-		SELECT pack_id, name, version, language, license, attribution
-		FROM audio_packs WHERE deleted_at IS NULL`)
-	if err != nil {
-		return nil, fmt.Errorf("plugins: read audio packs: %w", err)
-	}
-	defer rows.Close()
-
-	list := make([]model.PluginInfo, 0)
-	for rows.Next() {
-		var m dataManifest
-		if err := rows.Scan(&m.ID, &m.Name, &m.Version, &m.Language, &m.License, &m.Attribution); err != nil {
-			return nil, fmt.Errorf("plugins: scan audio pack: %w", err)
-		}
-		m.Type = "audio"
-		info, err := dataPlugin(m)
-		if err != nil {
-			return nil, err
-		}
-		list = append(list, info)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("plugins: read audio packs: %w", err)
-	}
-	return list, nil
-}
-
 // dataPlugin turns one data-plugin manifest into its listed form:
-// enabled by default, ordered 0 until the user moves it.
+// enabled by default, ordered 0 until the user moves it, and hidden: data
+// packs are managed in Settings → Data, and a client leaves hidden rows out
+// of its plugin list (#169).
 func dataPlugin(m dataManifest) (model.PluginInfo, error) {
 	manifest, err := marshalManifest(m)
 	if err != nil {
@@ -480,6 +399,7 @@ func dataPlugin(m dataManifest) (model.PluginInfo, error) {
 		ID:       m.ID,
 		Manifest: manifest,
 		Enabled:  true,
+		Hidden:   true,
 	}, nil
 }
 
@@ -518,22 +438,15 @@ func statesFor(ctx context.Context, sqlDB *sql.DB, userID int64) (map[string]mod
 // state or data under: a registered feature plugin or an active data
 // plugin (dictionary, levels scheme, frequency pack, sentences pack, grammar pack, or audio pack).
 func Exists(ctx context.Context, sqlDB *sql.DB, pluginID string) (bool, error) {
+	query, args := `SELECT 1 FROM plugin_registry WHERE pack_id = ?`, []any{pluginID}
+	for _, d := range packtype.All {
+		if row, ok := legacyRows[d.Type]; ok && d.LegacyPluginRow {
+			query += "\n\t\tUNION ALL\n\t\t" + row.exists
+			args = append(args, pluginID)
+		}
+	}
 	var one int
-	err := sqlDB.QueryRowContext(ctx, `
-		SELECT 1 FROM plugin_registry WHERE pack_id = ?
-		UNION ALL
-		SELECT 1 FROM dictionaries WHERE pack_id = ? AND deleted_at IS NULL
-		UNION ALL
-		SELECT 1 FROM schemes WHERE pack_id = ? AND deleted_at IS NULL
-		UNION ALL
-		SELECT 1 FROM frequency_packs WHERE pack_id = ? AND deleted_at IS NULL
-		UNION ALL
-		SELECT 1 FROM sentences WHERE source_pack = ? AND user_id IS NULL AND deleted_at IS NULL
-		UNION ALL
-		SELECT 1 FROM grammar_packs WHERE pack_id = ? AND deleted_at IS NULL
-		UNION ALL
-		SELECT 1 FROM audio_packs WHERE pack_id = ? AND deleted_at IS NULL
-		LIMIT 1`, pluginID, pluginID, pluginID, pluginID, pluginID, pluginID, pluginID).Scan(&one)
+	err := sqlDB.QueryRowContext(ctx, query+"\n\t\tLIMIT 1", args...).Scan(&one)
 	if errors.Is(err, sql.ErrNoRows) {
 		return false, nil
 	}

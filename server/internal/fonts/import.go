@@ -82,14 +82,18 @@ func checkPack(p dict.Pack) (map[string]sliceFile, []Face, error) {
 	return files, list, nil
 }
 
+// afterStoreHook is a test seam: it runs after the slices are stored.
+var afterStoreHook func()
+
 // Import installs the font pack p: faces.json and every slice file are
 // validated, and no face may collide with a face another installed pack
 // provides (the same face, script and style with overlapping weights)
 // before anything is written. The slices are then copied into storeDir,
 // one transaction upserts the font_packs row (clearing an uninstall) and
 // replaces the pack's font_slices rows, and the files no row references
-// any more are removed.
-func Import(ctx context.Context, sqlDB *sql.DB, p dict.Pack, storeDir string) (Result, error) {
+// any more are removed. A failure before the commit (a cancelled ctx
+// included) removes the slices it stored that no installed pack uses.
+func Import(ctx context.Context, sqlDB *sql.DB, p dict.Pack, storeDir string) (res Result, err error) {
 	files, list, err := checkPack(p)
 	if err != nil {
 		return Result{}, err
@@ -107,10 +111,23 @@ func Import(ctx context.Context, sqlDB *sql.DB, p dict.Pack, storeDir string) (R
 			}
 		}
 	}
+	// Until the rows commit, a failure (or a cancelled ctx: a shutdown)
+	// removes the slices this import stored that no installed pack uses.
+	stored := map[string]bool{}
+	committed := false
+	defer func() {
+		if !committed && len(stored) > 0 {
+			_ = collectBlobs(context.WithoutCancel(ctx), sqlDB, storeDir, stored)
+		}
+	}()
 	for _, sf := range files {
 		if err := storeBlob(storeDir, sf); err != nil {
 			return Result{}, fmt.Errorf("import font pack %s: store %s: %w", m.ID, sf.sha, err)
 		}
+		stored[sf.sha] = true
+	}
+	if afterStoreHook != nil {
+		afterStoreHook()
 	}
 
 	tx, err := sqlDB.BeginTx(ctx, nil)
@@ -135,7 +152,6 @@ func Import(ctx context.Context, sqlDB *sql.DB, p dict.Pack, storeDir string) (R
 	if _, err := tx.ExecContext(ctx, `DELETE FROM font_slices WHERE pack_id = ?`, m.ID); err != nil {
 		return Result{}, fmt.Errorf("import font pack %s: %w", m.ID, err)
 	}
-	var res Result
 	for _, f := range list {
 		res.Faces++
 		for i, s := range f.Slices {
@@ -151,6 +167,7 @@ func Import(ctx context.Context, sqlDB *sql.DB, p dict.Pack, storeDir string) (R
 	if err := tx.Commit(); err != nil {
 		return Result{}, fmt.Errorf("import font pack %s: %w", m.ID, err)
 	}
+	committed = true
 	// Garbage-collect after commit: a failure here only leaves an orphan.
 	if err := collectBlobs(ctx, sqlDB, storeDir, old); err != nil {
 		return res, fmt.Errorf("import font pack %s: %w", m.ID, err)

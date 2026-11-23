@@ -23,12 +23,19 @@ func packageBuilder(sqlDB *sql.DB, dataDir string, logf func(string, ...any)) *d
 
 // startPackages starts the builder for serve and queues the startup
 // reconcile (stray .tmp files, expired revisions, tombstones, and builds
-// of what is missing or stale); serve does not wait for it.
-func startPackages(ctx context.Context, sqlDB *sql.DB, dataDir string, logf func(string, ...any)) *datapkg.Builder {
-	b := packageBuilder(sqlDB, dataDir, logf)
-	go b.Run(ctx)
+// of what is missing or stale); serve does not wait for it. done is closed
+// once the builder stopped after ctx ended (a build in progress is
+// abandoned: its row keeps its last state and the next start's reconcile
+// removes the .tmp file and builds again).
+func startPackages(ctx context.Context, sqlDB *sql.DB, dataDir string, logf func(string, ...any)) (b *datapkg.Builder, done <-chan struct{}) {
+	b = packageBuilder(sqlDB, dataDir, logf)
+	stopped := make(chan struct{})
+	go func() {
+		b.Run(ctx)
+		close(stopped)
+	}()
 	b.KickReconcile()
-	return b
+	return b, stopped
 }
 
 // buildPackages runs the builder until its queue (the kicks of the seeded

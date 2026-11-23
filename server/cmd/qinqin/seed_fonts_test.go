@@ -44,7 +44,7 @@ func TestSeedImportsFontPack(t *testing.T) {
 	if _, err := os.Stat(fonts.BlobPath(filepath.Join(data, "fonts"), sha)); err != nil {
 		t.Errorf("slice not under <data>/fonts: %v", err)
 	}
-	if importOrder[dict.TypeFont] <= importOrder[dict.TypeSentences] {
-		t.Errorf("importOrder[font] = %d, want after sentences", importOrder[dict.TypeFont])
+	if importRank(dict.TypeFont) <= importRank(dict.TypeSentences) {
+		t.Errorf("importRank(font) = %d, want after sentences", importRank(dict.TypeFont))
 	}
 }

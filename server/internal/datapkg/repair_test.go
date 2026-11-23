@@ -120,3 +120,30 @@ func TestAReadOnlyLockFileStillLocks(t *testing.T) {
 		t.Fatalf("reconcile with a read-only lock file: %v", err)
 	}
 }
+
+// A file moved into place whose rows then fail to commit (a cancelled
+// build at shutdown, or any error after the rename) is removed again, so no
+// revision file exists that the catalogue does not describe.
+func TestAMovedFileWhoseRowsFailIsRemoved(t *testing.T) {
+	ctx := context.Background()
+	clock := &testClock{now: time.Date(2026, 11, 16, 10, 0, 0, 0, time.UTC)}
+	e := newPkgEnv(t, newDB(t), clock)
+	importAll(t, e, "cedict/v1")
+	restore := datapkg.SetRenameHookForTest(func(from, to string) error {
+		if err := os.Rename(from, to); err != nil {
+			return err
+		}
+		return errors.New("injected failure after the rename")
+	})
+	clock.Add(time.Minute)
+	importAll(t, e, "cedict/v2")
+	restore()
+	if _, err := os.Stat(filepath.Join(e.reg.Dir, "lexicon.zh", "r2.qqpkg")); !errors.Is(err, os.ErrNotExist) {
+		t.Fatalf("r2 file after its rows failed: %v, want it removed", err)
+	}
+	if f, _, err := e.reg.Open(ctx, "lexicon.zh", 1); err != nil {
+		t.Fatalf("r1 after the failure: %v", err)
+	} else {
+		f.Close()
+	}
+}

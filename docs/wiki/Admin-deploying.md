@@ -25,7 +25,7 @@ The first start of a fresh instance installs the bundled packs by itself before 
 
 - It runs once per database and only on a fresh instance, that is while no pack of any type is installed. An upgraded or curated instance is never touched, and packs an administrator uninstalled stay uninstalled (a marker in the database records that it ran).
 - It leaves out the demo pack `es-demo`.
-- A pack that fails to import is logged (`auto-seed failed ...`); the server starts anyway and the next start tries again.
+- A pack that fails to import is logged (`auto-seed failed ...`); the server starts anyway and the next start tries again. The same holds when the container is stopped during the seed: the next start installs the bundled packs again (already installed ones are replaced as they are) and finishes.
 - `QINQIN_AUTO_SEED=0` (or `false`, `off`) turns it off.
 
 `qinqin seed` is for what the auto-seed does not do: the demo pack `es-demo` (it installs everything the image ships, demos included), local packs, and re-seeding after an image update that ships newer packs.
@@ -37,6 +37,14 @@ It installs the bundled packs from the image (CC-CEDICT, Unihan, JMdict, KANJIDI
 Run it while the server is idle: each pack is one write transaction, JMdict holds the database write lock for about 20 s, and the server waits at most 5 s (`busy_timeout`) before a write fails. Packages it builds and those the running server builds take turns through a lock file, so a seed next to a running server is safe; the second one waits.
 
 Options: `--data <dir>` (default `$QINQIN_DATA`, else `./data`) and `--packs <dir>[,<dir>...]` (pack roots, comma-separated or repeated; default `$QINQIN_PACKS`, which the image sets to its own packs). Under Docker the command sees only the image's packs, not a host folder such as `plugins/data-local`: mount it (for example `./plugins/data-local:/opt/qinqin/local:ro`) and run `qinqin seed --packs /opt/qinqin/packs,/opt/qinqin/audio,/opt/qinqin/strokes,/opt/qinqin/local`. More on packs: [Data packs on the server](Admin-data-packs).
+
+### Stopping and restarting
+
+`docker stop` (and `docker compose down`, a Portainer stop or redeploy) sends `SIGTERM`, and the server shuts down in order: it stops accepting connections, gives requests in flight 10 s to finish (a longer download is cut; the app resumes it), then stops the mail queue, any package build and other background jobs (up to 10 s more), closes the database and logs `shutdown complete`. The compose file allows 30 s (`stop_grace_period`) before Docker kills the container; keep at least that if you write your own. A second signal (Ctrl-C twice when running the binary by hand) exits at once.
+
+What is cut short is safe: a package build in progress is started again on the next start, a pack upload still being imported, or a personal-backup restore still running, is cancelled and rolled back (one transaction; nothing of the pack is installed, so upload it again), and mails still queued are not sent (the log says how many; a reset or verification mail can be requested again). An AI review running after its browser left is lost and can be repeated.
+
+The server also closes connections that take more than 10 s to send their request headers and keep-alive connections idle for 125 seconds. It sets no overall request timeout: uploads, downloads and long requests are limited by the proxy in front ([Reverse proxy](Admin-proxy-and-rate-limiting)).
 
 ## Release images and versions
 

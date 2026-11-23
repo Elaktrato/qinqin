@@ -175,6 +175,15 @@ func (s *Service) underCap(kind Kind) bool {
 	return true
 }
 
+// Pending is the number of queued mails the worker has not taken yet; serve
+// logs it when the worker stops at shutdown (the queue lives in memory).
+func (s *Service) Pending() int {
+	if s == nil {
+		return 0
+	}
+	return len(s.q().ch)
+}
+
 // Run is the single worker: it sends queued mails one at a time until ctx
 // ends. Run it in its own goroutine.
 func (s *Service) Run(ctx context.Context) {

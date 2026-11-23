@@ -35,7 +35,8 @@ export const PACK_TYPE_LABELS: Readonly<Record<PackType, string>> = labelRecord(
 	theme: 'packs.type.theme'
 });
 
-const TYPE_ORDER: PackType[] = ['dictionary', 'frequency', 'levels', 'sentences', 'grammar', 'audio', 'components', 'strokes', 'font', 'theme'];
+// The server's list order (docs/contracts/packages/pack-types.json).
+const TYPE_ORDER: PackType[] = ['dictionary', 'frequency', 'levels', 'sentences', 'grammar', 'audio', 'components', 'strokes', 'theme', 'font'];
 
 /** packLanguages is the languages a listed pack covers: a strokes pack's list, else its one language. */
 export function packLanguages(pack: InstalledPack): string[] {

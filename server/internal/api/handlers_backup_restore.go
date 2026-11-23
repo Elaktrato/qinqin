@@ -106,7 +106,7 @@ func (s *server) handleRestoreUpload(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusConflict, "stage_not_ready", "A newer upload replaced this one.")
 		return
 	}
-	go s.validateStage(st)
+	s.goBackground(func() { s.validateStage(st) })
 	writeJSON(w, http.StatusAccepted, map[string]string{"token": token})
 }
 
@@ -249,7 +249,7 @@ func (s *server) handleRestoreApply(w http.ResponseWriter, r *http.Request) {
 	}
 	st.status = rsRunning
 	s.restores.mu.Unlock()
-	go s.runRestore(st, p.SessionID, req.Unresolved == "drop")
+	s.goBackground(func() { s.runRestore(st, p.SessionID, req.Unresolved == "drop") })
 	writeJSON(w, http.StatusAccepted, map[string]string{"status": rsRunning})
 }
 

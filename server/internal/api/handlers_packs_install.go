@@ -61,11 +61,23 @@ func (s *server) handleInstallStaged(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusConflict, "conflict", "The staged pack "+msg+".")
 	default:
 		// The job outlives the request: a proxy timeout or a closed tab
-		// must not abort or half-apply the import.
-		go s.runStagedImport(context.WithoutCancel(r.Context()), token, u.ID)
+		// must not abort or half-apply the import. The server's shutdown
+		// does cancel it (#170): the import's transaction rolls back, and
+		// the admin stages the pack again.
+		ctx, cancel := context.WithCancel(context.WithoutCancel(r.Context()))
+		stop := context.AfterFunc(s.bg, cancel)
+		s.goBackground(func() {
+			defer stop()
+			defer cancel()
+			s.runStagedImport(ctx, token, u.ID)
+		})
 		writeJSON(w, http.StatusAccepted, map[string]string{"status": stageImporting})
 	}
 }
+
+// shutdownImportText is the failure of an import the server's shutdown
+// cancelled before it committed.
+const shutdownImportText = "The server shut down before the import finished; nothing was installed. Upload the pack again."
 
 // filesWarning is shown when the import was committed but its files
 // could not be moved into place.
@@ -101,12 +113,21 @@ func (s *server) runStagedImport(ctx context.Context, token string, userID int64
 			}
 		}
 		var err error
+		if ctx.Err() != nil {
+			errMsg = shutdownImportText
+			return
+		}
 		if summary, err = importer(ctx, s.db, st.pack); err != nil {
 			errMsg = packErrorText(err, st.dir, s.dataDir)
+			if ctx.Err() != nil {
+				errMsg = shutdownImportText
+			}
 			return
 		}
 		// The import is committed. From here a problem is a warning, not a
-		// failure: the pack is installed.
+		// failure: the pack is installed, and a shutdown no longer stops the
+		// few steps left (moving its files, reading its row back).
+		ctx = context.WithoutCancel(ctx)
 		if err := placePack(filepath.Join(s.dataDir, "packs"), st.pack.Manifest, st.root, token); err != nil {
 			log.Printf("pack %s: move files into place: %v", st.pack.ID, err)
 			warning = filesWarning

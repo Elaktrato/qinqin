@@ -175,3 +175,70 @@ func TestManualSeedStillImportsDemos(t *testing.T) {
 		t.Fatal("seed skipped es-demo")
 	}
 }
+
+// A signal during the first-start seed (#170) leaves the marker "running";
+// the next start seeds again, though packs are already installed, and
+// finishes the job (the imports are idempotent).
+func TestAutoSeedCutShortIsFinishedNextStart(t *testing.T) {
+	sqlDB, dir := openTestDB(t)
+	root := autoSeedRoot(t)
+	ctx, cancel := context.WithCancel(context.Background())
+	lines := 0
+	cutAfterFirstPack := func(format string, args ...any) {
+		lines++
+		if lines == 2 { // the start line, then the first pack's line
+			cancel()
+		}
+	}
+	if err := autoSeed(ctx, sqlDB, dir, []string{root}, noEnv, cutAfterFirstPack); err == nil {
+		t.Fatal("the cut-short seed reported success")
+	}
+	if ids := installedIDs(t, sqlDB); len(ids) == 0 || len(ids) >= 5 {
+		t.Fatalf("after the cut: installed %v, want some but not all", ids)
+	}
+	if done, _ := autoSeedDone(context.Background(), sqlDB); done {
+		t.Fatal("marker done after a cut-short seed")
+	}
+	if err := autoSeed(context.Background(), sqlDB, dir, []string{root}, noEnv, func(string, ...any) {}); err != nil {
+		t.Fatalf("second start: %v", err)
+	}
+	ids := installedIDs(t, sqlDB)
+	for _, want := range []string{"ja-mini", "zh-mini", "hsk-mini", "jlpt-mini", "hw-strokes"} {
+		if !ids[want] {
+			t.Errorf("%s not installed after the second start: %v", want, ids)
+		}
+	}
+	if done, _ := autoSeedDone(context.Background(), sqlDB); !done {
+		t.Error("marker not done after the finished seed")
+	}
+}
+
+// A pack that fails after others were installed is retried at the next
+// start too (the marker stays "running", not done).
+func TestAutoSeedPartialFailureRetries(t *testing.T) {
+	ctx := context.Background()
+	sqlDB, dir := openTestDB(t)
+	root := autoSeedRoot(t)
+	bad := filepath.Join(root, "zz-bad-theme")
+	if err := os.MkdirAll(bad, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	m := `{"id":"zz-bad-theme","name":"x","version":"1","type":"theme","format":"themes-json","license":"CC0-1.0","attribution":"x"}`
+	if err := os.WriteFile(filepath.Join(bad, "manifest.json"), []byte(m), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(bad, "themes.json"), []byte(`{"themes": "not a list"}`), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := autoSeed(ctx, sqlDB, dir, []string{root}, noEnv, func(string, ...any) {}); err == nil {
+		t.Fatal("want the failing pack's error")
+	}
+	if len(installedIDs(t, sqlDB)) == 0 {
+		t.Fatal("nothing installed before the failing pack")
+	}
+	var rec logRecorder
+	autoSeed(ctx, sqlDB, dir, []string{root}, noEnv, rec.logf)
+	if len(rec.lines) == 0 || !strings.Contains(rec.lines[0], "installing") {
+		t.Errorf("second start did not retry: %q", rec.lines)
+	}
+}

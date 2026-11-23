@@ -237,3 +237,21 @@ func TestCheckPackRefusesOtherTypes(t *testing.T) {
 		t.Errorf("CheckPack(theme) = %v", err)
 	}
 }
+
+// An import cancelled after its slices were stored (a shutdown, #170)
+// leaves no slice behind that no installed pack references.
+func TestCancelledImportLeavesNoSlices(t *testing.T) {
+	sqlDB, store := newDB(t), t.TempDir()
+	ctx, cancel := context.WithCancel(context.Background())
+	defer fonts.SetAfterStoreHookForTest(cancel)()
+	p := writePack(t, "test-sans", sansHans("200 900", sliceSpec{data: sliceA, rng: "U+20-7E"}, sliceSpec{data: sliceB, rng: "U+4E00-4E3F"}))
+	if _, err := fonts.Import(ctx, sqlDB, p, store); err == nil {
+		t.Fatal("the cancelled import succeeded")
+	}
+	if got := blobs(t, store); len(got) != 0 {
+		t.Errorf("slices left behind: %v", got)
+	}
+	if faces, _ := fonts.Faces(context.Background(), sqlDB); len(faces) != 0 {
+		t.Errorf("faces registered: %+v", faces)
+	}
+}
