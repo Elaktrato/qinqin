@@ -85,7 +85,7 @@ describe('messages and polling', () => {
 
 describe('clearLocalAfterRestore', () => {
 	it('forgets the workspace and queued reviews and counts the reviews', () => {
-		const m = new Map([['qinqin.workspace', '7'], ['qinqin.study.pending', '[{"a":1},{"a":2}]'], ['qinqin.study.session', '{}'], ['qinqin.token', 't']]);
+		const m = new Map([['qinqin.workspace', '7'], ['qinqin.study.pending.v2', '[{"a":1},{"a":2}]'], ['qinqin.study.session', '{}'], ['qinqin.token', 't']]);
 		const st = { getItem: (k: string) => m.get(k) ?? null, removeItem: (k: string) => void m.delete(k) };
 		expect(clearLocalAfterRestore(st)).toBe(2);
 		expect([...m.keys()]).toEqual(['qinqin.token']);

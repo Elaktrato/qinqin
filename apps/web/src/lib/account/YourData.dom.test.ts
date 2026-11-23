@@ -66,7 +66,7 @@ describe('YourData', () => {
 		vi.mocked(api.restoreStatus).mockResolvedValueOnce(ready() as never);
 		vi.mocked(api.applyRestore).mockResolvedValue({ status: 'running' });
 		const reload = vi.fn();
-		const storage = { getItem: (k: string) => (k === 'qinqin.study.pending' ? '[1,2,3]' : null), removeItem: vi.fn() };
+		const storage = { getItem: (k: string) => (k === 'qinqin.study.pending.v2' ? '[1,2,3]' : null), removeItem: vi.fn() };
 		render(YourData, { reload, storage });
 		await choose();
 		expect(api.uploadRestore).toHaveBeenCalled();

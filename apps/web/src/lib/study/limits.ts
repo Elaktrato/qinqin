@@ -7,9 +7,6 @@ import { isValidReview, sortedReviews } from './reviewOrder';
 import type { StudyContext } from './studyContext';
 import type { ReviewEvent, StudyCard } from './types';
 
-export const LIMITS_WORKSPACE_KEY = 'limits:workspace';
-export const LIMITS_DECK_PREFIX = 'limits:deck:';
-
 export const MAX_LIMIT = 9999;
 
 /**
@@ -31,31 +28,6 @@ export interface LimitPair {
 }
 
 export const DEFAULT_LIMITS: LimitPair = { new: 20, reviews: 200 };
-
-export function limitsDeckKey(deckId: string): string {
-	return `${LIMITS_DECK_PREFIX}${deckId}`;
-}
-
-function isLimit(value: unknown): value is number | null {
-	return value === null || (typeof value === 'number' && Number.isInteger(value) && value >= 0 && value <= MAX_LIMIT);
-}
-
-/**
- * parseLimitRow reads a `limits:workspace` or `limits:deck:<id>` row: the
- * fields that are present and usable (a field that is not is ignored, so it
- * follows the workspace or the default). null for an unusable row.
- */
-export function parseLimitRow(key: string, raw: unknown): Partial<LimitPair> | null {
-	const deck = key.startsWith(LIMITS_DECK_PREFIX) && key.length > LIMITS_DECK_PREFIX.length;
-	if (key !== LIMITS_WORKSPACE_KEY && !deck) return null;
-	if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) return null;
-	const row = raw as Record<string, unknown>;
-	if (row.version !== 1) return null;
-	const out: Partial<LimitPair> = {};
-	if ('new' in row && isLimit(row.new)) out.new = row.new;
-	if ('reviews' in row && isLimit(row.reviews)) out.reviews = row.reviews;
-	return out;
-}
 
 /** effectiveLimits: the deck's field if present, else the workspace's, else the default. */
 export function effectiveLimits(

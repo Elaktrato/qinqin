@@ -29,15 +29,12 @@ describe('study writes use one storage', () => {
 		expect(offenders).toEqual([]);
 	});
 
-	it('store.ts uses the plugin-data routes only for the keyed rows, behind assertKeyedRow', () => {
+	it('store.ts uses the plugin-data routes only for the keyed rows', () => {
 		const store = sources[STORE];
 		const lines = store.split('\n').filter((line) => line.includes('/api/plugins/'));
 		// dataPath (goals, known marks) and the two vacation writers.
 		expect(lines).toHaveLength(3);
 		expect(lines.filter((line) => line.includes('VACATION_PREFIX'))).toHaveLength(2);
-		expect(store).toMatch(/function putData[\s\S]*?assertKeyedRow\(key\);/);
-		expect(store).toMatch(/async function deleteData[\s\S]*?assertKeyedRow\(key\);/);
-		expect(store).toMatch(/async function pushKeyedRows[\s\S]*?assertKeyedRow\(row\.key\)/);
 		expect(store).not.toMatch(/export (async )?function pushStudyRows/);
 	});
 });

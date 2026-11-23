@@ -4,8 +4,6 @@
 	import { getSchemes } from '$lib/api/schemes';
 	import { languageLabel } from '$lib/languages';
 	import { workspaces } from '$lib/workspaces';
-	import { pluginEnabled } from '../index';
-	import { pluginStates } from '../states';
 	import { listGrammar } from './api';
 	import { browseSections } from './browse';
 	import { loadProgress } from './progress';
@@ -45,16 +43,7 @@
 		);
 	});
 
-	const sections = $derived(
-		packs === null
-			? []
-			: browseSections(
-					packs,
-					schemes,
-					(id) => pluginEnabled(id, $pluginStates.list),
-					progress
-				)
-	);
+	const sections = $derived(packs === null ? [] : browseSections(packs, schemes, progress));
 </script>
 
 <div class="page-body grammar">

@@ -8,7 +8,6 @@ import { firstEventsPageUrl, readEventLog } from './eventPages';
 import { pruneSavedEventPages, type PageCachesLike } from './pwa/eventPageCache';
 import { sessionPayload } from './eventPayloads';
 import { logChangingTypes } from './plugins/contract';
-import { emitStudyEvents } from './plugins/hooks';
 import type { StudyEventBody } from './api/types';
 import { currentStudyDay, whenStudyDaySettled } from './time/zone';
 import type { StudyDay } from './time/studyDay';
@@ -44,7 +43,6 @@ export async function postEvents(events: StudyEventBody[]): Promise<void> {
 			method: 'POST',
 			body: { events }
 		});
-		emitStudyEvents(events);
 	} finally {
 		// A failed POST may still have landed: drop what may be stale either way.
 		logChanged(events);

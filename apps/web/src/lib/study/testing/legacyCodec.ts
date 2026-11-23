@@ -9,7 +9,6 @@ import {
 	STUDY_COLLECTIONS,
 	bodyOf,
 	identityOf,
-	legacyFamily,
 	parseRow,
 	type StudyCollection,
 	type StudyRow,
@@ -17,6 +16,21 @@ import {
 } from '../rows';
 
 type Obj = Record<string, unknown>;
+
+/**
+ * legacyFamily: the typed collection of a legacy qinqin-flashcards key
+ * (`card:`, `deck:`, `deckcfg:`, `limits:workspace`, `limits:deck:`,
+ * `fsrs:set:`, `fsrs:active`); null for the keyed rows that stay plugin data.
+ */
+export function legacyFamily(key: string): StudyCollection | null {
+	if (key.startsWith('card:')) return 'cards';
+	if (key.startsWith('deck:')) return 'decks';
+	if (key.startsWith('deckcfg:')) return 'deckSettings';
+	if (key === 'limits:workspace' || key.startsWith('limits:deck:')) return 'limits';
+	if (key.startsWith('fsrs:set:')) return 'fsrsSets';
+	if (key === 'fsrs:active') return 'fsrsActive';
+	return null;
+}
 
 const KINDS = ['vocab', 'sentence', 'writing', 'tone', 'reverse', 'cloze'];
 const MAX_ID = 2 ** 53 - 1;

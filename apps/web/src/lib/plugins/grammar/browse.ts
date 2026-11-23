@@ -38,19 +38,18 @@ function badgesFor(level: Level, schemes: SchemeRef[]): string[] {
 }
 
 /**
- * browseSections shows enabled packs level by level. Progress rows of
+ * browseSections shows every installed pack level by level (packs are
+ * managed in Settings → Data; a pack has no plugin state, #198). Progress rows of
  * lessons that no longer exist are ignored; levels without lessons are
  * omitted; a scheme badge appears only when that scheme's level is installed.
  */
 export function browseSections(
 	packs: PackInfo[],
 	schemes: SchemeRef[],
-	enabled: (packId: string) => boolean,
 	progress: Map<string, Progress>
 ): Section[] {
 	const sections: Section[] = [];
 	for (const pack of packs) {
-		if (!enabled(pack.packId)) continue;
 		const lessons = pack.lessons ?? [];
 		const levels: BrowseLevel[] = [];
 		for (const level of pack.levels) {

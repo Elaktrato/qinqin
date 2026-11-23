@@ -9,7 +9,6 @@ import {
 	cap,
 	dayCounts,
 	effectiveLimits,
-	parseLimitRow,
 	type Candidate,
 	type DayCounts,
 	type LimitPair
@@ -17,13 +16,10 @@ import {
 import { contextFor } from './studyContext';
 import type { ReviewEvent, StudyCard } from './types';
 
-describe('fixtures: limit rows', () => {
+describe('fixtures: limits (defaults and the effective pair)', () => {
 	it('has the documented defaults', () => {
 		expect(DEFAULT_LIMITS).toEqual(rowsFixture.defaults);
 	});
-	for (const c of rowsFixture.rows) {
-		it(c.name, () => expect(parseLimitRow(c.key, c.raw)).toEqual(c.parsed));
-	}
 	for (const c of rowsFixture.effective) {
 		it(`effective: ${c.name}`, () => {
 			expect(effectiveLimits(c.workspace as never, c.deck as never)).toEqual(c.effective);

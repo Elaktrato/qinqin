@@ -6,7 +6,7 @@
 import type { Workspace } from './api/types';
 import { workspaceDisplay } from './languages';
 import { EXTRA_TYPES_KEY, LAST_CARD_TYPES_KEY } from './study/cardTypesMemory';
-import { LEGACY_PENDING_KEY, PENDING_REVIEWS_KEY } from './study/events';
+import { PENDING_REVIEWS_KEY } from './study/events';
 import { INELIGIBLE_KEY } from './study/ineligible';
 
 /**
@@ -51,28 +51,25 @@ function dropEntry(storage: Storage, key: string, id: number): void {
 }
 
 /**
- * Removes the queued reviews of `id` from the review outbox: the bare events
- * of the pre-v2 key and the `{userId, queuedAt, event}` items of v2 (of every
- * user: a workspace id is global and the workspace is gone for all).
+ * Removes the queued reviews of `id` from the review outbox: the
+ * `{userId, queuedAt, event}` items of every user (a workspace id is global
+ * and the workspace is gone for all).
  */
 function dropPending(storage: Storage, id: number): void {
-	const inWorkspace = (event: unknown): boolean =>
-		typeof event === 'object' && event !== null && (event as { workspaceId?: unknown }).workspaceId === id;
-	for (const [key, eventOf] of [
-		[LEGACY_PENDING_KEY, (item: unknown) => item],
-		[PENDING_REVIEWS_KEY, (item: unknown) => (item as { event?: unknown } | null)?.event]
-	] as const) {
-		attempt(() => {
-			const raw = storage.getItem(key);
-			if (raw === null) return;
-			const parsed: unknown = JSON.parse(raw);
-			if (!Array.isArray(parsed)) return;
-			const kept = parsed.filter((item) => !inWorkspace(eventOf(item)));
-			if (kept.length === parsed.length) return;
-			if (kept.length === 0) storage.removeItem(key);
-			else storage.setItem(key, JSON.stringify(kept));
-		});
-	}
+	attempt(() => {
+		const raw = storage.getItem(PENDING_REVIEWS_KEY);
+		if (raw === null) return;
+		const parsed: unknown = JSON.parse(raw);
+		if (!Array.isArray(parsed)) return;
+		const inWorkspace = (item: unknown): boolean => {
+			const event = (item as { event?: unknown } | null)?.event;
+			return typeof event === 'object' && event !== null && (event as { workspaceId?: unknown }).workspaceId === id;
+		};
+		const kept = parsed.filter((item) => !inWorkspace(item));
+		if (kept.length === parsed.length) return;
+		if (kept.length === 0) storage.removeItem(PENDING_REVIEWS_KEY);
+		else storage.setItem(PENDING_REVIEWS_KEY, JSON.stringify(kept));
+	});
 }
 
 /**

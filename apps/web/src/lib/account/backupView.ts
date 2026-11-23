@@ -3,6 +3,7 @@
 import { API_ERROR_KEYS, apiErrorText } from '$lib/api/apiErrors';
 import { t, type MessageKey } from '$lib/i18n';
 import { formatNumber } from '$lib/i18n/format';
+import { PENDING_REVIEWS_KEY } from '$lib/study/events';
 
 export interface Counts {
 	workspaces: number;
@@ -151,7 +152,7 @@ export function formatBytes(n: number): string {
 	return t('account.backup.sizeMib', { n: formatNumber(n / 1048576, { minimumFractionDigits: 1, maximumFractionDigits: 1 }) });
 }
 
-export const LOCAL_KEYS_AFTER_RESTORE = ['qinqin.workspace', 'qinqin.study.session', 'qinqin.study.pending'] as const;
+export const LOCAL_KEYS_AFTER_RESTORE = ['qinqin.workspace', 'qinqin.study.session', PENDING_REVIEWS_KEY] as const;
 
 /**
  * After a restore the workspace ids are new: forget the selected workspace,
@@ -161,7 +162,7 @@ export const LOCAL_KEYS_AFTER_RESTORE = ['qinqin.workspace', 'qinqin.study.sessi
 export function clearLocalAfterRestore(storage: Pick<Storage, 'getItem' | 'removeItem'>): number {
 	let dropped = 0;
 	try {
-		const raw = storage.getItem('qinqin.study.pending');
+		const raw = storage.getItem(PENDING_REVIEWS_KEY);
 		if (raw) {
 			const v = JSON.parse(raw) as unknown;
 			dropped = Array.isArray(v) ? v.length : v && typeof v === 'object' ? Object.keys(v).length : 0;
