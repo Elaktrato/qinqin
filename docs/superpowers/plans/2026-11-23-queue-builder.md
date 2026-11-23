@@ -105,6 +105,9 @@ mutation shown failing and reverted:
 | 7 Offline Study all | `39e9205b` | New `planOffline` test failed (no Study all pass), then passed; the mutation "third pass without `studyAll`" fails it. Two older tests pass `studyAllExtra: 0` to keep their meaning. Wiki `Install-and-offline.md` and a spec Ruling (cap 200). |
 | 1 Wiki wording | (this commit) | Prose only (no red possible): `Flashcards-study-sessions.md` says the Study all button is enabled when that session would hold something; Ruling (no separate numbers) in the spec, committed with group 7. |
 
+**Fix wave gates:** `npm run check` 0 errors; `npm run build` exit 0; full vitest under Node 26: 587 files, 12 556
+passed, 2 skipped, exit 0 (the sandbox reported one process killed for memory during the run; every file passed).
+
 **Mutation checks (by hand, each reverted; targeted sessionQueue/studyAll/levelQueue/cardFlow tests):**
 Study all still consulting the limit rows → 13 failed; reserve not bounded by `backfillLeft` → 5 failed; vacation
 check removed → 4 failed; caps not floored → 1 failed; level plan ignoring `skipKinds` → 1 failed.
