@@ -16,6 +16,7 @@ import (
 	"time"
 
 	"qinqin/internal/dict"
+	"qinqin/internal/packtype"
 )
 
 // Retention is how long a replaced or tombstoned revision's file stays on
@@ -764,10 +765,15 @@ func AffectedIDs(ctx context.Context, q Querier, typ, packID, language string) [
 		return ids
 	}
 	add(string(TypeLexicon) + "." + language)
-	for _, query := range []struct{ typ, sql string }{
-		{string(TypeLevels), `SELECT pack_id FROM schemes WHERE language = ? AND deleted_at IS NULL ORDER BY pack_id`},
-		{string(TypeSentences), `SELECT pack_id FROM sentence_packs WHERE language = ? AND deleted_at IS NULL ORDER BY pack_id`},
-	} {
+	// The packages that require this language's lexicon reference it.
+	var dependents []struct{ typ, sql string }
+	for _, d := range packtype.All {
+		if d.RequiresLexicon {
+			dependents = append(dependents, struct{ typ, sql string }{d.Package,
+				`SELECT pack_id FROM ` + d.Registry + ` WHERE language = ? AND deleted_at IS NULL ORDER BY pack_id`})
+		}
+	}
+	for _, query := range dependents {
 		rows, err := q.QueryContext(ctx, query.sql, language)
 		if err != nil {
 			continue // the lexicon is kicked; a reconcile catches the rest
