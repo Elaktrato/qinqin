@@ -12,8 +12,8 @@ import (
 
 	"github.com/oklog/ulid/v2"
 
+	"qinqin/internal/db/step032"
 	"qinqin/internal/db/step038"
-	"qinqin/internal/model"
 )
 
 // goSteps are migration work SQL cannot do. A step runs inside the
@@ -109,7 +109,7 @@ func fillUsernameKeys(tx *sql.Tx) error {
 	seen := map[string]bool{}
 	skipped := 0
 	for _, x := range all {
-		k := model.UsernameKey(x.name)
+		k := step032.UsernameKey(x.name)
 		if seen[k] {
 			skipped++
 			continue

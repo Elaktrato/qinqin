@@ -1,9 +1,9 @@
 <script lang="ts">
+	import { errorText } from '$lib/api/apiErrors';
 	import { studyLang } from '$lib/i18n/lang';
 	import { tick, untrack } from 'svelte';
 	import { t } from '$lib/i18n';
 	import Msg from '$lib/i18n/Msg.svelte';
-	import { ApiError } from '$lib/api/client';
 	import { fetchCharacters, type CharacterList } from '$lib/api/characters';
 	import { fetchSchemeCharacters, getSchemes } from '$lib/api/schemes';
 	import { levelAttributionLine } from '$lib/study/levelAttribution';
@@ -119,11 +119,6 @@
 	let searchTimer: ReturnType<typeof setTimeout> | undefined;
 	let announceTimer: ReturnType<typeof setTimeout> | undefined;
 
-	function message(err: unknown, fallback: string): string {
-		if (err instanceof ApiError && err.message) return err.message;
-		if (err instanceof Error && err.message) return err.message;
-		return fallback;
-	}
 
 	function storage(): Storage | null {
 		try {
@@ -152,7 +147,7 @@
 			return await getSchemes();
 		} catch (err) {
 			// The built-in groupings work without the scheme list.
-			schemesError = message(err, t('stats.map.schemesFailed'));
+			schemesError = errorText(err, t('stats.map.schemesFailed'));
 			return [];
 		}
 	}
@@ -220,7 +215,7 @@
 			void backfillWritten(data.cards, seq);
 		} catch (err) {
 			if (seq !== requestSeq) return;
-			loadError = message(err, t('stats.map.loadFailed'));
+			loadError = errorText(err, t('stats.map.loadFailed'));
 		} finally {
 			if (seq === requestSeq) loading = false;
 		}
@@ -317,7 +312,7 @@
 			members = { schemeId: id, levels };
 		} catch (err) {
 			if (seq !== membersSeq) return;
-			membersError = message(err, t('stats.map.membersFailed'));
+			membersError = errorText(err, t('stats.map.membersFailed'));
 		} finally {
 			if (seq === membersSeq) membersLoading = false;
 		}
@@ -333,7 +328,7 @@
 			levelMembers = { schemeId: id, levels };
 		} catch (err) {
 			if (seq !== levelSeq || parseLevelValue(levelValue)?.schemeId !== id) return;
-			levelError = message(err, t('stats.map.membersFailed'));
+			levelError = errorText(err, t('stats.map.membersFailed'));
 		} finally {
 			if (seq === levelSeq) levelLoading = false;
 		}

@@ -94,17 +94,17 @@ func (s *server) handleCreateWorkspace(w http.ResponseWriter, r *http.Request) {
 		Name     string `json:"name"`
 	}
 	if err := json.NewDecoder(bytes.NewReader(body)).Decode(&req); err != nil {
-		http.Error(w, "malformed request body", http.StatusBadRequest)
+		writeError(w, http.StatusBadRequest, "bad_request", "Malformed request body.")
 		return
 	}
 	rawLanguage := strings.ToLower(strings.TrimSpace(req.Language))
 	if rawLanguage == "" {
-		http.Error(w, "language is required", http.StatusBadRequest)
+		writeError(w, http.StatusBadRequest, "bad_request", "language is required.")
 		return
 	}
 	name, problem := workspaceName(req.Name)
 	if problem != "" {
-		http.Error(w, problem, http.StatusUnprocessableEntity)
+		writeError(w, http.StatusUnprocessableEntity, "invalid_request", problem)
 		return
 	}
 
@@ -121,20 +121,20 @@ func (s *server) handleCreateWorkspace(w http.ResponseWriter, r *http.Request) {
 	language := rawLanguage
 	exact, err := languageKnown(r.Context(), s.db, rawLanguage)
 	if err != nil {
-		http.Error(w, "internal error", http.StatusInternalServerError)
+		writeInternal(w, r)
 		return
 	}
 	known := exact || lang.Registered(rawLanguage)
 	if !exact {
 		code, valid := lang.ValidCode(req.Language)
 		if !valid {
-			http.Error(w, "language must be a code like es or pt-br", http.StatusUnprocessableEntity)
+			writeError(w, http.StatusUnprocessableEntity, "invalid_language", "language must be a code like es or pt-br.")
 			return
 		}
 		language = code
 		if !lang.Registered(code) {
 			if known, err = languageKnown(r.Context(), s.db, code); err != nil {
-				http.Error(w, "internal error", http.StatusInternalServerError)
+				writeInternal(w, r)
 				return
 			}
 		} else {
@@ -145,13 +145,13 @@ func (s *server) handleCreateWorkspace(w http.ResponseWriter, r *http.Request) {
 		// Only an administrator opens a new language; everyone else
 		// picks from the known ones.
 		if !known && !u.Admin {
-			http.Error(w, "unknown language — ask the administrator to add it", http.StatusUnprocessableEntity)
+			writeError(w, http.StatusUnprocessableEntity, "language_unknown", "This language is not set up on the server: ask an administrator to add it.")
 			return
 		}
 		if _, err := s.db.ExecContext(r.Context(), `
 			INSERT INTO languages (code, name, updated_at) VALUES (?, ?, ?)
 			ON CONFLICT (code) DO NOTHING`, language, language, now()); err != nil {
-			http.Error(w, "internal error", http.StatusInternalServerError)
+			writeInternal(w, r)
 			return
 		}
 	}
@@ -161,11 +161,11 @@ func (s *server) handleCreateWorkspace(w http.ResponseWriter, r *http.Request) {
 		RETURNING `+workspaceColumns,
 		u.ID, language, name, now()))
 	if isUniqueViolation(err) {
-		http.Error(w, "workspace already exists", http.StatusConflict)
+		writeError(w, http.StatusConflict, "workspace_exists", "A workspace with this name already exists.")
 		return
 	}
 	if err != nil {
-		http.Error(w, "internal error", http.StatusInternalServerError)
+		writeInternal(w, r)
 		return
 	}
 	writeJSON(w, http.StatusCreated, ws)
@@ -211,14 +211,14 @@ func (s *server) handleListWorkspaces(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err := s.ensureDefaultWorkspaces(r.Context(), u.ID); err != nil {
-		http.Error(w, "internal error", http.StatusInternalServerError)
+		writeInternal(w, r)
 		return
 	}
 	rows, err := s.db.QueryContext(r.Context(), `
 		SELECT `+workspaceColumns+` FROM workspaces
 		WHERE user_id = ? ORDER BY id`, u.ID)
 	if err != nil {
-		http.Error(w, "internal error", http.StatusInternalServerError)
+		writeInternal(w, r)
 		return
 	}
 	defer rows.Close()
@@ -226,13 +226,13 @@ func (s *server) handleListWorkspaces(w http.ResponseWriter, r *http.Request) {
 	for rows.Next() {
 		ws, err := scanWorkspace(rows)
 		if err != nil {
-			http.Error(w, "internal error", http.StatusInternalServerError)
+			writeInternal(w, r)
 			return
 		}
 		list = append(list, ws)
 	}
 	if err := rows.Err(); err != nil {
-		http.Error(w, "internal error", http.StatusInternalServerError)
+		writeInternal(w, r)
 		return
 	}
 	writeJSON(w, http.StatusOK, list)
@@ -300,7 +300,7 @@ func (s *server) handleUpdateWorkspace(w http.ResponseWriter, r *http.Request) {
 	}
 	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
 	if err != nil {
-		http.Error(w, "workspace not found", http.StatusNotFound)
+		writeError(w, http.StatusNotFound, "workspace_not_found", "No such workspace.")
 		return
 	}
 	var req struct {
@@ -314,14 +314,14 @@ func (s *server) handleUpdateWorkspace(w http.ResponseWriter, r *http.Request) {
 	dec := json.NewDecoder(bytes.NewReader(body))
 	dec.DisallowUnknownFields()
 	if err := dec.Decode(&req); err != nil {
-		http.Error(w, "malformed request body", http.StatusBadRequest)
+		writeError(w, http.StatusBadRequest, "bad_request", "Malformed request body.")
 		return
 	}
 	var name sql.NullString
 	if req.Name != nil {
 		n, problem := workspaceName(*req.Name)
 		if problem != "" {
-			http.Error(w, problem, http.StatusUnprocessableEntity)
+			writeError(w, http.StatusUnprocessableEntity, "invalid_request", problem)
 			return
 		}
 		name = sql.NullString{String: n, Valid: true}
@@ -330,18 +330,18 @@ func (s *server) handleUpdateWorkspace(w http.ResponseWriter, r *http.Request) {
 	if len(req.Settings) > 0 && string(req.Settings) != "null" {
 		var obj map[string]any
 		if err := json.Unmarshal(req.Settings, &obj); err != nil {
-			http.Error(w, "settings must be an object", http.StatusBadRequest)
+			writeError(w, http.StatusBadRequest, "bad_request", "settings must be an object.")
 			return
 		}
 		merged, err := json.Marshal(obj)
 		if err != nil {
-			http.Error(w, "internal error", http.StatusInternalServerError)
+			writeInternal(w, r)
 			return
 		}
 		patch = sql.NullString{String: string(merged), Valid: true}
 	}
 	if !name.Valid && !patch.Valid {
-		http.Error(w, "name or settings required", http.StatusBadRequest)
+		writeError(w, http.StatusBadRequest, "bad_request", "name or settings required.")
 		return
 	}
 	// json_patch merges the settings object in place (RFC 7396: existing
@@ -361,20 +361,20 @@ func (s *server) handleUpdateWorkspace(w http.ResponseWriter, r *http.Request) {
 		owned, oerr := s.workspaceOwned(r.Context(), u.ID, id)
 		switch {
 		case oerr != nil:
-			http.Error(w, "internal error", http.StatusInternalServerError)
+			writeInternal(w, r)
 		case owned && patch.Valid:
-			writeJSON(w, http.StatusRequestEntityTooLarge, map[string]string{"error": "workspace settings too large"})
+			writeError(w, http.StatusRequestEntityTooLarge, "too_large", "The workspace settings would be larger than 64 KiB.")
 		default:
-			http.Error(w, "workspace not found", http.StatusNotFound)
+			writeError(w, http.StatusNotFound, "workspace_not_found", "No such workspace.")
 		}
 		return
 	}
 	if isUniqueViolation(err) {
-		http.Error(w, "workspace already exists", http.StatusConflict)
+		writeError(w, http.StatusConflict, "workspace_exists", "A workspace with this name already exists.")
 		return
 	}
 	if err != nil {
-		http.Error(w, "internal error", http.StatusInternalServerError)
+		writeInternal(w, r)
 		return
 	}
 	writeJSON(w, http.StatusOK, ws)
@@ -398,19 +398,19 @@ func (s *server) handleDeleteWorkspace(w http.ResponseWriter, r *http.Request) {
 	}
 	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
 	if err != nil {
-		http.Error(w, "workspace not found", http.StatusNotFound)
+		writeError(w, http.StatusNotFound, "workspace_not_found", "No such workspace.")
 		return
 	}
 	books, photoIDs, err := s.deleteWorkspace(r.Context(), u.ID, id)
 	switch {
 	case errors.Is(err, errWorkspaceNotFound):
-		http.Error(w, "workspace not found", http.StatusNotFound)
+		writeError(w, http.StatusNotFound, "workspace_not_found", "No such workspace.")
 		return
 	case errors.Is(err, errLastWorkspace):
-		http.Error(w, "keep at least one workspace", http.StatusConflict)
+		writeError(w, http.StatusConflict, "last_workspace", "Keep at least one workspace.")
 		return
 	case err != nil:
-		http.Error(w, "internal error", http.StatusInternalServerError)
+		writeInternal(w, r)
 		return
 	}
 	if err := s.library().RemoveContent(u.ID, books); err != nil {

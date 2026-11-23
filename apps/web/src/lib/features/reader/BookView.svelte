@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { UserError } from '$lib/api/userError';
 	import { studyLang } from '$lib/i18n/lang';
 	import { t } from '$lib/i18n';
 	import { onDestroy, onMount, tick, untrack } from 'svelte';
@@ -1026,7 +1027,7 @@
 	}
 	function bookWorkspace(): number {
 		const wsId = studyWorkspaceId;
-		if (wsId === null) throw new Error('This book has no workspace to study in.');
+		if (wsId === null) throw new UserError('reader.error.noWorkspace');
 		return wsId;
 	}
 	function addFromPanel(ids: number[], target: { id: string; name: string }) {

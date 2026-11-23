@@ -68,7 +68,7 @@ describe('Settings -> Home: the heatmap layout', () => {
 		const group = await fieldset();
 		await fireEvent.click(within(group).getByRole('radio', { name: 'This week' }));
 		await waitFor(() => expect(within(group).getByRole('radio', { name: 'Garden grid' })).toHaveProperty('checked', true));
-		expect(within(group).getByText(/Could not save the heatmap layout \(offline\)/)).toBeTruthy();
+		expect(within(group).getByText(/Could\ not\ save\ the\ heatmap\ layout\ \(The\ server\ did\ not\ answer\.\)\./)).toBeTruthy();
 		expect(document.querySelector('[aria-live="polite"]')?.textContent).toMatch(/Could not save the heatmap layout/);
 	});
 
@@ -101,7 +101,7 @@ describe('Settings -> Home: the heatmap layout', () => {
 		await waitFor(() => expect(document.querySelector('[aria-live="polite"]')?.textContent).toBe('Heatmap layout: Month calendar.'));
 		await fireEvent.click(within(group).getByRole('radio', { name: 'This week' }));
 		await waitFor(() => expect(within(group).getByRole('radio', { name: 'Month calendar' })).toHaveProperty('checked', true));
-		expect(within(group).getByText(/Could not save the heatmap layout \(offline\)/)).toBeTruthy();
+		expect(within(group).getByText(/Could\ not\ save\ the\ heatmap\ layout\ \(The\ server\ did\ not\ answer\.\)\./)).toBeTruthy();
 	});
 
 	it('is hairline rows with base Buttons and no primary action (it saves on change, #106)', async () => {

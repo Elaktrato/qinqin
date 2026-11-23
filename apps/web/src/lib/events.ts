@@ -2,6 +2,7 @@
 // keys on a client-generated ULID. Recording is fire-and-forget — a
 // failed POST must never break the page the user is on.
 
+import { onSessionEnd } from './session/sessionEnd';
 import { api, getToken } from './api/client';
 import { firstEventsPageUrl, readEventLog } from './eventPages';
 import { pruneSavedEventPages, type PageCachesLike } from './pwa/eventPageCache';
@@ -92,6 +93,8 @@ const eventLog = createWorkspaceCache(
 	() => Date.now(),
 	WORKSPACE_EVENTS_TTL_MS
 );
+
+onSessionEnd(() => eventLog.invalidate());
 
 const logListeners = new Set<(workspaceId: number) => void>();
 

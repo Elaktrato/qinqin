@@ -30,11 +30,11 @@ func (s *server) handleAdminBackupStart(w http.ResponseWriter, r *http.Request) 
 	}
 	inc, err := backup.ParseInclude(req.Include)
 	if err != nil {
-		writeAuthError(w, http.StatusBadRequest, "bad_request", `include may name "db", "books", "packs" and "audio".`)
+		writeError(w, http.StatusBadRequest, "bad_request", `include may name "db", "books", "packs" and "audio".`)
 		return
 	}
 	if s.backups.isServerRunning() {
-		writeAuthError(w, http.StatusConflict, "backup_running", "A server backup is already running.")
+		writeError(w, http.StatusConflict, "backup_running", "A server backup is already running.")
 		return
 	}
 	// The archive holds every password hash: password, and a code from an admin with an authenticator.
@@ -57,7 +57,7 @@ func (s *server) handleAdminBackupStart(w http.ResponseWriter, r *http.Request) 
 
 func (s *server) writeSpaceError(w http.ResponseWriter, r *http.Request, err error) {
 	if errors.Is(err, backup.ErrInsufficientStorage) {
-		writeAuthError(w, http.StatusInsufficientStorage, "insufficient_storage",
+		writeError(w, http.StatusInsufficientStorage, "insufficient_storage",
 			"There is not enough free space on the data volume for a snapshot of the database. Free some space and try again.")
 		return
 	}
@@ -77,7 +77,7 @@ func (s *server) handleAdminBackupDownload(w http.ResponseWriter, r *http.Reques
 	w.Header().Set("Cache-Control", "no-store")
 	uid, extra, ok := s.tickets.consumeExtra(r.PathValue("ticket"), ticketServerBackup, s.now())
 	notFound := func() {
-		writeAuthError(w, http.StatusNotFound, "not_found", "This download link is not valid any more.")
+		writeError(w, http.StatusNotFound, "not_found", "This download link is not valid any more.")
 	}
 	if !ok {
 		notFound()
@@ -97,7 +97,7 @@ func (s *server) handleAdminBackupDownload(w http.ResponseWriter, r *http.Reques
 	s.backups.mu.Lock()
 	if s.backups.server {
 		s.backups.mu.Unlock()
-		writeAuthError(w, http.StatusConflict, "backup_running", "A server backup is already running.")
+		writeError(w, http.StatusConflict, "backup_running", "A server backup is already running.")
 		return
 	}
 	s.backups.server = true

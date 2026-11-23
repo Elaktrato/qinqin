@@ -34,25 +34,27 @@ func (s *server) library() library.Store {
 // libraryError maps a store error to a response; internal errors never
 // leak details.
 func libraryError(w http.ResponseWriter, err error) {
+	var mismatch *library.LanguageMismatchError
 	switch {
 	case errors.Is(err, library.ErrNotFound):
-		http.Error(w, "not found", http.StatusNotFound)
+		writeError(w, http.StatusNotFound, "not_found", "Not found.")
 	case errors.Is(err, library.ErrDuplicate):
-		http.Error(w, "book already in library", http.StatusConflict)
+		writeError(w, http.StatusConflict, "book_exists", "Book already in library.")
 	case errors.Is(err, library.ErrWorkspaceNotFound):
-		http.Error(w, "workspace not found", http.StatusNotFound)
-	case errors.As(err, new(*library.LanguageMismatchError)):
-		http.Error(w, err.Error(), http.StatusUnprocessableEntity)
+		writeError(w, http.StatusNotFound, "workspace_not_found", "No such workspace.")
+	case errors.As(err, &mismatch):
+		writeError(w, http.StatusUnprocessableEntity, "language_mismatch", err.Error(),
+			map[string]any{"workspaceLanguage": mismatch.Workspace, "bookLanguage": mismatch.Book})
 	case errors.Is(err, library.ErrPositionTooLong):
-		http.Error(w, "position too long", http.StatusRequestEntityTooLarge)
+		writeError(w, http.StatusRequestEntityTooLarge, "too_large", "position too long.")
 	case errors.Is(err, library.ErrPositionEmpty):
-		http.Error(w, "position required", http.StatusUnprocessableEntity)
+		writeError(w, http.StatusUnprocessableEntity, "invalid_request", "position required.")
 	case errors.Is(err, library.ErrLabelTooLong):
-		http.Error(w, "label is longer than 120 characters", http.StatusUnprocessableEntity)
+		writeError(w, http.StatusUnprocessableEntity, "invalid_request", "label is longer than 120 characters.")
 	case errors.Is(err, library.ErrTooMany):
-		http.Error(w, "this book already has 200 bookmarks", http.StatusConflict)
+		writeError(w, http.StatusConflict, "bookmark_limit", "This book already has 200 bookmarks.")
 	default:
-		http.Error(w, "internal error", http.StatusInternalServerError)
+		writeError(w, http.StatusInternalServerError, "internal", "Internal server error.")
 	}
 }
 
@@ -60,7 +62,7 @@ func libraryError(w http.ResponseWriter, err error) {
 func bookID(w http.ResponseWriter, r *http.Request) (int64, bool) {
 	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
 	if err != nil {
-		http.Error(w, "not found", http.StatusNotFound)
+		writeError(w, http.StatusNotFound, "not_found", "Not found.")
 		return 0, false
 	}
 	return id, true
@@ -104,7 +106,7 @@ func (s *server) handleUploadBook(w http.ResponseWriter, r *http.Request) {
 	defer r.MultipartForm.RemoveAll()
 	workspaceID, ok := parseWorkspaceID(r.FormValue("workspace"))
 	if !ok {
-		http.Error(w, `form field "workspace" with a workspace id required`, http.StatusBadRequest)
+		writeError(w, http.StatusBadRequest, "bad_request", "Form field \"workspace\" with a workspace id required.")
 		return
 	}
 	store := s.library()
@@ -115,7 +117,7 @@ func (s *server) handleUploadBook(w http.ResponseWriter, r *http.Request) {
 	}
 	file, _, err := r.FormFile("file")
 	if err != nil {
-		http.Error(w, `multipart field "file" with the epub required`, http.StatusBadRequest)
+		writeError(w, http.StatusBadRequest, "bad_request", "Multipart field \"file\" with the epub required.")
 		return
 	}
 	defer file.Close()
@@ -125,17 +127,17 @@ func (s *server) handleUploadBook(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if len(data) > maxEpubBody {
-		http.Error(w, "epub too large", http.StatusRequestEntityTooLarge)
+		writeError(w, http.StatusRequestEntityTooLarge, "too_large", "Epub too large.")
 		return
 	}
 
 	meta, chapters, err := epub.Parse(bytes.NewReader(data), int64(len(data)))
 	if err != nil {
 		if errors.Is(err, epub.ErrInvalid) {
-			http.Error(w, "not a readable epub", http.StatusUnprocessableEntity)
+			writeError(w, http.StatusUnprocessableEntity, "epub_unreadable", "Not a readable epub.")
 			return
 		}
-		http.Error(w, "internal error", http.StatusInternalServerError)
+		writeInternal(w, r)
 		return
 	}
 	// The epub's own dc:language decides; the form field only fills in
@@ -151,7 +153,7 @@ func (s *server) handleUploadBook(w http.ResponseWriter, r *http.Request) {
 		if declared {
 			msg = "the epub's language must be zh or ja"
 		}
-		http.Error(w, msg, http.StatusUnprocessableEntity)
+		writeError(w, http.StatusUnprocessableEntity, "invalid_request", msg+".")
 		return
 	}
 	title := meta.Title
@@ -190,7 +192,7 @@ func (s *server) handleListBooks(w http.ResponseWriter, r *http.Request) {
 	if r.URL.Query().Has("workspace") {
 		id, ok := parseWorkspaceID(r.URL.Query().Get("workspace"))
 		if !ok {
-			http.Error(w, "workspace must be a workspace id", http.StatusBadRequest)
+			writeError(w, http.StatusBadRequest, "bad_request", "workspace must be a workspace id.")
 			return
 		}
 		if _, err := store.WorkspaceLanguage(r.Context(), u.ID, id); err != nil {
@@ -240,7 +242,7 @@ func (s *server) handleGetChapter(w http.ResponseWriter, r *http.Request) {
 	}
 	n, err := strconv.Atoi(r.PathValue("n"))
 	if err != nil {
-		http.Error(w, "not found", http.StatusNotFound)
+		writeError(w, http.StatusNotFound, "not_found", "Not found.")
 		return
 	}
 	ch, err := s.library().Chapter(r.Context(), u.ID, id, n)

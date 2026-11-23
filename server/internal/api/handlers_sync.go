@@ -39,19 +39,18 @@ func (s *server) handleSyncPull(w http.ResponseWriter, r *http.Request) {
 	if raw := q.Get("cursor"); raw != "" {
 		t, err := time.Parse(time.RFC3339, raw)
 		if err != nil {
-			http.Error(w, "cursor must be RFC 3339", http.StatusBadRequest)
+			writeError(w, http.StatusBadRequest, "bad_request", "cursor must be RFC 3339.")
 			return
 		}
 		cursor = t
 	}
 	only, err := chinsync.ParseCollections(q.Get("collections"))
 	if errors.Is(err, chinsync.ErrMoved) {
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "sync_collection_moved",
-			"message": "The lexicon collections moved to data packages: read GET /api/packages. " + err.Error()})
+		writeError(w, http.StatusBadRequest, "sync_collection_moved", "The lexicon collections moved to data packages: read GET /api/packages. Moved: "+errDetail(err, chinsync.ErrMoved))
 		return
 	}
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		writeError(w, http.StatusBadRequest, "bad_request", errDetail(err, chinsync.ErrInvalid))
 		return
 	}
 	h := w.Header()
@@ -87,16 +86,13 @@ func (s *server) handleSyncPullV2(w http.ResponseWriter, r *http.Request, p *aut
 	}
 	switch {
 	case errors.Is(err, chinsync.ErrMoved):
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "sync_collection_moved",
-			"message": "The lexicon collections moved to data packages: read GET /api/packages. " + err.Error()})
+		writeError(w, http.StatusBadRequest, "sync_collection_moved", "The lexicon collections moved to data packages: read GET /api/packages. Moved: "+errDetail(err, chinsync.ErrMoved))
 	case errors.Is(err, chinsync.ErrPageInvalid):
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "sync_page_invalid",
-			"message": "Start the round again without page. " + err.Error()})
+		writeError(w, http.StatusBadRequest, "sync_page_invalid", "Start the round again without page. "+errDetail(err, chinsync.ErrPageInvalid))
 	case errors.Is(err, chinsync.ErrNotFound):
-		writeJSON(w, http.StatusNotFound, map[string]string{"error": "not_found", "message": "No such workspace."})
+		writeError(w, http.StatusNotFound, "not_found", "No such workspace.")
 	case errors.Is(err, chinsync.ErrCursorExpired):
-		writeJSON(w, http.StatusGone, map[string]string{"error": "sync_cursor_expired",
-			"message": "Discard local user data and pull again without since."})
+		writeError(w, http.StatusGone, "sync_cursor_expired", "Discard local user data and pull again without since.")
 	default:
 		writeInternal(w, r)
 	}
@@ -111,6 +107,14 @@ func (s *server) syncCatalogueETag(p *auth.Principal) chinsync.CatalogueFunc {
 		c, err := reg.Catalogue(ctx, languages, admin)
 		return c.ETag, err
 	}
+}
+
+// writeStoredUnreadable answers a write onto a stored study row this server
+// cannot read back (study.ErrUnreadableStored): 409 study_row_unreadable,
+// nothing applied (docs/contracts/sync/README.md, "Reading rows").
+func writeStoredUnreadable(w http.ResponseWriter) {
+	writeError(w, http.StatusConflict, "study_row_unreadable",
+		"A stored study row this write would replace was saved in a form this server version cannot read; it is kept unchanged. Update the server or leave the row alone.")
 }
 
 // handleSyncPush serves POST /api/sync/push: a client's offline events,
@@ -147,11 +151,13 @@ func (s *server) handleSyncPush(w http.ResponseWriter, r *http.Request) {
 	res, err := chinsync.Push(r.Context(), s.db, u.ID, body)
 	switch {
 	case errors.Is(err, chinsync.ErrInvalid):
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		writeError(w, http.StatusBadRequest, "bad_request", errDetail(err, chinsync.ErrInvalid))
 	case errors.Is(err, chinsync.ErrNotFound):
-		http.Error(w, "workspace or plugin not found", http.StatusNotFound)
+		writeError(w, http.StatusNotFound, "not_found", "No such workspace or plugin.")
+	case errors.Is(err, chinsync.ErrStoredUnreadable):
+		writeStoredUnreadable(w)
 	case err != nil:
-		http.Error(w, "internal error", http.StatusInternalServerError)
+		writeInternal(w, r)
 	default:
 		writeJSON(w, http.StatusOK, res)
 	}

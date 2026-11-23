@@ -47,7 +47,7 @@ func (s *server) handleActivity(w http.ResponseWriter, r *http.Request) {
 	}
 	hist, _, err := studyday.Load(r.Context(), s.db, u.ID)
 	if err != nil {
-		http.Error(w, "internal error", http.StatusInternalServerError)
+		writeInternal(w, r)
 		return
 	}
 	q := r.URL.Query()
@@ -55,7 +55,7 @@ func (s *server) handleActivity(w http.ResponseWriter, r *http.Request) {
 	if raw := q.Get("to"); raw != "" {
 		d, err := studyday.ParseDate(raw)
 		if err != nil {
-			http.Error(w, "to must be YYYY-MM-DD", http.StatusBadRequest)
+			writeError(w, http.StatusBadRequest, "bad_request", "to must be YYYY-MM-DD.")
 			return
 		}
 		to = d
@@ -64,45 +64,45 @@ func (s *server) handleActivity(w http.ResponseWriter, r *http.Request) {
 	if raw := q.Get("from"); raw != "" {
 		d, err := studyday.ParseDate(raw)
 		if err != nil {
-			http.Error(w, "from must be YYYY-MM-DD", http.StatusBadRequest)
+			writeError(w, http.StatusBadRequest, "bad_request", "from must be YYYY-MM-DD.")
 			return
 		}
 		from = d
 	}
 	if to.Before(from) {
-		http.Error(w, "from must not be after to", http.StatusBadRequest)
+		writeError(w, http.StatusBadRequest, "bad_request", "from must not be after to.")
 		return
 	}
 	if from.DaysUntil(to)+1 > maxActivitySpanDays {
-		http.Error(w, "the window may cover at most 366 days", http.StatusBadRequest)
+		writeError(w, http.StatusBadRequest, "bad_request", "The window may cover at most 366 days.")
 		return
 	}
 	var workspace *int64
 	if raw := q.Get("workspace"); raw != "" {
 		id, err := strconv.ParseInt(raw, 10, 64)
 		if err != nil {
-			http.Error(w, "workspace must be an integer", http.StatusBadRequest)
+			writeError(w, http.StatusBadRequest, "bad_request", "workspace must be an integer.")
 			return
 		}
 		ok, err := s.workspaceOwned(r.Context(), u.ID, id)
 		if err != nil {
-			http.Error(w, "internal error", http.StatusInternalServerError)
+			writeInternal(w, r)
 			return
 		}
 		if !ok {
-			http.Error(w, "workspace not found", http.StatusNotFound)
+			writeError(w, http.StatusNotFound, "workspace_not_found", "No such workspace.")
 			return
 		}
 		workspace = &id
 	}
 	rules, err := plugins.ActivityRules(r.Context(), s.db)
 	if err != nil {
-		http.Error(w, "internal error", http.StatusInternalServerError)
+		writeInternal(w, r)
 		return
 	}
 	cells, err := stats.Activity(r.Context(), s.db, u.ID, hist.Windows(from, to), workspace, rules)
 	if err != nil {
-		http.Error(w, "internal error", http.StatusInternalServerError)
+		writeInternal(w, r)
 		return
 	}
 	sources := make([]sourceJSON, 0, len(rules))

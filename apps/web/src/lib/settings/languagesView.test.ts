@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import type { Language } from '$lib/api/types';
 import type { InstalledPack } from '$lib/api/packs';
-import { languageRows, normalizeCode } from './languagesView';
+import { ApiError } from '$lib/api/client';
+import { inUseLines, languageRows, normalizeCode } from './languagesView';
 
 const lang = (code: string, kind: 'code' | 'data', installed = false): Language => ({
 	code, name: code, installed, kind
@@ -46,5 +47,25 @@ describe('normalizeCode', () => {
 	});
 	it('rejects malformed codes', () => {
 		for (const bad of ['x', '', 'spanish', 'es-', 'Hello!']) expect(normalizeCode(bad)).toBeNull();
+	});
+});
+
+describe('inUseLines (#168 review)', () => {
+	const inUse = (usage: unknown) =>
+		new ApiError(409, JSON.stringify({ error: 'language_in_use', message: 'English.', usage }));
+
+	it('says how many workspaces and packs still use the language, from the counts the server sends', () => {
+		expect(
+			inUseLines(inUse({ workspaces: 2, dictionaries: 1, levelLists: 0, frequencyPacks: 1, sentencePacks: 0, grammarPacks: 0, audioPacks: 0, legacySentences: 0 }))
+		).toEqual(['2 workspaces', '2 installed packs']);
+		expect(inUseLines(inUse({ workspaces: 1, sentencePacks: 0 }))).toEqual(['1 workspace']);
+		expect(inUseLines(inUse({ workspaces: 0, audioPacks: 1 }))).toEqual(['1 installed pack']);
+	});
+
+	it('is empty for anything else or counts it cannot read', () => {
+		expect(inUseLines(inUse('lots'))).toEqual([]);
+		expect(inUseLines(inUse({ workspaces: 'two' }))).toEqual([]);
+		expect(inUseLines(new ApiError(409, JSON.stringify({ error: 'conflict', message: 'x', usage: { workspaces: 1 } })))).toEqual([]);
+		expect(inUseLines(new Error('x'))).toEqual([]);
 	});
 });

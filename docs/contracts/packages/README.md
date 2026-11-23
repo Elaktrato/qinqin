@@ -17,6 +17,8 @@ Fixtures:
 - `manifest.json` — valid manifests (one per type) and invalid ones.
 - `versioning.json` — `server` cases (pack operations → catalogue rows) and `client` cases (`packageAction`).
 - `schemas.json` — the exact `data.sqlite` schema of format 1 per type, and the row order of each table.
+- `pack-types.json` — every data **pack** type (the manifest `type` of a pack an administrator installs) and
+  what it builds; see "Pack types" below.
 
 ## Ids and types
 
@@ -35,6 +37,26 @@ An id matches `catalogue.json` `idPattern`. `.` separates type and pack id (pack
 no dot). A lexicon package exists per language that has at least one live dictionary; installing or removing
 a dictionary of the language rebuilds it, and removing the last one makes it a tombstone. Every other package
 belongs to exactly one installed pack.
+
+## Pack types (`pack-types.json`)
+
+Packages are built from installed **packs**. `pack-types.json` lists every pack type in the server's order (the
+admin list `GET /api/admin/packs` and the seed order): its language shape (`one`: the manifest states
+`language`; `many`: `languages`; `none`: neither), whether an administrator may install it by an upload
+(`uploadable`; audio packs are seeded), the package type it builds (`package`, `null` for none; the
+dictionaries' `lexicon` is per language), and that package's `requiresLexicon` and `optionalPackage`. The
+server keeps one table of these (`server/internal/packtype`) and a Go test compares it with the fixture; the web
+test `lib/plugins/packTypes.contract.test.ts` checks the web knows every type. A client meets a pack type it does
+not know only in admin and Sources views; it shows it by its `type` string.
+
+**Never rely on the data-pack rows of `GET /api/plugins`.** For v0.3.x web shells the server still lists one
+plugin row per live pack of the types marked `legacyPluginRow` (dictionary, frequency, levels, sentences,
+grammar, audio), with a synthesized manifest and `hidden: true`. They are not plugins and go away when the
+v0.3.x shells are retired. One exception remains until then: the web's Grammar page still honours a grammar
+pack's `enabled` from this list (no UI changes it; only `PUT /api/plugins/{id}/state` does). New clients take
+neither the rows nor their state. Packs are listed by
+their own routes (`GET /api/dictionaries`, `/api/frequency-packs`, `/api/sentence-packs`, `/api/audio-packs`, ...;
+`docs/wiki/API-Routes.md`) and, for administrators, `GET /api/admin/packs`; their data by this catalogue.
 
 ## Catalogue: `GET /api/packages[?languages=zh,ja|all]`
 

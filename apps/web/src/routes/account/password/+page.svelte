@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { errorText } from '$lib/api/apiErrors';
 	import { goto } from '$app/navigation';
 	import { onMount } from 'svelte';
 	import { api, apiErrorBody } from '$lib/api/client';
@@ -55,7 +56,7 @@
 						: t('auth.forced.currentNeeded');
 				needCurrent = true;
 			} else {
-				error = body?.message || (err instanceof Error ? err.message : '') || t('auth.forced.failed');
+				error = errorText(err, t('auth.forced.failed'));
 			}
 		} finally {
 			busy = false;

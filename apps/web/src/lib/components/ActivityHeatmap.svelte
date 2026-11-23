@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { onMount, untrack } from 'svelte';
-	import { errorMessage } from '$lib/stats/errors';
+	import { errorText } from '$lib/api/apiErrors';
 	import { t } from '$lib/i18n';
 	import { activityLabel } from '$lib/plugins/manifestText';
 	import { fetchActivity, type ActivityResponse } from '$lib/api/stats';
@@ -264,7 +264,7 @@
 			void loadGoals();
 		} catch (err) {
 			if (!requests.isCurrent(seq)) return;
-			if (response === null) error = errorMessage(err, t('stats.activity.loadFailed'));
+			if (response === null) error = errorText(err, t('stats.activity.loadFailed'));
 			else if (layout === 'month' && (next.from !== range.from || next.to !== range.to)) {
 				// A new month (not a refresh of the one on screen) did not load.
 				monthError = t('widgets.activity.month.loadFailed');

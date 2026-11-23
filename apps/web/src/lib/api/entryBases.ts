@@ -4,6 +4,7 @@
 // own overlay, so the cache is dropped on sign-out and per entry after an
 // edit. Failures are never cached; successes of the same call stay.
 
+import { onSessionEnd, sessionEpoch } from '../session/sessionEnd';
 import { api } from './client';
 import type { EntryBase } from './types';
 
@@ -13,6 +14,10 @@ const CONCURRENCY = 2;
 const cache = new Map<number, EntryBase>();
 // Ids a request is (or is about to be) busy with, so concurrent callers share it.
 const inflight = new Map<number, Promise<void>>();
+onSessionEnd(() => {
+	cache.clear();
+	inflight.clear();
+});
 
 /** clearEntryBasesCache forgets everything (sign-out, tests). */
 export function clearEntryBasesCache(): void {
@@ -77,11 +82,13 @@ export async function loadEntryBases(
 				continue;
 			}
 			try {
+				const epoch = sessionEpoch();
 				const rows = await api<EntryBase[]>('/api/entries/bases', {
 					method: 'POST',
 					body: { ids: job.ids }
 				});
-				for (const row of Array.isArray(rows) ? rows : []) cache.set(row.id, row);
+				// An answer for a session that has ended is not kept (#173).
+				if (epoch === sessionEpoch()) for (const row of Array.isArray(rows) ? rows : []) cache.set(row.id, row);
 				for (const id of job.ids) inflight.delete(id);
 				job.resolve();
 			} catch (err) {

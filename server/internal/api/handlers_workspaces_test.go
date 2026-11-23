@@ -436,7 +436,7 @@ func TestWorkspaceLanguageCodes(t *testing.T) {
 		resp := doJSON(t, http.MethodPost, ts.URL, "/api/workspaces", token, map[string]string{"language": code})
 		b, _ := io.ReadAll(resp.Body)
 		resp.Body.Close()
-		return resp.StatusCode, strings.TrimSpace(string(b))
+		return resp.StatusCode, errorCode(t, b)
 	}
 	if st, _ := create(admin, "pt"); st != http.StatusCreated {
 		t.Fatalf("admin pt = %d, want 201", st)
@@ -445,13 +445,13 @@ func TestWorkspaceLanguageCodes(t *testing.T) {
 	if err := sqlDB.QueryRow(`SELECT COUNT(*) FROM languages WHERE code = 'pt'`).Scan(&n); err != nil || n != 1 {
 		t.Errorf("languages row for pt: n=%d err=%v, want 1", n, err)
 	}
-	if st, msg := create(user, "de"); st != http.StatusUnprocessableEntity || msg != "unknown language — ask the administrator to add it" {
+	if st, msg := create(user, "de"); st != http.StatusUnprocessableEntity || msg != "language_unknown" {
 		t.Errorf("learner unknown = %d %q", st, msg)
 	}
-	if st, msg := create(user, "Hello!"); st != http.StatusUnprocessableEntity || msg != "language must be a code like es or pt-br" {
+	if st, msg := create(user, "Hello!"); st != http.StatusUnprocessableEntity || msg != "invalid_language" {
 		t.Errorf("learner invalid = %d %q", st, msg)
 	}
-	if st, msg := create(admin, "Hello!"); st != http.StatusUnprocessableEntity || msg != "language must be a code like es or pt-br" {
+	if st, msg := create(admin, "Hello!"); st != http.StatusUnprocessableEntity || msg != "invalid_language" {
 		t.Errorf("admin invalid = %d %q", st, msg)
 	}
 	if st, _ := create(user, "pt"); st != http.StatusCreated {

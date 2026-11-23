@@ -4,9 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"go/ast"
-	"go/parser"
-	"go/token"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -252,8 +249,8 @@ func TestAuthContractFixturesMatchTheServer(t *testing.T) {
 	}
 }
 
-// errors.json is the one catalogue: every code the handlers write and every
-// code of throttle-responses.json must be in it with the same status.
+// errors.json is the one catalogue: every code of throttle-responses.json
+// must be in it with the same status.
 func TestAuthErrorCatalogueIsCoherent(t *testing.T) {
 	raw, err := os.ReadFile(filepath.Join(contractDir, "errors.json"))
 	if err != nil {
@@ -293,54 +290,6 @@ func TestAuthErrorCatalogueIsCoherent(t *testing.T) {
 		}
 	}
 
-	// Every writeAuthError call site names a catalogued code with its status.
-	names := map[string]int{
-		"StatusBadRequest": 400, "StatusUnauthorized": 401, "StatusForbidden": 403, "StatusNotFound": 404, "StatusGone": 410,
-		"StatusConflict": 409, "StatusRequestEntityTooLarge": 413, "StatusUnsupportedMediaType": 415, "StatusInsufficientStorage": 507, "StatusUnprocessableEntity": 422,
-		"StatusTooManyRequests": 429, "StatusInternalServerError": 500, "StatusServiceUnavailable": 503,
-	}
-	files, _ := filepath.Glob("*.go")
-	fset := token.NewFileSet()
-	seen := 0
-	for _, f := range files {
-		if strings.HasSuffix(f, "_test.go") {
-			continue
-		}
-		file, err := parser.ParseFile(fset, f, nil, 0)
-		if err != nil {
-			t.Fatal(err)
-		}
-		ast.Inspect(file, func(n ast.Node) bool {
-			call, ok := n.(*ast.CallExpr)
-			if !ok {
-				return true
-			}
-			id, ok := call.Fun.(*ast.Ident)
-			if !ok || id.Name != "writeAuthError" || len(call.Args) < 4 {
-				return true
-			}
-			codeLit, ok := call.Args[2].(*ast.BasicLit)
-			if !ok {
-				return true // the generic helper itself
-			}
-			code, _ := strconv.Unquote(codeLit.Value)
-			seen++
-			st, ok := status[code]
-			if !ok {
-				t.Errorf("%s: error code %q is not in errors.json", f, code)
-				return true
-			}
-			if sel, ok := call.Args[1].(*ast.SelectorExpr); ok {
-				if want := names[sel.Sel.Name]; want == 0 {
-					t.Errorf("%s: unknown status constant %s (add it to the test)", f, sel.Sel.Name)
-				} else if want != st {
-					t.Errorf("%s: %q written with %d, errors.json says %d", f, code, want, st)
-				}
-			}
-			return true
-		})
-	}
-	if seen < 20 {
-		t.Errorf("only %d writeAuthError call sites found; the scan is broken", seen)
-	}
+	// Every writeError call site names a catalogued code with its status:
+	// TestEveryErrorGoesThroughWriteError (errors_static_test.go).
 }

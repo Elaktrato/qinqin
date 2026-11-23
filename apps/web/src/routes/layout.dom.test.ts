@@ -219,10 +219,10 @@ describe('layout workspaces', () => {
 			return [];
 		}) as never);
 		const view = render(Layout, { children });
-		await view.findByText('offline');
+		await view.findByText('Could not load workspaces.');
 		fail = false;
 		await fireEvent.click(view.getByRole('button', { name: 'Try again' }));
-		await waitFor(() => expect(view.queryByText('offline')).toBeNull());
+		await waitFor(() => expect(view.queryByText('Could not load workspaces.')).toBeNull());
 		await waitFor(() => expect(get(workspaces).current?.id).toBe(1));
 	});
 

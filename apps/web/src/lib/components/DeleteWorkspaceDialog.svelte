@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { errorText } from '$lib/api/apiErrors';
 	import { onMount, tick } from 'svelte';
 	import { t } from '$lib/i18n';
 	import { ApiError } from '$lib/api/client';
@@ -57,9 +58,7 @@
 			error =
 				err instanceof ApiError && err.status === 409
 					? t('app.workspaces.delete.onlyOne')
-					: err instanceof Error && err.message
-						? err.message
-						: t('app.workspaces.delete.failed');
+					: errorText(err, t('app.workspaces.delete.failed'));
 			deleting = false;
 			await tick();
 			input?.focus();

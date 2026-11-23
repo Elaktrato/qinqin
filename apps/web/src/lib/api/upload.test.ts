@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 const { goto } = vi.hoisted(() => ({ goto: vi.fn() }));
 vi.mock('$app/navigation', () => ({ goto }));
 
-import { ApiError, setUnauthorizedHandler } from './client';
+import { ApiError, setRestrictedHandler, setUnauthorizedHandler, setWorkspaceGoneHandler } from './client';
 import { uploadWithProgress } from './upload';
 import { installStaged, stagedStatus, waitForImport, type StagedStatus } from './packs';
 
@@ -92,6 +92,33 @@ describe('uploadWithProgress', () => {
 		x.finish(401, 'unauthorized');
 		await expect(p).rejects.toMatchObject({ status: 401 });
 		expect(handler).toHaveBeenCalledTimes(1);
+	});
+
+	it('tells the workspace-gone and restriction handlers, like api() (#168 review)', async () => {
+		const gone = vi.fn();
+		const restricted = vi.fn();
+		setWorkspaceGoneHandler(gone);
+		setRestrictedHandler(restricted);
+		try {
+			let { x, xhr } = setup();
+			let p = uploadWithProgress('/api/library/upload', new FormData(), { xhr });
+			x.finish(404, JSON.stringify({ error: 'workspace_not_found', message: 'No such workspace.' }));
+			await expect(p).rejects.toMatchObject({ status: 404, code: 'workspace_not_found' });
+			expect(gone).toHaveBeenCalledTimes(1);
+			({ x, xhr } = setup());
+			p = uploadWithProgress('/api/library/upload', new FormData(), { xhr });
+			x.finish(403, JSON.stringify({ error: 'password_change_required', message: 'x' }));
+			await expect(p).rejects.toMatchObject({ status: 403 });
+			expect(restricted).toHaveBeenCalledTimes(1);
+			({ x, xhr } = setup());
+			p = uploadWithProgress('/api/library/upload', new FormData(), { xhr });
+			x.finish(404, JSON.stringify({ error: 'not_found', message: 'x' }));
+			await expect(p).rejects.toMatchObject({ status: 404 });
+			expect(gone).toHaveBeenCalledTimes(1);
+		} finally {
+			setWorkspaceGoneHandler(null);
+			setRestrictedHandler(null);
+		}
 	});
 
 	it('aborts through the signal and rejects with AbortError', async () => {

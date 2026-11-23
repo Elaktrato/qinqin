@@ -29,7 +29,7 @@ func (s *server) handleRestoreUpload(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if ct := strings.ToLower(strings.TrimSpace(strings.SplitN(r.Header.Get("Content-Type"), ";", 2)[0])); ct != "application/zip" && ct != "application/octet-stream" && ct != "application/x-zip-compressed" {
-		writeAuthError(w, http.StatusUnsupportedMediaType, "unsupported_media_type", "Send the backup file as application/zip.")
+		writeError(w, http.StatusUnsupportedMediaType, "unsupported_media_type", "Send the backup file as application/zip.")
 		return
 	}
 	if ok, retry := s.authLimiter("restore").Allow(int64Key(u.ID)); !ok {
@@ -50,7 +50,7 @@ func (s *server) handleRestoreUpload(w http.ResponseWriter, r *http.Request) {
 	old := s.restores.byUser[u.ID]
 	if old != nil && old.status == rsRunning {
 		s.restores.mu.Unlock()
-		writeAuthError(w, http.StatusConflict, "restore_running", "A restore of your data is already running.")
+		writeError(w, http.StatusConflict, "restore_running", "A restore of your data is already running.")
 		return
 	}
 	if old != nil {
@@ -90,11 +90,11 @@ func (s *server) handleRestoreUpload(w http.ResponseWriter, r *http.Request) {
 		abandon()
 		var tooBig *http.MaxBytesError
 		if errors.As(cerr, &tooBig) {
-			writeAuthError(w, http.StatusRequestEntityTooLarge, backup.CodeTooLarge, "This file is larger than 128 MiB, the most a backup upload may be.")
+			writeError(w, http.StatusRequestEntityTooLarge, backup.CodeTooLarge, "This file is larger than 128 MiB, the most a backup upload may be.")
 		} else if r.Context().Err() != nil {
 			writeClientGone(w)
 		} else {
-			writeAuthError(w, http.StatusBadRequest, "bad_request", "The upload did not arrive completely.")
+			writeError(w, http.StatusBadRequest, "bad_request", "The upload did not arrive completely.")
 		}
 		return
 	}
@@ -103,17 +103,17 @@ func (s *server) handleRestoreUpload(w http.ResponseWriter, r *http.Request) {
 	s.restores.mu.Unlock()
 	if !still { // a newer upload of this user took the slot meanwhile
 		os.Remove(path)
-		writeAuthError(w, http.StatusConflict, "stage_not_ready", "A newer upload replaced this one.")
+		writeError(w, http.StatusConflict, "stage_not_ready", "A newer upload replaced this one.")
 		return
 	}
-	go s.validateStage(st)
+	s.goBackground(func() { s.validateStage(st) })
 	writeJSON(w, http.StatusAccepted, map[string]string{"token": token})
 }
 
 func (s *server) ownStage(w http.ResponseWriter, r *http.Request, userID int64) *restoreStage {
 	st := s.restores.get(r.PathValue("token"), userID, s.now())
 	if st == nil {
-		writeAuthError(w, http.StatusNotFound, "not_found", "No such restore.")
+		writeError(w, http.StatusNotFound, "not_found", "No such restore.")
 	}
 	return st
 }
@@ -148,7 +148,7 @@ func (s *server) handleRestoreDiscard(w http.ResponseWriter, r *http.Request) {
 	s.restores.mu.Lock()
 	if st.status == rsRunning {
 		s.restores.mu.Unlock()
-		writeAuthError(w, http.StatusConflict, "restore_running", "The restore is running and cannot be cancelled.")
+		writeError(w, http.StatusConflict, "restore_running", "The restore is running and cannot be cancelled.")
 		return
 	}
 	s.restores.dropLocked(st)
@@ -184,23 +184,23 @@ func (s *server) handleRestoreApply(w http.ResponseWriter, r *http.Request) {
 	s.restores.mu.Unlock()
 	switch status {
 	case rsRunning:
-		writeAuthError(w, http.StatusConflict, "restore_running", "A restore of your data is already running.")
+		writeError(w, http.StatusConflict, "restore_running", "A restore of your data is already running.")
 		return
 	case rsReady:
 	default:
-		writeAuthError(w, http.StatusConflict, "stage_not_ready", "This upload is not ready to be restored.")
+		writeError(w, http.StatusConflict, "stage_not_ready", "This upload is not ready to be restored.")
 		return
 	}
 	if req.Confirm != u.Username {
-		writeAuthError(w, http.StatusUnprocessableEntity, "confirm_mismatch", "Type your username exactly to confirm.")
+		writeError(w, http.StatusUnprocessableEntity, "confirm_mismatch", "Type your username exactly to confirm.")
 		return
 	}
 	if req.Unresolved != "" && req.Unresolved != "drop" {
-		writeAuthError(w, http.StatusBadRequest, "bad_request", `unresolved must be "drop" or absent.`)
+		writeError(w, http.StatusBadRequest, "bad_request", `unresolved must be "drop" or absent.`)
 		return
 	}
 	if rep != nil && (rep.Unresolved.EntryCount > 0 || rep.Unresolved.Sentences > 0) && req.Unresolved != "drop" {
-		writeAuthError(w, http.StatusConflict, "unresolved_entries", "The backup refers to words this server does not have. Confirm that they are dropped to continue.")
+		writeError(w, http.StatusConflict, "unresolved_entries", "The backup refers to words this server does not have. Confirm that they are dropped to continue.")
 		return
 	}
 	if s.backups.applyBusy() {
@@ -226,13 +226,13 @@ func (s *server) handleRestoreApply(w http.ResponseWriter, r *http.Request) {
 	if s.backups.restoring[u.ID] {
 		s.backups.mu.Unlock()
 		s.backups.endApply()
-		writeAuthError(w, http.StatusConflict, "restore_running", "A restore of your data is already running.")
+		writeError(w, http.StatusConflict, "restore_running", "A restore of your data is already running.")
 		return
 	}
 	if s.backups.exporting[u.ID] {
 		s.backups.mu.Unlock()
 		s.backups.endApply()
-		writeAuthError(w, http.StatusConflict, "export_running", "An export of your data is running. Wait until it has finished.")
+		writeError(w, http.StatusConflict, "export_running", "An export of your data is running. Wait until it has finished.")
 		return
 	}
 	s.backups.restoring[u.ID] = true
@@ -244,12 +244,12 @@ func (s *server) handleRestoreApply(w http.ResponseWriter, r *http.Request) {
 		delete(s.backups.restoring, u.ID)
 		s.backups.mu.Unlock()
 		s.backups.endApply()
-		writeAuthError(w, http.StatusConflict, "restore_running", "A restore of your data is already running.")
+		writeError(w, http.StatusConflict, "restore_running", "A restore of your data is already running.")
 		return
 	}
 	st.status = rsRunning
 	s.restores.mu.Unlock()
-	go s.runRestore(st, p.SessionID, req.Unresolved == "drop")
+	s.goBackground(func() { s.runRestore(st, p.SessionID, req.Unresolved == "drop") })
 	writeJSON(w, http.StatusAccepted, map[string]string{"status": rsRunning})
 }
 
@@ -313,7 +313,7 @@ func (s *server) handleSafetyExportTicket(w http.ResponseWriter, r *http.Request
 		return
 	}
 	if _, ok := backup.LatestSafetyExport(s.dataDir, u.ID); !ok {
-		writeAuthError(w, http.StatusNotFound, "not_found", "There is no earlier backup of your data on this server.")
+		writeError(w, http.StatusNotFound, "not_found", "There is no earlier backup of your data on this server.")
 		return
 	}
 	token := s.tickets.issue(u.ID, ticketSafety, ticketTTL, s.now())
@@ -325,17 +325,17 @@ func (s *server) handleSafetyExportDownload(w http.ResponseWriter, r *http.Reque
 	w.Header().Set("Cache-Control", "no-store")
 	uid, ok := s.tickets.consume(r.PathValue("ticket"), ticketSafety, s.now())
 	if !ok {
-		writeAuthError(w, http.StatusNotFound, "not_found", "This download link is not valid any more.")
+		writeError(w, http.StatusNotFound, "not_found", "This download link is not valid any more.")
 		return
 	}
 	path, ok := backup.LatestSafetyExport(s.dataDir, uid)
 	if !ok {
-		writeAuthError(w, http.StatusNotFound, "not_found", "There is no earlier backup of your data on this server.")
+		writeError(w, http.StatusNotFound, "not_found", "There is no earlier backup of your data on this server.")
 		return
 	}
 	f, err := os.Open(path)
 	if err != nil {
-		writeAuthError(w, http.StatusNotFound, "not_found", "There is no earlier backup of your data on this server.")
+		writeError(w, http.StatusNotFound, "not_found", "There is no earlier backup of your data on this server.")
 		return
 	}
 	defer f.Close()
@@ -345,10 +345,10 @@ func (s *server) handleSafetyExportDownload(w http.ResponseWriter, r *http.Reque
 	w.Header().Set("Content-Type", "application/zip")
 	w.Header().Set("Content-Disposition", `attachment; filename="`+downloadName("qinqin-before-restore", username, info.ModTime(), "zip")+`"`)
 	w.Header().Set("X-Content-Type-Options", "nosniff")
-	http.ServeContent(w, r, "", info.ModTime(), f)
+	serveContent(w, r, info.ModTime(), f)
 }
 
 func writeRestoreBusy(w http.ResponseWriter) {
 	w.Header().Set("Retry-After", "30")
-	writeAuthError(w, http.StatusConflict, "restore_busy", "Another restore is running on this server. Try again in a minute.")
+	writeError(w, http.StatusConflict, "restore_busy", "Another restore is running on this server. Try again in a minute.")
 }

@@ -6,7 +6,7 @@
 	import { streakText } from '$lib/goals/goalText';
 	import { loadGoalStatus, type GoalView } from '$lib/goals/loadGoal';
 	import { onContextStale } from '$lib/study/currentContext';
-	import { errorMessage } from '$lib/stats/errors';
+	import { errorText } from '$lib/api/apiErrors';
 	import { workspaces } from '$lib/workspaces';
 	import WidgetCard from './WidgetCard.svelte';
 	import type { WidgetStatus } from './types';
@@ -50,7 +50,7 @@
 		} catch (err) {
 			if (seq !== requestSeq) return;
 			goal = null;
-			error = errorMessage(err, t('widgets.goal.loadFailed'));
+			error = errorText(err, t('widgets.goal.loadFailed'));
 		} finally {
 			if (seq === requestSeq) loading = false;
 		}

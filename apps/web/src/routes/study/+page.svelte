@@ -1,8 +1,9 @@
 <script lang="ts">
+	import { errorText } from '$lib/api/apiErrors';
+	import UnreadableRowsNotice from '$lib/study/UnreadableRowsNotice.svelte';
 	import { pageTitle } from '$lib/pageTitle';
 	import { t } from '$lib/i18n';
 	import { goto } from '$app/navigation';
-	import { ApiError } from '$lib/api/client';
 	import { fetchSchemeCharacters, getSchemeEntries, getSchemes } from '$lib/api/schemes';
 	import { fetchCharacters } from '$lib/api/characters';
 	import type { CharRow } from '$lib/api/types';
@@ -173,11 +174,6 @@ import { limitsOf } from '$lib/study/scheduler';
 	// the data of the one now selected.
 	let requestSeq = 0;
 
-	function message(err: unknown, fallback: string): string {
-		if (err instanceof ApiError && err.message) return err.message;
-		if (err instanceof Error && err.message) return err.message;
-		return fallback;
-	}
 
 	/**
 	 * keepKnownDecks drops decks deleted since the setup was saved (or
@@ -246,7 +242,7 @@ import { limitsOf } from '$lib/study/scheduler';
 			decks = [];
 			cards = [];
 			reviews = [];
-			loadError = message(err, t('study.setup.decksFailed'));
+			loadError = errorText(err, t('study.setup.decksFailed'));
 		} finally {
 			if (seq === requestSeq) loading = false;
 		}
@@ -272,7 +268,7 @@ import { limitsOf } from '$lib/study/scheduler';
 			vacations = data.vacations ?? [];
 			schedulingLabel = describeScheduling(data);
 		} catch (err) {
-			if (seq === requestSeq) deckError = message(err, t('study.setup.reloadFailed'));
+			if (seq === requestSeq) deckError = errorText(err, t('study.setup.reloadFailed'));
 		}
 	}
 
@@ -287,7 +283,7 @@ import { limitsOf } from '$lib/study/scheduler';
 		} catch (err) {
 			if (seq !== requestSeq) return;
 			schemes = [];
-			schemeError = message(err, t('study.setup.schemesFailed'));
+			schemeError = errorText(err, t('study.setup.schemesFailed'));
 		} finally {
 			if (seq === requestSeq) schemesLoaded = true;
 		}
@@ -378,7 +374,7 @@ import { limitsOf } from '$lib/study/scheduler';
 			levelEntries = list;
 		} catch (err) {
 			if (seq !== levelEntriesSeq) return;
-			levelEntriesError = message(err, t('study.setup.levelFailed'));
+			levelEntriesError = errorText(err, t('study.setup.levelFailed'));
 		} finally {
 			if (seq === levelEntriesSeq) levelEntriesLoading = false;
 		}
@@ -682,6 +678,9 @@ import { limitsOf } from '$lib/study/scheduler';
 		errors = [];
 		typeError = '';
 		if (isOptIn(id)) {
+			// The workspace whose decks are shown, captured at the click (#174).
+			const ws = activeWorkspaceId;
+			if (ws === null) return;
 			const kind = id as OptInKind;
 			const next = !extraKinds.includes(kind);
 			const previousSettings = deckSettings;
@@ -700,20 +699,32 @@ import { limitsOf } from '$lib/study/scheduler';
 			}
 			deckSettings = optimistic;
 			extraChoices = { ...extraChoices, [kind]: next };
-			if (activeWorkspaceId !== null) rememberExtraChoice(activeWorkspaceId, kind, next);
+			rememberExtraChoice(ws, kind, next);
 			typeSaving = id;
 			try {
 				const saved = await saveDeckCardTypesForDecks(
+					ws,
 					allDecks.map((deck) => deck.id),
 					kind,
 					next
 				);
-				deckSettings = { ...deckSettings, ...saved };
+				// A switch while it saved: the page shows another workspace now.
+				if (activeWorkspaceId === ws) {
+					const next = { ...deckSettings, ...saved.saved };
+					// Decks whose stored switches this version cannot read keep them (#167).
+					for (const deckId of saved.unreadable) {
+						if (previousSettings[deckId] === undefined) delete next[deckId];
+						else next[deckId] = previousSettings[deckId];
+					}
+					deckSettings = next;
+					if (saved.unreadable.length > 0) typeError = t('study.store.unreadableRow');
+				}
 			} catch (err) {
+				rememberExtraChoice(ws, kind, !next);
+				if (activeWorkspaceId !== ws) return;
 				deckSettings = previousSettings;
 				extraChoices = previousChoices;
-				if (activeWorkspaceId !== null) rememberExtraChoice(activeWorkspaceId, kind, !next);
-				typeError = message(err, t('study.types.saveFailed'));
+				typeError = errorText(err, t('study.types.saveFailed'));
 			} finally {
 				typeSaving = null;
 			}
@@ -740,19 +751,21 @@ import { limitsOf } from '$lib/study/scheduler';
 	async function addDeck(event: SubmitEvent): Promise<void> {
 		event.preventDefault();
 		const name = deckName.trim();
-		if (!name || creating) return;
+		const ws = activeWorkspaceId;
+		if (!name || creating || ws === null) return;
 
 		creating = true;
 		deckError = '';
 		try {
-			const deck = await createDeck(name);
+			const deck = await createDeck(ws, name);
+			if (activeWorkspaceId !== ws) return;
 			decks = [...decks, deck];
 			// A deck the user just made is almost certainly one they want
 			// to study from, so select it instead of leaving it unticked.
 			selectedDeckIds = [...selectedDeckIds, deck.id];
 			deckName = '';
 		} catch (err) {
-			deckError = message(err, t('study.decks.createFailed'));
+			deckError = errorText(err, t('study.decks.createFailed'));
 		} finally {
 			creating = false;
 		}
@@ -777,18 +790,22 @@ import { limitsOf } from '$lib/study/scheduler';
 			return;
 		}
 
+		const ws = activeWorkspaceId;
+		if (ws === null) return;
 		deckError = '';
 		try {
-			const renamed = await renameDeck(id, name);
+			const renamed = await renameDeck(ws, id, name);
+			if (activeWorkspaceId !== ws) return;
 			decks = decks.map((deck) => (deck.id === id ? renamed : deck));
 			cancelRename();
 		} catch (err) {
-			deckError = message(err, t('study.decks.renameFailed'));
+			deckError = errorText(err, t('study.decks.renameFailed'));
 		}
 	}
 
 	async function removeDeck(deck: Deck): Promise<void> {
-		if (deletingId !== null) return;
+		const ws = activeWorkspaceId;
+		if (deletingId !== null || ws === null) return;
 		if (
 			!confirm(t('study.decks.confirmDelete', { deck: deck.name }))
 		) {
@@ -798,7 +815,8 @@ import { limitsOf } from '$lib/study/scheduler';
 		deletingId = deck.id;
 		deckError = '';
 		try {
-			await deleteDeck(deck.id);
+			await deleteDeck(ws, deck.id);
+			if (activeWorkspaceId !== ws) return;
 			decks = decks.filter((item) => item.id !== deck.id);
 			// Mirror the store's reassignment locally so the counts do not
 			// keep counting cards of a deck that is gone.
@@ -812,7 +830,7 @@ import { limitsOf } from '$lib/study/scheduler';
 			});
 			selectedDeckIds = selectedDeckIds.filter((id) => id !== deck.id);
 		} catch (err) {
-			deckError = message(err, t('study.decks.deleteFailed'));
+			deckError = errorText(err, t('study.decks.deleteFailed'));
 		} finally {
 			deletingId = null;
 		}
@@ -890,6 +908,7 @@ import { limitsOf } from '$lib/study/scheduler';
 		<p class="vacation" role="status">{vacationText}. <a href="/settings?tab=study">{t('study.setup.change')}</a></p>
 	{/if}
 	<p class="hint">{t('study.setup.intro')}</p>
+	<UnreadableRowsNotice workspaceId={activeWorkspaceId} />
 	{#if $workspaces.current && usesHan($workspaces.current.language)}
 		<p class="hint"><a href="/stats/characters">{t('study.setup.masteryMap')}</a></p>
 	{/if}
@@ -1118,7 +1137,9 @@ import { limitsOf } from '$lib/study/scheduler';
 				{/if}
 			</Section>
 
-			<CardManager {cards} decks={allDecks} onchanged={refreshData} />
+			{#if activeWorkspaceId !== null}
+				<CardManager workspaceId={activeWorkspaceId} {cards} decks={allDecks} onchanged={refreshData} />
+			{/if}
 		{:else}
 			<Section title={t('study.level.title')} headingId="levels-heading">
 				<p class="hint">{t('study.level.intro')}</p>
@@ -1195,6 +1216,7 @@ import { limitsOf } from '$lib/study/scheduler';
 							<li>
 								<span class="advanced-name">{deck.name}</span>
 								<DeckCardTypes
+									workspaceId={activeWorkspaceId}
 									deckId={deck.id}
 									deckName={deck.name}
 									cardTypes={deckSettings[deck.id]?.cardTypes ?? []}

@@ -1,7 +1,8 @@
 <script lang="ts">
+	import { errorText } from '$lib/api/apiErrors';
+	import { ApiError } from '$lib/api/client';
 	import { onMount, tick } from 'svelte';
 	import { t } from '$lib/i18n';
-	import { ApiError } from '$lib/api/client';
 	import { listLanguages } from '$lib/api/languages';
 	import type { Language, Workspace } from '$lib/api/types';
 	import { languageOptions } from '$lib/languages';
@@ -52,20 +53,11 @@
 		}
 	});
 
-	function message(err: unknown, fallback: string): string {
-		if (err instanceof ApiError && err.status === 409) {
-			return t('app.workspaces.create.exists');
-		}
-		if (err instanceof ApiError && err.message) return err.message;
-		if (err instanceof Error && err.message) return err.message;
-		return fallback;
-	}
-
 	onMount(async () => {
 		try {
 			installed = await listLanguages();
 		} catch (err) {
-			languagesError = message(err, t('app.workspaces.create.languagesFailed'));
+			languagesError = errorText(err, t('app.workspaces.create.languagesFailed'));
 		} finally {
 			loadingLanguages = false;
 		}
@@ -86,7 +78,10 @@
 			name = '';
 			onCreated?.(created);
 		} catch (err) {
-			error = message(err, t('app.workspaces.create.failed'));
+			error =
+				err instanceof ApiError && err.code === 'workspace_exists'
+					? t('app.workspaces.create.exists')
+					: errorText(err, t('app.workspaces.create.failed'));
 		} finally {
 			creating = false;
 		}

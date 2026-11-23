@@ -41,11 +41,6 @@ func timeZoneBody(changes []studyday.Change) timeZoneJSON {
 	return out
 }
 
-// jsonError writes the {"error","message"} body the new routes use.
-func jsonError(w http.ResponseWriter, status int, code, message string) {
-	writeJSON(w, status, map[string]string{"error": code, "message": message})
-}
-
 // handleGetTimeZone serves GET /api/me/time-zone: the caller's own zone
 // history. Zones are never logged.
 func (s *server) handleGetTimeZone(w http.ResponseWriter, r *http.Request) {
@@ -55,7 +50,7 @@ func (s *server) handleGetTimeZone(w http.ResponseWriter, r *http.Request) {
 	}
 	_, changes, err := studyday.Load(r.Context(), s.db, u.ID)
 	if err != nil {
-		http.Error(w, "internal error", http.StatusInternalServerError)
+		writeInternal(w, r)
 		return
 	}
 	writeJSON(w, http.StatusOK, timeZoneBody(changes))
@@ -74,22 +69,17 @@ func (s *server) handlePutTimeZone(w http.ResponseWriter, r *http.Request) {
 		IfUnset bool   `json:"ifUnset"`
 	}
 	if err := decodeStrictJSON(w, r, &req, maxTimeZoneBody); err != nil {
-		var tooBig *http.MaxBytesError
-		if errors.As(err, &tooBig) {
-			jsonError(w, http.StatusRequestEntityTooLarge, "too_large", "request body too large")
-			return
-		}
-		jsonError(w, http.StatusBadRequest, "bad_request", "invalid request body")
+		badBody(w, err)
 		return
 	}
 	changes, err := studyday.Set(r.Context(), s.db, u.ID, req.Zone, req.IfUnset, s.now())
 	switch {
 	case errors.Is(err, studyday.ErrUnknownZone):
-		jsonError(w, http.StatusBadRequest, "unknown_time_zone", "unknown time zone")
+		writeError(w, http.StatusBadRequest, "unknown_time_zone", "unknown time zone")
 	case errors.Is(err, studyday.ErrTooManyChanges):
-		jsonError(w, http.StatusConflict, "too_many_changes", "too many time zone changes")
+		writeError(w, http.StatusConflict, "too_many_changes", "too many time zone changes")
 	case err != nil:
-		http.Error(w, "internal error", http.StatusInternalServerError)
+		writeInternal(w, r)
 	default:
 		writeJSON(w, http.StatusOK, timeZoneBody(changes))
 	}

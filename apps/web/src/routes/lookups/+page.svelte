@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { errorText } from '$lib/api/apiErrors';
 	import { onDestroy, tick } from 'svelte';
 	import { pageTitle } from '$lib/pageTitle';
 	import { t } from '$lib/i18n';
@@ -104,7 +105,7 @@
 		try {
 			await work();
 		} catch (err) {
-			actionError = err instanceof Error && err.message ? err.message : t('lookups.actionFailed');
+			actionError = errorText(err, t('lookups.actionFailed'));
 		} finally {
 			busy = false;
 		}

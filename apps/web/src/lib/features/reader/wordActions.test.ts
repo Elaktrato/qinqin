@@ -32,6 +32,16 @@ const now = new Date('2026-11-16T10:00:00.000Z');
 const deck: Deck = { id: 'D1', name: 'Reading', createdAt: '2026-01-01T00:00:00.000Z' };
 
 describe('addWords', () => {
+	it('a word whose card this version cannot read is still added, under another id (#167)', async () => {
+		const s = fakeStore([], [deck]);
+		s.raw.mockImplementation(async () => ({ decks: [deck], cards: [], knownAt: new Map<string, string>(), stored: new Map(), unreadable: new Set(['cards:c-vocab-5']) }) as never);
+		const res = await addWords({ workspaceId: 3, entryIds: [5, 2], target: deck, now, ...s });
+		expect(res.created).toBe(2);
+		const ids = s.pushed[0].map((r) => (r.data as StudyCard).id);
+		expect(ids).not.toContain('c-vocab-5');
+		expect(ids).toContain('c-vocab-2');
+	});
+
 	it('creates cards in the given order (createdAt keeps the most frequent first)', async () => {
 		const s = fakeStore([], [deck]);
 		const res = await addWords({ workspaceId: 3, entryIds: [5, 2, 9], target: deck, now, ...s });

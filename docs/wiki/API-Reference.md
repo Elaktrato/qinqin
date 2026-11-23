@@ -67,20 +67,20 @@ What each route takes and answers, area by area. [API routes](API-Routes) is the
 | Route | Purpose |
 |---|---|
 | `POST /api/events/batch` | Append offline-recorded study events (idempotent by event id; each event needs a `workspaceId` of 1 or more, else 400, and the workspace must be the caller's, else 404; timestamps are stored as UTC whole seconds) |
-| `GET /api/events?limit=&since=&workspace=`, `GET /api/events?page=&workspace=` | The caller's events from an RFC 3339 instant, optionally of one workspace, in `(ts, id)` order, in pages: `{"events": [...], "more": bool, "next": "e1.…" or null}` with at most `limit` events (1 to 2,000) and 4 MiB per page. Continue with `page=<next>` and the same `workspace=` as the first page (nothing else; an access token limited to a workspace needs it). A wrong `limit` or page token is 400 `events_page_invalid` (JSON); a bad `since` or `workspace` is a plain-text 400, another user's workspace 404. Contract `docs/contracts/events/` |
+| `GET /api/events?limit=&since=&workspace=`, `GET /api/events?page=&workspace=` | The caller's events from an RFC 3339 instant, optionally of one workspace, in `(ts, id)` order, in pages: `{"events": [...], "more": bool, "next": "e1.…" or null}` with at most `limit` events (1 to 2,000) and 4 MiB per page. Continue with `page=<next>` and the same `workspace=` as the first page (nothing else; an access token limited to a workspace needs it). A wrong `limit` or page token is 400 `events_page_invalid` (JSON); a bad `since` or `workspace` is 400 `bad_request`, another user's workspace 404 `workspace_not_found`. Contract `docs/contracts/events/` |
 | `GET /api/events?since=&workspace=` | The legacy form (no `limit`, no `page`): every matching event in one array, streamed. Deprecated (answers carry `Deprecation: true` and a `Link` to the paged form), kept at least until v0.5.0 for cached older web shells and scripts |
 | `DELETE /api/events/lookups?workspace=` | Erases the caller's `lookup` events of one workspace (the lookup history's Clear): `{"deleted": n}`. The workspace is required. No other event type is ever deleted |
 | `GET /api/stats/activity?from=&to=&workspace=` | The caller's activity by learner day, workspace and type for the plugins' activity rules: `{from, to, timeZone, sources, cells}`. `from`/`to` are learner dates (default: today and the 90 days before; at most 366 days) |
 | `GET /api/me/time-zone`, `PUT /api/me/time-zone` | The caller's learner time zone: `{zone, history: [{zone, from}]}` (`zone` null while none is set). `PUT {"zone": "Asia/Tokyo"[, "ifUnset": true]}` records a change effective from the server's now (the very first zone has `from: null` and applies to the whole log); IANA names only, body up to 1 KiB; errors `unknown_time_zone` (400), `bad_request` (400), `too_large` (413), `too_many_changes` (409) |
 | `PUT /api/me/interface-language` `{language}` | The caller's interface language: `""` (follow the browser) or a language tag; answers `200 {language}`, 422 `invalid_language`, 400 `bad_request`. `GET /api/auth/me` reads it back as `interfaceLanguage`. A full session only; tokens are refused. Contract `docs/contracts/i18n/` |
-| `GET /api/plugins`, `PUT /api/plugins/{id}/state` `{enabled, order}` | The caller's plugins with their state (`hidden: true` marks the app's own surface-less built-ins such as `qinqin-core`; clients leave those out of plugin lists), and the caller's switch and (legacy) order for one plugin |
+| `GET /api/plugins`, `PUT /api/plugins/{id}/state` `{enabled, order}` | The caller's plugins with their state (`hidden: true` marks the app's own surface-less built-ins such as `qinqin-core` and the rows kept for old web shells for installed dictionary, frequency, level, sentence, grammar and audio packs; clients leave hidden rows out of plugin lists, and data packs are listed by their own routes), and the caller's switch and (legacy) order for one plugin |
 | `GET /api/plugins/{id}/data?workspace=&prefix=`, `GET`/`PUT`/`DELETE /api/plugins/{id}/data/{key}?workspace=` | Plugin data rows ([Plugin data API](Plugin-data-api)) |
 
 ## Workspaces
 
 | Route | Purpose |
 |---|---|
-| `GET /api/workspaces`, `POST /api/workspaces` `{language, name?}` | List the caller's workspaces (creating the defaults on a first call) and create one (201); an over-long or invalid name is 422, a duplicate (language, name) 409. `language`: a code that exactly matches a stored one keeps its spelling; otherwise it must be well formed (422 "language must be a code like es or pt-br") and is normalised. A non-administrator may only use a known language (a code pack such as `zh` or `ja`, a registered language, installed dictionary data, or any live level, frequency, sentence, grammar or audio pack of it), else 422 "unknown language — ask the administrator to add it"; an administrator's request registers a new code. These errors are plain text |
+| `GET /api/workspaces`, `POST /api/workspaces` `{language, name?}` | List the caller's workspaces (creating the defaults on a first call) and create one (201); an over-long or invalid name is 422, a duplicate (language, name) 409. `language`: a code that exactly matches a stored one keeps its spelling; otherwise it must be well formed (422 `invalid_language`) and is normalised. A non-administrator may only use a known language (a code pack such as `zh` or `ja`, a registered language, installed dictionary data, or any live level, frequency, sentence, grammar or audio pack of it), else 422 `language_unknown`; an administrator's request registers a new code. A duplicate is 409 `workspace_exists` |
 | `PUT /api/workspaces/{id}` `{name?, settings?}` | Rename and/or merge settings; at least one field is required |
 | `DELETE /api/workspaces/{id}` | Delete a workspace and everything scoped to it: 204, 404 for an unknown or foreign id, 409 for the caller's last workspace |
 
@@ -166,7 +166,7 @@ Administrator sessions only, never an access token. Re-authentication rules: [Us
 
 ## Request body limits
 
-A body over its limit is a 413, usually with a JSON `{"error": ...}` (older routes answer plain text).
+A body over its limit is a 413 with the JSON body `{"error": "too_large", "message": ...}` (a backup upload: `backup_too_large`, a journal photo: `photo_too_large`).
 
 | Route | Limit |
 |---|---|

@@ -4,7 +4,7 @@
 // settings view; each calls `load` for the selected workspace.
 
 import { untrack } from 'svelte';
-import { errorMessage } from '$lib/stats/errors';
+import { errorText } from '$lib/api/apiErrors';
 import { t } from '$lib/i18n';
 import { DEFAULT_W } from '$lib/study/fsrs/params';
 import type { DeckSettings } from '$lib/study/deckSettings';
@@ -75,7 +75,7 @@ export function createDecksData() {
 		} catch (err) {
 			if (mine !== seq) return;
 			snapshot = null;
-			error = errorMessage(err, t('flashcards.decks.loadError'));
+			error = errorText(err, t('flashcards.decks.loadError'));
 			status = 'error';
 		}
 	}

@@ -8,6 +8,7 @@
 // cards stayed unresolved.
 
 import { getEntry } from '../api/entries';
+import { onSessionEnd, sessionEpoch } from '../session/sessionEnd';
 import type { StudyCard } from './types';
 
 // One page load resolves a modest number of legacy cards at a time; the
@@ -17,6 +18,7 @@ const FETCH_CONCURRENCY = 4;
 // Values are successful resolutions only: a null means the entry exists
 // but has no written form. Fetch failures never get a row.
 const writtenByEntry = new Map<number, string | null>();
+onSessionEnd(() => writtenByEntry.clear());
 
 interface WrittenResult {
 	ok: boolean;
@@ -59,13 +61,15 @@ async function fetchWritten(entryId: number): Promise<WrittenResult> {
 		return { ok: true, written: writtenByEntry.get(entryId) ?? null };
 	}
 
+	const epoch = sessionEpoch();
 	try {
 		const entry = await getEntry(entryId);
 		const written =
 			typeof entry.written === 'string' && entry.written !== '' ? entry.written : null;
 		// A successful lookup is stable: retrying cannot teach the API a
 		// written form it does not have.
-		writtenByEntry.set(entryId, written);
+		// An answer for a session that has ended is not kept (#173).
+		if (epoch === sessionEpoch()) writtenByEntry.set(entryId, written);
 		return { ok: true, written };
 	} catch {
 		// A missing or forbidden entry, or a transient network failure:

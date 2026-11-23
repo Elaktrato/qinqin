@@ -32,10 +32,17 @@
 		workspaceRow?.reviews === undefined ? DEFAULT_LIMITS.reviews : workspaceRow.reviews
 	);
 
+	/** The workspace whose limits the form holds: set together with them, and the one Save writes (#174). */
+	let loadedWorkspace = $state<number | null>(null);
+
 	async function load(force = false): Promise<void> {
-		if (workspaceId === null) return;
+		const ws = loadedWorkspace ?? workspaceId;
+		if (ws === null) return;
 		try {
-			const data = await getStudyData(workspaceId, { force });
+			const data = await getStudyData(ws, { force });
+			// A late answer for a workspace no longer the form's is dropped.
+			if (loadedWorkspace !== null && ws !== loadedWorkspace) return;
+			loadedWorkspace = ws;
 			workspaceRow = data.limits?.workspace ?? null;
 			const row = data.limits?.decks[deckId] ?? null;
 			newState = deckFieldFrom(row, 'new');
@@ -51,6 +58,9 @@
 		event.preventDefault();
 		message = '';
 		error = '';
+		// The workspace whose limits the form shows, captured now (#174).
+		const ws = loadedWorkspace;
+		if (ws === null) return;
 		const plan = deckRowFrom(newState, reviewsState);
 		if ('error' in plan) {
 			error = plan.error;
@@ -58,7 +68,7 @@
 		}
 		busy = true;
 		try {
-			await saveDeckLimits(deckId, plan.row);
+			await saveDeckLimits(ws, deckId, plan.row);
 			message = t('common.state.saved');
 			await load(true);
 		} catch {

@@ -24,7 +24,7 @@ type overlayStep struct {
 	Age       bool            `json:"age"`
 	Expect    *struct {
 		Status   int              `json:"status"`
-		Text     *string          `json:"text"`
+		Error    string           `json:"error"`
 		Written  *string          `json:"written"`
 		Readings *[]model.Reading `json:"readings"`
 	} `json:"expect"`
@@ -103,8 +103,10 @@ func TestContractOverlays(t *testing.T) {
 				if resp.StatusCode != st.Expect.Status {
 					t.Fatalf("step %d: status %d, want %d: %.300s", i, resp.StatusCode, st.Expect.Status, body)
 				}
-				if st.Expect.Text != nil && string(body) != *st.Expect.Text {
-					t.Errorf("step %d: body %q, want %q", i, body, *st.Expect.Text)
+				if st.Expect.Error != "" {
+					if got := errorCode(t, body); got != st.Expect.Error {
+						t.Errorf("step %d: body %s, want error %q", i, body, st.Expect.Error)
+					}
 				}
 				if resp.StatusCode == http.StatusOK {
 					var view entryBody

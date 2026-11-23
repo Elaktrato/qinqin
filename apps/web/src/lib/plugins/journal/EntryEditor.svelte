@@ -1,6 +1,8 @@
 <script module lang="ts">
-	// One `journal` study event per entry per UTC day per tab.
+	import { onSessionEnd } from '$lib/session/sessionEnd';
+	// One `journal` study event per entry per UTC day per tab (entry ids are the user's).
 	const sentEvents = new Map<string, string>();
+	onSessionEnd(() => sentEvents.clear());
 </script>
 
 <script lang="ts">

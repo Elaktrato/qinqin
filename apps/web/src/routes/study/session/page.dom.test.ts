@@ -137,7 +137,7 @@ beforeEach(() => {
 	] as never);
 	vi.mocked(getEntry).mockImplementation(async (id: number) => kanji(id, GLYPHS[id] ?? '?'));
 	vi.mocked(usableChars).mockImplementation(async (written: string) => [...written]);
-	vi.mocked(addCard).mockImplementation(async (entryId, opts) => ({
+	vi.mocked(addCard).mockImplementation(async (_ws, entryId, opts) => ({
 		id: `c-${opts?.kind ?? 'vocab'}-${entryId}`,
 		kind: opts?.kind ?? 'vocab',
 		entryId,
@@ -172,6 +172,7 @@ describe('character level session', () => {
 		await fireEvent.click(screen.getByRole('button', { name: /Good/ }));
 		await waitFor(() => expect(recordReview).toHaveBeenCalledTimes(1));
 		expect(addCard).toHaveBeenCalledWith(
+			1,
 			11,
 			expect.objectContaining({ kind: 'vocab', written: '日', entryKind: 'character' })
 		);

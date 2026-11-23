@@ -88,7 +88,8 @@ beforeEach(() => {
 		decks: structuredClone(decks),
 		cards: structuredClone(cards),
 		knownAt: new Map(knownAt),
-		stored: new Map()
+		stored: new Map(),
+		unreadable: new Set<string>()
 	}));
 	vi.mocked(pushStudy).mockImplementation(async (_ws, rows, opts) => {
 		if (failAfter !== null) {

@@ -53,6 +53,10 @@ Every folder, in dependency order (this page's sync model and Events sections af
   `until − 30 s`): the `since` of the next round with the same `collections` and `workspace` (one cursor per
   filter set; rows of the last 30 s may come twice, upsert by key). From no `since` a round ships live rows
   only; with one it ships tombstones too. Within a library collection tombstones follow the live rows.
+- Reading rows (`sync/README.md`, `sync/unreadable-rows.json`, #167): a client checks the page envelope only
+  and decodes each row itself; a row it cannot read (damaged, or from a newer client) is skipped and counted,
+  never blocks the round, and is never rewritten or deleted: a write to its identity is refused and a new card
+  never takes its id.
 - Scope: the first page of a round carries `scope` — every workspace of the caller (a workspace not listed
   is deleted: drop its local data), the round's language set and `catalogue`, the ETag `GET /api/packages`
   gives the same caller by default (a change means "re-read the catalogue"). `workspace=<id>` narrows a round
@@ -70,7 +74,7 @@ Every folder, in dependency order (this page's sync model and Events sections af
   links, senses, levelMembers, sentences, pluginData, pluginStates, overlays, dictionaries, schemes, levels,
   cards, decks, deckSettings, limits, fsrsSets, fsrsActive}` with `Deprecation: true`. The lexicon
   collections are always `[]` and naming one is 400 `sync_collection_moved`; `sentences` are the caller's
-  own; an unknown name or a bad cursor is a plain-text 400. Its cursor lags 30 s and its second is
+  own; an unknown name or a bad cursor is 400 `bad_request`. Its cursor lags 30 s and its second is
   inclusive. Android never uses it.
 - Push: `POST /api/sync/push {events: [...], pluginData: [...], cards: [...], decks: [...], deckSettings: [...],
   limits: [...], fsrsSets: [...], fsrsActive: [...]}` (`server/internal/sync/sync.go`, `sync/push-result.json`). The whole
@@ -115,8 +119,8 @@ Every folder, in dependency order (this page's sync model and Events sections af
 - Envelope `{id (ULID), workspaceId, device, ts (RFC 3339), type, payload}`. The server stores `ts` as UTC
   whole seconds (`10:00:00.789+01:00` → `09:00:00Z`), any `type` and any JSON `payload` (absent = `null`,
   returned compact); a repeated id is a duplicate, never an error, and the first copy stays. Batch errors are
-  plain-text 400 (`id` not a ULID, `ts` or `workspaceId` missing) and 404 (foreign workspace), and store
-  nothing of the batch. `envelope.json`.
+  400 `bad_request` (`id` not a ULID, `ts` or `workspaceId` missing; the message names the check) and 404
+  `workspace_not_found` (foreign workspace), and store nothing of the batch. `envelope.json`.
 - Order everything by `(ts, id)`. **Android sends `ts` already truncated to whole seconds (UTC)** so its local
   copy equals the server copy byte for byte (Ruling in `events/README.md`).
 - Reading events: the paged pull's `events` collection (every type except `lookup`, with a delta cursor), or
@@ -187,7 +191,9 @@ Study-day inputs are not rows: the learner's zone history is `GET/PUT /api/me/ti
   secure storage. The server keeps only its SHA-256; idle 90 days ends a session. `POST /api/auth/logout`
   ends that session.
 - 401 `unauthorized` = session gone (drop the token). 403 never means that; branch on the `error` code in
-  `{error, message}` bodies, never the message. The full catalogue: `auth/errors.json`.
+  `{error, message}` bodies, never the message. Every route answers every error in this shape (no text bodies
+  since #168; unknown paths 404 `not_found`); the one catalogue for all routes: `auth/errors.json`, and its
+  changelog in `auth/README.md`.
 - Restricted sessions: `GET /api/auth/me` returns `restriction` `""|"password_change"|"mfa_enrollment"`. A
   restricted token may call only `me`, `logout` and the route that lifts the restriction; all else is 403
   `password_change_required` / `mfa_enrollment_required` and the token stays valid.
@@ -282,6 +288,11 @@ preparation marks (`qinqin.pwa.*`), the current workspace and the session token.
 - Do not cache admin, account, AI, journal photo, audio, search or lookup responses as truth.
 - Package files are verified before use, never partially (`packages/README.md`, "Verification"): a download
   that fails a check is discarded, and a package database is opened read-only and replaced as a whole.
+- Do not treat the rows of `GET /api/plugins` whose manifest `type` is a pack type as plugins (they carry
+  `hidden: true`; v0.3.x compatibility only, see `packages/README.md`, "Pack types"): leave every hidden row
+  out of plugin lists and do not take a data pack's enabled state from them. (Until the "Later" part of #169
+  lands, the web's Grammar page still honours a grammar pack's enabled state from this list; nothing in the
+  web UI can change it, only `PUT /api/plugins/{id}/state`. Android does not need to copy that.)
 
 ## Not specified (on purpose)
 

@@ -33,38 +33,51 @@ func (s *server) handleInstallStaged(w http.ResponseWriter, r *http.Request) {
 		License string `json:"license"`
 	}
 	if err := json.Unmarshal(body, &req); err != nil {
-		http.Error(w, "malformed request body", http.StatusBadRequest)
+		writeError(w, http.StatusBadRequest, "bad_request", "Malformed request body.")
 		return
 	}
 	token := r.PathValue("token")
-	var code int
-	var msg string
+	var refusal string // "": the import starts
 	found := s.stages().with(token, u.ID, s.now(), func(st *stagedPack) {
 		switch {
+		case st.status == stageImporting:
+			refusal = "importing"
 		case st.status != stageStaged:
-			code, msg = http.StatusConflict, "already importing"
-			if st.status != stageImporting {
-				msg = "already processed"
-			}
+			refusal = "processed"
 		case req.License != st.license:
-			code, msg = http.StatusConflict, "confirm the pack's licence"
+			refusal = "licence"
 		default:
 			st.status = stageImporting
-			code = http.StatusAccepted
 		}
 	})
 	switch {
 	case !found:
-		http.Error(w, "staged pack not found", http.StatusNotFound)
-	case code != http.StatusAccepted:
-		http.Error(w, msg, code)
+		writeError(w, http.StatusNotFound, "not_found", "Staged pack not found.")
+	case refusal == "importing":
+		writeError(w, http.StatusConflict, "pack_import_running", "This pack is already being imported.")
+	case refusal == "processed":
+		writeError(w, http.StatusConflict, "conflict", "This staged pack was already installed or refused.")
+	case refusal == "licence":
+		writeError(w, http.StatusConflict, "licence_mismatch", "Confirm the pack's licence: the licence sent is not the staged pack's.")
 	default:
 		// The job outlives the request: a proxy timeout or a closed tab
-		// must not abort or half-apply the import.
-		go s.runStagedImport(context.WithoutCancel(r.Context()), token, u.ID)
+		// must not abort or half-apply the import. The server's shutdown
+		// does cancel it (#170): the import's transaction rolls back, and
+		// the admin stages the pack again.
+		ctx, cancel := context.WithCancel(context.WithoutCancel(r.Context()))
+		stop := context.AfterFunc(s.bg, cancel)
+		s.goBackground(func() {
+			defer stop()
+			defer cancel()
+			s.runStagedImport(ctx, token, u.ID)
+		})
 		writeJSON(w, http.StatusAccepted, map[string]string{"status": stageImporting})
 	}
 }
+
+// shutdownImportText is the failure of an import the server's shutdown
+// cancelled before it committed.
+const shutdownImportText = "The server shut down before the import finished; nothing was installed. Upload the pack again."
 
 // filesWarning is shown when the import was committed but its files
 // could not be moved into place.
@@ -100,12 +113,21 @@ func (s *server) runStagedImport(ctx context.Context, token string, userID int64
 			}
 		}
 		var err error
+		if ctx.Err() != nil {
+			errMsg = shutdownImportText
+			return
+		}
 		if summary, err = importer(ctx, s.db, st.pack); err != nil {
 			errMsg = packErrorText(err, st.dir, s.dataDir)
+			if ctx.Err() != nil {
+				errMsg = shutdownImportText
+			}
 			return
 		}
 		// The import is committed. From here a problem is a warning, not a
-		// failure: the pack is installed.
+		// failure: the pack is installed, and a shutdown no longer stops the
+		// few steps left (moving its files, reading its row back).
+		ctx = context.WithoutCancel(ctx)
 		if err := placePack(filepath.Join(s.dataDir, "packs"), st.pack.Manifest, st.root, token); err != nil {
 			log.Printf("pack %s: move files into place: %v", st.pack.ID, err)
 			warning = filesWarning
@@ -150,7 +172,7 @@ func (s *server) handleStagedStatus(w http.ResponseWriter, r *http.Request) {
 		out.Status, out.Pack, out.Summary, out.Error, out.Warning = st.status, st.result, st.summary, st.errMsg, st.warning
 	})
 	if !found {
-		http.Error(w, "staged pack not found", http.StatusNotFound)
+		writeError(w, http.StatusNotFound, "not_found", "Staged pack not found.")
 		return
 	}
 	writeJSON(w, http.StatusOK, out)

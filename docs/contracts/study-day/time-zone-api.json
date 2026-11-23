@@ -336,7 +336,7 @@
    "status": 400,
    "body": {
     "error": "bad_request",
-    "message": "invalid request body"
+    "message": "Malformed request body."
    }
   },
   {
@@ -349,7 +349,7 @@
    "status": 413,
    "body": {
     "error": "too_large",
-    "message": "request body too large"
+    "message": "Request body too large."
    }
   },
   {

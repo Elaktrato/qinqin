@@ -32,7 +32,7 @@ func (s *server) handleAdminAudit(w http.ResponseWriter, r *http.Request) {
 	if v := r.URL.Query().Get("limit"); v != "" {
 		n, err := strconv.Atoi(v)
 		if err != nil || n < 1 || n > 100 {
-			writeAuthError(w, http.StatusBadRequest, "bad_request", "limit must be between 1 and 100.")
+			writeError(w, http.StatusBadRequest, "bad_request", "limit must be between 1 and 100.")
 			return
 		}
 		limit = n
@@ -41,7 +41,7 @@ func (s *server) handleAdminAudit(w http.ResponseWriter, r *http.Request) {
 	if v := r.URL.Query().Get("before"); v != "" {
 		n, err := strconv.ParseInt(v, 10, 64)
 		if err != nil || n < 1 {
-			writeAuthError(w, http.StatusBadRequest, "bad_request", "before must be an event id.")
+			writeError(w, http.StatusBadRequest, "bad_request", "before must be an event id.")
 			return
 		}
 		before = n

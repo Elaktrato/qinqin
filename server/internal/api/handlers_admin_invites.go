@@ -34,13 +34,13 @@ func (s *server) handleCreateInvite(w http.ResponseWriter, r *http.Request) {
 		if string(req.ExpiresInDays) == "null" {
 			days = nil
 		} else if err := json.Unmarshal(req.ExpiresInDays, days); err != nil {
-			writeAuthError(w, http.StatusBadRequest, "bad_request", "Malformed request body.")
+			writeError(w, http.StatusBadRequest, "bad_request", "Malformed request body.")
 			return
 		}
 	}
 	inv, token, err := auth.CreateInvite(r.Context(), s.db, admin.ID, maxUses, days, req.Note)
 	if errors.Is(err, auth.ErrInviteInput) {
-		writeAuthError(w, http.StatusUnprocessableEntity, "invalid_invite", err.Error())
+		writeError(w, http.StatusUnprocessableEntity, "invalid_invite", err.Error())
 		return
 	}
 	if err != nil {
@@ -79,7 +79,7 @@ func (s *server) handleRevokeInvite(w http.ResponseWriter, r *http.Request) {
 	}
 	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
 	if err != nil {
-		writeAuthError(w, http.StatusNotFound, "not_found", "No such invite.")
+		writeError(w, http.StatusNotFound, "not_found", "No such invite.")
 		return
 	}
 	ok, err := auth.RevokeInvite(r.Context(), s.db, admin.ID, id)
@@ -87,7 +87,7 @@ func (s *server) handleRevokeInvite(w http.ResponseWriter, r *http.Request) {
 	case err != nil:
 		writeInternal(w, r)
 	case !ok:
-		writeAuthError(w, http.StatusNotFound, "not_found", "No such invite.")
+		writeError(w, http.StatusNotFound, "not_found", "No such invite.")
 	default:
 		w.WriteHeader(http.StatusNoContent)
 	}
@@ -119,7 +119,7 @@ func (s *server) handleCheckInvite(w http.ResponseWriter, r *http.Request) {
 	}
 	switch {
 	case errors.Is(err, auth.ErrInviteInvalid):
-		writeAuthError(w, http.StatusForbidden, "invite_invalid", inviteInvalidMessage)
+		writeError(w, http.StatusForbidden, "invite_invalid", inviteInvalidMessage)
 	case err != nil:
 		writeInternal(w, r)
 	default:

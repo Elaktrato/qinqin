@@ -59,7 +59,7 @@ func TestStagedInstallRequiresExactLicence(t *testing.T) {
 	s := stageZip(t, e, esPackZip(t, packTestDictManifest))
 	for _, lic := range []string{"CC0-1.0 ", "", "cc0-1.0"} {
 		code, text := e.install(t, s.Token, lic)
-		if code != http.StatusConflict || !strings.Contains(text, "confirm the pack's licence") {
+		if code != http.StatusConflict || text != "licence_mismatch: Confirm the pack's licence: the licence sent is not the staged pack's." {
 			t.Errorf("licence %q: %d %q", lic, code, text)
 		}
 	}
@@ -100,7 +100,7 @@ func TestStagedInstallWhileImportingAndUnknownToken(t *testing.T) {
 		t.Fatalf("install = %d", code)
 	}
 	code, text := e.install(t, s.Token, "CC0-1.0")
-	if code != http.StatusConflict || !strings.Contains(text, "already importing") {
+	if code != http.StatusConflict || !strings.HasPrefix(text, "pack_import_running: ") {
 		t.Errorf("second install = %d %q", code, text)
 	}
 	if _, b := e.status(t, s.Token); b.Status != "importing" {
@@ -240,7 +240,7 @@ func TestAudioPackUploadIsRefused(t *testing.T) {
 	os.WriteFile(filepath.Join(dir, "index.tsv"), []byte("kind\tform\treading\tfile\tlicense\tattribution\tsource\n"), 0o644)
 	resp := uploadZip(t, e, e.admin, zipDirToBytes(t, dir))
 	body := bodyText(resp)
-	if resp.StatusCode != http.StatusUnprocessableEntity || !strings.Contains(body, "audio packs") || !strings.Contains(body, "qinqin seed") {
+	if resp.StatusCode != http.StatusUnprocessableEntity || !strings.HasPrefix(body, "pack_type_unsupported: ") || !strings.Contains(body, "qinqin seed") {
 		t.Errorf("audio upload = %d %q, want 422 naming the fetch script and seed", resp.StatusCode, body)
 	}
 }

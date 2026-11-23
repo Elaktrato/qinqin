@@ -451,7 +451,8 @@
    },
    "expect": {
     "status": 400,
-    "text": "sync: invalid: event 0 needs a ULID id and a ts"
+    "error": "bad_request",
+    "messageContains": "event 0 needs a ULID id and a ts"
    },
    "stored": {
     "events": 0,
@@ -482,7 +483,8 @@
    },
    "expect": {
     "status": 400,
-    "textPrefix": "sync: invalid: plugin data 0"
+    "error": "bad_request",
+    "messageContains": "plugin data 0"
    },
    "stored": {
     "events": 0
@@ -524,7 +526,8 @@
    },
    "expect": {
     "status": 400,
-    "textPrefix": "sync: invalid: cards 0"
+    "error": "bad_request",
+    "messageContains": "cards 0"
    },
    "stored": {
     "events": 0,
@@ -558,7 +561,8 @@
    },
    "expect": {
     "status": 404,
-    "text": "workspace or plugin not found"
+    "error": "not_found",
+    "messageContains": "workspace or plugin"
    },
    "stored": {
     "events": 0,
@@ -592,7 +596,8 @@
    },
    "expect": {
     "status": 404,
-    "text": "workspace or plugin not found"
+    "error": "not_found",
+    "messageContains": "workspace or plugin"
    },
    "stored": {
     "events": 0
@@ -624,7 +629,8 @@
    "expect": {
     "status": 413,
     "json": {
-     "error": "request body too large"
+     "error": "too_large",
+     "message": "Request body too large."
     }
    },
    "stored": {
@@ -659,24 +665,31 @@
    "expect": {
     "status": 413,
     "json": {
-     "error": "request body too large"
+     "error": "too_large",
+     "message": "Request body too large."
     }
    }
   },
   {
-   "name": "a body above 8 MiB is 413 (plain text)",
+   "name": "a body above 8 MiB is 413 too_large",
    "rawBody": "$jsonPadded:8388609",
    "expect": {
     "status": 413,
-    "text": "request body too large"
+    "json": {
+     "error": "too_large",
+     "message": "Request body too large."
+    }
    }
   },
   {
-   "name": "a body that is not JSON is 400 (plain text)",
+   "name": "a body that is not JSON is 400 bad_request",
    "rawBody": "{\"events\": [",
    "expect": {
     "status": 400,
-    "text": "malformed request body"
+    "json": {
+     "error": "bad_request",
+     "message": "Malformed request body."
+    }
    }
   }
  ]

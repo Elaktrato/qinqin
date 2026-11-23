@@ -44,7 +44,9 @@ describe('LanguageManager', () => {
 
 	it('previews the label, registers the normalized code and shows server errors', async () => {
 		setup();
-		vi.mocked(registerLanguage).mockRejectedValue(new ApiError(409, 'zh is built in'));
+		vi.mocked(registerLanguage).mockRejectedValue(
+			new ApiError(409, JSON.stringify({ error: 'language_built_in', message: 'zh is built in.' }))
+		);
 		render(LanguageManager);
 		await screen.findByText('Portuguese');
 		const input = screen.getByLabelText('Language code');
@@ -52,7 +54,7 @@ describe('LanguageManager', () => {
 		expect(screen.getByText('Brazilian Portuguese')).toBeTruthy();
 		await fireEvent.click(screen.getByRole('button', { name: 'Add language' }));
 		await waitFor(() => expect(registerLanguage).toHaveBeenCalledWith('pt-br'));
-		expect((await screen.findByRole('alert')).textContent).toContain('zh is built in');
+		expect((await screen.findByRole('alert')).textContent).toContain('This language is built in');
 	});
 
 	it('disables Add for an invalid code', async () => {
@@ -72,6 +74,24 @@ describe('LanguageManager', () => {
 		await fireEvent.submit(input.closest('form')!);
 		expect((await screen.findByRole('alert')).textContent?.trim()).toBe('language must be a code like es or pt-br');
 		expect(registerLanguage).not.toHaveBeenCalled();
+	});
+
+	it('a language still in use says so by code and lists the counts the server sent', async () => {
+		setup();
+		vi.mocked(removeLanguage).mockRejectedValue(
+			new ApiError(
+				409,
+				JSON.stringify({ error: 'language_in_use', message: 'The language is still used by: 2 workspaces.', usage: { workspaces: 2, sentencePacks: 1 } })
+			)
+		);
+		render(LanguageManager);
+		await screen.findByText('Portuguese');
+		await fireEvent.click(screen.getByRole('button', { name: 'Remove Portuguese (pt)' }));
+		await fireEvent.click(screen.getByRole('button', { name: /Confirm remove/ }));
+		expect((await screen.findByRole('alert')).textContent).toBe('Workspaces or installed packs still use this language.');
+		const items = [...document.querySelectorAll('.in-use li')].map((li) => li.textContent);
+		expect(items).toEqual(['2 workspaces', '1 installed pack']);
+		expect(document.body.textContent).not.toContain('still used by');
 	});
 
 	it('moves focus to Confirm after Remove and back to Remove on Cancel', async () => {

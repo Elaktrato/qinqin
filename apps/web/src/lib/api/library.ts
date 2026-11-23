@@ -86,23 +86,15 @@ export class HighlightOverlapError extends ApiError {
 	}
 }
 
-// The server's JSON 409 body: {error, existingId} on an overlap, {error}
-// at the cap. Anything else is left as it came.
+// The server's 409 highlight_overlap names the covering highlight in
+// existingId; anything else (the cap: highlight_limit) is left as it came.
 function conflictOf(err: unknown): ApiError | null {
-	if (!(err instanceof ApiError) || err.status !== 409) return null;
-	let parsed: unknown;
-	try {
-		parsed = JSON.parse(err.message);
-	} catch {
-		return null;
-	}
-	if (!parsed || typeof parsed !== 'object') return null;
-	const { error, existingId } = parsed as { error?: unknown; existingId?: unknown };
-	const message = typeof error === 'string' && error.trim() ? error.trim() : 'conflict';
+	if (!(err instanceof ApiError) || err.status !== 409 || err.code !== 'highlight_overlap') return null;
+	const existingId = err.body?.existingId;
 	if (typeof existingId === 'number' && Number.isInteger(existingId) && existingId > 0) {
-		return new HighlightOverlapError(message, existingId);
+		return new HighlightOverlapError(JSON.stringify(err.body), existingId);
 	}
-	return new ApiError(409, message);
+	return null;
 }
 
 /**

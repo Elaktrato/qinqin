@@ -5,8 +5,8 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
-	"errors"
 	"io"
+	"log"
 	"net/http"
 	"net/netip"
 	"sync"
@@ -84,6 +84,56 @@ type server struct {
 	packages   *datapkg.Builder // nil: no data packages (pack changes kick nothing)
 	downloads  downloadSlots    // running package downloads per user
 	bg         context.Context  // lives as long as the server; background jobs run under it
+	bgGroup    *Jobs            // the background goroutines (WithBackgroundGroup); nil: not counted
+}
+
+// Jobs is the group of a server's background goroutines (the stage
+// sweeper, staged pack imports, restore validations and restores), so serve
+// can wait for them before it closes the database (#170). Once Wait has
+// begun, no new job starts: a handler still running after a forced close
+// cannot add work nobody waits for. The zero value is ready to use.
+type Jobs struct {
+	mu     sync.Mutex
+	wg     sync.WaitGroup
+	closed bool
+}
+
+// start runs fn in its own goroutine, counted, unless the group is closed.
+func (j *Jobs) start(fn func()) bool {
+	j.mu.Lock()
+	defer j.mu.Unlock()
+	if j.closed {
+		return false
+	}
+	j.wg.Add(1)
+	go func() {
+		defer j.wg.Done()
+		fn()
+	}()
+	return true
+}
+
+// Wait closes the group to new jobs and waits for the running ones.
+func (j *Jobs) Wait() {
+	j.mu.Lock()
+	j.closed = true
+	j.mu.Unlock()
+	j.wg.Wait()
+}
+
+// WithBackgroundGroup runs every background goroutine of the server in jobs.
+func WithBackgroundGroup(jobs *Jobs) Option { return func(s *server) { s.bgGroup = jobs } }
+
+// goBackground runs fn in its own goroutine, in the background group when
+// there is one; a closed group (shutdown) refuses it.
+func (s *server) goBackground(fn func()) {
+	if s.bgGroup == nil {
+		go fn()
+		return
+	}
+	if !s.bgGroup.start(fn) {
+		log.Printf("background job refused: the server is shutting down")
+	}
 }
 
 // Option configures optional parts of the server.
@@ -151,7 +201,7 @@ func newServer(sqlDB *sql.DB, dataDir string, srcs []sources.Source, opts ...Opt
 	s.mfa = &auth.MFA{DB: sqlDB, Current: s.sealCur, Previous: s.sealPrev}
 	auth.Warm() // the first unknown-user login must cost one argon2 run, like the rest
 	if s.sweepCtx != nil && s.sweepEvery > 0 {
-		go s.runStageSweeper()
+		s.goBackground(s.runStageSweeper)
 	}
 	return s
 }
@@ -165,7 +215,7 @@ func (s *server) handler() http.Handler {
 	for _, rt := range s.routes() {
 		mux.HandleFunc(rt.pattern, s.tokenGate(rt))
 	}
-	return mux
+	return recoverPanics(codedUnmatched(mux))
 }
 
 // access is the route's declared policy, checked against the handler's real
@@ -401,40 +451,6 @@ const (
 	maxLookupRunes    = 64        // GET /api/lookup text code points
 )
 
-// badBody answers a request body that failed to decode: 413 when it
-// exceeded its cap, 400 when it was malformed.
-func badBody(w http.ResponseWriter, err error) {
-	var tooBig *http.MaxBytesError
-	if errors.As(err, &tooBig) {
-		http.Error(w, "request body too large", http.StatusRequestEntityTooLarge)
-		return
-	}
-	http.Error(w, "malformed request body", http.StatusBadRequest)
-}
-
-// writeTooLarge answers 413 with the JSON error body of the limited
-// routes.
-func writeTooLarge(w http.ResponseWriter) {
-	writeJSON(w, http.StatusRequestEntityTooLarge, map[string]string{"error": "request body too large"})
-}
-
-// readBody reads the whole request body, at most limit bytes. Beyond
-// the cap it stops reading, answers 413 itself (writeTooLarge) and
-// reports false; another read failure is a 400.
-func readBody(w http.ResponseWriter, r *http.Request, limit int64) ([]byte, bool) {
-	body, err := readBodyErr(w, r, limit)
-	if err != nil {
-		var tooBig *http.MaxBytesError
-		if errors.As(err, &tooBig) {
-			writeTooLarge(w)
-		} else {
-			http.Error(w, "malformed request body", http.StatusBadRequest)
-		}
-		return nil, false
-	}
-	return body, true
-}
-
 // readBodyErr reads the whole request body, at most limit bytes, and
 // leaves the error to the caller.
 func readBodyErr(w http.ResponseWriter, r *http.Request, limit int64) ([]byte, error) {
@@ -449,8 +465,8 @@ func handleHealthz(w http.ResponseWriter, r *http.Request) {
 func writeJSON(w http.ResponseWriter, status int, v any) {
 	body, err := json.Marshal(v)
 	if err != nil {
-		http.Error(w, "internal error", http.StatusInternalServerError)
-		return
+		// The error body is a constant: writeError itself goes through here.
+		status, body = http.StatusInternalServerError, []byte(`{"error":"internal","message":"Internal server error."}`)
 	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)

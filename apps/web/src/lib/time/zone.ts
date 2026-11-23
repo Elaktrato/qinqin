@@ -4,6 +4,7 @@
 // history, the cached copy of this user, the browser's own zone
 // (provisional, until the load finishes), UTC.
 
+import { onSessionEnd } from '../session/sessionEnd';
 import { getTimeZone, putTimeZone, type TimeZoneResponse } from '../api/timeZone';
 import { studyDay, unusableZones, type StudyDay, type ZoneChange } from './studyDay';
 
@@ -17,6 +18,7 @@ let pending: Promise<unknown> | null = null;
 let history: ZoneChange[] | null = null;
 let current: StudyDay | null = null;
 const listeners = new Set<(day: StudyDay) => void>();
+onSessionEnd(() => clearStudyDay());
 
 function defaultResolve(): string | undefined {
 	return Intl.DateTimeFormat().resolvedOptions().timeZone;
