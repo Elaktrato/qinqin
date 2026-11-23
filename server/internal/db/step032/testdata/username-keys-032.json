@@ -1,0 +1,101 @@
+{
+	"cases": [
+		{
+			"name": "alice",
+			"note": "plain ASCII stays",
+			"key": "alice"
+		},
+		{
+			"name": "Alice",
+			"note": "ASCII case folds",
+			"key": "alice"
+		},
+		{
+			"name": "ALICE",
+			"note": "upper case folds",
+			"key": "alice"
+		},
+		{
+			"name": "ａｌｉｃｅ",
+			"note": "fullwidth letters collapse (NFKC)",
+			"key": "alice"
+		},
+		{
+			"name": "Ａｌｉｃｅ",
+			"note": "fullwidth upper case collapses and folds",
+			"key": "alice"
+		},
+		{
+			"name": "Straße",
+			"note": "sharp s folds to ss",
+			"key": "strasse"
+		},
+		{
+			"name": "STRASSE",
+			"note": "and matches the upper-case spelling",
+			"key": "strasse"
+		},
+		{
+			"name": "İstanbul",
+			"note": "dotted capital I folds to i + combining dot (full folding, no Turkish special case)",
+			"key": "i̇stanbul"
+		},
+		{
+			"name": "ﬁona",
+			"note": "the fi ligature decomposes",
+			"key": "fiona"
+		},
+		{
+			"name": "Café",
+			"note": "precomposed e acute stays composed",
+			"key": "café"
+		},
+		{
+			"name": "Café",
+			"note": "e + combining acute composes to the same key",
+			"key": "café"
+		},
+		{
+			"name": "Kelvin",
+			"note": "Kelvin sign folds to k",
+			"key": "kelvin"
+		},
+		{
+			"name": "ΣΊΣΥΦΟΣ",
+			"note": "Greek capital sigma folds to small sigma",
+			"key": "σίσυφοσ"
+		},
+		{
+			"name": "王小明",
+			"note": "CJK unchanged",
+			"key": "王小明"
+		},
+		{
+			"name": "たなか",
+			"note": "kana unchanged",
+			"key": "たなか"
+		},
+		{
+			"name": "ﾀﾅｶ",
+			"note": "halfwidth katakana become fullwidth",
+			"key": "タナカ"
+		},
+		{
+			"name": "user①",
+			"note": "circled digit becomes 1",
+			"key": "user1"
+		},
+		{
+			"name": "x²",
+			"note": "superscript becomes 2",
+			"key": "x2"
+		},
+		{
+			"name": "",
+			"note": "empty stays empty",
+			"key": ""
+		}
+	],
+	"note": "Frozen with migration 032 (#171): written once from the live model.UsernameKey on 2026-11-23. Never regenerate; a change means upgrades of old databases would change.",
+	"version": 1
+}
