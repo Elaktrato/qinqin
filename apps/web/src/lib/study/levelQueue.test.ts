@@ -288,7 +288,7 @@ interface FixtureCase {
 	history: ZoneChange[];
 	now: string;
 	entries: { id: number; kind: string; written?: string; strokeData?: boolean }[];
-	cards: { id: string; kind: StudyCardKind; entryId: number; createdAt: string }[];
+	cards: { id: string; kind: StudyCardKind; entryId: number; createdAt: string; skipKinds?: StudyCardKind[] }[];
 	reviews: { cardId: string; grade: ReviewGrade; ts: string }[];
 	newLimit: number;
 	reviewLimit: number;
@@ -300,7 +300,7 @@ describe('character level queue fixtures', () => {
 	const cases = (fixtures as { cases: FixtureCase[] }).cases;
 
 	it('has the spec case list', () => {
-		expect(cases.map((c) => c.name)).toHaveLength(13);
+		expect(cases.map((c) => c.name)).toHaveLength(14);
 	});
 
 	for (const c of cases) {
@@ -618,5 +618,30 @@ describe('level sessions on the shared builder (#175)', () => {
 			reviewLimit: 10
 		});
 		expect(plan.queue.map((item) => item.cardId)).toEqual(['level:writing:2']);
+	});
+});
+
+describe('character levels leave excluded (buried) entries out (#175 review)', () => {
+	const glyphs = [1, 2, 3].map((id) => ({ id, kind: 'character', written: String.fromCodePoint(0x4e00 + id) }));
+	const base = {
+		ctx: UTC_CONTEXT,
+		w: DEFAULT_W,
+		entries: glyphs,
+		cards: [],
+		reviews: [],
+		now: NOW,
+		unit: 'character' as LevelUnit,
+		kinds: ['vocab'] as StudyCardKind[],
+		excludeEntries: new Set([1])
+	};
+
+	it('the next character takes the slot of an excluded one', () => {
+		const plan = buildLevelPlan({ ...base, newLimit: 1, reviewLimit: 10 });
+		expect(plan.queue.map((item) => item.cardId)).toEqual(['level:2']);
+		expect(plan.reserve.map((item) => item.cardId)).toEqual(['level:3']);
+	});
+
+	it('the setup counts leave it out too', () => {
+		expect(levelPlanCounts(base)).toMatchObject({ due: 0, fresh: 2, items: 2 });
 	});
 });
