@@ -126,3 +126,46 @@ plan order, except as noted.
   shell; the route walk cannot reach outage branches (a full disk, a source that is down) — the static test
   covers those writers; Android string conversion of the new keys was not run separately (the i18n contract
   tests passed).
+
+### Review fix wave (2026-11-23)
+
+No MUST-FIX. Each group test-first; where the reviewer named a mutation it was applied to the source with a
+scratch script (`mutate.sh`: apply, run the named test, restore), seen to survive before the fix and to die after.
+
+- **Merge 1** (ac255915): `feature/hardening-batch` with hb-server-fixes merged without conflicts (the staged
+  import's `context.AfterFunc` shutdown cancel and `writeError` sit together in `handleInstallStaged`); the
+  static test and the route walk passed on the merge.
+- **1 static statuses** (44b5681e): the three named mutations survived the old test (`ok`), then died
+  (`w.WriteHeader(500)` in handleListWorkspaces; `writeError(w, 409, "bad_request", …)` in
+  handlers_plugins.go:109; `writeJSON(w, 500, map{"err":…})` in handlers_dict.go:48). The stricter check also
+  found a real gap: the mail test failure was written by `writeJSON` with a 502 map; now `writeError`.
+- **2 walk statuses** (a537bee5): mutation `status = http.StatusBadGateway` for the 409 AI codes survived the
+  old walk, dies now; the unmutated walk found no mismatch.
+- **3 mappers** (11a4b6a9): `no_key`→`no_key_typo` in writeAIError survived the static test and the walk, dies in
+  `TestAIErrorCodesAreCatalogued`; an SMTP table status 422→409 dies in `TestSMTPInputErrorCodesAreCatalogued`.
+- **4 walk throttling** (f0b84edb, 0d94bf61): the new assertions failed first (six routes answered
+  `rate_limited`, two sign-in routes never reached their refusal); then one address per request, an
+  unthrottled policy for the walk and a credentials body. Ruling: the walk sends a `Range` header on every
+  request but has no installed files; the 416/412 path stays the `serveContent` unit test's (spec corrected).
+- **5 errmsg lint** (2ca23639): the new pattern cases failed, then passed; the walk then found the pack_invalid
+  detail (allowlisted, the ruled exception) and `apiErrorBody`'s `{ message } = err.body`, whose `message`
+  member is gone (tests updated first).
+- **6 language_in_use** (39b08c3e): the Go usage test and the web `inUseLines` / LanguageManager tests failed
+  first; the 409 carries `usage` counts (documented in errors.json), the screen lists workspaces and installed
+  packs, the text is "Workspaces or installed packs still use this language.".
+- **7 NITs**: recover wrapper and wrapper Unwrap/ReaderFrom (9da9c775; tests failed to compile first, then three
+  mutations — no ReadFrom, no Unwrap, no coded answer — each die); API-Errors notes the pre-routing answers of
+  net/http; licence mismatch gets `licence_mismatch` and the staged-pack refusals read as sentences, the
+  `sync:`/`events:` prefixes are cut by `errDetail` (2f82ace8, tests failed first); spec table and changelog
+  (4daa1cee); XHR uploads notify the workspace-gone and restriction handlers (ea4ef5f8, test failed first);
+  a write failure while unpacking is no longer `ErrInvalidPack` and the dictionary route answers through
+  `writePackError` (5a38fd1a, `copyEntry` test failed to compile first).
+- **Merge 2** (610dd43a): `feature/hardening-batch` with hb-web-robust. Conflicts in loadGoal, cardActions test,
+  frequencyRanks, store.ts, routes/study/+page.svelte, contracts README and handlers_sync.go, resolved keeping
+  both sides. In the same commit: `writeStoredUnreadable` (409 `study_row_unreadable`) goes through
+  `writeError` (the static test flagged it first); `UnreadableRowError` extends `ShownError` (a new errorText
+  test failed first); AddToStudy throws `UserError('entry.study.noWorkspace')` (no dedicated dom test: the
+  path needs no workspace while the button is live; covered by the generic UserError test). No `http.Error`,
+  `message(err)` helper or `.message` read in their code survived the errmsg lint.
+- `TestPluginDataRoute` and `TestSourcesImportWorkspace` still fail when run alone (pre-existing, language
+  registry order); they pass in the full run.
