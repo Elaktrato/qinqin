@@ -113,7 +113,32 @@ export const API_ERROR_KEYS: Readonly<Record<string, MessageKey>> = {
 	too_many_photos: 'apiError.tooManyPhotos',
 	ocr_unavailable: 'apiError.ocrUnavailable',
 	ocr_language_missing: 'apiError.ocrLanguageMissing',
-	ocr_failed: 'apiError.ocrFailed'
+	ocr_failed: 'apiError.ocrFailed',
+	conflict: 'apiError.conflict',
+	method_not_allowed: 'apiError.methodNotAllowed',
+	range_not_satisfiable: 'apiError.rangeNotSatisfiable',
+	precondition_failed: 'apiError.preconditionFailed',
+	not_implemented: 'apiError.notImplemented',
+	workspace_not_found: 'apiError.workspaceNotFound',
+	workspace_exists: 'apiError.workspaceExists',
+	last_workspace: 'apiError.lastWorkspace',
+	language_unknown: 'apiError.languageUnknown',
+	language_built_in: 'apiError.languageBuiltIn',
+	language_in_use: 'apiError.languageInUse',
+	pack_invalid: 'apiError.packInvalid',
+	pack_type_unsupported: 'apiError.packTypeUnsupported',
+	pack_staged: 'apiError.packStaged',
+	pack_import_running: 'apiError.packImportRunning',
+	import_busy: 'apiError.importBusy',
+	book_exists: 'apiError.bookExists',
+	bookmark_limit: 'apiError.bookmarkLimit',
+	highlight_limit: 'apiError.highlightLimit',
+	highlight_overlap: 'apiError.highlightOverlap',
+	epub_unreadable: 'apiError.epubUnreadable',
+	language_mismatch: 'apiError.languageMismatch',
+	source_unavailable: 'apiError.sourceUnavailable',
+	source_language_unavailable: 'apiError.sourceLanguageUnavailable',
+	plugin_no_data: 'apiError.pluginNoData'
 };
 
 /** The interface text of an API error code; an unknown code gives "Something went wrong (<code>)." */

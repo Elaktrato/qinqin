@@ -6,7 +6,7 @@ Every error body is JSON `{"error": code, "message": "English sentence"}`. Branc
 
 | Code | Status | Meaning |
 |---|---|---|
-| `bad_request` | 400 | Malformed or incomplete request body. The AI routes answer it with 422 when the provider refused the request. |
+| `bad_request` | 400 | Malformed or incomplete request: a body that is not the JSON the route reads, or a query parameter or form field that is missing or not in its format; the message names it. The AI routes answer it with 422 when the provider refused the request. |
 | `unauthorized` | 401 | No session, or the token is unknown, idle for 90 days or revoked, or the access token is unknown, expired or revoked. The client drops its token and shows sign-in. |
 | `bad_credentials` | 401 | Wrong username or password at sign-in (anonymous step, not a lost session). |
 | `forbidden` | 403 | The route needs an administrator. |
@@ -41,7 +41,7 @@ Every error body is JSON `{"error": code, "message": "English sentence"}`. Branc
 | `mail_outage` | 503 | Sign-in refused (fail closed): the account's second step is an emailed code and the server cannot send mail. Retry later; an administrator can fix Admin, Email or run qinqin recover --reset-mfa. |
 | `last_admin` | 409 | The change would leave the instance without an active administrator. |
 | `self_target` | 409 | An administrator tried to disable or delete their own account, or reset their own two-step sign-in, through the admin routes (Settings, Account does these). |
-| `invalid_request` | 422 | A well-formed request the server will not do (for example cancelling a forced password change). |
+| `invalid_request` | 422 | A well-formed request the server will not do (for example cancelling a forced password change), or a value out of its range (a label too long, an unknown highlight colour); the message names the field. |
 | `token_invalid` | 400 | A reset link is unknown, expired, already used or belongs to a disabled account (one code and one body for all of them). |
 | `confirm_mismatch` | 422 | The typed confirmation (the username) does not match the account being deleted. |
 | `password_required` | 422 | An administrator action that needs the acting administrator's own password (the list on the wiki page Admin-users-and-registration, Re-authentication: e.g. grant admin, delete another user, change an address, save the mail settings, lower a sign-in protection) came without currentPassword. An administrator with an authenticator also sends code (403 code_invalid). On PUT /api/admin/settings/smtp the same code can also mean the mail account's user name needs a password; the message says which. |
@@ -65,7 +65,7 @@ Every error body is JSON `{"error": code, "message": "English sentence"}`. Branc
 | `backup_version_unsupported` | 422 | Stage error code: the archive's formatVersion is not one this server reads (formats are never guessed). |
 | `backup_too_large_to_restore` | 422 | Export refused: the archive would exceed what a restore accepts (128 MiB compressed, 2 GiB expanded, 64 MiB per book), so no download link is issued. |
 | `insufficient_storage` | 507 | Admin server backup: the data volume lacks room for a snapshot of the database (database + WAL + 64 MiB). |
-| `not_found` | 404 | No such object (or it belongs to someone else). |
+| `not_found` | 404 | No such object (or it belongs to someone else), or no such API path. |
 | `username_taken` | 409 | The username exists (compared case-insensitively). |
 | `too_large` | 413 | Request body above the route's cap. |
 | `weak_password` | 422 | The new password breaks the policy (10-256 characters, not the username). message names the rule. |
@@ -114,3 +114,28 @@ Every error body is JSON `{"error": code, "message": "English sentence"}`. Branc
 | `ocr_unavailable` | 409 | Journal photos: offline reading (OCR) is not installed on this server. |
 | `ocr_language_missing` | 409 | Journal photos: offline reading has no model for the entry's language; the message names it. |
 | `ocr_failed` | 422 | Journal photos: offline reading failed on this photo. |
+| `conflict` | 409 | The request conflicts with the current state and no more specific code applies (for example a plugin manifest that reuses a built-in plugin id). |
+| `method_not_allowed` | 405 | The API path exists but not with this method; the Allow header lists the methods it takes. |
+| `range_not_satisfiable` | 416 | A download's Range header lies outside the file (package, audio clip, font slice, backup and stroke downloads). |
+| `precondition_failed` | 412 | A download's If-Match or If-Unmodified-Since condition failed. |
+| `not_implemented` | 501 | The route exists but this instance or source cannot do it (a library source without a browse list). |
+| `workspace_not_found` | 404 | The workspace the request names does not exist (any more) or belongs to someone else. The client drops it and switches to another workspace. (Sync pull and push and token creation answer the older not_found for the same case.) |
+| `workspace_exists` | 409 | A workspace with that name already exists for this user. |
+| `last_workspace` | 409 | The workspace is the user's only one; keep at least one. |
+| `language_unknown` | 422 | The workspace language is not registered on this server; an administrator adds it under Admin, Languages. |
+| `language_built_in` | 409 | Admin languages: a built-in language cannot be removed. |
+| `language_in_use` | 409 | Admin languages: a workspace still uses the language; the message names how many. |
+| `pack_invalid` | 400 | The uploaded pack is not a valid pack; the message names the rule it breaks (never a server path). |
+| `pack_type_unsupported` | 422 | The pack's type is unknown or cannot be installed through this route (audio packs are installed on the host). |
+| `pack_staged` | 429 | A pack is already staged for review: install or discard it first. |
+| `pack_import_running` | 409 | A pack import is already running on this server; try again when it has finished. |
+| `import_busy` | 429 | A library import from a source is already running for this user; wait for it to finish. |
+| `book_exists` | 409 | The book is already in this workspace's library. |
+| `bookmark_limit` | 409 | The book already has the maximum number of bookmarks (200). |
+| `highlight_limit` | 409 | The book already has the maximum number of highlights (2000). |
+| `highlight_overlap` | 409 | The text is already highlighted; existingId names the highlight that covers it. |
+| `epub_unreadable` | 422 | The uploaded file, or the source's file, is not a readable EPUB. |
+| `language_mismatch` | 422 | The book's language is not the workspace's; workspaceLanguage and bookLanguage name both. |
+| `source_unavailable` | 502 | The library source did not answer; try again later. |
+| `source_language_unavailable` | 422 | The library source has no books in the workspace's language. |
+| `plugin_no_data` | 403 | The plugin does not declare owns-data, so it has no data rows. |
