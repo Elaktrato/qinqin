@@ -60,7 +60,7 @@ func autoInstallStrokes(ctx context.Context, sqlDB *sql.DB, roots []string, logf
 // refresh an upgraded instance would keep a stale Japanese table that masks
 // every fix in the binary. Each change is logged in one line; a pack that
 // fails is returned as an error after the others ran.
-func syncBundledLemmaPacks(ctx context.Context, sqlDB *sql.DB, roots []string, logf func(string, ...any)) error {
+func syncBundledLemmaPacks(ctx context.Context, sqlDB *sql.DB, roots []string, logf func(string, ...any), opts ...packs.Option) error {
 	var errs []error
 	for _, root := range roots {
 		if info, err := os.Stat(root); err != nil || !info.IsDir() {
@@ -75,7 +75,7 @@ func syncBundledLemmaPacks(ctx context.Context, sqlDB *sql.DB, roots []string, l
 			if p.pack.Type != dict.TypeLemmaRules {
 				continue
 			}
-			if err := syncBundledLemmaPack(ctx, sqlDB, p, logf); err != nil {
+			if err := syncBundledLemmaPack(ctx, sqlDB, p, logf, opts); err != nil {
 				errs = append(errs, fmt.Errorf("lemma-rules sync of %s (%s): %w", p.pack.ID, p.dir, err))
 			}
 		}
@@ -83,7 +83,7 @@ func syncBundledLemmaPacks(ctx context.Context, sqlDB *sql.DB, roots []string, l
 	return errors.Join(errs...)
 }
 
-func syncBundledLemmaPack(ctx context.Context, sqlDB *sql.DB, p seedPack, logf func(string, ...any)) error {
+func syncBundledLemmaPack(ctx context.Context, sqlDB *sql.DB, p seedPack, logf func(string, ...any), opts []packs.Option) error {
 	raw, _, err := lemmapack.LoadFile(p.pack.Dir)
 	if err != nil {
 		return err
@@ -101,7 +101,7 @@ func syncBundledLemmaPack(ctx context.Context, sqlDB *sql.DB, p seedPack, logf f
 			return err
 		}
 	}
-	line, err := packs.Import(ctx, sqlDB, p.pack)
+	line, err := packs.Import(ctx, sqlDB, p.pack, opts...)
 	if err != nil {
 		return err
 	}
@@ -115,10 +115,12 @@ func syncBundledLemmaPack(ctx context.Context, sqlDB *sql.DB, p seedPack, logf f
 
 // loadLemmaTables brings the lemmatizer rule tables up at serve start: the
 // bundled packs are synced (syncBundledLemmaPacks), then the overlay of
-// every live lemma-rules pack is loaded (lemmapack.Reload). Failures are
-// logged; the built-in tables keep working.
-func loadLemmaTables(ctx context.Context, sqlDB *sql.DB, roots []string, logf func(string, ...any)) {
-	if err := syncBundledLemmaPacks(ctx, sqlDB, roots, logf); err != nil {
+// every live lemma-rules pack is loaded (lemmapack.Reload). opts reach
+// packs.Import: serve passes the package builder's hook, so a refreshed
+// table also gets a new package revision (the reconcile compares only the
+// manifest terms). Failures are logged; the built-in tables keep working.
+func loadLemmaTables(ctx context.Context, sqlDB *sql.DB, roots []string, logf func(string, ...any), opts ...packs.Option) {
+	if err := syncBundledLemmaPacks(ctx, sqlDB, roots, logf, opts...); err != nil {
 		logf("%v", err)
 	}
 	if err := lemmapack.Reload(ctx, sqlDB); err != nil {

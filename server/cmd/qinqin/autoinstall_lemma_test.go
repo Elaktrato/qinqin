@@ -8,7 +8,9 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
+	"qinqin/internal/datapkg"
 	"qinqin/internal/lemma"
 	"qinqin/internal/lemmapack"
 	"qinqin/internal/packs"
@@ -177,5 +179,46 @@ func copyDir(t *testing.T, from, to string) {
 		if err := os.WriteFile(filepath.Join(to, e.Name()), b, 0o644); err != nil {
 			t.Fatal(err)
 		}
+	}
+}
+
+// A startup refresh of a bundled table tells the package builder: the
+// lemma-rules package gets a new revision with the new content, as it would
+// after an upload (the reconcile alone compares only the manifest terms).
+func TestStartupRefreshRebuildsThePackage(t *testing.T) {
+	t.Cleanup(func() { lemma.SetInstalled(nil) })
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	sqlDB, _ := openTestDB(t)
+	root := t.TempDir()
+	writeLemmaPack(t, root, "xa-lemma", "xa", lemmaTable("xa", "1"))
+	b, _ := startPackages(ctx, sqlDB, t.TempDir(), t.Logf)
+	row := func() datapkg.Row {
+		t.Helper()
+		wctx, wcancel := context.WithTimeout(ctx, time.Minute)
+		defer wcancel()
+		if err := b.Wait(wctx); err != nil {
+			t.Fatal(err)
+		}
+		cat, err := b.Registry().Catalogue(ctx, []string{datapkg.AllLanguages}, true)
+		if err != nil {
+			t.Fatal(err)
+		}
+		for _, r := range cat.Packages {
+			if r.ID == "lemma-rules.xa-lemma" {
+				return r
+			}
+		}
+		t.Fatalf("no lemma-rules.xa-lemma in %+v", cat.Packages)
+		return datapkg.Row{}
+	}
+	logf := (&logRecorder{}).logf
+	loadLemmaTables(ctx, sqlDB, []string{root}, logf, packs.WithOnChange(b.PackChanged))
+	first := row()
+	writeLemmaPack(t, root, "xa-lemma", "xa", lemmaTable("xa", "2")) // an upgraded image, same manifest
+	loadLemmaTables(ctx, sqlDB, []string{root}, logf, packs.WithOnChange(b.PackChanged))
+	second := row()
+	if second.Revision != first.Revision+1 || second.ContentHash == first.ContentHash || second.State != "ready" {
+		t.Errorf("after the refresh: r%d -> r%d, hash changed %v, %s", first.Revision, second.Revision, second.ContentHash != first.ContentHash, second.State)
 	}
 }
