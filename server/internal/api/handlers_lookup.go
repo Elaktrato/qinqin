@@ -116,6 +116,9 @@ func toLookupResult(r lookup.Result) lookupResult {
 // optional, otherwise 400; text over maxLookupRunes is 413. An offset
 // outside the text is not an error: it finds nothing.
 func (s *server) handleLookup(w http.ResponseWriter, r *http.Request) {
+	if !s.allowLookup(w, r) {
+		return
+	}
 	params := r.URL.Query()
 	language, text := params.Get("lang"), params.Get("text")
 	offset, err := strconv.Atoi(params.Get("offset"))

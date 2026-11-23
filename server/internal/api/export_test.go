@@ -81,3 +81,7 @@ func WithExportCap(n int64) Option { return func(s *server) { s.exportCap = n } 
 func WithEventStream(f func(ctx context.Context, w io.Writer, db *sql.DB, user int64, since time.Time, ws *int64) error) Option {
 	return func(s *server) { s.streamEvents = f }
 }
+
+// WithSegmentHook runs hook inside every POST /api/segment, after its
+// concurrency slot is taken (tests hold requests in flight with it).
+func WithSegmentHook(hook func()) Option { return func(s *server) { s.segmentHook = hook } }

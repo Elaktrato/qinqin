@@ -26,6 +26,11 @@ import (
 // server carries the shared database handle and data directory for all
 // route handlers.
 type server struct {
+	// segmentHook runs inside POST /api/segment once its slot is taken
+	// (tests); segments counts each user's segmentations in flight.
+	segmentHook func()
+	segments    inFlight
+
 	db        *sql.DB
 	dataDir   string
 	sources   []sources.Source

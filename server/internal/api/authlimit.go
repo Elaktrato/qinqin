@@ -84,7 +84,12 @@ func DefaultAuthPolicy() AuthPolicy {
 			"smtp-test": {Burst: 10, Every: 6 * time.Minute, MaxKeys: authTableCap},
 			// Personal exports per user: 6 per hour. Restore uploads per user:
 			// 5 per hour. Server backups (admin): 1 per minute.
-			"export":        {Burst: 6, Every: 10 * time.Minute, MaxKeys: authTableCap},
+			"export": {Burst: 6, Every: 10 * time.Minute, MaxKeys: authTableCap},
+			// The public lookup routes (GET /api/lookup, /api/segment/at),
+			// per client address: the reader calls them on taps and
+			// hovers, through a client cache. 300 at once, then 20 a
+			// second.
+			"lookup":        {Burst: 300, Every: 50 * time.Millisecond, MaxKeys: authTableCap},
 			"restore":       {Burst: 5, Every: 12 * time.Minute, MaxKeys: authTableCap},
 			"server-backup": {Burst: 1, Every: time.Minute, MaxKeys: authTableCap},
 			// Personal access token requests per user, shared by all of the

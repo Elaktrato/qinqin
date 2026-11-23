@@ -78,6 +78,20 @@ for a new language would install, package and do nothing on the server, which co
 cost if wrong: a space-delimited language gets the dictionary longest-match segmentation the CJK languages use
 (bounded, can match inside an unknown word); reverting is one predicate (`segmentable`).
 
+## Rate and concurrency limits (second fix wave)
+
+`GET /api/lookup` and `GET /api/segment/at` (public) share a per-address token bucket "lookup" (300 burst, one
+more every 50 ms); `POST /api/segment` allows 6 requests in flight per user. Both answer 429 `rate_limited`
+through `writeError`, with `Retry-After`.
+
+Ruling: a bucket per address for the public GETs and a concurrency limit per user for the POST — the reader calls
+the GETs on taps and hovers (cached per window, a person makes a few a second) and the POST in 4,000-rune chunks,
+two in parallel, plus two more for a book count; a rate bucket on the POST would starve a whole-book count, while
+a concurrency cap bounds the CPU one user can hold (6 × the request budget) without slowing sequential work — cost
+if wrong: a user with several tabs counting books at once sees 429s on the seventh parallel chunk (that chunk's
+paragraphs stay without annotations until they are loaded again; the web counts it as failed); a shared NAT address with many readers could meet the bucket (300 + 20/s is far above
+one reader).
+
 ## Validation and bounds
 
 `lemma.Parse` already rejects unknown keys, classes, match modes, scripts and empty predicates. It now also
