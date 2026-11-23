@@ -9,7 +9,6 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
-	"sync"
 	"testing"
 	"time"
 
@@ -24,10 +23,10 @@ import (
 func TestBackgroundGroupCountsTheSweeper(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	var wg sync.WaitGroup
-	newPackEnv(t, api.WithStageSweeper(ctx, 10*time.Millisecond), api.WithBackgroundGroup(&wg))
+	var jobs api.Jobs
+	newPackEnv(t, api.WithStageSweeper(ctx, 10*time.Millisecond), api.WithBackgroundGroup(&jobs))
 	done := make(chan struct{})
-	go func() { wg.Wait(); close(done) }()
+	go func() { jobs.Wait(); close(done) }()
 	select {
 	case <-done:
 		t.Fatal("the group was empty while the sweeper runs")
@@ -47,14 +46,14 @@ func TestBackgroundGroupCountsTheSweeper(t *testing.T) {
 func TestStagedImportIsCountedAndCancelledByShutdown(t *testing.T) {
 	bg, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	var wg sync.WaitGroup
+	var jobs api.Jobs
 	started := make(chan struct{}, 1)
 	importer := func(ctx context.Context, _ *sql.DB, _ dict.Pack) (string, error) {
 		started <- struct{}{}
 		<-ctx.Done()
 		return "", ctx.Err()
 	}
-	e := newPackEnv(t, api.WithStageSweeper(bg, time.Hour), api.WithBackgroundGroup(&wg), api.WithImporter(importer))
+	e := newPackEnv(t, api.WithStageSweeper(bg, time.Hour), api.WithBackgroundGroup(&jobs), api.WithImporter(importer))
 	s := stageZip(t, e, esPackZip(t, packTestDictManifest))
 	if code, body := e.install(t, s.Token, "CC0-1.0"); code != http.StatusAccepted {
 		t.Fatalf("install = %d %s", code, body)
@@ -65,7 +64,7 @@ func TestStagedImportIsCountedAndCancelledByShutdown(t *testing.T) {
 		t.Fatal("import did not start")
 	}
 	done := make(chan struct{})
-	go func() { wg.Wait(); close(done) }()
+	go func() { jobs.Wait(); close(done) }()
 	select {
 	case <-done:
 		t.Fatal("the group did not count the running import")
@@ -103,5 +102,28 @@ func TestNoBareGoroutinesInTheAPI(t *testing.T) {
 			}
 			t.Errorf("%s:%d starts a goroutine outside goBackground", f, line)
 		}
+	}
+}
+
+// Once serve has started waiting for the jobs, a handler still running
+// (after a forced close) cannot start a new one: it is refused, not lost
+// in a group nobody waits for any more.
+func TestClosedJobsRefuseNewJobs(t *testing.T) {
+	var jobs api.Jobs
+	called := make(chan struct{}, 1)
+	importer := func(ctx context.Context, _ *sql.DB, _ dict.Pack) (string, error) {
+		called <- struct{}{}
+		return "", nil
+	}
+	e := newPackEnv(t, api.WithBackgroundGroup(&jobs), api.WithImporter(importer))
+	s := stageZip(t, e, esPackZip(t, packTestDictManifest))
+	jobs.Wait() // nothing runs: returns at once and closes the group
+	if code, body := e.install(t, s.Token, "CC0-1.0"); code != http.StatusAccepted {
+		t.Fatalf("install = %d %s", code, body)
+	}
+	select {
+	case <-called:
+		t.Fatal("a job started after the group was closed")
+	case <-time.After(200 * time.Millisecond):
 	}
 }

@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"context"
+	"database/sql"
 	"fmt"
 	"io"
 	"log"
@@ -105,7 +106,7 @@ func TestServeShutsDownOnCancelledContext(t *testing.T) {
 		t.Error("still listening after serve returned")
 	}
 	out := logs.String()
-	steps := []string{"shutting down", "http server stopped", "mail queue stopped", "package builder stopped", "background jobs stopped", "shutdown complete"}
+	steps := []string{"shutting down", "http server stopped", "mail queue stopped", "package builder stopped", "background jobs stopped", "janitors stopped", "shutdown complete"}
 	last := -1
 	for _, s := range steps {
 		i := strings.Index(out, s)
@@ -238,5 +239,54 @@ func TestWaitStepBoundedByDeadline(t *testing.T) {
 	waitStep("mail queue", closed, deadline, logf)
 	if len(logs) != 2 || !strings.Contains(logs[0], "did not stop") || !strings.Contains(logs[1], "stopped") {
 		t.Errorf("logs %q", logs)
+	}
+}
+
+// The order is pinned (#170): the mail queue and the package builder still
+// run while the HTTP server drains (they live under their own context, not
+// the signal's), and the database is still open when the background jobs
+// and janitors have stopped.
+func TestServeShutdownOrder(t *testing.T) {
+	quietServeEnv(t)
+	captureLog(t)
+	var workersStoppedEarly []string
+	var dbErr error
+	dbChecked := false
+	shutdownHooks.afterHTTP = func(mailDone, pkgsDone <-chan struct{}) {
+		for name, ch := range map[string]<-chan struct{}{"mail queue": mailDone, "package builder": pkgsDone} {
+			select {
+			case <-ch:
+				workersStoppedEarly = append(workersStoppedEarly, name)
+			case <-time.After(200 * time.Millisecond):
+			}
+		}
+	}
+	shutdownHooks.afterJobs = func(sqlDB *sql.DB) { dbChecked, dbErr = true, sqlDB.Ping() }
+	t.Cleanup(func() { shutdownHooks.afterHTTP, shutdownHooks.afterJobs = nil, nil })
+
+	ctx, cancel := context.WithCancel(context.Background())
+	listening := make(chan struct{})
+	done := make(chan error, 1)
+	go func() {
+		done <- serve(ctx, t.TempDir(), func() (net.Listener, error) {
+			defer close(listening)
+			return net.Listen("tcp", "127.0.0.1:0")
+		})
+	}()
+	select {
+	case <-listening:
+	case <-time.After(60 * time.Second):
+		t.Fatal("serve did not listen")
+	}
+	time.Sleep(100 * time.Millisecond)
+	cancel()
+	if err := <-done; err != nil {
+		t.Fatal(err)
+	}
+	if len(workersStoppedEarly) > 0 {
+		t.Errorf("stopped before the HTTP server had drained: %v", workersStoppedEarly)
+	}
+	if !dbChecked || dbErr != nil {
+		t.Errorf("database when the jobs had stopped: checked %v, %v; want open", dbChecked, dbErr)
 	}
 }

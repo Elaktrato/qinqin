@@ -181,7 +181,7 @@ const (
 // serve runs the server on the data directory until ctx ends, then shuts
 // down in order: the HTTP server (requests in flight get httpGrace), the mail
 // queue, the package builder, the API's background jobs (stage sweeper,
-// staged pack imports, restores), and last the database. Startup steps run
+// staged pack imports, restores), the janitors, and last the database. Startup steps run
 // under ctx, so a signal during the first-start auto-seed aborts it and serve
 // returns without listening. The background workers run under their own
 // context, cancelled only once the HTTP server has stopped, so requests that
@@ -237,14 +237,24 @@ func serve(ctx context.Context, data string, listen func() (net.Listener, error)
 	aiSvc := aiFromEnv(sqlDB, os.Getenv, log.Printf)
 	sec := secretsFromEnv(os.Getenv)
 	mailSvc := mailFromEnv(sqlDB, sec, os.Getenv, log.Printf)
-	go aiJanitor(bg, aiSvc, 15*time.Minute, log.Printf)
+	// The janitors (AI call records, sessions, journal photos) stop with bg;
+	// serve waits for them before it closes the database.
+	var janitors sync.WaitGroup
+	runJanitor := func(fn func()) {
+		janitors.Add(1)
+		go func() {
+			defer janitors.Done()
+			fn()
+		}()
+	}
+	runJanitor(func() { aiJanitor(bg, aiSvc, 15*time.Minute, log.Printf) })
 	rotateSecrets(ctx, sqlDB, sec, mailSvc, log.Printf)
 	mailDone := make(chan struct{})
 	go func() {
 		mailSvc.Run(bg)
 		close(mailDone)
 	}()
-	go auth.RunJanitor(bg, sqlDB, time.Hour, log.Printf)
+	runJanitor(func() { auth.RunJanitor(bg, sqlDB, time.Hour, log.Printf) })
 	// Files of users that no longer exist (a deletion whose file removal failed).
 	if n, err := auth.SweepOrphanUserDirs(ctx, sqlDB, data); err != nil {
 		log.Printf("startup sweep of orphan user directories: %v", err)
@@ -257,7 +267,9 @@ func serve(ctx context.Context, data string, listen func() (net.Listener, error)
 	if aiSvc != nil {
 		limiter = aiSvc.Limiter
 	}
-	go journal.RunJanitor(bg, journal.Photos{DB: sqlDB, Dir: filepath.Join(data, "journal")}, limiter, 15*time.Minute, log.Printf)
+	runJanitor(func() {
+		journal.RunJanitor(bg, journal.Photos{DB: sqlDB, Dir: filepath.Join(data, "journal")}, limiter, 15*time.Minute, log.Printf)
+	})
 
 	tess := journal.DetectTesseract(ctx, envOr("QINQIN_TESSERACT", "tesseract"))
 	if tess.Available() {
@@ -285,7 +297,7 @@ func serve(ctx context.Context, data string, listen func() (net.Listener, error)
 	// is missing or stale in the background (the catalogue says building).
 	pkgs, pkgsDone := startPackages(bg, sqlDB, data, log.Printf)
 
-	var apiJobs sync.WaitGroup
+	var apiJobs api.Jobs
 	if ctx.Err() != nil {
 		log.Printf("shutting down: stopped during startup, before listening")
 	} else if ln, err := listen(); err != nil {
@@ -301,6 +313,9 @@ func serve(ctx context.Context, data string, listen func() (net.Listener, error)
 			log.Printf("%v", err)
 		}
 	}
+	if shutdownHooks.afterHTTP != nil {
+		shutdownHooks.afterHTTP(mailDone, pkgsDone)
+	}
 
 	cancelBg()
 	deadline := time.Now().Add(backgroundGrace)
@@ -315,11 +330,28 @@ func serve(ctx context.Context, data string, listen func() (net.Listener, error)
 		close(jobsDone)
 	}()
 	waitStep("background jobs", jobsDone, deadline, log.Printf)
+	janitorsDone := make(chan struct{})
+	go func() {
+		janitors.Wait()
+		close(janitorsDone)
+	}()
+	waitStep("janitors", janitorsDone, deadline, log.Printf)
+	if shutdownHooks.afterJobs != nil {
+		shutdownHooks.afterJobs(sqlDB)
+	}
 	if err := closeDB(); err != nil {
 		log.Printf("close database: %v", err)
 	}
 	log.Printf("shutdown complete")
 	return nil
+}
+
+// shutdownHooks are test seams of serve's shutdown: afterHTTP runs once the
+// HTTP server stopped and before the workers are told to stop, afterJobs
+// once every worker stopped and before the database closes.
+var shutdownHooks struct {
+	afterHTTP func(mailDone, pkgsDone <-chan struct{})
+	afterJobs func(sqlDB *sql.DB)
 }
 
 // runHTTP serves srv on ln until ctx ends, then stops accepting and gives
