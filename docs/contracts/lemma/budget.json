@@ -1,11 +1,11 @@
 {
  "version": 1,
  "rule": "lemma/budget",
- "_doc": "The work budget of one Deinflect call (README.md, Rules and chaining, Bound). work is the number of work units the call spent: one per (form, rule) pair considered (before the class and chainOnly gating) and one per predicate leaf evaluated (minRunes, notOnly, each notSuffix entry), in the evaluation order of the README. A case without budget runs with maxWork; forms are the candidates' forms in output order.",
- "maxWork": 16384,
+ "_doc": "The work budget of one Deinflect call (README.md, Rules and chaining, Bound). work is the number of units the call spent: a rule is considered for a form only when its from ends in the form's last code point; each such (form, rule) pair costs 1, and its suffix comparison ceil(runes(from)/8) when the class and chainOnly gating let it through; a predicate leaf costs 1 + ceil(scanned/8): minRunes scans min(stem runes, minRunes), notOnly the runes up to and including the first one outside the script (all when none is), a notSuffix entry its own runes. A unit that does not fit stops the call. A candidate longer than the surface plus 64 code points is dropped. A case without budget runs with maxWork; forms are the candidates' forms in output order.",
+ "maxWork": 4096,
  "cases": [
   {
-   "name": "suffix checks and predicate leaves are counted",
+   "name": "suffix checks and predicate leaves are counted; a rule whose from cannot match is free",
    "surface": "zza",
    "table": {
     "format": 2,
@@ -40,15 +40,15 @@
      }
     ]
    },
-   "work": 5,
+   "work": 8,
    "forms": [
     "zzb"
    ]
   },
   {
-   "name": "the budget stops before the third suffix check",
+   "name": "the budget stops before the third rule (each costs 2: the pair and its 1-rune suffix)",
    "surface": "xa",
-   "budget": 2,
+   "budget": 4,
    "table": {
     "format": 2,
     "language": "xb",
@@ -81,7 +81,7 @@
      }
     ]
    },
-   "work": 2,
+   "work": 4,
    "forms": [
     "xb",
     "xc"
@@ -90,7 +90,7 @@
   {
    "name": "a predicate cut short by the budget produces nothing, and the call stops",
    "surface": "xa",
-   "budget": 3,
+   "budget": 6,
    "table": {
     "format": 2,
     "language": "xb",
@@ -124,7 +124,7 @@
      }
     ]
    },
-   "work": 3,
+   "work": 6,
    "forms": []
   },
   {
@@ -180,7 +180,7 @@
      }
     ]
    },
-   "work": 4,
+   "work": 8,
    "forms": [
     "kkc"
    ]
@@ -221,6 +221,129 @@
    "forms": [
     "xa",
     "xo"
+   ]
+  },
+  {
+   "name": "notOnly is charged for the runes it scans: 10 Latin runes cost 1 + ceil(10/8)",
+   "surface": "abcdefghijz",
+   "table": {
+    "format": 2,
+    "language": "xb",
+    "version": "t",
+    "maxDepth": 1,
+    "classes": {
+     "w": {
+      "any": true
+     }
+    },
+    "hints": {},
+    "rules": [
+     {
+      "from": "z",
+      "to": "",
+      "reason": "r",
+      "out": "w",
+      "stem": {
+       "notOnly": "latin"
+      }
+     }
+    ]
+   },
+   "work": 5,
+   "forms": []
+  },
+  {
+   "name": "a long suffix costs ceil(runes/8): a 17-rune from costs 3 after the pair",
+   "surface": "xaaaaaaaaaaaaaaaaa",
+   "table": {
+    "format": 2,
+    "language": "xb",
+    "version": "t",
+    "maxDepth": 1,
+    "classes": {
+     "w": {
+      "any": true
+     }
+    },
+    "hints": {},
+    "rules": [
+     {
+      "from": "aaaaaaaaaaaaaaaaa",
+      "to": "o",
+      "reason": "r",
+      "out": "w"
+     }
+    ]
+   },
+   "work": 4,
+   "forms": [
+    "xo"
+   ]
+  },
+  {
+   "name": "a rule whose from does not end in the form's last code point is never considered (free)",
+   "surface": "xa",
+   "table": {
+    "format": 2,
+    "language": "xb",
+    "version": "t",
+    "maxDepth": 1,
+    "classes": {
+     "w": {
+      "any": true
+     }
+    },
+    "hints": {},
+    "rules": [
+     {
+      "from": "b",
+      "to": "",
+      "reason": "r",
+      "out": "w"
+     },
+     {
+      "from": "a",
+      "to": "o",
+      "reason": "r",
+      "out": "w"
+     }
+    ]
+   },
+   "work": 2,
+   "forms": [
+    "xo"
+   ]
+  },
+  {
+   "name": "a candidate longer than the surface plus 64 code points is dropped",
+   "surface": "xa",
+   "table": {
+    "format": 2,
+    "language": "xb",
+    "version": "t",
+    "maxDepth": 4,
+    "classes": {
+     "w": {
+      "any": true
+     }
+    },
+    "hints": {},
+    "rules": [
+     {
+      "from": "a",
+      "to": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbba",
+      "reason": "g",
+      "out": "w",
+      "in": [
+       "w"
+      ]
+     }
+    ]
+   },
+   "work": 6,
+   "forms": [
+    "xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbba",
+    "xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbba"
    ]
   }
  ]

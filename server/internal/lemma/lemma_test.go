@@ -202,10 +202,10 @@ func TestCompoundStemPredicate(t *testing.T) {
 	if !(lemma.Compound{Suffix: "する", Class: "vs"}).StemOK("す", lemma.NewWork(0)) {
 		t.Error("a compound without a predicate refuses a stem")
 	}
-	// The shared budget: 勉強 costs one unit (minRunes holds); a spent
-	// budget accepts nothing.
-	w := lemma.NewWork(1)
-	if !c.StemOK("勉強", w) || w.Used() != 1 || c.StemOK("勉強", w) {
+	// The shared budget: 勉強 costs 2 units (minRunes 2: 1 + ceil(2/8));
+	// a spent budget accepts nothing.
+	w := lemma.NewWork(2)
+	if !c.StemOK("勉強", w) || w.Used() != 2 || c.StemOK("勉強", w) {
 		t.Errorf("budgeted StemOK: used %d", w.Used())
 	}
 	if _, err := lemma.Parse([]byte(`{"format": 1, "language": "xc", "version": "t", "maxDepth": 1,

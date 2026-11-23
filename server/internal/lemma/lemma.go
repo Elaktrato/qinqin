@@ -54,14 +54,15 @@ const (
 // multiply its candidates at every depth.
 const MaxCandidates = 64
 
-// MaxWork bounds the work of one Deinflect call: one unit per (form, rule)
-// pair considered and one per predicate leaf evaluated (a minRunes or
-// notOnly test, one notSuffix entry). When the budget is spent the call
-// stops and returns the candidates produced so far; a predicate cut short
-// produces nothing. The order of evaluation is fixed
-// (docs/contracts/lemma/README.md, "Bound"), so every engine stops at the
-// same place.
-const MaxWork = 16384
+// MaxWork bounds the work of one Deinflect call. A rule is considered for
+// a form only when its From ends in the form's last code point; each such
+// (form, rule) pair costs 1, its suffix comparison scanCost(runes of From)
+// once the gating lets it through, and each predicate leaf 1 + scanCost of
+// the runes it scans. When a cost does not fit the call stops and returns
+// the candidates produced so far; a predicate cut short produces nothing.
+// The order of evaluation is fixed (docs/contracts/lemma/README.md,
+// "Bound"), so every engine stops at the same place.
+const MaxWork = 4096
 
 // workDone counts the work of every Deinflect call (WorkDone).
 var workDone atomic.Int64
@@ -76,15 +77,23 @@ type budget struct {
 	out       bool
 }
 
-// spend takes one unit; false (and out) when none is left.
-func (b *budget) spend() bool {
-	if b.used >= b.max {
+// spend takes n units; false (and out) when they do not fit.
+func (b *budget) spend(n int) bool {
+	if b.used+n > b.max {
 		b.out = true
 		return false
 	}
-	b.used++
+	b.used += n
 	return true
 }
+
+// scanCost is the price of scanning n code points: one unit per 8, rounded
+// up (docs/contracts/lemma/README.md, "Bound").
+func scanCost(n int) int { return (n + 7) / 8 }
+
+// MaxGrowth bounds how much longer than the surface a candidate may be: a
+// candidate of more than surface + MaxGrowth code points is dropped.
+const MaxGrowth = 64
 
 // Match modes of a rule.
 const (
@@ -105,6 +114,10 @@ type Table struct {
 	Compounds []Compound       `json:"compounds,omitempty"`
 	Hints     Hints            `json:"hints"`
 	Rules     []Rule           `json:"rules"`
+
+	// byLast lists the rules by the last code point of From, in table
+	// order (Parse): the only rules a form ending in it can match.
+	byLast map[rune][]int
 }
 
 // Class is a word class: the dictionary part-of-speech tags that have it,
@@ -200,8 +213,10 @@ type Rule struct {
 	// the ないで of ないです).
 	ChainOnly bool `json:"chainOnly,omitempty"`
 
-	// in is In as a set (Parse).
-	in map[string]bool
+	// in is In as a set, fromRunes and toRunes the code points of From and
+	// To (Parse).
+	in                 map[string]bool
+	fromRunes, toRunes int
 }
 
 // takes reports whether class is in the rule's In.
@@ -350,10 +365,16 @@ func (t *Table) validate() error {
 			}
 		}
 	}
+	t.byLast = map[rune][]int{}
 	for i := range t.Rules {
-		t.Rules[i].in = map[string]bool{}
-		for _, c := range t.Rules[i].In {
-			t.Rules[i].in[c] = true
+		r := &t.Rules[i]
+		r.in = map[string]bool{}
+		for _, c := range r.In {
+			r.in[c] = true
+		}
+		r.fromRunes, r.toRunes = utf8.RuneCountInString(r.From), utf8.RuneCountInString(r.To)
+		if last, _ := utf8.DecodeLastRuneInString(r.From); r.From != "" {
+			t.byLast[last] = append(t.byLast[last], i)
 		}
 	}
 	for i, r := range t.Rules {
@@ -514,14 +535,33 @@ func (t *Table) checkLimits() error {
 // allOf children (stopping at the first false), then the anyOf children
 // (stopping at the first true). A spent budget makes it false.
 func (p Pred) holds(stem string, b *budget) bool {
-	if p.MinRunes > 0 && (!b.spend() || utf8.RuneCountInString(stem) < p.MinRunes) {
-		return false
+	if p.MinRunes > 0 {
+		n := 0
+		for range stem {
+			if n == p.MinRunes {
+				break
+			}
+			n++
+		}
+		if !b.spend(1+scanCost(n)) || n < p.MinRunes {
+			return false
+		}
 	}
-	if p.NotOnly != "" && (!b.spend() || !strings.ContainsFunc(stem, func(r rune) bool { return !scripts[p.NotOnly](r) })) {
-		return false
+	if p.NotOnly != "" {
+		in, n, outside := scripts[p.NotOnly], 0, false
+		for _, r := range stem {
+			n++
+			if !in(r) {
+				outside = true
+				break
+			}
+		}
+		if !b.spend(1+scanCost(n)) || !outside {
+			return false
+		}
 	}
 	for _, s := range p.NotSuffix {
-		if !b.spend() || strings.HasSuffix(stem, s) {
+		if !b.spend(1+scanCost(utf8.RuneCountInString(s))) || strings.HasSuffix(stem, s) {
 			return false
 		}
 	}
@@ -568,20 +608,29 @@ func (t *Table) deinflect(surface string, b *budget) []Candidate {
 	type node struct {
 		key
 		reasons []string
+		runes   int
 	}
 	seen := map[key]bool{}
 	var out []Candidate
-	level := []node{{key: key{form: surface}}}
+	surfaceRunes := utf8.RuneCountInString(surface)
+	level := []node{{key: key{form: surface}, runes: surfaceRunes}}
 	for depth := 0; depth < t.MaxDepth && len(level) > 0; depth++ {
 		var next []node
 		for _, n := range level {
-			for i := range t.Rules {
+			last, size := utf8.DecodeLastRuneInString(n.form)
+			if size == 0 {
+				continue
+			}
+			for _, i := range t.byLast[last] {
 				r := &t.Rules[i]
-				if !b.spend() {
+				if !b.spend(1) {
 					return out
 				}
 				if depth > 0 && !r.takes(n.class) || depth == 0 && r.ChainOnly {
 					continue
+				}
+				if !b.spend(scanCost(r.fromRunes)) {
+					return out
 				}
 				if !strings.HasSuffix(n.form, r.From) {
 					continue
@@ -605,13 +654,17 @@ func (t *Table) deinflect(surface string, b *budget) []Candidate {
 					}
 					continue
 				}
+				runes := n.runes - r.fromRunes + r.toRunes
+				if runes > surfaceRunes+MaxGrowth {
+					continue // a form that only grows: dropped, free
+				}
 				k := key{stem + r.To, r.Out}
 				if k.form == surface || seen[k] {
 					continue
 				}
 				seen[k] = true
 				reasons := append(slices.Clone(n.reasons), r.Reason)
-				next = append(next, node{k, reasons})
+				next = append(next, node{k, reasons, runes})
 				out = append(out, Candidate{Form: k.form, Reasons: reasons, Class: k.class})
 				if len(out) == MaxCandidates {
 					return out
