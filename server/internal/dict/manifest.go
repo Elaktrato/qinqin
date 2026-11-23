@@ -24,6 +24,7 @@ const (
 	TypeAudio      = packtype.Audio
 	TypeComponents = packtype.Components
 	TypeStrokes    = packtype.Strokes
+	TypeLemmaRules = packtype.LemmaRules
 	TypeTheme      = packtype.Theme
 	TypeFont       = packtype.Font
 )
@@ -54,6 +55,9 @@ const (
 	// FormatFontSlices is a font pack: faces.json plus slices/<sha256>.woff2
 	// (docs/contracts/fonts/).
 	FormatFontSlices = "font-slices"
+	// FormatRulesJSON is a lemma-rules pack: rules.json, one lemmatizer rule
+	// table (docs/contracts/lemma/).
+	FormatRulesJSON = "rules-json"
 )
 
 // typeList is the valid types for an error message: "a, b, or c".
@@ -105,6 +109,7 @@ var (
 		FormatStrokesJSONLGz: true,
 		FormatThemesJSON:     true,
 		FormatFontSlices:     true,
+		FormatRulesJSON:      true,
 	}
 )
 
@@ -155,11 +160,13 @@ func (m Manifest) Validate() error {
 	case !manifestTypes[m.Type]:
 		return fmt.Errorf("manifest: unknown type %q (want %s)", m.Type, typeList())
 	case !manifestFormats[m.Format]:
-		return fmt.Errorf("manifest: unknown format %q (want json, cedict, unihan, jmdict, kanjidic2, yomitan-freq, freq-csv, audio-index, components-tsv, hanzi-writer-jsonl-gz, themes-json, or font-slices)", m.Format)
+		return fmt.Errorf("manifest: unknown format %q (want json, cedict, unihan, jmdict, kanjidic2, yomitan-freq, freq-csv, audio-index, components-tsv, hanzi-writer-jsonl-gz, themes-json, font-slices, or rules-json)", m.Format)
 	case (m.Type == TypeTheme) != (m.Format == FormatThemesJSON):
 		return fmt.Errorf("manifest: a theme pack has the format themes-json, and themes-json is for theme packs only (type %s, format %s)", m.Type, m.Format)
 	case (m.Type == TypeFont) != (m.Format == FormatFontSlices):
 		return fmt.Errorf("manifest: a font pack has the format font-slices, and font-slices is for font packs only (type %s, format %s)", m.Type, m.Format)
+	case (m.Type == TypeLemmaRules) != (m.Format == FormatRulesJSON):
+		return fmt.Errorf("manifest: a lemma-rules pack has the format rules-json, and rules-json is for lemma-rules packs only (type %s, format %s)", m.Type, m.Format)
 	}
 	if err := m.validateLanguages(); err != nil {
 		return err

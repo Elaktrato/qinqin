@@ -1,0 +1,53 @@
+{
+ "version": 1,
+ "rule": "lemma/parse",
+ "_doc": "Whole-table decoding (README.md, Table format): text is the exact file content. A table must be exactly one JSON object (whitespace around it allowed), with no key twice in any object, and no unknown key. invalid cases are refused whole; reason names the rule.",
+ "cases": [
+  {
+   "name": "a valid table",
+   "text": "{\"format\": 2, \"language\": \"xb\", \"version\": \"t\", \"maxDepth\": 1, \"classes\": {\"w\": {\"any\": true}}, \"hints\": {}, \"rules\": [{\"from\": \"a\", \"to\": \"b\", \"reason\": \"r\", \"out\": \"w\"}]}",
+   "valid": true
+  },
+  {
+   "name": "trailing whitespace is fine",
+   "text": "{\"format\": 2, \"language\": \"xb\", \"version\": \"t\", \"maxDepth\": 1, \"classes\": {\"w\": {\"any\": true}}, \"hints\": {}, \"rules\": [{\"from\": \"a\", \"to\": \"b\", \"reason\": \"r\", \"out\": \"w\"}]}\n  \n",
+   "valid": true
+  },
+  {
+   "name": "a second JSON value after the table",
+   "text": "{\"format\": 2, \"language\": \"xb\", \"version\": \"t\", \"maxDepth\": 1, \"classes\": {\"w\": {\"any\": true}}, \"hints\": {}, \"rules\": [{\"from\": \"a\", \"to\": \"b\", \"reason\": \"r\", \"out\": \"w\"}]} {\"format\": 2}",
+   "valid": false,
+   "reason": "trailing data"
+  },
+  {
+   "name": "trailing garbage",
+   "text": "{\"format\": 2, \"language\": \"xb\", \"version\": \"t\", \"maxDepth\": 1, \"classes\": {\"w\": {\"any\": true}}, \"hints\": {}, \"rules\": [{\"from\": \"a\", \"to\": \"b\", \"reason\": \"r\", \"out\": \"w\"}]} x",
+   "valid": false,
+   "reason": "trailing data"
+  },
+  {
+   "name": "a duplicate top-level key",
+   "text": "{\"format\": 2, \"language\": \"xb\", \"version\": \"t\", \"version\": \"u\", \"maxDepth\": 1, \"classes\": {\"w\": {\"any\": true}}, \"hints\": {}, \"rules\": [{\"from\": \"a\", \"to\": \"b\", \"reason\": \"r\", \"out\": \"w\"}]}",
+   "valid": false,
+   "reason": "duplicate key"
+  },
+  {
+   "name": "a duplicate key in a rule",
+   "text": "{\"format\": 2, \"language\": \"xb\", \"version\": \"t\", \"maxDepth\": 1, \"classes\": {\"w\": {\"any\": true}}, \"hints\": {}, \"rules\": [{\"from\": \"a\", \"to\": \"b\", \"to\": \"c\", \"reason\": \"r\", \"out\": \"w\"}]}",
+   "valid": false,
+   "reason": "duplicate key"
+  },
+  {
+   "name": "a duplicate class name",
+   "text": "{\"format\": 2, \"language\": \"xb\", \"version\": \"t\", \"maxDepth\": 1, \"classes\": {\"w\": {\"any\": true}, \"w\": {}}, \"hints\": {}, \"rules\": [{\"from\": \"a\", \"to\": \"b\", \"reason\": \"r\", \"out\": \"w\"}]}",
+   "valid": false,
+   "reason": "duplicate key"
+  },
+  {
+   "name": "an unknown key",
+   "text": "{\"format\": 2, \"language\": \"xb\", \"version\": \"t\", \"maxDepth\": 1, \"classes\": {\"w\": {\"any\": true}}, \"hints\": {}, \"extra\": 1, \"rules\": [{\"from\": \"a\", \"to\": \"b\", \"reason\": \"r\", \"out\": \"w\"}]}",
+   "valid": false,
+   "reason": "unknown field"
+  }
+ ]
+}

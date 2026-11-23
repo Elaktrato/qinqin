@@ -102,6 +102,11 @@
 			"workspace": "any"
 		},
 		{
+			"pattern": "GET /api/lemma-packs",
+			"scope": "read",
+			"workspace": "any"
+		},
+		{
 			"pattern": "GET /api/library/books",
 			"scope": "read",
 			"workspace": "query"

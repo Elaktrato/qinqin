@@ -169,7 +169,7 @@ func TestCatalogueLanguagesAdminETagInstance(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if want := []string{"audio.ja-audio", "lexicon.ja", "strokes.hw"}; !slices.Equal(ids(ja), want) {
+	if want := []string{"audio.ja-audio", "lemma-rules.ja-rules", "lexicon.ja", "strokes.hw"}; !slices.Equal(ids(ja), want) {
 		t.Fatalf("ja catalogue %v, want %v", ids(ja), want)
 	}
 	if !slices.Equal(ja.Languages, []string{"ja"}) || ja.Format != 1 || ja.Building {
@@ -186,7 +186,7 @@ func TestCatalogueLanguagesAdminETagInstance(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if want := []string{"audio.ja-audio", "components.zh-comp", "frequency.zh-freq", "grammar.zh-gram", "levels.zh-levels",
+	if want := []string{"audio.ja-audio", "components.zh-comp", "frequency.zh-freq", "grammar.zh-gram", "lemma-rules.ja-rules", "levels.zh-levels",
 		"lexicon.ja", "lexicon.zh", "sentences.zh-sent", "strokes.hw"}; !slices.Equal(ids(all), want) {
 		t.Fatalf("all catalogue %v, want %v", ids(all), want)
 	}

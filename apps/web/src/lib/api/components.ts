@@ -3,7 +3,7 @@
 // Contract: docs/contracts/radicals/README.md.
 import { onSessionEnd } from '../session/sessionEnd';
 import { api } from './client';
-import type { ComponentPack, ComponentPart, ComponentsResponse } from './types';
+import type { ComponentPack, ComponentPart, ComponentsResponse, LemmaPack } from './types';
 
 export interface ComponentIndex {
 	packs: ComponentsResponse['packs'];
@@ -58,6 +58,11 @@ export function fetchComponents(code: string): Promise<ComponentIndex> {
 	);
 	inFlight.set(language, promise);
 	return promise;
+}
+
+/** getLemmaPacks lists the installed lemmatizer rule-table packs (public). */
+export function getLemmaPacks(): Promise<LemmaPack[]> {
+	return api<LemmaPack[]>('/api/lemma-packs', { auth: false });
 }
 
 /** getComponentPacks lists the installed components packs (public). */

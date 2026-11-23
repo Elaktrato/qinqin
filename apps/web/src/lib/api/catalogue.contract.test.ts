@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import fixture from '../../../../../docs/contracts/packages/catalogue.json';
-import { parseCatalogue } from './packages';
+import { PACKAGE_ID, PACKAGE_TYPES, parseCatalogue } from './packages';
 
 interface Case {
 	name: string;
@@ -26,6 +26,11 @@ describe('docs/contracts/packages/catalogue.json', () => {
 			}
 		});
 	}
+
+	it('knows every package type and the id grammar', () => {
+		expect([...PACKAGE_TYPES]).toEqual(fixture.types);
+		expect(PACKAGE_ID.source).toBe(fixture.idPattern);
+	});
 
 	it('refuses what is not an object', () => {
 		for (const raw of [null, undefined, 'x', 3, [], true]) expect(parseCatalogue(raw)).toBeNull();

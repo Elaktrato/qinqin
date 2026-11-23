@@ -1,0 +1,11 @@
+{
+  "id": "ja-lemma",
+  "name": "Japanese lemmatizer rules",
+  "version": "2026-11-22",
+  "type": "lemma-rules",
+  "language": "ja",
+  "license": "CC0-1.0",
+  "attribution": "Japanese lemmatizer rule table written for qinqin by the project; CC0 1.0.",
+  "format": "rules-json",
+  "notice": "The rules that turn inflected Japanese (食べました, してしまった, 読んでる) into dictionary forms, written for qinqin and released under [CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/).\n\nThe same table is built into the server; this pack lets clients download it as a data package."
+}

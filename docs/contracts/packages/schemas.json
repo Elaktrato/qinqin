@@ -222,6 +222,19 @@
     }
    ],
    "indexes": []
+  },
+  {
+   "type": "lemma-rules",
+   "tables": [
+    {
+     "name": "lemma_rules",
+     "sql": "CREATE TABLE lemma_rules (language TEXT PRIMARY KEY, rules_json TEXT NOT NULL)",
+     "order": [
+      "language"
+     ]
+    }
+   ],
+   "indexes": []
   }
  ]
 }

@@ -5,18 +5,32 @@ import (
 	"encoding/json"
 	"net/http"
 	"strconv"
+	"sync"
 	"unicode/utf8"
 
 	"qinqin/internal/lang"
+	"qinqin/internal/lemma"
 	"qinqin/internal/overlay"
 	"qinqin/internal/segment"
 )
+
+// segmentable reports whether /api/segment, /api/segment/at and
+// /api/lookup serve language: a language with a code pack (zh, ja), or one
+// with a lemmatizer rule table in effect — an installed lemma-rules pack
+// gives a data-only language segmentation and lookups with no code change
+// (#176).
+func segmentable(language string) bool {
+	return lang.Registered(language) || lemma.For(language) != nil
+}
 
 // handleSegmentAt serves GET /api/segment/at?lang=&text=&offset= with the
 // longest dictionary match starting at the code-point offset, as
 // {"match": Match|null}. The route is public. lang and text are required
 // and offset must be an integer, otherwise 400.
 func (s *server) handleSegmentAt(w http.ResponseWriter, r *http.Request) {
+	if !s.allowLookup(w, r) {
+		return
+	}
 	params := r.URL.Query()
 	language, text := params.Get("lang"), params.Get("text")
 	offset, err := strconv.Atoi(params.Get("offset"))
@@ -24,7 +38,7 @@ func (s *server) handleSegmentAt(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, "bad_request", "Lang, text and integer offset required.")
 		return
 	}
-	if !lang.Registered(language) {
+	if !segmentable(language) {
 		writeError(w, http.StatusBadRequest, "bad_request", "Unsupported language.")
 		return
 	}
@@ -59,6 +73,16 @@ func (s *server) handleSegment(w http.ResponseWriter, r *http.Request) {
 	if u == nil {
 		return
 	}
+	release, ok := s.segments.acquire(u.ID, MaxSegmentsInFlight)
+	if !ok {
+		w.Header().Set("Retry-After", "1")
+		writeError(w, http.StatusTooManyRequests, "rate_limited", "Too many texts are being segmented at once. Try again in a moment.")
+		return
+	}
+	defer release()
+	if s.segmentHook != nil {
+		s.segmentHook()
+	}
 	var req segmentRequest
 	r.Body = http.MaxBytesReader(w, r.Body, maxSegmentBody)
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -69,7 +93,7 @@ func (s *server) handleSegment(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, "bad_request", "lang required.")
 		return
 	}
-	if !lang.Registered(req.Lang) {
+	if !segmentable(req.Lang) {
 		writeError(w, http.StatusBadRequest, "bad_request", "Unsupported language.")
 		return
 	}
@@ -132,4 +156,45 @@ func (s *server) overlayReadings(ctx context.Context, userID int64, matches []se
 		m.Reading = &segment.Reading{Type: pick.Type, Value: pick.Value}
 	}
 	return nil
+}
+
+// MaxSegmentsInFlight is how many POST /api/segment one user may have
+// running at once: the reader runs two chunks in parallel and a book count
+// two more (#176). One more is 429 rate_limited.
+const MaxSegmentsInFlight = 6
+
+// inFlight counts requests in flight per user.
+type inFlight struct {
+	mu sync.Mutex
+	n  map[int64]int
+}
+
+// acquire takes one of max slots of user; release gives it back.
+func (f *inFlight) acquire(user int64, max int) (release func(), ok bool) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	if f.n == nil {
+		f.n = map[int64]int{}
+	}
+	if f.n[user] >= max {
+		return nil, false
+	}
+	f.n[user]++
+	return func() {
+		f.mu.Lock()
+		defer f.mu.Unlock()
+		if f.n[user]--; f.n[user] <= 0 {
+			delete(f.n, user)
+		}
+	}, true
+}
+
+// allowLookup spends one token of the client's "lookup" bucket (the public
+// GET /api/lookup and /api/segment/at) or answers 429 rate_limited.
+func (s *server) allowLookup(w http.ResponseWriter, r *http.Request) bool {
+	if ok, retry := s.authLimiter("lookup").Allow(clientKeyString(s.clientIP(r))); !ok {
+		writeRateLimitedAs(w, retry, "lookups")
+		return false
+	}
+	return true
 }

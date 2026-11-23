@@ -5,7 +5,16 @@
 import { api } from './client';
 import type { StrokePack } from './types';
 
-export type PackageType = 'lexicon' | 'levels' | 'sentences' | 'frequency' | 'components' | 'audio' | 'grammar' | 'strokes';
+export type PackageType =
+	| 'lexicon'
+	| 'levels'
+	| 'sentences'
+	| 'frequency'
+	| 'components'
+	| 'audio'
+	| 'grammar'
+	| 'strokes'
+	| 'lemma-rules';
 export type PackageState = 'building' | 'ready' | 'failed' | 'deleted';
 
 export interface PackageSource {
@@ -48,9 +57,23 @@ export interface Catalogue {
 	packages: CatalogueRow[];
 }
 
-const TYPES: readonly string[] = ['lexicon', 'levels', 'sentences', 'frequency', 'components', 'audio', 'grammar', 'strokes'];
+/** Every package type in contract order (catalogue.json types; a test keeps them equal). */
+export const PACKAGE_TYPES: readonly PackageType[] = [
+	'lexicon',
+	'levels',
+	'sentences',
+	'frequency',
+	'components',
+	'audio',
+	'grammar',
+	'strokes',
+	'lemma-rules'
+];
+const TYPES: readonly string[] = PACKAGE_TYPES;
 const STATES: readonly string[] = ['building', 'ready', 'failed', 'deleted'];
-const ID = /^(lexicon\.[a-z]{2,3}(-[a-z0-9]+)*|(levels|sentences|frequency|components|audio|grammar|strokes)\.[a-z][a-z0-9]*(-[a-z0-9]+)*)$/;
+/** The package id grammar (catalogue.json idPattern). */
+export const PACKAGE_ID = /^(lexicon\.[a-z]{2,3}(-[a-z0-9]+)*|(levels|sentences|frequency|components|audio|grammar|strokes|lemma-rules)\.[a-z][a-z0-9]*(-[a-z0-9]+)*)$/;
+const ID = PACKAGE_ID;
 const ULID = /^[0-9A-HJKMNP-TV-Z]{26}$/;
 const TIME = /^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d(\.\d+)?Z$/;
 const CONTENT_HASH = /^sha256:[0-9a-f]{64}$/;

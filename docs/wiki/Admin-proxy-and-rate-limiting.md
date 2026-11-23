@@ -89,5 +89,7 @@ All in memory unless noted, per user unless noted.
 | Journal photos | 30 uploads an hour, 10 pending; offline reads 60 an hour |
 | Data package downloads | 2 at a time (429 `download_busy`, `Retry-After: 5`) |
 | Staged pack uploads (admin) | 3 at a time for the server |
+| Dictionary lookups and tap segmentation (`GET /api/lookup`, `GET /api/segment/at`, public) | 300 at once per client address, then 20 a second (429 `rate_limited` with `Retry-After`) |
+| Text segmentation (`POST /api/segment`) | 6 at a time per user (429 `rate_limited`, `Retry-After: 1`); each request also has a fixed work budget, after which the rest of the text is matched without deinflection |
 
 Request body limits per route are on [API reference](API-Reference#request-body-limits).
