@@ -11,7 +11,7 @@ import (
 	"testing"
 
 	"qinqin/internal/auth"
-	"qinqin/internal/db"
+	"qinqin/internal/dbtest"
 	"qinqin/internal/library"
 )
 
@@ -24,11 +24,7 @@ type fixture struct {
 
 func setup(t *testing.T) fixture {
 	t.Helper()
-	sqlDB, err := db.Open(filepath.Join(t.TempDir(), "test.db"))
-	if err != nil {
-		t.Fatalf("db.Open: %v", err)
-	}
-	t.Cleanup(func() { sqlDB.Close() })
+	sqlDB := dbtest.Open(t)
 	f := fixture{Store: library.Store{DB: sqlDB, Dir: t.TempDir()}}
 	f.a, f.b = newUser(t, sqlDB, "a"), newUser(t, sqlDB, "b")
 	f.wa, f.wb = newWorkspace(t, sqlDB, f.a, "zh", ""), newWorkspace(t, sqlDB, f.b, "zh", "")

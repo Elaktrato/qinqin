@@ -12,6 +12,7 @@ import (
 	"strings"
 	"testing"
 
+	"qinqin/internal/dbtest"
 	"qinqin/internal/dict"
 	"qinqin/internal/lexicon"
 )
@@ -236,7 +237,7 @@ func TestUnihanParseRejectsMalformedLines(t *testing.T) {
 // through the table, and reject numbers outside it.
 func TestKangxiRadicalsCoverAllNumbers(t *testing.T) {
 	ctx := context.Background()
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	lines := make([]string, 0, 214)
 	for n := 1; n <= 214; n++ {
 		lines = append(lines, fmt.Sprintf("U+%04X\tkRSUnicode\t%d.0", 0x4E00+n-1, n))
@@ -250,7 +251,7 @@ func TestKangxiRadicalsCoverAllNumbers(t *testing.T) {
 	}
 
 	for _, n := range []int{0, 215} {
-		sqlDB := newDB(t)
+		sqlDB := dbtest.Open(t)
 		_, err := importUnihanPack(t, ctx, sqlDB, unihanManifest, fmt.Sprintf("U+4E00\tkRSUnicode\t%d.0", n))
 		if err == nil || !strings.Contains(err.Error(), "Kangxi") {
 			t.Errorf("radical %d: ImportLexicon = %v, want an error naming the Kangxi radicals", n, err)
@@ -271,7 +272,7 @@ func TestKangxiRadicalsCoverAllNumbers(t *testing.T) {
 // must be its own.
 func TestKangxiRadicalCharacters(t *testing.T) {
 	ctx := context.Background()
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	anchors := []struct {
 		n   int
 		chr string

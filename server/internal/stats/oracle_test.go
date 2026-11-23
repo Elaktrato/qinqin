@@ -11,6 +11,7 @@ import (
 	"testing"
 	"time"
 
+	"qinqin/internal/dbtest"
 	"qinqin/internal/events"
 	"qinqin/internal/model"
 	"qinqin/internal/plugins"
@@ -84,7 +85,7 @@ func oracle(evs []model.StudyEvent, h studyday.History, from, to time.Time) []st
 }
 
 func TestActivityMatchesOracle(t *testing.T) {
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	rules := builtinRules(t, sqlDB)
 	u := newUser(t, sqlDB, "a")
 	rng := rand.New(rand.NewSource(48))

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"testing"
 
+	"qinqin/internal/dbtest"
 	"qinqin/internal/dict"
 	"qinqin/internal/lang"
 	"qinqin/internal/levels"
@@ -27,7 +28,7 @@ func charsOf(t *testing.T, got []levels.LevelChars) (names []string, chars map[s
 
 func TestSchemeCharactersWordUnit(t *testing.T) {
 	lang.Register(lang.Zh{})
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	ctx := context.Background()
 	seedFixture(t, sqlDB)
 
@@ -64,7 +65,7 @@ func TestSchemeCharactersWordUnit(t *testing.T) {
 
 func TestSchemeCharactersLowestLevelWins(t *testing.T) {
 	lang.Register(lang.Zh{})
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	ctx := context.Background()
 	// No character entry for 人: it still counts, being written in a
 	// member word; 好 sits in level 1 (你好) and not again in level 2.
@@ -92,7 +93,7 @@ func TestSchemeCharactersLowestLevelWins(t *testing.T) {
 
 func TestSchemeCharactersCharacterUnit(t *testing.T) {
 	lang.Register(lang.Zh{})
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	ctx := context.Background()
 	importCedict(t, sqlDB, lineHao, lineNi, lineRen, lineNihao)
 	if _, err := levels.Import(ctx, sqlDB, buildPack(t, "chars",
@@ -114,7 +115,7 @@ func TestSchemeCharactersCharacterUnit(t *testing.T) {
 
 func TestSchemeCharactersSkipsDeletedRows(t *testing.T) {
 	lang.Register(lang.Zh{})
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	ctx := context.Background()
 	fe := seedFixture(t, sqlDB)
 	pack, err := dict.LoadPack(hskMini)
@@ -186,7 +187,7 @@ func TestSchemeCharactersSkipsDeletedRows(t *testing.T) {
 
 func TestSchemeVersionStableOnNoopReimport(t *testing.T) {
 	lang.Register(lang.Zh{})
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	ctx := context.Background()
 	seedFixture(t, sqlDB)
 	pack, err := dict.LoadPack(hskMini)

@@ -7,7 +7,6 @@ import (
 	"io"
 	"mime/quotedprintable"
 	"net/http/httptest"
-	"path/filepath"
 	"regexp"
 	"strings"
 	"sync"
@@ -15,7 +14,7 @@ import (
 	"time"
 
 	"qinqin/internal/api"
-	"qinqin/internal/db"
+	"qinqin/internal/dbtest"
 	"qinqin/internal/mail"
 	"qinqin/internal/mail/mailtest"
 	"qinqin/internal/netguard"
@@ -73,11 +72,7 @@ func newMailEnv(t *testing.T, o mailOpts) *mailEnv {
 		t.Fatal(err)
 	}
 	t.Cleanup(fake.Close)
-	sqlDB, err := db.Open(filepath.Join(t.TempDir(), "test.db"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(func() { sqlDB.Close() })
+	sqlDB := dbtest.Open(t)
 	policy := netguard.GuardPolicy{AllowPrivate: true}
 	store := &mail.Store{DB: sqlDB, Policy: policy}
 	state := secretbox.SecretMissing

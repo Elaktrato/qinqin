@@ -10,6 +10,7 @@ import {
 	withWritten
 } from './entriesCache';
 import type { StudyCard } from './types';
+import * as build from '$lib/testing/study';
 
 vi.mock('../api/entries', () => ({ getEntry: vi.fn() }));
 
@@ -25,15 +26,7 @@ beforeEach(() => {
 });
 
 function card(id: string, entryId: number, written?: string): StudyCard {
-	const result: StudyCard = {
-		id,
-		kind: 'vocab',
-		entryId,
-		deckIds: ['general'],
-		createdAt: '2025-01-01T00:00:00.000Z'
-	};
-	if (written !== undefined) result.written = written;
-	return result;
+	return build.card({ id, entryId, written, createdAt: '2025-01-01T00:00:00.000Z' });
 }
 
 describe('missingWrittenEntryIds', () => {

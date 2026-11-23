@@ -5,13 +5,12 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
-	"path/filepath"
 	"strings"
 	"testing"
 	"time"
 
 	"qinqin/internal/ai"
-	"qinqin/internal/db"
+	"qinqin/internal/dbtest"
 	"qinqin/internal/plugins"
 )
 
@@ -19,11 +18,7 @@ func b64(b byte) string { return base64.StdEncoding.EncodeToString(bytes.Repeat(
 
 func newEnvSvc(t *testing.T, env map[string]string) (*ai.Service, string) {
 	t.Helper()
-	sqlDB, err := db.Open(filepath.Join(t.TempDir(), "t.db"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(func() { sqlDB.Close() })
+	sqlDB := dbtest.Open(t)
 	var logs strings.Builder
 	svc := aiFromEnv(sqlDB, func(k string) string { return env[k] }, func(f string, a ...any) { fmt.Fprintf(&logs, f+"\n", a...) })
 	return svc, logs.String()
@@ -157,11 +152,7 @@ func TestAIEnvLogsNoSecret(t *testing.T) {
 }
 
 func TestAIFromEnvRotates(t *testing.T) {
-	sqlDB, err := db.Open(filepath.Join(t.TempDir(), "t.db"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer sqlDB.Close()
+	sqlDB := dbtest.Open(t)
 	ctx := context.Background()
 	a, _ := ai.ParseSecret(b64(1))
 	old := &ai.KeyStore{DB: sqlDB, Current: ai.NewSealer(a)}
@@ -192,11 +183,7 @@ func TestAIFromEnvRotates(t *testing.T) {
 }
 
 func TestAIJanitorPrunesOldCalls(t *testing.T) {
-	sqlDB, err := db.Open(filepath.Join(t.TempDir(), "t.db"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer sqlDB.Close()
+	sqlDB := dbtest.Open(t)
 	old := time.Now().UTC().Add(-8 * 24 * time.Hour).Format(time.RFC3339)
 	fresh := time.Now().UTC().Format(time.RFC3339)
 	for _, at := range []string{old, fresh} {
@@ -225,11 +212,7 @@ func TestAIJanitorPrunesOldCalls(t *testing.T) {
 }
 
 func TestBuiltinJournalManifest(t *testing.T) {
-	sqlDB, err := db.Open(filepath.Join(t.TempDir(), "t.db"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer sqlDB.Close()
+	sqlDB := dbtest.Open(t)
 	if err := registerBuiltinPlugins(context.Background(), sqlDB); err != nil {
 		t.Fatal(err)
 	}

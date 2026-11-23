@@ -6,17 +6,10 @@ import { gradeItem, type GradeableItem } from './grade';
 import { planCompanions } from './companions';
 import { buildQueue } from './scheduler';
 import type { ReviewGrade, StudyCard } from './types';
+import * as build from '$lib/testing/study';
 
 function card(id: string, entryId: number, written?: string): StudyCard {
-	const result: StudyCard = {
-		id,
-		kind: 'vocab',
-		entryId,
-		deckIds: ['general'],
-		createdAt: '2025-01-01T00:00:00.000Z'
-	};
-	if (written !== undefined) result.written = written;
-	return result;
+	return build.card({ id, entryId, written, createdAt: '2025-01-01T00:00:00.000Z' });
 }
 
 function item(overrides: Partial<GradeableItem> = {}): GradeableItem {

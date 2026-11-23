@@ -20,10 +20,9 @@ import {
 } from './levelQueue';
 import type { StudyCardKind } from './types';
 import type { ReviewEvent, ReviewGrade, StudyCard } from './types';
+import * as build from '$lib/testing/study';
 
-function eventId(n: number): string {
-	return `01JTEST${String(n).padStart(19, '0')}`;
-}
+const eventId = (n: number): string => build.eventId(n);
 
 function review(
 	cardId: string,
@@ -31,18 +30,11 @@ function review(
 	ts: string,
 	id = eventId(1)
 ): ReviewEvent {
-	return {
-		id,
-		workspaceId: 7,
-		device: 'web',
-		ts,
-		type: 'review',
-		payload: { cardId, mode: 'vocab', grade }
-	};
+	return build.review({ id, cardId, grade, ts, workspaceId: 7 });
 }
 
 function card(id: string, entryId: number, createdAt = '2026-01-01T00:00:00.000Z'): StudyCard {
-	return { id, kind: 'vocab', entryId, deckIds: ['general'], createdAt };
+	return build.card({ id, entryId, createdAt });
 }
 
 function entry(id: number, kind = 'word'): LevelEntry {

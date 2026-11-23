@@ -5,11 +5,12 @@ import (
 	"testing"
 
 	"qinqin/internal/audio"
+	"qinqin/internal/dbtest"
 	"qinqin/internal/dict"
 )
 
 func TestResolveJapaneseTermByKatakanaReading(t *testing.T) {
-	ctx, sqlDB, store := context.Background(), newDB(t), t.TempDir()
+	ctx, sqlDB, store := context.Background(), dbtest.Open(t), t.TempDir()
 	p := makePack(t, "ja1", "ja", "CC BY 4.0", []string{"term\t風\tかぜ\taudio/a.opus\t\t\t"}, []clipFile{{"a.opus", oggClip("a")}})
 	if _, err := audio.Import(ctx, sqlDB, p, store); err != nil {
 		t.Fatal(err)
@@ -34,7 +35,7 @@ func TestResolveJapaneseTermByKatakanaReading(t *testing.T) {
 }
 
 func TestResolveChineseTermAndSyllables(t *testing.T) {
-	ctx, sqlDB, store := context.Background(), newDB(t), t.TempDir()
+	ctx, sqlDB, store := context.Background(), dbtest.Open(t), t.TempDir()
 	p := makePack(t, "zh1", "zh", "CC0", []string{
 		"term\t你好\tni3 hao3\taudio/t.ogg\t\t\t",
 		"syllable\t\tni3\taudio/n.ogg\t\t\t",
@@ -81,7 +82,7 @@ func TestResolveChineseTermAndSyllables(t *testing.T) {
 }
 
 func TestResolveKeepsPackImportOrder(t *testing.T) {
-	ctx, sqlDB, store := context.Background(), newDB(t), t.TempDir()
+	ctx, sqlDB, store := context.Background(), dbtest.Open(t), t.TempDir()
 	row := []string{"term\t風\tかぜ\taudio/a.opus\t\t\t"}
 	for _, id := range []string{"zz-first", "aa-second"} {
 		p := makePack(t, id, "ja", "CC0", row, []clipFile{{"a.opus", oggClip(id)}})
@@ -98,7 +99,7 @@ func TestResolveKeepsPackImportOrder(t *testing.T) {
 // A term row without a reading (a Lingua Libre recording knows only its
 // word) matches the form under any reading, after exact-reading rows.
 func TestResolveTermWithoutReadingMatchesAnyReading(t *testing.T) {
-	ctx, sqlDB, store := context.Background(), newDB(t), t.TempDir()
+	ctx, sqlDB, store := context.Background(), dbtest.Open(t), t.TempDir()
 	loose := makePack(t, "loose", "zh", "CC0", []string{"term\t你好\t\taudio/a.ogg\t\t\t"}, []clipFile{{"a.ogg", oggClip("loose")}})
 	exact := makePack(t, "exact", "zh", "CC0", []string{"term\t你好\tnǐ hǎo\taudio/b.ogg\t\t\t"}, []clipFile{{"b.ogg", oggClip("exact")}})
 	for _, p := range []dict.Pack{loose, exact} {
@@ -122,7 +123,7 @@ func TestResolveTermWithoutReadingMatchesAnyReading(t *testing.T) {
 
 // One request cannot trigger an unbounded number of syllable lookups.
 func TestResolveCapsSyllableQueries(t *testing.T) {
-	ctx, sqlDB, store := context.Background(), newDB(t), t.TempDir()
+	ctx, sqlDB, store := context.Background(), dbtest.Open(t), t.TempDir()
 	var rows []string
 	var readings []string
 	for _, ini := range []string{"b", "p", "m", "f", "d", "t", "n", "l", "g", "k", "h", "zh", "ch", "sh", "z", "c", "s"} {

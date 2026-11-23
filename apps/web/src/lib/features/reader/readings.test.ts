@@ -167,12 +167,14 @@ describe('ReadingsController cost', () => {
 		// Every paragraph "你" sits at an even offset of the chunk text (joined by newlines).
 		const segment = vi.fn(async (text: string) => Array.from({ length: Math.ceil(text.length / 2) }, (_, i) => one(i * 2)));
 		const c = new ReadingsController(segment);
-		const t0 = performance.now();
+		// Count publications, not milliseconds: every assignment of the pieces map is one.
+		const published = vi.spyOn(c, 'pieces', 'set');
 		await c.run({ key: 'a', lang: 'zh', runs: many, start: 0, display: display({ readings: 'always', highlightWords: true }), index: EMPTY_KNOWN_INDEX, want: { readings: true, words: true } });
-		const ms = performance.now() - t0;
-		console.info(`readings controller: 4000 paragraphs in ${ms.toFixed(0)} ms`);
 		expect(c.progress).toEqual({ done: 4000, total: 4000 });
 		expect(c.words.size).toBe(4000);
-		expect(ms).toBeLessThan(400);
+		const chunks = segment.mock.calls.length;
+		expect(chunks).toBeGreaterThan(0);
+		expect(chunks).toBeLessThan(100);
+		expect(published.mock.calls.length).toBeLessThanOrEqual(chunks + 2);
 	});
 });

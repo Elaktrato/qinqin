@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"qinqin/internal/dbtest"
 	"qinqin/internal/model"
 	"qinqin/internal/plugins"
 	chinsync "qinqin/internal/sync"
@@ -16,7 +17,7 @@ import (
 // later on another device wins even when it syncs after an earlier edit
 // that reached the server more recently.
 func TestPushLWWUsesClientEditTime(t *testing.T) {
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	ctx := context.Background()
 	alice := newUser(t, sqlDB, "alice")
 	if err := plugins.Register(ctx, sqlDB, []byte(validManifest("flashcards", ""))); err != nil {

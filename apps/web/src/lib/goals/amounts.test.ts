@@ -4,6 +4,7 @@ import { studyDay, type ZoneChange } from '../time/studyDay';
 import type { ActivityCell } from '../api/stats';
 import type { ReviewEvent } from '../study/types';
 import { MAX_REVIEW_MS, NO_AMOUNTS, activityAmounts, amountsOf, flashcardAmounts } from './amounts';
+import * as build from '$lib/testing/study';
 
 interface FixtureReview {
 	id: string;
@@ -14,19 +15,13 @@ interface FixtureReview {
 }
 
 function event(r: FixtureReview): ReviewEvent {
-	return {
+	return build.review({
 		id: r.id,
-		workspaceId: 1,
-		device: 'web',
 		ts: r.ts,
-		type: 'review',
-		payload: {
-			cardId: r.cardId,
-			mode: 'vocab',
-			grade: r.grade as 1,
-			...(r.durationMs === undefined ? {} : { meta: { durationMs: r.durationMs } })
-		}
-	};
+		cardId: r.cardId,
+		grade: r.grade,
+		meta: r.durationMs === undefined ? undefined : { durationMs: r.durationMs }
+	});
 }
 
 const toObject = <T>(m: ReadonlyMap<string, T>): Record<string, T> => Object.fromEntries(m);
@@ -59,14 +54,7 @@ const UTC = studyDay([]);
 let n = 0;
 function rv(ts: string, cardId: string, meta?: Record<string, unknown>): ReviewEvent {
 	n++;
-	return {
-		id: `01JTESTAMOUNT${String(n).padStart(13, '0')}`,
-		workspaceId: 1,
-		device: 'web',
-		ts,
-		type: 'review',
-		payload: { cardId, mode: 'vocab', grade: 3, ...(meta === undefined ? {} : { meta: meta as never }) }
-	};
+	return build.review({ id: build.eventId(n, '01JTESTAMOUNT'), ts, cardId, meta: meta as never });
 }
 
 describe('flashcardAmounts', () => {

@@ -6,11 +6,12 @@ import (
 	"strings"
 	"testing"
 
+	"qinqin/internal/dbtest"
 	"qinqin/internal/dict"
 )
 
 func TestJSONPackIdenticalLinesGiveOneSense(t *testing.T) {
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	res := importLexiconPack(t, sqlDB, miniLexPack(t, `{"entries": [
 		{"written": "好", "kind": "character", "glosses": ["good"]},
 		{"written": "好", "kind": "character", "glosses": ["good"]},
@@ -25,7 +26,7 @@ func TestJSONPackIdenticalLinesGiveOneSense(t *testing.T) {
 }
 
 func TestCedictKindIsCharacterOnlyForOneHanzi(t *testing.T) {
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	importLexiconPack(t, sqlDB, cedictLexPack(t,
 		"好 好 [hao3] /good/\nA A [a5] /letter A/\n1 1 [yi1] /digit one/\n"))
 	lexByKey(t, sqlDB, "zh", "character", "好")
@@ -34,7 +35,7 @@ func TestCedictKindIsCharacterOnlyForOneHanzi(t *testing.T) {
 }
 
 func TestCedictIndentedCommentIsNotMalformed(t *testing.T) {
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	res := importLexiconPack(t, sqlDB, cedictLexPack(t, "  # an indented comment\n\t#another\n好 好 [hao3] /good/\n"))
 	if res.Skipped != 0 || res.Entries != 1 {
 		t.Errorf("result = %+v, want 1 entry and nothing skipped", res)
@@ -55,7 +56,7 @@ func TestCompressedReadersRejectCorruptInput(t *testing.T) {
 				if err != nil {
 					t.Fatalf("LoadPack: %v", err)
 				}
-				_, err = dict.ImportLexicon(context.Background(), newDB(t), &pack)
+				_, err = dict.ImportLexicon(context.Background(), dbtest.Open(t), &pack)
 				if !errors.Is(err, dict.ErrInvalidPack) {
 					t.Errorf("ImportLexicon = %v, want ErrInvalidPack", err)
 				}
@@ -71,14 +72,14 @@ func TestUnihanZipMissingRequiredMember(t *testing.T) {
 			members[k] = v
 		}
 	}
-	_, err := dict.ImportLexicon(context.Background(), newDB(t), unihanZipPack(t, members))
+	_, err := dict.ImportLexicon(context.Background(), dbtest.Open(t), unihanZipPack(t, members))
 	if !errors.Is(err, dict.ErrInvalidPack) || !strings.Contains(err.Error(), "Unihan_Variants.txt") {
 		t.Errorf("ImportLexicon = %v, want ErrInvalidPack naming the missing member", err)
 	}
 }
 
 func TestUnihanRadicalOutsideKangxiNamesDictionaryAndWritesNothing(t *testing.T) {
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	m := unihanManifest
 	m.ID = "my-unihan-pack"
 	_, err := importUnihanPack(t, context.Background(), sqlDB, m,
@@ -94,7 +95,7 @@ func TestUnihanRadicalOutsideKangxiNamesDictionaryAndWritesNothing(t *testing.T)
 }
 
 func TestUnihanSelfVariantMakesNoLink(t *testing.T) {
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	_, err := importUnihanPack(t, context.Background(), sqlDB, unihanManifest,
 		"U+597D\tkTraditionalVariant\tU+597D",
 		"U+597D\tkDefinition\tgood")
@@ -107,7 +108,7 @@ func TestUnihanSelfVariantMakesNoLink(t *testing.T) {
 }
 
 func TestUnihanResultCountsPackEntriesNotBareRadicals(t *testing.T) {
-	res, err := importUnihanPack(t, context.Background(), newDB(t), unihanManifest,
+	res, err := importUnihanPack(t, context.Background(), dbtest.Open(t), unihanManifest,
 		"U+597D\tkRSUnicode\t38.3")
 	if err != nil {
 		t.Fatal(err)
@@ -121,7 +122,7 @@ func TestImportLexiconUnimplementedFormat(t *testing.T) {
 	m := unihanManifest
 	m.ID, m.Format = "freq-as-dict", dict.FormatFreqCSV
 	pack := lexPack(t, m, "dictionary.txt", "x\n")
-	_, err := dict.ImportLexicon(context.Background(), newDB(t), pack)
+	_, err := dict.ImportLexicon(context.Background(), dbtest.Open(t), pack)
 	if !errors.Is(err, dict.ErrInvalidPack) || !strings.Contains(err.Error(), "not implemented") {
 		t.Errorf("ImportLexicon = %v, want ErrInvalidPack not implemented", err)
 	}

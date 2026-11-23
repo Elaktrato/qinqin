@@ -8,6 +8,7 @@ import (
 	"strings"
 	"testing"
 
+	"qinqin/internal/dbtest"
 	"qinqin/internal/dict"
 	"qinqin/internal/fonts"
 )
@@ -24,7 +25,7 @@ func sansHans(weight string, s ...sliceSpec) faceSpec {
 
 func TestImportStoresSlicesAndRows(t *testing.T) {
 	ctx := context.Background()
-	sqlDB, store := newDB(t), t.TempDir()
+	sqlDB, store := dbtest.Open(t), t.TempDir()
 	p := writePack(t, "test-sans",
 		sansHans("200 900", sliceSpec{data: sliceA, rng: "U+20-7E"}, sliceSpec{data: sliceB, rng: "U+4E00-4E3F"}),
 		faceSpec{face: "kai", script: "Jpan", weight: "400", slices: []sliceSpec{{data: sliceC, rng: "U+3040-30FF"}}})
@@ -102,7 +103,7 @@ func TestImportRefusesBadPacks(t *testing.T) {
 		}, "no such file"},
 	} {
 		t.Run(name, func(t *testing.T) {
-			sqlDB, store := newDB(t), t.TempDir()
+			sqlDB, store := dbtest.Open(t), t.TempDir()
 			_, err := fonts.Import(ctx, sqlDB, tc.pack(t), store)
 			if !errors.Is(err, dict.ErrInvalidPack) || !strings.Contains(err.Error(), tc.want) {
 				t.Fatalf("err = %v, want ErrInvalidPack naming %q", err, tc.want)
@@ -119,7 +120,7 @@ func TestImportRefusesBadPacks(t *testing.T) {
 
 func TestImportRefusesAFaceAnotherPackProvides(t *testing.T) {
 	ctx := context.Background()
-	sqlDB, store := newDB(t), t.TempDir()
+	sqlDB, store := dbtest.Open(t), t.TempDir()
 	if _, err := fonts.Import(ctx, sqlDB, writePack(t, "first", sansHans("200 900", sliceSpec{data: sliceA, rng: "U+41"})), store); err != nil {
 		t.Fatal(err)
 	}
@@ -146,7 +147,7 @@ func TestImportRefusesAFaceAnotherPackProvides(t *testing.T) {
 
 func TestUninstallRemovesRowsAndUnsharedBlobs(t *testing.T) {
 	ctx := context.Background()
-	sqlDB, store := newDB(t), t.TempDir()
+	sqlDB, store := dbtest.Open(t), t.TempDir()
 	// Two packs share slice A (the same bytes in two faces).
 	if _, err := fonts.Import(ctx, sqlDB, writePack(t, "one", sansHans("400", sliceSpec{data: sliceA, rng: "U+41"}, sliceSpec{data: sliceB, rng: "U+42"})), store); err != nil {
 		t.Fatal(err)
@@ -191,7 +192,7 @@ func TestUninstallRemovesRowsAndUnsharedBlobs(t *testing.T) {
 // style, the lower weight bound, then pack id; slices in file order.
 func TestFacesOrder(t *testing.T) {
 	ctx := context.Background()
-	sqlDB, store := newDB(t), t.TempDir()
+	sqlDB, store := dbtest.Open(t), t.TempDir()
 	if _, err := fonts.Import(ctx, sqlDB, writePack(t, "b-pack",
 		faceSpec{face: "kai", script: "Jpan", weight: "400", slices: []sliceSpec{{data: woff2("1"), rng: "U+41"}}},
 		sansHans("700", sliceSpec{data: woff2("2"), rng: "U+42"}, sliceSpec{data: woff2("3"), rng: "U+41"}),
@@ -241,7 +242,7 @@ func TestCheckPackRefusesOtherTypes(t *testing.T) {
 // An import cancelled after its slices were stored (a shutdown, #170)
 // leaves no slice behind that no installed pack references.
 func TestCancelledImportLeavesNoSlices(t *testing.T) {
-	sqlDB, store := newDB(t), t.TempDir()
+	sqlDB, store := dbtest.Open(t), t.TempDir()
 	ctx, cancel := context.WithCancel(context.Background())
 	defer fonts.SetAfterStoreHookForTest(cancel)()
 	p := writePack(t, "test-sans", sansHans("200 900", sliceSpec{data: sliceA, rng: "U+20-7E"}, sliceSpec{data: sliceB, rng: "U+4E00-4E3F"}))

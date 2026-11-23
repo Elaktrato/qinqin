@@ -5,29 +5,18 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
-	"path/filepath"
 	"reflect"
 	"testing"
 	"time"
 
 	"qinqin/internal/auth"
-	"qinqin/internal/db"
+	"qinqin/internal/dbtest"
 	"qinqin/internal/events"
 	"qinqin/internal/model"
 	"qinqin/internal/plugins"
 	"qinqin/internal/stats"
 	"qinqin/internal/studyday"
 )
-
-func newDB(t testing.TB) *sql.DB {
-	t.Helper()
-	sqlDB, err := db.Open(filepath.Join(t.TempDir(), "test.db"))
-	if err != nil {
-		t.Fatalf("db.Open: %v", err)
-	}
-	t.Cleanup(func() { sqlDB.Close() })
-	return sqlDB
-}
 
 func newUser(t testing.TB, sqlDB *sql.DB, name string) int64 {
 	t.Helper()
@@ -112,7 +101,7 @@ func runIn(t *testing.T, sqlDB *sql.DB, user int64, h studyday.History, from, to
 }
 
 func TestActivityCount(t *testing.T) {
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	rules := builtinRules(t, sqlDB)
 	u, other := newUser(t, sqlDB, "a"), newUser(t, sqlDB, "b")
 	for i := 0; i < 3; i++ {
@@ -134,7 +123,7 @@ func TestActivityCount(t *testing.T) {
 }
 
 func TestActivityMeasure(t *testing.T) {
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	rules := builtinRules(t, sqlDB)
 	u := newUser(t, sqlDB, "a")
 	for _, c := range []struct {
@@ -170,7 +159,7 @@ func TestActivityMeasure(t *testing.T) {
 }
 
 func TestActivityDistinct(t *testing.T) {
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	rules := builtinRules(t, sqlDB)
 	u := newUser(t, sqlDB, "a")
 	add(t, sqlDB, u, 1, "2026-11-13T08:00:00Z", "journal", `{"entryId":"A"}`)
@@ -190,7 +179,7 @@ func TestActivityDistinct(t *testing.T) {
 }
 
 func TestActivityBadPayloads(t *testing.T) {
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	rules := builtinRules(t, sqlDB)
 	u := newUser(t, sqlDB, "a")
 	for _, typ := range []string{"read", "journal"} {
@@ -208,7 +197,7 @@ func TestActivityBadPayloads(t *testing.T) {
 }
 
 func TestActivityWindowAndFilter(t *testing.T) {
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	rules := builtinRules(t, sqlDB)
 	u := newUser(t, sqlDB, "a")
 	add(t, sqlDB, u, 1, "2026-11-10T00:00:00Z", "review", "")
@@ -238,7 +227,7 @@ func TestActivityWindowAndFilter(t *testing.T) {
 // voids nothing of Alice's, and Alice's replacement of her own misclick
 // leaves Bob's count alone.
 func TestActivityReplacedIsolation(t *testing.T) {
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	rules := builtinRules(t, sqlDB)
 	alice, bob := newUser(t, sqlDB, "a"), newUser(t, sqlDB, "b")
 	const ts = "2026-11-13T08:00:00Z"
@@ -269,7 +258,7 @@ func TestActivityReplacedIsolation(t *testing.T) {
 // review: read without the user filter, Bob's greater id would win the family
 // and Alice's own review would stop counting.
 func TestActivityReplacedTargetOfAnotherUser(t *testing.T) {
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	rules := builtinRules(t, sqlDB)
 	alice, bob := newUser(t, sqlDB, "a"), newUser(t, sqlDB, "b")
 	const ts = "2026-11-13T08:00:00Z"

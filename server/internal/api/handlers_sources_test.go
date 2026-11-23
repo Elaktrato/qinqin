@@ -17,7 +17,8 @@ import (
 	"time"
 
 	"qinqin/internal/api"
-	"qinqin/internal/db"
+	"qinqin/internal/dbtest"
+	"qinqin/internal/lang"
 	"qinqin/internal/library"
 	"qinqin/internal/library/epub"
 	"qinqin/internal/library/sources"
@@ -87,11 +88,7 @@ func newSourcesServerAt(t *testing.T, now time.Time, srcs ...sources.Source) (ts
 func newSourcesServerWith(t *testing.T, srcs []sources.Source, opts ...api.Option) (ts *httptest.Server, sqlDB *sql.DB, dataDir string) {
 	t.Helper()
 	dataDir = t.TempDir()
-	sqlDB, err := db.Open(filepath.Join(t.TempDir(), "test.db"))
-	if err != nil {
-		t.Fatalf("db.Open: %v", err)
-	}
-	t.Cleanup(func() { sqlDB.Close() })
+	sqlDB = dbtest.Open(t)
 	ts = httptest.NewServer(api.New(sqlDB, dataDir, srcs, opts...))
 	t.Cleanup(ts.Close)
 	return ts, sqlDB, dataDir
@@ -350,6 +347,8 @@ func TestSourcesImportChecksCatalogLanguageFirst(t *testing.T) {
 }
 
 func TestSourcesImportWorkspace(t *testing.T) {
+	lang.Register(lang.Zh{}) // the workspaces below; no reliance on another test registering them
+	lang.Register(lang.Ja{})
 	fake := &fakeSource{id: "fake"} // serves ja books
 	aozora := &fakeSource{id: "aozora"}
 	ts, sqlDB, dataDir := newSourcesServer(t, fake, aozora)

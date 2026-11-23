@@ -12,13 +12,12 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
-	"path/filepath"
 	"testing"
 	"time"
 
 	"qinqin/internal/api"
 	"qinqin/internal/auth"
-	"qinqin/internal/db"
+	"qinqin/internal/dbtest"
 	"qinqin/internal/lang"
 	"qinqin/internal/model"
 	"qinqin/internal/plugins"
@@ -39,17 +38,6 @@ func validManifest(id, extra string) string {
 		extra = "," + extra
 	}
 	return `{"id":"` + id + `","name":"X","version":"1.0","type":"feature","sdk":1,"surfaces":[],"permissions":["owns-data"],"hooks":[],"events":[]` + extra + `}`
-}
-
-// newDB opens a fresh migrated database.
-func newDB(t *testing.T) *sql.DB {
-	t.Helper()
-	sqlDB, err := db.Open(filepath.Join(t.TempDir(), "test.db"))
-	if err != nil {
-		t.Fatalf("db.Open: %v", err)
-	}
-	t.Cleanup(func() { sqlDB.Close() })
-	return sqlDB
 }
 
 // newUser creates a user and returns its id.
@@ -147,7 +135,7 @@ func mustPull(t *testing.T, sqlDB *sql.DB, userID int64) delta {
 }
 
 func TestPushEventsAndLWW(t *testing.T) {
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	ctx := context.Background()
 	alice := newUser(t, sqlDB, "alice")
 	ws := newWorkspace(t, sqlDB, alice)
@@ -215,7 +203,7 @@ func TestPushEventsAndLWW(t *testing.T) {
 }
 
 func TestPushRejectsForeignWorkspaceAndUnknownPlugin(t *testing.T) {
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	ctx := context.Background()
 	alice, bob := newUser(t, sqlDB, "alice"), newUser(t, sqlDB, "bob")
 	bobWS := newWorkspace(t, sqlDB, bob)
@@ -242,7 +230,7 @@ func TestPushRejectsForeignWorkspaceAndUnknownPlugin(t *testing.T) {
 }
 
 func TestSyncEndpoints(t *testing.T) {
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	ts := httptest.NewServer(api.New(sqlDB, t.TempDir(), nil))
 	t.Cleanup(ts.Close)
 	seedWorld(t, sqlDB)
@@ -320,7 +308,7 @@ func registerAndLogin(t *testing.T, tsURL string) string {
 // TestPushSkipsUndeclaredWriter: a row for a plugin without owns-data is
 // refused on its own; the events and the other rows of the push land.
 func TestPushSkipsUndeclaredWriter(t *testing.T) {
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	ctx := context.Background()
 	alice := newUser(t, sqlDB, "alice")
 	ws := newWorkspace(t, sqlDB, alice)
@@ -354,7 +342,7 @@ func TestPushSkipsUndeclaredWriter(t *testing.T) {
 // TestPushAcceptsBuiltinWriters: every plugin id the web writes under is
 // accepted by the built-in manifests.
 func TestPushAcceptsBuiltinWriters(t *testing.T) {
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	ctx := context.Background()
 	alice := newUser(t, sqlDB, "alice")
 	for _, raw := range plugins.Builtin() {
@@ -375,7 +363,7 @@ func TestPushAcceptsBuiltinWriters(t *testing.T) {
 
 // An event without a workspace (0) is invalid, as in POST /api/events/batch.
 func TestPushRejectsEventWithoutWorkspace(t *testing.T) {
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	alice := newUser(t, sqlDB, "alice")
 	_, err := chinsync.Push(context.Background(), sqlDB, alice, chinsync.PushBody{Events: []model.StudyEvent{
 		{ID: "01J00000000000000000000008", TS: time.Now().UTC(), Type: "review", Payload: json.RawMessage(`{}`)}}})

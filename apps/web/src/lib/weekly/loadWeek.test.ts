@@ -15,6 +15,7 @@ import { loadStudyHistory } from '../study/history';
 import { IDENTITY_CLOCK } from '../study/studyClock';
 import type { ReviewEvent, StudyCard, StudyHistory } from '../study/types';
 import { loadWeek, loadWeekCharacters } from './loadWeek';
+import * as build from '$lib/testing/study';
 
 const NOW = Date.parse('2026-11-18T12:00:00Z');
 const REVIEW_SOURCE = {
@@ -26,24 +27,10 @@ const REVIEW_SOURCE = {
 };
 
 function rv(n: number, cardId: string, ts: string, grade = 4): ReviewEvent {
-	return {
-		id: `01JLW${String(n).padStart(21, '0')}`,
-		workspaceId: 3,
-		device: 'web',
-		ts,
-		type: 'review',
-		payload: { cardId, mode: 'vocab', grade }
-	} as ReviewEvent;
+	return build.review({ id: build.eventId(n, '01JLW'), workspaceId: 3, ts, cardId, grade });
 }
 
-const card = (id: string, written?: string): StudyCard => ({
-	id,
-	kind: 'vocab',
-	entryId: 1,
-	deckIds: ['general'],
-	createdAt: '2026-01-01T00:00:00Z',
-	...(written === undefined ? {} : { written })
-});
+const card = (id: string, written?: string): StudyCard => build.card({ id, createdAt: '2026-01-01T00:00:00Z', written });
 
 // Easy every few days from September: mature well before November.
 const longReviews = [0, 3, 10, 30, 70].map((d, i) =>
@@ -52,7 +39,7 @@ const longReviews = [0, 3, 10, 30, 70].map((d, i) =>
 const weekReview = rv(50, 'a', '2026-11-10T10:00:00Z', 3);
 
 function history(extra: Partial<StudyHistory> = {}): StudyHistory {
-	return { decks: [], cards: [card('old'), card('a')], reviews: [...longReviews, weekReview], merged: 0, ...extra };
+	return build.history({ cards: [card('old'), card('a')], reviews: [...longReviews, weekReview], ...extra });
 }
 
 const activity = (cells: ActivityResponse['cells']): ActivityResponse => ({

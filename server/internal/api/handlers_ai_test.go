@@ -10,14 +10,13 @@ import (
 	"log"
 	"net/http"
 	"net/http/httptest"
-	"path/filepath"
 	"strconv"
 	"strings"
 	"testing"
 
 	"qinqin/internal/ai"
 	"qinqin/internal/api"
-	"qinqin/internal/db"
+	"qinqin/internal/dbtest"
 	"qinqin/internal/journal"
 )
 
@@ -29,11 +28,7 @@ const aiBadKey = "sk-fake-bad-key-0001"
 // aiFromEnv does.
 func aiServer(t *testing.T, secret ai.SecretState) (*httptest.Server, *sql.DB, string) {
 	t.Helper()
-	sqlDB, err := db.Open(filepath.Join(t.TempDir(), "test.db"))
-	if err != nil {
-		t.Fatalf("db.Open: %v", err)
-	}
-	t.Cleanup(func() { sqlDB.Close() })
+	sqlDB := dbtest.Open(t)
 	var seed byte
 	if secret == ai.SecretOK {
 		seed = 7
@@ -726,11 +721,7 @@ type counting struct {
 func (c counting) ValidateCounted(context.Context, ai.Credentials) (int, error) { return c.calls, nil }
 
 func TestValidateFallbackRecordsEveryCall(t *testing.T) {
-	sqlDB, err := db.Open(filepath.Join(t.TempDir(), "test.db"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(func() { sqlDB.Close() })
+	sqlDB := dbtest.Open(t)
 	svc := testAIService(sqlDB, counting{calls: 2}, ai.SecretOK, 7)
 	ts := httptest.NewServer(api.New(sqlDB, t.TempDir(), nil, api.WithAI(svc)))
 	t.Cleanup(ts.Close)

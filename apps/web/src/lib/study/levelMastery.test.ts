@@ -2,15 +2,15 @@ import { IDENTITY_CLOCK } from '$lib/study/studyClock';
 import { describe, expect, it } from 'vitest';
 
 import type { CharRow } from '../api/types';
-import { strongReviews } from '../testing/reviews';
 import { DEFAULT_W } from './fsrs/params';
 import { levelMastery } from './levelMastery';
 import type { StudyCard } from './types';
+import * as build from '$lib/testing/study';
 
 const NOW = new Date('2027-06-01T00:00:00.000Z');
 
 function card(id: string, written: string): StudyCard {
-	return { id, kind: 'vocab', entryId: 1, written, deckIds: ['general'], createdAt: '2025-01-01T00:00:00Z' };
+	return build.card({ id, written, createdAt: '2025-01-01T00:00:00Z' });
 }
 
 const row = (i: number, c: string, v?: string[]): CharRow => ({ i, c, ...(v ? { v } : {}) });
@@ -24,7 +24,7 @@ const levels = [
 
 describe('levelMastery', () => {
 	it('counts a character of a strong card as learned', () => {
-		const result = levelMastery(levels, rows, [card('a', '日')], strongReviews('a'), NOW, DEFAULT_W, IDENTITY_CLOCK);
+		const result = levelMastery(levels, rows, [card('a', '日')], build.strongReviews('a'), NOW, DEFAULT_W, IDENTITY_CLOCK);
 		expect(result.get('N5')).toEqual({ learned: 1, total: 3 });
 	});
 
@@ -33,7 +33,7 @@ describe('levelMastery', () => {
 			levels,
 			rows,
 			[card('a', '日日')],
-			strongReviews('a'),
+			build.strongReviews('a'),
 			NOW,
 			DEFAULT_W
 		, IDENTITY_CLOCK);
@@ -42,7 +42,7 @@ describe('levelMastery', () => {
 	});
 
 	it('counts a variant-only studied character like the Stats map does', () => {
-		const result = levelMastery(levels, rows, [card('a', '爱')], strongReviews('a'), NOW, DEFAULT_W, IDENTITY_CLOCK);
+		const result = levelMastery(levels, rows, [card('a', '爱')], build.strongReviews('a'), NOW, DEFAULT_W, IDENTITY_CLOCK);
 		expect(result.get('N4')).toEqual({ learned: 1, total: 2 });
 	});
 

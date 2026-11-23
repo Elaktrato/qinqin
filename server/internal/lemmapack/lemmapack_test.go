@@ -14,7 +14,7 @@ import (
 	"testing"
 	"time"
 
-	"qinqin/internal/db"
+	"qinqin/internal/dbtest"
 	"qinqin/internal/dict"
 	"qinqin/internal/lang"
 	"qinqin/internal/lemma"
@@ -23,11 +23,7 @@ import (
 
 func newDB(t *testing.T) *sql.DB {
 	t.Helper()
-	sqlDB, err := db.Open(filepath.Join(t.TempDir(), "test.db"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(func() { sqlDB.Close() })
+	sqlDB := dbtest.Open(t)
 	// The overlay is process-wide: every test leaves it empty.
 	t.Cleanup(func() { lemma.SetInstalled(nil) })
 	return sqlDB

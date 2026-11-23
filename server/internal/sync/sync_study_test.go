@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"qinqin/internal/api"
+	"qinqin/internal/dbtest"
 	"qinqin/internal/model"
 	"qinqin/internal/plugins"
 	chinsync "qinqin/internal/sync"
@@ -77,7 +78,7 @@ func TestPushAndPullEachTypedCollection(t *testing.T) {
 	ctx := context.Background()
 	for _, c := range studyCollections {
 		t.Run(c, func(t *testing.T) {
-			sqlDB := newDB(t)
+			sqlDB := dbtest.Open(t)
 			alice, bob := newUser(t, sqlDB, "alice"), newUser(t, sqlDB, "bob")
 			ws, bobWS := newWorkspace(t, sqlDB, alice), newWorkspace(t, sqlDB, bob)
 			at := time.Now().UTC().Add(-time.Minute)
@@ -156,7 +157,7 @@ func registerReserved(t *testing.T, sqlDB *sql.DB) {
 // A malformed typed item or a foreign workspace refuses the whole push.
 func TestTypedPushIsAllOrNothing(t *testing.T) {
 	ctx := context.Background()
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	alice, bob := newUser(t, sqlDB, "alice"), newUser(t, sqlDB, "bob")
 	ws, bobWS := newWorkspace(t, sqlDB, alice), newWorkspace(t, sqlDB, bob)
 	now := time.Now().UTC()
@@ -192,7 +193,7 @@ func TestTypedPushIsAllOrNothing(t *testing.T) {
 // One push carries events, keyed plugin rows and typed rows.
 func TestMixedPush(t *testing.T) {
 	ctx := context.Background()
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	alice := newUser(t, sqlDB, "alice")
 	ws := newWorkspace(t, sqlDB, alice)
 	registerReserved(t, sqlDB)
@@ -215,7 +216,7 @@ func TestMixedPush(t *testing.T) {
 
 // The pull over HTTP carries every typed collection key, as [] when empty.
 func TestTypedCollectionsOverHTTP(t *testing.T) {
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	ts := httptest.NewServer(api.New(sqlDB, t.TempDir(), nil))
 	t.Cleanup(ts.Close)
 	token := registerAndLogin(t, ts.URL)

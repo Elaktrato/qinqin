@@ -9,6 +9,7 @@ import { readSeconds } from '$lib/stats/readingTime';
 import { FAMILIES, enabledFamilies, milestoneId, type MilestoneFamily } from './catalogue';
 import { journalEntryId, reachedFromLog, reachedStats, type LogInputs } from './reached';
 import { asFixture, decodeCase, expectedOf, type ReachedCase } from './testing/reachedCase';
+import * as build from '$lib/testing/study';
 
 const cases = fixture.cases as unknown as ReachedCase[];
 
@@ -49,14 +50,7 @@ const ALL = enabledFamilies({ flashcards: true, reader: true, journal: true, han
 const START = Date.parse('2026-01-01T00:00:00Z');
 
 function review(i: number, at: number, cardId: string, grade = 3): ReviewEvent {
-	return {
-		id: `r${String(i).padStart(6, '0')}`,
-		workspaceId: 1,
-		device: 'web',
-		ts: new Date(at).toISOString(),
-		type: 'review',
-		payload: { cardId, mode: 'vocab', grade: grade as 1 }
-	};
+	return build.review({ id: `r${String(i).padStart(6, '0')}`, ts: new Date(at).toISOString(), cardId, grade });
 }
 
 function event(i: number, at: number, type: string, payload: unknown): StudyEvent {

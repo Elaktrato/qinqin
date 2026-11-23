@@ -12,6 +12,7 @@ import {
 } from './regrade';
 import { MAX_RESHOWS, requeueAfterGrade } from './requeue';
 import type { ReviewEvent, ReviewGrade } from './types';
+import * as build from '$lib/testing/study';
 
 function item(id: string, extra: Partial<FlowItem> = {}): FlowItem {
 	return { cardId: id, kind: 'vocab', entryId: 1, virtual: false, card: null, ...extra };
@@ -24,14 +25,7 @@ function ids(queue: readonly FlowItem[]): string[] {
 const many = (n: number) => Array.from({ length: n }, (_, i) => item(`c${i}`));
 
 function review(id: string, grade: ReviewGrade = 3): ReviewEvent {
-	return {
-		id,
-		workspaceId: 7,
-		device: 'web',
-		ts: '2026-11-22T09:00:00.000Z',
-		type: 'review',
-		payload: { cardId: 'c0', mode: 'vocab', grade }
-	};
+	return build.review({ id, grade, workspaceId: 7, ts: '2026-11-22T09:00:00.000Z', cardId: 'c0' });
 }
 
 function step(pos: number, queue: readonly FlowItem[], grade: ReviewGrade, extra: Partial<GradedStep> = {}): GradedStep {

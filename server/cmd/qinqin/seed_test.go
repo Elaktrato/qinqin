@@ -14,6 +14,7 @@ import (
 
 	"qinqin/internal/auth"
 	"qinqin/internal/db"
+	"qinqin/internal/dbtest"
 	"qinqin/internal/levels"
 	"qinqin/internal/lexicon"
 )
@@ -33,13 +34,8 @@ const samplePacks = "../../../plugins/samples"
 func openTestDB(t *testing.T) (*sql.DB, string) {
 	t.Helper()
 	registerLanguages()
-	dir := t.TempDir()
-	sqlDB, err := db.Open(filepath.Join(dir, "qinqin.db"))
-	if err != nil {
-		t.Fatalf("db.Open: %v", err)
-	}
-	t.Cleanup(func() { sqlDB.Close() })
-	return sqlDB, dir
+	sqlDB, path := dbtest.OpenPath(t)
+	return sqlDB, filepath.Dir(path)
 }
 
 // smallPacks copies the hand-written sample packs (es-demo from the
@@ -282,6 +278,7 @@ func TestAddUser(t *testing.T) {
 	if err := adduserCmd(args, strings.NewReader("s3cret-pw-1234\n"), io.Discard); err != nil {
 		t.Fatalf("adduser: %v", err)
 	}
+	// reopen: adduser created it
 	sqlDB, err := db.Open(filepath.Join(dir, "qinqin.db"))
 	if err != nil {
 		t.Fatalf("reopen db: %v", err)

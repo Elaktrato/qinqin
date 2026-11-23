@@ -4,21 +4,16 @@ import (
 	"context"
 	"database/sql"
 	"net/http/httptest"
-	"path/filepath"
 	"testing"
 
 	"qinqin/internal/components"
-	"qinqin/internal/db"
+	"qinqin/internal/dbtest"
 )
 
 // One GET /api/components reads the packs' version once, with or without
 // packs.
 func TestComponentsReadsVersionOnce(t *testing.T) {
-	sqlDB, err := db.Open(filepath.Join(t.TempDir(), "test.db"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer sqlDB.Close()
+	sqlDB := dbtest.Open(t)
 	calls := 0
 	old := componentsVersion
 	componentsVersion = func(ctx context.Context, d *sql.DB, language string) (string, error) {

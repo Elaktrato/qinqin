@@ -16,7 +16,7 @@ import type { EntryBase, Scheme } from '$lib/api/types';
 import { loadStudyHistory } from '$lib/study/history';
 import { SESSION_CONFIG_KEY } from '$lib/study/session';
 import { PartialPushError, loadRawStudyData, pushStudy } from '$lib/study/store';
-import { toLegacy } from '$lib/study/testing/legacyCodec';
+import { toLegacy } from '$lib/testing/legacyCodec';
 import type { StudyWrite } from '$lib/study/store';
 
 /** The typed writes as the legacy rows they stand for (test codec). */

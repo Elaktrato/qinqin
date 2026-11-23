@@ -11,6 +11,7 @@ import (
 	"testing"
 
 	"qinqin/internal/audio"
+	"qinqin/internal/dbtest"
 )
 
 func twoRowPack(t *testing.T) (dictPackFiles []clipFile, index []string) {
@@ -19,7 +20,7 @@ func twoRowPack(t *testing.T) (dictPackFiles []clipFile, index []string) {
 }
 
 func TestImportCopiesBlobsAndRows(t *testing.T) {
-	ctx, sqlDB, store := context.Background(), newDB(t), t.TempDir()
+	ctx, sqlDB, store := context.Background(), dbtest.Open(t), t.TempDir()
 	files, index := twoRowPack(t)
 	res, err := audio.Import(ctx, sqlDB, makePack(t, "p1", "ja", "CC BY 4.0", index, files), store)
 	if err != nil || res.Clips != 2 {
@@ -50,7 +51,7 @@ func TestImportCopiesBlobsAndRows(t *testing.T) {
 }
 
 func TestImportSameFileTwiceStoresOneBlob(t *testing.T) {
-	ctx, sqlDB, store := context.Background(), newDB(t), t.TempDir()
+	ctx, sqlDB, store := context.Background(), dbtest.Open(t), t.TempDir()
 	p := makePack(t, "p1", "ja", "CC0",
 		[]string{"term\t風\tかぜ\taudio/a.opus\t\t\t", "term\t風邪\tかぜ\taudio/b.opus\t\t\t"},
 		[]clipFile{{"a.opus", oggClip("same")}, {"b.opus", oggClip("same")}})
@@ -71,7 +72,7 @@ func TestImportRejectsBadFiles(t *testing.T) {
 	for name, f := range cases {
 		store := t.TempDir()
 		p := makePack(t, "p1", "ja", "CC0", []string{"term\t風\tかぜ\taudio/" + f.name + "\t\t\t"}, []clipFile{f})
-		if _, err := audio.Import(context.Background(), newDB(t), p, store); err == nil {
+		if _, err := audio.Import(context.Background(), dbtest.Open(t), p, store); err == nil {
 			t.Errorf("%s: Import succeeded", name)
 		}
 		if got := blobs(t, store); len(got) != 0 {
@@ -79,13 +80,13 @@ func TestImportRejectsBadFiles(t *testing.T) {
 		}
 	}
 	p := makePack(t, "p1", "ja", "CC0", []string{"term\t風\tかぜ\taudio/missing.ogg\t\t\t"}, nil)
-	if _, err := audio.Import(context.Background(), newDB(t), p, t.TempDir()); err == nil {
+	if _, err := audio.Import(context.Background(), dbtest.Open(t), p, t.TempDir()); err == nil {
 		t.Error("missing file: Import succeeded")
 	}
 }
 
 func TestImportReimportDeletesDroppedBlob(t *testing.T) {
-	ctx, sqlDB, store := context.Background(), newDB(t), t.TempDir()
+	ctx, sqlDB, store := context.Background(), dbtest.Open(t), t.TempDir()
 	files, index := twoRowPack(t)
 	if _, err := audio.Import(ctx, sqlDB, makePack(t, "p1", "ja", "CC0", index, files), store); err != nil {
 		t.Fatal(err)
@@ -104,7 +105,7 @@ func TestImportReimportDeletesDroppedBlob(t *testing.T) {
 }
 
 func TestImportKeepsBlobSharedWithAnotherPack(t *testing.T) {
-	ctx, sqlDB, store := context.Background(), newDB(t), t.TempDir()
+	ctx, sqlDB, store := context.Background(), dbtest.Open(t), t.TempDir()
 	shared := []clipFile{{"s.opus", oggClip("shared")}}
 	row := []string{"term\t風\tかぜ\taudio/s.opus\t\t\t"}
 	if _, err := audio.Import(ctx, sqlDB, makePack(t, "p1", "ja", "CC0", row, shared), store); err != nil {
@@ -128,7 +129,7 @@ func TestImportLeavesNoPartialBlobOnCopyError(t *testing.T) {
 	audio.SetBlobFault(func() error { return os.ErrInvalid })
 	defer audio.SetBlobFault(nil)
 	files, index := twoRowPack(t)
-	if _, err := audio.Import(context.Background(), newDB(t), makePack(t, "p1", "ja", "CC0", index, files), store); err == nil {
+	if _, err := audio.Import(context.Background(), dbtest.Open(t), makePack(t, "p1", "ja", "CC0", index, files), store); err == nil {
 		t.Fatal("Import succeeded despite the injected error")
 	}
 	if got := blobs(t, store); len(got) != 0 {
@@ -139,14 +140,14 @@ func TestImportLeavesNoPartialBlobOnCopyError(t *testing.T) {
 func TestImportSkipsUnkeyableZhTerm(t *testing.T) {
 	p := makePack(t, "z", "zh", "CC0", []string{"term\t好\txyz\taudio/a.ogg\t\t\t", "term\t好\thǎo\taudio/b.ogg\t\t\t"},
 		[]clipFile{{"a.ogg", oggClip("a")}, {"b.ogg", oggClip("b")}})
-	res, err := audio.Import(context.Background(), newDB(t), p, t.TempDir())
+	res, err := audio.Import(context.Background(), dbtest.Open(t), p, t.TempDir())
 	if err != nil || res.Clips != 1 || res.Skipped != 1 {
 		t.Errorf("Import = %+v, %v", res, err)
 	}
 }
 
 func TestImportKeepsTermWithoutReading(t *testing.T) {
-	ctx, sqlDB := context.Background(), newDB(t)
+	ctx, sqlDB := context.Background(), dbtest.Open(t)
 	p := makePack(t, "z", "zh", "CC0", []string{"term\t块钱\t\taudio/a.ogg\t\t\t"}, []clipFile{{"a.ogg", oggClip("a")}})
 	res, err := audio.Import(ctx, sqlDB, p, t.TempDir())
 	if err != nil || res.Clips != 1 || res.Skipped != 0 {

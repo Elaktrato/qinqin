@@ -9,12 +9,13 @@ import (
 	"time"
 
 	"qinqin/internal/api"
+	"qinqin/internal/dbtest"
 )
 
 // A write to a stored typed row this server cannot read back is a coded
 // 409 study_row_unreadable (JSON), never a 500; the paged pull still answers.
 func TestUnreadableStoredRowOverHTTP(t *testing.T) {
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	registerReserved(t, sqlDB)
 	ts := httptest.NewServer(api.New(sqlDB, t.TempDir(), nil))
 	t.Cleanup(ts.Close)

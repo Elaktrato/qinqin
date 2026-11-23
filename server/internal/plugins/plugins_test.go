@@ -8,27 +8,15 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
-	"path/filepath"
 	"reflect"
 	"testing"
 	"time"
 
 	"qinqin/internal/auth"
-	"qinqin/internal/db"
+	"qinqin/internal/dbtest"
 	"qinqin/internal/model"
 	"qinqin/internal/plugins"
 )
-
-// newDB opens a fresh migrated database.
-func newDB(t *testing.T) *sql.DB {
-	t.Helper()
-	sqlDB, err := db.Open(filepath.Join(t.TempDir(), "test.db"))
-	if err != nil {
-		t.Fatalf("db.Open: %v", err)
-	}
-	t.Cleanup(func() { sqlDB.Close() })
-	return sqlDB
-}
 
 // newUser creates a user directly and returns its id.
 func newUser(t *testing.T, sqlDB *sql.DB, username string) int64 {
@@ -86,7 +74,7 @@ func validManifest(id, extra string) string {
 }
 
 func TestRegisterListState(t *testing.T) {
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	ctx := context.Background()
 	alice := newUser(t, sqlDB, "alice")
 	mustRegister(t, sqlDB, heatmapManifest)
@@ -141,7 +129,7 @@ func TestRegisterListState(t *testing.T) {
 }
 
 func TestRegisterRejectsInvalidManifests(t *testing.T) {
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	ctx := context.Background()
 
 	for name, manifest := range map[string]string{
@@ -165,7 +153,7 @@ func TestRegisterRejectsInvalidManifests(t *testing.T) {
 }
 
 func TestPluginDataVersioning(t *testing.T) {
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	ctx := context.Background()
 	alice := newUser(t, sqlDB, "alice")
 
@@ -201,7 +189,7 @@ func TestPluginDataVersioning(t *testing.T) {
 }
 
 func TestPluginDataTombstone(t *testing.T) {
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	ctx := context.Background()
 	alice := newUser(t, sqlDB, "alice")
 
@@ -251,7 +239,7 @@ func TestPluginDataTombstone(t *testing.T) {
 }
 
 func TestPluginDataRevive(t *testing.T) {
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	ctx := context.Background()
 	alice := newUser(t, sqlDB, "alice")
 
@@ -305,7 +293,7 @@ func TestPluginDataRevive(t *testing.T) {
 }
 
 func TestPluginDataIsolatedBetweenUsers(t *testing.T) {
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	ctx := context.Background()
 	alice := newUser(t, sqlDB, "alice")
 	bob := newUser(t, sqlDB, "bob")
@@ -358,7 +346,7 @@ func TestPluginDataIsolatedBetweenUsers(t *testing.T) {
 }
 
 func TestPluginDataWorkspaceScoped(t *testing.T) {
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	ctx := context.Background()
 	alice := newUser(t, sqlDB, "alice")
 
@@ -440,7 +428,7 @@ func TestPluginDataWorkspaceScoped(t *testing.T) {
 }
 
 func TestListDataPrefixScopeAndTombstones(t *testing.T) {
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	ctx := context.Background()
 	alice := newUser(t, sqlDB, "alice")
 	bob := newUser(t, sqlDB, "bob")
@@ -510,7 +498,7 @@ func TestListDataPrefixScopeAndTombstones(t *testing.T) {
 }
 
 func TestCanWriteData(t *testing.T) {
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	ctx := context.Background()
 	mustRegister(t, sqlDB, validManifest("with-data", ""))
 	mustRegister(t, sqlDB, validManifest("without-data", `"permissions":[]`))
@@ -537,7 +525,7 @@ func TestCanWriteData(t *testing.T) {
 // TestCanWriteDataGrandfathered: a registry row from before the contract
 // (no sdk, or not even parsable) keeps writing data as before.
 func TestCanWriteDataGrandfathered(t *testing.T) {
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	for id, raw := range map[string]string{
 		"legacy":   `{"id":"legacy","name":"L"}`,
 		"garbled":  `{"id":"garbled","events":"x"}`,
@@ -555,7 +543,7 @@ func TestCanWriteDataGrandfathered(t *testing.T) {
 }
 
 func TestUnparsableRegistryRows(t *testing.T) {
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	ctx := context.Background()
 	for _, raw := range plugins.Builtin() {
 		if _, err := plugins.RegisterBuiltin(ctx, sqlDB, raw); err != nil {
@@ -584,7 +572,7 @@ func TestUnparsableRegistryRows(t *testing.T) {
 // only, whatever is installed and whatever state rows exist, and a pack id
 // takes no plugin state or data.
 func TestDataPacksAreNoPlugins(t *testing.T) {
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	ctx := context.Background()
 	alice := newUser(t, sqlDB, "alice")
 	stamp := "2026-01-01T00:00:00Z"

@@ -35,6 +35,7 @@ import type { LimitPair } from './limits';
 import type { Run } from './vacation';
 import type { LevelQueueItem } from './levelQueue';
 import type { OptInKind, ReviewEvent, ReviewGrade, StudyCard, StudyCardKind } from './types';
+import * as build from '$lib/testing/study';
 
 function card(
 	id: string,
@@ -42,27 +43,19 @@ function card(
 	entryId: number,
 	opts: { written?: string; sentenceId?: number; deckIds?: string[]; createdAt?: string } = {}
 ): StudyCard {
-	const result: StudyCard = {
+	return build.card({
 		id,
 		kind,
 		entryId,
 		written: opts.written ?? '学习',
-		deckIds: opts.deckIds ?? ['general'],
-		createdAt: opts.createdAt ?? '2026-01-01T00:00:00.000Z'
-	};
-	if (opts.sentenceId !== undefined) result.sentenceId = opts.sentenceId;
-	return result;
+		deckIds: opts.deckIds,
+		createdAt: opts.createdAt,
+		sentenceId: opts.sentenceId
+	});
 }
 
 function review(cardId: string, ts: string, grade: ReviewGrade = 3, id = `${cardId}-${ts}`): ReviewEvent {
-	return {
-		id,
-		workspaceId: 1,
-		device: 'web',
-		ts,
-		type: 'review',
-		payload: { cardId, mode: 'vocab', grade }
-	};
+	return build.review({ cardId, ts, grade, id });
 }
 
 const zhEntry = {

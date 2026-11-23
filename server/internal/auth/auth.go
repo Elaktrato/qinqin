@@ -16,6 +16,7 @@ import (
 	"strings"
 	"sync"
 	"sync/atomic"
+	"testing"
 	"time"
 
 	"golang.org/x/crypto/argon2"
@@ -34,6 +35,36 @@ const (
 	argonSaltLen   = 16
 	argonKeyLen    = 32
 )
+
+// hashCost is the memory and passes Hash uses: the production parameters,
+// lowered only by SetHashCostForTests inside a test binary.
+var hashCost atomic.Pointer[[2]uint32]
+
+func currentHashCost() (memoryKiB, passes uint32) {
+	if c := hashCost.Load(); c != nil {
+		return c[0], c[1]
+	}
+	return argonMemoryKiB, argonTime
+}
+
+// SetHashCostForTests makes Hash use memoryKiB and passes (0, 0: the
+// production parameters) and returns a function that restores the previous
+// cost. It exists for test suites that create hundreds of users (the api
+// tests), where argon2id dominates the run; Verify reads the parameters
+// from each hash, so low-cost hashes verify as usual. It panics outside a
+// test binary (testing.Testing), so serving code cannot lower the cost.
+func SetHashCostForTests(memoryKiB, passes uint32) (restore func()) {
+	if !testing.Testing() {
+		panic("auth: SetHashCostForTests outside a test binary")
+	}
+	prev := hashCost.Load()
+	if memoryKiB == 0 && passes == 0 {
+		hashCost.Store(nil)
+	} else {
+		hashCost.Store(&[2]uint32{memoryKiB, passes})
+	}
+	return func() { hashCost.Store(prev) }
+}
 
 // ErrBadCredentials reports an unknown username or wrong password from Login.
 var ErrBadCredentials = errors.New("bad credentials")
@@ -78,9 +109,10 @@ func resetDummyForTest() {
 // hashes carry their own parameters and are verifiable without config.
 func Hash(password string) string {
 	salt := randomBytes(argonSaltLen)
-	key := argon2.IDKey([]byte(password), salt, argonTime, argonMemoryKiB, argonThreads, argonKeyLen)
+	memoryKiB, passes := currentHashCost()
+	key := argon2.IDKey([]byte(password), salt, passes, memoryKiB, argonThreads, argonKeyLen)
 	return fmt.Sprintf("$argon2id$v=%d$m=%d,t=%d,p=%d$%s$%s",
-		argon2.Version, argonMemoryKiB, argonTime, argonThreads,
+		argon2.Version, memoryKiB, passes, argonThreads,
 		base64.RawStdEncoding.EncodeToString(salt),
 		base64.RawStdEncoding.EncodeToString(key))
 }

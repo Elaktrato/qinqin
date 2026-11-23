@@ -8,11 +8,13 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"qinqin/internal/dbtest"
 )
 
 func newCustom(t *testing.T) (*CustomStore, *sql.DB) {
 	t.Helper()
-	sqlDB, _ := openTestDB(t)
+	sqlDB := dbtest.Open(t)
 	return &CustomStore{DB: sqlDB, Now: time.Now}, sqlDB
 }
 

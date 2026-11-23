@@ -9,6 +9,7 @@ import (
 	"strings"
 	"testing"
 
+	"qinqin/internal/dbtest"
 	"qinqin/internal/plugins"
 )
 
@@ -131,7 +132,7 @@ func pairs(rs []plugins.RuleOf) []string {
 
 func TestActivityRules(t *testing.T) {
 	ctx := context.Background()
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	registerBuiltins(t, sqlDB)
 	got, err := plugins.ActivityRules(ctx, sqlDB)
 	if err != nil {

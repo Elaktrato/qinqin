@@ -52,8 +52,9 @@ import {
 } from "./store";
 import seenMergeFixture from "../../../../../docs/contracts/milestones/seen-merge.json";
 import { DEFAULT_W, type ParamSet } from "./fsrs/params";
-import { legacyFamily, pageOf, pagedPull, toLegacy } from "./testing/legacyCodec";
+import { legacyFamily, pageOf, pagedPull, toLegacy } from '$lib/testing/legacyCodec';
 import { STUDY_COLLECTIONS, cardRow, type StudyCollection } from "./rows";
+import * as build from '$lib/testing/study';
 
 const PLUGIN_ID = "qinqin-flashcards";
 const WORKSPACE_ID = 7;
@@ -136,9 +137,7 @@ function card(
   createdAt = "2026-01-02T00:00:00Z",
   written?: string,
 ): StudyCard {
-  const result: StudyCard = { id, kind: "vocab", entryId, deckIds, createdAt };
-  if (written !== undefined) result.written = written;
-  return result;
+  return build.card({ id, entryId, deckIds, createdAt, written });
 }
 
 function selectWorkspace(id: number | null): void {
@@ -266,14 +265,7 @@ function reviewEvent(
   cardId: string,
   workspaceId = WORKSPACE_ID,
 ): StudyEvent {
-  return {
-    id,
-    workspaceId,
-    device: "web",
-    ts: "2026-02-01T00:00:00.000Z",
-    type: "review",
-    payload: { cardId, mode: "vocab", grade: 3 },
-  } as StudyEvent;
+  return build.review({ id, cardId, workspaceId, ts: "2026-02-01T00:00:00.000Z" }) as StudyEvent;
 }
 
 // The one storage rule, checked after every test (each suite's afterEach

@@ -6,6 +6,7 @@ import (
 	"errors"
 	"testing"
 
+	"qinqin/internal/dbtest"
 	"qinqin/internal/dict"
 	"qinqin/internal/levels"
 )
@@ -22,7 +23,7 @@ func schemeRow(t *testing.T, sqlDB *sql.DB, packID string) (notice, updated stri
 // writes no scheme row (no restamp), a changed notice updates it.
 func TestSchemeNoticeWithoutRestamp(t *testing.T) {
 	ctx := context.Background()
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	seedFixture(t, sqlDB)
 	pack, err := dict.LoadPack(hskMini)
 	if err != nil {

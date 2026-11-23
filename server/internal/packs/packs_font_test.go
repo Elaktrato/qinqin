@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"qinqin/internal/dbtest"
 	"qinqin/internal/dict"
 	"qinqin/internal/packs"
 )
@@ -44,7 +45,7 @@ func fontPack(t *testing.T) (dict.Pack, string) {
 }
 
 func TestFontPacks(t *testing.T) {
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	ctx := context.Background()
 	importAll(t, sqlDB)
 	store := t.TempDir()

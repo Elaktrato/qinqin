@@ -18,7 +18,7 @@ function files(dir: string): string[] {
 	return out;
 }
 
-/** App modules: no tests, no test-only helpers (lib/study/testing builds old-shaped test data). */
+/** App modules: no tests, no test-only helpers (lib/testing builds old-shaped test data). */
 const app = files(src)
 	.map((p) => relative(src, p))
 	.filter((rel) => !/\.test\.(ts|svelte)$/.test(rel) && !/(^|\/)testing\//.test(rel));

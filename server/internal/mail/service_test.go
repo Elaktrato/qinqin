@@ -4,13 +4,12 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"path/filepath"
 	"strings"
 	"sync"
 	"testing"
 	"time"
 
-	"qinqin/internal/db"
+	"qinqin/internal/dbtest"
 	"qinqin/internal/i18n"
 	"qinqin/internal/mail/mailtest"
 	"qinqin/internal/netguard"
@@ -30,11 +29,7 @@ func (l *logSink) all() string { l.mu.Lock(); defer l.mu.Unlock(); return string
 
 func svcFor(t *testing.T, fake *mailtest.Server, sink *logSink) *Service {
 	t.Helper()
-	sqlDB, err := db.Open(filepath.Join(t.TempDir(), "m.db"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(func() { sqlDB.Close() })
+	sqlDB := dbtest.Open(t)
 	store := &Store{DB: sqlDB, Policy: netguard.GuardPolicy{AllowPrivate: true}}
 	p, err := store.Prepare(context.Background(), Input{Config: Config{Host: fake.Host, Port: fake.Port, TLS: ModeStartTLS,
 		FromAddress: "q@example.org", PublicURL: "https://words.example.org"}})
@@ -87,12 +82,16 @@ func TestEnqueueReturnsImmediatelyWithAStallingServer(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	go s.Run(ctx)
-	begin := time.Now()
 	for i := 0; i < 5; i++ {
-		s.Enqueue(Job{Kind: KindLoginCode, UserID: int64(i), To: "bob@example.com"})
+		if !s.Enqueue(Job{Kind: KindLoginCode, UserID: int64(i), To: "bob@example.com"}) {
+			t.Fatalf("job %d not queued", i)
+		}
 	}
-	if d := time.Since(begin); d > 100*time.Millisecond {
-		t.Fatalf("enqueue took %v", d)
+	// No wall-clock limit (docs/architecture/0005-test-conventions.md): an
+	// Enqueue that waited for the stalling send would return only after the
+	// 300 ms send timeout was logged, five times over.
+	if strings.Contains(sink.all(), "category=timeout") {
+		t.Fatalf("enqueue waited for a send: %s", sink.all())
 	}
 	wait(t, func() bool { return strings.Contains(sink.all(), "category=timeout") })
 	if strings.Contains(sink.all(), "bob@example.com") {

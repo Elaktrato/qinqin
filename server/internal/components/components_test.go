@@ -2,7 +2,6 @@ package components_test
 
 import (
 	"context"
-	"database/sql"
 	"encoding/json"
 	"errors"
 	"os"
@@ -12,19 +11,9 @@ import (
 	"testing"
 
 	"qinqin/internal/components"
-	"qinqin/internal/db"
+	"qinqin/internal/dbtest"
 	"qinqin/internal/dict"
 )
-
-func newDB(t *testing.T) *sql.DB {
-	t.Helper()
-	sqlDB, err := db.Open(filepath.Join(t.TempDir(), "test.db"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(func() { sqlDB.Close() })
-	return sqlDB
-}
 
 // writePack writes a components pack directory and loads it.
 func writePack(t *testing.T, id, language, format string, files map[string]string) dict.Pack {
@@ -71,7 +60,7 @@ func loadContract(t *testing.T) contractFixture {
 }
 
 func TestImportAndIndexMatchContract(t *testing.T) {
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	ctx := context.Background()
 	fx := loadContract(t)
 	files := map[string]string{}
@@ -103,7 +92,7 @@ func TestImportAndIndexMatchContract(t *testing.T) {
 }
 
 func TestReimportReplacesRows(t *testing.T) {
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	ctx := context.Background()
 	if _, err := components.Import(ctx, sqlDB, writePack(t, "p", "ja", "components-tsv", map[string]string{
 		"components.tsv": "語\t言 口\n話\t言 舌\n", "parts.tsv": "舌\t6\n"})); err != nil {
@@ -130,7 +119,7 @@ func TestReimportReplacesRows(t *testing.T) {
 }
 
 func TestIndexUnionOverPacks(t *testing.T) {
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	ctx := context.Background()
 	for _, p := range []dict.Pack{
 		writePack(t, "b", "ja", "components-tsv", map[string]string{"components.tsv": "語\t言 口\n海\t氵 毎\n", "parts.tsv": "言\t7\n"}),
@@ -194,7 +183,7 @@ func TestIndexUnionOverPacks(t *testing.T) {
 }
 
 func TestImportRejects(t *testing.T) {
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	ctx := context.Background()
 	for name, p := range map[string]dict.Pack{
 		"wrong format":     writePack(t, "p", "ja", "freq-csv", map[string]string{"components.tsv": "語\t言\n"}),
@@ -222,7 +211,7 @@ func TestImportRejects(t *testing.T) {
 // A pack's language is stored as its primary subtag: the lookup asks for
 // zh, ja (GET /api/components takes the primary subtag).
 func TestImportNormalisesLanguageToPrimarySubtag(t *testing.T) {
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	ctx := context.Background()
 	if _, err := components.Import(ctx, sqlDB, writePack(t, "tw", "zh-tw", "components-tsv", map[string]string{"components.tsv": "語\t言 吾\n"})); err != nil {
 		t.Fatal(err)

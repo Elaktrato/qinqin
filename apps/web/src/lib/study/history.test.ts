@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { pagedPull } from './testing/legacyCodec';
+import { pagedPull } from '$lib/testing/legacyCodec';
 
 const { goto } = vi.hoisted(() => ({ goto: vi.fn() }));
 

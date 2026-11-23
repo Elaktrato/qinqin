@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"qinqin/internal/datapkg"
+	"qinqin/internal/dbtest"
 	"qinqin/internal/packs"
 )
 
@@ -21,7 +22,7 @@ import (
 func TestAWrongSizeCurrentFileIsReplacedOnce(t *testing.T) {
 	ctx := context.Background()
 	clock := &testClock{now: time.Date(2026, 11, 16, 10, 0, 0, 0, time.UTC)}
-	e := newPkgEnv(t, newDB(t), clock)
+	e := newPkgEnv(t, dbtest.Open(t), clock)
 	if _, err := packs.Import(ctx, e.db, versionPack(t, "dictionary", "cedict", "zh", "v1"), e.onChange()); err != nil {
 		t.Fatal(err)
 	}
@@ -66,7 +67,7 @@ func TestAWrongSizeCurrentFileIsReplacedOnce(t *testing.T) {
 func TestAFailedRenameKeepsThePreviousRevision(t *testing.T) {
 	ctx := context.Background()
 	clock := &testClock{now: time.Date(2026, 11, 16, 10, 0, 0, 0, time.UTC)}
-	e := newPkgEnv(t, newDB(t), clock)
+	e := newPkgEnv(t, dbtest.Open(t), clock)
 	importAll(t, e, "cedict/v1")
 	restore := datapkg.SetRenameHookForTest(func(string, string) error { return errors.New("injected rename failure") })
 	clock.Add(time.Minute)
@@ -104,7 +105,7 @@ func TestAFailedRenameKeepsThePreviousRevision(t *testing.T) {
 // flock needs only a read descriptor.
 func TestAReadOnlyLockFileStillLocks(t *testing.T) {
 	ctx := context.Background()
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	dir := filepath.Join(t.TempDir(), "packages")
 	if err := os.MkdirAll(dir, 0o755); err != nil {
 		t.Fatal(err)
@@ -127,7 +128,7 @@ func TestAReadOnlyLockFileStillLocks(t *testing.T) {
 func TestAMovedFileWhoseRowsFailIsRemoved(t *testing.T) {
 	ctx := context.Background()
 	clock := &testClock{now: time.Date(2026, 11, 16, 10, 0, 0, 0, time.UTC)}
-	e := newPkgEnv(t, newDB(t), clock)
+	e := newPkgEnv(t, dbtest.Open(t), clock)
 	importAll(t, e, "cedict/v1")
 	restore := datapkg.SetRenameHookForTest(func(from, to string) error {
 		if err := os.Rename(from, to); err != nil {

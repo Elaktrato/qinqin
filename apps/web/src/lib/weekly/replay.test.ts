@@ -18,6 +18,7 @@ import {
 	wordsReachingMature,
 	type Timelines
 } from './replay';
+import * as build from '$lib/testing/study';
 
 interface ReplayCase {
 	name: string;
@@ -65,14 +66,7 @@ describe('week-summary.json: mature and character crossings', () => {
 });
 
 function ev(id: number, cardId: string, grade: number, ts: string): ReviewEvent {
-	return {
-		id: `01JRP${String(id).padStart(21, '0')}`,
-		workspaceId: 1,
-		device: 'web',
-		ts,
-		type: 'review',
-		payload: { cardId, mode: 'vocab', grade }
-	} as unknown as ReviewEvent;
+	return build.review({ id: build.eventId(id, '01JRP'), cardId, grade, ts });
 }
 
 describe('timelinesFor', () => {
@@ -115,14 +109,8 @@ describe('timelinesFor', () => {
 	});
 });
 
-const card = (id: string, kind: StudyCard['kind'], deckIds: string[], written?: string): StudyCard => ({
-	id,
-	kind,
-	entryId: 1,
-	deckIds,
-	createdAt: '2026-01-01T00:00:00Z',
-	...(written === undefined ? {} : { written })
-});
+const card = (id: string, kind: StudyCard['kind'], deckIds: string[], written?: string): StudyCard =>
+	build.card({ id, kind, deckIds, createdAt: '2026-01-01T00:00:00Z', written });
 
 describe('wordsReachingMature', () => {
 	const t = givenTimelines({

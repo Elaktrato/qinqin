@@ -5,6 +5,7 @@ import (
 	"errors"
 	"testing"
 
+	"qinqin/internal/dbtest"
 	"qinqin/internal/lemma"
 	"qinqin/internal/packs"
 )
@@ -16,7 +17,7 @@ const xaRules = `{"format": 2, "language": "es", "version": "t", "maxDepth": 1,
 // lemma-rules packs import, list and uninstall through packs (#176), and
 // take effect at once.
 func TestLemmaRulesPacks(t *testing.T) {
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	t.Cleanup(func() { lemma.SetInstalled(nil) })
 	ctx := context.Background()
 	var changed []string

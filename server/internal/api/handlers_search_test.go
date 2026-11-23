@@ -7,14 +7,13 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
-	"path/filepath"
 	"slices"
 	"strings"
 	"sync/atomic"
 	"testing"
 
 	"qinqin/internal/api"
-	"qinqin/internal/db"
+	"qinqin/internal/dbtest"
 	"qinqin/internal/dict"
 	"qinqin/internal/lang"
 	"qinqin/internal/levels"
@@ -231,12 +230,7 @@ func TestSearchHitLevels(t *testing.T) {
 // number of hits (a counting driver, 1 hit against 50).
 func TestSearchQueriesBounded(t *testing.T) {
 	lang.Register(lang.Zh{})
-	path := filepath.Join(t.TempDir(), "test.db")
-	sqlDB, err := db.Open(path)
-	if err != nil {
-		t.Fatalf("db.Open: %v", err)
-	}
-	t.Cleanup(func() { sqlDB.Close() })
+	sqlDB, path := dbtest.OpenPath(t)
 	var lines strings.Builder
 	for i := 0; i < 50; i++ {
 		r := rune(0x4e00 + i)

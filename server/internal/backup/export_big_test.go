@@ -9,6 +9,9 @@ import (
 	"sync/atomic"
 	"testing"
 	"time"
+
+	"qinqin/internal/auth"
+	"qinqin/internal/dbtest"
 )
 
 // bigWorld fills one user with a million events and 20 000 card rows in
@@ -72,7 +75,7 @@ func TestBigExportStaysMemoryBound(t *testing.T) {
 	t.Logf("peak heap %d MiB", peak.Load()>>20)
 }
 
-func TestBigRestoreFinishesQuicklyAndStaysMemoryBound(t *testing.T) {
+func TestBigRestoreIsBatchedAndStaysMemoryBound(t *testing.T) {
 	w := bigWorld(t)
 	p := filepath.Join(t.TempDir(), "big.zip")
 	f, err := os.Create(p)
@@ -91,7 +94,16 @@ func TestBigRestoreFinishesQuicklyAndStaysMemoryBound(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer a.Close()
-	res, _, err := Restore(context.Background(), deps(w), w.AliceUID, 0, a, Options{})
+	// The bound is a count, not a time (docs/architecture/0005-test-conventions.md):
+	// the restore runs through a counting handle on the same database.
+	var path string
+	if err := w.DB.QueryRow(`SELECT file FROM pragma_database_list WHERE name = 'main'`).Scan(&path); err != nil {
+		t.Fatal(err)
+	}
+	counted, n := dbtest.Counting(t, path)
+	d := deps(w)
+	d.DB, d.Users = counted, auth.NewUsers(counted)
+	res, _, err := Restore(context.Background(), d, w.AliceUID, 0, a, Options{})
 	elapsed := time.Since(start)
 	stop()
 	if err != nil {
@@ -100,11 +112,16 @@ func TestBigRestoreFinishesQuicklyAndStaysMemoryBound(t *testing.T) {
 	if res.Restored.Events != 1000004 || res.Restored.Cards < 20000 {
 		t.Errorf("result %+v", res.Restored)
 	}
-	if elapsed > 60*time.Second {
-		t.Errorf("restore took %s, want < 60s", elapsed)
-	}
 	if mib := peak.Load() >> 20; mib >= 64 {
 		t.Errorf("peak HeapInuse %d MiB, want < 64", mib)
 	}
-	t.Logf("restore (validate + safety export + apply) %s, peak heap %d MiB", elapsed, peak.Load()>>20)
+	t.Logf("restore (validate + safety export + apply) %s, peak heap %d MiB, %d statements, %d transactions",
+		elapsed, peak.Load()>>20, n.Statements(), n.Transactions())
+	rows := int64(res.Restored.Events + res.Restored.Cards)
+	if got := n.Statements(); got > rows+rows/10 {
+		t.Errorf("%d statements for %d rows: more than one per row", got, rows)
+	}
+	if got := n.Transactions(); got > 4 {
+		t.Errorf("%d transactions: the restore is not batched", got)
+	}
 }

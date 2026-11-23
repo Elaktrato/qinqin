@@ -9,7 +9,6 @@ import (
 	"strings"
 	"sync/atomic"
 	"testing"
-	"time"
 )
 
 // padded returns a JSON object of about n bytes: the given fields plus a
@@ -62,7 +61,7 @@ func (c *countingReader) Read(p []byte) (int, error) {
 }
 
 // A 30 MB anonymous login is refused without the server reading it.
-func TestHugeLoginRejectedQuickly(t *testing.T) {
+func TestHugeLoginRejectedUnread(t *testing.T) {
 	ts, _ := newServer(t)
 	body := &countingReader{}
 	req, err := http.NewRequest(http.MethodPost, ts.URL+"/api/auth/login",
@@ -70,9 +69,7 @@ func TestHugeLoginRejectedQuickly(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	start := time.Now()
 	resp, err := http.DefaultClient.Do(req)
-	elapsed := time.Since(start)
 	if err != nil {
 		// The server may close the connection before the client finishes
 		// writing; what matters is that it did not read 30 MB.
@@ -83,9 +80,6 @@ func TestHugeLoginRejectedQuickly(t *testing.T) {
 	}
 	if sent := body.n.Load(); sent >= 30<<20 {
 		t.Errorf("client wrote the whole 30 MB body (%d bytes): the server read it all", sent)
-	}
-	if elapsed > 5*time.Second {
-		t.Errorf("30 MB login took %v", elapsed)
 	}
 }
 

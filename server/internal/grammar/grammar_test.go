@@ -2,27 +2,16 @@ package grammar_test
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
 
-	"qinqin/internal/db"
+	"qinqin/internal/dbtest"
 	"qinqin/internal/dict"
 	"qinqin/internal/grammar"
 )
-
-func newDB(t *testing.T) *sql.DB {
-	t.Helper()
-	sqlDB, err := db.Open(filepath.Join(t.TempDir(), "test.db"))
-	if err != nil {
-		t.Fatalf("db.Open: %v", err)
-	}
-	t.Cleanup(func() { sqlDB.Close() })
-	return sqlDB
-}
 
 func loadMini(t *testing.T) dict.Pack {
 	t.Helper()
@@ -70,7 +59,7 @@ const longAgo = "2020-01-01T00:00:00Z"
 
 func TestImportAndList(t *testing.T) {
 	ctx := context.Background()
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	res, err := grammar.Import(ctx, sqlDB, loadMini(t))
 	if err != nil {
 		t.Fatal(err)
@@ -116,7 +105,7 @@ func TestImportAndList(t *testing.T) {
 
 func TestLessonByID(t *testing.T) {
 	ctx := context.Background()
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	if _, err := grammar.Import(ctx, sqlDB, loadMini(t)); err != nil {
 		t.Fatal(err)
 	}
@@ -148,7 +137,7 @@ func TestLessonByID(t *testing.T) {
 
 func TestReimportIdenticalWritesNothing(t *testing.T) {
 	ctx := context.Background()
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	if _, err := grammar.Import(ctx, sqlDB, loadMini(t)); err != nil {
 		t.Fatal(err)
 	}
@@ -173,7 +162,7 @@ func TestReimportIdenticalWritesNothing(t *testing.T) {
 
 func TestReimportChangedLessonOnlyTouchesIt(t *testing.T) {
 	ctx := context.Background()
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	if _, err := grammar.Import(ctx, sqlDB, loadMini(t)); err != nil {
 		t.Fatal(err)
 	}
@@ -204,7 +193,7 @@ func TestReimportChangedLessonOnlyTouchesIt(t *testing.T) {
 
 func TestReimportWithoutLessonSoftDeletesAndRevives(t *testing.T) {
 	ctx := context.Background()
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	if _, err := grammar.Import(ctx, sqlDB, loadMini(t)); err != nil {
 		t.Fatal(err)
 	}
@@ -246,7 +235,7 @@ func TestReimportWithoutLessonSoftDeletesAndRevives(t *testing.T) {
 
 func TestReimportRevivesDeletedPack(t *testing.T) {
 	ctx := context.Background()
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	if _, err := grammar.Import(ctx, sqlDB, loadMini(t)); err != nil {
 		t.Fatal(err)
 	}
@@ -267,7 +256,7 @@ func TestReimportRevivesDeletedPack(t *testing.T) {
 func TestImportRejectsWrongType(t *testing.T) {
 	ctx := context.Background()
 	m := `{"id":"x","name":"X","version":"1","type":"sentences","language":"zh","license":"CC0-1.0","attribution":"a","format":"json"}`
-	_, err := grammar.Import(ctx, newDB(t), packWith(t, m, miniLessons(t)))
+	_, err := grammar.Import(ctx, dbtest.Open(t), packWith(t, m, miniLessons(t)))
 	if !errors.Is(err, grammar.ErrNotGrammar) {
 		t.Errorf("err = %v, want ErrNotGrammar", err)
 	}
@@ -275,7 +264,7 @@ func TestImportRejectsWrongType(t *testing.T) {
 
 func TestImportRejectsInvalidAndStaysAtomic(t *testing.T) {
 	ctx := context.Background()
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	if _, err := grammar.Import(ctx, sqlDB, loadMini(t)); err != nil {
 		t.Fatal(err)
 	}
@@ -296,7 +285,7 @@ func TestImportRejectsInvalidAndStaysAtomic(t *testing.T) {
 
 func TestImportRejectsNonJSONFormat(t *testing.T) {
 	m := `{"id":"x","name":"X","version":"1","type":"grammar","language":"zh","license":"CC0-1.0","attribution":"a","format":"cedict"}`
-	_, err := grammar.Import(context.Background(), newDB(t), packWith(t, m, miniLessons(t)))
+	_, err := grammar.Import(context.Background(), dbtest.Open(t), packWith(t, m, miniLessons(t)))
 	if !errors.Is(err, dict.ErrInvalidPack) {
 		t.Errorf("err = %v, want ErrInvalidPack", err)
 	}
@@ -304,7 +293,7 @@ func TestImportRejectsNonJSONFormat(t *testing.T) {
 
 func TestUninstallThenReinstall(t *testing.T) {
 	ctx := context.Background()
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	if _, err := grammar.Import(ctx, sqlDB, loadMini(t)); err != nil {
 		t.Fatal(err)
 	}

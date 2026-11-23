@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import fixture from '../../../../../docs/contracts/cards/session-mix.json';
 import type { FlowItem } from './cardFlow';
 import type { ReviewEvent, StudyCardKind } from './types';
-import { spaceOutReference } from './testing/spaceOutReference';
+import { spaceOutReference } from '$lib/testing/spaceOutReference';
 import { fnv1a32, mixFlowQueue, mixKey, mixSession, spaceOut, typeGap, type TypeOrder } from './sessionMix';
 
 describe('docs/contracts/cards/session-mix.json keys', () => {
@@ -259,12 +259,12 @@ describe('spaceOut performance (#132 review)', () => {
 		}
 	});
 
-	const timed = (items: Item[]) => {
-		const started = performance.now();
+	// No wall-clock limit (0005-test-conventions): a quadratic regression on
+	// 20,000 items shows as a test timeout.
+	const spaced = (items: Item[]) => {
 		const out = spaceOut(items, 3);
-		const ms = performance.now() - started;
 		expect(out).toHaveLength(items.length);
-		return ms;
+		expect(new Set(ids(out)).size).toBe(items.length);
 	};
 
 	it('spaces 20,000 items of a Study all session quickly', () => {
@@ -278,14 +278,14 @@ describe('spaceOut performance (#132 review)', () => {
 			const j = next(i + 1);
 			[items[i], items[j]] = [items[j], items[i]];
 		}
-		expect(timed(items)).toBeLessThan(1500);
+		spaced(items);
 	});
 
 	it('stays quick when one or two words hold the block', () => {
 		const one = Array.from({ length: 20_000 }, (_, i) => ({ id: String(i), entryId: 1 }));
 		const two = Array.from({ length: 20_000 }, (_, i) => ({ id: String(i), entryId: i < 10_000 ? 1 : 2 }));
-		expect(timed(one)).toBeLessThan(1500);
-		expect(timed(two)).toBeLessThan(1500);
+		spaced(one);
+		spaced(two);
 	});
 });
 

@@ -66,7 +66,7 @@ settings get `updatedAt` = the row's edit time (`modified_at`). `ToLegacy(FromLe
 JSON values except for that cleaning. Fixture: `study-rows.json` (keyed row to typed row, `unreadable`, the
 object written back as `roundTrip`; `families` maps keys to collections). Go: `server/internal/study/rows`
 (`codec_test.go`); migration 038 keeps a frozen copy (`server/internal/db/step038/testdata`). Web: a test-only
-mirror (`apps/web/src/lib/study/testing/legacyCodec.ts`) that builds old-shaped test data.
+mirror (`apps/web/src/lib/testing/legacyCodec.ts`) that builds old-shaped test data.
 
 ## Version rule
 

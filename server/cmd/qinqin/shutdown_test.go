@@ -119,6 +119,7 @@ func TestServeShutsDownOnCancelledContext(t *testing.T) {
 		last = i
 	}
 	// The database was closed: another handle opens and writes at once.
+	// reopen: serve created it
 	sqlDB, err := db.Open(filepath.Join(data, "qinqin.db"))
 	if err != nil {
 		t.Fatal(err)

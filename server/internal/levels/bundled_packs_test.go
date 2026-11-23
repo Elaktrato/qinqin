@@ -9,6 +9,7 @@ import (
 	"strings"
 	"testing"
 
+	"qinqin/internal/dbtest"
 	"qinqin/internal/dict"
 	"qinqin/internal/levels"
 )
@@ -129,7 +130,7 @@ func TestBundledLevelPacks(t *testing.T) {
 				t.Errorf("%d forms, want %d", total, c.total)
 			}
 
-			res, err := levels.Import(context.Background(), newDB(t), p)
+			res, err := levels.Import(context.Background(), dbtest.Open(t), p)
 			if err != nil {
 				t.Fatalf("Import into an empty lexicon: %v", err)
 			}

@@ -5,6 +5,7 @@ import (
 	"slices"
 	"testing"
 
+	"qinqin/internal/dbtest"
 	"qinqin/internal/packs"
 	"qinqin/internal/packtype"
 )
@@ -37,7 +38,7 @@ func TestEveryPackTypeHasItsOperations(t *testing.T) {
 // columns the generic queries read (List, the licence check, the package
 // plan): a new type needs its migration.
 func TestEveryRegistryTableHasTheStandardColumns(t *testing.T) {
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	for _, d := range packtype.All {
 		rows, err := sqlDB.QueryContext(context.Background(), `SELECT name FROM pragma_table_info(?)`, d.Registry)
 		if err != nil {

@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"qinqin/internal/dbtest"
 	"qinqin/internal/dict"
 	"qinqin/internal/packs"
 )
@@ -37,7 +38,7 @@ func themePack(t *testing.T) dict.Pack {
 }
 
 func TestThemePacks(t *testing.T) {
-	sqlDB := newDB(t)
+	sqlDB := dbtest.Open(t)
 	ctx := context.Background()
 	importAll(t, sqlDB)
 	var changed []string

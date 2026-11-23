@@ -19,6 +19,7 @@ import {
 	type DeckNumbers,
 	type ScheduleIndex
 } from './deckStats';
+import * as build from '$lib/testing/study';
 
 interface FixtureCard {
 	id: string;
@@ -104,17 +105,10 @@ describe('deck numbers contract', () => {
 // ---- helpers for the behavioural tests ------------------------------------------------------
 
 function card(id: string, kind: StudyCardKind, entryId: number, deckIds: string[]): StudyCard {
-	return { id, kind, entryId, deckIds, createdAt: '2026-01-01T00:00:00.000Z' };
+	return build.card({ id, kind, entryId, deckIds });
 }
 function review(cardId: string, ts: string, grade: 1 | 2 | 3 | 4, n = 0): ReviewEvent {
-	return {
-		id: `${ts}-${cardId}-${n}`,
-		workspaceId: 1,
-		device: 'd',
-		ts,
-		type: 'review',
-		payload: { cardId, mode: 'vocab', grade }
-	};
+	return build.review({ cardId, ts, grade, id: `${ts}-${cardId}-${n}`, device: 'd' });
 }
 const NOW = new Date('2026-03-10T12:00:00.000Z');
 const utcDay = { dayOf: (ms: number) => new Date(ms).toISOString().slice(0, 10), today: () => '2026-03-10' };
