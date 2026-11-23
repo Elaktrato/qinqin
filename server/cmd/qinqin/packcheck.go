@@ -15,9 +15,9 @@ import (
 // manifest's terms.
 type storedTerms struct{ license, attribution, notice string }
 
-// warnStalePackTerms logs one warning per installed dictionary,
-// frequency pack, level scheme, grammar pack or audio pack whose stored license, attribution or
-// notice differs from its manifest under roots: the Sources page shows
+// warnStalePackTerms logs one warning per installed pack of any type whose
+// stored license, attribution or notice differs from its manifest under
+// roots: the Sources page shows
 // the stored copy, which only `qinqin seed` refreshes. The typical case
 // is an upgrade past migration 024, which adds every notice empty.
 //
@@ -32,6 +32,7 @@ func warnStalePackTerms(ctx context.Context, sqlDB *sql.DB, roots []string, logf
 		dict.TypeDictionary: "dictionaries",
 		dict.TypeFrequency:  "frequency_packs",
 		dict.TypeLevels:     "schemes",
+		dict.TypeSentences:  "sentence_packs",
 		dict.TypeGrammar:    "grammar_packs",
 		dict.TypeAudio:      "audio_packs",
 		dict.TypeComponents: "component_packs",
@@ -76,7 +77,8 @@ func warnStalePackTerms(ctx context.Context, sqlDB *sql.DB, roots []string, logf
 			if m.Type == dict.TypeDictionary {
 				id, license, attribution = dict.RegistryTerms(m)
 			}
-			// Sentence packs store no terms; uninstalled packs have no row.
+			// Uninstalled packs (and legacy sentence packs imported before
+			// migration 027) have no row.
 			if got, ok := stored[m.Type][id]; ok && got != (storedTerms{license, attribution, m.Notice}) {
 				logf(`pack %s: stored license/attribution/notice differs from %s; run "qinqin seed" to refresh`, m.ID, manifest)
 			}
