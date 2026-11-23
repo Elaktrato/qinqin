@@ -126,3 +126,14 @@ names them as records their issues write.
   `gen-api-docs --check` exit 0. No Go touched.
 - Not verified: the records against develop after #198 merges (the coordinator asks for a merge and rerun then;
   the path and identifier checks will show any break).
+
+### After #198 merged
+
+- `git merge --no-ff develop` (develop at a2a5091b, #198 merged): no conflicts. Before any record change, the
+  doc checks (`architectureDocs`, `wikiDocs`, `readmeDocs`) passed, 241 tests: no path or identifier named in
+  an Accepted record was removed by #198.
+- 0001 and 0002 name the contract changelog that #198 added (`docs/contracts/CHANGELOG.md`): a new error code
+  and a change to the "Reading rows" rule each get an entry there; 0001 also points at the error catalogue's
+  own changelog for the changes up to #168.
+- Gates: doc checks 241 passed; web check exit 0 (0 errors, 0 warnings); full vitest under Node 26.13.1 exit
+  0, 586 files, 12559 passed, 8 skipped (fewer than before because #198 removed legacy tests). No Go touched.

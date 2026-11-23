@@ -38,8 +38,10 @@ errors stay plain `Error`s.
 ## Consequences
 
 - A client branches on and translates the code; the English message is never interface text.
-- A new error needs a catalogue code (with its status), an `apiError.<code>` key with text, and a regenerated
-  API errors wiki page; status codes do not change when a body is reworded.
+- A new error needs a catalogue code (with its status), an `apiError.<code>` key with text, a line in the
+  contract changelog ([`docs/contracts/CHANGELOG.md`](../contracts/CHANGELOG.md); the catalogue's changes up
+  to #168 are in [its own changelog](../contracts/auth/README.md#changelog)) and a regenerated API errors wiki
+  page; status codes do not change when a body is reworded.
 - Old web shells may show raw JSON on some screens until they reload (accepted in #168).
 
 ## Allowed / Not allowed
