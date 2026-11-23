@@ -133,3 +133,43 @@ func startServe(t *testing.T, data string) (string, func()) {
 	}
 	return "", stop
 }
+
+// serve hands the package builder's hook to the bundled-pack sync: an image
+// with a changed bundled table gives its package a new revision (#176).
+func TestServeRebuildsTheRefreshedBundledPackage(t *testing.T) {
+	quietServeEnv(t)
+	captureLog(t)
+	t.Cleanup(func() { lemma.SetInstalled(nil) })
+	root := t.TempDir()
+	t.Setenv("QINQIN_PACKS", root)
+	writeLemmaPack(t, root, "xa-lemma", "xa", lemmaTable("xa", "1"))
+	data := t.TempDir()
+	revision := func(want int) {
+		t.Helper()
+		sqlDB, err := db.Open(filepath.Join(data, "qinqin.db"))
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer sqlDB.Close()
+		deadline := time.Now().Add(30 * time.Second)
+		for {
+			var rev int
+			var state string
+			err := sqlDB.QueryRow(`SELECT revision, state FROM packages WHERE id = 'lemma-rules.xa-lemma'`).Scan(&rev, &state)
+			if err == nil && rev == want && state == "ready" {
+				return
+			}
+			if time.Now().After(deadline) {
+				t.Fatalf("lemma-rules.xa-lemma: revision %d %s (%v), want %d ready", rev, state, err, want)
+			}
+			time.Sleep(20 * time.Millisecond)
+		}
+	}
+	_, stop := startServe(t, data)
+	revision(1)
+	stop()
+	writeLemmaPack(t, root, "xa-lemma", "xa", lemmaTable("xa", "2")) // an upgraded image
+	_, stop = startServe(t, data)
+	defer stop()
+	revision(2)
+}
