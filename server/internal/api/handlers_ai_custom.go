@@ -25,7 +25,7 @@ func (s *server) requireCustomAdmin(w http.ResponseWriter, r *http.Request) (*mo
 	// Admin-only: an access token never manages endpoints (tokenGate refuses
 	// it first; this holds even if the route row were marked).
 	if p.ViaToken() {
-		writeAuthError(w, http.StatusForbidden, "token_not_allowed", "Access tokens cannot be used on this route.")
+		writeError(w, http.StatusForbidden, "token_not_allowed", "Access tokens cannot be used on this route.")
 		return nil, false
 	}
 	u := &p.User

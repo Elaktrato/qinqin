@@ -87,7 +87,7 @@ func (s *server) handlePackageCatalogue(w http.ResponseWriter, r *http.Request) 
 	if r.URL.Query().Has("languages") {
 		var ok bool
 		if languages, ok = parseCatalogueLanguages(r.URL.Query().Get("languages")); !ok {
-			writeAuthError(w, http.StatusBadRequest, "bad_request", "languages must be all or a comma-separated list of language codes.")
+			writeError(w, http.StatusBadRequest, "bad_request", "languages must be all or a comma-separated list of language codes.")
 			return
 		}
 	} else {
@@ -177,7 +177,7 @@ func (s *server) handlePackageDownload(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	notFound := func() {
-		writeAuthError(w, http.StatusNotFound, "package_not_found", "No data package with that id and revision.")
+		writeError(w, http.StatusNotFound, "package_not_found", "No data package with that id and revision.")
 	}
 	rev := r.PathValue("revision")
 	if !packageRevision.MatchString(rev) {
@@ -195,7 +195,7 @@ func (s *server) handlePackageDownload(w http.ResponseWriter, r *http.Request) {
 		notFound()
 		return
 	case errors.Is(err, datapkg.ErrGone):
-		writeAuthError(w, http.StatusGone, "package_revision_gone", "That package revision was replaced. Read the catalogue and download the current one.")
+		writeError(w, http.StatusGone, "package_revision_gone", "That package revision was replaced. Read the catalogue and download the current one.")
 		return
 	case err != nil:
 		writeInternal(w, r)
@@ -204,7 +204,7 @@ func (s *server) handlePackageDownload(w http.ResponseWriter, r *http.Request) {
 	defer f.Close()
 	if !s.downloads.acquire(u.ID) {
 		w.Header().Set("Retry-After", "5")
-		writeAuthError(w, http.StatusTooManyRequests, "download_busy",
+		writeError(w, http.StatusTooManyRequests, "download_busy",
 			"Two package downloads are already running for this account. Try again when one has finished.")
 		return
 	}

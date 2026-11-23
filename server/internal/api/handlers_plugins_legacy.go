@@ -68,13 +68,13 @@ func (s *server) mergeLegacyList(r *http.Request, userID, workspaceID int64, pre
 // legacy row. Data the codec refuses is 400 study_row_invalid.
 func (s *server) legacyPut(w http.ResponseWriter, r *http.Request, userID int64, workspaceID *int64, key string, body []byte) {
 	if workspaceID == nil {
-		writeAuthError(w, http.StatusBadRequest, "study_row_invalid", "Study rows of this key belong to a workspace: send ?workspace=.")
+		writeError(w, http.StatusBadRequest, "study_row_invalid", "Study rows of this key belong to a workspace: send ?workspace=.")
 		return
 	}
 	row := model.PluginData{PluginID: rows.Namespace, Key: key, UserID: userID, WorkspaceID: workspaceID, Data: json.RawMessage(body)}
 	_, err := study.ApplyLegacy(r.Context(), s.db, userID, row, study.Now())
 	if errors.Is(err, rows.ErrUnreadable) || errors.Is(err, rows.ErrInvalid) {
-		writeAuthError(w, http.StatusBadRequest, "study_row_invalid", "The data is not a readable study row for this key.")
+		writeError(w, http.StatusBadRequest, "study_row_invalid", "The data is not a readable study row for this key.")
 		return
 	}
 	if err != nil {

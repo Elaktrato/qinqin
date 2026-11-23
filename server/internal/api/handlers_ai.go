@@ -92,7 +92,7 @@ func writeAIError(w http.ResponseWriter, err error) {
 		code = ai.Code(err)
 	}
 	if code == "" {
-		http.Error(w, "internal error", http.StatusInternalServerError)
+		writeError(w, http.StatusInternalServerError, "internal", "Internal server error.")
 		return
 	}
 	status := http.StatusUnprocessableEntity
@@ -124,7 +124,7 @@ func writeAIError(w http.ResponseWriter, err error) {
 	if msg == "" {
 		msg = aiMessages[code]
 	}
-	writeJSON(w, status, map[string]string{"error": code, "message": msg})
+	writeError(w, status, code, msg)
 }
 
 func secondsCeil(d time.Duration) int { return max(1, int(math.Ceil(d.Seconds()))) }

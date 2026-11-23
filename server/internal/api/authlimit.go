@@ -219,11 +219,6 @@ func waitText(sec int) string {
 	return unit((sec+59)/60, "minute")
 }
 
-// writeAuthError answers a login/register error as {"error","message"}.
-func writeAuthError(w http.ResponseWriter, status int, code, message string) {
-	writeJSON(w, status, map[string]string{"error": code, "message": message})
-}
-
 // writeRateLimited answers 429 rate_limited with Retry-After, worded for
 // sign-in attempts.
 func writeRateLimited(w http.ResponseWriter, retry time.Duration) {
@@ -235,7 +230,7 @@ func writeRateLimited(w http.ResponseWriter, retry time.Duration) {
 func writeRateLimitedAs(w http.ResponseWriter, retry time.Duration, subject string) {
 	sec := retrySeconds(retry)
 	w.Header().Set("Retry-After", strconv.Itoa(sec))
-	writeAuthError(w, http.StatusTooManyRequests, "rate_limited",
+	writeError(w, http.StatusTooManyRequests, "rate_limited",
 		fmt.Sprintf("Too many %s. Try again in %s.", subject, waitText(sec)))
 }
 
@@ -246,7 +241,7 @@ func writeClientGone(w http.ResponseWriter) { w.WriteHeader(499) }
 // writeBusy answers 503 busy with Retry-After: 2.
 func writeBusy(w http.ResponseWriter) {
 	w.Header().Set("Retry-After", "2")
-	writeAuthError(w, http.StatusServiceUnavailable, "busy", "The server is busy. Try again in a moment.")
+	writeError(w, http.StatusServiceUnavailable, "busy", "The server is busy. Try again in a moment.")
 }
 
 // logThrottled notes that a layer refused a request. It never names an
@@ -277,9 +272,9 @@ func readAuthBody(w http.ResponseWriter, r *http.Request) ([]byte, bool) {
 	if err != nil {
 		var tooBig *http.MaxBytesError
 		if errors.As(err, &tooBig) {
-			writeAuthError(w, http.StatusRequestEntityTooLarge, "too_large", "Request body too large.")
+			writeError(w, http.StatusRequestEntityTooLarge, "too_large", "Request body too large.")
 		} else {
-			writeAuthError(w, http.StatusBadRequest, "bad_request", "Malformed request body.")
+			writeError(w, http.StatusBadRequest, "bad_request", "Malformed request body.")
 		}
 		return nil, false
 	}

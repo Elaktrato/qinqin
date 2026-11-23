@@ -20,7 +20,7 @@ import (
 func (s *server) requireTokenManager(w http.ResponseWriter, r *http.Request) *auth.Principal {
 	p := s.requirePrincipal(w, r)
 	if p != nil && p.ViaToken() {
-		writeAuthError(w, http.StatusForbidden, "token_not_allowed", "Access tokens cannot be used on this route.")
+		writeError(w, http.StatusForbidden, "token_not_allowed", "Access tokens cannot be used on this route.")
 		return nil
 	}
 	return p
@@ -54,7 +54,7 @@ func (s *server) handleCreateToken(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if req.CurrentPassword == "" {
-		writeAuthError(w, http.StatusForbidden, "current_password_required", "Enter your current password to continue.")
+		writeError(w, http.StatusForbidden, "current_password_required", "Enter your current password to continue.")
 		return
 	}
 	if ok, retry := s.authLimiter("pat-create").Allow(int64Key(p.User.ID)); !ok {
@@ -85,17 +85,17 @@ func (s *server) handleCreateToken(w http.ResponseWriter, r *http.Request) {
 		writeInternal(w, r)
 		return
 	case !good:
-		writeAuthError(w, http.StatusForbidden, "wrong_password", "The current password is wrong.")
+		writeError(w, http.StatusForbidden, "wrong_password", "The current password is wrong.")
 		return
 	}
 	refund()
 	token, info, err := auth.CreateToken(r.Context(), s.db, p.User.ID, treq)
 	switch {
 	case errors.Is(err, auth.ErrWorkspaceNotFound):
-		writeAuthError(w, http.StatusNotFound, "not_found", "No such workspace.")
+		writeError(w, http.StatusNotFound, "not_found", "No such workspace.")
 		return
 	case errors.Is(err, auth.ErrTokenLimit):
-		writeAuthError(w, http.StatusConflict, "token_limit", "You already have 20 access tokens. Revoke one first.")
+		writeError(w, http.StatusConflict, "token_limit", "You already have 20 access tokens. Revoke one first.")
 		return
 	case errors.Is(err, auth.ErrTokenRequest):
 		writeTokenRequestError(w, err)
@@ -122,7 +122,7 @@ func writeTokenRequestError(w http.ResponseWriter, err error) bool {
 	if errors.As(err, &re) {
 		msg = re.Message
 	}
-	writeAuthError(w, http.StatusUnprocessableEntity, "invalid_token_request", msg)
+	writeError(w, http.StatusUnprocessableEntity, "invalid_token_request", msg)
 	return false
 }
 
@@ -156,7 +156,7 @@ func (s *server) handleRevokeToken(w http.ResponseWriter, r *http.Request) {
 	}
 	switch {
 	case errors.Is(err, auth.ErrTokenNotFound):
-		writeAuthError(w, http.StatusNotFound, "not_found", "No such access token.")
+		writeError(w, http.StatusNotFound, "not_found", "No such access token.")
 		return
 	case err != nil:
 		writeInternal(w, r)

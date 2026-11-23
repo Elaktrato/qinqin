@@ -43,10 +43,6 @@ func (s *server) photos() journal.Photos {
 	return journal.Photos{DB: s.db, Dir: filepath.Join(s.dataDir, "journal")}
 }
 
-func writeJournalError(w http.ResponseWriter, status int, code, msg string) {
-	writeJSON(w, status, map[string]string{"error": code, "message": msg})
-}
-
 // handleUploadPhoto serves POST /api/journal/photos.
 func (s *server) handleUploadPhoto(w http.ResponseWriter, r *http.Request) {
 	u := s.requireUser(w, r)
@@ -54,7 +50,7 @@ func (s *server) handleUploadPhoto(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	tooBig := func() {
-		writeJournalError(w, http.StatusRequestEntityTooLarge, "photo_too_large", "That photo is larger than 10 MB.")
+		writeError(w, http.StatusRequestEntityTooLarge, "photo_too_large", "That photo is larger than 10 MB.")
 	}
 	r.Body = http.MaxBytesReader(w, r.Body, maxPhotoFormBody)
 	if err := r.ParseMultipartForm(maxPhotoFormMemory); err != nil {
@@ -78,12 +74,12 @@ func (s *server) handleUploadPhoto(w http.ResponseWriter, r *http.Request) {
 	// Cheap refusals first: the pending cap and the hourly limit come before
 	// any pixel is decoded. Create still enforces the cap atomically.
 	if n, err := s.photos().Count(r.Context(), u.ID); err == nil && n >= journal.MaxPendingPhotos {
-		writeJournalError(w, http.StatusConflict, "too_many_photos", "You have 10 photo drafts open. Finish or discard one first.")
+		writeError(w, http.StatusConflict, "too_many_photos", "You have 10 photo drafts open. Finish or discard one first.")
 		return
 	}
 	if ok, wait := s.uploadUse.take(u.ID, time.Now(), photoUploadsHour); !ok {
 		w.Header().Set("Retry-After", strconv.Itoa(secondsCeil(wait)))
-		writeJournalError(w, http.StatusTooManyRequests, "rate_limited", "You have uploaded "+strconv.Itoa(photoUploadsHour)+" photos this hour. Try again later.")
+		writeError(w, http.StatusTooManyRequests, "rate_limited", "You have uploaded "+strconv.Itoa(photoUploadsHour)+" photos this hour. Try again later.")
 		return
 	}
 	file, _, err := r.FormFile("file")
@@ -107,10 +103,10 @@ func (s *server) handleUploadPhoto(w http.ResponseWriter, r *http.Request) {
 		return
 
 	case errors.Is(err, journal.ErrUnsupportedImage):
-		writeJournalError(w, http.StatusUnsupportedMediaType, "unsupported_image", "Choose a JPEG, PNG or WebP photo.")
+		writeError(w, http.StatusUnsupportedMediaType, "unsupported_image", "Choose a JPEG, PNG or WebP photo.")
 		return
 	case errors.Is(err, journal.ErrImageTooLarge):
-		writeJournalError(w, http.StatusUnprocessableEntity, "image_too_large", "That photo is larger than 25 megapixels.")
+		writeError(w, http.StatusUnprocessableEntity, "image_too_large", "That photo is larger than 25 megapixels.")
 		return
 	case err != nil:
 		log.Printf("journal: normalise photo: %v", err)
@@ -120,7 +116,7 @@ func (s *server) handleUploadPhoto(w http.ResponseWriter, r *http.Request) {
 	ph, err := s.photos().Create(r.Context(), u.ID, wsID, jpegData)
 	switch {
 	case errors.Is(err, journal.ErrTooManyPhotos):
-		writeJournalError(w, http.StatusConflict, "too_many_photos", "You have 10 photo drafts open. Finish or discard one first.")
+		writeError(w, http.StatusConflict, "too_many_photos", "You have 10 photo drafts open. Finish or discard one first.")
 		return
 	case err != nil:
 		log.Printf("journal: store photo: %v", err)
@@ -297,18 +293,18 @@ func (s *server) handleJournalTranscribe(w http.ResponseWriter, r *http.Request)
 	}
 
 	if !s.ocrAvailable() {
-		writeJournalError(w, http.StatusConflict, "ocr_unavailable", "Offline reading is not installed on this server.")
+		writeError(w, http.StatusConflict, "ocr_unavailable", "Offline reading is not installed on this server.")
 		return
 	}
 	langs := journal.OCRLanguages(t.language)
 	if !s.ocr.HasLanguages(langs) {
-		writeJournalError(w, http.StatusConflict, "ocr_language_missing", "Offline reading has no model for "+ai.LanguageName(t.language)+".")
+		writeError(w, http.StatusConflict, "ocr_language_missing", "Offline reading has no model for "+ai.LanguageName(t.language)+".")
 		return
 	}
 	usedAt := time.Now()
 	if ok, wait := s.ocrUse.take(u.ID, usedAt, offlineReadsHour); !ok {
 		w.Header().Set("Retry-After", strconv.Itoa(secondsCeil(wait)))
-		writeJournalError(w, http.StatusTooManyRequests, "rate_limited", "You have used "+strconv.Itoa(offlineReadsHour)+" offline reads this hour. Try again later.")
+		writeError(w, http.StatusTooManyRequests, "rate_limited", "You have used "+strconv.Itoa(offlineReadsHour)+" offline reads this hour. Try again later.")
 		return
 	}
 	text, err := s.ocr.Recognize(r.Context(), jpegData, langs)
@@ -316,19 +312,19 @@ func (s *server) handleJournalTranscribe(w http.ResponseWriter, r *http.Request)
 	case errors.Is(err, journal.ErrOCRBusy):
 		s.ocrUse.refund(u.ID, usedAt) // the read never ran
 		w.Header().Set("Retry-After", "10")
-		writeJournalError(w, http.StatusServiceUnavailable, "busy", "Offline reading is busy. Try again in a moment.")
+		writeError(w, http.StatusServiceUnavailable, "busy", "Offline reading is busy. Try again in a moment.")
 		return
 	case errors.Is(err, journal.ErrOCRUnavailable):
-		writeJournalError(w, http.StatusConflict, "ocr_unavailable", "Offline reading is not installed on this server.")
+		writeError(w, http.StatusConflict, "ocr_unavailable", "Offline reading is not installed on this server.")
 		return
 	case errors.Is(err, journal.ErrOCRLanguageMissing):
-		writeJournalError(w, http.StatusConflict, "ocr_language_missing", "Offline reading has no model for "+ai.LanguageName(t.language)+".")
+		writeError(w, http.StatusConflict, "ocr_language_missing", "Offline reading has no model for "+ai.LanguageName(t.language)+".")
 		return
 	case err != nil:
 		if r.Context().Err() == nil {
 			log.Printf("journal: offline OCR failed")
 		}
-		writeJournalError(w, http.StatusUnprocessableEntity, "ocr_failed", "Offline reading failed on this photo.")
+		writeError(w, http.StatusUnprocessableEntity, "ocr_failed", "Offline reading failed on this photo.")
 		return
 	}
 	text = strings.TrimSpace(text)

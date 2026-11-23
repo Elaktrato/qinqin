@@ -132,5 +132,7 @@
   "language_mismatch": {"status": 422, "meaning": "The book's language is not the workspace's; workspaceLanguage and bookLanguage name both."},
   "source_unavailable": {"status": 502, "meaning": "The library source did not answer; try again later."},
   "source_language_unavailable": {"status": 422, "meaning": "The library source has no books in the workspace's language."},
-  "plugin_no_data": {"status": 403, "meaning": "The plugin does not declare owns-data, so it has no data rows."}
+  "plugin_no_data": {"status": 403, "meaning": "The plugin does not declare owns-data, so it has no data rows."},
+  "unknown_time_zone": {"status": 400, "meaning": "PUT /api/me/time-zone: the zone is not an IANA name this server knows (study-day/time-zone-api.json)."},
+  "too_many_changes": {"status": 409, "meaning": "PUT /api/me/time-zone: the account has the most zone changes the history keeps (study-day/)."}
 }

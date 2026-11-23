@@ -139,3 +139,5 @@ Every error body is JSON `{"error": code, "message": "English sentence"}`. Branc
 | `source_unavailable` | 502 | The library source did not answer; try again later. |
 | `source_language_unavailable` | 422 | The library source has no books in the workspace's language. |
 | `plugin_no_data` | 403 | The plugin does not declare owns-data, so it has no data rows. |
+| `unknown_time_zone` | 400 | PUT /api/me/time-zone: the zone is not an IANA name this server knows (study-day/time-zone-api.json). |
+| `too_many_changes` | 409 | PUT /api/me/time-zone: the account has the most zone changes the history keeps (study-day/). |
