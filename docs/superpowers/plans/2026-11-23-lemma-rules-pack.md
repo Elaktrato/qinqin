@@ -147,3 +147,50 @@ failed before and after my changes (also on the untouched branch); it passes und
 covered by unit and jsdom tests only); Android consumption of the package; a real non-Japanese table beyond the
 toy one; performance of a table at the limits on a long text (bounded by the limits and the 64-candidate stop,
 not measured); the watcher end to end.
+
+## Fix wave (independent review), 2026-11-23
+
+Merged `feature/hardening-batch` at e952f609 (#175) first (`49034a37`, no conflicts). One commit per group:
+
+1. **CPU denial of service (security), `e1989da9`.** A deterministic work budget: one `Deinflect` call spends at
+   most `MaxWork` = 16,384 units (one per (form, rule) pair considered, one per predicate leaf, fixed evaluation
+   order); the prefixes of a lookup window share 32,768, its compound checks 4,096, and a window keeps at most
+   256 probes, with one compound probe per (stem, class) of a prefix and map de-duplication of forms and
+   readings. Table-wide predicate caps: 16 children per `allOf`/`anyOf`, 4,096 predicates, 4,096 `notSuffix`.
+   Contract: README "Bound", "Lookup bounds", Limits rows, new fixture `budget.json` (five cases, unit for unit).
+   Measured: Japanese at most 4,352 units per call, 11,696 per window, 44 probes; the review's worst tables
+   rebuilt within the new caps segment 5,000 runes of "a" in 3.6 s (heavy, 118,983,040 units) and 4.3 s
+   (compounds) instead of 188 s and 51 s; the review's own `heavy.json` is now refused (118,784 `notSuffix`
+   entries), its `compounds.json` spends 64 units per call. The segmentation test asserts the work count; its
+   2-minute time bound is only a backstop. Test-first: lemma budget tests failed to compile (`MaxWork`
+   undefined), then the Japanese headroom check failed (4,352 × 4 > 16,384; relaxed to ×3, Ruling); the lookup
+   tests and the segment work test were written before the implementation but first ran after it (their red
+   was only a compile failure). De-duplicating compound probes per (stem, class) of the whole window, as
+   suggested, broke seven Japanese lookup and segment tests: now per prefix length (Ruling). Lookup and segment
+   take the language's table once per request (`lookup.LangOf`, `LookupIn`) — the first NIT. Spec lines 18/95
+   and wiki Data-pack-format corrected. Item 5 is in this commit too: `TestDeinflectStopsAtMaxCandidates` uses
+   `maxDepth` 3.
+2. **Package after a startup refresh, `dcc90e38`.** `serve` starts the package builder first and passes its
+   `PackChanged` hook into the bundled sync, so a refreshed `ja-lemma` gets a new revision and content hash. Red:
+   a reconcile-only datapkg test showed r1 → r1 with the same hash (the reconcile compares only manifest terms);
+   that test was replaced by the cmd test that drives the real startup path (r1 → r2, hash changed).
+3. **Trailing data and duplicate keys, `04ab5bdb`.** `Parse` requires `io.EOF` after the table and walks the
+   tokens for a key named twice in any object. New fixture `parse.json` (8 cases); red: 5 cases failed.
+4. **Serve wiring, `cd768e09`.** `TestServeUsesInstalledAndOutsideChangedTables` runs `serve` twice: with the
+   watcher at one hour a pack row present before serve answers `/api/segment/at`; with it at 20 ms an outside
+   `UPDATE` of `rules_json` takes effect. Mutation-checked: removing `loadLemmaTables` fails the first part (400),
+   removing the watcher janitor fails the second ("never took effect"). `lemmaWatchEvery` is a variable for it.
+5. See 1.
+6. **Unique index, `6c913f2a`.** 043 edited in place (no other branch has a 043):
+   `CREATE UNIQUE INDEX idx_lemma_rule_packs_live_language ON lemma_rule_packs (language) WHERE deleted_at IS NULL`.
+   Red: the migration test accepted two live `ja` rows. Reload's duplicate branch is tested with the index
+   dropped (keeps the first by pack id).
+
+NITs (`934f97b3`): a reload that fails after a commit is logged, not returned (Watch retries; test swaps the
+reload); Admin-deploying says the startup sync installs `ja-lemma` even with `QINQIN_AUTO_SEED=0`; Data-pack-format
+no longer says words resolve "in the Reader" for any language; the `ja-lemma` attribution in the packages fixtures
+and spec is the manifest's; the zh refusal stays exact-code with a Ruling (`zh-tw` is a separate data-only code
+whose table works).
+
+**Not verified in the fix wave:** no new real-app run (the serve-level test covers start-up load and the
+watcher); timing numbers come from one loaded machine.
