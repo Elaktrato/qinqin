@@ -3,7 +3,8 @@
 // docs/contracts/auth/errors.json has a key (apiErrors.test.ts reads the file); a code this version does not know
 // (a newer server) shows `apiError.unknown` with the code.
 import { t, type MessageKey } from '$lib/i18n';
-import { apiErrorBody } from './client';
+import { ApiError } from './client';
+import { UserError } from './userError';
 
 export const API_ERROR_KEYS: Readonly<Record<string, MessageKey>> = {
 	bad_request: 'apiError.badRequest',
@@ -149,10 +150,12 @@ export function apiErrorText(code: string): string {
 }
 
 /**
- * What a screen shows for a failed request: the catalogue text of a known error code, otherwise the screen's own
- * `fallback` ("Could not save the email address.") — never the server's English `message`.
+ * What a screen shows for a failed operation: the catalogue text of a known API error code, the translated text of
+ * a UserError, otherwise the screen's own `fallback` ("Could not save the email address.") — never the server's
+ * English `message` and never an `Error`'s developer text (#168; the i18n lint's `errmsg` rule).
  */
 export function errorText(err: unknown, fallback: string): string {
-	const code = apiErrorBody(err)?.error;
+	if (err instanceof UserError) return t(err.key, err.args);
+	const code = err instanceof ApiError ? err.code : undefined;
 	return code !== undefined && Object.hasOwn(API_ERROR_KEYS, code) ? t(API_ERROR_KEYS[code]) : fallback;
 }

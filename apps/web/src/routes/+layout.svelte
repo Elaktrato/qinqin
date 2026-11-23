@@ -139,7 +139,7 @@
 
 	onMount(async () => {
 		// A workspace deleted in another tab or on another device: the
-		// first "workspace not found" reloads the list and falls back.
+		// first workspace_not_found reloads the list and falls back.
 		watchDeletedWorkspaces();
 		// Installable app: a no-op outside secure contexts (see lib/pwa/register.ts).
 		void registerWorker();

@@ -128,7 +128,7 @@ describe('plain-text 404', () => {
 	});
 
 	it('says the workspace is gone for the workspace 404', () => {
-		expect(aiErrorView(new ApiError(404, 'workspace not found'), 'review').text).toBe(
+		expect(aiErrorView(new ApiError(404, '{"error":"workspace_not_found","message":"No such workspace."}'), 'review').text).toBe(
 			'This workspace no longer exists.'
 		);
 	});

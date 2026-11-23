@@ -80,7 +80,7 @@ export function aiErrorView(err: unknown, context: 'review' | 'ideas' | 'transcr
 }
 
 function notFoundText(err: ApiError, context: 'review' | 'ideas' | 'transcribe'): string {
-	if (isWorkspaceGoneResponse(err.status, err.message)) return t('journal.ai.workspaceGone');
+	if (isWorkspaceGoneResponse(err.status, err.code)) return t('journal.ai.workspaceGone');
 	if (context === 'review') return t('journal.ai.entryGone');
 	if (context === 'transcribe') return t('journal.ai.draftExpired');
 	return generic();

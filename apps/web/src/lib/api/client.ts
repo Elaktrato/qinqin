@@ -5,10 +5,16 @@ import { reportNetworkFailure, reportResponse } from '../pwa/offlineState';
 
 export const TOKEN_KEY = 'qinqin.token';
 
-// ApiError carries the HTTP status alongside the plain-text body the Go
-// API sends for 4xx/5xx responses.
+// ApiError carries the HTTP status of a 4xx/5xx answer and its body, parsed once here: every API error is
+// `{error, message}` (docs/contracts/auth/errors.json). `code` is the `error` string, `body` the parsed object;
+// both are undefined for a body that is not one (a proxy's HTML page, an old server's text). `message` keeps the
+// raw text for logs and the console only: screens show `errorText(err, fallback)` (lib/api/apiErrors.ts).
 export class ApiError extends Error {
 	status: number;
+	/** The catalogue code of a `{error, message}` body. */
+	code?: string;
+	/** The parsed `{error, message, ...}` body (with members such as attemptsLeft or existingId). */
+	body?: Readonly<Record<string, unknown>>;
 	/** Seconds from a Retry-After header, when the server sent one. */
 	retryAfterSeconds?: number;
 
@@ -16,7 +22,23 @@ export class ApiError extends Error {
 		super(message);
 		this.name = 'ApiError';
 		this.status = status;
+		const body = parseErrorBody(message);
+		if (body !== undefined) {
+			this.body = body;
+			this.code = body.error as string;
+		}
 		if (retryAfterSeconds !== undefined) this.retryAfterSeconds = retryAfterSeconds;
+	}
+}
+
+function parseErrorBody(text: string): Record<string, unknown> | undefined {
+	if (!text.trimStart().startsWith('{')) return undefined;
+	try {
+		const body = JSON.parse(text) as unknown;
+		if (typeof body !== 'object' || body === null || Array.isArray(body)) return undefined;
+		return typeof (body as { error?: unknown }).error === 'string' ? (body as Record<string, unknown>) : undefined;
+	} catch {
+		return undefined;
 	}
 }
 
@@ -35,12 +57,12 @@ let unauthorizedHandler: (() => void) | null = null;
 let workspaceGoneHandler: (() => void) | null = null;
 let restrictedHandler: (() => void) | null = null;
 
-/** The API's 404 text for a workspace that does not exist (any more). */
-export const WORKSPACE_GONE_MESSAGE = 'workspace not found';
+/** The API's 404 code for a workspace that does not exist (any more). */
+export const WORKSPACE_GONE_CODE = 'workspace_not_found';
 
-/** True for a 404 whose text says the workspace does not exist. */
-export function isWorkspaceGoneResponse(status: number, message: string): boolean {
-	return status === 404 && message.trim().toLowerCase() === WORKSPACE_GONE_MESSAGE;
+/** True for the 404 `workspace_not_found` (`code` is ApiError.code). */
+export function isWorkspaceGoneResponse(status: number, code: string | undefined): boolean {
+	return status === 404 && code === WORKSPACE_GONE_CODE;
 }
 
 /**
@@ -53,14 +75,8 @@ export function setUnauthorizedHandler(handler: (() => void) | null): void {
 }
 
 /** True for the 403 body of a restricted session (`password_change_required`, `mfa_enrollment_required`). */
-export function isRestrictionResponse(status: number, message: string): boolean {
-	if (status !== 403) return false;
-	try {
-		const code = (JSON.parse(message) as { error?: unknown }).error;
-		return typeof code === 'string' && RESTRICTION_CODES.has(code);
-	} catch {
-		return false;
-	}
+export function isRestrictionResponse(status: number, code: string | undefined): boolean {
+	return status === 403 && code !== undefined && RESTRICTION_CODES.has(code);
 }
 
 /**
@@ -79,8 +95,8 @@ const RESTRICTION_CODES: ReadonlySet<string> = new Set([
 ]);
 
 /**
- * Registers a callback fired when a request comes back 404 "workspace not
- * found": the workspace was deleted in another tab or on another device,
+ * Registers a callback fired when a request comes back 404
+ * `workspace_not_found`: the workspace was deleted in another tab or on another device,
  * so the workspace store reloads its list (lib/workspaceGone.ts).
  */
 export function setWorkspaceGoneHandler(handler: (() => void) | null): void {
@@ -183,19 +199,13 @@ async function request(path: string, options: ApiOptions): Promise<Response> {
 	reportResponse(response.headers);
 
 	if (!response.ok) {
-		const message = (await response.text()).trim() || response.statusText || `HTTP ${response.status}`;
-		if (response.status === 401) notifyUnauthorized();
-		if (isWorkspaceGoneResponse(response.status, message)) workspaceGoneHandler?.();
-		if (response.status === 403 && restrictedHandler) {
-			try {
-				const code = (JSON.parse(message) as { error?: unknown }).error;
-				if (typeof code === 'string' && RESTRICTION_CODES.has(code)) restrictedHandler();
-			} catch {
-				// Not a JSON body: an ordinary 403.
-			}
-		}
+		const text = (await response.text()).trim() || response.statusText || `HTTP ${response.status}`;
 		const retry = Number.parseInt(response.headers.get('retry-after') ?? '', 10);
-		throw new ApiError(response.status, message, Number.isFinite(retry) && retry > 0 ? retry : undefined);
+		const err = new ApiError(response.status, text, Number.isFinite(retry) && retry > 0 ? retry : undefined);
+		if (response.status === 401) notifyUnauthorized();
+		if (isWorkspaceGoneResponse(err.status, err.code)) workspaceGoneHandler?.();
+		if (isRestrictionResponse(err.status, err.code)) restrictedHandler?.();
+		throw err;
 	}
 	return response;
 }
@@ -220,20 +230,16 @@ export async function apiBlob(path: string, options: ApiOptions = {}): Promise<B
 }
 
 /**
- * apiErrorBody parses the `{error, message}` JSON the AI and journal
- * routes answer with; null for any other error or a plain-text body.
+ * apiErrorBody is the `{error, message}` body of an ApiError (every API
+ * route answers it); null for any other error or a body that is not one.
  */
 export function apiErrorBody(err: unknown): { error: string; message: string; attemptsLeft?: number } | null {
-	if (!(err instanceof ApiError)) return null;
-	try {
-		const body = JSON.parse(err.message) as unknown;
-		if (typeof body !== 'object' || body === null) return null;
-		const { error, message, attemptsLeft } = body as { error?: unknown; message?: unknown; attemptsLeft?: unknown };
-		if (typeof error !== 'string') return null;
-		const out: { error: string; message: string; attemptsLeft?: number } = { error, message: typeof message === 'string' ? message : '' };
-		if (typeof attemptsLeft === 'number') out.attemptsLeft = attemptsLeft;
-		return out;
-	} catch {
-		return null;
-	}
+	if (!(err instanceof ApiError) || err.body === undefined || err.code === undefined) return null;
+	const { message, attemptsLeft } = err.body;
+	const out: { error: string; message: string; attemptsLeft?: number } = {
+		error: err.code,
+		message: typeof message === 'string' ? message : ''
+	};
+	if (typeof attemptsLeft === 'number') out.attemptsLeft = attemptsLeft;
+	return out;
 }
