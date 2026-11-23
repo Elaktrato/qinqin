@@ -104,14 +104,8 @@ function apiAllowed(url: URL): boolean {
 	const { pathname, searchParams } = url;
 	if (holdsLookups(url)) return false;
 	if (API_PATTERNS.some((re) => re.test(pathname))) return true;
-	if (pathname === '/api/sync/pull') {
-		if (searchParams.has('v')) return v2PullAllowed(searchParams);
-		// Without `collections` a pull is the whole dictionary delta: never stored.
-		const all = searchParams.getAll('collections');
-		if (all.length !== 1) return false;
-		const list = all[0].split(',');
-		return list.length > 0 && list.every((c) => PULL_COLLECTIONS.has(c));
-	}
+	// Only the paged pull: the legacy form (no v=2) is gone (#198).
+	if (pathname === '/api/sync/pull') return v2PullAllowed(searchParams);
 	if (pathname === '/api/events') return eventsAllowed(searchParams);
 	return false;
 }

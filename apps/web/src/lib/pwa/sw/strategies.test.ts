@@ -53,10 +53,10 @@ afterEach(() => vi.useRealTimers());
 
 describe('api: the lookup history never reaches Cache Storage (#72)', () => {
 	it('a saved pull holds no lookups rows and a saved event log no lookup events; the live answers are whole', async () => {
-		const pull = { pluginData: [{ pluginId: 'qinqin-core', key: 'lookups', data: { items: [{ entryId: 5 }] } }, { pluginId: 'qinqin-flashcards', key: 'card:c-vocab-1', data: {} }] };
+		const pull = { format: 2, collections: { pluginData: [{ pluginId: 'qinqin-core', key: 'lookups', data: { items: [{ entryId: 5 }] } }, { pluginId: 'qinqin-flashcards', key: 'known:5', data: {} }] } };
 		fetchMock.mockResolvedValueOnce(json(pull));
-		const live = await run(request('/api/sync/pull?cursor=1970-01-01T00:00:00Z&collections=pluginData', { auth: 'Bearer a' }));
-		expect((await live.json()).pluginData).toHaveLength(2);
+		const live = await run(request('/api/sync/pull?v=2&collections=pluginData&workspace=3', { auth: 'Bearer a' }));
+		expect((await live.json()).collections.pluginData).toHaveLength(2);
 		const evs = [{ id: '1', type: 'lookup', payload: { query: 'ma' } }, { id: '2', type: 'review' }];
 		fetchMock.mockResolvedValueOnce(json(evs));
 		const liveEvents = await run(request('/api/events?since=1970-01-01T00:00:00Z&workspace=3', { auth: 'Bearer a' }));
@@ -67,7 +67,7 @@ describe('api: the lookup history never reaches Cache Storage (#72)', () => {
 		expect(texts).toHaveLength(2);
 		expect(texts.join('\n')).not.toContain('lookups');
 		expect(texts.join('\n')).not.toContain('"lookup"');
-		expect(texts.join('\n')).toContain('card:c-vocab-1');
+		expect(texts.join('\n')).toContain('known:5');
 		expect(texts.join('\n')).toContain('review');
 	});
 });

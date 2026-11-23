@@ -75,8 +75,6 @@ describe('classify: spec table', () => {
 			'/api/plugins',
 			'/api/languages',
 			'/api/me/time-zone',
-			'/api/sync/pull?cursor=1970-01-01T00:00:00Z&collections=pluginData,pluginStates',
-			'/api/sync/pull?collections=pluginStates',
 			'/api/plugins/qinqin-flashcards/data',
 			'/api/plugins/qinqin-flashcards/data/vacation%3A01ABC',
 			'/api/events?since=1970-01-01T00:00:00Z&workspace=3',
@@ -136,20 +134,15 @@ describe('classify: spec table', () => {
 		expect(kind('/api/account/tokens', { method: 'POST' })).toBe('bypass');
 	});
 
-	it('sync/pull with a subset of the plugin and typed study collections is cacheable', () => {
+	// #198: the legacy pull (no v=2) is gone; the server answers 404, and no copy is kept.
+	it('a sync/pull without v=2 is never cached', () => {
 		for (const url of [
 			'/api/sync/pull?cursor=1970-01-01T00:00:00Z&collections=pluginData,pluginStates,cards,decks,deckSettings,limits,fsrsSets,fsrsActive',
 			'/api/sync/pull?collections=cards',
 			'/api/sync/pull?collections=fsrsActive,pluginData',
-			'/api/sync/pull?collections=pluginData,pluginStates'
-		]) {
-			expect(kind(url), url).toBe('api');
-		}
-		for (const url of [
-			'/api/sync/pull?collections=card',
-			'/api/sync/pull?collections=cards,entries',
-			'/api/sync/pull?collections=cards,',
-			'/api/sync/pull?collections=library'
+			'/api/sync/pull?collections=pluginData,pluginStates',
+			'/api/sync/pull?collections=pluginStates',
+			'/api/sync/pull'
 		]) {
 			expect(kind(url), url).toBe('bypass');
 		}
@@ -253,6 +246,7 @@ describe('classify: the server route table', () => {
 	]);
 
 	function sample(pattern: string): string {
+		if (pattern === 'GET /api/sync/pull') return '/api/sync/pull?v=2&collections=pluginData,pluginStates&workspace=3';
 		const path = pattern.split(' ')[1]
 			.replace('{id}', pattern.includes('/entries/') ? '12' : 'qinqin-flashcards')
 			.replace('{key}', 'card%3A1')
