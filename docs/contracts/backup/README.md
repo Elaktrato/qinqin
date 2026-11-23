@@ -43,8 +43,8 @@ row (`card:<id>`, `deck:<id>`, `deckcfg:<deckId>`, `limits:workspace`, `limits:d
 `fsrs:set:<id>`, `fsrs:active`; the keyed-row codec's `ToLegacy`: same key, data, `version`, `updatedAt`,
 `modifiedAt`), counted under `pluginData`, so a v0.4 archive restores on a v0.3 server and a v0.3 archive on
 a v0.4 or later one. This keyed form exists only in archives: since #198 no route reads or writes it, and
-old-format archives (a v0.3.0 server's, like `sample-v1/`) are still accepted, through the restore only. Typed tombstones are never exported. A leftover `plugin_data` row of a typed family is exported
-only while it is still a readable study row whose key no typed row holds (so keys never repeat).
+old-format archives (a v0.3.0 server's, like `sample-v1/`) are still accepted, through the restore only. Typed tombstones are never exported. A leftover `plugin_data` row of a typed family is never exported
+(#198; before, a readable one no typed row shadowed was).
 
 A restore remaps these rows exactly like every plugin row (workspaces, derived card ids, entry and
 sentence ids, `remap.json`), then decodes each with the codec into its typed table: `version` and the edit

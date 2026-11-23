@@ -23,8 +23,7 @@ longer supported; the code whose only job was serving them goes now.
   Ruling); `overview.md`, `README.md`, a contract changelog line.
 
 **Keep:** the migrations (and the frozen `step038` codec), `legacyRoutes.ts`, backup restore of keyed rows,
-`study.AdoptLeftovers` (a downgraded binary's rows, taken over at start), the `GET /api/events` full-array
-form (not in the issue), the plugin manifest vocabulary (`hook` surface, `study-event`, `read:study-events`).
+the `GET /api/events` full-array form (not in the issue), the plugin manifest vocabulary (`hook` surface, `study-event`, `read:study-events`).
 
 **What answers now:**
 
@@ -84,11 +83,20 @@ form (not in the issue), the plugin manifest vocabulary (`hook` surface, `study-
   drops nothing — the first fix cleared the whole queue, which on a shared browser lost another user's unsent
   reviews — cost if wrong: an unowned item recorded by another user before sign-in is dropped (rare: an item is
   unowned only while no user was known).
-- Ruling: kept although v0.3-related, because the issue does not list them: `study.AdoptLeftovers` (a
-  downgraded binary's rows), the full-array `GET /api/events` form, the unhidden core feature rows in
-  `GET /api/plugins` (`isHiddenBuiltin`), the `legacySentences` usage count of `language_in_use`, and the
-  test-only codec mirror `lib/study/testing/legacyCodec.ts` (test data builders; #197 replaces them) — cost if
-  wrong: a follow-up removal.
+- Ruling: kept although v0.3-related, because the issue does not list them: the full-array `GET /api/events`
+  form, the `legacySentences` usage count of `language_in_use` (see S2), and the test-only codec mirror
+  `lib/study/testing/legacyCodec.ts` (test data builders; #197 replaces them) — cost if wrong: a follow-up
+  removal.
+- Ruling (fix wave S4): `study.AdoptLeftovers`, `ReadableLeftover` and `HasTypedRow` are removed; `LegacyKeySQL`
+  stays for the pull, push and backup-count filters. A leftover typed-family `plugin_data` row is now inert
+  everywhere: never adopted at start, never exported (before, a readable unshadowed one was). Only a
+  downgraded binary (unsupported) or migration 038's unreadable rows create one, and no client can read it —
+  cost if wrong: study rows a v0.3 binary wrote after an upgrade (an unsupported downgrade) are not recovered.
+- Follow-up (fix wave N4): `plugins.isHiddenBuiltin` lists the core feature rows `qinqin-flashcards` and
+  `qinqin-reader` with `hidden: false` only because v0.3.x shells dropped hidden rows. It is not removed now:
+  the flag is part of the documented `GET /api/plugins` answer a second client may read, so changing it is a
+  contract change better made with #199 (code plugins retired). The web ignores `hidden` (it uses the reserved
+  ids). Comments now say so.
 - Ruling (fix wave S2): pre-v0.2.0 sentence packs without a registry row keep blocking a language delete
   (`legacySentences`), and the 409 message names each such pack (at most ten) with its removal route
   `DELETE /api/admin/sentences/{pack}`, which still removes them; users' own sentences (`source_pack = ''`) no

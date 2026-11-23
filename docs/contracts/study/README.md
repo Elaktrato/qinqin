@@ -40,8 +40,8 @@ user-global `vacation:<id>`, unknown keys) stay plugin-data rows with their own 
 **The keys of the six families are never plugin data (#198).** `GET`, `PUT` and `DELETE
 /api/plugins/qinqin-flashcards/data/{key}` of such a key answer 404 `not_found`; a prefix list leaves them out;
 a push item of `pluginData` with such a key is refused alone (`dataRefused`); the paged pull never ships one in
-`pluginData`. A leftover `plugin_data` row of such a key (written by a downgraded binary after migration 038)
-is taken over into its typed table at the next start when it is readable, and otherwise stays inert.
+`pluginData`. A leftover `plugin_data` row of such a key (one migration 038 could not read, or one a
+downgraded binary wrote) stays inert: no route serves it and no backup carries it.
 
 ## Wire shape
 

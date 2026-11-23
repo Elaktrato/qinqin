@@ -19,7 +19,8 @@ v0.3.x clients are no longer supported.
   leaves such keys out. Retired: `study/legacy-view.json`. The error code `study_row_invalid` leaves
   `auth/errors.json` (nothing sends it).
 - **Backups:** the keyed form of the typed rows is now only the backup format's; old-format archives (a
-  v0.3.0 server's) still restore. `study/legacy-codec.json` moved to `backup/study-rows.json` (rule
+  v0.3.0 server's) still restore. A leftover `plugin_data` row of a typed family is never exported (a
+  readable unshadowed one was), and the server no longer takes such rows over at start. `study/legacy-codec.json` moved to `backup/study-rows.json` (rule
   `backup/study-rows`, same cases).
 - **Plugins and packs:** `GET /api/plugins` lists registry plugins only (no synthesized row per data pack,
   #169); a data pack's id is an unknown plugin for `PUT /api/plugins/{id}/state`, the data routes and a push.

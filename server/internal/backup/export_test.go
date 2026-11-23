@@ -311,9 +311,10 @@ func TestWriteUserRefusesToProduceWhatARestoreWouldRefuse(t *testing.T) {
 	}
 }
 
-// A typed-family plugin row is exported only while it carries a readable
-// study row no typed row shadows; the counts the dry run shows agree.
-func TestExportTypedFamilyLeftovers(t *testing.T) {
+// A typed-family plugin row (a leftover a downgraded binary wrote) is never
+// exported, readable or not (#198 review: the typed rows are the only study
+// state); the counts the dry run shows agree.
+func TestExportNeverCarriesTypedFamilyLeftovers(t *testing.T) {
 	w := newWorld(t)
 	uid := w.AliceUID
 	e1 := strconv.FormatInt(w.E1, 10)
@@ -321,7 +322,7 @@ func TestExportTypedFamilyLeftovers(t *testing.T) {
 		exec(t, w.DB, `INSERT INTO plugin_data (pack_id, user_id, workspace_id, key, data, version, updated_at, modified_at)
 			VALUES ('qinqin-flashcards', ?, ?, ?, ?, 1, '2026-11-10T08:00:00Z', '2026-11-10T08:00:00Z')`, uid, ws, key, data)
 	}
-	// readable and unshadowed: exported
+	// readable and unshadowed: still not exported
 	ins(w.Alice.WS2, "deck:PLAIN", `{"id":"PLAIN","name":"n","createdAt":"t"}`)
 	// readable but a typed row holds the key: only the typed row goes
 	ins(w.Alice.WS1, "card:c-vocab-"+e1, `{"id":"c-vocab-`+e1+`","kind":"vocab","entryId":`+e1+`,"deckIds":["SHADOWED"],"createdAt":"t"}`)
@@ -338,14 +339,14 @@ func TestExportTypedFamilyLeftovers(t *testing.T) {
 			t.Error("a shadowed leftover was exported")
 		}
 	}
-	if keys["deck:PLAIN"] != 1 || keys["card:c-vocab-"+e1] != 1 || keys["deck:FOREIGN"] != 0 || keys["card:LEFTOVER"] != 0 {
+	if keys["deck:PLAIN"] != 0 || keys["card:c-vocab-"+e1] != 1 || keys["deck:FOREIGN"] != 0 || keys["card:LEFTOVER"] != 0 {
 		t.Errorf("exported keys %v", keys)
 	}
 	c, err := CurrentCounts(context.Background(), w.DB, uid)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if c.PluginData != man.Counts["pluginData"] || c.PluginData != 6 || c.Cards != 3 {
+	if c.PluginData != man.Counts["pluginData"] || c.PluginData != 5 || c.Cards != 3 {
 		t.Errorf("CurrentCounts %+v, export counts %v", c, man.Counts)
 	}
 }

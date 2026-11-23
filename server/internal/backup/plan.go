@@ -3,7 +3,6 @@ package backup
 import (
 	"context"
 	"database/sql"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"slices"
@@ -463,7 +462,7 @@ func CurrentCounts(ctx context.Context, db *sql.DB, userID int64) (Counts, error
 		{&c.Workspaces, `SELECT COUNT(*) FROM workspaces WHERE user_id = ?`},
 		{&c.Events, `SELECT COUNT(*) FROM study_events WHERE user_id = ?`},
 		// cards and the other typed study rows live in their tables; typed-family
-		// plugin rows are counted below, as the export decides them
+		// plugin rows (leftovers) are never exported, so never counted
 		{&c.Cards, `SELECT COUNT(*) FROM study_cards WHERE user_id = ? AND deleted_at IS NULL`},
 		{&c.PluginData, `SELECT (SELECT COUNT(*) FROM plugin_data WHERE user_id = ?1 AND deleted_at IS NULL
 			AND NOT (pack_id = '` + FlashcardsPlugin + `' AND ` + study.LegacyKeySQL + `))` + typedLiveCount},
@@ -475,40 +474,6 @@ func CurrentCounts(ctx context.Context, db *sql.DB, userID int64) (Counts, error
 	} {
 		if err := db.QueryRowContext(ctx, q.sql, userID).Scan(q.dst); err != nil {
 			return c, fmt.Errorf("count: %w", err)
-		}
-	}
-	// typed-family plugin rows: only the ones an export carries
-	rs, err := db.QueryContext(ctx, `SELECT workspace_id, key, data FROM plugin_data WHERE user_id = ? AND deleted_at IS NULL
-		AND pack_id = '`+FlashcardsPlugin+`' AND `+study.LegacyKeySQL, userID)
-	if err != nil {
-		return c, fmt.Errorf("count: %w", err)
-	}
-	type leftover struct {
-		ws        *int64
-		key, data string
-	}
-	var all []leftover
-	for rs.Next() {
-		var l leftover
-		if err := rs.Scan(&l.ws, &l.key, &l.data); err != nil {
-			rs.Close()
-			return c, fmt.Errorf("count: %w", err)
-		}
-		all = append(all, l)
-	}
-	if err := closeRows(rs); err != nil {
-		return c, err
-	}
-	for _, l := range all {
-		keep, err := study.ReadableLeftover(ctx, db, userID, l.ws, l.key, json.RawMessage(l.data))
-		if err != nil {
-			return c, fmt.Errorf("count: %w", err)
-		}
-		if keep {
-			c.PluginData++
-			if strings.HasPrefix(l.key, cardKeyPrefix) {
-				c.Cards++
-			}
 		}
 	}
 	return c, nil
