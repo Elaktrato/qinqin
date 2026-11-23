@@ -3,6 +3,7 @@
 // mature / character crossings (given as callbacks over two cutoffs).
 // Pure. Rule and fixtures: docs/contracts/weekly/.
 
+import { onSessionEnd } from '../session/sessionEnd';
 import type { ActivityCell, ActivitySource } from '../api/stats';
 import { activityAmounts, amountsOf, flashcardAmounts, type FlashcardDay } from '../goals/amounts';
 import type { GoalsRow } from '../goals/goals';
@@ -124,6 +125,7 @@ export const summaryStats = { logPasses: 0 };
 // (a cached object), so browsing weeks does not repeat it.
 const MAX_PASSES = 4;
 const passes = new Map<string, { day: StudyDay; pass: LocalPass }>();
+onSessionEnd(() => passes.clear());
 
 function localPass(reviews: readonly ReviewEvent[], day: StudyDay): LocalPass {
 	const key = reviewsKey(reviews);

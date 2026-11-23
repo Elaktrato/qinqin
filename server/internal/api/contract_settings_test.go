@@ -22,7 +22,7 @@ type settingsMergeCase struct {
 	RawPatch string          `json:"rawPatch"`
 	Expect   struct {
 		Status   int             `json:"status"`
-		Text     *string         `json:"text"`
+		Error    string          `json:"error"`
 		JSON     json.RawMessage `json:"json"`
 		Settings json.RawMessage `json:"settings"`
 	} `json:"expect"`
@@ -76,8 +76,8 @@ func TestContractWorkspaceSettingsMerge(t *testing.T) {
 			if resp.StatusCode != c.Expect.Status {
 				t.Fatalf("status %d, want %d: %.300s", resp.StatusCode, c.Expect.Status, body)
 			}
-			if c.Expect.Text != nil && string(body) != *c.Expect.Text {
-				t.Errorf("body %q, want %q", body, *c.Expect.Text)
+			if c.Expect.Error != "" && errorCode(t, body) != c.Expect.Error {
+				t.Errorf("body %s, want error %q", body, c.Expect.Error)
 			}
 			if c.Expect.JSON != nil && !jsonValueEqual(body, c.Expect.JSON) {
 				t.Errorf("body %s, want %s", body, c.Expect.JSON)

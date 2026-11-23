@@ -111,14 +111,14 @@ func TestAdminPackListAndUninstall(t *testing.T) {
 	for _, tc := range []struct {
 		path, msg string
 	}{
-		{"/api/admin/packs/dictionary/es-test", "pack not found"},
-		{"/api/admin/packs/audio/x", "pack not found"},
-		{"/api/admin/packs/bogus/x", "unknown pack type"},
+		{"/api/admin/packs/dictionary/es-test", "not_found"},
+		{"/api/admin/packs/audio/x", "not_found"},
+		{"/api/admin/packs/bogus/x", "not_found"},
 	} {
 		resp := doJSON(t, http.MethodDelete, ts.URL, tc.path, admin, nil)
 		body, _ := io.ReadAll(resp.Body)
 		resp.Body.Close()
-		if resp.StatusCode != http.StatusNotFound || !strings.Contains(string(body), tc.msg) {
+		if resp.StatusCode != http.StatusNotFound || errorCode(t, body) != tc.msg {
 			t.Errorf("DELETE %s = %d %q, want 404 %q", tc.path, resp.StatusCode, body, tc.msg)
 		}
 	}

@@ -176,7 +176,7 @@ describe('ReviewsPerDayWidget', () => {
 		vi.mocked(loadStudyHistory).mockRejectedValueOnce(new Error('broken'));
 		render(ReviewsPerDayWidget);
 		expect(await screen.findByRole('button', { name: 'Try again' })).toBeTruthy();
-		expect(screen.getByText('broken')).toBeTruthy();
+		expect(screen.getByText('Could not load your reviews.')).toBeTruthy();
 	});
 
 	it('keeps only the days with reviews in the list and the first, middle and last axis labels', async () => {

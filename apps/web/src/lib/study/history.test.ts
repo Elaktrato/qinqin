@@ -135,7 +135,7 @@ describe('loadStudyHistory', () => {
 
 	it('a study-data write drops the cached history', async () => {
 		await loadStudyHistory(7);
-		await addCard(43);
+		await addCard(7, 43);
 		const pulls = calls('/api/sync/pull');
 		await loadStudyHistory(7);
 

@@ -30,10 +30,10 @@ type pushCase struct {
 	Body    json.RawMessage `json:"body"`
 	RawBody string          `json:"rawBody"`
 	Expect  struct {
-		Status     int             `json:"status"`
-		JSON       json.RawMessage `json:"json"`
-		Text       string          `json:"text"`
-		TextPrefix string          `json:"textPrefix"`
+		Status          int             `json:"status"`
+		JSON            json.RawMessage `json:"json"`
+		Error           string          `json:"error"`
+		MessageContains string          `json:"messageContains"`
 	} `json:"expect"`
 	Stored *struct {
 		Events               *int                       `json:"events"`
@@ -158,11 +158,11 @@ func TestContractPushResult(t *testing.T) {
 			if c.Expect.JSON != nil && !jsonValueEqual(got, c.Expect.JSON) {
 				t.Errorf("body %s, want %s", got, c.Expect.JSON)
 			}
-			if c.Expect.Text != "" && string(got) != c.Expect.Text+"\n" {
-				t.Errorf("text %q, want %q", got, c.Expect.Text+"\n")
-			}
-			if c.Expect.TextPrefix != "" && !strings.HasPrefix(string(got), c.Expect.TextPrefix) {
-				t.Errorf("text %q, want prefix %q", got, c.Expect.TextPrefix)
+			if c.Expect.Error != "" {
+				var e struct{ Error, Message string }
+				if err := json.Unmarshal(got, &e); err != nil || e.Error != c.Expect.Error || !strings.Contains(e.Message, c.Expect.MessageContains) {
+					t.Errorf("body %s, want %s with %q", got, c.Expect.Error, c.Expect.MessageContains)
+				}
 			}
 			if c.Stored != nil {
 				checkPushStored(t, sqlDB, aliceID, setupKeys, c)

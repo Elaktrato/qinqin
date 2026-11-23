@@ -144,7 +144,7 @@ describe('loadGoalStatus', () => {
 		vi.mocked(fetchActivity).mockRejectedValue(new Error('offline'));
 		const view = await loadGoalStatus(3, { now: NOW, force: true });
 		expect(loadStudyHistory).toHaveBeenCalledWith(3, { force: true });
-		expect(view.activityError).toBe('offline');
+		expect(view.activityError).toBe('Could not load your activity.');
 		expect(view.today.unavailable).toBe(true);
 		expect(view.today.status).toBe('none');
 	});
@@ -201,7 +201,7 @@ describe('loadGoalStatus', () => {
 		// Today's flashcards goal is still computed; the activity request failed.
 		expect(view.today.status).toBe('open');
 		expect(view.today.unavailable).toBe(false);
-		expect(view.activityError).toBe('offline');
+		expect(view.activityError).toBe('Could not load your activity.');
 	});
 
 	it('skips activity when the activity goal ended before the window', async () => {

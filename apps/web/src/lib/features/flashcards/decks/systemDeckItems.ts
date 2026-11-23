@@ -3,6 +3,7 @@
 // members change only when its pack is re-installed.
 
 import { getSchemeEntries } from '$lib/api/schemes';
+import { onSessionEnd, sessionEpoch } from '$lib/session/sessionEnd';
 import type { EntryBase } from '$lib/api/types';
 import { levelItems, type LevelDeck } from './systemDecks';
 
@@ -10,6 +11,10 @@ const CONCURRENCY = 2;
 
 const cache = new Map<string, EntryBase[]>();
 const inflight = new Map<string, Promise<EntryBase[]>>();
+onSessionEnd(() => {
+	cache.clear();
+	inflight.clear();
+});
 const waiting: (() => void)[] = [];
 let running = 0;
 
@@ -43,15 +48,18 @@ export function loadLevelItems(deck: LevelDeck): Promise<EntryBase[]> {
 	if (cached !== undefined) return Promise.resolve(cached);
 	const pending = inflight.get(key);
 	if (pending !== undefined) return pending;
-	const promise = (async () => {
+	const epoch = sessionEpoch();
+	let promise: Promise<EntryBase[]> | undefined;
+	promise = (async () => {
 		await slot();
 		try {
 			const items = levelItems(deck, await getSchemeEntries(deck.schemeId, deck.level));
-			cache.set(key, items);
+			// An answer for a session that has ended is not kept (#173).
+			if (epoch === sessionEpoch()) cache.set(key, items);
 			return items;
 		} finally {
 			release();
-			inflight.delete(key);
+			if (inflight.get(key) === promise) inflight.delete(key);
 		}
 	})();
 	inflight.set(key, promise);

@@ -9,6 +9,7 @@
 // or read event is posted (onEventLogChange). The returned object is
 // shared between widgets: do not mutate it.
 
+import { onSessionEnd } from '../session/sessionEnd';
 import { invalidateWorkspaceEvents, loadWorkspaceEvents, onEventLogChange } from '../events';
 import { createWorkspaceCache } from '../workspaceCache';
 import { ALL_WORKSPACES, loadStudyDataWith, onStudyWrite } from './store';
@@ -26,6 +27,7 @@ onStudyWrite((workspaceId) =>
 	history.invalidate(workspaceId === ALL_WORKSPACES ? undefined : workspaceId)
 );
 onEventLogChange((workspaceId) => history.invalidate(workspaceId));
+onSessionEnd(() => history.invalidate());
 
 /**
  * loadStudyHistory is loadStudyData(workspaceId) for widgets, cached.

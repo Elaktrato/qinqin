@@ -75,7 +75,7 @@ func (s *server) smtpView(ctx context.Context) (smtpView, error) {
 // requireMailService answers 409 when the build has no mail service.
 func (s *server) requireMailService(w http.ResponseWriter) bool {
 	if s.mail == nil || s.mail.Store == nil {
-		writeAuthError(w, http.StatusConflict, "mail_unavailable", "Email is not available on this server.")
+		writeError(w, http.StatusConflict, "mail_unavailable", "Email is not available on this server.")
 		return false
 	}
 	return true
@@ -103,7 +103,7 @@ func writeSMTPInputError(w http.ResponseWriter, err error) bool {
 		{mail.ErrSecretUnavailable, 409, "secret_unavailable", "QINQIN_SECRET is missing or invalid, so a mail password cannot be stored. Set it, or use a relay that needs no password."},
 	} {
 		if errors.Is(err, e.err) {
-			writeAuthError(w, e.status, e.code, e.msg)
+			writeError(w, e.status, e.code, e.msg)
 			return true
 		}
 	}
@@ -224,7 +224,7 @@ func (s *server) handleTestSMTP(w http.ResponseWriter, r *http.Request) {
 		if to == "" {
 			code, msg = "recipient_required", "Enter a recipient: your account has no email address."
 		}
-		writeAuthError(w, http.StatusUnprocessableEntity, code, msg)
+		writeError(w, http.StatusUnprocessableEntity, code, msg)
 		return
 	}
 	var p *mail.Prepared
@@ -236,7 +236,7 @@ func (s *server) handleTestSMTP(w http.ResponseWriter, r *http.Request) {
 	}
 	if err != nil {
 		if errors.Is(err, mail.ErrNotConfigured) {
-			writeAuthError(w, http.StatusConflict, "mail_unavailable", "Save the email settings first.")
+			writeError(w, http.StatusConflict, "mail_unavailable", "Save the email settings first.")
 		} else if !writeSMTPInputError(w, err) {
 			writeInternal(w, r)
 		}
@@ -265,12 +265,11 @@ func (s *server) handleTestSMTP(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusOK, map[string]bool{"sent": true})
 	case errors.As(err, &se):
 		log.Printf("mail: test failed category=%s", se.Category)
-		body := map[string]any{"error": "smtp_test_failed", "category": se.Category,
-			"message": "The test mail could not be sent (" + se.Category + ")."}
+		extra := map[string]any{"category": se.Category}
 		if se.Code != 0 {
-			body["smtpCode"] = se.Code
+			extra["smtpCode"] = se.Code
 		}
-		writeJSON(w, http.StatusBadGateway, body)
+		writeError(w, http.StatusBadGateway, "smtp_test_failed", "The test mail could not be sent ("+se.Category+").", extra)
 	default:
 		writeInternal(w, r)
 	}

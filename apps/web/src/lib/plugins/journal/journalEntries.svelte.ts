@@ -2,6 +2,7 @@
 // in step with saves, deletes and reviews without reloading. Reviews are
 // read only for the reviewed dot, at most 40 newest entries, four at a time.
 
+import { onSessionEnd } from '$lib/session/sessionEnd';
 import { t } from '$lib/i18n';
 import { getReview, listEntries } from './store';
 import type { JournalEntry, Review } from './types';
@@ -98,6 +99,7 @@ export class JournalEntries {
 }
 
 const cache = new Map<number, JournalEntries>();
+onSessionEnd(() => clearJournalEntriesCache());
 
 /** journalEntriesFor: one store per workspace for the app's column. */
 export function journalEntriesFor(workspaceId: number): JournalEntries {

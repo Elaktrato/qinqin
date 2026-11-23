@@ -4,6 +4,7 @@
 // only (no replay); the Week tab passes the timelines and the character
 // universe it already loaded. Rule: docs/contracts/milestones/.
 
+import { onSessionEnd, sessionEpoch } from '../session/sessionEnd';
 import { get } from 'svelte/store';
 import { fetchSchemeCharacters, getSchemeEntries, getSchemes } from '$lib/api/schemes';
 import type { CharRow } from '$lib/api/types';
@@ -73,6 +74,7 @@ let lastPlace: {
 	tombstones: ReadonlyMap<string, string>;
 } | null = null;
 let onlineHooked = false;
+onSessionEnd(() => resetMilestonesForTests());
 
 /** Test hook: forget the flush throttle and the last place. */
 export function resetMilestonesForTests(): void {
@@ -188,12 +190,14 @@ export async function loadMilestones(
 	const now = opts.now ?? Date.now();
 	const day = currentStudyDay();
 	const today = day.today(now);
+	const epoch = sessionEpoch();
 	const [data, log] = await Promise.all([loadStudyHistory(workspaceId), loadWorkspaceEvents(workspaceId)]);
 	const live = data.seenMilestones ?? new Map<string, SeenMilestone>();
 	const tombstones = data.milestoneTombstones ?? new Map<string, string>();
 
 	const user = outboxUser();
-	if (user !== null) {
+	// A load for a session that has ended leaves no place to flush into (#173).
+	if (user !== null && epoch === sessionEpoch()) {
 		lastPlace = { user, workspaceId, live, tombstones };
 		prunePending(user, workspaceId, live);
 		await flushPending(user, workspaceId, live, tombstones, now);

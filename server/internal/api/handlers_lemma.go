@@ -1,6 +1,7 @@
 package api
 
 import (
+	"log"
 	"net/http"
 
 	"qinqin/internal/lemmapack"
@@ -24,7 +25,8 @@ type lemmaPackBody struct {
 func (s *server) handleListLemmaPacks(w http.ResponseWriter, r *http.Request) {
 	list, err := lemmapack.List(r.Context(), s.db)
 	if err != nil {
-		http.Error(w, "internal error", http.StatusInternalServerError)
+		log.Printf("lemma-packs: %v", err)
+		writeInternal(w, r)
 		return
 	}
 	out := make([]lemmaPackBody, 0, len(list))

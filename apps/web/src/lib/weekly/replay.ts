@@ -3,6 +3,7 @@
 // reviewed card per loaded history, so browsing weeks replays nothing.
 // Pure. Rule and fixtures: docs/contracts/weekly/.
 
+import { onSessionEnd } from '../session/sessionEnd';
 import type { CharRow } from '../api/types';
 import { cellStates, masteryGlyphs } from '../study/charGroups';
 import { weightsKey } from '../study/fsrs/params';
@@ -29,6 +30,7 @@ export const replayStats = { timelines: 0 };
 const MAX_MEMO = 4;
 const memo = new Map<string, Timelines>();
 const keys = new WeakMap<readonly ReviewEvent[], string>();
+onSessionEnd(() => memo.clear());
 
 /**
  * reviewsKey identifies a review log by its content (FNV-1a over each

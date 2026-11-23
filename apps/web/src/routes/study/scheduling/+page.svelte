@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { errorText } from '$lib/api/apiErrors';
+	import { UserError } from '$lib/api/userError';
 	import { pageTitle } from '$lib/pageTitle';
 	import { t } from '$lib/i18n';
 	import { onDestroy, untrack } from 'svelte';
@@ -108,7 +110,7 @@ import type { StudyContext } from '$lib/study/studyContext';
 			activeFit = evaluate(fsrs.w, dataset);
 		} catch (err) {
 			if (mine !== seq) return;
-			loadError = err instanceof Error ? err.message : t('study.sched.loadFailed');
+			loadError = errorText(err, t('study.sched.loadFailed'));
 		} finally {
 			if (mine === seq) loading = false;
 		}
@@ -158,7 +160,7 @@ import type { StudyContext } from '$lib/study/studyContext';
 			}
 		} catch (err) {
 			if (mine !== seq) return;
-			optimiseError = err instanceof Error ? err.message : t('study.sched.optimizerFailed');
+			optimiseError = errorText(err, t('study.sched.optimizerFailed'));
 		} finally {
 			if (mine === seq) running = false;
 		}
@@ -208,7 +210,7 @@ import type { StudyContext } from '$lib/study/studyContext';
 			})
 			.catch((err: unknown) => {
 				if (ctl.signal.aborted) return;
-				previewError = err instanceof Error ? err.message : t('study.fsrs.previewFailed');
+				previewError = errorText(err, t('study.fsrs.previewFailed'));
 				previewPending = false;
 			});
 		return () => ctl.abort();
@@ -273,7 +275,7 @@ import type { StudyContext } from '$lib/study/studyContext';
 			const problemText = verify?.(pointerBefore) ?? null;
 			if (problemText !== null) actionError = problemText;
 		} catch (err) {
-			actionError = err instanceof Error ? err.message : t('study.sched.saveFailed');
+			actionError = errorText(err, t('study.sched.saveFailed'));
 		} finally {
 			busy = false;
 		}
@@ -290,7 +292,7 @@ import type { StudyContext } from '$lib/study/studyContext';
 		const c = candidate;
 		if (c === null || !check.ok) return;
 		await change(async (id) => {
-			if (id !== c.workspaceId) throw new Error('The workspace changed. Optimise again.');
+			if (id !== c.workspaceId) throw new UserError('study.sched.workspaceChanged');
 			const saved = await saveParamSet(id, {
 				w: c.w,
 				source: c.source,
@@ -347,7 +349,7 @@ import type { StudyContext } from '$lib/study/studyContext';
 			candidate = null;
 			await reloadData(slot.workspaceId);
 		} catch (err) {
-			actionError = err instanceof Error ? err.message : t('study.store.undoFailed');
+			actionError = errorText(err, t('study.store.undoFailed'));
 		} finally {
 			busy = false;
 		}

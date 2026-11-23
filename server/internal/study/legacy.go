@@ -154,6 +154,11 @@ func LegacyGet(ctx context.Context, q Querier, userID, workspaceID int64, key st
 		return model.PluginData{}, false, false, nil
 	}
 	r, exists, err := Load(ctx, q, userID, workspaceID, f, id)
+	if errors.Is(err, ErrUnreadableStored) {
+		// Held (no leftover shows through) but not shown: this server cannot read it.
+		LogUnreadable("study: legacy get", err)
+		return model.PluginData{}, true, false, nil
+	}
 	if err != nil || !exists {
 		return model.PluginData{}, false, false, err
 	}
@@ -187,6 +192,14 @@ func LegacyList(ctx context.Context, q Querier, userID, workspaceID int64, prefi
 		}
 		for rs.Next() {
 			r, err := scanRow(f, rs)
+			var bad *UnreadableStoredError
+			if errors.As(err, &bad) {
+				// Skipped, but its legacy key stays held: a leftover plugin
+				// row of the same key must not show through.
+				LogUnreadable("study: legacy list", err)
+				held[LegacyKeyOf(f, bad.Identity)] = true
+				continue
+			}
 			if err != nil {
 				rs.Close()
 				return nil, nil, fmt.Errorf("study: legacy list %s: %w", f, err)
@@ -209,4 +222,31 @@ func LegacyList(ctx context.Context, q Querier, userID, workspaceID int64, prefi
 	}
 	sort.Slice(list, func(i, j int) bool { return list[i].Key < list[j].Key })
 	return list, held, nil
+}
+
+// LegacyKeyOf is the qinqin-flashcards key of the typed row of family f with
+// this identity (rows.LegacyKey without a decoded row).
+func LegacyKeyOf(f rows.Family, identity string) string {
+	var r rows.Row
+	switch f {
+	case rows.Cards:
+		r = &rows.Card{ID: identity}
+	case rows.Decks:
+		r = &rows.Deck{ID: identity}
+	case rows.DeckSettings:
+		r = &rows.DeckSettingsRow{DeckID: identity}
+	case rows.Limits:
+		l := &rows.LimitsRow{}
+		if identity != "" {
+			l.DeckID = &identity
+		}
+		r = l
+	case rows.FsrsSets:
+		r = &rows.FsrsSet{ID: identity}
+	case rows.FsrsActive:
+		r = &rows.FsrsActiveRow{}
+	default:
+		return ""
+	}
+	return rows.LegacyKey(r)
 }

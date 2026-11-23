@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { errorText } from '$lib/api/apiErrors';
 	import { onMount, tick } from 'svelte';
 	import { t } from '$lib/i18n';
 	import type { Dictionary, Workspace } from '$lib/api/types';
@@ -51,7 +52,7 @@
 			await setSettings(workspace.id, { [HIDDEN_DICTIONARIES_KEY]: hidden });
 			onclose();
 		} catch (err) {
-			error = err instanceof Error && err.message ? err.message : t('settings.dictionaries.saveFailed');
+			error = errorText(err, t('settings.dictionaries.saveFailed'));
 		} finally {
 			saving = false;
 		}

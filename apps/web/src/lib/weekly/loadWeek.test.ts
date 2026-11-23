@@ -92,7 +92,7 @@ describe('loadWeek', () => {
 	it('keeps the local rows when the activity request fails', async () => {
 		vi.mocked(fetchActivity).mockRejectedValue(new Error('You are offline.'));
 		const view = await loadWeek(3, '2026-11-09', { now: NOW });
-		expect(view.activityError).toBe('You are offline.');
+		expect(view.activityError).toBe('Could not load your activity.');
 		expect(view.summary.rows.find((r) => r.key === 'reviews')?.value).toBeNull();
 		expect(view.summary.rows.find((r) => r.key === 'newCards')?.value).toBe(1);
 		expect(view.summary.daysActive.localOnly).toBe(true);

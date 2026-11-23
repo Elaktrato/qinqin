@@ -29,7 +29,7 @@ func (s *server) handleListPacks(w http.ResponseWriter, r *http.Request) {
 	}
 	list, err := packs.List(r.Context(), s.db)
 	if err != nil {
-		http.Error(w, "internal error", http.StatusInternalServerError)
+		writeInternal(w, r)
 		return
 	}
 	if list == nil {
@@ -51,11 +51,11 @@ func (s *server) handleUninstallPack(w http.ResponseWriter, r *http.Request) {
 		packs.WithOnChange(s.packChanged))
 	switch {
 	case errors.Is(err, packs.ErrUnknownType):
-		http.Error(w, "unknown pack type", http.StatusNotFound)
+		writeError(w, http.StatusNotFound, "not_found", "Unknown pack type.")
 	case errors.Is(err, packs.ErrNotFound):
-		http.Error(w, "pack not found", http.StatusNotFound)
+		writeError(w, http.StatusNotFound, "not_found", "Pack not found.")
 	case err != nil:
-		http.Error(w, "internal error", http.StatusInternalServerError)
+		writeInternal(w, r)
 	default:
 		w.WriteHeader(http.StatusNoContent)
 	}
@@ -81,7 +81,7 @@ func (s *server) handleListSentencePacks(w http.ResponseWriter, r *http.Request)
 		SELECT pack_id, name, version, language, license, attribution, notice
 		FROM sentence_packs WHERE deleted_at IS NULL ORDER BY name, pack_id`)
 	if err != nil {
-		http.Error(w, "internal error", http.StatusInternalServerError)
+		writeInternal(w, r)
 		return
 	}
 	defer rows.Close()
@@ -89,13 +89,13 @@ func (s *server) handleListSentencePacks(w http.ResponseWriter, r *http.Request)
 	for rows.Next() {
 		var p sentencePackBody
 		if err := rows.Scan(&p.PackID, &p.Name, &p.Version, &p.Language, &p.License, &p.Attribution, &p.Notice); err != nil {
-			http.Error(w, "internal error", http.StatusInternalServerError)
+			writeInternal(w, r)
 			return
 		}
 		list = append(list, p)
 	}
 	if err := rows.Err(); err != nil {
-		http.Error(w, "internal error", http.StatusInternalServerError)
+		writeInternal(w, r)
 		return
 	}
 	writeJSON(w, http.StatusOK, list)
@@ -105,6 +105,18 @@ func (s *server) handleListSentencePacks(w http.ResponseWriter, r *http.Request)
 // show: validation and zip-limit reasons are kept, filesystem paths never
 // are. Errors that are not the pack's fault read "import failed" and go
 // to the server log.
+// writePackError answers a failed pack check: 400 pack_invalid naming the
+// rule (no server path) when the pack is at fault, else 500 internal with
+// the cause in the log (spec Ruling: not the admin's pack to fix).
+func writePackError(w http.ResponseWriter, r *http.Request, err error, paths ...string) {
+	if !errors.Is(err, dict.ErrInvalidPack) {
+		log.Printf("pack: %v", err)
+		writeInternal(w, r)
+		return
+	}
+	writeError(w, http.StatusBadRequest, "pack_invalid", packErrorText(err, paths...))
+}
+
 func packErrorText(err error, paths ...string) string {
 	if !errors.Is(err, dict.ErrInvalidPack) {
 		log.Printf("pack: %v", err)
@@ -191,7 +203,7 @@ type stagedResponse struct {
 	Themes    []stagedTheme   `json:"themes,omitempty"`
 }
 
-const tooLargeMessage = "pack zip larger than 128 MiB — use qinqin seed for larger packs"
+const tooLargeMessage = "The pack zip is larger than 128 MiB — use qinqin seed for larger packs."
 
 // handleStagePack serves POST /api/admin/packs: the multipart "pack" zip
 // is streamed to disk, extracted and validated into a stage directory and
@@ -206,13 +218,13 @@ func (s *server) handleStagePack(w http.ResponseWriter, r *http.Request) {
 	}
 	packsDir := filepath.Join(s.dataDir, "packs")
 	if err := os.MkdirAll(packsDir, 0o755); err != nil {
-		http.Error(w, "internal error", http.StatusInternalServerError)
+		writeInternal(w, r)
 		return
 	}
 	s.sweepStages(packsDir)
 	ss := s.stages()
 	if !ss.reserve(s.now()) {
-		http.Error(w, "finish or discard a staged pack first", http.StatusTooManyRequests)
+		writeError(w, http.StatusTooManyRequests, "pack_staged", "Finish or discard a staged pack first.")
 		return
 	}
 	reserved := true
@@ -224,7 +236,7 @@ func (s *server) handleStagePack(w http.ResponseWriter, r *http.Request) {
 
 	token, err := newToken()
 	if err != nil {
-		http.Error(w, "internal error", http.StatusInternalServerError)
+		writeInternal(w, r)
 		return
 	}
 	dir := filepath.Join(packsDir, ".stage-"+token)
@@ -243,22 +255,22 @@ func (s *server) handleStagePack(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err := os.Mkdir(dir, 0o755); err != nil {
-		http.Error(w, "internal error", http.StatusInternalServerError)
+		writeInternal(w, r)
 		return
 	}
 	zf, err := os.Open(zipPath)
 	if err != nil {
-		http.Error(w, "internal error", http.StatusInternalServerError)
+		writeInternal(w, r)
 		return
 	}
 	defer zf.Close()
 	if err := dict.ExtractZipAt(zf, size, dir, dict.DefaultZipLimits); err != nil {
 		if !errors.Is(err, dict.ErrInvalidPack) {
 			log.Printf("pack: unpack upload: %v", err)
-			http.Error(w, "could not unpack the pack — see the server log", http.StatusInternalServerError)
+			writeInternal(w, r)
 			return
 		}
-		http.Error(w, packErrorText(err, dir, s.dataDir), http.StatusBadRequest)
+		writePackError(w, r, err, dir, s.dataDir)
 		return
 	}
 	if r.Context().Err() != nil {
@@ -266,20 +278,20 @@ func (s *server) handleStagePack(w http.ResponseWriter, r *http.Request) {
 	}
 	pack, err := dict.LoadExtracted(dir)
 	if err != nil {
-		http.Error(w, packErrorText(err, dir, s.dataDir), http.StatusBadRequest)
+		writePackError(w, r, err, dir, s.dataDir)
 		return
 	}
 	m := pack.Manifest
 	if m.Type == dict.TypeAudio {
-		http.Error(w, "audio packs cannot be uploaded: install them with scripts/fetch-audio-kanjialive.sh (or the Commons tool) and `qinqin seed`", http.StatusUnprocessableEntity)
+		writeError(w, http.StatusUnprocessableEntity, "pack_type_unsupported", "Audio packs cannot be uploaded: install them with scripts/fetch-audio-kanjialive.sh (or the Commons tool) and `qinqin seed`.")
 		return
 	}
 	if !packs.Installable(m.Type) {
-		http.Error(w, "unsupported pack type: "+m.Type, http.StatusUnprocessableEntity)
+		writeError(w, http.StatusUnprocessableEntity, "pack_type_unsupported", "Unsupported pack type: "+m.Type+".")
 		return
 	}
 	if _, err := packDir(packsDir, m); err != nil {
-		http.Error(w, "invalid pack: the id and version must be plain names", http.StatusBadRequest)
+		writeError(w, http.StatusBadRequest, "pack_invalid", "Invalid pack: the id and version must be plain names.")
 		return
 	}
 	// A theme pack's themes.json is validated now and every theme measured,
@@ -288,7 +300,7 @@ func (s *server) handleStagePack(w http.ResponseWriter, r *http.Request) {
 	if m.Type == dict.TypeTheme {
 		list, err := themes.CheckPack(pack)
 		if err != nil {
-			http.Error(w, packErrorText(err, dir, s.dataDir), http.StatusBadRequest)
+			writePackError(w, r, err, dir, s.dataDir)
 			return
 		}
 		for _, t := range list {
@@ -301,7 +313,7 @@ func (s *server) handleStagePack(w http.ResponseWriter, r *http.Request) {
 	// broken pack is refused before the licence review, not after it.
 	if m.Type == dict.TypeFont {
 		if _, err := fonts.CheckPack(pack); err != nil {
-			http.Error(w, packErrorText(err, dir, s.dataDir), http.StatusBadRequest)
+			writePackError(w, r, err, dir, s.dataDir)
 			return
 		}
 	}
@@ -313,13 +325,8 @@ func (s *server) handleStagePack(w http.ResponseWriter, r *http.Request) {
 		if err == nil {
 			err = lemmapack.CheckLanguage(r.Context(), s.db, m.ID, m.Language)
 		}
-		if errors.Is(err, dict.ErrInvalidPack) {
-			http.Error(w, packErrorText(err, dir, s.dataDir), http.StatusBadRequest)
-			return
-		}
 		if err != nil {
-			log.Printf("pack: review lemma-rules pack: %v", err)
-			http.Error(w, "internal error", http.StatusInternalServerError)
+			writePackError(w, r, err, dir, s.dataDir)
 			return
 		}
 	}
@@ -337,7 +344,7 @@ func (s *server) handleStagePack(w http.ResponseWriter, r *http.Request) {
 	case err == nil:
 		resp.Replaces = &stagedReplaces{Version: old.Version, License: old.License, Attribution: old.Attribution}
 	case !errors.Is(err, packs.ErrNotFound):
-		http.Error(w, "internal error", http.StatusInternalServerError)
+		writeInternal(w, r)
 		return
 	}
 	filepath.WalkDir(pack.Dir, func(_ string, d fs.DirEntry, err error) error {
@@ -363,16 +370,16 @@ func (s *server) handleStagePack(w http.ResponseWriter, r *http.Request) {
 // path and returns its size. It answers the error itself and reports
 // false on any problem; the 413 covers both the body cap and the zip cap.
 func (s *server) receivePackZip(w http.ResponseWriter, r *http.Request, path string) (int64, bool) {
-	tooLarge := func() { http.Error(w, tooLargeMessage, http.StatusRequestEntityTooLarge) }
+	tooLarge := func() { writeError(w, http.StatusRequestEntityTooLarge, "too_large", tooLargeMessage) }
 	mr, err := r.MultipartReader()
 	if err != nil {
-		http.Error(w, "multipart form with a pack zip required", http.StatusBadRequest)
+		writeError(w, http.StatusBadRequest, "bad_request", "Multipart form with a pack zip required.")
 		return 0, false
 	}
 	for {
 		part, err := mr.NextPart()
 		if err == io.EOF {
-			http.Error(w, `multipart field "pack" with the pack zip required`, http.StatusBadRequest)
+			writeError(w, http.StatusBadRequest, "bad_request", "Multipart field \"pack\" with the pack zip required.")
 			return 0, false
 		}
 		if err != nil {
@@ -380,7 +387,7 @@ func (s *server) receivePackZip(w http.ResponseWriter, r *http.Request, path str
 			if errors.As(err, &big) {
 				tooLarge()
 			} else {
-				http.Error(w, "multipart form with a pack zip required", http.StatusBadRequest)
+				writeError(w, http.StatusBadRequest, "bad_request", "Multipart form with a pack zip required.")
 			}
 			return 0, false
 		}
@@ -389,7 +396,7 @@ func (s *server) receivePackZip(w http.ResponseWriter, r *http.Request, path str
 		}
 		f, err := os.OpenFile(path, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0o600)
 		if err != nil {
-			http.Error(w, "internal error", http.StatusInternalServerError)
+			writeInternal(w, r)
 			return 0, false
 		}
 		n, err := io.Copy(f, io.LimitReader(part, maxPackUpload+1))
@@ -400,10 +407,10 @@ func (s *server) receivePackZip(w http.ResponseWriter, r *http.Request, path str
 			tooLarge()
 			return 0, false
 		case err != nil:
-			http.Error(w, "the upload was interrupted", http.StatusBadRequest)
+			writeError(w, http.StatusBadRequest, "bad_request", "The upload was interrupted.")
 			return 0, false
 		case cerr != nil:
-			http.Error(w, "internal error", http.StatusInternalServerError)
+			writeInternal(w, r)
 			return 0, false
 		}
 		return n, true
@@ -419,9 +426,9 @@ func (s *server) handleDiscardStaged(w http.ResponseWriter, r *http.Request) {
 	dir, found, busy := s.stages().discard(r.PathValue("token"), u.ID, s.now())
 	switch {
 	case !found:
-		http.Error(w, "staged pack not found", http.StatusNotFound)
+		writeError(w, http.StatusNotFound, "not_found", "Staged pack not found.")
 	case busy:
-		http.Error(w, "already importing", http.StatusConflict)
+		writeError(w, http.StatusConflict, "pack_import_running", "Already importing.")
 	default:
 		os.RemoveAll(dir)
 		w.WriteHeader(http.StatusNoContent)

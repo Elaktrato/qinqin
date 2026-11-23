@@ -1,3 +1,4 @@
+import { onSessionEnd } from '../session/sessionEnd';
 import { apiBlob } from '../api/client';
 
 // The clip route needs the bearer token, which an <audio src> cannot send,
@@ -11,6 +12,7 @@ interface Slot {
 	url?: string;
 }
 const cache = new Map<string, Slot>();
+onSessionEnd(() => clearClipCache());
 
 // trim keeps the MAX_CLIPS most recently used clips that have finished loading:
 // a clip still being fetched is never dropped, so no object URL is created for

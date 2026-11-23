@@ -147,7 +147,7 @@ describe('recordReview', () => {
 	it('does not queue a review of a deleted workspace, and says so', async () => {
 		dismissNotice();
 		const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
-		vi.mocked(fetch).mockResolvedValue(new Response('workspace not found', { status: 404 }));
+		vi.mocked(fetch).mockResolvedValue(new Response('{"error":"workspace_not_found","message":"No such workspace."}', { status: 404 }));
 
 		await expect(recordReview(7, 'card-1', 2)).resolves.toBeNull();
 
@@ -385,8 +385,8 @@ describe('flushPendingReviews', () => {
 
 		vi.mocked(fetch).mockClear();
 		vi.mocked(fetch)
-			.mockResolvedValueOnce(new Response('workspace not found', { status: 404 }))
-			.mockResolvedValueOnce(new Response('workspace not found', { status: 404 }))
+			.mockResolvedValueOnce(new Response('{"error":"workspace_not_found","message":"No such workspace."}', { status: 404 }))
+			.mockResolvedValueOnce(new Response('{"error":"workspace_not_found","message":"No such workspace."}', { status: 404 }))
 			.mockResolvedValueOnce(jsonResponse({ accepted: 1, duplicates: 0 }));
 		await flushPendingReviews();
 
@@ -585,7 +585,7 @@ describe('outbox per user', () => {
 		// Tab 2 signs in as B: the shared localStorage token changes, tab 1 does not know yet.
 		localStorage.setItem('qinqin.token', 'tokB');
 		vi.mocked(fetch).mockClear();
-		vi.mocked(fetch).mockResolvedValue(new Response('workspace not found', { status: 404 }));
+		vi.mocked(fetch).mockResolvedValue(new Response('{"error":"workspace_not_found","message":"No such workspace."}', { status: 404 }));
 		await flushPendingReviews(); // the poll fires in tab 1
 		expect(fetch).not.toHaveBeenCalled();
 		expect(pending()).toHaveLength(2);
@@ -597,7 +597,7 @@ describe('outbox per user', () => {
 		vi.mocked(fetch).mockClear();
 		vi.mocked(fetch).mockImplementation(async () => {
 			localStorage.setItem('qinqin.token', 'tokB');
-			return new Response('workspace not found', { status: 404 });
+			return new Response('{"error":"workspace_not_found","message":"No such workspace."}', { status: 404 });
 		});
 		await flushPendingReviews();
 		expect(fetch).toHaveBeenCalledTimes(1);

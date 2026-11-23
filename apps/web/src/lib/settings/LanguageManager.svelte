@@ -1,12 +1,12 @@
 <script lang="ts">
+	import { errorText } from '$lib/api/apiErrors';
 	import { onMount, tick } from 'svelte';
 	import { t } from '$lib/i18n';
-	import { ApiError } from '$lib/api/client';
 	import { languageUsage, registerLanguage, removeLanguage } from '$lib/api/adminLanguages';
 	import { listLanguages } from '$lib/api/languages';
 	import { listPacks } from '$lib/api/packs';
 	import { languageLabel } from '$lib/languages';
-	import { languageRows, normalizeCode, type LanguageRow } from './languagesView';
+	import { inUseLines, languageRows, normalizeCode, type LanguageRow } from './languagesView';
 	import { Button, Field } from '$lib/ui';
 
 	// Admin view of every known language: where its data comes from, how
@@ -20,6 +20,8 @@
 	let code = $state('');
 	let adding = $state(false);
 	let error = $state('');
+	// The counts under a refused removal (language_in_use).
+	let inUse = $state<string[]>([]);
 	let notice = $state('');
 	let confirmCode = $state<string | null>(null);
 	let confirmButton = $state<HTMLElement | undefined>(undefined);
@@ -47,7 +49,7 @@
 			const [langs, packs, usage] = await Promise.all([listLanguages(), listPacks(), languageUsage()]);
 			rows = languageRows(langs, packs, usage);
 		} catch (err) {
-			loadError = err instanceof ApiError ? err.message : t('settings.languages.loadFailed');
+			loadError = errorText(err, t('settings.languages.loadFailed'));
 		} finally {
 			loading = false;
 		}
@@ -81,7 +83,7 @@
 			code = '';
 			await load();
 		} catch (err) {
-			error = err instanceof ApiError ? err.message : t('settings.languages.addFailed');
+			error = errorText(err, t('settings.languages.addFailed'));
 		} finally {
 			adding = false;
 		}
@@ -89,13 +91,15 @@
 
 	async function remove(row: LanguageRow): Promise<void> {
 		error = '';
+		inUse = [];
 		notice = '';
 		try {
 			await removeLanguage(row.code);
 			notice = t('settings.languages.removed', { language: row.label, code: row.code });
 			await load();
 		} catch (err) {
-			error = err instanceof ApiError ? err.message : t('settings.languages.removeFailed');
+			error = errorText(err, t('settings.languages.removeFailed'));
+			inUse = inUseLines(err);
 		} finally {
 			confirmCode = null;
 			heading?.focus();
@@ -185,6 +189,11 @@
 	</form>
 	{#if notice}<p class="hint" role="status">{notice}</p>{/if}
 	{#if error}<p class="error" role="alert">{error}</p>{/if}
+	{#if error && inUse.length > 0}
+		<ul class="in-use">
+			{#each inUse as line (line)}<li>{line}</li>{/each}
+		</ul>
+	{/if}
 </section>
 
 <style>

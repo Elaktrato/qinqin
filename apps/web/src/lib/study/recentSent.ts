@@ -3,11 +3,18 @@
 // minutes ago would show as due again. Merged into the history like queued
 // reviews (store.ts), deduplicated by id, so a refreshed log makes them moot.
 
+import { onSessionEnd } from '../session/sessionEnd';
 import type { StudyEventBody } from '../api/types';
 
 export const RECENT_SENT_KEY = 'qinqin.study.sent.v1';
 export const RECENT_SENT_TTL_MS = 3 * 24 * 60 * 60 * 1000;
 export const RECENT_SENT_MAX = 300;
+
+// Kept per user id, so another account never reads them; an explicit sign-out
+// still drops them (they belong to the session that ended).
+onSessionEnd((reason) => {
+	if (reason === 'signOut') clearRecentSent();
+});
 
 interface Item {
 	userId: number;

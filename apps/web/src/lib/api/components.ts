@@ -1,6 +1,7 @@
 // The radical and part lookup's data (#71): GET /api/components (the
 // component index of a language) and GET /api/component-packs (credits).
 // Contract: docs/contracts/radicals/README.md.
+import { onSessionEnd } from '../session/sessionEnd';
 import { api } from './client';
 import type { ComponentPack, ComponentPart, ComponentsResponse, LemmaPack } from './types';
 
@@ -15,6 +16,7 @@ export interface ComponentIndex {
 // request, and errors are not cached. The browser revalidates by ETag.
 const loaded = new Map<string, ComponentIndex>();
 const inFlight = new Map<string, Promise<ComponentIndex>>();
+onSessionEnd(() => clearComponentsCache());
 
 /** clearComponentsCache forgets every loaded index (tests, sign-out). */
 export function clearComponentsCache(): void {

@@ -4,6 +4,7 @@
 // at the first event at which its quantity reaches the threshold. Pure and
 // memoised. Rule and fixtures: docs/contracts/milestones/ (reached.json).
 
+import { onSessionEnd } from '../session/sessionEnd';
 import type { StudyEvent } from '$lib/events';
 import { readSeconds } from '$lib/stats/readingTime';
 import { streakRuns } from '$lib/study/exp';
@@ -161,6 +162,7 @@ function compute(input: LogInputs): Reached[] {
 // same reviews) and the same event log do not walk the log again.
 const MAX_MEMO = 4;
 const memo = new Map<string, Reached[]>();
+onSessionEnd(() => memo.clear());
 const identities = new WeakMap<object, number>();
 let nextIdentity = 1;
 

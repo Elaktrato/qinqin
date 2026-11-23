@@ -76,7 +76,8 @@ describe('Settings -> Features', () => {
 		render(FeatureSettings);
 		const decks = screen.getByRole('checkbox', { name: /Decks/ }) as HTMLInputElement;
 		await fireEvent.click(decks);
-		expect((await screen.findByRole('alert')).textContent).toContain('offline');
+		// The thrown text is never shown (#168): the screen's own sentence is.
+		expect((await screen.findByRole('alert')).textContent).toContain('Could not save the switch.');
 		expect(decks.checked).toBe(true);
 	});
 });

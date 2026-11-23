@@ -25,6 +25,7 @@ import { givenTimelines, replayStats } from '$lib/weekly/replay';
 import { levelMilestoneId } from './catalogue';
 import { flushOnOnline, loadMilestones, markSeen, resetMilestonesForTests } from './loadMilestones';
 import { addPending, readPending } from './seen';
+import { endSession } from '$lib/session/sessionEnd';
 
 const NOW = Date.parse('2026-11-17T12:00:00Z');
 const WS = 3;
@@ -205,6 +206,19 @@ describe('loadMilestones', () => {
 		await flushOnOnline();
 		expect(saveSeenMilestones).toHaveBeenCalledTimes(1);
 		expect(vi.mocked(saveSeenMilestones).mock.calls[0][1].map((r) => r.key)).toEqual(['milestone:streak:3']);
+	});
+
+	it('a load still in flight at the session end leaves no place to flush into (#173)', async () => {
+		let release: (h: StudyHistory) => void = () => undefined;
+		vi.mocked(loadStudyHistory).mockReturnValue(new Promise((r) => (release = r)));
+		const late = loadMilestones(WS, { scope: 'home', now: NOW, language: 'zh' });
+		endSession('signOut');
+		release(history());
+		await late;
+		vi.mocked(saveSeenMilestones).mockClear();
+		addPending(1, WS, [{ id: 'streak:3', seenAt: null, reachedDay: null }]);
+		await flushOnOnline();
+		expect(saveSeenMilestones).not.toHaveBeenCalled();
 	});
 
 	it('back online before any load: nothing is flushed', async () => {

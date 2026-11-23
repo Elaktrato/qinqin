@@ -16,6 +16,8 @@ Fixtures:
   Go tests.
 - `push-result.json` — push requests and their status and body, as built.
 - `legacy-pull.json` — the legacy form (no `v=2`) and what it answers.
+- `unreadable-rows.json` — a page with an unreadable row of every typed family (malformed, or written by a newer
+  client) and an unreadable `pluginData` row: what a reader loads, counts and must never rewrite ("Reading rows").
 
 Error codes are in `docs/contracts/auth/errors.json`: `sync_collection_moved` (400), `sync_page_invalid` (400),
 `sync_cursor_expired` (410), `not_found` (404). v2 errors are JSON `{error, message}`.
@@ -111,13 +113,45 @@ Row shapes (every key always present; `pull-page.json` `shapes`):
 | `sentences` | own sentences only: `{id, entryId, sourcePack: "", userId, hanzi, pinyin, translation, updatedAt, deletedAt}` |
 | `events` | `{id, workspaceId, device, ts, type, payload, updatedAt}`, every type but `lookup` (no tombstones) |
 
+### Reading rows (`unreadable-rows.json`, #167)
+
+The server sends only rows that decode (`pull-page.json`: a case with `"level": "row"` is invalid server output).
+A reader still meets rows it cannot read: a newer server or client wrote them (a typed member outside `extra`, a
+card kind, deck source or new-card order this version does not know), or a row is damaged. The rule, for every
+client (web and Android):
+
+1. **The pager checks the envelope only:** the top-level members, `format`, `instanceId`, `until`, `scope`,
+   `restarted`, `collections` (exactly the requested keys, each an array) and `more`/`next`/`cursor`. An envelope
+   fault refuses the page; a row never does.
+2. **The consumer decodes each row** with its collection's decoder: typed rows strictly as
+   `docs/contracts/study/rows.json`, the others by the `shapes` above. A row that does not decode is **unreadable**:
+   skipped, counted per collection and reported (web: one console warning with collection, count and identities,
+   never row data, and a notice on the study page). The other rows load: one bad row never blocks studying.
+3. **An unreadable row is never rewritten or deleted.** A reader keeps the identity of each unreadable typed row
+   whose identity member is still readable (`id`; `deckId`; `''` for the workspace `limits` row and for
+   `fsrsActive`) and refuses a write to it (the web says the item was saved by a newer version); a new card never
+   takes such an id (the next one: `c-<kind>-<entry>-<sentence>`, then a ULID; the read-time merge of
+   `study/canonical.json` joins the two once both are readable); a deck delete tombstones only rows it read. The row
+   stays on the server as written, so the client that wrote it still reads it.
+4. A row of another workspace is not counted, readable or not (`workspace=` already filters them out).
+
+The server follows the same rule for its own stored rows (#167 review). A stored typed row it cannot read back
+(stored JSON it does not know, such as a deck `source` type or a `newOrder` a newer server wrote before a
+downgrade, or a damaged row) is logged by family, workspace and identity (never its data) and skipped: the paged
+pull goes on and its position, so the cursor, still moves past the row; the legacy pull and the legacy plugin-data
+view skip it too (a legacy GET of its key is 404, a leftover plugin row of the key does not show through). A write
+that would replace it (`POST /api/sync/push`, a legacy plugin-data PUT or DELETE of its key) is refused with 409
+`study_row_unreadable` (`docs/contracts/auth/errors.json`) and nothing in the request is applied. Go:
+`server/internal/sync/unreadable_stored_test.go`, `unreadable_http_test.go`. The backup export still fails on such
+a row: a backup must not silently lose data.
+
 ## Push (`push-result.json`)
 
 `POST /api/sync/push` is unchanged: body `{events, pluginData, cards, decks, deckSettings, limits, fsrsSets,
 fsrsActive}` (each optional), answer `{eventsAccepted, eventDuplicates, dataAccepted, dataSkipped,
 dataRefused}` with every key always present. The whole body is validated first: a malformed item is 400 and
-a foreign workspace or unknown plugin 404, and then nothing is applied (both plain text, as in v0.3.x). A
-plugin value or typed item above 256 KiB is 413 with a JSON body; a body above 8 MiB is a plain-text 413. A
+a foreign workspace or unknown plugin 404, and then nothing is applied (400 `bad_request` naming the item,
+404 `not_found`). A plugin value or typed item above 256 KiB, or a body above 8 MiB, is 413 `too_large`. A
 row of a plugin without `owns-data` is refused alone (`dataRefused`). Plugin rows and typed rows are
 last-write-wins on the edit time (`docs/contracts/study/README.md`); a typed row equal to the stored one
 counts `dataAccepted` without a write.
@@ -135,4 +169,4 @@ transaction; the truncated JSON makes it retry, as after a network cut.
   `pluginData`.
 - Lexicon collections moved to packages: naming one is 400 `sync_collection_moved` (JSON); a pull without
   `collections` keeps their keys as `[]`. `sentences` carries the caller's own sentences only.
-- Other legacy errors stay plain text (`cursor must be RFC 3339`, an unknown collection).
+- Other legacy errors are 400 `bad_request` (a cursor that is not RFC 3339, an unknown collection).

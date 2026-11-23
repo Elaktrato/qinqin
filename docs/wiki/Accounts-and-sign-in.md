@@ -16,7 +16,7 @@ If an administrator gave you a temporary password, or the server requires two-st
 
 ## Sessions
 
-Signing in gives your browser a random token (64 hex characters). The server stores only a hash of it, so a copy of the database or a backup hands out no live session. A session you have not used for 90 days stops working. **Sign out** ends the session on the server too.
+Signing in gives your browser a random token (64 hex characters). The server stores only a hash of it, so a copy of the database or a backup hands out no live session. A session you have not used for 90 days stops working. **Sign out** ends the session on the server too, and the app forgets everything it kept in memory for you (cards, decks, entries, audio, the journal, offline copies), so the next person who signs in on the same device sees none of it. The same happens when a session expires or another tab signs in as someone else; only an explicit sign-out also forgets the chosen workspace.
 
 Settings → Account → Sessions lists your signed-in devices with a coarse label such as "Firefox on Linux" (never the raw User-Agent, never an address), when each signed in and when it was last active. You can end one, **Log out everywhere else**, or **Log out everywhere**.
 

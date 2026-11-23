@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { errorText } from '$lib/api/apiErrors';
 	import { t } from '$lib/i18n';
 	import { goto } from '$app/navigation';
 	import type { Component } from 'svelte';
@@ -75,13 +76,15 @@
 		message = '';
 		error = '';
 		const order = decodeOrder(value);
+		const ws = data?.workspaceId;
+		if (ws === undefined) return;
 		busy = true;
 		try {
-			await saveDeckNewOrder(deckId, order === 'deck' || order === 'random' ? { by: 'added' } : order);
+			await saveDeckNewOrder(ws, deckId, order === 'deck' || order === 'random' ? { by: 'added' } : order);
 			message = t('flashcards.settings.saved');
 			await store.load(workspaceId, true);
 		} catch (err) {
-			error = err instanceof Error && err.message ? err.message : t('flashcards.settings.orderFailed');
+			error = errorText(err, t('flashcards.settings.orderFailed'));
 		} finally {
 			busy = false;
 		}
@@ -102,13 +105,15 @@
 			error = t('flashcards.list.nameMissing');
 			return;
 		}
+		const ws = data?.workspaceId;
+		if (ws === undefined) return;
 		busy = true;
 		try {
-			await renameDeck(deckId, next);
+			await renameDeck(ws, deckId, next);
 			message = t('flashcards.settings.renamed');
 			await store.load(workspaceId, true);
 		} catch (err) {
-			error = err instanceof Error && err.message ? err.message : t('flashcards.settings.renameFailed');
+			error = errorText(err, t('flashcards.settings.renameFailed'));
 		} finally {
 			busy = false;
 		}
@@ -122,12 +127,14 @@
 	async function remove(): Promise<void> {
 		message = '';
 		error = '';
+		const ws = data?.workspaceId;
+		if (ws === undefined) return;
 		busy = true;
 		try {
-			await deleteDeck(deckId);
+			await deleteDeck(ws, deckId);
 			await goto(flashcardsHref({ view: 'list' }));
 		} catch (err) {
-			error = err instanceof Error && err.message ? err.message : t('flashcards.settings.deleteFailed');
+			error = errorText(err, t('flashcards.settings.deleteFailed'));
 			confirming = false;
 		} finally {
 			busy = false;
@@ -176,6 +183,7 @@
 		<Section title={t('flashcards.settings.cardTypes')}>
 			<p class="hint">{t('flashcards.settings.cardTypesHint')}</p>
 			<DeckCardTypes
+				workspaceId={data.workspaceId}
 				{deckId}
 				deckName={deck.name}
 				cardTypes={data.deckSettings[deckId]?.cardTypes ?? []}

@@ -23,10 +23,13 @@
 	// The writes, the undo slot and its timer live in the shared controller
 	// (lib/study/cardActions.ts), which the decks view uses as well.
 	let {
+		workspaceId,
 		cards,
 		decks,
 		onchanged
 	}: {
+		/** The workspace `cards` were loaded from: every write goes there (#174). */
+		workspaceId: number;
 		cards: readonly StudyCard[];
 		decks: readonly Deck[];
 		onchanged: () => void | Promise<void>;
@@ -115,7 +118,7 @@
 	async function remove(ids: string[]): Promise<void> {
 		confirming = false;
 		const index = Math.min(...ids.map((id) => visibleIds.indexOf(id)).filter((i) => i >= 0));
-		await actions.remove(ids);
+		await actions.remove(workspaceId, ids);
 		selected = selected.filter((id) => !ids.includes(id));
 		await focusRow(Number.isFinite(index) ? index : 0);
 	}
@@ -123,7 +126,7 @@
 	async function move(): Promise<void> {
 		if (target === '' || chosen.length === 0) return;
 		const ids = [...chosen];
-		await actions.move(ids, target, deckName.get(target) ?? target);
+		await actions.move(workspaceId, ids, target, deckName.get(target) ?? target);
 		selected = [];
 	}
 

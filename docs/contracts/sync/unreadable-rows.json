@@ -1,0 +1,466 @@
+{
+ "version": 1,
+ "rule": "sync/unreadable-rows",
+ "_doc": "Reading rows (README): one page of the web's study collections for workspace 7 whose envelope is valid and which holds, per typed family, a readable row and an unreadable one (malformed, or written by a newer client), plus an unreadable pluginData row. A reader decodes the envelope, decodes each row with its collection's decoder (typed rows: study/rows.json, strict), skips and counts every unreadable row and loads the rest. It never rewrites or deletes a row it could not read: a write to a protected identity (an unreadable typed row whose identity member is still readable: id, deckId, the workspace limits row '', the fsrsActive row '') is refused, and a new card never takes a protected id. A tombstone (deletedAt set) that does not decode is protected but not counted: there is nothing to show. A row of another workspace is neither counted nor protected. Keyed pluginData rows are protected by key (pluginData:<key>) when the row shape or the keyed payload (goals/, known marks, vacations) does not decode. rows[collection][i]._why says why a row is (un)readable; the page is rows with _why dropped. Decoded by apps/web/src/lib/study/unreadable.contract.test.ts (the study load) and server/internal/study/rows/unreadable_contract_test.go (typed rows decode exactly when readable).",
+ "requested": [
+  "pluginStates",
+  "pluginData",
+  "cards",
+  "decks",
+  "deckSettings",
+  "limits",
+  "fsrsSets",
+  "fsrsActive"
+ ],
+ "envelope": {
+  "format": 2,
+  "instanceId": "01JD8Z3Q4M5N6P7R8S9T0V1W2X",
+  "until": "2026-11-12T10:00:00Z",
+  "scope": {
+   "workspaces": [
+    {
+     "id": 7,
+     "language": "zh"
+    }
+   ],
+   "languages": [
+    "zh"
+   ],
+   "catalogue": "\"k-3fa9\""
+  },
+  "restarted": [],
+  "more": false,
+  "next": null,
+  "cursor": "c2.eyJ0IjoiMjAyNi0xMS0xMlQwOTo1OTozMFoifQ"
+ },
+ "rows": {
+  "pluginStates": [],
+  "pluginData": [
+   {
+    "_why": "readable",
+    "row": {
+     "pluginId": "qinqin-flashcards",
+     "key": "known:1201",
+     "userId": 1,
+     "workspaceId": 7,
+     "data": {
+      "version": 1,
+      "entryId": 1201,
+      "createdAt": "2026-11-10T08:00:00Z"
+     },
+     "version": 4,
+     "updatedAt": "2026-11-12T09:00:00Z",
+     "deletedAt": null
+    }
+   },
+   {
+    "_why": "malformed: the row has no version",
+    "row": {
+     "pluginId": "qinqin-flashcards",
+     "key": "known:1202",
+     "userId": 1,
+     "workspaceId": 7,
+     "data": {
+      "version": 1,
+      "entryId": 1202,
+      "createdAt": "2026-11-10T08:00:00Z"
+     },
+     "updatedAt": "2026-11-12T09:00:00Z",
+     "deletedAt": null
+    }
+   },
+   {
+    "_why": "malformed keyed data: the row shape is fine but the goal row is not (goals/): counted and protected",
+    "row": {
+     "pluginId": "qinqin-flashcards",
+     "key": "goals:workspace",
+     "userId": 1,
+     "workspaceId": 7,
+     "data": {
+      "version": "one"
+     },
+     "version": 4,
+     "updatedAt": "2026-11-12T09:00:00Z",
+     "deletedAt": null
+    }
+   }
+  ],
+  "cards": [
+   {
+    "_why": "readable",
+    "row": {
+     "workspaceId": 7,
+     "id": "c-vocab-1201",
+     "kind": "vocab",
+     "entryId": 1201,
+     "written": null,
+     "entryKind": null,
+     "sentenceId": null,
+     "skipKinds": [],
+     "deckIds": [
+      "general"
+     ],
+     "createdAt": "2026-11-10T08:00:00Z",
+     "extra": {},
+     "version": 3,
+     "updatedAt": "2026-11-12T10:00:00Z",
+     "deletedAt": null
+    }
+   },
+   {
+    "_why": "newer client: a card kind this version does not know",
+    "row": {
+     "workspaceId": 7,
+     "id": "c-listening-1202",
+     "kind": "listening",
+     "entryId": 1202,
+     "written": null,
+     "entryKind": null,
+     "sentenceId": null,
+     "skipKinds": [],
+     "deckIds": [
+      "general"
+     ],
+     "createdAt": "2026-11-10T08:00:00Z",
+     "extra": {},
+     "version": 3,
+     "updatedAt": "2026-11-12T10:00:00Z",
+     "deletedAt": null
+    }
+   },
+   {
+    "_why": "newer client: a typed member outside extra",
+    "row": {
+     "workspaceId": 7,
+     "id": "c-vocab-1203",
+     "kind": "vocab",
+     "entryId": 1203,
+     "written": null,
+     "entryKind": null,
+     "sentenceId": null,
+     "skipKinds": [],
+     "deckIds": [
+      "general"
+     ],
+     "createdAt": "2026-11-10T08:00:00Z",
+     "extra": {},
+     "version": 3,
+     "updatedAt": "2026-11-12T10:00:00Z",
+     "deletedAt": null,
+     "audioId": 12
+    }
+   },
+   {
+    "_why": "malformed: the id is not a string (identity unreadable)",
+    "row": {
+     "workspaceId": 7,
+     "id": 5,
+     "kind": "vocab",
+     "entryId": 1204,
+     "written": null,
+     "entryKind": null,
+     "sentenceId": null,
+     "skipKinds": [],
+     "deckIds": [
+      "general"
+     ],
+     "createdAt": "2026-11-10T08:00:00Z",
+     "extra": {},
+     "version": 3,
+     "updatedAt": "2026-11-12T10:00:00Z",
+     "deletedAt": null
+    }
+   },
+   {
+    "_why": "a tombstone of a newer client's card: protected, not counted (nothing to show)",
+    "row": {
+     "workspaceId": 7,
+     "id": "c-listening-1205",
+     "kind": "listening",
+     "entryId": 1205,
+     "written": null,
+     "entryKind": null,
+     "sentenceId": null,
+     "skipKinds": [],
+     "deckIds": [
+      "general"
+     ],
+     "createdAt": "2026-11-10T08:00:00Z",
+     "extra": {},
+     "version": 3,
+     "updatedAt": "2026-11-12T10:00:00Z",
+     "deletedAt": "2026-11-12T10:00:00Z"
+    }
+   },
+   {
+    "_why": "another workspace's unreadable row: neither counted nor protected here",
+    "row": {
+     "workspaceId": 9,
+     "id": "c-listening-1206",
+     "kind": "listening",
+     "entryId": 1206,
+     "written": null,
+     "entryKind": null,
+     "sentenceId": null,
+     "skipKinds": [],
+     "deckIds": [
+      "general"
+     ],
+     "createdAt": "2026-11-10T08:00:00Z",
+     "extra": {},
+     "version": 3,
+     "updatedAt": "2026-11-12T10:00:00Z",
+     "deletedAt": null
+    }
+   }
+  ],
+  "decks": [
+   {
+    "_why": "readable",
+    "row": {
+     "workspaceId": 7,
+     "id": "01JDECK0000000000000000001",
+     "name": "Words",
+     "createdAt": "2026-11-10T08:00:00Z",
+     "source": null,
+     "extra": {},
+     "version": 3,
+     "updatedAt": "2026-11-12T10:00:00Z",
+     "deletedAt": null
+    }
+   },
+   {
+    "_why": "newer client: a deck source type this version does not know",
+    "row": {
+     "workspaceId": 7,
+     "id": "01JDECK0000000000000000002",
+     "name": "Course",
+     "createdAt": "2026-11-10T08:00:00Z",
+     "source": {
+      "type": "course",
+      "courseId": "hsk-1"
+     },
+     "extra": {},
+     "version": 3,
+     "updatedAt": "2026-11-12T10:00:00Z",
+     "deletedAt": null
+    }
+   }
+  ],
+  "deckSettings": [
+   {
+    "_why": "readable",
+    "row": {
+     "workspaceId": 7,
+     "deckId": "general",
+     "cardTypes": [],
+     "newOrder": null,
+     "extra": {},
+     "version": 3,
+     "updatedAt": "2026-11-12T10:00:00Z",
+     "deletedAt": null
+    }
+   },
+   {
+    "_why": "newer client: a new-card order this version does not know",
+    "row": {
+     "workspaceId": 7,
+     "deckId": "01JDECK0000000000000000001",
+     "cardTypes": [],
+     "newOrder": {
+      "by": "difficulty"
+     },
+     "extra": {},
+     "version": 3,
+     "updatedAt": "2026-11-12T10:00:00Z",
+     "deletedAt": null
+    }
+   }
+  ],
+  "limits": [
+   {
+    "_why": "readable",
+    "row": {
+     "workspaceId": 7,
+     "deckId": "general",
+     "new": {
+      "limit": 5
+     },
+     "reviews": null,
+     "extra": {},
+     "version": 3,
+     "updatedAt": "2026-11-12T10:00:00Z",
+     "deletedAt": null
+    }
+   },
+   {
+    "_why": "malformed: a limit above 9999 (the workspace row)",
+    "row": {
+     "workspaceId": 7,
+     "deckId": null,
+     "new": null,
+     "reviews": {
+      "limit": 100000
+     },
+     "extra": {},
+     "version": 3,
+     "updatedAt": "2026-11-12T10:00:00Z",
+     "deletedAt": null
+    }
+   }
+  ],
+  "fsrsSets": [
+   {
+    "_why": "readable",
+    "row": {
+     "workspaceId": 7,
+     "id": "01JSET00000000000000000001",
+     "w": [
+      0.212,
+      1.2931,
+      2.3065,
+      8.2956,
+      6.4133,
+      0.8334,
+      3.0194,
+      0.001,
+      1.8722,
+      0.1666,
+      0.796,
+      1.4835,
+      0.0614,
+      0.2629,
+      1.6483,
+      0.6014,
+      1.8729,
+      0.5425,
+      0.0912,
+      0.0658,
+      0.1542
+     ],
+     "createdAt": "2026-11-10T08:00:00Z",
+     "source": "optimized",
+     "labelled": 420,
+     "logLoss": 0.31,
+     "baselineLogLoss": 0.35,
+     "extra": {},
+     "version": 3,
+     "updatedAt": "2026-11-12T10:00:00Z",
+     "deletedAt": null
+    }
+   },
+   {
+    "_why": "newer client: a weight set of another length",
+    "row": {
+     "workspaceId": 7,
+     "id": "01JSET00000000000000000002",
+     "w": [
+      0.212,
+      1.2931,
+      2.3065,
+      8.2956,
+      6.4133,
+      0.8334,
+      3.0194,
+      0.001,
+      1.8722,
+      0.1666,
+      0.796,
+      1.4835,
+      0.0614,
+      0.2629,
+      1.6483,
+      0.6014,
+      1.8729,
+      0.5425,
+      0.0912,
+      0.0658,
+      0.1542,
+      0.5
+     ],
+     "createdAt": "2026-11-10T08:00:00Z",
+     "source": "optimized",
+     "labelled": 420,
+     "logLoss": 0.31,
+     "baselineLogLoss": 0.35,
+     "extra": {},
+     "version": 3,
+     "updatedAt": "2026-11-12T10:00:00Z",
+     "deletedAt": null
+    }
+   }
+  ],
+  "fsrsActive": [
+   {
+    "_why": "malformed: setId is not a string or null",
+    "row": {
+     "workspaceId": 7,
+     "setId": 42,
+     "changedAt": "2026-11-11T07:00:00.000Z",
+     "extra": {},
+     "version": 3,
+     "updatedAt": "2026-11-12T10:00:00Z",
+     "deletedAt": null
+    }
+   }
+  ]
+ },
+ "expect": {
+  "readable": {
+   "pluginData": [
+    "known:1201"
+   ],
+   "cards": [
+    "c-vocab-1201"
+   ],
+   "decks": [
+    "01JDECK0000000000000000001"
+   ],
+   "deckSettings": [
+    "general"
+   ],
+   "limits": [
+    "general"
+   ],
+   "fsrsSets": [
+    "01JSET00000000000000000001"
+   ],
+   "fsrsActive": []
+  },
+  "unreadable": {
+   "pluginData": 2,
+   "cards": 3,
+   "decks": 1,
+   "deckSettings": 1,
+   "limits": 1,
+   "fsrsSets": 1,
+   "fsrsActive": 1
+  },
+  "protected": {
+   "cards": [
+    "c-listening-1202",
+    "c-vocab-1203",
+    "c-listening-1205"
+   ],
+   "decks": [
+    "01JDECK0000000000000000002"
+   ],
+   "deckSettings": [
+    "01JDECK0000000000000000001"
+   ],
+   "limits": [
+    ""
+   ],
+   "fsrsSets": [
+    "01JSET00000000000000000002"
+   ],
+   "fsrsActive": [
+    ""
+   ],
+   "pluginData": [
+    "known:1202",
+    "goals:workspace"
+   ]
+  }
+ }
+}

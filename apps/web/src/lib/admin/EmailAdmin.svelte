@@ -3,7 +3,7 @@
 	import { user } from '$lib/auth';
 	import ReauthFields from './ReauthFields.svelte';
 	import { reauthBody, reauthError, reauthFocus, reauthNeedsCode, reauthReady } from './reauth';
-	import { apiErrorBody } from '$lib/api/client';
+	import { ApiError, apiErrorBody } from '$lib/api/client';
 	import { errorText } from '$lib/api/apiErrors';
 	import { t } from '$lib/i18n';
 	import { Button, Field, Section, Select } from '$lib/ui';
@@ -52,8 +52,11 @@
 		} catch (err) {
 			const body = apiErrorBody(err);
 			if (body?.error === 'smtp_test_failed') {
-				const raw = JSON.parse((err as Error).message) as { category?: string; smtpCode?: number };
-				error = testFailure(raw.category ?? '', raw.smtpCode);
+				const raw = err instanceof ApiError ? (err.body ?? {}) : {};
+				error = testFailure(
+					typeof raw.category === 'string' ? raw.category : '',
+					typeof raw.smtpCode === 'number' ? raw.smtpCode : undefined
+				);
 			} else if (reauthFields && ['wrong_password', 'code_invalid', 'rate_limited'].includes(body?.error ?? '')) {
 				// the administrator's own re-authentication was refused
 				refused = body!.error;

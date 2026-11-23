@@ -3,16 +3,13 @@ import { get } from 'svelte/store';
 
 const { goto } = vi.hoisted(() => ({ goto: vi.fn() }));
 
-const { clearClipCache, clearAudioCache } = vi.hoisted(() => ({ clearClipCache: vi.fn(), clearAudioCache: vi.fn() }));
-
 vi.mock('$app/navigation', () => ({ goto }));
-vi.mock('./audio/source', () => ({ clearClipCache }));
-vi.mock('./api/audio', () => ({ clearAudioCache }));
 const { reloadPage } = vi.hoisted(() => ({ reloadPage: vi.fn() }));
 vi.mock('./i18n/reloadPage', () => ({ reloadPage }));
 
-import { getToken } from './api/client';
+import { getToken, notifyUnauthorized } from './api/client';
 import { auth, loadMe, login, logout, register, restriction } from './auth';
+import { onSessionEnd, type SessionEndReason } from './session/sessionEnd';
 
 const user = {
 	id: 1,
@@ -241,10 +238,51 @@ describe('auth store', () => {
 		expect(fetch).not.toHaveBeenCalled();
 	});
 
-	it('logout forgets the audio caches (blob URLs and resolutions of the signed-out user)', () => {
-		logout();
-		expect(clearClipCache).toHaveBeenCalled();
-		expect(clearAudioCache).toHaveBeenCalled();
+	describe('ends the session for every registered cache (#173)', () => {
+		const ended: SessionEndReason[] = [];
+		let off: () => void = () => undefined;
+		beforeEach(() => {
+			ended.length = 0;
+			off = onSessionEnd((reason) => ended.push(reason));
+		});
+		afterEach(() => off());
+
+		it('logout: signOut, and the workspace choice goes', () => {
+			auth.set({ token: 'stored', user });
+			localStorage.setItem('qinqin.workspace', '3');
+			logout();
+			expect(ended).toEqual(['signOut']);
+			expect(localStorage.getItem('qinqin.workspace')).toBeNull();
+		});
+
+		it('a 401 that ends the session: expired, and the workspace choice stays', () => {
+			auth.set({ token: 'stored', user });
+			localStorage.setItem('qinqin.workspace', '3');
+			notifyUnauthorized();
+			expect(ended).toEqual(['expired']);
+			expect(get(auth)).toEqual({ token: null, user: null });
+			expect(localStorage.getItem('qinqin.workspace')).toBe('3');
+		});
+
+		it('the user changing under this tab (another tab, a token swap): switched, once', () => {
+			auth.set({ token: 'stored', user });
+			auth.set({ token: 'other', user: { ...user, id: 2 } });
+			expect(ended).toEqual(['switched']);
+			auth.set({ token: 'other', user: { ...user, id: 2 } });
+			expect(ended).toEqual(['switched']);
+		});
+
+		it('another tab signing out ends it too', () => {
+			auth.set({ token: 'stored', user });
+			auth.set({ token: null, user: null });
+			expect(ended).toEqual(['switched']);
+		});
+
+		it('hydrating the same user again (a reload of me) ends nothing', () => {
+			auth.set({ token: 'stored', user });
+			auth.set({ token: 'stored', user: { ...user, username: 'ada2' } });
+			expect(ended).toEqual([]);
+		});
 	});
 });
 

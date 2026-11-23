@@ -3,6 +3,7 @@
 // A handler runs only while its plugin is enabled, and a throwing handler
 // is logged and skipped so one plugin can never break event recording.
 
+import { onSessionEnd } from '../session/sessionEnd';
 import type { PluginInfo, StudyEventBody } from '../api/types';
 
 export type StudyEventHandler = (events: StudyEventBody[]) => void | Promise<void>;
@@ -14,6 +15,10 @@ interface Registration {
 
 const handlers = new Set<Registration>();
 let states: PluginInfo[] | null = null;
+// The next session's states are not known yet: no handler runs until they are.
+onSessionEnd(() => {
+	states = [];
+});
 
 /**
  * registerStudyEventHandler subscribes a handler for one plugin and

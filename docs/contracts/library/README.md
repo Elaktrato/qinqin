@@ -33,7 +33,7 @@ handlers with two users by `server/internal/api/contract_library_test.go`.
 - **Highlight range**: `start`/`end` are code-point offsets into the paragraph's plain text, `end`
   exclusive; `text` must be exactly those code points (not empty, no leading or trailing whitespace) —
   UTF-16 offsets are refused (422). The chapter must exist (422). Ranges of one paragraph may touch but not
-  overlap: 409 `{"error": ..., "existingId": <id>}`.
+  overlap: 409 `{"error": "highlight_overlap", "message": …, "existingId": <id>}`; the cap is 409 `highlight_limit`.
 - **Colour**: `yellow` (default), `green`, `blue`, `pink`; anything else 422.
 - **Note**: CR LF and CR become LF, control and bidi-control characters dropped, at most 2000 code points
   (422). A highlight's text is at most 500 code points; a book holds at most 2000 highlights and 200

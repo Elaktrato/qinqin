@@ -5,7 +5,7 @@
 	import { onContextStale } from '$lib/study/currentContext';
 	import { usesHan } from '$lib/languages';
 	import { characterSummary, loadCharacterMapData, withLegacyWritten } from '$lib/stats/characterMap';
-	import { errorMessage } from '$lib/stats/errors';
+	import { errorText } from '$lib/api/apiErrors';
 	import type { SectionStats } from '$lib/study/charGroups';
 	import { STAGE_INFO, formatCount, learnedSummary } from '$lib/study/mapGrid';
 	import { MASTERY_THRESHOLD } from '$lib/study/mastery';
@@ -86,7 +86,7 @@
 		} catch (err) {
 			if (seq !== requestSeq) return;
 			stats = null;
-			error = errorMessage(err, t('widgets.characters.loadFailed'));
+			error = errorText(err, t('widgets.characters.loadFailed'));
 		} finally {
 			if (seq === requestSeq) loading = false;
 		}

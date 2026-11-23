@@ -84,7 +84,7 @@ func (s *server) tokenGate(rt route) http.HandlerFunc {
 			return
 		}
 		if rule.scope == tokNone {
-			writeAuthError(w, http.StatusForbidden, "token_not_allowed", "Access tokens cannot be used on this route.")
+			writeError(w, http.StatusForbidden, "token_not_allowed", "Access tokens cannot be used on this route.")
 			return
 		}
 		p, err := auth.AuthenticateToken(r.Context(), s.db, raw)
@@ -93,20 +93,20 @@ func (s *server) tokenGate(rt route) http.HandlerFunc {
 			return
 		}
 		if p == nil {
-			writeAuthError(w, http.StatusUnauthorized, "unauthorized", "Sign in to continue.")
+			writeError(w, http.StatusUnauthorized, "unauthorized", "Sign in to continue.")
 			return
 		}
 		if res := p.Restriction(); res != "" {
 			code, msg := restrictionError(res)
-			writeAuthError(w, http.StatusForbidden, code, msg)
+			writeError(w, http.StatusForbidden, code, msg)
 			return
 		}
 		if rule.scope == tokWrite && p.TokenScope != auth.ScopeWrite {
-			writeAuthError(w, http.StatusForbidden, "token_read_only", "This access token is read-only.")
+			writeError(w, http.StatusForbidden, "token_read_only", "This access token is read-only.")
 			return
 		}
 		if p.TokenWorkspace != nil && !insideTokenWorkspace(r, rule.ws, *p.TokenWorkspace) {
-			writeAuthError(w, http.StatusForbidden, "token_workspace", "This access token is limited to one workspace and this request is outside it.")
+			writeError(w, http.StatusForbidden, "token_workspace", "This access token is limited to one workspace and this request is outside it.")
 			return
 		}
 		if allowed, retry := s.authLimiter("pat").Allow(int64Key(p.User.ID)); !allowed {

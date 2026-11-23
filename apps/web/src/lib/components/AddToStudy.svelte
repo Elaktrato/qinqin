@@ -1,6 +1,7 @@
 <script lang="ts">
+	import { errorText } from '$lib/api/apiErrors';
+	import { UserError } from '$lib/api/userError';
 	import { t } from '$lib/i18n';
-	import { ApiError } from '$lib/api/client';
 	import { GENERAL_DECK_ID, addCard } from '$lib/study/store';
 	import { getStudyData, hasCard } from '$lib/study/studyData';
 	import type { Deck } from '$lib/study/types';
@@ -48,20 +49,18 @@
 	// component's markup).
 	$effect(() => onchange?.(inDeck));
 
-	function message(err: unknown, fallback: string): string {
-		if (err instanceof ApiError && err.message) return err.message;
-		if (err instanceof Error && err.message) return err.message;
-		return fallback;
-	}
-
 	// A failed load must not hide the button: an unavailable workspace or
 	// a flaky pull is reported when the user actually tries to add. Until
 	// the check answers, though, the button is disabled: it must never
 	// offer to add an entry that is already in the deck. The study data
 	// comes from the shared short-lived cache (studyData.ts).
+	/** The workspace the "in deck" check ran against: an add goes there (#174). */
+	let checkedWorkspace: number | null = null;
+
 	$effect(() => {
 		const id = entryId;
 		const workspaceId = $workspaces.current?.id ?? null;
+		checkedWorkspace = workspaceId;
 		let stale = false;
 		inDeck = null;
 		justAdded = false;
@@ -99,6 +98,8 @@
 	async function add(deckId: string): Promise<void> {
 		// Unresolved or already-added means "no new card"; addCard itself
 		// is idempotent, so a race across tabs cannot duplicate either.
+		// The workspace the "in deck" check ran against, captured at the click (#174).
+		const ws = checkedWorkspace;
 		if (saving || inDeck !== false) return;
 		saving = true;
 		error = '';
@@ -111,7 +112,8 @@
 			// A character card has no sentence and carries the entryKind
 			// snapshot, the same row a level session creates.
 			const isCharacter = kind === 'character';
-			await addCard(entryId, {
+			if (ws === null) throw new UserError('entry.study.noWorkspace');
+			await addCard(ws, entryId, {
 				written,
 				...(isCharacter ? { entryKind: 'character' as const } : { sentenceId }),
 				deckIds: [deckId]
@@ -120,7 +122,7 @@
 			justAdded = true;
 			onadded?.();
 		} catch (err) {
-			error = message(err, t('entry.study.addFailed'));
+			error = errorText(err, t('entry.study.addFailed'));
 		} finally {
 			saving = false;
 		}

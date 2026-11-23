@@ -20,7 +20,7 @@ func readAccountBody(w http.ResponseWriter, r *http.Request, v any) bool {
 		return false
 	}
 	if err := json.NewDecoder(bytes.NewReader(body)).Decode(v); err != nil {
-		writeAuthError(w, http.StatusBadRequest, "bad_request", "Malformed request body.")
+		writeError(w, http.StatusBadRequest, "bad_request", "Malformed request body.")
 		return false
 	}
 	return true
@@ -36,7 +36,7 @@ func readAccountBodyStrict(w http.ResponseWriter, r *http.Request, v any) bool {
 	dec := json.NewDecoder(bytes.NewReader(body))
 	dec.DisallowUnknownFields()
 	if err := dec.Decode(v); err != nil {
-		writeAuthError(w, http.StatusBadRequest, "bad_request", "Malformed request body.")
+		writeError(w, http.StatusBadRequest, "bad_request", "Malformed request body.")
 		return false
 	}
 	return true
@@ -84,7 +84,7 @@ func (s *server) handleChangePassword(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err := auth.CheckPassword(p.User.Username, req.NewPassword); err != nil {
-		writeAuthError(w, http.StatusUnprocessableEntity, "weak_password", auth.PolicyReason(err))
+		writeError(w, http.StatusUnprocessableEntity, "weak_password", auth.PolicyReason(err))
 		return
 	}
 	// Only the session born from the temporary-password login skips the
@@ -92,7 +92,7 @@ func (s *server) handleChangePassword(w http.ResponseWriter, r *http.Request) {
 	if !p.TemporarySession {
 		// An empty one is refused before it spends a re-auth token or a hash.
 		if req.CurrentPassword == "" {
-			writeAuthError(w, http.StatusForbidden, "current_password_required", "Enter your current password to continue.")
+			writeError(w, http.StatusForbidden, "current_password_required", "Enter your current password to continue.")
 			return
 		}
 		refund, ok := s.reauth(w, p.User.ID)
@@ -118,7 +118,7 @@ func (s *server) handleChangePassword(w http.ResponseWriter, r *http.Request) {
 			writeInternal(w, r)
 			return
 		case !good:
-			writeAuthError(w, http.StatusForbidden, "wrong_password", "The current password is wrong.")
+			writeError(w, http.StatusForbidden, "wrong_password", "The current password is wrong.")
 			return
 		}
 		refund()
@@ -175,7 +175,7 @@ func (s *server) handleRevokeSession(w http.ResponseWriter, r *http.Request) {
 	}
 	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
 	if err != nil {
-		writeAuthError(w, http.StatusNotFound, "not_found", "No such session.")
+		writeError(w, http.StatusNotFound, "not_found", "No such session.")
 		return
 	}
 	ok, err := auth.RevokeSessionAudited(r.Context(), s.db, p.User.ID, id)
@@ -184,7 +184,7 @@ func (s *server) handleRevokeSession(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if !ok {
-		writeAuthError(w, http.StatusNotFound, "not_found", "No such session.")
+		writeError(w, http.StatusNotFound, "not_found", "No such session.")
 		return
 	}
 	w.WriteHeader(http.StatusNoContent)
@@ -209,7 +209,7 @@ func (s *server) handleRevokeSessions(w http.ResponseWriter, r *http.Request) {
 		except = p.SessionID
 	case "all":
 	default:
-		writeAuthError(w, http.StatusBadRequest, "bad_request", `scope must be "others" or "all".`)
+		writeError(w, http.StatusBadRequest, "bad_request", `scope must be "others" or "all".`)
 		return
 	}
 	n, err := auth.RevokeOthersAudited(r.Context(), s.db, p.User.ID, except, req.Scope)
@@ -249,11 +249,11 @@ func (s *server) handleDeleteAccount(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if req.Confirm != u.Username {
-		writeAuthError(w, http.StatusUnprocessableEntity, "confirm_mismatch", "Type your username exactly to confirm.")
+		writeError(w, http.StatusUnprocessableEntity, "confirm_mismatch", "Type your username exactly to confirm.")
 		return
 	}
 	if req.Password == "" {
-		writeAuthError(w, http.StatusForbidden, "wrong_password", "The password is wrong.")
+		writeError(w, http.StatusForbidden, "wrong_password", "The password is wrong.")
 		return
 	}
 	refund, ok := s.reauth(w, u.ID)
@@ -279,7 +279,7 @@ func (s *server) handleDeleteAccount(w http.ResponseWriter, r *http.Request) {
 		writeInternal(w, r)
 		return
 	case !good:
-		writeAuthError(w, http.StatusForbidden, "wrong_password", "The password is wrong.")
+		writeError(w, http.StatusForbidden, "wrong_password", "The password is wrong.")
 		return
 	}
 	refund()
@@ -388,7 +388,7 @@ func (s *server) handlePutEmail(w http.ResponseWriter, r *http.Request) {
 // reauth limiter, which a right password refunds. False: a response was written.
 func (s *server) verifyOwnPassword(w http.ResponseWriter, r *http.Request, userID int64, password string) bool {
 	if password == "" {
-		writeAuthError(w, http.StatusForbidden, "current_password_required", "Enter your current password to continue.")
+		writeError(w, http.StatusForbidden, "current_password_required", "Enter your current password to continue.")
 		return false
 	}
 	refund, ok := s.reauth(w, userID)
@@ -414,7 +414,7 @@ func (s *server) verifyOwnPassword(w http.ResponseWriter, r *http.Request, userI
 		writeInternal(w, r)
 		return false
 	case !good:
-		writeAuthError(w, http.StatusForbidden, "wrong_password", "The current password is wrong.")
+		writeError(w, http.StatusForbidden, "wrong_password", "The current password is wrong.")
 		return false
 	}
 	refund()
@@ -464,9 +464,9 @@ func writeCodeError(w http.ResponseWriter, err error, authenticated bool) bool {
 	var ce *auth.CodeError
 	switch {
 	case errors.As(err, &ce) && errors.Is(err, auth.ErrCodeWrong):
-		writeJSON(w, status, map[string]any{"error": "code_invalid", "message": "That code is not right.", "attemptsLeft": ce.AttemptsLeft})
+		writeError(w, status, "code_invalid", "That code is not right.", map[string]any{"attemptsLeft": ce.AttemptsLeft})
 	case errors.Is(err, auth.ErrChallengeInvalid):
-		writeAuthError(w, status, "challenge_expired", "This code has expired or was tried too often. Ask for a new one.")
+		writeError(w, status, "challenge_expired", "This code has expired or was tried too often. Ask for a new one.")
 	default:
 		return false
 	}
@@ -507,7 +507,7 @@ func (s *server) handleEmailResend(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if !s.mailConfigured(r.Context()) {
-		writeAuthError(w, http.StatusConflict, "mail_unavailable", "Email is not set up on this server.")
+		writeError(w, http.StatusConflict, "mail_unavailable", "Email is not set up on this server.")
 		return
 	}
 	u, err := auth.LoadUser(r.Context(), s.db, p.User.ID)
@@ -516,7 +516,7 @@ func (s *server) handleEmailResend(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if u.Email == nil || u.EmailVerified {
-		writeAuthError(w, http.StatusConflict, "nothing_to_verify", "There is no unverified email address on this account.")
+		writeError(w, http.StatusConflict, "nothing_to_verify", "There is no unverified email address on this account.")
 		return
 	}
 	_, norm, nerr := auth.NormalizeEmail(*u.Email)

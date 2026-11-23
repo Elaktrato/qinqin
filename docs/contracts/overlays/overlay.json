@@ -33,7 +33,7 @@
      },
      "expect": {
       "status": 404,
-      "text": "entry not found\n"
+      "error": "not_found"
      }
     }
    ],
@@ -49,7 +49,7 @@
      },
      "expect": {
       "status": 400,
-      "text": "written must not be empty\n"
+      "error": "bad_request"
      }
     }
    ],
@@ -70,7 +70,7 @@
      },
      "expect": {
       "status": 400,
-      "text": "each reading needs a type and a value\n"
+      "error": "bad_request"
      }
     }
    ],
@@ -91,7 +91,7 @@
      },
      "expect": {
       "status": 400,
-      "text": "each reading needs a type and a value\n"
+      "error": "bad_request"
      }
     }
    ],
@@ -107,7 +107,7 @@
      },
      "expect": {
       "status": 400,
-      "text": "malformed request body\n"
+      "error": "bad_request"
      }
     }
    ],

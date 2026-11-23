@@ -50,12 +50,13 @@ function workspaceCalls(): number {
 
 describe('isWorkspaceGone', () => {
 	it('is the API 404 for a workspace that no longer exists', () => {
-		expect(isWorkspaceGone(new ApiError(404, 'workspace not found'))).toBe(true);
-		expect(isWorkspaceGone(new ApiError(404, ' Workspace not found\n'))).toBe(true);
+		expect(isWorkspaceGone(new ApiError(404, '{"error":"workspace_not_found","message":"No such workspace."}'))).toBe(true);
 	});
 
 	it('is nothing else', () => {
 		expect(isWorkspaceGone(new ApiError(404, 'not found'))).toBe(false);
+		expect(isWorkspaceGone(new ApiError(404, 'workspace not found'))).toBe(false); // text is never sniffed
+		expect(isWorkspaceGone(new ApiError(404, '{"error":"not_found","message":"No such workspace."}'))).toBe(false);
 		expect(isWorkspaceGone(new ApiError(404, 'workspace or plugin not found'))).toBe(false);
 		expect(isWorkspaceGone(new ApiError(409, 'workspace not found'))).toBe(false);
 		expect(isWorkspaceGone(new Error('workspace not found'))).toBe(false);
@@ -147,13 +148,13 @@ describe('recoverFromDeletedWorkspace', () => {
 		expect(get(workspaces).current).toEqual(zh);
 	});
 
-	it('is triggered by any API call answered "workspace not found" once watching', async () => {
+	it('is triggered by any API call answered workspace_not_found once watching', async () => {
 		selectIn([zh, ja], zh);
 		watchDeletedWorkspaces();
 		vi.mocked(fetch).mockImplementation(async (input) =>
 			String(input) === '/api/workspaces'
 				? jsonResponse([ja])
-				: new Response('workspace not found', { status: 404 })
+				: new Response('{"error":"workspace_not_found","message":"No such workspace."}', { status: 404 })
 		);
 
 		await expect(api('/api/events?workspace=1')).rejects.toBeInstanceOf(ApiError);

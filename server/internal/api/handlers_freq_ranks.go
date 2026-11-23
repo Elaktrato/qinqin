@@ -50,14 +50,14 @@ func (s *server) handleFrequencyRanks(w http.ResponseWriter, r *http.Request) {
 	}
 	if err := json.NewDecoder(bytes.NewReader(body)).Decode(&req); err != nil ||
 		len(req.IDs) == 0 || len(req.IDs) > maxEntryBasesIDs {
-		http.Error(w, "ids must be 1 to 500 entry ids", http.StatusBadRequest)
+		writeError(w, http.StatusBadRequest, "bad_request", "ids must be 1 to 500 entry ids.")
 		return
 	}
 	seen := make(map[int64]bool, len(req.IDs))
 	ids := make([]int64, 0, len(req.IDs))
 	for _, id := range req.IDs {
 		if id <= 0 {
-			http.Error(w, "ids must be 1 to 500 entry ids", http.StatusBadRequest)
+			writeError(w, http.StatusBadRequest, "bad_request", "ids must be 1 to 500 entry ids.")
 			return
 		}
 		if !seen[id] {
@@ -67,12 +67,12 @@ func (s *server) handleFrequencyRanks(w http.ResponseWriter, r *http.Request) {
 	}
 	language := strings.ToLower(strings.TrimSpace(req.Language))
 	if language == "" {
-		http.Error(w, "language is required", http.StatusBadRequest)
+		writeError(w, http.StatusBadRequest, "bad_request", "language is required.")
 		return
 	}
 	es, err := lexicon.Store{DB: s.db}.GetMany(r.Context(), ids)
 	if err != nil {
-		http.Error(w, "internal error", http.StatusInternalServerError)
+		writeInternal(w, r)
 		return
 	}
 	mine := es[:0:0]
@@ -83,7 +83,7 @@ func (s *server) handleFrequencyRanks(w http.ResponseWriter, r *http.Request) {
 	}
 	pack, ranks, err := s.lookupService().EntryRanks(r.Context(), language, mine)
 	if err != nil {
-		http.Error(w, "internal error", http.StatusInternalServerError)
+		writeInternal(w, r)
 		return
 	}
 	out := struct {
@@ -135,18 +135,18 @@ func (s *server) handleFrequencyTop(w http.ResponseWriter, r *http.Request) {
 	}
 	size, ok := starterSizes[r.URL.Query().Get("size")]
 	if !ok {
-		http.Error(w, "size must be 500, 1000 or 2000", http.StatusBadRequest)
+		writeError(w, http.StatusBadRequest, "bad_request", "size must be 500, 1000 or 2000.")
 		return
 	}
 	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
 	if err != nil {
-		http.NotFound(w, r)
+		writeError(w, http.StatusNotFound, "not_found", "No such frequency pack.")
 		return
 	}
 	fs := freq.Store{DB: s.db}
 	packs, err := fs.Packs(r.Context())
 	if err != nil {
-		http.Error(w, "internal error", http.StatusInternalServerError)
+		writeInternal(w, r)
 		return
 	}
 	var pack *freq.PackInfo
@@ -156,7 +156,7 @@ func (s *server) handleFrequencyTop(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	if pack == nil {
-		http.NotFound(w, r)
+		writeError(w, http.StatusNotFound, "not_found", "No such frequency pack.")
 		return
 	}
 	store := lexicon.Store{DB: s.db}
@@ -164,7 +164,7 @@ func (s *server) handleFrequencyTop(w http.ResponseWriter, r *http.Request) {
 	// entries' base fields: the lexicon version is part of every cache key.
 	version, err := store.CharactersVersion(r.Context())
 	if err != nil {
-		http.Error(w, "internal error", http.StatusInternalServerError)
+		writeInternal(w, r)
 		return
 	}
 	key := starterBodyKey{pack.ID, pack.ContentHash, version, size}
@@ -174,7 +174,7 @@ func (s *server) handleFrequencyTop(w http.ResponseWriter, r *http.Request) {
 	}
 	top, err := s.freqTop.Get(r.Context(), fs, freq.StarterResolver{Lexicon: store}, *pack, version, size)
 	if err != nil {
-		http.Error(w, "internal error", http.StatusInternalServerError)
+		writeInternal(w, r)
 		return
 	}
 	ids := make([]int64, len(top))
@@ -187,12 +187,12 @@ func (s *server) handleFrequencyTop(w http.ResponseWriter, r *http.Request) {
 	for start := 0; start < len(ids); start += maxEntryBasesIDs {
 		es, err := store.GetMany(r.Context(), ids[start:min(start+maxEntryBasesIDs, len(ids))])
 		if err != nil {
-			http.Error(w, "internal error", http.StatusInternalServerError)
+			writeInternal(w, r)
 			return
 		}
 		bases, err := entryBases(r.Context(), store, es)
 		if err != nil {
-			http.Error(w, "internal error", http.StatusInternalServerError)
+			writeInternal(w, r)
 			return
 		}
 		for i, b := range bases {
@@ -209,7 +209,7 @@ func (s *server) handleFrequencyTop(w http.ResponseWriter, r *http.Request) {
 		Entries []starterEntryBody `json:"entries"`
 	}{pack.PackID, pack.Name, size, entries})
 	if err != nil {
-		http.Error(w, "internal error", http.StatusInternalServerError)
+		writeInternal(w, r)
 		return
 	}
 	s.freqTopBodies.put(key, body)
