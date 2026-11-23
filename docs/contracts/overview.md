@@ -282,6 +282,9 @@ preparation marks (`qinqin.pwa.*`), the current workspace and the session token.
 - Do not cache admin, account, AI, journal photo, audio, search or lookup responses as truth.
 - Package files are verified before use, never partially (`packages/README.md`, "Verification"): a download
   that fails a check is discarded, and a package database is opened read-only and replaced as a whole.
+- Do not treat the rows of `GET /api/plugins` whose manifest `type` is a pack type as plugins (they carry
+  `hidden: true`; v0.3.x compatibility only, see `packages/README.md`, "Pack types"): leave every hidden row
+  out of plugin lists and never read a data pack's enabled state from them.
 
 ## Not specified (on purpose)
 

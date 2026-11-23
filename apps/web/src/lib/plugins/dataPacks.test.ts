@@ -8,7 +8,7 @@ function info(id: string, manifest: Record<string, unknown>): PluginInfo {
 
 describe('isDataPackPlugin', () => {
 	it('is true for the synthesized pack manifests of every type', () => {
-		for (const type of ['dictionary', 'frequency', 'levels', 'sentences', 'grammar']) {
+		for (const type of ['dictionary', 'frequency', 'levels', 'sentences', 'grammar', 'audio', 'components', 'strokes', 'theme', 'font']) {
 			expect(isDataPackPlugin(info('p', { id: 'p', name: 'P', type })), type).toBe(true);
 		}
 	});
