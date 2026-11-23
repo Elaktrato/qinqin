@@ -506,6 +506,7 @@
 	"apiError.smtpTestFailed": "The test mail could not be sent.",
 	"apiError.stageNotReady": "This upload is not ready to be restored.",
 	"apiError.studyRowInvalid": "The data is not a readable study row for this key.",
+	"apiError.studyRowUnreadable": "This item was saved in a form this server version cannot read, so it was left unchanged. Update the server to change it.",
 	"apiError.syncCollectionMoved": "This data moved to another place. Update the app.",
 	"apiError.syncCursorExpired": "This device was away too long. Its data is downloaded again.",
 	"apiError.syncPageInvalid": "The sync request is not valid. Update the app.",

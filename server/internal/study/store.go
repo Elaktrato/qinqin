@@ -2,6 +2,7 @@ package study
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -184,6 +185,10 @@ func PullEach(ctx context.Context, q Querier, userID int64, f rows.Family, since
 	defer rs.Close()
 	for rs.Next() {
 		r, err := scanRow(f, rs)
+		if errors.Is(err, ErrUnreadableStored) {
+			LogUnreadable("study: pull", err) // skipped: never fails the pull
+			continue
+		}
 		if err != nil {
 			return fmt.Errorf("study: pull %s: %w", f, err)
 		}
@@ -274,6 +279,10 @@ func ListCards(ctx context.Context, q Querier, userID, workspaceID int64) ([]row
 	out := []rows.Card{}
 	for rs.Next() {
 		r, err := scanRow(rows.Cards, rs)
+		if errors.Is(err, ErrUnreadableStored) {
+			LogUnreadable("study: list cards", err)
+			continue
+		}
 		if err != nil {
 			return nil, fmt.Errorf("study: list cards: %w", err)
 		}

@@ -135,6 +135,16 @@ client (web and Android):
    stays on the server as written, so the client that wrote it still reads it.
 4. A row of another workspace is not counted, readable or not (`workspace=` already filters them out).
 
+The server follows the same rule for its own stored rows (#167 review). A stored typed row it cannot read back
+(stored JSON it does not know, such as a deck `source` type or a `newOrder` a newer server wrote before a
+downgrade, or a damaged row) is logged by family, workspace and identity (never its data) and skipped: the paged
+pull goes on and its position, so the cursor, still moves past the row; the legacy pull and the legacy plugin-data
+view skip it too (a legacy GET of its key is 404, a leftover plugin row of the key does not show through). A write
+that would replace it (`POST /api/sync/push`, a legacy plugin-data PUT or DELETE of its key) is refused with 409
+`study_row_unreadable` (`docs/contracts/auth/errors.json`) and nothing in the request is applied. Go:
+`server/internal/sync/unreadable_stored_test.go`, `unreadable_http_test.go`. The backup export still fails on such
+a row: a backup must not silently lose data.
+
 ## Push (`push-result.json`)
 
 `POST /api/sync/push` is unchanged: body `{events, pluginData, cards, decks, deckSettings, limits, fsrsSets,
