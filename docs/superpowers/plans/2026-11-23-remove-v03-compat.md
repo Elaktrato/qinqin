@@ -71,6 +71,20 @@ form (not in the issue), the plugin manifest vocabulary (`hook` surface, `study-
   admin manifest may declare a hook that does nothing (it already did nothing).
 - Ruling: `docs/contracts/CHANGELOG.md` is created as the general contract changelog (only `auth/README.md`
   had one, for #168, which it points to) — cost if wrong: one file.
+- Ruling: the service worker no longer caches a pull without `v=2` — the server answers 404 for it, and the
+  only client that sent it (a cached v0.3.x shell) is unsupported — cost if wrong: none.
+- Ruling: `scheduler/fsrs.json` loses its `paramSet` cases and `scheduler/limits-rows.json` its `rows` cases
+  (regenerated with `gen-scheduler-fixtures.mjs`): they pinned the keyed `fsrs:set:*` / `limits:*` parsers the
+  issue removes; the typed rows are pinned by `study/rows.json`. `frequency/deckcfg-new-order.json` stays: its
+  `newOrder` member rule is still `parseNewOrder`'s and the backup codec's — cost if wrong: re-adding cases.
+- Ruling: the restore cleanup (`clearLocalAfterRestore`) clears the v2 outbox key; it still read only the v1
+  key, so a restore left the v2 queue of the old workspace ids behind (found while removing the v1 key) —
+  cost if wrong: none.
+- Ruling: kept although v0.3-related, because the issue does not list them: `study.AdoptLeftovers` (a
+  downgraded binary's rows), the full-array `GET /api/events` form, the unhidden core feature rows in
+  `GET /api/plugins` (`isHiddenBuiltin`), the `legacySentences` usage count of `language_in_use`, and the
+  test-only codec mirror `lib/study/testing/legacyCodec.ts` (test data builders; #197 replaces them) — cost if
+  wrong: a follow-up removal.
 - Ruling: the release-notes draft is `docs/releases/NEXT.md`; no test enumerates `docs/releases` and the
   release workflow only reads `docs/releases/<tag>.md`, so the draft is never published by accident; it is
   renamed at tagging — cost if wrong: none.
@@ -88,4 +102,36 @@ form (not in the issue), the plugin manifest vocabulary (`hook` surface, `study-
 
 ## Execution record
 
-(filled in as the work goes)
+- Inventory: every caller of each removed item was grepped (server, web, contracts, wiki, tests, scripts).
+  Legacy-only tests deleted with their code: `api/compat_old_shell_test.go`, `api/handlers_plugins_legacy_test.go`,
+  `sync/{contract_legacy,legacy,legacy_equal,legacy_view,pull_semantics,sync_registry}_test.go`,
+  `sync/export_test.go`, `study/legacy_test.go`, `plugins/{legacyrows,datamanifest}_internal_test.go`, the
+  data-pack listing tests in `plugins_test.go`, the seed WARNING test, web `storeGuard.test.ts`,
+  `hooks.test.ts`, `dataPacks.test.ts` and the keyed-parser cases. Tests that used the legacy pull or legacy
+  view only as a read-out (sync push tests, the backup round trip, workspace delete, token routes, the
+  `cmd/qinqin` core-row tests) now read the paged pull or push typed rows.
+- Guards first: `api/legacy_removed_test.go` (`TestLegacyPullAndViewAreGone`,
+  `TestOldFormatBackupRestoresIntoTypedRows`, `TestDataPackPluginRowsAreGone`, `TestLegacyCompatCodeStaysGone`)
+  and web `study/legacyRemoved.test.ts` were written and run against the untouched code: every case failed
+  (the legacy pull answered 200 with `Deprecation`, the plugin-data routes served and wrote typed keys, data-pack
+  ids were plugins, the identifier scans found the code; the web scan found all five patterns). Then the code
+  went and they passed. The backup test's restore half passed before too (the behaviour is kept; only its 404
+  half was new). The route set is unchanged, so the route-walk, the pinned token set and the PWA route fixture
+  needed no change (`UPDATE_ROUTES_FIXTURE=1` gave no diff; `gen-api-docs` changed only `API-Errors.md`).
+- Test-first for the moved consumers: `grammar/browse.test.ts` (every pack shows) failed before `browseSections`
+  lost its predicate; `backupView.test.ts` / `YourData.dom.test.ts` (the v2 key) failed before the fix;
+  `classify.test.ts` (no legacy pull cached) failed before `classify.ts` changed.
+- Gates: gofmt clean; one full `go vet ./... && go test ./...` under the flock: green apart from the known
+  sandbox-only `internal/ai` `TestHostnameResolvingToEmbeddedFormIsRefused`; web check 0 errors, build ok;
+  full vitest under Node 26: 585 files, 12,499 passed, 8 skipped; `gen-api-docs --check`, `check-sources`,
+  `node --test scripts/*.test.mjs` (156) ok; `gen-scheduler-fixtures --check` ok. Under the local Node 22 five
+  dom tests (`BookView`, `AccountSettings`) fail on the untouched code too; Node 26 is green.
+- Real app: a scratch build on a random 127.0.0.1 port (auto-seed off): the three legacy pull forms and
+  GET/PUT/DELETE of a typed key answered 404 `not_found` JSON (401 anonymous); a typed push was accepted and a
+  keyed card in the same push refused alone; the v2 pull shipped the card; `GET /api/plugins` listed only the
+  five registry plugins with a grammar pack row inserted, and `PUT /api/plugins/<pack>/state` was 404; the
+  v0.3.0 sample archive uploaded, staged, applied, and its cards, deck, limits, FSRS set and active set pulled
+  as typed rows with no keyed row left. Server killed, scratch removed.
+- Not verified: nothing in a browser or on a device (the Grammar page and Settings → Plugins were checked by
+  unit and dom tests only); the real app ran without seeded packs, so the data-pack check used one inserted
+  registry row; the web was not served by the real-app server.
