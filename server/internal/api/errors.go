@@ -8,6 +8,7 @@ import (
 	"log"
 	"net/http"
 	"runtime/debug"
+	"strings"
 	"time"
 )
 
@@ -231,4 +232,16 @@ func recoverPanics(next http.Handler) http.Handler {
 		}()
 		next.ServeHTTP(rw, r)
 	})
+}
+
+// errDetail is the detail a validation error of a lower package adds to
+// its sentinel ("sync: invalid: event 0 needs ..." -> "event 0 needs
+// ..."), for the message of a coded answer; the error itself when it does
+// not wrap the sentinel that way.
+func errDetail(err, sentinel error) string {
+	msg := err.Error()
+	if rest, ok := strings.CutPrefix(msg, sentinel.Error()+": "); ok {
+		return rest
+	}
+	return msg
 }

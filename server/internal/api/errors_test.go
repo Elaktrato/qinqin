@@ -122,3 +122,23 @@ func TestBadBodyAndReadBodyAreCoded(t *testing.T) {
 		t.Fatalf("writeTooLarge: %d %q", w.Code, w.Body.String())
 	}
 }
+
+// TestErrorMessagesCarryNoPackagePrefix: a validation detail of a lower
+// package reaches the message without its "sync:" / "events:" prefix.
+func TestErrorMessagesCarryNoPackagePrefix(t *testing.T) {
+	_, h, a, _ := newGateServer(t)
+	for _, c := range []struct{ method, path, body, code string }{
+		{"GET", "/api/sync/pull?v=2&limit=0", "", "sync_page_invalid"},
+		{"GET", "/api/sync/pull?collections=pluginData,levels", "", "sync_collection_moved"},
+		{"GET", "/api/sync/pull?collections=nope", "", "bad_request"},
+		{"POST", "/api/sync/push", `{"events":[{"id":"x"}]}`, "bad_request"},
+		{"GET", "/api/events?limit=0", "", "events_page_invalid"},
+	} {
+		w := walkRequest(h, c.method, c.path, c.body, a.user)
+		body := errorBody(t, w)
+		msg, _ := body["message"].(string)
+		if body["error"] != c.code || strings.Contains(msg, "sync:") || strings.Contains(msg, "events:") {
+			t.Errorf("%s %s: %v %q", c.method, c.path, body["error"], msg)
+		}
+	}
+}

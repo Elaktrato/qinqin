@@ -480,6 +480,7 @@
 	"apiError.languageUnknown": "This language is not set up on the server. Ask an administrator to add it.",
 	"apiError.lastAdmin": "The last administrator cannot be removed. Make someone else an administrator first.",
 	"apiError.lastWorkspace": "Keep at least one workspace.",
+	"apiError.licenceMismatch": "The licence changed since the review. Review the pack again.",
 	"apiError.mailOutage": "Two-step sign-in by email is not working right now because the server cannot send mail. Ask an administrator.",
 	"apiError.mailUnavailable": "Email is not available on this server.",
 	"apiError.methodNotAllowed": "This app version sent a request the server does not take.",

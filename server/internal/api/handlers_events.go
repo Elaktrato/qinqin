@@ -130,7 +130,7 @@ func (s *server) handleListEvents(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	if errors.Is(err, events.ErrPageInvalid) {
-		writeError(w, http.StatusBadRequest, "events_page_invalid", "Read the log again from its first page. "+err.Error())
+		writeError(w, http.StatusBadRequest, "events_page_invalid", "Read the log again from its first page. "+errDetail(err, events.ErrPageInvalid))
 		return
 	}
 	if err != nil {

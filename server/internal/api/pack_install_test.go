@@ -59,7 +59,7 @@ func TestStagedInstallRequiresExactLicence(t *testing.T) {
 	s := stageZip(t, e, esPackZip(t, packTestDictManifest))
 	for _, lic := range []string{"CC0-1.0 ", "", "cc0-1.0"} {
 		code, text := e.install(t, s.Token, lic)
-		if code != http.StatusConflict || !strings.Contains(text, "confirm the pack's licence") {
+		if code != http.StatusConflict || text != "licence_mismatch: Confirm the pack's licence: the licence sent is not the staged pack's." {
 			t.Errorf("licence %q: %d %q", lic, code, text)
 		}
 	}

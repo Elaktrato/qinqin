@@ -46,11 +46,11 @@ func (s *server) handleSyncPull(w http.ResponseWriter, r *http.Request) {
 	}
 	only, err := chinsync.ParseCollections(q.Get("collections"))
 	if errors.Is(err, chinsync.ErrMoved) {
-		writeError(w, http.StatusBadRequest, "sync_collection_moved", "The lexicon collections moved to data packages: read GET /api/packages. "+err.Error())
+		writeError(w, http.StatusBadRequest, "sync_collection_moved", "The lexicon collections moved to data packages: read GET /api/packages. Moved: "+errDetail(err, chinsync.ErrMoved))
 		return
 	}
 	if err != nil {
-		writeError(w, http.StatusBadRequest, "bad_request", err.Error())
+		writeError(w, http.StatusBadRequest, "bad_request", errDetail(err, chinsync.ErrInvalid))
 		return
 	}
 	h := w.Header()
@@ -86,9 +86,9 @@ func (s *server) handleSyncPullV2(w http.ResponseWriter, r *http.Request, p *aut
 	}
 	switch {
 	case errors.Is(err, chinsync.ErrMoved):
-		writeError(w, http.StatusBadRequest, "sync_collection_moved", "The lexicon collections moved to data packages: read GET /api/packages. "+err.Error())
+		writeError(w, http.StatusBadRequest, "sync_collection_moved", "The lexicon collections moved to data packages: read GET /api/packages. Moved: "+errDetail(err, chinsync.ErrMoved))
 	case errors.Is(err, chinsync.ErrPageInvalid):
-		writeError(w, http.StatusBadRequest, "sync_page_invalid", "Start the round again without page. "+err.Error())
+		writeError(w, http.StatusBadRequest, "sync_page_invalid", "Start the round again without page. "+errDetail(err, chinsync.ErrPageInvalid))
 	case errors.Is(err, chinsync.ErrNotFound):
 		writeError(w, http.StatusNotFound, "not_found", "No such workspace.")
 	case errors.Is(err, chinsync.ErrCursorExpired):
@@ -143,7 +143,7 @@ func (s *server) handleSyncPush(w http.ResponseWriter, r *http.Request) {
 	res, err := chinsync.Push(r.Context(), s.db, u.ID, body)
 	switch {
 	case errors.Is(err, chinsync.ErrInvalid):
-		writeError(w, http.StatusBadRequest, "bad_request", err.Error())
+		writeError(w, http.StatusBadRequest, "bad_request", errDetail(err, chinsync.ErrInvalid))
 	case errors.Is(err, chinsync.ErrNotFound):
 		writeError(w, http.StatusNotFound, "not_found", "No such workspace or plugin.")
 	case err != nil:

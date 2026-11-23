@@ -141,7 +141,8 @@ export const API_ERROR_KEYS: Readonly<Record<string, MessageKey>> = {
 	source_language_unavailable: 'apiError.sourceLanguageUnavailable',
 	plugin_no_data: 'apiError.pluginNoData',
 	unknown_time_zone: 'apiError.unknownTimeZone',
-	too_many_changes: 'apiError.tooManyChanges'
+	too_many_changes: 'apiError.tooManyChanges',
+	licence_mismatch: 'apiError.licenceMismatch'
 };
 
 /** The interface text of an API error code; an unknown code gives "Something went wrong (<code>)." */
