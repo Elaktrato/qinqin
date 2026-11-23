@@ -65,6 +65,10 @@ A rule `{from, to, reason, in?, out, match?, stem?, chainOnly?}` rewrites a form
   depth, then the order of the form it came from, then rule order. Each candidate carries `reasons`, the
   reasons of its chain in application order (the rule applied to the surface first); the server's
   single `reason` string joins them innermost first (`polite past` for `[past, polite]`).
+- **Bound:** one Deinflect call stops as soon as it has produced **64 candidates** (`MaxCandidates`) and
+  returns those, the first 64 in the output order above. Every format; no table field. The Japanese table
+  produces at most 16 on the fixture texts, so the bound never changes its output; it exists so that a table
+  whose rules keep matching what earlier rules produced cannot multiply its candidates at every depth.
 - A candidate is a dictionary form only when an entry's sense has a POS tag of its class
   (`classes`); intermediate classes never match.
 
@@ -75,6 +79,26 @@ least one code point outside the script (so false for an empty stem). `notSuffix
 `allOf [p...]`, `anyOf [p...]`: nested predicates. Scripts: `kana` (hiragana, katakana, `ー`), `hiragana`,
 `katakana` (with `ー`), `han`, `latin`. The script list is fixed by the engine (formats 1 and 2), not by a table:
 a language needing another script (Hangul, Cyrillic) needs an engine change in every client and a format bump.
+
+## Limits
+
+A table over any limit is rejected as a whole, like an unknown key (every format; the built-in tables obey
+them too). Lengths count code points.
+
+| Item | Limit |
+| --- | --- |
+| `language` | a lowercase language code: `^[a-z]{2,3}(-[a-z0-9]{2,8}){0,2}$` |
+| `version`, a rule's `reason` | 64 |
+| `rules` | 1,024 |
+| `classes` | 64; a class name, a tag or prefix 32; `tags` + `prefixes` of one class 256 |
+| `compounds` | 64 |
+| a rule's `in` | 64 classes |
+| `from`, `to`, a compound `suffix`, a `notSuffix` or `keepWhole` entry | 32 |
+| `hints.keepWhole` | 2,048 entries |
+| `hints.expressionPos`, `hints.particlePos` | 64 entries each, each 32; `readingType` 32 |
+| stem predicate | nesting 4 levels (a predicate alone is level 1); `notSuffix` 256 entries; `minRunes` 0..64 |
+
+A rule-table pack's `rules.json` is at most 1 MiB ("Rule-table packs" below).
 
 ## Compounds
 
@@ -153,5 +177,6 @@ Godan imperatives are deliberately not deinflected (届け, 構え are nouns far
 
 ## Android notes
 
-Bundle `ja.rules.json` until a rule-table package type exists (follow-up); implement the engine and the
-two predicates exactly; check against `deinflect.json` and `segment.json`.
+Bundle `ja.rules.json` as the fallback and prefer a downloaded `lemma-rules` package of the language ("Rule-table
+packs" below); implement the engine, its limits, the candidate bound and the two predicates exactly; check against
+`deinflect.json` and `segment.json`.

@@ -11,6 +11,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"regexp"
 	"slices"
 	"strings"
 	"unicode"
@@ -21,6 +22,31 @@ import (
 // every format from 1 up to it. It changes when a rule field, hint, match
 // mode or stem predicate is added (2: hints keepWhole, rule chainOnly).
 const Format = 2
+
+// Limits of a table (docs/contracts/lemma/README.md, "Limits"): Parse
+// rejects a table over any of them, so no table — built in or installed
+// from a pack — can make the engine slow or large.
+const (
+	MaxRules       = 1024 // rules
+	MaxClasses     = 64   // word classes
+	MaxClassTags   = 256  // tags plus prefixes of one class
+	MaxCompounds   = 64   // compounds
+	MaxIn          = 64   // classes in one rule's in
+	MaxKeepWhole   = 2048 // hints.keepWhole entries
+	MaxPOSHints    = 64   // entries of hints.expressionPos and of hints.particlePos
+	MaxNameRunes   = 32   // a class name, a tag, a prefix, a part-of-speech hint
+	MaxAffixRunes  = 32   // from, to, a compound suffix, a notSuffix or keepWhole entry
+	MaxReasonRunes = 64   // a reason; the version
+	MaxPredDepth   = 4    // nesting of stem predicates (a predicate alone is 1)
+	MaxNotSuffix   = 256  // notSuffix entries of one predicate
+	MaxMinRunes    = 64   // minRunes
+)
+
+// MaxCandidates bounds one Deinflect call: it stops once it has produced
+// this many candidates, keeping the first ones in output order. A table
+// whose rules keep matching what earlier rules produced would otherwise
+// multiply its candidates at every depth.
+const MaxCandidates = 64
 
 // Match modes of a rule.
 const (
@@ -151,8 +177,9 @@ var scripts = map[string]func(rune) bool{
 }
 
 // Parse decodes and validates a table. Unknown keys, classes, match
-// modes, scripts and empty predicates are errors: a table either runs
-// the same in every engine or not at all.
+// modes, scripts, empty predicates and anything over a limit (MaxRules,
+// ...) are errors: a table either runs the same in every engine or not at
+// all.
 func Parse(data []byte) (*Table, error) {
 	dec := json.NewDecoder(bytes.NewReader(data))
 	dec.DisallowUnknownFields()
@@ -176,8 +203,13 @@ func (t *Table) validate() error {
 		return errors.New("keepWhole and chainOnly need format 2")
 	case t.Language == "":
 		return errors.New("no language")
+	case !languageCode.MatchString(t.Language):
+		return fmt.Errorf("language %q is not a lowercase language code like es or pt-br", t.Language)
 	case t.MaxDepth < 1 || t.MaxDepth > 8:
 		return fmt.Errorf("maxDepth %d outside 1..8", t.MaxDepth)
+	}
+	if err := t.checkLimits(); err != nil {
+		return err
 	}
 	if t.Hints.ReadingScript != "" && (scripts[t.Hints.ReadingScript] == nil || t.Hints.ReadingType == "") {
 		return fmt.Errorf("hints: reading script %q needs a known script and a reading type", t.Hints.ReadingScript)
@@ -226,7 +258,22 @@ func (t *Table) validate() error {
 	return nil
 }
 
-func (p Pred) validate() error {
+func (p Pred) validate() error { return p.validateAt(1) }
+
+func (p Pred) validateAt(depth int) error {
+	switch {
+	case depth > MaxPredDepth:
+		return fmt.Errorf("stem predicate nested deeper than %d", MaxPredDepth)
+	case p.MinRunes < 0 || p.MinRunes > MaxMinRunes:
+		return fmt.Errorf("stem predicate minRunes %d outside 0..%d", p.MinRunes, MaxMinRunes)
+	case len(p.NotSuffix) > MaxNotSuffix:
+		return fmt.Errorf("stem predicate has %d notSuffix entries, at most %d", len(p.NotSuffix), MaxNotSuffix)
+	}
+	for _, s := range p.NotSuffix {
+		if utf8.RuneCountInString(s) > MaxAffixRunes {
+			return fmt.Errorf("stem predicate notSuffix entry longer than %d code points", MaxAffixRunes)
+		}
+	}
 	if p.MinRunes == 0 && p.NotOnly == "" && len(p.NotSuffix) == 0 && len(p.AllOf) == 0 && len(p.AnyOf) == 0 {
 		return errors.New("empty stem predicate")
 	}
@@ -234,8 +281,76 @@ func (p Pred) validate() error {
 		return fmt.Errorf("unknown script %q", p.NotOnly)
 	}
 	for _, q := range append(slices.Clone(p.AllOf), p.AnyOf...) {
-		if err := q.validate(); err != nil {
+		if err := q.validateAt(depth + 1); err != nil {
 			return err
+		}
+	}
+	return nil
+}
+
+// languageCode is the shape of a table's language: lang.ValidCode's
+// normalised form (this package cannot import lang).
+var languageCode = regexp.MustCompile(`^[a-z]{2,3}(-[a-z0-9]{2,8}){0,2}$`)
+
+// checkLimits enforces the size limits (MaxRules, ...).
+func (t *Table) checkLimits() error {
+	longer := func(s string, n int) bool { return utf8.RuneCountInString(s) > n }
+	switch {
+	case longer(t.Version, MaxReasonRunes):
+		return fmt.Errorf("version longer than %d code points", MaxReasonRunes)
+	case len(t.Rules) > MaxRules:
+		return fmt.Errorf("%d rules, at most %d", len(t.Rules), MaxRules)
+	case len(t.Classes) > MaxClasses:
+		return fmt.Errorf("%d classes, at most %d", len(t.Classes), MaxClasses)
+	case len(t.Compounds) > MaxCompounds:
+		return fmt.Errorf("%d compounds, at most %d", len(t.Compounds), MaxCompounds)
+	case len(t.Hints.KeepWhole) > MaxKeepWhole:
+		return fmt.Errorf("hints: %d keepWhole entries, at most %d", len(t.Hints.KeepWhole), MaxKeepWhole)
+	case len(t.Hints.ExpressionPOS) > MaxPOSHints:
+		return fmt.Errorf("hints: %d expressionPos entries, at most %d", len(t.Hints.ExpressionPOS), MaxPOSHints)
+	case len(t.Hints.ParticlePOS) > MaxPOSHints:
+		return fmt.Errorf("hints: %d particlePos entries, at most %d", len(t.Hints.ParticlePOS), MaxPOSHints)
+	case longer(t.Hints.ReadingType, MaxNameRunes):
+		return fmt.Errorf("hints: readingType longer than %d code points", MaxNameRunes)
+	}
+	for _, s := range t.Hints.KeepWhole {
+		if longer(s, MaxAffixRunes) {
+			return fmt.Errorf("hints: keepWhole entry longer than %d code points", MaxAffixRunes)
+		}
+	}
+	for _, s := range append(slices.Clone(t.Hints.ExpressionPOS), t.Hints.ParticlePOS...) {
+		if longer(s, MaxNameRunes) {
+			return fmt.Errorf("hints: expressionPos or particlePos entry longer than %d code points", MaxNameRunes)
+		}
+	}
+	for name, c := range t.Classes {
+		switch {
+		case longer(name, MaxNameRunes):
+			return fmt.Errorf("class name longer than %d code points", MaxNameRunes)
+		case len(c.Tags)+len(c.Prefixes) > MaxClassTags:
+			return fmt.Errorf("class %q: %d tags and prefixes, at most %d", name, len(c.Tags)+len(c.Prefixes), MaxClassTags)
+		}
+		for _, tag := range append(slices.Clone(c.Tags), c.Prefixes...) {
+			if longer(tag, MaxNameRunes) {
+				return fmt.Errorf("class %q: tag or prefix longer than %d code points", name, MaxNameRunes)
+			}
+		}
+	}
+	for _, c := range t.Compounds {
+		if longer(c.Suffix, MaxAffixRunes) {
+			return fmt.Errorf("compound suffix longer than %d code points", MaxAffixRunes)
+		}
+	}
+	for i, r := range t.Rules {
+		switch {
+		case longer(r.From, MaxAffixRunes):
+			return fmt.Errorf("rule %d: from longer than %d code points", i, MaxAffixRunes)
+		case longer(r.To, MaxAffixRunes):
+			return fmt.Errorf("rule %d: to longer than %d code points", i, MaxAffixRunes)
+		case longer(r.Reason, MaxReasonRunes):
+			return fmt.Errorf("rule %d: reason longer than %d code points", i, MaxReasonRunes)
+		case len(r.In) > MaxIn:
+			return fmt.Errorf("rule %d: %d in classes, at most %d", i, len(r.In), MaxIn)
 		}
 	}
 	return nil
@@ -265,7 +380,7 @@ func (p Pred) holds(stem string) bool {
 // Deinflect returns the possible dictionary forms of surface,
 // breadth-first: shallowest chain first, then the order of the forms
 // they came from, then rule order; never the surface itself, and each
-// (form, class) pair once.
+// (form, class) pair once. It stops at MaxCandidates.
 func (t *Table) Deinflect(surface string) []Candidate {
 	type key struct{ form, class string }
 	type node struct {
@@ -310,6 +425,9 @@ func (t *Table) Deinflect(surface string) []Candidate {
 				reasons := append(slices.Clone(n.reasons), r.Reason)
 				next = append(next, node{k, reasons})
 				out = append(out, Candidate{Form: k.form, Reasons: reasons, Class: k.class})
+				if len(out) == MaxCandidates {
+					return out
+				}
 			}
 		}
 		level = next
