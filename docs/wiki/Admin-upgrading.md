@@ -22,6 +22,12 @@ In the Portainer console the seed is `qinqin seed`; with plain compose `docker c
 
 ## Notes per release
 
+### To v0.5.0
+
+- No database migrations.
+- Run `qinqin seed` once to install the new Chinese (≈ HSK) and Japanese (≈ JLPT) grammar packs: the first-start auto-seed runs only on a fresh instance. The old `zh-grammar-demo` pack stays installed until you uninstall it in Settings → Data ([Data packs on the server](Admin-data-packs)).
+- An open tab of the old app counts both reviews of a changed grade until it is reloaded.
+
 ### To v0.4.0
 
 - **Migration 038** moves the flashcards data (cards, decks, deck settings, daily limits, FSRS parameter sets and the active set) from plugin data into typed tables, keeping every card id, review, setting, version and stamp. Nothing is lost; a row no v0.3 client could read stays where it was. Open tabs of a cached v0.3 app keep reading and writing their cards until they are reloaded. Old `/p/flashcards` and `/p/reader` links redirect to `/flashcards` and `/reader`.
