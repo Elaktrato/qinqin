@@ -198,3 +198,44 @@ web `check` 0, `build` 0; full vitest under Node 26: 587 files, 12,567 passed, 2
 
 **Not verified in the fix wave:** no new real-app run (the serve-level test covers start-up load and the
 watcher); timing numbers come from one loaded machine.
+
+## Second fix wave (security), 2026-11-23
+
+The reviewer's verification found the CPU DoS still open: a unit was not constant work (`minRunes`/`notOnly`
+scanned whole stems, which grew with depth), and nothing bounded a whole segmentation request. No generator
+file was in `/tmp/claude-0/review-lp/v2` (it holds a source copy), so the table was rebuilt from the
+description in `segment/bounds_test.go` (`notOnlyTable`: one rule `a → é×31 + a` chaining, 1,023 chain-only
+rules with `notOnly: latin`, 64 compounds with two `notOnly` checks each).
+
+**Red first (item 4).** `TestSegmentationRequestWorkIsBounded` was written before any change and run against
+the first fix wave's code: 163,790,827 units and 3 min 57 s for 5,000 runes, failing the 4 M work assertion and
+the time backstop. After the changes: 15,656,020 units (under the 16 M request budget) in about 1.0 s.
+
+1. **Bounded units, `284742bc`.** A rule is considered only when its `from` ends in the form's last code point
+   (an index by last code point, in table order); a considered pair costs 1, its suffix comparison
+   ceil(runes(from)/8), a predicate leaf 1 + ceil(scanned/8) (`minRunes` scans at most n runes, `notOnly` up to
+   the first rune outside the script, a `notSuffix` entry its own runes); a cost that does not fit stops the call.
+   Candidates longer than the surface + 64 code points are dropped. `MaxWork` 16,384 → 4,096 (Japanese now spends
+   at most 884 per call). `budget.json`: the five cases recomputed by hand, four new ones (scan cost, long suffix,
+   index, growth cap). Red: all budget cases failed with the old counts; one existing test
+   (`TestCompoundStemPredicate`) pinned the old cost of a compound check and was updated deliberately.
+2. **Request budget, `fa56f723`.** `Segment` gives all windows one `lookup.Budget` of 16,000,000 units
+   (Deinflect, compound, 16 per extra probe); once spent, the rest of the text is matched exactly. The window
+   budgets are now 8,192 Deinflect units and 128 probes (Japanese: 1,966 units, 45 probes). Japanese on 5,000
+   runes of grammar-pack examples with no dictionary: 1,445,948 Deinflect units. The reviewer's suggested 4 M
+   would have been below that, so 16 M with a Ruling (about 11× Japanese's worst case). SQL `ByForm` terms are
+   bounded per window (128) and charged per probe (Ruling). Contract README "Bound", "Lookup bounds" and the new
+   "Request budget"; spec Rulings.
+3. **Limits, `0c805069`.** Bucket "lookup" per client address on the public GETs (300, then 20/s); 6 POST
+   /api/segment in flight per user. Both answer 429 `rate_limited` via `writeError` with `Retry-After`. Tests:
+   the bucket triggers and is per address (trusted-proxy `X-Forwarded-For`), 200 reader taps pass the defaults,
+   the seventh parallel segmentation of one user is refused while another user's passes. These tests were first
+   seen red only as compile failures (no hook, no constant). Wiki Admin-proxy-and-rate-limiting table updated.
+4. See "Red first"; the test is in the `fa56f723` commit.
+5. **Builder hook, this wave's last code commit.** `TestServeRebuildsTheRefreshedBundledPackage` runs serve twice
+   with a changed bundled table and waits for revision 2. Mutation-checked: without the hook argument it fails
+   (no package at all, since the startup reconcile runs before the sync installs it).
+
+**Not verified:** the reviewer's own generator (absent; rebuilt from the description); POST /api/segment over HTTP
+with the worst table (the service-level test covers the same path); a real-app run; how the limits feel to a
+real reader (no browser).
