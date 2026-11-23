@@ -8,7 +8,7 @@
 	import { page } from '$app/state';
 	import { onEventLogChange } from '$lib/events';
 	import { usesHan } from '$lib/languages';
-	import { errorMessage } from '$lib/stats/errors';
+	import { errorText } from '$lib/api/apiErrors';
 	import { onContextStale } from '$lib/study/currentContext';
 	import IconButton from '$lib/ui/IconButton.svelte';
 	import { ALL_WORKSPACES, onStudyWrite } from '$lib/study/store';
@@ -78,7 +78,7 @@
 		} catch (err) {
 			if (seq !== requestSeq) return;
 			view = null;
-			error = errorMessage(err, t('weekly.page.loadFailed'));
+			error = errorText(err, t('weekly.page.loadFailed'));
 			return;
 		} finally {
 			if (seq === requestSeq) loading = false;

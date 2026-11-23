@@ -83,5 +83,20 @@
 		"file": "lib/sources/coreCredits.ts",
 		"text": "MIT AND Apache-2.0",
 		"reason": "An SPDX licence expression (data)."
+	},
+	{
+		"file": "lib/i18n/catalogueCheck.ts",
+		"text": "String(e)",
+		"reason": "Catalogue machinery: a developer report of a message that does not parse (test and dev-script output); never shown in the app."
+	},
+	{
+		"file": "lib/study/fsrs/optimizer.worker.ts",
+		"text": "e.message",
+		"reason": "The worker posts its failure to optimizerClient.ts for the console; the screen shows its own sentence (errorText fallback)."
+	},
+	{
+		"file": "lib/study/fsrs/optimizer.worker.ts",
+		"text": "String(e)",
+		"reason": "The worker posts its failure to optimizerClient.ts for the console; the screen shows its own sentence (errorText fallback)."
 	}
 ]

@@ -8,7 +8,7 @@
 	import { t } from '$lib/i18n';
 	import { formatDay } from '$lib/i18n/format';
 	import { pluginStates } from '$lib/plugins/states';
-	import { errorMessage } from '$lib/stats/errors';
+	import { errorText } from '$lib/api/apiErrors';
 	import { reviewsPerDay, type ReviewDay } from '$lib/stats/summary';
 	import { contextForData, onContextStale } from '$lib/study/currentContext';
 	import { loadStudyHistory } from '$lib/study/history';
@@ -88,7 +88,7 @@
 		} catch (err) {
 			if (seq !== requestSeq) return;
 			series = null;
-			error = errorMessage(err, t('widgets.reviewsPerDay.loadFailed'));
+			error = errorText(err, t('widgets.reviewsPerDay.loadFailed'));
 		} finally {
 			if (seq === requestSeq) loading = false;
 		}

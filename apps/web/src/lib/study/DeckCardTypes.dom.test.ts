@@ -52,7 +52,7 @@ describe('DeckCardTypes', () => {
 		const reverse = screen.getByLabelText(/Reverse/) as HTMLInputElement;
 		await fireEvent.click(reverse);
 		const alert = await screen.findByRole('alert');
-		expect(alert.textContent).toContain('offline');
+		expect(alert.textContent).toContain('Could not save this setting.');
 		await waitFor(() => expect(reverse.checked).toBe(false));
 	});
 });

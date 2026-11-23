@@ -5,6 +5,7 @@
 // a different ranking pack (re-installed) drops the older ranks. A
 // failure rejects and is not cached; chunks that succeeded stay.
 
+import { UserError } from '$lib/api/userError';
 import { getEntryRanks } from '$lib/api/frequency';
 
 export const RANKS_CHUNK = 500;
@@ -56,7 +57,7 @@ export async function loadRanks(
 		const state = stateOf(language);
 		if (!switched || entryIds.every((id) => state.ranks.has(id))) return result(state);
 	}
-	throw new Error('The frequency list changed while loading; try again.');
+	throw new UserError('study.freq.listChanged');
 }
 
 /** loadOnce asks for the ids not known yet; true when the ranking pack changed meanwhile. */

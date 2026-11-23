@@ -6,6 +6,7 @@
 // or the pointer rests on it. Pure and framework-free; components render
 // its `state` and call its methods.
 
+import { errorText } from '$lib/api/apiErrors';
 import { t, type MessageKey } from '$lib/i18n';
 import { PartialCardsError } from './store';
 import type { StudyCard, StudyCardKind } from './types';
@@ -109,7 +110,7 @@ export function createCardActions(deps: CardActionsDeps): CardActions {
 			try {
 				await action();
 			} catch (err) {
-				set({ error: err instanceof Error && err.message ? err.message : t('study.actions.failed') });
+				set({ error: errorText(err, t('study.actions.failed')) });
 			} finally {
 				// A failed write may still have landed: always show the stored state.
 				try {

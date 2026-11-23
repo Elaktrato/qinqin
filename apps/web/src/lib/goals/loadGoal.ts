@@ -4,6 +4,7 @@
 // widget) call this; concurrent calls for the same workspace, learner day
 // and force flag (and signed-in user) share one promise, dropped once it settles.
 
+import { errorText } from '$lib/api/apiErrors';
 import { t } from '../i18n';
 import { fetchActivity, type ActivityResponse, type ActivitySource } from '../api/stats';
 import { loadStudyHistory } from '../study/history';
@@ -66,7 +67,7 @@ async function load(workspaceId: number, now: number, force: boolean): Promise<G
 		try {
 			activity = await fetchActivity(windowStart, today, workspaceId);
 		} catch (err) {
-			activityError = err instanceof Error && err.message ? err.message : t('goals.activityFailed');
+			activityError = errorText(err, t('goals.activityFailed'));
 		}
 	}
 	const sources = activity.sources ?? [];

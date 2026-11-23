@@ -121,7 +121,7 @@ describe('SummaryWidget', () => {
 		render(SummaryWidget);
 
 		const retry = await screen.findByRole('button', { name: 'Try again' });
-		await waitFor(() => expect(screen.getByText('broken')).toBeTruthy());
+		await waitFor(() => expect(screen.getByText('Could not load your summary.')).toBeTruthy());
 		retry.click();
 		await waitFor(() => expect(screen.getByText('Day streak')).toBeTruthy());
 		expect(vi.mocked(loadStudyHistory).mock.calls.at(-1)?.[1]).toEqual({ force: true });

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { errorText } from '$lib/api/apiErrors';
 	import { t } from '$lib/i18n';
 	import { goto } from '$app/navigation';
 	import { loadConfig, saveConfig } from '$lib/study/session';
@@ -75,7 +76,7 @@
 			newName = '';
 			await store.load(workspaceId, true);
 		} catch (err) {
-			formError = err instanceof Error && err.message ? err.message : t('flashcards.list.createFailed');
+			formError = errorText(err, t('flashcards.list.createFailed'));
 		} finally {
 			creating = false;
 		}

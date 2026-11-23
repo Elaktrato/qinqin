@@ -17,7 +17,7 @@ Every error body is JSON `{"error": code, "message": "English sentence"}`. Branc
 | `invalid_email` | 422 | Not a usable email address (one @, a dotted domain, at most 254 bytes). |
 | `email_taken` | 409 | Another account already uses that email address (compared case-insensitively). |
 | `mail_unavailable` | 409 | The setting needs a working mail server and none is configured. |
-| `invalid_language` | 422 | The interface language is neither empty (follow the browser) nor a language tag in canonical case (language, optional script, optional region: en, zh-Hant, pt-BR; see i18n/language-tags.json). Syntax only: an unsupported but well-formed tag is stored. |
+| `invalid_language` | 422 | A language code that is not well formed: a workspace or admin language that is not like es or pt-br, or an interface language that is neither empty (follow the browser) nor a language tag in canonical case (language, optional script, optional region: en, zh-Hant, pt-BR; see i18n/language-tags.json). Syntax only: an unsupported but well-formed tag is stored. |
 | `invalid_host` | 422 | The mail server host name is empty, too long, or has a scheme, path or space. |
 | `smtp_host_blocked` | 422 | The mail server address is never allowed (metadata, link-local) or private and QINQIN_SMTP_ALLOW_PRIVATE is off. |
 | `invalid_port` | 422 | The mail server port is outside 1-65535. |

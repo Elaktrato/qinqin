@@ -4,7 +4,7 @@
 // (a newer server) shows `apiError.unknown` with the code.
 import { t, type MessageKey } from '$lib/i18n';
 import { ApiError } from './client';
-import { UserError } from './userError';
+import { ShownError, UserError } from './userError';
 
 export const API_ERROR_KEYS: Readonly<Record<string, MessageKey>> = {
 	bad_request: 'apiError.badRequest',
@@ -156,6 +156,18 @@ export function apiErrorText(code: string): string {
  */
 export function errorText(err: unknown, fallback: string): string {
 	if (err instanceof UserError) return t(err.key, err.args);
+	if (err instanceof ShownError) return err.text;
 	const code = err instanceof ApiError ? err.code : undefined;
 	return code !== undefined && Object.hasOwn(API_ERROR_KEYS, code) ? t(API_ERROR_KEYS[code]) : fallback;
+}
+
+/**
+ * The one place a server sentence reaches the interface (spec Ruling, #168): the English reason of a 400
+ * `pack_invalid` (the pack validator names the rule a pack breaks, never a server path), shown to the administrator
+ * under the translated text, marked as English detail. '' for anything else.
+ */
+export function packErrorDetail(err: unknown): string {
+	if (!(err instanceof ApiError) || err.code !== 'pack_invalid') return '';
+	const detail = err.body?.message;
+	return typeof detail === 'string' ? detail.trim() : '';
 }
