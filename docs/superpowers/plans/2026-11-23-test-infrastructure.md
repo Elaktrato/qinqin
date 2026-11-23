@@ -43,8 +43,9 @@ the end.
   test uses `db.OpenThrough`, which the guard does not flag.
 - Ruling: tests that reopen an existing file keep `db.Open(path)` (the serve/seed/recover/backup command
   tests after the command ran, the datapkg restore of a `VACUUM INTO` copy); the fresh file they start from
-  comes from `dbtest.File`. The guard only flags `db.Open` of a new path in `t.TempDir()` — cost if wrong: a
-  fresh database built some other way (e.g. `os.MkdirTemp`) slips past the guard to review.
+  comes from `dbtest.File`. (Fix wave: the guard now flags every `db.Open` not preceded by dbtest.File,
+  OpenPath or VACUUM INTO in its function unless marked `// reopen` — cost if wrong: a wrong `// reopen`
+  marker is caught only in review.)
 - Ruling: the trivial wrapper copies (newDB etc. whose body was only the open) are removed and their callers
   call `dbtest.Open`/`OpenPath` directly; wrappers that do more (lemmapack's overlay reset, cmd/qinqin's
   `openTestDB` registering languages, the auth `tokenDB` fixture) stay and call dbtest — cost if wrong: none.
@@ -128,3 +129,61 @@ one run on a shared machine, plus the tests develop added).
   `BookView.dom.test.ts` (4 tests) and `AccountSettings.dom.test.ts` (1 test) fail under Node 22 on
   `develop` too, alone and in the full run, and pass under Node 26 (CI's version); not investigated. The mail
   enqueue check was not shown to fail with a blocking Enqueue (it reasons from the 300 ms send timeout).
+
+**Bisect: skip 696f10ca** (the web suite does not build there; see the deviation above).
+
+### Review fix wave
+
+The independent review found no must-fix and no coverage loss (identical test counts per file). Every group
+was test-first, one commit each:
+
+- go.sum (a8444eb7): the six `/go.mod` lines that running goimports with `-mod=mod` added are dropped;
+  `go mod tidy -diff` exits 0 again.
+- Stale template (2d4ef8ff): `TestFileWritesAFullyMigratedDatabase` reads the `File` output with
+  `OpenReadOnly` (no migration) and compares its `schema_migrations` and schema with a fresh `db.Open`. The
+  mutation "template built with `OpenThrough(…, "042_fonts")`" fails it (missing `043_lemma_rules`); before,
+  `OpenPath`'s `db.Open` healed it in every test. The test also asserts WAL mode, which failed first (the
+  `VACUUM INTO` output is a rollback-journal file); the template is now opened once with `db.Open` before
+  its bytes are kept.
+- Database guard (100555df): the matcher parses each test file (`go/parser`) and flags every
+  `db.Open`/`OpenForSeed` whose top-level function has no `dbtest.File`, `dbtest.OpenPath` or `VACUUM INTO`
+  before it and no `// reopen` marker on its line or the line above. New cases: `dir := t.TempDir()`,
+  `t.TempDir() + "/x.db"`, a local helper, a closure, File in another function. On the a609a10f tree (via a
+  throw-away test over `git archive a609a10f server`) it flags 81 test files, including all seven the
+  review named (cmd/qinqin backup, recover, seed, serve_lemma, shutdown; stats/large_test.go — plus
+  ai_env, bootstrap_env, secrets_env). Five reopen calls on this branch got `// reopen` markers.
+- Counts instead of time (43878fe4): `dbtest.Counting` opens a database through a counting wrapper of the
+  SQLite driver (statements, transactions). `TestActivityLargeLog` asserts the 91-day Activity runs the same
+  statements as a 7-day one, at most 4 (it runs 4). The big restore (`QINQIN_BIG_TESTS=1`, renamed
+  `TestBigRestoreIsBatchedAndStaysMemoryBound`) asserts at most one statement per restored row and at most
+  4 transactions; it ran 1 022 689 statements for about 1 020 000 rows in 2 transactions, 57 s.
+- Ruling: the counts are statement counts, not row or page counts — a statement that turns into a full scan
+  is not caught — cost if wrong: such a regression shows only as a slower suite.
+- Wall-clock guard (7618428b): ALL_CAPS operands are constants (`Date.now() - DAY` passes), block comments
+  are skipped, and clock reads are followed through variables: an `expect` on a difference of clock reads or
+  stamps, on a variable holding such a difference, or on the clock itself (deadline style) is flagged. The
+  reviewer's evasions (`end - start`, `new Date().getTime()`, `+new Date()`, a deadline) are cases; the
+  whole tree has no finding.
+- Fixtures (2a173fd7): `dbtest.User` and `dbtest.Workspace` replace the hand-built users and workspaces of
+  the auth token tests and the api token gate test. Ruling: `DictPack` has no caller yet; it is for the
+  domain-package tests of #194 and the e2e seed of #157 — cost if wrong: an unused fixture.
+- Hash cost (1debf6ae): `auth.SetHashCostForTests(memoryKiB, passes)` lowers the argon2id cost; the api
+  `TestMain` sets 64 KiB and one pass. `TestRegisterAndLoginAtTheProductionHashCost` (api) and all auth tests
+  stay on the production parameters, and `TestNoServingCodeLowersTheHashCost` checks that no non-test
+  source calls the hook. Ruling: the hook is exported (the api tests are another package) and panics unless
+  `testing.Testing()`, so serving code cannot lower the cost; the price is that the auth package imports
+  `testing` — cost if wrong: a slightly larger binary, no behaviour change. The api package alone (test binary
+  run directly, load about 3): 219.6 s wall / 409 s user before, 35.5 s wall / 21 s user after.
+
+Timings after the wave (one run each, final gates):
+
+| Suite | Before (a2a5091b) | After the first pass | After the wave |
+|---|---|---|---|
+| Go `go test -count=1 -p 2 ./...` wall | 422 s | 252 s | 113 s (2.9 → 3.5) |
+| Go slowest packages | api 392.4 s, auth 63.9, backup 34.7 | api 247.8 s, auth 28.9, cmd/qinqin 17.2 | api 41.2 s, auth 22.0, cmd/qinqin 15.2, stats 14.6, sync 11.7, lexicon 11.1, datapkg 9.0, backup 7.7, grammar 6.9, library 6.0 |
+| Web vitest, Node 26, wall | 165 s | 184 s | 255 s (2.8 → 9.8: the #157 agent ran beside it) |
+
+Final gates of the wave: gofmt clean, `go mod tidy -diff` 0, `go vet ./...` and `go test ./...` green but the
+known `TestHostnameResolvingToEmbeddedFormIsRefused` (no IPv6 here); web check 0 errors, Node 26 vitest 588
+files passed, build ok; `check-sources` and `node --test scripts/*.test.mjs` (156 pass). The web suite's
+skipped count is 2 instead of 8 because a build existed during the run (the build-id test skips without one).

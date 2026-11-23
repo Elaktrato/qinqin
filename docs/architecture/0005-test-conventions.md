@@ -38,14 +38,18 @@ Touched by: #195, #196. A merge from one of these issues that changes what this 
   compatibility test that needs an older schema uses `OpenThrough` in `server/internal/db`. Everything else
   uses `dbtest`; a test that opens an existing file again (after a command wrote it, or a `VACUUM INTO`
   copy) uses `db.Open` on that path, marked `// reopen` when nothing in the same function wrote it.
+- **Password hashing in tests.** A test package that creates many users may lower the argon2id cost for
+  its run with `SetHashCostForTests` (`server/internal/auth/auth.go`; it panics outside a test binary); the
+  api tests do so in `server/internal/api/main_test.go`. At least one test of such a package, and every test
+  of `server/internal/auth`, stays on the production parameters.
 - **Web study builders** live in `apps/web/src/lib/testing/study.ts`: `card`, `review` and `history` take
   overrides (an undefined override keeps the default), plus `eventId` and `strongReviews`. All web test
   support lives in `apps/web/src/lib/testing/`, including the test-only legacy codec mirror
   (`apps/web/src/lib/testing/legacyCodec.ts`, still used by the store and history tests to describe study
   state as old rows) and the spaceOut reference; `lib/study/testing/` is gone.
 - **No wall-clock assertions in unit tests.** A performance test asserts operation counts (replays, log
-  passes, Intl calls, publications, work units, bytes read, SQL statements and transactions) and no time limit; there is no separate perf
-  project. A heavy test may declare a generous vitest timeout as a hang backstop (the PWA icons test), and a
+  passes, Intl calls, publications, work units, bytes read, SQL statements and transactions) and no time
+  limit; there is no separate perf project. A heavy test may declare a generous vitest timeout as a hang backstop (the PWA icons test), and a
   Go test may bound how long a cancelled, timed-out or shut-down call takes to return (a liveness check,
   not a speed check). The lexicon characters test keeps its thread-CPU budget (`QINQIN_PERF_BUDGET_MS`),
   which measures CPU time, not elapsed time.
