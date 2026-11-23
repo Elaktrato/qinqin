@@ -13,7 +13,8 @@ vi.mock('$lib/api/frequency', () => ({ getFrequencyPacks: vi.fn(async () => []) 
 vi.mock('$lib/study/store', async (importOriginal) => ({
 	...(await importOriginal<typeof import('$lib/study/store')>()),
 	loadStudyData: vi.fn(),
-	saveDeckCardTypesForDecks: vi.fn()
+	saveDeckCardTypesForDecks: vi.fn(),
+	createDeck: vi.fn()
 }));
 vi.mock('$lib/components/CardManager.svelte', () => ({ default: () => ({}) }));
 vi.mock('$lib/time/zone', () => ({
@@ -27,7 +28,7 @@ import { getFrequencyPacks } from '$lib/api/frequency';
 import { goto } from '$app/navigation';
 import { fireEvent } from '@testing-library/svelte';
 import { fetchSchemeCharacters, getSchemeEntries, getSchemes } from '$lib/api/schemes';
-import { loadStudyData, saveDeckCardTypesForDecks } from '$lib/study/store';
+import { createDeck, loadStudyData, saveDeckCardTypesForDecks } from '$lib/study/store';
 import { studyDay } from '$lib/time/studyDay';
 import { currentStudyDay } from '$lib/time/zone';
 import { workspaces } from '$lib/workspaces';
@@ -295,6 +296,31 @@ describe('study setup, reverse and cloze checkboxes', () => {
 		await waitFor(() => expect(box(/cloze/)).not.toBeNull());
 		expect(box(/reverse/)!.checked).toBe(true);
 		expect(box(/cloze/)!.checked).toBe(false);
+	});
+});
+
+describe('study setup, a workspace switch while a deck is created (#174)', () => {
+	it('the deck lands in the workspace it was created in and never shows in the one switched to', async () => {
+		sessionStorage.setItem(
+			SESSION_CONFIG_KEY,
+			JSON.stringify({ mode: 'decks', schemeId: null, levelName: null, deckIds: ['general'], newLimit: 20, reviewLimit: 100, cardTypes: ['vocab'] })
+		);
+		vi.mocked(getSchemes).mockResolvedValue([]);
+		let finish: (d: unknown) => void = () => undefined;
+		vi.mocked(createDeck).mockImplementation(() => new Promise((r) => (finish = r)) as never);
+		render(Page);
+		const name = (await screen.findByLabelText('New deck')) as HTMLInputElement;
+		await fireEvent.input(name, { target: { value: 'Late deck' } });
+		await fireEvent.click(screen.getByRole('button', { name: 'Create deck' }));
+		expect(createDeck).toHaveBeenCalledWith(1, 'Late deck');
+		workspaces.set({
+			list: [{ id: 1, language: 'ja', name: 'ja' } as never, { id: 2, language: 'ja', name: 'ja2' } as never],
+			current: { id: 2, language: 'ja', name: 'ja2' } as never
+		});
+		await waitFor(() => expect(loadStudyData).toHaveBeenCalledWith(2));
+		finish({ id: 'dLate', name: 'Late deck', createdAt: '2026-11-23T00:00:00Z' });
+		await new Promise((r) => setTimeout(r, 0));
+		expect(screen.queryByText('Late deck')).toBeNull();
 	});
 });
 

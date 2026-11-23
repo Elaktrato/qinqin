@@ -59,9 +59,13 @@
 	// the check answers, though, the button is disabled: it must never
 	// offer to add an entry that is already in the deck. The study data
 	// comes from the shared short-lived cache (studyData.ts).
+	/** The workspace the "in deck" check ran against: an add goes there (#174). */
+	let checkedWorkspace: number | null = null;
+
 	$effect(() => {
 		const id = entryId;
 		const workspaceId = $workspaces.current?.id ?? null;
+		checkedWorkspace = workspaceId;
 		let stale = false;
 		inDeck = null;
 		justAdded = false;
@@ -100,7 +104,7 @@
 		// Unresolved or already-added means "no new card"; addCard itself
 		// is idempotent, so a race across tabs cannot duplicate either.
 		// The workspace the "in deck" check ran against, captured at the click (#174).
-		const ws = $workspaces.current?.id ?? null;
+		const ws = checkedWorkspace;
 		if (saving || inDeck !== false) return;
 		saving = true;
 		error = '';

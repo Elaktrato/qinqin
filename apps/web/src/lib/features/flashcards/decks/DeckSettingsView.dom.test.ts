@@ -76,6 +76,18 @@ describe('DeckSettingsView', () => {
 		await screen.findByText('Renamed.');
 	});
 
+	it('renames in the workspace of the deck on screen, even when another was selected in the same moment (#174)', async () => {
+		render(DeckSettingsView, { deckId: 'd1' });
+		const input = (await screen.findByLabelText('Deck name')) as HTMLInputElement;
+		await fireEvent.input(input, { target: { value: 'Hello' } });
+		const save = screen.getByRole('button', { name: 'Save name' });
+		// The switch lands, and the click comes before the page reloaded for it.
+		workspaces.set({ list: [], current: { id: 2, language: 'ja', name: 'ja' } as never });
+		save.click();
+		await waitFor(() => expect(renameDeck).toHaveBeenCalled());
+		expect(vi.mocked(renameDeck).mock.calls[0][0]).toBe(1);
+	});
+
 	it('asks before deleting, names where the cards go, and leaves for the list', async () => {
 		render(DeckSettingsView, { deckId: 'd1' });
 		await screen.findByLabelText('Deck name');

@@ -46,6 +46,16 @@ describe('DeckLimitsEditor', () => {
 		await waitFor(() => expect(saveDeckLimits).toHaveBeenCalledWith(1, 'd1', { new: 8 }));
 	});
 
+	it('saves to the workspace its limits were loaded from, not one selected since (#174)', async () => {
+		setup({ workspace: null, decks: { d1: { new: 5 } } });
+		const input = (await screen.findByLabelText('New cards per day value')) as HTMLInputElement;
+		await waitFor(() => expect(input.value).toBe('5'));
+		workspaces.set({ list: [], current: { id: 2, language: 'ja', name: 'ja' } as never });
+		await fireEvent.input(input, { target: { value: '8' } });
+		await fireEvent.click(screen.getByRole('button', { name: 'Save limits' }));
+		await waitFor(() => expect(saveDeckLimits).toHaveBeenCalledWith(1, 'd1', { new: 8 }));
+	});
+
 	it('refuses an invalid value without writing', async () => {
 		setup({ workspace: null, decks: { d1: { new: 5 } } });
 		const input = await screen.findByLabelText('New cards per day value');

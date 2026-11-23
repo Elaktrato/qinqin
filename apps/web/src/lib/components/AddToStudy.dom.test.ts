@@ -27,6 +27,16 @@ afterEach(() => {
 });
 
 describe('AddToStudy', () => {
+	it('adds to the workspace the in-deck check ran against, even when another was selected in the same moment (#174)', async () => {
+		render(AddToStudy, { entryId: 11, written: '学', sentenceId: 5 });
+		const button = (await screen.findByRole('button', { name: /Add to deck/ })) as HTMLButtonElement;
+		await waitFor(() => expect(button.disabled).toBe(false));
+		workspaces.set({ list: [], current: { id: 2, language: 'ja', name: 'ja2' } as never });
+		button.click();
+		await waitFor(() => expect(addCard).toHaveBeenCalled());
+		expect(vi.mocked(addCard).mock.calls[0][0]).toBe(1);
+	});
+
 	it('adds a character with the entryKind snapshot and no sentence', async () => {
 		render(AddToStudy, { entryId: 11, written: '学', sentenceId: 5, kind: 'character' });
 		const button = await screen.findByRole('button', { name: /Add to deck/ });
