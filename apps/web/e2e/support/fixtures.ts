@@ -67,13 +67,32 @@ export const test = base.extend<TestFixtures, WorkerFixtures>({
 		await use({ username, password, api, workspaces, entryId });
 	},
 	storageState: async ({ signedIn, learner, baseURL }, use) => {
-		await use(
-			signedIn
-				? { cookies: [], origins: [{ origin: baseURL!, localStorage: [{ name: 'qinqin.token', value: learner.api.token }] }] }
-				: { cookies: [], origins: [] }
-		);
+		await use(signedIn ? signedInState(baseURL!, learner) : { cookies: [], origins: [] });
+	},
+	// No network but the local server: a request anywhere else is aborted and fails the test.
+	context: async ({ context }, use) => {
+		const foreign: string[] = [];
+		await context.route(NOT_LOOPBACK, (route) => {
+			foreign.push(`${route.request().method()} ${route.request().url()}`);
+			return route.abort('blockedbyclient');
+		});
+		await use(context);
+		expect(foreign, 'requests to hosts other than the local server').toEqual([]);
 	}
 });
+
+/** Any http(s) URL whose host is not the loopback server. */
+const NOT_LOOPBACK = /^https?:\/\/(?!(127\.0\.0\.1|localhost|\[::1\])(:\d+)?\/)/;
+
+/**
+ * The browser storage of a signed-in learner: only the session token, under
+ * the app's key (`TOKEN_KEY` in apps/web/src/lib/api/client.ts; that module
+ * cannot be imported here without the app's runtime, so the key is repeated
+ * in this one place).
+ */
+export function signedInState(origin: string, learner: Learner) {
+	return { cookies: [], origins: [{ origin, localStorage: [{ name: 'qinqin.token', value: learner.api.token }] }] };
+}
 
 export { expect };
 
