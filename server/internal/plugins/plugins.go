@@ -2,9 +2,8 @@
 // of feature plugins, the per-user enable/order state for every
 // plugin, and the plugin-owned data store plugins keep their settings
 // and content in. Feature plugins ship no content of their own, so
-// registering one only stores its manifest; data plugins (dictionary,
-// levels, frequency, sentences packs) register themselves through their pack
-// registries and appear in listings without a row here.
+// registering one only stores its manifest. Data packs are no plugins:
+// they have their own registries and routes (#198).
 package plugins
 
 import (
@@ -261,8 +260,9 @@ var CoreFeatureIDs = []string{"qinqin-flashcards", "qinqin-reader"}
 // isHiddenBuiltin reports whether a registry row is one of the built-in
 // plugins and declares no surface: not a plugin to list (the core row).
 // The two core feature rows declare no surface either but are listed
-// unhidden: a cached v0.3.x web shell leaves hidden rows out of Settings
-// and would lose the two switches; new clients know the reserved ids.
+// unhidden. That was for v0.3.x web shells (they left hidden rows out of
+// Settings); it stays the documented answer until #199 retires the code
+// plugins (follow-up in the #198 plan). Clients know the reserved ids.
 // Admin-registered plugins are never hidden, whatever they declare.
 func isHiddenBuiltin(id, manifest string) bool {
 	if !slices.Contains(BuiltinIDs(), id) || slices.Contains(CoreFeatureIDs, id) {

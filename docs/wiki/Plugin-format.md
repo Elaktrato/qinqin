@@ -124,4 +124,4 @@ Options of single widgets live in another user-global row, `qinqin-core` / `widg
 
 A plugin that ships or fetches third-party material credits it in the optional `sources` array of its manifest ([Data and licences](Data-and-licences#credits-and-the-sources-page)).
 
-Data packs (dictionaries, level lists and so on) are a different kind of plugin: see [Data pack format](Data-pack-format).
+Data packs (dictionaries, level lists and so on) are not plugins: they carry content, are managed in Settings → Data and have no plugin state. See [Data pack format](Data-pack-format).

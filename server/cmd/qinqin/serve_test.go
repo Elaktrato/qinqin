@@ -10,7 +10,7 @@ import (
 
 // The server bounds how long a client may take to send its headers and how
 // long an idle keep-alive connection stays open, and sets no whole-request
-// read or write deadline: uploads, downloads and the streamed legacy pull set
+// read or write deadline: uploads, downloads and the streamed full event list set
 // their own (#170).
 func TestNewHTTPServerTimeouts(t *testing.T) {
 	srv := newHTTPServer(http.NotFoundHandler())
