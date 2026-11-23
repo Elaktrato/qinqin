@@ -9,6 +9,7 @@ import (
 
 	"qinqin/internal/dict"
 	"qinqin/internal/packs"
+	"qinqin/internal/packtype"
 )
 
 // storedTerms is what an installed pack's registry row holds of its
@@ -28,18 +29,7 @@ type storedTerms struct{ license, attribution, notice string }
 // directories).
 func warnStalePackTerms(ctx context.Context, sqlDB *sql.DB, roots []string, logf func(format string, args ...any)) {
 	stored := map[string]map[string]storedTerms{}
-	for kind, table := range map[string]string{
-		dict.TypeDictionary: "dictionaries",
-		dict.TypeFrequency:  "frequency_packs",
-		dict.TypeLevels:     "schemes",
-		dict.TypeSentences:  "sentence_packs",
-		dict.TypeGrammar:    "grammar_packs",
-		dict.TypeAudio:      "audio_packs",
-		dict.TypeComponents: "component_packs",
-		dict.TypeStrokes:    "stroke_packs",
-		dict.TypeTheme:      "theme_packs",
-		dict.TypeFont:       "font_packs",
-	} {
+	for kind, table := range staleCheckTables() {
 		rows, err := loadStoredTerms(ctx, sqlDB, table)
 		if err != nil {
 			logf("pack notice check: read %s: %v", table, err)
@@ -85,6 +75,16 @@ func warnStalePackTerms(ctx context.Context, sqlDB *sql.DB, roots []string, logf
 			return filepath.SkipDir
 		})
 	}
+}
+
+// staleCheckTables maps every pack type to its registry table (the
+// pack-type table, internal/packtype): every type stores its terms.
+func staleCheckTables() map[string]string {
+	out := map[string]string{}
+	for _, d := range packtype.All {
+		out[d.Type] = d.Registry
+	}
+	return out
 }
 
 // loadStoredTerms reads the installed rows of one registry table by

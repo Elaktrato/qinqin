@@ -10,31 +10,22 @@ import (
 	"strings"
 
 	"qinqin/internal/lang"
+	"qinqin/internal/packtype"
 )
 
-// Manifest types: the import pipeline a pack flows through.
+// Manifest types: the import pipeline a pack flows through. The pack-type
+// table (internal/packtype) is their single list; these are its names.
 const (
-	TypeDictionary = "dictionary"
-	TypeLevels     = "levels"
-	TypeSentences  = "sentences"
-	TypeFrequency  = "frequency"
-	TypeGrammar    = "grammar"
-	TypeAudio      = "audio"
-	// TypeComponents is a character components pack: which parts each
-	// character contains, for the radical and part lookup.
-	TypeComponents = "components"
-	// TypeStrokes is a stroke-order data pack (internal/strokes): one
-	// stroke JSON per character for the stroke player. It serves several
-	// languages, so its manifest states languages instead of language.
-	TypeStrokes = "strokes"
-	// TypeTheme is a colour theme pack (internal/themes): a themes.json of
-	// one or more themes. It teaches no language: its manifest states
-	// neither language nor languages.
-	TypeTheme = "theme"
-	// TypeFont is a font pack (internal/fonts): faces.json and WOFF2 slices
-	// of one or more hanzi/kanji faces. Like a theme pack it states neither
-	// language nor languages.
-	TypeFont = "font"
+	TypeDictionary = packtype.Dictionary
+	TypeLevels     = packtype.Levels
+	TypeSentences  = packtype.Sentences
+	TypeFrequency  = packtype.Frequency
+	TypeGrammar    = packtype.Grammar
+	TypeAudio      = packtype.Audio
+	TypeComponents = packtype.Components
+	TypeStrokes    = packtype.Strokes
+	TypeTheme      = packtype.Theme
+	TypeFont       = packtype.Font
 )
 
 // Pack formats: how a dictionary pack's data files are encoded.
@@ -65,21 +56,19 @@ const (
 	FormatFontSlices = "font-slices"
 )
 
+// typesOfTable is the set of the pack-type table's types.
+func typesOfTable() map[string]bool {
+	out := map[string]bool{}
+	for _, t := range packtype.Types() {
+		out[t] = true
+	}
+	return out
+}
+
 // manifestTypes and manifestFormats are the valid enum values of a
 // manifest's Type and Format fields.
 var (
-	manifestTypes = map[string]bool{
-		TypeDictionary: true,
-		TypeLevels:     true,
-		TypeSentences:  true,
-		TypeFrequency:  true,
-		TypeGrammar:    true,
-		TypeAudio:      true,
-		TypeComponents: true,
-		TypeStrokes:    true,
-		TypeTheme:      true,
-		TypeFont:       true,
-	}
+	manifestTypes   = typesOfTable()
 	manifestFormats = map[string]bool{
 		FormatJSON:      true,
 		FormatCedict:    true,

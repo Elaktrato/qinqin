@@ -39,8 +39,8 @@ func writeStrokesPack(t *testing.T, root string) string {
 }
 
 func TestSeedImportsStrokesPacksLast(t *testing.T) {
-	if importOrder[dict.TypeStrokes] <= importOrder[dict.TypeComponents] {
-		t.Errorf("importOrder[strokes] = %d, want after components %d", importOrder[dict.TypeStrokes], importOrder[dict.TypeComponents])
+	if importRank(dict.TypeStrokes) <= importRank(dict.TypeComponents) {
+		t.Errorf("importRank(strokes) = %d, want after components %d", importRank(dict.TypeStrokes), importRank(dict.TypeComponents))
 	}
 	sqlDB, _ := openTestDB(t)
 	root := t.TempDir()
