@@ -135,7 +135,10 @@ func Import(ctx context.Context, sqlDB *sql.DB, pack dict.Pack, opts ...Option) 
 	if err != nil {
 		return "", err
 	}
-	err = storeTextsAfterImport(ctx, sqlDB, pack)
+	// The type's import committed: the bookkeeping after it runs to the end
+	// even when ctx ends now (a shutdown), so an installed pack never lacks
+	// its licence texts because of a cancellation.
+	err = storeTextsAfterImport(context.WithoutCancel(ctx), sqlDB, pack)
 	o.changed(pack.Type, RegistryID(pack.Manifest), pack.Language)
 	if err != nil {
 		return "", err
