@@ -239,3 +239,7 @@ the time backstop. After the changes: 15,656,020 units (under the 16 M request b
 **Not verified:** the reviewer's own generator (absent; rebuilt from the description); POST /api/segment over HTTP
 with the worst table (the service-level test covers the same path); a real-app run; how the limits feel to a
 real reader (no browser).
+
+**Second-wave gates:** gofmt clean; `-race` on lemma, lemmapack, lookup ok; full Go `./...` under the flock: 50
+packages ok, only the known `internal/ai` `TestHostnameResolvingToEmbeddedFormIsRefused`; web `check` 0,
+`build` 0; full vitest under Node 26: 587 files, 12,567 passed, 2 skipped.
