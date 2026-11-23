@@ -171,3 +171,52 @@ One full Go run (`gofmt -l .` empty, `go vet ./...`, `go test -count=1 -p 2 ./..
 packages ok; the only failure is the known environment one, `internal/ai`
 `TestHostnameResolvingToEmbeddedFormIsRefused` (no IPv6 sockets here). `-race` was run on the shutdown tests of
 `cmd/qinqin` and on the sweeper/restore/staged-import tests of `internal/api` (filtered), both clean.
+
+### Review fix wave (2026-11-23)
+
+One fix wave after the independent review, each item test-first (or killed by a mutation), one commit per group:
+
+1. **Auto-seed cut short** (`5ce3fd67`): `TestAutoSeedCutShortIsFinishedNextStart` (cancel after the first pack; the
+   second start installed only `ja-mini` and set done) and `TestAutoSeedPartialFailureRetries` (a bad theme pack after
+   the others; the second start did not retry) failed first. The marker is now `running` from before the first import
+   and `done` only at the end; `running` seeds again although packs are installed. The hand-seeded rule is kept: no
+   marker plus installed packs is left alone (marked done). Ruling: an instance whose first auto-seed was cut short by
+   an older build (a kill, a crash or a failing pack left the marker unset with some packs installed, which older builds
+   then marked done) is indistinguishable from a hand-seeded one and stays as it is — cost if wrong: such an admin runs
+   `qinqin seed` once (the wiki says so for missing packs).
+2. **Staged imports and the shutdown** (`3c586c5e`): `TestStagedImportIsCountedAndCancelledByShutdown` failed (the
+   import ignored the shutdown) and `TestCancelledImportLeavesNoSlices` failed (two slices left in the store; seen red
+   with the cleanup disabled). The import's context now also ends with `s.bg` (`context.AfterFunc`); a cancelled job is
+   refused before the importer or fails with "nothing was installed"; after the type's commit the remaining steps
+   (licence texts in `packs.Import`, moving files, reading the row) run with `context.WithoutCancel`, so no pack is
+   registered without its texts or files because of a cancel. A failed font import removes the slices it stored that
+   no pack uses. Wiki wording made precise. Not tested: a cancel landing exactly between the type's commit and the
+   licence texts (no seam there; covered by reasoning: that step no longer sees the cancel).
+3. **Shutdown order pinned** (`907048a3`): `TestServeShutdownOrder` (seams `shutdownHooks.afterHTTP`/`afterJobs`) kills
+   the three reviewed mutations, each run and seen failing: `closeDB()` before the jobs wait ("database is closed"),
+   `startPackages(ctx, …)` ("package builder" stopped before HTTP drained), and `mailSvc.Run(ctx)` ("mail queue").
+   Plain `go s.runRestore(...)` is killed by `TestNoBareGoroutinesInTheAPI` (a source guard: every API goroutine goes
+   through `goBackground`; run with the mutation, it failed naming the line). Deviation: the restore is guarded by that
+   static test, not by a hook-held behavioural test; the staged import has the behavioural test. NITs in the same
+   commit: `api.Jobs` replaces the bare `WaitGroup` and refuses new jobs once `Wait` began
+   (`TestClosedJobsRefuseNewJobs`, compile-red first); the AI, auth and journal janitors are waited for before the
+   database closes (`janitors stopped`).
+4. **Import scan** (`0909066f`): `TestImportsOfFindsEveryForm` failed on the regex scan for the trailing-comment,
+   one-line-group and single-import forms; the scan is now `go/parser` with `ImportsOnly`.
+5. **step032 outer NFKC** (same commit): three cases (U+01F0, J + U+030C, U+0390) with keys printed by the unchanged
+   `model.UsernameKey`; with the outer `norm.NFKC` dropped from step032 the fixture test fails (run and seen). The
+   fixture note records the addition.
+6. **dict from the table** (`68fd100a`): `TestLanguagesFollowTheTableShape` (a fake None/Many/One type) failed on the
+   name-based switch; `validateLanguages` switches on `packtype` `Languages`, the unknown-type message is built from
+   `packtype.Types()`. `TestManifestTypesFollowThePackTypeTable` is a guard that passed at once (honestly: no red).
+7. **Grammar wording** (`2225473b`): the contracts and the web test now say the web's Grammar page still honours a
+   grammar pack's enabled state until #169's Later part. With it the NIT: the Data list order follows the contract
+   (theme before font); the new order test failed first.
+8. **NITs** (`348ab752`): `IdleTimeout` 125 s (test red first at 120 s; wiki proxy page and Admin-deploying);
+   the compose grace check reads only the `qinqin:` service block; a package file moved into place whose rows then
+   fail is removed (`TestAMovedFileWhoseRowsFailIsRemoved`, red first: r2 stayed on disk).
+
+Gates after the wave: web `check` 0; Node 26 vitest 574 files, 12384 passed, 2 skipped, exit 0. Full Go run (`gofmt -l .` empty, `go vet ./...`,
+`go test -count=1 -p 2 ./...`, proxy variables unset): 49 packages ok; the only failure is the known environment
+one, `internal/ai` `TestHostnameResolvingToEmbeddedFormIsRefused`. Node 22 `npm test` was not rerun after the wave
+(its 5 known environment failures are unrelated; Node 26 is the CI runtime).
