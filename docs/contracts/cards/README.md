@@ -1,8 +1,8 @@
-# Card ids, burying, cloze, deck sessions and the session mix (reverse and cloze cards, #65; #132)
+# Card ids, burying, cloze, deck sessions, the session queue and the session mix (reverse and cloze cards, #65; #132; #175)
 
 Rules every client implements identically. Fixtures: `{"version":1,"rule":"cards/<name>","cases":[...]}`;
 `deck-session.json` has three case lists instead: `plans`, `steps`, `eligible`; `session-mix.json` has `keys`,
-`gaps`, `queues`.
+`gaps`, `queues`; `session-queue.json` has `noLimit` and `cases`.
 
 ## Card kinds and ids
 
@@ -70,7 +70,7 @@ spans: [[s, e]], before, after, answer}`; `before`/`after` are arrays of strings
 A deck session studies the cards of the chosen decks (`deckIds`) and kinds (`kinds`) with a session new-card
 limit (`newLimit`) and review limit (`reviewLimit`). Level sessions follow their own plan
 (`levels/character-level-queue.json`). `deckSessionPlan` (web: `lib/study/cardFlow.ts`, with
-`companions.ts` and `scheduler.ts` `buildQueue`) returns `{queue, reserve, backfillLeft}`; `plans` cases pin
+`companions.ts`, `scheduler.ts` `queueCandidates` and `sessionQueue.ts`) returns `{queue, reserve, backfillLeft}`; `plans` cases pin
 the ids of each, decoded by `apps/web/src/lib/study/cardFlow.test.ts`. Inputs: zone `history`, `now`,
 `language`, `cards`, `reviews` (`{cardId, ts, grade}`; event ids are given in list order, `mode` is the card's
 kind), optional `vacation` runs, `limits` rows (`scheduler/`), `deckSettings` (deck id → enabled opt-in kinds),
@@ -97,10 +97,14 @@ kind), optional `vacation` runs, `limits` rows (`scheduler/`), `deckSettings` (d
    when reverse cannot be planned). Items are taken round-robin by kind (one of each kind per round, in kind
    order). **Offline nothing is planned** (a companion becomes a card by a row write; the offline outbox
    carries review events only).
-6. **Budget and reserve**: companions are new cards. The queue holds the real cards, then the companions the
-   session's new limit still admits (after the real new cards) and each deck's daily new limit allows; the
-   companions the daily limits allow beyond the session limit are the **reserve**, in planning order.
-7. **`backfillLeft`** = `backfillLimit(newLimit)` = `max(30, 2 · max(0, floor(newLimit)))`.
+6. **Budget and reserve** (the session queue below, over the real cards then the companions): companions are
+   new cards. The queue holds the real cards, then the companions the session's new limit still admits (after
+   the real new cards) and each deck's daily new limit allows; the new items (real or companion) the daily
+   limits allow beyond the session limit are the **reserve**, in planning order, at most `backfillLeft` items.
+7. **`backfillLeft`** = `backfillLimit(newLimit)` = `max(30, 2 · max(0, floor(newLimit)))`; `NO_LIMIT` with
+   Study all.
+8. **Study all** (`studyAll`): the session queue's rule — no session caps and no daily limits, not even the
+   default 20/200.
 
 `steps` cases replay the runner's two queue edits on a plan:
 
@@ -121,6 +125,32 @@ Ruling: the fixture pins the **plan** and eligibility, not which sentence a sent
 virtual item is graded — sentence choice and cloze are already pinned (`cloze.json`), grade suggestions are
 deferred (spec D2) — cost: none.
 
+
+## Session queue (`session-queue.json`, #175)
+
+The admission every session shares: deck sessions (above), level sessions (`levels/`) and the counts (due/new
+numbers, "left today"). Each lists its **candidates** in queue order its own way, `{cardId, deckIds, bucket}` with
+`bucket` = `continuing` (due, already reviewed today), `review` (due) or `new` (never reviewed, or virtual); the
+builder never reorders them. Web: `lib/study/sessionQueue.ts` (`admitSession`, `buildSessionQueue`), decoded by
+`apps/web/src/lib/study/sessionQueue.test.ts`. Spec: `docs/superpowers/specs/2026-11-23-queue-builder-design.md`.
+
+1. **Vacation day** (`vacationToday`): nothing is admitted; queue and reserve are empty, `left` is all zero.
+2. **Caps**: `cap(x)` = `floor(x)` for a finite `x`, at least 0 (fixture caps such as `1.7` and `-2`); anything
+   else is 0. **Study all** (`studyAll`) uses `noLimit` (1 000 000) for both caps and treats every deck as
+   unlimited (`limitsOf` is not consulted, so the 20/200 defaults do not apply); nothing else changes.
+3. **Admission**: `scheduler/README.md` "Limits" (`admit`) with those caps, the limit rows (`limits`: `workspace`,
+   `decks`, `existingDecks` — `null` means every named deck exists) and today's `counts` (`newDone`,
+   `reviewDone` per deck). `inSession` is that pass; `inAllowance` the same with no new-card cap (the review cap
+   kept); `left` the pass with no session cap.
+4. **Queue** = candidates in `inSession`, in order. **Reserve** = candidates in `inAllowance` and not in
+   `inSession` (always new items), in order, at most `backfillLeft`.
+5. **`backfillLeft`** = `noLimit` with Study all, else `max(30, 2 · cap(newLimit))`.
+
+Case: `{name, vacationToday, studyAll, caps: {newLimit, reviewLimit}, limits, counts, candidates, expect: {queue,
+inAllowance, reserve, backfillLeft, left: {reviews, new, unlimited, limitedOut}}}`.
+
+Unreadable rows (`sync/unreadable-rows.json`) are not candidates: they are absent from the cards, planning writes
+nothing, and a card created from a virtual item takes the next free id (`freshCardId`).
 
 ## Session mix (`session-mix.json`, #132)
 

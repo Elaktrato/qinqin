@@ -401,6 +401,48 @@ describe('deckSessionPlan and dropItem', () => {
 	});
 });
 
+describe('deckSessionPlan on the shared builder (#175)', () => {
+	const now = new Date('2026-03-01T00:00:00Z');
+	const words = (n: number) =>
+		Array.from({ length: n }, (_, i) =>
+			card(`v${String(i + 1).padStart(2, '0')}`, 'vocab', i + 1, { createdAt: `2026-01-01T00:00:${String(i).padStart(2, '0')}Z` })
+		);
+	const base = {
+		ctx: UTC_CONTEXT,
+		reviews: [] as ReviewEvent[],
+		deckIds: ['general'],
+		newLimit: 5,
+		reviewLimit: 100,
+		now,
+		w: DEFAULT_W,
+		language: 'zh'
+	};
+
+	it('Study all queues every new card, past the default 20 new per deck', () => {
+		const cards = words(25);
+		const plan = deckSessionPlan({ ...base, cards, kinds: ['vocab'], studyAll: true });
+		expect(plan.queue).toHaveLength(25);
+		expect(deckSessionPlan({ ...base, cards, kinds: ['vocab'] }).queue).toHaveLength(5);
+	});
+
+	it('the reserve never holds more than a session can draw (backfillLeft)', () => {
+		const unlimited = contextFor(UTC_CONTEXT.day, [], now.getTime(), [], {
+			workspace: { new: null, reviews: null },
+			decks: {},
+			existingDecks: null
+		});
+		const plan = deckSessionPlan({ ...base, ctx: unlimited, cards: words(40), kinds: ['vocab', 'sentence'], newLimit: 0 });
+		expect(plan.queue).toEqual([]);
+		expect(plan.backfillLeft).toBe(30);
+		expect(plan.reserve).toHaveLength(30);
+	});
+
+	it('Study all backfills without a bound', () => {
+		const plan = deckSessionPlan({ ...base, cards: words(2), kinds: ['vocab'], studyAll: true });
+		expect(plan.backfillLeft).toBe(1_000_000);
+	});
+});
+
 describe('levelSessionItems', () => {
 	const cards = [card('v1', 'vocab', 1)];
 	const queue: LevelQueueItem[] = [
@@ -532,7 +574,8 @@ describe('backfill bound', () => {
 		// Two in the queue plus thirty replacements, then the session ends.
 		expect(drops).toBe(32);
 		expect(state.backfillLeft).toBe(0);
-		expect(state.reserve.length).toBe(40 - 32);
+		// The reserve held only what the bound lets a session draw (#175).
+		expect(state.reserve.length).toBe(0);
 	});
 
 	it('skips remembered ineligible companions at planning time', () => {

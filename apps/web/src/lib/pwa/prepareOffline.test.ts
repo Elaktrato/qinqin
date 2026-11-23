@@ -47,18 +47,25 @@ const base = {
 
 describe('planOffline', () => {
 	it("is today's queue plus the next new cards, unique", () => {
-		const plan = planOffline(base, { extraNew: 2, maxEntries: 500 });
+		const plan = planOffline(base, { extraNew: 2, maxEntries: 500, studyAllExtra: 0 });
 		expect(plan.entryIds).toEqual([1, 2, 3, 4]);
 	});
 
 	it('daily limits apply to the extra new cards too (the same rule as online)', () => {
 		const limited: StudyContext = { ...UTC_CONTEXT, limits: { workspace: { new: 1 }, decks: {}, existingDecks: null } };
-		expect(planOffline({ ...base, ctx: limited }, { extraNew: 50, maxEntries: 500 }).entryIds).toEqual([1]);
+		expect(planOffline({ ...base, ctx: limited }, { extraNew: 50, maxEntries: 500, studyAllExtra: 0 }).entryIds).toEqual([1]);
 	});
 
 	it('a vacation day prepares nothing', () => {
 		const vacation: StudyContext = { ...UTC_CONTEXT, vacationToday: true };
 		expect(planOffline({ ...base, ctx: vacation }).entryIds).toEqual([]);
+	});
+
+	it('then prepares what Study all would add, past the daily limits, at most studyAllExtra entries (#175 review)', () => {
+		const limited: StudyContext = { ...UTC_CONTEXT, limits: { workspace: { new: 1 }, decks: {}, existingDecks: null } };
+		expect(planOffline({ ...base, ctx: limited }, { extraNew: 0, maxEntries: 500 }).entryIds).toEqual([1, 2, 3, 4, 5, 6]);
+		expect(planOffline({ ...base, ctx: limited }, { extraNew: 0, maxEntries: 500, studyAllExtra: 2 }).entryIds).toEqual([1, 2, 3]);
+		expect(planOffline({ ...base, ctx: limited }, { extraNew: 0, maxEntries: 2, studyAllExtra: 50 }).entryIds).toEqual([1, 2]);
 	});
 
 	it('caps the entries', () => {
@@ -144,6 +151,7 @@ describe('prepareOffline', () => {
 			isCached: async () => false,
 			pullPages: () => 1,
 			extraNew: 2,
+			studyAllExtra: 0,
 			onPrepared: () => {},
 			...over
 		};

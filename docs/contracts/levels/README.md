@@ -30,11 +30,15 @@ real id, never duplicated. Fixture: `level-card-ids.json`.
 2. New bucket: never-reviewed real cards and virtual items. Unlocked writing items first, then recognition
    items, each group in level order (real and virtual interleaved by level order). At most `newLimit`
    cards in total (cards, not characters).
-3. Reserve: the next new items after the cap (a session replaces dropped items from it).
+3. Admission, reserve and Study all: the session queue (`cards/README.md`, `session-queue.json`) over the due
+   items then the new ones; existing cards count against their own decks, virtual items against `general`. The
+   reserve is the new items the daily limits allow after the cap, at most `backfillLeft` (a session replaces
+   dropped items from it).
 4. Writing unlock: only when both `vocab` and `writing` are selected, a new writing item for an entry is
    included only if the entry's recognition card has a valid review whose learner day (`dayOf`, zone
    history) is before today's learner day. With `writing` alone there is no gating.
 5. `strokeData: false` on an entry means its glyph has no stroke data: it never gets a writing item (recognition is unaffected and still takes its slot).
+   A kind listed in the `skipKinds` of the entry's vocab card (removed by the learner) is never planned either.
 6. The session then orders the queue by the session mix (`cards/README.md`, `session-mix.json`): due first, the
    kinds interleaved inside each block and a character's two kinds kept apart (or grouped by kind when the setup
    asks for it). The plan above and its fixture are the order before the mix.

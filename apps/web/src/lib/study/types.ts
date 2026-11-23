@@ -16,6 +16,9 @@ export type DeckSource =
 	| { type: 'plugin'; pluginId: string; key: string }
 	| { type: 'frequency'; packId: string; size: number };
 
+/** The implicit deck every card without another deck is in; it has no stored row. */
+export const GENERAL_DECK_ID = 'general';
+
 /** One user-created deck. The implicit `general` deck has no stored row. */
 export interface Deck {
 	id: string;

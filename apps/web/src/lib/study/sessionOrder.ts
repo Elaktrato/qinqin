@@ -9,9 +9,8 @@ import { randomKey, resolveSessionOrder, type NewOrder, type ResolvedOrder, type
 import { mixedNote, offlineNote, resolveAvailableOrder } from './newOrderView';
 import type { RanksResult } from './frequencyRanks';
 import { isValidReview } from './scheduler';
-import type { ReviewEvent, StudyCard, StudyCardKind } from './types';
+import { GENERAL_DECK_ID, type ReviewEvent, type StudyCard, type StudyCardKind } from './types';
 import type { DeckSettings } from './deckSettings';
-import { GENERAL_DECK_ID } from './store';
 
 export interface SessionKeyDeps {
 	packs: () => Promise<FrequencyPack[]>;
