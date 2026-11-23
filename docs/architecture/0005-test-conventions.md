@@ -30,6 +30,8 @@ Touched by: #195, #196. A merge from one of these issues that changes what this 
   seed, recover and backup commands). Shared fixtures in `server/internal/dbtest/fixtures.go`: `User` (a
   user that cannot sign in; a test that signs in uses `auth.CreateUser`), `Workspace`, `WritePack` (a pack
   directory from a manifest and files) and `DictPack` (the tiny zh dictionary `DictWords`).
+  `Counting` (`server/internal/dbtest/counting.go`) opens an existing database through a counting driver
+  wrapper (`Counter`: statements and transactions), for performance tests that count instead of timing.
 - **Real migration runs** stay where the migrating itself is under test: the tests of `server/internal/db`
   (the migration tests `migrate_0NN_test.go`, the frozen-step test, the schema tests of `db_test.go` with its
   own `openDB`) and of its frozen steps `server/internal/db/step032` and `server/internal/db/step038`. A
@@ -42,7 +44,7 @@ Touched by: #195, #196. A merge from one of these issues that changes what this 
   (`apps/web/src/lib/testing/legacyCodec.ts`, still used by the store and history tests to describe study
   state as old rows) and the spaceOut reference; `lib/study/testing/` is gone.
 - **No wall-clock assertions in unit tests.** A performance test asserts operation counts (replays, log
-  passes, Intl calls, publications, work units, bytes read) and no time limit; there is no separate perf
+  passes, Intl calls, publications, work units, bytes read, SQL statements and transactions) and no time limit; there is no separate perf
   project. A heavy test may declare a generous vitest timeout as a hang backstop (the PWA icons test), and a
   Go test may bound how long a cancelled, timed-out or shut-down call takes to return (a liveness check,
   not a speed check). The lexicon characters test keeps its thread-CPU budget (`QINQIN_PERF_BUDGET_MS`),
