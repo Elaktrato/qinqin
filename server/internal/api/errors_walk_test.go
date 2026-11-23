@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"slices"
+	"strconv"
 	"strings"
 	"testing"
 )
@@ -32,8 +34,12 @@ func checkErrorAnswer(cat map[string]int, w *httptest.ResponseRecorder) string {
 	if err := json.Unmarshal(w.Body.Bytes(), &body); err != nil {
 		return "not JSON: " + abbreviate(w.Body.String())
 	}
-	if _, ok := cat[body.Error]; !ok {
+	st, ok := cat[body.Error]
+	if !ok {
 		return "code " + body.Error + " is not in errors.json: " + abbreviate(w.Body.String())
+	}
+	if w.Code != st && !slices.Contains(documentedStatuses[body.Error], w.Code) {
+		return "code " + body.Error + " answered with " + strconv.Itoa(w.Code) + ", errors.json says " + strconv.Itoa(st)
 	}
 	if strings.TrimSpace(body.Message) == "" {
 		return "no message: " + abbreviate(w.Body.String())
