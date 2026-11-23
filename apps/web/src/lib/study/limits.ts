@@ -3,7 +3,7 @@
 // learner's day. Pure. Rule and fixtures: docs/contracts/scheduler/.
 
 import { onSessionEnd } from '../session/sessionEnd';
-import { isValidReview, sortedReviews } from './scheduler';
+import { isValidReview, sortedReviews } from './reviewOrder';
 import type { StudyContext } from './studyContext';
 import type { ReviewEvent, StudyCard } from './types';
 

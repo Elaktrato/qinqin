@@ -7,6 +7,7 @@ import { onSessionEnd } from '../session/sessionEnd';
 import { createEmptyCard, fsrs, Rating, type Card, type Grade } from 'ts-fsrs';
 
 import { orderNew } from './newOrder';
+import { compareById, instantOf, isValidReview, sortedReviews } from './reviewOrder';
 import { weightsKey } from './fsrs/params';
 import { feedInstants, type StudyClock } from './studyClock';
 import { isDueNow, type StudyContext } from './studyContext';
@@ -88,39 +89,10 @@ const RATING: Record<ReviewGrade, Grade> = {
 	4: Rating.Easy
 };
 
-function instant(ts: string): number {
-	const ms = Date.parse(ts);
-	return Number.isNaN(ms) ? 0 : ms;
-}
-
-/**
- * isValidReview guards the replay against out-of-contract payloads. The
- * server only validates a review's id and ts, so a stored grade can be
- * anything; ts-fsrs throws on unknown grades and would otherwise break
- * every queue build.
- */
-export function isValidReview(review: ReviewEvent): boolean {
-	if (review === null || typeof review !== 'object') return false;
-	if (typeof review.ts !== 'string' || Number.isNaN(Date.parse(review.ts))) return false;
-	const payload: unknown = review.payload;
-	if (typeof payload !== 'object' || payload === null) return false;
-	const { cardId, grade } = payload as { cardId?: unknown; grade?: unknown };
-	if (typeof cardId !== 'string' || cardId.length === 0) return false;
-	return grade === 1 || grade === 2 || grade === 3 || grade === 4;
-}
-
-function byId(a: { id: string }, b: { id: string }): number {
-	return a.id < b.id ? -1 : a.id > b.id ? 1 : 0;
-}
-
-/**
- * sortedReviews orders a card's history by event time, then by id so
- * two events written in the same millisecond still replay in the same
- * order on every device.
- */
-export function sortedReviews(reviews: readonly ReviewEvent[]): ReviewEvent[] {
-	return [...reviews].sort((a, b) => instant(a.ts) - instant(b.ts) || byId(a, b));
-}
+// The review rules live in reviewOrder.ts (#175); re-exported so existing imports keep working.
+export { isValidReview, sortedReviews };
+const instant = instantOf;
+const byId = compareById;
 
 /** The schedule of a card right after one of its reviews (`ts`: the review's real instant, epoch ms). */
 export interface TimelinePoint {
