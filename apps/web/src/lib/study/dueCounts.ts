@@ -10,13 +10,13 @@ import { allowedReal, skipKindsByEntry, vocabEntryIds } from './cardFlow';
 import type { DeckSettings } from './deckSettings';
 import { buriedNow } from './siblings';
 import {
-	buildQueue,
 	queueCandidates,
 	type BuildQueueOptions,
 	type Schedule
 } from './scheduler';
 import type { LimitRows, StudyContext } from './studyContext';
-import { admit, dayCountsCached, existingDecksOf, limitsOf, NO_LIMIT, type Admission, type DayCounts } from './limits';
+import { dayCountsCached, NO_LIMIT, type Admission, type DayCounts } from './limits';
+import { admitSession } from './sessionQueue';
 import type { ReviewEvent, StudyCard, StudyCardKind } from './types';
 
 /** Limits that never refuse anything. */
@@ -85,30 +85,34 @@ function prepare(input: DueCountsInput): BuildQueueOptions {
 
 export function dueCounts(input: DueCountsInput): { due: number; fresh: number } {
 	const base = prepare(input);
-	return {
-		due: buildQueue({
-			...base,
-			newLimit: 0
-		}).length,
-		fresh: buildQueue({
-			...base,
-			reviewLimit: 0
-		}).length
-	};
+	const { candidates, counts } = queueCandidates(base);
+	const { inSession } = admitSession({
+		candidates,
+		ctx: base.ctx,
+		counts,
+		caps: { newLimit: base.newLimit, reviewLimit: base.reviewLimit }
+	});
+	let due = 0;
+	let fresh = 0;
+	for (const candidate of candidates) {
+		if (!inSession.has(candidate.cardId)) continue;
+		if (candidate.bucket === 'new') fresh += 1;
+		else due += 1;
+	}
+	return { due, fresh };
 }
 
 /**
  * leftToday: what the daily limits admit right now for these decks and kinds,
- * session caps removed (limits.ts `admit().left`). Real cards only.
+ * session caps removed (sessionQueue.ts `admitSession().left`). Real cards only.
  */
 export function leftToday(input: DueCountsInput): Admission['left'] {
 	const base = prepare({ ...input, applyDailyLimits: true });
 	const { candidates, counts } = queueCandidates(base);
-	return admit(
+	return admitSession({
 		candidates,
-		(deckId) => limitsOf(base.ctx, deckId),
+		ctx: base.ctx,
 		counts,
-		{ newLimit: Infinity, reviewLimit: Infinity },
-		existingDecksOf(base.ctx, candidates)
-	).left;
+		caps: { newLimit: NO_LIMIT, reviewLimit: NO_LIMIT }
+	}).left;
 }
