@@ -141,3 +141,4 @@ Every error body is JSON `{"error": code, "message": "English sentence"}`. Branc
 | `plugin_no_data` | 403 | The plugin does not declare owns-data, so it has no data rows. |
 | `unknown_time_zone` | 400 | PUT /api/me/time-zone: the zone is not an IANA name this server knows (study-day/time-zone-api.json). |
 | `too_many_changes` | 409 | PUT /api/me/time-zone: the account has the most zone changes the history keeps (study-day/). |
+| `licence_mismatch` | 409 | POST /api/admin/packs/staged/{token}: the licence sent is not exactly the staged pack's (the administrator confirms the licence the review showed). |

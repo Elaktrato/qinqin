@@ -92,6 +92,9 @@ keep exactly their bodies). New codes, each with one status:
 | `source_unavailable` | 502 | a library source did not answer |
 | `source_language_unavailable` | 422 | the source has no books in the workspace language |
 | `plugin_no_data` | 403 | the plugin does not declare owns-data |
+| `unknown_time_zone` | 400 | the time-zone route already wrote it; it was missing from the catalogue |
+| `too_many_changes` | 409 | the time-zone route already wrote it; it was missing from the catalogue |
+| `licence_mismatch` | 409 | (review fix wave) the licence sent to install a staged pack is not the staged pack's |
 
 Everything else maps by status: 400 `bad_request`, 404 `not_found`, 409 `conflict`, 413 `too_large`,
 422 `invalid_request`, 500 `internal`.
