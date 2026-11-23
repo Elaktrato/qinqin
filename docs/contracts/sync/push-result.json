@@ -352,7 +352,7 @@
    }
   },
   {
-   "name": "a legacy qinqin-flashcards card row goes to the typed table (old shell)",
+   "name": "a qinqin-flashcards row of a typed family is refused alone: typed rows travel as typed collections only (#198)",
    "body": {
     "pluginData": [
      {
@@ -367,38 +367,6 @@
         "general"
        ],
        "createdAt": "2026-11-10T08:00:00Z"
-      },
-      "updatedAt": "2026-11-12T09:00:00Z"
-     }
-    ]
-   },
-   "expect": {
-    "status": 200,
-    "json": {
-     "eventsAccepted": 0,
-     "eventDuplicates": 0,
-     "dataAccepted": 1,
-     "dataSkipped": 0,
-     "dataRefused": 0
-    }
-   },
-   "stored": {
-    "cards": [
-     "c-vocab-1201"
-    ],
-    "pluginData": []
-   }
-  },
-  {
-   "name": "a legacy typed row the codec cannot read is refused alone",
-   "body": {
-    "pluginData": [
-     {
-      "pluginId": "qinqin-flashcards",
-      "key": "card:broken",
-      "workspaceId": "$ws",
-      "data": {
-       "kind": "vocab"
       },
       "updatedAt": "2026-11-12T09:00:00Z"
      },
@@ -422,6 +390,9 @@
      "dataSkipped": 0,
      "dataRefused": 1
     }
+   },
+   "stored": {
+    "cards": []
    }
   },
   {

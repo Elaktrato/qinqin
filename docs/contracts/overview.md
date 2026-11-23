@@ -14,10 +14,10 @@ where the rule is implemented today.
 | --- | --- |
 | Identity and transport | `auth/` (token, restrictions, errors, two-step sign-in), `pwa/` (outbox, cache rules) |
 | Shared data | `packages/` (data packages: the catalogue, downloads, the zip and `data.sqlite` of every type, versioning and the client rule) |
-| User data in transit | `sync/` (the paged pull `v=2`, the push answer, the deprecated legacy pull) |
+| User data in transit | `sync/` (the paged pull `v=2`, the push answer) |
 | Time | `study-day/` (the learner's day, zone history) is the base of everything below |
 | Study events | `events/` (the envelope and how the server stores it, the payload of every type and when it is written, review parsing and replay order, heatmap activity scoring) |
-| Typed study data | `study/` (cards, decks, deck settings, limits, FSRS sets, the active set: wire shapes, last-write-wins, tombstones, the legacy codec and the legacy view for old web shells; the duplicate-card merge), `library/` (reader books, bookmarks, highlights, positions, the deletion log) |
+| Typed study data | `study/` (cards, decks, deck settings, limits, FSRS sets, the active set: wire shapes, last-write-wins, tombstones; the duplicate-card merge), `library/` (reader books, bookmarks, highlights, positions, the deletion log) |
 | Cards and study | `cards/` (ids, kinds, burying, cloze, the deck session plan, the session queue shared by deck and level sessions, the session mix of card types), `levels/` (level sessions), `scheduler/` (the FSRS pin, XP and levels, vacation, study clock, due, streak, daily limits), `decks/` (deck numbers, system deck ids, add-to-deck, character mastery), `frequency/` (frequency order of new cards, starter decks, the known-word predicate, the display form of an entry), `goals/` (daily goal, day status, goal streak), `weekly/` (weekly summary; nothing stored), `stats/` (the Overview's four summary numbers and reviews per day; nothing stored), `milestones/` (weekly milestones: catalogue, reached rule, the `milestone:<id>` seen rows, card plan) |
 | Reader | `lemma/` (rule tables of the lemmatizer: deinflection, ranking keys, token boundaries), `reader/` (display settings, furigana, smart readings, word states, coverage) |
 | Personal data on entries | `notes/` (notes and the answer-side switch), `lookups/` (lookup history and its switch), `overlays/` (a user's edits of a shared entry), `journal/` (review documents and their mistake/suggestion kind) |
@@ -69,18 +69,13 @@ Every folder, in dependency order (this page's sync model and Events sections af
   foreign token, a `page=` that repeats a filter: start the round again), 400 `sync_collection_moved` (a
   lexicon collection: read packages), 404 `not_found` (a `workspace=` the caller does not own), 410
   `sync_cursor_expired` (defined, not sent yet: discard local user data, pull without `since`).
-- Legacy pull (deprecated, until v0.5.0; old web shells only): `GET /api/sync/pull?cursor=<RFC 3339>&collections=a,b`
-  (`server/internal/sync/legacy.go`, `sync/legacy-pull.json`), one streamed JSON object `{cursor, entries,
-  links, senses, levelMembers, sentences, pluginData, pluginStates, overlays, dictionaries, schemes, levels,
-  cards, decks, deckSettings, limits, fsrsSets, fsrsActive}` with `Deprecation: true`. The lexicon
-  collections are always `[]` and naming one is 400 `sync_collection_moved`; `sentences` are the caller's
-  own; an unknown name or a bad cursor is 400 `bad_request`. Its cursor lags 30 s and its second is
-  inclusive. Android never uses it.
+- There is no other pull form: a pull without `v=2` (the v0.3.x streaming form) is 404 `not_found` since #198.
 - Push: `POST /api/sync/push {events: [...], pluginData: [...], cards: [...], decks: [...], deckSettings: [...],
   limits: [...], fsrsSets: [...], fsrsActive: [...]}` (`server/internal/sync/sync.go`, `sync/push-result.json`). The whole
   body is validated first; an unknown or foreign workspace or plugin is 404 and nothing is applied; a bad
   item is 400. Answer: `{eventsAccepted, eventDuplicates, dataAccepted, dataSkipped, dataRefused}`.
-  `dataRefused` counts rows of plugins that do not declare owns-data (the rest still applies). A value is at
+  `dataRefused` counts rows of plugins that do not declare owns-data, and `qinqin-flashcards` rows of a typed
+  family sent as `pluginData` (the rest still applies). A value is at
   most 256 KiB (413); so is each typed item. `dataAccepted` and `dataSkipped` count typed items too.
 - Plugin data row (wire shape, `model.PluginData`): `{pluginId, key, userId, workspaceId|null, data,
   version, updatedAt, deletedAt|null}`. The identity of a row is `(pluginId, workspaceId, key)`.
@@ -101,12 +96,10 @@ Every folder, in dependency order (this page's sync model and Events sections af
   (`study/lww.json`) and one extra rule: an item equal to the stored live row is written nowhere and counted `dataAccepted` (`unchanged`). Every typed row is
   a workspace row. Owner code: `server/internal/study/rows`, `server/internal/study`; web:
   `apps/web/src/lib/study/rows.ts`, `store.ts`.
-- **Name a typed collection whenever you pull `pluginData`.** The legacy view (`study/README.md`) keeps
-  cached v0.3.x web shells working: a pull whose `collections` names `pluginData` and none of the six typed
-  collections also gets every typed row as its old `qinqin-flashcards` plugin row; a pushed or `PUT`
-  plugin row of a typed family is applied to the typed table. Android never uses it: it pulls and pushes
-  the typed collections, and `pluginData` only for the keyed rows below. A pull without `collections`
-  carries the typed collections and no legacy rows.
+- **The typed families are never plugin data.** A `qinqin-flashcards` key of a typed family (`card:`, `deck:`,
+  `deckcfg:`, `limits:workspace`, `limits:deck:`, `fsrs:set:`, `fsrs:active`) is 404 on the plugin-data routes,
+  refused alone in a push and never shipped in `pluginData` (#198; the v0.3.x "legacy view" is gone). Pull and
+  push the six typed collections; use `pluginData` only for the keyed rows below.
 - The keyed study rows (`goals:workspace`, `known:*`, `vacation:*`, `milestone:*`) are plugin data of the study namespace
   `qinqin-flashcards` (`FLASHCARDS_PLUGIN_ID`), which is not a plugin. The registry ids `qinqin-core`,
   `qinqin-flashcards` and `qinqin-reader` are reserved: the last two are the core features flashcards and
@@ -144,9 +137,9 @@ Every folder, in dependency order (this page's sync model and Events sections af
 
 ### Typed study rows (`study/`)
 
-| Collection | Legacy key (old shells, backups) | Identity | Wire shape | Owner code path | Pinned by |
+| Collection | Keyed form (backups only) | Identity | Wire shape | Owner code path | Pinned by |
 | --- | --- | --- | --- | --- | --- |
-| `cards` | `card:<cardId>` | `id` (`c-<kind>-<entryId>` or a ULID) | `{id, kind: vocab\|sentence\|writing\|tone\|reverse\|cloze, entryId: int, written: string\|null, entryKind: "character"\|null, sentenceId: int\|null, skipKinds: kind[] (vocab only), deckIds: string[], createdAt, extra}`; a card may be in several decks | `study/rows.ts`, `study/store.ts`, `study/canonical.ts` (`newCardId`); Go `study/rows` | `study/rows.json`, `study/legacy-codec.json`, `cards/card-ids.json` |
+| `cards` | `card:<cardId>` | `id` (`c-<kind>-<entryId>` or a ULID) | `{id, kind: vocab\|sentence\|writing\|tone\|reverse\|cloze, entryId: int, written: string\|null, entryKind: "character"\|null, sentenceId: int\|null, skipKinds: kind[] (vocab only), deckIds: string[], createdAt, extra}`; a card may be in several decks | `study/rows.ts`, `study/store.ts`, `study/canonical.ts` (`newCardId`); Go `study/rows` | `study/rows.json`, `backup/study-rows.json`, `cards/card-ids.json` |
 | `decks` | `deck:<deckId>` | `id` (ULID, or `d-lvl-…`/`d-plg-…`/`d-frq-…` for copies; `general` has no row) | `{id, name, createdAt, source: null \| {type:"level", packId, level} \| {type:"plugin", pluginId, key} \| {type:"frequency", packId, size}, extra}` | same | `study/rows.json`, `decks/system-deck-ids.json`, `frequency/starter-deck-ids.json` |
 | `deckSettings` | `deckcfg:<deckId>` | `deckId` (also `general`) | `{deckId, cardTypes: ("reverse"\|"cloze")[], newOrder: null \| {by:"added"} \| {by:"frequency"} \| {by:"level", packId}, extra}` | `study/rows.ts`, `study/deckSettings.ts`, `study/newOrder.ts` | `study/rows.json`, `frequency/deckcfg-new-order.json` |
 | `limits` | `limits:workspace`, `limits:deck:<deckId>` | `deckId` (`null` = the workspace row) | `{deckId, new: null \| {limit: 0..9999 \| null}, reviews: same, extra}`; `null` = not set (deck, then workspace, then 20 new / 200 reviews), `{limit: null}` = unlimited | `study/rows.ts`, `study/limits.ts` | `study/rows.json`, `scheduler/limits-rows.json`, `scheduler/daily-limits.json` |
@@ -288,11 +281,9 @@ preparation marks (`qinqin.pwa.*`), the current workspace and the session token.
 - Do not cache admin, account, AI, journal photo, audio, search or lookup responses as truth.
 - Package files are verified before use, never partially (`packages/README.md`, "Verification"): a download
   that fails a check is discarded, and a package database is opened read-only and replaced as a whole.
-- Do not treat the rows of `GET /api/plugins` whose manifest `type` is a pack type as plugins (they carry
-  `hidden: true`; v0.3.x compatibility only, see `packages/README.md`, "Pack types"): leave every hidden row
-  out of plugin lists and do not take a data pack's enabled state from them. (Until the "Later" part of #169
-  lands, the web's Grammar page still honours a grammar pack's enabled state from this list; nothing in the
-  web UI can change it, only `PUT /api/plugins/{id}/state`. Android does not need to copy that.)
+- A data pack is not a plugin: `GET /api/plugins` lists registry plugins only (#198), a pack id has no plugin
+  state, and an installed pack is always shown (packs are managed in Settings → Data). Leave rows with
+  `hidden: true` (the surface-less built-ins such as `qinqin-core`) out of plugin lists.
 
 ## Not specified (on purpose)
 

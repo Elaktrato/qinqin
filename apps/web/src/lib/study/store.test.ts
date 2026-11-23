@@ -52,8 +52,8 @@ import {
 } from "./store";
 import seenMergeFixture from "../../../../../docs/contracts/milestones/seen-merge.json";
 import { DEFAULT_W, type ParamSet } from "./fsrs/params";
-import { pageOf, pagedPull, toLegacy } from "./testing/legacyCodec";
-import { STUDY_COLLECTIONS, cardRow, legacyFamily, type StudyCollection } from "./rows";
+import { legacyFamily, pageOf, pagedPull, toLegacy } from "./testing/legacyCodec";
+import { STUDY_COLLECTIONS, cardRow, type StudyCollection } from "./rows";
 
 const PLUGIN_ID = "qinqin-flashcards";
 const WORKSPACE_ID = 7;

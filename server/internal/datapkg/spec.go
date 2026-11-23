@@ -149,9 +149,7 @@ var registries = func() []registry {
 // pack of every other type. Levels and sentences packages require their
 // language's lexicon; audio packages are optional. A pack whose id or
 // language does not fit the package id grammar gets no package (no pack
-// imported through the manifest rules has one). Sentences imported before
-// the sentence pack registry existed have no licence on record and get no
-// package.
+// imported through the manifest rules has one).
 func Plan(ctx context.Context, q Querier) ([]Spec, error) {
 	var specs []Spec
 	lexicons := map[string]*Spec{}

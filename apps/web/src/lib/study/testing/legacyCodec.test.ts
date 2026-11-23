@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 
-import fixture from '../../../../../../docs/contracts/study/legacy-codec.json';
+import fixture from '../../../../../../docs/contracts/backup/study-rows.json';
 import { parseRow, bodyOf, type StudyCollection } from '../rows';
-import { fromLegacy, toLegacy, typedPull } from './legacyCodec';
+import { fromLegacy, legacyFamily, toLegacy, typedPull } from './legacyCodec';
 
 interface Case {
 	name: string;
@@ -15,7 +15,7 @@ interface Case {
 const meta = { workspaceId: 7, version: 1, updatedAt: '2026-11-12T10:00:00Z', deletedAt: null };
 
 // The test helper mirrors the server codec; the fixture keeps the two equal.
-describe('test-only legacy codec (docs/contracts/study/legacy-codec.json)', () => {
+describe('test-only legacy codec (docs/contracts/backup/study-rows.json)', () => {
 	for (const c of fixture.cases as Case[]) {
 		it(c.name, () => {
 			const got = fromLegacy(c.key, c.data);
@@ -30,6 +30,11 @@ describe('test-only legacy codec (docs/contracts/study/legacy-codec.json)', () =
 			expect(toLegacy(c.expect.collection, row!, fixture.modifiedAt)).toEqual({ key: c.key, data: c.roundTrip });
 		});
 	}
+
+	it('legacyFamily maps the keyed families', () => {
+		for (const f of fixture.families) expect(legacyFamily(f.key), f.key).toBe(f.collection);
+		for (const key of ['known:5', 'goals:workspace', 'vacation:x']) expect(legacyFamily(key)).toBeNull();
+	});
 
 	it('typedPull moves readable workspace rows and leaves the rest', () => {
 		const card = { id: 'c1', kind: 'vocab', entryId: 1, deckIds: ['general'], createdAt: 'x' };

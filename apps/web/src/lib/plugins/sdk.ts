@@ -1,15 +1,12 @@
-// The plugin SDK: plugin data and study events behind the permissions a
+// The plugin SDK: plugin data and recording study events behind the permissions a
 // plugin's manifest declares. The permissions are a contract that catches
 // mistakes and tells the user what a plugin does; all plugin code runs in
 // one trusted bundle, so this is not a security boundary.
 
 import { ApiError, api } from '../api/client';
-import type { StudyEventBody } from '../api/types';
-import { postEvents, type StudyEvent } from '../events';
-import { readAllEvents } from '../eventPages';
+import { postEvents } from '../events';
 import { newUlid } from '../ulid';
 import type { ContractManifest, Permission } from './contract';
-import { registerStudyEventHandler } from './hooks';
 
 /** PermissionError names the plugin and the permission or declaration it lacks. */
 export class PermissionError extends Error {
@@ -45,14 +42,11 @@ export interface PluginSdk {
 	readonly id: string;
 	data: { user(): DataScope; workspace(id: number): DataScope };
 	events: {
-		list(opts: { workspace?: number; since?: string; types?: string[] }): Promise<StudyEvent[]>;
 		record(type: string, workspace: number, payload?: unknown, at?: Date): Promise<void>;
 	};
-	onStudyEvent(handler: (events: StudyEventBody[]) => void): () => void;
 }
 
 const DEVICE = 'web';
-const EPOCH = '1970-01-01T00:00:00Z';
 
 // The API serves data as JSON, but a row may carry JSON text as a string (an
 // older writer): JSON text is decoded, any other string is returned as it is,
@@ -154,14 +148,6 @@ export function createPluginSdk(manifest: ContractManifest): PluginSdk {
 			}
 		},
 		events: {
-			list(opts) {
-				need('read:study-events');
-				const types = opts.types;
-				// Every page of the log (#110); the type filter stays client-side.
-				return readAllEvents((path) => api<unknown>(path), { since: opts.since ?? EPOCH, workspace: opts.workspace }).then(
-					(list) => (types ? list.filter((e) => types.includes(e.type)) : list)
-				);
-			},
 			record(type, workspace, payload = null, at = new Date()) {
 				need('write:study-events');
 				if (!manifest.events.some((e) => e.type === type)) {
@@ -178,12 +164,6 @@ export function createPluginSdk(manifest: ContractManifest): PluginSdk {
 					}
 				]);
 			}
-		},
-		onStudyEvent(handler) {
-			if (!manifest.hooks.includes('study-event')) {
-				throw new PermissionError(`plugin ${id} does not declare the "study-event" hook`);
-			}
-			return registerStudyEventHandler(id, handler);
 		}
 	};
 }

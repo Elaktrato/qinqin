@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest';
 
 import rowsFixture from '../../../../../docs/contracts/study/rows.json';
 import lwwFixture from '../../../../../docs/contracts/study/lww.json';
-import codecFixture from '../../../../../docs/contracts/study/legacy-codec.json';
 import {
 	STUDY_COLLECTIONS,
 	activeOf,
@@ -13,7 +12,6 @@ import {
 	deckOf,
 	deckRow,
 	identityOf,
-	legacyFamily,
 	limitsOf,
 	limitsRow,
 	parseRow,
@@ -208,19 +206,8 @@ describe('typed rows <-> study shapes', () => {
 		});
 	});
 
-	it('studyKey and legacyFamily', () => {
+	it('studyKey', () => {
 		expect(studyKey('cards', 'c-vocab-1')).toBe('cards:c-vocab-1');
 		expect(studyKey('fsrsActive', '')).toBe('fsrsActive:');
-		expect(legacyFamily('card:x')).toBe('cards');
-		expect(legacyFamily('deck:x')).toBe('decks');
-		expect(legacyFamily('deckcfg:general')).toBe('deckSettings');
-		expect(legacyFamily('limits:workspace')).toBe('limits');
-		expect(legacyFamily('limits:deck:general')).toBe('limits');
-		expect(legacyFamily('fsrs:set:x')).toBe('fsrsSets');
-		expect(legacyFamily('fsrs:active')).toBe('fsrsActive');
-		expect(legacyFamily('known:5')).toBeNull();
-		expect(legacyFamily('goals:workspace')).toBeNull();
-		expect(legacyFamily('vacation:x')).toBeNull();
-		for (const f of codecFixture.families) expect(legacyFamily(f.key), f.key).toBe(f.collection);
 	});
 });

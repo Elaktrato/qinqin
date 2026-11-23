@@ -30,7 +30,6 @@
 	import LanguageManager from '$lib/settings/LanguageManager.svelte';
 	import PackManager from '$lib/settings/PackManager.svelte';
 	import FeatureSettings from '$lib/settings/FeatureSettings.svelte';
-	import { isDataPackPlugin } from '$lib/plugins/dataPacks';
 	import { user } from '$lib/auth';
 	import {
 		RENAMED_TABS,
@@ -113,7 +112,7 @@
 		pluginsLoading = true;
 		pluginsError = '';
 		try {
-			const list = (await api<PluginInfo[]>('/api/plugins')).filter((p) => !isDataPackPlugin(p));
+			const list = await api<PluginInfo[]>('/api/plugins');
 			// Plugins only: never the core row or the core features (lib/features).
 			plugins = listedPlugins(list).map((plugin) => ({
 				id: plugin.id,

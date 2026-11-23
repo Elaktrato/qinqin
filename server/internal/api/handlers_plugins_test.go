@@ -613,11 +613,11 @@ func TestReservedFeatureRows(t *testing.T) {
 			Hidden bool   `json:"hidden"`
 		}
 		json.Unmarshal(item, &p)
-		// Listed unhidden: a cached v0.3.x shell shows the switch only for
-		// unhidden rows; new clients know the reserved ids (review fix, phase A, 5).
+		// Listed unhidden (introduced for v0.3.x shells, kept as the documented
+		// answer until #199 retires code plugins; clients know the reserved ids).
 		if p.ID == "qinqin-reader" || p.ID == "qinqin-flashcards" {
 			if p.Hidden {
-				t.Errorf("%s hidden = true, want false (old shells must keep the switch)", p.ID)
+				t.Errorf("%s hidden = true, want false (the documented answer)", p.ID)
 			}
 		}
 	}

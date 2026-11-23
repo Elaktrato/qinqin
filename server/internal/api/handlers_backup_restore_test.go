@@ -324,8 +324,9 @@ func TestRestoreUnresolvedNeedsTheAcknowledgement(t *testing.T) {
 	var eid int64
 	e.db.QueryRow(`SELECT id FROM entries WHERE ext_key = 'k1'`).Scan(&eid)
 	e.db.Exec(`INSERT INTO forms (entry_id, text, ord, updated_at) VALUES (?, '水', 0, 't')`, eid)
-	doRaw(t, "PUT", e.ts.URL, fmt.Sprintf("/api/plugins/qinqin-flashcards/data/card:c-vocab-%d?workspace=%d", eid, ws), alice,
-		fmt.Sprintf(`{"id":"c-vocab-%d","kind":"vocab","entryId":%d,"deckIds":[],"createdAt":"2026-11-10T08:00:00Z"}`, eid, eid))
+	pushTyped(t, e, alice, map[string]any{"cards": []any{map[string]any{"workspaceId": ws, "id": fmt.Sprintf("c-vocab-%d", eid), "kind": "vocab",
+		"entryId": eid, "written": nil, "entryKind": nil, "sentenceId": nil, "skipKinds": []string{}, "deckIds": []string{},
+		"createdAt": "2026-11-10T08:00:00Z", "extra": map[string]any{}, "updatedAt": "2026-11-10T08:00:00Z"}}})
 	archive := e.export(t, alice)
 	e.db.Exec(`UPDATE entries SET deleted_at = 't' WHERE id = ?`, eid) // the word is gone from this server
 	_, rt, _ := e.upload(t, alice, archive)

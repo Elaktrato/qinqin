@@ -7,73 +7,10 @@ import (
 	"testing"
 	"time"
 
-	"qinqin/internal/lexicon"
 	"qinqin/internal/model"
-	"qinqin/internal/overlay"
 	"qinqin/internal/plugins"
 	chinsync "qinqin/internal/sync"
 )
-
-// A writer stamps its row before it commits, so a pull's cursor must lag
-// the server clock by more than any write can take; otherwise a row that
-// commits after the pull but carries an earlier stamp is never delivered.
-func TestPullCursorLagsBehindNow(t *testing.T) {
-	sqlDB := newDB(t)
-	alice := newUser(t, sqlDB, "alice")
-	d := mustPull(t, sqlDB, alice, time.Time{})
-	if lag := time.Since(d.Cursor); lag < 20*time.Second || lag > 5*time.Minute {
-		t.Errorf("cursor lags now by %v, want a safety margin of at least 20s", lag)
-	}
-}
-
-// A fresh client has nothing to delete, so a pull from the zero cursor
-// ships live rows only; a cursor-based pull still ships tombstones.
-func TestPullFreshCursorOmitsTombstones(t *testing.T) {
-	sqlDB := newDB(t)
-	ctx := context.Background()
-	alice := newUser(t, sqlDB, "alice")
-	for _, key := range []string{"kept", "gone"} {
-		if _, err := plugins.PutData(ctx, sqlDB, alice, nil, "heatmap", key, json.RawMessage(`{}`)); err != nil {
-			t.Fatal(err)
-		}
-	}
-	if err := plugins.DeleteData(ctx, sqlDB, alice, nil, "heatmap", "gone"); err != nil {
-		t.Fatal(err)
-	}
-	fresh := mustPull(t, sqlDB, alice, time.Time{})
-	if len(fresh.PluginData) != 1 || fresh.PluginData[0].Key != "kept" {
-		t.Fatalf("fresh pull = %+v, want the live row only", fresh.PluginData)
-	}
-	incremental := mustPull(t, sqlDB, alice, time.Now().UTC().Add(-time.Hour))
-	if len(incremental.PluginData) != 2 {
-		t.Errorf("incremental pull = %+v, want the live row and the tombstone", incremental.PluginData)
-	}
-}
-
-// The delta carries the caller's own overlays (and only theirs), so an
-// offline client shows the user's edit, not the shared entry.
-func TestPullShipsOwnOverlays(t *testing.T) {
-	sqlDB := newDB(t)
-	ctx := context.Background()
-	alice, bob := newUser(t, sqlDB, "alice"), newUser(t, sqlDB, "bob")
-	seedWorld(t, sqlDB)
-	hao, err := lexicon.Store{DB: sqlDB}.Best(ctx, "zh", "character", "好")
-	if err != nil {
-		t.Fatalf("get 好: %v", err)
-	}
-	mine := "好!"
-	if err := overlay.Put(ctx, sqlDB, alice, hao.ID, model.EntryPatch{Written: &mine}); err != nil {
-		t.Fatalf("alice overlay: %v", err)
-	}
-
-	d := mustPull(t, sqlDB, alice, time.Time{})
-	if len(d.Overlays) != 1 || d.Overlays[0].EntryID != hao.ID || d.Overlays[0].Written == nil || *d.Overlays[0].Written != mine {
-		t.Fatalf("alice overlays = %+v, want her edit of entry %d", d.Overlays, hao.ID)
-	}
-	if other := mustPull(t, sqlDB, bob, time.Time{}); len(other.Overlays) != 0 {
-		t.Errorf("bob received overlays %+v, want none", other.Overlays)
-	}
-}
 
 // Last-write-wins compares edit times, not arrival times: an edit made
 // later on another device wins even when it syncs after an earlier edit

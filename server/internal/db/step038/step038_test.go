@@ -12,7 +12,8 @@ import (
 
 // The frozen codec reads the legacy rows exactly as the fixture said when
 // migration 038 shipped (testdata/legacy-codec-038.json, a frozen copy of
-// docs/contracts/study/legacy-codec.json; never regenerate it).
+// docs/contracts/backup/study-rows.json as it was then, under its old name
+// study/legacy-codec.json; never regenerate it).
 func TestFrozenCodecMatchesThe038Fixture(t *testing.T) {
 	raw, err := os.ReadFile("testdata/legacy-codec-038.json")
 	if err != nil {

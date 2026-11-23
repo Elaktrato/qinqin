@@ -22,6 +22,15 @@ In the Portainer console the seed is `qinqin seed`; with plain compose `docker c
 
 ## Notes per release
 
+### To the release after v0.5.0
+
+- **v0.3.x clients are no longer supported.** Before you upgrade, open the app online on every device (every browser and every installed copy) and let it finish syncing: a copy of the app from before v0.4.0 may hold reviews it cached offline and never sent, and the upgraded server no longer accepts them from that old copy. Afterwards nothing is lost.
+- The old sync form (`GET /api/sync/pull` without `v=2`) is gone and answers 404; scripts use the paged pull ([API access tokens](API-Access-tokens)). The plugin-data routes no longer serve or accept cards, decks, deck settings, limits or FSRS sets under their old `qinqin-flashcards` keys.
+- `GET /api/plugins` no longer lists a row per installed data pack. Every installed grammar pack now shows on the Grammar page (manage packs in Settings → Data).
+- Personal backups from every earlier version, v0.3 included, still restore.
+- Flashcards rows that a v0.3 binary run on an upgraded database wrote are no longer taken over at start (running an older binary on a newer database stays unsupported).
+- `GET /api/admin/packs` (Settings → Data) no longer lists sentences imported before v0.2.0 without a registry row. If removing a language answers 409 "sentences from an older pack", the message names each such pack: remove it with `DELETE /api/admin/sentences/<pack>`.
+
 ### To v0.5.0
 
 - No database migrations.
@@ -54,7 +63,7 @@ They run in place and keep all data. 018 rebuilds `workspaces` with an optional 
 
 ### From v0.1.0 or an early development database
 
-Entry ids changed with the dictionary rebuild (migration 017 drops the legacy tables and moves no data). There is **no upgrade path for entry data**: start from a fresh data directory (or at least delete `qinqin.db`) and seed again. On an old database the restart and seed succeed without an error, but user edits and flashcards created before keep their old entry ids and point at different entries; `qinqin seed` prints a `WARNING` line whenever the database holds user edits or flashcards.
+Entry ids changed with the dictionary rebuild (migration 017 drops the legacy tables and moves no data). There is **no upgrade path for entry data**: start from a fresh data directory (or at least delete `qinqin.db`) and seed again. On an old database the restart and seed succeed without an error, but user edits and flashcards created before keep their old entry ids and point at different entries.
 
 ## Related
 

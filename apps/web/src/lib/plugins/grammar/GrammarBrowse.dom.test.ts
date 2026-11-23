@@ -8,7 +8,6 @@ vi.mock('./progress', () => ({ loadProgress: vi.fn(async () => new Map()) }));
 vi.mock('./browse', () => ({ browseSections: vi.fn() }));
 
 import { browseSections } from './browse';
-import { pluginStates } from '$lib/plugins/states';
 import { workspaces } from '$lib/workspaces';
 import { primaryActions } from '$lib/ui/testing/primary';
 import GrammarBrowse from './GrammarBrowse.svelte';
@@ -17,7 +16,6 @@ const ws = { id: 1, language: 'ja', name: '', settings: {}, updatedAt: '' } as n
 
 beforeEach(() => {
 	workspaces.set({ list: [ws], current: ws });
-	pluginStates.set({ list: [], status: 'ready' });
 	vi.mocked(browseSections).mockReturnValue([
 		{
 			packId: 'basics',
@@ -45,7 +43,6 @@ afterEach(() => {
 	cleanup();
 	vi.clearAllMocks();
 	workspaces.set({ list: [], current: null });
-	pluginStates.set({ list: [], status: 'idle' });
 });
 
 describe('grammar browse in the lighter look (#106)', () => {

@@ -6,28 +6,26 @@ fixed shapes (v0.4.0, issue #85). Until v0.3.x they were keyed JSON rows of plug
 moved every readable row into one table per family, keeping its identity, `version`, stamps and tombstone.
 Design: `docs/superpowers/specs/2026-11-16-v040p-core-features-design.md`.
 
-Owner code: `server/internal/study/rows` (shapes and the legacy codec), `server/internal/study` (store:
-last-write-wins, pull, legacy view).
+Owner code: `server/internal/study/rows` (shapes, and the keyed-row codec the backup format uses),
+`server/internal/study` (store: last-write-wins and reads; the paged pull reads its tables).
 
 Fixtures:
 
 - `rows.json` — valid and invalid wire rows per collection (the strict wire decode).
-- `legacy-codec.json` — legacy `qinqin-flashcards` row (key + data) to typed row, `unreadable`, and the
-  legacy object written back (`roundTrip`); `families` maps keys to collections.
 - `lww.json` — last-write-wins and tombstone cases of a push; `expect` is `applied`, `skipped` or `unchanged` (see `outcomes`).
-- `legacy-view.json` — the request shapes of a v0.3.0 web shell and what the legacy view answers.
 - `canonical.json` — duplicate cards merged at read time: `{cards, reviews}` and the merged `{cards, reviews,
   merged}` (web: `apps/web/src/lib/study/canonical.test.ts`).
 
 Web: `apps/web/src/lib/study/rows.ts` (strict parse, the study shapes, `sameBody`) and `store.ts` (typed
-pull and push; a write is never sent when it would change nothing). The web decodes `rows.json`, `lww.json`
-and `legacy-codec.json` (a test-only mirror of the codec, `lib/study/testing/legacyCodec.ts`).
+pull and push; a write is never sent when it would change nothing). The web decodes `rows.json` and
+`lww.json`; its test-only mirror of the keyed-row codec (`lib/study/testing/legacyCodec.ts`) decodes
+`backup/study-rows.json`.
 
 ## Collections
 
 Every typed row is a workspace row; there is no user-global typed row.
 
-| Collection | Legacy key | Identity (per user and workspace) |
+| Collection | Keyed form (backups only) | Identity (per user and workspace) |
 | --- | --- | --- |
 | `cards` | `card:<id>` | `id` |
 | `decks` | `deck:<id>` | `id` |
@@ -38,6 +36,12 @@ Every typed row is a workspace row; there is no user-global typed row.
 
 The remaining keyed rows of the study namespace `qinqin-flashcards` (`goals:workspace`, `known:<entryId>`,
 user-global `vacation:<id>`, unknown keys) stay plugin-data rows with their own contracts.
+
+**The keys of the six families are never plugin data (#198).** `GET`, `PUT` and `DELETE
+/api/plugins/qinqin-flashcards/data/{key}` of such a key answer 404 `not_found`; a prefix list leaves them out;
+a push item of `pluginData` with such a key is refused alone (`dataRefused`); the paged pull never ships one in
+`pluginData`. A leftover `plugin_data` row of such a key (one migration 038 could not read, or one a
+downgraded binary wrote) stays inert: no route serves it and no backup carries it.
 
 ## Wire shape
 
@@ -72,11 +76,11 @@ On push `version` is ignored and may be left out, and `deletedAt` may be left ou
 
 `extra` holds every member the typed shape does not carry, verbatim (a newer client's member, or a known
 member whose stored value the typed shape cannot carry, under its own name). `extra` must not carry a
-typed member's name, with one exception: a known member whose stored legacy value the typed shape cannot
+typed member's name, with one exception: a known member whose stored keyed value the typed shape cannot
 carry while that typed member is unset (`null`) - an unusable `source`, an `entryKind` other than
 `"character"`, a `sentenceId` that is not an integer in `1..2^53-1`, an unreadable `newOrder`, a limit
-outside `0..9999`. The legacy view writes `extra` first, so an old shell reads such a value back exactly as
-it stored it; a client that sets the typed member replaces it. A member that the legacy form writes from a
+outside `0..9999`. The keyed form (backups) writes `extra` first, so a backup carries such a value exactly
+as it was stored; a client that sets the typed member replaces it. A member that the keyed form writes from a
 typed value always wins: the server drops `extra` members shadowed by a set typed member (`id`, `kind`,
 `entryId`, `deckIds`, `createdAt` of a card; `deckId`, `cardTypes`, `updatedAt` of deck settings;
 `version` of limits; and every optional member that is not `null`), and a writer must not send them.
@@ -93,39 +97,12 @@ skipped; a deletion keeps the row's last data; a newer live write revives a tomb
 bumps `version` and stamps `updatedAt` with the server clock. A pull from the zero cursor ships live rows
 only; any other cursor (including `1970-01-01T00:00:00Z`) ships tombstones too.
 
-## The legacy codec (`legacy-codec.json`)
+## The keyed form (backups only)
 
-`FromLegacy(key, data)` reads a legacy row exactly as the v0.3.0 web parsers did (key/payload agreement,
-`deckIds` cleaned to unique strings, `skipKinds`/`cardTypes` to known kinds in kind order, limits only at
-`version: 1`, members beyond a source or order variant dropped). A row the v0.3.0 parsers ignored is
-`unreadable` (and so is a card whose `entryId` is not an integer in `1..2^53-1`; a `sentenceId` that is not
-one stays in `extra`, since the v0.3.0 web read such a card). `ToLegacy` writes the
-legacy object back; deck settings get `updatedAt` = the row's edit time (`modified_at`).
-`ToLegacy(FromLegacy(row))` equals the row as JSON values except for that cleaning.
-
-## The legacy view (old web shells only)
-
-A cached v0.3.x web shell keeps working for the v0.4.x line through a legacy view of the same tables:
-
-- `GET /api/sync/pull` whose `collections` names `pluginData` and none of the six typed collections gets
-  every typed row (cursor and tombstone rules as above) appended to `pluginData` as its legacy
-  `qinqin-flashcards` row. A pull without `collections` gets the typed collections and no legacy rows. A
-  client that understands typed collections must name one whenever it pulls `pluginData`.
-- A pushed (`POST /api/sync/push` `pluginData`) or `PUT /api/plugins/qinqin-flashcards/data/{key}` row of a
-  typed family is decoded and applied to the typed table with the same last-write-wins, except that a row
-  equal to the stored live row after the codec's cleaning is counted `dataAccepted` without a write (no
-  version bump; a v0.3.0 shell reports any skipped row as an error and re-sends unchanged rows); a row the codec
-  refuses is `dataRefused` (push) or 400 `study_row_invalid` (`PUT`; also for a typed key without
-  `?workspace=`, since there is no user-global typed row). A `PUT` is stamped with the server clock and
-  answers the stored legacy row; equal content changes nothing (the version stays). `DELETE` tombstones
-  the typed row (404 when it is already a tombstone).
-- `GET` of a key or a prefix answers the legacy row of a typed row. A typed row (live or tombstoned)
-  shadows a leftover `plugin_data` row of the same key; a key only a leftover holds (a row the migration
-  could not read) is served, listed and deleted from `plugin_data` exactly as before. Prefix lists merge
-  both in key order.
-
-Android never uses the legacy view: it pulls and pushes the typed collections and uses `pluginData` only
-for the keyed rows.
+Until v0.3.x the six families were `qinqin-flashcards` plugin rows; a personal backup (format v1) still carries
+them in that keyed form, in both directions. The codec (`FromLegacy`, `ToLegacy`) and its fixture are part of
+the backup contract: `docs/contracts/backup/README.md` and `backup/study-rows.json`. No route reads or writes
+the keyed form any more (the v0.3.x "legacy view" and the legacy pull were removed in #198).
 
 ## Duplicate cards (`canonical.json`)
 

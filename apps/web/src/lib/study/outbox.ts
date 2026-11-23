@@ -16,26 +16,15 @@ export interface OutboxItem {
 	event: StudyEventBody;
 }
 
-export interface OutboxState {
-	/** The pre-v2 queue ('qinqin.study.pending'): events without an owner. */
-	legacy: StudyEventBody[];
-	items: OutboxItem[];
-}
-
 /**
- * settle brings the queue into the state `userId` may use: the legacy queue
- * and unowned items are adopted by this user (today's single-user behaviour),
- * and other users' items past the 30-day limit are removed. Own items never
- * expire. Returns a new state.
+ * settle brings the queue into the state `userId` may use: unowned items are
+ * adopted by this user (today's single-user behaviour), and other users'
+ * items past the 30-day limit are removed. Own items never expire. Returns a
+ * new list.
  */
-export function settle(state: OutboxState, userId: number, nowMs: number): OutboxState {
-	const adopted: OutboxItem[] = state.legacy.map((event) => ({
-		userId,
-		queuedAt: event.ts,
-		event
-	}));
+export function settle(state: readonly OutboxItem[], userId: number, nowMs: number): OutboxItem[] {
 	const items: OutboxItem[] = [];
-	for (const item of state.items) {
+	for (const item of state) {
 		if (item.userId === null) {
 			items.push({ ...item, userId });
 		} else if (item.userId === userId) {
@@ -45,7 +34,7 @@ export function settle(state: OutboxState, userId: number, nowMs: number): Outbo
 			if (Number.isFinite(queued) && nowMs - queued <= OTHER_USER_EXPIRY_MS) items.push(item);
 		}
 	}
-	return { legacy: [], items: [...adopted, ...items] };
+	return items;
 }
 
 /** flushable: the items `userId` may send, in queue order. */

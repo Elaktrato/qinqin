@@ -1,6 +1,7 @@
 // Package study stores the typed study rows (cards, decks, deck settings,
 // limits, FSRS sets, the active set; shapes in study/rows): last-write-wins
-// writes, reads, the sync pull, and the legacy view old web shells use.
+// writes and reads (the paged pull reads the tables through
+// TableOf/SelectColumns).
 // Every query is scoped to one user. Contract: docs/contracts/study/.
 package study
 

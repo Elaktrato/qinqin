@@ -37,7 +37,7 @@ The Grammar plugin (`server/internal/plugins/builtin/grammar.json`):
 | `icon` | Optional. The icon of the plugin's page in the app's navigation: a name of the app's icon set (the names in `apps/web/src/lib/ui/icons/lucide.ts`, such as `journal` or `grammar`). The server checks only the form: a lowercase letter, then up to 31 lowercase letters, digits and hyphens (`^[a-z][a-z0-9-]{0,31}$`); present but empty, `null` or not a string is an error. The apps show a generic icon for a name they do not know (or no icon field). |
 | `surfaces` | Any of `home-widget`, `page`, `hook`; no repeats. |
 | `permissions` | Any of the four below; no repeats. |
-| `hooks` | Only `study-event` is known. Must be non-empty with the `hook` surface and empty without it. |
+| `hooks` | Only `study-event` is known (it no longer runs anything in the web app). Must be non-empty with the `hook` surface and empty without it. |
 | `events` | Event types the plugin emits (below). |
 
 ## Permissions
@@ -45,7 +45,7 @@ The Grammar plugin (`server/internal/plugins/builtin/grammar.json`):
 | Permission | What the code does with it |
 |---|---|
 | `owns-data` | The plugin may store its own rows. The server answers 403 to `PUT` and `DELETE` on `/api/plugins/{id}/data/{key}` (and refuses such rows in a sync push) for a plugin without it; the web SDK throws on `data.user()` and `data.workspace()`. See [Plugin data API](Plugin-data-api). |
-| `read:study-events` | The web SDK allows reading study events. |
+| `read:study-events` | Accepted for compatibility; the web SDK no longer reads the event log. |
 | `write:study-events` | The web SDK allows emitting study events. The server rejects a manifest that declares `events` without it. |
 | `read:entries` | Accepted and shown to the user in Settings. Neither the server nor the web SDK checks it at run time yet. |
 
@@ -83,7 +83,7 @@ a plugin under a reserved id (409).
 
 ## The web SDK
 
-`apps/web/src/lib/plugins/sdk.ts` (`createPluginSdk(manifest)`) wraps plugin data (per user or per workspace) and study events, and throws a `PermissionError` for anything the manifest did not declare; `sdk.onStudyEvent` delivers posted events to a plugin while it is enabled. `events.list` returns the raw log: a plugin that counts `review` events must drop the replaced ones (a changed grade is a new review with `replaces: <id>`, `docs/contracts/events/review-replace.json`), and a replacement carries the time of the review it replaces, so a reader that pages with `since` must read from before that second. Permissions are a contract that catches mistakes and tells the user what a plugin does, **not a sandbox**: all plugin code ships in one bundle. The journal and the home layout use the SDK.
+`apps/web/src/lib/plugins/sdk.ts` (`createPluginSdk(manifest)`) wraps plugin data (per user or per workspace) and recording study events (`events.record`), and throws a `PermissionError` for anything the manifest did not declare. The SDK no longer reads the event log or runs the `study-event` hook (removed in #198: nothing used them); the manifest may still declare them, which grants nothing. Permissions are a contract that catches mistakes and tells the user what a plugin does, **not a sandbox**: all plugin code ships in one bundle. The journal and the home layout use the SDK.
 
 SDK data keys may not be empty, `.` or `..`. A plain string value round-trips (`put('k', 'hello')` reads back `'hello'`); a string that is itself valid JSON text (`'123'`) reads back decoded, so store objects instead of such strings.
 
@@ -124,4 +124,4 @@ Options of single widgets live in another user-global row, `qinqin-core` / `widg
 
 A plugin that ships or fetches third-party material credits it in the optional `sources` array of its manifest ([Data and licences](Data-and-licences#credits-and-the-sources-page)).
 
-Data packs (dictionaries, level lists and so on) are a different kind of plugin: see [Data pack format](Data-pack-format).
+Data packs (dictionaries, level lists and so on) are not plugins: they carry content, are managed in Settings → Data and have no plugin state. See [Data pack format](Data-pack-format).

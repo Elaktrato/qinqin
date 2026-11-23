@@ -69,8 +69,8 @@ Fixtures:
   workspaces or one, ordered by `ts`, then `id`. `since` is cut to its whole second before comparing, so an
   event of that second is included (`since=…09:00:00.500Z` includes `09:00:00Z`). With `limit` or `page` it
   answers in pages (Paging below); without them it is the **legacy form**: one array, streamed, with
-  `Deprecation: true` and `Link: </api/events?limit=500>; rel="successor-version"` (kept at least until v0.5.0
-  for cached older web shells and scripts). A second client may read the log from the pull v2 `events`
+  `Deprecation: true` and `Link: </api/events?limit=500>; rel="successor-version"` (kept for scripts; use the
+  paged form). A second client may read the log from the pull v2 `events`
   collection instead (`sync/`), which pages by `updatedAt` and leaves `lookup` out.
 - Pull v2 `events` ships every type **except `lookup`**.
 - `DELETE /api/events/lookups?workspace=<id>` → `{"deleted": n}`: the only deletion of events (the lookup

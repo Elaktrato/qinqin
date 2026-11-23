@@ -1,7 +1,7 @@
 {
  "version": 1,
  "rule": "packages/pack-types",
- "note": "Every data pack type (the manifest type), in the server's list and seed order. languages: the manifest states language (one), languages (many) or neither (none). uploadable: an administrator may install it by an upload. package: the data package type built from it (null: none; the dictionary's lexicon is per language). requiresLexicon / optionalPackage: the package's requires and optional. legacyPluginRow: GET /api/plugins still lists a hidden row per live pack of the type for v0.3.x web shells; no client may rely on it. registry is the server's table (informative).",
+ "note": "Every data pack type (the manifest type), in the server's list and seed order. languages: the manifest states language (one), languages (many) or neither (none). uploadable: an administrator may install it by an upload. package: the data package type built from it (null: none; the dictionary's lexicon is per language). requiresLexicon / optionalPackage: the package's requires and optional. registry is the server's table (informative).",
  "types": [
   {
    "type": "dictionary",
@@ -10,8 +10,7 @@
    "uploadable": true,
    "package": "lexicon",
    "requiresLexicon": false,
-   "optionalPackage": false,
-   "legacyPluginRow": true
+   "optionalPackage": false
   },
   {
    "type": "frequency",
@@ -20,8 +19,7 @@
    "uploadable": true,
    "package": "frequency",
    "requiresLexicon": false,
-   "optionalPackage": false,
-   "legacyPluginRow": true
+   "optionalPackage": false
   },
   {
    "type": "levels",
@@ -30,8 +28,7 @@
    "uploadable": true,
    "package": "levels",
    "requiresLexicon": true,
-   "optionalPackage": false,
-   "legacyPluginRow": true
+   "optionalPackage": false
   },
   {
    "type": "sentences",
@@ -40,8 +37,7 @@
    "uploadable": true,
    "package": "sentences",
    "requiresLexicon": true,
-   "optionalPackage": false,
-   "legacyPluginRow": true
+   "optionalPackage": false
   },
   {
    "type": "grammar",
@@ -50,8 +46,7 @@
    "uploadable": true,
    "package": "grammar",
    "requiresLexicon": false,
-   "optionalPackage": false,
-   "legacyPluginRow": true
+   "optionalPackage": false
   },
   {
    "type": "audio",
@@ -60,8 +55,7 @@
    "uploadable": false,
    "package": "audio",
    "requiresLexicon": false,
-   "optionalPackage": true,
-   "legacyPluginRow": true
+   "optionalPackage": true
   },
   {
    "type": "components",
@@ -70,8 +64,7 @@
    "uploadable": true,
    "package": "components",
    "requiresLexicon": false,
-   "optionalPackage": false,
-   "legacyPluginRow": false
+   "optionalPackage": false
   },
   {
    "type": "strokes",
@@ -80,8 +73,7 @@
    "uploadable": true,
    "package": "strokes",
    "requiresLexicon": false,
-   "optionalPackage": false,
-   "legacyPluginRow": false
+   "optionalPackage": false
   },
   {
    "type": "lemma-rules",
@@ -90,8 +82,7 @@
    "uploadable": true,
    "package": "lemma-rules",
    "requiresLexicon": false,
-   "optionalPackage": false,
-   "legacyPluginRow": false
+   "optionalPackage": false
   },
   {
    "type": "theme",
@@ -100,8 +91,7 @@
    "uploadable": true,
    "package": null,
    "requiresLexicon": false,
-   "optionalPackage": false,
-   "legacyPluginRow": false
+   "optionalPackage": false
   },
   {
    "type": "font",
@@ -110,8 +100,7 @@
    "uploadable": true,
    "package": null,
    "requiresLexicon": false,
-   "optionalPackage": false,
-   "legacyPluginRow": false
+   "optionalPackage": false
   }
  ]
 }

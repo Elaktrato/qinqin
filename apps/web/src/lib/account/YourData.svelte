@@ -5,6 +5,7 @@
 		applyRestore, discardRestore, downloadMyData, restoreStatus, safetyExportTicket, uploadRestore
 	} from '$lib/api/backup';
 	import { user } from '$lib/auth';
+	import { outboxUser } from '$lib/study/outboxUser';
 	import { t } from '$lib/i18n';
 	import Msg from '$lib/i18n/Msg.svelte';
 	import {
@@ -20,7 +21,7 @@
 		reload = () => location.reload(),
 		assign = (u: string) => location.assign(u),
 		storage = typeof localStorage === 'undefined' ? null : localStorage
-	}: { reload?: () => void; assign?: (url: string) => void; storage?: Pick<Storage, 'getItem' | 'removeItem'> | null } = $props();
+	}: { reload?: () => void; assign?: (url: string) => void; storage?: Pick<Storage, 'getItem' | 'setItem' | 'removeItem'> | null } = $props();
 
 	let error = $state('');
 	let busy = $state(false);
@@ -78,7 +79,7 @@
 			return;
 		}
 		if (view.status === 'done') {
-			droppedReviews = storage ? clearLocalAfterRestore(storage) : 0;
+			droppedReviews = storage ? clearLocalAfterRestore(storage, outboxUser()) : 0;
 			try {
 				if (typeof caches !== 'undefined') for (const k of await caches.keys()) await caches.delete(k);
 			} catch {

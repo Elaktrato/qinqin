@@ -10,7 +10,7 @@ import { showNotice } from '../notices';
 import { postEvents } from '../events';
 import { newUlid, ulidTime } from '../ulid';
 import { notifyAllSent, setQueued } from '../pwa/offlineState';
-import { flushable, settle, type OutboxItem, type OutboxState } from './outbox';
+import { flushable, settle, type OutboxItem } from './outbox';
 import { onOutboxUser, outboxToken, outboxUser, resetOutboxUserForTests } from './outboxUser';
 import { rememberSent } from './recentSent';
 import type {
@@ -23,8 +23,6 @@ import type {
 
 /** localStorage key of the per-user pending review queue (items {userId, queuedAt, event}). */
 export const PENDING_REVIEWS_KEY = 'qinqin.study.pending.v2';
-/** The pre-v2 queue (bare events, no owner): adopted by the first signed-in user, then removed. */
-export const LEGACY_PENDING_KEY = 'qinqin.study.pending';
 
 const DEVICE = 'web';
 
@@ -71,40 +69,32 @@ function readArray(key: string): unknown[] {
 	}
 }
 
-function writeState(state: OutboxState): void {
+function writeState(items: readonly OutboxItem[]): void {
 	const store = storage();
 	if (store === null) return;
 	try {
-		if (state.items.length === 0) store.removeItem(PENDING_REVIEWS_KEY);
-		else store.setItem(PENDING_REVIEWS_KEY, JSON.stringify(state.items));
-		if (state.legacy.length === 0) store.removeItem(LEGACY_PENDING_KEY);
-		else store.setItem(LEGACY_PENDING_KEY, JSON.stringify(state.legacy));
+		if (items.length === 0) store.removeItem(PENDING_REVIEWS_KEY);
+		else store.setItem(PENDING_REVIEWS_KEY, JSON.stringify(items));
 	} catch {
 		// Storage unavailable (private mode): the queue stays empty.
 	}
 }
 
 /**
- * load reads the queue. With a known user it first settles it (legacy and
- * unowned items adopted, other users' expired items removed) and saves the
- * result; without one the legacy queue is left alone.
+ * load reads the queue. With a known user it first settles it (unowned items
+ * adopted, other users' expired items removed) and saves the result.
  */
 function load(): OutboxItem[] {
-	const state: OutboxState = {
-		legacy: readArray(LEGACY_PENDING_KEY).filter(isEventBody),
-		items: readArray(PENDING_REVIEWS_KEY).filter(isItem)
-	};
+	const items = readArray(PENDING_REVIEWS_KEY).filter(isItem);
 	const user = outboxUser();
-	if (user === null) return state.items;
-	const next = settle(state, user, Date.now());
-	if (state.legacy.length > 0 || JSON.stringify(next.items) !== JSON.stringify(state.items)) {
-		writeState(next);
-	}
-	return next.items;
+	if (user === null) return items;
+	const next = settle(items, user, Date.now());
+	if (JSON.stringify(next) !== JSON.stringify(items)) writeState(next);
+	return next;
 }
 
 function save(items: OutboxItem[]): void {
-	writeState({ legacy: readArray(LEGACY_PENDING_KEY).filter(isEventBody), items });
+	writeState(items);
 	refreshQueued(items);
 }
 

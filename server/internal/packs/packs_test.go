@@ -133,7 +133,7 @@ func importAll(t *testing.T, sqlDB *sql.DB) {
 func TestListAllTypes(t *testing.T) {
 	sqlDB := newDB(t)
 	importAll(t, sqlDB)
-	// A sentence pack imported before the registry existed: sentences, no row.
+	// Sentences without a registry row (a pre-v0.2.0 import) are no pack (#198).
 	var entryID int64
 	if err := sqlDB.QueryRow(`SELECT id FROM entries LIMIT 1`).Scan(&entryID); err != nil {
 		t.Fatal(err)
@@ -153,7 +153,7 @@ func TestListAllTypes(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	order := []string{"dictionary/es-test", "frequency/es-freq", "levels/es-levels", "sentences/es-sent", "sentences/legacy-pack"}
+	order := []string{"dictionary/es-test", "frequency/es-freq", "levels/es-levels", "sentences/es-sent"}
 	if len(got) != len(order) {
 		t.Fatalf("list = %+v", got)
 	}
@@ -171,9 +171,6 @@ func TestListAllTypes(t *testing.T) {
 		if p.License == "" || p.Language != "es" || p.Name == "" {
 			t.Errorf("%s/%s missing fields: %+v", p.Type, p.PackID, p)
 		}
-	}
-	if l := got[4]; l.Name != "" || l.License != "" || l.Attribution != "" || l.UpdatedAt != "" {
-		t.Errorf("legacy row = %+v, want only type and pack id", l)
 	}
 	raw, _ := json.Marshal(got[0])
 	var m map[string]any

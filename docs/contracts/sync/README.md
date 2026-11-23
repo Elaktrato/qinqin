@@ -1,4 +1,4 @@
-# Sync: paged pull, push and the legacy pull
+# Sync: paged pull and push
 
 A client gets its **first copy of shared data by package download** (`docs/contracts/packages/`) and its
 **user data by the paged pull** (`GET /api/sync/pull?v=2`); it sends offline work with `POST /api/sync/push`.
@@ -6,7 +6,7 @@ The pull carries the caller's own data only — never lexicon rows — paged wit
 limited to the languages of the caller's workspaces. Design:
 `docs/superpowers/specs/2026-11-16-v040p-packages-design.md` (Q6–Q8, Q13; issue #93).
 
-Owner code: `server/internal/sync` (`page.go`, `token.go`, `page_collections.go`, `legacy.go`, `sync.go`),
+Owner code: `server/internal/sync` (`page.go`, `token.go`, `page_collections.go`, `sync.go`),
 `server/internal/api/handlers_sync.go`. Web: `apps/web/src/lib/sync/pager.ts`, `apps/web/src/lib/study/store.ts`.
 
 Fixtures:
@@ -15,7 +15,6 @@ Fixtures:
 - `pull-rounds.json` — scenarios (setup, requests, writes between pages, expected rows per page) run by the
   Go tests.
 - `push-result.json` — push requests and their status and body, as built.
-- `legacy-pull.json` — the legacy form (no `v=2`) and what it answers.
 - `unreadable-rows.json` — a page with an unreadable row of every typed family (malformed, or written by a newer
   client) and an unreadable `pluginData` row: what a reader loads, counts and must never rewrite ("Reading rows").
 
@@ -138,9 +137,8 @@ client (web and Android):
 The server follows the same rule for its own stored rows (#167 review). A stored typed row it cannot read back
 (stored JSON it does not know, such as a deck `source` type or a `newOrder` a newer server wrote before a
 downgrade, or a damaged row) is logged by family, workspace and identity (never its data) and skipped: the paged
-pull goes on and its position, so the cursor, still moves past the row; the legacy pull and the legacy plugin-data
-view skip it too (a legacy GET of its key is 404, a leftover plugin row of the key does not show through). A write
-that would replace it (`POST /api/sync/push`, a legacy plugin-data PUT or DELETE of its key) is refused with 409
+pull goes on and its position, so the cursor, still moves past the row. A write that would replace it
+(`POST /api/sync/push`) is refused with 409
 `study_row_unreadable` (`docs/contracts/auth/errors.json`) and nothing in the request is applied. Go:
 `server/internal/sync/unreadable_stored_test.go`, `unreadable_http_test.go`. The backup export still fails on such
 a row: a backup must not silently lose data.
@@ -152,21 +150,15 @@ fsrsActive}` (each optional), answer `{eventsAccepted, eventDuplicates, dataAcce
 dataRefused}` with every key always present. The whole body is validated first: a malformed item is 400 and
 a foreign workspace or unknown plugin 404, and then nothing is applied (400 `bad_request` naming the item,
 404 `not_found`). A plugin value or typed item above 256 KiB, or a body above 8 MiB, is 413 `too_large`. A
-row of a plugin without `owns-data` is refused alone (`dataRefused`). Plugin rows and typed rows are
+row of a plugin without `owns-data` is refused alone (`dataRefused`), and so is a `pluginData` row of
+`qinqin-flashcards` whose key belongs to a typed family (`card:`, `deck:`, `deckcfg:`, `limits:workspace`,
+`limits:deck:`, `fsrs:set:`, `fsrs:active`; those travel as typed collections only, `study/README.md`). A data
+pack's id is no plugin (404 `not_found`, like any unknown plugin). Plugin rows and typed rows are
 last-write-wins on the edit time (`docs/contracts/study/README.md`); a typed row equal to the stored one
 counts `dataAccepted` without a write.
 
-## Legacy form (`legacy-pull.json`, until v0.5.0)
+## No legacy form
 
-Any pull without `v=2`: `cursor` (RFC 3339, optional) and `collections` exactly as in v0.3.x, one JSON
-object, streamed row by row. It answers `Deprecation: true` and
-`Link: </api/sync/pull?v=2>; rel="successor-version"`. A client that reads nothing for 60 s is cut (the
-write deadline moves forward as rows go out), so a stalled reader does not hold the server's read
-transaction; the truncated JSON makes it retry, as after a network cut.
-
-- Item 4's legacy view applies unchanged (`docs/contracts/study/legacy-view.json`): a pull naming
-  `pluginData` and none of the typed collections gets the typed rows as `qinqin-flashcards` rows in
-  `pluginData`.
-- Lexicon collections moved to packages: naming one is 400 `sync_collection_moved` (JSON); a pull without
-  `collections` keeps their keys as `[]`. `sentences` carries the caller's own sentences only.
-- Other legacy errors are 400 `bad_request` (a cursor that is not RFC 3339, an unknown collection).
+A pull without `v=2` (the v0.3.x streaming form with `cursor=`) was removed in #198: it answers 404
+`not_found` (JSON), whatever the other parameters. The paged pull never ships a `qinqin-flashcards` row of a
+typed family in `pluginData` (a leftover a downgraded binary wrote; `study/README.md`).

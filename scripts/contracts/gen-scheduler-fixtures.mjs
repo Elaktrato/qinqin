@@ -221,23 +221,6 @@ const WEIGHT_CASES = [
 	{ name: 'not a list', w: { w: default_w }, note: 'an object is not a weight list' }
 ].map((c) => ({ ...c, w: Array.isArray(c.w) ? [...c.w] : c.w, expect: weightVerdict(c.w) }));
 
-// fsrs:set:<id> rows (study/README.md): the key must name the id, source is
-// optimized or imported, w exactly 21 valid numbers, labelled / logLoss /
-// baselineLogLoss optional finite numbers. Expectations written down here.
-const goodSet = { id: 's1', w: CUSTOM_W, createdAt: '2026-11-01T10:00:00Z', source: 'optimized', labelled: 812, logLoss: 0.31, baselineLogLoss: 0.35 };
-const PARAM_SET_CASES = [
-	{ name: 'an optimized set with every optional number', key: 'fsrs:set:s1', raw: goodSet, valid: true, note: 'every member kept' },
-	{ name: 'an imported set without optional numbers', key: 'fsrs:set:s2', raw: { id: 's2', w: default_w, createdAt: '2026-11-02T10:00:00Z', source: 'imported' }, valid: true, note: 'labelled, logLoss, baselineLogLoss are optional' },
-	{ name: 'the key names another id', key: 'fsrs:set:s9', raw: goodSet, valid: false, note: 'key must be fsrs:set:<id>' },
-	{ name: 'an unknown source', key: 'fsrs:set:s1', raw: { ...goodSet, source: 'manual' }, valid: false, note: 'source is optimized or imported' },
-	{ name: '19 weights in a stored set', key: 'fsrs:set:s1', raw: { ...goodSet, w: FSRS5_W }, valid: false, note: 'a stored set holds exactly 21 weights (migrate before storing)' },
-	{ name: 'a weight out of range', key: 'fsrs:set:s1', raw: { ...goodSet, w: withAt(CUSTOM_W, 4, 11) }, valid: false, note: 'the weight check applies' },
-	{ name: 'an optional number that is a string', key: 'fsrs:set:s1', raw: { ...goodSet, logLoss: '0.31' }, valid: false, note: 'present optional members must be finite numbers' },
-	{ name: 'an optional number that is null', key: 'fsrs:set:s1', raw: { ...goodSet, labelled: null }, valid: false, note: 'null is not absent' },
-	{ name: 'createdAt missing', key: 'fsrs:set:s1', raw: { id: 's1', w: CUSTOM_W, source: 'optimized' }, valid: false, note: 'id and createdAt are strings' },
-	{ name: 'not an object', key: 'fsrs:set:s1', raw: [CUSTOM_W], valid: false, note: 'a row value is an object' }
-].map((c) => ({ ...c, expect: c.valid ? { ...Object.fromEntries(Object.entries(c.raw).filter(([k]) => ['id', 'w', 'createdAt', 'source', 'labelled', 'logLoss', 'baselineLogLoss'].includes(k))), w: migrateParameters([...c.raw.w]) } : null }));
-
 // fsrs:active {setId}: the sets newest first (createdAt descending, then id
 // descending); the pointer picks a set by id; missing, null, non-string or
 // dangling = the default weights.
@@ -313,7 +296,6 @@ const fsrsPin = {
 	parameters: generatorParameters(),
 	clampRanges: ranges,
 	weights: WEIGHT_CASES.map(({ name, note, w, expect }) => ({ name, note, w, expect })),
-	paramSet: PARAM_SET_CASES.map(({ name, note, key, raw, expect }) => ({ name, note, key, raw, expect })),
 	resolve: RESOLVE_CASES.map(({ name, note, sets, active, expect }) => ({ name, note, sets, active, expect })),
 	replay: REPLAY_CASES.map((c) => {
 		const r = replayPlain(c);

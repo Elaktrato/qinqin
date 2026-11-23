@@ -142,7 +142,7 @@ func (s *server) handleListEvents(w http.ResponseWriter, r *http.Request) {
 	h.Set("Deprecation", "true")
 	h.Set("Link", `</api/events?limit=500>; rel="successor-version"`)
 	// A stalled client is cut one window after the last bytes went out.
-	out := &countingWriter{w: newDeadlineWriter(w, http.NewResponseController(w), legacyPullWindow, time.Now)}
+	out := &countingWriter{w: newDeadlineWriter(w, http.NewResponseController(w), streamWindow, time.Now)}
 	stream := s.streamEvents
 	if stream == nil {
 		stream = events.StreamSince

@@ -72,10 +72,6 @@ type Descriptor struct {
 	RequiresLexicon bool
 	// OptionalPackage: clients ask before downloading the package.
 	OptionalPackage bool
-	// LegacyPluginRow: GET /api/plugins lists every live pack of the type as
-	// a hidden plugin row, for v0.3.x web shells only (#169). No new type
-	// gets one.
-	LegacyPluginRow bool
 }
 
 // All is every pack type, in the order the admin list shows them and seed
@@ -83,12 +79,12 @@ type Descriptor struct {
 // entries), then frequency, levels and sentences, then the types that refer
 // to no entries at import time.
 var All = []Descriptor{
-	{Type: Dictionary, Registry: "dictionaries", Languages: One, Uploadable: true, Package: LexiconPackage, LegacyPluginRow: true},
-	{Type: Frequency, Registry: "frequency_packs", Languages: One, Uploadable: true, Package: "frequency", LegacyPluginRow: true},
-	{Type: Levels, Registry: "schemes", Languages: One, Uploadable: true, Package: "levels", RequiresLexicon: true, LegacyPluginRow: true},
-	{Type: Sentences, Registry: "sentence_packs", Languages: One, Uploadable: true, Package: "sentences", RequiresLexicon: true, LegacyPluginRow: true},
-	{Type: Grammar, Registry: "grammar_packs", Languages: One, Uploadable: true, Package: "grammar", LegacyPluginRow: true},
-	{Type: Audio, Registry: "audio_packs", Languages: One, Uploadable: false, Package: "audio", OptionalPackage: true, LegacyPluginRow: true},
+	{Type: Dictionary, Registry: "dictionaries", Languages: One, Uploadable: true, Package: LexiconPackage},
+	{Type: Frequency, Registry: "frequency_packs", Languages: One, Uploadable: true, Package: "frequency"},
+	{Type: Levels, Registry: "schemes", Languages: One, Uploadable: true, Package: "levels", RequiresLexicon: true},
+	{Type: Sentences, Registry: "sentence_packs", Languages: One, Uploadable: true, Package: "sentences", RequiresLexicon: true},
+	{Type: Grammar, Registry: "grammar_packs", Languages: One, Uploadable: true, Package: "grammar"},
+	{Type: Audio, Registry: "audio_packs", Languages: One, Uploadable: false, Package: "audio", OptionalPackage: true},
 	{Type: Components, Registry: "component_packs", Languages: One, Uploadable: true, Package: "components"},
 	{Type: Strokes, Registry: "stroke_packs", Languages: Many, Uploadable: true, Package: "strokes"},
 	{Type: LemmaRules, Registry: "lemma_rule_packs", Languages: One, Uploadable: true, Package: "lemma-rules"},

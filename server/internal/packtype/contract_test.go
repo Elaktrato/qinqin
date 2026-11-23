@@ -25,7 +25,6 @@ func TestTableMatchesTheContract(t *testing.T) {
 			Package         *string `json:"package"`
 			RequiresLexicon bool    `json:"requiresLexicon"`
 			OptionalPackage bool    `json:"optionalPackage"`
-			LegacyPluginRow bool    `json:"legacyPluginRow"`
 		} `json:"types"`
 	}
 	if err := json.Unmarshal(raw, &fx); err != nil {
@@ -42,8 +41,7 @@ func TestTableMatchesTheContract(t *testing.T) {
 			pkg = *c.Package
 		}
 		if c.Type != d.Type || c.Registry != d.Registry || c.Languages != shape[d.Languages] || c.Uploadable != d.Uploadable ||
-			pkg != d.Package || c.RequiresLexicon != d.RequiresLexicon || c.OptionalPackage != d.OptionalPackage ||
-			c.LegacyPluginRow != d.LegacyPluginRow {
+			pkg != d.Package || c.RequiresLexicon != d.RequiresLexicon || c.OptionalPackage != d.OptionalPackage {
 			t.Errorf("row %d: fixture %+v (package %q), table %+v", i, c, pkg, d)
 		}
 	}

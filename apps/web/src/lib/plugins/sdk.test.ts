@@ -31,18 +31,10 @@ describe('plugin sdk permissions', () => {
 		expect(() => createPluginSdk(bare).data.workspace(1)).toThrow(/qinqin-bare.*owns-data/);
 	});
 
-	it('events.list needs read:study-events', () => {
-		expect(() => createPluginSdk(bare).events.list({})).toThrow(/qinqin-bare.*read:study-events/);
-	});
-
 	it('events.record needs write:study-events', () => {
 		expect(() => createPluginSdk(bare).events.record('journal', 1)).toThrow(
 			/qinqin-bare.*write:study-events/
 		);
-	});
-
-	it('onStudyEvent needs the study-event hook', () => {
-		expect(() => createPluginSdk(bare).onStudyEvent(() => undefined)).toThrow(PermissionError);
 	});
 
 	it('record rejects a type the manifest does not declare', () => {
@@ -139,36 +131,6 @@ describe('plugin sdk events', () => {
 		vi.stubGlobal('fetch', vi.fn());
 	});
 	afterEach(() => vi.unstubAllGlobals());
-
-	it('list spans workspaces and filters by type client-side', async () => {
-		vi.mocked(fetch).mockResolvedValue(
-			json([
-				{ id: '1', type: 'read' },
-				{ id: '2', type: 'review' }
-			])
-		);
-		const rows = await createPluginSdk(full).events.list({ types: ['read'] });
-		expect(lastCall().url).toBe('/api/events?limit=2000&since=1970-01-01T00%3A00%3A00Z');
-		expect(rows.map((r) => r.id)).toEqual(['1']);
-	});
-
-	it('list URL-encodes since', async () => {
-		vi.mocked(fetch).mockResolvedValue(json([]));
-		await createPluginSdk(full).events.list({ since: '2026-11-15T10:00:00+01:00', workspace: 2 });
-		expect(lastCall().url).toBe(
-			'/api/events?limit=2000&since=2026-11-15T10%3A00%3A00%2B01%3A00&workspace=2'
-		);
-	});
-
-	it('list follows the pages of the log, repeating the workspace', async () => {
-		const item = (id: string, type: string) => ({ id, userId: 1, workspaceId: 2, device: 'web', ts: '2026-01-01T00:00:00Z', type, payload: null });
-		vi.mocked(fetch)
-			.mockResolvedValueOnce(json({ events: [item('a', 'read')], more: true, next: 'e1.n' }))
-			.mockResolvedValueOnce(json({ events: [item('b', 'review'), item('c', 'read')], more: false, next: null }));
-		const rows = await createPluginSdk(full).events.list({ workspace: 2, types: ['read'] });
-		expect(lastCall().url).toBe('/api/events?page=e1.n&workspace=2');
-		expect(rows.map((r) => r.id)).toEqual(['a', 'c']);
-	});
 
 	it('record posts one ULID event with device web and the given time', async () => {
 		vi.mocked(fetch).mockResolvedValue(json({}));

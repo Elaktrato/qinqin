@@ -4,12 +4,9 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 import {
-	ACTIVE_KEY,
 	DEFAULT_W,
-	SET_PREFIX,
 	checkWeights,
 	formatWeights,
-	parseParamSet,
 	parseWeightString,
 	resolveState,
 	validWeights,
@@ -97,9 +94,6 @@ describe('parseWeightString', () => {
 			expect(r.ok).toBe(true);
 			if (!r.ok) continue;
 			expect(validWeights(r.w)).toEqual(r.w);
-			expect(
-				parseParamSet('fsrs:set:X', { id: 'X', w: r.w, createdAt: 'c', source: 'imported' })
-			).not.toBeNull();
 		}
 	});
 
@@ -112,9 +106,9 @@ describe('parseWeightString', () => {
 			expect(r.ok, text).toBe(true);
 			if (!r.ok) continue;
 			expect(r.w).toHaveLength(21);
-			const row = { id: 'X', w: r.w, createdAt: 'c', source: 'imported' };
-			const set = parseParamSet('fsrs:set:X', JSON.parse(JSON.stringify(row)));
-			expect(set?.w).toEqual(r.w);
+			const stored = validWeights(JSON.parse(JSON.stringify(r.w)));
+			expect(stored).toEqual(r.w);
+			const set: ParamSet | null = stored === null ? null : { id: 'X', w: stored, createdAt: 'c', source: 'imported' };
 			expect(resolveState(set ? [set] : [], { setId: 'X' }).w).toEqual(r.w);
 		}
 	});
@@ -178,25 +172,6 @@ describe('formatWeights and weightsKey', () => {
 	});
 });
 
-describe('parseParamSet', () => {
-	it('parses a stored row', () => {
-		const raw = { ...set('A', '2026-01-01T00:00:00Z'), labelled: 500, logLoss: 0.3 };
-		expect(parseParamSet(SET_PREFIX + 'A', raw)).toEqual(raw);
-	});
-
-	it('rejects a key that disagrees with the id', () => {
-		expect(parseParamSet('fsrs:set:B', set('A', '2026-01-01T00:00:00Z'))).toBeNull();
-	});
-
-	it('rejects bad weights, source and shapes', () => {
-		expect(parseParamSet('fsrs:set:A', { ...set('A', 'x'), w: [1, 2] })).toBeNull();
-		expect(parseParamSet('fsrs:set:A', { ...set('A', 'x'), w: withIndex(4, 11) })).toBeNull();
-		expect(parseParamSet('fsrs:set:A', { ...set('A', 'x'), source: 'other' })).toBeNull();
-		expect(parseParamSet('fsrs:set:A', null)).toBeNull();
-		expect(parseParamSet('fsrs:set:A', [])).toBeNull();
-	});
-});
-
 describe('resolveState', () => {
 	const a = set('A', '2026-01-01T00:00:00Z', withIndex(8, 1.5));
 	const b = set('B', '2026-02-01T00:00:00Z', withIndex(8, 2.5));
@@ -222,20 +197,14 @@ describe('resolveState', () => {
 			expect(state.w).toEqual(DEFAULT_W);
 		}
 	});
-
-	it('exports the row keys', () => {
-		expect(SET_PREFIX).toBe('fsrs:set:');
-		expect(ACTIVE_KEY).toBe('fsrs:active');
-	});
 });
 
-describe('docs/contracts/scheduler/fsrs.json: weights, parameter sets, active set', () => {
+describe('docs/contracts/scheduler/fsrs.json: weights and the active set', () => {
 	type Verdict = { ok: true; migrated: number[] } | { ok: false; reason: string; position?: number };
 	const fixture = fsrsFixture as unknown as {
 		rule: string;
 		parameters: { w: number[] };
 		weights: { name: string; w: unknown; expect: Verdict }[];
-		paramSet: { name: string; key: string; raw: unknown; expect: ParamSet | null }[];
 		resolve: {
 			name: string;
 			sets: ParamSet[];
@@ -268,11 +237,6 @@ describe('docs/contracts/scheduler/fsrs.json: weights, parameter sets, active se
 				if (!got.ok) expect(reasonOf(got.error)).toEqual({ reason: c.expect.reason, ...(c.expect.position ? { position: c.expect.position } : {}) });
 				expect(validWeights(c.w)).toBeNull();
 			}
-		});
-	}
-	for (const c of fixture.paramSet) {
-		it(`paramSet: ${c.name}`, () => {
-			expect(parseParamSet(c.key, c.raw)).toEqual(c.expect);
 		});
 	}
 	for (const c of fixture.resolve) {
