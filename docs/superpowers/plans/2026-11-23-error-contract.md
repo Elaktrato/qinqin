@@ -114,7 +114,7 @@ plan order, except as noted.
   copy and data deleted.
 - **Final gates** (after the last code commit):
   - Go, one full run `go vet ./... && go test -count=1 -p 2 ./...` with the proxy variables unset: `gofmt -l`
-    empty; 53 packages, 47 ok, 5 without tests, 1 FAIL = `internal/ai`
+    empty; 51 packages, 47 ok, 3 without test files, 1 FAIL = `internal/ai`
     `TestHostnameResolvingToEmbeddedFormIsRefused` only (the known no-IPv6 sandbox failure); exit 1 for that.
   - Web `npm run check`: exit 0, 1675 files, 0 errors, 0 warnings.
   - Web `npm test` (Node 22): exit 1, 575 files, 12408 passed, 6 failed, 8 skipped: `BookView.dom.test.ts` (4)
