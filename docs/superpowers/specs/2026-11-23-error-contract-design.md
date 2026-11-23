@@ -119,7 +119,12 @@ workspace-gone switch).
   The test replaces the writeAuthError scan of `TestAuthErrorCatalogueIsCoherent`.
 - **Dynamic route walk** `errors_walk_test.go`: every pattern of `routes()` is called as anonymous, a user and
   an admin with: no body, `{}`, a malformed body `{`, path wildcards `999999` and `x`, a query
-  `?workspace=999999`, and a bad `Range` on the file routes; plus unmatched paths and wrong methods. Every
+  `?workspace=999999`, a body with plausible credentials, challenge, code and token fields (so the sign-in
+  routes reach their own refusals), and a `Range` header beyond any file on every request; plus unmatched paths
+  and wrong methods. Each request comes from its own client address and the walk's server uses budgets it
+  cannot use up, so no answer is the throttle's; the test fails if any route answers `rate_limited` or `busy`
+  and names the deeper refusal each sign-in route must reach. The walk has no installed files, so the 416/412
+  path itself is checked by `TestServeContentErrorsAreCodedJSON` (errors_mux_test.go). Every
   answer with status ≥ 400 must be `application/json` decoding to a non-empty `error` that is in the
   catalogue and a non-empty `message`.
   Ruling: both a static and a dynamic test — the walk cannot reach every branch (a full disk, a source
