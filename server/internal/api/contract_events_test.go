@@ -23,7 +23,7 @@ type envelopeStep struct {
 	Expect struct {
 		Status int             `json:"status"`
 		JSON   json.RawMessage `json:"json"`
-		Text   *string         `json:"text"`
+		Error  string          `json:"error"`
 		IDs    []string        `json:"ids"`
 		Types  []string        `json:"types"`
 	} `json:"expect"`
@@ -117,8 +117,10 @@ func TestContractEventEnvelope(t *testing.T) {
 				if st.Expect.JSON != nil && !jsonValueEqual(body, []byte(expand(string(st.Expect.JSON)))) {
 					t.Errorf("step %d: body %s, want %s", i, body, st.Expect.JSON)
 				}
-				if st.Expect.Text != nil && string(body) != *st.Expect.Text {
-					t.Errorf("step %d: body %q, want %q", i, body, *st.Expect.Text)
+				if st.Expect.Error != "" {
+					if got := errorCode(t, body); got != st.Expect.Error {
+						t.Errorf("step %d: body %s, want error %q", i, body, st.Expect.Error)
+					}
 				}
 				if st.Expect.IDs != nil {
 					var list []storedEvent

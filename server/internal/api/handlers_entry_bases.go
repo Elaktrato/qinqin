@@ -35,14 +35,14 @@ func (s *server) handleEntryBases(w http.ResponseWriter, r *http.Request) {
 	}
 	if err := json.NewDecoder(bytes.NewReader(body)).Decode(&req); err != nil ||
 		len(req.IDs) == 0 || len(req.IDs) > maxEntryBasesIDs {
-		writeError(w, http.StatusBadRequest, "bad_request", "Ids must be 1 to 500 entry ids.")
+		writeError(w, http.StatusBadRequest, "bad_request", "ids must be 1 to 500 entry ids.")
 		return
 	}
 	seen := make(map[int64]bool, len(req.IDs))
 	ids := make([]int64, 0, len(req.IDs))
 	for _, id := range req.IDs {
 		if id <= 0 {
-			writeError(w, http.StatusBadRequest, "bad_request", "Ids must be 1 to 500 entry ids.")
+			writeError(w, http.StatusBadRequest, "bad_request", "ids must be 1 to 500 entry ids.")
 			return
 		}
 		if !seen[id] {

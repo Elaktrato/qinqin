@@ -39,7 +39,7 @@ func (s *server) handleSyncPull(w http.ResponseWriter, r *http.Request) {
 	if raw := q.Get("cursor"); raw != "" {
 		t, err := time.Parse(time.RFC3339, raw)
 		if err != nil {
-			writeError(w, http.StatusBadRequest, "bad_request", "Cursor must be RFC 3339.")
+			writeError(w, http.StatusBadRequest, "bad_request", "cursor must be RFC 3339.")
 			return
 		}
 		cursor = t

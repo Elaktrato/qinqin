@@ -50,14 +50,14 @@ func (s *server) handleFrequencyRanks(w http.ResponseWriter, r *http.Request) {
 	}
 	if err := json.NewDecoder(bytes.NewReader(body)).Decode(&req); err != nil ||
 		len(req.IDs) == 0 || len(req.IDs) > maxEntryBasesIDs {
-		writeError(w, http.StatusBadRequest, "bad_request", "Ids must be 1 to 500 entry ids.")
+		writeError(w, http.StatusBadRequest, "bad_request", "ids must be 1 to 500 entry ids.")
 		return
 	}
 	seen := make(map[int64]bool, len(req.IDs))
 	ids := make([]int64, 0, len(req.IDs))
 	for _, id := range req.IDs {
 		if id <= 0 {
-			writeError(w, http.StatusBadRequest, "bad_request", "Ids must be 1 to 500 entry ids.")
+			writeError(w, http.StatusBadRequest, "bad_request", "ids must be 1 to 500 entry ids.")
 			return
 		}
 		if !seen[id] {
@@ -67,7 +67,7 @@ func (s *server) handleFrequencyRanks(w http.ResponseWriter, r *http.Request) {
 	}
 	language := strings.ToLower(strings.TrimSpace(req.Language))
 	if language == "" {
-		writeError(w, http.StatusBadRequest, "bad_request", "Language is required.")
+		writeError(w, http.StatusBadRequest, "bad_request", "language is required.")
 		return
 	}
 	es, err := lexicon.Store{DB: s.db}.GetMany(r.Context(), ids)
@@ -135,7 +135,7 @@ func (s *server) handleFrequencyTop(w http.ResponseWriter, r *http.Request) {
 	}
 	size, ok := starterSizes[r.URL.Query().Get("size")]
 	if !ok {
-		writeError(w, http.StatusBadRequest, "bad_request", "Size must be 500, 1000 or 2000.")
+		writeError(w, http.StatusBadRequest, "bad_request", "size must be 500, 1000 or 2000.")
 		return
 	}
 	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)

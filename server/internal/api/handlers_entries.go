@@ -94,7 +94,7 @@ func (s *server) handlePutEntry(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if patch.Written != nil && strings.TrimSpace(*patch.Written) == "" {
-		writeError(w, http.StatusBadRequest, "bad_request", "Written must not be empty.")
+		writeError(w, http.StatusBadRequest, "bad_request", "written must not be empty.")
 		return
 	}
 	for _, reading := range patch.Readings {
