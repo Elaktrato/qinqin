@@ -581,3 +581,42 @@ describe('buildLevelQueue study all', () => {
 		expect(buildLevelQueue({ ...options, studyAll: true })).toHaveLength(2);
 	});
 });
+
+describe('level sessions on the shared builder (#175)', () => {
+	const words = Array.from({ length: 25 }, (_, i) => entry(i + 1));
+	const base = { ctx: UTC_CONTEXT, w: DEFAULT_W, entries: words, cards: [], reviews: [], now: NOW };
+
+	it('the plan carries backfillLeft: backfillLimit, or no bound for Study all', () => {
+		expect(buildLevelPlan({ ...base, newLimit: 5, reviewLimit: 5 }).backfillLeft).toBe(30);
+		expect(buildLevelPlan({ ...base, newLimit: 20, reviewLimit: 5 }).backfillLeft).toBe(40);
+		expect(buildLevelPlan({ ...base, newLimit: 5, reviewLimit: 5, studyAll: true }).backfillLeft).toBe(1_000_000);
+	});
+
+	it('levelPlanCounts with Study all counts what the Study all session holds', () => {
+		const counts = levelPlanCounts({ ...base, studyAll: true });
+		expect(counts).toMatchObject({ due: 0, fresh: 25, items: 25 });
+		expect(buildLevelPlan({ ...base, newLimit: 1, reviewLimit: 1, studyAll: true }).queue).toHaveLength(25);
+		// Without Study all the default 20 new per deck applies, as in the session.
+		expect(levelPlanCounts(base)).toMatchObject({ due: 0, fresh: 20 });
+	});
+
+	it("a character level plans no writing item for a character whose writing the learner removed", () => {
+		const glyphs = [
+			{ id: 1, kind: 'character', written: '学' },
+			{ id: 2, kind: 'character', written: '习' }
+		];
+		const removed: StudyCard = { ...card('c-vocab-1', 1), entryKind: 'character', skipKinds: ['writing'] };
+		const kept: StudyCard = { ...card('c-vocab-2', 2), entryKind: 'character' };
+		const writing: StudyCard = { ...card('c-writing-1', 1), kind: 'writing' };
+		const plan = buildLevelPlan({
+			...base,
+			entries: glyphs,
+			cards: [removed, kept, writing],
+			unit: 'character',
+			kinds: ['writing'],
+			newLimit: 10,
+			reviewLimit: 10
+		});
+		expect(plan.queue.map((item) => item.cardId)).toEqual(['level:writing:2']);
+	});
+});

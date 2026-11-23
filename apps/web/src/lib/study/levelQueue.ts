@@ -6,10 +6,10 @@
 
 import { t } from '$lib/i18n';
 import { compareCanonical } from './canonical';
-import { backfillLimit } from './sessionQueue';
+import { buildSessionQueue, skipKindsByEntry, type QueueEntry } from './sessionQueue';
 import { isValidReview, scheduleFor, sortedReviews } from './scheduler';
 import { orderNew } from './newOrder';
-import { admit, cap, dayCountsCached, existingDecksOf, limitsOf, NO_LIMIT, type Candidate } from './limits';
+import { dayCountsCached, NO_LIMIT, type Candidate } from './limits';
 import { isDueNow, type StudyContext } from './studyContext';
 import { GENERAL_DECK_ID, type ReviewEvent, type StudyCard, type StudyCardKind } from './types';
 
@@ -52,7 +52,7 @@ export interface BuildLevelQueueOptions {
 	kinds?: readonly StudyCardKind[];
 	/** The learner's day (writing unlock), the study clock and vacation state. */
 	ctx: StudyContext;
-	/** How many extra new items to keep as reserve; defaults to backfillLimit(newLimit). */
+	/** How many extra new items to keep as reserve; defaults to the plan's backfillLeft. */
 	reserve?: number;
 	/** `kind:entryId` keys of virtual items already found ineligible (never planned). */
 	skip?: ReadonlySet<string>;
@@ -82,7 +82,17 @@ export interface BuildLevelQueueOptions {
 export interface LevelPlan {
 	queue: LevelQueueItem[];
 	reserve: LevelQueueItem[];
+	/** Replacements from the reserve left this session (sessionQueue.ts). */
+	backfillLeft: number;
 }
+
+/** A level's candidates before admission: the due items in due order, then the new ones. */
+interface LevelCandidates {
+	due: LevelQueueItem[];
+	fresher: LevelQueueItem[];
+}
+
+const NO_CANDIDATES: LevelCandidates = { due: [], fresher: [] };
 
 /** The id of an item whose card does not exist yet. */
 export function virtualLevelId(kind: StudyCardKind, entryId: number): string {
@@ -112,23 +122,18 @@ export function buildLevelQueue(options: BuildLevelQueueOptions): LevelQueueItem
 	return buildLevelPlan(options).queue;
 }
 
-/** buildLevelPlan is the session's entry point: queue and reserve. */
+/** buildLevelPlan is the session's entry point: queue, reserve and backfill bound. */
 export function buildLevelPlan(options: BuildLevelQueueOptions): LevelPlan {
-	return (options.unit ?? 'word') === 'character'
-		? buildCharacterPlan(options)
-		: buildWordPlan(options);
+	return admitPlan(options, levelCandidates(options));
 }
 
-function reserveSize(options: BuildLevelQueueOptions): number {
-	const limit = options.studyAll ? NO_LIMIT : options.newLimit;
-	return options.reserve === undefined ? backfillLimit(limit) : cap(options.reserve);
+function levelCandidates(options: BuildLevelQueueOptions): LevelCandidates {
+	return (options.unit ?? 'word') === 'character' ? characterCandidates(options) : wordCandidates(options);
 }
 
-function buildWordPlan(options: BuildLevelQueueOptions): LevelPlan {
+function wordCandidates(options: BuildLevelQueueOptions): LevelCandidates {
 	const { entries, cards, reviews, now, w } = options;
-	if (options.kinds !== undefined && !options.kinds.includes('vocab')) {
-		return { queue: [], reserve: [] };
-	}
+	if (options.kinds !== undefined && !options.kinds.includes('vocab')) return NO_CANDIDATES;
 	// One card per entry is the store's invariant; if legacy data has
 	// several, the smallest id keeps the queue stable across loads.
 	const cardByEntry = new Map<number, StudyCard>();
@@ -176,11 +181,7 @@ function buildWordPlan(options: BuildLevelQueueOptions): LevelPlan {
 	due.sort((a, b) => a.at - b.at || a.item.entryId - b.item.entryId);
 	fresh.sort((a, b) => a.entryId - b.entryId);
 
-	return admitPlan(
-		options,
-		due.map((entry) => entry.item),
-		ordered(options, [...fresh, ...virtual])
-	);
+	return { due: due.map((entry) => entry.item), fresher: ordered(options, [...fresh, ...virtual]) };
 }
 
 /** ordered applies the session's new-item key, if any. */
@@ -190,48 +191,37 @@ function ordered(options: BuildLevelQueueOptions, items: LevelQueueItem[]): Leve
 }
 
 /**
- * admitPlan applies the session caps and the daily limits (limits.ts) to the
- * due items and the new ones, in order. Existing cards count against their
- * own decks, virtual items against `general`. New items the daily limits
- * still allow beyond the session cap are the reserve.
+ * levelEntries are a level's candidates for the shared builder
+ * (sessionQueue.ts): existing cards count against their own decks, virtual
+ * items against `general`.
  */
-function admitPlan(
-	options: BuildLevelQueueOptions,
-	due: readonly LevelQueueItem[],
-	fresher: readonly LevelQueueItem[]
-): LevelPlan {
-	const { ctx, cards, reviews, now } = options;
-	if (ctx.vacationToday) return { queue: [], reserve: [] };
+function levelEntries(options: BuildLevelQueueOptions, { due, fresher }: LevelCandidates): QueueEntry<LevelQueueItem>[] {
+	const { cards, reviews, ctx, now } = options;
 	const counts = dayCountsCached(cards, reviews, ctx, now);
 	const decksOf = new Map(cards.map((card) => [card.id, card.deckIds]));
-	const candidate = (item: LevelQueueItem, bucket: Candidate['bucket']): Candidate => ({
+	const entry = (item: LevelQueueItem, bucket: Candidate['bucket']): QueueEntry<LevelQueueItem> => ({
 		cardId: item.cardId,
 		deckIds: item.virtual ? [GENERAL_DECK_ID] : (decksOf.get(item.cardId) ?? [GENERAL_DECK_ID]),
-		bucket
+		bucket,
+		item
 	});
-	const candidates = [
-		...due.map((item) =>
-			candidate(item, counts.reviewedToday.has(item.cardId) ? 'continuing' : 'review')
-		),
-		...fresher.map((item) => candidate(item, 'new'))
+	return [
+		...due.map((item) => entry(item, counts.reviewedToday.has(item.cardId) ? 'continuing' : 'review')),
+		...fresher.map((item) => entry(item, 'new'))
 	];
-	const caps = options.studyAll
-		? { newLimit: NO_LIMIT, reviewLimit: NO_LIMIT }
-		: { newLimit: cap(options.newLimit), reviewLimit: cap(options.reviewLimit) };
-	const limitsFor = options.studyAll
-		? () => ({ new: null, reviews: null })
-		: (deckId: string) => limitsOf(ctx, deckId);
-	const existing = existingDecksOf(ctx, candidates);
-	const inSession = new Set(admit(candidates, limitsFor, counts, caps, existing).admitted);
-	const inAllowance = new Set(
-		admit(candidates, limitsFor, counts, { ...caps, newLimit: Infinity }, existing).admitted
-	);
-	return {
-		queue: [...due, ...fresher].filter((item) => inSession.has(item.cardId)),
-		reserve: fresher
-			.filter((item) => inAllowance.has(item.cardId) && !inSession.has(item.cardId))
-			.slice(0, reserveSize(options))
-	};
+}
+
+/** admitPlan runs the shared builder over a level's candidates. */
+function admitPlan(options: BuildLevelQueueOptions, candidates: LevelCandidates): LevelPlan {
+	const { cards, reviews, ctx, now } = options;
+	return buildSessionQueue({
+		entries: levelEntries(options, candidates),
+		ctx,
+		counts: dayCountsCached(cards, reviews, ctx, now),
+		caps: { newLimit: options.newLimit, reviewLimit: options.reviewLimit },
+		studyAll: options.studyAll === true,
+		...(options.reserve === undefined ? {} : { reserveSize: options.reserve })
+	});
 }
 
 /**
@@ -239,10 +229,12 @@ function admitPlan(
  * Writing, when both kinds are selected, is new only once the recognition
  * card was first reviewed on an earlier learner day.
  */
-function buildCharacterPlan(options: BuildLevelQueueOptions): LevelPlan {
+function characterCandidates(options: BuildLevelQueueOptions): LevelCandidates {
 	const { entries, cards, reviews, now, w } = options;
 	const wanted = CHARACTER_KINDS.filter((kind) => (options.kinds ?? ['vocab']).includes(kind));
-	if (wanted.length === 0) return { queue: [], reserve: [] };
+	if (wanted.length === 0) return NO_CANDIDATES;
+	// A kind the learner removed for a character (its vocab row's skipKinds) is never planned.
+	const removed = skipKindsByEntry(cards);
 	const day = options.ctx.day;
 	const today = day.today(now.getTime());
 	const gated = wanted.includes('vocab') && wanted.includes('writing');
@@ -269,6 +261,7 @@ function buildCharacterPlan(options: BuildLevelQueueOptions): LevelPlan {
 		seen.add(entry.id);
 
 		for (const kind of wanted) {
+			if (removed.get(entry.id)?.has(kind)) continue;
 			if (
 				kind === 'writing' &&
 				entry.written !== undefined &&
@@ -308,11 +301,10 @@ function buildCharacterPlan(options: BuildLevelQueueOptions): LevelPlan {
 	}
 
 	due.sort((a, b) => a.at - b.at);
-	return admitPlan(
-		options,
-		due.map((entry) => entry.item),
-		[...ordered(options, freshWriting), ...ordered(options, freshVocab)]
-	);
+	return {
+		due: due.map((entry) => entry.item),
+		fresher: [...ordered(options, freshWriting), ...ordered(options, freshVocab)]
+	};
 }
 
 /** What the setup page shows for one level and kind selection. */
@@ -324,18 +316,23 @@ export interface LevelPlanCounts {
 	unitLabel: 'words' | 'characters';
 }
 
-/** levelPlanCounts counts what a level session would hold before the new/review caps. */
+/**
+ * levelPlanCounts counts what a level session would hold before the new and
+ * review caps (the daily limits apply, or none with Study all): one plan with
+ * no cap, split into due and new items.
+ */
 export function levelPlanCounts(
 	options: Omit<BuildLevelQueueOptions, 'newLimit' | 'reviewLimit'>
 ): LevelPlanCounts {
-	const due = buildLevelPlan({ ...options, newLimit: 0, reviewLimit: NO_LIMIT, reserve: 0 }).queue
-		.length;
-	const fresh = buildLevelPlan({ ...options, newLimit: NO_LIMIT, reviewLimit: 0, reserve: 0 })
-		.queue.length;
+	const full = { ...options, newLimit: NO_LIMIT, reviewLimit: NO_LIMIT, reserve: 0 };
+	const candidates = levelCandidates(full);
+	const due = new Set(candidates.due.map((item) => item.cardId));
+	const queue = admitPlan(full, candidates).queue;
+	const dueCount = queue.filter((item) => due.has(item.cardId)).length;
 	return {
-		due,
-		fresh,
-		items: due + fresh,
+		due: dueCount,
+		fresh: queue.length - dueCount,
+		items: queue.length,
 		unitLabel: (options.unit ?? 'word') === 'character' ? 'characters' : 'words'
 	};
 }
