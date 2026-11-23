@@ -95,3 +95,34 @@ names them as records their issues write.
 - Not verified: the records' wording of the planned decisions (0003–0006) against the owner's intent beyond
   the issue text; that #198's final branch leaves every path named in 0001/0002 in place (the path test will
   say so after the merge).
+
+### Review fix wave (one wave, after the independent review)
+
+- Group 1, `aab58cd6` test(docs) (items 7, 8, 12, 13). New checks in `architectureDocs.test.ts`: an Accepted
+  record's backticked identifiers (`Name`, `name()`, `name(...`) must occur as a word in `server/**/*.go`,
+  `apps/web/src/**/*.{ts,svelte}`, `scripts/**/*.mjs` or `docs/contracts/**/*.json`; `#anchor` links into
+  Markdown files must hit a heading (`mdAnchors`, as the wiki check); an Accepted record's Enforcement must not
+  say "planned", "being implemented" or "until then"; the README link must sit inside the Development section
+  only; every record's Status has a `Touched by: #N, ...` line and the README says a merge from such an issue
+  updates the record. Seen failing first: the Touched-by checks failed on all six records and the README (7
+  failures) before the lines were added; by-hand mutations (a misspelled `errMessageFindings` in 0001, a
+  broken `#reading-rows...` anchor in 0002, a "Planned by" line in 0001's Enforcement, the README link moved
+  to the Licence section) each failed exactly their test; reverted. Touched by: 0001 ← #194, #195, #199; 0002
+  ← #193, #195, #196; 0003 ← #194; 0004 ← #195; 0005 ← #197; 0006 ← #199. 0002 and 0004 note that
+  `lib/study/UnreadableRowsNotice.svelte` is UI in a logic folder that #195 moves.
+- Group 2, `50f5a731` docs(architecture) (items 1–6, 9–11): 0001 lists the real `dynamicCodeWriters`
+  (`writeAIError`, `writeSMTPInputError`, `handleTestSMTP`, `requirePrincipal`, `requireAdminPrincipal`,
+  `tokenGate`, `handleExportDownload`, `handleRestoreUpload`; `writePackError` writes literals), adds
+  `documentedStatuses`, drops `http.Redirect` from the checked rules (the AST scan only sees `http.Error` and
+  `http.NotFound`) and moves the unchecked rules to the Review line. 0002: typed rows decode with `parseRow`,
+  `pluginData` with `readableRow`; the typed-list rule is narrowed to "which rows are typed or how they
+  decode", with `V2_STUDY_COLLECTIONS` and `CACHEABLE_PULL_COLLECTIONS` named as scope lists with their
+  pinning tests, and "derive `V2_STUDY_COLLECTIONS` from `STUDY_COLLECTIONS`" as an open follow-up (no code
+  change on this docs branch). 0005: the `internal/db` migration-test exception in the rule; the open question
+  marked "not addressed by #197". 0006: the order #193, #196, #199 from the owner's queue as a decision (open
+  question removed); #189 cited from the queue.
+- Gates after the wave: web check exit 0 (0 errors, 0 warnings); full vitest under Node 26.13.1 exit 0, 588
+  files, 12619 passed, 8 skipped; `node --test scripts/*.test.mjs` exit 0 (156 pass, 0 fail, 1 skipped);
+  `gen-api-docs --check` exit 0. No Go touched.
+- Not verified: the records against develop after #198 merges (the coordinator asks for a merge and rerun then;
+  the path and identifier checks will show any break).
