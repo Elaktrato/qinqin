@@ -319,6 +319,7 @@ var v1TokenRoutes = map[string]tokenRule{
 	"GET /api/characters":               tokReadGlobal,
 	"GET /api/components":               tokReadGlobal, // #71: public shared data (amendment at merge)
 	"GET /api/component-packs":          tokReadGlobal, // #71: public shared data (amendment at merge)
+	"GET /api/lemma-packs":              tokReadGlobal, // #176: public shared credits, like component-packs (spec Ruling)
 	"GET /api/dictionaries":             tokReadGlobal,
 	"GET /api/frequency-packs":          tokReadGlobal,
 	"GET /api/sentence-packs":           tokReadGlobal,

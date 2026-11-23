@@ -345,6 +345,7 @@ func (s *server) routes() []route {
 		{"DELETE /api/admin/dictionaries/{id}", s.handleUninstallDictionary, accAdmin, nil, noTok},
 		{"GET /api/frequency-packs", s.handleListFrequencyPacks, accPublic, nil, tokReadGlobal},
 		{"GET /api/component-packs", s.handleListComponentPacks, accPublic, nil, tokReadGlobal},
+		{"GET /api/lemma-packs", s.handleListLemmaPacks, accPublic, nil, tokReadGlobal},
 		{"GET /api/frequency-packs/{id}/top", s.handleFrequencyTop, accUser, nil, noTok},
 		{"GET /api/grammar", s.handleListGrammar, accPublic, nil, tokReadGlobal},
 		{"GET /api/grammar/{pack}/{lesson}", s.handleGrammarLesson, accPublic, nil, tokReadGlobal},

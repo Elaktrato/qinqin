@@ -5,7 +5,7 @@
 import { pluginName } from '$lib/plugins/manifestText';
 import type { SentencePack } from '$lib/api/packs';
 import type { ThemePack } from '$lib/api/themes';
-import type { ComponentPack, StrokePack } from '$lib/api/types';
+import type { ComponentPack, LemmaPack, StrokePack } from '$lib/api/types';
 import type { FontList } from '$lib/api/fonts';
 import { t } from '$lib/i18n';
 import { licenseUrl } from '$lib/licenses';
@@ -45,6 +45,27 @@ export function sentencePackSources(list: SentencePack[]): PackSource[] {
 export function componentsSection(list: ComponentPack[], error: string): { show: boolean; table: PackTable } {
 	const table = packTable(
 		'components',
+		list.map((p, i) => ({
+			id: i,
+			name: p.name,
+			language: p.language,
+			version: p.version,
+			license: p.license,
+			attribution: p.attribution,
+			notice: p.notice
+		}))
+	);
+	return { show: error !== '' || list.length > 0, table };
+}
+
+/**
+ * lemmaSection is the Sources page's "Lemmatizer rules" block: the table of
+ * GET /api/lemma-packs. It shows only while a pack is installed, or on a load
+ * error (so the retry is reachable).
+ */
+export function lemmaSection(list: LemmaPack[], error: string): { show: boolean; table: PackTable } {
+	const table = packTable(
+		'lemma',
 		list.map((p, i) => ({
 			id: i,
 			name: p.name,
