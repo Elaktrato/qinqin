@@ -732,6 +732,67 @@
         }
       ],
       "reserve": []
+    },
+    {
+      "name": "a kind the learner removed is never planned",
+      "note": "character 11's vocab card lists writing in skipKinds (removed by the learner): neither its stored writing card nor a virtual one is queued; character 12 still gets one",
+      "unit": "character",
+      "kinds": [
+        "writing"
+      ],
+      "history": [
+        {
+          "zone": "Asia/Tokyo",
+          "from": null
+        }
+      ],
+      "now": "2026-11-16T03:00:00Z",
+      "entries": [
+        {
+          "id": 11,
+          "kind": "character"
+        },
+        {
+          "id": 12,
+          "kind": "character"
+        }
+      ],
+      "cards": [
+        {
+          "id": "c-vocab-11",
+          "kind": "vocab",
+          "entryId": 11,
+          "createdAt": "2026-11-01T00:00:00Z",
+          "skipKinds": [
+            "writing"
+          ]
+        },
+        {
+          "id": "c-writing-11",
+          "kind": "writing",
+          "entryId": 11,
+          "createdAt": "2026-11-01T00:00:00Z"
+        },
+        {
+          "id": "c-vocab-12",
+          "kind": "vocab",
+          "entryId": 12,
+          "createdAt": "2026-11-01T00:00:00Z"
+        }
+      ],
+      "reviews": [],
+      "newLimit": 5,
+      "reviewLimit": 100,
+      "weights": "default",
+      "queue": [
+        {
+          "cardId": "level:writing:12",
+          "kind": "writing",
+          "entryId": 12,
+          "virtual": true
+        }
+      ],
+      "reserve": []
     }
   ]
 }

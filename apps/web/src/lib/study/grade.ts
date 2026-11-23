@@ -7,8 +7,7 @@
 
 import { errorText } from '$lib/api/apiErrors';
 import { t } from '../i18n';
-import { GENERAL_DECK_ID } from './store';
-import type { ReviewEvent, ReviewGrade, ReviewMeta, StudyCard, StudyCardKind } from './types';
+import { GENERAL_DECK_ID, type ReviewEvent, type ReviewGrade, type ReviewMeta, type StudyCard, type StudyCardKind } from './types';
 
 /** One queue item as both session modes represent it. */
 export interface GradeableItem {

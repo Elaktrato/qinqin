@@ -220,7 +220,7 @@
   },
   {
    "name": "due before new, each up to its limit",
-   "note": "reviewLimit 1 and newLimit 1: one due card, then one new card",
+   "note": "reviewLimit 1 and newLimit 1: one due card, then one new card; the reserve is every new item the daily limits allow past the session cap (session-queue.json), real cards included",
    "history": [],
    "now": "2026-03-10T12:00:00Z",
    "language": "zh",
@@ -292,7 +292,9 @@
      "d1",
      "n1"
     ],
-    "reserve": [],
+    "reserve": [
+     "n2"
+    ],
     "backfillLeft": 30
    }
   },
@@ -1160,6 +1162,7 @@
      "v1"
     ],
     "reserve": [
+     "n2",
      "companion:sentence:1",
      "companion:sentence:2"
     ],
@@ -1462,6 +1465,54 @@
     "reserve": [],
     "backfillLeft": 40
    }
+  },
+  {
+   "name": "a due card the review limit leaves out does not block its word's opt-in companion",
+   "note": "v1 is due but reviewLimit 0 leaves it out, so no real item of word 1 is queued: the reverse companion is planned and admitted as a new item (the opt-in exclusion counts queued real cards only)",
+   "history": [],
+   "now": "2026-03-10T12:00:00Z",
+   "language": "zh",
+   "deckIds": [
+    "general"
+   ],
+   "kinds": [
+    "vocab",
+    "reverse"
+   ],
+   "newLimit": 5,
+   "reviewLimit": 0,
+   "weights": "default",
+   "deckSettings": {
+    "general": [
+     "reverse"
+    ]
+   },
+   "cards": [
+    {
+     "id": "v1",
+     "kind": "vocab",
+     "entryId": 1,
+     "written": "学习",
+     "deckIds": [
+      "general"
+     ],
+     "createdAt": "2026-01-01T00:00:00Z"
+    }
+   ],
+   "reviews": [
+    {
+     "cardId": "v1",
+     "ts": "2026-03-01T00:00:00Z",
+     "grade": 1
+    }
+   ],
+   "expect": {
+    "queue": [
+     "companion:reverse:1"
+    ],
+    "reserve": [],
+    "backfillLeft": 30
+   }
   }
  ],
  "steps": [
@@ -1605,7 +1656,7 @@
   },
   {
    "name": "backfill stops at backfillLeft",
-   "note": "with backfillLeft exhausted a dropped companion is not replaced",
+   "note": "with backfillLeft exhausted a dropped companion is not replaced; the reserve holds at most backfillLeft items, so it is empty by then",
    "history": [],
    "now": "2026-03-10T12:00:00Z",
    "language": "zh",
@@ -2158,9 +2209,7 @@
      "companion:sentence:28",
      "companion:sentence:29",
      "companion:sentence:30",
-     "companion:sentence:31",
-     "companion:sentence:32",
-     "companion:sentence:33"
+     "companion:sentence:31"
     ],
     "backfillLeft": 30
    },
@@ -2201,9 +2250,7 @@
        "companion:sentence:28",
        "companion:sentence:29",
        "companion:sentence:30",
-       "companion:sentence:31",
-       "companion:sentence:32",
-       "companion:sentence:33"
+       "companion:sentence:31"
       ],
       "backfillLeft": 29
      }
@@ -2327,10 +2374,7 @@
       "queue": [
        "companion:sentence:31"
       ],
-      "reserve": [
-       "companion:sentence:32",
-       "companion:sentence:33"
-      ],
+      "reserve": [],
       "backfillLeft": 0
      }
     },
@@ -2339,10 +2383,7 @@
      "cardId": "companion:sentence:31",
      "expect": {
       "queue": [],
-      "reserve": [
-       "companion:sentence:32",
-       "companion:sentence:33"
-      ],
+      "reserve": [],
       "backfillLeft": 0
      }
     }

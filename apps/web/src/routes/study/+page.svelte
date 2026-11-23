@@ -42,7 +42,6 @@ import { vacationBanner, vacationStatus } from '$lib/settings/vacationForm';
 import { startTodayText } from '$lib/study/limitsText';
 import { limitsOf } from '$lib/study/scheduler';
 	import { currentStudyDay } from '$lib/time/zone';
-	import { STUDY_ALL_LIMIT } from '$lib/study/session';
 	import { hasStrokeData } from '$lib/study/strokeIndex';
 	import { getFrequencyPacks } from '$lib/api/frequency';
 	import type { FrequencyPack } from '$lib/api/types';
@@ -488,11 +487,8 @@ import { limitsOf } from '$lib/study/scheduler';
 
 	const deckCounts = $derived({ due: deckPlan.due, fresh: deckPlan.fresh });
 
-	// What Study all would contain: the same plan without any daily limits.
-	const noLimitCtx = $derived({
-		...ctx,
-		limits: { ...ctx.limits, workspace: null, decks: {} }
-	});
+	// What Study all would contain: the same plan with Study all, which ignores the
+	// session caps and every daily limit (sessionQueue.ts), exactly as the session does.
 	const deckAllPlan = $derived.by(() => {
 		const empty = { due: 0, fresh: 0, byKind: { vocab: 0, sentence: 0, writing: 0, tone: 0, reverse: 0, cloze: 0 } };
 		if (selectedDeckIds.length === 0 || selectedKinds.length === 0) return empty;
@@ -501,13 +497,14 @@ import { limitsOf } from '$lib/study/scheduler';
 			reviews,
 			deckIds: selectedDeckIds,
 			kinds: selectedKinds,
-			newLimit: STUDY_ALL_LIMIT,
-			reviewLimit: STUDY_ALL_LIMIT,
+			newLimit: COUNT_CAP,
+			reviewLimit: COUNT_CAP,
 			now: new Date(),
 			w: weights,
 			language: workspaceLanguage ?? '',
 			deckSettings,
-			ctx: noLimitCtx,
+			ctx,
+			studyAll: true,
 			skip: activeWorkspaceId === null ? undefined : loadIneligible(activeWorkspaceId)
 		});
 		return sessionCounts(items, reviews);
@@ -569,7 +566,8 @@ import { limitsOf } from '$lib/study/scheduler';
 			w: weights,
 			unit: levelUnit,
 			kinds: levelKinds,
-			ctx: noLimitCtx,
+			ctx,
+			studyAll: true,
 			hasStrokes: hasStrokeData,
 			excludeEntries: buriedLevelEntries(
 				buriedNow({ cards, reviews, now: new Date(), studyDay: ctx.day }),

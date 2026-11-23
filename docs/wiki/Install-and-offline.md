@@ -14,7 +14,7 @@ HTTPS, or `http://localhost` on the same machine. Over plain HTTP (including a L
 
 ## What works offline
 
-The app opens. Your decks and today's study queue (the cards a session started now would hold, plus the next 50 new cards, within your daily limits and vacation days) are saved on the device whenever you use the app online. Offline you study those real cards and grade them; the reviews wait on the device. The day, vacation and limits follow the same rules offline: the time zone you set is saved with your data, and "today" is computed on the device.
+The app opens. Your decks and today's study queue (the cards a session started now would hold, plus the next 50 new cards, within your daily limits and vacation days) are saved on the device whenever you use the app online, and then up to 200 more of the cards **Study all** would add (due reviews first), so a Study all session offline has its words too; a larger Study all session offline shows only the saved ones (500 words at most in all). Offline you study those real cards and grade them; the reviews wait on the device. The day, vacation and limits follow the same rules offline: the time zone you set is saved with your data, and "today" is computed on the device.
 
 A line at the top says what is happening: "You're offline. Study works with saved cards.", "You're offline. 3 reviews are saved on this device and will be sent when you're back online.", "Can't reach the server. Showing saved data from …", and "All reviews sent." once they have left. Your theme is remembered on the device too, so the app starts in your colours ([Appearance and themes](Appearance-and-themes)).
 

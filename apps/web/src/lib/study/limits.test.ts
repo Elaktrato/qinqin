@@ -4,7 +4,9 @@ import fixture from '../../../../../docs/contracts/scheduler/daily-limits.json';
 import { studyDay } from '../time/studyDay';
 import {
 	DEFAULT_LIMITS,
+	NO_LIMIT,
 	admit,
+	cap,
 	dayCounts,
 	effectiveLimits,
 	parseLimitRow,
@@ -71,4 +73,23 @@ describe('fixtures: admission', () => {
 			expect(result.left).toEqual(c.left);
 		});
 	}
+});
+
+describe('cap and NO_LIMIT (#175)', () => {
+	it('floors a finite limit at zero or more', () => {
+		expect(cap(5.9)).toBe(5);
+		expect(cap(0)).toBe(0);
+		expect(cap(-3)).toBe(0);
+	});
+
+	it('reads a non-finite limit as zero', () => {
+		expect(cap(Number.NaN)).toBe(0);
+		expect(cap(Infinity)).toBe(0);
+		expect(cap(-Infinity)).toBe(0);
+	});
+
+	it('NO_LIMIT is one million and survives cap', () => {
+		expect(NO_LIMIT).toBe(1_000_000);
+		expect(cap(NO_LIMIT)).toBe(NO_LIMIT);
+	});
 });

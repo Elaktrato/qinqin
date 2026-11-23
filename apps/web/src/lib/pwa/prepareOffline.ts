@@ -24,6 +24,8 @@ export const OFFLINE_API_PATHS: readonly string[] = [
 export const PREPARE_THROTTLE_MS = 30 * 60 * 1000;
 const MAX_ENTRIES = 500;
 const EXTRA_NEW = 50;
+/** At most this many more entries for an offline Study all session (spec Ruling, #175 review). */
+const STUDY_ALL_EXTRA = 200;
 const CONCURRENCY = 2;
 
 export interface OfflinePlan {
@@ -37,21 +39,30 @@ type PlanInput = Omit<DeckSessionOptions, 'skip'>;
 /**
  * planOffline: the real cards of the session a user would start now, plus the
  * next `extraNew` new cards. Both plans go through the daily limits, so what
- * is saved is what could be studied today. Companion (virtual) items are not
- * studied offline and are left out.
+ * is saved is what could be studied today. Then what a Study all session
+ * would add (no limits), at most `studyAllExtra` more entries, due cards
+ * first. Companion (virtual) items are not studied offline and are left out.
+ * Never more than `maxEntries` in all.
  */
 export function planOffline(
 	input: PlanInput,
-	opts: { extraNew?: number; maxEntries?: number } = {}
+	opts: { extraNew?: number; maxEntries?: number; studyAllExtra?: number } = {}
 ): OfflinePlan {
 	const extraNew = opts.extraNew ?? EXTRA_NEW;
 	const maxEntries = opts.maxEntries ?? MAX_ENTRIES;
+	const studyAllExtra = opts.studyAllExtra ?? STUDY_ALL_EXTRA;
 	const entryIds: number[] = [];
 	const chars = new Set<string>();
 	const seen = new Set<number>();
-	for (const options of [input, { ...input, newLimit: input.newLimit + extraNew }]) {
-		for (const item of deckSessionPlan(options).queue) {
-			if (item.virtual || seen.has(item.entryId) || entryIds.length >= maxEntries) continue;
+	const passes: { options: PlanInput; extra: number }[] = [
+		{ options: input, extra: maxEntries },
+		{ options: { ...input, newLimit: input.newLimit + extraNew }, extra: maxEntries },
+		{ options: { ...input, studyAll: true }, extra: studyAllExtra }
+	];
+	for (const pass of passes) {
+		const max = Math.min(maxEntries, entryIds.length + pass.extra);
+		for (const item of deckSessionPlan(pass.options).queue) {
+			if (item.virtual || seen.has(item.entryId) || entryIds.length >= max) continue;
 			seen.add(item.entryId);
 			entryIds.push(item.entryId);
 			if (item.kind === 'writing') {
@@ -101,6 +112,8 @@ export interface PrepareDeps {
 	/** True when the worker already holds this API path for the current partition. */
 	isCached: (path: string) => Promise<boolean>;
 	extraNew?: number;
+	/** Entries prepared for an offline Study all session beyond the others (planOffline). */
+	studyAllExtra?: number;
 	onPrepared: (prepared: NonNullable<OfflineState['prepared']>) => void;
 }
 
@@ -201,7 +214,7 @@ export async function prepareOffline(
 				deckSettings: data.deckSettings,
 				language: d.language
 			},
-			{ extraNew: d.extraNew }
+			{ extraNew: d.extraNew, studyAllExtra: d.studyAllExtra }
 		);
 		for (const path of OFFLINE_API_PATHS) await d.fetchApi(path);
 		await pool(plan.entryIds, async (id) => {
