@@ -8,6 +8,7 @@ package packs
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"sort"
@@ -19,6 +20,7 @@ import (
 	"qinqin/internal/freq"
 	"qinqin/internal/grammar"
 	"qinqin/internal/levels"
+	"qinqin/internal/packtype"
 	"qinqin/internal/sentences"
 	"qinqin/internal/strokes"
 	"qinqin/internal/themes"
@@ -49,36 +51,28 @@ var ErrNotFound = errors.New("packs: not found")
 // ErrUnknownType reports a pack type this package does not manage.
 var ErrUnknownType = errors.New("packs: unknown type")
 
-// typeOrder is the list order of the pack types.
-var typeOrder = map[string]int{
-	dict.TypeDictionary: 0,
-	dict.TypeFrequency:  1,
-	dict.TypeLevels:     2,
-	dict.TypeSentences:  3,
-	dict.TypeGrammar:    4,
-	dict.TypeAudio:      5,
-	dict.TypeComponents: 6,
-	dict.TypeStrokes:    7,
-	dict.TypeTheme:      8,
-	dict.TypeFont:       9,
-}
+// typeIndex is the list order of a pack type: its row in the pack-type
+// table (internal/packtype); -1 for an unknown type.
+func typeIndex(typ string) int { return packtype.Index(typ) }
 
-// Supported reports whether typ is a pack type this package manages.
+// Supported reports whether typ is a pack type this package manages: every
+// type of the pack-type table.
 func Supported(typ string) bool {
-	_, ok := typeOrder[typ]
+	_, ok := packtype.Lookup(typ)
 	return ok
 }
 
 // Installable reports whether a pack of type typ may be installed by an
-// upload through the admin API. Audio packs may not: a pack of thousands of
-// clips exceeds the upload's file and size limits and keeps its files under
-// <data>/audio, so they are installed with scripts/fetch-audio-*.sh or
-// `qinqin seed`; listing and uninstalling them work as for any pack.
-// Font packs may: a face sliced for the web is a few MB in a few hundred
-// files, well inside the limits, and the upload's licence review is the
-// point of installing one.
+// upload through the admin API (the table's Uploadable). Audio packs may
+// not: a pack of thousands of clips exceeds the upload's file and size
+// limits and keeps its files under <data>/audio, so they are installed with
+// scripts/fetch-audio-*.sh or `qinqin seed`; listing and uninstalling them
+// work as for any pack. Font packs may: a face sliced for the web is a few
+// MB in a few hundred files, well inside the limits, and the upload's
+// licence review is the point of installing one.
 func Installable(typ string) bool {
-	return Supported(typ) && typ != dict.TypeAudio
+	d, ok := packtype.Lookup(typ)
+	return ok && d.Uploadable
 }
 
 // Option configures Import and Uninstall.
@@ -141,7 +135,10 @@ func Import(ctx context.Context, sqlDB *sql.DB, pack dict.Pack, opts ...Option) 
 	if err != nil {
 		return "", err
 	}
-	err = storeTextsAfterImport(ctx, sqlDB, pack)
+	// The type's import committed: the bookkeeping after it runs to the end
+	// even when ctx ends now (a shutdown), so an installed pack never lacks
+	// its licence texts because of a cancellation.
+	err = storeTextsAfterImport(context.WithoutCancel(ctx), sqlDB, pack)
 	o.changed(pack.Type, RegistryID(pack.Manifest), pack.Language)
 	if err != nil {
 		return "", err
@@ -151,83 +148,181 @@ func Import(ctx context.Context, sqlDB *sql.DB, pack dict.Pack, opts ...Option) 
 
 // importData imports pack by its type, in the type importer's transaction.
 func importData(ctx context.Context, sqlDB *sql.DB, pack dict.Pack, o options) (string, error) {
-	switch pack.Type {
-	case dict.TypeDictionary:
-		r, err := dict.ImportLexicon(ctx, sqlDB, &pack)
-		if err != nil {
-			return "", err
-		}
-		line := fmt.Sprintf("%d entries, %d senses", r.Entries, r.Senses)
-		if r.Skipped > 0 || r.Unconverted > 0 {
-			line += fmt.Sprintf(" (skipped %d malformed lines, %d pinyin unconverted)", r.Skipped, r.Unconverted)
-		}
-		return line, nil
-	case dict.TypeFrequency:
-		r, err := freq.Import(ctx, sqlDB, &pack)
-		if err != nil {
-			return "", err
-		}
-		return fmt.Sprintf("%d rows", r.Entries), nil
-	case dict.TypeLevels:
-		r, err := levels.Import(ctx, sqlDB, pack)
-		if err != nil {
-			return "", err
-		}
-		return fmt.Sprintf("%d unknown forms skipped", len(r.Skipped)), nil
-	case dict.TypeSentences:
-		r, err := sentences.ImportPack(ctx, sqlDB, pack)
-		if err != nil {
-			return "", err
-		}
-		return fmt.Sprintf("%d unknown words skipped", len(r.Skipped)), nil
-	case dict.TypeGrammar:
-		r, err := grammar.Import(ctx, sqlDB, pack)
-		if err != nil {
-			return "", err
-		}
-		return fmt.Sprintf("%d lessons", r.Lessons), nil
-	case dict.TypeAudio:
-		if o.audioStore == "" {
-			return "", errNoAudioStore
-		}
-		r, err := audio.Import(ctx, sqlDB, pack, o.audioStore)
-		if err != nil {
-			return "", err
-		}
-		line := fmt.Sprintf("%d clips", r.Clips)
-		if r.Skipped > 0 {
-			line += fmt.Sprintf(" (skipped %d with no usable reading)", r.Skipped)
-		}
-		return line, nil
-	case dict.TypeComponents:
-		r, err := components.Import(ctx, sqlDB, pack)
-		if err != nil {
-			return "", err
-		}
-		return fmt.Sprintf("%d characters, %d parts", r.Chars, r.Parts), nil
-	case dict.TypeStrokes:
-		r, err := strokes.Import(ctx, sqlDB, pack)
-		if err != nil {
-			return "", err
-		}
-		return fmt.Sprintf("%d characters", r.Chars), nil
-	case dict.TypeTheme:
-		r, err := themes.Import(ctx, sqlDB, pack)
-		if err != nil {
-			return "", err
-		}
-		return fmt.Sprintf("%d themes", r.Themes), nil
-	case dict.TypeFont:
-		if o.fontStore == "" {
-			return "", errNoFontStore
-		}
-		r, err := fonts.Import(ctx, sqlDB, pack, o.fontStore)
-		if err != nil {
-			return "", err
-		}
-		return fmt.Sprintf("%d faces, %d slices", r.Faces, r.Slices), nil
+	op, ok := operations[pack.Type]
+	if !ok {
+		return "", fmt.Errorf("%w: %q", ErrUnknownType, pack.Type)
 	}
-	return "", fmt.Errorf("%w: %q", ErrUnknownType, pack.Type)
+	return op.importPack(ctx, sqlDB, pack, o)
+}
+
+// operation is how one pack type is imported and uninstalled. Every type of
+// the pack-type table has one (a test checks it).
+type operation struct {
+	// importPack imports the pack and returns the seed CLI's summary line.
+	importPack func(ctx context.Context, sqlDB *sql.DB, pack dict.Pack, o options) (string, error)
+	// uninstall removes the live pack with the registry id; a pack that is
+	// not installed is the type package's not-found error (notFound).
+	uninstall func(ctx context.Context, sqlDB *sql.DB, packID string, o options) error
+}
+
+var operations = map[string]operation{
+	dict.TypeDictionary: {
+		importPack: func(ctx context.Context, sqlDB *sql.DB, pack dict.Pack, _ options) (string, error) {
+			r, err := dict.ImportLexicon(ctx, sqlDB, &pack)
+			if err != nil {
+				return "", err
+			}
+			line := fmt.Sprintf("%d entries, %d senses", r.Entries, r.Senses)
+			if r.Skipped > 0 || r.Unconverted > 0 {
+				line += fmt.Sprintf(" (skipped %d malformed lines, %d pinyin unconverted)", r.Skipped, r.Unconverted)
+			}
+			return line, nil
+		},
+		uninstall: func(ctx context.Context, sqlDB *sql.DB, packID string, _ options) error {
+			id, err := rowID(ctx, sqlDB, `SELECT id FROM dictionaries WHERE pack_id = ? AND deleted_at IS NULL`, packID)
+			if err != nil {
+				return err
+			}
+			return dict.Uninstall(ctx, sqlDB, id)
+		},
+	},
+	dict.TypeFrequency: {
+		importPack: func(ctx context.Context, sqlDB *sql.DB, pack dict.Pack, _ options) (string, error) {
+			r, err := freq.Import(ctx, sqlDB, &pack)
+			if err != nil {
+				return "", err
+			}
+			return fmt.Sprintf("%d rows", r.Entries), nil
+		},
+		uninstall: func(ctx context.Context, sqlDB *sql.DB, packID string, _ options) error {
+			return freq.Uninstall(ctx, sqlDB, packID)
+		},
+	},
+	dict.TypeLevels: {
+		importPack: func(ctx context.Context, sqlDB *sql.DB, pack dict.Pack, _ options) (string, error) {
+			r, err := levels.Import(ctx, sqlDB, pack)
+			if err != nil {
+				return "", err
+			}
+			return fmt.Sprintf("%d unknown forms skipped", len(r.Skipped)), nil
+		},
+		uninstall: func(ctx context.Context, sqlDB *sql.DB, packID string, _ options) error {
+			id, err := rowID(ctx, sqlDB, `SELECT id FROM schemes WHERE pack_id = ? AND deleted_at IS NULL`, packID)
+			if err != nil {
+				return err
+			}
+			return levels.Uninstall(ctx, sqlDB, id)
+		},
+	},
+	dict.TypeSentences: {
+		importPack: func(ctx context.Context, sqlDB *sql.DB, pack dict.Pack, _ options) (string, error) {
+			r, err := sentences.ImportPack(ctx, sqlDB, pack)
+			if err != nil {
+				return "", err
+			}
+			return fmt.Sprintf("%d unknown words skipped", len(r.Skipped)), nil
+		},
+		uninstall: func(ctx context.Context, sqlDB *sql.DB, packID string, _ options) error {
+			return sentences.Uninstall(ctx, sqlDB, packID)
+		},
+	},
+	dict.TypeGrammar: {
+		importPack: func(ctx context.Context, sqlDB *sql.DB, pack dict.Pack, _ options) (string, error) {
+			r, err := grammar.Import(ctx, sqlDB, pack)
+			if err != nil {
+				return "", err
+			}
+			return fmt.Sprintf("%d lessons", r.Lessons), nil
+		},
+		uninstall: func(ctx context.Context, sqlDB *sql.DB, packID string, _ options) error {
+			return grammar.Uninstall(ctx, sqlDB, packID)
+		},
+	},
+	dict.TypeAudio: {
+		importPack: func(ctx context.Context, sqlDB *sql.DB, pack dict.Pack, o options) (string, error) {
+			if o.audioStore == "" {
+				return "", errNoAudioStore
+			}
+			r, err := audio.Import(ctx, sqlDB, pack, o.audioStore)
+			if err != nil {
+				return "", err
+			}
+			line := fmt.Sprintf("%d clips", r.Clips)
+			if r.Skipped > 0 {
+				line += fmt.Sprintf(" (skipped %d with no usable reading)", r.Skipped)
+			}
+			return line, nil
+		},
+		uninstall: func(ctx context.Context, sqlDB *sql.DB, packID string, o options) error {
+			if o.audioStore == "" {
+				return errNoAudioStore
+			}
+			_, err := audio.Uninstall(ctx, sqlDB, packID, o.audioStore)
+			return err
+		},
+	},
+	dict.TypeComponents: {
+		importPack: func(ctx context.Context, sqlDB *sql.DB, pack dict.Pack, _ options) (string, error) {
+			r, err := components.Import(ctx, sqlDB, pack)
+			if err != nil {
+				return "", err
+			}
+			return fmt.Sprintf("%d characters, %d parts", r.Chars, r.Parts), nil
+		},
+		uninstall: func(ctx context.Context, sqlDB *sql.DB, packID string, _ options) error {
+			return components.Uninstall(ctx, sqlDB, packID)
+		},
+	},
+	dict.TypeStrokes: {
+		importPack: func(ctx context.Context, sqlDB *sql.DB, pack dict.Pack, _ options) (string, error) {
+			r, err := strokes.Import(ctx, sqlDB, pack)
+			if err != nil {
+				return "", err
+			}
+			return fmt.Sprintf("%d characters", r.Chars), nil
+		},
+		uninstall: func(ctx context.Context, sqlDB *sql.DB, packID string, _ options) error {
+			return strokes.Uninstall(ctx, sqlDB, packID)
+		},
+	},
+	dict.TypeTheme: {
+		importPack: func(ctx context.Context, sqlDB *sql.DB, pack dict.Pack, _ options) (string, error) {
+			r, err := themes.Import(ctx, sqlDB, pack)
+			if err != nil {
+				return "", err
+			}
+			return fmt.Sprintf("%d themes", r.Themes), nil
+		},
+		uninstall: func(ctx context.Context, sqlDB *sql.DB, packID string, _ options) error {
+			return themes.Uninstall(ctx, sqlDB, packID)
+		},
+	},
+	dict.TypeFont: {
+		importPack: func(ctx context.Context, sqlDB *sql.DB, pack dict.Pack, o options) (string, error) {
+			if o.fontStore == "" {
+				return "", errNoFontStore
+			}
+			r, err := fonts.Import(ctx, sqlDB, pack, o.fontStore)
+			if err != nil {
+				return "", err
+			}
+			return fmt.Sprintf("%d faces, %d slices", r.Faces, r.Slices), nil
+		},
+		uninstall: func(ctx context.Context, sqlDB *sql.DB, packID string, o options) error {
+			if o.fontStore == "" {
+				return errNoFontStore
+			}
+			return fonts.Uninstall(ctx, sqlDB, packID, o.fontStore)
+		},
+	},
+}
+
+// notFound reports a type package's error for a pack that is not installed.
+func notFound(err error) bool {
+	return errors.Is(err, ErrNotFound) || errors.Is(err, grammar.ErrNotFound) || errors.Is(err, dict.ErrNotFound) ||
+		errors.Is(err, freq.ErrNotFound) || errors.Is(err, levels.ErrNotFound) || errors.Is(err, sentences.ErrNotFound) ||
+		errors.Is(err, audio.ErrPackNotFound) || errors.Is(err, components.ErrNotFound) || errors.Is(err, strokes.ErrNotFound) ||
+		errors.Is(err, themes.ErrNotFound) || errors.Is(err, fonts.ErrNotFound)
 }
 
 // Uninstall removes the live pack of type typ with registry id packID and
@@ -251,49 +346,12 @@ func Uninstall(ctx context.Context, sqlDB *sql.DB, typ, packID string, opts ...O
 }
 
 func uninstall(ctx context.Context, sqlDB *sql.DB, typ, packID string, o options) error {
-	var err error
-	switch typ {
-	case dict.TypeDictionary:
-		var id int64
-		id, err = rowID(ctx, sqlDB, `SELECT id FROM dictionaries WHERE pack_id = ? AND deleted_at IS NULL`, packID)
-		if err == nil {
-			err = dict.Uninstall(ctx, sqlDB, id)
-		}
-	case dict.TypeFrequency:
-		err = freq.Uninstall(ctx, sqlDB, packID)
-	case dict.TypeLevels:
-		var id int64
-		id, err = rowID(ctx, sqlDB, `SELECT id FROM schemes WHERE pack_id = ? AND deleted_at IS NULL`, packID)
-		if err == nil {
-			err = levels.Uninstall(ctx, sqlDB, id)
-		}
-	case dict.TypeSentences:
-		err = sentences.Uninstall(ctx, sqlDB, packID)
-	case dict.TypeGrammar:
-		err = grammar.Uninstall(ctx, sqlDB, packID)
-	case dict.TypeAudio:
-		if o.audioStore == "" {
-			return errNoAudioStore
-		}
-		_, err = audio.Uninstall(ctx, sqlDB, packID, o.audioStore)
-	case dict.TypeComponents:
-		err = components.Uninstall(ctx, sqlDB, packID)
-	case dict.TypeStrokes:
-		err = strokes.Uninstall(ctx, sqlDB, packID)
-	case dict.TypeTheme:
-		err = themes.Uninstall(ctx, sqlDB, packID)
-	case dict.TypeFont:
-		if o.fontStore == "" {
-			return errNoFontStore
-		}
-		err = fonts.Uninstall(ctx, sqlDB, packID, o.fontStore)
-	default:
+	op, ok := operations[typ]
+	if !ok {
 		return fmt.Errorf("%w: %q", ErrUnknownType, typ)
 	}
-	if errors.Is(err, grammar.ErrNotFound) || errors.Is(err, dict.ErrNotFound) || errors.Is(err, freq.ErrNotFound) ||
-		errors.Is(err, levels.ErrNotFound) || errors.Is(err, sentences.ErrNotFound) || errors.Is(err, audio.ErrPackNotFound) ||
-		errors.Is(err, components.ErrNotFound) || errors.Is(err, strokes.ErrNotFound) || errors.Is(err, themes.ErrNotFound) ||
-		errors.Is(err, fonts.ErrNotFound) {
+	err := op.uninstall(ctx, sqlDB, packID, o)
+	if notFound(err) {
 		return ErrNotFound
 	}
 	if err != nil {
@@ -314,7 +372,7 @@ func rowID(ctx context.Context, sqlDB *sql.DB, query, packID string) (int64, err
 
 // Find returns the live pack of type typ with manifest id packID.
 func Find(ctx context.Context, sqlDB *sql.DB, typ, packID string) (Installed, error) {
-	if _, ok := typeOrder[typ]; !ok {
+	if !Supported(typ) {
 		return Installed{}, fmt.Errorf("%w: %q", ErrUnknownType, typ)
 	}
 	all, err := List(ctx, sqlDB)
@@ -339,49 +397,39 @@ func Find(ctx context.Context, sqlDB *sql.DB, typ, packID string) (Installed, er
 // recorded, and the list must not make them look like known packs.
 func List(ctx context.Context, sqlDB *sql.DB) ([]Installed, error) {
 	var out []Installed
-	for _, q := range []struct{ typ, query string }{
-		{dict.TypeDictionary, `SELECT pack_id, name, version, language, license, attribution, notice, updated_at
-			FROM dictionaries WHERE deleted_at IS NULL`},
-		{dict.TypeFrequency, `SELECT pack_id, name, version, language, license, attribution, notice, updated_at
-			FROM frequency_packs WHERE deleted_at IS NULL`},
-		{dict.TypeLevels, `SELECT pack_id, name, version, language, license, attribution, notice, updated_at
-			FROM schemes WHERE deleted_at IS NULL`},
-		{dict.TypeSentences, `SELECT pack_id, name, version, language, license, attribution, notice, updated_at
-			FROM sentence_packs WHERE deleted_at IS NULL`},
-		{dict.TypeGrammar, `SELECT pack_id, name, version, language, license, attribution, notice, updated_at
-			FROM grammar_packs WHERE deleted_at IS NULL`},
-		{dict.TypeAudio, `SELECT pack_id, name, version, language, license, attribution, notice, updated_at
-			FROM audio_packs WHERE deleted_at IS NULL`},
-		{dict.TypeComponents, `SELECT pack_id, name, version, language, license, attribution, notice, updated_at
-			FROM component_packs WHERE deleted_at IS NULL`},
-		{dict.TypeTheme, `SELECT pack_id, name, version, '', license, attribution, notice, updated_at
-			FROM theme_packs WHERE deleted_at IS NULL`},
-		{dict.TypeFont, `SELECT pack_id, name, version, '', license, attribution, notice, updated_at
-			FROM font_packs WHERE deleted_at IS NULL`},
-	} {
-		rows, err := sqlDB.QueryContext(ctx, q.query)
+	for _, d := range packtype.All {
+		lang := "language"
+		switch d.Languages {
+		case packtype.Many:
+			lang = "languages"
+		case packtype.None:
+			lang = "''"
+		}
+		rows, err := sqlDB.QueryContext(ctx, `SELECT pack_id, name, version, `+lang+`, license, attribution, notice, updated_at
+			FROM `+d.Registry+` WHERE deleted_at IS NULL`)
 		if err != nil {
-			return nil, fmt.Errorf("packs: list %s: %w", q.typ, err)
+			return nil, fmt.Errorf("packs: list %s: %w", d.Type, err)
 		}
 		for rows.Next() {
-			p := Installed{Type: q.typ}
-			if err := rows.Scan(&p.PackID, &p.Name, &p.Version, &p.Language, &p.License, &p.Attribution, &p.Notice, &p.UpdatedAt); err != nil {
+			p := Installed{Type: d.Type}
+			var language string
+			if err := rows.Scan(&p.PackID, &p.Name, &p.Version, &language, &p.License, &p.Attribution, &p.Notice, &p.UpdatedAt); err != nil {
 				rows.Close()
-				return nil, fmt.Errorf("packs: list %s: %w", q.typ, err)
+				return nil, fmt.Errorf("packs: list %s: %w", d.Type, err)
+			}
+			if d.Languages == packtype.Many {
+				if err := json.Unmarshal([]byte(language), &p.Languages); err != nil {
+					rows.Close()
+					return nil, fmt.Errorf("packs: list %s: pack %s: languages: %w", d.Type, p.PackID, err)
+				}
+			} else {
+				p.Language = language
 			}
 			out = append(out, p)
 		}
 		if err := errors.Join(rows.Err(), rows.Close()); err != nil {
-			return nil, fmt.Errorf("packs: list %s: %w", q.typ, err)
+			return nil, fmt.Errorf("packs: list %s: %w", d.Type, err)
 		}
-	}
-	strokePacks, err := strokes.Packs(ctx, sqlDB)
-	if err != nil {
-		return nil, fmt.Errorf("packs: list %s: %w", dict.TypeStrokes, err)
-	}
-	for _, sp := range strokePacks {
-		out = append(out, Installed{Type: dict.TypeStrokes, PackID: sp.PackID, Name: sp.Name, Version: sp.Version,
-			Languages: sp.Languages, License: sp.License, Attribution: sp.Attribution, Notice: sp.Notice, UpdatedAt: sp.UpdatedAt})
 	}
 
 	legacy, err := sqlDB.QueryContext(ctx, `
@@ -406,7 +454,7 @@ func List(ctx context.Context, sqlDB *sql.DB) ([]Installed, error) {
 	sort.SliceStable(out, func(i, j int) bool {
 		a, b := out[i], out[j]
 		if a.Type != b.Type {
-			return typeOrder[a.Type] < typeOrder[b.Type]
+			return typeIndex(a.Type) < typeIndex(b.Type)
 		}
 		if (a.Name == "") != (b.Name == "") {
 			return b.Name == "" // unnamed (legacy) last

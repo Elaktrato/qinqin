@@ -20,26 +20,38 @@ var demoPacks = map[string]bool{"es-demo": true}
 // auto-seeding again on this database.
 const autoSeedKey = "packs_auto_seed"
 
-// autoSeedDone reports whether the one-time auto-seed has run (or decided to
-// skip) on this database.
-func autoSeedDone(ctx context.Context, sqlDB *sql.DB) (bool, error) {
+// autoSeedMarker reads the auto-seed marker: "" (never started), "running"
+// (started and not finished: cut short by a signal, a crash or a failing
+// pack) or "done".
+func autoSeedMarker(ctx context.Context, sqlDB *sql.DB) (string, error) {
 	var v string
 	err := sqlDB.QueryRowContext(ctx, `SELECT value FROM server_meta WHERE key = ?`, autoSeedKey).Scan(&v)
 	if err == sql.ErrNoRows {
-		return false, nil
+		return "", nil
 	}
 	if err != nil {
-		return false, fmt.Errorf("auto-seed: marker: %w", err)
+		return "", fmt.Errorf("auto-seed: marker: %w", err)
 	}
-	return v == "done", nil
+	return v, nil
 }
 
-func markAutoSeedDone(ctx context.Context, sqlDB *sql.DB) error {
+// autoSeedDone reports whether the one-time auto-seed has run (or decided to
+// skip) on this database.
+func autoSeedDone(ctx context.Context, sqlDB *sql.DB) (bool, error) {
+	v, err := autoSeedMarker(ctx, sqlDB)
+	return v == "done", err
+}
+
+func setAutoSeedMarker(ctx context.Context, sqlDB *sql.DB, value string) error {
 	if _, err := sqlDB.ExecContext(ctx, `
-		INSERT INTO server_meta (key, value) VALUES (?, 'done') ON CONFLICT (key) DO UPDATE SET value = 'done'`, autoSeedKey); err != nil {
+		INSERT INTO server_meta (key, value) VALUES (?, ?) ON CONFLICT (key) DO UPDATE SET value = excluded.value`, autoSeedKey, value); err != nil {
 		return fmt.Errorf("auto-seed: set marker: %w", err)
 	}
 	return nil
+}
+
+func markAutoSeedDone(ctx context.Context, sqlDB *sql.DB) error {
+	return setAutoSeedMarker(ctx, sqlDB, "done")
 }
 
 // autoSeedDisabled reports whether QINQIN_AUTO_SEED is 0, false or off.
@@ -56,30 +68,40 @@ func autoSeedDisabled(getenv func(string) string) bool {
 // runs synchronously before the server listens (nothing else writes then).
 //
 // "Fresh" means no pack of any type is installed (packs.List is empty) and
-// the marker autoSeedKey in server_meta is unset. The marker is set once the
+// the marker autoSeedKey in server_meta is unset, or the marker says an
+// earlier auto-seed is unfinished ("running"). The marker is "done" once the
 // seed finished, or when an installed pack shows the instance is not fresh,
 // so an upgraded or curated instance is never touched and an administrator
 // who uninstalled everything is not given the packs back. Nothing is done
 // (and no marker set) when QINQIN_AUTO_SEED is 0/false/off or when the roots
 // hold no pack.
 //
-// A failing pack returns an error, with the marker unset: the caller logs it
-// and starts the server anyway; the next start retries (imports are
-// idempotent), and `qinqin seed` can be run by hand meanwhile. Roots that do
+// The marker is "running" from before the first import until the seed
+// finished. A failing pack, a signal (#170) or a crash leaves it so: the
+// caller logs the error and starts the server anyway (or stops), and the
+// next start seeds again although packs are installed (imports are
+// idempotent); `qinqin seed` can be run by hand meanwhile. Roots that do
 // not exist are skipped.
 func autoSeed(ctx context.Context, sqlDB *sql.DB, dataDir string, roots []string, getenv func(string) string, logf func(string, ...any)) error {
 	if autoSeedDisabled(getenv) {
 		return nil
 	}
-	if done, err := autoSeedDone(ctx, sqlDB); err != nil || done {
+	marker, err := autoSeedMarker(ctx, sqlDB)
+	if err != nil || marker == "done" {
 		return err
 	}
-	installed, err := packs.List(ctx, sqlDB)
-	if err != nil {
-		return fmt.Errorf("auto-seed: %w", err)
-	}
-	if len(installed) > 0 {
-		return markAutoSeedDone(ctx, sqlDB)
+	if marker == "" {
+		// Never started here: packs already installed mean the instance
+		// was seeded or curated by hand (before auto-seed existed, or with
+		// QINQIN_AUTO_SEED=0); never touch it. A "running" marker is our
+		// own unfinished seed: seed again (imports are idempotent).
+		installed, err := packs.List(ctx, sqlDB)
+		if err != nil {
+			return fmt.Errorf("auto-seed: %w", err)
+		}
+		if len(installed) > 0 {
+			return markAutoSeedDone(ctx, sqlDB)
+		}
 	}
 	var found []seedPack
 	for _, root := range roots {
@@ -99,7 +121,13 @@ func autoSeed(ctx context.Context, sqlDB *sql.DB, dataDir string, roots []string
 	if len(found) == 0 {
 		return nil
 	}
+	if err := setAutoSeedMarker(ctx, sqlDB, "running"); err != nil {
+		return err
+	}
 	start := time.Now()
+	if marker == "running" {
+		logf("auto-seed: the last start's seed did not finish; installing again")
+	}
 	logf("auto-seed: fresh instance, installing %d bundled packs (demo packs excluded; QINQIN_AUTO_SEED=0 turns this off)", len(found))
 	if err := seedPacks(ctx, sqlDB, dataDir, found, lineLogger{logf}); err != nil {
 		return fmt.Errorf("auto-seed failed (will retry at the next start; or run `qinqin seed`): %w", err)

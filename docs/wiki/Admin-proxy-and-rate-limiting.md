@@ -8,6 +8,7 @@ The app speaks plain HTTP on port 8080. Serve it over HTTPS through a reverse pr
 - **Not cache** `/service-worker.js`, `/manifest.webmanifest` or anything under `/api/`. The server sets `Cache-Control` on the static files (`no-cache` for the worker and the manifest, `no-store` for `index.html`, a year for hashed assets), but most API responses carry none, so a proxy that applies a default cache to `/api/` would serve one user's data to another.
 - Allow request bodies of at least **130 MB**: pack uploads and personal restores go up to 128 MiB.
 - Allow a read timeout of at least **180 seconds**: an AI review can take up to 170 s.
+- qinqin closes a connection that takes more than 10 s to send its request headers and a keep-alive connection idle for **125 seconds**. Keep the proxy's idle keep-alive towards qinqin shorter than that (Caddy's default is 2 minutes; nginx `keepalive_timeout` in an `upstream` block defaults to 60 s), so the proxy closes idle connections first.
 - No WebSocket is used.
 
 **Caddy** (its defaults are fine: no body limit, no response timeout):

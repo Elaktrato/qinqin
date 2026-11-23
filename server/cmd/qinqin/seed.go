@@ -14,6 +14,7 @@ import (
 
 	"qinqin/internal/dict"
 	"qinqin/internal/packs"
+	"qinqin/internal/packtype"
 )
 
 // seedCmd runs `qinqin seed --data <dir> --packs <dir>[,<dir>...]`.
@@ -97,24 +98,13 @@ type seedPack struct {
 	pack dict.Pack
 }
 
-// importOrder ranks pack types for seeding. Dictionaries — including the
-// character data of cedict, unihan, kanjidic2, and jmdict — come first:
-// frequency, level and sentence packs refer to existing entries and skip
-// the unknown ones, so they must follow. Frequency packs come right after
-// the dictionaries; sentences follow; grammar, audio, components, strokes,
-// theme and font packs, which refer to no entries at import time, come last.
-var importOrder = map[string]int{
-	dict.TypeDictionary: 0,
-	dict.TypeFrequency:  1,
-	dict.TypeLevels:     2,
-	dict.TypeSentences:  3,
-	dict.TypeGrammar:    4,
-	dict.TypeAudio:      5,
-	dict.TypeComponents: 6,
-	dict.TypeStrokes:    7,
-	dict.TypeTheme:      8,
-	dict.TypeFont:       9,
-}
+// importRank ranks pack types for seeding: the pack-type table's order
+// (internal/packtype). Dictionaries — including the character data of
+// cedict, unihan, kanjidic2, and jmdict — come first: frequency, level and
+// sentence packs refer to existing entries and skip the unknown ones, so
+// they must follow; the types that refer to no entries at import time come
+// last.
+func importRank(typ string) int { return packtype.Index(typ) }
 
 // seed imports every pack under the roots into sqlDB through
 // packs.Import, which dispatches on each manifest's type (audio clips go to
@@ -146,7 +136,7 @@ func seedPacks(ctx context.Context, sqlDB *sql.DB, dataDir string, found []seedP
 		return err
 	}
 	sort.SliceStable(found, func(i, j int) bool {
-		ri, rj := importOrder[found[i].pack.Type], importOrder[found[j].pack.Type]
+		ri, rj := importRank(found[i].pack.Type), importRank(found[j].pack.Type)
 		if ri != rj {
 			return ri < rj
 		}

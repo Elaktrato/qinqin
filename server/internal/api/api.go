@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"io"
+	"log"
 	"net/http"
 	"net/netip"
 	"sync"
@@ -84,6 +85,56 @@ type server struct {
 	packages   *datapkg.Builder // nil: no data packages (pack changes kick nothing)
 	downloads  downloadSlots    // running package downloads per user
 	bg         context.Context  // lives as long as the server; background jobs run under it
+	bgGroup    *Jobs            // the background goroutines (WithBackgroundGroup); nil: not counted
+}
+
+// Jobs is the group of a server's background goroutines (the stage
+// sweeper, staged pack imports, restore validations and restores), so serve
+// can wait for them before it closes the database (#170). Once Wait has
+// begun, no new job starts: a handler still running after a forced close
+// cannot add work nobody waits for. The zero value is ready to use.
+type Jobs struct {
+	mu     sync.Mutex
+	wg     sync.WaitGroup
+	closed bool
+}
+
+// start runs fn in its own goroutine, counted, unless the group is closed.
+func (j *Jobs) start(fn func()) bool {
+	j.mu.Lock()
+	defer j.mu.Unlock()
+	if j.closed {
+		return false
+	}
+	j.wg.Add(1)
+	go func() {
+		defer j.wg.Done()
+		fn()
+	}()
+	return true
+}
+
+// Wait closes the group to new jobs and waits for the running ones.
+func (j *Jobs) Wait() {
+	j.mu.Lock()
+	j.closed = true
+	j.mu.Unlock()
+	j.wg.Wait()
+}
+
+// WithBackgroundGroup runs every background goroutine of the server in jobs.
+func WithBackgroundGroup(jobs *Jobs) Option { return func(s *server) { s.bgGroup = jobs } }
+
+// goBackground runs fn in its own goroutine, in the background group when
+// there is one; a closed group (shutdown) refuses it.
+func (s *server) goBackground(fn func()) {
+	if s.bgGroup == nil {
+		go fn()
+		return
+	}
+	if !s.bgGroup.start(fn) {
+		log.Printf("background job refused: the server is shutting down")
+	}
 }
 
 // Option configures optional parts of the server.
@@ -151,7 +202,7 @@ func newServer(sqlDB *sql.DB, dataDir string, srcs []sources.Source, opts ...Opt
 	s.mfa = &auth.MFA{DB: sqlDB, Current: s.sealCur, Previous: s.sealPrev}
 	auth.Warm() // the first unknown-user login must cost one argon2 run, like the rest
 	if s.sweepCtx != nil && s.sweepEvery > 0 {
-		go s.runStageSweeper()
+		s.goBackground(s.runStageSweeper)
 	}
 	return s
 }

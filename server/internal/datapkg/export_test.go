@@ -23,3 +23,25 @@ func SetRenameHookForTest(f func(oldPath, newPath string) error) (restore func()
 	renameFile = f
 	return func() { renameFile = old }
 }
+
+// IDPatternForTest is the package id grammar.
+func IDPatternForTest() string { return idPattern.String() }
+
+// PlanSourceForTest is the pack type each package type (other than the
+// lexicon) is planned from, with its optional and requires-lexicon flags.
+func PlanSourceForTest() map[Type]struct {
+	PackType                  string
+	Optional, RequiresLexicon bool
+} {
+	out := map[Type]struct {
+		PackType                  string
+		Optional, RequiresLexicon bool
+	}{}
+	for _, r := range registries {
+		out[r.typ] = struct {
+			PackType                  string
+			Optional, RequiresLexicon bool
+		}{r.packType, r.optional, r.requiresLexicon}
+	}
+	return out
+}

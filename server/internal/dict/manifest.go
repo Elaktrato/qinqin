@@ -10,31 +10,22 @@ import (
 	"strings"
 
 	"qinqin/internal/lang"
+	"qinqin/internal/packtype"
 )
 
-// Manifest types: the import pipeline a pack flows through.
+// Manifest types: the import pipeline a pack flows through. The pack-type
+// table (internal/packtype) is their single list; these are its names.
 const (
-	TypeDictionary = "dictionary"
-	TypeLevels     = "levels"
-	TypeSentences  = "sentences"
-	TypeFrequency  = "frequency"
-	TypeGrammar    = "grammar"
-	TypeAudio      = "audio"
-	// TypeComponents is a character components pack: which parts each
-	// character contains, for the radical and part lookup.
-	TypeComponents = "components"
-	// TypeStrokes is a stroke-order data pack (internal/strokes): one
-	// stroke JSON per character for the stroke player. It serves several
-	// languages, so its manifest states languages instead of language.
-	TypeStrokes = "strokes"
-	// TypeTheme is a colour theme pack (internal/themes): a themes.json of
-	// one or more themes. It teaches no language: its manifest states
-	// neither language nor languages.
-	TypeTheme = "theme"
-	// TypeFont is a font pack (internal/fonts): faces.json and WOFF2 slices
-	// of one or more hanzi/kanji faces. Like a theme pack it states neither
-	// language nor languages.
-	TypeFont = "font"
+	TypeDictionary = packtype.Dictionary
+	TypeLevels     = packtype.Levels
+	TypeSentences  = packtype.Sentences
+	TypeFrequency  = packtype.Frequency
+	TypeGrammar    = packtype.Grammar
+	TypeAudio      = packtype.Audio
+	TypeComponents = packtype.Components
+	TypeStrokes    = packtype.Strokes
+	TypeTheme      = packtype.Theme
+	TypeFont       = packtype.Font
 )
 
 // Pack formats: how a dictionary pack's data files are encoded.
@@ -65,21 +56,40 @@ const (
 	FormatFontSlices = "font-slices"
 )
 
+// typeList is the valid types for an error message: "a, b, or c".
+func typeList() string {
+	types := packtype.Types()
+	return strings.Join(types[:len(types)-1], ", ") + ", or " + types[len(types)-1]
+}
+
+// manyTypes names the types that state several languages.
+func manyTypes() string {
+	var out []string
+	for _, d := range packtype.All {
+		if d.Languages == packtype.Many {
+			out = append(out, d.Type)
+		}
+	}
+	return strings.Join(out, ", ")
+}
+
+// lookupPackType reads the pack-type table (a variable so a test can add a
+// type).
+var lookupPackType = packtype.Lookup
+
+// typesOfTable is the set of the pack-type table's types.
+func typesOfTable() map[string]bool {
+	out := map[string]bool{}
+	for _, t := range packtype.Types() {
+		out[t] = true
+	}
+	return out
+}
+
 // manifestTypes and manifestFormats are the valid enum values of a
 // manifest's Type and Format fields.
 var (
-	manifestTypes = map[string]bool{
-		TypeDictionary: true,
-		TypeLevels:     true,
-		TypeSentences:  true,
-		TypeFrequency:  true,
-		TypeGrammar:    true,
-		TypeAudio:      true,
-		TypeComponents: true,
-		TypeStrokes:    true,
-		TypeTheme:      true,
-		TypeFont:       true,
-	}
+	manifestTypes   = typesOfTable()
 	manifestFormats = map[string]bool{
 		FormatJSON:      true,
 		FormatCedict:    true,
@@ -143,7 +153,7 @@ func (m Manifest) Validate() error {
 	case strings.TrimSpace(m.Attribution) == "":
 		return errors.New("manifest: attribution is required — packs without attribution are rejected")
 	case !manifestTypes[m.Type]:
-		return fmt.Errorf("manifest: unknown type %q (want dictionary, levels, sentences, frequency, grammar, audio, components, strokes, theme, or font)", m.Type)
+		return fmt.Errorf("manifest: unknown type %q (want %s)", m.Type, typeList())
 	case !manifestFormats[m.Format]:
 		return fmt.Errorf("manifest: unknown format %q (want json, cedict, unihan, jmdict, kanjidic2, yomitan-freq, freq-csv, audio-index, components-tsv, hanzi-writer-jsonl-gz, themes-json, or font-slices)", m.Format)
 	case (m.Type == TypeTheme) != (m.Format == FormatThemesJSON):
@@ -160,19 +170,22 @@ func (m Manifest) Validate() error {
 	return nil
 }
 
-// validateLanguages checks Language, or Languages for a strokes pack; a
-// theme or font pack states neither.
+// validateLanguages checks the languages by the type's language shape in
+// the pack-type table: one Language, several Languages (strokes), or
+// neither (theme, font).
 func (m Manifest) validateLanguages() error {
-	if m.Type == TypeTheme || m.Type == TypeFont {
+	d, _ := lookupPackType(m.Type)
+	switch d.Languages {
+	case packtype.None:
 		if strings.TrimSpace(m.Language) != "" || len(m.Languages) > 0 {
 			return fmt.Errorf("manifest: a %s pack states no language and no languages", m.Type)
 		}
 		return nil
-	}
-	if m.Type != TypeStrokes {
+	case packtype.Many:
+	default:
 		switch {
 		case len(m.Languages) > 0:
-			return fmt.Errorf("manifest: languages is for strokes packs only; a %s pack states one language", m.Type)
+			return fmt.Errorf("manifest: languages is for packs that serve several languages (%s); a %s pack states one language", manyTypes(), m.Type)
 		case strings.TrimSpace(m.Language) == "":
 			return errors.New("manifest: language is required")
 		case !validLanguage(m.Language):
@@ -182,9 +195,9 @@ func (m Manifest) validateLanguages() error {
 	}
 	switch {
 	case strings.TrimSpace(m.Language) != "":
-		return errors.New("manifest: a strokes pack states its languages in languages, not language")
+		return fmt.Errorf("manifest: a %s pack states its languages in languages, not language", m.Type)
 	case len(m.Languages) == 0:
-		return errors.New("manifest: languages is required for a strokes pack")
+		return fmt.Errorf("manifest: languages is required for a %s pack", m.Type)
 	}
 	seen := map[string]bool{}
 	for _, code := range m.Languages {
