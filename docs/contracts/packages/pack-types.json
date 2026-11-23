@@ -84,6 +84,16 @@
    "legacyPluginRow": false
   },
   {
+   "type": "lemma-rules",
+   "registry": "lemma_rule_packs",
+   "languages": "one",
+   "uploadable": true,
+   "package": null,
+   "requiresLexicon": false,
+   "optionalPackage": false,
+   "legacyPluginRow": false
+  },
+  {
    "type": "theme",
    "registry": "theme_packs",
    "languages": "none",

@@ -26,6 +26,9 @@ const (
 	// Strokes is a stroke-order data pack: one stroke JSON per character.
 	// It serves several languages, so its manifest states languages.
 	Strokes = "strokes"
+	// LemmaRules is a lemmatizer rule-table pack: one rules.json in the
+	// format of docs/contracts/lemma/ for one language (#176).
+	LemmaRules = "lemma-rules"
 	// Theme is a colour theme pack; it states no language.
 	Theme = "theme"
 	// Font is a hanzi/kanji font pack; it states no language.
@@ -88,6 +91,7 @@ var All = []Descriptor{
 	{Type: Audio, Registry: "audio_packs", Languages: One, Uploadable: false, Package: "audio", OptionalPackage: true, LegacyPluginRow: true},
 	{Type: Components, Registry: "component_packs", Languages: One, Uploadable: true, Package: "components"},
 	{Type: Strokes, Registry: "stroke_packs", Languages: Many, Uploadable: true, Package: "strokes"},
+	{Type: LemmaRules, Registry: "lemma_rule_packs", Languages: One, Uploadable: true},
 	{Type: Theme, Registry: "theme_packs", Languages: None, Uploadable: true},
 	{Type: Font, Registry: "font_packs", Languages: None, Uploadable: true},
 }

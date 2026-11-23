@@ -7,7 +7,12 @@ import (
 	"qinqin/internal/packtype"
 )
 
-var ident = regexp.MustCompile(`^[a-z][a-z_]*$`)
+// ident is a registry table name; typeName a manifest type (lowercase
+// words joined by hyphens: lemma-rules).
+var (
+	ident    = regexp.MustCompile(`^[a-z][a-z_]*$`)
+	typeName = regexp.MustCompile(`^[a-z]+(-[a-z]+)*$`)
+)
 
 // The table's own invariants: every row names a distinct manifest type, a
 // registry table and a language shape, and the package fields agree.
@@ -17,7 +22,7 @@ func TestTableInvariants(t *testing.T) {
 	}
 	seenType, seenRegistry, seenPackage := map[string]bool{}, map[string]bool{}, map[string]bool{}
 	for i, d := range packtype.All {
-		if !ident.MatchString(d.Type) || seenType[d.Type] {
+		if !typeName.MatchString(d.Type) || seenType[d.Type] {
 			t.Errorf("row %d: type %q empty, malformed or repeated", i, d.Type)
 		}
 		seenType[d.Type] = true
