@@ -4,6 +4,7 @@
 // per workspace for the study page's notice and logs one warning per new
 // report: collection, count and identities only, never row data.
 
+import { onSessionEnd } from '../session/sessionEnd';
 import { writable } from 'svelte/store';
 import { t } from '../i18n';
 import type { StudyCollection } from './rows';
@@ -19,6 +20,7 @@ export interface UnreadableReport {
 
 /** The last study load's report, or null when it read every row. */
 export const unreadableRows = writable<UnreadableReport | null>(null);
+onSessionEnd(() => clearUnreadableReport());
 
 let lastWarned = '';
 

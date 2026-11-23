@@ -3,6 +3,7 @@
 // worker's saved copy, how many reviews wait to be sent, and what offline
 // preparation last saved. One small store plus the sentence it shows.
 
+import { onSessionEnd } from '../session/sessionEnd';
 import { writable } from 'svelte/store';
 import { t } from '$lib/i18n';
 
@@ -33,6 +34,9 @@ function initial(): OfflineState {
 export const offline = writable<OfflineState>(initial());
 
 let sentTimer: ReturnType<typeof setTimeout> | null = null;
+
+// Queued and prepared counts belong to the session that ended.
+onSessionEnd(() => resetOffline());
 
 export function resetOffline(): void {
 	if (sentTimer !== null) clearTimeout(sentTimer);

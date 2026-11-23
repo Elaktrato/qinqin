@@ -12,6 +12,7 @@ import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 
 const LIB = fileURLToPath(new URL('..', import.meta.url));
+const SRC = fileURLToPath(new URL('../..', import.meta.url));
 
 /** file (relative to src/lib) + name -> why it is not a per-user cache. */
 const ALLOWED: Record<string, string> = {
@@ -23,6 +24,18 @@ const ALLOWED: Record<string, string> = {
 	'i18n/message.ts:numberFormats': 'Intl.NumberFormat by locale',
 	'time/studyDay.ts:formatters': 'Intl.DateTimeFormat by zone',
 	'radicals/kangxi.ts:numbers': 'built from the bundled Kangxi table at load',
+	'auth.ts:auth': 'the session itself: auth.ts ends it',
+	'session/sessionEnd.ts:clears': 'the registry itself',
+	'account/logoutFlow.ts:logoutPrompt': 'the open state of the sign-out prompt, no data',
+	'components/map/CharGrid.svelte:waiting': 'render jobs of mounted grids, no data',
+	'features/flashcards/Mascot.svelte:probes': 'whether bundled mascot images exist, no user data',
+	'features/flashcards/decks/providers.ts:pluginDeckProviders': 'deck providers plugins register at load, no data',
+	'features/reader/variants.ts:converters': 'script converters built from bundled tables',
+	'features/reader/variants.ts:loading': 'the converter tables loading, no user data',
+	'frame/pageFrame.svelte.ts:slots': 'layout slots of the mounted page, no data',
+	'plugins/hooks.ts:handlers': 'plugin hook registrations, not data (the states reset at the session end)',
+	'pwa/install.ts:installPrompt': 'the browser install prompt event, device state',
+	'time/zone.ts:pending': 'the zone load in flight; clearStudyDay moves the zone epoch, so a late answer is dropped',
 	'api/client.ts:memoryToken': 'the credential itself (storage blocked): clearToken drops it on every session end',
 	'workspaceGone.ts:inFlight': 'a shared workspace-list reload in flight; it holds no data and the list store is reset by the layout per token'
 };
@@ -32,18 +45,75 @@ export interface Finding {
 	line: number;
 }
 
-const EMPTY_COLLECTION = /^(?:export\s+)?(?:const|let)\s+(\w+)[^=]*=\s*new\s+(?:Map|Set)\b[^(]*\(\s*\)/;
-const CREATED_CACHE = /^(?:export\s+)?(?:const|let)\s+(\w+)[^=]*=\s*create\w*Cache\(/;
-const CACHE_LET = /^(?:export\s+)?let\s+((?:cache|memo|inflight|inFlight|pending|loaded)\w*)\b/;
+// A module-level declaration (column 0) of something filled at runtime.
+const DECLARATIONS: RegExp[] = [
+	// an empty Map / Set (a constant table has initial values)
+	/^(?:export\s+)?(?:const|let)\s+(\w+)[^=]*=\s*new\s+(?:Map|Set)\b[^(]*\(\s*\)/,
+	// a cache built by a factory
+	/^(?:export\s+)?(?:const|let)\s+(\w+)[^=]*=\s*create\w*Cache\(/,
+	// a cache-named let
+	/^(?:export\s+)?let\s+((?:cache|memo|inflight|inFlight|pending|loaded)\w*)\b/,
+	// a store or a rune at module level
+	/^(?:export\s+)?(?:const|let)\s+(\w+)[^=]*=\s*(?:writable|\$state)(?:<[^=]*>)?\(/,
+	// an empty array or object literal (a Record filled later)
+	/^(?:export\s+)?(?:const|let)\s+(\w+)[^=]*=\s*(?:\[\]|\{\})\s*;/
+];
 
-/** findCaches lists the module-level cache declarations of one source file. */
+/** findCaches lists the module-level declarations of one source text that look like runtime-filled state. */
 export function findCaches(source: string): Finding[] {
 	const out: Finding[] = [];
 	source.split('\n').forEach((text, i) => {
-		const m = EMPTY_COLLECTION.exec(text) ?? CREATED_CACHE.exec(text) ?? CACHE_LET.exec(text);
-		if (m) out.push({ name: m[1], line: i + 1 });
+		for (const re of DECLARATIONS) {
+			const m = re.exec(text);
+			if (m) {
+				out.push({ name: m[1], line: i + 1 });
+				return;
+			}
+		}
 	});
 	return out;
+}
+
+/** The text from `open` (an opening paren) to its matching close. */
+function balanced(source: string, open: number): string {
+	let depth = 0;
+	for (let i = open; i < source.length; i++) {
+		if (source[i] === '(' || source[i] === '{') depth++;
+		else if (source[i] === ')' || source[i] === '}') {
+			depth--;
+			if (depth === 0) return source.slice(open, i + 1);
+		}
+	}
+	return source.slice(open);
+}
+
+/**
+ * sessionEndText: every onSessionEnd(...) callback of a source, with the
+ * bodies of the same-file functions and methods it calls folded in (two
+ * levels deep), so `onSessionEnd(() => clearX())` counts what clearX clears.
+ */
+export function sessionEndText(source: string): string {
+	const parts: string[] = [];
+	for (let at = source.indexOf('onSessionEnd('); at >= 0; at = source.indexOf('onSessionEnd(', at + 1)) {
+		parts.push(balanced(source, at + 'onSessionEnd'.length));
+	}
+	let text = parts.join('\n');
+	for (let depth = 0; depth < 2; depth++) {
+		const called = new Set([...text.matchAll(/\b(\w+)\s*\(/g)].map((m) => m[1]));
+		for (const name of called) {
+			const def = new RegExp(`function\\s+${name}\\s*\\(`).exec(source);
+			if (def === null) continue;
+			const body = source.indexOf('{', source.indexOf(')', def.index));
+			text += '\n' + balanced(source, body);
+		}
+	}
+	return text;
+}
+
+/** The module script of a Svelte component (`<script module>`), or ''. */
+function moduleScript(svelte: string): string {
+	const m = /<script\b[^>]*\bmodule\b[^>]*>([\s\S]*?)<\/script>/.exec(svelte);
+	return m === null ? '' : m[1].replace(/^\t/gm, '');
 }
 
 function sources(dir: string): string[] {
@@ -55,7 +125,8 @@ function sources(dir: string): string[] {
 			if (name !== 'testing' && name !== 'sw') out.push(...sources(path));
 			continue;
 		}
-		if (name.endsWith('.ts') && !name.endsWith('.test.ts') && !name.endsWith('.d.ts')) out.push(path);
+		if (name.endsWith('.test.ts') || name.endsWith('.d.ts')) continue;
+		if (name.endsWith('.ts') || name.endsWith('.svelte')) out.push(path);
 	}
 	return out;
 }
@@ -71,23 +142,49 @@ describe('findCaches', () => {
 			"const KNOWN = new Set(['a', 'b']);",
 			'const keys = new WeakMap<object, string>();',
 			'\tconst local = new Map();',
-			'let timer: number | null = null;'
+			'let timer: number | null = null;',
+			'export const report = writable<Report | null>(null);',
+			'let rows = $state<Row[]>([]);',
+			'const providers: Provider[] = [];',
+			'const byId: Record<string, Row> = {};',
+			"const LABELS = ['a'];"
 		].join('\n');
-		expect(findCaches(planted).map((f) => f.name)).toEqual(['cache', 'seen', 'shared', 'memo', 'inFlight']);
+		expect(findCaches(planted).map((f) => f.name)).toEqual(['cache', 'seen', 'shared', 'memo', 'inFlight', 'report', 'rows', 'providers', 'byId']);
 	});
 });
 
-describe('every module-level cache in src/lib registers with onSessionEnd (#173)', () => {
-	it('has no unregistered cache outside the allowlist', () => {
+describe('sessionEndText', () => {
+	it('counts what a callback clears, through the same-file functions it calls, per name', () => {
+		const source = [
+			'const a = new Map<string, number>();',
+			'const b = new Map<string, number>();',
+			'export function clearA(): void {',
+			'\ta.clear();',
+			'}',
+			'onSessionEnd(() => clearA());',
+			'function unrelated(): void { b.clear(); }'
+		].join('\n');
+		const text = sessionEndText(source);
+		expect(text).toMatch(/\ba\.clear/);
+		// b is cleared somewhere, but not at the session end: still flagged.
+		expect(text).not.toMatch(/\bb\.clear/);
+	});
+});
+
+describe('every module-level cache in src/lib and src/routes is cleared at the session end (#173)', () => {
+	it('names each declaration inside an onSessionEnd callback, or allowlists it', () => {
 		const unregistered: string[] = [];
 		const used = new Set<string>();
-		for (const path of sources(LIB)) {
+		for (const path of [...sources(LIB), ...sources(join(SRC, 'routes'))]) {
 			const rel = relative(LIB, path).split('\\').join('/');
-			const source = readFileSync(path, 'utf8');
+			const raw = readFileSync(path, 'utf8');
+			const source = path.endsWith('.svelte') ? moduleScript(raw) : raw;
 			const found = findCaches(source);
-			if (found.length === 0 || source.includes('onSessionEnd(')) continue;
+			if (found.length === 0) continue;
+			const cleared = sessionEndText(source);
 			for (const f of found) {
 				const key = `${rel}:${f.name}`;
+				if (new RegExp(`\\b${f.name}\\b`).test(cleared)) continue;
 				if (key in ALLOWED) used.add(key);
 				else unregistered.push(`${rel}:${f.line} ${f.name}`);
 			}
