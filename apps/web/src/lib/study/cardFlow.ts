@@ -6,10 +6,17 @@ import type { StudyContext } from './studyContext';
 import type { StudyClock } from './studyClock';
 import { planCompanions } from './companions';
 import type { LevelQueueItem } from './levelQueue';
-import { buildQueue, scheduleFor } from './scheduler';
-import { admit, cap, dayCountsCached, existingDecksOf, limitsOf, NO_LIMIT, type Candidate } from './limits';
+import { queueCandidates, scheduleFor } from './scheduler';
+import { dayCountsCached } from './limits';
 import type { ClozeMode } from './cloze';
-import { backfillLimit, skipKindsByEntry } from './sessionQueue';
+import {
+	admitSession,
+	backfillLimit,
+	buildSessionQueue,
+	sessionBackfill,
+	skipKindsByEntry,
+	type QueueEntry
+} from './sessionQueue';
 
 // Moved to sessionQueue.ts (#175); re-exported so existing imports keep working.
 export { backfillLimit, skipKindsByEntry };
@@ -275,9 +282,7 @@ export function deckSessionPlan({
 	newKey,
 	studyAll = false
 }: DeckSessionOptions): DeckSessionPlan {
-	const capNew = studyAll ? NO_LIMIT : newLimit;
-	const capReview = studyAll ? NO_LIMIT : reviewLimit;
-	const backfillLeft = backfillLimit(capNew);
+	const backfillLeft = sessionBackfill(newLimit, studyAll);
 	const wanted = sessionKinds(kinds, language);
 	if (wanted.length === 0 || ctx.vacationToday) return { queue: [], reserve: [], backfillLeft };
 
@@ -291,25 +296,28 @@ export function deckSessionPlan({
 			!buried.cardIds.has(card.id) &&
 			allowedReal(card, { sessionDecks: deckIds, deckSettings, skipByEntry, vocabEntries })
 	);
-	const buildCtx = studyAll
-		? { ...ctx, limits: { ...ctx.limits, workspace: null, decks: {} } }
-		: ctx;
-	const real = buildQueue({
+	// Reviews of cards that are not shown (buried, kind switched off) still
+	// use the day's allowance: count over every card.
+	const counts = dayCountsCached(cards, reviews, ctx, now);
+	const admission = { ctx, counts, caps: { newLimit, reviewLimit }, studyAll };
+	const { candidates, byId } = queueCandidates({
 		cards: allowed,
 		reviews,
 		deckIds,
-		newLimit: capNew,
-		reviewLimit: capReview,
+		newLimit,
+		reviewLimit,
 		now,
 		kinds: wanted,
 		w,
-		ctx: buildCtx,
-		// Reviews of cards that are not shown (buried, kind switched off) still
-		// use the day's allowance: count over every card.
-		counts: dayCountsCached(cards, reviews, ctx, now),
+		ctx,
+		counts,
 		newKey
 	});
-	const reviewed = reviewedIds(reviews);
+	const real = candidates.map(
+		(candidate): QueueEntry<FlowItem> => ({ ...candidate, item: fromCard(byId.get(candidate.cardId) as StudyCard) })
+	);
+	// Words with a queued real card get no opt-in companion (planCompanions).
+	const queuedReal = admitSession({ ...admission, candidates }).inSession;
 
 	const companions = planCompanions({
 		cards,
@@ -321,7 +329,7 @@ export function deckSessionPlan({
 		now: now.getTime(),
 		studyDay: ctx.day,
 		deckSettings,
-		exclude: new Set(real.map((card) => card.entryId)),
+		exclude: new Set(real.filter((entry) => queuedReal.has(entry.cardId)).map((entry) => entry.item.entryId)),
 		skip,
 		offline
 	})
@@ -336,48 +344,25 @@ export function deckSessionPlan({
 				writableChars(item.written).length > 0
 		)
 		.map(
-			(item): FlowItem => ({
+			(item): QueueEntry<FlowItem> => ({
 				cardId: item.cardId,
-				kind: item.kind,
-				entryId: item.entryId,
-				virtual: true,
-				card: null,
-				...(item.written === undefined ? {} : { written: item.written }),
-				deckIds: [...item.deckIds]
+				deckIds: item.deckIds,
+				// Companions are new cards: they share the new allowance (the
+				// session limit and each deck's daily limit) with the real ones.
+				bucket: 'new',
+				item: {
+					cardId: item.cardId,
+					kind: item.kind,
+					entryId: item.entryId,
+					virtual: true,
+					card: null,
+					...(item.written === undefined ? {} : { written: item.written }),
+					deckIds: [...item.deckIds]
+				}
 			})
 		);
 
-	// Companions are new cards: they share the new allowance (the session
-	// limit and each deck's daily limit) with the real new cards. The ones
-	// the daily limits still allow beyond the session limit are the reserve.
-	const counts = dayCountsCached(cards, reviews, ctx, now);
-	const caps = { newLimit: cap(capNew), reviewLimit: cap(capReview) };
-	const asCandidates: Candidate[] = [
-		...real.map((card) => ({
-			cardId: card.id,
-			deckIds: card.deckIds,
-			bucket: counts.reviewedToday.has(card.id)
-				? ('continuing' as const)
-				: reviewed.has(card.id)
-					? ('review' as const)
-					: ('new' as const)
-		})),
-		...companions.map((item) => ({ cardId: item.cardId, deckIds: item.deckIds ?? [], bucket: 'new' as const }))
-	];
-	const limitsFor = studyAll
-		? () => ({ new: null, reviews: null })
-		: (deckId: string) => limitsOf(ctx, deckId);
-	const existing = existingDecksOf(ctx, asCandidates);
-	const inSession = new Set(admit(asCandidates, limitsFor, counts, caps, existing).admitted);
-	const inAllowance = new Set(
-		admit(asCandidates, limitsFor, counts, { ...caps, newLimit: Infinity }, existing).admitted
-	);
-
-	return {
-		queue: [...real.map(fromCard), ...companions.filter((item) => inSession.has(item.cardId))],
-		reserve: companions.filter((item) => inAllowance.has(item.cardId) && !inSession.has(item.cardId)),
-		backfillLeft
-	};
+	return buildSessionQueue({ ...admission, entries: [...real, ...companions] });
 }
 
 /** deckSessionItems is the queue of deckSessionPlan (no reserve). */

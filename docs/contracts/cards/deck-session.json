@@ -220,7 +220,7 @@
   },
   {
    "name": "due before new, each up to its limit",
-   "note": "reviewLimit 1 and newLimit 1: one due card, then one new card",
+   "note": "reviewLimit 1 and newLimit 1: one due card, then one new card; the reserve is every new item the daily limits allow past the session cap (session-queue.json), real cards included",
    "history": [],
    "now": "2026-03-10T12:00:00Z",
    "language": "zh",
@@ -292,7 +292,9 @@
      "d1",
      "n1"
     ],
-    "reserve": [],
+    "reserve": [
+     "n2"
+    ],
     "backfillLeft": 30
    }
   },
@@ -1160,6 +1162,7 @@
      "v1"
     ],
     "reserve": [
+     "n2",
      "companion:sentence:1",
      "companion:sentence:2"
     ],
@@ -1605,7 +1608,7 @@
   },
   {
    "name": "backfill stops at backfillLeft",
-   "note": "with backfillLeft exhausted a dropped companion is not replaced",
+   "note": "with backfillLeft exhausted a dropped companion is not replaced; the reserve holds at most backfillLeft items, so it is empty by then",
    "history": [],
    "now": "2026-03-10T12:00:00Z",
    "language": "zh",
@@ -2158,9 +2161,7 @@
      "companion:sentence:28",
      "companion:sentence:29",
      "companion:sentence:30",
-     "companion:sentence:31",
-     "companion:sentence:32",
-     "companion:sentence:33"
+     "companion:sentence:31"
     ],
     "backfillLeft": 30
    },
@@ -2201,9 +2202,7 @@
        "companion:sentence:28",
        "companion:sentence:29",
        "companion:sentence:30",
-       "companion:sentence:31",
-       "companion:sentence:32",
-       "companion:sentence:33"
+       "companion:sentence:31"
       ],
       "backfillLeft": 29
      }
@@ -2327,10 +2326,7 @@
       "queue": [
        "companion:sentence:31"
       ],
-      "reserve": [
-       "companion:sentence:32",
-       "companion:sentence:33"
-      ],
+      "reserve": [],
       "backfillLeft": 0
      }
     },
@@ -2339,10 +2335,7 @@
      "cardId": "companion:sentence:31",
      "expect": {
       "queue": [],
-      "reserve": [
-       "companion:sentence:32",
-       "companion:sentence:33"
-      ],
+      "reserve": [],
       "backfillLeft": 0
      }
     }

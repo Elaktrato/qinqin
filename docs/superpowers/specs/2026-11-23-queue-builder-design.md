@@ -107,8 +107,12 @@ The session mix (#132) is unchanged and still applied after the plan.
   `backfillLeft`, in both modes** — deck sessions held companions only and no bound, level sessions every new
   item. A real new card is in the reserve only when the session cap refused it, and then every later new item
   (all companions) is refused too, so no virtual item is in the queue and the reserve is never drawn: nothing
-  changes for learners. Nothing beyond `backfillLeft` can ever be drawn, so the bound is invisible too — cost:
-  `deck-session.json` reserve lists that held real cards would change (none do).
+  changes for learners. Nothing beyond `backfillLeft` can ever be drawn, so the bound is invisible too; the one
+  side effect is that the session's audio lookup covers at most `backfillLeft` reserve items instead of every
+  planned companion (fewer requests in large decks). Level sessions need real cards in the reserve (with a
+  random new order real and virtual items interleave) — cost: three `deck-session.json` expectations change
+  (`due before new` and `newLimit 0` list the real `n2` in the reserve; `backfill stops at backfillLeft` holds
+  30 reserve items, not 32, so its reserve is empty once `backfillLeft` is spent).
 - Ruling: **`backfillLeft` for Study all is `NO_LIMIT` in both modes** (deck had 2 000 000, level 1 000 000) —
   either is more than any session — cost: none.
 - Ruling: **level sessions honour a word's removed kinds (`skipKinds`)** — a character level re-planned a

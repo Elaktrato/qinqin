@@ -10,15 +10,8 @@ import { orderNew } from './newOrder';
 import { weightsKey } from './fsrs/params';
 import { feedInstants, type StudyClock } from './studyClock';
 import { isDueNow, type StudyContext } from './studyContext';
-import {
-	admit,
-	cap,
-	dayCountsCached,
-	existingDecksOf,
-	limitsOf,
-	type Candidate,
-	type DayCounts
-} from './limits';
+import { dayCountsCached, type Candidate, type DayCounts } from './limits';
+import { admitSession } from './sessionQueue';
 import type { ReviewEvent, ReviewGrade, StudyCard, StudyCardKind } from './types';
 
 /** The derived schedule of one card. `due` is an RFC 3339 instant. */
@@ -269,15 +262,9 @@ export function isDue(schedule: Schedule, now: Date): boolean {
  */
 export function buildQueue(options: BuildQueueOptions): StudyCard[] {
 	const { newLimit, reviewLimit, ctx } = options;
-	const { candidates, byId: cardById, counts: dayUsed } = queueCandidates(options);
-	const { admitted } = admit(
-		candidates,
-		(deckId) => limitsOf(ctx, deckId),
-		dayUsed,
-		{ newLimit: cap(newLimit), reviewLimit: cap(reviewLimit) },
-		existingDecksOf(ctx, candidates)
-	);
-	return admitted.map((id) => cardById.get(id) as StudyCard);
+	const { candidates, byId: cardById, counts } = queueCandidates(options);
+	const { inSession } = admitSession({ candidates, ctx, counts, caps: { newLimit, reviewLimit } });
+	return candidates.filter((c) => inSession.has(c.cardId)).map((c) => cardById.get(c.cardId) as StudyCard);
 }
 
 /**
