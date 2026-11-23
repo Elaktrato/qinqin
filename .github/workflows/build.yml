@@ -69,8 +69,52 @@ jobs:
       - name: Embed smoke test
         run: scripts/smoke-embed.sh
 
+  # Browser end-to-end tests (#157, apps/web/e2e): the real binary with the
+  # built SPA embedded, one throw-away data directory and port per worker,
+  # Chromium only. Runs beside `test`; a failure blocks like a unit test.
+  # Traces, screenshots, videos, the HTML report and the server logs are
+  # uploaded only when it fails, for 7 days.
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 26
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: server/go.mod
+          cache-dependency-path: server/go.sum
+      - name: Install web dependencies
+        working-directory: apps/web
+        run: npm ci
+      # The browser of the pinned @playwright/test version, with its system libraries.
+      - name: Install Chromium
+        working-directory: apps/web
+        run: npx playwright install --with-deps chromium
+      - name: Build web
+        working-directory: apps/web
+        run: npm run build
+      # The global setup builds the binary from server/ with this build embedded.
+      - name: End-to-end tests
+        working-directory: apps/web
+        run: npm run e2e
+      - name: Upload the failure artifacts
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: e2e-failure
+          path: |
+            apps/web/e2e/test-results/
+            apps/web/e2e/playwright-report/
+          retention-days: 7
+          if-no-files-found: ignore
+
   image:
-    needs: test
+    needs: [test, e2e]
     # Develop pushes are test-only; images publish from main and release tags.
     if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v'))
     runs-on: ubuntu-latest
