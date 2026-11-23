@@ -124,7 +124,7 @@ Every error body is JSON `{"error": code, "message": "English sentence"}`. Branc
 | `last_workspace` | 409 | The workspace is the user's only one; keep at least one. |
 | `language_unknown` | 422 | The workspace language is not registered on this server; an administrator adds it under Admin, Languages. |
 | `language_built_in` | 409 | Admin languages: a built-in language cannot be removed. |
-| `language_in_use` | 409 | Admin languages: a workspace still uses the language; the message names how many. |
+| `language_in_use` | 409 | Admin languages: workspaces or installed packs still use the language. The body carries usage, counts only (never who): {workspaces, dictionaries, levelLists, frequencyPacks, sentencePacks, grammarPacks, audioPacks, legacySentences}, each an integer (dictionaries and legacySentences 0 or 1). |
 | `pack_invalid` | 400 | The uploaded pack is not a valid pack; the message names the rule it breaks (never a server path). |
 | `pack_type_unsupported` | 422 | The pack's type is unknown or cannot be installed through this route (audio packs are installed on the host). |
 | `pack_staged` | 429 | A pack is already staged for review: install or discard it first. |

@@ -6,7 +6,7 @@
 	import { listLanguages } from '$lib/api/languages';
 	import { listPacks } from '$lib/api/packs';
 	import { languageLabel } from '$lib/languages';
-	import { languageRows, normalizeCode, type LanguageRow } from './languagesView';
+	import { inUseLines, languageRows, normalizeCode, type LanguageRow } from './languagesView';
 	import { Button, Field } from '$lib/ui';
 
 	// Admin view of every known language: where its data comes from, how
@@ -20,6 +20,8 @@
 	let code = $state('');
 	let adding = $state(false);
 	let error = $state('');
+	// The counts under a refused removal (language_in_use).
+	let inUse = $state<string[]>([]);
 	let notice = $state('');
 	let confirmCode = $state<string | null>(null);
 	let confirmButton = $state<HTMLElement | undefined>(undefined);
@@ -89,6 +91,7 @@
 
 	async function remove(row: LanguageRow): Promise<void> {
 		error = '';
+		inUse = [];
 		notice = '';
 		try {
 			await removeLanguage(row.code);
@@ -96,6 +99,7 @@
 			await load();
 		} catch (err) {
 			error = errorText(err, t('settings.languages.removeFailed'));
+			inUse = inUseLines(err);
 		} finally {
 			confirmCode = null;
 			heading?.focus();
@@ -185,6 +189,11 @@
 	</form>
 	{#if notice}<p class="hint" role="status">{notice}</p>{/if}
 	{#if error}<p class="error" role="alert">{error}</p>{/if}
+	{#if error && inUse.length > 0}
+		<ul class="in-use">
+			{#each inUse as line (line)}<li>{line}</li>{/each}
+		</ul>
+	{/if}
 </section>
 
 <style>

@@ -101,6 +101,20 @@ func plural(n int, one, many string) string {
 	return strconv.Itoa(n) + " " + many
 }
 
+// counts is the use as the extra member usage of a 409 language_in_use
+// (errors.json): numbers only, never who uses it.
+func (u languageUse) counts() map[string]int {
+	b := func(v bool) int {
+		if v {
+			return 1
+		}
+		return 0
+	}
+	return map[string]int{"workspaces": u.workspaces, "dictionaries": b(u.installed), "levelLists": u.levels,
+		"frequencyPacks": u.freq, "sentencePacks": u.sentences, "grammarPacks": u.grammar, "audioPacks": u.audio,
+		"legacySentences": b(u.legacy)}
+}
+
 // blockers names what keeps a language in use, never who uses it.
 func (u languageUse) blockers() string {
 	var parts []string
@@ -190,7 +204,8 @@ func (s *server) handleDeleteLanguage(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		if msg := use.blockers(); msg != "" {
-			writeError(w, http.StatusConflict, "language_in_use", "The language is still used by: "+msg+".")
+			writeError(w, http.StatusConflict, "language_in_use", "The language is still used by: "+msg+".",
+				map[string]any{"usage": use.counts()})
 			return
 		}
 		writeError(w, http.StatusNotFound, "not_found", "No such language.")

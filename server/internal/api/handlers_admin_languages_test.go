@@ -2,7 +2,9 @@ package api_test
 
 import (
 	"database/sql"
+	"encoding/json"
 	"io"
+	"maps"
 	"net/http"
 	"reflect"
 	"strconv"
@@ -205,6 +207,21 @@ func TestDeleteLanguageBodyNamesBlockers(t *testing.T) {
 	}
 	if strings.Contains(msg, "bob") {
 		t.Errorf("body names a user: %q", msg)
+	}
+	// The counts ride beside the code (errors.json language_in_use).
+	resp := doJSON(t, http.MethodDelete, ts.URL, "/api/admin/languages/es", admin, nil)
+	defer resp.Body.Close()
+	var body struct {
+		Error string         `json:"error"`
+		Usage map[string]int `json:"usage"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&body); err != nil {
+		t.Fatal(err)
+	}
+	wantUsage := map[string]int{"workspaces": 2, "dictionaries": 0, "levelLists": 0, "frequencyPacks": 0,
+		"sentencePacks": 1, "grammarPacks": 0, "audioPacks": 0, "legacySentences": 0}
+	if body.Error != "language_in_use" || !maps.Equal(body.Usage, wantUsage) {
+		t.Errorf("usage = %v, want %v", body.Usage, wantUsage)
 	}
 }
 

@@ -76,6 +76,24 @@ describe('LanguageManager', () => {
 		expect(registerLanguage).not.toHaveBeenCalled();
 	});
 
+	it('a language still in use says so by code and lists the counts the server sent', async () => {
+		setup();
+		vi.mocked(removeLanguage).mockRejectedValue(
+			new ApiError(
+				409,
+				JSON.stringify({ error: 'language_in_use', message: 'The language is still used by: 2 workspaces.', usage: { workspaces: 2, sentencePacks: 1 } })
+			)
+		);
+		render(LanguageManager);
+		await screen.findByText('Portuguese');
+		await fireEvent.click(screen.getByRole('button', { name: 'Remove Portuguese (pt)' }));
+		await fireEvent.click(screen.getByRole('button', { name: /Confirm remove/ }));
+		expect((await screen.findByRole('alert')).textContent).toBe('Workspaces or installed packs still use this language.');
+		const items = [...document.querySelectorAll('.in-use li')].map((li) => li.textContent);
+		expect(items).toEqual(['2 workspaces', '1 installed pack']);
+		expect(document.body.textContent).not.toContain('still used by');
+	});
+
 	it('moves focus to Confirm after Remove and back to Remove on Cancel', async () => {
 		setup();
 		render(LanguageManager);
