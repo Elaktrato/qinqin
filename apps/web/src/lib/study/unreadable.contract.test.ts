@@ -7,7 +7,6 @@ import { get } from 'svelte/store';
 
 import fixture from '../../../../../docs/contracts/sync/unreadable-rows.json';
 import { parsePullPage } from '../sync/pager';
-import { workspaces } from '../workspaces';
 import { STUDY_COLLECTIONS, type StudyCollection } from './rows';
 import {
 	UnreadableRowError,
@@ -53,7 +52,6 @@ function pushedKeys(): string[] {
 
 beforeEach(() => {
 	clearUnreadableReport();
-	workspaces.set({ list: [], current: { id: WS, language: 'zh', name: '', settings: {}, updatedAt: '2026-01-01T00:00:00Z' } });
 	vi.spyOn(console, 'warn').mockImplementation(() => undefined);
 	vi.stubGlobal(
 		'fetch',
@@ -76,7 +74,6 @@ afterEach(() => {
 	for (const key of pushedKeys()) expect(protectedKeys, key).not.toContain(key);
 	vi.unstubAllGlobals();
 	vi.restoreAllMocks();
-	workspaces.set({ list: [], current: null });
 });
 
 describe('docs/contracts/sync/unreadable-rows.json', () => {
@@ -114,25 +111,25 @@ describe('docs/contracts/sync/unreadable-rows.json', () => {
 
 	it('refuses writes that would replace an unreadable row, before any push', async () => {
 		const deck = fixture.expect.protected.deckSettings[0];
-		await expect(saveDeckCardTypes(deck, ['reverse'])).rejects.toBeInstanceOf(UnreadableRowError);
-		await expect(saveWorkspaceLimits({ new: 3 })).rejects.toBeInstanceOf(UnreadableRowError);
+		await expect(saveDeckCardTypes(WS, deck, ['reverse'])).rejects.toBeInstanceOf(UnreadableRowError);
+		await expect(saveWorkspaceLimits(WS, { new: 3 })).rejects.toBeInstanceOf(UnreadableRowError);
 		await expect(setActiveSet(WS, fixture.expect.readable.fsrsSets[0])).rejects.toBeInstanceOf(UnreadableRowError);
 		expect(pushes()).toEqual([]);
 	});
 
 	it('writes a readable row of the same collection as before', async () => {
-		await saveDeckLimits('general', { new: 8 });
+		await saveDeckLimits(WS, 'general', { new: 8 });
 		expect(pushedKeys()).toEqual(['limits:general']);
 	});
 
 	it('a new card never takes the id of an unreadable card', async () => {
-		const added = await addCard(1203);
+		const added = await addCard(WS, 1203);
 		expect(added.id).not.toBe('c-vocab-1203');
 		expect(pushedKeys()).toEqual([`cards:${added.id}`]);
 	});
 
 	it('deleting a deck leaves its unreadable settings row untouched', async () => {
-		await deleteDeck(fixture.expect.readable.decks[0]);
+		await deleteDeck(WS, fixture.expect.readable.decks[0]);
 		expect(pushedKeys()).toContain(`decks:${fixture.expect.readable.decks[0]}`);
 		expect(pushedKeys().filter((k) => k.startsWith('deckSettings:'))).toEqual([]);
 	});

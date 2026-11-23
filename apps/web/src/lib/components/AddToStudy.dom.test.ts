@@ -33,7 +33,8 @@ describe('AddToStudy', () => {
 		await waitFor(() => expect((button as HTMLButtonElement).disabled).toBe(false));
 		await fireEvent.click(button);
 		await waitFor(() => expect(addCard).toHaveBeenCalled());
-		const [, opts] = vi.mocked(addCard).mock.calls[0] as unknown as [number, Record<string, unknown>];
+		const [ws, , opts] = vi.mocked(addCard).mock.calls[0] as unknown as [number, number, Record<string, unknown>];
+		expect(ws).toBe(1);
 		expect(opts.entryKind).toBe('character');
 		expect(opts.sentenceId).toBeUndefined();
 		expect(opts.written).toBe('学');
@@ -45,7 +46,8 @@ describe('AddToStudy', () => {
 		await waitFor(() => expect((button as HTMLButtonElement).disabled).toBe(false));
 		await fireEvent.click(button);
 		await waitFor(() => expect(addCard).toHaveBeenCalled());
-		const [, opts] = vi.mocked(addCard).mock.calls[0] as unknown as [number, Record<string, unknown>];
+		const [ws, , opts] = vi.mocked(addCard).mock.calls[0] as unknown as [number, number, Record<string, unknown>];
+		expect(ws).toBe(1);
 		expect(opts.entryKind).toBeUndefined();
 		expect(opts.sentenceId).toBe(5);
 	});
@@ -63,7 +65,8 @@ describe('AddToStudy in the entry header (#104)', () => {
 		expect(add.className).toContain('primary');
 		await fireEvent.click(add);
 		await waitFor(() => expect(addCard).toHaveBeenCalled());
-		const [, opts] = vi.mocked(addCard).mock.calls[0] as unknown as [number, Record<string, unknown>];
+		const [ws, , opts] = vi.mocked(addCard).mock.calls[0] as unknown as [number, number, Record<string, unknown>];
+		expect(ws).toBe(1);
 		expect(opts.deckIds).toEqual([expect.stringMatching(/general/i)]);
 	});
 
@@ -82,7 +85,8 @@ describe('AddToStudy in the entry header (#104)', () => {
 		await fireEvent.click(choose);
 		await fireEvent.click(await screen.findByRole('menuitem', { name: 'History' }));
 		await waitFor(() => expect(addCard).toHaveBeenCalled());
-		const [, opts] = vi.mocked(addCard).mock.calls[0] as unknown as [number, Record<string, unknown>];
+		const [ws, , opts] = vi.mocked(addCard).mock.calls[0] as unknown as [number, number, Record<string, unknown>];
+		expect(ws).toBe(1);
 		expect(opts.deckIds).toEqual(['deck-1']);
 	});
 

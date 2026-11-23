@@ -271,7 +271,7 @@ describe('study setup, reverse and cloze checkboxes', () => {
 		await waitFor(() => expect(box(/reverse/)).not.toBeNull());
 		await fireEvent.click(box(/reverse/)!);
 		await waitFor(() =>
-			expect(saveDeckCardTypesForDecks).toHaveBeenCalledWith(['general'], 'reverse', true)
+			expect(saveDeckCardTypesForDecks).toHaveBeenCalledWith(1, ['general'], 'reverse', true)
 		);
 		expect(box(/reverse/)!.checked).toBe(true);
 	});

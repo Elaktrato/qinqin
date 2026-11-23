@@ -683,6 +683,9 @@ import { limitsOf } from '$lib/study/scheduler';
 		errors = [];
 		typeError = '';
 		if (isOptIn(id)) {
+			// The workspace whose decks are shown, captured at the click (#174).
+			const ws = activeWorkspaceId;
+			if (ws === null) return;
 			const kind = id as OptInKind;
 			const next = !extraKinds.includes(kind);
 			const previousSettings = deckSettings;
@@ -701,19 +704,22 @@ import { limitsOf } from '$lib/study/scheduler';
 			}
 			deckSettings = optimistic;
 			extraChoices = { ...extraChoices, [kind]: next };
-			if (activeWorkspaceId !== null) rememberExtraChoice(activeWorkspaceId, kind, next);
+			rememberExtraChoice(ws, kind, next);
 			typeSaving = id;
 			try {
 				const saved = await saveDeckCardTypesForDecks(
+					ws,
 					allDecks.map((deck) => deck.id),
 					kind,
 					next
 				);
-				deckSettings = { ...deckSettings, ...saved };
+				// A switch while it saved: the page shows another workspace now.
+				if (activeWorkspaceId === ws) deckSettings = { ...deckSettings, ...saved };
 			} catch (err) {
+				rememberExtraChoice(ws, kind, !next);
+				if (activeWorkspaceId !== ws) return;
 				deckSettings = previousSettings;
 				extraChoices = previousChoices;
-				if (activeWorkspaceId !== null) rememberExtraChoice(activeWorkspaceId, kind, !next);
 				typeError = message(err, t('study.types.saveFailed'));
 			} finally {
 				typeSaving = null;
@@ -741,12 +747,14 @@ import { limitsOf } from '$lib/study/scheduler';
 	async function addDeck(event: SubmitEvent): Promise<void> {
 		event.preventDefault();
 		const name = deckName.trim();
-		if (!name || creating) return;
+		const ws = activeWorkspaceId;
+		if (!name || creating || ws === null) return;
 
 		creating = true;
 		deckError = '';
 		try {
-			const deck = await createDeck(name);
+			const deck = await createDeck(ws, name);
+			if (activeWorkspaceId !== ws) return;
 			decks = [...decks, deck];
 			// A deck the user just made is almost certainly one they want
 			// to study from, so select it instead of leaving it unticked.
@@ -778,9 +786,12 @@ import { limitsOf } from '$lib/study/scheduler';
 			return;
 		}
 
+		const ws = activeWorkspaceId;
+		if (ws === null) return;
 		deckError = '';
 		try {
-			const renamed = await renameDeck(id, name);
+			const renamed = await renameDeck(ws, id, name);
+			if (activeWorkspaceId !== ws) return;
 			decks = decks.map((deck) => (deck.id === id ? renamed : deck));
 			cancelRename();
 		} catch (err) {
@@ -789,7 +800,8 @@ import { limitsOf } from '$lib/study/scheduler';
 	}
 
 	async function removeDeck(deck: Deck): Promise<void> {
-		if (deletingId !== null) return;
+		const ws = activeWorkspaceId;
+		if (deletingId !== null || ws === null) return;
 		if (
 			!confirm(t('study.decks.confirmDelete', { deck: deck.name }))
 		) {
@@ -799,7 +811,8 @@ import { limitsOf } from '$lib/study/scheduler';
 		deletingId = deck.id;
 		deckError = '';
 		try {
-			await deleteDeck(deck.id);
+			await deleteDeck(ws, deck.id);
+			if (activeWorkspaceId !== ws) return;
 			decks = decks.filter((item) => item.id !== deck.id);
 			// Mirror the store's reassignment locally so the counts do not
 			// keep counting cards of a deck that is gone.
@@ -1120,7 +1133,9 @@ import { limitsOf } from '$lib/study/scheduler';
 				{/if}
 			</Section>
 
-			<CardManager {cards} decks={allDecks} onchanged={refreshData} />
+			{#if activeWorkspaceId !== null}
+				<CardManager workspaceId={activeWorkspaceId} {cards} decks={allDecks} onchanged={refreshData} />
+			{/if}
 		{:else}
 			<Section title={t('study.level.title')} headingId="levels-heading">
 				<p class="hint">{t('study.level.intro')}</p>
@@ -1197,6 +1212,7 @@ import { limitsOf } from '$lib/study/scheduler';
 							<li>
 								<span class="advanced-name">{deck.name}</span>
 								<DeckCardTypes
+									workspaceId={activeWorkspaceId}
 									deckId={deck.id}
 									deckName={deck.name}
 									cardTypes={deckSettings[deck.id]?.cardTypes ?? []}

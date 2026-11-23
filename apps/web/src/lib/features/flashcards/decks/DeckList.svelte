@@ -68,10 +68,13 @@
 			formError = t('flashcards.list.nameMissing');
 			return;
 		}
+		// The workspace whose decks are listed, captured at the click (#174).
+		const ws = workspaceId;
+		if (ws === null) return;
 		creating = true;
 		formError = '';
 		try {
-			await createDeck(name);
+			await createDeck(ws, name);
 			newName = '';
 			await store.load(workspaceId, true);
 		} catch (err) {

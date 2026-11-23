@@ -180,7 +180,7 @@ describe('StudySettings daily limits', () => {
 		await fireEvent.input(newValue, { target: { value: '12' } });
 		await fireEvent.click(screen.getAllByLabelText('Unlimited')[1]);
 		await fireEvent.click(screen.getByRole('button', { name: 'Save limits' }));
-		await waitFor(() => expect(saveWorkspaceLimits).toHaveBeenCalledWith({ new: 12, reviews: null }));
+		await waitFor(() => expect(saveWorkspaceLimits).toHaveBeenCalledWith(1, { new: 12, reviews: null }));
 	});
 
 	it('refuses a bad value', async () => {

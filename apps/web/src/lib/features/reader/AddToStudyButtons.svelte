@@ -131,11 +131,10 @@
 				sentenceId = saved.sentenceId;
 				if (saved.failed) note = t('reader.study.noSentence');
 			}
-			await addCard(entryId, {
+			await addCard(ws, entryId, {
 				written: popupWritten(result),
 				...(isCharacter ? { entryKind: 'character' as const } : { sentenceId }),
-				deckIds: [deckId],
-				workspaceId: ws
+				deckIds: [deckId]
 			});
 			inStudy = true;
 			if (!note) note = t('reader.study.added');

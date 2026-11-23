@@ -1,20 +1,19 @@
 // The study state of a workspace. Cards, decks, deck settings, limits and
 // FSRS sets are typed core rows (docs/contracts/study/), read from one sync
 // pull; the keyed rows goals:workspace, known:*, vacation:* and milestone:* stay plugin
-// data of the study namespace `qinqin-flashcards`. A missing current workspace is an error: study
+// data of the study namespace `qinqin-flashcards`. Every read and write names its workspace
+// (#174: captured by the caller when the user acted); a missing one is an error: study
 // data must never fall back to user-global or another workspace's rows.
 // The one explicit exception: `vacation:*` rows are user-global (they
 // apply to every workspace or a chosen list) and are read from rows with
 // no workspace (docs/contracts/scheduler/).
 // The daily goal is goals:workspace (docs/contracts/goals/).
 
-import { get } from "svelte/store";
 import { ApiError, api } from "../api/client";
 import { newUlid } from "../ulid";
 import { t } from "../i18n";
 import { V2_STUDY_COLLECTIONS, firstPageUrl, pullAll } from "../sync/pager";
 import { readableRow } from "../sync/rows";
-import { workspaces } from "../workspaces";
 import { fetchFullLog, type StudyEvent } from "../events";
 import { canonicalCards, cleanSkipKinds, compareCanonical, newCardId } from "./canonical";
 import {
@@ -124,17 +123,16 @@ async function pullStudy(workspaceId: number): Promise<SyncDelta> {
 }
 
 /**
- * requireWorkspaceId returns the selected workspace id. Study data is
- * workspace-scoped, so there is nothing sensible to read or write
- * without one; callers get a plain Error instead of silently writing
- * user-global rows.
+ * requireWorkspaceArg checks the workspace a caller named (#174): study data
+ * is workspace-scoped and every read and write names its workspace, captured
+ * when the user acted (never "whatever is selected now", which a switch
+ * mid-save would change), so a missing one is a plain Error before any
+ * request instead of a write to user-global or another workspace's rows.
  */
-function requireWorkspaceId(): number {
-  const workspace = get(workspaces).current;
-  if (workspace === null) {
-    throw new Error("no workspace selected: study data is workspace-scoped");
+function requireWorkspaceArg(workspaceId: number, fn: string): void {
+  if (!Number.isInteger(workspaceId) || workspaceId <= 0) {
+    throw new Error(`${fn}: not a workspace id: study data is workspace-scoped`);
   }
-  return workspace.id;
 }
 
 function dataPath(key: string, workspaceId: number): string {
@@ -696,15 +694,14 @@ function withQueued(
  * card ids were deterministic) merged by `canonicalCards` and their
  * reviews re-pointed to the surviving card. Every page and widget goes
  * through it (widgets through the cached loadStudyHistory, history.ts),
- * so no call site can forget the merge. The selected workspace is the
- * default; pass the id the caller captured so cards and reviews come
- * from the same workspace. Writes (addCard, deleteDeck) read the raw
- * rows instead, so they see and rewrite every stored duplicate.
+ * so no call site can forget the merge. The caller names the workspace
+ * it captured, so cards and reviews come from the same workspace. Writes
+ * (addCard, deleteDeck) read the raw rows instead, so they see and
+ * rewrite every stored duplicate.
  */
-export async function loadStudyData(
-  workspaceId?: number,
-): Promise<StudyHistory> {
-  return loadStudyDataWith(workspaceId ?? requireWorkspaceId(), fetchEvents);
+export async function loadStudyData(workspaceId: number): Promise<StudyHistory> {
+  requireWorkspaceArg(workspaceId, "loadStudyData");
+  return loadStudyDataWith(workspaceId, fetchEvents);
 }
 
 /**
@@ -803,8 +800,8 @@ export async function deleteParamSet(
 }
 
 /** createDeck stores a new ULID-keyed deck and returns it. */
-export async function createDeck(name: string): Promise<Deck> {
-  const workspaceId = requireWorkspaceId();
+export async function createDeck(workspaceId: number, name: string): Promise<Deck> {
+  requireWorkspaceArg(workspaceId, "createDeck");
   const deck: Deck = {
     id: newUlid(),
     name,
@@ -818,8 +815,8 @@ export async function createDeck(name: string): Promise<Deck> {
  * renameDeck rewrites the deck under the same id and creation time.
  * Renaming a deck that is no longer stored is an error.
  */
-export async function renameDeck(id: string, name: string): Promise<Deck> {
-  const workspaceId = requireWorkspaceId();
+export async function renameDeck(workspaceId: number, id: string, name: string): Promise<Deck> {
+  requireWorkspaceArg(workspaceId, "renameDeck");
   const snap = newSnapshot();
   const { decks } = await fetchStudyData(workspaceId, snap);
   const existing = decks.find((deck) => deck.id === id);
@@ -839,8 +836,8 @@ export async function renameDeck(id: string, name: string): Promise<Deck> {
  * rewritten before the tombstone so a failed write cannot orphan them
  * behind a deleted deck.
  */
-export async function deleteDeck(id: string): Promise<void> {
-  const workspaceId = requireWorkspaceId();
+export async function deleteDeck(workspaceId: number, id: string): Promise<void> {
+  requireWorkspaceArg(workspaceId, "deleteDeck");
   if (id === GENERAL_DECK_ID) {
     // The implicit deck has no stored row to tombstone and must survive.
     throw new Error("the general deck cannot be deleted");
@@ -873,10 +870,11 @@ export async function deleteDeck(id: string): Promise<void> {
  * fields this version does not know survive.
  */
 export async function saveDeckCardTypes(
+  workspaceId: number,
   deckId: string,
   cardTypes: readonly OptInKind[],
 ): Promise<DeckSettings> {
-  const workspaceId = requireWorkspaceId();
+  requireWorkspaceArg(workspaceId, "saveDeckCardTypes");
   const snap = newSnapshot();
   const { deckSettings } = await fetchStudyData(workspaceId, snap);
   const stored = deckSettings?.[deckId];
@@ -898,12 +896,13 @@ export async function saveDeckCardTypes(
  * are not written.
  */
 export async function saveDeckCardTypesForDecks(
+  workspaceId: number,
   deckIds: readonly string[],
   kind: OptInKind,
   on: boolean,
 ): Promise<Record<string, DeckSettings>> {
+  requireWorkspaceArg(workspaceId, "saveDeckCardTypesForDecks");
   if (deckIds.length === 0) return {};
-  const workspaceId = requireWorkspaceId();
   const snap = newSnapshot();
   const { deckSettings } = await fetchStudyData(workspaceId, snap);
   const out: Record<string, DeckSettings> = {};
@@ -940,10 +939,11 @@ function withoutNewOrder(extra: Record<string, unknown>): Record<string, unknown
  * `added` is stored as no field (the default).
  */
 export async function saveDeckNewOrder(
+  workspaceId: number,
   deckId: string,
   order: NewOrder,
 ): Promise<DeckSettings> {
-  const workspaceId = requireWorkspaceId();
+  requireWorkspaceArg(workspaceId, "saveDeckNewOrder");
   const snap = newSnapshot();
   const { deckSettings } = await fetchStudyData(workspaceId, snap);
   const stored = deckSettings?.[deckId];
@@ -973,11 +973,12 @@ export async function saveDeckNewOrder(
  * entry (`newCardId`), so two devices that both miss each other's card
  * write the same key and sync keeps one row (the later write's fields:
  * decks, snapshot, createdAt; reviews point at the shared id either way).
- * Older duplicates are merged at read time (loadStudyData). `workspaceId` names the
- * workspace explicitly (the reader adds to the book's workspace); the
- * selected one is the default.
+ * Older duplicates are merged at read time (loadStudyData). `workspaceId` is
+ * the workspace the caller captured when the user acted (the reader adds to
+ * the book's workspace).
  */
 export async function addCard(
+  workspaceId: number,
   entryId: number,
   opts: {
     kind?: StudyCardKind;
@@ -985,10 +986,9 @@ export async function addCard(
     entryKind?: "character";
     sentenceId?: number;
     deckIds?: string[];
-    workspaceId?: number;
   } = {},
 ): Promise<StudyCard> {
-  const workspaceId = opts.workspaceId ?? requireWorkspaceId();
+  requireWorkspaceArg(workspaceId, "addCard");
   const kind = opts.kind ?? "vocab";
   const snap = newSnapshot();
   const { cards } = await fetchStudyData(workspaceId, snap);
@@ -1111,9 +1111,10 @@ function errorMessage(err: unknown, fallback: string): string {
  * ignored by scheduling and mastery, while EXP and streaks keep counting.
  */
 export async function deleteCards(
+  workspaceId: number,
   ids: readonly string[],
 ): Promise<StudyCard[]> {
-  const workspaceId = requireWorkspaceId();
+  requireWorkspaceArg(workspaceId, "deleteCards");
   if (ids.length === 0) return [];
   const snap = newSnapshot();
   const { cards } = await fetchStudyData(workspaceId, snap);
@@ -1151,10 +1152,11 @@ export async function deleteCards(
  * PartialCardsError whose `rows` are the ones still to restore.
  */
 export async function restoreCards(
+  workspaceId: number,
   rows: readonly StudyCard[],
   opts: { onlyLive?: boolean } = {},
 ): Promise<void> {
-  const workspaceId = requireWorkspaceId();
+  requireWorkspaceArg(workspaceId, "restoreCards");
   let todo = [...rows].reverse();
   const snap = newSnapshot();
   try {
@@ -1193,10 +1195,11 @@ export async function restoreCards(
  * the rows already moved. The deck must be General or a stored deck.
  */
 export async function moveCards(
+  workspaceId: number,
   ids: readonly string[],
   deckId: string,
 ): Promise<StudyCard[]> {
-  const workspaceId = requireWorkspaceId();
+  requireWorkspaceArg(workspaceId, "moveCards");
   if (deckId === "") throw new Error("choose a deck to move the cards to");
   if (ids.length === 0) return [];
   const snap = newSnapshot();
@@ -1282,11 +1285,12 @@ function assertSkippable(kind: StudyCardKind): void {
  * nowhere to keep the switch: that is an error.
  */
 export async function skipKind(
+  workspaceId: number,
   entryId: number,
   kind: StudyCardKind,
 ): Promise<StudyCard[]> {
+  requireWorkspaceArg(workspaceId, "skipKind");
   assertSkippable(kind);
-  const workspaceId = requireWorkspaceId();
   const snap = newSnapshot();
   const { cards } = await fetchStudyData(workspaceId, snap);
   const rows = vocabRowsOf(cards, entryId);
@@ -1296,11 +1300,12 @@ export async function skipKind(
 
 /** unskipKind removes a kind from the word's `skipKinds`; returns the previous rows for undo. */
 export async function unskipKind(
+  workspaceId: number,
   entryId: number,
   kind: StudyCardKind,
 ): Promise<StudyCard[]> {
+  requireWorkspaceArg(workspaceId, "unskipKind");
   assertSkippable(kind);
-  const workspaceId = requireWorkspaceId();
   const snap = newSnapshot();
   const { cards } = await fetchStudyData(workspaceId, snap);
   const rows = vocabRowsOf(cards, entryId);
@@ -1320,9 +1325,10 @@ export async function unskipKind(
  * throws PartialCardsError with the rows that did change.
  */
 export async function dropSiblingCards(
+  workspaceId: number,
   ids: readonly string[],
 ): Promise<StudyCard[]> {
-  const workspaceId = requireWorkspaceId();
+  requireWorkspaceArg(workspaceId, "dropSiblingCards");
   if (ids.length === 0) return [];
   const snap = newSnapshot();
   const { cards } = await fetchStudyData(workspaceId, snap);
@@ -1411,8 +1417,8 @@ export async function deleteVacation(id: string): Promise<void> {
 }
 
 /** saveWorkspaceLimits stores the workspace's daily limits (`null` = unlimited). */
-export async function saveWorkspaceLimits(limits: Partial<LimitPair>): Promise<void> {
-  const workspaceId = requireWorkspaceId();
+export async function saveWorkspaceLimits(workspaceId: number, limits: Partial<LimitPair>): Promise<void> {
+  requireWorkspaceArg(workspaceId, "saveWorkspaceLimits");
   const snap = newSnapshot();
   await fetchStudyData(workspaceId, snap);
   const write = studyWrite(snap, "limits", limitsRow(null, limits, extraOf(snap, "limits", "")));
@@ -1426,9 +1432,7 @@ export async function saveWorkspaceLimits(limits: Partial<LimitPair>): Promise<v
  * now", so a workspace switch mid-save cannot write another workspace.
  */
 export async function saveGoals(workspaceId: number, row: GoalsRow): Promise<void> {
-  if (!Number.isInteger(workspaceId) || workspaceId <= 0) {
-    throw new Error("saveGoals: not a workspace id: study data is workspace-scoped");
-  }
+  requireWorkspaceArg(workspaceId, "saveGoals");
   await putData(workspaceId, GOALS_KEY, row);
 }
 
@@ -1436,8 +1440,8 @@ export async function saveGoals(workspaceId: number, row: GoalsRow): Promise<voi
  * saveDeckLimits stores one deck's overrides (General included). A field
  * left out follows the workspace; an empty object removes the row.
  */
-export async function saveDeckLimits(deckId: string, limits: Partial<LimitPair>): Promise<void> {
-  const workspaceId = requireWorkspaceId();
+export async function saveDeckLimits(workspaceId: number, deckId: string, limits: Partial<LimitPair>): Promise<void> {
+  requireWorkspaceArg(workspaceId, "saveDeckLimits");
   const snap = newSnapshot();
   await fetchStudyData(workspaceId, snap);
   if (Object.keys(limits).length === 0) {
@@ -1448,12 +1452,6 @@ export async function saveDeckLimits(deckId: string, limits: Partial<LimitPair>)
   }
   const write = studyWrite(snap, "limits", limitsRow(deckId, limits, extraOf(snap, "limits", deckId)));
   if (write !== null) await pushStudy(workspaceId, [write]);
-}
-
-function requireWorkspaceArg(workspaceId: number, fn: string): void {
-  if (!Number.isInteger(workspaceId) || workspaceId <= 0) {
-    throw new Error(`${fn}: not a workspace id: study data is workspace-scoped`);
-  }
 }
 
 /**

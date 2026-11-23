@@ -152,7 +152,7 @@ describe('DeckList', () => {
 		);
 		await fireEvent.input(screen.getByLabelText('New deck name'), { target: { value: 'Nouns' } });
 		await fireEvent.click(screen.getByRole('button', { name: 'Create deck' }));
-		expect(createDeck).toHaveBeenCalledWith('Nouns');
+		expect(createDeck).toHaveBeenCalledWith(1, 'Nouns');
 		await screen.findByRole('link', { name: 'Nouns' });
 	});
 

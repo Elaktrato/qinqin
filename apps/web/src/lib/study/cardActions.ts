@@ -12,13 +12,14 @@ import type { StudyCard, StudyCardKind } from './types';
 
 export const UNDO_MS = 10000;
 
+/** The store writes (store.ts), each naming its workspace (#174). */
 export interface CardActionsDeps {
-	deleteCards(ids: readonly string[]): Promise<StudyCard[]>;
-	moveCards(ids: readonly string[], deckId: string): Promise<StudyCard[]>;
-	restoreCards(rows: readonly StudyCard[], opts?: { onlyLive?: boolean }): Promise<void>;
-	dropSiblingCards(ids: readonly string[]): Promise<StudyCard[]>;
-	skipKind(entryId: number, kind: StudyCardKind): Promise<StudyCard[]>;
-	unskipKind(entryId: number, kind: StudyCardKind): Promise<StudyCard[]>;
+	deleteCards(workspaceId: number, ids: readonly string[]): Promise<StudyCard[]>;
+	moveCards(workspaceId: number, ids: readonly string[], deckId: string): Promise<StudyCard[]>;
+	restoreCards(workspaceId: number, rows: readonly StudyCard[], opts?: { onlyLive?: boolean }): Promise<void>;
+	dropSiblingCards(workspaceId: number, ids: readonly string[]): Promise<StudyCard[]>;
+	skipKind(workspaceId: number, entryId: number, kind: StudyCardKind): Promise<StudyCard[]>;
+	unskipKind(workspaceId: number, entryId: number, kind: StudyCardKind): Promise<StudyCard[]>;
 	/** Called after every action, failed ones included: show the stored state. */
 	onchanged: () => void | Promise<void>;
 	setTimer?: typeof setTimeout;
@@ -26,6 +27,8 @@ export interface CardActionsDeps {
 }
 
 export interface UndoSlot {
+	/** The workspace the rows came from: an undo restores there, whatever is shown now. */
+	workspaceId: number;
 	text: string;
 	rows: StudyCard[];
 	/** A move-undo must not revive a card another tab deleted since. */
@@ -51,13 +54,18 @@ function label(kind: StudyCardKind): string {
 	return key ? t(key) : kind;
 }
 
+/**
+ * Every action names the workspace of the cards the user acted on (the
+ * shown data's, captured at the click), never the one selected when the
+ * write runs (#174).
+ */
 export interface CardActions {
-	remove(ids: string[]): Promise<void>;
-	move(ids: string[], deckId: string, deckName: string): Promise<void>;
+	remove(workspaceId: number, ids: string[]): Promise<void>;
+	move(workspaceId: number, ids: string[], deckId: string, deckName: string): Promise<void>;
 	/** Removes the non-vocab cards with these ids without removing their word. */
-	dropKind(ids: string[]): Promise<void>;
-	skip(entryId: number, kind: StudyCardKind): Promise<void>;
-	unskip(entryId: number, kind: StudyCardKind): Promise<void>;
+	dropKind(workspaceId: number, ids: string[]): Promise<void>;
+	skip(workspaceId: number, entryId: number, kind: StudyCardKind): Promise<void>;
+	unskip(workspaceId: number, entryId: number, kind: StudyCardKind): Promise<void>;
 	undo(): Promise<void>;
 	state: { subscribe(fn: (s: CardActionsState) => void): () => void };
 	pauseTimer(): void;
@@ -126,6 +134,7 @@ export function createCardActions(deps: CardActionsDeps): CardActions {
 
 	/** Runs a row-changing write; whatever landed stays undoable, even on failure. */
 	async function changing(
+		workspaceId: number,
 		write: () => Promise<StudyCard[]>,
 		text: string,
 		onlyLive: boolean
@@ -139,42 +148,55 @@ export function createCardActions(deps: CardActionsDeps): CardActions {
 			rows = err.rows;
 			failure = err;
 		}
-		if (rows.length > 0) offerUndo({ text, rows, onlyLive });
+		if (rows.length > 0) offerUndo({ workspaceId, text, rows, onlyLive });
 		if (failure !== null) throw failure;
 	}
 
 	return {
-		remove: (ids) =>
+		remove: (workspaceId, ids) =>
 			run(() =>
 				changing(
-					() => deps.deleteCards(ids),
+					workspaceId,
+					() => deps.deleteCards(workspaceId, ids),
 					t('study.actions.deleted', { count: ids.length }),
 					false
 				)
 			),
-		move: (ids, deckId, deckName) =>
+		move: (workspaceId, ids, deckId, deckName) =>
 			run(() =>
 				changing(
-					() => deps.moveCards(ids, deckId),
+					workspaceId,
+					() => deps.moveCards(workspaceId, ids, deckId),
 					t('study.actions.moved', { count: ids.length, deck: deckName }),
 					true
 				)
 			),
-		dropKind: (ids) =>
+		dropKind: (workspaceId, ids) =>
 			run(() =>
 				changing(
-					() => deps.dropSiblingCards(ids),
+					workspaceId,
+					() => deps.dropSiblingCards(workspaceId, ids),
 					t('study.actions.removed', { count: ids.length }),
 					false
 				)
 			),
-		skip: (entryId, kind) =>
+		skip: (workspaceId, entryId, kind) =>
 			run(() =>
-				changing(() => deps.skipKind(entryId, kind), t('study.actions.kindOff', { kind: label(kind) }), false)
+				changing(
+					workspaceId,
+					() => deps.skipKind(workspaceId, entryId, kind),
+					t('study.actions.kindOff', { kind: label(kind) }),
+					false
+				)
 			),
-		unskip: (entryId, kind) =>
+		unskip: (workspaceId, entryId, kind) =>
 			run(() =>
-				changing(() => deps.unskipKind(entryId, kind), t('study.actions.kindOn', { kind: label(kind) }), false)
+				changing(
+					workspaceId,
+					() => deps.unskipKind(workspaceId, entryId, kind),
+					t('study.actions.kindOn', { kind: label(kind) }),
+					false
+				)
 			),
 		undo: async () => {
 			if (state.undo === null || pending > 0) return;
@@ -183,7 +205,7 @@ export function createCardActions(deps: CardActionsDeps): CardActions {
 				const slot = state.undo;
 				if (slot === null) return;
 				try {
-					await deps.restoreCards(slot.rows, { onlyLive: slot.onlyLive });
+					await deps.restoreCards(slot.workspaceId, slot.rows, { onlyLive: slot.onlyLive });
 					// Cleared only after it worked, so a failed undo can be retried.
 					set({ undo: null });
 				} catch (err) {

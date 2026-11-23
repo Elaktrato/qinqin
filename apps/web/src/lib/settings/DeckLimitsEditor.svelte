@@ -51,6 +51,9 @@
 		event.preventDefault();
 		message = '';
 		error = '';
+		// The workspace whose limits the form shows, captured now (#174).
+		const ws = workspaceId;
+		if (ws === null) return;
 		const plan = deckRowFrom(newState, reviewsState);
 		if ('error' in plan) {
 			error = plan.error;
@@ -58,7 +61,7 @@
 		}
 		busy = true;
 		try {
-			await saveDeckLimits(deckId, plan.row);
+			await saveDeckLimits(ws, deckId, plan.row);
 			message = t('common.state.saved');
 			await load(true);
 		} catch {

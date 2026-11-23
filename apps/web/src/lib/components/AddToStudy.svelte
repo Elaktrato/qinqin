@@ -99,6 +99,8 @@
 	async function add(deckId: string): Promise<void> {
 		// Unresolved or already-added means "no new card"; addCard itself
 		// is idempotent, so a race across tabs cannot duplicate either.
+		// The workspace the "in deck" check ran against, captured at the click (#174).
+		const ws = $workspaces.current?.id ?? null;
 		if (saving || inDeck !== false) return;
 		saving = true;
 		error = '';
@@ -111,7 +113,8 @@
 			// A character card has no sentence and carries the entryKind
 			// snapshot, the same row a level session creates.
 			const isCharacter = kind === 'character';
-			await addCard(entryId, {
+			if (ws === null) throw new Error(t('entry.study.noWorkspace'));
+			await addCard(ws, entryId, {
 				written,
 				...(isCharacter ? { entryKind: 'character' as const } : { sentenceId }),
 				deckIds: [deckId]

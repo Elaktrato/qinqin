@@ -170,6 +170,9 @@
 		event.preventDefault();
 		limitsMessage = '';
 		limitsError = '';
+		// The workspace whose limits the form shows, captured now (#174).
+		const ws = workspaceId;
+		if (ws === null) return;
 		const plan = workspaceRowFrom(newState, reviewsState);
 		if ('error' in plan) {
 			limitsError = plan.error;
@@ -177,7 +180,7 @@
 		}
 		busy = true;
 		try {
-			await saveWorkspaceLimits(plan.row);
+			await saveWorkspaceLimits(ws, plan.row);
 			limitsMessage = t('common.state.saved');
 			await load(true);
 		} catch {

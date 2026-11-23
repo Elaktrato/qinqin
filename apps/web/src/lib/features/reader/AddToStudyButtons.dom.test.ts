@@ -61,7 +61,8 @@ describe('AddToStudyButtons', () => {
 		await waitFor(() => expect((plus as HTMLButtonElement).disabled).toBe(false));
 		await fireEvent.click(plus);
 		await waitFor(() => expect(addCard).toHaveBeenCalled());
-		const [, opts] = vi.mocked(addCard).mock.calls[0] as unknown as [number, Record<string, unknown>];
+		const [ws, , opts] = vi.mocked(addCard).mock.calls[0] as unknown as [number, number, Record<string, unknown>];
+		expect(ws).toBe(1);
 		expect(opts.entryKind).toBe('character');
 		expect(opts.sentenceId).toBeUndefined();
 	});
@@ -77,7 +78,8 @@ describe('AddToStudyButtons', () => {
 		await waitFor(() => expect((plus as HTMLButtonElement).disabled).toBe(false));
 		await fireEvent.click(plus);
 		await waitFor(() => expect(addCard).toHaveBeenCalled());
-		const [, opts] = vi.mocked(addCard).mock.calls[0] as unknown as [number, Record<string, unknown>];
+		const [ws, , opts] = vi.mocked(addCard).mock.calls[0] as unknown as [number, number, Record<string, unknown>];
+		expect(ws).toBe(1);
 		expect(opts.entryKind).toBeUndefined();
 	});
 });
@@ -212,8 +214,9 @@ describe('the lighter popup actions (#102)', () => {
 		expect(add.classList.contains('primary')).toBe(true);
 		await fireEvent.click(add);
 		await waitFor(() => expect(addCard).toHaveBeenCalled());
-		const [, opts] = vi.mocked(addCard).mock.calls[0] as unknown as [number, Record<string, unknown>];
+		const [ws, , opts] = vi.mocked(addCard).mock.calls[0] as unknown as [number, number, Record<string, unknown>];
 		expect(opts.deckIds).toEqual(['general']);
+		expect(ws, 'the book\'s workspace').toBe(3);
 		expect(await screen.findByText('In study')).toBeTruthy();
 	});
 
@@ -234,7 +237,7 @@ describe('the lighter popup actions (#102)', () => {
 		await fireEvent.click(choose);
 		await fireEvent.click(within(await screen.findByRole('menu')).getByRole('menuitem', { name: 'Lu Xun' }));
 		await waitFor(() => expect(addCard).toHaveBeenCalled());
-		const [, opts] = vi.mocked(addCard).mock.calls[0] as unknown as [number, Record<string, unknown>];
+		const [, , opts] = vi.mocked(addCard).mock.calls[0] as unknown as [number, number, Record<string, unknown>];
 		expect(opts.deckIds).toEqual(['d1']);
 		vi.mocked(getStudyData).mockResolvedValue({ decks: [], cards: [] } as never);
 	});
@@ -252,7 +255,7 @@ describe('the lighter popup actions (#102)', () => {
 		mount({ result: { ...result('word'), term: c.term, forms: c.forms, readings: c.readings, senses: c.senses } });
 		await fireEvent.click(await ready(`Add to deck: ${c.term}`));
 		await waitFor(() => expect(addCard).toHaveBeenCalled());
-		const [, opts] = vi.mocked(addCard).mock.calls[0] as unknown as [number, Record<string, unknown>];
+		const [ws, , opts] = vi.mocked(addCard).mock.calls[0] as unknown as [number, number, Record<string, unknown>];
 		expect(opts.written).toBe('の');
 	});
 });
