@@ -317,3 +317,21 @@ func TestReloadSkipsASecondPackOfALanguage(t *testing.T) {
 		t.Errorf("For(xa) = %+v, want the table of xa-a (first by pack id)", tb)
 	}
 }
+
+// A reload that fails after the commit does not fail the import or the
+// uninstall: the pack is installed (or gone), the error is logged, and the
+// watcher retries.
+func TestReloadFailureAfterTheCommitIsLogged(t *testing.T) {
+	sqlDB := newDB(t)
+	ctx := context.Background()
+	defer lemmapack.SetReloadForTest(func(context.Context, lemmapack.Querier) error { return errors.New("boom") })()
+	if _, err := lemmapack.Import(ctx, sqlDB, pack(t, "xa-rules", "xa", table("xa", "1"))); err != nil {
+		t.Errorf("Import = %v, want nil (committed)", err)
+	}
+	if _, found, live, _ := lemmapack.Stored(ctx, sqlDB, "xa-rules"); !found || !live {
+		t.Error("pack not installed")
+	}
+	if err := lemmapack.Uninstall(ctx, sqlDB, "xa-rules"); err != nil {
+		t.Errorf("Uninstall = %v, want nil (committed)", err)
+	}
+}

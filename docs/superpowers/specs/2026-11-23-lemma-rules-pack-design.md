@@ -54,6 +54,12 @@ Ruling: the table of a language whose code pack does not run rule tables (today 
 `lang.Deinflector`) is refused at import with a clear message — installing it would look successful and do
 nothing — cost if wrong: a later Chinese deinflector needs this check relaxed (one line).
 
+Ruling (fix wave): the refusal matches the exact code of a code pack that runs no tables (`zh`), not `zh-tw`
+or `zh-hant`: those are separate, data-only language codes on this server (no code pack is registered for
+them), and a table for one works like any data-only language's — refusing them would refuse a working pack —
+cost if wrong: an admin who expects `zh-tw` to change Chinese segmentation sees it change only `zh-tw`
+(documented in Data-pack-format).
+
 Ruling: a `lemma-rules` pack does not auto-register its language (dictionary packs do): rules without a
 dictionary of the language change nothing, and the language appears when its first dictionary is installed —
 cost if wrong: none visible; the table waits for the dictionary.
@@ -159,7 +165,7 @@ from the same zip.
 
 ## The built-in table as a pack
 
-`plugins/data/ja-lemma` holds `manifest.json` (`license: CC0-1.0`, attribution "qinqin contributors"),
+`plugins/data/ja-lemma` holds `manifest.json` (`license: CC0-1.0`, attribution "Japanese lemmatizer rule table written for qinqin by the project; CC0 1.0."),
 `rules.json` (byte-identical to `server/internal/lemma/tables/ja.json` and
 `docs/contracts/lemma/ja.rules.json`, checked by a test) and `LICENSE` (CC0). It is listed in
 `docs/sources.md` (project-authored, CC0). The embedded table stays as the fallback, so a server without the

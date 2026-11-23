@@ -203,7 +203,7 @@ A table also ships as a data pack: manifest `type: lemma-rules`, `format: rules-
   **replaces** the built-in table wholesale (no merging). At most one live pack per language: the server refuses
   a second pack id for a language with a live pack; the same id again replaces it.
 - **Validation:** `Parse` as above (strict keys, Limits) at upload review and import; a table for a language whose
-  code pack does not run tables (zh) is refused. A stored table that no longer parses (an older engine) is skipped
+  code pack does not run tables (exactly `zh`; `zh-tw` is a separate data-only code) is refused. A stored table that no longer parses (an older engine) is skipped
   and the built-in applies.
 - **Effect:** immediate. The server swaps the table set after every install or uninstall (and within 30 s of a
   change another process, `qinqin seed`, made); segmentation and lookups read it per request. `/api/segment`, `/api/segment/at` and `/api/lookup` serve a language with a code pack or

@@ -552,7 +552,7 @@
         "name": "Japanese lemmatizer rules",
         "version": "2026-11-22",
         "license": "CC0-1.0",
-        "attribution": "qinqin contributors",
+        "attribution": "Japanese lemmatizer rule table written for qinqin by the project; CC0 1.0.",
         "notice": ""
        }
       ],

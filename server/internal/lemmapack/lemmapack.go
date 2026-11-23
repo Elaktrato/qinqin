@@ -176,10 +176,7 @@ func Import(ctx context.Context, sqlDB *sql.DB, p dict.Pack) (Result, error) {
 	if err := tx.Commit(); err != nil {
 		return Result{}, fmt.Errorf("import lemma-rules pack %s: %w", m.ID, err)
 	}
-	// Committed: the overlay follows even when ctx ends now.
-	if err := Reload(context.WithoutCancel(ctx), sqlDB); err != nil {
-		return Result{}, err
-	}
+	reloadAfterCommit(ctx, sqlDB, m.ID)
 	return res, nil
 }
 
@@ -196,7 +193,20 @@ func Uninstall(ctx context.Context, sqlDB *sql.DB, packID string) error {
 	if n, _ := res.RowsAffected(); n == 0 {
 		return ErrNotFound
 	}
-	return Reload(context.WithoutCancel(ctx), sqlDB)
+	reloadAfterCommit(ctx, sqlDB, packID)
+	return nil
+}
+
+// reload is Reload; tests swap it.
+var reload = Reload
+
+// reloadAfterCommit reloads the overlay after a committed import or
+// uninstall, even when ctx ends now. A failure is logged, not returned: the
+// pack's change is committed, and Watch retries.
+func reloadAfterCommit(ctx context.Context, q Querier, packID string) {
+	if err := reload(context.WithoutCancel(ctx), q); err != nil {
+		log.Printf("lemmapack: %s changed, but reloading the rule tables failed (retried by the watcher): %v", packID, err)
+	}
 }
 
 // reloadMu serialises Reload, so a reload that read older rows never
