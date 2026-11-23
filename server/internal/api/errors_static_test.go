@@ -161,6 +161,9 @@ func scanErrorWrites(t *testing.T, cat map[string]int) (violations []errorViolat
 					if x, ok := fun.X.(*ast.Ident); ok && x.Name == "http" && (fun.Sel.Name == "Error" || fun.Sel.Name == "NotFound") {
 						bad(call, "http."+fun.Sel.Name+" answers text/plain: use writeError")
 					}
+					if x, ok := fun.X.(*ast.Ident); ok && x.Name == "http" && fun.Sel.Name == "ServeContent" && fn.Name.Name != "serveContent" {
+						bad(call, "http.ServeContent answers its errors in text: use serveContent")
+					}
 					if fun.Sel.Name == "WriteHeader" && len(call.Args) == 1 {
 						if sel, ok := call.Args[0].(*ast.SelectorExpr); ok && statusNames[sel.Sel.Name] >= 400 {
 							bad(call, "WriteHeader("+sel.Sel.Name+") answers an error without a body: use writeError")
@@ -202,7 +205,7 @@ func scanErrorWrites(t *testing.T, cat map[string]int) (violations []errorViolat
 							bad(call, "error code "+strconv.Quote(code)+" is not in errors.json")
 							return true
 						}
-						if sel, ok := call.Args[1].(*ast.SelectorExpr); ok {
+						if sel, ok := call.Args[1].(*ast.SelectorExpr); ok && isHTTPConst(sel) {
 							want, known := statusNames[sel.Sel.Name]
 							if !known {
 								bad(call, "unknown status constant "+sel.Sel.Name+" (add it to statusNames)")
@@ -223,6 +226,12 @@ func scanErrorWrites(t *testing.T, cat map[string]int) (violations []errorViolat
 		}
 	}
 	return violations, literalSites
+}
+
+// isHTTPConst reports a net/http status constant (http.StatusX).
+func isHTTPConst(sel *ast.SelectorExpr) bool {
+	x, ok := sel.X.(*ast.Ident)
+	return ok && x.Name == "http"
 }
 
 // hasErrorKey reports a map composite literal with an "error" key.

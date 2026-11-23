@@ -345,7 +345,7 @@ func (s *server) handleSafetyExportDownload(w http.ResponseWriter, r *http.Reque
 	w.Header().Set("Content-Type", "application/zip")
 	w.Header().Set("Content-Disposition", `attachment; filename="`+downloadName("qinqin-before-restore", username, info.ModTime(), "zip")+`"`)
 	w.Header().Set("X-Content-Type-Options", "nosniff")
-	http.ServeContent(w, r, "", info.ModTime(), f)
+	serveContent(w, r, info.ModTime(), f)
 }
 
 func writeRestoreBusy(w http.ResponseWriter) {

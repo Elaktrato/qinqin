@@ -6,6 +6,7 @@ import (
 	"errors"
 	"io"
 	"net/http"
+	"time"
 )
 
 // writeError is the one way the API answers an error (docs/contracts/auth/
@@ -86,4 +87,79 @@ func decodeBody(w http.ResponseWriter, r *http.Request, v any, limit int64, stri
 		}
 	}
 	return true
+}
+
+// codedErrors passes a response through until its status is an error: then
+// it swallows the status and body the wrapped writer (the mux's 404 and 405,
+// http.ServeContent's 416 and 412) would send in text, so the caller can
+// answer with writeError instead. Headers set before (Allow, Content-Range)
+// stay.
+type codedErrors struct {
+	http.ResponseWriter
+	status int // the swallowed error status; 0: none
+}
+
+func (c *codedErrors) WriteHeader(status int) {
+	if status >= 400 {
+		c.status = status
+		return
+	}
+	c.ResponseWriter.WriteHeader(status)
+}
+
+func (c *codedErrors) Write(b []byte) (int, error) {
+	if c.status != 0 {
+		return len(b), nil
+	}
+	return c.ResponseWriter.Write(b)
+}
+
+// answer writes the coded error for a swallowed status; false: there was none.
+func (c *codedErrors) answer() bool {
+	if c.status == 0 {
+		return false
+	}
+	h := c.ResponseWriter.Header()
+	h.Del("Content-Length")
+	h.Del("Content-Encoding")
+	h.Del("X-Content-Type-Options")
+	switch c.status {
+	case http.StatusNotFound:
+		writeError(c.ResponseWriter, c.status, "not_found", "No such API route.")
+	case http.StatusMethodNotAllowed:
+		writeError(c.ResponseWriter, c.status, "method_not_allowed", "This API route does not take this method.")
+	case http.StatusRequestedRangeNotSatisfiable:
+		writeError(c.ResponseWriter, c.status, "range_not_satisfiable", "The requested range lies outside the file.")
+	case http.StatusPreconditionFailed:
+		writeError(c.ResponseWriter, c.status, "precondition_failed", "The file does not meet the request's precondition.")
+	default:
+		if c.status >= 500 {
+			writeError(c.ResponseWriter, c.status, "internal", "Internal server error.")
+		} else {
+			writeError(c.ResponseWriter, c.status, "bad_request", "The request cannot be served.")
+		}
+	}
+	return true
+}
+
+// serveContent is http.ServeContent (Range, If-Range, conditional
+// requests) with its error answers coded (spec section 2).
+func serveContent(w http.ResponseWriter, r *http.Request, modtime time.Time, content io.ReadSeeker) {
+	cw := &codedErrors{ResponseWriter: w}
+	http.ServeContent(cw, r, "", modtime, content)
+	cw.answer()
+}
+
+// codedUnmatched answers a request no route matches with 404 not_found or
+// 405 method_not_allowed as JSON; matched requests go straight to the mux.
+func codedUnmatched(mux *http.ServeMux) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if _, pattern := mux.Handler(r); pattern != "" {
+			mux.ServeHTTP(w, r)
+			return
+		}
+		cw := &codedErrors{ResponseWriter: w}
+		mux.ServeHTTP(cw, r)
+		cw.answer()
+	})
 }

@@ -220,5 +220,5 @@ func (s *server) handlePackageDownload(w http.ResponseWriter, r *http.Request) {
 	// The zero modification time: the ETag alone validates (a rebuilt file
 	// of the same revision after a restore has a new time, not new bytes
 	// that matter to the client rule).
-	http.ServeContent(w, r, "", time.Time{}, f)
+	serveContent(w, r, time.Time{}, f)
 }

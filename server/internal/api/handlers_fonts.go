@@ -129,5 +129,5 @@ func (s *server) handleFontFile(w http.ResponseWriter, r *http.Request) {
 	h.Set("Content-Type", "font/woff2")
 	h.Set("Cache-Control", "public, max-age=31536000, immutable")
 	h.Set("ETag", `"`+m[1]+`"`)
-	http.ServeContent(w, r, "", time.Time{}, f)
+	serveContent(w, r, time.Time{}, f)
 }

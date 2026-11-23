@@ -192,7 +192,7 @@ func (s *server) handleAudioClip(w http.ResponseWriter, r *http.Request) {
 	h.Set("Cache-Control", "private, max-age=31536000, immutable")
 	h.Set("X-Content-Type-Options", "nosniff")
 	h.Set("ETag", `"`+sha+`"`)
-	http.ServeContent(w, r, "", info.ModTime(), f)
+	serveContent(w, r, info.ModTime(), f)
 }
 
 // handleListAudioPacks serves GET /api/audio-packs: the installed audio

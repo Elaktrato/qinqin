@@ -47,7 +47,7 @@ func (s *server) handleStrokeFile(w http.ResponseWriter, r *http.Request) {
 	h.Set("X-Content-Type-Options", "nosniff") // the 404s carry it too (http.Error)
 	h.Set("Cache-Control", "public, max-age=86400")
 	h.Set("ETag", `"`+hex.EncodeToString(sum[:16])+`"`)
-	http.ServeContent(w, r, "", time.Time{}, strings.NewReader(string(data)))
+	serveContent(w, r, time.Time{}, strings.NewReader(string(data)))
 }
 
 // strokePackBody is one row of GET /api/stroke-packs: the credits of an
