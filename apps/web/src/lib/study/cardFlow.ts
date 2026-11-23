@@ -9,6 +9,10 @@ import type { LevelQueueItem } from './levelQueue';
 import { buildQueue, scheduleFor } from './scheduler';
 import { admit, cap, dayCountsCached, existingDecksOf, limitsOf, NO_LIMIT, type Candidate } from './limits';
 import type { ClozeMode } from './cloze';
+import { backfillLimit, skipKindsByEntry } from './sessionQueue';
+
+// Moved to sessionQueue.ts (#175); re-exported so existing imports keep working.
+export { backfillLimit, skipKindsByEntry };
 import { enabledKinds, type DeckSettings } from './deckSettings';
 import { buriedNow, buries, type Buried } from './siblings';
 import { cleanReadings, eligibleForTone, type Syllable, type Tone } from './tones';
@@ -197,15 +201,6 @@ export interface DeckSessionOptions {
 	studyAll?: boolean;
 }
 
-/**
- * How many dropped companions one session replaces from the reserve. A
- * deck of mostly unsuitable words would otherwise fetch every entry one
- * by one before the session could end.
- */
-export function backfillLimit(newLimit: number): number {
-	return Math.max(30, 2 * cap(newLimit));
-}
-
 /** A deck session: the queue, plus companions held back beyond the budget. */
 export interface DeckSessionPlan {
 	queue: FlowItem[];
@@ -219,18 +214,6 @@ export interface DeckSessionPlan {
 	reserve: FlowItem[];
 	/** Replacements left this session (see backfillLimit). */
 	backfillLeft: number;
-}
-
-/** Non-vocab kinds each word's vocab row says to skip. */
-export function skipKindsByEntry(cards: readonly StudyCard[]): Map<number, Set<StudyCardKind>> {
-	const out = new Map<number, Set<StudyCardKind>>();
-	for (const card of cards) {
-		if (card.kind !== 'vocab' || card.skipKinds === undefined) continue;
-		const set = out.get(card.entryId) ?? new Set<StudyCardKind>();
-		for (const kind of card.skipKinds) set.add(kind);
-		out.set(card.entryId, set);
-	}
-	return out;
 }
 
 /** The entries that have a stored vocab card. */

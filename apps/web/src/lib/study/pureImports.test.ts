@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest';
 // The planners are pure modules Android ports and #193 reuses (#175): they take
 // their constants from types.ts and limits.ts, never from the store or the
 // session setup (heavy modules with storage and network).
-const PURE = ['limits.ts', 'levelQueue.ts', 'cardFlow.ts', 'sessionOrder.ts', 'grade.ts'];
+const PURE = ['sessionQueue.ts', 'limits.ts', 'levelQueue.ts', 'cardFlow.ts', 'sessionOrder.ts', 'grade.ts'];
 
 function imports(file: string): string[] {
 	const text = readFileSync(resolve(__dirname, file), 'utf8');

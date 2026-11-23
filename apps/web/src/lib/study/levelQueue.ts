@@ -6,7 +6,7 @@
 
 import { t } from '$lib/i18n';
 import { compareCanonical } from './canonical';
-import { backfillLimit } from './cardFlow';
+import { backfillLimit } from './sessionQueue';
 import { isValidReview, scheduleFor, sortedReviews } from './scheduler';
 import { orderNew } from './newOrder';
 import { admit, cap, dayCountsCached, existingDecksOf, limitsOf, NO_LIMIT, type Candidate } from './limits';
