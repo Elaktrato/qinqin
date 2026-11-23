@@ -29,6 +29,16 @@ func TestMigration043LemmaRules(t *testing.T) {
 		VALUES ('p', 'Q', '1', 'ja', 'CC0-1.0', 'a', '{}', 'h', 't')`); err == nil {
 		t.Error("a pack id stored twice")
 	}
+	// One live pack per language: a second live row of ja is refused, an
+	// uninstalled one is not.
+	ins := `INSERT INTO lemma_rule_packs (pack_id, name, version, language, license, attribution, rules_json, content_hash, updated_at, deleted_at)
+		VALUES (?, 'N', '1', 'ja', 'CC0-1.0', 'a', '{}', 'h', 't', ?)`
+	if _, err := sqlDB.Exec(ins, "q", nil); err == nil {
+		t.Error("two live packs for ja")
+	}
+	if _, err := sqlDB.Exec(ins, "r", "t"); err != nil {
+		t.Errorf("an uninstalled pack of ja refused: %v", err)
+	}
 	for _, col := range []string{"name", "version", "language", "license", "attribution", "rules_json", "content_hash", "updated_at"} {
 		if _, err := sqlDB.Exec(`UPDATE lemma_rule_packs SET ` + col + ` = NULL WHERE pack_id = 'p'`); err == nil {
 			t.Errorf("NULL accepted in %s", col)

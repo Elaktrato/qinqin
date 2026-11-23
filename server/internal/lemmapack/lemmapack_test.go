@@ -294,3 +294,26 @@ func TestWatchReloadsOnOutsideChanges(t *testing.T) {
 	cancel()
 	<-done
 }
+
+// Reload keeps the first live pack of a language (by pack id) should two
+// ever be live (the unique index makes it impossible; Reload does not rely
+// on it).
+func TestReloadSkipsASecondPackOfALanguage(t *testing.T) {
+	sqlDB := newDB(t)
+	ctx := context.Background()
+	if _, err := sqlDB.Exec(`DROP INDEX idx_lemma_rule_packs_live_language`); err != nil {
+		t.Fatal(err)
+	}
+	for _, id := range []string{"xa-b", "xa-a"} {
+		if _, err := sqlDB.Exec(`INSERT INTO lemma_rule_packs (pack_id, name, version, language, license, attribution, rules_json, content_hash, updated_at)
+			VALUES (?, 'X', '1', 'xa', 'CC0-1.0', 'a', ?, 'h', 't')`, id, table("xa", id)); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if err := lemmapack.Reload(ctx, sqlDB); err != nil {
+		t.Fatal(err)
+	}
+	if tb := lemma.For("xa"); tb == nil || tb.Version != "xa-a" {
+		t.Errorf("For(xa) = %+v, want the table of xa-a (first by pack id)", tb)
+	}
+}

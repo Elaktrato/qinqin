@@ -2,7 +2,8 @@
 -- rules-json). lemma_rule_packs is the registry row of a pack, like
 -- theme_packs, and holds its rule table: rules_json is the pack's rules.json
 -- exactly as imported (validated by internal/lemma), content_hash its sha256.
--- At most one live pack per language (enforced by the importer, so an
+-- At most one live pack per language: the importer refuses a second one
+-- with a clear message, and the partial unique index guarantees it (an
 -- uninstalled row keeps its language).
 CREATE TABLE lemma_rule_packs (
     pack_id TEXT PRIMARY KEY,
@@ -18,4 +19,4 @@ CREATE TABLE lemma_rule_packs (
     deleted_at TEXT
 );
 
-CREATE INDEX idx_lemma_rule_packs_language ON lemma_rule_packs (language, deleted_at);
+CREATE UNIQUE INDEX idx_lemma_rule_packs_live_language ON lemma_rule_packs (language) WHERE deleted_at IS NULL;
