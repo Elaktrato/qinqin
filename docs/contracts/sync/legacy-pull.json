@@ -334,23 +334,25 @@
    }
   },
   {
-   "name": "an unknown collection stays a plain-text 400",
+   "name": "an unknown collection is 400 bad_request",
    "query": {
     "collections": "pluginData,flashcards"
    },
    "expect": {
     "status": 400,
-    "textPrefix": "sync: invalid: unknown collection"
+    "error": "bad_request",
+    "messageContains": "unknown collection"
    }
   },
   {
-   "name": "a cursor that is not RFC 3339 stays a plain-text 400",
+   "name": "a cursor that is not RFC 3339 is 400 bad_request",
    "query": {
     "cursor": "yesterday"
    },
    "expect": {
     "status": 400,
-    "text": "cursor must be RFC 3339"
+    "error": "bad_request",
+    "messageContains": "RFC 3339"
    }
   },
   {

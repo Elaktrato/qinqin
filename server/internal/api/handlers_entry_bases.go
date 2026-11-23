@@ -35,14 +35,14 @@ func (s *server) handleEntryBases(w http.ResponseWriter, r *http.Request) {
 	}
 	if err := json.NewDecoder(bytes.NewReader(body)).Decode(&req); err != nil ||
 		len(req.IDs) == 0 || len(req.IDs) > maxEntryBasesIDs {
-		http.Error(w, "ids must be 1 to 500 entry ids", http.StatusBadRequest)
+		writeError(w, http.StatusBadRequest, "bad_request", "Ids must be 1 to 500 entry ids.")
 		return
 	}
 	seen := make(map[int64]bool, len(req.IDs))
 	ids := make([]int64, 0, len(req.IDs))
 	for _, id := range req.IDs {
 		if id <= 0 {
-			http.Error(w, "ids must be 1 to 500 entry ids", http.StatusBadRequest)
+			writeError(w, http.StatusBadRequest, "bad_request", "Ids must be 1 to 500 entry ids.")
 			return
 		}
 		if !seen[id] {
@@ -53,17 +53,17 @@ func (s *server) handleEntryBases(w http.ResponseWriter, r *http.Request) {
 	store := lexicon.Store{DB: s.db}
 	es, err := store.GetMany(r.Context(), ids)
 	if err != nil {
-		http.Error(w, "internal error", http.StatusInternalServerError)
+		writeInternal(w, r)
 		return
 	}
 	list, err := entryBases(r.Context(), store, es)
 	if err != nil {
-		http.Error(w, "internal error", http.StatusInternalServerError)
+		writeInternal(w, r)
 		return
 	}
 	for i := range list {
 		if err := overlay.Apply(r.Context(), s.db, u.ID, &list[i]); err != nil {
-			http.Error(w, "internal error", http.StatusInternalServerError)
+			writeInternal(w, r)
 			return
 		}
 	}

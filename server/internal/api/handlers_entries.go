@@ -33,12 +33,12 @@ func (s *server) handleGetEntry(w http.ResponseWriter, r *http.Request) {
 	}
 	resp, err := buildEntryResponse(r.Context(), s.db, e, viewerID)
 	if err != nil {
-		http.Error(w, "internal error", http.StatusInternalServerError)
+		writeInternal(w, r)
 		return
 	}
 	if u != nil {
 		if err := overlay.Apply(r.Context(), s.db, u.ID, &resp.EntryBase); err != nil {
-			http.Error(w, "internal error", http.StatusInternalServerError)
+			writeInternal(w, r)
 			return
 		}
 	}
@@ -57,12 +57,12 @@ func (s *server) handleCharsUnderRadical(w http.ResponseWriter, r *http.Request)
 	store := lexicon.Store{DB: s.db}
 	chars, err := store.CharsUnder(r.Context(), e.ID)
 	if err != nil {
-		http.Error(w, "internal error", http.StatusInternalServerError)
+		writeInternal(w, r)
 		return
 	}
 	list, err := entryBases(r.Context(), store, chars)
 	if err != nil {
-		http.Error(w, "internal error", http.StatusInternalServerError)
+		writeInternal(w, r)
 		return
 	}
 	writeJSON(w, http.StatusOK, list)
@@ -90,31 +90,31 @@ func (s *server) handlePutEntry(w http.ResponseWriter, r *http.Request) {
 	}
 	var patch model.EntryPatch
 	if err := json.NewDecoder(bytes.NewReader(body)).Decode(&patch); err != nil {
-		http.Error(w, "malformed request body", http.StatusBadRequest)
+		writeError(w, http.StatusBadRequest, "bad_request", "Malformed request body.")
 		return
 	}
 	if patch.Written != nil && strings.TrimSpace(*patch.Written) == "" {
-		http.Error(w, "written must not be empty", http.StatusBadRequest)
+		writeError(w, http.StatusBadRequest, "bad_request", "Written must not be empty.")
 		return
 	}
 	for _, reading := range patch.Readings {
 		if strings.TrimSpace(reading.Type) == "" || strings.TrimSpace(reading.Value) == "" {
-			http.Error(w, "each reading needs a type and a value", http.StatusBadRequest)
+			writeError(w, http.StatusBadRequest, "bad_request", "Each reading needs a type and a value.")
 			return
 		}
 	}
 
 	if err := overlay.Put(r.Context(), s.db, u.ID, e.ID, patch); err != nil {
-		http.Error(w, "internal error", http.StatusInternalServerError)
+		writeInternal(w, r)
 		return
 	}
 	resp, err := buildEntryResponse(r.Context(), s.db, e, u.ID)
 	if err != nil {
-		http.Error(w, "internal error", http.StatusInternalServerError)
+		writeInternal(w, r)
 		return
 	}
 	if err := overlay.Apply(r.Context(), s.db, u.ID, &resp.EntryBase); err != nil {
-		http.Error(w, "internal error", http.StatusInternalServerError)
+		writeInternal(w, r)
 		return
 	}
 	writeJSON(w, http.StatusOK, resp)
@@ -126,16 +126,16 @@ func (s *server) handlePutEntry(w http.ResponseWriter, r *http.Request) {
 func (s *server) entryFromPath(w http.ResponseWriter, r *http.Request) (*lexicon.Entry, bool) {
 	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
 	if err != nil {
-		http.Error(w, "entry not found", http.StatusNotFound)
+		writeError(w, http.StatusNotFound, "not_found", "Entry not found.")
 		return nil, false
 	}
 	e, err := lexicon.Store{DB: s.db}.Get(r.Context(), id)
 	if errors.Is(err, lexicon.ErrNotFound) {
-		http.Error(w, "entry not found", http.StatusNotFound)
+		writeError(w, http.StatusNotFound, "not_found", "Entry not found.")
 		return nil, false
 	}
 	if err != nil {
-		http.Error(w, "internal error", http.StatusInternalServerError)
+		writeInternal(w, r)
 		return nil, false
 	}
 	return e, true
