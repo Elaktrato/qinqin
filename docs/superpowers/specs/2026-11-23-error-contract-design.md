@@ -54,7 +54,7 @@ so it must be one rule, written once.
   left alone.
   Ruling: wrap ServeContent instead of reimplementing Range handling — Range, If-Range and conditional
   requests are subtle and the standard library gets them right — cost if wrong: a future net/http that
-  writes a body before WriteHeader would slip past the wrapper (the route walk sends a bad Range to catch it).
+  writes a body before WriteHeader would slip past the wrapper (the serveContent unit test sends a Range beyond the file to catch it).
 - The SPA handler (`internal/webdist`) is not the API and keeps its text answers (a 405 on a POST to a page).
   Ruling: out of scope — it is the static web app, browsers navigate to it and never parse its body — cost if
   wrong: none for API clients.
