@@ -32,6 +32,11 @@ main flows through those refactors and stays green.
   issue); randomness the app draws from `Math.random` is seeded where a test depends on it.
 - **Functional only:** no visual snapshots, no axe scan (both decided in #157, see the plan
   `docs/superpowers/plans/2026-11-23-e2e.md`).
+- **No network** but the local server: the browser context aborts a request to any other host and the test
+  fails (`apps/web/e2e/support/fixtures.ts`).
+- **Secrets:** a failure's trace and video hold the learner's session token and, in the sign-in tests, the
+  typed password. They belong to the throw-away instance, which is deleted with the runner, and are never
+  real credentials. The server logs were checked to contain no token or password.
 - **The gate:** the whole suite runs in CI on every push and pull request (the `e2e` job of
   `.github/workflows/build.yml`) and blocks like the unit tests.
 
@@ -63,7 +68,9 @@ Not allowed:
 ## Enforcement
 
 - The `e2e` job in `.github/workflows/build.yml` runs the suite.
-- `apps/web/e2e/tests/conventions.spec.ts` fails on a fixed sleep in a spec and on retries in the config.
+- `apps/web/e2e/tests/conventions.spec.ts` fails on a fixed sleep in a spec, and on a retry setting in the
+  config, a spec, the support code or the CI command.
+- The network guard in `apps/web/e2e/support/fixtures.ts` fails a test that reaches another host.
 - `npm run check` type-checks the suite (`tsc -p e2e`).
 - Review: shared data between tests, network access, and selectors by CSS class instead of role or text.
 

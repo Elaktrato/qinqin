@@ -59,16 +59,17 @@ It needs Go and Node, and `npm --prefix apps/web ci` once:
 ```sh
 cd apps/web
 npx playwright install chromium   # once per Playwright version; CI adds --with-deps
-npm run build                      # the SPA the binary embeds (built when missing)
-npm run e2e                        # about 15 s with 2 workers after the first Go build
+npm run e2e                        # builds the SPA and the binary, then runs the suite
 npm run e2e -- study               # one spec file
 npm run e2e -- --headed --debug    # watch and step through
 ```
 
-- The global setup copies `server/` to a scratch directory, embeds `apps/web/build` and runs `go build` (your
-  checkout is not modified), then seeds a template data directory from the tiny packs in
-  `apps/web/e2e/fixtures/packs` and adds an admin. `QINQIN_E2E_BINARY=/path/to/qinqin` skips the build. Run
-  `npm run build` again after changing the web app: the suite tests what is in `apps/web/build`.
+- The global setup runs `npm run build`, copies `server/` to a scratch directory, embeds `apps/web/build` and
+  runs `go build` (your checkout is not modified), then seeds a template data directory from the tiny packs in
+  `apps/web/e2e/fixtures/packs` and adds an admin. The tests take about 20 s with 2 workers; the web build and
+  the first Go build add to that. `QINQIN_E2E_REUSE_BUILD=1` reuses the existing `apps/web/build` instead of
+  building it (CI sets it after its own web build); `QINQIN_E2E_BINARY=/path/to/qinqin` skips both builds and
+  runs that binary (a build with a deliberate mutation, for example).
 - Each worker runs its own server on a free loopback port over a copy of the template, with
   `QINQIN_AUTO_SEED=0` and no AI, mail or other network; each test signs in as a new user of its own.
 - A browser other than the one the pinned `@playwright/test` version installs:
@@ -77,7 +78,10 @@ npm run e2e -- --headed --debug    # watch and step through
   `npx playwright show-trace <file>`), with each worker's server log (`server-w<N>.log`). `--trace off` skips
   the traces locally.
 - The rules: role and text locators, no fixed sleeps (wait for a condition), no retries, data written through
-  the API; `tests/conventions.spec.ts` checks the first two. `npm run check` type-checks the suite.
+  the API, no network but the local server (a request to any other host fails the test);
+  `tests/conventions.spec.ts` checks the sleeps and the retries.
+- A failure's trace holds the learner's session token and, in the sign-in tests, the password typed: they
+  belong to the throw-away instance and die with it, but do not reuse those names or passwords anywhere. `npm run check` type-checks the suite.
 
 Covered: signing in and out (and a wrong password); registration in open mode; search and adding a word to
 study; switching the workspace; a study session mixing two card types (#132) and changing grades with Z and
@@ -122,7 +126,8 @@ the record before changing the structure it covers; an issue that changes a rule
 `.github/workflows/build.yml` runs on pushes to `main` and `develop`, on `v*` tags and on pull requests into `main` and `develop`:
 
 1. **test**: source and script checks (`check-sources.mjs`, `node --test scripts/*.test.mjs`), the seed archive check (`scripts/check-archives.sh`), web check and tests, the font pack script test, `go vet` and `go test` with Tesseract installed and `QINQIN_REQUIRE_TESSERACT=1`, the web build, and the embed smoke test (`scripts/smoke-embed.sh`: the real binary with the real SPA, asserted through HTTP).
-2. **e2e** (beside `test`): installs Chromium, builds the web app and runs the browser end-to-end suite
+2. **e2e** (beside `test`): installs Chromium (cached per Playwright version; its system libraries every run),
+   builds the web app and runs the browser end-to-end suite
    (`npm run e2e`; above). On a failure the traces, screenshots, videos, the HTML report and the server logs
    are uploaded as the `e2e-failure` artifact, kept 7 days.
 3. **image** (pushes to `main` and `v*` tags only, after `test` and `e2e`): builds and pushes `ghcr.io/elaktrato/qinqin` with the tags `latest` (from `main`), the version tag and `sha-<commit>`.

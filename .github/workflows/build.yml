@@ -91,16 +91,30 @@ jobs:
       - name: Install web dependencies
         working-directory: apps/web
         run: npm ci
-      # The browser of the pinned @playwright/test version, with its system libraries.
+      # The browser of the pinned @playwright/test version: cached per version;
+      # its system libraries are installed every time (they are not cached).
+      - name: Playwright version
+        id: playwright
+        working-directory: apps/web
+        run: echo "version=$(node -p "require('@playwright/test/package.json').version")" >> "$GITHUB_OUTPUT"
+      - uses: actions/cache@v6
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ steps.playwright.outputs.version }}
       - name: Install Chromium
         working-directory: apps/web
-        run: npx playwright install --with-deps chromium
+        run: |
+          npx playwright install chromium
+          npx playwright install-deps chromium
       - name: Build web
         working-directory: apps/web
         run: npm run build
-      # The global setup builds the binary from server/ with this build embedded.
+      # The global setup builds the binary from server/ with this build embedded
+      # (QINQIN_E2E_REUSE_BUILD: the web build above, not a second one).
       - name: End-to-end tests
         working-directory: apps/web
+        env:
+          QINQIN_E2E_REUSE_BUILD: "1"
         run: npm run e2e
       - name: Upload the failure artifacts
         if: failure()
