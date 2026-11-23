@@ -57,23 +57,15 @@ func typedBody(c string, items ...json.RawMessage) chinsync.PushBody {
 	return b
 }
 
-func typedCount(d chinsync.Delta, c string) int {
+func typedCount(d delta, c string) int {
 	return map[string]int{"cards": len(d.Cards), "decks": len(d.Decks), "deckSettings": len(d.DeckSettings),
 		"limits": len(d.Limits), "fsrsSets": len(d.FsrsSets), "fsrsActive": len(d.FsrsActive)}[c]
 }
 
 func TestTypedCollectionNames(t *testing.T) {
 	for _, c := range studyCollections {
-		if !slices.Contains(chinsync.Collections, c) {
-			t.Errorf("Collections lacks %s", c)
-		}
-		if only, err := chinsync.ParseCollections(c); err != nil || !only[c] {
-			t.Errorf("ParseCollections(%s) = %v, %v", c, only, err)
-		}
-	}
-	for _, bad := range []string{"card", "Cards", "pluginData,deck"} {
-		if _, err := chinsync.ParseCollections(bad); !errors.Is(err, chinsync.ErrInvalid) {
-			t.Errorf("ParseCollections(%q) err = %v, want ErrInvalid", bad, err)
+		if !slices.Contains(chinsync.V2Collections, c) {
+			t.Errorf("V2Collections lacks %s", c)
 		}
 	}
 }
@@ -107,8 +99,8 @@ func TestPushAndPullEachTypedCollection(t *testing.T) {
 			if _, err := chinsync.Push(ctx, sqlDB, bob, typedBody(c, typedItem(c, bobWS, "b1", at))); err != nil {
 				t.Fatal(err)
 			}
-			only, _ := chinsync.ParseCollections(c)
-			d, err := pullDelta(ctx, sqlDB, alice, time.Time{}, only)
+			only := map[string]bool{c: true}
+			d, err := pullDelta(ctx, sqlDB, alice, false, only)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -125,22 +117,22 @@ func TestPushAndPullEachTypedCollection(t *testing.T) {
 				t.Errorf("pull %s shipped pluginData %+v", c, d.PluginData)
 			}
 			// Bob's full pull holds only his row.
-			d, _ = pullDelta(ctx, sqlDB, bob, time.Time{}, nil)
+			d, _ = pullDelta(ctx, sqlDB, bob, false, nil)
 			raw, _ := json.Marshal(d)
 			if typedCount(d, c) != 1 || bytes.Contains(raw, []byte(`"x1"`)) || bytes.Contains(raw, []byte(fmt.Sprintf(`"workspaceId":%d`, ws))) {
 				t.Errorf("bob's pull: %s", raw)
 			}
-			// A tombstone ships from a non-zero cursor only.
+			// A tombstone ships only when asked for (tombstones=1 or since).
 			del := at.Add(time.Second)
 			item := strings.Replace(string(typedItem(c, ws, "x1", at.Add(time.Second))), `"extra":{}`, `"extra":{},"deletedAt":"`+del.Format(time.RFC3339)+`"`, 1)
 			if res, err := chinsync.Push(ctx, sqlDB, alice, typedBody(c, json.RawMessage(item))); err != nil || res.DataAccepted != 1 {
 				t.Fatalf("tombstone push = %+v, %v", res, err)
 			}
-			if d, _ := pullDelta(ctx, sqlDB, alice, time.Time{}, only); typedCount(d, c) != 0 {
-				t.Errorf("zero-cursor pull shipped a tombstone")
+			if d, _ := pullDelta(ctx, sqlDB, alice, false, only); typedCount(d, c) != 0 {
+				t.Errorf("a live-only pull shipped a tombstone")
 			}
-			if d, _ := pullDelta(ctx, sqlDB, alice, time.Unix(0, 0), only); typedCount(d, c) != 1 {
-				t.Errorf("1970 pull lacks the tombstone")
+			if d, _ := pullDelta(ctx, sqlDB, alice, true, only); typedCount(d, c) != 1 {
+				t.Errorf("a pull with tombstones lacks the tombstone")
 			}
 		})
 	}
@@ -215,7 +207,7 @@ func TestMixedPush(t *testing.T) {
 	if err != nil || res.EventsAccepted != 1 || res.DataAccepted != 3 {
 		t.Fatalf("mixed push = %+v, %v; want 1 event and 3 data rows", res, err)
 	}
-	d, _ := pullDelta(ctx, sqlDB, alice, time.Time{}, nil)
+	d, _ := pullDelta(ctx, sqlDB, alice, false, nil)
 	if len(d.Cards) != 1 || len(d.Decks) != 1 || len(d.PluginData) != 1 || d.PluginData[0].Key != "known:5" {
 		t.Errorf("pull after mixed push: cards %d decks %d pluginData %+v", len(d.Cards), len(d.Decks), d.PluginData)
 	}
@@ -252,20 +244,17 @@ func TestTypedCollectionsOverHTTP(t *testing.T) {
 	if resp.StatusCode != http.StatusBadRequest {
 		t.Errorf("malformed typed push status %d, want 400", resp.StatusCode)
 	}
-	resp = call(http.MethodGet, "/api/sync/pull?collections=cards", "")
-	var generic map[string]json.RawMessage
-	json.NewDecoder(resp.Body).Decode(&generic)
-	resp.Body.Close()
-	for _, c := range studyCollections {
-		v, ok := generic[c]
-		if !ok {
-			t.Errorf("pull lacks %s", c)
-			continue
-		}
-		if c != "cards" && string(v) != "[]" {
-			t.Errorf("%s = %s, want []", c, v)
-		}
+	// a paged pull ships rows stamped before its own second
+	if _, err := sqlDB.Exec(`UPDATE study_cards SET updated_at = '2026-01-01T00:00:00Z'`); err != nil {
+		t.Fatal(err)
 	}
+	resp = call(http.MethodGet, "/api/sync/pull?v=2&collections=cards", "")
+	var page struct {
+		Collections map[string]json.RawMessage `json:"collections"`
+	}
+	json.NewDecoder(resp.Body).Decode(&page)
+	resp.Body.Close()
+	generic := page.Collections
 	var cards []map[string]json.RawMessage
 	json.Unmarshal(generic["cards"], &cards)
 	if len(cards) != 1 {

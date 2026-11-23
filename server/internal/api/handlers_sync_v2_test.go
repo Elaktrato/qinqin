@@ -117,11 +117,9 @@ func TestSyncPullV2Handler(t *testing.T) {
 		if ct := h.Get("Content-Type"); ct != "application/json" {
 			t.Errorf("Content-Type %q", ct)
 		}
-		st, _, body = get(t, ts.URL, "/api/sync/pull", alice)
-		top = nil
-		json.Unmarshal(body, &top)
-		if st != http.StatusOK || top["format"] != nil || top["pluginData"] == nil {
-			t.Errorf("legacy answer: %d %s", st, body[:min(len(body), 200)])
+		// without v=2: the removed legacy form (legacy_removed_test.go)
+		if st, _, body = get(t, ts.URL, "/api/sync/pull", alice); st != http.StatusNotFound {
+			t.Errorf("legacy form: %d %s, want 404", st, body[:min(len(body), 200)])
 		}
 	})
 

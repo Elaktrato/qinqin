@@ -23,7 +23,8 @@ import (
 //     their book's workspace, library tombstones the logged workspace_id;
 //   - overlays and own sentences ship only for entries of the round's
 //     languages (?8);
-//   - lookup events never ship.
+//   - lookup events never ship, nor study-namespace plugin rows of a
+//     typed family (leftovers).
 // Row shapes: docs/contracts/sync/pull-page.json.
 
 // PullPage answers one v2 pull request of userID over the caller's own
@@ -68,10 +69,14 @@ func v2Segments() []segment {
 		{coll: "pluginData", table: "plugin_data", stamp: "updated_at", tomb: true,
 			cols: "pack_id, key, user_id, workspace_id, data, version, updated_at, deleted_at",
 			extra: func(ws int64) string {
+				// a leftover study-namespace row of a typed family (an old
+				// binary's write the start could not adopt) is never shipped:
+				// those rows are typed collections only (#198)
+				typed := " AND NOT (pack_id = '" + rows.Namespace + "' AND " + study.LegacyKeySQL + ")"
 				if ws == 0 {
-					return ""
+					return typed
 				}
-				return " AND (workspace_id IS NULL OR workspace_id = ?7)"
+				return typed + " AND (workspace_id IS NULL OR workspace_id = ?7)"
 			}, encode: encodePluginData},
 	}
 	for _, f := range rows.Families {

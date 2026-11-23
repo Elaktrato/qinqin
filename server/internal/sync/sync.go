@@ -39,37 +39,6 @@ var (
 	ErrStoredUnreadable = errors.New("sync: stored row unreadable")
 )
 
-// Delta is the legacy pull answer (StreamLegacy writes it row by row; a
-// client may decode it into this type). Every collection is non-nil. The
-// lexicon collections (Entries, Links, Senses, LevelMembers, Dictionaries,
-// Schemes, Levels) moved to data packages (GET /api/packages) and are
-// always []; Sentences are the caller's own; plugin data, states, overlays
-// and the typed study rows are the caller's. Rows carry updated_at and,
-// when removed, deleted_at.
-type Delta struct {
-	Cursor       time.Time           `json:"cursor"`
-	Entries      []json.RawMessage   `json:"entries"`
-	Links        []json.RawMessage   `json:"links"`
-	Senses       []json.RawMessage   `json:"senses"`
-	LevelMembers []json.RawMessage   `json:"levelMembers"`
-	Sentences    []model.Sentence    `json:"sentences"`
-	PluginData   []model.PluginData  `json:"pluginData"`
-	PluginStates []model.PluginState `json:"pluginStates"`
-	Overlays     []Overlay           `json:"overlays"`
-	Dictionaries []json.RawMessage   `json:"dictionaries"`
-	Schemes      []json.RawMessage   `json:"schemes"`
-	Levels       []json.RawMessage   `json:"levels"`
-
-	// The caller's typed study rows (docs/contracts/study/), last-write-wins
-	// per row with tombstones, like plugin data.
-	Cards        []rows.Card            `json:"cards"`
-	Decks        []rows.Deck            `json:"decks"`
-	DeckSettings []rows.DeckSettingsRow `json:"deckSettings"`
-	Limits       []rows.LimitsRow       `json:"limits"`
-	FsrsSets     []rows.FsrsSet         `json:"fsrsSets"`
-	FsrsActive   []rows.FsrsActiveRow   `json:"fsrsActive"`
-}
-
 // Overlay is one of the caller's per-user entry edits (user_edits row):
 // nil Written and nil Readings are untouched fields, as in
 // model.EntryPatch.
@@ -123,8 +92,9 @@ type PushResult struct {
 	EventDuplicates int `json:"eventDuplicates"`
 	DataAccepted    int `json:"dataAccepted"`
 	DataSkipped     int `json:"dataSkipped"`
-	// DataRefused counts rows of plugins that do not declare owns-data;
-	// they are not applied, the rest of the push is.
+	// DataRefused counts rows of plugins that do not declare owns-data
+	// and study-namespace rows of a typed family; they are not applied,
+	// the rest of the push is.
 	DataRefused int `json:"dataRefused"`
 }
 
@@ -149,9 +119,8 @@ type typedItem struct {
 // does not declare owns-data is refused alone (DataRefused): the events
 // and every other row still apply.
 //
-// A qinqin-flashcards row of a typed study family (an old web shell's write)
-// goes through the legacy view to its typed table under the same rule; a row
-// the codec cannot read, or one without a workspace, is refused alone.
+// A qinqin-flashcards row of a typed study family (card:, deck:, ...) is
+// refused alone: those rows travel as typed collections only (#198).
 func Push(ctx context.Context, sqlDB *sql.DB, userID int64, body PushBody) (PushResult, error) {
 	owned := map[int64]bool{}
 	checkWorkspace := func(id int64) error {
@@ -254,26 +223,8 @@ func Push(ctx context.Context, sqlDB *sql.DB, userID int64, body PushBody) (Push
 		}
 		if row.PluginID == rows.Namespace {
 			if _, typed := rows.FamilyOf(row.Key); typed {
-				// The legacy view: an old web shell's study row goes to its
-				// typed table; one the codec refuses is refused alone.
-				applied, err := study.ApplyLegacy(ctx, sqlDB, userID, row, editTime(row))
-				switch {
-				case errors.Is(err, rows.ErrUnreadable), errors.Is(err, study.ErrUnreadableStored):
-					// a row the codec refuses, or one whose stored row this
-					// server cannot read back: refused alone
-					res.DataRefused++
-					continue
-				case errors.Is(err, study.ErrNoTypedRow):
-					// a deletion of a leftover row: plugin data as before
-				case err != nil:
-					return res, fmt.Errorf("sync push: %w", err)
-				case applied:
-					res.DataAccepted++
-					continue
-				default:
-					res.DataSkipped++
-					continue
-				}
+				res.DataRefused++ // a typed study row as plugin data: never stored
+				continue
 			}
 		}
 		applied, err := applyData(ctx, sqlDB, userID, row)

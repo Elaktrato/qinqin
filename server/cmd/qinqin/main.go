@@ -226,8 +226,9 @@ func serve(ctx context.Context, data string, listen func() (net.Listener, error)
 	}
 	// Study rows an older (downgraded) binary wrote as plugin data after
 	// migration 038 move into the typed tables; idempotent and per row.
-	// A failure is logged, never fatal: the rows stay where the legacy view
-	// serves them, and the next start tries again (also after a signal).
+	// A failure is logged, never fatal: the rows stay in plugin_data (no
+	// client reads them there), and the next start tries again (also after
+	// a signal).
 	if _, err := study.AdoptLeftovers(ctx, sqlDB); err != nil {
 		log.Printf("study: adopting study rows left in plugin_data: %v", err)
 	}
@@ -417,7 +418,7 @@ func waitStep(name string, done <-chan struct{}, deadline time.Time, logf func(s
 // 125 s (longer than Caddy's 2-minute upstream keep-alive, so the proxy
 // closes first), so slow-header connections cannot pile up. There is deliberately no
 // ReadTimeout or WriteTimeout: uploads, package downloads and the streamed
-// legacy pull set their own deadlines (api stream_deadline.go).
+// full event list set their own deadlines (api stream_deadline.go).
 func newHTTPServer(h http.Handler) *http.Server {
 	return &http.Server{
 		Handler:           h,

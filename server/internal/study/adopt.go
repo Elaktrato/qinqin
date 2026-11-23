@@ -19,7 +19,7 @@ import (
 // binary downgrade, which is unsupported) gets the same treatment at every
 // start. Each row moves in its own transaction, so a failure leaves every
 // other row where it is. A shadowed, unreadable, user-global or foreign-
-// workspace row stays untouched (the legacy view serves it as before). A row
+// workspace row stays untouched (no client reads it; #198). A row
 // that fails to move is logged and left (Failed), so one bad row never stops
 // the server; a shadowed leftover edited after its typed row (an old binary's
 // change the new clients do not see) is counted (NewerShadowed) and logged.

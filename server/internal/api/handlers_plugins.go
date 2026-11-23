@@ -5,8 +5,10 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+	"slices"
 	"strconv"
 
+	"qinqin/internal/model"
 	"qinqin/internal/plugins"
 	"qinqin/internal/study/rows"
 )
@@ -121,6 +123,22 @@ func (s *server) pluginWorkspace(w http.ResponseWriter, r *http.Request, userID 
 	return &id, true
 }
 
+// typedStudyKey answers 404 for a key of the study namespace that belongs
+// to a typed study family (cards, decks, deck settings, limits, FSRS sets,
+// the active set): those rows are typed rows of the sync pull and push
+// (docs/contracts/study/), never plugin data, and the v0.3.x view of them
+// is gone (#198). True when it answered.
+func typedStudyKey(w http.ResponseWriter, pluginID, key string) bool {
+	if pluginID != rows.Namespace {
+		return false
+	}
+	if _, typed := rows.FamilyOf(key); !typed {
+		return false
+	}
+	writeError(w, http.StatusNotFound, "not_found", "Study rows of this key are typed rows of GET /api/sync/pull?v=2 and POST /api/sync/push, not plugin data.")
+	return true
+}
+
 // handleGetPluginData serves GET /api/plugins/{id}/data/{key}: the
 // caller's stored value for that key, scoped like the write was.
 // Tombstoned and never-stored keys alike read 404.
@@ -133,7 +151,7 @@ func (s *server) handleGetPluginData(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	if legacyKey(r.PathValue("id"), r.PathValue("key"), workspaceID) && s.legacyGet(w, r, u.ID, *workspaceID, r.PathValue("key")) {
+	if typedStudyKey(w, r.PathValue("id"), r.PathValue("key")) {
 		return
 	}
 	d, err := plugins.GetData(r.Context(), s.db, u.ID, workspaceID, r.PathValue("id"), r.PathValue("key"))
@@ -176,11 +194,12 @@ func (s *server) handleListPluginData(w http.ResponseWriter, r *http.Request) {
 		writeInternal(w, r)
 		return
 	}
-	if pluginID == rows.Namespace && workspaceID != nil {
-		if list, err = s.mergeLegacyList(r, u.ID, *workspaceID, prefix, list); err != nil {
-			writeInternal(w, r)
-			return
-		}
+	if pluginID == rows.Namespace {
+		// a leftover row of a typed family is no plugin data (typedStudyKey)
+		list = slices.DeleteFunc(list, func(d model.PluginData) bool {
+			_, typed := rows.FamilyOf(d.Key)
+			return typed
+		})
 	}
 	writeJSON(w, http.StatusOK, list)
 }
@@ -203,6 +222,9 @@ func (s *server) handlePutPluginData(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
+	if typedStudyKey(w, pluginID, key) {
+		return
+	}
 	body, ok := readBody(w, r, maxPluginDataValue)
 	if !ok {
 		return
@@ -222,10 +244,6 @@ func (s *server) handlePutPluginData(w http.ResponseWriter, r *http.Request) {
 	}
 	if !allowed {
 		writeError(w, http.StatusForbidden, "plugin_no_data", "Plugin does not declare owns-data.")
-		return
-	}
-	if _, typed := rows.FamilyOf(key); typed && pluginID == rows.Namespace {
-		s.legacyPut(w, r, u.ID, workspaceID, key, body)
 		return
 	}
 	d, err := plugins.PutDataRow(r.Context(), s.db, u.ID, workspaceID, pluginID, key, json.RawMessage(body), nil)
@@ -250,6 +268,9 @@ func (s *server) handleDeletePluginData(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 	pluginID := r.PathValue("id")
+	if typedStudyKey(w, pluginID, r.PathValue("key")) {
+		return
+	}
 	exists, allowed, err := plugins.CanWriteData(r.Context(), s.db, pluginID)
 	if err != nil {
 		writeInternal(w, r)
@@ -261,9 +282,6 @@ func (s *server) handleDeletePluginData(w http.ResponseWriter, r *http.Request) 
 	}
 	if !allowed {
 		writeError(w, http.StatusForbidden, "plugin_no_data", "Plugin does not declare owns-data.")
-		return
-	}
-	if legacyKey(pluginID, r.PathValue("key"), workspaceID) && s.legacyDelete(w, r, u.ID, *workspaceID, r.PathValue("key")) {
 		return
 	}
 	err = plugins.DeleteData(r.Context(), s.db, u.ID, workspaceID, pluginID, r.PathValue("key"))

@@ -1,7 +1,6 @@
 // Package sync_test exercises delta sync over a real SQLite database:
-// the pull (every row changed since a cursor, tombstones included) and
-// the push (idempotent events, last-write-wins plugin data), through the
-// library and over real HTTP.
+// the paged pull and the push (idempotent events, last-write-wins plugin
+// data and typed rows), through the library and over real HTTP.
 package sync_test
 
 import (
@@ -10,6 +9,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"path/filepath"
@@ -22,6 +22,7 @@ import (
 	"qinqin/internal/lang"
 	"qinqin/internal/model"
 	"qinqin/internal/plugins"
+	"qinqin/internal/study/rows"
 	chinsync "qinqin/internal/sync"
 )
 
@@ -74,20 +75,71 @@ func newWorkspace(t *testing.T, sqlDB *sql.DB, userID int64) int64 {
 	return id
 }
 
-// pullDelta runs the legacy pull (StreamLegacy) and decodes its answer.
-func pullDelta(ctx context.Context, sqlDB *sql.DB, userID int64, cursor time.Time, only map[string]bool) (chinsync.Delta, error) {
-	var buf bytes.Buffer
-	if err := chinsync.StreamLegacy(ctx, &buf, sqlDB, userID, cursor, only); err != nil {
-		return chinsync.Delta{}, err
-	}
-	var d chinsync.Delta
-	err := json.Unmarshal(buf.Bytes(), &d)
-	return d, err
+// delta is what the push tests read back: one full paged round (sync.PullPage)
+// of the caller's plugin data and typed study rows.
+type delta struct {
+	PluginData   []model.PluginData     `json:"pluginData"`
+	Cards        []rows.Card            `json:"cards"`
+	Decks        []rows.Deck            `json:"decks"`
+	DeckSettings []rows.DeckSettingsRow `json:"deckSettings"`
+	Limits       []rows.LimitsRow       `json:"limits"`
+	FsrsSets     []rows.FsrsSet         `json:"fsrsSets"`
+	FsrsActive   []rows.FsrsActiveRow   `json:"fsrsActive"`
 }
 
-func mustPull(t *testing.T, sqlDB *sql.DB, userID int64, cursor time.Time) chinsync.Delta {
+// pullDelta pulls a full paged round of userID: live rows only, or
+// tombstones too when withTombstones; only limits the collections (nil:
+// all). The round's clock runs a minute ahead, so rows written this second
+// are in it.
+func pullDelta(ctx context.Context, sqlDB *sql.DB, userID int64, withTombstones bool, only map[string]bool) (delta, error) {
+	d := delta{}
+	req := chinsync.PageRequest{Only: only, Tombstones: withTombstones, Now: time.Now().Add(time.Minute)}
+	for {
+		page, err := chinsync.PullPage(ctx, sqlDB, userID, req, nil)
+		if err != nil {
+			return delta{}, err
+		}
+		for name, raw := range page.Collections {
+			switch name {
+			case "pluginData":
+				err = appendTo(&d.PluginData, raw)
+			case "cards":
+				err = appendTo(&d.Cards, raw)
+			case "decks":
+				err = appendTo(&d.Decks, raw)
+			case "deckSettings":
+				err = appendTo(&d.DeckSettings, raw)
+			case "limits":
+				err = appendTo(&d.Limits, raw)
+			case "fsrsSets":
+				err = appendTo(&d.FsrsSets, raw)
+			case "fsrsActive":
+				err = appendTo(&d.FsrsActive, raw)
+			}
+			if err != nil {
+				return delta{}, fmt.Errorf("%s: %w", name, err)
+			}
+		}
+		if !page.More || page.Next == nil {
+			return d, nil
+		}
+		req = chinsync.PageRequest{Page: *page.Next, Now: req.Now}
+	}
+}
+
+// appendTo decodes a JSON array and appends it to list.
+func appendTo[T any](list *[]T, raw json.RawMessage) error {
+	var page []T
+	if err := json.Unmarshal(raw, &page); err != nil {
+		return err
+	}
+	*list = append(*list, page...)
+	return nil
+}
+
+func mustPull(t *testing.T, sqlDB *sql.DB, userID int64) delta {
 	t.Helper()
-	d, err := pullDelta(context.Background(), sqlDB, userID, cursor, nil)
+	d, err := pullDelta(context.Background(), sqlDB, userID, false, nil)
 	if err != nil {
 		t.Fatalf("pull: %v", err)
 	}
@@ -221,36 +273,6 @@ func TestSyncEndpoints(t *testing.T) {
 			t.Fatalf("%s %s: %v", method, path, err)
 		}
 		return resp
-	}
-
-	// The lexicon is in data packages now: a full legacy pull keeps its
-	// keys, empty, and still ships the caller's rows.
-	resp = call(http.MethodGet, "/api/sync/pull", nil)
-	var delta chinsync.Delta
-	if resp.StatusCode != http.StatusOK || json.NewDecoder(resp.Body).Decode(&delta) != nil || len(delta.Entries) != 0 ||
-		delta.Entries == nil || len(delta.Sentences) != 0 {
-		t.Fatalf("pull status = %d entries = %d sentences = %d, want 200 without the lexicon and pack sentences",
-			resp.StatusCode, len(delta.Entries), len(delta.Sentences))
-	}
-	resp.Body.Close()
-
-	resp = call(http.MethodGet, "/api/sync/pull?collections=pluginData,pluginStates", nil)
-	var subset chinsync.Delta
-	if resp.StatusCode != http.StatusOK || json.NewDecoder(resp.Body).Decode(&subset) != nil ||
-		len(subset.Entries) != 0 || len(subset.Senses) != 0 || len(subset.Sentences) != 0 {
-		t.Fatalf("collections pull status = %d entries = %d, want 200 with only the requested collections", resp.StatusCode, len(subset.Entries))
-	}
-	resp.Body.Close()
-	resp = call(http.MethodGet, "/api/sync/pull?collections=pluginData,bogus", nil)
-	resp.Body.Close()
-	if resp.StatusCode != http.StatusBadRequest {
-		t.Errorf("unknown collection status = %d, want 400", resp.StatusCode)
-	}
-
-	resp = call(http.MethodGet, "/api/sync/pull?cursor=garbage", nil)
-	resp.Body.Close()
-	if resp.StatusCode != http.StatusBadRequest {
-		t.Errorf("bad cursor status = %d, want 400", resp.StatusCode)
 	}
 
 	resp = call(http.MethodPost, "/api/sync/push", map[string]any{"events": []any{

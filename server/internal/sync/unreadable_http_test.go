@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
-	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -43,14 +42,6 @@ func TestUnreadableStoredRowOverHTTP(t *testing.T) {
 	status, body := call(http.MethodPost, "/api/sync/push", string(push))
 	if status != http.StatusConflict || string(body["error"]) != `"study_row_unreadable"` || len(body["message"]) == 0 {
 		t.Errorf("push onto an unreadable stored row: %d %v, want 409 study_row_unreadable", status, body)
-	}
-	status, body = call(http.MethodPut, "/api/plugins/qinqin-flashcards/data/deck:d9?workspace="+strconv.FormatInt(ws, 10), `{"id":"d9","name":"x","createdAt":"t"}`)
-	if status != http.StatusConflict || string(body["error"]) != `"study_row_unreadable"` {
-		t.Errorf("legacy PUT onto an unreadable stored row: %d %v, want 409 study_row_unreadable", status, body)
-	}
-	status, _ = call(http.MethodGet, "/api/plugins/qinqin-flashcards/data/deck:d9?workspace="+strconv.FormatInt(ws, 10), "")
-	if status != http.StatusNotFound {
-		t.Errorf("legacy GET of an unreadable stored row: %d, want 404 (held, not shown)", status)
 	}
 	status, body = call(http.MethodGet, "/api/sync/pull?v=2&collections=decks", "")
 	if status != http.StatusOK || string(body["collections"]) != `{"decks":[]}` {

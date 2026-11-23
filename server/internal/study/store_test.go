@@ -196,7 +196,7 @@ func TestApplyBumpsVersionAndRefusesInvalid(t *testing.T) {
 	}
 }
 
-func TestPullCursorTombstonesOrderAndIsolation(t *testing.T) {
+func TestGetAndListCardsSkipTombstonesAndOtherUsers(t *testing.T) {
 	sqlDB := openDB(t)
 	ctx := context.Background()
 	apply(t, sqlDB, 1, card(t, 7, "c-b", 2), "2026-11-01T10:00:00Z", false)
@@ -207,43 +207,6 @@ func TestPullCursorTombstonesOrderAndIsolation(t *testing.T) {
 	apply(t, sqlDB, 2, card(t, 9, "c-a", 1), "2026-11-01T10:00:00Z", false)
 	deck := decodeBody(t, rows.Decks, json.RawMessage(`{"id":"d1","name":"n","createdAt":"t","source":null,"extra":{}}`), 7, "2026-11-01T00:00:00Z")
 	apply(t, sqlDB, 1, deck, "2026-11-01T12:00:00Z", false)
-
-	ids := func(d study.Delta) []string {
-		var out []string
-		for _, c := range d.Cards {
-			out = append(out, c.ID+"@"+c.UpdatedAt.Format("15:04")+del(c.DeletedAt))
-		}
-		return out
-	}
-	d, err := study.Pull(ctx, sqlDB, 1, time.Time{}, nil)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if got := ids(d); !equal(got, []string{"c-a@09:00", "c-a@10:00", "c-b@10:00"}) {
-		t.Errorf("zero cursor cards = %v (live only, by updated_at then workspace then id)", got)
-	}
-	if len(d.Decks) != 1 || d.DeckSettings == nil || d.Limits == nil || d.FsrsSets == nil || d.FsrsActive == nil {
-		t.Errorf("delta %+v: decks or nil collections", d)
-	}
-	d, _ = study.Pull(ctx, sqlDB, 1, ts(t, "1970-01-01T00:00:00Z"), nil)
-	if got := ids(d); !equal(got, []string{"c-a@09:00", "c-a@10:00", "c-b@10:00", "c-gone@11:00x"}) {
-		t.Errorf("1970 cursor cards = %v (tombstones ship)", got)
-	}
-	d, _ = study.Pull(ctx, sqlDB, 1, ts(t, "2026-11-01T10:00:00Z"), nil)
-	if got := ids(d); !equal(got, []string{"c-a@10:00", "c-b@10:00", "c-gone@11:00x"}) {
-		t.Errorf("cursor 10:00 cards = %v (inclusive second)", got)
-	}
-	d, _ = study.Pull(ctx, sqlDB, 1, time.Time{}, map[rows.Family]bool{rows.Decks: true})
-	if len(d.Cards) != 0 || d.Cards == nil || len(d.Decks) != 1 {
-		t.Errorf("decks-only pull: cards %v decks %v", d.Cards, d.Decks)
-	}
-	d, _ = study.Pull(ctx, sqlDB, 2, ts(t, "1970-01-01T00:00:00Z"), nil)
-	if got := ids(d); !equal(got, []string{"c-a@10:00"}) || len(d.Decks) != 0 {
-		t.Errorf("user 2 pull = %v decks %d", got, len(d.Decks))
-	}
-	if d.Cards[0].WorkspaceID != 9 {
-		t.Errorf("user 2 card workspace %d", d.Cards[0].WorkspaceID)
-	}
 
 	// Get and ListCards skip tombstones and other users.
 	if _, ok, _ := study.Get(ctx, sqlDB, 1, 7, rows.Cards, "c-gone"); ok {
