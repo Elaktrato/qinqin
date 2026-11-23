@@ -44,3 +44,21 @@ func readRepoFile(t *testing.T, rel string) string {
 	}
 	return string(b)
 }
+
+// docker stop sends SIGTERM and kills after the stop grace period. serve
+// needs httpGrace for requests in flight plus backgroundGrace for the
+// workers (#170); the compose file must allow both with a margin.
+func TestComposeAllowsTheShutdown(t *testing.T) {
+	compose := readRepoFile(t, "docker-compose.yml")
+	m := regexp.MustCompile(`(?m)^\s+stop_grace_period:\s*(\d+)s\s*$`).FindStringSubmatch(compose)
+	if m == nil {
+		t.Fatal("docker-compose.yml sets no stop_grace_period (Docker's default 10 s kills serve mid-shutdown)")
+	}
+	var secs int
+	for _, c := range m[1] {
+		secs = secs*10 + int(c-'0')
+	}
+	if need := int((httpGrace + backgroundGrace).Seconds()) + 5; secs < need {
+		t.Errorf("stop_grace_period %ds, want at least %ds", secs, need)
+	}
+}

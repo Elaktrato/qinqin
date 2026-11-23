@@ -38,6 +38,14 @@ Run it while the server is idle: each pack is one write transaction, JMdict hold
 
 Options: `--data <dir>` (default `$QINQIN_DATA`, else `./data`) and `--packs <dir>[,<dir>...]` (pack roots, comma-separated or repeated; default `$QINQIN_PACKS`, which the image sets to its own packs). Under Docker the command sees only the image's packs, not a host folder such as `plugins/data-local`: mount it (for example `./plugins/data-local:/opt/qinqin/local:ro`) and run `qinqin seed --packs /opt/qinqin/packs,/opt/qinqin/audio,/opt/qinqin/strokes,/opt/qinqin/local`. More on packs: [Data packs on the server](Admin-data-packs).
 
+### Stopping and restarting
+
+`docker stop` (and `docker compose down`, a Portainer stop or redeploy) sends `SIGTERM`, and the server shuts down in order: it stops accepting connections, gives requests in flight 10 s to finish (a longer download is cut; the app resumes it), then stops the mail queue, any package build and other background jobs (up to 10 s more), closes the database and logs `shutdown complete`. The compose file allows 30 s (`stop_grace_period`) before Docker kills the container; keep at least that if you write your own. A second signal (Ctrl-C twice when running the binary by hand) exits at once.
+
+What is cut short is safe: a package build in progress is started again on the next start, a pack import or restore that had not finished is rolled back (one transaction), and mails still queued are not sent (the log says how many; a reset or verification mail can be requested again). An AI review running after its browser left is lost and can be repeated.
+
+The server also closes connections that take more than 10 s to send their request headers and keep-alive connections idle for 2 minutes. It sets no overall request timeout: uploads, downloads and long requests are limited by the proxy in front ([Reverse proxy](Admin-proxy-and-rate-limiting)).
+
 ## Release images and versions
 
 CI publishes the image `ghcr.io/elaktrato/qinqin` on pushes to `main` and on `v*` tags; pushes to `develop` only run the tests. Image tags:
