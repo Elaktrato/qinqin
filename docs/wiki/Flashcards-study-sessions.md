@@ -6,7 +6,7 @@ Flashcards are part of the app (you can switch them off for yourself in [Setting
 
 A session starts from **Study** on a deck of the Decks page, from the flashcards widget on the home page, or from the study setup (`/study`).
 
-The setup opens with **This session** and **Limits** at the top: what the session will hold ("Today: 18 reviews and 5 new"), the limits for new cards and reviews (a session stops after these counts, reviews first), the **Order of new cards**, the **Order of card types**, **Start studying** and **Study all**. **Study all** ignores the limits and every daily limit (your own and the default 20 new and 200 reviews per deck) for that one session, in deck and level sessions alike, so every due review and new card is included; the numbers beside it count exactly that session. The line **Scheduling: …** opens the [scheduling page](Scheduling-and-FSRS).
+The setup opens with **This session** and **Limits** at the top: what the session will hold ("Today: 18 reviews and 5 new"), the limits for new cards and reviews (a session stops after these counts, reviews first), the **Order of new cards**, the **Order of card types**, **Start studying** and **Study all**. **Study all** ignores the limits and every daily limit (your own and the default 20 new and 200 reviews per deck) for that one session, in deck and level sessions alike, so every due review and new card is included; the button is enabled when that session would hold something. The line **Scheduling: …** opens the [scheduling page](Scheduling-and-FSRS).
 
 Below that:
 

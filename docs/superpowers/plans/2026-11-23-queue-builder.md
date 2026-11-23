@@ -92,6 +92,19 @@ review and one fix wave follow).
 | Merge | (merge commit) | `feature/hardening-batch` with #168 merged in (no conflicts); `grade.ts` still takes `GENERAL_DECK_ID` from `types.ts`. |
 | 6 Docs | (this commit) | `contractsDocs.test.ts`, `wikiDocs.test.ts` pass. |
 
+**Review fix wave** (independent review: no MUST-FIX; its differential test over 3 000 random inputs found deck
+queues unchanged, its count-consistency property 0 mismatches). One commit per group, test-first, each named
+mutation shown failing and reverted:
+
+| Group | Commit | Evidence |
+|---|---|---|
+| 8 Import cycle | `dfebc560` | `pureImports.test.ts` "limits.ts does not import ./scheduler" failed, then passed after moving `isValidReview`/`sortedReviews` to `reviewOrder.ts`. |
+| 2–3 Character levels | `43d20e47` | Fixture case "a kind the learner removed is never planned" (`character-level-queue.json`, decoded by `levelQueue.test.ts`, count 13 → 14) and the `excludeEntries` unit test passed on the built code (the rules already existed); mutation M5 (drop the `skipKinds` check) failed the fixture case, M4 (drop `excludeEntries` in `characterCandidates`) failed both new tests. |
+| 4 Opt-in exclude | `7758d170` | New `deck-session.json` plan case (reviewLimit 0, a due vocab card, reverse on) passed; M11 (exclude every real candidate) failed it. |
+| 5–6 Reserve option, comment | `7c1e2a8c` | A test passing the removed `reserve: 1` under `@ts-expect-error` failed in vitest (reserve 1, not 30) and in `npm run check` before the removal; both pass after. `buildSessionQueue`'s `reserveSize` went with it (its unit test removed). `DeckSessionPlan.reserve` comment rewritten. |
+| 7 Offline Study all | `39e9205b` | New `planOffline` test failed (no Study all pass), then passed; the mutation "third pass without `studyAll`" fails it. Two older tests pass `studyAllExtra: 0` to keep their meaning. Wiki `Install-and-offline.md` and a spec Ruling (cap 200). |
+| 1 Wiki wording | (this commit) | Prose only (no red possible): `Flashcards-study-sessions.md` says the Study all button is enabled when that session would hold something; Ruling (no separate numbers) in the spec, committed with group 7. |
+
 **Mutation checks (by hand, each reverted; targeted sessionQueue/studyAll/levelQueue/cardFlow tests):**
 Study all still consulting the limit rows → 13 failed; reserve not bounded by `backfillLeft` → 5 failed; vacation
 check removed → 4 failed; caps not floored → 1 failed; level plan ignoring `skipKinds` → 1 failed.

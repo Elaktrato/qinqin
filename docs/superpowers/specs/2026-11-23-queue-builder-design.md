@@ -77,7 +77,9 @@ Rules (pinned by `session-queue.json`):
 re-exported there); `GENERAL_DECK_ID` moves to `types.ts` (re-exported by `store.ts`); `STUDY_ALL_LIMIT`,
 `UNCAPPED`, `UNLIMITED` and the two `cap()` copies are deleted. `backfillLimit` and `skipKindsByEntry` move into
 `sessionQueue.ts` (re-exported by `cardFlow.ts`), so `levelQueue.ts` no longer imports `cardFlow.ts` or
-`session.ts` for them.
+`session.ts` for them. `isValidReview` and `sortedReviews` move to the leaf `reviewOrder.ts` (re-exported by
+`scheduler.ts`; review fix wave), so `limits.ts` and `sessionQueue.ts` do not import the scheduler that imports
+them.
 
 ### The planners on the builder
 
