@@ -55,6 +55,20 @@ Ruling: a `lemma-rules` pack does not auto-register its language (dictionary pac
 dictionary of the language change nothing, and the language appears when its first dictionary is installed —
 cost if wrong: none visible; the table waits for the dictionary.
 
+## A language without a code pack
+
+`/api/segment`, `/api/segment/at` and `/api/lookup` used to serve only languages with a code pack (zh, ja) and
+answer 400 "unsupported language" for every other. They now also serve a language that has a rule table in
+effect (`lemma.For(language) != nil`): installing a `lemma-rules` pack for a data-only language (one that has a
+dictionary pack but no code pack) gives it segmentation and lookups with deinflection, and uninstalling the pack
+takes them away again, at once. The web reader's views stay zh/ja-only (they are CJK-specific: furigana, word
+panel); a client of the routes (Android, a later web reader) gets the rest.
+
+Ruling: widen the language gate of the three routes to "code pack or rule table in effect" — without it a pack
+for a new language would install, package and do nothing on the server, which contradicts "no code change" —
+cost if wrong: a space-delimited language gets the dictionary longest-match segmentation the CJK languages use
+(bounded, can match inside an unknown word); reverting is one predicate (`segmentable`).
+
 ## Validation and bounds
 
 `lemma.Parse` already rejects unknown keys, classes, match modes, scripts and empty predicates. It now also

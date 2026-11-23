@@ -8,9 +8,19 @@ import (
 	"unicode/utf8"
 
 	"qinqin/internal/lang"
+	"qinqin/internal/lemma"
 	"qinqin/internal/overlay"
 	"qinqin/internal/segment"
 )
+
+// segmentable reports whether /api/segment, /api/segment/at and
+// /api/lookup serve language: a language with a code pack (zh, ja), or one
+// with a lemmatizer rule table in effect — an installed lemma-rules pack
+// gives a data-only language segmentation and lookups with no code change
+// (#176).
+func segmentable(language string) bool {
+	return lang.Registered(language) || lemma.For(language) != nil
+}
 
 // handleSegmentAt serves GET /api/segment/at?lang=&text=&offset= with the
 // longest dictionary match starting at the code-point offset, as
@@ -24,7 +34,7 @@ func (s *server) handleSegmentAt(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "lang, text and integer offset required", http.StatusBadRequest)
 		return
 	}
-	if !lang.Registered(language) {
+	if !segmentable(language) {
 		http.Error(w, "unsupported language", http.StatusBadRequest)
 		return
 	}
@@ -69,7 +79,7 @@ func (s *server) handleSegment(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "lang required", http.StatusBadRequest)
 		return
 	}
-	if !lang.Registered(req.Lang) {
+	if !segmentable(req.Lang) {
 		http.Error(w, "unsupported language", http.StatusBadRequest)
 		return
 	}

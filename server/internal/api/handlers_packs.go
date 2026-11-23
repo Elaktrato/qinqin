@@ -13,6 +13,7 @@ import (
 
 	"qinqin/internal/dict"
 	"qinqin/internal/fonts"
+	"qinqin/internal/lemmapack"
 	"qinqin/internal/packs"
 	"qinqin/internal/themes"
 )
@@ -301,6 +302,24 @@ func (s *server) handleStagePack(w http.ResponseWriter, r *http.Request) {
 	if m.Type == dict.TypeFont {
 		if _, err := fonts.CheckPack(pack); err != nil {
 			http.Error(w, packErrorText(err, dir, s.dataDir), http.StatusBadRequest)
+			return
+		}
+	}
+	// A lemma-rules pack's table is parsed and bounded now, and a language
+	// keeps one live pack: a broken or conflicting table is refused before
+	// the licence review.
+	if m.Type == dict.TypeLemmaRules {
+		_, _, err := lemmapack.CheckPack(pack)
+		if err == nil {
+			err = lemmapack.CheckLanguage(r.Context(), s.db, m.ID, m.Language)
+		}
+		if errors.Is(err, dict.ErrInvalidPack) {
+			http.Error(w, packErrorText(err, dir, s.dataDir), http.StatusBadRequest)
+			return
+		}
+		if err != nil {
+			log.Printf("pack: review lemma-rules pack: %v", err)
+			http.Error(w, "internal error", http.StatusInternalServerError)
 			return
 		}
 	}

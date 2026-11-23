@@ -8,7 +8,6 @@ import (
 	"unicode/utf8"
 
 	"qinqin/internal/freq"
-	"qinqin/internal/lang"
 	"qinqin/internal/lexicon"
 	"qinqin/internal/lookup"
 )
@@ -124,7 +123,7 @@ func (s *server) handleLookup(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "lang, text and integer offset required", http.StatusBadRequest)
 		return
 	}
-	if !lang.Registered(language) {
+	if !segmentable(language) {
 		http.Error(w, "unsupported language", http.StatusBadRequest)
 		return
 	}
