@@ -12,8 +12,15 @@ import (
 
 	"qinqin/internal/db"
 	"qinqin/internal/dict"
+	"qinqin/internal/lemma"
 	"qinqin/internal/packs"
 )
+
+// jaRules is the lemma-rules pack's table, byte for byte what its package
+// must carry.
+const jaRules = `{"format": 2, "language": "ja", "version": "t", "maxDepth": 1,
+ "classes": {"v1": {"tags": ["v1"]}}, "hints": {},
+ "rules": [{"from": "た", "to": "る", "reason": "past", "out": "v1"}]}`
 
 func newDB(t *testing.T) *sql.DB {
 	t.Helper()
@@ -75,9 +82,10 @@ type seeded struct {
 // seedAll installs, through packs.Import: two zh dictionaries (zh-a with
 // LICENSE and ATTRIBUTION.md, zh-b without licence files), a ja dictionary,
 // and one levels, sentences, frequency, components, grammar, audio and
-// strokes pack.
+// strokes pack, and a lemma-rules pack (ja-rules).
 func seedAll(t *testing.T) seeded {
 	t.Helper()
+	t.Cleanup(func() { lemma.SetInstalled(nil) }) // ja-rules overlays the built-in table
 	ctx := context.Background()
 	s := seeded{db: newDB(t), audioDir: t.TempDir()}
 	for _, p := range []dict.Pack{
@@ -119,6 +127,8 @@ func seedAll(t *testing.T) seeded {
 			}),
 		writePack(t, map[string]any{"id": "hw", "name": "Strokes", "type": "strokes", "languages": []string{"zh", "ja"}, "license": "Arphic Public License", "format": "hanzi-writer-jsonl-gz"},
 			map[string][]byte{"strokes.jsonl.gz": gz(`{"char":"好","data":{"strokes":["M 1 2"]}}` + "\n" + `{"char":"一","data":{"strokes":["M 3 4"]}}` + "\n"), "LICENSE": []byte("Arphic\n")}),
+		writePack(t, map[string]any{"id": "ja-rules", "name": "Ja rules", "type": "lemma-rules", "language": "ja", "license": "CC0-1.0", "format": "rules-json"},
+			map[string][]byte{"rules.json": []byte(jaRules), "LICENSE": []byte("CC0\n")}),
 	} {
 		if _, err := packs.Import(ctx, s.db, p, packs.WithAudioStore(s.audioDir)); err != nil {
 			t.Fatalf("import %s: %v", p.ID, err)

@@ -91,7 +91,7 @@ var All = []Descriptor{
 	{Type: Audio, Registry: "audio_packs", Languages: One, Uploadable: false, Package: "audio", OptionalPackage: true, LegacyPluginRow: true},
 	{Type: Components, Registry: "component_packs", Languages: One, Uploadable: true, Package: "components"},
 	{Type: Strokes, Registry: "stroke_packs", Languages: Many, Uploadable: true, Package: "strokes"},
-	{Type: LemmaRules, Registry: "lemma_rule_packs", Languages: One, Uploadable: true},
+	{Type: LemmaRules, Registry: "lemma_rule_packs", Languages: One, Uploadable: true, Package: "lemma-rules"},
 	{Type: Theme, Registry: "theme_packs", Languages: None, Uploadable: true},
 	{Type: Font, Registry: "font_packs", Languages: None, Uploadable: true},
 }

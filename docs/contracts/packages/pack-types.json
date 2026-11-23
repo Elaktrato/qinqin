@@ -88,7 +88,7 @@
    "registry": "lemma_rule_packs",
    "languages": "one",
    "uploadable": true,
-   "package": null,
+   "package": "lemma-rules",
    "requiresLexicon": false,
    "optionalPackage": false,
    "legacyPluginRow": false

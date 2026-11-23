@@ -476,6 +476,52 @@
    }
   },
   {
+   "name": "lemma-rules.ja-lemma",
+   "valid": true,
+   "manifest": {
+    "format": "qinqin-package",
+    "formatVersion": 1,
+    "id": "lemma-rules.ja-lemma",
+    "type": "lemma-rules",
+    "languages": [
+     "ja"
+    ],
+    "revision": 1,
+    "contentHash": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+    "instanceId": "01JD8Z3Q4M5N6P7R8S9T0V1W2X",
+    "builtAt": "2026-11-16T10:00:00Z",
+    "requires": [],
+    "sources": [
+     {
+      "type": "lemma-rules",
+      "packId": "ja-lemma",
+      "name": "Japanese lemmatizer rules",
+      "version": "2026-11-22",
+      "license": "CC0-1.0",
+      "attribution": "qinqin contributors",
+      "notice": ""
+     }
+    ],
+    "files": [
+     {
+      "name": "data.sqlite",
+      "bytes": 40960,
+      "sha256": "1111111111111111111111111111111111111111111111111111111111111111"
+     },
+     {
+      "name": "NOTICE.md",
+      "bytes": 420,
+      "sha256": "2222222222222222222222222222222222222222222222222222222222222222"
+     },
+     {
+      "name": "LICENSES/ja-lemma/LICENSE",
+      "bytes": 7048,
+      "sha256": "3333333333333333333333333333333333333333333333333333333333333333"
+     }
+    ]
+   }
+  },
+  {
    "name": "a pack without stored licence texts: no LICENSES files",
    "valid": true,
    "manifest": {
