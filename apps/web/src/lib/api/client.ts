@@ -202,12 +202,20 @@ async function request(path: string, options: ApiOptions): Promise<Response> {
 		const text = (await response.text()).trim() || response.statusText || `HTTP ${response.status}`;
 		const retry = Number.parseInt(response.headers.get('retry-after') ?? '', 10);
 		const err = new ApiError(response.status, text, Number.isFinite(retry) && retry > 0 ? retry : undefined);
-		if (response.status === 401) notifyUnauthorized();
-		if (isWorkspaceGoneResponse(err.status, err.code)) workspaceGoneHandler?.();
-		if (isRestrictionResponse(err.status, err.code)) restrictedHandler?.();
+		notifyErrorAnswer(err);
 		throw err;
 	}
 	return response;
+}
+
+/**
+ * notifyErrorAnswer is what every error answer of the API does, fetched or uploaded by XHR: a 401 drops the token,
+ * a 404 workspace_not_found tells the workspace store, a restriction code tells the auth store.
+ */
+export function notifyErrorAnswer(err: ApiError): void {
+	if (err.status === 401) notifyUnauthorized();
+	if (isWorkspaceGoneResponse(err.status, err.code)) workspaceGoneHandler?.();
+	if (isRestrictionResponse(err.status, err.code)) restrictedHandler?.();
 }
 
 export async function api<T>(path: string, options: ApiOptions = {}): Promise<T> {
