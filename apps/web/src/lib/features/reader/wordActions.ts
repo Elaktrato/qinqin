@@ -38,6 +38,7 @@ export async function addWords(o: {
 		target: o.target,
 		existingDeck: raw.decks.find((d) => d.id === o.target.id) ?? null,
 		rawCards: raw.cards,
+		unreadable: raw.unreadable,
 		now: o.now
 	});
 	const rows = addPlanRows(plan, raw);

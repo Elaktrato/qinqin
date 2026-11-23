@@ -120,6 +120,7 @@
 				target: named,
 				existingDeck: raw.decks.find((d) => d.id === target.id) ?? null,
 				rawCards: raw.cards,
+				unreadable: raw.unreadable,
 				now: new Date(),
 				exclude: knownNow,
 				// Joined cards keep their older createdAt, so the copy studies by frequency.

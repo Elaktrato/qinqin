@@ -1025,14 +1025,15 @@ export async function addCard(
 }
 
 /**
- * freshCardId picks the id of a new card. The derived id (`newCardId`)
+ * freshCardId picks the id of a new card (exported for planners such as
+ * add-to-deck, docs/contracts/decks/add-to-deck.json). The derived id (`newCardId`)
  * makes two devices adding the same card at once write one key. It can
  * only be taken by a card with another cardKey for sentence cards (one
  * per sentence once existed), or by a stored card this version cannot read;
  * then the sentence joins the id, and a ULID is the last resort, so an
  * existing card is never overwritten.
  */
-function freshCardId(
+export function freshCardId(
   cards: readonly StudyCard[],
   unreadable: ReadonlySet<string>,
   kind: StudyCardKind,

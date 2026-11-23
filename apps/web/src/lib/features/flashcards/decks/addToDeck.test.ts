@@ -15,7 +15,16 @@ interface Case {
 	target: { id: string; name: string; source?: Deck['source'] };
 	existingDeck: Deck | null;
 	rawCards: StudyCard[];
-	expected: { deck: Deck | null; writes: StudyCard[]; created: number; joined: number; skipped: number };
+	unreadable?: string[];
+	settings?: { newOrder: { by: 'frequency' }; exists: boolean };
+	expected: { deck: Deck | null; writes: StudyCard[]; created: number; joined: number; skipped: number; unreadable?: number };
+}
+
+const ULID = /^[0-9A-HJKMNP-TV-Z]{26}$/;
+
+/** A fresh ULID id (docs: the placeholder <ulid>) compares as the placeholder. */
+function masked(plan: AddPlan): AddPlan {
+	return { ...plan, writes: plan.writes.map((w) => (ULID.test(w.id) ? { ...w, id: '<ulid>' } : w)) };
 }
 
 const cases = fixture.cases as unknown as Case[];
@@ -29,9 +38,13 @@ describe('add to deck contract', () => {
 				target: input.target,
 				existingDeck: input.existingDeck,
 				rawCards: input.rawCards,
-				now: new Date(input.now)
+				now: new Date(input.now),
+				...(input.unreadable === undefined ? {} : { unreadable: new Set(input.unreadable) }),
+				...(input.settings === undefined ? {} : { settings: input.settings })
 			});
-			expect(plan).toEqual(c.expected);
+			expect(masked(plan)).toEqual(c.expected);
+			// The planned rows never name a row this version cannot read.
+			expect(() => addPlanRows(plan, { unreadable: new Set(c.unreadable ?? []) })).not.toThrow();
 			// Planning never changes its input.
 			expect(input).toEqual(c);
 			// Two devices planning from the same input write identical rows.
@@ -40,9 +53,11 @@ describe('add to deck contract', () => {
 				target: c.target,
 				existingDeck: c.existingDeck,
 				rawCards: c.rawCards,
-				now: new Date(c.now)
+				now: new Date(c.now),
+				...(c.unreadable === undefined ? {} : { unreadable: new Set(c.unreadable) }),
+				...(c.settings === undefined ? {} : { settings: c.settings })
 			});
-			expect(again).toEqual(plan);
+			expect(masked(again)).toEqual(masked(plan));
 		});
 	}
 });
