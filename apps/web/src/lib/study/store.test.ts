@@ -2045,9 +2045,15 @@ describe("typed study collections", () => {
     expect(data.fsrs?.sets.map((s) => s.id)).toEqual(["S1"]);
   });
 
-  it("refuses the whole page when a typed row fails the strict parse", async () => {
-    serve({ cards: [{ ...cardBody("c-vocab-5", 5), kind: "flash", ...meta() }] });
-    await expect(loadStudyData()).rejects.toThrow(/contract/);
+  it("skips a typed row that fails the strict parse and keeps the others (sync README, Reading rows)", async () => {
+    serve({
+      cards: [
+        { ...cardBody("c-vocab-5", 5), kind: "flash", ...meta() },
+        { ...cardBody("c-vocab-6", 6), ...meta() },
+      ],
+    });
+    const data = await loadStudyData();
+    expect(data.cards.map((c) => c.id)).toEqual(["c-vocab-6"]);
   });
 
   it("ignores typed-family keys left in pluginData and keeps reading the keyed rows", async () => {
