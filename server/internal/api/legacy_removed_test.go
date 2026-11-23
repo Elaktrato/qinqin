@@ -117,24 +117,33 @@ func TestLegacyPullAndViewAreGone(t *testing.T) {
 		}
 	}
 
-	// a push of a typed-family key as plugin data is refused alone
-	r := doJSON(t, "POST", ts.URL, "/api/sync/push", alice, map[string]any{"pluginData": []any{
-		map[string]any{"pluginId": "qinqin-flashcards", "workspaceId": ws, "key": "card:c-vocab-2", "updatedAt": "2026-11-10T08:00:00Z",
-			"data": map[string]any{"id": "c-vocab-2", "kind": "vocab", "entryId": 2, "deckIds": []string{"general"}, "createdAt": "2026-11-10T08:00:00Z"}},
-		map[string]any{"pluginId": "qinqin-flashcards", "workspaceId": ws, "key": "known:2", "updatedAt": "2026-11-10T08:00:00Z",
-			"data": map[string]any{"version": 1, "entryId": 2, "createdAt": "2026-11-10T08:00:00Z"}},
-	}})
+	// a push of any typed-family key as plugin data is refused alone
+	items := []any{map[string]any{"pluginId": "qinqin-flashcards", "workspaceId": ws, "key": "known:2", "updatedAt": "2026-11-10T08:00:00Z",
+		"data": map[string]any{"version": 1, "entryId": 2, "createdAt": "2026-11-10T08:00:00Z"}}}
+	for _, key := range typedKeys {
+		items = append(items, map[string]any{"pluginId": "qinqin-flashcards", "workspaceId": ws, "key": key, "updatedAt": "2026-11-10T08:00:00Z",
+			"data": map[string]any{"id": "x", "kind": "vocab", "entryId": 2, "deckIds": []string{"general"}, "createdAt": "2026-11-10T08:00:00Z"}})
+	}
+	r := doJSON(t, "POST", ts.URL, "/api/sync/push", alice, map[string]any{"pluginData": items})
 	var res struct {
 		DataAccepted, DataSkipped, DataRefused int
 	}
 	decodeJSON(t, r, &res)
-	if res.DataAccepted != 1 || res.DataRefused != 1 {
-		t.Errorf("push result %+v, want 1 accepted (known:2) and 1 refused (card:c-vocab-2)", res)
+	if res.DataAccepted != 1 || res.DataRefused != len(typedKeys) {
+		t.Errorf("push result %+v, want 1 accepted (known:2) and %d refused (every typed key)", res, len(typedKeys))
 	}
-	var n int
-	sqlDB.QueryRow(`SELECT (SELECT COUNT(*) FROM study_cards WHERE id = 'c-vocab-2') + (SELECT COUNT(*) FROM plugin_data WHERE key = 'card:c-vocab-2')`).Scan(&n)
-	if n != 0 {
-		t.Errorf("the refused card was stored (%d rows)", n)
+	for _, key := range typedKeys {
+		var n int
+		sqlDB.QueryRow(`SELECT COUNT(*) FROM plugin_data WHERE key = ?`, key).Scan(&n)
+		if n != 0 {
+			t.Errorf("the refused %s was stored as plugin data", key)
+		}
+	}
+	var typedRows int
+	sqlDB.QueryRow(`SELECT (SELECT COUNT(*) FROM study_cards) + (SELECT COUNT(*) FROM study_decks) + (SELECT COUNT(*) FROM study_deck_settings)
+		+ (SELECT COUNT(*) FROM study_limits) + (SELECT COUNT(*) FROM study_fsrs_sets) + (SELECT COUNT(*) FROM study_fsrs_active)`).Scan(&typedRows)
+	if typedRows != 1 {
+		t.Errorf("typed rows = %d after the refused push, want the one card", typedRows)
 	}
 
 	// the paged pull never ships a typed-family leftover in pluginData
