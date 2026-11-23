@@ -18,12 +18,18 @@ export const fixturePacks = resolve(here, '..', 'fixtures', 'packs');
 /** The admin of every e2e instance; the password exists only in the throw-away data directory. */
 export const ADMIN = { username: 'e2e-admin', password: 'e2e-admin-Passw0rd!' } as const;
 
-/** The SPA build the binary embeds: apps/web/build, built when missing. */
-function ensureWebBuild(): string {
+/**
+ * The SPA build the binary embeds: apps/web/build, built afresh so the suite
+ * never tests a stale build. QINQIN_E2E_REUSE_BUILD=1 reuses the existing one
+ * (CI, which has just built it).
+ */
+function webBuild(): string {
 	const build = join(webRoot, 'build');
-	if (!existsSync(join(build, 'index.html'))) {
-		execFileSync('npm', ['run', 'build'], { cwd: webRoot, stdio: 'inherit' });
+	if (process.env.QINQIN_E2E_REUSE_BUILD === '1') {
+		if (!existsSync(join(build, 'index.html'))) throw new Error('QINQIN_E2E_REUSE_BUILD=1 but apps/web/build has no index.html');
+		return build;
 	}
+	execFileSync('npm', ['run', 'build'], { cwd: webRoot, stdio: 'inherit' });
 	return build;
 }
 
@@ -33,20 +39,23 @@ function ensureWebBuild(): string {
  * the worktree is not modified.
  */
 export function buildBinary(work: string): string {
-	const build = ensureWebBuild();
+	const build = webBuild();
 	const src = join(work, 'src');
-	// Skipped: a local data directory and a stale embed copy.
-	const skip = new Set([join(repoRoot, 'server', 'data'), join(repoRoot, 'server', 'internal', 'webdist', 'dist')]);
-	cpSync(join(repoRoot, 'server'), src, { recursive: true, filter: (path) => !skip.has(path) });
-	rmSync(join(src, 'internal', 'webdist', 'dist'), { recursive: true, force: true });
-	cpSync(build, join(src, 'internal', 'webdist', 'dist'), { recursive: true });
 	const bin = join(work, 'qinqin');
-	execFileSync('go', ['build', '-trimpath', '-o', bin, './cmd/qinqin'], {
-		cwd: src,
-		stdio: 'inherit',
-		env: { ...process.env, CGO_ENABLED: '0', GOFLAGS: '-buildvcs=false' }
-	});
-	rmSync(src, { recursive: true, force: true });
+	try {
+		// Skipped: a local data directory and a stale embed copy.
+		const skip = new Set([join(repoRoot, 'server', 'data'), join(repoRoot, 'server', 'internal', 'webdist', 'dist')]);
+		cpSync(join(repoRoot, 'server'), src, { recursive: true, filter: (path) => !skip.has(path) });
+		rmSync(join(src, 'internal', 'webdist', 'dist'), { recursive: true, force: true });
+		cpSync(build, join(src, 'internal', 'webdist', 'dist'), { recursive: true });
+		execFileSync('go', ['build', '-trimpath', '-o', bin, './cmd/qinqin'], {
+			cwd: src,
+			stdio: 'inherit',
+			env: { ...process.env, CGO_ENABLED: '0', GOFLAGS: '-buildvcs=false' }
+		});
+	} finally {
+		rmSync(src, { recursive: true, force: true });
+	}
 	return bin;
 }
 

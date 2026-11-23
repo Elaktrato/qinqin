@@ -56,31 +56,53 @@ export async function startServer(logDir: string, name: string): Promise<Running
 	const logFile = join(logDir, `server-${name}.log`);
 	const log = createWriteStream(logFile);
 
+	const cleanup = () => {
+		log.end();
+		rmSync(root, { recursive: true, force: true });
+	};
+
 	// A port taken between the probe and the bind makes serve exit; try again.
 	for (let attempt = 0; attempt < 3; attempt++) {
 		const port = await freePort();
 		const url = `http://127.0.0.1:${port}`;
+		// Its own process group: teardown signals the whole group, so nothing
+		// serve starts outlives it.
 		const proc = spawn(bin, ['serve', '--addr', `127.0.0.1:${port}`, '--data', dataDir], {
 			env: serverEnv(packs),
-			stdio: ['ignore', 'pipe', 'pipe']
+			stdio: ['ignore', 'pipe', 'pipe'],
+			detached: true
 		});
+		const signalGroup = (signal: NodeJS.Signals) => {
+			try {
+				if (proc.pid !== undefined) process.kill(-proc.pid, signal);
+			} catch {
+				// Already gone.
+			}
+		};
+		// A worker that exits without its teardown (an error, a signal it handles) still stops the server.
+		const onExit = () => signalGroup('SIGKILL');
+		process.once('exit', onExit);
 		proc.stdout?.pipe(log, { end: false });
 		proc.stderr?.pipe(log, { end: false });
 		try {
 			await waitHealthy(url, proc, logFile, 30_000);
 		} catch (err) {
-			proc.kill('SIGKILL');
-			if (attempt === 2) throw err;
+			signalGroup('SIGKILL');
+			process.off('exit', onExit);
+			if (attempt === 2) {
+				cleanup();
+				throw err;
+			}
 			continue;
 		}
 		const stop = async () => {
-			if (proc.exitCode === null) {
+			if (proc.exitCode === null && proc.signalCode === null) {
 				const exited = new Promise((r) => proc.once('exit', r));
-				proc.kill('SIGTERM');
+				signalGroup('SIGTERM');
 				await exited;
 			}
-			log.end();
-			rmSync(root, { recursive: true, force: true });
+			process.off('exit', onExit);
+			cleanup();
 		};
 		return { url, dataDir, logFile, stop };
 	}
