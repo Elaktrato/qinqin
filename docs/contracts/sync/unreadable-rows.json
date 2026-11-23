@@ -1,7 +1,7 @@
 {
  "version": 1,
  "rule": "sync/unreadable-rows",
- "_doc": "Reading rows (README): one page of the web's study collections for workspace 7 whose envelope is valid and which holds, per typed family, a readable row and an unreadable one (malformed, or written by a newer client), plus an unreadable pluginData row. A reader decodes the envelope, decodes each row with its collection's decoder (typed rows: study/rows.json, strict), skips and counts every unreadable row and loads the rest. It never rewrites or deletes a row it could not read: a write to a protected identity (an unreadable typed row whose identity member is still readable: id, deckId, the workspace limits row '', the fsrsActive row '') is refused, and a new card never takes a protected id. rows[collection][i]._why says why a row is (un)readable; the page is rows with _why dropped. Decoded by apps/web/src/lib/study/unreadable.contract.test.ts (the study load) and server/internal/study/rows/unreadable_contract_test.go (typed rows decode exactly when readable).",
+ "_doc": "Reading rows (README): one page of the web's study collections for workspace 7 whose envelope is valid and which holds, per typed family, a readable row and an unreadable one (malformed, or written by a newer client), plus an unreadable pluginData row. A reader decodes the envelope, decodes each row with its collection's decoder (typed rows: study/rows.json, strict), skips and counts every unreadable row and loads the rest. It never rewrites or deletes a row it could not read: a write to a protected identity (an unreadable typed row whose identity member is still readable: id, deckId, the workspace limits row '', the fsrsActive row '') is refused, and a new card never takes a protected id. A tombstone (deletedAt set) that does not decode is protected but not counted: there is nothing to show. A row of another workspace is neither counted nor protected. Keyed pluginData rows are protected by key (pluginData:<key>) when the row shape or the keyed payload (goals/, known marks, vacations) does not decode. rows[collection][i]._why says why a row is (un)readable; the page is rows with _why dropped. Decoded by apps/web/src/lib/study/unreadable.contract.test.ts (the study load) and server/internal/study/rows/unreadable_contract_test.go (typed rows decode exactly when readable).",
  "requested": [
   "pluginStates",
   "pluginData",
@@ -65,6 +65,21 @@
       "entryId": 1202,
       "createdAt": "2026-11-10T08:00:00Z"
      },
+     "updatedAt": "2026-11-12T09:00:00Z",
+     "deletedAt": null
+    }
+   },
+   {
+    "_why": "malformed keyed data: the row shape is fine but the goal row is not (goals/): counted and protected",
+    "row": {
+     "pluginId": "qinqin-flashcards",
+     "key": "goals:workspace",
+     "userId": 1,
+     "workspaceId": 7,
+     "data": {
+      "version": "one"
+     },
+     "version": 4,
      "updatedAt": "2026-11-12T09:00:00Z",
      "deletedAt": null
     }
@@ -142,6 +157,48 @@
      "id": 5,
      "kind": "vocab",
      "entryId": 1204,
+     "written": null,
+     "entryKind": null,
+     "sentenceId": null,
+     "skipKinds": [],
+     "deckIds": [
+      "general"
+     ],
+     "createdAt": "2026-11-10T08:00:00Z",
+     "extra": {},
+     "version": 3,
+     "updatedAt": "2026-11-12T10:00:00Z",
+     "deletedAt": null
+    }
+   },
+   {
+    "_why": "a tombstone of a newer client's card: protected, not counted (nothing to show)",
+    "row": {
+     "workspaceId": 7,
+     "id": "c-listening-1205",
+     "kind": "listening",
+     "entryId": 1205,
+     "written": null,
+     "entryKind": null,
+     "sentenceId": null,
+     "skipKinds": [],
+     "deckIds": [
+      "general"
+     ],
+     "createdAt": "2026-11-10T08:00:00Z",
+     "extra": {},
+     "version": 3,
+     "updatedAt": "2026-11-12T10:00:00Z",
+     "deletedAt": "2026-11-12T10:00:00Z"
+    }
+   },
+   {
+    "_why": "another workspace's unreadable row: neither counted nor protected here",
+    "row": {
+     "workspaceId": 9,
+     "id": "c-listening-1206",
+     "kind": "listening",
+     "entryId": 1206,
      "written": null,
      "entryKind": null,
      "sentenceId": null,
@@ -371,7 +428,7 @@
    "fsrsActive": []
   },
   "unreadable": {
-   "pluginData": 1,
+   "pluginData": 2,
    "cards": 3,
    "decks": 1,
    "deckSettings": 1,
@@ -382,7 +439,8 @@
   "protected": {
    "cards": [
     "c-listening-1202",
-    "c-vocab-1203"
+    "c-vocab-1203",
+    "c-listening-1205"
    ],
    "decks": [
     "01JDECK0000000000000000002"
@@ -398,6 +456,10 @@
    ],
    "fsrsActive": [
     ""
+   ],
+   "pluginData": [
+    "known:1202",
+    "goals:workspace"
    ]
   }
  }

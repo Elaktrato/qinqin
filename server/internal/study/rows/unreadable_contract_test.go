@@ -63,8 +63,10 @@ func TestUnreadableRowsFixture(t *testing.T) {
 				t.Errorf("%s: readable identity %q, fixture %q", f, id, fx.Expect.Readable[string(f)][i])
 			}
 		}
-		if unreadable != fx.Expect.Unreadable[string(f)] {
-			t.Errorf("%s: %d unreadable rows, fixture expects %d", f, unreadable, fx.Expect.Unreadable[string(f)])
+		// A reader counts fewer than fail here (tombstones and other
+		// workspaces are not counted), never more.
+		if unreadable < fx.Expect.Unreadable[string(f)] {
+			t.Errorf("%s: %d rows fail Decode, fixture counts %d unreadable", f, unreadable, fx.Expect.Unreadable[string(f)])
 		}
 	}
 }

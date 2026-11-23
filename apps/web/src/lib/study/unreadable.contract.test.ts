@@ -15,10 +15,15 @@ import {
 	loadRawStudyData,
 	loadStudyData,
 	saveDeckCardTypes,
+	saveDeckCardTypesForDecks,
 	saveDeckLimits,
+	saveGoals,
+	setKnownMark,
 	saveWorkspaceLimits,
-	setActiveSet
+	setActiveSet,
+	studyPullPages
 } from './store';
+import { endSession } from '../session/sessionEnd';
 import { clearUnreadableReport, unreadableRows } from './unreadable';
 
 const WS = 7;
@@ -64,6 +69,7 @@ beforeEach(() => {
 				return Response.json({ eventsAccepted: 0, eventDuplicates: 0, dataAccepted: n, dataSkipped: 0, dataRefused: 0 });
 			}
 			if (url.startsWith('/api/sync/pull')) return Response.json(page);
+			if (url.startsWith('/api/plugins/') && (init?.method === 'PUT' || init?.method === 'DELETE')) return Response.json({ version: 2 });
 			return new Response('unexpected', { status: 500 });
 		})
 	);
@@ -117,6 +123,24 @@ describe('docs/contracts/sync/unreadable-rows.json', () => {
 		expect(pushes()).toEqual([]);
 	});
 
+	it('refuses keyed writes over an unreadable keyed row (goals, known marks)', async () => {
+		await loadStudyData(WS);
+		await expect(saveGoals(WS, { version: 1, showStreak: true, history: [] } as never)).rejects.toBeInstanceOf(UnreadableRowError);
+		await expect(setKnownMark(WS, 1202, true)).rejects.toBeInstanceOf(UnreadableRowError);
+		expect(vi.mocked(fetch).mock.calls.filter(([, init]) => init?.method === 'PUT' || init?.method === 'DELETE')).toEqual([]);
+		// A readable keyed row is written as before.
+		await setKnownMark(WS, 1201, true);
+		expect(vi.mocked(fetch).mock.calls.some(([url, init]) => init?.method === 'PUT' && String(url).includes('known:1201'))).toBe(true);
+	});
+
+	it('a batch switch skips the unreadable deck settings and reports them, writing the others', async () => {
+		const bad = fixture.expect.protected.deckSettings[0];
+		const out = await saveDeckCardTypesForDecks(WS, ['general', bad], 'reverse', true);
+		expect(out.unreadable).toEqual([bad]);
+		expect(Object.keys(out.saved)).toEqual(['general']);
+		expect(pushedKeys()).toEqual(['deckSettings:general']);
+	});
+
 	it('writes a readable row of the same collection as before', async () => {
 		await saveDeckLimits(WS, 'general', { new: 8 });
 		expect(pushedKeys()).toEqual(['limits:general']);
@@ -132,5 +156,22 @@ describe('docs/contracts/sync/unreadable-rows.json', () => {
 		await deleteDeck(WS, fixture.expect.readable.decks[0]);
 		expect(pushedKeys()).toContain(`decks:${fixture.expect.readable.decks[0]}`);
 		expect(pushedKeys().filter((k) => k.startsWith('deckSettings:'))).toEqual([]);
+	});
+
+	it('a load still in flight when the session ends reports nothing and counts no pages (#173)', async () => {
+		let release: () => void = () => undefined;
+		const gate = new Promise<void>((r) => (release = r));
+		const plain = vi.mocked(fetch).getMockImplementation()!;
+		vi.mocked(fetch).mockImplementation(async (input, init) => {
+			if (String(input).startsWith('/api/sync/pull')) await gate;
+			return plain(input, init);
+		});
+		const late = loadStudyData(WS);
+		await Promise.resolve();
+		endSession('signOut');
+		release();
+		await late;
+		expect(get(unreadableRows)).toBeNull();
+		expect(studyPullPages(WS)).toBe(0);
 	});
 });

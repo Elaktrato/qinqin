@@ -714,7 +714,16 @@ import { limitsOf } from '$lib/study/scheduler';
 					next
 				);
 				// A switch while it saved: the page shows another workspace now.
-				if (activeWorkspaceId === ws) deckSettings = { ...deckSettings, ...saved };
+				if (activeWorkspaceId === ws) {
+					const next = { ...deckSettings, ...saved.saved };
+					// Decks whose stored switches this version cannot read keep them (#167).
+					for (const deckId of saved.unreadable) {
+						if (previousSettings[deckId] === undefined) delete next[deckId];
+						else next[deckId] = previousSettings[deckId];
+					}
+					deckSettings = next;
+					if (saved.unreadable.length > 0) typeError = t('study.store.unreadableRow');
+				}
 			} catch (err) {
 				rememberExtraChoice(ws, kind, !next);
 				if (activeWorkspaceId !== ws) return;

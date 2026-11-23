@@ -102,10 +102,23 @@ type SyncDelta = { pluginData?: unknown } & Partial<Record<StudyCollection, unkn
  * collections of one workspace plus user-global rows, merged in page order.
  */
 const pulledPages = new Map<number, number>();
+/**
+ * The keys of keyed rows (goals, known marks, milestones; vacations under
+ * ALL_WORKSPACES) the last study load of a workspace could not read: keyed
+ * writes refuse them (putData, deleteData, pushKeyedRows). Callers plan
+ * keyed writes from that load.
+ */
+const unreadableKeyed = new Map<number, Set<string>>();
 onSessionEnd(() => {
   pulledPages.clear();
+  unreadableKeyed.clear();
   clearUnreadableReport();
 });
+
+/** Throws UnreadableRowError when the last load could not read the keyed row `key` of `workspaceId`. */
+function assertReadableKeyed(workspaceId: number, key: string): void {
+  if (unreadableKeyed.get(workspaceId)?.has(key) === true) throw new UnreadableRowError(`pluginData:${key}`);
+}
 
 /** How many pages the last study pull of a workspace took (the offline receipt counts them). */
 export function studyPullPages(workspaceId: number): number {
@@ -220,6 +233,7 @@ async function fetchStudyData(
   snap?: StudySnapshot,
 ): Promise<StudyData> {
   const knownAt = snap?.knownAt;
+  const epoch = sessionEpoch();
   const delta = await pullStudy(workspaceId);
   const rows = Array.isArray(delta?.pluginData) ? delta.pluginData : [];
   const decks: Deck[] = [];
@@ -235,6 +249,18 @@ async function fetchStudyData(
   const milestoneRows: { key: string; data: unknown; deletedAt: string | null; updatedAt?: string }[] = [];
   const unreadable: UnreadableCounts = {};
   const unreadableKeys: string[] = [];
+  const keyedHere = new Set<string>();
+  const keyedGlobal = new Set<string>();
+  // A tombstone that does not decode is protected but not counted: it shows nothing.
+  const count = (name: keyof UnreadableCounts, raw: unknown): void => {
+    if (isRecord(raw) && typeof raw.deletedAt === "string") return;
+    unreadable[name] = (unreadable[name] ?? 0) + 1;
+  };
+  const protectKeyed = (key: string, global: boolean): void => {
+    unreadableKeys.push(`pluginData:${key}`);
+    snap?.unreadable.add(`pluginData:${key}`);
+    (global ? keyedGlobal : keyedHere).add(key);
+  };
 
   for (const collection of STUDY_COLLECTIONS) {
     const list = delta?.[collection];
@@ -244,7 +270,7 @@ async function fetchStudyData(
         const where = isRecord(raw) ? raw.workspaceId : undefined;
         // Another workspace's row is not this load's business, readable or not.
         if (typeof where === "number" && where !== workspaceId) continue;
-        unreadable[collection] = (unreadable[collection] ?? 0) + 1;
+        count(collection, raw);
         const identity = rawIdentity(collection, raw);
         if (identity !== null) {
           const key = studyKey(collection, identity);
@@ -295,7 +321,10 @@ async function fetchStudyData(
     if (foreign) continue;
     const row = readableRow("pluginData", value) ? asPluginDataRow(value) : null;
     if (row === null) {
-      unreadable.pluginData = (unreadable.pluginData ?? 0) + 1;
+      const where = isRecord(value) ? value.workspaceId : undefined;
+      if (typeof where === "number" && where !== workspaceId) continue;
+      count("pluginData", value);
+      if (isRecord(value) && typeof value.key === "string") protectKeyed(value.key, where === null);
       continue;
     }
     // A typed-family key in pluginData is a leftover the server could not
@@ -305,6 +334,10 @@ async function fetchStudyData(
       if (row.deletedAt != null) continue;
       const period = parseVacation(row.key, decodeData(row.data));
       if (period !== null) vacations.push(period);
+      else {
+        count("pluginData", value);
+        protectKeyed(row.key, true);
+      }
       continue;
     }
     if (row.workspaceId !== workspaceId) continue;
@@ -327,13 +360,26 @@ async function fetchStudyData(
     const data = decodeData(row.data);
     if (row.key === GOALS_KEY) {
       goals = parseGoalsRow(data);
+      if (goals === null) {
+        count("pluginData", value);
+        protectKeyed(row.key, false);
+      }
     } else if (row.key.startsWith(KNOWN_PREFIX)) {
       const entryId = parseKnownMark(row.key, data);
       if (entryId !== null) known.push(entryId);
+      else {
+        count("pluginData", value);
+        protectKeyed(row.key, false);
+      }
     }
   }
 
-  reportUnreadable(workspaceId, unreadable, unreadableKeys);
+  // An answer for a session that has ended reports nothing (#173).
+  if (epoch === sessionEpoch()) {
+    reportUnreadable(workspaceId, unreadable, unreadableKeys);
+    unreadableKeyed.set(workspaceId, keyedHere);
+    unreadableKeyed.set(ALL_WORKSPACES, keyedGlobal);
+  }
   const seenMilestones = parseSeenRows(milestoneRows);
   const milestoneTombstones = tombstoneStamps(milestoneRows);
   // Absent (not empty) without any deckcfg row: workspaces that never
@@ -425,6 +471,7 @@ async function putData(
   value: unknown,
 ): Promise<void> {
   assertKeyedRow(key);
+  assertReadableKeyed(workspaceId, key);
   try {
     await api(dataPath(key, workspaceId), { method: "PUT", body: value });
   } finally {
@@ -611,7 +658,10 @@ async function pushKeyedRows(
   rows: readonly { key: string; data: unknown; knownAt?: string; deleted?: true }[],
   opts: { chunk?: number; onProgress?: (done: number, total: number) => void } = {},
 ): Promise<void> {
-  for (const row of rows) assertKeyedRow(row.key);
+  for (const row of rows) {
+    assertKeyedRow(row.key);
+    assertReadableKeyed(workspaceId, row.key);
+  }
   await pushChunks(workspaceId, rows.length, opts, (from, to, nowMs) => ({
     pluginData: rows.slice(from, to).map((row) => {
       const stamp = stampOf(nowMs, row.knownAt);
@@ -629,6 +679,7 @@ async function pushKeyedRows(
 
 async function deleteData(workspaceId: number, key: string): Promise<void> {
   assertKeyedRow(key);
+  assertReadableKeyed(workspaceId, key);
   try {
     await api(dataPath(key, workspaceId), { method: "DELETE" });
   } finally {
@@ -893,21 +944,28 @@ export async function saveDeckCardTypes(
  * saveDeckCardTypesForDecks toggles one opt-in kind on every named deck in
  * one pull/push: the global card-type checkboxes on the setup page use it so
  * the decks agree before a session starts. Rows whose kinds are unchanged
- * are not written.
+ * are not written. A deck whose stored settings row this version cannot
+ * read (#167) is left alone and listed in `unreadable`, so one such row
+ * does not stop the others; `saved` holds the decks written or unchanged.
  */
 export async function saveDeckCardTypesForDecks(
   workspaceId: number,
   deckIds: readonly string[],
   kind: OptInKind,
   on: boolean,
-): Promise<Record<string, DeckSettings>> {
+): Promise<{ saved: Record<string, DeckSettings>; unreadable: string[] }> {
   requireWorkspaceArg(workspaceId, "saveDeckCardTypesForDecks");
-  if (deckIds.length === 0) return {};
+  if (deckIds.length === 0) return { saved: {}, unreadable: [] };
   const snap = newSnapshot();
   const { deckSettings } = await fetchStudyData(workspaceId, snap);
   const out: Record<string, DeckSettings> = {};
+  const unreadable: string[] = [];
   const writes: StudyWrite[] = [];
   for (const deckId of deckIds) {
+    if (snap.unreadable.has(studyKey("deckSettings", deckId))) {
+      unreadable.push(deckId);
+      continue;
+    }
     const stored = deckSettings?.[deckId];
     const current = cleanCardTypes(stored?.cardTypes ?? []);
     const nextTypes = on
@@ -924,7 +982,7 @@ export async function saveDeckCardTypesForDecks(
     if (write !== null) writes.push(write);
   }
   if (writes.length > 0) await pushStudy(workspaceId, writes);
-  return out;
+  return { saved: out, unreadable };
 }
 
 function withoutNewOrder(extra: Record<string, unknown>): Record<string, unknown> {
@@ -1396,6 +1454,7 @@ export function cardsInDecks(
 
 /** saveVacation stores one vacation period (user-global: no workspace). */
 export async function saveVacation(period: VacationPeriod): Promise<void> {
+  assertReadableKeyed(ALL_WORKSPACES, `${VACATION_PREFIX}${period.id}`);
   try {
     await api(`/api/plugins/${FLASHCARDS_PLUGIN_ID}/data/${VACATION_PREFIX}${period.id}`, {
       method: "PUT",
@@ -1408,6 +1467,7 @@ export async function saveVacation(period: VacationPeriod): Promise<void> {
 
 /** deleteVacation tombstones one vacation period. */
 export async function deleteVacation(id: string): Promise<void> {
+  assertReadableKeyed(ALL_WORKSPACES, `${VACATION_PREFIX}${id}`);
   try {
     await api(`/api/plugins/${FLASHCARDS_PLUGIN_ID}/data/${VACATION_PREFIX}${id}`, {
       method: "DELETE",

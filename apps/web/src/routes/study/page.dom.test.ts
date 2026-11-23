@@ -265,7 +265,8 @@ describe('study setup, reverse and cloze checkboxes', () => {
 		deckSetup();
 		withSettings([]);
 		vi.mocked(saveDeckCardTypesForDecks).mockResolvedValue({
-			general: { deckId: 'general', cardTypes: ['reverse'], extra: {} }
+			saved: { general: { deckId: 'general', cardTypes: ['reverse'], extra: {} } },
+			unreadable: []
 		});
 		render(Page);
 		await waitFor(() => expect(box(/reverse/)).not.toBeNull());
@@ -274,6 +275,16 @@ describe('study setup, reverse and cloze checkboxes', () => {
 			expect(saveDeckCardTypesForDecks).toHaveBeenCalledWith(1, ['general'], 'reverse', true)
 		);
 		expect(box(/reverse/)!.checked).toBe(true);
+	});
+
+	it('a deck whose stored switches cannot be read is left out and the page says so (#167)', async () => {
+		deckSetup();
+		withSettings([]);
+		vi.mocked(saveDeckCardTypesForDecks).mockResolvedValue({ saved: {}, unreadable: ['general'] });
+		render(Page);
+		await waitFor(() => expect(box(/reverse/)).not.toBeNull());
+		await fireEvent.click(box(/reverse/)!);
+		expect(await screen.findByText(/saved by a newer version of qinqin/)).toBeTruthy();
 	});
 
 	it('starts unchecked after the learner unchecked it before in this workspace', async () => {
