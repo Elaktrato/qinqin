@@ -99,19 +99,45 @@ enforces limits (contract README "Limits"), on every table including the built-i
 The engine has no regular expressions, so there is no regex blow-up; the remaining risk is a combinatorial
 one: rules that keep matching what earlier rules produced multiply the candidates at every depth (100 rules
 on one suffix, depth 8: 10¹⁶ forms), and predicates that fail late can cost thousands of tests per rule.
-**Bounds** (contract README, "Bound" and "Lookup bounds"): one `Deinflect` call stops at **64 candidates** or
-after **16,384 work units** (one per (form, rule) pair considered and per predicate leaf, in a fixed order);
-the prefixes of one lookup window share **32,768 units**, its compound checks **4,096**, and it keeps at most
-**256 probes** with one compound probe per (stem, class) of a prefix. Predicates are capped per table at 16
-children per `allOf`/`anyOf`, 4,096 predicates and 4,096 `notSuffix` entries. Measured (fix wave): the review's
-worst tables segment 5,000 runes of "a" in about 3.6 s (heavy) and 4.3 s (compounds) instead of 188 s and
-51 s; the Japanese table spends at most 4,352 units per call and 11,696 per window, 44 probes.
+**Bounds** (contract README, "Bound", "Lookup bounds" and "Request budget"; second fix wave): one `Deinflect`
+call stops at **64 candidates** or when a cost no longer fits **4,096 units**. A rule is considered only when its
+`from` ends in the form's last code point (1 unit per considered pair, plus ceil(runes(from)/8) for its suffix
+comparison), and a predicate leaf costs 1 + ceil(scanned runes/8), so one unit is bounded work (at most 8
+code points scanned); a candidate longer than the surface plus 64 code points is dropped, so stems cannot grow
+with depth. One lookup window shares **8,192** Deinflect units and **4,096** compound units and keeps at most
+**128 probes**; one segmentation request shares **16,000,000 units** (Deinflect, compound, and 16 per extra
+probe), after which the rest of the text is matched exactly. Predicates are capped per table at 16 children per
+`allOf`/`anyOf`, 4,096 predicates and 4,096 `notSuffix` entries. Measured (second fix wave): the second review's
+notOnly table segments 5,000 runes in about 1.0 s (was 237 s on the first fix wave's code, measured by the new
+test), the first review's heavy and compounds tables in 0.8 s and 2.2 s; the Japanese table spends at most 884
+units per call and 1,966 per window (45 probes), and about 1.4 million Deinflect units on 5,000 runes with no
+dictionary match.
 
 Ruling (fix wave): a deterministic work budget per call and per window, counted in units every engine counts
 the same way (`docs/contracts/lemma/budget.json`), rather than a time limit — a time limit would make results
 depend on load and differ between server and Android — cost if wrong: a very productive future language would
-need the budgets raised in every client (the Japanese table uses about a quarter of the call budget and a third
+need the budgets raised in every client (the Japanese table uses about a fifth of the call budget and a quarter
 of the window budget).
+
+Ruling (second fix wave): a unit is bounded work — scans are charged per 8 code points, only rules whose `from`
+can match are considered (an index by last code point, the same in every engine), and candidates may grow at most
+64 code points past the surface — because a unit that scanned a whole stem let a valid 107 KB table cost 50 ms
+per window — cost if wrong: an engine that indexes differently counts differently; the rule is in the contract and
+`budget.json`.
+
+Ruling (second fix wave): one segmentation request shares 16,000,000 units and then degrades to exact matching,
+rather than answering an error — the request still succeeds with a deterministic, poorer segmentation, and no
+error code is needed. 16 M is about 11 times what the Japanese table needs on 5,000 runes in its worst case (no
+dictionary match, about 1.45 M Deinflect units; with a dictionary far less), and keeps the worst table at about
+one second per 5,000-rune request. The review suggested 4 M; that is below Japanese's worst case and would have
+degraded real Japanese text — cost if wrong: a pathological table costs about a second of CPU per request (the
+rate limits below cap how often).
+
+Ruling (second fix wave): dictionary queries are bounded per window (at most 128 probes, so at most 128 form terms
+per `ByForm` call) and charged against the request budget (16 units per probe beyond a prefix), not counted
+separately — one budget is simpler for every client and the charge makes probe-heavy tables exhaust it sooner —
+cost if wrong: a table whose probes are cheap in units but slow in SQL (the compound table: 2.2 s) stays slower
+than one budget alone would suggest.
 
 Ruling (fix wave): table-wide predicate caps 16 children per `allOf`/`anyOf`, 4,096 predicates and 4,096
 `notSuffix` entries — the Japanese table uses 15 predicates, 2 `notSuffix` entries and 2 children, so the caps

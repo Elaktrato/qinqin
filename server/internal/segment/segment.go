@@ -85,6 +85,9 @@ func (s Service) Segment(ctx context.Context, language, text string) ([]Match, e
 	matches := []Match{}
 	// One table for the whole text, even if the tables reload meanwhile.
 	l := lookup.LangOf(language)
+	// The whole text shares one work budget; once it is spent the rest is
+	// matched exactly (docs/contracts/lemma/README.md, Lookup bounds).
+	l.Budget = lookup.NewBudget(lookup.MaxRequestWork)
 	hints := hintsOf(l)
 	for i := 0; i < len(runes); {
 		m, results, err := s.lookupAt(ctx, l, runes, i)

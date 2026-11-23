@@ -71,14 +71,20 @@ A rule `{from, to, reason, in?, out, match?, stem?, chainOnly?}` rewrites a form
   reasons of its chain in application order (the rule applied to the surface first); the server's
   single `reason` string joins them innermost first (`polite past` for `[past, polite]`).
 - **Bound:** one Deinflect call stops as soon as it has produced **64 candidates** (`MaxCandidates`), or when
-  it has spent its **work budget of 16,384 units** (`MaxWork`), and returns the candidates produced so far, in
-  the output order above. Every format; no table field. A unit is one (form, rule) pair considered (before the
-  class and `chainOnly` gating) and one predicate leaf evaluated: a `minRunes` test, a `notOnly` test, one
-  `notSuffix` entry. A predicate is evaluated in this order and stops early: `minRunes`, `notOnly`, each
-  `notSuffix` entry, the `allOf` children until one is false, the `anyOf` children until one is true. A unit
-  that cannot be spent stops the call at once; a predicate cut short produces no candidate. The Japanese table
-  produces at most 16 candidates and spends at most 4,352 units on the fixture texts, so neither bound changes
-  its output. `budget.json` pins the counting unit for unit (an engine takes the budget as a parameter for it).
+  a cost no longer fits its **work budget of 4,096 units** (`MaxWork`), and returns the candidates produced so
+  far, in the output order above. Every format; no table field. Costs:
+  - a rule is **considered** for a form only when its `from` ends in the form's last code point (other rules
+    are free); each considered (form, rule) pair costs **1**, before the class and `chainOnly` gating;
+  - a pair that passes the gating costs **ceil(runes(from) / 8)** more for its suffix comparison;
+  - a predicate leaf costs **1 + ceil(scanned / 8)**: `minRunes n` scans min(stem runes, n), `notOnly` the stem's
+    runes up to and including the first one outside the script (all of them when there is none), a `notSuffix`
+    entry its own runes. A predicate is evaluated in this order and stops early: `minRunes`, `notOnly`, each
+    `notSuffix` entry, the `allOf` children until one is false, the `anyOf` children until one is true.
+  A cost that does not fit stops the call at once (nothing of it is spent); a predicate cut short produces no
+  candidate. **Growth cap:** a candidate longer than the surface plus **64** code points (`MaxGrowth`) is dropped
+  (free, not expanded). The Japanese table produces at most 16 candidates and spends at most 884 units on the
+  fixture texts, so neither bound changes its output. `budget.json` pins the counting unit for unit (an engine
+  takes the budget as a parameter for it).
 - A candidate is a dictionary form only when an entry's sense has a POS tag of its class
   (`classes`); intermediate classes never match.
 
@@ -114,11 +120,19 @@ A rule-table pack's `rules.json` is at most 1 MiB ("Rule-table packs" below).
 ## Compounds
 
 **Lookup bounds.** One lookup window (up to 12 code points, every prefix) is bounded too: the Deinflect calls
-of its prefixes share **32,768 units** (each prefix's call gets what is left, at most `MaxWork`; once spent,
-the remaining prefixes are looked up exactly only), the compound stem checks of the window share **4,096
-predicate units**, a prefix gets at most one compound probe per (stem, class), and the window keeps at most
-**256 probes** (later ones are dropped). The Japanese table needs at most 44 probes and 11,696 units per window
-on the fixture texts.
+of its prefixes share **8,192 units** (each prefix's call gets what is left, at most `MaxWork`; once spent, the
+remaining prefixes are looked up exactly only), the compound stem checks of the window share **4,096 units**, a
+prefix gets at most one compound probe per (stem, class), and the window keeps at most **128 probes** (later ones
+are dropped). The Japanese table needs at most 45 probes and 1,966 units per window on the fixture texts.
+
+**Request budget.** All windows of one segmentation (`/api/segment`, a client segmenting a text) share **16,000,000
+units**: a window may start its two budgets with at most what is left, and its Deinflect units, compound units
+and **16 units per probe beyond the prefix itself** (a deinflected form or a compound stem: one more dictionary
+term) are then taken off. Once nothing is left, every later window of the text is matched **exactly** (no
+deinflection, no compounds): the result is deterministic and the request still succeeds. The Japanese table
+spends about 1.4 million Deinflect units on 5,000 runes of grammar-pack examples with no dictionary match at all
+(a window at every rune, its worst case). A single lookup (`/api/lookup`, `/api/segment/at`) has the window
+bounds only.
 
 For a **deinflected** candidate of a compound's `class` whose form ends in its `suffix` with a non-empty stem
 that satisfies the compound's optional `stem` predicate, the stem is looked up too, with the same class

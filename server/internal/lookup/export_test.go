@@ -6,7 +6,7 @@ import "qinqin/internal/lemma"
 // there are, how many are compound stem probes, whether two compound
 // probes share a (stem, class), and the Deinflect work the window spent.
 func ProbeStats(rules *lemma.Table, window string) (probes, compounds int, duplicate bool, work int) {
-	ps, w := buildProbes(rules, []rune(window))
+	ps, w := buildProbes(rules, []rune(window), MaxWindowWork+MaxCompoundWork)
 	seen := map[compoundKey]bool{}
 	for _, p := range ps {
 		if p.compound {
