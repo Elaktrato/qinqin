@@ -2,7 +2,7 @@
  "version": 1,
  "rule": "sync/pull-page",
  "cacheControl": "private, no-cache",
- "_doc": "One answer of GET /api/sync/pull?v=2. requested is the collection set of the round; position is first (scope set), middle, last (cursor set) or only (first and last). valid pages decode; invalid ones must be refused for the reason given. Row shapes: shapes (every key always present; library rows have deletedAt null when live, and a library tombstone is exactly libraryTombstone); typed rows decode as docs/contracts/study/rows.json. Typed rows here are copied from study/rows.json, library keys from library/rows.json shapes. Tokens are opaque: only the p2./c2. prefixes are a contract. Decoded by server/internal/sync (B2) and apps/web/src/lib/sync/pager.ts (C1). cacheControl is the Cache-Control of every v2 page (private, no-cache: never kept by a shared cache, revalidated, and saved by the web service worker for offline study, which skips answers that say no-store).",
+ "_doc": "One answer of GET /api/sync/pull?v=2. requested is the collection set of the round; position is first (scope set), middle, last (cursor set) or only (first and last). valid pages are what the server may send; the server never sends an invalid one (the Go harness refuses each for the reason given). A reader refuses an invalid page whole only when the fault is in the envelope; a case with level row has a bad row inside a good envelope: a reader decodes the page, skips that row as unreadable and keeps the rest (README, Reading rows; unreadable-rows.json). Row shapes: shapes (every key always present; library rows have deletedAt null when live, and a library tombstone is exactly libraryTombstone); typed rows decode as docs/contracts/study/rows.json. Typed rows here are copied from study/rows.json, library keys from library/rows.json shapes. Tokens are opaque: only the p2./c2. prefixes are a contract. Decoded by server/internal/sync (B2) and apps/web/src/lib/sync/pager.ts (the envelope) with apps/web/src/lib/sync/rows.ts (the rows). cacheControl is the Cache-Control of every v2 page (private, no-cache: never kept by a shared cache, revalidated, and saved by the web service worker for offline study, which skips answers that say no-store).",
  "collections": [
   "workspaces",
   "pluginStates",
@@ -2640,6 +2640,7 @@
   {
    "name": "a plugin-data row without version",
    "valid": false,
+   "level": "row",
    "reason": "row shape",
    "requested": [
     "workspaces",
@@ -2746,6 +2747,7 @@
   {
    "name": "a typed card with an unknown member",
    "valid": false,
+   "level": "row",
    "reason": "typed rows decode strictly (study/rows.json)",
    "requested": [
     "workspaces",
@@ -2858,6 +2860,7 @@
   {
    "name": "a live book without deletedAt",
    "valid": false,
+   "level": "row",
    "reason": "row shape",
    "requested": [
     "workspaces",
@@ -3000,6 +3003,7 @@
   {
    "name": "a library tombstone with data members",
    "valid": false,
+   "level": "row",
    "reason": "a library tombstone is exactly {id, workspaceId, updatedAt, deletedAt}",
    "requested": [
     "workspaces",
@@ -3144,6 +3148,7 @@
   {
    "name": "a library tombstone without deletedAt",
    "valid": false,
+   "level": "row",
    "reason": "a library tombstone is exactly {id, workspaceId, updatedAt, deletedAt}",
    "requested": [
     "workspaces",
@@ -3287,6 +3292,7 @@
   {
    "name": "an event carrying userId",
    "valid": false,
+   "level": "row",
    "reason": "row shape",
    "requested": [
     "workspaces",
@@ -3431,6 +3437,7 @@
   {
    "name": "a lookup event",
    "valid": false,
+   "level": "row",
    "reason": "events never carry type lookup",
    "requested": [
     "workspaces",
@@ -3574,6 +3581,7 @@
   {
    "name": "a pack sentence",
    "valid": false,
+   "level": "row",
    "reason": "sentences are own sentences (sourcePack \"\", userId set)",
    "requested": [
     "workspaces",

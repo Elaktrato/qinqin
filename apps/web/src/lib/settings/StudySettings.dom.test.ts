@@ -180,7 +180,43 @@ describe('StudySettings daily limits', () => {
 		await fireEvent.input(newValue, { target: { value: '12' } });
 		await fireEvent.click(screen.getAllByLabelText('Unlimited')[1]);
 		await fireEvent.click(screen.getByRole('button', { name: 'Save limits' }));
-		await waitFor(() => expect(saveWorkspaceLimits).toHaveBeenCalledWith({ new: 12, reviews: null }));
+		await waitFor(() => expect(saveWorkspaceLimits).toHaveBeenCalledWith(1, { new: 12, reviews: null }));
+	});
+
+	it('a workspace switch: a late answer of the old workspace never fills the form, and saving goes to the shown one (#174)', async () => {
+		const lateOnes: ((v: unknown) => void)[] = [];
+		vi.mocked(currentStudyDay).mockReturnValue(day);
+		vi.mocked(loadWorkspaceEvents).mockResolvedValue([]);
+		vi.mocked(getStudyData).mockImplementation(async (id: number) => {
+			if (id === 1) return new Promise((r) => lateOnes.push(r)) as never;
+			return { decks: [], cards: [], limits: { workspace: { new: 7 }, decks: {} } } as never;
+		});
+		workspaces.set({
+			list: [{ id: 1, language: 'zh', name: 'zh' } as never, { id: 2, language: 'ja', name: 'ja' } as never],
+			current: { id: 1, language: 'zh', name: 'zh' } as never
+		});
+		render(StudySettings);
+		await waitFor(() => expect(lateOnes.length).toBeGreaterThan(0));
+		workspaces.update((w) => ({ ...w, current: { id: 2, language: 'ja', name: 'ja' } as never }));
+		const newValue = (await screen.findByLabelText('New cards per day value')) as HTMLInputElement;
+		await waitFor(() => expect(newValue.value).toBe('7'));
+		for (const r of lateOnes) r({ decks: [], cards: [], limits: { workspace: { new: 3 }, decks: {} } });
+		await new Promise((r) => setTimeout(r, 0));
+		expect(newValue.value).toBe('7');
+		await fireEvent.click(screen.getByRole('button', { name: 'Save limits' }));
+		await waitFor(() => expect(saveWorkspaceLimits).toHaveBeenCalledWith(2, { new: 7, reviews: 200 }));
+	});
+
+	it('saves to the workspace whose limits the form shows, not one selected since (#174)', async () => {
+		setup();
+		const newValue = (await screen.findByLabelText('New cards per day value')) as HTMLInputElement;
+		await fireEvent.input(newValue, { target: { value: '12' } });
+		// Selected since, still loading: the form shows workspace 1.
+		vi.mocked(getStudyData).mockImplementation(() => new Promise(() => undefined));
+		workspaces.update((w) => ({ ...w, current: { id: 2, language: 'ja', name: 'ja' } as never }));
+		await fireEvent.click(screen.getByRole('button', { name: 'Save limits' }));
+		await waitFor(() => expect(saveWorkspaceLimits).toHaveBeenCalled());
+		expect(vi.mocked(saveWorkspaceLimits).mock.calls[0][0]).toBe(1);
 	});
 
 	it('refuses a bad value', async () => {

@@ -239,12 +239,12 @@ describe('shared getStudyData', () => {
 
 	it('is invalidated by addCard and createDeck', async () => {
 		await getStudyData(7);
-		await addCard(42);
+		await addCard(7, 42);
 		const afterAdd = pulls();
 		await getStudyData(7);
 		expect(pulls()).toBe(afterAdd + 1);
 
-		await createDeck('HSK 1');
+		await createDeck(7, 'HSK 1');
 		await getStudyData(7);
 		expect(pulls()).toBe(afterAdd + 2);
 	});

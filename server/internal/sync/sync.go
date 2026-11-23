@@ -33,6 +33,10 @@ var (
 	ErrNotFound = errors.New("sync: not found")
 	// ErrInvalid reports a malformed push item.
 	ErrInvalid = errors.New("sync: invalid")
+	// ErrStoredUnreadable reports a push item whose stored row this server
+	// cannot read back (study.ErrUnreadableStored): the push is refused
+	// whole, before anything applies, and the stored row is kept as it is.
+	ErrStoredUnreadable = errors.New("sync: stored row unreadable")
 )
 
 // Delta is the legacy pull answer (StreamLegacy writes it row by row; a
@@ -223,6 +227,17 @@ func Push(ctx context.Context, sqlDB *sql.DB, userID int64, body PushBody) (Push
 			typed = append(typed, typedItem{row: r, edited: study.EditTime(m.UpdatedAt, m.DeletedAt), deleted: m.DeletedAt != nil})
 		}
 	}
+	// A typed item whose stored row this server cannot read back would
+	// replace data it does not understand: the push is refused whole, before
+	// anything applies, like a malformed item.
+	for _, it := range typed {
+		if _, _, err := study.Load(ctx, sqlDB, userID, it.row.M().WorkspaceID, it.row.Family(), it.row.Identity()); err != nil {
+			if errors.Is(err, study.ErrUnreadableStored) {
+				return PushResult{}, fmt.Errorf("%w: %s %q", ErrStoredUnreadable, it.row.Family(), it.row.Identity())
+			}
+			return PushResult{}, fmt.Errorf("sync push: %w", err)
+		}
+	}
 
 	var res PushResult
 	if len(evts) > 0 {
@@ -243,7 +258,9 @@ func Push(ctx context.Context, sqlDB *sql.DB, userID int64, body PushBody) (Push
 				// typed table; one the codec refuses is refused alone.
 				applied, err := study.ApplyLegacy(ctx, sqlDB, userID, row, editTime(row))
 				switch {
-				case errors.Is(err, rows.ErrUnreadable):
+				case errors.Is(err, rows.ErrUnreadable), errors.Is(err, study.ErrUnreadableStored):
+					// a row the codec refuses, or one whose stored row this
+					// server cannot read back: refused alone
 					res.DataRefused++
 					continue
 				case errors.Is(err, study.ErrNoTypedRow):

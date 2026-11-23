@@ -34,6 +34,7 @@ export interface GradeEntry {
 
 /** The store write a virtual item needs; injected so tests stay pure. */
 export type AddCard = (
+	workspaceId: number,
 	entryId: number,
 	opts: {
 		kind?: StudyCardKind;
@@ -127,7 +128,8 @@ export async function gradeItem({
 	const isCharacter = entry.kind === 'character';
 	let card: StudyCard;
 	try {
-		card = await addCard(item.entryId, {
+		// The item's workspace (checked above), never the one selected now (#174).
+		card = await addCard(workspaceId, item.entryId, {
 			kind,
 			written: entry.written,
 			...(isCharacter ? { entryKind: 'character' as const } : {}),

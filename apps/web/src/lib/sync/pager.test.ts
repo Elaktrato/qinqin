@@ -54,6 +54,14 @@ describe('pullAll', () => {
 		expect(out.scope).toEqual(SCOPE);
 		expect(out.instanceId).toBe(ID);
 	});
+	it('keeps a page whose rows do not decode: rows are the consumer\'s (sync README, Reading rows)', async () => {
+		const bad = { ...card('b'), kind: 'listening', audioId: 12 };
+		const out = await pullAll(async () => page({ scope: SCOPE }, [card('a'), bad, 'not a row']), '/x', REQ);
+		expect(out.collections.cards).toEqual([card('a'), bad, 'not a row']);
+	});
+	it('still refuses a collection that is not an array', async () => {
+		await expect(pullAll(async () => ({ ...page({ scope: SCOPE }), collections: { cards: {}, decks: [] } }), '/x', REQ)).rejects.toThrow(/contract/);
+	});
 	it('throws on a page that fails to parse', async () => {
 		await expect(pullAll(async () => ({ nope: 1 }), '/x', REQ)).rejects.toThrow();
 	});

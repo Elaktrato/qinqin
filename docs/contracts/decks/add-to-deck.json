@@ -479,6 +479,72 @@
     "joined": 0,
     "skipped": 0
    }
+  },
+  {
+   "name": "rows this version cannot read are never written: a new card takes a free id, the deck and settings rows of an unreadable identity are left alone and counted",
+   "note": "unreadable holds the keys (<collection>:<identity>, docs/contracts/sync/README.md 'Reading rows') of stored rows the reader could not decode. c-vocab-1 is such a card: the new card for entry 1 gets the next free id (freshCardId: c-vocab-<entry>-<sentence> for a sentence card, else a ULID, written here as the placeholder <ulid>). The target deck and its settings row are unreadable: neither is written, each counts in unreadable. The other word is created as usual.",
+   "now": "2026-03-10T12:00:00.000Z",
+   "items": [
+    {
+     "entryId": 1,
+     "written": "你"
+    },
+    {
+     "entryId": 2,
+     "written": "好"
+    }
+   ],
+   "target": {
+    "id": "d-lvl-hsk-words-b06fd2ac",
+    "name": "HSK words · HSK 1",
+    "source": {
+     "type": "level",
+     "packId": "hsk-words",
+     "level": "HSK 1"
+    }
+   },
+   "existingDeck": null,
+   "rawCards": [],
+   "unreadable": [
+    "cards:c-vocab-1",
+    "decks:d-lvl-hsk-words-b06fd2ac",
+    "deckSettings:d-lvl-hsk-words-b06fd2ac"
+   ],
+   "settings": {
+    "newOrder": {
+     "by": "frequency"
+    },
+    "exists": false
+   },
+   "expected": {
+    "deck": null,
+    "writes": [
+     {
+      "id": "<ulid>",
+      "kind": "vocab",
+      "entryId": 1,
+      "deckIds": [
+       "d-lvl-hsk-words-b06fd2ac"
+      ],
+      "createdAt": "2026-03-10T12:00:00.000Z",
+      "written": "你"
+     },
+     {
+      "id": "c-vocab-2",
+      "kind": "vocab",
+      "entryId": 2,
+      "deckIds": [
+       "d-lvl-hsk-words-b06fd2ac"
+      ],
+      "createdAt": "2026-03-10T12:00:00.001Z",
+      "written": "好"
+     }
+    ],
+    "created": 2,
+    "joined": 0,
+    "skipped": 0,
+    "unreadable": 2
+   }
   }
  ]
 }

@@ -31,7 +31,7 @@ describe('CardManager (the lang="zh" bug)', () => {
 		const cards: StudyCard[] = [
 			{ id: 'c-vocab-1', kind: 'vocab', entryId: 1, written: '食べる', deckIds: ['general'], createdAt: '2026-01-01T00:00:00.000Z' }
 		];
-		render(CardManager, { cards, decks: [], onchanged: async () => {} });
+		render(CardManager, { workspaceId: 1, cards, decks: [], onchanged: async () => {} });
 		const word = screen.getByText('食べる');
 		expect(word.closest('[lang]')?.getAttribute('lang')).toBe('ja');
 		expect(screen.getByText(/Manage cards/).closest('[lang]')).toBeNull();

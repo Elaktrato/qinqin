@@ -12,6 +12,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"qinqin/internal/study"
 )
 
 // The paged pull (sync v2, GET /api/sync/pull?v=2): the caller's own rows,
@@ -340,37 +342,57 @@ func walk(ctx context.Context, sqlDB *sql.DB, st pageToken, set roundSet) (Page,
 			pos = position{Seg: seg}
 		}
 		query := s.query(since, st.Filters.Workspace, st.Filters.Tombstones)
-		args := s.args(query, st.User, since, st.Until, pos, st.Limit-shipped+1, st.Filters.Workspace, st.Languages)
-		stop, err := func() (bool, error) {
-			rows, err := sqlDB.QueryContext(ctx, query, args...)
-			if err != nil {
-				return false, fmt.Errorf("sync pull %s: %w", s.coll, err)
-			}
-			defer rows.Close()
-			buf := bufs[s.coll]
-			for rows.Next() {
-				stamp, rowid, raw, err := s.encode(rows)
+		// One query reads up to the rows still wanted plus one (the look-ahead).
+		// A stored row this server cannot read (study.ErrUnreadableStored) is
+		// logged and skipped, and the position still moves past it; when skips
+		// used up a query's rows, the segment is read again from there.
+		var stop bool
+		for {
+			n := st.Limit - shipped + 1
+			args := s.args(query, st.User, since, st.Until, pos, n, st.Filters.Workspace, st.Languages)
+			read := 0
+			var err error
+			stop, read, err = func() (bool, int, error) {
+				rows, err := sqlDB.QueryContext(ctx, query, args...)
 				if err != nil {
-					return false, fmt.Errorf("sync pull %s: %w", s.coll, err)
+					return false, 0, fmt.Errorf("sync pull %s: %w", s.coll, err)
 				}
-				if shipped == st.Limit || (shipped > 0 && size+len(raw) > MaxPageBytes) {
-					return true, nil
+				defer rows.Close()
+				buf := bufs[s.coll]
+				read := 0
+				for rows.Next() {
+					read++
+					stamp, rowid, raw, err := s.encode(rows)
+					if errors.Is(err, study.ErrUnreadableStored) {
+						study.LogUnreadable("sync pull", err)
+						pos = position{Seg: seg, Stamp: stamp, RowID: rowid}
+						continue
+					}
+					if err != nil {
+						return false, read, fmt.Errorf("sync pull %s: %w", s.coll, err)
+					}
+					if shipped == st.Limit || (shipped > 0 && size+len(raw) > MaxPageBytes) {
+						return true, read, nil
+					}
+					if buf.Len() > 1 {
+						buf.WriteByte(',')
+					}
+					buf.Write(raw)
+					shipped++
+					size += len(raw)
+					pos = position{Seg: seg, Stamp: stamp, RowID: rowid}
 				}
-				if buf.Len() > 1 {
-					buf.WriteByte(',')
+				if err := rows.Err(); err != nil {
+					return false, read, fmt.Errorf("sync pull %s: %w", s.coll, err)
 				}
-				buf.Write(raw)
-				shipped++
-				size += len(raw)
-				pos = position{Seg: seg, Stamp: stamp, RowID: rowid}
+				return false, read, nil
+			}()
+			if err != nil {
+				return Page{}, err
 			}
-			if err := rows.Err(); err != nil {
-				return false, fmt.Errorf("sync pull %s: %w", s.coll, err)
+			if stop || read < n {
+				break
 			}
-			return false, nil
-		}()
-		if err != nil {
-			return Page{}, err
 		}
 		more = stop
 	}

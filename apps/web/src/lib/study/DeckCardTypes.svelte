@@ -6,6 +6,8 @@
 	import type { OptInKind } from './types';
 
 	interface Props {
+		/** The workspace the deck belongs to (the shown data's): the write goes there (#174). */
+		workspaceId: number | null;
 		deckId: string;
 		deckName: string;
 		/** The deck's stored switches (`deckcfg:` row); none when absent. */
@@ -13,7 +15,7 @@
 		onSaved?: (settings: DeckSettings) => void;
 	}
 
-	let { deckId, deckName, cardTypes, onSaved }: Props = $props();
+	let { workspaceId, deckId, deckName, cardTypes, onSaved }: Props = $props();
 
 	const OPTIONS: { kind: OptInKind; label: string; info: string }[] = [
 		{ kind: 'reverse', label: 'Reverse', info: 'meaning to word (words only)' },
@@ -27,13 +29,14 @@
 	const shown = $derived(pending ?? cleanCardTypes(cardTypes));
 
 	async function toggle(kind: OptInKind): Promise<void> {
-		if (saving) return;
+		const ws = workspaceId;
+		if (saving || ws === null) return;
 		const next = shown.includes(kind) ? shown.filter((k) => k !== kind) : [...shown, kind];
 		saving = true;
 		error = '';
 		pending = cleanCardTypes(next);
 		try {
-			const saved = await saveDeckCardTypes(deckId, next);
+			const saved = await saveDeckCardTypes(ws, deckId, next);
 			onSaved?.(saved);
 		} catch (err) {
 			error = errorText(err, t('study.deckTypes.saveFailed'));

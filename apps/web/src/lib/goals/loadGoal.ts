@@ -5,6 +5,7 @@
 // and force flag (and signed-in user) share one promise, dropped once it settles.
 
 import { errorText } from '$lib/api/apiErrors';
+import { onSessionEnd } from '../session/sessionEnd';
 import { t } from '../i18n';
 import { fetchActivity, type ActivityResponse, type ActivitySource } from '../api/stats';
 import { loadStudyHistory } from '../study/history';
@@ -37,6 +38,7 @@ export interface GoalView {
 }
 
 const inflight = new Map<string, Promise<GoalView>>();
+onSessionEnd(() => inflight.clear());
 
 async function load(workspaceId: number, now: number, force: boolean): Promise<GoalView> {
 	const day = currentStudyDay();

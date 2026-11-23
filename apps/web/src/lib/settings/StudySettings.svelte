@@ -70,20 +70,29 @@
 			.sort((a, b) => (a.start < b.start ? -1 : a.start > b.start ? 1 : 0))
 	);
 
+	/** The workspace whose limits the form holds: set together with them, and the one Save writes (#174). */
+	let loadedWorkspace = $state<number | null>(null);
+
 	async function load(force = false): Promise<void> {
-		if (workspaceId === null) {
+		const ws = workspaceId;
+		if (ws === null) {
 			periods = [];
+			loadedWorkspace = null;
 			loaded = true;
 			return;
 		}
 		try {
-			const data = await getStudyData(workspaceId, { force });
+			const data = await getStudyData(ws, { force });
+			// A late answer for a workspace no longer selected is dropped.
+			if (ws !== workspaceId) return;
+			loadedWorkspace = ws;
 			newState = workspaceFieldFrom(data.limits?.workspace ?? null, 'new');
 			reviewsState = workspaceFieldFrom(data.limits?.workspace ?? null, 'reviews');
 			periods = (data.vacations ?? [])
 				.map((p) => parseVacation(`vacation:${p.id}`, p))
 				.filter((p): p is VacationPeriod => p !== null);
 		} catch {
+			if (ws !== workspaceId) return;
 			error = t('settings.vacation.loadFailed');
 		}
 		loaded = true;
@@ -170,6 +179,9 @@
 		event.preventDefault();
 		limitsMessage = '';
 		limitsError = '';
+		// The workspace whose limits the form shows, captured now (#174).
+		const ws = loadedWorkspace;
+		if (ws === null) return;
 		const plan = workspaceRowFrom(newState, reviewsState);
 		if ('error' in plan) {
 			limitsError = plan.error;
@@ -177,7 +189,7 @@
 		}
 		busy = true;
 		try {
-			await saveWorkspaceLimits(plan.row);
+			await saveWorkspaceLimits(ws, plan.row);
 			limitsMessage = t('common.state.saved');
 			await load(true);
 		} catch {

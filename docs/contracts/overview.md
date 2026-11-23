@@ -53,6 +53,10 @@ Every folder, in dependency order (this page's sync model and Events sections af
   `until − 30 s`): the `since` of the next round with the same `collections` and `workspace` (one cursor per
   filter set; rows of the last 30 s may come twice, upsert by key). From no `since` a round ships live rows
   only; with one it ships tombstones too. Within a library collection tombstones follow the live rows.
+- Reading rows (`sync/README.md`, `sync/unreadable-rows.json`, #167): a client checks the page envelope only
+  and decodes each row itself; a row it cannot read (damaged, or from a newer client) is skipped and counted,
+  never blocks the round, and is never rewritten or deleted: a write to its identity is refused and a new card
+  never takes its id.
 - Scope: the first page of a round carries `scope` — every workspace of the caller (a workspace not listed
   is deleted: drop its local data), the round's language set and `catalogue`, the ETag `GET /api/packages`
   gives the same caller by default (a change means "re-read the catalogue"). `workspace=<id>` narrows a round

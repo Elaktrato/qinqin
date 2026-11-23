@@ -143,6 +143,7 @@
 				target,
 				existingDeck: raw.decks.find((d) => d.id === target.id) ?? null,
 				rawCards: raw.cards,
+				unreadable: raw.unreadable,
 				now: new Date()
 			});
 			const rows = addPlanRows(plan, raw);

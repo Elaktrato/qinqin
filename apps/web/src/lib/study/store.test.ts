@@ -317,14 +317,14 @@ describe("study store", () => {
         if (url.startsWith("/api/events")) return jsonResponse([]);
         return rawResponse(url.includes("page=") ? page2 : page1);
       });
-      const data = await loadStudyData();
+      const data = await loadStudyData(WORKSPACE_ID);
       expect(data.cards.map((c) => c.id)).toEqual(["card-1", "card-2"]);
       expect(urls.filter((u) => u.startsWith("/api/sync/pull"))[1]).toBe("/api/sync/pull?page=p2.abc&v=2");
     });
 
     it("refuses a page that does not match the contract", async () => {
       vi.mocked(fetch).mockImplementation(async () => rawResponse({ pluginData: [] }));
-      await expect(loadStudyData()).rejects.toThrow(/contract/);
+      await expect(loadStudyData(WORKSPACE_ID)).rejects.toThrow(/contract/);
     });
 
     it("keeps the pre-v2 pull path out of the sources", () => {
@@ -403,7 +403,7 @@ describe("study store", () => {
         ],
       });
 
-      const data = await loadStudyData();
+      const data = await loadStudyData(WORKSPACE_ID);
 
       expect(data.decks).toEqual([general, custom]);
       expect(data.cards).toEqual([
@@ -432,7 +432,7 @@ describe("study store", () => {
         ],
       });
 
-      const data = await loadStudyData();
+      const data = await loadStudyData(WORKSPACE_ID);
 
       expect(data.cards).toEqual(good);
     });
@@ -452,7 +452,7 @@ describe("study store", () => {
         ],
       });
 
-      const data = await loadStudyData();
+      const data = await loadStudyData(WORKSPACE_ID);
 
       expect(data.cards[0]!.skipKinds).toEqual(["reverse"]);
       expect("skipKinds" in data.cards[1]!).toBe(false);
@@ -462,7 +462,7 @@ describe("study store", () => {
     it("returns empty arrays when the pull has no plugin data", async () => {
       respondPull({ cursor: "2026-01-01T00:00:00Z" });
 
-      await expect(loadStudyData()).resolves.toEqual({
+      await expect(loadStudyData(WORKSPACE_ID)).resolves.toEqual({
         decks: [],
         cards: [],
         fsrs: { sets: [], active: null, w: DEFAULT_W, pointer: null },
@@ -476,7 +476,7 @@ describe("study store", () => {
         pluginData: [pluginRow("settings:study", { newLimit: 20 })],
       });
 
-      await expect(loadStudyData()).resolves.toEqual({
+      await expect(loadStudyData(WORKSPACE_ID)).resolves.toEqual({
         decks: [],
         cards: [],
         fsrs: { sets: [], active: null, w: DEFAULT_W, pointer: null },
@@ -485,10 +485,10 @@ describe("study store", () => {
       });
     });
 
-    it("fails when no workspace is selected", async () => {
+    it("fails without a workspace id (the selected one is never read, #174)", async () => {
       selectWorkspace(null);
 
-      await expect(loadStudyData()).rejects.toThrow(/workspace/i);
+      await expect(loadStudyData(0)).rejects.toThrow(/workspace/i);
       expect(fetch).not.toHaveBeenCalled();
     });
 
@@ -544,7 +544,7 @@ describe("study store", () => {
         },
       ]);
 
-      const data = await loadStudyData();
+      const data = await loadStudyData(WORKSPACE_ID);
 
       expect(data.reviews.map((r) => r.id)).toEqual(["r1"]);
     });
@@ -575,7 +575,7 @@ describe("study store", () => {
         [reviewEvent("r1", early.id), reviewEvent("r2", late.id)],
       );
 
-      const data = await loadStudyData();
+      const data = await loadStudyData(WORKSPACE_ID);
 
       expect(data.merged).toBe(1);
       expect(data.cards).toEqual([
@@ -592,7 +592,7 @@ describe("study store", () => {
     it("writes a ULID-keyed deck scoped to the current workspace", async () => {
       vi.mocked(fetch).mockResolvedValue(jsonResponse({ version: 1 }));
 
-      const created = await createDeck("  HSK 3  ");
+      const created = await createDeck(WORKSPACE_ID, "  HSK 3  ");
 
       expect(created.id).toMatch(ULID);
       expect(created.name).toBe("  HSK 3  ");
@@ -613,10 +613,10 @@ describe("study store", () => {
       ]);
     });
 
-    it("fails without writing when no workspace is selected", async () => {
+    it("fails without writing when no workspace id is given (#174)", async () => {
       selectWorkspace(null);
 
-      await expect(createDeck("HSK 3")).rejects.toThrow(/workspace/i);
+      await expect(createDeck(0, "HSK 3")).rejects.toThrow(/workspace/i);
       expect(fetch).not.toHaveBeenCalled();
     });
   });
@@ -631,7 +631,7 @@ describe("study store", () => {
         });
       });
 
-      const renamed = await renameDeck("deck-1", "New name");
+      const renamed = await renameDeck(WORKSPACE_ID, "deck-1", "New name");
 
       expect(renamed).toEqual(
         deck("deck-1", "New name", "2026-01-01T00:00:00Z"),
@@ -647,7 +647,7 @@ describe("study store", () => {
     it("refuses to rename a deck that does not exist", async () => {
       vi.mocked(fetch).mockResolvedValue(jsonResponse({ pluginData: [] }));
 
-      await expect(renameDeck("missing", "New name")).rejects.toThrow(/deck/i);
+      await expect(renameDeck(WORKSPACE_ID, "missing", "New name")).rejects.toThrow(/deck/i);
       expect(writtenRows()).toEqual([]);
     });
   });
@@ -665,7 +665,7 @@ describe("study store", () => {
           pluginRow("deckcfg:bad", { deckId: "other", cardTypes: ["cloze"] }),
         ],
       });
-      const data = await loadStudyData();
+      const data = await loadStudyData(WORKSPACE_ID);
       expect(Object.keys(data.deckSettings ?? {})).toEqual(["general"]);
       expect(data.deckSettings?.general?.cardTypes).toEqual(["reverse"]);
     });
@@ -684,7 +684,7 @@ describe("study store", () => {
           ],
         });
       });
-      const saved = await saveDeckCardTypes("general", ["cloze", "reverse"]);
+      const saved = await saveDeckCardTypes(WORKSPACE_ID, "general", ["cloze", "reverse"]);
       expect(saved.cardTypes).toEqual(["reverse", "cloze"]);
       expect(writtenRows()).toHaveLength(1);
       expect(writtenRows()[0]!.key).toBe("deckcfg:general");
@@ -711,7 +711,7 @@ describe("study store", () => {
           ],
         });
       });
-      await saveDeckCardTypes("d1", ["reverse"]);
+      await saveDeckCardTypes(WORKSPACE_ID, "d1", ["reverse"]);
       expect(writtenRows()[0]!.body).toMatchObject({
         deckId: "d1",
         cardTypes: ["reverse"],
@@ -733,7 +733,7 @@ describe("study store", () => {
           ],
         });
       });
-      const saved = await saveDeckNewOrder("d1", { by: "level", packId: "hsk-words" });
+      const saved = await saveDeckNewOrder(WORKSPACE_ID, "d1", { by: "level", packId: "hsk-words" });
       expect(saved.newOrder).toEqual({ by: "level", packId: "hsk-words" });
       expect(writtenRows()[0]!.key).toBe("deckcfg:d1");
       expect(writtenRows()[0]!.body).toMatchObject({
@@ -758,7 +758,7 @@ describe("study store", () => {
           ],
         });
       });
-      await saveDeckNewOrder("d1", { by: "added" });
+      await saveDeckNewOrder(WORKSPACE_ID, "d1", { by: "added" });
       expect(writtenRows()[0]!.body).not.toHaveProperty("newOrder");
     });
 
@@ -771,7 +771,7 @@ describe("study store", () => {
           ],
         });
       });
-      await saveDeckNewOrder("d1", { by: "added" });
+      await saveDeckNewOrder(WORKSPACE_ID, "d1", { by: "added" });
       expect(writtenRows()[0]!.body).not.toHaveProperty("newOrder");
     });
 
@@ -780,7 +780,7 @@ describe("study store", () => {
         if (init?.method === "PUT") return jsonResponse({ version: 1 });
         return jsonResponse({ pluginData: [] });
       });
-      await saveDeckCardTypes("d9", ["reverse"]);
+      await saveDeckCardTypes(WORKSPACE_ID, "d9", ["reverse"]);
       expect(writtenRows()[0]!.body).toMatchObject({ deckId: "d9", cardTypes: ["reverse"] });
     });
 
@@ -795,7 +795,7 @@ describe("study store", () => {
           ],
         });
       });
-      await deleteDeck("d1");
+      await deleteDeck(WORKSPACE_ID, "d1");
       expect(deletedKeys()).toEqual(["deck:d1", "deckcfg:d1"]);
       // Each tombstone is its own push, the deck's first.
       expect(pushBodies().map((b) => Object.keys(b).filter((k) => (b[k] as unknown[]).length > 0))).toEqual([
@@ -829,7 +829,7 @@ describe("study store", () => {
       const cloze = typed("c-cloze-7", "cloze", 7);
       stub([vocab, reverse, cloze]);
 
-      const previous = await dropSiblingCards(["c-reverse-7"]);
+      const previous = await dropSiblingCards(WORKSPACE_ID, ["c-reverse-7"]);
 
       expect(deletes()).toEqual([rowUrl("c-reverse-7")]);
       expect(writtenRows()).toEqual([
@@ -842,11 +842,11 @@ describe("study store", () => {
       const vocab = typed("c-vocab-7", "vocab", 7);
       const reverse = typed("c-reverse-7", "reverse", 7);
       stub([vocab, reverse]);
-      const previous = await dropSiblingCards(["c-reverse-7"]);
+      const previous = await dropSiblingCards(WORKSPACE_ID, ["c-reverse-7"]);
       vi.mocked(fetch).mockClear();
       // The server holds what the drop wrote: the skip on the vocab row, the sibling gone.
       stub([{ ...vocab, skipKinds: ["reverse"] }]);
-      await restoreCards(previous);
+      await restoreCards(WORKSPACE_ID, previous);
       const bodies = writtenRows();
       expect(bodies.map((b) => b.key).sort()).toEqual(
         [rowUrl("c-reverse-7"), rowUrl("c-vocab-7")].sort(),
@@ -857,28 +857,28 @@ describe("study store", () => {
 
     it("a stray sibling without a vocab row is only tombstoned", async () => {
       stub([typed("c-cloze-9", "cloze", 9)]);
-      await dropSiblingCards(["c-cloze-9"]);
+      await dropSiblingCards(WORKSPACE_ID, ["c-cloze-9"]);
       expect(deletes()).toEqual([rowUrl("c-cloze-9")]);
       expect(writtenRows()).toEqual([]);
     });
 
     it("refuses a vocab id", async () => {
       stub([typed("c-vocab-7", "vocab", 7)]);
-      await expect(dropSiblingCards(["c-vocab-7"])).rejects.toThrow();
+      await expect(dropSiblingCards(WORKSPACE_ID, ["c-vocab-7"])).rejects.toThrow();
       expect(deletes()).toEqual([]);
     });
 
     it("skipKind and unskipKind write only the vocab rows", async () => {
       const vocab = typed("c-vocab-7", "vocab", 7);
       stub([vocab]);
-      const before = await skipKind(7, "cloze");
+      const before = await skipKind(WORKSPACE_ID, 7, "cloze");
       expect(before).toEqual([vocab]);
       expect(writtenRows()[0]!.body).toEqual({ ...vocab, skipKinds: ["cloze"] });
 
       vi.mocked(fetch).mockClear();
       const skipped = { ...vocab, skipKinds: ["reverse", "cloze"] } as StudyCard;
       stub([skipped]);
-      const prev = await unskipKind(7, "cloze");
+      const prev = await unskipKind(WORKSPACE_ID, 7, "cloze");
       expect(prev).toEqual([skipped]);
       expect(writtenRows()[0]!.body).toEqual({ ...vocab, skipKinds: ["reverse"] });
     });
@@ -886,10 +886,10 @@ describe("study store", () => {
     it("unskipKind drops the field when the list empties; no vocab row is an error", async () => {
       const skipped = { ...typed("c-vocab-7", "vocab", 7), skipKinds: ["reverse"] } as StudyCard;
       stub([skipped]);
-      await unskipKind(7, "reverse");
+      await unskipKind(WORKSPACE_ID, 7, "reverse");
       expect("skipKinds" in (writtenRows()[0]!.body as object)).toBe(false);
       stub([]);
-      await expect(skipKind(8, "reverse")).rejects.toThrow();
+      await expect(skipKind(WORKSPACE_ID, 8, "reverse")).rejects.toThrow();
     });
 
     it("deleting the word also tombstones its reverse and cloze cards", async () => {
@@ -898,7 +898,7 @@ describe("study store", () => {
         typed("c-reverse-7", "reverse", 7),
         typed("c-cloze-7", "cloze", 7),
       ]);
-      await deleteCards(["c-vocab-7"]);
+      await deleteCards(WORKSPACE_ID, ["c-vocab-7"]);
       expect(deletes().sort()).toEqual(
         [rowUrl("c-vocab-7"), rowUrl("c-reverse-7"), rowUrl("c-cloze-7")].sort(),
       );
@@ -917,7 +917,7 @@ describe("study store", () => {
           ],
         });
       });
-      await moveCards(["c-vocab-7"], "d2");
+      await moveCards(WORKSPACE_ID, ["c-vocab-7"], "d2");
       expect(writtenRows().map((b) => b.key).sort()).toEqual(
         [rowUrl("c-vocab-7"), rowUrl("c-reverse-7"), rowUrl("c-cloze-7")].sort(),
       );
@@ -949,7 +949,7 @@ describe("study store", () => {
         });
       });
 
-      await deleteDeck("deck-1");
+      await deleteDeck(WORKSPACE_ID, "deck-1");
 
       expect(deletedKeys()).toEqual(["deck:deck-1"]);
       // The cards go out as one batch, before the tombstone.
@@ -977,13 +977,13 @@ describe("study store", () => {
         });
       });
 
-      await deleteDeck("deck-1");
+      await deleteDeck(WORKSPACE_ID, "deck-1");
 
       expect(writes().filter((w) => !w.deleted).map((row) => row.key)).toEqual(["card:card-early", "card:card-late"]);
     });
 
     it("refuses to delete the implicit general deck without touching the server", async () => {
-      await expect(deleteDeck(GENERAL_DECK_ID)).rejects.toThrow(/general/i);
+      await expect(deleteDeck(WORKSPACE_ID, GENERAL_DECK_ID)).rejects.toThrow(/general/i);
       expect(fetch).not.toHaveBeenCalled();
     });
 
@@ -1002,7 +1002,7 @@ describe("study store", () => {
         });
       });
 
-      await deleteDeck("deck-1");
+      await deleteDeck(WORKSPACE_ID, "deck-1");
 
       expect(writtenRows().map(({ key, body }) => ({ key, data: body }))).toEqual([
         { key: "card:card-shared", data: { ...shared, deckIds: ["deck-2"] } },
@@ -1035,8 +1035,8 @@ describe("study store", () => {
         });
       });
 
-      await deleteDeck("deck-1");
-      await deleteDeck("deck-2");
+      await deleteDeck(WORKSPACE_ID, "deck-1");
+      await deleteDeck(WORKSPACE_ID, "deck-2");
 
       expect(cards.get("card:card-1")?.deckIds).toEqual([GENERAL_DECK_ID]);
       expect(writtenRows().map((row) => (row.body as StudyCard).deckIds)).toEqual([
@@ -1060,7 +1060,7 @@ describe("study store", () => {
     it("writes into an explicitly given workspace instead of the selected one", async () => {
       respondWith([]);
 
-      const added = await addCard(42, { workspaceId: 9 });
+      const added = await addCard(9, 42);
 
       expect(writtenRows().map(({ key, workspaceId }) => [key, workspaceId])).toEqual([[`card:${added.id}`, 9]]);
     });
@@ -1069,7 +1069,7 @@ describe("study store", () => {
       // The selected workspace (7) has the card; workspace 9 does not.
       respondWith([pluginRow("card:card-1", card("card-1", 42, ["general"]))]);
 
-      const added = await addCard(42, { workspaceId: 9 });
+      const added = await addCard(9, 42);
 
       expect(added.id).not.toBe("card-1");
     });
@@ -1079,11 +1079,11 @@ describe("study store", () => {
       const seen: number[] = [];
       const stop = onStudyWrite((id) => seen.push(id));
 
-      await addCard(42);
-      await addCard(43, { workspaceId: 9 });
-      await createDeck("HSK 1");
+      await addCard(WORKSPACE_ID, 42);
+      await addCard(9, 43);
+      await createDeck(WORKSPACE_ID, "HSK 1");
       stop();
-      await addCard(44);
+      await addCard(WORKSPACE_ID, 44);
 
       expect(seen).toEqual([WORKSPACE_ID, 9, WORKSPACE_ID]);
     });
@@ -1091,7 +1091,7 @@ describe("study store", () => {
     it("writes a vocab card in the general deck", async () => {
       respondWith([]);
 
-      const added = await addCard(42);
+      const added = await addCard(WORKSPACE_ID, 42);
 
       expect(added.id).toBe("c-vocab-42");
       expect(added.kind).toBe("vocab");
@@ -1119,7 +1119,7 @@ describe("study store", () => {
 
     it("keeps the entry kind snapshot of a character card across a round trip", async () => {
       respondWith([]);
-      const added = await addCard(11, {
+      const added = await addCard(WORKSPACE_ID, 11, {
         kind: "writing",
         written: "学",
         entryKind: "character",
@@ -1128,7 +1128,7 @@ describe("study store", () => {
       const body = writtenRows()[0]!.body as StudyCard;
       expect(body.entryKind).toBe("character");
       respondWith([pluginRow(`card:${added.id}`, body)]);
-      const { cards } = await loadStudyData();
+      const { cards } = await loadStudyData(WORKSPACE_ID);
       expect(cards[0].entryKind).toBe("character");
     });
 
@@ -1136,7 +1136,7 @@ describe("study store", () => {
       const vocab = card("card-1", 42, ["general"]);
       respondWith([pluginRow("card:card-1", vocab)]);
 
-      const added = await addCard(42, { kind: "sentence", sentenceId: 9 });
+      const added = await addCard(WORKSPACE_ID, 42, { kind: "sentence", sentenceId: 9 });
 
       expect(added.id).not.toBe("card-1");
       expect(added.kind).toBe("sentence");
@@ -1154,13 +1154,13 @@ describe("study store", () => {
       };
       respondWith([pluginRow("card:card-s9", first)]);
 
-      const same = await addCard(42, { kind: "sentence", sentenceId: 9 });
+      const same = await addCard(WORKSPACE_ID, 42, { kind: "sentence", sentenceId: 9 });
       expect(same.id).toBe("card-s9");
       expect(writtenRows()).toHaveLength(
         0,
       );
 
-      const other = await addCard(42, { kind: "sentence", sentenceId: 10 });
+      const other = await addCard(WORKSPACE_ID, 42, { kind: "sentence", sentenceId: 10 });
       expect(other.id).not.toBe("card-s9");
       expect(other.sentenceId).toBe(10);
     });
@@ -1168,14 +1168,14 @@ describe("study store", () => {
     it("derives the id of a new card from its kind and entry", async () => {
       respondWith([]);
 
-      await expect(addCard(42, { kind: "writing" })).resolves.toMatchObject({
+      await expect(addCard(WORKSPACE_ID, 42, { kind: "writing" })).resolves.toMatchObject({
         id: "c-writing-42",
       });
-      await expect(addCard(42, { kind: "tone" })).resolves.toMatchObject({
+      await expect(addCard(WORKSPACE_ID, 42, { kind: "tone" })).resolves.toMatchObject({
         id: "c-tone-42",
       });
       await expect(
-        addCard(42, { kind: "sentence", sentenceId: 9 }),
+        addCard(WORKSPACE_ID, 42, { kind: "sentence", sentenceId: 9 }),
       ).resolves.toMatchObject({
         id: "c-sentence-42",
       });
@@ -1194,7 +1194,7 @@ describe("study store", () => {
       };
       respondWith([pluginRow("card:c-sentence-42", s9)]);
 
-      const s10 = await addCard(42, { kind: "sentence", sentenceId: 10 });
+      const s10 = await addCard(WORKSPACE_ID, 42, { kind: "sentence", sentenceId: 10 });
 
       expect(s10.id).toBe("c-sentence-42-10");
       expect(writtenRows().map((entry) => entry.key)).toEqual(["card:c-sentence-42-10"]);
@@ -1208,7 +1208,7 @@ describe("study store", () => {
       };
       respondWith([pluginRow("card:c-sentence-42", s9)]);
 
-      const bare = await addCard(42, { kind: "sentence" });
+      const bare = await addCard(WORKSPACE_ID, 42, { kind: "sentence" });
 
       expect(bare.id).toMatch(ULID);
     });
@@ -1221,7 +1221,7 @@ describe("study store", () => {
         pluginRow("card:card-early", early),
       ]);
 
-      await expect(addCard(42)).resolves.toEqual(early);
+      await expect(addCard(WORKSPACE_ID, 42)).resolves.toEqual(early);
       expect(writtenRows()).toEqual([]);
     });
 
@@ -1247,14 +1247,14 @@ describe("study store", () => {
       });
 
       const [deviceA, deviceB] = await Promise.all([
-        addCard(42, { written: "猫" }),
-        addCard(42, { written: "猫", deckIds: ["deck-1"] }),
+        addCard(WORKSPACE_ID, 42, { written: "猫" }),
+        addCard(WORKSPACE_ID, 42, { written: "猫", deckIds: ["deck-1"] }),
       ]);
 
       expect(writtenRows()).toHaveLength(2);
       expect(deviceA.id).toBe(deviceB.id);
       expect([...server.keys()]).toEqual(["card:c-vocab-42"]);
-      const data = await loadStudyData();
+      const data = await loadStudyData(WORKSPACE_ID);
       expect(data.cards).toHaveLength(1);
       expect(data.merged).toBe(0);
       expect(data.reviews.map((r) => r.payload.cardId)).toEqual([
@@ -1310,7 +1310,7 @@ describe("study store", () => {
     it("stores the entry written form and the sentence id", async () => {
       respondWith([]);
 
-      const added = await addCard(42, { written: "猫", sentenceId: 9 });
+      const added = await addCard(WORKSPACE_ID, 42, { written: "猫", sentenceId: 9 });
 
       expect(added.written).toBe("猫");
       expect(added.sentenceId).toBe(9);
@@ -1320,7 +1320,7 @@ describe("study store", () => {
     it("stores the card in explicitly requested decks", async () => {
       respondWith([]);
 
-      const added = await addCard(42, {
+      const added = await addCard(WORKSPACE_ID, 42, {
         deckIds: ["deck-a", "deck-b", "deck-a"],
       });
 
@@ -1331,7 +1331,7 @@ describe("study store", () => {
     it("falls back to general when no deck is given", async () => {
       respondWith([]);
 
-      const added = await addCard(42, { deckIds: [] });
+      const added = await addCard(WORKSPACE_ID, 42, { deckIds: [] });
 
       expect(added.deckIds).toEqual([GENERAL_DECK_ID]);
     });
@@ -1340,7 +1340,7 @@ describe("study store", () => {
       const existing = card("card-1", 42, ["general"]);
       respondWith([pluginRow("card:card-1", existing)]);
 
-      await expect(addCard(42)).resolves.toEqual(existing);
+      await expect(addCard(WORKSPACE_ID, 42)).resolves.toEqual(existing);
       expect(writtenRows()).toEqual([]);
     });
 
@@ -1348,8 +1348,8 @@ describe("study store", () => {
       const legacy = { ...card("card-1", 42, ["general"]), sentenceId: 9 };
       respondWith([pluginRow("card:card-1", legacy)]);
 
-      await expect(addCard(42)).resolves.toEqual(legacy);
-      await expect(addCard(42, { sentenceId: 10 })).resolves.toEqual(legacy);
+      await expect(addCard(WORKSPACE_ID, 42)).resolves.toEqual(legacy);
+      await expect(addCard(WORKSPACE_ID, 42, { sentenceId: 10 })).resolves.toEqual(legacy);
       expect(writtenRows()).toEqual([]);
     });
 
@@ -1357,7 +1357,7 @@ describe("study store", () => {
       const existing = card("card-1", 42, ["general"]);
       respondWith([pluginRow("card:card-1", existing)]);
 
-      await expect(addCard(42, { deckIds: ["deck-a"] })).resolves.toEqual(
+      await expect(addCard(WORKSPACE_ID, 42, { deckIds: ["deck-a"] })).resolves.toEqual(
         existing,
       );
       expect(writtenRows()).toEqual([]);
@@ -1367,7 +1367,7 @@ describe("study store", () => {
       const existing = card("card-1", 42, ["general"]);
       respondWith([pluginRow("card:card-1", existing)]);
 
-      await expect(addCard(42, { written: "猫" })).resolves.toEqual(existing);
+      await expect(addCard(WORKSPACE_ID, 42, { written: "猫" })).resolves.toEqual(existing);
       expect(writtenRows()).toEqual([]);
     });
   });
@@ -1408,7 +1408,7 @@ describe("study store", () => {
 
     it("tombstones the card, its stored duplicates and its companion cards", async () => {
       serve([vocab, companion, dupe, other]);
-      const removed = await deleteCards(["c-vocab-42"]);
+      const removed = await deleteCards(WORKSPACE_ID, ["c-vocab-42"]);
       expect(deletedKeys().sort()).toEqual(
         ["card:01DUPE", "card:c-vocab-42", "card:c-writing-42"].sort(),
       );
@@ -1421,7 +1421,7 @@ describe("study store", () => {
 
     it("tombstones companions and duplicates before the vocab row it was asked for", async () => {
       serve([vocab, companion, dupe]);
-      await deleteCards(["c-vocab-42"]);
+      await deleteCards(WORKSPACE_ID, ["c-vocab-42"]);
       const order = deletedKeys();
       expect(order[order.length - 1]).toBe("card:c-vocab-42");
       expect(order.indexOf("card:c-writing-42")).toBeLessThan(
@@ -1439,7 +1439,7 @@ describe("study store", () => {
           ),
         });
       });
-      const removed = await deleteCards(["c-vocab-42"]);
+      const removed = await deleteCards(WORKSPACE_ID, ["c-vocab-42"]);
       expect(removed.map((row) => row.id)).toEqual(["c-vocab-42"]);
     });
 
@@ -1456,7 +1456,7 @@ describe("study store", () => {
           ),
         });
       });
-      const err = await deleteCards(["c-vocab-42"]).catch((e: unknown) => e);
+      const err = await deleteCards(WORKSPACE_ID, ["c-vocab-42"]).catch((e: unknown) => e);
       expect(err).toBeInstanceOf(PartialCardsError);
       expect((err as PartialCardsError).rows.map((row) => row.id)).toEqual([
         "c-writing-42",
@@ -1472,7 +1472,7 @@ describe("study store", () => {
         }
         return jsonResponse({ pluginData: [] });
       });
-      const err = await restoreCards([vocab, companion, other]).catch(
+      const err = await restoreCards(WORKSPACE_ID, [vocab, companion, other]).catch(
         (e: unknown) => e,
       );
       expect(err).toBeInstanceOf(PartialCardsError);
@@ -1485,7 +1485,7 @@ describe("study store", () => {
     it("restore with onlyLive skips cards another tab deleted since", async () => {
       // `other` was moved since (so the undo rewrites it); `vocab` was deleted.
       serve([{ ...other, deckIds: ["deck-3"] }]);
-      await restoreCards([vocab, other], { onlyLive: true });
+      await restoreCards(WORKSPACE_ID, [vocab, other], { onlyLive: true });
       expect(writtenRows().map((entry) => (entry.body as StudyCard).id)).toEqual([
         "c-vocab-43",
       ]);
@@ -1493,11 +1493,11 @@ describe("study store", () => {
 
     it("undoing a move puts every row back into its old decks", async () => {
       serve([vocab, companion, dupe]);
-      const before = await moveCards(["c-vocab-42"], "deck-3");
+      const before = await moveCards(WORKSPACE_ID, ["c-vocab-42"], "deck-3");
       vi.mocked(fetch).mockClear();
       // The server now holds the moved rows.
       serve([vocab, companion, dupe].map((row) => ({ ...row, deckIds: ["deck-3"] })));
-      await restoreCards(before, { onlyLive: true });
+      await restoreCards(WORKSPACE_ID, before, { onlyLive: true });
       const byId = new Map(
         writtenRows().map((entry) => [(entry.body as StudyCard).id, entry.body]),
       );
@@ -1508,21 +1508,21 @@ describe("study store", () => {
 
     it("deleting a non-vocab card leaves the vocab card alone", async () => {
       serve([vocab, companion]);
-      await deleteCards(["c-writing-42"]);
+      await deleteCards(WORKSPACE_ID, ["c-writing-42"]);
       expect(deletedKeys()).toEqual(["card:c-writing-42"]);
     });
 
     it("ignores unknown ids and writes nothing for an empty list", async () => {
       serve([vocab]);
-      expect(await deleteCards(["nope"])).toEqual([]);
-      expect(await deleteCards([])).toEqual([]);
+      expect(await deleteCards(WORKSPACE_ID, ["nope"])).toEqual([]);
+      expect(await deleteCards(WORKSPACE_ID, [])).toEqual([]);
       expect(deletedKeys()).toEqual([]);
     });
 
     it("restoreCards puts the removed rows back unchanged", async () => {
       serve([]);
       // Deletion order is companions first, so undo writes the word first.
-      await restoreCards([companion, vocab]);
+      await restoreCards(WORKSPACE_ID, [companion, vocab]);
       expect(writtenRows()).toEqual([
         {
           key: `card:c-vocab-42`, workspaceId: WORKSPACE_ID,
@@ -1537,7 +1537,7 @@ describe("study store", () => {
 
     it("moves cards (and their duplicates and companions) into the target deck", async () => {
       serve([vocab, companion, dupe, other]);
-      await moveCards(["c-vocab-42"], "deck-3");
+      await moveCards(WORKSPACE_ID, ["c-vocab-42"], "deck-3");
       const bodies = writtenRows();
       expect(
         bodies
@@ -1550,13 +1550,13 @@ describe("study store", () => {
 
     it("skips rows already only in the target deck", async () => {
       serve([vocab, other]);
-      await moveCards(["c-vocab-42", "c-vocab-43"], "deck-1");
+      await moveCards(WORKSPACE_ID, ["c-vocab-42", "c-vocab-43"], "deck-1");
       expect(writtenRows()).toEqual([]);
     });
 
     it("rejects a deck that does not exist", async () => {
       serve([vocab]);
-      await expect(moveCards(["c-vocab-42"], "ghost")).rejects.toThrow(
+      await expect(moveCards(WORKSPACE_ID, ["c-vocab-42"], "ghost")).rejects.toThrow(
         /not found/,
       );
       expect(writtenRows()).toEqual([]);
@@ -1564,13 +1564,13 @@ describe("study store", () => {
 
     it("moves into the implicit general deck", async () => {
       serve([vocab]);
-      await moveCards(["c-vocab-42"], GENERAL_DECK_ID);
+      await moveCards(WORKSPACE_ID, ["c-vocab-42"], GENERAL_DECK_ID);
       expect(writtenRows()).toHaveLength(1);
     });
 
     it("rejects an empty target and the move leaves the store untouched", async () => {
       serve([vocab]);
-      await expect(moveCards(["c-vocab-42"], "")).rejects.toThrow(/deck/i);
+      await expect(moveCards(WORKSPACE_ID, ["c-vocab-42"], "")).rejects.toThrow(/deck/i);
       expect(writtenRows()).toEqual([]);
     });
 
@@ -1586,7 +1586,7 @@ describe("study store", () => {
           events: [],
         }),
       );
-      const data = await loadStudyData();
+      const data = await loadStudyData(WORKSPACE_ID);
       expect(data.cards.map((c) => c.id)).toEqual(["c-vocab-43"]);
     });
   });
@@ -1635,7 +1635,7 @@ describe("study store", () => {
           pluginRow("fsrs:active", { setId: "B", changedAt: "x" }),
         ],
       });
-      const data = await loadStudyData();
+      const data = await loadStudyData(WORKSPACE_ID);
       expect(data.fsrs?.active?.id).toBe("B");
       expect(data.fsrs?.w).toEqual(wWith(8, 2.5));
       expect(data.fsrs?.sets.map((s) => s.id)).toEqual(["B", "A"]);
@@ -1651,7 +1651,7 @@ describe("study store", () => {
           }),
         ],
       });
-      const data = await loadStudyData();
+      const data = await loadStudyData(WORKSPACE_ID);
       expect(data.fsrs?.active).toBeNull();
       expect(activeWeights(data)).toEqual(DEFAULT_W);
       expect(activeWeights({})).toEqual(DEFAULT_W);
@@ -1665,7 +1665,7 @@ describe("study store", () => {
           pluginRow("fsrs:active", { setId: "A", changedAt: "x" }, { workspaceId: 8 }),
         ],
       });
-      const data = await loadStudyData();
+      const data = await loadStudyData(WORKSPACE_ID);
       expect(data.fsrs?.sets).toEqual([]);
       expect(data.fsrs?.w).toEqual(DEFAULT_W);
     });
@@ -1732,7 +1732,7 @@ describe("study store", () => {
           ],
         });
       });
-      await deleteDeck("deck-1");
+      await deleteDeck(WORKSPACE_ID, "deck-1");
       const pushes = pushBodies().map((b) => itemsOf(b));
       expect(pushes.map((items) => items.length)).toEqual([200, 200, 50, 1]);
       expect(pushes.slice(0, 3).flat().every((w) => w.collection === "cards" && !w.deleted)).toBe(true);
@@ -1749,7 +1749,7 @@ describe("study store", () => {
           ],
         });
       });
-      await expect(deleteDeck("deck-1")).rejects.toThrow();
+      await expect(deleteDeck(WORKSPACE_ID, "deck-1")).rejects.toThrow();
       expect(deletedKeys()).toEqual([]);
     });
 
@@ -2027,7 +2027,7 @@ describe("typed study collections", () => {
       fsrsActive: [{ setId: "S1", changedAt: "2026-01-06T00:00:00Z", extra: {}, ...meta() }],
     });
 
-    const data = await loadStudyData();
+    const data = await loadStudyData(WORKSPACE_ID);
 
     expect(data.cards).toEqual([
       card("c-vocab-1", 1, ["general"]),
@@ -2045,9 +2045,15 @@ describe("typed study collections", () => {
     expect(data.fsrs?.sets.map((s) => s.id)).toEqual(["S1"]);
   });
 
-  it("refuses the whole page when a typed row fails the strict parse", async () => {
-    serve({ cards: [{ ...cardBody("c-vocab-5", 5), kind: "flash", ...meta() }] });
-    await expect(loadStudyData()).rejects.toThrow(/contract/);
+  it("skips a typed row that fails the strict parse and keeps the others (sync README, Reading rows)", async () => {
+    serve({
+      cards: [
+        { ...cardBody("c-vocab-5", 5), kind: "flash", ...meta() },
+        { ...cardBody("c-vocab-6", 6), ...meta() },
+      ],
+    });
+    const data = await loadStudyData(WORKSPACE_ID);
+    expect(data.cards.map((c) => c.id)).toEqual(["c-vocab-6"]);
   });
 
   it("ignores typed-family keys left in pluginData and keeps reading the keyed rows", async () => {
@@ -2064,7 +2070,7 @@ describe("typed study collections", () => {
       ],
     });
 
-    const data = await loadStudyData();
+    const data = await loadStudyData(WORKSPACE_ID);
 
     expect(data.cards).toEqual([]);
     expect(data.decks).toEqual([]);
@@ -2089,8 +2095,8 @@ describe("typed study collections", () => {
         decks: [{ id: "d2", name: "Two", createdAt: "2026-01-01T00:00:00Z", source: null, extra: { pinned: true }, ...meta() }],
       }));
     });
-    await moveCards(["c-vocab-1"], "d2");
-    await renameDeck("d2", "Zwei");
+    await moveCards(WORKSPACE_ID, ["c-vocab-1"], "d2");
+    await renameDeck(WORKSPACE_ID, "d2", "Zwei");
     expect(writes().map((w) => [w.collection, w.item.extra])).toEqual([
       ["cards", { color: "red" }],
       ["decks", { pinned: true }],
@@ -2110,7 +2116,7 @@ describe("typed study collections", () => {
           decks: [{ id: "d2", name: "Two", createdAt: "2026-01-01T00:00:00Z", source: null, extra: {}, ...meta({ updatedAt: "2026-02-01T00:00:09Z" }) }],
         }));
       });
-      await renameDeck("d2", "Zwei");
+      await renameDeck(WORKSPACE_ID, "d2", "Zwei");
       expect(writes()[0]!.updatedAt).toBe("2026-02-01T00:00:09.001Z");
     } finally {
       vi.useRealTimers();
@@ -2142,7 +2148,7 @@ describe("typed study collections", () => {
       fsrsSets: [{ ...set("S9"), ...gone }],
     });
     await deleteParamSet(WORKSPACE_ID, "S9");
-    await deleteDeck("d1");
+    await deleteDeck(WORKSPACE_ID, "d1");
     expect(writes()).toEqual([]);
     expect(pushBodies()).toEqual([]);
   });
@@ -2153,10 +2159,10 @@ describe("typed study collections", () => {
       limits: [{ deckId: null, new: { limit: 5 }, reviews: null, extra: {}, ...meta() }],
       fsrsActive: [{ setId: "S1", changedAt: "2026-01-06T00:00:00Z", extra: {}, ...meta() }],
     });
-    await saveDeckCardTypes("d1", ["cloze"]);
-    await saveDeckNewOrder("d1", { by: "frequency" });
-    await saveWorkspaceLimits({ new: 5 });
-    await renameDeck("d1", "x").catch(() => undefined);
+    await saveDeckCardTypes(WORKSPACE_ID, "d1", ["cloze"]);
+    await saveDeckNewOrder(WORKSPACE_ID, "d1", { by: "frequency" });
+    await saveWorkspaceLimits(WORKSPACE_ID, { new: 5 });
+    await renameDeck(WORKSPACE_ID, "d1", "x").catch(() => undefined);
     expect(writes()).toEqual([]);
   });
 
@@ -2164,7 +2170,7 @@ describe("typed study collections", () => {
     vi.mocked(fetch).mockImplementation(async (input) =>
       String(input).startsWith("/api/events") ? rawResponse([]) : rawResponse(pagedPull({ cursor: "x" })),
     );
-    const data = await loadStudyData();
+    const data = await loadStudyData(WORKSPACE_ID);
     expect(data.cards).toEqual([]);
     expect(data.fsrs).toEqual({ sets: [], active: null, w: DEFAULT_W, pointer: null });
   });
@@ -2253,11 +2259,11 @@ describe("limit rows", () => {
       if (isPush(input, init)) return pushAnswer(init);
       return jsonResponse({ pluginData: [pluginRow("limits:deck:d2", { version: 1, new: 3 })] });
     });
-    await saveWorkspaceLimits({ new: 15, reviews: null });
-    await saveDeckLimits("d1", { reviews: null });
-    await saveDeckLimits("d2", {});
+    await saveWorkspaceLimits(WORKSPACE_ID, { new: 15, reviews: null });
+    await saveDeckLimits(WORKSPACE_ID, "d1", { reviews: null });
+    await saveDeckLimits(WORKSPACE_ID, "d2", {});
     // A deck without a row has nothing to remove.
-    await saveDeckLimits("d3", {});
+    await saveDeckLimits(WORKSPACE_ID, "d3", {});
     expect(writtenRows()).toEqual([
       { key: "limits:workspace", workspaceId: WORKSPACE_ID, body: { version: 1, new: 15, reviews: null } },
       { key: "limits:deck:d1", workspaceId: WORKSPACE_ID, body: { version: 1, reviews: null } },
@@ -2278,7 +2284,7 @@ describe("limit rows", () => {
         pluginData: [pluginRow("deck:d1", deck("d1", "Doomed")), pluginRow("limits:deck:d1", { version: 1, new: 1 })],
       });
     });
-    await deleteDeck("d1");
+    await deleteDeck(WORKSPACE_ID, "d1");
     expect(deletedKeys()).toEqual(["deck:d1", "limits:deck:d1"]);
   });
 });
@@ -2310,7 +2316,7 @@ describe("queued reviews count in the loaded history", () => {
     respondPull(pull, []);
     queue(1, reviewEvent("Q1", "card-1"));
 
-    const data = await loadStudyData();
+    const data = await loadStudyData(WORKSPACE_ID);
 
     expect(data.reviews.map((r) => r.id)).toEqual(["Q1"]);
   });
@@ -2319,7 +2325,7 @@ describe("queued reviews count in the loaded history", () => {
     respondPull(pull, [reviewEvent("Q1", "card-1")]);
     queue(1, reviewEvent("Q1", "card-1"));
 
-    const data = await loadStudyData();
+    const data = await loadStudyData(WORKSPACE_ID);
 
     expect(data.reviews.map((r) => r.id)).toEqual(["Q1"]);
   });
@@ -2328,7 +2334,7 @@ describe("queued reviews count in the loaded history", () => {
     respondPull(pull, []);
     queue(2, reviewEvent("Q2", "card-1"));
 
-    const data = await loadStudyData();
+    const data = await loadStudyData(WORKSPACE_ID);
 
     expect(data.reviews).toEqual([]);
   });
@@ -2337,7 +2343,7 @@ describe("queued reviews count in the loaded history", () => {
     respondPull(pull, []);
     queue(1, reviewEvent("Q3", "card-1", WORKSPACE_ID + 1));
 
-    const data = await loadStudyData();
+    const data = await loadStudyData(WORKSPACE_ID);
 
     expect(data.reviews).toEqual([]);
   });
@@ -2346,7 +2352,7 @@ describe("queued reviews count in the loaded history", () => {
     respondPull(pull, []);
     rememberSent(1, [reviewEvent("S1", "card-1")]);
 
-    const data = await loadStudyData();
+    const data = await loadStudyData(WORKSPACE_ID);
 
     expect(data.reviews.map((r) => r.id)).toEqual(["S1"]);
   });
@@ -2355,7 +2361,7 @@ describe("queued reviews count in the loaded history", () => {
     respondPull(pull, [reviewEvent("S1", "card-1")]);
     rememberSent(1, [reviewEvent("S1", "card-1")]);
 
-    const data = await loadStudyData();
+    const data = await loadStudyData(WORKSPACE_ID);
 
     expect(data.reviews.map((r) => r.id)).toEqual(["S1"]);
   });
@@ -2370,7 +2376,7 @@ describe("queued reviews count in the loaded history", () => {
     const misclick = { ...reviewEvent("R1", "card-1"), payload: { cardId: "card-1", mode: "vocab", grade: 1 } };
     respondPull(pull, [misclick, replacing("R2", "R1")]);
 
-    const data = await loadStudyData();
+    const data = await loadStudyData(WORKSPACE_ID);
 
     expect(data.reviews.map((r) => r.id)).toEqual(["R2"]);
     expect(data.reviews[0].payload.replaces).toBe("R1");
@@ -2380,7 +2386,7 @@ describe("queued reviews count in the loaded history", () => {
     respondPull(pull, [reviewEvent("R1", "card-1")]);
     queue(1, replacing("R2", "R1"));
 
-    const data = await loadStudyData();
+    const data = await loadStudyData(WORKSPACE_ID);
 
     expect(data.reviews.map((r) => r.id)).toEqual(["R2"]);
   });
@@ -2390,7 +2396,7 @@ describe("queued reviews count in the loaded history", () => {
     queue(1, reviewEvent("Q1", "card-1"));
     setOutboxUser(null, null);
 
-    const data = await loadStudyData();
+    const data = await loadStudyData(WORKSPACE_ID);
 
     expect(data.reviews).toEqual([]);
   });

@@ -4,6 +4,7 @@
 // share one pull (in flight) and its answer (for STUDY_DATA_TTL_MS).
 // Every study-data write (store.ts) drops the workspace's cached copy.
 
+import { onSessionEnd } from '../session/sessionEnd';
 import { createWorkspaceCache, type WorkspaceCache } from '../workspaceCache';
 import { ALL_WORKSPACES, loadStudyDataFor, onStudyWrite } from './store';
 import type { StudyCard, StudyData } from './types';
@@ -24,6 +25,7 @@ export function createStudyDataCache(
 }
 
 const shared = createStudyDataCache(loadStudyDataFor);
+onSessionEnd(() => shared.invalidate());
 onStudyWrite((workspaceId) =>
 	shared.invalidate(workspaceId === ALL_WORKSPACES ? undefined : workspaceId)
 );

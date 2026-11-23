@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"slices"
 	"time"
@@ -201,6 +202,10 @@ func encodeTyped(f rows.Family) func(sc scanner) (string, int64, []byte, error) 
 		var rowid int64
 		var stamp string
 		r, err := study.ScanRow(f, typedScanner{sc, &rowid, &stamp})
+		if errors.Is(err, study.ErrUnreadableStored) {
+			// walk skips it and still moves past its rowid.
+			return stamp, rowid, nil, err
+		}
 		if err != nil {
 			return "", 0, nil, err
 		}

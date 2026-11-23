@@ -2,18 +2,12 @@ import { catalogueLanguage, getLanguage } from './i18n';
 import { UserError } from './api/userError';
 import { followServerLanguage } from './i18n/interfaceLanguage';
 import { reloadPage } from './i18n/reloadPage';
-import { clearAudioCache } from './api/audio';
-import { clearJournalEntriesCache } from '$lib/plugins/journal/journalEntries.svelte';
-import { clearEntryBasesCache } from './api/entryBases';
-import { resetLookupRecorder } from './lookups/store';
-import { clearClipCache } from './audio/source';
 import { derived, get, writable } from 'svelte/store';
 import { clearSelection } from './workspaces';
 import { hasSession, stepFor, type LoginStep, type MfaChallenge } from './account/loginFlow';
 import { emailLoginVerify, mfaStep, type LoginBody } from './api/mfa';
-import { clearStudyDay } from './time/zone';
+import { endSession, type SessionEndReason } from './session/sessionEnd';
 import { setOutboxUser } from './study/outboxUser';
-import { clearRecentSent } from './study/recentSent';
 import { cleanupPartitions, ownPartition } from './pwa/partitions';
 import { clearReceipts } from './pwa/prepareOffline';
 import {
@@ -64,23 +58,29 @@ export const restriction = derived(auth, ($auth): Restriction | null => $auth.us
 // The review outbox belongs to the user `me` named; null when signed out.
 auth.subscribe(($auth) => setOutboxUser($auth.user?.id ?? null, $auth.token));
 
-// The lookup history's buffer and copies (memory only) belong to one user:
-// whenever the signed-in user changes (sign-out, another tab signing in as
-// someone else, a token swap) they are dropped.
-let lookupUser: number | null = null;
+// Every per-user cache registers with session/sessionEnd.ts; the session
+// ends here: an explicit sign-out, a 401 that ends it, or the signed-in user
+// changing under this tab (another tab signed in as someone else, a token
+// swap), which this subscription notices.
+let sessionUser: number | null = null;
+
+function closeSession(reason: SessionEndReason): void {
+	sessionUser = null;
+	endSession(reason);
+}
+
 auth.subscribe(($auth) => {
 	const id = $auth.user?.id ?? null;
-	if (id !== lookupUser) resetLookupRecorder();
-	lookupUser = id;
+	if (sessionUser !== null && id !== sessionUser) closeSession('switched');
+	if (id !== null) sessionUser = id;
 });
 
 // A 401 anywhere clears the token in the client; mirror that in the store.
 // Its offline copies and receipts are worthless too (the worker deletes the partition itself).
 setUnauthorizedHandler(() => {
+	closeSession('expired');
 	auth.set({ token: null, user: null });
 	forgetOfflineCopies();
-	// Looked-up words buffered for the lookup history belong to the session that ended.
-	resetLookupRecorder();
 });
 
 // A 403 that names a restriction means the session changed under us (an admin
@@ -277,22 +277,12 @@ export function logout(): void {
 		api('/api/auth/logout', { method: 'POST', body: {} }).catch(() => undefined);
 	}
 	clearToken();
-	// Offline API copies and the list of recently sent reviews belong to the session that just ended.
-	clearRecentSent();
+	// Every registered per-user cache (session/sessionEnd.ts).
+	closeSession('signOut');
+	// Device state that is not kept per user: offline API copies and receipts,
+	// and the workspace choice (workspace ids are global: the next user must not
+	// inherit it; only an explicit sign-out clears it, a mid-session 401 keeps it).
 	forgetOfflineCopies();
-	// Recordings fetched for this user must not outlive the session.
-	clearClipCache();
-	clearAudioCache();
-	// Workspace ids are global: the next user must not inherit this choice.
-	// Only an explicit sign-out clears it; a mid-session 401 keeps it.
 	clearSelection();
-	// The learner's zone history belongs to the account that just left.
-	clearStudyDay();
-	// Entry bases carry this user's own edits.
-	clearEntryBasesCache();
-	// The journal's entries column belongs to this user.
-	clearJournalEntriesCache();
-	// The lookup history's buffer and copies (memory only) belong to this user.
-	resetLookupRecorder();
 	auth.set({ token: null, user: null });
 }
