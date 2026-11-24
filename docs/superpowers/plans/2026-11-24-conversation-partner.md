@@ -286,7 +286,10 @@ caller of it):
 2. `81658102` web: turn ids and polling for this turn ("Still waiting…"), read-only field and the reply in the
    live region, turn-specific texts and the limit as a parameter, the privacy line names the topic and guidance, a
    picked level is kept, `pollUntil`, the contract cases through `startBody`/`turnGate`, the e2e comment.
-3. the docs commit (contracts README and CHANGELOG, wiki, these Rulings and this record).
+3. `23d38f11` the docs commit (contracts README and CHANGELOG, wiki, these Rulings and this record).
+4. the e2e spec follows the new live region on purpose: the reply text now shows twice (the message and "Partner:
+   …" in the live region), so the spec matches the message exactly and checks the live region (all three final
+   runs failed on the strict locator before this change).
 
 Review items: 1 (lost answer, double charge) — server idempotency plus client polling; 2 (stale seq/history) —
 re-read under the slot and ids in `AppendTurn`; 3 (transcript) — fixed with fixture cases; 4 (focus) — read-only;

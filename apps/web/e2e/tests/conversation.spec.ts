@@ -20,7 +20,9 @@ test('a conversation with the partner is corrected, looked up and saved as an en
 
 	// The partner opens, in the workspace language; the provider is named.
 	await page.getByRole('button', { name: 'Let the partner begin' }).click();
-	const reply = page.getByText('こんにちは！今日は学校に行きましたか？');
+	const reply = page.getByText('こんにちは！今日は学校に行きましたか？', { exact: true });
+	// The live region reads it out too.
+	await expect(page.getByText('Partner: こんにちは！今日は学校に行きましたか？')).toBeAttached();
 	await expect(reply).toBeVisible();
 	await expect(page.getByText(/Answered by .*Anthropic/)).toBeVisible();
 
