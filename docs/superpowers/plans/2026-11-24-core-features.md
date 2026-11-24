@@ -220,6 +220,26 @@ deinflection) stays language code: a profile says *whether* a language has tones
   reverse and cloze — the Spanish demo is exactly that plus `script: "latin"` — cost if wrong: a new language
   without a profile gets the plain set until its profile lands.
 
+- Ruling (fix wave): the journal and grammar copies of migrations 044 and 045 are Go steps with frozen copies of
+  the rules a restore applies, not SQL — SQL cannot check control characters, code points, calendar dates or RFC
+  3339 stamps, and the owner's clean start does not cover an archive that cannot be restored — cost if wrong: two
+  more frozen files in `internal/db`.
+- Ruling (fix wave): an entry text over 50000 code points (the old editor allowed 80000 UTF-16 units) is cut, not
+  dropped, by migration 044; an over-long title and guidance likewise — keeping most of the text beats losing
+  the entry — cost if wrong: the tail of a few very long entries.
+- Ruling (fix wave): grammar progress is capped at 10000 lessons per user (`grammar.MaxProgressRows`); the keyed
+  prefix families get no cap in #199 — a cap there needs a count on every write and push item, and known marks
+  and notes legitimately scale with the dictionary; push bodies are already capped — cost if wrong: a script with
+  a write token can grow a user's keyed rows.
+- Ruling (fix wave): the web reads every profile member that decides availability: `script` (`usesHan`),
+  `readings` (`hasReadings`: the reader's Display tab), `practiceModes` (`hasCharacterMap`: Stats → Characters
+  and the map widget), `segmentation`, `tones`, `strokes`, `variants`, `cardKinds`; `kana` is read by the server
+  (journal script check) only; `decks` and `levels` decide nothing today. The languages README names what each
+  member decides — cost if wrong: none.
+- Ruling (fix wave): the client sends the journal what the server takes (control characters stripped from title,
+  text and guidance, the title cut to 200 code points, also an idea's title from the address) and shows a
+  refused save by its error code; the server caps AI idea titles too — cost if wrong: none.
+
 ## Execution record
 
 Commits on `feature/199-core-features` (from develop b5765fb1):
@@ -251,6 +271,26 @@ Not verified:
 - No manual run in a real browser beyond the Playwright suite; no phone.
 - The migrations were tested on synthetic rows, not on a copy of a production database.
 - An e2e run of a grammar lesson (no grammar pack in the e2e fixtures).
+
+### Fix wave (two reviews)
+
+- S1 (blocker): migration 046 failed with "UNIQUE constraint failed" when one user held a key in both former
+  namespaces; it now keeps one row per key (newest edit, then the family's namespace). Test first (red seen:
+  the constraint error). Every migration of the branch got a messy-database test: 044 and 045 red (rules not
+  applied), 046 red (the collision), 047 green on the first run (no unique or check constraint a populated
+  database can break; kept as a guard).
+- S2/S3: 044 and 045 became Go steps (`internal/db/step044.go`, `step045.go`) applying the restore's rules
+  (normalise or drop); the export replaces an unreadable `completedAt`/`createdAt` by the row's write time.
+  Round-trip test export → Open → restore (red seen: `backup_invalid`).
+- S4: the dry run drops journal and grammar rows without a workspace (`planDrops`); test red seen by disabling
+  the new condition after writing test and code together.
+- S5: `grammar.MaxProgressRows` (red seen: undefined constant).
+- W1: `plainText`/`entryTitle` (red seen), the editor and settings show `errorText` (red seen: the DOM tests for
+  a refused save and a pasted vertical tab), the server's idea titles are plain and capped (red seen).
+- W2/W3/W6: catalogue strings, the wiki and stale comments and names reworded (`hasPlugins` → `switchesSettled`,
+  `PluginDataRow` → `KeyedDataRow`, the Sources page's variables).
+- W4/W5: `hasCharacterMap` and `hasReadings` (written together with their test; red not seen), the reader's
+  Display tab and the character map's note go through the profile, so `zh-TW` gets them.
 
 ## Comment for #38 (to be posted by the orchestrator)
 

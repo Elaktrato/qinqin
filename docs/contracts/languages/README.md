@@ -7,17 +7,17 @@ stays language code: a profile says whether a language has tones, not how to par
 A code resolves by its primary subtag, case-insensitive (`zh-TW`, `zh_Hant`, `ZH` → `zh`). Every code
 without a profile gets the fallback (`code: "*"`).
 
-| Member | Meaning | Read by |
+| Member | Meaning | Decides |
 | --- | --- | --- |
-| `script` | `han`, `latin` or `other` | the Characters tab, the character-map widget, the parts search and radical filter, the weekly characters, the han milestones (web `usesHan`); the character breakdown of a word (server `entryCharacters`); the journal's script check of a correction (server `journal.CorrectionFitsLanguage`) |
-| `readings` | the reading systems an entry carries (`pinyin`, `kana`) | informational: which reading code exists |
+| `script` | `han`, `latin` or `other` | web `usesHan`: the parts search and radical filter, the weekly characters learned, the han milestones; server: the character breakdown of a word (`entryCharacters`) and the journal's script check |
+| `readings` | the reading systems an entry carries (`pinyin`, `kana`) | web `hasReadings`: the reader's Display tab (readings, ruby, fonts) |
 | `segmentation` | `dictionary` (words found by lookup, no spaces) or `spaces` | the reader's word counts and Words tab, the word salad's tokens |
 | `tones` | tone practice exists | tone eligibility |
 | `strokes` | the stroke player has data | the entry page's stroke player |
-| `kana` | the language writes kana | the journal's script check |
-| `variants` | traditional/simplified variants | the variant label, the reader's and grammar's variant choice |
+| `kana` | the language writes kana | server: the journal's script check (kana counts as the language's script) |
+| `variants` | traditional/simplified variants | the variant label, the reader's and grammar's variant choice, the character map's note on variants |
 | `cardKinds` | the card kinds a session and the setup may hold | the session's kinds, Study → card types |
-| `practiceModes` | `decks`, `levels`, `characterMap` | which practice the language offers |
+| `practiceModes` | `decks`, `levels`, `characterMap` | web `hasCharacterMap`: Stats → Characters and the character-map widget; `decks` and `levels` are every language's and decide nothing today |
 
 The fallback is the plain set: no readings, space segmentation, no tones, strokes, kana or variants, the card
 kinds `vocab`, `sentence`, `reverse`, `cloze`, decks and levels. The Spanish demo is exactly that with
