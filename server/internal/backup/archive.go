@@ -353,8 +353,7 @@ func (a *Archive) validate() error {
 	seenSent := map[int64]struct{}{}
 	if counts["sentences"], err = a.countLines(read, NameSentences, func(b []byte) error {
 		var s OwnSentence
-		if err := decodeStrict(b, &s); err != nil || s.ID <= 0 || s.EntryID <= 0 || s.Hanzi == "" || len(s.Hanzi) > 4096 ||
-			len(s.Pinyin) > 4096 || len(s.Translation) > 8192 {
+		if !ownSentenceLineOK(b) || decodeStrict(b, &s) != nil {
 			return invalid("%s holds a malformed line", NameSentences)
 		}
 		if _, dup := seenSent[s.ID]; dup {
@@ -717,6 +716,18 @@ func (a *Archive) Rows(fn func(Row) error) error {
 
 // Overlays streams overlays.jsonl.
 func (a *Archive) Overlays(fn func(Overlay) error) error { return eachFamily(a, NameOverlays, fn) }
+
+// ownSentenceLineOK is the live rule of an own sentences line: an id, an
+// entry and a text within the caps, and a well-formed AI mark when there is
+// one (#186).
+func ownSentenceLineOK(b []byte) bool {
+	var s OwnSentence
+	if err := decodeStrict(b, &s); err != nil || s.ID <= 0 || s.EntryID <= 0 || s.Hanzi == "" || len(s.Hanzi) > 4096 ||
+		len(s.Pinyin) > 4096 || len(s.Translation) > 8192 {
+		return false
+	}
+	return s.AI == nil || (s.AI.Provider != "" || s.AI.Model != "") && len(s.AI.Provider) <= 64 && len(s.AI.Model) <= 200
+}
 
 // OwnSentences streams sentences.jsonl.
 func (a *Archive) OwnSentences(fn func(OwnSentence) error) error {

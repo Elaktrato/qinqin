@@ -93,7 +93,7 @@ func v2Segments() []segment {
 		segment{coll: "overlays", table: "user_edits", stamp: "updated_at", cols: "entry_id, written, readings, updated_at",
 			extra: byLanguage, encode: encodeOverlay},
 		segment{coll: "sentences", table: "sentences", stamp: "updated_at", tomb: true,
-			cols:  "id, entry_id, source_pack, user_id, hanzi, pinyin, translation, updated_at, deleted_at",
+			cols:  "id, entry_id, source_pack, user_id, hanzi, pinyin, translation, updated_at, deleted_at, ai_provider, ai_model",
 			extra: byLanguage, encode: encodeSentence},
 		segment{coll: "events", table: "study_events", stamp: "updated_at",
 			cols: "id, workspace_id, device, ts, type, payload, updated_at",
@@ -323,8 +323,12 @@ func encodeSentence(sc scanner) (string, int64, []byte, error) {
 	var owner sql.NullInt64
 	var updated string
 	var deleted sql.NullString
-	if err := sc.Scan(&rowid, &s.ID, &s.EntryID, &s.SourcePack, &owner, &s.Hanzi, &s.Pinyin, &s.Translation, &updated, &deleted); err != nil {
+	var aiProvider, aiModel string
+	if err := sc.Scan(&rowid, &s.ID, &s.EntryID, &s.SourcePack, &owner, &s.Hanzi, &s.Pinyin, &s.Translation, &updated, &deleted, &aiProvider, &aiModel); err != nil {
 		return "", 0, nil, err
+	}
+	if aiProvider != "" || aiModel != "" { // an AI example (#186)
+		s.AI = &model.SentenceAI{Provider: aiProvider, Model: aiModel}
 	}
 	if owner.Valid {
 		id := owner.Int64

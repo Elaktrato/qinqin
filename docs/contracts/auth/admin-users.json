@@ -48,7 +48,7 @@
   "deletion_preview": {
     "request": {"method": "GET", "path": "/api/admin/users/{id}/deletion-preview"},
     "status": 200,
-    "body": {"workspaces": 1, "studyEvents": 120, "keyedRows": 8, "cards": 0, "books": 0, "journalEntries": 0, "journalConversations": 0, "journalPhotos": 0, "aiKeys": 0, "sessions": 1, "overlays": 0, "sentences": 0, "accessTokens": 0}
+    "body": {"workspaces": 1, "studyEvents": 120, "keyedRows": 8, "cards": 0, "books": 0, "journalEntries": 0, "journalConversations": 0, "journalPhotos": 0, "aiKeys": 0, "sessions": 1, "overlays": 0, "sentences": 0, "exampleReports": 0, "accessTokens": 0}
   },
   "mfa_reset": {
     "request": {"method": "POST", "path": "/api/admin/users/{id}/mfa/reset", "body": {"currentPassword": "<your own password>", "code": "<only when YOU have an authenticator: your authenticator or recovery code>"}},

@@ -215,6 +215,7 @@
 	"admin.delete.preview.aiKeys": "{count, plural, one {# stored AI key} other {# stored AI keys}}",
 	"admin.delete.preview.books": "{count, plural, one {# book in the library, with its bookmarks and highlights} other {# books in the library, with their bookmarks and highlights}}",
 	"admin.delete.preview.cards": "{count, plural, one {# flashcard, with its decks and study settings} other {# flashcards, with their decks and study settings}}",
+	"admin.delete.preview.exampleReports": "{count, plural, one {# report of an AI example sentence} other {# reports of AI example sentences}}",
 	"admin.delete.preview.journalConversations": "{count, plural, one {# journal conversation} other {# journal conversations}}",
 	"admin.delete.preview.journalEntries": "{count, plural, one {# journal entry, with its review} other {# journal entries, with their reviews}}",
 	"admin.delete.preview.journalPhotos": "{count, plural, one {# journal photo draft} other {# journal photo drafts}}",

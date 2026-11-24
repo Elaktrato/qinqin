@@ -359,7 +359,7 @@ func applyRestore(ctx context.Context, tx *sql.Tx, d RestoreDeps, userID, keepSe
 		return nil, err
 	}
 	// 5. own sentences (new ids), overlays
-	insSent, err := tx.PrepareContext(ctx, `INSERT INTO sentences (entry_id, source_pack, user_id, hanzi, pinyin, translation, updated_at) VALUES (?, '', ?, ?, ?, ?, ?)`)
+	insSent, err := tx.PrepareContext(ctx, `INSERT INTO sentences (entry_id, source_pack, user_id, hanzi, pinyin, translation, updated_at, ai_provider, ai_model) VALUES (?, '', ?, ?, ?, ?, ?, ?, ?)`)
 	if err != nil {
 		return nil, err
 	}
@@ -377,7 +377,11 @@ func applyRestore(ctx context.Context, tx *sql.Tx, d RestoreDeps, userID, keepSe
 			res.DroppedRows++
 			return nil
 		}
-		r, err := insSent.ExecContext(ctx, ne, userID, s.Hanzi, s.Pinyin, s.Translation, s.UpdatedAt)
+		var aiProvider, aiModel string
+		if s.AI != nil {
+			aiProvider, aiModel = s.AI.Provider, s.AI.Model
+		}
+		r, err := insSent.ExecContext(ctx, ne, userID, s.Hanzi, s.Pinyin, s.Translation, s.UpdatedAt, aiProvider, aiModel)
 		if err != nil {
 			return fmt.Errorf("backup: sentence: %w", err)
 		}

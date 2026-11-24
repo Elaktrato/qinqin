@@ -232,14 +232,23 @@ type Overlay struct {
 	UpdatedAt string  `json:"updatedAt"`
 }
 
-// OwnSentence is a sentence the user added.
+// OwnSentence is a sentence the user added, or a kept AI example (#186)
+// with its mark.
 type OwnSentence struct {
-	ID          int64  `json:"id"`
-	EntryID     int64  `json:"entryId"`
-	Hanzi       string `json:"hanzi"`
-	Pinyin      string `json:"pinyin"`
-	Translation string `json:"translation"`
-	UpdatedAt   string `json:"updatedAt"`
+	ID          int64       `json:"id"`
+	EntryID     int64       `json:"entryId"`
+	Hanzi       string      `json:"hanzi"`
+	Pinyin      string      `json:"pinyin"`
+	Translation string      `json:"translation"`
+	UpdatedAt   string      `json:"updatedAt"`
+	AI          *SentenceAI `json:"ai,omitempty"`
+}
+
+// SentenceAI is the mark of a kept AI example: the provider id and the
+// model that wrote it (at least one of them; at most 64 and 200 bytes).
+type SentenceAI struct {
+	Provider string `json:"provider"`
+	Model    string `json:"model"`
 }
 
 // Book is a library book's metadata; its chapters are library/books/<id>.json.

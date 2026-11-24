@@ -6,6 +6,7 @@ import (
 	"unicode"
 
 	"qinqin/internal/ai"
+	langpkg "qinqin/internal/lang"
 )
 
 const (
@@ -36,7 +37,7 @@ func ResolveAnnotations(text, lang string, raw []ai.RawAnnotation) ([]Annotation
 		case corr == quote:
 			drop.NoChange++
 			continue
-		case !CorrectionFitsLanguage(lang, corr):
+		case !langpkg.FitsScript(lang, corr):
 			drop.WrongScript++
 			continue
 		}

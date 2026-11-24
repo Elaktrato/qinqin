@@ -73,6 +73,14 @@ var userTables = []UserTable{
 		PreviewKey: "overlays", Count: `SELECT COUNT(*) FROM user_edits WHERE user_id = ?1`, Export: ExportRows, Restore: RestoreReplace},
 	{Name: "sentences", Columns: []string{"user_id"}, Statements: []string{`DELETE FROM sentences WHERE user_id = ?1`},
 		PreviewKey: "sentences", Count: `SELECT COUNT(*) FROM sentences WHERE user_id = ?1 AND deleted_at IS NULL`, Export: ExportRows, Restore: RestoreReplace},
+	// AI examples (#186, migration 049): kept ones are own sentences (above);
+	// the drafts are undecided output, the reports the user's feedback on the
+	// AI. Neither is exported; a restore drops the drafts and keeps the reports.
+	{Name: "example_drafts", Columns: []string{"user_id"}, Statements: []string{`DELETE FROM example_drafts WHERE user_id = ?1`},
+		Export: ExportSkip, ExportReason: skipDraft, Restore: RestoreDrop},
+	{Name: "example_reports", Columns: []string{"user_id"}, Statements: []string{`DELETE FROM example_reports WHERE user_id = ?1`},
+		PreviewKey: "exampleReports", Count: `SELECT COUNT(*) FROM example_reports WHERE user_id = ?1`,
+		Export: ExportSkip, ExportReason: "feedback on the AI's sentences, not learning data", Restore: RestoreKeep},
 	{Name: "library_books", Columns: []string{"user_id", "workspace_id"}, Statements: []string{`DELETE FROM library_books WHERE user_id = ?1`},
 		PreviewKey: "books", Count: `SELECT COUNT(*) FROM library_books WHERE user_id = ?1`, Export: ExportRows, Restore: RestoreReplace},
 	{Name: "library_bookmarks", Columns: []string{"user_id"}, Statements: []string{`DELETE FROM library_bookmarks WHERE user_id = ?1`}, Export: ExportRows, Restore: RestoreReplace},
@@ -174,6 +182,7 @@ type Preview struct {
 	Sessions             int `json:"sessions"`
 	Overlays             int `json:"overlays"`
 	Sentences            int `json:"sentences"`
+	ExampleReports       int `json:"exampleReports"`
 	AccessTokens         int `json:"accessTokens"`
 }
 
@@ -189,7 +198,7 @@ func DeletionPreview(ctx context.Context, sqlDB *sql.DB, id int64) (Preview, err
 	var p Preview
 	fields := map[string]*int{"workspaces": &p.Workspaces, "studyEvents": &p.StudyEvents, "keyedRows": &p.KeyedRows, "cards": &p.Cards,
 		"books": &p.Books, "journalEntries": &p.JournalEntries, "journalConversations": &p.JournalConversations, "journalPhotos": &p.JournalPhotos, "aiKeys": &p.AIKeys, "sessions": &p.Sessions,
-		"overlays": &p.Overlays, "sentences": &p.Sentences, "accessTokens": &p.AccessTokens}
+		"overlays": &p.Overlays, "sentences": &p.Sentences, "exampleReports": &p.ExampleReports, "accessTokens": &p.AccessTokens}
 	for _, t := range userTables {
 		if t.PreviewKey == "" {
 			continue
