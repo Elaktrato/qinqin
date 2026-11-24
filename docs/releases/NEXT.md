@@ -28,6 +28,8 @@ https://github.com/Elaktrato/qinqin/wiki
 - Settings → Data (`GET /api/admin/packs`) no longer lists sentences imported before v0.2.0 without a registry
   row. Removing a language that still has such sentences answers 409 naming each pack and its removal route,
   `DELETE /api/admin/sentences/<pack>`.
+- `scripts/prepare-local-levels.mjs` (the TBCL and curriculum TSV converter) is gone (#42). A level pack you
+  already built with it keeps working: it is an ordinary levels pack, installed and seeded as before.
 
 ## What's new
 

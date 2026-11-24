@@ -15,7 +15,7 @@ describe('badgeScheme', () => {
 	});
 
 	it('keeps any other scheme name as it is', () => {
-		expect(badgeScheme('My curriculum')).toBe('My curriculum');
+		expect(badgeScheme('My own list')).toBe('My own list');
 		expect(badgeScheme('  Jōyō  ')).toBe('Jōyō');
 		expect(badgeScheme('HSK mini (sample) list')).toBe('HSK mini (sample) list');
 	});
@@ -31,6 +31,6 @@ describe('badgeSchemeParts', () => {
 
 	it('has no qualifier for any other scheme name', () => {
 		expect(badgeSchemeParts('JLPT (vocabulary)')).toEqual({ base: 'JLPT vocabulary', qualifier: null });
-		expect(badgeSchemeParts('My curriculum')).toEqual({ base: 'My curriculum', qualifier: null });
+		expect(badgeSchemeParts('My own list')).toEqual({ base: 'My own list', qualifier: null });
 	});
 });

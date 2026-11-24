@@ -42,7 +42,6 @@ Where things live in the repository ([github.com/Elaktrato/qinqin](https://githu
 | `scripts/prepare-ids-components.mjs` | Prepares a local-only Chinese components pack from an IDS file |
 | `scripts/prepare-level-packs.mjs` | Rebuilds the approximate JLPT kanji pack from the pinned kanjiapi.dev file and the bundled KANJIDIC2 (`--calibrate` prints the evaluation of its gap-fill thresholds); `--jlpt-vocab` generates the optional local-only JLPT vocabulary pack |
 | `scripts/prepare-standard-levels.mjs` | Regenerates `joyo-grades` and `tgh-chars` from the bundled KANJIDIC2 and Unihan (no network) |
-| `scripts/prepare-local-levels.mjs` | Converts a TSV you prepared (TBCL, curriculum tables, any private list) into a local-only level pack under `plugins/data-local/`; writes no `LICENSE`, refuses other directories |
 | `scripts/prepare-hsk-syllabus.mjs` | Rebuilds `hsk-words` and `hsk-chars` from the official syllabus PDF's `pdftotext -tsv` output (steps in its header; the inputs are never committed) |
 | `scripts/prepare-strokes-pack.mjs` | Builds the stroke-order pack from the pinned `hanzi-writer-data` package |
 | `scripts/prepare-font-pack.mjs` | Builds a hanzi/kanji font pack from a pinned upstream face (needs `npm --prefix scripts/fonts ci`) |
