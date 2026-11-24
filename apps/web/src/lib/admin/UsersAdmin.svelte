@@ -16,6 +16,8 @@
 		type AdminUserDto
 	} from '$lib/api/adminUsers';
 	import { passwordHint } from '$lib/account/passwordRules';
+	import { removeUserAvatar } from '$lib/api/avatar';
+	import Avatar from '$lib/frame/Avatar.svelte';
 	import DeleteUserDialog from './DeleteUserDialog.svelte';
 	import ResetMfaDialog from './ResetMfaDialog.svelte';
 	import { resetNotice, type MfaFactors } from './mfaResetView';
@@ -175,6 +177,10 @@
 					notice = t('admin.users.notice.signedOut', { name: row.username, count: out.revoked });
 					break;
 				}
+				case 'removePicture':
+					await removeUserAvatar(row.id);
+					notice = t('admin.users.notice.pictureRemoved', { name: row.username });
+					break;
 				case 'revokeResetLink':
 					await revokeResetLink(row.id);
 					notice = t('admin.users.notice.resetLinkRevoked', { name: row.username });
@@ -297,7 +303,7 @@
 			<tbody>
 				{#each rows as row (row.id)}
 					<tr>
-						<th scope="row">{row.username}{#if row.self} <Chip>{t('admin.users.you')}</Chip>{/if}</th>
+						<th scope="row"><span class="who"><Avatar name={row.username} src={row.avatarUrl} />{row.username}</span>{#if row.self} <Chip>{t('admin.users.you')}</Chip>{/if}</th>
 						{#if emailPolicy !== 'off'}<td>{row.email}</td>{/if}
 						<td>{row.role}</td>
 						<td>{#each row.status as s (s)}<Chip>{s}</Chip>{/each}</td>
@@ -309,7 +315,7 @@
 									{#each row.actions as action (action.id)}
 										<li>
 											<Button
-												tone={/delete|disable|removeAdmin|resetMfa/i.test(action.id) ? 'danger' : 'default'}
+												tone={/delete|disable|removeAdmin|resetMfa|removePicture/i.test(action.id) ? 'danger' : 'default'}
 												disabled={busy || action.disabled}
 												aria-describedby={action.reason ? `why-${row.id}-${action.id}` : undefined}
 												onclick={() => run(row, action.id)}>{action.label}</Button
@@ -383,6 +389,11 @@
 {/if}
 
 <style>
+	.who {
+		display: inline-flex;
+		align-items: center;
+		gap: var(--space-2);
+	}
 	.stack {
 		display: grid;
 		gap: var(--space-3);

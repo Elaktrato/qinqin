@@ -13,6 +13,8 @@ export interface AdminUserDto {
 	lastSeenAt: string | null;
 	/** Which second steps the user has (never a secret); absent from servers before v0.3.0. */
 	mfa?: { totp: boolean; email: boolean };
+	/** The profile picture's path, or null (docs/contracts/auth/avatar.json). */
+	avatarUrl?: string | null;
 }
 
 export interface DeletionPreview {
@@ -35,6 +37,8 @@ export interface DeletionPreview {
 	exampleReports?: number;
 	/** Personal access tokens (absent from servers before #83). */
 	accessTokens?: number;
+	/** 1 when the account has a profile picture (#189). */
+	avatar?: number;
 }
 
 export async function listUsers(): Promise<AdminUserDto[]> {

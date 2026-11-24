@@ -50,6 +50,7 @@ export type UserActionId =
 	| 'revokeResetLink'
 	| 'signOutEverywhere'
 	| 'resetMfa'
+	| 'removePicture'
 	| 'delete';
 
 export interface UserAction {
@@ -70,6 +71,8 @@ export interface UserRow {
 	status: string[];
 	lastSeen: string;
 	self: boolean;
+	/** The profile picture's path, or null: the letter. */
+	avatarUrl: string | null;
 	actions: UserAction[];
 }
 
@@ -83,6 +86,7 @@ const ACTION_LABELS: Record<UserActionId, MessageKey> = {
 	revokeResetLink: 'admin.users.action.revokeResetLink',
 	signOutEverywhere: 'admin.users.action.signOutEverywhere',
 	resetMfa: 'admin.users.action.resetMfa',
+	removePicture: 'admin.users.action.removePicture',
 	delete: 'admin.users.action.delete'
 };
 
@@ -128,6 +132,7 @@ export function userRows(users: readonly AdminUserDto[], selfId: number, now: Da
 		actions.push(plain('requirePasswordChange'), plain('resetLink'), plain('revokeResetLink'), plain('signOutEverywhere'));
 		// Not for oneself: Settings, Account manages one's own factors (the server answers self_target).
 		if (!self && hasSecondStep(u)) actions.push(plain('resetMfa'));
+		if (u.avatarUrl) actions.push(plain('removePicture'));
 		if (!self) actions.push(guard('delete'));
 		const status = [u.disabled ? t('admin.users.status.disabled') : t('admin.users.status.active')];
 		if (u.mustChangePassword) status.push(t('admin.users.status.mustChangePassword'));
@@ -139,6 +144,7 @@ export function userRows(users: readonly AdminUserDto[], selfId: number, now: Da
 			status,
 			lastSeen: lastSeenLabel(u.lastSeenAt, now),
 			self,
+			avatarUrl: u.avatarUrl ?? null,
 			actions
 		};
 	});
