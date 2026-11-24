@@ -133,7 +133,7 @@ The rules are `docs/contracts/auth/` (start with its README); [API overview](API
 
 | Route | Purpose |
 |---|---|
-| `GET /api/auth/options` | Public, never cached: `{bootstrap, registration, emailPolicy, passwordReset, emailCodeLogin, passwordMinLength}` |
+| `GET /api/auth/options` | Public, never cached: `{registration, emailPolicy, passwordReset, emailCodeLogin, passwordMinLength, totpAvailable, mfaEnforced}` |
 | `POST /api/auth/register` `{username, password, email?, invite?}` | Never makes an administrator (the server creates the first one before it listens); the registration mode decides, on an empty instance too (`closed` 403 `registration_closed`, `invite` needs a valid invite, 403 `invite_invalid`; `open` takes anyone). Body up to 4 KiB |
 | `POST /api/auth/login` `{username, password, deviceName?}` | `{status: "ok" \| "password_change_required", token, user}`, or `mfa_required` with a challenge; body up to 4 KiB |
 | `POST /api/auth/login/mfa` `{challenge, method, code}`, `POST /api/auth/login/mfa/email` `{challenge}` | The second step (`totp`, `recovery` or `email`); ask for the emailed code first (202 `{resendAfter: 60}`) |
