@@ -1,6 +1,6 @@
 # Courses — a guided path from beginner to ≈ HSK 4 / ≈ JLPT N3
 
-Status: draft agreed in conversation with the owner on 2026-11-24; awaiting the owner's approval of this document.
+Status: approved by the owner on 2026-11-24 (with the answers to the builder check below).
 
 ## 1. Intent
 
@@ -39,8 +39,9 @@ Anti-goals
 
 ## 3. Constraints
 
-- Licence first: only data under CC BY-SA 4.0 or more permissive, with notices. Course texts written for the
-  project are released openly (licence chosen by the owner).
+- Licence first: only data under CC BY-SA 4.0 or more permissive, with notices. Everything the project writes
+  (course skeletons, reading texts, topic labels, base sets) is released under **CC BY 4.0** (owner, 2026-11-24);
+  qinqin's code is MIT.
 - Shared rules for web and Android go into `docs/contracts/` with fixtures, as everywhere else.
 - Builds on the architecture work in #190: core features with typed storage (no code plugins, #199), language
   profiles (#199), one pack system (#192).
@@ -139,11 +140,16 @@ The owner picked C. Hundreds of lessons are fine as long as milestones mark ever
 
 ## 9. Content and authoring
 
-- **A `course` pack type** (via #192) per language: the skeleton (sections, units, themes, grammar lesson ids,
-  hanzi or kanji ids, reading texts, checkpoint rules) plus the generated unit vocabulary, written to files by a
-  deterministic generator so changes show up as diffs.
-- **The generator** fills units from the level lists by topic labels and frequency, keeps each level's words inside
-  its section, balances lesson sizes, and reports words it couldn't place.
+- **A `course` pack type** (via #192) per language holds **only the course's own content** (owner, 2026-11-24):
+  the skeleton (sections, units, themes, grammar lesson ids, hanzi or kanji, reading texts, checkpoint rules) and
+  the topic labels, all CC BY 4.0. It contains **no level-list words**.
+- **Units are filled on the server** from the installed level packs (HSK words for Chinese, the estimated JLPT word
+  list for Japanese) by a deterministic rule, so the HSK list, which has no reuse licence, never ends up inside the
+  course pack. If no level pack is installed, the course falls back to frequency-estimated levels (as Japanese uses
+  for gaps). The rule is a shared contract with fixtures, so web and Android fill units identically, and the
+  filled result is cached per server.
+- **The fill rule** places words into units by topic labels and frequency, keeps each level's words inside its
+  section, balances lesson sizes, and reports words it couldn't place (an admin view or a log, for review).
 - **Skeletons and reading texts** are drafted by an agent and reviewed by the owner. Native-speaker review of the
   texts happens during the owner's own use, as for the grammar lessons.
 - **Other languages (#201)** get their own skeleton later; the format and generator are language-neutral.
