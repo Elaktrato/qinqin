@@ -8,7 +8,7 @@ vi.mock('../i18n/reloadPage', () => ({ reloadPage: vi.fn() }));
 
 import { setToken } from '../api/client';
 import { createAppContext, type AppContext } from '../context/app.svelte';
-import { fakeDeps } from '../testing/context';
+import { fakeDeps, manualTimers, type ManualTimers } from '../testing/context';
 import { fillMissingWritten } from '../study/entriesCache';
 import { loadStarterEntries } from '../features/flashcards/decks/starterDecks';
 import { loadLevelItems } from '../features/flashcards/decks/systemDeckItems';
@@ -82,10 +82,12 @@ function answer(path: string, method: string, tag: string): unknown {
 }
 
 let app: AppContext;
+let timers: ManualTimers;
 
 beforeEach(() => {
 	vi.stubGlobal('localStorage', storage());
-	app = createAppContext(fakeDeps(undefined, { local: () => localStorage, window: null }));
+	timers = manualTimers();
+	app = createAppContext(fakeDeps(undefined, { local: () => localStorage, window: null, timers }));
 	vi.stubGlobal(
 		'fetch',
 		vi.fn(async (input: unknown, init?: RequestInit) => {
@@ -193,5 +195,27 @@ describe('sign-out isolation (#173)', () => {
 			...(await readAll())
 		};
 		for (const [name, json] of Object.entries(asB)) expect(json, name).not.toContain('AAA');
+	});
+
+	it("A's session leaves no timer running: after sign-out nothing of A fires, nothing asks for A", async () => {
+		signIn('tok-A');
+		await readAll();
+		// The server refuses A's reviews for now: the review waits in the outbox, which polls to send it.
+		const answering = vi.mocked(fetch).getMockImplementation()!;
+		vi.mocked(fetch).mockImplementation(async (input, init) =>
+			String(input) === '/api/events/batch' ? new Response('{}', { status: 503 }) : answering(input, init)
+		);
+		const outbox = app.session!.outbox;
+		outbox.start();
+		await outbox.recordReview(WS, 'c-vocab-1', 3);
+		expect(outbox.pendingCount(USERS['tok-A'].id)).toBe(1);
+		expect(timers.pending()).toBeGreaterThan(0);
+
+		app.auth.logout();
+		expect(timers.pending()).toBe(0);
+		const fetched = vi.mocked(fetch).mock.calls.length;
+		timers.advance(60 * 60 * 1000);
+		await Promise.resolve();
+		expect(vi.mocked(fetch).mock.calls.length).toBe(fetched);
 	});
 });

@@ -4,7 +4,7 @@
 
 Accepted
 
-Touched by: #195, #196. A merge from one of these issues that changes what this record names updates the record.
+Touched by: #195. A merge from one of these issues that changes what this record names updates the record.
 
 ## Context
 
@@ -31,9 +31,10 @@ data rule every client follows is the contract: "Reading rows" in
   the study cache `apps/web/src/lib/study/cache.ts` since #193) skips and counts unreadable rows, and remembers
   the identity of each unreadable typed row whose identity member is still readable (`rawIdentity`) and each
   unreadable keyed row (goals, known marks, vacations), across later pull rounds: a readable version of the
-  row frees its identity. `apps/web/src/lib/study/unreadable.ts` keeps the count for the study page's notice
-  (`UnreadableRowsNotice.svelte`) and logs one console warning with collection, count and identities, never
-  row data.
+  row frees its identity. The session's `UnreadableRows` (`apps/web/src/lib/study/unreadableReport.svelte.ts`,
+  record [0009](0009-web-state-model.md)) keeps the count for the study page's notice
+  (`UnreadableRowsNotice.svelte`, its text from `apps/web/src/lib/study/unreadable.ts`) and logs one console
+  warning with collection, count and identities, never row data.
 - A write that would replace a protected identity throws `UnreadableRowError` (a `ShownError`, so
   `errorText` shows its text, [0001](0001-error-handling.md)): `studyWrite` (`apps/web/src/lib/study/plan.ts`)
   for typed rows, `assertReadableKeyed` (`apps/web/src/lib/study/data.ts`) for keyed ones. A new card takes a

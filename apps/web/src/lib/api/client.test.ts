@@ -4,7 +4,6 @@ const { goto } = vi.hoisted(() => ({ goto: vi.fn() }));
 
 vi.mock('$app/navigation', () => ({ goto }));
 
-import { get } from 'svelte/store';
 import {
 	ApiError,
 	api,

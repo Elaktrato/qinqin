@@ -1,10 +1,10 @@
 // The app context (record 0009): one per tab, created by the root layout and
 // disposed when it unmounts. It holds what is tab-wide and outlives a sign-in
 // (auth, connectivity, the install prompt, the service worker's update, the
-// sign-out prompt, and the tab's other state as later tasks add it) and the current
-// session, which it follows from auth: a session exists while a token does, a
-// user other than the session's ends it (`switched`), a sign-out or a 401 ends
-// it with that reason.
+// sign-out prompt, the theme, the navigation layout, the font faces and the
+// page frame) and the current session, which it follows from auth: a session
+// exists while a token does, a user other than the session's ends it
+// (`switched`), a sign-out or a 401 ends it with that reason.
 
 import { setApiObserver } from '../api/client';
 import { createPackFaces, type PackFaces } from '../fonts/packFaces.svelte';
@@ -14,7 +14,6 @@ import { InstallPrompt } from '../pwa/installPrompt.svelte';
 import { createThemeStore, type ThemeStore } from '../theme/store.svelte';
 import { Connectivity } from '../pwa/offlineState.svelte';
 import { createWorkerRegistration, type WorkerRegistration } from '../pwa/register.svelte';
-import { endSession } from '../session/sessionEnd';
 import { Auth, type AuthState } from '../auth.svelte';
 import type { AppDeps } from './deps';
 import { createSession, type Session, type SessionEndReason } from './session.svelte';
@@ -111,8 +110,6 @@ export class AppContext {
 		this.logoutPrompt = null;
 		current.dispose(reason);
 		this.offline.endSession();
-		// The caches not moved into the session yet (#196 migrates them task by task).
-		endSession(reason);
 	}
 }
 

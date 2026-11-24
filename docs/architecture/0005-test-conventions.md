@@ -4,7 +4,7 @@
 
 Accepted
 
-Touched by: #195, #196. A merge from one of these issues that changes what this record names updates the record.
+Touched by: #195. A merge from one of these issues that changes what this record names updates the record.
 
 ## Context
 
@@ -47,6 +47,12 @@ Touched by: #195, #196. A merge from one of these issues that changes what this 
   support lives in `apps/web/src/lib/testing/`, including the test-only legacy codec mirror
   (`apps/web/src/lib/testing/legacyCodec.ts`, still used by the study command tests to describe study
   state as old rows) and the spaceOut reference; `lib/study/testing/` is gone.
+- **Web state in tests** (record [0009](0009-web-state-model.md)): a test builds a fresh app context and
+  session from fakes with `apps/web/src/lib/testing/context.ts` (`testContext`, `studyContext`, `fakeDeps`,
+  `fakeApi`, `memoryStorage`, `manualTimers`, `fakeWindow`, `fakeDocument`); a component test renders with
+  `render(Component, { props, context: ctx.context })`, a module test passes the state objects it uses, and
+  `newSession(ctx)` ends the session and starts the next one. There are no global resets; a test that fakes a
+  state method spies on the class's prototype.
 - **No wall-clock assertions in unit tests.** A performance test asserts operation counts (replays, log
   passes, Intl calls, publications, work units, bytes read, SQL statements and transactions) and no time
   limit; there is no separate perf project. A heavy test may declare a generous vitest timeout as a hang backstop (the PWA icons test), and a
@@ -81,6 +87,7 @@ Allowed:
 - Builders from `apps/web/src/lib/testing/study.ts`, extended there when a test needs a new variant; a
   one-line local adapter that maps a test's positional arguments onto them.
 - Counting operations (calls, rows, passes, work units) in a performance test; a timeout as a hang backstop.
+- A fresh test context per test (`testContext()`), its fakes adjusted by the test.
 
 Not allowed:
 
@@ -88,6 +95,7 @@ Not allowed:
   temporary directory (except in `server/internal/db`).
 - A new local card, review or history builder that spells out the row literal in a web test file.
 - A time limit (`performance.now()`, `Date.now()` differences, elapsed milliseconds) asserted in a unit test.
+- An exported reset for tests (`…ForTests`) in the web app, or a test that shares app state with the next one.
 
 ## Enforcement
 
@@ -103,6 +111,8 @@ Not allowed:
   `process.hrtime`, `console.time`, `Date.now()` minus a variable (an ALL_CAPS constant is clock
   arithmetic), and an `expect` on a difference of clock reads or of variables that hold one, on a variable
   holding such a difference, or on the clock itself (a deadline). Strings and comments are skipped.
+- `apps/web/src/lib/context/stateModel.lint.test.ts` fails on an exported `…ForTests` in the web app (and on
+  the rest of record 0009's rules).
 - `apps/web/src/lib/testing/study.test.ts` pins the builders' defaults.
   `server/internal/dbtest/dbtest_test.go` pins that the template itself, read without migrating
   (`OpenReadOnly`), has every migration and the schema of a fresh `db.Open` and is in WAL mode

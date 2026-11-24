@@ -4,7 +4,6 @@ import { newSession, studyContext, type TestContext } from '$lib/testing/context
 // client) loads the readable rows, reports the others, and no write ever
 // replaces a row this version could not read.
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { get } from 'svelte/store';
 
 import fixture from '../../../../../docs/contracts/sync/unreadable-rows.json';
 import { parsePullPage } from '../sync/pager';

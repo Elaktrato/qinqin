@@ -117,6 +117,21 @@ The decision is recorded in `docs/architecture/0009-web-state-model.md`.
 - Ruling: `logout()` with no session (no token) clears nothing per user: there is nothing to clear; the workspace
   choice and the lookup buffer go with the session that held them — cost if wrong: none found; two tests now sign
   in before signing out.
+- Ruling: #173's registry (`onSessionEnd`, `sessionEpoch`, `endSession`) goes instead of becoming the session's
+  dispose — every cache it cleared now belongs to a session, so there is nothing left to register; the session's
+  own `onDispose` list holds what it owns, and the study cache's late-answer check derives its epoch from
+  `session.alive` — cost if wrong: a new module-level cache would have no clear to register with; the guard below
+  fails on it instead.
+- Ruling: the guard (`context/stateModel.lint.test.ts`) flags every module-level `let`, not only cache-named ones
+  as #173's lint did, and allow-lists each with a reason: the i18n catalogue (installed before mount, a language
+  change reloads the page), the API client's observer slot and its in-memory token, two identity counters,
+  CharGrid's render queue, Intl memos, bundled tables — a `let` is the shape a hidden singleton takes most often —
+  cost if wrong: a harmless new `let` needs an allow-list line.
+- Ruling: the `…ForTests` guard covers the web app only; the Go `SetHashCostForTests` and `SetAfterBeginForTests`
+  stay — record 0005 allows them, they panic outside a test binary, and this issue does not touch Go — cost if
+  wrong: none for the web app.
+- Ruling: no release note — no stored format or key changed (the recently sent reviews are still kept per user and
+  cleared at a sign-out, as before) — cost if wrong: none.
 
 ## Execution record
 
@@ -185,3 +200,18 @@ Baseline (55312f3e, Node 26): 598 files, 12,651 passed, 8 skipped.
    theme cross-fade timer became a WeakMap keyed by the root element. Pure moves: the component tests render with a
    fresh test context instead of sharing the singletons. Full vitest under Node 26: 599 files, 12,664 passed; e2e
    13 passed.
+10. Guards and docs. #173's registry is gone (`session/sessionEnd.ts`, its test and `sessionCaches.lint.test.ts`;
+   the app context's end no longer calls it). `context/stateModel.lint.test.ts` replaces the lint: no
+   `svelte/store` import under `src/`, no exported `…ForTests`, no module-level `let`, empty `Map`/`Set`,
+   `create…Cache(`, store, `$state` or empty array/object outside its allow-list, no stale allow-list entry. Run
+   before the registry was removed it failed on the registry's two declarations (and on its own file, which it now
+   skips); the last five `svelte/store` imports (unused `get` imports in the search page and four tests) were
+   removed in the same step, before the guard ran, so the guard was not seen failing on them — its own cases cover
+   the pattern. `signOutIsolation.test.ts` gained a case: A's queued review keeps the outbox polling; after A signs
+   out no timer is pending and an hour of A's timers asks nothing; checked by mutation (without the outbox
+   dispose's poll stop it fails). Records: 0009 `Accepted` with the real paths and enforcement, 0002 (the
+   unreadable count lives in the session's `UnreadableRows`), 0004 (the new `lib/context/`), 0005 (test contexts,
+   the guard), #196 off the "Touched by" lines of 0002, 0005 and 0007; the wiki's Development, Project layout and
+   Plugin format pages. Deviations over the whole issue: `context/app.test.ts` was not seen failing before the
+   classes existed (task 2), the new Connectivity cases were written with the class (task 6), and task 8a had no
+   e2e run of its own.

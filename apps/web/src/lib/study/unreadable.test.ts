@@ -1,6 +1,5 @@
 import { newSession, studyContext, type TestContext } from '$lib/testing/context';
 import { afterEach, describe, expect, it, vi, beforeEach } from 'vitest';
-import { get } from 'svelte/store';
 
 import { rawIdentity, unreadableNotice } from './unreadable';
 

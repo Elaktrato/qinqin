@@ -69,7 +69,7 @@ repository path it names in backticks exists.
 | [0006](0006-core-features-instead-of-code-plugins.md) | Core features, feature switches, language profiles and data packs instead of code plugins | Accepted, being implemented by #199 |
 | [0007](0007-browser-end-to-end-tests.md) | Browser end-to-end tests | Accepted |
 | [0008](0008-pack-types.md) | Server: one pack system and how to add a pack type | Accepted |
-| [0009](0009-web-state-model.md) | Web: one state model (runes, contexts, no hidden singletons) | Accepted, being implemented by #196 |
+| [0009](0009-web-state-model.md) | Web: one state model (runes, contexts, no hidden singletons) | Accepted |
 
 ## Adding or changing a record
 

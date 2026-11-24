@@ -2,7 +2,6 @@
 	import { errorText } from '$lib/api/apiErrors';
 	import { pageTitle } from '$lib/pageTitle';
 	import { t } from '$lib/i18n';
-	import { get } from 'svelte/store';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
 	import { search } from '$lib/api/search';

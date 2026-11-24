@@ -2,7 +2,6 @@ import { EventLog } from '$lib/events';
 import type { MockInstance } from 'vitest';
 import { cleanup, render, waitFor, within } from '@testing-library/svelte';
 import { createRawSnippet } from 'svelte';
-import { get } from 'svelte/store';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('$app/state', () => import('$lib/testing/appState.svelte'));
