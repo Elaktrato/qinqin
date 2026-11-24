@@ -1,6 +1,6 @@
 # Journal documents (`/api/journal/*`)
 
-Issues #103 and #199. The journal is a core feature with a per-user switch (`features/`). Its documents are
+Issues #103, #185 and #199. The journal is a core feature with a per-user switch (`features/`). Its documents are
 typed storage of the server (`server/internal/journal/store.go`, migration 044), each scoped to one workspace
 of one user. None of them is in the paged pull; clients read and write them through these routes (every one
 takes `?workspace=<id>` of the caller: missing or not an integer is 400 `bad_request`, an unknown or foreign
@@ -25,7 +25,41 @@ a stored value that is no longer listed reads as `en`, and `guidance` (at most 2
 that length when read.
 
 A personal backup carries these documents in their keyed form (`journal:entry:<id>`, `journal:review:<entryId>`,
-`journal:suggestions`, `journal:settings`; `backup/README.md`).
+`journal:suggestions`, `journal:settings`, `journal:conversation:<id>`; `backup/README.md`).
+
+## Conversations
+
+Issue #185: the conversation partner, a draft of the journal (tables `journal_conversations` and
+`journal_messages`, migration 048). Every route takes `?workspace=` as above and needs the learner's own AI key
+for the AI turn (the journal's `no_key`, rate limit and provider errors apply):
+
+| Route | Does |
+| --- | --- |
+| `GET /api/journal/conversations` | the workspace's conversations without messages, newest `updatedAt` first: `[{id, topic, level, messageCount, createdAt, updatedAt}]` |
+| `POST /api/journal/conversations` `{topic, level}` | starts one, 201 with the conversation (no AI call); 400 `bad_request` for a level outside `levels` or a topic that is not plain text of at most `topicRunes`; 409 `conversation_limit` when the workspace has `conversations` open |
+| `GET /api/journal/conversations/{id}` | the conversation with its messages; 404 `not_found` |
+| `DELETE /api/journal/conversations/{id}` | discards it (204; 404 when missing) |
+| `POST /api/journal/conversations/{id}/turn` `{text}` | one AI call; stores the learner's message with its corrections and the partner's reply and answers the conversation. A blank `text` is allowed only while the conversation has no message (the partner opens), else 422 `empty`; over `messageRunes` is 413 `too_long`; 409 `conversation_full` when two more messages would pass `messages`. A failed call stores nothing |
+| `POST /api/journal/conversations/{id}/save` `{entryId, date}` | turns it into a journal entry and deletes it in one transaction; answers the entry. 422 `empty` without messages; 400 for an `entryId` or `date` an entry refuses or an existing entry's id |
+
+A conversation is `{id, topic, level, createdAt, updatedAt, messages: [{seq, role: "learner" | "partner", text,
+annotations, model?, provider?, createdAt}]}`. A learner message carries the corrections of its text in the review's
+annotation shape (below), validated against that text like a review's; their ids are unique in the conversation
+(`m<seq>a<n>`). A partner message has no annotations and names the `model` and `provider` that wrote it. The
+partner's reply is plain text cut to `replyRunes`, and must be written in the workspace language's script (the
+journal's script check, by the language profile); a reply that is not is refused as 422 `bad_reply`.
+
+What a turn sends to the provider: the workspace language, the `level` with a CEFR-like description, the topic,
+at most `wordSample` of the workspace's most recently reviewed studied words (never the whole deck), the last
+`contextMessages` messages and the new message, the journal settings' explanation language and guidance.
+
+A saved conversation becomes an entry with `title` = the topic, `source` `typed` and `text` = the transcript: one
+paragraph per message (separated by a blank line), the partner's lines quoted with `> `. The caps keep the longest
+transcript under an entry's 50000 code points.
+
+A client reads a conversation leniently (`reads`): an unknown level reads as `beginner`, a message of another role
+or without text is dropped, annotations that are not a list read as none, an annotation without a string `quote`
+is dropped and an unknown `kind` is a mistake.
 
 ## Review documents
 
@@ -85,6 +119,7 @@ list-only / missing sections rather than dropping it. An annotation whose
 | `kind-resolve.json` | model kind → stored kind (trim, case fold, closed set, default mistake) | `server/internal/journal/resolve_contract_test.go` |
 | `review-docs.json` | stored document → what a client shows (kinds, legacy rows, bogus kinds, malformed fields, extra keys) | `apps/web/src/lib/features/journal/review.test.ts` |
 | `entries.json` | what `PUT` of an entry and of the settings accepts, the limits, the settings defaults and lenient reads | `server/internal/journal/entries_contract_test.go`, `apps/web/src/lib/features/journal/entries.contract.test.ts` |
+| `conversations.json` | the levels and limits of a conversation, what a start and a turn accept, the transcript of a saved one, lenient reads | `server/internal/journal/conversation_contract_test.go`, `apps/web/src/lib/features/journal/conversation/conversations.contract.test.ts` |
 
 Fixtures win over code. The server is the only writer of `kind`; every client
 reads it with the same fallback.

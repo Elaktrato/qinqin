@@ -17,13 +17,15 @@ import (
 //	journal:review:<entryId>   the review of an entry
 //	journal:suggestions        the topic ideas
 //	journal:settings           the settings
+//	journal:conversation:<id>  a conversation with its messages
 const KeyPrefix = "journal:"
 
 const (
-	entryKey       = KeyPrefix + "entry:"
-	reviewKey      = KeyPrefix + "review:"
-	suggestionsKey = KeyPrefix + "suggestions"
-	settingsKey    = KeyPrefix + "settings"
+	entryKey        = KeyPrefix + "entry:"
+	reviewKey       = KeyPrefix + "review:"
+	suggestionsKey  = KeyPrefix + "suggestions"
+	settingsKey     = KeyPrefix + "settings"
+	conversationKey = KeyPrefix + "conversation:"
 )
 
 // IsKeyed reports whether a backup row key is a journal document.
@@ -38,13 +40,14 @@ type KeyedDoc struct {
 }
 
 // EachKeyed streams every journal document of the user in its keyed form:
-// per workspace the entries, then their reviews, the topic ideas and the
-// settings (a restore needs an entry before its review).
+// per workspace the entries, then their reviews, the topic ideas, the
+// settings and the conversations (a restore needs an entry before its review).
 func EachKeyed(ctx context.Context, q Querier, userID int64, fn func(KeyedDoc) error) error {
 	rows, err := q.QueryContext(ctx, `SELECT DISTINCT workspace_id FROM (
 		SELECT workspace_id FROM journal_entries WHERE user_id = ?1
 		UNION SELECT workspace_id FROM journal_suggestions WHERE user_id = ?1
-		UNION SELECT workspace_id FROM journal_settings WHERE user_id = ?1) ORDER BY workspace_id`, userID)
+		UNION SELECT workspace_id FROM journal_settings WHERE user_id = ?1
+		UNION SELECT workspace_id FROM journal_conversations WHERE user_id = ?1) ORDER BY workspace_id`, userID)
 	if err != nil {
 		return fmt.Errorf("journal: keyed workspaces: %w", err)
 	}
@@ -116,6 +119,19 @@ func EachKeyed(ctx context.Context, q Querier, userID int64, fn func(KeyedDoc) e
 				return err
 			}
 		}
+		convs, err := ListConversations(ctx, q, userID, ws)
+		if err != nil {
+			return err
+		}
+		for _, s := range convs {
+			c, err := GetConversation(ctx, q, userID, ws, s.ID)
+			if err != nil {
+				return err
+			}
+			if err := emit(ws, conversationKey+c.ID, c, stampOr(c.UpdatedAt, stampNow())); err != nil {
+				return err
+			}
+		}
 	}
 	return nil
 }
@@ -158,6 +174,12 @@ func RestoreKeyed(ctx context.Context, q Querier, userID, ws int64, key string, 
 		if _, err := PutSettings(ctx, q, userID, ws, s); err != nil {
 			return refused(err)
 		}
+	case strings.HasPrefix(key, conversationKey):
+		var c Conversation
+		if json.Unmarshal(data, &c) != nil || c.ID != strings.TrimPrefix(key, conversationKey) {
+			return false, nil
+		}
+		return restoreConversation(ctx, q, userID, ws, c)
 	default:
 		return false, nil
 	}

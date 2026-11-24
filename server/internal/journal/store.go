@@ -23,7 +23,7 @@ import (
 
 // Tables are the journal's typed tables, each with a workspace_id.
 func Tables() []string {
-	return []string{"journal_entries", "journal_reviews", "journal_suggestions", "journal_settings"}
+	return []string{"journal_entries", "journal_reviews", "journal_suggestions", "journal_settings", "journal_conversations", "journal_messages"}
 }
 
 // ErrNotFound reports a missing entry.
@@ -122,7 +122,7 @@ func ListEntries(ctx context.Context, sqlDB Querier, userID, workspaceID int64) 
 }
 
 // GetEntry returns one entry, or ErrNotFound.
-func GetEntry(ctx context.Context, sqlDB *sql.DB, userID, workspaceID int64, id string) (Entry, error) {
+func GetEntry(ctx context.Context, sqlDB Querier, userID, workspaceID int64, id string) (Entry, error) {
 	e, err := scanEntry(sqlDB.QueryRowContext(ctx, `SELECT `+entryCols+` FROM journal_entries
 		WHERE user_id = ? AND workspace_id = ? AND id = ?`, userID, workspaceID, id))
 	if errors.Is(err, sql.ErrNoRows) {
