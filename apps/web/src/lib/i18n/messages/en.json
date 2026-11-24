@@ -664,7 +664,6 @@
 	"auth.mfa.yourAddress": "your address",
 	"auth.mfa.yourEmail": "your email address",
 	"auth.register.askNewInvite": "Ask the administrator for a new invite link. <link>Sign in</link>",
-	"auth.register.bootstrap": "This is a new instance: the first account becomes the administrator.",
 	"auth.register.closed": "Registration is closed. Ask the administrator for an invite link or an account.",
 	"auth.register.creating": "Creating account…",
 	"auth.register.failed": "Registration failed.",

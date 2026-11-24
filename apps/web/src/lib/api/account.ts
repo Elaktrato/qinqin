@@ -26,7 +26,6 @@ export function revokeSessions(scope: 'others' | 'all'): Promise<{ revoked: numb
 }
 
 export interface AuthOptions {
-	bootstrap: boolean;
 	registration: 'closed' | 'invite' | 'open';
 	emailPolicy: 'off' | 'optional' | 'required';
 	passwordReset: boolean;

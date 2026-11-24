@@ -25,7 +25,7 @@ const challenge = (methods: string[], emailHint: string | null = null) => ({
 });
 const err = (status: number, body: object) => new ApiError(status, JSON.stringify(body));
 const opts = (o: object = {}) =>
-	({ bootstrap: false, registration: 'closed', emailPolicy: 'off', passwordReset: false, emailCodeLogin: false, passwordMinLength: 10, ...o }) as never;
+	({ registration: 'closed', emailPolicy: 'off', passwordReset: false, emailCodeLogin: false, passwordMinLength: 10, ...o }) as never;
 
 beforeEach(() => {
 	vi.mocked(getAuthOptions).mockResolvedValue(opts());

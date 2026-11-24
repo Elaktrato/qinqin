@@ -28,7 +28,6 @@ beforeEach(() => {
 const setMe = (user: Record<string, unknown>) => ctx.app.auth.set({ token: 'test-token', user: { ...ctx.app.auth.user!, ...user } });
 
 const options = (o: Partial<AuthOptions> = {}): AuthOptions => ({
-	bootstrap: false,
 	registration: 'closed',
 	emailPolicy: 'optional',
 	passwordReset: true,

@@ -49,10 +49,9 @@
 		emailPolicy === 'required' ? t('account.email.label') : t('account.email.labelOptional')
 	);
 
-	// Who may see the form: the bootstrap, an invite holder, or anyone when open.
-	const closed = $derived(
-		loaded && options !== null && !options.bootstrap && !invite && options.registration !== 'open'
-	);
+	// Who may see the form: an invite holder, or anyone when open. Registering
+	// never makes an administrator (#211).
+	const closed = $derived(loaded && options !== null && !invite && options.registration !== 'open');
 
 	async function submit(event: SubmitEvent) {
 		event.preventDefault();
@@ -93,9 +92,6 @@
 		</p>
 		<p class="hint"><a href="/login">{t('auth.register.signIn')}</a></p>
 	{:else}
-		{#if options?.bootstrap}
-			<p class="hint">{t('auth.register.bootstrap')}</p>
-		{/if}
 		<form onsubmit={submit}>
 			<Field
 				label={t('auth.signIn.username')}
@@ -106,7 +102,7 @@
 				required
 			/>
 
-			{#if emailPolicy !== 'off' && !options?.bootstrap}
+			{#if emailPolicy !== 'off'}
 				<Field
 					label={emailLabel}
 					name="email"

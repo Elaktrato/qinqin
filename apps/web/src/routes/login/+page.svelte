@@ -296,7 +296,7 @@
 	{/if}
 
 	{#if view === 'password' && options}
-		{#if options.bootstrap || options.registration === 'open'}
+		{#if options.registration === 'open'}
 			<p class="hint">
 				<Msg key="auth.signIn.noAccount">{#snippet link(text: string)}<a href="/register">{text}</a>{/snippet}</Msg>
 			</p>
