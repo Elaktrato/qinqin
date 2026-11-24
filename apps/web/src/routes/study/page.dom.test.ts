@@ -32,7 +32,8 @@ import { goto } from '$app/navigation';
 import { fireEvent } from '@testing-library/svelte';
 import { fetchSchemeCharacters, getSchemeEntries, getSchemes } from '$lib/api/schemes';
 import { createDeck, saveDeckCardTypesForDecks } from '$lib/study/commands/decks';
-import { loadStudyData } from '$lib/study/data';
+import { loadStudyData, studyCache } from '$lib/study/data';
+import { tick } from 'svelte';
 import { studyDay } from '$lib/time/studyDay';
 import { currentStudyDay } from '$lib/time/zone';
 import { workspaces } from '$lib/workspaces';
@@ -516,5 +517,19 @@ describe('study setup, order of card types (#132)', () => {
 		);
 		render(Page);
 		await waitFor(() => expect(typeOrderSelect().value).toBe('grouped'));
+	});
+});
+
+describe('study setup and the study cache (#193)', () => {
+	it('reloads its counts when the rows of the shown workspace change, not for another workspace', async () => {
+		render(Page);
+		await waitFor(() => expect(loadStudyData).toHaveBeenCalledTimes(1));
+		// A row another device wrote in the second of the load arrives with the cache's follow-up round.
+		vi.mocked(loadStudyData).mockResolvedValue({ decks: [], cards: [build.card({ id: 'late', entryId: 9 })], reviews: [], merged: 0 });
+		studyCache.markStale(2);
+		await tick();
+		expect(loadStudyData).toHaveBeenCalledTimes(1);
+		studyCache.markStale(1);
+		await waitFor(() => expect(loadStudyData).toHaveBeenCalledTimes(2));
 	});
 });

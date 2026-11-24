@@ -63,7 +63,7 @@ import { limitsOf } from '$lib/study/scheduler';
 		type StudySessionMode
 	} from '$lib/study/session';
 	import { createDeck, deleteDeck, renameDeck, saveDeckCardTypesForDecks } from '$lib/study/commands/decks';
-	import { loadStudyData } from '$lib/study/data';
+	import { loadStudyData, onStudyChange, touches } from '$lib/study/data';
 	import { cardsInDecks, activeWeights } from '$lib/study/readModel';
 	import {
 		CARD_KINDS,
@@ -267,6 +267,15 @@ import { limitsOf } from '$lib/study/scheduler';
 
 	// A new learner day (or zone) changes what is due and on vacation.
 	$effect(() => onContextStale(() => void refreshData()));
+
+	// A change of the workspace's study rows (a write elsewhere on the page, or a
+	// row another device wrote in the second of the load, which the cache's
+	// follow-up round brings, #193) reloads the counts without a new visit.
+	$effect(() =>
+		onStudyChange((changed) => {
+			if (touches(changed, activeWorkspaceId)) void refreshData();
+		})
+	);
 
 	async function loadSchemes(seq: number): Promise<void> {
 		try {
