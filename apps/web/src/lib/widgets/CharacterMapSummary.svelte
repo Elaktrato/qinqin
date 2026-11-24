@@ -69,7 +69,7 @@
 		}
 
 		try {
-			const data = await loadCharacterMapData(id, lang, { force });
+			const data = await loadCharacterMapData(session.study, id, lang, { force });
 			if (seq !== requestSeq) return;
 			const now = new Date();
 			stats = characterSummary(data.list.chars, data.cards, data.reviews, now, data.w, data.clock);

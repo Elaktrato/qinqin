@@ -85,7 +85,7 @@ describe('SummaryWidget', () => {
 		expect(screen.getByText('91%')).toBeTruthy();
 		expect(screen.getByText('Studied this month')).toBeTruthy();
 		expect(screen.getByText('14 h 20 min')).toBeTruthy();
-		expect(loadStudyHistory).toHaveBeenCalledWith(1, { force: false });
+		expect(loadStudyHistory).toHaveBeenCalledWith(expect.anything(), 1, { force: false });
 	});
 
 	it('recall below the floor shows the later text, not a number', async () => {
@@ -128,13 +128,13 @@ describe('SummaryWidget', () => {
 		await waitFor(() => expect(screen.getByText('Could not load your summary.')).toBeTruthy());
 		retry.click();
 		await waitFor(() => expect(screen.getByText('Day streak')).toBeTruthy());
-		expect(vi.mocked(loadStudyHistory).mock.calls.at(-1)?.[1]).toEqual({ force: true });
+		expect(vi.mocked(loadStudyHistory).mock.calls.at(-1)?.[2]).toEqual({ force: true });
 	});
 
 	it('reloads on onStudyChange for this workspace', async () => {
 		render(SummaryWidget, { context: ctx.context });
 		await waitFor(() => expect(loadStudyHistory).toHaveBeenCalledTimes(1));
-		const onWrite = vi.mocked(onStudyChange).mock.calls.at(-1)![0];
+		const onWrite = vi.mocked(onStudyChange).mock.calls.at(-1)![1];
 
 		onWrite(2);
 		await tick();

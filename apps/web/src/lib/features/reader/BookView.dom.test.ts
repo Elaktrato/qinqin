@@ -205,7 +205,7 @@ describe('BookView Words tab and the known index', () => {
 		let release!: () => void;
 		const history = vi.mocked(loadStudyHistory).getMockImplementation()!;
 		vi.mocked(loadStudyHistory).mockImplementationOnce(
-			(ws) => new Promise((res) => (release = () => void res(history(ws) as never)))
+			(_study, ws) => new Promise((res) => (release = () => void res(history(_study, ws) as never)))
 		);
 		render(BookView, { props: { id: 1, chapter: 0 }, context: ctx.context });
 		await fireEvent.click(await screen.findByRole('tab', { name: /Words/ }));

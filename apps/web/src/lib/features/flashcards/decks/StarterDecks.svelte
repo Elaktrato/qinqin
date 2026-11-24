@@ -17,6 +17,8 @@
 		type StarterDeck
 	} from './starterDecks';
 	import type { StarterEntry } from '$lib/api/frequency';
+	import { useSession } from '$lib/context/context';
+	const session = useSession();
 
 	// Starter decks (#75): Top 500/1000/2000 of each installed frequency pack
 	// of the workspace language, computed by the server, collapsed per pack.
@@ -105,7 +107,7 @@
 		notes = { ...notes, [key]: '' };
 		errors = { ...errors, [key]: '' };
 		try {
-			const plan = await addDeckFromOverview({
+			const plan = await addDeckFromOverview(session.study, {
 				workspaceId,
 				items: starterAddItems(list.slice(0, deck.size)),
 				target: starterTarget(deck),

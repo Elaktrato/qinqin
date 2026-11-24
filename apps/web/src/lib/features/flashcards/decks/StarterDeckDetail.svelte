@@ -34,7 +34,7 @@
 	// has no session of its own: add it, then study the copy like any deck.
 	let { route }: { route: Extract<FlashcardsRoute, { view: 'system-frequency' }> } = $props();
 
-	const store = createDecksData();
+	const store = createDecksData(session.study);
 	const workspace = $derived(session.workspaces.current);
 	const workspaceId = $derived(workspace?.id ?? null);
 	$effect(() => {
@@ -117,7 +117,7 @@
 			}
 			const knownNow = knownEntries(fresh.cards, (id) => fresh.index.get(id) ?? null, fresh.known);
 			// Planned from the stored rows right now, so a retry adds only the rest.
-			const raw = await loadRawStudyData(workspaceId);
+			const raw = await loadRawStudyData(session.study, workspaceId);
 			const named = { ...target, name: raw.decks.find((d) => d.id === target.id)?.name ?? target.name };
 			const plan = planAddToDeck({
 				items: starterAddItems(entries),
@@ -133,14 +133,14 @@
 			const rows = addPlanRows(plan, raw);
 			if (plan.writes.length === 0) {
 				// A deck or settings row alone (a deleted copy) is still written.
-				if (rows.length > 0) await pushStudy(workspaceId, rows);
+				if (rows.length > 0) await pushStudy(session.study, workspaceId, rows);
 				result = t('flashcards.system.nothingNew', { name: named.name });
 				return;
 			}
 			headRows = rows.length - plan.writes.length;
 			const total = plan.writes.length;
 			progress = { done: 0, total };
-			await pushStudy(workspaceId, rows, {
+			await pushStudy(session.study, workspaceId, rows, {
 				onProgress: (done) => (progress = { done: Math.max(0, done - headRows), total })
 			});
 			result = starterAddedText(plan);

@@ -70,7 +70,7 @@
 		// flashcards goal needs, so the form also works offline.
 		void loadSources(workspace);
 		try {
-			const data = await getStudyData(workspace, { force });
+			const data = await getStudyData(session.study, workspace, { force });
 			if (mine !== seq) return;
 			const goals = data.goals ?? null;
 			newer = goals === 'newer';
@@ -116,7 +116,7 @@
 		}
 		busy = true;
 		try {
-			await saveGoals(target, next);
+			await saveGoals(session.study, target, next);
 			await load(target, true);
 			message = t('common.state.saved');
 		} catch {

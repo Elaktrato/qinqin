@@ -38,7 +38,7 @@
 		loading = true;
 		try {
 			const monday = weekOf(currentStudyDay().today());
-			const next = await loadWeek(workspace, monday, { force });
+			const next = await loadWeek(session.study, workspace, monday, { force });
 			if (seq !== requestSeq) return;
 			view = next;
 		} catch (err) {

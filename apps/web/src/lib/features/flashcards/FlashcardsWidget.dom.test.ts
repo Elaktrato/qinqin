@@ -130,7 +130,7 @@ describe('FlashcardsWidget goal ring', () => {
 		expect(ring.getAttribute('aria-valuetext')).toBe('32 of 50 flashcard reviews today');
 		expect(screen.getByText('32/50')).toBeTruthy();
 		expect(screen.getByText('Goal streak: 4 days')).toBeTruthy();
-		expect(loadGoalStatus).toHaveBeenCalledWith(1, { force: false });
+		expect(loadGoalStatus).toHaveBeenCalledWith(expect.anything(), 1, { force: false });
 	});
 
 	it('says "Goal reached" next to the small ring when met', async () => {

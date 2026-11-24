@@ -4,6 +4,7 @@
 // widget) call this; concurrent calls for the same workspace, learner day
 // and force flag (and signed-in user) share one promise, dropped once it settles.
 
+import type { StudyState } from '$lib/study/data';
 import { errorText } from '$lib/api/apiErrors';
 import { onSessionEnd } from '../session/sessionEnd';
 import { t } from '../i18n';
@@ -40,10 +41,10 @@ export interface GoalView {
 const inflight = new Map<string, Promise<GoalView>>();
 onSessionEnd(() => inflight.clear());
 
-async function load(workspaceId: number, now: number, force: boolean): Promise<GoalView> {
+async function load(study: StudyState, workspaceId: number, now: number, force: boolean): Promise<GoalView> {
 	const day = currentStudyDay();
 	const today = day.today(now);
-	const data = await loadStudyHistory(workspaceId, { force });
+	const data = await loadStudyHistory(study, workspaceId, { force });
 	const parsed = data.goals ?? null;
 	const limitsNew = effectiveLimits(data.limits?.workspace ?? null, null).new;
 	const vacation = vacationRuns(data.vacations ?? [], workspaceId, today);
@@ -87,6 +88,7 @@ async function load(workspaceId: number, now: number, force: boolean): Promise<G
 }
 
 export function loadGoalStatus(
+	study: StudyState,
 	workspaceId: number,
 	opts?: { force?: boolean; now?: number }
 ): Promise<GoalView> {
@@ -96,7 +98,7 @@ export function loadGoalStatus(
 	const key = `${outboxUser() ?? 0}|${workspaceId}|${currentStudyDay().today(now)}|${force ? 1 : 0}`;
 	const pending = inflight.get(key);
 	if (pending !== undefined) return pending;
-	const promise = load(workspaceId, now, force).finally(() => {
+	const promise = load(study, workspaceId, now, force).finally(() => {
 		if (inflight.get(key) === promise) inflight.delete(key);
 	});
 	inflight.set(key, promise);

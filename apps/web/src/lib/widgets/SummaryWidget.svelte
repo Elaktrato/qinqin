@@ -66,7 +66,7 @@
 		try {
 			// Duplicate cards arrive merged, their reviews re-pointed; the
 			// history is shared with the other widgets (study/data.ts loadStudyHistory).
-			const data = await loadStudyHistory(workspace, { force });
+			const data = await loadStudyHistory(session.study, workspace, { force });
 			if (seq !== requestSeq) return;
 			const ctx = contextForData(data, workspace);
 			summary = summaryNumbers({
@@ -113,7 +113,7 @@
 			if (id !== null && (touched === id || touched === ALL_WORKSPACES)) void load(id);
 		};
 		const offLog = onEventLogChange(again);
-		const offWrite = onStudyChange(again);
+		const offWrite = onStudyChange(session.study, again);
 		return () => {
 			offLog();
 			offWrite();

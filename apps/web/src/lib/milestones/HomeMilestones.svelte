@@ -29,7 +29,7 @@
 			return;
 		}
 		try {
-			const loaded = await loadMilestones(id, { scope: 'home', language: lang });
+			const loaded = await loadMilestones(session.study, id, { scope: 'home', language: lang });
 			if (mine === seq) view = loaded;
 		} catch {
 			if (mine === seq) view = null;
@@ -47,7 +47,7 @@
 			if (id !== null && (touched === id || touched === ALL_WORKSPACES)) void load(id, lang, isReady);
 		};
 		const offLog = onEventLogChange(again);
-		const offWrite = onStudyChange(again);
+		const offWrite = onStudyChange(session.study, again);
 		return () => {
 			offLog();
 			offWrite();
@@ -58,7 +58,7 @@
 		const shown = view;
 		if (shown === null || shown.workspaceId !== workspaceId) return;
 		view = { ...shown, plan: { kind: 'none' } };
-		void markSeen(shown);
+		void markSeen(session.study, shown);
 	}
 </script>
 

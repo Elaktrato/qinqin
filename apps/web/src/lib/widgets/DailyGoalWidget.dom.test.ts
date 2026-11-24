@@ -79,7 +79,7 @@ describe('DailyGoalWidget', () => {
 		const link = await screen.findByRole('link', { name: 'Set a daily goal' });
 		expect(link.getAttribute('href')).toBe('/settings?tab=study');
 		expect(screen.queryByRole('progressbar')).toBeNull();
-		expect(loadGoalStatus).toHaveBeenCalledWith(1, { force: false });
+		expect(loadGoalStatus).toHaveBeenCalledWith(expect.anything(), 1, { force: false });
 	});
 
 	it('shows the ring, the progress text and the streak line', async () => {
@@ -144,7 +144,7 @@ describe('DailyGoalWidget', () => {
 		vi.mocked(loadGoalStatus).mockResolvedValue(view());
 		retry.click();
 		await screen.findByRole('progressbar');
-		expect(loadGoalStatus).toHaveBeenLastCalledWith(1, { force: true });
+		expect(loadGoalStatus).toHaveBeenLastCalledWith(expect.anything(), 1, { force: true });
 	});
 
 	it('reloads on a workspace switch and ignores the stale answer', async () => {
@@ -159,6 +159,6 @@ describe('DailyGoalWidget', () => {
 		await new Promise((r) => setTimeout(r, 0));
 		await waitFor(() => expect(screen.queryByText('40 of 50 flashcard reviews today')).toBeNull());
 		expect(screen.getByText('7 of 50 flashcard reviews today')).toBeTruthy();
-		expect(vi.mocked(loadGoalStatus).mock.calls.map((c) => c[0])).toEqual([1, 2]);
+		expect(vi.mocked(loadGoalStatus).mock.calls.map((c) => c[1])).toEqual([1, 2]);
 	});
 });

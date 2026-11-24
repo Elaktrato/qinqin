@@ -71,7 +71,7 @@ import type { Run } from '$lib/study/vacation';
 	import { companionNote, sessionStartError, showCompanionNote } from '$lib/study/sessionStart';
 	import { offline } from '$lib/pwa/offlineState';
 	import { addCard } from '$lib/study/commands/cards';
-	import { loadStudyData } from '$lib/study/data';
+	import { loadStudyData, withStudy } from '$lib/study/data';
 	import { activeWeights } from '$lib/study/readModel';
 	import { getFrequencyPacks } from '$lib/api/frequency';
 	import { loadRanks } from '$lib/study/frequencyRanks';
@@ -474,7 +474,7 @@ import type { Run } from '$lib/study/vacation';
 			}
 			// Duplicate cards arrive merged, their reviews re-pointed.
 			const [data, levelRequest] = await Promise.all([
-				loadStudyData(workspaceId),
+				loadStudyData(session.study, workspaceId),
 				levelEntriesRequest(language)
 			]);
 			if (seq !== requestSeq) return;
@@ -1062,7 +1062,7 @@ import type { Run } from '$lib/study/vacation';
 						meta,
 						currentWorkspaceId: session.workspaces.current?.id ?? null,
 						entry: current.entry,
-						addCard,
+						addCard: withStudy(session.study, addCard),
 						recordReview: (...args) => session.outbox.recordReview(...args)
 					})
 			});

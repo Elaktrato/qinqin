@@ -125,7 +125,7 @@
 		try {
 			// Duplicate cards arrive merged, their reviews re-pointed; the
 			// history is shared with the other widgets (study/data.ts loadStudyHistory).
-			const data = await loadStudyHistory(workspace, { force });
+			const data = await loadStudyHistory(session.study, workspace, { force });
 			if (seq !== requestSeq) return;
 			decks = data.decks;
 			cards = data.cards;
@@ -152,7 +152,7 @@
 			return;
 		}
 		try {
-			const next = await loadGoalStatus(workspace, { force });
+			const next = await loadGoalStatus(session.study, workspace, { force });
 			if (seq === goalSeq) goal = next;
 		} catch {
 			if (seq === goalSeq) goal = null;

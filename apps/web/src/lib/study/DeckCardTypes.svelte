@@ -4,6 +4,8 @@
 	import { cleanCardTypes, type DeckSettings } from './deckSettings';
 	import { saveDeckCardTypes } from './commands/decks';
 	import type { OptInKind } from './types';
+	import { useSession } from '$lib/context/context';
+	const session = useSession();
 
 	interface Props {
 		/** The workspace the deck belongs to (the shown data's): the write goes there (#174). */
@@ -36,7 +38,7 @@
 		error = '';
 		pending = cleanCardTypes(next);
 		try {
-			const saved = await saveDeckCardTypes(ws, deckId, next);
+			const saved = await saveDeckCardTypes(session.study, ws, deckId, next);
 			onSaved?.(saved);
 		} catch (err) {
 			error = errorText(err, t('study.deckTypes.saveFailed'));

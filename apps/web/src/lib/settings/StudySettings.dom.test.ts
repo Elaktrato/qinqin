@@ -92,7 +92,7 @@ describe('StudySettings vacation', () => {
 		await screen.findByRole('heading', { name: 'Vacation' });
 		await fireEvent.click(screen.getByRole('button', { name: 'Start vacation' }));
 		await waitFor(() => expect(saveVacation).toHaveBeenCalledTimes(1));
-		const saved = vi.mocked(saveVacation).mock.calls[0][0];
+		const saved = vi.mocked(saveVacation).mock.calls[0][1];
 		expect(saved).toMatchObject({ start: today, end: null, scope: 'all', createdDay: today });
 	});
 
@@ -101,7 +101,7 @@ describe('StudySettings vacation', () => {
 		await screen.findByRole('heading', { name: 'Vacation' });
 		await fireEvent.click(screen.getByRole('button', { name: 'Start vacation' }));
 		await waitFor(() => expect(saveVacation).toHaveBeenCalled());
-		expect(vi.mocked(saveVacation).mock.calls[0][0].start).toBe(later(1));
+		expect(vi.mocked(saveVacation).mock.calls[0][1].start).toBe(later(1));
 		expect(await screen.findByText('Starts tomorrow — you already studied today')).toBeTruthy();
 	});
 
@@ -116,7 +116,7 @@ describe('StudySettings vacation', () => {
 		await fireEvent.input(screen.getByLabelText('End date'), { target: { value: later(9) } });
 		await fireEvent.click(screen.getByRole('button', { name: 'Schedule vacation' }));
 		await waitFor(() => expect(saveVacation).toHaveBeenCalled());
-		expect(vi.mocked(saveVacation).mock.calls[0][0]).toMatchObject({ start: later(5), end: later(9) });
+		expect(vi.mocked(saveVacation).mock.calls[0][1]).toMatchObject({ start: later(5), end: later(9) });
 	});
 
 	it('limits a vacation to the chosen workspaces and refuses an empty choice', async () => {
@@ -129,7 +129,7 @@ describe('StudySettings vacation', () => {
 		await fireEvent.click(screen.getByLabelText('zh'));
 		await fireEvent.click(screen.getByRole('button', { name: 'Start vacation' }));
 		await waitFor(() => expect(saveVacation).toHaveBeenCalled());
-		expect(vi.mocked(saveVacation).mock.calls[0][0].scope).toEqual({ workspaces: [1] });
+		expect(vi.mocked(saveVacation).mock.calls[0][1].scope).toEqual({ workspaces: [1] });
 	});
 
 	it('lists a scheduled period with Cancel and an active one with End now only', async () => {
@@ -141,7 +141,7 @@ describe('StudySettings vacation', () => {
 		expect(cancel[0].getAttribute('aria-label')).toMatch(/^Cancel vacation /);
 		expect(screen.getByRole('button', { name: /^End now/ }).getAttribute('aria-label')).toMatch(/^End now: /);
 		await fireEvent.click(cancel[0]);
-		await waitFor(() => expect(deleteVacation).toHaveBeenCalledWith('S'));
+		await waitFor(() => expect(deleteVacation).toHaveBeenCalledWith(expect.anything(), 'S'));
 	});
 
 	it('ends an active period early by writing the day before today', async () => {
@@ -149,7 +149,7 @@ describe('StudySettings vacation', () => {
 		setup([period({ id: 'A', start, end: later(5), createdDay: start })]);
 		await fireEvent.click(await screen.findByRole('button', { name: /^End now/ }));
 		await waitFor(() => expect(saveVacation).toHaveBeenCalled());
-		expect(vi.mocked(saveVacation).mock.calls[0][0]).toMatchObject({ id: 'A', end: later(-1) });
+		expect(vi.mocked(saveVacation).mock.calls[0][1]).toMatchObject({ id: 'A', end: later(-1) });
 	});
 });
 
@@ -193,14 +193,14 @@ describe('StudySettings daily limits', () => {
 		await fireEvent.input(newValue, { target: { value: '12' } });
 		await fireEvent.click(screen.getAllByLabelText('Unlimited')[1]);
 		await fireEvent.click(screen.getByRole('button', { name: 'Save limits' }));
-		await waitFor(() => expect(saveWorkspaceLimits).toHaveBeenCalledWith(1, { new: 12, reviews: null }));
+		await waitFor(() => expect(saveWorkspaceLimits).toHaveBeenCalledWith(expect.anything(), 1, { new: 12, reviews: null }));
 	});
 
 	it('a workspace switch: a late answer of the old workspace never fills the form, and saving goes to the shown one (#174)', async () => {
 		const lateOnes: ((v: unknown) => void)[] = [];
 		vi.mocked(currentStudyDay).mockReturnValue(day);
 		vi.mocked(loadWorkspaceEvents).mockResolvedValue([]);
-		vi.mocked(getStudyData).mockImplementation(async (id: number) => {
+		vi.mocked(getStudyData).mockImplementation(async (_study, id: number) => {
 			if (id === 1) return new Promise((r) => lateOnes.push(r)) as never;
 			return { decks: [], cards: [], limits: { workspace: { new: 7 }, decks: {} } } as never;
 		});
@@ -217,7 +217,7 @@ describe('StudySettings daily limits', () => {
 		await new Promise((r) => setTimeout(r, 0));
 		expect(newValue.value).toBe('7');
 		await fireEvent.click(screen.getByRole('button', { name: 'Save limits' }));
-		await waitFor(() => expect(saveWorkspaceLimits).toHaveBeenCalledWith(2, { new: 7, reviews: 200 }));
+		await waitFor(() => expect(saveWorkspaceLimits).toHaveBeenCalledWith(expect.anything(), 2, { new: 7, reviews: 200 }));
 	});
 
 	it('saves to the workspace whose limits the form shows, not one selected since (#174)', async () => {
@@ -229,7 +229,7 @@ describe('StudySettings daily limits', () => {
 		updateWorkspaces(ctx.session.workspaces, (w: WorkspacesState) => ({ ...w, current: { id: 2, language: 'ja', name: 'ja' } as never }));
 		await fireEvent.click(screen.getByRole('button', { name: 'Save limits' }));
 		await waitFor(() => expect(saveWorkspaceLimits).toHaveBeenCalled());
-		expect(vi.mocked(saveWorkspaceLimits).mock.calls[0][0]).toBe(1);
+		expect(vi.mocked(saveWorkspaceLimits).mock.calls[0][1]).toBe(1);
 	});
 
 	it('refuses a bad value', async () => {

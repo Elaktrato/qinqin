@@ -39,11 +39,10 @@ import { goto } from '$app/navigation';
 import { fireEvent } from '@testing-library/svelte';
 import { fetchSchemeCharacters, getSchemeEntries, getSchemes } from '$lib/api/schemes';
 import { createDeck, saveDeckCardTypesForDecks } from '$lib/study/commands/decks';
-import { loadStudyData, studyCache } from '$lib/study/data';
+import { loadStudyData } from '$lib/study/data';
 import { tick } from 'svelte';
 import { studyDay } from '$lib/time/studyDay';
 import { currentStudyDay } from '$lib/time/zone';
-import { unreadableRows } from '$lib/study/unreadable';
 import { SESSION_CONFIG_KEY } from '$lib/study/session';
 import { primaryActions } from '$lib/ui/testing/primary';
 import Page from './+page.svelte';
@@ -289,7 +288,7 @@ describe('study setup, reverse and cloze checkboxes', () => {
 		await waitFor(() => expect(box(/reverse/)).not.toBeNull());
 		await fireEvent.click(box(/reverse/)!);
 		await waitFor(() =>
-			expect(saveDeckCardTypesForDecks).toHaveBeenCalledWith(1, ['general'], 'reverse', true)
+			expect(saveDeckCardTypesForDecks).toHaveBeenCalledWith(expect.anything(), 1, ['general'], 'reverse', true)
 		);
 		expect(box(/reverse/)!.checked).toBe(true);
 	});
@@ -328,12 +327,12 @@ describe('study setup, a workspace switch while a deck is created (#174)', () =>
 		const name = (await screen.findByLabelText('New deck')) as HTMLInputElement;
 		await fireEvent.input(name, { target: { value: 'Late deck' } });
 		await fireEvent.click(screen.getByRole('button', { name: 'Create deck' }));
-		expect(createDeck).toHaveBeenCalledWith(1, 'Late deck');
+		expect(createDeck).toHaveBeenCalledWith(expect.anything(), 1, 'Late deck');
 		ctx.session.workspaces.set({
 			list: [{ id: 1, language: 'ja', name: 'ja' } as never, { id: 2, language: 'ja', name: 'ja2' } as never],
 			current: { id: 2, language: 'ja', name: 'ja2' } as never
 		});
-		await waitFor(() => expect(loadStudyData).toHaveBeenCalledWith(2));
+		await waitFor(() => expect(loadStudyData).toHaveBeenCalledWith(expect.anything(), 2));
 		finish({ id: 'dLate', name: 'Late deck', createdAt: '2026-11-23T00:00:00Z' });
 		await new Promise((r) => setTimeout(r, 0));
 		expect(screen.queryByText('Late deck')).toBeNull();
@@ -362,14 +361,13 @@ describe('study setup on a vacation day', () => {
 describe('study setup with rows this version cannot read (#167)', () => {
 	it('shows the notice of the loaded workspace and still offers the session', async () => {
 		setup(charScheme, ['vocab']);
-		vi.mocked(loadStudyData).mockImplementation(async (id) => {
-			unreadableRows.set({ workspaceId: id as number, counts: { cards: 1 }, total: 1 });
+		vi.mocked(loadStudyData).mockImplementation(async (_study, id) => {
+			ctx.session.study.unreadable.record(id as number, { cards: 1 }, []);
 			return { decks: [], cards: [], reviews: [], merged: 0 };
 		});
 		render(Page, { context: ctx.context });
 		expect(await screen.findByText(/1 saved study item could not be read/)).toBeTruthy();
 		expect(screen.getByRole('button', { name: /start studying/i })).toBeTruthy();
-		unreadableRows.set(null);
 	});
 });
 
@@ -537,10 +535,10 @@ describe('study setup and the study cache (#193)', () => {
 		await waitFor(() => expect(loadStudyData).toHaveBeenCalledTimes(1));
 		// A row another device wrote in the second of the load arrives with the cache's follow-up round.
 		vi.mocked(loadStudyData).mockResolvedValue({ decks: [], cards: [build.card({ id: 'late', entryId: 9 })], reviews: [], merged: 0 });
-		studyCache.markStale(2);
+		ctx.session.study.cache.markStale(2);
 		await tick();
 		expect(loadStudyData).toHaveBeenCalledTimes(1);
-		studyCache.markStale(1);
+		ctx.session.study.cache.markStale(1);
 		await waitFor(() => expect(loadStudyData).toHaveBeenCalledTimes(2));
 	});
 

@@ -1,4 +1,4 @@
-import { testContext, type TestContext } from '$lib/testing/context';
+import { newSession, studyContext, type TestContext } from '$lib/testing/context';
 // Settings commands (split from the old store tests, #193).
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { readFileSync, readdirSync } from "node:fs";
@@ -51,10 +51,9 @@ import { DEFAULT_W, type ParamSet } from "$lib/study/fsrs/params";
 import { legacyFamily, pageOf, pagedPull, toLegacy } from '$lib/testing/legacyCodec';
 import { STUDY_COLLECTIONS, cardRow, type StudyCollection } from "$lib/study/rows";
 import * as build from '$lib/testing/study';
-import { endSession } from "$lib/session/sessionEnd";
 
 // Every test starts a session of its own: the study cache holds nothing.
-beforeEach(() => endSession("signOut"));
+beforeEach(() => newSession(ctx));
 import {
   PLUGIN_ID,
   WORKSPACE_ID,
@@ -83,9 +82,9 @@ import {
   useStudyStoreMocks
 } from "$lib/testing/studyFetch";
 
-let ctx: TestContext = testContext();
+let ctx: TestContext = studyContext();
 beforeEach(() => {
-	ctx = testContext();
+	ctx = studyContext();
 });
 
 
@@ -116,7 +115,7 @@ describe("settings commands", () => {
           pluginRow("fsrs:active", { setId: "B", changedAt: "x" }),
         ],
       });
-      const data = await loadStudyData(WORKSPACE_ID);
+      const data = await loadStudyData(ctx.session.study, WORKSPACE_ID);
       expect(data.fsrs?.active?.id).toBe("B");
       expect(data.fsrs?.w).toEqual(wWith(8, 2.5));
       expect(data.fsrs?.sets.map((s) => s.id)).toEqual(["B", "A"]);
@@ -132,7 +131,7 @@ describe("settings commands", () => {
           }),
         ],
       });
-      const data = await loadStudyData(WORKSPACE_ID);
+      const data = await loadStudyData(ctx.session.study, WORKSPACE_ID);
       expect(data.fsrs?.active).toBeNull();
       expect(activeWeights(data)).toEqual(DEFAULT_W);
       expect(activeWeights({})).toEqual(DEFAULT_W);
@@ -146,7 +145,7 @@ describe("settings commands", () => {
           pluginRow("fsrs:active", { setId: "A", changedAt: "x" }, { workspaceId: 8 }),
         ],
       });
-      const data = await loadStudyData(WORKSPACE_ID);
+      const data = await loadStudyData(ctx.session.study, WORKSPACE_ID);
       expect(data.fsrs?.sets).toEqual([]);
       expect(data.fsrs?.w).toEqual(DEFAULT_W);
     });
@@ -154,8 +153,8 @@ describe("settings commands", () => {
     it("saves a set under a ULID key and notifies listeners", async () => {
       vi.mocked(fetch).mockResolvedValue(jsonResponse({ version: 1 }));
       const listener = vi.fn();
-      onStudyChange(listener);
-      const saved = await saveParamSet(WORKSPACE_ID, {
+      onStudyChange(ctx.session.study, listener);
+      const saved = await saveParamSet(ctx.session.study, WORKSPACE_ID, {
         w: [...DEFAULT_W],
         source: "imported",
       });
@@ -173,10 +172,10 @@ describe("settings commands", () => {
       vi.mocked(fetch).mockImplementation(async (input) =>
         String(input).startsWith("/api/sync/pull") ? jsonResponse(pagedPull({ pluginData: [] })) : jsonResponse({ version: 1 }),
       );
-      await setActiveSet(WORKSPACE_ID, "A");
+      await setActiveSet(ctx.session.study, WORKSPACE_ID, "A");
       // The server now holds A: switching back to the defaults writes setId null.
       respondPull({ pluginData: [pluginRow("fsrs:active", { setId: "A", changedAt: "2026-01-06T00:00:00Z" })] });
-      await setActiveSet(WORKSPACE_ID, null);
+      await setActiveSet(ctx.session.study, WORKSPACE_ID, null);
       const [first, second] = writtenRows();
       expect(first.key).toBe("fsrs:active");
       expect(first.body).toEqual({ setId: "A", changedAt: expect.any(String) });
@@ -191,11 +190,11 @@ describe("settings commands", () => {
           pluginRow("fsrs:active", { setId: "B", changedAt: "x" }),
         ],
       });
-      await expect(deleteParamSet(WORKSPACE_ID, "B")).rejects.toThrow(
+      await expect(deleteParamSet(ctx.session.study, WORKSPACE_ID, "B")).rejects.toThrow(
         "Cannot delete the active parameters.",
       );
       expect(writes()).toEqual([]);
-      await deleteParamSet(WORKSPACE_ID, "A");
+      await deleteParamSet(ctx.session.study, WORKSPACE_ID, "A");
       expect(deletedKeys()).toEqual(["fsrs:set:A"]);
       expect(writes()).toHaveLength(1);
     });
@@ -225,7 +224,7 @@ describe("limit rows", () => {
         ],
       });
     });
-    const data = await loadStudyData(WORKSPACE_ID);
+    const data = await loadStudyData(ctx.session.study, WORKSPACE_ID);
     expect(data.limits).toEqual({ workspace: { new: 10, reviews: null }, decks: { d1: { new: 0 } } });
   });
 
@@ -234,11 +233,11 @@ describe("limit rows", () => {
       if (isPush(input, init)) return pushAnswer(init);
       return jsonResponse({ pluginData: [pluginRow("limits:deck:d2", { version: 1, new: 3 })] });
     });
-    await saveWorkspaceLimits(WORKSPACE_ID, { new: 15, reviews: null });
-    await saveDeckLimits(WORKSPACE_ID, "d1", { reviews: null });
-    await saveDeckLimits(WORKSPACE_ID, "d2", {});
+    await saveWorkspaceLimits(ctx.session.study, WORKSPACE_ID, { new: 15, reviews: null });
+    await saveDeckLimits(ctx.session.study, WORKSPACE_ID, "d1", { reviews: null });
+    await saveDeckLimits(ctx.session.study, WORKSPACE_ID, "d2", {});
     // A deck without a row has nothing to remove.
-    await saveDeckLimits(WORKSPACE_ID, "d3", {});
+    await saveDeckLimits(ctx.session.study, WORKSPACE_ID, "d3", {});
     expect(writtenRows()).toEqual([
       { key: "limits:workspace", workspaceId: WORKSPACE_ID, body: { version: 1, new: 15, reviews: null } },
       { key: "limits:deck:d1", workspaceId: WORKSPACE_ID, body: { version: 1, reviews: null } },
@@ -259,7 +258,7 @@ describe("limit rows", () => {
         pluginData: [pluginRow("deck:d1", deck("d1", "Doomed")), pluginRow("limits:deck:d1", { version: 1, new: 1 })],
       });
     });
-    await deleteDeck(WORKSPACE_ID, "d1");
+    await deleteDeck(ctx.session.study, WORKSPACE_ID, "d1");
     expect(deletedKeys()).toEqual(["deck:d1", "limits:deck:d1"]);
   });
 });

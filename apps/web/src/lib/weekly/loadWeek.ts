@@ -3,6 +3,7 @@
 // and, on the Week tab only, the language's character universe. Failures
 // of the activity request leave the local rows (offline).
 
+import type { StudyState } from '$lib/study/data';
 import { errorText } from '$lib/api/apiErrors';
 import { fetchActivity, type ActivitySource } from '../api/stats';
 import { t } from '../i18n';
@@ -46,6 +47,7 @@ function goalsOf(goals: GoalsRow | 'newer' | undefined): GoalsRow | null {
  * `detail` adds the words reaching mature (one replay per loaded history).
  */
 export async function loadWeek(
+	study: StudyState,
 	workspaceId: number,
 	monday: string,
 	opts?: { force?: boolean; now?: number; detail?: boolean }
@@ -53,7 +55,7 @@ export async function loadWeek(
 	const now = opts?.now ?? Date.now();
 	const day = currentStudyDay();
 	const today = day.today(now);
-	const data = await loadStudyHistory(workspaceId, { force: opts?.force === true });
+	const data = await loadStudyHistory(study, workspaceId, { force: opts?.force === true });
 	const sunday = addDays(monday, 6);
 	let activity: { sources: ActivitySource[]; cells: Awaited<ReturnType<typeof fetchActivity>>['cells'] } | null = null;
 	let activityError: string | null = null;
@@ -93,6 +95,7 @@ export async function loadWeek(
  * they were counted from (the milestones sweep it).
  */
 export async function loadWeekCharacters(
+	study: StudyState,
 	workspaceId: number,
 	language: string,
 	monday: string,
@@ -100,7 +103,7 @@ export async function loadWeekCharacters(
 ): Promise<WeekCharacters | null> {
 	if (!usesHan(language)) return null;
 	const now = opts?.now ?? Date.now();
-	const data = await loadCharacterMapData(workspaceId, language, { force: opts?.force === true });
+	const data = await loadCharacterMapData(study, workspaceId, language, { force: opts?.force === true });
 	// Cards added before written snapshots existed are resolved as the map does.
 	const cards = data.cards.some((c) => c.written === undefined)
 		? (await withLegacyWritten(data.cards)).cards

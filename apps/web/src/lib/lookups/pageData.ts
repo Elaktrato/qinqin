@@ -2,6 +2,7 @@
 // everything the page shows, and the decks view's idempotent add plan
 // (addWords) for the chosen words. The page itself stays thin.
 
+import type { StudyState } from '$lib/study/data';
 import { loadEntryBases } from '$lib/api/entryBases';
 import { listBooks } from '$lib/api/library';
 import type { EntryBase } from '$lib/api/types';
@@ -27,18 +28,18 @@ export interface PageData {
 }
 
 /** loadStates: the familiarity of every entry in the workspace (#68's predicate). */
-async function loadStates(ws: number): Promise<{ decks: Deck[]; index: KnownIndex }> {
-	const data = await loadStudyHistory(ws, { force: true });
+async function loadStates(study: StudyState, ws: number): Promise<{ decks: Deck[]; index: KnownIndex }> {
+	const data = await loadStudyHistory(study, ws, { force: true });
 	const schedules = scheduleIndex(data.cards, data.reviews, activeWeights(data), contextForData(data, ws).clock);
 	return { decks: data.decks, index: knownIndex(data.cards, (id) => schedules.get(id) ?? null, data.known) };
 }
 
-export async function loadPage(ws: number): Promise<PageData> {
+export async function loadPage(study: StudyState, ws: number): Promise<PageData> {
 	const [history, cfg, books, states] = await Promise.all([
 		loadHistory(ws),
 		loadLookupCfg(),
 		listBooks(ws).catch(() => []),
-		loadStates(ws)
+		loadStates(study, ws)
 	]);
 	const bases = history.items.length === 0 ? new Map<number, EntryBase>() : await loadEntryBases(history.items.map((i) => i.entryId));
 	return {
@@ -53,6 +54,7 @@ export async function loadPage(ws: number): Promise<PageData> {
 
 /** addEntries adds the words (in the given order) to a deck; adding twice creates nothing. */
 export async function addEntries(
+	study: StudyState,
 	ws: number,
 	entryIds: readonly number[],
 	target: { id: string; name: string },
@@ -64,8 +66,8 @@ export async function addEntries(
 		target,
 		now,
 		bases: (ids) => loadEntryBases(ids),
-		raw: () => loadRawStudyData(ws),
-		push: (w, writes) => pushStudy(w, writes)
+		raw: () => loadRawStudyData(study, ws),
+		push: (w, writes) => pushStudy(study, w, writes)
 	});
 	return result;
 }

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { withStudy } from '$lib/study/data';
 	import { readingBeside } from '$lib/entry/displayForm';
 	import { t, type MessageKey } from '$lib/i18n';
 	import { goto } from '$app/navigation';
@@ -42,7 +43,7 @@
 
 	let { deckId }: { deckId: string } = $props();
 
-	const store = createDecksData();
+	const store = createDecksData(session.study);
 	const workspaceId = $derived(session.workspaces.current?.id ?? null);
 	$effect(() => {
 		void store.load(workspaceId);
@@ -165,12 +166,12 @@
 	});
 
 	const actions = createCardActions({
-		deleteCards,
-		moveCards,
-		restoreCards,
-		dropSiblingCards,
-		skipKind,
-		unskipKind,
+		deleteCards: withStudy(session.study, deleteCards),
+		moveCards: withStudy(session.study, moveCards),
+		restoreCards: withStudy(session.study, restoreCards),
+		dropSiblingCards: withStudy(session.study, dropSiblingCards),
+		skipKind: withStudy(session.study, skipKind),
+		unskipKind: withStudy(session.study, unskipKind),
 		onchanged: () => store.load(untrack(() => workspaceId), true)
 	});
 	let controller = $state<CardActionsState>({ busy: false, error: '', undo: null });

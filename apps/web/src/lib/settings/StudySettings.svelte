@@ -84,7 +84,7 @@
 			return;
 		}
 		try {
-			const data = await getStudyData(ws, { force });
+			const data = await getStudyData(session.study, ws, { force });
 			// A late answer for a workspace no longer selected is dropped.
 			if (ws !== workspaceId) return;
 			loadedWorkspace = ws;
@@ -108,8 +108,8 @@
 
 	async function apply(writes: VacationWrite[]): Promise<void> {
 		for (const write of writes) {
-			if ('put' in write) await saveVacation(write.put);
-			else await deleteVacation(write.delete);
+			if ('put' in write) await saveVacation(session.study, write.put);
+			else await deleteVacation(session.study, write.delete);
 		}
 		await load(true);
 	}
@@ -191,7 +191,7 @@
 		}
 		busy = true;
 		try {
-			await saveWorkspaceLimits(ws, plan.row);
+			await saveWorkspaceLimits(session.study, ws, plan.row);
 			limitsMessage = t('common.state.saved');
 			await load(true);
 		} catch {

@@ -25,7 +25,7 @@
 		limitsEditor = deckLimitsEditor
 	}: { deckId: string; limitsEditor?: Component<DeckLimitsEditorProps> | null } = $props();
 
-	const store = createDecksData();
+	const store = createDecksData(session.study);
 	const workspaceId = $derived(session.workspaces.current?.id ?? null);
 	$effect(() => {
 		void store.load(workspaceId);
@@ -82,7 +82,7 @@
 		if (ws === undefined) return;
 		busy = true;
 		try {
-			await saveDeckNewOrder(ws, deckId, order === 'deck' || order === 'random' ? { by: 'added' } : order);
+			await saveDeckNewOrder(session.study, ws, deckId, order === 'deck' || order === 'random' ? { by: 'added' } : order);
 			message = t('flashcards.settings.saved');
 			await store.load(workspaceId, true);
 		} catch (err) {
@@ -111,7 +111,7 @@
 		if (ws === undefined) return;
 		busy = true;
 		try {
-			await renameDeck(ws, deckId, next);
+			await renameDeck(session.study, ws, deckId, next);
 			message = t('flashcards.settings.renamed');
 			await store.load(workspaceId, true);
 		} catch (err) {
@@ -133,7 +133,7 @@
 		if (ws === undefined) return;
 		busy = true;
 		try {
-			await deleteDeck(ws, deckId);
+			await deleteDeck(session.study, ws, deckId);
 			await goto(flashcardsHref({ view: 'list' }));
 		} catch (err) {
 			error = errorText(err, t('flashcards.settings.deleteFailed'));

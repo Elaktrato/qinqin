@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { withStudy } from '$lib/study/data';
 	import { onDestroy, tick } from 'svelte';
 	import { t } from '$lib/i18n';
 	import { studyLang } from '$lib/i18n/lang';
@@ -45,12 +46,12 @@
 	let anchor = $state<string | null>(null);
 
 	const actions = createCardActions({
-		deleteCards,
-		moveCards,
-		restoreCards,
-		dropSiblingCards,
-		skipKind,
-		unskipKind,
+		deleteCards: withStudy(session.study, deleteCards),
+		moveCards: withStudy(session.study, moveCards),
+		restoreCards: withStudy(session.study, restoreCards),
+		dropSiblingCards: withStudy(session.study, dropSiblingCards),
+		skipKind: withStudy(session.study, skipKind),
+		unskipKind: withStudy(session.study, unskipKind),
 		onchanged: () => onchanged?.()
 	});
 	let controller = $state<CardActionsState>({ busy: false, error: '', undo: null });

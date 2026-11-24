@@ -64,7 +64,7 @@
 		try {
 			// Duplicate cards arrive merged, their reviews re-pointed; the
 			// history is shared with the other widgets (study/data.ts loadStudyHistory).
-			const data = await loadStudyHistory(workspace, { force });
+			const data = await loadStudyHistory(session.study, workspace, { force });
 			if (seq !== requestSeq) return;
 			result = wordStateCounts(data.cards, data.reviews, data.decks, new Date(), activeWeights(data), contextForData(data, workspace).clock);
 		} catch (err) {

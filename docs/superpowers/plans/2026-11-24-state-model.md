@@ -93,6 +93,10 @@ The decision is recorded in `docs/architecture/0009-web-state-model.md`.
 - Ruling: the outbox (`ReviewOutbox`) belongs to the session and sends only the session's user's items with the
   token the tab holds; a review recorded after the session ended is queued under that session's user (it used to be
   queued unowned and adopted by whoever signed in next) — cost if wrong: none; another user never sends it.
+- Ruling: study reads and commands stay module functions that take the session's `StudyState` first, instead of
+  methods of a session object — the pure modules (planners, the grade flow, card actions) already take the
+  functions as dependencies, and the tests' module mocks keep working; a component binds with `withStudy` where a
+  pure module wants a function — cost if wrong: one more argument at every call.
 - Ruling: the study commands' "selected workspace" fixture (`selectWorkspace`) went: the study layer cannot reach
   the session's selection at all, so #174's guarantee holds by construction — cost if wrong: none.
 - Ruling: `logout()` with no session (no token) clears nothing per user: there is nothing to clear; the workspace
@@ -117,3 +121,10 @@ Baseline (55312f3e, Node 26): 598 files, 12,651 passed, 8 skipped.
    existing behaviour: the existing tests (`workspaces.test.ts`, `workspaceGone.test.ts`, `events.test.ts`,
    `eventsSync.dom.test.ts`, `lateAnswers.test.ts`) are the guard, rewritten onto instances; their assertions are
    unchanged. Full vitest under Node 26: 599 files, 12,662 passed; e2e 13 passed.
+5. Study data into the session (task 7 of the list, moved before plugin states and the PWA state because the
+   other caches read it): `StudyState` in `study/data.ts` (the `StudyCache` of #193, the unreadable report as a
+   runes class `study/unreadableReport.svelte.ts`, the history memo); every read of `data.ts` and every command of
+   `commands/` takes it as its first argument; pure modules get bound functions (`withStudy`). A pure move: the
+   data, command, cache and request-count tests are the guard; they now build a fresh session per test
+   (`studyContext()`, `newSession()` instead of `endSession`), and mocked calls carry the study first. Full vitest
+   under Node 26: 599 files, 12,662 passed; e2e 13 passed.

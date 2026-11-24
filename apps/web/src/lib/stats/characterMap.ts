@@ -4,6 +4,7 @@
 // The map page itself keeps its own loading, because it also needs the
 // level schemes and paints progressively.
 
+import type { StudyState } from '$lib/study/data';
 import { fetchCharacters, type CharacterList } from '$lib/api/characters';
 import type { CharRow } from '$lib/api/types';
 import { cellStates, masteryGlyphs, sectionStats, type SectionStats } from '$lib/study/charGroups';
@@ -46,13 +47,14 @@ export interface CharacterMapData {
  * `force` reads it again).
  */
 export async function loadCharacterMapData(
+	study: StudyState,
 	workspaceId: number,
 	language: string,
 	opts?: { force?: boolean }
 ): Promise<CharacterMapData> {
 	const [list, data] = await Promise.all([
 		fetchCharacters(language),
-		loadStudyHistory(workspaceId, opts)
+		loadStudyHistory(study, workspaceId, opts)
 	]);
 	return {
 		list,

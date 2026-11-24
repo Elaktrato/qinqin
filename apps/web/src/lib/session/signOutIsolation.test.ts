@@ -2,7 +2,6 @@
 // leave one load of A in flight, sign out, sign in as B: every answer is B's,
 // nothing of A is reachable from any cache, and A's late answer does not land.
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { get } from 'svelte/store';
 
 vi.mock('$app/navigation', () => ({ goto: vi.fn() }));
 vi.mock('../i18n/reloadPage', () => ({ reloadPage: vi.fn() }));
@@ -22,7 +21,6 @@ import { loadProviderNames } from '../plugins/journal/providerNames';
 import { journalEntriesFor } from '../plugins/journal/journalEntries.svelte';
 import { loadWorkspaceEvents } from '../events';
 import { studyPullPages, loadStudyHistory, getStudyData } from '../study/data';
-import { unreadableRows } from '../study/unreadable';
 import type { StudyCard } from '../study/types';
 
 const WS = 7;
@@ -121,6 +119,9 @@ function signIn(token: Token): void {
 const legacyCard = (entryId: number): StudyCard => ({ id: `c-vocab-${entryId}`, kind: 'vocab', entryId, deckIds: ['general'], createdAt: '2026-11-10T08:00:00Z' });
 const level: LevelDeck = { kind: 'level', schemeId: 1, packId: 'p', schemeName: 's', unit: 'word', level: 'L1', ord: 1 };
 
+/** The current session's study state (read at each call: a new session is a new one). */
+const study = () => app.session!.study;
+
 /** Every cache, read through its public reader; the answer as JSON. */
 const readers: Record<string, () => Promise<unknown>> = {
 	entriesCache: () => fillMissingWritten([legacyCard(1)]),
@@ -131,8 +132,8 @@ const readers: Record<string, () => Promise<unknown>> = {
 	schemes: () => fetchSchemeCharacters(1).then((levels) => levels.map((l) => l.name)),
 	characters: () => fetchCharacters('zh'),
 	providerNames: () => loadProviderNames().then((m) => [...m.values()]),
-	studyHistory: () => loadStudyHistory(WS),
-	studyData: () => getStudyData(WS),
+	studyHistory: () => loadStudyHistory(study(), WS),
+	studyData: () => getStudyData(study(), WS),
 	eventLog: () => loadWorkspaceEvents(WS)
 };
 
@@ -148,12 +149,13 @@ describe('sign-out isolation (#173)', () => {
 		const asA = await readAll();
 		for (const [name, json] of Object.entries(asA)) expect(json, name).toContain('AAA');
 		const journalA = journalEntriesFor(WS);
-		expect(studyPullPages(WS)).toBeGreaterThan(0);
-		unreadableRows.set({ workspaceId: WS, counts: { cards: 1 }, total: 1 });
+		const studyA = study();
+		expect(studyPullPages(studyA, WS)).toBeGreaterThan(0);
+		studyA.unreadable.record(WS, { cards: 1 }, []);
 
 		app.auth.logout();
-		expect(studyPullPages(WS)).toBe(0);
-		expect(get(unreadableRows)).toBeNull();
+		expect(studyPullPages(studyA, WS)).toBe(0);
+		expect(studyA.unreadable.report).toBeNull();
 		signIn('tok-B');
 
 		const asB = await readAll();
@@ -172,8 +174,8 @@ describe('sign-out isolation (#173)', () => {
 			loadLevelItems(level),
 			loadEntryBases([1]),
 			getEntryAudio(1),
-			loadStudyHistory(WS),
-			getStudyData(WS),
+			loadStudyHistory(study(), WS),
+			getStudyData(study(), WS),
 			loadWorkspaceEvents(WS)
 		];
 		// The history and the raw data share one study round (#193): six requests held.

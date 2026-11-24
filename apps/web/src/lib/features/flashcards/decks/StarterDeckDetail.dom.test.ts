@@ -102,7 +102,7 @@ beforeEach(() => {
 		unreadable: new Set<string>(),
 		deckSettings: structuredClone(settings)
 	}));
-	vi.mocked(pushStudy).mockImplementation(async (_ws, writes) => {
+	vi.mocked(pushStudy).mockImplementation(async (_study, _ws, writes) => {
 		for (const row of keyed(writes)) {
 			pushed.push(row);
 			if (row.key.startsWith('deck:')) decks.push(row.data as Deck);
@@ -167,7 +167,7 @@ describe('StarterDeckDetail', () => {
 
 	it('skips a word the learner marked known, card or not', async () => {
 		const history = vi.mocked(loadStudyHistory).getMockImplementation()!;
-		vi.mocked(loadStudyHistory).mockImplementation(async (ws) => ({ ...(await history(ws)), known: [2] }));
+		vi.mocked(loadStudyHistory).mockImplementation(async (_study, ws) => ({ ...(await history(_study, ws)), known: [2] }));
 		render(StarterDeckDetail, { props: { route }, context: ctx.context });
 		await screen.findByText('2 known words skipped');
 		expect(screen.queryByText('w2')).toBeNull();

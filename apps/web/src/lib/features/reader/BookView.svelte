@@ -8,7 +8,7 @@
 	import { readPayload } from '$lib/eventPayloads';
 	import { segmentWithReadings } from '$lib/api/segment';
 	import { scheduleIndex } from '../flashcards/decks/deckStats';
-	import { onStudyChange, loadRawStudyData, loadStudyHistory } from '$lib/study/data';
+	import { onStudyChange, loadRawStudyData, loadStudyHistory, withStudy } from '$lib/study/data';
 	import { activeWeights } from '$lib/study/readModel';
 	import { contextForData } from '$lib/study/currentContext';
 	import { createReadingTimer } from './readingTimer';
@@ -261,7 +261,7 @@
 		});
 		const loader = createLatestLoad(
 			async () => {
-				const data = await loadStudyHistory(wsId);
+				const data = await loadStudyHistory(session.study, wsId);
 				const schedules = scheduleIndex(data.cards, data.reviews, activeWeights(data), contextForData(data, wsId).clock);
 				return { index: knownIndex(data.cards, (cardId) => schedules.get(cardId) ?? null, data.known), decks: data.decks };
 			},
@@ -278,7 +278,7 @@
 		);
 		indexLoad = loader;
 		void loader.reload();
-		const off = onStudyChange((changed) => {
+		const off = onStudyChange(session.study, (changed) => {
 			if (changed === wsId) void loader.reload();
 		});
 		return () => {
@@ -1041,14 +1041,14 @@
 			target,
 			now: new Date(),
 			bases: (x) => loadEntryBases(x),
-			raw: () => loadRawStudyData(wsId),
-			push: pushStudy
+			raw: () => loadRawStudyData(session.study, wsId),
+			push: withStudy(session.study, pushStudy)
 		}));
 	}
 	function markFromPanel(ids: number[]) {
 		const wsId = bookWorkspace();
 		return batched(async () => {
-			const res = await markWords({ workspaceId: wsId, entryIds: ids, marked: index.marks, on: true, set: setKnownMarks });
+			const res = await markWords({ workspaceId: wsId, entryIds: ids, marked: index.marks, on: true, set: withStudy(session.study, setKnownMarks) });
 			return { written: res.written, undo: () => batched(res.undo) };
 		});
 	}

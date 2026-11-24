@@ -220,7 +220,7 @@ import { limitsOf } from '$lib/study/scheduler';
 
 		try {
 			// Duplicate cards arrive merged, their reviews re-pointed.
-			const data = await loadStudyData(workspaceId);
+			const data = await loadStudyData(session.study, workspaceId);
 			if (seq !== requestSeq) return;
 			decks = data.decks;
 			cards = data.cards;
@@ -251,7 +251,7 @@ import { limitsOf } from '$lib/study/scheduler';
 		if (activeWorkspaceId === null) return;
 		const seq = requestSeq;
 		try {
-			const data = await loadStudyData(activeWorkspaceId);
+			const data = await loadStudyData(session.study, activeWorkspaceId);
 			if (seq !== requestSeq) return;
 			decks = data.decks;
 			cards = data.cards;
@@ -273,7 +273,7 @@ import { limitsOf } from '$lib/study/scheduler';
 	// row another device wrote in the second of the load, which the cache's
 	// follow-up round brings, #193) reloads the counts without a new visit.
 	$effect(() =>
-		onStudyChange((changed) => {
+		onStudyChange(session.study, (changed) => {
 			if (touches(changed, activeWorkspaceId)) void refreshData();
 		})
 	);
@@ -704,7 +704,7 @@ import { limitsOf } from '$lib/study/scheduler';
 			rememberExtraChoice(ws, kind, next);
 			typeSaving = id;
 			try {
-				const saved = await saveDeckCardTypesForDecks(
+				const saved = await saveDeckCardTypesForDecks(session.study, 
 					ws,
 					allDecks.map((deck) => deck.id),
 					kind,
@@ -759,7 +759,7 @@ import { limitsOf } from '$lib/study/scheduler';
 		creating = true;
 		deckError = '';
 		try {
-			const deck = await createDeck(ws, name);
+			const deck = await createDeck(session.study, ws, name);
 			if (activeWorkspaceId !== ws) return;
 			decks = [...decks, deck];
 			// A deck the user just made is almost certainly one they want
@@ -796,7 +796,7 @@ import { limitsOf } from '$lib/study/scheduler';
 		if (ws === null) return;
 		deckError = '';
 		try {
-			const renamed = await renameDeck(ws, id, name);
+			const renamed = await renameDeck(session.study, ws, id, name);
 			if (activeWorkspaceId !== ws) return;
 			decks = decks.map((deck) => (deck.id === id ? renamed : deck));
 			cancelRename();
@@ -817,7 +817,7 @@ import { limitsOf } from '$lib/study/scheduler';
 		deletingId = deck.id;
 		deckError = '';
 		try {
-			await deleteDeck(ws, deck.id);
+			await deleteDeck(session.study, ws, deck.id);
 			if (activeWorkspaceId !== ws) return;
 			decks = decks.filter((item) => item.id !== deck.id);
 			// Mirror the store's reassignment locally so the counts do not

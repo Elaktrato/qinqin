@@ -101,7 +101,7 @@ beforeEach(() => {
 		stored: new Map(),
 		unreadable: new Set<string>()
 	}));
-	vi.mocked(pushStudy).mockImplementation(async (_ws, rows, opts) => {
+	vi.mocked(pushStudy).mockImplementation(async (_study, _ws, rows, opts) => {
 		if (failAfter !== null) {
 			const part = keyed(rows).slice(0, failAfter);
 			apply(part);
@@ -155,7 +155,7 @@ describe('SystemDeckDetail', () => {
 		await open();
 		await fireEvent.click(await screen.findByRole('button', { name: 'Add to my decks' }));
 		await screen.findByText('Added 3 words to HSK words · HSK 1');
-		const rows = keyed(vi.mocked(pushStudy).mock.calls[0][1]);
+		const rows = keyed(vi.mocked(pushStudy).mock.calls[0][2]);
 		expect(rows.map((r) => r.key)).toEqual([
 			`deck:${DECK_ID}`,
 			'card:c-vocab-1',
@@ -179,7 +179,7 @@ describe('SystemDeckDetail', () => {
 		await fireEvent.change(await screen.findByLabelText('Add to'), { target: { value: 'd1' } });
 		await fireEvent.click(screen.getByRole('button', { name: 'Add to my decks' }));
 		await screen.findByText('Added 3 words to Verbs');
-		const keys = keyed(vi.mocked(pushStudy).mock.calls[0][1]).map((r) => r.key);
+		const keys = keyed(vi.mocked(pushStudy).mock.calls[0][2]).map((r) => r.key);
 		expect(keys.some((k) => k.startsWith('deck:'))).toBe(false);
 		expect(decks).toHaveLength(1);
 	});
@@ -192,7 +192,7 @@ describe('SystemDeckDetail', () => {
 		expect(alert.textContent).toContain('Added 1; try again to add the rest');
 		await fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
 		await screen.findByText(/^Added 2 words to HSK words · HSK 1/);
-		const retryRows = keyed(vi.mocked(pushStudy).mock.calls[1][1]).map((r) => r.key);
+		const retryRows = keyed(vi.mocked(pushStudy).mock.calls[1][2]).map((r) => r.key);
 		expect(retryRows).toEqual(['card:c-vocab-2', 'card:c-vocab-3']);
 	});
 
@@ -223,7 +223,7 @@ describe('SystemDeckDetail', () => {
 		await open();
 		await fireEvent.click(await screen.findByRole('button', { name: 'Add to my decks' }));
 		await screen.findByText('Added 3 words to HSK words · HSK 1');
-		const rows = keyed(vi.mocked(pushStudy).mock.calls[0][1]);
+		const rows = keyed(vi.mocked(pushStudy).mock.calls[0][2]);
 		expect(rows.find((r) => r.key === 'card:c-vocab-1')?.knownAt).toBe('2026-03-10T12:00:09.000Z');
 		expect(rows.find((r) => r.key === 'card:c-vocab-2')?.knownAt).toBeUndefined();
 	});
@@ -245,14 +245,14 @@ describe('SystemDeckDetail', () => {
 		expect(option).toBeTruthy();
 		await fireEvent.click(screen.getByRole('button', { name: 'Add to my decks' }));
 		await screen.findByText('Added 3 words to My HSK 1');
-		const keys = keyed(vi.mocked(pushStudy).mock.calls[0][1]).map((r) => r.key);
+		const keys = keyed(vi.mocked(pushStudy).mock.calls[0][2]).map((r) => r.key);
 		expect(keys.some((k) => k.startsWith('deck:'))).toBe(false);
 		expect(decks.find((d) => d.id === DECK_ID)?.name).toBe('My HSK 1');
 	});
 
 	it('shows progress while adding', async () => {
 		let release: () => void = () => {};
-		vi.mocked(pushStudy).mockImplementationOnce(async (_ws, rows, opts) => {
+		vi.mocked(pushStudy).mockImplementationOnce(async (_study, _ws, rows, opts) => {
 			opts?.onProgress?.(2, rows.length);
 			await new Promise<void>((resolve) => (release = resolve));
 			apply(keyed(rows));

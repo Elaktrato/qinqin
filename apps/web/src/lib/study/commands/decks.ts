@@ -1,3 +1,4 @@
+import type { StudyState } from '../data';
 // Deck commands (#193): create, rename, delete, and the deck settings rows
 // (opt-in card kinds, new-card order). Each plans against the workspace's
 // view (data.ts) and writes through commands/write.ts.
@@ -11,14 +12,14 @@ import { extraOf, studyDelete, studyWrite, type StudyWrite } from '../plan';
 import { pushOptional, pushStudy, replanned, requireWorkspaceArg } from './write';
 
 /** createDeck stores a new ULID-keyed deck and returns it. */
-export async function createDeck(workspaceId: number, name: string): Promise<Deck> {
+export async function createDeck(study: StudyState, workspaceId: number, name: string): Promise<Deck> {
 	requireWorkspaceArg(workspaceId, 'createDeck');
 	const deck: Deck = {
 		id: newUlid(),
 		name,
 		createdAt: new Date().toISOString(),
 	};
-	await pushStudy(workspaceId, [{ collection: 'decks', row: deckRow(deck) }]);
+	await pushStudy(study, workspaceId, [{ collection: 'decks', row: deckRow(deck) }]);
 	return deck;
 }
 
@@ -26,16 +27,16 @@ export async function createDeck(workspaceId: number, name: string): Promise<Dec
  * renameDeck rewrites the deck under the same id and creation time.
  * Renaming a deck that is no longer stored is an error.
  */
-export async function renameDeck(workspaceId: number, id: string, name: string): Promise<Deck> {
+export async function renameDeck(study: StudyState, workspaceId: number, id: string, name: string): Promise<Deck> {
 	requireWorkspaceArg(workspaceId, 'renameDeck');
-	return replanned(workspaceId, async ({ data: { decks }, snapshot: snap }) => {
+	return replanned(study, workspaceId, async ({ data: { decks }, snapshot: snap }) => {
 		const existing = decks.find((deck) => deck.id === id);
 		if (existing === undefined) {
 			throw new Error(`deck "${id}" not found`);
 		}
 		const renamed: Deck = { ...existing, name };
 		const write = studyWrite(snap, 'decks', deckRow(renamed, extraOf(snap, 'decks', id)));
-		if (write !== null) await pushStudy(workspaceId, [write]);
+		if (write !== null) await pushStudy(study, workspaceId, [write]);
 		return renamed;
 	});
 }
@@ -47,13 +48,13 @@ export async function renameDeck(workspaceId: number, id: string, name: string):
  * rewritten before the tombstone so a failed write cannot orphan them
  * behind a deleted deck.
  */
-export async function deleteDeck(workspaceId: number, id: string): Promise<void> {
+export async function deleteDeck(study: StudyState, workspaceId: number, id: string): Promise<void> {
 	requireWorkspaceArg(workspaceId, 'deleteDeck');
 	if (id === GENERAL_DECK_ID) {
 		// The implicit deck has no stored row to tombstone and must survive.
 		throw new Error('the general deck cannot be deleted');
 	}
-	return replanned(workspaceId, async ({ data: { cards }, snapshot: snap }) => {
+	return replanned(study, workspaceId, async ({ data: { cards }, snapshot: snap }) => {
 		// One batch (chunks of 200) instead of a request per card: a big copied
 		// deck is a handful of requests. A failure throws before the tombstone.
 		const rows = cards
@@ -64,13 +65,13 @@ export async function deleteDeck(workspaceId: number, id: string): Promise<void>
 				return studyWrite(snap, 'cards', cardRow({ ...card, deckIds }, extraOf(snap, 'cards', card.id)));
 			})
 			.filter((write): write is StudyWrite => write !== null);
-		await pushStudy(workspaceId, rows);
+		await pushStudy(study, workspaceId, rows);
 		const tombstone = studyDelete(snap, 'decks', id);
-		if (tombstone !== null) await pushStudy(workspaceId, [tombstone]);
+		if (tombstone !== null) await pushStudy(study, workspaceId, [tombstone]);
 		// The deck's card type switches and its daily limits go with it; another
 		// tab may have removed those rows already (a skipped tombstone is fine).
 		for (const write of [studyDelete(snap, 'deckSettings', id), studyDelete(snap, 'limits', id)]) {
-			if (write !== null) await pushOptional(workspaceId, write);
+			if (write !== null) await pushOptional(study, workspaceId, write);
 		}
 	});
 }
@@ -81,12 +82,13 @@ export async function deleteDeck(workspaceId: number, id: string): Promise<void>
  * fields this version does not know survive.
  */
 export async function saveDeckCardTypes(
+	study: StudyState,
 	workspaceId: number,
 	deckId: string,
 	cardTypes: readonly OptInKind[],
 ): Promise<DeckSettings> {
 	requireWorkspaceArg(workspaceId, 'saveDeckCardTypes');
-	return replanned(workspaceId, async ({ data: { deckSettings }, snapshot: snap }) => {
+	return replanned(study, workspaceId, async ({ data: { deckSettings }, snapshot: snap }) => {
 		const stored = deckSettings?.[deckId];
 		const next: DeckSettings = {
 			deckId,
@@ -95,7 +97,7 @@ export async function saveDeckCardTypes(
 			extra: stored?.extra ?? extraOf(snap, 'deckSettings', deckId),
 		};
 		const write = studyWrite(snap, 'deckSettings', settingsRow(next));
-		if (write !== null) await pushStudy(workspaceId, [write]);
+		if (write !== null) await pushStudy(study, workspaceId, [write]);
 		return next;
 	});
 }
@@ -109,6 +111,7 @@ export async function saveDeckCardTypes(
  * does not stop the others; `saved` holds the decks written or unchanged.
  */
 export async function saveDeckCardTypesForDecks(
+	study: StudyState,
 	workspaceId: number,
 	deckIds: readonly string[],
 	kind: OptInKind,
@@ -116,7 +119,7 @@ export async function saveDeckCardTypesForDecks(
 ): Promise<{ saved: Record<string, DeckSettings>; unreadable: string[] }> {
 	requireWorkspaceArg(workspaceId, 'saveDeckCardTypesForDecks');
 	if (deckIds.length === 0) return { saved: {}, unreadable: [] };
-	return replanned(workspaceId, async ({ data: { deckSettings }, snapshot: snap }) => {
+	return replanned(study, workspaceId, async ({ data: { deckSettings }, snapshot: snap }) => {
 		const out: Record<string, DeckSettings> = {};
 		const unreadable: string[] = [];
 		const writes: StudyWrite[] = [];
@@ -140,7 +143,7 @@ export async function saveDeckCardTypesForDecks(
 			const write = studyWrite(snap, 'deckSettings', settingsRow(next));
 			if (write !== null) writes.push(write);
 		}
-		if (writes.length > 0) await pushStudy(workspaceId, writes);
+		if (writes.length > 0) await pushStudy(study, workspaceId, writes);
 		return { saved: out, unreadable };
 	});
 }
@@ -157,12 +160,13 @@ function withoutNewOrder(extra: Record<string, unknown>): Record<string, unknown
  * `added` is stored as no field (the default).
  */
 export async function saveDeckNewOrder(
+	study: StudyState,
 	workspaceId: number,
 	deckId: string,
 	order: NewOrder,
 ): Promise<DeckSettings> {
 	requireWorkspaceArg(workspaceId, 'saveDeckNewOrder');
-	return replanned(workspaceId, async ({ data: { deckSettings }, snapshot: snap }) => {
+	return replanned(study, workspaceId, async ({ data: { deckSettings }, snapshot: snap }) => {
 		const stored = deckSettings?.[deckId];
 		const next: DeckSettings = {
 			deckId,
@@ -172,7 +176,7 @@ export async function saveDeckNewOrder(
 			extra: withoutNewOrder(stored?.extra ?? extraOf(snap, 'deckSettings', deckId)),
 		};
 		const write = studyWrite(snap, 'deckSettings', settingsRow(next));
-		if (write !== null) await pushStudy(workspaceId, [write]);
+		if (write !== null) await pushStudy(study, workspaceId, [write]);
 		return next;
 	});
 }

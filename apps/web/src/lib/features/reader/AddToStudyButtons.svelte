@@ -13,6 +13,8 @@
 	import { popupWritten } from './browse';
 	import { Button, Chip, Menu, MenuItem } from '$lib/ui';
 	import { bookSentence, resolveBookSentence } from './sentence';
+	import { useSession } from '$lib/context/context';
+	const session = useSession();
 
 	// The study actions of one popup entry (design §9 "Reader", #102): the
 	// primary "Add to deck" adds a vocab card to General in one click; with
@@ -74,7 +76,7 @@
 		let stale = false;
 		inStudy = null;
 		marked = null;
-		getStudyData(ws).then(
+		getStudyData(session.study, ws).then(
 			(data) => {
 				if (stale) return;
 				marked = (data.known ?? []).includes(entryId);
@@ -118,7 +120,7 @@
 		const ws = workspaceId;
 		try {
 			try {
-				if (hasCard((await getStudyData(ws)).cards, entryId)) {
+				if (hasCard((await getStudyData(session.study, ws)).cards, entryId)) {
 					inStudy = true;
 					return;
 				}
@@ -133,7 +135,7 @@
 				sentenceId = saved.sentenceId;
 				if (saved.failed) note = t('reader.study.noSentence');
 			}
-			await addCard(ws, entryId, {
+			await addCard(session.study, ws, entryId, {
 				written: popupWritten(result),
 				...(isCharacter ? { entryKind: 'character' as const } : { sentenceId }),
 				deckIds: [deckId]
@@ -156,7 +158,7 @@
 		markError = '';
 		marked = next;
 		try {
-			await setKnownMark(workspaceId, result.entryId, next);
+			await setKnownMark(session.study, workspaceId, result.entryId, next);
 		} catch {
 			marked = !next;
 			markError = t('reader.study.markFailed');

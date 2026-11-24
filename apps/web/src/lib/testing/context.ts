@@ -11,7 +11,7 @@ import { ApiError, api as moduleApi, type ApiOptions } from '../api/client';
 import type { User } from '../auth.svelte';
 import { createAppContext, type AppContext } from '../context/app.svelte';
 import { contextOf } from '../context/context';
-import { webStorage, type Api, type AppDeps, type EventSource, type Timers, type VisibilitySource } from '../context/deps';
+import { browserTimers, webStorage, type Api, type AppDeps, type EventSource, type Timers, type VisibilitySource } from '../context/deps';
 import type { Session } from '../context/session.svelte';
 import type { Workspaces, WorkspacesState } from '../workspaces.svelte';
 
@@ -151,6 +151,22 @@ export interface TestContext {
 	deps: AppDeps;
 	/** The context map a component renders with: `render(C, { props, context: ctx.context })`. */
 	context: Map<unknown, unknown>;
+}
+
+/**
+ * newSession ends the context's session (a sign-out) and signs the same user
+ * in again: the next reads see a fresh session, as after a sign-in. No request
+ * is sent (the test's fetch counts stay exact).
+ */
+export function newSession(ctx: TestContext, reason: 'signOut' | 'expired' | 'switched' = 'signOut'): void {
+	const { token, user } = ctx.app.auth.state;
+	ctx.app.auth.set({ token: null, user: null }, reason);
+	ctx.app.auth.set({ token: token ?? 'test-token', user: user ?? testUser() });
+}
+
+/** studyContext: a signed-in test context whose timers are the environment's (fake timers drive them). */
+export function studyContext(options: TestContextOptions = {}): TestContext {
+	return testContext({ ...options, deps: { timers: browserTimers, ...options.deps } });
 }
 
 /** workspacesState: the plain `{ list, current }` of a Workspaces (for toEqual). */

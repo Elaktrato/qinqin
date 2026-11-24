@@ -8,9 +8,8 @@
 
 import { PartialPushError } from '../../sync/push';
 import { STUDY_NAMESPACE, keyedData, pushKeyed, type KeyedRow, type KeyedWrite } from '../../sync/keyed';
-import { sessionEpoch } from '../../session/sessionEnd';
 import { stampOf } from '../../sync/push';
-import { ALL_WORKSPACES, assertReadableKeyed, planningView, studyCache } from '../data';
+import { ALL_WORKSPACES, assertReadableKeyed, planningView, type StudyState } from '../data';
 import type { StudyView } from '../readModel';
 import type { StudyWrite } from '../plan';
 import type { StudyRow } from '../rows';
@@ -29,16 +28,16 @@ function heldRow(workspaceId: number, write: StudyWrite, stamp: string): StudyRo
 	} as StudyRow;
 }
 
-/** The cache as the session that started a write sees it: once that session ended, its answer changes nothing (#173). */
-type Bound = Pick<typeof studyCache, 'applyTyped' | 'applyKeyed' | 'markStale'>;
+/** The cache of the session that started a write: once that session ended, its answer changes nothing (#173). */
+type Bound = Pick<StudyState['cache'], 'applyTyped' | 'applyKeyed' | 'markStale'>;
 
-function bound(): Bound {
-	const epoch = sessionEpoch();
-	const live = (): boolean => epoch === sessionEpoch();
+function bound(study: StudyState): Bound {
+	const { cache } = study;
+	const live = (): boolean => study.deps.alive();
 	return {
-		applyTyped: (...args) => (live() ? studyCache.applyTyped(...args) : undefined),
-		applyKeyed: (...args) => (live() ? studyCache.applyKeyed(...args) : undefined),
-		markStale: (...args) => (live() ? studyCache.markStale(...args) : undefined)
+		applyTyped: (...args) => (live() ? cache.applyTyped(...args) : undefined),
+		applyKeyed: (...args) => (live() ? cache.applyKeyed(...args) : undefined),
+		markStale: (...args) => (live() ? cache.markStale(...args) : undefined)
 	};
 }
 
@@ -60,11 +59,12 @@ function hold(cache: Bound, workspaceId: number, writes: readonly StudyWrite[], 
  * callers must never report success for it.
  */
 export async function pushStudy(
+	study: StudyState,
 	workspaceId: number,
 	writes: readonly StudyWrite[],
 	opts: { chunk?: number; onProgress?: (done: number, total: number) => void } = {}
 ): Promise<void> {
-	const cache = bound();
+	const cache = bound(study);
 	const stamps: string[] = [];
 	await pushTyped(
 		workspaceId,
@@ -86,12 +86,12 @@ export async function pushStudy(
  * refresh learns their stamps, so the new plan is stamped after them, or finds
  * the work done). A second skip is the PartialPushError it was.
  */
-export async function replanned<T>(workspaceId: number, run: (view: StudyView) => Promise<T>): Promise<T> {
+export async function replanned<T>(study: StudyState, workspaceId: number, run: (view: StudyView) => Promise<T>): Promise<T> {
 	try {
-		return await run(await planningView(workspaceId));
+		return await run(await planningView(study, workspaceId));
 	} catch (err) {
 		if (!(err instanceof PartialPushError) || err.skipped === 0) throw err;
-		return run(await planningView(workspaceId));
+		return run(await planningView(study, workspaceId));
 	}
 }
 
@@ -99,11 +99,11 @@ export async function replanned<T>(workspaceId: number, run: (view: StudyView) =
  * pushOptional writes one typed row whose loss is fine (a tombstone another
  * tab may have written already): false when the server skipped it.
  */
-export async function pushOptional(workspaceId: number, write: StudyWrite): Promise<boolean> {
-	const cache = bound();
+export async function pushOptional(study: StudyState, workspaceId: number, write: StudyWrite): Promise<boolean> {
+	const cache = bound(study);
 	let result: { ok: boolean; stamp: string };
 	try {
-		result = await pushTypedOne(workspaceId, write, Date.now());
+		result = await pushTypedOne(workspaceId, write, study.deps.now());
 	} catch (err) {
 		cache.markStale(workspaceId);
 		throw err;
@@ -126,9 +126,9 @@ function keyedHeld(workspaceId: number | null, key: string, data: unknown, stamp
 }
 
 /** putData stores one keyed row of the study namespace (PUT: the server stamps it and answers the row). */
-export async function putData(workspaceId: number | null, key: string, value: unknown): Promise<void> {
-	const cache = bound();
-	assertReadableKeyed(workspaceId ?? ALL_WORKSPACES, key);
+export async function putData(study: StudyState, workspaceId: number | null, key: string, value: unknown): Promise<void> {
+	const cache = bound(study);
+	assertReadableKeyed(study, workspaceId ?? ALL_WORKSPACES, key);
 	let row: KeyedRow | null;
 	try {
 		row = await keyedData(STUDY_NAMESPACE, workspaceId).put(key, value);
@@ -141,9 +141,9 @@ export async function putData(workspaceId: number | null, key: string, value: un
 }
 
 /** deleteData tombstones one keyed row of the study namespace; a missing row counts as deleted. */
-export async function deleteData(workspaceId: number | null, key: string): Promise<void> {
-	const cache = bound();
-	assertReadableKeyed(workspaceId ?? ALL_WORKSPACES, key);
+export async function deleteData(study: StudyState, workspaceId: number | null, key: string): Promise<void> {
+	const cache = bound(study);
+	assertReadableKeyed(study, workspaceId ?? ALL_WORKSPACES, key);
 	try {
 		await keyedData(STUDY_NAMESPACE, workspaceId).delete(key);
 	} catch (err) {
@@ -153,19 +153,20 @@ export async function deleteData(workspaceId: number | null, key: string): Promi
 	// The server does not answer its stamp. The tombstone is held just after the stamp this tab
 	// knew, so any row the server sends later wins over it (this device's clock may run ahead);
 	// a row the cache does not hold only marks the workspace stale.
-	const known = studyCache.keyedStamp(workspaceId, key);
+	const known = study.cache.keyedStamp(workspaceId, key);
 	if (known === undefined) cache.markStale(workspaceId);
 	else cache.applyKeyed(workspaceId, [keyedHeld(workspaceId, key, null, stampOf(0, known), true)]);
 }
 
 /** pushKeyedRows writes keyed rows of the study namespace through the push, like pushStudy. */
 export async function pushKeyedRows(
+	study: StudyState,
 	workspaceId: number,
 	rows: readonly KeyedWrite[],
 	opts: { chunk?: number; onProgress?: (done: number, total: number) => void } = {}
 ): Promise<void> {
-	const cache = bound();
-	for (const row of rows) assertReadableKeyed(workspaceId, row.key);
+	const cache = bound(study);
+	for (const row of rows) assertReadableKeyed(study, workspaceId, row.key);
 	const stamps: string[] = [];
 	const after = (from: number, to: number, ok: boolean): void => {
 		if (!ok) {

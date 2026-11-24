@@ -1,4 +1,5 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { newSession, studyContext, type TestContext } from '$lib/testing/context';
+import { afterEach, describe, expect, it, vi, beforeEach } from 'vitest';
 
 vi.mock('$lib/study/data', async (importOriginal) => ({
 	...(await importOriginal<typeof import('$lib/study/data')>()),
@@ -28,6 +29,11 @@ import { enabledFamilies } from './catalogue';
 import { loadMilestones } from './loadMilestones';
 import { reachedFromLog, reachedStats } from './reached';
 import { reachedFromReplay } from './replayReached';
+
+let ctx: TestContext = studyContext();
+beforeEach(() => {
+	ctx = studyContext();
+});
 
 // A guard against an extra replay and a repeated log pass: 5 000 cards,
 // 50 000 reviews, 2 000 read and 300 journal events. The bounds are
@@ -118,16 +124,16 @@ describe('milestones performance', () => {
 		vi.mocked(loadStudyHistory).mockResolvedValue({ decks: [], cards: w.cards, reviews: w.reviews, merged: 0 });
 		vi.mocked(loadWorkspaceEvents).mockResolvedValue(w.events);
 		pluginStates.set({ list: [], status: 'ready' });
-		await loadMilestones(1, { scope: 'week', language: 'zh', now: NOW, week: { timelines: t, chars: w.chars, cards: w.cards } });
+		await loadMilestones(ctx.session.study, 1, { scope: 'week', language: 'zh', now: NOW, week: { timelines: t, chars: w.chars, cards: w.cards } });
 		expect(replayStats.timelines).toBe(built);
 		// Home: no replay at all.
-		await loadMilestones(1, { scope: 'home', language: 'zh', now: NOW });
+		await loadMilestones(ctx.session.study, 1, { scope: 'home', language: 'zh', now: NOW });
 		expect(replayStats.timelines).toBe(built);
 		// A reload (new, equal history and event log arrays after the caches' TTL) walks the log no more.
 		const passes = reachedStats.passes;
 		vi.mocked(loadStudyHistory).mockResolvedValue({ decks: [], cards: w.cards, reviews: w.reviews.map((r) => ({ ...r })), merged: 0 });
 		vi.mocked(loadWorkspaceEvents).mockResolvedValue(w.events.map((e) => ({ ...e })));
-		await loadMilestones(1, { scope: 'home', language: 'zh', now: NOW });
+		await loadMilestones(ctx.session.study, 1, { scope: 'home', language: 'zh', now: NOW });
 		expect(reachedStats.passes).toBe(passes);
 		pluginStates.set({ list: [], status: 'idle' });
 	}, 60_000);

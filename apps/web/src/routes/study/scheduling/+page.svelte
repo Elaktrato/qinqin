@@ -97,7 +97,7 @@ import type { StudyContext } from '$lib/study/studyContext';
 		loading = true;
 		loadError = '';
 		try {
-			const data = await loadStudyData(id);
+			const data = await loadStudyData(session.study, id);
 			if (mine !== seq) return;
 			cards = data.cards;
 			reviews = data.reviews;
@@ -279,7 +279,7 @@ import type { StudyContext } from '$lib/study/studyContext';
 	}
 
 	async function reloadData(id: number): Promise<void> {
-		const data = await loadStudyData(id);
+		const data = await loadStudyData(session.study, id);
 		if (id !== workspaceId) return;
 		fsrs = data.fsrs ?? { sets: [], active: null, w: DEFAULT_W };
 		activeFit = evaluate(fsrs.w, dataset);
@@ -290,14 +290,14 @@ import type { StudyContext } from '$lib/study/studyContext';
 		if (c === null || !check.ok) return;
 		await change(async (id) => {
 			if (id !== c.workspaceId) throw new UserError('study.sched.workspaceChanged');
-			const saved = await saveParamSet(id, {
+			const saved = await saveParamSet(session.study, id, {
 				w: c.w,
 				source: c.source,
 				labelled: c.labelled,
 				logLoss: c.logLoss,
 				baselineLogLoss: c.source === 'optimized' ? c.baselineLogLoss : undefined
 			});
-			await setActiveSet(id, saved.id);
+			await setActiveSet(session.study, id, saved.id);
 			return saved.id;
 		}, t('study.sched.changed'));
 	}
@@ -309,7 +309,7 @@ import type { StudyContext } from '$lib/study/studyContext';
 
 	function use(setId: string | null): Promise<void> {
 		return change(async (id) => {
-			await setActiveSet(id, setId);
+			await setActiveSet(session.study, id, setId);
 			return setId;
 		}, t('study.sched.changed'));
 	}
@@ -317,7 +317,7 @@ import type { StudyContext } from '$lib/study/studyContext';
 	function remove(setId: string): Promise<void> {
 		return change(
 			async (id) => {
-				await deleteParamSet(id, setId);
+				await deleteParamSet(session.study, id, setId);
 				return undefined;
 			},
 			null,
@@ -341,7 +341,7 @@ import type { StudyContext } from '$lib/study/studyContext';
 				undo = null;
 				return;
 			}
-			await setActiveSet(slot.workspaceId, slot.previousId);
+			await setActiveSet(session.study, slot.workspaceId, slot.previousId);
 			undo = null;
 			candidate = null;
 			await reloadData(slot.workspaceId);

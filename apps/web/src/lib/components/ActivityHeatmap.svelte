@@ -284,7 +284,7 @@
 		}
 		const id = workspaceId;
 		try {
-			const got = (await getStudyData(id)).vacations ?? [];
+			const got = (await getStudyData(session.study, id)).vacations ?? [];
 			if (id === workspaceId) vacations = got;
 		} catch {
 			// The marks are decoration: the heatmap works without them.
@@ -298,7 +298,7 @@
 			return;
 		}
 		try {
-			const history = await loadStudyHistory(id);
+			const history = await loadStudyHistory(session.study, id);
 			// A slower load for the workspace switched away from never wins.
 			if (id !== workspaceId) return;
 			const row = history.goals === undefined || history.goals === 'newer' ? null : history.goals;

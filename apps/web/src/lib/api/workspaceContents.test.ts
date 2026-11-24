@@ -1,9 +1,15 @@
+import { newSession, studyContext, type TestContext } from '$lib/testing/context';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('$app/navigation', () => ({ goto: vi.fn() }));
 
 import { fetchWorkspaceContents } from './workspaceContents';
 import { pagedPull } from '$lib/testing/legacyCodec';
+
+let ctx: TestContext = studyContext();
+beforeEach(() => {
+	ctx = studyContext();
+});
 
 function jsonResponse(body: unknown, status = 200): Response {
 	return new Response(JSON.stringify(body), {
@@ -66,11 +72,11 @@ describe('fetchWorkspaceContents', () => {
 			return new Response('unexpected', { status: 500 });
 		});
 
-		await expect(fetchWorkspaceContents(7)).resolves.toEqual({ books: 2, cards: 2, decks: 1, reviews: 3 });
+		await expect(fetchWorkspaceContents(ctx.session.study, 7)).resolves.toEqual({ books: 2, cards: 2, decks: 1, reviews: 3 });
 	});
 
 	it('rejects when a count cannot be fetched', async () => {
 		vi.mocked(fetch).mockResolvedValue(new Response('boom', { status: 500 }));
-		await expect(fetchWorkspaceContents(7)).rejects.toBeTruthy();
+		await expect(fetchWorkspaceContents(ctx.session.study, 7)).rejects.toBeTruthy();
 	});
 });

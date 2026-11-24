@@ -72,7 +72,7 @@
 		loading = true;
 		let timelines: Timelines | undefined;
 		try {
-			const loaded = await loadWeek(id, week, { detail: true, force });
+			const loaded = await loadWeek(session.study, id, week, { detail: true, force });
 			if (seq !== requestSeq) return;
 			view = loaded;
 			timelines = loaded.timelines;
@@ -89,7 +89,7 @@
 			// Characters need the language's ~13k-row universe: shown after the rest.
 			characters = 'pending';
 			try {
-				const counted = await loadWeekCharacters(id, lang, week, { force });
+				const counted = await loadWeekCharacters(session.study, id, lang, week, { force });
 				if (seq !== requestSeq) return;
 				characters = counted;
 				universe = counted?.universe ?? null;
@@ -118,7 +118,7 @@
 					? { timelines, chars: null }
 					: { timelines, chars: universe.chars, cards: universe.cards };
 		try {
-			const loaded = await loadMilestones(id, { scope: 'week', language: lang, ...(week === undefined ? {} : { week }) });
+			const loaded = await loadMilestones(session.study, id, { scope: 'week', language: lang, ...(week === undefined ? {} : { week }) });
 			if (seq === requestSeq) milestones = loaded;
 		} catch {
 			// The milestones are extra: the week stays without them.
@@ -130,7 +130,7 @@
 		const shown = milestones;
 		if (shown === null || shown.workspaceId !== workspaceId) return;
 		milestones = { ...shown, plan: { kind: 'none' } };
-		void markSeen(shown);
+		void markSeen(session.study, shown);
 	}
 
 	function go(target: string): void {
@@ -156,7 +156,7 @@
 			if (id !== null && (touched === id || touched === ALL_WORKSPACES)) void load(id, lang, week);
 		};
 		const offLog = onEventLogChange(again);
-		const offWrite = onStudyChange(again);
+		const offWrite = onStudyChange(session.study, again);
 		return () => {
 			offLog();
 			offWrite();

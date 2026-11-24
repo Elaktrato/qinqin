@@ -1,11 +1,9 @@
 // Rows the study load could not read (docs/contracts/sync/, 'Reading rows'):
 // a malformed row, or one a newer client wrote (a new member, a new kind).
-// The load skips them and goes on; this module keeps the last load's count
-// per workspace for the study page's notice and logs one warning per new
-// report: collection, count and identities only, never row data.
+// The load skips them and goes on; the session's UnreadableRows
+// (unreadableReport.svelte.ts) keeps the last load's count per workspace for
+// the study page's notice. This module holds the pure parts.
 
-import { onSessionEnd } from '../session/sessionEnd';
-import { writable } from 'svelte/store';
 import { t } from '../i18n';
 import { ShownError } from '../api/userError';
 import type { StudyCollection } from './rows';
@@ -18,12 +16,6 @@ export interface UnreadableReport {
 	counts: UnreadableCounts;
 	total: number;
 }
-
-/** The last study load's report, or null when it read every row. */
-export const unreadableRows = writable<UnreadableReport | null>(null);
-onSessionEnd(() => clearUnreadableReport());
-
-let lastWarned = '';
 
 function isRecord(value: unknown): value is Record<string, unknown> {
 	return typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -49,27 +41,6 @@ export function rawIdentity(collection: StudyCollection, raw: unknown): string |
 		case 'fsrsActive':
 			return '';
 	}
-}
-
-/** reportUnreadable records one load's unreadable rows (an empty count clears the report). */
-export function reportUnreadable(workspaceId: number, counts: UnreadableCounts, keys: readonly string[]): void {
-	const total = Object.values(counts).reduce((sum, n) => sum + (n ?? 0), 0);
-	if (total === 0) {
-		unreadableRows.update((now) => (now === null || now.workspaceId === workspaceId ? null : now));
-		return;
-	}
-	unreadableRows.set({ workspaceId, counts: { ...counts }, total });
-	const signature = JSON.stringify([workspaceId, counts, keys]);
-	if (signature === lastWarned) return;
-	lastWarned = signature;
-	const summary = Object.entries(counts).map(([collection, n]) => `${collection} ${n}`);
-	console.warn(`study: skipped ${total} unreadable row(s) in workspace ${workspaceId}`, summary, 'kept unchanged:', keys);
-}
-
-/** clearUnreadableReport forgets the report (session end, tests). */
-export function clearUnreadableReport(): void {
-	unreadableRows.set(null);
-	lastWarned = '';
 }
 
 /** unreadableNotice: the study page's text for the shown workspace, or null. */

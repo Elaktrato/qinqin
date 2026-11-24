@@ -27,7 +27,7 @@
 	// decks (providers.ts) are wired here when a plugin ships one.
 	let { route }: { route: Extract<FlashcardsRoute, { view: 'system-level' | 'system-plugin' }> } = $props();
 
-	const store = createDecksData();
+	const store = createDecksData(session.study);
 	const workspace = $derived(session.workspaces.current);
 	const workspaceId = $derived(workspace?.id ?? null);
 	$effect(() => {
@@ -115,7 +115,7 @@
 		let deckRows = 0;
 		try {
 			// Planned from the stored rows right now, so a retry adds only the rest.
-			const raw = await loadRawStudyData(workspaceId);
+			const raw = await loadRawStudyData(session.study, workspaceId);
 			const id = ownedLevelDeckId(deck.packId, deck.level);
 			let target: { id: string; name: string; source?: { type: 'level'; packId: string; level: string } };
 			if (targetChoice === 'new') {
@@ -158,7 +158,7 @@
 			deckRows = plan.deck === null ? 0 : 1;
 			const total = plan.writes.length;
 			progress = { done: 0, total };
-			await pushStudy(workspaceId, rows, {
+			await pushStudy(session.study, workspaceId, rows, {
 				onProgress: (done) => (progress = { done: Math.max(0, done - deckRows), total })
 			});
 			result = t('flashcards.system.added', { items: words(plan.created + plan.joined), name: target.name });

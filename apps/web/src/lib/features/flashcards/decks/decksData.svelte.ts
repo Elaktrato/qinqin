@@ -3,6 +3,7 @@
 // every number on the page agrees. Shared by the list, the detail and the
 // settings view; each calls `load` for the selected workspace.
 
+import type { StudyState } from '$lib/study/data';
 import { untrack } from 'svelte';
 import { errorText } from '$lib/api/apiErrors';
 import { t } from '$lib/i18n';
@@ -34,7 +35,7 @@ export interface DecksSnapshot {
 
 export type DecksStatus = 'loading' | 'ready' | 'error' | 'no-workspace';
 
-export function createDecksData() {
+export function createDecksData(study: StudyState) {
 	let status = $state<DecksStatus>('loading');
 	let error = $state('');
 	let snapshot = $state.raw<DecksSnapshot | null>(null);
@@ -54,7 +55,7 @@ export function createDecksData() {
 		if (current === null || current.workspaceId !== workspaceId) status = 'loading';
 		error = '';
 		try {
-			const data = await loadStudyHistory(workspaceId, { force });
+			const data = await loadStudyHistory(study, workspaceId, { force });
 			if (mine !== seq) return;
 			const weights = activeWeights(data) ?? DEFAULT_W;
 			const ctx = contextForData(data, workspaceId);

@@ -83,7 +83,7 @@ describe('home milestones', () => {
 	it('shows the card for the log families above the widgets', async () => {
 		render(Page, { context: ctx.context });
 		await waitFor(() => expect(cardHeading()).toBeTruthy());
-		expect(loadMilestones).toHaveBeenCalledWith(1, { scope: 'home', language: 'zh' });
+		expect(loadMilestones).toHaveBeenCalledWith(expect.anything(), 1, { scope: 'home', language: 'zh' });
 		expect(screen.getByText(/^100 reviews, reached/)).toBeTruthy();
 	});
 
@@ -106,7 +106,7 @@ describe('home milestones', () => {
 		render(Page, { context: ctx.context });
 		await waitFor(() => expect(cardHeading()).toBeTruthy());
 		await fireEvent.click(screen.getByRole('button', { name: 'Dismiss' }));
-		expect(markSeen).toHaveBeenCalledWith(ms);
+		expect(markSeen).toHaveBeenCalledWith(expect.anything(), ms);
 		expect(cardHeading()).toBeNull();
 		expect(document.activeElement?.tagName).toBe('H1');
 	});
@@ -141,7 +141,7 @@ describe('home milestones', () => {
 		await tick();
 		select(2);
 		await waitFor(() => expect(screen.getByText(/^from workspace 2, reached/)).toBeTruthy());
-		expect(loadMilestones).toHaveBeenLastCalledWith(2, { scope: 'home', language: 'zh' });
+		expect(loadMilestones).toHaveBeenLastCalledWith(expect.anything(), 2, { scope: 'home', language: 'zh' });
 		first.resolve(milestones('from workspace 1'));
 		await tick();
 		await Promise.resolve();
@@ -152,7 +152,7 @@ describe('home milestones', () => {
 		vi.mocked(loadMilestones).mockResolvedValue({ ...milestones(), plan: { kind: 'none' } });
 		render(Page, { context: ctx.context });
 		await waitFor(() => expect(loadMilestones).toHaveBeenCalledTimes(1));
-		const onWrite = vi.mocked(onStudyChange).mock.calls.at(-1)![0];
+		const onWrite = vi.mocked(onStudyChange).mock.calls.at(-1)![1];
 		const onLog = vi.mocked(onEventLogChange).mock.calls.at(-1)![0];
 		onWrite(2);
 		await tick();

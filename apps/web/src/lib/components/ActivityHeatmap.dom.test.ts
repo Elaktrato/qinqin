@@ -231,7 +231,7 @@ describe('ActivityHeatmap garden and flower stages', () => {
 		const list = await screen.findByRole('list', { name: 'Daily activity' });
 		await waitFor(() => expect(within(list).getAllByRole('listitem')).toHaveLength(61));
 		ctx.session.workspaces.set({ list: [WS, WS4], current: WS4 });
-		await waitFor(() => expect(loadStudyHistory).toHaveBeenLastCalledWith(4));
+		await waitFor(() => expect(loadStudyHistory).toHaveBeenLastCalledWith(expect.anything(), 4));
 		await waitFor(() => expect(within(list).getAllByRole('listitem')).toHaveLength(61));
 		const items = within(list).getAllByRole('listitem').map((li) => li.textContent ?? '');
 		expect(items.find((text) => text.startsWith(`${addDays(today, -2)}:`))).toContain('5 of 50 — ');

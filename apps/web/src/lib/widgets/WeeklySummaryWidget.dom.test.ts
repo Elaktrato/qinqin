@@ -78,7 +78,7 @@ describe('WeeklySummaryWidget', () => {
 		const { container } = render(WeeklySummaryWidget, { context: ctx.context });
 		await waitFor(() => expect(reviewsValue()).toBe('12'));
 		const monday = weekOf(currentStudyDay().today());
-		expect(loadWeek).toHaveBeenCalledWith(1, monday, { force: false });
+		expect(loadWeek).toHaveBeenCalledWith(expect.anything(), 1, monday, { force: false });
 		expect([...container.querySelectorAll('dt')].map((t) => t.textContent)).toEqual([
 			'Reviews',
 			'New cards',
@@ -105,7 +105,7 @@ describe('WeeklySummaryWidget', () => {
 		const retry = await screen.findByRole('button', { name: 'Try again' });
 		retry.click();
 		await waitFor(() => expect(reviewsValue()).toBe('12'));
-		expect(vi.mocked(loadWeek).mock.calls.at(-1)?.[2]).toEqual({ force: true });
+		expect(vi.mocked(loadWeek).mock.calls.at(-1)?.[3]).toEqual({ force: true });
 	});
 
 	it('offline: the local rows and a Retry', async () => {
@@ -115,7 +115,7 @@ describe('WeeklySummaryWidget', () => {
 		expect(screen.getByText('1')).toBeTruthy();
 		expect(screen.getByText('10 min (flashcards only)')).toBeTruthy();
 		screen.getByRole('button', { name: 'Retry' }).click();
-		await waitFor(() => expect(vi.mocked(loadWeek).mock.calls.at(-1)?.[2]).toEqual({ force: true }));
+		await waitFor(() => expect(vi.mocked(loadWeek).mock.calls.at(-1)?.[3]).toEqual({ force: true }));
 	});
 
 	it('drops a stale answer after a workspace switch', async () => {

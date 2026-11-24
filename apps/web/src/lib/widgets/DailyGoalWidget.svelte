@@ -45,7 +45,7 @@
 		}
 		loading = true;
 		try {
-			const next = await loadGoalStatus(workspace, { force });
+			const next = await loadGoalStatus(session.study, workspace, { force });
 			if (seq !== requestSeq) return;
 			goal = next;
 		} catch (err) {

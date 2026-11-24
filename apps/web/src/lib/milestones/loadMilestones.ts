@@ -4,6 +4,7 @@
 // only (no replay); the Week tab passes the timelines and the character
 // universe it already loaded. Rule: docs/contracts/milestones/.
 
+import type { StudyState } from '$lib/study/data';
 import { onSessionEnd, sessionEpoch } from '../session/sessionEnd';
 import { get } from 'svelte/store';
 import { fetchSchemeCharacters, getSchemeEntries, getSchemes } from '$lib/api/schemes';
@@ -69,6 +70,7 @@ const FLUSH_EVERY_MS = 30_000;
 const lastFlush = new Map<string, number>();
 /** The last load's user, workspace and live rows: an `online` flush never rewrites a live row. */
 let lastPlace: {
+	study: StudyState;
 	user: number;
 	workspaceId: number;
 	live: ReadonlyMap<string, SeenMilestone>;
@@ -93,7 +95,7 @@ function hookOnline(): void {
 export async function flushOnOnline(): Promise<void> {
 	lastFlush.clear();
 	if (lastPlace === null) return;
-	await flushPending(lastPlace.user, lastPlace.workspaceId, lastPlace.live, lastPlace.tombstones, Date.now());
+	await flushPending(lastPlace.study, lastPlace.user, lastPlace.workspaceId, lastPlace.live, lastPlace.tombstones, Date.now());
 }
 
 function rowOf(m: SeenMilestone, now: number, tombstones: ReadonlyMap<string, string>): { key: string; data: unknown; knownAt?: string } {
@@ -112,6 +114,7 @@ function rowOf(m: SeenMilestone, now: number, tombstones: ReadonlyMap<string, st
 
 /** flushPending pushes the pending ids that are not live; a failure keeps them. */
 async function flushPending(
+	study: StudyState,
 	user: number,
 	workspaceId: number,
 	live: ReadonlyMap<string, SeenMilestone>,
@@ -126,6 +129,7 @@ async function flushPending(
 	lastFlush.set(key, now);
 	try {
 		const result = await saveSeenMilestones(
+			study,
 			workspaceId,
 			pending.map((m) => rowOf(m, now, tombstones))
 		);
@@ -184,6 +188,7 @@ async function loadLevels(
  * Callers guard against a stale answer (workspace switch) themselves.
  */
 export async function loadMilestones(
+	study: StudyState,
 	workspaceId: number,
 	opts: { scope: 'home' | 'week'; language: string; now?: number; week?: WeekInputs }
 ): Promise<MilestonesView> {
@@ -192,16 +197,16 @@ export async function loadMilestones(
 	const day = currentStudyDay();
 	const today = day.today(now);
 	const epoch = sessionEpoch();
-	const [data, log] = await Promise.all([loadStudyHistory(workspaceId), loadWorkspaceEvents(workspaceId)]);
+	const [data, log] = await Promise.all([loadStudyHistory(study, workspaceId), loadWorkspaceEvents(workspaceId)]);
 	const live = data.seenMilestones ?? new Map<string, SeenMilestone>();
 	const tombstones = data.milestoneTombstones ?? new Map<string, string>();
 
 	const user = outboxUser();
 	// A load for a session that has ended leaves no place to flush into (#173).
 	if (user !== null && epoch === sessionEpoch()) {
-		lastPlace = { user, workspaceId, live, tombstones };
+		lastPlace = { study, user, workspaceId, live, tombstones };
 		prunePending(user, workspaceId, live);
-		await flushPending(user, workspaceId, live, tombstones, now);
+		await flushPending(study, user, workspaceId, live, tombstones, now);
 	}
 	const pending = user === null ? [] : readPending(user, workspaceId);
 
@@ -259,7 +264,7 @@ export async function loadMilestones(
  * pending list first, then the rows of the ids without a live row are
  * pushed; on success they leave the pending list. Never throws.
  */
-export async function markSeen(view: MilestonesView): Promise<void> {
+export async function markSeen(study: StudyState, view: MilestonesView): Promise<void> {
 	if (view.plan.kind === 'none') return;
 	const { workspaceId } = view;
 	const covered = new Set(view.plan.ids);
@@ -271,7 +276,7 @@ export async function markSeen(view: MilestonesView): Promise<void> {
 	const rows = seenWritePlan(mark, view.live, now, view.tombstones);
 	try {
 		// 'pending': a row was skipped or refused; its id stays pending until live in a pull.
-		if ((await saveSeenMilestones(workspaceId, rows)) === 'done' && user !== null) {
+		if ((await saveSeenMilestones(study, workspaceId, rows)) === 'done' && user !== null) {
 			dropPending(user, workspaceId, items.map((m) => m.id));
 		}
 	} catch {

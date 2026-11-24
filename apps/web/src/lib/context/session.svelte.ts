@@ -9,8 +9,9 @@ import type { Auth } from '../auth.svelte';
 import { postEvents } from '../events';
 import { Notices } from '../notices.svelte';
 import { notifyAllSent, setQueued } from '../pwa/offlineState';
+import { createStudyState, type StudyState } from '../study/data';
 import { ReviewOutbox } from '../study/events';
-import { rememberSent } from '../study/recentSent';
+import { clearRecentSent, rememberSent } from '../study/recentSent';
 import { WorkspaceRecovery } from '../workspaceGone';
 import { Workspaces } from '../workspaces.svelte';
 import type { AppDeps } from './deps';
@@ -40,6 +41,8 @@ export class Session {
 	readonly recovery: WorkspaceRecovery;
 	/** The review outbox: the user's queued reviews, sent with this session's token. */
 	readonly outbox: ReviewOutbox;
+	/** The study data: the study cache of #193 and what derives from it. */
+	readonly study: StudyState;
 
 	constructor(deps: SessionDeps, user: number | null) {
 		this.deps = deps;
@@ -63,6 +66,20 @@ export class Session {
 			rememberSent: (userId, events) => rememberSent(userId, events, now(), local())
 		});
 		this.onDispose(() => this.outbox.dispose());
+		this.study = createStudyState({
+			api,
+			now,
+			timers: deps.timers,
+			local,
+			user: () => this.#user,
+			alive: () => this.alive,
+			outbox: this.outbox
+		});
+		this.onDispose((reason) => {
+			this.study.dispose();
+			// Reviews sent lately are kept per user id; an explicit sign-out still drops them.
+			if (reason === 'signOut') clearRecentSent(local());
+		});
 	}
 
 	/** The signed-in user's id; null until `me` answered (a boot offline). */

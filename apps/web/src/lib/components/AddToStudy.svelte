@@ -76,7 +76,7 @@
 				return;
 			}
 			try {
-				const data = await getStudyData(workspaceId);
+				const data = await getStudyData(session.study, workspaceId);
 				if (stale) return;
 				decks = [...data.decks].sort(
 					(a, b) => a.createdAt.localeCompare(b.createdAt) || a.id.localeCompare(b.id)
@@ -115,7 +115,7 @@
 			// snapshot, the same row a level session creates.
 			const isCharacter = kind === 'character';
 			if (ws === null) throw new UserError('entry.study.noWorkspace');
-			await addCard(ws, entryId, {
+			await addCard(session.study, ws, entryId, {
 				written,
 				...(isCharacter ? { entryKind: 'character' as const } : { sentenceId }),
 				deckIds: [deckId]

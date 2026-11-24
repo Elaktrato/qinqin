@@ -76,7 +76,7 @@
 		}
 
 		try {
-			const data = await loadStudyHistory(workspace, { force });
+			const data = await loadStudyHistory(session.study, workspace, { force });
 			if (seq !== requestSeq) return;
 			const ctx = contextForData(data, workspace);
 			series = reviewsPerDay({
@@ -116,7 +116,7 @@
 			if (id !== null && (touched === id || touched === ALL_WORKSPACES)) void load(id);
 		};
 		const offLog = onEventLogChange(again);
-		const offWrite = onStudyChange(again);
+		const offWrite = onStudyChange(session.study, again);
 		return () => {
 			offLog();
 			offWrite();

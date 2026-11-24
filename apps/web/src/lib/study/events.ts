@@ -88,17 +88,6 @@ function isPermanentFailure(err: unknown): boolean {
 	return err.status !== 401 && err.status !== 408 && err.status !== 429;
 }
 
-/**
- * pendingReviewsIn: the queued events of `userId` in one workspace, read from
- * `store` without changing it (unowned items count as the user's, as the
- * outbox adopts them on its next read).
- */
-export function pendingReviewsIn(store: Storage | null, userId: number, workspaceId: number, nowMs: number): StudyEventBody[] {
-	return flushable(settle(readArray(store, PENDING_REVIEWS_KEY).filter(isItem), userId, nowMs), userId)
-		.map((item) => item.event)
-		.filter((event) => event.workspaceId === workspaceId);
-}
-
 export const OUTBOX_POLL_MS = 60_000;
 
 function backoffMs(run: number): number {

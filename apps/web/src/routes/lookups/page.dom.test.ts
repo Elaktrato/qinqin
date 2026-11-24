@@ -74,7 +74,7 @@ describe('/lookups page', () => {
 		await fireEvent.click(screen.getByRole('button', { name: 'Show 50 more' }));
 		expect(within(list).getAllByRole('listitem')).toHaveLength(60);
 		expect(screen.queryByRole('button', { name: 'Show 50 more' })).toBeNull();
-		expect(loadPage).toHaveBeenCalledWith(3);
+		expect(loadPage).toHaveBeenCalledWith(expect.anything(), 3);
 	});
 
 	it('a row shows count, day, where and its state', async () => {
@@ -102,7 +102,7 @@ describe('/lookups page', () => {
 		await screen.findByRole('list', { name: 'Looked-up words' });
 		await fireEvent.change(screen.getByLabelText('Deck'), { target: { value: 'd1' } });
 		await fireEvent.click(screen.getByRole('button', { name: 'Add 词2' }));
-		await waitFor(() => expect(addEntries).toHaveBeenCalledWith(3, [2], { id: 'd1', name: 'HSK' }));
+		await waitFor(() => expect(addEntries).toHaveBeenCalledWith(expect.anything(), 3, [2], { id: 'd1', name: 'HSK' }));
 		expect(await screen.findByText('Added 1 new card to HSK.')).toBeTruthy();
 		expect(loadPage).toHaveBeenCalledTimes(2);
 	});
@@ -115,7 +115,7 @@ describe('/lookups page', () => {
 		await fireEvent.click(screen.getByRole('checkbox', { name: 'Select 词1' }));
 		await fireEvent.click(screen.getByRole('checkbox', { name: 'Select 词3' }));
 		await fireEvent.click(screen.getByRole('button', { name: 'Add selected (2)' }));
-		await waitFor(() => expect(addEntries).toHaveBeenCalledWith(3, [1, 3], { id: 'general', name: 'General' }));
+		await waitFor(() => expect(addEntries).toHaveBeenCalledWith(expect.anything(), 3, [1, 3], { id: 'general', name: 'General' }));
 		// adding clears the selection
 		await waitFor(() => expect(screen.getByRole('button', { name: 'Add selected (0)' })).toBeTruthy());
 		await fireEvent.click(screen.getByRole('checkbox', { name: 'Select 词1' }));
@@ -139,7 +139,7 @@ describe('/lookups page', () => {
 		expect(box.textContent).not.toContain('词3');
 		expect(box.textContent).not.toContain('词4');
 		await fireEvent.click(within(box).getByRole('button', { name: 'Add these 2 to General' }));
-		await waitFor(() => expect(addEntries).toHaveBeenCalledWith(3, [1, 2], { id: 'general', name: 'General' }));
+		await waitFor(() => expect(addEntries).toHaveBeenCalledWith(expect.anything(), 3, [1, 2], { id: 'general', name: 'General' }));
 	});
 
 	it('the filter shows only words without a card', async () => {

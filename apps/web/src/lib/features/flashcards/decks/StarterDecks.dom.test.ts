@@ -1,3 +1,4 @@
+import { testContext, type TestContext } from '$lib/testing/context';
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/svelte';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -8,6 +9,11 @@ import { getFrequencyPacks, getStarterEntries } from '$lib/api/frequency';
 import { addDeckFromOverview } from './addDeckFromOverview';
 import { clearStarterCache, starterTarget, starterDecks } from './starterDecks';
 import StarterDecks from './StarterDecks.svelte';
+
+let ctx: TestContext = testContext();
+beforeEach(() => {
+	ctx = testContext();
+});
 
 const jiten = {
 	id: 3,
@@ -46,7 +52,7 @@ afterEach(() => {
 
 describe('StarterDecks', () => {
 	it('without a pack for the language: the hint, no group', async () => {
-		render(StarterDecks, { language: 'zh', ownedEntryIds: new Set<number>() });
+		render(StarterDecks, { props: { language: 'zh', ownedEntryIds: new Set<number>() }, context: ctx.context });
 		await screen.findByText(
 			'No frequency list is installed for Chinese. An administrator can add one in Settings, Data; see Data and licences.'
 		);
@@ -54,7 +60,7 @@ describe('StarterDecks', () => {
 	});
 
 	it('a collapsed group per pack with the licence line; expanding loads one size', async () => {
-		render(StarterDecks, { language: 'ja', ownedEntryIds: new Set([2]) });
+		render(StarterDecks, { props: { language: 'ja', ownedEntryIds: new Set([2]) }, context: ctx.context });
 		const toggle = await screen.findByRole('button', {
 			name: /Starter decks · Jiten frequency list/
 		});
@@ -84,20 +90,20 @@ describe('StarterDecks', () => {
 			skipped: 0,
 			known: 2
 		});
-		render(StarterDecks, {
+		render(StarterDecks, { props: {
 			language: 'ja',
 			ownedEntryIds: new Set<number>(),
 			workspaceId: 2,
 			deckIds: new Set<string>(),
 			knownIds: new Set([2, 3]),
 			onchanged
-		});
+		}, context: ctx.context });
 		await fireEvent.click(await screen.findByRole('button', { name: /Starter decks/ }));
 		const add = (await screen.findAllByRole('button', { name: /^Add/ }))[0];
 		await fireEvent.click(add);
 		await waitFor(() => expect(addDeckFromOverview).toHaveBeenCalledOnce());
 		const deck = starterDecks([jiten], 'ja').find((d) => d.size === 500)!;
-		expect(addDeckFromOverview).toHaveBeenCalledWith(
+		expect(addDeckFromOverview).toHaveBeenCalledWith(expect.anything(), 
 			expect.objectContaining({
 				workspaceId: 2,
 				exclude: new Set([2, 3]),
@@ -111,12 +117,12 @@ describe('StarterDecks', () => {
 
 	it('an existing copy opens instead of offering Add', async () => {
 		const deck = starterDecks([jiten], 'ja').find((d) => d.size === 500)!;
-		render(StarterDecks, {
+		render(StarterDecks, { props: {
 			language: 'ja',
 			ownedEntryIds: new Set<number>(),
 			workspaceId: 2,
 			deckIds: new Set([starterTarget(deck).id])
-		});
+		}, context: ctx.context });
 		await fireEvent.click(await screen.findByRole('button', { name: /Starter decks/ }));
 		const row = (await screen.findByRole('link', { name: 'Top 500' })).closest('li')!;
 		const open = within(row).getByRole('link', { name: /^Open my copy/ });

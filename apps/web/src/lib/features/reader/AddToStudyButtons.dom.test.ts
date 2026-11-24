@@ -1,7 +1,8 @@
+import { testContext, type TestContext } from '$lib/testing/context';
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/svelte';
 import { tick } from 'svelte';
 import popupFixture from '../../../../../../docs/contracts/reader/popup-written.json';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi, beforeEach } from 'vitest';
 import type { LookupResult } from '$lib/api/types';
 
 vi.mock('$lib/api/entries', () => ({ addSentence: vi.fn(), getEntry: vi.fn() }));
@@ -27,6 +28,11 @@ import { addCard } from '$lib/study/commands/cards';
 import { setKnownMark } from '$lib/study/commands/keyed';
 import { getStudyData, hasCard } from '$lib/study/data';
 import AddToStudyButtons from './AddToStudyButtons.svelte';
+
+let ctx: TestContext = testContext();
+beforeEach(() => {
+	ctx = testContext();
+});
 
 function result(kind: 'word' | 'character'): LookupResult {
 	return {
@@ -56,34 +62,34 @@ afterEach(() => {
 
 describe('AddToStudyButtons', () => {
 	it('snapshots entryKind for a character result', async () => {
-		render(AddToStudyButtons, {
+		render(AddToStudyButtons, { props: {
 			result: result('character'),
 			workspaceId: 1,
 			paragraph: null,
 			hold: vi.fn()
-		});
+		}, context: ctx.context });
 		const plus = await screen.findByRole('button', { name: 'Add to deck: 学' });
 		await waitFor(() => expect((plus as HTMLButtonElement).disabled).toBe(false));
 		await fireEvent.click(plus);
 		await waitFor(() => expect(addCard).toHaveBeenCalled());
-		const [ws, , opts] = vi.mocked(addCard).mock.calls[0] as unknown as [number, number, Record<string, unknown>];
+		const [, ws, , opts] = vi.mocked(addCard).mock.calls[0] as unknown as [unknown, number, number, Record<string, unknown>];
 		expect(ws).toBe(1);
 		expect(opts.entryKind).toBe('character');
 		expect(opts.sentenceId).toBeUndefined();
 	});
 
 	it('leaves word cards without it', async () => {
-		render(AddToStudyButtons, {
+		render(AddToStudyButtons, { props: {
 			result: result('word'),
 			workspaceId: 1,
 			paragraph: null,
 			hold: vi.fn()
-		});
+		}, context: ctx.context });
 		const plus = await screen.findByRole('button', { name: 'Add to deck: 学' });
 		await waitFor(() => expect((plus as HTMLButtonElement).disabled).toBe(false));
 		await fireEvent.click(plus);
 		await waitFor(() => expect(addCard).toHaveBeenCalled());
-		const [ws, , opts] = vi.mocked(addCard).mock.calls[0] as unknown as [number, number, Record<string, unknown>];
+		const [, ws, , opts] = vi.mocked(addCard).mock.calls[0] as unknown as [unknown, number, number, Record<string, unknown>];
 		expect(ws).toBe(1);
 		expect(opts.entryKind).toBeUndefined();
 	});
@@ -91,7 +97,7 @@ describe('AddToStudyButtons', () => {
 
 describe('I know this', () => {
 	const mount = (over: Record<string, unknown> = {}) =>
-		render(AddToStudyButtons, { result: result('word'), workspaceId: 3, paragraph: null, hold: vi.fn(), ...over } as never);
+		render(AddToStudyButtons, { props: { result: result('word'), workspaceId: 3, paragraph: null, hold: vi.fn(), ...over } as never, context: ctx.context });
 	const toggle = async () => {
 		const b = (await screen.findByRole('button', { name: 'I know this' })) as HTMLButtonElement;
 		await waitFor(() => expect(b.disabled).toBe(false));
@@ -110,10 +116,10 @@ describe('I know this', () => {
 		const b = await toggle();
 		expect(b.getAttribute('aria-pressed')).toBe('false');
 		await fireEvent.click(b);
-		await waitFor(() => expect(setKnownMark).toHaveBeenLastCalledWith(3, 11, true));
+		await waitFor(() => expect(setKnownMark).toHaveBeenLastCalledWith(expect.anything(), 3, 11, true));
 		await waitFor(() => expect(b.getAttribute('aria-pressed')).toBe('true'));
 		await fireEvent.click(b);
-		await waitFor(() => expect(setKnownMark).toHaveBeenLastCalledWith(3, 11, false));
+		await waitFor(() => expect(setKnownMark).toHaveBeenLastCalledWith(expect.anything(), 3, 11, false));
 		await waitFor(() => expect(b.getAttribute('aria-pressed')).toBe('false'));
 	});
 
@@ -148,7 +154,7 @@ describe("You've looked this up N times (#72)", () => {
 		rec.current = r;
 	}
 	const mount = (over: Record<string, unknown> = {}) =>
-		render(AddToStudyButtons, { result: result('word'), workspaceId: 3, paragraph: 'p', first: true, hold: vi.fn(), ...over } as never);
+		render(AddToStudyButtons, { props: { result: result('word'), workspaceId: 3, paragraph: 'p', first: true, hold: vi.fn(), ...over } as never, context: ctx.context });
 	const settled = async () => {
 		const b = (await screen.findByRole('button', { name: 'I know this' })) as HTMLButtonElement;
 		await waitFor(() => expect(b.disabled).toBe(false));
@@ -205,7 +211,7 @@ describe("You've looked this up N times (#72)", () => {
 
 describe('the lighter popup actions (#102)', () => {
 	const mount = (over: Record<string, unknown> = {}) =>
-		render(AddToStudyButtons, { result: result('word'), workspaceId: 3, paragraph: null, hold: vi.fn(), ...over } as never);
+		render(AddToStudyButtons, { props: { result: result('word'), workspaceId: 3, paragraph: null, hold: vi.fn(), ...over } as never, context: ctx.context });
 	const ready = async (name: string | RegExp) => {
 		const b = (await screen.findByRole('button', { name })) as HTMLButtonElement;
 		await waitFor(() => expect(b.disabled).toBe(false));
@@ -219,7 +225,7 @@ describe('the lighter popup actions (#102)', () => {
 		expect(add.classList.contains('primary')).toBe(true);
 		await fireEvent.click(add);
 		await waitFor(() => expect(addCard).toHaveBeenCalled());
-		const [ws, , opts] = vi.mocked(addCard).mock.calls[0] as unknown as [number, number, Record<string, unknown>];
+		const [, ws, , opts] = vi.mocked(addCard).mock.calls[0] as unknown as [unknown, number, number, Record<string, unknown>];
 		expect(opts.deckIds).toEqual(['general']);
 		expect(ws, 'the book\'s workspace').toBe(3);
 		expect(await screen.findByText('In study')).toBeTruthy();
@@ -242,7 +248,7 @@ describe('the lighter popup actions (#102)', () => {
 		await fireEvent.click(choose);
 		await fireEvent.click(within(await screen.findByRole('menu')).getByRole('menuitem', { name: 'Lu Xun' }));
 		await waitFor(() => expect(addCard).toHaveBeenCalled());
-		const [, , opts] = vi.mocked(addCard).mock.calls[0] as unknown as [number, number, Record<string, unknown>];
+		const [, , , opts] = vi.mocked(addCard).mock.calls[0] as unknown as [unknown, number, number, Record<string, unknown>];
 		expect(opts.deckIds).toEqual(['d1']);
 		vi.mocked(getStudyData).mockResolvedValue({ decks: [], cards: [] } as never);
 	});
@@ -260,7 +266,7 @@ describe('the lighter popup actions (#102)', () => {
 		mount({ result: { ...result('word'), term: c.term, forms: c.forms, readings: c.readings, senses: c.senses } });
 		await fireEvent.click(await ready(`Add to deck: ${c.term}`));
 		await waitFor(() => expect(addCard).toHaveBeenCalled());
-		const [ws, , opts] = vi.mocked(addCard).mock.calls[0] as unknown as [number, number, Record<string, unknown>];
+		const [, ws, , opts] = vi.mocked(addCard).mock.calls[0] as unknown as [unknown, number, number, Record<string, unknown>];
 		expect(opts.written).toBe('の');
 	});
 });

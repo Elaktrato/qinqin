@@ -88,23 +88,23 @@ function install(): void {
 		deckSettings: settings as never
 	}));
 	vi.mocked(loadEntryBases).mockImplementation(async (ids) => new Map(ids.filter((id) => BASES.has(id)).map((id) => [id, BASES.get(id)!])));
-	vi.mocked(deleteCards).mockImplementation(async (_ws, ids) => {
+	vi.mocked(deleteCards).mockImplementation(async (_study, _ws, ids) => {
 		const entries = new Set(cards.filter((c) => ids.includes(c.id)).map((c) => c.entryId));
 		const removed = cards.filter((c) => entries.has(c.entryId));
 		cards = cards.filter((c) => !entries.has(c.entryId));
 		return removed;
 	});
-	vi.mocked(moveCards).mockImplementation(async (_ws, ids, deckId) => {
+	vi.mocked(moveCards).mockImplementation(async (_study, _ws, ids, deckId) => {
 		const entries = new Set(cards.filter((c) => ids.includes(c.id)).map((c) => c.entryId));
 		const before = cards.filter((c) => entries.has(c.entryId));
 		cards = cards.map((c) => (entries.has(c.entryId) ? { ...c, deckIds: [deckId] } : c));
 		return before;
 	});
-	vi.mocked(restoreCards).mockImplementation(async (_ws, rows) => {
+	vi.mocked(restoreCards).mockImplementation(async (_study, _ws, rows) => {
 		const ids = new Set(rows.map((r) => r.id));
 		cards = [...cards.filter((c) => !ids.has(c.id)), ...rows];
 	});
-	vi.mocked(dropSiblingCards).mockImplementation(async (_ws, ids) => {
+	vi.mocked(dropSiblingCards).mockImplementation(async (_study, _ws, ids) => {
 		const dropped = cards.filter((c) => ids.includes(c.id));
 		const prevVocab = cards.filter((c) => c.kind === 'vocab' && dropped.some((d) => d.entryId === c.entryId));
 		cards = cards
@@ -112,7 +112,7 @@ function install(): void {
 			.map((c) => (prevVocab.some((p) => p.id === c.id) ? { ...c, skipKinds: ['reverse'] } : c));
 		return [...prevVocab, ...dropped];
 	});
-	vi.mocked(unskipKind).mockImplementation(async (entryId) => {
+	vi.mocked(unskipKind).mockImplementation(async (_study, entryId) => {
 		const prev = cards.filter((c) => c.kind === 'vocab' && c.entryId === entryId);
 		cards = cards.map((c) => (c.kind === 'vocab' && c.entryId === entryId ? { ...c, skipKinds: undefined } : c));
 		return prev;
@@ -224,10 +224,10 @@ describe('DeckDetail', () => {
 		await waitFor(() => expect(written()).toEqual(['3']));
 		// Focus returns to a row, like after a delete.
 		await waitFor(() => expect(document.activeElement?.classList.contains('pick')).toBe(true));
-		expect(moveCards).toHaveBeenCalledWith(1, ['c-vocab-1', 'c-vocab-2'], 'd2');
+		expect(moveCards).toHaveBeenCalledWith(expect.anything(), 1, ['c-vocab-1', 'c-vocab-2'], 'd2');
 		await fireEvent.click(await screen.findByRole('button', { name: 'Undo' }));
 		await waitFor(() => expect(written()).toEqual(['1', '2', '3']));
-		expect(vi.mocked(restoreCards).mock.calls[0][2]).toEqual({ onlyLive: true });
+		expect(vi.mocked(restoreCards).mock.calls[0][3]).toEqual({ onlyLive: true });
 	});
 
 	it('Cancel on the move dialog moves nothing', async () => {
@@ -255,13 +255,13 @@ describe('DeckDetail', () => {
 		await fireEvent.change(screen.getByLabelText('Move to'), { target: { value: 'd2' } });
 		await fireEvent.click(screen.getByRole('button', { name: 'Move' }));
 		await fireEvent.click(within(screen.getByRole('alertdialog')).getByRole('button', { name: 'Move 1 word' }));
-		await waitFor(() => expect(moveCards).toHaveBeenCalledWith(1, ['c-reverse-9', 'c-cloze-9'], 'd2'));
+		await waitFor(() => expect(moveCards).toHaveBeenCalledWith(expect.anything(), 1, ['c-reverse-9', 'c-cloze-9'], 'd2'));
 		await fireEvent.click(await screen.findByRole('button', { name: 'Undo' }));
 		await waitFor(() => expect(document.querySelector('li[data-entry="9"]')).not.toBeNull());
 		await fireEvent.click(screen.getByRole('checkbox', { name: 'Select 走' }));
 		await fireEvent.click(screen.getByRole('button', { name: 'Delete' }));
 		await fireEvent.click(within(screen.getByRole('alertdialog')).getByRole('button', { name: 'Delete 1 word' }));
-		await waitFor(() => expect(deleteCards).toHaveBeenCalledWith(1, ['c-reverse-9', 'c-cloze-9']));
+		await waitFor(() => expect(deleteCards).toHaveBeenCalledWith(expect.anything(), 1, ['c-reverse-9', 'c-cloze-9']));
 	});
 
 	it('shows where a copied deck came from', async () => {
@@ -299,10 +299,10 @@ describe('DeckDetail', () => {
 		expect(within(row).getByText('Reverse')).toBeTruthy();
 		await fireEvent.click(within(row).getByRole('button', { name: 'Cards of 好' }));
 		await fireEvent.click(within(row).getByRole('button', { name: 'Remove Reverse' }));
-		expect(dropSiblingCards).toHaveBeenCalledWith(1, ['c-reverse-1']);
+		expect(dropSiblingCards).toHaveBeenCalledWith(expect.anything(), 1, ['c-reverse-1']);
 		await waitFor(() => expect(within(row).getByText('Reverse off')).toBeTruthy());
 		await fireEvent.click(within(row).getByRole('button', { name: 'Turn Reverse back on' }));
-		expect(unskipKind).toHaveBeenCalledWith(1, 1, 'reverse');
+		expect(unskipKind).toHaveBeenCalledWith(expect.anything(), 1, 1, 'reverse');
 		await waitFor(() => expect(within(row).queryByText('Reverse off')).toBeNull());
 	});
 
@@ -311,7 +311,7 @@ describe('DeckDetail', () => {
 		const row = screen.getByRole('link', { name: '喜欢' }).closest('li') as HTMLElement;
 		await fireEvent.click(within(row).getByRole('button', { name: 'Cards of 喜欢' }));
 		await fireEvent.click(within(row).getByRole('button', { name: 'Remove Reverse' }));
-		expect(skipKind).toHaveBeenCalledWith(1, 2, 'reverse');
+		expect(skipKind).toHaveBeenCalledWith(expect.anything(), 1, 2, 'reverse');
 		expect(within(row).queryByRole('button', { name: 'Remove Cloze' })).toBeNull();
 	});
 

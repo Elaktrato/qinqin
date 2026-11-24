@@ -109,12 +109,12 @@ describe('GoalSettings', () => {
 		await fireEvent.input(f.target, { target: { value: '50' } });
 		await fireEvent.click(screen.getByRole('button', { name: 'Save goal' }));
 		await waitFor(() => expect(saveGoals).toHaveBeenCalledTimes(1));
-		expect(vi.mocked(saveGoals).mock.calls[0][1]).toEqual({
+		expect(vi.mocked(saveGoals).mock.calls[0][2]).toEqual({
 			version: 1,
 			showStreak: true,
 			history: [{ from: today, metric: 'activity:review', target: 50 }]
 		});
-		expect(vi.mocked(saveGoals).mock.calls[0][0]).toBe(1);
+		expect(vi.mocked(saveGoals).mock.calls[0][1]).toBe(1);
 		expect(await screen.findByText('Saved.')).toBeTruthy();
 	});
 
@@ -144,7 +144,7 @@ describe('GoalSettings', () => {
 		await form();
 		await fireEvent.click(screen.getByRole('button', { name: 'Remove goal' }));
 		await waitFor(() => expect(saveGoals).toHaveBeenCalledTimes(1));
-		expect(vi.mocked(saveGoals).mock.calls[0][1].history).toEqual([
+		expect(vi.mocked(saveGoals).mock.calls[0][2].history).toEqual([
 			{ from: '2026-01-01', metric: 'activity:review', target: 50 },
 			{ from: today, metric: null, target: null }
 		]);
@@ -157,7 +157,7 @@ describe('GoalSettings', () => {
 		await fireEvent.click(streak);
 		await fireEvent.click(screen.getByRole('button', { name: 'Save goal' }));
 		await waitFor(() => expect(saveGoals).toHaveBeenCalledTimes(1));
-		expect(vi.mocked(saveGoals).mock.calls[0][1]).toEqual(goal('activity:review', 50, false));
+		expect(vi.mocked(saveGoals).mock.calls[0][2]).toEqual(goal('activity:review', 50, false));
 	});
 
 	it('hints at the new-card limit', async () => {
@@ -182,7 +182,7 @@ describe('GoalSettings', () => {
 		vi.mocked(getStudyData).mockResolvedValue({ decks: [], cards: [], goals: goal('flashcards:new', 7) });
 		select(2);
 		await waitFor(() => expect((screen.getByLabelText('Target') as HTMLInputElement).value).toBe('7'));
-		expect(vi.mocked(getStudyData).mock.calls.map((c) => c[0])).toContain(2);
+		expect(vi.mocked(getStudyData).mock.calls.map((c) => c[1])).toContain(2);
 		expect((screen.getByLabelText('Count') as HTMLSelectElement).value).toBe('flashcards:new');
 	});
 

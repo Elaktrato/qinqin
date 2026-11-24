@@ -68,7 +68,7 @@
 
 	onMount(() => {
 		let alive = true;
-		fetchWorkspaceContents(workspace.id).then(
+		fetchWorkspaceContents(session.study, workspace.id).then(
 			(found) => {
 				if (alive) contents = found;
 			},

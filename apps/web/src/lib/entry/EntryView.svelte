@@ -226,7 +226,7 @@
 		const current = entry;
 		const workspace = session.workspaces.current?.id;
 		if (!current || workspace === undefined) return;
-		void getStudyData(workspace, { force: true }).then(
+		void getStudyData(session.study, workspace, { force: true }).then(
 			(data) => {
 				if (entry?.id === current.id) inDecks = decksContaining(data, current.id);
 			},
@@ -239,7 +239,7 @@
 		const workspace = session.workspaces.current?.id;
 		inDecks = 0;
 		if (!current || workspace === undefined) return;
-		void getStudyData(workspace).then(
+		void getStudyData(session.study, workspace).then(
 			(data) => {
 				if (entry?.id === current.id) inDecks = decksContaining(data, current.id);
 			},

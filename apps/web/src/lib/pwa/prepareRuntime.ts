@@ -43,12 +43,13 @@ async function cachedInPartition(path: string): Promise<boolean> {
 /** prepareActiveWorkspace: best effort, never throws, never blocks the page. */
 export async function prepareActiveWorkspace(app: AppContext): Promise<void> {
 	const me = app.auth.user;
-	const ws = app.session?.workspaces.current ?? null;
-	if (me === null || ws === null || ws === undefined) return;
+	const session = app.session;
+	const ws = session?.workspaces.current ?? null;
+	if (me === null || session === null || ws === null) return;
 	await prepareOffline(ws.id, {
 		userId: me.id,
 		// A full round: the worker saves full rounds for offline study, never a delta (#193).
-		loadHistory: (id) => loadStudyHistory(id, { full: true }),
+		loadHistory: (id) => loadStudyHistory(session.study, id, { full: true }),
 		config: loadConfig,
 		tabTypes: () => (hasTabSetup() ? loadConfig().cardTypes : null),
 		remembered: () => loadRememberedTypes(ws.id),
@@ -59,7 +60,7 @@ export async function prepareActiveWorkspace(app: AppContext): Promise<void> {
 		fetchEntry: (id) => getEntry(id),
 		fetchStroke: (ch) => fetchStrokeData(ch),
 		fetchApi: (path) => api(path),
-		pullPages: studyPullPages,
+		pullPages: (id) => studyPullPages(session.study, id),
 		storage: typeof localStorage === 'undefined' ? null : localStorage,
 		now: () => Date.now(),
 		canPrepare: controlled,

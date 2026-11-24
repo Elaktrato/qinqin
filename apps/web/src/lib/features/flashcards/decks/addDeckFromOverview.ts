@@ -2,6 +2,7 @@
 // system/starter detail pages (addToDeck.ts), without the target picker. The
 // deck gets its usual owned id and name; adding again joins only what is new.
 
+import type { StudyState } from '$lib/study/data';
 import type { NewOrder } from '$lib/study/newOrder';
 import { loadRawStudyData } from '$lib/study/data';
 import { pushStudy } from '$lib/study/commands/write';
@@ -19,8 +20,8 @@ export interface OverviewAddInput {
 }
 
 /** addDeckFromOverview plans from the stored rows now and pushes one batch. */
-export async function addDeckFromOverview(input: OverviewAddInput): Promise<AddPlan> {
-	const raw = await loadRawStudyData(input.workspaceId);
+export async function addDeckFromOverview(study: StudyState, input: OverviewAddInput): Promise<AddPlan> {
+	const raw = await loadRawStudyData(study, input.workspaceId);
 	const plan = planAddToDeck({
 		items: input.items,
 		target: input.target,
@@ -38,6 +39,6 @@ export async function addDeckFromOverview(input: OverviewAddInput): Promise<AddP
 					}
 	});
 	const rows = addPlanRows(plan, raw);
-	if (rows.length > 0) await pushStudy(input.workspaceId, rows);
+	if (rows.length > 0) await pushStudy(study, input.workspaceId, rows);
 	return plan;
 }

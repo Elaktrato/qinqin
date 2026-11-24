@@ -1,3 +1,4 @@
+import type { StudyState } from '../data';
 // Card commands (#193): add, delete, restore, move, and the per-word card kind
 // switches (skipKinds). Each plans against the workspace's view (data.ts) and
 // writes through commands/write.ts; multi-row writes report what landed with
@@ -33,6 +34,7 @@ import { pushOptional, pushStudy, replanned, requireWorkspaceArg } from './write
  * the book's workspace).
  */
 export async function addCard(
+	study: StudyState,
 	workspaceId: number,
 	entryId: number,
 	opts: {
@@ -45,7 +47,7 @@ export async function addCard(
 ): Promise<StudyCard> {
 	requireWorkspaceArg(workspaceId, 'addCard');
 	const kind = opts.kind ?? 'vocab';
-	return replanned(workspaceId, async ({ data: { cards }, snapshot: snap }) => {
+	return replanned(study, workspaceId, async ({ data: { cards }, snapshot: snap }) => {
 		const wanted = cardKey(kind, entryId, opts.sentenceId);
 		// Several stored duplicates: answer with the one loadStudyData keeps.
 		const existing = cards
@@ -74,7 +76,7 @@ export async function addCard(
 		}
 		// The id of a deleted card revives its tombstone (and its extra).
 		const write = studyWrite(snap, 'cards', cardRow(card, extraOf(snap, 'cards', card.id)));
-		if (write !== null) await pushStudy(workspaceId, [write]);
+		if (write !== null) await pushStudy(study, workspaceId, [write]);
 		return card;
 	});
 }
@@ -136,12 +138,13 @@ export class PartialCardsError extends ShownError {
  * ignored by scheduling and mastery, while EXP and streaks keep counting.
  */
 export async function deleteCards(
+	study: StudyState,
 	workspaceId: number,
 	ids: readonly string[],
 ): Promise<StudyCard[]> {
 	requireWorkspaceArg(workspaceId, 'deleteCards');
 	if (ids.length === 0) return [];
-	const { data: { cards }, snapshot: snap } = await planningView(workspaceId);
+	const { data: { cards }, snapshot: snap } = await planningView(study, workspaceId);
 	const asked = new Set(ids);
 	const rows = rowsOfCards(cards, ids);
 	const ordered = [
@@ -154,7 +157,7 @@ export async function deleteCards(
 		if (write === null) continue;
 		try {
 			// Skipped: another tab deleted (or rewrote) the row since the read.
-			if (await pushOptional(workspaceId, write)) removed.push(row);
+			if (await pushOptional(study, workspaceId, write)) removed.push(row);
 		} catch (err) {
 			throw new PartialCardsError(
 				errorText(err, t('study.store.deleteFailed')),
@@ -176,6 +179,7 @@ export async function deleteCards(
  * PartialCardsError whose `rows` are the ones still to restore.
  */
 export async function restoreCards(
+	study: StudyState,
 	workspaceId: number,
 	rows: readonly StudyCard[],
 	opts: { onlyLive?: boolean } = {},
@@ -185,7 +189,7 @@ export async function restoreCards(
 	let snap: StudySnapshot;
 	try {
 		// Read first: a restore is stamped after the tombstone the server holds.
-		const view = await planningView(workspaceId);
+		const view = await planningView(study, workspaceId);
 		snap = view.snapshot;
 		const { cards } = view.data;
 		if (opts.onlyLive === true) {
@@ -202,7 +206,7 @@ export async function restoreCards(
 	for (let i = 0; i < todo.length; i++) {
 		try {
 			const write = studyWrite(snap, 'cards', cardRow(todo[i], extraOf(snap, 'cards', todo[i].id)));
-			if (write !== null) await pushStudy(workspaceId, [write]);
+			if (write !== null) await pushStudy(study, workspaceId, [write]);
 		} catch (err) {
 			throw new PartialCardsError(
 				errorText(err, t('study.store.undoFailed')),
@@ -221,6 +225,7 @@ export async function restoreCards(
  * the rows already moved. The deck must be General or a stored deck.
  */
 export async function moveCards(
+	study: StudyState,
 	workspaceId: number,
 	ids: readonly string[],
 	deckId: string,
@@ -228,7 +233,7 @@ export async function moveCards(
 	requireWorkspaceArg(workspaceId, 'moveCards');
 	if (deckId === '') throw new Error('choose a deck to move the cards to');
 	if (ids.length === 0) return [];
-	const { data: { cards, decks }, snapshot: snap } = await planningView(workspaceId);
+	const { data: { cards, decks }, snapshot: snap } = await planningView(study, workspaceId);
 	if (deckId !== GENERAL_DECK_ID && !decks.some((deck) => deck.id === deckId)) {
 		// Only the general deck is implicit: any other target must exist.
 		throw new Error(`deck "${deckId}" not found`);
@@ -244,7 +249,7 @@ export async function moveCards(
 				'cards',
 				cardRow({ ...row, deckIds: [deckId] }, extraOf(snap, 'cards', row.id)),
 			);
-			if (write !== null) await pushStudy(workspaceId, [write]);
+			if (write !== null) await pushStudy(study, workspaceId, [write]);
 			moved.push(row);
 		} catch (err) {
 			throw new PartialCardsError(
@@ -274,6 +279,7 @@ function withSkip(row: StudyCard, skipKinds: readonly StudyCardKind[]): StudyCar
 
 /** Writes new skipKinds to the entry's vocab rows; returns their previous state. */
 async function rewriteSkips(
+	study: StudyState,
 	workspaceId: number,
 	snap: StudySnapshot,
 	rows: readonly StudyCard[],
@@ -285,7 +291,7 @@ async function rewriteSkips(
 		if (JSON.stringify(updated.skipKinds ?? []) === JSON.stringify(row.skipKinds ?? [])) continue;
 		try {
 			const write = studyWrite(snap, 'cards', cardRow(updated, extraOf(snap, 'cards', row.id)));
-			if (write !== null) await pushStudy(workspaceId, [write]);
+			if (write !== null) await pushStudy(study, workspaceId, [write]);
 			changed.push(row);
 		} catch (err) {
 			throw new PartialCardsError(
@@ -310,30 +316,32 @@ function assertSkippable(kind: StudyCardKind): void {
  * nowhere to keep the switch: that is an error.
  */
 export async function skipKind(
+	study: StudyState,
 	workspaceId: number,
 	entryId: number,
 	kind: StudyCardKind,
 ): Promise<StudyCard[]> {
 	requireWorkspaceArg(workspaceId, 'skipKind');
 	assertSkippable(kind);
-	const { data: { cards }, snapshot: snap } = await planningView(workspaceId);
+	const { data: { cards }, snapshot: snap } = await planningView(study, workspaceId);
 	const rows = vocabRowsOf(cards, entryId);
 	if (rows.length === 0) throw new Error('this word has no vocab card to hold the setting');
-	return rewriteSkips(workspaceId, snap, rows, (row) => [...(row.skipKinds ?? []), kind]);
+	return rewriteSkips(study, workspaceId, snap, rows, (row) => [...(row.skipKinds ?? []), kind]);
 }
 
 /** unskipKind removes a kind from the word's `skipKinds`; returns the previous rows for undo. */
 export async function unskipKind(
+	study: StudyState,
 	workspaceId: number,
 	entryId: number,
 	kind: StudyCardKind,
 ): Promise<StudyCard[]> {
 	requireWorkspaceArg(workspaceId, 'unskipKind');
 	assertSkippable(kind);
-	const { data: { cards }, snapshot: snap } = await planningView(workspaceId);
+	const { data: { cards }, snapshot: snap } = await planningView(study, workspaceId);
 	const rows = vocabRowsOf(cards, entryId);
 	if (rows.length === 0) throw new Error('this word has no vocab card to hold the setting');
-	return rewriteSkips(workspaceId, snap, rows, (row) =>
+	return rewriteSkips(study, workspaceId, snap, rows, (row) =>
 		(row.skipKinds ?? []).filter((skipped) => skipped !== kind),
 	);
 }
@@ -348,12 +356,13 @@ export async function unskipKind(
  * throws PartialCardsError with the rows that did change.
  */
 export async function dropSiblingCards(
+	study: StudyState,
 	workspaceId: number,
 	ids: readonly string[],
 ): Promise<StudyCard[]> {
 	requireWorkspaceArg(workspaceId, 'dropSiblingCards');
 	if (ids.length === 0) return [];
-	const { data: { cards }, snapshot: snap } = await planningView(workspaceId);
+	const { data: { cards }, snapshot: snap } = await planningView(study, workspaceId);
 	const asked = cards.filter((card) => ids.includes(card.id));
 	if (asked.some((card) => card.kind === 'vocab')) {
 		throw new Error('only the other cards of a word can be removed on their own');
@@ -378,7 +387,7 @@ export async function dropSiblingCards(
 		const rows = vocabRowsOf(cards, entryId);
 		try {
 			previous.push(
-				...(await rewriteSkips(workspaceId, snap, rows, (row) => [
+				...(await rewriteSkips(study, workspaceId, snap, rows, (row) => [
 					...(row.skipKinds ?? []),
 					...kinds,
 				])),
@@ -394,7 +403,7 @@ export async function dropSiblingCards(
 		const write = studyDelete(snap, 'cards', row.id);
 		if (write === null) continue;
 		try {
-			if (await pushOptional(workspaceId, write)) previous.push(row);
+			if (await pushOptional(study, workspaceId, write)) previous.push(row);
 		} catch (err) {
 			throw new PartialCardsError(
 				errorText(err, t('study.store.removeFailed')),

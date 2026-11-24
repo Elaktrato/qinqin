@@ -40,7 +40,7 @@
 		const ws = loadedWorkspace ?? workspaceId;
 		if (ws === null) return;
 		try {
-			const data = await getStudyData(ws, { force });
+			const data = await getStudyData(session.study, ws, { force });
 			// A late answer for a workspace no longer the form's is dropped.
 			if (loadedWorkspace !== null && ws !== loadedWorkspace) return;
 			loadedWorkspace = ws;
@@ -69,7 +69,7 @@
 		}
 		busy = true;
 		try {
-			await saveDeckLimits(ws, deckId, plan.row);
+			await saveDeckLimits(session.study, ws, deckId, plan.row);
 			message = t('common.state.saved');
 			await load(true);
 		} catch {

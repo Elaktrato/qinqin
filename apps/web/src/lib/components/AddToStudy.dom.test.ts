@@ -40,7 +40,7 @@ describe('AddToStudy', () => {
 		ctx.session.workspaces.set({ list: [], current: { id: 2, language: 'ja', name: 'ja2' } as never });
 		button.click();
 		await waitFor(() => expect(addCard).toHaveBeenCalled());
-		expect(vi.mocked(addCard).mock.calls[0][0]).toBe(1);
+		expect(vi.mocked(addCard).mock.calls[0][1]).toBe(1);
 	});
 
 	it('adds a character with the entryKind snapshot and no sentence', async () => {
@@ -49,7 +49,7 @@ describe('AddToStudy', () => {
 		await waitFor(() => expect((button as HTMLButtonElement).disabled).toBe(false));
 		await fireEvent.click(button);
 		await waitFor(() => expect(addCard).toHaveBeenCalled());
-		const [ws, , opts] = vi.mocked(addCard).mock.calls[0] as unknown as [number, number, Record<string, unknown>];
+		const [, ws, , opts] = vi.mocked(addCard).mock.calls[0] as unknown as [unknown, number, number, Record<string, unknown>];
 		expect(ws).toBe(1);
 		expect(opts.entryKind).toBe('character');
 		expect(opts.sentenceId).toBeUndefined();
@@ -62,7 +62,7 @@ describe('AddToStudy', () => {
 		await waitFor(() => expect((button as HTMLButtonElement).disabled).toBe(false));
 		await fireEvent.click(button);
 		await waitFor(() => expect(addCard).toHaveBeenCalled());
-		const [ws, , opts] = vi.mocked(addCard).mock.calls[0] as unknown as [number, number, Record<string, unknown>];
+		const [, ws, , opts] = vi.mocked(addCard).mock.calls[0] as unknown as [unknown, number, number, Record<string, unknown>];
 		expect(ws).toBe(1);
 		expect(opts.entryKind).toBeUndefined();
 		expect(opts.sentenceId).toBe(5);
@@ -81,7 +81,7 @@ describe('AddToStudy in the entry header (#104)', () => {
 		expect(add.className).toContain('primary');
 		await fireEvent.click(add);
 		await waitFor(() => expect(addCard).toHaveBeenCalled());
-		const [ws, , opts] = vi.mocked(addCard).mock.calls[0] as unknown as [number, number, Record<string, unknown>];
+		const [, ws, , opts] = vi.mocked(addCard).mock.calls[0] as unknown as [unknown, number, number, Record<string, unknown>];
 		expect(ws).toBe(1);
 		expect(opts.deckIds).toEqual([expect.stringMatching(/general/i)]);
 	});
@@ -101,7 +101,7 @@ describe('AddToStudy in the entry header (#104)', () => {
 		await fireEvent.click(choose);
 		await fireEvent.click(await screen.findByRole('menuitem', { name: 'History' }));
 		await waitFor(() => expect(addCard).toHaveBeenCalled());
-		const [ws, , opts] = vi.mocked(addCard).mock.calls[0] as unknown as [number, number, Record<string, unknown>];
+		const [, ws, , opts] = vi.mocked(addCard).mock.calls[0] as unknown as [unknown, number, number, Record<string, unknown>];
 		expect(ws).toBe(1);
 		expect(opts.deckIds).toEqual(['deck-1']);
 	});

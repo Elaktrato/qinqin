@@ -20,7 +20,7 @@
 	import { useSession } from '$lib/context/context';
 	const session = useSession();
 
-	const store = createDecksData();
+	const store = createDecksData(session.study);
 	const workspaceId = $derived(session.workspaces.current?.id ?? null);
 
 	$effect(() => {
@@ -76,7 +76,7 @@
 		creating = true;
 		formError = '';
 		try {
-			await createDeck(ws, name);
+			await createDeck(session.study, ws, name);
 			newName = '';
 			// Reload the workspace written; after a switch the view already loads the new one.
 			if (workspaceId === ws) await store.load(ws, true);

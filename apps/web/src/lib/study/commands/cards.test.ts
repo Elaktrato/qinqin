@@ -1,4 +1,4 @@
-import { testContext, type TestContext } from '$lib/testing/context';
+import { newSession, studyContext, type TestContext } from '$lib/testing/context';
 // Card commands (split from the old store tests, #193).
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { readFileSync, readdirSync } from "node:fs";
@@ -25,7 +25,7 @@ import {
   restoreCards
 } from '$lib/study/commands/cards';
 import { createDeck, deleteDeck, saveDeckCardTypes, saveDeckNewOrder, renameDeck } from '$lib/study/commands/decks';
-import { loadStudyData, onStudyChange, loadRawStudyData, ALL_WORKSPACES } from '$lib/study/data';
+import { loadStudyData, onStudyChange, loadRawStudyData, ALL_WORKSPACES, withStudy } from '$lib/study/data';
 import {
   saveParamSet,
   setActiveSet,
@@ -51,10 +51,9 @@ import { DEFAULT_W, type ParamSet } from "$lib/study/fsrs/params";
 import { legacyFamily, pageOf, pagedPull, toLegacy } from '$lib/testing/legacyCodec';
 import { STUDY_COLLECTIONS, cardRow, type StudyCollection } from "$lib/study/rows";
 import * as build from '$lib/testing/study';
-import { endSession } from "$lib/session/sessionEnd";
 
 // Every test starts a session of its own: the study cache holds nothing.
-beforeEach(() => endSession("signOut"));
+beforeEach(() => newSession(ctx));
 import {
   PLUGIN_ID,
   WORKSPACE_ID,
@@ -83,9 +82,9 @@ import {
   useStudyStoreMocks
 } from "$lib/testing/studyFetch";
 
-let ctx: TestContext = testContext();
+let ctx: TestContext = studyContext();
 beforeEach(() => {
-	ctx = testContext();
+	ctx = studyContext();
 });
 
 
@@ -116,7 +115,7 @@ describe("card commands", () => {
       const cloze = typed("c-cloze-7", "cloze", 7);
       stub([vocab, reverse, cloze]);
 
-      const previous = await dropSiblingCards(WORKSPACE_ID, ["c-reverse-7"]);
+      const previous = await dropSiblingCards(ctx.session.study, WORKSPACE_ID, ["c-reverse-7"]);
 
       expect(deletes()).toEqual([rowUrl("c-reverse-7")]);
       expect(writtenRows()).toEqual([
@@ -129,11 +128,11 @@ describe("card commands", () => {
       const vocab = typed("c-vocab-7", "vocab", 7);
       const reverse = typed("c-reverse-7", "reverse", 7);
       stub([vocab, reverse]);
-      const previous = await dropSiblingCards(WORKSPACE_ID, ["c-reverse-7"]);
+      const previous = await dropSiblingCards(ctx.session.study, WORKSPACE_ID, ["c-reverse-7"]);
       vi.mocked(fetch).mockClear();
       // The server holds what the drop wrote: the skip on the vocab row, the sibling gone.
       stub([{ ...vocab, skipKinds: ["reverse"] }]);
-      await restoreCards(WORKSPACE_ID, previous);
+      await restoreCards(ctx.session.study, WORKSPACE_ID, previous);
       const bodies = writtenRows();
       expect(bodies.map((b) => b.key).sort()).toEqual(
         [rowUrl("c-reverse-7"), rowUrl("c-vocab-7")].sort(),
@@ -144,30 +143,30 @@ describe("card commands", () => {
 
     it("a stray sibling without a vocab row is only tombstoned", async () => {
       stub([typed("c-cloze-9", "cloze", 9)]);
-      await dropSiblingCards(WORKSPACE_ID, ["c-cloze-9"]);
+      await dropSiblingCards(ctx.session.study, WORKSPACE_ID, ["c-cloze-9"]);
       expect(deletes()).toEqual([rowUrl("c-cloze-9")]);
       expect(writtenRows()).toEqual([]);
     });
 
     it("refuses a vocab id", async () => {
       stub([typed("c-vocab-7", "vocab", 7)]);
-      await expect(dropSiblingCards(WORKSPACE_ID, ["c-vocab-7"])).rejects.toThrow();
+      await expect(dropSiblingCards(ctx.session.study, WORKSPACE_ID, ["c-vocab-7"])).rejects.toThrow();
       expect(deletes()).toEqual([]);
     });
 
     it("skipKind and unskipKind write only the vocab rows", async () => {
       const vocab = typed("c-vocab-7", "vocab", 7);
       stub([vocab]);
-      const before = await skipKind(WORKSPACE_ID, 7, "cloze");
+      const before = await skipKind(ctx.session.study, WORKSPACE_ID, 7, "cloze");
       expect(before).toEqual([vocab]);
       expect(writtenRows()[0]!.body).toEqual({ ...vocab, skipKinds: ["cloze"] });
 
       vi.mocked(fetch).mockClear();
       // Another device changed the row since: a new session reads it (the cache would plan from its own write).
-      endSession("signOut");
+      newSession(ctx);
       const skipped = { ...vocab, skipKinds: ["reverse", "cloze"] } as StudyCard;
       stub([skipped]);
-      const prev = await unskipKind(WORKSPACE_ID, 7, "cloze");
+      const prev = await unskipKind(ctx.session.study, WORKSPACE_ID, 7, "cloze");
       expect(prev).toEqual([skipped]);
       expect(writtenRows()[0]!.body).toEqual({ ...vocab, skipKinds: ["reverse"] });
     });
@@ -175,10 +174,10 @@ describe("card commands", () => {
     it("unskipKind drops the field when the list empties; no vocab row is an error", async () => {
       const skipped = { ...typed("c-vocab-7", "vocab", 7), skipKinds: ["reverse"] } as StudyCard;
       stub([skipped]);
-      await unskipKind(WORKSPACE_ID, 7, "reverse");
+      await unskipKind(ctx.session.study, WORKSPACE_ID, 7, "reverse");
       expect("skipKinds" in (writtenRows()[0]!.body as object)).toBe(false);
       stub([]);
-      await expect(skipKind(WORKSPACE_ID, 8, "reverse")).rejects.toThrow();
+      await expect(skipKind(ctx.session.study, WORKSPACE_ID, 8, "reverse")).rejects.toThrow();
     });
 
     it("deleting the word also tombstones its reverse and cloze cards", async () => {
@@ -187,7 +186,7 @@ describe("card commands", () => {
         typed("c-reverse-7", "reverse", 7),
         typed("c-cloze-7", "cloze", 7),
       ]);
-      await deleteCards(WORKSPACE_ID, ["c-vocab-7"]);
+      await deleteCards(ctx.session.study, WORKSPACE_ID, ["c-vocab-7"]);
       expect(deletes().sort()).toEqual(
         [rowUrl("c-vocab-7"), rowUrl("c-reverse-7"), rowUrl("c-cloze-7")].sort(),
       );
@@ -206,7 +205,7 @@ describe("card commands", () => {
           ],
         });
       });
-      await moveCards(WORKSPACE_ID, ["c-vocab-7"], "d2");
+      await moveCards(ctx.session.study, WORKSPACE_ID, ["c-vocab-7"], "d2");
       expect(writtenRows().map((b) => b.key).sort()).toEqual(
         [rowUrl("c-vocab-7"), rowUrl("c-reverse-7"), rowUrl("c-cloze-7")].sort(),
       );
@@ -227,7 +226,7 @@ describe("card commands", () => {
     it("writes into an explicitly given workspace instead of the selected one", async () => {
       respondWith([]);
 
-      const added = await addCard(9, 42);
+      const added = await addCard(ctx.session.study, 9, 42);
 
       expect(writtenRows().map(({ key, workspaceId }) => [key, workspaceId])).toEqual([[`card:${added.id}`, 9]]);
     });
@@ -236,7 +235,7 @@ describe("card commands", () => {
       // The selected workspace (7) has the card; workspace 9 does not.
       respondWith([pluginRow("card:card-1", card("card-1", 42, ["general"]))]);
 
-      const added = await addCard(9, 42);
+      const added = await addCard(ctx.session.study, 9, 42);
 
       expect(added.id).not.toBe("card-1");
     });
@@ -244,13 +243,13 @@ describe("card commands", () => {
     it("tells write listeners which workspace changed", async () => {
       respondWith([]);
       const seen: number[] = [];
-      const stop = onStudyChange((id) => seen.push(id));
+      const stop = onStudyChange(ctx.session.study, (id) => seen.push(id));
 
-      await addCard(WORKSPACE_ID, 42);
-      await addCard(9, 43);
-      await createDeck(WORKSPACE_ID, "HSK 1");
+      await addCard(ctx.session.study, WORKSPACE_ID, 42);
+      await addCard(ctx.session.study, 9, 43);
+      await createDeck(ctx.session.study, WORKSPACE_ID, "HSK 1");
       stop();
-      await addCard(WORKSPACE_ID, 44);
+      await addCard(ctx.session.study, WORKSPACE_ID, 44);
 
       expect(seen).toEqual([WORKSPACE_ID, 9, WORKSPACE_ID]);
     });
@@ -258,7 +257,7 @@ describe("card commands", () => {
     it("writes a vocab card in the general deck", async () => {
       respondWith([]);
 
-      const added = await addCard(WORKSPACE_ID, 42);
+      const added = await addCard(ctx.session.study, WORKSPACE_ID, 42);
 
       expect(added.id).toBe("c-vocab-42");
       expect(added.kind).toBe("vocab");
@@ -286,7 +285,7 @@ describe("card commands", () => {
 
     it("keeps the entry kind snapshot of a character card across a round trip", async () => {
       respondWith([]);
-      const added = await addCard(WORKSPACE_ID, 11, {
+      const added = await addCard(ctx.session.study, WORKSPACE_ID, 11, {
         kind: "writing",
         written: "学",
         entryKind: "character",
@@ -295,7 +294,7 @@ describe("card commands", () => {
       const body = writtenRows()[0]!.body as StudyCard;
       expect(body.entryKind).toBe("character");
       respondWith([pluginRow(`card:${added.id}`, body)]);
-      const { cards } = await loadStudyData(WORKSPACE_ID);
+      const { cards } = await loadStudyData(ctx.session.study, WORKSPACE_ID);
       expect(cards[0].entryKind).toBe("character");
     });
 
@@ -303,7 +302,7 @@ describe("card commands", () => {
       const vocab = card("card-1", 42, ["general"]);
       respondWith([pluginRow("card:card-1", vocab)]);
 
-      const added = await addCard(WORKSPACE_ID, 42, { kind: "sentence", sentenceId: 9 });
+      const added = await addCard(ctx.session.study, WORKSPACE_ID, 42, { kind: "sentence", sentenceId: 9 });
 
       expect(added.id).not.toBe("card-1");
       expect(added.kind).toBe("sentence");
@@ -321,13 +320,13 @@ describe("card commands", () => {
       };
       respondWith([pluginRow("card:card-s9", first)]);
 
-      const same = await addCard(WORKSPACE_ID, 42, { kind: "sentence", sentenceId: 9 });
+      const same = await addCard(ctx.session.study, WORKSPACE_ID, 42, { kind: "sentence", sentenceId: 9 });
       expect(same.id).toBe("card-s9");
       expect(writtenRows()).toHaveLength(
         0,
       );
 
-      const other = await addCard(WORKSPACE_ID, 42, { kind: "sentence", sentenceId: 10 });
+      const other = await addCard(ctx.session.study, WORKSPACE_ID, 42, { kind: "sentence", sentenceId: 10 });
       expect(other.id).not.toBe("card-s9");
       expect(other.sentenceId).toBe(10);
     });
@@ -335,14 +334,14 @@ describe("card commands", () => {
     it("derives the id of a new card from its kind and entry", async () => {
       respondWith([]);
 
-      await expect(addCard(WORKSPACE_ID, 42, { kind: "writing" })).resolves.toMatchObject({
+      await expect(addCard(ctx.session.study, WORKSPACE_ID, 42, { kind: "writing" })).resolves.toMatchObject({
         id: "c-writing-42",
       });
-      await expect(addCard(WORKSPACE_ID, 42, { kind: "tone" })).resolves.toMatchObject({
+      await expect(addCard(ctx.session.study, WORKSPACE_ID, 42, { kind: "tone" })).resolves.toMatchObject({
         id: "c-tone-42",
       });
       await expect(
-        addCard(WORKSPACE_ID, 42, { kind: "sentence", sentenceId: 9 }),
+        addCard(ctx.session.study, WORKSPACE_ID, 42, { kind: "sentence", sentenceId: 9 }),
       ).resolves.toMatchObject({
         id: "c-sentence-42",
       });
@@ -361,7 +360,7 @@ describe("card commands", () => {
       };
       respondWith([pluginRow("card:c-sentence-42", s9)]);
 
-      const s10 = await addCard(WORKSPACE_ID, 42, { kind: "sentence", sentenceId: 10 });
+      const s10 = await addCard(ctx.session.study, WORKSPACE_ID, 42, { kind: "sentence", sentenceId: 10 });
 
       expect(s10.id).toBe("c-sentence-42-10");
       expect(writtenRows().map((entry) => entry.key)).toEqual(["card:c-sentence-42-10"]);
@@ -375,7 +374,7 @@ describe("card commands", () => {
       };
       respondWith([pluginRow("card:c-sentence-42", s9)]);
 
-      const bare = await addCard(WORKSPACE_ID, 42, { kind: "sentence" });
+      const bare = await addCard(ctx.session.study, WORKSPACE_ID, 42, { kind: "sentence" });
 
       expect(bare.id).toMatch(ULID);
     });
@@ -388,7 +387,7 @@ describe("card commands", () => {
         pluginRow("card:card-early", early),
       ]);
 
-      await expect(addCard(WORKSPACE_ID, 42)).resolves.toEqual(early);
+      await expect(addCard(ctx.session.study, WORKSPACE_ID, 42)).resolves.toEqual(early);
       expect(writtenRows()).toEqual([]);
     });
 
@@ -414,14 +413,14 @@ describe("card commands", () => {
       });
 
       const [deviceA, deviceB] = await Promise.all([
-        addCard(WORKSPACE_ID, 42, { written: "猫" }),
-        addCard(WORKSPACE_ID, 42, { written: "猫", deckIds: ["deck-1"] }),
+        addCard(ctx.session.study, WORKSPACE_ID, 42, { written: "猫" }),
+        addCard(ctx.session.study, WORKSPACE_ID, 42, { written: "猫", deckIds: ["deck-1"] }),
       ]);
 
       expect(writtenRows()).toHaveLength(2);
       expect(deviceA.id).toBe(deviceB.id);
       expect([...server.keys()]).toEqual(["card:c-vocab-42"]);
-      const data = await loadStudyData(WORKSPACE_ID);
+      const data = await loadStudyData(ctx.session.study, WORKSPACE_ID);
       expect(data.cards).toHaveLength(1);
       expect(data.merged).toBe(0);
       expect(data.reviews.map((r) => r.payload.cardId)).toEqual([
@@ -450,7 +449,7 @@ describe("card commands", () => {
         grade: 3,
         workspaceId: WORKSPACE_ID,
         entry: { written: "猫" },
-        addCard,
+        addCard: withStudy(ctx.session.study, addCard),
         recordReview,
       });
       expect(kept).toMatchObject({ ok: true, card: existing });
@@ -462,7 +461,7 @@ describe("card commands", () => {
         grade: 3,
         workspaceId: WORKSPACE_ID,
         entry: { written: "猫" },
-        addCard,
+        addCard: withStudy(ctx.session.study, addCard),
         recordReview,
       });
       expect(created).toMatchObject({
@@ -477,7 +476,7 @@ describe("card commands", () => {
     it("stores the entry written form and the sentence id", async () => {
       respondWith([]);
 
-      const added = await addCard(WORKSPACE_ID, 42, { written: "猫", sentenceId: 9 });
+      const added = await addCard(ctx.session.study, WORKSPACE_ID, 42, { written: "猫", sentenceId: 9 });
 
       expect(added.written).toBe("猫");
       expect(added.sentenceId).toBe(9);
@@ -487,7 +486,7 @@ describe("card commands", () => {
     it("stores the card in explicitly requested decks", async () => {
       respondWith([]);
 
-      const added = await addCard(WORKSPACE_ID, 42, {
+      const added = await addCard(ctx.session.study, WORKSPACE_ID, 42, {
         deckIds: ["deck-a", "deck-b", "deck-a"],
       });
 
@@ -498,7 +497,7 @@ describe("card commands", () => {
     it("falls back to general when no deck is given", async () => {
       respondWith([]);
 
-      const added = await addCard(WORKSPACE_ID, 42, { deckIds: [] });
+      const added = await addCard(ctx.session.study, WORKSPACE_ID, 42, { deckIds: [] });
 
       expect(added.deckIds).toEqual([GENERAL_DECK_ID]);
     });
@@ -507,7 +506,7 @@ describe("card commands", () => {
       const existing = card("card-1", 42, ["general"]);
       respondWith([pluginRow("card:card-1", existing)]);
 
-      await expect(addCard(WORKSPACE_ID, 42)).resolves.toEqual(existing);
+      await expect(addCard(ctx.session.study, WORKSPACE_ID, 42)).resolves.toEqual(existing);
       expect(writtenRows()).toEqual([]);
     });
 
@@ -515,8 +514,8 @@ describe("card commands", () => {
       const legacy = { ...card("card-1", 42, ["general"]), sentenceId: 9 };
       respondWith([pluginRow("card:card-1", legacy)]);
 
-      await expect(addCard(WORKSPACE_ID, 42)).resolves.toEqual(legacy);
-      await expect(addCard(WORKSPACE_ID, 42, { sentenceId: 10 })).resolves.toEqual(legacy);
+      await expect(addCard(ctx.session.study, WORKSPACE_ID, 42)).resolves.toEqual(legacy);
+      await expect(addCard(ctx.session.study, WORKSPACE_ID, 42, { sentenceId: 10 })).resolves.toEqual(legacy);
       expect(writtenRows()).toEqual([]);
     });
 
@@ -524,7 +523,7 @@ describe("card commands", () => {
       const existing = card("card-1", 42, ["general"]);
       respondWith([pluginRow("card:card-1", existing)]);
 
-      await expect(addCard(WORKSPACE_ID, 42, { deckIds: ["deck-a"] })).resolves.toEqual(
+      await expect(addCard(ctx.session.study, WORKSPACE_ID, 42, { deckIds: ["deck-a"] })).resolves.toEqual(
         existing,
       );
       expect(writtenRows()).toEqual([]);
@@ -534,7 +533,7 @@ describe("card commands", () => {
       const existing = card("card-1", 42, ["general"]);
       respondWith([pluginRow("card:card-1", existing)]);
 
-      await expect(addCard(WORKSPACE_ID, 42, { written: "猫" })).resolves.toEqual(existing);
+      await expect(addCard(ctx.session.study, WORKSPACE_ID, 42, { written: "猫" })).resolves.toEqual(existing);
       expect(writtenRows()).toEqual([]);
     });
   });
@@ -575,7 +574,7 @@ describe("card commands", () => {
 
     it("tombstones the card, its stored duplicates and its companion cards", async () => {
       serve([vocab, companion, dupe, other]);
-      const removed = await deleteCards(WORKSPACE_ID, ["c-vocab-42"]);
+      const removed = await deleteCards(ctx.session.study, WORKSPACE_ID, ["c-vocab-42"]);
       expect(deletedKeys().sort()).toEqual(
         ["card:01DUPE", "card:c-vocab-42", "card:c-writing-42"].sort(),
       );
@@ -588,7 +587,7 @@ describe("card commands", () => {
 
     it("tombstones companions and duplicates before the vocab row it was asked for", async () => {
       serve([vocab, companion, dupe]);
-      await deleteCards(WORKSPACE_ID, ["c-vocab-42"]);
+      await deleteCards(ctx.session.study, WORKSPACE_ID, ["c-vocab-42"]);
       const order = deletedKeys();
       expect(order[order.length - 1]).toBe("card:c-vocab-42");
       expect(order.indexOf("card:c-writing-42")).toBeLessThan(
@@ -606,7 +605,7 @@ describe("card commands", () => {
           ),
         });
       });
-      const removed = await deleteCards(WORKSPACE_ID, ["c-vocab-42"]);
+      const removed = await deleteCards(ctx.session.study, WORKSPACE_ID, ["c-vocab-42"]);
       expect(removed.map((row) => row.id)).toEqual(["c-vocab-42"]);
     });
 
@@ -623,7 +622,7 @@ describe("card commands", () => {
           ),
         });
       });
-      const err = await deleteCards(WORKSPACE_ID, ["c-vocab-42"]).catch((e: unknown) => e);
+      const err = await deleteCards(ctx.session.study, WORKSPACE_ID, ["c-vocab-42"]).catch((e: unknown) => e);
       expect(err).toBeInstanceOf(PartialCardsError);
       expect((err as PartialCardsError).rows.map((row) => row.id)).toEqual([
         "c-writing-42",
@@ -639,7 +638,7 @@ describe("card commands", () => {
         }
         return jsonResponse({ pluginData: [] });
       });
-      const err = await restoreCards(WORKSPACE_ID, [vocab, companion, other]).catch(
+      const err = await restoreCards(ctx.session.study, WORKSPACE_ID, [vocab, companion, other]).catch(
         (e: unknown) => e,
       );
       expect(err).toBeInstanceOf(PartialCardsError);
@@ -652,7 +651,7 @@ describe("card commands", () => {
     it("restore with onlyLive skips cards another tab deleted since", async () => {
       // `other` was moved since (so the undo rewrites it); `vocab` was deleted.
       serve([{ ...other, deckIds: ["deck-3"] }]);
-      await restoreCards(WORKSPACE_ID, [vocab, other], { onlyLive: true });
+      await restoreCards(ctx.session.study, WORKSPACE_ID, [vocab, other], { onlyLive: true });
       expect(writtenRows().map((entry) => (entry.body as StudyCard).id)).toEqual([
         "c-vocab-43",
       ]);
@@ -660,11 +659,11 @@ describe("card commands", () => {
 
     it("undoing a move puts every row back into its old decks", async () => {
       serve([vocab, companion, dupe]);
-      const before = await moveCards(WORKSPACE_ID, ["c-vocab-42"], "deck-3");
+      const before = await moveCards(ctx.session.study, WORKSPACE_ID, ["c-vocab-42"], "deck-3");
       vi.mocked(fetch).mockClear();
       // The server now holds the moved rows.
       serve([vocab, companion, dupe].map((row) => ({ ...row, deckIds: ["deck-3"] })));
-      await restoreCards(WORKSPACE_ID, before, { onlyLive: true });
+      await restoreCards(ctx.session.study, WORKSPACE_ID, before, { onlyLive: true });
       const byId = new Map(
         writtenRows().map((entry) => [(entry.body as StudyCard).id, entry.body]),
       );
@@ -675,21 +674,21 @@ describe("card commands", () => {
 
     it("deleting a non-vocab card leaves the vocab card alone", async () => {
       serve([vocab, companion]);
-      await deleteCards(WORKSPACE_ID, ["c-writing-42"]);
+      await deleteCards(ctx.session.study, WORKSPACE_ID, ["c-writing-42"]);
       expect(deletedKeys()).toEqual(["card:c-writing-42"]);
     });
 
     it("ignores unknown ids and writes nothing for an empty list", async () => {
       serve([vocab]);
-      expect(await deleteCards(WORKSPACE_ID, ["nope"])).toEqual([]);
-      expect(await deleteCards(WORKSPACE_ID, [])).toEqual([]);
+      expect(await deleteCards(ctx.session.study, WORKSPACE_ID, ["nope"])).toEqual([]);
+      expect(await deleteCards(ctx.session.study, WORKSPACE_ID, [])).toEqual([]);
       expect(deletedKeys()).toEqual([]);
     });
 
     it("restoreCards puts the removed rows back unchanged", async () => {
       serve([]);
       // Deletion order is companions first, so undo writes the word first.
-      await restoreCards(WORKSPACE_ID, [companion, vocab]);
+      await restoreCards(ctx.session.study, WORKSPACE_ID, [companion, vocab]);
       expect(writtenRows()).toEqual([
         {
           key: `card:c-vocab-42`, workspaceId: WORKSPACE_ID,
@@ -704,7 +703,7 @@ describe("card commands", () => {
 
     it("moves cards (and their duplicates and companions) into the target deck", async () => {
       serve([vocab, companion, dupe, other]);
-      await moveCards(WORKSPACE_ID, ["c-vocab-42"], "deck-3");
+      await moveCards(ctx.session.study, WORKSPACE_ID, ["c-vocab-42"], "deck-3");
       const bodies = writtenRows();
       expect(
         bodies
@@ -717,13 +716,13 @@ describe("card commands", () => {
 
     it("skips rows already only in the target deck", async () => {
       serve([vocab, other]);
-      await moveCards(WORKSPACE_ID, ["c-vocab-42", "c-vocab-43"], "deck-1");
+      await moveCards(ctx.session.study, WORKSPACE_ID, ["c-vocab-42", "c-vocab-43"], "deck-1");
       expect(writtenRows()).toEqual([]);
     });
 
     it("rejects a deck that does not exist", async () => {
       serve([vocab]);
-      await expect(moveCards(WORKSPACE_ID, ["c-vocab-42"], "ghost")).rejects.toThrow(
+      await expect(moveCards(ctx.session.study, WORKSPACE_ID, ["c-vocab-42"], "ghost")).rejects.toThrow(
         /not found/,
       );
       expect(writtenRows()).toEqual([]);
@@ -731,13 +730,13 @@ describe("card commands", () => {
 
     it("moves into the implicit general deck", async () => {
       serve([vocab]);
-      await moveCards(WORKSPACE_ID, ["c-vocab-42"], GENERAL_DECK_ID);
+      await moveCards(ctx.session.study, WORKSPACE_ID, ["c-vocab-42"], GENERAL_DECK_ID);
       expect(writtenRows()).toHaveLength(1);
     });
 
     it("rejects an empty target and the move leaves the store untouched", async () => {
       serve([vocab]);
-      await expect(moveCards(WORKSPACE_ID, ["c-vocab-42"], "")).rejects.toThrow(/deck/i);
+      await expect(moveCards(ctx.session.study, WORKSPACE_ID, ["c-vocab-42"], "")).rejects.toThrow(/deck/i);
       expect(writtenRows()).toEqual([]);
     });
 
@@ -753,7 +752,7 @@ describe("card commands", () => {
           events: [],
         }),
       );
-      const data = await loadStudyData(WORKSPACE_ID);
+      const data = await loadStudyData(ctx.session.study, WORKSPACE_ID);
       expect(data.cards.map((c) => c.id)).toEqual(["c-vocab-43"]);
     });
   });

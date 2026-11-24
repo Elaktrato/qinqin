@@ -82,7 +82,7 @@ describe('DeckSettingsView', () => {
 		expect((await screen.findByRole('alert')).textContent).toContain('name');
 		await fireEvent.input(input, { target: { value: 'Hello' } });
 		await fireEvent.click(screen.getByRole('button', { name: 'Save name' }));
-		expect(renameDeck).toHaveBeenCalledWith(1, 'd1', 'Hello');
+		expect(renameDeck).toHaveBeenCalledWith(expect.anything(), 1, 'd1', 'Hello');
 		await screen.findByText('Renamed.');
 	});
 
@@ -95,7 +95,7 @@ describe('DeckSettingsView', () => {
 		ctx.session.workspaces.set({ list: [], current: { id: 2, language: 'ja', name: 'ja' } as never });
 		save.click();
 		await waitFor(() => expect(renameDeck).toHaveBeenCalled());
-		expect(vi.mocked(renameDeck).mock.calls[0][0]).toBe(1);
+		expect(vi.mocked(renameDeck).mock.calls[0][1]).toBe(1);
 	});
 
 	it('asks before deleting, names where the cards go, and leaves for the list', async () => {
@@ -106,7 +106,7 @@ describe('DeckSettingsView', () => {
 		expect(dialog.textContent).toContain('Delete “Greetings”? Its 3 cards: 1 stays in Verbs, 2 move to General.');
 		expect(deleteDeck).not.toHaveBeenCalled();
 		await fireEvent.click(screen.getByRole('button', { name: 'Delete “Greetings”' }));
-		await waitFor(() => expect(deleteDeck).toHaveBeenCalledWith(1, 'd1'));
+		await waitFor(() => expect(deleteDeck).toHaveBeenCalledWith(expect.anything(), 1, 'd1'));
 		await waitFor(() => expect(goto).toHaveBeenCalledWith('/flashcards'));
 	});
 
@@ -133,7 +133,7 @@ describe('DeckSettingsView', () => {
 		const cloze = (await screen.findByLabelText(/Cloze/)) as HTMLInputElement;
 		expect(cloze.checked).toBe(true);
 		await fireEvent.click(screen.getByLabelText(/Reverse/));
-		expect(saveDeckCardTypes).toHaveBeenCalledWith(1, 'd1', ['cloze', 'reverse']);
+		expect(saveDeckCardTypes).toHaveBeenCalledWith(expect.anything(), 1, 'd1', ['cloze', 'reverse']);
 	});
 
 	it('renders the real daily limits editor by default, hides the section without one, and takes a stub', async () => {
@@ -173,7 +173,7 @@ describe('DeckSettingsView', () => {
 		beforeEach(() => {
 			vi.mocked(getFrequencyPacks).mockResolvedValue([zhPack] as never);
 			vi.mocked(getSchemes).mockResolvedValue([hsk] as never);
-			vi.mocked(saveDeckNewOrder).mockImplementation(async (_ws, deckId, order) => ({
+			vi.mocked(saveDeckNewOrder).mockImplementation(async (_study, _ws, deckId, order) => ({
 				deckId,
 				cardTypes: ['cloze'],
 				...(order.by === 'added' ? {} : { newOrder: order }),
@@ -192,10 +192,10 @@ describe('DeckSettingsView', () => {
 			);
 			expect(select().value).toBe('added');
 			await fireEvent.change(select(), { target: { value: 'frequency' } });
-			await waitFor(() => expect(saveDeckNewOrder).toHaveBeenCalledWith(1, 'd1', { by: 'frequency' }));
+			await waitFor(() => expect(saveDeckNewOrder).toHaveBeenCalledWith(expect.anything(), 1, 'd1', { by: 'frequency' }));
 			await fireEvent.change(select(), { target: { value: 'level:hsk-words' } });
 			await waitFor(() =>
-				expect(saveDeckNewOrder).toHaveBeenCalledWith(1, 'd1', { by: 'level', packId: 'hsk-words' })
+				expect(saveDeckNewOrder).toHaveBeenCalledWith(expect.anything(), 1, 'd1', { by: 'level', packId: 'hsk-words' })
 			);
 			expect(saveDeckCardTypes).not.toHaveBeenCalled();
 		});
@@ -268,7 +268,7 @@ describe('DeckSettingsView', () => {
 			render(DeckSettingsView, { props: { deckId: 'general' }, context: ctx.context });
 			await waitFor(() => expect(select().options.length).toBe(3));
 			await fireEvent.change(select(), { target: { value: 'frequency' } });
-			await waitFor(() => expect(saveDeckNewOrder).toHaveBeenCalledWith(1, 'general', { by: 'frequency' }));
+			await waitFor(() => expect(saveDeckNewOrder).toHaveBeenCalledWith(expect.anything(), 1, 'general', { by: 'frequency' }));
 		});
 	});
 });

@@ -190,7 +190,7 @@
 			const [list, schemeList, data] = await Promise.all([
 				fetchCharacters(lang),
 				loadSchemeList(),
-				loadStudyData(id)
+				loadStudyData(session.study, id)
 			]);
 			if (seq !== requestSeq) return;
 			universe = list;
