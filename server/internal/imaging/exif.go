@@ -1,10 +1,13 @@
-package journal
+// Package imaging holds the small image helpers the upload paths share (the
+// journal photos and the profile pictures): reading and applying the EXIF
+// orientation of a JPEG.
+package imaging
 
 import "encoding/binary"
 
-// exifOrientation returns the EXIF orientation (1..8) of a JPEG, or 1 when
+// JPEGOrientation returns the EXIF orientation (1..8) of a JPEG, or 1 when
 // there is none or the data is malformed. Every read is bounds-checked.
-func exifOrientation(jpeg []byte) int {
+func JPEGOrientation(jpeg []byte) int {
 	if len(jpeg) < 4 || jpeg[0] != 0xFF || jpeg[1] != 0xD8 {
 		return 1
 	}

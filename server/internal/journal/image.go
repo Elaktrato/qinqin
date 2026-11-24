@@ -9,7 +9,9 @@ import (
 	_ "image/png" // registers the PNG decoder
 
 	xdraw "golang.org/x/image/draw"
+
 	_ "golang.org/x/image/webp" // registers the WebP decoder
+	"qinqin/internal/imaging"
 )
 
 var (
@@ -67,7 +69,7 @@ func NormalizePhoto(data []byte) ([]byte, error) {
 	}
 	orientation := 1
 	if isJPEG {
-		orientation = exifOrientation(data)
+		orientation = imaging.JPEGOrientation(data)
 	}
 	// The API takes at most 5 MB after base64, so the JPEG must fit maxResult
 	// raw bytes: step the quality down, then the long edge, until it does.
@@ -87,7 +89,7 @@ func NormalizePhoto(data []byte) ([]byte, error) {
 		}
 		var out image.Image = dst
 		if isJPEG {
-			out = orient(dst, orientation)
+			out = imaging.Orient(dst, orientation)
 		}
 		for _, q := range jpegQualities {
 			var b bytes.Buffer
@@ -104,40 +106,4 @@ func NormalizePhoto(data []byte) ([]byte, error) {
 		}
 		edge = max(minLongEdge, edge*4/5)
 	}
-}
-
-// orient applies an EXIF orientation (2..8) to img.
-func orient(img *image.RGBA, o int) image.Image {
-	if o <= 1 || o > 8 {
-		return img
-	}
-	w, h := img.Bounds().Dx(), img.Bounds().Dy()
-	ow, oh := w, h
-	if o >= 5 {
-		ow, oh = h, w
-	}
-	out := image.NewRGBA(image.Rect(0, 0, ow, oh))
-	for y := 0; y < oh; y++ {
-		for x := 0; x < ow; x++ {
-			var sx, sy int
-			switch o {
-			case 2:
-				sx, sy = w-1-x, y
-			case 3:
-				sx, sy = w-1-x, h-1-y
-			case 4:
-				sx, sy = x, h-1-y
-			case 5:
-				sx, sy = y, x
-			case 6:
-				sx, sy = y, h-1-x
-			case 7:
-				sx, sy = w-1-y, h-1-x
-			case 8:
-				sx, sy = w-1-y, x
-			}
-			out.SetRGBA(x, y, img.RGBAAt(sx, sy))
-		}
-	}
-	return out
 }
