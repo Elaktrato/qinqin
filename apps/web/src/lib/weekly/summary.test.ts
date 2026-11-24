@@ -3,7 +3,7 @@ import fixture from '../../../../../docs/contracts/weekly/week-summary.json';
 import type { ActivityCell, ActivitySource } from '../api/stats';
 import type { CharRow } from '../api/types';
 import { parseGoalsRow, type GoalsRow } from '../goals/goals';
-import { usesHan } from '../languages';
+import { usesHan } from '$lib/languages';
 import { GENERAL_DECK_ID } from '../study/types';
 import type { Run } from '../study/vacation';
 import type { ReviewEvent, StudyCard } from '../study/types';

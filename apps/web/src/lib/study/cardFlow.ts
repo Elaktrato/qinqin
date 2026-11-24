@@ -2,7 +2,7 @@
 // an item can be shown, and the small derived values the card components
 // need. Kept out of the Svelte pages so they are covered by tests.
 
-import { profileOf } from '../languageProfiles';
+import { profileOf } from '$lib/languages/profiles';
 import type { StudyContext } from './studyContext';
 import type { StudyClock } from './studyClock';
 import { planCompanions } from './companions';

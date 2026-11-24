@@ -5,18 +5,18 @@
 // disposed objects, which nothing reads any more: the next session is a new set
 // of objects, so nothing of one account is reachable from the next.
 
-import type { Auth } from '../auth.svelte';
-import { EventLog } from '../events';
+import type { Auth } from '$lib/auth/auth.svelte';
+import { EventLog } from '$lib/events';
 import { LookupsState } from '../lookups/state';
 import { FeatureSwitches } from '../features/switches.svelte';
 import { StudyDays } from '../time/studyDays';
-import { Notices } from '../notices.svelte';
+import { Notices } from '$lib/frame/notices.svelte';
 import type { Connectivity } from '../pwa/offlineState.svelte';
 import { createStudyState, type StudyState } from '../study/data';
 import { ReviewOutbox } from '../study/events';
 import { clearRecentSent, rememberSent } from '../study/recentSent';
-import { WorkspaceRecovery } from '../workspaceGone';
-import { Workspaces } from '../workspaces.svelte';
+import { WorkspaceRecovery } from '$lib/workspace/workspaceGone';
+import { Workspaces } from '$lib/workspace/workspaces.svelte';
 import { createPlayer, type Player } from '../audio/player';
 import { clipObjectUrl, readyClipUrl } from '../audio/source';
 import { SessionCaches } from './caches';

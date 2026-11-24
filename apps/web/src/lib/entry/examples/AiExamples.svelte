@@ -23,7 +23,7 @@
 	import type { Sentence } from '$lib/api/types';
 	import { useSession } from '$lib/context/context';
 	import { loadProviderNames } from '$lib/features/journal/providerNames';
-	import { newUlid } from '$lib/ulid';
+	import { newUlid } from '$lib/events/ulid';
 	import ExampleActions from './ExampleActions.svelte';
 	import { aiLabel, generatedText, generateErrorText, levelLabel, needsExamples, runGenerate } from './examples';
 

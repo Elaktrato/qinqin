@@ -3,8 +3,8 @@
 	import type { SenseGroup, SenseView } from '$lib/api/types';
 	import { tick } from 'svelte';
 	import { t } from '$lib/i18n';
-	import { hiddenDictionaries, partitionSenses } from '$lib/dictionaryVisibility';
-	import { licenseUrl } from '$lib/licenses';
+	import { hiddenDictionaries, partitionSenses } from '$lib/workspace/dictionaryVisibility';
+	import { licenseUrl } from '$lib/sources/licenses';
 	import { useSession } from '$lib/context/context';
 	const session = useSession();
 	let {

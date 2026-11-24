@@ -5,8 +5,8 @@ import type { EventLog } from '$lib/events';
 
 import { ApiError, api } from '../../api/client';
 import type { StudyDay } from '../../time/studyDay';
-import { journalPayload } from '../../eventPayloads';
-import { newUlid } from '../../ulid';
+import { journalPayload } from '$lib/events/eventPayloads';
+import { newUlid } from '$lib/events/ulid';
 import { EXPLANATION_LANGUAGES } from './languages';
 import { parseReview } from './review';
 import type { JournalEntry, JournalSettings, Review, Suggestions } from './types';

@@ -4,7 +4,7 @@ import { studyDay as studyDayOf } from '$lib/time/studyDay';
 /** One rule object, as the session's StudyDays caches it. */
 const SHARED_DAY = studyDayOf([]);
 import { EventLog } from '$lib/events';
-import type { WorkspacesState } from '$lib/workspaces.svelte';
+import type { WorkspacesState } from '$lib/workspace/workspaces.svelte';
 import { testContext, type TestContext, updateWorkspaces } from '$lib/testing/context';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/svelte';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';

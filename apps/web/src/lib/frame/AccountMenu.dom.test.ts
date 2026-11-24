@@ -1,4 +1,4 @@
-import type { User } from '$lib/auth.svelte';
+import type { User } from '$lib/auth/auth.svelte';
 import { testContext, type TestContext } from '$lib/testing/context';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/svelte';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';

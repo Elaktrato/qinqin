@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { hasCharacterMap } from '$lib/languageProfiles';
+	import { hasCharacterMap } from '$lib/languages/profiles';
 	import StageBar from '$lib/components/map/StageBar.svelte';
 	import { t } from '$lib/i18n';
 	import Msg from '$lib/i18n/Msg.svelte';

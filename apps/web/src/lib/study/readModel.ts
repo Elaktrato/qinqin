@@ -46,7 +46,7 @@ import { GOALS_KEY, parseGoalsRow, type ParsedGoals } from '../goals/goals';
 import { MILESTONE_KEY_PREFIX } from '../milestones/catalogue';
 import { parseSeenRows, tombstoneStamps } from '../milestones/seen';
 import { keyedRowOf, type KeyedRow } from '../sync/keyed';
-import type { StudyEvent } from '../events';
+import type { StudyEvent } from '$lib/events';
 import type { ReviewEvent, StudyCard, StudyData, StudyHistory, Deck } from './types';
 
 /** activeWeights is the workspace's FSRS weights; the defaults without a set. */

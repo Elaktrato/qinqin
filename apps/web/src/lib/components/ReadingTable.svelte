@@ -4,7 +4,7 @@
 	// side by side, separated by " | ". Kinds keep the order they first appear in.
 	// Each value carries the reading's own language; the separator is hidden from
 	// screen readers, which move through the values one by one.
-	import { readingLabel } from '$lib/format';
+	import { readingLabel } from '$lib/languages/format';
 	import { readingLang } from '$lib/i18n/lang';
 
 	interface Reading {

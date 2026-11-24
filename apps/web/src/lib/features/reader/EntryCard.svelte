@@ -2,7 +2,7 @@
 	import { t } from '$lib/i18n';
 	import { tick } from 'svelte';
 	import type { LookupResult } from '$lib/api/types';
-	import { partitionSenses } from '$lib/dictionaryVisibility';
+	import { partitionSenses } from '$lib/workspace/dictionaryVisibility';
 	import AddToStudyButtons from './AddToStudyButtons.svelte';
 	import { Chip } from '$lib/ui';
 	import {

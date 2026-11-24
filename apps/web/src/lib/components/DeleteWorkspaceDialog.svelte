@@ -5,7 +5,7 @@
 	import { ApiError } from '$lib/api/client';
 	import type { Workspace } from '$lib/api/types';
 	import { fetchWorkspaceContents, type WorkspaceContents } from '$lib/api/workspaceContents';
-	import { confirmLabel, labelMatches } from '$lib/workspaceDelete';
+	import { confirmLabel, labelMatches } from '$lib/workspace/workspaceDelete';
 	import Button from '$lib/ui/Button.svelte';
 	import Dialog from '$lib/ui/Dialog.svelte';
 	import Field from '$lib/ui/Field.svelte';

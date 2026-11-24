@@ -135,7 +135,7 @@ its data gets typed storage in its own package with a contract. Content is a dat
 ([Data pack format](Data-pack-format)).
 
 A language is a profile: a row in `docs/contracts/languages/profiles.json` and the same row in
-`server/internal/lang/profile.go` and `apps/web/src/lib/languageProfiles.ts`, then its data packs, and reading
+`server/internal/lang/profile.go` and `apps/web/src/lib/languages/profiles.ts`, then its data packs, and reading
 code only when the profile names something new (`docs/contracts/languages/README.md`, "How to add a language").
 Availability checks ask the profile (`docs/contracts/languages/README.md` says which member decides what), not `language === 'zh'`; what remains language code is reading code (pinyin, kana, fonts, audio, the online-library sources) and the Chinese-only data notes.
 

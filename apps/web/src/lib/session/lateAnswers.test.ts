@@ -2,7 +2,7 @@
 // per-user state afterwards: the workspace list and the plugin states. And ending the session empties the content-keyed memos.
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { WORKSPACE_KEY } from '../workspaces.svelte';
+import { WORKSPACE_KEY } from '$lib/workspace/workspaces.svelte';
 import { newSession, testContext, workspacesState } from '../testing/context';
 
 function storage(): Storage {

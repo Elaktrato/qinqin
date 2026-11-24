@@ -2,7 +2,7 @@
 // (#199). Their links land on the core routes, the redirect replacing this
 // history entry; every other plugin id is gone.
 import { error, redirect } from '@sveltejs/kit';
-import { legacyRedirect } from '$lib/legacyRoutes';
+import { legacyRedirect } from '$lib/routing/legacyRoutes';
 import type { PageLoad } from './$types';
 
 export const load: PageLoad = ({ url }) => {

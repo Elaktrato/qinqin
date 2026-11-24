@@ -48,13 +48,13 @@ on 2026-11-23 to retire the code-plugin system (#199).
 | Grammar progress | `server/internal/grammar/progress.go` (table `grammar_progress`, migration 045), `/api/grammar/progress` | `apps/web/src/lib/features/grammar/`, route `/grammar` | `docs/contracts/grammar/` |
 | Keyed rows (the core's small settings documents: notes, lookups, known marks, milestones, goals, vacations, layouts, appearance) | `server/internal/keyed/` (table `keyed_rows`, migration 046; `plugin_data` dropped), `/api/rows`, pull/push `rows` | `apps/web/src/lib/sync/keyed.ts` | `docs/contracts/keyed/` |
 | Activity sources | `server/internal/stats/rules.go` | `apps/web/src/lib/activity/sources.ts` | `docs/contracts/events/activity.json` |
-| Language profiles | `server/internal/lang/profile.go` (`ProfileOf`) | `apps/web/src/lib/languageProfiles.ts` (`profileOf`) | `docs/contracts/languages/` |
-| Old plugin URLs | — | `apps/web/src/lib/legacyRoutes.ts`, `apps/web/src/routes/p/[plugin]/[...rest]/+page.ts` (the four features redirect, any other id is 404) | — |
+| Language profiles | `server/internal/lang/profile.go` (`ProfileOf`) | `apps/web/src/lib/languages/profiles.ts` (`profileOf`) | `docs/contracts/languages/` |
+| Old plugin URLs | — | `apps/web/src/lib/routing/legacyRoutes.ts`, `apps/web/src/routes/p/[plugin]/[...rest]/+page.ts` (the four features redirect, any other id is 404) | — |
 
 ### How to add a language
 
 1. Write its profile: a row in `docs/contracts/languages/profiles.json` (with a `resolve` case) and the same row
-   in `server/internal/lang/profile.go` and `apps/web/src/lib/languageProfiles.ts`. The tests of both tables
+   in `server/internal/lang/profile.go` and `apps/web/src/lib/languages/profiles.ts`. The tests of both tables
    compare them with the fixture. Without a row the language gets the fallback (no readings, space
    segmentation, the plain card kinds).
 2. Add its data packs (dictionary, levels, sentences, grammar; `docs/contracts/packages/`).

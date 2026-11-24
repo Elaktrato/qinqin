@@ -2,7 +2,7 @@
 // reader's script setting (Chinese only) before tiles are cut or a gap
 // is found.
 
-import { profileOf } from '$lib/languageProfiles';
+import { profileOf } from '$lib/languages/profiles';
 import { studyLang } from '$lib/i18n/lang';
 import { prepareVariant, convertText, type Variant } from '$lib/features/reader/variants';
 import { browserStorage, loadPrefs } from '$lib/features/reader/prefs';

@@ -26,7 +26,7 @@ kinds `vocab`, `sentence`, `reverse`, `cloze`, decks and levels. The Spanish dem
 ## How to add a language
 
 1. Add its profile to `profiles.json` (and a `resolve` case), then the same row to
-   `server/internal/lang/profile.go` and `apps/web/src/lib/languageProfiles.ts`; both tests compare the table
+   `server/internal/lang/profile.go` and `apps/web/src/lib/languages/profiles.ts`; both tests compare the table
    with the fixture.
 2. Install its data packs (dictionary, levels, sentences; `packages/`). A language without a code pack is
    data-only (`lang.KindData`), like Spanish.
@@ -35,4 +35,4 @@ kinds `vocab`, `sentence`, `reverse`, `cloze`, decks and levels. The Spanish dem
 
 | File | Rule | Decoded by |
 | --- | --- | --- |
-| `profiles.json` | the profiles and how a code resolves | `server/internal/lang/profile_test.go`, `apps/web/src/lib/languageProfiles.test.ts` |
+| `profiles.json` | the profiles and how a code resolves | `server/internal/lang/profile_test.go`, `apps/web/src/lib/languages/profiles.test.ts` |

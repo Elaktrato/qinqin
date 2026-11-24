@@ -1,6 +1,6 @@
 // The core app's own widgets: they exist whatever features are switched on.
 
-import { hasCharacterMap } from '$lib/languageProfiles';
+import { hasCharacterMap } from '$lib/languages/profiles';
 import ActivityHeatmap from '$lib/components/ActivityHeatmap.svelte';
 import { t } from '$lib/i18n';
 import ActivityHome from './ActivityHome.svelte';

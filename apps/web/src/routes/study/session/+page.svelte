@@ -2,7 +2,7 @@
 	import { loadStrokeData } from '$lib/study/strokeData';
 	import { errorText } from '$lib/api/apiErrors';
 	import { UserError } from '$lib/api/userError';
-	import { pageTitle } from '$lib/pageTitle';
+	import { pageTitle } from '$lib/routing/pageTitle';
 	import { t } from '$lib/i18n';
 	import { onMount, tick, untrack } from 'svelte';
 	import { goto } from '$app/navigation';
@@ -88,7 +88,7 @@ import type { Run } from '$lib/study/vacation';
 	import { shuffleTokens, type SaladTier } from '$lib/study/wordSalad';
 	import { usableChars } from '$lib/study/writing';
 	import { hasStrokeData } from '$lib/study/strokeIndex';
-	import { newUlid } from '$lib/ulid';
+	import { newUlid } from '$lib/events/ulid';
 	import NoteAnswer from '$lib/notes/NoteAnswer.svelte';
 	import { loadNoteCfg, loadNotes } from '$lib/notes/store';
 	import StudyFace from '$lib/features/flashcards/face/StudyFace.svelte';

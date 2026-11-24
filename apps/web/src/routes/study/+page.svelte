@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { errorText } from '$lib/api/apiErrors';
 	import UnreadableRowsNotice from '$lib/study/UnreadableRowsNotice.svelte';
-	import { pageTitle } from '$lib/pageTitle';
+	import { pageTitle } from '$lib/routing/pageTitle';
 	import { t } from '$lib/i18n';
 	import { goto } from '$app/navigation';
 	import { fetchSchemeCharacters, getSchemeEntries, getSchemes } from '$lib/api/schemes';
@@ -13,7 +13,7 @@
 	import { usesHan } from '$lib/languages';
 	import CardManager from '$lib/components/CardManager.svelte';
 	import { deckSessionItems, sessionCounts } from '$lib/study/cardFlow';
-	import { profileOf } from '$lib/languageProfiles';
+	import { profileOf } from '$lib/languages/profiles';
 	import { loadIneligible } from '$lib/study/ineligible';
 	import {
 		defaultExtraTypes,

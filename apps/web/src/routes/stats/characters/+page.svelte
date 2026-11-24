@@ -1,6 +1,6 @@
 <script lang="ts">
-	import { profileOf } from '$lib/languageProfiles';
-	import { hasCharacterMap } from '$lib/languageProfiles';
+	import { profileOf } from '$lib/languages/profiles';
+	import { hasCharacterMap } from '$lib/languages/profiles';
 	import { errorText } from '$lib/api/apiErrors';
 	import { studyLang } from '$lib/i18n/lang';
 	import { tick, untrack } from 'svelte';

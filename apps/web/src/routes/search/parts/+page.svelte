@@ -6,9 +6,9 @@
 	import { fetchCharacters } from '$lib/api/characters';
 	import { fetchComponents, type ComponentIndex } from '$lib/api/components';
 	import type { CharRow } from '$lib/api/types';
-	import { dictionaryHint } from '$lib/coverage';
+	import { dictionaryHint } from '$lib/languages/coverage';
 	import { languageLabel, usesHan } from '$lib/languages';
-	import { pageTitle } from '$lib/pageTitle';
+	import { pageTitle } from '$lib/routing/pageTitle';
 	import { primaryLanguage, radicalTable } from '$lib/radicals/kangxi';
 	import { buildIndex, isEmpty, lookup, pickerParts, RESULT_CAP, type Selection } from '$lib/radicals/lookup';
 	import {

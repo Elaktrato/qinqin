@@ -7,7 +7,7 @@ import type { ThemePack } from '$lib/api/themes';
 import type { ComponentPack, LemmaPack, StrokePack } from '$lib/api/types';
 import type { FontList } from '$lib/api/fonts';
 import { t } from '$lib/i18n';
-import { licenseUrl } from '$lib/licenses';
+import { licenseUrl } from '$lib/sources/licenses';
 import { localLicensePath, type LicenseText, type SourceCredit } from './credits';
 import { cjkLang, parseNotice, safeHref, type NoticeParagraph } from './notice';
 

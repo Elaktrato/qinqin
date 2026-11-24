@@ -23,7 +23,7 @@
 // One page owns the slot at a time (the last caller wins).
 
 import type { Snippet } from 'svelte';
-import { APP_NAME } from '$lib/app';
+import { APP_NAME } from '$lib/frame/app';
 import { useApp } from '$lib/context/context';
 import { t } from '$lib/i18n';
 import type { FrameSection } from './sections';

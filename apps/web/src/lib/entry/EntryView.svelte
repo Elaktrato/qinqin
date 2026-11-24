@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { tick } from 'svelte';
-	import { profileOf } from '$lib/languageProfiles';
+	import { profileOf } from '$lib/languages/profiles';
 	import { errorText } from '$lib/api/apiErrors';
 	import Msg from '$lib/i18n/Msg.svelte';
 	import { t } from '$lib/i18n';
@@ -21,7 +21,7 @@
 	import { creditLine, headwordClips, readingClips } from '$lib/audio/button';
 	import { readAudioSettings } from '$lib/audio/settings';
 	import PlayButton from '$lib/components/PlayButton.svelte';
-	import { viewPayload } from '$lib/eventPayloads';
+	import { viewPayload } from '$lib/events/eventPayloads';
 	import { loadEntryExtras } from '$lib/entry/extras';
 	import ReadingText from '$lib/components/ReadingText.svelte';
 	import { glossLang, readingLang, studyLang } from '$lib/i18n/lang';

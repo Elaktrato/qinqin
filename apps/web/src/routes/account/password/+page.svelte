@@ -4,7 +4,7 @@
 	import { onMount } from 'svelte';
 	import { api, apiErrorBody } from '$lib/api/client';
 	import { confirmProblem, passwordHint, passwordProblem } from '$lib/account/passwordRules';
-	import { pageTitle } from '$lib/pageTitle';
+	import { pageTitle } from '$lib/routing/pageTitle';
 	import { t } from '$lib/i18n';
 	import { Button, Field } from '$lib/ui';
 	import { useApp } from '$lib/context/context';

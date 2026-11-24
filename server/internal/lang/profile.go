@@ -6,7 +6,7 @@ import "strings"
 // core definition per language of what it has, read by availability checks
 // instead of comparing codes. Reading code (pinyin, kana, deinflection)
 // stays in the language packs. The web table is
-// apps/web/src/lib/languageProfiles.ts; both are pinned to the fixture.
+// apps/web/src/lib/languages/profiles.ts; both are pinned to the fixture.
 
 // Scripts of a profile.
 const (

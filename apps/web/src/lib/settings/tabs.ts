@@ -118,5 +118,5 @@ export function settingsTabHref(tab: SettingsTab): string {
 	return tab === 'workspaces' ? '/settings' : `/settings?tab=${tab}`;
 }
 
-// One tablist key handler for Stats and Settings (lib/statsTabs.ts).
-export { tabKeyTarget } from '../statsTabs';
+// One tablist key handler for Stats and Settings (lib/stats/statsTabs.ts).
+export { tabKeyTarget } from '$lib/stats/statsTabs';

@@ -1,8 +1,8 @@
 <script lang="ts">
-	import { pageTitle } from '$lib/pageTitle';
+	import { pageTitle } from '$lib/routing/pageTitle';
 	import { t } from '$lib/i18n';
 	import { page } from '$app/state';
-	import { activeStatsTab, statsPanelLabel, statsTabs } from '$lib/statsTabs';
+	import { activeStatsTab, statsPanelLabel, statsTabs } from '$lib/stats/statsTabs';
 	import Tabs from '$lib/ui/Tabs.svelte';
 	import { useSession } from '$lib/context/context';
 	const session = useSession();

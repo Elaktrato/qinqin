@@ -9,7 +9,7 @@ with it, and what each type's payload means. Design: `docs/superpowers/specs/202
 Owner code: `server/internal/api/handlers_events.go`, `server/internal/events/events.go` (`page.go`,
 `page_list.go`: paging),
 `server/internal/sync/sync.go` (push), `server/internal/sync/page_collections.go` (pull v2). Web:
-`apps/web/src/lib/events.ts`, `apps/web/src/lib/eventPages.ts`, `apps/web/src/lib/study/scheduler.ts` (`sortedReviews`).
+`apps/web/src/lib/events/index.ts`, `apps/web/src/lib/events/eventPages.ts`, `apps/web/src/lib/study/scheduler.ts` (`sortedReviews`).
 
 Fixtures:
 
@@ -20,7 +20,7 @@ Fixtures:
   `$bobWs` one of another user.
 - `payloads.json` — the payload of each written type (`build`), when the web emits `read` and `journal`
   events (`emit`) and how a consumer counts a `read` payload (`consume`). Decoded by
-  `apps/web/src/lib/eventPayloads.test.ts` (the builders of `lib/eventPayloads.ts`, member order included),
+  `apps/web/src/lib/events/eventPayloads.test.ts` (the builders of `lib/events/eventPayloads.ts`, member order included),
   `features/reader/readingTimer.test.ts`, `features/journal/entryDraft.test.ts`, `stats/readingTime.test.ts`.
   The restore remap of `view` and `read` payloads is pinned in `backup/remap.json`.
 - `review-parse.json` — stored events and what a client makes of them: `parsed` (the review payload
@@ -35,7 +35,7 @@ Fixtures:
 - `page.json` — the paged `GET /api/events`: valid and invalid pages (shape, order, `next` rule) and request
   cases (query → status and JSON code). Decoded by
   `server/internal/api/contract_events_page_test.go` (every request against the server, every page through
-  the shape check) and `apps/web/src/lib/eventPages.test.ts` (the web's strict decoder).
+  the shape check) and `apps/web/src/lib/events/eventPages.test.ts` (the web's strict decoder).
 - `activity.json` — heatmap cells of the built-in activity rules over a case's events (zone history, window
   `from`..`to`). Decoded by `server/internal/stats/contract_activity_test.go` (every cell) and
   `apps/web/src/lib/stats/readingTime.test.ts` (the `read` cells through `readingPoints`/`readSeconds`).
@@ -102,7 +102,7 @@ GET /api/events?page=<next>[&workspace=<id>]                          continuati
   first `since`), a `limit` outside 1..2000 → 400 JSON
   `{"error": "events_page_invalid", "message": …}` (`auth/errors.json`): read again from the first page. A
   bad `since` or `workspace` and a foreign workspace keep the answers below, on every page.
-- Web reader: `apps/web/src/lib/eventPages.ts` (`limit=2000`, strict decode, at most 1000 pages). It follows
+- Web reader: `apps/web/src/lib/events/eventPages.ts` (`limit=2000`, strict decode, at most 1000 pages). It follows
   an empty page with `more` true (`readerAccepts` in `page.json`): the server never sends one, but a page the
   service worker saved has lost its `lookup` events and may be empty. A continuation that cannot be reached at
   all (offline, and not saved: the page boundaries moved since the pages were saved) ends the read with the
@@ -181,7 +181,7 @@ unremapped — cost: none for the learner.
 Ruling: `read` and `journal` are written exactly as above by every client — the heatmap, the weekly summary,
 goals and item 7 count them — cost if wrong: reading time or journal days differ per device.
 
-Ruling: the web's four call sites use named payload builders in the pure module `lib/eventPayloads.ts`
+Ruling: the web's four call sites use named payload builders in the pure module `lib/events/eventPayloads.ts`
 (`sessionPayload()`, `viewPayload(entryId)`, `readPayload(bookId, seconds)`, `journalPayload(entryId)`), and
 `payloads.json` is decoded against the builders and against the consumers (`readingPoints`, `readSeconds`,
 `journalEventDue`, and the reading timer's flush) — the payload of `read` was built inline in a Svelte

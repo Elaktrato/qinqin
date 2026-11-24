@@ -10,7 +10,7 @@ import type { StudyEventBody } from '../api/types';
 import { ApiError, getToken, isRestrictionResponse, isWorkspaceGoneResponse } from '../api/client';
 import type { EventSource, Timers, VisibilitySource } from '../context/deps';
 import { t } from '../i18n';
-import { newUlid, ulidTime } from '../ulid';
+import { newUlid, ulidTime } from '$lib/events/ulid';
 import { flushable, settle, type OutboxItem } from './outbox';
 import type {
 	ReviewEvent,
@@ -95,7 +95,7 @@ function backoffMs(run: number): number {
 }
 
 export interface OutboxDeps {
-	/** POST /api/events/batch (lib/events.ts postEvents). */
+	/** POST /api/events/batch (lib/events/index.ts postEvents). */
 	post(events: StudyEventBody[]): Promise<void>;
 	local(): Storage | null;
 	now(): number;

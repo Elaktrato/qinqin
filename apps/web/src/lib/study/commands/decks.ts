@@ -7,7 +7,7 @@ import { GENERAL_DECK_ID, type Deck, type OptInKind } from '../types';
 import { cleanCardTypes, type DeckSettings } from '../deckSettings';
 import type { NewOrder } from '../newOrder';
 import { cardRow, deckRow, settingsRow, studyKey } from '../rows';
-import { newUlid } from '../../ulid';
+import { newUlid } from '$lib/events/ulid';
 import { extraOf, studyDelete, studyWrite, type StudyWrite } from '../plan';
 import { pushOptional, pushStudy, replanned, requireWorkspaceArg } from './write';
 
