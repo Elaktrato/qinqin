@@ -47,6 +47,10 @@ https://github.com/Elaktrato/qinqin/wiki
   routes are rate-limited (#176).
 
 **Accounts**
+- **Profile pictures** (#189): upload a picture in Settings → Account (on a phone from the camera or the photo
+  picker), crop it to a square, replace or remove it. It shows in the top bar, the account menu and the admin user
+  list; the letter stays where there is none. The server re-encodes every upload, so no location or camera data is
+  kept. Administrators can remove a picture (audited). Pictures are in personal and server backups.
 - Signing out, a lapsed session or a user switch in another tab clears every per-user cache in the browser
   (#173).
 

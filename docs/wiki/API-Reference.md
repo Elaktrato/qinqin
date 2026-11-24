@@ -140,7 +140,7 @@ The rules are `docs/contracts/auth/` (start with its README); [API overview](API
 | `POST /api/auth/email-login/start` `{login, deviceName?}`, `POST /api/auth/email-login/verify` `{challenge, code}` | Sign-in by emailed code, when the administrator allows it. The start always answers 202, known account or not; the verify answers like a login |
 | `POST /api/auth/reset-request` `{login}` | "Forgot password": always 202 `{}`; only an enabled user with a verified address gets mail. 409 `mail_unavailable` without mail |
 | `POST /api/auth/invite/check` `{invite}`, `POST /api/auth/reset/check` `{token}`, `POST /api/auth/reset` `{token, password, deviceName?}` | Is this invite usable (403 `invite_invalid`); whose reset link is this (400 `token_invalid`); spend a reset link (login-shaped answer) |
-| `GET /api/auth/me`, `POST /api/auth/logout` | The current user with the session's `restriction` and `interfaceLanguage`; end the session the request came in on (204). Both allowed for a restricted session |
+| `GET /api/auth/me`, `POST /api/auth/logout` | The current user with the session's `restriction`, `interfaceLanguage` and `avatarUrl`; end the session the request came in on (204). Both allowed for a restricted session |
 | `POST /api/account/password` `{currentPassword, newPassword, signOutOthers?}` | Change the password; a wrong current password is 403 `wrong_password`, a policy failure 422; other sessions are signed out unless `signOutOthers` is false (always after a forced change); all access tokens are revoked |
 | `PUT /api/account/email` `{email, currentPassword}`, `POST /api/account/email/verify` `{code}`, `POST /api/account/email/resend` | Set or clear your own address under the email policy; confirm it with the mailed code; ask for a new code |
 | `POST /api/account/mfa/totp/setup`, `…/totp/confirm`, `DELETE /api/account/mfa/totp`, `POST /api/account/mfa/recovery-codes`, `POST /api/account/mfa/email` | Authenticator setup (the secret is shown once), its confirmation (the recovery codes are shown once), removal, a new set of recovery codes, and the emailed-code method; each re-asks the password. Contract `auth/mfa-setup.json` |
@@ -149,6 +149,7 @@ The rules are `docs/contracts/auth/` (start with its README); [API overview](API
 | `POST /api/account/export`, `GET /api/account/export/{ticket}` | Your own data as a zip: the POST answers `{url, expiresInSeconds: 60}`, the unauthenticated GET of that single-use URL streams the file. 6 an hour, 409 `export_running` |
 | `POST /api/account/restore` (the zip, `application/zip`, up to 128 MiB) → 202 `{token}`; `GET`, `DELETE /api/account/restore/{token}`; `POST /api/account/restore/{token}` `{confirm, password, code?, unresolved?: "drop"}` | Staged restore that replaces all of your data. GET answers `{status: validating \| ready \| invalid \| running \| done \| failed, report, error, result}`. The POST needs your username, password and, with an authenticator, a code (403 `wrong_password` / `code_invalid`); 409 `unresolved_entries` until missing words are acknowledged. 5 uploads an hour. Contract `docs/contracts/backup/` |
 | `POST /api/account/restore/safety-export`, `GET /api/account/restore/safety-export/{ticket}` | A fresh ticket for the data you had before your last restore |
+| `POST /api/account/avatar` (multipart `file`), `DELETE /api/account/avatar`, `GET /api/avatars/{user}/{hash}[?size=64]` | The profile picture: upload a JPEG, PNG or WebP (5 MB, 25 megapixels, 8192 px a side, not animated; 200 `{avatarUrl}`; 415 `unsupported_image` / `animated_image`, 413 `photo_too_large`, 422 `image_too_large`, 10 an hour); remove it (204); the stored 256 px (or 64 px) JPEG for any signed-in user, `private, no-cache`. `me` and the admin user objects carry `avatarUrl`. Contract `auth/avatar.json` |
 | `GET /api/account/deletion-preview`, `DELETE /api/account` `{password, confirm}` | What deleting your account removes; delete it (409 `last_admin` for the last active administrator) |
 | `GET /healthz` | Liveness check: `ok` |
 
@@ -161,7 +162,7 @@ Administrator sessions only, never an access token. Re-authentication rules: [Us
 | `GET`/`PATCH /api/admin/settings/auth` | Registration mode, email policy, and (once mail exists) required two-step sign-in and sign-in by emailed code; 409 `mail_unavailable` before |
 | `GET`/`PUT`/`DELETE /api/admin/settings/smtp`, `POST /api/admin/settings/smtp/test` `{to?, draft?}` | The mail settings (the password is never in the answer); save the whole object; remove them; send one test mail through the saved or draft settings |
 | `GET`/`POST /api/admin/invites`, `DELETE /api/admin/invites/{id}` | List (never a token), create (`{maxUses, expiresInDays, note}`; the token and `path` only in the 201), revoke |
-| `GET`/`POST /api/admin/users`, `GET`/`PATCH /api/admin/users/{id}`, `POST …/{id}/sessions/revoke`, `POST`/`DELETE …/{id}/reset-link`, `POST …/{id}/mfa/reset`, `GET …/{id}/deletion-preview`, `DELETE …/{id}` `{confirm}` | User management (409 `last_admin`, 409 `self_target`, 422 `confirm_mismatch`) |
+| `GET`/`POST /api/admin/users`, `GET`/`PATCH /api/admin/users/{id}`, `POST …/{id}/sessions/revoke`, `POST`/`DELETE …/{id}/reset-link`, `POST …/{id}/mfa/reset`, `GET …/{id}/deletion-preview`, `DELETE …/{id}` `{confirm}`, `DELETE …/{id}/avatar` | User management (409 `last_admin`, 409 `self_target`, 422 `confirm_mismatch`); removing a profile picture is audited (`avatar_removed`, 404 when there is none) |
 | `GET /api/admin/audit?before=&limit=` | Audit events, newest first, with a `next` id for the following page |
 | `POST /api/admin/backup` `{currentPassword, include?: ["db", "books", "packs", "audio"]}`, `GET /api/admin/backup/{ticket}` | A ticket, then the streamed `tar.gz` server backup. 507 `insufficient_storage`, 409 `backup_running`, one a minute |
 | `GET /api/admin/packs` | Every installed pack of every type with the licence and attribution it was installed under |
@@ -173,7 +174,7 @@ Administrator sessions only, never an access token. Re-authentication rules: [Us
 
 ## Request body limits
 
-A body over its limit is a 413 with the JSON body `{"error": "too_large", "message": ...}` (a backup upload: `backup_too_large`, a journal photo: `photo_too_large`).
+A body over its limit is a 413 with the JSON body `{"error": "too_large", "message": ...}` (a backup upload: `backup_too_large`, a journal photo or a profile picture: `photo_too_large`).
 
 | Route | Limit |
 |---|---|
@@ -192,5 +193,6 @@ A body over its limit is a 413 with the JSON body `{"error": "too_large", "messa
 | `POST /api/segment` | 256 KiB |
 | `POST /api/library/upload` | the epub up to 20 MiB (plus 1 MiB multipart overhead) |
 | `POST /api/journal/photos` | 10 MiB |
+| `POST /api/account/avatar` | the picture up to 5 MB (counted while the body is read; plus 16 KiB multipart overhead) |
 | `POST /api/admin/packs`, `POST /api/account/restore` | 128 MiB |
 | `POST /api/admin/dictionaries` | no total cap |
