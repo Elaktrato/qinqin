@@ -176,3 +176,26 @@ The issue predates #172, #176 and #198. Its places, checked in the code at 86fe1
 - Task 8: record 0008 and its README index row; the README's "records still to write" no longer names #192;
   the contracts README, the wiki Data-pack-format page and the contract changelog updated.
   `architectureDocs.test.ts`, `wikiDocs.test.ts`, `readmeDocs.test.ts` green.
+- Real-app check: two binaries built from scratch copies (`git archive` of 86fe13a4 and of this branch, with
+  the committed placeholder SPA), each seeded with `qinqin seed --packs plugins/data` into its own data
+  directory: the 15 pack lines of the seed log are identical in order and text (dictionaries first: cedict,
+  es-demo, jmdict, kanjidic2, unihan, then jiten-frequency, the five level lists, the two grammar packs,
+  kanjivg-components, ja-lemma), and so are the startup logs of `qinqin serve` (apart from the port). Served on
+  a random free 127.0.0.1 port above 20000; as an administrator through the API: `GET /api/admin/packs` lists
+  the same 15 packs (type, id, version, language, licence) on both. A components pack zip uploaded,
+  installed, uploaded and installed again unchanged, uninstalled (204, then 404 `not_found`, gone from the
+  list): on 86fe13a4 the re-install restamped the registry row (`updated_at` one second later), on this
+  branch it wrote nothing (same `updated_at`, same row ids of the registry, data and licence-text rows).
+  Servers stopped, scratch copies and data deleted.
+- Final gates: `gofmt -l` empty; `go mod tidy -diff` clean; full Go `./...` under the flock green apart from
+  the known `internal/ai` `TestHostnameResolvingToEmbeddedFormIsRefused` (no IPv6 here), 51 packages ok
+  (the `TestPackageDownload` failure of task 5 did not come back); web `check` 0 errors, `build` ok; full
+  vitest under Node 26.13.1: 588 files, 12,602 passed, 2 skipped; e2e 13 passed (one run); `node --test
+  scripts/*.test.mjs` 156 passed; `gen-api-docs --check` ok; `check-sources` ok.
+- Not verified: the HTTP stage and install routes with the fake type (see the Ruling; the steps are tested
+  in `packs`); audio and font packs through the real app (no audio pack is bundled and uploads refuse audio;
+  the font case is covered by the re-import test only); a re-seed of the full bundled packs into an already
+  seeded database counted for changed rows (the per-type test counts with tiny packs; the real app was
+  checked with one components pack); the `TestPackageDownload` failure seen once in task 5 was not
+  reproduced or explained.
+
