@@ -4,7 +4,7 @@
 
 Accepted
 
-Touched by: #195, #199. A merge from one of these issues that changes what this record names updates the record.
+Touched by: #195, #199, #185. A merge from one of these issues that changes what this record names updates the record.
 
 ## Context
 
@@ -23,8 +23,9 @@ main flows through those refactors and stays green.
   server, no dev server.
 - **Throw-away data, fast fixture:** one template data directory seeded once per run from the tiny packs in
   `apps/web/e2e/fixtures/packs` plus an admin; each worker copies it and serves it on its own free loopback port
-  with `QINQIN_AUTO_SEED=0` and an empty pack root (`apps/web/e2e/support/server.ts`). No network: no AI provider
-  (no `QINQIN_SECRET`), no SMTP.
+  with `QINQIN_AUTO_SEED=0` and an empty pack root (`apps/web/e2e/support/server.ts`). No network: the AI is the
+  server's deterministic fake provider (`QINQIN_AI_PROVIDER=fake`, with a random throw-away `QINQIN_SECRET` per test
+  process, #185), which never leaves the process; no SMTP.
 - **One user per test** (`apps/web/e2e/support/fixtures.ts`): tests share no study data and run in parallel.
   Study data is written through the push API in the contract shapes (`apps/web/e2e/support/study.ts`).
 - **Stable by construction:** role and text locators; every wait is a web-first assertion or a poll on a

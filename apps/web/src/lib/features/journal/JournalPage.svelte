@@ -16,6 +16,8 @@
 	import Button from '$lib/ui/Button.svelte';
 	import PhotoImport from './PhotoImport.svelte';
 	import JournalSettingsView from './JournalSettings.svelte';
+	import TalkPage from './conversation/TalkPage.svelte';
+	import ConversationView from './conversation/ConversationView.svelte';
 	import { getCapabilities } from './api';
 	import { journalHref, parseJournalRoute } from './route';
 	import type { Capabilities } from './types';
@@ -63,7 +65,7 @@
 	let openedIn: number | undefined;
 	$effect(() => {
 		const id = workspace?.id;
-		if (route.view === 'entry' || route.view === 'new' || route.view === 'photo') {
+		if (route.view === 'entry' || route.view === 'new' || route.view === 'photo' || route.view === 'conversation') {
 			if (openedIn !== undefined && id !== undefined && id !== openedIn) {
 				void goto(journalHref({ view: 'list' }), { replaceState: true });
 			}
@@ -117,6 +119,20 @@
 		<p>{t('journal.chooseWorkspace')}</p>
 	{:else if route.view === 'settings'}
 		<JournalSettingsView {workspace} />
+	{:else if route.view === 'talk'}
+		{#key workspace.id}
+			<TalkPage workspaceId={workspace.id} gate={ideasGate} studyLang={studyLang(workspace.language) ?? workspace.language} />
+		{/key}
+	{:else if route.view === 'conversation'}
+		{#key `${workspace.id}:${route.id}`}
+			<ConversationView
+				workspaceId={workspace.id}
+				id={route.id}
+				studyLang={studyLang(workspace.language) ?? workspace.language}
+				{aiAvailable}
+				{aiBanner}
+			/>
+		{/key}
 	{:else if route.view === 'photo'}
 		{#key workspace.id}
 			<PhotoImport workspaceId={workspace.id} language={workspace.language} {capabilities} />

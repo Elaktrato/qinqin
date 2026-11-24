@@ -1,7 +1,7 @@
 <script lang="ts">
 	// The journal's entries column (#103): New entry (the view's primary on
 	// the list), the entries as hairline rows with their date and title, a
-	// dot for a reviewed entry, Ideas for today, and the photo/settings
+	// dot for a reviewed entry, Ideas for today, the conversation partner, and the photo/settings
 	// actions at the bottom. The list is the cached per-workspace store.
 	import { t } from '$lib/i18n';
 	import { formatDay } from '$lib/i18n/format';
@@ -97,6 +97,7 @@
 	{/if}
 
 	<button type="button" class="ideas" onclick={onideas}>{t('journal.list.ideasToday')}</button>
+	<a class="talk" href={journalHref({ view: 'talk' })}>{t('journal.list.talk')}</a>
 
 	<div class="foot">
 		<Button variant="secondary" href={journalHref({ view: 'photo' })}>{t('journal.list.upload')}</Button>
@@ -180,6 +181,19 @@
 		text-decoration: underline;
 		text-underline-offset: 0.2em;
 		cursor: pointer;
+	}
+	.talk {
+		justify-self: start;
+		display: inline-flex;
+		align-items: center;
+		min-height: var(--hit);
+		padding: 0 var(--space-2);
+		color: var(--text);
+		text-underline-offset: 0.2em;
+	}
+	.talk:focus-visible {
+		outline: var(--focus-ring);
+		outline-offset: var(--focus-ring-offset);
 	}
 	.foot {
 		display: flex;

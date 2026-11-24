@@ -25,6 +25,8 @@ import (
 //   - Suggest: three items "Topic 1".."Topic 3", each with up to 2 of the
 //     given words and the invented word "捏造" (for validation to drop).
 //   - Transcribe: "fake transcription"; unreadable below 100 bytes.
+//   - Converse (converse.go): a fixed reply in the workspace language (zh and
+//     ja mention 学校) and Review's corrections of the new message.
 type Fake struct{}
 
 func (Fake) Validate(_ context.Context, c Credentials) error {

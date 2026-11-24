@@ -93,3 +93,28 @@ describe('pollForReview', () => {
 		expect(calls).toBe(1);
 	});
 });
+
+import { pollUntil } from './reviewPoll';
+
+describe('pollUntil', () => {
+	it('returns the first load the condition accepts; a failed load counts as not yet', async () => {
+		const answers: (number | Error)[] = [1, new Error('x'), 2, 3];
+		let calls = 0;
+		const got = await pollUntil(
+			async () => {
+				const a = answers[calls++];
+				if (a instanceof Error) throw a;
+				return a;
+			},
+			(n) => n >= 2,
+			{ sleep: noSleep }
+		);
+		expect([got, calls]).toEqual([2, 3]);
+	});
+
+	it('gives up after the timeout, counted in sleeps', async () => {
+		let sleeps = 0;
+		const got = await pollUntil(async () => 0, () => false, { intervalMs: 10, timeoutMs: 30, sleep: async () => void sleeps++ });
+		expect([got, sleeps]).toEqual([null, 3]);
+	});
+});

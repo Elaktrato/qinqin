@@ -4,7 +4,7 @@
 
 Accepted
 
-Touched by: #199. A merge from one of these issues that changes what this record names updates the record.
+Touched by: #199, #185. A merge from one of these issues that changes what this record names updates the record.
 
 ## Context
 
@@ -43,7 +43,7 @@ on 2026-11-23 to retire the code-plugin system (#199).
 | Part | Server | Web | Contract |
 | --- | --- | --- | --- |
 | Feature switches | `server/internal/features/` (table `feature_switches`, migration 047), `GET /api/features`, `PUT /api/features/{id}` | `apps/web/src/lib/features/` (`index.ts`: the four core features; `switches.svelte.ts`: the session's switches), Settings → Features | `docs/contracts/features/` |
-| Journal | `server/internal/journal/` (tables `journal_entries`, `journal_reviews`, `journal_suggestions`, `journal_settings`, migration 044), `/api/journal/*` | `apps/web/src/lib/features/journal/`, route `/journal` | `docs/contracts/journal/` |
+| Journal | `server/internal/journal/` (tables `journal_entries`, `journal_reviews`, `journal_suggestions`, `journal_settings`, migration 044; the conversation partner of #185: `journal_conversations`, `journal_messages`, migration 048, `conversation.go`), `/api/journal/*` | `apps/web/src/lib/features/journal/` (the partner in `conversation/`), route `/journal` (`/journal/talk`) | `docs/contracts/journal/` (`conversations.json`) |
 | Grammar progress | `server/internal/grammar/progress.go` (table `grammar_progress`, migration 045), `/api/grammar/progress` | `apps/web/src/lib/features/grammar/`, route `/grammar` | `docs/contracts/grammar/` |
 | Keyed rows (the core's small settings documents: notes, lookups, known marks, milestones, goals, vacations, layouts, appearance) | `server/internal/keyed/` (table `keyed_rows`, migration 046; `plugin_data` dropped), `/api/rows`, pull/push `rows` | `apps/web/src/lib/sync/keyed.ts` | `docs/contracts/keyed/` |
 | Activity sources | `server/internal/stats/rules.go` | `apps/web/src/lib/activity/sources.ts` | `docs/contracts/events/activity.json` |

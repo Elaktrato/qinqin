@@ -114,6 +114,7 @@ type Provider interface {
 	Review(ctx context.Context, c Credentials, r ReviewRequest) (ReviewReply, error)
 	Suggest(ctx context.Context, c Credentials, r SuggestRequest) (SuggestReply, error)
 	Transcribe(ctx context.Context, c Credentials, r TranscribeRequest) (TranscribeReply, error)
+	Converse(ctx context.Context, c Credentials, r ConverseRequest) (ConverseReply, error)
 }
 
 // CallCounter is implemented by adapters whose key check may take more than

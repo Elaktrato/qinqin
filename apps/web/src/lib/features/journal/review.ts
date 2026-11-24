@@ -29,7 +29,8 @@ export function annotationKind(value: unknown): AnnotationKind {
 	return isRecord(value) && value.kind === 'suggestion' ? 'suggestion' : 'mistake';
 }
 
-function parseAnnotation(value: unknown): Annotation | null {
+/** parseAnnotation: one stored annotation; null without a string quote and id (review-docs.json). */
+export function parseAnnotation(value: unknown): Annotation | null {
 	if (!isRecord(value) || typeof value.quote !== 'string' || typeof value.id !== 'string' || value.id === '') return null;
 	return {
 		id: str(value.id),

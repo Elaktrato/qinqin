@@ -52,11 +52,12 @@ row). A typed-family row the codec cannot read, or one without a workspace, is d
 (`library_deletions`, sync bookkeeping that is never exported); every client pulls in full after a
 restore.
 
-### Journal documents (#199)
+### Journal documents (#199, #185)
 
-The journal's entries, reviews, topic ideas and settings are typed storage (`journal/README.md`). The archive
-carries each as a workspace row of the `rows` family in its keyed form: `journal:entry:<id>` (the entry
-as the routes answer it), `journal:review:<entryId>`, `journal:suggestions`, `journal:settings`, version 1,
+The journal's entries, reviews, topic ideas, settings and conversations are typed storage (`journal/README.md`).
+The archive carries each as a workspace row of the `rows` family in its keyed form: `journal:entry:<id>` (the entry
+as the routes answer it), `journal:review:<entryId>`, `journal:suggestions`, `journal:settings`,
+`journal:conversation:<id>` (the conversation with its messages, as `GET` answers it), version 1,
 `updatedAt` the document's stamp, counted under `rows`; per workspace the entries come before their
 reviews. A restore remaps the workspace and writes each into its table through the store's own validation;
 one that does not decode, that the store refuses, or a review whose entry the archive did not restore first is

@@ -1,0 +1,386 @@
+{
+  "_doc": "The conversation partner (#185, journal/README.md#conversations). A string written as {\"repeat\": s, \"times\": n} is s repeated n times. Decoded by server/internal/journal/conversation_contract_test.go and apps/web/src/lib/features/journal/conversation/conversations.contract.test.ts.",
+  "levels": [
+    "beginner",
+    "elementary",
+    "intermediate",
+    "advanced"
+  ],
+  "limits": {
+    "topicRunes": 200,
+    "messageRunes": 1000,
+    "replyRunes": 800,
+    "messages": 50,
+    "conversations": 20,
+    "contextMessages": 12,
+    "wordSample": 40
+  },
+  "start": {
+    "accept": [
+      {
+        "topic": "",
+        "level": "beginner"
+      },
+      {
+        "topic": "我的周末",
+        "level": "advanced"
+      },
+      {
+        "topic": {
+          "repeat": "字",
+          "times": 200
+        },
+        "level": "intermediate"
+      }
+    ],
+    "refuse": [
+      {
+        "topic": "",
+        "level": "expert",
+        "why": "unknown level"
+      },
+      {
+        "topic": "",
+        "level": "",
+        "why": "no level"
+      },
+      {
+        "topic": {
+          "repeat": "字",
+          "times": 201
+        },
+        "level": "beginner",
+        "why": "topic too long"
+      },
+      {
+        "topic": "a\u000bb",
+        "level": "beginner",
+        "why": "control character"
+      }
+    ]
+  },
+  "turn": [
+    {
+      "text": "",
+      "hasMessages": false,
+      "code": "",
+      "why": "the partner opens"
+    },
+    {
+      "text": "   ",
+      "hasMessages": false,
+      "code": "",
+      "why": "white space is no message: the partner opens"
+    },
+    {
+      "text": "",
+      "hasMessages": true,
+      "code": "empty",
+      "why": "the learner must write once the partner has spoken"
+    },
+    {
+      "text": "我很好。",
+      "hasMessages": true,
+      "code": ""
+    },
+    {
+      "text": {
+        "repeat": "字",
+        "times": 1000
+      },
+      "hasMessages": true,
+      "code": ""
+    },
+    {
+      "text": {
+        "repeat": "字",
+        "times": 1001
+      },
+      "hasMessages": true,
+      "code": "too_long"
+    },
+    {
+      "text": "a\u0007b",
+      "hasMessages": true,
+      "code": "bad_request",
+      "why": "control character"
+    }
+  ],
+  "conversation": {
+    "id": "c0123456789abcdef",
+    "topic": "我的周末",
+    "level": "elementary",
+    "createdAt": "2026-11-24T09:00:00Z",
+    "updatedAt": "2026-11-24T09:01:00Z",
+    "messages": [
+      {
+        "seq": 1,
+        "role": "partner",
+        "text": "你好！你周末做什么了？",
+        "annotations": [],
+        "model": "claude-opus-5-5",
+        "provider": "anthropic",
+        "turnId": "t-open",
+        "createdAt": "2026-11-24T09:00:05Z"
+      },
+      {
+        "seq": 2,
+        "role": "learner",
+        "text": "我是很好。我去了公园。",
+        "annotations": [
+          {
+            "id": "m2a1",
+            "quote": "是很",
+            "prefix": "我",
+            "suffix": "好。我去了公园",
+            "correction": "很",
+            "explanation": "No 是 before an adjective.",
+            "category": "grammar",
+            "kind": "mistake"
+          }
+        ],
+        "turnId": "t-2",
+        "createdAt": "2026-11-24T09:01:00Z"
+      },
+      {
+        "seq": 3,
+        "role": "partner",
+        "text": "公园里人多吗？",
+        "annotations": [],
+        "model": "claude-opus-5-5",
+        "provider": "anthropic",
+        "turnId": "t-2",
+        "createdAt": "2026-11-24T09:01:00Z"
+      }
+    ]
+  },
+  "reads": [
+    {
+      "why": "a stored conversation reads as written",
+      "doc": {
+        "id": "c1",
+        "topic": "t",
+        "level": "advanced",
+        "createdAt": "a",
+        "updatedAt": "b",
+        "messages": [
+          {
+            "seq": 1,
+            "role": "partner",
+            "text": "x",
+            "annotations": [],
+            "model": "m",
+            "provider": "p",
+            "turnId": "t1",
+            "createdAt": "c"
+          }
+        ]
+      },
+      "expect": {
+        "id": "c1",
+        "topic": "t",
+        "level": "advanced",
+        "createdAt": "a",
+        "updatedAt": "b",
+        "messages": [
+          {
+            "seq": 1,
+            "role": "partner",
+            "text": "x",
+            "annotations": [],
+            "model": "m",
+            "provider": "p",
+            "turnId": "t1",
+            "createdAt": "c"
+          }
+        ]
+      }
+    },
+    {
+      "why": "an unknown level reads as beginner; a missing messages list as none; missing strings as empty; a message without turnId reads with an empty one",
+      "doc": {
+        "id": "c2",
+        "level": "expert"
+      },
+      "expect": {
+        "id": "c2",
+        "topic": "",
+        "level": "beginner",
+        "createdAt": "",
+        "updatedAt": "",
+        "messages": []
+      }
+    },
+    {
+      "why": "a message with an unknown role or without text is dropped; annotations that are not a list read as none; an annotation without a string quote is dropped; an unknown kind is a mistake",
+      "doc": {
+        "id": "c3",
+        "level": "beginner",
+        "messages": [
+          {
+            "seq": 1,
+            "role": "narrator",
+            "text": "x"
+          },
+          {
+            "seq": 2,
+            "role": "learner"
+          },
+          {
+            "seq": 3,
+            "role": "learner",
+            "text": "y",
+            "annotations": "bogus"
+          },
+          {
+            "seq": 4,
+            "role": "learner",
+            "text": "z",
+            "annotations": [
+              {
+                "id": "m4a1",
+                "quote": 5
+              },
+              {
+                "id": "m4a2",
+                "quote": "z",
+                "prefix": "",
+                "suffix": "",
+                "correction": "zz",
+                "explanation": "e",
+                "category": "spelling",
+                "kind": "odd"
+              }
+            ]
+          }
+        ]
+      },
+      "expect": {
+        "id": "c3",
+        "topic": "",
+        "level": "beginner",
+        "createdAt": "",
+        "updatedAt": "",
+        "messages": [
+          {
+            "seq": 3,
+            "role": "learner",
+            "text": "y",
+            "annotations": [],
+            "turnId": "",
+            "createdAt": ""
+          },
+          {
+            "seq": 4,
+            "role": "learner",
+            "text": "z",
+            "annotations": [
+              {
+                "id": "m4a2",
+                "quote": "z",
+                "prefix": "",
+                "suffix": "",
+                "correction": "zz",
+                "explanation": "e",
+                "category": "spelling",
+                "kind": "mistake"
+              }
+            ],
+            "turnId": "",
+            "createdAt": ""
+          }
+        ]
+      }
+    },
+    {
+      "why": "not a conversation",
+      "doc": {
+        "topic": "no id"
+      },
+      "expect": null
+    }
+  ],
+  "transcripts": [
+    {
+      "why": "one paragraph per message, the partner's lines quoted",
+      "conversation": {
+        "id": "c0123456789abcdef",
+        "topic": "我的周末",
+        "level": "elementary",
+        "createdAt": "2026-11-24T09:00:00Z",
+        "updatedAt": "2026-11-24T09:01:00Z",
+        "messages": [
+          {
+            "seq": 1,
+            "role": "partner",
+            "text": "你好！你周末做什么了？",
+            "annotations": [],
+            "model": "claude-opus-5-5",
+            "provider": "anthropic",
+            "turnId": "t-open",
+            "createdAt": "2026-11-24T09:00:05Z"
+          },
+          {
+            "seq": 2,
+            "role": "learner",
+            "text": "我是很好。我去了公园。",
+            "annotations": [
+              {
+                "id": "m2a1",
+                "quote": "是很",
+                "prefix": "我",
+                "suffix": "好。我去了公园",
+                "correction": "很",
+                "explanation": "No 是 before an adjective.",
+                "category": "grammar",
+                "kind": "mistake"
+              }
+            ],
+            "turnId": "t-2",
+            "createdAt": "2026-11-24T09:01:00Z"
+          },
+          {
+            "seq": 3,
+            "role": "partner",
+            "text": "公园里人多吗？",
+            "annotations": [],
+            "model": "claude-opus-5-5",
+            "provider": "anthropic",
+            "turnId": "t-2",
+            "createdAt": "2026-11-24T09:01:00Z"
+          }
+        ]
+      },
+      "text": "> 你好！你周末做什么了？\n\n我是很好。我去了公园。\n\n> 公园里人多吗？"
+    },
+    {
+      "why": "every line of a partner message is quoted (an empty one with \">\"); a learner line starting with \">\" is escaped with a backslash",
+      "conversation": {
+        "id": "c2",
+        "topic": "",
+        "level": "beginner",
+        "createdAt": "",
+        "updatedAt": "",
+        "messages": [
+          {
+            "seq": 1,
+            "role": "partner",
+            "text": "第一段。\n\n第二段？",
+            "annotations": [],
+            "turnId": "a",
+            "createdAt": ""
+          },
+          {
+            "seq": 2,
+            "role": "learner",
+            "text": "> 我不是AI\n第二行\n>也不是",
+            "annotations": [],
+            "turnId": "b",
+            "createdAt": ""
+          }
+        ]
+      },
+      "text": "> 第一段。\n>\n> 第二段？\n\n\\> 我不是AI\n第二行\n\\>也不是"
+    }
+  ]
+}
