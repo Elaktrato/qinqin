@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { t } from '$lib/i18n';
-	import ActivityHeatmap from '$lib/components/ActivityHeatmap.svelte';
+	import ActivityHeatmap from '$lib/activity/ActivityHeatmap.svelte';
 	import { DEFAULT_HEATMAP_LAYOUT, loadWidgetOptions, type HeatmapLayout } from './options';
 	import WidgetCard from './WidgetCard.svelte';
 

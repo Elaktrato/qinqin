@@ -26,7 +26,7 @@ vi.mock('$lib/study/commands/decks', async (importOriginal) => ({
 	createDeck: vi.fn()
 }));
 const cardManager = vi.hoisted(() => ({ props: [] as Record<string, unknown>[] }));
-vi.mock('$lib/components/CardManager.svelte', () => ({
+vi.mock('$lib/features/flashcards/decks/CardManager.svelte', () => ({
 	default: (_anchor: unknown, props: Record<string, unknown>) => {
 		cardManager.props.push(props);
 		return {};

@@ -5,7 +5,7 @@
 	import type { Sentence, SentenceAi } from '$lib/api/types';
 	import { aiMark } from '$lib/api/examples';
 	import { markTerm } from '$lib/entry/markTerm';
-	import AiTag from './AiTag.svelte';
+	import AiTag from '$lib/components/AiTag.svelte';
 
 	let {
 		sentences,

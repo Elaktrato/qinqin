@@ -1,8 +1,8 @@
 <script lang="ts">
 	import { hasCharacterMap } from '$lib/languages/profiles';
-	import StageBar from '$lib/components/map/StageBar.svelte';
+	import StageBar from '$lib/stats/map/StageBar.svelte';
 	import { t } from '$lib/i18n';
-	import Msg from '$lib/i18n/Msg.svelte';
+	import Msg from '$lib/ui/Msg.svelte';
 	import { onContextStale } from '$lib/study/currentContext';
 	import { characterSummary, loadCharacterMapData, withLegacyWritten } from '$lib/stats/characterMap';
 	import { errorText } from '$lib/api/apiErrors';

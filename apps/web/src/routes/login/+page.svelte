@@ -2,7 +2,7 @@
 	import { onDestroy, onMount, tick } from 'svelte';
 	import { pageTitle } from '$lib/routing/pageTitle';
 	import { t } from '$lib/i18n';
-	import Msg from '$lib/i18n/Msg.svelte';
+	import Msg from '$lib/ui/Msg.svelte';
 	import { authErrorMessage } from '$lib/api/authErrors';
 	import { apiErrorBody } from '$lib/api/client';
 	import { getAuthOptions, type AuthOptions } from '$lib/api/account';

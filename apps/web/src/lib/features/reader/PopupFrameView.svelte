@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { t } from '$lib/i18n';
-	import Msg from '$lib/i18n/Msg.svelte';
+	import Msg from '$lib/ui/Msg.svelte';
 	import { hiddenFor } from '$lib/workspace/dictionaryVisibility';
 	import EntryCard from './EntryCard.svelte';
 	import { IconButton } from '$lib/ui';

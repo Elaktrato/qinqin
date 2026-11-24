@@ -1,5 +1,5 @@
 <script lang="ts">
-	import ReadingTable from '$lib/components/ReadingTable.svelte';
+	import ReadingTable from '$lib/features/flashcards/cards/ReadingTable.svelte';
 	import AiTag from '$lib/components/AiTag.svelte';
 	import { studyLang } from '$lib/i18n/lang';
 	import { t } from '$lib/i18n';

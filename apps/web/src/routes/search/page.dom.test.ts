@@ -16,8 +16,8 @@ vi.mock('$lib/api/entries', () => ({
 	getSharedEntry: vi.fn()
 }));
 vi.mock('$lib/lookups/sink', () => ({ recordLookup: vi.fn() }));
-vi.mock('$lib/components/AddToStudy.svelte', () => ({ default: () => ({}) }));
-vi.mock('$lib/components/StrokePlayer.svelte', () => ({ default: () => ({}) }));
+vi.mock('$lib/entry/AddToStudy.svelte', () => ({ default: () => ({}) }));
+vi.mock('$lib/entry/StrokePlayer.svelte', () => ({ default: () => ({}) }));
 vi.mock('$lib/notes/store', async (orig) => ({
 	...(await orig<typeof import('$lib/notes/store')>()),
 	loadNote: vi.fn(async () => null)

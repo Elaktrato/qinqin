@@ -6,7 +6,7 @@
 	import { formatDay } from '$lib/i18n/format';
 	import Button from '$lib/ui/Button.svelte';
 	import Field from '$lib/ui/Field.svelte';
-	import Msg from '$lib/i18n/Msg.svelte';
+	import Msg from '$lib/ui/Msg.svelte';
 	import EmailBanner from '$lib/account/EmailBanner.svelte';
 	import HomeMilestones from '$lib/milestones/HomeMilestones.svelte';
 	import { homeEmptyReason, loadLayout, placeWidgets, resolveLayout } from '$lib/widgets/layout';

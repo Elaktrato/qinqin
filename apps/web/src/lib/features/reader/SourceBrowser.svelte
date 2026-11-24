@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { t } from '$lib/i18n';
-	import Msg from '$lib/i18n/Msg.svelte';
+	import Msg from '$lib/ui/Msg.svelte';
 	import { onMount, tick } from 'svelte';
 	import { ApiError } from '$lib/api/client';
 	import {
@@ -12,7 +12,7 @@
 		searchSource
 	} from '$lib/api/library';
 	import type { Book, SourceInfo, SourceResult } from '$lib/api/types';
-	import WorkspaceLabel from '$lib/components/WorkspaceLabel.svelte';
+	import WorkspaceLabel from '$lib/workspace/WorkspaceLabel.svelte';
 	import { languageLabel } from '$lib/languages';
 	import { browseSeed, shuffleSeed } from './browse';
 	import { apiErrorMessage } from './errors';

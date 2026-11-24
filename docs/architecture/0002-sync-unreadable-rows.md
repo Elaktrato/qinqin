@@ -85,7 +85,7 @@ Not allowed:
   `TestUnreadableRowsFixture` (`server/internal/study/rows/unreadable_contract_test.go`: typed rows decode
   exactly when readable).
 - `apps/web/src/lib/sync/pullPage.contract.test.ts` (the pager and `readableRow`),
-  `apps/web/src/lib/study/unreadable.test.ts`, `apps/web/src/lib/study/UnreadableRowsNotice.dom.test.ts` and
+  `apps/web/src/lib/study/unreadable.test.ts`, `apps/web/src/lib/features/flashcards/UnreadableRowsNotice.dom.test.ts` and
   `apps/web/src/routes/study/page.dom.test.ts` (the notice on the study page).
 - Server: `TestPullSkipsUnreadableStoredRowsAndAdvances` and `TestPushToAnUnreadableStoredRowIsRefusedWhole`
   (`server/internal/sync/unreadable_stored_test.go`), `TestUnreadableStoredRowOverHTTP`

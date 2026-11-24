@@ -5,7 +5,7 @@
 	// fallback title; the feature's own views set theirs.
 	import { onMount } from 'svelte';
 	import { t } from '$lib/i18n';
-	import Msg from '$lib/i18n/Msg.svelte';
+	import Msg from '$lib/ui/Msg.svelte';
 	import { featureEnabled, switchedOffTitle, type CoreFeature } from './index';
 	import { useSession } from '$lib/context/context';
 	const session = useSession();

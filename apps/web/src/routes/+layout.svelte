@@ -5,7 +5,7 @@
 	import { page } from '$app/state';
 	import { APP_NAME } from '$lib/frame/app';
 	import { t } from '$lib/i18n';
-	import WorkspaceCreateForm from '$lib/components/WorkspaceCreateForm.svelte';
+	import WorkspaceCreateForm from '$lib/workspace/WorkspaceCreateForm.svelte';
 	import AccountMenu from '$lib/frame/AccountMenu.svelte';
 	import { currentSection, frameSections, homeSection } from '$lib/frame/sections';
 	import { barHiddenOn } from '$lib/frame/barItems';
@@ -25,7 +25,7 @@
 	import OfflineBanner from '$lib/pwa/OfflineBanner.svelte';
 	import { persistOnceNow } from '$lib/pwa/install';
 	import { prepareActiveWorkspace } from '$lib/pwa/prepareRuntime';
-	import Logo from '$lib/components/Logo.svelte';
+	import Logo from '$lib/frame/Logo.svelte';
 	import LogoutDialog from '$lib/account/LogoutDialog.svelte';
 	import { applyHanziVars, hanziVars } from '$lib/fonts/hanziVars';
 	import '../app.css';

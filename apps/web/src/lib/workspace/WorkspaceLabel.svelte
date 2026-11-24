@@ -1,7 +1,7 @@
 <script lang="ts">
 	import type { Workspace } from '$lib/api/types';
 	import { workspaceDisplay } from '$lib/languages';
-	import Flag from './Flag.svelte';
+	import Flag from '$lib/components/Flag.svelte';
 
 	// A workspace as flag + optional name. The flag carries the language
 	// name for assistive tech; the visible name appears only when the

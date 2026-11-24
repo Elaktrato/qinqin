@@ -3,7 +3,7 @@
 	// name (`{#snippet link(text)}<a href="/sources">{text}</a>{/snippet}`); a tag without a snippet renders as
 	// its text. Plain messages use `t()` instead.
 	import type { Snippet } from 'svelte';
-	import { tParts, type MessageArgs, type MessageKey } from './index';
+	import { tParts, type MessageArgs, type MessageKey } from '$lib/i18n';
 
 	interface Props {
 		key: MessageKey;

@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { t } from '$lib/i18n';
-	import Msg from '$lib/i18n/Msg.svelte';
+	import Msg from '$lib/ui/Msg.svelte';
 	import { tick } from 'svelte';
 	import { snippetAt } from './bookmarks';
 	import type { HighlightList } from './highlightList.svelte';

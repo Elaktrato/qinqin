@@ -1,10 +1,10 @@
 <script lang="ts">
-	import ReadingText from './ReadingText.svelte';
+	import ReadingText from '$lib/components/ReadingText.svelte';
 	import { studyLang } from '$lib/i18n/lang';
 	import type { Reading } from '$lib/api/types';
 	import type { AudioClip } from '$lib/api/audio';
 	import { t } from '$lib/i18n';
-	import PlayButton from './PlayButton.svelte';
+	import PlayButton from '$lib/components/PlayButton.svelte';
 
 	let {
 		readings,

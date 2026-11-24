@@ -11,7 +11,7 @@ import { ratio } from '$lib/theme/contrast';
 import { BUILTIN_THEMES } from '$lib/theme/testing/builtinThemes';
 import grid from './CharGrid.svelte?raw';
 import bar from './StageBar.svelte?raw';
-import summary from '../../widgets/CharacterMapSummary.svelte?raw';
+import summary from '$lib/widgets/CharacterMapSummary.svelte?raw';
 import tip from './CellTip.svelte?raw';
 import page from '../../../routes/stats/characters/+page.svelte?raw';
 

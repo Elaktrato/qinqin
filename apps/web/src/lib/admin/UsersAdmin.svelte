@@ -3,7 +3,7 @@
 	import { apiErrorBody } from '$lib/api/client';
 	import { errorText } from '$lib/api/apiErrors';
 	import { t } from '$lib/i18n';
-	import Msg from '$lib/i18n/Msg.svelte';
+	import Msg from '$lib/ui/Msg.svelte';
 	import { formatDateTime } from '$lib/i18n/format';
 	import { getAuthOptions, type AuthOptions } from '$lib/api/account';
 	import {

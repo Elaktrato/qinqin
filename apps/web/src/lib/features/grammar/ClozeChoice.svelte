@@ -1,7 +1,7 @@
 <script lang="ts">
 	import type { ClozePart } from '$lib/study/cloze';
 	import { t } from '$lib/i18n';
-	import { choiceForKeyEvent } from './clozeKeys';
+	import { choiceForKeyEvent } from '$lib/components/clozeKeys';
 
 	interface Props {
 		/** A plain string, or parts where `{ gap: true }` is an extra gap. */

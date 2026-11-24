@@ -5,14 +5,14 @@
 	import { studyLang } from '$lib/i18n/lang';
 	import { tick, untrack } from 'svelte';
 	import { t } from '$lib/i18n';
-	import Msg from '$lib/i18n/Msg.svelte';
+	import Msg from '$lib/ui/Msg.svelte';
 	import { fetchCharacters, type CharacterList } from '$lib/api/characters';
 	import { fetchSchemeCharacters, getSchemes } from '$lib/api/schemes';
 	import { levelAttributionLine } from '$lib/study/levelAttribution';
 	import type { Scheme } from '$lib/api/types';
-	import CellTip from '$lib/components/map/CellTip.svelte';
-	import CharGrid from '$lib/components/map/CharGrid.svelte';
-	import StageBar from '$lib/components/map/StageBar.svelte';
+	import CellTip from '$lib/stats/map/CellTip.svelte';
+	import CharGrid from '$lib/stats/map/CharGrid.svelte';
+	import StageBar from '$lib/stats/map/StageBar.svelte';
 	import {
 		cellStates,
 		filterCells,

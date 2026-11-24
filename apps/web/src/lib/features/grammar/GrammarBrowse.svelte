@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { t } from '$lib/i18n';
-	import Msg from '$lib/i18n/Msg.svelte';
+	import Msg from '$lib/ui/Msg.svelte';
 	import { getSchemes } from '$lib/api/schemes';
 	import { languageLabel } from '$lib/languages';
 	import { listGrammar } from './api';

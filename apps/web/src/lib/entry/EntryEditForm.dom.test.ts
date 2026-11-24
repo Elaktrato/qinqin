@@ -11,7 +11,7 @@ vi.mock('$lib/api/edit', async (importOriginal) => ({
 
 import { updateEntry } from '$lib/api/edit';
 import { getSharedEntry } from '$lib/api/entries';
-import EntryEditor from './EntryEditor.svelte';
+import EntryEditForm from './EntryEditForm.svelte';
 
 let ctx: TestContext = testContext();
 beforeEach(() => {
@@ -38,11 +38,11 @@ afterEach(() => {
 	vi.clearAllMocks();
 });
 
-describe('EntryEditor baseline and overlay', () => {
+describe('EntryEditForm baseline and overlay', () => {
 	it('keeps Save disabled until the shared baseline has loaded', async () => {
 		let release!: (e: EntryDetail) => void;
 		vi.mocked(getSharedEntry).mockReturnValue(new Promise((res) => (release = res)));
-		render(EntryEditor, { props: { entry: entry(), onSaved: vi.fn(), onCancel: vi.fn() }, context: ctx.context });
+		render(EntryEditForm, { props: { entry: entry(), onSaved: vi.fn(), onCancel: vi.fn() }, context: ctx.context });
 		expect(screen.getByText('Preparing editor…')).toBeTruthy();
 		const save = screen.getByRole('button', { name: 'Save' }) as HTMLButtonElement;
 		expect(save.disabled).toBe(true);
@@ -55,7 +55,7 @@ describe('EntryEditor baseline and overlay', () => {
 		vi.mocked(getSharedEntry).mockResolvedValue(entry({ written: '發' }));
 		vi.mocked(updateEntry).mockResolvedValue(entry({ written: '发', readings: [{ type: 'pinyin', value: 'fa1', plain: 'fa', ord: 0 }] }));
 		const onSaved = vi.fn();
-		render(EntryEditor, { props: { entry: entry(), onSaved, onCancel: vi.fn() }, context: ctx.context });
+		render(EntryEditForm, { props: { entry: entry(), onSaved, onCancel: vi.fn() }, context: ctx.context });
 		const reading = screen.getByLabelText('Reading 1 value');
 		await fireEvent.input(reading, { target: { value: 'fa1' } });
 		await waitFor(() => expect((screen.getByRole('button', { name: 'Save' }) as HTMLButtonElement).disabled).toBe(false));
@@ -71,7 +71,7 @@ describe('EntryEditor baseline and overlay', () => {
 	async function ready(shared: EntryDetail, mine: EntryDetail) {
 		vi.mocked(getSharedEntry).mockResolvedValue(shared);
 		const onSaved = vi.fn();
-		render(EntryEditor, { props: { entry: mine, onSaved, onCancel: vi.fn() }, context: ctx.context });
+		render(EntryEditForm, { props: { entry: mine, onSaved, onCancel: vi.fn() }, context: ctx.context });
 		await waitFor(() => expect(screen.queryByText('Preparing editor…')).toBeNull());
 		return onSaved;
 	}
@@ -80,7 +80,7 @@ describe('EntryEditor baseline and overlay', () => {
 	it('offers Try again when the baseline cannot be fetched, and recovers', async () => {
 		vi.mocked(getSharedEntry).mockRejectedValueOnce(new Error('boom'));
 		vi.mocked(getSharedEntry).mockResolvedValueOnce(entry());
-		render(EntryEditor, { props: { entry: entry(), onSaved: vi.fn(), onCancel: vi.fn() }, context: ctx.context });
+		render(EntryEditForm, { props: { entry: entry(), onSaved: vi.fn(), onCancel: vi.fn() }, context: ctx.context });
 		await screen.findByText('Could not prepare the editor.');
 		await fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
 		await waitFor(() => expect(screen.queryByText('Could not prepare the editor.')).toBeNull());

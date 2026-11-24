@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { Component } from 'svelte';
 import type { FeatureSwitch } from '$lib/features/switches.svelte';
-import ActivityHeatmap from '$lib/components/ActivityHeatmap.svelte';
+import ActivityHeatmap from '$lib/activity/ActivityHeatmap.svelte';
 import ActivityHome from './ActivityHome.svelte';
 import { DEFAULT_LAYOUT } from './layout';
 import { allWidgets } from './registry';

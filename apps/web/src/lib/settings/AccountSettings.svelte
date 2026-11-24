@@ -3,7 +3,7 @@
 	import { apiErrorBody } from '$lib/api/client';
 	import { errorText } from '$lib/api/apiErrors';
 	import { t } from '$lib/i18n';
-	import Msg from '$lib/i18n/Msg.svelte';
+	import Msg from '$lib/ui/Msg.svelte';
 	import { putInterfaceLanguage } from '$lib/api/interfaceLanguage';
 	import { SUPPORTED_LANGUAGES } from '$lib/i18n/negotiate';
 	import { resolveInterfaceLanguage, switchInterfaceLanguage } from '$lib/i18n/interfaceLanguage';

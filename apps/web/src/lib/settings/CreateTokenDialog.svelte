@@ -8,7 +8,7 @@
 	import Select from '$lib/ui/Select.svelte';
 	import { errorText } from '$lib/api/apiErrors';
 	import { t } from '$lib/i18n';
-	import Msg from '$lib/i18n/Msg.svelte';
+	import Msg from '$lib/ui/Msg.svelte';
 	import { createToken } from '$lib/api/tokens';
 	import { DEFAULT_EXPIRY, EXPIRY_CHOICES, exampleCommand, scopeText, validateTokenForm, type TokenDto } from '$lib/account/tokensView';
 

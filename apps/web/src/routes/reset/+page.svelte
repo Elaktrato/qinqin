@@ -3,7 +3,7 @@
 	import { goto } from '$app/navigation';
 	import { pageTitle } from '$lib/routing/pageTitle';
 	import { t } from '$lib/i18n';
-	import Msg from '$lib/i18n/Msg.svelte';
+	import Msg from '$lib/ui/Msg.svelte';
 	import { authErrorMessage } from '$lib/api/authErrors';
 	import { checkReset, getAuthOptions, useReset } from '$lib/api/account';
 	import { resetRequest } from '$lib/api/mfa';

@@ -2,7 +2,7 @@ import { render } from '@testing-library/svelte';
 import { createRawSnippet } from 'svelte';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import Msg from './Msg.svelte';
-import { installCatalogue, resetCatalogue, type MessageKey } from './index';
+import { installCatalogue, resetCatalogue, type MessageKey } from '$lib/i18n';
 
 afterEach(() => {
 	resetCatalogue();

@@ -4,7 +4,7 @@
 	import { goto } from '$app/navigation';
 	import type { Component } from 'svelte';
 	import { tick, untrack } from 'svelte';
-	import DeckCardTypes from '$lib/study/DeckCardTypes.svelte';
+	import DeckCardTypes from '$lib/features/flashcards/decks/DeckCardTypes.svelte';
 	import { deleteDeck, renameDeck, saveDeckNewOrder } from '$lib/study/commands/decks';
 	import { GENERAL_DECK_ID } from '$lib/study/types';
 	import { getFrequencyPacks } from '$lib/api/frequency';

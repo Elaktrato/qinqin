@@ -39,7 +39,7 @@ Under `apps/web/src/lib/`:
 - A file's folder says who owns it; a component used by one feature lives with that feature.
 - A widget that gains a second feature moves to `lib/components`; one that loses it moves back.
 - The moves touch many imports, so #195 runs when no other web branch is open.
-- `lib/study/UnreadableRowsNotice.svelte` (from #167, record [0002](0002-sync-unreadable-rows.md)) is also a UI
+- `lib/features/flashcards/UnreadableRowsNotice.svelte` (from #167, record [0002](0002-sync-unreadable-rows.md)) is also a UI
   component in a logic folder; #195 moves it with the others.
 - #196 (record [0009](0009-web-state-model.md)) added `lib/context/` (the app and session contexts, their
   dependencies and the session's caches) and turned the loose `auth.ts`, `workspaces.ts` and `notices.ts` into

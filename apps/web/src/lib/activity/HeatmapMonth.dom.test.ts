@@ -20,7 +20,7 @@ vi.mock('$lib/activity/viewPrefs', async (importOriginal) => ({
 }));
 
 import { fetchActivity, type ActivityResponse } from '$lib/api/stats';
-import ActivityHeatmap from '$lib/components/ActivityHeatmap.svelte';
+import ActivityHeatmap from '$lib/activity/ActivityHeatmap.svelte';
 import { loadStudyHistory, getStudyData } from '$lib/study/data';
 import { studyDay } from '$lib/time/studyDay';
 

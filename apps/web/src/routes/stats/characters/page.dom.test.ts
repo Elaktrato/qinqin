@@ -21,9 +21,9 @@ import { fetchSchemeCharacters, getSchemes } from '$lib/api/schemes';
 import { masteryForChars, type CharMastery } from '$lib/study/mastery';
 import { loadStudyData } from '$lib/study/data';
 import CharactersPage from './+page.svelte';
-import charGrid from '$lib/components/map/CharGrid.svelte?raw';
-import cellTip from '$lib/components/map/CellTip.svelte?raw';
-import stageBar from '$lib/components/map/StageBar.svelte?raw';
+import charGrid from '$lib/stats/map/CharGrid.svelte?raw';
+import cellTip from '$lib/stats/map/CellTip.svelte?raw';
+import stageBar from '$lib/stats/map/StageBar.svelte?raw';
 import pageSource from './+page.svelte?raw';
 
 let ctx: TestContext = testContext();

@@ -4,7 +4,7 @@ import { describe, expect, it, beforeEach } from 'vitest';
 import type { AudioClip } from '../api/audio';
 import type { Reading } from '../api/types';
 import PlayButton from './PlayButton.svelte';
-import Readings from './Readings.svelte';
+import Readings from '$lib/entry/Readings.svelte';
 
 let ctx: TestContext = testContext();
 beforeEach(() => {

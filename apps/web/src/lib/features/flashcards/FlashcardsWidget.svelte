@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { errorText } from '$lib/api/apiErrors';
 	import { t } from '$lib/i18n';
-	import Msg from '$lib/i18n/Msg.svelte';
+	import Msg from '$lib/ui/Msg.svelte';
 	import GoalRing from '$lib/goals/GoalRing.svelte';
 	import { streakText } from '$lib/goals/goalText';
 	import { loadGoalStatus, type GoalView } from '$lib/goals/loadGoal';

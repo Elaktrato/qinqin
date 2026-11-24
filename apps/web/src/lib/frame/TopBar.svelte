@@ -6,7 +6,7 @@
 	// flag and the avatar. No pills, no borders (§5).
 	import { APP_NAME } from '$lib/frame/app';
 	import { t } from '$lib/i18n';
-	import Logo from '$lib/components/Logo.svelte';
+	import Logo from '$lib/frame/Logo.svelte';
 	import IconButton from '$lib/ui/IconButton.svelte';
 	import Tooltip from '$lib/ui/Tooltip.svelte';
 	import AccountMenu from './AccountMenu.svelte';
