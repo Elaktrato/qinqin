@@ -124,6 +124,17 @@ Request counts measured before the change (fake server `lib/testing/studyServer.
   through the 8 s log cache, both over the one row cache; `loadStudyData` and `loadRawStudyData` hand out fresh
   objects, `loadStudyHistory` and `getStudyData` share one per slot version (do not mutate) — the pages keep
   their data in `$state`.
+- Ruling (fix wave): a held keyed tombstone (DELETE, whose answer carries no stamp) is stamped one millisecond
+  after the stamp the tab knew for the row, so any row the server sends later wins over it; when the tab holds
+  no such row it holds nothing and marks the workspace stale — chosen over "mark stale only" because the page
+  then hides the row at once without a request — cost if wrong: a delta brings the server's tombstone a moment
+  later (the same view).
+- Ruling (fix wave): `keyedData().delete` treats a 404 as done only with the code `not_found`. The server answers
+  `not_found` for a missing row and for an unknown plugin alike; the namespaces are compiled in, so that
+  ambiguity cannot arise from this client — cost if wrong: a deleted plugin's delete would read as done.
+- Ruling (fix wave): change detection ignores `version` (a held write has version 0, the server's copy its own);
+  a full round keeps an unreadable row unless this tab's write is newer, and keeps it when either stamp is
+  unknown — cost if wrong: a write of this tab hidden behind a protected row until the next round.
 - Ruling: no client-side stored data is migrated or read in an old form (owner update 2026-11-24: a clean start
   is fine, also for browser storage). This branch changes no stored client format: the study cache lives in
   memory only, the outbox, the offline receipts and the service worker's saved pages keep their keys, so there
@@ -190,3 +201,26 @@ vitest under Node 26: 598 files, 12,640 passed, 2 skipped; e2e (`npm run e2e -- 
 passed each (one after task 7, four at the end); `node --test scripts/*.test.mjs` 156 passed;
 `gen-api-docs --check` ok. Go not touched, so no Go gate. Under Node 22 locally, `BookView.dom.test.ts` and
 `AccountSettings.dom.test.ts` fail five tests on the untouched base too (they pass under Node 26, as in CI).
+
+### Fix wave (independent review: 4 should-fix, 4 nits)
+
+| Finding | Commit | Test that failed first |
+|---|---|---|
+| 1. readers joining a round (and a failing follow-up) got the bare round's rejection | `726ab8d7` | `cache.test.ts` "every reader of a failed refresh…", "a reader joining a failing follow-up…" |
+| 2. `full: true` joining a delta got the delta | `726ab8d7` | "a full read joining a delta in flight waits for it…" |
+| 3. the echo of a held write (version 0) counted as a change | `726ab8d7`, `ca2e9d3a` | "the server's copy of this tab's own write…"; `requestCounts.test.ts` "rename with the study page listening" (written after the fix, seen failing by reverting it) |
+| 4. write answers after sign-out landed in the next user's slots | `98353c66` | `commands/write.test.ts` "a user-global write answered after sign-out…" |
+| 5. a held DELETE tombstone used the device clock | `98353c66` | "a deleted keyed row is held stamped just after…" |
+| 6. a stale mark set during a round was cleared by it | `726ab8d7` | "a stale mark set while a round runs survives the round" |
+| 7. `keepLocalWrites` dropped a newer unreadable row | `726ab8d7` | "a full round keeps an unreadable row newer than a write…" |
+| 8a. the 410 fallback ran as a delta (writtenDuringRound never reset) | `726ab8d7` | none: not observable from outside (the next full round resets the set); fixed by reading |
+| 8b. `keyedData().delete` swallowed every 404 | `b361f4d5` | `keyed.test.ts` "delete resolves when the row is missing, and rethrows…" |
+| 8c. the study page reloaded twice after a card change | `feddc7c7` | `page.dom.test.ts` "leaves the card manager's reloads to onStudyChange" |
+
+(Three test fixtures answering a bare 404 to a delete now answer
+`not_found`, as the server does.)
+
+Gates after the fix wave (on `feddc7c7` plus this record): `npm run check` 0 errors; `npm run build` ok; full
+vitest under Node 26: 12,650 passed, 2 skipped; e2e three runs green, 13 passed each; `node --test
+scripts/*.test.mjs` 156 passed. Go not touched.
+
