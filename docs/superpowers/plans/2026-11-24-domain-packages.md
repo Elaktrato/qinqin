@@ -155,3 +155,20 @@ calls of `QueryContext`, `QueryRowContext`, `ExecContext` and `BeginTx` in the n
 - Not verified: the CLI does not call the new domain functions yet (reuse is possible, not exercised); the
   backup download and MFA sign-in paths were checked only by their existing tests, not in the real app; no
   measurement of speed (none of the moved queries changed).
+
+## Fix wave (independent review)
+
+The review found no MUST-FIX. Each group below is one commit, test first.
+
+- SHOULD-1, the SQL scan could be evaded. Eleven new `TestSQLFindings` cases, each seen failing first (a method
+  value `q := s.db.QueryRowContext` and one passed on as an argument; a leading `/* */` and `--` comment;
+  lower case; `(SELECT 1)`; `"DEL" + "ETE FROM ..."`; a statement split around a name; a long chain counted
+  once), plus prose that must pass ("Select a language first.", "Delete it first, then try again.", ...).
+  The scan now flags every selector of the five context methods that is not a call (a method value); strips
+  white space, comments and opening parentheses before matching; matches case-insensitively and requires what
+  each statement needs next (`SELECT` a column list or value, `DELETE FROM`, `INSERT INTO`, `UPDATE ... SET`,
+  `WITH name AS (`, `CREATE TABLE`, ...); and reads a `+` chain of strings as one text (other operands `?`),
+  once. Run with an empty allowlist on b1ccaae6 (a scratch worktree, removed): 92 findings in the same 37
+  functions (48 calls, 44 statements; a chain is now one finding, where the old scan counted a literal of it).
+  What stays open is named under Review in 0003 (a helper written for `api`, `fmt.Sprintf`/`strings.Join`,
+  constants of another package, reflection).

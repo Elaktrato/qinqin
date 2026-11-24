@@ -66,18 +66,26 @@ Allowed:
 
 Not allowed:
 
-- SQL in `server/internal/api`: a call of `QueryContext`, `QueryRowContext`, `ExecContext`, `PrepareContext`
-  or `BeginTx` (or their non-context forms), or a string literal that starts like an SQL statement.
+- SQL in `server/internal/api`: a call or method value of `QueryContext`, `QueryRowContext`, `ExecContext`,
+  `PrepareContext` or `BeginTx` (or a call of their non-context forms), or a string that starts like an SQL
+  statement, whatever its letter case, comments or parentheses in front, or the `+` chain it is split over.
 - A domain function that needs an HTTP request or response to be called.
 - A new table with a `workspace_id` that the workspace delete has no rule for.
 
 ## Enforcement
 
-- `TestNoSQLInAPI` (`server/internal/api/sql_static_test.go`): an AST scan of every non-test file of `api` for
-  those calls and SQL literals. A finding is allowed only when `sqlAllowed` names its file and function with a
-  reason; the list is empty, and a stale entry fails too. `TestSQLFindings` pins what the scan does and does not
-  flag (a route pattern such as `DELETE /api/...`, `r.URL.Query()`, a rate limiter's `Begin`, the mail store's
-  `Prepare`). On the code before #194 it reported 93 findings in 37 functions.
+- `TestNoSQLInAPI` (`server/internal/api/sql_static_test.go`): an AST scan of every non-test file of `api`. It
+  flags every use of `QueryContext`, `QueryRowContext`, `ExecContext`, `PrepareContext` and `BeginTx`, called
+  or taken as a method value (`q := s.db.QueryRowContext`); a call of `Query`, `QueryRow` or `Exec` with
+  arguments, of `Prepare` with a string, of `Begin()`; and every string, a literal or a `+` chain of
+  literals read as one text (other operands as `?`), that starts like an SQL statement once leading white
+  space, comments and parentheses are stripped (`sqlLead`), in any letter case, with what the statement needs
+  next (`sqlStatement`: `SELECT` a column list or value, `DELETE FROM`, `INSERT INTO`, `UPDATE ... SET`, `WITH
+  name AS (`, `CREATE TABLE`, ...), so prose such as "Select a language first." passes. A finding is allowed
+  only when `sqlAllowed` names its file and function with a reason; the list is empty, and a stale entry fails
+  too. `TestSQLFindings` pins what the scan does and does not flag (a route pattern such as `DELETE /api/...`,
+  `r.URL.Query()`, a rate limiter's `Begin`, the mail store's `Prepare`, prose). On the code before #194 it
+  reports 92 findings in 37 functions (48 calls, 44 statements).
 - `TestEveryWorkspaceTableHasADeleteRule` (`server/internal/workspaces/delete_test.go`): lists every table with a
   `workspace_id` column from the migrated schema and fails on a table without a rule, or a rule without a
   table. `TestDeleteEmptiesEveryWorkspaceTable` seeds a row in each of them (it fails on a table without a seed
@@ -89,8 +97,10 @@ Not allowed:
 - `TestMovedRoutesAnswerAsBefore` (`server/internal/api/domain_pins_test.go`) compares the answers of the moved
   routes with `server/internal/api/testdata/domain_routes.golden`, written on the code before the move.
 - Review, since no check sees these: business rules in a handler without SQL (a decision on data the handler
-  got from a domain function), an import of a domain package's table name into `api`, and SQL that reaches
-  `api` through a helper of another package written only for it.
+  got from a domain function); SQL that reaches `api` through a helper of another package written only for it
+  (a query runner taking the statement text, a `*sql.Tx` handed back to the handler); a statement built at
+  run time from parts the scan cannot fold (`fmt.Sprintf`, `strings.Join`, a named constant of another
+  package, bytes); a database method reached through reflection or an interface method of another name.
 
 ## Open questions
 

@@ -32,10 +32,34 @@ var sqlCallMethods = map[string]bool{
 	"QueryContext": true, "QueryRowContext": true, "ExecContext": true, "PrepareContext": true, "BeginTx": true,
 }
 
-// sqlStatement matches a literal that starts like an SQL statement: an
-// upper-case keyword, white space, then anything but a slash, so a route
-// pattern such as "DELETE /api/workspaces/{id}" is not one.
-var sqlStatement = regexp.MustCompile(`^\s*(SELECT|INSERT|UPDATE|DELETE|REPLACE|WITH|CREATE|DROP|ALTER|PRAGMA|VACUUM|ATTACH)\s+[^/\s]`)
+// sqlStatement matches a string that starts like an SQL statement, in any
+// letter case, once sqlLead is stripped: a statement keyword followed by
+// what that statement needs next (SELECT a column list or a value, DELETE
+// FROM, INSERT INTO, UPDATE ... SET, WITH name AS (, CREATE TABLE, ...). A
+// route pattern such as "DELETE /api/workspaces/{id}" and prose such as
+// "Select a language first." or "Delete it first." are not statements.
+var sqlStatement = regexp.MustCompile(`(?is)^(` +
+	`SELECT\s+(DISTINCT\b|ALL\b|\*|\d|'|\?|\(|EXISTS\b|COUNT\s*\(|[\w.]+\s*(,|\bFROM\b|\bAS\b|\())` +
+	`|DELETE\s+FROM\b` +
+	`|(INSERT|REPLACE)(\s+OR\s+\w+)?\s+INTO\b` +
+	`|UPDATE(\s+OR\s+\w+)?\s+\S+\s+SET\b` +
+	`|WITH\s+(RECURSIVE\s+)?\w+\s*(\([^)]*\))?\s*AS\s*(NOT\s+)?(MATERIALIZED\s+)?\(` +
+	`|(CREATE|DROP|ALTER)\s+(UNIQUE\s+|TEMP\s+|TEMPORARY\s+|VIRTUAL\s+)*(TABLE|INDEX|VIEW|TRIGGER)\b` +
+	`|PRAGMA\s+\w+|VACUUM(\s+INTO\b|\s*$)|ATTACH\s+(DATABASE\s+)?['"?]` +
+	`)`)
+
+// sqlLead is what may precede the statement: white space, block and line
+// comments, opening parentheses.
+var sqlLead = regexp.MustCompile(`^(\s+|/\*.*?\*/|--[^\n]*(\n|$)|\()+`)
+
+// sqlText returns s without its lead when it starts like a statement, else "".
+func sqlText(s string) string {
+	s = sqlLead.ReplaceAllString(s, "")
+	if sqlStatement.MatchString(s) {
+		return s
+	}
+	return ""
+}
 
 // sqlAllowed lists the functions of this package that may still hold SQL,
 // keyed "file.go function" (a method by its name, a package-level
@@ -66,20 +90,46 @@ func sqlFindings(name, src string) ([]sqlFinding, error) {
 		if fd, ok := decl.(*ast.FuncDecl); ok {
 			fn = fd.Name.Name
 		}
+		calls := map[*ast.SelectorExpr]bool{} // selectors already reported as a call
+		folded := map[ast.Node]bool{}         // literals and sub-chains already read as part of a + chain
+		literal := func(pos token.Pos, text string) {
+			if sql := sqlText(text); sql != "" {
+				first := strings.Fields(sql)
+				add(fn, pos, "SQL literal "+strings.Join(first[:min(3, len(first))], " "))
+			}
+		}
 		ast.Inspect(decl, func(n ast.Node) bool {
 			switch x := n.(type) {
 			case *ast.CallExpr:
 				if what := sqlCallFinding(x); what != "" {
 					add(fn, x.Pos(), what)
+					if sel, ok := x.Fun.(*ast.SelectorExpr); ok {
+						calls[sel] = true
+					}
 				}
-			case *ast.BasicLit:
-				if x.Kind != token.STRING {
+			case *ast.SelectorExpr:
+				// A method value (q := db.QueryRowContext) runs SQL later.
+				if sqlCallMethods[x.Sel.Name] && !calls[x] {
+					add(fn, x.Pos(), "method value "+x.Sel.Name)
+				}
+			case *ast.BinaryExpr:
+				// A + chain of strings is read as one text, other operands as "?",
+				// so a statement split over literals is still one statement.
+				if x.Op != token.ADD || folded[x] {
 					return true
 				}
-				s, err := strconv.Unquote(x.Value)
-				if err == nil && sqlStatement.MatchString(s) {
-					first := strings.Fields(s)
-					add(fn, x.Pos(), "SQL literal "+strings.Join(first[:min(3, len(first))], " "))
+				if text, parts, ok := foldStrings(x); ok {
+					for _, p := range parts {
+						folded[p] = true
+					}
+					literal(x.Pos(), text)
+				}
+			case *ast.BasicLit:
+				if x.Kind != token.STRING || folded[x] {
+					return true
+				}
+				if s, err := strconv.Unquote(x.Value); err == nil {
+					literal(x.Pos(), s)
 				}
 			}
 			return true
@@ -119,6 +169,43 @@ func isStringExpr(e ast.Expr) bool {
 	return false
 }
 
+// foldStrings flattens a + chain: the text of its string literals in order,
+// with every other operand as "?", and the parts it read (its literals and
+// inner chains). ok is false when the chain holds no string literal.
+func foldStrings(e *ast.BinaryExpr) (text string, parts []ast.Node, ok bool) {
+	var b strings.Builder
+	lits, e0 := 0, e
+	var walk func(ast.Expr)
+	walk = func(e ast.Expr) {
+		switch x := e.(type) {
+		case *ast.BinaryExpr:
+			if x.Op == token.ADD {
+				if x != e0 {
+					parts = append(parts, x)
+				}
+				walk(x.X)
+				walk(x.Y)
+				return
+			}
+		case *ast.ParenExpr:
+			walk(x.X)
+			return
+		case *ast.BasicLit:
+			if x.Kind == token.STRING {
+				if s, err := strconv.Unquote(x.Value); err == nil {
+					b.WriteString(s)
+					parts = append(parts, x)
+					lits++
+					return
+				}
+			}
+		}
+		b.WriteString("?")
+	}
+	walk(e)
+	return b.String(), parts, lits > 0
+}
+
 func TestSQLFindings(t *testing.T) {
 	for _, c := range []struct {
 		name, src string
@@ -132,9 +219,37 @@ func h(s *server) { tx, _ := s.db.BeginTx(ctx, nil); tx.ExecContext(ctx, q) }`, 
 func h(s *server) { s.db.Query(q); s.db.QueryRow(q, 1); s.db.Exec(q); s.db.Prepare("SELECT 1"); s.db.Begin() }`,
 			[]string{"h call Query", "h call QueryRow", "h call Exec", "h call Prepare", "h SQL literal SELECT 1", "h call Begin"}},
 		{"a statement literal", "package p\nconst q = `\n\tSELECT id FROM workspaces`", []string{"<package> SQL literal SELECT id FROM"}},
-		{"a concatenated statement", "package p\nfunc h(t string) string { return `DELETE FROM ` + t }", []string{"h SQL literal DELETE FROM"}},
+		{"a concatenated statement", "package p\nfunc h(t string) string { return `DELETE FROM ` + t }", []string{"h SQL literal DELETE FROM ?"}},
 		{"a method", `package p
 func (s *server) m() { s.db.QueryRowContext(ctx, "UPDATE x SET y = 1") }`, []string{"m call QueryRowContext", "m SQL literal UPDATE x SET"}},
+		{"a method value", `package p
+func h(s *server) { q := s.db.QueryRowContext; q(ctx, "select id from users") }`, []string{"h method value QueryRowContext", "h SQL literal select id from"}},
+		{"a method value passed on", `package p
+func h(s *server) { run(s.db.ExecContext) }`, []string{"h method value ExecContext"}},
+		{"a leading block comment", "package p\nconst q = `/* x */ DELETE FROM users`", []string{"<package> SQL literal DELETE FROM users"}},
+		{"a leading line comment", "package p\nconst q = `-- why\n  INSERT INTO users (id) VALUES (1)`", []string{"<package> SQL literal INSERT INTO users"}},
+		{"lower case", `package p
+const q = "delete from users where id = ?"`, []string{"<package> SQL literal delete from users"}},
+		{"a parenthesised select", `package p
+const q = "(SELECT 1)"`, []string{"<package> SQL literal SELECT 1)"}},
+		{"a split keyword", `package p
+const q = "DEL" + "ETE FROM users"`, []string{"<package> SQL literal DELETE FROM users"}},
+		{"a split statement around a name", "package p\nfunc h(t string) string { return \"UPD\" + \"ATE \" + t + \" SET a = 1\" }", []string{"h SQL literal UPDATE ? SET"}},
+		{"a long chain is one finding", `package p
+const q = "DELETE FROM users" + " WHERE id = " + "1" + ""`, []string{"<package> SQL literal DELETE FROM users"}},
+		{"a with clause", "package p\nconst q = `WITH RECURSIVE langs(code) AS (SELECT 1) SELECT code FROM langs`", []string{"<package> SQL literal WITH RECURSIVE langs(code)"}},
+		{"prose with SQL words", `package p
+func h() {
+	_ = "Select a language first."
+	_ = "Update the app to continue."
+	_ = "Delete it first, then try again."
+	_ = "With a key you can sign in."
+	_ = "Insert a card."
+	_ = "Replace the key."
+	_ = "Create a workspace for each language."
+	_ = "(Select one.)"
+	_ = "Sel" + "ect a deck."
+}`, nil},
 		{"look-alikes are not SQL", `package p
 func h(r *http.Request, l *limiter, s *server) {
 	r.URL.Query()
