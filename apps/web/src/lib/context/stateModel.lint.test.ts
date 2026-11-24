@@ -4,10 +4,11 @@
 // analysis:
 // - no file under src/ imports svelte/store;
 // - no file exports a `…ForTests` reset: a test builds a fresh context instead;
-// - no module-level mutable state (a `let`, an empty Map or Set, a
-//   `create…Cache(`, a store or a rune, an empty array or object filled later)
-//   in src/lib or src/routes, unless ALLOWED names it with the reason it holds
-//   nothing of a user. WeakMaps are not flagged: they hold nothing once the
+// - no module-level mutable state (a `let` or `var`, an empty Map or Set, an
+//   instance of another class, whatever a `create…(` factory builds, a store
+//   or a rune, an empty array or object filled later, a small object of
+//   counters or slots such as `{ current: null }`) in src/lib or src/routes,
+//   unless ALLOWED names it with the reason it holds nothing of a user. WeakMaps are not flagged: they hold nothing once the
 //   keyed objects (owned by a session or a component) are dropped.
 // The service worker (src/service-worker.ts) is its own global with no
 // session: its API cache is per credential and is not scanned here.
@@ -42,6 +43,12 @@ const ALLOWED: Record<string, string> = {
 	'lib/milestones/reached.ts:nextIdentity': 'a counter that tells objects apart, no data',
 	'lib/milestones/replayReached.ts:nextIdentity': 'a counter that tells objects apart, no data',
 	'lib/api/client.ts:observer': "the one observer slot of the API client: the app context installs it at start and removes it at dispose",
+	'lib/plugins/journal/store.ts:sdk': "the journal plugin's SDK: permission checks over the manifest, no state of its own",
+	'lib/plugins/grammar/progress.ts:sdk': "the grammar plugin's SDK, the same way",
+	'lib/weekly/replay.ts:replayStats': 'an operation counter the performance tests read, no user data',
+	'lib/weekly/summary.ts:summaryStats': 'an operation counter the performance tests read, no user data',
+	'lib/milestones/reached.ts:reachedStats': 'an operation counter the performance tests read, no user data',
+	'lib/time/studyDay.ts:studyDayStats': 'an operation counter the performance tests read, no user data',
 	'lib/api/client.ts:memoryToken': 'the credential itself (storage blocked): clearToken drops it at every session end'
 };
 
@@ -52,16 +59,20 @@ export interface Finding {
 
 // A module-level declaration (column 0) of something that changes at runtime.
 const DECLARATIONS: RegExp[] = [
-	// any let
-	/^(?:export\s+)?let\s+(\w+)\b/,
+	// any let or var
+	/^(?:export\s+)?(?:let|var)\s+(\w+)\b/,
 	// an empty Map / Set (a constant table has initial values)
 	/^(?:export\s+)?const\s+(\w+)[^=]*=\s*new\s+(?:Map|Set)\b[^(]*\(\s*\)/,
-	// a cache built by a factory
-	/^(?:export\s+)?const\s+(\w+)[^=]*=\s*create\w*Cache\(/,
+	// an instance of any other class (WeakMaps and regular expressions hold no state of their own)
+	/^(?:export\s+)?const\s+(\w+)[^=]*=\s*new\s+(?!(?:Map|Set|WeakMap|WeakSet|RegExp)\b)[\w.]+/,
+	// whatever a factory builds
+	/^(?:export\s+)?const\s+(\w+)[^=]*=\s*create\w*\(/,
 	// a store or a rune at module level
 	/^(?:export\s+)?const\s+(\w+)[^=]*=\s*(?:writable|readable|\$state)(?:\.raw)?(?:<[^=]*>)?\(/,
-	// an empty array or object literal (a Record filled later)
-	/^(?:export\s+)?const\s+(\w+)[^=]*=\s*(?:\[\]|\{\})\s*;/
+	// an empty array or object literal (a Record filled later), with or without a cast
+	/^(?:export\s+)?const\s+(\w+)[^=]*=\s*(?:\[\]|\{\})\s*(?:as\s+[^;]+)?;/,
+	// a small object of counters or slots (`{ current: null }`, `{ passes: 0 }`); an ALL_CAPS name is a constant
+	/^(?:export\s+)?const\s+(?![A-Z0-9_]+\b)(\w+)[^=]*=\s*\{\s*(?:\w+\s*:\s*(?:null|undefined|true|false|-?\d+|\[\]|\{\})\s*,?\s*)+\}/
 ];
 
 /** findState lists the module-level declarations of one source text that look like runtime-changed state. */
@@ -122,9 +133,22 @@ describe('findState', () => {
 			'const rows = $state.raw<Row[]>([]);',
 			'const providers: Provider[] = [];',
 			'const byId: Record<string, Row> = {};',
-			"const LABELS = ['a'];"
+			"const LABELS = ['a'];",
+			'var legacy = 1;',
+			'const outbox = new ReviewOutbox(deps);',
+			'export const player = createPlayer();',
+			'const queue = [] as Job[];',
+			'const slot = { current: null };',
+			'export const stats = { passes: 0, hits: 0 };',
+			"const TABLE = new Map([['a', 1]]);",
+			'const pattern = new RegExp("x");',
+			'const EMPTY: Pair = { a: null, b: null };',
+			"const library: Route = { view: 'library' };"
 		].join('\n');
-		expect(findState(planted).map((f) => f.name)).toEqual(['cache', 'seen', 'shared', 'memo', 'timer', 'report', 'rows', 'providers', 'byId']);
+		expect(findState(planted).map((f) => f.name)).toEqual([
+			'cache', 'seen', 'shared', 'memo', 'timer', 'report', 'rows', 'providers', 'byId',
+			'legacy', 'outbox', 'player', 'queue', 'slot', 'stats'
+		]);
 	});
 
 	it('the import and export patterns catch what they name', () => {

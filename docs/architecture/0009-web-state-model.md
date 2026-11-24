@@ -83,13 +83,15 @@ Not allowed:
 ## Enforcement
 
 - `apps/web/src/lib/context/stateModel.lint.test.ts` scans the sources and fails on a `svelte/store` import
-  anywhere under `apps/web/src/`, an exported `…ForTests`, and a module-level `let`, empty `Map` or `Set`,
-  `create…Cache(`, store, `$state` or empty array or object in `src/lib` or `src/routes` that its allow-list
-  does not name with a reason; a stale allow-list entry fails too. WeakMaps are not flagged.
+  anywhere under `apps/web/src/`, an exported `…ForTests`, and module-level state in `src/lib` or `src/routes`
+  that its allow-list does not name with a reason: a `let` or `var`, an empty `Map` or `Set`, an instance of
+  another class, whatever a `create…(` factory builds, a store, `$state`, an empty array or object (cast or
+  not), a small object of counters or slots (`{ current: null }`); a stale allow-list entry fails too. WeakMaps,
+  regular expressions and filled `Map`/`Set` tables are not flagged.
 - `apps/web/src/lib/session/signOutIsolation.test.ts`: two users; every cache read through its public reader
   answers with the second user's data after the first signs out, a load of the first still in flight never
   lands where the second reads, and no timer of the first session is left running.
 - `apps/web/src/lib/context/app.test.ts`: the session's lifecycle (created with a token, disposed at sign-out,
   at a 401 and at a user switch, kept for the same user, disposed with the app; disposers run once and in order).
-- Review: a component that receives state as a prop it could read from context is fine; one that imports a
-  module that keeps state behind a function (a closure over a module `const` object) is not caught by the scan.
+- Review: a component that receives state as a prop it could read from context is fine; a module object
+  literal spread over several lines, or a filled table changed at runtime, is not caught by the scan.

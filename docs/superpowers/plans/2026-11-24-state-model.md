@@ -265,3 +265,10 @@ Baseline (55312f3e, Node 26): 598 files, 12,651 passed, 8 skipped.
   `prepareActiveWorkspace` stops fetching and reports no prepared count once its session ended (no unit test:
   `prepareRuntime.ts` is the untested real-dependency shell of `prepareOffline.ts`; covered only by review and
   the offline e2e specs).
+- F6 (nit 7): the guard missed `var`, an instance of any class (`new ReviewOutbox(...)`), whatever any factory
+  builds (`createFoo(...)`), `[] as T[]` and small mutable objects (`{ current: null }`, `{ passes: 0 }`). New
+  planted cases first, run against the old patterns: they failed. The scan now flags them (WeakMaps, regular
+  expressions, filled Map/Set tables and one-line objects with an ALL_CAPS name are left alone), and the
+  allow-list names what it found: the two plugin SDKs (`createPluginSdk`: permission checks, no state) and the four
+  operation counters the performance tests read. Record 0009's Enforcement says what the scan covers and what
+  it does not (a multi-line object literal, a filled table changed at runtime).
