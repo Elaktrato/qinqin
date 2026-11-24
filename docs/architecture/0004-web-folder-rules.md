@@ -2,74 +2,100 @@
 
 ## Status
 
-Accepted, being implemented by #195
+Accepted
 
-Touched by: #195. A merge from one of these issues that changes what this record names updates the record.
+Touched by: none. A merge from an issue that changes what this record names adds it here and updates the record.
 
 ## Context
 
-`apps/web/src/lib/components` is a grab-bag: most of it is used by one feature only. About 20 loose modules sit
-at the top of `lib/`, beside about 30 tests of the repository itself (contract docs, README, wiki, licences,
-bundle size). Some UI sits in logic folders (`study/DeckCardTypes.svelte`), and two different files are called
-`EntryEditor.svelte` (#195).
+`apps/web/src/lib/components` was a grab-bag: most of it was used by one feature only. About 20 loose modules
+sat at the top of `lib/`, beside 7 tests of the repository itself (contract docs, README, wiki, licences,
+bundle size). Some UI sat in logic folders (`DeckCardTypes` and `UnreadableRowsNotice` in `lib/study`, `Msg` in
+`lib/i18n`), and two different files were called `EntryEditor.svelte` (#195). #195 decided the rule below and
+moved the code to match it (`docs/superpowers/plans/2026-11-24-folder-layout.md` has the full table of moves).
 
 ## Decision
 
 Under `apps/web/src/lib/`:
 
-- **`lib/ui`**: generic building blocks with no domain knowledge.
-- **`lib/frame`**: the app chrome.
-- **Feature folders** (`lib/features/<feature>`, `lib/entry`, `lib/stats`, ...): everything owned by one
-  feature.
-- **`lib/components`**: only domain widgets shared by two or more features (`PlayButton`, `ReadingText`,
-  `ReadingTable`, `ClozeChoice`, `Flag`).
+- **`lib/ui`**: generic building blocks with no domain knowledge (`Button`, `Dialog`, `Tabs`, `Msg`, ...). It
+  imports only itself, `lib/i18n` (translated labels) and `lib/theme` (the design tokens).
+- **`lib/frame`**: the app chrome (top bar, phone bar, drawer, menus, `Logo`, the page frame, the shell's
+  notices, the app's name in `app.ts`).
+- **Feature folders**: everything owned by one feature, UI and logic. The four switchable core features live
+  under `lib/features/<feature>` (flashcards, reader, journal, grammar: the features of record
+  [0006](0006-core-features-instead-of-code-plugins.md), each with a switch); every other feature folder sits
+  at the top of `lib/`: `account`, `activity`, `admin`, `entry`, `goals`, `lookups` (the lookup history and
+  its page), `milestones`, `notes`, `pwa`, `search`, `settings`, `sources`, `stats`, `weekly`, `widgets` (the
+  home and Stats overview board) and `workspace`.
+- **Logic-only folders**: the shared layers below the features, with no component: `api`, `audio`, `auth`,
+  `context`, `events`, `fonts`, `i18n`, `languages`, `packages`, `radicals`, `routing`, `session`, `study`,
+  `sync`, `theme`, `time`, `writing`.
+- **The other top folders** are `ui`, `frame`, `components`, `features` (the parent of the switchable
+  features, holding their switches and `FeaturePage`), `testing` (the shared test support) and `assets`
+  (fonts and the logo). Every top folder of `lib/` is in exactly one of these classes.
+- **`lib/components`**: only domain widgets shared by two or more features (today `AiTag`, `Flag`,
+  `PlayButton`, `ReadingText` and the cloze keyboard model `clozeKeys.ts`). A user is a feature folder, a
+  switchable feature, the frame (the app chrome shows `Flag` beside the workspace's label), or a route that
+  shows one of them (`routes/study` and `routes/flashcards` are flashcards, `routes/+layout.svelte` is the
+  frame, `routes/+page.svelte` the widget board, `routes/login`, `register` and `reset` are account; the others
+  by their folder name). A logic folder, `lib/ui`, `lib/features` itself, a file at the top of `src` (the
+  hooks, the service worker), a route of a logic folder (`routes/p`, the old plugin URLs), a test, the shared
+  test support (`lib/testing`, `lib/ui/testing`) and a commented-out import are not users.
+- **Nothing loose at the top of `lib/`**: every module sits in the folder of what it describes.
+- **One name per component**: no two components under `lib/` share a file name (the dictionary entry editor is
+  `lib/entry/EntryEditForm.svelte`, the journal's is `lib/features/journal/EntryEditor.svelte`).
+- **Repository tests** (the docs, the README, the wiki, the shipped licence texts, the bundle size, these folder
+  rules) live in `apps/web/tests/repo/`, outside `src/`; the vitest `unit` project runs them.
 
-#195 moves the code to match, with `git mv` (history kept) and rewritten imports, and no behaviour change:
-
-- the entry pieces (`AddToStudy`, `Badges`, `Readings`, `Senses`, `Sentences`, `StrokePlayer`, the dictionary
-  `EntryEditor` renamed `EntryEditForm`) to `lib/entry/`;
-- `CardManager` and `DeckCardTypes` to `lib/features/flashcards/decks/`;
-- `components/map/*` to `lib/stats/map/`, `ActivityHeatmap` to `lib/widgets/`;
-- `Logo` to `lib/frame/`; `Workspace*` and the loose workspace modules to `lib/workspace/`;
-- the loose modules into `lib/routing/`, `lib/events/`, `lib/auth/` and the feature folders;
-- the repository tests to `apps/web/tests/repo/`; the dead `lib/listbox.ts` is deleted.
+Imports across folders use `$lib/...`; inside one folder they stay relative.
 
 ## Consequences
 
 - A file's folder says who owns it; a component used by one feature lives with that feature.
-- A widget that gains a second feature moves to `lib/components`; one that loses it moves back.
-- The moves touch many imports, so #195 runs when no other web branch is open.
-- `lib/study/UnreadableRowsNotice.svelte` (from #167, record [0002](0002-sync-unreadable-rows.md)) is also a UI
-  component in a logic folder; #195 moves it with the others.
-- #196 (record [0009](0009-web-state-model.md)) added `lib/context/` (the app and session contexts, their
-  dependencies and the session's caches) and turned the loose `auth.ts`, `workspaces.ts` and `notices.ts` into
-  runes classes (`auth.svelte.ts`, `workspaces.svelte.ts`, `notices.svelte.ts`); #195 moves those with the other
-  loose modules.
-- The repository tests move to `apps/web/tests/repo/`, among them this folder's own check
-  (`architectureDocs.test.ts`); #195 updates the path named in this folder's README.
+- A widget that gains a second feature moves to `lib/components`; one that loses it moves back, and the guard
+  says so.
+- A generic piece a layer needs to render goes to `lib/ui`; a domain one to its feature.
+- A new route folder names its feature in the guard's table.
+- Record [0007](0007-browser-end-to-end-tests.md)'s suite in `apps/web/e2e/` is outside `src/`, so these rules
+  do not apply to it.
 
 ## Allowed / Not allowed
 
 Allowed:
 
 - `lib/ui` imported from anywhere.
-- A feature folder importing `lib/ui`, `lib/components` and shared logic.
+- A feature folder importing `lib/ui`, `lib/components`, the logic folders and another feature's public piece
+  (the widget board shows `StageBar` from `lib/stats/map` and the widget the flashcards manifest names).
+- A test or a `*.test.svelte` stub next to the code it tests, importing anything; the UI gallery harness
+  (`apps/web/src/lib/ui/testing/Gallery.svelte`) shows real domain widgets. A feature's own `testing/` harness
+  (`apps/web/src/lib/entry/testing/`) is checked like the feature.
 
 Not allowed:
 
-- `lib/ui` importing a feature folder.
+- `lib/ui` importing a feature folder, `lib/components` or a domain module.
 - A file in `lib/components` used by only one feature.
-- What #195 moves away from: new loose modules at the top of `lib/`, UI components in logic folders, two
-  components with the same file name for different things.
+- A component in a logic-only folder.
+- Two components with the same file name.
+- A loose module at the top of `lib/` (the guard's allow-list, `LOOSE_ALLOWED`, is empty).
+- A re-export left at an old path after a move.
 
 ## Enforcement
 
-Planned by #195: a test that fails when anything in `lib/ui` imports a feature folder, or when something in
-`lib/components` is used by only one feature. Until then: review.
+- `apps/web/tests/repo/folderRules.test.ts` runs the checks of `apps/web/tests/repo/folderRules.ts` on the real
+  tree and shows each failing on a planted tree: `uiImportFindings` (the allow-list `UI_MAY_IMPORT`),
+  `sharedComponentFindings` (users by `ownerOf`: `FEATURE_FOLDERS`, the switchable features, the frame, routes by
+  `ROUTE_FEATURES`), `logicFolderFindings` (`LOGIC_FOLDERS`), `duplicateNameFindings`, `looseFileFindings`,
+  `unmappedRouteFindings` (a route folder missing from `ROUTE_FEATURES`), `unclassifiedFolderFindings` (a top
+  folder in none of `LOGIC_FOLDERS`, `FEATURE_FOLDERS` and `STRUCTURE_FOLDERS`) and `unresolvedImportFindings`
+  (a `$lib/` or relative import of a shipped file that names no file, so no import is silently left out of the
+  checks). Imports are read with comments stripped (`stripComments`), static, dynamic (a plain or template
+  string), side-effect and re-export alike; a `.js` ending names the `.ts` file. It also fails when a folder
+  or an allowed loose file it names is gone, or a folder is in two classes.
+- Review: whether a new folder is a feature or a logic layer (the guard only demands that it is classified),
+  whether a component is generic enough for `lib/ui`, and the import style.
 
 ## Open questions
 
-- `lib/widgets/` exists and receives `ActivityHeatmap` in #195's moves, but the rule does not name it: whether
-  it counts as a feature folder or as a shared folder is decided in #195.
-- What counts as "a feature" for the `lib/components` check (feature folders only, or also route folders under
-  `src/routes/`). Decided in #195.
+None. Resolved in #195: `lib/widgets` is a feature folder (the board); a route counts as the feature it shows,
+through the guard's table.

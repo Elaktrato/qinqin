@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { pageTitle } from '$lib/pageTitle';
+	import { pageTitle } from '$lib/routing/pageTitle';
 	import GrammarBrowse from './GrammarBrowse.svelte';
 	import LessonPage from './LessonView.svelte';
 	import PracticeRun from './PracticeRun.svelte';

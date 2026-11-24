@@ -3,9 +3,9 @@
 	import { onDestroy, onMount } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
-	import { APP_NAME } from '$lib/app';
+	import { APP_NAME } from '$lib/frame/app';
 	import { t } from '$lib/i18n';
-	import WorkspaceCreateForm from '$lib/components/WorkspaceCreateForm.svelte';
+	import WorkspaceCreateForm from '$lib/workspace/WorkspaceCreateForm.svelte';
 	import AccountMenu from '$lib/frame/AccountMenu.svelte';
 	import { currentSection, frameSections, homeSection } from '$lib/frame/sections';
 	import { barHiddenOn } from '$lib/frame/barItems';
@@ -20,12 +20,12 @@
 		redirectTarget,
 		restrictedTarget,
 		routeAccess
-	} from '$lib/routeAccess';
+	} from '$lib/routing/routeAccess';
 	import UpdateBanner from '$lib/pwa/UpdateBanner.svelte';
 	import OfflineBanner from '$lib/pwa/OfflineBanner.svelte';
 	import { persistOnceNow } from '$lib/pwa/install';
 	import { prepareActiveWorkspace } from '$lib/pwa/prepareRuntime';
-	import Logo from '$lib/components/Logo.svelte';
+	import Logo from '$lib/frame/Logo.svelte';
 	import LogoutDialog from '$lib/account/LogoutDialog.svelte';
 	import { applyHanziVars, hanziVars } from '$lib/fonts/hanziVars';
 	import '../app.css';
@@ -64,7 +64,7 @@
 	const openSignedOut = $derived(!signedIn && routeAccess(path) === 'open');
 	// Render a route only when the session matches it: protected pages
 	// never flash while a redirect is in flight, auth pages do not show
-	// once signed in, and open pages show either way (lib/routeAccess.ts).
+	// once signed in, and open pages show either way (lib/routing/routeAccess.ts).
 	// A restricted session (forced password change, MFA enrolment) sees only
 	// its own page and the open Sources page, and loads nothing of the app.
 	const restricted = $derived(signedIn && app.auth.restriction !== null);

@@ -14,7 +14,7 @@
    "key": "hiddenDictionaries",
    "shape": "array of positive integer dictionary ids",
    "default": [],
-   "owner": "apps/web/src/lib/dictionaryVisibility.ts"
+   "owner": "apps/web/src/lib/workspace/dictionaryVisibility.ts"
   },
   {
    "key": "audioAutoplay",

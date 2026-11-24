@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { errorText } from '$lib/api/apiErrors';
 	import { UserError } from '$lib/api/userError';
-	import { pageTitle } from '$lib/pageTitle';
+	import { pageTitle } from '$lib/routing/pageTitle';
 	import { t } from '$lib/i18n';
 	import { onDestroy, untrack } from 'svelte';
 	import ImportExport from '$lib/features/flashcards/scheduling/ImportExport.svelte';

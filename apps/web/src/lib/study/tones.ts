@@ -1,4 +1,4 @@
-import { profileOf } from '../languageProfiles';
+import { profileOf } from '$lib/languages/profiles';
 import type { ReviewGrade } from './types';
 import { isHan } from './writing';
 

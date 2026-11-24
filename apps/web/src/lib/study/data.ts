@@ -18,7 +18,7 @@
 // function here takes the session's study state first.
 
 import type { Api, Timers } from '../context/deps';
-import { fetchFullLog, type EventLog, type StudyEvent } from '../events';
+import { fetchFullLog, type EventLog, type StudyEvent } from '$lib/events';
 import { createStudyCache, type StudyCache } from './cache';
 import type { ReviewOutbox } from './events';
 import { recentSentReviews } from './recentSent';

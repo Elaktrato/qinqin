@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { errorText } from '$lib/api/apiErrors';
-	import UnreadableRowsNotice from '$lib/study/UnreadableRowsNotice.svelte';
-	import { pageTitle } from '$lib/pageTitle';
+	import UnreadableRowsNotice from '$lib/features/flashcards/UnreadableRowsNotice.svelte';
+	import { pageTitle } from '$lib/routing/pageTitle';
 	import { t } from '$lib/i18n';
 	import { goto } from '$app/navigation';
 	import { fetchSchemeCharacters, getSchemeEntries, getSchemes } from '$lib/api/schemes';
@@ -11,9 +11,9 @@
 	import { levelMastery } from '$lib/study/levelMastery';
 	import type { EntryBase, Level, Scheme } from '$lib/api/types';
 	import { usesHan } from '$lib/languages';
-	import CardManager from '$lib/components/CardManager.svelte';
+	import CardManager from '$lib/features/flashcards/decks/CardManager.svelte';
 	import { deckSessionItems, sessionCounts } from '$lib/study/cardFlow';
-	import { profileOf } from '$lib/languageProfiles';
+	import { profileOf } from '$lib/languages/profiles';
 	import { loadIneligible } from '$lib/study/ineligible';
 	import {
 		defaultExtraTypes,
@@ -24,7 +24,7 @@
 		rememberExtraChoice,
 		type ExtraChoices
 	} from '$lib/study/cardTypesMemory';
-	import DeckCardTypes from '$lib/study/DeckCardTypes.svelte';
+	import DeckCardTypes from '$lib/features/flashcards/decks/DeckCardTypes.svelte';
 	import { cleanCardTypes, enabledKinds, type DeckSettings } from '$lib/study/deckSettings';
 	import { buriedLevelEntries, buriedNow } from '$lib/study/siblings';
 	import { DEFAULT_W } from '$lib/study/fsrs/params';

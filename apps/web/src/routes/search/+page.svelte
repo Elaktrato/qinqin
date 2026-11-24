@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { errorText } from '$lib/api/apiErrors';
-	import { pageTitle } from '$lib/pageTitle';
+	import { pageTitle } from '$lib/routing/pageTitle';
 	import { t } from '$lib/i18n';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
@@ -23,11 +23,11 @@
 		setScheme,
 		submitHref,
 		type SearchFilters
-	} from '$lib/searchFilters';
+	} from '$lib/search/searchFilters';
 	import { onMount, tick } from 'svelte';
 	import { listLanguages } from '$lib/api/languages';
-	import { dictionaryHint } from '$lib/coverage';
-	import { hiddenDictionaries } from '$lib/dictionaryVisibility';
+	import { dictionaryHint } from '$lib/languages/coverage';
+	import { hiddenDictionaries } from '$lib/workspace/dictionaryVisibility';
 	import { languageLabel, usesHan } from '$lib/languages';
 	import { FRAME_PHONE_BREAKPOINT, PHONE_MEDIA_QUERY } from '$lib/frame/breakpoint';
 	import Field from '$lib/ui/Field.svelte';

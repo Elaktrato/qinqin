@@ -4,9 +4,9 @@
 	// icon-only links with tooltips (the current one: accent icon and a
 	// small accent dot, aria-current="page"), and on the right the workspace
 	// flag and the avatar. No pills, no borders (§5).
-	import { APP_NAME } from '$lib/app';
+	import { APP_NAME } from '$lib/frame/app';
 	import { t } from '$lib/i18n';
-	import Logo from '$lib/components/Logo.svelte';
+	import Logo from '$lib/frame/Logo.svelte';
 	import IconButton from '$lib/ui/IconButton.svelte';
 	import Tooltip from '$lib/ui/Tooltip.svelte';
 	import AccountMenu from './AccountMenu.svelte';

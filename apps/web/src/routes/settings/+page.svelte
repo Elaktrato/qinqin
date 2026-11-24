@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { errorText } from '$lib/api/apiErrors';
-	import { pageTitle } from '$lib/pageTitle';
+	import { pageTitle } from '$lib/routing/pageTitle';
 	import { t } from '$lib/i18n';
 	import { onMount, tick } from 'svelte';
 	import { goto } from '$app/navigation';
@@ -8,10 +8,10 @@
 	import { ApiError, api } from '$lib/api/client';
 	import { getSchemes } from '$lib/api/schemes';
 	import type { Dictionary, Scheme, Workspace } from '$lib/api/types';
-	import { coverage, dictionaryHint, levelsHint } from '$lib/coverage';
-	import DeleteWorkspaceDialog from '$lib/components/DeleteWorkspaceDialog.svelte';
-	import WorkspaceCreateForm from '$lib/components/WorkspaceCreateForm.svelte';
-	import WorkspaceLabel from '$lib/components/WorkspaceLabel.svelte';
+	import { coverage, dictionaryHint, levelsHint } from '$lib/languages/coverage';
+	import DeleteWorkspaceDialog from '$lib/workspace/DeleteWorkspaceDialog.svelte';
+	import WorkspaceCreateForm from '$lib/workspace/WorkspaceCreateForm.svelte';
+	import WorkspaceLabel from '$lib/workspace/WorkspaceLabel.svelte';
 	import { languageLabel } from '$lib/languages';
 	import WorkspaceDictionaries from '$lib/settings/WorkspaceDictionaries.svelte';
 	import AccountSettings from '$lib/settings/AccountSettings.svelte';

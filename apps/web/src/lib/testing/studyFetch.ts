@@ -3,7 +3,7 @@
 // server serves for v0.3.0-style keyed rows (legacyCodec typedPull), the pushes
 // and keyed-row writes read back as legacy rows, and the one-storage check.
 import { afterEach, beforeEach, expect, vi } from "vitest";
-import type { StudyEvent } from "../events";
+import type { StudyEvent } from "$lib/events";
 import type { Deck, StudyCard } from "../study/types";
 import { legacyFamily, pagedPull, toLegacy } from "./legacyCodec";
 import { STUDY_COLLECTIONS, type StudyCollection } from "../study/rows";

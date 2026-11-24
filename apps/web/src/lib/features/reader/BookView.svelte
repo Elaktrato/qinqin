@@ -1,12 +1,12 @@
 <script lang="ts">
-	import { hasReadings } from '$lib/languageProfiles';
-	import { profileOf } from '$lib/languageProfiles';
+	import { hasReadings } from '$lib/languages/profiles';
+	import { profileOf } from '$lib/languages/profiles';
 	import { UserError } from '$lib/api/userError';
 	import { studyLang } from '$lib/i18n/lang';
 	import { t } from '$lib/i18n';
 	import { onDestroy, onMount, tick, untrack } from 'svelte';
 	import { goto } from '$app/navigation';
-	import { readPayload } from '$lib/eventPayloads';
+	import { readPayload } from '$lib/events/eventPayloads';
 	import { segmentWithReadings } from '$lib/api/segment';
 	import { scheduleIndex } from '../flashcards/decks/deckStats';
 	import { onStudyChange, loadRawStudyData, loadStudyHistory, withStudy } from '$lib/study/data';

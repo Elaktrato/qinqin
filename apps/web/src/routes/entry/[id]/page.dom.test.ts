@@ -13,8 +13,8 @@ vi.mock('$lib/api/entries', () => ({
 	getCharsUnderRadical: vi.fn(),
 	getSharedEntry: vi.fn()
 }));
-vi.mock('$lib/components/AddToStudy.svelte', () => ({ default: () => ({}) }));
-vi.mock('$lib/components/StrokePlayer.svelte', () => ({ default: () => ({}) }));
+vi.mock('$lib/entry/AddToStudy.svelte', () => ({ default: () => ({}) }));
+vi.mock('$lib/entry/StrokePlayer.svelte', () => ({ default: () => ({}) }));
 vi.mock('$lib/api/audio', () => ({ getEntryAudio: vi.fn(async () => ({ terms: [], syllables: null })) }));
 vi.mock('$lib/api/frequency', () => ({ getEntryRanks: vi.fn(async () => ({ pack: null, ranks: [] })) }));
 vi.mock('$lib/notes/store', async (orig) => ({

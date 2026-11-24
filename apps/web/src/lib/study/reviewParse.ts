@@ -2,7 +2,7 @@
 // validates id and timestamp, so the payload is checked here; callers
 // still filter by workspace themselves.
 
-import type { StudyEvent } from '../events';
+import type { StudyEvent } from '$lib/events';
 import { CARD_KINDS, type ReviewEvent, type ReviewGrade, type ReviewMeta, type StudyCardKind } from './types';
 
 function isCount(value: unknown): value is number {

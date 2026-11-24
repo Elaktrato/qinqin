@@ -8,7 +8,7 @@
 	import { apiErrorBody } from '$lib/api/client';
 	import { errorText } from '$lib/api/apiErrors';
 	import { t } from '$lib/i18n';
-	import Msg from '$lib/i18n/Msg.svelte';
+	import Msg from '$lib/ui/Msg.svelte';
 	import { previewLines } from '$lib/admin/deleteView';
 	import { useApp } from '$lib/context/context';
 	const app = useApp();

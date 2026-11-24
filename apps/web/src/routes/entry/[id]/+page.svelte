@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { page } from '$app/state';
-	import { pageTitle } from '$lib/pageTitle';
+	import { pageTitle } from '$lib/routing/pageTitle';
 	import { t } from '$lib/i18n';
 	import EntryView from '$lib/entry/EntryView.svelte';
 	import { setFrameTitle } from '$lib/frame/pageFrame.svelte';

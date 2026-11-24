@@ -8,12 +8,12 @@
 
 import { vi } from 'vitest';
 import { ApiError, api as moduleApi, type ApiOptions } from '../api/client';
-import type { User } from '../auth.svelte';
+import type { User } from '$lib/auth/auth.svelte';
 import { createAppContext, type AppContext } from '../context/app.svelte';
 import { contextOf } from '../context/context';
 import { browserTimers, webStorage, type Api, type AppDeps, type EventSource, type Timers, type VisibilitySource } from '../context/deps';
 import type { Session } from '../context/session.svelte';
-import type { Workspaces, WorkspacesState } from '../workspaces.svelte';
+import type { Workspaces, WorkspacesState } from '$lib/workspace/workspaces.svelte';
 import type { FeatureSwitches, FeatureSwitchesValue } from '../features/switches.svelte';
 
 /** An answer for `METHOD /path` (the query string included when the route names one). */

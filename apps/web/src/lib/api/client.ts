@@ -149,7 +149,7 @@ export function isOwnApiPath(path: string): boolean {
 
 /**
  * notifyUnauthorized is what any 401 does: drop the token and tell the auth
- * store. It never navigates: the layout guard (lib/routeAccess.ts) is the
+ * store. It never navigates: the layout guard (lib/routing/routeAccess.ts) is the
  * single owner of the redirect to /login. api() and the XHR upload helper
  * share it, so a session that drops mid-upload logs out too.
  */
@@ -162,7 +162,7 @@ export function notifyUnauthorized(): void {
  * api performs a same-origin JSON request. A stored token is attached as
  * `Authorization: Bearer` unless `auth` is false. Non-2xx responses throw
  * ApiError; a 401 also clears the token and tells the auth store, and the
- * layout guard (lib/routeAccess.ts) is the one place that navigates to
+ * layout guard (lib/routing/routeAccess.ts) is the one place that navigates to
  * /login — on an auth or open page the user simply stays put.
  */
 async function request(path: string, options: ApiOptions): Promise<Response> {

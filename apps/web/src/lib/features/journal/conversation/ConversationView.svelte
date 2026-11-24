@@ -13,7 +13,7 @@
 	import PopupStackView from '$lib/features/reader/PopupStackView.svelte';
 	import { LookupController } from '$lib/features/reader/useLookup.svelte';
 	import { recordLookup } from '$lib/lookups/sink';
-	import { newUlid } from '$lib/ulid';
+	import { newUlid } from '$lib/events/ulid';
 	import { useSession } from '$lib/context/context';
 	import { aiErrorView } from '../aiErrors';
 	import { answeredBy } from '../answeredBy';

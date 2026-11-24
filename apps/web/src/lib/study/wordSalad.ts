@@ -1,7 +1,7 @@
 // Word Salad: pure tokenising, tiering, shuffling and grading logic. No UI.
 // All offsets and splitting work in code points, never UTF-16 units.
 
-import { profileOf } from '../languageProfiles';
+import { profileOf } from '$lib/languages/profiles';
 import type { ReviewGrade } from './types';
 
 /** 0 = whole words, 1 = words (stability >= 4), 2 = single characters (>= 21). */

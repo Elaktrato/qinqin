@@ -19,7 +19,9 @@ export default mergeConfig(
 					extends: true,
 					test: {
 						name: 'unit',
-						include: ['src/**/*.test.ts'],
+						// tests/: the checks of the repository itself (docs, README, wiki, licence
+						// texts, bundle size, folder rules), plain node like the unit tests.
+						include: ['src/**/*.test.ts', 'tests/**/*.test.ts'],
 						exclude: ['src/**/*.dom.test.ts', 'src/**/*.gallery.test.ts', '**/node_modules/**']
 					}
 				},

@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { t } from '$lib/i18n';
-	import Msg from '$lib/i18n/Msg.svelte';
+	import Msg from '$lib/ui/Msg.svelte';
 	import { segmentBatch } from '$lib/api/segment';
 	import type { Entry, Sentence } from '$lib/api/types';
 	import WordSaladBoard from './WordSaladBoard.svelte';

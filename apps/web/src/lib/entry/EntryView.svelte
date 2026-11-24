@@ -1,8 +1,8 @@
 <script lang="ts">
 	import { tick } from 'svelte';
-	import { profileOf } from '$lib/languageProfiles';
+	import { profileOf } from '$lib/languages/profiles';
 	import { errorText } from '$lib/api/apiErrors';
-	import Msg from '$lib/i18n/Msg.svelte';
+	import Msg from '$lib/ui/Msg.svelte';
 	import { t } from '$lib/i18n';
 	import { formatNumber } from '$lib/i18n/format';
 	import { goto } from '$app/navigation';
@@ -11,17 +11,17 @@
 	import { getEntryAudio, type AudioResolution } from '$lib/api/audio';
 	import { getCharsUnderRadical, getEntry } from '$lib/api/entries';
 	import type { Entry, EntryBase, EntryDetail } from '$lib/api/types';
-	import AddToStudy from '$lib/components/AddToStudy.svelte';
-	import Badges from '$lib/components/Badges.svelte';
-	import EntryEditor from '$lib/components/EntryEditor.svelte';
-	import Readings from '$lib/components/Readings.svelte';
-	import Senses from '$lib/components/Senses.svelte';
-	import Sentences from '$lib/components/Sentences.svelte';
-	import StrokePlayer from '$lib/components/StrokePlayer.svelte';
+	import AddToStudy from '$lib/entry/AddToStudy.svelte';
+	import Badges from '$lib/entry/Badges.svelte';
+	import EntryEditForm from '$lib/entry/EntryEditForm.svelte';
+	import Readings from '$lib/entry/Readings.svelte';
+	import Senses from '$lib/entry/Senses.svelte';
+	import Sentences from '$lib/entry/Sentences.svelte';
+	import StrokePlayer from '$lib/entry/StrokePlayer.svelte';
 	import { creditLine, headwordClips, readingClips } from '$lib/audio/button';
 	import { readAudioSettings } from '$lib/audio/settings';
 	import PlayButton from '$lib/components/PlayButton.svelte';
-	import { viewPayload } from '$lib/eventPayloads';
+	import { viewPayload } from '$lib/events/eventPayloads';
 	import { loadEntryExtras } from '$lib/entry/extras';
 	import ReadingText from '$lib/components/ReadingText.svelte';
 	import { glossLang, readingLang, studyLang } from '$lib/i18n/lang';
@@ -401,7 +401,7 @@
 
 		{#if editing}
 		{#key entry.id}
-			<EntryEditor entry={entry} onSaved={handleSaved} onCancel={closeEditor} />
+			<EntryEditForm entry={entry} onSaved={handleSaved} onCancel={closeEditor} />
 		{/key}
 	{:else}
 		<div class="columns">

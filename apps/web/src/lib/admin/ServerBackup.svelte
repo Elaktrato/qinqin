@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { errorText } from '$lib/api/apiErrors';
 	import { t } from '$lib/i18n';
-	import Msg from '$lib/i18n/Msg.svelte';
+	import Msg from '$lib/ui/Msg.svelte';
 	import { apiErrorBody } from '$lib/api/client';
 	import { createServerBackup } from '$lib/api/backup';
 	import { PARTS, backupError, canCreate, includeBody, restoreSteps, securityNote } from './serverBackupView';

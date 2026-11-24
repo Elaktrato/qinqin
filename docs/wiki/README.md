@@ -37,4 +37,4 @@ Without `WIKI_TOKEN` the job prints a notice ("Wiki not published") and succeeds
 - Links between pages are standard Markdown links without extension: `[text](Page-name)`.
 - No images: the pages describe the interface in words.
 - `API-Routes.md` and `API-Errors.md` are generated. After a route or an error code changes run `node scripts/gen-api-docs.mjs`; `node scripts/gen-api-docs.mjs --check` (and the tests) fail when the committed pages are stale.
-- Every page file must be linked from `_Sidebar.md`, and every link in the sidebar must exist (checked by `apps/web/src/lib/wikiDocs.test.ts`).
+- Every page file must be linked from `_Sidebar.md`, and every link in the sidebar must exist (checked by `apps/web/tests/repo/wikiDocs.test.ts`).

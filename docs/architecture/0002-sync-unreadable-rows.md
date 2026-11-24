@@ -4,7 +4,7 @@
 
 Accepted
 
-Touched by: #195. A merge from one of these issues that changes what this record names updates the record.
+Touched by: none. A merge from an issue that changes what this record names adds it here and updates the record.
 
 ## Context
 
@@ -51,7 +51,8 @@ is refused whole (`ErrStoredUnreadable` in `server/internal/sync/sync.go`) and t
 
 - One bad row never blocks studying; the learner sees how many items this version could not read.
 - A row a newer client wrote survives on the server unchanged, so that client still reads it.
-- The notice component sits in the logic folder `lib/study/`; #195 moves it ([0004](0004-web-folder-rules.md)).
+- The notice component is the flashcards feature's (`apps/web/src/lib/features/flashcards/UnreadableRowsNotice.svelte`);
+  the detection stays in the logic folder `lib/study/` ([0004](0004-web-folder-rules.md)).
 - A change to the rule changes the contract first: the "Reading rows" section and its fixture, with an entry in
   the contract changelog ([`docs/contracts/CHANGELOG.md`](../contracts/CHANGELOG.md)); this record then follows
   the code.
@@ -85,7 +86,7 @@ Not allowed:
   `TestUnreadableRowsFixture` (`server/internal/study/rows/unreadable_contract_test.go`: typed rows decode
   exactly when readable).
 - `apps/web/src/lib/sync/pullPage.contract.test.ts` (the pager and `readableRow`),
-  `apps/web/src/lib/study/unreadable.test.ts`, `apps/web/src/lib/study/UnreadableRowsNotice.dom.test.ts` and
+  `apps/web/src/lib/study/unreadable.test.ts`, `apps/web/src/lib/features/flashcards/UnreadableRowsNotice.dom.test.ts` and
   `apps/web/src/routes/study/page.dom.test.ts` (the notice on the study page).
 - Server: `TestPullSkipsUnreadableStoredRowsAndAdvances` and `TestPushToAnUnreadableStoredRowIsRefusedWhole`
   (`server/internal/sync/unreadable_stored_test.go`), `TestUnreadableStoredRowOverHTTP`

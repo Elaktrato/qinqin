@@ -7,13 +7,13 @@ vi.mock('$app/navigation', () => ({ goto }));
 import { api } from '../api/client';
 import { browserTimers } from '../context/deps';
 import { studyDay } from '../time/studyDay';
-import { EventLog } from '../events';
+import { EventLog } from '$lib/events';
 import { webStorage } from '../context/deps';
-import { Notices } from '../notices.svelte';
+import { Notices } from '$lib/frame/notices.svelte';
 import { Connectivity } from '../pwa/offlineState.svelte';
 import { PENDING_REVIEWS_KEY, ReviewOutbox } from './events';
 import { recentSentReviews, rememberSent } from './recentSent';
-import { newUlid, ulidTime } from '../ulid';
+import { newUlid, ulidTime } from '$lib/events/ulid';
 
 // A fresh outbox per test (record 0009): the session's user and token are
 // these two variables, the window and document whatever the test stubs.

@@ -1,7 +1,7 @@
 import { readdirSync } from 'node:fs';
 import { join, relative, resolve } from 'node:path';
 import { describe, expect, it, vi } from 'vitest';
-import { APP_NAME } from '$lib/app';
+import { APP_NAME } from '$lib/frame/app';
 import { FLASHCARDS_ID, READER_ID } from '$lib/features';
 import { PHONE_MAX_WIDTH, PHONE_MEDIA_QUERY, FRAME_PHONE_BREAKPOINT, onLeavePhoneFrame } from './breakpoint';
 import phoneBar from './PhoneBar.svelte?raw';

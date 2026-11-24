@@ -4,7 +4,7 @@
 
 Accepted
 
-Touched by: #195, #199. A merge from one of these issues that changes what this record names updates the record.
+Touched by: #199. A merge from one of these issues that changes what this record names updates the record.
 
 ## Context
 
@@ -23,7 +23,7 @@ the registry #173 added (onSessionEnd, with sessionEpoch checks against late ans
   (`AppDeps` in `apps/web/src/lib/context/deps.ts`; `browserDeps()` is the production set). Nothing in it
   reaches a browser global or another module's instance by itself.
 - **One app context** per tab (`AppContext`, `apps/web/src/lib/context/app.svelte.ts`): what is tab-wide and
-  outlives a sign-in: auth (`apps/web/src/lib/auth.svelte.ts`), connectivity and the PWA state (the install
+  outlives a sign-in: auth (`apps/web/src/lib/auth/auth.svelte.ts`), connectivity and the PWA state (the install
   prompt, the service worker's update), the sign-out prompt, the theme, the navigation layout, the font faces,
   the page frame (`apps/web/src/lib/frame/pageFrame.svelte.ts`), and the current session. The root layout
   (`apps/web/src/routes/+layout.svelte`) creates it, starts it (it installs the API client's one observer,

@@ -6,7 +6,7 @@
 	// The menu behaviour is lib/ui Menu's.
 	import { t } from '$lib/i18n';
 	import Flag from '$lib/components/Flag.svelte';
-	import WorkspaceLabel from '$lib/components/WorkspaceLabel.svelte';
+	import WorkspaceLabel from '$lib/workspace/WorkspaceLabel.svelte';
 	import { workspaceDisplay } from '$lib/languages';
 	import Icon from '$lib/ui/Icon.svelte';
 	import Menu from '$lib/ui/Menu.svelte';

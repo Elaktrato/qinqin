@@ -3,8 +3,8 @@
 	import { onMount, tick } from 'svelte';
 	import { t } from '$lib/i18n';
 	import type { Dictionary, Workspace } from '$lib/api/types';
-	import { dictionaryHint } from '$lib/coverage';
-	import { HIDDEN_DICTIONARIES_KEY, hiddenDictionaries } from '$lib/dictionaryVisibility';
+	import { dictionaryHint } from '$lib/languages/coverage';
+	import { HIDDEN_DICTIONARIES_KEY, hiddenDictionaries } from '$lib/workspace/dictionaryVisibility';
 	import { languageLabel } from '$lib/languages';
 	import { Button } from '$lib/ui';
 	import { useSession } from '$lib/context/context';

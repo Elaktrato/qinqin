@@ -1,8 +1,8 @@
 <script lang="ts">
-	import { pageTitle } from '$lib/pageTitle';
+	import { pageTitle } from '$lib/routing/pageTitle';
 	import { errorText } from '$lib/api/apiErrors';
 	import { t } from '$lib/i18n';
-	import Msg from '$lib/i18n/Msg.svelte';
+	import Msg from '$lib/ui/Msg.svelte';
 	import { onMount } from 'svelte';
 	import { api } from '$lib/api/client';
 	import { Button } from '$lib/ui';

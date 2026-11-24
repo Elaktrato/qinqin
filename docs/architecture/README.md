@@ -20,7 +20,7 @@ reused. The first line is `# NNNN. Title`, then these sections, in this order:
 ```md
 ## Status
 One line, one of the status values below; then a line "Touched by: #N, #M." naming the open issues that
-change the code the record describes.
+change the code the record describes, or "Touched by: none." when no open issue does.
 
 ## Context
 What problem or drift made the decision necessary; the issue that decided it.
@@ -42,7 +42,7 @@ catch by hand.
 Optional: points the deciding issue leaves open. Each names who decides it (usually the implementing issue).
 ```
 
-`architectureDocs.test.ts` (in `apps/web/src/lib/`) checks every record against this template, checks its
+`architectureDocs.test.ts` (in `apps/web/tests/repo/`) checks every record against this template, checks its
 status, its links and its row in the index below, and, for a record in force (`Accepted`), that every
 repository path it names in backticks exists.
 
@@ -64,7 +64,7 @@ repository path it names in backticks exists.
 | [0001](0001-error-handling.md) | Error handling: one coded error answer, shown by code | Accepted |
 | [0002](0002-sync-unreadable-rows.md) | Sync: an unreadable row is skipped, never the page | Accepted |
 | [0003](0003-domain-packages-own-their-sql.md) | Server: domain packages own their SQL | Accepted |
-| [0004](0004-web-folder-rules.md) | Web: folder rules | Accepted, being implemented by #195 |
+| [0004](0004-web-folder-rules.md) | Web: folder rules | Accepted |
 | [0005](0005-test-conventions.md) | Test conventions | Accepted |
 | [0006](0006-core-features-instead-of-code-plugins.md) | Core features, feature switches, language profiles and data packs instead of code plugins | Accepted |
 | [0007](0007-browser-end-to-end-tests.md) | Browser end-to-end tests | Accepted |
@@ -74,7 +74,7 @@ repository path it names in backticks exists.
 ## Adding or changing a record
 
 - A new decision gets the next number, a row in the index and the template's sections; run
-  `cd apps/web && npx vitest run src/lib/architectureDocs.test.ts`.
+  `cd apps/web && npx vitest run tests/repo/architectureDocs.test.ts`.
 - The issue that implements a record updates it when it lands (status, names, enforcement), and so does
   every merge from an issue on a record's "Touched by" line that changes the code, paths or names the record
   describes. A new issue that will change such code is added to the line.

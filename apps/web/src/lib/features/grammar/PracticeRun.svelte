@@ -4,7 +4,7 @@
 	import { segmentBatch } from '$lib/api/segment';
 	import { loadTokens } from '$lib/study/wordSalad';
 	import WordSaladBoard from '$lib/features/flashcards/cards/WordSaladBoard.svelte';
-	import ClozeChoice from '$lib/components/ClozeChoice.svelte';
+	import ClozeChoice from '$lib/features/grammar/ClozeChoice.svelte';
 	import { buildExercises, clozeParts, firstTry, type Exercise } from './exercises';
 	import { loadDisplayLesson, type DisplayLesson } from './lessonData';
 	import { recordRun } from './progress';

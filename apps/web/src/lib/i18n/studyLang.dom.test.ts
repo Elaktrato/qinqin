@@ -6,7 +6,7 @@ import { afterEach, describe, expect, it, beforeEach } from 'vitest';
 import type { Entry, Workspace } from '$lib/api/types';
 import type { FlowItem } from '$lib/study/cardFlow';
 import type { StudyCard } from '$lib/study/types';
-import CardManager from '$lib/components/CardManager.svelte';
+import CardManager from '$lib/features/flashcards/decks/CardManager.svelte';
 import ToneCard from '$lib/features/flashcards/cards/ToneCard.svelte';
 import CardHarness from '$lib/features/flashcards/face/testing/CardHarness.svelte';
 
@@ -72,18 +72,18 @@ describe('ToneCard', () => {
 
 // Every audited component of study text takes its `lang` from lib/i18n/lang.ts (no third source).
 const AUDITED = [
-	'lib/components/CardManager.svelte',
+	'lib/features/flashcards/decks/CardManager.svelte',
 	'lib/features/flashcards/cards/ToneCard.svelte',
 	'lib/features/flashcards/cards/VocabCard.svelte',
 	'lib/features/flashcards/cards/ReverseCard.svelte',
 	'lib/features/flashcards/cards/WritingCard.svelte',
-	'lib/components/Readings.svelte',
-	'lib/components/Senses.svelte',
-	'lib/components/Sentences.svelte',
+	'lib/entry/Readings.svelte',
+	'lib/entry/Senses.svelte',
+	'lib/entry/Sentences.svelte',
 	'lib/components/ReadingText.svelte',
 	'lib/entry/EntryView.svelte',
 	'routes/stats/characters/+page.svelte',
-	'lib/components/map/CellTip.svelte',
+	'lib/stats/map/CellTip.svelte',
 	'lib/features/flashcards/decks/DeckDetail.svelte',
 	'lib/features/flashcards/decks/StarterDeckDetail.svelte',
 	'lib/features/flashcards/decks/SystemDeckDetail.svelte',

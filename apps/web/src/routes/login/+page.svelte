@@ -1,8 +1,8 @@
 <script lang="ts">
 	import { onDestroy, onMount, tick } from 'svelte';
-	import { pageTitle } from '$lib/pageTitle';
+	import { pageTitle } from '$lib/routing/pageTitle';
 	import { t } from '$lib/i18n';
-	import Msg from '$lib/i18n/Msg.svelte';
+	import Msg from '$lib/ui/Msg.svelte';
 	import { authErrorMessage } from '$lib/api/authErrors';
 	import { apiErrorBody } from '$lib/api/client';
 	import { getAuthOptions, type AuthOptions } from '$lib/api/account';
@@ -10,7 +10,7 @@
 	import { firstMethod, otherMethods, type MfaChallenge, type MfaMethod } from '$lib/account/loginFlow';
 	import { codeFailure, otpAttrs, otpComplete, resendText, sanitizeOtp } from '$lib/account/otpInput';
 	import { Button, Field } from '$lib/ui';
-	import type { SignInResult } from '$lib/auth.svelte';
+	import type { SignInResult } from '$lib/auth/auth.svelte';
 	import { useApp } from '$lib/context/context';
 	const app = useApp();
 

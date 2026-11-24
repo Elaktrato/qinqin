@@ -6,7 +6,7 @@
 	// Native radio groups: arrow keys move within a group.
 	import { onDestroy } from 'svelte';
 	import { t, type MessageKey } from '$lib/i18n';
-	import Msg from '$lib/i18n/Msg.svelte';
+	import Msg from '$lib/ui/Msg.svelte';
 	import {
 		CORNERS,
 		DEFAULT_APPEARANCE,

@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { t } from '$lib/i18n';
 	import { readingLang, studyLang } from '$lib/i18n/lang';
-	import ReadingTable from '$lib/components/ReadingTable.svelte';
+	import ReadingTable from '$lib/features/flashcards/cards/ReadingTable.svelte';
 	import { onDestroy } from 'svelte';
 	import type { Entry } from '$lib/api/types';
 	import PlayButton from '$lib/components/PlayButton.svelte';

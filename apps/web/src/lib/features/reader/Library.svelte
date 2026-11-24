@@ -1,9 +1,9 @@
 <script lang="ts">
 	import { t } from '$lib/i18n';
-	import Msg from '$lib/i18n/Msg.svelte';
+	import Msg from '$lib/ui/Msg.svelte';
 	import { deleteBook, listAllBooks, listBooks, uploadBook } from '$lib/api/library';
 	import type { Book } from '$lib/api/types';
-	import WorkspaceLabel from '$lib/components/WorkspaceLabel.svelte';
+	import WorkspaceLabel from '$lib/workspace/WorkspaceLabel.svelte';
 	import { languageLabel } from '$lib/languages';
 	import { apiErrorMessage } from './errors';
 	import { workspacesWithBooks } from './libraryElsewhere';

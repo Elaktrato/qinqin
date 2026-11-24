@@ -3,7 +3,7 @@
 // "variant" when the script cannot be told. Japanese forms are never
 // variants (they stay in the "Also written" line).
 
-import { profileOf } from '$lib/languageProfiles';
+import { profileOf } from '$lib/languages/profiles';
 
 export type VariantLabel = 'traditional' | 'simplified' | 'variant';
 

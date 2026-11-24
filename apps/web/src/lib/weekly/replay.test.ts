@@ -1,7 +1,7 @@
 import { describe, expect, it, beforeEach } from 'vitest';
 import fixture from '../../../../../docs/contracts/weekly/week-summary.json';
 import type { CharRow } from '../api/types';
-import { usesHan } from '../languages';
+import { usesHan } from '$lib/languages';
 import { DEFAULT_W } from '../study/fsrs/params';
 import { cellStates, masteryGlyphs, sectionStats } from '../study/charGroups';
 import { masteryFromSchedules } from '../study/mastery';

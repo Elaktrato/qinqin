@@ -3,7 +3,7 @@
 // last-write-wins stamps and the rows this version cannot read) decides which
 // typed rows a command writes and with which stamp; nothing here sends.
 
-import { newUlid } from '../ulid';
+import { newUlid } from '$lib/events/ulid';
 import { newCardId } from './canonical';
 import { bodyOf, identityOf, sameBody, studyKey, type StudyCollection, type StudyRow, type StudyRowBody } from './rows';
 import { UnreadableRowError } from './unreadable';

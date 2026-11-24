@@ -2,7 +2,7 @@
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { getAuthOptions, type AuthOptions } from '$lib/api/account';
-	import { pageTitle } from '$lib/pageTitle';
+	import { pageTitle } from '$lib/routing/pageTitle';
 	import { t } from '$lib/i18n';
 	import TwoFactorSetup from '$lib/account/TwoFactorSetup.svelte';
 	import { Button } from '$lib/ui';

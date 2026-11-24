@@ -14,7 +14,7 @@ import { InstallPrompt } from '../pwa/installPrompt.svelte';
 import { createThemeStore, type ThemeStore } from '../theme/store.svelte';
 import { Connectivity } from '../pwa/offlineState.svelte';
 import { createWorkerRegistration, type WorkerRegistration } from '../pwa/register.svelte';
-import { Auth, type AuthState } from '../auth.svelte';
+import { Auth, type AuthState } from '$lib/auth/auth.svelte';
 import type { AppDeps } from './deps';
 import { createSession, type Session, type SessionEndReason } from './session.svelte';
 

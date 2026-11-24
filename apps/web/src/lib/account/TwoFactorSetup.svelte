@@ -5,7 +5,7 @@
 	import { putEmail, type AuthOptions } from '$lib/api/account';
 	import { confirmEmailMethod, setEmailMethod, totpConfirm, totpSetup, type TotpSetup } from '$lib/api/mfa';
 	import { t } from '$lib/i18n';
-	import Msg from '$lib/i18n/Msg.svelte';
+	import Msg from '$lib/ui/Msg.svelte';
 	import { Button, Field } from '$lib/ui';
 	import { codeFailure, otpAttrs, otpComplete, sanitizeOtp } from './otpInput';
 	import { groupSecret, twoFactorChoices } from './mfaView';

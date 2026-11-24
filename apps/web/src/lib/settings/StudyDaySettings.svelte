@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { t } from '$lib/i18n';
-	import Msg from '$lib/i18n/Msg.svelte';
+	import Msg from '$lib/ui/Msg.svelte';
 	import { unusableZones } from '$lib/time/studyDay';
 	import { browserZone } from '$lib/time/zone';
 	import { changeErrorMessage, mismatch, zoneLabel, zoneMatchText, zoneOptions } from './zoneSettings';

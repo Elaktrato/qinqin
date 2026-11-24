@@ -2,7 +2,7 @@
 	import { errorText } from '$lib/api/apiErrors';
 	import { t } from '$lib/i18n';
 	import { Field } from '$lib/ui';
-	import Msg from '$lib/i18n/Msg.svelte';
+	import Msg from '$lib/ui/Msg.svelte';
 	import { onMount, tick } from 'svelte';
 	import { apiErrorBody } from '$lib/api/client';
 	import { deleteUser, deletionPreview, type DeletionPreview } from '$lib/api/adminUsers';

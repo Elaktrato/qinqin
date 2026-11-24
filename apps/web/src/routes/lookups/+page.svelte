@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { errorText } from '$lib/api/apiErrors';
 	import { onDestroy, tick } from 'svelte';
-	import { pageTitle } from '$lib/pageTitle';
+	import { pageTitle } from '$lib/routing/pageTitle';
 	import { t } from '$lib/i18n';
 	import {
 		PAGE_SIZE,

@@ -7,7 +7,7 @@ import { UTC_CONTEXT, type StudyContext } from '../study/studyContext';
 import type { ReviewEvent, StudyCard, StudyCardKind } from '../study/types';
 import { STUDY_COLLECTIONS } from '../study/rows';
 import { firstPageUrl, nextPageUrl } from '../sync/pager';
-import { fullLogPath } from '../events';
+import { fullLogPath } from '$lib/events';
 import { entryPath } from '../api/entries';
 import { strokeUrl } from '../study/strokeData';
 import {

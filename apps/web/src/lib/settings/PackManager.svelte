@@ -15,7 +15,7 @@
 	import type { UploadProgress } from '$lib/api/upload';
 	import { languageLabel } from '$lib/languages';
 	import { t } from '$lib/i18n';
-	import Msg from '$lib/i18n/Msg.svelte';
+	import Msg from '$lib/ui/Msg.svelte';
 	import { Button, Dialog, Panel, Section } from '$lib/ui';
 	import {
 		groupPacks,

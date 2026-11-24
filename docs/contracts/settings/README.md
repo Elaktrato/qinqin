@@ -6,7 +6,7 @@ Two kinds of shared settings a second client reads and writes. Design:
 Fixtures:
 
 - `workspace-settings.json` — `keys` (the key table below), `parse` (how the web reads each key from a
-  workspace's `settings`; web: `lib/audio/settings.test.ts`, `lib/dictionaryVisibility.test.ts`,
+  workspace's `settings`; web: `lib/audio/settings.test.ts`, `lib/workspace/dictionaryVisibility.test.ts`,
   `lib/features/reader/displaySettings.test.ts`) and `merge` (`PUT /api/workspaces/{id}` with
   `{"settings": patch}` over a stored object; Go: `server/internal/api/contract_settings_test.go`).
   `"$string:n"` is a JSON string of n `x` characters.

@@ -8,7 +8,7 @@ import { errorText } from '$lib/api/apiErrors';
 import { fetchActivity, type ActivitySource } from '../api/stats';
 import { t } from '../i18n';
 import type { GoalsRow } from '../goals/goals';
-import { usesHan } from '../languages';
+import { usesHan } from '$lib/languages';
 import { loadCharacterMapData, withLegacyWritten } from '../stats/characterMap';
 import { contextForData } from '../study/currentContext';
 import { loadStudyHistory } from '../study/data';

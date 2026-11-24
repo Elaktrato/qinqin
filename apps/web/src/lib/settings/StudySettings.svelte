@@ -8,7 +8,7 @@
 	import NoteSettings from './NoteSettings.svelte';
 	import { workspaceFieldFrom, workspaceRowFrom, type FieldState } from './limitsForm';
 	import { getStudyData } from '$lib/study/data';
-	import { newUlid } from '$lib/ulid';
+	import { newUlid } from '$lib/events/ulid';
 	import {
 		parseVacation,
 		planCancel,

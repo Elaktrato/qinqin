@@ -2,7 +2,7 @@ import type { StudyState } from '../data';
 // Settings commands (#193): FSRS parameter sets, the active set, and the daily
 // limit rows of the workspace and its decks.
 
-import { newUlid } from '../../ulid';
+import { newUlid } from '$lib/events/ulid';
 import type { ParamSet } from '../fsrs/params';
 import type { LimitPair } from '../limits';
 import { activeRow, limitsRow, setRow, studyKey, type FsrsActiveRow } from '../rows';
