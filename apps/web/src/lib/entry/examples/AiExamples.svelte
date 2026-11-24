@@ -51,15 +51,18 @@
 	const drafts = $derived(view?.drafts ?? []);
 	const shown = $derived(view !== null && needsExamples(entry.sentences, drafts));
 
+	// The drafts load once per entry: a new entry object of the same word (the
+	// page adding a kept sentence) must not reset them or the status.
+	const entryId = $derived(entry.id);
 	$effect(() => {
-		const id = entry.id;
+		const id = entryId;
 		view = null;
 		status = '';
 		error = '';
 		pendingRequest = null;
 		getExamples(id).then(
 			(v) => {
-				if (id !== entry.id) return;
+				if (id !== entryId) return;
 				view = v;
 				if (!levelPicked) level = v.defaultLevel;
 			},
@@ -82,7 +85,7 @@
 		busy = true;
 		error = '';
 		status = t('entry.examples.writing');
-		const id = entry.id;
+		const id = entryId;
 		const requestId = (pendingRequest ??= newUlid());
 		const r = await runGenerate(
 			{
@@ -94,7 +97,7 @@
 			{ onWaiting: () => (status = t('entry.examples.stillWaiting')) }
 		);
 		busy = false;
-		if (id !== entry.id) return;
+		if (id !== entryId) return;
 		if (r.generated) {
 			pendingRequest = null;
 			view = { drafts: r.generated.drafts, defaultLevel: level };

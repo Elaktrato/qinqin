@@ -88,6 +88,22 @@ describe('AiExamples', () => {
 		expect(screen.getByText(/New examples replace the ones you have not kept/)).toBeTruthy();
 	});
 
+	it('keeps its drafts and status when the page adds the kept sentence to the entry', async () => {
+		vi.mocked(getExamples).mockResolvedValue({ drafts: [draft(1, '我喜欢学习。'), draft(2, '学习很好。')], defaultLevel: 'beginner' });
+		const kept = sentence(50, '我喜欢学习。', { provider: 'anthropic', model: 'claude-opus-5-5' });
+		vi.mocked(keepExample).mockResolvedValue(kept);
+		const onkept = vi.fn();
+		const view = render(AiExamples, { props: { entry: { id: 7, language: 'zh', sentences: [] }, onkept }, context: ctx.context });
+		await screen.findByText('我喜欢学习。');
+		await fireEvent.click(screen.getAllByRole('button', { name: 'Keep' })[0]);
+		await waitFor(() => expect(onkept).toHaveBeenCalled());
+		// The entry page answers with a new entry object holding the kept sentence.
+		await view.rerender({ entry: { id: 7, language: 'zh', sentences: [kept] }, onkept });
+		expect(screen.getByRole('status').textContent).toContain('Kept.');
+		expect(screen.getByText('学习很好。')).toBeTruthy();
+		expect(getExamples).toHaveBeenCalledTimes(1);
+	});
+
 	it('reports a draft with a reason from a picker, and deletes one without', async () => {
 		vi.mocked(getExamples).mockResolvedValue({ drafts: [draft(1, '我喜欢学习。'), draft(2, '学习很好。')], defaultLevel: 'beginner' });
 		vi.mocked(discardExample).mockResolvedValue();
