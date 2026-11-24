@@ -1,8 +1,6 @@
 package api
 
 import (
-	"context"
-	"database/sql"
 	"encoding/json"
 	"errors"
 	"io"
@@ -13,6 +11,7 @@ import (
 
 	"qinqin/internal/events"
 	"qinqin/internal/model"
+	"qinqin/internal/workspaces"
 )
 
 // eventBatch is the request body of POST /api/events/batch: the
@@ -61,7 +60,7 @@ func (s *server) handleEventBatch(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		if !owned[ev.WorkspaceID] {
-			ok, err := s.workspaceOwned(r.Context(), u.ID, ev.WorkspaceID)
+			ok, err := workspaces.Owned(r.Context(), s.db, u.ID, ev.WorkspaceID)
 			if err != nil {
 				writeInternal(w, r)
 				return
@@ -109,7 +108,7 @@ func (s *server) handleListEvents(w http.ResponseWriter, r *http.Request) {
 			writeError(w, http.StatusBadRequest, "bad_request", "workspace must be an integer.")
 			return
 		}
-		ok, err := s.workspaceOwned(r.Context(), u.ID, id)
+		ok, err := workspaces.Owned(r.Context(), s.db, u.ID, id)
 		if err != nil {
 			writeInternal(w, r)
 			return
@@ -183,7 +182,7 @@ func (s *server) handleDeleteLookupEvents(w http.ResponseWriter, r *http.Request
 		writeError(w, http.StatusBadRequest, "bad_request", "workspace must be an integer.")
 		return
 	}
-	ok, err := s.workspaceOwned(r.Context(), u.ID, id)
+	ok, err := workspaces.Owned(r.Context(), s.db, u.ID, id)
 	if err != nil {
 		writeInternal(w, r)
 		return
@@ -198,22 +197,6 @@ func (s *server) handleDeleteLookupEvents(w http.ResponseWriter, r *http.Request
 		return
 	}
 	writeJSON(w, http.StatusOK, map[string]int64{"deleted": n})
-}
-
-// workspaceOwned reports whether the workspace belongs to userID. The
-// lookup keys on (id, user_id), so unknown and foreign ids are
-// indistinguishable to the caller.
-func (s *server) workspaceOwned(ctx context.Context, userID, workspaceID int64) (bool, error) {
-	var one int
-	err := s.db.QueryRowContext(ctx, `
-		SELECT 1 FROM workspaces WHERE id = ? AND user_id = ?`, workspaceID, userID).Scan(&one)
-	if errors.Is(err, sql.ErrNoRows) {
-		return false, nil
-	}
-	if err != nil {
-		return false, err
-	}
-	return true, nil
 }
 
 // countingWriter counts the bytes that went out, so a stream that failed

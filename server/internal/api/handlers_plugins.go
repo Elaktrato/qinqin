@@ -11,6 +11,7 @@ import (
 	"qinqin/internal/model"
 	"qinqin/internal/plugins"
 	"qinqin/internal/study/rows"
+	"qinqin/internal/workspaces"
 )
 
 // handleRegisterPlugin serves POST /api/admin/plugins: an admin
@@ -111,7 +112,7 @@ func (s *server) pluginWorkspace(w http.ResponseWriter, r *http.Request, userID 
 		writeError(w, http.StatusBadRequest, "bad_request", "workspace must be an integer.")
 		return nil, false
 	}
-	ok, err := s.workspaceOwned(r.Context(), userID, id)
+	ok, err := workspaces.Owned(r.Context(), s.db, userID, id)
 	if err != nil {
 		writeInternal(w, r)
 		return nil, false

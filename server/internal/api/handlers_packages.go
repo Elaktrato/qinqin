@@ -12,6 +12,7 @@ import (
 
 	"qinqin/internal/auth"
 	"qinqin/internal/datapkg"
+	"qinqin/internal/workspaces"
 )
 
 // Data packages (docs/contracts/packages/): the catalogue and the files.
@@ -92,7 +93,7 @@ func (s *server) handlePackageCatalogue(w http.ResponseWriter, r *http.Request) 
 		}
 	} else {
 		var err error
-		if languages, err = s.workspaceLanguages(r, p.User.ID); err != nil {
+		if languages, err = workspaces.Languages(r.Context(), s.db, p.User.ID); err != nil {
 			writeInternal(w, r)
 			return
 		}
@@ -136,24 +137,6 @@ func parseCatalogueLanguages(v string) ([]string, bool) {
 		}
 	}
 	return parts, true
-}
-
-// workspaceLanguages lists the distinct languages of the user's workspaces.
-func (s *server) workspaceLanguages(r *http.Request, userID int64) ([]string, error) {
-	rows, err := s.db.QueryContext(r.Context(), `SELECT DISTINCT language FROM workspaces WHERE user_id = ? ORDER BY language`, userID)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	langs := []string{}
-	for rows.Next() {
-		var l string
-		if err := rows.Scan(&l); err != nil {
-			return nil, err
-		}
-		langs = append(langs, l)
-	}
-	return langs, rows.Err()
 }
 
 // etagListed reports whether an If-None-Match header names etag (or *).

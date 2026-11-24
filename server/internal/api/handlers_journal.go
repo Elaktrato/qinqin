@@ -2,7 +2,6 @@ package api
 
 import (
 	"context"
-	"database/sql"
 	"encoding/json"
 	"errors"
 	"log"
@@ -15,6 +14,7 @@ import (
 	"qinqin/internal/ai"
 	"qinqin/internal/journal"
 	"qinqin/internal/plugins"
+	"qinqin/internal/workspaces"
 )
 
 const (
@@ -36,9 +36,8 @@ type aiTarget struct {
 // journalTarget resolves the owned workspace, its language and the journal
 // settings. A foreign or unknown workspace is a 404.
 func (s *server) journalTarget(w http.ResponseWriter, r *http.Request, userID, workspaceID int64) (aiTarget, bool) {
-	var lang string
-	err := s.db.QueryRowContext(r.Context(), `SELECT language FROM workspaces WHERE id = ? AND user_id = ?`, workspaceID, userID).Scan(&lang)
-	if errors.Is(err, sql.ErrNoRows) {
+	lang, err := workspaces.Language(r.Context(), s.db, userID, workspaceID)
+	if errors.Is(err, workspaces.ErrNotFound) {
 		writeError(w, http.StatusNotFound, "workspace_not_found", "No such workspace.")
 		return aiTarget{}, false
 	}
