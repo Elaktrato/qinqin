@@ -13,6 +13,7 @@ import (
 	"qinqin/internal/datapkg"
 	"qinqin/internal/lemma"
 	"qinqin/internal/lemmapack"
+	"qinqin/internal/pack"
 	"qinqin/internal/packs"
 )
 
@@ -192,7 +193,7 @@ func TestStartupRefreshRebuildsThePackage(t *testing.T) {
 	sqlDB, _ := openTestDB(t)
 	root := t.TempDir()
 	writeLemmaPack(t, root, "xa-lemma", "xa", lemmaTable("xa", "1"))
-	b, _ := startPackages(ctx, sqlDB, t.TempDir(), t.Logf)
+	b, _ := startPackages(ctx, sqlDB, t.TempDir(), t.Logf, nil)
 	row := func() datapkg.Row {
 		t.Helper()
 		wctx, wcancel := context.WithTimeout(ctx, time.Minute)
@@ -221,4 +222,55 @@ func TestStartupRefreshRebuildsThePackage(t *testing.T) {
 	if second.Revision != first.Revision+1 || second.ContentHash == first.ContentHash || second.State != "ready" {
 		t.Errorf("after the refresh: r%d -> r%d, hash changed %v, %s", first.Revision, second.Revision, second.ContentHash != first.ContentHash, second.State)
 	}
+}
+
+// The bundled lemma-rules sync runs before the package builder builds
+// anything (startPackages' prepare): an import commits the pack's rows and
+// then, in a transaction of its own, its licence texts, so a build between
+// the two publishes a revision without the texts, and the import's kick
+// then builds a second one. Here the first transaction has committed before
+// start (the pack's rules are live, its texts are not), and prepare lets
+// any build that is already running finish before it stores the texts:
+// with the sync before the builder, the package's only revision is built
+// with the texts.
+func TestStartPackagesSyncsBeforeTheFirstBuild(t *testing.T) {
+	t.Cleanup(func() { lemma.SetInstalled(nil) })
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	sqlDB, _ := openTestDB(t)
+	root := t.TempDir()
+	writeLemmaPack(t, root, "xa-lemma", "xa", lemmaTable("xa", "1"))
+	pk, err := pack.LoadPack(filepath.Join(root, "xa-lemma"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := lemmapack.Import(ctx, sqlDB, pk); err != nil { // the rows, not yet the texts
+		t.Fatal(err)
+	}
+	wctx, wcancel := context.WithTimeout(ctx, time.Minute)
+	defer wcancel()
+	b, _ := startPackages(ctx, sqlDB, t.TempDir(), t.Logf, func(b *datapkg.Builder) {
+		if err := b.Wait(wctx); err != nil { // a build already running finishes first
+			t.Error(err)
+		}
+		if _, err := packs.Import(ctx, sqlDB, pk, packs.WithOnChange(b.PackChanged)); err != nil { // stores the texts, kicks
+			t.Error(err)
+		}
+	})
+	if err := b.Wait(wctx); err != nil {
+		t.Fatal(err)
+	}
+	cat, err := b.Registry().Catalogue(ctx, []string{datapkg.AllLanguages}, true)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, r := range cat.Packages {
+		if r.ID == "lemma-rules.xa-lemma" {
+			if r.Revision != 1 || !r.LicenseTexts || r.State != "ready" {
+				t.Fatalf("lemma-rules.xa-lemma: revision %d %s, licence texts %v; want revision 1 ready with the texts", r.Revision, r.State, r.LicenseTexts)
+			}
+			return
+		}
+	}
+	t.Fatalf("no lemma-rules.xa-lemma in %+v", cat.Packages)
 }

@@ -69,7 +69,7 @@ func TestServeStartsPackagesInTheBackground(t *testing.T) {
 		t.Fatal(err)
 	}
 	data := t.TempDir() // no package files yet: the reconcile builds them
-	b, _ := startPackages(ctx, sqlDB, data, t.Logf)
+	b, _ := startPackages(ctx, sqlDB, data, t.Logf, nil)
 	wctx, wcancel := context.WithTimeout(ctx, time.Minute)
 	defer wcancel()
 	if err := b.Wait(wctx); err != nil {

@@ -23,12 +23,19 @@ func packageBuilder(sqlDB *sql.DB, dataDir string, logf func(string, ...any)) *d
 
 // startPackages starts the builder for serve and queues the startup
 // reconcile (stray .tmp files, expired revisions, tombstones, and builds
-// of what is missing or stale); serve does not wait for it. done is closed
-// once the builder stopped after ctx ended (a build in progress is
-// abandoned: its row keeps its last state and the next start's reconcile
-// removes the .tmp file and builds again).
-func startPackages(ctx context.Context, sqlDB *sql.DB, dataDir string, logf func(string, ...any)) (b *datapkg.Builder, done <-chan struct{}) {
+// of what is missing or stale); serve does not wait for it. prepare, if
+// set, runs first, before the builder builds anything: the startup imports
+// that kick packages (the bundled lemma-rules sync) go there, so no build
+// sees an import half done (its rows committed, its licence texts not yet)
+// and no package gets two revisions at one start; its kicks run after the
+// reconcile. done is closed once the builder stopped after ctx ended (a
+// build in progress is abandoned: its row keeps its last state and the
+// next start's reconcile removes the .tmp file and builds again).
+func startPackages(ctx context.Context, sqlDB *sql.DB, dataDir string, logf func(string, ...any), prepare func(*datapkg.Builder)) (b *datapkg.Builder, done <-chan struct{}) {
 	b = packageBuilder(sqlDB, dataDir, logf)
+	if prepare != nil {
+		prepare(b)
+	}
 	stopped := make(chan struct{})
 	go func() {
 		b.Run(ctx)
