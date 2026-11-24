@@ -16,7 +16,9 @@ import (
 	"time"
 	"unicode/utf8"
 
+	"qinqin/internal/ai"
 	"qinqin/internal/events"
+	"qinqin/internal/sentences"
 )
 
 // Error codes of an invalid archive (docs/contracts/auth/errors.json).
@@ -351,6 +353,7 @@ func (a *Archive) validate() error {
 		return err
 	}
 	seenSent := map[int64]struct{}{}
+	aiPerEntry := map[int64]int{}
 	if counts["sentences"], err = a.countLines(read, NameSentences, func(b []byte) error {
 		var s OwnSentence
 		if !ownSentenceLineOK(b) || decodeStrict(b, &s) != nil {
@@ -360,6 +363,11 @@ func (a *Archive) validate() error {
 			return invalid("%s names a sentence twice", NameSentences)
 		}
 		seenSent[s.ID] = struct{}{}
+		if s.AI != nil {
+			if aiPerEntry[s.EntryID]++; aiPerEntry[s.EntryID] > sentences.MaxKeptPerEntry {
+				return invalid("%s holds more than %d AI examples of one entry", NameSentences, sentences.MaxKeptPerEntry)
+			}
+		}
 		return nil
 	}); err != nil {
 		return err
@@ -726,7 +734,15 @@ func ownSentenceLineOK(b []byte) bool {
 		len(s.Pinyin) > 4096 || len(s.Translation) > 8192 {
 		return false
 	}
-	return s.AI == nil || (s.AI.Provider != "" || s.AI.Model != "") && len(s.AI.Provider) <= 64 && len(s.AI.Model) <= 200
+	if s.AI == nil {
+		return true
+	}
+	// A kept AI example: the live rules of the examples (#186, docs/contracts/examples/).
+	return s.AI.Provider != "" && s.AI.Model != "" && len(s.AI.Provider) <= 64 && len(s.AI.Model) <= 200 && ai.ValidLevel(s.AI.Level) &&
+		strings.TrimSpace(s.Translation) != "" &&
+		utf8.RuneCountInString(s.Hanzi) <= sentences.MaxExampleTextRunes &&
+		utf8.RuneCountInString(s.Translation) <= sentences.MaxExampleTranslationRunes &&
+		utf8.RuneCountInString(s.Pinyin) <= sentences.MaxExampleReadingRunes
 }
 
 // OwnSentences streams sentences.jsonl.

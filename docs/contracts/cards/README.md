@@ -53,7 +53,9 @@ One cloze card per entry (`c-cloze-<entryId>`). Per showing, nothing stored:
    count towards the 8; a client segments at most these). Eligible sentences = the candidates whose text has at least
    one blank span.
 2. Blank spans (code-point offsets, half-open) = the segmenter matches (`POST /api/segment`) whose
-   `entries[].id` contains the entry id; if none, the non-overlapping leftmost occurrences of the written
+   `entries[].id` contains the entry id (for an entry whose written form has a Han character, a match whose text has
+   none, such as はし for 橋, counts only when the entry is its first candidate, `entries[0]`: a later candidate is a
+   homophone); if none, the non-overlapping leftmost occurrences of the written
    form and of every form text, longest first, except an occurrence lying inside a strictly longer segmenter
    match (中国 inside 中国人). All spans are blanked; the first span is the answer slot,
    the others show the same gap marker.

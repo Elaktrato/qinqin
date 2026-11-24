@@ -573,6 +573,202 @@
     "keep": false,
     "reason": "duplicate"
    }
+  },
+  {
+   "name": "a romaji reading for a kana reading system is emptied",
+   "language": "ja",
+   "readingSystem": "kana",
+   "word": {
+    "id": 5001,
+    "written": "食べる"
+   },
+   "segmented": true,
+   "matches": [
+    {
+     "start": 2,
+     "end": 5,
+     "entries": [
+      {
+       "id": 5001
+      }
+     ]
+    }
+   ],
+   "sentence": {
+    "text": "毎日食べる。",
+    "reading": "mainichi taberu",
+    "translation": "t"
+   },
+   "want": {
+    "keep": true,
+    "text": "毎日食べる。",
+    "reading": "",
+    "translation": "t"
+   }
+  },
+  {
+   "name": "a kana reading may hold katakana, the long-vowel mark, punctuation and spaces",
+   "language": "ja",
+   "readingSystem": "kana",
+   "word": {
+    "id": 5002,
+    "written": "コーヒー"
+   },
+   "segmented": true,
+   "matches": [
+    {
+     "start": 0,
+     "end": 4,
+     "entries": [
+      {
+       "id": 5002
+      }
+     ]
+    }
+   ],
+   "sentence": {
+    "text": "コーヒーを飲む。",
+    "reading": "コーヒーを のむ。",
+    "translation": "t"
+   },
+   "want": {
+    "keep": true,
+    "text": "コーヒーを飲む。",
+    "reading": "コーヒーを のむ。",
+    "translation": "t"
+   }
+  },
+  {
+   "name": "a hiragana reading for pinyin is emptied",
+   "language": "zh",
+   "readingSystem": "pinyin",
+   "word": {
+    "id": 1201,
+    "written": "学习"
+   },
+   "segmented": true,
+   "matches": [
+    {
+     "start": 0,
+     "end": 2,
+     "entries": [
+      {
+       "id": 1201
+      }
+     ]
+    }
+   ],
+   "sentence": {
+    "text": "学习很好。",
+    "reading": "がくしゅう",
+    "translation": "t"
+   },
+   "want": {
+    "keep": true,
+    "text": "学习很好。",
+    "reading": "",
+    "translation": "t"
+   }
+  },
+  {
+   "name": "pinyin with tone numbers, an apostrophe and punctuation is kept",
+   "language": "zh",
+   "readingSystem": "pinyin",
+   "word": {
+    "id": 1201,
+    "written": "学习"
+   },
+   "segmented": true,
+   "matches": [
+    {
+     "start": 0,
+     "end": 2,
+     "entries": [
+      {
+       "id": 1201
+      }
+     ]
+    }
+   ],
+   "sentence": {
+    "text": "学习很好。",
+    "reading": "xue2xi2 hen3 hao3, xi'an.",
+    "translation": "t"
+   },
+   "want": {
+    "keep": true,
+    "text": "学习很好。",
+    "reading": "xue2xi2 hen3 hao3, xi'an.",
+    "translation": "t"
+   }
+  },
+  {
+   "name": "a kana-only match for a word written with Han counts when the entry is the segmenter's first candidate",
+   "language": "ja",
+   "readingSystem": "kana",
+   "word": {
+    "id": 8001,
+    "written": "橋"
+   },
+   "segmented": true,
+   "matches": [
+    {
+     "start": 0,
+     "end": 2,
+     "entries": [
+      {
+       "id": 8001
+      },
+      {
+       "id": 8002
+      }
+     ]
+    }
+   ],
+   "sentence": {
+    "text": "はしを渡る。",
+    "reading": "",
+    "translation": "t"
+   },
+   "want": {
+    "keep": true,
+    "text": "はしを渡る。",
+    "reading": "",
+    "translation": "t"
+   }
+  },
+  {
+   "name": "a kana homophone does not count: the entry is not the first candidate of a kana-only match",
+   "language": "ja",
+   "readingSystem": "kana",
+   "word": {
+    "id": 8001,
+    "written": "橋"
+   },
+   "segmented": true,
+   "matches": [
+    {
+     "start": 0,
+     "end": 2,
+     "entries": [
+      {
+       "id": 8002
+      },
+      {
+       "id": 8001
+      }
+     ]
+    }
+   ],
+   "sentence": {
+    "text": "はしで食べる。",
+    "reading": "",
+    "translation": "t"
+   },
+   "want": {
+    "keep": false,
+    "reason": "missing_word"
+   }
   }
  ],
  "reads": [

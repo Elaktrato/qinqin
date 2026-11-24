@@ -810,6 +810,89 @@
         "人。"
       ],
       "answer": "中国"
+    },
+    {
+      "name": "a kana-only match blanks a word written with Han only when the entry is the segmenter's first candidate",
+      "entry": {
+        "id": 8001,
+        "written": "橋"
+      },
+      "sentences": [
+        {
+          "id": 51,
+          "hanzi": "はしを渡る。"
+        }
+      ],
+      "matchesBySentence": {
+        "51": [
+          {
+            "start": 0,
+            "end": 2,
+            "entries": [
+              {
+                "id": 8001
+              },
+              {
+                "id": 8002
+              }
+            ]
+          }
+        ]
+      },
+      "reviews": 0,
+      "eligibleIds": [
+        51
+      ],
+      "shownId": 51,
+      "spans": [
+        [
+          0,
+          2
+        ]
+      ],
+      "before": [],
+      "after": [
+        "を渡る。"
+      ],
+      "answer": "はし",
+      "cardId": "c-cloze-8001"
+    },
+    {
+      "name": "a kana homophone is not the word: the entry is a later candidate of a kana-only match",
+      "entry": {
+        "id": 8001,
+        "written": "橋"
+      },
+      "sentences": [
+        {
+          "id": 52,
+          "hanzi": "はしで食べる。"
+        }
+      ],
+      "matchesBySentence": {
+        "52": [
+          {
+            "start": 0,
+            "end": 2,
+            "entries": [
+              {
+                "id": 8002
+              },
+              {
+                "id": 8001
+              }
+            ]
+          }
+        ]
+      },
+      "reviews": 0,
+      "eligibleIds": [],
+      "shownId": null,
+      "spans": [],
+      "before": [],
+      "after": [],
+      "answer": "",
+      "cardId": "c-cloze-8001"
     }
   ]
 }

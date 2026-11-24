@@ -20,7 +20,7 @@ workspaces.json          [{id, language, name, settings, updatedAt}]
 events/NNNNNN.jsonl      {id, workspaceId, device, ts, type, payload, updatedAt}
 rows/NNNNNN.jsonl        {workspaceId|null, key, data, version, updatedAt, modifiedAt|null}
 overlays/NNNNNN.jsonl    {entryId, written, readings, updatedAt}
-sentences/NNNNNN.jsonl   {id, entryId, hanzi, pinyin, translation, updatedAt, ai?} own sentences only; ai = {provider, model} on a kept AI example (#186)
+sentences/NNNNNN.jsonl   {id, entryId, hanzi, pinyin, translation, updatedAt, ai?} own sentences only; ai = {provider, model, level} on a kept AI example (#186, the rules in examples/README.md)
 library/books.json       [{id, workspaceId, language, title, author, source, sourceId, sourceUrl,
                            attribution, licenseNote, chapterCount, position, createdAt}]
 library/books/<id>.json  the chapter array exactly as stored

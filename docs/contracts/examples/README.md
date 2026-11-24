@@ -16,8 +16,10 @@ sentences pack. Fixture: `examples.json` (Go: `server/internal/sentences/example
   generation replaces them, one that kept none leaves them. Never in the pull, never in a backup (a restore drops them), never shown on a card.
 - Kept examples: own sentences, so they reach the entry answer (`GET /api/entries/{id}`, after the pack sentences and
   the other own sentences), every card that shows a sentence, the offline copy of the entry, the paged pull
-  (`sentences` collection) and the backup (`sentences/NNNNNN.jsonl` line with `ai`; the restore refuses a mark with
-  neither provider nor model, a provider over 64 or a model over 200 bytes).
+  (`sentences` collection) and the backup (`sentences/NNNNNN.jsonl` line with `ai: {provider, model, level}`). A restore holds such a line to the live rules: a
+  provider (at most 64 bytes), a model (at most 200 bytes) and a level of `levels`, all required; a text of at most
+  200 code points, a translation of 1 to 400 and a reading of at most 400; at most 10 AI examples per entry. An
+  archive that breaks one is refused whole.
 - Generation markers (`example_generations`): one per stored generation (request id, level, dropped count, provider,
   model), so a retry of a generation that kept nothing is answered too; kept a day, not in the pull or a backup.
 - Reports (`example_reports`): the sentence, its reason, level, provider and model, at most 500 per user (the oldest
@@ -57,15 +59,18 @@ failure:
 3. `wrong_script`: less than half of the text's letters in the language's script (the language profile;
    `lang.MostlyInScript`, the journal's rule).
 4. `missing_word`: the text does not contain the word by the cloze card's blank rule (`cards/cloze.json`): a
-   segmenter match (`POST /api/segment`, with the lemmatizer, so 食べた counts for 食べる) that resolves to the entry,
-   else a literal occurrence of the written form or a form text that does not lie inside a strictly longer match.
+   segmenter match (`POST /api/segment`, with the lemmatizer, so 食べた counts for 食べる) that resolves to the entry
+   (for a word written with Han, a kana-only match such as はし only when the entry is its first candidate, so 箸 is
+   not 橋), else a literal occurrence of the written form or a form text that does not lie inside a strictly longer match.
    A language without dictionary segmentation and without a lemma table has the literal rule only, and the prompt
    asks for the exact form.
 5. `duplicate`: the cleaned text equals a sentence of the entry the caller sees, or an earlier sentence of the same
    answer.
 
-The reading is emptied (the sentence kept) when the language profile has no reading system, when it holds a Han
-character or when it is over 400 code points. At most 5 drafts per generation. Every kept example is a cloze
+The reading is emptied (the sentence kept) when the language profile has no reading system, when it is over 400
+code points, or when it holds anything but the reading system's letters, punctuation and spaces: for `kana`
+hiragana, katakana and the long-vowel mark ー (so romaji is emptied); for `pinyin` Latin letters with or without
+tone marks, the tone numbers 1–5 and the apostrophe (so kana is emptied). At most 5 drafts per generation. Every kept example is a cloze
 candidate by construction.
 
 ## Client rules

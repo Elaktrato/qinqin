@@ -16,6 +16,11 @@ logged. Earlier changes: the error catalogue's own changelog in [`auth/README.md
   `ai`: `{provider, model}` for a kept AI example, else `null` (`sync/pull-page.json` shapes and rows). A backup
   line of `sentences/` carries `ai` for an AI example (optional member). The deletion previews count
   `exampleReports` (`auth/admin-users.json`).
+- **Fix wave:** `GET …/examples` adds `lastRequest` and a generation's answer `requestId`; a generation that kept
+  nothing is stored as a marker (answered on a retry) and leaves the earlier drafts. Readings must be in the reading
+  system's letters. A kana-only segmenter match of a word written with Han counts only when the entry is its first
+  candidate, for the AI examples and the cloze card alike (`cards/cloze.json`, two new cases). The backup's `ai` has
+  `level` and a restore applies the live rules (`examples/README.md`).
 
 ## #185 — the conversation partner
 

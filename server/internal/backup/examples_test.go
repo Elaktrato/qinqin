@@ -2,6 +2,9 @@ package backup
 
 import (
 	"context"
+	"fmt"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 )
@@ -30,7 +33,7 @@ func TestExportAndRestoreAIExamples(t *testing.T) {
 	for _, s := range lines {
 		if s.AI != nil {
 			marked++
-			if s.AI.Provider != "anthropic" || s.AI.Model != "claude-opus-5-5" || s.Hanzi != "你好吗？" {
+			if s.AI.Provider != "anthropic" || s.AI.Model != "claude-opus-5-5" || s.AI.Level != "beginner" || s.Hanzi != "你好吗？" {
 				t.Errorf("exported mark %+v on %q", s.AI, s.Hanzi)
 			}
 		}
@@ -44,7 +47,7 @@ func TestExportAndRestoreAIExamples(t *testing.T) {
 		t.Fatalf("Restore: %v (%+v)", err, rep)
 	}
 	var ai, plain, drafts, reports int
-	w.DB.QueryRow(`SELECT COUNT(*) FROM sentences WHERE user_id = ? AND deleted_at IS NULL AND ai_provider = 'anthropic' AND ai_model = 'claude-opus-5-5' AND hanzi = '你好吗？'`, uid).Scan(&ai)
+	w.DB.QueryRow(`SELECT COUNT(*) FROM sentences WHERE user_id = ? AND deleted_at IS NULL AND ai_provider = 'anthropic' AND ai_model = 'claude-opus-5-5' AND ai_level = 'beginner' AND hanzi = '你好吗？'`, uid).Scan(&ai)
 	w.DB.QueryRow(`SELECT COUNT(*) FROM sentences WHERE user_id = ? AND deleted_at IS NULL AND ai_provider = '' AND ai_model = '' AND hanzi = '我说你好。'`, uid).Scan(&plain)
 	w.DB.QueryRow(`SELECT COUNT(*) FROM example_drafts WHERE user_id = ?`, uid).Scan(&drafts)
 	w.DB.QueryRow(`SELECT COUNT(*) FROM example_reports WHERE user_id = ?`, uid).Scan(&reports)
@@ -53,22 +56,53 @@ func TestExportAndRestoreAIExamples(t *testing.T) {
 	}
 }
 
-// A hand-edited archive with a malformed mark is refused.
+// A hand-edited archive is held to the live rules of a kept example: a
+// provider, a model and a level, the lengths of the server's checks.
 func TestMalformedAIMarkIsRefused(t *testing.T) {
-	for name, line := range map[string]string{
-		"both empty":        `{"id":1,"entryId":1,"hanzi":"h","pinyin":"","translation":"t","updatedAt":"2026-11-24T09:00:00Z","ai":{"provider":"","model":""}}`,
-		"a long provider":   `{"id":1,"entryId":1,"hanzi":"h","pinyin":"","translation":"t","updatedAt":"2026-11-24T09:00:00Z","ai":{"provider":"` + strings.Repeat("p", 65) + `","model":"m"}}`,
-		"an unknown member": `{"id":1,"entryId":1,"hanzi":"h","pinyin":"","translation":"t","updatedAt":"2026-11-24T09:00:00Z","ai":{"provider":"p","model":"m","x":1}}`,
-		"a long model":      `{"id":1,"entryId":1,"hanzi":"h","pinyin":"","translation":"t","updatedAt":"2026-11-24T09:00:00Z","ai":{"provider":"p","model":"` + strings.Repeat("m", 201) + `"}}`,
+	line := func(hanzi, pinyin, translation, ai string) string {
+		return `{"id":1,"entryId":1,"hanzi":"` + hanzi + `","pinyin":"` + pinyin + `","translation":"` + translation + `","updatedAt":"2026-11-24T09:00:00Z"` + ai + `}`
+	}
+	ok := `,"ai":{"provider":"p","model":"m","level":"beginner"}`
+	for name, l := range map[string]string{
+		"both empty":         line("h", "", "t", `,"ai":{"provider":"","model":"","level":"beginner"}`),
+		"no model":           line("h", "", "t", `,"ai":{"provider":"p","model":"","level":"beginner"}`),
+		"no provider":        line("h", "", "t", `,"ai":{"provider":"","model":"m","level":"beginner"}`),
+		"no level":           line("h", "", "t", `,"ai":{"provider":"p","model":"m"}`),
+		"an unknown level":   line("h", "", "t", `,"ai":{"provider":"p","model":"m","level":"expert"}`),
+		"a long provider":    line("h", "", "t", `,"ai":{"provider":"`+strings.Repeat("p", 65)+`","model":"m","level":"beginner"}`),
+		"a long model":       line("h", "", "t", `,"ai":{"provider":"p","model":"`+strings.Repeat("m", 201)+`","level":"beginner"}`),
+		"an unknown member":  line("h", "", "t", `,"ai":{"provider":"p","model":"m","level":"beginner","x":1}`),
+		"a long text":        line(strings.Repeat("字", 201), "", "t", ok),
+		"a long translation": line("h", "", strings.Repeat("t", 401), ok),
+		"a long reading":     line("h", strings.Repeat("p", 401), "t", ok),
+		"no translation":     line("h", "", "", ok),
 	} {
-		if ownSentenceLineOK([]byte(line)) {
+		if ownSentenceLineOK([]byte(l)) {
 			t.Errorf("%s: accepted", name)
 		}
 	}
-	if !ownSentenceLineOK([]byte(`{"id":1,"entryId":1,"hanzi":"h","pinyin":"","translation":"t","updatedAt":"2026-11-24T09:00:00Z","ai":{"provider":"p","model":""}}`)) {
-		t.Error("a provider without a model is a mark")
+	if !ownSentenceLineOK([]byte(line(strings.Repeat("字", 200), "", "t", ok))) {
+		t.Error("a well-formed AI example at the length cap is refused")
 	}
-	if !ownSentenceLineOK([]byte(`{"id":1,"entryId":1,"hanzi":"h","pinyin":"","translation":"t","updatedAt":"2026-11-24T09:00:00Z"}`)) {
-		t.Error("a line without ai is a plain own sentence")
+	if !ownSentenceLineOK([]byte(line(strings.Repeat("字", 300), "", "", ""))) {
+		t.Error("a plain own sentence keeps the plain rules")
+	}
+}
+
+// More than ten AI examples on one entry is a hand-edited archive.
+func TestTooManyAIExamplesOnAnEntryAreRefused(t *testing.T) {
+	w := newWorld(t)
+	uid := w.AliceUID
+	for i := 0; i < 11; i++ {
+		exec(t, w.DB, `INSERT INTO sentences (entry_id, source_pack, user_id, hanzi, pinyin, translation, updated_at, ai_provider, ai_model, ai_level)
+			VALUES (?, '', ?, ?, '', 't', '2026-11-24T09:00:00Z', 'anthropic', 'm', 'beginner')`, w.E1, uid, fmt.Sprintf("你好%d。", i))
+	}
+	data, _ := exportBytes(t, w, uid)
+	p := filepath.Join(t.TempDir(), "x.zip")
+	os.WriteFile(p, data, 0o644)
+	a, err := Open(p)
+	if err == nil {
+		a.Close()
+		t.Fatal("an archive with 11 AI examples on one entry was read")
 	}
 }

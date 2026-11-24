@@ -143,17 +143,54 @@ func hasHan(s string) bool {
 	return strings.IndexFunc(s, func(r rune) bool { return unicode.Is(unicode.Han, r) }) >= 0
 }
 
+// readingFits reports whether a reading is written in the reading system:
+// kana (hiragana, katakana, the long-vowel mark), or pinyin (Latin letters
+// with or without tone marks, tone numbers, the apostrophe), each with
+// punctuation and spaces. No reading system fits no reading.
+func readingFits(system, reading string) bool {
+	var letter func(rune) bool
+	switch system {
+	case "kana":
+		letter = func(r rune) bool {
+			return unicode.Is(unicode.Hiragana, r) || unicode.Is(unicode.Katakana, r) || r == 'ー'
+		}
+	case "pinyin":
+		letter = func(r rune) bool {
+			return unicode.Is(unicode.Latin, r) || r >= '1' && r <= '5' || unicode.Is(unicode.Mn, r)
+		}
+	default:
+		return false
+	}
+	for _, r := range reading {
+		if !letter(r) && !unicode.IsPunct(r) && !unicode.IsSpace(r) {
+			return false
+		}
+	}
+	return true
+}
+
 type span struct{ start, end int }
 
 // ContainsWord is the cloze card's blank rule (docs/contracts/cards/cloze.json)
-// reduced to "is there a blank": a segmenter match that resolves to the entry,
+// reduced to "is there a blank": a segmenter match that resolves to the entry
+// (for a word written with Han, a kana-only match only when the entry is its
+// first candidate),
 // else a literal occurrence of the written form or a form text (longest
 // first, leftmost, not overlapping) that does not lie inside a strictly longer
 // segmenter match. matches nil or empty: the literal rule alone.
 func ContainsWord(text string, w Word, matches []segment.Match) bool {
 	chars := []rune(text)
+	hanWord := hasHan(w.Written)
 	for _, m := range matches {
 		if m.Start < 0 || m.End > len(chars) || m.End <= m.Start {
+			continue
+		}
+		// A kana-only surface of a word written with Han (はし for 橋) is a
+		// homophone unless the segmenter ranks the entry first for it.
+		if hanWord && !hasHan(string(chars[m.Start:m.End])) {
+			if len(m.Entries) > 0 && m.Entries[0].ID == w.ID {
+				return true
+			}
 			continue
 		}
 		for _, c := range m.Entries {
@@ -228,7 +265,7 @@ func CheckExample(c Candidate, w Word, readingSystem string, matches []segment.M
 			return Candidate{}, "duplicate"
 		}
 	}
-	if readingSystem == "" || hasHan(out.Reading) || utf8.RuneCountInString(out.Reading) > MaxExampleReadingRunes {
+	if !readingFits(readingSystem, out.Reading) || utf8.RuneCountInString(out.Reading) > MaxExampleReadingRunes {
 		out.Reading = ""
 	}
 	return out, ""

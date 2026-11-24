@@ -245,10 +245,12 @@ type OwnSentence struct {
 }
 
 // SentenceAI is the mark of a kept AI example: the provider id and the
-// model that wrote it (at least one of them; at most 64 and 200 bytes).
+// model that wrote it (both required; at most 64 and 200 bytes) and the
+// level it was written for (one of ai.Levels).
 type SentenceAI struct {
 	Provider string `json:"provider"`
 	Model    string `json:"model"`
+	Level    string `json:"level"`
 }
 
 // Book is a library book's metadata; its chapters are library/books/<id>.json.
