@@ -97,6 +97,18 @@ export class ClipCache {
 }
 
 
+/** AvatarCache: the session's profile pictures by file path (record 0009); its end revokes their object URLs. */
+export class AvatarCache {
+	readonly slots = new Map<string, { promise: Promise<string>; url?: string }>();
+
+	/** clear revokes and forgets every picture (the session end). */
+	clear(): void {
+		for (const slot of this.slots.values()) if (slot.url) URL.revokeObjectURL(slot.url);
+		this.slots.clear();
+	}
+}
+
+
 /** StarterCache: a per-session cache (record 0009). */
 export class StarterCache {
 	readonly cache = new Map<string, Promise<StarterEntry[]>>();
@@ -209,6 +221,8 @@ export class SessionCaches {
 	readonly entryBases = new EntryBasesCache();
 	readonly schemes = new SchemeCache();
 	readonly clips = new ClipCache();
+	/** Profile pictures (api/avatar.ts avatarObjectUrl). */
+	readonly avatars = new AvatarCache();
 	readonly starters = new StarterCache();
 	readonly levelItems = new LevelItemsCache();
 	readonly journalEntries = new JournalEntriesCache();
@@ -232,6 +246,7 @@ export class SessionCaches {
 			this.entryBases,
 			this.schemes,
 			this.clips,
+			this.avatars,
 			this.starters,
 			this.levelItems,
 			this.journalEntries,

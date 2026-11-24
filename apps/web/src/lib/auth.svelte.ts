@@ -34,6 +34,8 @@ export interface User {
 	mfa?: { totp: boolean; email: boolean; recoveryCodesLeft: number };
 	/** Only `me`: the interface language setting ('' = follow the browser; absent on older servers). */
 	interfaceLanguage?: string;
+	/** Only `me`: the profile picture's path, or null (docs/contracts/auth/avatar.json). */
+	avatarUrl?: string | null;
 }
 
 export interface AuthState {

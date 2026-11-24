@@ -175,3 +175,41 @@ describe('AccountMenu', () => {
 		});
 	});
 });
+
+describe('AccountMenu: the profile picture (#189)', () => {
+	const url = '/api/avatars/1/0123456789abcdef0123456789abcdef';
+	beforeEach(() => {
+		vi.stubGlobal('fetch', vi.fn(async () => new Response('jpg', { status: 200 })));
+		Object.assign(URL, { createObjectURL: (() => { let n = 0; return () => `blob:pic-${++n}`; })(), revokeObjectURL: () => undefined });
+	});
+	afterEach(() => vi.unstubAllGlobals());
+
+	it('shows the picture on the trigger and in the menu header from one fetch of the small file', async () => {
+		ctx.app.auth.set({ token: 'tok', user: { ...me(), avatarUrl: url } });
+		render(AccountMenu, { props: { store: await store() }, context: ctx.context });
+		const trigger = screen.getByRole('button', { name: 'Account menu' });
+		await waitFor(() => expect(trigger.querySelector('img')).not.toBeNull());
+		await fireEvent.click(trigger);
+		await waitFor(() => expect(document.querySelector('.who img')).not.toBeNull());
+		// 28 and 36 CSS px on a 1x screen: both fit the 64 px file, fetched once for the session.
+		expect(vi.mocked(fetch).mock.calls.map(([u]) => u)).toEqual([`${url}?size=64`]);
+	});
+
+	it('takes the 256 px file on a dense screen', async () => {
+		Object.defineProperty(window, 'devicePixelRatio', { value: 3, configurable: true });
+		try {
+			ctx.app.auth.set({ token: 'tok', user: { ...me(), avatarUrl: url } });
+			render(AccountMenu, { props: { store: await store() }, context: ctx.context });
+			await waitFor(() => expect(fetch).toHaveBeenCalledWith(url, expect.anything()));
+		} finally {
+			Object.defineProperty(window, 'devicePixelRatio', { value: 1, configurable: true });
+		}
+	});
+
+	it('loads no picture for a restricted session (its routes refuse it)', async () => {
+		ctx.app.auth.set({ token: 'tok', user: { ...me(false, 'password_change'), avatarUrl: url } });
+		render(AccountMenu, { props: { store: await store(), restricted: true }, context: ctx.context });
+		expect(screen.getByRole('button', { name: /account/i }).textContent).toContain('M');
+		expect(fetch).not.toHaveBeenCalled();
+	});
+});
