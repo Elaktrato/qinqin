@@ -15,7 +15,7 @@ import { cardRow, deckRow } from './rows';
 import { addCard, deleteCards } from './commands/cards';
 import { renameDeck } from './commands/decks';
 import { setKnownMark } from './commands/keyed';
-import { getStudyData, loadStudyData, loadStudyHistory } from './data';
+import { getStudyData, loadStudyData, loadStudyHistory, onStudyChange } from './data';
 
 const WS = 7;
 let server: StudyServer;
@@ -79,5 +79,25 @@ describe('requests per flow', () => {
 		server.resetCounts();
 		await loadStudyData(WS);
 		expect(counts()).toEqual({ pulls: 0, pushes: 0, dataWrites: 0, logs: 1 });
+	});
+
+	it('rename with the study page listening: one push, one reload; the echo of the write reloads nothing', async () => {
+		await loadStudyData(WS);
+		let reloads = 0;
+		const reloading: Promise<unknown>[] = [];
+		const off = onStudyChange(() => {
+			reloads++;
+			reloading.push(loadStudyData(WS));
+		});
+		server.resetCounts();
+		await renameDeck(WS, 'deck-1', 'x');
+		await Promise.all(reloading);
+		// The next delta round, two seconds on, brings the server's copy of the write back.
+		server.now = () => Date.now() + 2_000;
+		await loadStudyHistory(WS, { force: true });
+		await Promise.all(reloading);
+		off();
+		expect(reloads).toBe(1);
+		expect(counts()).toEqual({ pulls: 1, pushes: 1, dataWrites: 0, logs: 2 });
 	});
 });
