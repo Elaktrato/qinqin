@@ -1,38 +1,35 @@
 import { cleanup, fireEvent, render, screen } from '@testing-library/svelte';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-const { apply } = vi.hoisted(() => ({ apply: vi.fn() }));
-vi.mock('./register', async () => {
-	const { writable } = await import('svelte/store');
-	const updateAvailable = writable(false);
-	return { updateAvailable, applyUpdate: apply };
-});
-
-import type { Writable } from 'svelte/store';
-import { updateAvailable as available } from './register';
+import { testContext } from '$lib/testing/context';
+import type { WorkerRegistration } from './register.svelte';
 import UpdateBanner from './UpdateBanner.svelte';
 
-// The mock above swaps the readable for a writable.
-const updateAvailable = available as Writable<boolean>;
+/** A context whose service worker registration reports `available` (and records apply). */
+function withWorker(available: boolean) {
+	const ctx = testContext();
+	const worker: WorkerRegistration = { updateAvailable: available, register: async () => {}, apply: vi.fn() };
+	(ctx.app as { worker: WorkerRegistration }).worker = worker;
+	return { ctx, worker };
+}
 
 afterEach(() => {
 	cleanup();
-	updateAvailable.set(false);
-	apply.mockClear();
 });
 
 describe('UpdateBanner', () => {
 	it('shows nothing without an update', () => {
-		render(UpdateBanner);
+		const { ctx } = withWorker(false);
+		render(UpdateBanner, { context: ctx.context });
 		expect(screen.queryByRole('status')).toBeNull();
 	});
 
 	it('announces an update politely and Reload applies it', async () => {
-		updateAvailable.set(true);
-		render(UpdateBanner);
+		const { ctx, worker } = withWorker(true);
+		render(UpdateBanner, { context: ctx.context });
 		const status = screen.getByRole('status');
 		expect(status.textContent).toContain('A new version of qinqin is available.');
 		await fireEvent.click(screen.getByRole('button', { name: 'Reload' }));
-		expect(apply).toHaveBeenCalledTimes(1);
+		expect(worker.apply).toHaveBeenCalledTimes(1);
 	});
 });

@@ -27,12 +27,10 @@
 	} from '$lib/routeAccess';
 	import UpdateBanner from '$lib/pwa/UpdateBanner.svelte';
 	import OfflineBanner from '$lib/pwa/OfflineBanner.svelte';
-	import { registerWorker } from '$lib/pwa/register';
-	import { captureInstallPrompt, persistOnceNow } from '$lib/pwa/install';
+	import { persistOnceNow } from '$lib/pwa/install';
 	import { prepareActiveWorkspace } from '$lib/pwa/prepareRuntime';
 	import Logo from '$lib/components/Logo.svelte';
 	import LogoutDialog from '$lib/account/LogoutDialog.svelte';
-	import { logoutPrompt } from '$lib/account/logoutFlow';
 	import { themeStore } from '$lib/theme/store.svelte';
 	import { packFaces } from '$lib/fonts/packFaces.svelte';
 	import { applyHanziVars, hanziVars } from '$lib/fonts/hanziVars';
@@ -133,8 +131,6 @@
 
 	onMount(async () => {
 		// Installable app: a no-op outside secure contexts (see lib/pwa/register.ts).
-		void registerWorker();
-		captureInstallPrompt(window); // the root layout lives as long as the page
 		void persistOnceNow();
 		// The theme list and the device's light/dark switch, signed in or out.
 		void themeStore.start();
@@ -319,7 +315,7 @@
 				{/if}
 			</div>
 
-			{#if $logoutPrompt !== null}<LogoutDialog />{/if}
+			{#if app.logoutPrompt !== null}<LogoutDialog />{/if}
 
 			<!-- The one main landmark of every page (the skip link's target):
 			     pages bring plain containers, never their own <main>. -->

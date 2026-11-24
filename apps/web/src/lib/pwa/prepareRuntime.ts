@@ -12,7 +12,6 @@ import { activeWeights } from '../study/readModel';
 import { fetchStrokeData } from '../study/strokeData';
 import { ownPartition } from './partitions';
 import { normalizeUrl } from './sw/classify';
-import { setPrepared } from './offlineState';
 import { prepareOffline } from './prepareOffline';
 
 function controlled(): boolean {
@@ -66,6 +65,6 @@ export async function prepareActiveWorkspace(app: AppContext): Promise<void> {
 		canPrepare: controlled,
 		partition: currentPartition,
 		isCached: cachedInPartition,
-		onPrepared: setPrepared
+		onPrepared: (prepared) => app.offline.setPrepared(prepared)
 	});
 }

@@ -62,7 +62,6 @@ import { loadStudyData } from '$lib/study/data';
 import { usableChars } from '$lib/study/writing';
 import { studyDay } from '$lib/time/studyDay';
 import { currentStudyDay } from '$lib/time/zone';
-import { offline, resetOffline } from '$lib/pwa/offlineState';
 import Page from './+page.svelte';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
@@ -261,11 +260,9 @@ describe('offline start', () => {
 	}
 	const word = (id: number): StudyCard => ({ id: `v${id}`, kind: 'vocab', entryId: id, written: '日', deckIds: ['general'], createdAt: '2026-01-01T00:00:00.000Z' });
 
-	beforeEach(() => resetOffline());
-	afterEach(() => resetOffline());
 
 	it('says the workspace is not ready when nothing was saved', async () => {
-		offline.update((s) => ({ ...s, online: false }));
+		ctx.app.offline.reportNetworkFailure();
 		configureDecks(['vocab']);
 		vi.mocked(loadStudyData).mockRejectedValue(new TypeError('Failed to fetch'));
 		render(Page, { context: ctx.context });
@@ -273,7 +270,7 @@ describe('offline start', () => {
 	});
 
 	it('a level session offline says it needs a connection', async () => {
-		offline.update((s) => ({ ...s, online: false }));
+		ctx.app.offline.reportNetworkFailure();
 		configure(['vocab']);
 		vi.mocked(getSchemes).mockRejectedValue(new TypeError('Failed to fetch'));
 		render(Page, { context: ctx.context });
@@ -281,7 +278,7 @@ describe('offline start', () => {
 	});
 
 	it('studies saved real cards and notes that companion cards return online', async () => {
-		offline.update((s) => ({ ...s, online: false }));
+		ctx.app.offline.reportNetworkFailure();
 		configureDecks(['vocab', 'sentence']);
 		history([word(11), word(12)], []);
 		render(Page, { context: ctx.context });
@@ -321,7 +318,6 @@ describe('personal note on the answer side', () => {
 	const NOTE = 'Sun + root <img src=x onerror=alert(1)>';
 
 	beforeEach(() => {
-		resetOffline();
 		ctx.session.workspaces.set({
 			list: [{ id: 2, language: 'zh', name: 'zh' } as never],
 			current: { id: 2, language: 'zh', name: 'zh' } as never
@@ -331,7 +327,6 @@ describe('personal note on the answer side', () => {
 		vi.mocked(loadNotes).mockResolvedValue(new Map([[21, NOTE]]));
 		vi.mocked(loadNoteCfg).mockResolvedValue({ onAnswer: true, extra: {} });
 	});
-	afterEach(() => resetOffline());
 
 	const LABELS: Record<string, string> = {
 		vocab: 'Recognise card',
@@ -402,7 +397,7 @@ describe('personal note on the answer side', () => {
 	});
 
 	it('an offline session makes no notes request', async () => {
-		offline.update((s) => ({ ...s, online: false }));
+		ctx.app.offline.reportNetworkFailure();
 		configureDecks(['vocab']);
 		history([cardOf('vocab')], []);
 		render(Page, { context: ctx.context });
@@ -610,12 +605,11 @@ describe('the session loads once (#101, found in the real-app check)', () => {
 		render(Page, { context: ctx.context });
 		await screen.findByLabelText('Recognise card');
 		expect(loadStudyData).toHaveBeenCalledTimes(1);
-		offline.update((s) => ({ ...s, allSentAt: Date.now() }));
-		offline.update((s) => ({ ...s, queued: 3 }));
+		ctx.app.offline.allSentAt = Date.now();
+		ctx.app.offline.setQueued(3);
 		await new Promise((r) => setTimeout(r, 0));
 		expect(loadStudyData).toHaveBeenCalledTimes(1);
 		expect(screen.getByLabelText('Recognise card')).toBeTruthy();
-		resetOffline();
 	});
 });
 

@@ -1,17 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { get } from 'svelte/store';
-import {
-	ALL_SENT_MS,
-	offline,
-	offlineMessage,
-	reportNetworkFailure,
-	reportOnline,
-	reportResponse,
-	resetOffline,
-	setQueued,
-	notifyAllSent,
-	type OfflineState
-} from './offlineState';
+import { browserTimers } from '../context/deps';
+import { ALL_SENT_MS, Connectivity, offlineMessage, type OfflineState } from './offlineState.svelte';
 
 const base: OfflineState = { online: true, servedFromCacheAt: null, queued: 0, allSentAt: null, prepared: null };
 
@@ -55,37 +44,68 @@ describe('offlineMessage', () => {
 	});
 });
 
-describe('the store', () => {
+describe('Connectivity (the app context\'s)', () => {
+	let state: Connectivity;
+	let online = true;
 	beforeEach(() => {
-		resetOffline();
 		vi.useFakeTimers();
+		online = true;
+		state = new Connectivity({ now: () => Date.now(), timers: browserTimers, browserOnline: () => online });
 	});
-	afterEach(() => vi.useRealTimers());
+	afterEach(() => {
+		state.dispose();
+		vi.useRealTimers();
+	});
 
 	it('a response from the saved copy is remembered; a live one clears it and marks online', () => {
-		reportResponse(new Headers({ 'x-qinqin-offline': '1', 'x-qinqin-saved-at': '2026-11-16T14:02:00.000Z' }));
-		expect(get(offline).servedFromCacheAt).toBe('2026-11-16T14:02:00.000Z');
-		reportResponse(new Headers());
-		expect(get(offline).servedFromCacheAt).toBeNull();
-		expect(get(offline).online).toBe(true);
+		state.reportResponse(new Headers({ 'x-qinqin-offline': '1', 'x-qinqin-saved-at': '2026-11-16T14:02:00.000Z' }));
+		expect(state.servedFromCacheAt).toBe('2026-11-16T14:02:00.000Z');
+		state.reportResponse(new Headers());
+		expect(state.servedFromCacheAt).toBeNull();
+		expect(state.online).toBe(true);
 	});
 
 	it('a network failure marks offline; a later response marks online again', () => {
-		reportNetworkFailure();
-		expect(get(offline).online).toBe(false);
-		reportOnline();
-		expect(get(offline).online).toBe(true);
+		state.reportNetworkFailure();
+		expect(state.online).toBe(false);
+		state.reportOnline();
+		expect(state.online).toBe(true);
 	});
 
 	it('tracks the queue size', () => {
-		setQueued(4);
-		expect(get(offline).queued).toBe(4);
+		state.setQueued(4);
+		expect(state.queued).toBe(4);
 	});
 
 	it('"All reviews sent." clears itself after five seconds', () => {
-		notifyAllSent();
-		expect(get(offline).allSentAt).not.toBeNull();
+		state.notifyAllSent();
+		expect(state.allSentAt).not.toBeNull();
 		vi.advanceTimersByTime(ALL_SENT_MS);
-		expect(get(offline).allSentAt).toBeNull();
+		expect(state.allSentAt).toBeNull();
+	});
+
+	it('the end of a session forgets its queued and prepared counts and the pending "All reviews sent."', () => {
+		state.setQueued(3);
+		state.setPrepared({ workspaceId: 1, cards: 4, at: 't' });
+		state.notifyAllSent();
+		online = false;
+		state.endSession();
+		expect(state.queued).toBe(0);
+		expect(state.prepared).toBeNull();
+		expect(state.allSentAt).toBeNull();
+		expect(state.online).toBe(false);
+		expect(vi.getTimerCount()).toBe(0);
+	});
+
+	it('follows the online and offline events of the window it watches, until stopped', () => {
+		const target = new EventTarget();
+		const stop = state.watch(target);
+		target.dispatchEvent(new Event('offline'));
+		expect(state.online).toBe(false);
+		target.dispatchEvent(new Event('online'));
+		expect(state.online).toBe(true);
+		stop();
+		target.dispatchEvent(new Event('offline'));
+		expect(state.online).toBe(true);
 	});
 });

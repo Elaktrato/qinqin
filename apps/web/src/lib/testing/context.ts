@@ -131,6 +131,8 @@ export function fakeDeps(routes?: Record<string, Route | unknown>, overrides: Pa
 		timers: manualTimers(),
 		window: fakeWindow(),
 		document: fakeDocument(),
+		online: () => true,
+		worker: null,
 		...overrides
 	};
 }

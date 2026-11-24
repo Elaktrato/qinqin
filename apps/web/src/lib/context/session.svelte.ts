@@ -8,7 +8,7 @@
 import type { Auth } from '../auth.svelte';
 import { postEvents } from '../events';
 import { Notices } from '../notices.svelte';
-import { notifyAllSent, setQueued } from '../pwa/offlineState';
+import type { Connectivity } from '../pwa/offlineState.svelte';
 import { createStudyState, type StudyState } from '../study/data';
 import { ReviewOutbox } from '../study/events';
 import { clearRecentSent, rememberSent } from '../study/recentSent';
@@ -22,6 +22,8 @@ export type SessionEndReason = 'signOut' | 'expired' | 'switched';
 export interface SessionDeps extends AppDeps {
 	/** The tab's auth: the token the session's requests carry. */
 	auth: Pick<Auth, 'token' | 'user'>;
+	/** The tab's connectivity: the outbox reports its queue there. */
+	offline: Pick<Connectivity, 'setQueued' | 'notifyAllSent'>;
 }
 
 type Disposer = (reason: SessionEndReason) => void;
@@ -61,8 +63,8 @@ export class Session {
 			user: () => this.#user,
 			token: () => deps.auth.token,
 			notify: (text) => this.notices.show(text),
-			setQueued,
-			allSent: notifyAllSent,
+			setQueued: (count) => deps.offline.setQueued(count),
+			allSent: () => deps.offline.notifyAllSent(),
 			rememberSent: (userId, events) => rememberSent(userId, events, now(), local())
 		});
 		this.onDispose(() => this.outbox.dispose());

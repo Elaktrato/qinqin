@@ -3,7 +3,6 @@ import { cleanup, fireEvent, render, screen } from '@testing-library/svelte';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { setOutboxUser } from '$lib/study/outboxUser';
-import { logoutPrompt } from './logoutFlow';
 import { requestSignOut } from './signOut';
 import LogoutDialog from './LogoutDialog.svelte';
 
@@ -34,7 +33,6 @@ beforeEach(() => {
 	localStorage.setItem('qinqin.token', 'tok');
 	ctx.app.auth.set({ token: 'tok', user: { id: 1, username: 'u' } as never });
 	setOutboxUser(1);
-	logoutPrompt.set(null);
 	vi.stubGlobal('fetch', vi.fn(() => Promise.reject(new Error('offline'))));
 	vi.spyOn(console, 'warn').mockImplementation(() => {});
 });
@@ -49,9 +47,7 @@ describe('sign-out with unsent reviews', () => {
 	it('signs out at once when nothing is queued', async () => {
 		await requestSignOut(ctx.app);
 		expect(localStorage.getItem('qinqin.token')).toBeNull();
-		let value: number | null = -1;
-		logoutPrompt.subscribe((v) => (value = v))();
-		expect(value).toBeNull();
+		expect(ctx.app.logoutPrompt).toBeNull();
 	});
 
 	it('asks, with Stay signed in focused, when reviews cannot be sent', async () => {
@@ -70,11 +66,9 @@ describe('sign-out with unsent reviews', () => {
 		await fireEvent.click(screen.getByText('Stay signed in'));
 		expect(localStorage.getItem('qinqin.token')).toBe('tok');
 		expect(localStorage.getItem('qinqin.study.pending.v2')).not.toBeNull();
-		logoutPrompt.set(1);
+		ctx.app.logoutPrompt = 1;
 		await fireEvent(container.querySelector('dialog')!, new Event('cancel', { cancelable: true }));
-		let value: number | null = -1;
-		logoutPrompt.subscribe((v) => (value = v))();
-		expect(value).toBeNull();
+		expect(ctx.app.logoutPrompt).toBeNull();
 		expect(localStorage.getItem('qinqin.token')).toBe('tok');
 	});
 

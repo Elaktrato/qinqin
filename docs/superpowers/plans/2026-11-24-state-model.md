@@ -128,3 +128,9 @@ Baseline (55312f3e, Node 26): 598 files, 12,651 passed, 8 skipped.
    data, command, cache and request-count tests are the guard; they now build a fresh session per test
    (`studyContext()`, `newSession()` instead of `endSession`), and mocked calls carry the study first. Full vitest
    under Node 26: 599 files, 12,662 passed; e2e 13 passed.
+6. PWA and offline state into the app context: `Connectivity` (`pwa/offlineState.svelte.ts`, with the session-end
+   reset and the window's online events), `InstallPrompt` (`pwa/installPrompt.svelte.ts`), the worker registration
+   on runes (`pwa/register.svelte.ts`, created by the app context and registered by `start()`), the sign-out
+   prompt as `app.logoutPrompt`. Pure moves; the existing tests are the guard (rewritten onto instances), plus two
+   new cases for what moved into the class (the session-end reset, the watched window). Full vitest under Node 26:
+   599 files, 12,663 passed (+ the lint's stale entries removed); e2e 13 passed.

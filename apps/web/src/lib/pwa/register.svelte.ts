@@ -2,7 +2,6 @@
 // notices an update waiting behind the running worker, and applies it on the
 // user's say-so. The worker never takes over by itself (see sw/lifecycle.ts).
 
-import { writable, type Readable } from 'svelte/store';
 
 interface WorkerLike extends EventTarget {
 	state: string;
@@ -29,14 +28,14 @@ const HOUR_MS = 3_600_000;
 
 export interface WorkerRegistration {
 	/** True while a new version is installed and waiting for the user's Reload. */
-	updateAvailable: Readable<boolean>;
+	readonly updateAvailable: boolean;
 	register(): Promise<void>;
 	/** Asks the waiting worker to take over; the page reloads once when it does. */
 	apply(): void;
 }
 
 export function createWorkerRegistration(env: RegistrationEnv): WorkerRegistration {
-	const available = writable(false);
+	let available = $state(false);
 	let registration: RegistrationLike | null = null;
 	let applying = false;
 	let reloaded = false;
@@ -54,19 +53,19 @@ export function createWorkerRegistration(env: RegistrationEnv): WorkerRegistrati
 			wasControlled = hadController;
 			registration = await container.register('/service-worker.js', { scope: '/', updateViaCache: 'none' });
 			const reg = registration;
-			if (hadController && reg.waiting) available.set(true);
+			if (hadController && reg.waiting) available = true;
 			reg.addEventListener('updatefound', () => {
 				const worker = reg.installing;
 				if (!worker) return;
 				worker.addEventListener('statechange', () => {
-					if (worker.state === 'installed' && container.controller !== null) available.set(true);
+					if (worker.state === 'installed' && container.controller !== null) available = true;
 				});
 			});
 			container.addEventListener('controllerchange', () => {
 				// Only the user's Reload may swap the code under an open page. A tab
 				// that did not press it (another tab did) offers the Reload instead.
 				if (!applying) {
-					if (wasControlled) available.set(true);
+					if (wasControlled) available = true;
 					return;
 				}
 				if (reloaded) return;
@@ -93,22 +92,27 @@ export function createWorkerRegistration(env: RegistrationEnv): WorkerRegistrati
 		}
 	}
 
-	return { updateAvailable: available, register, apply };
+	return {
+		get updateAvailable() {
+			return available;
+		},
+		register,
+		apply
+	};
 }
 
-const real: WorkerRegistration = createWorkerRegistration({
-	get isSecureContext() {
-		return typeof window !== 'undefined' && window.isSecureContext === true;
-	},
-	get serviceWorker() {
-		return typeof navigator !== 'undefined' && 'serviceWorker' in navigator
-			? (navigator.serviceWorker as unknown as ContainerLike)
-			: undefined;
-	},
-	reload: () => location.reload(),
-	setInterval: (handler, ms) => window.setInterval(handler, ms)
-});
-
-export const updateAvailable = real.updateAvailable;
-export const registerWorker = real.register;
-export const applyUpdate = real.apply;
+/** browserRegistrationEnv: the page's service worker container (the app context's registration). */
+export function browserRegistrationEnv(): RegistrationEnv {
+	return {
+		get isSecureContext() {
+			return typeof window !== 'undefined' && window.isSecureContext === true;
+		},
+		get serviceWorker() {
+			return typeof navigator !== 'undefined' && 'serviceWorker' in navigator
+				? (navigator.serviceWorker as unknown as ContainerLike)
+				: undefined;
+		},
+		reload: () => location.reload(),
+		setInterval: (handler, ms) => window.setInterval(handler, ms)
+	};
+}

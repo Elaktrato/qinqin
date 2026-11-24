@@ -5,6 +5,7 @@
 // helper (lib/testing/context.ts) builds one from fakes.
 
 import { api } from '../api/client';
+import { browserRegistrationEnv, type RegistrationEnv } from '../pwa/register.svelte';
 
 export type Api = typeof api;
 
@@ -38,6 +39,10 @@ export interface AppDeps {
 	window: EventSource | null;
 	/** The document, for visibility; null outside a browser. */
 	document: VisibilitySource | null;
+	/** Whether the browser says it is online (navigator.onLine). */
+	online(): boolean;
+	/** The service worker container; null: no worker (tests, outside a browser). */
+	worker: RegistrationEnv | null;
 }
 
 /** webStorage: a Web Storage area, or null where it is missing or access throws. */
@@ -65,6 +70,8 @@ export function browserDeps(): AppDeps {
 		now: () => Date.now(),
 		timers: browserTimers,
 		window: typeof window === 'undefined' ? null : window,
-		document: typeof document === 'undefined' ? null : document
+		document: typeof document === 'undefined' ? null : document,
+		online: () => typeof navigator === 'undefined' || navigator.onLine !== false,
+		worker: browserRegistrationEnv()
 	};
 }

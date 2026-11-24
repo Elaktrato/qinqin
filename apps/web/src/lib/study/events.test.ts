@@ -7,7 +7,7 @@ vi.mock('$app/navigation', () => ({ goto }));
 import { browserTimers } from '../context/deps';
 import { postEvents } from '../events';
 import { Notices } from '../notices.svelte';
-import { notifyAllSent, setQueued } from '../pwa/offlineState';
+import { Connectivity } from '../pwa/offlineState.svelte';
 import { PENDING_REVIEWS_KEY, ReviewOutbox } from './events';
 import { recentSentReviews, rememberSent } from './recentSent';
 import { newUlid, ulidTime } from '../ulid';
@@ -17,6 +17,7 @@ import { newUlid, ulidTime } from '../ulid';
 let user: number | null = null;
 let token: string | null = null;
 let notices = new Notices();
+const offline = new Connectivity({ now: () => Date.now(), timers: browserTimers, browserOnline: () => true });
 let outbox: ReviewOutbox;
 
 function newOutbox(): ReviewOutbox {
@@ -34,8 +35,8 @@ function newOutbox(): ReviewOutbox {
 		user: () => user,
 		token: () => token,
 		notify: (text) => notices.show(text),
-		setQueued,
-		allSent: notifyAllSent,
+		setQueued: (count) => offline.setQueued(count),
+		allSent: () => offline.notifyAllSent(),
 		rememberSent: (id, events) => rememberSent(id, events)
 	});
 }

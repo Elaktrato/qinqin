@@ -1,8 +1,6 @@
 import { testContext, type TestContext } from '$lib/testing/context';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/svelte';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { captureInstallPrompt, installPrompt } from './install';
-import { resetOffline, setPrepared } from './offlineState';
 import AppSection from './AppSection.svelte';
 import { FakeCacheStorage } from '../testing/fakeCaches';
 import { ownPartition } from './partitions';
@@ -28,8 +26,6 @@ beforeEach(() => {
 	fake = new FakeCacheStorage();
 	vi.stubGlobal('caches', fake);
 	localStorage.setItem('qinqin.token', 't');
-	resetOffline();
-	installPrompt.set(null);
 	ctx.app.auth.set({ token: 't', user: me });
 	ctx.session.workspaces.set({ list: [{ id: 7, language: 'zh', name: '' } as never], current: { id: 7, language: 'zh', name: '' } as never });
 	secure(true);
@@ -57,7 +53,7 @@ describe('Settings -> Account -> App', () => {
 		render(AppSection, { context: ctx.context });
 		expect(screen.queryByRole('button', { name: 'Install qinqin' })).toBeNull();
 		const prompt = vi.fn(async () => {});
-		const off = captureInstallPrompt(window);
+		const off = ctx.app.install.capture(window);
 		window.dispatchEvent(Object.assign(new Event('beforeinstallprompt', { cancelable: true }), { prompt, userChoice: Promise.resolve({ outcome: 'accepted' as const }) }));
 		const button = await screen.findByRole('button', { name: 'Install qinqin' });
 		await fireEvent.click(button);
@@ -106,7 +102,7 @@ describe('Settings -> Account -> App', () => {
 	it('Clear offline data removes receipts, keeps the review outbox, and says so', async () => {
 		await receipt(1, 3);
 		localStorage.setItem('qinqin.study.pending.v2', '[{"x":1}]');
-		setPrepared({ workspaceId: 7, cards: 3, at: new Date().toISOString() });
+		ctx.app.offline.setPrepared({ workspaceId: 7, cards: 3, at: new Date().toISOString() });
 		render(AppSection, { context: ctx.context });
 		await fireEvent.click(screen.getByRole('button', { name: 'Clear offline data' }));
 		await waitFor(() => expect(screen.getByText(/Offline data cleared/)).toBeTruthy());

@@ -5,7 +5,7 @@ import { cleanupPartitions, type CachesLike } from './partitions';
 import { t } from '$lib/i18n';
 import { formatBytes } from './install';
 import { clearReceipts } from './prepareOffline';
-import type { OfflineState } from './offlineState';
+import type { OfflineState } from './offlineState.svelte';
 
 export interface AppViewInput {
 	secure: boolean;

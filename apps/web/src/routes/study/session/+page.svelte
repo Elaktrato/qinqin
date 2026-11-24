@@ -69,7 +69,6 @@ import type { Run } from '$lib/study/vacation';
 	import { MAX_RESHOWS, applyGrade, progressOf, removeAt } from '$lib/study/requeue';
 	import { SESSION_CONFIG_KEY, loadConfig } from '$lib/study/session';
 	import { companionNote, sessionStartError, showCompanionNote } from '$lib/study/sessionStart';
-	import { offline } from '$lib/pwa/offlineState';
 	import { addCard } from '$lib/study/commands/cards';
 	import { loadStudyData, withStudy } from '$lib/study/data';
 	import { activeWeights } from '$lib/study/readModel';
@@ -459,7 +458,7 @@ import type { Run } from '$lib/study/vacation';
 			loading = false;
 			return;
 		}
-		if ($offline.online) void loadSessionNotes(workspaceId, seq);
+		if (app.offline.online) void loadSessionNotes(workspaceId, seq);
 
 		try {
 			// Queued reviews must land before the history is read: the
@@ -480,7 +479,7 @@ import type { Run } from '$lib/study/vacation';
 			if (seq !== requestSeq) return;
 
 			// Offline (or answered from the saved copy): real cards only, see planCompanions.
-			offlineSession = !$offline.online || $offline.servedFromCacheAt !== null;
+			offlineSession = !app.offline.online || app.offline.servedFromCacheAt !== null;
 			const history = data.reviews;
 			reviews = history;
 			weights = activeWeights(data);
@@ -580,7 +579,7 @@ import type { Run } from '$lib/study/vacation';
 				workspaceMismatch = errorText(err, t('study.session.schemeMissing'));
 			} else {
 				loadError = sessionStartError({
-					offline: !$offline.online || err instanceof TypeError,
+					offline: !app.offline.online || err instanceof TypeError,
 					mode: config.mode,
 					fallback: errorText(err, t('study.session.startFailed'))
 				});
