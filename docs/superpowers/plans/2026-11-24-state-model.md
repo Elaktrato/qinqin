@@ -255,3 +255,13 @@ Baseline (55312f3e, Node 26): 598 files, 12,651 passed, 8 skipped.
   first (`api/client.test.ts` "its remover clears only its own observer", `context/app.test.ts` "a stale app's
   stop leaves the observer of a newer app in place", "start is idempotent and its stop runs once"), seen failing;
   `setApiObserver` returns a remover that clears only its own observer, and `start()` returns the running stop.
+- F5 (nit 6): work of a disposed session went out with the next user's token. Tests first
+  (`session/afterDispose.test.ts`: the event log's `post` after the end refuses and sends nothing; a session
+  receipt waiting for the study day is not recorded; an outbox flush that finishes after the end does not announce
+  "All reviews sent." to the next session), seen failing. Fix: `EventLog` refuses to post or record once disposed
+  (`SessionEndedError`), the outbox reports nothing to the tab after its session ended, `clearHistory` schedules no
+  repair check and sends no delete once the session's `LookupsState` is disposed (its test, in
+  `lookups/store.test.ts`, was written with the fix and checked by mutation: without the check it fails), and
+  `prepareActiveWorkspace` stops fetching and reports no prepared count once its session ended (no unit test:
+  `prepareRuntime.ts` is the untested real-dependency shell of `prepareOffline.ts`; covered only by review and
+  the offline e2e specs).

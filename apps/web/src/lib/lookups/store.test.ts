@@ -81,6 +81,19 @@ describe('lookups store', () => {
 		expect(invalidate).toHaveBeenCalledWith(3);
 	});
 
+	it('a session that ends during the clear schedules no repair and deletes nothing with the next token', async () => {
+		vi.mocked(fetch).mockResolvedValueOnce(json([]));
+		vi.mocked(fetch).mockImplementationOnce(async () => {
+			// The session ends while its row is being written.
+			lookups.dispose();
+			return json({});
+		});
+		const out = await clearHistory(lookups, 3);
+		expect(out.eventsDeleted).toBe(0);
+		expect(calls().some(([, method]) => method === 'DELETE')).toBe(false);
+		expect(lookups.repairs.size).toBe(0);
+	});
+
 	it('a failed event delete after the row was cleared says what remains', async () => {
 		vi.mocked(fetch).mockResolvedValueOnce(json([]));
 		vi.mocked(fetch).mockResolvedValueOnce(json({}));

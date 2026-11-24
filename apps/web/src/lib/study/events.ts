@@ -385,6 +385,8 @@ export class ReviewOutbox {
 			this.#failureRun = 0;
 			this.#backoffUntil = 0;
 		}
+		// The session ended during the flush: the tab's banner and notices belong to the next one.
+		if (this.#disposed) return;
 		if (sent > 0 && this.pendingCount(user) === 0) this.#deps.allSent();
 		// Reviews of a workspace deleted elsewhere are lost for good: say so.
 		if (gone > 0) this.#deps.notify(t('study.outbox.queuedNotSaved', { count: gone }));

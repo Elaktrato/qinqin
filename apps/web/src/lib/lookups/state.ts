@@ -19,13 +19,20 @@ export class LookupsState {
 	readonly recorder: LookupRecorder;
 	/** The repair check after a Clear, per workspace (store.ts clearHistory). */
 	readonly repairs = new Map<number, ReturnType<typeof setTimeout>>();
+	#disposed = false;
 
 	constructor(io: RecorderIO = recorderIO) {
 		this.recorder = new LookupRecorder(io);
 	}
 
+	/** False once the session ended: nothing more is scheduled or sent for it. */
+	get alive(): boolean {
+		return !this.#disposed;
+	}
+
 	/** dispose: the buffer, the copies and the pending repair checks belong to the session that ended. */
 	dispose(): void {
+		this.#disposed = true;
 		for (const timer of this.repairs.values()) clearTimeout(timer);
 		this.repairs.clear();
 		this.recorder.reset();

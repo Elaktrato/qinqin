@@ -58,13 +58,16 @@ export async function prepareActiveWorkspace(app: AppContext): Promise<void> {
 		weights: (data) => activeWeights(data),
 		fetchEntry: (id) => getEntry(id),
 		fetchStroke: (ch) => fetchStrokeData(session.caches.strokes, ch),
-		fetchApi: (path) => api(path),
+		fetchApi: (path) => (session.alive ? api(path) : Promise.reject(new Error('the session ended'))),
 		pullPages: (id) => studyPullPages(session.study, id),
 		storage: typeof localStorage === 'undefined' ? null : localStorage,
 		now: () => Date.now(),
-		canPrepare: controlled,
+		canPrepare: () => session.alive && controlled(),
 		partition: currentPartition,
 		isCached: cachedInPartition,
-		onPrepared: (prepared) => app.offline.setPrepared(prepared)
+		// The prepared count belongs to this session's banner, not the next one's.
+		onPrepared: (prepared) => {
+			if (app.session === session && session.alive) app.offline.setPrepared(prepared);
+		}
 	});
 }

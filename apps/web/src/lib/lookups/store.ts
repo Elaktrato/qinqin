@@ -103,6 +103,9 @@ export async function clearHistory(
 		return h;
 	});
 	const mine = next.clearedAt as string;
+	// The session ended during the clear: no check is scheduled and nothing is
+	// deleted with the next user's token.
+	if (!lookups.alive) return { eventsDeleted: 0, history: next };
 	clearTimeout(repairs.get(ws));
 	repairs.set(
 		ws,

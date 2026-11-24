@@ -81,6 +81,14 @@ export interface EventLogDeps {
 	whenStudyDaySettled(): Promise<void>;
 }
 
+/** SessionEndedError: the event log's session ended, so nothing more is sent. */
+export class SessionEndedError extends Error {
+	constructor() {
+		super('the session ended: the event was not sent');
+		this.name = 'SessionEndedError';
+	}
+}
+
 /**
  * EventLog: the session's event posting and its short-lived cache of each
  * workspace's whole log (WORKSPACE_EVENTS_TTL_MS) shared by the home and Stats
@@ -91,6 +99,7 @@ export class EventLog {
 	readonly #deps: EventLogDeps;
 	readonly #log: WorkspaceCache<StudyEvent[]>;
 	readonly #listeners = new Set<(workspaceId: number) => void>();
+	#disposed = false;
 
 	constructor(deps: EventLogDeps) {
 		this.#deps = deps;
@@ -109,6 +118,8 @@ export class EventLog {
 	 * retry queue.
 	 */
 	async post(events: StudyEventBody[]): Promise<void> {
+		// The session ended: its events must not go out with the next user's token.
+		if (this.#disposed) throw new SessionEndedError();
 		try {
 			await this.#deps.api('/api/events/batch', { method: 'POST', body: { events } });
 		} finally {
@@ -122,6 +133,7 @@ export class EventLog {
 	 * the console and swallowed: recording is telemetry, never page-breaking.
 	 */
 	async record(type: EventType, workspaceId: number, payload: unknown = null): Promise<void> {
+		if (this.#disposed) return;
 		const event: StudyEventBody = {
 			id: newUlid(),
 			workspaceId,
@@ -171,6 +183,7 @@ export class EventLog {
 	 * session is recorded every time, which is the safe direction.
 	 */
 	recordSessionOnce(workspaceId: number, day: StudyDay = this.#deps.studyDay(), now: number = this.#deps.now()): void {
+		if (this.#disposed) return;
 		const key = sessionKey(workspaceId, day.today(now));
 		try {
 			const storage = this.#deps.local();
@@ -196,6 +209,7 @@ export class EventLog {
 
 	/** dispose: the session ended; the cached logs and the listeners go. */
 	dispose(): void {
+		this.#disposed = true;
 		this.#log.invalidate();
 		this.#listeners.clear();
 	}
