@@ -121,5 +121,3 @@ export function createPackFaces(overrides: Partial<PackFacesDeps> = {}) {
 
 export type PackFaces = ReturnType<typeof createPackFaces>;
 
-/** The app's one pack-face registry (wired once in routes/+layout.svelte). */
-export const packFaces = createPackFaces();

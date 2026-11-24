@@ -271,5 +271,3 @@ export function createThemeStore(overrides: Partial<ThemeStoreDeps> = {}) {
 
 export type ThemeStore = ReturnType<typeof createThemeStore>;
 
-/** The app's one theme store (wired once in routes/+layout.svelte). */
-export const themeStore = createThemeStore();

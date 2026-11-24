@@ -19,7 +19,6 @@ import { createAppContext, type AppContext } from '$lib/context/app.svelte';
 import { contextOf } from '$lib/context/context';
 import { fakeDeps } from '$lib/testing/context';
 import { setUrl } from '$lib/testing/appState.svelte';
-import { navLayoutStore } from '$lib/frame/navLayoutStore.svelte';
 import Layout from './+layout.svelte';
 import { dataRow } from '../lib/testing/keyed';
 
@@ -57,7 +56,6 @@ function mountAt(path: string, token: string | null, navLayout: unknown = null) 
 }
 
 beforeEach(() => {
-	void navLayoutStore.setUser(null);
 });
 afterEach(() => {
 	cleanup();
@@ -131,7 +129,7 @@ describe('layout auth guard', () => {
 	it('the phone bar in side-menu mode: the menu button, the title and the flag; no nav until the drawer opens', async () => {
 		const { findByText, container } = mountAt('/stats/week', 'tok', { version: 1, phone: 'drawer' });
 		await findByText('page body');
-		await waitFor(() => expect(navLayoutStore.phone).toBe('drawer'));
+		await waitFor(() => expect(app.navLayout.phone).toBe('drawer'));
 		const phone = container.querySelector('[data-frame="phone"]') as HTMLElement;
 		expect(phone.closest('header')).toBe(desktop(container).closest('header'));
 		expect(within(phone).getByRole('button', { name: 'Open menu' })).toBeTruthy();
@@ -178,10 +176,9 @@ describe('layout auth guard', () => {
 		const markup = (el: HTMLElement) => el.innerHTML.replace(/ (id|for|aria-controls|aria-describedby|aria-labelledby)="[^"]*"/g, '');
 		const withBar = markup(desktop(bar.container));
 		cleanup();
-		void navLayoutStore.setUser(null);
 		const drawer = mountAt('/reader', 'tok', { version: 1, phone: 'drawer' });
 		await drawer.findByText('page body');
-		await waitFor(() => expect(navLayoutStore.phone).toBe('drawer'));
+		await waitFor(() => expect(app.navLayout.phone).toBe('drawer'));
 		expect(markup(desktop(drawer.container))).toBe(withBar);
 	});
 

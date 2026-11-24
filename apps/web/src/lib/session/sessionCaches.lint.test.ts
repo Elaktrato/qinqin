@@ -30,7 +30,6 @@ const ALLOWED: Record<string, string> = {
 	'features/flashcards/decks/providers.ts:pluginDeckProviders': 'deck providers plugins register at load, no data',
 	'features/reader/variants.ts:converters': 'script converters built from bundled tables',
 	'features/reader/variants.ts:loading': 'the converter tables loading, no user data',
-	'frame/pageFrame.svelte.ts:slots': 'layout slots of the mounted page, no data',
 	'study/scheduler.ts:schedulers': 'ts-fsrs instances by weight values (at most 16): a pure function\'s memo, no rows',
 	'api/client.ts:memoryToken': 'the credential itself (storage blocked): clearToken drops it on every session end',
 };

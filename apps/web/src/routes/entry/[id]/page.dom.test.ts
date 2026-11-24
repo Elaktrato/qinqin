@@ -24,7 +24,6 @@ vi.mock('$lib/notes/store', async (orig) => ({
 
 import { getCharsUnderRadical, getEntry, getSharedEntry } from '$lib/api/entries';
 import { ApiError } from '$lib/api/client';
-import { pageFrame } from '$lib/frame/pageFrame.svelte';
 import { page, setUrl } from '$lib/testing/appState.svelte';
 import { loadNote } from '$lib/notes/store';
 import type { Workspace } from '$lib/api/types';
@@ -234,7 +233,7 @@ describe('entry page titles and the phone bar (#104)', () => {
 		vi.mocked(getEntry).mockResolvedValue(entry({ written: '你' }));
 		render(Page, { context: ctx.context });
 		await screen.findByRole('heading', { name: '你' });
-		await waitFor(() => expect(pageFrame.title).toBe('你'));
+		await waitFor(() => expect(ctx.app.frame.title).toBe('你'));
 		expect(document.title).toBe('你 · qinqin');
 	});
 
@@ -264,6 +263,6 @@ describe('entry page titles and the phone bar (#104)', () => {
 		(page as unknown as { params: Record<string, string> }).params = { id: '999' };
 		await tick();
 		await waitFor(() => expect(document.title).toBe('Entry not found · qinqin'));
-		expect(pageFrame.title === null || pageFrame.title === '').toBe(true);
+		expect(ctx.app.frame.title === null || ctx.app.frame.title === '').toBe(true);
 	});
 });

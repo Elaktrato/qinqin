@@ -22,16 +22,18 @@
 		type NavLayoutChange,
 		type PhoneMode
 	} from '$lib/frame/navLayout';
-	import { navLayoutStore, type NavLayoutStore } from '$lib/frame/navLayoutStore.svelte';
+	import { type NavLayoutStore } from '$lib/frame/navLayoutStore.svelte';
 	import { frameSections, homeSection, type FrameSection } from '$lib/frame/sections';
 	import type { MessageKey } from '$lib/i18n';
 	import Icon from '$lib/ui/Icon.svelte';
 	import { Button, Panel, Section } from '$lib/ui';
 	import { useSession } from '$lib/context/context';
+	import { useApp } from '$lib/context/context';
+	const app = useApp();
 	const session = useSession();
 
 	let {
-		store = navLayoutStore,
+		store = app.navLayout,
 		load = loadNavLayout,
 		save = saveNavLayout
 	}: {

@@ -10,7 +10,7 @@
 	import { tick } from 'svelte';
 	import { t } from '$lib/i18n';
 	import { requestSignOut } from '$lib/account/signOut';
-	import { themeStore, type ThemeStore } from '$lib/theme/store.svelte';
+	import { type ThemeStore } from '$lib/theme/store.svelte';
 	import Icon from '$lib/ui/Icon.svelte';
 	import Menu from '$lib/ui/Menu.svelte';
 	import MenuItem from '$lib/ui/MenuItem.svelte';
@@ -20,7 +20,7 @@
 	const app = useApp();
 
 	let {
-		store = themeStore,
+		store = app.theme,
 		restricted = false,
 		align = 'end',
 		direction = 'down'

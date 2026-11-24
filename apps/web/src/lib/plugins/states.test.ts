@@ -3,11 +3,11 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 vi.mock('$lib/api/client', () => ({ api: vi.fn() }));
 
 import { api } from '$lib/api/client';
-import { pluginStatesValue } from '$lib/testing/context';
 import { logChangingTypes } from './contract';
 import { PluginStates } from './states.svelte';
 
 const mocked = vi.mocked(api);
+const pluginStatesValue = (p: PluginStates) => ({ list: p.list, status: p.status });
 let alive = true;
 let states: PluginStates;
 

@@ -7,7 +7,11 @@
 // it with that reason.
 
 import { setApiObserver } from '../api/client';
+import { createPackFaces, type PackFaces } from '../fonts/packFaces.svelte';
+import { createNavLayoutStore, type NavLayoutStore } from '../frame/navLayoutStore.svelte';
+import { PageFrame } from '../frame/pageFrame.svelte';
 import { InstallPrompt } from '../pwa/installPrompt.svelte';
+import { createThemeStore, type ThemeStore } from '../theme/store.svelte';
 import { Connectivity } from '../pwa/offlineState.svelte';
 import { createWorkerRegistration, type WorkerRegistration } from '../pwa/register.svelte';
 import { endSession } from '../session/sessionEnd';
@@ -24,6 +28,14 @@ export class AppContext {
 	readonly install = new InstallPrompt();
 	/** The service worker's registration and its waiting update. */
 	readonly worker: WorkerRegistration;
+	/** The installed themes, the person's appearance row and the device's light/dark switch. */
+	readonly theme: ThemeStore;
+	/** The person's phone navigation (bottom bar or side menu). */
+	readonly navLayout: NavLayoutStore;
+	/** The faces of the installed font packs. */
+	readonly fonts: PackFaces;
+	/** The phone bar's page title and actions. */
+	readonly frame = new PageFrame();
 	/** The number of unsent reviews the sign-out dialog is asking about; null = no dialog. */
 	logoutPrompt = $state<number | null>(null);
 	#session = $state.raw<Session | null>(null);
@@ -35,6 +47,9 @@ export class AppContext {
 		this.worker = createWorkerRegistration(
 			deps.worker ?? { isSecureContext: false, serviceWorker: undefined, reload: () => undefined, setInterval: () => 0 }
 		);
+		this.theme = createThemeStore({ storage: deps.local });
+		this.navLayout = createNavLayoutStore({ storage: deps.local, now: deps.now });
+		this.fonts = createPackFaces();
 		this.auth = new Auth(deps, (state, reason) => this.#follow(state, reason));
 	}
 

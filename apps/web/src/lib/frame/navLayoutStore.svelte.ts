@@ -138,5 +138,3 @@ export function createNavLayoutStore(overrides: Partial<NavLayoutStoreDeps> = {}
 
 export type NavLayoutStore = ReturnType<typeof createNavLayoutStore>;
 
-/** The app's one store (the root layout drives it). */
-export const navLayoutStore = createNavLayoutStore();

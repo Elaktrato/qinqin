@@ -8,10 +8,12 @@
 	// retired ThemeSwitch (#98).
 	import { t } from '$lib/i18n';
 	import MenuItem from '$lib/ui/MenuItem.svelte';
-	import { themeStore, type ThemeStore } from '$lib/theme/store.svelte';
+	import { type ThemeStore } from '$lib/theme/store.svelte';
+	import { useApp } from '$lib/context/context';
+	const app = useApp();
 
 	let {
-		store = themeStore,
+		store = app.theme,
 		onback,
 		onerror
 	}: { store?: ThemeStore; onback?: () => void; onerror?: (message: string) => void } = $props();

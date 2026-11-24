@@ -1,7 +1,7 @@
+import { testContext, type TestContext } from '$lib/testing/context';
 import { cleanup, render } from '@testing-library/svelte';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi, beforeEach } from 'vitest';
 import { installedFaces } from '$lib/fonts/hanzi';
-import { packFaces } from '$lib/fonts/packFaces.svelte';
 import ChapterText from './ChapterText.svelte';
 import source from './ChapterText.svelte?raw';
 import { DEFAULT_DISPLAY, type ReaderDisplay } from './displaySettings';
@@ -12,6 +12,11 @@ import type { Piece } from './smartReadings';
 import type { WordRange } from './wordRanges';
 import { createReveal } from './reveal';
 import type { LookupController } from './useLookup.svelte';
+
+let ctx: TestContext = testContext();
+beforeEach(() => {
+	ctx = testContext();
+});
 
 afterEach(cleanup);
 
@@ -29,7 +34,7 @@ function mount(props: {
 	showAll?: boolean;
 	words?: Map<number, WordRange[]>;
 }) {
-	const result = render(ChapterText, { lang: 'zh', lookup, display: display(), ...props } as never);
+	const result = render(ChapterText, { props: { lang: 'zh', lookup, display: display(), ...props } as never, context: ctx.context });
 	return { ...result, root: result.container.querySelector('.chapter-text') as HTMLElement };
 }
 
@@ -113,8 +118,8 @@ describe('ChapterText readings', () => {
 	});
 
 	it('a concrete reader font asks for its pack face and puts it first when installed', async () => {
-		const need = vi.spyOn(packFaces, 'need');
-		const installed = vi.spyOn(packFaces, 'installed', 'get').mockReturnValue(installedFaces([{ face: 'kai', script: 'Hant' }]));
+		const need = vi.spyOn(ctx.app.fonts, 'need');
+		const installed = vi.spyOn(ctx.app.fonts, 'installed', 'get').mockReturnValue(installedFaces([{ face: 'kai', script: 'Hant' }]));
 		const { root, unmount } = mount({ paragraphs: zh, lang: 'zh-Hant', display: display({ font: 'kai' }) });
 		expect(need).toHaveBeenLastCalledWith('reader', ['kai']);
 		expect(root.style.getPropertyValue('--reader-font')).toMatch(/^"qq-kai-Hant", /);

@@ -11,7 +11,11 @@ import { textHash } from './textHash';
 
 vi.mock('$app/navigation', () => ({ goto: vi.fn(async () => {}), beforeNavigate: vi.fn() }));
 vi.mock('$app/state', () => ({ page: { url: new URL('http://localhost/p/journal/e/e1') } }));
-vi.mock('$lib/frame/pageFrame.svelte', () => ({ setFrameTitle: vi.fn(), setPageActions: vi.fn() }));
+vi.mock('$lib/frame/pageFrame.svelte', async (importOriginal) => ({
+	...(await importOriginal<typeof import('$lib/frame/pageFrame.svelte')>()),
+	setFrameTitle: vi.fn(),
+	setPageActions: vi.fn()
+}));
 vi.mock('./store', () => ({
 	getEntry: vi.fn(),
 	getReview: vi.fn(),

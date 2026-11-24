@@ -178,3 +178,10 @@ Baseline (55312f3e, Node 26): 598 files, 12,651 passed, 8 skipped.
    the app. Pure moves; the tests now build their memos, recorder and study day per test (`zone.test.ts` on a
    `StudyDays`, `currentContext.test.ts` on a fake view, tests that mocked `time/zone` spy on
    `StudyDays.prototype`). Full vitest under Node 26: 599 files, 12,664 passed; e2e 13 passed.
+9. The tab-wide appearance state into the app context: the theme (`app.theme`, `createThemeStore` with the app's
+   storage), the navigation layout (`app.navLayout`), the pack font faces (`app.fonts`) and the page frame
+   (`frame/pageFrame.svelte.ts` `PageFrame`, `app.frame`; `setFrameTitle`/`setPageActions` reach it through
+   `useApp()`). The module singletons `themeStore`, `navLayoutStore`, `packFaces` and the frame slots are gone; the
+   theme cross-fade timer became a WeakMap keyed by the root element. Pure moves: the component tests render with a
+   fresh test context instead of sharing the singletons. Full vitest under Node 26: 599 files, 12,664 passed; e2e
+   13 passed.

@@ -59,7 +59,8 @@ function setThemeColor(color: string | undefined): void {
 
 /** The class that turns on the brief colour transition of a theme switch. */
 export const THEME_ANIM_CLASS = 'theme-anim';
-let themeAnimTimer: ReturnType<typeof setTimeout> | null = null;
+// The cross-fade timer of each root (the document's one), so a second switch restarts it.
+const themeAnimTimers = new WeakMap<HTMLElement, ReturnType<typeof setTimeout>>();
 
 /**
  * animateThemeChange marks `root` so colours cross-fade once (app.css,
@@ -70,11 +71,15 @@ let themeAnimTimer: ReturnType<typeof setTimeout> | null = null;
 export function animateThemeChange(root: HTMLElement | null): void {
 	if (root === null || typeof root.classList === 'undefined') return;
 	root.classList.add(THEME_ANIM_CLASS);
-	if (themeAnimTimer !== null) clearTimeout(themeAnimTimer);
-	themeAnimTimer = setTimeout(() => {
-		root.classList.remove(THEME_ANIM_CLASS);
-		themeAnimTimer = null;
-	}, 240);
+	const running = themeAnimTimers.get(root);
+	if (running !== undefined) clearTimeout(running);
+	themeAnimTimers.set(
+		root,
+		setTimeout(() => {
+			root.classList.remove(THEME_ANIM_CLASS);
+			themeAnimTimers.delete(root);
+		}, 240)
+	);
 }
 
 /** applySlot paints one slot's tokens and the adjustments on `root`. */

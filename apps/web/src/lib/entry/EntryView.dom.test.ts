@@ -37,7 +37,6 @@ import { ApiError } from '$lib/api/client';
 import { getEntry } from '$lib/api/entries';
 import { getEntryRanks } from '$lib/api/frequency';
 import { getStudyData } from '$lib/study/data';
-import { pageFrame } from '$lib/frame/pageFrame.svelte';
 import { setUrl } from '$lib/testing/appState.svelte';
 import EntryView from './EntryView.svelte';
 import ActionsHarness from './testing/ActionsHarness.svelte';
@@ -201,12 +200,12 @@ describe('the entry on a phone (#104)', () => {
 		getEntryMock.mockResolvedValue(entry());
 		const view = render(EntryView, { props: { entryId: 5, recordView: false }, context: ctx.context });
 		await screen.findByRole('heading', { name: '勤奋' });
-		await waitFor(() => expect(pageFrame.actions).toBeTruthy());
+		await waitFor(() => expect(ctx.app.frame.actions).toBeTruthy());
 		const harness = render(ActionsHarness, { context: ctx.context });
 		await waitFor(() => expect(within(harness.container).getByRole('button', { name: 'Add to deck' })).toBeTruthy());
 		view.unmount();
 		cleanup();
-		await waitFor(() => expect(pageFrame.actions).toBeNull());
+		await waitFor(() => expect(ctx.app.frame.actions).toBeNull());
 	});
 });
 

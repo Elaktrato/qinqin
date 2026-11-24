@@ -10,7 +10,6 @@
 	import { currentSection, frameSections, homeSection } from '$lib/frame/sections';
 	import { barHiddenOn } from '$lib/frame/barItems';
 	import BottomBar from '$lib/frame/BottomBar.svelte';
-	import { navLayoutStore } from '$lib/frame/navLayoutStore.svelte';
 	import PhoneBar from '$lib/frame/PhoneBar.svelte';
 	import TopBar from '$lib/frame/TopBar.svelte';
 	import Icon from '$lib/ui/Icon.svelte';
@@ -28,8 +27,6 @@
 	import { prepareActiveWorkspace } from '$lib/pwa/prepareRuntime';
 	import Logo from '$lib/components/Logo.svelte';
 	import LogoutDialog from '$lib/account/LogoutDialog.svelte';
-	import { themeStore } from '$lib/theme/store.svelte';
-	import { packFaces } from '$lib/fonts/packFaces.svelte';
 	import { applyHanziVars, hanziVars } from '$lib/fonts/hanziVars';
 	import '../app.css';
 	import '$lib/fonts/hanzi.css';
@@ -80,7 +77,7 @@
 	// The phone navigation (#188, the person's nav-layout row): the bottom bar
 	// (default) or the side menu. Desktop and tablet widths ignore it: the
 	// bar is in the phone-only wrapper and every rule for it is phone-only.
-	const phoneMode = $derived(navLayoutStore.phone);
+	const phoneMode = $derived(app.navLayout.phone);
 	const barSections = $derived([homeSection(), ...sections]);
 	const bottomBar = $derived(signedIn && !restricted && phoneMode === 'bar' && !barHiddenOn(path));
 	$effect(() => {
@@ -130,7 +127,7 @@
 		// Installable app: a no-op outside secure contexts (see lib/pwa/register.ts).
 		void persistOnceNow();
 		// The theme list and the device's light/dark switch, signed in or out.
-		void themeStore.start();
+		void app.theme.start();
 		// Rehydrate the session from qinqin.token before guarding.
 		try {
 			await app.auth.loadMe();
@@ -186,17 +183,17 @@
 		const id = booted && signedIn && app.auth.restriction === null ? (app.auth.user?.id ?? null) : null;
 		if (id === themeUser) return;
 		themeUser = id;
-		void themeStore.setUser(id);
-		void navLayoutStore.setUser(id);
+		void app.theme.setUser(id);
+		void app.navLayout.setUser(id);
 		// The installed font pack faces (#97): the list needs a session.
-		if (id === null) packFaces.clear();
-		else void packFaces.load();
+		if (id === null) app.fonts.clear();
+		else void app.fonts.load();
 	});
 
 	// Back to the front: another device may have changed the phone navigation.
 	$effect(() => {
 		const onVisible = () => {
-			if (document.visibilityState === 'visible') void navLayoutStore.resume();
+			if (document.visibilityState === 'visible') void app.navLayout.resume();
 		};
 		document.addEventListener('visibilitychange', onVisible);
 		return () => document.removeEventListener('visibilitychange', onVisible);
@@ -205,10 +202,10 @@
 	// The app-wide hanzi font (#97): the saved choice (or the Appearance
 	// preview) sets one stack per script on :root, an installed pack face
 	// first; only that face's slices are registered.
-	const hanziFont = $derived((themeStore.preview ?? themeStore.appearance).hanziFont);
+	const hanziFont = $derived((app.theme.preview ?? app.theme.appearance).hanziFont);
 	$effect(() => {
-		applyHanziVars(hanziVars(hanziFont, packFaces.installed), document.documentElement);
-		packFaces.need('app', [hanziFont]);
+		applyHanziVars(hanziVars(hanziFont, app.fonts.installed), document.documentElement);
+		app.fonts.need('app', [hanziFont]);
 	});
 
 	// The learner's time zone history (and, once per account, the browser
@@ -333,7 +330,7 @@
 			     (a nav landmark of its own). Phone only: the wrapper is display:
 			     none at 720px and wider. -->
 			<div class="phone" data-frame="phone-nav">
-				<BottomBar sections={barSections} bar={navLayoutStore.bar} {current} />
+				<BottomBar sections={barSections} bar={app.navLayout.bar} {current} />
 			</div>
 		{/if}
 	</div>
