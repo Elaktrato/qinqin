@@ -8,23 +8,13 @@ import { get } from 'svelte/store';
 import fixture from '../../../../../docs/contracts/sync/unreadable-rows.json';
 import { parsePullPage } from '../sync/pager';
 import { STUDY_COLLECTIONS, type StudyCollection } from './rows';
-import {
-	UnreadableRowError,
-	addCard,
-	deleteDeck,
-	loadRawStudyData,
-	loadStudyData,
-	saveDeckCardTypes,
-	saveDeckCardTypesForDecks,
-	saveDeckLimits,
-	saveGoals,
-	setKnownMark,
-	saveWorkspaceLimits,
-	setActiveSet,
-	studyPullPages
-} from './store';
+import { addCard } from './commands/cards';
+import { deleteDeck, saveDeckCardTypes, saveDeckCardTypesForDecks } from './commands/decks';
+import { loadRawStudyData, loadStudyData, studyPullPages } from './data';
+import { saveDeckLimits, saveWorkspaceLimits, setActiveSet } from './commands/settings';
+import { saveGoals, setKnownMark } from './commands/keyed';
 import { endSession } from '../session/sessionEnd';
-import { clearUnreadableReport, unreadableRows } from './unreadable';
+import { clearUnreadableReport, unreadableRows, UnreadableRowError } from './unreadable';
 
 const WS = 7;
 type Rows = Record<string, { _why: string; row: unknown }[]>;

@@ -281,6 +281,11 @@ export class StudyCache {
 	}
 }
 
+/** createStudyCache builds the cache (data.ts makes the session's one). */
+export function createStudyCache(deps: StudyCacheDeps): StudyCache {
+	return new StudyCache(deps);
+}
+
 /** keepLocalWrites puts back into a fresh full round the rows this tab wrote while it ran, when newer. */
 function keepLocalWrites(fresh: StudyRows, held: StudyRows, keys: ReadonlySet<string>): void {
 	for (const key of keys) {

@@ -1,12 +1,15 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-vi.mock('$lib/study/history', () => ({ loadStudyHistory: vi.fn() }));
-vi.mock('$lib/events', () => ({ loadWorkspaceEvents: vi.fn() }));
-vi.mock('$lib/api/schemes', () => ({ getSchemes: vi.fn(), getSchemeEntries: vi.fn(), fetchSchemeCharacters: vi.fn() }));
-vi.mock('$lib/study/store', async (importOriginal) => ({
-	...(await importOriginal<typeof import('$lib/study/store')>()),
+vi.mock('$lib/study/data', async (importOriginal) => ({
+	...(await importOriginal<typeof import('$lib/study/data')>()),
+	loadStudyHistory: vi.fn()
+}));
+vi.mock('$lib/study/commands/keyed', async (importOriginal) => ({
+	...(await importOriginal<typeof import('$lib/study/commands/keyed')>()),
 	saveSeenMilestones: vi.fn()
 }));
+vi.mock('$lib/events', () => ({ loadWorkspaceEvents: vi.fn() }));
+vi.mock('$lib/api/schemes', () => ({ getSchemes: vi.fn(), getSchemeEntries: vi.fn(), fetchSchemeCharacters: vi.fn() }));
 vi.mock('$lib/time/zone', async () => {
 	const { studyDay } = await import('$lib/time/studyDay');
 	return { currentStudyDay: () => studyDay([]), currentStudyHistory: () => [], onStudyDayChange: () => () => {} };
@@ -17,9 +20,10 @@ import { fetchSchemeCharacters, getSchemeEntries, getSchemes } from '$lib/api/sc
 import type { StudyEvent } from '$lib/events';
 import { loadWorkspaceEvents } from '$lib/events';
 import { pluginStates } from '$lib/plugins/states';
-import { loadStudyHistory } from '$lib/study/history';
+import { loadStudyHistory } from '$lib/study/data';
 import { setOutboxUser } from '$lib/study/outboxUser';
-import { PartialPushError, saveSeenMilestones } from '$lib/study/store';
+import { PartialPushError } from '$lib/sync/push';
+import { saveSeenMilestones } from '$lib/study/commands/keyed';
 import type { ReviewEvent, StudyCard, StudyHistory } from '$lib/study/types';
 import { givenTimelines, replayStats } from '$lib/weekly/replay';
 import { levelMilestoneId } from './catalogue';

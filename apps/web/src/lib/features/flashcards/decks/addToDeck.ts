@@ -27,7 +27,7 @@ import { newCardId } from '$lib/study/canonical';
 import type { DeckSettings } from '$lib/study/deckSettings';
 import type { NewOrder } from '$lib/study/newOrder';
 import { cardRow, deckRow, settingsRow, studyKey } from '$lib/study/rows';
-import { extraOf, freshCardId, studyWrite, type StudySnapshot, type StudyWrite } from '$lib/study/store';
+import { extraOf, freshCardId, studyWrite, type StudySnapshot, type StudyWrite } from '$lib/study/plan';
 import { GENERAL_DECK_ID } from '$lib/study/types';
 import type { Deck, StudyCard } from '$lib/study/types';
 

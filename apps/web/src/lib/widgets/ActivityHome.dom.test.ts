@@ -3,8 +3,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('$lib/api/stats', () => ({ fetchActivity: vi.fn() }));
 vi.mock('$lib/time/zone', () => ({ currentStudyDay: vi.fn(), onStudyDayChange: vi.fn() }));
-vi.mock('$lib/study/studyData', () => ({ getStudyData: vi.fn() }));
-vi.mock('$lib/study/history', () => ({ loadStudyHistory: vi.fn() }));
+vi.mock('$lib/study/data', async (importOriginal) => ({
+	...(await importOriginal<typeof import('$lib/study/data')>()),
+	getStudyData: vi.fn(),
+	loadStudyHistory: vi.fn()
+}));
 vi.mock('$lib/activity/viewPrefs', async (importOriginal) => ({
 	...(await importOriginal<typeof import('$lib/activity/viewPrefs')>()),
 	loadActivityView: vi.fn(() => Promise.resolve({ scope: 'workspace', hidden: [] })),
@@ -16,8 +19,7 @@ vi.mock('./options', async (importOriginal) => ({
 }));
 
 import { fetchActivity } from '$lib/api/stats';
-import { loadStudyHistory } from '$lib/study/history';
-import { getStudyData } from '$lib/study/studyData';
+import { loadStudyHistory, getStudyData } from '$lib/study/data';
 import { studyDay } from '$lib/time/studyDay';
 import { currentStudyDay, onStudyDayChange } from '$lib/time/zone';
 import { workspaces } from '$lib/workspaces';

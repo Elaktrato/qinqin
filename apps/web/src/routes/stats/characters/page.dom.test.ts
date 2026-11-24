@@ -3,8 +3,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('$lib/api/characters', () => ({ fetchCharacters: vi.fn() }));
 vi.mock('$lib/api/schemes', () => ({ fetchSchemeCharacters: vi.fn(), getSchemes: vi.fn() }));
-vi.mock('$lib/study/store', async (importOriginal) => ({
-	...(await importOriginal<typeof import('$lib/study/store')>()),
+vi.mock('$lib/study/data', async (importOriginal) => ({
+	...(await importOriginal<typeof import('$lib/study/data')>()),
 	loadStudyData: vi.fn()
 }));
 vi.mock('$lib/study/entriesCache', () => ({
@@ -18,7 +18,7 @@ vi.mock('$lib/study/mastery', async (importOriginal) => ({
 import { fetchCharacters } from '$lib/api/characters';
 import { fetchSchemeCharacters, getSchemes } from '$lib/api/schemes';
 import { masteryForChars, type CharMastery } from '$lib/study/mastery';
-import { loadStudyData } from '$lib/study/store';
+import { loadStudyData } from '$lib/study/data';
 import { workspaces } from '$lib/workspaces';
 import CharactersPage from './+page.svelte';
 import charGrid from '$lib/components/map/CharGrid.svelte?raw';

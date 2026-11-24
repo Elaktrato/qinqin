@@ -162,9 +162,10 @@ export async function pushKeyed(
 	namespace: string,
 	workspace: number | null,
 	rows: readonly KeyedWrite[],
-	opts: ChunkOptions = {}
+	opts: ChunkOptions = {},
+	/** Filled with each row's stamp as its chunk is built (readable in `opts.after`). */
+	stamps: string[] = []
 ): Promise<string[]> {
-	const stamps: string[] = [];
 	await pushChunks(rows.length, opts, (from, to, nowMs) => ({
 		pluginData: rows.slice(from, to).map((row, i) => {
 			const stamp = stampOf(nowMs, row.knownAt);

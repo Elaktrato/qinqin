@@ -1,13 +1,16 @@
 import { cleanup, render, screen, waitFor } from '@testing-library/svelte';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-vi.mock('$lib/study/history', () => ({ loadStudyHistory: vi.fn() }));
+vi.mock('$lib/study/data', async (importOriginal) => ({
+	...(await importOriginal<typeof import('$lib/study/data')>()),
+	loadStudyHistory: vi.fn()
+}));
 vi.mock('$lib/goals/loadGoal', () => ({ loadGoalStatus: vi.fn() }));
 
 import type { GoalView } from '$lib/goals/loadGoal';
 import { loadGoalStatus } from '$lib/goals/loadGoal';
 import { levelProgress, xpFromReviews } from '$lib/study/exp';
-import { loadStudyHistory } from '$lib/study/history';
+import { loadStudyHistory } from '$lib/study/data';
 import type { ReviewEvent } from '$lib/study/types';
 import { currentStudyDay } from '$lib/time/zone';
 import { workspaces } from '$lib/workspaces';

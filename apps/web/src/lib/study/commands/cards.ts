@@ -12,7 +12,7 @@ import { cardRow } from '../rows';
 import { GENERAL_DECK_ID, type StudyCard, type StudyCardKind } from '../types';
 import { extraOf, freshCardId, studyDelete, studyWrite, type StudySnapshot } from '../plan';
 import { planningView } from '../data';
-import { pushOptional, pushStudy, requireWorkspaceArg } from './write';
+import { pushOptional, pushStudy, replanned, requireWorkspaceArg } from './write';
 
 /**
  * addCard stores a new card (vocab unless `kind` says otherwise) and
@@ -45,37 +45,38 @@ export async function addCard(
 ): Promise<StudyCard> {
 	requireWorkspaceArg(workspaceId, 'addCard');
 	const kind = opts.kind ?? 'vocab';
-	const { data: { cards }, snapshot: snap } = await planningView(workspaceId);
-	const wanted = cardKey(kind, entryId, opts.sentenceId);
-	// Several stored duplicates: answer with the one loadStudyData keeps.
-	const existing = cards
-		.filter(
-			(card) => cardKey(card.kind, card.entryId, card.sentenceId) === wanted,
-		)
-		.sort(compareCanonical)[0];
-	if (existing !== undefined) return existing;
-	const deckIds = opts.deckIds ?? [GENERAL_DECK_ID];
-	const chosen = [...new Set(deckIds.filter((id) => id !== ''))];
-	const card: StudyCard = {
-		id: freshCardId(cards, snap.unreadable, kind, entryId, opts.sentenceId),
-		kind,
-		entryId,
-		deckIds: chosen.length === 0 ? [GENERAL_DECK_ID] : chosen,
-		createdAt: new Date().toISOString(),
-	};
-	if (typeof opts.written === 'string') {
-		card.written = opts.written;
-	}
-	if (opts.entryKind === 'character') {
-		card.entryKind = 'character';
-	}
-	if (opts.sentenceId !== undefined) {
-		card.sentenceId = opts.sentenceId;
-	}
-	// The id of a deleted card revives its tombstone (and its extra).
-	const write = studyWrite(snap, 'cards', cardRow(card, extraOf(snap, 'cards', card.id)));
-	if (write !== null) await pushStudy(workspaceId, [write]);
-	return card;
+	return replanned(workspaceId, async ({ data: { cards }, snapshot: snap }) => {
+		const wanted = cardKey(kind, entryId, opts.sentenceId);
+		// Several stored duplicates: answer with the one loadStudyData keeps.
+		const existing = cards
+			.filter(
+				(card) => cardKey(card.kind, card.entryId, card.sentenceId) === wanted,
+			)
+			.sort(compareCanonical)[0];
+		if (existing !== undefined) return existing;
+		const deckIds = opts.deckIds ?? [GENERAL_DECK_ID];
+		const chosen = [...new Set(deckIds.filter((id) => id !== ''))];
+		const card: StudyCard = {
+			id: freshCardId(cards, snap.unreadable, kind, entryId, opts.sentenceId),
+			kind,
+			entryId,
+			deckIds: chosen.length === 0 ? [GENERAL_DECK_ID] : chosen,
+			createdAt: new Date().toISOString(),
+		};
+		if (typeof opts.written === 'string') {
+			card.written = opts.written;
+		}
+		if (opts.entryKind === 'character') {
+			card.entryKind = 'character';
+		}
+		if (opts.sentenceId !== undefined) {
+			card.sentenceId = opts.sentenceId;
+		}
+		// The id of a deleted card revives its tombstone (and its extra).
+		const write = studyWrite(snap, 'cards', cardRow(card, extraOf(snap, 'cards', card.id)));
+		if (write !== null) await pushStudy(workspaceId, [write]);
+		return card;
+	});
 }
 
 /**

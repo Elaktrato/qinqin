@@ -6,7 +6,7 @@
 	import { untrack } from 'svelte';
 	import { onEventLogChange } from '$lib/events';
 	import { pluginStates } from '$lib/plugins/states';
-	import { ALL_WORKSPACES, onStudyWrite } from '$lib/study/store';
+	import { ALL_WORKSPACES, onStudyChange } from '$lib/study/data';
 	import { workspaces } from '$lib/workspaces';
 	import MilestoneCard from './MilestoneCard.svelte';
 	import { loadMilestones, markSeen, type MilestonesView } from './loadMilestones';
@@ -46,7 +46,7 @@
 			if (id !== null && (touched === id || touched === ALL_WORKSPACES)) void load(id, lang, isReady);
 		};
 		const offLog = onEventLogChange(again);
-		const offWrite = onStudyWrite(again);
+		const offWrite = onStudyChange(again);
 		return () => {
 			offLog();
 			offWrite();

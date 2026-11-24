@@ -23,7 +23,7 @@
 		loadExtraChoices,
 		loadRememberedTypes
 	} from '$lib/study/cardTypesMemory';
-	import { loadStudyHistory } from '$lib/study/history';
+	import { loadStudyHistory } from '$lib/study/data';
 	import { activeWeights } from '$lib/study/readModel';
 	import { DEFAULT_W } from '$lib/study/fsrs/params';
 	import { GENERAL_DECK_ID } from '$lib/study/types';
@@ -124,7 +124,7 @@
 
 		try {
 			// Duplicate cards arrive merged, their reviews re-pointed; the
-			// history is shared with the other widgets (history.ts).
+			// history is shared with the other widgets (study/data.ts loadStudyHistory).
 			const data = await loadStudyHistory(workspace, { force });
 			if (seq !== requestSeq) return;
 			decks = data.decks;

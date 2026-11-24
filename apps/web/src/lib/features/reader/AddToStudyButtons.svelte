@@ -3,9 +3,10 @@
 	import { tick } from 'svelte';
 	import { addSentence, getEntry } from '$lib/api/entries';
 	import type { LookupResult } from '$lib/api/types';
-	import { addCard, setKnownMark } from '$lib/study/store';
+	import { addCard } from '$lib/study/commands/cards';
+	import { setKnownMark } from '$lib/study/commands/keyed';
 	import { GENERAL_DECK_ID } from '$lib/study/types';
-	import { getStudyData, hasCard } from '$lib/study/studyData';
+	import { getStudyData, hasCard } from '$lib/study/data';
 	import { PROMPT_MIN_COUNT } from '$lib/lookups/lookups';
 	import { lookupRecorder } from '$lib/lookups/store';
 	import type { Deck } from '$lib/study/types';

@@ -1,6 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-vi.mock('../study/history', () => ({ loadStudyHistory: vi.fn() }));
+vi.mock('../study/data', async (importOriginal) => ({
+	...(await importOriginal<typeof import('../study/data')>()),
+	loadStudyHistory: vi.fn()
+}));
 vi.mock('../api/stats', () => ({ fetchActivity: vi.fn() }));
 vi.mock('../stats/characterMap', () => ({ loadCharacterMapData: vi.fn(), withLegacyWritten: vi.fn() }));
 vi.mock('../time/zone', async () => {
@@ -11,7 +14,7 @@ vi.mock('../time/zone', async () => {
 import { fetchActivity, type ActivityResponse } from '../api/stats';
 import { loadCharacterMapData, withLegacyWritten } from '../stats/characterMap';
 import { DEFAULT_W } from '../study/fsrs/params';
-import { loadStudyHistory } from '../study/history';
+import { loadStudyHistory } from '../study/data';
 import { IDENTITY_CLOCK } from '../study/studyClock';
 import type { ReviewEvent, StudyCard, StudyHistory } from '../study/types';
 import { loadWeek, loadWeekCharacters } from './loadWeek';

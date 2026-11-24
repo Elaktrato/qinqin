@@ -10,9 +10,12 @@ vi.mock('$lib/api/schemes', () => ({
 }));
 vi.mock('$lib/api/characters', () => ({ fetchCharacters: vi.fn() }));
 vi.mock('$lib/api/frequency', () => ({ getFrequencyPacks: vi.fn(async () => []) }));
-vi.mock('$lib/study/store', async (importOriginal) => ({
-	...(await importOriginal<typeof import('$lib/study/store')>()),
-	loadStudyData: vi.fn(),
+vi.mock('$lib/study/data', async (importOriginal) => ({
+	...(await importOriginal<typeof import('$lib/study/data')>()),
+	loadStudyData: vi.fn()
+}));
+vi.mock('$lib/study/commands/decks', async (importOriginal) => ({
+	...(await importOriginal<typeof import('$lib/study/commands/decks')>()),
 	saveDeckCardTypesForDecks: vi.fn(),
 	createDeck: vi.fn()
 }));
@@ -28,7 +31,8 @@ import { getFrequencyPacks } from '$lib/api/frequency';
 import { goto } from '$app/navigation';
 import { fireEvent } from '@testing-library/svelte';
 import { fetchSchemeCharacters, getSchemeEntries, getSchemes } from '$lib/api/schemes';
-import { createDeck, loadStudyData, saveDeckCardTypesForDecks } from '$lib/study/store';
+import { createDeck, saveDeckCardTypesForDecks } from '$lib/study/commands/decks';
+import { loadStudyData } from '$lib/study/data';
 import { studyDay } from '$lib/time/studyDay';
 import { currentStudyDay } from '$lib/time/zone';
 import { workspaces } from '$lib/workspaces';

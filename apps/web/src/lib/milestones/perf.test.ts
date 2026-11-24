@@ -1,6 +1,9 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-vi.mock('$lib/study/history', () => ({ loadStudyHistory: vi.fn() }));
+vi.mock('$lib/study/data', async (importOriginal) => ({
+	...(await importOriginal<typeof import('$lib/study/data')>()),
+	loadStudyHistory: vi.fn()
+}));
 vi.mock('$lib/events', () => ({ loadWorkspaceEvents: vi.fn() }));
 vi.mock('$lib/api/schemes', () => ({ getSchemes: vi.fn(async () => []), getSchemeEntries: vi.fn(), fetchSchemeCharacters: vi.fn() }));
 vi.mock('$lib/time/zone', async () => {
@@ -15,7 +18,7 @@ import type { StudyEvent } from '$lib/events';
 import { loadWorkspaceEvents } from '$lib/events';
 import { pluginStates } from '$lib/plugins/states';
 import { DEFAULT_W } from '$lib/study/fsrs/params';
-import { loadStudyHistory } from '$lib/study/history';
+import { loadStudyHistory } from '$lib/study/data';
 import { GENERAL_DECK_ID } from '$lib/study/types';
 import { IDENTITY_CLOCK } from '$lib/study/studyClock';
 import type { ReviewEvent, StudyCard } from '$lib/study/types';

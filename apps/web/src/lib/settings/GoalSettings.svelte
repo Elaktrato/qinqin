@@ -8,8 +8,8 @@
 	import { metricOptions, type MetricOption } from '$lib/goals/goalText';
 	import { onContextStale } from '$lib/study/currentContext';
 	import { effectiveLimits } from '$lib/study/limits';
-	import { saveGoals } from '$lib/study/store';
-	import { getStudyData } from '$lib/study/studyData';
+	import { saveGoals } from '$lib/study/commands/keyed';
+	import { getStudyData } from '$lib/study/data';
 	import { currentStudyDay } from '$lib/time/zone';
 	import { workspaces } from '$lib/workspaces';
 	import { formFrom, limitHint, planForm, type GoalFormState } from './goalForm';

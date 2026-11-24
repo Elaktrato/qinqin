@@ -4,17 +4,18 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 const { goto } = vi.hoisted(() => ({ goto: vi.fn() }));
 vi.mock('$app/navigation', () => ({ goto }));
 vi.mock('$lib/api/schemes', () => ({ getSchemes: vi.fn(async () => []), getSchemeEntries: vi.fn() }));
-vi.mock('$lib/study/history', () => ({
+vi.mock('$lib/study/data', async (importOriginal) => ({
+	...(await importOriginal<typeof import('$lib/study/data')>()),
 	loadStudyHistory: vi.fn(),
 	invalidateStudyHistory: vi.fn()
 }));
-vi.mock('$lib/study/store', async (importOriginal) => ({
-	...(await importOriginal<typeof import('$lib/study/store')>()),
+vi.mock('$lib/study/commands/decks', async (importOriginal) => ({
+	...(await importOriginal<typeof import('$lib/study/commands/decks')>()),
 	createDeck: vi.fn()
 }));
 
-import { loadStudyHistory } from '$lib/study/history';
-import { createDeck } from '$lib/study/store';
+import { loadStudyHistory } from '$lib/study/data';
+import { createDeck } from '$lib/study/commands/decks';
 import { SESSION_CONFIG_KEY } from '$lib/study/session';
 import type { Deck, ReviewEvent, StudyCard, StudyHistory } from '$lib/study/types';
 import { workspaces } from '$lib/workspaces';

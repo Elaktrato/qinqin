@@ -9,9 +9,8 @@
 	import { setSettings, workspaces } from '$lib/workspaces';
 	import { segmentWithReadings } from '$lib/api/segment';
 	import { scheduleIndex } from '../flashcards/decks/deckStats';
-	import { onStudyWrite } from '$lib/study/store';
+	import { onStudyChange, loadRawStudyData, loadStudyHistory } from '$lib/study/data';
 	import { activeWeights } from '$lib/study/readModel';
-	import { loadStudyHistory } from '$lib/study/history';
 	import { contextForData } from '$lib/study/currentContext';
 	import { createReadingTimer } from './readingTimer';
 	import { workspaceForBook } from './readingWorkspace';
@@ -39,7 +38,8 @@
 	import { createReveal, revealKey } from './reveal';
 	import { EMPTY_KNOWN_INDEX, familiarity, knownIndex, type KnownIndex } from '$lib/study/known';
 	import { loadEntryBases } from '$lib/api/entryBases';
-	import { loadRawStudyData, pushStudy, setKnownMarks } from '$lib/study/store';
+	import { pushStudy } from '$lib/study/commands/write';
+	import { setKnownMarks } from '$lib/study/commands/keyed';
 	import type { Deck } from '$lib/study/types';
 	import WordsPanel from './WordsPanel.svelte';
 	import { stateLineText, wordCountsSupported } from './wordsPanel';
@@ -276,7 +276,7 @@
 		);
 		indexLoad = loader;
 		void loader.reload();
-		const off = onStudyWrite((changed) => {
+		const off = onStudyChange((changed) => {
 			if (changed === wsId) void loader.reload();
 		});
 		return () => {

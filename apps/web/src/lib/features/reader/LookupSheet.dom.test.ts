@@ -3,7 +3,8 @@ import { tick } from 'svelte';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { LookupResult } from '$lib/api/types';
 
-vi.mock('$lib/study/studyData', () => ({
+vi.mock('$lib/study/data', async (importOriginal) => ({
+	...(await importOriginal<typeof import('$lib/study/data')>()),
 	getStudyData: vi.fn(async () => ({ decks: [], cards: [] })),
 	hasCard: vi.fn(() => false)
 }));

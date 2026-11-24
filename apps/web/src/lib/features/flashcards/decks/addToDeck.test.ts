@@ -4,7 +4,7 @@ import fixture from '../../../../../../../docs/contracts/decks/add-to-deck.json'
 import type { Deck, StudyCard } from '$lib/study/types';
 import { addPlanRows, planAddToDeck, type AddPlan } from './addToDeck';
 import { cardRow, identityOf, parseRow, studyKey } from '$lib/study/rows';
-import type { StudyWrite } from '$lib/study/store';
+import { type StudyWrite } from '$lib/study/plan';
 
 const keyOf = (w: StudyWrite) => studyKey(w.collection, identityOf(w.collection, w.row));
 

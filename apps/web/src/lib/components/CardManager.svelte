@@ -11,7 +11,7 @@
 		restoreCards,
 		skipKind,
 		unskipKind
-	} from '$lib/study/store';
+	} from '$lib/study/commands/cards';
 	import { rangeIds, toggleId, wordsOfCards } from '$lib/study/cardSelection';
 	import type { Deck, StudyCard } from '$lib/study/types';
 	import { Button, Select } from '$lib/ui';

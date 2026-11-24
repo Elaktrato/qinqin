@@ -4,20 +4,25 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 const { goto } = vi.hoisted(() => ({ goto: vi.fn() }));
 vi.mock('$app/navigation', () => ({ goto }));
 vi.mock('$lib/api/schemes', () => ({ getSchemes: vi.fn(), getSchemeEntries: vi.fn() }));
-vi.mock('$lib/study/history', () => ({ loadStudyHistory: vi.fn(), invalidateStudyHistory: vi.fn() }));
-vi.mock('$lib/study/store', async (importOriginal) => ({
-	...(await importOriginal<typeof import('$lib/study/store')>()),
-	loadRawStudyData: vi.fn(),
+vi.mock('$lib/study/data', async (importOriginal) => ({
+	...(await importOriginal<typeof import('$lib/study/data')>()),
+	loadStudyHistory: vi.fn(),
+	invalidateStudyHistory: vi.fn(),
+	loadRawStudyData: vi.fn()
+}));
+vi.mock('$lib/study/commands/write', async (importOriginal) => ({
+	...(await importOriginal<typeof import('$lib/study/commands/write')>()),
 	pushStudy: vi.fn()
 }));
 
 import { getSchemeEntries, getSchemes } from '$lib/api/schemes';
 import type { EntryBase, Scheme } from '$lib/api/types';
-import { loadStudyHistory } from '$lib/study/history';
 import { SESSION_CONFIG_KEY } from '$lib/study/session';
-import { PartialPushError, loadRawStudyData, pushStudy } from '$lib/study/store';
+import { PartialPushError } from '$lib/sync/push';
+import { loadRawStudyData, loadStudyHistory } from '$lib/study/data';
+import { pushStudy } from '$lib/study/commands/write';
 import { toLegacy } from '$lib/testing/legacyCodec';
-import type { StudyWrite } from '$lib/study/store';
+import { type StudyWrite } from '$lib/study/plan';
 
 /** The typed writes as the legacy rows they stand for (test codec). */
 function keyed(writes: readonly StudyWrite[]): { key: string; data: unknown; knownAt?: string }[] {

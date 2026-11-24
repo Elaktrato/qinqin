@@ -62,13 +62,8 @@ import { limitsOf } from '$lib/study/scheduler';
 		type StudySessionConfig,
 		type StudySessionMode
 	} from '$lib/study/session';
-	import {
-		createDeck,
-		deleteDeck,
-		loadStudyData,
-		renameDeck,
-		saveDeckCardTypesForDecks
-	} from '$lib/study/store';
+	import { createDeck, deleteDeck, renameDeck, saveDeckCardTypesForDecks } from '$lib/study/commands/decks';
+	import { loadStudyData } from '$lib/study/data';
 	import { cardsInDecks, activeWeights } from '$lib/study/readModel';
 	import {
 		CARD_KINDS,

@@ -1,5 +1,5 @@
 // The one I/O of daily goals: a workspace's study history (goal row,
-// reviews, vacations, limits; cached and shared, study/history.ts) plus one
+// reviews, vacations, limits; cached and shared, study/data.ts loadStudyHistory) plus one
 // activity window of that workspace. Both rings (home widget, flashcards
 // widget) call this; concurrent calls for the same workspace, learner day
 // and force flag (and signed-in user) share one promise, dropped once it settles.
@@ -8,7 +8,7 @@ import { errorText } from '$lib/api/apiErrors';
 import { onSessionEnd } from '../session/sessionEnd';
 import { t } from '../i18n';
 import { fetchActivity, type ActivityResponse, type ActivitySource } from '../api/stats';
-import { loadStudyHistory } from '../study/history';
+import { loadStudyHistory } from '../study/data';
 import { outboxUser } from '../study/outboxUser';
 import { effectiveLimits } from '../study/limits';
 import { vacationRuns } from '../study/vacation';

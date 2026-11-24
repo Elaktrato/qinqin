@@ -1,6 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-vi.mock('../study/history', () => ({ loadStudyHistory: vi.fn() }));
+vi.mock('../study/data', async (importOriginal) => ({
+	...(await importOriginal<typeof import('../study/data')>()),
+	loadStudyHistory: vi.fn()
+}));
 vi.mock('../api/stats', () => ({ fetchActivity: vi.fn() }));
 vi.mock('../time/zone', async () => {
 	const { studyDay } = await import('../time/studyDay');
@@ -8,7 +11,7 @@ vi.mock('../time/zone', async () => {
 });
 
 import { fetchActivity, type ActivityResponse } from '../api/stats';
-import { loadStudyHistory } from '../study/history';
+import { loadStudyHistory } from '../study/data';
 import { setOutboxUser } from '../study/outboxUser';
 import type { StudyHistory } from '../study/types';
 import { loadGoalStatus } from './loadGoal';

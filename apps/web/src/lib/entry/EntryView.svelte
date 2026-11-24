@@ -37,7 +37,7 @@
 	import { variantLabel } from './variant';
 	import { characterMeta } from './characterMeta';
 	import { getEntryRanks } from '$lib/api/frequency';
-	import { getStudyData } from '$lib/study/studyData';
+	import { getStudyData } from '$lib/study/data';
 	import { setPageActions } from '$lib/frame/pageFrame.svelte';
 
 	let {

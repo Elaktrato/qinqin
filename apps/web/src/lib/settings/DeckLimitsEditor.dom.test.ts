@@ -1,14 +1,17 @@
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/svelte';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-vi.mock('$lib/study/studyData', () => ({ getStudyData: vi.fn() }));
-vi.mock('$lib/study/store', async (importOriginal) => ({
-	...(await importOriginal<typeof import('$lib/study/store')>()),
+vi.mock('$lib/study/data', async (importOriginal) => ({
+	...(await importOriginal<typeof import('$lib/study/data')>()),
+	getStudyData: vi.fn()
+}));
+vi.mock('$lib/study/commands/settings', async (importOriginal) => ({
+	...(await importOriginal<typeof import('$lib/study/commands/settings')>()),
 	saveDeckLimits: vi.fn(() => Promise.resolve())
 }));
 
-import { saveDeckLimits } from '$lib/study/store';
-import { getStudyData } from '$lib/study/studyData';
+import { saveDeckLimits } from '$lib/study/commands/settings';
+import { getStudyData } from '$lib/study/data';
 import { workspaces } from '$lib/workspaces';
 import DeckLimitsEditor from './DeckLimitsEditor.svelte';
 

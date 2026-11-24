@@ -8,11 +8,10 @@ import type { EntryBase } from '$lib/api/types';
 import { scheduleIndex } from '$lib/features/flashcards/decks/deckStats';
 import { addWords, type AddWordsResult } from '$lib/features/reader/wordActions';
 import { contextForData } from '$lib/study/currentContext';
-import { loadStudyHistory } from '$lib/study/history';
 import { type KnownIndex, familiarity, knownIndex } from '$lib/study/known';
-import { loadRawStudyData, pushStudy } from '$lib/study/store';
+import { loadRawStudyData, loadStudyHistory } from '$lib/study/data';
+import { pushStudy } from '$lib/study/commands/write';
 import { activeWeights } from '$lib/study/readModel';
-import { invalidateStudyData } from '$lib/study/studyData';
 import type { Deck } from '$lib/study/types';
 import type { LookupHistory, LookupState } from './lookups';
 import { loadHistory, loadLookupCfg } from './store';
@@ -68,6 +67,5 @@ export async function addEntries(
 		raw: () => loadRawStudyData(ws),
 		push: (w, writes) => pushStudy(w, writes)
 	});
-	invalidateStudyData(ws);
 	return result;
 }

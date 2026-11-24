@@ -7,7 +7,8 @@ limited to the languages of the caller's workspaces. Design:
 `docs/superpowers/specs/2026-11-16-v040p-packages-design.md` (Q6–Q8, Q13; issue #93).
 
 Owner code: `server/internal/sync` (`page.go`, `token.go`, `page_collections.go`, `sync.go`),
-`server/internal/api/handlers_sync.go`. Web: `apps/web/src/lib/sync/pager.ts`, `apps/web/src/lib/study/store.ts`.
+`server/internal/api/handlers_sync.go`. Web: `apps/web/src/lib/sync/pager.ts`, `apps/web/src/lib/sync/keyed.ts`, `apps/web/src/lib/study/sync/pull.ts`,
+`apps/web/src/lib/study/cache.ts`, `apps/web/src/lib/study/readModel.ts`.
 
 Fixtures:
 

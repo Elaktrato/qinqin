@@ -3,7 +3,7 @@
 	import { t } from '$lib/i18n';
 	import { goto } from '$app/navigation';
 	import { loadConfig, saveConfig } from '$lib/study/session';
-	import { createDeck } from '$lib/study/store';
+	import { createDeck } from '$lib/study/commands/decks';
 	import { knownEntries } from '$lib/study/known';
 	import { workspaces } from '$lib/workspaces';
 	import { summarizeDecks } from './deckSummaries';

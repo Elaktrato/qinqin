@@ -28,8 +28,13 @@ export function typedBody(workspaceId: number, writes: readonly StudyWrite[], no
  * Answers the stamp each write was sent with. A chunk the server only partly
  * applied is a PartialPushError (pushChunks).
  */
-export async function pushTyped(workspaceId: number, writes: readonly StudyWrite[], opts: ChunkOptions = {}): Promise<string[]> {
-	const stamps: string[] = [];
+export async function pushTyped(
+	workspaceId: number,
+	writes: readonly StudyWrite[],
+	opts: ChunkOptions = {},
+	/** Filled with each write's stamp as its chunk is built (readable in `opts.after`). */
+	stamps: string[] = []
+): Promise<string[]> {
 	await pushChunks(writes.length, opts, (from, to, nowMs) => typedBody(workspaceId, writes.slice(from, to), nowMs, stamps));
 	return stamps;
 }

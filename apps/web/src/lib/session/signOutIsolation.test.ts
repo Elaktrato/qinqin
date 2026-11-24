@@ -19,10 +19,8 @@ import { fetchSchemeCharacters } from '../api/schemes';
 import { fetchCharacters } from '../api/characters';
 import { loadProviderNames } from '../plugins/journal/providerNames';
 import { journalEntriesFor } from '../plugins/journal/journalEntries.svelte';
-import { loadStudyHistory } from '../study/history';
-import { getStudyData } from '../study/studyData';
 import { loadWorkspaceEvents } from '../events';
-import { studyPullPages } from '../study/store';
+import { studyPullPages, loadStudyHistory, getStudyData } from '../study/data';
 import { unreadableRows } from '../study/unreadable';
 import type { StudyCard } from '../study/types';
 
@@ -173,7 +171,8 @@ describe('sign-out isolation (#173)', () => {
 			getStudyData(WS),
 			loadWorkspaceEvents(WS)
 		];
-		await vi.waitFor(() => expect(held.length).toBe(7));
+		// The history and the raw data share one study round (#193): six requests held.
+		await vi.waitFor(() => expect(held.length).toBe(6));
 
 		logout();
 		signIn('tok-B');

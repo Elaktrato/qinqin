@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 
 import { createCardActions, UNDO_MS, type CardActionsDeps } from './cardActions';
-import { PartialCardsError } from './store';
+import { PartialCardsError } from './commands/cards';
 import type { StudyCard } from './types';
 
 function row(entryId: number, kind: StudyCard['kind'] = 'vocab'): StudyCard {

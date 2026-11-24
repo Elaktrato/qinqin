@@ -5,7 +5,8 @@ vi.mock('$app/state', () => import('$lib/testing/appState.svelte'));
 const { goto } = vi.hoisted(() => ({ goto: vi.fn(() => Promise.resolve()) }));
 vi.mock('$app/navigation', () => ({ goto }));
 vi.mock('$lib/api/schemes', () => ({ getSchemes: vi.fn(async () => []), getSchemeEntries: vi.fn() }));
-vi.mock('$lib/study/history', () => ({
+vi.mock('$lib/study/data', async (importOriginal) => ({
+	...(await importOriginal<typeof import('$lib/study/data')>()),
 	loadStudyHistory: vi.fn(async () => ({ decks: [], cards: [], reviews: [], merged: 0 }))
 }));
 

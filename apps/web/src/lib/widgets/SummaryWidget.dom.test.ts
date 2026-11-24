@@ -2,7 +2,11 @@ import { cleanup, render, screen, waitFor } from '@testing-library/svelte';
 import { tick } from 'svelte';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-vi.mock('$lib/study/history', () => ({ loadStudyHistory: vi.fn() }));
+vi.mock('$lib/study/data', async (importOriginal) => ({
+	...(await importOriginal<typeof import('$lib/study/data')>()),
+	loadStudyHistory: vi.fn(),
+	onStudyChange: vi.fn(() => () => {})
+}));
 vi.mock('$lib/stats/summary', async (importOriginal) => ({
 	...(await importOriginal<typeof import('$lib/stats/summary')>()),
 	summaryNumbers: vi.fn()
@@ -11,20 +15,15 @@ vi.mock('$lib/study/currentContext', async (importOriginal) => ({
 	...(await importOriginal<typeof import('$lib/study/currentContext')>()),
 	onContextStale: vi.fn(() => () => {})
 }));
-vi.mock('$lib/study/store', async (importOriginal) => ({
-	...(await importOriginal<typeof import('$lib/study/store')>()),
-	onStudyWrite: vi.fn(() => () => {})
-}));
 vi.mock('$lib/events', async (importOriginal) => ({
 	...(await importOriginal<typeof import('$lib/events')>()),
 	onEventLogChange: vi.fn(() => () => {})
 }));
 
 import { onEventLogChange } from '$lib/events';
-import { loadStudyHistory } from '$lib/study/history';
 import { summaryNumbers, type SummaryNumbers } from '$lib/stats/summary';
 import { onContextStale } from '$lib/study/currentContext';
-import { onStudyWrite } from '$lib/study/store';
+import { onStudyChange, loadStudyHistory } from '$lib/study/data';
 import { pluginStates } from '$lib/plugins/states';
 import { workspaces } from '$lib/workspaces';
 import SummaryWidget from './SummaryWidget.svelte';
@@ -127,10 +126,10 @@ describe('SummaryWidget', () => {
 		expect(vi.mocked(loadStudyHistory).mock.calls.at(-1)?.[1]).toEqual({ force: true });
 	});
 
-	it('reloads on onStudyWrite for this workspace', async () => {
+	it('reloads on onStudyChange for this workspace', async () => {
 		render(SummaryWidget);
 		await waitFor(() => expect(loadStudyHistory).toHaveBeenCalledTimes(1));
-		const onWrite = vi.mocked(onStudyWrite).mock.calls.at(-1)![0];
+		const onWrite = vi.mocked(onStudyChange).mock.calls.at(-1)![0];
 
 		onWrite(2);
 		await tick();

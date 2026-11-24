@@ -6,8 +6,11 @@ vi.mock('$lib/time/zone', () => ({
 	currentStudyDay: vi.fn(),
 	onStudyDayChange: vi.fn()
 }));
-vi.mock('$lib/study/studyData', () => ({ getStudyData: vi.fn() }));
-vi.mock('$lib/study/history', () => ({ loadStudyHistory: vi.fn() }));
+vi.mock('$lib/study/data', async (importOriginal) => ({
+	...(await importOriginal<typeof import('$lib/study/data')>()),
+	getStudyData: vi.fn(),
+	loadStudyHistory: vi.fn()
+}));
 vi.mock('$lib/activity/viewPrefs', async (importOriginal) => ({
 	...(await importOriginal<typeof import('$lib/activity/viewPrefs')>()),
 	loadActivityView: vi.fn(() => Promise.resolve({ scope: 'workspace', hidden: [] })),
@@ -16,8 +19,7 @@ vi.mock('$lib/activity/viewPrefs', async (importOriginal) => ({
 
 import { fetchActivity } from '$lib/api/stats';
 import { loadActivityView, saveActivityView } from '$lib/activity/viewPrefs';
-import { loadStudyHistory } from '$lib/study/history';
-import { getStudyData } from '$lib/study/studyData';
+import { loadStudyHistory, getStudyData } from '$lib/study/data';
 import { HEATMAP_DAYS } from '$lib/activity/activity';
 import { addDays, studyDay } from '$lib/time/studyDay';
 import { currentStudyDay, onStudyDayChange } from '$lib/time/zone';

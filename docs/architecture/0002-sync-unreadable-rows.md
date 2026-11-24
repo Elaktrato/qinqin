@@ -4,7 +4,7 @@
 
 Accepted
 
-Touched by: #193, #195, #196. A merge from one of these issues that changes what this record names updates the record.
+Touched by: #195, #196. A merge from one of these issues that changes what this record names updates the record.
 
 ## Context
 
@@ -24,16 +24,21 @@ data rule every client follows is the contract: "Reading rows" in
   envelope fault refuses the page.
 - Each consumer decodes the rows it uses. Typed study rows decode strictly with `parseRow` over
   `STUDY_COLLECTIONS` (`apps/web/src/lib/study/rows.ts`); `readableRow` (`apps/web/src/lib/sync/rows.ts`) does
-  the same for them and decodes the other collections by their shape, and the study load uses it for
-  `pluginData` rows. A row that does not decode is **unreadable**.
-- The study load (`apps/web/src/lib/study/store.ts`) skips and counts unreadable rows, and remembers the
-  identity of each unreadable typed row whose identity member is still readable (`rawIdentity`) and each
-  unreadable keyed row (goals, known marks, vacations). `apps/web/src/lib/study/unreadable.ts` keeps the count
-  for the study page's notice (`UnreadableRowsNotice.svelte`) and logs one console warning with collection,
-  count and identities, never row data.
+  the same for them and decodes the other collections by their shape. Keyed plugin-data rows (the study
+  namespace's and the core rows) decode through `keyedRowOf` (`apps/web/src/lib/sync/keyed.ts`, #193), which
+  uses `readableRow`, for the pull and the list route alike. A row that does not decode is **unreadable**.
+- The study read model (`mergeRows` and `viewOf` in `apps/web/src/lib/study/readModel.ts`, held per workspace by
+  the study cache `apps/web/src/lib/study/cache.ts` since #193) skips and counts unreadable rows, and remembers
+  the identity of each unreadable typed row whose identity member is still readable (`rawIdentity`) and each
+  unreadable keyed row (goals, known marks, vacations), across later pull rounds: a readable version of the
+  row frees its identity. `apps/web/src/lib/study/unreadable.ts` keeps the count for the study page's notice
+  (`UnreadableRowsNotice.svelte`) and logs one console warning with collection, count and identities, never
+  row data.
 - A write that would replace a protected identity throws `UnreadableRowError` (a `ShownError`, so
-  `errorText` shows its text, [0001](0001-error-handling.md)). A new card takes a free id (`freshCardId`),
-  add-to-deck skips protected identities, and a deck delete tombstones only rows it read.
+  `errorText` shows its text, [0001](0001-error-handling.md)): `studyWrite` (`apps/web/src/lib/study/plan.ts`)
+  for typed rows, `assertReadableKeyed` (`apps/web/src/lib/study/data.ts`) for keyed ones. A new card takes a
+  free id (`freshCardId`), add-to-deck skips protected identities, and a deck delete tombstones only rows it
+  read.
 
 **Server.** `server/internal/study` reports a stored typed row it cannot decode as `ErrUnreadableStored`
 (`UnreadableStoredError` names family, workspace and identity; `LogUnreadable` logs those, never the data). The

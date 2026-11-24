@@ -8,8 +8,7 @@ import type { NewOrder } from '../newOrder';
 import { cardRow, deckRow, settingsRow, studyKey } from '../rows';
 import { newUlid } from '../../ulid';
 import { extraOf, studyDelete, studyWrite, type StudyWrite } from '../plan';
-import { planningView } from '../data';
-import { pushOptional, pushStudy, requireWorkspaceArg } from './write';
+import { pushOptional, pushStudy, replanned, requireWorkspaceArg } from './write';
 
 /** createDeck stores a new ULID-keyed deck and returns it. */
 export async function createDeck(workspaceId: number, name: string): Promise<Deck> {
@@ -29,15 +28,16 @@ export async function createDeck(workspaceId: number, name: string): Promise<Dec
  */
 export async function renameDeck(workspaceId: number, id: string, name: string): Promise<Deck> {
 	requireWorkspaceArg(workspaceId, 'renameDeck');
-	const { data: { decks }, snapshot: snap } = await planningView(workspaceId);
-	const existing = decks.find((deck) => deck.id === id);
-	if (existing === undefined) {
-		throw new Error(`deck "${id}" not found`);
-	}
-	const renamed: Deck = { ...existing, name };
-	const write = studyWrite(snap, 'decks', deckRow(renamed, extraOf(snap, 'decks', id)));
-	if (write !== null) await pushStudy(workspaceId, [write]);
-	return renamed;
+	return replanned(workspaceId, async ({ data: { decks }, snapshot: snap }) => {
+		const existing = decks.find((deck) => deck.id === id);
+		if (existing === undefined) {
+			throw new Error(`deck "${id}" not found`);
+		}
+		const renamed: Deck = { ...existing, name };
+		const write = studyWrite(snap, 'decks', deckRow(renamed, extraOf(snap, 'decks', id)));
+		if (write !== null) await pushStudy(workspaceId, [write]);
+		return renamed;
+	});
 }
 
 /**
@@ -53,25 +53,26 @@ export async function deleteDeck(workspaceId: number, id: string): Promise<void>
 		// The implicit deck has no stored row to tombstone and must survive.
 		throw new Error('the general deck cannot be deleted');
 	}
-	const { data: { cards }, snapshot: snap } = await planningView(workspaceId);
-	// One batch (chunks of 200) instead of a request per card: a big copied
-	// deck is a handful of requests. A failure throws before the tombstone.
-	const rows = cards
-		.filter((card) => card.deckIds.includes(id))
-		.map((card) => {
-			const remaining = card.deckIds.filter((deckId) => deckId !== id);
-			const deckIds = remaining.length === 0 ? [GENERAL_DECK_ID] : remaining;
-			return studyWrite(snap, 'cards', cardRow({ ...card, deckIds }, extraOf(snap, 'cards', card.id)));
-		})
-		.filter((write): write is StudyWrite => write !== null);
-	await pushStudy(workspaceId, rows);
-	const tombstone = studyDelete(snap, 'decks', id);
-	if (tombstone !== null) await pushStudy(workspaceId, [tombstone]);
-	// The deck's card type switches and its daily limits go with it; another
-	// tab may have removed those rows already (a skipped tombstone is fine).
-	for (const write of [studyDelete(snap, 'deckSettings', id), studyDelete(snap, 'limits', id)]) {
-		if (write !== null) await pushOptional(workspaceId, write);
-	}
+	return replanned(workspaceId, async ({ data: { cards }, snapshot: snap }) => {
+		// One batch (chunks of 200) instead of a request per card: a big copied
+		// deck is a handful of requests. A failure throws before the tombstone.
+		const rows = cards
+			.filter((card) => card.deckIds.includes(id))
+			.map((card) => {
+				const remaining = card.deckIds.filter((deckId) => deckId !== id);
+				const deckIds = remaining.length === 0 ? [GENERAL_DECK_ID] : remaining;
+				return studyWrite(snap, 'cards', cardRow({ ...card, deckIds }, extraOf(snap, 'cards', card.id)));
+			})
+			.filter((write): write is StudyWrite => write !== null);
+		await pushStudy(workspaceId, rows);
+		const tombstone = studyDelete(snap, 'decks', id);
+		if (tombstone !== null) await pushStudy(workspaceId, [tombstone]);
+		// The deck's card type switches and its daily limits go with it; another
+		// tab may have removed those rows already (a skipped tombstone is fine).
+		for (const write of [studyDelete(snap, 'deckSettings', id), studyDelete(snap, 'limits', id)]) {
+			if (write !== null) await pushOptional(workspaceId, write);
+		}
+	});
 }
 
 /**
@@ -85,17 +86,18 @@ export async function saveDeckCardTypes(
 	cardTypes: readonly OptInKind[],
 ): Promise<DeckSettings> {
 	requireWorkspaceArg(workspaceId, 'saveDeckCardTypes');
-	const { data: { deckSettings }, snapshot: snap } = await planningView(workspaceId);
-	const stored = deckSettings?.[deckId];
-	const next: DeckSettings = {
-		deckId,
-		cardTypes: cleanCardTypes(cardTypes),
-		...(stored?.newOrder ? { newOrder: stored.newOrder } : {}),
-		extra: stored?.extra ?? extraOf(snap, 'deckSettings', deckId),
-	};
-	const write = studyWrite(snap, 'deckSettings', settingsRow(next));
-	if (write !== null) await pushStudy(workspaceId, [write]);
-	return next;
+	return replanned(workspaceId, async ({ data: { deckSettings }, snapshot: snap }) => {
+		const stored = deckSettings?.[deckId];
+		const next: DeckSettings = {
+			deckId,
+			cardTypes: cleanCardTypes(cardTypes),
+			...(stored?.newOrder ? { newOrder: stored.newOrder } : {}),
+			extra: stored?.extra ?? extraOf(snap, 'deckSettings', deckId),
+		};
+		const write = studyWrite(snap, 'deckSettings', settingsRow(next));
+		if (write !== null) await pushStudy(workspaceId, [write]);
+		return next;
+	});
 }
 
 /**
@@ -114,32 +116,33 @@ export async function saveDeckCardTypesForDecks(
 ): Promise<{ saved: Record<string, DeckSettings>; unreadable: string[] }> {
 	requireWorkspaceArg(workspaceId, 'saveDeckCardTypesForDecks');
 	if (deckIds.length === 0) return { saved: {}, unreadable: [] };
-	const { data: { deckSettings }, snapshot: snap } = await planningView(workspaceId);
-	const out: Record<string, DeckSettings> = {};
-	const unreadable: string[] = [];
-	const writes: StudyWrite[] = [];
-	for (const deckId of deckIds) {
-		if (snap.unreadable.has(studyKey('deckSettings', deckId))) {
-			unreadable.push(deckId);
-			continue;
+	return replanned(workspaceId, async ({ data: { deckSettings }, snapshot: snap }) => {
+		const out: Record<string, DeckSettings> = {};
+		const unreadable: string[] = [];
+		const writes: StudyWrite[] = [];
+		for (const deckId of deckIds) {
+			if (snap.unreadable.has(studyKey('deckSettings', deckId))) {
+				unreadable.push(deckId);
+				continue;
+			}
+			const stored = deckSettings?.[deckId];
+			const current = cleanCardTypes(stored?.cardTypes ?? []);
+			const nextTypes = on
+				? cleanCardTypes([...current, kind])
+				: current.filter((value) => value !== kind);
+			const next: DeckSettings = {
+				deckId,
+				cardTypes: nextTypes,
+				...(stored?.newOrder ? { newOrder: stored.newOrder } : {}),
+				extra: stored?.extra ?? extraOf(snap, 'deckSettings', deckId),
+			};
+			out[deckId] = next;
+			const write = studyWrite(snap, 'deckSettings', settingsRow(next));
+			if (write !== null) writes.push(write);
 		}
-		const stored = deckSettings?.[deckId];
-		const current = cleanCardTypes(stored?.cardTypes ?? []);
-		const nextTypes = on
-			? cleanCardTypes([...current, kind])
-			: current.filter((value) => value !== kind);
-		const next: DeckSettings = {
-			deckId,
-			cardTypes: nextTypes,
-			...(stored?.newOrder ? { newOrder: stored.newOrder } : {}),
-			extra: stored?.extra ?? extraOf(snap, 'deckSettings', deckId),
-		};
-		out[deckId] = next;
-		const write = studyWrite(snap, 'deckSettings', settingsRow(next));
-		if (write !== null) writes.push(write);
-	}
-	if (writes.length > 0) await pushStudy(workspaceId, writes);
-	return { saved: out, unreadable };
+		if (writes.length > 0) await pushStudy(workspaceId, writes);
+		return { saved: out, unreadable };
+	});
 }
 
 function withoutNewOrder(extra: Record<string, unknown>): Record<string, unknown> {
@@ -159,17 +162,18 @@ export async function saveDeckNewOrder(
 	order: NewOrder,
 ): Promise<DeckSettings> {
 	requireWorkspaceArg(workspaceId, 'saveDeckNewOrder');
-	const { data: { deckSettings }, snapshot: snap } = await planningView(workspaceId);
-	const stored = deckSettings?.[deckId];
-	const next: DeckSettings = {
-		deckId,
-		cardTypes: stored?.cardTypes ?? [],
-		...(order.by === 'added' ? {} : { newOrder: order }),
-		// Choosing an order replaces an unreadable stored one too.
-		extra: withoutNewOrder(stored?.extra ?? extraOf(snap, 'deckSettings', deckId)),
-	};
-	const write = studyWrite(snap, 'deckSettings', settingsRow(next));
-	if (write !== null) await pushStudy(workspaceId, [write]);
-	return next;
+	return replanned(workspaceId, async ({ data: { deckSettings }, snapshot: snap }) => {
+		const stored = deckSettings?.[deckId];
+		const next: DeckSettings = {
+			deckId,
+			cardTypes: stored?.cardTypes ?? [],
+			...(order.by === 'added' ? {} : { newOrder: order }),
+			// Choosing an order replaces an unreadable stored one too.
+			extra: withoutNewOrder(stored?.extra ?? extraOf(snap, 'deckSettings', deckId)),
+		};
+		const write = studyWrite(snap, 'deckSettings', settingsRow(next));
+		if (write !== null) await pushStudy(workspaceId, [write]);
+		return next;
+	});
 }
 

@@ -1,18 +1,19 @@
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/svelte';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-vi.mock('$lib/study/store', async (importOriginal) => ({
-	...(await importOriginal<typeof import('$lib/study/store')>()),
+vi.mock('$lib/study/commands/cards', async (importOriginal) => ({
+	...(await importOriginal<typeof import('$lib/study/commands/cards')>()),
 	addCard: vi.fn(async () => ({}))
 }));
-vi.mock('$lib/study/studyData', () => ({
+vi.mock('$lib/study/data', async (importOriginal) => ({
+	...(await importOriginal<typeof import('$lib/study/data')>()),
 	getStudyData: vi.fn(async () => ({ decks: [], cards: [] })),
 	hasCard: vi.fn(() => false)
 }));
 
 import { workspaces } from '$lib/workspaces';
-import { addCard } from '$lib/study/store';
-import { getStudyData, hasCard } from '$lib/study/studyData';
+import { addCard } from '$lib/study/commands/cards';
+import { getStudyData, hasCard } from '$lib/study/data';
 import AddToStudy from './AddToStudy.svelte';
 
 beforeEach(() => {

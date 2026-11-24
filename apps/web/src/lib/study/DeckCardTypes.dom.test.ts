@@ -1,12 +1,12 @@
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/svelte';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-vi.mock('./store', async (importOriginal) => ({
-	...(await importOriginal<typeof import('./store')>()),
+vi.mock('./commands/decks', async (importOriginal) => ({
+	...(await importOriginal<typeof import('./commands/decks')>()),
 	saveDeckCardTypes: vi.fn()
 }));
 
-import { saveDeckCardTypes } from './store';
+import { saveDeckCardTypes } from './commands/decks';
 import DeckCardTypes from './DeckCardTypes.svelte';
 
 afterEach(() => {

@@ -6,15 +6,18 @@ vi.mock('$app/navigation', () => ({ goto: vi.fn() }));
 vi.mock('$lib/api/entryBases', () => ({
 	loadEntryBases: vi.fn(async (ids: readonly number[]) => new Map(ids.filter((id) => id !== 404).map((id) => [id, { id, written: `w${id}`, readings: [] }])))
 }));
-vi.mock('$lib/study/store', async (orig) => {
+vi.mock('$lib/study/data', async (orig) => ({
+	...(await orig<typeof import('$lib/study/data')>()),
+	loadRawStudyData: vi.fn(async () => ({ decks: [], cards: [...mem.cards.values()] as StudyCard[], knownAt: new Map() }))
+}));
+vi.mock('$lib/study/commands/write', async (orig) => {
 	const { cardOf } = await import('$lib/study/rows');
 	return {
-	...(await orig<typeof import('$lib/study/store')>()),
-	loadRawStudyData: vi.fn(async () => ({ decks: [], cards: [...mem.cards.values()] as StudyCard[], knownAt: new Map() })),
-	pushStudy: vi.fn(async (_ws: number, writes: { collection: string; row: { id: string } }[]) => {
-		mem.pushes++;
-		for (const w of writes) if (w.collection === 'cards') mem.cards.set(`card:${w.row.id}`, cardOf(w.row as never));
-	})
+		...(await orig<typeof import('$lib/study/commands/write')>()),
+		pushStudy: vi.fn(async (_ws: number, writes: { collection: string; row: { id: string } }[]) => {
+			mem.pushes++;
+			for (const w of writes) if (w.collection === 'cards') mem.cards.set(`card:${w.row.id}`, cardOf(w.row as never));
+		})
 	};
 });
 

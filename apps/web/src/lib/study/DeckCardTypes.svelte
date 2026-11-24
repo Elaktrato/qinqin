@@ -2,7 +2,7 @@
 	import { errorText } from '$lib/api/apiErrors';
 	import { t } from '$lib/i18n';
 	import { cleanCardTypes, type DeckSettings } from './deckSettings';
-	import { saveDeckCardTypes } from './store';
+	import { saveDeckCardTypes } from './commands/decks';
 	import type { OptInKind } from './types';
 
 	interface Props {

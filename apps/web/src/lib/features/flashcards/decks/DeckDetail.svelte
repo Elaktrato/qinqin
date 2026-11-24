@@ -17,7 +17,7 @@
 		restoreCards,
 		skipKind,
 		unskipKind
-	} from '$lib/study/store';
+	} from '$lib/study/commands/cards';
 	import { CARD_KINDS, OPT_IN_KINDS, type StudyCardKind, GENERAL_DECK_ID } from '$lib/study/types';
 	import { workspaces } from '$lib/workspaces';
 	import { glossLang, studyLang, wordReadingLang, readingLang } from '$lib/i18n/lang';

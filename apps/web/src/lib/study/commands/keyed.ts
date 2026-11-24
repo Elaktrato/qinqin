@@ -8,8 +8,7 @@ import { MILESTONE_KEY_PREFIX } from '../../milestones/catalogue';
 import { PartialPushError } from '../../sync/push';
 import { knownMarkKey, knownMarkRow } from '../knownMarks';
 import { VACATION_PREFIX, type VacationPeriod } from '../vacation';
-import { planningView } from '../data';
-import { deleteData, pushKeyedRows, putData, requireWorkspaceArg } from './write';
+import { deleteData, pushKeyedRows, putData, replanned, requireWorkspaceArg } from './write';
 
 /** saveVacation stores one vacation period (user-global: no workspace). */
 export async function saveVacation(period: VacationPeriod): Promise<void> {
@@ -65,15 +64,16 @@ export async function setKnownMarks(
 	requireWorkspaceArg(workspaceId, 'setKnownMarks');
 	// Each row is stamped after the time the server holds for its key (a
 	// client clock behind the server's would otherwise lose every write).
-	const { knownAt } = (await planningView(workspaceId)).snapshot;
-	const now = new Date();
-	const rows = [...new Set(entryIds)].map((id) => {
-		const row = knownMarkRow(id, now);
-		const at = knownAt.get(row.key);
-		const stamp = at === undefined ? {} : { knownAt: at };
-		return on ? { ...row, ...stamp } : { key: row.key, data: {}, deleted: true as const, ...stamp };
+	return replanned(workspaceId, async ({ snapshot: { knownAt } }) => {
+		const now = new Date();
+		const rows = [...new Set(entryIds)].map((id) => {
+			const row = knownMarkRow(id, now);
+			const at = knownAt.get(row.key);
+			const stamp = at === undefined ? {} : { knownAt: at };
+			return on ? { ...row, ...stamp } : { key: row.key, data: {}, deleted: true as const, ...stamp };
+		});
+		await pushKeyedRows(workspaceId, rows, opts);
 	});
-	await pushKeyedRows(workspaceId, rows, opts);
 }
 
 /**

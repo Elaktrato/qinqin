@@ -14,8 +14,7 @@
 	import { formatDuration } from '$lib/stats/readingTime';
 	import { summaryNumbers, type SummaryNumbers } from '$lib/stats/summary';
 	import { contextForData, onContextStale } from '$lib/study/currentContext';
-	import { loadStudyHistory } from '$lib/study/history';
-	import { ALL_WORKSPACES, onStudyWrite } from '$lib/study/store';
+	import { ALL_WORKSPACES, onStudyChange, loadStudyHistory } from '$lib/study/data';
 	import { activeWeights } from '$lib/study/readModel';
 	import Stat from '$lib/ui/Stat.svelte';
 	import { workspaces } from '$lib/workspaces';
@@ -65,7 +64,7 @@
 
 		try {
 			// Duplicate cards arrive merged, their reviews re-pointed; the
-			// history is shared with the other widgets (history.ts).
+			// history is shared with the other widgets (study/data.ts loadStudyHistory).
 			const data = await loadStudyHistory(workspace, { force });
 			if (seq !== requestSeq) return;
 			const ctx = contextForData(data, workspace);
@@ -113,7 +112,7 @@
 			if (id !== null && (touched === id || touched === ALL_WORKSPACES)) void load(id);
 		};
 		const offLog = onEventLogChange(again);
-		const offWrite = onStudyWrite(again);
+		const offWrite = onStudyChange(again);
 		return () => {
 			offLog();
 			offWrite();
