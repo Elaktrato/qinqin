@@ -1,12 +1,12 @@
 # AI providers and offline OCR
 
-The Journal's AI features (a review with corrections, topic ideas, the conversation partner, reading a photo of a page) use **each user's own API key** for a provider they choose; qinqin ships none. How people use them is on [Journal and AI providers](Journal-and-AI). This page is what the server owner decides.
+The AI features (the Journal's review with corrections, topic ideas, the conversation partner and reading a photo of a page, and AI example sentences on a dictionary entry) use **each user's own API key** for a provider they choose; qinqin ships none. How people use them is on [Journal and AI providers](Journal-and-AI). This page is what the server owner decides.
 
 > **Status.** The provider integrations are tested against fake providers only; the project owner has not yet tried them with real keys. Some provider details are marked `UNVERIFIED 2026-11-15` in `server/internal/ai/registry.go` (see "Provider notes").
 
 ## What leaves the server
 
-Only when a user presses an AI button, and only to the provider that user made active in Settings → AI: the journal entry (up to 5,000 characters) and their guidance for a review; recently studied words (at most 60) and the titles and openings of their last 10 entries for topic ideas; for a conversation turn the new message, the last 12 messages, the topic, the level, their guidance and at most 40 recently studied words; or one re-encoded photo for a transcription. Photos are stripped of all metadata (including GPS) and shrunk first. Settings → AI tells the user, wherever they type a key, that this text, these messages and these photos go to that provider and that its terms apply.
+Only when a user presses an AI button, and only to the provider that user made active in Settings → AI: the journal entry (up to 5,000 characters) and their guidance for a review; recently studied words (at most 60) and the titles and openings of their last 10 entries for topic ideas; for a conversation turn the new message, the last 12 messages, the topic, the level, their guidance and at most 40 recently studied words; one re-encoded photo for a transcription; or, for AI examples, the word, its first reading, up to five meanings, up to ten existing examples and the learner's level. Photos are stripped of all metadata (including GPS) and shrunk first. Settings → AI tells the user, wherever they type a key, that this text, these messages and these photos go to that provider and that its terms apply.
 
 **Cost.** The default models are the providers' flagship models, also the most expensive. Tell users to pick a cheaper model in Settings → AI if cost matters; calls are limited to 30 per user per rolling hour across all providers.
 

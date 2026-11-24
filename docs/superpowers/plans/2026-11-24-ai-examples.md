@@ -240,4 +240,69 @@ lenient reads of the client. Decoded by `server/internal/sentences/examples_cont
 
 ## Execution record
 
-(Filled in as the tasks land.)
+Commits on `feature/186-ai-examples` (from develop ef0dc8c3):
+
+1. `e3ab6b94` this plan.
+2. `702fd0f9` the AI task `examples` (types, prompt, schema, Anthropic, OpenAI-compatible, Gemini, the fake, the
+   canned fake servers); `ai.ConverseLevels` renamed `ai.Levels` (shared).
+3. `bb4365a7` storage and checks: migration 049, the `ai` member of a sentence (entry answer, pull row, backup
+   line), the script rule moved from `journal` to `lang` (`FitsScript`, `MostlyInScript`, `LatinLanguage`), the word
+   check, drafts, keep, delete, report and the caps, account delete (registry, preview `exampleReports`), the
+   contract `docs/contracts/examples/` with its Go test; the web pull-row decoder and the preview line so the web
+   suite stays green.
+4. `4c27ca71` the five routes, `examples_full`, regenerated route and PWA fixtures and API wiki pages, the
+   CHANGELOG.
+5. `73766c6a` the web: the API module, the logic module, the panel, the marks on the entry page and the cards,
+   the strings.
+6. `13b827aa` the e2e spec, and the panel fix it found.
+7. the docs commit (wiki, record 0006, contracts overview and README, NEXT.md, README, this record).
+
+Test-first, honestly:
+
+- Red seen first: the `internal/ai` examples tests (build failure), the `lang` script tests after the move (build
+  failure), the sentences store and contract tests (build failure), the backup round trip and malformed-mark tests
+  (build failure, then the drafts were still restored until the registry said `RestoreDrop`), the account schema
+  guard and export-decision test (no seed rows, the drafts' decision), the API route tests (all seven failed, 404
+  for unmounted routes), the web contract test and the API module test (missing modules), the logic tests (missing
+  keys), the deletion preview line, and the panel's "new entry object" DOM test (written after the e2e spec found
+  the bug, failing on the old panel).
+- Written after the code (red not seen first): the panel's other DOM tests (`AiExamples.dom.test.ts`), the
+  `Sentences` and card mark tests (the cloze mark test was checked to fail with the tag removed), the
+  `errors_nocall_test.go` mapper test (it passes with the old mapper too; the fixed line in the conversation turn
+  is verified by reading only), the e2e spec (failed twice on its own locators and once on the panel bug before it
+  passed).
+- Test bugs fixed on the way, not code: `TestExampleFlow` expected three drafts after the second generation where the
+  duplicate rule (rightly) leaves two; the `MostlyInScript` case "我喜欢 Python 和 Go。" has a Latin majority; a
+  plural message with text outside the plural; the e2e region name "Examples" also matched "AI examples".
+- Found on the way in #185's code: a turn that ended before the provider call (its conversation changed while the
+  turn waited for the AI slot) answered 500, because `errors.Unwrap` of a two-`%w` error is nil; it now answers the
+  cause (404, 409). Fixed in commit 4.
+- A careless `cat >` overwrote the existing `Sentences.dom.test.ts` in commit 5; restored with the new cases
+  appended before the commit was final (the three #104 tests are back).
+
+Gates (final):
+
+- Go: the touched packages per task; one full `./...` (vet and tests, `-p 2`): 53 packages ok, the only failure the
+  known `internal/ai` `TestHostnameResolvingToEmbeddedFormIsRefused` (no IPv6 sockets here); `gofmt -l` prints
+  nothing.
+- Web: `npm run check` 0 errors, 0 warnings (1742 files); `npm run build` passes; full vitest under Node 26: 607
+  files, 12,807 tests passed, 2 skipped (under Node 22 the five known reader/settings DOM tests fail, as on the
+  base).
+- e2e (`npm run e2e -- --trace off`): 16 passed, three runs in a row.
+- Script tests (`node --test scripts/*.test.mjs`): 157 tests, 156 passed, 1 skipped, 0 failed.
+- `node scripts/gen-api-docs.mjs --check`: clean.
+
+Not verified:
+
+- No real provider: every AI call ran against the deterministic fake or the canned `aitest` servers; whether real
+  models write sentences that contain the word, at the asked level, with correct pinyin or kana, is the owner's
+  real-key check. The Gemini and OpenAI request bodies for `examples` are checked only through the fake servers.
+- The Japanese inflection rule is checked through the server's real segmenter with a small JMdict (`食べた`,
+  `食べています` for 食べる) and the contract cases; other inflection classes rely on the lemmatizer's own tests.
+- The handler's re-read under the AI slot (another generation of the same user landing between the first check
+  and the call) cannot be timed without a hook; the in-flight limiter answers a parallel call `in_flight` first.
+- No phone or Android WebView run: the panel's phone layout (wrapping rows, a reason picker instead of a text
+  field, buttons that stay enabled with `aria-disabled` so the focus stays) is covered by DOM tests only; the e2e
+  spec runs on a desktop viewport.
+- Offline: kept examples reach offline study through the cached entry answer like every sentence; no new offline
+  test was written for them.

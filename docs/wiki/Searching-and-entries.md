@@ -37,7 +37,20 @@ An entry is one dictionary headword, either a **word** or a **character** (kanji
 - **Characters** in a word name each character's own entry; each row shows the reading, gloss, radical, stroke count and level when they are known. **Stroke order** plays stroke by stroke with a progress line (勤 · 3 of 13), pauses, and loops.
 - **Frequency**: a rank chip appears where a frequency pack covers the word. Frequency also orders lookup results when a pack exists.
 - **Example sentences** come from installed sentence packs plus your own. Sentences you save are private to you.
+- **AI examples**: when a word has fewer than three example sentences, the entry offers [**Generate examples**](#ai-examples) written by your own AI provider.
 - **Audio**: where an audio pack covers a word, a play button appears. Clips are credited on the Sources page.
+
+## AI examples
+
+A word with fewer than three example sentences (or with AI examples waiting for you) shows **AI examples** under its examples. Pick **Your level** (Beginner, Elementary, Intermediate or Advanced; it starts at the level you used last) and press **Generate examples**: your AI provider writes up to five sentences at that level, each with a reading (pinyin or kana) and an English translation. It uses the key and provider you set in [Settings → AI](Journal-and-AI#setting-up-a-provider), with the journal's limits (30 calls an hour, one at a time); without a key the panel links to Settings → AI. Only the word, its meanings and the examples it already has are sent.
+
+The server checks every sentence before you see it: it must be mostly in the word's language and script, contain the word (a Japanese verb may be conjugated: 食べた counts for 食べる, as in the reader and the cloze card), repeat no example the word has, and stay under 200 characters; a reading that is clearly not a reading is left out. The panel says how many were left out. Each new example shows **AI-written · model · provider**, with:
+
+- **Keep**: it joins the word's examples, still marked AI-written, and feeds your Word Salad, cloze and vocab cards like any example (after the dictionary's own examples). Up to ten kept AI examples per word.
+- **Delete**: it goes.
+- **Report**: pick what is wrong (the word is missing, wrong translation, wrong reading, sounds unnatural, too hard for my level, inappropriate, something else) and **Report and delete**. The report stays in your account (no administrator sees it) so the prompt can be improved later.
+
+A kept AI example has **Delete** and **Report** too. **Generate new examples** replaces the ones you have not kept. AI examples are yours alone: never shown to other users, never part of a sentences pack, kept per word across your workspaces, in your [backup](Your-data) and removed with your account.
 
 ## Your own edits
 

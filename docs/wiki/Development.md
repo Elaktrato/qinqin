@@ -92,7 +92,8 @@ today's cards (a deck's reverse cards included), and the sync of each review exa
 grading time, when back online and after a reload; the phone bottom bar at 360 px (on the bottom edge while a
 long page scrolls), More, and the side menu option of Settings → Layout, kept for the account, and back; a
 journal conversation with the fake AI partner (its opening, the lookup popup on a reply, corrections in the
-margin, saving it as an entry).
+margin, saving it as an entry); AI example sentences on an entry with the fake provider (generating them, the
+one without the word left out, keeping one, reporting one, the AI-written mark after a reload).
 
 Not covered, still checked by hand: Firefox and Safari (WebKit), real phones and the installed app (install
 prompt, home-screen app, safe areas, the on-screen keyboard), the update bar after a new version, the stroke

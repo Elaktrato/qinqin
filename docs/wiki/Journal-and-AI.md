@@ -2,7 +2,7 @@
 
 The **Journal** (`/journal`, the journal icon in the top bar or the phone menu) is a core feature where you write dated entries per workspace, in the language you are learning. It is on until you switch it off in [Settings → Features](Settings-tour#features).
 
-The AI features (a review with corrections in the margin, topic ideas, a [conversation partner](#conversation-partner), and turning a photo of a page into an entry) are optional. They use **your own API key** for a provider you choose; qinqin ships no key and sends nothing to any provider on its own. Reading a photo **offline** needs no AI at all.
+The AI features (a review with corrections in the margin, topic ideas, a [conversation partner](#conversation-partner), turning a photo of a page into an entry, and [AI example sentences](Searching-and-entries#ai-examples) on a dictionary entry) are optional. They use **your own API key** for a provider you choose; qinqin ships no key and sends nothing to any provider on its own. Reading a photo **offline** needs no AI at all.
 
 > **Status.** The AI provider integrations are covered by tests against fake providers. They have **not yet been tested with real keys** by the project owner. Some provider details are marked unverified in the code (see "Provider notes" below). Expect rough edges until a real key has been tried.
 
@@ -57,7 +57,7 @@ There is no automatic fallback between the two. The transcription is a draft: ch
 2. Open **Settings → AI** and **Add a provider**: pick one, enter your API key (**Get a key from <provider>** links to its page), optionally a model, and save. The key is checked with the provider (one call counts toward your hourly limit), stored encrypted, and the first stored key becomes **Active**. Only the last four characters are shown afterwards ("key …abcd").
 3. You can store one key per provider, **Make active** another, **Change model**, **Test key** and **Remove** a key. You may type any model id; the list only suggests. The defaults are the providers' flagship models, which are also the most expensive: choose a cheaper model if cost matters.
 
-Settings → AI shows, where you type a key, "Your journal text, conversation messages, guidance and the photos you choose to read with AI are sent to <provider> when you press a button. <provider>'s terms apply.", and below the list the calls and tokens used this hour. It links to the Journal settings. A key the server can no longer read (after the server secret changed) says "Enter the key again"; a provider the server turned off says "Turned off by the server" and offers only Remove.
+Settings → AI shows, where you type a key, "Your journal text, conversation messages, guidance, the photos you choose to read with AI and the words you ask examples for are sent to <provider> when you press a button. <provider>'s terms apply.", and below the list the calls and tokens used this hour. It links to the Journal settings. A key the server can no longer read (after the server secret changed) says "Enter the key again"; a provider the server turned off says "Turned off by the server" and offers only Remove.
 
 | Provider | Default model (also suggested) | Reads photos |
 |---|---|---|
@@ -75,11 +75,11 @@ A custom endpoint shows "Added by your admin · <host>" wherever you type a key 
 
 ## What is sent, and when
 
-Only when you press an AI button, and only to the active provider: the entry text (up to 5,000 characters) with your guidance for a review; recently studied words and the openings of your last entries for topic ideas; for each conversation turn your new message, the last 12 messages, the topic, your level, your guidance and up to 40 of your most recently studied words (never your whole deck); or one re-encoded photo for a transcription. Nothing is sent when you open the page or pick a photo. If a reply is not valid in the expected shape, the server asks once more (a second counted call), and otherwise reports a bad reply; nothing from a malformed reply reaches the page.
+Only when you press an AI button, and only to the active provider: the entry text (up to 5,000 characters) with your guidance for a review; recently studied words and the openings of your last entries for topic ideas; for each conversation turn your new message, the last 12 messages, the topic, your level, your guidance and up to 40 of your most recently studied words (never your whole deck); one re-encoded photo for a transcription; or, for [AI examples](Searching-and-entries#ai-examples), the word, its first reading, up to five of its meanings, up to ten of its existing examples and your level. Nothing is sent when you open the page or pick a photo. If a reply is not valid in the expected shape, the server asks once more (a second counted call), and otherwise reports a bad reply; nothing from a malformed reply reaches the page.
 
 ## Limits
 
-30 provider calls per user and rolling hour across all providers (checking a key, a repeated request and every conversation turn count), one AI call in flight per user, 5,000 characters per review, 1,000 characters per conversation message, 50 messages per conversation, 20 open conversations per workspace, 10 MiB and 25 megapixels per photo, at most 10 pending photos and 30 uploads per user and hour, 60 offline reads per user and hour, replies capped at 8 MiB and 150 seconds per call. When the hourly limit is used up the page says "You have used all AI calls for this hour. Try again in …".
+30 provider calls per user and rolling hour across all providers (checking a key, a repeated request, every conversation turn and every generation of AI examples count), one AI call in flight per user, 5,000 characters per review, 1,000 characters per conversation message, 50 messages per conversation, 20 open conversations per workspace, 10 MiB and 25 megapixels per photo, at most 10 pending photos and 30 uploads per user and hour, 60 offline reads per user and hour, replies capped at 8 MiB and 150 seconds per call. When the hourly limit is used up the page says "You have used all AI calls for this hour. Try again in …".
 
 ## Provider notes
 
