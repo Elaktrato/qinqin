@@ -137,3 +137,35 @@ func TestSeedOrderIsPinned(t *testing.T) {
 		}
 	}
 }
+
+// With several roots, a type's packs are in the order of their full paths,
+// not in the order the roots are given: the second root's pack, whose path
+// sorts first, imports first.
+func TestSeedOrderAcrossRootsIsByPath(t *testing.T) {
+	sqlDB, _ := openTestDB(t)
+	parent := t.TempDir()
+	dict := func(root, dir, id string) {
+		writeOrderPack(t, filepath.Join(parent, root), dir, map[string]string{
+			"manifest.json": `{"id":"` + id + `","name":"` + id + `","version":"1","type":"dictionary","language":"es",
+				"license":"CC0-1.0","attribution":"Qinqin test fixtures","format":"json"}`,
+			"dictionary.json": `{"entries":[{"written":"agua","kind":"word","readings":[{"type":"latin","value":"agua"}],"glosses":["water"]}]}`,
+		})
+	}
+	dict("z-root", "a-dict", "from-z-root")
+	dict("a-root", "z-dict", "from-a-root")
+	writeFreqPack(t, filepath.Join(parent, "a-root"), "a-frequency", "agua,,1\n")
+	var out strings.Builder
+	roots := []string{filepath.Join(parent, "z-root"), filepath.Join(parent, "a-root")}
+	if err := seed(context.Background(), sqlDB, t.TempDir(), roots, &out); err != nil {
+		t.Fatalf("seed: %v\n%s", err, out.String())
+	}
+	var got []string
+	for _, line := range strings.Split(strings.TrimSpace(out.String()), "\n") {
+		if f := strings.Fields(line); len(f) >= 2 && slices.Contains(seedOrder, f[1]) {
+			got = append(got, f[0])
+		}
+	}
+	if want := []string{"from-a-root", "from-z-root", "a-frequency"}; !slices.Equal(got, want) {
+		t.Errorf("seed order %v, want %v\n%s", got, want, out.String())
+	}
+}

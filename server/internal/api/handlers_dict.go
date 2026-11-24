@@ -1,6 +1,7 @@
 package api
 
 import (
+	"database/sql"
 	"errors"
 	"fmt"
 	"io"
@@ -12,8 +13,8 @@ import (
 	"strconv"
 	"strings"
 
-	"qinqin/internal/dict"
 	"qinqin/internal/pack"
+	"qinqin/internal/packs"
 )
 
 // maxPackMemory bounds the bytes of an uploaded pack held in memory
@@ -137,8 +138,10 @@ func (s *server) handleInstallDictionary(w http.ResponseWriter, r *http.Request)
 	}
 	s.packMu.Lock()
 	defer s.packMu.Unlock()
-	// One transaction: a failed import leaves nothing behind.
-	if _, err := dict.ImportLexicon(r.Context(), s.db, &pk); err != nil {
+	// Through the pack system, as an upload: one transaction (a failed
+	// import leaves nothing behind), then the licence texts, then the data
+	// packages (packChanged).
+	if _, err := packs.Import(r.Context(), s.db, pk, packs.WithOnChange(s.packChanged)); err != nil {
 		if errors.Is(err, pack.ErrInvalidPack) {
 			writeError(w, http.StatusBadRequest, "pack_invalid", "Invalid pack.")
 			return
@@ -146,8 +149,6 @@ func (s *server) handleInstallDictionary(w http.ResponseWriter, r *http.Request)
 		writeInternal(w, r)
 		return
 	}
-	registryID, _, _ := dict.RegistryTerms(pk.Manifest)
-	s.packChanged(pack.TypeDictionary, registryID, pk.Manifest.Language)
 	legacyToken, _ := newToken()
 	if err := placePack(packsDir, pk.Manifest, pk.Dir, legacyToken); err != nil {
 		// The import is committed: the dictionary is installed. The files
@@ -181,18 +182,21 @@ func (s *server) handleUninstallDictionary(w http.ResponseWriter, r *http.Reques
 	}
 	s.packMu.Lock()
 	defer s.packMu.Unlock()
-	// Read before the uninstall: the data packages hang off pack id and language.
-	var packID, language string
-	s.db.QueryRowContext(r.Context(), `SELECT pack_id, language FROM dictionaries WHERE id = ?`, id).Scan(&packID, &language)
-	if err := dict.Uninstall(r.Context(), s.db, id); err != nil {
-		if errors.Is(err, dict.ErrNotFound) {
+	// The route names the row id; the pack system uninstalls by pack id
+	// (the dictionary, its licence texts, then the data packages).
+	var packID string
+	if err := s.db.QueryRowContext(r.Context(), `SELECT pack_id FROM dictionaries WHERE id = ?`, id).Scan(&packID); err != nil && !errors.Is(err, sql.ErrNoRows) {
+		writeInternal(w, r)
+		return
+	}
+	if err := packs.Uninstall(r.Context(), s.db, pack.TypeDictionary, packID, packs.WithOnChange(s.packChanged)); err != nil {
+		if errors.Is(err, packs.ErrNotFound) {
 			writeError(w, http.StatusNotFound, "not_found", "Dictionary not found.")
 			return
 		}
 		writeInternal(w, r)
 		return
 	}
-	s.packChanged(pack.TypeDictionary, packID, language)
 	w.WriteHeader(http.StatusNoContent)
 }
 

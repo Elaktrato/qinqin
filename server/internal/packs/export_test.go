@@ -58,3 +58,15 @@ func AddTypeForTest(t testing.TB, d pack.Descriptor,
 			return uninstall(ctx, sqlDB, packID)
 		}})
 }
+
+// UninstallErrorsForTest calls every handler's uninstall for a pack that is
+// not installed, with the stores given, and returns each type's error as the
+// handler returned it (before Uninstall maps it).
+func UninstallErrorsForTest(ctx context.Context, sqlDB *sql.DB, audioStore, fontStore string) map[string]error {
+	o := options{audioStore: audioStore, fontStore: fontStore}
+	out := map[string]error{}
+	for _, h := range handlers {
+		out[h.typ] = h.uninstall(ctx, sqlDB, "not-installed", o)
+	}
+	return out
+}

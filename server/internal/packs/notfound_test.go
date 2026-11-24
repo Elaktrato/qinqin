@@ -1,35 +1,34 @@
 package packs_test
 
 import (
+	"context"
 	"errors"
+	"path/filepath"
 	"testing"
 
-	"qinqin/internal/audio"
-	"qinqin/internal/components"
-	"qinqin/internal/dict"
-	"qinqin/internal/fonts"
-	"qinqin/internal/freq"
-	"qinqin/internal/grammar"
-	"qinqin/internal/lemmapack"
-	"qinqin/internal/levels"
+	"qinqin/internal/dbtest"
 	"qinqin/internal/pack"
 	"qinqin/internal/packs"
-	"qinqin/internal/sentences"
-	"qinqin/internal/strokes"
-	"qinqin/internal/themes"
 )
 
 // Every pack type's uninstall reports a pack that is not installed with an
-// error that is a pack.ErrNotFound, so Uninstall needs one check (#192).
+// error that is a pack.ErrNotFound, so Uninstall needs one check (#192). The
+// types come from the handler table, so a new type is checked too.
 func TestEveryNotFoundErrorIsPackNotFound(t *testing.T) {
-	for name, err := range map[string]error{
-		"dict": dict.ErrNotFound, "freq": freq.ErrNotFound, "levels": levels.ErrNotFound,
-		"sentences": sentences.ErrNotFound, "grammar": grammar.ErrNotFound, "audio": audio.ErrPackNotFound,
-		"components": components.ErrNotFound, "strokes": strokes.ErrNotFound, "lemmapack": lemmapack.ErrNotFound,
-		"themes": themes.ErrNotFound, "fonts": fonts.ErrNotFound, "packs": packs.ErrNotFound,
-	} {
+	ctx := context.Background()
+	sqlDB := dbtest.Open(t)
+	stores := t.TempDir()
+	errs := packs.UninstallErrorsForTest(ctx, sqlDB, filepath.Join(stores, "audio"), filepath.Join(stores, "fonts"))
+	if len(errs) != len(pack.All) {
+		t.Errorf("%d handlers, %d types", len(errs), len(pack.All))
+	}
+	for typ, err := range errs {
 		if !errors.Is(err, pack.ErrNotFound) {
-			t.Errorf("%s: %v is not a pack.ErrNotFound", name, err)
+			t.Errorf("%s: uninstall of a pack that is not installed: %v is not a pack.ErrNotFound", typ, err)
+		}
+		if err := packs.Uninstall(ctx, sqlDB, typ, "not-installed", packs.WithAudioStore(filepath.Join(stores, "audio")),
+			packs.WithFontStore(filepath.Join(stores, "fonts"))); !errors.Is(err, packs.ErrNotFound) {
+			t.Errorf("%s: Uninstall = %v, want packs.ErrNotFound", typ, err)
 		}
 	}
 }

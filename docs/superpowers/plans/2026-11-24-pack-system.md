@@ -153,6 +153,16 @@ The issue predates #172, #176 and #198. Its places, checked in the code at 86fe1
   `packShas`, lemmapack's `CheckLanguage`, the uninstalls' id lookups) — cost if wrong: an import waits for
   the builder's write (busy_timeout 5 s) instead of failing; nothing else changes.
 
+- Ruling (fix wave): the legacy `POST /api/admin/dictionaries` and `DELETE /api/admin/dictionaries/{id}`
+  now go through `packs.Import` and `packs.Uninstall` (by the row's pack id) instead of `dict` directly, so a
+  dictionary installed there gets its licence texts and loses them on uninstall like any upload. Same answers
+  (201 with the row, 204, 404 `not_found` for an unknown or uninstalled id, 400 `pack_invalid`); new: a
+  failure to store the texts after the import committed is a 500, as on the upload route. The rest of the
+  dictionary handlers (their SQL) is #194's — cost if wrong: none found; the route tests pass unchanged.
+- Ruling (fix wave): the components fingerprint stays as it is: parts are read with `strings.Fields`, so no
+  part holds a space and the space-joined list is unambiguous; a new encoding would rewrite every installed
+  components pack once for nothing — cost if wrong: none while the parser splits on whitespace.
+
 ## Execution record
 
 - Task 1: `TestSeedOrderIsPinned` and `TestManifestMessagesArePinned` pass on 86fe13a4 unchanged (the seed
@@ -161,9 +171,11 @@ The issue predates #172, #176 and #198. Its places, checked in the code at 86fe1
   `packtype/*`. The rewrite of the call sites was a script (`dict.X` to `pack.X` for the moved names, the
   `packtype` names) after an AST rename of local `pack` variables; one composite-literal key the rename
   touched was fixed by hand, and the lemmapack test helper `pack(...)` became `rulesPack(...)`. Full Go
-  `./...` green apart from the known `internal/ai` IPv6 test. `dict` is now imported by `api` (dictionary
-  routes), `packs`, `packcheck` and `tools/tatoeba` (they import dictionaries) and by `packs/texts.go` and
-  `packcheck.go` for `RegistryTerms` (task 4); 14 non-test packages import `pack`.
+  `./...` green apart from the known `internal/ai` IPv6 test. After task 2, `dict` was still imported by `api`, `packs`, `packcheck` and `tools/tatoeba`;
+  task 4 removed it from `packcheck.go`, `packs/texts.go` and `api/handlers_packs.go`, and the fix wave
+  (group 3) from `api/handlers_dict.go` (corrected in the fix wave: today only `packs/handlers.go`, the
+  dictionary handler, and `tools/tatoeba`, which imports dictionaries, import `dict` outside tests); 14
+  non-test packages import `pack`.
 - Task 3: `TestNotFoundIsErrNotFound` and `TestEveryNotFoundErrorIsPackNotFound` written first and seen
   failing (12 errors), then `pack.NotFound`. The texts of the domain errors are unchanged.
 - Task 4: `packs/handlers.go` holds the handlers in table order; `packcheck` and the upload stage ask
@@ -230,4 +242,19 @@ The issue predates #172, #176 and #198. Its places, checked in the code at 86fe1
   dictionary, sentences, components and audio, `version` and `license` for every type, and audio's and fonts'
   `Force` replaced by a length check (the audio run first failed to compile because of the unused `slices`
   import; rerun with it kept used, it fails on the clip licence, file and same-count form changes).
+- Group 3 (should 3–5, nits 6–9): record 0008 names the places that still list types (datapkg `Types()` and
+  `typeDefs`, the web `PackType`, `PACKAGE_TYPES`, `PACKAGE_ID` and labels, the i18n strings, the wiki), adds
+  `apps/web/src/lib/api/packages.ts` to step 6, says the fake-type test covers the `packs` steps only,
+  corrects the "nothing rebuilt" wording (the hook runs, the builder builds to a temporary file and adds no
+  revision), adds the `content_hash` rule for later data migrations and the `BeginWrite` step, and words the
+  seed pin as an expected amendment for an appended type. `TestSeedOrderAcrossRootsIsByPath` (two roots given
+  z-root first; the a-root dictionary imports first) pins the existing order by full path; it passed at once
+  (existing behaviour). `TestEveryNotFoundErrorIsPackNotFound` now walks the handler table (raw handler error
+  and `Uninstall`); a mutation (audio's error back to `errors.New`) fails it.
+  `TestLegacyDictionaryRoutesKeepTheLicenceTexts` failed first (no texts stored by the legacy route), then
+  passes. Components fingerprint: no change (Ruling). Task 2's line about `dict`'s importers corrected.
+- Seen while gating group 3: `cmd/qinqin` `TestServeRebuildsTheRefreshedBundledPackage` failed once ("revision
+  2 ready, want 1"). Pre-existing: with `-count=20` it fails 3 times on 86fe13a4 and 2 times on the reviewed
+  head a2bce403 (also "no rows" once on the base); not caused by #192 and not fixed here (a startup race
+  between the lemma-rules sync and the reconcile; a follow-up for the next server issue).
 
