@@ -42,7 +42,6 @@ var sqlStatement = regexp.MustCompile(`^\s*(SELECT|INSERT|UPDATE|DELETE|REPLACE|
 // declaration as "<package>"), each with its reason. An entry without a
 // finding is stale and fails the test, so the list only shrinks with the code.
 var sqlAllowed = map[string]string{
-	"entry_view.go dictionaryCredits":                       "debt of #194: moves into internal/dict (plan task 7)",
 	"handlers_admin_audit.go handleAdminAudit":              "debt of #194: moves into internal/auth (plan task 8)",
 	"handlers_admin_backup.go handleAdminBackupDownload":    "debt of #194: moves into internal/auth (plan task 8)",
 	"handlers_ai.go handleDeleteAIKey":                      "debt of #194: moves into internal/ai (plan task 9)",
@@ -51,9 +50,6 @@ var sqlAllowed = map[string]string{
 	"handlers_auth.go handleRegister":                       "debt of #194: moves into internal/auth (plan task 8)",
 	"handlers_backup.go handleExportDownload":               "debt of #194: moves into internal/auth (plan task 8)",
 	"handlers_backup_restore.go handleSafetyExportDownload": "debt of #194: moves into internal/auth (plan task 8)",
-	"handlers_dict.go handleInstallDictionary":              "debt of #194: moves into internal/dict (plan task 7)",
-	"handlers_dict.go handleListDictionaries":               "debt of #194: moves into internal/dict (plan task 7)",
-	"handlers_dict.go handleUninstallDictionary":            "debt of #194: moves into internal/dict (plan task 7)",
 	"handlers_levels.go handleUninstallScheme":              "debt of #194: moves into internal/levels (plan task 9)",
 	"handlers_login_mfa.go handleEmailLoginVerify":          "debt of #194: moves into internal/auth (plan task 8)",
 	"handlers_login_mfa.go mfaChallenge":                    "debt of #194: moves into internal/auth (plan task 8)",

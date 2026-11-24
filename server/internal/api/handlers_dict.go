@@ -1,7 +1,6 @@
 package api
 
 import (
-	"database/sql"
 	"errors"
 	"fmt"
 	"io"
@@ -13,6 +12,7 @@ import (
 	"strconv"
 	"strings"
 
+	"qinqin/internal/dict"
 	"qinqin/internal/pack"
 	"qinqin/internal/packs"
 )
@@ -39,30 +39,22 @@ type dictionaryBody struct {
 	Language    string `json:"language"`
 }
 
+func toDictionaryBody(d dict.Installed) dictionaryBody {
+	return dictionaryBody{ID: d.ID, Name: d.Name, Version: d.Version, License: d.License, Attribution: d.Attribution,
+		Notice: d.Notice, PackID: d.PackID, Language: d.Language}
+}
+
 // handleListDictionaries serves GET /api/dictionaries with every
 // installed dictionary, in install order.
 func (s *server) handleListDictionaries(w http.ResponseWriter, r *http.Request) {
-	rows, err := s.db.QueryContext(r.Context(), `
-		SELECT id, name, version, license, attribution, notice, pack_id, language FROM dictionaries
-		WHERE deleted_at IS NULL
-		ORDER BY id`)
+	installed, err := dict.List(r.Context(), s.db)
 	if err != nil {
 		writeInternal(w, r)
 		return
 	}
-	defer rows.Close()
-	list := make([]dictionaryBody, 0)
-	for rows.Next() {
-		d, err := scanDictionary(rows)
-		if err != nil {
-			writeInternal(w, r)
-			return
-		}
-		list = append(list, d)
-	}
-	if err := rows.Err(); err != nil {
-		writeInternal(w, r)
-		return
+	list := make([]dictionaryBody, 0, len(installed))
+	for _, d := range installed {
+		list = append(list, toDictionaryBody(d))
 	}
 	writeJSON(w, http.StatusOK, list)
 }
@@ -158,14 +150,12 @@ func (s *server) handleInstallDictionary(w http.ResponseWriter, r *http.Request)
 	// pack.Dir is the stage itself or the one folder inside it; the
 	// deferred cleanup removes what is left of the stage.
 
-	d, err := scanDictionary(s.db.QueryRowContext(r.Context(), `
-		SELECT id, name, version, license, attribution, notice, pack_id, language FROM dictionaries
-		WHERE pack_id = ? AND deleted_at IS NULL`, pk.Manifest.ID))
+	d, err := dict.ByPack(r.Context(), s.db, pk.Manifest.ID)
 	if err != nil {
 		writeInternal(w, r)
 		return
 	}
-	writeJSON(w, http.StatusCreated, d)
+	writeJSON(w, http.StatusCreated, toDictionaryBody(d))
 }
 
 // handleUninstallDictionary serves DELETE /api/admin/dictionaries/{id}:
@@ -184,8 +174,8 @@ func (s *server) handleUninstallDictionary(w http.ResponseWriter, r *http.Reques
 	defer s.packMu.Unlock()
 	// The route names the row id; the pack system uninstalls by pack id
 	// (the dictionary, its licence texts, then the data packages).
-	var packID string
-	if err := s.db.QueryRowContext(r.Context(), `SELECT pack_id FROM dictionaries WHERE id = ?`, id).Scan(&packID); err != nil && !errors.Is(err, sql.ErrNoRows) {
+	packID, err := dict.PackOf(r.Context(), s.db, id)
+	if err != nil {
 		writeInternal(w, r)
 		return
 	}
@@ -245,13 +235,4 @@ func placePack(packsDir string, m pack.Manifest, src, token string) error {
 		os.RemoveAll(aside)
 	}
 	return nil
-}
-
-// scanDictionary reads one dictionary row into its response body.
-func scanDictionary(row rowScanner) (dictionaryBody, error) {
-	var d dictionaryBody
-	if err := row.Scan(&d.ID, &d.Name, &d.Version, &d.License, &d.Attribution, &d.Notice, &d.PackID, &d.Language); err != nil {
-		return d, err
-	}
-	return d, nil
 }

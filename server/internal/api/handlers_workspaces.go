@@ -27,11 +27,6 @@ func toWorkspace(ws workspaces.Workspace) workspace {
 	return workspace{ID: ws.ID, Language: ws.Language, Name: ws.Name, Settings: ws.Settings, UpdatedAt: ws.UpdatedAt}
 }
 
-// rowScanner is anything with a Scan method: *sql.Row and *sql.Rows.
-type rowScanner interface {
-	Scan(dest ...any) error
-}
-
 // writeWorkspaceError answers an error of the workspaces package, or a
 // 500 for anything else.
 func writeWorkspaceError(w http.ResponseWriter, r *http.Request, err error) {
