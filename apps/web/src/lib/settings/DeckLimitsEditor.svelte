@@ -2,8 +2,8 @@
 	import { onMount } from 'svelte';
 	import { t } from '$lib/i18n';
 	import { DEFAULT_LIMITS, type LimitPair } from '$lib/study/limits';
-	import { saveDeckLimits } from '$lib/study/store';
-	import { getStudyData } from '$lib/study/studyData';
+	import { saveDeckLimits } from '$lib/study/commands/settings';
+	import { getStudyData } from '$lib/study/data';
 	import { workspaces } from '$lib/workspaces';
 	import LimitField from './LimitField.svelte';
 	import {

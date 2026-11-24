@@ -1,6 +1,6 @@
 // The Words rail tab's view model (#68): texts, paging and the deck list.
 // Pure; WordsPanel.svelte only renders it.
-import { GENERAL_DECK_ID } from '$lib/study/store';
+import { GENERAL_DECK_ID } from '$lib/study/types';
 import { familiarity, type KnownIndex } from '$lib/study/known';
 import type { Deck } from '$lib/study/types';
 import type { Coverage } from './coverage';

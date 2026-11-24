@@ -11,8 +11,7 @@
 	import { errorText } from '$lib/api/apiErrors';
 	import { reviewsPerDay, type ReviewDay } from '$lib/stats/summary';
 	import { contextForData, onContextStale } from '$lib/study/currentContext';
-	import { loadStudyHistory } from '$lib/study/history';
-	import { ALL_WORKSPACES, onStudyWrite } from '$lib/study/store';
+	import { ALL_WORKSPACES, onStudyChange, loadStudyHistory } from '$lib/study/data';
 	import { workspaces } from '$lib/workspaces';
 	import WidgetCard from './WidgetCard.svelte';
 	import type { WidgetStatus } from './types';
@@ -116,7 +115,7 @@
 			if (id !== null && (touched === id || touched === ALL_WORKSPACES)) void load(id);
 		};
 		const offLog = onEventLogChange(again);
-		const offWrite = onStudyWrite(again);
+		const offWrite = onStudyChange(again);
 		return () => {
 			offLog();
 			offWrite();

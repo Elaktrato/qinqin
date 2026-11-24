@@ -8,16 +8,18 @@
 	import PlayButton from '$lib/components/PlayButton.svelte';
 	import { creditLine } from '$lib/audio/button';
 	import type { CardAudio } from '$lib/study/audioCue';
+	import { type CardResult, type FlowItem } from '$lib/study/cardFlow';
 	import {
+		suggestToneGrade,
+		toneFromGesture,
+		type GesturePoint,
+		type Tone,
 		pinyinReadings,
 		tonePadLabels,
 		toneCandidates,
 		toneVerdict,
-		type CardResult,
-		type FlowItem,
 		type ToneVerdict
-	} from '$lib/study/cardFlow';
-	import { suggestToneGrade, toneFromGesture, type GesturePoint, type Tone } from '$lib/study/tones';
+	} from '$lib/study/tones';
 	import Icon from '$lib/ui/Icon.svelte';
 	import FaceAnswer from '../face/FaceAnswer.svelte';
 	import FacePrompt from '../face/FacePrompt.svelte';

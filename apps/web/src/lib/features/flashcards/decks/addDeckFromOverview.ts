@@ -3,7 +3,8 @@
 // deck gets its usual owned id and name; adding again joins only what is new.
 
 import type { NewOrder } from '$lib/study/newOrder';
-import { loadRawStudyData, pushStudy } from '$lib/study/store';
+import { loadRawStudyData } from '$lib/study/data';
+import { pushStudy } from '$lib/study/commands/write';
 import type { Deck } from '$lib/study/types';
 import { addPlanRows, planAddToDeck, type AddItem, type AddPlan } from './addToDeck';
 

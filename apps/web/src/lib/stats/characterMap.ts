@@ -11,8 +11,8 @@ import { fillMissingWritten } from '$lib/study/entriesCache';
 import { masteryForChars } from '$lib/study/mastery';
 import type { StudyClock } from '$lib/study/studyClock';
 import { contextForData } from '$lib/study/currentContext';
-import { loadStudyHistory } from '$lib/study/history';
-import { activeWeights } from '$lib/study/store';
+import { loadStudyHistory } from '$lib/study/data';
+import { activeWeights } from '$lib/study/readModel';
 import type { ReviewEvent, StudyCard } from '$lib/study/types';
 
 /** characterSummary counts the characters per mastery stage and those learned. */

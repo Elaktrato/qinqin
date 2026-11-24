@@ -11,9 +11,9 @@ vi.mock('$lib/events', async (importOriginal) => ({
 	...(await importOriginal<typeof import('$lib/events')>()),
 	onEventLogChange: vi.fn(() => () => {})
 }));
-vi.mock('$lib/study/store', async (importOriginal) => ({
-	...(await importOriginal<typeof import('$lib/study/store')>()),
-	onStudyWrite: vi.fn(() => () => {})
+vi.mock('$lib/study/data', async (importOriginal) => ({
+	...(await importOriginal<typeof import('$lib/study/data')>()),
+	onStudyChange: vi.fn(() => () => {})
 }));
 
 import { goto } from '$app/navigation';
@@ -22,7 +22,7 @@ import { loadMilestones, markSeen, type MilestonesView } from '$lib/milestones/l
 import { givenTimelines } from '$lib/weekly/replay';
 import { onEventLogChange } from '$lib/events';
 import { onContextStale } from '$lib/study/currentContext';
-import { onStudyWrite } from '$lib/study/store';
+import { onStudyChange } from '$lib/study/data';
 import { setUrl } from '$lib/testing/appState.svelte';
 import { loadWeek, loadWeekCharacters, type WeekView } from '$lib/weekly/loadWeek';
 import type { WeekSummary } from '$lib/weekly/summary';
@@ -233,7 +233,7 @@ describe('Stats week page', () => {
 		render(Page);
 		await waitFor(() => expect(firstValue()).toBe('12'));
 		const onLog = vi.mocked(onEventLogChange).mock.calls[0][0];
-		const onWrite = vi.mocked(onStudyWrite).mock.calls[0][0];
+		const onWrite = vi.mocked(onStudyChange).mock.calls[0][0];
 		const calls = vi.mocked(loadWeek).mock.calls.length;
 		onLog(2);
 		await tick();
@@ -352,7 +352,7 @@ describe('Stats week page', () => {
 			render(Page);
 			await waitFor(() => expect(loadMilestones).toHaveBeenCalledTimes(1));
 			vi.mocked(loadMilestones).mockResolvedValue(someMilestones());
-			vi.mocked(onStudyWrite).mock.calls[0][0](1);
+			vi.mocked(onStudyChange).mock.calls[0][0](1);
 			await waitFor(() => expect(screen.getByRole('heading', { name: 'Milestone reached' })).toBeTruthy());
 		});
 	});

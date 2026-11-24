@@ -17,12 +17,8 @@ import type { StudyContext } from '$lib/study/studyContext';
 	import { activeProblem, sameWeights, shouldRestorePointer } from '$lib/study/fsrs/guard';
 	import { DEFAULT_W, type FsrsState } from '$lib/study/fsrs/params';
 	import { canApply, type Preview } from '$lib/study/fsrs/preview';
-	import {
-		deleteParamSet,
-		loadStudyData,
-		saveParamSet,
-		setActiveSet
-	} from '$lib/study/store';
+	import { deleteParamSet, saveParamSet, setActiveSet } from '$lib/study/commands/settings';
+	import { loadStudyData } from '$lib/study/data';
 	import type { ReviewEvent, StudyCard } from '$lib/study/types';
 	import { workspaces } from '$lib/workspaces';
 	import { Button } from '$lib/ui';

@@ -5,7 +5,8 @@
 	import type { Component } from 'svelte';
 	import { tick, untrack } from 'svelte';
 	import DeckCardTypes from '$lib/study/DeckCardTypes.svelte';
-	import { GENERAL_DECK_ID, deleteDeck, renameDeck, saveDeckNewOrder } from '$lib/study/store';
+	import { deleteDeck, renameDeck, saveDeckNewOrder } from '$lib/study/commands/decks';
+	import { GENERAL_DECK_ID } from '$lib/study/types';
 	import { getFrequencyPacks } from '$lib/api/frequency';
 	import { getSchemes } from '$lib/api/schemes';
 	import type { FrequencyPack, Scheme } from '$lib/api/types';

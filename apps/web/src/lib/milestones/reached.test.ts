@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import fixture from '../../../../../docs/contracts/milestones/reached.json';
 import type { StudyEvent } from '$lib/events';
 import { dailyStreak } from '$lib/study/exp';
-import { GENERAL_DECK_ID } from '$lib/study/store';
+import { GENERAL_DECK_ID } from '$lib/study/types';
 import type { ReviewEvent, StudyCard } from '$lib/study/types';
 import { studyDay } from '$lib/time/studyDay';
 import { readSeconds } from '$lib/stats/readingTime';

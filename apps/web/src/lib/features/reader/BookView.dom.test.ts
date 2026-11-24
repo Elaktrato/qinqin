@@ -19,7 +19,8 @@ vi.mock('$lib/api/library', () => ({
 	deleteHighlight: vi.fn()
 }));
 vi.mock('$lib/api/segment', () => ({ segmentWithReadings: vi.fn(), segmentAt: vi.fn(async () => null), segmentBatch: vi.fn() }));
-vi.mock('$lib/study/history', () => ({
+vi.mock('$lib/study/data', async (importOriginal) => ({
+	...(await importOriginal<typeof import('$lib/study/data')>()),
 	loadStudyHistory: vi.fn(async () => ({
 		decks: [],
 		cards: [{ id: 'c1', kind: 'vocab', entryId: 1, deckIds: ['general'] }],
@@ -45,7 +46,7 @@ vi.mock('$lib/workspaces', async () => {
 });
 
 import { addBookmark, addHighlight, getBook, getChapter, listBookmarks, listHighlights } from '$lib/api/library';
-import { loadStudyHistory } from '$lib/study/history';
+import { loadStudyHistory } from '$lib/study/data';
 import { segmentWithReadings } from '$lib/api/segment';
 import { setSettings, workspaces } from '$lib/workspaces';
 import BookView from './BookView.svelte';

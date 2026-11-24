@@ -1,10 +1,12 @@
-// The plugin SDK: plugin data and recording study events behind the permissions a
-// plugin's manifest declares. The permissions are a contract that catches
-// mistakes and tells the user what a plugin does; all plugin code runs in
-// one trusted bundle, so this is not a security boundary.
+// The plugin SDK: plugin data (the keyed rows of lib/sync/keyed.ts, in the
+// plugin's namespace) and recording study events behind the permissions a
+// plugin's manifest declares. Only the journal and grammar use it (#199
+// retires it). The permissions are a contract that catches mistakes and tells
+// the user what a plugin does; all plugin code runs in one trusted bundle, so
+// this is not a security boundary.
 
-import { ApiError, api } from '../api/client';
 import { postEvents } from '../events';
+import { keyedData, type KeyedScope } from '../sync/keyed';
 import { newUlid } from '../ulid';
 import type { ContractManifest, Permission } from './contract';
 
@@ -16,27 +18,8 @@ export class PermissionError extends Error {
 	}
 }
 
-export interface DataRow<T = unknown> {
-	key: string;
-	data: T;
-	version: number;
-	updatedAt: string;
-}
-
-export interface DataScope {
-	/** 404 or a deleted row is null; a string value is JSON-decoded. */
-	get<T = unknown>(key: string): Promise<T | null>;
-	put(key: string, value: unknown, opts?: { keepalive?: boolean }): Promise<void>;
-	/**
-	 * Reads one key through the prefix route and picks the exact key, so a
-	 * missing row is an empty 200 instead of a logged 404. Null when absent.
-	 */
-	find<T = unknown>(key: string): Promise<T | null>;
-	/** The prefix route, ordered by key. */
-	list<T = unknown>(prefix?: string): Promise<DataRow<T>[]>;
-	/** A missing row counts as deleted. */
-	delete(key: string): Promise<void>;
-}
+/** The data scope of a plugin: the keyed rows of its namespace (lib/sync/keyed.ts). */
+export type DataScope = KeyedScope;
 
 export interface PluginSdk {
 	readonly id: string;
@@ -47,85 +30,6 @@ export interface PluginSdk {
 }
 
 const DEVICE = 'web';
-
-// The API serves data as JSON, but a row may carry JSON text as a string (an
-// older writer): JSON text is decoded, any other string is returned as it is,
-// so put('k', 'hello') reads back as 'hello'. A string that is itself valid
-// JSON text ('123', '{"a":1}') still reads back decoded, a quirk to avoid by
-// storing objects instead of such strings.
-function decodeData(data: unknown): unknown {
-	if (typeof data !== 'string') return data;
-	try {
-		return JSON.parse(data) as unknown;
-	} catch {
-		return data;
-	}
-}
-
-function scope(pluginId: string, workspace: number | null): DataScope {
-	const base = `/api/plugins/${encodeURIComponent(pluginId)}/data`;
-	const suffix = workspace === null ? '' : `?workspace=${workspace}`;
-	// ':' is legal in a path segment, so keys like `entry:<id>` keep their readable form.
-	const keyPath = (key: string) => {
-		// '.' and '..' would be resolved away as path segments, and an empty key is no route.
-		if (key === '' || key === '.' || key === '..') {
-			throw new Error(`plugin ${pluginId}: invalid data key "${key}"`);
-		}
-		return `${base}/${encodeURIComponent(key).replaceAll('%3A', ':')}${suffix}`;
-	};
-	const scoped: DataScope = {
-		async get<T>(key: string): Promise<T | null> {
-			try {
-				const row = await api<{ data?: unknown } | undefined>(keyPath(key), { method: 'GET' });
-				return row === undefined || row === null ? null : ((decodeData(row.data) ?? null) as T | null);
-			} catch (err) {
-				if (err instanceof ApiError && err.status === 404) return null;
-				throw err;
-			}
-		},
-		async put(key, value, opts) {
-			await api<unknown>(keyPath(key), {
-				method: 'PUT',
-				body: value,
-				...(opts?.keepalive ? { keepalive: true } : {})
-			});
-		},
-		async find<T>(key: string): Promise<T | null> {
-			const rows = await scoped.list<T>(key);
-			const row = rows.find((r) => r.key === key);
-			return row === undefined ? null : ((row.data ?? null) as T | null);
-		},
-		async list<T>(prefix?: string): Promise<DataRow<T>[]> {
-			const query: string[] = [];
-			if (workspace !== null) query.push(`workspace=${workspace}`);
-			if (prefix !== undefined) query.push(`prefix=${encodeURIComponent(prefix)}`);
-			const rows = await api<unknown[] | undefined>(
-				`${base}${query.length ? `?${query.join('&')}` : ''}`
-			);
-			const out: DataRow<T>[] = [];
-			for (const raw of Array.isArray(rows) ? rows : []) {
-				const row = raw as Partial<Record<keyof DataRow, unknown>> | null;
-				if (!row || typeof row.key !== 'string') continue;
-				out.push({
-					key: row.key,
-					data: decodeData(row.data) as T,
-					version: typeof row.version === 'number' ? row.version : 0,
-					updatedAt: typeof row.updatedAt === 'string' ? row.updatedAt : ''
-				});
-			}
-			return out;
-		},
-		async delete(key) {
-			try {
-				await api(keyPath(key), { method: 'DELETE' });
-			} catch (err) {
-				if (err instanceof ApiError && err.status === 404) return;
-				throw err;
-			}
-		}
-	};
-	return scoped;
-}
 
 /** createPluginSdk binds the SDK to one manifest; every call checks it. */
 export function createPluginSdk(manifest: ContractManifest): PluginSdk {
@@ -140,11 +44,11 @@ export function createPluginSdk(manifest: ContractManifest): PluginSdk {
 		data: {
 			user() {
 				need('owns-data');
-				return scope(id, null);
+				return keyedData(id, null);
 			},
 			workspace(workspaceId: number) {
 				need('owns-data');
-				return scope(id, workspaceId);
+				return keyedData(id, workspaceId);
 			}
 		},
 		events: {

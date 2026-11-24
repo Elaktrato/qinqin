@@ -19,11 +19,12 @@ vi.mock('$lib/api/frequency', () => ({
 	getEntryRanks: vi.fn(async () => ({ pack: null, ranks: [] }))
 }));
 vi.mock('$lib/components/StrokePlayer.svelte', () => ({ default: () => ({}) }));
-vi.mock('$lib/study/store', async (orig) => ({
-	...(await orig<typeof import('$lib/study/store')>()),
+vi.mock('$lib/study/commands/cards', async (importOriginal) => ({
+	...(await importOriginal<typeof import('$lib/study/commands/cards')>()),
 	addCard: vi.fn(async () => ({}))
 }));
-vi.mock('$lib/study/studyData', () => ({
+vi.mock('$lib/study/data', async (importOriginal) => ({
+	...(await importOriginal<typeof import('$lib/study/data')>()),
 	getStudyData: vi.fn(async () => ({ decks: [], cards: [], known: [] })),
 	hasCard: vi.fn(() => false)
 }));
@@ -37,7 +38,7 @@ import { fireEvent, within } from '@testing-library/svelte';
 import { ApiError } from '$lib/api/client';
 import { getEntry } from '$lib/api/entries';
 import { getEntryRanks } from '$lib/api/frequency';
-import { getStudyData } from '$lib/study/studyData';
+import { getStudyData } from '$lib/study/data';
 import { record } from '$lib/events';
 import { pageFrame } from '$lib/frame/pageFrame.svelte';
 import { setUrl } from '$lib/testing/appState.svelte';

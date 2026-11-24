@@ -36,7 +36,7 @@ describe('packErrorDetail', () => {
 
 describe('errors of the study store and the add button (#168 merge)', () => {
 	it('an unreadable stored row shows the "update the app" text through errorText', async () => {
-		const { UnreadableRowError } = await import('$lib/study/store');
+		const { UnreadableRowError } = await import('$lib/study/unreadable');
 		expect(errorText(new UnreadableRowError('card:1'), 'f')).toBe(
 			'This item was saved by a newer version of qinqin and cannot be changed here. Update the app to change it.'
 		);

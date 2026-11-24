@@ -5,7 +5,7 @@
 // card ids were deterministic) count once. Nothing here is cached.
 
 import { listBooks } from './library';
-import { loadStudyData } from '../study/store';
+import { loadStudyData } from '../study/data';
 
 export interface WorkspaceContents {
 	books: number;

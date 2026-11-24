@@ -6,16 +6,22 @@ vi.mock('$lib/time/zone', () => ({
 	currentStudyHistory: vi.fn(() => []),
 	onStudyDayChange: vi.fn(() => () => {})
 }));
-vi.mock('$lib/study/studyData', () => ({ getStudyData: vi.fn() }));
+vi.mock('$lib/study/data', async (importOriginal) => ({
+	...(await importOriginal<typeof import('$lib/study/data')>()),
+	getStudyData: vi.fn()
+}));
+vi.mock('$lib/study/commands/keyed', async (importOriginal) => ({
+	...(await importOriginal<typeof import('$lib/study/commands/keyed')>()),
+	saveVacation: vi.fn(() => Promise.resolve()),
+	deleteVacation: vi.fn(() => Promise.resolve())
+}));
+vi.mock('$lib/study/commands/settings', async (importOriginal) => ({
+	...(await importOriginal<typeof import('$lib/study/commands/settings')>()),
+	saveWorkspaceLimits: vi.fn(() => Promise.resolve())
+}));
 vi.mock('$lib/events', () => ({ loadWorkspaceEvents: vi.fn() }));
 vi.mock('$lib/api/stats', () => ({
 	fetchActivity: vi.fn(() => Promise.resolve({ from: '', to: '', timeZone: 'UTC', sources: [], cells: [] }))
-}));
-vi.mock('$lib/study/store', async (importOriginal) => ({
-	...(await importOriginal<typeof import('$lib/study/store')>()),
-	saveVacation: vi.fn(() => Promise.resolve()),
-	saveWorkspaceLimits: vi.fn(() => Promise.resolve()),
-	deleteVacation: vi.fn(() => Promise.resolve())
 }));
 
 vi.mock('$lib/notes/store', () => ({
@@ -25,8 +31,9 @@ vi.mock('$lib/notes/store', () => ({
 
 import { loadWorkspaceEvents } from '$lib/events';
 import { loadNoteCfg, saveNoteCfg } from '$lib/notes/store';
-import { deleteVacation, saveVacation, saveWorkspaceLimits } from '$lib/study/store';
-import { getStudyData } from '$lib/study/studyData';
+import { deleteVacation, saveVacation } from '$lib/study/commands/keyed';
+import { saveWorkspaceLimits } from '$lib/study/commands/settings';
+import { getStudyData } from '$lib/study/data';
 import type { VacationPeriod } from '$lib/study/vacation';
 import { studyDay } from '$lib/time/studyDay';
 import { currentStudyDay } from '$lib/time/zone';

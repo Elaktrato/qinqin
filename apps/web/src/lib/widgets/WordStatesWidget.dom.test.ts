@@ -1,9 +1,12 @@
 import { cleanup, render, screen } from '@testing-library/svelte';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-vi.mock('$lib/study/history', () => ({ loadStudyHistory: vi.fn() }));
+vi.mock('$lib/study/data', async (importOriginal) => ({
+	...(await importOriginal<typeof import('$lib/study/data')>()),
+	loadStudyHistory: vi.fn()
+}));
 
-import { loadStudyHistory } from '$lib/study/history';
+import { loadStudyHistory } from '$lib/study/data';
 import { workspaces } from '$lib/workspaces';
 import WordStatesWidget from './WordStatesWidget.svelte';
 

@@ -6,10 +6,10 @@ import { api, getToken } from '../api/client';
 import { getEntry } from '../api/entries';
 import { user } from '../auth';
 import { contextForData } from '../study/currentContext';
-import { loadStudyHistory } from '../study/history';
 import { loadConfig } from '../study/session';
 import { hasTabSetup, loadExtraChoices, loadRememberedTypes } from '../study/cardTypesMemory';
-import { activeWeights, studyPullPages } from '../study/store';
+import { studyPullPages, loadStudyHistory } from '../study/data';
+import { activeWeights } from '../study/readModel';
 import { fetchStrokeData } from '../study/strokeData';
 import { workspaces } from '../workspaces';
 import { ownPartition } from './partitions';
@@ -49,7 +49,8 @@ export async function prepareActiveWorkspace(): Promise<void> {
 	if (me === null || ws === null || ws === undefined) return;
 	await prepareOffline(ws.id, {
 		userId: me.id,
-		loadHistory: (id) => loadStudyHistory(id),
+		// A full round: the worker saves full rounds for offline study, never a delta (#193).
+		loadHistory: (id) => loadStudyHistory(id, { full: true }),
 		config: loadConfig,
 		tabTypes: () => (hasTabSetup() ? loadConfig().cardTypes : null),
 		remembered: () => loadRememberedTypes(ws.id),

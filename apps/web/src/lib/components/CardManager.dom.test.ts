@@ -3,14 +3,14 @@
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/svelte';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-vi.mock('$lib/study/store', async (importOriginal) => ({
-	...(await importOriginal<typeof import('$lib/study/store')>()),
+vi.mock('$lib/study/commands/cards', async (importOriginal) => ({
+	...(await importOriginal<typeof import('$lib/study/commands/cards')>()),
 	deleteCards: vi.fn(),
 	moveCards: vi.fn(),
 	restoreCards: vi.fn()
 }));
 
-import { PartialCardsError, deleteCards, moveCards, restoreCards } from '$lib/study/store';
+import { PartialCardsError, deleteCards, moveCards, restoreCards } from '$lib/study/commands/cards';
 import type { Deck, StudyCard } from '$lib/study/types';
 import CardManager from './CardManager.svelte';
 import * as build from '$lib/testing/study';

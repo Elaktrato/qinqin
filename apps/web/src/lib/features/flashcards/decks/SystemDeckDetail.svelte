@@ -7,7 +7,10 @@
 	import { WORD_STATES, classifySchedule } from '$lib/stats/wordStates';
 	import { errorText } from '$lib/api/apiErrors';
 	import { loadConfig, saveConfig } from '$lib/study/session';
-	import { GENERAL_DECK_ID, PartialPushError, loadRawStudyData, pushStudy } from '$lib/study/store';
+	import { PartialPushError } from '$lib/sync/push';
+	import { loadRawStudyData } from '$lib/study/data';
+	import { pushStudy } from '$lib/study/commands/write';
+	import { GENERAL_DECK_ID } from '$lib/study/types';
 	import { workspaces } from '$lib/workspaces';
 	import { glossLang, studyLang, wordReadingLang, readingLang } from '$lib/i18n/lang';
 	import { flashcardsHref, type FlashcardsRoute } from '../route';

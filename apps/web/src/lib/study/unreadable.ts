@@ -1,4 +1,4 @@
-// Rows the study load could not read (docs/contracts/sync/, "Reading rows"):
+// Rows the study load could not read (docs/contracts/sync/, 'Reading rows'):
 // a malformed row, or one a newer client wrote (a new member, a new kind).
 // The load skips them and goes on; this module keeps the last load's count
 // per workspace for the study page's notice and logs one warning per new
@@ -7,6 +7,7 @@
 import { onSessionEnd } from '../session/sessionEnd';
 import { writable } from 'svelte/store';
 import { t } from '../i18n';
+import { ShownError } from '../api/userError';
 import type { StudyCollection } from './rows';
 
 /** Unreadable rows per collection (typed collections and pluginData). */
@@ -75,4 +76,18 @@ export function clearUnreadableReport(): void {
 export function unreadableNotice(report: UnreadableReport | null, workspaceId: number | null): string | null {
 	if (report === null || workspaceId === null || report.workspaceId !== workspaceId || report.total === 0) return null;
 	return t('study.unreadable.notice', { count: report.total });
+}
+
+/**
+ * UnreadableRowError: a write would replace a stored row this version cannot
+ * read (docs/contracts/sync/, 'Reading rows'); nothing was sent.
+ */
+export class UnreadableRowError extends ShownError {
+	key: string;
+
+	constructor(key: string) {
+		super(t('study.store.unreadableRow')); // interface text: errorText shows it
+		this.name = 'UnreadableRowError';
+		this.key = key;
+	}
 }

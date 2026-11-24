@@ -50,78 +50,14 @@ describe('plugin sdk data', () => {
 	});
 	afterEach(() => vi.unstubAllGlobals());
 
-	it('workspace get hits the keyed route with the workspace', async () => {
-		vi.mocked(fetch).mockResolvedValue(json({ key: 'k', data: { a: 1 } }));
+	it('the scopes are the keyed rows of the plugin namespace (lib/sync/keyed.ts)', async () => {
+		vi.mocked(fetch).mockResolvedValue(json({ key: 'k', data: '{"a":1}' }));
 		expect(await createPluginSdk(full).data.workspace(3).get('k')).toEqual({ a: 1 });
 		expect(lastCall().url).toBe('/api/plugins/qinqin-test/data/k?workspace=3');
-	});
-
-	it('404 is null and a JSON-text string is decoded', async () => {
-		const scope = createPluginSdk(full).data.workspace(3);
-		vi.mocked(fetch).mockResolvedValue(new Response('nope', { status: 404 }));
-		expect(await scope.get('k')).toBeNull();
-		vi.mocked(fetch).mockResolvedValue(json({ data: '{"a":1}' }));
-		expect(await scope.get('k')).toEqual({ a: 1 });
-	});
-
-	it('a plain string round-trips instead of reading back as null', async () => {
-		const scope = createPluginSdk(full).data.workspace(3);
-		vi.mocked(fetch).mockResolvedValue(json({}));
-		await scope.put('k', 'hello');
-		expect(JSON.parse(String(lastCall().init.body))).toBe('hello');
-		vi.mocked(fetch).mockResolvedValue(json({ data: 'hello' }));
-		expect(await scope.get('k')).toBe('hello');
-		vi.mocked(fetch).mockResolvedValue(json({ data: '{oops' }));
-		expect(await scope.get('k')).toBe('{oops');
-	});
-
-	it('rejects empty, dot and dot-dot keys before any request', async () => {
-		const scope = createPluginSdk(full).data.workspace(3);
-		vi.mocked(fetch).mockClear();
-		for (const key of ['', '.', '..']) {
-			await expect(scope.get(key)).rejects.toThrow(/key/);
-			await expect(scope.put(key, 1)).rejects.toThrow(/key/);
-			await expect(scope.delete(key)).rejects.toThrow(/key/);
-		}
-		expect(fetch).not.toHaveBeenCalled();
-	});
-
-	it('user scope has no workspace parameter and keys are escaped', async () => {
-		vi.mocked(fetch).mockResolvedValue(json({ data: 1 }));
-		await createPluginSdk(full).data.user().get('a b/c');
-		expect(lastCall().url).toBe('/api/plugins/qinqin-test/data/a%20b%2Fc');
-		expect(lastCall().url).not.toContain('workspace=');
-	});
-
-	it('keeps a colon readable in a key and rethrows other failures', async () => {
-		vi.mocked(fetch).mockResolvedValue(json({ data: 1 }));
-		await createPluginSdk(full).data.workspace(3).get('entry:a');
-		expect(lastCall().url).toBe('/api/plugins/qinqin-test/data/entry:a?workspace=3');
-		vi.mocked(fetch).mockResolvedValue(new Response('boom', { status: 500 }));
-		await expect(createPluginSdk(full).data.user().get('k')).rejects.toThrow();
-	});
-
-	it('list uses the prefix route and maps rows', async () => {
-		vi.mocked(fetch).mockResolvedValue(
-			json([{ key: 'entry:a', data: { x: 1 }, version: 2, updatedAt: 't' }])
-		);
-		const rows = await createPluginSdk(full).data.workspace(3).list('entry:');
-		expect(lastCall().url).toBe('/api/plugins/qinqin-test/data?workspace=3&prefix=entry%3A');
-		expect(rows).toEqual([{ key: 'entry:a', data: { x: 1 }, version: 2, updatedAt: 't' }]);
-	});
-
-	it('delete resolves on 404', async () => {
-		vi.mocked(fetch).mockResolvedValue(new Response('', { status: 404 }));
-		await expect(createPluginSdk(full).data.workspace(3).delete('k')).resolves.toBeUndefined();
+		vi.mocked(fetch).mockResolvedValue(new Response(JSON.stringify({ error: 'not_found', message: 'Plugin data not found.' }), { status: 404 }));
+		await createPluginSdk(full).data.user().delete('entry:a');
+		expect(lastCall().url).toBe('/api/plugins/qinqin-test/data/entry:a');
 		expect(lastCall().init.method).toBe('DELETE');
-	});
-
-	it('put sends the JSON body and passes keepalive', async () => {
-		vi.mocked(fetch).mockResolvedValue(json({}));
-		await createPluginSdk(full).data.workspace(3).put('k', { v: 1 }, { keepalive: true });
-		expect(lastCall().init.method).toBe('PUT');
-		expect(lastCall().init.keepalive).toBe(true);
-		expect(JSON.parse(String(lastCall().init.body))).toEqual({ v: 1 });
 	});
 });
 

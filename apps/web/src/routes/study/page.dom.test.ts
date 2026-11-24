@@ -10,13 +10,22 @@ vi.mock('$lib/api/schemes', () => ({
 }));
 vi.mock('$lib/api/characters', () => ({ fetchCharacters: vi.fn() }));
 vi.mock('$lib/api/frequency', () => ({ getFrequencyPacks: vi.fn(async () => []) }));
-vi.mock('$lib/study/store', async (importOriginal) => ({
-	...(await importOriginal<typeof import('$lib/study/store')>()),
-	loadStudyData: vi.fn(),
+vi.mock('$lib/study/data', async (importOriginal) => ({
+	...(await importOriginal<typeof import('$lib/study/data')>()),
+	loadStudyData: vi.fn()
+}));
+vi.mock('$lib/study/commands/decks', async (importOriginal) => ({
+	...(await importOriginal<typeof import('$lib/study/commands/decks')>()),
 	saveDeckCardTypesForDecks: vi.fn(),
 	createDeck: vi.fn()
 }));
-vi.mock('$lib/components/CardManager.svelte', () => ({ default: () => ({}) }));
+const cardManager = vi.hoisted(() => ({ props: [] as Record<string, unknown>[] }));
+vi.mock('$lib/components/CardManager.svelte', () => ({
+	default: (_anchor: unknown, props: Record<string, unknown>) => {
+		cardManager.props.push(props);
+		return {};
+	}
+}));
 vi.mock('$lib/time/zone', () => ({
 	currentStudyDay: vi.fn(),
 	currentStudyHistory: vi.fn(() => []),
@@ -28,7 +37,9 @@ import { getFrequencyPacks } from '$lib/api/frequency';
 import { goto } from '$app/navigation';
 import { fireEvent } from '@testing-library/svelte';
 import { fetchSchemeCharacters, getSchemeEntries, getSchemes } from '$lib/api/schemes';
-import { createDeck, loadStudyData, saveDeckCardTypesForDecks } from '$lib/study/store';
+import { createDeck, saveDeckCardTypesForDecks } from '$lib/study/commands/decks';
+import { loadStudyData, studyCache } from '$lib/study/data';
+import { tick } from 'svelte';
 import { studyDay } from '$lib/time/studyDay';
 import { currentStudyDay } from '$lib/time/zone';
 import { workspaces } from '$lib/workspaces';
@@ -512,5 +523,26 @@ describe('study setup, order of card types (#132)', () => {
 		);
 		render(Page);
 		await waitFor(() => expect(typeOrderSelect().value).toBe('grouped'));
+	});
+});
+
+describe('study setup and the study cache (#193)', () => {
+	it('reloads its counts when the rows of the shown workspace change, not for another workspace', async () => {
+		render(Page);
+		await waitFor(() => expect(loadStudyData).toHaveBeenCalledTimes(1));
+		// A row another device wrote in the second of the load arrives with the cache's follow-up round.
+		vi.mocked(loadStudyData).mockResolvedValue({ decks: [], cards: [build.card({ id: 'late', entryId: 9 })], reviews: [], merged: 0 });
+		studyCache.markStale(2);
+		await tick();
+		expect(loadStudyData).toHaveBeenCalledTimes(1);
+		studyCache.markStale(1);
+		await waitFor(() => expect(loadStudyData).toHaveBeenCalledTimes(2));
+	});
+
+	it("leaves the card manager's reloads to onStudyChange: one reload per change, not two", async () => {
+		cardManager.props.length = 0;
+		render(Page);
+		await waitFor(() => expect(cardManager.props.length).toBeGreaterThan(0));
+		expect(cardManager.props.at(-1)?.onchanged).toBeUndefined();
 	});
 });

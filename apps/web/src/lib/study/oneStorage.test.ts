@@ -2,39 +2,37 @@ import { describe, expect, it } from 'vitest';
 
 // One storage (docs/contracts/study/): cards, decks, deck settings, limits
 // and FSRS sets are written only through the typed push. The plugin-data
-// routes of the study namespace are left to its keyed rows (goals, known
-// marks, vacations), and in all of src/ only store.ts talks to them.
+// routes are left to keyed rows (the study namespace's goals, known marks,
+// vacations and milestones; the core rows; the SDK's plugins), and in all of
+// src/ only lib/sync/keyed.ts builds them (#193); the service worker's
+// classifier only matches them.
 const sources = import.meta.glob(
 	['../../**/*.{ts,svelte}', '!../../**/*.test.ts', '!../../**/*.test.svelte', '!../../**/testing/**'],
 	{ query: '?raw', import: 'default', eager: true }
 ) as Record<string, string>;
 
-const STORE = Object.keys(sources).find((path) => path.endsWith('lib/study/store.ts') || path === './store.ts')!;
+const KEYED = Object.keys(sources).find((path) => path.endsWith('/sync/keyed.ts'))!;
+const CLASSIFY = Object.keys(sources).find((path) => path.endsWith('/pwa/sw/classify.ts'))!;
 
 describe('study writes use one storage', () => {
 	it('finds the sources it checks: all of src/', () => {
-		expect(STORE).toBeDefined();
+		expect(KEYED).toBeDefined();
+		expect(CLASSIFY).toBeDefined();
 		expect(Object.keys(sources).some((path) => path.startsWith('../../routes/'))).toBe(true);
 		expect(Object.keys(sources).some((path) => path.includes('/pwa/'))).toBe(true);
 		expect(Object.keys(sources).length).toBeGreaterThan(400);
 	});
 
-	it("no source in src/ but store.ts names the study namespace's plugin-data routes", () => {
+	it('no source in src/ but lib/sync/keyed.ts builds a plugin-data route', () => {
 		const offenders = Object.entries(sources)
-			.filter(
-				([path, text]) =>
-					path !== STORE && /\/api\/plugins\/\$\{FLASHCARDS_PLUGIN_ID\}|\/api\/plugins\/qinqin-flashcards/.test(text)
-			)
+			.filter(([path, text]) => path !== KEYED && path !== CLASSIFY && /\/api\/plugins\/[^'"`\s]*\/data\b/.test(text))
 			.map(([path]) => path);
 		expect(offenders).toEqual([]);
 	});
 
-	it('store.ts uses the plugin-data routes only for the keyed rows', () => {
-		const store = sources[STORE];
-		const lines = store.split('\n').filter((line) => line.includes('/api/plugins/'));
-		// dataPath (goals, known marks) and the two vacation writers.
-		expect(lines).toHaveLength(3);
-		expect(lines.filter((line) => line.includes('VACATION_PREFIX'))).toHaveLength(2);
-		expect(store).not.toMatch(/export (async )?function pushStudyRows/);
+	it('keyed.ts builds them in one place and has no typed-row writer', () => {
+		const keyed = sources[KEYED];
+		expect(keyed.split('\n').filter((line) => line.includes('/api/plugins/'))).toHaveLength(1);
+		expect(keyed).not.toMatch(/export (async )?function pushStudyRows/);
 	});
 });

@@ -5,12 +5,16 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { LookupResult } from '$lib/api/types';
 
 vi.mock('$lib/api/entries', () => ({ addSentence: vi.fn(), getEntry: vi.fn() }));
-vi.mock('$lib/study/store', async (importOriginal) => ({
-	...(await importOriginal<typeof import('$lib/study/store')>()),
-	addCard: vi.fn(async () => ({})),
+vi.mock('$lib/study/commands/cards', async (importOriginal) => ({
+	...(await importOriginal<typeof import('$lib/study/commands/cards')>()),
+	addCard: vi.fn(async () => ({}))
+}));
+vi.mock('$lib/study/commands/keyed', async (importOriginal) => ({
+	...(await importOriginal<typeof import('$lib/study/commands/keyed')>()),
 	setKnownMark: vi.fn(async () => {})
 }));
-vi.mock('$lib/study/studyData', () => ({
+vi.mock('$lib/study/data', async (importOriginal) => ({
+	...(await importOriginal<typeof import('$lib/study/data')>()),
 	getStudyData: vi.fn(async () => ({ decks: [], cards: [] })),
 	hasCard: vi.fn(() => false)
 }));
@@ -19,8 +23,9 @@ const rec = vi.hoisted(() => ({ current: null as unknown }));
 vi.mock('$lib/lookups/store', () => ({ lookupRecorder: () => rec.current ?? { countOf: () => 0 } }));
 
 import { LookupRecorder } from '$lib/lookups/recorder';
-import { addCard, setKnownMark } from '$lib/study/store';
-import { getStudyData, hasCard } from '$lib/study/studyData';
+import { addCard } from '$lib/study/commands/cards';
+import { setKnownMark } from '$lib/study/commands/keyed';
+import { getStudyData, hasCard } from '$lib/study/data';
 import AddToStudyButtons from './AddToStudyButtons.svelte';
 
 function result(kind: 'word' | 'character'): LookupResult {

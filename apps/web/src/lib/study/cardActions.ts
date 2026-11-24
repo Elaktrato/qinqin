@@ -8,7 +8,7 @@
 
 import { errorText } from '$lib/api/apiErrors';
 import { t, type MessageKey } from '$lib/i18n';
-import { PartialCardsError } from './store';
+import { PartialCardsError } from './commands/cards';
 import type { StudyCard, StudyCardKind } from './types';
 
 export const UNDO_MS = 10000;

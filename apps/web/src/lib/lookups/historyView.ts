@@ -5,7 +5,7 @@ import { readingBeside } from '$lib/entry/displayForm';
 import { t } from '$lib/i18n';
 import { formatDay } from '$lib/i18n/format';
 import type { EntryBase } from '$lib/api/types';
-import { GENERAL_DECK_ID } from '$lib/study/store';
+import { GENERAL_DECK_ID } from '$lib/study/types';
 import type { Deck } from '$lib/study/types';
 import type { LookupHistory, LookupItem, LookupState } from './lookups';
 

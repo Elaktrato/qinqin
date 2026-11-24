@@ -15,13 +15,14 @@ import {
 	saveEntry,
 	saveJournalSettings
 } from './store';
+import { dataRow } from '../../testing/keyed';
 
 function json(body: unknown, status = 200): Response {
 	return new Response(JSON.stringify(body), { status });
 }
 
 function row(key: string, data: unknown) {
-	return { pluginId: JOURNAL_PLUGIN_ID, key, workspaceId: 3, data, deletedAt: null };
+	return dataRow({ pluginId: JOURNAL_PLUGIN_ID, key, workspaceId: 3, data });
 }
 
 function entry(id: string, date: string, updatedAt: string) {
@@ -103,7 +104,7 @@ describe('journal store', () => {
 	it('deletes the entry and its review, tolerating a 404', async () => {
 		vi.mocked(fetch)
 			.mockResolvedValueOnce(new Response(null, { status: 204 }))
-			.mockResolvedValueOnce(new Response('not found', { status: 404 }));
+			.mockResolvedValueOnce(new Response(JSON.stringify({ error: 'not_found', message: 'Plugin data not found.' }), { status: 404 }));
 		await deleteEntry(3, 'a');
 		const calls = vi.mocked(fetch).mock.calls;
 		expect(calls.map((c) => [c[0], c[1]?.method])).toEqual([

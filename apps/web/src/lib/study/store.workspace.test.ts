@@ -8,24 +8,29 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { workspaces } from '../workspaces';
 import {
 	addCard,
-	createDeck,
 	deleteCards,
-	deleteDeck,
 	dropSiblingCards,
-	loadStudyData,
 	moveCards,
-	renameDeck,
 	restoreCards,
-	saveDeckCardTypes,
-	saveDeckCardTypesForDecks,
-	saveDeckLimits,
-	saveDeckNewOrder,
-	saveWorkspaceLimits,
 	skipKind,
 	unskipKind
-} from './store';
+} from './commands/cards';
+import {
+	createDeck,
+	deleteDeck,
+	renameDeck,
+	saveDeckCardTypes,
+	saveDeckCardTypesForDecks,
+	saveDeckNewOrder
+} from './commands/decks';
+import { loadStudyData } from './data';
+import { saveDeckLimits, saveWorkspaceLimits } from './commands/settings';
 import { STUDY_COLLECTIONS } from './rows';
 import type { StudyCard } from './types';
+import { endSession } from '../session/sessionEnd';
+
+// Every test starts a session of its own: the study cache holds nothing.
+beforeEach(() => endSession('signOut'));
 
 const A = 7;
 const B = 9;
@@ -153,9 +158,12 @@ describe('a workspace switch during a study write (#174)', () => {
 		expect(fetch).not.toHaveBeenCalled();
 	});
 
-	it('store.ts never reads the selected workspace itself', () => {
-		const source = readFileSync(fileURLToPath(new URL('./store.ts', import.meta.url)), 'utf8');
-		expect(source).not.toMatch(/from ["']\.\.\/workspaces["']/);
-		expect(source).not.toContain('requireWorkspaceId');
-	});
+	it.each(['./data.ts', './cache.ts', './commands/write.ts', './commands/decks.ts', './commands/cards.ts', './commands/settings.ts', './commands/keyed.ts'])(
+		'%s never reads the selected workspace itself',
+		(file) => {
+			const source = readFileSync(fileURLToPath(new URL(file, import.meta.url)), 'utf8');
+			expect(source).not.toMatch(/from ["'](\.\.\/)+workspaces["']/);
+			expect(source).not.toContain('requireWorkspaceId');
+		}
+	);
 });

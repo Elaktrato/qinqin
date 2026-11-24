@@ -2,12 +2,13 @@
 	import { onMount } from 'svelte';
 	import { t } from '$lib/i18n';
 	import { loadWorkspaceEvents } from '$lib/events';
-	import { deleteVacation, saveVacation, saveWorkspaceLimits } from '$lib/study/store';
+	import { deleteVacation, saveVacation } from '$lib/study/commands/keyed';
+	import { saveWorkspaceLimits } from '$lib/study/commands/settings';
 	import GoalSettings from './GoalSettings.svelte';
 	import LimitField from './LimitField.svelte';
 	import NoteSettings from './NoteSettings.svelte';
 	import { workspaceFieldFrom, workspaceRowFrom, type FieldState } from './limitsForm';
-	import { getStudyData } from '$lib/study/studyData';
+	import { getStudyData } from '$lib/study/data';
 	import { newUlid } from '$lib/ulid';
 	import {
 		parseVacation,

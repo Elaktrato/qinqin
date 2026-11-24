@@ -1,4 +1,5 @@
 import type { ReviewGrade } from './types';
+import { isHan } from './writing';
 
 /** Mandarin tone; 5 is the neutral tone. */
 export type Tone = 1 | 2 | 3 | 4 | 5;
@@ -183,4 +184,65 @@ export function cleanReadings(readings: string[]): Syllable[][] {
 export function eligibleForTone(language: string, pinyinReadings: string[]): boolean {
 	const base = language.toLowerCase().split(/[-_]/)[0];
 	return base === 'zh' && cleanReadings(pinyinReadings).length > 0;
+}
+
+/** The pinyin reading values of an entry, in order. */
+export function pinyinReadings(readings: readonly { type: string; value: string }[]): string[] {
+	return readings.filter((reading) => reading.type === 'pinyin').map((reading) => reading.value);
+}
+
+export interface ToneVerdict {
+	correct: boolean;
+	wrong: number;
+	/** Per syllable: right against the best matching reading. */
+	marks: boolean[];
+	/** The reading the answer was checked against, null when none fits. */
+	best: Syllable[] | null;
+}
+
+/**
+ * toneVerdict checks chosen tones against every reading with the same
+ * syllable count (cleanReadings output) and keeps the closest one, so a
+ * polyphone answer for any of its readings is right. Ties keep the first.
+ */
+export function toneVerdict(
+	chosen: readonly Tone[],
+	candidates: readonly (readonly Syllable[])[]
+): ToneVerdict {
+	let best: readonly Syllable[] | null = null;
+	let bestWrong = chosen.length;
+	for (const candidate of candidates) {
+		if (candidate.length !== chosen.length) continue;
+		const wrong = candidate.reduce((sum, syllable, i) => sum + (syllable.tone === chosen[i] ? 0 : 1), 0);
+		if (best === null || wrong < bestWrong) {
+			best = candidate;
+			bestWrong = wrong;
+		}
+	}
+	if (best === null) {
+		return { correct: false, wrong: chosen.length, marks: chosen.map(() => false), best: null };
+	}
+	const reading = best;
+	return {
+		correct: bestWrong === 0,
+		wrong: bestWrong,
+		marks: chosen.map((tone, i) => reading[i].tone === tone),
+		best: [...reading]
+	};
+}
+
+/**
+ * The Han characters of `written` when every character is Han and their
+ * count equals the syllable count; otherwise null (erhua such as 花儿,
+ * mixed scripts), and the pads show toneless pinyin instead.
+ */
+export function tonePadLabels(written: string, syllableCount: number): string[] | null {
+	const chars = [...written.trim()];
+	if (chars.length === 0 || chars.length !== syllableCount) return null;
+	return chars.every(isHan) ? chars : null;
+}
+
+/** The tone check candidates of an entry: its clean pinyin readings. */
+export function toneCandidates(readings: readonly { type: string; value: string }[]): Syllable[][] {
+	return cleanReadings(pinyinReadings(readings));
 }

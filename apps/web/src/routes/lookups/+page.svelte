@@ -16,7 +16,7 @@
 	import { promptItems } from '$lib/lookups/lookups';
 	import { addEntries, loadPage, type PageData } from '$lib/lookups/pageData';
 	import { clearHistory, removeFromHistory, saveLookupCfg } from '$lib/lookups/store';
-	import { GENERAL_DECK_ID } from '$lib/study/store';
+	import { GENERAL_DECK_ID } from '$lib/study/types';
 	import { currentStudyDay } from '$lib/time/zone';
 	import { workspaces } from '$lib/workspaces';
 	import { glossLang, studyLang, wordReadingLang, readingLang } from '$lib/i18n/lang';

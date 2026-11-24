@@ -26,6 +26,7 @@ import { auth } from '$lib/auth';
 import { setUrl } from '$lib/testing/appState.svelte';
 import { navLayoutStore } from '$lib/frame/navLayoutStore.svelte';
 import Layout from './+layout.svelte';
+import { dataRow } from '../lib/testing/keyed';
 
 /** The desktop bar (both bars are in the DOM; CSS shows one, and jsdom has no CSS). */
 function desktop(container: HTMLElement): HTMLElement {
@@ -40,7 +41,7 @@ function mountAt(path: string, token: string | null, navLayout: unknown = null) 
 	if (token) localStorage.setItem('qinqin.token', token);
 	vi.mocked(api).mockImplementation((async (url: string) => {
 		if (url === '/api/auth/me') return { id: 1, username: 'u', admin: false };
-		if (navLayout !== null && url.includes('prefix=nav-layout')) return [{ key: 'nav-layout', workspaceId: null, data: navLayout }];
+		if (navLayout !== null && url.includes('prefix=nav-layout')) return [dataRow({ key: 'nav-layout', workspaceId: null, data: navLayout })];
 		return [];
 	}) as never);
 	return render(Layout, { children });

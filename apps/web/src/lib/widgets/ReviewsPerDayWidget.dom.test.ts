@@ -2,7 +2,11 @@ import { cleanup, render, screen, waitFor } from '@testing-library/svelte';
 import { tick } from 'svelte';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-vi.mock('$lib/study/history', () => ({ loadStudyHistory: vi.fn() }));
+vi.mock('$lib/study/data', async (importOriginal) => ({
+	...(await importOriginal<typeof import('$lib/study/data')>()),
+	loadStudyHistory: vi.fn(),
+	onStudyChange: vi.fn(() => () => {})
+}));
 vi.mock('$lib/stats/summary', async (importOriginal) => ({
 	...(await importOriginal<typeof import('$lib/stats/summary')>()),
 	reviewsPerDay: vi.fn()
@@ -11,17 +15,13 @@ vi.mock('$lib/study/currentContext', async (importOriginal) => ({
 	...(await importOriginal<typeof import('$lib/study/currentContext')>()),
 	onContextStale: vi.fn(() => () => {})
 }));
-vi.mock('$lib/study/store', async (importOriginal) => ({
-	...(await importOriginal<typeof import('$lib/study/store')>()),
-	onStudyWrite: vi.fn(() => () => {})
-}));
 vi.mock('$lib/events', async (importOriginal) => ({
 	...(await importOriginal<typeof import('$lib/events')>()),
 	onEventLogChange: vi.fn(() => () => {})
 }));
 
 import { onEventLogChange } from '$lib/events';
-import { loadStudyHistory } from '$lib/study/history';
+import { loadStudyHistory } from '$lib/study/data';
 import { reviewsPerDay, type ReviewDay } from '$lib/stats/summary';
 import { pluginStates } from '$lib/plugins/states';
 import { workspaces } from '$lib/workspaces';

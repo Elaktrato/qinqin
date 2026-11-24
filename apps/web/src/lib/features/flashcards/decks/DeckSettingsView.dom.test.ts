@@ -3,10 +3,14 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const { goto } = vi.hoisted(() => ({ goto: vi.fn() }));
 vi.mock('$app/navigation', () => ({ goto }));
-vi.mock('$lib/study/history', () => ({ loadStudyHistory: vi.fn(), invalidateStudyHistory: vi.fn() }));
-vi.mock('$lib/study/studyData', () => ({ getStudyData: vi.fn(() => Promise.resolve({ decks: [], cards: [] })) }));
-vi.mock('$lib/study/store', async (importOriginal) => ({
-	...(await importOriginal<typeof import('$lib/study/store')>()),
+vi.mock('$lib/study/data', async (importOriginal) => ({
+	...(await importOriginal<typeof import('$lib/study/data')>()),
+	loadStudyHistory: vi.fn(),
+	invalidateStudyHistory: vi.fn(),
+	getStudyData: vi.fn(() => Promise.resolve({ decks: [], cards: [] }))
+}));
+vi.mock('$lib/study/commands/decks', async (importOriginal) => ({
+	...(await importOriginal<typeof import('$lib/study/commands/decks')>()),
 	renameDeck: vi.fn(),
 	deleteDeck: vi.fn(),
 	saveDeckCardTypes: vi.fn(),
@@ -15,10 +19,10 @@ vi.mock('$lib/study/store', async (importOriginal) => ({
 vi.mock('$lib/api/frequency', () => ({ getFrequencyPacks: vi.fn(async () => []) }));
 vi.mock('$lib/api/schemes', () => ({ getSchemes: vi.fn(async () => []) }));
 
-import { loadStudyHistory } from '$lib/study/history';
+import { loadStudyHistory } from '$lib/study/data';
 import { getFrequencyPacks } from '$lib/api/frequency';
 import { getSchemes } from '$lib/api/schemes';
-import { deleteDeck, renameDeck, saveDeckCardTypes, saveDeckNewOrder } from '$lib/study/store';
+import { deleteDeck, renameDeck, saveDeckCardTypes, saveDeckNewOrder } from '$lib/study/commands/decks';
 import type { Deck, StudyCard } from '$lib/study/types';
 import { workspaces } from '$lib/workspaces';
 import { primaryActions } from '$lib/ui/testing/primary';

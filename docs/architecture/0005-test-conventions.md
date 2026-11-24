@@ -45,7 +45,7 @@ Touched by: #195, #196. A merge from one of these issues that changes what this 
 - **Web study builders** live in `apps/web/src/lib/testing/study.ts`: `card`, `review` and `history` take
   overrides (an undefined override keeps the default), plus `eventId` and `strongReviews`. All web test
   support lives in `apps/web/src/lib/testing/`, including the test-only legacy codec mirror
-  (`apps/web/src/lib/testing/legacyCodec.ts`, still used by the store and history tests to describe study
+  (`apps/web/src/lib/testing/legacyCodec.ts`, still used by the study command tests to describe study
   state as old rows) and the spaceOut reference; `lib/study/testing/` is gone.
 - **No wall-clock assertions in unit tests.** A performance test asserts operation counts (replays, log
   passes, Intl calls, publications, work units, bytes read, SQL statements and transactions) and no time

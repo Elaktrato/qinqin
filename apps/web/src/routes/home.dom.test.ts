@@ -21,9 +21,9 @@ vi.mock('$lib/time/zone', async (importOriginal) => {
 	const actual = await importOriginal<typeof import('$lib/time/zone')>();
 	return { ...actual, currentStudyDay: vi.fn(actual.currentStudyDay) };
 });
-vi.mock('$lib/study/store', async (importOriginal) => ({
-	...(await importOriginal<typeof import('$lib/study/store')>()),
-	onStudyWrite: vi.fn(() => () => {})
+vi.mock('$lib/study/data', async (importOriginal) => ({
+	...(await importOriginal<typeof import('$lib/study/data')>()),
+	onStudyChange: vi.fn(() => () => {})
 }));
 
 import { goto } from '$app/navigation';
@@ -33,7 +33,7 @@ import { studyDay } from '$lib/time/studyDay';
 import { currentStudyDay } from '$lib/time/zone';
 import { onEventLogChange } from '$lib/events';
 import { pluginStates } from '$lib/plugins/states';
-import { onStudyWrite } from '$lib/study/store';
+import { onStudyChange } from '$lib/study/data';
 import { workspaces } from '$lib/workspaces';
 import Page from './+page.svelte';
 
@@ -147,7 +147,7 @@ describe('home milestones', () => {
 		vi.mocked(loadMilestones).mockResolvedValue({ ...milestones(), plan: { kind: 'none' } });
 		render(Page);
 		await waitFor(() => expect(loadMilestones).toHaveBeenCalledTimes(1));
-		const onWrite = vi.mocked(onStudyWrite).mock.calls.at(-1)![0];
+		const onWrite = vi.mocked(onStudyChange).mock.calls.at(-1)![0];
 		const onLog = vi.mocked(onEventLogChange).mock.calls.at(-1)![0];
 		onWrite(2);
 		await tick();

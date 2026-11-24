@@ -2,8 +2,7 @@
 // through the plugin SDK (docs/contracts/notes/README.md). Rules live in
 // notes.ts.
 
-import { coreManifest } from '../plugins/core/manifest';
-import { createPluginSdk, type DataScope } from '../plugins/sdk';
+import { CORE_NAMESPACE, keyedData, type KeyedScope } from '../sync/keyed';
 import {
 	NOTE_CFG_KEY,
 	NOTE_MAX_CHARS,
@@ -27,8 +26,8 @@ export class NoteTooLongError extends Error {
 	}
 }
 
-function data(ws: number): DataScope {
-	return createPluginSdk(coreManifest).data.workspace(ws);
+function data(ws: number): KeyedScope {
+	return keyedData(CORE_NAMESPACE, ws);
 }
 
 /** loadNote reads an entry's note with the single-row route; 404 (none or deleted) is no note. */

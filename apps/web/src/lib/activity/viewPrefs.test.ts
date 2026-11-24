@@ -11,6 +11,7 @@ import {
 	saveActivityView
 } from './viewPrefs';
 import coreRowsFixture from '../../../../../docs/contracts/settings/core-rows.json';
+import { dataRow } from '../testing/keyed';
 
 describe('parseActivityView', () => {
 	it('round-trips a valid value', () => {
@@ -57,7 +58,7 @@ describe('view store', () => {
 	it('reads the user-global qinqin-core activity-view row', async () => {
 		expect(ACTIVITY_VIEW_KEY).toBe('activity-view');
 		vi.mocked(fetch).mockResolvedValue(
-			new Response(JSON.stringify([{ key: 'activity-view', data: { version: 1, scope: 'all', hidden: ['journal'] } }]), {
+			new Response(JSON.stringify([dataRow({ key: 'activity-view', data: { version: 1, scope: 'all', hidden: ['journal'] } })]), {
 				headers: { 'content-type': 'application/json' }
 			})
 		);

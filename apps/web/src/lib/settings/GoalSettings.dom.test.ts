@@ -6,16 +6,19 @@ vi.mock('$lib/time/zone', () => ({
 	currentStudyHistory: vi.fn(() => []),
 	onStudyDayChange: vi.fn(() => () => {})
 }));
-vi.mock('$lib/study/studyData', () => ({ getStudyData: vi.fn() }));
-vi.mock('$lib/api/stats', () => ({ fetchActivity: vi.fn() }));
-vi.mock('$lib/study/store', async (importOriginal) => ({
-	...(await importOriginal<typeof import('$lib/study/store')>()),
+vi.mock('$lib/study/data', async (importOriginal) => ({
+	...(await importOriginal<typeof import('$lib/study/data')>()),
+	getStudyData: vi.fn()
+}));
+vi.mock('$lib/study/commands/keyed', async (importOriginal) => ({
+	...(await importOriginal<typeof import('$lib/study/commands/keyed')>()),
 	saveGoals: vi.fn(() => Promise.resolve())
 }));
+vi.mock('$lib/api/stats', () => ({ fetchActivity: vi.fn() }));
 
 import { fetchActivity, type ActivitySource } from '$lib/api/stats';
-import { saveGoals } from '$lib/study/store';
-import { getStudyData } from '$lib/study/studyData';
+import { saveGoals } from '$lib/study/commands/keyed';
+import { getStudyData } from '$lib/study/data';
 import type { StudyData } from '$lib/study/types';
 import { studyDay } from '$lib/time/studyDay';
 import { currentStudyDay } from '$lib/time/zone';

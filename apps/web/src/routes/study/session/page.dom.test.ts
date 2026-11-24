@@ -12,9 +12,12 @@ vi.mock('$lib/study/events', () => ({
 	recordReview: vi.fn(async () => null),
 	recordReplacement: vi.fn(async () => null)
 }));
-vi.mock('$lib/study/store', async (importOriginal) => ({
-	...(await importOriginal<typeof import('$lib/study/store')>()),
-	loadStudyData: vi.fn(),
+vi.mock('$lib/study/data', async (importOriginal) => ({
+	...(await importOriginal<typeof import('$lib/study/data')>()),
+	loadStudyData: vi.fn()
+}));
+vi.mock('$lib/study/commands/cards', async (importOriginal) => ({
+	...(await importOriginal<typeof import('$lib/study/commands/cards')>()),
 	addCard: vi.fn()
 }));
 vi.mock('$lib/study/writing', async (importOriginal) => ({
@@ -52,7 +55,8 @@ import { getSchemeEntries, getSchemes } from '$lib/api/schemes';
 import { recordReplacement, recordReview } from '$lib/study/events';
 import { SESSION_CONFIG_KEY } from '$lib/study/session';
 import { mixFlowQueue } from '$lib/study/sessionMix';
-import { addCard, loadStudyData } from '$lib/study/store';
+import { addCard } from '$lib/study/commands/cards';
+import { loadStudyData } from '$lib/study/data';
 import { usableChars } from '$lib/study/writing';
 import { studyDay } from '$lib/time/studyDay';
 import { currentStudyDay } from '$lib/time/zone';

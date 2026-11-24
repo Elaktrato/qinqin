@@ -1,12 +1,16 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-vi.mock('$lib/study/store', async (importOriginal) => ({
-	...(await importOriginal<typeof import('$lib/study/store')>()),
-	loadRawStudyData: vi.fn(),
+vi.mock('$lib/study/data', async (importOriginal) => ({
+	...(await importOriginal<typeof import('$lib/study/data')>()),
+	loadRawStudyData: vi.fn()
+}));
+vi.mock('$lib/study/commands/write', async (importOriginal) => ({
+	...(await importOriginal<typeof import('$lib/study/commands/write')>()),
 	pushStudy: vi.fn()
 }));
 
-import { loadRawStudyData, pushStudy } from '$lib/study/store';
+import { loadRawStudyData } from '$lib/study/data';
+import { pushStudy } from '$lib/study/commands/write';
 import { addDeckFromOverview } from './addDeckFromOverview';
 
 const raw = () => ({

@@ -11,7 +11,7 @@
 	import { errorText } from '$lib/api/apiErrors';
 	import { onContextStale } from '$lib/study/currentContext';
 	import IconButton from '$lib/ui/IconButton.svelte';
-	import { ALL_WORKSPACES, onStudyWrite } from '$lib/study/store';
+	import { ALL_WORKSPACES, onStudyChange } from '$lib/study/data';
 	import { currentStudyDay } from '$lib/time/zone';
 	import { loadWeek, loadWeekCharacters, type WeekView } from '$lib/weekly/loadWeek';
 	import WeekSummary from '$lib/weekly/WeekSummary.svelte';
@@ -155,7 +155,7 @@
 			if (id !== null && (touched === id || touched === ALL_WORKSPACES)) void load(id, lang, week);
 		};
 		const offLog = onEventLogChange(again);
-		const offWrite = onStudyWrite(again);
+		const offWrite = onStudyChange(again);
 		return () => {
 			offLog();
 			offWrite();

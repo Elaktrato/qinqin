@@ -62,16 +62,9 @@ import { limitsOf } from '$lib/study/scheduler';
 		type StudySessionConfig,
 		type StudySessionMode
 	} from '$lib/study/session';
-	import {
-		GENERAL_DECK_ID,
-		cardsInDecks,
-		createDeck,
-		activeWeights,
-		deleteDeck,
-		loadStudyData,
-		renameDeck,
-		saveDeckCardTypesForDecks
-	} from '$lib/study/store';
+	import { createDeck, deleteDeck, renameDeck, saveDeckCardTypesForDecks } from '$lib/study/commands/decks';
+	import { loadStudyData, onStudyChange, touches } from '$lib/study/data';
+	import { cardsInDecks, activeWeights } from '$lib/study/readModel';
 	import {
 		CARD_KINDS,
 		OPT_IN_KINDS,
@@ -79,7 +72,8 @@ import { limitsOf } from '$lib/study/scheduler';
 		type Deck,
 		type ReviewEvent,
 		type StudyCard,
-		type StudyCardKind
+		type StudyCardKind,
+		GENERAL_DECK_ID
 	} from '$lib/study/types';
 
 	function describeScheduling(data: Awaited<ReturnType<typeof loadStudyData>>): string {
@@ -273,6 +267,15 @@ import { limitsOf } from '$lib/study/scheduler';
 
 	// A new learner day (or zone) changes what is due and on vacation.
 	$effect(() => onContextStale(() => void refreshData()));
+
+	// A change of the workspace's study rows (a write elsewhere on the page, or a
+	// row another device wrote in the second of the load, which the cache's
+	// follow-up round brings, #193) reloads the counts without a new visit.
+	$effect(() =>
+		onStudyChange((changed) => {
+			if (touches(changed, activeWorkspaceId)) void refreshData();
+		})
+	);
 
 	async function loadSchemes(seq: number): Promise<void> {
 		try {
@@ -1136,7 +1139,8 @@ import { limitsOf } from '$lib/study/scheduler';
 			</Section>
 
 			{#if activeWorkspaceId !== null}
-				<CardManager workspaceId={activeWorkspaceId} {cards} decks={allDecks} onchanged={refreshData} />
+				<!-- Its writes reach the page through onStudyChange (one reload each). -->
+				<CardManager workspaceId={activeWorkspaceId} {cards} decks={allDecks} />
 			{/if}
 		{:else}
 			<Section title={t('study.level.title')} headingId="levels-heading">

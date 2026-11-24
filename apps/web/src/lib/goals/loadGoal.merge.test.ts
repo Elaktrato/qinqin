@@ -9,7 +9,7 @@ vi.mock('../time/zone', async () => {
 	return { currentStudyDay: () => studyDay([]) };
 });
 
-import { invalidateStudyHistory } from '../study/history';
+import { endSession } from '../session/sessionEnd';
 import { loadGoalStatus } from './loadGoal';
 import { pagedPull } from '$lib/testing/legacyCodec';
 import * as build from '$lib/testing/study';
@@ -39,11 +39,11 @@ beforeEach(() => {
 		key: () => null,
 		length: 0
 	});
-	invalidateStudyHistory();
+	endSession('signOut');
 });
 afterEach(() => {
 	vi.unstubAllGlobals();
-	invalidateStudyHistory();
+	endSession('signOut');
 });
 
 describe('loadGoalStatus through the canonical merge', () => {
