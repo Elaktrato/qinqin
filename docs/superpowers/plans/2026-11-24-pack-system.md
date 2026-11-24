@@ -257,4 +257,9 @@ The issue predates #172, #176 and #198. Its places, checked in the code at 86fe1
   2 ready, want 1"). Pre-existing: with `-count=20` it fails 3 times on 86fe13a4 and 2 times on the reviewed
   head a2bce403 (also "no rows" once on the base); not caused by #192 and not fixed here (a startup race
   between the lemma-rules sync and the reconcile; a follow-up for the next server issue).
+- Fix-wave gates: `gofmt -l` empty; `go mod tidy -diff` clean; full Go `./...` under the flock: 51 packages
+  ok, only the known `internal/ai` IPv6 test fails; web `check` 0 errors, `build` ok; vitest under Node 26:
+  588 files, 12,602 passed, 2 skipped; e2e 13 passed; `node --test scripts/*.test.mjs` 156 passed;
+  `gen-api-docs --check` and `check-sources` ok. The real-app check was not repeated after the fix wave (the
+  change is covered by the concurrency and route tests).
 
