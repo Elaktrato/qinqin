@@ -3,7 +3,6 @@ package api_test
 import (
 	"fmt"
 	"net/http"
-	"net/http/httptest"
 	"reflect"
 	"strings"
 	"testing"
@@ -77,7 +76,7 @@ func getActivity(t *testing.T, url, token, query string) (*http.Response, activi
 func statsServerAt(t *testing.T, now time.Time) (url, token string, ws int64) {
 	t.Helper()
 	sqlDB := dbtest.Open(t)
-	ts := httptest.NewServer(api.New(sqlDB, t.TempDir(), nil, api.WithClock(func() time.Time { return now })))
+	ts := newTestServer(sqlDB, api.New(sqlDB, t.TempDir(), nil, api.WithClock(func() time.Time { return now })))
 	t.Cleanup(ts.Close)
 	token = registerUser(t, ts.URL, "owner", "")
 	return ts.URL, token, statsWorkspace(t, ts.URL, token, "zh")

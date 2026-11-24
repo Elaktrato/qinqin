@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"net/http/httptest"
 	"slices"
 	"strings"
 	"sync/atomic"
@@ -249,7 +248,7 @@ func TestSearchQueriesBounded(t *testing.T) {
 		count: &count,
 	})
 	t.Cleanup(func() { counted.Close() })
-	ts := httptest.NewServer(api.New(counted, t.TempDir(), nil))
+	ts := newTestServer(counted, api.New(counted, t.TempDir(), nil))
 	t.Cleanup(ts.Close)
 
 	search := func(limit int) []searchHitBody {

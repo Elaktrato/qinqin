@@ -74,17 +74,26 @@ func mkInvite(t *testing.T, sqlDB *sql.DB, maxUses int) string {
 	return tok
 }
 
-func TestBootstrapWorksInEveryMode(t *testing.T) {
+// An empty instance is closed to registration whatever its stored mode
+// (#211): serve bootstraps the admin before the port opens, and with the
+// bootstrap off nobody may register until `adduser --admin` has run, not
+// even on a restored database whose mode is open or invite.
+func TestEmptyInstanceGrantsNoAdminByRegistration(t *testing.T) {
 	for _, mode := range []string{"closed", "invite", "open"} {
 		ts, sqlDB := newLooseServer(t)
 		setAuthSetting(t, sqlDB, "registration", mode)
-		if st, code := regCode(t, ts, "", map[string]any{"username": "firstone", "password": "long-enough-pw"}); st != 201 {
-			t.Errorf("%s: bootstrap = %d %s", mode, st, code)
+		for _, body := range []map[string]any{
+			{"username": "firstone", "password": "long-enough-pw"},
+			{"username": "firstone", "password": "long-enough-pw", "invite": "some-token"},
+		} {
+			if st, code := regCode(t, ts, "", body); st != 403 || code != "registration_closed" {
+				t.Errorf("%s %v: first registration = %d %q, want 403 registration_closed", mode, body, st, code)
+			}
 		}
-		var admin bool
-		sqlDB.QueryRow(`SELECT admin FROM users WHERE username = 'firstone'`).Scan(&admin)
-		if !admin {
-			t.Errorf("%s: first user is not admin", mode)
+		var users int
+		sqlDB.QueryRow(`SELECT COUNT(*) FROM users`).Scan(&users)
+		if users != 0 {
+			t.Errorf("%s: %d users after registrations on an empty instance, want 0", mode, users)
 		}
 	}
 }
@@ -291,21 +300,5 @@ func TestLegacyAdminRegisterIsAudited(t *testing.T) {
 	sqlDB.QueryRow(`SELECT COUNT(*) FROM auth_audit WHERE action = 'user_created' AND actor_name = 'owner'`).Scan(&n)
 	if n != 2 {
 		t.Errorf("user_created rows = %d, want 2 (both legacy branches)", n)
-	}
-}
-
-func TestBootstrapStoresTheValidatedEmail(t *testing.T) {
-	ts, sqlDB := newLooseServer(t)
-	setAuthSetting(t, sqlDB, "email_policy", "required")
-	if st, code := regCode(t, ts, "", map[string]any{"username": "firstone", "password": "long-enough-pw"}); st != 422 || code != "email_required" {
-		t.Fatalf("bootstrap without the required email = %d %s", st, code)
-	}
-	if st, code := regCode(t, ts, "", map[string]any{"username": "firstone", "password": "long-enough-pw", "email": "First@Example.org"}); st != 201 {
-		t.Fatalf("bootstrap = %d %s", st, code)
-	}
-	var email, norm string
-	sqlDB.QueryRow(`SELECT email, email_norm FROM users WHERE username = 'firstone'`).Scan(&email, &norm)
-	if email != "First@example.org" || norm != "first@example.org" {
-		t.Errorf("stored %q / %q", email, norm)
 	}
 }

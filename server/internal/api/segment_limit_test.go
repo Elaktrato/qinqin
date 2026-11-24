@@ -17,7 +17,7 @@ func limitServer(t *testing.T, opts ...api.Option) *httptest.Server {
 	t.Helper()
 	lang.Register(lang.Zh{})
 	sqlDB := dbtest.Open(t)
-	ts := httptest.NewServer(api.New(sqlDB, t.TempDir(), nil, opts...))
+	ts := newTestServer(sqlDB, api.New(sqlDB, t.TempDir(), nil, opts...))
 	t.Cleanup(ts.Close)
 	return ts
 }

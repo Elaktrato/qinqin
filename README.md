@@ -80,17 +80,17 @@ Repository with compose path `docker-compose.yml`). In a folder holding that fil
 
 ```sh
 docker compose up -d
-docker compose exec qinqin qinqin adduser --admin --username you
+docker compose logs qinqin | grep 'bootstrap:'
 ```
 
 The first start installs the bundled dictionaries, frequency and level lists, stroke data and audio by itself
-before it listens (about 2 minutes, once; `QINQIN_AUTO_SEED=0` turns that off). `adduser` asks for a password (10 to 256 characters, not the username). Then open
-<http://localhost:8080>.
+before it listens (about 2 minutes, once; `QINQIN_AUTO_SEED=0` turns that off). Then open
+<http://localhost:8080> and sign in as `admin` with the password from the log.
 
-- **Create the admin before the port is reachable beyond your LAN.** While no user exists, the first
-  registration becomes the administrator, whoever makes it. Or set `QINQIN_BOOTSTRAP_ADMIN` to a username:
-  on the first start the server creates that admin before it opens the port and prints a one-time password in
-  the container log (or uses `QINQIN_BOOTSTRAP_PASSWORD`); it must be changed at the first sign-in.
+- **The first start creates the administrator `admin`** before it opens the port and prints a one-time
+  password in the container log (`docker compose logs qinqin | grep bootstrap:`); it must be changed at the
+  first sign-in. `QINQIN_BOOTSTRAP_ADMIN` picks another name, `QINQIN_BOOTSTRAP_PASSWORD` the password, and
+  `QINQIN_BOOTSTRAP_ADMIN=off` leaves it to `qinqin adduser --admin`. Nobody becomes administrator by registering.
 - **`QINQIN_SECRET` is optional.** Without it the AI features, authenticator apps and a
   stored mail password are unavailable; everything else works. With it
   (`head -c 32 /dev/urandom | base64`) users' AI keys, the mail password and authenticator secrets are stored

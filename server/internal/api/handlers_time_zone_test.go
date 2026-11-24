@@ -24,7 +24,7 @@ var tzNow = time.Date(2026, 11, 15, 10, 0, 0, 0, time.UTC)
 func timeZoneServer(t *testing.T, now time.Time) (*httptest.Server, *sql.DB) {
 	t.Helper()
 	sqlDB := dbtest.Open(t)
-	ts := httptest.NewServer(api.New(sqlDB, t.TempDir(), nil, api.WithClock(func() time.Time { return now })))
+	ts := newTestServer(sqlDB, api.New(sqlDB, t.TempDir(), nil, api.WithClock(func() time.Time { return now })))
 	t.Cleanup(ts.Close)
 	return ts, sqlDB
 }

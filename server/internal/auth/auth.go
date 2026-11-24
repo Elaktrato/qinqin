@@ -75,7 +75,7 @@ var ErrAccountDisabled = errors.New("account disabled")
 // ErrUsernameTaken reports a CreateUser attempt on an existing username.
 var ErrUsernameTaken = errors.New("username taken")
 
-// ErrNotFirst reports a CreateFirstUser attempt on a database that
+// ErrNotFirst reports a BootstrapAdmin attempt on a database that
 // already has users.
 var ErrNotFirst = errors.New("users already exist")
 
@@ -189,33 +189,6 @@ func CreateUser(ctx context.Context, sqlDB *sql.DB, username, password string, a
 		return model.User{}, fmt.Errorf("insert user %q: last insert id: %w", username, err)
 	}
 	return model.User{ID: id, Username: username, Admin: admin, CreatedAt: created}, nil
-}
-
-// CreateFirstUser inserts the instance admin, but only while the users
-// table is empty: the emptiness check and the insert are one statement,
-// so two concurrent first registrations cannot both win. A non-empty
-// table yields ErrNotFirst and writes nothing.
-func CreateFirstUser(ctx context.Context, sqlDB *sql.DB, username, password string) (model.User, error) {
-	created := now()
-	res, err := sqlDB.ExecContext(ctx, `
-		INSERT INTO users (username, hash, admin, updated_at, created_at, username_key)
-		SELECT ?, ?, 1, ?, ?, ? WHERE NOT EXISTS (SELECT 1 FROM users)`,
-		username, Hash(password), created, created, model.UsernameKey(username))
-	if err != nil {
-		return model.User{}, fmt.Errorf("insert first user %q: %w", username, err)
-	}
-	n, err := res.RowsAffected()
-	if err != nil {
-		return model.User{}, fmt.Errorf("insert first user %q: rows affected: %w", username, err)
-	}
-	if n == 0 {
-		return model.User{}, ErrNotFirst
-	}
-	id, err := res.LastInsertId()
-	if err != nil {
-		return model.User{}, fmt.Errorf("insert first user %q: last insert id: %w", username, err)
-	}
-	return model.User{ID: id, Username: username, Admin: true, CreatedAt: created}, nil
 }
 
 // LoginResult is a successful sign-in: the bearer token (shown once) and

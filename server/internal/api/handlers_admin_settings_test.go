@@ -1,6 +1,7 @@
 package api_test
 
 import (
+	"encoding/json"
 	"net/http"
 	"strings"
 	"testing"
@@ -65,10 +66,11 @@ func TestAuthSettingsDefaultsPatchAndAudit(t *testing.T) {
 	}
 }
 
-func TestAuthOptionsArePublicAndTrackBootstrap(t *testing.T) {
+// The options carry no bootstrap flag any more: no registration makes an
+// administrator (#211).
+func TestAuthOptionsArePublic(t *testing.T) {
 	ts, _ := newServer(t)
 	type options struct {
-		Bootstrap         bool   `json:"bootstrap"`
 		Registration      string `json:"registration"`
 		EmailPolicy       string `json:"emailPolicy"`
 		PasswordReset     bool   `json:"passwordReset"`
@@ -77,15 +79,23 @@ func TestAuthOptionsArePublicAndTrackBootstrap(t *testing.T) {
 	}
 	var o options
 	resp := doJSON(t, "GET", ts.URL, "/api/auth/options", "", nil)
+	var raw map[string]any
+	if err := json.NewDecoder(resp.Body).Decode(&raw); err != nil {
+		t.Fatal(err)
+	}
+	if _, ok := raw["bootstrap"]; ok {
+		t.Errorf("empty db options carry bootstrap: %v", raw)
+	}
+	resp = doJSON(t, "GET", ts.URL, "/api/auth/options", "", nil)
 	decodeJSON(t, resp, &o)
-	if resp.StatusCode != 200 || !o.Bootstrap || o.Registration != "closed" || o.PasswordMinLength != 10 || o.PasswordReset || o.EmailCodeLogin {
+	if resp.StatusCode != 200 || o.Registration != "closed" || o.PasswordMinLength != 10 || o.PasswordReset || o.EmailCodeLogin {
 		t.Fatalf("empty db options = %d %+v", resp.StatusCode, o)
 	}
 	owner := registerUser(t, ts.URL, "owner", "")
 	doJSON(t, "PATCH", ts.URL, "/api/admin/settings/auth", owner, map[string]any{"registration": "open", "currentPassword": "secret-pass-owner"})
 	resp = doJSON(t, "GET", ts.URL, "/api/auth/options", "", nil)
 	decodeJSON(t, resp, &o)
-	if o.Bootstrap || o.Registration != "open" {
+	if o.Registration != "open" {
 		t.Errorf("options after first user = %+v", o)
 	}
 	if !strings.HasPrefix(resp.Header.Get("Content-Type"), "application/json") {

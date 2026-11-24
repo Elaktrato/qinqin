@@ -18,7 +18,6 @@ beforeEach(() => {
 });
 
 const opts = (o: object) => ({
-	bootstrap: false,
 	registration: 'closed',
 	emailPolicy: 'off',
 	passwordReset: false,
@@ -47,11 +46,13 @@ describe('register page', () => {
 		expect(screen.queryByLabelText('Username')).toBeNull();
 	});
 
-	it('shows the form with the bootstrap notice on a fresh instance', async () => {
+	it('treats a fresh instance like any closed one: no form, no first-account notice (#211)', async () => {
+		// The server no longer sends bootstrap; a stray flag opens nothing.
 		vi.mocked(getAuthOptions).mockResolvedValue(opts({ bootstrap: true }) as never);
 		render(Page, { context: ctx.context });
-		expect(await screen.findByLabelText('Username')).toBeTruthy();
-		expect(screen.getByText(/first account becomes the administrator/)).toBeTruthy();
+		expect(await screen.findByText(/Registration is closed/)).toBeTruthy();
+		expect(screen.queryByLabelText('Username')).toBeNull();
+		expect(screen.queryByText(/first account/)).toBeNull();
 	});
 
 	it('checks the invite from the fragment, strips it and registers with it', async () => {

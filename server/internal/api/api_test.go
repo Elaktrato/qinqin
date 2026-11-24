@@ -3,7 +3,6 @@ package api_test
 import (
 	"io"
 	"net/http"
-	"net/http/httptest"
 	"testing"
 
 	"qinqin/internal/api"
@@ -13,7 +12,7 @@ import (
 func TestHealthz(t *testing.T) {
 	sqlDB := dbtest.Open(t)
 
-	ts := httptest.NewServer(api.New(sqlDB, t.TempDir(), nil))
+	ts := newTestServer(sqlDB, api.New(sqlDB, t.TempDir(), nil))
 	defer ts.Close()
 
 	resp, err := http.Get(ts.URL + "/healthz")

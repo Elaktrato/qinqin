@@ -34,10 +34,9 @@ func WithImporter(f func(context.Context, *sql.DB, pack.Pack) (string, error)) O
 // AuthHooks replaces the password-hashing entry points of the auth
 // handlers; a nil field keeps the real function.
 type AuthHooks struct {
-	Login           func(ctx context.Context, db *sql.DB, user, pass string) (string, error)
-	CreateFirstUser func(ctx context.Context, db *sql.DB, user, pass string) (model.User, error)
-	CreateUser      func(ctx context.Context, db *sql.DB, user, pass string, admin bool) (model.User, error)
-	Hash            func(password string) string
+	Login      func(ctx context.Context, db *sql.DB, user, pass string) (string, error)
+	CreateUser func(ctx context.Context, db *sql.DB, user, pass string, admin bool) (model.User, error)
+	Hash       func(password string) string
 }
 
 func WithAuthHooks(h AuthHooks) Option {
@@ -47,9 +46,6 @@ func WithAuthHooks(h AuthHooks) Option {
 				tok, err := h.Login(ctx, d, user, pass)
 				return auth.LoginResult{Token: tok, User: model.User{Username: user}}, err
 			}
-		}
-		if h.CreateFirstUser != nil {
-			s.hash.createFirstUser = h.CreateFirstUser
 		}
 		if h.Hash != nil {
 			s.hash.hash = h.Hash

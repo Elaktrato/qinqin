@@ -13,8 +13,6 @@ import (
 	"testing"
 	"time"
 
-	"net/http/httptest"
-
 	"qinqin/internal/api"
 	"qinqin/internal/dbtest"
 	"qinqin/internal/lang"
@@ -131,7 +129,7 @@ func TestExportTicketExpires(t *testing.T) {
 	var mu sync.Mutex
 	clock := func() time.Time { mu.Lock(); defer mu.Unlock(); return now }
 	sqlDB := dbtest.Open(t)
-	ts := httptest.NewServer(api.New(sqlDB, t.TempDir(), nil, api.WithClock(clock)))
+	ts := newTestServer(sqlDB, api.New(sqlDB, t.TempDir(), nil, api.WithClock(clock)))
 	t.Cleanup(ts.Close)
 	alice := registerUser(t, ts.URL, "alice", "")
 	var tk ticketReply

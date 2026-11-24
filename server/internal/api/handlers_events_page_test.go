@@ -232,7 +232,7 @@ func legacyStreamServer(t *testing.T, rows int) (*httptest.Server, string) {
 		}
 		return errors.New("disk read failed")
 	}
-	ts := httptest.NewServer(api.New(sqlDB, t.TempDir(), nil, api.WithEventStream(fail)))
+	ts := newTestServer(sqlDB, api.New(sqlDB, t.TempDir(), nil, api.WithEventStream(fail)))
 	t.Cleanup(ts.Close)
 	return ts, registerUser(t, ts.URL, "alice", "")
 }

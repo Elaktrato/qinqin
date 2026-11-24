@@ -47,7 +47,6 @@ describe('the sign-in views in the lighter look (#106)', () => {
 
 	it('the other-method signs are plain text, not a second button style', async () => {
 		vi.mocked(getAuthOptions).mockResolvedValue({
-			bootstrap: false,
 			registration: 'closed',
 			emailPolicy: 'off',
 			passwordReset: true,
@@ -102,7 +101,6 @@ describe('login page throttling', () => {
 
 describe('login page links follow the instance options', () => {
 	const opts = (o: object) => ({
-		bootstrap: false,
 		registration: 'closed',
 		emailPolicy: 'off',
 		passwordReset: false,
@@ -110,10 +108,12 @@ describe('login page links follow the instance options', () => {
 		passwordMinLength: 10,
 		...o
 	});
-	it('offers account creation on a fresh instance and in open mode', async () => {
+	it('offers account creation only in open mode, not on a fresh instance (#211)', async () => {
+		// The server no longer sends bootstrap; a stray flag offers nothing.
 		vi.mocked(getAuthOptions).mockResolvedValue(opts({ bootstrap: true }) as never);
 		render(Page, { context: ctx.context });
-		expect(await screen.findByRole('link', { name: 'Create one' })).toBeTruthy();
+		await screen.findByText(/Ask your administrator for a reset link/);
+		expect(screen.queryByRole('link', { name: 'Create one' })).toBeNull();
 		cleanup();
 		vi.mocked(getAuthOptions).mockResolvedValue(opts({ registration: 'open' }) as never);
 		render(Page, { context: ctx.context });

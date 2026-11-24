@@ -34,7 +34,7 @@ func newBackupEnv(t *testing.T, opts ...api.Option) *backupEnv {
 	p := api.DefaultAuthPolicy()
 	p.Client.Burst = 5000
 	opts = append([]api.Option{api.WithAuthPolicy(p), api.WithStageDone(e.done)}, opts...)
-	e.ts = httptest.NewServer(api.New(sqlDB, e.data, nil, opts...))
+	e.ts = newTestServer(sqlDB, api.New(sqlDB, e.data, nil, opts...))
 	t.Cleanup(e.ts.Close)
 	return e
 }

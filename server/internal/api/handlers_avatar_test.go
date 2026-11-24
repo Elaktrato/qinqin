@@ -14,7 +14,6 @@ import (
 	"io"
 	"mime/multipart"
 	"net/http"
-	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -417,7 +416,7 @@ func TestAvatarUploadRacingAnAccountDeletionStoresNothing(t *testing.T) {
 			}
 			sqlDB := dbtest.Open(t)
 			dataDir := t.TempDir()
-			ts := httptest.NewServer(api.New(sqlDB, dataDir, nil, api.WithAvatarHook(func() { hook() })))
+			ts := newTestServer(sqlDB, api.New(sqlDB, dataDir, nil, api.WithAvatarHook(func() { hook() })))
 			t.Cleanup(ts.Close)
 			root := registerUser(t, ts.URL, "root", "")
 			e = avatarEnv{url: ts.URL, dataDir: dataDir, root: root, bob: registerUser(t, ts.URL, "bobby", root),

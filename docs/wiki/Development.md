@@ -15,12 +15,13 @@ cd server
 go run ./cmd/qinqin
 ```
 
-First seed and an admin user, in a second terminal:
+The first start on an empty data directory creates the administrator `admin` and prints its password once (`bootstrap: initial password (shown once, never again): ...`); sign in with it and choose your own. `QINQIN_BOOTSTRAP_ADMIN=you go run ./cmd/qinqin` picks the name instead (add `QINQIN_BOOTSTRAP_PASSWORD` to choose the password too). To create the admin yourself, start with `QINQIN_BOOTSTRAP_ADMIN=off` and run `go run ./cmd/qinqin adduser --admin --username you` (without `off`, `adduser` adds a second administrator). See [Deploying](Admin-deploying#the-bootstrap-administrator).
+
+The demo and local packs, in a second terminal:
 
 ```sh
 cd server
 go run ./cmd/qinqin seed --packs ../plugins/data
-go run ./cmd/qinqin adduser --admin --username you
 ```
 
 Stroke animations need the stroke pack, which is not committed: `npm --prefix apps/web ci`, then `node scripts/prepare-strokes-pack.mjs --out plugins/data-strokes/hanzi-writer-strokes`, and seed with `--packs ../plugins/data,../plugins/data-strokes` (from `server/`; without `--packs`, run from the repository root, `seed` picks up `plugins/data-strokes`, `plugins/data-audio` and `plugins/data-local` when they exist).

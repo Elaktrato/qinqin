@@ -18,7 +18,7 @@ This page is for people writing a client or a script (the web app is the referen
 
 Send `Authorization: Bearer <token>`.
 
-1. `GET /api/auth/options` (public, never cached) tells the client what the sign-in page may offer: bootstrap state, registration mode, email policy, whether password reset and emailed-code sign-in exist, and the minimum password length.
+1. `GET /api/auth/options` (public, never cached) tells the client what the sign-in page may offer: registration mode, email policy, whether password reset and emailed-code sign-in exist, and the minimum password length.
 2. `POST /api/auth/login` with `{username, password, deviceName?}` answers `{"status": "ok" | "password_change_required", "token", "user"}`. Both statuses carry a usable token. The token is 64 hex characters, shown once; store it in secure storage and never log it. `deviceName` (max 64 characters) names the session in the session list.
 3. If two-step sign-in applies, login answers `mfa_required` instead and the client completes the second step (contract `auth/mfa-login.json`).
 4. `POST /api/auth/logout` ends exactly that session (204).

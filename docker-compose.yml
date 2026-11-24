@@ -9,11 +9,13 @@
 # (previously ./data; set QINQIN_DATA_VOLUME=./data to keep using it).
 #
 # First run - the first start installs the bundled packs by itself before it
-# listens (about 2 minutes; see QINQIN_AUTO_SEED below). Create the admin
-# BEFORE exposing the port beyond your LAN (until a user exists, the first
-# registration over the API becomes the admin):
+# listens (about 2 minutes; see QINQIN_AUTO_SEED below) and creates the
+# administrator "admin" before it opens the port; its password is printed ONCE
+# in the log (nobody becomes admin by registering):
+#   docker compose logs qinqin | grep 'bootstrap:'
+# See QINQIN_BOOTSTRAP_ADMIN below to pick the name or switch this off and use
 #   docker compose exec qinqin qinqin adduser --username <name> --admin
-# or set QINQIN_BOOTSTRAP_ADMIN below. `qinqin seed` is only needed for the
+# instead. `qinqin seed` is only needed for the
 # demo packs, local packs, or re-seeding after an image with newer packs. Set variables in a .env file next to
 # this file, in the shell, or (Portainer) in the stack's Environment variables.
 #
@@ -61,15 +63,17 @@
 #                    bundled packs (default on; the demo packs are never
 #                    installed this way). See the wiki page Admin-deploying,
 #                    "The auto-seed on the first start".
-#   QINQIN_BOOTSTRAP_ADMIN  username of the first admin, created on the first
-#                    start while the instance has no users (empty = off). The
-#                    admin must set a new password at the first sign-in. Later
-#                    starts ignore it, so it can stay set or be removed.
+#   QINQIN_BOOTSTRAP_ADMIN  username of the first admin, created at a start
+#                    while the instance has no users (empty = "admin"; "off" =
+#                    none: create it with adduser, registration stays closed
+#                    until then). The admin must set a new password at the
+#                    first sign-in. Later starts ignore it, so it can stay set.
 #   QINQIN_BOOTSTRAP_PASSWORD  its initial password (10 to 256 characters, not
 #                    the username). Empty = a random one is generated and
 #                    printed ONCE in the container log (Portainer: Containers,
 #                    qinqin, Logs). Remove it from the stack after the first
-#                    sign-in. An invalid value stops the server from starting.
+#                    sign-in. There is no fixed default password. An invalid
+#                    name or password stops the server from starting.
 #   QINQIN_TESSERACT        path of the tesseract binary; empty = the image's.
 #   QINQIN_AI_PROVIDER      "fake" for testing only; never contacts an AI service.
 #                    "anthropic" (legacy) means QINQIN_AI_PROVIDERS=anthropic.

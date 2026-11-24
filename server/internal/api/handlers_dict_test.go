@@ -28,7 +28,7 @@ func newServerWithDir(t *testing.T) (*httptest.Server, *sql.DB, string) {
 	t.Helper()
 	dataDir := t.TempDir()
 	sqlDB := dbtest.Open(t)
-	ts := httptest.NewServer(api.New(sqlDB, dataDir, nil))
+	ts := newTestServer(sqlDB, api.New(sqlDB, dataDir, nil))
 	t.Cleanup(ts.Close)
 	return ts, sqlDB, dataDir
 }

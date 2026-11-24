@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"database/sql/driver"
 	"fmt"
-	"net/http/httptest"
 	"os"
 	"strings"
 	"sync/atomic"
@@ -253,7 +252,7 @@ func TestEntryCharactersQueriesBounded(t *testing.T) {
 		count: &count,
 	})
 	t.Cleanup(func() { counted.Close() })
-	ts := httptest.NewServer(api.New(counted, t.TempDir(), nil))
+	ts := newTestServer(counted, api.New(counted, t.TempDir(), nil))
 	t.Cleanup(ts.Close)
 
 	two := lexID(t, sqlDB, "zh", "word", "一二")

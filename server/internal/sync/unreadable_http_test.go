@@ -18,7 +18,7 @@ func TestUnreadableStoredRowOverHTTP(t *testing.T) {
 	sqlDB := dbtest.Open(t)
 	ts := httptest.NewServer(api.New(sqlDB, t.TempDir(), nil))
 	t.Cleanup(ts.Close)
-	token := registerAndLogin(t, ts.URL)
+	token := registerAndLogin(t, sqlDB, ts.URL)
 	call := func(method, path, body string) (int, map[string]json.RawMessage) {
 		req, _ := http.NewRequest(method, ts.URL+path, strings.NewReader(body))
 		req.Header.Set("Authorization", "Bearer "+token)

@@ -227,7 +227,7 @@ func TestSyncEndpoints(t *testing.T) {
 		t.Fatalf("anonymous pull status = %d, want 401", resp.StatusCode)
 	}
 
-	token := registerAndLogin(t, ts.URL)
+	token := registerAndLogin(t, sqlDB, ts.URL)
 	call := func(method, path string, body any) *http.Response {
 		var r *bytes.Reader
 		if body != nil {
@@ -260,20 +260,16 @@ func TestSyncEndpoints(t *testing.T) {
 	resp.Body.Close()
 }
 
-// registerAndLogin creates the first (admin) user over HTTP and returns
-// its bearer token.
-func registerAndLogin(t *testing.T, tsURL string) string {
+// registerAndLogin creates the first (admin) user in the database, as
+// `qinqin adduser --admin` does (no registration makes an admin, #211), and
+// returns its bearer token.
+func registerAndLogin(t *testing.T, sqlDB *sql.DB, tsURL string) string {
 	t.Helper()
+	if _, err := auth.CreateUser(context.Background(), sqlDB, "owner", "secret-pass-owner", true); err != nil {
+		t.Fatalf("create admin: %v", err)
+	}
 	creds, _ := json.Marshal(map[string]string{"username": "owner", "password": "secret-pass-owner"})
-	resp, err := http.Post(tsURL+"/api/auth/register", "application/json", bytes.NewReader(creds))
-	if err != nil {
-		t.Fatalf("register: %v", err)
-	}
-	resp.Body.Close()
-	if resp.StatusCode != http.StatusCreated {
-		t.Fatalf("register status = %d, want 201", resp.StatusCode)
-	}
-	resp, err = http.Post(tsURL+"/api/auth/login", "application/json", bytes.NewReader(creds))
+	resp, err := http.Post(tsURL+"/api/auth/login", "application/json", bytes.NewReader(creds))
 	if err != nil {
 		t.Fatalf("login: %v", err)
 	}

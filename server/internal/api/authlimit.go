@@ -140,14 +140,13 @@ func newAuthLimits(p AuthPolicy) *authLimits {
 // hashers are the password-hashing entry points a handler calls; tests
 // swap them through WithAuthHooks to block or count hashes.
 type hashers struct {
-	hash            func(password string) string // a new password's digest (change password)
-	login           func(ctx context.Context, db *sql.DB, user, pass string, o auth.LoginOptions) (auth.LoginResult, error)
-	createFirstUser func(ctx context.Context, db *sql.DB, user, pass string) (model.User, error)
-	createUser      func(ctx context.Context, db *sql.DB, user, pass string, admin bool) (model.User, error)
+	hash       func(password string) string // a new password's digest (change password)
+	login      func(ctx context.Context, db *sql.DB, user, pass string, o auth.LoginOptions) (auth.LoginResult, error)
+	createUser func(ctx context.Context, db *sql.DB, user, pass string, admin bool) (model.User, error)
 }
 
 func defaultHashers() hashers {
-	return hashers{hash: auth.Hash, login: auth.LoginWith, createFirstUser: auth.CreateFirstUser, createUser: auth.CreateUser}
+	return hashers{hash: auth.Hash, login: auth.LoginWith, createUser: auth.CreateUser}
 }
 
 // namedLimiter adapts a Buckets table to the limiter seam.

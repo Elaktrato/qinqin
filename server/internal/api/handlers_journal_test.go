@@ -75,7 +75,7 @@ func newJournalEnvSvc(t *testing.T, mk func(*sql.DB) *ai.Service, withKey bool, 
 	sqlDB := dbtest.Open(t)
 	svc := mk(sqlDB)
 	dataDir := t.TempDir()
-	ts := httptest.NewServer(api.New(sqlDB, dataDir, nil, append([]api.Option{api.WithAI(svc)}, opts...)...))
+	ts := newTestServer(sqlDB, api.New(sqlDB, dataDir, nil, append([]api.Option{api.WithAI(svc)}, opts...)...))
 	t.Cleanup(ts.Close)
 	tok := registerUser(t, ts.URL, "root", "")
 	env := journalEnv{url: ts.URL, token: tok, dataDir: dataDir, db: sqlDB,

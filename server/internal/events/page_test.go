@@ -27,7 +27,7 @@ func newPagingWorld(t *testing.T) pagingWorld {
 	t.Helper()
 	lang.Register(lang.Zh{})
 	ts, sqlDB := newServer(t)
-	aliceID, alice := registerFirstUser(t, ts.URL, "alice")
+	aliceID, alice := registerFirstUser(t, sqlDB, ts.URL, "alice")
 	bobID, bob := registerUser(t, ts.URL, "bob", alice)
 	return pagingWorld{db: sqlDB, alice: aliceID, bob: bobID,
 		zh: createWorkspace(t, ts.URL, alice, "zh"), es: createWorkspace(t, ts.URL, alice, "es"),
