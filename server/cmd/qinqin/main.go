@@ -29,6 +29,7 @@ import (
 	"qinqin/internal/ai"
 	"qinqin/internal/api"
 	"qinqin/internal/auth"
+	"qinqin/internal/datapkg"
 	"qinqin/internal/db"
 	"qinqin/internal/journal"
 	"qinqin/internal/lang"
@@ -250,12 +251,14 @@ func serve(ctx context.Context, data string, listen func() (net.Listener, error)
 
 	// Data packages: one builder goroutine; the startup reconcile builds what
 	// is missing or stale in the background (the catalogue says building).
-	pkgs, pkgsDone := startPackages(bg, sqlDB, data, log.Printf)
-
-	// Lemmatizer rule tables: sync the bundled lemma-rules packs (a changed
-	// one kicks its package), then load every installed table over the
-	// built-in ones (#176).
-	loadLemmaTables(ctx, sqlDB, defaultPacks(), log.Printf, packs.WithOnChange(pkgs.PackChanged))
+	// Lemmatizer rule tables first: sync the bundled lemma-rules packs (a
+	// changed one kicks its package), then load every installed table over
+	// the built-in ones (#176). The sync runs before the builder does: an
+	// import commits its rows and its licence texts in two transactions, and
+	// a build between them would publish a revision without the texts.
+	pkgs, pkgsDone := startPackages(bg, sqlDB, data, log.Printf, func(b *datapkg.Builder) {
+		loadLemmaTables(ctx, sqlDB, defaultPacks(), log.Printf, packs.WithOnChange(b.PackChanged))
+	})
 
 	var apiJobs api.Jobs
 	if ctx.Err() != nil {
