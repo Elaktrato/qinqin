@@ -1,6 +1,7 @@
 package db_test
 
 import (
+	"strings"
 	"testing"
 
 	"qinqin/internal/db"
@@ -109,5 +110,83 @@ func TestMigration044Journal(t *testing.T) {
 		if _, err := sqlDB.Exec(bad); err == nil {
 			t.Errorf("accepted: %s", bad)
 		}
+	}
+}
+
+// A messy populated database (#199 fix wave): what the old plugin rows could
+// hold that the journal's rules refuse is normalised (control characters
+// stripped, an over-long title or text cut, a missing or unreadable stamp
+// replaced by the row's write time, an unknown language read as "en") or, when
+// it cannot be (an impossible date, a bad id, a document that does not
+// decode), dropped with its review. The migration never fails.
+func TestMigration044MessyRows(t *testing.T) {
+	sqlDB := open030(t)
+	if err := db.MigrateThrough(sqlDB, "043_lemma_rules"); err != nil {
+		t.Fatal(err)
+	}
+	put := func(key, data string) {
+		t.Helper()
+		if _, err := sqlDB.Exec(`INSERT INTO plugin_data (pack_id, user_id, workspace_id, key, data, version, updated_at)
+			VALUES ('qinqin-journal', 1, 5, ?, ?, 1, '2026-11-20T10:00:00Z')`, key, data); err != nil {
+			t.Fatal(err)
+		}
+	}
+	long := strings.Repeat("长", 250)
+	put("entry:A", `{"id":"A","date":"2026-11-19","title":"`+long+`","text":"a\u000bb\u000cc\nd","createdAt":""}`)
+	put("entry:B", `{"id":"B","date":"2026-11-19","text":"`+strings.Repeat("字", 50010)+`","createdAt":"yesterday"}`)
+	put("entry:C", `{"id":"C","date":"2026-02-30","text":"impossible date"}`)
+	put("review:C", `{"entryId":"C","annotations":[],"overall":{},"createdAt":"2026-11-20T09:00:00Z"}`)
+	put("entry:bad id", `{"id":"bad id","date":"2026-11-19","text":"bad id"}`)
+	put("entry:D", `{"id":"D","date":"2026-11-19","title":7,"text":"title not a string"}`)
+	put("review:A", `{"entryId":"A","textHash":"h","annotations":[],"overall":{"summary":"s"},"model":"m","createdAt":""}`)
+	put("review:B", `{"entryId":"B","annotations":[{"id":5}],"overall":{}}`)
+	put("suggestions", `{"items":[{"title":"t","prompt":"p","words":["w"]}],"model":"m","createdAt":"soon"}`)
+	put("settings", `{"guidance":"g\u0007`+strings.Repeat("x", 2100)+`","explanationLanguage":"xx"}`)
+	if err := db.MigrateThrough(sqlDB, "044_journal"); err != nil {
+		t.Fatalf("migration 044 on messy rows: %v", err)
+	}
+	type entry struct{ title, text, created string }
+	got := map[string]entry{}
+	rows, err := sqlDB.Query(`SELECT id, title, text, created_at FROM journal_entries WHERE user_id = 1`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for rows.Next() {
+		var id string
+		var e entry
+		rows.Scan(&id, &e.title, &e.text, &e.created)
+		got[id] = e
+	}
+	rows.Close()
+	if len(got) != 3 {
+		t.Errorf("entries %v, want A, B and D", len(got))
+	}
+	if a := got["A"]; a.title != strings.Repeat("长", 200) || a.text != "abc\nd" || a.created != "2026-11-20T10:00:00Z" {
+		t.Errorf("A = %q %q %q", []rune(a.title)[:3], a.text, a.created)
+	}
+	if b := got["B"]; len([]rune(b.text)) != 50000 || b.created != "2026-11-20T10:00:00Z" {
+		t.Errorf("B: %d runes, created %q", len([]rune(b.text)), b.created)
+	}
+	if d := got["D"]; d.title != "" {
+		t.Errorf("D title %q", d.title)
+	}
+	var created string
+	if err := sqlDB.QueryRow(`SELECT created_at FROM journal_reviews WHERE entry_id = 'A'`).Scan(&created); err != nil || created != "2026-11-20T10:00:00Z" {
+		t.Errorf("review A created %q (%v)", created, err)
+	}
+	var n int
+	if err := sqlDB.QueryRow(`SELECT COUNT(*) FROM journal_reviews`).Scan(&n); err != nil || n != 1 {
+		t.Errorf("%d reviews (%v), want 1: C's entry is gone, B's annotations do not decode", n, err)
+	}
+	if err := sqlDB.QueryRow(`SELECT created_at FROM journal_suggestions`).Scan(&created); err != nil || created != "2026-11-20T10:00:00Z" {
+		t.Errorf("suggestions created %q (%v)", created, err)
+	}
+	var guidance, lang string
+	if err := sqlDB.QueryRow(`SELECT guidance, explanation_language FROM journal_settings`).Scan(&guidance, &lang); err != nil ||
+		len([]rune(guidance)) != 2000 || strings.ContainsRune(guidance, 7) || lang != "en" {
+		t.Errorf("settings: %d runes, lang %q (%v)", len([]rune(guidance)), lang, err)
+	}
+	if err := sqlDB.QueryRow(`SELECT COUNT(*) FROM plugin_data WHERE pack_id = 'qinqin-journal'`).Scan(&n); err != nil || n != 0 {
+		t.Errorf("%d journal plugin rows left (%v)", n, err)
 	}
 }

@@ -5,8 +5,10 @@
 -- docs/contracts/grammar/. Not in the paged pull; clients read and write it
 -- through /api/grammar/progress.
 --
--- Rows whose key and JSON decode are copied; anything else of qinqin-grammar
--- is dropped (the owner allows a clean start, NEXT.md).
+-- Rows the progress rules accept are copied (a missing or unreadable
+-- completedAt becomes the row's write time); anything else of qinqin-grammar
+-- is dropped (the owner allows a clean start, NEXT.md), so a personal backup
+-- of the result restores without loss.
 
 CREATE TABLE grammar_progress (
     user_id INTEGER NOT NULL REFERENCES users(id),
@@ -20,17 +22,6 @@ CREATE TABLE grammar_progress (
     PRIMARY KEY (user_id, workspace_id, pack_id, lesson_id)
 );
 
-INSERT OR IGNORE INTO grammar_progress (user_id, workspace_id, pack_id, lesson_id, completed_at, best, total, updated_at)
-SELECT user_id, workspace_id,
-    substr(rest, 1, instr(rest, ':') - 1), substr(rest, instr(rest, ':') + 1),
-    json_extract(data, '$.completedAt'), json_extract(data, '$.best'), json_extract(data, '$.total'), updated_at
-FROM (SELECT *, substr(key, 8) AS rest FROM plugin_data
-    WHERE pack_id = 'qinqin-grammar' AND deleted_at IS NULL AND workspace_id IS NOT NULL AND substr(key, 1, 7) = 'lesson:')
-WHERE instr(rest, ':') > 1 AND instr(rest, ':') < length(rest)
-    AND json_valid(data) AND json_type(data) = 'object'
-    AND json_type(data, '$.completedAt') = 'text'
-    AND json_type(data, '$.best') = 'integer' AND json_type(data, '$.total') = 'integer'
-    AND json_extract(data, '$.best') BETWEEN 0 AND json_extract(data, '$.total')
-    AND json_extract(data, '$.total') <= 1000;
-
-DELETE FROM plugin_data WHERE pack_id = 'qinqin-grammar';
+-- The copy is the Go step of this migration (step045.go): it applies the
+-- progress rules as of #199 (pack and lesson ids, whole numbers, RFC 3339
+-- stamps), which SQL cannot.

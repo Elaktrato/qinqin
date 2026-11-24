@@ -72,3 +72,52 @@ func TestMigration046KeyedRows(t *testing.T) {
 		t.Error("a second user-global home-layout row accepted")
 	}
 }
+
+// A messy populated database (#199 fix wave): the old API let every
+// data-owning plugin keep any key, so one user can hold the same key in both
+// former namespaces. The migration keeps one row per key — the newest edit,
+// on a tie the family's own namespace — and never fails.
+func TestMigration046DuplicateKeysAcrossNamespaces(t *testing.T) {
+	sqlDB := open030(t)
+	if err := db.MigrateThrough(sqlDB, "045_grammar_progress"); err != nil {
+		t.Fatal(err)
+	}
+	put := func(pack string, ws any, key, data string, updated string, modified any) {
+		t.Helper()
+		if _, err := sqlDB.Exec(`INSERT INTO plugin_data (pack_id, user_id, workspace_id, key, data, version, updated_at, modified_at)
+			VALUES (?, 1, ?, ?, ?, 1, ?, ?)`, pack, ws, key, data, updated, modified); err != nil {
+			t.Fatal(err)
+		}
+	}
+	// the newer edit wins, whichever namespace holds it
+	put("qinqin-core", nil, "appearance", `"core-old"`, "2026-11-20T10:00:00Z", "2026-11-20T09:00:00Z")
+	put("qinqin-flashcards", nil, "appearance", `"study-new"`, "2026-11-20T10:00:00Z", "2026-11-20T09:30:00Z")
+	// a tie goes to the family's namespace: known marks are the study namespace's, notes the core's
+	put("qinqin-core", 5, "known:7", `"core"`, "2026-11-20T10:00:00Z", nil)
+	put("qinqin-flashcards", 5, "known:7", `"study"`, "2026-11-20T10:00:00Z", nil)
+	put("qinqin-flashcards", 5, "note:3", `"study"`, "2026-11-20T10:00:00Z", nil)
+	put("qinqin-core", 5, "note:3", `"core"`, "2026-11-20T10:00:00Z", nil)
+	if err := db.MigrateThrough(sqlDB, "046_keyed_rows"); err != nil {
+		t.Fatalf("migration 046 on duplicate keys: %v", err)
+	}
+	got := map[string]string{}
+	rows, err := sqlDB.Query(`SELECT key, data FROM keyed_rows WHERE user_id = 1`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for rows.Next() {
+		var k, d string
+		rows.Scan(&k, &d)
+		got[k] = d
+	}
+	rows.Close()
+	want := map[string]string{"appearance": `"study-new"`, "known:7": `"study"`, "note:3": `"core"`}
+	if len(got) != len(want) {
+		t.Errorf("rows = %v, want %v", got, want)
+	}
+	for k, v := range want {
+		if got[k] != v {
+			t.Errorf("%s = %s, want %s", k, got[k], v)
+		}
+	}
+}

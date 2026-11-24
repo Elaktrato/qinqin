@@ -25,7 +25,12 @@ CREATE TABLE keyed_rows (
 CREATE UNIQUE INDEX idx_keyed_rows_key ON keyed_rows (user_id, IFNULL(workspace_id, 0), key);
 CREATE INDEX idx_keyed_rows_updated ON keyed_rows (user_id, updated_at);
 
-INSERT INTO keyed_rows (user_id, workspace_id, key, data, version, updated_at, modified_at, deleted_at)
+-- The old API let every data-owning plugin keep any key, so one user can hold
+-- the same key in both namespaces: one row per key is kept, the newest edit,
+-- on a tie the family's own namespace (the study namespace for known marks,
+-- milestones, goals and vacations, the core's for the rest), then the lowest
+-- rowid. Rows go in that order and a later duplicate is ignored.
+INSERT OR IGNORE INTO keyed_rows (user_id, workspace_id, key, data, version, updated_at, modified_at, deleted_at)
 SELECT user_id, workspace_id, key, data, version, updated_at, COALESCE(modified_at, updated_at), deleted_at
 FROM plugin_data
 WHERE pack_id IN ('qinqin-core', 'qinqin-flashcards') AND length(key) <= 512 AND (
@@ -34,6 +39,11 @@ WHERE pack_id IN ('qinqin-core', 'qinqin-flashcards') AND length(key) <= 512 AND
         OR (substr(key, 1, 6) = 'known:' AND length(key) > 6)
         OR (substr(key, 1, 10) = 'milestone:' AND length(key) > 10)))
     OR (workspace_id IS NULL AND (key IN ('lookupcfg', 'home-layout', 'activity-view', 'widget-options', 'nav-layout', 'appearance')
-        OR (substr(key, 1, 9) = 'vacation:' AND length(key) > 9))));
+        OR (substr(key, 1, 9) = 'vacation:' AND length(key) > 9))))
+ORDER BY COALESCE(modified_at, updated_at) DESC,
+    CASE WHEN pack_id = (CASE WHEN substr(key, 1, 6) = 'known:' OR substr(key, 1, 10) = 'milestone:'
+        OR key = 'goals:workspace' OR substr(key, 1, 9) = 'vacation:' THEN 'qinqin-flashcards' ELSE 'qinqin-core' END)
+        THEN 0 ELSE 1 END,
+    rowid;
 
 DROP TABLE plugin_data;

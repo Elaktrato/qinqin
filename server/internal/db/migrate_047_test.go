@@ -61,3 +61,34 @@ func TestMigration047FeatureSwitches(t *testing.T) {
 		t.Error("an unknown feature accepted")
 	}
 }
+
+// A messy populated database (#199 fix wave): every plugin state of several
+// users, decks with and without sources; the migration never fails and copies
+// one switch per user and feature.
+func TestMigration047MessyRows(t *testing.T) {
+	sqlDB := open030(t)
+	if err := db.MigrateThrough(sqlDB, "046_keyed_rows"); err != nil {
+		t.Fatal(err)
+	}
+	for _, s := range []string{
+		`INSERT INTO plugin_states (user_id, pack_id, enabled, ord, updated_at) VALUES
+			(1, 'qinqin-flashcards', 0, 9, 'x'), (1, 'qinqin-reader', 1, -3, ''), (1, 'qinqin-journal', 1, 0, 'y'), (1, 'qinqin-grammar', 0, 0, 'z'),
+			(2, 'qinqin-flashcards', 1, 0, 'x'), (2, 'qinqin-core', 0, 0, 'x'), (2, 'qinqin-', 1, 0, 'x'), (2, 'qinqin-journalx', 1, 0, 'x')`,
+		`INSERT INTO study_decks (user_id, workspace_id, id, name, created_at, source, version, updated_at, modified_at) VALUES
+			(1, 5, 'd1', 'n', 'c', NULL, 1, 'u', 'm'), (1, 5, 'd2', 'n', 'c', '{"type":"plugin"}', 1, 'u', 'm'), (1, 5, 'd3', 'n', 'c', '{}', 1, 'u', 'm')`,
+	} {
+		if _, err := sqlDB.Exec(s); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if err := db.MigrateThrough(sqlDB, "047_features"); err != nil {
+		t.Fatalf("migration 047 on messy rows: %v", err)
+	}
+	var n int
+	if err := sqlDB.QueryRow(`SELECT COUNT(*) FROM feature_switches`).Scan(&n); err != nil || n != 5 {
+		t.Errorf("%d switches (%v), want 5", n, err)
+	}
+	if err := sqlDB.QueryRow(`SELECT COUNT(*) FROM study_decks WHERE source IS NULL`).Scan(&n); err != nil || n != 2 {
+		t.Errorf("%d decks without a source (%v), want 2", n, err)
+	}
+}
