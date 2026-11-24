@@ -48,9 +48,9 @@ describe('conversation routes', () => {
 		expect((await getConversation(3, 'c1'))?.id).toBe('c1');
 		expect(vi.mocked(fetch).mock.calls[1][0]).toBe('/api/journal/conversations/c1?workspace=3');
 		const signal = new AbortController().signal;
-		await sendTurn(3, 'c1', '你好', signal);
+		await sendTurn(3, 'c1', '你好', 'T1', signal);
 		[url, init] = vi.mocked(fetch).mock.calls[2];
-		expect([url, JSON.parse(init?.body as string), init?.signal]).toEqual(['/api/journal/conversations/c1/turn?workspace=3', { text: '你好' }, signal]);
+		expect([url, JSON.parse(init?.body as string), init?.signal]).toEqual(['/api/journal/conversations/c1/turn?workspace=3', { text: '你好', turnId: 'T1' }, signal]);
 		const entry = await saveConversation(3, 'c1', 'E1', '2026-11-24');
 		expect(entry?.id).toBe('E1');
 		[url, init] = vi.mocked(fetch).mock.calls[3];
@@ -67,6 +67,6 @@ describe('conversation routes', () => {
 
 	it('refuses an answer that is not a conversation', async () => {
 		vi.mocked(fetch).mockResolvedValue(json({ nope: true }));
-		await expect(sendTurn(3, 'c1', 'x')).rejects.toThrow();
+		await expect(sendTurn(3, 'c1', 'x', 'T1')).rejects.toThrow();
 	});
 });

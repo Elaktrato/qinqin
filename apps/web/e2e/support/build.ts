@@ -60,13 +60,13 @@ export function buildBinary(work: string): string {
 	return bin;
 }
 
-/** The environment every qinqin process of the suite gets: no network services, no proxy, no seed. */
 /**
  * A throw-away secret per test process: it seals the fake AI keys the
  * conversation spec stores, on a server that is deleted with the run.
  */
 const AI_SECRET = randomBytes(32).toString('base64');
 
+/** The environment every qinqin process of the suite gets: no network services, no proxy, no seed, the fake AI. */
 export function serverEnv(packs: string): NodeJS.ProcessEnv {
 	const env: NodeJS.ProcessEnv = {};
 	for (const key of ['PATH', 'HOME', 'TMPDIR', 'GOCOVERDIR']) {

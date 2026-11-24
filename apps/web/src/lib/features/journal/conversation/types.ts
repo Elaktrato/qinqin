@@ -13,6 +13,8 @@ export interface Message {
 	/** Who wrote a partner message. */
 	model?: string;
 	provider?: string;
+	/** The client's id of the turn that wrote it (both messages of a turn). */
+	turnId: string;
 	createdAt: string;
 }
 

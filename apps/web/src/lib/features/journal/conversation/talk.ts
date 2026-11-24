@@ -8,9 +8,11 @@ import { aiErrorView } from '../aiErrors';
 import { anchorAnnotations, type Placed } from '../anchor';
 import type { Correction, CorrectionState } from '../corrections';
 import { annotationKind } from '../review';
-import type { AiGate } from '../editorLogic';
+import { entryTitle, plainText, type AiGate } from '../editorLogic';
 import type { Annotation, JournalEntry } from '../types';
-import { LIMITS } from './conversations';
+import { formatNumber } from '$lib/i18n/format';
+import { pollUntil, type PollOptions } from '../reviewPoll';
+import { LEVELS, LIMITS } from './conversations';
 import type { Conversation, ConversationSummary, Level, Message } from './types';
 
 /**
@@ -75,10 +77,11 @@ export function turnGate(input: {
 	if (input.available === null) return { enabled: false, hint: null, settingsLink: false };
 	if (!input.available) return { enabled: false, hint: input.banner ?? t('journal.gate.noKey'), settingsLink: true };
 	if (input.full) return { enabled: false, hint: t('journal.talk.full'), settingsLink: false };
-	if ([...input.text.trim()].length > LIMITS.messageRunes) {
-		return { enabled: false, hint: t('journal.talk.tooLong', { max: LIMITS.messageRunes }), settingsLink: false };
+	const text = sendableText(input.text);
+	if ([...text].length > LIMITS.messageRunes) {
+		return { enabled: false, hint: t('journal.talk.tooLong', { max: formatNumber(LIMITS.messageRunes) }), settingsLink: false };
 	}
-	if (input.busy || (input.opened && input.text.trim() === '')) return { enabled: false, hint: null, settingsLink: false };
+	if (input.busy || (input.opened && text === '')) return { enabled: false, hint: null, settingsLink: false };
 	return { enabled: true, hint: null, settingsLink: false };
 }
 
@@ -97,30 +100,75 @@ export function levelLabel(level: Level): string {
 }
 
 /**
- * runTurn sends one turn. A 404 means the conversation was saved or discarded
- * elsewhere. When the answer was lost on the way (the network or a proxy cut
- * the request) the server may still have stored the turn: one reload decides.
+ * runTurn sends one turn. A 404 means the conversation was saved or
+ * discarded elsewhere. When the answer was lost on the way (the network or a
+ * proxy cut the request; the server finishes a paid call anyway) or the
+ * server says a call is still in flight, the conversation is polled like a
+ * review until it holds THIS turn (its turn id); growth from another tab
+ * does not count. `onWaiting` is called once when the polling starts.
  */
 export async function runTurn(
-	io: { send(text: string): Promise<Conversation>; reload(): Promise<Conversation | null> },
-	before: Conversation,
-	text: string
+	io: { send(text: string, turnId: string): Promise<Conversation>; reload(): Promise<Conversation | null> },
+	text: string,
+	turnId: string,
+	opts: PollOptions & { onWaiting?: () => void } = {}
 ): Promise<{ conversation: Conversation | null; error: unknown; gone: boolean }> {
 	try {
-		return { conversation: await io.send(text), error: null, gone: false };
+		return { conversation: await io.send(text, turnId), error: null, gone: false };
 	} catch (err) {
-		if (err instanceof ApiError && err.status === 404 && err.code === 'not_found') return { conversation: null, error: null, gone: true };
-		if (aiErrorView(err, 'ideas').poll) {
-			try {
-				const late = await io.reload();
-				if (late === null) return { conversation: null, error: null, gone: true };
-				if (late.messages.length > before.messages.length) return { conversation: late, error: null, gone: false };
-			} catch {
-				// keep the first error
-			}
-		}
+		if (isGone(err)) return { conversation: null, error: null, gone: true };
+		const inFlight = err instanceof ApiError && err.code === 'in_flight';
+		if (!inFlight && !aiErrorView(err, 'ideas').poll) return { conversation: null, error: err, gone: false };
+		opts.onWaiting?.();
+		let gone = false;
+		const stop = new AbortController();
+		opts.signal?.addEventListener('abort', () => stop.abort(), { once: true });
+		const late = await pollUntil(
+			async () => {
+				const c = await io.reload();
+				if (c === null) {
+					gone = true;
+					stop.abort();
+				}
+				return c;
+			},
+			(c) => c.messages.some((m) => m.turnId === turnId),
+			{ ...opts, signal: stop.signal }
+		);
+		if (late) return { conversation: late, error: null, gone: false };
+		if (gone) return { conversation: null, error: null, gone: true };
 		return { conversation: null, error: err, gone: false };
 	}
+}
+
+function isGone(err: unknown): boolean {
+	return err instanceof ApiError && err.status === 404 && err.code === 'not_found';
+}
+
+/** turnErrorText: a failed turn in the conversation's words, else the journal's AI error text. */
+export function turnErrorText(err: unknown): string {
+	const code = err instanceof ApiError ? err.code : undefined;
+	switch (code) {
+		case 'too_long':
+			return t('journal.talk.tooLong', { max: formatNumber(LIMITS.messageRunes) });
+		case 'empty':
+			return t('journal.talk.empty');
+		case 'conversation_limit':
+			return t('journal.talk.limit', { max: LIMITS.conversations });
+		case 'conversation_full':
+			return t('journal.talk.full');
+	}
+	return aiErrorView(err, 'ideas').text;
+}
+
+/** sendableText: a message as the server takes it (no control characters but line breaks and tabs), trimmed. */
+export function sendableText(text: string): string {
+	return plainText(text).trim();
+}
+
+/** startBody: what a start sends: a plain topic of at most LIMITS.topicRunes code points and a known level. */
+export function startBody(topic: string, level: Level): { topic: string; level: Level } {
+	return { topic: entryTitle(topic).trim(), level: LEVELS.includes(level) ? level : 'beginner' };
 }
 
 /**

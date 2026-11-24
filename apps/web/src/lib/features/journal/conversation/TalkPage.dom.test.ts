@@ -46,6 +46,17 @@ describe('TalkPage', () => {
 		await waitFor(() => expect(goto).toHaveBeenCalledWith('/journal/talk/c2'));
 	});
 
+	it('keeps a level the learner picked before the list loaded', async () => {
+		let resolve!: (l: never[]) => void;
+		vi.mocked(listConversations).mockImplementation(() => new Promise((r) => (resolve = r as never)));
+		render(TalkPage, { props: { workspaceId: 3, gate, studyLang: 'zh-Hans' }, context: ctx.context });
+		const select = screen.getByRole('combobox', { name: 'Your level' }) as HTMLSelectElement;
+		await fireEvent.change(select, { target: { value: 'advanced' } });
+		resolve([{ id: 'c1', topic: '', level: 'elementary', messageCount: 1, createdAt: '', updatedAt: '2026-11-24' }] as never);
+		await screen.findByRole('link', { name: /without a topic/ });
+		expect(select.value).toBe('advanced');
+	});
+
 	it('shows a refused start by its error code', async () => {
 		vi.mocked(listConversations).mockResolvedValue([]);
 		const { ApiError } = await import('$lib/api/client');
@@ -53,6 +64,6 @@ describe('TalkPage', () => {
 		render(TalkPage, { props: { workspaceId: 3, gate, studyLang: 'zh-Hans' }, context: ctx.context });
 		expect(await screen.findByText('No open conversations.')).toBeTruthy();
 		await fireEvent.click(screen.getByRole('button', { name: 'Start' }));
-		expect((await screen.findByRole('alert')).textContent).toContain('20 open conversations');
+		expect((await screen.findByRole('alert')).textContent).toContain('You have 20 open conversations.');
 	});
 });

@@ -54,15 +54,16 @@ const empty: Conversation = { id: 'c1', topic: '周末', level: 'elementary', cr
 const talked: Conversation = {
 	...empty,
 	messages: [
-		{ seq: 1, role: 'partner', text: '你好！你周末做什么了？', annotations: [], model: 'claude-x', provider: 'anthropic', createdAt: '' },
+		{ seq: 1, role: 'partner', text: '你好！你周末做什么了？', annotations: [], model: 'claude-x', provider: 'anthropic', turnId: 'o', createdAt: '' },
 		{
 			seq: 2,
 			role: 'learner',
 			text: '我是很好。',
 			annotations: [{ id: 'm2a1', quote: '是很', prefix: '我', suffix: '好。', correction: '很', explanation: 'Kein 是.', category: 'grammar', kind: 'mistake' }],
+			turnId: 't2',
 			createdAt: ''
 		},
-		{ seq: 3, role: 'partner', text: '太好了。', annotations: [], model: 'claude-x', provider: 'anthropic', createdAt: '' }
+		{ seq: 3, role: 'partner', text: '太好了。', annotations: [], model: 'claude-x', provider: 'anthropic', turnId: 't2', createdAt: '' }
 	]
 };
 
@@ -81,7 +82,7 @@ describe('ConversationView', () => {
 		const begin = await screen.findByRole('button', { name: 'Let the partner begin' });
 		expect(primaryActions(document.body)).toEqual([begin]);
 		await fireEvent.click(begin);
-		expect(sendTurn).toHaveBeenCalledWith(3, 'c1', '', expect.any(AbortSignal));
+		expect(sendTurn).toHaveBeenCalledWith(3, 'c1', '', expect.any(String), expect.any(AbortSignal));
 		expect(await screen.findByText('太好了。')).toBeTruthy();
 	});
 
@@ -110,9 +111,47 @@ describe('ConversationView', () => {
 		await fireEvent.input(box, { target: { value: '我去了公园。' } });
 		expect((send as HTMLButtonElement).disabled).toBe(false);
 		await fireEvent.click(send);
-		expect(sendTurn).toHaveBeenCalledWith(3, 'c1', '我去了公园。', expect.any(AbortSignal));
+		expect(sendTurn).toHaveBeenCalledWith(3, 'c1', '我去了公园。', expect.any(String), expect.any(AbortSignal));
 		expect((await screen.findByRole('alert')).textContent).toMatch(/all AI calls for this hour/);
 		expect((box as HTMLTextAreaElement).value).toBe('我去了公园。');
+	});
+
+	it('keeps the focus in the message field through a turn and reads the reply out', async () => {
+		vi.mocked(getConversation).mockResolvedValue(talked);
+		const answered: Conversation = {
+			...talked,
+			messages: [
+				...talked.messages,
+				{ seq: 4, role: 'learner', text: '我去了。', annotations: [], turnId: 'x', createdAt: '' },
+				{ seq: 5, role: 'partner', text: '去哪儿了？', annotations: [], model: 'claude-x', provider: 'anthropic', turnId: 'x', createdAt: '' }
+			]
+		};
+		let resolve!: (c: Conversation) => void;
+		vi.mocked(sendTurn).mockImplementation(() => new Promise((r) => (resolve = r)));
+		show();
+		const box = (await screen.findByRole('textbox', { name: 'Your message' })) as HTMLTextAreaElement;
+		box.focus();
+		await fireEvent.input(box, { target: { value: '我去了。' } });
+		await fireEvent.click(screen.getByRole('button', { name: 'Send' }));
+		// Busy: the field is read-only, not disabled, so it keeps the focus (and the phone keyboard).
+		expect(box.disabled).toBe(false);
+		expect(box.readOnly).toBe(true);
+		box.focus();
+		resolve(answered);
+		await screen.findByText('去哪儿了？');
+		await waitFor(() => expect(box.readOnly).toBe(false));
+		expect(document.activeElement).toBe(box);
+		expect(box.value).toBe('');
+		expect(document.querySelector('.live')?.textContent).toBe('Partner: 去哪儿了？');
+	});
+
+	it('words a refused message for the conversation', async () => {
+		vi.mocked(getConversation).mockResolvedValue(talked);
+		vi.mocked(sendTurn).mockRejectedValue(new ApiError(413, JSON.stringify({ error: 'too_long', message: 'x' })));
+		show();
+		await fireEvent.input(await screen.findByRole('textbox', { name: 'Your message' }), { target: { value: '好' } });
+		await fireEvent.click(screen.getByRole('button', { name: 'Send' }));
+		expect((await screen.findByRole('alert')).textContent).toContain('A message has at most 1,000 characters.');
 	});
 
 	it('says why it cannot send without a key and links the AI settings', async () => {

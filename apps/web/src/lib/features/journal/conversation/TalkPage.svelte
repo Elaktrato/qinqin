@@ -13,7 +13,8 @@
 	import { entryTitle } from '../editorLogic';
 	import { journalHref } from '../route';
 	import { LEVELS, LIMITS, listConversations, startConversation } from './conversations';
-	import { defaultLevel, levelLabel } from './talk';
+	import { defaultLevel, levelLabel, startBody, turnErrorText } from './talk';
+	import { ApiError } from '$lib/api/client';
 	import type { ConversationSummary, Level } from './types';
 
 	let {
@@ -27,6 +28,8 @@
 	let listError = $state('');
 	let topic = $state('');
 	let level = $state<Level>('beginner');
+	// The learner's own pick wins over the default the list gives.
+	let levelPicked = $state(false);
 	let starting = $state(false);
 	let startError = $state('');
 
@@ -37,7 +40,7 @@
 		listConversations(ws).then(
 			(found) => {
 				list = found;
-				level = defaultLevel(found);
+				if (!levelPicked) level = defaultLevel(found);
 			},
 			() => (listError = t('journal.talk.listFailed'))
 		);
@@ -49,10 +52,11 @@
 		starting = true;
 		startError = '';
 		try {
-			const c = await startConversation(workspaceId, entryTitle(topic).trim(), level);
+			const body = startBody(topic, level);
+			const c = await startConversation(workspaceId, body.topic, body.level);
 			await goto(journalHref({ view: 'conversation', id: c.id }));
 		} catch (err) {
-			startError = errorText(err, t('journal.talk.startFailed'));
+			startError = err instanceof ApiError && err.code === 'conversation_limit' ? turnErrorText(err) : errorText(err, t('journal.talk.startFailed'));
 		} finally {
 			starting = false;
 		}
@@ -68,7 +72,7 @@
 	<form class="start" onsubmit={start} aria-labelledby="talk-start">
 		<h2 id="talk-start">{t('journal.talk.startHeading')}</h2>
 		<Field label={t('journal.talk.topic')} bind:value={topic} hint={t('journal.talk.topicHint')} maxlength={LIMITS.topicRunes} lang={studyLang} />
-		<Select label={t('journal.talk.levelLabel')} bind:value={level} options={levelOptions} />
+		<Select label={t('journal.talk.levelLabel')} bind:value={level} options={levelOptions} onchange={() => (levelPicked = true)} />
 		<div class="actions">
 			<Button variant="primary" type="submit" disabled={starting}>{starting ? t('journal.talk.starting') : t('journal.talk.start')}</Button>
 		</div>

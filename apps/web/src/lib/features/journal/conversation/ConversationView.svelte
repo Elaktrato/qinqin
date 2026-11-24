@@ -15,7 +15,7 @@
 	import { recordLookup } from '$lib/lookups/sink';
 	import { newUlid } from '$lib/ulid';
 	import { useSession } from '$lib/context/context';
-	import { aiErrorView, type AiErrorView } from '../aiErrors';
+	import { aiErrorView } from '../aiErrors';
 	import { answeredBy } from '../answeredBy';
 	import CorrectionSheet from '../CorrectionSheet.svelte';
 	import JournalMargin from '../JournalMargin.svelte';
@@ -25,7 +25,7 @@
 	import { journalHref } from '../route';
 	import { getJournalSettings, recordJournalEvent } from '../store';
 	import { discardConversation, getConversation, saveConversation, sendTurn } from './conversations';
-	import { conversationCorrections, isFull, lastAnswer, levelLabel, runTurn, saveAsEntry, turnGate } from './talk';
+	import { conversationCorrections, isFull, lastAnswer, levelLabel, runTurn, saveAsEntry, sendableText, turnErrorText, turnGate } from './talk';
 	import type { Conversation } from './types';
 	const session = useSession();
 
@@ -46,7 +46,11 @@
 	let text = $state('');
 	let busy = $state(false);
 	let live = $state('');
-	let failure = $state<AiErrorView | null>(null);
+	let failure = $state<{ text: string; settingsLink: boolean } | null>(null);
+	// The id of the turn being sent; a retry of the same message reuses it, so
+	// the server answers a turn it already stored instead of a second AI call.
+	let pendingTurn: string | null = null;
+	let field = $state<HTMLInputElement | HTMLTextAreaElement>();
 	let actionError = $state('');
 	let confirmingDiscard = $state(false);
 	let saving = $state(false);
@@ -117,11 +121,12 @@
 		failure = null;
 		live = t('journal.talk.thinking');
 		lookup.close();
-		const before = conversation;
+		const turnId = (pendingTurn ??= newUlid());
 		const r = await runTurn(
-			{ send: (s) => sendTurn(ws, id, s, aborter.signal), reload: () => getConversation(ws, id) },
-			before,
-			text.trim()
+			{ send: (s, tid) => sendTurn(ws, id, s, tid, aborter.signal), reload: () => getConversation(ws, id) },
+			sendableText(text),
+			turnId,
+			{ signal: aborter.signal, onWaiting: () => (live = t('journal.talk.waiting')) }
 		);
 		if (aborter.signal.aborted) return;
 		busy = false;
@@ -130,12 +135,16 @@
 			live = '';
 		} else if (r.conversation) {
 			conversation = r.conversation;
+			pendingTurn = null;
 			text = '';
-			live = t('journal.talk.answered');
+			const reply = [...r.conversation.messages].reverse().find((m) => m.role === 'partner');
+			live = reply ? t('journal.talk.partnerSaid', { text: reply.text }) : t('journal.talk.answered');
 		} else {
-			failure = aiErrorView(r.error, 'ideas');
+			failure = { text: turnErrorText(r.error), settingsLink: aiErrorView(r.error, 'ideas').settingsLink };
 			live = '';
 		}
+		await tick();
+		if (document.activeElement === document.body) field?.focus();
 	}
 
 	function keydown(event: KeyboardEvent): void {
@@ -242,7 +251,10 @@
 						bind:value={text}
 						multiline
 						lang={studyLang}
-						disabled={busy || full}
+						bind:element={field}
+						readonly={busy}
+						aria-busy={busy}
+						disabled={full && !busy}
 						onkeydown={keydown}
 					/>
 					<div class="actions">

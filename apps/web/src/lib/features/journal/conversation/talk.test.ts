@@ -14,10 +14,10 @@ const ann = (id: string, quote: string, prefix: string, suffix: string, kind: 'm
 });
 
 const messages: Message[] = [
-	{ seq: 1, role: 'partner', text: '你好！', annotations: [], model: 'm1', provider: 'anthropic', createdAt: '' },
-	{ seq: 2, role: 'learner', text: '我是很好。', annotations: [ann('m2a1', '是很', '我', '好。')], model: '', provider: '', createdAt: '' },
-	{ seq: 3, role: 'partner', text: '好。', annotations: [], model: 'm2', provider: 'openai', createdAt: '' },
-	{ seq: 4, role: 'learner', text: '我去公园了。我去公园。', annotations: [ann('m4a1', '公园', '我去', '了。我去公园。', 'suggestion'), ann('m4a2', '园了', '我去公', '。我去公园。')], model: '', provider: '', createdAt: '' }
+	{ seq: 1, role: 'partner', text: '你好！', annotations: [], model: 'm1', provider: 'anthropic', turnId: 'p', createdAt: '' },
+	{ seq: 2, role: 'learner', text: '我是很好。', annotations: [ann('m2a1', '是很', '我', '好。')], model: '', provider: '', turnId: 'p', createdAt: '' },
+	{ seq: 3, role: 'partner', text: '好。', annotations: [], model: 'm2', provider: 'openai', turnId: 'p', createdAt: '' },
+	{ seq: 4, role: 'learner', text: '我去公园了。我去公园。', annotations: [ann('m4a1', '公园', '我去', '了。我去公园。', 'suggestion'), ann('m4a2', '园了', '我去公', '。我去公园。')], model: '', provider: '', turnId: 'p', createdAt: '' }
 ];
 
 describe('conversationCorrections', () => {
@@ -59,6 +59,10 @@ describe('lastAnswer', () => {
 
 describe('turnGate', () => {
 	const ready = { available: true, banner: null, opened: true, full: false, busy: false };
+	it('names the limit in the too-long hint', () => {
+		expect(turnGate({ ...ready, text: '字'.repeat(1001) }).hint).toBe('A message has at most 1,000 characters.');
+	});
+
 	it('sends a non-empty message while the AI is usable and the conversation has room', () => {
 		expect(turnGate({ ...ready, text: '你好' }).enabled).toBe(true);
 		expect(turnGate({ ...ready, text: '  ' }).enabled).toBe(false);
@@ -78,7 +82,7 @@ describe('turnGate', () => {
 });
 
 import { ApiError } from '$lib/api/client';
-import { runTurn, saveAsEntry } from './talk';
+import { runTurn, saveAsEntry, startBody, turnErrorText } from './talk';
 import type { Conversation } from './types';
 
 const conv = (n: number): Conversation => ({
@@ -93,30 +97,68 @@ const apiError = (status: number, code: string) =>
 	new ApiError(status, JSON.stringify({ error: code, message: 'x' }));
 
 describe('runTurn', () => {
-	it('answers the stored conversation', async () => {
+	const noSleep = async () => {};
+	const withTurn = (n: number, turnId: string): Conversation => {
+		const c = conv(n);
+		return { ...c, messages: c.messages.map((m, i) => (i >= n - 2 ? { ...m, turnId } : m)) };
+	};
+
+	it('answers the stored conversation and sends the turn id', async () => {
 		const send = vi.fn(async () => conv(3));
-		expect(await runTurn({ send, reload: vi.fn() }, conv(1), '我')).toEqual({ conversation: conv(3), error: null, gone: false });
-		expect(send).toHaveBeenCalledWith('我');
+		expect(await runTurn({ send, reload: vi.fn() }, '我', 't1')).toEqual({ conversation: conv(3), error: null, gone: false });
+		expect(send).toHaveBeenCalledWith('我', 't1');
 	});
 
 	it('reads a 404 as a conversation that is gone', async () => {
-		const r = await runTurn({ send: async () => Promise.reject(apiError(404, 'not_found')), reload: vi.fn() }, conv(1), 'x');
+		const r = await runTurn({ send: async () => Promise.reject(apiError(404, 'not_found')), reload: vi.fn() }, 'x', 't1');
 		expect(r.gone).toBe(true);
 	});
 
-	it('finds the answer of a turn whose reply was lost on the way (a proxy cut it)', async () => {
-		const reload = vi.fn(async () => conv(3));
-		const r = await runTurn({ send: async () => Promise.reject(new TypeError('network')), reload }, conv(1), 'x');
-		expect(r).toEqual({ conversation: conv(3), error: null, gone: false });
+	it('waits for a slow answer the network lost: not yet grown, then this turn arrives', async () => {
+		const reloads = [conv(1), conv(1), withTurn(3, 't1')];
+		const reload = vi.fn(async () => reloads.shift() ?? null);
+		const waiting = vi.fn();
+		const r = await runTurn({ send: async () => Promise.reject(new TypeError('network')), reload }, 'x', 't1', { sleep: noSleep, onWaiting: waiting });
+		expect(r.conversation?.messages).toHaveLength(3);
+		expect(reload).toHaveBeenCalledTimes(3);
+		expect(waiting).toHaveBeenCalledOnce();
 	});
 
-	it('keeps the error when the reload shows nothing new, and for a provider error', async () => {
+	it('also waits when the server says a call is still in flight', async () => {
+		const reload = vi.fn(async () => withTurn(3, 't1'));
+		const r = await runTurn({ send: async () => Promise.reject(apiError(409, 'in_flight')), reload }, 'x', 't1', { sleep: noSleep });
+		expect(r.conversation?.messages).toHaveLength(3);
+	});
+
+	it('does not take growth from another tab for this turn', async () => {
 		const lost = new TypeError('network');
-		expect((await runTurn({ send: async () => Promise.reject(lost), reload: async () => conv(1) }, conv(1), 'x')).error).toBe(lost);
+		const reload = vi.fn(async () => withTurn(3, 'other'));
+		const r = await runTurn({ send: async () => Promise.reject(lost), reload }, 'x', 't1', { sleep: noSleep, timeoutMs: 20, intervalMs: 10 });
+		expect(r).toEqual({ conversation: null, error: lost, gone: false });
+	});
+
+	it('keeps a definite provider error without polling', async () => {
 		const refused = apiError(422, 'refused');
 		const reload = vi.fn();
-		expect((await runTurn({ send: async () => Promise.reject(refused), reload }, conv(1), 'x')).error).toBe(refused);
+		expect((await runTurn({ send: async () => Promise.reject(refused), reload }, 'x', 't1')).error).toBe(refused);
 		expect(reload).not.toHaveBeenCalled();
+	});
+});
+
+describe('turnErrorText', () => {
+	it('words the turn refusals for a message, else as the journal does', () => {
+		expect(turnErrorText(apiError(413, 'too_long'))).toBe('A message has at most 1,000 characters.');
+		expect(turnErrorText(apiError(422, 'empty'))).toBe('Write a message first.');
+		expect(turnErrorText(apiError(409, 'conversation_limit'))).toBe('You have 20 open conversations. Save or discard one first.');
+		expect(turnErrorText(apiError(422, 'wrong_language'))).toContain("this workspace's language");
+	});
+});
+
+describe('startBody', () => {
+	it('sends a plain topic of at most 200 code points and a known level', () => {
+		expect(startBody(' 周末 ', 'advanced')).toEqual({ topic: '周末', level: 'advanced' });
+		expect(startBody('a\u000bb', 'odd' as never)).toEqual({ topic: 'ab', level: 'beginner' });
+		expect([...startBody('字'.repeat(201), 'beginner').topic]).toHaveLength(200);
 	});
 });
 

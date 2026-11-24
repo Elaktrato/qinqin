@@ -45,6 +45,7 @@ function parseMessage(value: unknown): Message | null {
 		role: value.role,
 		text: value.text,
 		annotations,
+		turnId: str(value.turnId),
 		createdAt: str(value.createdAt)
 	};
 	if (typeof value.model === 'string' && value.model !== '') m.model = value.model;
@@ -112,9 +113,13 @@ export async function getConversation(workspaceId: number, id: string): Promise<
 	}
 }
 
-/** One AI turn; an empty text lets the partner open. Answers the stored conversation. */
-export async function sendTurn(workspaceId: number, id: string, text: string, signal?: AbortSignal): Promise<Conversation> {
-	return conversationOf(await api<unknown>(path(workspaceId, id, '/turn'), { body: { text }, signal }));
+/**
+ * One AI turn; an empty text lets the partner open. `turnId` names the turn:
+ * a retry with the same id answers the stored turn without a second AI call.
+ * Answers the stored conversation.
+ */
+export async function sendTurn(workspaceId: number, id: string, text: string, turnId: string, signal?: AbortSignal): Promise<Conversation> {
+	return conversationOf(await api<unknown>(path(workspaceId, id, '/turn'), { body: { text, turnId }, signal }));
 }
 
 /** Saves the conversation as a journal entry (it is removed); answers the entry. */
