@@ -49,7 +49,7 @@ export function serializeLayout(ids: readonly string[]): StoredLayout {
 
 /**
  * resolveLayout turns stored ids into the widgets to render on a
- * surface: unknown and unavailable ids (a disabled plugin, another
+ * surface: unknown and unavailable ids (a switched-off feature, another
  * language) are dropped but stay stored, duplicates keep their first
  * position, the order is kept. No stored layout means DEFAULT_LAYOUT; an
  * empty stored layout stays empty.
@@ -74,7 +74,7 @@ export function resolveLayout(
 /**
  * homeEmptyReason says why the home page shows no widget: the stored
  * layout chose none ('none-chosen'), or it chose some that cannot be
- * shown in this workspace (another language, a disabled plugin:
+ * shown in this workspace (another language, a switched-off feature:
  * 'none-available'). Null while at least one widget is shown.
  */
 export function homeEmptyReason(

@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { t } from '$lib/i18n';
+	import { errorText } from '$lib/api/apiErrors';
 	import { formatDate, formatDay, formatNumber } from '$lib/i18n/format';
 	import { studyLang } from '$lib/i18n/lang';
 	import { onDestroy, onMount, tick, untrack } from 'svelte';
@@ -25,6 +26,8 @@
 	import {
 		ENTRY_MAX_CHARS,
 		aiButtonGate,
+		entryTitle,
+		plainText,
 		canGotoAfterFirstSave,
 		editorTarget,
 		isEntryGone,
@@ -85,6 +88,8 @@
 	let savedText = '';
 	let dirty = false;
 	let saveState = $state<SaveState>('idle');
+	/** Why the last save failed (catalogue text, record 0001). */
+	let saveError = $state('');
 	let timer: ReturnType<typeof setTimeout> | undefined;
 	let saveChain: Promise<boolean> = Promise.resolve(true);
 
@@ -144,7 +149,8 @@
 		}
 		dirty = false;
 		saveState = 'saving';
-		const snapshot: JournalEntry = { ...entry, title, text, date: date || entry.date };
+		// The server refuses control characters and a title over its limit: send what it takes.
+		const snapshot: JournalEntry = { ...entry, title: entryTitle(title), text: plainText(text), date: date || entry.date };
 		const textChanged = snapshot.text !== savedText;
 		try {
 			const saved = await saveEntry(ws, snapshot, opts);
@@ -169,8 +175,9 @@
 				}
 			}
 			return true;
-		} catch {
+		} catch (err) {
 			dirty = true;
+			saveError = errorText(err, t('journal.save.error'));
 			saveState = 'error';
 			return false;
 		}
@@ -206,7 +213,7 @@
 		if (id === null) {
 			const fresh = newEntry('typed', session.zone.day());
 			entry = fresh;
-			title = initialTitle;
+			title = entryTitle(initialTitle);
 			text = '';
 			date = fresh.date;
 			persisted = false;
@@ -513,7 +520,10 @@
 					{/if}
 				</form>
 				<p class="foot" aria-live="polite">{saveStatusText(saveState)
-					? t('journal.editor.foot', { count: formatNumber(chars), status: saveStatusText(saveState) })
+					? t('journal.editor.foot', {
+							count: formatNumber(chars),
+							status: saveState === 'error' ? saveError : saveStatusText(saveState)
+						})
 					: formatNumber(chars)}</p>
 				{#if saveState === 'error'}
 					<Button variant="secondary" onclick={() => void flush()}>{t('journal.editor.save')}</Button>

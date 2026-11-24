@@ -111,3 +111,19 @@ export function tooLongHint(chars: number): string {
 		? t('journal.tooLongHint', { max: formatNumber(MAX_REVIEW_CHARS) })
 		: '';
 }
+
+/** The server's title limit in code points (docs/contracts/journal/entries.json `limits`). */
+export const ENTRY_TITLE_MAX = 200;
+
+/**
+ * plainText drops the control characters the server refuses in a title, a text or the guidance (all but line
+ * breaks and tabs), such as a pasted vertical tab or form feed.
+ */
+export function plainText(s: string): string {
+	return s.replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f-\u009f]/g, '');
+}
+
+/** entryTitle: a title as the server takes it, plain text cut to ENTRY_TITLE_MAX code points. */
+export function entryTitle(s: string): string {
+	return [...plainText(s)].slice(0, ENTRY_TITLE_MAX).join('');
+}

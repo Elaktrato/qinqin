@@ -59,7 +59,7 @@ import {
   fakeStorage,
   jsonResponse,
   rawResponse,
-  type PluginDataRow,
+  type KeyedDataRow,
   pluginRow,
   deck,
   card,

@@ -90,3 +90,13 @@ export function profileOf(code: string): LanguageProfile {
 	const primary = code.trim().toLowerCase().split(/[-_]/)[0] ?? '';
 	return PROFILES.find((p) => p.code === primary && p.code !== '*') ?? FALLBACK;
 }
+
+/** hasCharacterMap: the language offers the character map (Stats → Characters, the map widget): `practiceModes`. */
+export function hasCharacterMap(code: string): boolean {
+	return profileOf(code).practiceModes.includes('characterMap');
+}
+
+/** hasReadings: entries carry a reading system (pinyin, kana), so the reader's Display tab applies: `readings`. */
+export function hasReadings(code: string): boolean {
+	return profileOf(code).readings.length > 0;
+}

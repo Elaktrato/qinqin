@@ -11,7 +11,7 @@
 
 	const session = useSession();
 
-	// Reading time (reader plugin): tracked time in the active workspace,
+	// Reading time (the reader feature): tracked time in the active workspace,
 	// all time, the last 7 and 30 days, and the five most read books.
 
 	let totals = $state.raw<ReadingTotals | null>(null);

@@ -7,9 +7,9 @@
 
 	const session = useSession();
 	// The design's default arrangement first, then every other available
-	// widget in registry order (core, features, plugins); only the home
-	// page is arranged by the user. Plugin widgets join once the plugin
-	// states are loaded, as on home.
+	// widget in registry order (core, then the features'); only the home
+	// page is arranged by the user. Feature widgets join once the feature
+	// switches are loaded, as on home.
 	const states = $derived(session.features.status === 'ready' ? session.features.list : []);
 	const placed = $derived(
 		placeWidgets(

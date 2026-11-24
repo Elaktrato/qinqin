@@ -59,7 +59,7 @@ import {
   fakeStorage,
   jsonResponse,
   rawResponse,
-  type PluginDataRow,
+  type KeyedDataRow,
   pluginRow,
   deck,
   card,
@@ -150,7 +150,7 @@ describe("goal row", () => {
     note: "kept",
     history: [{ from: "2026-11-16", metric: "activity:review", target: 50, by: "android" }],
   };
-  function pull(rows: PluginDataRow[]) {
+  function pull(rows: KeyedDataRow[]) {
     vi.mocked(fetch).mockImplementation(async (input) => {
       if (String(input).startsWith("/api/events")) return jsonResponse([]);
       return jsonResponse({ rows: rows });

@@ -17,7 +17,7 @@
 	import { useSession } from '$lib/context/context';
 	const session = useSession();
 
-	// Word states (flashcards plugin): how many words are new, learning,
+	// Word states (the flashcards feature): how many words are new, learning,
 	// young or mature. Stats shows a per-deck table under the overall
 	// bar; the home variant (compact) shows the overall numbers only.
 

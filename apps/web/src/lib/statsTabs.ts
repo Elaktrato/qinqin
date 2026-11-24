@@ -1,8 +1,8 @@
 // The Stats page's views and their URLs. Pure, so the language rule and
 // the keyboard model of the tablist are tested without rendering.
 
+import { hasCharacterMap } from './languageProfiles';
 import { t, type MessageKey } from './i18n';
-import { usesHan } from './languages';
 import { normalizePath } from './routeAccess';
 
 export type StatsTabId = 'overview' | 'week' | 'characters';
@@ -30,12 +30,12 @@ const CHARACTERS: StatsTab = tab('characters', 'stats.tabs.characters', '/stats/
 /**
  * statsTabs lists the views for the workspace language: Overview always,
  * Week (the weekly summary) with a workspace, Characters (the character
- * map) only for languages written with Han characters. With no workspace
+ * map) only for languages whose profile offers it (practiceModes). With no workspace
  * chosen there is no week or map to show.
  */
 export function statsTabs(language: string | null): StatsTab[] {
 	if (language === null) return [OVERVIEW];
-	return usesHan(language) ? [OVERVIEW, WEEK, CHARACTERS] : [OVERVIEW, WEEK];
+	return hasCharacterMap(language) ? [OVERVIEW, WEEK, CHARACTERS] : [OVERVIEW, WEEK];
 }
 
 /** activeStatsTab is the view a pathname shows, or null outside Stats. */

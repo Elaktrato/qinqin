@@ -82,7 +82,7 @@
 	"settings.ai.usage": "All four arguments are formatted numbers.",
 	"settings.home.layoutSaveFailed": "{reason} is the server's or network's error text.",
 	"settings.home.layoutSaved": "Announced to screen readers after the choice is saved; {layout} is one of settings.home.layout.garden|month|week.",
-	"settings.home.parked": "Follows a list of widget names (\"Journal (qinqin-journal) stays in your layout …\"); the plural follows how many.",
+	"settings.home.parked": "Follows a list of widget names (\"Decks summary (Decks) stays in your layout …\"); the plural follows how many. Features is the Settings tab.",
 	"settings.home.thenJoin": "Joins widget titles in the default layout order (\"Today, then Activity, then Words\").",
 	"settings.navLayout.inBar": "Label of the switch that pins a section to the phone bottom bar.",
 	"settings.navLayout.ruleMore": "One line explaining the five-item rule of the phone bottom bar; More is the label of nav.more.",

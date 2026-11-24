@@ -1,6 +1,5 @@
 // The study layer's persistent shapes. Deck and card definitions live in
-// the workspace-scoped plugin data store, keyed `deck:<id>` and
-// `card:<id>`; review history and scheduling are separate (events, never
+// typed study rows (docs/contracts/study/: decks and cards); review history and scheduling are separate (events, never
 // stored schedules).
 
 import type { ParsedGoals } from '../goals/goals';

@@ -1,7 +1,7 @@
 // TEST-ONLY: the fetch stubs and helpers of the study command tests (#193,
 // split from the old store tests): a pull answered as the typed rows a migrated
-// server serves for v0.3.0-style plugin rows (legacyCodec typedPull), the pushes
-// and plugin-data writes read back as legacy rows, and the one-storage check.
+// server serves for v0.3.0-style keyed rows (legacyCodec typedPull), the pushes
+// and keyed-row writes read back as legacy rows, and the one-storage check.
 import { afterEach, beforeEach, expect, vi } from "vitest";
 import type { StudyEvent } from "../events";
 import type { Deck, StudyCard } from "../study/types";
@@ -28,8 +28,8 @@ export function fakeStorage(): Storage {
 
 /**
  * jsonResponse answers a request. A pull body is described as the v0.3.0
- * plugin rows the study state was; it is served as the migrated server
- * answers it (typed collections, leftovers in pluginData; typedPull).
+ * keyed rows the study state was; it is served as the migrated server
+ * answers it (typed collections, leftovers in rows; typedPull).
  */
 export function jsonResponse(body: unknown, status = 200): Response {
   const isPull =
@@ -45,7 +45,7 @@ export function rawResponse(body: unknown, status = 200): Response {
   });
 }
 
-export interface PluginDataRow {
+export interface KeyedDataRow {
   key: string;
   userId: number;
   workspaceId: number | null;
@@ -58,8 +58,8 @@ export interface PluginDataRow {
 export function pluginRow(
   key: string,
   data: unknown,
-  overrides: Partial<PluginDataRow> = {},
-): PluginDataRow {
+  overrides: Partial<KeyedDataRow> = {},
+): KeyedDataRow {
   return {
     key,
     userId: 1,
@@ -97,7 +97,7 @@ export function calls(): Array<[string, RequestInit | undefined]> {
   >;
 }
 
-/** PUTs to the plugin-data routes: only the keyed rows (goals, known marks, vacations) still use them. */
+/** PUTs to the keyed-row routes: only the keyed rows (goals, known marks, vacations) still use them. */
 export function putBodies(): Array<{ url: string; body: unknown }> {
   return calls()
     .filter(([, init]) => init?.method === "PUT")
@@ -205,7 +205,7 @@ export function reviewEvent(
 
 // The one storage rule, checked after every test (each suite's afterEach
 // calls it before clearing the mocks): no typed study family ever goes
-// through the plugin-data routes or a pluginData push item.
+// through the keyed-row routes or a rows push item.
 export function expectOneStorage(): void {
   const onRoutes = calls()
     .map(([url]) => /^\/api\/rows\/([^?]+)/.exec(String(url))?.[1])

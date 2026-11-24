@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { ApiError } from '$lib/api/client';
 import {
+	ENTRY_TITLE_MAX,
+	entryTitle,
+	plainText,
 	canGotoAfterFirstSave,
 	isEntryGone,
 	navigationPlan,
@@ -139,3 +142,17 @@ describe('tooLongHint', () => {
 	});
 });
 
+
+describe('plain text for the server (#199 fix wave)', () => {
+	it('plainText strips the control characters the server refuses, keeping line breaks and tabs', () => {
+		expect(plainText('a\u000bb\u000cc\nd\te\r\n\u0000\u007f\u0085f')).toBe('abc\nd\te\r\nf');
+		expect(plainText('你好')).toBe('你好');
+	});
+
+	it('entryTitle is plain text of at most ENTRY_TITLE_MAX code points', () => {
+		expect(ENTRY_TITLE_MAX).toBe(200);
+		const t = entryTitle('😀'.repeat(250));
+		expect([...t]).toHaveLength(200);
+		expect(entryTitle('a\u000bb')).toBe('ab');
+	});
+});

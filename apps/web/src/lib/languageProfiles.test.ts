@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import fixture from '../../../../docs/contracts/languages/profiles.json';
-import { PROFILES, profileOf } from './languageProfiles';
+import { PROFILES, hasCharacterMap, hasReadings, profileOf } from './languageProfiles';
 
 // docs/contracts/languages/profiles.json: one core definition per language
 // (#199); the Go table (server/internal/lang/profile.go) reads the same file.
@@ -19,5 +19,10 @@ describe('docs/contracts/languages/profiles.json', () => {
 		expect(profileOf('es')).toMatchObject({ script: 'latin', tones: false, segmentation: 'spaces', readings: [] });
 		expect(profileOf('es').cardKinds).not.toContain('tone');
 		expect(profileOf('es').practiceModes).not.toContain('characterMap');
+	});
+
+	it('hasCharacterMap follows practiceModes, hasReadings follows readings (#199 fix wave)', () => {
+		expect([hasCharacterMap('zh-TW'), hasCharacterMap('ja'), hasCharacterMap('es'), hasCharacterMap('ko')]).toEqual([true, true, false, false]);
+		expect([hasReadings('zh-TW'), hasReadings('ja-JP'), hasReadings('es'), hasReadings('')]).toEqual([true, true, false, false]);
 	});
 });

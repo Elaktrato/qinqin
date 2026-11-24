@@ -8,6 +8,7 @@ import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/sv
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { JournalEntry, Review } from './types';
 import { textHash } from './textHash';
+import { ApiError } from '$lib/api/client';
 
 vi.mock('$app/navigation', () => ({ goto: vi.fn(async () => {}), beforeNavigate: vi.fn() }));
 vi.mock('$app/state', () => ({ page: { url: new URL('http://localhost/journal/e/e1') } }));
@@ -125,6 +126,28 @@ describe('EntryEditor in three columns (#103)', () => {
 		await fireEvent.blur(area);
 		await waitFor(() => expect(saveEntry).toHaveBeenCalled());
 		expect(document.querySelector('[aria-live="polite"]')).toBeTruthy();
+	});
+
+	it('a pasted vertical tab or form feed is never sent: the server refuses control characters (#199)', async () => {
+		await renderEditor();
+		const area = screen.getByLabelText('Entry') as HTMLTextAreaElement;
+		await fireEvent.input(area, { target: { value: 'a\u000bb\u000cc' } });
+		await fireEvent.blur(area);
+		await waitFor(() => expect(saveEntry).toHaveBeenCalled());
+		expect(vi.mocked(saveEntry).mock.calls.at(-1)?.[1].text).toBe('abc');
+	});
+
+	it('a refused save says why, from the catalogue (record 0001)', async () => {
+		vi.mocked(saveEntry).mockRejectedValueOnce(
+			new ApiError(400, JSON.stringify({ error: 'bad_request', message: 'title must be plain text' }))
+		);
+		await renderEditor();
+		const area = screen.getByLabelText('Entry') as HTMLTextAreaElement;
+		await fireEvent.input(area, { target: { value: '我昨天去学校。今天很好。' } });
+		await fireEvent.blur(area);
+		await waitFor(() => expect(document.body.textContent).toContain('The request was not understood.'));
+		expect(document.body.textContent).not.toContain('title must be plain text');
+		expect(screen.getByRole('button', { name: 'Save' })).toBeTruthy();
 	});
 
 	it('after a review shows the marks, the margin and moves focus to the review heading', async () => {

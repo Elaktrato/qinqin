@@ -6,7 +6,7 @@
 	import { onMount } from 'svelte';
 	import { getAiStatus } from '$lib/api/ai';
 	import { aiBanner as bannerOf } from '$lib/settings/aiSettingsView';
-	import { aiButtonGate } from './editorLogic';
+	import { aiButtonGate, entryTitle } from './editorLogic';
 	import EntryEditor from './EntryEditor.svelte';
 	import EntriesColumn from './EntriesColumn.svelte';
 	import JournalMargin from './JournalMargin.svelte';
@@ -73,7 +73,8 @@
 		}
 	});
 
-	const newTitle = $derived(page.url.searchParams.get('title') ?? '');
+	// A title from the address (an idea's) is cut to what the server takes.
+	const newTitle = $derived(entryTitle(page.url.searchParams.get('title') ?? ''));
 
 	let phone = $state(false);
 	let ideasOpen = $state(false);

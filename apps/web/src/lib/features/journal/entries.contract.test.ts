@@ -2,14 +2,14 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { EXPLANATION_LANGUAGES } from './languages';
-import { ENTRY_MAX_CHARS } from './editorLogic';
+import { ENTRY_MAX_CHARS, ENTRY_TITLE_MAX } from './editorLogic';
 import { DEFAULT_SETTINGS, parseEntry, parseSettings } from './store';
 
 const fixture = JSON.parse(
 	readFileSync(resolve(__dirname, '../../../../../../docs/contracts/journal/entries.json'), 'utf8')
 ) as {
 	entry: Record<string, unknown>;
-	limits: { guidanceCodePoints: number; textCodePoints: number };
+	limits: { guidanceCodePoints: number; textCodePoints: number; titleCodePoints: number };
 	settings: {
 		defaults: unknown;
 		explanationLanguages: string[];
@@ -24,6 +24,7 @@ describe('docs/contracts/journal/entries.json', () => {
 
 	it('caps the entry textarea at the server limit (UTF-16 units are never fewer than code points)', () => {
 		expect(ENTRY_MAX_CHARS).toBe(fixture.limits.textCodePoints);
+		expect(ENTRY_TITLE_MAX).toBe(fixture.limits.titleCodePoints);
 	});
 
 	it('offers exactly the listed explanation languages', () => {

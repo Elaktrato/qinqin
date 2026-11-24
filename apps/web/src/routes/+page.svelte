@@ -31,14 +31,14 @@
 	let stored = $state<string[] | null>(null);
 	let layoutReady = $state(false);
 
-	// Plugin widgets join once the shared plugin states are loaded; until
+	// Feature widgets join once the shared feature switches are loaded; until
 	// then, or when they failed, only the core widgets can be shown.
 	const states = $derived(session.features.status === 'ready' ? session.features.list : []);
 	const placed = $derived(
 		placeWidgets(resolveLayout(stored, allWidgets(states, session.workspaces.language), 'home'))
 	);
 	const emptyReason = $derived(homeEmptyReason(stored, placed.length));
-	const hasPlugins = $derived(session.features.status === 'ready' || session.features.status === 'error');
+	const switchesSettled = $derived(session.features.status === 'ready' || session.features.status === 'error');
 
 	onMount(async () => {
 		try {
@@ -95,7 +95,7 @@
 					</div>
 				{/each}
 			</div>
-		{:else if hasPlugins}
+		{:else if switchesSettled}
 			<p class="empty">
 				{emptyReason === 'none-chosen'
 					? t('app.home.noWidgets')

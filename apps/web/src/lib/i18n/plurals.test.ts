@@ -176,8 +176,8 @@ const CASES: [MessageKey, MessageArgs, string, string][] = [
 	[
 		'settings.home.parked',
 		{},
-		'stays in your layout while the plugin is disabled and comes back when you enable it under Plugins.',
-		'stay in your layout while the plugin is disabled and come back when you enable it under Plugins.'
+		'stays in your layout while its feature is switched off and comes back when you switch it on under Features.',
+		'stay in your layout while their feature is switched off and come back when you switch it on under Features.'
 	],
 	// settings, part 2 (Task 16)
 	['settings.tokens.expiresInDays', {}, 'Expires in 1 day', 'Expires in 2 days'],

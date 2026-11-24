@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { errorText } from '$lib/api/apiErrors';
+	import { plainText } from './editorLogic';
 	import { t } from '$lib/i18n';
 	import { formatNumber } from '$lib/i18n/format';
 	import { onMount } from 'svelte';
@@ -44,11 +46,12 @@
 		error = '';
 		status = t('journal.save.saving');
 		try {
-			await saveJournalSettings(workspace.id, { guidance, explanationLanguage: language });
+			// The server refuses control characters (a pasted vertical tab): send what it takes.
+			await saveJournalSettings(workspace.id, { guidance: plainText(guidance), explanationLanguage: language });
 			status = t('journal.save.saved');
-		} catch {
+		} catch (err) {
 			status = '';
-			error = t('journal.settings.saveFailed');
+			error = errorText(err, t('journal.settings.saveFailed'));
 		} finally {
 			saving = false;
 		}

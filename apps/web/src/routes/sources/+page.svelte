@@ -35,7 +35,7 @@
 
 	// Credits declared in code: the app's own, and each core feature's.
 	const coreViews = coreCredits.map(creditView);
-	const plugins = featureCredits(coreFeatures, coreCredits);
+	const features = featureCredits(coreFeatures, coreCredits);
 
 	let dictionaries = $state<Dictionary[]>([]);
 	let loading = $state(true);
@@ -844,14 +844,14 @@
 		</p>
 	</section>
 
-	{#if plugins.length > 0}
+	{#if features.length > 0}
 		<section>
 			<h2 id="sources-features">{t('sources.features.title')}</h2>
 			<p class="lede">{t('sources.features.lede')}</p>
-			{#each plugins as plugin (plugin.id)}
-				<h3 class="plugin-name">{plugin.name}</h3>
-				<ul class="credits" aria-label={t('sources.features.sources', { name: plugin.name })}>
-					{#each plugin.credits as view (view.name)}
+			{#each features as feature (feature.id)}
+				<h3 class="feature-name">{feature.name}</h3>
+				<ul class="credits" aria-label={t('sources.features.sources', { name: feature.name })}>
+					{#each feature.credits as view (view.name)}
 						{@render credit(view, 'h4')}
 					{/each}
 				</ul>
@@ -973,7 +973,7 @@
 		margin-top: 0;
 	}
 
-	.plugin-name {
+	.feature-name {
 		margin: 1.4rem 0 0.4rem;
 	}
 

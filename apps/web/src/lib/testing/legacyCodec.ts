@@ -1,6 +1,6 @@
 // TEST-ONLY: the legacy row codec of server/internal/study/rows (FromLegacy,
 // ToLegacy), mirrored so web tests can describe study state as the v0.3.0
-// plugin rows it was and get the typed pull a migrated server serves for it
+// keyed rows it was and get the typed pull a migrated server serves for it
 // (`typedPull`). Production code never imports this file: the web reads and
 // writes typed rows only. Pinned by docs/contracts/backup/study-rows.json
 // (legacyCodec.test.ts).
@@ -20,7 +20,7 @@ type Obj = Record<string, unknown>;
 /**
  * legacyFamily: the typed collection of a legacy qinqin-flashcards key
  * (`card:`, `deck:`, `deckcfg:`, `limits:workspace`, `limits:deck:`,
- * `fsrs:set:`, `fsrs:active`); null for the keyed rows that stay plugin data.
+ * `fsrs:set:`, `fsrs:active`); null for the keyed rows (`keyed/`).
  */
 export function legacyFamily(key: string): StudyCollection | null {
 	if (key.startsWith('card:')) return 'cards';
