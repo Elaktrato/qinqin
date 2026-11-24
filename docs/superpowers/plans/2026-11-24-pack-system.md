@@ -220,4 +220,14 @@ The issue predates #172, #176 and #198. Its places, checked in the code at 86fe1
   ("database is locked (517)", the other connection committed inside every transaction). With the write
   lock taken first it passes, also `-count=60`; `TestPackageDownload -count=60` passes; the re-import test
   still counts 0 changed rows.
+- Group 2, a changed re-import (must-fix 2): `TestReimportOfAChangedPackStoresTheChange`
+  (`server/internal/packs/changed_reimport_test.go`): for every type, each manifest term (name, version,
+  license, attribution, notice), its language or languages, its own registry columns (levels `unit`, grammar
+  `levels_json`, lemma-rules `rules_json`) and one or more data-row fields, changed in place and re-imported;
+  the stored value is asserted (a type without a case fails). It passes on the fixed code (it guards the
+  existing behaviour). The review's mutations all fail it (13 runs, each restored): insert-only themes
+  `content_hash`, strokes `languages`, grammar `levels_json` and `language`, levels `unit`, the `language` of
+  dictionary, sentences, components and audio, `version` and `license` for every type, and audio's and fonts'
+  `Force` replaced by a length check (the audio run first failed to compile because of the unused `slices`
+  import; rerun with it kept used, it fails on the clip licence, file and same-count form changes).
 
