@@ -62,8 +62,8 @@ func (s *server) handleRegister(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, "bad_request", "Username and password are required.")
 		return
 	}
-	var count int
-	if err := s.db.QueryRowContext(r.Context(), `SELECT COUNT(*) FROM users`).Scan(&count); err != nil {
+	count, err := auth.CountUsers(r.Context(), s.db)
+	if err != nil {
 		internal()
 		return
 	}
@@ -349,7 +349,7 @@ func (s *server) handleAuthOptions(w http.ResponseWriter, r *http.Request) {
 	set, err := auth.LoadSettings(r.Context(), s.db)
 	var count int
 	if err == nil {
-		err = s.db.QueryRowContext(r.Context(), `SELECT COUNT(*) FROM users`).Scan(&count)
+		count, err = auth.CountUsers(r.Context(), s.db)
 	}
 	if err != nil {
 		writeInternal(w, r)

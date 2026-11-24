@@ -7,6 +7,7 @@ import (
 	"qinqin/internal/plugins"
 	"qinqin/internal/stats"
 	"qinqin/internal/studyday"
+	"qinqin/internal/workspaces"
 )
 
 // maxActivitySpanDays bounds one request's cost: the window may cover
@@ -84,7 +85,7 @@ func (s *server) handleActivity(w http.ResponseWriter, r *http.Request) {
 			writeError(w, http.StatusBadRequest, "bad_request", "workspace must be an integer.")
 			return
 		}
-		ok, err := s.workspaceOwned(r.Context(), u.ID, id)
+		ok, err := workspaces.Owned(r.Context(), s.db, u.ID, id)
 		if err != nil {
 			writeInternal(w, r)
 			return

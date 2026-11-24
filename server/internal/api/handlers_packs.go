@@ -15,6 +15,7 @@ import (
 	"qinqin/internal/lemmapack"
 	"qinqin/internal/pack"
 	"qinqin/internal/packs"
+	"qinqin/internal/sentences"
 	"qinqin/internal/themes"
 )
 
@@ -77,26 +78,14 @@ type sentencePackBody struct {
 // the Sources page can credit them. Legacy packs without a registry row
 // have nothing to credit and are not listed.
 func (s *server) handleListSentencePacks(w http.ResponseWriter, r *http.Request) {
-	rows, err := s.db.QueryContext(r.Context(), `
-		SELECT pack_id, name, version, language, license, attribution, notice
-		FROM sentence_packs WHERE deleted_at IS NULL ORDER BY name, pack_id`)
+	packs, err := sentences.ListPacks(r.Context(), s.db)
 	if err != nil {
 		writeInternal(w, r)
 		return
 	}
-	defer rows.Close()
-	list := []sentencePackBody{}
-	for rows.Next() {
-		var p sentencePackBody
-		if err := rows.Scan(&p.PackID, &p.Name, &p.Version, &p.Language, &p.License, &p.Attribution, &p.Notice); err != nil {
-			writeInternal(w, r)
-			return
-		}
-		list = append(list, p)
-	}
-	if err := rows.Err(); err != nil {
-		writeInternal(w, r)
-		return
+	list := make([]sentencePackBody, 0, len(packs))
+	for _, p := range packs {
+		list = append(list, sentencePackBody{p.PackID, p.Name, p.Version, p.Language, p.License, p.Attribution, p.Notice})
 	}
 	writeJSON(w, http.StatusOK, list)
 }

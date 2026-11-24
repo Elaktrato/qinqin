@@ -4,7 +4,7 @@
 
 Accepted
 
-Touched by: #194, #179, #182. A merge from one of these issues that changes what this record names updates the record.
+Touched by: #179, #182. A merge from one of these issues that changes what this record names updates the record.
 
 ## Context
 
@@ -24,7 +24,7 @@ types.
   `DefaultZipLimits`), the type and format constants (`TypeDictionary` ... `TypeFont`, `Formats`),
   `ErrInvalidPack`, `ErrNotFound` with `NotFound`, the registry upsert `UpsertRegistry`, and the helpers
   `Now`, `Placeholders`, `Tuples` and `ReadCapped`. It imports only `internal/lang`, so every type package
-  imports it. `server/internal/dict` only parses and imports dictionaries.
+  imports it. `server/internal/dict` only parses and imports dictionaries and reads the installed ones (`server/internal/dict/installed.go`, record [0003](0003-domain-packages-own-their-sql.md)).
 - **One table of pack types, in two halves, row for row.** The data half is `All` in
   `server/internal/pack/types.go`: one `Descriptor` per type (its registry table, its language shape `One`,
   `Many` or `None`, whether an administrator may upload it, the data package it builds with

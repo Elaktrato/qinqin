@@ -215,9 +215,8 @@ func (s *server) mfaChallenge(w http.ResponseWriter, r *http.Request, token stri
 	if err == nil {
 		u, err = auth.LoadUser(r.Context(), s.db, ch.UserID)
 		if err == nil {
-			var disabled int
-			s.db.QueryRowContext(r.Context(), `SELECT disabled_at IS NOT NULL FROM users WHERE id = ?`, ch.UserID).Scan(&disabled)
-			if disabled != 0 {
+			// An unknown user was refused by LoadUser above.
+			if disabled, _ := auth.Disabled(r.Context(), s.db, ch.UserID); disabled {
 				err = auth.ErrChallengeInvalid
 			}
 		}
@@ -505,11 +504,11 @@ func (s *server) handleEmailLoginVerify(w http.ResponseWriter, r *http.Request) 
 	}
 	refund()
 	u, err := auth.LoadUser(r.Context(), s.db, ch.UserID)
-	var disabled int
+	var disabled bool
 	if err == nil {
-		err = s.db.QueryRowContext(r.Context(), `SELECT disabled_at IS NOT NULL FROM users WHERE id = ?`, ch.UserID).Scan(&disabled)
+		disabled, err = auth.Disabled(r.Context(), s.db, ch.UserID)
 	}
-	if err != nil || disabled != 0 {
+	if err != nil || disabled {
 		writeCodeError(w, auth.ErrChallengeInvalid, false)
 		return
 	}

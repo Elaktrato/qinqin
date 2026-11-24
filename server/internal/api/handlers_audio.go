@@ -1,7 +1,6 @@
 package api
 
 import (
-	"database/sql"
 	"encoding/json"
 	"errors"
 	"net/http"
@@ -18,7 +17,6 @@ const (
 	maxAudioResolveBody = 16 << 10 // POST /api/audio/resolve: up to 200 ids
 	maxAudioResolveIDs  = 200
 	defaultCreditsLimit = 100
-	maxCreditsLimit     = 500
 )
 
 // clipFilePattern is the only shape a clip file name may take: a
@@ -164,16 +162,13 @@ func (s *server) handleAudioClip(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	sha, ext := m[1], m[2]
-	var one int
-	err := s.db.QueryRowContext(r.Context(), `
-		SELECT 1 FROM audio_clips c JOIN audio_packs p ON p.id = c.pack_id
-		WHERE c.sha256 = ? AND c.ext = ? AND p.deleted_at IS NULL LIMIT 1`, sha, ext).Scan(&one)
-	if errors.Is(err, sql.ErrNoRows) {
-		writeError(w, http.StatusNotFound, "not_found", "No such audio clip.")
-		return
-	}
+	active, err := audio.ClipActive(r.Context(), s.db, sha, ext)
 	if err != nil {
 		writeInternal(w, r)
+		return
+	}
+	if !active {
+		writeError(w, http.StatusNotFound, "not_found", "No such audio clip.")
 		return
 	}
 	f, err := os.Open(audio.BlobPath(filepath.Join(s.dataDir, "audio"), sha, ext))
@@ -198,15 +193,11 @@ func (s *server) handleAudioClip(w http.ResponseWriter, r *http.Request) {
 // handleListAudioPacks serves GET /api/audio-packs: the installed audio
 // packs with their terms and clip counts, for the Sources page. Public.
 func (s *server) handleListAudioPacks(w http.ResponseWriter, r *http.Request) {
-	rows, err := s.db.QueryContext(r.Context(), `
-		SELECT p.pack_id, p.name, p.version, p.language, p.license, p.attribution, p.notice,
-			(SELECT COUNT(*) FROM audio_clips c WHERE c.pack_id = p.id)
-		FROM audio_packs p WHERE p.deleted_at IS NULL ORDER BY p.id`)
+	packs, err := audio.Packs(r.Context(), s.db)
 	if err != nil {
 		writeInternal(w, r)
 		return
 	}
-	defer rows.Close()
 	type packJSON struct {
 		PackID      string `json:"packId"`
 		Name        string `json:"name"`
@@ -217,25 +208,16 @@ func (s *server) handleListAudioPacks(w http.ResponseWriter, r *http.Request) {
 		Notice      string `json:"notice"`
 		ClipCount   int    `json:"clipCount"`
 	}
-	out := []packJSON{}
-	for rows.Next() {
-		var p packJSON
-		if err := rows.Scan(&p.PackID, &p.Name, &p.Version, &p.Language, &p.License, &p.Attribution, &p.Notice, &p.ClipCount); err != nil {
-			writeInternal(w, r)
-			return
-		}
-		out = append(out, p)
-	}
-	if rows.Err() != nil {
-		writeInternal(w, r)
-		return
+	out := make([]packJSON, 0, len(packs))
+	for _, p := range packs {
+		out = append(out, packJSON{p.PackID, p.Name, p.Version, p.Language, p.License, p.Attribution, p.Notice, p.ClipCount})
 	}
 	writeJSON(w, http.StatusOK, out)
 }
 
 // handleAudioCredits serves GET /api/audio-packs/{id}/credits?offset=&limit=:
 // the per-recording credits of one pack as text fields only (no clip
-// URLs), limit at most 500. Public; an unknown pack is 404.
+// URLs), limit at most 500 (audio.Credits). Public; an unknown pack is 404.
 func (s *server) handleAudioCredits(w http.ResponseWriter, r *http.Request) {
 	offset, limit := 0, defaultCreditsLimit
 	q := r.URL.Query()
@@ -253,11 +235,10 @@ func (s *server) handleAudioCredits(w http.ResponseWriter, r *http.Request) {
 			writeError(w, http.StatusBadRequest, "bad_request", "Bad limit.")
 			return
 		}
-		limit = min(n, maxCreditsLimit)
+		limit = n
 	}
-	var packRow int64
-	err := s.db.QueryRowContext(r.Context(), `SELECT id FROM audio_packs WHERE pack_id = ? AND deleted_at IS NULL`, r.PathValue("id")).Scan(&packRow)
-	if errors.Is(err, sql.ErrNoRows) {
+	page, err := audio.Credits(r.Context(), s.db, r.PathValue("id"), offset, limit)
+	if errors.Is(err, audio.ErrPackNotFound) {
 		writeError(w, http.StatusNotFound, "not_found", "No such audio pack.")
 		return
 	}
@@ -278,30 +259,9 @@ func (s *server) handleAudioCredits(w http.ResponseWriter, r *http.Request) {
 		Offset int          `json:"offset"`
 		Limit  int          `json:"limit"`
 		Clips  []creditJSON `json:"clips"`
-	}{Offset: offset, Limit: limit, Clips: []creditJSON{}}
-	if err := s.db.QueryRowContext(r.Context(), `SELECT COUNT(*) FROM audio_clips WHERE pack_id = ?`, packRow).Scan(&resp.Total); err != nil {
-		writeInternal(w, r)
-		return
-	}
-	rows, err := s.db.QueryContext(r.Context(), `
-		SELECT kind, form, reading_key, license, attribution, source
-		FROM audio_clips WHERE pack_id = ? ORDER BY id LIMIT ? OFFSET ?`, packRow, limit, offset)
-	if err != nil {
-		writeInternal(w, r)
-		return
-	}
-	defer rows.Close()
-	for rows.Next() {
-		var c creditJSON
-		if err := rows.Scan(&c.Kind, &c.Form, &c.Reading, &c.License, &c.Attribution, &c.Source); err != nil {
-			writeInternal(w, r)
-			return
-		}
-		resp.Clips = append(resp.Clips, c)
-	}
-	if rows.Err() != nil {
-		writeInternal(w, r)
-		return
+	}{Total: page.Total, Offset: page.Offset, Limit: page.Limit, Clips: make([]creditJSON, 0, len(page.Credits))}
+	for _, c := range page.Credits {
+		resp.Clips = append(resp.Clips, creditJSON{c.Kind, c.Form, c.Reading, c.License, c.Attribution, c.Source})
 	}
 	writeJSON(w, http.StatusOK, resp)
 }

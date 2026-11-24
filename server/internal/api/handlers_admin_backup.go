@@ -83,9 +83,8 @@ func (s *server) handleAdminBackupDownload(w http.ResponseWriter, r *http.Reques
 		notFound()
 		return
 	}
-	var admin bool
-	var username string
-	if err := s.db.QueryRowContext(r.Context(), `SELECT admin, username FROM users WHERE id = ? AND disabled_at IS NULL`, uid).Scan(&admin, &username); err != nil || !admin {
+	who, err := auth.ActiveUser(r.Context(), s.db, uid)
+	if err != nil || !who.Admin {
 		notFound()
 		return
 	}

@@ -82,8 +82,8 @@ func (s *server) handleUninstallScheme(w http.ResponseWriter, r *http.Request) {
 	}
 	s.packMu.Lock()
 	defer s.packMu.Unlock()
-	var packID, language string
-	s.db.QueryRowContext(r.Context(), `SELECT pack_id, language FROM schemes WHERE id = ?`, id).Scan(&packID, &language)
+	// The pack the change hook names; an unknown id is refused just below.
+	packID, language, _ := levels.PackOf(r.Context(), s.db, id)
 	if err := levels.Uninstall(r.Context(), s.db, id); err != nil {
 		if errors.Is(err, levels.ErrNotFound) {
 			writeError(w, http.StatusNotFound, "not_found", "Scheme not found.")

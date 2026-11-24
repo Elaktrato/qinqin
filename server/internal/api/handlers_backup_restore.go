@@ -339,8 +339,7 @@ func (s *server) handleSafetyExportDownload(w http.ResponseWriter, r *http.Reque
 		return
 	}
 	defer f.Close()
-	var username string
-	s.db.QueryRowContext(r.Context(), `SELECT username FROM users WHERE id = ?`, uid).Scan(&username)
+	username, _ := auth.Username(r.Context(), s.db, uid) // "" names the file without a user
 	info, _ := f.Stat()
 	w.Header().Set("Content-Type", "application/zip")
 	w.Header().Set("Content-Disposition", `attachment; filename="`+downloadName("qinqin-before-restore", username, info.ModTime(), "zip")+`"`)

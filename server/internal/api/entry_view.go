@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 
+	"qinqin/internal/dict"
 	"qinqin/internal/levels"
 	"qinqin/internal/lexicon"
 	"qinqin/internal/model"
@@ -137,7 +138,11 @@ func buildEntryResponse(ctx context.Context, sqlDB *sql.DB, e *lexicon.Entry, vi
 		resp.Forms = append(resp.Forms, formView{Text: f.Text, Flags: f.Flags, Pri: f.Pri})
 	}
 
-	dicts, err := dictionaryCredits(ctx, sqlDB, e.Senses)
+	ids := make([]int64, 0, len(e.Senses))
+	for _, sn := range e.Senses {
+		ids = append(ids, sn.DictionaryID)
+	}
+	dicts, err := dict.Credits(ctx, sqlDB, ids)
 	if err != nil {
 		return nil, fmt.Errorf("entry %d: %w", e.ID, err)
 	}
@@ -172,24 +177,4 @@ func buildEntryResponse(ctx context.Context, sqlDB *sql.DB, e *lexicon.Entry, vi
 		return nil, err
 	}
 	return resp, nil
-}
-
-// dictionaryCredits loads the dictionaries rows the senses come from,
-// keyed by id. Senses only load for active dictionaries, so every id is
-// found.
-func dictionaryCredits(ctx context.Context, sqlDB *sql.DB, senses []lexicon.Sense) (map[int64]model.Dictionary, error) {
-	out := map[int64]model.Dictionary{}
-	for _, sn := range senses {
-		if _, ok := out[sn.DictionaryID]; ok {
-			continue
-		}
-		var d model.Dictionary
-		if err := sqlDB.QueryRowContext(ctx, `
-			SELECT id, pack_id, name, license, attribution FROM dictionaries WHERE id = ?`,
-			sn.DictionaryID).Scan(&d.ID, &d.PackID, &d.Name, &d.License, &d.Attribution); err != nil {
-			return nil, fmt.Errorf("dictionary %d: %w", sn.DictionaryID, err)
-		}
-		out[sn.DictionaryID] = d
-	}
-	return out, nil
 }
