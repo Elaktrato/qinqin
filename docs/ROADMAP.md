@@ -128,9 +128,9 @@ Tracker [#166](https://github.com/Elaktrato/qinqin/issues/166). Handoff: `docs/s
 - ~~[#175](https://github.com/Elaktrato/qinqin/issues/175) one queue builder for deck and level sessions~~ (`docs/contracts/cards/session-queue.json`)
 - ~~[#176](https://github.com/Elaktrato/qinqin/issues/176) lemmatizer rule tables as `lemma-rules` data packs~~ (`docs/contracts/lemma/`)
 
-## Architecture clean-up ([#190](https://github.com/Elaktrato/qinqin/issues/190), next)
+## Architecture clean-up ([#190](https://github.com/Elaktrato/qinqin/issues/190), in progress)
 
-- Phase 1, foundations: [#198](https://github.com/Elaktrato/qinqin/issues/198) remove the v0.3 compatibility layer, [#191](https://github.com/Elaktrato/qinqin/issues/191) decision records, [#197](https://github.com/Elaktrato/qinqin/issues/197) test infrastructure, [#157](https://github.com/Elaktrato/qinqin/issues/157) browser end-to-end tests ([#133](https://github.com/Elaktrato/qinqin/issues/133) packs stay owner-side)
+- Phase 1, foundations — done (handoff `docs/superpowers/handoffs/2026-11-24-foundations-handoff.md`): ~~[#198](https://github.com/Elaktrato/qinqin/issues/198) remove the v0.3 compatibility layer~~, ~~[#191](https://github.com/Elaktrato/qinqin/issues/191) decision records~~ (`docs/architecture/`), ~~[#197](https://github.com/Elaktrato/qinqin/issues/197) test infrastructure~~, ~~[#157](https://github.com/Elaktrato/qinqin/issues/157) browser end-to-end tests~~ (CI job `e2e`); [#133](https://github.com/Elaktrato/qinqin/issues/133) packs stay owner-side
 - Phase 2, server: [#192](https://github.com/Elaktrato/qinqin/issues/192) one pack system, [#194](https://github.com/Elaktrato/qinqin/issues/194) domain packages
 - Phase 3, web and features: [#193](https://github.com/Elaktrato/qinqin/issues/193) study data layer, [#196](https://github.com/Elaktrato/qinqin/issues/196) one state model, [#199](https://github.com/Elaktrato/qinqin/issues/199) retire code plugins (journal and grammar become core), then [#185](https://github.com/Elaktrato/qinqin/issues/185) AI conversation partner, [#186](https://github.com/Elaktrato/qinqin/issues/186) AI example sentences, [#189](https://github.com/Elaktrato/qinqin/issues/189) profile picture, and last [#195](https://github.com/Elaktrato/qinqin/issues/195) folder layout
 

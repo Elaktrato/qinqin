@@ -20,7 +20,26 @@ https://github.com/Elaktrato/qinqin/wiki
 
 ## What's new
 
+**Study**
+- **Study all** includes every new card and due review; before, a deck without its own limits stopped at 20 new
+  cards and 200 reviews (#175). A character level no longer plans a card type you removed.
+- Offline preparation also saves the opt-in cards (reverse and the others) that your decks switch on (#157).
+- One unreadable study row (saved by a newer version) no longer stops flashcards loading; it is skipped and
+  never overwritten (#167).
+
+**Reading**
+- Lemmatizer rule tables are a data pack type, `lemma-rules`; the Japanese table ships as the `ja-lemma` pack.
+  An installed table replaces the built-in one for its language. Tables are bounded, and the segment and lookup
+  routes are rate-limited (#176).
+
+**Accounts**
+- Signing out, a lapsed session or a user switch in another tab clears every per-user cache in the browser
+  (#173).
+
 **Server and API**
+- Every error answer is JSON `{error, message}` with a code from `docs/contracts/auth/errors.json` (#168).
+- Clean shutdown: HTTP drains, then background work stops, then the database closes; an interrupted first-start
+  seed finishes at the next start (#170, #171).
 - The v0.3 compatibility layer is gone (#198): `GET /api/sync/pull` without `v=2` answers 404; cards, decks,
   deck settings, limits and FSRS sets are no longer served or accepted as `qinqin-flashcards` plugin data;
   `GET /api/plugins` lists real plugins only, with no row per installed data pack (#169). The contract
