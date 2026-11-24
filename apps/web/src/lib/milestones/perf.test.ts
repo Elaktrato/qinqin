@@ -16,7 +16,7 @@ import { loadWorkspaceEvents } from '$lib/events';
 import { pluginStates } from '$lib/plugins/states';
 import { DEFAULT_W } from '$lib/study/fsrs/params';
 import { loadStudyHistory } from '$lib/study/history';
-import { GENERAL_DECK_ID } from '$lib/study/store';
+import { GENERAL_DECK_ID } from '$lib/study/types';
 import { IDENTITY_CLOCK } from '$lib/study/studyClock';
 import type { ReviewEvent, StudyCard } from '$lib/study/types';
 import { studyDay } from '$lib/time/studyDay';

@@ -51,7 +51,8 @@
 	import type { StudyContext } from '$lib/study/studyContext';
 	import { MASTERY_THRESHOLD, masteryForChars } from '$lib/study/mastery';
 	import { DEFAULT_W } from '$lib/study/fsrs/params';
-	import { activeWeights, loadStudyData } from '$lib/study/store';
+	import { loadStudyData } from '$lib/study/store';
+	import { activeWeights } from '$lib/study/readModel';
 	import type { ReviewEvent, StudyCard } from '$lib/study/types';
 	import Button from '$lib/ui/Button.svelte';
 	import Field from '$lib/ui/Field.svelte';

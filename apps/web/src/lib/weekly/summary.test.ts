@@ -4,7 +4,7 @@ import type { ActivityCell, ActivitySource } from '../api/stats';
 import type { CharRow } from '../api/types';
 import { parseGoalsRow, type GoalsRow } from '../goals/goals';
 import { usesHan } from '../languages';
-import { GENERAL_DECK_ID } from '../study/store';
+import { GENERAL_DECK_ID } from '../study/types';
 import type { Run } from '../study/vacation';
 import type { ReviewEvent, StudyCard } from '../study/types';
 import { studyDay, type ZoneChange } from '../time/studyDay';

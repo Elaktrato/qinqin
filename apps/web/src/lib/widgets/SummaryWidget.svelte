@@ -15,7 +15,8 @@
 	import { summaryNumbers, type SummaryNumbers } from '$lib/stats/summary';
 	import { contextForData, onContextStale } from '$lib/study/currentContext';
 	import { loadStudyHistory } from '$lib/study/history';
-	import { activeWeights, ALL_WORKSPACES, onStudyWrite } from '$lib/study/store';
+	import { ALL_WORKSPACES, onStudyWrite } from '$lib/study/store';
+	import { activeWeights } from '$lib/study/readModel';
 	import Stat from '$lib/ui/Stat.svelte';
 	import { workspaces } from '$lib/workspaces';
 	import WidgetCard from './WidgetCard.svelte';

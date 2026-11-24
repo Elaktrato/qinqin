@@ -9,7 +9,8 @@
 	import { setSettings, workspaces } from '$lib/workspaces';
 	import { segmentWithReadings } from '$lib/api/segment';
 	import { scheduleIndex } from '../flashcards/decks/deckStats';
-	import { activeWeights, onStudyWrite } from '$lib/study/store';
+	import { onStudyWrite } from '$lib/study/store';
+	import { activeWeights } from '$lib/study/readModel';
 	import { loadStudyHistory } from '$lib/study/history';
 	import { contextForData } from '$lib/study/currentContext';
 	import { createReadingTimer } from './readingTimer';

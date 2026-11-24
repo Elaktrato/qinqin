@@ -4,9 +4,9 @@
 	import { t } from '$lib/i18n';
 	import { untrack } from 'svelte';
 	import type { Entry } from '$lib/api/types';
-	import { maskWritten, type CardResult, type FlowItem } from '$lib/study/cardFlow';
+	import { type CardResult, type FlowItem } from '$lib/study/cardFlow';
 	import { loadStrokeData } from '$lib/study/strokeData';
-	import { suggestWritingGrade, type CharOutcome } from '$lib/study/writing';
+	import { suggestWritingGrade, type CharOutcome, maskWritten } from '$lib/study/writing';
 	import { parseStrokeData, type CharStrokes } from '$lib/writing/strokes';
 	import WritingPad from './WritingPad.svelte';
 	import Button from '$lib/ui/Button.svelte';

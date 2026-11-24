@@ -3,7 +3,8 @@
 	import { tick } from 'svelte';
 	import { addSentence, getEntry } from '$lib/api/entries';
 	import type { LookupResult } from '$lib/api/types';
-	import { GENERAL_DECK_ID, addCard, setKnownMark } from '$lib/study/store';
+	import { addCard, setKnownMark } from '$lib/study/store';
+	import { GENERAL_DECK_ID } from '$lib/study/types';
 	import { getStudyData, hasCard } from '$lib/study/studyData';
 	import { PROMPT_MIN_COUNT } from '$lib/lookups/lookups';
 	import { lookupRecorder } from '$lib/lookups/store';

@@ -6,7 +6,7 @@
 // companions that do not exist yet are not counted (the setup summary
 // counts them through deckSessionItems).
 
-import { allowedReal, skipKindsByEntry, vocabEntryIds } from './cardFlow';
+import { allowedReal, vocabEntryIds } from './cardFlow';
 import type { DeckSettings } from './deckSettings';
 import { buriedNow } from './siblings';
 import {
@@ -16,7 +16,7 @@ import {
 } from './scheduler';
 import type { LimitRows, StudyContext } from './studyContext';
 import { dayCountsCached, NO_LIMIT, type Admission, type DayCounts } from './limits';
-import { admitSession } from './sessionQueue';
+import { admitSession, skipKindsByEntry } from './sessionQueue';
 import type { ReviewEvent, StudyCard, StudyCardKind } from './types';
 
 /** Limits that never refuse anything. */

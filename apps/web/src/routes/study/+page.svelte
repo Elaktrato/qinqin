@@ -63,15 +63,13 @@ import { limitsOf } from '$lib/study/scheduler';
 		type StudySessionMode
 	} from '$lib/study/session';
 	import {
-		GENERAL_DECK_ID,
-		cardsInDecks,
 		createDeck,
-		activeWeights,
 		deleteDeck,
 		loadStudyData,
 		renameDeck,
 		saveDeckCardTypesForDecks
 	} from '$lib/study/store';
+	import { cardsInDecks, activeWeights } from '$lib/study/readModel';
 	import {
 		CARD_KINDS,
 		OPT_IN_KINDS,
@@ -79,7 +77,8 @@ import { limitsOf } from '$lib/study/scheduler';
 		type Deck,
 		type ReviewEvent,
 		type StudyCard,
-		type StudyCardKind
+		type StudyCardKind,
+		GENERAL_DECK_ID
 	} from '$lib/study/types';
 
 	function describeScheduling(data: Awaited<ReturnType<typeof loadStudyData>>): string {

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
 	isHan,
+	maskWritten,
 	suggestWritingGrade,
 	usableChars,
 	writableChars,
@@ -52,5 +53,14 @@ describe('usableChars', () => {
 	it('drops characters without stroke data', async () => {
 		const load = async (ch: string) => (ch === '习' ? null : {});
 		expect(await usableChars('学习生a', load)).toEqual(['学', '生']);
+	});
+});
+
+describe('maskWritten', () => {
+	it('maskWritten hides the usable characters not yet written', () => {
+		expect(maskWritten('食べ物', ['食', '物'], 0)).toBe('□べ□');
+		expect(maskWritten('食べ物', ['食', '物'], 1)).toBe('食べ□');
+		expect(maskWritten('食べ物', ['食', '物'], 2)).toBe('食べ物');
+		expect(maskWritten('好好', ['好'], 0)).toBe('□□');
 	});
 });

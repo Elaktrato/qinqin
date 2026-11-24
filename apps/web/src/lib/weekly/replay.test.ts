@@ -7,7 +7,7 @@ import { cellStates, masteryGlyphs, sectionStats } from '../study/charGroups';
 import { masteryFromSchedules } from '../study/mastery';
 import { scheduleAt, type TimelinePoint } from '../study/scheduler';
 import { IDENTITY_CLOCK, clockFromRuns } from '../study/studyClock';
-import { GENERAL_DECK_ID } from '../study/store';
+import { GENERAL_DECK_ID } from '../study/types';
 import type { ReviewEvent, StudyCard } from '../study/types';
 import { addDays, studyDay, type ZoneChange } from '../time/studyDay';
 import {

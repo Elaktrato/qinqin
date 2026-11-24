@@ -18,11 +18,7 @@ import { V2_STUDY_COLLECTIONS, firstPageUrl, pullAll } from "../sync/pager";
 import { readableRow } from "../sync/rows";
 import { fetchFullLog, type StudyEvent } from "../events";
 import { canonicalCards, cleanSkipKinds, compareCanonical, newCardId } from "./canonical";
-import {
-  DEFAULT_W,
-  resolveState,
-  type ParamSet,
-} from "./fsrs/params";
+import { resolveState, type ParamSet } from "./fsrs/params";
 import {
   cleanCardTypes,
   type DeckSettings,
@@ -83,9 +79,7 @@ import {
 export const FLASHCARDS_PLUGIN_ID = "qinqin-flashcards";
 
 // The implicit deck always exists; it is never written to plugin data.
-// Defined in types.ts (#175) so pure modules need not import the store.
 import { GENERAL_DECK_ID } from "./types";
-export { GENERAL_DECK_ID };
 
 // Only the fields the study layer reads; the server sends more.
 interface PluginDataRow {
@@ -787,11 +781,6 @@ export function loadStudyDataFor(workspaceId: number): Promise<StudyData> {
   return fetchStudyData(workspaceId);
 }
 
-/** activeWeights is the workspace's FSRS weights; the defaults without a set. */
-export function activeWeights(data: Pick<StudyData, "fsrs">): readonly number[] {
-  return data.fsrs?.w ?? DEFAULT_W;
-}
-
 /** saveParamSet stores a new ULID-keyed parameter set; it never makes it active. */
 export async function saveParamSet(
   workspaceId: number,
@@ -1427,15 +1416,6 @@ export async function dropSiblingCards(
     }
   }
   return previous;
-}
-
-/** cardsInDecks keeps the cards that belong to at least one of `deckIds`. */
-export function cardsInDecks(
-  cards: readonly StudyCard[],
-  deckIds: readonly string[],
-): StudyCard[] {
-  const wanted = new Set(deckIds);
-  return cards.filter((card) => card.deckIds.some((id) => wanted.has(id)));
 }
 
 /** saveVacation stores one vacation period (user-global: no workspace). */

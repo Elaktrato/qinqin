@@ -10,7 +10,7 @@
 	} from '$lib/stats/wordStates';
 	import { contextForData, onContextStale } from '$lib/study/currentContext';
 	import { loadStudyHistory } from '$lib/study/history';
-	import { activeWeights } from '$lib/study/store';
+	import { activeWeights } from '$lib/study/readModel';
 	import { workspaces } from '$lib/workspaces';
 	import { flashcardsHref } from '$lib/features/flashcards/route';
 	import WidgetCard from './WidgetCard.svelte';

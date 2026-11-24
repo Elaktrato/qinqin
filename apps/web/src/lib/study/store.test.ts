@@ -14,9 +14,7 @@ import { gradeItem } from "./grade";
 import type { StudyEvent } from "../events";
 import type { Deck, StudyCard } from "./types";
 import {
-  GENERAL_DECK_ID,
   addCard,
-  cardsInDecks,
   createDeck,
   PartialCardsError,
   deleteCards,
@@ -34,7 +32,6 @@ import {
   saveParamSet,
   setActiveSet,
   deleteParamSet,
-  activeWeights,
   loadRawStudyData,
   pushStudy,
   PartialPushError,
@@ -48,8 +45,10 @@ import {
   setKnownMarks,
   saveSeenMilestones,
   loadStudyDataWith,
-  ALL_WORKSPACES,
+  ALL_WORKSPACES
 } from "./store";
+import { GENERAL_DECK_ID } from './types';
+import { cardsInDecks, activeWeights } from './readModel';
 import seenMergeFixture from "../../../../../docs/contracts/milestones/seen-merge.json";
 import { DEFAULT_W, type ParamSet } from "./fsrs/params";
 import { legacyFamily, pageOf, pagedPull, toLegacy } from '$lib/testing/legacyCodec';

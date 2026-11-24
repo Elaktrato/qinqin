@@ -10,26 +10,21 @@ import {
 	deckSessionItems,
 	deckSessionPlan,
 	dropItem,
-	backfillLimit,
 	buryAfterAnswer,
 	clozeDistractorPool,
 	revealsOnKey,
 	isChinese,
 	isEligible,
 	levelSessionItems,
-	maskWritten,
 	pickSentence,
-	pinyinReadings,
 	rememberDrop,
 	resolveSentence,
 	reviewCountFor,
 	sessionCounts,
 	shouldIgnoreGrade,
-	tierForCard,
-	tonePadLabels,
-	toneVerdict
+	tierForCard
 } from './cardFlow';
-import { parsePinyin } from './tones';
+import { backfillLimit } from './sessionQueue';
 import type { DeckSessionOptions, DeckSessionPlan, EligibilityContext, EntryLike, FlowItem } from './cardFlow';
 import type { LimitPair } from './limits';
 import type { Run } from './vacation';
@@ -138,16 +133,6 @@ describe('helpers', () => {
 		expect(isChinese('')).toBe(false);
 	});
 
-	it('pinyinReadings keeps pinyin values only', () => {
-		expect(
-			pinyinReadings([
-				{ type: 'pinyin', value: 'háng' },
-				{ type: 'bopomofo', value: 'ㄏㄤˊ' },
-				{ type: 'pinyin', value: 'xíng' }
-			])
-		).toEqual(['háng', 'xíng']);
-	});
-
 	it('reviewCountFor counts valid reviews of one card', () => {
 		const reviews = [
 			review('a', '2026-01-01T00:00:00Z'),
@@ -172,41 +157,6 @@ describe('helpers', () => {
 		expect(tierForCard('a', reviews, now, DEFAULT_W, IDENTITY_CLOCK)).toBe(2);
 	});
 
-	it('maskWritten hides the usable characters not yet written', () => {
-		expect(maskWritten('食べ物', ['食', '物'], 0)).toBe('□べ□');
-		expect(maskWritten('食べ物', ['食', '物'], 1)).toBe('食べ□');
-		expect(maskWritten('食べ物', ['食', '物'], 2)).toBe('食べ物');
-		expect(maskWritten('好好', ['好'], 0)).toBe('□□');
-	});
-});
-
-describe('toneVerdict', () => {
-	it('marks each syllable against the best matching reading', () => {
-		const candidates = [parsePinyin('xué xí')];
-		expect(toneVerdict([2, 2], candidates)).toEqual({
-			correct: true,
-			wrong: 0,
-			marks: [true, true],
-			best: candidates[0]
-		});
-		const verdict = toneVerdict([2, 4], candidates);
-		expect(verdict.wrong).toBe(1);
-		expect(verdict.marks).toEqual([true, false]);
-	});
-
-	it('accepts any reading of a polyphone with the same length', () => {
-		const candidates = [parsePinyin('háng'), parsePinyin('xíng')];
-		expect(toneVerdict([2], candidates).correct).toBe(true);
-		const both = [parsePinyin('zhǎng'), parsePinyin('cháng')];
-		const verdict = toneVerdict([2], both);
-		expect(verdict.correct).toBe(true);
-		expect(verdict.best?.[0].text).toBe('cháng');
-	});
-
-	it('marks everything wrong when no reading has the same length', () => {
-		const verdict = toneVerdict([1, 1], [parsePinyin('hǎo')]);
-		expect(verdict).toEqual({ correct: false, wrong: 2, marks: [false, false], best: null });
-	});
 });
 
 describe('deckSessionItems', () => {
@@ -659,20 +609,6 @@ describe('resolveSentence', () => {
 		};
 		expect(resolveSentence(companion, sentences, new Set([1]))).toEqual({ id: 2 });
 		expect(resolveSentence(companion, sentences, new Set([1, 2, 3]))).toBeNull();
-	});
-});
-
-describe('tonePadLabels', () => {
-	it('gives one Han character per syllable', () => {
-		expect(tonePadLabels('学生', 2)).toEqual(['学', '生']);
-	});
-
-	it('falls back for erhua, where characters outnumber syllables', () => {
-		expect(tonePadLabels('花儿', 1)).toBeNull();
-	});
-
-	it('falls back when a character is not Han', () => {
-		expect(tonePadLabels('T恤', 2)).toBeNull();
 	});
 });
 

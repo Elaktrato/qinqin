@@ -4,7 +4,7 @@
 import type { CharRow } from '$lib/api/types';
 import type { StudyEvent } from '$lib/events';
 import { usesHan } from '$lib/languages';
-import { GENERAL_DECK_ID } from '$lib/study/store';
+import { GENERAL_DECK_ID } from '$lib/study/types';
 import type { ReviewEvent, StudyCard } from '$lib/study/types';
 import type { Run } from '$lib/study/vacation';
 import { studyDay, type StudyDay, type ZoneChange } from '$lib/time/studyDay';

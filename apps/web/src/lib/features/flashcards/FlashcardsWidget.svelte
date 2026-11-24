@@ -24,9 +24,9 @@
 		loadRememberedTypes
 	} from '$lib/study/cardTypesMemory';
 	import { loadStudyHistory } from '$lib/study/history';
-	import { activeWeights } from '$lib/study/store';
+	import { activeWeights } from '$lib/study/readModel';
 	import { DEFAULT_W } from '$lib/study/fsrs/params';
-	import { GENERAL_DECK_ID } from '$lib/study/store';
+	import { GENERAL_DECK_ID } from '$lib/study/types';
 	import type { Deck, ReviewEvent, ReviewGrade, StudyCard } from '$lib/study/types';
 	import Button from '$lib/ui/Button.svelte';
 	import WidgetCard from '$lib/widgets/WidgetCard.svelte';

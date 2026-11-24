@@ -2,7 +2,8 @@
 	import { errorText } from '$lib/api/apiErrors';
 	import { UserError } from '$lib/api/userError';
 	import { t } from '$lib/i18n';
-	import { GENERAL_DECK_ID, addCard } from '$lib/study/store';
+	import { addCard } from '$lib/study/store';
+	import { GENERAL_DECK_ID } from '$lib/study/types';
 	import { getStudyData, hasCard } from '$lib/study/studyData';
 	import type { Deck } from '$lib/study/types';
 	import { workspaces } from '$lib/workspaces';

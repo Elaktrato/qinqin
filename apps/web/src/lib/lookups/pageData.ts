@@ -10,7 +10,8 @@ import { addWords, type AddWordsResult } from '$lib/features/reader/wordActions'
 import { contextForData } from '$lib/study/currentContext';
 import { loadStudyHistory } from '$lib/study/history';
 import { type KnownIndex, familiarity, knownIndex } from '$lib/study/known';
-import { activeWeights, loadRawStudyData, pushStudy } from '$lib/study/store';
+import { loadRawStudyData, pushStudy } from '$lib/study/store';
+import { activeWeights } from '$lib/study/readModel';
 import { invalidateStudyData } from '$lib/study/studyData';
 import type { Deck } from '$lib/study/types';
 import type { LookupHistory, LookupState } from './lookups';

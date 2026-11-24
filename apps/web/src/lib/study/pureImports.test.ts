@@ -2,10 +2,25 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
-// The planners are pure modules Android ports and #193 reuses (#175): they take
-// their constants from types.ts and limits.ts, never from the store or the
-// session setup (heavy modules with storage and network).
-const PURE = ['reviewOrder.ts', 'sessionQueue.ts', 'limits.ts', 'levelQueue.ts', 'cardFlow.ts', 'sessionOrder.ts', 'grade.ts'];
+// The planners are pure modules Android ports (#175, #193): they take their
+// constants from types.ts and limits.ts, never from the study data layer (the
+// cache, its reads and the commands, #193) or the session setup (heavy modules
+// with storage and network).
+const PURE = [
+	'reviewOrder.ts',
+	'sessionQueue.ts',
+	'limits.ts',
+	'levelQueue.ts',
+	'cardFlow.ts',
+	'sessionOrder.ts',
+	'grade.ts',
+	'tones.ts',
+	'writing.ts',
+	'readModel.ts',
+	'canonical.ts',
+	'rows.ts'
+];
+const HEAVY = /(^|\/)(store|session|data|cache|history|studyData)$|(^|\/)commands\/|(^|\/)api\/client$/;
 
 function imports(file: string): string[] {
 	const text = readFileSync(resolve(__dirname, file), 'utf8');
@@ -13,8 +28,8 @@ function imports(file: string): string[] {
 }
 
 describe('pure study planners', () => {
-	it.each(PURE)('%s imports neither the store nor the session setup', (file) => {
-		const bad = imports(file).filter((path) => /(^|\/)(store|session)$/.test(path));
+	it.each(PURE)('%s imports neither the study data layer nor the session setup', (file) => {
+		const bad = imports(file).filter((path) => HEAVY.test(path));
 		expect(bad).toEqual([]);
 	});
 });

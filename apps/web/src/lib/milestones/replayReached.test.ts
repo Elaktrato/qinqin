@@ -5,7 +5,7 @@ import { classifySchedule } from '$lib/stats/wordStates';
 import { cellStates, masteryGlyphs } from '$lib/study/charGroups';
 import { MASTERY_THRESHOLD, masteryFromSchedules } from '$lib/study/mastery';
 import { scheduleAt } from '$lib/study/scheduler';
-import { GENERAL_DECK_ID } from '$lib/study/store';
+import { GENERAL_DECK_ID } from '$lib/study/types';
 import { studyClock } from '$lib/study/studyClock';
 import type { ReviewEvent, StudyCard, StudyCardKind } from '$lib/study/types';
 import { studyDay } from '$lib/time/studyDay';

@@ -11,20 +11,17 @@ import { dayCountsCached } from './limits';
 import type { ClozeMode } from './cloze';
 import {
 	admitSession,
-	backfillLimit,
 	buildSessionQueue,
 	sessionBackfill,
 	skipKindsByEntry,
 	type QueueEntry
 } from './sessionQueue';
 
-// Moved to sessionQueue.ts (#175); re-exported so existing imports keep working.
-export { backfillLimit, skipKindsByEntry };
 import { enabledKinds, type DeckSettings } from './deckSettings';
 import { buriedNow, buries, type Buried } from './siblings';
-import { cleanReadings, eligibleForTone, type Syllable, type Tone } from './tones';
+import { eligibleForTone, pinyinReadings } from './tones';
 import { tierFor, type SaladTier } from './wordSalad';
-import { isHan, writableChars } from './writing';
+import { writableChars } from './writing';
 import {
 	GENERAL_DECK_ID,
 	OPT_IN_KINDS,
@@ -95,11 +92,6 @@ export interface EligibilityContext {
 /** zh and its regional tags (zh-Hant, zh_TW, ...). */
 export function isChinese(language: string): boolean {
 	return language.toLowerCase().split(/[-_]/)[0] === 'zh';
-}
-
-/** The pinyin reading values of an entry, in order. */
-export function pinyinReadings(readings: readonly { type: string; value: string }[]): string[] {
-	return readings.filter((reading) => reading.type === 'pinyin').map((reading) => reading.value);
 }
 
 /** The first sentence that has no sentence card yet, or null. */
@@ -531,76 +523,6 @@ export function tierForCard(
 ): SaladTier {
 	if (cardId === null) return 0;
 	return tierFor(scheduleFor(cardId, reviews, now, w, clock)?.stability ?? null);
-}
-
-/**
- * maskWritten shows the word with every usable character that is not yet
- * written replaced by a box; `done` counts the characters completed in
- * order. Kana and other characters stay visible as context.
- */
-export function maskWritten(written: string, chars: readonly string[], done: number): string {
-	let out = '';
-	for (const ch of written) {
-		const at = chars.indexOf(ch);
-		out += at >= 0 && at >= done ? '□' : ch;
-	}
-	return out;
-}
-
-export interface ToneVerdict {
-	correct: boolean;
-	wrong: number;
-	/** Per syllable: right against the best matching reading. */
-	marks: boolean[];
-	/** The reading the answer was checked against, null when none fits. */
-	best: Syllable[] | null;
-}
-
-/**
- * toneVerdict checks chosen tones against every reading with the same
- * syllable count (cleanReadings output) and keeps the closest one, so a
- * polyphone answer for any of its readings is right. Ties keep the first.
- */
-export function toneVerdict(
-	chosen: readonly Tone[],
-	candidates: readonly (readonly Syllable[])[]
-): ToneVerdict {
-	let best: readonly Syllable[] | null = null;
-	let bestWrong = chosen.length;
-	for (const candidate of candidates) {
-		if (candidate.length !== chosen.length) continue;
-		const wrong = candidate.reduce((sum, syllable, i) => sum + (syllable.tone === chosen[i] ? 0 : 1), 0);
-		if (best === null || wrong < bestWrong) {
-			best = candidate;
-			bestWrong = wrong;
-		}
-	}
-	if (best === null) {
-		return { correct: false, wrong: chosen.length, marks: chosen.map(() => false), best: null };
-	}
-	const reading = best;
-	return {
-		correct: bestWrong === 0,
-		wrong: bestWrong,
-		marks: chosen.map((tone, i) => reading[i].tone === tone),
-		best: [...reading]
-	};
-}
-
-/**
- * The Han characters of `written` when every character is Han and their
- * count equals the syllable count; otherwise null (erhua such as 花儿,
- * mixed scripts), and the pads show toneless pinyin instead.
- */
-export function tonePadLabels(written: string, syllableCount: number): string[] | null {
-	const chars = [...written.trim()];
-	if (chars.length === 0 || chars.length !== syllableCount) return null;
-	return chars.every(isHan) ? chars : null;
-}
-
-/** The tone check candidates of an entry: its clean pinyin readings. */
-export function toneCandidates(readings: readonly { type: string; value: string }[]): Syllable[][] {
-	return cleanReadings(pinyinReadings(readings));
 }
 
 /** Whether Space/Enter outside a field reveals the answer of this kind of card. */
