@@ -21,6 +21,7 @@ import { ApiError } from '../api/client';
 import type { KeyedRow } from '../sync/keyed';
 import {
 	copyRows,
+	sameContent,
 	emptyRows,
 	keyedSlot,
 	mergeRows,
@@ -61,6 +62,10 @@ interface Slot {
 	fullAt: number;
 	pages: number;
 	stale: boolean;
+	/** Bumped by every markStale: a round clears `stale` only when no mark came after it started. */
+	staleMarks: number;
+	/** Whether the round in flight is a full one. */
+	inFlightFull: boolean;
 	/** Bumped by every change: the memoised view follows it. */
 	version: number;
 	view: { version: number; value: StudyView } | null;
@@ -99,18 +104,24 @@ export class StudyCache {
 		if (slot.rows !== null && !opts.force && !opts.full && !slot.stale && now - slot.readAt < this.#freshMs) {
 			return this.#viewOf(slot);
 		}
-		if (slot.inFlight !== null) return slot.inFlight;
+		const loaded = slot.rows !== null;
+		// Every reader of a loaded slot gets the rows held when the refresh fails, joining or not.
+		const held = (run: Promise<StudyView>): Promise<StudyView> =>
+			!loaded || opts.force === true || opts.full === true ? run : run.catch(() => this.#viewOf(slot));
+		if (slot.inFlight !== null) {
+			// A full read waits for a delta in flight, then reads its own full round.
+			if (opts.full === true && !slot.inFlightFull) {
+				const after = (): Promise<StudyView> => this.view(workspaceId, opts);
+				return slot.inFlight.then(after, after);
+			}
+			return held(slot.inFlight);
+		}
 		const full =
 			opts.full === true ||
 			slot.rows === null ||
 			slot.cursor === null ||
 			now - slot.fullAt >= (this.#deps.fullMs ?? STUDY_FULL_ROUND_MS);
-		const loaded = slot.rows !== null;
-		const run = this.#round(workspaceId, slot, full ? 'full' : 'delta', true).catch((err: unknown) => {
-			if (!loaded || opts.force === true || opts.full === true) throw err;
-			return this.#viewOf(slot);
-		});
-		return run;
+		return held(this.#round(workspaceId, slot, full ? 'full' : 'delta', true));
 	}
 
 	/** peek: the slot's view without reading anything, or null when the workspace is not loaded. */
@@ -162,7 +173,11 @@ export class StudyCache {
 	 */
 	markStale(workspaceId: number | null): void {
 		const targets = workspaceId === null ? [...this.#slots.values()] : [this.#slots.get(workspaceId)];
-		for (const slot of targets) if (slot !== undefined) slot.stale = true;
+		for (const slot of targets) {
+			if (slot === undefined) continue;
+			slot.stale = true;
+			slot.staleMarks++;
+		}
 		this.#notify(workspaceId ?? 0);
 	}
 
@@ -191,6 +206,8 @@ export class StudyCache {
 				fullAt: 0,
 				pages: 0,
 				stale: false,
+				staleMarks: 0,
+				inFlightFull: false,
 				version: 0,
 				view: null,
 				inFlight: null,
@@ -217,17 +234,21 @@ export class StudyCache {
 		const generation = this.#generation;
 		const epoch = this.#deps.epoch();
 		const current = (): boolean => generation === this.#generation && epoch === this.#deps.epoch();
-		if (kind === 'full') slot.writtenDuringRound = new Set();
+		const marks = slot.staleMarks;
+		let full = kind === 'full';
+		if (full) slot.writtenDuringRound = new Set();
 		const run = (async (): Promise<StudyView> => {
 			let round: StudyRound;
-			let full = kind === 'full';
 			try {
 				round = await this.#deps.pull(workspaceId, full ? undefined : (slot.cursor ?? undefined));
 			} catch (err) {
 				if (full || !(err instanceof ApiError && err.status === 410)) throw err;
 				// The cursor expired: read the workspace from scratch.
 				full = true;
-				if (current()) slot.writtenDuringRound = new Set();
+				if (current()) {
+					slot.writtenDuringRound = new Set();
+					slot.inFlightFull = true;
+				}
 				round = await this.#deps.pull(workspaceId);
 			}
 			const loaded = slot.rows !== null;
@@ -246,7 +267,7 @@ export class StudyCache {
 			slot.rows = rows;
 			slot.cursor = round.cursor;
 			slot.readAt = this.#deps.now();
-			slot.stale = false;
+			if (slot.staleMarks === marks) slot.stale = false;
 			if (full) {
 				slot.fullAt = slot.readAt;
 				slot.pages = round.pages;
@@ -259,9 +280,13 @@ export class StudyCache {
 			return view;
 		})();
 		slot.inFlight = run;
+		slot.inFlightFull = full;
 		const done = (): void => {
-			if (slot.inFlight === run) slot.inFlight = null;
-			if (kind === 'full' && current()) slot.writtenDuringRound = null;
+			if (slot.inFlight === run) {
+				slot.inFlight = null;
+				slot.inFlightFull = false;
+			}
+			if (full && current()) slot.writtenDuringRound = null;
 		};
 		run.then(done, done);
 		return run;
@@ -290,6 +315,13 @@ export function createStudyCache(deps: StudyCacheDeps): StudyCache {
 function keepLocalWrites(fresh: StudyRows, held: StudyRows, keys: ReadonlySet<string>): void {
 	for (const key of keys) {
 		const typed = held.typed.get(key);
+		const unreadable = fresh.unreadable.get(key);
+		// A row this version cannot read that is not older than the write stays protected (record 0002).
+		if (unreadable !== undefined) {
+			const mine = typed ?? held.keyed.get(key);
+			const stamp = mine === undefined ? undefined : newestOf([mine.updatedAt, mine.deletedAt]);
+			if (unreadable.stamp === undefined || stamp === undefined || Date.parse(unreadable.stamp) >= Date.parse(stamp)) continue;
+		}
 		if (typed !== undefined) {
 			const theirs = fresh.typed.get(key);
 			if (theirs === undefined || stampAfterOrSame(typed, theirs)) {
@@ -320,6 +352,6 @@ function stampAfterOrSame(
 
 function sameRows(a: StudyRows, b: StudyRows): boolean {
 	const same = <V>(x: Map<string, V>, y: Map<string, V>): boolean =>
-		x.size === y.size && [...x].every(([key, value]) => JSON.stringify(value) === JSON.stringify(y.get(key)));
+		x.size === y.size && [...x].every(([key, value]) => sameContent(value, y.get(key)));
 	return same(a.typed, b.typed) && same(a.keyed, b.keyed) && same(a.unreadable, b.unreadable) && same(a.anonymous, b.anonymous);
 }

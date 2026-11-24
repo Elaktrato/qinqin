@@ -202,14 +202,28 @@ export function mergeRows(rows: StudyRows, collections: Record<string, unknown[]
 		const key = keyedSlot(row.key, row.workspaceId === null);
 		if (!newerOrSame(newestOf([row.updatedAt, row.deletedAt]), heldStamp(rows, key, rows.keyed.get(key)))) continue;
 		rows.unreadable.delete(key);
-		if (JSON.stringify(rows.keyed.get(key)) !== JSON.stringify(row)) changed = true;
+		if (!sameContent(rows.keyed.get(key), row)) changed = true;
 		setLast(rows.keyed, key, row);
 	}
 	return changed;
 }
 
 function sameRow(a: StudyRow | undefined, b: StudyRow): boolean {
-	return a !== undefined && JSON.stringify(a) === JSON.stringify(b);
+	return a !== undefined && sameContent(a, b);
+}
+
+/**
+ * sameContent: two held rows say the same, whatever their `version` (a row this
+ * tab wrote is held with version 0; the server's copy of it carries its own).
+ */
+export function sameContent(a: unknown, b: unknown): boolean {
+	const plain = (v: unknown): string => {
+		if (typeof v !== 'object' || v === null || Array.isArray(v)) return JSON.stringify(v);
+		const { version: _v, ...rest } = v as Record<string, unknown>;
+		void _v;
+		return JSON.stringify(rest);
+	};
+	return plain(a) === plain(b);
 }
 
 /** putTyped holds a row this tab wrote (in-place update after a push), as the server now holds it. */

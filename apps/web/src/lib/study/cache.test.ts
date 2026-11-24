@@ -300,3 +300,125 @@ describe('StudyCache: the session end (#173)', () => {
 		expect(s.rounds).toEqual([]);
 	});
 });
+
+describe('StudyCache: readers joining a round (review fixes)', () => {
+	function gated() {
+		const clock = { now: T0 };
+		const server = new StudyServer({ now: () => clock.now, pageSize: 2 });
+		server.putTyped('cards', cardAt('a', 1, '2026-01-01T00:00:00Z'));
+		let gate: Promise<void> | null = null;
+		const kinds: boolean[] = [];
+		const cache = new StudyCache({
+			pull: async (workspaceId, since) => {
+				const round = await pullStudyRound(async (path) => (await server.fetch(path)).json(), workspaceId, since);
+				if (gate !== null) await gate;
+				return round;
+			},
+			now: () => clock.now,
+			epoch: () => 0,
+			onRound: (_ws, _view, full) => kinds.push(full)
+		});
+		return { clock, server, cache, kinds, hold: (g: Promise<void> | null) => (gate = g) };
+	}
+
+	it('every reader of a failed refresh gets the rows held, not only the first', async () => {
+		const s = gated();
+		await s.cache.view(WS);
+		s.clock.now += 9_000;
+		s.server.beforeAnswer = () => {
+			throw new TypeError('offline');
+		};
+		const results = await Promise.allSettled([s.cache.view(WS), s.cache.view(WS), s.cache.view(WS)]);
+		expect(results.map((r) => r.status)).toEqual(['fulfilled', 'fulfilled', 'fulfilled']);
+	});
+
+	it('a reader joining a failing follow-up round gets the rows held', async () => {
+		const s = setup();
+		s.cache.onChange(() => undefined);
+		await s.cache.view(WS);
+		s.server.beforeAnswer = () => {
+			throw new TypeError('offline');
+		};
+		s.clock.now += 9_000;
+		const timer = s.timers.shift();
+		timer?.fn();
+		await expect(s.cache.view(WS)).resolves.toBeDefined();
+	});
+
+	it('a full read joining a delta in flight waits for it, then reads a full round', async () => {
+		const s = gated();
+		await s.cache.view(WS);
+		s.clock.now += 9_000;
+		let release: () => void = () => undefined;
+		s.hold(new Promise<void>((resolve) => (release = resolve)));
+		const delta = s.cache.view(WS);
+		const full = s.cache.view(WS, { full: true });
+		await settle();
+		s.hold(null);
+		release();
+		await Promise.all([delta, full]);
+		expect(s.kinds).toEqual([true, false, true]);
+	});
+
+	it('a stale mark set while a round runs survives the round', async () => {
+		const s = gated();
+		await s.cache.view(WS);
+		s.clock.now += 9_000;
+		let release: () => void = () => undefined;
+		s.hold(new Promise<void>((resolve) => (release = resolve)));
+		const running = s.cache.view(WS);
+		await settle();
+		s.cache.markStale(WS);
+		s.hold(null);
+		release();
+		await running;
+		s.server.resetCounts();
+		await s.cache.view(WS);
+		expect(s.server.counts.pullPages).toBe(1);
+	});
+});
+
+describe('StudyCache: change detection (review fixes)', () => {
+	it("the server's copy of this tab's own write (another version number) is no change", async () => {
+		const s = setup();
+		await s.cache.view(WS);
+		const mine = cardAt('a', 1, '2026-02-01T10:00:00.500Z');
+		s.server.putTyped('cards', { ...mine, version: 3 });
+		s.cache.applyTyped(WS, 'cards', [{ ...mine, version: 0 }]);
+		const changed: number[] = [];
+		s.cache.onChange((ws) => changed.push(ws));
+		s.clock.now += 3_000;
+		await s.cache.view(WS, { force: true });
+		await s.cache.view(WS, { full: true });
+		expect(changed).toEqual([]);
+	});
+
+	it('a full round keeps an unreadable row newer than a write of this tab (record 0002)', async () => {
+		const s = setup();
+		s.server.putTyped('cards', cardAt('a', 1, '2026-01-01T00:00:00Z'));
+		let release: () => void = () => undefined;
+		let gated = false;
+		const gate = new Promise<void>((resolve) => (release = resolve));
+		const cache = new StudyCache({
+			pull: async (workspaceId, since) => {
+				const round = await pullStudyRound(async (path) => (await s.server.fetch(path)).json(), workspaceId, since);
+				if (gated) await gate;
+				return round;
+			},
+			now: () => s.clock.now,
+			epoch: () => 0
+		});
+		await cache.view(WS);
+		// A newer client rewrote the card in a form this version cannot read, after this tab's write.
+		s.server.putTyped('cards', { ...cardAt('a', 1, '2026-02-01T10:00:00.300Z'), kind: 'drawing' as never });
+		s.clock.now += 2_000;
+		gated = true;
+		const running = cache.view(WS, { full: true });
+		await settle();
+		cache.applyTyped(WS, 'cards', [cardAt('a', 1, '2026-02-01T10:00:00.100Z')]);
+		release();
+		const view = await running;
+		expect(view.snapshot.unreadable.has('cards:a')).toBe(true);
+		expect(view.data.cards).toEqual([]);
+	});
+});
