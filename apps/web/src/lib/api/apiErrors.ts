@@ -115,6 +115,7 @@ export const API_ERROR_KEYS: Readonly<Record<string, MessageKey>> = {
 	conversation_full: 'apiError.conversationFull',
 	conversation_limit: 'apiError.conversationLimit',
 	wrong_language: 'apiError.wrongLanguage',
+	examples_full: 'apiError.examplesFull',
 	ocr_unavailable: 'apiError.ocrUnavailable',
 	ocr_language_missing: 'apiError.ocrLanguageMissing',
 	ocr_failed: 'apiError.ocrFailed',

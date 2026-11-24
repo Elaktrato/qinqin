@@ -112,6 +112,7 @@ Every error body is JSON `{"error": code, "message": "English sentence"}`. Branc
 | `image_too_large` | 422 | POST /api/journal/photos: the photo has more than 25 megapixels. |
 | `conversation_full` | 409 | Journal conversation partner: the conversation holds the maximum of 50 messages; save it or start a new one. |
 | `wrong_language` | 422 | Journal conversation partner: the AI's reply was not (mostly) in the workspace language; nothing was stored, send again. |
+| `examples_full` | 409 | AI example sentences: the word has the maximum of 10 kept AI examples; delete one first. |
 | `conversation_limit` | 409 | Journal conversation partner: 20 conversations are open in the workspace already; save or discard one first. |
 | `too_many_photos` | 409 | Journal photos: 10 photo drafts are open already; finish or discard one first. |
 | `ocr_unavailable` | 409 | Journal photos: offline reading (OCR) is not installed on this server. |

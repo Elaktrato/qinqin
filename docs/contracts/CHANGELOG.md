@@ -5,6 +5,18 @@ follow (a removed route form, a new or retired fixture, a changed answer); typo 
 logged. Earlier changes: the error catalogue's own changelog in [`auth/README.md`](auth/README.md#changelog)
 (#168).
 
+## #186 — AI example sentences on demand
+
+- **AI examples:** new routes `GET/POST /api/entries/{id}/examples` (the caller's drafts; one AI call with the
+  learner's own key, `{level, requestId}`, idempotent by `requestId`), `POST
+  /api/entries/{id}/examples/{draftId}/keep`, `DELETE /api/entries/{id}/examples/{draftId}[?reason=]` and `DELETE
+  /api/entries/{id}/sentences/{sentenceId}[?reason=]` (a kept AI example only), no access token
+  (`examples/README.md`). New fixture `examples/examples.json`, new error code `examples_full` (409).
+- **Sentences:** every sentence (the entry answer's `sentences`, the pull's `sentences` rows, the keep answer) has
+  `ai`: `{provider, model}` for a kept AI example, else `null` (`sync/pull-page.json` shapes and rows). A backup
+  line of `sentences/` carries `ai` for an AI example (optional member). The deletion previews count
+  `exampleReports` (`auth/admin-users.json`).
+
 ## #185 — the conversation partner
 
 - **Journal conversations:** new routes `GET/POST /api/journal/conversations`, `GET/DELETE

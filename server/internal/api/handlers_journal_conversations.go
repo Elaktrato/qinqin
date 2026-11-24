@@ -223,7 +223,9 @@ func (s *server) handleConversationTurn(w http.ResponseWriter, r *http.Request) 
 		writeJSON(w, http.StatusOK, stored)
 		return
 	case errors.Is(err, errNoProviderCall):
-		answerTurnError(w, r, errors.Unwrap(errors.Unwrap(err)))
+		// The cause is wrapped beside errNoProviderCall (two %w): errors.Unwrap
+		// would give nil, the mappers match the cause with errors.Is/As.
+		answerTurnError(w, r, err)
 		return
 	case err != nil:
 		writeAIError(w, err)

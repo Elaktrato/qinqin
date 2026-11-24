@@ -458,6 +458,7 @@
 	"apiError.endpointBlocked": "That address is not allowed.",
 	"apiError.epubUnreadable": "This file is not a readable EPUB book.",
 	"apiError.eventsPageInvalid": "The study history request is not valid. Reload the page.",
+	"apiError.examplesFull": "This word has as many AI examples as it can keep. Delete one first.",
 	"apiError.exportRunning": "An export of your data is already running.",
 	"apiError.forbidden": "Administrator access is required.",
 	"apiError.highlightLimit": "This book has the maximum number of highlights.",
