@@ -13,13 +13,13 @@ import (
 	"testing"
 
 	"qinqin/internal/dbtest"
-	"qinqin/internal/dict"
 	"qinqin/internal/freq"
+	"qinqin/internal/pack"
 )
 
 // importFails runs Import and checks it failed with an invalid-pack error
 // mentioning every want, and that nothing was written.
-func importFails(t *testing.T, name string, p *dict.Pack, want ...string) {
+func importFails(t *testing.T, name string, p *pack.Pack, want ...string) {
 	t.Helper()
 	sqlDB := dbtest.Open(t)
 	_, err := freq.Import(context.Background(), sqlDB, p)
@@ -32,8 +32,8 @@ func importFails(t *testing.T, name string, p *dict.Pack, want ...string) {
 			t.Errorf("%s: err = %v, want it to mention %q", name, err, w)
 		}
 	}
-	if !errors.Is(err, dict.ErrInvalidPack) {
-		t.Errorf("%s: err = %v, want dict.ErrInvalidPack", name, err)
+	if !errors.Is(err, pack.ErrInvalidPack) {
+		t.Errorf("%s: err = %v, want pack.ErrInvalidPack", name, err)
 	}
 	if n := count(t, sqlDB, `SELECT count(*) FROM frequency`) + count(t, sqlDB, `SELECT count(*) FROM frequency_packs`); n != 0 {
 		t.Errorf("%s: %d rows written", name, n)

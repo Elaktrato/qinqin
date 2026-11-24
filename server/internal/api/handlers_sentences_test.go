@@ -7,9 +7,9 @@ import (
 	"strings"
 	"testing"
 
-	"qinqin/internal/dict"
 	"qinqin/internal/lang"
 	"qinqin/internal/model"
+	"qinqin/internal/pack"
 	"qinqin/internal/sentences"
 )
 
@@ -29,11 +29,11 @@ func TestSentenceRoutes(t *testing.T) {
 
 	// The admin layer dispatches sentence packs by manifest type; the
 	// fixture imports through the library like the seed CLI does.
-	pack, err := dict.LoadPack(sentencesFixture)
+	pk, err := pack.LoadPack(sentencesFixture)
 	if err != nil {
 		t.Fatalf("load fixture pack: %v", err)
 	}
-	if _, err := sentences.ImportPack(ctx, sqlDB, pack); err != nil {
+	if _, err := sentences.ImportPack(ctx, sqlDB, pk); err != nil {
 		t.Fatalf("import fixture pack: %v", err)
 	}
 

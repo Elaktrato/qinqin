@@ -14,8 +14,8 @@ import (
 	"testing"
 
 	"qinqin/internal/audio"
-	"qinqin/internal/dict"
 	"qinqin/internal/lexicon"
+	"qinqin/internal/pack"
 )
 
 type audioEnv struct {
@@ -72,11 +72,11 @@ func newAudioEnv(t *testing.T) audioEnv {
 			t.Fatal(err)
 		}
 	}
-	pack, err := dict.LoadPack(pdir)
+	pk, err := pack.LoadPack(pdir)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := audio.Import(ctx, sqlDB, pack, filepath.Join(dir, "audio")); err != nil {
+	if _, err := audio.Import(ctx, sqlDB, pk, filepath.Join(dir, "audio")); err != nil {
 		t.Fatal(err)
 	}
 	if err := sqlDB.QueryRow(`SELECT sha256 FROM audio_clips WHERE kind = 'term'`).Scan(&env.sha); err != nil {

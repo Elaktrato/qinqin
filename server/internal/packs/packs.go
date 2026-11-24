@@ -21,7 +21,7 @@ import (
 	"qinqin/internal/grammar"
 	"qinqin/internal/lemmapack"
 	"qinqin/internal/levels"
-	"qinqin/internal/packtype"
+	"qinqin/internal/pack"
 	"qinqin/internal/sentences"
 	"qinqin/internal/strokes"
 	"qinqin/internal/themes"
@@ -53,13 +53,13 @@ var ErrNotFound = errors.New("packs: not found")
 var ErrUnknownType = errors.New("packs: unknown type")
 
 // typeIndex is the list order of a pack type: its row in the pack-type
-// table (internal/packtype); -1 for an unknown type.
-func typeIndex(typ string) int { return packtype.Index(typ) }
+// table (internal/pack); -1 for an unknown type.
+func typeIndex(typ string) int { return pack.Index(typ) }
 
 // Supported reports whether typ is a pack type this package manages: every
 // type of the pack-type table.
 func Supported(typ string) bool {
-	_, ok := packtype.Lookup(typ)
+	_, ok := pack.Lookup(typ)
 	return ok
 }
 
@@ -72,7 +72,7 @@ func Supported(typ string) bool {
 // MB in a few hundred files, well inside the limits, and the upload's
 // licence review is the point of installing one.
 func Installable(typ string) bool {
-	d, ok := packtype.Lookup(typ)
+	d, ok := pack.Lookup(typ)
 	return ok && d.Uploadable
 }
 
@@ -130,17 +130,17 @@ var errNoFontStore = errors.New("packs: font packs need a font store directory (
 //
 // The onChange hook (WithOnChange) runs once the type's import committed,
 // also when storing the texts failed afterwards: the pack's data changed.
-func Import(ctx context.Context, sqlDB *sql.DB, pack dict.Pack, opts ...Option) (string, error) {
+func Import(ctx context.Context, sqlDB *sql.DB, pk pack.Pack, opts ...Option) (string, error) {
 	o := collect(opts)
-	line, err := importData(ctx, sqlDB, pack, o)
+	line, err := importData(ctx, sqlDB, pk, o)
 	if err != nil {
 		return "", err
 	}
 	// The type's import committed: the bookkeeping after it runs to the end
 	// even when ctx ends now (a shutdown), so an installed pack never lacks
 	// its licence texts because of a cancellation.
-	err = storeTextsAfterImport(context.WithoutCancel(ctx), sqlDB, pack)
-	o.changed(pack.Type, RegistryID(pack.Manifest), pack.Language)
+	err = storeTextsAfterImport(context.WithoutCancel(ctx), sqlDB, pk)
+	o.changed(pk.Type, RegistryID(pk.Manifest), pk.Language)
 	if err != nil {
 		return "", err
 	}
@@ -148,28 +148,28 @@ func Import(ctx context.Context, sqlDB *sql.DB, pack dict.Pack, opts ...Option) 
 }
 
 // importData imports pack by its type, in the type importer's transaction.
-func importData(ctx context.Context, sqlDB *sql.DB, pack dict.Pack, o options) (string, error) {
-	op, ok := operations[pack.Type]
+func importData(ctx context.Context, sqlDB *sql.DB, pk pack.Pack, o options) (string, error) {
+	op, ok := operations[pk.Type]
 	if !ok {
-		return "", fmt.Errorf("%w: %q", ErrUnknownType, pack.Type)
+		return "", fmt.Errorf("%w: %q", ErrUnknownType, pk.Type)
 	}
-	return op.importPack(ctx, sqlDB, pack, o)
+	return op.importPack(ctx, sqlDB, pk, o)
 }
 
 // operation is how one pack type is imported and uninstalled. Every type of
 // the pack-type table has one (a test checks it).
 type operation struct {
 	// importPack imports the pack and returns the seed CLI's summary line.
-	importPack func(ctx context.Context, sqlDB *sql.DB, pack dict.Pack, o options) (string, error)
+	importPack func(ctx context.Context, sqlDB *sql.DB, pk pack.Pack, o options) (string, error)
 	// uninstall removes the live pack with the registry id; a pack that is
 	// not installed is the type package's not-found error (notFound).
 	uninstall func(ctx context.Context, sqlDB *sql.DB, packID string, o options) error
 }
 
 var operations = map[string]operation{
-	dict.TypeDictionary: {
-		importPack: func(ctx context.Context, sqlDB *sql.DB, pack dict.Pack, _ options) (string, error) {
-			r, err := dict.ImportLexicon(ctx, sqlDB, &pack)
+	pack.TypeDictionary: {
+		importPack: func(ctx context.Context, sqlDB *sql.DB, pk pack.Pack, _ options) (string, error) {
+			r, err := dict.ImportLexicon(ctx, sqlDB, &pk)
 			if err != nil {
 				return "", err
 			}
@@ -187,9 +187,9 @@ var operations = map[string]operation{
 			return dict.Uninstall(ctx, sqlDB, id)
 		},
 	},
-	dict.TypeFrequency: {
-		importPack: func(ctx context.Context, sqlDB *sql.DB, pack dict.Pack, _ options) (string, error) {
-			r, err := freq.Import(ctx, sqlDB, &pack)
+	pack.TypeFrequency: {
+		importPack: func(ctx context.Context, sqlDB *sql.DB, pk pack.Pack, _ options) (string, error) {
+			r, err := freq.Import(ctx, sqlDB, &pk)
 			if err != nil {
 				return "", err
 			}
@@ -199,9 +199,9 @@ var operations = map[string]operation{
 			return freq.Uninstall(ctx, sqlDB, packID)
 		},
 	},
-	dict.TypeLevels: {
-		importPack: func(ctx context.Context, sqlDB *sql.DB, pack dict.Pack, _ options) (string, error) {
-			r, err := levels.Import(ctx, sqlDB, pack)
+	pack.TypeLevels: {
+		importPack: func(ctx context.Context, sqlDB *sql.DB, pk pack.Pack, _ options) (string, error) {
+			r, err := levels.Import(ctx, sqlDB, pk)
 			if err != nil {
 				return "", err
 			}
@@ -215,9 +215,9 @@ var operations = map[string]operation{
 			return levels.Uninstall(ctx, sqlDB, id)
 		},
 	},
-	dict.TypeSentences: {
-		importPack: func(ctx context.Context, sqlDB *sql.DB, pack dict.Pack, _ options) (string, error) {
-			r, err := sentences.ImportPack(ctx, sqlDB, pack)
+	pack.TypeSentences: {
+		importPack: func(ctx context.Context, sqlDB *sql.DB, pk pack.Pack, _ options) (string, error) {
+			r, err := sentences.ImportPack(ctx, sqlDB, pk)
 			if err != nil {
 				return "", err
 			}
@@ -227,9 +227,9 @@ var operations = map[string]operation{
 			return sentences.Uninstall(ctx, sqlDB, packID)
 		},
 	},
-	dict.TypeGrammar: {
-		importPack: func(ctx context.Context, sqlDB *sql.DB, pack dict.Pack, _ options) (string, error) {
-			r, err := grammar.Import(ctx, sqlDB, pack)
+	pack.TypeGrammar: {
+		importPack: func(ctx context.Context, sqlDB *sql.DB, pk pack.Pack, _ options) (string, error) {
+			r, err := grammar.Import(ctx, sqlDB, pk)
 			if err != nil {
 				return "", err
 			}
@@ -239,12 +239,12 @@ var operations = map[string]operation{
 			return grammar.Uninstall(ctx, sqlDB, packID)
 		},
 	},
-	dict.TypeAudio: {
-		importPack: func(ctx context.Context, sqlDB *sql.DB, pack dict.Pack, o options) (string, error) {
+	pack.TypeAudio: {
+		importPack: func(ctx context.Context, sqlDB *sql.DB, pk pack.Pack, o options) (string, error) {
 			if o.audioStore == "" {
 				return "", errNoAudioStore
 			}
-			r, err := audio.Import(ctx, sqlDB, pack, o.audioStore)
+			r, err := audio.Import(ctx, sqlDB, pk, o.audioStore)
 			if err != nil {
 				return "", err
 			}
@@ -262,9 +262,9 @@ var operations = map[string]operation{
 			return err
 		},
 	},
-	dict.TypeComponents: {
-		importPack: func(ctx context.Context, sqlDB *sql.DB, pack dict.Pack, _ options) (string, error) {
-			r, err := components.Import(ctx, sqlDB, pack)
+	pack.TypeComponents: {
+		importPack: func(ctx context.Context, sqlDB *sql.DB, pk pack.Pack, _ options) (string, error) {
+			r, err := components.Import(ctx, sqlDB, pk)
 			if err != nil {
 				return "", err
 			}
@@ -274,9 +274,9 @@ var operations = map[string]operation{
 			return components.Uninstall(ctx, sqlDB, packID)
 		},
 	},
-	dict.TypeStrokes: {
-		importPack: func(ctx context.Context, sqlDB *sql.DB, pack dict.Pack, _ options) (string, error) {
-			r, err := strokes.Import(ctx, sqlDB, pack)
+	pack.TypeStrokes: {
+		importPack: func(ctx context.Context, sqlDB *sql.DB, pk pack.Pack, _ options) (string, error) {
+			r, err := strokes.Import(ctx, sqlDB, pk)
 			if err != nil {
 				return "", err
 			}
@@ -286,9 +286,9 @@ var operations = map[string]operation{
 			return strokes.Uninstall(ctx, sqlDB, packID)
 		},
 	},
-	dict.TypeLemmaRules: {
-		importPack: func(ctx context.Context, sqlDB *sql.DB, pack dict.Pack, _ options) (string, error) {
-			r, err := lemmapack.Import(ctx, sqlDB, pack)
+	pack.TypeLemmaRules: {
+		importPack: func(ctx context.Context, sqlDB *sql.DB, pk pack.Pack, _ options) (string, error) {
+			r, err := lemmapack.Import(ctx, sqlDB, pk)
 			if err != nil {
 				return "", err
 			}
@@ -298,9 +298,9 @@ var operations = map[string]operation{
 			return lemmapack.Uninstall(ctx, sqlDB, packID)
 		},
 	},
-	dict.TypeTheme: {
-		importPack: func(ctx context.Context, sqlDB *sql.DB, pack dict.Pack, _ options) (string, error) {
-			r, err := themes.Import(ctx, sqlDB, pack)
+	pack.TypeTheme: {
+		importPack: func(ctx context.Context, sqlDB *sql.DB, pk pack.Pack, _ options) (string, error) {
+			r, err := themes.Import(ctx, sqlDB, pk)
 			if err != nil {
 				return "", err
 			}
@@ -310,12 +310,12 @@ var operations = map[string]operation{
 			return themes.Uninstall(ctx, sqlDB, packID)
 		},
 	},
-	dict.TypeFont: {
-		importPack: func(ctx context.Context, sqlDB *sql.DB, pack dict.Pack, o options) (string, error) {
+	pack.TypeFont: {
+		importPack: func(ctx context.Context, sqlDB *sql.DB, pk pack.Pack, o options) (string, error) {
 			if o.fontStore == "" {
 				return "", errNoFontStore
 			}
-			r, err := fonts.Import(ctx, sqlDB, pack, o.fontStore)
+			r, err := fonts.Import(ctx, sqlDB, pk, o.fontStore)
 			if err != nil {
 				return "", err
 			}
@@ -407,12 +407,12 @@ func Find(ctx context.Context, sqlDB *sql.DB, typ, packID string) (Installed, er
 // them).
 func List(ctx context.Context, sqlDB *sql.DB) ([]Installed, error) {
 	var out []Installed
-	for _, d := range packtype.All {
+	for _, d := range pack.All {
 		lang := "language"
 		switch d.Languages {
-		case packtype.Many:
+		case pack.Many:
 			lang = "languages"
-		case packtype.None:
+		case pack.None:
 			lang = "''"
 		}
 		rows, err := sqlDB.QueryContext(ctx, `SELECT pack_id, name, version, `+lang+`, license, attribution, notice, updated_at
@@ -427,7 +427,7 @@ func List(ctx context.Context, sqlDB *sql.DB) ([]Installed, error) {
 				rows.Close()
 				return nil, fmt.Errorf("packs: list %s: %w", d.Type, err)
 			}
-			if d.Languages == packtype.Many {
+			if d.Languages == pack.Many {
 				if err := json.Unmarshal([]byte(language), &p.Languages); err != nil {
 					rows.Close()
 					return nil, fmt.Errorf("packs: list %s: pack %s: languages: %w", d.Type, p.PackID, err)

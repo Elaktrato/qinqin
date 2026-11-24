@@ -17,7 +17,7 @@ import (
 	"strings"
 	"time"
 
-	"qinqin/internal/dict"
+	"qinqin/internal/pack"
 )
 
 // insertBatch is the rows per INSERT: 3 columns each stays under SQLite's
@@ -56,21 +56,21 @@ type Set struct {
 // directory are parsed completely (Parse), then ONE transaction upserts
 // the component_packs row (clearing an uninstall) and replaces the pack's
 // rows. The language is stored as its primary subtag (zh-tw -> zh). A
-// malformed pack is dict.ErrInvalidPack and leaves nothing behind.
-func Import(ctx context.Context, sqlDB *sql.DB, p dict.Pack) (Result, error) {
+// malformed pack is pack.ErrInvalidPack and leaves nothing behind.
+func Import(ctx context.Context, sqlDB *sql.DB, p pack.Pack) (Result, error) {
 	m := p.Manifest
 	if err := m.Validate(); err != nil {
-		return Result{}, fmt.Errorf("%w: %v", dict.ErrInvalidPack, err)
+		return Result{}, fmt.Errorf("%w: %v", pack.ErrInvalidPack, err)
 	}
-	if m.Type != dict.TypeComponents {
-		return Result{}, fmt.Errorf("%w: %q is a %s pack, not a components pack", dict.ErrInvalidPack, m.ID, m.Type)
+	if m.Type != pack.TypeComponents {
+		return Result{}, fmt.Errorf("%w: %q is a %s pack, not a components pack", pack.ErrInvalidPack, m.ID, m.Type)
 	}
-	if m.Format != dict.FormatComponentsTSV {
-		return Result{}, fmt.Errorf("%w: components pack %s: format %q is not a components format (want components-tsv)", dict.ErrInvalidPack, m.ID, m.Format)
+	if m.Format != pack.FormatComponentsTSV {
+		return Result{}, fmt.Errorf("%w: components pack %s: format %q is not a components format (want components-tsv)", pack.ErrInvalidPack, m.ID, m.Format)
 	}
 	d, err := readDir(p.Dir)
 	if err != nil {
-		return Result{}, fmt.Errorf("%w: components pack %s: %w", dict.ErrInvalidPack, m.ID, err)
+		return Result{}, fmt.Errorf("%w: components pack %s: %w", pack.ErrInvalidPack, m.ID, err)
 	}
 	chars := make([]string, 0, len(d.Chars))
 	used := map[string]bool{}

@@ -13,6 +13,7 @@ import (
 	"strings"
 
 	"qinqin/internal/dict"
+	"qinqin/internal/pack"
 )
 
 // maxPackMemory bounds the bytes of an uploaded pack held in memory
@@ -117,48 +118,48 @@ func (s *server) handleInstallDictionary(w http.ResponseWriter, r *http.Request)
 		return
 	}
 	// A failure that is not the pack's (a full disk) is 500 internal.
-	if err := dict.ExtractZipAt(ra, header.Size, stage, dict.DefaultZipLimits); err != nil {
+	if err := pack.ExtractZipAt(ra, header.Size, stage, pack.DefaultZipLimits); err != nil {
 		writePackError(w, r, err, stage, s.dataDir)
 		return
 	}
-	pack, err := dict.LoadExtracted(stage)
+	pk, err := pack.LoadExtracted(stage)
 	if err != nil {
 		writePackError(w, r, err, stage, s.dataDir)
 		return
 	}
-	if pack.Manifest.Type != dict.TypeDictionary {
+	if pk.Manifest.Type != pack.TypeDictionary {
 		writeError(w, http.StatusBadRequest, "pack_invalid", "Only dictionary packs install here.")
 		return
 	}
-	if _, err := packDir(packsDir, pack.Manifest); err != nil {
+	if _, err := packDir(packsDir, pk.Manifest); err != nil {
 		writeError(w, http.StatusBadRequest, "pack_invalid", "Invalid pack.")
 		return
 	}
 	s.packMu.Lock()
 	defer s.packMu.Unlock()
 	// One transaction: a failed import leaves nothing behind.
-	if _, err := dict.ImportLexicon(r.Context(), s.db, &pack); err != nil {
-		if errors.Is(err, dict.ErrInvalidPack) {
+	if _, err := dict.ImportLexicon(r.Context(), s.db, &pk); err != nil {
+		if errors.Is(err, pack.ErrInvalidPack) {
 			writeError(w, http.StatusBadRequest, "pack_invalid", "Invalid pack.")
 			return
 		}
 		writeInternal(w, r)
 		return
 	}
-	registryID, _, _ := dict.RegistryTerms(pack.Manifest)
-	s.packChanged(dict.TypeDictionary, registryID, pack.Manifest.Language)
+	registryID, _, _ := dict.RegistryTerms(pk.Manifest)
+	s.packChanged(pack.TypeDictionary, registryID, pk.Manifest.Language)
 	legacyToken, _ := newToken()
-	if err := placePack(packsDir, pack.Manifest, pack.Dir, legacyToken); err != nil {
+	if err := placePack(packsDir, pk.Manifest, pk.Dir, legacyToken); err != nil {
 		// The import is committed: the dictionary is installed. The files
 		// are only a re-install copy, so a failed move is logged, not a 500.
-		log.Printf("dictionary %s: move files into place: %v", pack.Manifest.ID, err)
+		log.Printf("dictionary %s: move files into place: %v", pk.Manifest.ID, err)
 	}
 	// pack.Dir is the stage itself or the one folder inside it; the
 	// deferred cleanup removes what is left of the stage.
 
 	d, err := scanDictionary(s.db.QueryRowContext(r.Context(), `
 		SELECT id, name, version, license, attribution, notice, pack_id, language FROM dictionaries
-		WHERE pack_id = ? AND deleted_at IS NULL`, pack.Manifest.ID))
+		WHERE pack_id = ? AND deleted_at IS NULL`, pk.Manifest.ID))
 	if err != nil {
 		writeInternal(w, r)
 		return
@@ -191,7 +192,7 @@ func (s *server) handleUninstallDictionary(w http.ResponseWriter, r *http.Reques
 		writeInternal(w, r)
 		return
 	}
-	s.packChanged(dict.TypeDictionary, packID, language)
+	s.packChanged(pack.TypeDictionary, packID, language)
 	w.WriteHeader(http.StatusNoContent)
 }
 
@@ -200,7 +201,7 @@ func (s *server) handleUninstallDictionary(w http.ResponseWriter, r *http.Reques
 // characters their ids and versions contain (a flat <id>-<version> name made
 // es-test/1.0 and es/test-1.0 the same directory). Ids and versions must be
 // plain names, and the result is checked to lie inside packsDir.
-func packDir(packsDir string, m dict.Manifest) (string, error) {
+func packDir(packsDir string, m pack.Manifest) (string, error) {
 	if !packSlug.MatchString(m.ID) || !packSlug.MatchString(m.Version) || !packSlug.MatchString(m.Type) {
 		return "", fmt.Errorf("manifest id %q or version %q is not a safe directory name", m.ID, m.Version)
 	}
@@ -215,7 +216,7 @@ func packDir(packsDir string, m dict.Manifest) (string, error) {
 // placePack moves the extracted pack at src into its install directory.
 // An installed copy is renamed aside first and removed only once the new
 // files are in place, so a failed move leaves the old files as they were.
-func placePack(packsDir string, m dict.Manifest, src, token string) error {
+func placePack(packsDir string, m pack.Manifest, src, token string) error {
 	dest, err := packDir(packsDir, m)
 	if err != nil {
 		return err

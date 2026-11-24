@@ -11,9 +11,9 @@ import (
 	"net/http"
 	"strconv"
 
-	"qinqin/internal/dict"
 	"qinqin/internal/levels"
 	"qinqin/internal/lexicon"
+	"qinqin/internal/pack"
 )
 
 // handleSchemeEntries serves GET /api/schemes/{id}/entries: the scheme's
@@ -92,7 +92,7 @@ func (s *server) handleUninstallScheme(w http.ResponseWriter, r *http.Request) {
 		writeInternal(w, r)
 		return
 	}
-	s.packChanged(dict.TypeLevels, packID, language)
+	s.packChanged(pack.TypeLevels, packID, language)
 	w.WriteHeader(http.StatusNoContent)
 }
 

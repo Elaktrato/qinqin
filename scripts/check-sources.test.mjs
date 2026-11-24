@@ -161,7 +161,7 @@ test('notice rules', () => {
 	assert.match(noticeProblems('a\rb')[0], /control character U\+000D/);
 });
 
-// The vectors are shared with server/internal/dict/notice_vectors_test.go:
+// The vectors are shared with server/internal/pack/notice_vectors_test.go:
 // the server validator and this mirror must agree on each.
 test('noticeProblems agrees with the server on the shared vectors', () => {
 	const vectors = JSON.parse(readFileSync(new URL('./testdata/notice-vectors.json', import.meta.url), 'utf8'));

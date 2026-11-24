@@ -12,6 +12,7 @@ import (
 	"qinqin/internal/dbtest"
 	"qinqin/internal/dict"
 	"qinqin/internal/lexicon"
+	"qinqin/internal/pack"
 )
 
 // lexiconJMdict is a tiny JMdict in the real file's shape: a DOCTYPE
@@ -64,7 +65,7 @@ const lexiconJMdict = `<?xml version="1.0" encoding="UTF-8"?>
 `
 
 // lexiconPack writes the pack's jmdict.xml and manifest and loads it.
-func lexiconPack(t *testing.T, xml string) *dict.Pack {
+func lexiconPack(t *testing.T, xml string) *pack.Pack {
 	t.Helper()
 	dir := t.TempDir()
 	manifest, err := json.Marshal(jmdictManifest)
@@ -73,11 +74,11 @@ func lexiconPack(t *testing.T, xml string) *dict.Pack {
 	}
 	mustWriteFile(t, filepath.Join(dir, "manifest.json"), string(manifest))
 	mustWriteFile(t, filepath.Join(dir, "jmdict.xml"), xml)
-	pack, err := dict.LoadPack(dir)
+	pk, err := pack.LoadPack(dir)
 	if err != nil {
 		t.Fatalf("LoadPack: %v", err)
 	}
-	return &pack
+	return &pk
 }
 
 // lexiconEntry loads the active ja word entry with the given ent_seq.

@@ -1,4 +1,4 @@
-package dict
+package pack
 
 import (
 	"encoding/json"
@@ -29,7 +29,7 @@ func TestNoticeVectors(t *testing.T) {
 	for _, v := range vectors {
 		m := Manifest{ID: "x", Name: "x", Version: "1", Type: TypeLevels, Language: "zh",
 			License: "L", Attribution: "A", Format: FormatJSON, Notice: v.Notice}
-		m.normalize()
+		m.Normalize()
 		err := m.Validate()
 		if (err == nil) != v.OK {
 			t.Errorf("%s: Validate = %v, want ok=%v", v.Name, err, v.OK)

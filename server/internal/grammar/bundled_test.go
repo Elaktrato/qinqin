@@ -6,8 +6,8 @@ import (
 	"testing"
 
 	"qinqin/internal/dbtest"
-	"qinqin/internal/dict"
 	"qinqin/internal/grammar"
+	"qinqin/internal/pack"
 )
 
 // TestBundledGrammarPack checks the committed zh-grammar pack: it passes the
@@ -15,12 +15,12 @@ import (
 // cloze, and the pack imports and reads back through the store.
 func TestBundledGrammarPack(t *testing.T) {
 	dir := filepath.Join("..", "..", "..", "plugins", "data", "zh-grammar")
-	pack, err := dict.LoadPack(dir)
+	pk, err := pack.LoadPack(dir)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if pack.Manifest.ID != "zh-grammar" || !strings.HasPrefix(pack.Manifest.License, "CC0-1.0") {
-		t.Fatalf("manifest: %+v", pack.Manifest)
+	if pk.Manifest.ID != "zh-grammar" || !strings.HasPrefix(pk.Manifest.License, "CC0-1.0") {
+		t.Fatalf("manifest: %+v", pk.Manifest)
 	}
 	data, err := grammar.ReadData(dir)
 	if err != nil {
@@ -91,7 +91,7 @@ func TestBundledGrammarPack(t *testing.T) {
 	}
 	sqlDB := dbtest.Open(t)
 	ctx := t.Context()
-	if _, err := grammar.Import(ctx, sqlDB, pack); err != nil {
+	if _, err := grammar.Import(ctx, sqlDB, pk); err != nil {
 		t.Fatal(err)
 	}
 	packs, err := grammar.ListPacks(ctx, sqlDB, "zh")
@@ -113,12 +113,12 @@ func TestBundledGrammarPack(t *testing.T) {
 // every example's reading and cloze, and the import.
 func TestBundledJapaneseGrammarPack(t *testing.T) {
 	dir := filepath.Join("..", "..", "..", "plugins", "data", "ja-grammar")
-	pack, err := dict.LoadPack(dir)
+	pk, err := pack.LoadPack(dir)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if pack.Manifest.ID != "ja-grammar" || pack.Manifest.Language != "ja" || pack.Manifest.License != "CC0-1.0" {
-		t.Fatalf("manifest: %+v", pack.Manifest)
+	if pk.Manifest.ID != "ja-grammar" || pk.Manifest.Language != "ja" || pk.Manifest.License != "CC0-1.0" {
+		t.Fatalf("manifest: %+v", pk.Manifest)
 	}
 	data, err := grammar.ReadData(dir)
 	if err != nil {
@@ -152,7 +152,7 @@ func TestBundledJapaneseGrammarPack(t *testing.T) {
 	}
 	sqlDB := dbtest.Open(t)
 	ctx := t.Context()
-	if _, err := grammar.Import(ctx, sqlDB, pack); err != nil {
+	if _, err := grammar.Import(ctx, sqlDB, pk); err != nil {
 		t.Fatal(err)
 	}
 	packs, err := grammar.ListPacks(ctx, sqlDB, "ja")

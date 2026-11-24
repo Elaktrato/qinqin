@@ -1,15 +1,15 @@
-package dict_test
+package pack_test
 
 import (
 	"strings"
 	"testing"
 
-	"qinqin/internal/dict"
+	"qinqin/internal/pack"
 )
 
-func themeManifest() dict.Manifest {
+func themeManifest() pack.Manifest {
 	m := fixtureManifest
-	m.ID, m.Type, m.Format = "catppuccin", dict.TypeTheme, dict.FormatThemesJSON
+	m.ID, m.Type, m.Format = "catppuccin", pack.TypeTheme, pack.FormatThemesJSON
 	m.Language = ""
 	return m
 }
@@ -21,12 +21,12 @@ func TestManifestAcceptsThemePacks(t *testing.T) {
 		t.Fatalf("theme/themes-json: Validate = %v, want nil", err)
 	}
 	for name, tc := range map[string]struct {
-		mutate func(*dict.Manifest)
+		mutate func(*pack.Manifest)
 		want   string
 	}{
-		"language":     {func(m *dict.Manifest) { m.Language = "zh" }, "language"},
-		"languages":    {func(m *dict.Manifest) { m.Languages = []string{"zh"} }, "languages"},
-		"other format": {func(m *dict.Manifest) { m.Format = dict.FormatJSON }, "themes-json"},
+		"language":     {func(m *pack.Manifest) { m.Language = "zh" }, "language"},
+		"languages":    {func(m *pack.Manifest) { m.Languages = []string{"zh"} }, "languages"},
+		"other format": {func(m *pack.Manifest) { m.Format = pack.FormatJSON }, "themes-json"},
 	} {
 		m := themeManifest()
 		tc.mutate(&m)
@@ -36,7 +36,7 @@ func TestManifestAcceptsThemePacks(t *testing.T) {
 	}
 	// themes-json belongs to theme packs only.
 	m := fixtureManifest
-	m.Format = dict.FormatThemesJSON
+	m.Format = pack.FormatThemesJSON
 	if err := m.Validate(); err == nil || !strings.Contains(err.Error(), "theme") {
 		t.Errorf("dictionary with themes-json: Validate = %v, want an error naming theme", err)
 	}

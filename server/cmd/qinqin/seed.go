@@ -12,9 +12,8 @@ import (
 	"sort"
 	"strings"
 
-	"qinqin/internal/dict"
+	"qinqin/internal/pack"
 	"qinqin/internal/packs"
-	"qinqin/internal/packtype"
 )
 
 // seedCmd runs `qinqin seed --data <dir> --packs <dir>[,<dir>...]`.
@@ -95,16 +94,16 @@ func (f *rootsFlag) Set(v string) error {
 // seedPack is one pack found under the packs directory.
 type seedPack struct {
 	dir  string
-	pack dict.Pack
+	pack pack.Pack
 }
 
 // importRank ranks pack types for seeding: the pack-type table's order
-// (internal/packtype). Dictionaries — including the character data of
+// (internal/pack). Dictionaries — including the character data of
 // cedict, unihan, kanjidic2, and jmdict — come first: frequency, level and
 // sentence packs refer to existing entries and skip the unknown ones, so
 // they must follow; the types that refer to no entries at import time come
 // last.
-func importRank(typ string) int { return packtype.Index(typ) }
+func importRank(typ string) int { return pack.Index(typ) }
 
 // seed imports every pack under the roots into sqlDB through
 // packs.Import, which dispatches on each manifest's type (audio clips go to
@@ -180,11 +179,11 @@ func findPacksIn(root string) ([]seedPack, error) {
 		if _, err := os.Stat(filepath.Join(path, "manifest.json")); err != nil {
 			return nil // not a pack; keep walking
 		}
-		pack, err := dict.LoadPack(path)
+		pk, err := pack.LoadPack(path)
 		if err != nil {
 			return fmt.Errorf("load pack %s: %w", path, err)
 		}
-		found = append(found, seedPack{dir: path, pack: pack})
+		found = append(found, seedPack{dir: path, pack: pk})
 		return filepath.SkipDir
 	})
 	if err != nil {

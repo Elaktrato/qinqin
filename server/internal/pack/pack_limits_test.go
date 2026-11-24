@@ -1,4 +1,4 @@
-package dict
+package pack
 
 import (
 	"archive/zip"

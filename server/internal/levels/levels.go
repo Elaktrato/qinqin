@@ -19,9 +19,9 @@ import (
 	"unicode"
 	"unicode/utf8"
 
-	"qinqin/internal/dict"
 	"qinqin/internal/lexicon"
 	"qinqin/internal/model"
+	"qinqin/internal/pack"
 )
 
 // ErrNotFound reports an uninstall or level lookup for an unknown (or
@@ -88,21 +88,21 @@ type member struct {
 // characters and the iteration mark 々 derive nothing; a Han character
 // without an entry is skipped and reported. Character-unit schemes rank
 // their members directly and derive nothing.
-func Import(ctx context.Context, sqlDB *sql.DB, pack dict.Pack) (Result, error) {
-	m := pack.Manifest
+func Import(ctx context.Context, sqlDB *sql.DB, pk pack.Pack) (Result, error) {
+	m := pk.Manifest
 	// LoadPack normalizes the manifest; Import re-applies the one part
 	// its own lookups key on, in case the pack arrived by another route.
 	m.Language = strings.ToLower(strings.TrimSpace(m.Language))
 	if err := m.Validate(); err != nil {
-		return Result{}, fmt.Errorf("%w: %v", dict.ErrInvalidPack, err)
+		return Result{}, fmt.Errorf("%w: %v", pack.ErrInvalidPack, err)
 	}
-	if m.Type != dict.TypeLevels {
+	if m.Type != pack.TypeLevels {
 		return Result{}, fmt.Errorf("%w: %q is a %s pack", ErrNotLevels, m.ID, m.Type)
 	}
-	if m.Format != dict.FormatJSON {
-		return Result{}, fmt.Errorf("%w: levels pack format %q is not implemented (want json)", dict.ErrInvalidPack, m.Format)
+	if m.Format != pack.FormatJSON {
+		return Result{}, fmt.Errorf("%w: levels pack format %q is not implemented (want json)", pack.ErrInvalidPack, m.Format)
 	}
-	unit, lvls, err := readLevelsPack(pack.Dir)
+	unit, lvls, err := readLevelsPack(pk.Dir)
 	if err != nil {
 		return Result{}, err
 	}
@@ -460,11 +460,11 @@ func (p *packEntry) UnmarshalJSON(data []byte) error {
 func readLevelsPack(dir string) (string, []packLevel, error) {
 	data, err := os.ReadFile(filepath.Join(dir, levelsFile))
 	if err != nil {
-		return "", nil, fmt.Errorf("%w: read %s of %s: %v", dict.ErrInvalidPack, levelsFile, dir, err)
+		return "", nil, fmt.Errorf("%w: read %s of %s: %v", pack.ErrInvalidPack, levelsFile, dir, err)
 	}
 	var p levelsPack
 	if err := json.Unmarshal(data, &p); err != nil {
-		return "", nil, fmt.Errorf("%w: parse %s of %s: %v", dict.ErrInvalidPack, levelsFile, dir, err)
+		return "", nil, fmt.Errorf("%w: parse %s of %s: %v", pack.ErrInvalidPack, levelsFile, dir, err)
 	}
 
 	unit := strings.ToLower(strings.TrimSpace(p.Unit))
@@ -473,10 +473,10 @@ func readLevelsPack(dir string) (string, []packLevel, error) {
 	case "hanzi", UnitCharacter:
 		unit = UnitCharacter
 	default:
-		return "", nil, fmt.Errorf("%w: %s of %s: unit %q must be word, hanzi or character", dict.ErrInvalidPack, levelsFile, dir, p.Unit)
+		return "", nil, fmt.Errorf("%w: %s of %s: unit %q must be word, hanzi or character", pack.ErrInvalidPack, levelsFile, dir, p.Unit)
 	}
 	if len(p.Levels) == 0 {
-		return "", nil, fmt.Errorf("%w: %s of %s: at least one level is required", dict.ErrInvalidPack, levelsFile, dir)
+		return "", nil, fmt.Errorf("%w: %s of %s: at least one level is required", pack.ErrInvalidPack, levelsFile, dir)
 	}
 	// Names, forms and readings are stored and compared trimmed, so
 	// "1" and " 1" are one level name and " 你好" finds 你好.
@@ -489,15 +489,15 @@ func readLevelsPack(dir string) (string, []packLevel, error) {
 			lv.Entries[j].Reading = strings.TrimSpace(lv.Entries[j].Reading)
 		}
 		if lv.Name == "" {
-			return "", nil, fmt.Errorf("%w: %s of %s: level %d needs a name", dict.ErrInvalidPack, levelsFile, dir, i)
+			return "", nil, fmt.Errorf("%w: %s of %s: level %d needs a name", pack.ErrInvalidPack, levelsFile, dir, i)
 		}
 		if names[lv.Name] {
-			return "", nil, fmt.Errorf("%w: %s of %s: level name %q appears twice", dict.ErrInvalidPack, levelsFile, dir, lv.Name)
+			return "", nil, fmt.Errorf("%w: %s of %s: level name %q appears twice", pack.ErrInvalidPack, levelsFile, dir, lv.Name)
 		}
 		names[lv.Name] = true
 		for j, pe := range lv.Entries {
 			if strings.TrimSpace(pe.Form) == "" {
-				return "", nil, fmt.Errorf("%w: %s of %s: entry %d of level %q is empty", dict.ErrInvalidPack, levelsFile, dir, j, lv.Name)
+				return "", nil, fmt.Errorf("%w: %s of %s: entry %d of level %q is empty", pack.ErrInvalidPack, levelsFile, dir, j, lv.Name)
 			}
 		}
 	}
@@ -508,7 +508,7 @@ func readLevelsPack(dir string) (string, []packLevel, error) {
 // its levels and memberships in one transaction: the previous rows are
 // tombstoned and the pack's list then upserted, reviving the rows this
 // scheme used before — level ids stay stable across re-imports.
-func writeScheme(ctx context.Context, sqlDB *sql.DB, m dict.Manifest, unit string, lvls []packLevel, ms []member) error {
+func writeScheme(ctx context.Context, sqlDB *sql.DB, m pack.Manifest, unit string, lvls []packLevel, ms []member) error {
 	tx, err := sqlDB.BeginTx(ctx, nil)
 	if err != nil {
 		return fmt.Errorf("import scheme %s: %w", m.ID, err)

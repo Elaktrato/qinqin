@@ -13,7 +13,7 @@ import (
 	"path/filepath"
 	"time"
 
-	"qinqin/internal/dict"
+	"qinqin/internal/pack"
 )
 
 // DataFile is the data file of a theme pack.
@@ -33,31 +33,31 @@ type Querier interface {
 }
 
 // LoadFile reads and validates the themes.json of the pack in dir. Errors
-// are dict.ErrInvalidPack naming the file, the code and the path.
+// are pack.ErrInvalidPack naming the file, the code and the path.
 func LoadFile(dir string) ([]Theme, error) {
 	f, err := os.Open(filepath.Join(dir, DataFile))
 	if err != nil {
-		return nil, fmt.Errorf("%w: %s: %v", dict.ErrInvalidPack, DataFile, err)
+		return nil, fmt.Errorf("%w: %s: %v", pack.ErrInvalidPack, DataFile, err)
 	}
 	defer f.Close()
 	data, err := io.ReadAll(io.LimitReader(f, MaxFileBytes+1))
 	if err != nil {
-		return nil, fmt.Errorf("%w: %s: %v", dict.ErrInvalidPack, DataFile, err)
+		return nil, fmt.Errorf("%w: %s: %v", pack.ErrInvalidPack, DataFile, err)
 	}
 	list, err := ParseFile(data)
 	if err != nil {
-		return nil, fmt.Errorf("%w: %s: %v", dict.ErrInvalidPack, DataFile, err)
+		return nil, fmt.Errorf("%w: %s: %v", pack.ErrInvalidPack, DataFile, err)
 	}
 	return list, nil
 }
 
 // checkManifest refuses a manifest that is not a theme pack's.
-func checkManifest(m dict.Manifest) error {
+func checkManifest(m pack.Manifest) error {
 	if err := m.Validate(); err != nil {
-		return fmt.Errorf("%w: %v", dict.ErrInvalidPack, err)
+		return fmt.Errorf("%w: %v", pack.ErrInvalidPack, err)
 	}
-	if m.Type != dict.TypeTheme || m.Format != dict.FormatThemesJSON {
-		return fmt.Errorf("%w: %q is a %s pack (format %s), not a theme pack", dict.ErrInvalidPack, m.ID, m.Type, m.Format)
+	if m.Type != pack.TypeTheme || m.Format != pack.FormatThemesJSON {
+		return fmt.Errorf("%w: %q is a %s pack (format %s), not a theme pack", pack.ErrInvalidPack, m.ID, m.Type, m.Format)
 	}
 	return nil
 }
@@ -66,7 +66,7 @@ func checkManifest(m dict.Manifest) error {
 // and the ids against the built-in themes — without the installed packs
 // (Import checks those inside its transaction). The staged upload calls it
 // to review a pack before anything is stored.
-func CheckPack(p dict.Pack) ([]Theme, error) {
+func CheckPack(p pack.Pack) ([]Theme, error) {
 	if err := checkManifest(p.Manifest); err != nil {
 		return nil, err
 	}
@@ -85,12 +85,12 @@ func CheckPack(p dict.Pack) ([]Theme, error) {
 func checkBuiltinClash(packID string, list []Theme) error {
 	for _, b := range Builtin() {
 		if b.Manifest.ID == packID {
-			return fmt.Errorf("%w: the pack id %q belongs to a built-in theme pack", dict.ErrInvalidPack, packID)
+			return fmt.Errorf("%w: the pack id %q belongs to a built-in theme pack", pack.ErrInvalidPack, packID)
 		}
 		for _, bt := range b.Themes {
 			for _, t := range list {
 				if t.ID == bt.ID {
-					return fmt.Errorf("%w: the theme id %q belongs to the built-in theme pack %q", dict.ErrInvalidPack, t.ID, b.Manifest.ID)
+					return fmt.Errorf("%w: the theme id %q belongs to the built-in theme pack %q", pack.ErrInvalidPack, t.ID, b.Manifest.ID)
 				}
 			}
 		}
@@ -103,7 +103,7 @@ func checkBuiltinClash(packID string, list []Theme) error {
 // theme id may belong to another installed pack. One transaction upserts the
 // theme_packs row (clearing an uninstall) and replaces the pack's themes. An
 // identical re-import (same themes and manifest fields) writes nothing.
-func Import(ctx context.Context, sqlDB *sql.DB, p dict.Pack) (Result, error) {
+func Import(ctx context.Context, sqlDB *sql.DB, p pack.Pack) (Result, error) {
 	list, err := CheckPack(p)
 	if err != nil {
 		return Result{}, err
@@ -130,7 +130,7 @@ func Import(ctx context.Context, sqlDB *sql.DB, p dict.Pack) (Result, error) {
 		err := tx.QueryRowContext(ctx, `SELECT pack_id FROM themes WHERE theme_id = ? AND pack_id != ?`, t.ID, m.ID).Scan(&owner)
 		switch {
 		case err == nil:
-			return Result{}, fmt.Errorf("%w: the theme id %q belongs to the installed theme pack %q", dict.ErrInvalidPack, t.ID, owner)
+			return Result{}, fmt.Errorf("%w: the theme id %q belongs to the installed theme pack %q", pack.ErrInvalidPack, t.ID, owner)
 		case !errors.Is(err, sql.ErrNoRows):
 			return Result{}, fmt.Errorf("import theme pack %s: %w", m.ID, err)
 		}
@@ -253,11 +253,11 @@ func Packs(ctx context.Context, q Querier) ([]Pack, error) {
 	defer ids.Close()
 	byPack := map[string][]string{}
 	for ids.Next() {
-		var pack, id string
-		if err := ids.Scan(&pack, &id); err != nil {
+		var pk, id string
+		if err := ids.Scan(&pk, &id); err != nil {
 			return nil, fmt.Errorf("themes: list packs: %w", err)
 		}
-		byPack[pack] = append(byPack[pack], id)
+		byPack[pk] = append(byPack[pk], id)
 	}
 	if err := ids.Err(); err != nil {
 		return nil, fmt.Errorf("themes: list packs: %w", err)
@@ -289,16 +289,16 @@ func Installed(ctx context.Context, q Querier) ([]InstalledTheme, error) {
 	defer rows.Close()
 	var out []InstalledTheme
 	for rows.Next() {
-		var pack, id, data string
-		if err := rows.Scan(&pack, &id, &data); err != nil {
+		var pk, id, data string
+		if err := rows.Scan(&pk, &id, &data); err != nil {
 			return nil, fmt.Errorf("themes: list: %w", err)
 		}
 		t, err := ParseTheme([]byte(data))
 		if err != nil || t.ID != id {
-			log.Printf("themes: stored theme %s of pack %s skipped: %v", id, pack, err)
+			log.Printf("themes: stored theme %s of pack %s skipped: %v", id, pk, err)
 			continue
 		}
-		out = append(out, InstalledTheme{PackID: pack, Theme: t})
+		out = append(out, InstalledTheme{PackID: pk, Theme: t})
 	}
 	if err := rows.Err(); err != nil {
 		return nil, fmt.Errorf("themes: list: %w", err)

@@ -16,9 +16,9 @@ import (
 	"strings"
 	"time"
 
-	"qinqin/internal/dict"
 	"qinqin/internal/lexicon"
 	"qinqin/internal/model"
+	"qinqin/internal/pack"
 )
 
 // ErrNotFound reports an uninstall of an unknown — or already
@@ -64,22 +64,22 @@ type sentenceRow struct {
 // transaction — superseded rows are soft-deleted, the new list
 // inserted — scoped to that pack's rows alone: user-owned sentences
 // never carry a source pack and are never touched.
-func ImportPack(ctx context.Context, sqlDB *sql.DB, pack dict.Pack) (Result, error) {
-	m := pack.Manifest
+func ImportPack(ctx context.Context, sqlDB *sql.DB, pk pack.Pack) (Result, error) {
+	m := pk.Manifest
 	// LoadPack normalizes the manifest; ImportPack re-applies the one
 	// part its own lookups key on, in case the pack arrived by another
 	// route.
 	m.Language = strings.ToLower(strings.TrimSpace(m.Language))
 	if err := m.Validate(); err != nil {
-		return Result{}, fmt.Errorf("%w: %v", dict.ErrInvalidPack, err)
+		return Result{}, fmt.Errorf("%w: %v", pack.ErrInvalidPack, err)
 	}
-	if m.Type != dict.TypeSentences {
+	if m.Type != pack.TypeSentences {
 		return Result{}, fmt.Errorf("%w: %q is a %s pack", ErrNotSentences, m.ID, m.Type)
 	}
-	if m.Format != dict.FormatJSON {
-		return Result{}, fmt.Errorf("%w: sentences pack format %q is not implemented (want json)", dict.ErrInvalidPack, m.Format)
+	if m.Format != pack.FormatJSON {
+		return Result{}, fmt.Errorf("%w: sentences pack format %q is not implemented (want json)", pack.ErrInvalidPack, m.Format)
 	}
-	groups, err := readPack(pack.Dir)
+	groups, err := readPack(pk.Dir)
 	if err != nil {
 		return Result{}, err
 	}
@@ -222,35 +222,35 @@ func AddUser(ctx context.Context, sqlDB *sql.DB, userID, entryID int64, s model.
 // Uninstall soft-deletes every sentence of the pack with manifest id
 // pack. User-owned sentences never carry a source pack and survive. An
 // unknown or already-uninstalled pack returns ErrNotFound.
-func Uninstall(ctx context.Context, sqlDB *sql.DB, pack string) error {
+func Uninstall(ctx context.Context, sqlDB *sql.DB, pk string) error {
 	stamp := now()
 	tx, err := sqlDB.BeginTx(ctx, nil)
 	if err != nil {
-		return fmt.Errorf("uninstall sentences of pack %s: %w", pack, err)
+		return fmt.Errorf("uninstall sentences of pack %s: %w", pk, err)
 	}
 	defer tx.Rollback()
 	res, err := tx.ExecContext(ctx, `
 		UPDATE sentences SET deleted_at = ?, updated_at = ?
 		WHERE source_pack = ? AND user_id IS NULL AND deleted_at IS NULL`,
-		stamp, stamp, pack)
+		stamp, stamp, pk)
 	if err != nil {
-		return fmt.Errorf("uninstall sentences of pack %s: %w", pack, err)
+		return fmt.Errorf("uninstall sentences of pack %s: %w", pk, err)
 	}
 	n, err := res.RowsAffected()
 	if err != nil {
-		return fmt.Errorf("uninstall sentences of pack %s: %w", pack, err)
+		return fmt.Errorf("uninstall sentences of pack %s: %w", pk, err)
 	}
 	// A registered pack with no live sentences (all skipped) still
 	// uninstalls: the registry row is what the admin sees.
 	reg, err := tx.ExecContext(ctx, `
 		UPDATE sentence_packs SET deleted_at = ?, updated_at = ?
-		WHERE pack_id = ? AND deleted_at IS NULL`, stamp, stamp, pack)
+		WHERE pack_id = ? AND deleted_at IS NULL`, stamp, stamp, pk)
 	if err != nil {
-		return fmt.Errorf("uninstall sentence pack %s: %w", pack, err)
+		return fmt.Errorf("uninstall sentence pack %s: %w", pk, err)
 	}
 	regN, err := reg.RowsAffected()
 	if err != nil {
-		return fmt.Errorf("uninstall sentence pack %s: %w", pack, err)
+		return fmt.Errorf("uninstall sentence pack %s: %w", pk, err)
 	}
 	if n == 0 && regN == 0 {
 		return ErrNotFound
@@ -261,7 +261,7 @@ func Uninstall(ctx context.Context, sqlDB *sql.DB, pack string) error {
 // upsertRegistry records the pack's manifest in sentence_packs inside
 // tx, reviving an uninstalled row. An unchanged live row is not
 // restamped, so an identical re-import writes nothing.
-func upsertRegistry(ctx context.Context, tx *sql.Tx, m dict.Manifest, stamp string) error {
+func upsertRegistry(ctx context.Context, tx *sql.Tx, m pack.Manifest, stamp string) error {
 	if _, err := tx.ExecContext(ctx, `
 		INSERT INTO sentence_packs (pack_id, name, version, language, license, attribution, notice, updated_at)
 		VALUES (?, ?, ?, ?, ?, ?, ?, ?)
@@ -313,26 +313,26 @@ type packSentence struct {
 func readPack(dir string) ([]packEntry, error) {
 	data, err := os.ReadFile(filepath.Join(dir, sentencesFile))
 	if err != nil {
-		return nil, fmt.Errorf("%w: read %s of %s: %v", dict.ErrInvalidPack, sentencesFile, dir, err)
+		return nil, fmt.Errorf("%w: read %s of %s: %v", pack.ErrInvalidPack, sentencesFile, dir, err)
 	}
 	var p packData
 	if err := json.Unmarshal(data, &p); err != nil {
-		return nil, fmt.Errorf("%w: parse %s of %s: %v", dict.ErrInvalidPack, sentencesFile, dir, err)
+		return nil, fmt.Errorf("%w: parse %s of %s: %v", pack.ErrInvalidPack, sentencesFile, dir, err)
 	}
 	if len(p.Entries) == 0 {
-		return nil, fmt.Errorf("%w: %s of %s: at least one entry is required", dict.ErrInvalidPack, sentencesFile, dir)
+		return nil, fmt.Errorf("%w: %s of %s: at least one entry is required", pack.ErrInvalidPack, sentencesFile, dir)
 	}
 	for i, g := range p.Entries {
 		if strings.TrimSpace(g.Word) == "" {
-			return nil, fmt.Errorf("%w: %s of %s: entry %d needs a word", dict.ErrInvalidPack, sentencesFile, dir, i)
+			return nil, fmt.Errorf("%w: %s of %s: entry %d needs a word", pack.ErrInvalidPack, sentencesFile, dir, i)
 		}
 		if len(g.Sentences) == 0 {
-			return nil, fmt.Errorf("%w: %s of %s: entry %d (%s) lists no sentences", dict.ErrInvalidPack, sentencesFile, dir, i, g.Word)
+			return nil, fmt.Errorf("%w: %s of %s: entry %d (%s) lists no sentences", pack.ErrInvalidPack, sentencesFile, dir, i, g.Word)
 		}
 		for j, s := range g.Sentences {
 			if strings.TrimSpace(s.Hanzi) == "" || strings.TrimSpace(s.Translation) == "" {
 				return nil, fmt.Errorf("%w: %s of %s: sentence %d of %s needs a hanzi and a translation",
-					dict.ErrInvalidPack, sentencesFile, dir, j, g.Word)
+					pack.ErrInvalidPack, sentencesFile, dir, j, g.Word)
 			}
 			// The reading is optional: a pack leaves it out rather than
 			// guess one (a generated reading of an ambiguous word). A
@@ -350,7 +350,7 @@ func readPack(dir string) ([]packEntry, error) {
 // re-import swaps a pack's sentences atomically, scoped to that pack
 // alone. User-owned rows never carry a source pack and are never
 // touched.
-func writePack(ctx context.Context, sqlDB *sql.DB, m dict.Manifest, rows []sentenceRow) error {
+func writePack(ctx context.Context, sqlDB *sql.DB, m pack.Manifest, rows []sentenceRow) error {
 	tx, err := sqlDB.BeginTx(ctx, nil)
 	if err != nil {
 		return fmt.Errorf("import sentences %s: %w", m.ID, err)

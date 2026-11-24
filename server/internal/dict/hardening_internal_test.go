@@ -7,6 +7,7 @@ import (
 
 	"qinqin/internal/dbtest"
 	"qinqin/internal/lexicon"
+	"qinqin/internal/pack"
 )
 
 // A radical outside the Kangxi table is rejected before the first entry is
@@ -23,7 +24,7 @@ func TestUnihanRadicalCheckRunsBeforeAnyWrite(t *testing.T) {
 		Radicals:    map[string]int{"好": 215},
 		Definitions: map[string]string{"一": "one"},
 	}
-	_, err = importUnihanLexicon(ctx, tx, lexicon.Store{DB: sqlDB}, 1, Manifest{Language: "zh"}, data)
+	_, err = importUnihanLexicon(ctx, tx, lexicon.Store{DB: sqlDB}, 1, pack.Manifest{Language: "zh"}, data)
 	if err == nil || !strings.Contains(err.Error(), "215") {
 		t.Fatalf("err = %v, want the radical error", err)
 	}

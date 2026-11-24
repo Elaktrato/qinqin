@@ -1,4 +1,4 @@
-package dict
+package pack
 
 import (
 	"archive/zip"
@@ -14,7 +14,10 @@ import (
 
 // ErrInvalidPack reports a pack whose files are missing, malformed, or
 // invalid; callers map it to a client error rather than a server fault.
-var ErrInvalidPack = errors.New("dict: invalid pack")
+var ErrInvalidPack = errors.New("pack: invalid pack")
+
+// ErrNotFound reports a pack that is not installed.
+var ErrNotFound = errors.New("packs: not found")
 
 // Pack is one loaded pack: its validated manifest plus the directory
 // holding its data files.
@@ -95,7 +98,7 @@ func loadDir(dir string) (Pack, error) {
 	if err := json.Unmarshal(data, &m); err != nil {
 		return Pack{}, fmt.Errorf("%w: parse manifest of %s: %v", ErrInvalidPack, dir, err)
 	}
-	m.normalize()
+	m.Normalize()
 	if err := m.Validate(); err != nil {
 		return Pack{}, fmt.Errorf("%w: %s: %v", ErrInvalidPack, dir, err)
 	}

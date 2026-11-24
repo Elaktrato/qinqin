@@ -13,7 +13,7 @@ import (
 	"testing"
 
 	"qinqin/internal/dbtest"
-	"qinqin/internal/dict"
+	"qinqin/internal/pack"
 	"qinqin/internal/strokes"
 )
 
@@ -31,7 +31,7 @@ func line(char, data string) string {
 
 // writePack writes a strokes pack directory with the given jsonl body
 // (gzipped) and loads it.
-func writePack(t *testing.T, id, version string, languages []string, jsonl string) dict.Pack {
+func writePack(t *testing.T, id, version string, languages []string, jsonl string) pack.Pack {
 	t.Helper()
 	dir := t.TempDir()
 	m, _ := json.Marshal(map[string]any{
@@ -49,7 +49,7 @@ func writePack(t *testing.T, id, version string, languages []string, jsonl strin
 	if err := os.WriteFile(filepath.Join(dir, strokes.DataFile), buf.Bytes(), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	p, err := dict.LoadPack(dir)
+	p, err := pack.LoadPack(dir)
 	if err != nil {
 		t.Fatalf("LoadPack: %v", err)
 	}
@@ -122,7 +122,7 @@ func TestMalformedLineFailsWholeImport(t *testing.T) {
 				t.Fatal(err)
 			}
 			_, err := strokes.Import(ctx, sqlDB, writePack(t, "hw", "2", []string{"zh"}, body))
-			if !errors.Is(err, dict.ErrInvalidPack) {
+			if !errors.Is(err, pack.ErrInvalidPack) {
 				t.Fatalf("Import = %v, want ErrInvalidPack", err)
 			}
 			var n int
@@ -236,13 +236,13 @@ func TestImportRejectsOtherTypesAndFormats(t *testing.T) {
 	ctx := context.Background()
 	sqlDB := dbtest.Open(t)
 	p := writePack(t, "hw", "1", []string{"zh"}, threeChars())
-	p.Type = dict.TypeComponents
-	if _, err := strokes.Import(ctx, sqlDB, p); !errors.Is(err, dict.ErrInvalidPack) {
+	p.Type = pack.TypeComponents
+	if _, err := strokes.Import(ctx, sqlDB, p); !errors.Is(err, pack.ErrInvalidPack) {
 		t.Errorf("components pack: Import = %v, want ErrInvalidPack", err)
 	}
 	p = writePack(t, "hw", "1", []string{"zh"}, threeChars())
 	os.Remove(filepath.Join(p.Dir, strokes.DataFile))
-	if _, err := strokes.Import(ctx, sqlDB, p); !errors.Is(err, dict.ErrInvalidPack) {
+	if _, err := strokes.Import(ctx, sqlDB, p); !errors.Is(err, pack.ErrInvalidPack) {
 		t.Errorf("missing data file: Import = %v, want ErrInvalidPack", err)
 	}
 }

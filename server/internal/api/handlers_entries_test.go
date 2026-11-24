@@ -12,9 +12,9 @@ import (
 
 	"qinqin/internal/api"
 	"qinqin/internal/dbtest"
-	"qinqin/internal/dict"
 	"qinqin/internal/lang"
 	"qinqin/internal/model"
+	"qinqin/internal/pack"
 )
 
 // entryBody mirrors the JSON body of GET /api/entries/{id}.
@@ -176,11 +176,11 @@ func seedEntries(t *testing.T, sqlDB *sql.DB) {
 	t.Helper()
 	lang.Register(lang.Ja{})
 	lang.Register(lang.Zh{})
-	lookupImport(t, sqlDB, dict.Manifest{
+	lookupImport(t, sqlDB, pack.Manifest{
 		ID: "jmdict-test", Name: "JMdict test", Version: "1", Type: "dictionary", Language: "ja",
 		License: "CC BY-SA 4.0", Attribution: "EDRDG", Format: "jmdict",
 	}, "jmdict.xml", entriesJMdict)
-	lookupImport(t, sqlDB, dict.Manifest{
+	lookupImport(t, sqlDB, pack.Manifest{
 		ID: "cedict-test", Name: "CC-CEDICT test", Version: "1", Type: "dictionary", Language: "zh",
 		License: "CC BY-SA 4.0", Attribution: "MDBG", Format: "cedict",
 	}, "dictionary.txt", entriesCedict)
@@ -188,7 +188,7 @@ func seedEntries(t *testing.T, sqlDB *sql.DB) {
 	if err != nil {
 		t.Fatalf("read unihan fixture: %v", err)
 	}
-	lookupImport(t, sqlDB, dict.Manifest{
+	lookupImport(t, sqlDB, pack.Manifest{
 		ID: "unihan", Name: "Unihan database", Version: "1.0", Type: "dictionary", Language: "zh",
 		License: "Unicode License v3 (fixture)", Attribution: "Unicode Consortium (fixture attribution)",
 		Format: "unihan",

@@ -9,9 +9,9 @@ import (
 	"testing"
 
 	"qinqin/internal/dbtest"
-	"qinqin/internal/dict"
 	"qinqin/internal/lang"
 	"qinqin/internal/levels"
+	"qinqin/internal/pack"
 )
 
 // kazeJMdict: 風 is a written form of the usually-kana 振り (ふり, with a
@@ -51,7 +51,7 @@ const kazeJMdict = `<?xml version="1.0" encoding="UTF-8"?>
 `
 
 // jaLevelsPack writes a ja levels pack holding levelsJSON and loads it.
-func jaLevelsPack(t *testing.T, id, levelsJSON string) dict.Pack {
+func jaLevelsPack(t *testing.T, id, levelsJSON string) pack.Pack {
 	t.Helper()
 	dir := t.TempDir()
 	manifest := `{"id":"` + id + `","name":"JLPT test","version":"1.0","type":"levels",` +
@@ -61,7 +61,7 @@ func jaLevelsPack(t *testing.T, id, levelsJSON string) dict.Pack {
 			t.Fatal(err)
 		}
 	}
-	p, err := dict.LoadPack(dir)
+	p, err := pack.LoadPack(dir)
 	if err != nil {
 		t.Fatalf("load pack: %v", err)
 	}
@@ -85,7 +85,7 @@ func TestEntryWithReading(t *testing.T) {
 	lang.Register(lang.Ja{})
 	sqlDB := dbtest.Open(t)
 	ctx := context.Background()
-	importDictionary(t, sqlDB, dict.Manifest{
+	importDictionary(t, sqlDB, pack.Manifest{
 		ID: "jmdict-test", Name: "JMdict test", Version: "1", Type: "dictionary", Language: "ja",
 		License: "CC BY-SA 4.0", Attribution: "EDRDG", Format: "jmdict",
 	}, "jmdict.xml", kazeJMdict)
@@ -93,10 +93,10 @@ func TestEntryWithReading(t *testing.T) {
 	kaze := jaWordID(t, sqlDB, "j:1500620")
 	soto := jaWordID(t, sqlDB, "j:1500621")
 
-	pack := jaLevelsPack(t, "reading", `{"unit":"word","levels":[
+	pk := jaLevelsPack(t, "reading", `{"unit":"word","levels":[
 		{"name":"N5","entries":[{"form":"風","reading":"かぜ"},"外",{"form":"猫","reading":"ねこ"}]},
 		{"name":"N4","entries":[{"form":"風","reading":"なし"}]}]}`)
-	res, err := levels.Import(ctx, sqlDB, pack)
+	res, err := levels.Import(ctx, sqlDB, pk)
 	if err != nil {
 		t.Fatalf("import: %v", err)
 	}
@@ -146,10 +146,10 @@ func TestZhEntryWithPinyinReading(t *testing.T) {
 	xingren := lexID(t, sqlDB, "word", "行人")
 	hangren := lexID(t, sqlDB, "word", "杭人")
 
-	pack := buildPack(t, "zh-reading", `{"unit":"word","levels":[
+	pk := buildPack(t, "zh-reading", `{"unit":"word","levels":[
 		{"name":"L1","entries":[{"form":"行人","reading":"hángrén"}]},
 		{"name":"L2","entries":["行人"]}]}`)
-	if _, err := levels.Import(ctx, sqlDB, pack); err != nil {
+	if _, err := levels.Import(ctx, sqlDB, pk); err != nil {
 		t.Fatalf("import: %v", err)
 	}
 	for _, c := range []struct {

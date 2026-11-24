@@ -1,24 +1,22 @@
-package dict
+package pack
 
 import (
-	"maps"
-	"slices"
 	"strings"
 	"testing"
-
-	"qinqin/internal/packtype"
 )
 
 // The valid manifest types are exactly the pack-type table's (#172).
 func TestManifestTypesFollowThePackTypeTable(t *testing.T) {
-	got := slices.Sorted(maps.Keys(manifestTypes))
-	want := packtype.Types()
-	slices.Sort(want)
-	if !slices.Equal(got, want) {
-		t.Errorf("manifest types %v, table %v", got, want)
+	for _, typ := range Types() {
+		if !known(typ) {
+			t.Errorf("%s is not a manifest type", typ)
+		}
+	}
+	if known("nope") || known("lexicon") {
+		t.Error("an unknown type is a manifest type")
 	}
 	err := Manifest{ID: "x", Name: "x", Version: "1", License: "x", Attribution: "x", Type: "nope", Format: FormatJSON}.Validate()
-	for _, typ := range packtype.Types() {
+	for _, typ := range Types() {
 		if err == nil || !strings.Contains(err.Error(), typ) {
 			t.Errorf("unknown type error %v does not list %s", err, typ)
 		}
@@ -30,14 +28,14 @@ func TestManifestTypesFollowThePackTypeTable(t *testing.T) {
 func TestLanguagesFollowTheTableShape(t *testing.T) {
 	old := lookupPackType
 	t.Cleanup(func() { lookupPackType = old })
-	lookupPackType = func(typ string) (packtype.Descriptor, bool) {
+	lookupPackType = func(typ string) (Descriptor, bool) {
 		switch typ {
 		case "new-none":
-			return packtype.Descriptor{Type: typ, Languages: packtype.None}, true
+			return Descriptor{Type: typ, Languages: None}, true
 		case "new-many":
-			return packtype.Descriptor{Type: typ, Languages: packtype.Many}, true
+			return Descriptor{Type: typ, Languages: Many}, true
 		case "new-one":
-			return packtype.Descriptor{Type: typ, Languages: packtype.One}, true
+			return Descriptor{Type: typ, Languages: One}, true
 		}
 		return old(typ)
 	}

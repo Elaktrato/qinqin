@@ -8,13 +8,13 @@ import (
 	"strings"
 	"sync"
 
-	"qinqin/internal/dict"
+	"qinqin/internal/pack"
 )
 
 // BuiltinPack is a theme pack embedded in the binary: always present, never
 // stored, never uninstalled. License is its LICENSE text.
 type BuiltinPack struct {
-	Manifest dict.Manifest
+	Manifest pack.Manifest
 	Themes   []Theme
 	License  string
 }
@@ -40,7 +40,7 @@ var loadBuiltin = sync.OnceValue(func() []BuiltinPack {
 			}
 			return b
 		}
-		var m dict.Manifest
+		var m pack.Manifest
 		if err := json.Unmarshal(read("manifest.json"), &m); err != nil {
 			panic(fmt.Sprintf("themes: built-in pack %s: manifest: %v", id, err))
 		}

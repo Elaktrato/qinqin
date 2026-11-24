@@ -9,6 +9,8 @@ import (
 	"strconv"
 	"strings"
 	"unicode/utf8"
+
+	"qinqin/internal/pack"
 )
 
 // unihanFile is the data file of a format "unihan" dictionary pack: the
@@ -241,23 +243,23 @@ func readUnihanPack(dir string) (UnihanData, error) {
 	if _, err := os.Stat(zipPath); err == nil {
 		f, err := openZipMembers(zipPath, unihanZipMembers, unihanZipOptionalMembers)
 		if err != nil {
-			return UnihanData{}, fmt.Errorf("%w: read %s of %s: %v", ErrInvalidPack, unihanZipFile, dir, err)
+			return UnihanData{}, fmt.Errorf("%w: read %s of %s: %v", pack.ErrInvalidPack, unihanZipFile, dir, err)
 		}
 		defer f.Close()
 		data, err := ParseUnihan(f)
 		if err != nil {
-			return UnihanData{}, fmt.Errorf("%w: parse %s of %s: %v", ErrInvalidPack, unihanZipFile, dir, err)
+			return UnihanData{}, fmt.Errorf("%w: parse %s of %s: %v", pack.ErrInvalidPack, unihanZipFile, dir, err)
 		}
 		return data, nil
 	}
 	f, err := openMaybeGz(filepath.Join(dir, unihanFile))
 	if err != nil {
-		return UnihanData{}, fmt.Errorf("%w: read %s of %s: %v", ErrInvalidPack, unihanFile, dir, err)
+		return UnihanData{}, fmt.Errorf("%w: read %s of %s: %v", pack.ErrInvalidPack, unihanFile, dir, err)
 	}
 	defer f.Close()
 	data, err := ParseUnihan(f)
 	if err != nil {
-		return UnihanData{}, fmt.Errorf("%w: parse %s of %s: %v", ErrInvalidPack, unihanFile, dir, err)
+		return UnihanData{}, fmt.Errorf("%w: parse %s of %s: %v", pack.ErrInvalidPack, unihanFile, dir, err)
 	}
 	return data, nil
 }

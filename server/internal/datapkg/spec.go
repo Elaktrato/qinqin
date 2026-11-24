@@ -16,9 +16,8 @@ import (
 	"slices"
 	"strings"
 
-	"qinqin/internal/dict"
+	"qinqin/internal/pack"
 	"qinqin/internal/packs"
-	"qinqin/internal/packtype"
 )
 
 // Type is a package type.
@@ -119,23 +118,23 @@ type registry struct {
 }
 
 // registries are the package types built per pack: every row of the
-// pack-type table (internal/packtype) with a package, except the
+// pack-type table (internal/pack) with a package, except the
 // dictionaries' lexicon, which Plan builds per language.
 var registries = func() []registry {
 	var out []registry
-	for _, d := range packtype.All {
-		if d.Package == "" || d.Package == packtype.LexiconPackage {
+	for _, d := range pack.All {
+		if d.Package == "" || d.Package == pack.LexiconPackage {
 			continue
 		}
 		lang := "language"
-		if d.Languages == packtype.Many {
+		if d.Languages == pack.Many {
 			lang = "languages"
 		}
 		out = append(out, registry{
 			typ:             Type(d.Package),
 			packType:        d.Type,
 			query:           `SELECT pack_id, name, version, ` + lang + `, license, attribution, notice FROM ` + d.Registry + ` WHERE deleted_at IS NULL`,
-			manyLanguages:   d.Languages == packtype.Many,
+			manyLanguages:   d.Languages == pack.Many,
 			optional:        d.OptionalPackage,
 			requiresLexicon: d.RequiresLexicon,
 		})
@@ -164,7 +163,7 @@ func Plan(ctx context.Context, q Querier) ([]Spec, error) {
 				s = &Spec{ID: id, Type: TypeLexicon, Languages: []string{language}}
 				lexicons[language] = s
 			}
-			s.Sources = append(s.Sources, Source{Type: dict.TypeDictionary, PackID: packID, Name: name, Version: version,
+			s.Sources = append(s.Sources, Source{Type: pack.TypeDictionary, PackID: packID, Name: name, Version: version,
 				License: license, Attribution: attribution, Notice: notice})
 			return nil
 		})

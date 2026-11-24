@@ -8,6 +8,7 @@ import (
 
 	"qinqin/internal/dbtest"
 	"qinqin/internal/dict"
+	"qinqin/internal/pack"
 )
 
 // Files downloaded or edited on Windows end lines with CRLF; the \r is
@@ -15,8 +16,8 @@ import (
 func TestCedictImportAcceptsCRLF(t *testing.T) {
 	sqlDB := dbtest.Open(t)
 	text := strings.ReplaceAll(goodCedictLines(30), "\n", "\r\n")
-	pack := cedictPackFromText(t, text)
-	res, err := dict.ImportLexicon(context.Background(), sqlDB, &pack)
+	pk := cedictPackFromText(t, text)
+	res, err := dict.ImportLexicon(context.Background(), sqlDB, &pk)
 	if err != nil {
 		t.Fatalf("ImportLexicon(CRLF file): %v", err)
 	}
@@ -33,9 +34,9 @@ func TestCedictImportRejectsEmptyFile(t *testing.T) {
 		"empty":         "",
 		"comments only": "# CC-CEDICT\n#! version=1\n",
 	} {
-		pack := cedictPackFromText(t, text)
-		_, err := dict.ImportLexicon(context.Background(), sqlDB, &pack)
-		if !errors.Is(err, dict.ErrInvalidPack) {
+		pk := cedictPackFromText(t, text)
+		_, err := dict.ImportLexicon(context.Background(), sqlDB, &pk)
+		if !errors.Is(err, pack.ErrInvalidPack) {
 			t.Errorf("%s: ImportLexicon err = %v, want ErrInvalidPack", name, err)
 		}
 	}

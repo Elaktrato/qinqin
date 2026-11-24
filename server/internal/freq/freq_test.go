@@ -13,13 +13,13 @@ import (
 	"testing"
 
 	"qinqin/internal/dbtest"
-	"qinqin/internal/dict"
 	"qinqin/internal/freq"
+	"qinqin/internal/pack"
 )
 
-func loadPack(t *testing.T, dir string) *dict.Pack {
+func loadPack(t *testing.T, dir string) *pack.Pack {
 	t.Helper()
-	p, err := dict.LoadPack(dir)
+	p, err := pack.LoadPack(dir)
 	if err != nil {
 		t.Fatalf("LoadPack(%s): %v", dir, err)
 	}
@@ -42,14 +42,14 @@ func writeFiles(t *testing.T, files map[string]string) string {
 	return dir
 }
 
-func csvPack(t *testing.T, id, body string) *dict.Pack {
+func csvPack(t *testing.T, id, body string) *pack.Pack {
 	return loadPack(t, writeFiles(t, map[string]string{
 		"manifest.json": manifest(id, "freq-csv"),
 		"freq.csv":      "term,reading,rank\n" + body,
 	}))
 }
 
-func mustImport(t *testing.T, sqlDB *sql.DB, p *dict.Pack) dict.Result {
+func mustImport(t *testing.T, sqlDB *sql.DB, p *pack.Pack) freq.Result {
 	t.Helper()
 	r, err := freq.Import(context.Background(), sqlDB, p)
 	if err != nil {
@@ -103,7 +103,7 @@ func TestImportYomitanDirectory(t *testing.T) {
 	}
 }
 
-func yomitanZipPack(t *testing.T, index, bank string) *dict.Pack {
+func yomitanZipPack(t *testing.T, index, bank string) *pack.Pack {
 	t.Helper()
 	dir := t.TempDir()
 	f, err := os.Create(filepath.Join(dir, "dictionary.zip"))
@@ -289,35 +289,35 @@ func TestReimportReplacesRowsAndIdenticalWritesNothing(t *testing.T) {
 func TestMalformedPackWritesNothing(t *testing.T) {
 	for _, tc := range []struct {
 		name string
-		pack func() *dict.Pack
+		pack func() *pack.Pack
 		want string
 	}{
-		{"csv bad rank on the last row", func() *dict.Pack { return csvPack(t, "bad", "猫,,3\n犬,,x\n") }, "freq.csv row 1"},
-		{"csv zero rank", func() *dict.Pack { return csvPack(t, "bad", "猫,,0\n") }, "freq.csv row 0"},
-		{"csv rank beyond 2^53", func() *dict.Pack { return csvPack(t, "bad", "猫,,3\n犬,,99999999999999999999\n") }, "freq.csv row 1"},
-		{"csv empty term", func() *dict.Pack { return csvPack(t, "bad", ",,3\n") }, "freq.csv row 0"},
-		{"csv wrong header", func() *dict.Pack {
+		{"csv bad rank on the last row", func() *pack.Pack { return csvPack(t, "bad", "猫,,3\n犬,,x\n") }, "freq.csv row 1"},
+		{"csv zero rank", func() *pack.Pack { return csvPack(t, "bad", "猫,,0\n") }, "freq.csv row 0"},
+		{"csv rank beyond 2^53", func() *pack.Pack { return csvPack(t, "bad", "猫,,3\n犬,,99999999999999999999\n") }, "freq.csv row 1"},
+		{"csv empty term", func() *pack.Pack { return csvPack(t, "bad", ",,3\n") }, "freq.csv row 0"},
+		{"csv wrong header", func() *pack.Pack {
 			return loadPack(t, writeFiles(t, map[string]string{"manifest.json": manifest("bad", "freq-csv"), "freq.csv": "word,rank\nx,1\n"}))
 		}, "header"},
-		{"csv missing file", func() *dict.Pack {
+		{"csv missing file", func() *pack.Pack {
 			return loadPack(t, writeFiles(t, map[string]string{"manifest.json": manifest("bad", "freq-csv")}))
 		}, "freq.csv"},
-		{"yomitan row not an array of three", func() *dict.Pack {
+		{"yomitan row not an array of three", func() *pack.Pack {
 			return yomitanZipPack(t, `{}`, `[["a","freq",1],["b","freq"]]`)
 		}, "term_meta_bank_1.json row 1"},
-		{"yomitan unusable value", func() *dict.Pack {
+		{"yomitan unusable value", func() *pack.Pack {
 			return yomitanZipPack(t, `{}`, `[["a","freq",1],["b","freq",{"frequency":[]}]]`)
 		}, "term_meta_bank_1.json row 1"},
-		{"yomitan value beyond 2^53", func() *dict.Pack {
+		{"yomitan value beyond 2^53", func() *pack.Pack {
 			return yomitanZipPack(t, `{"frequencyMode":"occurrence-based"}`, `[["a","freq",1],["b","freq",1e300]]`)
 		}, "term_meta_bank_1.json row 1"},
-		{"yomitan non-integer rank", func() *dict.Pack {
+		{"yomitan non-integer rank", func() *pack.Pack {
 			return yomitanZipPack(t, `{}`, `[["a","freq",1.5]]`)
 		}, "term_meta_bank_1.json row 0"},
-		{"yomitan unknown mode", func() *dict.Pack {
+		{"yomitan unknown mode", func() *pack.Pack {
 			return yomitanZipPack(t, `{"frequencyMode":"weird"}`, `[["a","freq",1]]`)
 		}, "frequencyMode"},
-		{"yomitan broken json", func() *dict.Pack {
+		{"yomitan broken json", func() *pack.Pack {
 			return yomitanZipPack(t, `{}`, `[["a","freq",1],`)
 		}, "term_meta_bank_1.json"},
 	} {
@@ -326,8 +326,8 @@ func TestMalformedPackWritesNothing(t *testing.T) {
 		if err == nil || !strings.Contains(err.Error(), tc.want) {
 			t.Errorf("%s: err = %v, want it to mention %q", tc.name, err, tc.want)
 		}
-		if !errors.Is(err, dict.ErrInvalidPack) {
-			t.Errorf("%s: err = %v, want it to wrap dict.ErrInvalidPack", tc.name, err)
+		if !errors.Is(err, pack.ErrInvalidPack) {
+			t.Errorf("%s: err = %v, want it to wrap pack.ErrInvalidPack", tc.name, err)
 		}
 		if n := count(t, sqlDB, `SELECT count(*) FROM frequency`) + count(t, sqlDB, `SELECT count(*) FROM frequency_packs`); n != 0 {
 			t.Errorf("%s: %d rows written by a failed import", tc.name, n)
@@ -347,7 +347,7 @@ func TestFailedReimportKeepsThePreviousRows(t *testing.T) {
 func TestImportRejectsOtherPackTypes(t *testing.T) {
 	sqlDB := dbtest.Open(t)
 	p := csvPack(t, "x", "猫,,3\n")
-	p.Type = dict.TypeDictionary
+	p.Type = pack.TypeDictionary
 	if _, err := freq.Import(context.Background(), sqlDB, p); err == nil {
 		t.Error("Import of a dictionary pack succeeded")
 	}

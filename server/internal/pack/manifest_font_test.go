@@ -1,15 +1,15 @@
-package dict_test
+package pack_test
 
 import (
 	"strings"
 	"testing"
 
-	"qinqin/internal/dict"
+	"qinqin/internal/pack"
 )
 
-func fontManifest() dict.Manifest {
+func fontManifest() pack.Manifest {
 	m := fixtureManifest
-	m.ID, m.Type, m.Format = "noto-sans-sc", dict.TypeFont, dict.FormatFontSlices
+	m.ID, m.Type, m.Format = "noto-sans-sc", pack.TypeFont, pack.FormatFontSlices
 	m.Language = ""
 	return m
 }
@@ -21,12 +21,12 @@ func TestManifestAcceptsFontPacks(t *testing.T) {
 		t.Fatalf("font/font-slices: Validate = %v, want nil", err)
 	}
 	for name, tc := range map[string]struct {
-		mutate func(*dict.Manifest)
+		mutate func(*pack.Manifest)
 		want   string
 	}{
-		"language":     {func(m *dict.Manifest) { m.Language = "zh" }, "language"},
-		"languages":    {func(m *dict.Manifest) { m.Languages = []string{"zh"} }, "languages"},
-		"other format": {func(m *dict.Manifest) { m.Format = dict.FormatJSON }, "font-slices"},
+		"language":     {func(m *pack.Manifest) { m.Language = "zh" }, "language"},
+		"languages":    {func(m *pack.Manifest) { m.Languages = []string{"zh"} }, "languages"},
+		"other format": {func(m *pack.Manifest) { m.Format = pack.FormatJSON }, "font-slices"},
 	} {
 		m := fontManifest()
 		tc.mutate(&m)
@@ -35,7 +35,7 @@ func TestManifestAcceptsFontPacks(t *testing.T) {
 		}
 	}
 	m := fixtureManifest
-	m.Format = dict.FormatFontSlices
+	m.Format = pack.FormatFontSlices
 	if err := m.Validate(); err == nil || !strings.Contains(err.Error(), "font") {
 		t.Errorf("dictionary with font-slices: Validate = %v, want an error naming font", err)
 	}

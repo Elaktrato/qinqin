@@ -1,4 +1,4 @@
-package dict_test
+package pack_test
 
 import (
 	"strings"

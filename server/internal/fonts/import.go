@@ -10,7 +10,7 @@ import (
 	"path/filepath"
 	"time"
 
-	"qinqin/internal/dict"
+	"qinqin/internal/pack"
 )
 
 // DataFile is the faces list of a font pack.
@@ -30,20 +30,20 @@ type Querier interface {
 }
 
 // LoadFile reads and validates the faces.json of the pack in dir. Errors
-// are dict.ErrInvalidPack naming the file, the code and the path.
+// are pack.ErrInvalidPack naming the file, the code and the path.
 func LoadFile(dir string) ([]Face, error) {
 	f, err := os.Open(filepath.Join(dir, DataFile))
 	if err != nil {
-		return nil, fmt.Errorf("%w: %s: %v", dict.ErrInvalidPack, DataFile, err)
+		return nil, fmt.Errorf("%w: %s: %v", pack.ErrInvalidPack, DataFile, err)
 	}
 	defer f.Close()
 	data, err := io.ReadAll(io.LimitReader(f, MaxFacesBytes+1))
 	if err != nil {
-		return nil, fmt.Errorf("%w: %s: %v", dict.ErrInvalidPack, DataFile, err)
+		return nil, fmt.Errorf("%w: %s: %v", pack.ErrInvalidPack, DataFile, err)
 	}
 	list, err := ParseFaces(data)
 	if err != nil {
-		return nil, fmt.Errorf("%w: %s: %v", dict.ErrInvalidPack, DataFile, err)
+		return nil, fmt.Errorf("%w: %s: %v", pack.ErrInvalidPack, DataFile, err)
 	}
 	return list, nil
 }
@@ -52,18 +52,18 @@ func LoadFile(dir string) ([]Face, error) {
 // faces.json and every slice file — without the installed packs (Import
 // checks those). The staged upload calls it to refuse a broken pack
 // before the licence review.
-func CheckPack(p dict.Pack) ([]Face, error) {
+func CheckPack(p pack.Pack) ([]Face, error) {
 	_, list, err := checkPack(p)
 	return list, err
 }
 
-func checkPack(p dict.Pack) (map[string]sliceFile, []Face, error) {
+func checkPack(p pack.Pack) (map[string]sliceFile, []Face, error) {
 	m := p.Manifest
 	if err := m.Validate(); err != nil {
-		return nil, nil, fmt.Errorf("%w: %v", dict.ErrInvalidPack, err)
+		return nil, nil, fmt.Errorf("%w: %v", pack.ErrInvalidPack, err)
 	}
-	if m.Type != dict.TypeFont || m.Format != dict.FormatFontSlices {
-		return nil, nil, fmt.Errorf("%w: %q is a %s pack (format %s), not a font pack", dict.ErrInvalidPack, m.ID, m.Type, m.Format)
+	if m.Type != pack.TypeFont || m.Format != pack.FormatFontSlices {
+		return nil, nil, fmt.Errorf("%w: %q is a %s pack (format %s), not a font pack", pack.ErrInvalidPack, m.ID, m.Type, m.Format)
 	}
 	list, err := LoadFile(p.Dir)
 	if err != nil {
@@ -74,7 +74,7 @@ func checkPack(p dict.Pack) (map[string]sliceFile, []Face, error) {
 		for _, s := range f.Slices {
 			sf, err := inspect(filepath.Join(p.Dir, filepath.FromSlash(s.File)), s.Sha)
 			if err != nil {
-				return nil, nil, fmt.Errorf("%w: %s: %v", dict.ErrInvalidPack, s.File, err)
+				return nil, nil, fmt.Errorf("%w: %s: %v", pack.ErrInvalidPack, s.File, err)
 			}
 			files[s.Sha] = sf
 		}
@@ -93,7 +93,7 @@ var afterStoreHook func()
 // replaces the pack's font_slices rows, and the files no row references
 // any more are removed. A failure before the commit (a cancelled ctx
 // included) removes the slices it stored that no installed pack uses.
-func Import(ctx context.Context, sqlDB *sql.DB, p dict.Pack, storeDir string) (res Result, err error) {
+func Import(ctx context.Context, sqlDB *sql.DB, p pack.Pack, storeDir string) (res Result, err error) {
 	files, list, err := checkPack(p)
 	if err != nil {
 		return Result{}, err
@@ -107,7 +107,7 @@ func Import(ctx context.Context, sqlDB *sql.DB, p dict.Pack, storeDir string) (r
 		for _, g := range installed {
 			if g.PackID != m.ID && f.overlaps(g.Face) {
 				return Result{}, fmt.Errorf("%w: the face %s is already provided by the installed font pack %q (as %s); uninstall that pack first",
-					dict.ErrInvalidPack, f.Key(), g.PackID, g.Key())
+					pack.ErrInvalidPack, f.Key(), g.PackID, g.Key())
 			}
 		}
 	}

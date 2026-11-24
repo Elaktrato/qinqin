@@ -7,8 +7,8 @@ import (
 	"testing"
 
 	"qinqin/internal/dbtest"
-	"qinqin/internal/dict"
 	"qinqin/internal/levels"
+	"qinqin/internal/pack"
 )
 
 func schemeRow(t *testing.T, sqlDB *sql.DB, packID string) (notice, updated string) {
@@ -25,14 +25,14 @@ func TestSchemeNoticeWithoutRestamp(t *testing.T) {
 	ctx := context.Background()
 	sqlDB := dbtest.Open(t)
 	seedFixture(t, sqlDB)
-	pack, err := dict.LoadPack(hskMini)
+	pk, err := pack.LoadPack(hskMini)
 	if err != nil {
 		t.Fatalf("load pack: %v", err)
 	}
-	if _, err := levels.Import(ctx, sqlDB, pack); err != nil {
+	if _, err := levels.Import(ctx, sqlDB, pk); err != nil {
 		t.Fatalf("import: %v", err)
 	}
-	id := pack.Manifest.ID
+	id := pk.Manifest.ID
 	if notice, _ := schemeRow(t, sqlDB, id); notice != "" {
 		t.Errorf("pack without notice: notice = %q, want ''", notice)
 	}
@@ -40,23 +40,23 @@ func TestSchemeNoticeWithoutRestamp(t *testing.T) {
 	if _, err := sqlDB.Exec(`UPDATE schemes SET updated_at = ?`, longAgo); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := levels.Import(ctx, sqlDB, pack); err != nil {
+	if _, err := levels.Import(ctx, sqlDB, pk); err != nil {
 		t.Fatalf("identical re-import: %v", err)
 	}
 	if _, updated := schemeRow(t, sqlDB, id); updated != longAgo {
 		t.Errorf("identical re-import restamped the scheme: updated_at = %q", updated)
 	}
 
-	pack.Manifest.Notice = "Approximate levels, see [the source](https://example.com)."
-	if _, err := levels.Import(ctx, sqlDB, pack); err != nil {
+	pk.Manifest.Notice = "Approximate levels, see [the source](https://example.com)."
+	if _, err := levels.Import(ctx, sqlDB, pk); err != nil {
 		t.Fatalf("re-import with notice: %v", err)
 	}
 	notice, updated := schemeRow(t, sqlDB, id)
-	if notice != pack.Manifest.Notice || updated == longAgo {
+	if notice != pk.Manifest.Notice || updated == longAgo {
 		t.Errorf("changed notice: notice = %q, updated_at = %q; want it stored and restamped", notice, updated)
 	}
 	schemes, err := levels.List(ctx, sqlDB)
-	if err != nil || len(schemes) != 1 || schemes[0].Notice != pack.Manifest.Notice {
+	if err != nil || len(schemes) != 1 || schemes[0].Notice != pk.Manifest.Notice {
 		t.Errorf("List = %+v, %v; want the notice", schemes, err)
 	}
 
@@ -64,15 +64,15 @@ func TestSchemeNoticeWithoutRestamp(t *testing.T) {
 	if err := levels.Uninstall(ctx, sqlDB, schemes[0].ID); err != nil {
 		t.Fatalf("uninstall: %v", err)
 	}
-	if _, err := levels.Import(ctx, sqlDB, pack); err != nil {
+	if _, err := levels.Import(ctx, sqlDB, pk); err != nil {
 		t.Fatalf("re-import after uninstall: %v", err)
 	}
 	if schemes, err := levels.List(ctx, sqlDB); err != nil || len(schemes) != 1 {
 		t.Errorf("after revive: List = %+v, %v; want the scheme back", schemes, err)
 	}
 
-	pack.Manifest.Notice = "[x](data:text/plain,hi)"
-	if _, err := levels.Import(ctx, sqlDB, pack); !errors.Is(err, dict.ErrInvalidPack) {
+	pk.Manifest.Notice = "[x](data:text/plain,hi)"
+	if _, err := levels.Import(ctx, sqlDB, pk); !errors.Is(err, pack.ErrInvalidPack) {
 		t.Errorf("import with a data: link = %v, want ErrInvalidPack", err)
 	}
 }

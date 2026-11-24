@@ -16,6 +16,7 @@ import (
 	"qinqin/internal/lexicon"
 	"qinqin/internal/model"
 	"qinqin/internal/overlay"
+	"qinqin/internal/pack"
 )
 
 // The zh pack registers for these tests the same way main.go registers it
@@ -66,7 +67,7 @@ func entryID(t *testing.T, sqlDB *sql.DB, key string) int64 {
 }
 
 // overlayManifest is the manifest of the test dictionary pack.
-var overlayManifest = dict.Manifest{
+var overlayManifest = pack.Manifest{
 	ID: "overlay-demo", Name: "Overlay demo dictionary", Version: "1.0",
 	Type: "dictionary", Language: "zh",
 	License: "CC BY-SA 4.0", Attribution: "Qinqin test fixtures",
@@ -75,7 +76,7 @@ var overlayManifest = dict.Manifest{
 
 // importPack writes a JSON dictionary pack carrying the given data file
 // and imports it into the lexicon with the real importer.
-func importPack(t *testing.T, ctx context.Context, sqlDB *sql.DB, m dict.Manifest, dictionary string) dict.Result {
+func importPack(t *testing.T, ctx context.Context, sqlDB *sql.DB, m pack.Manifest, dictionary string) dict.Result {
 	t.Helper()
 	dir := t.TempDir()
 	manifest, err := json.Marshal(m)
@@ -90,11 +91,11 @@ func importPack(t *testing.T, ctx context.Context, sqlDB *sql.DB, m dict.Manifes
 			t.Fatalf("write %s: %v", name, err)
 		}
 	}
-	pack, err := dict.LoadPack(dir)
+	pk, err := pack.LoadPack(dir)
 	if err != nil {
 		t.Fatalf("LoadPack: %v", err)
 	}
-	res, err := dict.ImportLexicon(ctx, sqlDB, &pack)
+	res, err := dict.ImportLexicon(ctx, sqlDB, &pk)
 	if err != nil {
 		t.Fatalf("ImportLexicon: %v", err)
 	}

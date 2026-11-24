@@ -8,8 +8,8 @@ import (
 	"path/filepath"
 
 	"qinqin/internal/dict"
+	"qinqin/internal/pack"
 	"qinqin/internal/packs"
-	"qinqin/internal/packtype"
 )
 
 // storedTerms is what an installed pack's registry row holds of its
@@ -57,14 +57,14 @@ func warnStalePackTerms(ctx context.Context, sqlDB *sql.DB, roots []string, logf
 			if _, err := os.Stat(manifest); err != nil {
 				return nil // not a pack; keep walking
 			}
-			pack, err := dict.LoadPack(path)
+			pk, err := pack.LoadPack(path)
 			if err != nil {
 				logf("pack notice check: skipped %s: %v", path, err)
 				return filepath.SkipDir
 			}
-			m := pack.Manifest
+			m := pk.Manifest
 			id, license, attribution := m.ID, m.License, m.Attribution
-			if m.Type == dict.TypeDictionary {
+			if m.Type == pack.TypeDictionary {
 				id, license, attribution = dict.RegistryTerms(m)
 			}
 			// Uninstalled packs have no row.
@@ -77,10 +77,10 @@ func warnStalePackTerms(ctx context.Context, sqlDB *sql.DB, roots []string, logf
 }
 
 // staleCheckTables maps every pack type to its registry table (the
-// pack-type table, internal/packtype): every type stores its terms.
+// pack-type table, internal/pack): every type stores its terms.
 func staleCheckTables() map[string]string {
 	out := map[string]string{}
-	for _, d := range packtype.All {
+	for _, d := range pack.All {
 		out[d.Type] = d.Registry
 	}
 	return out

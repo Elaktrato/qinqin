@@ -13,7 +13,7 @@ import (
 	"time"
 
 	"qinqin/internal/api"
-	"qinqin/internal/dict"
+	"qinqin/internal/pack"
 )
 
 // The API's background goroutines (the stage sweeper here; staged pack
@@ -48,7 +48,7 @@ func TestStagedImportIsCountedAndCancelledByShutdown(t *testing.T) {
 	defer cancel()
 	var jobs api.Jobs
 	started := make(chan struct{}, 1)
-	importer := func(ctx context.Context, _ *sql.DB, _ dict.Pack) (string, error) {
+	importer := func(ctx context.Context, _ *sql.DB, _ pack.Pack) (string, error) {
 		started <- struct{}{}
 		<-ctx.Done()
 		return "", ctx.Err()
@@ -111,7 +111,7 @@ func TestNoBareGoroutinesInTheAPI(t *testing.T) {
 func TestClosedJobsRefuseNewJobs(t *testing.T) {
 	var jobs api.Jobs
 	called := make(chan struct{}, 1)
-	importer := func(ctx context.Context, _ *sql.DB, _ dict.Pack) (string, error) {
+	importer := func(ctx context.Context, _ *sql.DB, _ pack.Pack) (string, error) {
 		called <- struct{}{}
 		return "", nil
 	}

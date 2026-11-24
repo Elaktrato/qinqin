@@ -8,9 +8,9 @@ import (
 	"strings"
 	"unicode/utf8"
 
-	"qinqin/internal/dict"
 	"qinqin/internal/lexicon"
 	"qinqin/internal/model"
+	"qinqin/internal/pack"
 	"qinqin/internal/sentences"
 )
 
@@ -113,6 +113,6 @@ func (s *server) handleUninstallSentences(w http.ResponseWriter, r *http.Request
 		writeInternal(w, r)
 		return
 	}
-	s.packChanged(dict.TypeSentences, r.PathValue("pack"), "")
+	s.packChanged(pack.TypeSentences, r.PathValue("pack"), "")
 	w.WriteHeader(http.StatusNoContent)
 }

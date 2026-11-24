@@ -1,24 +1,24 @@
-package dict_test
+package pack_test
 
 import (
 	"strings"
 	"testing"
 
-	"qinqin/internal/dict"
+	"qinqin/internal/pack"
 )
 
 // A lemma-rules pack (#176) states one language and has the format
 // rules-json, which no other type may use.
 func TestManifestAcceptsLemmaRulesPacks(t *testing.T) {
 	m := fixtureManifest
-	m.ID, m.Type, m.Format = "ja-lemma", dict.TypeLemmaRules, dict.FormatRulesJSON
+	m.ID, m.Type, m.Format = "ja-lemma", pack.TypeLemmaRules, pack.FormatRulesJSON
 	if err := m.Validate(); err != nil {
 		t.Fatalf("lemma-rules/rules-json: Validate = %v", err)
 	}
-	for name, mutate := range map[string]func(*dict.Manifest){
-		"no language":  func(m *dict.Manifest) { m.Language = "" },
-		"languages":    func(m *dict.Manifest) { m.Languages = []string{"ja"} },
-		"other format": func(m *dict.Manifest) { m.Format = dict.FormatJSON },
+	for name, mutate := range map[string]func(*pack.Manifest){
+		"no language":  func(m *pack.Manifest) { m.Language = "" },
+		"languages":    func(m *pack.Manifest) { m.Languages = []string{"ja"} },
+		"other format": func(m *pack.Manifest) { m.Format = pack.FormatJSON },
 	} {
 		bad := m
 		mutate(&bad)
@@ -27,7 +27,7 @@ func TestManifestAcceptsLemmaRulesPacks(t *testing.T) {
 		}
 	}
 	other := fixtureManifest
-	other.Format = dict.FormatRulesJSON
+	other.Format = pack.FormatRulesJSON
 	if err := other.Validate(); err == nil || !strings.Contains(err.Error(), "rules-json") {
 		t.Errorf("dictionary with rules-json: Validate = %v", err)
 	}

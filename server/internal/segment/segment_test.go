@@ -17,6 +17,7 @@ import (
 	"qinqin/internal/lang"
 	"qinqin/internal/lexicon"
 	"qinqin/internal/lookup"
+	"qinqin/internal/pack"
 	"qinqin/internal/segment"
 )
 
@@ -99,7 +100,7 @@ func jmdictXML(words []jw) string {
 
 // importPack writes the manifest and one data file into a fresh pack
 // directory and imports it with the real importer of its type.
-func importPack(t *testing.T, sqlDB *sql.DB, m dict.Manifest, file, content string) {
+func importPack(t *testing.T, sqlDB *sql.DB, m pack.Manifest, file, content string) {
 	t.Helper()
 	dir := t.TempDir()
 	manifest, err := json.Marshal(m)
@@ -111,12 +112,12 @@ func importPack(t *testing.T, sqlDB *sql.DB, m dict.Manifest, file, content stri
 			t.Fatal(err)
 		}
 	}
-	p, err := dict.LoadPack(dir)
+	p, err := pack.LoadPack(dir)
 	if err != nil {
 		t.Fatalf("LoadPack(%s): %v", m.ID, err)
 	}
 	ctx := context.Background()
-	if m.Type == dict.TypeFrequency {
+	if m.Type == pack.TypeFrequency {
 		_, err = freq.Import(ctx, sqlDB, &p)
 	} else {
 		_, err = dict.ImportLexicon(ctx, sqlDB, &p)
@@ -135,12 +136,12 @@ func service(sqlDB *sql.DB) segment.Service {
 func jaService(t *testing.T, words []jw, freqRows string) (segment.Service, *sql.DB) {
 	t.Helper()
 	sqlDB := dbtest.Open(t)
-	importPack(t, sqlDB, dict.Manifest{
+	importPack(t, sqlDB, pack.Manifest{
 		ID: "jmdict-test", Name: "JMdict test", Version: "1", Type: "dictionary", Language: "ja",
 		License: "CC BY-SA 4.0", Attribution: "EDRDG", Format: "jmdict",
 	}, "jmdict.xml", jmdictXML(words))
 	if freqRows != "" {
-		importPack(t, sqlDB, dict.Manifest{
+		importPack(t, sqlDB, pack.Manifest{
 			ID: "freq-test", Name: "Freq test", Version: "1", Type: "frequency", Language: "ja",
 			License: "CC BY-SA 4.0", Attribution: "test", Format: "freq-csv",
 		}, "freq.csv", "term,reading,rank\n"+freqRows)
@@ -165,7 +166,7 @@ const zhLines = `我 我 [wo3] /I/
 func zhService(t *testing.T) segment.Service {
 	t.Helper()
 	sqlDB := dbtest.Open(t)
-	importPack(t, sqlDB, dict.Manifest{
+	importPack(t, sqlDB, pack.Manifest{
 		ID: "cedict-test", Name: "CC-CEDICT test", Version: "1", Type: "dictionary", Language: "zh",
 		License: "CC BY-SA 4.0", Attribution: "CC-CEDICT", Format: "cedict",
 	}, "dictionary.txt", zhLines)

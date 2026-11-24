@@ -15,10 +15,10 @@ import (
 	"time"
 
 	"qinqin/internal/dbtest"
-	"qinqin/internal/dict"
 	"qinqin/internal/lang"
 	"qinqin/internal/lemma"
 	"qinqin/internal/lemmapack"
+	"qinqin/internal/pack"
 )
 
 func newDB(t *testing.T) *sql.DB {
@@ -36,8 +36,8 @@ func table(language, version string) string {
  "rules": [{"from": "aba", "to": "ar", "reason": "past", "out": "ar"}]}`
 }
 
-// pack writes a lemma-rules pack directory and loads it.
-func pack(t *testing.T, id, language, rules string) dict.Pack {
+// rulesPack writes a lemma-rules pack directory and loads it.
+func rulesPack(t *testing.T, id, language, rules string) pack.Pack {
 	t.Helper()
 	dir := t.TempDir()
 	m, _ := json.Marshal(map[string]string{"id": id, "name": "Rules " + id, "version": "1.0", "type": "lemma-rules",
@@ -47,7 +47,7 @@ func pack(t *testing.T, id, language, rules string) dict.Pack {
 			t.Fatal(err)
 		}
 	}
-	p, err := dict.LoadPack(dir)
+	p, err := pack.LoadPack(dir)
 	if err != nil {
 		t.Fatalf("LoadPack: %v", err)
 	}
@@ -58,7 +58,7 @@ func TestImportInstallsAndReloads(t *testing.T) {
 	sqlDB := newDB(t)
 	ctx := context.Background()
 	rules := table("xa", "1")
-	r, err := lemmapack.Import(ctx, sqlDB, pack(t, "xa-rules", "xa", rules))
+	r, err := lemmapack.Import(ctx, sqlDB, rulesPack(t, "xa-rules", "xa", rules))
 	if err != nil || r.Rules != 1 {
 		t.Fatalf("Import = %+v, %v", r, err)
 	}
@@ -87,14 +87,14 @@ func TestImportInstallsAndReloads(t *testing.T) {
 	var stamp string
 	sqlDB.QueryRow(`SELECT updated_at FROM lemma_rule_packs`).Scan(&stamp)
 	sqlDB.Exec(`UPDATE lemma_rule_packs SET updated_at = 'x'`)
-	if _, err := lemmapack.Import(ctx, sqlDB, pack(t, "xa-rules", "xa", rules)); err != nil {
+	if _, err := lemmapack.Import(ctx, sqlDB, rulesPack(t, "xa-rules", "xa", rules)); err != nil {
 		t.Fatal(err)
 	}
 	sqlDB.QueryRow(`SELECT updated_at FROM lemma_rule_packs`).Scan(&stamp)
 	if stamp != "x" {
 		t.Errorf("an identical re-import wrote the row (updated_at %q)", stamp)
 	}
-	if _, err := lemmapack.Import(ctx, sqlDB, pack(t, "xa-rules", "xa", table("xa", "2"))); err != nil {
+	if _, err := lemmapack.Import(ctx, sqlDB, rulesPack(t, "xa-rules", "xa", table("xa", "2"))); err != nil {
 		t.Fatal(err)
 	}
 	if lemma.For("xa").Version != "2" {
@@ -115,7 +115,7 @@ func TestImportInstallsAndReloads(t *testing.T) {
 		t.Errorf("List after uninstall = %+v", list)
 	}
 	// A re-import revives the uninstalled row.
-	if _, err := lemmapack.Import(ctx, sqlDB, pack(t, "xa-rules", "xa", rules)); err != nil || lemma.For("xa") == nil {
+	if _, err := lemmapack.Import(ctx, sqlDB, rulesPack(t, "xa-rules", "xa", rules)); err != nil || lemma.For("xa") == nil {
 		t.Errorf("re-import after uninstall: %v", err)
 	}
 }
@@ -126,7 +126,7 @@ func TestInstalledTableReplacesTheBuiltin(t *testing.T) {
 	sqlDB := newDB(t)
 	ctx := context.Background()
 	builtin := lemma.Builtin("ja")
-	if _, err := lemmapack.Import(ctx, sqlDB, pack(t, "ja-custom", "ja", table("ja", "custom"))); err != nil {
+	if _, err := lemmapack.Import(ctx, sqlDB, rulesPack(t, "ja-custom", "ja", table("ja", "custom"))); err != nil {
 		t.Fatal(err)
 	}
 	if got := (lang.Ja{}).Rules(); got.Version != "custom" {
@@ -145,34 +145,34 @@ func TestCheckPackRefuses(t *testing.T) {
 	big := table("xa", "1")
 	big = strings.Replace(big, `"hints": {}`, `"hints": {}, "compounds": [], "version2": "`+strings.Repeat("x", lemmapack.MaxFileBytes)+`"`, 1)
 	for name, tc := range map[string]struct {
-		p    func(t *testing.T) dict.Pack
+		p    func(t *testing.T) pack.Pack
 		want string
 	}{
-		"bad json": {func(t *testing.T) dict.Pack { return pack(t, "x", "xa", `{"format": 2,`) }, "rules.json"},
-		"unknown key": {func(t *testing.T) dict.Pack {
-			return pack(t, "x", "xa", strings.Replace(table("xa", "1"), `"hints"`, `"hint2": 1, "hints"`, 1))
+		"bad json": {func(t *testing.T) pack.Pack { return rulesPack(t, "x", "xa", `{"format": 2,`) }, "rules.json"},
+		"unknown key": {func(t *testing.T) pack.Pack {
+			return rulesPack(t, "x", "xa", strings.Replace(table("xa", "1"), `"hints"`, `"hint2": 1, "hints"`, 1))
 		}, "hint2"},
-		"over a limit": {func(t *testing.T) dict.Pack {
-			return pack(t, "x", "xa", strings.Replace(table("xa", "1"), `"maxDepth": 2`, `"maxDepth": 9`, 1))
+		"over a limit": {func(t *testing.T) pack.Pack {
+			return rulesPack(t, "x", "xa", strings.Replace(table("xa", "1"), `"maxDepth": 2`, `"maxDepth": 9`, 1))
 		}, "maxDepth"},
-		"language mismatch": {func(t *testing.T) dict.Pack { return pack(t, "x", "xb", table("xa", "1")) }, "xa"},
-		"too large":         {func(t *testing.T) dict.Pack { return pack(t, "x", "xa", big) }, "1 MiB"},
-		"no deinflector":    {func(t *testing.T) dict.Pack { return pack(t, "x", "zh", table("zh", "1")) }, "zh"},
-		"missing rules.json": {func(t *testing.T) dict.Pack {
-			p := pack(t, "x", "xa", table("xa", "1"))
+		"language mismatch": {func(t *testing.T) pack.Pack { return rulesPack(t, "x", "xb", table("xa", "1")) }, "xa"},
+		"too large":         {func(t *testing.T) pack.Pack { return rulesPack(t, "x", "xa", big) }, "1 MiB"},
+		"no deinflector":    {func(t *testing.T) pack.Pack { return rulesPack(t, "x", "zh", table("zh", "1")) }, "zh"},
+		"missing rules.json": {func(t *testing.T) pack.Pack {
+			p := rulesPack(t, "x", "xa", table("xa", "1"))
 			os.Remove(filepath.Join(p.Dir, "rules.json"))
 			return p
 		}, "rules.json"},
 	} {
 		_, _, err := lemmapack.CheckPack(tc.p(t))
-		if !errors.Is(err, dict.ErrInvalidPack) || !strings.Contains(err.Error(), tc.want) {
+		if !errors.Is(err, pack.ErrInvalidPack) || !strings.Contains(err.Error(), tc.want) {
 			t.Errorf("%s: CheckPack = %v, want an invalid-pack error naming %q", name, err, tc.want)
 		}
 	}
 	// Another pack type's manifest is not a lemma-rules pack.
-	p := pack(t, "x", "xa", table("xa", "1"))
-	p.Type, p.Format = dict.TypeGrammar, dict.FormatJSON
-	if _, _, err := lemmapack.CheckPack(p); !errors.Is(err, dict.ErrInvalidPack) {
+	p := rulesPack(t, "x", "xa", table("xa", "1"))
+	p.Type, p.Format = pack.TypeGrammar, pack.FormatJSON
+	if _, _, err := lemmapack.CheckPack(p); !errors.Is(err, pack.ErrInvalidPack) {
 		t.Errorf("grammar manifest: %v", err)
 	}
 }
@@ -182,17 +182,17 @@ func TestCheckPackRefuses(t *testing.T) {
 func TestOnePackPerLanguage(t *testing.T) {
 	sqlDB := newDB(t)
 	ctx := context.Background()
-	if _, err := lemmapack.Import(ctx, sqlDB, pack(t, "xa-one", "xa", table("xa", "1"))); err != nil {
+	if _, err := lemmapack.Import(ctx, sqlDB, rulesPack(t, "xa-one", "xa", table("xa", "1"))); err != nil {
 		t.Fatal(err)
 	}
-	if err := lemmapack.CheckLanguage(ctx, sqlDB, "xa-two", "xa"); !errors.Is(err, dict.ErrInvalidPack) || !strings.Contains(err.Error(), "xa-one") {
+	if err := lemmapack.CheckLanguage(ctx, sqlDB, "xa-two", "xa"); !errors.Is(err, pack.ErrInvalidPack) || !strings.Contains(err.Error(), "xa-one") {
 		t.Errorf("CheckLanguage = %v", err)
 	}
 	if err := lemmapack.CheckLanguage(ctx, sqlDB, "xa-one", "xa"); err != nil {
 		t.Errorf("CheckLanguage of the installed pack itself = %v", err)
 	}
-	_, err := lemmapack.Import(ctx, sqlDB, pack(t, "xa-two", "xa", table("xa", "2")))
-	if !errors.Is(err, dict.ErrInvalidPack) || !strings.Contains(err.Error(), "xa-one") {
+	_, err := lemmapack.Import(ctx, sqlDB, rulesPack(t, "xa-two", "xa", table("xa", "2")))
+	if !errors.Is(err, pack.ErrInvalidPack) || !strings.Contains(err.Error(), "xa-one") {
 		t.Fatalf("second pack for xa: %v", err)
 	}
 	if lemma.For("xa").Version != "1" {
@@ -201,7 +201,7 @@ func TestOnePackPerLanguage(t *testing.T) {
 	if err := lemmapack.Uninstall(ctx, sqlDB, "xa-one"); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := lemmapack.Import(ctx, sqlDB, pack(t, "xa-two", "xa", table("xa", "2"))); err != nil {
+	if _, err := lemmapack.Import(ctx, sqlDB, rulesPack(t, "xa-two", "xa", table("xa", "2"))); err != nil {
 		t.Fatalf("after the uninstall: %v", err)
 	}
 }
@@ -213,7 +213,7 @@ func TestReloadSkipsBrokenRows(t *testing.T) {
 	ctx := context.Background()
 	for _, id := range []string{"xa-rules", "ja-rules"} {
 		language := id[:2]
-		if _, err := lemmapack.Import(ctx, sqlDB, pack(t, id, language, table(language, "1"))); err != nil {
+		if _, err := lemmapack.Import(ctx, sqlDB, rulesPack(t, id, language, table(language, "1"))); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -243,7 +243,7 @@ func TestStored(t *testing.T) {
 		t.Fatalf("Stored before import: found %v, %v", found, err)
 	}
 	rules := table("xa", "1")
-	lemmapack.Import(ctx, sqlDB, pack(t, "xa-rules", "xa", rules))
+	lemmapack.Import(ctx, sqlDB, rulesPack(t, "xa-rules", "xa", rules))
 	hash, found, live, err := lemmapack.Stored(ctx, sqlDB, "xa-rules")
 	if err != nil || !found || !live || hash != lemmapack.Hash([]byte(rules)) {
 		t.Errorf("Stored = %s %v %v %v", hash, found, live, err)
@@ -321,7 +321,7 @@ func TestReloadFailureAfterTheCommitIsLogged(t *testing.T) {
 	sqlDB := newDB(t)
 	ctx := context.Background()
 	defer lemmapack.SetReloadForTest(func(context.Context, lemmapack.Querier) error { return errors.New("boom") })()
-	if _, err := lemmapack.Import(ctx, sqlDB, pack(t, "xa-rules", "xa", table("xa", "1"))); err != nil {
+	if _, err := lemmapack.Import(ctx, sqlDB, rulesPack(t, "xa-rules", "xa", table("xa", "1"))); err != nil {
 		t.Errorf("Import = %v, want nil (committed)", err)
 	}
 	if _, found, live, _ := lemmapack.Stored(ctx, sqlDB, "xa-rules"); !found || !live {

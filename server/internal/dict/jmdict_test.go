@@ -10,6 +10,7 @@ import (
 
 	"qinqin/internal/dict"
 	"qinqin/internal/model"
+	"qinqin/internal/pack"
 )
 
 // jmdictFixture is the committed JMdict sample, relative to this
@@ -19,7 +20,7 @@ const jmdictFixture = "testdata/jmdict-sample.xml"
 // jmdictManifest is the manifest of the pack loadJmdictFixture builds
 // around the committed sample: the JMdict's own terms, under which its
 // senses register.
-var jmdictManifest = dict.Manifest{
+var jmdictManifest = pack.Manifest{
 	ID:          "jmdict-sample",
 	Name:        "JMdict sample",
 	Version:     "1.0",
@@ -32,7 +33,7 @@ var jmdictManifest = dict.Manifest{
 
 // loadJmdictFixture builds the pack around the committed sample: its
 // manifest plus a jmdict.xml holding the fixture verbatim.
-func loadJmdictFixture(t *testing.T) dict.Pack {
+func loadJmdictFixture(t *testing.T) pack.Pack {
 	t.Helper()
 	data, err := os.ReadFile(jmdictFixture)
 	if err != nil {
@@ -45,11 +46,11 @@ func loadJmdictFixture(t *testing.T) dict.Pack {
 	}
 	mustWriteFile(t, filepath.Join(dir, "manifest.json"), string(manifest))
 	mustWriteFile(t, filepath.Join(dir, "jmdict.xml"), string(data))
-	pack, err := dict.LoadPack(dir)
+	pk, err := pack.LoadPack(dir)
 	if err != nil {
 		t.Fatalf("LoadPack(jmdict sample): %v", err)
 	}
-	return pack
+	return pk
 }
 
 func TestJmdictParse(t *testing.T) {

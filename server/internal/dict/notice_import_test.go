@@ -10,6 +10,7 @@ import (
 
 	"qinqin/internal/dbtest"
 	"qinqin/internal/dict"
+	"qinqin/internal/pack"
 )
 
 // dictionaryRow reads the notice and updated_at of the dictionary
@@ -34,11 +35,11 @@ func fixtureDictionary(t *testing.T) string {
 
 func importNoticeDir(t *testing.T, sqlDB *sql.DB, dir string) {
 	t.Helper()
-	pack, err := dict.LoadPack(dir)
+	pk, err := pack.LoadPack(dir)
 	if err != nil {
 		t.Fatalf("LoadPack: %v", err)
 	}
-	if _, err := dict.ImportLexicon(context.Background(), sqlDB, &pack); err != nil {
+	if _, err := dict.ImportLexicon(context.Background(), sqlDB, &pk); err != nil {
 		t.Fatalf("ImportLexicon: %v", err)
 	}
 }
@@ -96,11 +97,11 @@ func TestImportRejectsInvalidNotice(t *testing.T) {
 	m := fixtureManifest
 	m.Notice = "[click](javascript:alert)"
 	dir := writePack(t, m, fixtureDictionary(t))
-	if _, err := dict.LoadPack(dir); !errors.Is(err, dict.ErrInvalidPack) {
+	if _, err := pack.LoadPack(dir); !errors.Is(err, pack.ErrInvalidPack) {
 		t.Errorf("LoadPack with a javascript: link = %v, want ErrInvalidPack", err)
 	}
-	pack := dict.Pack{Manifest: m, Dir: dir}
-	if _, err := dict.ImportLexicon(context.Background(), sqlDB, &pack); !errors.Is(err, dict.ErrInvalidPack) {
+	pk := pack.Pack{Manifest: m, Dir: dir}
+	if _, err := dict.ImportLexicon(context.Background(), sqlDB, &pk); !errors.Is(err, pack.ErrInvalidPack) {
 		t.Errorf("ImportLexicon with a javascript: link = %v, want ErrInvalidPack", err)
 	}
 	if n := totalRows(t, sqlDB, "dictionaries"); n != 0 {

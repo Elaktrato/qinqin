@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	"qinqin/internal/dict"
+	"qinqin/internal/pack"
 )
 
 // ErrNotFound reports a lesson (or its pack) that does not exist or was
@@ -65,19 +65,19 @@ type LessonView struct {
 // lesson the pack dropped is soft-deleted, a returning one revived, a
 // changed one updated; an identical pack writes nothing. The data is
 // validated before anything is written.
-func Import(ctx context.Context, sqlDB *sql.DB, pack dict.Pack) (Result, error) {
-	m := pack.Manifest
+func Import(ctx context.Context, sqlDB *sql.DB, pk pack.Pack) (Result, error) {
+	m := pk.Manifest
 	m.Language = strings.ToLower(strings.TrimSpace(m.Language))
 	if err := m.Validate(); err != nil {
-		return Result{}, fmt.Errorf("%w: %v", dict.ErrInvalidPack, err)
+		return Result{}, fmt.Errorf("%w: %v", pack.ErrInvalidPack, err)
 	}
-	if m.Type != dict.TypeGrammar {
+	if m.Type != pack.TypeGrammar {
 		return Result{}, fmt.Errorf("%w: %q is a %s pack", ErrNotGrammar, m.ID, m.Type)
 	}
-	if m.Format != dict.FormatJSON {
-		return Result{}, fmt.Errorf("%w: grammar pack format %q is not implemented (want json)", dict.ErrInvalidPack, m.Format)
+	if m.Format != pack.FormatJSON {
+		return Result{}, fmt.Errorf("%w: grammar pack format %q is not implemented (want json)", pack.ErrInvalidPack, m.Format)
 	}
-	data, err := ReadData(pack.Dir)
+	data, err := ReadData(pk.Dir)
 	if err != nil {
 		return Result{}, err
 	}
@@ -200,7 +200,7 @@ func Uninstall(ctx context.Context, sqlDB *sql.DB, packID string) error {
 
 // upsertPack inserts or updates the pack row, writing only when a stored
 // field differs (or the pack was deleted), and returns its row id.
-func upsertPack(ctx context.Context, tx *sql.Tx, m dict.Manifest, levelsJSON, stamp string) (int64, error) {
+func upsertPack(ctx context.Context, tx *sql.Tx, m pack.Manifest, levelsJSON, stamp string) (int64, error) {
 	var (
 		id                                            int64
 		name, version, language, license, attribution string
@@ -350,9 +350,9 @@ func LessonByID(ctx context.Context, sqlDB *sql.DB, packID, lessonID string) (Le
 	if len(packs) == 0 {
 		return LessonView{}, ErrNotFound
 	}
-	pack := packs[0]
+	pk := packs[0]
 	idx := -1
-	for i, s := range pack.Lessons {
+	for i, s := range pk.Lessons {
 		if s.ID == lessonID {
 			idx = i
 		}
@@ -375,13 +375,13 @@ func LessonByID(ctx context.Context, sqlDB *sql.DB, packID, lessonID string) (Le
 		return LessonView{}, fmt.Errorf("decode grammar lesson %s/%s: %w", packID, lessonID, err)
 	}
 	if idx > 0 {
-		v.Prev = pack.Lessons[idx-1].ID
+		v.Prev = pk.Lessons[idx-1].ID
 	}
-	if idx < len(pack.Lessons)-1 {
-		v.Next = pack.Lessons[idx+1].ID
+	if idx < len(pk.Lessons)-1 {
+		v.Next = pk.Lessons[idx+1].ID
 	}
-	pack.Lessons = nil
-	v.Pack = pack
+	pk.Lessons = nil
+	v.Pack = pk
 	return v, nil
 }
 

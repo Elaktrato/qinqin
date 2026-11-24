@@ -59,8 +59,39 @@ The issue predates #172, #176 and #198. Its places, checked in the code at 86fe1
 
 ## Rulings
 
-(filled in as decided; see below)
+- Ruling: `internal/packtype` merges into `internal/pack` (`pack.All`, `pack.Descriptor`, `pack.Lookup`,
+  `pack.Index`, `pack.Types`, `pack.LexiconPackage`) — the table is what the manifest validation reads, so it
+  belongs with the manifest, and `pack` is a leaf like `packtype` was (it imports only `internal/lang`), so every
+  package that used `packtype` can use `pack` — cost if wrong: a later split is a rename of one package.
+- Ruling: the type constants are `pack.TypeDictionary` ... `pack.TypeFont` (the `dict.Type*` names), not
+  `packtype.Dictionary` — one spelling for the call sites that used `dict` (most of them) — cost if wrong: none.
+- Ruling: local variables named `pack` became `pk` where the package `pack` is now imported (an AST rename of
+  resolved identifiers, no hand edits), so the package name of the issue could be kept — cost if wrong: a
+  reader meets `pk`.
+- Ruling: `Result` does not move to `pack`. The issue lists it because `freq` returned `dict.Result`; `freq`
+  now has its own `Result{Entries}` and `dict.Result` keeps the dictionary's counters (senses, skipped and
+  unconverted lines). The generic per-type result is the handler's summary line — cost if wrong: none.
+- Ruling: `ErrInvalidPack`'s text becomes `pack: invalid pack` (was `dict: invalid pack`). The API's
+  `pack_invalid` detail starts at "invalid pack: ", so no answer changes; only the CLI and log text of an
+  invalid pack does. `pack.ErrNotFound` keeps the text `packs: not found` of `packs.ErrNotFound`, which is now
+  the same error — cost if wrong: a log grep for `dict: invalid pack` finds nothing.
+- Ruling: a type's own format (themes-json, font-slices, rules-json) is the table field `Descriptor.Format`,
+  replacing three hand-written cases, and every other message keeps its exact text
+  (`TestManifestMessagesArePinned`). One message changes: a manifest that breaks two own-format rules at once
+  (a lemma-rules or font pack with another type's own format) now names the rule of its own type; before, a
+  fixed theme, font, lemma-rules precedence chose. Both texts are true, the new one names the type the pack
+  declares, and the two cases are pinned — cost if wrong: an administrator with such a doubly wrong pack reads
+  the other one of two true messages.
+- Ruling: `dict` keeps `RegistryTerms` for now; task 4 moves the per-type rule behind the handler table.
 
 ## Execution record
 
-(filled in per task)
+- Task 1: `TestSeedOrderIsPinned` and `TestManifestMessagesArePinned` pass on 86fe13a4 unchanged (the seed
+  test asserts the 15-line order of one root holding all 11 types). They pass again after every later task.
+- Task 2: files moved with `git mv` (history kept): `dict/{manifest,pack,notice}.go`, their tests, and
+  `packtype/*`. The rewrite of the call sites was a script (`dict.X` to `pack.X` for the moved names, the
+  `packtype` names) after an AST rename of local `pack` variables; one composite-literal key the rename
+  touched was fixed by hand, and the lemmapack test helper `pack(...)` became `rulesPack(...)`. Full Go
+  `./...` green apart from the known `internal/ai` IPv6 test. `dict` is now imported by `api` (dictionary
+  routes), `packs`, `packcheck` and `tools/tatoeba` (they import dictionaries) and by `packs/texts.go` and
+  `packcheck.go` for `RegistryTerms` (task 4); 14 non-test packages import `pack`.

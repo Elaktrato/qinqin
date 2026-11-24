@@ -9,13 +9,13 @@ import (
 	"testing"
 
 	"qinqin/internal/dbtest"
-	"qinqin/internal/dict"
 	"qinqin/internal/grammar"
+	"qinqin/internal/pack"
 )
 
-func loadMini(t *testing.T) dict.Pack {
+func loadMini(t *testing.T) pack.Pack {
 	t.Helper()
-	p, err := dict.LoadPack(filepath.Join("testdata", "zh-mini"))
+	p, err := pack.LoadPack(filepath.Join("testdata", "zh-mini"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -23,7 +23,7 @@ func loadMini(t *testing.T) dict.Pack {
 }
 
 // packWith copies zh-mini's manifest and writes lessons into a temp pack.
-func packWith(t *testing.T, manifest, lessons string) dict.Pack {
+func packWith(t *testing.T, manifest, lessons string) pack.Pack {
 	t.Helper()
 	dir := t.TempDir()
 	if manifest == "" {
@@ -39,7 +39,7 @@ func packWith(t *testing.T, manifest, lessons string) dict.Pack {
 	if err := os.WriteFile(filepath.Join(dir, "lessons.json"), []byte(lessons), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	p, err := dict.LoadPack(dir)
+	p, err := pack.LoadPack(dir)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -270,7 +270,7 @@ func TestImportRejectsInvalidAndStaysAtomic(t *testing.T) {
 	}
 	bad := strings.Replace(miniLessons(t), `"focus": "不"`, `"focus": "呢"`, 1)
 	_, err := grammar.Import(ctx, sqlDB, packWith(t, "", bad))
-	if !errors.Is(err, dict.ErrInvalidPack) {
+	if !errors.Is(err, pack.ErrInvalidPack) {
 		t.Fatalf("err = %v, want ErrInvalidPack", err)
 	}
 	packs, _ := grammar.ListPacks(ctx, sqlDB, "zh")
@@ -286,7 +286,7 @@ func TestImportRejectsInvalidAndStaysAtomic(t *testing.T) {
 func TestImportRejectsNonJSONFormat(t *testing.T) {
 	m := `{"id":"x","name":"X","version":"1","type":"grammar","language":"zh","license":"CC0-1.0","attribution":"a","format":"cedict"}`
 	_, err := grammar.Import(context.Background(), dbtest.Open(t), packWith(t, m, miniLessons(t)))
-	if !errors.Is(err, dict.ErrInvalidPack) {
+	if !errors.Is(err, pack.ErrInvalidPack) {
 		t.Errorf("err = %v, want ErrInvalidPack", err)
 	}
 }

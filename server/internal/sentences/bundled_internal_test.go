@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"qinqin/internal/dict"
+	"qinqin/internal/pack"
 )
 
 // TestBundledTatoebaPacksParse: once server/tools/tatoeba has generated the
@@ -19,14 +19,14 @@ func TestBundledTatoebaPacksParse(t *testing.T) {
 			t.Logf("%s not generated yet (go run ./tools/tatoeba build)", id)
 			continue
 		}
-		p, err := dict.LoadPack(dir)
+		p, err := pack.LoadPack(dir)
 		if err != nil {
 			t.Fatalf("%s: %v", id, err)
 		}
-		if p.ID != id || p.Type != dict.TypeSentences || p.Format != dict.FormatJSON || p.Notice == "" {
+		if p.ID != id || p.Type != pack.TypeSentences || p.Format != pack.FormatJSON || p.Notice == "" {
 			t.Errorf("%s: manifest %+v", id, p.Manifest)
 		}
-		if err := dict.ValidateNotice(p.Notice); err != nil {
+		if err := pack.ValidateNotice(p.Notice); err != nil {
 			t.Errorf("%s: %v", id, err)
 		}
 		groups, err := readPack(dir)

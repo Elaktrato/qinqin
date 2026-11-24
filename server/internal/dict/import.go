@@ -1,3 +1,7 @@
+// Package dict parses dictionary packs (JMdict, CC-CEDICT, KANJIDIC2,
+// Unihan and the json pack format), imports them into the lexicon and
+// uninstalls them. What every pack type shares (the manifest, loading a
+// pack, the type table) is internal/pack.
 package dict
 
 import (
@@ -13,6 +17,7 @@ import (
 
 	"qinqin/internal/lang"
 	"qinqin/internal/model"
+	"qinqin/internal/pack"
 )
 
 // ErrNotDictionary reports an ImportLexicon of a pack whose manifest type is
@@ -41,7 +46,7 @@ type Result struct {
 // registerLanguage auto-registers the manifest's language as a data-only
 // language when no code pack is registered for it; code packs (zh, ja)
 // live in code, not in the table.
-func registerLanguage(ctx context.Context, sqlDB *sql.DB, m Manifest) error {
+func registerLanguage(ctx context.Context, sqlDB *sql.DB, m pack.Manifest) error {
 	if lang.Registered(m.Language) {
 		return nil
 	}
@@ -208,27 +213,27 @@ func (e jsonEntry) toEntry() entry {
 func readJSONPack(dir string) ([]entry, error) {
 	data, err := os.ReadFile(filepath.Join(dir, dictionaryFile))
 	if err != nil {
-		return nil, fmt.Errorf("%w: read %s of %s: %v", ErrInvalidPack, dictionaryFile, dir, err)
+		return nil, fmt.Errorf("%w: read %s of %s: %v", pack.ErrInvalidPack, dictionaryFile, dir, err)
 	}
 	var p jsonPack
 	if err := json.Unmarshal(data, &p); err != nil {
-		return nil, fmt.Errorf("%w: parse %s of %s: %v", ErrInvalidPack, dictionaryFile, dir, err)
+		return nil, fmt.Errorf("%w: parse %s of %s: %v", pack.ErrInvalidPack, dictionaryFile, dir, err)
 	}
 	for i, e := range p.Entries {
 		if strings.TrimSpace(e.Written) == "" {
-			return nil, fmt.Errorf("%w: entry %d of %s: written is required", ErrInvalidPack, i, dir)
+			return nil, fmt.Errorf("%w: entry %d of %s: written is required", pack.ErrInvalidPack, i, dir)
 		}
 		if e.Kind != "character" && e.Kind != "word" {
-			return nil, fmt.Errorf("%w: entry %d (%s) of %s: kind must be \"character\" or \"word\"", ErrInvalidPack, i, e.Written, dir)
+			return nil, fmt.Errorf("%w: entry %d (%s) of %s: kind must be \"character\" or \"word\"", pack.ErrInvalidPack, i, e.Written, dir)
 		}
 		for j, r := range e.Readings {
 			if strings.TrimSpace(r.Type) == "" || strings.TrimSpace(r.Value) == "" {
-				return nil, fmt.Errorf("%w: entry %d (%s) of %s: reading %d needs a type and a value", ErrInvalidPack, i, e.Written, dir, j)
+				return nil, fmt.Errorf("%w: entry %d (%s) of %s: reading %d needs a type and a value", pack.ErrInvalidPack, i, e.Written, dir, j)
 			}
 		}
 		for j, g := range e.Glosses {
 			if strings.TrimSpace(g) == "" {
-				return nil, fmt.Errorf("%w: entry %d (%s) of %s: gloss %d is empty", ErrInvalidPack, i, e.Written, dir, j)
+				return nil, fmt.Errorf("%w: entry %d (%s) of %s: gloss %d is empty", pack.ErrInvalidPack, i, e.Written, dir, j)
 			}
 		}
 	}

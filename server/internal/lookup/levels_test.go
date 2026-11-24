@@ -11,9 +11,9 @@ import (
 	"testing"
 
 	"qinqin/internal/dbtest"
-	"qinqin/internal/dict"
 	"qinqin/internal/levels"
 	"qinqin/internal/lookup"
+	"qinqin/internal/pack"
 )
 
 // importLevels imports a word-unit zh levels pack named name with the
@@ -21,8 +21,8 @@ import (
 func importLevels(t *testing.T, sqlDB *sql.DB, id, name, levelsJSON string) {
 	t.Helper()
 	dir := t.TempDir()
-	manifest, err := json.Marshal(dict.Manifest{
-		ID: id, Name: name, Version: "1", Type: dict.TypeLevels, Language: "zh",
+	manifest, err := json.Marshal(pack.Manifest{
+		ID: id, Name: name, Version: "1", Type: pack.TypeLevels, Language: "zh",
 		License: "CC BY-SA 4.0", Attribution: "test", Format: "json",
 	})
 	if err != nil {
@@ -33,7 +33,7 @@ func importLevels(t *testing.T, sqlDB *sql.DB, id, name, levelsJSON string) {
 			t.Fatal(err)
 		}
 	}
-	p, err := dict.LoadPack(dir)
+	p, err := pack.LoadPack(dir)
 	if err != nil {
 		t.Fatalf("LoadPack(%s): %v", id, err)
 	}

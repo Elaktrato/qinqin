@@ -11,7 +11,7 @@ import (
 	"strings"
 	"time"
 
-	"qinqin/internal/dict"
+	"qinqin/internal/pack"
 )
 
 // ImportResult counts what an import stored. Skipped rows are term rows
@@ -22,22 +22,22 @@ type ImportResult struct{ Clips, Skipped int }
 // validated and hashed before anything is written; blobs are then copied
 // into storeDir, the pack's rows replaced in one transaction, and blobs
 // the pack no longer uses (and no other pack references) removed.
-func Import(ctx context.Context, sqlDB *sql.DB, pack dict.Pack, storeDir string) (ImportResult, error) {
-	m := pack.Manifest
+func Import(ctx context.Context, sqlDB *sql.DB, pk pack.Pack, storeDir string) (ImportResult, error) {
+	m := pk.Manifest
 	if err := m.Validate(); err != nil {
-		return ImportResult{}, fmt.Errorf("%w: %v", dict.ErrInvalidPack, err)
+		return ImportResult{}, fmt.Errorf("%w: %v", pack.ErrInvalidPack, err)
 	}
-	if m.Type != dict.TypeAudio || m.Format != dict.FormatAudioIndex {
-		return ImportResult{}, fmt.Errorf("%w: %q is not an audio-index audio pack", dict.ErrInvalidPack, m.ID)
+	if m.Type != pack.TypeAudio || m.Format != pack.FormatAudioIndex {
+		return ImportResult{}, fmt.Errorf("%w: %q is not an audio-index audio pack", pack.ErrInvalidPack, m.ID)
 	}
-	f, err := os.Open(filepath.Join(pack.Dir, "index.tsv"))
+	f, err := os.Open(filepath.Join(pk.Dir, "index.tsv"))
 	if err != nil {
-		return ImportResult{}, fmt.Errorf("%w: open index of %s: %v", dict.ErrInvalidPack, m.ID, err)
+		return ImportResult{}, fmt.Errorf("%w: open index of %s: %v", pack.ErrInvalidPack, m.ID, err)
 	}
 	rows, err := ParseIndex(f, m)
 	f.Close()
 	if err != nil {
-		return ImportResult{}, fmt.Errorf("%w: %s: %v", dict.ErrInvalidPack, m.ID, err)
+		return ImportResult{}, fmt.Errorf("%w: %s: %v", pack.ErrInvalidPack, m.ID, err)
 	}
 
 	type clip struct {
@@ -62,9 +62,9 @@ func Import(ctx context.Context, sqlDB *sql.DB, pack dict.Pack, storeDir string)
 		cf, ok := seen[r.File]
 		if !ok {
 			ext := strings.TrimPrefix(path.Ext(r.File), ".")
-			cf, err = inspect(filepath.Join(pack.Dir, filepath.FromSlash(r.File)), ext)
+			cf, err = inspect(filepath.Join(pk.Dir, filepath.FromSlash(r.File)), ext)
 			if err != nil {
-				return ImportResult{}, fmt.Errorf("%w: %s: index row %d: %s: %v", dict.ErrInvalidPack, m.ID, i+1, r.File, err)
+				return ImportResult{}, fmt.Errorf("%w: %s: index row %d: %s: %v", pack.ErrInvalidPack, m.ID, i+1, r.File, err)
 			}
 			seen[r.File] = cf
 		}

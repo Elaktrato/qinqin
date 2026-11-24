@@ -10,12 +10,12 @@ import (
 	"testing"
 
 	"qinqin/internal/dbtest"
-	"qinqin/internal/dict"
+	"qinqin/internal/pack"
 	"qinqin/internal/packs"
 )
 
 // buildPack writes a pack directory from strings and loads it.
-func buildPack(t *testing.T, typ, id, name, license, format string, files map[string]string) dict.Pack {
+func buildPack(t *testing.T, typ, id, name, license, format string, files map[string]string) pack.Pack {
 	t.Helper()
 	dir := t.TempDir()
 	m, _ := json.Marshal(map[string]string{
@@ -29,7 +29,7 @@ func buildPack(t *testing.T, typ, id, name, license, format string, files map[st
 			t.Fatal(err)
 		}
 	}
-	p, err := dict.LoadPack(dir)
+	p, err := pack.LoadPack(dir)
 	if err != nil {
 		t.Fatalf("LoadPack: %v", err)
 	}
@@ -42,23 +42,23 @@ const esDict = `{"entries":[
  {"written":"agua","kind":"word","readings":[{"type":"latin","value":"agua"}],"glosses":["water"]},
  {"written":"casa","kind":"word","readings":[{"type":"latin","value":"casa"}],"glosses":["house"]}]}`
 
-func dictPack(t *testing.T) dict.Pack {
+func dictPack(t *testing.T) pack.Pack {
 	return buildPack(t, "dictionary", "es-test", "Zeta dictionary", "CC0-1.0", "json", map[string]string{"dictionary.json": esDict})
 }
-func freqPack(t *testing.T) dict.Pack {
+func freqPack(t *testing.T) pack.Pack {
 	return buildPack(t, "frequency", "es-freq", "Alpha frequency", "MIT", "freq-csv",
 		map[string]string{"freq.csv": "term,reading,rank\nhola,,1\nagua,,2\ncasa,,3\n"})
 }
-func levelsPack(t *testing.T) dict.Pack {
+func levelsPack(t *testing.T) pack.Pack {
 	return buildPack(t, "levels", "es-levels", "Levels", "CC BY 4.0", "json",
 		map[string]string{"levels.json": `{"unit":"word","levels":[{"name":"1","entries":["hola","agua"]}]}`})
 }
-func sentencesPack(t *testing.T) dict.Pack {
+func sentencesPack(t *testing.T) pack.Pack {
 	return buildPack(t, "sentences", "es-sent", "Sentences", "CC BY-SA 4.0", "json",
 		map[string]string{"sentences.json": `{"entries":[{"word":"hola","sentences":[{"hanzi":"Hola, amigo.","pinyin":"hola","translation":"Hello, friend."}]}]}`})
 }
 
-func grammarPack(t *testing.T) dict.Pack {
+func grammarPack(t *testing.T) pack.Pack {
 	return buildPack(t, "grammar", "es-grammar", "Grammar", "CC0-1.0", "json", map[string]string{"lessons.json": `{
   "levels": [{"id": "a1", "name": "A1"}],
   "lessons": [{"id": "ser", "level": "a1", "title": "ser", "summary": "To be.", "pattern": ["A + ser + B"], "body": ["ser links nouns."],
@@ -91,7 +91,7 @@ func TestImportDispatchesByType(t *testing.T) {
 	sqlDB := dbtest.Open(t)
 	ctx := context.Background()
 	for _, tc := range []struct {
-		pack dict.Pack
+		pack pack.Pack
 		want string
 	}{
 		{dictPack(t), "4 entries, 4 senses"},
@@ -113,7 +113,7 @@ func TestImportDispatchesByType(t *testing.T) {
 
 func importAll(t *testing.T, sqlDB *sql.DB) {
 	t.Helper()
-	for _, p := range []dict.Pack{dictPack(t), freqPack(t), levelsPack(t), sentencesPack(t)} {
+	for _, p := range []pack.Pack{dictPack(t), freqPack(t), levelsPack(t), sentencesPack(t)} {
 		if _, err := packs.Import(context.Background(), sqlDB, p); err != nil {
 			t.Fatalf("import %s: %v", p.ID, err)
 		}
@@ -227,7 +227,7 @@ func TestFind(t *testing.T) {
 	}
 }
 
-func componentsPack(t *testing.T) dict.Pack {
+func componentsPack(t *testing.T) pack.Pack {
 	return buildPack(t, "components", "es-comp", "Components", "CC BY-SA 3.0", "components-tsv",
 		map[string]string{"components.tsv": "語\t言 口 吾\n話\t言 舌\n", "parts.tsv": "言\t7\n"})
 }

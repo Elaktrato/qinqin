@@ -24,12 +24,12 @@ import (
 	"time"
 	"unicode/utf8"
 
-	"qinqin/internal/dict"
 	"qinqin/internal/model"
+	"qinqin/internal/pack"
 )
 
 // Format is the one strokes pack format.
-const Format = dict.FormatStrokesJSONLGz
+const Format = pack.FormatStrokesJSONLGz
 
 // DataFile is the data file of a strokes pack: gzipped JSON lines
 // {"char": <one code point>, "data": <a JSON object>}.
@@ -73,22 +73,22 @@ type line struct {
 // uninstall) and replaces the pack's rows. A malformed line — not JSON, a
 // char that is not exactly one code point, data that is not a JSON object,
 // a repeated char, a line over MaxLineBytes, an unknown key — is
-// dict.ErrInvalidPack naming the line and leaves nothing behind. An
+// pack.ErrInvalidPack naming the line and leaves nothing behind. An
 // identical re-import (same rows and manifest fields) writes nothing.
 //
 // ord, the pack's priority in Lookup (the first live pack with data for a
 // character wins), is assigned at the pack's first registration and kept on
 // re-import and reinstall.
-func Import(ctx context.Context, sqlDB *sql.DB, p dict.Pack) (Result, error) {
+func Import(ctx context.Context, sqlDB *sql.DB, p pack.Pack) (Result, error) {
 	m := p.Manifest
 	if err := m.Validate(); err != nil {
-		return Result{}, fmt.Errorf("%w: %v", dict.ErrInvalidPack, err)
+		return Result{}, fmt.Errorf("%w: %v", pack.ErrInvalidPack, err)
 	}
-	if m.Type != dict.TypeStrokes {
-		return Result{}, fmt.Errorf("%w: %q is a %s pack, not a strokes pack", dict.ErrInvalidPack, m.ID, m.Type)
+	if m.Type != pack.TypeStrokes {
+		return Result{}, fmt.Errorf("%w: %q is a %s pack, not a strokes pack", pack.ErrInvalidPack, m.ID, m.Type)
 	}
 	if m.Format != Format {
-		return Result{}, fmt.Errorf("%w: strokes pack %s: format %q is not a strokes format (want %s)", dict.ErrInvalidPack, m.ID, m.Format, Format)
+		return Result{}, fmt.Errorf("%w: strokes pack %s: format %q is not a strokes format (want %s)", pack.ErrInvalidPack, m.ID, m.Format, Format)
 	}
 	path := filepath.Join(p.Dir, DataFile)
 	h := sha256.New()
@@ -97,7 +97,7 @@ func Import(ctx context.Context, sqlDB *sql.DB, p dict.Pack) (Result, error) {
 		return nil
 	})
 	if err != nil {
-		return Result{}, fmt.Errorf("%w: strokes pack %s: %w", dict.ErrInvalidPack, m.ID, err)
+		return Result{}, fmt.Errorf("%w: strokes pack %s: %w", pack.ErrInvalidPack, m.ID, err)
 	}
 	hash := hex.EncodeToString(h.Sum(nil))
 	langs := slices.Clone(m.Languages)

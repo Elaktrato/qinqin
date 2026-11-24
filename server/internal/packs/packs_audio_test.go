@@ -9,12 +9,12 @@ import (
 	"testing"
 
 	"qinqin/internal/dbtest"
-	"qinqin/internal/dict"
+	"qinqin/internal/pack"
 	"qinqin/internal/packs"
 )
 
 // audioPack writes a generated two-clip audio pack (synthetic Ogg-magic bytes).
-func audioPack(t *testing.T, id string) dict.Pack {
+func audioPack(t *testing.T, id string) pack.Pack {
 	t.Helper()
 	dir := t.TempDir()
 	files := map[string]string{
@@ -32,7 +32,7 @@ func audioPack(t *testing.T, id string) dict.Pack {
 			t.Fatal(err)
 		}
 	}
-	p, err := dict.LoadPack(dir)
+	p, err := pack.LoadPack(dir)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -53,13 +53,13 @@ func blobCount(t *testing.T, store string) int {
 
 func TestAudioPacksImportListUninstall(t *testing.T) {
 	ctx, sqlDB, store := context.Background(), dbtest.Open(t), t.TempDir()
-	if !packs.Supported(dict.TypeAudio) {
+	if !packs.Supported(pack.TypeAudio) {
 		t.Fatal("audio is not a supported pack type")
 	}
-	if packs.Installable(dict.TypeAudio) {
+	if packs.Installable(pack.TypeAudio) {
 		t.Error("audio packs must not be installable by upload (limits; see the plan)")
 	}
-	if !packs.Installable(dict.TypeDictionary) {
+	if !packs.Installable(pack.TypeDictionary) {
 		t.Error("dictionaries stay installable")
 	}
 
@@ -75,11 +75,11 @@ func TestAudioPacksImportListUninstall(t *testing.T) {
 		all[0].License != "CC0" || all[0].Attribution != "Tester" || all[0].Notice != "N." || all[0].UpdatedAt == "" {
 		t.Fatalf("List = %+v, %v", all, err)
 	}
-	if got, err := packs.Find(ctx, sqlDB, dict.TypeAudio, "audio-test"); err != nil || got.Name != "Audio test" {
+	if got, err := packs.Find(ctx, sqlDB, pack.TypeAudio, "audio-test"); err != nil || got.Name != "Audio test" {
 		t.Errorf("Find = %+v, %v", got, err)
 	}
 
-	if err := packs.Uninstall(ctx, sqlDB, dict.TypeAudio, "audio-test", packs.WithAudioStore(store)); err != nil {
+	if err := packs.Uninstall(ctx, sqlDB, pack.TypeAudio, "audio-test", packs.WithAudioStore(store)); err != nil {
 		t.Fatalf("Uninstall: %v", err)
 	}
 	if blobCount(t, store) != 0 {
@@ -88,7 +88,7 @@ func TestAudioPacksImportListUninstall(t *testing.T) {
 	if all, _ := packs.List(ctx, sqlDB); len(all) != 0 {
 		t.Errorf("List after uninstall = %+v", all)
 	}
-	if err := packs.Uninstall(ctx, sqlDB, dict.TypeAudio, "audio-test", packs.WithAudioStore(store)); !errors.Is(err, packs.ErrNotFound) {
+	if err := packs.Uninstall(ctx, sqlDB, pack.TypeAudio, "audio-test", packs.WithAudioStore(store)); !errors.Is(err, packs.ErrNotFound) {
 		t.Errorf("second uninstall = %v, want ErrNotFound", err)
 	}
 }
@@ -98,7 +98,7 @@ func TestAudioNeedsAStoreDirectory(t *testing.T) {
 	if _, err := packs.Import(ctx, sqlDB, audioPack(t, "audio-test")); err == nil || !strings.Contains(err.Error(), "store") {
 		t.Errorf("Import without a store = %v, want an error naming the store", err)
 	}
-	if err := packs.Uninstall(ctx, sqlDB, dict.TypeAudio, "x"); err == nil || errors.Is(err, packs.ErrNotFound) {
+	if err := packs.Uninstall(ctx, sqlDB, pack.TypeAudio, "x"); err == nil || errors.Is(err, packs.ErrNotFound) {
 		t.Errorf("Uninstall without a store = %v, want a configuration error", err)
 	}
 }

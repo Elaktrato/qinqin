@@ -10,7 +10,7 @@ import (
 	"strings"
 	"testing"
 
-	"qinqin/internal/dict"
+	"qinqin/internal/pack"
 	"qinqin/internal/strokes"
 )
 
@@ -39,8 +39,8 @@ func writeStrokesPack(t *testing.T, root string) string {
 }
 
 func TestSeedImportsStrokesPacksLast(t *testing.T) {
-	if importRank(dict.TypeStrokes) <= importRank(dict.TypeComponents) {
-		t.Errorf("importRank(strokes) = %d, want after components %d", importRank(dict.TypeStrokes), importRank(dict.TypeComponents))
+	if importRank(pack.TypeStrokes) <= importRank(pack.TypeComponents) {
+		t.Errorf("importRank(strokes) = %d, want after components %d", importRank(pack.TypeStrokes), importRank(pack.TypeComponents))
 	}
 	sqlDB, _ := openTestDB(t)
 	root := t.TempDir()

@@ -21,6 +21,7 @@ import (
 	"qinqin/internal/lang"
 	"qinqin/internal/lexicon"
 	"qinqin/internal/lookup"
+	"qinqin/internal/pack"
 	"qinqin/internal/segment"
 )
 
@@ -39,7 +40,7 @@ type analyzer struct {
 	path  string
 	seg   segment.Service
 	lex   lexicon.Store
-	dict  dict.Manifest
+	dict  pack.Manifest
 
 	mu    sync.Mutex
 	links map[string]int64 // word → BestWord entry id, 0 when it does not link
@@ -48,23 +49,23 @@ type analyzer struct {
 // newAnalyzer imports the language's dictionary pack (root-relative
 // rules.Dictionary) into a fresh database at dbPath.
 func newAnalyzer(ctx context.Context, dbPath, code string, rules LangRules, root string) (*analyzer, error) {
-	pack, err := dict.LoadPack(filepath.Join(root, rules.Dictionary))
+	pk, err := pack.LoadPack(filepath.Join(root, rules.Dictionary))
 	if err != nil {
 		return nil, fmt.Errorf("dictionary of %s: %w", code, err)
 	}
-	if pack.Language != code {
-		return nil, fmt.Errorf("dictionary %s is %s, not %s", pack.ID, pack.Language, code)
+	if pk.Language != code {
+		return nil, fmt.Errorf("dictionary %s is %s, not %s", pk.ID, pk.Language, code)
 	}
 	sqlDB, err := db.OpenForSeed(dbPath)
 	if err != nil {
 		return nil, err
 	}
-	if _, err := dict.ImportLexicon(ctx, sqlDB, &pack); err != nil {
+	if _, err := dict.ImportLexicon(ctx, sqlDB, &pk); err != nil {
 		sqlDB.Close()
-		return nil, fmt.Errorf("import %s: %w", pack.ID, err)
+		return nil, fmt.Errorf("import %s: %w", pk.ID, err)
 	}
 	return &analyzer{
-		code: code, rules: rules, db: sqlDB, path: dbPath, dict: pack.Manifest,
+		code: code, rules: rules, db: sqlDB, path: dbPath, dict: pk.Manifest,
 		seg:   segment.Service{Lookup: lookup.Service{Lexicon: lexicon.Store{DB: sqlDB}, Freq: freq.Store{DB: sqlDB}, DB: sqlDB}},
 		lex:   lexicon.Store{DB: sqlDB},
 		links: map[string]int64{},

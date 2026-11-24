@@ -15,7 +15,7 @@ import (
 	"testing"
 
 	"qinqin/internal/components"
-	"qinqin/internal/dict"
+	"qinqin/internal/pack"
 )
 
 // importComponents installs a components pack with the given files.
@@ -32,7 +32,7 @@ func importComponents(t *testing.T, sqlDB *sql.DB, id, language string, files ma
 			t.Fatal(err)
 		}
 	}
-	p, err := dict.LoadPack(dir)
+	p, err := pack.LoadPack(dir)
 	if err != nil {
 		t.Fatal(err)
 	}

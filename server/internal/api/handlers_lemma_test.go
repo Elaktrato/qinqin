@@ -6,8 +6,8 @@ import (
 	"net/http"
 	"testing"
 
-	"qinqin/internal/dict"
 	"qinqin/internal/lemma"
+	"qinqin/internal/pack"
 	"qinqin/internal/packs"
 )
 
@@ -24,7 +24,7 @@ func TestLemmaPacksList(t *testing.T) {
 	ctx := context.Background()
 	for _, id := range []string{"xh-b", "xh-a"} {
 		language := map[string]string{"xh-a": "xh", "xh-b": "xq"}[id]
-		p, err := dict.LoadPack(lemmaPackDir(t, id, language, `{"format": 2, "language": "`+language+`", "version": "1", "maxDepth": 1,
+		p, err := pack.LoadPack(lemmaPackDir(t, id, language, `{"format": 2, "language": "`+language+`", "version": "1", "maxDepth": 1,
  "classes": {"w": {"any": true}}, "hints": {}, "rules": [{"from": "aba", "to": "ar", "reason": "past", "out": "w"}]}`))
 		if err != nil {
 			t.Fatal(err)

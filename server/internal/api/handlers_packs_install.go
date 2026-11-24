@@ -10,7 +10,7 @@ import (
 	"path/filepath"
 	"runtime/debug"
 
-	"qinqin/internal/dict"
+	"qinqin/internal/pack"
 	"qinqin/internal/packs"
 )
 
@@ -108,7 +108,7 @@ func (s *server) runStagedImport(ctx context.Context, token string, userID int64
 		if importer == nil {
 			// Uploads never carry audio packs (the stage handler refuses them), so no audio store;
 			// font packs keep their slices under <data>/fonts.
-			importer = func(ctx context.Context, sqlDB *sql.DB, p dict.Pack) (string, error) {
+			importer = func(ctx context.Context, sqlDB *sql.DB, p pack.Pack) (string, error) {
 				return packs.Import(ctx, sqlDB, p, packs.WithFontStore(filepath.Join(s.dataDir, "fonts")), packs.WithOnChange(s.packChanged))
 			}
 		}

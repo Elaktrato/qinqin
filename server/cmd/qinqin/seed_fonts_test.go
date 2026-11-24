@@ -9,8 +9,8 @@ import (
 	"strings"
 	"testing"
 
-	"qinqin/internal/dict"
 	"qinqin/internal/fonts"
+	"qinqin/internal/pack"
 )
 
 // `qinqin seed` installs a font pack found in a pack root; its slices go
@@ -44,7 +44,7 @@ func TestSeedImportsFontPack(t *testing.T) {
 	if _, err := os.Stat(fonts.BlobPath(filepath.Join(data, "fonts"), sha)); err != nil {
 		t.Errorf("slice not under <data>/fonts: %v", err)
 	}
-	if importRank(dict.TypeFont) <= importRank(dict.TypeSentences) {
-		t.Errorf("importRank(font) = %d, want after sentences", importRank(dict.TypeFont))
+	if importRank(pack.TypeFont) <= importRank(pack.TypeSentences) {
+		t.Errorf("importRank(font) = %d, want after sentences", importRank(pack.TypeFont))
 	}
 }

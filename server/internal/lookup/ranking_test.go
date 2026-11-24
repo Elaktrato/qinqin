@@ -7,8 +7,8 @@ import (
 	"testing"
 
 	"qinqin/internal/dbtest"
-	"qinqin/internal/dict"
 	"qinqin/internal/lookup"
+	"qinqin/internal/pack"
 )
 
 // altWords are words found by an alternative form or reading, and 生's
@@ -104,7 +104,7 @@ func kanji(literal, on, kun, meaning string) string {
 
 func importKanjidic(t *testing.T, sqlDB *sql.DB) {
 	t.Helper()
-	importPack(t, sqlDB, dict.Manifest{
+	importPack(t, sqlDB, pack.Manifest{
 		ID: "kanjidic2-test", Name: "KANJIDIC2 test", Version: "1", Type: "dictionary", Language: "ja",
 		License: "CC BY-SA 4.0", Attribution: "EDRDG", Format: "kanjidic2",
 	}, "kanjidic2.xml", kanjidic)
@@ -112,7 +112,7 @@ func importKanjidic(t *testing.T, sqlDB *sql.DB) {
 
 func importFreqPack(t *testing.T, sqlDB *sql.DB, id, rows string) {
 	t.Helper()
-	importPack(t, sqlDB, dict.Manifest{
+	importPack(t, sqlDB, pack.Manifest{
 		ID: id, Name: "Freq " + id, Version: "1", Type: "frequency", Language: "ja",
 		License: "CC BY-SA 4.0", Attribution: "test", Format: "freq-csv",
 	}, "freq.csv", "term,reading,rank\n"+rows)

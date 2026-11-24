@@ -11,6 +11,7 @@ import (
 
 	"qinqin/internal/dbtest"
 	"qinqin/internal/dict"
+	"qinqin/internal/pack"
 )
 
 // Grade, level, frequency and stroke attrs of character entries: what
@@ -73,7 +74,7 @@ func writeUnihanZip(t *testing.T, dir string, members map[string]string) {
 	}
 }
 
-func unihanZipPack(t *testing.T, members map[string]string) *dict.Pack {
+func unihanZipPack(t *testing.T, members map[string]string) *pack.Pack {
 	t.Helper()
 	dir := t.TempDir()
 	manifest, err := json.Marshal(unihanManifest)
@@ -82,11 +83,11 @@ func unihanZipPack(t *testing.T, members map[string]string) *dict.Pack {
 	}
 	mustWriteFile(t, filepath.Join(dir, "manifest.json"), string(manifest))
 	writeUnihanZip(t, dir, members)
-	pack, err := dict.LoadPack(dir)
+	pk, err := pack.LoadPack(dir)
 	if err != nil {
 		t.Fatalf("LoadPack: %v", err)
 	}
-	return &pack
+	return &pk
 }
 
 var unihanZipCore = map[string]string{
@@ -141,14 +142,14 @@ func TestLexiconUnihanZipRequiresCoreMembers(t *testing.T) {
 // CEDICT owns no character attrs: whichever of CEDICT and Unihan imports
 // first, the Unihan attrs stay on the shared character.
 func TestLexiconCedictAndUnihanKeepUnihanAttrsInEitherOrder(t *testing.T) {
-	for name, order := range map[string][]func(*testing.T) *dict.Pack{
+	for name, order := range map[string][]func(*testing.T) *pack.Pack{
 		"cedict then unihan": {
-			func(t *testing.T) *dict.Pack { return cedictLexPack(t, lexCedictChars) },
+			func(t *testing.T) *pack.Pack { return cedictLexPack(t, lexCedictChars) },
 			unihanLexPack,
 		},
 		"unihan then cedict": {
 			unihanLexPack,
-			func(t *testing.T) *dict.Pack { return cedictLexPack(t, lexCedictChars) },
+			func(t *testing.T) *pack.Pack { return cedictLexPack(t, lexCedictChars) },
 		},
 	} {
 		t.Run(name, func(t *testing.T) {

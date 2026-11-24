@@ -26,7 +26,7 @@ import (
 	"strings"
 	"time"
 
-	"qinqin/internal/dict"
+	"qinqin/internal/pack"
 )
 
 const (
@@ -59,6 +59,11 @@ type row struct {
 	value                  float64
 }
 
+// Result counts what one frequency import stored: its rows.
+type Result struct {
+	Entries int
+}
+
 // Import installs the frequency pack p: its frequency_packs row and every
 // frequency row, in ONE transaction, so a malformed row — which aborts
 // the pack with an error naming the file and row index — leaves nothing
@@ -82,13 +87,13 @@ type row struct {
 // stores values as ranks; "occurrence-based" turns counts into dense
 // ranks, the highest count being rank 1. displayValue is kept as the
 // hit's Display.
-func Import(ctx context.Context, sqlDB *sql.DB, p *dict.Pack) (dict.Result, error) {
+func Import(ctx context.Context, sqlDB *sql.DB, p *pack.Pack) (Result, error) {
 	m := p.Manifest
 	if err := m.Validate(); err != nil {
-		return dict.Result{}, fmt.Errorf("%w: %v", dict.ErrInvalidPack, err)
+		return Result{}, fmt.Errorf("%w: %v", pack.ErrInvalidPack, err)
 	}
-	if m.Type != dict.TypeFrequency {
-		return dict.Result{}, fmt.Errorf("%w: %q is a %s pack, not a frequency pack", dict.ErrInvalidPack, m.ID, m.Type)
+	if m.Type != pack.TypeFrequency {
+		return Result{}, fmt.Errorf("%w: %q is a %s pack, not a frequency pack", pack.ErrInvalidPack, m.ID, m.Type)
 	}
 
 	var (
@@ -96,21 +101,21 @@ func Import(ctx context.Context, sqlDB *sql.DB, p *dict.Pack) (dict.Result, erro
 		err  error
 	)
 	switch m.Format {
-	case dict.FormatFreqCSV:
+	case pack.FormatFreqCSV:
 		rows, err = readCSV(p.Dir)
-	case dict.FormatYomitanFreq:
+	case pack.FormatYomitanFreq:
 		rows, err = readYomitan(p.Dir)
 	default:
 		err = fmt.Errorf("format %q is not a frequency format (want yomitan-freq or freq-csv)", m.Format)
 	}
 	if err != nil {
-		return dict.Result{}, fmt.Errorf("%w: frequency pack %s: %w", dict.ErrInvalidPack, m.ID, err)
+		return Result{}, fmt.Errorf("%w: frequency pack %s: %w", pack.ErrInvalidPack, m.ID, err)
 	}
 	hash := fingerprint(rows)
 
 	tx, err := sqlDB.BeginTx(ctx, nil)
 	if err != nil {
-		return dict.Result{}, fmt.Errorf("import frequency pack %s: %w", m.ID, err)
+		return Result{}, fmt.Errorf("import frequency pack %s: %w", m.ID, err)
 	}
 	defer tx.Rollback()
 
@@ -124,7 +129,7 @@ func Import(ctx context.Context, sqlDB *sql.DB, p *dict.Pack) (dict.Result, erro
 		SELECT id, name, version, language, license, attribution, notice, content_hash, deleted_at
 		FROM frequency_packs WHERE pack_id = ?`, m.ID).
 		Scan(&id, &name, &version, &language, &license, &attribution, &notice, &oldHash, &deleted)
-	result := dict.Result{Entries: len(rows)}
+	result := Result{Entries: len(rows)}
 	switch {
 	case errors.Is(err, sql.ErrNoRows):
 		stamp := time.Now().UTC().Format(time.RFC3339)
@@ -133,10 +138,10 @@ func Import(ctx context.Context, sqlDB *sql.DB, p *dict.Pack) (dict.Result, erro
 			VALUES (?, ?, ?, ?, ?, ?, ?, (SELECT COALESCE(MAX(ord), 0) + 1 FROM frequency_packs), ?, ?)
 			RETURNING id`,
 			m.ID, m.Name, m.Version, m.Language, m.License, m.Attribution, m.Notice, hash, stamp).Scan(&id); err != nil {
-			return dict.Result{}, fmt.Errorf("register frequency pack %s: %w", m.ID, err)
+			return Result{}, fmt.Errorf("register frequency pack %s: %w", m.ID, err)
 		}
 	case err != nil:
-		return dict.Result{}, fmt.Errorf("import frequency pack %s: %w", m.ID, err)
+		return Result{}, fmt.Errorf("import frequency pack %s: %w", m.ID, err)
 	default:
 		if !deleted.Valid && oldHash == hash && name == m.Name && version == m.Version &&
 			language == m.Language && license == m.License && attribution == m.Attribution && notice == m.Notice {
@@ -148,17 +153,17 @@ func Import(ctx context.Context, sqlDB *sql.DB, p *dict.Pack) (dict.Result, erro
 			WHERE id = ?`,
 			m.Name, m.Version, m.Language, m.License, m.Attribution, m.Notice, hash,
 			time.Now().UTC().Format(time.RFC3339), id); err != nil {
-			return dict.Result{}, fmt.Errorf("update frequency pack %s: %w", m.ID, err)
+			return Result{}, fmt.Errorf("update frequency pack %s: %w", m.ID, err)
 		}
 		if _, err = tx.ExecContext(ctx, `DELETE FROM frequency WHERE pack_id = ?`, id); err != nil {
-			return dict.Result{}, fmt.Errorf("replace frequency rows of %s: %w", m.ID, err)
+			return Result{}, fmt.Errorf("replace frequency rows of %s: %w", m.ID, err)
 		}
 	}
 	if err := insertRows(ctx, tx, id, rows); err != nil {
-		return dict.Result{}, fmt.Errorf("import frequency pack %s: %w", m.ID, err)
+		return Result{}, fmt.Errorf("import frequency pack %s: %w", m.ID, err)
 	}
 	if err := tx.Commit(); err != nil {
-		return dict.Result{}, fmt.Errorf("import frequency pack %s: %w", m.ID, err)
+		return Result{}, fmt.Errorf("import frequency pack %s: %w", m.ID, err)
 	}
 	return result, nil
 }

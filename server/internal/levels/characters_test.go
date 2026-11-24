@@ -6,9 +6,9 @@ import (
 	"testing"
 
 	"qinqin/internal/dbtest"
-	"qinqin/internal/dict"
 	"qinqin/internal/lang"
 	"qinqin/internal/levels"
+	"qinqin/internal/pack"
 )
 
 // charsOf flattens SchemeCharacters into level name -> chars, keeping
@@ -32,11 +32,11 @@ func TestSchemeCharactersWordUnit(t *testing.T) {
 	ctx := context.Background()
 	seedFixture(t, sqlDB)
 
-	pack, err := dict.LoadPack(hskMini)
+	pk, err := pack.LoadPack(hskMini)
 	if err != nil {
 		t.Fatalf("load fixture pack: %v", err)
 	}
-	if _, err := levels.Import(ctx, sqlDB, pack); err != nil {
+	if _, err := levels.Import(ctx, sqlDB, pk); err != nil {
 		t.Fatalf("import fixture scheme: %v", err)
 	}
 	schemes, err := levels.List(ctx, sqlDB)
@@ -118,11 +118,11 @@ func TestSchemeCharactersSkipsDeletedRows(t *testing.T) {
 	sqlDB := dbtest.Open(t)
 	ctx := context.Background()
 	fe := seedFixture(t, sqlDB)
-	pack, err := dict.LoadPack(hskMini)
+	pk, err := pack.LoadPack(hskMini)
 	if err != nil {
 		t.Fatalf("load fixture pack: %v", err)
 	}
-	if _, err := levels.Import(ctx, sqlDB, pack); err != nil {
+	if _, err := levels.Import(ctx, sqlDB, pk); err != nil {
 		t.Fatalf("import fixture scheme: %v", err)
 	}
 	schemes, err := levels.List(ctx, sqlDB)
@@ -190,11 +190,11 @@ func TestSchemeVersionStableOnNoopReimport(t *testing.T) {
 	sqlDB := dbtest.Open(t)
 	ctx := context.Background()
 	seedFixture(t, sqlDB)
-	pack, err := dict.LoadPack(hskMini)
+	pk, err := pack.LoadPack(hskMini)
 	if err != nil {
 		t.Fatalf("load fixture pack: %v", err)
 	}
-	if _, err := levels.Import(ctx, sqlDB, pack); err != nil {
+	if _, err := levels.Import(ctx, sqlDB, pk); err != nil {
 		t.Fatalf("import fixture scheme: %v", err)
 	}
 	schemes, err := levels.List(ctx, sqlDB)
@@ -211,7 +211,7 @@ func TestSchemeVersionStableOnNoopReimport(t *testing.T) {
 	}
 	// An identical re-import re-stamps the scheme row but no level or
 	// member: the characters, and so the version, stay the same.
-	if _, err := levels.Import(ctx, sqlDB, pack); err != nil {
+	if _, err := levels.Import(ctx, sqlDB, pk); err != nil {
 		t.Fatalf("re-import fixture scheme: %v", err)
 	}
 	if v2, err := levels.SchemeVersion(ctx, sqlDB, schemes[0].ID); err != nil || v2 != v1 {

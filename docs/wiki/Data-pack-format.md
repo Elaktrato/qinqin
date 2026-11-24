@@ -1,6 +1,6 @@
 # Data pack format
 
-A data pack carries content: a dictionary, a level list, a frequency list, sentences, grammar lessons, audio or character components. A pack is a directory (or a `.zip` of one) with a `manifest.json` and the data file its format reads. Parsing and validation: `server/internal/dict/manifest.go` and `pack.go`; the list of pack types: `server/internal/packtype` (shared copy `docs/contracts/packages/pack-types.json`); dispatch per type: `server/internal/packs/packs.go`. The bundled packs live in `plugins/data/` (see `plugins/data/README.md`); the licence reference is [`docs/sources.md`](https://github.com/Elaktrato/qinqin/blob/develop/docs/sources.md).
+A data pack carries content: a dictionary, a level list, a frequency list, sentences, grammar lessons, audio or character components. A pack is a directory (or a `.zip` of one) with a `manifest.json` and the data file its format reads. Parsing and validation: `server/internal/pack/manifest.go` and `pack.go`; the list of pack types: `server/internal/pack/types.go` (shared copy `docs/contracts/packages/pack-types.json`); dispatch per type: `server/internal/packs/packs.go`. The bundled packs live in `plugins/data/` (see `plugins/data/README.md`); the licence reference is [`docs/sources.md`](https://github.com/Elaktrato/qinqin/blob/develop/docs/sources.md).
 
 ## Manifest
 

@@ -8,7 +8,7 @@ import (
 	"testing"
 
 	"qinqin/internal/datapkg"
-	"qinqin/internal/packtype"
+	"qinqin/internal/pack"
 )
 
 // The package types are the pack-type table's (#172): every pack type with
@@ -16,7 +16,7 @@ import (
 // states; a new type with a package fails here until all of that exists.
 func TestPackageTypesFollowThePackTypeTable(t *testing.T) {
 	var want []string
-	for _, d := range packtype.All {
+	for _, d := range pack.All {
 		if d.Package != "" {
 			want = append(want, d.Package)
 		}
@@ -35,8 +35,8 @@ func TestPackageTypesFollowThePackTypeTable(t *testing.T) {
 	}
 
 	plan := datapkg.PlanSourceForTest()
-	for _, d := range packtype.All {
-		if d.Package == "" || d.Package == packtype.LexiconPackage {
+	for _, d := range pack.All {
+		if d.Package == "" || d.Package == pack.LexiconPackage {
 			continue
 		}
 		src, ok := plan[datapkg.Type(d.Package)]

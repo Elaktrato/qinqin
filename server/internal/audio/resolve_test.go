@@ -6,7 +6,7 @@ import (
 
 	"qinqin/internal/audio"
 	"qinqin/internal/dbtest"
-	"qinqin/internal/dict"
+	"qinqin/internal/pack"
 )
 
 func TestResolveJapaneseTermByKatakanaReading(t *testing.T) {
@@ -102,7 +102,7 @@ func TestResolveTermWithoutReadingMatchesAnyReading(t *testing.T) {
 	ctx, sqlDB, store := context.Background(), dbtest.Open(t), t.TempDir()
 	loose := makePack(t, "loose", "zh", "CC0", []string{"term\t你好\t\taudio/a.ogg\t\t\t"}, []clipFile{{"a.ogg", oggClip("loose")}})
 	exact := makePack(t, "exact", "zh", "CC0", []string{"term\t你好\tnǐ hǎo\taudio/b.ogg\t\t\t"}, []clipFile{{"b.ogg", oggClip("exact")}})
-	for _, p := range []dict.Pack{loose, exact} {
+	for _, p := range []pack.Pack{loose, exact} {
 		if _, err := audio.Import(ctx, sqlDB, p, store); err != nil {
 			t.Fatal(err)
 		}

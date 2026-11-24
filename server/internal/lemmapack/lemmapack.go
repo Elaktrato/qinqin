@@ -22,9 +22,9 @@ import (
 	"sync"
 	"time"
 
-	"qinqin/internal/dict"
 	"qinqin/internal/lang"
 	"qinqin/internal/lemma"
+	"qinqin/internal/pack"
 )
 
 // DataFile is the data file of a lemma-rules pack.
@@ -57,23 +57,23 @@ func Hash(raw []byte) string {
 }
 
 // LoadFile reads and validates the rules.json of the pack in dir. Errors
-// are dict.ErrInvalidPack naming the file.
+// are pack.ErrInvalidPack naming the file.
 func LoadFile(dir string) ([]byte, *lemma.Table, error) {
 	f, err := os.Open(filepath.Join(dir, DataFile))
 	if err != nil {
-		return nil, nil, fmt.Errorf("%w: %s: %v", dict.ErrInvalidPack, DataFile, err)
+		return nil, nil, fmt.Errorf("%w: %s: %v", pack.ErrInvalidPack, DataFile, err)
 	}
 	defer f.Close()
 	raw, err := io.ReadAll(io.LimitReader(f, MaxFileBytes+1))
 	if err != nil {
-		return nil, nil, fmt.Errorf("%w: %s: %v", dict.ErrInvalidPack, DataFile, err)
+		return nil, nil, fmt.Errorf("%w: %s: %v", pack.ErrInvalidPack, DataFile, err)
 	}
 	if len(raw) > MaxFileBytes {
-		return nil, nil, fmt.Errorf("%w: %s is larger than 1 MiB", dict.ErrInvalidPack, DataFile)
+		return nil, nil, fmt.Errorf("%w: %s is larger than 1 MiB", pack.ErrInvalidPack, DataFile)
 	}
 	t, err := lemma.Parse(raw)
 	if err != nil {
-		return nil, nil, fmt.Errorf("%w: %s: %v", dict.ErrInvalidPack, DataFile, err)
+		return nil, nil, fmt.Errorf("%w: %s: %v", pack.ErrInvalidPack, DataFile, err)
 	}
 	return raw, t, nil
 }
@@ -82,24 +82,24 @@ func LoadFile(dir string) ([]byte, *lemma.Table, error) {
 // rules.json, the table's language against the manifest's, and that the
 // language's code pack runs rule tables — without the installed packs
 // (CheckLanguage). The staged upload calls it before the licence review.
-func CheckPack(p dict.Pack) ([]byte, *lemma.Table, error) {
+func CheckPack(p pack.Pack) ([]byte, *lemma.Table, error) {
 	m := p.Manifest
 	if err := m.Validate(); err != nil {
-		return nil, nil, fmt.Errorf("%w: %v", dict.ErrInvalidPack, err)
+		return nil, nil, fmt.Errorf("%w: %v", pack.ErrInvalidPack, err)
 	}
-	if m.Type != dict.TypeLemmaRules || m.Format != dict.FormatRulesJSON {
-		return nil, nil, fmt.Errorf("%w: %q is a %s pack (format %s), not a lemma-rules pack", dict.ErrInvalidPack, m.ID, m.Type, m.Format)
+	if m.Type != pack.TypeLemmaRules || m.Format != pack.FormatRulesJSON {
+		return nil, nil, fmt.Errorf("%w: %q is a %s pack (format %s), not a lemma-rules pack", pack.ErrInvalidPack, m.ID, m.Type, m.Format)
 	}
 	raw, t, err := LoadFile(p.Dir)
 	if err != nil {
 		return nil, nil, err
 	}
 	if t.Language != m.Language {
-		return nil, nil, fmt.Errorf("%w: %s is the table of %q, the manifest states %q", dict.ErrInvalidPack, DataFile, t.Language, m.Language)
+		return nil, nil, fmt.Errorf("%w: %s is the table of %q, the manifest states %q", pack.ErrInvalidPack, DataFile, t.Language, m.Language)
 	}
 	if lang.Registered(m.Language) {
 		if _, ok := lang.For(m.Language).(lang.Deinflector); !ok {
-			return nil, nil, fmt.Errorf("%w: the %s language module does not use lemmatizer rule tables", dict.ErrInvalidPack, m.Language)
+			return nil, nil, fmt.Errorf("%w: the %s language module does not use lemmatizer rule tables", pack.ErrInvalidPack, m.Language)
 		}
 	}
 	return raw, t, nil
@@ -117,14 +117,14 @@ func CheckLanguage(ctx context.Context, q Querier, packID, language string) erro
 	case err != nil:
 		return fmt.Errorf("lemmapack: %w", err)
 	}
-	return fmt.Errorf("%w: %s already has the lemma-rules pack %q; uninstall it first", dict.ErrInvalidPack, language, other)
+	return fmt.Errorf("%w: %s already has the lemma-rules pack %q; uninstall it first", pack.ErrInvalidPack, language, other)
 }
 
 // Import installs the lemma-rules pack p (CheckPack, then CheckLanguage in
 // the transaction) and reloads the overlay. One transaction upserts the
 // registry row with the raw rules.json, clearing an uninstall; an identical
 // re-import (same bytes and manifest fields) writes nothing.
-func Import(ctx context.Context, sqlDB *sql.DB, p dict.Pack) (Result, error) {
+func Import(ctx context.Context, sqlDB *sql.DB, p pack.Pack) (Result, error) {
 	raw, t, err := CheckPack(p)
 	if err != nil {
 		return Result{}, err

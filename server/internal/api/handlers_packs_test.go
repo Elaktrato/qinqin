@@ -11,7 +11,7 @@ import (
 	"strings"
 	"testing"
 
-	"qinqin/internal/dict"
+	"qinqin/internal/pack"
 	"qinqin/internal/packs"
 )
 
@@ -28,7 +28,7 @@ const (
 // through packs.Import.
 func installTestPacks(t *testing.T, sqlDB *sql.DB) {
 	t.Helper()
-	d, err := dict.LoadPack(buildPackDir(t, packTestDictManifest, packTestDict))
+	d, err := pack.LoadPack(buildPackDir(t, packTestDictManifest, packTestDict))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -42,7 +42,7 @@ func installTestPacks(t *testing.T, sqlDB *sql.DB) {
 	if err := os.WriteFile(filepath.Join(dir, "sentences.json"), []byte(packTestSentences), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	s, err := dict.LoadPack(dir)
+	s, err := pack.LoadPack(dir)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -186,11 +186,11 @@ func TestAdminAudioPackListAndUninstall(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	pack, err := dict.LoadPack(pdir)
+	pk, err := pack.LoadPack(pdir)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := packs.Import(context.Background(), sqlDB, pack, packs.WithAudioStore(store)); err != nil {
+	if _, err := packs.Import(context.Background(), sqlDB, pk, packs.WithAudioStore(store)); err != nil {
 		t.Fatal(err)
 	}
 

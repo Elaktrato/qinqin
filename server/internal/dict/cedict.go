@@ -11,6 +11,7 @@ import (
 	"unicode"
 	"unicode/utf8"
 
+	"qinqin/internal/pack"
 	"qinqin/internal/pinyin"
 )
 
@@ -120,20 +121,20 @@ type cedictStats struct {
 func readCedictLines(dir string) (cedictParse, error) {
 	f, err := openMaybeGz(filepath.Join(dir, cedictFile))
 	if err != nil {
-		return cedictParse{}, fmt.Errorf("%w: read %s of %s: %v", ErrInvalidPack, cedictFile, dir, err)
+		return cedictParse{}, fmt.Errorf("%w: read %s of %s: %v", pack.ErrInvalidPack, cedictFile, dir, err)
 	}
 	defer f.Close()
 	p, err := parseCedictLenient(f)
 	if err != nil {
-		return cedictParse{}, fmt.Errorf("%w: parse %s of %s: %v", ErrInvalidPack, cedictFile, dir, err)
+		return cedictParse{}, fmt.Errorf("%w: parse %s of %s: %v", pack.ErrInvalidPack, cedictFile, dir, err)
 	}
 	if len(p.entries) == 0 && p.skipped == 0 {
-		return cedictParse{}, fmt.Errorf("%w: %s of %s has no entries", ErrInvalidPack, cedictFile, dir)
+		return cedictParse{}, fmt.Errorf("%w: %s of %s has no entries", pack.ErrInvalidPack, cedictFile, dir)
 	}
 	if p.skipped > 0 && (len(p.entries) == 0 ||
 		float64(p.skipped) > maxSkippedShare*float64(p.skipped+len(p.entries))) {
 		return cedictParse{}, fmt.Errorf("%w: %s of %s: %d of %d entry lines are malformed (first: %s)",
-			ErrInvalidPack, cedictFile, dir, p.skipped, p.skipped+len(p.entries), p.firstSkip)
+			pack.ErrInvalidPack, cedictFile, dir, p.skipped, p.skipped+len(p.entries), p.firstSkip)
 	}
 	return p, nil
 }

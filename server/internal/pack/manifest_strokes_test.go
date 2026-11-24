@@ -1,4 +1,4 @@
-package dict_test
+package pack_test
 
 import (
 	"os"
@@ -7,12 +7,12 @@ import (
 	"strings"
 	"testing"
 
-	"qinqin/internal/dict"
+	"qinqin/internal/pack"
 )
 
-func strokesManifest() dict.Manifest {
+func strokesManifest() pack.Manifest {
 	m := fixtureManifest
-	m.ID, m.Type, m.Format = "hanzi-writer-strokes", dict.TypeStrokes, dict.FormatStrokesJSONLGz
+	m.ID, m.Type, m.Format = "hanzi-writer-strokes", pack.TypeStrokes, pack.FormatStrokesJSONLGz
 	m.Language = ""
 	m.Languages = []string{"zh", "ja"}
 	return m
@@ -32,14 +32,14 @@ func TestManifestAcceptsStrokesPacks(t *testing.T) {
 
 func TestManifestStrokesNeedsLanguages(t *testing.T) {
 	for name, tc := range map[string]struct {
-		mutate func(*dict.Manifest)
+		mutate func(*pack.Manifest)
 		want   string
 	}{
-		"none":            {func(m *dict.Manifest) { m.Languages = nil }, "languages"},
-		"empty code":      {func(m *dict.Manifest) { m.Languages = []string{"zh", ""} }, "language"},
-		"malformed code":  {func(m *dict.Manifest) { m.Languages = []string{"Chinese"} }, "language"},
-		"duplicate":       {func(m *dict.Manifest) { m.Languages = []string{"zh", "zh"} }, "twice"},
-		"single language": {func(m *dict.Manifest) { m.Language = "zh" }, "languages"},
+		"none":            {func(m *pack.Manifest) { m.Languages = nil }, "languages"},
+		"empty code":      {func(m *pack.Manifest) { m.Languages = []string{"zh", ""} }, "language"},
+		"malformed code":  {func(m *pack.Manifest) { m.Languages = []string{"Chinese"} }, "language"},
+		"duplicate":       {func(m *pack.Manifest) { m.Languages = []string{"zh", "zh"} }, "twice"},
+		"single language": {func(m *pack.Manifest) { m.Language = "zh" }, "languages"},
 	} {
 		m := strokesManifest()
 		tc.mutate(&m)
@@ -76,7 +76,7 @@ func TestLoadPackNormalizesStrokesLanguages(t *testing.T) {
 		"languages":[" ZH ","ja"],"license":"Arphic Public License","attribution":"x","format":"hanzi-writer-jsonl-gz"}`), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	p, err := dict.LoadPack(dir)
+	p, err := pack.LoadPack(dir)
 	if err != nil {
 		t.Fatalf("LoadPack: %v", err)
 	}

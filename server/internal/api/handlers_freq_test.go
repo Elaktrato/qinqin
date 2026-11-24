@@ -8,8 +8,8 @@ import (
 	"reflect"
 	"testing"
 
-	"qinqin/internal/dict"
 	"qinqin/internal/freq"
+	"qinqin/internal/pack"
 )
 
 // frequencyPackBody mirrors the JSON body of GET /api/frequency-packs.
@@ -48,7 +48,7 @@ func TestListFrequencyPacks(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	p, err := dict.LoadPack(dir)
+	p, err := pack.LoadPack(dir)
 	if err != nil {
 		t.Fatal(err)
 	}

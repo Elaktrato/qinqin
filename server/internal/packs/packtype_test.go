@@ -6,8 +6,8 @@ import (
 	"testing"
 
 	"qinqin/internal/dbtest"
+	"qinqin/internal/pack"
 	"qinqin/internal/packs"
-	"qinqin/internal/packtype"
 )
 
 // Every pack type of the table has an importer and an uninstaller here,
@@ -15,16 +15,16 @@ import (
 func TestEveryPackTypeHasItsOperations(t *testing.T) {
 	got := packs.OperationTypes()
 	slices.Sort(got)
-	want := packtype.Types()
+	want := pack.Types()
 	slices.Sort(want)
 	if !slices.Equal(got, want) {
 		t.Errorf("import/uninstall operations for %v, pack types %v", got, want)
 	}
-	for _, typ := range packtype.Types() {
+	for _, typ := range pack.Types() {
 		if !packs.Supported(typ) {
 			t.Errorf("%s not supported", typ)
 		}
-		d, _ := packtype.Lookup(typ)
+		d, _ := pack.Lookup(typ)
 		if packs.Installable(typ) != d.Uploadable {
 			t.Errorf("%s: Installable %v, table says %v", typ, packs.Installable(typ), d.Uploadable)
 		}
@@ -39,7 +39,7 @@ func TestEveryPackTypeHasItsOperations(t *testing.T) {
 // plan): a new type needs its migration.
 func TestEveryRegistryTableHasTheStandardColumns(t *testing.T) {
 	sqlDB := dbtest.Open(t)
-	for _, d := range packtype.All {
+	for _, d := range pack.All {
 		rows, err := sqlDB.QueryContext(context.Background(), `SELECT name FROM pragma_table_info(?)`, d.Registry)
 		if err != nil {
 			t.Fatal(err)
@@ -53,9 +53,9 @@ func TestEveryRegistryTableHasTheStandardColumns(t *testing.T) {
 		rows.Close()
 		want := []string{"pack_id", "name", "version", "license", "attribution", "notice", "updated_at", "deleted_at"}
 		switch d.Languages {
-		case packtype.One:
+		case pack.One:
 			want = append(want, "language")
-		case packtype.Many:
+		case pack.Many:
 			want = append(want, "languages")
 		}
 		for _, c := range want {
@@ -68,9 +68,9 @@ func TestEveryRegistryTableHasTheStandardColumns(t *testing.T) {
 
 // List orders the types as the table does.
 func TestListOrderIsTheTableOrder(t *testing.T) {
-	for i := 1; i < len(packtype.All); i++ {
-		if !packs.TypeBefore(packtype.All[i-1].Type, packtype.All[i].Type) {
-			t.Errorf("%s does not list before %s", packtype.All[i-1].Type, packtype.All[i].Type)
+	for i := 1; i < len(pack.All); i++ {
+		if !packs.TypeBefore(pack.All[i-1].Type, pack.All[i].Type) {
+			t.Errorf("%s does not list before %s", pack.All[i-1].Type, pack.All[i].Type)
 		}
 	}
 }

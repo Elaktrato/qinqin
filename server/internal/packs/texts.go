@@ -11,6 +11,7 @@ import (
 	"unicode/utf8"
 
 	"qinqin/internal/dict"
+	"qinqin/internal/pack"
 )
 
 // A pack's licence texts: its LICENSE*, LICENCE*, ATTRIBUTION*, NOTICE* and
@@ -158,8 +159,8 @@ func TextsStored(ctx context.Context, q Querier, typ, packID string) (bool, erro
 // RegistryID is the pack id of the registry row an import of manifest m
 // writes: the manifest id, except for the built-in kanjidic2 and unihan
 // dictionaries (dict.RegistryTerms).
-func RegistryID(m dict.Manifest) string {
-	if m.Type == dict.TypeDictionary {
+func RegistryID(m pack.Manifest) string {
+	if m.Type == pack.TypeDictionary {
 		id, _, _ := dict.RegistryTerms(m)
 		return id
 	}
@@ -170,17 +171,17 @@ func RegistryID(m dict.Manifest) string {
 // transaction of its own: each type importer commits its own transaction,
 // so this runs after it. A failure is returned (the pack is installed; a
 // re-import, which changes no data, stores the texts).
-func storeTextsAfterImport(ctx context.Context, sqlDB *sql.DB, pack dict.Pack) error {
+func storeTextsAfterImport(ctx context.Context, sqlDB *sql.DB, pk pack.Pack) error {
 	tx, err := sqlDB.BeginTx(ctx, nil)
 	if err != nil {
-		return fmt.Errorf("packs: pack %s installed, but its licence texts were not stored: %w", pack.ID, err)
+		return fmt.Errorf("packs: pack %s installed, but its licence texts were not stored: %w", pk.ID, err)
 	}
 	defer tx.Rollback()
-	if _, err := StoreTexts(ctx, tx, pack.Type, RegistryID(pack.Manifest), pack.Dir); err != nil {
-		return fmt.Errorf("packs: pack %s installed, but its licence texts were not stored: %w", pack.ID, err)
+	if _, err := StoreTexts(ctx, tx, pk.Type, RegistryID(pk.Manifest), pk.Dir); err != nil {
+		return fmt.Errorf("packs: pack %s installed, but its licence texts were not stored: %w", pk.ID, err)
 	}
 	if err := tx.Commit(); err != nil {
-		return fmt.Errorf("packs: pack %s installed, but its licence texts were not stored: %w", pack.ID, err)
+		return fmt.Errorf("packs: pack %s installed, but its licence texts were not stored: %w", pk.ID, err)
 	}
 	return nil
 }

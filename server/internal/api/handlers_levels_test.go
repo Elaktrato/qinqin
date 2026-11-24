@@ -10,10 +10,10 @@ import (
 	"strconv"
 	"testing"
 
-	"qinqin/internal/dict"
 	"qinqin/internal/lang"
 	"qinqin/internal/levels"
 	"qinqin/internal/model"
+	"qinqin/internal/pack"
 )
 
 // levelsFixture is the shared levels pack fixture, relative to this
@@ -71,7 +71,7 @@ const schemeCedict = "你好 你好 [ni3 hao3] /hello/\n" +
 func importSchemeCedict(t *testing.T, sqlDB *sql.DB) {
 	t.Helper()
 	lang.Register(lang.Zh{})
-	lookupImport(t, sqlDB, dict.Manifest{
+	lookupImport(t, sqlDB, pack.Manifest{
 		ID: "cedict-test", Name: "CC-CEDICT test", Version: "1", Type: "dictionary", Language: "zh",
 		License: "CC BY-SA 4.0", Attribution: "MDBG", Format: "cedict",
 	}, "dictionary.txt", schemeCedict)
@@ -113,11 +113,11 @@ func TestSchemeRoutes(t *testing.T) {
 
 	// The admin layer dispatches levels packs by manifest type; the
 	// fixture imports through the library like the seed CLI does.
-	pack, err := dict.LoadPack(levelsFixture)
+	pk, err := pack.LoadPack(levelsFixture)
 	if err != nil {
 		t.Fatalf("load fixture pack: %v", err)
 	}
-	if _, err := levels.Import(ctx, sqlDB, pack); err != nil {
+	if _, err := levels.Import(ctx, sqlDB, pk); err != nil {
 		t.Fatalf("import fixture scheme: %v", err)
 	}
 
@@ -257,11 +257,11 @@ func TestSchemeEntriesRoute(t *testing.T) {
 	nihao, xiexie, yinhang := word("你好"), word("谢谢"), word("银行")
 	ni, hao, xie, yin, xing := char("你"), char("好"), char("谢"), char("银"), char("行")
 
-	pack, err := dict.LoadPack(levelsFixture)
+	pk, err := pack.LoadPack(levelsFixture)
 	if err != nil {
 		t.Fatalf("load fixture pack: %v", err)
 	}
-	if _, err := levels.Import(ctx, sqlDB, pack); err != nil {
+	if _, err := levels.Import(ctx, sqlDB, pk); err != nil {
 		t.Fatalf("import fixture scheme: %v", err)
 	}
 	schemes := listSchemes(t, ts.URL)
@@ -301,7 +301,7 @@ func TestSchemeEntriesRoute(t *testing.T) {
 
 	// A scheme whose only level has no members answers an empty array,
 	// never null.
-	emptyPack, err := dict.LoadPack(writeLevelsPack(t, "empty-scheme",
+	emptyPack, err := pack.LoadPack(writeLevelsPack(t, "empty-scheme",
 		`{"unit":"word","levels":[{"name":"1","entries":["电脑"]}]}`))
 	if err != nil {
 		t.Fatalf("load empty pack: %v", err)

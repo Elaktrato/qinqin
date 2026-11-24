@@ -15,7 +15,7 @@ import (
 	"time"
 
 	"qinqin/internal/api"
-	"qinqin/internal/dict"
+	"qinqin/internal/pack"
 	"qinqin/internal/packs"
 )
 
@@ -89,7 +89,7 @@ func TestPackDirsDoNotCollide(t *testing.T) {
 func TestInstallPanicIsRecovered(t *testing.T) {
 	var calls int
 	done := make(chan string, 4)
-	e := newPackEnvWith(t, done, api.WithImporter(func(ctx context.Context, db *sql.DB, p dict.Pack) (string, error) {
+	e := newPackEnvWith(t, done, api.WithImporter(func(ctx context.Context, db *sql.DB, p pack.Pack) (string, error) {
 		calls++
 		if calls == 1 {
 			panic("boom")

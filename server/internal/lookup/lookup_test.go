@@ -18,6 +18,7 @@ import (
 	"qinqin/internal/lemma"
 	"qinqin/internal/lexicon"
 	"qinqin/internal/lookup"
+	"qinqin/internal/pack"
 )
 
 func init() {
@@ -184,7 +185,7 @@ const jaFreq = `為る,する,15
 
 // importPack writes the manifest and one data file into a fresh pack
 // directory and imports it with the real importer of its type.
-func importPack(t *testing.T, sqlDB *sql.DB, m dict.Manifest, file, content string) {
+func importPack(t *testing.T, sqlDB *sql.DB, m pack.Manifest, file, content string) {
 	t.Helper()
 	dir := t.TempDir()
 	manifest, err := json.Marshal(m)
@@ -196,12 +197,12 @@ func importPack(t *testing.T, sqlDB *sql.DB, m dict.Manifest, file, content stri
 			t.Fatal(err)
 		}
 	}
-	p, err := dict.LoadPack(dir)
+	p, err := pack.LoadPack(dir)
 	if err != nil {
 		t.Fatalf("LoadPack(%s): %v", m.ID, err)
 	}
 	ctx := context.Background()
-	if m.Type == dict.TypeFrequency {
+	if m.Type == pack.TypeFrequency {
 		_, err = freq.Import(ctx, sqlDB, &p)
 	} else {
 		_, err = dict.ImportLexicon(ctx, sqlDB, &p)
@@ -213,7 +214,7 @@ func importPack(t *testing.T, sqlDB *sql.DB, m dict.Manifest, file, content stri
 
 func importJMdict(t *testing.T, sqlDB *sql.DB, entries string) {
 	t.Helper()
-	importPack(t, sqlDB, dict.Manifest{
+	importPack(t, sqlDB, pack.Manifest{
 		ID: "jmdict-test", Name: "JMdict test", Version: "1", Type: "dictionary", Language: "ja",
 		License: "CC BY-SA 4.0", Attribution: "EDRDG", Format: "jmdict",
 	}, "jmdict.xml", jmdictHead+entries+"</JMdict>\n")
@@ -221,7 +222,7 @@ func importJMdict(t *testing.T, sqlDB *sql.DB, entries string) {
 
 func importCedict(t *testing.T, sqlDB *sql.DB) {
 	t.Helper()
-	importPack(t, sqlDB, dict.Manifest{
+	importPack(t, sqlDB, pack.Manifest{
 		ID: "cedict-test", Name: "CC-CEDICT test", Version: "1", Type: "dictionary", Language: "zh",
 		License: "CC BY-SA 4.0", Attribution: "CC-CEDICT", Format: "cedict",
 	}, "dictionary.txt", zhLines)
@@ -229,7 +230,7 @@ func importCedict(t *testing.T, sqlDB *sql.DB) {
 
 func importJaFreq(t *testing.T, sqlDB *sql.DB) {
 	t.Helper()
-	importPack(t, sqlDB, dict.Manifest{
+	importPack(t, sqlDB, pack.Manifest{
 		ID: "freq-test", Name: "Freq test", Version: "1", Type: "frequency", Language: "ja",
 		License: "CC BY-SA 4.0", Attribution: "test", Format: "freq-csv",
 	}, "freq.csv", "term,reading,rank\n"+jaFreq)
@@ -440,7 +441,7 @@ func zhService(t *testing.T) lookup.Service {
 	t.Helper()
 	sqlDB := dbtest.Open(t)
 	importCedict(t, sqlDB)
-	importPack(t, sqlDB, dict.Manifest{
+	importPack(t, sqlDB, pack.Manifest{
 		ID: "unihan", Name: "Unihan", Version: "1", Type: "dictionary", Language: "zh",
 		License: "Unicode License v3", Attribution: "Unicode", Format: "unihan",
 	}, "dictionary.txt", unihanLines)
@@ -455,11 +456,11 @@ func zhService(t *testing.T) lookup.Service {
 func TestUninstalledDictionaryWordsDisappear(t *testing.T) {
 	sqlDB := dbtest.Open(t)
 	importCedict(t, sqlDB)
-	importPack(t, sqlDB, dict.Manifest{
+	importPack(t, sqlDB, pack.Manifest{
 		ID: "zh-extra", Name: "zh extra", Version: "1", Type: "dictionary", Language: "zh",
 		License: "CC0-1.0", Attribution: "test", Format: "json",
 	}, "dictionary.json", `{"entries": [{"written": "学习", "kind": "word", "readings": [{"type": "pinyin", "value": "xué xí"}], "glosses": ["to study (extra)"]}]}`)
-	importPack(t, sqlDB, dict.Manifest{
+	importPack(t, sqlDB, pack.Manifest{
 		ID: "unihan", Name: "Unihan", Version: "1", Type: "dictionary", Language: "zh",
 		License: "Unicode License v3", Attribution: "Unicode", Format: "unihan",
 	}, "dictionary.txt", "U+5B57\tkRSUnicode\t39.3\n")
@@ -610,7 +611,7 @@ func TestTableOnlyLanguageLookup(t *testing.T) {
 	}
 	lemma.Register(tb)
 	sqlDB := dbtest.Open(t)
-	importPack(t, sqlDB, dict.Manifest{
+	importPack(t, sqlDB, pack.Manifest{
 		ID: "xl-test", Name: "xl", Version: "1", Type: "dictionary", Language: "xl",
 		License: "CC0-1.0", Attribution: "test", Format: "json",
 	}, "dictionary.json", `{"entries": [{"written": "cantar", "kind": "word", "readings": [{"type": "latin", "value": "cantar"}], "glosses": ["to sing"]}]}`)
@@ -631,7 +632,7 @@ func TestTableDrivenReadingProbes(t *testing.T) {
 	}
 	lemma.Register(tb)
 	sqlDB := dbtest.Open(t)
-	importPack(t, sqlDB, dict.Manifest{
+	importPack(t, sqlDB, pack.Manifest{
 		ID: "xk-test", Name: "xk", Version: "1", Type: "dictionary", Language: "xk",
 		License: "CC0-1.0", Attribution: "test", Format: "json",
 	}, "dictionary.json", `{"entries": [{"written": "Haus", "kind": "word", "readings": [{"type": "latin", "value": "haus"}], "glosses": ["house"]}]}`)
