@@ -222,3 +222,27 @@ Baseline (55312f3e, Node 26): 598 files, 12,651 passed, 8 skipped.
    Plugin format pages. Deviations over the whole issue: `context/app.test.ts` was not seen failing before the
    classes existed (task 2), the new Connectivity cases were written with the class (task 6), and task 8a had no
    e2e run of its own.
+
+### Fix wave (the review of #196)
+
+- F1 (blocker, with should-fix 3): a plain `loadMe()` while signed in blanked the user, which the app context
+  took as a switch: the session was replaced and the page tree remounted, so regenerated recovery codes vanished.
+  Tests first: `context/app.test.ts` "loadMe for the same token keeps the session and never blanks the user", "a
+  new token for the same user (another tab) keeps the session", "a new token for another user replaces the session
+  once `me` names that user", and `routes/layoutSession.dom.test.ts` (the layout around the two-factor settings:
+  the regenerated codes stay on screen after the reload of `me`); all four seen failing. Fix: `loadMe()` blanks
+  the user only when none is signed in; the session ends only when `me` names another user id, or at sign-out
+  or expiry. Record 0009's Consequences and the Ruling updated. `data.load.test.ts`'s "nothing is merged while no
+  user is known" relied on the blank ending the session; it now starts a session without a user explicitly.
+- F2 (should-fix 2): commit f06e45f8 had dropped four #168 tests at the end of `api/client.test.ts`; restored
+  verbatim from 55312f3e (they test unchanged code, so they pass at once). Then every changed or deleted test
+  file of the branch (170 under `apps/web/src`) was compared with 55312f3e by test titles and by `expect(` counts.
+  What differs, and why: `client.test.ts` (two connectivity cases renamed: they now assert what the observer is
+  told), `auth.test.ts` (the registry case now asserts the session's end with its reason), `EntryView.dom.test.ts`
+  (the signed-out case, removed by a Ruling), `goals/loadGoal.test.ts`, `lookups/store.test.ts`,
+  `plugins/contract.test.ts`, `plugins/states.test.ts`, `pwa/offlineState.test.ts`, `workspaces.test.ts` (renamed
+  for sessions; same assertions on instances), `session/lateAnswers.test.ts` (the scheduler and day-count asserts
+  went with the Ruling that keeps those memos out of the session: the scheduler memo is allow-listed, the day-count
+  memo is a WeakMap keyed by the cards array), `session/sessionEnd.test.ts` and
+  `session/sessionCaches.lint.test.ts` (deleted with the registry; covered by the session disposer tests in
+  `context/app.test.ts` and by `context/stateModel.lint.test.ts`). Nothing else was dropped.

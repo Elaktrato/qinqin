@@ -364,3 +364,41 @@ describe('api client reports connectivity', () => {
 		expect(seen.answered).toEqual([]);
 	});
 });
+
+describe('ApiError parses its body once (#168)', () => {
+	const body = (error: string, message = 'English.', extra: Record<string, unknown> = {}) =>
+		JSON.stringify({ error, message, ...extra });
+
+	it('carries the code and the parsed body of a {error, message} answer', () => {
+		const err = new ApiError(409, body('highlight_overlap', 'Already.', { existingId: 7 }));
+		expect(err.code).toBe('highlight_overlap');
+		expect(err.body).toEqual({ error: 'highlight_overlap', message: 'Already.', existingId: 7 });
+	});
+
+	it('has no code for a text, HTML or malformed body', () => {
+		for (const text of ['workspace not found', '<html>502</html>', '{"error": 1}', '[1]', '', 'null']) {
+			const err = new ApiError(500, text);
+			expect(err.code).toBeUndefined();
+		}
+		expect(new ApiError(500, '[1]').body).toBeUndefined();
+	});
+
+	it('detects a gone workspace and a restriction by code, never by text', async () => {
+		const { isWorkspaceGoneResponse, isRestrictionResponse } = await import('./client');
+		expect(isWorkspaceGoneResponse(404, 'workspace_not_found')).toBe(true);
+		expect(isWorkspaceGoneResponse(404, 'not_found')).toBe(false);
+		expect(isWorkspaceGoneResponse(410, 'workspace_not_found')).toBe(false);
+		expect(isWorkspaceGoneResponse(404, undefined)).toBe(false);
+		expect(isRestrictionResponse(403, 'password_change_required')).toBe(true);
+		expect(isRestrictionResponse(403, 'forbidden')).toBe(false);
+		expect(isRestrictionResponse(401, 'password_change_required')).toBe(false);
+	});
+
+	it('apiErrorBody reads the parsed body, attemptsLeft included', () => {
+		expect(apiErrorBody(new ApiError(401, body('code_invalid', 'No.', { attemptsLeft: 2 })))).toStrictEqual({
+			error: 'code_invalid',
+			attemptsLeft: 2
+		});
+		expect(apiErrorBody(new ApiError(404, 'not found'))).toBeNull();
+	});
+});
