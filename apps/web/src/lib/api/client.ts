@@ -69,9 +69,16 @@ export interface ApiObserver {
 // The tab's one transport has one observer slot, set by the running app context.
 let observer: ApiObserver | null = null;
 
-/** setApiObserver installs the observer (null: none). */
-export function setApiObserver(next: ApiObserver | null): void {
+/**
+ * setApiObserver installs the observer (null: none) and returns its remover,
+ * which clears the slot only while it still holds this observer: a stale app
+ * context stopping late never removes a newer one's.
+ */
+export function setApiObserver(next: ApiObserver | null): () => void {
 	observer = next;
+	return () => {
+		if (observer === next) observer = null;
+	};
 }
 
 /** The API's 404 code for a workspace that does not exist (any more). */

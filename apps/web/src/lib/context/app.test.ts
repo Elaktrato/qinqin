@@ -5,7 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('../i18n/reloadPage', () => ({ reloadPage: vi.fn() }));
 
-import { getToken } from '../api/client';
+import { getToken, notifyUnauthorized } from '../api/client';
 import { createAppContext, type AppContext } from './app.svelte';
 import type { SessionEndReason } from './session.svelte';
 import { fakeDeps, memoryStorage } from '../testing/context';
@@ -172,5 +172,32 @@ describe('session disposers', () => {
 		const ran: SessionEndReason[] = [];
 		session.onDispose((reason) => ran.push(reason));
 		expect(ran).toEqual(['expired']);
+	});
+});
+
+describe('the API observer', () => {
+	it("a stale app's stop leaves the observer of a newer app in place", async () => {
+		const stopOld = app.start();
+		const newer = createAppContext(fakeDeps({ 'GET /api/auth/me': () => me }));
+		const stopNew = newer.start();
+		newer.auth.set({ token: 'tok-n', user: user(1) });
+		// The old layout is destroyed after the new one mounted (a reload in development).
+		stopOld();
+		notifyUnauthorized();
+		expect(newer.auth.token).toBeNull();
+		stopNew();
+		newer.dispose();
+	});
+
+	it('start is idempotent and its stop runs once', () => {
+		const stop = app.start();
+		const again = app.start();
+		expect(again).toBe(stop);
+		stop();
+		stop();
+		app.auth.set({ token: 'tok-x', user: user(1) });
+		// Stopped: a 401 no longer reaches this app.
+		notifyUnauthorized();
+		expect(app.auth.token).toBe('tok-x');
 	});
 });

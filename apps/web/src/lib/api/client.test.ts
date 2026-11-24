@@ -402,3 +402,22 @@ describe('ApiError parses its body once (#168)', () => {
 		expect(apiErrorBody(new ApiError(404, 'not found'))).toBeNull();
 	});
 });
+
+describe('setApiObserver', () => {
+	afterEach(() => setApiObserver(null));
+
+	it('its remover clears only its own observer, never a newer one', async () => {
+		const { notifyUnauthorized } = await import('./client');
+		const first = vi.fn();
+		const second = vi.fn();
+		const removeFirst = setApiObserver({ unauthorized: first });
+		const removeSecond = setApiObserver({ unauthorized: second });
+		removeFirst();
+		notifyUnauthorized();
+		expect(second).toHaveBeenCalledTimes(1);
+		expect(first).not.toHaveBeenCalled();
+		removeSecond();
+		notifyUnauthorized();
+		expect(second).toHaveBeenCalledTimes(1);
+	});
+});

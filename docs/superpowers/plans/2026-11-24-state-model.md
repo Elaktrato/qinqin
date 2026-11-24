@@ -251,3 +251,7 @@ Baseline (55312f3e, Node 26): 598 files, 12,651 passed, 8 skipped.
   (`account/signOut.test.ts`: a held flush, then another user signs in; both outcomes of the flush), seen failing;
   `requestSignOut` now captures the session and acts only while `app.session` is still that live session, and
   `signOutAndDelete` deletes the reviews of the session's own user.
+- F4 (nit 5): a stale app context's stop cleared the one API observer slot a newer app context had set. Tests
+  first (`api/client.test.ts` "its remover clears only its own observer", `context/app.test.ts` "a stale app's
+  stop leaves the observer of a newer app in place", "start is idempotent and its stop runs once"), seen failing;
+  `setApiObserver` returns a remover that clears only its own observer, and `start()` returns the running stop.

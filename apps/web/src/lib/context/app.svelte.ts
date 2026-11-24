@@ -38,7 +38,8 @@ export class AppContext {
 	/** The number of unsent reviews the sign-out dialog is asking about; null = no dialog. */
 	logoutPrompt = $state<number | null>(null);
 	#session = $state.raw<Session | null>(null);
-	readonly #stops: Array<() => void> = [];
+	// The stop of the running start(); null while not started.
+	#stop: (() => void) | null = null;
 
 	constructor(deps: AppDeps) {
 		this.deps = deps;
@@ -61,10 +62,12 @@ export class AppContext {
 	 * start connects the context to the tab: the API client's observer (a 401,
 	 * a restriction, a deleted workspace, every answer), the other tabs'
 	 * sign-ins, the browser's online events, the install prompt and the
-	 * service worker. Returns the stop.
+	 * service worker. Returns the stop; a second call while running returns the
+	 * same stop, and the stop runs once.
 	 */
 	start(): () => void {
-		setApiObserver({
+		if (this.#stop !== null) return this.#stop;
+		const removeObserver = setApiObserver({
 			unauthorized: () => this.auth.expire(),
 			restricted: () => this.auth.restricted(),
 			workspaceGone: () => void this.#session?.recovery.recover(),
@@ -74,20 +77,24 @@ export class AppContext {
 		const stops = [
 			this.auth.followTabs(),
 			this.offline.watch(this.deps.window),
-			this.install.capture(this.deps.window as EventTarget | null)
+			this.install.capture(this.deps.window as EventTarget | null),
+			removeObserver
 		];
 		void this.worker.register();
+		let stopped = false;
 		const stop = (): void => {
+			if (stopped) return;
+			stopped = true;
+			if (this.#stop === stop) this.#stop = null;
 			for (const fn of stops) fn();
-			setApiObserver(null);
 		};
-		this.#stops.push(stop);
+		this.#stop = stop;
 		return stop;
 	}
 
 	/** dispose ends the current session and stops what start connected. */
 	dispose(): void {
-		for (const stop of this.#stops.splice(0)) stop();
+		this.#stop?.();
 		this.#end('switched');
 		this.offline.dispose();
 	}
