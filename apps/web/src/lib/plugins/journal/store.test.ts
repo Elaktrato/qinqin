@@ -104,7 +104,7 @@ describe('journal store', () => {
 	it('deletes the entry and its review, tolerating a 404', async () => {
 		vi.mocked(fetch)
 			.mockResolvedValueOnce(new Response(null, { status: 204 }))
-			.mockResolvedValueOnce(new Response('not found', { status: 404 }));
+			.mockResolvedValueOnce(new Response(JSON.stringify({ error: 'not_found', message: 'Plugin data not found.' }), { status: 404 }));
 		await deleteEntry(3, 'a');
 		const calls = vi.mocked(fetch).mock.calls;
 		expect(calls.map((c) => [c[0], c[1]?.method])).toEqual([

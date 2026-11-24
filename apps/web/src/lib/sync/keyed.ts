@@ -137,7 +137,8 @@ export function keyedData(namespace: string, workspace: number | null): KeyedSco
 			try {
 				await api(path, { method: 'DELETE' });
 			} catch (err) {
-				if (err instanceof ApiError && err.status === 404) return;
+				// Only a missing row is done already; a missing workspace (workspace_not_found) is an error.
+				if (err instanceof ApiError && err.status === 404 && err.code === 'not_found') return;
 				throw err;
 			}
 		}

@@ -54,7 +54,7 @@ describe('plugin sdk data', () => {
 		vi.mocked(fetch).mockResolvedValue(json({ key: 'k', data: '{"a":1}' }));
 		expect(await createPluginSdk(full).data.workspace(3).get('k')).toEqual({ a: 1 });
 		expect(lastCall().url).toBe('/api/plugins/qinqin-test/data/k?workspace=3');
-		vi.mocked(fetch).mockResolvedValue(new Response('', { status: 404 }));
+		vi.mocked(fetch).mockResolvedValue(new Response(JSON.stringify({ error: 'not_found', message: 'Plugin data not found.' }), { status: 404 }));
 		await createPluginSdk(full).data.user().delete('entry:a');
 		expect(lastCall().url).toBe('/api/plugins/qinqin-test/data/entry:a');
 		expect(lastCall().init.method).toBe('DELETE');

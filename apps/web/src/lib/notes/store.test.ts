@@ -53,7 +53,7 @@ describe('notes store', () => {
 	});
 
 	it('deletes, and a missing note is fine', async () => {
-		vi.mocked(fetch).mockResolvedValueOnce(new Response('not found', { status: 404 }));
+		vi.mocked(fetch).mockResolvedValueOnce(new Response(JSON.stringify({ error: 'not_found', message: 'Plugin data not found.' }), { status: 404 }));
 		await deleteNote(3, 5);
 		expect(calls()[0].slice(0, 2)).toEqual(['/api/plugins/qinqin-core/data/note:5?workspace=3', 'DELETE']);
 	});

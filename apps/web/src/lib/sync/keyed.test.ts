@@ -130,9 +130,13 @@ describe('keyedData: the key routes of one namespace and scope', () => {
 		expect(await keyedData('ns', null).find('a')).toBeNull();
 	});
 
-	it('delete resolves on 404 and rethrows other failures', async () => {
-		vi.mocked(fetch).mockResolvedValue(new Response('', { status: 404 }));
+	it('delete resolves when the row is missing, and rethrows every other failure', async () => {
+		vi.mocked(fetch).mockResolvedValue(json({ error: 'not_found', message: 'Plugin data not found.' }, 404));
 		await expect(keyedData('ns', 3).delete('k')).resolves.toBeUndefined();
+		vi.mocked(fetch).mockResolvedValue(json({ error: 'workspace_not_found', message: 'No such workspace.' }, 404));
+		await expect(keyedData('ns', 3).delete('k')).rejects.toThrow();
+		vi.mocked(fetch).mockResolvedValue(new Response('', { status: 404 }));
+		await expect(keyedData('ns', 3).delete('k')).rejects.toThrow();
 		expect(lastCall().init.method).toBe('DELETE');
 		vi.mocked(fetch).mockResolvedValue(new Response('boom', { status: 500 }));
 		await expect(keyedData('ns', 3).delete('k')).rejects.toThrow();
