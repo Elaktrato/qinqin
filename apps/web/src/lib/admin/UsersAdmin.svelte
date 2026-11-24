@@ -48,6 +48,9 @@
 	let resettingMfa = $state<{ id: number; username: string; mfa: MfaFactors } | null>(null);
 	// An action waiting for the acting administrator's own password.
 	let askPassword = $state<{ id: number; username: string; action: UserActionId } | null>(null);
+	// Removing a picture asks once (no password: moderation, audited).
+	let confirmPicture = $state<{ id: number; username: string } | null>(null);
+	let confirmPictureFirst = $state<HTMLElement>();
 	let ownPassword = $state('');
 	let ownCode = $state('');
 	// Creating an administrator re-authenticates too.
@@ -130,7 +133,7 @@
 		if (refused) await reauthRefused(refused, 'create');
 	}
 
-	async function run(row: { id: number; username: string }, id: UserActionId, reauth?: Reauth): Promise<void> {
+	async function run(row: { id: number; username: string }, id: UserActionId, reauth?: Reauth, confirmed = false): Promise<void> {
 		if (busy) return;
 		if (id === 'delete') {
 			deleting = { id: row.id, username: row.username };
@@ -142,6 +145,14 @@
 			resettingMfa = { id: row.id, username: row.username, mfa };
 			return;
 		}
+		if (id === 'removePicture' && !confirmed) {
+			error = notice = '';
+			confirmPicture = { id: row.id, username: row.username };
+			await tick();
+			confirmPictureFirst?.focus();
+			return;
+		}
+		confirmPicture = null;
 		const target = users.find((u) => u.id === row.id);
 		if (actionNeedsReauth(id, { admin: !!target?.admin, self: row.id === app.auth.user?.id }) && !reauth) {
 			askPassword = { id: row.id, username: row.username, action: id };
@@ -239,6 +250,17 @@
 <Section title={t('admin.users.title')} headingId="admin-users-heading" focusable>
 	{#if error}<p class="error" role="alert">{error}</p>{/if}
 	<p class="ok" role="status">{notice}</p>
+
+	{#if confirmPicture}
+		{@const who = confirmPicture}
+		<Panel class="link" role="group" aria-label={t('admin.users.confirm.removePicture', { name: who.username })}>
+			<p>{t('admin.users.confirm.removePicture', { name: who.username })}</p>
+			<Button bind:element={confirmPictureFirst} tone="danger" disabled={busy} onclick={() => run(who, 'removePicture', undefined, true)}
+				>{t('settings.account.avatar.remove')}</Button
+			>
+			<Button onclick={() => (confirmPicture = null)}>{t('common.action.cancel')}</Button>
+		</Panel>
+	{/if}
 
 	{#if askPassword}
 		<form

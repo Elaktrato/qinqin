@@ -125,7 +125,7 @@ describe('ProfilePicture', () => {
 	it('says so when the browser cannot open the file', async () => {
 		const { container } = render(ProfilePicture, { context: ctx.context });
 		const input = fileInput(container);
-		Object.defineProperty(input, 'files', { value: [new File(['x'], 'me.heic')], configurable: true });
+		Object.defineProperty(input, 'files', { value: [new File(['x'], 'broken.jpg', { type: 'image/jpeg' })], configurable: true });
 		await fireEvent.change(input);
 		const img = await waitFor(() => container.querySelector('.crop img') as HTMLImageElement);
 		await fireEvent.error(img);
@@ -141,5 +141,53 @@ describe('ProfilePicture', () => {
 		await waitFor(() => expect(screen.getByRole('status').textContent).toBe('Profile picture removed.'));
 		expect(vi.mocked(fetch).mock.calls.some(([p, init]) => p === '/api/account/avatar' && (init as RequestInit)?.method === 'DELETE')).toBe(true);
 		expect(ctx.app.auth.loadMe).toHaveBeenCalled();
+	});
+});
+
+describe('ProfilePicture: the fix wave', () => {
+	async function pick(input: HTMLInputElement, file: File): Promise<void> {
+		Object.defineProperty(input, 'files', { value: [file], configurable: true });
+		await fireEvent.change(input);
+	}
+
+	it('refuses a file of another type before anything is opened (GIF, SVG, AVIF, BMP)', async () => {
+		const { container } = render(ProfilePicture, { context: ctx.context });
+		for (const [name, type] of [['a.gif', 'image/gif'], ['a.svg', 'image/svg+xml'], ['a.avif', 'image/avif'], ['a.bmp', 'image/bmp'], ['a.txt', '']]) {
+			await pick(fileInput(container), new File(['x'], name, { type }));
+			expect(screen.getByRole('alert').textContent).toBe('Only JPEG, PNG and WebP pictures can be used.');
+			expect(container.querySelector('.crop')).toBeNull();
+		}
+		// A file without a type is judged by its name.
+		await pick(fileInput(container), new File(['x'], 'photo.JPG', { type: '' }));
+		expect(container.querySelector('.crop')).not.toBeNull();
+	});
+
+	it('offers Take a photo with the front camera on a touch screen, with the same type check', async () => {
+		const coarse = vi.fn((q: string) => ({ matches: q === '(pointer: coarse)', addEventListener() {}, removeEventListener() {} }));
+		vi.stubGlobal('matchMedia', coarse);
+		const { container } = render(ProfilePicture, { context: ctx.context });
+		expect(screen.getByRole('button', { name: 'Take a photo' })).toBeTruthy();
+		const camera = container.querySelector('input[capture]') as HTMLInputElement;
+		expect(camera.getAttribute('capture')).toBe('user');
+		expect(camera.accept).toBe('image/*');
+		await pick(camera, new File(['x'], 'shot.heic', { type: 'image/heic' }));
+		expect(screen.getByRole('alert').textContent).toBe('Only JPEG, PNG and WebP pictures can be used.');
+		await pick(camera, new File(['x'], 'shot.jpg', { type: 'image/jpeg' }));
+		expect(container.querySelector('.crop')).not.toBeNull();
+	});
+
+	it('offers no camera button with a mouse', () => {
+		vi.stubGlobal('matchMedia', () => ({ matches: false, addEventListener() {}, removeEventListener() {} }));
+		render(ProfilePicture, { context: ctx.context });
+		expect(screen.queryByRole('button', { name: 'Take a photo' })).toBeNull();
+	});
+
+	it('says the picture is saved even when reloading the account fails afterwards', async () => {
+		vi.mocked(ctx.app.auth.loadMe).mockRejectedValue(new Error('offline'));
+		const { container } = render(ProfilePicture, { context: ctx.context });
+		await choose(container);
+		await fireEvent.click(screen.getByRole('button', { name: 'Save picture' }));
+		await waitFor(() => expect(screen.getByRole('status').textContent).toBe('Profile picture saved.'));
+		expect(screen.queryByRole('alert')).toBeNull();
 	});
 });

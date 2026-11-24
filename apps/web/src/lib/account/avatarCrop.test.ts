@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
 	MAX_ZOOM,
+	acceptedPicture,
 	cropSide,
 	imageBox,
 	initialCrop,
@@ -123,5 +124,17 @@ describe('sourceRect', () => {
 			expect(r.sx + r.size).toBeLessThanOrEqual(1234);
 			expect(r.sy + r.size).toBeLessThanOrEqual(777);
 		}
+	});
+});
+
+describe('acceptedPicture', () => {
+	it('takes JPEG, PNG and WebP by type, and by name when there is no type', () => {
+		for (const type of ['image/jpeg', 'image/png', 'image/webp']) expect(acceptedPicture({ type, name: 'x' })).toBe(true);
+		for (const type of ['image/gif', 'image/svg+xml', 'image/avif', 'image/bmp', 'image/heic', 'text/plain'])
+			expect(acceptedPicture({ type, name: 'x.jpg' })).toBe(false);
+		expect(acceptedPicture({ type: '', name: 'IMG_1.JPEG' })).toBe(true);
+		expect(acceptedPicture({ type: '', name: 'a.webp' })).toBe(true);
+		expect(acceptedPicture({ type: '', name: 'a.gif' })).toBe(false);
+		expect(acceptedPicture({ type: '', name: 'jpg' })).toBe(false);
 	});
 });

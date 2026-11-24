@@ -23,10 +23,22 @@ export async function removeUserAvatar(id: number): Promise<void> {
 	await api(`/api/admin/users/${id}/avatar`, { method: 'DELETE' });
 }
 
+/** The picture a path names, without the size: `/api/avatars/{user}/{hash}`. */
+function pictureOf(path: string): string {
+	return path.split('?')[0];
+}
+
+/** The user segment of a picture path: `/api/avatars/{user}/`. */
+function ownerOf(path: string): string {
+	return pictureOf(path).replace(/[^/]*$/, '');
+}
+
 /**
  * avatarObjectUrl: an object URL for the picture file at `path` (an avatarUrl,
  * with `?size=64` for the small one), fetched once per session. A failed load
- * is forgotten, so the next use tries again.
+ * is forgotten, so the next use tries again. A new picture of a user revokes
+ * that user's earlier one; a picture that arrives after its slot is gone (the
+ * session ended, or a newer picture replaced it) is revoked at once.
  */
 export function avatarObjectUrl(cache: AvatarCache, path: string): Promise<string> {
 	if (!isOwnApiPath(path) || !path.startsWith('/api/avatars/')) {
@@ -34,10 +46,18 @@ export function avatarObjectUrl(cache: AvatarCache, path: string): Promise<strin
 	}
 	const hit = cache.slots.get(path);
 	if (hit) return hit.promise;
+	for (const [other, old] of cache.slots) {
+		if (ownerOf(other) === ownerOf(path) && pictureOf(other) !== pictureOf(path)) {
+			if (old.url) URL.revokeObjectURL(old.url);
+			cache.slots.delete(other);
+		}
+	}
 	const slot: { promise: Promise<string>; url?: string } = {
 		promise: apiBlob(path).then((blob) => {
-			slot.url = URL.createObjectURL(blob);
-			return slot.url;
+			const url = URL.createObjectURL(blob);
+			if (cache.slots.get(path) === slot) slot.url = url;
+			else URL.revokeObjectURL(url);
+			return url;
 		})
 	};
 	slot.promise.catch(() => {

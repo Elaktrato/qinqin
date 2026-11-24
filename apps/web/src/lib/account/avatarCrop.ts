@@ -118,3 +118,15 @@ export function imageBox(c: Crop): { left: number; top: number; width: number; h
 	const s = scale(c);
 	return { left: c.view / 2 - c.cx * s, top: c.view / 2 - c.cy * s, width: c.width * s, height: c.height * s };
 }
+
+const PICTURE_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+
+/**
+ * acceptedPicture: a file the server takes, by its type (JPEG, PNG, WebP), or
+ * by its name when the picker gave no type. The server still judges the
+ * content.
+ */
+export function acceptedPicture(file: { type: string; name: string }): boolean {
+	if (file.type) return PICTURE_TYPES.includes(file.type);
+	return /\.(jpe?g|png|webp)$/i.test(file.name);
+}

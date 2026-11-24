@@ -458,14 +458,34 @@ describe('UsersAdmin: profile pictures (#189)', () => {
 		expect(row1.querySelector('.avatar')?.textContent).toBe('U');
 	});
 
-	it('removes a picture at once, says so and reloads the list', async () => {
+	it('removes a picture after the confirmation, says so and reloads the list', async () => {
 		vi.mocked(adminUsers.listUsers).mockResolvedValue([dto(1, { admin: true }), dto(2, { avatarUrl: pic })] as never);
 		const { removeUserAvatar } = await import('$lib/api/avatar');
 		render(UsersAdmin, { context: ctx.context });
 		const row = (await screen.findByRole('rowheader', { name: /user2/ })).closest('tr')!;
 		await fireEvent.click(within(row).getByRole('button', { name: 'Remove profile picture' }));
+		await fireEvent.click(within(await screen.findByRole('group', { name: 'Remove the profile picture of user2?' })).getByRole('button', { name: 'Remove picture' }));
 		await waitFor(() => expect(removeUserAvatar).toHaveBeenCalledWith(2));
 		expect(await screen.findByText('The profile picture of user2 was removed.')).toBeTruthy();
 		expect(vi.mocked(adminUsers.listUsers).mock.calls.length).toBeGreaterThan(1);
+	});
+});
+
+describe('UsersAdmin: removing a picture asks first', () => {
+	const pic = '/api/avatars/2/0123456789abcdef0123456789abcdef';
+	it('confirms before it removes, and Cancel removes nothing', async () => {
+		vi.mocked(adminUsers.listUsers).mockResolvedValue([dto(1, { admin: true }), dto(2, { avatarUrl: pic })] as never);
+		const { removeUserAvatar } = await import('$lib/api/avatar');
+		render(UsersAdmin, { context: ctx.context });
+		const row = (await screen.findByRole('rowheader', { name: /user2/ })).closest('tr')!;
+		await fireEvent.click(within(row).getByRole('button', { name: 'Remove profile picture' }));
+		const ask = await screen.findByRole('group', { name: 'Remove the profile picture of user2?' });
+		expect(removeUserAvatar).not.toHaveBeenCalled();
+		await fireEvent.click(within(ask).getByRole('button', { name: 'Cancel' }));
+		expect(screen.queryByRole('group', { name: 'Remove the profile picture of user2?' })).toBeNull();
+		expect(removeUserAvatar).not.toHaveBeenCalled();
+		await fireEvent.click(within(row).getByRole('button', { name: 'Remove profile picture' }));
+		await fireEvent.click(within(await screen.findByRole('group', { name: 'Remove the profile picture of user2?' })).getByRole('button', { name: 'Remove picture' }));
+		await waitFor(() => expect(removeUserAvatar).toHaveBeenCalledWith(2));
 	});
 });

@@ -26,12 +26,17 @@
 		type Point
 	} from './avatarCrop';
 	import { cropToBlob } from './avatarPicture';
+	import { acceptedPicture } from './avatarCrop';
 
 	const app = useApp();
 	const uid = $props.id();
 	const VIEW = 240; // the crop view's side in CSS px
 
 	let input = $state<HTMLInputElement>();
+	let camera = $state<HTMLInputElement>();
+	// A touch screen also gets "Take a photo" (a camera input): the plain
+	// picker of an Android WebView may offer only the files and photos.
+	const touch = typeof window !== 'undefined' && !!window.matchMedia?.('(pointer: coarse)')?.matches;
 	let area = $state<HTMLElement>();
 	let chooser = $state<HTMLElement>();
 	let picture = $state<HTMLImageElement>();
@@ -63,6 +68,12 @@
 		if (!file) return;
 		discard();
 		error = done = '';
+		// The browser opens more than the server takes (GIF, SVG, AVIF, BMP; an
+		// animated GIF would become its first frame): refuse those here.
+		if (!acceptedPicture(file)) {
+			error = t('settings.account.avatar.error.type');
+			return;
+		}
 		objectUrl = URL.createObjectURL(file);
 	}
 
@@ -151,8 +162,10 @@
 		error = done = '';
 		try {
 			await uploadAvatar(await cropToBlob(picture, sourceRect(crop)));
-			await app.auth.loadMe();
 			done = t('settings.account.avatar.saved');
+			// The picture is saved; a failed reload of the account only delays
+			// the new picture elsewhere until the next one.
+			await app.auth.loadMe().catch(() => undefined);
 			await back();
 		} catch (err) {
 			error = errorText(err, t('settings.account.avatar.error.save'));
@@ -243,6 +256,9 @@
 					<Button bind:element={chooser} disabled={busy} onclick={() => input?.click()}
 						>{hasPicture ? t('settings.account.avatar.replace') : t('settings.account.avatar.choose')}</Button
 					>
+					{#if touch}
+						<Button disabled={busy} onclick={() => camera?.click()}>{t('settings.account.avatar.camera')}</Button>
+					{/if}
 					{#if hasPicture}
 						<Button tone="danger" busy={busy} onclick={remove}
 							>{busy ? t('settings.account.avatar.removing') : t('settings.account.avatar.remove')}</Button
@@ -262,6 +278,19 @@
 		aria-hidden="true"
 		onchange={choose}
 	/>
+	{#if touch}
+		<!-- The front camera; cameras deliver JPEG, and the same type check applies. -->
+		<input
+			bind:this={camera}
+			class="visually-hidden"
+			type="file"
+			accept="image/*"
+			capture="user"
+			tabindex="-1"
+			aria-hidden="true"
+			onchange={choose}
+		/>
+	{/if}
 	{#if error}<p class="error" role="alert">{error}</p>{/if}
 	<p class="ok" role="status">{done}</p>
 </div>

@@ -77,3 +77,39 @@ describe('avatarObjectUrl', () => {
 		expect(fetch).not.toHaveBeenCalled();
 	});
 });
+
+describe('avatarObjectUrl: object URLs are never left behind', () => {
+	const revoked: string[] = [];
+	let made = 0;
+	beforeEach(() => {
+		made = 0;
+		revoked.length = 0;
+		vi.stubGlobal('URL', { createObjectURL: () => `blob:pic-${++made}`, revokeObjectURL: (u: string) => revoked.push(u) });
+	});
+	afterEach(() => vi.unstubAllGlobals());
+
+	it('revokes a picture that arrives after the session cleared the cache', async () => {
+		let answer: (r: Response) => void = () => undefined;
+		vi.stubGlobal('fetch', vi.fn(() => new Promise<Response>((r) => (answer = r))));
+		const cache = new AvatarCache();
+		const late = avatarObjectUrl(cache, '/api/avatars/1/aaaa');
+		cache.clear();
+		answer(new Response('jpg', { status: 200 }));
+		await late;
+		expect(revoked).toEqual(['blob:pic-1']);
+		expect(cache.slots.size).toBe(0);
+	});
+
+	it('revokes the old picture of a user when a new one is loaded, keeping both sizes of the new one', async () => {
+		vi.stubGlobal('fetch', vi.fn(async () => new Response('jpg', { status: 200 })));
+		const cache = new AvatarCache();
+		await avatarObjectUrl(cache, '/api/avatars/1/aaaa?size=64');
+		await avatarObjectUrl(cache, '/api/avatars/1/aaaa');
+		await avatarObjectUrl(cache, '/api/avatars/2/cccc?size=64');
+		await avatarObjectUrl(cache, '/api/avatars/1/bbbb?size=64');
+		expect(revoked.sort()).toEqual(['blob:pic-1', 'blob:pic-2']);
+		expect([...cache.slots.keys()].sort()).toEqual(['/api/avatars/1/bbbb?size=64', '/api/avatars/2/cccc?size=64']);
+		await avatarObjectUrl(cache, '/api/avatars/1/bbbb');
+		expect(cache.slots.size).toBe(3);
+	});
+});
