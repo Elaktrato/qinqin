@@ -7,7 +7,7 @@ Where things live in the repository ([github.com/Elaktrato/qinqin](https://githu
 | `server/` | The Go server: the `qinqin` command (`cmd/qinqin`: `serve`, `seed`, `adduser`, `recover`, `backup`) and its packages under `internal/` |
 | `server/internal/api` | HTTP routes and handlers; the route table is in `api.go` |
 | `server/internal/db` | SQLite access and the embedded migrations |
-| `server/internal/dict`, `freq`, `packs`, `lexicon` | Pack manifests and importers (dictionaries, frequency lists, the per-type dispatch), the lexicon store |
+| `server/internal/pack`, `dict`, `freq`, `packs`, `lexicon` | Pack manifests and the pack-type table, importers (dictionaries, frequency lists, the per-type dispatch), the lexicon store |
 | `server/internal/lookup`, `segment` | The lookup engine and the tokenizer |
 | `server/internal/datapkg`, `sync` | Data packages (ids, writers, builder, registry) and the paged sync pull |
 | `server/internal/auth`, `ratelimit`, `secretbox`, `netguard` | Accounts, sessions, two-step sign-in and tokens; throttling; sealing with `QINQIN_SECRET`; the outbound address guard |

@@ -10,9 +10,9 @@ import (
 	"strings"
 	"testing"
 
-	"qinqin/internal/dict"
 	"qinqin/internal/lang"
 	"qinqin/internal/lexicon"
+	"qinqin/internal/pack"
 )
 
 // seedSegmentWords imports a CC-CEDICT holding zh 学 (character) and
@@ -21,7 +21,7 @@ func seedSegmentWords(t *testing.T) (tsURL string, wordID int64) {
 	t.Helper()
 	lang.Register(lang.Zh{})
 	ts, sqlDB := newServer(t)
-	lookupImport(t, sqlDB, dict.Manifest{
+	lookupImport(t, sqlDB, pack.Manifest{
 		ID: "cedict-test", Name: "CC-CEDICT test", Version: "1", Type: "dictionary", Language: "zh",
 		License: "CC BY-SA 4.0", Attribution: "CC-CEDICT", Format: "cedict",
 	}, "dictionary.txt", lookupCedict)

@@ -5,8 +5,8 @@ import (
 	"net/http"
 	"testing"
 
-	"qinqin/internal/dict"
 	"qinqin/internal/levels"
+	"qinqin/internal/pack"
 )
 
 // listRaw fetches path and decodes its JSON list without a typed body,
@@ -52,35 +52,35 @@ func TestPackListsServeNotice(t *testing.T) {
 
 	importSchemeCedict(t, sqlDB) // a dictionary without notice
 	const dictNotice = "Dictionary caveat with [a link](https://example.com/dict)."
-	lookupImport(t, sqlDB, dict.Manifest{
+	lookupImport(t, sqlDB, pack.Manifest{
 		ID: "cedict-noticed", Name: "Noticed dictionary", Version: "1", Type: "dictionary", Language: "zh",
 		License: "CC BY-SA 4.0", Attribution: "MDBG", Notice: dictNotice, Format: "cedict",
 	}, "dictionary.txt", "你好 你好 [ni3 hao3] /hello/\n")
 
 	const freqNotice = "Ranks unmodified.\n\nSecond paragraph."
-	lookupImport(t, sqlDB, dict.Manifest{
+	lookupImport(t, sqlDB, pack.Manifest{
 		ID: "freq-noticed", Name: "Noticed frequency", Version: "1", Type: "frequency", Language: "zh",
 		License: "CC0-1.0", Attribution: "test", Notice: freqNotice, Format: "freq-csv",
 	}, "freq.csv", "term,reading,rank\n你好,,1\n")
-	lookupImport(t, sqlDB, dict.Manifest{
+	lookupImport(t, sqlDB, pack.Manifest{
 		ID: "freq-plain", Name: "Plain frequency", Version: "1", Type: "frequency", Language: "zh",
 		License: "CC0-1.0", Attribution: "test", Format: "freq-csv",
 	}, "freq.csv", "term,reading,rank\n你好,,2\n")
 
 	const schemeNotice = "Approximate levels: 汉字 lists."
-	pack, err := dict.LoadPack(levelsFixture)
+	pk, err := pack.LoadPack(levelsFixture)
 	if err != nil {
 		t.Fatal(err)
 	}
-	pack.Manifest.Notice = schemeNotice
-	if _, err := levels.Import(ctx, sqlDB, pack); err != nil {
+	pk.Manifest.Notice = schemeNotice
+	if _, err := levels.Import(ctx, sqlDB, pk); err != nil {
 		t.Fatalf("import scheme: %v", err)
 	}
 
 	for path, want := range map[string]map[string]string{
 		"/api/dictionaries":    {"CC-CEDICT test": "", "Noticed dictionary": dictNotice},
 		"/api/frequency-packs": {"Noticed frequency": freqNotice, "Plain frequency": ""},
-		"/api/schemes":         {pack.Manifest.Name: schemeNotice},
+		"/api/schemes":         {pk.Manifest.Name: schemeNotice},
 	} {
 		list := listRaw(t, ts.URL, path)
 		got := noticesByName(t, path, list)

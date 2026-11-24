@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"qinqin/internal/dict"
+	"qinqin/internal/pack"
 )
 
 // Synthetic clips: valid magic bytes plus a distinguishing tail. They are
@@ -21,7 +21,7 @@ type clipFile struct {
 }
 
 // makePack writes a pack directory and loads it.
-func makePack(t *testing.T, id, language, license string, index []string, files []clipFile) dict.Pack {
+func makePack(t *testing.T, id, language, license string, index []string, files []clipFile) pack.Pack {
 	t.Helper()
 	dir := t.TempDir()
 	manifest := fmt.Sprintf(`{"id":%q,"name":"Test %s","version":"1","type":"audio","language":%q,"license":%q,"attribution":"Tester","format":"audio-index"}`,
@@ -31,7 +31,7 @@ func makePack(t *testing.T, id, language, license string, index []string, files 
 	for _, f := range files {
 		write(t, filepath.Join(dir, "audio", f.name), f.data)
 	}
-	p, err := dict.LoadPack(dir)
+	p, err := pack.LoadPack(dir)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -11,9 +11,9 @@ import (
 	"strings"
 	"time"
 
-	"qinqin/internal/dict"
 	"qinqin/internal/fonts"
 	"qinqin/internal/lemmapack"
+	"qinqin/internal/pack"
 	"qinqin/internal/packs"
 	"qinqin/internal/themes"
 )
@@ -109,7 +109,7 @@ func (s *server) handleListSentencePacks(w http.ResponseWriter, r *http.Request)
 // rule (no server path) when the pack is at fault, else 500 internal with
 // the cause in the log (spec Ruling: not the admin's pack to fix).
 func writePackError(w http.ResponseWriter, r *http.Request, err error, paths ...string) {
-	if !errors.Is(err, dict.ErrInvalidPack) {
+	if !errors.Is(err, pack.ErrInvalidPack) {
 		log.Printf("pack: %v", err)
 		writeInternal(w, r)
 		return
@@ -118,7 +118,7 @@ func writePackError(w http.ResponseWriter, r *http.Request, err error, paths ...
 }
 
 func packErrorText(err error, paths ...string) string {
-	if !errors.Is(err, dict.ErrInvalidPack) {
+	if !errors.Is(err, pack.ErrInvalidPack) {
 		log.Printf("pack: %v", err)
 		return "import failed — see the server log"
 	}
@@ -264,8 +264,8 @@ func (s *server) handleStagePack(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer zf.Close()
-	if err := dict.ExtractZipAt(zf, size, dir, dict.DefaultZipLimits); err != nil {
-		if !errors.Is(err, dict.ErrInvalidPack) {
+	if err := pack.ExtractZipAt(zf, size, dir, pack.DefaultZipLimits); err != nil {
+		if !errors.Is(err, pack.ErrInvalidPack) {
 			log.Printf("pack: unpack upload: %v", err)
 			writeInternal(w, r)
 			return
@@ -276,13 +276,13 @@ func (s *server) handleStagePack(w http.ResponseWriter, r *http.Request) {
 	if r.Context().Err() != nil {
 		return // the client went away: do not hold a slot for nobody
 	}
-	pack, err := dict.LoadExtracted(dir)
+	pk, err := pack.LoadExtracted(dir)
 	if err != nil {
 		writePackError(w, r, err, dir, s.dataDir)
 		return
 	}
-	m := pack.Manifest
-	if m.Type == dict.TypeAudio {
+	m := pk.Manifest
+	if m.Type == pack.TypeAudio {
 		writeError(w, http.StatusUnprocessableEntity, "pack_type_unsupported", "Audio packs cannot be uploaded: install them with scripts/fetch-audio-kanjialive.sh (or the Commons tool) and `qinqin seed`.")
 		return
 	}
@@ -297,8 +297,8 @@ func (s *server) handleStagePack(w http.ResponseWriter, r *http.Request) {
 	// A theme pack's themes.json is validated now and every theme measured,
 	// so the admin reviews the contrast with the licence.
 	var review []stagedTheme
-	if m.Type == dict.TypeTheme {
-		list, err := themes.CheckPack(pack)
+	if m.Type == pack.TypeTheme {
+		list, err := themes.CheckPack(pk)
 		if err != nil {
 			writePackError(w, r, err, dir, s.dataDir)
 			return
@@ -311,8 +311,8 @@ func (s *server) handleStagePack(w http.ResponseWriter, r *http.Request) {
 	}
 	// A font pack's faces.json and every slice file are checked now: a
 	// broken pack is refused before the licence review, not after it.
-	if m.Type == dict.TypeFont {
-		if _, err := fonts.CheckPack(pack); err != nil {
+	if m.Type == pack.TypeFont {
+		if _, err := fonts.CheckPack(pk); err != nil {
 			writePackError(w, r, err, dir, s.dataDir)
 			return
 		}
@@ -320,8 +320,8 @@ func (s *server) handleStagePack(w http.ResponseWriter, r *http.Request) {
 	// A lemma-rules pack's table is parsed and bounded now, and a language
 	// keeps one live pack: a broken or conflicting table is refused before
 	// the licence review.
-	if m.Type == dict.TypeLemmaRules {
-		_, _, err := lemmapack.CheckPack(pack)
+	if m.Type == pack.TypeLemmaRules {
+		_, _, err := lemmapack.CheckPack(pk)
 		if err == nil {
 			err = lemmapack.CheckLanguage(r.Context(), s.db, m.ID, m.Language)
 		}
@@ -333,10 +333,7 @@ func (s *server) handleStagePack(w http.ResponseWriter, r *http.Request) {
 	// The registry row a pack's import writes can differ from its manifest
 	// (KANJIDIC2 stores its fixed terms under a fixed id): review and echo
 	// what will actually be stored.
-	registryID, license, attribution := m.ID, m.License, m.Attribution
-	if m.Type == dict.TypeDictionary {
-		registryID, license, attribution = dict.RegistryTerms(m)
-	}
+	registryID, license, attribution := packs.RegistryTerms(m)
 	resp := stagedResponse{Token: token, Manifest: stagedManifest{ID: m.ID, Name: m.Name, Version: m.Version,
 		Type: m.Type, Language: m.Language, Languages: m.Languages, License: license, Attribution: attribution, Notice: m.Notice, Format: m.Format},
 		Themes: review}
@@ -347,7 +344,7 @@ func (s *server) handleStagePack(w http.ResponseWriter, r *http.Request) {
 		writeInternal(w, r)
 		return
 	}
-	filepath.WalkDir(pack.Dir, func(_ string, d fs.DirEntry, err error) error {
+	filepath.WalkDir(pk.Dir, func(_ string, d fs.DirEntry, err error) error {
 		if err == nil && d.Type().IsRegular() {
 			resp.Files++
 			if info, err := d.Info(); err == nil {
@@ -357,7 +354,7 @@ func (s *server) handleStagePack(w http.ResponseWriter, r *http.Request) {
 		return nil
 	})
 	now := s.now()
-	st := &stagedPack{token: token, dir: dir, root: pack.Dir, userID: u.ID, pack: pack, expires: now.Add(stageTTL),
+	st := &stagedPack{token: token, dir: dir, root: pk.Dir, userID: u.ID, pack: pk, expires: now.Add(stageTTL),
 		status: stageStaged, license: license, registryID: registryID}
 	ss.put(st) // converts the reservation into a stage
 	reserved = false

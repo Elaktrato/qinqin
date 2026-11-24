@@ -4,14 +4,14 @@ import (
 	"strings"
 	"testing"
 
-	"qinqin/internal/dict"
+	"qinqin/internal/pack"
 )
 
 const header = "kind\tform\treading\tfile\tlicense\tattribution\tsource\n"
 
-func manifest(lang, license string) dict.Manifest {
-	return dict.Manifest{ID: "t", Language: lang, License: license, Attribution: "Someone",
-		Type: dict.TypeAudio, Format: dict.FormatAudioIndex}
+func manifest(lang, license string) pack.Manifest {
+	return pack.Manifest{ID: "t", Language: lang, License: license, Attribution: "Someone",
+		Type: pack.TypeAudio, Format: pack.FormatAudioIndex}
 }
 
 func TestParseIndex(t *testing.T) {

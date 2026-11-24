@@ -46,8 +46,9 @@ admin list `GET /api/admin/packs` and the seed order): its language shape (`one`
 `language`; `many`: `languages`; `none`: neither), whether an administrator may install it by an upload
 (`uploadable`; audio packs are seeded), the package type it builds (`package`, `null` for none; the
 dictionaries' `lexicon` is per language), and that package's `requiresLexicon` and `optionalPackage`. The
-server keeps one table of these (`server/internal/packtype`) and a Go test compares it with the fixture; the web
-test `lib/plugins/packTypes.contract.test.ts` checks the web knows every type. A client meets a pack type it does
+server keeps one table of these (`server/internal/pack/types.go`) and a Go test compares it with the fixture; the web
+test `lib/plugins/packTypes.contract.test.ts` checks the web knows every type. How the server adds a type:
+[architecture record 0008](../../architecture/0008-pack-types.md). A client meets a pack type it does
 not know only in admin and Sources views; it shows it by its `type` string.
 
 **Data packs are not plugins.** `GET /api/plugins` lists registry plugins only (the per-pack rows it

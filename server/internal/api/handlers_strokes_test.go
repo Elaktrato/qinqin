@@ -14,7 +14,7 @@ import (
 	"strings"
 	"testing"
 
-	"qinqin/internal/dict"
+	"qinqin/internal/pack"
 	"qinqin/internal/packs"
 	"qinqin/internal/strokes"
 )
@@ -39,7 +39,7 @@ func installStrokes(t *testing.T, s *server, id string) {
 			t.Fatal(err)
 		}
 	}
-	p, err := dict.LoadPack(dir)
+	p, err := pack.LoadPack(dir)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -12,11 +12,11 @@ import (
 
 	"qinqin/internal/components"
 	"qinqin/internal/dbtest"
-	"qinqin/internal/dict"
+	"qinqin/internal/pack"
 )
 
 // writePack writes a components pack directory and loads it.
-func writePack(t *testing.T, id, language, format string, files map[string]string) dict.Pack {
+func writePack(t *testing.T, id, language, format string, files map[string]string) pack.Pack {
 	t.Helper()
 	dir := t.TempDir()
 	m, _ := json.Marshal(map[string]string{
@@ -29,7 +29,7 @@ func writePack(t *testing.T, id, language, format string, files map[string]strin
 			t.Fatal(err)
 		}
 	}
-	p, err := dict.LoadPack(dir)
+	p, err := pack.LoadPack(dir)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -121,7 +121,7 @@ func TestReimportReplacesRows(t *testing.T) {
 func TestIndexUnionOverPacks(t *testing.T) {
 	sqlDB := dbtest.Open(t)
 	ctx := context.Background()
-	for _, p := range []dict.Pack{
+	for _, p := range []pack.Pack{
 		writePack(t, "b", "ja", "components-tsv", map[string]string{"components.tsv": "語\t言 口\n海\t氵 毎\n", "parts.tsv": "言\t7\n"}),
 		writePack(t, "a", "ja", "components-tsv", map[string]string{"components.tsv": "語\t言 吾\n河\t氵 可\n", "parts.tsv": "氵\t3\n言\t6\n"}),
 		writePack(t, "z", "zh", "components-tsv", map[string]string{"components.tsv": "语\t讠 吾\n"}),
@@ -185,20 +185,20 @@ func TestIndexUnionOverPacks(t *testing.T) {
 func TestImportRejects(t *testing.T) {
 	sqlDB := dbtest.Open(t)
 	ctx := context.Background()
-	for name, p := range map[string]dict.Pack{
+	for name, p := range map[string]pack.Pack{
 		"wrong format":     writePack(t, "p", "ja", "freq-csv", map[string]string{"components.tsv": "語\t言\n"}),
 		"no file":          writePack(t, "p", "ja", "components-tsv", map[string]string{}),
 		"malformed line":   writePack(t, "p", "ja", "components-tsv", map[string]string{"components.tsv": "語\t言\nx\t口\n"}),
 		"malformed parts":  writePack(t, "p", "ja", "components-tsv", map[string]string{"components.tsv": "語\t言\n", "parts.tsv": "言\t0\n"}),
 		"oversized parts ": writePack(t, "p", "ja", "components-tsv", map[string]string{"components.tsv": "語\t言\n", "parts.tsv": strings.Repeat("#", 9<<20)}),
 	} {
-		if _, err := components.Import(ctx, sqlDB, p); !errors.Is(err, dict.ErrInvalidPack) {
+		if _, err := components.Import(ctx, sqlDB, p); !errors.Is(err, pack.ErrInvalidPack) {
 			t.Errorf("%s: err = %v, want ErrInvalidPack", name, err)
 		}
 	}
 	freqPack := writePack(t, "f", "ja", "components-tsv", map[string]string{"components.tsv": "語\t言\n"})
-	freqPack.Type = dict.TypeFrequency
-	if _, err := components.Import(ctx, sqlDB, freqPack); !errors.Is(err, dict.ErrInvalidPack) {
+	freqPack.Type = pack.TypeFrequency
+	if _, err := components.Import(ctx, sqlDB, freqPack); !errors.Is(err, pack.ErrInvalidPack) {
 		t.Errorf("wrong type: err = %v", err)
 	}
 	var n int

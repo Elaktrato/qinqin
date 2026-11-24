@@ -1,3 +1,7 @@
+// Package dict parses dictionary packs (JMdict, CC-CEDICT, KANJIDIC2,
+// Unihan and the json pack format), imports them into the lexicon and
+// uninstalls them. What every pack type shares (the manifest, loading a
+// pack, the type table) is internal/pack.
 package dict
 
 import (
@@ -9,10 +13,10 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"time"
 
 	"qinqin/internal/lang"
 	"qinqin/internal/model"
+	"qinqin/internal/pack"
 )
 
 // ErrNotDictionary reports an ImportLexicon of a pack whose manifest type is
@@ -21,7 +25,7 @@ import (
 var ErrNotDictionary = errors.New("dict: manifest type is not \"dictionary\"")
 
 // ErrNotFound reports an uninstall of an unknown dictionary.
-var ErrNotFound = errors.New("dictionary not found")
+var ErrNotFound = pack.NotFound("dictionary not found")
 
 // dictionaryFile is the data file of a format "json" dictionary pack.
 const dictionaryFile = "dictionary.json"
@@ -41,14 +45,14 @@ type Result struct {
 // registerLanguage auto-registers the manifest's language as a data-only
 // language when no code pack is registered for it; code packs (zh, ja)
 // live in code, not in the table.
-func registerLanguage(ctx context.Context, sqlDB *sql.DB, m Manifest) error {
+func registerLanguage(ctx context.Context, sqlDB *sql.DB, m pack.Manifest) error {
 	if lang.Registered(m.Language) {
 		return nil
 	}
 	if _, err := sqlDB.ExecContext(ctx, `
 		INSERT INTO languages (code, name, updated_at) VALUES (?, ?, ?)
 		ON CONFLICT (code) DO NOTHING`,
-		m.Language, m.Name, now()); err != nil {
+		m.Language, m.Name, pack.Now()); err != nil {
 		return fmt.Errorf("register language %s: %w", m.Language, err)
 	}
 	return nil
@@ -59,31 +63,8 @@ func registerLanguage(ctx context.Context, sqlDB *sql.DB, m Manifest) error {
 // manifest fields (notice included) are unchanged is not written (no
 // restamp), so an identical re-import leaves the registry row as it was.
 func upsertDictionary(ctx context.Context, tx *sql.Tx, packID, name, version, language, license, attribution, notice, stamp string) (int64, error) {
-	var dictID int64
-	err := tx.QueryRowContext(ctx, `
-		INSERT INTO dictionaries (pack_id, name, version, language, license, attribution, notice, updated_at)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-		ON CONFLICT (pack_id) DO UPDATE SET
-			name = excluded.name,
-			version = excluded.version,
-			language = excluded.language,
-			license = excluded.license,
-			attribution = excluded.attribution,
-			notice = excluded.notice,
-			updated_at = excluded.updated_at,
-			deleted_at = NULL
-		WHERE dictionaries.name IS NOT excluded.name OR dictionaries.version IS NOT excluded.version
-		   OR dictionaries.language IS NOT excluded.language
-		   OR dictionaries.license IS NOT excluded.license
-		   OR dictionaries.attribution IS NOT excluded.attribution
-		   OR dictionaries.notice IS NOT excluded.notice
-		   OR dictionaries.deleted_at IS NOT NULL
-		RETURNING id`,
-		packID, name, version, language, license, attribution, notice, stamp).Scan(&dictID)
-	if errors.Is(err, sql.ErrNoRows) {
-		// Unchanged: the conflict update's WHERE skipped the write.
-		err = tx.QueryRowContext(ctx, `SELECT id FROM dictionaries WHERE pack_id = ?`, packID).Scan(&dictID)
-	}
+	dictID, _, err := pack.UpsertRegistry(ctx, tx, pack.Registry{Table: "dictionaries", PackID: packID, Stamp: stamp,
+		Columns: pack.TermColumns(name, version, license, attribution, notice, pack.Column{Name: "language", Value: language})})
 	if err != nil {
 		return 0, fmt.Errorf("register dictionary %s: %w", packID, err)
 	}
@@ -95,12 +76,12 @@ func upsertDictionary(ctx context.Context, tx *sql.Tx, packID, name, version, la
 // them — and re-importing the pack revives both. An unknown or already
 // uninstalled dictionary returns ErrNotFound.
 func Uninstall(ctx context.Context, sqlDB *sql.DB, id int64) error {
-	tx, err := sqlDB.BeginTx(ctx, nil)
+	tx, err := pack.BeginWrite(ctx, sqlDB)
 	if err != nil {
 		return fmt.Errorf("uninstall dictionary %d: %w", id, err)
 	}
 	defer tx.Rollback()
-	stamp := now()
+	stamp := pack.Now()
 	// The senses become tombstones, so delta sync ships the removal.
 	if _, err := tx.ExecContext(ctx, `
 		UPDATE senses SET deleted_at = ?, updated_at = ?
@@ -208,27 +189,27 @@ func (e jsonEntry) toEntry() entry {
 func readJSONPack(dir string) ([]entry, error) {
 	data, err := os.ReadFile(filepath.Join(dir, dictionaryFile))
 	if err != nil {
-		return nil, fmt.Errorf("%w: read %s of %s: %v", ErrInvalidPack, dictionaryFile, dir, err)
+		return nil, fmt.Errorf("%w: read %s of %s: %v", pack.ErrInvalidPack, dictionaryFile, dir, err)
 	}
 	var p jsonPack
 	if err := json.Unmarshal(data, &p); err != nil {
-		return nil, fmt.Errorf("%w: parse %s of %s: %v", ErrInvalidPack, dictionaryFile, dir, err)
+		return nil, fmt.Errorf("%w: parse %s of %s: %v", pack.ErrInvalidPack, dictionaryFile, dir, err)
 	}
 	for i, e := range p.Entries {
 		if strings.TrimSpace(e.Written) == "" {
-			return nil, fmt.Errorf("%w: entry %d of %s: written is required", ErrInvalidPack, i, dir)
+			return nil, fmt.Errorf("%w: entry %d of %s: written is required", pack.ErrInvalidPack, i, dir)
 		}
 		if e.Kind != "character" && e.Kind != "word" {
-			return nil, fmt.Errorf("%w: entry %d (%s) of %s: kind must be \"character\" or \"word\"", ErrInvalidPack, i, e.Written, dir)
+			return nil, fmt.Errorf("%w: entry %d (%s) of %s: kind must be \"character\" or \"word\"", pack.ErrInvalidPack, i, e.Written, dir)
 		}
 		for j, r := range e.Readings {
 			if strings.TrimSpace(r.Type) == "" || strings.TrimSpace(r.Value) == "" {
-				return nil, fmt.Errorf("%w: entry %d (%s) of %s: reading %d needs a type and a value", ErrInvalidPack, i, e.Written, dir, j)
+				return nil, fmt.Errorf("%w: entry %d (%s) of %s: reading %d needs a type and a value", pack.ErrInvalidPack, i, e.Written, dir, j)
 			}
 		}
 		for j, g := range e.Glosses {
 			if strings.TrimSpace(g) == "" {
-				return nil, fmt.Errorf("%w: entry %d (%s) of %s: gloss %d is empty", ErrInvalidPack, i, e.Written, dir, j)
+				return nil, fmt.Errorf("%w: entry %d (%s) of %s: gloss %d is empty", pack.ErrInvalidPack, i, e.Written, dir, j)
 			}
 		}
 	}
@@ -237,10 +218,4 @@ func readJSONPack(dir string) ([]entry, error) {
 		es[i] = je.toEntry()
 	}
 	return es, nil
-}
-
-// now returns the server clock as UTC RFC 3339, the timestamp
-// convention for every write.
-func now() string {
-	return time.Now().UTC().Format(time.RFC3339)
 }

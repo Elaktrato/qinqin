@@ -7,6 +7,7 @@ import (
 	"qinqin/internal/dbtest"
 	"qinqin/internal/dict"
 	"qinqin/internal/lang"
+	"qinqin/internal/pack"
 )
 
 // The tiny dictionary pack imports with the real importer into a database
@@ -14,7 +15,7 @@ import (
 func TestDictPackImports(t *testing.T) {
 	lang.Register(lang.Zh{})
 	sqlDB := dbtest.Open(t)
-	p, err := dict.LoadPack(dbtest.DictPack(t))
+	p, err := pack.LoadPack(dbtest.DictPack(t))
 	if err != nil {
 		t.Fatal(err)
 	}

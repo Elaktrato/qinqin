@@ -1,10 +1,10 @@
-package dict_test
+package pack_test
 
 import (
 	"strings"
 	"testing"
 
-	"qinqin/internal/dict"
+	"qinqin/internal/pack"
 )
 
 func TestValidateNotice(t *testing.T) {
@@ -19,11 +19,11 @@ func TestValidateNotice(t *testing.T) {
 		{"https link", "From [kanjiapi.dev](https://github.com/onlyskin/kanjiapi.dev) (MIT).", ""},
 		{"two links and a path", "[A](https://a.example/x?y=1#z) and [B](https://b.example).", ""},
 		{"brackets without a link", "A note [sic] and (an aside).", ""},
-		{"exactly the limit", strings.Repeat("a", dict.MaxNoticeBytes), ""},
+		{"exactly the limit", strings.Repeat("a", pack.MaxNoticeBytes), ""},
 		{"tab", "a\tb", ""},
 
-		{"too long", strings.Repeat("a", dict.MaxNoticeBytes+1), "at most 4000"},
-		{"too long in runes", strings.Repeat("汉", dict.MaxNoticeBytes/3+1), "at most 4000"},
+		{"too long", strings.Repeat("a", pack.MaxNoticeBytes+1), "at most 4000"},
+		{"too long in runes", strings.Repeat("汉", pack.MaxNoticeBytes/3+1), "at most 4000"},
 		{"invalid utf-8", "bad \xff byte", "UTF-8"},
 		{"control character", "bell\x07", "control character"},
 		{"carriage return", "a\r\nb", "control character"},
@@ -43,7 +43,7 @@ func TestValidateNotice(t *testing.T) {
 		{"parens in url", "[x](https://en.wikipedia.org/wiki/A_(b))", "malformed link"},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			err := dict.ValidateNotice(tc.notice)
+			err := pack.ValidateNotice(tc.notice)
 			switch {
 			case tc.want == "" && err != nil:
 				t.Errorf("ValidateNotice = %v, want nil", err)

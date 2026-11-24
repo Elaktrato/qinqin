@@ -1,4 +1,4 @@
-package dict
+package pack
 
 import (
 	"archive/zip"
@@ -14,7 +14,10 @@ import (
 
 // ErrInvalidPack reports a pack whose files are missing, malformed, or
 // invalid; callers map it to a client error rather than a server fault.
-var ErrInvalidPack = errors.New("dict: invalid pack")
+var ErrInvalidPack = errors.New("pack: invalid pack")
+
+// ErrNotFound reports a pack that is not installed.
+var ErrNotFound = errors.New("packs: not found")
 
 // Pack is one loaded pack: its validated manifest plus the directory
 // holding its data files.
@@ -95,7 +98,7 @@ func loadDir(dir string) (Pack, error) {
 	if err := json.Unmarshal(data, &m); err != nil {
 		return Pack{}, fmt.Errorf("%w: parse manifest of %s: %v", ErrInvalidPack, dir, err)
 	}
-	m.normalize()
+	m.Normalize()
 	if err := m.Validate(); err != nil {
 		return Pack{}, fmt.Errorf("%w: %s: %v", ErrInvalidPack, dir, err)
 	}
@@ -116,12 +119,12 @@ var DefaultZipLimits = ZipLimits{MaxFiles: 2000, MaxBytes: 512 << 20}
 func ExtractZip(r io.Reader, dir string) error {
 	// An archive larger than the whole unpack budget cannot be a pack, so
 	// the compressed input is capped too.
-	data, err := io.ReadAll(io.LimitReader(r, DefaultZipLimits.MaxBytes+1))
+	data, err := ReadCapped(r, DefaultZipLimits.MaxBytes)
+	if errors.Is(err, ErrTooLarge) {
+		return fmt.Errorf("%w: zip is larger than %d MiB", ErrInvalidPack, mib(DefaultZipLimits.MaxBytes))
+	}
 	if err != nil {
 		return fmt.Errorf("read zip: %w", err)
-	}
-	if int64(len(data)) > DefaultZipLimits.MaxBytes {
-		return fmt.Errorf("%w: zip is larger than %d MiB", ErrInvalidPack, mib(DefaultZipLimits.MaxBytes))
 	}
 	return ExtractZipAt(bytes.NewReader(data), int64(len(data)), dir, DefaultZipLimits)
 }
@@ -281,3 +284,15 @@ func isOSMetadata(name string) bool {
 	}
 	return false
 }
+
+// NotFound returns a domain package's error for a pack (or an item of one)
+// that is not installed: its own text and identity, and a ErrNotFound for
+// errors.Is, so a caller that handles every type checks ErrNotFound once.
+func NotFound(text string) error { return &notFound{text} }
+
+type notFound struct{ text string }
+
+func (e *notFound) Error() string { return e.text }
+
+// Is makes the error a ErrNotFound.
+func (e *notFound) Is(target error) bool { return target == ErrNotFound }

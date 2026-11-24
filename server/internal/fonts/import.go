@@ -1,6 +1,7 @@
 package fonts
 
 import (
+	"cmp"
 	"context"
 	"database/sql"
 	"errors"
@@ -8,9 +9,10 @@ import (
 	"io"
 	"os"
 	"path/filepath"
-	"time"
+	"slices"
+	"strings"
 
-	"qinqin/internal/dict"
+	"qinqin/internal/pack"
 )
 
 // DataFile is the faces list of a font pack.
@@ -18,7 +20,7 @@ const DataFile = "faces.json"
 
 // ErrNotFound reports an uninstall of an unknown or already uninstalled
 // font pack.
-var ErrNotFound = errors.New("fonts: pack not found")
+var ErrNotFound = pack.NotFound("fonts: pack not found")
 
 // Result counts an import.
 type Result struct{ Faces, Slices int }
@@ -30,20 +32,20 @@ type Querier interface {
 }
 
 // LoadFile reads and validates the faces.json of the pack in dir. Errors
-// are dict.ErrInvalidPack naming the file, the code and the path.
+// are pack.ErrInvalidPack naming the file, the code and the path.
 func LoadFile(dir string) ([]Face, error) {
 	f, err := os.Open(filepath.Join(dir, DataFile))
 	if err != nil {
-		return nil, fmt.Errorf("%w: %s: %v", dict.ErrInvalidPack, DataFile, err)
+		return nil, fmt.Errorf("%w: %s: %v", pack.ErrInvalidPack, DataFile, err)
 	}
 	defer f.Close()
 	data, err := io.ReadAll(io.LimitReader(f, MaxFacesBytes+1))
 	if err != nil {
-		return nil, fmt.Errorf("%w: %s: %v", dict.ErrInvalidPack, DataFile, err)
+		return nil, fmt.Errorf("%w: %s: %v", pack.ErrInvalidPack, DataFile, err)
 	}
 	list, err := ParseFaces(data)
 	if err != nil {
-		return nil, fmt.Errorf("%w: %s: %v", dict.ErrInvalidPack, DataFile, err)
+		return nil, fmt.Errorf("%w: %s: %v", pack.ErrInvalidPack, DataFile, err)
 	}
 	return list, nil
 }
@@ -52,18 +54,18 @@ func LoadFile(dir string) ([]Face, error) {
 // faces.json and every slice file — without the installed packs (Import
 // checks those). The staged upload calls it to refuse a broken pack
 // before the licence review.
-func CheckPack(p dict.Pack) ([]Face, error) {
+func CheckPack(p pack.Pack) ([]Face, error) {
 	_, list, err := checkPack(p)
 	return list, err
 }
 
-func checkPack(p dict.Pack) (map[string]sliceFile, []Face, error) {
+func checkPack(p pack.Pack) (map[string]sliceFile, []Face, error) {
 	m := p.Manifest
 	if err := m.Validate(); err != nil {
-		return nil, nil, fmt.Errorf("%w: %v", dict.ErrInvalidPack, err)
+		return nil, nil, fmt.Errorf("%w: %v", pack.ErrInvalidPack, err)
 	}
-	if m.Type != dict.TypeFont || m.Format != dict.FormatFontSlices {
-		return nil, nil, fmt.Errorf("%w: %q is a %s pack (format %s), not a font pack", dict.ErrInvalidPack, m.ID, m.Type, m.Format)
+	if m.Type != pack.TypeFont || m.Format != pack.FormatFontSlices {
+		return nil, nil, fmt.Errorf("%w: %q is a %s pack (format %s), not a font pack", pack.ErrInvalidPack, m.ID, m.Type, m.Format)
 	}
 	list, err := LoadFile(p.Dir)
 	if err != nil {
@@ -74,7 +76,7 @@ func checkPack(p dict.Pack) (map[string]sliceFile, []Face, error) {
 		for _, s := range f.Slices {
 			sf, err := inspect(filepath.Join(p.Dir, filepath.FromSlash(s.File)), s.Sha)
 			if err != nil {
-				return nil, nil, fmt.Errorf("%w: %s: %v", dict.ErrInvalidPack, s.File, err)
+				return nil, nil, fmt.Errorf("%w: %s: %v", pack.ErrInvalidPack, s.File, err)
 			}
 			files[s.Sha] = sf
 		}
@@ -93,7 +95,7 @@ var afterStoreHook func()
 // replaces the pack's font_slices rows, and the files no row references
 // any more are removed. A failure before the commit (a cancelled ctx
 // included) removes the slices it stored that no installed pack uses.
-func Import(ctx context.Context, sqlDB *sql.DB, p dict.Pack, storeDir string) (res Result, err error) {
+func Import(ctx context.Context, sqlDB *sql.DB, p pack.Pack, storeDir string) (res Result, err error) {
 	files, list, err := checkPack(p)
 	if err != nil {
 		return Result{}, err
@@ -107,7 +109,7 @@ func Import(ctx context.Context, sqlDB *sql.DB, p dict.Pack, storeDir string) (r
 		for _, g := range installed {
 			if g.PackID != m.ID && f.overlaps(g.Face) {
 				return Result{}, fmt.Errorf("%w: the face %s is already provided by the installed font pack %q (as %s); uninstall that pack first",
-					dict.ErrInvalidPack, f.Key(), g.PackID, g.Key())
+					pack.ErrInvalidPack, f.Key(), g.PackID, g.Key())
 			}
 		}
 	}
@@ -130,7 +132,7 @@ func Import(ctx context.Context, sqlDB *sql.DB, p dict.Pack, storeDir string) (r
 		afterStoreHook()
 	}
 
-	tx, err := sqlDB.BeginTx(ctx, nil)
+	tx, err := pack.BeginWrite(ctx, sqlDB)
 	if err != nil {
 		return Result{}, fmt.Errorf("import font pack %s: %w", m.ID, err)
 	}
@@ -139,15 +141,31 @@ func Import(ctx context.Context, sqlDB *sql.DB, p dict.Pack, storeDir string) (r
 	if err != nil {
 		return Result{}, fmt.Errorf("import font pack %s: %w", m.ID, err)
 	}
-	stamp := time.Now().UTC().Format(time.RFC3339)
-	if _, err := tx.ExecContext(ctx, `
-		INSERT INTO font_packs (pack_id, name, version, license, attribution, notice, updated_at)
-		VALUES (?, ?, ?, ?, ?, ?, ?)
-		ON CONFLICT (pack_id) DO UPDATE SET name = excluded.name, version = excluded.version,
-			license = excluded.license, attribution = excluded.attribution, notice = excluded.notice,
-			updated_at = excluded.updated_at, deleted_at = NULL`,
-		m.ID, m.Name, m.Version, m.License, m.Attribution, m.Notice, stamp); err != nil {
+	var want []sliceRow
+	for _, f := range list {
+		for i, s := range f.Slices {
+			want = append(want, sliceRow{f.Face, f.Script, f.Weight, f.Style, f.Original, s.Sha, s.UnicodeRange, i})
+		}
+	}
+	have, err := packSlices(ctx, tx, m.ID)
+	if err != nil {
 		return Result{}, fmt.Errorf("import font pack %s: %w", m.ID, err)
+	}
+	slices.SortFunc(want, sliceRow.compare)
+	// The registry row holds no fingerprint of the slices, so a change of
+	// them alone writes it too (Force): its updated_at says the pack changed.
+	_, changed, err := pack.UpsertRegistry(ctx, tx, pack.Registry{Table: "font_packs", PackID: m.ID,
+		Stamp: pack.Now(), Columns: pack.ManifestColumns(m), Force: !slices.Equal(have, want)})
+	if err != nil {
+		return Result{}, fmt.Errorf("import font pack %s: %w", m.ID, err)
+	}
+	if !changed {
+		committed = true // nothing to write; the slices are the stored ones
+		for _, f := range list {
+			res.Faces++
+			res.Slices += len(f.Slices)
+		}
+		return res, nil
 	}
 	if _, err := tx.ExecContext(ctx, `DELETE FROM font_slices WHERE pack_id = ?`, m.ID); err != nil {
 		return Result{}, fmt.Errorf("import font pack %s: %w", m.ID, err)
@@ -173,6 +191,38 @@ func Import(ctx context.Context, sqlDB *sql.DB, p dict.Pack, storeDir string) (r
 		return res, fmt.Errorf("import font pack %s: %w", m.ID, err)
 	}
 	return res, nil
+}
+
+// sliceRow is one font_slices row of a pack.
+type sliceRow struct {
+	face, script, weight, style, original, sha, unicodeRange string
+	ord                                                      int
+}
+
+func (a sliceRow) compare(b sliceRow) int {
+	return cmp.Or(strings.Compare(a.face, b.face), strings.Compare(a.script, b.script), strings.Compare(a.weight, b.weight),
+		strings.Compare(a.style, b.style), cmp.Compare(a.ord, b.ord), strings.Compare(a.original, b.original),
+		strings.Compare(a.sha, b.sha), strings.Compare(a.unicodeRange, b.unicodeRange))
+}
+
+// packSlices returns the stored slice rows of a pack, sorted (compare).
+func packSlices(ctx context.Context, q Querier, packID string) ([]sliceRow, error) {
+	rows, err := q.QueryContext(ctx, `SELECT face, script, weight, style, original, sha, unicode_range, ord
+		FROM font_slices WHERE pack_id = ?`, packID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var out []sliceRow
+	for rows.Next() {
+		var r sliceRow
+		if err := rows.Scan(&r.face, &r.script, &r.weight, &r.style, &r.original, &r.sha, &r.unicodeRange, &r.ord); err != nil {
+			return nil, err
+		}
+		out = append(out, r)
+	}
+	slices.SortFunc(out, sliceRow.compare)
+	return out, rows.Err()
 }
 
 // packShas returns the slice hashes the pack's rows reference.

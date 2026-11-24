@@ -13,8 +13,8 @@ import (
 
 	"qinqin/internal/api"
 	"qinqin/internal/dbtest"
-	"qinqin/internal/dict"
 	"qinqin/internal/lang"
+	"qinqin/internal/pack"
 )
 
 const entriesCharacters = "学 学 [xue2] /to learn/\n" +
@@ -32,7 +32,7 @@ const entriesFoldedCharacters = "復 复 [fu4] /to return/\n" +
 func TestEntryCharactersChineseWord(t *testing.T) {
 	ts, sqlDB := newServer(t)
 	seedEntries(t, sqlDB)
-	lookupImport(t, sqlDB, dict.Manifest{
+	lookupImport(t, sqlDB, pack.Manifest{
 		ID: "chars-test", Name: "Character test", Version: "1", Type: "dictionary", Language: "zh",
 		License: "CC BY-SA 4.0", Attribution: "test", Format: "cedict",
 	}, "dictionary.txt", entriesCharacters)
@@ -59,7 +59,7 @@ func TestEntryCharactersChineseWord(t *testing.T) {
 func TestEntryCharactersResolveTheirOwnForm(t *testing.T) {
 	ts, sqlDB := newServer(t)
 	seedEntries(t, sqlDB)
-	lookupImport(t, sqlDB, dict.Manifest{
+	lookupImport(t, sqlDB, pack.Manifest{
 		ID: "folded-chars", Name: "Folded characters", Version: "1", Type: "dictionary", Language: "zh",
 		License: "CC BY-SA 4.0", Attribution: "test", Format: "cedict",
 	}, "dictionary.txt", entriesFoldedCharacters)
@@ -92,7 +92,7 @@ func TestEntryCharactersDedupeByEntry(t *testing.T) {
 	// their own entries, and this test needs both forms to fold into 复.
 	lang.Register(lang.Zh{})
 	ts, sqlDB := newServer(t)
-	lookupImport(t, sqlDB, dict.Manifest{
+	lookupImport(t, sqlDB, pack.Manifest{
 		ID: "folded-one", Name: "Folded forms", Version: "1", Type: "dictionary", Language: "zh",
 		License: "CC BY-SA 4.0", Attribution: "test", Format: "cedict",
 	}, "dictionary.txt", "復 复 [fu4] /to return/\n覆 复 [fu4] /variant of 復/\n復覆 復覆 [fu4 fu4] /(rare) both/\n")
@@ -120,7 +120,7 @@ func TestEntryCharactersJapaneseWord(t *testing.T) {
 </entry>
 </JMdict>
 `
-	lookupImport(t, sqlDB, dict.Manifest{
+	lookupImport(t, sqlDB, pack.Manifest{
 		ID: "jmdict-characters", Name: "JMdict characters", Version: "1", Type: "dictionary", Language: "ja",
 		License: "CC BY-SA 4.0", Attribution: "test", Format: "jmdict",
 	}, "jmdict.xml", jmdict)
@@ -128,7 +128,7 @@ func TestEntryCharactersJapaneseWord(t *testing.T) {
 	if err != nil {
 		t.Fatalf("read kanjidic2 fixture: %v", err)
 	}
-	lookupImport(t, sqlDB, dict.Manifest{
+	lookupImport(t, sqlDB, pack.Manifest{
 		ID: "kanjidic2-characters", Name: "KANJIDIC2 characters", Version: "1", Type: "dictionary", Language: "ja",
 		License: "CC BY-SA 4.0", Attribution: "test", Format: "kanjidic2",
 	}, "kanjidic2.xml", string(kanji))
@@ -156,7 +156,7 @@ func TestEntryCharactersDistinctAndCapped(t *testing.T) {
 	}
 	fmt.Fprintf(&b, "一二三四五六七八九 一二三四五六七八九 [yi1] /many/\n")
 	fmt.Fprintf(&b, "人人 人人 [ren2 ren2] /everybody/\n")
-	lookupImport(t, sqlDB, dict.Manifest{
+	lookupImport(t, sqlDB, pack.Manifest{
 		ID: "cap-chars", Name: "Cap characters", Version: "1", Type: "dictionary", Language: "zh",
 		License: "CC BY-SA 4.0", Attribution: "test", Format: "cedict",
 	}, "dictionary.txt", b.String())
@@ -241,7 +241,7 @@ func TestEntryCharactersQueriesBounded(t *testing.T) {
 	}
 	fmt.Fprintf(&b, "一二 一二 [yi1er4] /two/\n")
 	fmt.Fprintf(&b, "一二三四五六 一二三四五六 [yi1] /six/\n")
-	lookupImport(t, sqlDB, dict.Manifest{
+	lookupImport(t, sqlDB, pack.Manifest{
 		ID: "bounded-chars", Name: "Bounded characters", Version: "1", Type: "dictionary", Language: "zh",
 		License: "CC BY-SA 4.0", Attribution: "test", Format: "cedict",
 	}, "dictionary.txt", b.String())

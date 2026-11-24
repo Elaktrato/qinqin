@@ -15,8 +15,8 @@ import (
 
 	"qinqin/internal/db"
 	"qinqin/internal/dbtest"
-	"qinqin/internal/dict"
 	"qinqin/internal/lemma"
+	"qinqin/internal/pack"
 	"qinqin/internal/packs"
 )
 
@@ -43,7 +43,7 @@ func TestServeUsesInstalledAndOutsideChangedTables(t *testing.T) {
 	root := t.TempDir()
 	writeLemmaPack(t, root, "xh-rules", "xh", strings.Replace(lemmaTable("xh", "1"), `"reason": "past"`, `"reason": "first"`, 1))
 	for _, d := range []string{dir, filepath.Join(root, "xh-rules")} {
-		p, err := dict.LoadPack(d)
+		p, err := pack.LoadPack(d)
 		if err != nil {
 			t.Fatal(err)
 		}

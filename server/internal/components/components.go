@@ -15,9 +15,8 @@ import (
 	"path/filepath"
 	"slices"
 	"strings"
-	"time"
 
-	"qinqin/internal/dict"
+	"qinqin/internal/pack"
 )
 
 // insertBatch is the rows per INSERT: 3 columns each stays under SQLite's
@@ -26,7 +25,7 @@ const insertBatch = 300
 
 // ErrNotFound reports an uninstall of an unknown or already uninstalled
 // components pack.
-var ErrNotFound = errors.New("components: pack not found")
+var ErrNotFound = pack.NotFound("components: pack not found")
 
 // Result counts an import: the characters and the distinct parts they
 // use.
@@ -56,21 +55,21 @@ type Set struct {
 // directory are parsed completely (Parse), then ONE transaction upserts
 // the component_packs row (clearing an uninstall) and replaces the pack's
 // rows. The language is stored as its primary subtag (zh-tw -> zh). A
-// malformed pack is dict.ErrInvalidPack and leaves nothing behind.
-func Import(ctx context.Context, sqlDB *sql.DB, p dict.Pack) (Result, error) {
+// malformed pack is pack.ErrInvalidPack and leaves nothing behind.
+func Import(ctx context.Context, sqlDB *sql.DB, p pack.Pack) (Result, error) {
 	m := p.Manifest
 	if err := m.Validate(); err != nil {
-		return Result{}, fmt.Errorf("%w: %v", dict.ErrInvalidPack, err)
+		return Result{}, fmt.Errorf("%w: %v", pack.ErrInvalidPack, err)
 	}
-	if m.Type != dict.TypeComponents {
-		return Result{}, fmt.Errorf("%w: %q is a %s pack, not a components pack", dict.ErrInvalidPack, m.ID, m.Type)
+	if m.Type != pack.TypeComponents {
+		return Result{}, fmt.Errorf("%w: %q is a %s pack, not a components pack", pack.ErrInvalidPack, m.ID, m.Type)
 	}
-	if m.Format != dict.FormatComponentsTSV {
-		return Result{}, fmt.Errorf("%w: components pack %s: format %q is not a components format (want components-tsv)", dict.ErrInvalidPack, m.ID, m.Format)
+	if m.Format != pack.FormatComponentsTSV {
+		return Result{}, fmt.Errorf("%w: components pack %s: format %q is not a components format (want components-tsv)", pack.ErrInvalidPack, m.ID, m.Format)
 	}
 	d, err := readDir(p.Dir)
 	if err != nil {
-		return Result{}, fmt.Errorf("%w: components pack %s: %w", dict.ErrInvalidPack, m.ID, err)
+		return Result{}, fmt.Errorf("%w: components pack %s: %w", pack.ErrInvalidPack, m.ID, err)
 	}
 	chars := make([]string, 0, len(d.Chars))
 	used := map[string]bool{}
@@ -88,7 +87,7 @@ func Import(ctx context.Context, sqlDB *sql.DB, p dict.Pack) (Result, error) {
 	slices.Sort(parts)
 	hash := fingerprint(chars, parts, d)
 
-	tx, err := sqlDB.BeginTx(ctx, nil)
+	tx, err := pack.BeginWrite(ctx, sqlDB)
 	if err != nil {
 		return Result{}, fmt.Errorf("import components pack %s: %w", m.ID, err)
 	}
@@ -96,16 +95,16 @@ func Import(ctx context.Context, sqlDB *sql.DB, p dict.Pack) (Result, error) {
 	// The lookup asks by primary subtag (a zh-TW workspace asks for zh), so a
 	// pack's language is stored as its primary subtag: zh-tw -> zh.
 	language, _, _ := strings.Cut(m.Language, "-")
-	stamp := time.Now().UTC().Format(time.RFC3339)
-	if _, err := tx.ExecContext(ctx, `
-		INSERT INTO component_packs (pack_id, name, version, language, license, attribution, notice, content_hash, updated_at, deleted_at)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NULL)
-		ON CONFLICT (pack_id) DO UPDATE SET name = excluded.name, version = excluded.version,
-			language = excluded.language, license = excluded.license, attribution = excluded.attribution,
-			notice = excluded.notice, content_hash = excluded.content_hash, updated_at = excluded.updated_at,
-			deleted_at = NULL`,
-		m.ID, m.Name, m.Version, language, m.License, m.Attribution, m.Notice, hash, stamp); err != nil {
+	stamp := pack.Now()
+	_, changed, err := pack.UpsertRegistry(ctx, tx, pack.Registry{Table: "component_packs", PackID: m.ID, Stamp: stamp,
+		Columns: pack.ManifestColumns(m, pack.Column{Name: "language", Value: language}, pack.Column{Name: "content_hash", Value: hash})})
+	if err != nil {
 		return Result{}, fmt.Errorf("import components pack %s: %w", m.ID, err)
+	}
+	if !changed {
+		// The content hash and the manifest fields are as stored: the rows
+		// are too, and nothing is written.
+		return Result{Chars: len(chars), Parts: len(used)}, nil
 	}
 	if err := deleteRows(ctx, tx, m.ID); err != nil {
 		return Result{}, fmt.Errorf("import components pack %s: %w", m.ID, err)
@@ -174,7 +173,7 @@ func insert(ctx context.Context, tx *sql.Tx, table string, n int, row func(i int
 		for i := start; i < end; i++ {
 			args = append(args, row(i)...)
 		}
-		q := "INSERT INTO " + table + " VALUES " + strings.TrimSuffix(strings.Repeat("(?, ?, ?), ", end-start), ", ")
+		q := "INSERT INTO " + table + " VALUES " + pack.Tuples(end-start, 3)
 		if _, err := tx.ExecContext(ctx, q, args...); err != nil {
 			return err
 		}
@@ -186,12 +185,12 @@ func insert(ctx context.Context, tx *sql.Tx, table string, n int, row func(i int
 // rows, in one transaction. An unknown or already uninstalled pack
 // returns ErrNotFound.
 func Uninstall(ctx context.Context, sqlDB *sql.DB, packID string) error {
-	tx, err := sqlDB.BeginTx(ctx, nil)
+	tx, err := pack.BeginWrite(ctx, sqlDB)
 	if err != nil {
 		return fmt.Errorf("uninstall components pack %s: %w", packID, err)
 	}
 	defer tx.Rollback()
-	stamp := time.Now().UTC().Format(time.RFC3339)
+	stamp := pack.Now()
 	res, err := tx.ExecContext(ctx, `
 		UPDATE component_packs SET deleted_at = ?, updated_at = ? WHERE pack_id = ? AND deleted_at IS NULL`, stamp, stamp, packID)
 	if err != nil {

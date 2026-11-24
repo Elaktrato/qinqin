@@ -12,9 +12,9 @@ import (
 	"time"
 
 	"qinqin/internal/dbtest"
-	"qinqin/internal/dict"
 	"qinqin/internal/lemma"
 	"qinqin/internal/lookup"
+	"qinqin/internal/pack"
 )
 
 // worstTables are the review's two worst tables within the limits: heavy
@@ -73,7 +73,7 @@ func worstTables(t *testing.T) map[string]*lemma.Table {
 func TestSegmentationWorkIsBounded(t *testing.T) {
 	t.Cleanup(func() { lemma.SetInstalled(nil) })
 	sqlDB := dbtest.Open(t)
-	importPack(t, sqlDB, dict.Manifest{ID: "xq-dict", Name: "xq", Version: "1", Type: "dictionary", Language: "xq",
+	importPack(t, sqlDB, pack.Manifest{ID: "xq-dict", Name: "xq", Version: "1", Type: "dictionary", Language: "xq",
 		License: "CC0-1.0", Attribution: "test", Format: "json"}, "dictionary.json",
 		`{"entries": [{"written": "aba", "kind": "word", "readings": [{"type": "latin", "value": "aba"}], "glosses": ["x"]}]}`)
 	svc := service(sqlDB)

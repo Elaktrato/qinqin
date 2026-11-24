@@ -11,9 +11,9 @@ import (
 	"strings"
 	"testing"
 
-	"qinqin/internal/dict"
 	"qinqin/internal/freq"
 	"qinqin/internal/model"
+	"qinqin/internal/pack"
 )
 
 // importFreqPack installs a freq-csv pack with the given rows.
@@ -27,7 +27,7 @@ func importFreqPack(t *testing.T, sqlDB *sql.DB, id, language, rows string) int6
 			t.Fatal(err)
 		}
 	}
-	p, err := dict.LoadPack(dir)
+	p, err := pack.LoadPack(dir)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -236,7 +236,7 @@ func TestFrequencyTopFollowsDictionaryInstalls(t *testing.T) {
 	if len(first.Entries) != 2 {
 		t.Fatalf("top = %+v, want 2 entries", first)
 	}
-	lookupImport(t, sqlDB, dict.Manifest{
+	lookupImport(t, sqlDB, pack.Manifest{
 		ID: "jmdict-more", Name: "JMdict more", Version: "1", Type: "dictionary", Language: "ja",
 		License: "CC BY-SA 4.0", Attribution: "EDRDG", Format: "jmdict",
 	}, "jmdict.xml", `<?xml version="1.0" encoding="UTF-8"?>

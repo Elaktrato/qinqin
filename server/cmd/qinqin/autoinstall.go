@@ -7,8 +7,8 @@ import (
 	"fmt"
 	"os"
 
-	"qinqin/internal/dict"
 	"qinqin/internal/lemmapack"
+	"qinqin/internal/pack"
 	"qinqin/internal/packs"
 	"qinqin/internal/strokes"
 )
@@ -37,7 +37,7 @@ func autoInstallStrokes(ctx context.Context, sqlDB *sql.DB, roots []string, logf
 			return fmt.Errorf("strokes auto-install: %w", err)
 		}
 		for _, p := range found {
-			if p.pack.Type != dict.TypeStrokes {
+			if p.pack.Type != pack.TypeStrokes {
 				continue
 			}
 			line, err := packs.Import(ctx, sqlDB, p.pack)
@@ -72,7 +72,7 @@ func syncBundledLemmaPacks(ctx context.Context, sqlDB *sql.DB, roots []string, l
 			continue
 		}
 		for _, p := range found {
-			if p.pack.Type != dict.TypeLemmaRules {
+			if p.pack.Type != pack.TypeLemmaRules {
 				continue
 			}
 			if err := syncBundledLemmaPack(ctx, sqlDB, p, logf, opts); err != nil {
@@ -95,7 +95,7 @@ func syncBundledLemmaPack(ctx context.Context, sqlDB *sql.DB, p seedPack, logf f
 	case found && (!live || hash == lemmapack.Hash(raw)):
 		return nil // uninstalled by an administrator, or up to date
 	case !found:
-		if err := lemmapack.CheckLanguage(ctx, sqlDB, p.pack.ID, p.pack.Language); errors.Is(err, dict.ErrInvalidPack) {
+		if err := lemmapack.CheckLanguage(ctx, sqlDB, p.pack.ID, p.pack.Language); errors.Is(err, pack.ErrInvalidPack) {
 			return nil // the language has another live pack: the administrator's choice stands
 		} else if err != nil {
 			return err

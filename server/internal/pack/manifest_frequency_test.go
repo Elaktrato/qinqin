@@ -1,10 +1,10 @@
-package dict_test
+package pack_test
 
 import (
 	"strings"
 	"testing"
 
-	"qinqin/internal/dict"
+	"qinqin/internal/pack"
 )
 
 func TestManifestAcceptsFrequencyPacks(t *testing.T) {
@@ -14,10 +14,10 @@ func TestManifestAcceptsFrequencyPacks(t *testing.T) {
 		if err := m.Validate(); err != nil {
 			t.Errorf("frequency/%s: Validate = %v, want nil", format, err)
 		}
-		for name, mutate := range map[string]func(*dict.Manifest){
-			"language":    func(m *dict.Manifest) { m.Language = "" },
-			"license":     func(m *dict.Manifest) { m.License = "" },
-			"attribution": func(m *dict.Manifest) { m.Attribution = "" },
+		for name, mutate := range map[string]func(*pack.Manifest){
+			"language":    func(m *pack.Manifest) { m.Language = "" },
+			"license":     func(m *pack.Manifest) { m.License = "" },
+			"attribution": func(m *pack.Manifest) { m.Attribution = "" },
 		} {
 			bad := m
 			mutate(&bad)

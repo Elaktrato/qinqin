@@ -17,6 +17,7 @@ import (
 	"qinqin/internal/lang"
 	"qinqin/internal/lexicon"
 	"qinqin/internal/model"
+	"qinqin/internal/pack"
 	"qinqin/internal/radicals"
 )
 
@@ -25,11 +26,11 @@ import (
 // its own id and terms, except that kanjidic2 registers the built-in
 // "kanjidic2" dictionary with its fixed terms and unihan the built-in
 // "unihan" dictionary with the manifest's terms.
-func RegistryTerms(m Manifest) (packID, license, attribution string) {
+func RegistryTerms(m pack.Manifest) (packID, license, attribution string) {
 	switch m.Format {
-	case FormatKanjidic2:
+	case pack.FormatKanjidic2:
 		return kanjidic2PackID, kanjidic2License, kanjidic2Attribution
-	case FormatUnihan:
+	case pack.FormatUnihan:
 		return unihanPackID, m.License, m.Attribution
 	}
 	return m.ID, m.License, m.Attribution
@@ -51,13 +52,13 @@ func RegistryTerms(m Manifest) (packID, license, attribution string) {
 // is not counted. The entry shapes are described at jmdictLexiconEntry,
 // cedictLexiconEntries, kanjidic2LexiconEntry, importUnihanLexicon and
 // jsonLexiconEntry.
-func ImportLexicon(ctx context.Context, sqlDB *sql.DB, p *Pack) (Result, error) {
+func ImportLexicon(ctx context.Context, sqlDB *sql.DB, p *pack.Pack) (Result, error) {
 	m := p.Manifest
-	m.normalize()
+	m.Normalize()
 	if err := m.Validate(); err != nil {
-		return Result{}, fmt.Errorf("%w: %v", ErrInvalidPack, err)
+		return Result{}, fmt.Errorf("%w: %v", pack.ErrInvalidPack, err)
 	}
-	if m.Type != TypeDictionary {
+	if m.Type != pack.TypeDictionary {
 		return Result{}, fmt.Errorf("%w: %q is a %s pack", ErrNotDictionary, m.ID, m.Type)
 	}
 
@@ -71,11 +72,11 @@ func ImportLexicon(ctx context.Context, sqlDB *sql.DB, p *Pack) (Result, error) 
 	var src source
 	src.packID, src.license, src.attribution = RegistryTerms(m)
 	switch m.Format {
-	case FormatJMdict:
+	case pack.FormatJMdict:
 		src.write = func(ctx context.Context, tx *sql.Tx, store lexicon.Store, dictID int64) (Result, error) {
 			return importJMdictLexicon(ctx, tx, store, dictID, m, p.Dir)
 		}
-	case FormatCedict:
+	case pack.FormatCedict:
 		lines, err := readCedictLines(p.Dir)
 		if err != nil {
 			return Result{}, err
@@ -101,7 +102,7 @@ func ImportLexicon(ctx context.Context, sqlDB *sql.DB, p *Pack) (Result, error) 
 			}
 			return result, nil
 		}
-	case FormatKanjidic2:
+	case pack.FormatKanjidic2:
 		es, err := readKanjidic2Pack(p.Dir)
 		if err != nil {
 			return Result{}, err
@@ -109,7 +110,7 @@ func ImportLexicon(ctx context.Context, sqlDB *sql.DB, p *Pack) (Result, error) 
 		src.write = func(ctx context.Context, tx *sql.Tx, store lexicon.Store, dictID int64) (Result, error) {
 			return importKanjidic2Lexicon(ctx, tx, store, dictID, m, es)
 		}
-	case FormatUnihan:
+	case pack.FormatUnihan:
 		data, err := readUnihanPack(p.Dir)
 		if err != nil {
 			return Result{}, err
@@ -117,7 +118,7 @@ func ImportLexicon(ctx context.Context, sqlDB *sql.DB, p *Pack) (Result, error) 
 		src.write = func(ctx context.Context, tx *sql.Tx, store lexicon.Store, dictID int64) (Result, error) {
 			return importUnihanLexicon(ctx, tx, store, dictID, m, data)
 		}
-	case FormatJSON:
+	case pack.FormatJSON:
 		es, err := readJSONPack(p.Dir)
 		if err != nil {
 			return Result{}, err
@@ -134,7 +135,7 @@ func ImportLexicon(ctx context.Context, sqlDB *sql.DB, p *Pack) (Result, error) 
 			return result, nil
 		}
 	default:
-		return Result{}, fmt.Errorf("%w: lexicon import of format %q is not implemented", ErrInvalidPack, m.Format)
+		return Result{}, fmt.Errorf("%w: lexicon import of format %q is not implemented", pack.ErrInvalidPack, m.Format)
 	}
 
 	if err := registerLanguage(ctx, sqlDB, m); err != nil {
@@ -146,12 +147,12 @@ func ImportLexicon(ctx context.Context, sqlDB *sql.DB, p *Pack) (Result, error) 
 	if label != m.ID {
 		label = fmt.Sprintf("%s (pack %s)", src.packID, m.ID)
 	}
-	tx, err := sqlDB.BeginTx(ctx, nil)
+	tx, err := pack.BeginWrite(ctx, sqlDB)
 	if err != nil {
 		return Result{}, fmt.Errorf("import dictionary %s: %w", label, err)
 	}
 	defer tx.Rollback()
-	dictID, err := upsertDictionary(ctx, tx, src.packID, m.Name, m.Version, m.Language, src.license, src.attribution, m.Notice, now())
+	dictID, err := upsertDictionary(ctx, tx, src.packID, m.Name, m.Version, m.Language, src.license, src.attribution, m.Notice, pack.Now())
 	if err != nil {
 		return Result{}, err
 	}
@@ -167,10 +168,10 @@ func ImportLexicon(ctx context.Context, sqlDB *sql.DB, p *Pack) (Result, error) 
 
 // importJMdictLexicon streams the pack's jmdict.xml into the lexicon: one
 // entry per ent_seq (see jmdictLexiconEntry).
-func importJMdictLexicon(ctx context.Context, tx *sql.Tx, store lexicon.Store, dictID int64, m Manifest, dir string) (Result, error) {
+func importJMdictLexicon(ctx context.Context, tx *sql.Tx, store lexicon.Store, dictID int64, m pack.Manifest, dir string) (Result, error) {
 	f, err := openMaybeGz(filepath.Join(dir, jmdictFile))
 	if err != nil {
-		return Result{}, fmt.Errorf("%w: read %s of %s: %v", ErrInvalidPack, jmdictFile, dir, err)
+		return Result{}, fmt.Errorf("%w: read %s of %s: %v", pack.ErrInvalidPack, jmdictFile, dir, err)
 	}
 	defer f.Close()
 	var result Result
@@ -201,7 +202,7 @@ func importJMdictLexicon(ctx context.Context, tx *sql.Tx, store lexicon.Store, d
 // sense per line, in file order, holding that line's glosses. Pinyin
 // that does not convert is kept as written and counted.
 func cedictLexiconEntries(p cedictParse, language string) ([]*lexicon.Entry, cedictStats) {
-	pack := lang.For(language)
+	pk := lang.For(language)
 	stats := cedictStats{skipped: p.skipped}
 	var (
 		out     []*lexicon.Entry
@@ -236,7 +237,7 @@ func cedictLexiconEntries(p cedictParse, language string) ([]*lexicon.Entry, ced
 		e.Senses = append(e.Senses, lexicon.Sense{Glosses: r.Glosses})
 	}
 	for _, e := range out {
-		e.Readings = lexiconReadings(pack, pinyins[e.Key], true)
+		e.Readings = lexiconReadings(pk, pinyins[e.Key], true)
 	}
 	return out, stats
 }
@@ -247,7 +248,7 @@ func cedictLexiconEntries(p cedictParse, language string) ([]*lexicon.Entry, ced
 // already present is not repeated). With each set, derivation runs per
 // given reading, so every pinyin of a homograph entry gets its own
 // bopomofo rather than only the first.
-func lexiconReadings(pack lang.Pack, given []model.Reading, each bool) []lexicon.Reading {
+func lexiconReadings(pk lang.Pack, given []model.Reading, each bool) []lexicon.Reading {
 	groups := [][]model.Reading{given}
 	if each {
 		groups = groups[:0]
@@ -257,7 +258,7 @@ func lexiconReadings(pack lang.Pack, given []model.Reading, each bool) []lexicon
 	}
 	all := slices.Clone(given)
 	for _, g := range groups {
-		for _, d := range pack.DeriveReadings(slices.Clone(g))[len(g):] {
+		for _, d := range pk.DeriveReadings(slices.Clone(g))[len(g):] {
 			if !slices.ContainsFunc(all, func(x model.Reading) bool { return x.Type == d.Type && x.Value == d.Value }) {
 				all = append(all, d)
 			}
@@ -265,7 +266,7 @@ func lexiconReadings(pack lang.Pack, given []model.Reading, each bool) []lexicon
 	}
 	out := make([]lexicon.Reading, len(all))
 	for i, r := range all {
-		out[i] = lexicon.Reading{Type: r.Type, Value: r.Value, Plain: pack.NormalizeReading(r.Type, r.Value)}
+		out[i] = lexicon.Reading{Type: r.Type, Value: r.Value, Plain: pk.NormalizeReading(r.Type, r.Value)}
 	}
 	return out
 }
@@ -503,7 +504,7 @@ func kanjidic2LexiconEntry(e entry, language string) *lexicon.Entry {
 // from the character to its classical Kangxi radical's character entry
 // (a bare one is created when missing). It owns the kanjidic2AttrKeys of
 // a character's attrs; other keys stay (see putOwningAttrs).
-func importKanjidic2Lexicon(ctx context.Context, tx *sql.Tx, store lexicon.Store, dictID int64, m Manifest, es []entry) (Result, error) {
+func importKanjidic2Lexicon(ctx context.Context, tx *sql.Tx, store lexicon.Store, dictID int64, m pack.Manifest, es []entry) (Result, error) {
 	for _, e := range es {
 		if e.Radical != 0 {
 			if err := checkRadical(e.Written, e.Radical); err != nil {
@@ -546,7 +547,7 @@ func importKanjidic2Lexicon(ctx context.Context, tx *sql.Tx, store lexicon.Store
 // merged, not overwritten (see putMerged). Simplified/traditional
 // counterparts link as variants (both directions) and each character
 // links to its Kangxi radical.
-func importUnihanLexicon(ctx context.Context, tx *sql.Tx, store lexicon.Store, dictID int64, m Manifest, data UnihanData) (Result, error) {
+func importUnihanLexicon(ctx context.Context, tx *sql.Tx, store lexicon.Store, dictID int64, m pack.Manifest, data UnihanData) (Result, error) {
 	// Radical numbers are known from the parse: check them all before
 	// anything is written.
 	for _, ch := range slices.Sorted(maps.Keys(data.Radicals)) {
@@ -724,7 +725,7 @@ func streamJMdict(r io.Reader, fn func(jmdictEntry) error) error {
 // best score among forms and readings; a uk word's kanji forms follow
 // the rK-exempt rule of ParseJMdict (see kanjiFormScore).
 func jmdictLexiconEntry(x jmdictEntry, language string) (*lexicon.Entry, error) {
-	pack := lang.For(language)
+	pk := lang.For(language)
 	e := &lexicon.Entry{
 		Language: language,
 		Kind:     "word",
@@ -775,7 +776,7 @@ func jmdictLexiconEntry(x jmdictEntry, language string) (*lexicon.Entry, error) 
 		kanaScore = max(kanaScore, pri)
 		kana = append(kana, model.Reading{Type: "kana", Value: reb})
 		readingMeta = append(readingMeta, lexicon.Reading{
-			Type: "kana", Value: reb, Plain: pack.NormalizeReading("kana", reb),
+			Type: "kana", Value: reb, Plain: pk.NormalizeReading("kana", reb),
 			Flags: entityNames(re.Inf), Pri: pri,
 		})
 	}
@@ -784,13 +785,13 @@ func jmdictLexiconEntry(x jmdictEntry, language string) (*lexicon.Entry, error) 
 	}
 	e.Readings = readingMeta
 	seen := map[string]bool{}
-	for _, r := range pack.DeriveReadings(kana)[len(kana):] {
+	for _, r := range pk.DeriveReadings(kana)[len(kana):] {
 		if r.Type != "romaji" || seen[r.Value] {
 			continue
 		}
 		seen[r.Value] = true
 		e.Readings = append(e.Readings, lexicon.Reading{
-			Type: "romaji", Value: r.Value, Plain: pack.NormalizeReading("romaji", r.Value),
+			Type: "romaji", Value: r.Value, Plain: pk.NormalizeReading("romaji", r.Value),
 		})
 	}
 

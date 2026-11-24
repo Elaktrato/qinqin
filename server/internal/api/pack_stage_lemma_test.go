@@ -9,8 +9,8 @@ import (
 	"strings"
 	"testing"
 
-	"qinqin/internal/dict"
 	"qinqin/internal/lemma"
+	"qinqin/internal/pack"
 	"qinqin/internal/packs"
 )
 
@@ -86,7 +86,7 @@ func TestLemmaPackTakesEffectWithoutARestart(t *testing.T) {
 		"language":"xh","license":"CC0-1.0","attribution":"Qinqin test fixtures","format":"json"}`), 0o644)
 	os.WriteFile(filepath.Join(dir, "dictionary.json"), []byte(`{"entries":[
 		{"written":"hablar","kind":"word","readings":[{"type":"latin","value":"hablar"}],"glosses":["to speak"]}]}`), 0o644)
-	p, err := dict.LoadPack(dir)
+	p, err := pack.LoadPack(dir)
 	if err != nil {
 		t.Fatal(err)
 	}

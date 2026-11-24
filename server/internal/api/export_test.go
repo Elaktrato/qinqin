@@ -7,8 +7,8 @@ import (
 	"time"
 
 	"qinqin/internal/auth"
-	"qinqin/internal/dict"
 	"qinqin/internal/model"
+	"qinqin/internal/pack"
 )
 
 // Test hooks: the clock the stage store reads, the channel a finished
@@ -27,7 +27,7 @@ func WithPackLock(lock, unlock *func()) Option {
 }
 
 // WithImporter replaces packs.Import in background import jobs.
-func WithImporter(f func(context.Context, *sql.DB, dict.Pack) (string, error)) Option {
+func WithImporter(f func(context.Context, *sql.DB, pack.Pack) (string, error)) Option {
 	return func(s *server) { s.importPack = f }
 }
 

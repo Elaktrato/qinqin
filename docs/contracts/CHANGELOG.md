@@ -5,6 +5,17 @@ follow (a removed route form, a new or retired fixture, a changed answer); typo 
 logged. Earlier changes: the error catalogue's own changelog in [`auth/README.md`](auth/README.md#changelog)
 (#168).
 
+## #192 — one pack system on the server
+
+No fixture changes; `packages/pack-types.json` is unchanged and still decoded by the Go and web tests. Two
+answers can differ:
+
+- **`GET /api/admin/packs`:** re-importing an unchanged components, audio or font pack (a re-seed, the same
+  upload again) no longer changes its `updatedAt`, as for the other types already; nothing is rewritten.
+- **`pack_invalid` detail:** a manifest that breaks two own-format rules at once (for example a lemma-rules
+  pack with the format `themes-json`) now names the rule of its own type. Every other validation message is
+  unchanged.
+
 ## #198 — the v0.3 compatibility layer is removed
 
 v0.3.x clients are no longer supported.

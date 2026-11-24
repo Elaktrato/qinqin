@@ -8,6 +8,7 @@ import (
 
 	"qinqin/internal/dbtest"
 	"qinqin/internal/dict"
+	"qinqin/internal/pack"
 )
 
 func TestJSONPackIdenticalLinesGiveOneSense(t *testing.T) {
@@ -52,12 +53,12 @@ func TestCompressedReadersRejectCorruptInput(t *testing.T) {
 		for _, format := range []string{"cedict", "unihan"} {
 			t.Run(name+"/"+format, func(t *testing.T) {
 				dir := writeCompressedPack(t, compressedManifest(format, "zh"), "dictionary.txt.gz", payload)
-				pack, err := dict.LoadPack(dir)
+				pk, err := pack.LoadPack(dir)
 				if err != nil {
 					t.Fatalf("LoadPack: %v", err)
 				}
-				_, err = dict.ImportLexicon(context.Background(), dbtest.Open(t), &pack)
-				if !errors.Is(err, dict.ErrInvalidPack) {
+				_, err = dict.ImportLexicon(context.Background(), dbtest.Open(t), &pk)
+				if !errors.Is(err, pack.ErrInvalidPack) {
 					t.Errorf("ImportLexicon = %v, want ErrInvalidPack", err)
 				}
 			})
@@ -73,7 +74,7 @@ func TestUnihanZipMissingRequiredMember(t *testing.T) {
 		}
 	}
 	_, err := dict.ImportLexicon(context.Background(), dbtest.Open(t), unihanZipPack(t, members))
-	if !errors.Is(err, dict.ErrInvalidPack) || !strings.Contains(err.Error(), "Unihan_Variants.txt") {
+	if !errors.Is(err, pack.ErrInvalidPack) || !strings.Contains(err.Error(), "Unihan_Variants.txt") {
 		t.Errorf("ImportLexicon = %v, want ErrInvalidPack naming the missing member", err)
 	}
 }
@@ -120,10 +121,10 @@ func TestUnihanResultCountsPackEntriesNotBareRadicals(t *testing.T) {
 
 func TestImportLexiconUnimplementedFormat(t *testing.T) {
 	m := unihanManifest
-	m.ID, m.Format = "freq-as-dict", dict.FormatFreqCSV
-	pack := lexPack(t, m, "dictionary.txt", "x\n")
-	_, err := dict.ImportLexicon(context.Background(), dbtest.Open(t), pack)
-	if !errors.Is(err, dict.ErrInvalidPack) || !strings.Contains(err.Error(), "not implemented") {
+	m.ID, m.Format = "freq-as-dict", pack.FormatFreqCSV
+	pk := lexPack(t, m, "dictionary.txt", "x\n")
+	_, err := dict.ImportLexicon(context.Background(), dbtest.Open(t), pk)
+	if !errors.Is(err, pack.ErrInvalidPack) || !strings.Contains(err.Error(), "not implemented") {
 		t.Errorf("ImportLexicon = %v, want ErrInvalidPack not implemented", err)
 	}
 }

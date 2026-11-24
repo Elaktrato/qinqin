@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"qinqin/internal/dict"
+	"qinqin/internal/pack"
 )
 
 // TestCommittedPackNotices: every committed pack decides whether it
@@ -41,7 +41,7 @@ func TestCommittedPackNotices(t *testing.T) {
 	for _, p := range packs {
 		m := p.pack.Manifest
 		seen = append(seen, m.ID)
-		if err := dict.ValidateNotice(m.Notice); err != nil {
+		if err := pack.ValidateNotice(m.Notice); err != nil {
 			t.Errorf("%s: %v", m.ID, err)
 		}
 		wants, needs := needNotice[m.ID]

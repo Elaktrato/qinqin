@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"qinqin/internal/dict"
+	"qinqin/internal/pack"
 )
 
 // cedictFixture is the committed CC-CEDICT sample, relative to this
@@ -17,7 +18,7 @@ const cedictFixture = "testdata/cedict-sample.txt"
 
 // cedictManifest is the manifest of the pack loadCedictFixture builds
 // around the committed sample.
-var cedictManifest = dict.Manifest{
+var cedictManifest = pack.Manifest{
 	ID:          "cedict-sample",
 	Name:        "CC-CEDICT sample",
 	Version:     "1.0",
@@ -30,7 +31,7 @@ var cedictManifest = dict.Manifest{
 
 // loadCedictFixture builds the pack around the committed sample: its
 // manifest plus a dictionary.txt holding the fixture's lines verbatim.
-func loadCedictFixture(t *testing.T) dict.Pack {
+func loadCedictFixture(t *testing.T) pack.Pack {
 	t.Helper()
 	data, err := os.ReadFile(cedictFixture)
 	if err != nil {
@@ -43,11 +44,11 @@ func loadCedictFixture(t *testing.T) dict.Pack {
 	}
 	mustWriteFile(t, filepath.Join(dir, "manifest.json"), string(manifest))
 	mustWriteFile(t, filepath.Join(dir, "dictionary.txt"), string(data))
-	pack, err := dict.LoadPack(dir)
+	pk, err := pack.LoadPack(dir)
 	if err != nil {
 		t.Fatalf("LoadPack(cedict sample): %v", err)
 	}
-	return pack
+	return pk
 }
 
 // wantVariants asserts the entry's active variants are exactly want, by

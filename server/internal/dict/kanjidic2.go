@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"qinqin/internal/model"
+	"qinqin/internal/pack"
 )
 
 // kanjidic2File is the data file of a format "kanjidic2" dictionary
@@ -158,12 +159,12 @@ func ParseKanjidic2(r io.Reader) ([]RawEntry, error) {
 func readKanjidic2Pack(dir string) ([]entry, error) {
 	f, err := openMaybeGz(filepath.Join(dir, kanjidic2File))
 	if err != nil {
-		return nil, fmt.Errorf("%w: read %s of %s: %v", ErrInvalidPack, kanjidic2File, dir, err)
+		return nil, fmt.Errorf("%w: read %s of %s: %v", pack.ErrInvalidPack, kanjidic2File, dir, err)
 	}
 	defer f.Close()
 	raw, err := ParseKanjidic2(f)
 	if err != nil {
-		return nil, fmt.Errorf("%w: parse %s of %s: %v", ErrInvalidPack, kanjidic2File, dir, err)
+		return nil, fmt.Errorf("%w: parse %s of %s: %v", pack.ErrInvalidPack, kanjidic2File, dir, err)
 	}
 	es := make([]entry, len(raw))
 	for i, r := range raw {

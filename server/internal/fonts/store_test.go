@@ -9,8 +9,8 @@ import (
 	"testing"
 
 	"qinqin/internal/dbtest"
-	"qinqin/internal/dict"
 	"qinqin/internal/fonts"
+	"qinqin/internal/pack"
 )
 
 var (
@@ -78,34 +78,34 @@ func TestImportRefusesBadPacks(t *testing.T) {
 		}
 	}
 	for name, tc := range map[string]struct {
-		pack func(t *testing.T) dict.Pack
+		pack func(t *testing.T) pack.Pack
 		want string
 	}{
-		"overlapping ranges": {func(t *testing.T) dict.Pack {
+		"overlapping ranges": {func(t *testing.T) pack.Pack {
 			return writePack(t, "x", sansHans("400", sliceSpec{data: sliceA, rng: "U+20-7E"}, sliceSpec{data: sliceB, rng: "U+7E"}))
 		}, "faces.json: overlapping-range at $.faces[0].slices[1].unicodeRange"},
-		"not WOFF2": {func(t *testing.T) dict.Pack {
+		"not WOFF2": {func(t *testing.T) pack.Pack {
 			return writePack(t, "x", sansHans("400", sliceSpec{data: []byte("OTTO-not-woff2"), rng: "U+41"}))
 		}, "does not start with wOF2"},
-		"wrong hash": {func(t *testing.T) dict.Pack {
+		"wrong hash": {func(t *testing.T) pack.Pack {
 			return writePack(t, "x", sansHans("400", sliceSpec{data: sliceA, rng: "U+41", write: func(path string, _ []byte) {
 				os.WriteFile(path, sliceB, 0o644)
 			}}))
 		}, "sha256 does not match"},
-		"symlink": {func(t *testing.T) dict.Pack {
+		"symlink": {func(t *testing.T) pack.Pack {
 			return writePack(t, "x", sansHans("400", sliceSpec{data: sliceA, rng: "U+41", write: symlink}))
 		}, "not a regular file"},
-		"oversize": {func(t *testing.T) dict.Pack {
+		"oversize": {func(t *testing.T) pack.Pack {
 			return writePack(t, "x", sansHans("400", sliceSpec{data: append(woff2(""), make([]byte, fonts.MaxSliceBytes)...), rng: "U+41"}))
 		}, "exceeds"},
-		"missing file": {func(t *testing.T) dict.Pack {
+		"missing file": {func(t *testing.T) pack.Pack {
 			return writePack(t, "x", sansHans("400", sliceSpec{data: sliceA, rng: "U+41", write: func(string, []byte) {}}))
 		}, "no such file"},
 	} {
 		t.Run(name, func(t *testing.T) {
 			sqlDB, store := dbtest.Open(t), t.TempDir()
 			_, err := fonts.Import(ctx, sqlDB, tc.pack(t), store)
-			if !errors.Is(err, dict.ErrInvalidPack) || !strings.Contains(err.Error(), tc.want) {
+			if !errors.Is(err, pack.ErrInvalidPack) || !strings.Contains(err.Error(), tc.want) {
 				t.Fatalf("err = %v, want ErrInvalidPack naming %q", err, tc.want)
 			}
 			if got := blobs(t, store); len(got) != 0 {
@@ -125,7 +125,7 @@ func TestImportRefusesAFaceAnotherPackProvides(t *testing.T) {
 		t.Fatal(err)
 	}
 	_, err := fonts.Import(ctx, sqlDB, writePack(t, "second", sansHans("400", sliceSpec{data: sliceB, rng: "U+41"})), store)
-	if !errors.Is(err, dict.ErrInvalidPack) || !strings.Contains(err.Error(), `"first"`) || !strings.Contains(err.Error(), "sans/Hans 400 normal") {
+	if !errors.Is(err, pack.ErrInvalidPack) || !strings.Contains(err.Error(), `"first"`) || !strings.Contains(err.Error(), "sans/Hans 400 normal") {
 		t.Fatalf("err = %v, want a refusal naming the face and the pack first", err)
 	}
 	if got := blobs(t, store); !slices.Equal(got, []string{blobName(sliceA)}) {
@@ -233,8 +233,8 @@ func TestFacesOrder(t *testing.T) {
 
 func TestCheckPackRefusesOtherTypes(t *testing.T) {
 	p := writePack(t, "x", sansHans("400", sliceSpec{data: sliceA, rng: "U+41"}))
-	p.Manifest.Type, p.Manifest.Format = dict.TypeTheme, dict.FormatThemesJSON
-	if _, err := fonts.CheckPack(p); !errors.Is(err, dict.ErrInvalidPack) {
+	p.Manifest.Type, p.Manifest.Format = pack.TypeTheme, pack.FormatThemesJSON
+	if _, err := fonts.CheckPack(p); !errors.Is(err, pack.ErrInvalidPack) {
 		t.Errorf("CheckPack(theme) = %v", err)
 	}
 }

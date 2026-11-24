@@ -15,8 +15,7 @@ import (
 	"strings"
 	"time"
 
-	"qinqin/internal/dict"
-	"qinqin/internal/packtype"
+	"qinqin/internal/pack"
 )
 
 // Retention is how long a replaced or tombstoned revision's file stays on
@@ -774,14 +773,14 @@ func AffectedIDs(ctx context.Context, q Querier, typ, packID, language string) [
 			ids = append(ids, id)
 		}
 	}
-	if typ != dict.TypeDictionary {
+	if typ != pack.Lexicon().Type {
 		add(typ + "." + packID)
 		return ids
 	}
 	add(string(TypeLexicon) + "." + language)
 	// The packages that require this language's lexicon reference it.
 	var dependents []struct{ typ, sql string }
-	for _, d := range packtype.All {
+	for _, d := range pack.All {
 		if d.RequiresLexicon {
 			dependents = append(dependents, struct{ typ, sql string }{d.Package,
 				`SELECT pack_id FROM ` + d.Registry + ` WHERE language = ? AND deleted_at IS NULL ORDER BY pack_id`})

@@ -16,6 +16,7 @@ import (
 	"qinqin/internal/lang"
 	"qinqin/internal/levels"
 	"qinqin/internal/model"
+	"qinqin/internal/pack"
 )
 
 // hskMini is the shared levels pack fixture, relative to this package's
@@ -25,7 +26,7 @@ const hskMini = "testdata/hsk-mini"
 // importDictionary writes a dictionary pack (manifest m plus one data
 // file) into a temp directory and imports it into the lexicon with the
 // real importer.
-func importDictionary(t *testing.T, sqlDB *sql.DB, m dict.Manifest, file, content string) {
+func importDictionary(t *testing.T, sqlDB *sql.DB, m pack.Manifest, file, content string) {
 	t.Helper()
 	dir := t.TempDir()
 	manifest, err := json.Marshal(m)
@@ -37,7 +38,7 @@ func importDictionary(t *testing.T, sqlDB *sql.DB, m dict.Manifest, file, conten
 			t.Fatal(err)
 		}
 	}
-	p, err := dict.LoadPack(dir)
+	p, err := pack.LoadPack(dir)
 	if err != nil {
 		t.Fatalf("LoadPack(%s): %v", m.ID, err)
 	}
@@ -51,7 +52,7 @@ func importDictionary(t *testing.T, sqlDB *sql.DB, m dict.Manifest, file, conten
 func importCedict(t *testing.T, sqlDB *sql.DB, lines ...string) {
 	t.Helper()
 	lang.Register(lang.Zh{})
-	importDictionary(t, sqlDB, dict.Manifest{
+	importDictionary(t, sqlDB, pack.Manifest{
 		ID: "cedict-test", Name: "CC-CEDICT test", Version: "1", Type: "dictionary", Language: "zh",
 		License: "CC BY-SA 4.0", Attribution: "MDBG", Format: "cedict",
 	}, "dictionary.txt", strings.Join(lines, "\n")+"\n")
@@ -117,7 +118,7 @@ func levelsManifest(id, format string) string {
 // buildPackFormat writes a manifest.json of the given format and a
 // levels.json into a fresh temp directory and loads the pack from there.
 // An empty levelsJSON writes no data file.
-func buildPackFormat(t *testing.T, id, format, levelsJSON string) dict.Pack {
+func buildPackFormat(t *testing.T, id, format, levelsJSON string) pack.Pack {
 	t.Helper()
 	dir := t.TempDir()
 	if err := os.WriteFile(filepath.Join(dir, "manifest.json"), []byte(levelsManifest(id, format)), 0o644); err != nil {
@@ -128,16 +129,16 @@ func buildPackFormat(t *testing.T, id, format, levelsJSON string) dict.Pack {
 			t.Fatalf("write levels.json: %v", err)
 		}
 	}
-	pack, err := dict.LoadPack(dir)
+	pk, err := pack.LoadPack(dir)
 	if err != nil {
 		t.Fatalf("load pack %s: %v", id, err)
 	}
-	return pack
+	return pk
 }
 
 // buildPack writes a manifest.json (format json) and levels.json into a
 // fresh temp directory and loads the pack from there.
-func buildPack(t *testing.T, id, levelsJSON string) dict.Pack {
+func buildPack(t *testing.T, id, levelsJSON string) pack.Pack {
 	t.Helper()
 	return buildPackFormat(t, id, "json", levelsJSON)
 }
@@ -150,11 +151,11 @@ func TestSchemeImportAndBadges(t *testing.T) {
 	ctx := context.Background()
 	fe := seedFixture(t, sqlDB)
 
-	pack, err := dict.LoadPack(hskMini)
+	pk, err := pack.LoadPack(hskMini)
 	if err != nil {
 		t.Fatalf("load fixture pack: %v", err)
 	}
-	res, err := levels.Import(ctx, sqlDB, pack)
+	res, err := levels.Import(ctx, sqlDB, pk)
 	if err != nil {
 		t.Fatalf("import fixture scheme: %v", err)
 	}
@@ -234,7 +235,7 @@ func TestSchemeImportAndBadges(t *testing.T) {
 
 	// Re-importing the same pack replaces it: the counts repeat, one
 	// scheme row remains, and no duplicate memberships linger.
-	res2, err := levels.Import(ctx, sqlDB, pack)
+	res2, err := levels.Import(ctx, sqlDB, pk)
 	if err != nil {
 		t.Fatalf("re-import fixture scheme: %v", err)
 	}
@@ -273,10 +274,10 @@ func TestSchemeEntryIDs(t *testing.T) {
 
 	// 你好 joins both levels; 谢谢 only level 2. The characters derive
 	// into the lowest level whose words are written with them.
-	pack := buildPack(t, "scheme-members", `{"unit":"word","levels":[
+	pk := buildPack(t, "scheme-members", `{"unit":"word","levels":[
 		{"name":"1","entries":["你好"]},
 		{"name":"2","entries":["你好","谢谢"]}]}`)
-	if _, err := levels.Import(ctx, sqlDB, pack); err != nil {
+	if _, err := levels.Import(ctx, sqlDB, pk); err != nil {
 		t.Fatalf("import scheme: %v", err)
 	}
 	schemes, err := levels.List(ctx, sqlDB)
@@ -320,10 +321,10 @@ func TestDerivedLevelKeepsLowest(t *testing.T) {
 	hao := lexID(t, sqlDB, "character", "好")
 	ren := lexID(t, sqlDB, "character", "人")
 
-	pack := buildPack(t, "lowest", `{"unit":"word","levels":[
+	pk := buildPack(t, "lowest", `{"unit":"word","levels":[
 		{"name":"1","entries":["你好","你好"]},
 		{"name":"2","entries":["好人"]}]}`)
-	res, err := levels.Import(ctx, sqlDB, pack)
+	res, err := levels.Import(ctx, sqlDB, pk)
 	if err != nil {
 		t.Fatalf("import scheme: %v", err)
 	}
@@ -384,10 +385,10 @@ func TestSingleCharacterWords(t *testing.T) {
 	hao := lexID(t, sqlDB, "character", "好")
 	ren := lexID(t, sqlDB, "character", "人")
 
-	pack := buildPack(t, "single", `{"unit":"word","levels":[
+	pk := buildPack(t, "single", `{"unit":"word","levels":[
 		{"name":"1","entries":["好","你好"]},
 		{"name":"2","entries":["好人","人","猫"]}]}`)
-	res, err := levels.Import(ctx, sqlDB, pack)
+	res, err := levels.Import(ctx, sqlDB, pk)
 	if err != nil {
 		t.Fatalf("import scheme: %v", err)
 	}
@@ -467,11 +468,11 @@ func TestOneLevelPerEntry(t *testing.T) {
 	hao := lexID(t, sqlDB, "character", "好")
 	ren := lexID(t, sqlDB, "character", "人")
 
-	pack := buildPack(t, "lowest-only", `{"unit":"word","levels":[
+	pk := buildPack(t, "lowest-only", `{"unit":"word","levels":[
 		{"name":"1","entries":["你好"]},
 		{"name":"2","entries":["你好","好人"]},
 		{"name":"3","entries":["好","人","你好"]}]}`)
-	if _, err := levels.Import(ctx, sqlDB, pack); err != nil {
+	if _, err := levels.Import(ctx, sqlDB, pk); err != nil {
 		t.Fatalf("import: %v", err)
 	}
 	for _, c := range []struct {
@@ -504,10 +505,10 @@ func TestSkippedUnknownForms(t *testing.T) {
 	ni := lexID(t, sqlDB, "character", "你")
 	hao := lexID(t, sqlDB, "character", "好")
 
-	pack := buildPack(t, "skipped", `{"unit":"word","levels":[
+	pk := buildPack(t, "skipped", `{"unit":"word","levels":[
 		{"name":"1","entries":["你好","电脑"]},
 		{"name":"2","entries":["谢谢"]}]}`)
-	res, err := levels.Import(ctx, sqlDB, pack)
+	res, err := levels.Import(ctx, sqlDB, pk)
 	if err != nil {
 		t.Fatalf("import scheme: %v", err)
 	}
@@ -605,11 +606,11 @@ func TestUninstallAndReimportRevives(t *testing.T) {
 	ctx := context.Background()
 	fe := seedFixture(t, sqlDB)
 
-	pack, err := dict.LoadPack(hskMini)
+	pk, err := pack.LoadPack(hskMini)
 	if err != nil {
 		t.Fatalf("load fixture pack: %v", err)
 	}
-	if _, err := levels.Import(ctx, sqlDB, pack); err != nil {
+	if _, err := levels.Import(ctx, sqlDB, pk); err != nil {
 		t.Fatalf("import fixture scheme: %v", err)
 	}
 	schemes, err := levels.List(ctx, sqlDB)
@@ -644,7 +645,7 @@ func TestUninstallAndReimportRevives(t *testing.T) {
 	}
 
 	// Re-importing the pack revives the scheme and its memberships.
-	if _, err := levels.Import(ctx, sqlDB, pack); err != nil {
+	if _, err := levels.Import(ctx, sqlDB, pk); err != nil {
 		t.Fatalf("re-import fixture scheme: %v", err)
 	}
 	if got, err := levels.ForEntry(ctx, sqlDB, fe.chars["好"]); err != nil || len(got) != 1 ||
@@ -714,11 +715,11 @@ func TestSharedFormResolvesToBestRankedEntry(t *testing.T) {
 	lang.Register(lang.Ja{})
 	sqlDB := dbtest.Open(t)
 	ctx := context.Background()
-	importDictionary(t, sqlDB, dict.Manifest{
+	importDictionary(t, sqlDB, pack.Manifest{
 		ID: "jmdict-test", Name: "JMdict test", Version: "1", Type: "dictionary", Language: "ja",
 		License: "CC BY-SA 4.0", Attribution: "EDRDG", Format: "jmdict",
 	}, "jmdict.xml", sharedFormJMdict)
-	importDictionary(t, sqlDB, dict.Manifest{
+	importDictionary(t, sqlDB, pack.Manifest{
 		ID: "kanjidic2", Name: "KANJIDIC2 test", Version: "1", Type: "dictionary", Language: "ja",
 		License: "CC BY-SA 4.0", Attribution: "EDRDG", Format: "kanjidic2",
 	}, "kanjidic2.xml", sharedFormKanjidic2)
@@ -745,11 +746,11 @@ func TestSharedFormResolvesToBestRankedEntry(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	pack, err := dict.LoadPack(dir)
+	pk, err := pack.LoadPack(dir)
 	if err != nil {
 		t.Fatal(err)
 	}
-	res, err := levels.Import(ctx, sqlDB, pack)
+	res, err := levels.Import(ctx, sqlDB, pk)
 	if err != nil {
 		t.Fatalf("import scheme: %v", err)
 	}
@@ -788,7 +789,7 @@ func TestImportRejectsInvalidPacks(t *testing.T) {
 	ctx := context.Background()
 
 	// A dictionary pack is not a levels pack.
-	dictPack, err := dict.LoadPack("../dict/testdata/mkgloss")
+	dictPack, err := pack.LoadPack("../dict/testdata/mkgloss")
 	if err != nil {
 		t.Fatalf("load dictionary fixture: %v", err)
 	}
@@ -804,17 +805,17 @@ func TestImportRejectsInvalidPacks(t *testing.T) {
 		"blank form":     `{"unit":"word","levels":[{"name":"1","entries":["你好",""]}]}`,
 		"malformed json": `{"unit":`,
 	} {
-		if _, err := levels.Import(ctx, sqlDB, buildPack(t, "invalid-"+name, levelsJSON)); !errors.Is(err, dict.ErrInvalidPack) {
+		if _, err := levels.Import(ctx, sqlDB, buildPack(t, "invalid-"+name, levelsJSON)); !errors.Is(err, pack.ErrInvalidPack) {
 			t.Errorf("import %s err = %v, want ErrInvalidPack", name, err)
 		}
 	}
 
 	// A missing levels.json and a non-json format are invalid too.
-	if _, err := levels.Import(ctx, sqlDB, buildPack(t, "no-data", "")); !errors.Is(err, dict.ErrInvalidPack) {
+	if _, err := levels.Import(ctx, sqlDB, buildPack(t, "no-data", "")); !errors.Is(err, pack.ErrInvalidPack) {
 		t.Errorf("import pack without levels.json err = %v, want ErrInvalidPack", err)
 	}
 	if _, err := levels.Import(ctx, sqlDB, buildPackFormat(t, "cedict-format", "cedict",
-		`{"unit":"word","levels":[{"name":"1","entries":["你好"]}]}`)); !errors.Is(err, dict.ErrInvalidPack) {
+		`{"unit":"word","levels":[{"name":"1","entries":["你好"]}]}`)); !errors.Is(err, pack.ErrInvalidPack) {
 		t.Errorf("import cedict-format levels pack err = %v, want ErrInvalidPack", err)
 	}
 }
@@ -823,10 +824,10 @@ func TestSkippedFormsAreListedOnce(t *testing.T) {
 	lang.Register(lang.Zh{})
 	sqlDB := dbtest.Open(t)
 	importCedict(t, sqlDB, lineNihao)
-	pack := buildPack(t, "dup-skipped", `{"unit":"word","levels":[
+	pk := buildPack(t, "dup-skipped", `{"unit":"word","levels":[
 		{"name":"1","entries":["电脑","你好","电脑"]},
 		{"name":"2","entries":["电脑"]}]}`)
-	res, err := levels.Import(context.Background(), sqlDB, pack)
+	res, err := levels.Import(context.Background(), sqlDB, pk)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -853,7 +854,7 @@ func TestLevelNamesAndFormsAreTrimmed(t *testing.T) {
 
 	// "1" and " 1" are the same level name.
 	if _, err := levels.Import(ctx, sqlDB, buildPack(t, "ws-names",
-		`{"unit":"word","levels":[{"name":"1","entries":["你好"]},{"name":" 1 ","entries":["谢谢"]}]}`)); !errors.Is(err, dict.ErrInvalidPack) {
+		`{"unit":"word","levels":[{"name":"1","entries":["你好"]},{"name":" 1 ","entries":["谢谢"]}]}`)); !errors.Is(err, pack.ErrInvalidPack) {
 		t.Errorf("names 1 and \" 1 \" err = %v, want ErrInvalidPack", err)
 	}
 

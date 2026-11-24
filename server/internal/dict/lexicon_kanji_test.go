@@ -9,9 +9,10 @@ import (
 
 	"qinqin/internal/dbtest"
 	"qinqin/internal/dict"
+	"qinqin/internal/pack"
 )
 
-func kanjidicLexPack(t *testing.T, xml string) *dict.Pack {
+func kanjidicLexPack(t *testing.T, xml string) *pack.Pack {
 	t.Helper()
 	if xml == "" {
 		data, err := os.ReadFile(kanjidic2Fixture)

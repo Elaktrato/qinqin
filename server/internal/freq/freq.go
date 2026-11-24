@@ -24,9 +24,8 @@ import (
 	"sort"
 	"strconv"
 	"strings"
-	"time"
 
-	"qinqin/internal/dict"
+	"qinqin/internal/pack"
 )
 
 const (
@@ -59,6 +58,11 @@ type row struct {
 	value                  float64
 }
 
+// Result counts what one frequency import stored: its rows.
+type Result struct {
+	Entries int
+}
+
 // Import installs the frequency pack p: its frequency_packs row and every
 // frequency row, in ONE transaction, so a malformed row — which aborts
 // the pack with an error naming the file and row index — leaves nothing
@@ -82,13 +86,13 @@ type row struct {
 // stores values as ranks; "occurrence-based" turns counts into dense
 // ranks, the highest count being rank 1. displayValue is kept as the
 // hit's Display.
-func Import(ctx context.Context, sqlDB *sql.DB, p *dict.Pack) (dict.Result, error) {
+func Import(ctx context.Context, sqlDB *sql.DB, p *pack.Pack) (Result, error) {
 	m := p.Manifest
 	if err := m.Validate(); err != nil {
-		return dict.Result{}, fmt.Errorf("%w: %v", dict.ErrInvalidPack, err)
+		return Result{}, fmt.Errorf("%w: %v", pack.ErrInvalidPack, err)
 	}
-	if m.Type != dict.TypeFrequency {
-		return dict.Result{}, fmt.Errorf("%w: %q is a %s pack, not a frequency pack", dict.ErrInvalidPack, m.ID, m.Type)
+	if m.Type != pack.TypeFrequency {
+		return Result{}, fmt.Errorf("%w: %q is a %s pack, not a frequency pack", pack.ErrInvalidPack, m.ID, m.Type)
 	}
 
 	var (
@@ -96,69 +100,43 @@ func Import(ctx context.Context, sqlDB *sql.DB, p *dict.Pack) (dict.Result, erro
 		err  error
 	)
 	switch m.Format {
-	case dict.FormatFreqCSV:
+	case pack.FormatFreqCSV:
 		rows, err = readCSV(p.Dir)
-	case dict.FormatYomitanFreq:
+	case pack.FormatYomitanFreq:
 		rows, err = readYomitan(p.Dir)
 	default:
 		err = fmt.Errorf("format %q is not a frequency format (want yomitan-freq or freq-csv)", m.Format)
 	}
 	if err != nil {
-		return dict.Result{}, fmt.Errorf("%w: frequency pack %s: %w", dict.ErrInvalidPack, m.ID, err)
+		return Result{}, fmt.Errorf("%w: frequency pack %s: %w", pack.ErrInvalidPack, m.ID, err)
 	}
 	hash := fingerprint(rows)
 
-	tx, err := sqlDB.BeginTx(ctx, nil)
+	tx, err := pack.BeginWrite(ctx, sqlDB)
 	if err != nil {
-		return dict.Result{}, fmt.Errorf("import frequency pack %s: %w", m.ID, err)
+		return Result{}, fmt.Errorf("import frequency pack %s: %w", m.ID, err)
 	}
 	defer tx.Rollback()
 
-	var (
-		id                                                    int64
-		name, version, language, license, attribution, notice string
-		oldHash                                               string
-		deleted                                               sql.NullString
-	)
-	err = tx.QueryRowContext(ctx, `
-		SELECT id, name, version, language, license, attribution, notice, content_hash, deleted_at
-		FROM frequency_packs WHERE pack_id = ?`, m.ID).
-		Scan(&id, &name, &version, &language, &license, &attribution, &notice, &oldHash, &deleted)
-	result := dict.Result{Entries: len(rows)}
-	switch {
-	case errors.Is(err, sql.ErrNoRows):
-		stamp := time.Now().UTC().Format(time.RFC3339)
-		if err = tx.QueryRowContext(ctx, `
-			INSERT INTO frequency_packs (pack_id, name, version, language, license, attribution, notice, ord, content_hash, updated_at)
-			VALUES (?, ?, ?, ?, ?, ?, ?, (SELECT COALESCE(MAX(ord), 0) + 1 FROM frequency_packs), ?, ?)
-			RETURNING id`,
-			m.ID, m.Name, m.Version, m.Language, m.License, m.Attribution, m.Notice, hash, stamp).Scan(&id); err != nil {
-			return dict.Result{}, fmt.Errorf("register frequency pack %s: %w", m.ID, err)
-		}
-	case err != nil:
-		return dict.Result{}, fmt.Errorf("import frequency pack %s: %w", m.ID, err)
-	default:
-		if !deleted.Valid && oldHash == hash && name == m.Name && version == m.Version &&
-			language == m.Language && license == m.License && attribution == m.Attribution && notice == m.Notice {
-			return result, nil // identical: nothing to write
-		}
-		if _, err = tx.ExecContext(ctx, `
-			UPDATE frequency_packs SET name = ?, version = ?, language = ?, license = ?, attribution = ?,
-				notice = ?, content_hash = ?, updated_at = ?, deleted_at = NULL
-			WHERE id = ?`,
-			m.Name, m.Version, m.Language, m.License, m.Attribution, m.Notice, hash,
-			time.Now().UTC().Format(time.RFC3339), id); err != nil {
-			return dict.Result{}, fmt.Errorf("update frequency pack %s: %w", m.ID, err)
-		}
-		if _, err = tx.ExecContext(ctx, `DELETE FROM frequency WHERE pack_id = ?`, id); err != nil {
-			return dict.Result{}, fmt.Errorf("replace frequency rows of %s: %w", m.ID, err)
-		}
+	result := Result{Entries: len(rows)}
+	id, changed, err := pack.UpsertRegistry(ctx, tx, pack.Registry{Table: "frequency_packs", PackID: m.ID, Stamp: pack.Now(),
+		Columns: pack.ManifestColumns(m, pack.Column{Name: "language", Value: m.Language},
+			pack.Column{Name: "content_hash", Value: hash},
+			pack.Column{Name: "ord", Expr: "(SELECT COALESCE(MAX(ord), 0) + 1 FROM frequency_packs)", InsertOnly: true})})
+	if err != nil {
+		return Result{}, fmt.Errorf("register frequency pack %s: %w", m.ID, err)
+	}
+	if !changed {
+		return result, nil // identical: nothing to write
+	}
+	if _, err = tx.ExecContext(ctx, `DELETE FROM frequency WHERE pack_id = ?`, id); err != nil {
+		return Result{}, fmt.Errorf("replace frequency rows of %s: %w", m.ID, err)
 	}
 	if err := insertRows(ctx, tx, id, rows); err != nil {
-		return dict.Result{}, fmt.Errorf("import frequency pack %s: %w", m.ID, err)
+		return Result{}, fmt.Errorf("import frequency pack %s: %w", m.ID, err)
 	}
 	if err := tx.Commit(); err != nil {
-		return dict.Result{}, fmt.Errorf("import frequency pack %s: %w", m.ID, err)
+		return Result{}, fmt.Errorf("import frequency pack %s: %w", m.ID, err)
 	}
 	return result, nil
 }
@@ -500,14 +478,14 @@ func denseRanks(rows []row) {
 
 // ErrNotFound reports an uninstall of an unknown or already uninstalled
 // frequency pack.
-var ErrNotFound = errors.New("freq: pack not found")
+var ErrNotFound = pack.NotFound("freq: pack not found")
 
 // Uninstall soft-deletes the pack with manifest id packID and removes its
 // frequency rows (they carry no tombstone; a reinstall rewrites them), in
 // one transaction. The pack keeps its priority (ord), so a reinstall takes
 // its old place. An unknown or already uninstalled pack returns ErrNotFound.
 func Uninstall(ctx context.Context, sqlDB *sql.DB, packID string) error {
-	tx, err := sqlDB.BeginTx(ctx, nil)
+	tx, err := pack.BeginWrite(ctx, sqlDB)
 	if err != nil {
 		return fmt.Errorf("uninstall frequency pack %s: %w", packID, err)
 	}
@@ -521,7 +499,7 @@ func Uninstall(ctx context.Context, sqlDB *sql.DB, packID string) error {
 	if err != nil {
 		return fmt.Errorf("uninstall frequency pack %s: %w", packID, err)
 	}
-	stamp := time.Now().UTC().Format(time.RFC3339)
+	stamp := pack.Now()
 	if _, err := tx.ExecContext(ctx, `
 		UPDATE frequency_packs SET deleted_at = ?, updated_at = ? WHERE id = ?`, stamp, stamp, id); err != nil {
 		return fmt.Errorf("uninstall frequency pack %s: %w", packID, err)
@@ -609,7 +587,7 @@ func (s Store) Rows(ctx context.Context, terms []string) ([]Row, error) {
 		rows, err := s.DB.QueryContext(ctx, `
 			SELECT f.term, f.reading, f.rank, f.display, p.id, p.name, p.ord, f.rowid
 			FROM frequency f JOIN frequency_packs p ON p.id = f.pack_id
-			WHERE p.deleted_at IS NULL AND f.term IN (`+strings.TrimSuffix(strings.Repeat("?,", len(chunk)), ",")+`)
+			WHERE p.deleted_at IS NULL AND f.term IN (`+pack.Placeholders(len(chunk))+`)
 			ORDER BY p.ord, p.id, f.rowid`, args...)
 		if err != nil {
 			return nil, err

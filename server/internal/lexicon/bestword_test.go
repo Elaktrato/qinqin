@@ -10,6 +10,7 @@ import (
 
 	"qinqin/internal/dict"
 	"qinqin/internal/lexicon"
+	"qinqin/internal/pack"
 )
 
 // bestWordJMdict is a JMdict excerpt in the real element and entity
@@ -94,7 +95,7 @@ const bestWordJMdict = `<?xml version="1.0" encoding="UTF-8"?>
 func importJMdict(t *testing.T, st lexicon.Store, xml string) {
 	t.Helper()
 	dir := t.TempDir()
-	manifest, err := json.Marshal(dict.Manifest{
+	manifest, err := json.Marshal(pack.Manifest{
 		ID: "jmdict-test", Name: "JMdict test", Version: "1", Type: "dictionary", Language: "ja",
 		License: "CC BY-SA 4.0", Attribution: "EDRDG", Format: "jmdict",
 	})
@@ -106,7 +107,7 @@ func importJMdict(t *testing.T, st lexicon.Store, xml string) {
 			t.Fatal(err)
 		}
 	}
-	p, err := dict.LoadPack(dir)
+	p, err := pack.LoadPack(dir)
 	if err != nil {
 		t.Fatal(err)
 	}

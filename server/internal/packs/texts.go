@@ -7,10 +7,11 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"unicode/utf8"
 
-	"qinqin/internal/dict"
+	"qinqin/internal/pack"
 )
 
 // A pack's licence texts: its LICENSE*, LICENCE*, ATTRIBUTION*, NOTICE* and
@@ -56,7 +57,8 @@ func isTextCandidate(name string) bool {
 
 // StoreTexts replaces the stored licence texts of pack (typ, packID) with
 // the licence files in dir and returns how many it stored. It reads the
-// files first and writes in tx; it never follows a symlink.
+// files first and writes in tx, nothing when the stored texts are the same;
+// it never follows a symlink.
 func StoreTexts(ctx context.Context, tx *sql.Tx, typ, packID, dir string) (int, error) {
 	entries, err := os.ReadDir(dir)
 	if err != nil {
@@ -101,10 +103,18 @@ func StoreTexts(ctx context.Context, tx *sql.Tx, typ, packID, dir string) (int, 
 		keep = append(keep, Text{Name: name, Text: string(b)})
 	}
 
+	rows := append([]Text{{Name: collectedMarker}}, keep...)
+	stored, err := storedTexts(ctx, tx, typ, packID)
+	if err != nil {
+		return 0, err
+	}
+	if slices.Equal(stored, rows) {
+		return len(keep), nil // unchanged: nothing to write
+	}
 	if err := deleteTexts(ctx, tx, typ, packID); err != nil {
 		return 0, err
 	}
-	for _, t := range append([]Text{{Name: collectedMarker}}, keep...) {
+	for _, t := range rows {
 		if _, err := tx.ExecContext(ctx, `INSERT INTO pack_texts (pack_type, pack_id, name, text) VALUES (?, ?, ?, ?)`,
 			typ, packID, t.Name, t.Text); err != nil {
 			return 0, fmt.Errorf("packs: store licence text %s of %s %s: %w", t.Name, typ, packID, err)
@@ -122,6 +132,25 @@ func deleteTexts(ctx context.Context, q execer, typ, packID string) error {
 		return fmt.Errorf("packs: delete licence texts of %s %s: %w", typ, packID, err)
 	}
 	return nil
+}
+
+// storedTexts returns every stored row of pack (typ, packID), the marker
+// included, by name.
+func storedTexts(ctx context.Context, q Querier, typ, packID string) ([]Text, error) {
+	rows, err := q.QueryContext(ctx, `SELECT name, text FROM pack_texts WHERE pack_type = ? AND pack_id = ? ORDER BY name`, typ, packID)
+	if err != nil {
+		return nil, fmt.Errorf("packs: read licence texts of %s %s: %w", typ, packID, err)
+	}
+	defer rows.Close()
+	var out []Text
+	for rows.Next() {
+		var t Text
+		if err := rows.Scan(&t.Name, &t.Text); err != nil {
+			return nil, fmt.Errorf("packs: read licence texts of %s %s: %w", typ, packID, err)
+		}
+		out = append(out, t)
+	}
+	return out, rows.Err()
 }
 
 // Texts returns the stored licence texts of pack (typ, packID) by name.
@@ -156,31 +185,27 @@ func TextsStored(ctx context.Context, q Querier, typ, packID string) (bool, erro
 }
 
 // RegistryID is the pack id of the registry row an import of manifest m
-// writes: the manifest id, except for the built-in kanjidic2 and unihan
-// dictionaries (dict.RegistryTerms).
-func RegistryID(m dict.Manifest) string {
-	if m.Type == dict.TypeDictionary {
-		id, _, _ := dict.RegistryTerms(m)
-		return id
-	}
-	return m.ID
+// writes (RegistryTerms).
+func RegistryID(m pack.Manifest) string {
+	id, _, _ := RegistryTerms(m)
+	return id
 }
 
 // storeTextsAfterImport keeps the licence texts of an imported pack in a
 // transaction of its own: each type importer commits its own transaction,
 // so this runs after it. A failure is returned (the pack is installed; a
 // re-import, which changes no data, stores the texts).
-func storeTextsAfterImport(ctx context.Context, sqlDB *sql.DB, pack dict.Pack) error {
-	tx, err := sqlDB.BeginTx(ctx, nil)
+func storeTextsAfterImport(ctx context.Context, sqlDB *sql.DB, pk pack.Pack) error {
+	tx, err := pack.BeginWrite(ctx, sqlDB)
 	if err != nil {
-		return fmt.Errorf("packs: pack %s installed, but its licence texts were not stored: %w", pack.ID, err)
+		return fmt.Errorf("packs: pack %s installed, but its licence texts were not stored: %w", pk.ID, err)
 	}
 	defer tx.Rollback()
-	if _, err := StoreTexts(ctx, tx, pack.Type, RegistryID(pack.Manifest), pack.Dir); err != nil {
-		return fmt.Errorf("packs: pack %s installed, but its licence texts were not stored: %w", pack.ID, err)
+	if _, err := StoreTexts(ctx, tx, pk.Type, RegistryID(pk.Manifest), pk.Dir); err != nil {
+		return fmt.Errorf("packs: pack %s installed, but its licence texts were not stored: %w", pk.ID, err)
 	}
 	if err := tx.Commit(); err != nil {
-		return fmt.Errorf("packs: pack %s installed, but its licence texts were not stored: %w", pack.ID, err)
+		return fmt.Errorf("packs: pack %s installed, but its licence texts were not stored: %w", pk.ID, err)
 	}
 	return nil
 }

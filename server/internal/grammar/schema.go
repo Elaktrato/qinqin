@@ -15,7 +15,7 @@ import (
 	"strings"
 	"unicode/utf8"
 
-	"qinqin/internal/dict"
+	"qinqin/internal/pack"
 )
 
 // lessonsFile is the data file of a grammar pack.
@@ -86,29 +86,29 @@ const (
 var idPattern = regexp.MustCompile(`^[a-z0-9]+(-[a-z0-9]+)*$`)
 
 // ReadData reads and validates the lessons.json in dir. The whole pack
-// is rejected on the first violation; the error wraps dict.ErrInvalidPack
+// is rejected on the first violation; the error wraps pack.ErrInvalidPack
 // and names the JSON path.
 func ReadData(dir string) (Data, error) {
 	raw, err := os.ReadFile(filepath.Join(dir, lessonsFile))
 	if err != nil {
-		return Data{}, fmt.Errorf("%w: read %s of %s: %v", dict.ErrInvalidPack, lessonsFile, dir, err)
+		return Data{}, fmt.Errorf("%w: read %s of %s: %v", pack.ErrInvalidPack, lessonsFile, dir, err)
 	}
 	if len(raw) > maxFileBytes {
-		return Data{}, fmt.Errorf("%w: %s of %s is too large (%d bytes, at most %d)", dict.ErrInvalidPack, lessonsFile, dir, len(raw), maxFileBytes)
+		return Data{}, fmt.Errorf("%w: %s of %s is too large (%d bytes, at most %d)", pack.ErrInvalidPack, lessonsFile, dir, len(raw), maxFileBytes)
 	}
 	var d Data
 	dec := json.NewDecoder(bytes.NewReader(raw))
 	dec.DisallowUnknownFields()
 	if err := dec.Decode(&d); err != nil {
-		return Data{}, fmt.Errorf("%w: parse %s of %s: %v", dict.ErrInvalidPack, lessonsFile, dir, err)
+		return Data{}, fmt.Errorf("%w: parse %s of %s: %v", pack.ErrInvalidPack, lessonsFile, dir, err)
 	}
 	// Anything but whitespace after the document is a mistake (two
 	// concatenated files, a stray brace), not something to ignore.
 	if _, err := dec.Token(); err != io.EOF {
-		return Data{}, fmt.Errorf("%w: parse %s of %s: trailing data after the JSON document", dict.ErrInvalidPack, lessonsFile, dir)
+		return Data{}, fmt.Errorf("%w: parse %s of %s: trailing data after the JSON document", pack.ErrInvalidPack, lessonsFile, dir)
 	}
 	if err := d.validate(); err != nil {
-		return Data{}, fmt.Errorf("%w: %s of %s: %v", dict.ErrInvalidPack, lessonsFile, dir, err)
+		return Data{}, fmt.Errorf("%w: %s of %s: %v", pack.ErrInvalidPack, lessonsFile, dir, err)
 	}
 	d.normalize()
 	return d, nil

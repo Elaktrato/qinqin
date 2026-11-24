@@ -1,4 +1,4 @@
-package packtype_test
+package pack_test
 
 import (
 	"encoding/json"
@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"qinqin/internal/packtype"
+	"qinqin/internal/pack"
 )
 
 // docs/contracts/packages/pack-types.json is the clients' copy of the
@@ -30,11 +30,11 @@ func TestTableMatchesTheContract(t *testing.T) {
 	if err := json.Unmarshal(raw, &fx); err != nil {
 		t.Fatal(err)
 	}
-	if len(fx.Types) != len(packtype.All) {
-		t.Fatalf("fixture has %d types, the table %d", len(fx.Types), len(packtype.All))
+	if len(fx.Types) != len(pack.All) {
+		t.Fatalf("fixture has %d types, the table %d", len(fx.Types), len(pack.All))
 	}
-	shape := map[packtype.Languages]string{packtype.One: "one", packtype.Many: "many", packtype.None: "none"}
-	for i, d := range packtype.All {
+	shape := map[pack.Languages]string{pack.One: "one", pack.Many: "many", pack.None: "none"}
+	for i, d := range pack.All {
 		c := fx.Types[i]
 		pkg := ""
 		if c.Package != nil {

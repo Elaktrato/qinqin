@@ -15,16 +15,15 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
-	"io"
 	"log"
 	"os"
 	"path/filepath"
 	"sync"
 	"time"
 
-	"qinqin/internal/dict"
 	"qinqin/internal/lang"
 	"qinqin/internal/lemma"
+	"qinqin/internal/pack"
 )
 
 // DataFile is the data file of a lemma-rules pack.
@@ -35,7 +34,7 @@ const MaxFileBytes = 1 << 20
 
 // ErrNotFound reports an uninstall of an unknown or already uninstalled
 // pack.
-var ErrNotFound = errors.New("lemmapack: pack not found")
+var ErrNotFound = pack.NotFound("lemmapack: pack not found")
 
 // Result describes an import.
 type Result struct {
@@ -57,23 +56,23 @@ func Hash(raw []byte) string {
 }
 
 // LoadFile reads and validates the rules.json of the pack in dir. Errors
-// are dict.ErrInvalidPack naming the file.
+// are pack.ErrInvalidPack naming the file.
 func LoadFile(dir string) ([]byte, *lemma.Table, error) {
 	f, err := os.Open(filepath.Join(dir, DataFile))
 	if err != nil {
-		return nil, nil, fmt.Errorf("%w: %s: %v", dict.ErrInvalidPack, DataFile, err)
+		return nil, nil, fmt.Errorf("%w: %s: %v", pack.ErrInvalidPack, DataFile, err)
 	}
 	defer f.Close()
-	raw, err := io.ReadAll(io.LimitReader(f, MaxFileBytes+1))
-	if err != nil {
-		return nil, nil, fmt.Errorf("%w: %s: %v", dict.ErrInvalidPack, DataFile, err)
+	raw, err := pack.ReadCapped(f, MaxFileBytes)
+	if errors.Is(err, pack.ErrTooLarge) {
+		return nil, nil, fmt.Errorf("%w: %s is larger than 1 MiB", pack.ErrInvalidPack, DataFile)
 	}
-	if len(raw) > MaxFileBytes {
-		return nil, nil, fmt.Errorf("%w: %s is larger than 1 MiB", dict.ErrInvalidPack, DataFile)
+	if err != nil {
+		return nil, nil, fmt.Errorf("%w: %s: %v", pack.ErrInvalidPack, DataFile, err)
 	}
 	t, err := lemma.Parse(raw)
 	if err != nil {
-		return nil, nil, fmt.Errorf("%w: %s: %v", dict.ErrInvalidPack, DataFile, err)
+		return nil, nil, fmt.Errorf("%w: %s: %v", pack.ErrInvalidPack, DataFile, err)
 	}
 	return raw, t, nil
 }
@@ -82,24 +81,24 @@ func LoadFile(dir string) ([]byte, *lemma.Table, error) {
 // rules.json, the table's language against the manifest's, and that the
 // language's code pack runs rule tables — without the installed packs
 // (CheckLanguage). The staged upload calls it before the licence review.
-func CheckPack(p dict.Pack) ([]byte, *lemma.Table, error) {
+func CheckPack(p pack.Pack) ([]byte, *lemma.Table, error) {
 	m := p.Manifest
 	if err := m.Validate(); err != nil {
-		return nil, nil, fmt.Errorf("%w: %v", dict.ErrInvalidPack, err)
+		return nil, nil, fmt.Errorf("%w: %v", pack.ErrInvalidPack, err)
 	}
-	if m.Type != dict.TypeLemmaRules || m.Format != dict.FormatRulesJSON {
-		return nil, nil, fmt.Errorf("%w: %q is a %s pack (format %s), not a lemma-rules pack", dict.ErrInvalidPack, m.ID, m.Type, m.Format)
+	if m.Type != pack.TypeLemmaRules || m.Format != pack.FormatRulesJSON {
+		return nil, nil, fmt.Errorf("%w: %q is a %s pack (format %s), not a lemma-rules pack", pack.ErrInvalidPack, m.ID, m.Type, m.Format)
 	}
 	raw, t, err := LoadFile(p.Dir)
 	if err != nil {
 		return nil, nil, err
 	}
 	if t.Language != m.Language {
-		return nil, nil, fmt.Errorf("%w: %s is the table of %q, the manifest states %q", dict.ErrInvalidPack, DataFile, t.Language, m.Language)
+		return nil, nil, fmt.Errorf("%w: %s is the table of %q, the manifest states %q", pack.ErrInvalidPack, DataFile, t.Language, m.Language)
 	}
 	if lang.Registered(m.Language) {
 		if _, ok := lang.For(m.Language).(lang.Deinflector); !ok {
-			return nil, nil, fmt.Errorf("%w: the %s language module does not use lemmatizer rule tables", dict.ErrInvalidPack, m.Language)
+			return nil, nil, fmt.Errorf("%w: the %s language module does not use lemmatizer rule tables", pack.ErrInvalidPack, m.Language)
 		}
 	}
 	return raw, t, nil
@@ -117,14 +116,14 @@ func CheckLanguage(ctx context.Context, q Querier, packID, language string) erro
 	case err != nil:
 		return fmt.Errorf("lemmapack: %w", err)
 	}
-	return fmt.Errorf("%w: %s already has the lemma-rules pack %q; uninstall it first", dict.ErrInvalidPack, language, other)
+	return fmt.Errorf("%w: %s already has the lemma-rules pack %q; uninstall it first", pack.ErrInvalidPack, language, other)
 }
 
 // Import installs the lemma-rules pack p (CheckPack, then CheckLanguage in
 // the transaction) and reloads the overlay. One transaction upserts the
 // registry row with the raw rules.json, clearing an uninstall; an identical
 // re-import (same bytes and manifest fields) writes nothing.
-func Import(ctx context.Context, sqlDB *sql.DB, p dict.Pack) (Result, error) {
+func Import(ctx context.Context, sqlDB *sql.DB, p pack.Pack) (Result, error) {
 	raw, t, err := CheckPack(p)
 	if err != nil {
 		return Result{}, err
@@ -133,7 +132,7 @@ func Import(ctx context.Context, sqlDB *sql.DB, p dict.Pack) (Result, error) {
 	hash := Hash(raw)
 	res := Result{Language: m.Language, Rules: len(t.Rules)}
 
-	tx, err := sqlDB.BeginTx(ctx, nil)
+	tx, err := pack.BeginWrite(ctx, sqlDB)
 	if err != nil {
 		return Result{}, fmt.Errorf("import lemma-rules pack %s: %w", m.ID, err)
 	}
@@ -141,37 +140,15 @@ func Import(ctx context.Context, sqlDB *sql.DB, p dict.Pack) (Result, error) {
 	if err := CheckLanguage(ctx, tx, m.ID, m.Language); err != nil {
 		return Result{}, err
 	}
-	var (
-		name, version, language, license, attribution, notice, oldHash string
-		deleted                                                        sql.NullString
-	)
-	err = tx.QueryRowContext(ctx, `
-		SELECT name, version, language, license, attribution, notice, content_hash, deleted_at
-		FROM lemma_rule_packs WHERE pack_id = ?`, m.ID).
-		Scan(&name, &version, &language, &license, &attribution, &notice, &oldHash, &deleted)
-	stamp := time.Now().UTC().Format(time.RFC3339)
-	switch {
-	case errors.Is(err, sql.ErrNoRows):
-		if _, err := tx.ExecContext(ctx, `
-			INSERT INTO lemma_rule_packs (pack_id, name, version, language, license, attribution, notice, rules_json, content_hash, updated_at)
-			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-			m.ID, m.Name, m.Version, m.Language, m.License, m.Attribution, m.Notice, string(raw), hash, stamp); err != nil {
-			return Result{}, fmt.Errorf("register lemma-rules pack %s: %w", m.ID, err)
-		}
-	case err != nil:
-		return Result{}, fmt.Errorf("import lemma-rules pack %s: %w", m.ID, err)
-	default:
-		if !deleted.Valid && oldHash == hash && name == m.Name && version == m.Version && language == m.Language &&
-			license == m.License && attribution == m.Attribution && notice == m.Notice {
-			return res, nil // identical: nothing to write
-		}
-		if _, err := tx.ExecContext(ctx, `
-			UPDATE lemma_rule_packs SET name = ?, version = ?, language = ?, license = ?, attribution = ?, notice = ?,
-				rules_json = ?, content_hash = ?, updated_at = ?, deleted_at = NULL
-			WHERE pack_id = ?`,
-			m.Name, m.Version, m.Language, m.License, m.Attribution, m.Notice, string(raw), hash, stamp, m.ID); err != nil {
-			return Result{}, fmt.Errorf("update lemma-rules pack %s: %w", m.ID, err)
-		}
+	stamp := pack.Now()
+	_, changed, err := pack.UpsertRegistry(ctx, tx, pack.Registry{Table: "lemma_rule_packs", PackID: m.ID, Stamp: stamp,
+		Columns: pack.ManifestColumns(m, pack.Column{Name: "language", Value: m.Language},
+			pack.Column{Name: "rules_json", Value: string(raw)}, pack.Column{Name: "content_hash", Value: hash})})
+	if err != nil {
+		return Result{}, fmt.Errorf("register lemma-rules pack %s: %w", m.ID, err)
+	}
+	if !changed {
+		return res, nil // identical: nothing to write
 	}
 	if err := tx.Commit(); err != nil {
 		return Result{}, fmt.Errorf("import lemma-rules pack %s: %w", m.ID, err)
@@ -184,7 +161,7 @@ func Import(ctx context.Context, sqlDB *sql.DB, p dict.Pack) (Result, error) {
 // re-import revives it) and reloads the overlay. An unknown or already
 // uninstalled pack is ErrNotFound.
 func Uninstall(ctx context.Context, sqlDB *sql.DB, packID string) error {
-	stamp := time.Now().UTC().Format(time.RFC3339)
+	stamp := pack.Now()
 	res, err := sqlDB.ExecContext(ctx, `
 		UPDATE lemma_rule_packs SET deleted_at = ?, updated_at = ? WHERE pack_id = ? AND deleted_at IS NULL`, stamp, stamp, packID)
 	if err != nil {

@@ -15,6 +15,7 @@ import (
 	"qinqin/internal/dbtest"
 	"qinqin/internal/dict"
 	"qinqin/internal/lexicon"
+	"qinqin/internal/pack"
 )
 
 // gzipBytes returns data compressed with gzip.
@@ -33,7 +34,7 @@ func gzipBytes(t *testing.T, data []byte) []byte {
 
 // writeCompressedPack writes manifest.json plus one compressed payload
 // file into a fresh temp directory and returns its path.
-func writeCompressedPack(t *testing.T, m dict.Manifest, payloadName string, payload []byte) string {
+func writeCompressedPack(t *testing.T, m pack.Manifest, payloadName string, payload []byte) string {
 	t.Helper()
 	dir := t.TempDir()
 	manifest, err := json.Marshal(m)
@@ -47,8 +48,8 @@ func writeCompressedPack(t *testing.T, m dict.Manifest, payloadName string, payl
 	return dir
 }
 
-func compressedManifest(format, language string) dict.Manifest {
-	return dict.Manifest{
+func compressedManifest(format, language string) pack.Manifest {
+	return pack.Manifest{
 		ID:          "compressed-" + format,
 		Name:        "Compressed " + format + " pack",
 		Version:     "1.0",
@@ -73,13 +74,13 @@ func readingValue(e lexicon.Entry, typ string) string {
 // importDir loads the pack in dir and imports it into the lexicon.
 func importDir(t *testing.T, sqlDB *sql.DB, dir string) dict.Result {
 	t.Helper()
-	pack, err := dict.LoadPack(dir)
+	pk, err := pack.LoadPack(dir)
 	if err != nil {
 		t.Fatalf("LoadPack: %v", err)
 	}
-	res, err := dict.ImportLexicon(context.Background(), sqlDB, &pack)
+	res, err := dict.ImportLexicon(context.Background(), sqlDB, &pk)
 	if err != nil {
-		t.Fatalf("ImportLexicon(%s): %v", pack.Manifest.Format, err)
+		t.Fatalf("ImportLexicon(%s): %v", pk.Manifest.Format, err)
 	}
 	return res
 }

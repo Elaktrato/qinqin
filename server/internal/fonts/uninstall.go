@@ -5,7 +5,8 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"time"
+
+	"qinqin/internal/pack"
 )
 
 // Uninstall removes an installed font pack: its slice rows are deleted and
@@ -13,7 +14,7 @@ import (
 // slice file the pack used that no remaining row references is removed
 // from storeDir. An unknown or already removed pack is ErrNotFound.
 func Uninstall(ctx context.Context, sqlDB *sql.DB, packID, storeDir string) error {
-	tx, err := sqlDB.BeginTx(ctx, nil)
+	tx, err := pack.BeginWrite(ctx, sqlDB)
 	if err != nil {
 		return fmt.Errorf("uninstall font pack %s: %w", packID, err)
 	}
@@ -33,7 +34,7 @@ func Uninstall(ctx context.Context, sqlDB *sql.DB, packID, storeDir string) erro
 	if _, err := tx.ExecContext(ctx, `DELETE FROM font_slices WHERE pack_id = ?`, packID); err != nil {
 		return fmt.Errorf("uninstall font pack %s: %w", packID, err)
 	}
-	stamp := time.Now().UTC().Format(time.RFC3339)
+	stamp := pack.Now()
 	if _, err := tx.ExecContext(ctx, `UPDATE font_packs SET deleted_at = ?, updated_at = ? WHERE pack_id = ?`, stamp, stamp, packID); err != nil {
 		return fmt.Errorf("uninstall font pack %s: %w", packID, err)
 	}

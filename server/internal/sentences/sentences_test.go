@@ -23,6 +23,7 @@ import (
 	"qinqin/internal/dict"
 	"qinqin/internal/lang"
 	"qinqin/internal/model"
+	"qinqin/internal/pack"
 	"qinqin/internal/sentences"
 )
 
@@ -33,7 +34,7 @@ const zhMini = "testdata/zh-mini"
 // importDictionary writes a dictionary pack (manifest m plus one data
 // file) into a temp directory and imports it into the lexicon with the
 // real importer.
-func importDictionary(t *testing.T, sqlDB *sql.DB, m dict.Manifest, file, content string) {
+func importDictionary(t *testing.T, sqlDB *sql.DB, m pack.Manifest, file, content string) {
 	t.Helper()
 	dir := t.TempDir()
 	manifest, err := json.Marshal(m)
@@ -45,7 +46,7 @@ func importDictionary(t *testing.T, sqlDB *sql.DB, m dict.Manifest, file, conten
 			t.Fatal(err)
 		}
 	}
-	p, err := dict.LoadPack(dir)
+	p, err := pack.LoadPack(dir)
 	if err != nil {
 		t.Fatalf("LoadPack(%s): %v", m.ID, err)
 	}
@@ -59,7 +60,7 @@ func importDictionary(t *testing.T, sqlDB *sql.DB, m dict.Manifest, file, conten
 func importCedict(t *testing.T, sqlDB *sql.DB, lines ...string) {
 	t.Helper()
 	lang.Register(lang.Zh{})
-	importDictionary(t, sqlDB, dict.Manifest{
+	importDictionary(t, sqlDB, pack.Manifest{
 		ID: "cedict-test", Name: "CC-CEDICT test", Version: "1", Type: "dictionary", Language: "zh",
 		License: "CC BY-SA 4.0", Attribution: "MDBG", Format: "cedict",
 	}, "dictionary.txt", strings.Join(lines, "\n")+"\n")
@@ -102,7 +103,7 @@ func sentencesManifest(id, format string) string {
 // buildPackFormat writes a manifest.json of the given format and a
 // sentences.json into a fresh temp directory and loads the pack from
 // there. An empty sentencesJSON writes no data file.
-func buildPackFormat(t *testing.T, id, format, sentencesJSON string) dict.Pack {
+func buildPackFormat(t *testing.T, id, format, sentencesJSON string) pack.Pack {
 	t.Helper()
 	dir := t.TempDir()
 	if err := os.WriteFile(filepath.Join(dir, "manifest.json"), []byte(sentencesManifest(id, format)), 0o644); err != nil {
@@ -113,16 +114,16 @@ func buildPackFormat(t *testing.T, id, format, sentencesJSON string) dict.Pack {
 			t.Fatalf("write sentences.json: %v", err)
 		}
 	}
-	pack, err := dict.LoadPack(dir)
+	pk, err := pack.LoadPack(dir)
 	if err != nil {
 		t.Fatalf("load pack %s: %v", id, err)
 	}
-	return pack
+	return pk
 }
 
 // buildPack writes a manifest.json (format json) and sentences.json
 // into a fresh temp directory and loads the pack from there.
-func buildPack(t *testing.T, id, sentencesJSON string) dict.Pack {
+func buildPack(t *testing.T, id, sentencesJSON string) pack.Pack {
 	t.Helper()
 	return buildPackFormat(t, id, "json", sentencesJSON)
 }
@@ -204,11 +205,11 @@ func TestSentencePackImport(t *testing.T) {
 	// must not match it.
 	nihao, xiexie := seedWords(t, sqlDB, lineNi)
 
-	pack, err := dict.LoadPack(zhMini)
+	pk, err := pack.LoadPack(zhMini)
 	if err != nil {
 		t.Fatalf("load fixture pack: %v", err)
 	}
-	res, err := sentences.ImportPack(ctx, sqlDB, pack)
+	res, err := sentences.ImportPack(ctx, sqlDB, pk)
 	if err != nil {
 		t.Fatalf("import fixture pack: %v", err)
 	}
@@ -344,11 +345,11 @@ func TestReimportKeepsUserSentences(t *testing.T) {
 	importCedict(t, sqlDB, lineNihao) // no 谢谢: the fixture's group for it is skipped
 	nihao := lexID(t, sqlDB, "zh", "word", "你好")
 
-	pack, err := dict.LoadPack(zhMini)
+	pk, err := pack.LoadPack(zhMini)
 	if err != nil {
 		t.Fatalf("load fixture pack: %v", err)
 	}
-	if _, err := sentences.ImportPack(ctx, sqlDB, pack); err != nil {
+	if _, err := sentences.ImportPack(ctx, sqlDB, pk); err != nil {
 		t.Fatalf("import fixture pack: %v", err)
 	}
 	alice, err := auth.CreateUser(ctx, sqlDB, "alice", "secret-pass-alice", false)
@@ -425,7 +426,7 @@ func TestSharedFormLinksToBestRankedWord(t *testing.T) {
 	sqlDB := dbtest.Open(t)
 	ctx := context.Background()
 	// Two JMdict words are written 下; the second carries priority.
-	importDictionary(t, sqlDB, dict.Manifest{
+	importDictionary(t, sqlDB, pack.Manifest{
 		ID: "jmdict-test", Name: "JMdict test", Version: "1", Type: "dictionary", Language: "ja",
 		License: "CC BY-SA 4.0", Attribution: "EDRDG", Format: "jmdict",
 	}, "jmdict.xml", `<?xml version="1.0" encoding="UTF-8"?>
@@ -457,12 +458,12 @@ func TestSharedFormLinksToBestRankedWord(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	pack, err := dict.LoadPack(dir)
+	pk, err := pack.LoadPack(dir)
 	if err != nil {
 		t.Fatal(err)
 	}
 	// これ is kana-only: it resolves by its first kana reading.
-	if res, err := sentences.ImportPack(ctx, sqlDB, pack); err != nil || res.Sentences != 2 || len(res.Skipped) != 0 {
+	if res, err := sentences.ImportPack(ctx, sqlDB, pk); err != nil || res.Sentences != 2 || len(res.Skipped) != 0 {
 		t.Fatalf("import = %+v, %v; want two sentences, nothing skipped", res, err)
 	}
 	if got, err := sentences.ForEntry(ctx, sqlDB, kore, 0); err != nil || len(got) != 1 {
@@ -484,7 +485,7 @@ func TestImportRejectsInvalidPacks(t *testing.T) {
 	ctx := context.Background()
 
 	// A dictionary pack is not a sentences pack.
-	dictPack, err := dict.LoadPack("../dict/testdata/mkgloss")
+	dictPack, err := pack.LoadPack("../dict/testdata/mkgloss")
 	if err != nil {
 		t.Fatalf("load dictionary fixture: %v", err)
 	}
@@ -501,16 +502,16 @@ func TestImportRejectsInvalidPacks(t *testing.T) {
 		"empty array":    `{"entries":[{"word":"你好","sentences":[]}]}`,
 		"no sentences":   `{"entries":[{"word":"你好"}]}`,
 	} {
-		if _, err := sentences.ImportPack(ctx, sqlDB, buildPack(t, "invalid-"+name, sentencesJSON)); !errors.Is(err, dict.ErrInvalidPack) {
+		if _, err := sentences.ImportPack(ctx, sqlDB, buildPack(t, "invalid-"+name, sentencesJSON)); !errors.Is(err, pack.ErrInvalidPack) {
 			t.Errorf("import %s err = %v, want ErrInvalidPack", name, err)
 		}
 	}
 
 	// A missing sentences.json and a non-json format are invalid too.
-	if _, err := sentences.ImportPack(ctx, sqlDB, buildPack(t, "no-data", "")); !errors.Is(err, dict.ErrInvalidPack) {
+	if _, err := sentences.ImportPack(ctx, sqlDB, buildPack(t, "no-data", "")); !errors.Is(err, pack.ErrInvalidPack) {
 		t.Errorf("import pack without sentences.json err = %v, want ErrInvalidPack", err)
 	}
-	if _, err := sentences.ImportPack(ctx, sqlDB, buildPackFormat(t, "cedict-format", "cedict", `{"entries":[]}`)); !errors.Is(err, dict.ErrInvalidPack) {
+	if _, err := sentences.ImportPack(ctx, sqlDB, buildPackFormat(t, "cedict-format", "cedict", `{"entries":[]}`)); !errors.Is(err, pack.ErrInvalidPack) {
 		t.Errorf("import cedict-format sentences pack err = %v, want ErrInvalidPack", err)
 	}
 }
@@ -522,10 +523,10 @@ func TestImportAcceptsSentencesWithoutReading(t *testing.T) {
 	sqlDB := dbtest.Open(t)
 	ctx := context.Background()
 	nihao, _ := seedWords(t, sqlDB)
-	pack := `{"entries":[{"word":"你好","sentences":[
+	pk := `{"entries":[{"word":"你好","sentences":[
 		{"hanzi":"你好！","translation":"Hi!"},
 		{"hanzi":"你好吗？","pinyin":"  ","translation":"How are you?"}]}]}`
-	res, err := sentences.ImportPack(ctx, sqlDB, buildPack(t, "no-reading", pack))
+	res, err := sentences.ImportPack(ctx, sqlDB, buildPack(t, "no-reading", pk))
 	if err != nil {
 		t.Fatalf("import without readings: %v", err)
 	}

@@ -15,11 +15,12 @@ import (
 	"qinqin/internal/dbtest"
 	"qinqin/internal/dict"
 	"qinqin/internal/lexicon"
+	"qinqin/internal/pack"
 )
 
 // lexPack writes one data file and the manifest m into a fresh directory
 // and loads it as a pack.
-func lexPack(t *testing.T, m dict.Manifest, file, content string) *dict.Pack {
+func lexPack(t *testing.T, m pack.Manifest, file, content string) *pack.Pack {
 	t.Helper()
 	dir := t.TempDir()
 	manifest, err := json.Marshal(m)
@@ -28,14 +29,14 @@ func lexPack(t *testing.T, m dict.Manifest, file, content string) *dict.Pack {
 	}
 	mustWriteFile(t, filepath.Join(dir, "manifest.json"), string(manifest))
 	mustWriteFile(t, filepath.Join(dir, file), content)
-	pack, err := dict.LoadPack(dir)
+	pk, err := pack.LoadPack(dir)
 	if err != nil {
 		t.Fatalf("LoadPack: %v", err)
 	}
-	return &pack
+	return &pk
 }
 
-func importLexiconPack(t *testing.T, sqlDB *sql.DB, p *dict.Pack) dict.Result {
+func importLexiconPack(t *testing.T, sqlDB *sql.DB, p *pack.Pack) dict.Result {
 	t.Helper()
 	res, err := dict.ImportLexicon(context.Background(), sqlDB, p)
 	if err != nil {
@@ -138,12 +139,12 @@ const lexCedict = `# CC-CEDICT
 你好 你好 [ni3 hao3] /hello/hi/
 `
 
-var cedictLexManifest = dict.Manifest{
+var cedictLexManifest = pack.Manifest{
 	ID: "cedict-lex", Name: "CC-CEDICT lex", Version: "1.0", Type: "dictionary", Language: "zh",
 	License: "CC BY-SA 4.0", Attribution: "CC-CEDICT contributors", Format: "cedict",
 }
 
-func cedictLexPack(t *testing.T, content string) *dict.Pack {
+func cedictLexPack(t *testing.T, content string) *pack.Pack {
 	t.Helper()
 	return lexPack(t, cedictLexManifest, "dictionary.txt", content)
 }
@@ -246,7 +247,7 @@ func TestLexiconCedictReadingsAreSearchableByPlain(t *testing.T) {
 	}
 }
 
-func unihanLexPack(t *testing.T) *dict.Pack {
+func unihanLexPack(t *testing.T) *pack.Pack {
 	t.Helper()
 	data, err := os.ReadFile(unihanFixture)
 	if err != nil {
@@ -345,8 +346,8 @@ func TestLexiconUnihanThenCedictKeepsUnihanSensesAndLinks(t *testing.T) {
 
 func TestLexiconJSONPack(t *testing.T) {
 	sqlDB := dbtest.Open(t)
-	pack := loadFixture(t)
-	res, err := dict.ImportLexicon(context.Background(), sqlDB, &pack)
+	pk := loadFixture(t)
+	res, err := dict.ImportLexicon(context.Background(), sqlDB, &pk)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -375,13 +376,13 @@ func TestLexiconJSONPack(t *testing.T) {
 
 func TestLexiconJSONDataOnlyLanguage(t *testing.T) {
 	sqlDB := dbtest.Open(t)
-	m := dict.Manifest{
+	m := pack.Manifest{
 		ID: "es-demo", Name: "Demo Spanish dictionary", Version: "1.0", Type: "dictionary", Language: "es",
 		License: "CC0", Attribution: "Qinqin test fixtures", Format: "json",
 	}
-	pack := lexPack(t, m, "dictionary.json", `{"entries": [
+	pk := lexPack(t, m, "dictionary.json", `{"entries": [
 		{"written": "Hola", "kind": "word", "readings": [{"type": "latin", "value": "Hola"}], "glosses": ["hello"]}]}`)
-	importLexiconPack(t, sqlDB, pack)
+	importLexiconPack(t, sqlDB, pk)
 	var name string
 	if err := sqlDB.QueryRow(`SELECT name FROM languages WHERE code = 'es'`).Scan(&name); err != nil || name != m.Name {
 		t.Errorf("es language = %q, %v, want auto-registered %q", name, err, m.Name)
@@ -397,20 +398,20 @@ func TestLexiconJSONDataOnlyLanguage(t *testing.T) {
 
 func TestLexiconJSONInvalidEntryWritesNothing(t *testing.T) {
 	sqlDB := dbtest.Open(t)
-	m := dict.Manifest{
+	m := pack.Manifest{
 		ID: "bad-json", Name: "Bad", Version: "1.0", Type: "dictionary", Language: "zh",
 		License: "CC0", Attribution: "t", Format: "json",
 	}
-	pack := lexPack(t, m, "dictionary.json", `{"entries": [
+	pk := lexPack(t, m, "dictionary.json", `{"entries": [
 		{"written": "好", "kind": "character", "glosses": ["good"]},
 		{"written": "", "kind": "word", "glosses": ["nothing"]}]}`)
-	if _, err := dict.ImportLexicon(context.Background(), sqlDB, pack); err == nil {
+	if _, err := dict.ImportLexicon(context.Background(), sqlDB, pk); err == nil {
 		t.Fatal("ImportLexicon of an invalid pack succeeded")
 	}
 	assertNoLexiconRows(t, sqlDB)
 }
 
-var zhMiniLexManifest = dict.Manifest{
+var zhMiniLexManifest = pack.Manifest{
 	ID: "zh-mini-lex", Name: "zh mini", Version: "1.0", Type: "dictionary", Language: "zh",
 	License: "CC0", Attribution: "t", Format: "json",
 }
@@ -418,7 +419,7 @@ var zhMiniLexManifest = dict.Manifest{
 const lexMiniJSON = `{"entries": [
 	{"written": "行", "kind": "character", "readings": [{"type": "pinyin", "value": "háng"}], "glosses": ["row (mini)"]}]}`
 
-func miniLexPack(t *testing.T, content string) *dict.Pack {
+func miniLexPack(t *testing.T, content string) *pack.Pack {
 	t.Helper()
 	return lexPack(t, zhMiniLexManifest, "dictionary.json", content)
 }
@@ -485,11 +486,11 @@ func lexiconCounts(t *testing.T, sqlDB *sql.DB) map[string]int {
 }
 
 func TestLexiconReimportsWriteNothing(t *testing.T) {
-	packs := map[string]func(*testing.T) *dict.Pack{
-		"cedict":    func(t *testing.T) *dict.Pack { return cedictLexPack(t, lexCedict+lexCedictChars) },
-		"json":      func(t *testing.T) *dict.Pack { return miniLexPack(t, lexMiniJSON) },
-		"unihan":    func(t *testing.T) *dict.Pack { return unihanLexPack(t) },
-		"kanjidic2": func(t *testing.T) *dict.Pack { return kanjidicLexPack(t, "") },
+	packs := map[string]func(*testing.T) *pack.Pack{
+		"cedict":    func(t *testing.T) *pack.Pack { return cedictLexPack(t, lexCedict+lexCedictChars) },
+		"json":      func(t *testing.T) *pack.Pack { return miniLexPack(t, lexMiniJSON) },
+		"unihan":    func(t *testing.T) *pack.Pack { return unihanLexPack(t) },
+		"kanjidic2": func(t *testing.T) *pack.Pack { return kanjidicLexPack(t, "") },
 	}
 	// Each case imports its packs in order, backdates every row, then
 	// runs the last pack again.
