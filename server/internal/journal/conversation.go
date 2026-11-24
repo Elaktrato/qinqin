@@ -91,7 +91,7 @@ func NewConversationID() string {
 func ValidateStart(topic, level string) error {
 	switch {
 	case !ai.ValidLevel(level):
-		return invalid("level must be one of %s.", strings.Join(ai.ConverseLevels, ", "))
+		return invalid("level must be one of %s.", strings.Join(ai.Levels, ", "))
 	case !utf8.ValidString(topic) || utf8.RuneCountInString(topic) > MaxTopicRunes || !plainText(topic):
 		return invalid("topic must be plain text of at most %d characters.", MaxTopicRunes)
 	}

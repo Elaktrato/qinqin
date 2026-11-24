@@ -74,8 +74,8 @@ func TestConversationsContract(t *testing.T) {
 	if err := json.Unmarshal(raw, &fx); err != nil {
 		t.Fatal(err)
 	}
-	if !slices.Equal(fx.Levels, ai.ConverseLevels) {
-		t.Errorf("levels = %v, server %v", fx.Levels, ai.ConverseLevels)
+	if !slices.Equal(fx.Levels, ai.Levels) {
+		t.Errorf("levels = %v, server %v", fx.Levels, ai.Levels)
 	}
 	want := map[string]int{"topicRunes": MaxTopicRunes, "messageRunes": MaxMessageRunes, "replyRunes": MaxReplyRunes,
 		"messages": MaxMessages, "conversations": MaxConversations, "contextMessages": ai.MaxConverseHistory, "wordSample": ai.MaxConverseWords}

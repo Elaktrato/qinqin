@@ -27,6 +27,8 @@ import (
 //   - Transcribe: "fake transcription"; unreadable below 100 bytes.
 //   - Converse (converse.go): a fixed reply in the workspace language (zh and
 //     ja mention 学校) and Review's corrections of the new message.
+//   - Examples (examples.go): four fixed sentences around the word and one
+//     without it, for the server's word check.
 type Fake struct{}
 
 func (Fake) Validate(_ context.Context, c Credentials) error {
