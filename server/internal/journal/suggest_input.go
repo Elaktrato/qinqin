@@ -24,14 +24,36 @@ const (
 // the last 10 entries as title plus a 200-rune opening. Nothing else of the
 // learner's writing leaves the server.
 func SuggestionInput(ctx context.Context, sqlDB *sql.DB, userID, workspaceID int64, now time.Time) (words []string, recent []ai.EntrySummary, err error) {
-	evs, err := events.Since(ctx, sqlDB, userID, now.AddDate(0, 0, -30), &workspaceID)
+	words, err = StudiedWords(ctx, sqlDB, userID, workspaceID, now)
 	if err != nil {
 		return nil, nil, err
+	}
+	// ListEntries orders newest date first, then the most recently saved.
+	entries, err := ListEntries(ctx, sqlDB, userID, workspaceID)
+	if err != nil {
+		return nil, nil, err
+	}
+	for _, e := range entries {
+		if len(recent) == maxSuggestRecent {
+			break
+		}
+		recent = append(recent, ai.EntrySummary{Title: e.Title, Opening: cutRunes(e.Text, openingRunes)})
+	}
+	return words, recent, nil
+}
+
+// StudiedWords is the word list of SuggestionInput alone: up to 60 recently
+// reviewed words of the workspace, newest first, deduplicated (a
+// conversation turn sends WordSample of it and needs no entry summaries).
+func StudiedWords(ctx context.Context, sqlDB *sql.DB, userID, workspaceID int64, now time.Time) (words []string, err error) {
+	evs, err := events.Since(ctx, sqlDB, userID, now.AddDate(0, 0, -30), &workspaceID)
+	if err != nil {
+		return nil, err
 	}
 	// The workspace's live cards (typed study rows).
 	live, err := study.ListCards(ctx, sqlDB, userID, workspaceID)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 	type card struct {
 		EntryID int64
@@ -71,7 +93,7 @@ func SuggestionInput(ctx context.Context, sqlDB *sql.DB, userID, workspaceID int
 	if len(ids) > 0 {
 		entries, err := lexicon.Store{DB: sqlDB}.GetMany(ctx, ids)
 		if err != nil {
-			return nil, nil, err
+			return nil, err
 		}
 		for _, e := range entries {
 			// The entry's display form: の, not the search-only 乃.
@@ -93,17 +115,5 @@ func SuggestionInput(ctx context.Context, sqlDB *sql.DB, userID, workspaceID int
 			break
 		}
 	}
-
-	// ListEntries orders newest date first, then the most recently saved.
-	entries, err := ListEntries(ctx, sqlDB, userID, workspaceID)
-	if err != nil {
-		return nil, nil, err
-	}
-	for _, e := range entries {
-		if len(recent) == maxSuggestRecent {
-			break
-		}
-		recent = append(recent, ai.EntrySummary{Title: e.Title, Opening: cutRunes(e.Text, openingRunes)})
-	}
-	return words, recent, nil
+	return words, nil
 }

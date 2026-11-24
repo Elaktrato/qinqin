@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"log"
 	"net/http"
 	"strings"
@@ -109,10 +110,45 @@ func (s *server) handleDeleteConversation(w http.ResponseWriter, r *http.Request
 	w.WriteHeader(http.StatusNoContent)
 }
 
+// errNoProviderCall marks a turn that ended before the provider was called
+// (runAI records no call for it): the conversation changed while the turn
+// waited for the user's AI slot.
+var errNoProviderCall = errors.New("api: no provider call made")
+
+// errTurnStored: the turn id is stored already (a retry); answer it.
+var errTurnStored = errors.New("api: the turn is stored")
+
+// checkTurn applies the turn rules to the conversation as it is.
+func checkTurn(c journal.Conversation, text string) error {
+	if err := journal.CheckTurnText(text, len(c.Messages) > 0); err != nil {
+		return err
+	}
+	if text != "" && journal.ConversationFull(c) || text == "" && len(c.Messages)+1 > journal.MaxMessages {
+		return journal.ErrConversationFull
+	}
+	return nil
+}
+
+// answerTurnError maps a turn rule or store error to its answer.
+func answerTurnError(w http.ResponseWriter, r *http.Request, err error) {
+	switch journal.TurnTextCode(err) {
+	case "empty":
+		writeAIError(w, errEmptyEntry)
+	case "too_long":
+		writeAIError(w, errMessageTooLong)
+	default:
+		answerConversationError(w, r, err)
+	}
+}
+
 // handleConversationTurn serves POST /api/journal/conversations/{id}/turn?workspace=
-// {text}: one provider call with the learner's own key. The learner's message
-// and the partner's reply are stored together once the call succeeded; a
-// failed call stores nothing.
+// {text, turnId}: one provider call with the learner's own key. The learner's
+// message and the partner's reply are stored together once the call
+// succeeded; a failed call stores nothing. turnId is the client's id of the
+// turn: a retry with a stored id answers the stored turn without a provider
+// call. The conversation the call sends (the history, the next seq) is read
+// again while the turn holds the user's one AI slot, so no other turn of the
+// user can land in between.
 func (s *server) handleConversationTurn(w http.ResponseWriter, r *http.Request) {
 	userID, ws, ok := s.journalScope(w, r)
 	if !ok {
@@ -123,66 +159,84 @@ func (s *server) handleConversationTurn(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 	var in struct {
-		Text string `json:"text"`
+		Text   string `json:"text"`
+		TurnID string `json:"turnId"`
 	}
-	if json.Unmarshal(body, &in) != nil {
-		writeError(w, http.StatusBadRequest, "bad_request", "Malformed request body.")
+	if json.Unmarshal(body, &in) != nil || !journal.ValidEntryID(in.TurnID) {
+		writeError(w, http.StatusBadRequest, "bad_request", "The body must be {text, turnId} with turnId of 1 to 64 letters, digits, '-' or '_'.")
 		return
 	}
-	c, err := journal.GetConversation(r.Context(), s.db, userID, ws, r.PathValue("id"))
+	id := r.PathValue("id")
+	c, err := journal.GetConversation(r.Context(), s.db, userID, ws, id)
 	if err != nil {
 		answerConversationError(w, r, err)
 		return
 	}
-	text := strings.TrimSpace(in.Text)
-	switch err := journal.CheckTurnText(text, len(c.Messages) > 0); journal.TurnTextCode(err) {
-	case "":
-	case "empty":
-		writeAIError(w, errEmptyEntry)
-		return
-	case "too_long":
-		writeAIError(w, errMessageTooLong)
-		return
-	default:
-		answerConversationError(w, r, err)
+	if journal.HasTurn(c, in.TurnID) {
+		writeJSON(w, http.StatusOK, c)
 		return
 	}
-	if text != "" && journal.ConversationFull(c) || text == "" && len(c.Messages)+1 > journal.MaxMessages {
-		answerConversationError(w, r, journal.ErrConversationFull)
+	text := strings.TrimSpace(in.Text)
+	if err := checkTurn(c, text); err != nil {
+		answerTurnError(w, r, err)
 		return
 	}
 	t, ok := s.journalTarget(w, r, userID, ws)
 	if !ok {
 		return
 	}
-	words, _, err := journal.SuggestionInput(r.Context(), s.db, userID, ws, time.Now())
+	words, err := journal.StudiedWords(r.Context(), s.db, userID, ws, time.Now())
 	if err != nil {
 		writeInternal(w, r)
 		return
 	}
-	history := make([]ai.Turn, 0, len(c.Messages))
-	nextSeq := 1
-	for _, m := range c.Messages {
-		history = append(history, ai.Turn{Role: m.Role, Text: m.Text})
-		nextSeq = max(nextSeq, m.Seq+1)
-	}
 	var reply ai.ConverseReply
 	run, err := s.runAI(r, userID, "converse", func(ctx context.Context, p ai.Provider, _ ai.ProviderSpec, cr ai.Credentials) (ai.CallResult, error) {
-		var err error
+		// Under the slot: the conversation as stored now.
+		now, err := journal.GetConversation(ctx, s.db, userID, ws, id)
+		switch {
+		case err != nil:
+			return ai.CallResult{}, fmt.Errorf("%w: %w", errNoProviderCall, err)
+		case journal.HasTurn(now, in.TurnID):
+			return ai.CallResult{}, fmt.Errorf("%w: %w", errNoProviderCall, errTurnStored)
+		}
+		if err := checkTurn(now, text); err != nil {
+			return ai.CallResult{}, fmt.Errorf("%w: %w", errNoProviderCall, err)
+		}
+		history := make([]ai.Turn, 0, len(now.Messages))
+		for _, m := range now.Messages {
+			history = append(history, ai.Turn{Role: m.Role, Text: m.Text})
+		}
 		reply, err = p.Converse(ctx, cr, ai.ConverseRequest{
 			Language: t.language, ExplanationLanguage: t.settings.ExplanationLanguage, Guidance: t.settings.Guidance,
-			Level: c.Level, Topic: c.Topic, Words: journal.WordSample(words), History: history, Text: text,
+			Level: now.Level, Topic: now.Topic, Words: journal.WordSample(words), History: history, Text: text,
 		})
 		return ai.CallResult{Model: reply.Model, Usage: reply.Usage, Calls: reply.Calls}, err
 	})
-	if err != nil {
+	switch {
+	case errors.Is(err, errTurnStored):
+		stored, gerr := journal.GetConversation(r.Context(), s.db, userID, ws, id)
+		if gerr != nil {
+			answerConversationError(w, r, gerr)
+			return
+		}
+		writeJSON(w, http.StatusOK, stored)
+		return
+	case errors.Is(err, errNoProviderCall):
+		answerTurnError(w, r, errors.Unwrap(errors.Unwrap(err)))
+		return
+	case err != nil:
 		writeAIError(w, err)
 		return
 	}
-	partnerText, ok := journal.PartnerReply(t.language, reply.Reply)
-	if !ok {
-		log.Printf("ai converse: provider=%s code=bad_reply (empty or not in the workspace language)", run.Spec.ID)
-		writeAIError(w, ai.ErrBadReply)
+	partnerText, err := journal.PartnerReply(t.language, reply.Reply)
+	if err != nil {
+		log.Printf("ai converse: provider=%s refused reply: %v", run.Spec.ID, err)
+		if errors.Is(err, journal.ErrReplyLanguage) {
+			writeError(w, http.StatusUnprocessableEntity, "wrong_language", "The AI did not answer in the workspace language.")
+		} else {
+			writeAIError(w, ai.ErrBadReply)
+		}
 		return
 	}
 	model := reply.Model
@@ -192,11 +246,11 @@ func (s *server) handleConversationTurn(w http.ResponseWriter, r *http.Request) 
 	partner := journal.Message{Role: "partner", Text: partnerText, Model: model, Provider: run.Spec.ID}
 	var learner *journal.Message
 	if text != "" {
-		learner = &journal.Message{Role: "learner", Text: text, Annotations: journal.TurnAnnotations(text, t.language, nextSeq, reply.Annotations)}
+		learner = &journal.Message{Role: "learner", Text: text, Annotations: journal.TurnAnnotations(text, t.language, reply.Annotations)}
 	}
 	// The conversation may have been discarded while the provider worked:
 	// AppendTurn writes nothing then.
-	out, err := journal.AppendTurn(context.WithoutCancel(r.Context()), s.db, userID, ws, c.ID, learner, partner)
+	out, err := journal.AppendTurn(context.WithoutCancel(r.Context()), s.db, userID, ws, id, in.TurnID, learner, partner)
 	if err != nil {
 		answerConversationError(w, r, err)
 		return

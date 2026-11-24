@@ -562,6 +562,7 @@
 	"apiError.weakPassword": "This password is not allowed: use 10 to 256 characters, and not your username.",
 	"apiError.workspaceExists": "A workspace with this name already exists.",
 	"apiError.workspaceNotFound": "This workspace no longer exists.",
+	"apiError.wrongLanguage": "The AI did not answer in this workspace's language. Nothing was saved; send your message again.",
 	"apiError.wrongPassword": "The password is wrong.",
 	"app.home.chooseWidgets": "<link>Choose widgets in Settings</link>.",
 	"app.home.greeting.afternoon": "Good afternoon",

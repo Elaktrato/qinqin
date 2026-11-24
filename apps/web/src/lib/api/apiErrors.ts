@@ -114,6 +114,7 @@ export const API_ERROR_KEYS: Readonly<Record<string, MessageKey>> = {
 	too_many_photos: 'apiError.tooManyPhotos',
 	conversation_full: 'apiError.conversationFull',
 	conversation_limit: 'apiError.conversationLimit',
+	wrong_language: 'apiError.wrongLanguage',
 	ocr_unavailable: 'apiError.ocrUnavailable',
 	ocr_language_missing: 'apiError.ocrLanguageMissing',
 	ocr_failed: 'apiError.ocrFailed',

@@ -38,12 +38,12 @@ func TestConversationStoreAndIsolation(t *testing.T) {
 	}
 
 	// The partner opens; then a learner turn appends two messages.
-	got, err := AppendTurn(ctx, sqlDB, alice, ws, "c1", nil, partner("你好！"))
+	got, err := AppendTurn(ctx, sqlDB, alice, ws, "c1", "t1", nil, partner("你好！"))
 	if err != nil || len(got.Messages) != 1 || got.Messages[0].Seq != 1 || got.Messages[0].Role != "partner" || got.Messages[0].Annotations == nil {
 		t.Fatalf("opening = %+v, %v", got, err)
 	}
 	learner := Message{Role: "learner", Text: "我是很好。", Annotations: []Annotation{{ID: "m2a1", Quote: "是很", Correction: "很", Kind: "mistake"}}}
-	got, err = AppendTurn(ctx, sqlDB, alice, ws, "c1", &learner, partner("太好了。"))
+	got, err = AppendTurn(ctx, sqlDB, alice, ws, "c1", "t2", &learner, partner("太好了。"))
 	if err != nil || len(got.Messages) != 3 || got.Messages[1].Seq != 2 || got.Messages[1].Annotations[0].Quote != "是很" || got.Messages[2].Text != "太好了。" {
 		t.Fatalf("turn = %+v, %v", got, err)
 	}
@@ -63,7 +63,7 @@ func TestConversationStoreAndIsolation(t *testing.T) {
 		if _, err := GetConversation(ctx, sqlDB, scope[0], scope[1], "c1"); !errors.Is(err, ErrNotFound) {
 			t.Errorf("%v reads it: %v", scope, err)
 		}
-		if _, err := AppendTurn(ctx, sqlDB, scope[0], scope[1], "c1", nil, partner("x")); !errors.Is(err, ErrNotFound) {
+		if _, err := AppendTurn(ctx, sqlDB, scope[0], scope[1], "c1", "t3", nil, partner("x")); !errors.Is(err, ErrNotFound) {
 			t.Errorf("%v appends: %v", scope, err)
 		}
 		if err := DeleteConversation(ctx, sqlDB, scope[0], scope[1], "c1"); !errors.Is(err, ErrNotFound) {
@@ -77,7 +77,7 @@ func TestConversationStoreAndIsolation(t *testing.T) {
 	if err := sqlDB.QueryRow(`SELECT (SELECT COUNT(*) FROM journal_conversations) + (SELECT COUNT(*) FROM journal_messages)`).Scan(&left); err != nil || left != 0 {
 		t.Errorf("after delete %d rows, %v", left, err)
 	}
-	if _, err := AppendTurn(ctx, sqlDB, alice, ws, "c1", nil, partner("late")); !errors.Is(err, ErrNotFound) {
+	if _, err := AppendTurn(ctx, sqlDB, alice, ws, "c1", "t4", nil, partner("late")); !errors.Is(err, ErrNotFound) {
 		t.Errorf("a late reply for a discarded conversation: %v", err)
 	}
 }
@@ -95,12 +95,12 @@ func TestConversationCaps(t *testing.T) {
 	if _, err := CreateConversation(ctx, sqlDB, alice, ws, "over", "", "beginner"); !errors.Is(err, ErrConversationLimit) {
 		t.Fatalf("conversation %d: %v", MaxConversations+1, err)
 	}
-	if _, err := AppendTurn(ctx, sqlDB, alice, ws, "c0", nil, partner("开")); err != nil {
+	if _, err := AppendTurn(ctx, sqlDB, alice, ws, "c0", "t5", nil, partner("开")); err != nil {
 		t.Fatal(err)
 	}
 	learner := Message{Role: "learner", Text: "好"}
 	for n := 1; n+2 <= MaxMessages; n += 2 {
-		if _, err := AppendTurn(ctx, sqlDB, alice, ws, "c0", &learner, partner("好")); err != nil {
+		if _, err := AppendTurn(ctx, sqlDB, alice, ws, "c0", fmt.Sprintf("loop%d", n), &learner, partner("好")); err != nil {
 			t.Fatalf("at %d messages: %v", n, err)
 		}
 	}
@@ -111,28 +111,28 @@ func TestConversationCaps(t *testing.T) {
 	if !ConversationFull(c) {
 		t.Error("a conversation without room for one more turn is full")
 	}
-	if _, err := AppendTurn(ctx, sqlDB, alice, ws, "c0", &learner, partner("好")); !errors.Is(err, ErrConversationFull) {
+	if _, err := AppendTurn(ctx, sqlDB, alice, ws, "c0", "t7", &learner, partner("好")); !errors.Is(err, ErrConversationFull) {
 		t.Errorf("over the cap: %v", err)
 	}
 }
 
 func TestPartnerReplyAndTurnAnnotations(t *testing.T) {
-	if r, ok := PartnerReply("zh", "  你好！\u0007 "); !ok || r != "你好！" {
-		t.Errorf("reply = %q %v", r, ok)
+	if r, err := PartnerReply("zh", "  你好！\u0007 "); err != nil || r != "你好！" {
+		t.Errorf("reply = %q %v", r, err)
 	}
-	if _, ok := PartnerReply("zh", "Hello there."); ok {
+	if _, err := PartnerReply("zh", "Hello there."); err == nil {
 		t.Error("an English reply in a Chinese workspace")
 	}
-	if _, ok := PartnerReply("zh", "   "); ok {
+	if _, err := PartnerReply("zh", "   "); err == nil {
 		t.Error("an empty reply")
 	}
-	if r, ok := PartnerReply("zh", strings.Repeat("好", 900)); !ok || len([]rune(r)) != MaxReplyRunes {
+	if r, err := PartnerReply("zh", strings.Repeat("好", 900)); err != nil || len([]rune(r)) != MaxReplyRunes {
 		t.Errorf("a long reply is cut: %d", len([]rune(r)))
 	}
-	anns := TurnAnnotations("我是很好。", "zh", 4, []ai.RawAnnotation{
+	anns := TurnAnnotations("我是很好。", "zh", []ai.RawAnnotation{
 		{Quote: "是很", Correction: "很", Kind: "mistake"}, {Quote: "不在", Correction: "在"}, {Quote: "好", Correction: "abc"},
 	})
-	if len(anns) != 1 || anns[0].ID != "m4a1" || anns[0].Prefix != "我" {
+	if len(anns) != 1 || anns[0].Prefix != "我" {
 		t.Errorf("annotations = %+v", anns)
 	}
 }
@@ -149,10 +149,10 @@ func TestSaveConversationAsEntry(t *testing.T) {
 		t.Errorf("an empty conversation saved: %v", err)
 	}
 	learner := Message{Role: "learner", Text: "我很好。"}
-	if _, err := AppendTurn(ctx, sqlDB, alice, ws, "c1", nil, partner("你好！")); err != nil {
+	if _, err := AppendTurn(ctx, sqlDB, alice, ws, "c1", "t8", nil, partner("你好！")); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := AppendTurn(ctx, sqlDB, alice, ws, "c1", &learner, partner("太好了。")); err != nil {
+	if _, err := AppendTurn(ctx, sqlDB, alice, ws, "c1", "t9", &learner, partner("太好了。")); err != nil {
 		t.Fatal(err)
 	}
 	if _, err := SaveConversation(ctx, sqlDB, bob, ws, "c1", "E1", "2026-11-24"); !errors.Is(err, ErrNotFound) {
@@ -200,10 +200,10 @@ func TestConversationKeyedRoundTrip(t *testing.T) {
 		t.Fatal(err)
 	}
 	learner := Message{Role: "learner", Text: "我是很好。", Annotations: []Annotation{{ID: "m2a1", Quote: "是很", Correction: "很", Kind: "mistake"}}}
-	if _, err := AppendTurn(ctx, sqlDB, alice, ws, "c1", nil, partner("你好！")); err != nil {
+	if _, err := AppendTurn(ctx, sqlDB, alice, ws, "c1", "t10", nil, partner("你好！")); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := AppendTurn(ctx, sqlDB, alice, ws, "c1", &learner, partner("好。")); err != nil {
+	if _, err := AppendTurn(ctx, sqlDB, alice, ws, "c1", "t11", &learner, partner("好。")); err != nil {
 		t.Fatal(err)
 	}
 	before, _ := GetConversation(ctx, sqlDB, alice, ws, "c1")

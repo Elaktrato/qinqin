@@ -162,7 +162,7 @@ func PutEntry(ctx context.Context, sqlDB Querier, userID, workspaceID int64, e E
 
 // DeleteEntry removes an entry and its review; a missing entry is ErrNotFound.
 func DeleteEntry(ctx context.Context, sqlDB *sql.DB, userID, workspaceID int64, id string) error {
-	tx, err := sqlDB.BeginTx(ctx, nil)
+	tx, err := beginWrite(ctx, sqlDB)
 	if err != nil {
 		return fmt.Errorf("journal: delete entry: %w", err)
 	}

@@ -81,6 +81,9 @@ func (s *server) runAI(r *http.Request, userID int64, kind string, call func(ctx
 	ctx, cancel := context.WithTimeout(context.WithoutCancel(r.Context()), aiProviderTimeout)
 	defer cancel()
 	res, err := call(ctx, provider, spec, creds)
+	if errors.Is(err, errNoProviderCall) {
+		return aiRun{Creds: creds, Spec: spec}, err // nothing was sent: nothing to record or log
+	}
 	s.recordAICalls(ctx, userID, kind, spec.ID, creds.Model, res, err)
 	run := aiRun{Creds: creds, Spec: spec}
 	if err != nil {

@@ -39,7 +39,7 @@ var seedSQL = map[string][]string{
 	"journal_suggestions":   {`INSERT INTO journal_suggestions (user_id, workspace_id, items, model, created_at) VALUES (?1, 1, '[]', 'm', 't')`},
 	"journal_settings":      {`INSERT INTO journal_settings (user_id, workspace_id, guidance, explanation_language, updated_at) VALUES (?1, 1, '', 'en', 't')`},
 	"journal_conversations": {`INSERT INTO journal_conversations (user_id, workspace_id, id, topic, level, created_at, updated_at) VALUES (?1, 1, 'c', '', 'beginner', 't', 't')`},
-	"journal_messages":      {`INSERT INTO journal_messages (user_id, workspace_id, conversation_id, seq, role, text, annotations, created_at) VALUES (?1, 1, 'c', 1, 'partner', 'x', '[]', 't')`},
+	"journal_messages":      {`INSERT INTO journal_messages (user_id, workspace_id, conversation_id, seq, role, text, annotations, turn_id, created_at) VALUES (?1, 1, 'c', 1, 'partner', 'x', '[]', 't1', 't')`},
 	"grammar_progress":      {`INSERT INTO grammar_progress (user_id, workspace_id, pack_id, lesson_id, completed_at, best, total, updated_at) VALUES (?1, 1, 'p', 'l', 't', 1, 2, 't')`},
 	"journal_photos":        {`INSERT INTO journal_photos (id, user_id, workspace_id, created_at, last_seen_at) VALUES ('ph' || ?1, ?1, 1, 't', 't')`},
 	"ai_keys":               {`INSERT INTO ai_keys (user_id, provider, ciphertext, nonce, secret_fp, hint, model, created_at) VALUES (?1, 'anthropic', x'00', x'00', 'fp', 'h', 'm', 't')`},

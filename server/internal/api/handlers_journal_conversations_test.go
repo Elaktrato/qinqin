@@ -2,10 +2,12 @@ package api_test
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"testing"
 
 	"qinqin/internal/ai"
@@ -45,9 +47,17 @@ func (e journalEnv) startConversation(t *testing.T, topic, level string) journal
 	return c
 }
 
+var turnSeq atomic.Int64
+
+// turn sends a turn with a fresh client turn id.
 func (e journalEnv) turn(t *testing.T, id, text string) *http.Response {
 	t.Helper()
-	return doJSON(t, http.MethodPost, e.url, "/api/journal/conversations/"+id+"/turn"+wsQ(e.ws), e.token, map[string]any{"text": text})
+	return e.turnWithID(t, id, text, fmt.Sprintf("turn%d", turnSeq.Add(1)))
+}
+
+func (e journalEnv) turnWithID(t *testing.T, id, text, turnID string) *http.Response {
+	t.Helper()
+	return doJSON(t, http.MethodPost, e.url, "/api/journal/conversations/"+id+"/turn"+wsQ(e.ws), e.token, map[string]any{"text": text, "turnId": turnID})
 }
 
 func (e journalEnv) getConversation(t *testing.T, id string) (journal.Conversation, int) {
@@ -88,7 +98,7 @@ func TestConversationRoutesAccess(t *testing.T) {
 	}
 	// Bob in his own workspace, with Alice's conversation id: not found, and nothing of it changes.
 	for _, rt := range routes[2:] {
-		r := doJSON(t, rt.method, e.url, rt.path+wsQ(bobWS), bob, map[string]any{"text": "我很好。", "entryId": "E1", "date": "2026-11-24"})
+		r := doJSON(t, rt.method, e.url, rt.path+wsQ(bobWS), bob, map[string]any{"text": "我很好。", "turnId": "tb", "entryId": "E1", "date": "2026-11-24"})
 		if r.StatusCode != 404 {
 			t.Errorf("bob %s %s: %d, want 404", rt.method, rt.path, r.StatusCode)
 		}
@@ -209,7 +219,7 @@ func TestConversationRefusals(t *testing.T) {
 	}
 	// A reply in another script is refused and nothing is stored.
 	before, _ := e.getConversation(t, c.ID)
-	if got := code(e.turn(t, c.ID, "[[fake:wrongscript]]你好")); got != "422 bad_reply" {
+	if got := code(e.turn(t, c.ID, "[[fake:wrongscript]]你好")); got != "422 wrong_language" {
 		t.Errorf("an English reply: %s", got)
 	}
 	if after, _ := e.getConversation(t, c.ID); len(after.Messages) != len(before.Messages) {
@@ -225,7 +235,7 @@ func TestConversationRefusals(t *testing.T) {
 	// Full: two more messages would pass the cap.
 	uid := userID(t, e.db, "root")
 	for seq := 2; seq < journal.MaxMessages; seq++ {
-		if _, err := e.db.Exec(`INSERT INTO journal_messages (user_id, workspace_id, conversation_id, seq, role, text, annotations, created_at) VALUES (?, ?, ?, ?, 'learner', 'x', '[]', 't')`, uid, e.ws, c.ID, seq); err != nil {
+		if _, err := e.db.Exec(`INSERT INTO journal_messages (user_id, workspace_id, conversation_id, seq, role, text, annotations, turn_id, created_at) VALUES (?, ?, ?, ?, 'learner', 'x', '[]', ?, 't')`, uid, e.ws, c.ID, seq, fmt.Sprintf("seed%d", seq)); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -293,5 +303,83 @@ func TestConversationDiscardedDuringTheTurn(t *testing.T) {
 	e.db.QueryRow(`SELECT COUNT(*) FROM journal_messages`).Scan(&n)
 	if n != 0 {
 		t.Errorf("%d messages left", n)
+	}
+}
+
+// Fix wave (#185 review): a retried turn (the same client turn id) answers the
+// stored turn and never calls the provider a second time.
+func TestConversationTurnRetryIsIdempotent(t *testing.T) {
+	spy := &converseSpy{}
+	e := newJournalEnv(t, spy, true)
+	c := e.startConversation(t, "", "beginner")
+	if r := e.turnWithID(t, c.ID, "", "open1"); r.StatusCode != 200 {
+		t.Fatalf("opening: %d", r.StatusCode)
+	}
+	first := e.turnWithID(t, c.ID, "我是很好。", "t1")
+	var a, b journal.Conversation
+	decodeJSON(t, first, &a)
+	again := e.turnWithID(t, c.ID, "我是很好。", "t1")
+	decodeJSON(t, again, &b)
+	if first.StatusCode != 200 || again.StatusCode != 200 || len(a.Messages) != 3 || len(b.Messages) != 3 {
+		t.Fatalf("first %d (%d messages), retry %d (%d messages)", first.StatusCode, len(a.Messages), again.StatusCode, len(b.Messages))
+	}
+	if len(spy.turns) != 2 {
+		t.Errorf("%d provider calls, want 2 (the opening and one turn)", len(spy.turns))
+	}
+	if b.Messages[1].TurnID != "t1" || b.Messages[2].TurnID != "t1" {
+		t.Errorf("turn ids %+v", b.Messages)
+	}
+	// Without a turn id, or with a malformed one, a turn is refused.
+	for _, body := range []map[string]any{{"text": "好"}, {"text": "好", "turnId": "a b"}} {
+		r := doJSON(t, http.MethodPost, e.url, "/api/journal/conversations/"+c.ID+"/turn"+wsQ(e.ws), e.token, body)
+		if r.StatusCode != 400 {
+			t.Errorf("turn %v: %d, want 400", body, r.StatusCode)
+		}
+	}
+}
+
+// A retry that arrives while the first call is still running gets in_flight
+// and no second call; once the first is stored the retry answers it.
+func TestConversationTurnRetryWhileTheFirstRuns(t *testing.T) {
+	spy := &converseSpy{started: make(chan struct{}), release: make(chan struct{})}
+	e := newJournalEnv(t, spy, true)
+	c := e.startConversation(t, "", "beginner")
+	done := make(chan *http.Response)
+	go func() { done <- e.turnWithID(t, c.ID, "", "open1") }()
+	<-spy.started
+	var body aiErrBody
+	r := e.turnWithID(t, c.ID, "", "open1")
+	decodeJSON(t, r, &body)
+	if r.StatusCode != 409 || body.Error != "in_flight" {
+		t.Errorf("retry during the call: %d %q", r.StatusCode, body.Error)
+	}
+	close(spy.release)
+	if r := <-done; r.StatusCode != 200 {
+		t.Fatalf("first: %d", r.StatusCode)
+	}
+	spy.release = nil
+	var got journal.Conversation
+	r = e.turnWithID(t, c.ID, "", "open1")
+	decodeJSON(t, r, &got)
+	if r.StatusCode != 200 || len(got.Messages) != 1 || len(spy.turns) != 1 {
+		t.Errorf("retry after: %d, %d messages, %d calls", r.StatusCode, len(got.Messages), len(spy.turns))
+	}
+}
+
+// The history a turn sends is read while the turn holds the user's AI slot,
+// so it holds every turn stored before this one (here one written straight
+// into the store between the handler's first read and its provider call is
+// impossible to time, so the store's numbering test covers the ids:
+// TestAppendTurnNumbersAnnotationsFromTheStoredSeq).
+func TestConversationTurnSendsTheStoredHistory(t *testing.T) {
+	spy := &converseSpy{}
+	e := newJournalEnv(t, spy, true)
+	c := e.startConversation(t, "", "beginner")
+	e.turn(t, c.ID, "")
+	e.turn(t, c.ID, "我好。")
+	e.turn(t, c.ID, "你呢？")
+	last := spy.turns[len(spy.turns)-1]
+	if len(last.History) != 3 || last.History[1].Text != "我好。" || last.Text != "你呢？" {
+		t.Errorf("history %+v", last.History)
 	}
 }

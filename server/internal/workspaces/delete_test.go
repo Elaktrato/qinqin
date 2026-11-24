@@ -82,7 +82,7 @@ var seedSQL = map[string][]string{
 	"journal_suggestions":   {`INSERT INTO journal_suggestions (user_id, workspace_id, items, model, created_at) VALUES (?1, ?2, '[]', 'm', 't')`},
 	"journal_settings":      {`INSERT INTO journal_settings (user_id, workspace_id, guidance, explanation_language, updated_at) VALUES (?1, ?2, '', 'en', 't')`},
 	"journal_conversations": {`INSERT INTO journal_conversations (user_id, workspace_id, id, topic, level, created_at, updated_at) VALUES (?1, ?2, 'c' || ?3, '', 'beginner', 't', 't')`},
-	"journal_messages":      {`INSERT INTO journal_messages (user_id, workspace_id, conversation_id, seq, role, text, annotations, created_at) VALUES (?1, ?2, 'c' || ?3, 1, 'partner', 'x', '[]', 't')`},
+	"journal_messages":      {`INSERT INTO journal_messages (user_id, workspace_id, conversation_id, seq, role, text, annotations, turn_id, created_at) VALUES (?1, ?2, 'c' || ?3, 1, 'partner', 'x', '[]', 't1', 't')`},
 	"grammar_progress":      {`INSERT INTO grammar_progress (user_id, workspace_id, pack_id, lesson_id, completed_at, best, total, updated_at) VALUES (?1, ?2, 'p', 'l' || ?3, 't', 1, 2, 't')`},
 	"journal_photos":        {`INSERT INTO journal_photos (id, user_id, workspace_id, created_at, last_seen_at) VALUES ('ph' || ?3, ?1, ?2, 't', 't')`},
 	"access_tokens":         {`INSERT INTO access_tokens (user_id, workspace_id, name, token_hash, hint, scope, created_at, expires_at) VALUES (?1, ?2, 'n', 'ah' || ?3, 'abcdef', 'read', 't', '9999')`},

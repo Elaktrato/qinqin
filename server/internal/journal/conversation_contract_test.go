@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"os"
+	"reflect"
 	"slices"
 	"strings"
 	"testing"
@@ -34,10 +35,11 @@ func (s *fxString) UnmarshalJSON(b []byte) error {
 // docs/contracts/journal/conversations.json: the levels, the limits, what a
 // start and a turn accept, and the transcript of a saved conversation.
 func TestConversationsContract(t *testing.T) {
-	raw, err := os.ReadFile("../../../docs/contracts/journal/conversations.json")
+	raw0, err := os.ReadFile("../../../docs/contracts/journal/conversations.json")
 	if err != nil {
 		t.Fatal(err)
 	}
+	raw := raw0
 	var fx struct {
 		Levels []string `json:"levels"`
 		Limits struct {
@@ -61,8 +63,13 @@ func TestConversationsContract(t *testing.T) {
 			Code        string   `json:"code"`
 			Why         string   `json:"why"`
 		} `json:"turn"`
-		Conversation Conversation `json:"conversation"`
-		Transcript   string       `json:"transcript"`
+		Conversation    Conversation    `json:"conversation"`
+		RawConversation json.RawMessage `json:"-"`
+		Transcripts     []struct {
+			Why          string       `json:"why"`
+			Conversation Conversation `json:"conversation"`
+			Text         string       `json:"text"`
+		} `json:"transcripts"`
 	}
 	if err := json.Unmarshal(raw, &fx); err != nil {
 		t.Fatal(err)
@@ -96,8 +103,30 @@ func TestConversationsContract(t *testing.T) {
 			t.Errorf("turn %q (hasMessages %v, %s) = %q, want %q", cut(string(c.Text)), c.HasMessages, c.Why, got, c.Code)
 		}
 	}
-	if got := Transcript(fx.Conversation); got != fx.Transcript {
-		t.Errorf("transcript = %q, want %q", got, fx.Transcript)
+	if len(fx.Transcripts) < 2 {
+		t.Fatalf("%d transcript cases", len(fx.Transcripts))
+	}
+	for _, c := range fx.Transcripts {
+		if got := Transcript(c.Conversation); got != c.Text {
+			t.Errorf("transcript (%s) = %q, want %q", c.Why, got, c.Text)
+		}
+	}
+	// The server answers the conversation exactly as the fixture writes it.
+	var doc struct {
+		Conversation json.RawMessage `json:"conversation"`
+	}
+	if err := json.Unmarshal(raw0, &doc); err != nil {
+		t.Fatal(err)
+	}
+	got, err := json.Marshal(fx.Conversation)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var a, b any
+	_ = json.Unmarshal(got, &a)
+	_ = json.Unmarshal(doc.Conversation, &b)
+	if a == nil || b == nil || !reflect.DeepEqual(a, b) {
+		t.Errorf("marshalled conversation\n%s\ndiffers from the fixture\n%s", got, doc.Conversation)
 	}
 }
 

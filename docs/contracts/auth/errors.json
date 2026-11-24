@@ -105,6 +105,7 @@
   "unsupported_image": {"status": 415, "meaning": "POST /api/journal/photos: not a JPEG, PNG or WebP image."},
   "image_too_large": {"status": 422, "meaning": "POST /api/journal/photos: the photo has more than 25 megapixels."},
   "conversation_full": {"status": 409, "meaning": "Journal conversation partner: the conversation holds the maximum of 50 messages; save it or start a new one."},
+  "wrong_language": {"status": 422, "meaning": "Journal conversation partner: the AI's reply was not (mostly) in the workspace language; nothing was stored, send again."},
   "conversation_limit": {"status": 409, "meaning": "Journal conversation partner: 20 conversations are open in the workspace already; save or discard one first."},
   "too_many_photos": {"status": 409, "meaning": "Journal photos: 10 photo drafts are open already; finish or discard one first."},
   "ocr_unavailable": {"status": 409, "meaning": "Journal photos: offline reading (OCR) is not installed on this server."},
