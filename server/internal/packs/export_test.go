@@ -1,5 +1,14 @@
 package packs
 
+import (
+	"context"
+	"database/sql"
+	"slices"
+	"testing"
+
+	"qinqin/internal/pack"
+)
+
 // SetLogfForTest swaps the logger of skipped licence files and returns a
 // restore func.
 func SetLogfForTest(f func(string, ...any)) (restore func()) {
@@ -30,4 +39,22 @@ func IncompleteHandlers() []string {
 		}
 	}
 	return out
+}
+
+// AddTypeForTest adds a pack type for the rest of the test: its row of the
+// pack-type table and its handler, and nothing else (#192).
+func AddTypeForTest(t testing.TB, d pack.Descriptor,
+	importPack func(ctx context.Context, sqlDB *sql.DB, pk pack.Pack) (string, error),
+	uninstall func(ctx context.Context, sqlDB *sql.DB, packID string) error) {
+	t.Helper()
+	oldAll, oldHandlers := pack.All, handlers
+	t.Cleanup(func() { pack.All, handlers = oldAll, oldHandlers })
+	pack.All = append(slices.Clone(pack.All), d)
+	handlers = append(slices.Clone(handlers), handler{typ: d.Type,
+		importPack: func(ctx context.Context, sqlDB *sql.DB, pk pack.Pack, _ options) (string, error) {
+			return importPack(ctx, sqlDB, pk)
+		},
+		uninstall: func(ctx context.Context, sqlDB *sql.DB, packID string, _ options) error {
+			return uninstall(ctx, sqlDB, packID)
+		}})
 }

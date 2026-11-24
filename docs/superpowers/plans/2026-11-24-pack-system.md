@@ -125,6 +125,14 @@ The issue predates #172, #176 and #198. Its places, checked in the code at 86fe1
   rule and its message (shared with the contract tests), so `ReadCapped` would change a message — cost if
   wrong: two capped reads stay spelled out.
 
+- Ruling: the fake-type test lives in `internal/packs` (`faketype_test.go`) and goes through the steps of the
+  HTTP stage (unzip, load, `Supported`, `Installable`, `RegistryTerms`, `Find`), import with the change hook,
+  list, an unchanged re-import, the package plan and `AffectedIDs`, and uninstall. It does not drive the
+  HTTP routes: the `api` tests cannot reach `packs`' test hook (`AddTypeForTest`), and the stage handler has
+  no per-type code for a type like it. Its type has no data package: a type with one also needs its schema
+  in `datapkg` (`typeDefs`, `Types()`, the contract), which is the package format, not a table entry — cost
+  if wrong: a route-level regression for a new type is caught only by that type's own api tests.
+
 ## Execution record
 
 - Task 1: `TestSeedOrderIsPinned` and `TestManifestMessagesArePinned` pass on 86fe13a4 unchanged (the seed
@@ -151,3 +159,7 @@ The issue predates #172, #176 and #198. Its places, checked in the code at 86fe1
   full `api` run and 40 times alone (not reproduced; watched in the final gates).
 - Task 6: `TestNowIsAnRFC3339UTCSecond`, `TestPlaceholders`, `TestReadCapped` written first against stubs and
   seen failing, then the helpers; the copies replaced (imports fixed with goimports).
+- Task 7: `TestAFakePackTypeNeedsOnlyItsTableEntry` passes with `AddTypeForTest` (a row of `pack.All` and of
+  `handlers`, restored at cleanup) and nothing else; before the entry the stage refuses the pack (unknown
+  type). It checks existing behaviour, so it passed at once; a mutation (List looping over the first 11
+  rows only) made it fail.
