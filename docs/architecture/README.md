@@ -20,7 +20,7 @@ reused. The first line is `# NNNN. Title`, then these sections, in this order:
 ```md
 ## Status
 One line, one of the status values below; then a line "Touched by: #N, #M." naming the open issues that
-change the code the record describes.
+change the code the record describes, or "Touched by: none." when no open issue does.
 
 ## Context
 What problem or drift made the decision necessary; the issue that decided it.

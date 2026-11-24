@@ -191,8 +191,8 @@ describe('the architecture records', () => {
 		expectAnchorsResolve(r.text, resolve(dir, r.file));
 	});
 
-	it.each(records)('$file names the issues that touch it ("Touched by: #N, ...")', (r) => {
-		expect(section(r.text, 'Status')).toMatch(/^Touched by: #\d+(, #\d+)*\b/m);
+	it.each(records)('$file names the issues that touch it ("Touched by: #N, ..." or "Touched by: none.")', (r) => {
+		expect(section(r.text, 'Status')).toMatch(/^Touched by: (#\d+(, #\d+)*\b|none\.)/m);
 	});
 
 	// A record in force names the code it describes; a renamed or deleted path must update the record.
