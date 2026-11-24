@@ -1,4 +1,4 @@
-// Package levels stores level schemes — HSK, JLPT, curriculum tables,
+// Package levels stores level schemes — HSK, JLPT, Jōyō grades,
 // any ordered ladder of levels over a language's lexicon entries — imported
 // from levels packs, and derives character levels for word-based
 // schemes: each character joins the lowest level whose member words are

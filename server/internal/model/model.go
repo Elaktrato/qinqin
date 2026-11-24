@@ -86,7 +86,7 @@ type SenseView struct {
 }
 
 // Scheme is the registry row one imported levels pack creates — HSK,
-// JLPT, a curriculum table: any ordered ladder of levels over one
+// JLPT, Jōyō grades: any ordered ladder of levels over one
 // language's entries — keyed by the pack's manifest id. Re-imports
 // upsert the row and replace its levels and memberships; uninstall
 // soft-deletes them. Entries survive both.

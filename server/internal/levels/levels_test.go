@@ -561,7 +561,7 @@ func TestCharacterUnitScheme(t *testing.T) {
 	ni := lexID(t, sqlDB, "character", "你")
 
 	// "hanzi" is the pack spelling of the character unit.
-	if _, err := levels.Import(ctx, sqlDB, buildPack(t, "zh-curriculum",
+	if _, err := levels.Import(ctx, sqlDB, buildPack(t, "zh-hanzi-list",
 		`{"unit":"hanzi","levels":[{"name":"1","entries":["好","你"]}]}`)); err != nil {
 		t.Fatalf("import hanzi-unit scheme: %v", err)
 	}
