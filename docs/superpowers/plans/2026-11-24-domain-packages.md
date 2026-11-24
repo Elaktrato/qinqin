@@ -172,3 +172,9 @@ The review found no MUST-FIX. Each group below is one commit, test first.
   functions (48 calls, 44 statements; a chain is now one finding, where the old scan counted a literal of it).
   What stays open is named under Review in 0003 (a helper written for `api`, `fmt.Sprintf`/`strings.Join`,
   constants of another package, reflection).
+- NIT 3, child tables: the delete test now derives the children of the workspace tables from the schema
+  (a foreign key to one of them, or a `book_id` column) instead of a hand list, and fails on a child without
+  a seed row. Mutations, each reverted: without the `library_highlights` seed the test fails ("no seed row
+  ... a child of library_books"); without the highlights in `library.DeleteWorkspaceBooks` it fails (a
+  highlight of the deleted book remains). The limit (a child by another column name without a foreign key)
+  is in 0003's Enforcement section.

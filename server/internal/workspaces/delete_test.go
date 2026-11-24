@@ -81,11 +81,59 @@ var seedSQL = map[string][]string{
 	"access_tokens":       {`INSERT INTO access_tokens (user_id, workspace_id, name, token_hash, hint, scope, created_at, expires_at) VALUES (?1, ?2, 'n', 'ah' || ?3, 'abcdef', 'read', 't', '9999')`},
 }
 
-// bookChildren are the tables that hang off a library book (no
-// workspace_id of their own), seeded for the book of workspace ?2.
-var bookChildren = map[string]string{
+// childSeeds seed, for workspace ?2 of user ?1, one row of every child
+// table: a table without a workspace_id whose rows hang off a row of a
+// workspace table (childTables).
+var childSeeds = map[string]string{
 	"library_bookmarks":  `INSERT INTO library_bookmarks (user_id, book_id, position, created_at) VALUES (?1, (SELECT id FROM library_books WHERE workspace_id = ?2), '0:0', 't')`,
 	"library_highlights": `INSERT INTO library_highlights (user_id, book_id, chapter, paragraph, start_cp, end_cp, text, created_at, updated_at) VALUES (?1, (SELECT id FROM library_books WHERE workspace_id = ?2), 0, 0, 0, 1, 'x', 't', 't')`,
+}
+
+// child is a table whose column points at the id of a workspace table.
+type child struct{ table, column, parent string }
+
+// childTables lists, from the migrated schema, the tables without a
+// workspace_id that point at a workspace table: by a foreign key, or by a
+// book_id column (a row of library_books).
+func childTables(t *testing.T, db *sql.DB, workspaceTables []string) []child {
+	t.Helper()
+	found := map[string]child{}
+	rows, err := db.Query(`SELECT m.name, f."from", f."table" FROM sqlite_master m, pragma_foreign_key_list(m.name) f
+		WHERE m.type = 'table' AND m.name NOT LIKE 'sqlite_%' ORDER BY 1`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for rows.Next() {
+		var c child
+		if err := rows.Scan(&c.table, &c.column, &c.parent); err != nil {
+			t.Fatal(err)
+		}
+		if slices.Contains(workspaceTables, c.parent) && !slices.Contains(workspaceTables, c.table) {
+			found[c.table] = c
+		}
+	}
+	rows.Close()
+	rows, err = db.Query(`SELECT m.name FROM sqlite_master m, pragma_table_info(m.name) p
+		WHERE m.type = 'table' AND p.name = 'book_id' ORDER BY 1`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for rows.Next() {
+		var name string
+		if err := rows.Scan(&name); err != nil {
+			t.Fatal(err)
+		}
+		if _, ok := found[name]; !ok && !slices.Contains(workspaceTables, name) {
+			found[name] = child{name, "book_id", "library_books"}
+		}
+	}
+	rows.Close()
+	var out []child
+	for _, c := range found {
+		out = append(out, c)
+	}
+	sort.Slice(out, func(i, j int) bool { return out[i].table < out[j].table })
+	return out
 }
 
 func countIn(t *testing.T, db *sql.DB, table string, ws int64) int {
@@ -97,17 +145,17 @@ func countIn(t *testing.T, db *sql.DB, table string, ws int64) int {
 	return n
 }
 
-func countChildren(t *testing.T, db *sql.DB, table string, ws int64) int {
+func countChildren(t *testing.T, db *sql.DB, c child, ws int64) int {
 	t.Helper()
 	var n int
-	if err := db.QueryRow(`SELECT COUNT(*) FROM `+table+` x JOIN library_books b ON b.id = x.book_id WHERE b.workspace_id = ?`, ws).Scan(&n); err != nil {
-		t.Fatalf("count %s: %v", table, err)
+	if err := db.QueryRow(`SELECT COUNT(*) FROM `+c.table+` x JOIN `+c.parent+` p ON p.id = x.`+c.column+` WHERE p.workspace_id = ?`, ws).Scan(&n); err != nil {
+		t.Fatalf("count %s: %v", c.table, err)
 	}
 	return n
 }
 
 // TestDeleteEmptiesEveryWorkspaceTable seeds a row in every table with a
-// workspace_id (and the book's children) for two workspaces of one user
+// workspace_id and in every child table (childTables) for two workspaces of one user
 // and one of another, deletes one, and checks every table of the schema:
 // nothing of the deleted workspace is left except in a kept table, and the
 // other workspaces keep every row.
@@ -123,6 +171,15 @@ func TestDeleteEmptiesEveryWorkspaceTable(t *testing.T) {
 			t.Fatalf("no seed row for %s: extend seedSQL so this test covers its delete rule", table)
 		}
 	}
+	children := childTables(t, db, tables)
+	if len(children) < 2 {
+		t.Fatalf("found only the child tables %v: the schema query is broken", children)
+	}
+	for _, c := range children {
+		if _, ok := childSeeds[c.table]; !ok {
+			t.Fatalf("no seed row for %s (a child of %s): extend childSeeds, and make the workspace delete remove its rows", c.table, c.parent)
+		}
+	}
 	for i, ws := range []struct{ user, id int64 }{{alice, gone}, {alice, kept}, {bob, other}} {
 		for _, table := range tables {
 			for _, q := range seedSQL[table] {
@@ -131,15 +188,24 @@ func TestDeleteEmptiesEveryWorkspaceTable(t *testing.T) {
 				}
 			}
 		}
-		for table, q := range bookChildren {
-			if _, err := db.Exec(q, ws.user, ws.id); err != nil {
-				t.Fatalf("seed %s: %v", table, err)
+		for _, c := range children {
+			if _, err := db.Exec(childSeeds[c.table], ws.user, ws.id); err != nil {
+				t.Fatalf("seed %s: %v", c.table, err)
 			}
 		}
 	}
 	var bookID int64
 	if err := db.QueryRow(`SELECT id FROM library_books WHERE workspace_id = ?`, gone).Scan(&bookID); err != nil {
 		t.Fatal(err)
+	}
+	// The parent rows of the deleted workspace, to find orphans afterwards.
+	goneParents := map[string]string{}
+	for _, c := range children {
+		var ids string
+		if err := db.QueryRow(`SELECT COALESCE(group_concat(id), '') FROM `+c.parent+` WHERE workspace_id = ?`, gone).Scan(&ids); err != nil {
+			t.Fatal(err)
+		}
+		goneParents[c.parent] = ids
 	}
 
 	del, err := workspaces.Delete(ctx, db, alice, gone)
@@ -165,17 +231,19 @@ func TestDeleteEmptiesEveryWorkspaceTable(t *testing.T) {
 			}
 		}
 	}
-	for table := range bookChildren {
-		if n := countChildren(t, db, table, gone); n != 0 {
-			t.Errorf("%s: %d rows of the deleted workspace's book remain", table, n)
+	for _, c := range children {
+		if n := countChildren(t, db, c, gone); n != 0 {
+			t.Errorf("%s: %d rows of the deleted workspace's %s remain", c.table, n, c.parent)
 		}
-		var orphans int
-		db.QueryRow(`SELECT COUNT(*) FROM `+table+` WHERE book_id = ?`, bookID).Scan(&orphans)
-		if orphans != 0 {
-			t.Errorf("%s: %d rows of the deleted book remain", table, orphans)
+		if ids := goneParents[c.parent]; ids != "" {
+			var orphans int
+			db.QueryRow(`SELECT COUNT(*) FROM ` + c.table + ` WHERE ` + c.column + ` IN (` + ids + `)`).Scan(&orphans)
+			if orphans != 0 {
+				t.Errorf("%s: %d rows of the deleted %s rows remain", c.table, orphans, c.parent)
+			}
 		}
-		if n := countChildren(t, db, table, kept); n != 1 {
-			t.Errorf("%s: the kept workspace's book has %d rows, want 1", table, n)
+		if n := countChildren(t, db, c, kept); n != 1 {
+			t.Errorf("%s: the kept workspace has %d rows, want 1", c.table, n)
 		}
 	}
 	var ws int

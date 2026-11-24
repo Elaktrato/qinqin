@@ -88,9 +88,12 @@ Not allowed:
   reports 92 findings in 37 functions (48 calls, 44 statements).
 - `TestEveryWorkspaceTableHasADeleteRule` (`server/internal/workspaces/delete_test.go`): lists every table with a
   `workspace_id` column from the migrated schema and fails on a table without a rule, or a rule without a
-  table. `TestDeleteEmptiesEveryWorkspaceTable` seeds a row in each of them (it fails on a table without a seed
-  row) for two workspaces of one user and one of another, deletes one, and checks that nothing of it is left
-  outside a kept table while the others keep every row.
+  table. `TestDeleteEmptiesEveryWorkspaceTable` seeds a row in each of them and in each child table (`childTables`:
+  a table without a `workspace_id` that points at one of them by a foreign key or a `book_id` column, today
+  `library_bookmarks` and `library_highlights`), failing on a table without a seed row, for two workspaces of
+  one user and one of another; deletes one, and checks that nothing of it is left outside a kept table, no
+  child row of its deleted rows remains, and the others keep every row. A child table that points at its
+  parent by another column name and without a foreign key is not found; review catches that.
 - `TestSchemaGuardEveryUserTableIsListed` (`server/internal/auth/delete_test.go`) does the same for the
   account deletion: every table with a user reference column, `workspace_id` included, must be in the deletion
   registry.
