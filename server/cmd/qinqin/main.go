@@ -173,7 +173,7 @@ func serve(ctx context.Context, data string, listen func() (net.Listener, error)
 		return err
 	}
 
-	// A fresh instance gets its admin here (when configured), before the
+	// A fresh instance gets its admin here (unless switched off), before the
 	// port opens, so first registration never decides who is admin.
 	if err := bootstrapAdminFromEnv(ctx, sqlDB, os.Getenv, log.Printf); err != nil {
 		return stopped(err)
