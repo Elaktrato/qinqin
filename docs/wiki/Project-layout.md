@@ -5,7 +5,8 @@ Where things live in the repository ([github.com/Elaktrato/qinqin](https://githu
 | Path | Contents |
 |---|---|
 | `server/` | The Go server: the `qinqin` command (`cmd/qinqin`: `serve`, `seed`, `adduser`, `recover`, `backup`) and its packages under `internal/` |
-| `server/internal/api` | HTTP routes and handlers; the route table is in `api.go` |
+| `server/internal/api` | HTTP routes and handlers: they decode, authorise, call a domain package and answer (no SQL here); the route table is in `api.go` |
+| `server/internal/workspaces`, `lang` | Workspaces (create, list, rename, delete with everything in them); the language rules and the language registry |
 | `server/internal/db` | SQLite access and the embedded migrations |
 | `server/internal/pack`, `dict`, `freq`, `packs`, `lexicon` | Pack manifests and the pack-type table, importers (dictionaries, frequency lists, the per-type dispatch), the lexicon store |
 | `server/internal/lookup`, `segment` | The lookup engine and the tokenizer |

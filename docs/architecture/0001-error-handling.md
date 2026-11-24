@@ -4,7 +4,7 @@
 
 Accepted
 
-Touched by: #194, #195, #199. A merge from one of these issues that changes what this record names updates the record.
+Touched by: #195, #199. A merge from one of these issues that changes what this record names updates the record.
 
 ## Context
 
@@ -24,7 +24,9 @@ catalogue entry documents (`documentedStatuses`: `code_invalid` and `challenge_e
 sign-in steps, `bad_request` 422 on the AI routes).
 `message` is an English sentence for developers and logs; it never carries a path, SQL, a token, a stack or a
 lower layer's error text (validation messages of our own packages may pass through). Request bodies are read
-with `decodeBody` / `readBody` / `badBody` (413 `too_large`, 400 `bad_request`). Unmatched API paths
+with `decodeBody` / `readBody` / `badBody` (413 `too_large`, 400 `bad_request`). The SQL and the rules live in domain packages (record [0003](0003-domain-packages-own-their-sql.md)): they
+return typed errors, and the handler maps each to its catalogue code and status (for the workspaces package one
+mapper, `writeWorkspaceError` in `server/internal/api/handlers_workspaces.go`). Unmatched API paths
 (`codedUnmatched`: 404 `not_found`, 405 `method_not_allowed`), `http.ServeContent` answers (`serveContent`:
 416, 412) and panics before any byte (`recoverPanics`: 500 `internal`) are coded the same way.
 
