@@ -119,45 +119,19 @@ func Import(ctx context.Context, sqlDB *sql.DB, p *pack.Pack) (Result, error) {
 	}
 	defer tx.Rollback()
 
-	var (
-		id                                                    int64
-		name, version, language, license, attribution, notice string
-		oldHash                                               string
-		deleted                                               sql.NullString
-	)
-	err = tx.QueryRowContext(ctx, `
-		SELECT id, name, version, language, license, attribution, notice, content_hash, deleted_at
-		FROM frequency_packs WHERE pack_id = ?`, m.ID).
-		Scan(&id, &name, &version, &language, &license, &attribution, &notice, &oldHash, &deleted)
 	result := Result{Entries: len(rows)}
-	switch {
-	case errors.Is(err, sql.ErrNoRows):
-		stamp := time.Now().UTC().Format(time.RFC3339)
-		if err = tx.QueryRowContext(ctx, `
-			INSERT INTO frequency_packs (pack_id, name, version, language, license, attribution, notice, ord, content_hash, updated_at)
-			VALUES (?, ?, ?, ?, ?, ?, ?, (SELECT COALESCE(MAX(ord), 0) + 1 FROM frequency_packs), ?, ?)
-			RETURNING id`,
-			m.ID, m.Name, m.Version, m.Language, m.License, m.Attribution, m.Notice, hash, stamp).Scan(&id); err != nil {
-			return Result{}, fmt.Errorf("register frequency pack %s: %w", m.ID, err)
-		}
-	case err != nil:
-		return Result{}, fmt.Errorf("import frequency pack %s: %w", m.ID, err)
-	default:
-		if !deleted.Valid && oldHash == hash && name == m.Name && version == m.Version &&
-			language == m.Language && license == m.License && attribution == m.Attribution && notice == m.Notice {
-			return result, nil // identical: nothing to write
-		}
-		if _, err = tx.ExecContext(ctx, `
-			UPDATE frequency_packs SET name = ?, version = ?, language = ?, license = ?, attribution = ?,
-				notice = ?, content_hash = ?, updated_at = ?, deleted_at = NULL
-			WHERE id = ?`,
-			m.Name, m.Version, m.Language, m.License, m.Attribution, m.Notice, hash,
-			time.Now().UTC().Format(time.RFC3339), id); err != nil {
-			return Result{}, fmt.Errorf("update frequency pack %s: %w", m.ID, err)
-		}
-		if _, err = tx.ExecContext(ctx, `DELETE FROM frequency WHERE pack_id = ?`, id); err != nil {
-			return Result{}, fmt.Errorf("replace frequency rows of %s: %w", m.ID, err)
-		}
+	id, changed, err := pack.UpsertRegistry(ctx, tx, pack.Registry{Table: "frequency_packs", PackID: m.ID, Stamp: time.Now().UTC().Format(time.RFC3339),
+		Columns: pack.ManifestColumns(m, pack.Column{Name: "language", Value: m.Language},
+			pack.Column{Name: "content_hash", Value: hash},
+			pack.Column{Name: "ord", Expr: "(SELECT COALESCE(MAX(ord), 0) + 1 FROM frequency_packs)", InsertOnly: true})})
+	if err != nil {
+		return Result{}, fmt.Errorf("register frequency pack %s: %w", m.ID, err)
+	}
+	if !changed {
+		return result, nil // identical: nothing to write
+	}
+	if _, err = tx.ExecContext(ctx, `DELETE FROM frequency WHERE pack_id = ?`, id); err != nil {
+		return Result{}, fmt.Errorf("replace frequency rows of %s: %w", m.ID, err)
 	}
 	if err := insertRows(ctx, tx, id, rows); err != nil {
 		return Result{}, fmt.Errorf("import frequency pack %s: %w", m.ID, err)

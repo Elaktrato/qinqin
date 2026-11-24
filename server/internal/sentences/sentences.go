@@ -262,26 +262,8 @@ func Uninstall(ctx context.Context, sqlDB *sql.DB, pk string) error {
 // tx, reviving an uninstalled row. An unchanged live row is not
 // restamped, so an identical re-import writes nothing.
 func upsertRegistry(ctx context.Context, tx *sql.Tx, m pack.Manifest, stamp string) error {
-	if _, err := tx.ExecContext(ctx, `
-		INSERT INTO sentence_packs (pack_id, name, version, language, license, attribution, notice, updated_at)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-		ON CONFLICT (pack_id) DO UPDATE SET
-			name = excluded.name,
-			version = excluded.version,
-			language = excluded.language,
-			license = excluded.license,
-			attribution = excluded.attribution,
-			notice = excluded.notice,
-			updated_at = excluded.updated_at,
-			deleted_at = NULL
-		WHERE sentence_packs.name IS NOT excluded.name
-		   OR sentence_packs.version IS NOT excluded.version
-		   OR sentence_packs.language IS NOT excluded.language
-		   OR sentence_packs.license IS NOT excluded.license
-		   OR sentence_packs.attribution IS NOT excluded.attribution
-		   OR sentence_packs.notice IS NOT excluded.notice
-		   OR sentence_packs.deleted_at IS NOT NULL`,
-		m.ID, m.Name, m.Version, m.Language, m.License, m.Attribution, m.Notice, stamp); err != nil {
+	if _, _, err := pack.UpsertRegistry(ctx, tx, pack.Registry{Table: "sentence_packs", PackID: m.ID, Stamp: stamp,
+		Columns: pack.ManifestColumns(m, pack.Column{Name: "language", Value: m.Language})}); err != nil {
 		return fmt.Errorf("register sentence pack %s: %w", m.ID, err)
 	}
 	return nil

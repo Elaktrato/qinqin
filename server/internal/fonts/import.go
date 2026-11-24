@@ -1,6 +1,7 @@
 package fonts
 
 import (
+	"cmp"
 	"context"
 	"database/sql"
 	"errors"
@@ -8,6 +9,8 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"slices"
+	"strings"
 	"time"
 
 	"qinqin/internal/pack"
@@ -139,15 +142,31 @@ func Import(ctx context.Context, sqlDB *sql.DB, p pack.Pack, storeDir string) (r
 	if err != nil {
 		return Result{}, fmt.Errorf("import font pack %s: %w", m.ID, err)
 	}
-	stamp := time.Now().UTC().Format(time.RFC3339)
-	if _, err := tx.ExecContext(ctx, `
-		INSERT INTO font_packs (pack_id, name, version, license, attribution, notice, updated_at)
-		VALUES (?, ?, ?, ?, ?, ?, ?)
-		ON CONFLICT (pack_id) DO UPDATE SET name = excluded.name, version = excluded.version,
-			license = excluded.license, attribution = excluded.attribution, notice = excluded.notice,
-			updated_at = excluded.updated_at, deleted_at = NULL`,
-		m.ID, m.Name, m.Version, m.License, m.Attribution, m.Notice, stamp); err != nil {
+	var want []sliceRow
+	for _, f := range list {
+		for i, s := range f.Slices {
+			want = append(want, sliceRow{f.Face, f.Script, f.Weight, f.Style, f.Original, s.Sha, s.UnicodeRange, i})
+		}
+	}
+	have, err := packSlices(ctx, tx, m.ID)
+	if err != nil {
 		return Result{}, fmt.Errorf("import font pack %s: %w", m.ID, err)
+	}
+	slices.SortFunc(want, sliceRow.compare)
+	// The registry row holds no fingerprint of the slices, so a change of
+	// them alone writes it too (Force): its updated_at says the pack changed.
+	_, changed, err := pack.UpsertRegistry(ctx, tx, pack.Registry{Table: "font_packs", PackID: m.ID,
+		Stamp: time.Now().UTC().Format(time.RFC3339), Columns: pack.ManifestColumns(m), Force: !slices.Equal(have, want)})
+	if err != nil {
+		return Result{}, fmt.Errorf("import font pack %s: %w", m.ID, err)
+	}
+	if !changed {
+		committed = true // nothing to write; the slices are the stored ones
+		for _, f := range list {
+			res.Faces++
+			res.Slices += len(f.Slices)
+		}
+		return res, nil
 	}
 	if _, err := tx.ExecContext(ctx, `DELETE FROM font_slices WHERE pack_id = ?`, m.ID); err != nil {
 		return Result{}, fmt.Errorf("import font pack %s: %w", m.ID, err)
@@ -173,6 +192,38 @@ func Import(ctx context.Context, sqlDB *sql.DB, p pack.Pack, storeDir string) (r
 		return res, fmt.Errorf("import font pack %s: %w", m.ID, err)
 	}
 	return res, nil
+}
+
+// sliceRow is one font_slices row of a pack.
+type sliceRow struct {
+	face, script, weight, style, original, sha, unicodeRange string
+	ord                                                      int
+}
+
+func (a sliceRow) compare(b sliceRow) int {
+	return cmp.Or(strings.Compare(a.face, b.face), strings.Compare(a.script, b.script), strings.Compare(a.weight, b.weight),
+		strings.Compare(a.style, b.style), cmp.Compare(a.ord, b.ord), strings.Compare(a.original, b.original),
+		strings.Compare(a.sha, b.sha), strings.Compare(a.unicodeRange, b.unicodeRange))
+}
+
+// packSlices returns the stored slice rows of a pack, sorted (compare).
+func packSlices(ctx context.Context, q Querier, packID string) ([]sliceRow, error) {
+	rows, err := q.QueryContext(ctx, `SELECT face, script, weight, style, original, sha, unicode_range, ord
+		FROM font_slices WHERE pack_id = ?`, packID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var out []sliceRow
+	for rows.Next() {
+		var r sliceRow
+		if err := rows.Scan(&r.face, &r.script, &r.weight, &r.style, &r.original, &r.sha, &r.unicodeRange, &r.ord); err != nil {
+			return nil, err
+		}
+		out = append(out, r)
+	}
+	slices.SortFunc(out, sliceRow.compare)
+	return out, rows.Err()
 }
 
 // packShas returns the slice hashes the pack's rows reference.

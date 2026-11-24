@@ -109,40 +109,19 @@ func Import(ctx context.Context, sqlDB *sql.DB, p pack.Pack) (Result, error) {
 		return Result{}, fmt.Errorf("import strokes pack %s: %w", m.ID, err)
 	}
 	defer tx.Rollback()
-	var (
-		name, version, languages, license, attribution, notice, oldHash string
-		deleted                                                         sql.NullString
-	)
-	err = tx.QueryRowContext(ctx, `
-		SELECT name, version, languages, license, attribution, notice, content_hash, deleted_at
-		FROM stroke_packs WHERE pack_id = ?`, m.ID).
-		Scan(&name, &version, &languages, &license, &attribution, &notice, &oldHash, &deleted)
 	stamp := time.Now().UTC().Format(time.RFC3339)
-	switch {
-	case errors.Is(err, sql.ErrNoRows):
-		if _, err := tx.ExecContext(ctx, `
-			INSERT INTO stroke_packs (pack_id, name, version, languages, license, attribution, notice, content_hash, ord, updated_at)
-			VALUES (?, ?, ?, ?, ?, ?, ?, ?, (SELECT COALESCE(MAX(ord), 0) + 1 FROM stroke_packs), ?)`,
-			m.ID, m.Name, m.Version, string(langsJSON), m.License, m.Attribution, m.Notice, hash, stamp); err != nil {
-			return Result{}, fmt.Errorf("register strokes pack %s: %w", m.ID, err)
-		}
-	case err != nil:
-		return Result{}, fmt.Errorf("import strokes pack %s: %w", m.ID, err)
-	default:
-		if !deleted.Valid && oldHash == hash && name == m.Name && version == m.Version && languages == string(langsJSON) &&
-			license == m.License && attribution == m.Attribution && notice == m.Notice {
-			return Result{Chars: n}, nil // identical: nothing to write
-		}
-		if _, err := tx.ExecContext(ctx, `
-			UPDATE stroke_packs SET name = ?, version = ?, languages = ?, license = ?, attribution = ?, notice = ?,
-				content_hash = ?, updated_at = ?, deleted_at = NULL
-			WHERE pack_id = ?`,
-			m.Name, m.Version, string(langsJSON), m.License, m.Attribution, m.Notice, hash, stamp, m.ID); err != nil {
-			return Result{}, fmt.Errorf("update strokes pack %s: %w", m.ID, err)
-		}
-		if _, err := tx.ExecContext(ctx, `DELETE FROM strokes WHERE pack_id = ?`, m.ID); err != nil {
-			return Result{}, fmt.Errorf("replace strokes of %s: %w", m.ID, err)
-		}
+	_, changed, err := pack.UpsertRegistry(ctx, tx, pack.Registry{Table: "stroke_packs", PackID: m.ID, Stamp: stamp,
+		Columns: pack.ManifestColumns(m, pack.Column{Name: "languages", Value: string(langsJSON)},
+			pack.Column{Name: "content_hash", Value: hash},
+			pack.Column{Name: "ord", Expr: "(SELECT COALESCE(MAX(ord), 0) + 1 FROM stroke_packs)", InsertOnly: true})})
+	if err != nil {
+		return Result{}, fmt.Errorf("register strokes pack %s: %w", m.ID, err)
+	}
+	if !changed {
+		return Result{Chars: n}, nil // identical: nothing to write
+	}
+	if _, err := tx.ExecContext(ctx, `DELETE FROM strokes WHERE pack_id = ?`, m.ID); err != nil {
+		return Result{}, fmt.Errorf("replace strokes of %s: %w", m.ID, err)
 	}
 
 	batch := make([]any, 0, 3*insertBatch)

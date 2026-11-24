@@ -201,38 +201,10 @@ func Uninstall(ctx context.Context, sqlDB *sql.DB, packID string) error {
 // upsertPack inserts or updates the pack row, writing only when a stored
 // field differs (or the pack was deleted), and returns its row id.
 func upsertPack(ctx context.Context, tx *sql.Tx, m pack.Manifest, levelsJSON, stamp string) (int64, error) {
-	var (
-		id                                            int64
-		name, version, language, license, attribution string
-		notice, stored                                string
-		deleted                                       bool
-	)
-	err := tx.QueryRowContext(ctx, `
-		SELECT id, name, version, language, license, attribution, notice, levels_json, deleted_at IS NOT NULL
-		FROM grammar_packs WHERE pack_id = ?`, m.ID).
-		Scan(&id, &name, &version, &language, &license, &attribution, &notice, &stored, &deleted)
-	if errors.Is(err, sql.ErrNoRows) {
-		res, err := tx.ExecContext(ctx, `
-			INSERT INTO grammar_packs (pack_id, name, version, language, license, attribution, notice, levels_json, updated_at)
-			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-			m.ID, m.Name, m.Version, m.Language, m.License, m.Attribution, m.Notice, levelsJSON, stamp)
-		if err != nil {
-			return 0, fmt.Errorf("insert grammar pack %s: %w", m.ID, err)
-		}
-		return res.LastInsertId()
-	}
+	id, _, err := pack.UpsertRegistry(ctx, tx, pack.Registry{Table: "grammar_packs", PackID: m.ID, Stamp: stamp,
+		Columns: pack.ManifestColumns(m, pack.Column{Name: "language", Value: m.Language}, pack.Column{Name: "levels_json", Value: levelsJSON})})
 	if err != nil {
-		return 0, fmt.Errorf("read grammar pack %s: %w", m.ID, err)
-	}
-	if deleted || name != m.Name || version != m.Version || language != m.Language || license != m.License ||
-		attribution != m.Attribution || notice != m.Notice || stored != levelsJSON {
-		if _, err := tx.ExecContext(ctx, `
-			UPDATE grammar_packs SET name = ?, version = ?, language = ?, license = ?, attribution = ?,
-				notice = ?, levels_json = ?, updated_at = ?, deleted_at = NULL
-			WHERE id = ?`,
-			m.Name, m.Version, m.Language, m.License, m.Attribution, m.Notice, levelsJSON, stamp, id); err != nil {
-			return 0, fmt.Errorf("update grammar pack %s: %w", m.ID, err)
-		}
+		return 0, fmt.Errorf("register grammar pack %s: %w", m.ID, err)
 	}
 	return id, nil
 }

@@ -7,6 +7,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"unicode/utf8"
 
@@ -56,7 +57,8 @@ func isTextCandidate(name string) bool {
 
 // StoreTexts replaces the stored licence texts of pack (typ, packID) with
 // the licence files in dir and returns how many it stored. It reads the
-// files first and writes in tx; it never follows a symlink.
+// files first and writes in tx, nothing when the stored texts are the same;
+// it never follows a symlink.
 func StoreTexts(ctx context.Context, tx *sql.Tx, typ, packID, dir string) (int, error) {
 	entries, err := os.ReadDir(dir)
 	if err != nil {
@@ -101,10 +103,18 @@ func StoreTexts(ctx context.Context, tx *sql.Tx, typ, packID, dir string) (int, 
 		keep = append(keep, Text{Name: name, Text: string(b)})
 	}
 
+	rows := append([]Text{{Name: collectedMarker}}, keep...)
+	stored, err := storedTexts(ctx, tx, typ, packID)
+	if err != nil {
+		return 0, err
+	}
+	if slices.Equal(stored, rows) {
+		return len(keep), nil // unchanged: nothing to write
+	}
 	if err := deleteTexts(ctx, tx, typ, packID); err != nil {
 		return 0, err
 	}
-	for _, t := range append([]Text{{Name: collectedMarker}}, keep...) {
+	for _, t := range rows {
 		if _, err := tx.ExecContext(ctx, `INSERT INTO pack_texts (pack_type, pack_id, name, text) VALUES (?, ?, ?, ?)`,
 			typ, packID, t.Name, t.Text); err != nil {
 			return 0, fmt.Errorf("packs: store licence text %s of %s %s: %w", t.Name, typ, packID, err)
@@ -122,6 +132,25 @@ func deleteTexts(ctx context.Context, q execer, typ, packID string) error {
 		return fmt.Errorf("packs: delete licence texts of %s %s: %w", typ, packID, err)
 	}
 	return nil
+}
+
+// storedTexts returns every stored row of pack (typ, packID), the marker
+// included, by name.
+func storedTexts(ctx context.Context, q Querier, typ, packID string) ([]Text, error) {
+	rows, err := q.QueryContext(ctx, `SELECT name, text FROM pack_texts WHERE pack_type = ? AND pack_id = ? ORDER BY name`, typ, packID)
+	if err != nil {
+		return nil, fmt.Errorf("packs: read licence texts of %s %s: %w", typ, packID, err)
+	}
+	defer rows.Close()
+	var out []Text
+	for rows.Next() {
+		var t Text
+		if err := rows.Scan(&t.Name, &t.Text); err != nil {
+			return nil, fmt.Errorf("packs: read licence texts of %s %s: %w", typ, packID, err)
+		}
+		out = append(out, t)
+	}
+	return out, rows.Err()
 }
 
 // Texts returns the stored licence texts of pack (typ, packID) by name.

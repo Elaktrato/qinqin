@@ -64,31 +64,8 @@ func registerLanguage(ctx context.Context, sqlDB *sql.DB, m pack.Manifest) error
 // manifest fields (notice included) are unchanged is not written (no
 // restamp), so an identical re-import leaves the registry row as it was.
 func upsertDictionary(ctx context.Context, tx *sql.Tx, packID, name, version, language, license, attribution, notice, stamp string) (int64, error) {
-	var dictID int64
-	err := tx.QueryRowContext(ctx, `
-		INSERT INTO dictionaries (pack_id, name, version, language, license, attribution, notice, updated_at)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-		ON CONFLICT (pack_id) DO UPDATE SET
-			name = excluded.name,
-			version = excluded.version,
-			language = excluded.language,
-			license = excluded.license,
-			attribution = excluded.attribution,
-			notice = excluded.notice,
-			updated_at = excluded.updated_at,
-			deleted_at = NULL
-		WHERE dictionaries.name IS NOT excluded.name OR dictionaries.version IS NOT excluded.version
-		   OR dictionaries.language IS NOT excluded.language
-		   OR dictionaries.license IS NOT excluded.license
-		   OR dictionaries.attribution IS NOT excluded.attribution
-		   OR dictionaries.notice IS NOT excluded.notice
-		   OR dictionaries.deleted_at IS NOT NULL
-		RETURNING id`,
-		packID, name, version, language, license, attribution, notice, stamp).Scan(&dictID)
-	if errors.Is(err, sql.ErrNoRows) {
-		// Unchanged: the conflict update's WHERE skipped the write.
-		err = tx.QueryRowContext(ctx, `SELECT id FROM dictionaries WHERE pack_id = ?`, packID).Scan(&dictID)
-	}
+	dictID, _, err := pack.UpsertRegistry(ctx, tx, pack.Registry{Table: "dictionaries", PackID: packID, Stamp: stamp,
+		Columns: pack.TermColumns(name, version, license, attribution, notice, pack.Column{Name: "language", Value: language})})
 	if err != nil {
 		return 0, fmt.Errorf("register dictionary %s: %w", packID, err)
 	}

@@ -97,15 +97,15 @@ func Import(ctx context.Context, sqlDB *sql.DB, p pack.Pack) (Result, error) {
 	// pack's language is stored as its primary subtag: zh-tw -> zh.
 	language, _, _ := strings.Cut(m.Language, "-")
 	stamp := time.Now().UTC().Format(time.RFC3339)
-	if _, err := tx.ExecContext(ctx, `
-		INSERT INTO component_packs (pack_id, name, version, language, license, attribution, notice, content_hash, updated_at, deleted_at)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NULL)
-		ON CONFLICT (pack_id) DO UPDATE SET name = excluded.name, version = excluded.version,
-			language = excluded.language, license = excluded.license, attribution = excluded.attribution,
-			notice = excluded.notice, content_hash = excluded.content_hash, updated_at = excluded.updated_at,
-			deleted_at = NULL`,
-		m.ID, m.Name, m.Version, language, m.License, m.Attribution, m.Notice, hash, stamp); err != nil {
+	_, changed, err := pack.UpsertRegistry(ctx, tx, pack.Registry{Table: "component_packs", PackID: m.ID, Stamp: stamp,
+		Columns: pack.ManifestColumns(m, pack.Column{Name: "language", Value: language}, pack.Column{Name: "content_hash", Value: hash})})
+	if err != nil {
 		return Result{}, fmt.Errorf("import components pack %s: %w", m.ID, err)
+	}
+	if !changed {
+		// The content hash and the manifest fields are as stored: the rows
+		// are too, and nothing is written.
+		return Result{Chars: len(chars), Parts: len(used)}, nil
 	}
 	if err := deleteRows(ctx, tx, m.ID); err != nil {
 		return Result{}, fmt.Errorf("import components pack %s: %w", m.ID, err)

@@ -105,6 +105,17 @@ The issue predates #172, #176 and #198. Its places, checked in the code at 86fe1
   (`pack.Lexicon()`) — cost if wrong: a new type with a package still adds its schema in datapkg (record
   0008 says so).
 
+- Ruling: `pack.UpsertRegistry` returns the row's rowid and whether it wrote; a type whose data rows are
+  fingerprinted by a registry column (`content_hash`: frequency, components, strokes, lemma-rules, theme)
+  skips its data rows when the row is unchanged. Audio and font packs have no such column; instead of a
+  migration they compare their stored rows (clips in id order, slices sorted) with the pack's and pass
+  `Force` when those differ, so a data-only change still restamps the row as before — cost if wrong: a
+  re-import of an unchanged audio pack reads its clip rows once (a few thousand rows) before writing nothing.
+- Ruling: the licence texts (`packs.StoreTexts`) write nothing when the stored rows equal the pack's files;
+  they were rewritten on every import (2 rows for a pack without licence files) — cost if wrong: none.
+- Ruling: the error texts of a failed registry write are now "register <type> pack <id>: write <table> row
+  of <id>: ..." style (internal errors, logged, never in an answer) — cost if wrong: none.
+
 ## Execution record
 
 - Task 1: `TestSeedOrderIsPinned` and `TestManifestMessagesArePinned` pass on 86fe13a4 unchanged (the seed
@@ -122,3 +133,10 @@ The issue predates #172, #176 and #198. Its places, checked in the code at 86fe1
   `packs.RegistryTerms`, so `dict` leaves `packs/texts.go`, `packcheck.go` and `api/handlers_packs.go`.
   Test-guarded refactor (the handler bodies are unchanged); new tests: `TestEveryHandlerIsComplete`,
   `TestRegistryTermsFollowTheHandler`.
+- Task 5: `TestUpsertRegistry` (insert, unchanged writes nothing, change, revive, insert-only columns,
+  `Force`) written first against a stub and seen failing; `TestReimportOfAnUnchangedPackWritesNothing`
+  (one case per table row, a missing case fails) seen failing for every type before the change: 2 changed
+  rows for each (the licence texts), 7 for audio, 9 for components and fonts, 4 for strokes and themes.
+  After: 0 for all 11. All eleven importers write their registry row through the helper. One run of the
+  `api` package failed `TestPackageDownload` once under the parallel targeted run; it passed in the next
+  full `api` run and 40 times alone (not reproduced; watched in the final gates).

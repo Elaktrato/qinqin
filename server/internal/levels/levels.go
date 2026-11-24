@@ -519,31 +519,8 @@ func writeScheme(ctx context.Context, sqlDB *sql.DB, m pack.Manifest, unit strin
 	// The scheme row is written only when a manifest field (the notice
 	// included) or the unit changed, or the scheme returns from an
 	// uninstall: an identical re-import does not restamp it.
-	var schemeID int64
-	err = tx.QueryRowContext(ctx, `
-		INSERT INTO schemes (pack_id, name, unit, language, version, license, attribution, notice, updated_at)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-		ON CONFLICT (pack_id) DO UPDATE SET
-			name = excluded.name,
-			unit = excluded.unit,
-			language = excluded.language,
-			version = excluded.version,
-			license = excluded.license,
-			attribution = excluded.attribution,
-			notice = excluded.notice,
-			updated_at = excluded.updated_at,
-			deleted_at = NULL
-		WHERE schemes.name IS NOT excluded.name OR schemes.unit IS NOT excluded.unit
-		   OR schemes.language IS NOT excluded.language OR schemes.version IS NOT excluded.version
-		   OR schemes.license IS NOT excluded.license OR schemes.attribution IS NOT excluded.attribution
-		   OR schemes.notice IS NOT excluded.notice
-		   OR schemes.deleted_at IS NOT NULL
-		RETURNING id`,
-		m.ID, m.Name, unit, m.Language, m.Version, m.License, m.Attribution, m.Notice, stamp).Scan(&schemeID)
-	if errors.Is(err, sql.ErrNoRows) {
-		// Unchanged: the conflict update's WHERE skipped the write.
-		err = tx.QueryRowContext(ctx, `SELECT id FROM schemes WHERE pack_id = ?`, m.ID).Scan(&schemeID)
-	}
+	schemeID, _, err := pack.UpsertRegistry(ctx, tx, pack.Registry{Table: "schemes", PackID: m.ID, Stamp: stamp,
+		Columns: pack.ManifestColumns(m, pack.Column{Name: "unit", Value: unit}, pack.Column{Name: "language", Value: m.Language})})
 	if err != nil {
 		return fmt.Errorf("register scheme %s: %w", m.ID, err)
 	}

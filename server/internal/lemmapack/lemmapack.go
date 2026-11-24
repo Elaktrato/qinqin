@@ -141,37 +141,15 @@ func Import(ctx context.Context, sqlDB *sql.DB, p pack.Pack) (Result, error) {
 	if err := CheckLanguage(ctx, tx, m.ID, m.Language); err != nil {
 		return Result{}, err
 	}
-	var (
-		name, version, language, license, attribution, notice, oldHash string
-		deleted                                                        sql.NullString
-	)
-	err = tx.QueryRowContext(ctx, `
-		SELECT name, version, language, license, attribution, notice, content_hash, deleted_at
-		FROM lemma_rule_packs WHERE pack_id = ?`, m.ID).
-		Scan(&name, &version, &language, &license, &attribution, &notice, &oldHash, &deleted)
 	stamp := time.Now().UTC().Format(time.RFC3339)
-	switch {
-	case errors.Is(err, sql.ErrNoRows):
-		if _, err := tx.ExecContext(ctx, `
-			INSERT INTO lemma_rule_packs (pack_id, name, version, language, license, attribution, notice, rules_json, content_hash, updated_at)
-			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-			m.ID, m.Name, m.Version, m.Language, m.License, m.Attribution, m.Notice, string(raw), hash, stamp); err != nil {
-			return Result{}, fmt.Errorf("register lemma-rules pack %s: %w", m.ID, err)
-		}
-	case err != nil:
-		return Result{}, fmt.Errorf("import lemma-rules pack %s: %w", m.ID, err)
-	default:
-		if !deleted.Valid && oldHash == hash && name == m.Name && version == m.Version && language == m.Language &&
-			license == m.License && attribution == m.Attribution && notice == m.Notice {
-			return res, nil // identical: nothing to write
-		}
-		if _, err := tx.ExecContext(ctx, `
-			UPDATE lemma_rule_packs SET name = ?, version = ?, language = ?, license = ?, attribution = ?, notice = ?,
-				rules_json = ?, content_hash = ?, updated_at = ?, deleted_at = NULL
-			WHERE pack_id = ?`,
-			m.Name, m.Version, m.Language, m.License, m.Attribution, m.Notice, string(raw), hash, stamp, m.ID); err != nil {
-			return Result{}, fmt.Errorf("update lemma-rules pack %s: %w", m.ID, err)
-		}
+	_, changed, err := pack.UpsertRegistry(ctx, tx, pack.Registry{Table: "lemma_rule_packs", PackID: m.ID, Stamp: stamp,
+		Columns: pack.ManifestColumns(m, pack.Column{Name: "language", Value: m.Language},
+			pack.Column{Name: "rules_json", Value: string(raw)}, pack.Column{Name: "content_hash", Value: hash})})
+	if err != nil {
+		return Result{}, fmt.Errorf("register lemma-rules pack %s: %w", m.ID, err)
+	}
+	if !changed {
+		return res, nil // identical: nothing to write
 	}
 	if err := tx.Commit(); err != nil {
 		return Result{}, fmt.Errorf("import lemma-rules pack %s: %w", m.ID, err)

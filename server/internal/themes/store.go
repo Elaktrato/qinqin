@@ -135,37 +135,14 @@ func Import(ctx context.Context, sqlDB *sql.DB, p pack.Pack) (Result, error) {
 			return Result{}, fmt.Errorf("import theme pack %s: %w", m.ID, err)
 		}
 	}
-	var (
-		name, version, license, attribution, notice, oldHash string
-		deleted                                              sql.NullString
-	)
-	err = tx.QueryRowContext(ctx, `
-		SELECT name, version, license, attribution, notice, content_hash, deleted_at
-		FROM theme_packs WHERE pack_id = ?`, m.ID).
-		Scan(&name, &version, &license, &attribution, &notice, &oldHash, &deleted)
 	stamp := time.Now().UTC().Format(time.RFC3339)
-	switch {
-	case errors.Is(err, sql.ErrNoRows):
-		if _, err := tx.ExecContext(ctx, `
-			INSERT INTO theme_packs (pack_id, name, version, license, attribution, notice, content_hash, updated_at)
-			VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-			m.ID, m.Name, m.Version, m.License, m.Attribution, m.Notice, hash, stamp); err != nil {
-			return Result{}, fmt.Errorf("register theme pack %s: %w", m.ID, err)
-		}
-	case err != nil:
-		return Result{}, fmt.Errorf("import theme pack %s: %w", m.ID, err)
-	default:
-		if !deleted.Valid && oldHash == hash && name == m.Name && version == m.Version &&
-			license == m.License && attribution == m.Attribution && notice == m.Notice {
-			return Result{Themes: len(list)}, nil // identical: nothing to write
-		}
-		if _, err := tx.ExecContext(ctx, `
-			UPDATE theme_packs SET name = ?, version = ?, license = ?, attribution = ?, notice = ?,
-				content_hash = ?, updated_at = ?, deleted_at = NULL
-			WHERE pack_id = ?`,
-			m.Name, m.Version, m.License, m.Attribution, m.Notice, hash, stamp, m.ID); err != nil {
-			return Result{}, fmt.Errorf("update theme pack %s: %w", m.ID, err)
-		}
+	_, changed, err := pack.UpsertRegistry(ctx, tx, pack.Registry{Table: "theme_packs", PackID: m.ID, Stamp: stamp,
+		Columns: pack.ManifestColumns(m, pack.Column{Name: "content_hash", Value: hash})})
+	if err != nil {
+		return Result{}, fmt.Errorf("register theme pack %s: %w", m.ID, err)
+	}
+	if !changed {
+		return Result{Themes: len(list)}, nil // identical: nothing to write
 	}
 	if _, err := tx.ExecContext(ctx, `DELETE FROM themes WHERE pack_id = ?`, m.ID); err != nil {
 		return Result{}, fmt.Errorf("replace themes of %s: %w", m.ID, err)
