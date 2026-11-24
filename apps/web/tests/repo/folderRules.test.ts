@@ -4,14 +4,19 @@ import { readdirSync, readFileSync } from 'node:fs';
 import { join, relative, resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import {
+	FEATURE_FOLDERS,
 	LOGIC_FOLDERS,
 	LOOSE_ALLOWED,
+	STRUCTURE_FOLDERS,
 	duplicateNameFindings,
+	isTestOnly,
 	logicFolderFindings,
 	looseFileFindings,
 	sharedComponentFindings,
 	uiImportFindings,
+	unclassifiedFolderFindings,
 	unmappedRouteFindings,
+	unresolvedImportFindings,
 	type SourceFile
 } from './folderRules';
 
@@ -62,9 +67,19 @@ describe('the web folder rules hold on apps/web/src', () => {
 		expect(unmappedRouteFindings(tree)).toEqual([]);
 	});
 
-	it('names only folders and allowed files that exist', () => {
+	it('every import of a shipped file resolves', () => {
+		expect(unresolvedImportFindings(tree)).toEqual([]);
+	});
+
+	it('every top folder of lib is classified', () => {
+		expect(unclassifiedFolderFindings(tree)).toEqual([]);
+	});
+
+	it('names only folders and allowed files that exist, each in one class', () => {
 		const tops = new Set(tree.filter((f) => f.path.startsWith('lib/')).map((f) => f.path.split('/')[1]));
-		for (const d of LOGIC_FOLDERS) expect(tops.has(d), d).toBe(true);
+		const classes = [...LOGIC_FOLDERS, ...FEATURE_FOLDERS, ...STRUCTURE_FOLDERS];
+		for (const d of classes) expect(tops.has(d), d).toBe(true);
+		expect(new Set(classes).size).toBe(classes.length);
 		for (const name of Object.keys(LOOSE_ALLOWED)) expect(tops.has(name), name).toBe(true);
 	});
 });
@@ -76,6 +91,8 @@ describe('each check fails on a planted violation', () => {
 			file('lib/ui/Chip.svelte', imp('../components/Flag.svelte')),
 			file('lib/ui/menu.ts', "import { api } from '$lib/api/client';\nimport { t } from '$lib/i18n';"),
 			file('lib/ui/testing/Gallery.svelte', imp('$lib/components/Flag.svelte')),
+			file('lib/ui/Tabs.svelte', "<script>const m = import(`$lib/api/client`); import x from '$lib/api/client.js';</script>"),
+			file('lib/ui/Sheet.svelte', "<script>// import X from '$lib/api/client';\n/* import Y from '$lib/api/client'; */</script>"),
 			file('lib/features/reader/BookView.svelte'),
 			file('lib/components/Flag.svelte'),
 			file('lib/api/client.ts'),
@@ -84,7 +101,9 @@ describe('each check fails on a planted violation', () => {
 		expect(uiImportFindings(planted)).toEqual([
 			'lib/ui/Button.svelte imports lib/features/reader/BookView.svelte',
 			'lib/ui/Chip.svelte imports lib/components/Flag.svelte',
-			'lib/ui/menu.ts imports lib/api/client.ts'
+			'lib/ui/menu.ts imports lib/api/client.ts',
+			'lib/ui/Tabs.svelte imports lib/api/client.ts',
+			'lib/ui/Tabs.svelte imports lib/api/client.ts'
 		]);
 	});
 
@@ -102,6 +121,62 @@ describe('each check fails on a planted violation', () => {
 			'lib/components/Single.svelte is used by only entry',
 			'lib/components/Unused.ts is used by no feature'
 		]);
+	});
+
+	it('only features count as users: not logic folders, ui, lib/features itself, root files, logic routes or comments', () => {
+		const planted = [
+			file('lib/components/Lonely.svelte'),
+			file('lib/entry/Use.svelte', imp('$lib/components/Lonely.svelte')),
+			file('lib/features/journal/Note.svelte', "<script>// import L from '$lib/components/Lonely.svelte'\n</script>"),
+			file('lib/study/reexport.ts', "export { default as L } from '$lib/components/Lonely.svelte';"),
+			file('lib/ui/Chip.svelte', imp('$lib/components/Lonely.svelte')),
+			file('lib/features/index.ts', "import '$lib/components/Lonely.svelte';"),
+			file('lib/features/FeaturePage.svelte', imp('$lib/components/Lonely.svelte')),
+			file('hooks.client.ts', "import '$lib/components/Lonely.svelte';"),
+			file('routes/p/[plugin]/+page.ts', "import '$lib/components/Lonely.svelte';"),
+			file('lib/features/reader/Words.svelte', '<!-- <Lonely /> import L from "$lib/components/Lonely.svelte" -->')
+		];
+		expect(sharedComponentFindings(planted)).toEqual(['lib/components/Lonely.svelte is used by only entry']);
+	});
+
+	it('the frame and a core feature count as users', () => {
+		const planted = [
+			file('lib/components/Flag.svelte'),
+			file('lib/frame/NavDrawer.svelte', imp('$lib/components/Flag.svelte')),
+			file('lib/features/reader/Library.svelte', imp('$lib/components/Flag.svelte'))
+		];
+		expect(sharedComponentFindings(planted)).toEqual([]);
+	});
+
+	it('an import that names no file (a moved or misspelt path; .js names the .ts)', () => {
+		const planted = [
+			file('lib/api/client.ts'),
+			file('lib/entry/EntryView.svelte', imp('$lib/entry/Gone.svelte') + imp('./missing') + imp('$lib/api/client.js')),
+			file('lib/entry/lazy.ts', 'const m = import(`./alsoGone`);'),
+			file('lib/entry/fixture.test.ts', "import x from './notHere';"),
+			file('lib/entry/data.ts', "import d from '../../../../docs/contracts/x.json';"),
+			file('routes/study/map/+page.ts', "import type { PageLoad } from './$types';")
+		];
+		expect(unresolvedImportFindings(planted)).toEqual([
+			'lib/entry/EntryView.svelte: $lib/entry/Gone.svelte names no file',
+			'lib/entry/EntryView.svelte: ./missing names no file',
+			'lib/entry/lazy.ts: ./alsoGone names no file'
+		]);
+	});
+
+	it('a top folder of lib that is in no class', () => {
+		expect(unclassifiedFolderFindings([file('lib/quiz/quiz.ts'), file('lib/entry/EntryView.svelte')])).toEqual([
+			'lib/quiz is not classified (logic, feature or structure folder)'
+		]);
+	});
+
+	it('only lib/testing, lib/ui/testing and test files are test-only', () => {
+		expect(isTestOnly('lib/testing/context.ts')).toBe(true);
+		expect(isTestOnly('lib/ui/testing/Gallery.svelte')).toBe(true);
+		expect(isTestOnly('lib/entry/EntryView.dom.test.ts')).toBe(true);
+		expect(isTestOnly('lib/i18n/PseudoStub.test.svelte')).toBe(true);
+		expect(isTestOnly('lib/entry/testing/SaveEditor.svelte')).toBe(false);
+		expect(isTestOnly('lib/study/testing.ts')).toBe(false);
 	});
 
 	it('a component in a logic-only folder (a test stub is fine)', () => {

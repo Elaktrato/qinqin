@@ -26,8 +26,8 @@ The issue was written before #193, #196, #199, #185, #186 and #189. What is ther
 - `lib/features/` holds the four switchable core features (record 0006: `index.ts` lists them) plus the switch
   code and `FeaturePage.svelte`; the other feature folders (`entry`, `stats`, `settings`, `widgets`, ...) sit
   at the top of `lib/`.
-- The vitest projects include only `src/**`; the generated `.svelte-kit/tsconfig.json` includes `../test/**`
-  (singular), not `../tests/**`.
+- The vitest projects include only `src/**`; the generated `.svelte-kit/tsconfig.json` includes both `../test/**`
+  and `../tests/**`.
 
 ## Moves (old path → new path), one commit per area
 
@@ -40,8 +40,8 @@ Paths are under `apps/web/src/lib/` unless they start with `tests/`. A test move
 | `architectureDocs.test.ts`, `contractsDocs.test.ts`, `readmeDocs.test.ts`, `readmeGallery.test.ts`, `wikiDocs.test.ts` | `tests/repo/` (same names) |
 | `bundleSize.test.ts`, `thirdPartyLicenses.test.ts` | `tests/repo/` (same names) |
 
-Plus: the vitest `unit` project includes `tests/**/*.test.ts`; `svelte.config.js` adds `../tests/**/*.ts` to
-the generated tsconfig (`kit.typescript.config`) so `npm run check` type-checks them.
+Plus: the vitest `unit` project includes `tests/**/*.test.ts`. `npm run check` type-checks them with no
+config change: the generated `.svelte-kit/tsconfig.json` already includes `../tests/**` (beside `../test/**`).
 
 ### 2. Loose modules → owning folders
 
@@ -100,20 +100,41 @@ Left in `lib/components`: `AiTag`, `Flag`, `PlayButton`, `ReadingText`, `clozeKe
   the issue named them as shared — today each is used by one feature only; `clozeKeys.ts` (the cloze keyboard
   model) stays, since grammar's `ClozeChoice` and flashcards' `ClozeCard` both use it — cost if wrong: a move
   back when a second feature takes one up, which the guard then demands.
-- Ruling: a feature of an importer is its folder under `lib/` (`lib/features/<f>` counts as `<f>`); a route
+- Ruling: a feature of an importer is its folder under `lib/` (`lib/features/<f>` counts as `features/<f>`); a route
   counts as the feature it shows (`routes/study`, `routes/flashcards` → flashcards; `routes/+layout.svelte` →
   frame; `routes/+page.svelte` → widgets; `routes/login`, `register`, `reset`, `account` → account; the rest by
   their first segment) — closes the record's open question; the map lives in the guard and a new route folder
   without an entry fails it — cost if wrong: a wrong entry lets a one-feature widget stay shared, review catches.
-- Ruling: tests and `testing/` harnesses do not count as users (for the `lib/components` and `lib/ui` checks) and
-  `*.test.svelte` stubs are exempt from the folder and unique-name checks — a test may import anything, and
-  the UI gallery harness (`lib/ui/testing/Gallery.svelte`) shows real domain widgets such as `Flag` — cost if
-  wrong: a domain import into `lib/ui` hidden in a harness, which ships nothing.
+- Ruling (narrowed in the fix wave): tests (`*.test.*`), `*.test.svelte` stubs and the shared test support
+  (`lib/testing/`, `lib/ui/testing/`) are test-only: they do not count as users and are exempt from the folder,
+  unique-name and import checks; a feature's own `testing/` harness is checked like the feature — a test may
+  import anything, and the UI gallery harness (`lib/ui/testing/Gallery.svelte`) shows real domain widgets such
+  as `Flag` — cost if wrong: a domain import into `lib/ui` hidden in the gallery, which ships nothing.
+- Ruling (fix wave): only features count as users of `lib/components`: a folder of `FEATURE_FOLDERS`, a
+  switchable feature (`lib/features/<f>`), the frame, or a route mapped to one of them; a logic folder, `lib/ui`,
+  `lib/features` itself, a file at the top of `src` and `routes/p` (mapped to the logic folder `routing`) are
+  not — a re-export from a logic folder or an import from the service worker must not make a one-feature
+  widget look shared — cost if wrong: a widget used by a feature and a layer has to live in the feature.
+- Ruling (fix wave): the frame counts as a user — the app chrome is its own owner, not a feature folder, and
+  `Flag` is shared by the frame's workspace menu and drawer and by `lib/workspace` — cost if wrong: `Flag` would
+  move to `lib/workspace` and the frame import it from there.
+- Ruling (fix wave): `lib/lookups` is a feature folder, not a logic folder — it owns the lookup history that
+  `routes/lookups` shows (the reader records into it) — cost if wrong: none; it has no component today.
+- Ruling (fix wave): every top folder of `lib/` is in exactly one class: `LOGIC_FOLDERS`, `FEATURE_FOLDERS`, or
+  `STRUCTURE_FOLDERS` (`ui`, `frame`, `components`, `features`, `testing`, `assets`); an unclassified folder fails
+  — otherwise a new folder escapes every check — cost if wrong: one line in the guard per new folder.
+- Ruling (fix wave): an unresolved `$lib/` or relative import is a finding only in a shipped file; a test's own
+  broken import already fails that test, and test fixtures import files outside `src` (`docs/contracts`,
+  `static`, packages with `?raw`), which the guard ignores, as it ignores generated `./$types` — cost if wrong: a
+  stale path in a harness-only import goes unreported here and fails its test instead.
+- Ruling (fix wave): a record no open issue touches says `Touched by: none.`; the doc check and the template in
+  `docs/architecture/README.md` accept it — 0002, 0004 and 0005 had only #195 left, and naming a closed issue
+  would be false — cost if wrong: one regex.
 - Ruling: `lib/ui` may import only `lib/ui`, `lib/i18n` and `lib/theme` (plus packages) — the building blocks
   show translated labels and read the design tokens; everything else in `$lib` is domain — cost if wrong: a
   needed generic helper must first move into `lib/ui`.
 - Ruling: the logic-only folders are `api`, `audio`, `auth`, `context`, `events`, `fonts`, `i18n`, `languages`,
-  `lookups`, `packages`, `radicals`, `routing`, `session`, `study`, `sync`, `theme`, `time`, `writing` — shared
+  `packages`, `radicals`, `routing`, `session`, `study`, `sync`, `theme`, `time`, `writing` — shared
   layers below the features; a feature folder may mix UI and logic — cost if wrong: a UI piece that belongs to a
   layer has to live in `lib/ui` or a feature.
 - Ruling: `Msg.svelte` moves from `lib/i18n` to `lib/ui` — it is the generic rich-text building block, with no
@@ -172,3 +193,39 @@ Left in `lib/components`: `AiTag`, `Flag`, `PlayButton`, `ReadingText`, `clozeKe
 - **Other gates** on the last commit: `npm run check` 0 errors (1753 files), build passes, `node --test
   scripts/*.test.mjs` 156 passed and 1 skipped, `gen-api-docs --check` clean, e2e (`npm run e2e -- --trace off`)
   17 passed in each of 3 runs with no spec changed. Not verified: the app in a browser by hand, and CI itself.
+
+### Fix wave (after the independent review)
+
+The review found no blockers: every import that survived the moves resolves to the same file as before, and no
+test was lost. It found gaps in the guard, fixed test-first. Each case below was planted in
+`folderRules.test.ts` and seen failing (wrong result, or the function missing) before the fix:
+
+- **Users of `lib/components`.** `ownerOf` counted logic folders, `lib/ui`, `lib/features` itself, root `src`
+  files and logic routes as features. The planted case: a component used by `lib/entry` only, plus a re-export
+  from `lib/study`, an import from `lib/ui`, `lib/features/index.ts`, `FeaturePage`, `hooks.client.ts`,
+  `routes/p` and a commented-out import. It came out clean before the fix and is flagged after. `ownerOf` now
+  returns a user only for `FEATURE_FOLDERS`, `features/<f>`, `frame` or a route mapped to one of them (new
+  Rulings: frame counts, lookups is a feature). Every current `lib/components` file still has two real users
+  (AiTag, PlayButton, ReadingText: entry and flashcards; clozeKeys: flashcards and grammar; Flag: frame and
+  workspace), so nothing moved.
+- **Silent drops.** `unresolvedImportFindings` reports a `$lib/` or relative import of a shipped file that
+  names no file. `.js` resolves to `.ts`. Template-literal `import()` is read (it had evaded the `lib/ui`
+  check). A relative path that leaves `src` and generated `./$types` are ignored. Planting `$lib/nothing/here`
+  in the real tree failed the check.
+- **Classes.** `unclassifiedFolderFindings` fails on a top folder in none of `LOGIC_FOLDERS`,
+  `FEATURE_FOLDERS` and `STRUCTURE_FOLDERS` (the last is `ui`, `frame`, `components`, `features`, `testing`,
+  `assets`). A planted `lib/quiz` failed it. The existence test now also fails on a folder listed in two
+  classes. `lookups` moved from `LOGIC_FOLDERS` to `FEATURE_FOLDERS`.
+- **Matching.** `isTestOnly` exempts only `*.test.*`, `lib/testing/**` and `lib/ui/testing/**`; feature
+  harnesses such as `lib/entry/testing/` are now checked, and none breaks a rule. Comments (`//`, `/* */`,
+  `<!-- -->`) are stripped before matching (`stripComments`).
+- **Docs.** The plan no longer claims a `svelte.config.js` change. Record 0004 says 7 repository tests, lists
+  the classes with `assets` and `testing`, defines users and lists the new checks. The Development wiki names
+  the folder rules among the repository checks. #195 is dropped from the "Touched by" lines of 0001, 0007 and
+  0009. Records 0002, 0004 and 0005 had only #195, so they now say `Touched by: none.`. The #196 and #199
+  precedent left the next open issue on the line and had no empty case, so `architectureDocs.test.ts` and the
+  template in `docs/architecture/README.md` now accept `none.`; the record files failed the doc check before
+  that change.
+- **Gates.** `npm run check` 0 errors; build passes; vitest on Node 26: 612 files, 12895 passed and 2 skipped
+  (12897 = 12890 + 7 new guard tests); script tests 156 passed and 1 skipped; `gen-api-docs --check` clean;
+  e2e 17 passed in 1 run (only tests and docs changed).
