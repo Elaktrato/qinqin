@@ -193,3 +193,11 @@ The review found no MUST-FIX. Each group below is one commit, test first.
   CHANGELOG line: the error contract pins the code `language_in_use`, its status and the `usage` counts
   (`docs/contracts/auth/errors.json`); the `message` is the English developer sentence clients never show
   (record 0001), and the web translates the code.
+- Owner note received during the wave (backwards compatibility not required): it changes nothing here. The
+  message fix above was made anyway, and this branch neither added nor found a compatibility shim in the code
+  it moved (no search beyond that code was made).
+- Fix-wave gates (on 6666e29a): `gofmt -l` empty; `go mod tidy -diff` clean; full Go `./...` under the flock:
+  52 packages ok, only the known `internal/ai` `TestHostnameResolvingToEmbeddedFormIsRefused` failing; web
+  `check` 0 errors, `build` ok; full vitest under Node 26: 588 files, 12605 passed, 2 skipped; e2e: 13 passed;
+  `node --test scripts/*.test.mjs`: 156 passed; `gen-api-docs --check` ok. The real-app check was not
+  repeated (the wave changed tests, two comments and one message text).
