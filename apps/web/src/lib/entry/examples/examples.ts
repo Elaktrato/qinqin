@@ -9,7 +9,7 @@ import { ApiError } from '$lib/api/client';
 import { EXAMPLE_LIMITS, type ExampleLevel, type ExamplesView, type Generated, type ReportReason } from '$lib/api/examples';
 import type { SentenceAi } from '$lib/api/types';
 import { aiErrorView } from '$lib/features/journal/aiErrors';
-import { pollUntil, type PollOptions } from '$lib/features/journal/reviewPoll';
+import { pollUntil, sendRetryingInFlight, type PollOptions } from '$lib/features/journal/reviewPoll';
 
 /** needsExamples: the panel is offered while the entry has few sentences with text, or drafts wait. */
 export function needsExamples(sentences: readonly { hanzi: string }[], drafts: readonly unknown[]): boolean {
@@ -74,9 +74,11 @@ export function generateErrorText(err: unknown): string {
 }
 
 /**
- * runGenerate asks for examples. When the answer was lost on the way (the
- * network or a proxy) or a call is still in flight, the drafts are polled
- * until drafts of THIS request id appear (another tab's generation does not
+ * runGenerate asks for examples. `in_flight` (another call of the user held
+ * the AI slot; this one never ran) sends the same request again after a
+ * bounded backoff. When the answer was lost on the way (the network, a proxy:
+ * the server finishes the paid call), the examples are polled until the marker
+ * or a draft of THIS request id appears (another tab's generation does not
  * count). `onWaiting` is called once when the polling starts.
  */
 export async function runGenerate(
@@ -86,10 +88,11 @@ export async function runGenerate(
 	opts: PollOptions & { onWaiting?: () => void } = {}
 ): Promise<{ generated: Generated | null; error: unknown }> {
 	try {
-		return { generated: await io.send(level, requestId), error: null };
+		return { generated: await sendRetryingInFlight(() => io.send(level, requestId), opts), error: null };
 	} catch (err) {
+		// in_flight left after the backoff: the request never ran, nothing to poll for.
 		const inFlight = err instanceof ApiError && err.code === 'in_flight';
-		if (!inFlight && !aiErrorView(err, 'ideas').poll) return { generated: null, error: err };
+		if (inFlight || !aiErrorView(err, 'ideas').poll) return { generated: null, error: err };
 		opts.onWaiting?.();
 		const late = await pollUntil(
 			() => io.reload(),

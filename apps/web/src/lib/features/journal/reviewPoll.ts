@@ -1,5 +1,9 @@
 // After a proxy cut a long review (or ideas request), the server still
 // writes the document. Poll the stored one until one newer than `since` shows up.
+// `in_flight` is different: the request never ran (another call of the user
+// held the AI slot), so it is sent again with the same id (sendRetryingInFlight).
+
+import { ApiError } from '$lib/api/client';
 
 export interface PollOptions {
 	intervalMs?: number;
@@ -41,4 +45,26 @@ export function pollForReview<T extends { createdAt: string }>(
 	opts: PollOptions = {}
 ): Promise<T | null> {
 	return pollUntil(load, (review) => review.createdAt > since, opts);
+}
+
+/** The waits before each resend after `in_flight` (about half a minute in all). */
+export const IN_FLIGHT_BACKOFF_MS: readonly number[] = [2000, 4000, 8000, 16000];
+
+/**
+ * sendRetryingInFlight sends, and sends again after each wait of
+ * IN_FLIGHT_BACKOFF_MS while the server answers `in_flight` (the request did
+ * not run); the last `in_flight`, an abort or any other error is thrown.
+ */
+export async function sendRetryingInFlight<T>(send: () => Promise<T>, opts: Pick<PollOptions, 'sleep' | 'signal'> = {}): Promise<T> {
+	const sleep = opts.sleep ?? realSleep;
+	for (let attempt = 0; ; attempt++) {
+		try {
+			return await send();
+		} catch (err) {
+			const inFlight = err instanceof ApiError && err.code === 'in_flight';
+			if (!inFlight || attempt >= IN_FLIGHT_BACKOFF_MS.length || opts.signal?.aborted) throw err;
+			await sleep(IN_FLIGHT_BACKOFF_MS[attempt]);
+			if (opts.signal?.aborted) throw err;
+		}
+	}
 }

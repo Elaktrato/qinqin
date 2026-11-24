@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { pollForReview } from './reviewPoll';
+import { ApiError } from '$lib/api/client';
+import { IN_FLIGHT_BACKOFF_MS, pollForReview, sendRetryingInFlight } from './reviewPoll';
 import type { Review } from './types';
 
 function review(createdAt: string): Review {
@@ -116,5 +117,55 @@ describe('pollUntil', () => {
 		let sleeps = 0;
 		const got = await pollUntil(async () => 0, () => false, { intervalMs: 10, timeoutMs: 30, sleep: async () => void sleeps++ });
 		expect([got, sleeps]).toEqual([null, 3]);
+	});
+});
+
+describe('sendRetryingInFlight', () => {
+	const inFlight = () => new ApiError(409, JSON.stringify({ error: 'in_flight', message: 'x' }));
+
+	it('sends again with backoff while another call holds the slot', async () => {
+		const sleeps: number[] = [];
+		let n = 0;
+		const got = await sendRetryingInFlight(
+			async () => {
+				if (n++ < 2) throw inFlight();
+				return 'ok';
+			},
+			{ sleep: async (ms) => void sleeps.push(ms) }
+		);
+		expect(got).toBe('ok');
+		expect(sleeps).toEqual(IN_FLIGHT_BACKOFF_MS.slice(0, 2));
+	});
+
+	it('gives up after the last backoff with the in_flight error, and passes any other error at once', async () => {
+		const sleeps: number[] = [];
+		let n = 0;
+		const err = await sendRetryingInFlight(
+			async () => {
+				n++;
+				throw inFlight();
+			},
+			{ sleep: async (ms) => void sleeps.push(ms) }
+		).catch((e: unknown) => e);
+		expect((err as ApiError).code).toBe('in_flight');
+		expect(n).toBe(IN_FLIGHT_BACKOFF_MS.length + 1);
+		expect(sleeps).toEqual([...IN_FLIGHT_BACKOFF_MS]);
+		const lost = new TypeError('network');
+		expect(await sendRetryingInFlight(async () => Promise.reject(lost), { sleep: async () => {} }).catch((e: unknown) => e)).toBe(lost);
+	});
+
+	it('stops on abort', async () => {
+		const stop = new AbortController();
+		let n = 0;
+		const err = await sendRetryingInFlight(
+			async () => {
+				n++;
+				stop.abort();
+				throw inFlight();
+			},
+			{ sleep: async () => {}, signal: stop.signal }
+		).catch((e: unknown) => e);
+		expect(n).toBe(1);
+		expect((err as ApiError).code).toBe('in_flight');
 	});
 });

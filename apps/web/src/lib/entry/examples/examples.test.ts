@@ -96,12 +96,16 @@ describe('runGenerate', () => {
 		expect(reload).toHaveBeenCalledTimes(1);
 	});
 
-	it('polls after in_flight too, and gives up with the error', async () => {
+	it('sends the same request again after in_flight (it never ran), and gives up without polling', async () => {
 		const busy = apiError(409, 'in_flight');
-		const io = { send: vi.fn().mockRejectedValue(busy), reload: vi.fn().mockResolvedValue({ drafts: [], defaultLevel: 'beginner' }) };
-		const r = await runGenerate(io, 'beginner', 'req', { sleep: async () => {}, intervalMs: 1, timeoutMs: 2 });
-		expect(r).toEqual({ generated: null, error: busy });
-		expect(io.reload).toHaveBeenCalled();
+		const send = vi.fn().mockRejectedValueOnce(busy).mockResolvedValueOnce(ok);
+		const reload = vi.fn();
+		expect(await runGenerate({ send, reload }, 'beginner', 'req', { sleep: async () => {} })).toEqual({ generated: ok, error: null });
+		expect(send).toHaveBeenNthCalledWith(2, 'beginner', 'req');
+		const always = vi.fn().mockRejectedValue(busy);
+		expect(await runGenerate({ send: always, reload }, 'beginner', 'req', { sleep: async () => {} })).toEqual({ generated: null, error: busy });
+		expect(always).toHaveBeenCalledTimes(5);
+		expect(reload).not.toHaveBeenCalled();
 	});
 
 	it('does not poll after a refusal', async () => {

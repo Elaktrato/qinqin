@@ -1,6 +1,6 @@
 import { cleanup, render, screen } from '@testing-library/svelte';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import type { Entry } from '$lib/api/types';
+import type { Entry, Sentence } from '$lib/api/types';
 import type { FlowItem } from '$lib/study/cardFlow';
 
 vi.mock('$lib/components/PlayButton.svelte', () => ({ default: () => ({}) }));
@@ -139,5 +139,25 @@ describe('VocabCard on the open page (#101)', () => {
 		expect(document.querySelector('.face-prompt .fp-word')?.textContent).toBe('学');
 		expect(document.querySelector('.face-answer')?.textContent).toContain('study');
 		expect(document.querySelector('.dock button')).toBeNull();
+	});
+});
+
+const aiSentence = (ai: Sentence['ai']): Sentence => ({ id: 9, entryId: 1, sourcePack: '', userId: 1, hanzi: '我喜欢学习。', pinyin: '', translation: 't', ai });
+const aiEntry = (s: Sentence): Entry =>
+	({ id: 1, language: 'zh', kind: 'word', written: '学习', readings: [], senses: [], senseGroups: [], variants: [], sentences: [s], badges: [] }) as unknown as Entry;
+const aiItem: FlowItem = { cardId: 'level:1', kind: 'vocab', entryId: 1, virtual: true, card: null };
+
+function setupAi(s: Sentence) {
+	render(CardHarness, { card: VocabCard, cardProps: { item: aiItem, entry: aiEntry(s), revealed: true, onDone: vi.fn() }, kindLabel: 'Recognise', done: true });
+}
+
+describe('VocabCard and an AI example (#186)', () => {
+	it('marks the answer side sentence an AI wrote, and no other', () => {
+		setupAi(aiSentence({ provider: 'anthropic', model: 'm' }));
+		expect(document.querySelector('.sentence')?.textContent).toMatch(/^我喜欢.+。$/);
+		expect(screen.getByText('AI-written')).toBeTruthy();
+		cleanup();
+		setupAi(aiSentence(null));
+		expect(screen.queryByText('AI-written')).toBeNull();
 	});
 });

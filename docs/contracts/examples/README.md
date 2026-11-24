@@ -80,5 +80,6 @@ candidate by construction.
 - A client reads drafts leniently (`reads` cases): a draft without a numeric `id` or with an empty text is skipped;
   missing strings are empty; an unknown level reads as `beginner`.
 - After a lost answer (a network error, 502 or 504) the client reloads `GET …/examples` until `lastRequest` (or a
-  draft) carries its request id. After `in_flight` the client
-  polls the same way.
+  draft) carries its request id. `in_flight` means the request
+  never ran (another call of the user held the AI slot): the client sends it again with the same id after 2, 4, 8
+  and 16 s, then gives up, and never polls for it. The journal's conversation turn does the same (#186 fix wave).

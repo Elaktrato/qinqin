@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { tick } from 'svelte';
 	import { profileOf } from '$lib/languageProfiles';
 	import { errorText } from '$lib/api/apiErrors';
 	import Msg from '$lib/i18n/Msg.svelte';
@@ -105,8 +106,17 @@
 		}
 	});
 
+	// After a kept or deleted AI example the entry is fetched again in the
+	// background: the service worker's offline copy of the answer follows.
+	function refreshOfflineCopy(id: number): void {
+		void getEntry(id).catch(() => {});
+	}
+
 	function addSentence(sentence: Sentence): void {
-		if (entry && sentence.entryId === entry.id) entry = { ...entry, sentences: [...entry.sentences, sentence] };
+		if (entry && sentence.entryId === entry.id) {
+			entry = { ...entry, sentences: [...entry.sentences, sentence] };
+			refreshOfflineCopy(entry.id);
+		}
 	}
 
 	async function removeAiSentence(sentence: Sentence, reason?: ReportReason): Promise<void> {
@@ -114,7 +124,17 @@
 		exampleError = '';
 		try {
 			await deleteAiSentence(entry.id, sentence.id, reason);
+			const aiIds = entry.sentences.filter((s) => aiMark(s.ai) !== null).map((s) => s.id);
+			const index = aiIds.indexOf(sentence.id);
 			entry = { ...entry, sentences: entry.sentences.filter((s) => s.id !== sentence.id) };
+			refreshOfflineCopy(entry.id);
+			// The focus stays in the examples: the next AI example's first button,
+			// else the AI examples heading, the examples heading or the word.
+			await tick();
+			const left = aiIds.filter((id) => id !== sentence.id);
+			const next = left[Math.min(Math.max(index, 0), left.length - 1)];
+			const button = next === undefined ? null : document.querySelector<HTMLElement>(`[aria-describedby="sentence-${next}"]`);
+			(button ?? document.getElementById('ai-examples-heading') ?? document.getElementById('sentences-heading') ?? headingEl)?.focus();
 		} catch (err) {
 			exampleError = generateErrorText(err);
 		}

@@ -11,7 +11,7 @@ import { annotationKind } from '../review';
 import { entryTitle, plainText, type AiGate } from '../editorLogic';
 import type { Annotation, JournalEntry } from '../types';
 import { formatNumber } from '$lib/i18n/format';
-import { pollUntil, type PollOptions } from '../reviewPoll';
+import { pollUntil, sendRetryingInFlight, type PollOptions } from '../reviewPoll';
 import { LEVELS, LIMITS } from './conversations';
 import type { Conversation, ConversationSummary, Level, Message } from './types';
 
@@ -102,10 +102,11 @@ export function levelLabel(level: Level): string {
 /**
  * runTurn sends one turn. A 404 means the conversation was saved or
  * discarded elsewhere. When the answer was lost on the way (the network or a
- * proxy cut the request; the server finishes a paid call anyway) or the
- * server says a call is still in flight, the conversation is polled like a
- * review until it holds THIS turn (its turn id); growth from another tab
- * does not count. `onWaiting` is called once when the polling starts.
+ * proxy cut the request; the server finishes a paid call anyway), the
+ * conversation is polled like a review until it holds THIS turn (its turn
+ * id); growth from another tab does not count. `in_flight` (another call held
+ * the AI slot; this turn never ran) sends the same turn again after a bounded
+ * backoff. `onWaiting` is called once when the polling starts.
  */
 export async function runTurn(
 	io: { send(text: string, turnId: string): Promise<Conversation>; reload(): Promise<Conversation | null> },
@@ -114,11 +115,12 @@ export async function runTurn(
 	opts: PollOptions & { onWaiting?: () => void } = {}
 ): Promise<{ conversation: Conversation | null; error: unknown; gone: boolean }> {
 	try {
-		return { conversation: await io.send(text, turnId), error: null, gone: false };
+		return { conversation: await sendRetryingInFlight(() => io.send(text, turnId), opts), error: null, gone: false };
 	} catch (err) {
 		if (isGone(err)) return { conversation: null, error: null, gone: true };
+		// in_flight left after the backoff: the turn never ran, nothing to poll for (#186 fix wave).
 		const inFlight = err instanceof ApiError && err.code === 'in_flight';
-		if (!inFlight && !aiErrorView(err, 'ideas').poll) return { conversation: null, error: err, gone: false };
+		if (inFlight || !aiErrorView(err, 'ideas').poll) return { conversation: null, error: err, gone: false };
 		opts.onWaiting?.();
 		let gone = false;
 		const stop = new AbortController();

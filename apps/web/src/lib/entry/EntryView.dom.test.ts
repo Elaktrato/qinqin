@@ -26,6 +26,16 @@ vi.mock('$lib/study/data', async (importOriginal) => ({
 	getStudyData: vi.fn(async () => ({ decks: [], cards: [], known: [] })),
 	hasCard: vi.fn(() => false)
 }));
+vi.mock('$lib/api/examples', async (importOriginal) => ({
+	...(await importOriginal<typeof import('$lib/api/examples')>()),
+	getExamples: vi.fn(async () => ({ drafts: [], defaultLevel: 'beginner', lastRequest: null })),
+	deleteAiSentence: vi.fn(async () => {})
+}));
+vi.mock('$lib/api/ai', async (importOriginal) => ({
+	...(await importOriginal<typeof import('$lib/api/ai')>()),
+	getAiStatus: vi.fn(async () => ({ available: true })),
+	getAiProviders: vi.fn(async () => ({ providers: [], canManageCustom: false, privateAllowed: false }))
+}));
 vi.mock('$lib/components/EntryEditor.svelte', () => import('./testing/SaveEditor.svelte'));
 vi.mock('$lib/notes/store', async (orig) => ({
 	...(await orig<typeof import('$lib/notes/store')>()),
@@ -39,6 +49,7 @@ import { getEntryRanks } from '$lib/api/frequency';
 import { getStudyData } from '$lib/study/data';
 import { setUrl } from '$lib/testing/appState.svelte';
 import EntryView from './EntryView.svelte';
+import { deleteAiSentence } from '$lib/api/examples';
 import ActionsHarness from './testing/ActionsHarness.svelte';
 
 // The session's event log (record 0009): its methods, faked on the class.
@@ -310,5 +321,27 @@ describe('entry a11y names (#104)', () => {
 		const choose = await screen.findByRole('button', { name: 'Choose a deck' });
 		expect(choose.getAttribute('aria-label')).toBe('Choose a deck');
 		expect(choose.parentElement?.querySelector('[role="tooltip"]')?.textContent).toBe('Choose a deck');
+	});
+});
+
+// #186 fix wave: deleting or reporting a kept AI example moves the focus to the
+// next one's first button, else to the AI examples heading.
+describe('kept AI examples on the entry', () => {
+	afterEach(cleanup);
+
+	it('keeps the focus in the examples after a delete', async () => {
+		const ai = { provider: 'anthropic', model: 'm' };
+		const sentence = (id: number, hanzi: string) => ({ id, entryId: 5, sourcePack: '', userId: 1, hanzi, pinyin: '', translation: 't', ai });
+		getEntryMock.mockResolvedValue(entry({ sentences: [sentence(1, '勤奋一。'), sentence(2, '勤奋二。')] }));
+		render(EntryView, { props: { entryId: 5 }, context: ctx.context });
+		const first = (await screen.findAllByRole('button', { name: 'Delete' }))[0];
+		first.focus();
+		await fireEvent.click(first);
+		await waitFor(() => expect(deleteAiSentence).toHaveBeenCalledWith(5, 1, undefined));
+		// The entry is fetched again, so the offline copy of its answer follows.
+		await waitFor(() => expect(getEntryMock).toHaveBeenCalledTimes(2));
+		await waitFor(() => expect(document.activeElement?.getAttribute('aria-describedby')).toBe('sentence-2'));
+		await fireEvent.click(document.activeElement as HTMLElement);
+		await waitFor(() => expect(document.activeElement?.id).toBe('ai-examples-heading'));
 	});
 });

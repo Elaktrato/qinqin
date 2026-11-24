@@ -41,7 +41,7 @@
 
 {#if sentences.length > 0}
 	<section class="sentences" aria-labelledby="sentences-heading">
-		<h2 id="sentences-heading">{t('entry.page.examples')}</h2>
+		<h2 id="sentences-heading" tabindex="-1">{t('entry.page.examples')}</h2>
 		<ul>
 			{#each sentences as sentence (sentence.id)}
 				{@const mark = aiMark(sentence.ai)}

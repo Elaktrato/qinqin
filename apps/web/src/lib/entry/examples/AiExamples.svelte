@@ -4,6 +4,7 @@
 	// with their own AI key; the drafts show with Keep, Delete and Report. A kept
 	// one joins the entry's examples (onkept). Logic: examples.ts; routes:
 	// $lib/api/examples.ts; contract: docs/contracts/examples/.
+	import { tick } from 'svelte';
 	import { t } from '$lib/i18n';
 	import { Button, Select } from '$lib/ui';
 	import { studyLang, readingLang, glossLang } from '$lib/i18n/lang';
@@ -44,8 +45,12 @@
 	let busy = $state(false);
 	let status = $state('');
 	let error = $state('');
-	// One request id per generation until it is answered: a retry after a lost answer is free.
-	let pendingRequest: string | null = null;
+	// One request id per generation until it is answered: a retry after a lost
+	// answer at the same level is free; another level is another request.
+	let pendingRequest: { id: string; level: ExampleLevel } | null = null;
+	// Stops a running poll or in_flight backoff when the panel goes away.
+	const stop = new AbortController();
+	$effect(() => () => stop.abort());
 
 	const levelOptions = EXAMPLE_LEVELS.map((value) => ({ value, label: levelLabel(value) }));
 	const drafts = $derived(view?.drafts ?? []);
@@ -81,12 +86,13 @@
 	});
 
 	async function generate(): Promise<void> {
-		if (busy) return;
+		if (busy || available !== true) return;
 		busy = true;
 		error = '';
 		status = t('entry.examples.writing');
 		const id = entryId;
-		const requestId = (pendingRequest ??= newUlid());
+		if (pendingRequest?.level !== level) pendingRequest = { id: newUlid(), level };
+		const requestId = pendingRequest.id;
 		const r = await runGenerate(
 			{
 				send: (lvl, req) => generateExamples(id, lvl, req),
@@ -94,7 +100,7 @@
 			},
 			level,
 			requestId,
-			{ onWaiting: () => (status = t('entry.examples.stillWaiting')) }
+			{ onWaiting: () => (status = t('entry.examples.stillWaiting')), signal: stop.signal }
 		);
 		busy = false;
 		if (id !== entryId) return;
@@ -109,16 +115,24 @@
 		}
 	}
 
-	function dropDraft(draft: ExampleDraft): void {
-		if (view) view = { ...view, drafts: view.drafts.filter((d) => d.id !== draft.id) };
+	/** dropDraft removes a decided draft and moves the focus to the next one's first button, else the heading. */
+	async function dropDraft(draft: ExampleDraft): Promise<void> {
+		if (!view) return;
+		const index = view.drafts.findIndex((d) => d.id === draft.id);
+		view = { ...view, drafts: view.drafts.filter((d) => d.id !== draft.id) };
+		await tick();
+		const left = view?.drafts ?? [];
+		const next = left[Math.min(Math.max(index, 0), left.length - 1)];
+		const button = next ? document.querySelector<HTMLElement>(`[aria-describedby="ai-draft-${next.id}"]`) : null;
+		(button ?? document.getElementById('ai-examples-heading') ?? document.getElementById('sentences-heading'))?.focus();
 	}
 
 	async function keep(draft: ExampleDraft): Promise<void> {
 		error = '';
 		try {
 			const sentence = await keepExample(entry.id, draft.id);
-			dropDraft(draft);
 			onkept(sentence);
+			await dropDraft(draft);
 			status = t('entry.examples.kept');
 		} catch (err) {
 			error = generateErrorText(err);
@@ -129,7 +143,7 @@
 		error = '';
 		try {
 			await discardExample(entry.id, draft.id, reason);
-			dropDraft(draft);
+			await dropDraft(draft);
 			status = reason ? t('entry.examples.reported') : t('entry.examples.deleted');
 		} catch (err) {
 			error = generateErrorText(err);
@@ -139,7 +153,7 @@
 
 {#if shown}
 	<section class="ai-examples" aria-labelledby="ai-examples-heading">
-		<h2 id="ai-examples-heading">{t('entry.examples.heading')}</h2>
+		<h2 id="ai-examples-heading" tabindex="-1">{t('entry.examples.heading')}</h2>
 		{#if drafts.length === 0}<p class="intro">{t('entry.examples.intro')}</p>{/if}
 		{#if available === false}
 			<p class="hint">{t('entry.examples.noKey')} <a href="/settings?tab=ai">{t('entry.examples.settingsLink')}</a></p>

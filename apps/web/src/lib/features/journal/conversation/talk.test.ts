@@ -124,10 +124,21 @@ describe('runTurn', () => {
 		expect(waiting).toHaveBeenCalledOnce();
 	});
 
-	it('also waits when the server says a call is still in flight', async () => {
-		const reload = vi.fn(async () => withTurn(3, 't1'));
-		const r = await runTurn({ send: async () => Promise.reject(apiError(409, 'in_flight')), reload }, 'x', 't1', { sleep: noSleep });
+	it('sends the same turn again when another call held the slot (in_flight: this one never ran)', async () => {
+		const reload = vi.fn();
+		const send = vi.fn().mockRejectedValueOnce(apiError(409, 'in_flight')).mockResolvedValueOnce(withTurn(3, 't1'));
+		const r = await runTurn({ send, reload }, 'x', 't1', { sleep: noSleep });
 		expect(r.conversation?.messages).toHaveLength(3);
+		expect(send).toHaveBeenNthCalledWith(2, 'x', 't1');
+		expect(reload).not.toHaveBeenCalled();
+	});
+
+	it('gives up on in_flight after the backoff without polling', async () => {
+		const reload = vi.fn();
+		const busy = apiError(409, 'in_flight');
+		const r = await runTurn({ send: async () => Promise.reject(busy), reload }, 'x', 't1', { sleep: noSleep });
+		expect(r).toEqual({ conversation: null, error: busy, gone: false });
+		expect(reload).not.toHaveBeenCalled();
 	});
 
 	it('does not take growth from another tab for this turn', async () => {

@@ -74,7 +74,7 @@ describe('AiExamples', () => {
 		const onkept = mount([sentence(9, '你好。')]);
 		const level = (await screen.findByRole('combobox', { name: 'Your level' })) as HTMLSelectElement;
 		await waitFor(() => expect(level.value).toBe('elementary'));
-		expect(screen.getByText(/Sent to your provider: the word/)).toBeTruthy();
+		expect(screen.getByText(/Sent to your provider: the word, its meanings and the examples it already has, including sentences you saved yourself/)).toBeTruthy();
 		const button = screen.getByRole('button', { name: 'Generate examples' });
 		await waitFor(() => expect(button.getAttribute('aria-disabled')).toBe('false'));
 		await fireEvent.click(button);
@@ -108,6 +108,20 @@ describe('AiExamples', () => {
 		expect(screen.getByRole('status').textContent).toContain('Kept.');
 		expect(screen.getByText('学习很好。')).toBeTruthy();
 		expect(getExamples).toHaveBeenCalledTimes(1);
+	});
+
+	it('moves the focus to the next draft after a delete, and to the heading after the last', async () => {
+		vi.mocked(getExamples).mockResolvedValue({ drafts: [draft(1, '一。'), draft(2, '二。')], defaultLevel: 'beginner', lastRequest: null });
+		vi.mocked(discardExample).mockResolvedValue();
+		mount([]);
+		await screen.findByText('一。');
+		const del = screen.getAllByRole('button', { name: 'Delete' })[0];
+		del.focus();
+		await fireEvent.click(del);
+		await waitFor(() => expect(document.activeElement?.getAttribute('aria-describedby')).toBe('ai-draft-2'));
+		expect(document.activeElement?.textContent).toBe('Keep');
+		await fireEvent.click(screen.getByRole('button', { name: 'Delete' }));
+		await waitFor(() => expect(document.activeElement?.id).toBe('ai-examples-heading'));
 	});
 
 	it('reports a draft with a reason from a picker, and deletes one without', async () => {
@@ -147,6 +161,15 @@ describe('AiExamples', () => {
 		reject(new TypeError('network'));
 		expect(await screen.findByText('学习。', {}, { timeout: 8000 })).toBeTruthy();
 	}, 15000);
+
+	it('waits for the AI status before generating', async () => {
+		vi.mocked(getExamples).mockResolvedValue({ drafts: [], defaultLevel: 'beginner', lastRequest: null });
+		vi.mocked(getAiStatus).mockImplementation(() => new Promise(() => {}));
+		mount([]);
+		const button = await screen.findByRole('button', { name: 'Generate examples' });
+		await fireEvent.click(button);
+		expect(generateExamples).not.toHaveBeenCalled();
+	});
 
 	it('points to Settings → AI without a key', async () => {
 		vi.mocked(getExamples).mockResolvedValue({ drafts: [], defaultLevel: 'beginner', lastRequest: null });
