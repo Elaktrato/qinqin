@@ -40,7 +40,7 @@ The review is stored with the entry. Editing the text afterwards marks it as **W
 - The line under the title names the provider and model of the latest reply ("Answered by …").
 - **Save as journal entry** turns the conversation into an entry titled with the topic (the partner's lines start with "> ") and opens it; you can review it like any entry. **Discard** deletes the conversation (asked first). Open conversations are listed on the Talk page until you save or discard them.
 
-The partner always answers in the workspace's language and script; a reply in another language is refused ("The reply could not be read") and nothing is stored, so you can send again. A failed reply keeps your text in the box. A conversation holds up to 50 messages, a message up to 1,000 characters (replies are cut at 800), and a workspace up to 20 open conversations.
+The partner always answers in the workspace's language and script; a reply in another language is refused ("The AI answer could not be read. Try again.") and nothing is stored, so you can send again. A failed reply keeps your text in the box. A conversation holds up to 50 messages, a message up to 1,000 characters (replies are cut at 800), and a workspace up to 20 open conversations.
 
 ## Photo to entry
 
