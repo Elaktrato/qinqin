@@ -60,6 +60,7 @@ describe('docs/contracts coverage', () => {
 	}
 	const tests = [
 		...walk(resolve(repo, 'apps/web/src'), (n) => n.endsWith('.test.ts'), skipDeps).map((p) => readFileSync(p, 'utf8')),
+		...walk(resolve(repo, 'apps/web/tests'), (n) => n.endsWith('.test.ts'), skipDeps).map((p) => readFileSync(p, 'utf8')),
 		...goPackages.values()
 	];
 	// A test names a fixture by its path under docs/contracts (`study/rows.json`), or by its bare file name

@@ -2,7 +2,7 @@ import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { describe, expect, it } from 'vitest';
-import { mdAnchors } from './testing/mdAnchors';
+import { mdAnchors } from '$lib/testing/mdAnchors';
 
 // Doc check for the wiki source in docs/wiki: the sidebar and the page files
 // agree, every internal link resolves, and the generated API pages are current.

@@ -19,7 +19,7 @@ Go tests read the files with `os.ReadFile` (relative to the test's package); web
 (`resolveJsonModule`), or read it with `JSON.parse` where a value such as `1e999` (Infinity) must survive. A
 fixture is only changed after re-deriving the value from its source of truth; never to match an implementation.
 Add one row per area. A Go or web test must decode each fixture; the guard in
-`apps/web/src/lib/contractsDocs.test.ts` checks that every fixture is named by a test, except generator input
+`apps/web/tests/repo/contractsDocs.test.ts` checks that every fixture is named by a test, except generator input
 (`scheduler/optimizer-steps.inside.json`) and the sample archive `backup/sample-v2/` (decoded as a whole by
 `server/internal/backup/format_test.go` and `restore_typed_test.go`).
 

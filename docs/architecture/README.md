@@ -42,7 +42,7 @@ catch by hand.
 Optional: points the deciding issue leaves open. Each names who decides it (usually the implementing issue).
 ```
 
-`architectureDocs.test.ts` (in `apps/web/src/lib/`) checks every record against this template, checks its
+`architectureDocs.test.ts` (in `apps/web/tests/repo/`) checks every record against this template, checks its
 status, its links and its row in the index below, and, for a record in force (`Accepted`), that every
 repository path it names in backticks exists.
 
@@ -74,7 +74,7 @@ repository path it names in backticks exists.
 ## Adding or changing a record
 
 - A new decision gets the next number, a row in the index and the template's sections; run
-  `cd apps/web && npx vitest run src/lib/architectureDocs.test.ts`.
+  `cd apps/web && npx vitest run tests/repo/architectureDocs.test.ts`.
 - The issue that implements a record updates it when it lands (status, names, enforcement), and so does
   every merge from an issue on a record's "Touched by" line that changes the code, paths or names the record
   describes. A new issue that will change such code is added to the line.

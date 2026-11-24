@@ -1,7 +1,7 @@
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { mdAnchors } from './testing/mdAnchors';
+import { mdAnchors } from '$lib/testing/mdAnchors';
 
 // Doc check for the architecture records in docs/architecture (#191): every record follows the template of
 // docs/architecture/README.md, carries a known status, is listed once in the README's index with its own title and
@@ -96,6 +96,7 @@ function sourceBlob(): string {
 	};
 	walk(resolve(root, 'server'), /\.go$/);
 	walk(resolve(root, 'apps/web/src'), /\.(ts|svelte)$/);
+	walk(resolve(root, 'apps/web/tests'), /\.ts$/);
 	walk(resolve(root, 'apps/web/e2e'), /\.ts$/);
 	walk(resolve(root, 'scripts'), /\.mjs$/);
 	walk(resolve(root, 'docs/contracts'), /\.json$/);

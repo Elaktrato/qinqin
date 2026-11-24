@@ -1,7 +1,7 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { mdAnchors as anchors } from './testing/mdAnchors';
+import { mdAnchors as anchors } from '$lib/testing/mdAnchors';
 
 // Doc check for the README front page: its wiki links point at pages of docs/wiki (the wiki's source) and at
 // headings that exist there, its links into the repository resolve, and it stays a short front page.
