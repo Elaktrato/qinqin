@@ -180,6 +180,17 @@ Decoded by `server/internal/journal/conversation_contract_test.go` and
   changed entry — the heatmap counts journal days — cost if wrong: none.
 - Ruling: the default level of a new conversation is the level of the most recently updated one, else
   `beginner` — no new setting — cost if wrong: one more tap.
+- Ruling: a lookup in a partner reply is recorded in the lookup history with the source `reader` (the reader's
+  popup) — a new known source would change the lookups contract's key cap (`lookups/README.md`, at most 16 source
+  members of which the known ones are reserved) for one label — cost if wrong: the history counts conversation
+  lookups as reader lookups.
+- Ruling: a turn whose answer was lost on the way (network or proxy, the journal's "poll" errors) reloads the
+  conversation once; when it grew, the turn counts as answered — the server finishes a paid call even when the
+  client is gone, like the review — cost if wrong: one extra GET after such a failure.
+- Ruling: the fake provider's Japanese and Chinese replies mention 学校, a word of the e2e dictionaries — the e2e
+  spec checks the lookup popup on a reply without a new fixture pack — cost if wrong: none.
+- Ruling: the Settings → AI privacy line now names conversation messages ("Your journal text, conversation
+  messages, guidance and the photos …") — what is sent must be said where the key is typed — cost if wrong: none.
 - Ruling: no data is wiped by this branch (new tables only); `docs/releases/NEXT.md` gets a "What's new" line, no
   upgrade line — cost if wrong: none.
 - Ruling: CHANGELOG line: new routes, the two error codes, the fixture, the keyed backup family
@@ -187,4 +198,41 @@ Decoded by `server/internal/journal/conversation_contract_test.go` and
 
 ## Execution record
 
-(filled in as the tasks land)
+Commits on `feature/185-conversation` (from develop 42b690ec):
+
+1. `197a59db` this plan.
+2. `f451f26a` the AI task `converse` (types, prompt, schema, Anthropic, OpenAI-compatible, Gemini, the fake, the
+   canned fake servers).
+3. `53f25907` conversation storage (migration 048, `journal/conversation.go`), the keyed backup form, workspace and
+   account delete with the preview, the contract `journal/conversations.json`.
+4. `02febed9` the six routes, the two error codes, regenerated route and PWA fixtures and API wiki pages.
+5. `8a92e7b1` the web: `/journal/talk`, the conversation view, logic modules, the deletion preview line.
+6. `b6c2ea79` the e2e spec with the fake provider (servers run with `QINQIN_AI_PROVIDER=fake`).
+7. the docs commit (wiki, records 0006 and 0007, contracts overview and README, NEXT.md, this record).
+
+Test-first, honestly:
+
+- Red seen first: the `internal/ai` converse tests (build failure), the journal store and contract tests (build
+  failure), the workspace and account delete guards (`TestDeleteEmptiesEveryWorkspaceTable`,
+  `TestSchemaGuardEveryUserTableIsListed`), the API route tests (all six failed, 404 for unmounted routes), the
+  route fixture test, the web error catalogue test (two codes without `apiError.*` keys), the web contract, API
+  and logic tests (missing modules), the route parser tests, the deletion preview line.
+- Written after the code (red not seen first): the backup round trip `TestExportAndRestoreConversations` (checked
+  afterwards: it fails when the export skips conversations), `TestWordSample`, the `runTurn`/`saveAsEntry` part of
+  `talk.test.ts` (it failed only as "not a function" before those functions existed), the two DOM tests
+  (`TalkPage.dom.test.ts`, `ConversationView.dom.test.ts`; written after the components, they failed first on two
+  wrong expectations of mine, then passed), and the e2e spec (passed on its first run).
+- Test bugs fixed on the way, not code: a case-sensitive phrase and JSON HTML escaping in the converse tests; the
+  rate-limit API test could not reach the limit with one conversation (it fills at 50 messages), so it opens and
+  discards conversations; a reused `Response` body in a web test.
+
+Not verified:
+
+- No real provider: every AI call ran against the deterministic fake or the canned `aitest` servers; whether real
+  models keep replies in the workspace language and the corrections well placed is the owner's real-key check.
+- No phone or Android WebView run; the phone layout (bottom sheet, one column) is covered by the DOM tests and the
+  shared components only. The e2e spec runs on a desktop viewport.
+- The Gemini and OpenAI request bodies for `converse` are checked only through the fake servers (the schema is the
+  same mechanism as the review's).
+- Under Node 22 (local) five reader/settings DOM tests fail on the untouched base as well; under Node 26 (CI)
+  the whole suite passes.

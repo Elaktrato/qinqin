@@ -2076,7 +2076,7 @@
 	"settings.ai.makeActiveNamed": "Make {name} active",
 	"settings.ai.modelFor": "Model for {name}",
 	"settings.ai.note": "Your keys stay on this server, encrypted. qinqin sends text to the provider you made active only when you press Review, Ideas or Read with AI: the entry text and your correction guidance for Review; the words you studied in the last 30 days and the titles and opening lines of your last 10 entries for Ideas; the photo for Read with AI. The provider bills these calls to your key.",
-	"settings.ai.privacy": "Your journal text, guidance and the photos you choose to read with AI are sent to {name} when you press a button. {name}'s terms apply.",
+	"settings.ai.privacy": "Your journal text, conversation messages, guidance and the photos you choose to read with AI are sent to {name} when you press a button. {name}'s terms apply.",
 	"settings.ai.readsPhotos": "Reads photos",
 	"settings.ai.removeConfirm": "Remove the {name} key?",
 	"settings.ai.removeNamed": "Remove {name} key",

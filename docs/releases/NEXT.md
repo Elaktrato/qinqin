@@ -30,6 +30,11 @@ https://github.com/Elaktrato/qinqin/wiki
 - One unreadable study row (saved by a newer version) no longer stops flashcards loading; it is skipped and
   never overwritten (#167).
 
+**Journal**
+- **Conversation partner:** chat with the AI in your workspace's language at your level, on your own key (Journal →
+  Talk with the AI). Your messages get the journal's corrections, the partner's replies have the reader's lookup
+  popup with +, and a conversation is saved as a journal entry or discarded (#185).
+
 **Reading**
 - Lemmatizer rule tables are a data pack type, `lemma-rules`; the Japanese table ships as the `ja-lemma` pack.
   An installed table replaces the built-in one for its language. Tables are bounded, and the segment and lookup
