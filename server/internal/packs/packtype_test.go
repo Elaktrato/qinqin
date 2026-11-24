@@ -10,15 +10,12 @@ import (
 	"qinqin/internal/packs"
 )
 
-// Every pack type of the table has an importer and an uninstaller here,
-// and nothing else does (#172): a new type fails this test until both exist.
-func TestEveryPackTypeHasItsOperations(t *testing.T) {
-	got := packs.OperationTypes()
-	slices.Sort(got)
-	want := pack.Types()
-	slices.Sort(want)
-	if !slices.Equal(got, want) {
-		t.Errorf("import/uninstall operations for %v, pack types %v", got, want)
+// Every pack type of the table has its handler here, in the table's order,
+// and nothing else has one (#172, #192): a new type fails this test until its
+// handler exists.
+func TestEveryPackTypeHasItsHandler(t *testing.T) {
+	if got, want := packs.HandlerTypes(), pack.Types(); !slices.Equal(got, want) {
+		t.Errorf("handlers for %v, pack types %v", got, want)
 	}
 	for _, typ := range pack.Types() {
 		if !packs.Supported(typ) {
@@ -71,6 +68,32 @@ func TestListOrderIsTheTableOrder(t *testing.T) {
 	for i := 1; i < len(pack.All); i++ {
 		if !packs.TypeBefore(pack.All[i-1].Type, pack.All[i].Type) {
 			t.Errorf("%s does not list before %s", pack.All[i-1].Type, pack.All[i].Type)
+		}
+	}
+}
+
+// Every handler imports and uninstalls.
+func TestEveryHandlerIsComplete(t *testing.T) {
+	if got := packs.IncompleteHandlers(); len(got) != 0 {
+		t.Errorf("handlers without an import or an uninstall: %v", got)
+	}
+}
+
+// The registry terms are the manifest's own unless the type's handler says
+// otherwise: the built-in kanjidic2 dictionary is stored under its fixed id
+// and terms, whatever pack delivered it.
+func TestRegistryTermsFollowTheHandler(t *testing.T) {
+	m := pack.Manifest{ID: "my-kanji", Type: pack.TypeDictionary, Format: pack.FormatKanjidic2, License: "L", Attribution: "A"}
+	if id, lic, _ := packs.RegistryTerms(m); id != "kanjidic2" || lic == "L" {
+		t.Errorf("kanjidic2 terms %q, %q", id, lic)
+	}
+	for _, typ := range pack.Types() {
+		m := pack.Manifest{ID: "own", Type: typ, Format: pack.FormatJSON, License: "L", Attribution: "A"}
+		if id, lic, attr := packs.RegistryTerms(m); id != "own" || lic != "L" || attr != "A" {
+			t.Errorf("%s: terms %q, %q, %q", typ, id, lic, attr)
+		}
+		if packs.RegistryID(m) != "own" {
+			t.Errorf("%s: registry id %q", typ, packs.RegistryID(m))
 		}
 	}
 }

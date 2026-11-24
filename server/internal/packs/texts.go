@@ -10,7 +10,6 @@ import (
 	"strings"
 	"unicode/utf8"
 
-	"qinqin/internal/dict"
 	"qinqin/internal/pack"
 )
 
@@ -157,14 +156,10 @@ func TextsStored(ctx context.Context, q Querier, typ, packID string) (bool, erro
 }
 
 // RegistryID is the pack id of the registry row an import of manifest m
-// writes: the manifest id, except for the built-in kanjidic2 and unihan
-// dictionaries (dict.RegistryTerms).
+// writes (RegistryTerms).
 func RegistryID(m pack.Manifest) string {
-	if m.Type == pack.TypeDictionary {
-		id, _, _ := dict.RegistryTerms(m)
-		return id
-	}
-	return m.ID
+	id, _, _ := RegistryTerms(m)
+	return id
 }
 
 // storeTextsAfterImport keeps the licence texts of an imported pack in a

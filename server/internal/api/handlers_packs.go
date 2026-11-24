@@ -11,7 +11,6 @@ import (
 	"strings"
 	"time"
 
-	"qinqin/internal/dict"
 	"qinqin/internal/fonts"
 	"qinqin/internal/lemmapack"
 	"qinqin/internal/pack"
@@ -334,10 +333,7 @@ func (s *server) handleStagePack(w http.ResponseWriter, r *http.Request) {
 	// The registry row a pack's import writes can differ from its manifest
 	// (KANJIDIC2 stores its fixed terms under a fixed id): review and echo
 	// what will actually be stored.
-	registryID, license, attribution := m.ID, m.License, m.Attribution
-	if m.Type == pack.TypeDictionary {
-		registryID, license, attribution = dict.RegistryTerms(m)
-	}
+	registryID, license, attribution := packs.RegistryTerms(m)
 	resp := stagedResponse{Token: token, Manifest: stagedManifest{ID: m.ID, Name: m.Name, Version: m.Version,
 		Type: m.Type, Language: m.Language, Languages: m.Languages, License: license, Attribution: attribution, Notice: m.Notice, Format: m.Format},
 		Themes: review}

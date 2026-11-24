@@ -773,7 +773,7 @@ func AffectedIDs(ctx context.Context, q Querier, typ, packID, language string) [
 			ids = append(ids, id)
 		}
 	}
-	if typ != pack.TypeDictionary {
+	if typ != pack.Lexicon().Type {
 		add(typ + "." + packID)
 		return ids
 	}

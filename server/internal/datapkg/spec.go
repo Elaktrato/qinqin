@@ -126,10 +126,7 @@ var registries = func() []registry {
 		if d.Package == "" || d.Package == pack.LexiconPackage {
 			continue
 		}
-		lang := "language"
-		if d.Languages == pack.Many {
-			lang = "languages"
-		}
+		lang := d.LanguageColumn()
 		out = append(out, registry{
 			typ:             Type(d.Package),
 			packType:        d.Type,
@@ -152,7 +149,8 @@ var registries = func() []registry {
 func Plan(ctx context.Context, q Querier) ([]Spec, error) {
 	var specs []Spec
 	lexicons := map[string]*Spec{}
-	err := scanPacks(ctx, q, `SELECT pack_id, name, version, language, license, attribution, notice FROM dictionaries WHERE deleted_at IS NULL`,
+	lex := pack.Lexicon()
+	err := scanPacks(ctx, q, `SELECT pack_id, name, version, language, license, attribution, notice FROM `+lex.Registry+` WHERE deleted_at IS NULL`,
 		func(packID, name, version, language, license, attribution, notice string) error {
 			id := string(TypeLexicon) + "." + language
 			if _, _, err := ParseID(id); err != nil {
@@ -163,7 +161,7 @@ func Plan(ctx context.Context, q Querier) ([]Spec, error) {
 				s = &Spec{ID: id, Type: TypeLexicon, Languages: []string{language}}
 				lexicons[language] = s
 			}
-			s.Sources = append(s.Sources, Source{Type: pack.TypeDictionary, PackID: packID, Name: name, Version: version,
+			s.Sources = append(s.Sources, Source{Type: lex.Type, PackID: packID, Name: name, Version: version,
 				License: license, Attribution: attribution, Notice: notice})
 			return nil
 		})

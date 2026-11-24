@@ -82,7 +82,28 @@ The issue predates #172, #176 and #198. Its places, checked in the code at 86fe1
   fixed theme, font, lemma-rules precedence chose. Both texts are true, the new one names the type the pack
   declares, and the two cases are pinned — cost if wrong: an administrator with such a doubly wrong pack reads
   the other one of two true messages.
-- Ruling: `dict` keeps `RegistryTerms` for now; task 4 moves the per-type rule behind the handler table.
+- Ruling: `dict` keeps `RegistryTerms` (it is the dictionary's rule); it is the dictionary handler's `terms`, and
+  every caller asks `packs.RegistryTerms` (task 4).
+- Ruling: the one table has two halves in two packages, row for row: the data in `pack.All` and the behaviour
+  (import with its summary line, uninstall, registry terms) in `packs.handlers`, in the same order
+  (`TestEveryPackTypeHasItsHandler` compares the two orders; `TestEveryHandlerIsComplete`). One literal in
+  `pack` cannot hold the behaviour: the type packages import `pack`, so `pack` cannot name their importers
+  (an import cycle). Registration at init (the `database/sql` driver pattern) was rejected: a type package's
+  own tests, which link no `packs`, would see a table without behaviour, and the table order would depend on
+  init order. One literal in `packs` was rejected: the manifest validation in `pack` needs the types, and
+  `pack` cannot import `packs` — cost if wrong: a new type is two rows (one per half) instead of one; both
+  are named in record 0008 and a test fails until both exist.
+- Ruling: the upload stage's per-type steps stay in `api/handlers_packs.go`: the audio refusal text, the theme
+  contrast review (a typed part of the stage answer), the font and lemma-rules checks. They are features of
+  those types, not lists of types; a new type needs none of them. Only the registry terms, which were a list
+  in two places, moved to the handler — cost if wrong: a new type that needs a stage check adds a branch
+  there, as theme, font and lemma-rules did.
+- Ruling: `datapkg.Types()` (the package types in contract order, which the catalogue's `idPattern` string
+  follows) and `typeDefs` (each package type's schema and copy queries) stay datapkg's own: they are the
+  package format, not the pack type, and `TestPackageTypesFollowThePackTypeTable` checks them against the
+  table. The lexicon's source registry and the `AffectedIDs` rule now come from the table
+  (`pack.Lexicon()`) — cost if wrong: a new type with a package still adds its schema in datapkg (record
+  0008 says so).
 
 ## Execution record
 
@@ -95,3 +116,9 @@ The issue predates #172, #176 and #198. Its places, checked in the code at 86fe1
   `./...` green apart from the known `internal/ai` IPv6 test. `dict` is now imported by `api` (dictionary
   routes), `packs`, `packcheck` and `tools/tatoeba` (they import dictionaries) and by `packs/texts.go` and
   `packcheck.go` for `RegistryTerms` (task 4); 14 non-test packages import `pack`.
+- Task 3: `TestNotFoundIsErrNotFound` and `TestEveryNotFoundErrorIsPackNotFound` written first and seen
+  failing (12 errors), then `pack.NotFound`. The texts of the domain errors are unchanged.
+- Task 4: `packs/handlers.go` holds the handlers in table order; `packcheck` and the upload stage ask
+  `packs.RegistryTerms`, so `dict` leaves `packs/texts.go`, `packcheck.go` and `api/handlers_packs.go`.
+  Test-guarded refactor (the handler bodies are unchanged); new tests: `TestEveryHandlerIsComplete`,
+  `TestRegistryTermsFollowTheHandler`.

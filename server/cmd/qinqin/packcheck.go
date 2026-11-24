@@ -7,7 +7,6 @@ import (
 	"os"
 	"path/filepath"
 
-	"qinqin/internal/dict"
 	"qinqin/internal/pack"
 	"qinqin/internal/packs"
 )
@@ -63,10 +62,7 @@ func warnStalePackTerms(ctx context.Context, sqlDB *sql.DB, roots []string, logf
 				return filepath.SkipDir
 			}
 			m := pk.Manifest
-			id, license, attribution := m.ID, m.License, m.Attribution
-			if m.Type == pack.TypeDictionary {
-				id, license, attribution = dict.RegistryTerms(m)
-			}
+			id, license, attribution := packs.RegistryTerms(m)
 			// Uninstalled packs have no row.
 			if got, ok := stored[m.Type][id]; ok && got != (storedTerms{license, attribution, m.Notice}) {
 				logf(`pack %s: stored license/attribution/notice differs from %s; run "qinqin seed" to refresh`, m.ID, manifest)
