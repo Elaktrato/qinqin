@@ -10,6 +10,8 @@ describe('parseJournalRoute', () => {
 		expect(parseJournalRoute('settings')).toEqual({ view: 'settings' });
 		expect(parseJournalRoute('e/01ABC')).toEqual({ view: 'entry', id: '01ABC' });
 		expect(parseJournalRoute('/e/01ABC/')).toEqual({ view: 'entry', id: '01ABC' });
+		expect(parseJournalRoute('talk')).toEqual({ view: 'talk' });
+		expect(parseJournalRoute('talk/c0123')).toEqual({ view: 'conversation', id: 'c0123' });
 	});
 
 	it('sends unknown paths to the list', () => {
@@ -18,6 +20,7 @@ describe('parseJournalRoute', () => {
 		expect(parseJournalRoute('e/')).toEqual({ view: 'list' });
 		expect(parseJournalRoute('e/a/b')).toEqual({ view: 'list' });
 		expect(parseJournalRoute('new/extra')).toEqual({ view: 'list' });
+		expect(parseJournalRoute('talk/a/b')).toEqual({ view: 'list' });
 	});
 });
 
@@ -28,7 +31,9 @@ describe('journalHref', () => {
 			{ view: 'new' },
 			{ view: 'photo' },
 			{ view: 'settings' },
-			{ view: 'entry', id: '01ABC' }
+			{ view: 'entry', id: '01ABC' },
+			{ view: 'talk' },
+			{ view: 'conversation', id: 'c1' }
 		];
 		for (const route of routes) {
 			expect(parseJournalRoute(journalHref(route).replace(/^\/journal\/?/, ''))).toEqual(route);
@@ -39,6 +44,8 @@ describe('journalHref', () => {
 		expect(journalHref({ view: 'list' })).toBe('/journal');
 		expect(journalHref({ view: 'entry', id: 'x' })).toBe('/journal/e/x');
 		expect(journalHref({ view: 'settings' })).toBe('/journal/settings');
+		expect(journalHref({ view: 'talk' })).toBe('/journal/talk');
+		expect(journalHref({ view: 'conversation', id: 'c1' })).toBe('/journal/talk/c1');
 	});
 
 	it('encodes an id', () => {

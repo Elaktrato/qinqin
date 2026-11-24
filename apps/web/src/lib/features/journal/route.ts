@@ -5,7 +5,9 @@ export type JournalRoute =
 	| { view: 'new' }
 	| { view: 'entry'; id: string }
 	| { view: 'photo' }
-	| { view: 'settings' };
+	| { view: 'settings' }
+	| { view: 'talk' }
+	| { view: 'conversation'; id: string };
 
 const BASE = '/journal';
 const list: JournalRoute = { view: 'list' };
@@ -26,11 +28,13 @@ export function parseJournalRoute(rest: string): JournalRoute {
 		if (parts[0] === 'new') return { view: 'new' };
 		if (parts[0] === 'photo') return { view: 'photo' };
 		if (parts[0] === 'settings') return { view: 'settings' };
+		if (parts[0] === 'talk') return { view: 'talk' };
 		return list;
 	}
-	if (parts.length === 2 && parts[0] === 'e') {
+	if (parts.length === 2 && (parts[0] === 'e' || parts[0] === 'talk')) {
 		const id = decode(parts[1]);
-		return id ? { view: 'entry', id } : list;
+		if (!id) return list;
+		return parts[0] === 'e' ? { view: 'entry', id } : { view: 'conversation', id };
 	}
 	return list;
 }
@@ -41,6 +45,8 @@ export function journalHref(route: JournalRoute): string {
 			return BASE;
 		case 'entry':
 			return `${BASE}/e/${encodeURIComponent(route.id)}`;
+		case 'conversation':
+			return `${BASE}/talk/${encodeURIComponent(route.id)}`;
 		default:
 			return `${BASE}/${route.view}`;
 	}

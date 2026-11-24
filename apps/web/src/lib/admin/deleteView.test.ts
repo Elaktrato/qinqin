@@ -20,6 +20,9 @@ describe('previewLines', () => {
 		]);
 		expect(previewLines({ ...zero, cards: 3 })).toEqual(['3 flashcards, with their decks and study settings']);
 	});
+	it('counts the journal conversations', () => {
+		expect(previewLines({ ...zero, journalEntries: 2, journalConversations: 1 })).toEqual(['2 journal entries, with their reviews', '1 journal conversation']);
+	});
 	it('counts access tokens', () => {
 		expect(previewLines({ ...zero, accessTokens: 1 })).toEqual(['1 personal access token']);
 		expect(previewLines({ ...zero, accessTokens: 3 })).toEqual(['3 personal access tokens']);

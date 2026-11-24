@@ -73,8 +73,8 @@
         { "seq": 4, "role": "learner", "text": "z", "annotations": [{ "id": "m4a1", "quote": 5 }, { "id": "m4a2", "quote": "z", "prefix": "", "suffix": "", "correction": "zz", "explanation": "e", "category": "spelling", "kind": "odd" }] }
       ] },
       "expect": { "id": "c3", "topic": "", "level": "beginner", "createdAt": "", "updatedAt": "", "messages": [
-        { "seq": 3, "role": "learner", "text": "y", "annotations": [], "model": "", "provider": "", "createdAt": "" },
-        { "seq": 4, "role": "learner", "text": "z", "annotations": [{ "id": "m4a2", "quote": "z", "prefix": "", "suffix": "", "correction": "zz", "explanation": "e", "category": "spelling", "kind": "mistake" }], "model": "", "provider": "", "createdAt": "" }
+        { "seq": 3, "role": "learner", "text": "y", "annotations": [], "createdAt": "" },
+        { "seq": 4, "role": "learner", "text": "z", "annotations": [{ "id": "m4a2", "quote": "z", "prefix": "", "suffix": "", "correction": "zz", "explanation": "e", "category": "spelling", "kind": "mistake" }], "createdAt": "" }
       ] }
     },
     {

@@ -77,6 +77,8 @@ export interface SelfDeletionPreview {
 	books: number;
 	/** Journal entries (typed storage since #199). */
 	journalEntries?: number;
+	/** Open conversations of the partner (#185). */
+	journalConversations?: number;
 	journalPhotos: number;
 	aiKeys: number;
 	sessions: number;
