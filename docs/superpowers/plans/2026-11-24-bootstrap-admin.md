@@ -88,4 +88,30 @@ empty database became the administrator, in every registration mode (`GET /api/a
 
 ## Execution record
 
-(filled in as the tasks land)
+- Task 1: the new `bootstrap_env_test.go` tests ran first and failed (default, named, supplied password, off,
+  policy violations with the default name, the two-handle race: 6 failing tests). `TestServeRefusesAnInvalidBootstrapAdmin`,
+  `TestBootstrapAdminIgnoresConfigOnceUsersExist` and `TestBootstrapAdminOffWithUsersIsSilent` passed before the
+  change: they pin behaviour the old code already had. `TestBootstrapAdminLosingTheRaceIsSilent` was written after
+  the `bootstrapAdmin` seam it needs, so it was never seen failing; the two-handle race test does not prove that its
+  loser reached `ErrNotFirst` (with the cheap test hash both may not overlap), which is why the deterministic one
+  exists. `-race -count=10` of the race test: pass.
+- Task 2: `TestEmptyInstanceGrantsNoAdminByRegistration` and the options fixture without `bootstrap` failed first
+  (201 and an admin in every mode; an undocumented `bootstrap` key), then passed. The helper move (API
+  `registerUser` through `newTestServer`, auth `mustRegister`, events/sentences `registerFirstUser`, sync
+  `registerAndLogin`) keeps each test's meaning: the first tokenless user on an empty instance is created as an
+  administrator in the database; any later tokenless call still registers over the API. Tests that pinned the
+  zero-users path were rewritten to pin 403 `registration_closed`; `TestAuthLimitRegisterGateBusy` now blocks the
+  gate in open mode. The domain pin golden was regenerated deliberately (no `bootstrap`; a new "register before
+  any user" line).
+- Task 3: the two page tests (a stray `bootstrap: true` opens no form, offers no link) failed first, then passed.
+- Real app (scratch build, 127.0.0.1:18431, empty data, auto-seed off): first start logged the creation and one
+  20-character password line; register answered 403 `registration_closed`; options had no `bootstrap`; signing in
+  as `admin` answered `password_change_required` (admin, must change). A second start logged nothing. `off`: the
+  hint line, register 403. `QINQIN_BOOTSTRAP_ADMIN=ab`: exit 1 with the reason, never listened.
+- Gates: full Go `./...` (vet + test, `gofmt -l` empty): 55 packages ok, only the known `internal/ai`
+  `TestHostnameResolvingToEmbeddedFormIsRefused` (no IPv6 here) failed; `cmd/qinqin` and `internal/api` again after
+  the last docs commit: ok. `npm run check`: 0 errors, 0 warnings. Full vitest under Node 26: 612 files, 12889 passed,
+  8 skipped. e2e 3 runs: 17 passed each, no flakes. `node --test scripts/*.test.mjs`: 156 pass, 0 fail.
+  `gen-api-docs --check`: clean (no route changed).
+- Not verified: a real `docker compose up` (no Docker here; the compose file only passes the variables through,
+  unchanged); the Portainer log view.
