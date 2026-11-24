@@ -32,6 +32,14 @@ export interface Sentence {
 	hanzi: string;
 	pinyin: string;
 	translation: string;
+	/** Who wrote a kept AI example (#186); null (or absent in an old cached answer) for every other sentence. Read it with `aiMark`. */
+	ai?: SentenceAi | null;
+}
+
+/** The mark of an AI example: the provider id and the model (docs/contracts/examples/). */
+export interface SentenceAi {
+	provider: string;
+	model: string;
 }
 
 // EntryBase is an entry as it appears nested inside another entry's

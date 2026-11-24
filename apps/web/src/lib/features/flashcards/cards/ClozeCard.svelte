@@ -2,6 +2,7 @@
 	import { t } from '$lib/i18n';
 	import { onMount } from 'svelte';
 	import type { Entry, Sentence } from '$lib/api/types';
+	import AiTag from '$lib/components/AiTag.svelte';
 	import { choiceForKeyEvent } from '$lib/components/clozeKeys';
 	import type { CardResult, FlowItem } from '$lib/study/cardFlow';
 	import { normalizeAnswer, suggestClozeGrade, type ClozeMode, type ClozePrompt } from '$lib/study/cloze';
@@ -116,6 +117,7 @@
 		{#each prompt.before as part, i (i)}{#if typeof part === 'string'}{part}{:else}{@render gap(part.answer)}{/if}{/each}{@render gap(undefined)}{#each prompt.after as part, i (i)}{#if typeof part === 'string'}{part}{:else}{@render gap(part.answer)}{/if}{/each}
 	</p>
 	<p class="fp-sub translation">{sentence.translation}</p>
+	<AiTag ai={sentence.ai} />
 </FacePrompt>
 
 <FaceWork>
