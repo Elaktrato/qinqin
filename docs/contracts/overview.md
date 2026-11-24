@@ -15,6 +15,7 @@ where the rule is implemented today.
 | Identity and transport | `auth/` (token, restrictions, errors, two-step sign-in), `pwa/` (outbox, cache rules) |
 | Shared data | `packages/` (data packages: the catalogue, downloads, the zip and `data.sqlite` of every type, versioning and the client rule) |
 | User data in transit | `sync/` (the paged pull `v=2`, the push answer), `keyed/` (the keyed rows store: families and scopes) |
+| Languages | `languages/` (the language profiles: what each language has, the fallback, how to add one) |
 | Time | `study-day/` (the learner's day, zone history) is the base of everything below |
 | Study events | `events/` (the envelope and how the server stores it, the payload of every type and when it is written, review parsing and replay order, heatmap activity scoring) |
 | Typed study data | `study/` (cards, decks, deck settings, limits, FSRS sets, the active set: wire shapes, last-write-wins, tombstones; the duplicate-card merge), `library/` (reader books, bookmarks, highlights, positions, the deletion log) |
@@ -32,7 +33,7 @@ where the rule is implemented today.
 
 Every folder, in dependency order (this page's sync model and Events sections after `sync/`):
 
-`auth/` → `study-day/` → `packages/` → `sync/` → `keyed/` → `features/` → `events/` → `study/` → `cards/` → `scheduler/` → `decks/` →
+`auth/` → `languages/` → `study-day/` → `packages/` → `sync/` → `keyed/` → `features/` → `events/` → `study/` → `cards/` → `scheduler/` → `decks/` →
 `levels/` → `frequency/` → `goals/` → `weekly/` → `stats/` → `milestones/` → `lemma/` → `reader/` → `library/` → `notes/` → `lookups/` →
 `radicals/` → `journal/` → `grammar/` → `settings/` → `themes/` → `fonts/` → `overlays/` → `backup/` → `pwa/` → `i18n/`
 

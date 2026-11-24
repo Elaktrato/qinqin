@@ -63,6 +63,9 @@ describe('words panel texts', () => {
 		expect(wordCountsSupported('zh')).toBe(true);
 		expect(wordCountsSupported('ja')).toBe(true);
 		expect(wordCountsSupported('ko')).toBe(false);
+		// From the language profile's segmentation (#199): regional tags count, spaced languages do not.
+		expect(wordCountsSupported('zh-TW')).toBe(true);
+		expect(wordCountsSupported('es')).toBe(false);
 	});
 });
 

@@ -1,3 +1,4 @@
+import { profileOf } from './languageProfiles';
 import type { Language, Workspace } from './api/types';
 import { getLanguage } from './i18n';
 import { languageName } from './i18n/format';
@@ -41,10 +42,12 @@ export function flagFor(code: string): FlagKind {
 	}
 }
 
-/** usesHan is true for languages written with Han characters (Chinese, Japanese). */
+/**
+ * usesHan is true for languages written with Han characters (the profile's script, #199): the Characters tab,
+ * the character map, the parts search, the weekly characters and the han milestones follow it.
+ */
 export function usesHan(code: string): boolean {
-	const primary = primarySubtag(code);
-	return primary === 'zh' || primary === 'ja';
+	return profileOf(code).script === 'han';
 }
 
 /**

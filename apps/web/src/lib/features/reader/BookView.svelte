@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { profileOf } from '$lib/languageProfiles';
 	import { UserError } from '$lib/api/userError';
 	import { studyLang } from '$lib/i18n/lang';
 	import { t } from '$lib/i18n';
@@ -112,7 +113,7 @@
 
 	// The chosen script applies once its converter has loaded; until then
 	// (or if loading fails) the text stays as it is.
-	const wantedVariant = $derived<Variant>(book?.language === 'zh' ? prefs.variant : 'original');
+	const wantedVariant = $derived<Variant>(profileOf(book?.language ?? '').variants ? prefs.variant : 'original');
 	let variant = $state<Variant>('original');
 	let variantError = $state('');
 	$effect(() => {

@@ -1,0 +1,69 @@
+{
+ "version": 1,
+ "rule": "languages/profiles",
+ "note": "One profile per language the app knows, and the fallback (code \"*\") for every other code. A code resolves by its primary subtag, case-insensitive (zh-TW -> zh). A profile says what a language has, not how its reading code works. resolve: code -> the profile's code.",
+ "profiles": [
+  {
+   "code": "zh",
+   "script": "han",
+   "readings": ["pinyin"],
+   "segmentation": "dictionary",
+   "tones": true,
+   "strokes": true,
+   "kana": false,
+   "variants": true,
+   "cardKinds": ["vocab", "sentence", "writing", "tone", "reverse", "cloze"],
+   "practiceModes": ["decks", "levels", "characterMap"]
+  },
+  {
+   "code": "ja",
+   "script": "han",
+   "readings": ["kana"],
+   "segmentation": "dictionary",
+   "tones": false,
+   "strokes": false,
+   "kana": true,
+   "variants": false,
+   "cardKinds": ["vocab", "sentence", "writing", "reverse", "cloze"],
+   "practiceModes": ["decks", "levels", "characterMap"]
+  },
+  {
+   "code": "es",
+   "script": "latin",
+   "readings": [],
+   "segmentation": "spaces",
+   "tones": false,
+   "strokes": false,
+   "kana": false,
+   "variants": false,
+   "cardKinds": ["vocab", "sentence", "reverse", "cloze"],
+   "practiceModes": ["decks", "levels"]
+  },
+  {
+   "code": "*",
+   "script": "other",
+   "readings": [],
+   "segmentation": "spaces",
+   "tones": false,
+   "strokes": false,
+   "kana": false,
+   "variants": false,
+   "cardKinds": ["vocab", "sentence", "reverse", "cloze"],
+   "practiceModes": ["decks", "levels"]
+  }
+ ],
+ "resolve": [
+  {"code": "zh", "profile": "zh"},
+  {"code": "zh-TW", "profile": "zh"},
+  {"code": "zh_hant", "profile": "zh"},
+  {"code": "ZH", "profile": "zh"},
+  {"code": "ja", "profile": "ja"},
+  {"code": "ja-JP", "profile": "ja"},
+  {"code": "es", "profile": "es"},
+  {"code": "es-419", "profile": "es"},
+  {"code": "pt-br", "profile": "*"},
+  {"code": "ko", "profile": "*"},
+  {"code": "zhx", "profile": "*"},
+  {"code": "", "profile": "*"}
+ ]
+}

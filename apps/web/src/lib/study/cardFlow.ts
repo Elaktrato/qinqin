@@ -2,6 +2,7 @@
 // an item can be shown, and the small derived values the card components
 // need. Kept out of the Svelte pages so they are covered by tests.
 
+import { profileOf } from '../languageProfiles';
 import type { StudyContext } from './studyContext';
 import type { StudyClock } from './studyClock';
 import { planCompanions } from './companions';
@@ -89,9 +90,10 @@ export interface EligibilityContext {
 	hasCloze?: boolean;
 }
 
-/** zh and its regional tags (zh-Hant, zh_TW, ...). */
-export function isChinese(language: string): boolean {
-	return language.toLowerCase().split(/[-_]/)[0] === 'zh';
+/** languageCardKinds keeps the kinds the language's profile has (tone only for a tonal language, #199). */
+export function languageCardKinds(kinds: readonly StudyCardKind[], language: string): StudyCardKind[] {
+	const own = profileOf(language).cardKinds;
+	return kinds.filter((kind) => own.includes(kind));
 }
 
 /** The first sentence that has no sentence card yet, or null. */
@@ -171,7 +173,7 @@ function reviewedIds(reviews: readonly ReviewEvent[]): Set<string> {
 }
 
 function sessionKinds(kinds: readonly StudyCardKind[], language: string): StudyCardKind[] {
-	return kinds.filter((kind) => kind !== 'tone' || isChinese(language));
+	return languageCardKinds(kinds, language);
 }
 
 export interface DeckSessionOptions {

@@ -2,6 +2,7 @@
 // reader's script setting (Chinese only) before tiles are cut or a gap
 // is found.
 
+import { profileOf } from '$lib/languageProfiles';
 import { studyLang } from '$lib/i18n/lang';
 import { prepareVariant, convertText, type Variant } from '$lib/features/reader/variants';
 import { browserStorage, loadPrefs } from '$lib/features/reader/prefs';
@@ -21,7 +22,7 @@ export async function loadDisplayLesson(pack: string, id: string): Promise<Displ
 	const view = await loadLesson(pack, id);
 	if (view === null) return null;
 	const language = view.pack.language;
-	let variant: Variant = language === 'zh' ? loadPrefs(browserStorage()).variant : 'original';
+	let variant: Variant = profileOf(language).variants ? loadPrefs(browserStorage()).variant : 'original';
 	try {
 		await prepareVariant(variant);
 	} catch {

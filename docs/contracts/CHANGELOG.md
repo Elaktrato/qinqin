@@ -28,6 +28,11 @@ logged. Earlier changes: the error catalogue's own changelog in [`auth/README.md
   wrong scope 400. Fixtures changed: `sync/pull-page.json`, `sync/pull-rounds.json`, `sync/push-result.json`,
   `sync/unreadable-rows.json`, `backup/remap.json` (op `row`), `settings/*.json` and `themes/appearance.json`
   (no `pluginId`), `auth/admin-users.json` (deletion preview `keyedRows`).
+- **Language profiles:** new fixture `languages/profiles.json` (zh, ja, es and the fallback): what a language
+  has (script, readings, segmentation, tones, strokes, kana, variants, card kinds, practice modes), resolved by
+  the primary subtag. Availability checks follow it; a regional tag such as `zh-TW` now gets everything `zh`
+  has (word counts, the variant label, the journal's Han check), and a language without writing or tone cards
+  no longer lists them in the study setup.
 - **Feature switches replace plugin states; the code plugins are retired:** `GET /api/features` lists the
   caller's switch of the four core features (`flashcards`, `reader`, `journal`, `grammar`; no row is on), `PUT
   /api/features/{id} {enabled}` stores one (`features/README.md`, new fixture `features/switches.json`). Removed:

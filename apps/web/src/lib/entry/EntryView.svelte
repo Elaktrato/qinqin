@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { profileOf } from '$lib/languageProfiles';
 	import { errorText } from '$lib/api/apiErrors';
 	import Msg from '$lib/i18n/Msg.svelte';
 	import { t } from '$lib/i18n';
@@ -388,7 +389,7 @@
 						</ul>
 					</section>
 				{/if}
-				{#if entry.language === 'zh' && strokeChar !== null}
+				{#if profileOf(entry.language).strokes && strokeChar !== null}
 					<section class="section" aria-labelledby="stroke-heading">
 						<h2 id="stroke-heading">{t('entry.page.strokeOrder')}</h2>
 						{#if entry.kind === 'word' && entry.characters && entry.characters.length > 1}
