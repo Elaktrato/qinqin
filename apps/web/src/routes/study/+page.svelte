@@ -1139,7 +1139,8 @@ import { limitsOf } from '$lib/study/scheduler';
 			</Section>
 
 			{#if activeWorkspaceId !== null}
-				<CardManager workspaceId={activeWorkspaceId} {cards} decks={allDecks} onchanged={refreshData} />
+				<!-- Its writes reach the page through onStudyChange (one reload each). -->
+				<CardManager workspaceId={activeWorkspaceId} {cards} decks={allDecks} />
 			{/if}
 		{:else}
 			<Section title={t('study.level.title')} headingId="levels-heading">

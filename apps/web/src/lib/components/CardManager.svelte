@@ -32,7 +32,8 @@
 		workspaceId: number;
 		cards: readonly StudyCard[];
 		decks: readonly Deck[];
-		onchanged: () => void | Promise<void>;
+		/** Called after a change; a page that listens to onStudyChange leaves it out. */
+		onchanged?: () => void | Promise<void>;
 	} = $props();
 
 	let root: HTMLDetailsElement | undefined = $state();
@@ -49,7 +50,7 @@
 		dropSiblingCards,
 		skipKind,
 		unskipKind,
-		onchanged: () => onchanged()
+		onchanged: () => onchanged?.()
 	});
 	let controller = $state<CardActionsState>({ busy: false, error: '', undo: null });
 	const unsubscribe = actions.state.subscribe((next) => (controller = next));

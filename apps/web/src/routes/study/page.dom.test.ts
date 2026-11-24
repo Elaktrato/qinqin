@@ -19,7 +19,13 @@ vi.mock('$lib/study/commands/decks', async (importOriginal) => ({
 	saveDeckCardTypesForDecks: vi.fn(),
 	createDeck: vi.fn()
 }));
-vi.mock('$lib/components/CardManager.svelte', () => ({ default: () => ({}) }));
+const cardManager = vi.hoisted(() => ({ props: [] as Record<string, unknown>[] }));
+vi.mock('$lib/components/CardManager.svelte', () => ({
+	default: (_anchor: unknown, props: Record<string, unknown>) => {
+		cardManager.props.push(props);
+		return {};
+	}
+}));
 vi.mock('$lib/time/zone', () => ({
 	currentStudyDay: vi.fn(),
 	currentStudyHistory: vi.fn(() => []),
@@ -531,5 +537,12 @@ describe('study setup and the study cache (#193)', () => {
 		expect(loadStudyData).toHaveBeenCalledTimes(1);
 		studyCache.markStale(1);
 		await waitFor(() => expect(loadStudyData).toHaveBeenCalledTimes(2));
+	});
+
+	it("leaves the card manager's reloads to onStudyChange: one reload per change, not two", async () => {
+		cardManager.props.length = 0;
+		render(Page);
+		await waitFor(() => expect(cardManager.props.length).toBeGreaterThan(0));
+		expect(cardManager.props.at(-1)?.onchanged).toBeUndefined();
 	});
 });
