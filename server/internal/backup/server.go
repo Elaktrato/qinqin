@@ -142,13 +142,32 @@ func quoteSQL(s string) string { return "'" + strings.ReplaceAll(s, "'", "''") +
 // vanish between the walk and the read are skipped; symbolic links and other
 // non-regular files are never followed.
 func WriteServer(ctx context.Context, db *sql.DB, dataDir string, inc Include, w io.Writer, meta Meta) error {
-	var snap string
+	var snap, pictures string
 	if inc.DB {
-		var err error
-		if snap, err = SnapshotDB(ctx, db, dataDir); err != nil {
+		lock := meta.Lock
+		if lock == nil {
+			lock = func(fn func() error) error { return fn() }
+		}
+		// The snapshot and a hard-linked copy of avatars/ are taken together
+		// under the pictures' lock: a picture replaced afterwards cannot take
+		// away the files the snapshot's rows name.
+		err := lock(func() error {
+			var err error
+			if snap, err = SnapshotDB(ctx, db, dataDir); err != nil {
+				return err
+			}
+			pictures, err = stagePictures(dataDir)
+			return err
+		})
+		if snap != "" {
+			defer os.Remove(snap)
+		}
+		if pictures != "" {
+			defer os.RemoveAll(filepath.Dir(pictures))
+		}
+		if err != nil {
 			return err
 		}
-		defer os.Remove(snap)
 		afterSnapshot()
 	}
 	gz, err := gzip.NewWriterLevel(w, gzip.BestSpeed)
@@ -198,7 +217,13 @@ func WriteServer(ctx context.Context, db *sql.DB, dataDir string, inc Include, w
 		if !part.on {
 			continue
 		}
-		root := filepath.Join(dataDir, part.dir)
+		root, base := filepath.Join(dataDir, part.dir), dataDir
+		if part.dir == "avatars" {
+			if pictures == "" {
+				continue
+			}
+			root, base = pictures, filepath.Dir(pictures)
+		}
 		err := filepath.WalkDir(root, func(p string, d fs.DirEntry, err error) error {
 			if err != nil {
 				if errors.Is(err, os.ErrNotExist) {
@@ -218,7 +243,7 @@ func WriteServer(ctx context.Context, db *sql.DB, dataDir string, inc Include, w
 			if !d.Type().IsRegular() {
 				return nil // a symlink or special file: never followed
 			}
-			rel, err := filepath.Rel(dataDir, p)
+			rel, err := filepath.Rel(base, p)
 			if err != nil || strings.HasPrefix(rel, "..") {
 				return nil
 			}
@@ -293,4 +318,45 @@ func SameVolume(a, b string) bool {
 		return true // unknown: assume the worst
 	}
 	return sa.Dev == sb.Dev
+}
+
+// stagePictures links (or, across volumes, copies) every file of
+// <data>/avatars into <data>/tmp/backup-<rand>/avatars and returns that
+// avatars folder ("" when there are no pictures). The caller removes its
+// parent.
+func stagePictures(dataDir string) (string, error) {
+	src := filepath.Join(dataDir, "avatars")
+	if _, err := os.Stat(src); errors.Is(err, os.ErrNotExist) {
+		return "", nil
+	}
+	stage := filepath.Join(dataDir, "tmp", "backup-"+randHex(), "avatars")
+	err := filepath.WalkDir(src, func(p string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+		rel, err := filepath.Rel(src, p)
+		if err != nil {
+			return err
+		}
+		dst := filepath.Join(stage, rel)
+		switch {
+		case d.IsDir():
+			return os.MkdirAll(dst, 0o700)
+		case !d.Type().IsRegular() || strings.HasPrefix(d.Name(), ".tmp-"):
+			return nil // a link or a picture being written
+		}
+		if os.Link(p, dst) == nil {
+			return nil
+		}
+		b, err := os.ReadFile(p)
+		if err != nil {
+			return err
+		}
+		return os.WriteFile(dst, b, 0o600)
+	})
+	if err != nil {
+		os.RemoveAll(filepath.Dir(stage))
+		return "", fmt.Errorf("backup: stage pictures: %w", err)
+	}
+	return stage, nil
 }

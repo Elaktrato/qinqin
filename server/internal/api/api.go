@@ -34,6 +34,9 @@ type server struct {
 	// ("releasing") (tests).
 	aiSlotHook func(kind, phase string)
 	segments   inFlight
+	// avatarHook runs in POST /api/account/avatar between the decode and
+	// the store (tests).
+	avatarHook func()
 
 	db        *sql.DB
 	dataDir   string

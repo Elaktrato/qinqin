@@ -91,3 +91,7 @@ func WithSegmentHook(hook func()) Option { return func(s *server) { s.segmentHoo
 func WithAISlotHook(hook func(kind, phase string)) Option {
 	return func(s *server) { s.aiSlotHook = hook }
 }
+
+// WithAvatarHook runs inside POST /api/account/avatar once the picture is
+// decoded, before it is stored (tests).
+func WithAvatarHook(hook func()) Option { return func(s *server) { s.avatarHook = hook } }

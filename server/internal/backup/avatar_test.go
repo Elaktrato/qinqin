@@ -3,6 +3,7 @@ package backup
 import (
 	"bytes"
 	"context"
+	"database/sql"
 	"errors"
 	"image"
 	"image/color"
@@ -248,5 +249,40 @@ func TestArchivePictureTakesADecodeSlot(t *testing.T) {
 	}
 	if err := <-done; err != nil {
 		t.Fatal(err)
+	}
+}
+
+// A picture replaced between the database snapshot and the copy of the
+// files: the backup still holds the files the snapshot's rows name.
+func TestServerBackupPicturesMatchTheSnapshot(t *testing.T) {
+	w := newWorld(t)
+	setPicture(t, w, w.AliceUID, color.RGBA{200, 30, 30, 255})
+	afterSnapshot = func() { setPicture(t, w, w.AliceUID, color.RGBA{30, 30, 200, 255}) }
+	t.Cleanup(func() { afterSnapshot = func() {} })
+	var buf bytes.Buffer
+	if err := WriteServer(context.Background(), w.DB, w.Data, AllIncluded, &buf, testMeta); err != nil {
+		t.Fatal(err)
+	}
+	files, _ := untar(t, buf.Bytes())
+	p := filepath.Join(t.TempDir(), "snap.db")
+	os.WriteFile(p, files["qinqin.db"], 0o600)
+	snap, err := sql.Open("sqlite", p)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer snap.Close()
+	var hash string
+	if err := snap.QueryRow(`SELECT hash FROM user_avatars WHERE user_id = ?`, w.AliceUID).Scan(&hash); err != nil {
+		t.Fatal(err)
+	}
+	for _, size := range []string{"256", "64"} {
+		name := "avatars/" + strconv.FormatInt(w.AliceUID, 10) + "/" + hash + "-" + size + ".jpg"
+		if len(files[name]) == 0 {
+			t.Errorf("the snapshot names %s, which the backup lacks", name)
+		}
+	}
+	// The staging folder of the pictures is gone again.
+	if entries, _ := os.ReadDir(filepath.Join(w.Data, "tmp")); len(entries) != 0 {
+		t.Errorf("tmp holds %d entries after the backup", len(entries))
 	}
 }

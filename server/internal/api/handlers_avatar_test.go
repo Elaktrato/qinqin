@@ -14,11 +14,15 @@ import (
 	"io"
 	"mime/multipart"
 	"net/http"
+	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
 	"testing"
+
+	"qinqin/internal/api"
+	"qinqin/internal/dbtest"
 )
 
 const avatarGPS = "QINQIN-GPS-48.8584N-2.2945E"
@@ -390,5 +394,46 @@ func TestAccountDeletionRemovesThePicture(t *testing.T) {
 	}
 	if _, err := os.Stat(filepath.Join(e.dataDir, "avatars", strconv.FormatInt(e.bobID, 10))); !os.IsNotExist(err) {
 		t.Fatalf("files are left: %v", err)
+	}
+}
+
+// An upload whose account is deleted (or disabled) while its picture is
+// being decoded stores nothing: no row, no files, no picture served.
+func TestAvatarUploadRacingAnAccountDeletionStoresNothing(t *testing.T) {
+	for _, gone := range []string{"deleted", "disabled"} {
+		t.Run(gone, func(t *testing.T) {
+			var e avatarEnv
+			hook := func() {
+				path := "/api/admin/users/" + strconv.FormatInt(e.bobID, 10)
+				var r *http.Response
+				if gone == "deleted" {
+					r = doJSON(t, http.MethodDelete, e.url, path, e.root, map[string]string{"currentPassword": "secret-pass-root", "confirm": "bobby"})
+				} else {
+					r = doJSON(t, http.MethodPatch, e.url, path, e.root, map[string]any{"disabled": true})
+				}
+				if r.StatusCode >= 300 {
+					t.Errorf("%s bob in the hook: %d %s", gone, r.StatusCode, body(t, r))
+				}
+			}
+			sqlDB := dbtest.Open(t)
+			dataDir := t.TempDir()
+			ts := httptest.NewServer(api.New(sqlDB, dataDir, nil, api.WithAvatarHook(func() { hook() })))
+			t.Cleanup(ts.Close)
+			root := registerUser(t, ts.URL, "root", "")
+			e = avatarEnv{url: ts.URL, dataDir: dataDir, root: root, bob: registerUser(t, ts.URL, "bobby", root),
+				rootID: userID(t, sqlDB, "root"), bobID: userID(t, sqlDB, "bobby")}
+			r := uploadAvatar(t, e, e.bob, colourPNG(t, 40, 40, color.RGBA{10, 200, 10, 255}))
+			if r.StatusCode != http.StatusUnauthorized || codeOf(t, r) != "unauthorized" {
+				t.Fatalf("upload of a %s account: %d", gone, r.StatusCode)
+			}
+			var rows int
+			sqlDB.QueryRow(`SELECT COUNT(*) FROM user_avatars WHERE user_id = ?`, e.bobID).Scan(&rows)
+			if rows != 0 {
+				t.Fatalf("%d picture rows for the %s account", rows, gone)
+			}
+			if _, err := os.Stat(filepath.Join(dataDir, "avatars", strconv.FormatInt(e.bobID, 10))); !os.IsNotExist(err) {
+				t.Fatalf("files for the %s account: %v", gone, err)
+			}
+		})
 	}
 }

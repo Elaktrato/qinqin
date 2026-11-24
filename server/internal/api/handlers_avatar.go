@@ -114,12 +114,25 @@ func (s *server) handleUploadAvatar(w http.ResponseWriter, r *http.Request) {
 		writeInternal(w, r)
 		return
 	}
+	if s.avatarHook != nil {
+		s.avatarHook()
+	}
 	var hash string
 	err = s.users.WithUserLock(func() error {
+		// The account may have been deleted or disabled while the picture was
+		// decoded: under the lock a deletion holds, store only for a live one
+		// (a personal restore checks the same).
+		if _, e := auth.ActiveUser(r.Context(), s.db, u.ID); e != nil {
+			return e
+		}
 		var e error
 		hash, e = s.avatars().Set(r.Context(), u.ID, img)
 		return e
 	})
+	if errors.Is(err, auth.ErrUserNotFound) {
+		writeError(w, http.StatusUnauthorized, "unauthorized", "Sign in to continue.")
+		return
+	}
 	if err != nil {
 		log.Printf("avatar: store: %v", err)
 		writeInternal(w, r)

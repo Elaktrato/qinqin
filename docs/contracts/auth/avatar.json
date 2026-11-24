@@ -30,7 +30,7 @@
   "picture_anonymous": {
     "request": {"method": "GET", "path": "/api/avatars/{userId}/{hash}", "note": "no bearer token"},
     "status": 401,
-    "body": {"error": "unauthorized", "message": "Sign in first."}
+    "body": {"error": "unauthorized", "message": "Sign in to continue."}
   },
   "picture_replaced": {
     "request": {"method": "GET", "path": "/api/avatars/{userId}/{an earlier hash}"},

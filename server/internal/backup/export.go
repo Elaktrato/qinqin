@@ -34,6 +34,10 @@ type Meta struct {
 	// may produce: beyond it the export fails with ErrTooLargeToRestore
 	// instead of producing a file this server would then refuse to restore.
 	MaxBytes int64
+	// Lock, when set, runs the server backup's snapshot and the staging of
+	// the profile pictures under the lock the pictures' writers hold
+	// (auth.Users.WithUserLock), so the files match the snapshot's rows.
+	Lock func(func() error) error
 }
 
 // ErrTooLargeToRestore: the archive would exceed what a restore accepts

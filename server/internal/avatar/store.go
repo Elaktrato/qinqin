@@ -93,9 +93,12 @@ func (s Store) Set(ctx context.Context, userID int64, img Images) (string, error
 	if err := s.writeFiles(userID, hash, img); err != nil {
 		return "", err
 	}
+	// The files are written: the row and the pruning finish even when the
+	// caller is gone, so a cancel cannot leave a false error and stray files.
+	ctx = context.WithoutCancel(ctx)
 	if _, err := s.DB.ExecContext(ctx, `INSERT INTO user_avatars (user_id, hash, updated_at) VALUES (?, ?, ?)
 		ON CONFLICT (user_id) DO UPDATE SET hash = excluded.hash, updated_at = excluded.updated_at`, userID, hash, s.now()); err != nil {
-		s.Prune(context.WithoutCancel(ctx), userID)
+		s.Prune(ctx, userID)
 		return "", fmt.Errorf("avatar: save: %w", err)
 	}
 	return hash, s.Prune(ctx, userID)

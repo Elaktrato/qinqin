@@ -182,3 +182,22 @@ func TestDeleteTxRemovesTheRowInsideATransaction(t *testing.T) {
 		t.Fatal("a rolled back DeleteTx removed the row")
 	}
 }
+
+// Once the files are written, the row and the pruning finish even when the
+// request is gone: a cancel there would leave a false error and stray files.
+func TestSetFinishesAfterTheFilesAreWritten(t *testing.T) {
+	s, alice, _ := newStore(t)
+	s.Set(context.Background(), alice, images(t, 30, 30))
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+	hash, err := s.Set(ctx, alice, images(t, 31, 30))
+	if err != nil {
+		t.Fatalf("Set with a cancelled context after the write: %v", err)
+	}
+	if cur, _ := s.Current(context.Background(), alice); cur != hash {
+		t.Fatalf("Current = %q, want %q", cur, hash)
+	}
+	if got := files(t, s, alice); len(got) != 2 {
+		t.Fatalf("files: %v, want the new picture's two", got)
+	}
+}
