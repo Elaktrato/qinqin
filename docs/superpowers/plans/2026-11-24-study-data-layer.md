@@ -104,10 +104,19 @@ Request counts measured before the change (fake server `lib/testing/studyServer.
   follow-up that changed rows fires `onStudyChange`; the study page reloads on it — cost if wrong: one extra
   pull request per round while a page listens.
 - Ruling: one keyed-data decode for every namespace: a string that is JSON text is decoded, any other string is
-  kept as it is (the SDK's round-trip rule); a study keyed row whose family parser then refuses it is unreadable
-  and protected (record 0002) — the store's old rule (non-JSON string = no data) made such a row look absent, so a
-  write could replace it — cost if wrong: none for stored data; a string-valued study row reads as unreadable
-  instead of absent.
+  kept as it is (the SDK's round-trip rule, which the core rows rely on); a study keyed row whose family parser
+  then refuses it is unreadable and protected (record 0002), as it was under the store's rule (which turned such
+  a string into null, refused the same way) — cost if wrong: none for stored data.
+- Ruling: listed rows (the key routes' prefix list) decode by the pull's strict shape (`keyedRowOf` over
+  `readableRow`): a row off the contract shape is skipped and logged, never the answer; a single-row `get`
+  decodes only its data — the server always sends the full shape, so this only made test fixtures honest
+  (`lib/testing/keyed.ts`) — cost if wrong: a server answering partial rows would hide them (none does).
+- Ruling: deleting a keyed row the server does not hold (a vacation deleted in another tab) succeeds instead of
+  failing with 404, as unmarking a known mark already did — cost if wrong: none; the row is gone either way.
+- Ruling: the commands that write row by row and report what landed with `PartialCardsError` (delete, restore,
+  move, the skip-kind switches) do not re-plan after a skip: the skip marks the workspace stale, so a retry
+  plans from fresh rows; every other command re-plans once (`replanned`) — cost if wrong: one extra click after
+  a clock-skew skip in those flows.
 - Ruling: the core rows (notes, lookups, layout, widget options, theme, navigation layout, activity view) use
   `lib/sync/keyed.ts` directly, not the plugin SDK; the SDK keeps only the permission checks for the journal and
   grammar until #199 removes it — so this branch does not deepen the SDK dependency #199 retires.
@@ -115,10 +124,69 @@ Request counts measured before the change (fake server `lib/testing/studyServer.
   through the 8 s log cache, both over the one row cache; `loadStudyData` and `loadRawStudyData` hand out fresh
   objects, `loadStudyHistory` and `getStudyData` share one per slot version (do not mutate) — the pages keep
   their data in `$state`.
+- Ruling: no client-side stored data is migrated or read in an old form (owner update 2026-11-24: a clean start
+  is fine, also for browser storage). This branch changes no stored client format: the study cache lives in
+  memory only, the outbox, the offline receipts and the service worker's saved pages keep their keys, so there
+  was nothing to drop — cost if wrong: none.
 - Ruling: the cache is a plain class (`StudyCache`) with its dependencies injected (pull, clock, session epoch,
   timers); `data.ts` creates the session's one instance with `createStudyCache` and clears it at the session end
   (#173's registry and lint) — #196 moves that instance into the per-session app context.
 
 ## Execution record
 
-(Filled in as the tasks land.)
+Commits (one per task, the suite green at each; full vitest under Node 26 at tasks 2, 4, 5 and 7):
+
+1. `2e4caa95` the plan and the fake study server (`lib/testing/studyServer.ts`, with its own test).
+2. `4fa55f3e` constants and card checks out of heavy modules; `pureImports.test.ts` widened to the data layer.
+3. `5d88c22c` `STUDY_PULL_COLLECTIONS` from `STUDY_COLLECTIONS` (test first; seen failing by a mutation that
+   dropped `fsrsActive`); record 0002's open question closed.
+4. `30d90838` `lib/sync/keyed.ts` and `lib/sync/push.ts` (tests first: `keyed.test.ts`, `push.test.ts` failed on the
+   missing modules); the SDK and the core rows on it.
+5. `7a223295` `store.ts` split; `store.ts` a re-export shell; `store.test.ts` unchanged and green.
+6. `a2649edd` `StudyCache`, test first (`cache.test.ts` failed on the missing module, then on three test
+   mistakes of my own: page counts, a gate that also held the first load, the vacation shape). Mutation checks:
+   without `keepLocalWrites`, without the follow-up and without the stamp check of the merge, a test fails each
+   time (the stamp check only after the test was fixed to send the older copy inside the delta window).
+7. `c204a595` the cache wired; `store.ts`, `history.ts`, `studyData.ts` gone; tests split. `replanned` seen
+   failing by a mutation (no second plan: 2 of 3 tests fail).
+8. `84aaf17a` the study page reloads on `onStudyChange`; its dom test fails without the wiring.
+9. Docs, records and this record (the last commit).
+
+Test changes on purpose: the skip-kind test ends the session between its two steps (the second step used to see
+the server's changed row through a new full pull; the cache plans from its own write now); the sign-out isolation
+test holds six requests instead of seven (the widgets' history and the raw data share one round); the store
+workspace guard checks every data-layer file. The 149 tests of `store.test.ts` all survive in the split files.
+
+Request counts after (`requestCounts.test.ts`, same seed as above):
+
+| Flow | Before | After |
+|---|---|---|
+| `addCard` on a cold tab | 21 pulls + 1 push | 21 pulls + 1 push |
+| Reader: "is this studied" check, then add | 42 pulls + 1 push | 21 pulls + 1 push |
+| Rename a deck after the study page loaded | 21 pulls + 1 push | 1 push |
+| Delete 3 cards after the study page loaded | 21 pulls + 3 pushes | 3 pushes |
+| Known mark after the home widgets | 1 PUT | 1 PUT |
+| Study page load / a second load right after | 21 pulls + 1 log, each | 21 pulls + 1 log, then 1 log |
+
+A write more than 8 s after the last round costs one delta page first (usually one request); a skipped write
+costs one delta page and one more push. While a page listens, each round is followed by one delta page 1.25 s
+later.
+
+Not migrated / not done:
+- The service-worker list `CACHEABLE_PULL_COLLECTIONS` stays its own list (pinned by its test, record 0002): deriving
+  it would pull the study row code into the worker bundle.
+- The e2e helper `settled()` (waits until a pull round ships pushed cards) stays: other specs start a session at
+  once, before the follow-up round could add the late cards.
+- The journal and grammar keep the SDK (#199 retires it); the cache instance is a module singleton in `data.ts`
+  until #196 moves it into the app context.
+
+Not verified: real devices and browsers other than Chromium; the follow-up round against a real server's
+second boundary (checked on the fake server and by reasoning about `until`); offline after a long online session
+(the five-minute full round is unit-tested, not driven in a browser).
+
+
+Gates on the last code commit (`84aaf17a`, plus these docs): `npm run check` 0 errors; `npm run build` ok; full
+vitest under Node 26: 598 files, 12,640 passed, 2 skipped; e2e (`npm run e2e -- --trace off`) five runs green, 13
+passed each (one after task 7, four at the end); `node --test scripts/*.test.mjs` 156 passed;
+`gen-api-docs --check` ok. Go not touched, so no Go gate. Under Node 22 locally, `BookView.dom.test.ts` and
+`AccountSettings.dom.test.ts` fail five tests on the untouched base too (they pass under Node 26, as in CI).
