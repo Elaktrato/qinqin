@@ -139,6 +139,10 @@ The decision is recorded in `docs/architecture/0009-web-state-model.md`.
   wrong: none for the web app.
 - Ruling: no release note — no stored format or key changed (the recently sent reviews are still kept per user and
   cleared at a sign-out, as before) — cost if wrong: none.
+- Ruling (fix wave): signing in or out on an open page (`/sources`) and completing `/reset` remount the page tree
+  — the session starts or ends there, and the tree is keyed on it; both pages show nothing that a remount loses
+  after that step (the sources list reloads, the reset form is done) — cost if wrong: a scroll position or a
+  half-read list on `/sources` resets once at the sign-in.
 
 ## Execution record
 
@@ -272,3 +276,5 @@ Baseline (55312f3e, Node 26): 598 files, 12,651 passed, 8 skipped.
   allow-list names what it found: the two plugin SDKs (`createPluginSdk`: permission checks, no state) and the four
   operation counters the performance tests read. Record 0009's Enforcement says what the scan covers and what
   it does not (a multi-line object literal, a filled table changed at runtime).
+- F7 (nit 8): accepted as a Ruling (the remount at a sign-in or sign-out on `/sources` and at the end of `/reset`);
+  no code change.

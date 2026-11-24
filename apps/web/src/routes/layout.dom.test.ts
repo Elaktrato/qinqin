@@ -54,8 +54,6 @@ function mountAt(path: string, token: string | null, navLayout: unknown = null) 
 	return render(Layout, { props: { children }, context: freshApp() });
 }
 
-beforeEach(() => {
-});
 afterEach(() => {
 	cleanup();
 	vi.clearAllMocks();
