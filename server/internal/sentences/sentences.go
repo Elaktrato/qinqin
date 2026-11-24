@@ -224,7 +224,7 @@ func AddUser(ctx context.Context, sqlDB *sql.DB, userID, entryID int64, s model.
 // unknown or already-uninstalled pack returns ErrNotFound.
 func Uninstall(ctx context.Context, sqlDB *sql.DB, pk string) error {
 	stamp := pack.Now()
-	tx, err := sqlDB.BeginTx(ctx, nil)
+	tx, err := pack.BeginWrite(ctx, sqlDB)
 	if err != nil {
 		return fmt.Errorf("uninstall sentences of pack %s: %w", pk, err)
 	}
@@ -333,7 +333,7 @@ func readPack(dir string) ([]packEntry, error) {
 // alone. User-owned rows never carry a source pack and are never
 // touched.
 func writePack(ctx context.Context, sqlDB *sql.DB, m pack.Manifest, rows []sentenceRow) error {
-	tx, err := sqlDB.BeginTx(ctx, nil)
+	tx, err := pack.BeginWrite(ctx, sqlDB)
 	if err != nil {
 		return fmt.Errorf("import sentences %s: %w", m.ID, err)
 	}

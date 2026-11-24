@@ -112,7 +112,7 @@ func Import(ctx context.Context, sqlDB *sql.DB, p *pack.Pack) (Result, error) {
 	}
 	hash := fingerprint(rows)
 
-	tx, err := sqlDB.BeginTx(ctx, nil)
+	tx, err := pack.BeginWrite(ctx, sqlDB)
 	if err != nil {
 		return Result{}, fmt.Errorf("import frequency pack %s: %w", m.ID, err)
 	}
@@ -485,7 +485,7 @@ var ErrNotFound = pack.NotFound("freq: pack not found")
 // one transaction. The pack keeps its priority (ord), so a reinstall takes
 // its old place. An unknown or already uninstalled pack returns ErrNotFound.
 func Uninstall(ctx context.Context, sqlDB *sql.DB, packID string) error {
-	tx, err := sqlDB.BeginTx(ctx, nil)
+	tx, err := pack.BeginWrite(ctx, sqlDB)
 	if err != nil {
 		return fmt.Errorf("uninstall frequency pack %s: %w", packID, err)
 	}

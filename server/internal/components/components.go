@@ -87,7 +87,7 @@ func Import(ctx context.Context, sqlDB *sql.DB, p pack.Pack) (Result, error) {
 	slices.Sort(parts)
 	hash := fingerprint(chars, parts, d)
 
-	tx, err := sqlDB.BeginTx(ctx, nil)
+	tx, err := pack.BeginWrite(ctx, sqlDB)
 	if err != nil {
 		return Result{}, fmt.Errorf("import components pack %s: %w", m.ID, err)
 	}
@@ -185,7 +185,7 @@ func insert(ctx context.Context, tx *sql.Tx, table string, n int, row func(i int
 // rows, in one transaction. An unknown or already uninstalled pack
 // returns ErrNotFound.
 func Uninstall(ctx context.Context, sqlDB *sql.DB, packID string) error {
-	tx, err := sqlDB.BeginTx(ctx, nil)
+	tx, err := pack.BeginWrite(ctx, sqlDB)
 	if err != nil {
 		return fmt.Errorf("uninstall components pack %s: %w", packID, err)
 	}

@@ -147,7 +147,7 @@ func ImportLexicon(ctx context.Context, sqlDB *sql.DB, p *pack.Pack) (Result, er
 	if label != m.ID {
 		label = fmt.Sprintf("%s (pack %s)", src.packID, m.ID)
 	}
-	tx, err := sqlDB.BeginTx(ctx, nil)
+	tx, err := pack.BeginWrite(ctx, sqlDB)
 	if err != nil {
 		return Result{}, fmt.Errorf("import dictionary %s: %w", label, err)
 	}

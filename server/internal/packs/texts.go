@@ -196,7 +196,7 @@ func RegistryID(m pack.Manifest) string {
 // so this runs after it. A failure is returned (the pack is installed; a
 // re-import, which changes no data, stores the texts).
 func storeTextsAfterImport(ctx context.Context, sqlDB *sql.DB, pk pack.Pack) error {
-	tx, err := sqlDB.BeginTx(ctx, nil)
+	tx, err := pack.BeginWrite(ctx, sqlDB)
 	if err != nil {
 		return fmt.Errorf("packs: pack %s installed, but its licence texts were not stored: %w", pk.ID, err)
 	}

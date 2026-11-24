@@ -132,7 +132,7 @@ func Import(ctx context.Context, sqlDB *sql.DB, p pack.Pack) (Result, error) {
 	hash := Hash(raw)
 	res := Result{Language: m.Language, Rules: len(t.Rules)}
 
-	tx, err := sqlDB.BeginTx(ctx, nil)
+	tx, err := pack.BeginWrite(ctx, sqlDB)
 	if err != nil {
 		return Result{}, fmt.Errorf("import lemma-rules pack %s: %w", m.ID, err)
 	}

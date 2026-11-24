@@ -143,6 +143,16 @@ The issue predates #172, #176 and #198. Its places, checked in the code at 86fe1
   add a type moved there from the packtype comments, and the contracts README and the wiki link it — cost if
   wrong: none.
 
+- Ruling (fix wave): every transaction of an import or an uninstall of the pack packages begins with
+  `pack.BeginWrite`, which runs a write statement that changes no row (`UPDATE schema_migrations SET version =
+  version WHERE 0`) first and so holds SQLite's write lock from the start, like `BEGIN IMMEDIATE`, while
+  staying a `*sql.Tx` that the importers' helpers take. `_txlock=immediate` on the connection was rejected: it
+  would make every transaction of the server a writer (reads in a transaction would queue behind the builder);
+  a `BEGIN IMMEDIATE` on a raw `sql.Conn` (as `plugins` does) was rejected because twenty helpers take a
+  `*sql.Tx`. It covers the reads-first transactions that predate #192 too (themes' owner check, fonts'
+  `packShas`, lemmapack's `CheckLanguage`, the uninstalls' id lookups) — cost if wrong: an import waits for
+  the builder's write (busy_timeout 5 s) instead of failing; nothing else changes.
+
 ## Execution record
 
 - Task 1: `TestSeedOrderIsPinned` and `TestManifestMessagesArePinned` pass on 86fe13a4 unchanged (the seed
@@ -198,4 +208,16 @@ The issue predates #172, #176 and #198. Its places, checked in the code at 86fe1
   seeded database counted for changed rows (the per-type test counts with tiny packs; the real app was
   checked with one components pack); the `TestPackageDownload` failure seen once in task 5 was not
   reproduced or explained.
+
+### Fix wave (independent review)
+
+- Group 1, SQLITE_BUSY (must-fix 1): reproduced on the reviewed HEAD, `TestPackageDownload -count=30` failed
+  with "licence texts were not stored ... database is locked (5)": `StoreTexts` read (`storedTexts`) before
+  its first write, and the builder kicked by the previous import committed in between. `pack.BeginWrite`
+  with a test hook came first as a plain `BeginTx` (all 22 pack transactions switched);
+  `TestPackTransactionsTakeTheWriteLockFirst` (per type: import and uninstall; the hook reads in the
+  transaction and has a second connection with `busy_timeout(0)` try to commit) failed for every type
+  ("database is locked (517)", the other connection committed inside every transaction). With the write
+  lock taken first it passes, also `-count=60`; `TestPackageDownload -count=60` passes; the re-import test
+  still counts 0 changed rows.
 

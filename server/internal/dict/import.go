@@ -76,7 +76,7 @@ func upsertDictionary(ctx context.Context, tx *sql.Tx, packID, name, version, la
 // them — and re-importing the pack revives both. An unknown or already
 // uninstalled dictionary returns ErrNotFound.
 func Uninstall(ctx context.Context, sqlDB *sql.DB, id int64) error {
-	tx, err := sqlDB.BeginTx(ctx, nil)
+	tx, err := pack.BeginWrite(ctx, sqlDB)
 	if err != nil {
 		return fmt.Errorf("uninstall dictionary %d: %w", id, err)
 	}

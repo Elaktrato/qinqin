@@ -14,7 +14,7 @@ import (
 // slice file the pack used that no remaining row references is removed
 // from storeDir. An unknown or already removed pack is ErrNotFound.
 func Uninstall(ctx context.Context, sqlDB *sql.DB, packID, storeDir string) error {
-	tx, err := sqlDB.BeginTx(ctx, nil)
+	tx, err := pack.BeginWrite(ctx, sqlDB)
 	if err != nil {
 		return fmt.Errorf("uninstall font pack %s: %w", packID, err)
 	}

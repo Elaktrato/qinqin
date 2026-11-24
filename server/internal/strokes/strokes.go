@@ -102,7 +102,7 @@ func Import(ctx context.Context, sqlDB *sql.DB, p pack.Pack) (Result, error) {
 	slices.Sort(langs)
 	langsJSON, _ := json.Marshal(langs)
 
-	tx, err := sqlDB.BeginTx(ctx, nil)
+	tx, err := pack.BeginWrite(ctx, sqlDB)
 	if err != nil {
 		return Result{}, fmt.Errorf("import strokes pack %s: %w", m.ID, err)
 	}
@@ -252,7 +252,7 @@ func parseLine(raw []byte) (line, error) {
 // off (AutoInstallOff). An unknown or already uninstalled pack returns
 // ErrNotFound.
 func Uninstall(ctx context.Context, sqlDB *sql.DB, packID string) error {
-	tx, err := sqlDB.BeginTx(ctx, nil)
+	tx, err := pack.BeginWrite(ctx, sqlDB)
 	if err != nil {
 		return fmt.Errorf("uninstall strokes pack %s: %w", packID, err)
 	}

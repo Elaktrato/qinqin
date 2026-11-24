@@ -119,7 +119,7 @@ func Import(ctx context.Context, sqlDB *sql.DB, p pack.Pack) (Result, error) {
 	}
 	hash := hex.EncodeToString(h.Sum(nil))
 
-	tx, err := sqlDB.BeginTx(ctx, nil)
+	tx, err := pack.BeginWrite(ctx, sqlDB)
 	if err != nil {
 		return Result{}, fmt.Errorf("import theme pack %s: %w", m.ID, err)
 	}
@@ -161,7 +161,7 @@ func Import(ctx context.Context, sqlDB *sql.DB, p pack.Pack) (Result, error) {
 // Uninstall soft-deletes the theme pack packID and removes its themes, in
 // one transaction. An unknown or already uninstalled pack is ErrNotFound.
 func Uninstall(ctx context.Context, sqlDB *sql.DB, packID string) error {
-	tx, err := sqlDB.BeginTx(ctx, nil)
+	tx, err := pack.BeginWrite(ctx, sqlDB)
 	if err != nil {
 		return fmt.Errorf("uninstall theme pack %s: %w", packID, err)
 	}

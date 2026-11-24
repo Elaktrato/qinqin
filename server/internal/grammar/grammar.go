@@ -85,7 +85,7 @@ func Import(ctx context.Context, sqlDB *sql.DB, pk pack.Pack) (Result, error) {
 		return Result{}, fmt.Errorf("import grammar %s: %w", m.ID, err)
 	}
 
-	tx, err := sqlDB.BeginTx(ctx, nil)
+	tx, err := pack.BeginWrite(ctx, sqlDB)
 	if err != nil {
 		return Result{}, fmt.Errorf("import grammar %s: %w", m.ID, err)
 	}
@@ -172,7 +172,7 @@ func Import(ctx context.Context, sqlDB *sql.DB, pk pack.Pack) (Result, error) {
 // lessons in one transaction; a reinstall revives both (see Import). An
 // unknown or already uninstalled pack returns ErrNotFound.
 func Uninstall(ctx context.Context, sqlDB *sql.DB, packID string) error {
-	tx, err := sqlDB.BeginTx(ctx, nil)
+	tx, err := pack.BeginWrite(ctx, sqlDB)
 	if err != nil {
 		return fmt.Errorf("uninstall grammar pack %s: %w", packID, err)
 	}

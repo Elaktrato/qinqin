@@ -21,7 +21,7 @@ type UninstallResult struct{ Clips int }
 // A blob another pack shares stays. An unknown or already removed pack is
 // ErrPackNotFound.
 func Uninstall(ctx context.Context, sqlDB *sql.DB, packID, storeDir string) (UninstallResult, error) {
-	tx, err := sqlDB.BeginTx(ctx, nil)
+	tx, err := pack.BeginWrite(ctx, sqlDB)
 	if err != nil {
 		return UninstallResult{}, fmt.Errorf("uninstall audio %s: %w", packID, err)
 	}

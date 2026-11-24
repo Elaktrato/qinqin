@@ -78,7 +78,7 @@ func Import(ctx context.Context, sqlDB *sql.DB, pk pack.Pack, storeDir string) (
 	}
 
 	old := map[blobKey]bool{}
-	tx, err := sqlDB.BeginTx(ctx, nil)
+	tx, err := pack.BeginWrite(ctx, sqlDB)
 	if err != nil {
 		return ImportResult{}, fmt.Errorf("import audio %s: %w", m.ID, err)
 	}

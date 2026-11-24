@@ -199,7 +199,7 @@ func Import(ctx context.Context, sqlDB *sql.DB, pk pack.Pack) (Result, error) {
 // reference them — and re-importing the pack revives the scheme. An
 // unknown or already-uninstalled scheme returns ErrNotFound.
 func Uninstall(ctx context.Context, sqlDB *sql.DB, id int64) error {
-	tx, err := sqlDB.BeginTx(ctx, nil)
+	tx, err := pack.BeginWrite(ctx, sqlDB)
 	if err != nil {
 		return fmt.Errorf("uninstall scheme %d: %w", id, err)
 	}
@@ -509,7 +509,7 @@ func readLevelsPack(dir string) (string, []packLevel, error) {
 // tombstoned and the pack's list then upserted, reviving the rows this
 // scheme used before — level ids stay stable across re-imports.
 func writeScheme(ctx context.Context, sqlDB *sql.DB, m pack.Manifest, unit string, lvls []packLevel, ms []member) error {
-	tx, err := sqlDB.BeginTx(ctx, nil)
+	tx, err := pack.BeginWrite(ctx, sqlDB)
 	if err != nil {
 		return fmt.Errorf("import scheme %s: %w", m.ID, err)
 	}

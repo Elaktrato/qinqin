@@ -25,26 +25,29 @@ func totalChanges(t *testing.T, sqlDB *sql.DB) int64 {
 	return n
 }
 
+// typeCases builds a small valid pack of every type of the table.
+var typeCases = map[string]func(t *testing.T) pack.Pack{
+	pack.TypeDictionary: dictPack,
+	pack.TypeFrequency:  freqPack,
+	pack.TypeLevels:     levelsPack,
+	pack.TypeSentences:  sentencesPack,
+	pack.TypeGrammar:    grammarPack,
+	pack.TypeAudio:      func(t *testing.T) pack.Pack { return audioPack(t, "es-audio") },
+	pack.TypeComponents: componentsPack,
+	pack.TypeStrokes:    strokesPack,
+	pack.TypeLemmaRules: func(t *testing.T) pack.Pack {
+		return buildPack(t, "lemma-rules", "es-rules", "Spanish rules", "CC0-1.0", "rules-json", map[string]string{"rules.json": xaRules})
+	},
+	pack.TypeTheme: themePack,
+	pack.TypeFont:  func(t *testing.T) pack.Pack { p, _ := fontPack(t); return p },
+}
+
 // Re-importing a pack that did not change writes no row, for every pack
 // type (#192): not its registry row, not its data rows, not its licence
 // texts. Before #192 components, audio and fonts rewrote theirs.
 func TestReimportOfAnUnchangedPackWritesNothing(t *testing.T) {
 	t.Cleanup(func() { lemma.SetInstalled(nil) })
-	cases := map[string]func(t *testing.T) pack.Pack{
-		pack.TypeDictionary: dictPack,
-		pack.TypeFrequency:  freqPack,
-		pack.TypeLevels:     levelsPack,
-		pack.TypeSentences:  sentencesPack,
-		pack.TypeGrammar:    grammarPack,
-		pack.TypeAudio:      func(t *testing.T) pack.Pack { return audioPack(t, "es-audio") },
-		pack.TypeComponents: componentsPack,
-		pack.TypeStrokes:    strokesPack,
-		pack.TypeLemmaRules: func(t *testing.T) pack.Pack {
-			return buildPack(t, "lemma-rules", "es-rules", "Spanish rules", "CC0-1.0", "rules-json", map[string]string{"rules.json": xaRules})
-		},
-		pack.TypeTheme: themePack,
-		pack.TypeFont:  func(t *testing.T) pack.Pack { p, _ := fontPack(t); return p },
-	}
+	cases := typeCases
 	for _, typ := range pack.Types() {
 		build, ok := cases[typ]
 		if !ok {
