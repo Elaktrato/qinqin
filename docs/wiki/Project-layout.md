@@ -12,10 +12,11 @@ Where things live in the repository ([github.com/Elaktrato/qinqin](https://githu
 | `server/internal/lookup`, `segment` | The lookup engine and the tokenizer |
 | `server/internal/datapkg`, `sync` | Data packages (ids, writers, builder, registry) and the paged sync pull |
 | `server/internal/auth`, `ratelimit`, `secretbox`, `netguard` | Accounts, sessions, two-step sign-in and tokens; throttling; sealing with `QINQIN_SECRET`; the outbound address guard |
-| `server/internal/ai`, `journal`, `mail`, `i18n` | AI providers, journal photos and OCR, the mail queue and its catalogue (`mail/messages/`), the Go message formatter |
-| `server/internal/plugins` | The plugin manifest contract and the built-in manifests (`plugins/builtin/*.json`) |
+| `server/internal/ai`, `journal`, `mail`, `i18n` | AI providers, the journal's storage, photos and OCR, the mail queue and its catalogue (`mail/messages/`), the Go message formatter |
+| `server/internal/features`, `keyed`, `grammar` | The feature switches, the keyed rows store, grammar packs and lesson progress |
+| `server/internal/lang` | Language code packs, the language registry and the language profiles (`profile.go`) |
 | `server/internal/webdist` | The embedded web app |
-| `apps/web/` | The SvelteKit web app (adapter-static, a single-page app); catalogue in `src/lib/i18n/messages/`, the service worker in `src/lib/pwa/sw/`, settings screens in `src/lib/settings/`, the rules of which pages need a sign-in in `src/lib/routeAccess.ts`, core features in `src/lib/features/`, the app and session contexts that hold the app's state in `src/lib/context/` |
+| `apps/web/` | The SvelteKit web app (adapter-static, a single-page app); catalogue in `src/lib/i18n/messages/`, the service worker in `src/lib/pwa/sw/`, settings screens in `src/lib/settings/`, the rules of which pages need a sign-in in `src/lib/routeAccess.ts`, core features (flashcards, reader, journal, grammar) in `src/lib/features/`, the language profiles in `src/lib/languageProfiles.ts`, the app and session contexts that hold the app's state in `src/lib/context/` |
 | `plugins/data/` | Bundled seed packs (dictionaries, the Jiten frequency list, the level lists, the KanjiVG component index, the demos) with their licences and attribution notices; `plugins/data/README.md` documents the formats |
 | `plugins/data-local/` | Gitignored: local-only packs with unclear or restrictive licences |
 | `plugins/data-strokes/`, `plugins/data-audio/`, `plugins/data-fonts/` | Gitignored: the built stroke pack, fetched audio packs and built font packs |

@@ -102,7 +102,7 @@ type Deleted struct {
 // Delete deletes one of the user's workspaces and everything scoped to it
 // (rules) in one transaction. Foreign keys are not enforced in this
 // database, so every table is deleted from explicitly; user-scoped data
-// (overlays, own sentences, plugin states) is not the workspace's and
+// (overlays, own sentences, feature switches) is not the workspace's and
 // stays. The first statement deletes the workspace row only when the user
 // keeps another one: being a write, it takes SQLite's write lock before
 // reading, so concurrent deletes serialise and two of them can never

@@ -22,7 +22,7 @@ If you have forgotten your password and the server has email set up, the sign-in
 
 After signing in you land on the home page: a greeting, today's date, a search box and your widgets. A new account shows the activity heatmap, the flashcards summary, the daily goal and this week; choose and order them under Settings → Home. A widget that does not apply to the current workspace's language is left out.
 
-The top bar (on a phone, the menu) leads to Search, Decks, Reader, the plugin pages such as Journal and Grammar, and Stats; the flag switches workspace and your avatar opens Settings, the theme switch, Sources and Sign out. [Finding your way](Finding-your-way) describes the frame in detail.
+The top bar (on a phone, the menu) leads to Search, Decks, Reader, Journal, Grammar and Stats; the flag switches workspace and your avatar opens Settings, the theme switch, Sources and Sign out. [Finding your way](Finding-your-way) describes the frame in detail.
 
 ## A first ten minutes
 

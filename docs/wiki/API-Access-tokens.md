@@ -47,7 +47,7 @@ To check that a token works, call `GET /api/workspaces`. Deleting your lookup hi
 (`DELETE /api/events/lookups`) also needs the app.
 
 A token that may read your data can read your personal notes and your [lookup history](Searching-and-entries#lookup-history)
-(the `qinqin-core` plugin data rows `note:*` and `lookups`, through the plugin data routes and the sync pull), like
+(the keyed rows `note:*` and `lookups`, through `/api/rows` and the sync pull; [Core data API](Core-data-api)), like
 everything else you study; a read and write token can also change them.
 
 ## Using it
@@ -58,15 +58,15 @@ Send it like a session token:
 export QQ=https://qinqin.example.org QQ_TOKEN=qq_pat_...   # from Settings → Account → Access tokens
 curl -sS -H "Authorization: Bearer $QQ_TOKEN" "$QQ/api/workspaces"
 curl -sS -H "Authorization: Bearer $QQ_TOKEN" "$QQ/api/lookup?lang=zh&text=%E5%AD%A6&offset=0"
-curl -sS -H "Authorization: Bearer $QQ_TOKEN" "$QQ/api/sync/pull?v=2&collections=cards,pluginData&limit=500"
+curl -sS -H "Authorization: Bearer $QQ_TOKEN" "$QQ/api/sync/pull?v=2&collections=cards,rows&limit=500"
 curl -sS -H "Authorization: Bearer $QQ_TOKEN" "$QQ/api/packages"
 curl -sS -C - -o lexicon.zh.qqpkg -H "Authorization: Bearer $QQ_TOKEN" "$QQ/api/packages/lexicon.zh/3"
 curl -sS -H "Authorization: Bearer $QQ_TOKEN" -H 'Content-Type: application/json' \
      -X POST "$QQ/api/events/batch" --data @events.json
-curl -sS -H "Authorization: Bearer $QQ_TOKEN" "$QQ/api/plugins/qinqin-flashcards/data?workspace=3"
+curl -sS -H "Authorization: Bearer $QQ_TOKEN" "$QQ/api/rows?workspace=3&prefix=known%3A"
 ```
 
-Since v0.4.0 cards, decks, deck settings, limits and FSRS sets are typed collections of the sync pull and push (`docs/contracts/study/`). A script that reads cards from `pluginData` must ask for it the old way, `collections=pluginData` (it then gets them as `card:` rows), or read the `cards` collection: a pull **without** `collections` carries them only in `cards`. The plugin data routes above still answer the old keys.
+Since v0.4.0 cards, decks, deck settings, limits and FSRS sets are typed collections of the sync pull and push (`docs/contracts/study/`). They are never keyed rows: read the `cards` collection. The plugin routes and the `pluginData` collection are gone (#199); keyed rows are `rows` and `/api/rows`.
 
 The paged pull (`v=2`) answers one page at a time: repeat the request with `page=<next>` alone until `more` is false, then keep `cursor` and send it as `since` next time (`docs/contracts/sync/`). A read token or a token for all workspaces works; a workspace-limited token gets 403 `token_workspace`, as on the old pull.
 

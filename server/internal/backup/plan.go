@@ -442,8 +442,7 @@ func CurrentCounts(ctx context.Context, db *sql.DB, userID int64) (Counts, error
 	}{
 		{&c.Workspaces, `SELECT COUNT(*) FROM workspaces WHERE user_id = ?`},
 		{&c.Events, `SELECT COUNT(*) FROM study_events WHERE user_id = ?`},
-		// cards and the other typed study rows live in their tables; typed-family
-		// plugin rows (leftovers) are never exported, so never counted
+		// cards and the other typed study rows live in their tables
 		{&c.Cards, `SELECT COUNT(*) FROM study_cards WHERE user_id = ? AND deleted_at IS NULL`},
 		{&c.Rows, `SELECT (SELECT COUNT(*) FROM keyed_rows WHERE user_id = ?1 AND deleted_at IS NULL)` + typedLiveCount},
 		{&c.Overlays, `SELECT COUNT(*) FROM user_edits WHERE user_id = ?`},

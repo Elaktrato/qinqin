@@ -194,6 +194,27 @@ deinflection) stays language code: a profile says *whether* a language has tones
   come from the client's catalogue — the English `label`/`describe` of a manifest were only a fallback for
   third-party plugins, which no longer exist — cost if wrong: a client without a catalogue entry for a new
   type shows the type id.
+- Ruling: the plugin deck source `{type:"plugin"}` goes — no plugin shipped a deck (`pluginDeckProviders` was
+  empty) — migration 047 turns such a deck into a plain deck and the legacy codec keeps the source in `extra` —
+  cost if wrong: none found.
+- Ruling: the web study pull no longer asks for the switches (`features`); the session reads them from `GET
+  /api/features` (cached offline by the service worker) — nothing read the pull's plugin states — cost if wrong:
+  one more collection in the study pull.
+- Ruling: `/p/<id>` keeps one load function: the four features redirect (308), every other id is 404 — the owner
+  removed old plugin ids — cost if wrong: none.
+- Ruling: the profile has no `grammarLessons` member — lessons come from grammar packs of any language, so the
+  member would be constant — cost if wrong: one boolean in the fixture and two tables.
+- Ruling: the web profile table is `lib/languageProfiles.ts`, not `lib/languages/profiles.ts` — a folder
+  `lib/languages/` beside `lib/languages.ts` makes `$lib/languages` ambiguous — cost if wrong: a file move.
+- Ruling: the journal's script check asks the profile for zh, ja, es (and their regional tags) and keeps its
+  Hangul and Latin lists for the languages without a profile — the fallback profile's `other` script must not
+  weaken the check for ko or pt — cost if wrong: a profile for those languages would replace the lists.
+- Ruling: the end-to-end spec covers the journal (write, reload, server copy), the grammar page and the old
+  `/p/journal` link, not a grammar lesson run — the suite installs no grammar pack and building one into the
+  e2e fixtures is outside #199; the lesson run is covered by the DOM tests and the Go route tests — cost if
+  wrong: a lesson run regression shows only in those tests.
+- Ruling: the entry textarea's cap becomes the server's 50000 code points (was 80000 UTF-16 units, sized for
+  the plugin-data cap) — text under the old cap could be refused on save — cost if wrong: none.
 - Ruling: a language profile says what a language has, not how its reading code works; the fallback profile
   (every code without a profile) has no readings, space segmentation and the card kinds vocab, sentence,
   reverse and cloze — the Spanish demo is exactly that plus `script: "latin"` — cost if wrong: a new language
@@ -201,4 +222,44 @@ deinflection) stays language code: a profile says *whether* a language has tones
 
 ## Execution record
 
-(filled in as the tasks land)
+Commits on `feature/199-core-features` (from develop b5765fb1):
+
+1. `eb229815` journal typed storage and routes (migration 044).
+2. `41cdb1b5` grammar progress, keep-the-best on the server (migration 045).
+3. `a011324d` keyed rows replace plugin data; backup format 2 (migration 046).
+4. `d9c4e850` feature switches; the code plugins retired (migration 047); journal and grammar at `/journal`,
+   `/grammar`.
+5. `daaf3890` language profiles.
+6. `c0322c23` the end-to-end spec for the journal and grammar.
+7. the docs commit (record 0006 Accepted, wiki, roadmap, release notes, this record, comment sweep).
+
+Deviations from test-first (recorded honestly):
+
+- The journal store (`journal/store.go`), the grammar progress handler, migration 046 and the `features`
+  package were written before their tests were seen failing; the tests were written right after and fail when
+  the code is reverted, but the red step was skipped.
+- `lib/activity/sources.ts` and `lib/features/switches.svelte.ts` were written before their tests ran:
+  `switches.test.ts` could not load at first (its client mock lacked `ApiError`) and passed once fixed; the
+  sources test passed on its first run.
+- `TestFeaturesContract` (Go decode of `features/switches.json`) was added after the routes.
+- The Go profile table was written after its test (red seen: build failure), the web table likewise
+  (red seen: missing module); the routing changes each had a failing test first (variant label, word counts,
+  card kinds, the journal script check with regional tags).
+
+Not verified:
+
+- No manual run in a real browser beyond the Playwright suite; no phone.
+- The migrations were tested on synthetic rows, not on a copy of a production database.
+- An e2e run of a grammar lesson (no grammar pack in the e2e fixtures).
+
+## Comment for #38 (to be posted by the orchestrator)
+
+> #199 retired the code plugins (record 0006). Android needs no feature-plugin host: flashcards, the reader, the
+> journal and grammar are core features, each with a per-user switch (`GET /api/features`, `PUT
+> /api/features/{id}`, pull collection `features`; `docs/contracts/features/`). Their data: typed study rows
+> (`docs/contracts/study/`), the journal's routes (`docs/contracts/journal/`), grammar progress
+> (`docs/contracts/grammar/`) and one store of keyed rows for the small settings documents
+> (`docs/contracts/keyed/`). What a language offers (script, readings, segmentation, tones, strokes, kana,
+> variants, card kinds, practice modes) is one shared table, `docs/contracts/languages/profiles.json`, with a
+> fallback for other codes. Suggest renaming this issue to "core features plus switches (Kotlin) and study
+> parity incl. native writing".

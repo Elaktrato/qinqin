@@ -27,7 +27,7 @@ The four summary numbers reuse rules defined elsewhere: the streak is the flashc
 - **Reading time** counts the Reader's tracked time: all time and the last 7 and 30 learner days (ending today), and the five most read books. A stretch under 30 seconds counts nothing and one stretch at most 2 hours; a book no longer in any library is "A removed book".
 - **Characters** shows "N of M learned" (learned is 80 of 100 or more), the stage bar and **Open the character map**.
 
-The [Daily goal](Daily-goals) widget and the **This week** widget ([Weekly summary](Weekly-summary)) are on the home page only; Stats has the Week tab instead. A plugin's widgets only appear while that plugin is enabled, and the flashcards and reader widgets while you have not switched that feature off (Settings → Features). The home page shows the widgets of your own layout (see [Settings tour](Settings-tour)).
+The [Daily goal](Daily-goals) widget and the **This week** widget ([Weekly summary](Weekly-summary)) are on the home page only; Stats has the Week tab instead. A feature's widgets only appear while you have not switched that feature off (Settings → Features). The home page shows the widgets of your own layout (see [Settings tour](Settings-tour)).
 
 ## The activity heatmap
 

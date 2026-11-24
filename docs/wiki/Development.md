@@ -122,6 +122,19 @@ the record before changing the structure it covers; an issue that changes a rule
 3. Decide in `apps/web/src/lib/pwa/sw/classify.ts` whether the service worker may cache it offline (default: no).
 4. Run `node scripts/gen-api-docs.mjs` to refresh [API routes](API-Routes) and [API errors](API-Errors), and describe the route on [API reference](API-Reference). A new error code goes into `docs/contracts/auth/errors.json` and gets an `apiError.<code>` key in the catalogue.
 
+## When you add a feature or a language
+
+There are no plugins ([record 0006](https://github.com/Elaktrato/qinqin/blob/develop/docs/architecture/0006-core-features-instead-of-code-plugins.md)).
+A feature is core code with a switch: its id in `server/internal/features/features.go`, the check constraint of
+`feature_switches` (a migration), `docs/contracts/features/switches.json` and `apps/web/src/lib/features/index.ts`;
+its data gets typed storage in its own package with a contract. Content is a data pack
+([Data pack format](Data-pack-format)).
+
+A language is a profile: a row in `docs/contracts/languages/profiles.json` and the same row in
+`server/internal/lang/profile.go` and `apps/web/src/lib/languageProfiles.ts`, then its data packs, and reading
+code only when the profile names something new (`docs/contracts/languages/README.md`, "How to add a language").
+Availability checks ask the profile, never `language === 'zh'`.
+
 ## CI
 
 `.github/workflows/build.yml` runs on pushes to `main` and `develop`, on `v*` tags and on pull requests into `main` and `develop`:

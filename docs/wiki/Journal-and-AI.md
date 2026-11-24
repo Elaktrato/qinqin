@@ -1,6 +1,6 @@
 # Journal and AI providers
 
-The **Journal** (`/p/journal`, the journal icon in the top bar or the phone menu) is a built-in feature plugin where you write dated entries per workspace, in the language you are learning. It is on until you switch it off in [Settings → Plugins](Settings-tour#plugins).
+The **Journal** (`/journal`, the journal icon in the top bar or the phone menu) is a core feature where you write dated entries per workspace, in the language you are learning. It is on until you switch it off in [Settings → Features](Settings-tour#features).
 
 The AI features (a review with corrections in the margin, topic ideas, and turning a photo of a page into an entry) are optional. They use **your own API key** for a provider you choose; qinqin ships no key and sends nothing to any provider on its own. Reading a photo **offline** needs no AI at all.
 

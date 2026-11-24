@@ -23,7 +23,7 @@ func EditTime(updatedAt time.Time, deletedAt *time.Time) time.Time {
 	return t.UTC()
 }
 
-// Apply writes r for userID under last-write-wins (the plugin-data rule):
+// Apply writes r for userID under last-write-wins (the keyed-row rule):
 // edited, clamped to the server clock, wins unless the stored edit time
 // (modified_at, second precision) is after it. A deletion tombstones a live
 // row and keeps its data; deleting an absent or deleted row is skipped. A

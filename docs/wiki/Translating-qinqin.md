@@ -27,4 +27,4 @@ Keys look like `area.part.name` and are **stable**: a key whose meaning changes 
 
 The stored setting if there is one, else the browser's (or device's) languages in order; each candidate is matched exactly, then a `zh` without a script gets one (`zh-TW`, `zh-HK`, `zh-MO` → `zh-Hant`, every other `zh` → `zh-Hans`), then trailing parts are dropped (`pt-BR` → `pt`). No match means English. Dates and numbers use the interface language with the device's region; English without a region formats like `16 Nov 2026`. Mails use the recipient's setting, else the `Accept-Language` of the request that triggered them, else English.
 
-The setting is `PUT /api/me/interface-language` ([API reference](API-Reference#study-events-stats-and-plugins)).
+The setting is `PUT /api/me/interface-language` ([API reference](API-Reference#study-events-stats-and-features)).

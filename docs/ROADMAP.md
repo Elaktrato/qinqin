@@ -156,7 +156,7 @@ Native Kotlin (Jetpack Compose, Room), Android only — replaces the earlier Flu
 - [#35](https://github.com/Elaktrato/qinqin/issues/35) offline-first store and sync engine
 - [#36](https://github.com/Elaktrato/qinqin/issues/36) core views parity (entry, search, strokes)
 - [#37](https://github.com/Elaktrato/qinqin/issues/37) entry editing
-- [#38](https://github.com/Elaktrato/qinqin/issues/38) feature-plugin host (Kotlin) and study parity incl. native writing
+- [#38](https://github.com/Elaktrato/qinqin/issues/38) core features plus switches (flashcards, reader, journal, grammar; `docs/contracts/features/`, language profiles in `docs/contracts/languages/`) and study parity incl. native writing — no plugin host: the code plugins are retired (#199, record 0006)
 - [#147](https://github.com/Elaktrato/qinqin/issues/147) release path — CI, signing and store presence
   ([#148](https://github.com/Elaktrato/qinqin/issues/148) CI and signed artifacts,
   [#149](https://github.com/Elaktrato/qinqin/issues/149) Play Store and F-Droid; blocked by #36 and #38)

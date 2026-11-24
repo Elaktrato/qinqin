@@ -28,8 +28,7 @@ func SuggestionInput(ctx context.Context, sqlDB *sql.DB, userID, workspaceID int
 	if err != nil {
 		return nil, nil, err
 	}
-	// The workspace's live cards (typed study rows; a leftover plugin row
-	// no client can read is not a card).
+	// The workspace's live cards (typed study rows).
 	live, err := study.ListCards(ctx, sqlDB, userID, workspaceID)
 	if err != nil {
 		return nil, nil, err

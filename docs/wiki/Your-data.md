@@ -4,7 +4,7 @@ Settings → Account → **Your data** lets every user download all their data a
 
 ## Download my data
 
-You get a zip of JSON files (format version 1). It contains: workspaces and settings, study history, flashcards and decks, vacation periods, limits and daily goals, word edits, personal notes on words, words you marked as known, your lookup history, your own sentences, library books with bookmarks and highlights, journal entries with their reviews and your journal settings, grammar lesson progress, FSRS parameter sets, the settings that follow your account (appearance, home layout, heatmap layout, reader display), feature and plugin switches with the plugin order, the [milestones](Milestones) you have seen, your time-zone history and your interface language. The file is named `qinqin-<username>-<date>-<time>.zip`. The download link is a one-time ticket valid for 60 seconds, and you can make six downloads per hour.
+You get a zip of JSON files (format version 2). It contains: workspaces and settings, study history, flashcards and decks, vacation periods, limits and daily goals, word edits, personal notes on words, words you marked as known, your lookup history, your own sentences, library books with bookmarks and highlights, journal entries with their reviews and your journal settings, grammar lesson progress, FSRS parameter sets, the settings that follow your account (appearance, home layout, heatmap layout, reader display), your feature switches, the [milestones](Milestones) you have seen, your time-zone history and your interface language. The file is named `qinqin-<username>-<date>-<time>.zip`. The download link is a one-time ticket valid for 60 seconds, and you can make six downloads per hour.
 
 It never contains: your password, email, sessions, access tokens, two-step secrets and recovery codes, AI keys, invites, the audit log, SMTP settings, the server secret, journal photo drafts, deleted rows, dictionary and pack content, or data packages. After moving to another server you enter your AI keys again.
 
@@ -16,7 +16,7 @@ The [lookup history](Searching-and-entries#lookup-history) is in the download (w
 
 ## Restore from a backup
 
-Restore **replaces all** your data with the backup's, in one transaction: if it fails, nothing changes.
+Restore **replaces all** your data with the backup's, in one transaction: if it fails, nothing changes. Only backups of format 2 restore; a backup made before the plugins were retired (#199) is refused.
 
 1. Choose the zip (at most 128 MiB). The server checks it.
 2. Read the report of what is replaced and what comes back.

@@ -39,7 +39,7 @@ A disabled account answers `account_disabled` when the right password is given, 
 
 The same list applies when an administrator deletes someone and when people delete themselves (Settings → Account, with their password and username typed). Removed in one step: workspaces, study events, plugin data (flashcards, journal entries, reader settings), edited dictionary entries, sentences the user added, library books with their bookmarks, highlights and files, journal photo drafts and their files, AI keys and selection, AI usage records, time-zone history, sessions, reset links, and invites the account created.
 
-**Kept**: AI endpoints the account registered as administrator (their creator becomes nobody), installed packs, languages, plugins and dictionaries, and the audit log (the name in it becomes `deleted user #<id>`). The last active administrator cannot delete themselves.
+**Kept**: AI endpoints the account registered as administrator (their creator becomes nobody), installed packs, languages and dictionaries, and the audit log (the name in it becomes `deleted user #<id>`). The last active administrator cannot delete themselves.
 
 ### Re-authentication
 

@@ -1,7 +1,7 @@
 // Package rows holds the typed study rows (cards, decks, deck settings,
 // limits, FSRS parameter sets, the active set): their wire shapes, the
 // strict wire decode, and the codec to and from the legacy
-// qinqin-flashcards plugin-data rows they replaced. It knows no database.
+// keyed form (backups only). It knows no database.
 // Contract: docs/contracts/study/.
 package rows
 

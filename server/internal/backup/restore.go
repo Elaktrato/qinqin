@@ -407,7 +407,7 @@ func applyRestore(ctx context.Context, tx *sql.Tx, d RestoreDeps, userID, keepSe
 	}
 	// 6. library. Every restored library row is a new row of this server:
 	// updated_at = the restore time (a delta pull from an earlier cursor ships
-	// it, like a restored plugin row); createdAt is the archive's.
+	// it, like a restored keyed row); createdAt is the archive's.
 	for _, b := range a.Books {
 		r, err := tx.ExecContext(ctx, `INSERT INTO library_books (user_id, workspace_id, language, title, author, source, source_id, source_url,
 			attribution, license_note, chapter_count, position, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,

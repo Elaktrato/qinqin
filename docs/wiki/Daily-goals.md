@@ -26,7 +26,7 @@ A change to the goal applies from today, for the whole of today. Earlier days ke
 - **Goal reached**, with a check mark, once the amount reaches the target.
 - Today is open until then; a past day that did not reach the target is missed.
 - A vacation day ([Decks, limits and vacation](Flashcards-decks-limits-vacation)) pauses the goal: "On vacation — goal paused", whatever you did that day.
-- If the goal counts an activity that is no longer a source of the statistics, it says "This goal's activity is no longer counted" and those days count as no goal. That happens when the plugin is removed from the server or renames its activity type; switching a plugin off in your own Settings does not do it (its activity still counts).
+- If the goal counts an activity that is no longer a source of the statistics, it says "This goal's activity is no longer counted" and those days count as no goal. That happens when a server update stops counting an activity type; switching a feature off in your own Settings does not do it (its activity still counts).
 
 ## Goal streak
 
@@ -47,4 +47,4 @@ New cards and flashcard study time count reviews waiting in this device's offlin
 
 ## For client implementers
 
-The goal is the workspace plugin-data row `goals:workspace` of `qinqin-flashcards`, with a history of target changes. Rules and fixtures: `docs/contracts/goals/` (see [API overview](API-Overview)).
+The goal is the workspace keyed row `goals:workspace` ([Core data API](Core-data-api)), with a history of target changes. Rules and fixtures: `docs/contracts/goals/` (see [API overview](API-Overview)).

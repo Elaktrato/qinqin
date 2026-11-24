@@ -101,7 +101,7 @@ Everything lives in `/data` (the volume):
 
 | Path | Content |
 |---|---|
-| `qinqin.db` (with `-wal` and `-shm`) | The SQLite database: users, entries, dictionaries, flashcards, journal, plugin data |
+| `qinqin.db` (with `-wal` and `-shm`) | The SQLite database: users, entries, dictionaries, flashcards, journal, grammar progress, settings rows |
 | `packs/` | Packs an administrator installed through the web app (`packs/<type>/<id>/<version>/`); staged uploads wait in `packs/.stage-<token>/` |
 | `audio/` | Audio clips imported by `seed` or audio packs |
 | `fonts/` | The WOFF2 slices of installed font packs |

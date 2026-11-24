@@ -15,7 +15,6 @@ Database migrations are embedded in the binary and run automatically at start (`
 | `pack <id>: stored license/attribution/notice differs from <manifest>; run "qinqin seed" to refresh` | The Sources page shows outdated pack terms. Run `qinqin seed` once. The check only reads; nothing changes until you seed, and the line goes away once the stored copies match. A pack it cannot read is skipped with a log line |
 | `pack <id>: no licence texts stored; run "qinqin seed"` | The pack was installed before the server kept licence files, so its data package carries only the licence name and attribution. Run `qinqin seed` once: the package gets a new revision with the texts |
 | `strokes: installed the bundled stroke data ...` | Normal on the first start of a release with data packages: the stroke-order data became a pack |
-| `plugin registry rows that do not parse as manifests ...` | Only development databases: re-register or remove those plugin rows ([Plugin format](Plugin-format)) |
 | `WARNING: this database has N user edit(s) and N flashcard(s) ...` (printed by `qinqin seed`) | The database holds data that refers to entries by id; see "From v0.1.0" below |
 
 In the Portainer console the seed is `qinqin seed`; with plain compose `docker compose exec qinqin qinqin seed`.
@@ -26,8 +25,9 @@ In the Portainer console the seed is `qinqin seed`; with plain compose `docker c
 
 - **v0.3.x clients are no longer supported.** Before you upgrade, open the app online on every device (every browser and every installed copy) and let it finish syncing: a copy of the app from before v0.4.0 may hold reviews it cached offline and never sent, and the upgraded server no longer accepts them from that old copy. Afterwards nothing is lost.
 - The old sync form (`GET /api/sync/pull` without `v=2`) is gone and answers 404; scripts use the paged pull ([API access tokens](API-Access-tokens)). The plugin-data routes no longer serve or accept cards, decks, deck settings, limits or FSRS sets under their old `qinqin-flashcards` keys.
-- `GET /api/plugins` no longer lists a row per installed data pack. Every installed grammar pack now shows on the Grammar page (manage packs in Settings → Data).
-- Personal backups from every earlier version, v0.3 included, still restore.
+- Every installed grammar pack now shows on the Grammar page (manage packs in Settings → Data).
+- **There are no plugins any more (#199).** Migrations 044 to 047 move the journal's entries, reviews, topic ideas and settings, grammar progress and the core's settings rows into their own tables and the four features' switches into `feature_switches`, then drop `plugin_data`, `plugin_states` and `plugin_registry`. What does not convert cleanly is wiped: admin-registered plugins, the plugin order, rows of other plugins, journal and grammar rows that do not decode, the plugin origin of copied decks. The plugin routes are gone (`/api/plugins…`, `POST /api/admin/plugins`).
+- Personal backups made before this release no longer restore (backup format 2): make a new one after upgrading.
 - Flashcards rows that a v0.3 binary run on an upgraded database wrote are no longer taken over at start (running an older binary on a newer database stays unsupported).
 - `GET /api/admin/packs` (Settings → Data) no longer lists sentences imported before v0.2.0 without a registry row. If removing a language answers 409 "sentences from an older pack", the message names each such pack: remove it with `DELETE /api/admin/sentences/<pack>`.
 
