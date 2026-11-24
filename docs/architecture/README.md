@@ -67,6 +67,7 @@ repository path it names in backticks exists.
 | [0004](0004-web-folder-rules.md) | Web: folder rules | Accepted, being implemented by #195 |
 | [0005](0005-test-conventions.md) | Test conventions | Accepted |
 | [0006](0006-core-features-instead-of-code-plugins.md) | Core features, feature switches, language profiles and data packs instead of code plugins | Accepted, being implemented by #199 |
+| [0007](0007-browser-end-to-end-tests.md) | Browser end-to-end tests | Accepted |
 
 ## Adding or changing a record
 

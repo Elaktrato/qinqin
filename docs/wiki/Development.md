@@ -42,12 +42,61 @@ npm --prefix apps/web test
 npm --prefix apps/web run build
 cd server && go vet ./... && go test ./...
 node scripts/check-sources.mjs && node --test scripts/*.test.mjs
+npm --prefix apps/web run e2e
 ```
 
 - A slow opt-in test seeds the real bundled packs and checks lookups against them: `QINQIN_REAL_DATA_TESTS=1 go test ./cmd/qinqin -run RealPacks -v` (from `server/`). Other test-only switches: `QINQIN_REQUIRE_TESSERACT=1` (the OCR test fails instead of skipping when the binary is missing; CI sets it), `QINQIN_BIG_TESTS`, `QINQIN_PERF_BUDGET_MS`.
 - Doc checks: `cd apps/web && npx vitest run src/lib/wikiDocs.test.ts src/lib/contractsDocs.test.ts src/lib/readmeGallery.test.ts src/lib/readmeDocs.test.ts src/lib/architectureDocs.test.ts` and `node scripts/gen-api-docs.mjs --check` (every wiki page is in `_Sidebar.md`, every link resolves, the generated API pages are current; every wiki link in `README.md` points at an existing `docs/wiki` page and heading; every architecture record follows the template of `docs/architecture/README.md` and is in its index).
 - Test helpers ([record 0005](https://github.com/Elaktrato/qinqin/blob/develop/docs/architecture/0005-test-conventions.md)): a Go test takes its database from `dbtest.Open(t)` (`server/internal/dbtest`; `OpenPath` also returns the file, `File` writes one where the code under test opens it), a copy of a template migrated once per test process; `dbtest.User`, `dbtest.Workspace` and `dbtest.DictPack` are the shared fixtures, and `dbtest.Counting` counts the SQL statements of a performance test. The api tests hash passwords at a lowered argon2id cost (`auth.SetHashCostForTests` in their `TestMain`). Web tests build cards, reviews and histories with `apps/web/src/lib/testing/study.ts`; the other test support (the legacy codec mirror, fake caches, DOM setup) is in `apps/web/src/lib/testing/` too. No unit test asserts a wall-clock time: performance tests count operations, and a guard test (`noWallClock.test.ts`) fails on a measured duration.
 - Concurrent builds in one worktree clobber `.svelte-kit`.
+
+## Browser end-to-end tests
+
+A Playwright suite in `apps/web/e2e/` drives Chromium against the real binary with the built SPA embedded
+([record 0007](https://github.com/Elaktrato/qinqin/blob/develop/docs/architecture/0007-browser-end-to-end-tests.md)).
+It needs Go and Node, and `npm --prefix apps/web ci` once:
+
+```sh
+cd apps/web
+npx playwright install chromium   # once per Playwright version; CI adds --with-deps
+npm run e2e                        # builds the SPA and the binary, then runs the suite
+npm run e2e -- study               # one spec file
+npm run e2e -- --headed --debug    # watch and step through
+```
+
+- The global setup runs `npm run build`, copies `server/` to a scratch directory, embeds `apps/web/build` and
+  runs `go build` (your checkout is not modified), then seeds a template data directory from the tiny packs in
+  `apps/web/e2e/fixtures/packs` and adds an admin. The tests take about 20 s with 2 workers; the web build and
+  the first Go build add to that. `QINQIN_E2E_REUSE_BUILD=1` reuses the existing `apps/web/build` instead of
+  building it (CI sets it after its own web build); `QINQIN_E2E_BINARY=/path/to/qinqin` skips both builds and
+  runs that binary (a build with a deliberate mutation, for example).
+- Each worker runs its own server on a free loopback port over a copy of the template, with
+  `QINQIN_AUTO_SEED=0` and no AI, mail or other network; each test signs in as a new user of its own.
+- A browser other than the one the pinned `@playwright/test` version installs:
+  `QINQIN_E2E_CHROMIUM=/path/to/chrome npm run e2e`.
+- On a failure the trace, screenshot and video are kept in `apps/web/e2e/test-results/` (open a trace with
+  `npx playwright show-trace <file>`), with each worker's server log (`server-w<N>.log`). `--trace off` skips
+  the traces locally.
+- The rules: role and text locators, no fixed sleeps (wait for a condition), no retries, data written through
+  the API, no network but the local server (a request to any other host fails the test);
+  `tests/conventions.spec.ts` checks the sleeps and the retries. `npm run check` type-checks the suite.
+- A failure's trace holds the learner's session token and, in the sign-in tests, the password typed: they
+  belong to the throw-away instance and die with it, but do not reuse those names or passwords anywhere.
+
+Covered: signing in and out (and a wrong password); registration in open mode; search and adding a word to
+study; switching the workspace; a study session mixing two card types (#132) and changing grades with Z and
+Back (#131), with the reviews the server stores; the reader popup on hover (desktop; the longest match first,
+no stale lookup) and from a selection (phone sheet); offline study after the service worker cached the app and
+today's cards (a deck's reverse cards included), and the sync of each review exactly once, with its grade and
+grading time, when back online and after a reload; the phone bottom bar at 360 px (on the bottom edge while a
+long page scrolls), More, and the side menu option of Settings → Layout, kept for the account, and back.
+
+Not covered, still checked by hand: Firefox and Safari (WebKit), real phones and the installed app (install
+prompt, home-screen app, safe areas, the on-screen keyboard), the update bar after a new version, the stroke
+animations, writing, tone, sentence and cloze cards, Japanese deinflection in the reader (the fixture has no
+rule-table pack), audio, the journal, grammar lessons, Settings → Admin (users, packs, backup) and the account
+backup download, two-step sign-in and email, and anything that looks wrong without failing (layout, colours,
+themes).
 
 ## How the build fits together
 
@@ -60,7 +109,8 @@ The Dockerfile has four stages: `web` (the SPA and the stroke pack), `build` (th
 ## Architecture records
 
 The rules of the code's structure (what the API layer may do, where web code lives, how errors are answered and
-shown, how unreadable sync rows are handled, test conventions, core features instead of code plugins) are
+shown, how unreadable sync rows are handled, test conventions, browser end-to-end tests, core features instead
+of code plugins) are
 written down as architecture records in [`docs/architecture/`](https://github.com/Elaktrato/qinqin/tree/develop/docs/architecture),
 each with how it is enforced. The data rules every client shares are the contracts in `docs/contracts/`. Read
 the record before changing the structure it covers; an issue that changes a rule updates its record.
@@ -77,8 +127,12 @@ the record before changing the structure it covers; an issue that changes a rule
 `.github/workflows/build.yml` runs on pushes to `main` and `develop`, on `v*` tags and on pull requests into `main` and `develop`:
 
 1. **test**: source and script checks (`check-sources.mjs`, `node --test scripts/*.test.mjs`), the seed archive check (`scripts/check-archives.sh`), web check and tests, the font pack script test, `go vet` and `go test` with Tesseract installed and `QINQIN_REQUIRE_TESSERACT=1`, the web build, and the embed smoke test (`scripts/smoke-embed.sh`: the real binary with the real SPA, asserted through HTTP).
-2. **image** (pushes to `main` and `v*` tags only): builds and pushes `ghcr.io/elaktrato/qinqin` with the tags `latest` (from `main`), the version tag and `sha-<commit>`.
-3. **release** (`v*` tags only, after the image): creates the GitHub Release `qinqin <tag>`, with `docs/releases/<tag>.md` as its text when that file exists and GitHub's generated notes otherwise; a tag with a hyphen becomes a pre-release, and a re-run for a tag that already has a release does nothing.
+2. **e2e** (beside `test`): installs Chromium (cached per Playwright version; its system libraries every run),
+   builds the web app and runs the browser end-to-end suite
+   (`npm run e2e`; above). On a failure the traces, screenshots, videos, the HTML report and the server logs
+   are uploaded as the `e2e-failure` artifact, kept 7 days.
+3. **image** (pushes to `main` and `v*` tags only, after `test` and `e2e`): builds and pushes `ghcr.io/elaktrato/qinqin` with the tags `latest` (from `main`), the version tag and `sha-<commit>`.
+4. **release** (`v*` tags only, after the image): creates the GitHub Release `qinqin <tag>`, with `docs/releases/<tag>.md` as its text when that file exists and GitHub's generated notes otherwise; a tag with a hyphen becomes a pre-release, and a re-run for a tag that already has a release does nothing.
 
 `.github/workflows/audio-stage.yml` builds only the Dockerfile's `audio` stage on pull requests that touch the Dockerfile, `.github/` or the audio scripts, weekly, and by hand, so a broken pin or an unreachable `media.kanjialive.com` shows before release day.
 

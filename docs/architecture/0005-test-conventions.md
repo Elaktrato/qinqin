@@ -53,6 +53,11 @@ Touched by: #195, #196. A merge from one of these issues that changes what this 
   Go test may bound how long a cancelled, timed-out or shut-down call takes to return (a liveness check,
   not a speed check). The lexicon characters test keeps its thread-CPU budget (`QINQIN_PERF_BUDGET_MS`),
   which measures CPU time, not elapsed time.
+- **Browser end-to-end tests** (#157) follow record [0007](0007-browser-end-to-end-tests.md): one Playwright
+  suite in `apps/web/e2e/` against the real binary, a fresh user per test, data written through the API, no
+  fixed sleeps and no retries (`apps/web/e2e/tests/conventions.spec.ts`). Its specs are `*.spec.ts`, so the
+  unit-test guards above (which scan `*.test.*` files) do not apply to them; a browser test waits for
+  conditions, and its timeouts are hang backstops, not speed checks.
 - #197 measured the suite times before and after and recorded them in the issue and in
   `docs/superpowers/plans/2026-11-23-test-infrastructure.md`.
 

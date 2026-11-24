@@ -96,6 +96,7 @@ function sourceBlob(): string {
 	};
 	walk(resolve(root, 'server'), /\.go$/);
 	walk(resolve(root, 'apps/web/src'), /\.(ts|svelte)$/);
+	walk(resolve(root, 'apps/web/e2e'), /\.ts$/);
 	walk(resolve(root, 'scripts'), /\.mjs$/);
 	walk(resolve(root, 'docs/contracts'), /\.json$/);
 	return out.join('\n');
