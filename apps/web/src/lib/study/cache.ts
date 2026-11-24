@@ -140,6 +140,16 @@ export class StudyCache {
 		return this.#slots.get(workspaceId)?.pages ?? 0;
 	}
 
+	/** keyedStamp: the newest stamp a loaded slot holds for a keyed row (workspace null: user-global), if any. */
+	keyedStamp(workspaceId: number | null, key: string): string | undefined {
+		const targets = workspaceId === null ? [...this.#slots.values()] : [this.#slots.get(workspaceId)];
+		for (const slot of targets) {
+			const row = slot?.rows?.keyed.get(keyedSlot(key, workspaceId === null));
+			if (row !== undefined) return newestOf([row.updatedAt, row.deletedAt]);
+		}
+		return undefined;
+	}
+
 	/** applyTyped holds typed rows this tab wrote, as the server now holds them. */
 	applyTyped(workspaceId: number, collection: StudyCollection, rows: readonly StudyRow[]): void {
 		const slot = this.#slots.get(workspaceId);

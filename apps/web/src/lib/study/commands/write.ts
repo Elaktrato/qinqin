@@ -8,6 +8,8 @@
 
 import { PartialPushError } from '../../sync/push';
 import { STUDY_NAMESPACE, keyedData, pushKeyed, type KeyedRow, type KeyedWrite } from '../../sync/keyed';
+import { sessionEpoch } from '../../session/sessionEnd';
+import { stampOf } from '../../sync/push';
 import { ALL_WORKSPACES, assertReadableKeyed, planningView, studyCache } from '../data';
 import type { StudyView } from '../readModel';
 import type { StudyWrite } from '../plan';
@@ -27,7 +29,20 @@ function heldRow(workspaceId: number, write: StudyWrite, stamp: string): StudyRo
 	} as StudyRow;
 }
 
-function hold(workspaceId: number, writes: readonly StudyWrite[], stamps: readonly string[]): void {
+/** The cache as the session that started a write sees it: once that session ended, its answer changes nothing (#173). */
+type Bound = Pick<typeof studyCache, 'applyTyped' | 'applyKeyed' | 'markStale'>;
+
+function bound(): Bound {
+	const epoch = sessionEpoch();
+	const live = (): boolean => epoch === sessionEpoch();
+	return {
+		applyTyped: (...args) => (live() ? studyCache.applyTyped(...args) : undefined),
+		applyKeyed: (...args) => (live() ? studyCache.applyKeyed(...args) : undefined),
+		markStale: (...args) => (live() ? studyCache.markStale(...args) : undefined)
+	};
+}
+
+function hold(cache: Bound, workspaceId: number, writes: readonly StudyWrite[], stamps: readonly string[]): void {
 	const byCollection = new Map<StudyWrite['collection'], StudyRow[]>();
 	writes.forEach((write, i) => {
 		const list = byCollection.get(write.collection) ?? [];
@@ -35,7 +50,7 @@ function hold(workspaceId: number, writes: readonly StudyWrite[], stamps: readon
 		byCollection.set(write.collection, list);
 	});
 	if (byCollection.size === 0) return;
-	for (const [collection, rows] of byCollection) studyCache.applyTyped(workspaceId, collection, rows);
+	for (const [collection, rows] of byCollection) cache.applyTyped(workspaceId, collection, rows);
 }
 
 /**
@@ -49,6 +64,7 @@ export async function pushStudy(
 	writes: readonly StudyWrite[],
 	opts: { chunk?: number; onProgress?: (done: number, total: number) => void } = {}
 ): Promise<void> {
+	const cache = bound();
 	const stamps: string[] = [];
 	await pushTyped(
 		workspaceId,
@@ -56,8 +72,8 @@ export async function pushStudy(
 		{
 			...opts,
 			after: (from, to, ok) => {
-				if (ok) hold(workspaceId, writes.slice(from, to), stamps.slice(from, to));
-				else studyCache.markStale(workspaceId);
+				if (ok) hold(cache, workspaceId, writes.slice(from, to), stamps.slice(from, to));
+				else cache.markStale(workspaceId);
 			}
 		},
 		stamps
@@ -84,15 +100,16 @@ export async function replanned<T>(workspaceId: number, run: (view: StudyView) =
  * tab may have written already): false when the server skipped it.
  */
 export async function pushOptional(workspaceId: number, write: StudyWrite): Promise<boolean> {
+	const cache = bound();
 	let result: { ok: boolean; stamp: string };
 	try {
 		result = await pushTypedOne(workspaceId, write, Date.now());
 	} catch (err) {
-		studyCache.markStale(workspaceId);
+		cache.markStale(workspaceId);
 		throw err;
 	}
-	if (result.ok) hold(workspaceId, [write], [result.stamp]);
-	else studyCache.markStale(workspaceId);
+	if (result.ok) hold(cache, workspaceId, [write], [result.stamp]);
+	else cache.markStale(workspaceId);
 	return result.ok;
 }
 
@@ -110,29 +127,35 @@ function keyedHeld(workspaceId: number | null, key: string, data: unknown, stamp
 
 /** putData stores one keyed row of the study namespace (PUT: the server stamps it and answers the row). */
 export async function putData(workspaceId: number | null, key: string, value: unknown): Promise<void> {
+	const cache = bound();
 	assertReadableKeyed(workspaceId ?? ALL_WORKSPACES, key);
 	let row: KeyedRow | null;
 	try {
 		row = await keyedData(STUDY_NAMESPACE, workspaceId).put(key, value);
 	} catch (err) {
-		studyCache.markStale(workspaceId);
+		cache.markStale(workspaceId);
 		throw err;
 	}
-	if (row === null) studyCache.markStale(workspaceId);
-	else studyCache.applyKeyed(workspaceId, [row]);
+	if (row === null) cache.markStale(workspaceId);
+	else cache.applyKeyed(workspaceId, [row]);
 }
 
 /** deleteData tombstones one keyed row of the study namespace; a missing row counts as deleted. */
 export async function deleteData(workspaceId: number | null, key: string): Promise<void> {
+	const cache = bound();
 	assertReadableKeyed(workspaceId ?? ALL_WORKSPACES, key);
 	try {
 		await keyedData(STUDY_NAMESPACE, workspaceId).delete(key);
 	} catch (err) {
-		studyCache.markStale(workspaceId);
+		cache.markStale(workspaceId);
 		throw err;
 	}
-	// The server's stamp is not answered: the local time stands in (a skip re-reads).
-	studyCache.applyKeyed(workspaceId, [keyedHeld(workspaceId, key, null, new Date().toISOString(), true)]);
+	// The server does not answer its stamp. The tombstone is held just after the stamp this tab
+	// knew, so any row the server sends later wins over it (this device's clock may run ahead);
+	// a row the cache does not hold only marks the workspace stale.
+	const known = studyCache.keyedStamp(workspaceId, key);
+	if (known === undefined) cache.markStale(workspaceId);
+	else cache.applyKeyed(workspaceId, [keyedHeld(workspaceId, key, null, stampOf(0, known), true)]);
 }
 
 /** pushKeyedRows writes keyed rows of the study namespace through the push, like pushStudy. */
@@ -141,15 +164,16 @@ export async function pushKeyedRows(
 	rows: readonly KeyedWrite[],
 	opts: { chunk?: number; onProgress?: (done: number, total: number) => void } = {}
 ): Promise<void> {
+	const cache = bound();
 	for (const row of rows) assertReadableKeyed(workspaceId, row.key);
 	const stamps: string[] = [];
 	const after = (from: number, to: number, ok: boolean): void => {
 		if (!ok) {
-			studyCache.markStale(workspaceId);
+			cache.markStale(workspaceId);
 			return;
 		}
 		const held = rows.slice(from, to).map((row, i) => keyedHeld(workspaceId, row.key, row.data, stamps[from + i], row.deleted === true));
-		studyCache.applyKeyed(workspaceId, held);
+		cache.applyKeyed(workspaceId, held);
 	};
 	await pushKeyed(STUDY_NAMESPACE, workspaceId, rows, { ...opts, after }, stamps);
 }

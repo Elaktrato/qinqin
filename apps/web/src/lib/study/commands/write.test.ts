@@ -10,7 +10,7 @@ import { StudyServer } from '../../testing/studyServer';
 import { deckRow, type DeckRow } from '../rows';
 import { getStudyData, studyCache } from '../data';
 import { renameDeck } from './decks';
-import { setKnownMarks } from './keyed';
+import { saveVacation, setKnownMark, setKnownMarks } from './keyed';
 
 const WS = 7;
 /** The server's clock runs a minute ahead of this device's. */
@@ -71,5 +71,42 @@ describe('a write the server skips', () => {
 		await setKnownMarks(WS, [5], false);
 		expect(server.counts).toMatchObject({ pushes: 2, pullPages: 1 });
 		expect([...server.data.values()].find((row) => row.key === 'known:5')?.deletedAt).not.toBeNull();
+	});
+});
+
+describe('held keyed writes (review fixes)', () => {
+	it("a deleted keyed row is held stamped just after what the server held, not by this device's clock", async () => {
+		server.putData({ pluginId: 'qinqin-flashcards', key: 'known:5', workspaceId: WS, data: { version: 1, entryId: 5, createdAt: '2026-01-01T00:00:00Z' }, updatedAt: '2026-01-02T00:00:00Z', deletedAt: null });
+		await getStudyData(WS);
+		await setKnownMark(WS, 5, false);
+		expect(studyCache.peek(WS)?.snapshot.knownAt.get('known:5')).toBe('2026-01-02T00:00:00.001Z');
+		expect(studyCache.peek(WS)?.data.known).toBeUndefined();
+	});
+
+	it("a user-global write answered after sign-out never lands in the next user's rows", async () => {
+		const serverB = new StudyServer({ now: () => Date.now() + AHEAD });
+		let release: () => void = () => undefined;
+		const held = new Promise<void>((resolve) => (release = resolve));
+		let user: 'A' | 'B' = 'A';
+		vi.mocked(fetch).mockImplementation(async (input, init) => {
+			if (user === 'A') {
+				if (init?.method === 'PUT') await held;
+				return server.fetch(input, init);
+			}
+			return serverB.fetch(input, init);
+		});
+		await getStudyData(WS);
+		const period = { version: 1 as const, id: 'v1', start: '2026-02-01', end: '2026-02-03', scope: 'all' as const, createdDay: '2026-02-01', createdAt: '2026-02-01T10:00:00Z' };
+		const writing = saveVacation(period);
+		await new Promise((resolve) => setTimeout(resolve, 0));
+		endSession('signOut');
+		user = 'B';
+		await getStudyData(WS);
+		const changed: number[] = [];
+		studyCache.onChange((ws) => changed.push(ws));
+		release();
+		await writing;
+		expect(studyCache.peek(WS)?.data.vacations).toBeUndefined();
+		expect(changed).toEqual([]);
 	});
 });
