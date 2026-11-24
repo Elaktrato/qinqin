@@ -246,3 +246,8 @@ Baseline (55312f3e, Node 26): 598 files, 12,651 passed, 8 skipped.
   memo is a WeakMap keyed by the cards array), `session/sessionEnd.test.ts` and
   `session/sessionCaches.lint.test.ts` (deleted with the registry; covered by the session disposer tests in
   `context/app.test.ts` and by `context/stateModel.lint.test.ts`). Nothing else was dropped.
+- F3 (should-fix 4): the sign-out's flush (up to 8 s) could outlive a switch to another user and then sign that
+  user out, or open the prompt over them so "Sign out and delete them" deleted their reviews. Tests first
+  (`account/signOut.test.ts`: a held flush, then another user signs in; both outcomes of the flush), seen failing;
+  `requestSignOut` now captures the session and acts only while `app.session` is still that live session, and
+  `signOutAndDelete` deletes the reviews of the session's own user.

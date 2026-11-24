@@ -5,25 +5,32 @@
 import type { AppContext } from '../context/app.svelte';
 import { decideLogout } from './logoutFlow';
 
+/**
+ * requestSignOut flushes, then signs out or asks. The flush can take seconds;
+ * what follows acts only on the session it started for: after a switch to
+ * another user (another tab) it does nothing.
+ */
 export async function requestSignOut(app: AppContext): Promise<void> {
-	const id = app.auth.user?.id;
-	const outbox = app.session?.outbox;
-	if (id === undefined || outbox === undefined) {
+	const session = app.session;
+	const id = session?.user ?? null;
+	if (session === null || id === null) {
 		app.auth.logout();
 		return;
 	}
 	const { decision, count } = await decideLogout({
-		pending: () => outbox.pendingCount(id),
-		flush: () => outbox.flush()
+		pending: () => session.outbox.pendingCount(id),
+		flush: () => session.outbox.flush()
 	});
+	if (app.session !== session || !session.alive) return;
 	if (decision === 'signout') app.auth.logout();
 	else app.logoutPrompt = count;
 }
 
-/** The dialog's "Sign out and delete them". */
+/** The dialog's "Sign out and delete them": the session's own user's reviews only. */
 export function signOutAndDelete(app: AppContext): void {
-	const id = app.auth.user?.id;
-	if (id !== undefined) app.session?.outbox.clearPending(id);
+	const session = app.session;
+	const id = session?.alive ? session.user : null;
+	if (session !== null && id !== null) session.outbox.clearPending(id);
 	app.logoutPrompt = null;
 	app.auth.logout();
 }
