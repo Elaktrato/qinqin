@@ -289,6 +289,9 @@ func (u Usage) Counts() map[string]int {
 
 func plural(n int, one, many string) string {
 	if n == 1 {
+		if strings.ContainsRune("aeiou", rune(one[0])) {
+			return "an " + one
+		}
 		return "a " + one
 	}
 	return strconv.Itoa(n) + " " + many

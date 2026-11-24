@@ -183,7 +183,7 @@ func TestLanguageUse(t *testing.T) {
 	if !maps.Equal(u.Counts(), wantCounts) {
 		t.Errorf("Counts = %v, want %v", u.Counts(), wantCounts)
 	}
-	wantText := "2 workspaces, installed dictionary data, 2 level lists, a frequency pack, a sentence pack, a grammar pack, a audio pack, " +
+	wantText := "2 workspaces, installed dictionary data, 2 level lists, a frequency pack, a sentence pack, a grammar pack, an audio pack, " +
 		"sentences from an older pack without a registry row (remove with DELETE /api/admin/sentences/old-a, DELETE /api/admin/sentences/old-b)"
 	if got := u.Blockers(); got != wantText {
 		t.Errorf("Blockers = %q\nwant      %q", got, wantText)

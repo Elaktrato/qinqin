@@ -92,7 +92,7 @@ calls of `QueryContext`, `QueryRowContext`, `ExecContext` and `BeginTx` in the n
   model list in the journal capabilities body) needs a deliberate regeneration.
 - Ruling: answers stay byte for byte, including the "a audio pack" of the language blockers (the plural helper
   writes "a" before every singular) — a refactor does not reword; a follow-up may fix it with its catalogue
-  test — cost if wrong: none.
+  test — cost if wrong: none. (Fixed in the fix wave, in its own commit; see below.)
 - Ruling: `PUT /api/workspaces/{id}` checks the name in the handler before the settings (and
   `workspaces.Update` checks it again) — the answer order (422 for a bad name before 400 for bad settings) is
   pinned, and the domain function must refuse a bad name for any caller — cost if wrong: a name is trimmed and
@@ -187,3 +187,9 @@ The review found no MUST-FIX. Each group below is one commit, test first.
   is older than #194. `auth.SweepOrphanUserDirs` only removes whole directories of deleted users. A sweep of
   book and photo files without a row needs the library and journal file layouts and a test per store; it is
   left for a follow-up issue rather than added in a fix wave.
+- The "a audio pack" slip, fixed in its own commit: `plural` writes "an" before a vowel ("an audio pack"),
+  test first (`TestLanguageUse` expected "an audio pack" and failed). The pin's golden file was regenerated
+  deliberately in that commit only; its diff is that one line of `DELETE /api/admin/languages/de`. No
+  CHANGELOG line: the error contract pins the code `language_in_use`, its status and the `usage` counts
+  (`docs/contracts/auth/errors.json`); the `message` is the English developer sentence clients never show
+  (record 0001), and the web translates the code.
