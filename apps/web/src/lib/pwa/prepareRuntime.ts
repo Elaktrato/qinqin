@@ -54,7 +54,7 @@ export async function prepareActiveWorkspace(app: AppContext): Promise<void> {
 		remembered: () => loadRememberedTypes(ws.id),
 		choices: () => loadExtraChoices(ws.id),
 		language: ws.language,
-		contextFor: (data, id, now) => contextForData(data, id, now),
+		contextFor: (data, id, now) => contextForData(session.zone, data, id, now),
 		weights: (data) => activeWeights(data),
 		fetchEntry: (id) => getEntry(id),
 		fetchStroke: (ch) => fetchStrokeData(session.caches.strokes, ch),

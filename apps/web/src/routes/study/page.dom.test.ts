@@ -1,3 +1,8 @@
+import { StudyDays } from '$lib/time/studyDays';
+import type { MockInstance } from 'vitest';
+import { studyDay as studyDayOf } from '$lib/time/studyDay';
+/** One rule object, as the session's StudyDays caches it. */
+const SHARED_DAY = studyDayOf([]);
 import { testContext, type TestContext } from '$lib/testing/context';
 import { cleanup, render, screen, waitFor } from '@testing-library/svelte';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -27,11 +32,6 @@ vi.mock('$lib/components/CardManager.svelte', () => ({
 		return {};
 	}
 }));
-vi.mock('$lib/time/zone', () => ({
-	currentStudyDay: vi.fn(),
-	currentStudyHistory: vi.fn(() => []),
-	onStudyDayChange: vi.fn(() => () => {})
-}));
 
 import { fetchCharacters } from '$lib/api/characters';
 import { getFrequencyPacks } from '$lib/api/frequency';
@@ -42,11 +42,18 @@ import { createDeck, saveDeckCardTypesForDecks } from '$lib/study/commands/decks
 import { loadStudyData } from '$lib/study/data';
 import { tick } from 'svelte';
 import { studyDay } from '$lib/time/studyDay';
-import { currentStudyDay } from '$lib/time/zone';
 import { SESSION_CONFIG_KEY } from '$lib/study/session';
 import { primaryActions } from '$lib/ui/testing/primary';
 import Page from './+page.svelte';
 import * as build from '$lib/testing/study';
+
+// The session's StudyDays (record 0009): its methods, faked on the class.
+let currentStudyDay!: MockInstance<StudyDays['day']>;
+beforeEach(() => {
+	currentStudyDay = vi.spyOn(StudyDays.prototype, 'day').mockImplementation((() => SHARED_DAY) as never);
+	vi.spyOn(StudyDays.prototype, 'effectiveHistory').mockImplementation((() => []) as never);
+	vi.spyOn(StudyDays.prototype, 'onChange').mockImplementation((() => () => {}) as never);
+});
 
 let ctx: TestContext = testContext();
 beforeEach(() => {
@@ -322,7 +329,7 @@ describe('study setup, a workspace switch while a deck is created (#174)', () =>
 		);
 		vi.mocked(getSchemes).mockResolvedValue([]);
 		let finish: (d: unknown) => void = () => undefined;
-		vi.mocked(createDeck).mockImplementation(() => new Promise((r) => (finish = r)) as never);
+		vi.mocked(createDeck).mockImplementation((() => new Promise((r) => (finish = r))) as never);
 		render(Page, { context: ctx.context });
 		const name = (await screen.findByLabelText('New deck')) as HTMLInputElement;
 		await fireEvent.input(name, { target: { value: 'Late deck' } });

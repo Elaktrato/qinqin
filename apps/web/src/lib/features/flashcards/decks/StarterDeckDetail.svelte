@@ -34,7 +34,7 @@
 	// has no session of its own: add it, then study the copy like any deck.
 	let { route }: { route: Extract<FlashcardsRoute, { view: 'system-frequency' }> } = $props();
 
-	const store = createDecksData(session.study);
+	const store = createDecksData(session);
 	const workspace = $derived(session.workspaces.current);
 	const workspaceId = $derived(workspace?.id ?? null);
 	$effect(() => {

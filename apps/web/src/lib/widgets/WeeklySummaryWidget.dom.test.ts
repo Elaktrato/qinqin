@@ -10,7 +10,6 @@ import { onContextStale } from '$lib/study/currentContext';
 import { loadWeek, loadWeekCharacters, type WeekView } from '$lib/weekly/loadWeek';
 import type { WeekSummary } from '$lib/weekly/summary';
 import { weekOf } from '$lib/weekly/week';
-import { currentStudyDay } from '$lib/time/zone';
 import WeeklySummaryWidget from './WeeklySummaryWidget.svelte';
 
 let ctx: TestContext = testContext();
@@ -77,7 +76,7 @@ describe('WeeklySummaryWidget', () => {
 	it('shows the compact current week and links to the Week tab', async () => {
 		const { container } = render(WeeklySummaryWidget, { context: ctx.context });
 		await waitFor(() => expect(reviewsValue()).toBe('12'));
-		const monday = weekOf(currentStudyDay().today());
+		const monday = weekOf(ctx.session.zone.day().today());
 		expect(loadWeek).toHaveBeenCalledWith(expect.anything(), 1, monday, { force: false });
 		expect([...container.querySelectorAll('dt')].map((t) => t.textContent)).toEqual([
 			'Reviews',
@@ -138,7 +137,7 @@ describe('WeeklySummaryWidget', () => {
 		render(WeeklySummaryWidget, { context: ctx.context });
 		await waitFor(() => expect(reviewsValue()).toBe('12'));
 		vi.mocked(loadWeek).mockResolvedValueOnce(view(30));
-		vi.mocked(onContextStale).mock.calls[0][0]();
+		vi.mocked(onContextStale).mock.calls[0][1]();
 		await waitFor(() => expect(reviewsValue()).toBe('30'));
 	});
 });

@@ -104,6 +104,14 @@ The decision is recorded in `docs/architecture/0009-web-state-model.md`.
   test mocks an API module, and the call sites name the cache they use — cost if wrong: one more argument per call.
 - Ruling: the audio player belongs to the session (`session.player`), not the tab — it plays through the session's
   clip cache, and a sign-out stops it — cost if wrong: none; there is never a player signed out.
+- Ruling: content-keyed memos of derived data (weekly timelines and passes, reached milestones) and loads in flight
+  (goals) live in the session's caches and are passed to the pure functions; the single-entry day-count memo became
+  a WeakMap keyed by the cards array (holding nothing once the arrays go); the ts-fsrs instance memo stays
+  module-level (numbers only, at most 16) — the owner named the weekly, milestone and goal memos; a scheduler
+  instance carries no user rows — cost if wrong: a memo miss after a sign-in costs one recomputation.
+- Ruling: tests that mocked `time/zone` or `events.ts` now spy on the class prototypes (`StudyDays.prototype.day`,
+  `EventLog.prototype.record`) — every session the test builds sees the fake, as the module mock did — cost if
+  wrong: a spy outliving its file (vitest isolates files).
 - Ruling: the plugin SDK's `events.record` takes the poster first (the session's `EventLog.post`) instead of
   reaching a module function — the SDK stays a module per plugin until #199 removes it — cost if wrong: none.
 - Ruling: `logout()` with no session (no token) clears nothing per user: there is nothing to clear; the workspace
@@ -160,3 +168,13 @@ Baseline (55312f3e, Node 26): 598 files, 12,651 passed, 8 skipped.
    stops it). The `sessionEpoch` checks of these caches went: a late answer lands in the old session's cache. Pure
    moves: each cache's tests now build a fresh cache per test instead of calling its `clear…` export. Full vitest
    under Node 26: 599 files, 12,664 passed. (No e2e run for this commit alone; the next commit's run covers it.)
+8b. The derived state and memos into the session: the study day (`time/studyDays.ts` `StudyDays`, `session.zone`;
+   `time/zone.ts` keeps the pure parts), the goal loads in flight, the weekly timelines and week passes, the reached
+   milestones and the seen-milestone flushes (with the session's `online` listener), the journal's sent events, the
+   lookup recorder (`lookups/state.ts`, `session.lookups`) — all in `SessionCaches` or the session. The
+   `currentContext.ts` builders take the session's StudyDays first. The day-count memo of `limits.ts` became a
+   WeakMap keyed by the cards array; the ts-fsrs instance memo of `scheduler.ts` stays module-level (allow-listed).
+   `study/outboxUser.ts` is gone: what read it reads the session's user. No `onSessionEnd` registration is left in
+   the app. Pure moves; the tests now build their memos, recorder and study day per test (`zone.test.ts` on a
+   `StudyDays`, `currentContext.test.ts` on a fake view, tests that mocked `time/zone` spy on
+   `StudyDays.prototype`). Full vitest under Node 26: 599 files, 12,664 passed; e2e 13 passed.

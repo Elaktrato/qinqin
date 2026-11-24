@@ -26,8 +26,8 @@ import { dataRow } from '../lib/testing/keyed';
 // The session's event log (record 0009): its methods, faked on the class.
 let recordSessionOnce!: MockInstance<EventLog['recordSessionWhenSettled']>;
 beforeEach(() => {
-	vi.spyOn(EventLog.prototype, 'record').mockImplementation((async () => {}) as never);
-	recordSessionOnce = vi.spyOn(EventLog.prototype, 'recordSessionWhenSettled').mockImplementation((async () => {}) as never);
+	vi.spyOn(EventLog.prototype, 'record').mockImplementation(((async () => {})) as never);
+	recordSessionOnce = vi.spyOn(EventLog.prototype, 'recordSessionWhenSettled').mockImplementation(((async () => {})) as never);
 });
 
 /** The app context the layout mounts with (a fresh one per mount, as a page load). */

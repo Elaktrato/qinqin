@@ -66,7 +66,7 @@
 			// history is shared with the other widgets (study/data.ts loadStudyHistory).
 			const data = await loadStudyHistory(session.study, workspace, { force });
 			if (seq !== requestSeq) return;
-			result = wordStateCounts(data.cards, data.reviews, data.decks, new Date(), activeWeights(data), contextForData(data, workspace).clock);
+			result = wordStateCounts(data.cards, data.reviews, data.decks, new Date(), activeWeights(data), contextForData(session.zone, data, workspace).clock);
 		} catch (err) {
 			if (seq !== requestSeq) return;
 			result = null;
@@ -79,7 +79,7 @@
 	$effect(() => {
 		void load(workspaceId);
 	});
-	$effect(() => onContextStale(() => void load(workspaceId)));
+	$effect(() => onContextStale(session.zone, () => void load(workspaceId)));
 
 	// The per-deck table scrolls sideways on narrow screens: a visible hint
 	// says so while columns are hidden to the right. Screen readers get the

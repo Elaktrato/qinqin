@@ -1,6 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createAppContext, type AppContext } from './context/app.svelte';
-import { outboxUser } from './study/outboxUser';
 import { fakeDeps } from './testing/context';
 
 const user = (id: number) => ({ id, username: `u${id}`, admin: false, email: null, emailVerified: false, mustChangePassword: false, createdAt: 't' });
@@ -29,10 +28,10 @@ afterEach(() => {
 describe('auth across tabs', () => {
 	it('a token written by another tab makes this tab see the new user at once', async () => {
 		const first = app.session;
-		expect(outboxUser()).toBe(1);
+		expect((app.session?.user ?? null)).toBe(1);
 		localStorage.setItem('qinqin.token', 'tokB');
 		storageEvent('qinqin.token');
-		await vi.waitFor(() => expect(outboxUser()).toBe(2));
+		await vi.waitFor(() => expect((app.session?.user ?? null)).toBe(2));
 		expect(app.auth.token).toBe('tokB');
 		expect(first?.alive).toBe(false);
 		expect(app.session?.user).toBe(2);
@@ -43,13 +42,13 @@ describe('auth across tabs', () => {
 		storageEvent('qinqin.token');
 		expect(app.auth.state).toEqual({ token: null, user: null });
 		expect(app.session).toBeNull();
-		expect(outboxUser()).toBeNull();
+		expect((app.session?.user ?? null)).toBeNull();
 	});
 
 	it('unrelated keys and an unchanged token do nothing', () => {
 		storageEvent('qinqin.reader.prefs');
 		storageEvent('qinqin.token');
-		expect(outboxUser()).toBe(1);
+		expect((app.session?.user ?? null)).toBe(1);
 		expect(fetch).not.toHaveBeenCalled();
 	});
 

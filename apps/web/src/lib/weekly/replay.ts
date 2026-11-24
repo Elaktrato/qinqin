@@ -3,7 +3,6 @@
 // reviewed card per loaded history, so browsing weeks replays nothing.
 // Pure. Rule and fixtures: docs/contracts/weekly/.
 
-import { onSessionEnd } from '../session/sessionEnd';
 import type { CharRow } from '../api/types';
 import { cellStates, masteryGlyphs } from '../study/charGroups';
 import { weightsKey } from '../study/fsrs/params';
@@ -28,9 +27,7 @@ export const replayStats = { timelines: 0 };
 
 /** Timelines kept per content key; a few, so switching workspaces does not thrash. */
 const MAX_MEMO = 4;
-const memo = new Map<string, Timelines>();
 const keys = new WeakMap<readonly ReviewEvent[], string>();
-onSessionEnd(() => memo.clear());
 
 /**
  * reviewsKey identifies a review log by its content (FNV-1a over each
@@ -88,10 +85,16 @@ function build(reviews: readonly ReviewEvent[], w: readonly number[], clock: Stu
 }
 
 /**
- * timelinesFor: one lazily built timeline per reviewed card, memoised by
- * the reviews' content (reviewsKey), the weights and the clock runs.
+ * timelinesFor: one lazily built timeline per reviewed card, memoised in
+ * `memo` (the session's, context/caches.ts) by the reviews' content
+ * (reviewsKey), the weights and the clock runs.
  */
-export function timelinesFor(reviews: readonly ReviewEvent[], w: readonly number[], clock: StudyClock): Timelines {
+export function timelinesFor(
+	memo: Map<string, Timelines>,
+	reviews: readonly ReviewEvent[],
+	w: readonly number[],
+	clock: StudyClock
+): Timelines {
 	const key = `${reviewsKey(reviews)}|${weightsKey(w)}|${JSON.stringify(clock.runs)}`;
 	let t = memo.get(key);
 	if (t === undefined) {

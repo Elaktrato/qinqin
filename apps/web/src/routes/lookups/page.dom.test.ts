@@ -1,3 +1,8 @@
+import { StudyDays } from '$lib/time/studyDays';
+import type { MockInstance } from 'vitest';
+import { studyDay as studyDayOf } from '$lib/time/studyDay';
+/** One rule object, as the session's StudyDays caches it. */
+const SHARED_DAY = studyDayOf([]);
 import { testContext, type TestContext } from '$lib/testing/context';
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/svelte';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -14,15 +19,17 @@ vi.mock('$lib/lookups/store', () => ({
 	saveLookupCfg: vi.fn(async () => {}),
 	repairAfterClear: vi.fn(async () => false)
 }));
-vi.mock('$lib/time/zone', () => ({
-	currentStudyDay: () => ({ dayOf: (ms: number) => new Date(ms).toISOString().slice(0, 10), today: () => '2026-11-16' })
-}));
 
 import { addEntries, loadPage } from '$lib/lookups/pageData';
 import { clearHistory, removeFromHistory, saveLookupCfg } from '$lib/lookups/store';
 import { primaryActions } from '$lib/ui/testing/primary';
 import Page from './+page.svelte';
 import source from './+page.svelte?raw';
+
+// The session's StudyDays (record 0009): its methods, faked on the class.
+beforeEach(() => {
+	vi.spyOn(StudyDays.prototype, 'day').mockImplementation((() => SHARED_DAY) as never);
+});
 
 let ctx: TestContext = testContext();
 beforeEach(() => {
@@ -121,7 +128,7 @@ describe('/lookups page', () => {
 		await fireEvent.click(screen.getByRole('checkbox', { name: 'Select 词1' }));
 		await fireEvent.click(screen.getByRole('checkbox', { name: 'Select 词3' }));
 		await fireEvent.click(screen.getByRole('button', { name: 'Remove selected (2)' }));
-		await waitFor(() => expect(removeFromHistory).toHaveBeenCalledWith(3, [1, 3]));
+		await waitFor(() => expect(removeFromHistory).toHaveBeenCalledWith(expect.anything(), 3, [1, 3]));
 		const list = screen.getByRole('list', { name: 'Looked-up words' });
 		await waitFor(() => expect(within(list).getAllByRole('listitem')).toHaveLength(1));
 		expect(screen.getByRole('button', { name: 'Remove selected (0)' }).hasAttribute('disabled')).toBe(true);
@@ -161,7 +168,7 @@ describe('/lookups page', () => {
 		expect(clearHistory).not.toHaveBeenCalled();
 		await fireEvent.click(screen.getByRole('button', { name: 'Clear history…' }));
 		await fireEvent.click(screen.getByRole('button', { name: 'Delete' }));
-		await waitFor(() => expect(clearHistory).toHaveBeenCalledWith(3, expect.any(Date), { invalidateEvents: expect.any(Function), onRepaired: expect.any(Function) }));
+		await waitFor(() => expect(clearHistory).toHaveBeenCalledWith(expect.anything(), 3, expect.any(Date), { invalidateEvents: expect.any(Function), onRepaired: expect.any(Function) }));
 		expect(await screen.findByText('No lookups yet. Hover or select a word in the reader, or open a search result.')).toBeTruthy();
 	});
 
@@ -173,7 +180,7 @@ describe('/lookups page', () => {
 		expect(sw.className).toContain('secondary');
 		expect(sw.getAttribute('aria-checked')).toBe('true');
 		await fireEvent.click(sw);
-		await waitFor(() => expect(saveLookupCfg).toHaveBeenCalledWith(false));
+		await waitFor(() => expect(saveLookupCfg).toHaveBeenCalledWith(expect.anything(), false));
 		expect(sw.getAttribute('aria-checked')).toBe('false');
 		await fireEvent.click(await screen.findByRole('button', { name: 'Clear history too' }));
 		expect(screen.getByText(/This cannot be undone\./)).toBeTruthy();

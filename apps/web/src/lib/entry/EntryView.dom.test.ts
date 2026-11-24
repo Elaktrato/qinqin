@@ -45,9 +45,9 @@ import ActionsHarness from './testing/ActionsHarness.svelte';
 // The session's event log (record 0009): its methods, faked on the class.
 let record!: MockInstance<EventLog['record']>;
 beforeEach(() => {
-	vi.spyOn(EventLog.prototype, 'load').mockImplementation((async () => []) as never);
+	vi.spyOn(EventLog.prototype, 'load').mockImplementation(((async () => [])) as never);
 	vi.spyOn(EventLog.prototype, 'onChange').mockImplementation((() => () => {}) as never);
-	record = vi.spyOn(EventLog.prototype, 'record').mockImplementation((async () => {}) as never);
+	record = vi.spyOn(EventLog.prototype, 'record').mockImplementation(((async () => {})) as never);
 });
 
 let ctx: TestContext = testContext();
@@ -271,7 +271,7 @@ describe("a word's characters (#104)", () => {
 describe('entry extras and the not-found state (#104)', () => {
 	it('refreshes the In N decks chip after an add', async () => {
 		let cards: unknown[] = [];
-		vi.mocked(getStudyData).mockImplementation(async () => ({ decks: [], cards, known: [] }) as never);
+		vi.mocked(getStudyData).mockImplementation((async () => ({ decks: [], cards, known: [] })) as never);
 		getEntryMock.mockResolvedValue(entry());
 		const { container } = render(EntryView, { props: { entryId: 5, recordView: false }, context: ctx.context });
 		await screen.findByRole('heading', { name: '勤奋' });

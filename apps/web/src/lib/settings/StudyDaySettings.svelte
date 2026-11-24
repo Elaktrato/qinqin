@@ -3,26 +3,22 @@
 	import { t } from '$lib/i18n';
 	import Msg from '$lib/i18n/Msg.svelte';
 	import { unusableZones } from '$lib/time/studyDay';
-	import {
-		browserZone,
-		changeZone,
-		currentHistory,
-		currentStudyDay,
-		onStudyDayChange
-	} from '$lib/time/zone';
+	import { browserZone } from '$lib/time/zone';
 	import { changeErrorMessage, mismatch, zoneLabel, zoneMatchText, zoneOptions } from './zoneSettings';
 	import { Button, Field, Section, Select } from '$lib/ui';
+	import { useSession } from '$lib/context/context';
+	const session = useSession();
 
-	let day = $state(currentStudyDay());
-	let history = $state([...currentHistory()]);
+	let day = $state(session.zone.day());
+	let history = $state([...session.zone.known()]);
 	let query = $state('');
 	let picked = $state('');
 	let busy = $state(false);
 	let error = $state('');
 
-	onMount(() => onStudyDayChange((next) => {
+	onMount(() => session.zone.onChange((next) => {
 		day = next;
-		history = [...currentHistory()];
+		history = [...session.zone.known()];
 		picked = '';
 	}));
 
@@ -50,7 +46,7 @@
 		busy = true;
 		error = '';
 		try {
-			await changeZone(zone);
+			await session.zone.change(zone);
 		} catch (err) {
 			error = changeErrorMessage(err);
 		} finally {

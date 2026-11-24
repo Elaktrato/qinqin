@@ -90,7 +90,6 @@
 	import { LIBRARY_HREF, bookHref, safeHttpUrl } from './route';
 	import { LookupController } from './useLookup.svelte';
 	import { recordLookup } from '$lib/lookups/sink';
-	import { lookupRecorder } from '$lib/lookups/store';
 	import { prepareVariant, type Variant } from './variants';
 	import { useSession } from '$lib/context/context';
 
@@ -262,7 +261,7 @@
 		const loader = createLatestLoad(
 			async () => {
 				const data = await loadStudyHistory(session.study, wsId);
-				const schedules = scheduleIndex(data.cards, data.reviews, activeWeights(data), contextForData(data, wsId).clock);
+				const schedules = scheduleIndex(data.cards, data.reviews, activeWeights(data), contextForData(session.zone, data, wsId).clock);
 				return { index: knownIndex(data.cards, (cardId) => schedules.get(cardId) ?? null, data.known), decks: data.decks };
 			},
 			(v) => {
@@ -342,13 +341,13 @@
 		textLang: () => textLang,
 		runsOf: (p) => paragraphs[p],
 		// The lookup history (#72), in the book's workspace like "+".
-		onLookup: (entryId) => recordLookup(studyWorkspaceId, { entryId, source: 'reader', bookId: book?.id })
+		onLookup: (entryId) => recordLookup(session.lookups.recorder, studyWorkspaceId, { entryId, source: 'reader', bookId: book?.id })
 	});
 	$effect(() => lookup.attach());
 	// One read of the history for the popup's "looked up N times" hint.
 	$effect(() => {
 		const ws = studyWorkspaceId;
-		if (ws !== null) void lookupRecorder().load(ws).catch(() => undefined);
+		if (ws !== null) void session.lookups.recorder.load(ws).catch(() => undefined);
 	});
 	// The text under a popup is re-rendered (chapter, script or furigana
 	// change): drop the popup rather than leave it pointing at nothing.

@@ -43,13 +43,13 @@
 
 	let { deckId }: { deckId: string } = $props();
 
-	const store = createDecksData(session.study);
+	const store = createDecksData(session);
 	const workspaceId = $derived(session.workspaces.current?.id ?? null);
 	$effect(() => {
 		void store.load(workspaceId);
 	});
 	// A new learner day (or zone) changes what is due and on vacation.
-	$effect(() => onContextStale(() => void store.load(workspaceId)));
+	$effect(() => onContextStale(session.zone, () => void store.load(workspaceId)));
 
 	const KIND_KEYS: Record<StudyCardKind, MessageKey> = {
 		vocab: 'study.cardType.vocab',

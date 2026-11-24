@@ -218,7 +218,7 @@
 	// click; "open in new tab" from the context menu is not seen). Typed
 	// queries are never recorded.
 	function openedHit(entryId: number): void {
-		recordLookup(session.workspaces.current?.id, { entryId, source: 'search' });
+		recordLookup(session.lookups.recorder, session.workspaces.current?.id, { entryId, source: 'search' });
 	}
 
 	/** Choosing a result: desktop replaces the entry in place; a phone pushes, so Back returns to the list. */

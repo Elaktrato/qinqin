@@ -3,7 +3,6 @@ import { FakeCacheStorage } from './testing/fakeCaches';
 import { notifyUnauthorized } from './api/client';
 import { createAppContext, type AppContext } from './context/app.svelte';
 import { fakeDeps } from './testing/context';
-import { lookupRecorder } from './lookups/store';
 
 let fake: FakeCacheStorage;
 let app: AppContext;
@@ -57,19 +56,21 @@ describe('saved API copies follow the session', () => {
 
 describe('the lookup history recorder follows the session (#72)', () => {
 	it('logout and a 401 drop its buffered lookups and copies', async () => {
-		const r = lookupRecorder();
-		r.note(3, { entryId: 7, source: 'reader' });
-		expect(r.countOf(3, 7)).toBe(1);
 		localStorage.setItem('qinqin.token', 'tok');
 		app.auth.set({ token: 'tok', user: { id: 1, username: 'alice' } as never });
+		const r = app.session!.lookups.recorder;
+		r.note(3, { entryId: 7, source: 'reader' });
+		expect(r.countOf(3, 7)).toBe(1);
 		app.auth.logout();
 		expect(r.countOf(3, 7)).toBe(0);
 		localStorage.setItem('qinqin.token', 'tok');
 		app.auth.set({ token: 'tok', user: { id: 1, username: 'alice' } as never });
-		r.note(3, { entryId: 8, source: 'reader' });
+		const next = app.session!.lookups.recorder;
+		expect(next).not.toBe(r);
+		next.note(3, { entryId: 8, source: 'reader' });
 		notifyUnauthorized();
-		expect(r.countOf(3, 8)).toBe(0);
-		await r.flush();
+		expect(next.countOf(3, 8)).toBe(0);
+		await next.flush();
 		expect(vi.mocked(fetch).mock.calls.some(([u]) => String(u).includes('lookups'))).toBe(false);
 	});
 });
@@ -77,7 +78,7 @@ describe('the lookup history recorder follows the session (#72)', () => {
 describe('the lookup recorder follows the signed-in user (#72 review)', () => {
 	it('another user signing in (another tab, a token swap) drops the previous buffer', () => {
 		app.auth.set({ token: 'a', user: { id: 1, username: 'alice' } as never });
-		const r = lookupRecorder();
+		const r = app.session!.lookups.recorder;
 		r.note(3, { entryId: 7, source: 'reader' });
 		app.auth.set({ token: 'a', user: { id: 1, username: 'alice' } as never }); // same user: kept
 		expect(r.countOf(3, 7)).toBe(1);

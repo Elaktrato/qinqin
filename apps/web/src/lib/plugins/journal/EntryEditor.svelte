@@ -1,10 +1,3 @@
-<script module lang="ts">
-	import { onSessionEnd } from '$lib/session/sessionEnd';
-	// One `journal` study event per entry per UTC day per tab (entry ids are the user's).
-	const sentEvents = new Map<string, string>();
-	onSessionEnd(() => sentEvents.clear());
-</script>
-
 <script lang="ts">
 	import { t } from '$lib/i18n';
 	import { formatDate, formatDay, formatNumber } from '$lib/i18n/format';
@@ -43,7 +36,6 @@
 	} from './editorLogic';
 	import { pollForReview } from './reviewPoll';
 	import { journalHref, newEntryHref } from './route';
-	import { currentStudyDay } from '$lib/time/zone';
 	import { PHONE_MEDIA_QUERY } from '$lib/frame/breakpoint';
 	import {
 		deleteEntry,
@@ -56,6 +48,7 @@
 	} from './store';
 	import type { JournalEntry, Review } from './types';
 	import { useSession } from '$lib/context/context';
+
 	const session = useSession();
 
 	let {
@@ -185,12 +178,12 @@
 
 	async function recordEvent(id: string): Promise<void> {
 		const now = new Date();
-		if (!journalEventDue(id, true, now, sentEvents, currentStudyDay().dayOf)) return;
+		if (!journalEventDue(id, true, now, session.caches.journalSent, session.zone.day().dayOf)) return;
 		try {
 			await recordJournalEvent(session.events, ws, id, now);
 		} catch {
 			// Telemetry only; allow another try on the next save.
-			sentEvents.delete(id);
+			session.caches.journalSent.delete(id);
 		}
 	}
 
@@ -211,7 +204,7 @@
 		gone = false;
 		originals = {};
 		if (id === null) {
-			const fresh = newEntry('typed', currentStudyDay());
+			const fresh = newEntry('typed', session.zone.day());
 			entry = fresh;
 			title = initialTitle;
 			text = '';

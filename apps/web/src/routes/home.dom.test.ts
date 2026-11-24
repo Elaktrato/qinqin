@@ -1,5 +1,9 @@
-import { EventLog } from '$lib/events';
+import { StudyDays } from '$lib/time/studyDays';
 import type { MockInstance } from 'vitest';
+import { studyDay as studyDayOf } from '$lib/time/studyDay';
+/** One rule object, as the session's StudyDays caches it. */
+const SHARED_DAY = studyDayOf([]);
+import { EventLog } from '$lib/events';
 import { testContext, type TestContext } from '$lib/testing/context';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/svelte';
 import { tick } from 'svelte';
@@ -16,10 +20,6 @@ vi.mock('$lib/api/account', async (importOriginal) => ({
 	getAuthOptions: vi.fn(() => Promise.reject(new Error('offline')))
 }));
 vi.mock('$lib/milestones/loadMilestones', () => ({ loadMilestones: vi.fn(), markSeen: vi.fn() }));
-vi.mock('$lib/time/zone', async (importOriginal) => {
-	const actual = await importOriginal<typeof import('$lib/time/zone')>();
-	return { ...actual, currentStudyDay: vi.fn(actual.currentStudyDay) };
-});
 vi.mock('$lib/study/data', async (importOriginal) => ({
 	...(await importOriginal<typeof import('$lib/study/data')>()),
 	onStudyChange: vi.fn(() => () => {})
@@ -29,9 +29,14 @@ import { goto } from '$app/navigation';
 import { allWidgets } from '$lib/widgets/registry';
 import { loadMilestones, markSeen, type MilestonesView } from '$lib/milestones/loadMilestones';
 import { studyDay } from '$lib/time/studyDay';
-import { currentStudyDay } from '$lib/time/zone';
 import { onStudyChange } from '$lib/study/data';
 import Page from './+page.svelte';
+
+// The session's StudyDays (record 0009): its methods, faked on the class.
+let currentStudyDay!: MockInstance<StudyDays['day']>;
+beforeEach(() => {
+	currentStudyDay = vi.spyOn(StudyDays.prototype, 'day');
+});
 
 // The session's event log (record 0009): its methods, faked on the class.
 let onEventLogChange!: MockInstance<EventLog['onChange']>;

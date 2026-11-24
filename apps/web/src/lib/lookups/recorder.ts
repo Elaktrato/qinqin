@@ -5,6 +5,7 @@
 // is never written, so a Clear on another device cannot be undone by this
 // tab. Nothing is kept in browser storage.
 
+import type { VisibilitySource } from '../context/deps';
 import {
 	type LookupHistory,
 	type LookupHit,
@@ -183,7 +184,7 @@ export class LookupRecorder {
 	 * when it is shown again (another tab or device may have counted, cleared
 	 * or switched recording off meanwhile); returns the detach.
 	 */
-	attach(doc: Document): () => void {
+	attach(doc: VisibilitySource): () => void {
 		const onVisibility = () => {
 			if (doc.visibilityState === 'hidden') void this.flush();
 			else if (doc.visibilityState === 'visible') void this.reloadCopies();

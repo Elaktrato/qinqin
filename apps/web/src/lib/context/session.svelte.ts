@@ -7,8 +7,9 @@
 
 import type { Auth } from '../auth.svelte';
 import { EventLog } from '../events';
+import { LookupsState } from '../lookups/state';
 import { PluginStates } from '../plugins/states.svelte';
-import { currentStudyDay, whenStudyDaySettled } from '../time/zone';
+import { StudyDays } from '../time/studyDays';
 import { Notices } from '../notices.svelte';
 import type { Connectivity } from '../pwa/offlineState.svelte';
 import { createStudyState, type StudyState } from '../study/data';
@@ -46,6 +47,8 @@ export class Session {
 	readonly plugins: PluginStates;
 	/** Event posting and the short-lived log cache of the widgets. */
 	readonly events: EventLog;
+	/** The learner's zone history and the StudyDay of now. */
+	readonly zone: StudyDays;
 	/** The user's workspaces and the one in use. */
 	readonly workspaces: Workspaces;
 	/** The reload after a workspace was deleted elsewhere. */
@@ -57,20 +60,24 @@ export class Session {
 	/** The caches of server answers (audio, characters, entry bases, schemes, clips, ...). */
 	readonly caches = new SessionCaches();
 	#player: Player | null = null;
+	/** The lookup history recorder (#72). */
+	readonly lookups = new LookupsState();
 
 	constructor(deps: SessionDeps, user: number | null) {
 		this.deps = deps;
 		this.#user = user;
 		const { api, local, session, now } = deps;
 		this.plugins = new PluginStates({ api, alive: () => this.alive });
+		this.zone = new StudyDays({ local });
+		this.onDispose(() => this.zone.dispose());
 		this.events = new EventLog({
 			api,
 			now,
 			timers: deps.timers,
 			local,
 			manifests: () => this.plugins.manifests,
-			studyDay: () => currentStudyDay(),
-			whenStudyDaySettled: () => whenStudyDaySettled()
+			studyDay: () => this.zone.day(),
+			whenStudyDaySettled: () => this.zone.settled()
 		});
 		this.onDispose(() => this.events.dispose());
 		this.workspaces = new Workspaces({ api, local, session, alive: () => this.alive });
@@ -101,8 +108,10 @@ export class Session {
 			outbox: this.outbox,
 			events: this.events
 		});
+		if (deps.document !== null) this.onDispose(this.lookups.recorder.attach(deps.document));
 		this.onDispose((reason) => {
 			this.#player?.stop();
+			this.lookups.dispose();
 			this.study.dispose();
 			this.caches.clear();
 			// Reviews sent lately are kept per user id; an explicit sign-out still drops them.

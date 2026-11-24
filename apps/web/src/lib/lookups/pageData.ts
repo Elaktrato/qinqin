@@ -2,7 +2,6 @@
 // everything the page shows, and the decks view's idempotent add plan
 // (addWords) for the chosen words. The page itself stays thin.
 
-import type { StudyState } from '$lib/study/data';
 import type { Session } from '$lib/context/session.svelte';
 import { loadEntryBases } from '$lib/api/entryBases';
 import { listBooks } from '$lib/api/library';
@@ -29,19 +28,18 @@ export interface PageData {
 }
 
 /** loadStates: the familiarity of every entry in the workspace (#68's predicate). */
-async function loadStates(study: StudyState, ws: number): Promise<{ decks: Deck[]; index: KnownIndex }> {
-	const data = await loadStudyHistory(study, ws, { force: true });
-	const schedules = scheduleIndex(data.cards, data.reviews, activeWeights(data), contextForData(data, ws).clock);
+async function loadStates(session: Session, ws: number): Promise<{ decks: Deck[]; index: KnownIndex }> {
+	const data = await loadStudyHistory(session.study, ws, { force: true });
+	const schedules = scheduleIndex(data.cards, data.reviews, activeWeights(data), contextForData(session.zone, data, ws).clock);
 	return { decks: data.decks, index: knownIndex(data.cards, (id) => schedules.get(id) ?? null, data.known) };
 }
 
 export async function loadPage(session: Session, ws: number): Promise<PageData> {
-	const study = session.study;
 	const [history, cfg, books, states] = await Promise.all([
 		loadHistory(ws),
 		loadLookupCfg(),
 		listBooks(ws).catch(() => []),
-		loadStates(study, ws)
+		loadStates(session, ws)
 	]);
 	const bases = history.items.length === 0 ? new Map<number, EntryBase>() : await loadEntryBases(session.caches.entryBases, history.items.map((i) => i.entryId));
 	return {

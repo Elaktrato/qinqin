@@ -8,19 +8,21 @@ import { api } from './api/client';
 import { browserTimers, webStorage } from './context/deps';
 import { EventLog, WORKSPACE_EVENTS_TTL_MS, sinceDaysAgo } from './events';
 import { studyDay } from './time/studyDay';
-import { currentStudyDay, whenStudyDaySettled } from './time/zone';
+import { StudyDays } from './time/studyDays';
 
-// A fresh event log per test (record 0009: the session's).
+// A fresh event log and study day per test (record 0009: the session's).
 let eventLog: EventLog;
+let days: StudyDays;
 beforeEach(() => {
+	days = new StudyDays({ local: () => webStorage('localStorage') });
 	eventLog = new EventLog({
 		api,
 		now: () => Date.now(),
 		timers: browserTimers,
 		local: () => webStorage('localStorage'),
 		manifests: () => null,
-		studyDay: () => currentStudyDay(),
-		whenStudyDaySettled: () => whenStudyDaySettled()
+		studyDay: () => days.day(),
+		whenStudyDaySettled: () => days.settled()
 	});
 });
 
@@ -212,9 +214,7 @@ describe('recordSessionWhenSettled', () => {
 				: Promise.resolve(new Response('{}'))
 		);
 		vi.stubGlobal('fetch', fetchMock);
-		const { syncStudyDayUser, clearStudyDay } = await import('./time/zone');
-		clearStudyDay();
-		void syncStudyDayUser(9);
+		void days.follow(9);
 		const done = eventLog.recordSessionWhenSettled(5);
 		await Promise.resolve();
 		expect(localStorage.getItem('qinqin.session.5.2026-03-15')).toBeNull();
@@ -222,7 +222,7 @@ describe('recordSessionWhenSettled', () => {
 		await done;
 		expect(localStorage.getItem('qinqin.session.5.2026-03-16')).toBe('1');
 		expect(localStorage.getItem('qinqin.session.5.2026-03-15')).toBeNull();
-		clearStudyDay();
+		days.dispose();
 		vi.restoreAllMocks();
 		vi.useRealTimers();
 	});

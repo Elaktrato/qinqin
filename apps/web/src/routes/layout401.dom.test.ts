@@ -17,7 +17,7 @@ import Layout from './+layout.svelte';
 
 // The session's event log (record 0009): its methods, faked on the class.
 beforeEach(() => {
-	vi.spyOn(EventLog.prototype, 'record').mockImplementation((async () => {}) as never);
+	vi.spyOn(EventLog.prototype, 'record').mockImplementation(((async () => {})) as never);
 	vi.spyOn(EventLog.prototype, 'recordSessionOnce').mockImplementation((() => {}) as never);
 });
 

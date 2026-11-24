@@ -5,8 +5,6 @@
 // universe it already loaded. Rule: docs/contracts/milestones/.
 
 import type { Session } from '$lib/context/session.svelte';
-import type { StudyState } from '$lib/study/data';
-import { onSessionEnd, sessionEpoch } from '../session/sessionEnd';
 import { fetchSchemeCharacters, getSchemeEntries, getSchemes } from '$lib/api/schemes';
 import type { CharRow } from '$lib/api/types';
 
@@ -17,12 +15,10 @@ import { pluginEnabled } from '$lib/plugins';
 import type { PluginStatesValue } from '$lib/plugins/states.svelte';
 import { buildSections } from '$lib/study/charGroups';
 import { loadStudyHistory } from '$lib/study/data';
-import { outboxUser } from '$lib/study/outboxUser';
 import { saveSeenMilestones } from '$lib/study/commands/keyed';
 import { GENERAL_DECK_ID } from '$lib/study/types';
 import type { StudyCard } from '$lib/study/types';
 import { vacationRuns } from '$lib/study/vacation';
-import { currentStudyDay } from '$lib/time/zone';
 import type { Timelines } from '$lib/weekly/replay';
 import { MILESTONE_KEY_PREFIX, enabledFamilies, logFamilies } from './catalogue';
 import { milestoneTitle } from './milestoneText';
@@ -67,35 +63,24 @@ export interface WeekInputs {
 
 /** A pending flush is tried at most this often (a failed push notifies, and the page reloads). */
 const FLUSH_EVERY_MS = 30_000;
-const lastFlush = new Map<string, number>();
-/** The last load's user, workspace and live rows: an `online` flush never rewrites a live row. */
-let lastPlace: {
-	study: StudyState;
-	user: number;
-	workspaceId: number;
-	live: ReadonlyMap<string, SeenMilestone>;
-	tombstones: ReadonlyMap<string, string>;
-} | null = null;
-let onlineHooked = false;
-onSessionEnd(() => resetMilestonesForTests());
 
-/** Test hook: forget the flush throttle and the last place. */
-export function resetMilestonesForTests(): void {
-	lastFlush.clear();
-	lastPlace = null;
-}
-
-function hookOnline(): void {
-	if (onlineHooked || typeof window === 'undefined') return;
-	onlineHooked = true;
-	window.addEventListener('online', () => void flushOnOnline());
+function hookOnline(session: Session): void {
+	const flushes = session.caches.milestones;
+	const target = session.deps.window;
+	if (flushes.hooked || target === null) return;
+	flushes.hooked = true;
+	const online = (): void => void flushOnOnline(session);
+	target.addEventListener('online', online);
+	session.onDispose(() => target.removeEventListener('online', online));
 }
 
 /** flushOnOnline: back online, push the pending ids that were not live at the last load. */
-export async function flushOnOnline(): Promise<void> {
-	lastFlush.clear();
-	if (lastPlace === null) return;
-	await flushPending(lastPlace.study, lastPlace.user, lastPlace.workspaceId, lastPlace.live, lastPlace.tombstones, Date.now());
+export async function flushOnOnline(session: Session): Promise<void> {
+	const flushes = session.caches.milestones;
+	flushes.last.clear();
+	const place = flushes.place;
+	if (place === null) return;
+	await flushPending(session, place.user, place.workspaceId, place.live, place.tombstones, session.deps.now());
 }
 
 function rowOf(m: SeenMilestone, now: number, tombstones: ReadonlyMap<string, string>): { key: string; data: unknown; knownAt?: string } {
@@ -114,13 +99,14 @@ function rowOf(m: SeenMilestone, now: number, tombstones: ReadonlyMap<string, st
 
 /** flushPending pushes the pending ids that are not live; a failure keeps them. */
 async function flushPending(
-	study: StudyState,
+	session: Session,
 	user: number,
 	workspaceId: number,
 	live: ReadonlyMap<string, SeenMilestone>,
 	tombstones: ReadonlyMap<string, string>,
 	now: number
 ): Promise<void> {
+	const lastFlush = session.caches.milestones.last;
 	const key = `${user}:${workspaceId}`;
 	const last = lastFlush.get(key);
 	if (last !== undefined && now - last < FLUSH_EVERY_MS) return;
@@ -129,7 +115,7 @@ async function flushPending(
 	lastFlush.set(key, now);
 	try {
 		const result = await saveSeenMilestones(
-			study,
+			session.study,
 			workspaceId,
 			pending.map((m) => rowOf(m, now, tombstones))
 		);
@@ -193,21 +179,20 @@ export async function loadMilestones(
 	workspaceId: number,
 	opts: { scope: 'home' | 'week'; language: string; states: PluginStatesValue; now?: number; week?: WeekInputs }
 ): Promise<MilestonesView> {
-	hookOnline();
+	hookOnline(session);
 	const now = opts.now ?? Date.now();
-	const day = currentStudyDay();
+	const day = session.zone.day();
 	const today = day.today(now);
-	const epoch = sessionEpoch();
 	const [data, log] = await Promise.all([loadStudyHistory(session.study, workspaceId), session.events.load(workspaceId)]);
 	const live = data.seenMilestones ?? new Map<string, SeenMilestone>();
 	const tombstones = data.milestoneTombstones ?? new Map<string, string>();
 
-	const user = outboxUser();
+	const user = session.user;
 	// A load for a session that has ended leaves no place to flush into (#173).
-	if (user !== null && epoch === sessionEpoch()) {
-		lastPlace = { study: session.study, user, workspaceId, live, tombstones };
+	if (user !== null && session.alive) {
+		session.caches.milestones.place = { user, workspaceId, live, tombstones };
 		prunePending(user, workspaceId, live);
-		await flushPending(session.study, user, workspaceId, live, tombstones, now);
+		await flushPending(session, user, workspaceId, live, tombstones, now);
 	}
 	const pending = user === null ? [] : readPending(user, workspaceId);
 
@@ -225,7 +210,7 @@ export async function loadMilestones(
 		const deckIds = new Set([GENERAL_DECK_ID, ...data.decks.map((d) => d.id)]);
 		const vacation = vacationRuns(data.vacations ?? [], workspaceId, today);
 		// The log as loaded (filtered inside, keyed by content): a reload is a memo hit.
-		reached = reachedFromLog({ reviews: data.reviews, events: log, workspaceId, cards: data.cards, deckIds, day, vacation, now, families });
+		reached = reachedFromLog(session.caches.reached, { reviews: data.reviews, events: log, workspaceId, cards: data.cards, deckIds, day, vacation, now, families });
 		if (opts.scope === 'week' && opts.week !== undefined && families.has('words-mature')) {
 			const chars = families.has('characters-learned') ? opts.week.chars : null;
 			const loaded = families.has('level-complete') ? await loadLevels(session, opts.language, opts.week.chars) : null;
@@ -271,8 +256,8 @@ export async function markSeen(session: Session, view: MilestonesView): Promise<
 	const { workspaceId } = view;
 	const covered = new Set(view.plan.ids);
 	const mark = view.reached.filter((r) => covered.has(r.id));
-	const now = new Date();
-	const user = outboxUser();
+	const now = new Date(session.deps.now());
+	const user = session.user;
 	const items = mark.map((r) => ({ id: r.id, seenAt: now.toISOString(), reachedDay: r.day }));
 	if (user !== null) addPending(user, workspaceId, items);
 	const rows = seenWritePlan(mark, view.live, now, view.tombstones);

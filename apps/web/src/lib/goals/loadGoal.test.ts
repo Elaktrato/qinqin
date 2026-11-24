@@ -1,4 +1,9 @@
-import { newSession, studyContext, type TestContext } from '$lib/testing/context';
+import { StudyDays } from '$lib/time/studyDays';
+import type { MockInstance } from 'vitest';
+import { studyDay as studyDayOf } from '$lib/time/studyDay';
+/** One rule object, as the session's StudyDays caches it. */
+const SHARED_DAY = studyDayOf([]);
+import { newSession, studyContext, testContext, type TestContext } from '$lib/testing/context';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('../study/data', async (importOriginal) => ({
@@ -6,17 +11,17 @@ vi.mock('../study/data', async (importOriginal) => ({
 	loadStudyHistory: vi.fn()
 }));
 vi.mock('../api/stats', () => ({ fetchActivity: vi.fn() }));
-vi.mock('../time/zone', async () => {
-	const { studyDay } = await import('../time/studyDay');
-	return { currentStudyDay: () => studyDay([]) };
-});
 
 import { fetchActivity, type ActivityResponse } from '../api/stats';
 import { loadStudyHistory } from '../study/data';
-import { setOutboxUser } from '../study/outboxUser';
 import type { StudyHistory } from '../study/types';
 import { loadGoalStatus } from './loadGoal';
 import * as build from '$lib/testing/study';
+
+// The session's StudyDays (record 0009): its methods, faked on the class.
+beforeEach(() => {
+	vi.spyOn(StudyDays.prototype, 'day').mockImplementation((() => SHARED_DAY) as never);
+});
 
 let ctx: TestContext = studyContext();
 beforeEach(() => {
@@ -61,32 +66,30 @@ describe('loadGoalStatus', () => {
 	it('shares one load between concurrent calls', async () => {
 		vi.mocked(loadStudyHistory).mockResolvedValue(history({ goals: goalRow() }));
 		const [a, b] = await Promise.all([
-			loadGoalStatus(ctx.session.study, 3, { now: NOW }),
-			loadGoalStatus(ctx.session.study, 3, { now: NOW })
+			loadGoalStatus(ctx.session, 3, { now: NOW }),
+			loadGoalStatus(ctx.session, 3, { now: NOW })
 		]);
 		expect(a).toBe(b);
 		expect(loadStudyHistory).toHaveBeenCalledTimes(1);
 		expect(fetchActivity).toHaveBeenCalledTimes(1);
 		// Settled: the next call loads again.
-		await loadGoalStatus(ctx.session.study, 3, { now: NOW });
+		await loadGoalStatus(ctx.session, 3, { now: NOW });
 		expect(loadStudyHistory).toHaveBeenCalledTimes(2);
 	});
 
-	it('does not share a load between users', async () => {
+	it('does not share a load between sessions (users)', async () => {
 		vi.mocked(loadStudyHistory).mockResolvedValue(history({ goals: goalRow() }));
-		setOutboxUser(1);
-		const first = loadGoalStatus(ctx.session.study, 3, { now: NOW });
-		setOutboxUser(2);
-		const second = loadGoalStatus(ctx.session.study, 3, { now: NOW });
+		const first = loadGoalStatus(ctx.session, 3, { now: NOW });
+		const other = testContext({ user: { id: 2 } });
+		const second = loadGoalStatus(other.session, 3, { now: NOW });
 		expect(second).not.toBe(first);
 		await Promise.all([first, second]);
 		expect(loadStudyHistory).toHaveBeenCalledTimes(2);
-		setOutboxUser(null);
 	});
 
 	it('asks for a year with the streak, for the workspace, and computes today and the streak', async () => {
 		vi.mocked(loadStudyHistory).mockResolvedValue(history({ goals: goalRow() }));
-		const view = await loadGoalStatus(ctx.session.study, 3, { now: NOW });
+		const view = await loadGoalStatus(ctx.session, 3, { now: NOW });
 		expect(fetchActivity).toHaveBeenCalledWith('2025-11-16', '2026-11-16', 3);
 		expect(view.today.status).toBe('open');
 		expect(view.today.amount).toBe(2);
@@ -98,14 +101,14 @@ describe('loadGoalStatus', () => {
 
 	it('asks only for today without the streak', async () => {
 		vi.mocked(loadStudyHistory).mockResolvedValue(history({ goals: goalRow(false) }));
-		const view = await loadGoalStatus(ctx.session.study, 3, { now: NOW });
+		const view = await loadGoalStatus(ctx.session, 3, { now: NOW });
 		expect(fetchActivity).toHaveBeenCalledWith('2026-11-16', '2026-11-16', 3);
 		expect(view.streak).toBeNull();
 	});
 
 	it('has no goal and no streak without a row', async () => {
 		vi.mocked(loadStudyHistory).mockResolvedValue(history({}));
-		const view = await loadGoalStatus(ctx.session.study, 3, { now: NOW });
+		const view = await loadGoalStatus(ctx.session, 3, { now: NOW });
 		expect(view.row).toBeNull();
 		expect(view.today.status).toBe('none');
 		expect(view.streak).toBeNull();
@@ -114,7 +117,7 @@ describe('loadGoalStatus', () => {
 
 	it('reports a newer row as no goal', async () => {
 		vi.mocked(loadStudyHistory).mockResolvedValue(history({ goals: 'newer' }));
-		const view = await loadGoalStatus(ctx.session.study, 3, { now: NOW });
+		const view = await loadGoalStatus(ctx.session, 3, { now: NOW });
 		expect(view.newer).toBe(true);
 		expect(view.row).toBeNull();
 		expect(view.today.status).toBe('none');
@@ -137,7 +140,7 @@ describe('loadGoalStatus', () => {
 				]
 			})
 		);
-		const view = await loadGoalStatus(ctx.session.study, 3, { now: NOW });
+		const view = await loadGoalStatus(ctx.session, 3, { now: NOW });
 		expect(view.today.status).toBe('vacation');
 		expect(view.streak?.todayMet).toBe(true);
 	});
@@ -146,13 +149,13 @@ describe('loadGoalStatus', () => {
 		vi.mocked(loadStudyHistory).mockResolvedValue(
 			history({ goals: goalRow(), limits: { workspace: { new: 7 }, decks: {} } })
 		);
-		expect((await loadGoalStatus(ctx.session.study, 3, { now: NOW })).limitsNew).toBe(7);
+		expect((await loadGoalStatus(ctx.session, 3, { now: NOW })).limitsNew).toBe(7);
 	});
 
 	it('passes force to the history; an activity goal reports a failed activity request', async () => {
 		vi.mocked(loadStudyHistory).mockResolvedValue(history({ goals: goalRow() }));
 		vi.mocked(fetchActivity).mockRejectedValue(new Error('offline'));
-		const view = await loadGoalStatus(ctx.session.study, 3, { now: NOW, force: true });
+		const view = await loadGoalStatus(ctx.session, 3, { now: NOW, force: true });
 		expect(loadStudyHistory).toHaveBeenCalledWith(expect.anything(), 3, { force: true });
 		expect(view.activityError).toBe('Could not load your activity.');
 		expect(view.today.unavailable).toBe(true);
@@ -185,7 +188,7 @@ describe('loadGoalStatus', () => {
 			})
 		);
 		vi.mocked(fetchActivity).mockRejectedValue(new Error('offline'));
-		const view = await loadGoalStatus(ctx.session.study, 3, { now: NOW });
+		const view = await loadGoalStatus(ctx.session, 3, { now: NOW });
 		expect(fetchActivity).not.toHaveBeenCalled();
 		expect(view.activityError).toBeNull();
 		expect([view.today.status, view.today.amount]).toEqual(['open', 1]);
@@ -206,7 +209,7 @@ describe('loadGoalStatus', () => {
 			})
 		);
 		vi.mocked(fetchActivity).mockRejectedValue(new Error('offline'));
-		const view = await loadGoalStatus(ctx.session.study, 3, { now: NOW });
+		const view = await loadGoalStatus(ctx.session, 3, { now: NOW });
 		expect(fetchActivity).toHaveBeenCalledWith('2025-11-16', '2026-11-16', 3);
 		// Today's flashcards goal is still computed; the activity request failed.
 		expect(view.today.status).toBe('open');
@@ -227,7 +230,7 @@ describe('loadGoalStatus', () => {
 				}
 			})
 		);
-		await loadGoalStatus(ctx.session.study, 3, { now: NOW });
+		await loadGoalStatus(ctx.session, 3, { now: NOW });
 		expect(fetchActivity).not.toHaveBeenCalled();
 	});
 });

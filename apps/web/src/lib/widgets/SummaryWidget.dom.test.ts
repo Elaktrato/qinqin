@@ -182,7 +182,7 @@ describe('SummaryWidget', () => {
 	it('reloads when the learner day changes', async () => {
 		render(SummaryWidget, { context: ctx.context });
 		await waitFor(() => expect(loadStudyHistory).toHaveBeenCalledTimes(1));
-		vi.mocked(onContextStale).mock.calls[0][0]();
+		vi.mocked(onContextStale).mock.calls[0][1]();
 		await waitFor(() => expect(loadStudyHistory).toHaveBeenCalledTimes(2));
 	});
 });

@@ -45,7 +45,7 @@
 		}
 		loading = true;
 		try {
-			const next = await loadGoalStatus(session.study, workspace, { force });
+			const next = await loadGoalStatus(session, workspace, { force });
 			if (seq !== requestSeq) return;
 			goal = next;
 		} catch (err) {
@@ -60,7 +60,7 @@
 	$effect(() => {
 		void load(workspaceId);
 	});
-	$effect(() => onContextStale(() => void load(workspaceId)));
+	$effect(() => onContextStale(session.zone, () => void load(workspaceId)));
 </script>
 
 <WidgetCard

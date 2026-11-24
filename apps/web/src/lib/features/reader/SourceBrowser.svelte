@@ -14,7 +14,6 @@
 	import type { Book, SourceInfo, SourceResult } from '$lib/api/types';
 	import WorkspaceLabel from '$lib/components/WorkspaceLabel.svelte';
 	import { languageLabel } from '$lib/languages';
-	import { currentStudyDay } from '$lib/time/zone';
 	import { browseSeed, shuffleSeed } from './browse';
 	import { apiErrorMessage } from './errors';
 	import { libraryKey } from './libraryKey';
@@ -22,6 +21,7 @@
 	import { resultCountText } from './sourceResults';
 	import { Button, Field, Tabs } from '$lib/ui';
 	import { useSession } from '$lib/context/context';
+
 	const session = useSession();
 
 	// Imports go to the selected workspace's library, and only works in its
@@ -46,7 +46,7 @@
 	let requestCounter = 0;
 
 	// The browse assortment of the active source: today's, until Shuffle.
-	let seed = $state(browseSeed(new Date(), currentStudyDay()));
+	let seed = $state(browseSeed(new Date(), session.zone.day()));
 	let suggestions = $state<SourceResult[]>([]);
 	let browsing = $state(false);
 	let browseError = $state('');
@@ -98,7 +98,7 @@
 		const match = sources.find((s) => s.languages.includes(lang));
 		if (match && match.id !== active) {
 			active = match.id;
-			seed = browseSeed(new Date(), currentStudyDay());
+			seed = browseSeed(new Date(), session.zone.day());
 			clearSearch();
 		}
 	});
@@ -166,7 +166,7 @@
 		userPicked = true;
 		if (id === active) return;
 		active = id;
-		seed = browseSeed(new Date(), currentStudyDay());
+		seed = browseSeed(new Date(), session.zone.day());
 		importError = '';
 		clearSearch();
 	}

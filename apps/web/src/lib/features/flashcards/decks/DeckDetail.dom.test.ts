@@ -33,7 +33,6 @@ import {
 } from '$lib/study/commands/cards';
 import { SESSION_CONFIG_KEY } from '$lib/study/session';
 import type { Deck, StudyCard } from '$lib/study/types';
-import { currentStudyDay } from '$lib/time/zone';
 import { primaryActions } from '$lib/ui/testing/primary';
 import DeckDetail from './DeckDetail.svelte';
 
@@ -336,7 +335,7 @@ describe('DeckDetail daily limits and vacation', () => {
 	});
 
 	it('says "On vacation" instead of due and new', async () => {
-		const today = currentStudyDay().today();
+		const today = ctx.session.zone.day().today();
 		vi.mocked(loadStudyHistory).mockImplementation(async () => ({
 			decks: [verbs, nouns],
 			cards: structuredClone(cards),

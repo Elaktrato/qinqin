@@ -20,14 +20,14 @@
 	import { useSession } from '$lib/context/context';
 	const session = useSession();
 
-	const store = createDecksData(session.study);
+	const store = createDecksData(session);
 	const workspaceId = $derived(session.workspaces.current?.id ?? null);
 
 	$effect(() => {
 		void store.load(workspaceId);
 	});
 	// A new learner day (or zone) changes what is due and on vacation.
-	$effect(() => onContextStale(() => void store.load(workspaceId)));
+	$effect(() => onContextStale(session.zone, () => void store.load(workspaceId)));
 
 	const summary = $derived.by(() => {
 		const data = store.data;

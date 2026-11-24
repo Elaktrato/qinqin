@@ -13,7 +13,6 @@ import { loadGoalStatus } from '$lib/goals/loadGoal';
 import { levelProgress, xpFromReviews } from '$lib/study/exp';
 import { loadStudyHistory } from '$lib/study/data';
 import type { ReviewEvent } from '$lib/study/types';
-import { currentStudyDay } from '$lib/time/zone';
 import FlashcardsWidget from './FlashcardsWidget.svelte';
 
 let ctx: TestContext = testContext();
@@ -111,7 +110,7 @@ describe('FlashcardsWidget goal ring', () => {
 		}));
 		vi.mocked(loadStudyHistory).mockResolvedValue({ decks: [], cards: [], reviews, merged: 0 });
 		vi.mocked(loadGoalStatus).mockResolvedValue(NO_GOAL);
-		const total = xpFromReviews(reviews, currentStudyDay().dayOf);
+		const total = xpFromReviews(reviews, ctx.session.zone.day().dayOf);
 		const progress = levelProgress(total);
 		expect(progress).toEqual({ level: 3, xpInto: 200, xpForNext: 300 });
 

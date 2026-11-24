@@ -3,16 +3,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 const { goto } = vi.hoisted(() => ({ goto: vi.fn() }));
 vi.mock('$app/navigation', () => ({ goto }));
 
-import {
-	browserZone,
-	changeZone,
-	clearStudyDay,
-	currentStudyDay,
-	ensureStudyDay,
-	onStudyDayChange,
-	syncStudyDayUser,
-	whenStudyDaySettled
-} from './zone';
+import { browserZone } from './zone';
+import { StudyDays } from './studyDays';
+
+// A fresh StudyDays per test (record 0009: the session's).
+let days: StudyDays;
 
 const store = new Map<string, string>();
 const json = (body: unknown, status = 200) =>
@@ -33,10 +28,10 @@ beforeEach(() => {
 		removeItem: (k: string) => void store.delete(k)
 	});
 	vi.stubGlobal('fetch', vi.fn());
-	clearStudyDay();
+	days = new StudyDays({ local: () => localStorage });
 });
 afterEach(() => {
-	clearStudyDay();
+	days.dispose();
 	vi.unstubAllGlobals();
 });
 
@@ -48,7 +43,7 @@ describe('ensureStudyDay', () => {
 		vi.mocked(fetch)
 			.mockResolvedValueOnce(json({ zone: null, history: [] }))
 			.mockResolvedValueOnce(json({ zone: 'Asia/Tokyo', history: [{ zone: 'Asia/Tokyo', from: null }] }));
-		const day = await ensureStudyDay(1);
+		const day = await days.load(1);
 		expect(calls().map((c) => `${c.method} ${c.url}`)).toEqual([
 			'GET /api/me/time-zone',
 			'PUT /api/me/time-zone'
@@ -67,7 +62,7 @@ describe('ensureStudyDay', () => {
 		vi.mocked(fetch).mockResolvedValueOnce(
 			json({ zone: 'Europe/Berlin', history: [{ zone: 'Europe/Berlin', from: null }] })
 		);
-		const day = await ensureStudyDay(1);
+		const day = await days.load(1);
 		expect(calls()).toHaveLength(1);
 		expect(day.zone).toBe('Europe/Berlin');
 		vi.restoreAllMocks();
@@ -76,25 +71,25 @@ describe('ensureStudyDay', () => {
 	it("does not use user A's cached copy for user B", async () => {
 		store.set('qinqin.studyDay.1', JSON.stringify([{ zone: 'Asia/Tokyo', from: null }]));
 		vi.mocked(fetch).mockRejectedValue(new TypeError('offline'));
-		const b = await ensureStudyDay(2);
+		const b = await days.load(2);
 		expect(b.zone).not.toBe('Asia/Tokyo');
 	});
 
 	it('starts offline from the cached copy', async () => {
 		store.set('qinqin.studyDay.1', JSON.stringify([{ zone: 'Asia/Tokyo', from: null }]));
 		vi.mocked(fetch).mockRejectedValue(new TypeError('offline'));
-		const day = await ensureStudyDay(1);
+		const day = await days.load(1);
 		expect(day.zone).toBe('Asia/Tokyo');
-		expect(currentStudyDay().zone).toBe('Asia/Tokyo');
+		expect(days.day().zone).toBe('Asia/Tokyo');
 	});
 
 	it('ignores a corrupt cache', async () => {
 		for (const bad of ['not json', '[]', '{"zone":1}', '[{"zone":1,"from":null}]', '[{"zone":"UTC","from":"2026-01-01T00:00:00Z"}]']) {
 			store.set('qinqin.studyDay.1', bad);
 			vi.mocked(fetch).mockRejectedValue(new TypeError('offline'));
-			clearStudyDay();
+			days.dispose();
 			store.set('qinqin.studyDay.1', bad);
-			const day = await ensureStudyDay(1);
+			const day = await days.load(1);
 			expect(['UTC', Intl.DateTimeFormat().resolvedOptions().timeZone]).toContain(day.zone);
 		}
 	});
@@ -114,7 +109,7 @@ describe('ensureStudyDay', () => {
 		vi.mocked(fetch).mockResolvedValueOnce(
 			json({ zone: 'Asia/Tokyo', history: [{ zone: 'Asia/Tokyo', from: null }] })
 		);
-		expect((await ensureStudyDay(1)).zone).toBe('Asia/Tokyo');
+		expect((await days.load(1)).zone).toBe('Asia/Tokyo');
 	});
 
 	it('does not send an unusable browser zone', async () => {
@@ -122,7 +117,7 @@ describe('ensureStudyDay', () => {
 			timeZone: 'Etc/Unknown'
 		} as Intl.ResolvedDateTimeFormatOptions);
 		vi.mocked(fetch).mockResolvedValueOnce(json({ zone: null, history: [] }));
-		const day = await ensureStudyDay(1);
+		const day = await days.load(1);
 		expect(calls()).toHaveLength(1);
 		expect(day.zone).toBe('UTC');
 		vi.restoreAllMocks();
@@ -132,22 +127,22 @@ describe('ensureStudyDay', () => {
 describe('changeZone, listeners and logout', () => {
 	it('puts the zone, caches it and tells listeners', async () => {
 		vi.mocked(fetch).mockResolvedValueOnce(json({ zone: null, history: [] }));
-		await ensureStudyDay(1);
+		await days.load(1);
 		const seen: string[] = [];
-		const off = onStudyDayChange((d) => seen.push(d.zone));
+		const off = days.onChange((d) => seen.push(d.zone));
 		const next = [
 			{ zone: 'Europe/Berlin', from: null },
 			{ zone: 'Asia/Tokyo', from: '2026-11-10T12:00:00Z' }
 		];
 		vi.mocked(fetch).mockResolvedValueOnce(json({ zone: 'Asia/Tokyo', history: next }));
-		const day = await changeZone('Asia/Tokyo');
+		const day = await days.change('Asia/Tokyo');
 		expect(JSON.parse(calls().at(-1)!.body!)).toEqual({ zone: 'Asia/Tokyo' });
 		expect(day.zone).toBe('Asia/Tokyo');
 		expect(seen).toEqual(['Asia/Tokyo']);
 		expect(JSON.parse(store.get('qinqin.studyDay.1')!)).toEqual(next);
 		off();
 		vi.mocked(fetch).mockResolvedValueOnce(json({ zone: 'Asia/Tokyo', history: next }));
-		await changeZone('Asia/Tokyo');
+		await days.change('Asia/Tokyo');
 		expect(seen).toHaveLength(1);
 	});
 
@@ -155,23 +150,23 @@ describe('changeZone, listeners and logout', () => {
 		vi.mocked(fetch).mockResolvedValueOnce(
 			json({ zone: 'Asia/Tokyo', history: [{ zone: 'Asia/Tokyo', from: null }] })
 		);
-		await ensureStudyDay(1);
+		await days.load(1);
 		vi.mocked(fetch).mockResolvedValueOnce(
 			json({ error: 'unknown_time_zone', message: 'unknown time zone' }, 400)
 		);
-		await expect(changeZone('Mars/Base')).rejects.toThrow();
-		expect(currentStudyDay().zone).toBe('Asia/Tokyo');
+		await expect(days.change('Mars/Base')).rejects.toThrow();
+		expect(days.day().zone).toBe('Asia/Tokyo');
 	});
 
 	it('logout clears memory and the stored copy', async () => {
 		vi.mocked(fetch).mockResolvedValueOnce(
 			json({ zone: 'Asia/Tokyo', history: [{ zone: 'Asia/Tokyo', from: null }] })
 		);
-		await ensureStudyDay(1);
+		await days.load(1);
 		expect(store.has('qinqin.studyDay.1')).toBe(true);
-		clearStudyDay();
+		days.dispose();
 		expect(store.has('qinqin.studyDay.1')).toBe(false);
-		expect(currentStudyDay().zone).not.toBe('Asia/Tokyo');
+		expect(days.day().zone).not.toBe('Asia/Tokyo');
 	});
 });
 
@@ -203,22 +198,22 @@ describe('sign-out and sign-in without a reload', () => {
 			timeZone: 'Europe/Berlin'
 		} as Intl.ResolvedDateTimeFormatOptions);
 		vi.mocked(fetch).mockImplementation(async () => json(tokyoBody));
-		await syncStudyDayUser(1);
-		syncStudyDayUser(null); // logout: user becomes null
-		clearStudyDay();
+		await days.follow(1);
+		days.follow(null); // logout: user becomes null
+		days.dispose();
 		store.clear();
 		store.set('qinqin.token', 'tok');
-		const again = await syncStudyDayUser(1); // login as the same user, no reload
+		const again = await days.follow(1); // login as the same user, no reload
 		expect(calls().filter((c) => c.method === 'GET')).toHaveLength(2);
 		expect(again?.zone).toBe('Asia/Tokyo');
-		expect(currentStudyDay().dayOf(Date.parse('2026-11-15T15:30:00Z'))).toBe('2026-11-16');
+		expect(days.day().dayOf(Date.parse('2026-11-15T15:30:00Z'))).toBe('2026-11-16');
 		vi.restoreAllMocks();
 	});
 
 	it('does nothing twice for the same signed-in user', async () => {
 		vi.mocked(fetch).mockImplementation(async () => json(tokyoBody));
-		await syncStudyDayUser(1);
-		await syncStudyDayUser(1);
+		await days.follow(1);
+		await days.follow(1);
 		expect(calls()).toHaveLength(1);
 	});
 });
@@ -227,12 +222,12 @@ describe('stale responses', () => {
 	it("drops user A's response when user B signed in meanwhile", async () => {
 		const a = deferred<Response>();
 		vi.mocked(fetch).mockImplementationOnce(() => a.promise).mockImplementation(async () => json(berlinBody));
-		const pendingA = ensureStudyDay(1);
-		clearStudyDay();
-		await ensureStudyDay(2);
+		const pendingA = days.load(1);
+		days.dispose();
+		await days.load(2);
 		a.resolve(json(tokyoBody));
 		await pendingA;
-		expect(currentStudyDay().zone).toBe('Europe/Berlin');
+		expect(days.day().zone).toBe('Europe/Berlin');
 		expect(store.has('qinqin.studyDay.1')).toBe(false);
 		expect(JSON.parse(store.get('qinqin.studyDay.2')!)[0].zone).toBe('Europe/Berlin');
 	});
@@ -243,9 +238,9 @@ describe('stale responses', () => {
 		} as Intl.ResolvedDateTimeFormatOptions);
 		const a = deferred<Response>();
 		vi.mocked(fetch).mockImplementationOnce(() => a.promise).mockImplementation(async () => json(berlinBody));
-		const pendingA = ensureStudyDay(1);
-		clearStudyDay();
-		await ensureStudyDay(2);
+		const pendingA = days.load(1);
+		days.dispose();
+		await days.load(2);
 		a.resolve(json({ zone: null, history: [] }));
 		await pendingA;
 		expect(calls().filter((c) => c.method === 'PUT')).toHaveLength(0);
@@ -254,16 +249,16 @@ describe('stale responses', () => {
 
 	it("drops user A's changeZone result after B signed in", async () => {
 		vi.mocked(fetch).mockResolvedValueOnce(json(berlinBody));
-		await ensureStudyDay(1);
+		await days.load(1);
 		const put = deferred<Response>();
 		vi.mocked(fetch).mockImplementationOnce(() => put.promise);
-		const change = changeZone('Asia/Tokyo');
-		clearStudyDay();
+		const change = days.change('Asia/Tokyo');
+		days.dispose();
 		vi.mocked(fetch).mockImplementation(async () => json(berlinBody));
-		await ensureStudyDay(2);
+		await days.load(2);
 		put.resolve(json(tokyoBody));
 		await change;
-		expect(currentStudyDay().zone).toBe('Europe/Berlin');
+		expect(days.day().zone).toBe('Europe/Berlin');
 		expect(JSON.parse(store.get('qinqin.studyDay.1') ?? 'null')).toBeNull();
 	});
 });
@@ -272,16 +267,16 @@ describe('whenStudyDaySettled', () => {
 	it('resolves after the load finishes, with the loaded rule', async () => {
 		const d = deferred<Response>();
 		vi.mocked(fetch).mockImplementationOnce(() => d.promise);
-		void syncStudyDayUser(1);
+		void days.follow(1);
 		let done = false;
-		void whenStudyDaySettled().then(() => (done = true));
+		void days.settled().then(() => (done = true));
 		await Promise.resolve();
 		expect(done).toBe(false);
 		d.resolve(json(tokyoBody));
-		await whenStudyDaySettled();
-		expect(currentStudyDay().zone).toBe('Asia/Tokyo');
+		await days.settled();
+		expect(days.day().zone).toBe('Asia/Tokyo');
 	});
 	it('resolves at once when nothing is loading', async () => {
-		await whenStudyDaySettled();
+		await days.settled();
 	});
 });

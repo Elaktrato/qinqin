@@ -11,7 +11,6 @@
 	import { onContextStale } from '$lib/study/currentContext';
 	import IconButton from '$lib/ui/IconButton.svelte';
 	import { ALL_WORKSPACES, onStudyChange } from '$lib/study/data';
-	import { currentStudyDay } from '$lib/time/zone';
 	import { loadWeek, loadWeekCharacters, type WeekView } from '$lib/weekly/loadWeek';
 	import WeekSummary from '$lib/weekly/WeekSummary.svelte';
 	import {
@@ -32,6 +31,7 @@
 	import type { StudyCard } from '$lib/study/types';
 	import { useSession } from '$lib/context/context';
 
+
 	const session = useSession();
 
 	let now = $state(Date.now());
@@ -46,7 +46,7 @@
 	const workspace = $derived(session.workspaces.current);
 	const workspaceId = $derived(workspace?.id ?? null);
 	const language = $derived(workspace?.language ?? '');
-	const today = $derived(currentStudyDay().today(now));
+	const today = $derived(session.zone.day().today(now));
 	const param = $derived(page.url.searchParams.get('week'));
 	const monday = $derived(normalizeWeekParam(param, today));
 	const next = $derived(nextWeek(monday, today));
@@ -163,9 +163,9 @@
 		};
 	});
 	$effect(() =>
-		onContextStale(() => {
+		onContextStale(session.zone, () => {
 			now = Date.now();
-			void load(workspaceId, language, normalizeWeekParam(param, currentStudyDay().today(now)));
+			void load(workspaceId, language, normalizeWeekParam(param, session.zone.day().today(now)));
 		})
 	);
 </script>

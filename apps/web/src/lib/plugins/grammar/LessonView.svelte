@@ -58,7 +58,7 @@
 		lang: () => language,
 		textLang: () => textLang,
 		runsOf: (p) => [{ text: texts[p] ?? '' }],
-		onLookup: (entryId) => recordLookup(studyWorkspaceId, { entryId, source: 'lesson' })
+		onLookup: (entryId) => recordLookup(session.lookups.recorder, studyWorkspaceId, { entryId, source: 'lesson' })
 	});
 	$effect(() => lookup.attach());
 	$effect(() => {

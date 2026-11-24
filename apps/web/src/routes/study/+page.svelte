@@ -40,7 +40,6 @@ import type { VacationPeriod } from '$lib/study/vacation';
 import { vacationBanner, vacationStatus } from '$lib/settings/vacationForm';
 import { startTodayText } from '$lib/study/limitsText';
 import { limitsOf } from '$lib/study/scheduler';
-	import { currentStudyDay } from '$lib/time/zone';
 	import { hasStrokeData } from '$lib/study/strokeIndex';
 	import { getFrequencyPacks } from '$lib/api/frequency';
 	import type { FrequencyPack } from '$lib/api/types';
@@ -75,6 +74,7 @@ import { limitsOf } from '$lib/study/scheduler';
 		GENERAL_DECK_ID
 	} from '$lib/study/types';
 	import { useSession } from '$lib/context/context';
+
 	const session = useSession();
 
 	function describeScheduling(data: Awaited<ReturnType<typeof loadStudyData>>): string {
@@ -107,7 +107,7 @@ import { limitsOf } from '$lib/study/scheduler';
 	let reviews = $state<ReviewEvent[]>([]);
 	let weights = $state.raw<readonly number[]>(DEFAULT_W);
 	// Vacation days and the study clock of the active workspace.
-	let ctx = $state.raw<StudyContext>(currentContext());
+	let ctx = $state.raw<StudyContext>(currentContext(session.zone));
 	let vacations = $state.raw<VacationPeriod[]>([]);
 	// Per-deck Reverse/Cloze switches (`deckcfg:` rows) and the learner's per-workspace unchecks.
 	let deckSettings = $state.raw<Record<string, DeckSettings>>({});
@@ -227,7 +227,7 @@ import { limitsOf } from '$lib/study/scheduler';
 			reviews = data.reviews;
 			deckSettings = data.deckSettings ?? {};
 			weights = activeWeights(data);
-			ctx = contextForData(data, workspaceId);
+			ctx = contextForData(session.zone, data, workspaceId);
 			vacations = data.vacations ?? [];
 			schedulingLabel = describeScheduling(data);
 			selectedDeckIds = keepKnownDecks(selectedDeckIds, data.decks);
@@ -258,7 +258,7 @@ import { limitsOf } from '$lib/study/scheduler';
 			reviews = data.reviews;
 			deckSettings = data.deckSettings ?? {};
 			weights = activeWeights(data);
-			ctx = contextForData(data, activeWorkspaceId);
+			ctx = contextForData(session.zone, data, activeWorkspaceId);
 			vacations = data.vacations ?? [];
 			schedulingLabel = describeScheduling(data);
 		} catch (err) {
@@ -267,7 +267,7 @@ import { limitsOf } from '$lib/study/scheduler';
 	}
 
 	// A new learner day (or zone) changes what is due and on vacation.
-	$effect(() => onContextStale(() => void refreshData()));
+	$effect(() => onContextStale(session.zone, () => void refreshData()));
 
 	// A change of the workspace's study rows (a write elsewhere on the page, or a
 	// row another device wrote in the second of the load, which the cache's

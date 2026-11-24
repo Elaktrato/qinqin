@@ -27,7 +27,7 @@
 	// decks (providers.ts) are wired here when a plugin ships one.
 	let { route }: { route: Extract<FlashcardsRoute, { view: 'system-level' | 'system-plugin' }> } = $props();
 
-	const store = createDecksData(session.study);
+	const store = createDecksData(session);
 	const workspace = $derived(session.workspaces.current);
 	const workspaceId = $derived(workspace?.id ?? null);
 	$effect(() => {

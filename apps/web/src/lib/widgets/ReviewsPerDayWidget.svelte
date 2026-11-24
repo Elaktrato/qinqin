@@ -78,7 +78,7 @@
 		try {
 			const data = await loadStudyHistory(session.study, workspace, { force });
 			if (seq !== requestSeq) return;
-			const ctx = contextForData(data, workspace);
+			const ctx = contextForData(session.zone, data, workspace);
 			series = reviewsPerDay({
 				workspaceId: workspace,
 				now: Date.now(),
@@ -106,7 +106,7 @@
 		}
 		void load(workspaceId);
 	});
-	$effect(() => onContextStale(() => void load(workspaceId)));
+	$effect(() => onContextStale(session.zone, () => void load(workspaceId)));
 
 	// A posted review or a study-data write changes the chart; the history
 	// cache is dropped by both. Only this workspace (or all) triggers a load.

@@ -4,7 +4,6 @@
 // of the activity request leave the local rows (offline).
 
 import type { Session } from '$lib/context/session.svelte';
-import type { StudyState } from '$lib/study/data';
 import { errorText } from '$lib/api/apiErrors';
 import { fetchActivity, type ActivitySource } from '../api/stats';
 import { t } from '../i18n';
@@ -17,7 +16,6 @@ import { GENERAL_DECK_ID } from '../study/types';
 import { activeWeights } from '../study/readModel';
 import { vacationRuns } from '../study/vacation';
 import { addDays } from '../time/studyDay';
-import { currentStudyDay } from '../time/zone';
 import type { CharRow } from '../api/types';
 import type { StudyCard } from '../study/types';
 import { charactersLearned, timelinesFor, wordsReachingMature, type Timelines } from './replay';
@@ -54,7 +52,7 @@ export async function loadWeek(
 	opts?: { force?: boolean; now?: number; detail?: boolean }
 ): Promise<WeekView> {
 	const now = opts?.now ?? Date.now();
-	const day = currentStudyDay();
+	const day = session.zone.day();
 	const today = day.today(now);
 	const data = await loadStudyHistory(session.study, workspaceId, { force: opts?.force === true });
 	const sunday = addDays(monday, 6);
@@ -69,13 +67,13 @@ export async function loadWeek(
 	let mature: ((before: number, after: number) => number) | undefined;
 	let timelines: Timelines | undefined;
 	if (opts?.detail === true) {
-		const clock = contextForData(data, workspaceId, now).clock;
-		const t = timelinesFor(data.reviews, activeWeights(data), clock);
+		const clock = contextForData(session.zone, data, workspaceId, now).clock;
+		const t = timelinesFor(session.caches.timelines, data.reviews, activeWeights(data), clock);
 		timelines = t;
 		const decks = new Set([GENERAL_DECK_ID, ...data.decks.map((d) => d.id)]);
 		mature = (before, after) => wordsReachingMature(data.cards, decks, t, before, after);
 	}
-	const summary = weekSummary({
+	const summary = weekSummary(session.caches.weekPasses, {
 		monday,
 		now,
 		day,
@@ -109,8 +107,8 @@ export async function loadWeekCharacters(
 	const cards = data.cards.some((c) => c.written === undefined)
 		? (await withLegacyWritten(session, data.cards)).cards
 		: data.cards;
-	const t = timelinesFor(data.reviews, data.w, data.clock);
-	const day = currentStudyDay();
+	const t = timelinesFor(session.caches.timelines, data.reviews, data.w, data.clock);
+	const day = session.zone.day();
 	const cuts = weekCutoffs(monday, day.today(now), day);
 	return {
 		value: charactersLearned(data.list.chars, cards, t, ...cuts.week),

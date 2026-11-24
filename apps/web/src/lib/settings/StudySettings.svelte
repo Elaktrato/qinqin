@@ -19,7 +19,6 @@
 		type VacationWrite
 	} from '$lib/study/vacation';
 	import { onContextStale } from '$lib/study/currentContext';
-	import { currentStudyDay } from '$lib/time/zone';
 	import { workspaceDisplay } from '$lib/languages';
 	import {
 		describePeriod,
@@ -31,14 +30,15 @@
 	import { Button, Field, Section } from '$lib/ui';
 	import { useSession } from '$lib/context/context';
 
+
 	const session = useSession();
 
 	// Vacation: freezes the schedule (nothing due, streak neutral). Periods are
 	// user-global rows; the pure rules live in lib/study/vacation.ts.
 
-	let day = $state.raw(currentStudyDay());
+	let day = $state.raw(session.zone.day());
 	// A new learner day (or a zone change) moves "today": min dates and plan rules follow.
-	$effect(() => onContextStale(() => (day = currentStudyDay())));
+	$effect(() => onContextStale(session.zone, () => (day = session.zone.day())));
 	const today = $derived(day.today());
 
 	let periods = $state.raw<VacationPeriod[]>([]);

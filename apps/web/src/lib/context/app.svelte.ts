@@ -11,7 +11,6 @@ import { InstallPrompt } from '../pwa/installPrompt.svelte';
 import { Connectivity } from '../pwa/offlineState.svelte';
 import { createWorkerRegistration, type WorkerRegistration } from '../pwa/register.svelte';
 import { endSession } from '../session/sessionEnd';
-import { setOutboxUser } from '../study/outboxUser';
 import { Auth, type AuthState } from '../auth.svelte';
 import type { AppDeps } from './deps';
 import { createSession, type Session, type SessionEndReason } from './session.svelte';
@@ -81,7 +80,6 @@ export class AppContext {
 
 	#follow(state: AuthState, reason: SessionEndReason | undefined): void {
 		const id = state.user?.id ?? null;
-		setOutboxUser(id);
 		const current = this.#session;
 		if (current !== null && (state.token === null || (current.user !== null && id !== current.user))) {
 			this.#end(reason ?? 'switched');

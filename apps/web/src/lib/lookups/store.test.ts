@@ -12,13 +12,14 @@ import {
 	scrubOfflineLookups,
 	loadHistory,
 	loadLookupCfg,
-	lookupRecorder,
-	recorderIO,
 	removeFromHistory,
 	repairAfterClear,
-	resetLookupRecorder,
 	saveLookupCfg
 } from './store';
+import { LookupsState, recorderIO } from './state';
+
+// A fresh recorder state per test (record 0009: the session's).
+let lookups: LookupsState;
 import { dataRow } from '../testing/keyed';
 
 function json(body: unknown, status = 200): Response {
@@ -34,6 +35,7 @@ beforeEach(() => {
 	vi.stubGlobal('localStorage', { getItem: () => 'tok', setItem: () => {}, removeItem: () => {} });
 	vi.stubGlobal('fetch', vi.fn());
 	invalidate.mockReset();
+	lookups = new LookupsState();
 });
 afterEach(() => vi.unstubAllGlobals());
 
@@ -54,7 +56,7 @@ describe('lookups store', () => {
 	it('removes by reading, then writing the row without the ids', async () => {
 		vi.mocked(fetch).mockResolvedValueOnce(listOf({ version: 1, clearedAt: null, items: [item(5), item(6), item(7)] }));
 		vi.mocked(fetch).mockResolvedValueOnce(json({}));
-		const h = await removeFromHistory(3, [5, 7]);
+		const h = await removeFromHistory(lookups, 3, [5, 7]);
 		expect(h.items.map((i) => i.entryId)).toEqual([6]);
 		const [, put] = calls();
 		expect(put.slice(0, 2)).toEqual(['/api/plugins/qinqin-core/data/lookups?workspace=3', 'PUT']);
@@ -65,7 +67,7 @@ describe('lookups store', () => {
 		vi.mocked(fetch).mockResolvedValueOnce(listOf({ version: 1, clearedAt: null, items: [item(5)], x: 1 }));
 		vi.mocked(fetch).mockResolvedValueOnce(json({}));
 		vi.mocked(fetch).mockResolvedValueOnce(json({ deleted: 4 }));
-		const out = await clearHistory(3, new Date('2026-11-16T12:00:00.000Z'), { invalidateEvents: invalidate });
+		const out = await clearHistory(lookups, 3, new Date('2026-11-16T12:00:00.000Z'), { invalidateEvents: invalidate });
 		expect(out.eventsDeleted).toBe(4);
 		expect(out.history).toEqual({ clearedAt: '2026-11-16T12:00:00.000Z', items: [], extra: { x: 1 } });
 		const c = calls();
@@ -83,7 +85,7 @@ describe('lookups store', () => {
 		vi.mocked(fetch).mockResolvedValueOnce(json([]));
 		vi.mocked(fetch).mockResolvedValueOnce(json({}));
 		vi.mocked(fetch).mockResolvedValueOnce(new Response('boom', { status: 500 }));
-		const err = await clearHistory(3).catch((e: unknown) => e);
+		const err = await clearHistory(lookups, 3).catch((e: unknown) => e);
 		expect(err).toBeInstanceOf(LookupEventsNotDeletedError);
 		expect(String((err as Error).message)).toMatch(/history is cleared/i);
 		expect(String((err as Error).message)).toMatch(/old search records/i);
@@ -92,7 +94,7 @@ describe('lookups store', () => {
 	it('a failed row write stops before the event delete', async () => {
 		vi.mocked(fetch).mockResolvedValueOnce(json([]));
 		vi.mocked(fetch).mockResolvedValueOnce(new Response('boom', { status: 500 }));
-		await expect(clearHistory(3)).rejects.toBeTruthy();
+		await expect(clearHistory(lookups, 3)).rejects.toBeTruthy();
 		expect(calls()).toHaveLength(2);
 	});
 
@@ -101,7 +103,7 @@ describe('lookups store', () => {
 		vi.mocked(fetch).mockResolvedValueOnce(json(dataRow({ key: 'lookups', workspaceId: 3, updatedAt: '2026-11-16T11:59:58Z' })));
 		vi.mocked(fetch).mockResolvedValueOnce(json(dataRow({ key: 'lookups', workspaceId: 3, updatedAt: '2026-11-16T11:59:59Z' })));
 		vi.mocked(fetch).mockResolvedValueOnce(json({ deleted: 0 }));
-		const out = await clearHistory(3, new Date('2026-11-16T12:00:07.000Z'));
+		const out = await clearHistory(lookups, 3, new Date('2026-11-16T12:00:07.000Z'));
 		expect(out.history.clearedAt).toBe('2026-11-16T11:59:58Z');
 		const c = calls();
 		expect(c.map((x) => x[1])).toEqual(['GET', 'PUT', 'PUT', 'DELETE']);
@@ -113,11 +115,11 @@ describe('lookups store', () => {
 		const mine = '2026-11-16T12:00:00Z';
 		vi.mocked(fetch).mockResolvedValueOnce(listOf({ version: 1, clearedAt: null, items: [item(5)] }));
 		vi.mocked(fetch).mockResolvedValueOnce(json({}));
-		expect(await repairAfterClear(3, mine)).toBe(true);
+		expect(await repairAfterClear(lookups, 3, mine)).toBe(true);
 		expect(calls()[1].slice(0, 2)).toEqual(['/api/plugins/qinqin-core/data/lookups?workspace=3', 'PUT']);
 		expect(JSON.parse(String(calls()[1][2]))).toEqual({ version: 1, clearedAt: mine, items: [] });
 		vi.mocked(fetch).mockResolvedValueOnce(listOf({ version: 1, clearedAt: mine, items: [{ ...item(6), lastAt: '2026-11-16T12:00:05Z' }] }));
-		expect(await repairAfterClear(3, mine)).toBe(false);
+		expect(await repairAfterClear(lookups, 3, mine)).toBe(false);
 		expect(calls()).toHaveLength(3);
 	});
 	it('reads and writes the user-global switch, keeping unknown members', async () => {
@@ -126,7 +128,7 @@ describe('lookups store', () => {
 		expect(calls()[0][0]).toBe('/api/plugins/qinqin-core/data?prefix=lookupcfg');
 		vi.mocked(fetch).mockResolvedValueOnce(json([dataRow({ key: 'lookupcfg', data: { version: 1, record: false, k: 2 } })]));
 		vi.mocked(fetch).mockResolvedValueOnce(json({}));
-		await saveLookupCfg(true);
+		await saveLookupCfg(lookups, true);
 		const [url, method, body] = calls()[2];
 		expect([url, method]).toEqual(['/api/plugins/qinqin-core/data/lookupcfg', 'PUT']);
 		expect(JSON.parse(String(body))).toEqual({ k: 2, version: 1, record: true });
@@ -146,8 +148,8 @@ describe('lookups store', () => {
 		]);
 	});
 
-	it('lookupRecorder is one recorder per tab', () => {
-		expect(lookupRecorder()).toBe(lookupRecorder());
+	it('a session has one recorder', () => {
+		expect(lookups.recorder).toBe(lookups.recorder);
 	});
 });
 
@@ -236,7 +238,7 @@ describe('Clear against another device that read the row before it (the real rac
 		server.set(3, { data: old, updatedAt: T });
 		const deviceBRead = structuredClone(old); // B reads before the Clear
 		const repaired = vi.fn();
-		await clearHistory(3, new Date(), { onRepaired: repaired });
+		await clearHistory(lookups, 3, new Date(), { onRepaired: repaired });
 		expect(server.get(3)!.data).toEqual({ version: 1, clearedAt: '2026-11-16T12:00:00Z', items: [] });
 		// B writes back its merge of the stale copy: its own (old) clearedAt
 		serverNow = '2026-11-16T12:00:03Z';
@@ -252,12 +254,12 @@ describe('Clear against another device that read the row before it (the real rac
 		expect(server.get(3)!.data).toEqual(old);
 	});
 
-	it('sign-out cancels a pending repair', async () => {
+	it('the end of the session cancels a pending repair', async () => {
 		server.set(3, { data: { version: 1, clearedAt: null, items: [item(5)] }, updatedAt: T });
-		await clearHistory(3, new Date());
+		await clearHistory(lookups, 3, new Date());
 		const stale = { version: 1, clearedAt: null, items: [item(5)] };
 		server.set(3, { data: stale, updatedAt: T });
-		resetLookupRecorder();
+		lookups.dispose();
 		await vi.advanceTimersByTimeAsync(60_000);
 		expect(server.get(3)!.data).toEqual(stale);
 	});

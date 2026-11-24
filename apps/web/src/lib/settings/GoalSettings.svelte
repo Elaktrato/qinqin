@@ -10,14 +10,14 @@
 	import { effectiveLimits } from '$lib/study/limits';
 	import { saveGoals } from '$lib/study/commands/keyed';
 	import { getStudyData } from '$lib/study/data';
-	import { currentStudyDay } from '$lib/time/zone';
 	import { formFrom, limitHint, planForm, type GoalFormState } from './goalForm';
 	import { Button, Field, Section, Select } from '$lib/ui';
 	import { useSession } from '$lib/context/context';
+
 	const session = useSession();
 
-	let day = $state.raw(currentStudyDay());
-	$effect(() => onContextStale(() => (day = currentStudyDay())));
+	let day = $state.raw(session.zone.day());
+	$effect(() => onContextStale(session.zone, () => (day = session.zone.day())));
 	const today = $derived(day.today());
 
 	let row = $state.raw<GoalsRow | null>(null);

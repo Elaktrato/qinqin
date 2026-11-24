@@ -1,3 +1,8 @@
+import { StudyDays } from '$lib/time/studyDays';
+import type { MockInstance } from 'vitest';
+import { studyDay as studyDayOf } from '$lib/time/studyDay';
+/** One rule object, as the session's StudyDays caches it. */
+const SHARED_DAY = studyDayOf([]);
 import { testContext, type TestContext } from '$lib/testing/context';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/svelte';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -45,11 +50,6 @@ vi.mock('$lib/study/sessionMix', async (importOriginal) => {
 	const real = await importOriginal<typeof import('$lib/study/sessionMix')>();
 	return { ...real, mixFlowQueue: vi.fn(real.mixFlowQueue) };
 });
-vi.mock('$lib/time/zone', () => ({
-	currentStudyDay: vi.fn(),
-	currentStudyHistory: vi.fn(() => []),
-	onStudyDayChange: vi.fn(() => () => {})
-}));
 
 import { getEntry } from '$lib/api/entries';
 import { loadNoteCfg, loadNotes } from '$lib/notes/store';
@@ -61,7 +61,6 @@ import { addCard } from '$lib/study/commands/cards';
 import { loadStudyData } from '$lib/study/data';
 import { usableChars } from '$lib/study/writing';
 import { studyDay } from '$lib/time/studyDay';
-import { currentStudyDay } from '$lib/time/zone';
 import Page from './+page.svelte';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
@@ -70,6 +69,14 @@ import { shortInterval } from '$lib/study/intervalText';
 import { scheduleFor } from '$lib/study/scheduler';
 import { IDENTITY_CLOCK } from '$lib/study/studyClock';
 import * as build from '$lib/testing/study';
+
+// The session's StudyDays (record 0009): its methods, faked on the class.
+let currentStudyDay!: MockInstance<StudyDays['day']>;
+beforeEach(() => {
+	currentStudyDay = vi.spyOn(StudyDays.prototype, 'day').mockImplementation((() => SHARED_DAY) as never);
+	vi.spyOn(StudyDays.prototype, 'effectiveHistory').mockImplementation((() => []) as never);
+	vi.spyOn(StudyDays.prototype, 'onChange').mockImplementation((() => () => {}) as never);
+});
 
 let ctx: TestContext = testContext();
 beforeEach(() => {

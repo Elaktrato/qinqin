@@ -39,9 +39,9 @@ import Page from './+page.svelte';
 // The session's event log (record 0009): its methods, faked on the class.
 let record!: MockInstance<EventLog['record']>;
 beforeEach(() => {
-	vi.spyOn(EventLog.prototype, 'load').mockImplementation((async () => []) as never);
+	vi.spyOn(EventLog.prototype, 'load').mockImplementation(((async () => [])) as never);
 	vi.spyOn(EventLog.prototype, 'onChange').mockImplementation((() => () => {}) as never);
-	record = vi.spyOn(EventLog.prototype, 'record').mockImplementation((async () => {}) as never);
+	record = vi.spyOn(EventLog.prototype, 'record').mockImplementation(((async () => {})) as never);
 });
 
 let ctx: TestContext = testContext();
@@ -433,7 +433,7 @@ describe('search page', () => {
 		const link = await screen.findByText('你好');
 		link.addEventListener('click', (e) => e.preventDefault());
 		await fireEvent.click(link);
-		expect(recordLookup).toHaveBeenCalledExactlyOnceWith(1, { entryId: 7, source: 'search' });
+		expect(recordLookup).toHaveBeenCalledExactlyOnceWith(expect.anything(), 1, { entryId: 7, source: 'search' });
 	});
 
 	it('links the lookup history', async () => {
@@ -452,7 +452,7 @@ describe('search page', () => {
 		await fireEvent(link, new MouseEvent('auxclick', { bubbles: true, button: 2 }));
 		expect(recordLookup).not.toHaveBeenCalled();
 		await fireEvent(link, new MouseEvent('auxclick', { bubbles: true, button: 1 }));
-		expect(recordLookup).toHaveBeenCalledExactlyOnceWith(1, { entryId: 7, source: 'search' });
+		expect(recordLookup).toHaveBeenCalledExactlyOnceWith(expect.anything(), 1, { entryId: 7, source: 'search' });
 	});
 
 	it('a middle-click records the lookup and leaves the browser to open its tab', async () => {
@@ -462,7 +462,7 @@ describe('search page', () => {
 		const link = await screen.findByText('你好');
 		const event = new MouseEvent('auxclick', { bubbles: true, cancelable: true, button: 1 });
 		expect(link.dispatchEvent(event)).toBe(true);
-		expect(recordLookup).toHaveBeenCalledExactlyOnceWith(1, { entryId: 7, source: 'search' });
+		expect(recordLookup).toHaveBeenCalledExactlyOnceWith(expect.anything(), 1, { entryId: 7, source: 'search' });
 		expect(goto).not.toHaveBeenCalled();
 	});
 });

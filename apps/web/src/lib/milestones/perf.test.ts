@@ -1,5 +1,11 @@
-import { EventLog } from '$lib/events';
+import type { Timelines } from '$lib/weekly/replay';
+import type { Reached } from './reached';
+import { StudyDays } from '$lib/time/studyDays';
 import type { MockInstance } from 'vitest';
+import { studyDay as studyDayOf } from '$lib/time/studyDay';
+/** One rule object, as the session's StudyDays caches it. */
+const SHARED_DAY = studyDayOf([]);
+import { EventLog } from '$lib/events';
 import { newSession, studyContext, type TestContext } from '$lib/testing/context';
 import { afterEach, describe, expect, it, vi, beforeEach } from 'vitest';
 
@@ -8,12 +14,6 @@ vi.mock('$lib/study/data', async (importOriginal) => ({
 	loadStudyHistory: vi.fn()
 }));
 vi.mock('$lib/api/schemes', () => ({ getSchemes: vi.fn(async () => []), getSchemeEntries: vi.fn(), fetchSchemeCharacters: vi.fn() }));
-vi.mock('$lib/time/zone', async () => {
-	const { studyDay } = await import('$lib/time/studyDay');
-	// One rule object, as the app's cached currentStudyDay gives.
-	const day = studyDay([]);
-	return { currentStudyDay: () => day, currentStudyHistory: () => [], onStudyDayChange: () => () => {} };
-});
 
 import type { CharRow } from '$lib/api/types';
 import type { StudyEvent } from '$lib/events';
@@ -29,10 +29,29 @@ import { loadMilestones } from './loadMilestones';
 import { reachedFromLog, reachedStats } from './reached';
 import { reachedFromReplay } from './replayReached';
 
+// A fresh memo per test (record 0009: the session owns one).
+let timelineMemo = new Map<string, Timelines>();
+beforeEach(() => {
+	timelineMemo = new Map<string, Timelines>();
+});
+
+// A fresh memo per test (record 0009: the session owns one).
+let reachedMemo = new Map<string, Reached[]>();
+beforeEach(() => {
+	reachedMemo = new Map<string, Reached[]>();
+});
+
+// The session's StudyDays (record 0009): its methods, faked on the class.
+beforeEach(() => {
+	vi.spyOn(StudyDays.prototype, 'day').mockImplementation((() => SHARED_DAY) as never);
+	vi.spyOn(StudyDays.prototype, 'effectiveHistory').mockImplementation((() => []) as never);
+	vi.spyOn(StudyDays.prototype, 'onChange').mockImplementation((() => () => {}) as never);
+});
+
 // The session's event log (record 0009): its methods, faked on the class.
 let loadWorkspaceEvents!: MockInstance<EventLog['load']>;
 beforeEach(() => {
-	loadWorkspaceEvents = vi.spyOn(EventLog.prototype, 'load').mockImplementation((async () => []) as never);
+	loadWorkspaceEvents = vi.spyOn(EventLog.prototype, 'load').mockImplementation(((async () => [])) as never);
 });
 
 let ctx: TestContext = studyContext();
@@ -108,16 +127,16 @@ describe('milestones performance', () => {
 	it('one log pass, and none for an equal reloaded log', () => {
 		const input = { reviews: w.reviews, events: w.events, cards: w.cards, deckIds: new Set([GENERAL_DECK_ID]), day, vacation: [], now: NOW, families };
 		const passes = reachedStats.passes;
-		const first = reachedFromLog(input);
+		const first = reachedFromLog(reachedMemo, input);
 		expect(reachedStats.passes - passes).toBe(1);
 		expect(first.length).toBeGreaterThan(20);
 		const reloaded = w.reviews.map((r) => ({ ...r, payload: { ...r.payload } }));
-		expect(reachedFromLog({ ...input, reviews: reloaded })).toBe(first);
+		expect(reachedFromLog(reachedMemo, { ...input, reviews: reloaded })).toBe(first);
 		expect(reachedStats.passes - passes).toBe(1);
 	});
 
 	it('the Week tab adds no replay: the sweep reuses the built timelines', async () => {
-		const t = timelinesFor(w.reviews, DEFAULT_W, IDENTITY_CLOCK);
+		const t = timelinesFor(timelineMemo, w.reviews, DEFAULT_W, IDENTITY_CLOCK);
 		// What loadWeek and loadWeekCharacters already did.
 		for (const card of w.cards) t.of(card.id);
 		const built = replayStats.timelines;

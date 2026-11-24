@@ -25,7 +25,7 @@
 		limitsEditor = deckLimitsEditor
 	}: { deckId: string; limitsEditor?: Component<DeckLimitsEditorProps> | null } = $props();
 
-	const store = createDecksData(session.study);
+	const store = createDecksData(session);
 	const workspaceId = $derived(session.workspaces.current?.id ?? null);
 	$effect(() => {
 		void store.load(workspaceId);

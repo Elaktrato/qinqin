@@ -3,11 +3,11 @@
 	import { t } from '$lib/i18n';
 	import { errorText } from '$lib/api/apiErrors';
 	import { formatDuration, readingTotals, topBooks, type ReadingTotals } from '$lib/stats/readingTime';
-	import { currentStudyDay, onStudyDayChange } from '$lib/time/zone';
 	import Button from '$lib/ui/Button.svelte';
 	import WidgetCard from './WidgetCard.svelte';
 	import type { WidgetStatus } from './types';
 	import { useSession } from '$lib/context/context';
+
 
 	const session = useSession();
 
@@ -77,7 +77,7 @@
 			const own = events.filter(
 				(event) => event.workspaceId === workspace
 			);
-			totals = readingTotals(own, new Date(), currentStudyDay());
+			totals = readingTotals(own, new Date(), session.zone.day());
 			titles = names;
 		} catch (err) {
 			if (seq !== requestSeq) return;
@@ -93,7 +93,7 @@
 	});
 
 	// A zone change moves the 7 and 30 day windows.
-	$effect(() => onStudyDayChange(() => void load(workspaceId)));
+	$effect(() => session.zone.onChange(() => void load(workspaceId)));
 </script>
 
 <WidgetCard

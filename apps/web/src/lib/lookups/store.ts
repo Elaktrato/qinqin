@@ -4,7 +4,6 @@
 // in lookups.ts, buffering in recorder.ts. Every write here reads the row
 // first in the same call (docs/contracts/lookups/README.md).
 
-import { onSessionEnd } from '../session/sessionEnd';
 import { api, getToken } from '../api/client';
 import { t } from '../i18n';
 import { CORE_NAMESPACE, keyedData, type KeyedScope } from '../sync/keyed';
@@ -26,7 +25,7 @@ import {
 	serializeLookups,
 	staleAfterClear
 } from './lookups';
-import { LookupRecorder, type RecorderIO } from './recorder';
+import type { LookupsState } from './state';
 
 /** The history row was cleared but the old `lookup` events could not be deleted. */
 export class LookupEventsNotDeletedError extends Error {
@@ -39,29 +38,6 @@ export class LookupEventsNotDeletedError extends Error {
 const rows = (ws: number): KeyedScope => keyedData(CORE_NAMESPACE, ws);
 const global = (): KeyedScope => keyedData(CORE_NAMESPACE, null);
 
-export const recorderIO: RecorderIO = {
-	readRow: (ws) => rows(ws).find(LOOKUPS_KEY),
-	writeRow: async (ws, data) => void (await rows(ws).put(LOOKUPS_KEY, data)),
-	readCfg: () => global().find(LOOKUP_CFG_KEY)
-};
-
-let recorder: LookupRecorder | null = null;
-
-/** lookupRecorder is the tab's one recorder (memory only), flushed when the page is hidden. */
-export function lookupRecorder(): LookupRecorder {
-	if (recorder === null) {
-		recorder = new LookupRecorder(recorderIO);
-		if (typeof document !== 'undefined') recorder.attach(document);
-	}
-	return recorder;
-}
-
-/** resetLookupRecorder drops the tab's buffer and copies (sign-out). */
-export function resetLookupRecorder(): void {
-	cancelRepairs();
-	recorder?.reset();
-}
-
 export async function loadHistory(ws: number): Promise<LookupHistory> {
 	return parseLookups(await rows(ws).find(LOOKUPS_KEY));
 }
@@ -71,8 +47,8 @@ async function write(ws: number, h: LookupHistory): Promise<void> {
 }
 
 /** removeFromHistory reads the row and writes it back without the entries. */
-export async function removeFromHistory(ws: number, entryIds: number[]): Promise<LookupHistory> {
-	const recorder = lookupRecorder();
+export async function removeFromHistory(lookups: LookupsState, ws: number, entryIds: number[]): Promise<LookupHistory> {
+	const recorder = lookups.recorder;
 	const next = await recorder.exclusive(async () => {
 		const h = removeLookups(await loadHistory(ws), entryIds);
 		await write(ws, h);
@@ -86,14 +62,6 @@ export async function removeFromHistory(ws: number, entryIds: number[]): Promise
 /** How long after a Clear the row is checked once for a stale write-back. */
 export const REPAIR_AFTER_CLEAR_MS = 30_000;
 
-const repairs = new Map<number, ReturnType<typeof setTimeout>>();
-// The buffer and copies (memory only) belong to the session that ended.
-onSessionEnd(() => resetLookupRecorder());
-
-function cancelRepairs(): void {
-	for (const t of repairs.values()) clearTimeout(t);
-	repairs.clear();
-}
 
 /** The server time of a write (`updatedAt` of the PUT answer), if it is RFC 3339. */
 function serverTime(res: unknown): string | null {
@@ -116,11 +84,12 @@ async function writeCleared(ws: number, h: LookupHistory): Promise<string | null
  * clear again.
  */
 export async function clearHistory(
+	lookups: LookupsState,
 	ws: number,
 	now: Date = new Date(),
 	opts: { onRepaired?: (ws: number) => void; invalidateEvents?: (ws: number) => void } = {}
 ): Promise<{ eventsDeleted: number; history: LookupHistory }> {
-	const recorder = lookupRecorder();
+	const { recorder, repairs } = lookups;
 	// In the recorder's chain: a flush of this tab that read the row before
 	// the Clear finishes first, and none starts until the row is cleared.
 	const next = await recorder.exclusive(async () => {
@@ -139,7 +108,7 @@ export async function clearHistory(
 		ws,
 		setTimeout(() => {
 			repairs.delete(ws);
-			void repairAfterClear(ws, mine)
+			void repairAfterClear(lookups, ws, mine)
 				.then((again) => {
 					if (again) opts.onRepaired?.(ws);
 				})
@@ -166,8 +135,8 @@ export async function clearHistory(
  * clearedAt and no items (a stale copy's counts include the erased past, so
  * nothing of it is kept). True when it cleared again.
  */
-export async function repairAfterClear(ws: number, cleared: string): Promise<boolean> {
-	const recorder = lookupRecorder();
+export async function repairAfterClear(lookups: LookupsState, ws: number, cleared: string): Promise<boolean> {
+	const recorder = lookups.recorder;
 	return recorder.exclusive(async () => {
 		const h = await loadHistory(ws);
 		if (!staleAfterClear(h, cleared)) return false;
@@ -183,10 +152,10 @@ export async function loadLookupCfg(): Promise<LookupCfg> {
 }
 
 /** saveLookupCfg re-reads the switch to keep its unknown members, then writes it. */
-export async function saveLookupCfg(record: boolean): Promise<void> {
+export async function saveLookupCfg(lookups: LookupsState, record: boolean): Promise<void> {
 	const previous = await loadLookupCfg();
 	await global().put(LOOKUP_CFG_KEY, serializeLookupCfg(record, previous));
-	lookupRecorder().setRecording(record);
+	lookups.recorder.setRecording(record);
 }
 
 interface CacheLike {

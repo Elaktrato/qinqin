@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, beforeEach } from 'vitest';
 import fixture from '../../../../../docs/contracts/weekly/week-summary.json';
 import type { ActivityCell, ActivitySource } from '../api/stats';
 import type { CharRow } from '../api/types';
@@ -9,8 +9,14 @@ import type { Run } from '../study/vacation';
 import type { ReviewEvent, StudyCard } from '../study/types';
 import { studyDay, type ZoneChange } from '../time/studyDay';
 import { charactersLearned, givenTimelines, wordsReachingMature } from './replay';
-import { weekSummary, type WeekInputs } from './summary';
+import { weekSummary, type WeekInputs, type WeekPasses } from './summary';
 import { oldestWeek } from './week';
+
+// A fresh memo per test (record 0009: the session owns one).
+let weekPasses = new Map() as WeekPasses;
+beforeEach(() => {
+	weekPasses = new Map() as WeekPasses;
+});
 
 interface FixtureReview {
 	id: string;
@@ -81,7 +87,7 @@ const cases = fixture.cases as unknown as SummaryCase[];
 
 describe('week-summary.json', () => {
 	it.each(cases.map((c) => [c.name, c] as const))('%s', (_n, c) => {
-		const summary = weekSummary(inputsOf(c));
+		const summary = weekSummary(weekPasses, inputsOf(c));
 		// The fixture's days carry date, state and reviews (points are the route's own numbers).
 		const out = {
 			...summary,
@@ -98,15 +104,15 @@ const base = cases.find((c) => c.name.startsWith('a completed week'))!;
 
 describe('weekSummary', () => {
 	it('throws for a week after the current one', () => {
-		expect(() => weekSummary({ ...inputsOf(base), monday: '2026-11-23' })).toThrow(RangeError);
+		expect(() => weekSummary(weekPasses, { ...inputsOf(base), monday: '2026-11-23' })).toThrow(RangeError);
 	});
 
 	it('throws for a date that is not a Monday', () => {
-		expect(() => weekSummary({ ...inputsOf(base), monday: '2026-11-10' })).toThrow(RangeError);
+		expect(() => weekSummary(weekPasses, { ...inputsOf(base), monday: '2026-11-10' })).toThrow(RangeError);
 	});
 
 	it('offline: no comparison for activity rows, localOnly days active', () => {
-		const out = weekSummary({ ...inputsOf(base), activity: null });
+		const out = weekSummary(weekPasses, { ...inputsOf(base), activity: null });
 		const byKey = new Map(out.rows.map((r) => [r.key, r]));
 		expect(byKey.get('reviews')).toMatchObject({ value: null, previous: null });
 		expect(byKey.get('reading')).toMatchObject({ value: null, previous: null });
@@ -118,7 +124,7 @@ describe('weekSummary', () => {
 
 	it('previousDays of the oldest browsable week are inactive with zero points when nothing was logged', () => {
 		const monday = oldestWeek('2026-11-18');
-		const out = weekSummary({ ...inputsOf(base), monday });
+		const out = weekSummary(weekPasses, { ...inputsOf(base), monday });
 		expect(out.previousDays.map((d) => d.date)).toEqual([
 			'2025-11-10',
 			'2025-11-11',
@@ -133,14 +139,14 @@ describe('weekSummary', () => {
 	});
 
 	it('a review on a vacation date counts in new cards and not in days active', () => {
-		const out = weekSummary({ ...inputsOf(base), vacation: [{ start: '2026-11-09', end: '2026-11-09' }] });
+		const out = weekSummary(weekPasses, { ...inputsOf(base), vacation: [{ start: '2026-11-09', end: '2026-11-09' }] });
 		expect(out.rows.find((r) => r.key === 'newCards')?.value).toBe(2);
 		expect(out.days[0].state).toBe('vacation');
 		expect(out.daysActive).toEqual({ active: 4, of: 6, localOnly: false });
 	});
 
 	it('has mature and characters null without their callbacks', () => {
-		const out = weekSummary(inputsOf(base));
+		const out = weekSummary(weekPasses, inputsOf(base));
 		expect(out.mature).toBeNull();
 		expect(out.characters).toBeNull();
 	});
@@ -148,7 +154,7 @@ describe('weekSummary', () => {
 	it('passes the week and comparison cutoffs to the callbacks', () => {
 		const calls: [string, string][] = [];
 		const iso = (ms: number) => new Date(ms).toISOString();
-		weekSummary({
+		weekSummary(weekPasses, {
 			...inputsOf(cases.find((c) => c.name.startsWith('the week in progress'))!),
 			mature: (b, a) => {
 				calls.push([iso(b), iso(a)]);

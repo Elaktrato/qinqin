@@ -9,7 +9,6 @@ vi.mock('$lib/api/backup', () => ({
 import * as api from '$lib/api/backup';
 import { primaryActions } from '$lib/ui/testing/primary';
 import YourData from './YourData.svelte';
-import { setOutboxUser } from '$lib/study/outboxUser';
 
 const initial = { username: 'alice', mfa: { totp: false } };
 let ctx: TestContext = testContext({ user: initial as never });
@@ -71,7 +70,6 @@ describe('YourData', () => {
 		vi.mocked(api.restoreStatus).mockResolvedValueOnce(ready() as never);
 		vi.mocked(api.applyRestore).mockResolvedValue({ status: 'running' });
 		const reload = vi.fn();
-		setOutboxUser(1);
 		const queue = JSON.stringify([{ userId: 1, queuedAt: 't', event: { id: 'a', workspaceId: 7, ts: 't', type: 'review', device: 'web', payload: {} } }, { userId: 1, queuedAt: 't', event: { id: 'b', workspaceId: 7, ts: 't', type: 'review', device: 'web', payload: {} } }, { userId: 2, queuedAt: 't', event: { id: 'bob', workspaceId: 7, ts: 't', type: 'review', device: 'web', payload: {} } }, { userId: 1, queuedAt: 't', event: { id: 'c', workspaceId: 7, ts: 't', type: 'review', device: 'web', payload: {} } }]);
 		const storage = { getItem: (k: string) => (k === 'qinqin.study.pending.v2' ? queue : null), setItem: vi.fn(), removeItem: vi.fn() };
 		render(YourData, { props: { reload, storage }, context: ctx.context });
@@ -92,7 +90,6 @@ describe('YourData', () => {
 		expect(storage.removeItem).toHaveBeenCalledWith('qinqin.workspace');
 		// bob's unsent review stays (#198 review, M1)
 		expect(JSON.parse(vi.mocked(storage.setItem).mock.calls[0][1]).map((i: { event: { id: string } }) => i.event.id)).toEqual(['bob']);
-		setOutboxUser(null);
 		await fireEvent.click(screen.getByRole('button', { name: 'Reload now' }));
 		expect(reload).toHaveBeenCalled();
 	});

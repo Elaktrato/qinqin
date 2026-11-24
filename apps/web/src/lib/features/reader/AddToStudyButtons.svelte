@@ -8,7 +8,6 @@
 	import { GENERAL_DECK_ID } from '$lib/study/types';
 	import { getStudyData, hasCard } from '$lib/study/data';
 	import { PROMPT_MIN_COUNT } from '$lib/lookups/lookups';
-	import { lookupRecorder } from '$lib/lookups/store';
 	import type { Deck } from '$lib/study/types';
 	import { popupWritten } from './browse';
 	import { Button, Chip, Menu, MenuItem } from '$lib/ui';
@@ -66,7 +65,7 @@
 	// The lookup history's hint (#72): the root popup's first result, looked
 	// up often, with no card and no "I know this" mark. The count comes from
 	// the recorder's memory (0 while recording is off); no request per popup.
-	const lookedUp = $derived(first && paragraph !== null ? lookupRecorder().countOf(workspaceId, result.entryId) : 0);
+	const lookedUp = $derived(first && paragraph !== null ? session.lookups.recorder.countOf(workspaceId, result.entryId) : 0);
 	const showLookedUp = $derived(lookedUp >= PROMPT_MIN_COUNT && inStudy === false && marked === false);
 	const disabled = $derived(busy || inStudy !== false);
 

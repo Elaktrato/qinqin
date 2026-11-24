@@ -19,7 +19,6 @@ import { loadStudyHistory } from '$lib/study/data';
 import { createDeck } from '$lib/study/commands/decks';
 import { SESSION_CONFIG_KEY } from '$lib/study/session';
 import type { Deck, ReviewEvent, StudyCard, StudyHistory } from '$lib/study/types';
-import { currentStudyDay } from '$lib/time/zone';
 import { primaryActions } from '$lib/ui/testing/primary';
 import DeckList from './DeckList.svelte';
 import * as build from '$lib/testing/study';
@@ -215,7 +214,7 @@ describe('DeckList daily limits and vacation', () => {
 	});
 
 	it('says "On vacation" where the numbers are', async () => {
-		const today = currentStudyDay().today();
+		const today = ctx.session.zone.day().today();
 		vi.mocked(loadStudyHistory).mockResolvedValue(
 			history({
 				vacations: [{ version: 1, id: 'V', start: today, end: null, scope: 'all', createdDay: today, createdAt: `${today}T00:00:00Z` }]

@@ -31,7 +31,7 @@ const ALLOWED: Record<string, string> = {
 	'features/reader/variants.ts:converters': 'script converters built from bundled tables',
 	'features/reader/variants.ts:loading': 'the converter tables loading, no user data',
 	'frame/pageFrame.svelte.ts:slots': 'layout slots of the mounted page, no data',
-	'time/zone.ts:pending': 'the zone load in flight; clearStudyDay moves the zone epoch, so a late answer is dropped',
+	'study/scheduler.ts:schedulers': 'ts-fsrs instances by weight values (at most 16): a pure function\'s memo, no rows',
 	'api/client.ts:memoryToken': 'the credential itself (storage blocked): clearToken drops it on every session end',
 };
 

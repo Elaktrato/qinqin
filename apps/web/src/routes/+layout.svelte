@@ -15,7 +15,6 @@
 	import TopBar from '$lib/frame/TopBar.svelte';
 	import Icon from '$lib/ui/Icon.svelte';
 	import Tooltip from '$lib/ui/Tooltip.svelte';
-	import { syncStudyDayUser } from '$lib/time/zone';
 	import {
 		allowed as routeAllowed,
 		normalizePath,
@@ -218,7 +217,7 @@
 	// loads it again instead of falling back to the browser zone.
 	// Not for a restricted session: the zone call would 403 and loop.
 	$effect(() => {
-		void syncStudyDayUser(app.auth.restriction === null ? (app.auth.user?.id ?? null) : null);
+		void session?.zone.follow(app.auth.restriction === null ? (app.auth.user?.id ?? null) : null);
 	});
 
 	// One session event per workspace per learner day, recorded for whichever

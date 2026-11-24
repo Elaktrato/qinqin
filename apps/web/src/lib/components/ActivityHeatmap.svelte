@@ -48,10 +48,10 @@
 	} from '$lib/activity/viewPrefs';
 	import type { VacationPeriod } from '$lib/study/vacation';
 	import { workspaceDisplay } from '$lib/languages';
-	import { currentStudyDay, onStudyDayChange } from '$lib/time/zone';
 	import WidgetCard from '$lib/widgets/WidgetCard.svelte';
 	import type { WidgetStatus } from '$lib/widgets/types';
 	import { useSession } from '$lib/context/context';
+
 
 	const session = useSession();
 	// The core home heatmap: the server-aggregated activity (one request
@@ -77,7 +77,7 @@
 	// The window `response` covers (learner days, inclusive).
 	let range = $state({ from: '', to: '' });
 	// The month calendar's page (the one requested; `range` says which is on screen).
-	let month = $state(monthOf(currentStudyDay().today(Date.now())));
+	let month = $state(monthOf(session.zone.day().today(Date.now())));
 	let prefs = $state(initialPrefs());
 	let loading = $state(true);
 	let error = $state('');
@@ -86,7 +86,7 @@
 	let monthError = $state('');
 	let failedMonth: Month | null = null;
 	// The learner's day rule; a zone change re-folds and re-requests the window.
-	let studyDay = $state.raw(currentStudyDay());
+	let studyDay = $state.raw(session.zone.day());
 	// The user's vacation periods (user-global rows): their dates are hatched.
 	let vacations = $state.raw<VacationPeriod[]>([]);
 	// The current workspace's goal row and reviews (cached study history), for the
@@ -334,7 +334,7 @@
 	onMount(() => {
 		void loadActivityView().then((view) => (prefs = prefsLoaded(prefs, view)));
 		const offEvents = session.events.onChange(() => void load());
-		const offZone = onStudyDayChange((next) => {
+		const offZone = session.zone.onChange((next) => {
 			studyDay = next;
 			void load();
 		});

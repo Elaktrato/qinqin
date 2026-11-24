@@ -4,7 +4,6 @@
 	import {
 		applyRestore, discardRestore, downloadMyData, restoreStatus, safetyExportTicket, uploadRestore
 	} from '$lib/api/backup';
-	import { outboxUser } from '$lib/study/outboxUser';
 	import { t } from '$lib/i18n';
 	import Msg from '$lib/i18n/Msg.svelte';
 	import {
@@ -80,7 +79,7 @@
 			return;
 		}
 		if (view.status === 'done') {
-			droppedReviews = storage ? clearLocalAfterRestore(storage, outboxUser()) : 0;
+			droppedReviews = storage ? clearLocalAfterRestore(storage, app.session?.user ?? null) : 0;
 			try {
 				if (typeof caches !== 'undefined') for (const k of await caches.keys()) await caches.delete(k);
 			} catch {

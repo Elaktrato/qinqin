@@ -15,6 +15,10 @@ import type { JournalEntries } from '../plugins/journal/journalEntries.svelte';
 import type { SchemeLevelMembers } from '../study/charGroups';
 import type { LanguageRanks } from '../study/frequencyRanks';
 import type { StrokeResult } from '../study/strokeData';
+import type { SeenMilestone } from '../milestones/seen';
+import type { Reached } from '../milestones/reached';
+import type { Timelines } from '../weekly/replay';
+import type { WeekPasses } from '../weekly/summary';
 
 /** AudioCache: a per-session cache (record 0009). */
 export class AudioCache {
@@ -170,7 +174,35 @@ export class StrokeCache {
 	}
 }
 
+/**
+ * MilestoneFlushes: the session's flush throttle of seen milestones and the
+ * last load's place (its user, workspace and live rows: an `online` flush never
+ * rewrites a live row), and whether its `online` listener is installed.
+ */
+export class MilestoneFlushes {
+	readonly last = new Map<string, number>();
+	place: { user: number; workspaceId: number; live: ReadonlyMap<string, SeenMilestone>; tombstones: ReadonlyMap<string, string> } | null = null;
+	hooked = false;
+
+	clear(): void {
+		this.last.clear();
+		this.place = null;
+	}
+}
+
 export class SessionCaches {
+	/** Weekly replay timelines by log content (weekly/replay.ts timelinesFor). */
+	readonly timelines = new Map<string, Timelines>();
+	/** The week summary's log passes (weekly/summary.ts). */
+	readonly weekPasses: WeekPasses = new Map();
+	/** Reached milestones by log content (milestones/reached.ts reachedFromLog). */
+	readonly reached = new Map<string, Reached[]>();
+	/** The day of the last `journal` event per entry (one per entry per day; the journal's EntryEditor). */
+	readonly journalSent = new Map<string, string>();
+	/** Seen-milestone flushes (milestones/loadMilestones.ts). */
+	readonly milestones = new MilestoneFlushes();
+	/** Goal loads in flight, by workspace, day and force (goals/loadGoal.ts). */
+	readonly goals = new Map<string, Promise<unknown>>();
 	readonly audio = new AudioCache();
 	readonly characters = new CharacterCache();
 	readonly components = new ComponentsCache();
@@ -187,6 +219,12 @@ export class SessionCaches {
 
 	/** clear empties every cache (the session end; the clips' object URLs are revoked). */
 	clear(): void {
+		this.goals.clear();
+		this.journalSent.clear();
+		this.timelines.clear();
+		this.weekPasses.clear();
+		this.reached.clear();
+		this.milestones.clear();
 		for (const cache of [
 			this.audio,
 			this.characters,

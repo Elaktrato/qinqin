@@ -13,7 +13,6 @@
 	import type { VacationPeriod } from '$lib/study/vacation';
 	import { vacationLine, vacationStatus } from '$lib/settings/vacationForm';
 	import { dailyStreak, levelProgress, xpFromReviews } from '$lib/study/exp';
-	import { currentStudyDay, onStudyDayChange } from '$lib/time/zone';
 	import Mascot from './Mascot.svelte';
 	import { loadConfig } from '$lib/study/session';
 	import {
@@ -32,6 +31,7 @@
 	import WidgetCard from '$lib/widgets/WidgetCard.svelte';
 	import type { WidgetStatus } from '$lib/widgets/types';
 	import { useSession } from '$lib/context/context';
+
 	const session = useSession();
 	// The home widget mirrors the study setup for its limits and card
 	// types; it counts every deck in the workspace, so a saved deck
@@ -44,7 +44,7 @@
 	let weights = $state.raw<readonly number[]>(DEFAULT_W);
 	let deckSettings = $state.raw<Record<string, DeckSettings>>({});
 	// Vacation days and the study clock of this workspace (rebuilt at midnight).
-	let ctx = $state.raw<StudyContext>(currentContext());
+	let ctx = $state.raw<StudyContext>(currentContext(session.zone));
 	let vacations = $state.raw<VacationPeriod[]>([]);
 	let loading = $state(true);
 	let error = $state('');
@@ -91,8 +91,8 @@
 	});
 
 	// The learner's day rule; a zone change recomputes XP and the streak.
-	let studyDay = $state.raw(currentStudyDay());
-	$effect(() => onStudyDayChange((next) => (studyDay = next)));
+	let studyDay = $state.raw(session.zone.day());
+	$effect(() => session.zone.onChange((next) => (studyDay = next)));
 
 	const xp = $derived(xpFromReviews(reviews, studyDay.dayOf));
 	const vacationText = $derived(
@@ -132,7 +132,7 @@
 			reviews = data.reviews;
 			deckSettings = data.deckSettings ?? {};
 			weights = activeWeights(data);
-			ctx = contextForData(data, workspace);
+			ctx = contextForData(session.zone, data, workspace);
 			vacations = data.vacations ?? [];
 		} catch (err) {
 			if (seq !== requestSeq) return;
@@ -152,7 +152,7 @@
 			return;
 		}
 		try {
-			const next = await loadGoalStatus(session.study, workspace, { force });
+			const next = await loadGoalStatus(session, workspace, { force });
 			if (seq === goalSeq) goal = next;
 		} catch {
 			if (seq === goalSeq) goal = null;
@@ -166,7 +166,7 @@
 		void loadGoal(workspaceId);
 	});
 	$effect(() =>
-		onContextStale(() => {
+		onContextStale(session.zone, () => {
 			void load(workspaceId);
 			void loadGoal(workspaceId);
 		})

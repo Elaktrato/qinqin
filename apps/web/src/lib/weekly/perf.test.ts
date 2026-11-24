@@ -1,11 +1,23 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, beforeEach } from 'vitest';
 import { DEFAULT_W } from '../study/fsrs/params';
 import { IDENTITY_CLOCK } from '../study/studyClock';
 import type { ReviewEvent, StudyCard } from '../study/types';
 import { addDays, studyDay } from '../time/studyDay';
-import { replayStats, timelinesFor, wordsReachingMature } from './replay';
-import { summaryStats, weekSummary } from './summary';
+import { replayStats, timelinesFor, wordsReachingMature, type Timelines } from './replay';
+import { summaryStats, weekSummary, type WeekPasses } from './summary';
 import { MAX_WEEKS_BACK, weekOf } from './week';
+
+// A fresh memo per test (record 0009: the session owns one).
+let timelineMemo = new Map<string, Timelines>();
+beforeEach(() => {
+	timelineMemo = new Map<string, Timelines>();
+});
+
+// A fresh memo per test (record 0009: the session owns one).
+let weekPasses = new Map() as WeekPasses;
+beforeEach(() => {
+	weekPasses = new Map() as WeekPasses;
+});
 
 // A guard against an accidental per-week replay: 53 weeks (current + 52
 // back) of a large history replay each reviewed card exactly once. The
@@ -47,8 +59,8 @@ describe('weekly summary performance', () => {
 		const before = replayStats.timelines;
 		const current = weekOf(day.today(NOW));
 		for (let k = 0; k <= MAX_WEEKS_BACK; k++) {
-			const t = timelinesFor(reviews, DEFAULT_W, IDENTITY_CLOCK);
-			weekSummary({
+			const t = timelinesFor(timelineMemo, reviews, DEFAULT_W, IDENTITY_CLOCK);
+			weekSummary(weekPasses, {
 				monday: addDays(current, -7 * k),
 				now: NOW,
 				day,
@@ -66,9 +78,9 @@ describe('weekly summary performance', () => {
 		// object: browsing on replays nothing and repeats no log pass.
 		const reloaded = reviews.map((r) => ({ ...r, payload: { ...r.payload } }));
 		const passes = summaryStats.logPasses;
-		const t = timelinesFor(reloaded, DEFAULT_W, IDENTITY_CLOCK);
+		const t = timelinesFor(timelineMemo, reloaded, DEFAULT_W, IDENTITY_CLOCK);
 		for (let k = 0; k < 3; k++) {
-			weekSummary({
+			weekSummary(weekPasses, {
 				monday: addDays(current, -7 * k),
 				now: NOW,
 				day,

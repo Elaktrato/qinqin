@@ -1,5 +1,9 @@
-import { EventLog } from '$lib/events';
+import { StudyDays } from '$lib/time/studyDays';
 import type { MockInstance } from 'vitest';
+import { studyDay as studyDayOf } from '$lib/time/studyDay';
+/** One rule object, as the session's StudyDays caches it. */
+const SHARED_DAY = studyDayOf([]);
+import { EventLog } from '$lib/events';
 import { newSession, studyContext, type TestContext } from '$lib/testing/context';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -12,29 +16,31 @@ vi.mock('$lib/study/commands/keyed', async (importOriginal) => ({
 	saveSeenMilestones: vi.fn()
 }));
 vi.mock('$lib/api/schemes', () => ({ getSchemes: vi.fn(), getSchemeEntries: vi.fn(), fetchSchemeCharacters: vi.fn() }));
-vi.mock('$lib/time/zone', async () => {
-	const { studyDay } = await import('$lib/time/studyDay');
-	return { currentStudyDay: () => studyDay([]), currentStudyHistory: () => [], onStudyDayChange: () => () => {} };
-});
 
 import type { CharRow, PluginInfo, Scheme } from '$lib/api/types';
 import { fetchSchemeCharacters, getSchemeEntries, getSchemes } from '$lib/api/schemes';
 import type { StudyEvent } from '$lib/events';
 import { loadStudyHistory } from '$lib/study/data';
-import { setOutboxUser } from '$lib/study/outboxUser';
 import { PartialPushError } from '$lib/sync/push';
 import { saveSeenMilestones } from '$lib/study/commands/keyed';
 import type { ReviewEvent, StudyCard, StudyHistory } from '$lib/study/types';
 import { givenTimelines, replayStats } from '$lib/weekly/replay';
 import { levelMilestoneId } from './catalogue';
-import { flushOnOnline, loadMilestones, markSeen, resetMilestonesForTests } from './loadMilestones';
+import { flushOnOnline, loadMilestones, markSeen } from './loadMilestones';
 import { addPending, readPending } from './seen';
 import * as build from '$lib/testing/study';
+
+// The session's StudyDays (record 0009): its methods, faked on the class.
+beforeEach(() => {
+	vi.spyOn(StudyDays.prototype, 'day').mockImplementation((() => SHARED_DAY) as never);
+	vi.spyOn(StudyDays.prototype, 'effectiveHistory').mockImplementation((() => []) as never);
+	vi.spyOn(StudyDays.prototype, 'onChange').mockImplementation((() => () => {}) as never);
+});
 
 // The session's event log (record 0009): its methods, faked on the class.
 let loadWorkspaceEvents!: MockInstance<EventLog['load']>;
 beforeEach(() => {
-	loadWorkspaceEvents = vi.spyOn(EventLog.prototype, 'load').mockImplementation((async () => []) as never);
+	loadWorkspaceEvents = vi.spyOn(EventLog.prototype, 'load').mockImplementation(((async () => [])) as never);
 });
 
 let ctx: TestContext = studyContext();
@@ -98,8 +104,6 @@ const ids = (list: { id: string }[]) => list.map((x) => x.id);
 
 beforeEach(() => {
 	vi.stubGlobal('localStorage', fakeStorage());
-	setOutboxUser(1);
-	resetMilestonesForTests();
 	states();
 	vi.mocked(loadStudyHistory).mockResolvedValue(history());
 	vi.mocked(loadWorkspaceEvents).mockResolvedValue([
@@ -112,7 +116,6 @@ beforeEach(() => {
 afterEach(() => {
 	vi.unstubAllGlobals();
 	vi.clearAllMocks();
-	setOutboxUser(null);
 });
 
 describe('loadMilestones', () => {
@@ -194,7 +197,6 @@ describe('loadMilestones', () => {
 		await loadMilestones(ctx.session, WS, { states: ctx.session.plugins, scope: 'home', now: NOW, language: 'zh' });
 		expect(readPending(1, WS)).toEqual([]);
 		vi.clearAllMocks();
-		resetMilestonesForTests();
 		vi.mocked(loadStudyHistory).mockResolvedValue(history({ seenMilestones: new Map([['streak:7', { id: 'streak:7', seenAt: null, reachedDay: null }]]) }));
 		vi.mocked(loadWorkspaceEvents).mockResolvedValue([]);
 		addPending(1, WS, [{ id: 'streak:7', seenAt: null, reachedDay: null }]);
@@ -210,7 +212,7 @@ describe('loadMilestones', () => {
 		await loadMilestones(ctx.session, WS, { states: ctx.session.plugins, scope: 'home', now: NOW, language: 'zh' });
 		vi.mocked(saveSeenMilestones).mockClear();
 		addPending(1, WS, ['reviews:100', 'streak:3'].map((id) => ({ id, seenAt: null, reachedDay: '2026-11-10' })));
-		await flushOnOnline();
+		await flushOnOnline(ctx.session);
 		expect(saveSeenMilestones).toHaveBeenCalledTimes(1);
 		expect(vi.mocked(saveSeenMilestones).mock.calls[0][2].map((r) => r.key)).toEqual(['milestone:streak:3']);
 	});
@@ -224,13 +226,13 @@ describe('loadMilestones', () => {
 		await late;
 		vi.mocked(saveSeenMilestones).mockClear();
 		addPending(1, WS, [{ id: 'streak:3', seenAt: null, reachedDay: null }]);
-		await flushOnOnline();
+		await flushOnOnline(ctx.session);
 		expect(saveSeenMilestones).not.toHaveBeenCalled();
 	});
 
 	it('back online before any load: nothing is flushed', async () => {
 		addPending(1, WS, [{ id: 'streak:3', seenAt: null, reachedDay: null }]);
-		await flushOnOnline();
+		await flushOnOnline(ctx.session);
 		expect(saveSeenMilestones).not.toHaveBeenCalled();
 	});
 
@@ -288,7 +290,6 @@ describe('markSeen', () => {
 		vi.mocked(saveSeenMilestones).mockRejectedValue(new PartialPushError('offline', 0));
 		await expect(markSeen(ctx.session, view)).resolves.toBeUndefined();
 		expect(ids(readPending(1, WS)).sort()).toEqual(view.plan.kind === 'none' ? [] : [...view.plan.ids].sort());
-		resetMilestonesForTests();
 		const next = await loadMilestones(ctx.session, WS, { states: ctx.session.plugins, scope: 'home', now: NOW, language: 'zh' });
 		expect(next.plan).toEqual({ kind: 'none' });
 	});

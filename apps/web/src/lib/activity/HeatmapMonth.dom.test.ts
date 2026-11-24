@@ -1,9 +1,13 @@
+import { StudyDays } from '$lib/time/studyDays';
+import type { MockInstance } from 'vitest';
+import { studyDay as studyDayOf } from '$lib/time/studyDay';
+/** One rule object, as the session's StudyDays caches it. */
+const SHARED_DAY = studyDayOf([]);
 import { testContext, type TestContext } from '$lib/testing/context';
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/svelte';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('$lib/api/stats', () => ({ fetchActivity: vi.fn() }));
-vi.mock('$lib/time/zone', () => ({ currentStudyDay: vi.fn(), onStudyDayChange: vi.fn() }));
 vi.mock('$lib/study/data', async (importOriginal) => ({
 	...(await importOriginal<typeof import('$lib/study/data')>()),
 	getStudyData: vi.fn(),
@@ -19,7 +23,14 @@ import { fetchActivity, type ActivityResponse } from '$lib/api/stats';
 import ActivityHeatmap from '$lib/components/ActivityHeatmap.svelte';
 import { loadStudyHistory, getStudyData } from '$lib/study/data';
 import { studyDay } from '$lib/time/studyDay';
-import { currentStudyDay, onStudyDayChange } from '$lib/time/zone';
+
+// The session's StudyDays (record 0009): its methods, faked on the class.
+let currentStudyDay!: MockInstance<StudyDays['day']>;
+let onStudyDayChange!: MockInstance<StudyDays['onChange']>;
+beforeEach(() => {
+	currentStudyDay = vi.spyOn(StudyDays.prototype, 'day').mockImplementation((() => SHARED_DAY) as never);
+	onStudyDayChange = vi.spyOn(StudyDays.prototype, 'onChange').mockImplementation((() => () => {}) as never);
+});
 
 let ctx: TestContext = testContext();
 beforeEach(() => {

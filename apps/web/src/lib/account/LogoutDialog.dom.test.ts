@@ -2,7 +2,6 @@ import { testContext, type TestContext } from '$lib/testing/context';
 import { cleanup, fireEvent, render, screen } from '@testing-library/svelte';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { setOutboxUser } from '$lib/study/outboxUser';
 import { requestSignOut } from './signOut';
 import LogoutDialog from './LogoutDialog.svelte';
 
@@ -32,7 +31,6 @@ beforeEach(() => {
 	localStorage.clear();
 	localStorage.setItem('qinqin.token', 'tok');
 	ctx.app.auth.set({ token: 'tok', user: { id: 1, username: 'u' } as never });
-	setOutboxUser(1);
 	vi.stubGlobal('fetch', vi.fn(() => Promise.reject(new Error('offline'))));
 	vi.spyOn(console, 'warn').mockImplementation(() => {});
 });
@@ -40,7 +38,6 @@ afterEach(() => {
 	cleanup();
 	vi.restoreAllMocks();
 	vi.unstubAllGlobals();
-	setOutboxUser(null);
 });
 
 describe('sign-out with unsent reviews', () => {

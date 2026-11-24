@@ -96,7 +96,7 @@
 	$effect(() => {
 		void load(workspaceId, language);
 	});
-	$effect(() => onContextStale(() => void load(workspaceId, language)));
+	$effect(() => onContextStale(session.zone, () => void load(workspaceId, language)));
 </script>
 
 <div class="tile">

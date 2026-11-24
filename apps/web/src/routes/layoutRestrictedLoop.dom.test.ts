@@ -12,14 +12,13 @@ import { api } from '$lib/api/client';
 import { createAppContext, type AppContext } from '$lib/context/app.svelte';
 import { contextOf } from '$lib/context/context';
 import { fakeDeps } from '$lib/testing/context';
-import { clearStudyDay } from '$lib/time/zone';
 import { setUrl } from '$lib/testing/appState.svelte';
 import Layout from './+layout.svelte';
 
 // The session's event log (record 0009): its methods, faked on the class.
 beforeEach(() => {
-	vi.spyOn(EventLog.prototype, 'record').mockImplementation((async () => {}) as never);
-	vi.spyOn(EventLog.prototype, 'recordSessionWhenSettled').mockImplementation((async () => {}) as never);
+	vi.spyOn(EventLog.prototype, 'record').mockImplementation(((async () => {})) as never);
+	vi.spyOn(EventLog.prototype, 'recordSessionWhenSettled').mockImplementation(((async () => {})) as never);
 });
 
 /** The app context the layout mounts with (a fresh one per mount, as a page load). */
@@ -52,7 +51,6 @@ const settle = () => new Promise((r) => setTimeout(r, 150));
 beforeEach(() => {
 	urls = [];
 	meBody = restrictedMe;
-	clearStudyDay();
 	localStorage.clear();
 	localStorage.setItem('qinqin.token', 'tok');
 	setUrl('/account/password');

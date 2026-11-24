@@ -82,7 +82,7 @@
 	let cards = $state.raw<StudyCard[]>([]);
 	let reviews = $state.raw<ReviewEvent[]>([]);
 	let weights = $state.raw<readonly number[]>(DEFAULT_W);
-	let ctx = $state.raw<StudyContext>(currentContext());
+	let ctx = $state.raw<StudyContext>(currentContext(session.zone));
 	// Cards whose legacy written snapshot could not be resolved on this
 	// visit. Reported so the map never silently under-reports.
 	let unresolvedCards = $state(0);
@@ -198,7 +198,7 @@
 			cards = data.cards;
 			reviews = data.reviews;
 			weights = activeWeights(data);
-			ctx = contextForData(data, id);
+			ctx = contextForData(session.zone, data, id);
 			groupKey = readGroupBy(storage(), lang, groupOptions(lang, schemeList));
 			levelValue = readLevelChoice(storage(), id, levelGroupsFor(lang, schemeList));
 			// A stored level from another scheme must not be grouped by that

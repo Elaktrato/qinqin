@@ -61,7 +61,6 @@ import { contextForData } from '$lib/study/currentContext';
 import { IDENTITY_CLOCK, type StudyClock } from '$lib/study/studyClock';
 import type { Run } from '$lib/study/vacation';
 	import { dailyStreak, levelProgress, xpByKind, xpFromReviews } from '$lib/study/exp';
-	import { currentStudyDay, onStudyDayChange } from '$lib/time/zone';
 	import Mascot from '$lib/features/flashcards/Mascot.svelte';
 	import { gradeItem } from '$lib/study/grade';
 	import { DEFAULT_W } from '$lib/study/fsrs/params';
@@ -105,6 +104,7 @@ import type { Run } from '$lib/study/vacation';
 	import Stat from '$lib/ui/Stat.svelte';
 	import { useApp } from '$lib/context/context';
 	import { useSession } from '$lib/context/context';
+
 	const session = useSession();
 	const app = useApp();
 
@@ -377,8 +377,8 @@ import type { Run } from '$lib/study/vacation';
 	// XP is the difference the session made to the whole log, so the
 	// daily bonus is only counted when this session earned it.
 	// The learner's day rule; a zone change recomputes XP and the streak.
-	let studyDay = $state.raw(currentStudyDay());
-	$effect(() => onStudyDayChange((next) => (studyDay = next)));
+	let studyDay = $state.raw(session.zone.day());
+	$effect(() => session.zone.onChange((next) => (studyDay = next)));
 
 	const historyXp = $derived(xpFromReviews(reviews, studyDay.dayOf));
 	const totalXp = $derived(xpFromReviews([...reviews, ...sessionReviews], studyDay.dayOf));
@@ -483,7 +483,7 @@ import type { Run } from '$lib/study/vacation';
 			const history = data.reviews;
 			reviews = history;
 			weights = activeWeights(data);
-			const loaded = contextForData(data, workspaceId);
+			const loaded = contextForData(session.zone, data, workspaceId);
 			sessionClock = loaded.clock;
 			sessionVacation = loaded.vacation;
 			const w = weights;
@@ -522,7 +522,7 @@ import type { Run } from '$lib/study/vacation';
 				// data) is replaced from the reserve, as in a deck session.
 				// A word answered today through reverse or cloze is buried: left out
 				// before the limits, so the next word takes its slot.
-				const ctx = contextForData(data, workspaceId);
+				const ctx = contextForData(session.zone, data, workspaceId);
 				const day = ctx.day;
 				const buried = buriedNow({ cards: data.cards, reviews: history, now, studyDay: day });
 				const plan = buildLevelPlan({
@@ -556,7 +556,7 @@ import type { Run } from '$lib/study/vacation';
 					reviewLimit: config.reviewLimit,
 					now,
 					w,
-					ctx: contextForData(data, workspaceId),
+					ctx: contextForData(session.zone, data, workspaceId),
 					deckSettings: data.deckSettings,
 					offline: offlineSession,
 					language: language ?? '',

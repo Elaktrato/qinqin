@@ -4,7 +4,6 @@
 	import { goto } from '$app/navigation';
 	import { t } from '$lib/i18n';
 	import { formatDay } from '$lib/i18n/format';
-	import { currentStudyDay } from '$lib/time/zone';
 	import Button from '$lib/ui/Button.svelte';
 	import Field from '$lib/ui/Field.svelte';
 	import Msg from '$lib/i18n/Msg.svelte';
@@ -15,6 +14,7 @@
 	import { allWidgets } from '$lib/widgets/registry';
 	import { useSession } from '$lib/context/context';
 
+
 	const session = useSession();
 	let query = $state('');
 
@@ -24,7 +24,7 @@
 	const hour = now.getHours();
 	const greeting =
 		hour < 12 ? t('app.home.greeting.morning') : hour < 18 ? t('app.home.greeting.afternoon') : t('app.home.greeting.evening');
-	const dateLine = formatDay(currentStudyDay().today(now.getTime()), { weekday: 'long', day: 'numeric', month: 'long' });
+	const dateLine = formatDay(session.zone.day().today(now.getTime()), { weekday: 'long', day: 'numeric', month: 'long' });
 
 	// The user's home layout (null = none stored, so the default). Nothing
 	// renders until it is known, so a custom order never flashes as the

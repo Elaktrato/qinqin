@@ -46,9 +46,9 @@ import BookView from './BookView.svelte';
 
 // The session's event log (record 0009): its methods, faked on the class.
 beforeEach(() => {
-	vi.spyOn(EventLog.prototype, 'load').mockImplementation((async () => []) as never);
+	vi.spyOn(EventLog.prototype, 'load').mockImplementation(((async () => [])) as never);
 	vi.spyOn(EventLog.prototype, 'onChange').mockImplementation((() => () => {}) as never);
-	vi.spyOn(EventLog.prototype, 'record').mockImplementation((async () => {}) as never);
+	vi.spyOn(EventLog.prototype, 'record').mockImplementation(((async () => {})) as never);
 });
 
 let ctx: TestContext = testContext();

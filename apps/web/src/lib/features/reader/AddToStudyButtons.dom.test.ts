@@ -20,8 +20,6 @@ vi.mock('$lib/study/data', async (importOriginal) => ({
 	hasCard: vi.fn(() => false)
 }));
 
-const rec = vi.hoisted(() => ({ current: null as unknown }));
-vi.mock('$lib/lookups/store', () => ({ lookupRecorder: () => rec.current ?? { countOf: () => 0 } }));
 
 import { LookupRecorder } from '$lib/lookups/recorder';
 import { addCard } from '$lib/study/commands/cards';
@@ -57,7 +55,6 @@ function result(kind: 'word' | 'character'): LookupResult {
 afterEach(() => {
 	cleanup();
 	vi.clearAllMocks();
-	rec.current = null;
 });
 
 describe('AddToStudyButtons', () => {
@@ -151,7 +148,8 @@ describe("You've looked this up N times (#72)", () => {
 			readCfg: async () => ({ version: 1, record })
 		});
 		await r.load(3);
-		rec.current = r;
+		// The session's recorder (record 0009).
+		Object.defineProperty(ctx.session.lookups, 'recorder', { value: r });
 	}
 	const mount = (over: Record<string, unknown> = {}) =>
 		render(AddToStudyButtons, { props: { result: result('word'), workspaceId: 3, paragraph: 'p', first: true, hold: vi.fn(), ...over } as never, context: ctx.context });

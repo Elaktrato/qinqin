@@ -192,7 +192,7 @@ describe('Stats week page', () => {
 	it('reloads when the learner day changes', async () => {
 		render(Page, { context: ctx.context });
 		await waitFor(() => expect(firstValue()).toBe('12'));
-		const listener = vi.mocked(onContextStale).mock.calls[0][0];
+		const listener = vi.mocked(onContextStale).mock.calls[0][1];
 		vi.mocked(loadWeek).mockResolvedValueOnce(view('2026-11-16', 30));
 		listener();
 		await waitFor(() => expect(firstValue()).toBe('30'));

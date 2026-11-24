@@ -5,7 +5,6 @@
 // level schemes and paints progressively.
 
 import type { Session } from '$lib/context/session.svelte';
-import type { StudyState } from '$lib/study/data';
 import { fetchCharacters, type CharacterList } from '$lib/api/characters';
 import type { CharRow } from '$lib/api/types';
 import { cellStates, masteryGlyphs, sectionStats, type SectionStats } from '$lib/study/charGroups';
@@ -62,7 +61,7 @@ export async function loadCharacterMapData(
 		cards: data.cards,
 		reviews: data.reviews,
 		w: activeWeights(data),
-		clock: contextForData(data, workspaceId).clock
+		clock: contextForData(session.zone, data, workspaceId).clock
 	};
 }
 
