@@ -6,6 +6,14 @@ https://github.com/Elaktrato/qinqin/wiki
 
 ## Upgrading
 
+- **Fresh installs now create an administrator by themselves** (#211): the first start creates `admin` (or
+  `QINQIN_BOOTSTRAP_ADMIN`) before it opens the port and prints a one-time password in the log
+  (`bootstrap: initial password ...`), or uses `QINQIN_BOOTSTRAP_PASSWORD`; it must be changed at the first
+  sign-in. The first registration no longer becomes the administrator: an empty instance follows its
+  registration mode (default closed). To create the admin with `qinqin adduser --admin` instead, set
+  `QINQIN_BOOTSTRAP_ADMIN=off`. Existing instances are not affected: they have users, so nothing is created
+  and nothing is logged. A previously empty `QINQIN_BOOTSTRAP_ADMIN` used to mean off; it now means `admin`.
+
 - **v0.3.x clients are no longer supported.** The server no longer answers the old sync form or the old
   flashcards keys that a copy of the app from before v0.4.0 used (#198).
 - **Before you upgrade, open the app online on every device** — every browser and every installed copy — and
@@ -47,6 +55,9 @@ https://github.com/Elaktrato/qinqin/wiki
   routes are rate-limited (#176).
 
 **Accounts**
+- **A fresh install creates its administrator** (`admin`, with a one-time password in the log) before it opens the
+  port, so nobody can claim the instance by registering first; `QINQIN_BOOTSTRAP_ADMIN=off` leaves it to
+  `qinqin adduser --admin` (#211).
 - **Profile pictures** (#189): upload a picture in Settings → Account (on a phone from the photo picker, or
   **Take a photo** with the front camera), crop it to a square, replace or remove it. It shows in the top bar, the account menu and the admin user
   list; the letter stays where there is none. The server re-encodes every upload, so no location or camera data is

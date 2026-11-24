@@ -12,7 +12,7 @@ The sign-in page asks for your **Username** and password. Depending on the serve
 
 Usernames are matched exactly at sign-in; for new names, `Bob`, `bob` and a fullwidth `Ｂob` count as the same name ([Getting started](Getting-started#signing-in)). A disabled account gets "This account is disabled. Ask an administrator to enable it." with the right password, and the usual refusal with a wrong one.
 
-If an administrator gave you a temporary password, or the server requires two-step sign-in and you have no second step yet, your first page is **Choose a new password** or **Two-step sign-in is required**. Until you have done that, only that page, the Sources page and **Sign out instead** are open.
+On a new server the administrator signs in as `admin` (or the name the server owner chose) with the one-time password from the server's log ([Deploying](Admin-deploying#the-bootstrap-administrator)) and must choose a new password first. If an administrator gave you a temporary password, or the server requires two-step sign-in and you have no second step yet, your first page is **Choose a new password** or **Two-step sign-in is required**. Until you have done that, only that page, the Sources page and **Sign out instead** are open.
 
 ## Sessions
 
@@ -38,7 +38,7 @@ Use a recovery code at the second step. If you have none, ask an administrator t
 
 ## Changing your password
 
-Settings → Account → Password. You enter the current password and a new one twice (10 to 256 characters, not your username). **Sign out my other sessions** is ticked by default. If an administrator gave you a temporary password, the app takes you to this page first and nothing else works until you change it.
+Settings → Account → Password. You enter the current password and a new one twice (10 to 256 characters, not your username). **Sign out my other sessions** is ticked by default. On a new server the administrator signs in as `admin` (or the name the server owner chose) with the one-time password from the server's log ([Deploying](Admin-deploying#the-bootstrap-administrator)) and must choose a new password first. If an administrator gave you a temporary password, the app takes you to this page first and nothing else works until you change it.
 
 Changing your password also revokes all your [access tokens](API-Access-tokens), so scripts that use one stop working until you give them a new token.
 

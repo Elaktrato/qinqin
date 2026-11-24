@@ -8,7 +8,7 @@ An administrator runs the server (see [Deploying](Admin-deploying)). You need it
 - **Invite**: you get an invite link of the form `https://your-server/register#invite=...`. Open it and register.
 - **Open**: anyone who reaches the server can register at `/register`.
 
-The very first account on an empty server always registers successfully and becomes the administrator, whatever the mode (the registration page says "This is a new instance: the first account becomes the administrator."). See [Users, registration and invites](Admin-users-and-registration).
+Nobody becomes the administrator by registering: a new server creates its administrator itself and prints a one-time password in its log ([Deploying](Admin-deploying#the-bootstrap-administrator)). See [Users, registration and invites](Admin-users-and-registration).
 
 ## Signing in
 

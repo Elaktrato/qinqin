@@ -8,16 +8,27 @@ You need Docker with the Compose plugin. In a checkout of the repository (or a f
 
 ```sh
 docker compose up -d
-docker compose exec qinqin qinqin adduser --admin --username you
+docker compose logs qinqin | grep 'bootstrap:'
 ```
 
-`adduser` asks for a password (10 to 256 characters, not the username). Then open `http://localhost:8080`.
+On the first start the server creates the administrator `admin` before it opens the port and prints its password **once** in the log: `bootstrap: initial password (shown once, never again): <password>`. Open `http://localhost:8080`, sign in as `admin` with that password, and choose your own password (the server asks for it at once; nothing else works until you have). See [the bootstrap administrator](#the-bootstrap-administrator) below to pick the name or the password, or to create the admin yourself.
 
 - **No reverse proxy in front?** Set `QINQIN_TRUSTED_PROXIES=none` (in a `.env` file next to `docker-compose.yml`, or in the stack's environment). The default trusts the `X-Forwarded-For` header of private-network peers, which a LAN client could forge to dodge the per-client sign-in limits ([Reverse proxy, rate limiting and trusted proxies](Admin-proxy-and-rate-limiting)).
 - **The first start seeds itself.** Before it listens, a fresh instance installs the bundled packs (about 2 minutes, once; the health check waits up to 300 s). See [the auto-seed](#the-auto-seed-on-the-first-start) below.
-- **Create the admin before you expose the port beyond your LAN.** While no user exists, the first registration over the API becomes the administrator, whoever makes it. `QINQIN_BOOTSTRAP_ADMIN` (below) closes that window completely.
+- **Nobody becomes administrator by registering.** The bootstrap administrator exists before the port opens, and registration is closed by default.
 - **Where the data lives.** In the named volume `qinqin-data`. Set `QINQIN_DATA_VOLUME=./data` (or an absolute path such as `/srv/qinqin/data`) to bind-mount a host directory instead. `QINQIN_PORT` changes the published port, `QINQIN_IMAGE` pins an image. `QINQIN_SECRET` is optional: empty means the AI features, authenticator apps and a stored mail password are unavailable, and everything else works ([AI providers and offline OCR](Admin-AI-and-OCR)).
 - **Upgrading from the old quick start?** It kept the data in `./data`; the compose file now defaults to a named volume, so without a change you would start on an empty instance. Set `QINQIN_DATA_VOLUME=./data` to keep using it.
+
+### The bootstrap administrator
+
+While the instance has no users, each start creates an administrator before it opens the port; once users exist, nothing happens and nothing is logged, so the variables can stay set.
+
+- **Name:** `admin`, or the value of `QINQIN_BOOTSTRAP_ADMIN` (3 to 32 letters, digits, `.`, `_`, `-`).
+- **Password:** the value of `QINQIN_BOOTSTRAP_PASSWORD` (10 to 256 characters, not the username), which is never logged; or, when that is empty, 20 random characters printed **once** in the log (Portainer: Containers, `qinqin`, Logs; the line starts `bootstrap: initial password`). There is no fixed default password. Remove a supplied password from the stack after the first sign-in.
+- **First sign-in:** the administrator must choose a new password; until then the session can do nothing else.
+- **A name or password that breaks the rules** stops the server from starting, with the reason in the log.
+- **Lost the logged password** before signing in? Run `qinqin recover --username admin` in the container ([Backup, recovery and the command line](Admin-backup-and-recovery)), or, on a still empty instance, delete the volume and start again.
+- **Creating the admin yourself:** set `QINQIN_BOOTSTRAP_ADMIN=off` and run `docker compose exec qinqin qinqin adduser --admin --username <name>` (it asks for the password). Until an administrator exists, registration stays closed and the log says so at every start.
 
 ### The auto-seed on the first start
 
@@ -83,16 +94,10 @@ Portainer needs no special file: `docker-compose.yml` is plain compose. It uses 
 
 1. **Generate the secret** (optional; without it AI, authenticator apps and a stored mail password are unavailable) and keep it in a password manager: `head -c 32 /dev/urandom | base64`. Back it up **separately** from the data volume; it is never written to `/data`.
 2. **Add the stack.** Portainer: Stacks, Add stack. Either *Web editor* and paste `docker-compose.yml`, or *Repository* with the URL `https://github.com/Elaktrato/qinqin`, reference `refs/heads/main` (or a tag) and compose path `docker-compose.yml`.
-3. **Environment variables** (stack form): `QINQIN_SECRET`, `QINQIN_IMAGE` (for example `ghcr.io/elaktrato/qinqin:v0.5.0`), `QINQIN_PORT` (host port, default 8080). Optional: `QINQIN_DATA_VOLUME` as an absolute host path such as `/srv/qinqin/data` (the directory must exist and be writable by root), `QINQIN_TRUSTED_PROXIES` (**`none` if nothing reverse-proxies to qinqin**), `QINQIN_AI_PROVIDERS`, `QINQIN_AI_ALLOW_PRIVATE`, `QINQIN_SMTP_ALLOW_PRIVATE`, `QINQIN_BOOTSTRAP_ADMIN`, and `QINQIN_SECRET_PREVIOUS` only while rotating the secret. The full list: [Environment variables](Admin-environment-variables). Deploy the stack.
-4. **First run, before exposing the port beyond your LAN.** Containers, `qinqin`, Console, command `/bin/sh`, Connect. Then:
+3. **Environment variables** (stack form): `QINQIN_SECRET`, `QINQIN_IMAGE` (for example `ghcr.io/elaktrato/qinqin:v0.5.0`), `QINQIN_PORT` (host port, default 8080). Optional: `QINQIN_DATA_VOLUME` as an absolute host path such as `/srv/qinqin/data` (the directory must exist and be writable by root), `QINQIN_TRUSTED_PROXIES` (**`none` if nothing reverse-proxies to qinqin**), `QINQIN_AI_PROVIDERS`, `QINQIN_AI_ALLOW_PRIVATE`, `QINQIN_SMTP_ALLOW_PRIVATE`, `QINQIN_BOOTSTRAP_ADMIN` and `QINQIN_BOOTSTRAP_PASSWORD` ([the bootstrap administrator](#the-bootstrap-administrator)), and `QINQIN_SECRET_PREVIOUS` only while rotating the secret. The full list: [Environment variables](Admin-environment-variables). Deploy the stack.
+4. **First sign-in.** Containers, `qinqin`, Logs: the line `bootstrap: initial password (shown once, never again): ...` holds the password of the administrator `admin` (or of `QINQIN_BOOTSTRAP_ADMIN`; with `QINQIN_BOOTSTRAP_PASSWORD` set, that password, which is not logged). Sign in and choose a new password. The first start has already installed the bundled packs before it opened the port ([the auto-seed](#the-auto-seed-on-the-first-start)); the demo packs are not installed, `qinqin seed` adds them and local packs.
 
-   ```sh
-   qinqin adduser --username <name> --admin
-   ```
-
-   `adduser` asks for the password and needs a terminal; Portainer's console provides one (the typed password is echoed). The first start has already installed the bundled packs before it opened the port ([the auto-seed](#the-auto-seed-on-the-first-start)); the demo packs are not installed, `qinqin seed` adds them and local packs.
-
-   **Or create the admin automatically.** Set `QINQIN_BOOTSTRAP_ADMIN` to the admin's username. On the first start, while no user exists, the server creates that administrator before it opens the port, so nobody can claim the first registration. The admin must choose a new password at the first sign-in; until then the session can do nothing else. Set `QINQIN_BOOTSTRAP_PASSWORD` to choose the initial password (10 to 256 characters, not the username), or leave it empty: the server then generates one (20 characters) and prints it **once** in the container log (Portainer: Containers, `qinqin`, Logs; the line starts `bootstrap: initial password`). A supplied password is never logged. Later starts ignore both variables, so remove the password from the stack after the first sign-in. A username or password that breaks the rules stops the server from starting, with the reason in the log. This replaces `adduser`.
+   **Or create the admin yourself.** Set `QINQIN_BOOTSTRAP_ADMIN=off` before the first start, then Containers, `qinqin`, Console, command `/bin/sh`, Connect, and run `qinqin adduser --username <name> --admin`. `adduser` asks for the password and needs a terminal; Portainer's console provides one (the typed password is echoed). Until then registration stays closed.
 5. Put a reverse proxy with HTTPS in front ([Reverse proxy, rate limiting and trusted proxies](Admin-proxy-and-rate-limiting)), then run the checklist below.
 
 ## Data directory

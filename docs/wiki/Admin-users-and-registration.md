@@ -4,7 +4,7 @@ All of this lives in **Settings → Admin** (`/settings?tab=admin`), which only 
 
 ## The first administrator
 
-The very first registration on an empty database always works and makes that person the administrator, in every registration mode. So create the admin before the port is reachable from outside your LAN: with `qinqin adduser --admin --username <name>` in the container, or automatically with `QINQIN_BOOTSTRAP_ADMIN` ([Deploying](Admin-deploying#deploying-with-portainer)), which creates the admin before the port opens. Afterwards the default mode `closed` refuses everyone but an administrator.
+Nobody becomes administrator by registering. On the first start the server creates the administrator `admin` (or the name in `QINQIN_BOOTSTRAP_ADMIN`) before it opens the port and prints a one-time password in its log; that admin must choose a new password at the first sign-in ([Deploying](Admin-deploying#the-bootstrap-administrator)). With `QINQIN_BOOTSTRAP_ADMIN=off` you create the admin with `qinqin adduser --admin --username <name>` in the container; until then registration is closed. The default mode `closed` refuses everyone but an administrator.
 
 ## Registration and email policy (Admin → Security)
 
