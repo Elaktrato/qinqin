@@ -3,7 +3,6 @@
 // server serves for v0.3.0-style plugin rows (legacyCodec typedPull), the pushes
 // and plugin-data writes read back as legacy rows, and the one-storage check.
 import { afterEach, beforeEach, expect, vi } from "vitest";
-import { workspaces } from "../workspaces";
 import type { StudyEvent } from "../events";
 import type { Deck, StudyCard } from "../study/types";
 import { legacyFamily, pagedPull, toLegacy } from "./legacyCodec";
@@ -94,21 +93,6 @@ export function card(
   return build.card({ id, entryId, deckIds, createdAt, written });
 }
 
-export function selectWorkspace(id: number | null): void {
-  workspaces.set({
-    list: [],
-    current:
-      id === null
-        ? null
-        : {
-            id,
-            language: "zh",
-            name: "",
-            settings: {},
-            updatedAt: "2026-01-01T00:00:00Z",
-          },
-  });
-}
 
 export function calls(): Array<[string, RequestInit | undefined]> {
   return vi.mocked(fetch).mock.calls as Array<
@@ -236,12 +220,11 @@ export function expectOneStorage(): void {
   expect(inPluginData).toEqual([]);
 }
 
-/** useStudyStoreMocks: a fresh storage and fetch stub per test, the workspace selected, the one-storage check after it. */
+/** useStudyStoreMocks: a fresh storage and fetch stub per test, the one-storage check after it. */
 export function useStudyStoreMocks(): void {
   beforeEach(() => {
     vi.stubGlobal("localStorage", fakeStorage());
     vi.stubGlobal("fetch", vi.fn());
-    selectWorkspace(WORKSPACE_ID);
   });
 
   afterEach(() => {

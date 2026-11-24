@@ -1,3 +1,4 @@
+import { testContext, type TestContext } from '$lib/testing/context';
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/svelte';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -23,8 +24,12 @@ import { loadStudyHistory, getStudyData } from '$lib/study/data';
 import { HEATMAP_DAYS } from '$lib/activity/activity';
 import { addDays, studyDay } from '$lib/time/studyDay';
 import { currentStudyDay, onStudyDayChange } from '$lib/time/zone';
-import { workspaces } from '$lib/workspaces';
 import ActivityHeatmap from './ActivityHeatmap.svelte';
+
+let ctx: TestContext = testContext();
+beforeEach(() => {
+	ctx = testContext();
+});
 
 const TOKYO = studyDay([{ zone: 'Asia/Tokyo', from: null }]);
 const BERLIN = studyDay([{ zone: 'Europe/Berlin', from: null }]);
@@ -45,7 +50,7 @@ afterEach(() => {
 describe('ActivityHeatmap accessibility', () => {
 	it('exposes each active day to assistive tech as a list item', async () => {
 		const today = studyDay([]).today();
-		workspaces.set({ list: [], current: { id: 3, language: 'zh', name: 'zh' } as never });
+		ctx.session.workspaces.set({ list: [], current: { id: 3, language: 'zh', name: 'zh' } as never });
 		vi.mocked(fetchActivity).mockResolvedValue({
 			from: today,
 			to: today,
@@ -61,7 +66,7 @@ describe('ActivityHeatmap accessibility', () => {
 			],
 			cells: [{ day: today, workspace: 3, type: 'review', points: 5, raw: 5 }]
 		});
-		render(ActivityHeatmap);
+		render(ActivityHeatmap, { context: ctx.context });
 		const list = await screen.findByRole('list', { name: 'Daily activity' });
 		await waitFor(() => expect(within(list).getAllByRole('listitem')).toHaveLength(1));
 		expect(within(list).getByRole('listitem').textContent).toContain(`${today}: 5 points`);
@@ -76,8 +81,8 @@ describe('ActivityHeatmap learner days', () => {
 		vi.setSystemTime(new Date('2026-11-15T15:30:00Z')); // the 16th in Tokyo
 		vi.mocked(currentStudyDay).mockReturnValue(TOKYO);
 		vi.mocked(fetchActivity).mockResolvedValue(empty);
-		workspaces.set({ list: [], current: { id: 3, language: 'zh', name: 'zh' } as never });
-		render(ActivityHeatmap);
+		ctx.session.workspaces.set({ list: [], current: { id: 3, language: 'zh', name: 'zh' } as never });
+		render(ActivityHeatmap, { context: ctx.context });
 		await waitFor(() => expect(fetchActivity).toHaveBeenCalled());
 		expect(vi.mocked(fetchActivity).mock.calls[0]).toEqual([
 			addDays('2026-11-16', -(HEATMAP_DAYS - 1)),
@@ -95,8 +100,8 @@ describe('ActivityHeatmap learner days', () => {
 		});
 		vi.mocked(currentStudyDay).mockReturnValue(BERLIN);
 		vi.mocked(fetchActivity).mockResolvedValue(empty);
-		workspaces.set({ list: [], current: { id: 3, language: 'zh', name: 'zh' } as never });
-		render(ActivityHeatmap);
+		ctx.session.workspaces.set({ list: [], current: { id: 3, language: 'zh', name: 'zh' } as never });
+		render(ActivityHeatmap, { context: ctx.context });
 		await waitFor(() => expect(fetchActivity).toHaveBeenCalledTimes(1));
 		expect(vi.mocked(fetchActivity).mock.calls[0][1]).toBe('2026-11-15');
 		listener!(TOKYO);
@@ -111,14 +116,14 @@ describe('ActivityHeatmap learner days', () => {
 describe('ActivityHeatmap vacation marks', () => {
 	it('hatches vacation days, says so in the tooltip and lists them for assistive tech', async () => {
 		const today = studyDay([]).today();
-		workspaces.set({ list: [{ id: 3, language: 'zh', name: 'zh' } as never], current: { id: 3, language: 'zh', name: 'zh' } as never });
+		ctx.session.workspaces.set({ list: [{ id: 3, language: 'zh', name: 'zh' } as never], current: { id: 3, language: 'zh', name: 'zh' } as never });
 		vi.mocked(getStudyData).mockResolvedValue({
 			decks: [],
 			cards: [],
 			vacations: [{ version: 1, id: 'A', start: today, end: today, scope: 'all', createdDay: today, createdAt: `${today}T00:00:00Z` }]
 		});
 		vi.mocked(fetchActivity).mockResolvedValue({ from: today, to: today, timeZone: 'UTC', sources: [], cells: [] });
-		render(ActivityHeatmap);
+		render(ActivityHeatmap, { context: ctx.context });
 		await waitFor(() => expect(document.querySelectorAll('.cell.vacation')).toHaveLength(1));
 		// Today is named in its text, not only ringed (#100).
 		expect(document.querySelector('.cell.vacation')?.getAttribute('title')).toBe(`${today}: no activity · On vacation · today`);
@@ -139,7 +144,7 @@ const WS = { id: 3, language: 'zh', name: 'zh' } as never;
 /** A goal of 50 reviews a day from 60 days ago and 21 reviews today (stage: bud). */
 function withGoal(): string {
 	const today = studyDay([]).today();
-	workspaces.set({ list: [WS], current: WS });
+	ctx.session.workspaces.set({ list: [WS], current: WS });
 	vi.mocked(loadStudyHistory).mockResolvedValue({
 		decks: [],
 		cards: [],
@@ -168,7 +173,7 @@ function withGoal(): string {
 describe('ActivityHeatmap garden and flower stages', () => {
 	it('renders 364 decorative tiles and one list item per day with activity or a stage', async () => {
 		const today = studyDay([]).today();
-		workspaces.set({ list: [WS], current: WS });
+		ctx.session.workspaces.set({ list: [WS], current: WS });
 		vi.mocked(fetchActivity).mockResolvedValue({
 			from: today,
 			to: today,
@@ -179,7 +184,7 @@ describe('ActivityHeatmap garden and flower stages', () => {
 				{ day: addDays(today, -3), workspace: 3, type: 'review', points: 9, raw: 9 }
 			]
 		});
-		render(ActivityHeatmap);
+		render(ActivityHeatmap, { context: ctx.context });
 		const list = await screen.findByRole('list', { name: 'Daily activity' });
 		await waitFor(() => expect(within(list).getAllByRole('listitem')).toHaveLength(2));
 		expect(document.querySelectorAll('.grid .cell')).toHaveLength(HEATMAP_DAYS);
@@ -188,7 +193,7 @@ describe('ActivityHeatmap garden and flower stages', () => {
 
 	it("with a goal in the workspace scope, a day's list text and tooltip name its stage and progress", async () => {
 		const today = withGoal();
-		render(ActivityHeatmap);
+		render(ActivityHeatmap, { context: ctx.context });
 		const list = await screen.findByRole('list', { name: 'Daily activity' });
 		// 61 goal days (60 back and today), each with a stage.
 		await waitFor(() => expect(within(list).getAllByRole('listitem')).toHaveLength(61));
@@ -203,7 +208,7 @@ describe('ActivityHeatmap garden and flower stages', () => {
 	it('in the all-workspaces scope no stage text appears', async () => {
 		vi.mocked(loadActivityView).mockResolvedValueOnce({ scope: 'all', hidden: [] });
 		withGoal();
-		render(ActivityHeatmap);
+		render(ActivityHeatmap, { context: ctx.context });
 		const list = await screen.findByRole('list', { name: 'Daily activity' });
 		await waitFor(() => expect(within(list).getAllByRole('listitem')).toHaveLength(3));
 		expect(list.textContent).not.toMatch(/ of 50 — /);
@@ -211,7 +216,7 @@ describe('ActivityHeatmap garden and flower stages', () => {
 
 	it("today's tile carries the today marker and its text says today", async () => {
 		const today = withGoal();
-		render(ActivityHeatmap);
+		render(ActivityHeatmap, { context: ctx.context });
 		await waitFor(() => expect(document.querySelector('.grid .cell.today')).not.toBeNull());
 		const tile = document.querySelector('.grid .cell.today');
 		expect(tile?.getAttribute('data-day')).toBe(today);
@@ -222,10 +227,10 @@ describe('ActivityHeatmap garden and flower stages', () => {
 	it('stages come back after a workspace switch (#100 review)', async () => {
 		const today = withGoal();
 		const WS4 = { id: 4, language: 'ja', name: 'ja' } as never;
-		render(ActivityHeatmap);
+		render(ActivityHeatmap, { context: ctx.context });
 		const list = await screen.findByRole('list', { name: 'Daily activity' });
 		await waitFor(() => expect(within(list).getAllByRole('listitem')).toHaveLength(61));
-		workspaces.set({ list: [WS, WS4], current: WS4 });
+		ctx.session.workspaces.set({ list: [WS, WS4], current: WS4 });
 		await waitFor(() => expect(loadStudyHistory).toHaveBeenLastCalledWith(4));
 		await waitFor(() => expect(within(list).getAllByRole('listitem')).toHaveLength(61));
 		const items = within(list).getAllByRole('listitem').map((li) => li.textContent ?? '');
@@ -235,7 +240,7 @@ describe('ActivityHeatmap garden and flower stages', () => {
 	it('a failed goal load leaves the heatmap working without stages', async () => {
 		const today = withGoal();
 		vi.mocked(loadStudyHistory).mockRejectedValue(new Error('offline'));
-		render(ActivityHeatmap);
+		render(ActivityHeatmap, { context: ctx.context });
 		const list = await screen.findByRole('list', { name: 'Daily activity' });
 		await waitFor(() => expect(within(list).getAllByRole('listitem')).toHaveLength(2));
 		expect(within(list).getAllByRole('listitem')[1].textContent).toContain(`${today}: 21 points`);
@@ -246,7 +251,7 @@ describe('ActivityHeatmap garden and flower stages', () => {
 describe('ActivityHeatmap controls', () => {
 	it('uses a switch for the workspace scope and remembers both states', async () => {
 		const today = studyDay([]).today();
-		workspaces.set({ list: [WS], current: WS });
+		ctx.session.workspaces.set({ list: [WS], current: WS });
 		vi.mocked(fetchActivity).mockResolvedValue({
 			from: today,
 			to: today,
@@ -254,7 +259,7 @@ describe('ActivityHeatmap controls', () => {
 			sources: [REVIEWS],
 			cells: []
 		});
-		render(ActivityHeatmap);
+		render(ActivityHeatmap, { context: ctx.context });
 		const scope = (await screen.findByRole('switch', { name: 'All workspaces' })) as HTMLInputElement;
 		expect(scope.checked).toBe(false);
 		expect(screen.getByText('This workspace')).toBeTruthy();
@@ -265,9 +270,9 @@ describe('ActivityHeatmap controls', () => {
 	});
 
 	it('turns the switch on and disables it when no workspace exists', async () => {
-		workspaces.set({ list: [], current: null });
+		ctx.session.workspaces.set({ list: [], current: null });
 		vi.mocked(fetchActivity).mockResolvedValue({ ...empty });
-		render(ActivityHeatmap);
+		render(ActivityHeatmap, { context: ctx.context });
 		const scope = (await screen.findByRole('switch', { name: 'All workspaces' })) as HTMLInputElement;
 		expect(scope.checked).toBe(true);
 		expect(scope.disabled).toBe(true);
@@ -275,7 +280,7 @@ describe('ActivityHeatmap controls', () => {
 
 	it('keeps the activity types as pressed toggle tabs', async () => {
 		const today = studyDay([]).today();
-		workspaces.set({ list: [WS], current: WS });
+		ctx.session.workspaces.set({ list: [WS], current: WS });
 		vi.mocked(fetchActivity).mockResolvedValue({
 			from: today,
 			to: today,
@@ -283,7 +288,7 @@ describe('ActivityHeatmap controls', () => {
 			sources: [REVIEWS],
 			cells: [{ day: today, workspace: 3, type: 'review', points: 2, raw: 2 }]
 		});
-		render(ActivityHeatmap);
+		render(ActivityHeatmap, { context: ctx.context });
 		const tab = await screen.findByRole('button', { name: 'Reviews, 2 points' });
 		expect(tab.getAttribute('aria-pressed')).toBe('true');
 		await fireEvent.click(tab);
@@ -304,8 +309,8 @@ describe('ActivityHeatmap across midnight (#100 review)', () => {
 		vi.setSystemTime(new Date('2026-11-15T14:58:30Z')); // 23:58:30 in Tokyo, the 15th
 		vi.mocked(currentStudyDay).mockReturnValue(TOKYO);
 		vi.mocked(fetchActivity).mockImplementation(async (from, to) => ({ ...empty, from, to }));
-		workspaces.set({ list: [WS], current: WS });
-		render(ActivityHeatmap);
+		ctx.session.workspaces.set({ list: [WS], current: WS });
+		render(ActivityHeatmap, { context: ctx.context });
 		await until(() => document.querySelector('.grid .cell.today') !== null);
 		expect(document.querySelector('.grid .cell.today')?.getAttribute('data-day')).toBe('2026-11-15');
 		expect(vi.mocked(fetchActivity).mock.calls[0]).toEqual([
@@ -327,8 +332,8 @@ describe('ActivityHeatmap across midnight (#100 review)', () => {
 		vi.useFakeTimers({ toFake: ['Date', 'setInterval', 'clearInterval'] });
 		vi.setSystemTime(new Date('2026-11-15T23:59:00Z')); // Sunday the 15th, UTC
 		vi.mocked(fetchActivity).mockImplementation(async (from, to) => ({ ...empty, from, to }));
-		workspaces.set({ list: [WS], current: WS });
-		render(ActivityHeatmap, { layout: 'week' });
+		ctx.session.workspaces.set({ list: [WS], current: WS });
+		render(ActivityHeatmap, { props: { layout: 'week' }, context: ctx.context });
 		await until(() => document.querySelector('.week-days .today') !== null);
 		expect(document.querySelector('.week-days .today')?.getAttribute('data-day')).toBe('2026-11-15');
 		vi.advanceTimersByTime(60_000);

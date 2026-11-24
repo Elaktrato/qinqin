@@ -2,7 +2,6 @@ import { testContext, type TestContext } from '$lib/testing/context';
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/svelte';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { FLASHCARDS_ID, READER_ID } from '$lib/features';
-import { workspaces } from '$lib/workspaces';
 import { PHONE_MEDIA_QUERY } from './breakpoint';
 import { frameSections } from './sections';
 import PhoneHarness from './testing/PhoneHarness.svelte';
@@ -26,7 +25,7 @@ beforeEach(() => {
 		user: { id: 1, username: 'mei', admin: false, email: null, emailVerified: false, mustChangePassword: false, createdAt: 't' }
 	});
 	const zh = { id: 1, language: 'zh', name: '', settings: {}, updatedAt: '' };
-	workspaces.set({ list: [zh], current: zh });
+	ctx.session.workspaces.set({ list: [zh], current: zh });
 });
 afterEach(() => {
 	cleanup();

@@ -22,7 +22,6 @@
 	import { onContextStale } from '$lib/study/currentContext';
 	import { currentStudyDay } from '$lib/time/zone';
 	import { workspaceDisplay } from '$lib/languages';
-	import { workspaces } from '$lib/workspaces';
 	import {
 		describePeriod,
 		errorText,
@@ -31,6 +30,8 @@
 		startNowNote
 	} from './vacationForm';
 	import { Button, Field, Section } from '$lib/ui';
+	import { useSession } from '$lib/context/context';
+	const session = useSession();
 
 	// Vacation: freezes the schedule (nothing due, streak neutral). Periods are
 	// user-global rows; the pure rules live in lib/study/vacation.ts.
@@ -57,8 +58,8 @@
 	let scopeMode = $state<'all' | 'chosen'>('all');
 	let chosen = $state<number[]>([]);
 
-	const list = $derived($workspaces.list);
-	const workspaceId = $derived($workspaces.current?.id ?? null);
+	const list = $derived(session.workspaces.list);
+	const workspaceId = $derived(session.workspaces.current?.id ?? null);
 	const named = $derived(
 		list.map((w) => {
 			const display = workspaceDisplay(list, w);

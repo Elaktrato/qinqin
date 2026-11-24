@@ -10,7 +10,6 @@
 	import { loadRawStudyData } from '$lib/study/data';
 	import { pushStudy } from '$lib/study/commands/write';
 	import { GENERAL_DECK_ID } from '$lib/study/types';
-	import { workspaces } from '$lib/workspaces';
 	import { glossLang, studyLang, wordReadingLang, readingLang } from '$lib/i18n/lang';
 	import { flashcardsHref, type FlashcardsRoute } from '../route';
 	import { addPlanRows, planAddToDeck } from './addToDeck';
@@ -27,6 +26,8 @@
 		type StarterDeck
 	} from './starterDecks';
 	import { Button } from '$lib/ui';
+	import { useSession } from '$lib/context/context';
+	const session = useSession();
 
 	// A starter deck (#75): the pack's top words as the server resolves them,
 	// with the learner's state; known words are skipped and never added. It
@@ -34,7 +35,7 @@
 	let { route }: { route: Extract<FlashcardsRoute, { view: 'system-frequency' }> } = $props();
 
 	const store = createDecksData();
-	const workspace = $derived($workspaces.current);
+	const workspace = $derived(session.workspaces.current);
 	const workspaceId = $derived(workspace?.id ?? null);
 	$effect(() => {
 		void store.load(workspaceId);

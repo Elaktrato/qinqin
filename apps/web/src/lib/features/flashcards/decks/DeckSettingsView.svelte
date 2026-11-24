@@ -11,12 +11,13 @@
 	import { getSchemes } from '$lib/api/schemes';
 	import type { FrequencyPack, Scheme } from '$lib/api/types';
 	import { decodeOrder, deckOrderControl } from '$lib/study/newOrderView';
-	import { workspaces } from '$lib/workspaces';
 	import { flashcardsHref } from '../route';
 	import { Button, Field, Section, Select } from '$lib/ui';
 	import { deleteDeckText } from './deleteText';
 	import { createDecksData } from './decksData.svelte';
 	import { deckLimitsEditor, type DeckLimitsEditorProps } from './DeckLimitsSlot';
+	import { useSession } from '$lib/context/context';
+	const session = useSession();
 
 	// `limitsEditor` is 4b's per-deck limits control (DeckLimitsSlot.ts); a test passes a stub.
 	let {
@@ -25,7 +26,7 @@
 	}: { deckId: string; limitsEditor?: Component<DeckLimitsEditorProps> | null } = $props();
 
 	const store = createDecksData();
-	const workspaceId = $derived($workspaces.current?.id ?? null);
+	const workspaceId = $derived(session.workspaces.current?.id ?? null);
 	$effect(() => {
 		void store.load(workspaceId);
 	});
@@ -64,7 +65,7 @@
 			.then((list) => (schemes = Array.isArray(list) ? list : []))
 			.catch(() => (listsFailed = true));
 	});
-	const language = $derived($workspaces.current?.language ?? '');
+	const language = $derived(session.workspaces.current?.language ?? '');
 	const orderControl = $derived(
 		deckOrderControl({
 			stored: data?.deckSettings[deckId]?.newOrder ?? null,

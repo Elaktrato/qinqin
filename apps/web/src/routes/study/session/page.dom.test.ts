@@ -8,10 +8,11 @@ vi.mock('$app/navigation', () => ({ goto: vi.fn(() => Promise.resolve()) }));
 vi.mock('$lib/api/entries', () => ({ getEntry: vi.fn() }));
 vi.mock('$lib/api/schemes', () => ({ getSchemes: vi.fn(), getSchemeEntries: vi.fn() }));
 vi.mock('$lib/api/audio', () => ({ resolveAudio: vi.fn(async () => ({})) }));
-vi.mock('$lib/study/events', () => ({
-	flushPendingReviews: vi.fn(async () => {}),
-	recordReview: vi.fn(async () => null),
-	recordReplacement: vi.fn(async () => null)
+// The session's outbox, faked (record 0009: the page records through useSession().outbox).
+const outboxFakes = vi.hoisted(() => ({
+	flush: vi.fn(async () => {}),
+	recordReview: vi.fn<import('$lib/study/events').ReviewOutbox['recordReview']>(async () => null),
+	recordReplacement: vi.fn<import('$lib/study/events').ReviewOutbox['recordReplacement']>(async () => null)
 }));
 vi.mock('$lib/study/data', async (importOriginal) => ({
 	...(await importOriginal<typeof import('$lib/study/data')>()),
@@ -53,7 +54,7 @@ vi.mock('$lib/time/zone', () => ({
 import { getEntry } from '$lib/api/entries';
 import { loadNoteCfg, loadNotes } from '$lib/notes/store';
 import { getSchemeEntries, getSchemes } from '$lib/api/schemes';
-import { recordReplacement, recordReview } from '$lib/study/events';
+const { recordReplacement, recordReview } = outboxFakes;
 import { SESSION_CONFIG_KEY } from '$lib/study/session';
 import { mixFlowQueue } from '$lib/study/sessionMix';
 import { addCard } from '$lib/study/commands/cards';
@@ -62,7 +63,6 @@ import { usableChars } from '$lib/study/writing';
 import { studyDay } from '$lib/time/studyDay';
 import { currentStudyDay } from '$lib/time/zone';
 import { offline, resetOffline } from '$lib/pwa/offlineState';
-import { workspaces } from '$lib/workspaces';
 import Page from './+page.svelte';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
@@ -75,6 +75,7 @@ import * as build from '$lib/testing/study';
 let ctx: TestContext = testContext();
 beforeEach(() => {
 	ctx = testContext();
+	Object.assign(ctx.session.outbox, outboxFakes);
 });
 
 // The generated preview of a new card with the default weights (#101): never adjusted to the test.
@@ -156,7 +157,7 @@ beforeEach(() => {
 		createdAt: new Date().toISOString()
 	}));
 	history([], []);
-	workspaces.set({
+	ctx.session.workspaces.set({
 		list: [{ id: 1, language: 'ja', name: 'ja' } as never],
 		current: { id: 1, language: 'ja', name: 'ja' } as never
 	});
@@ -321,7 +322,7 @@ describe('personal note on the answer side', () => {
 
 	beforeEach(() => {
 		resetOffline();
-		workspaces.set({
+		ctx.session.workspaces.set({
 			list: [{ id: 2, language: 'zh', name: 'zh' } as never],
 			current: { id: 2, language: 'zh', name: 'zh' } as never
 		});
@@ -416,7 +417,7 @@ describe('personal note on the answer side', () => {
 describe('session states keep the page outline (#101)', () => {
 	it('the no-workspace state still has an h1', async () => {
 		configure(['vocab']);
-		workspaces.set({ list: [], current: null });
+		ctx.session.workspaces.set({ list: [], current: null });
 		render(Page, { context: ctx.context });
 		const h1 = await screen.findByRole('heading', { level: 1 });
 		expect(h1.textContent).toBe('Session');

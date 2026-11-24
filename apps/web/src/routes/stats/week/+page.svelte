@@ -24,7 +24,6 @@
 		weekRedirect
 	} from '$lib/weekly/week';
 	import { weekHeading, type CharactersState } from '$lib/weekly/weekText';
-	import { workspaces } from '$lib/workspaces';
 	import MilestoneCard from '$lib/milestones/MilestoneCard.svelte';
 	import MilestoneHistory from '$lib/milestones/MilestoneHistory.svelte';
 	import { loadMilestones, markSeen, type MilestonesView } from '$lib/milestones/loadMilestones';
@@ -32,6 +31,8 @@
 	import type { Timelines } from '$lib/weekly/replay';
 	import type { CharRow } from '$lib/api/types';
 	import type { StudyCard } from '$lib/study/types';
+	import { useSession } from '$lib/context/context';
+	const session = useSession();
 
 	let now = $state(Date.now());
 	let view = $state.raw<WeekView | null>(null);
@@ -42,7 +43,7 @@
 	// Guards against a slow earlier request overwriting a newer view.
 	let requestSeq = 0;
 
-	const workspace = $derived($workspaces.current);
+	const workspace = $derived(session.workspaces.current);
 	const workspaceId = $derived(workspace?.id ?? null);
 	const language = $derived(workspace?.language ?? '');
 	const today = $derived(currentStudyDay().today(now));

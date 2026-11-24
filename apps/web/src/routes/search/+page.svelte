@@ -8,7 +8,6 @@
 	import { search } from '$lib/api/search';
 	import type { SearchHit } from '$lib/api/types';
 	import { recordLookup } from '$lib/lookups/sink';
-	import { currentLanguage, workspaces, workspacesLoaded } from '$lib/workspaces';
 	import { getSchemes } from '$lib/api/schemes';
 	import type { Scheme } from '$lib/api/types';
 	import {
@@ -41,6 +40,8 @@
 	import ResultRow from './ResultRow.svelte';
 	import EntryView from '$lib/entry/EntryView.svelte';
 	import { useApp } from '$lib/context/context';
+	import { useSession } from '$lib/context/context';
+	const session = useSession();
 	const app = useApp();
 
 	// The server's default result cap (lexicon.defaultSearchLimit).
@@ -55,8 +56,8 @@
 	// empty state refer to it even after the input changes.
 	let activeQuery = $state('');
 
-	const lang = $derived($currentLanguage);
-	const hidden = $derived(hiddenDictionaries($workspaces.current));
+	const lang = $derived(session.workspaces.language);
+	const hidden = $derived(hiddenDictionaries(session.workspaces.current));
 	const urlQuery = $derived(page.url.searchParams.get('q') ?? '');
 	const selected = $derived(selectedFromParams(page.url.searchParams));
 	// The URL's e is the detail's entry even when the visible hits do not
@@ -217,7 +218,7 @@
 	// click; "open in new tab" from the context menu is not seen). Typed
 	// queries are never recorded.
 	function openedHit(entryId: number): void {
-		recordLookup(get(workspaces).current?.id, { entryId, source: 'search' });
+		recordLookup(session.workspaces.current?.id, { entryId, source: 'search' });
 	}
 
 	/** Choosing a result: desktop replaces the entry in place; a phone pushes, so Back returns to the list. */
@@ -345,7 +346,7 @@
 				bind:value={query}
 				placeholder={lang !== null
 					? t('search.input.placeholder')
-					: $workspacesLoaded
+					: session.workspaces.loaded
 						? t('search.input.selectWorkspace')
 						: t('search.input.loadingWorkspaces')}
 				disabled={lang === null}
@@ -425,7 +426,7 @@
 		<p class="hint" role="status">{dictionaryHint(languageLabel(lang), app.auth.user?.admin === true)}</p>
 	{/if}
 
-	{#if lang === null && $workspacesLoaded}
+	{#if lang === null && session.workspaces.loaded}
 		<p class="hint">
 			{t('search.noWorkspace')}
 			<a href="/settings">{t('search.openSettings')}</a>

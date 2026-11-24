@@ -11,8 +11,9 @@ import { ApiError, api as moduleApi, type ApiOptions } from '../api/client';
 import type { User } from '../auth.svelte';
 import { createAppContext, type AppContext } from '../context/app.svelte';
 import { contextOf } from '../context/context';
-import type { Api, AppDeps, EventSource, Timers } from '../context/deps';
+import { webStorage, type Api, type AppDeps, type EventSource, type Timers, type VisibilitySource } from '../context/deps';
 import type { Session } from '../context/session.svelte';
+import type { Workspaces, WorkspacesState } from '../workspaces.svelte';
 
 /** An answer for `METHOD /path` (the query string included when the route names one). */
 export type Route = (body: unknown, path: string, options: ApiOptions) => unknown;
@@ -101,21 +102,35 @@ export function fakeWindow(): EventSource & { dispatch(event: Event): void } {
 	};
 }
 
+/** A document stand-in whose visibility the test sets. */
+export function fakeDocument(): VisibilitySource & { dispatch(event: Event): void; visibilityState: string } {
+	const target = new EventTarget();
+	return {
+		visibilityState: 'visible',
+		addEventListener: (type, listener) => target.addEventListener(type, listener),
+		removeEventListener: (type, listener) => target.removeEventListener(type, listener),
+		dispatch: (event) => void target.dispatchEvent(event)
+	};
+}
+
 /**
  * fakeDeps: app dependencies from fakes; `routes` answers the API. Without
  * routes the API is the module's `api` (a test that mocks lib/api/client or
  * stubs fetch answers it), so the state objects and the API helpers share it.
+ * Storage is the environment's (jsdom's, or a test's stub, read at each call)
+ * and an in-memory area where there is none.
  */
 export function fakeDeps(routes?: Record<string, Route | unknown>, overrides: Partial<AppDeps> = {}): AppDeps {
 	const local = memoryStorage();
 	const session = memoryStorage();
 	return {
 		api: routes === undefined ? moduleApi : fakeApi(routes),
-		local: () => local,
-		session: () => session,
+		local: () => webStorage('localStorage') ?? local,
+		session: () => webStorage('sessionStorage') ?? session,
 		now: () => Date.now(),
 		timers: manualTimers(),
 		window: fakeWindow(),
+		document: fakeDocument(),
 		...overrides
 	};
 }
@@ -136,6 +151,16 @@ export interface TestContext {
 	deps: AppDeps;
 	/** The context map a component renders with: `render(C, { props, context: ctx.context })`. */
 	context: Map<unknown, unknown>;
+}
+
+/** workspacesState: the plain `{ list, current }` of a Workspaces (for toEqual). */
+export function workspacesState(workspaces: Workspaces): WorkspacesState {
+	return { list: workspaces.list, current: workspaces.current };
+}
+
+/** updateWorkspaces: replaces the list and selection with `fn` of the current ones. */
+export function updateWorkspaces(workspaces: Workspaces, fn: (state: WorkspacesState) => WorkspacesState): void {
+	workspaces.set(fn(workspacesState(workspaces)));
 }
 
 export function testUser(over: Partial<User> = {}): User {

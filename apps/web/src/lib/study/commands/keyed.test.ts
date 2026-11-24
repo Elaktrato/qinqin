@@ -1,3 +1,4 @@
+import { testContext, type TestContext } from '$lib/testing/context';
 // Keyed-row commands (split from the old store tests, #193).
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { readFileSync, readdirSync } from "node:fs";
@@ -8,7 +9,6 @@ const { goto } = vi.hoisted(() => ({ goto: vi.fn() }));
 
 vi.mock("$app/navigation", () => ({ goto }));
 
-import { workspaces } from "$lib/workspaces";
 import { setOutboxUser } from "$lib/study/outboxUser";
 import { rememberSent } from "$lib/study/recentSent";
 import { gradeItem } from "$lib/study/grade";
@@ -66,7 +66,6 @@ import {
   pluginRow,
   deck,
   card,
-  selectWorkspace,
   calls,
   putBodies,
   pushBodies,
@@ -84,6 +83,11 @@ import {
   useStudyStoreMocks
 } from "$lib/testing/studyFetch";
 
+let ctx: TestContext = testContext();
+beforeEach(() => {
+	ctx = testContext();
+});
+
 describe("vacation rows", () => {
   const vacRow = (id: string, over: Record<string, unknown> = {}, rowOver = {}) =>
     pluginRow(
@@ -95,7 +99,6 @@ describe("vacation rows", () => {
   beforeEach(() => {
     vi.stubGlobal("localStorage", fakeStorage());
     vi.stubGlobal("fetch", vi.fn());
-    selectWorkspace(WORKSPACE_ID);
   });
   afterEach(() => {
     expectOneStorage();
@@ -138,7 +141,6 @@ describe("goal row", () => {
   beforeEach(() => {
     vi.stubGlobal("localStorage", fakeStorage());
     vi.stubGlobal("fetch", vi.fn());
-    selectWorkspace(3);
   });
   afterEach(() => {
     expectOneStorage();
@@ -187,7 +189,6 @@ describe("goal row", () => {
     const seen: number[] = [];
     const off = onStudyChange((w) => seen.push(w));
     // The current workspace has moved on: the caller's captured id wins.
-    selectWorkspace(4);
     await saveGoals(3, goal as never);
     off();
     expect(putBodies()).toEqual([
@@ -208,7 +209,6 @@ describe("known marks", () => {
   beforeEach(() => {
     vi.stubGlobal("localStorage", fakeStorage());
     vi.stubGlobal("fetch", vi.fn());
-    selectWorkspace(3);
   });
   afterEach(() => {
     expectOneStorage();
@@ -241,7 +241,6 @@ describe("known marks", () => {
     vi.mocked(fetch).mockImplementation(async () => jsonResponse({ version: 1 }));
     const seen: number[] = [];
     const off = onStudyChange((w) => seen.push(w));
-    selectWorkspace(4); // the current workspace is not the book's
     await setKnownMark(3, 41, true);
     off();
     const [put] = putBodies();
@@ -364,7 +363,6 @@ describe("seen milestone rows", () => {
   beforeEach(() => {
     vi.stubGlobal("localStorage", fakeStorage());
     vi.stubGlobal("fetch", vi.fn());
-    selectWorkspace(3);
   });
   afterEach(() => {
     expectOneStorage();

@@ -19,7 +19,6 @@ import { fetchCharacters } from '$lib/api/characters';
 import { fetchComponents } from '$lib/api/components';
 import type { CharRow } from '$lib/api/types';
 import { page, setUrl } from '$lib/testing/appState.svelte';
-import { workspaces } from '$lib/workspaces';
 import { primaryActions } from '$lib/ui/testing/primary';
 import Page from './+page.svelte';
 
@@ -56,7 +55,7 @@ const components = {
 };
 
 function workspace(language: string): void {
-	workspaces.set({ list: [], current: { id: 1, language, name: language } as never });
+	ctx.session.workspaces.set({ list: [], current: { id: 1, language, name: language } as never });
 }
 
 function cells(): string[] {

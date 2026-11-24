@@ -1,3 +1,4 @@
+import { testContext, type TestContext } from '$lib/testing/context';
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/svelte';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -32,10 +33,14 @@ import {
 } from '$lib/study/commands/cards';
 import { SESSION_CONFIG_KEY } from '$lib/study/session';
 import type { Deck, StudyCard } from '$lib/study/types';
-import { workspaces } from '$lib/workspaces';
 import { currentStudyDay } from '$lib/time/zone';
 import { primaryActions } from '$lib/ui/testing/primary';
 import DeckDetail from './DeckDetail.svelte';
+
+let ctx: TestContext = testContext();
+beforeEach(() => {
+	ctx = testContext();
+});
 
 const verbs: Deck = { id: 'd1', name: 'Verbs', createdAt: '2026-01-01T00:00:00.000Z' };
 const nouns: Deck = { id: 'd2', name: 'Nouns', createdAt: '2026-01-02T00:00:00.000Z' };
@@ -116,7 +121,7 @@ function install(): void {
 }
 
 beforeEach(() => {
-	workspaces.set({
+	ctx.session.workspaces.set({
 		list: [{ id: 1, language: 'zh', name: 'zh' } as never],
 		current: { id: 1, language: 'zh', name: 'zh' } as never
 	});
@@ -130,7 +135,7 @@ afterEach(() => {
 });
 
 async function open(deckId = 'd1'): Promise<void> {
-	render(DeckDetail, { deckId });
+	render(DeckDetail, { props: { deckId }, context: ctx.context });
 	await screen.findByRole('link', { name: '好' });
 }
 const wordRows = () => [...document.querySelectorAll('li[data-entry]')];
@@ -197,7 +202,7 @@ describe('DeckDetail', () => {
 
 	it('renders 100 rows at a time', async () => {
 		cards = Array.from({ length: 130 }, (_, i) => vocab(i + 1, `字${i + 1}`, { createdAt: `2026-01-01T00:00:${String(i % 60).padStart(2, '0')}.${String(i).padStart(3, '0')}Z` }));
-		render(DeckDetail, { deckId: 'd1' });
+		render(DeckDetail, { props: { deckId: 'd1' }, context: ctx.context });
 		await screen.findByRole('button', { name: 'Show 30 more' });
 		expect(wordRows()).toHaveLength(100);
 		await fireEvent.click(screen.getByRole('button', { name: 'Show 30 more' }));
@@ -271,7 +276,7 @@ describe('DeckDetail', () => {
 			merged: 0,
 			deckSettings: settings as never
 		}));
-		render(DeckDetail, { deckId: 'cp' });
+		render(DeckDetail, { props: { deckId: 'cp' }, context: ctx.context });
 		expect(await screen.findByText('Copied from hsk-words · HSK 1')).toBeTruthy();
 	});
 
@@ -311,7 +316,7 @@ describe('DeckDetail', () => {
 	});
 
 	it('says when the deck does not exist', async () => {
-		render(DeckDetail, { deckId: 'nope' });
+		render(DeckDetail, { props: { deckId: 'nope' }, context: ctx.context });
 		expect(await screen.findByText('Deck not found.')).toBeTruthy();
 	});
 });

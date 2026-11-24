@@ -1,3 +1,4 @@
+import { testContext, type TestContext } from '$lib/testing/context';
 import { cleanup, fireEvent, render, screen } from '@testing-library/svelte';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -23,14 +24,18 @@ vi.mock('./exercises', async (importOriginal) => ({
 }));
 
 import { loadDisplayLesson } from './lessonData';
-import { workspaces } from '$lib/workspaces';
 import { primaryActions } from '$lib/ui/testing/primary';
 import PracticeRun from './PracticeRun.svelte';
+
+let ctx: TestContext = testContext();
+beforeEach(() => {
+	ctx = testContext();
+});
 
 const ws = { id: 1, language: 'ja', name: '', settings: {}, updatedAt: '' } as never;
 
 beforeEach(() => {
-	workspaces.set({ list: [ws], current: ws });
+	ctx.session.workspaces.set({ list: [ws], current: ws });
 	vi.mocked(loadDisplayLesson).mockResolvedValue({
 		textLang: 'ja',
 		view: {
@@ -51,12 +56,12 @@ beforeEach(() => {
 afterEach(() => {
 	cleanup();
 	vi.clearAllMocks();
-	workspaces.set({ list: [], current: null });
+	ctx.session.workspaces.set({ list: [], current: null });
 });
 
 describe('grammar practice in the lighter look (#106)', () => {
 	it('has no primary before the answer, then Next is the one primary, then Retry', async () => {
-		render(PracticeRun, { pack: 'basics', lessonId: 'l1' });
+		render(PracticeRun, { props: { pack: 'basics', lessonId: 'l1' }, context: ctx.context });
 		await screen.findByRole('heading', { name: 'The は particle' });
 		expect(primaryActions(document.body)).toHaveLength(0);
 		await fireEvent.click(screen.getByRole('button', { name: '学生' }));

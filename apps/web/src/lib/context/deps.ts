@@ -21,6 +21,11 @@ export interface EventSource {
 	removeEventListener(type: string, listener: (event: Event) => void): void;
 }
 
+/** The slice of `document` the state objects follow (visibility). */
+export interface VisibilitySource extends EventSource {
+	readonly visibilityState: string;
+}
+
 export interface AppDeps {
 	api: Api;
 	/** localStorage, or null where it is missing or access throws (blocked site data). */
@@ -29,8 +34,10 @@ export interface AppDeps {
 	session(): Storage | null;
 	now(): number;
 	timers: Timers;
-	/** The window, for storage, online and visibility events; null outside a browser. */
+	/** The window, for storage and online events; null outside a browser. */
 	window: EventSource | null;
+	/** The document, for visibility; null outside a browser. */
+	document: VisibilitySource | null;
 }
 
 /** webStorage: a Web Storage area, or null where it is missing or access throws. */
@@ -57,6 +64,7 @@ export function browserDeps(): AppDeps {
 		session: () => webStorage('sessionStorage'),
 		now: () => Date.now(),
 		timers: browserTimers,
-		window: typeof window === 'undefined' ? null : window
+		window: typeof window === 'undefined' ? null : window,
+		document: typeof document === 'undefined' ? null : document
 	};
 }

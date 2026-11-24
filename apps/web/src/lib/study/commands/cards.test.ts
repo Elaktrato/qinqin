@@ -1,3 +1,4 @@
+import { testContext, type TestContext } from '$lib/testing/context';
 // Card commands (split from the old store tests, #193).
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { readFileSync, readdirSync } from "node:fs";
@@ -8,7 +9,6 @@ const { goto } = vi.hoisted(() => ({ goto: vi.fn() }));
 
 vi.mock("$app/navigation", () => ({ goto }));
 
-import { workspaces } from "$lib/workspaces";
 import { setOutboxUser } from "$lib/study/outboxUser";
 import { rememberSent } from "$lib/study/recentSent";
 import { gradeItem } from "$lib/study/grade";
@@ -66,7 +66,6 @@ import {
   pluginRow,
   deck,
   card,
-  selectWorkspace,
   calls,
   putBodies,
   pushBodies,
@@ -83,6 +82,11 @@ import {
   expectOneStorage,
   useStudyStoreMocks
 } from "$lib/testing/studyFetch";
+
+let ctx: TestContext = testContext();
+beforeEach(() => {
+	ctx = testContext();
+});
 
 
 describe("card commands", () => {

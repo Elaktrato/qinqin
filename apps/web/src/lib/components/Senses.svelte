@@ -5,8 +5,8 @@
 	import { t } from '$lib/i18n';
 	import { hiddenDictionaries, partitionSenses } from '$lib/dictionaryVisibility';
 	import { licenseUrl } from '$lib/licenses';
-	import { workspaces } from '$lib/workspaces';
-
+	import { useSession } from '$lib/context/context';
+	const session = useSession();
 	let {
 		senses,
 		senseGroups = []
@@ -18,7 +18,7 @@
 
 	// Dictionaries the current workspace hides collapse behind a button.
 	const partition = $derived(
-		partitionSenses(senses, hiddenDictionaries($workspaces.current))
+		partitionSenses(senses, hiddenDictionaries(session.workspaces.current))
 	);
 	let revealed = $state(false);
 	let section = $state<HTMLElement | null>(null);

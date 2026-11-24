@@ -4,7 +4,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { get } from 'svelte/store';
 
 import { endSession } from './sessionEnd';
-import { load, workspaces, workspacesLoaded, WORKSPACE_KEY } from '../workspaces';
+import { WORKSPACE_KEY } from '../workspaces.svelte';
+import { testContext, workspacesState } from '../testing/context';
 import { loadPluginStates, pluginStates } from '../plugins/states';
 
 function storage(): Storage {
@@ -36,8 +37,6 @@ beforeEach(() => {
 			return new Response('{}', { status: 404 });
 		})
 	);
-	workspaces.set({ list: [], current: null });
-	workspacesLoaded.set(false);
 	pluginStates.set({ list: [], status: 'idle' });
 });
 
@@ -47,12 +46,14 @@ afterEach(() => {
 
 describe('late answers after the session ended (#173)', () => {
 	it('a workspace list in flight sets nothing', async () => {
-		const late = load();
-		endSession('signOut');
+		const ctx = testContext({ deps: { local: () => localStorage } });
+		const session = ctx.session;
+		const late = session.workspaces.load();
+		ctx.app.auth.logout();
 		release();
 		await late;
-		expect(get(workspaces)).toEqual({ list: [], current: null });
-		expect(get(workspacesLoaded)).toBe(false);
+		expect(workspacesState(session.workspaces)).toEqual({ list: [], current: null });
+		expect(session.workspaces.loaded).toBe(false);
 		expect(localStorage.getItem(WORKSPACE_KEY)).toBeNull();
 	});
 

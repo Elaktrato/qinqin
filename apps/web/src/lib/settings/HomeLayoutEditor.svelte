@@ -34,8 +34,9 @@
 	} from '$lib/widgets/options';
 	import type { MessageKey } from '$lib/i18n';
 	import { allWidgets } from '$lib/widgets/registry';
-	import { currentLanguage } from '$lib/workspaces';
 	import { Button, Chip, Panel, Section } from '$lib/ui';
+	import { useSession } from '$lib/context/context';
+	const session = useSession();
 
 	// The layout as the editor shows it (null = nothing stored, so the
 	// default) and the last one the server confirmed, for Discard.
@@ -121,13 +122,13 @@
 	// workspace too.
 	const all = $derived(allWidgets(webPlugins, states, null));
 	const listed = $derived(all.filter((widget) => widget.surfaces.includes('home')).map((w) => w.id));
-	const items = $derived(displayItems(stored, all, $currentLanguage));
+	const items = $derived(displayItems(stored, all, session.workspaces.language));
 	const onItems = $derived(items.filter((item) => item.on));
 	const offItems = $derived(items.filter((item) => !item.on));
-	const language = $derived($currentLanguage ? languageLabel($currentLanguage) : '');
+	const language = $derived(session.workspaces.language ? languageLabel(session.workspaces.language) : '');
 	const preview = $derived(
 		placeWidgets(
-			resolveLayout(stored, allWidgets(webPlugins, states, $currentLanguage), 'home')
+			resolveLayout(stored, allWidgets(webPlugins, states, session.workspaces.language), 'home')
 		)
 	);
 	const isDefault = $derived(

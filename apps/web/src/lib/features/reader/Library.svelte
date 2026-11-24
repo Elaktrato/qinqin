@@ -5,19 +5,20 @@
 	import type { Book } from '$lib/api/types';
 	import WorkspaceLabel from '$lib/components/WorkspaceLabel.svelte';
 	import { languageLabel } from '$lib/languages';
-	import { select, workspaces } from '$lib/workspaces';
 	import { apiErrorMessage } from './errors';
 	import { workspacesWithBooks } from './libraryElsewhere';
 	import { initialUploadLanguage } from './uploadLanguage';
 	import { savedChapter } from './position';
 	import { SOURCES_HREF, bookHref } from './route';
 	import { Button } from '$lib/ui';
+	import { useSession } from '$lib/context/context';
+	const session = useSession();
 
 	const MAX_BYTES = 20 * 1024 * 1024;
 
 	// The library of the selected workspace: switching the workspace in
 	// the header shows that workspace's books, and uploads go there.
-	const workspace = $derived($workspaces.current);
+	const workspace = $derived(session.workspaces.current);
 	const workspaceId = $derived(workspace?.id ?? null);
 	// The language books of this workspace must have; '' when the reader
 	// does not support the workspace's language (no uploads then).
@@ -35,7 +36,7 @@
 	// When this library is empty: the user's books in other workspaces
 	// (after the upgrade they may sit in another workspace than this one).
 	let elsewhere = $state<Book[]>([]);
-	const others = $derived(workspacesWithBooks(elsewhere, $workspaces.list, workspaceId ?? undefined));
+	const others = $derived(workspacesWithBooks(elsewhere, session.workspaces.list, workspaceId ?? undefined));
 
 	// A response for a workspace that is no longer selected is dropped.
 	let loadSeq = 0;
@@ -128,7 +129,7 @@
 <div class="page-body library">
 	<h1 class="heading">
 		{t('reader.library.title')}
-		{#if workspace}<WorkspaceLabel {workspace} list={$workspaces.list} size={18} />{/if}
+		{#if workspace}<WorkspaceLabel {workspace} list={session.workspaces.list} size={18} />{/if}
 	</h1>
 
 	{#if workspace}
@@ -189,9 +190,9 @@
 						<li>
 							<span>
 								{t('reader.library.booksIn', { count })}
-								<WorkspaceLabel workspace={other} list={$workspaces.list} withLanguage />
+								<WorkspaceLabel workspace={other} list={session.workspaces.list} withLanguage />
 							</span>
-							<Button onclick={() => select(other.id)}>{t('reader.library.switch')}</Button>
+							<Button onclick={() => session.workspaces.select(other.id)}>{t('reader.library.switch')}</Button>
 						</li>
 					{/each}
 				</ul>

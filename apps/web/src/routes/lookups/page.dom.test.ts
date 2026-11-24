@@ -1,3 +1,4 @@
+import { testContext, type TestContext } from '$lib/testing/context';
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/svelte';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { EntryBase } from '$lib/api/types';
@@ -19,10 +20,14 @@ vi.mock('$lib/time/zone', () => ({
 
 import { addEntries, loadPage } from '$lib/lookups/pageData';
 import { clearHistory, removeFromHistory, saveLookupCfg } from '$lib/lookups/store';
-import { workspaces } from '$lib/workspaces';
 import { primaryActions } from '$lib/ui/testing/primary';
 import Page from './+page.svelte';
 import source from './+page.svelte?raw';
+
+let ctx: TestContext = testContext();
+beforeEach(() => {
+	ctx = testContext();
+});
 
 const item = (entryId: number, over: Partial<LookupItem> = {}): LookupItem => ({
 	entryId,
@@ -50,7 +55,7 @@ function data(items: LookupItem[], over: Partial<PageData> = {}, states: Record<
 }
 
 beforeEach(() => {
-	workspaces.set({ list: [], current: { id: 3, language: 'zh', name: 'Chinese' } as never });
+	ctx.session.workspaces.set({ list: [], current: { id: 3, language: 'zh', name: 'Chinese' } as never });
 	vi.mocked(addEntries).mockResolvedValue({ created: 1, joined: 0, skipped: 0, missing: 0 });
 });
 afterEach(() => {
@@ -62,7 +67,7 @@ describe('/lookups page', () => {
 	it('lists 50 words newest first and shows 50 more', async () => {
 		const items = Array.from({ length: 60 }, (_, i) => item(i + 1, { lastAt: new Date(Date.UTC(2026, 10, 15) - i * 60_000).toISOString() }));
 		vi.mocked(loadPage).mockResolvedValue(data(items));
-		render(Page);
+		render(Page, { context: ctx.context });
 		const list = await screen.findByRole('list', { name: 'Looked-up words' });
 		expect(within(list).getAllByRole('listitem')).toHaveLength(50);
 		expect(within(list).getAllByRole('listitem')[0].textContent).toContain('词1');
@@ -74,7 +79,7 @@ describe('/lookups page', () => {
 
 	it('a row shows count, day, where and its state', async () => {
 		vi.mocked(loadPage).mockResolvedValue(data([item(1, { count: 4, lastAt: '2026-11-03T09:00:00Z', books: [17], sources: { reader: 3, search: 1 } }), item(2)], {}, { 2: 'learning' }));
-		render(Page);
+		render(Page, { context: ctx.context });
 		const rows = within(await screen.findByRole('list', { name: 'Looked-up words' })).getAllByRole('listitem');
 		expect(rows[0].textContent).toContain('×4');
 		expect(rows[0].textContent).toContain('last 3 Nov');
@@ -86,14 +91,14 @@ describe('/lookups page', () => {
 
 	it('the deck is a Select and the history rows are hairline list items', async () => {
 		vi.mocked(loadPage).mockResolvedValue(data([item(1)]));
-		render(Page);
+		render(Page, { context: ctx.context });
 		await screen.findByRole('list', { name: 'Looked-up words' });
 		expect(screen.getByLabelText('Deck').closest('.field')).toBeTruthy();
 	});
 
 	it('Add on a row adds that word to the chosen deck and says what happened', async () => {
 		vi.mocked(loadPage).mockResolvedValue(data([item(1), item(2)]));
-		render(Page);
+		render(Page, { context: ctx.context });
 		await screen.findByRole('list', { name: 'Looked-up words' });
 		await fireEvent.change(screen.getByLabelText('Deck'), { target: { value: 'd1' } });
 		await fireEvent.click(screen.getByRole('button', { name: 'Add 词2' }));
@@ -105,7 +110,7 @@ describe('/lookups page', () => {
 	it('adds and removes the selected words', async () => {
 		vi.mocked(loadPage).mockResolvedValue(data([item(1), item(2), item(3)]));
 		vi.mocked(removeFromHistory).mockResolvedValue({ clearedAt: null, items: [item(2)], extra: {} });
-		render(Page);
+		render(Page, { context: ctx.context });
 		await screen.findByRole('list', { name: 'Looked-up words' });
 		await fireEvent.click(screen.getByRole('checkbox', { name: 'Select 词1' }));
 		await fireEvent.click(screen.getByRole('checkbox', { name: 'Select 词3' }));
@@ -126,7 +131,7 @@ describe('/lookups page', () => {
 		vi.mocked(loadPage).mockResolvedValue(
 			data([item(1, { count: 5 }), item(2, { count: 3 }), item(3, { count: 2 }), item(4, { count: 9 })], {}, { 4: 'learning' })
 		);
-		render(Page);
+		render(Page, { context: ctx.context });
 		const box = await screen.findByRole('region', { name: 'You keep looking these up' });
 		expect(primaryActions(box)).toHaveLength(1);
 		expect(box.textContent).toContain('词1');
@@ -139,7 +144,7 @@ describe('/lookups page', () => {
 
 	it('the filter shows only words without a card', async () => {
 		vi.mocked(loadPage).mockResolvedValue(data([item(1), item(2)], {}, { 2: 'known' }));
-		render(Page);
+		render(Page, { context: ctx.context });
 		const list = await screen.findByRole('list', { name: 'Looked-up words' });
 		await fireEvent.click(screen.getByRole('radio', { name: 'No card yet' }));
 		expect(within(list).getAllByRole('listitem')).toHaveLength(1);
@@ -148,7 +153,7 @@ describe('/lookups page', () => {
 	it('Clear asks first; Keep does nothing; Delete clears and shows the empty state', async () => {
 		vi.mocked(loadPage).mockResolvedValue(data([item(1)]));
 		vi.mocked(clearHistory).mockResolvedValue({ eventsDeleted: 2, history: { clearedAt: '2026-11-16T12:00:00Z', items: [], extra: {} } });
-		render(Page);
+		render(Page, { context: ctx.context });
 		await screen.findByRole('list', { name: 'Looked-up words' });
 		await fireEvent.click(screen.getByRole('button', { name: 'Clear history…' }));
 		expect(screen.getByText('Delete the lookup history of Chinese, including old search records? This cannot be undone.')).toBeTruthy();
@@ -162,7 +167,7 @@ describe('/lookups page', () => {
 
 	it('the switch saves the user-global setting and, when off, offers to clear too', async () => {
 		vi.mocked(loadPage).mockResolvedValue(data([item(1)]));
-		render(Page);
+		render(Page, { context: ctx.context });
 		const sw = await screen.findByRole('switch', { name: 'Record words I look up' });
 		expect(sw.className).toContain('button');
 		expect(sw.className).toContain('secondary');
@@ -176,14 +181,14 @@ describe('/lookups page', () => {
 
 	it('a failed load says so with Try again', async () => {
 		vi.mocked(loadPage).mockRejectedValueOnce(new Error('offline')).mockResolvedValueOnce(data([item(1)]));
-		render(Page);
+		render(Page, { context: ctx.context });
 		await fireEvent.click(await screen.findByRole('button', { name: 'Try again' }));
 		expect(await screen.findByRole('list', { name: 'Looked-up words' })).toBeTruthy();
 	});
 
 	it('a word no longer in the dictionary can only be removed', async () => {
 		vi.mocked(loadPage).mockResolvedValue(data([item(1)], { bases: new Map() }));
-		render(Page);
+		render(Page, { context: ctx.context });
 		const list = await screen.findByRole('list', { name: 'Looked-up words' });
 		expect(list.textContent).toContain('Not in the dictionary any more');
 		expect(within(list).queryByRole('button', { name: /^Add/ })).toBeNull();
@@ -195,7 +200,7 @@ describe('/lookups page', () => {
 		vi.mocked(loadPage).mockResolvedValue(
 			data([item(1, { books: [17] })], { bases: new Map([[1, base(1, evil)]]), books: new Map([[17, '<b>bold</b>']]) })
 		);
-		const { container } = render(Page);
+		const { container } = render(Page, { context: ctx.context });
 		await screen.findByRole('list', { name: 'Looked-up words' });
 		expect(container.querySelector('img')).toBeNull();
 		expect(container.querySelector('b')).toBeNull();
@@ -204,8 +209,8 @@ describe('/lookups page', () => {
 	});
 
 	it('without a workspace it says so and loads nothing', async () => {
-		workspaces.set({ list: [], current: null });
-		render(Page);
+		ctx.session.workspaces.set({ list: [], current: null });
+		render(Page, { context: ctx.context });
 		expect(await screen.findByText(/Select a workspace/)).toBeTruthy();
 		expect(loadPage).not.toHaveBeenCalled();
 	});
@@ -217,7 +222,7 @@ describe('/lookups page', () => {
 	it('shows the count and announces it only when the filter changes', async () => {
 		vi.mocked(loadPage).mockResolvedValue(data([item(1), item(2), item(3)], {}, { 2: 'learning' }));
 		vi.mocked(removeFromHistory).mockResolvedValue({ clearedAt: null, items: [item(2), item(3)], extra: {} });
-		const { container } = render(Page);
+		const { container } = render(Page, { context: ctx.context });
 		const count = await screen.findByText('3 words');
 		expect(count.className).toContain('history-count');
 		expect(count.getAttribute('aria-live')).toBeNull();

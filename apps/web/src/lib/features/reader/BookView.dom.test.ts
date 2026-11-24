@@ -1,3 +1,4 @@
+import { testContext, type TestContext } from '$lib/testing/context';
 import { pagedPull } from '$lib/testing/legacyCodec';
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/svelte';
 import { tick } from 'svelte';
@@ -36,20 +37,17 @@ vi.mock('$lib/study/currentContext', () => ({ contextForData: () => ({ clock: {}
 vi.mock('../flashcards/decks/deckStats', () => ({
 	scheduleIndex: vi.fn(() => new Map([['c1', { due: '', stability: 200, difficulty: 5, state: 2 }]]))
 }));
-vi.mock('$lib/workspaces', async () => {
-	const { writable } = await import('svelte/store');
-	const state = writable({
-		list: [{ id: 7, language: 'zh', name: '', settings: { reader: { readings: 'smart', smartThreshold: 80 } }, updatedAt: '' }],
-		current: null as unknown
-	});
-	return { workspaces: state, setSettings: vi.fn(async () => ({})) };
-});
 
 import { addBookmark, addHighlight, getBook, getChapter, listBookmarks, listHighlights } from '$lib/api/library';
 import { loadStudyHistory } from '$lib/study/data';
 import { segmentWithReadings } from '$lib/api/segment';
-import { setSettings, workspaces } from '$lib/workspaces';
 import BookView from './BookView.svelte';
+
+let ctx: TestContext = testContext();
+beforeEach(() => {
+	ctx = testContext();
+	vi.spyOn(ctx.session.workspaces, 'setSettings').mockResolvedValue({} as never);
+});
 
 class FakeObserver {
 	observe() {}
@@ -73,12 +71,12 @@ beforeEach(() => {
 		{ surface: '你好', start: 0, end: 2, lemma: '你好', reason: '', entries: [{ id: 1, kind: 'word' }], reading: { type: 'pinyin', value: 'nǐ hǎo' } },
 		{ surface: '世界', start: 2, end: 4, lemma: '世界', reason: '', entries: [{ id: 2, kind: 'word' }], reading: { type: 'pinyin', value: 'shì jiè' } }
 	]);
-	vi.mocked(setSettings).mockClear();
+	vi.mocked(ctx.session.workspaces.setSettings).mockClear();
 	setReader({ readings: 'smart', smartThreshold: 80 });
 });
 
 function setReader(reader: Record<string, unknown>): void {
-	workspaces.set({
+	ctx.session.workspaces.set({
 		list: [{ id: 7, language: 'zh', name: '', settings: { reader }, updatedAt: '' }],
 		current: null
 	} as never);
@@ -90,7 +88,7 @@ afterEach(() => {
 
 describe('BookView readings', () => {
 	it('smart: loads readings once, conceals the mastered word, shows the other', async () => {
-		render(BookView, { id: 1, chapter: 0 });
+		render(BookView, { props: { id: 1, chapter: 0 }, context: ctx.context });
 		await waitFor(() => expect(document.querySelectorAll('ruby.gen rt')).toHaveLength(2));
 		const rts = Array.from(document.querySelectorAll('ruby.gen rt'));
 		expect(rts.map((r) => [r.textContent, r.classList.contains('concealed')])).toEqual([
@@ -102,7 +100,7 @@ describe('BookView readings', () => {
 	});
 
 	it('Show all readings (and the R key) reveal everything', async () => {
-		render(BookView, { id: 1, chapter: 0 });
+		render(BookView, { props: { id: 1, chapter: 0 }, context: ctx.context });
 		await waitFor(() => expect(document.querySelectorAll('ruby.gen')).toHaveLength(2));
 		const root = document.querySelector('.chapter-text')!;
 		expect(root.classList.contains('show-all')).toBe(false);
@@ -113,14 +111,14 @@ describe('BookView readings', () => {
 	});
 
 	it('switching to Never makes the readings go and saves one patch', async () => {
-		render(BookView, { id: 1, chapter: 0 });
+		render(BookView, { props: { id: 1, chapter: 0 }, context: ctx.context });
 		await waitFor(() => expect(document.querySelectorAll('ruby.gen')).toHaveLength(2));
 		// The Display settings are the rail's Display tab now (#102).
 		await fireEvent.click(screen.getByRole('tab', { name: 'Display' }));
 		await fireEvent.click(screen.getByRole('radio', { name: /^Never/ }));
 		await waitFor(() => expect(document.querySelectorAll('ruby.gen')).toHaveLength(0));
-		await waitFor(() => expect(setSettings).toHaveBeenCalledTimes(1), { timeout: 2000 });
-		expect(setSettings).toHaveBeenCalledWith(7, { reader: { version: 1, readings: 'never', smartThreshold: 80 } });
+		await waitFor(() => expect(ctx.session.workspaces.setSettings).toHaveBeenCalledTimes(1), { timeout: 2000 });
+		expect(ctx.session.workspaces.setSettings).toHaveBeenCalledWith(7, { reader: { version: 1, readings: 'never', smartThreshold: 80 } });
 		await tick();
 		expect(segmentWithReadings).toHaveBeenCalledTimes(1);
 	});
@@ -129,7 +127,7 @@ describe('BookView readings', () => {
 describe('BookView word states', () => {
 	it('highlighting off and readings never: no segment request at all', async () => {
 		setReader({ readings: 'never', highlightWords: false });
-		render(BookView, { id: 1, chapter: 0 });
+		render(BookView, { props: { id: 1, chapter: 0 }, context: ctx.context });
 		await screen.findByText('你好世界');
 		await tick();
 		await new Promise((r) => setTimeout(r, 50));
@@ -139,7 +137,7 @@ describe('BookView word states', () => {
 
 	it('highlighting on with readings never: loads matches and marks the new word only', async () => {
 		setReader({ readings: 'never', highlightWords: true });
-		render(BookView, { id: 1, chapter: 0 });
+		render(BookView, { props: { id: 1, chapter: 0 }, context: ctx.context });
 		// In the text (the Display legend draws a sample mark too).
 		await waitFor(() => expect(document.querySelectorAll('.chapter-text .w-new')).toHaveLength(1));
 		expect(document.querySelector('.chapter-text .w-new')?.textContent).toBe('世界');
@@ -151,7 +149,7 @@ describe('BookView word states', () => {
 describe('BookView Words tab', () => {
 	it('opening the Words tab loads the matches and shows the chapter figure', async () => {
 		setReader({ readings: 'never', highlightWords: false });
-		render(BookView, { id: 1, chapter: 0 });
+		render(BookView, { props: { id: 1, chapter: 0 }, context: ctx.context });
 		await screen.findByText('你好世界');
 		expect(segmentWithReadings).not.toHaveBeenCalled();
 		await fireEvent.click(await screen.findByRole('tab', { name: /Words/ }));
@@ -167,7 +165,7 @@ describe('BookView Words tab', () => {
 describe('BookView Words tab across books', () => {
 	it('a selection does not survive opening another book in the same page', async () => {
 		setReader({ readings: 'never', highlightWords: false });
-		const r = render(BookView, { id: 1, chapter: 0 });
+		const r = render(BookView, { props: { id: 1, chapter: 0 }, context: ctx.context });
 		await fireEvent.click(await screen.findByRole('tab', { name: /Words/ }));
 		const box = (await screen.findByRole('checkbox', { name: '世界' })) as HTMLInputElement;
 		await fireEvent.click(box);
@@ -190,7 +188,7 @@ describe('BookView Words tab across books', () => {
 			id: 1, workspaceId: 7, language: 'zh', title: 'T', author: '', source: '', sourceId: '', sourceUrl: '',
 			attribution: '', licenseNote: '', chapterCount: 2, position: '', createdAt: ''
 		});
-		const r = render(BookView, { id: 1, chapter: 0 });
+		const r = render(BookView, { props: { id: 1, chapter: 0 }, context: ctx.context });
 		await fireEvent.click(await screen.findByRole('tab', { name: /Words/ }));
 		await fireEvent.click(await screen.findByRole('checkbox', { name: '世界' }));
 		await r.rerender({ id: 1, chapter: 1 });
@@ -209,7 +207,7 @@ describe('BookView Words tab and the known index', () => {
 		vi.mocked(loadStudyHistory).mockImplementationOnce(
 			(ws) => new Promise((res) => (release = () => void res(history(ws) as never)))
 		);
-		render(BookView, { id: 1, chapter: 0 });
+		render(BookView, { props: { id: 1, chapter: 0 }, context: ctx.context });
 		await fireEvent.click(await screen.findByRole('tab', { name: /Words/ }));
 		await screen.findByText('Loading your cards…');
 		expect(screen.queryByText(/You know 0%/)).toBeNull();
@@ -234,7 +232,7 @@ describe('BookView Words tab and the known index', () => {
 				return new Response(JSON.stringify(body), { status: 200, headers: { 'content-type': 'application/json' } });
 			})
 		);
-		render(BookView, { id: 1, chapter: 0 });
+		render(BookView, { props: { id: 1, chapter: 0 }, context: ctx.context });
 		await fireEvent.click(await screen.findByRole('tab', { name: /Words/ }));
 		const all = await screen.findByRole('button', { name: 'Add all new words (250)' });
 		const before = vi.mocked(loadStudyHistory).mock.calls.length;
@@ -256,7 +254,7 @@ describe('BookView in another language', () => {
 			id: 1, workspaceId: 7, language: 'en', title: 'T', author: '', source: '', sourceId: '', sourceUrl: '',
 			attribution: '', licenseNote: '', chapterCount: 1, position: '', createdAt: ''
 		});
-		render(BookView, { id: 1, chapter: 0 });
+		render(BookView, { props: { id: 1, chapter: 0 }, context: ctx.context });
 		await screen.findByText('你好世界');
 		await new Promise((r) => setTimeout(r, 30));
 		expect(loadStudyHistory).not.toHaveBeenCalled();
@@ -292,7 +290,7 @@ describe('BookView rail (#102)', () => {
 
 	it('the rail lists Contents, Bookmarks, Highlights, Words, Display', async () => {
 		setWidth(1280);
-		render(BookView, { id: 1, chapter: 0 });
+		render(BookView, { props: { id: 1, chapter: 0 }, context: ctx.context });
 		const list = await screen.findByRole('tablist', { name: 'Side panel' });
 		expect(within(list).getAllByRole('tab').map((tab) => tab.getAttribute('aria-label'))).toEqual([
 			'Contents',
@@ -305,7 +303,7 @@ describe('BookView rail (#102)', () => {
 
 	it('the Display settings and script choice are not above the text any more', async () => {
 		setWidth(1280);
-		render(BookView, { id: 1, chapter: 0 });
+		render(BookView, { props: { id: 1, chapter: 0 }, context: ctx.context });
 		await screen.findByText('你好世界');
 		expect(screen.queryByRole('radio', { name: /^Never/ })).toBeNull();
 		expect(screen.queryByRole('combobox', { name: 'Script' })).toBeNull();
@@ -321,7 +319,7 @@ describe('BookView rail (#102)', () => {
 			id: 1, workspaceId: 7, language: 'zh', title: 'T', author: '', source: '', sourceId: '', sourceUrl: '',
 			attribution: '', licenseNote: '', chapterCount: 3, position: '', createdAt: ''
 		});
-		render(BookView, { id: 1, chapter: 1 });
+		render(BookView, { props: { id: 1, chapter: 1 }, context: ctx.context });
 		await screen.findByText('你好世界');
 		expect(screen.queryByRole('combobox', { name: /Chapter/ })).toBeNull();
 		const prev = screen.getByRole('link', { name: 'Previous chapter' });
@@ -348,7 +346,7 @@ describe('BookView rail (#102)', () => {
 		vi.mocked(listBookmarks).mockResolvedValueOnce([
 			{ id: 5, bookId: 1, position: '0:0', label: '你好', createdAt: '2026-11-16T10:00:00Z' }
 		] as never);
-		render(BookView, { id: 1, chapter: 0 });
+		render(BookView, { props: { id: 1, chapter: 0 }, context: ctx.context });
 		const heading = await screen.findByRole('heading', { level: 1, name: '故乡' });
 		const line = heading.closest('.book-line') as HTMLElement;
 		expect(line.textContent).toContain('鲁迅');
@@ -358,7 +356,7 @@ describe('BookView rail (#102)', () => {
 
 	it('below 1000px one button opens a sheet with the five tabs', async () => {
 		setWidth(800);
-		render(BookView, { id: 1, chapter: 0 });
+		render(BookView, { props: { id: 1, chapter: 0 }, context: ctx.context });
 		await screen.findByText('你好世界');
 		expect(screen.queryByRole('tablist')).toBeNull();
 		const buttons = screen.getAllByRole('button', { name: RAIL_BUTTON });
@@ -377,7 +375,7 @@ describe('BookView rail (#102)', () => {
 
 	it('the rail sheet closes across the phone breakpoint, so no hidden opener keeps focus', async () => {
 		setWidth(800);
-		render(BookView, { id: 1, chapter: 0 });
+		render(BookView, { props: { id: 1, chapter: 0 }, context: ctx.context });
 		await screen.findByText('你好世界');
 		await fireEvent.click(screen.getByRole('button', { name: RAIL_BUTTON }));
 		expect(screen.getByRole('dialog', { name: 'Book tools' })).toBeTruthy();
@@ -386,7 +384,7 @@ describe('BookView rail (#102)', () => {
 		await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Book tools' })).toBeNull());
 		cleanup();
 		setWidth(700);
-		render(BookView, { id: 1, chapter: 0 });
+		render(BookView, { props: { id: 1, chapter: 0 }, context: ctx.context });
 		await screen.findByText('你好世界');
 		await fireEvent.click(screen.getByRole('button', { name: RAIL_BUTTON }));
 		expect(screen.getByRole('dialog', { name: 'Book tools' })).toBeTruthy();
@@ -397,8 +395,8 @@ describe('BookView rail (#102)', () => {
 
 	it('a failed display save is shown inside the rail sheet', async () => {
 		setWidth(800);
-		vi.mocked(setSettings).mockRejectedValueOnce(new Error('offline'));
-		render(BookView, { id: 1, chapter: 0 });
+		vi.mocked(ctx.session.workspaces.setSettings).mockRejectedValueOnce(new Error('offline'));
+		render(BookView, { props: { id: 1, chapter: 0 }, context: ctx.context });
 		await screen.findByText('你好世界');
 		await fireEvent.click(screen.getByRole('button', { name: RAIL_BUTTON }));
 		const sheet = screen.getByRole('dialog', { name: 'Book tools' });
@@ -414,7 +412,7 @@ describe('BookView rail (#102)', () => {
 		vi.mocked(listBookmarks).mockResolvedValueOnce([
 			{ id: 5, bookId: 1, position: '0:0', label: '你好', createdAt: '2026-11-16T10:00:00Z' }
 		] as never);
-		render(BookView, { id: 1, chapter: 0 });
+		render(BookView, { props: { id: 1, chapter: 0 }, context: ctx.context });
 		await screen.findByText('你好世界');
 		await fireEvent.click(screen.getByRole('button', { name: RAIL_BUTTON }));
 		const sheet = screen.getByRole('dialog', { name: 'Book tools' });
@@ -429,7 +427,7 @@ describe('BookView rail (#102)', () => {
 		vi.mocked(listHighlights).mockResolvedValueOnce([
 			{ id: 9, bookId: 1, chapter: 0, paragraph: 0, start: 0, end: 2, text: '你好', color: 'yellow', note: '', createdAt: '', updatedAt: '' }
 		] as never);
-		render(BookView, { id: 1, chapter: 0 });
+		render(BookView, { props: { id: 1, chapter: 0 }, context: ctx.context });
 		await waitFor(() => expect(document.querySelector('mark[data-h="9"]')).toBeTruthy());
 		await fireEvent.click(screen.getByRole('button', { name: RAIL_BUTTON }));
 		const sheet = screen.getByRole('dialog', { name: 'Book tools' });
@@ -441,7 +439,7 @@ describe('BookView rail (#102)', () => {
 
 	it('the bookmark and highlight live regions are outside the rail and the sheet', async () => {
 		setWidth(1280);
-		render(BookView, { id: 1, chapter: 0 });
+		render(BookView, { props: { id: 1, chapter: 0 }, context: ctx.context });
 		const rail = await screen.findByRole('complementary', { name: 'Side panel' });
 		const regions = [...document.querySelectorAll('[role="status"], [role="alert"]')].filter((el) =>
 			el.classList.contains('visually-hidden')
@@ -451,7 +449,7 @@ describe('BookView rail (#102)', () => {
 	});
 
 	it('existing: the Words tab is found by its name', async () => {
-		render(BookView, { id: 1, chapter: 0 });
+		render(BookView, { props: { id: 1, chapter: 0 }, context: ctx.context });
 		expect(await screen.findByRole('tab', { name: /Words/ })).toBeTruthy();
 	});
 });
@@ -491,7 +489,7 @@ describe('BookView lookup sheet (#102)', () => {
 
 	it('b and h do nothing inside the lookup sheet', async () => {
 		setWidth(700);
-		render(BookView, { id: 1, chapter: 0 });
+		render(BookView, { props: { id: 1, chapter: 0 }, context: ctx.context });
 		await waitFor(() => expect(document.querySelector('p[data-p="0"]')).toBeTruthy());
 		await selectFirstTwo();
 		const sheet = await screen.findByRole('dialog', { name: /Dictionary:/ }, { timeout: 2000 });
@@ -506,7 +504,7 @@ describe('BookView lookup sheet (#102)', () => {
 
 	it("closing the lookup sheet returns focus to the word's paragraph", async () => {
 		setWidth(700);
-		render(BookView, { id: 1, chapter: 0 });
+		render(BookView, { props: { id: 1, chapter: 0 }, context: ctx.context });
 		await waitFor(() => expect(document.querySelector('p[data-p="0"]')).toBeTruthy());
 		await selectFirstTwo();
 		const sheet = await screen.findByRole('dialog', { name: /Dictionary:/ }, { timeout: 2000 });
@@ -517,7 +515,7 @@ describe('BookView lookup sheet (#102)', () => {
 
 	it('a highlight applied in the sheet leaves its result in a status region inside the dialog', async () => {
 		setWidth(700);
-		render(BookView, { id: 1, chapter: 0 });
+		render(BookView, { props: { id: 1, chapter: 0 }, context: ctx.context });
 		await waitFor(() => expect(document.querySelector('p[data-p="0"]')).toBeTruthy());
 		await selectFirstTwo();
 		const sheet = await screen.findByRole('dialog', { name: /Dictionary:/ }, { timeout: 2000 });
@@ -548,7 +546,7 @@ describe('BookView shortcuts and focus across the new layout (#102)', () => {
 
 	it('b toggles the bookmark with the rail collapsed and with the sheet closed', async () => {
 		setWidth(1280);
-		render(BookView, { id: 1, chapter: 0 });
+		render(BookView, { props: { id: 1, chapter: 0 }, context: ctx.context });
 		await ready();
 		const active = screen.getByRole('tab', { selected: true });
 		await fireEvent.click(active);
@@ -557,7 +555,7 @@ describe('BookView shortcuts and focus across the new layout (#102)', () => {
 		await waitFor(() => expect(addBookmark).toHaveBeenCalledTimes(1));
 		cleanup();
 		setWidth(800);
-		render(BookView, { id: 1, chapter: 0 });
+		render(BookView, { props: { id: 1, chapter: 0 }, context: ctx.context });
 		await ready();
 		expect(screen.queryByRole('dialog')).toBeNull();
 		await fireEvent.keyDown(window, { key: 'b' });
@@ -567,7 +565,7 @@ describe('BookView shortcuts and focus across the new layout (#102)', () => {
 	it('h highlights the selection', async () => {
 		setReader({ readings: 'never', highlightWords: false });
 		setWidth(800);
-		render(BookView, { id: 1, chapter: 0 });
+		render(BookView, { props: { id: 1, chapter: 0 }, context: ctx.context });
 		await ready();
 		const text = document.querySelector('p[data-p="0"] [data-r="0"]')!.firstChild!;
 		const range = document.createRange();
@@ -583,7 +581,7 @@ describe('BookView shortcuts and focus across the new layout (#102)', () => {
 
 	it('R reveals all readings in smart mode with the sheet closed', async () => {
 		setWidth(800);
-		render(BookView, { id: 1, chapter: 0 });
+		render(BookView, { props: { id: 1, chapter: 0 }, context: ctx.context });
 		await waitFor(() => expect(document.querySelectorAll('ruby.gen')).toHaveLength(2));
 		const root = document.querySelector('.chapter-text')!;
 		await fireEvent.keyDown(window, { key: 'R' });
@@ -592,7 +590,7 @@ describe('BookView shortcuts and focus across the new layout (#102)', () => {
 
 	it('b, h and R do nothing while the rail sheet owns the keys', async () => {
 		setWidth(800);
-		render(BookView, { id: 1, chapter: 0 });
+		render(BookView, { props: { id: 1, chapter: 0 }, context: ctx.context });
 		await ready();
 		// A stale selection: without the guard, `h` would act on it behind the modal.
 		// (Smart readings wrap the run in <ruby>, so select its base text.)
@@ -619,7 +617,7 @@ describe('BookView shortcuts and focus across the new layout (#102)', () => {
 
 	it('the rail sheet repeats the bookmark announcement inside the dialog', async () => {
 		setWidth(800);
-		render(BookView, { id: 1, chapter: 0 });
+		render(BookView, { props: { id: 1, chapter: 0 }, context: ctx.context });
 		await ready();
 		await fireEvent.click(screen.getByRole('button', { name: RAIL_BUTTON }));
 		const sheet = screen.getByRole('dialog', { name: 'Book tools' });
@@ -629,7 +627,7 @@ describe('BookView shortcuts and focus across the new layout (#102)', () => {
 
 	it('Escape in the open rail sheet closes it and focus returns to the rail button', async () => {
 		setWidth(800);
-		render(BookView, { id: 1, chapter: 0 });
+		render(BookView, { props: { id: 1, chapter: 0 }, context: ctx.context });
 		await ready();
 		const button = screen.getByRole('button', { name: RAIL_BUTTON });
 		button.focus();
@@ -643,7 +641,7 @@ describe('BookView shortcuts and focus across the new layout (#102)', () => {
 
 	it('crossing 1000px after focus left the rail does not steal focus from the page', async () => {
 		setWidth(1280);
-		render(BookView, { id: 1, chapter: 0 });
+		render(BookView, { props: { id: 1, chapter: 0 }, context: ctx.context });
 		await ready();
 		const tab = screen.getByRole('tab', { selected: true });
 		tab.focus();
@@ -662,7 +660,7 @@ describe('BookView shortcuts and focus across the new layout (#102)', () => {
 		vi.mocked(listBookmarks).mockResolvedValueOnce([
 			{ id: 5, bookId: 1, position: '0:0', label: '你好', createdAt: '2026-11-16T10:00:00Z' }
 		] as never);
-		render(BookView, { id: 1, chapter: 0 });
+		render(BookView, { props: { id: 1, chapter: 0 }, context: ctx.context });
 		await ready();
 		await fireEvent.click(screen.getByRole('button', { name: RAIL_BUTTON }));
 		const sheet = screen.getByRole('dialog', { name: 'Book tools' });
@@ -683,7 +681,7 @@ describe('BookView shortcuts and focus across the new layout (#102)', () => {
 
 	it('crossing 1000px with focus in the rail moves focus to the rail button and back to the active tab', async () => {
 		setWidth(1280);
-		render(BookView, { id: 1, chapter: 0 });
+		render(BookView, { props: { id: 1, chapter: 0 }, context: ctx.context });
 		await ready();
 		screen.getByRole('tab', { selected: true }).focus();
 		setWidth(800);

@@ -83,6 +83,18 @@ The decision is recorded in `docs/architecture/0009-web-state-model.md`.
 - Ruling: `testContext()` uses the module `api` unless the test passes `routes` (then `fakeApi`) — a test that
   mocks `lib/api/client` or stubs `fetch` then answers the state objects and the helpers alike — cost if wrong: none
   (both are fresh per test).
+- Ruling: `testContext()` storage is the environment's (jsdom's, or a test's stub) and memory where there is none
+  — tests written against the browser's storage keep reading what the code wrote; jsdom's storage is per file and
+  the DOM setup clears it under Node 26 — cost if wrong: a test leaking storage into the next one of its file, as
+  before.
+- Ruling: a component that needs the session is not rendered signed out; components on the open pages use
+  `useOptionalSession()`. EntryView's "no frequency ranks while signed out" test went: the entry page is private, so
+  the case cannot occur any more — cost if wrong: none.
+- Ruling: the outbox (`ReviewOutbox`) belongs to the session and sends only the session's user's items with the
+  token the tab holds; a review recorded after the session ended is queued under that session's user (it used to be
+  queued unowned and adopted by whoever signed in next) — cost if wrong: none; another user never sends it.
+- Ruling: the study commands' "selected workspace" fixture (`selectWorkspace`) went: the study layer cannot reach
+  the session's selection at all, so #174's guarantee holds by construction — cost if wrong: none.
 - Ruling: `logout()` with no session (no token) clears nothing per user: there is nothing to clear; the workspace
   choice and the lookup buffer go with the session that held them — cost if wrong: none found; two tests now sign
   in before signing out.
@@ -97,3 +109,11 @@ Baseline (55312f3e, Node 26): 598 files, 12,651 passed, 8 skipped.
    `auth.test.ts`, `authTabs.dom.test.ts`, `authCleanup.dom.test.ts` and the layout tests were moved onto the app
    context (their assertions unchanged, apart from signing in before a sign-out that expects something cleared);
    component tests render with `ctx.context`. Full vitest under Node 26: 599 files, 12,657 passed, 8 skipped.
+   E2E: the first runs failed with `net::ERR_INSUFFICIENT_RESOURCES` (Chromium's storage quota: the root file system
+   has about 100 MB available to non-root processes on this machine); with `TMPDIR=/dev/shm/...` (the browser
+   profile on tmpfs) 13 passed. Every later e2e run uses that `TMPDIR`; the suite itself is unchanged.
+4. Workspaces, notices, the recovery and the review outbox into the session (`workspaces.svelte.ts`,
+   `notices.svelte.ts`, `workspaceGone.ts` `WorkspaceRecovery`, `study/events.ts` `ReviewOutbox`). Pure moves of
+   existing behaviour: the existing tests (`workspaces.test.ts`, `workspaceGone.test.ts`, `events.test.ts`,
+   `eventsSync.dom.test.ts`, `lateAnswers.test.ts`) are the guard, rewritten onto instances; their assertions are
+   unchanged. Full vitest under Node 26: 599 files, 12,662 passed; e2e 13 passed.

@@ -88,7 +88,7 @@ const ids = (list: { id: string }[]) => list.map((x) => x.id);
 
 beforeEach(() => {
 	vi.stubGlobal('localStorage', fakeStorage());
-	setOutboxUser(1, 'tok');
+	setOutboxUser(1);
 	resetMilestonesForTests();
 	states();
 	vi.mocked(loadStudyHistory).mockResolvedValue(history());
@@ -102,7 +102,7 @@ beforeEach(() => {
 afterEach(() => {
 	vi.unstubAllGlobals();
 	vi.clearAllMocks();
-	setOutboxUser(null, null);
+	setOutboxUser(null);
 });
 
 describe('loadMilestones', () => {

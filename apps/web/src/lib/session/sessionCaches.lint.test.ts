@@ -35,7 +35,6 @@ const ALLOWED: Record<string, string> = {
 	'pwa/install.ts:installPrompt': 'the browser install prompt event, device state',
 	'time/zone.ts:pending': 'the zone load in flight; clearStudyDay moves the zone epoch, so a late answer is dropped',
 	'api/client.ts:memoryToken': 'the credential itself (storage blocked): clearToken drops it on every session end',
-	'workspaceGone.ts:inFlight': 'a shared workspace-list reload in flight; it holds no data and the list store is reset by the layout per token'
 };
 
 export interface Finding {

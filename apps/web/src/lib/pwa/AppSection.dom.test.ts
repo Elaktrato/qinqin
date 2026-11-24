@@ -1,7 +1,6 @@
 import { testContext, type TestContext } from '$lib/testing/context';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/svelte';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { workspaces } from '$lib/workspaces';
 import { captureInstallPrompt, installPrompt } from './install';
 import { resetOffline, setPrepared } from './offlineState';
 import AppSection from './AppSection.svelte';
@@ -32,7 +31,7 @@ beforeEach(() => {
 	resetOffline();
 	installPrompt.set(null);
 	ctx.app.auth.set({ token: 't', user: me });
-	workspaces.set({ list: [{ id: 7, language: 'zh', name: '' } as never], current: { id: 7, language: 'zh', name: '' } as never });
+	ctx.session.workspaces.set({ list: [{ id: 7, language: 'zh', name: '' } as never], current: { id: 7, language: 'zh', name: '' } as never });
 	secure(true);
 	Object.defineProperty(navigator, 'storage', {
 		value: { estimate: async () => ({ usage: 12.3 * 1024 * 1024, quota: 4.2 * 1024 ** 3 }) },

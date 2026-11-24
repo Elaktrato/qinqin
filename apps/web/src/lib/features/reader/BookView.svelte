@@ -6,7 +6,6 @@
 	import { goto } from '$app/navigation';
 	import { record as recordEvent } from '$lib/events';
 	import { readPayload } from '$lib/eventPayloads';
-	import { setSettings, workspaces } from '$lib/workspaces';
 	import { segmentWithReadings } from '$lib/api/segment';
 	import { scheduleIndex } from '../flashcards/decks/deckStats';
 	import { onStudyChange, loadRawStudyData, loadStudyHistory } from '$lib/study/data';
@@ -94,6 +93,8 @@
 	import { recordLookup } from '$lib/lookups/sink';
 	import { lookupRecorder } from '$lib/lookups/store';
 	import { prepareVariant, type Variant } from './variants';
+	import { useSession } from '$lib/context/context';
+	const session = useSession();
 
 	let { id, chapter }: { id: number; chapter: number } = $props();
 
@@ -135,7 +136,7 @@
 	const sourceUrl = $derived(safeHttpUrl(book?.sourceUrl ?? ''));
 	// Words looked up in the book are added to study in the book's workspace.
 	const studyWorkspaceId = $derived(
-		book ? workspaceForBook(book, $workspaces.list, $workspaces.current) : null
+		book ? workspaceForBook(book, session.workspaces.list, session.workspaces.current) : null
 	);
 
 	// --- side rail ---
@@ -184,7 +185,7 @@
 	let display = $state(DEFAULT_DISPLAY);
 	let displayNotice = $state('');
 	let displayController: DisplayController | null = null;
-	const settingsOf = (wsId: number) => $workspaces.list.find((w) => w.id === wsId)?.settings ?? null;
+	const settingsOf = (wsId: number) => session.workspaces.list.find((w) => w.id === wsId)?.settings ?? null;
 
 	$effect(() => {
 		const wsId = studyWorkspaceId;
@@ -199,7 +200,7 @@
 			displayController = createDisplayController({
 				settings: () => settingsOf(wsId),
 				localFurigana: () => prefs.furigana,
-				save: (patch) => setSettings(wsId, patch),
+				save: (patch) => session.workspaces.setSettings(wsId, patch),
 				onError: (err) => (displayNotice = apiErrorMessage(err, 'display')),
 				onChange: (next) => (display = next)
 			});
@@ -208,7 +209,8 @@
 	});
 	// Settings changed elsewhere (another tab, the server's copy of our own save).
 	$effect(() => {
-		void $workspaces;
+		void session.workspaces.list;
+		void session.workspaces.current;
 		untrack(() => displayController?.adopt());
 	});
 	onDestroy(() => {
@@ -1084,14 +1086,21 @@
 				void recordEvent('read', workspaceId, readPayload(bookId, seconds));
 			}
 		};
-		// subscribe() calls back at once with the current selection.
-		const unsubscribe = workspaces.subscribe((state) => {
-			const next = workspaceForBook(ref, state.list, state.current);
-			if (next === workspaceId) return;
-			send();
-			workspaceId = next;
-			timer = createReadingTimer();
-			if (document.visibilityState === 'hidden') timer.hidden(Date.now());
+		// The book's workspace now, and again whenever the selection changes
+		// (a root of its own, so this effect does not re-run on a change).
+		const pick = (): number | null => workspaceForBook(ref, session.workspaces.list, session.workspaces.current);
+		workspaceId = untrack(pick);
+		const unsubscribe = $effect.root(() => {
+			$effect(() => {
+				const next = pick();
+				untrack(() => {
+					if (next === workspaceId) return;
+					send();
+					workspaceId = next;
+					timer = createReadingTimer();
+					if (document.visibilityState === 'hidden') timer.hidden(Date.now());
+				});
+			});
 		});
 		const feed = (): void => {
 			if (workspaceId === null) return;

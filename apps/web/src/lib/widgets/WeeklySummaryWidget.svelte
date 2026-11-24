@@ -11,9 +11,10 @@
 	import Button from '$lib/ui/Button.svelte';
 	import WeekSummary from '$lib/weekly/WeekSummary.svelte';
 	import { weekOf } from '$lib/weekly/week';
-	import { workspaces } from '$lib/workspaces';
 	import WidgetCard from './WidgetCard.svelte';
 	import type { WidgetStatus } from './types';
+	import { useSession } from '$lib/context/context';
+	const session = useSession();
 
 	let view = $state.raw<WeekView | null>(null);
 	let loading = $state(true);
@@ -21,7 +22,7 @@
 	// Guards against a slow earlier request overwriting a newer view.
 	let requestSeq = 0;
 
-	const workspaceId = $derived($workspaces.current?.id ?? null);
+	const workspaceId = $derived(session.workspaces.current?.id ?? null);
 	const status = $derived<WidgetStatus>(
 		workspaceId === null ? 'no-workspace' : loading && view === null ? 'loading' : error ? 'error' : 'ready'
 	);

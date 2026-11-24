@@ -52,8 +52,8 @@
 	import { currentStudyDay, onStudyDayChange } from '$lib/time/zone';
 	import WidgetCard from '$lib/widgets/WidgetCard.svelte';
 	import type { WidgetStatus } from '$lib/widgets/types';
-	import { workspaces } from '$lib/workspaces';
-
+	import { useSession } from '$lib/context/context';
+	const session = useSession();
 	// The core home heatmap: the server-aggregated activity (one request
 	// for every workspace and type), folded here per scope and filter, one
 	// cell per learner day (the user's time zone, lib/time/studyDay.ts) over the last 52 weeks. The view (scope, hidden
@@ -102,16 +102,16 @@
 
 	const stored = $derived(prefs.stored);
 
-	const workspaceId = $derived($workspaces.current?.id ?? null);
+	const workspaceId = $derived(session.workspaces.current?.id ?? null);
 	const scope = $derived(effectiveScope(stored.scope, workspaceId !== null));
 	const view = $derived(activityViewFor(stored, workspaceId));
 	const sources = $derived(response?.sources ?? []);
 
 	// A workspace no longer in the store still counts, under a fallback name.
 	function workspaceName(id: number): string {
-		const ws = $workspaces.list.find((w) => w.id === id);
+		const ws = session.workspaces.list.find((w) => w.id === id);
 		if (!ws) return t('stats.activity.workspaceN', { id });
-		const display = workspaceDisplay($workspaces.list, ws);
+		const display = workspaceDisplay(session.workspaces.list, ws);
 		return display.showName ? display.name : display.label;
 	}
 
@@ -133,7 +133,7 @@
 	const loaded = $derived(response !== null && range.from !== '');
 	const marks = $derived(
 		loaded
-			? vacationMarksRange(vacations, $workspaces.list.map((w) => w.id), view.workspace, range.from, range.to, today)
+			? vacationMarksRange(vacations, session.workspaces.list.map((w) => w.id), view.workspace, range.from, range.to, today)
 			: new Map()
 	);
 	const byDay = $derived(loaded ? foldRange(response ?? empty, view, range.from, range.to, marks) : new Map<string, DayActivity>());

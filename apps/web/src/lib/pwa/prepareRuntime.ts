@@ -1,7 +1,6 @@
 // The real dependencies of offline preparation, and the one call the app
 // shell makes. Kept out of prepareOffline.ts so that module stays pure.
 
-import { get } from 'svelte/store';
 import { api, getToken } from '../api/client';
 import { getEntry } from '../api/entries';
 import type { AppContext } from '../context/app.svelte';
@@ -11,7 +10,6 @@ import { hasTabSetup, loadExtraChoices, loadRememberedTypes } from '../study/car
 import { studyPullPages, loadStudyHistory } from '../study/data';
 import { activeWeights } from '../study/readModel';
 import { fetchStrokeData } from '../study/strokeData';
-import { workspaces } from '../workspaces';
 import { ownPartition } from './partitions';
 import { normalizeUrl } from './sw/classify';
 import { setPrepared } from './offlineState';
@@ -45,7 +43,7 @@ async function cachedInPartition(path: string): Promise<boolean> {
 /** prepareActiveWorkspace: best effort, never throws, never blocks the page. */
 export async function prepareActiveWorkspace(app: AppContext): Promise<void> {
 	const me = app.auth.user;
-	const ws = get(workspaces).current;
+	const ws = app.session?.workspaces.current ?? null;
 	if (me === null || ws === null || ws === undefined) return;
 	await prepareOffline(ws.id, {
 		userId: me.id,

@@ -31,8 +31,8 @@
 	import Button from '$lib/ui/Button.svelte';
 	import WidgetCard from '$lib/widgets/WidgetCard.svelte';
 	import type { WidgetStatus } from '$lib/widgets/types';
-	import { workspaces } from '$lib/workspaces';
-
+	import { useSession } from '$lib/context/context';
+	const session = useSession();
 	// The home widget mirrors the study setup for its limits and card
 	// types; it counts every deck in the workspace, so a saved deck
 	// selection cannot hide cards from the status line.
@@ -62,7 +62,7 @@
 			(goal.today.status !== 'none' || (goal.today.unavailable && goal.activityError === null))
 	);
 
-	const workspaceId = $derived($workspaces.current?.id ?? null);
+	const workspaceId = $derived(session.workspaces.current?.id ?? null);
 	const deckIds = $derived([GENERAL_DECK_ID, ...decks.map((deck) => deck.id)]);
 
 	// The card types a session would study: this tab's setup, else the

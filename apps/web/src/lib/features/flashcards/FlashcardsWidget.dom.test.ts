@@ -1,3 +1,4 @@
+import { testContext, type TestContext } from '$lib/testing/context';
 import { cleanup, render, screen, waitFor } from '@testing-library/svelte';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -13,8 +14,12 @@ import { levelProgress, xpFromReviews } from '$lib/study/exp';
 import { loadStudyHistory } from '$lib/study/data';
 import type { ReviewEvent } from '$lib/study/types';
 import { currentStudyDay } from '$lib/time/zone';
-import { workspaces } from '$lib/workspaces';
 import FlashcardsWidget from './FlashcardsWidget.svelte';
+
+let ctx: TestContext = testContext();
+beforeEach(() => {
+	ctx = testContext();
+});
 
 const NO_GOAL: GoalView = {
 	row: null,
@@ -67,7 +72,7 @@ const WITH_GOAL: GoalView = {
 const text = (el: HTMLElement) => el.textContent?.replace(/\s+/g, ' ').trim();
 
 beforeEach(() => {
-	workspaces.set({ list: [], current: { id: 1, language: 'zh', name: 'zh' } as never });
+	ctx.session.workspaces.set({ list: [], current: { id: 1, language: 'zh', name: 'zh' } as never });
 	vi.mocked(loadStudyHistory).mockResolvedValue({ decks: [], cards: [], reviews: [], merged: 0 });
 });
 afterEach(() => {
@@ -76,7 +81,7 @@ afterEach(() => {
 });
 
 async function ready(): Promise<HTMLElement> {
-	const { container } = render(FlashcardsWidget);
+	const { container } = render(FlashcardsWidget, { context: ctx.context });
 	await screen.findByText(/days streak/);
 	return container;
 }

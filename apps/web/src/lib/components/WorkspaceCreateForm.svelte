@@ -6,8 +6,9 @@
 	import { listLanguages } from '$lib/api/languages';
 	import type { Language, Workspace } from '$lib/api/types';
 	import { languageOptions } from '$lib/languages';
-	import { create, workspaces } from '$lib/workspaces';
 	import { Button, Field, Select } from '$lib/ui';
+	import { useSession } from '$lib/context/context';
+	const session = useSession();
 
 	// Creates a workspace from an installed language (or one the user
 	// already has) with an optional name. Shared by the header picker,
@@ -34,7 +35,7 @@
 	let select = $state<HTMLSelectElement | undefined>(undefined);
 	let nameInput = $state<HTMLInputElement | undefined>(undefined);
 
-	const options = $derived(languageOptions(installed, $workspaces.list));
+	const options = $derived(languageOptions(installed, session.workspaces.list));
 	const selectOptions = $derived(
 		options.length === 0
 			? [{ value: '', label: loadingLanguages ? t('common.loading') : t('app.workspaces.create.noLanguages') }]
@@ -74,7 +75,7 @@
 		creating = true;
 		error = '';
 		try {
-			const created = await create(language, name);
+			const created = await session.workspaces.create(language, name);
 			name = '';
 			onCreated?.(created);
 		} catch (err) {

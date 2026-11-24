@@ -1,3 +1,4 @@
+import { testContext, type TestContext } from '$lib/testing/context';
 import { cleanup, render, screen, waitFor } from '@testing-library/svelte';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Scheme } from '$lib/api/types';
@@ -42,12 +43,16 @@ import { loadStudyData, studyCache } from '$lib/study/data';
 import { tick } from 'svelte';
 import { studyDay } from '$lib/time/studyDay';
 import { currentStudyDay } from '$lib/time/zone';
-import { workspaces } from '$lib/workspaces';
 import { unreadableRows } from '$lib/study/unreadable';
 import { SESSION_CONFIG_KEY } from '$lib/study/session';
 import { primaryActions } from '$lib/ui/testing/primary';
 import Page from './+page.svelte';
 import * as build from '$lib/testing/study';
+
+let ctx: TestContext = testContext();
+beforeEach(() => {
+	ctx = testContext();
+});
 
 const charScheme: Scheme = {
 	id: 3,
@@ -94,7 +99,7 @@ beforeEach(() => {
 			{ id: 13, kind: 'character', written: '火' }
 		] as never;
 	});
-	workspaces.set({
+	ctx.session.workspaces.set({
 		list: [{ id: 1, language: 'ja', name: 'ja' } as never],
 		current: { id: 1, language: 'ja', name: 'ja' } as never
 	});
@@ -109,7 +114,7 @@ afterEach(() => {
 describe('study setup, level sessions', () => {
 	it('has one primary Start; scheme, level and limits are base controls', async () => {
 		setup(charScheme, ['vocab']);
-		render(Page);
+		render(Page, { context: ctx.context });
 		await screen.findByText(/characters in/);
 		expect(primaryActions(document.body)).toHaveLength(1);
 		expect(screen.getByRole('button', { name: /start/i }).className).toContain('primary');
@@ -120,7 +125,7 @@ describe('study setup, level sessions', () => {
 
 	it('Study all starts a session that ignores the limits', async () => {
 		setup(charScheme, ['vocab']);
-		render(Page);
+		render(Page, { context: ctx.context });
 		await screen.findByText(/characters in/);
 		const all = screen.getByRole('button', { name: 'Study all' });
 		expect((all as HTMLButtonElement).disabled).toBe(false);
@@ -133,7 +138,7 @@ describe('study setup, level sessions', () => {
 
 	it('enables start for a character level with new items', async () => {
 		setup(charScheme, ['vocab']);
-		render(Page);
+		render(Page, { context: ctx.context });
 		await screen.findByText(/characters in/);
 		const stats = document.querySelector('.stats');
 		expect(stats?.textContent).toMatch(/3\s*characters in/);
@@ -145,7 +150,7 @@ describe('study setup, level sessions', () => {
 
 	it('lets a writing-only character session start', async () => {
 		setup(charScheme, ['writing']);
-		render(Page);
+		render(Page, { context: ctx.context });
 		await screen.findByText(/characters in/);
 		const start = screen.getByRole('button', { name: /start/i }) as HTMLButtonElement;
 		expect(start.disabled).toBe(false);
@@ -153,7 +158,7 @@ describe('study setup, level sessions', () => {
 
 	it('warns about other kinds on a character level', async () => {
 		setup(charScheme, ['vocab', 'sentence']);
-		render(Page);
+		render(Page, { context: ctx.context });
 		await screen.findByText(/characters in/);
 		expect(screen.getByText('Character levels study recognition and writing cards.')).toBeTruthy();
 	});
@@ -163,7 +168,7 @@ describe('study setup, level sessions', () => {
 		vi.mocked(getSchemeEntries).mockResolvedValue([
 			{ id: 1, kind: 'word', written: '日本' }
 		] as never);
-		render(Page);
+		render(Page, { context: ctx.context });
 		await waitFor(() => expect(screen.getByText(/Level sessions study vocab cards only/)).toBeTruthy());
 		const start = screen.getByRole('button', { name: /start/i }) as HTMLButtonElement;
 		expect(start.disabled).toBe(true);
@@ -194,7 +199,7 @@ describe('study setup, level sessions', () => {
 			reviews: build.strongReviews('c-vocab-11'),
 			merged: 0
 		});
-		render(Page);
+		render(Page, { context: ctx.context });
 		expect(await screen.findByRole('option', { name: 'N5 — 2 of 4 learned' })).toBeTruthy();
 		expect(screen.getByRole('option', { name: 'N4 — 0 of 1 learned' })).toBeTruthy();
 	});
@@ -205,7 +210,7 @@ describe('study setup, level sessions', () => {
 			{ id: 11, kind: 'character', written: '気' },
 			{ id: 12, kind: 'character', written: '毎' }
 		] as never);
-		render(Page);
+		render(Page, { context: ctx.context });
 		await screen.findByText(/characters in/);
 		const start = screen.getByRole('button', { name: /start/i }) as HTMLButtonElement;
 		expect(start.disabled).toBe(true);
@@ -217,7 +222,7 @@ describe('study setup, level sessions', () => {
 		vi.mocked(getSchemeEntries).mockResolvedValue([
 			{ id: 11, kind: 'character', written: '気' }
 		] as never);
-		render(Page);
+		render(Page, { context: ctx.context });
 		await screen.findByText(/characters in/);
 		const start = screen.getByRole('button', { name: /start/i }) as HTMLButtonElement;
 		expect(start.disabled).toBe(false);
@@ -256,7 +261,7 @@ describe('study setup, reverse and cloze checkboxes', () => {
 
 	it('shows Reverse and Cloze once even when no deck enables them', async () => {
 		deckSetup();
-		render(Page);
+		render(Page, { context: ctx.context });
 		await screen.findByText(/This session/);
 		expect(box(/reverse/)).not.toBeNull();
 		expect(box(/cloze/)).not.toBeNull();
@@ -267,7 +272,7 @@ describe('study setup, reverse and cloze checkboxes', () => {
 	it('shows the enabled kinds, checked by default', async () => {
 		deckSetup();
 		withSettings(['reverse']);
-		render(Page);
+		render(Page, { context: ctx.context });
 		await waitFor(() => expect(box(/reverse/)).not.toBeNull());
 		expect(box(/reverse/)!.checked).toBe(true);
 		expect(box(/cloze/)!.checked).toBe(false);
@@ -280,7 +285,7 @@ describe('study setup, reverse and cloze checkboxes', () => {
 			saved: { general: { deckId: 'general', cardTypes: ['reverse'], extra: {} } },
 			unreadable: []
 		});
-		render(Page);
+		render(Page, { context: ctx.context });
 		await waitFor(() => expect(box(/reverse/)).not.toBeNull());
 		await fireEvent.click(box(/reverse/)!);
 		await waitFor(() =>
@@ -293,7 +298,7 @@ describe('study setup, reverse and cloze checkboxes', () => {
 		deckSetup();
 		withSettings([]);
 		vi.mocked(saveDeckCardTypesForDecks).mockResolvedValue({ saved: {}, unreadable: ['general'] });
-		render(Page);
+		render(Page, { context: ctx.context });
 		await waitFor(() => expect(box(/reverse/)).not.toBeNull());
 		await fireEvent.click(box(/reverse/)!);
 		expect(await screen.findByText(/saved by a newer version of qinqin/)).toBeTruthy();
@@ -303,7 +308,7 @@ describe('study setup, reverse and cloze checkboxes', () => {
 		deckSetup();
 		withSettings(['reverse', 'cloze']);
 		localStorage.setItem('qinqin.study.extraTypes', JSON.stringify({ '1': { cloze: false } }));
-		render(Page);
+		render(Page, { context: ctx.context });
 		await waitFor(() => expect(box(/cloze/)).not.toBeNull());
 		expect(box(/reverse/)!.checked).toBe(true);
 		expect(box(/cloze/)!.checked).toBe(false);
@@ -319,12 +324,12 @@ describe('study setup, a workspace switch while a deck is created (#174)', () =>
 		vi.mocked(getSchemes).mockResolvedValue([]);
 		let finish: (d: unknown) => void = () => undefined;
 		vi.mocked(createDeck).mockImplementation(() => new Promise((r) => (finish = r)) as never);
-		render(Page);
+		render(Page, { context: ctx.context });
 		const name = (await screen.findByLabelText('New deck')) as HTMLInputElement;
 		await fireEvent.input(name, { target: { value: 'Late deck' } });
 		await fireEvent.click(screen.getByRole('button', { name: 'Create deck' }));
 		expect(createDeck).toHaveBeenCalledWith(1, 'Late deck');
-		workspaces.set({
+		ctx.session.workspaces.set({
 			list: [{ id: 1, language: 'ja', name: 'ja' } as never, { id: 2, language: 'ja', name: 'ja2' } as never],
 			current: { id: 2, language: 'ja', name: 'ja2' } as never
 		});
@@ -347,7 +352,7 @@ describe('study setup on a vacation day', () => {
 			merged: 0,
 			vacations: [{ version: 1, id: 'V', start: today, end, scope: 'all', createdDay: today, createdAt: `${today}T00:00:00Z` }]
 		});
-		render(Page);
+		render(Page, { context: ctx.context });
 		const banner = await screen.findByText(/Vacation until/);
 		expect(banner.textContent).toMatch(/^Vacation until \d+ \w+/);
 		expect(screen.queryByRole('button', { name: /start studying/i })).toBeNull();
@@ -361,7 +366,7 @@ describe('study setup with rows this version cannot read (#167)', () => {
 			unreadableRows.set({ workspaceId: id as number, counts: { cards: 1 }, total: 1 });
 			return { decks: [], cards: [], reviews: [], merged: 0 };
 		});
-		render(Page);
+		render(Page, { context: ctx.context });
 		expect(await screen.findByText(/1 saved study item could not be read/)).toBeTruthy();
 		expect(screen.getByRole('button', { name: /start studying/i })).toBeTruthy();
 		unreadableRows.set(null);
@@ -371,7 +376,7 @@ describe('study setup with rows this version cannot read (#167)', () => {
 describe('study start and the daily limits', () => {
 	it('words the day with the limits applied', async () => {
 		setup(charScheme, ['vocab']);
-		render(Page);
+		render(Page, { context: ctx.context });
 		expect((await screen.findByText(/^Today:/)).textContent).toBe('Today: 0 reviews and 3 new (daily limits applied)');
 	});
 
@@ -381,7 +386,7 @@ describe('study start and the daily limits', () => {
 			decks: [], cards: [], reviews: [], merged: 0,
 			limits: { workspace: { new: 0, reviews: 0 }, decks: {} }
 		});
-		render(Page);
+		render(Page, { context: ctx.context });
 		await screen.findByText(/characters in/);
 		expect((screen.getByRole('button', { name: /start studying/i }) as HTMLButtonElement).disabled).toBe(true);
 		expect((screen.getByRole('button', { name: 'Study all' }) as HTMLButtonElement).disabled).toBe(false);
@@ -393,7 +398,7 @@ describe('study start and the daily limits', () => {
 			decks: [], cards: [], reviews: [], merged: 0,
 			limits: { workspace: { new: 2 }, decks: {} }
 		});
-		render(Page);
+		render(Page, { context: ctx.context });
 		expect((await screen.findByText(/^Today:/)).textContent).toBe('Today: 0 reviews and 2 new (daily limits applied)');
 	});
 });
@@ -416,7 +421,7 @@ describe('study setup, new-card order (#75)', () => {
 
 	it('offers most frequent first with a pack and saves the choice', async () => {
 		vi.mocked(getFrequencyPacks).mockResolvedValue([jiten] as never);
-		render(Page);
+		render(Page, { context: ctx.context });
 		await waitFor(() =>
 			expect([...orderSelect().options].map((o) => o.textContent)).toContain(
 				'Most frequent first (Jiten frequency list)'
@@ -430,7 +435,7 @@ describe('study setup, new-card order (#75)', () => {
 	});
 
 	it('starts random by default, with a seed that fixes the shuffle', async () => {
-		render(Page);
+		render(Page, { context: ctx.context });
 		await waitFor(() => expect(orderSelect().options.length).toBeGreaterThan(1));
 		await fireEvent.click(screen.getByRole('button', { name: /start/i }));
 		await waitFor(() => expect(goto).toHaveBeenCalledWith('/study/session'));
@@ -461,14 +466,14 @@ describe('study setup, new-card order (#75)', () => {
 				newOrder: 'deck'
 			})
 		);
-		render(Page);
+		render(Page, { context: ctx.context });
 		await waitFor(() => expect(orderSelect().options.length).toBeGreaterThan(2));
 		expect(screen.queryByText('Your decks use different orders: in the order added.')).toBeNull();
 	});
 
 	it('without a pack: no frequency option and the hint', async () => {
 		vi.mocked(getFrequencyPacks).mockResolvedValue([]);
-		render(Page);
+		render(Page, { context: ctx.context });
 		await screen.findByText(
 			'No frequency list is installed for Japanese. An administrator can add one in Settings, Data; see Data and licences.'
 		);
@@ -484,7 +489,7 @@ describe('study setup, order of card types (#132)', () => {
 	});
 
 	it('offers Mixed (the default) and Grouped by type and saves the choice', async () => {
-		render(Page);
+		render(Page, { context: ctx.context });
 		await waitFor(() => expect(typeOrderSelect()).toBeTruthy());
 		expect([...typeOrderSelect().options].map((o) => [o.value, o.textContent])).toEqual([
 			['mixed', 'Mixed'],
@@ -499,7 +504,7 @@ describe('study setup, order of card types (#132)', () => {
 
 	it('sits after the hints of the new-card order', async () => {
 		vi.mocked(getFrequencyPacks).mockResolvedValue([]);
-		render(Page);
+		render(Page, { context: ctx.context });
 		const hint = await screen.findByText(
 			'No frequency list is installed for Japanese. An administrator can add one in Settings, Data; see Data and licences.'
 		);
@@ -521,14 +526,14 @@ describe('study setup, order of card types (#132)', () => {
 				typeOrder: 'grouped'
 			})
 		);
-		render(Page);
+		render(Page, { context: ctx.context });
 		await waitFor(() => expect(typeOrderSelect().value).toBe('grouped'));
 	});
 });
 
 describe('study setup and the study cache (#193)', () => {
 	it('reloads its counts when the rows of the shown workspace change, not for another workspace', async () => {
-		render(Page);
+		render(Page, { context: ctx.context });
 		await waitFor(() => expect(loadStudyData).toHaveBeenCalledTimes(1));
 		// A row another device wrote in the second of the load arrives with the cache's follow-up round.
 		vi.mocked(loadStudyData).mockResolvedValue({ decks: [], cards: [build.card({ id: 'late', entryId: 9 })], reviews: [], merged: 0 });
@@ -541,7 +546,7 @@ describe('study setup and the study cache (#193)', () => {
 
 	it("leaves the card manager's reloads to onStudyChange: one reload per change, not two", async () => {
 		cardManager.props.length = 0;
-		render(Page);
+		render(Page, { context: ctx.context });
 		await waitFor(() => expect(cardManager.props.length).toBeGreaterThan(0));
 		expect(cardManager.props.at(-1)?.onchanged).toBeUndefined();
 	});

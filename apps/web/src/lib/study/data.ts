@@ -15,10 +15,11 @@
 // - loadRawStudyData: planners (raw rows and the snapshot to plan against).
 
 import { api } from '../api/client';
+import { webStorage } from '../context/deps';
 import { fetchFullLog, invalidateWorkspaceEvents, loadWorkspaceEvents, type StudyEvent } from '../events';
 import { onSessionEnd, sessionEpoch } from '../session/sessionEnd';
 import { createStudyCache } from './cache';
-import { pendingReviews } from './events';
+import { pendingReviewsIn } from './events';
 import { outboxUser } from './outboxUser';
 import { recentSentReviews } from './recentSent';
 import { historyOf, keyedSlot, withQueued as mergeQueued, type StudyView } from './readModel';
@@ -103,7 +104,8 @@ export function touches(changed: number, workspaceId: number | null): boolean {
 function queued(workspaceId: number): StudyEvent[] {
 	const user = outboxUser();
 	if (user === null) return [];
-	return [...pendingReviews(user, workspaceId), ...recentSentReviews(user, workspaceId)];
+	const store = webStorage('localStorage');
+	return [...pendingReviewsIn(store, user, workspaceId, Date.now()), ...recentSentReviews(user, workspaceId)];
 }
 
 /**

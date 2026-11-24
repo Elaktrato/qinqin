@@ -7,8 +7,6 @@
 
 import { setApiObserver } from '../api/client';
 import { reportNetworkFailure, reportResponse } from '../pwa/offlineState';
-import { recoverFromDeletedWorkspace } from '../workspaceGone';
-import { clearSelection } from '../workspaces';
 import { endSession } from '../session/sessionEnd';
 import { setOutboxUser } from '../study/outboxUser';
 import { Auth, type AuthState } from '../auth.svelte';
@@ -39,7 +37,7 @@ export class AppContext {
 		setApiObserver({
 			unauthorized: () => this.auth.expire(),
 			restricted: () => this.auth.restricted(),
-			workspaceGone: () => void recoverFromDeletedWorkspace(),
+			workspaceGone: () => void this.#session?.recovery.recover(),
 			answered: (headers) => reportResponse(headers),
 			unreachable: () => reportNetworkFailure()
 		});
@@ -60,7 +58,7 @@ export class AppContext {
 
 	#follow(state: AuthState, reason: SessionEndReason | undefined): void {
 		const id = state.user?.id ?? null;
-		setOutboxUser(id, state.token);
+		setOutboxUser(id);
 		const current = this.#session;
 		if (current !== null && (state.token === null || (current.user !== null && id !== current.user))) {
 			this.#end(reason ?? 'switched');
@@ -77,7 +75,6 @@ export class AppContext {
 		current.dispose(reason);
 		// The caches not moved into the session yet (#196 migrates them task by task).
 		endSession(reason);
-		if (reason === 'signOut') clearSelection();
 	}
 }
 

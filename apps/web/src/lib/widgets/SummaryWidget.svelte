@@ -17,9 +17,10 @@
 	import { ALL_WORKSPACES, onStudyChange, loadStudyHistory } from '$lib/study/data';
 	import { activeWeights } from '$lib/study/readModel';
 	import Stat from '$lib/ui/Stat.svelte';
-	import { workspaces } from '$lib/workspaces';
 	import WidgetCard from './WidgetCard.svelte';
 	import type { WidgetStatus } from './types';
+	import { useSession } from '$lib/context/context';
+	const session = useSession();
 
 	let summary = $state.raw<SummaryNumbers | null>(null);
 	let loading = $state(true);
@@ -29,7 +30,7 @@
 	// Guards against a slow earlier request overwriting a newer view.
 	let requestSeq = 0;
 
-	const workspaceId = $derived($workspaces.current?.id ?? null);
+	const workspaceId = $derived(session.workspaces.current?.id ?? null);
 	// Before the states are known the feature counts as on (no flash of the note).
 	const flashcardsOn = $derived(
 		$pluginStates.status === 'ready'

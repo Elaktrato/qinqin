@@ -8,13 +8,14 @@
 	import { t } from '$lib/i18n';
 	import Flag from '$lib/components/Flag.svelte';
 	import { workspaceDisplay } from '$lib/languages';
-	import { select, workspaces } from '$lib/workspaces';
 	import Icon from '$lib/ui/Icon.svelte';
 	import IconButton from '$lib/ui/IconButton.svelte';
 	import Tooltip from '$lib/ui/Tooltip.svelte';
 	import AccountMenu from './AccountMenu.svelte';
 	import { homeSection, type FrameSection } from './sections';
 	import { useApp } from '$lib/context/context';
+	import { useSession } from '$lib/context/context';
+	const session = useSession();
 	const app = useApp();
 
 	let {
@@ -23,8 +24,8 @@
 		onnavigate
 	}: { sections: readonly FrameSection[]; current: string | null; onnavigate: () => void } = $props();
 
-	const list = $derived($workspaces.list);
-	const active = $derived($workspaces.current);
+	const list = $derived(session.workspaces.list);
+	const active = $derived(session.workspaces.current);
 	const activeDisplay = $derived(active ? workspaceDisplay(list, active) : null);
 	const rows = $derived([homeSection(), ...sections]);
 
@@ -36,7 +37,7 @@
 	}
 
 	function choose(id: number): void {
-		select(id);
+		session.workspaces.select(id);
 		onnavigate();
 	}
 </script>

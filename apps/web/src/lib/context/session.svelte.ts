@@ -6,6 +6,13 @@
 // of objects, so nothing of one account is reachable from the next.
 
 import type { Auth } from '../auth.svelte';
+import { postEvents } from '../events';
+import { Notices } from '../notices.svelte';
+import { notifyAllSent, setQueued } from '../pwa/offlineState';
+import { ReviewOutbox } from '../study/events';
+import { rememberSent } from '../study/recentSent';
+import { WorkspaceRecovery } from '../workspaceGone';
+import { Workspaces } from '../workspaces.svelte';
 import type { AppDeps } from './deps';
 
 /** Why the session ended: only `signOut` also forgets the device's workspace choice. */
@@ -25,9 +32,37 @@ export class Session {
 	#reason: SessionEndReason | null = null;
 	readonly #disposers: Disposer[] = [];
 
+	/** The one-line notice of the shell. */
+	readonly notices = new Notices();
+	/** The user's workspaces and the one in use. */
+	readonly workspaces: Workspaces;
+	/** The reload after a workspace was deleted elsewhere. */
+	readonly recovery: WorkspaceRecovery;
+	/** The review outbox: the user's queued reviews, sent with this session's token. */
+	readonly outbox: ReviewOutbox;
+
 	constructor(deps: SessionDeps, user: number | null) {
 		this.deps = deps;
 		this.#user = user;
+		const { api, local, session, now } = deps;
+		this.workspaces = new Workspaces({ api, local, session, alive: () => this.alive });
+		this.onDispose((reason) => this.workspaces.dispose(reason));
+		this.recovery = new WorkspaceRecovery({ workspaces: this.workspaces, notices: this.notices, now, local, session });
+		this.outbox = new ReviewOutbox({
+			post: (events) => postEvents(events),
+			local,
+			now,
+			timers: deps.timers,
+			window: deps.window,
+			document: deps.document,
+			user: () => this.#user,
+			token: () => deps.auth.token,
+			notify: (text) => this.notices.show(text),
+			setQueued,
+			allSent: notifyAllSent,
+			rememberSent: (userId, events) => rememberSent(userId, events, now(), local())
+		});
+		this.onDispose(() => this.outbox.dispose());
 	}
 
 	/** The signed-in user's id; null until `me` answered (a boot offline). */
@@ -42,7 +77,9 @@ export class Session {
 
 	/** adopt: `me` named the user of a session that did not know it yet. */
 	adopt(user: number): void {
-		if (this.#user === null && this.#alive) this.#user = user;
+		if (this.#user !== null || !this.#alive) return;
+		this.#user = user;
+		this.outbox.userKnown();
 	}
 
 	/**

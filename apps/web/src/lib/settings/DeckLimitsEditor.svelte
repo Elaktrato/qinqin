@@ -4,7 +4,6 @@
 	import { DEFAULT_LIMITS, type LimitPair } from '$lib/study/limits';
 	import { saveDeckLimits } from '$lib/study/commands/settings';
 	import { getStudyData } from '$lib/study/data';
-	import { workspaces } from '$lib/workspaces';
 	import LimitField from './LimitField.svelte';
 	import {
 		deckFieldFrom,
@@ -13,6 +12,8 @@
 		type FieldState
 	} from './limitsForm';
 	import { Button } from '$lib/ui';
+	import { useSession } from '$lib/context/context';
+	const session = useSession();
 
 	// The per-deck daily limit control (deck settings page, General included):
 	// each field follows the workspace, has its own number, or is unlimited.
@@ -26,7 +27,7 @@
 	let message = $state('');
 	let error = $state('');
 
-	const workspaceId = $derived($workspaces.current?.id ?? null);
+	const workspaceId = $derived(session.workspaces.current?.id ?? null);
 	const newWorkspace = $derived(workspaceRow?.new === undefined ? DEFAULT_LIMITS.new : workspaceRow.new);
 	const reviewsWorkspace = $derived(
 		workspaceRow?.reviews === undefined ? DEFAULT_LIMITS.reviews : workspaceRow.reviews

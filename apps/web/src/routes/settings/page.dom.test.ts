@@ -1,4 +1,4 @@
-import { testContext, type TestContext } from '$lib/testing/context';
+import { testContext, type TestContext, workspacesState } from '$lib/testing/context';
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/svelte';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -13,7 +13,6 @@ import { goto } from '$app/navigation';
 import { api } from '$lib/api/client';
 import { setUrl } from '$lib/testing/appState.svelte';
 import { primaryActions } from '$lib/ui/testing/primary';
-import { workspaces, workspacesLoadError, workspacesLoaded } from '$lib/workspaces';
 import Page from './+page.svelte';
 
 let ctx: TestContext = testContext();
@@ -25,9 +24,9 @@ const plugin = { id: 'qinqin-journal', manifest: { name: 'Journal', version: '1.
 
 beforeEach(() => {
 	setUrl('/settings');
-	workspaces.set({ list: [], current: null });
-	workspacesLoaded.set(false);
-	workspacesLoadError.set('');
+	ctx.session.workspaces.set({ list: [], current: null });
+	ctx.session.workspaces.set(workspacesState(ctx.session.workspaces), false);
+	ctx.session.workspaces.loadError = '';
 	vi.mocked(api).mockImplementation((async (url: string) => {
 		if (url === '/api/plugins') return [plugin];
 		if (url.startsWith('/api/ai/providers')) return { providers: [], canManageCustom: false, privateAllowed: false };
@@ -105,11 +104,11 @@ describe('the settings tab row in the lighter look (#106)', () => {
 
 describe('the workspaces view in the lighter look (#106)', () => {
 	it('has one primary action and hairline rows with secondary actions', async () => {
-		workspaces.set({
+		ctx.session.workspaces.set({
 			list: [{ id: 1, language: 'zh', name: 'Chinese', settings: {}, updatedAt: '' } as never],
 			current: null
 		});
-		workspacesLoaded.set(true);
+		ctx.session.workspaces.set(workspacesState(ctx.session.workspaces), true);
 		render(Page, { context: ctx.context });
 		expect(primaryActions(document.body)).toHaveLength(1);
 		expect(screen.getByRole('button', { name: 'Create workspace' }).className).toContain('primary');
@@ -123,7 +122,7 @@ describe('settings loading states', () => {
 		render(Page, { context: ctx.context });
 		expect(screen.getByText('Loading workspaces…')).toBeTruthy();
 		expect(screen.queryByText('No workspaces yet.')).toBeNull();
-		workspacesLoaded.set(true);
+		ctx.session.workspaces.set(workspacesState(ctx.session.workspaces), true);
 		await waitFor(() => expect(screen.getByText('No workspaces yet.')).toBeTruthy());
 		expect(screen.queryByText('Loading workspaces…')).toBeNull();
 	});
@@ -141,7 +140,7 @@ describe('the new-workspace target (#99)', () => {
 
 describe('settings after a failed shell load', () => {
 	it('shows the error with Try again instead of loading forever, and recovers', async () => {
-		workspacesLoadError.set('Could not load workspaces.');
+		ctx.session.workspaces.loadError = 'Could not load workspaces.';
 		render(Page, { context: ctx.context });
 		expect(screen.queryByText('Loading workspaces…')).toBeNull();
 		expect(screen.getByText('Could not load workspaces.')).toBeTruthy();

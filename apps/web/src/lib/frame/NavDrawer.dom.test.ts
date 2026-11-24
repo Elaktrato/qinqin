@@ -1,9 +1,7 @@
-import { testContext, type TestContext } from '$lib/testing/context';
+import { testContext, type TestContext, workspacesState } from '$lib/testing/context';
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/svelte';
-import { get } from 'svelte/store';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { FLASHCARDS_ID, READER_ID } from '$lib/features';
-import { workspaces } from '$lib/workspaces';
 import { frameSections } from './sections';
 import PhoneHarness from './testing/PhoneHarness.svelte';
 
@@ -40,7 +38,7 @@ async function openDrawer(current: string | null = 'reader') {
 beforeEach(() => {
 	localStorage.clear();
 	signIn();
-	workspaces.set({ list: [ws(1, 'zh'), ws(2, 'ja'), ws(3, 'zh', 'Novels')], current: ws(3, 'zh', 'Novels') });
+	ctx.session.workspaces.set({ list: [ws(1, 'zh'), ws(2, 'ja'), ws(3, 'zh', 'Novels')], current: ws(3, 'zh', 'Novels') });
 });
 afterEach(() => {
 	cleanup();
@@ -66,7 +64,7 @@ describe('NavDrawer', () => {
 	it('tapping a flag selects the workspace and closes the drawer, focus back on the menu button', async () => {
 		const { drawer, opener } = await openDrawer();
 		await fireEvent.click(within(drawer).getByRole('button', { name: 'Workspace: Japanese' }));
-		expect(get(workspaces).current?.id).toBe(2);
+		expect(workspacesState(ctx.session.workspaces).current?.id).toBe(2);
 		expect(screen.queryByRole('dialog')).toBeNull();
 		await waitFor(() => expect(document.activeElement).toBe(opener));
 	});
@@ -124,7 +122,7 @@ describe('NavDrawer', () => {
 	});
 
 	it('with no workspace, the row holds only + and focus starts on the first control', async () => {
-		workspaces.set({ list: [], current: null });
+		ctx.session.workspaces.set({ list: [], current: null });
 		const { drawer } = await openDrawer();
 		const row = within(drawer).getByRole('group', { name: 'Workspaces' });
 		expect(within(row).queryAllByRole('button')).toEqual([]);

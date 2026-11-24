@@ -3,13 +3,14 @@
 	import { getToken } from '$lib/api/client';
 	import { t } from '$lib/i18n';
 	import { Button, Section } from '$lib/ui';
-	import { workspaces } from '$lib/workspaces';
 	import { appSectionView, clearOfflineData } from './appSectionView';
 	import { ownPartition } from './partitions';
 	import { currentIos, currentStandalone, installPrompt, promptInstall } from './install';
 	import { offline, setPrepared } from './offlineState';
 	import { readReceipt } from './prepareOffline';
 	import { useApp } from '$lib/context/context';
+	import { useSession } from '$lib/context/context';
+	const session = useSession();
 	const app = useApp();
 
 	const secure = typeof window !== 'undefined' && window.isSecureContext === true;
@@ -32,7 +33,7 @@
 	// What was prepared: this session's result, else the receipt of the active workspace.
 	const prepared = $derived.by(() => {
 		if ($offline.prepared !== null && partition !== null) return $offline.prepared;
-		const ws = $workspaces.current;
+		const ws = session.workspaces.current;
 		if (!app.auth.user || !ws || cleared) return null;
 		return readReceipt(typeof localStorage === 'undefined' ? null : localStorage, app.auth.user.id, ws.id, partition);
 	});

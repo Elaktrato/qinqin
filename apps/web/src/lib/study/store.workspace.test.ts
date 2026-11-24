@@ -1,3 +1,4 @@
+import { testContext, type TestContext } from '$lib/testing/context';
 // #174: every study write names its workspace. Start a write while its pull
 // is held back, switch the selected workspace, let the pull answer: the pull
 // asked for the original workspace and every pushed row carries it.
@@ -5,7 +6,6 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { workspaces } from '../workspaces';
 import {
 	addCard,
 	deleteCards,
@@ -28,6 +28,11 @@ import { saveDeckLimits, saveWorkspaceLimits } from './commands/settings';
 import { STUDY_COLLECTIONS } from './rows';
 import type { StudyCard } from './types';
 import { endSession } from '../session/sessionEnd';
+
+let ctx: TestContext = testContext();
+beforeEach(() => {
+	ctx = testContext();
+});
 
 // Every test starts a session of its own: the study cache holds nothing.
 beforeEach(() => endSession('signOut'));
@@ -66,7 +71,7 @@ const pulled: string[] = [];
 const pushed: Record<string, Record<string, unknown>[]>[] = [];
 
 function select(id: number): void {
-	workspaces.set({ list: [], current: { id, language: 'zh', name: '', settings: {}, updatedAt: '2026-01-01T00:00:00Z' } });
+	ctx.session.workspaces.set({ list: [], current: { id, language: 'zh', name: '', settings: {}, updatedAt: '2026-01-01T00:00:00Z' } });
 }
 
 beforeEach(() => {
@@ -98,7 +103,7 @@ beforeEach(() => {
 afterEach(() => {
 	release = null;
 	vi.unstubAllGlobals();
-	workspaces.set({ list: [], current: null });
+	ctx.session.workspaces.set({ list: [], current: null });
 });
 
 /** Runs `write`, switches to B while its first pull waits, and checks where everything went. */

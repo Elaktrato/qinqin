@@ -38,7 +38,6 @@
 		type CardResult,
 		type FlowItem
 	} from '$lib/study/cardFlow';
-	import { flushPendingReviews, recordReplacement, recordReview } from '$lib/study/events';
 	import {
 		backFrom,
 		pushStep,
@@ -92,7 +91,6 @@ import type { Run } from '$lib/study/vacation';
 	import { usableChars } from '$lib/study/writing';
 	import { hasStrokeData } from '$lib/study/strokeIndex';
 	import { newUlid } from '$lib/ulid';
-	import { workspaces } from '$lib/workspaces';
 	import NoteAnswer from '$lib/notes/NoteAnswer.svelte';
 	import { loadNoteCfg, loadNotes } from '$lib/notes/store';
 	import StudyFace from '$lib/features/flashcards/face/StudyFace.svelte';
@@ -107,6 +105,8 @@ import type { Run } from '$lib/study/vacation';
 	import Section from '$lib/ui/Section.svelte';
 	import Stat from '$lib/ui/Stat.svelte';
 	import { useApp } from '$lib/context/context';
+	import { useSession } from '$lib/context/context';
+	const session = useSession();
 	const app = useApp();
 
 	const GRADE_KEYS: Record<string, ReviewGrade> = { '1': 1, '2': 2, '3': 3, '4': 4 };
@@ -468,7 +468,7 @@ import type { Run } from '$lib/study/vacation';
 			// retry leaves the queue for the next boot and never blocks
 			// the session.
 			try {
-				await flushPendingReviews();
+				await session.outbox.flush();
 			} catch {
 				// The outbox retries on the next boot or reconnect.
 			}
@@ -780,7 +780,7 @@ import type { Run } from '$lib/study/vacation';
 		return item.kind === 'vocab' || item.kind === 'tone' || item.kind === 'reverse';
 	}
 
-	const audioSettings = $derived(readAudioSettings($workspaces.current?.settings));
+	const audioSettings = $derived(readAudioSettings(session.workspaces.current?.settings));
 	const currentAudio = $derived(
 		shownCard !== null && hasWordAudio(shownCard.item)
 			? cardAudio(shownCard.entry, audioMap[String(shownCard.item.entryId)], audioSettings)
@@ -852,7 +852,7 @@ import type { Run } from '$lib/study/vacation';
 	});
 
 	function retryLoad(): void {
-		void load($workspaces.current?.id ?? null, $workspaces.current?.language ?? null);
+		void load(session.workspaces.current?.id ?? null, session.workspaces.current?.language ?? null);
 	}
 
 	function retryEntry(): void {
@@ -935,7 +935,7 @@ import type { Run } from '$lib/study/vacation';
 		try {
 			let review = step.review;
 			if (action === 'replace' && review !== null) {
-				const next = await recordReplacement(review, value);
+				const next = await session.outbox.recordReplacement(review, value);
 				if (sessionWorkspaceId !== workspaceId) return;
 				// Not kept (its workspace was deleted): the notice said so.
 				if (next === null) return;
@@ -1060,10 +1060,10 @@ import type { Run } from '$lib/study/vacation';
 						workspaceId,
 						mode: item.kind,
 						meta,
-						currentWorkspaceId: $workspaces.current?.id ?? null,
+						currentWorkspaceId: session.workspaces.current?.id ?? null,
 						entry: current.entry,
 						addCard,
-						recordReview
+						recordReview: (...args) => session.outbox.recordReview(...args)
 					})
 			});
 			if (!step.ok) {
@@ -1226,7 +1226,7 @@ import type { Run } from '$lib/study/vacation';
 	// read there reloaded the session for ever in a real browser.
 	$effect(() => {
 		if (missingConfig) return;
-		const workspace = $workspaces.current;
+		const workspace = session.workspaces.current;
 		untrack(() => void load(workspace?.id ?? null, workspace?.language ?? null));
 	});
 </script>

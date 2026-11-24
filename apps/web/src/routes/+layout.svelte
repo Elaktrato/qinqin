@@ -18,7 +18,6 @@
 	import { loadPluginStates, pluginStates, resetPluginStates } from '$lib/plugins/states';
 	import { recordSessionWhenSettled } from '$lib/events';
 	import { syncStudyDayUser } from '$lib/time/zone';
-	import { dismissNotice, notice } from '$lib/notices';
 	import {
 		allowed as routeAllowed,
 		normalizePath,
@@ -26,7 +25,6 @@
 		restrictedTarget,
 		routeAccess
 	} from '$lib/routeAccess';
-	import { startReviewOutbox } from '$lib/study/events';
 	import UpdateBanner from '$lib/pwa/UpdateBanner.svelte';
 	import OfflineBanner from '$lib/pwa/OfflineBanner.svelte';
 	import { registerWorker } from '$lib/pwa/register';
@@ -38,12 +36,6 @@
 	import { themeStore } from '$lib/theme/store.svelte';
 	import { packFaces } from '$lib/fonts/packFaces.svelte';
 	import { applyHanziVars, hanziVars } from '$lib/fonts/hanziVars';
-	import {
-		load as loadWorkspaces,
-		workspaces,
-		workspacesLoadError,
-		workspacesLoaded
-	} from '$lib/workspaces';
 	import '../app.css';
 	import '$lib/fonts/hanzi.css';
 	import { existingApp, provideApp } from '$lib/context/context';
@@ -62,10 +54,12 @@
 	let { children } = $props();
 
 	let booted = $state(false);
-	// The token whose workspaces are loaded; guards the effect below
-	// against refetching on unrelated re-runs.
-	let loadedToken = $state<string | null>(null);
-	const workspaceError = $derived($workspacesLoadError);
+	// The session (record 0009): the per-user state the shell shows.
+	const session = $derived(app.session);
+	// The session whose app is loaded; guards the effect below against
+	// loading again on unrelated re-runs.
+	let loadedSession: object | null = null;
+	const workspaceError = $derived(session?.workspaces.loadError ?? '');
 
 	const path = $derived(normalizePath(page.url.pathname));
 	// The frame's sections (lib/frame/sections.ts): the core features, the
@@ -101,7 +95,7 @@
 		return () => document.documentElement.removeAttribute('data-bottom-bar');
 	});
 	const noWorkspaces = $derived(
-		$workspacesLoaded && !workspaceError && $workspaces.list.length === 0
+		session !== null && session.workspaces.loaded && !workspaceError && session.workspaces.list.length === 0
 	);
 
 	// A guard redirect replaces the history entry it leaves: Back from
@@ -127,11 +121,13 @@
 	// Loads the workspace list; a failure shows a message with "Try again"
 	// (the session's token stays, so a transient error is recoverable).
 	async function loadShellWorkspaces(): Promise<void> {
-		workspacesLoadError.set('');
+		const workspaces = app.session?.workspaces;
+		if (workspaces === undefined) return;
+		workspaces.loadError = '';
 		try {
-			await loadWorkspaces();
+			await workspaces.load();
 		} catch (err) {
-			workspacesLoadError.set(errorText(err, t('app.workspaces.loadFailed')));
+			workspaces.loadError = errorText(err, t('app.workspaces.loadFailed'));
 		}
 	}
 
@@ -151,29 +147,24 @@
 		booted = true;
 	});
 
-	// Load the user's workspaces once per session, and drop them on
-	// logout so another account never sees the previous user's list.
+	// Load the app once per session: the workspaces, the plugin states, and
+	// the review outbox (reviews queued while offline drain on whichever route
+	// the user opens). A new session is a new set of objects (record 0009), so
+	// nothing of the previous user is left to drop here.
 	$effect(() => {
 		if (!booted) return;
-		const token = app.auth.token;
-		if (token === null) {
-			loadedToken = null;
-			workspacesLoaded.set(false);
-			workspacesLoadError.set('');
+		const current = session;
+		if (current === null) {
+			loadedSession = null;
 			resetPluginStates();
-			dismissNotice();
-			workspaces.set({ list: [], current: null });
 			return;
 		}
 		// Nothing of the app loads for a restricted session; the effect runs
 		// again when the restriction clears.
 		if (app.auth.restriction !== null) return;
-		if (token === loadedToken) return;
-		loadedToken = token;
-		workspacesLoaded.set(false);
-		// Drain reviews queued while offline as soon as a session exists,
-		// on whichever route the user opens. Never blocks the boot.
-		startReviewOutbox();
+		if (current === loadedSession) return;
+		loadedSession = current;
+		current.outbox.start();
 		void loadPluginStates();
 		void loadShellWorkspaces();
 	});
@@ -182,7 +173,7 @@
 	// active workspace is up, and again whenever the app comes back to the
 	// front (throttled inside; a no-op without a controlling worker).
 	$effect(() => {
-		const id = $workspacesLoaded && app.auth.restriction === null ? ($workspaces.current?.id ?? null) : null;
+		const id = session?.workspaces.loaded && app.auth.restriction === null ? (session.workspaces.current?.id ?? null) : null;
 		if (id === null) return;
 		const run = () => void prepareActiveWorkspace(app);
 		const timer = setTimeout(run, 4000);
@@ -241,7 +232,7 @@
 	// workspace is active once the list is in: the first one at load and any
 	// the user switches to or creates later (receipts keep it once a day).
 	$effect(() => {
-		const id = $workspacesLoaded ? ($workspaces.current?.id ?? null) : null;
+		const id = session?.workspaces.loaded ? (session.workspaces.current?.id ?? null) : null;
 		// The receipt is keyed by the learner day, so wait for the zone to settle.
 		if (id !== null) void recordSessionWhenSettled(id);
 	});
@@ -320,10 +311,10 @@
 
 			<!-- Always in the DOM, so screen readers announce what arrives. -->
 			<div class="notice-region" role="status">
-				{#if signedIn && $notice}
+				{#if signedIn && session?.notices.text}
 					<p class="notice">
-						<span>{$notice}</span>
-						<button type="button" class="notice-dismiss" onclick={dismissNotice}>{t('app.notice.dismiss')}</button>
+						<span>{session.notices.text}</span>
+						<button type="button" class="notice-dismiss" onclick={() => session?.notices.dismiss()}>{t('app.notice.dismiss')}</button>
 					</p>
 				{/if}
 			</div>

@@ -6,9 +6,10 @@
 	import { formatDuration, readingTotals, topBooks, type ReadingTotals } from '$lib/stats/readingTime';
 	import { currentStudyDay, onStudyDayChange } from '$lib/time/zone';
 	import Button from '$lib/ui/Button.svelte';
-	import { workspaces } from '$lib/workspaces';
 	import WidgetCard from './WidgetCard.svelte';
 	import type { WidgetStatus } from './types';
+	import { useSession } from '$lib/context/context';
+	const session = useSession();
 
 	// Reading time (reader plugin): tracked time in the active workspace,
 	// all time, the last 7 and 30 days, and the five most read books.
@@ -21,7 +22,7 @@
 
 	let requestSeq = 0;
 
-	const workspaceId = $derived($workspaces.current?.id ?? null);
+	const workspaceId = $derived(session.workspaces.current?.id ?? null);
 	const top = $derived(totals === null ? [] : topBooks(totals.books, titles));
 	const status = $derived<WidgetStatus>(
 		noWorkspace

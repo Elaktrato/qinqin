@@ -22,12 +22,13 @@
 		type TypedOption
 	} from '$lib/radicals/selection';
 	import { partsHref, selectionFromParams } from '$lib/radicals/url';
-	import { currentLanguage, workspacesLoaded } from '$lib/workspaces';
 	import { Button, Field, Section } from '$lib/ui';
 	import { useApp } from '$lib/context/context';
+	import { useSession } from '$lib/context/context';
+	const session = useSession();
 	const app = useApp();
 
-	const lang = $derived($currentLanguage);
+	const lang = $derived(session.workspaces.language);
 	const supported = $derived(lang !== null && usesHan(lang));
 
 	let chars = $state.raw<CharRow[] | null>(null);
@@ -104,7 +105,7 @@
 	<p><a href="/search">{t('search.parts.back')}</a></p>
 
 	{#if lang === null}
-		{#if $workspacesLoaded}
+		{#if session.workspaces.loaded}
 			<p class="hint">{t('search.parts.noWorkspace')}</p>
 		{/if}
 	{:else if !supported}

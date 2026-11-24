@@ -20,8 +20,9 @@ import type { StudyContext } from '$lib/study/studyContext';
 	import { deleteParamSet, saveParamSet, setActiveSet } from '$lib/study/commands/settings';
 	import { loadStudyData } from '$lib/study/data';
 	import type { ReviewEvent, StudyCard } from '$lib/study/types';
-	import { workspaces } from '$lib/workspaces';
 	import { Button } from '$lib/ui';
+	import { useSession } from '$lib/context/context';
+	const session = useSession();
 
 	interface Candidate {
 		workspaceId: number;
@@ -40,7 +41,7 @@ import type { StudyContext } from '$lib/study/studyContext';
 	const UNDO_MS = 10000;
 	const EMPTY_FIT: Fit = { logLoss: 0, rmseBins: 0, items: 0 };
 
-	const workspaceId = $derived($workspaces.current?.id ?? null);
+	const workspaceId = $derived(session.workspaces.current?.id ?? null);
 
 	let loading = $state(true);
 	let loadError = $state('');

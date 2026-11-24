@@ -6,10 +6,11 @@
 	import type { Workspace } from '$lib/api/types';
 	import { fetchWorkspaceContents, type WorkspaceContents } from '$lib/api/workspaceContents';
 	import { confirmLabel, labelMatches } from '$lib/workspaceDelete';
-	import { deleteWorkspace } from '$lib/workspaces';
 	import Button from '$lib/ui/Button.svelte';
 	import Dialog from '$lib/ui/Dialog.svelte';
 	import Field from '$lib/ui/Field.svelte';
+	import { useSession } from '$lib/context/context';
+	const session = useSession();
 
 	// The confirmation for deleting a workspace: a modal Dialog (lib/ui: the
 	// browser traps focus in it, makes the page behind inert, Escape closes
@@ -52,7 +53,7 @@
 		deleting = true;
 		error = '';
 		try {
-			await deleteWorkspace(workspace.id);
+			await session.workspaces.delete(workspace.id);
 			finish(true);
 		} catch (err) {
 			error =

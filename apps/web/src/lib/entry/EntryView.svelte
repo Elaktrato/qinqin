@@ -26,7 +26,6 @@
 	import { glossLang, readingLang, studyLang } from '$lib/i18n/lang';
 	import { languageLabel } from '$lib/languages';
 	import { entryRadicalLinks } from '$lib/radicals/selection';
-	import { workspaces } from '$lib/workspaces';
 	import EntryNote from '$lib/notes/EntryNote.svelte';
 	import { joinForms, otherForms } from '$lib/features/reader/entryDisplay';
 	import Chip from '$lib/ui/Chip.svelte';
@@ -39,6 +38,8 @@
 	import { getStudyData } from '$lib/study/data';
 	import { setPageActions } from '$lib/frame/pageFrame.svelte';
 	import { useApp } from '$lib/context/context';
+	import { useSession } from '$lib/context/context';
+	const session = useSession();
 	const app = useApp();
 
 	let {
@@ -183,7 +184,7 @@
 	const lookupLinks = $derived(
 		entry === null ? {} : entryRadicalLinks(entry.written, entry.kind, radicalWritten)
 	);
-	const audioSettings = $derived(readAudioSettings($workspaces.current?.settings));
+	const audioSettings = $derived(readAudioSettings(session.workspaces.current?.settings));
 	const headClips = $derived(headwordClips(audio));
 	const audioFor = $derived(entry ? readingClips(audio, entry.readings) : null);
 	// The credit of every recording this page can play.
@@ -223,7 +224,7 @@
 
 	function refreshDecks(): void {
 		const current = entry;
-		const workspace = $workspaces.current?.id;
+		const workspace = session.workspaces.current?.id;
 		if (!current || workspace === undefined) return;
 		void getStudyData(workspace, { force: true }).then(
 			(data) => {
@@ -235,7 +236,7 @@
 
 	$effect(() => {
 		const current = entry;
-		const workspace = $workspaces.current?.id;
+		const workspace = session.workspaces.current?.id;
 		inDecks = 0;
 		if (!current || workspace === undefined) return;
 		void getStudyData(workspace).then(
@@ -251,7 +252,7 @@
 	$effect(() => {
 		if (!recordView) return;
 		const viewed = entry?.id ?? null;
-		const workspace = $workspaces.current?.id ?? null;
+		const workspace = session.workspaces.current?.id ?? null;
 		if (viewed === null || workspace === null || viewedEntry === viewed) return;
 		viewedEntry = viewed;
 		void record('view', workspace, viewPayload(viewed));
@@ -326,7 +327,7 @@
 				{#if rank !== null}<Chip>#{t('entry.chips.frequency', { rank: formatNumber(rank) })}</Chip>{/if}
 				<Chip>{t(entry.kind === 'character' ? 'entry.chips.character' : 'entry.chips.word')}</Chip>
 				{#if inDecks > 0}<Chip tone="good">{t('entry.chips.inDecks', { count: inDecks })}</Chip>{/if}
-				{#if entry.language !== $workspaces.current?.language}
+				{#if entry.language !== session.workspaces.current?.language}
 					<Chip>{languageLabel(entry.language)}</Chip>
 				{/if}
 			</div>
@@ -406,9 +407,9 @@
 						<StrokePlayer char={strokeChar} />
 					</section>
 				{/if}
-				{#if !editing && $workspaces.current}
-					{#key `${$workspaces.current.id}:${entry.id}`}
-						<EntryNote workspaceId={$workspaces.current.id} entryId={entry.id} />
+				{#if !editing && session.workspaces.current}
+					{#key `${session.workspaces.current.id}:${entry.id}`}
+						<EntryNote workspaceId={session.workspaces.current.id} entryId={entry.id} />
 					{/key}
 				{/if}
 				{#if entry.radicalId !== null}

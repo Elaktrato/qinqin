@@ -12,7 +12,6 @@
 	import type { EntryBase, Level, Scheme } from '$lib/api/types';
 	import { usesHan } from '$lib/languages';
 	import CardManager from '$lib/components/CardManager.svelte';
-	import { workspaces } from '$lib/workspaces';
 	import { deckSessionItems, isChinese, sessionCounts } from '$lib/study/cardFlow';
 	import { loadIneligible } from '$lib/study/ineligible';
 	import {
@@ -75,6 +74,8 @@ import { limitsOf } from '$lib/study/scheduler';
 		type StudyCardKind,
 		GENERAL_DECK_ID
 	} from '$lib/study/types';
+	import { useSession } from '$lib/context/context';
+	const session = useSession();
 
 	function describeScheduling(data: Awaited<ReturnType<typeof loadStudyData>>): string {
 		const active = data.fsrs?.active;
@@ -302,7 +303,7 @@ import { limitsOf } from '$lib/study/scheduler';
 	// Refetch when the active workspace changes; the header switcher
 	// makes that possible without leaving the page.
 	$effect(() => {
-		const workspace = $workspaces.current;
+		const workspace = session.workspaces.current;
 		void load(workspace?.id ?? null, workspace?.language ?? null);
 	});
 
@@ -910,7 +911,7 @@ import { limitsOf } from '$lib/study/scheduler';
 	{/if}
 	<p class="hint">{t('study.setup.intro')}</p>
 	<UnreadableRowsNotice workspaceId={activeWorkspaceId} />
-	{#if $workspaces.current && usesHan($workspaces.current.language)}
+	{#if session.workspaces.current && usesHan(session.workspaces.current.language)}
 		<p class="hint"><a href="/stats/characters">{t('study.setup.masteryMap')}</a></p>
 	{/if}
 

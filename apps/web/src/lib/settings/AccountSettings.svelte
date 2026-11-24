@@ -31,7 +31,6 @@
 		sessionRows,
 		type SessionDto
 	} from '$lib/account/sessionsView';
-	import { clearPending } from '$lib/study/events';
 	import AppSection from '$lib/pwa/AppSection.svelte';
 	import AccessTokens from './AccessTokens.svelte';
 	import { containmentNote } from '$lib/account/tokensView';
@@ -413,7 +412,7 @@
 		ondone={() => {
 			deleting = false;
 			// The account is gone: its unsent reviews can never be sent.
-			if (app.auth.user) clearPending(app.auth.user.id);
+			if (app.auth.user) app.session?.outbox.clearPending(app.auth.user.id);
 			app.auth.logout();
 		}}
 	/>

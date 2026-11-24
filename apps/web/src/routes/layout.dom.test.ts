@@ -14,13 +14,10 @@ vi.mock('$lib/events', async (importOriginal) => ({
 	recordSessionWhenSettled: vi.fn(),
 	record: vi.fn()
 }));
-vi.mock('$lib/study/events', () => ({ startReviewOutbox: vi.fn() }));
-vi.mock('$lib/workspaceGone', () => ({ recoverFromDeletedWorkspace: vi.fn(() => Promise.resolve()) }));
 
 import { goto } from '$app/navigation';
 import { fireEvent } from '@testing-library/svelte';
 import { recordSessionWhenSettled as recordSessionOnce } from '$lib/events';
-import { select, workspaces } from '$lib/workspaces';
 import { api } from '$lib/api/client';
 import { createAppContext, type AppContext } from '$lib/context/app.svelte';
 import { contextOf } from '$lib/context/context';
@@ -58,7 +55,6 @@ function mountAt(path: string, token: string | null, navLayout: unknown = null) 
 
 beforeEach(() => {
 	void navLayoutStore.setUser(null);
-	workspaces.set({ list: [], current: null });
 });
 afterEach(() => {
 	cleanup();
@@ -232,7 +228,7 @@ describe('layout workspaces', () => {
 		fail = false;
 		await fireEvent.click(view.getByRole('button', { name: 'Try again' }));
 		await waitFor(() => expect(view.queryByText('Could not load workspaces.')).toBeNull());
-		await waitFor(() => expect(get(workspaces).current?.id).toBe(1));
+		await waitFor(() => expect(app.session?.workspaces.current?.id).toBe(1));
 	});
 
 	it('records a session for a workspace selected mid-session', async () => {
@@ -246,7 +242,7 @@ describe('layout workspaces', () => {
 		}) as never);
 		render(Layout, { props: { children }, context: freshApp() });
 		await waitFor(() => expect(recordSessionOnce).toHaveBeenCalledWith(1));
-		select(2);
+		app.session?.workspaces.select(2);
 		await waitFor(() => expect(recordSessionOnce).toHaveBeenCalledWith(2));
 	});
 });

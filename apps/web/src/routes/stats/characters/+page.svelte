@@ -58,8 +58,8 @@
 	import Field from '$lib/ui/Field.svelte';
 	import Icon from '$lib/ui/Icon.svelte';
 	import Select from '$lib/ui/Select.svelte';
-	import { workspaces } from '$lib/workspaces';
-
+	import { useSession } from '$lib/context/context';
+	const session = useSession();
 	const TIP_ID = 'map-cell-tip';
 	const SEARCH_DELAY_MS = 200;
 
@@ -229,11 +229,11 @@
 	// The map is built from Han characters; other languages get a note
 	// instead (Stats hides the tab, but the URL can still be visited).
 	const notHan = $derived(
-		$workspaces.current !== null && !usesHan($workspaces.current.language)
+		session.workspaces.current !== null && !usesHan(session.workspaces.current.language)
 	);
 
 	$effect(() => {
-		const workspace = $workspaces.current;
+		const workspace = session.workspaces.current;
 		if (workspace && !usesHan(workspace.language)) {
 			// Drop any in-flight load for a previous workspace.
 			requestSeq++;

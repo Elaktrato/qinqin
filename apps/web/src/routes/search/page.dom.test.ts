@@ -1,4 +1,4 @@
-import { testContext, type TestContext } from '$lib/testing/context';
+import { testContext, type TestContext, workspacesState } from '$lib/testing/context';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/svelte';
 import { tick } from 'svelte';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -38,7 +38,6 @@ import { search } from '$lib/api/search';
 import { getSchemes } from '$lib/api/schemes';
 import { PHONE_MEDIA_QUERY, FRAME_PHONE_BREAKPOINT } from '$lib/frame/breakpoint';
 import { setUrl } from '$lib/testing/appState.svelte';
-import { workspaces, workspacesLoaded } from '$lib/workspaces';
 import Page from './+page.svelte';
 
 let ctx: TestContext = testContext();
@@ -105,7 +104,7 @@ beforeEach(() => {
 	setUrl('/search');
 	setViewport(true);
 	getEntryMock.mockRejectedValue(new Error('no entry stubbed'));
-	workspaces.set({
+	ctx.session.workspaces.set({
 		list: [],
 		current: { id: 1, language: 'zh', name: 'zh' } as never
 	});
@@ -384,8 +383,8 @@ describe('search page', () => {
 	});
 
 	it('says workspaces are loading, not that none is selected, while they load', async () => {
-		workspaces.set({ list: [], current: null });
-		workspacesLoaded.set(false);
+		ctx.session.workspaces.set({ list: [], current: null });
+		ctx.session.workspaces.set(workspacesState(ctx.session.workspaces), false);
 		render(Page, { context: ctx.context });
 		expect((screen.getByLabelText('Search entries') as HTMLInputElement).placeholder).toBe(
 			'Loading workspaces…'
@@ -393,8 +392,8 @@ describe('search page', () => {
 	});
 
 	it('disables the search input and says why when there is no workspace', async () => {
-		workspaces.set({ list: [], current: null });
-		workspacesLoaded.set(true);
+		ctx.session.workspaces.set({ list: [], current: null });
+		ctx.session.workspaces.set(workspacesState(ctx.session.workspaces), true);
 		render(Page, { context: ctx.context });
 		expect((screen.getByLabelText('Search entries') as HTMLInputElement).placeholder).toBe(
 			'Select a workspace to search'
@@ -408,7 +407,7 @@ describe('search page', () => {
 		const link = await screen.findByRole('link', { name: 'By parts' });
 		expect(link.getAttribute('href')).toBe('/search/parts');
 		cleanup();
-		workspaces.set({ list: [], current: { id: 2, language: 'es', name: 'es' } as never });
+		ctx.session.workspaces.set({ list: [], current: { id: 2, language: 'es', name: 'es' } as never });
 		render(Page, { context: ctx.context });
 		await tick();
 		expect(screen.queryByRole('link', { name: 'By parts' })).toBeNull();

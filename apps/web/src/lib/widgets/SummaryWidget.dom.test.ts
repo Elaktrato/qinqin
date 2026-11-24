@@ -1,3 +1,4 @@
+import { testContext, type TestContext } from '$lib/testing/context';
 import { cleanup, render, screen, waitFor } from '@testing-library/svelte';
 import { tick } from 'svelte';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -25,8 +26,12 @@ import { summaryNumbers, type SummaryNumbers } from '$lib/stats/summary';
 import { onContextStale } from '$lib/study/currentContext';
 import { onStudyChange, loadStudyHistory } from '$lib/study/data';
 import { pluginStates } from '$lib/plugins/states';
-import { workspaces } from '$lib/workspaces';
 import SummaryWidget from './SummaryWidget.svelte';
+
+let ctx: TestContext = testContext();
+beforeEach(() => {
+	ctx = testContext();
+});
 
 const NUMBERS: SummaryNumbers = {
 	streak: 23,
@@ -42,7 +47,7 @@ function deferred<T>() {
 }
 
 function select(id: number | null): void {
-	workspaces.set({
+	ctx.session.workspaces.set({
 		list: [],
 		current: id === null ? null : ({ id, language: 'zh', name: `w${id}` } as never)
 	});
@@ -70,7 +75,7 @@ afterEach(() => {
 
 describe('SummaryWidget', () => {
 	it('shows four Stats with their labels and formatted values', async () => {
-		render(SummaryWidget);
+		render(SummaryWidget, { context: ctx.context });
 
 		expect(await screen.findByText('Day streak')).toBeTruthy();
 		expect(screen.getByText('23')).toBeTruthy();
@@ -85,7 +90,7 @@ describe('SummaryWidget', () => {
 
 	it('recall below the floor shows the later text, not a number', async () => {
 		vi.mocked(summaryNumbers).mockReturnValue({ ...NUMBERS, recall: { share: null, base: 9 } });
-		render(SummaryWidget);
+		render(SummaryWidget, { context: ctx.context });
 
 		expect(await screen.findByText('Shown after 10 repeat reviews')).toBeTruthy();
 		expect(screen.queryByText('91%')).toBeNull();
@@ -93,7 +98,7 @@ describe('SummaryWidget', () => {
 
 	it('flashcards switched off shows the note and no numbers', async () => {
 		flashcards(false);
-		render(SummaryWidget);
+		render(SummaryWidget, { context: ctx.context });
 
 		expect(
 			await screen.findByText('Switch on flashcards in Settings → Features to see these numbers.')
@@ -104,20 +109,20 @@ describe('SummaryWidget', () => {
 
 	it('no workspace and loading come from WidgetCard', async () => {
 		select(null);
-		render(SummaryWidget);
+		render(SummaryWidget, { context: ctx.context });
 		expect(await screen.findByText('Choose a workspace in the header.')).toBeTruthy();
 		expect(loadStudyHistory).not.toHaveBeenCalled();
 
 		cleanup();
 		select(1);
 		vi.mocked(loadStudyHistory).mockReturnValue(deferred<never>().promise);
-		render(SummaryWidget);
+		render(SummaryWidget, { context: ctx.context });
 		expect(await screen.findByText('Loading…')).toBeTruthy();
 	});
 
 	it('the error comes from WidgetCard with Try again, which forces a reload', async () => {
 		vi.mocked(loadStudyHistory).mockRejectedValueOnce(new Error('broken'));
-		render(SummaryWidget);
+		render(SummaryWidget, { context: ctx.context });
 
 		const retry = await screen.findByRole('button', { name: 'Try again' });
 		await waitFor(() => expect(screen.getByText('Could not load your summary.')).toBeTruthy());
@@ -127,7 +132,7 @@ describe('SummaryWidget', () => {
 	});
 
 	it('reloads on onStudyChange for this workspace', async () => {
-		render(SummaryWidget);
+		render(SummaryWidget, { context: ctx.context });
 		await waitFor(() => expect(loadStudyHistory).toHaveBeenCalledTimes(1));
 		const onWrite = vi.mocked(onStudyChange).mock.calls.at(-1)![0];
 
@@ -139,7 +144,7 @@ describe('SummaryWidget', () => {
 	});
 
 	it('reloads on a posted review for this workspace', async () => {
-		render(SummaryWidget);
+		render(SummaryWidget, { context: ctx.context });
 		await waitFor(() => expect(loadStudyHistory).toHaveBeenCalledTimes(1));
 		const onLog = vi.mocked(onEventLogChange).mock.calls.at(-1)![0];
 
@@ -154,7 +159,7 @@ describe('SummaryWidget', () => {
 		const first = deferred<never>();
 		const second = deferred<never>();
 		vi.mocked(loadStudyHistory).mockReturnValueOnce(first.promise).mockReturnValueOnce(second.promise);
-		render(SummaryWidget);
+		render(SummaryWidget, { context: ctx.context });
 		await tick();
 		select(2);
 		await tick();
@@ -173,7 +178,7 @@ describe('SummaryWidget', () => {
 	});
 
 	it('reloads when the learner day changes', async () => {
-		render(SummaryWidget);
+		render(SummaryWidget, { context: ctx.context });
 		await waitFor(() => expect(loadStudyHistory).toHaveBeenCalledTimes(1));
 		vi.mocked(onContextStale).mock.calls[0][0]();
 		await waitFor(() => expect(loadStudyHistory).toHaveBeenCalledTimes(2));

@@ -5,7 +5,6 @@
 	import { page } from '$app/state';
 	import { onMount } from 'svelte';
 	import { getAiStatus } from '$lib/api/ai';
-	import { workspaces } from '$lib/workspaces';
 	import { aiBanner as bannerOf } from '$lib/settings/aiSettingsView';
 	import { aiButtonGate } from './editorLogic';
 	import EntryEditor from './EntryEditor.svelte';
@@ -20,11 +19,13 @@
 	import { getCapabilities } from './api';
 	import { journalHref, parseJournalRoute } from './route';
 	import type { Capabilities } from './types';
+	import { useSession } from '$lib/context/context';
+	const session = useSession();
 
 	let { rest }: { rest: string } = $props();
 
 	const route = $derived(parseJournalRoute(rest));
-	const workspace = $derived($workspaces.current);
+	const workspace = $derived(session.workspaces.current);
 
 	// What the AI buttons may do, from the server's capabilities. null while loading.
 	let capabilities = $state<Capabilities | null>(null);

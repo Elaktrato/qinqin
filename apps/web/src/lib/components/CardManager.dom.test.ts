@@ -1,3 +1,4 @@
+import { testContext, type TestContext } from '$lib/testing/context';
 // Pins the Card manager's behaviour before its controller moves to
 // lib/study/cardActions.ts: the same scenarios must pass unchanged after.
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/svelte';
@@ -15,6 +16,11 @@ import type { Deck, StudyCard } from '$lib/study/types';
 import CardManager from './CardManager.svelte';
 import * as build from '$lib/testing/study';
 
+let ctx: TestContext = testContext();
+beforeEach(() => {
+	ctx = testContext();
+});
+
 function card(entryId: number, written: string, deckIds = ['general']): StudyCard {
 	return build.card({ id: `c-vocab-${entryId}`, entryId, written, deckIds, createdAt: `2026-01-0${entryId}T00:00:00.000Z` });
 }
@@ -25,7 +31,7 @@ let onchanged: ReturnType<typeof vi.fn<() => Promise<void>>>;
 
 async function open(): Promise<void> {
 	onchanged = vi.fn<() => Promise<void>>(async () => {});
-	render(CardManager, { workspaceId: 7, cards: CARDS, decks: DECKS, onchanged });
+	render(CardManager, { props: { workspaceId: 7, cards: CARDS, decks: DECKS, onchanged }, context: ctx.context });
 	const summary = screen.getByText(/Manage cards/);
 	await fireEvent.click(summary);
 }

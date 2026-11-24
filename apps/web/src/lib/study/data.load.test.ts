@@ -1,3 +1,4 @@
+import { testContext, type TestContext } from '$lib/testing/context';
 // Loading the study state (split from the old store tests, #193).
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { readFileSync, readdirSync } from "node:fs";
@@ -8,7 +9,6 @@ const { goto } = vi.hoisted(() => ({ goto: vi.fn() }));
 
 vi.mock("$app/navigation", () => ({ goto }));
 
-import { workspaces } from "$lib/workspaces";
 import { setOutboxUser } from "$lib/study/outboxUser";
 import { rememberSent } from "$lib/study/recentSent";
 import { gradeItem } from "$lib/study/grade";
@@ -66,7 +66,6 @@ import {
   pluginRow,
   deck,
   card,
-  selectWorkspace,
   calls,
   putBodies,
   pushBodies,
@@ -83,6 +82,11 @@ import {
   expectOneStorage,
   useStudyStoreMocks
 } from "$lib/testing/studyFetch";
+
+let ctx: TestContext = testContext();
+beforeEach(() => {
+	ctx = testContext();
+});
 
 
 describe("loading the study state", () => {
@@ -271,7 +275,6 @@ describe("loading the study state", () => {
     });
 
     it("fails without a workspace id (the selected one is never read, #174)", async () => {
-      selectWorkspace(null);
 
       await expect(loadStudyData(0)).rejects.toThrow(/workspace/i);
       expect(fetch).not.toHaveBeenCalled();
@@ -398,7 +401,6 @@ describe("typed study collections", () => {
   beforeEach(() => {
     vi.stubGlobal("localStorage", fakeStorage());
     vi.stubGlobal("fetch", vi.fn());
-    selectWorkspace(WORKSPACE_ID);
   });
 
   afterEach(() => {
@@ -641,11 +643,10 @@ describe("queued reviews count in the loaded history", () => {
   beforeEach(() => {
     vi.stubGlobal("localStorage", fakeStorage());
     vi.stubGlobal("fetch", vi.fn());
-    selectWorkspace(WORKSPACE_ID);
-    setOutboxUser(1, 't');
+    setOutboxUser(1);
   });
   afterEach(() => {
-    setOutboxUser(null, null);
+    setOutboxUser(null);
     vi.unstubAllGlobals();
     vi.clearAllMocks();
   });
@@ -742,7 +743,7 @@ describe("queued reviews count in the loaded history", () => {
   it("nothing is merged while no user is known", async () => {
     respondPull(pull, []);
     queue(1, reviewEvent("Q1", "card-1"));
-    setOutboxUser(null, null);
+    setOutboxUser(null);
 
     const data = await loadStudyData(WORKSPACE_ID);
 

@@ -9,8 +9,6 @@ vi.mock('$lib/events', async (importOriginal) => ({
 	recordSessionWhenSettled: vi.fn(),
 	record: vi.fn()
 }));
-vi.mock('$lib/study/events', () => ({ startReviewOutbox: vi.fn() }));
-vi.mock('$lib/workspaceGone', () => ({ recoverFromDeletedWorkspace: vi.fn(() => Promise.resolve()) }));
 
 import { goto } from '$app/navigation';
 import { api } from '$lib/api/client';

@@ -68,14 +68,14 @@ describe('loadGoalStatus', () => {
 
 	it('does not share a load between users', async () => {
 		vi.mocked(loadStudyHistory).mockResolvedValue(history({ goals: goalRow() }));
-		setOutboxUser(1, 'token-one');
+		setOutboxUser(1);
 		const first = loadGoalStatus(3, { now: NOW });
-		setOutboxUser(2, 'token-two');
+		setOutboxUser(2);
 		const second = loadGoalStatus(3, { now: NOW });
 		expect(second).not.toBe(first);
 		await Promise.all([first, second]);
 		expect(loadStudyHistory).toHaveBeenCalledTimes(2);
-		setOutboxUser(null, null);
+		setOutboxUser(null);
 	});
 
 	it('asks for a year with the streak, for the workspace, and computes today and the streak', async () => {

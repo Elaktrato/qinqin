@@ -33,7 +33,7 @@ beforeEach(() => {
 	localStorage.clear();
 	localStorage.setItem('qinqin.token', 'tok');
 	ctx.app.auth.set({ token: 'tok', user: { id: 1, username: 'u' } as never });
-	setOutboxUser(1, 'tok');
+	setOutboxUser(1);
 	logoutPrompt.set(null);
 	vi.stubGlobal('fetch', vi.fn(() => Promise.reject(new Error('offline'))));
 	vi.spyOn(console, 'warn').mockImplementation(() => {});
@@ -42,7 +42,7 @@ afterEach(() => {
 	cleanup();
 	vi.restoreAllMocks();
 	vi.unstubAllGlobals();
-	setOutboxUser(null, null);
+	setOutboxUser(null);
 });
 
 describe('sign-out with unsent reviews', () => {

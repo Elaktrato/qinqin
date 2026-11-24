@@ -10,9 +10,10 @@
 	import { STAGE_INFO, formatCount, learnedSummary } from '$lib/study/mapGrid';
 	import { MASTERY_THRESHOLD } from '$lib/study/mastery';
 	import Button from '$lib/ui/Button.svelte';
-	import { workspaces } from '$lib/workspaces';
 	import WidgetCard from './WidgetCard.svelte';
 	import type { WidgetStatus } from './types';
+	import { useSession } from '$lib/context/context';
+	const session = useSession();
 
 	// The character map's summary tile (core, Han languages only): how
 	// many of the language's characters are learned, the stage bar and a
@@ -28,7 +29,7 @@
 
 	let requestSeq = 0;
 
-	const workspace = $derived($workspaces.current);
+	const workspace = $derived(session.workspaces.current);
 	const workspaceId = $derived(workspace?.id ?? null);
 	const language = $derived(workspace?.language ?? '');
 

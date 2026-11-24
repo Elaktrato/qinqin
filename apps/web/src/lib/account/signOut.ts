@@ -3,18 +3,18 @@
 // non-interactive path (expired or revoked session, delete account).
 
 import type { AppContext } from '../context/app.svelte';
-import { clearPending, flushPendingReviews, pendingCount } from '../study/events';
 import { decideLogout, logoutPrompt } from './logoutFlow';
 
 export async function requestSignOut(app: AppContext): Promise<void> {
 	const id = app.auth.user?.id;
-	if (id === undefined) {
+	const outbox = app.session?.outbox;
+	if (id === undefined || outbox === undefined) {
 		app.auth.logout();
 		return;
 	}
 	const { decision, count } = await decideLogout({
-		pending: () => pendingCount(id),
-		flush: flushPendingReviews
+		pending: () => outbox.pendingCount(id),
+		flush: () => outbox.flush()
 	});
 	if (decision === 'signout') app.auth.logout();
 	else logoutPrompt.set(count);
@@ -23,7 +23,7 @@ export async function requestSignOut(app: AppContext): Promise<void> {
 /** The dialog's "Sign out and delete them". */
 export function signOutAndDelete(app: AppContext): void {
 	const id = app.auth.user?.id;
-	if (id !== undefined) clearPending(id);
+	if (id !== undefined) app.session?.outbox.clearPending(id);
 	logoutPrompt.set(null);
 	app.auth.logout();
 }

@@ -39,9 +39,10 @@
 		visibleSettingsTabs,
 		type SettingsTab
 	} from '$lib/settings/tabs';
-	import { load as loadWorkspaces, rename, setSettings as setWorkspaceSettings, workspaces, workspacesLoadError, workspacesLoaded } from '$lib/workspaces';
 	import { Button, Chip, Field, Section, Tabs } from '$lib/ui';
 	import { useApp } from '$lib/context/context';
+	import { useSession } from '$lib/context/context';
+	const session = useSession();
 	const app = useApp();
 
 	interface PluginRow {
@@ -193,7 +194,7 @@
 		renameSaving = true;
 		renameError = '';
 		try {
-			await rename(workspace.id, renameDraft);
+			await session.workspaces.rename(workspace.id, renameDraft);
 			renamingId = null;
 		} catch (err) {
 			renameError =
@@ -245,27 +246,27 @@
 		<h2 bind:this={workspacesHeading} tabindex="-1">{t('settings.workspaces.title')}</h2>
 		<p class="hint">{t('settings.workspaces.hint')}</p>
 
-		{#if $workspaces.list.length === 0 && !$workspacesLoaded && $workspacesLoadError}
-			<p class="error" role="alert">{$workspacesLoadError}</p>
+		{#if session.workspaces.list.length === 0 && !session.workspaces.loaded && session.workspaces.loadError}
+			<p class="error" role="alert">{session.workspaces.loadError}</p>
 			<Button
 				onclick={() => {
-					workspacesLoadError.set('');
-					loadWorkspaces().catch((err) =>
-						workspacesLoadError.set(errorText(err, t('app.workspaces.loadFailed')))
+					session.workspaces.loadError = '';
+					session.workspaces.load().catch((err) =>
+						(session.workspaces.loadError = errorText(err, t('app.workspaces.loadFailed')))
 					);
 				}}>{t('common.action.retry')}</Button
 			>
-		{:else if $workspaces.list.length === 0 && !$workspacesLoaded}
+		{:else if session.workspaces.list.length === 0 && !session.workspaces.loaded}
 			<p class="hint" aria-live="polite">{t('settings.workspaces.loading')}</p>
-		{:else if $workspaces.list.length === 0}
+		{:else if session.workspaces.list.length === 0}
 			<p>{t('settings.workspaces.none')}</p>
 		{:else}
 			<ul class="workspaces">
-				{#each $workspaces.list as workspace (workspace.id)}
+				{#each session.workspaces.list as workspace (workspace.id)}
 					<li>
 						{#if renamingId === workspace.id}
 							<form class="rename" onsubmit={(event) => saveRename(event, workspace)}>
-								<WorkspaceLabel {workspace} list={$workspaces.list} withLanguage size={18} />
+								<WorkspaceLabel {workspace} list={session.workspaces.list} withLanguage size={18} />
 								<Field
 									class="rename-field"
 									label={t('settings.workspaces.name')}
@@ -293,8 +294,8 @@
 							{/if}
 						{:else}
 							<div class="row">
-								<WorkspaceLabel {workspace} list={$workspaces.list} withLanguage size={18} />
-								{#if $workspaces.current?.id === workspace.id}
+								<WorkspaceLabel {workspace} list={session.workspaces.list} withLanguage size={18} />
+								{#if session.workspaces.current?.id === workspace.id}
 									<Chip>{t('settings.workspaces.current')}</Chip>
 								{/if}
 								{#if allDictionaries !== null && coverageOf(workspace).dictionaries.length === 0}
@@ -322,7 +323,7 @@
 								>
 									{t('settings.workspaces.rename')}
 								</Button>
-								{#if $workspaces.list.length > 1}
+								{#if session.workspaces.list.length > 1}
 									<Button
 										tone="danger"
 										element={deleteButtons[workspace.id]}
@@ -345,23 +346,23 @@
 					</li>
 				{/each}
 			</ul>
-			{#if $workspaces.list.length === 1}
+			{#if session.workspaces.list.length === 1}
 				<p class="hint">{t('settings.workspaces.onlyOne')}</p>
 			{/if}
 		{/if}
 
 		{#if deleting}
-			<DeleteWorkspaceDialog workspace={deleting} list={$workspaces.list} onclose={closeDelete} />
+			<DeleteWorkspaceDialog workspace={deleting} list={session.workspaces.list} onclose={closeDelete} />
 		{/if}
 
-		{#if $workspaces.current}
-			{@const active = $workspaces.current}
+		{#if session.workspaces.current}
+			{@const active = session.workspaces.current}
 			<Section title={t('settings.workspaces.audioTitle')} level={3}>
 				<p class="hint">{t('settings.workspaces.audioHint')}</p>
 				<AudioSettings
 					settings={active.settings}
 					onChange={async (patch) => {
-						await setWorkspaceSettings(active.id, patch);
+						await session.workspaces.setSettings(active.id, patch);
 					}}
 				/>
 			</Section>

@@ -1,3 +1,4 @@
+import { testContext, type TestContext } from '$lib/testing/context';
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/svelte';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -18,11 +19,15 @@ import { loadStudyHistory } from '$lib/study/data';
 import { createDeck } from '$lib/study/commands/decks';
 import { SESSION_CONFIG_KEY } from '$lib/study/session';
 import type { Deck, ReviewEvent, StudyCard, StudyHistory } from '$lib/study/types';
-import { workspaces } from '$lib/workspaces';
 import { currentStudyDay } from '$lib/time/zone';
 import { primaryActions } from '$lib/ui/testing/primary';
 import DeckList from './DeckList.svelte';
 import * as build from '$lib/testing/study';
+
+let ctx: TestContext = testContext();
+beforeEach(() => {
+	ctx = testContext();
+});
 
 const verbs: Deck = { id: 'd1', name: 'Verbs', createdAt: '2026-01-01T00:00:00.000Z' };
 
@@ -42,7 +47,7 @@ function history(over: Partial<StudyHistory> = {}): StudyHistory {
 }
 
 beforeEach(() => {
-	workspaces.set({
+	ctx.session.workspaces.set({
 		list: [{ id: 1, language: 'zh', name: 'zh' } as never],
 		current: { id: 1, language: 'zh', name: 'zh' } as never
 	});
@@ -55,7 +60,7 @@ afterEach(() => {
 
 describe('DeckList', () => {
 	it('has one primary Study; rows are hairlines and the new-deck name a Field', async () => {
-		render(DeckList);
+		render(DeckList, { context: ctx.context });
 		await screen.findByRole('link', { name: 'Verbs' });
 		expect(primaryActions(document.body)).toHaveLength(1);
 		expect(screen.getByRole('link', { name: 'Study' }).className).toContain('primary');
@@ -66,7 +71,7 @@ describe('DeckList', () => {
 	});
 
 	it('shows loading, then the overall numbers and one row per deck', async () => {
-		render(DeckList);
+		render(DeckList, { context: ctx.context });
 		expect(screen.getByRole('status').textContent).toContain('Loading');
 		await screen.findByRole('link', { name: 'Verbs' });
 		const general = screen.getByRole('link', { name: 'General' });
@@ -81,20 +86,20 @@ describe('DeckList', () => {
 	});
 
 	it('loads the history once, not on every render (the load must not retrigger its own effect)', async () => {
-		render(DeckList);
+		render(DeckList, { context: ctx.context });
 		await screen.findByRole('link', { name: 'Verbs' });
 		await new Promise((resolve) => setTimeout(resolve, 30));
 		expect(loadStudyHistory).toHaveBeenCalledTimes(1);
 	});
 
 	it('ends with the section of level and plugin decks', async () => {
-		render(DeckList);
+		render(DeckList, { context: ctx.context });
 		await screen.findByRole('link', { name: 'Verbs' });
 		expect(await screen.findByRole('heading', { level: 2, name: 'Level and plugin decks' })).toBeTruthy();
 	});
 
 	it('gives each bar a text alternative', async () => {
-		render(DeckList);
+		render(DeckList, { context: ctx.context });
 		await screen.findByRole('link', { name: 'Verbs' });
 		const verbsRow = screen.getByRole('link', { name: 'Verbs' }).closest('li') as HTMLElement;
 		expect(within(verbsRow).getByRole('img').getAttribute('aria-label')).toBe('2 words: 0 mastered, 0 studied');
@@ -104,13 +109,13 @@ describe('DeckList', () => {
 
 	it('lists General only when it holds cards', async () => {
 		vi.mocked(loadStudyHistory).mockResolvedValue(history({ cards: [card(2, ['d1'])] }));
-		render(DeckList);
+		render(DeckList, { context: ctx.context });
 		await screen.findByRole('link', { name: 'Verbs' });
 		expect(screen.queryByRole('link', { name: 'General' })).toBeNull();
 	});
 
 	it('Study writes a session over this deck only and goes to the session', async () => {
-		render(DeckList);
+		render(DeckList, { context: ctx.context });
 		const study = await screen.findByRole('button', { name: 'Study Verbs' });
 		await fireEvent.click(study);
 		const saved = JSON.parse(sessionStorage.getItem(SESSION_CONFIG_KEY) as string);
@@ -122,7 +127,7 @@ describe('DeckList', () => {
 		vi.mocked(loadStudyHistory).mockResolvedValue(
 			history({ deckSettings: { d1: { deckId: 'd1', cardTypes: ['reverse'], extra: {} } } })
 		);
-		render(DeckList);
+		render(DeckList, { context: ctx.context });
 		const row = (await screen.findByRole('link', { name: 'Verbs' })).closest('li') as HTMLElement;
 		expect(row.textContent).toContain('+ reverse/cloze cards as you study');
 		await fireEvent.click(within(row).getByRole('button', { name: 'Study Verbs' }));
@@ -130,7 +135,7 @@ describe('DeckList', () => {
 	});
 
 	it('links Settings per deck', async () => {
-		render(DeckList);
+		render(DeckList, { context: ctx.context });
 		const row = (await screen.findByRole('link', { name: 'Verbs' })).closest('li') as HTMLElement;
 		expect(within(row).getByRole('link', { name: 'Settings for Verbs' }).getAttribute('href')).toBe(
 			'/flashcards/deck/d1/settings'
@@ -139,7 +144,7 @@ describe('DeckList', () => {
 
 	it('New deck creates and lists it', async () => {
 		vi.mocked(createDeck).mockResolvedValue({ id: 'd2', name: 'Nouns', createdAt: '2026-02-01T00:00:00.000Z' });
-		render(DeckList);
+		render(DeckList, { context: ctx.context });
 		await screen.findByRole('link', { name: 'Verbs' });
 		vi.mocked(loadStudyHistory).mockResolvedValue(
 			history({ decks: [verbs, { id: 'd2', name: 'Nouns', createdAt: '2026-02-01T00:00:00.000Z' }] })
@@ -153,12 +158,12 @@ describe('DeckList', () => {
 	it('after a workspace switch, the created deck does not reload the old workspace into the view (#174)', async () => {
 		let finish: (d: unknown) => void = () => undefined;
 		vi.mocked(createDeck).mockImplementation(() => new Promise((r) => (finish = r)) as never);
-		render(DeckList);
+		render(DeckList, { context: ctx.context });
 		await screen.findByRole('link', { name: 'Verbs' });
 		await fireEvent.input(screen.getByLabelText('New deck name'), { target: { value: 'Nouns' } });
 		await fireEvent.click(screen.getByRole('button', { name: 'Create deck' }));
 		expect(createDeck).toHaveBeenCalledWith(1, 'Nouns');
-		workspaces.set({ list: [], current: { id: 2, language: 'zh', name: 'zh2' } as never });
+		ctx.session.workspaces.set({ list: [], current: { id: 2, language: 'zh', name: 'zh2' } as never });
 		await waitFor(() => expect(loadStudyHistory).toHaveBeenCalledWith(2, expect.anything()));
 		vi.mocked(loadStudyHistory).mockClear();
 		finish({ id: 'd2', name: 'Nouns', createdAt: '2026-02-01T00:00:00.000Z' });
@@ -167,7 +172,7 @@ describe('DeckList', () => {
 	});
 
 	it('refuses an empty deck name', async () => {
-		render(DeckList);
+		render(DeckList, { context: ctx.context });
 		await screen.findByRole('link', { name: 'Verbs' });
 		await fireEvent.click(screen.getByRole('button', { name: 'Create deck' }));
 		expect(createDeck).not.toHaveBeenCalled();
@@ -176,7 +181,7 @@ describe('DeckList', () => {
 
 	it('shows a load error with Try again', async () => {
 		vi.mocked(loadStudyHistory).mockRejectedValueOnce(new Error('offline'));
-		render(DeckList);
+		render(DeckList, { context: ctx.context });
 		const alert = await screen.findByRole('alert');
 		expect(alert.textContent).toContain('Could not load your decks.');
 		await fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
@@ -184,8 +189,8 @@ describe('DeckList', () => {
 	});
 
 	it('asks for a workspace when none is selected', async () => {
-		workspaces.set({ list: [], current: null });
-		render(DeckList);
+		ctx.session.workspaces.set({ list: [], current: null });
+		render(DeckList, { context: ctx.context });
 		await waitFor(() => expect(screen.getByRole('status').textContent).toContain('workspace'));
 	});
 });
@@ -195,7 +200,7 @@ describe('DeckList daily limits and vacation', () => {
 		vi.mocked(loadStudyHistory).mockResolvedValue(
 			history({ limits: { workspace: { new: 1 }, decks: {} } })
 		);
-		render(DeckList);
+		render(DeckList, { context: ctx.context });
 		const verbsRow = (await screen.findByRole('link', { name: 'Verbs' })).closest('li') as HTMLElement;
 		expect(within(verbsRow).getByText('1 new · 0 reviews left today')).toBeTruthy();
 	});
@@ -204,7 +209,7 @@ describe('DeckList daily limits and vacation', () => {
 		vi.mocked(loadStudyHistory).mockResolvedValue(
 			history({ limits: { workspace: { new: null, reviews: null }, decks: {} } })
 		);
-		render(DeckList);
+		render(DeckList, { context: ctx.context });
 		await screen.findByRole('link', { name: 'Verbs' });
 		expect(document.querySelector('.left')).toBeNull();
 	});
@@ -216,7 +221,7 @@ describe('DeckList daily limits and vacation', () => {
 				vacations: [{ version: 1, id: 'V', start: today, end: null, scope: 'all', createdDay: today, createdAt: `${today}T00:00:00Z` }]
 			})
 		);
-		render(DeckList);
+		render(DeckList, { context: ctx.context });
 		const verbsRow = (await screen.findByRole('link', { name: 'Verbs' })).closest('li') as HTMLElement;
 		expect(within(verbsRow).getByText('On vacation')).toBeTruthy();
 		expect(within(verbsRow).queryByText(/ due$/)).toBeNull();

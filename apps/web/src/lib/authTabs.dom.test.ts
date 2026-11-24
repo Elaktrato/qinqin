@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createAppContext, type AppContext } from './context/app.svelte';
-import { outboxToken, outboxUser } from './study/outboxUser';
+import { outboxUser } from './study/outboxUser';
 import { fakeDeps } from './testing/context';
 
 const user = (id: number) => ({ id, username: `u${id}`, admin: false, email: null, emailVerified: false, mustChangePassword: false, createdAt: 't' });
@@ -33,7 +33,6 @@ describe('auth across tabs', () => {
 		localStorage.setItem('qinqin.token', 'tokB');
 		storageEvent('qinqin.token');
 		await vi.waitFor(() => expect(outboxUser()).toBe(2));
-		expect(outboxToken()).toBe('tokB');
 		expect(app.auth.token).toBe('tokB');
 		expect(first?.alive).toBe(false);
 		expect(app.session?.user).toBe(2);

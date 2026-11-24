@@ -18,15 +18,16 @@
 	import { clearHistory, removeFromHistory, saveLookupCfg } from '$lib/lookups/store';
 	import { GENERAL_DECK_ID } from '$lib/study/types';
 	import { currentStudyDay } from '$lib/time/zone';
-	import { workspaces } from '$lib/workspaces';
 	import { glossLang, studyLang, wordReadingLang, readingLang } from '$lib/i18n/lang';
 	import { Button, Section, Select } from '$lib/ui';
+	import { useSession } from '$lib/context/context';
+	const session = useSession();
 
 	// The lookup history of the current workspace (#72): what the learner
 	// looked up, add to a deck, remove, clear, and the recording switch. The
 	// rules live in $lib/lookups; nothing here is kept in browser storage.
 
-	const ws = $derived($workspaces.current);
+	const ws = $derived(session.workspaces.current);
 	const wsId = $derived(ws?.id ?? null);
 	const wsName = $derived(ws ? ws.name || ws.language : '');
 

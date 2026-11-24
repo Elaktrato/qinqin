@@ -4,9 +4,10 @@
 	import { t } from '$lib/i18n';
 	import { listTokens, revokeAllTokens, revokeToken } from '$lib/api/tokens';
 	import { tokenRows, type TokenDto } from '$lib/account/tokensView';
-	import { workspaces } from '$lib/workspaces';
 	import CreateTokenDialog from './CreateTokenDialog.svelte';
 	import { Button, Section } from '$lib/ui';
+	import { useSession } from '$lib/context/context';
+	const session = useSession();
 
 	// Settings → Account → Access tokens: the list, revoke (one or all, each
 	// confirmed) and "New token". oncount tells the page how many exist, for
@@ -21,7 +22,7 @@
 	let confirmOne = $state<number | null>(null);
 	let confirmAll = $state(false);
 
-	const wsList = $derived($workspaces.list.map((w) => ({ id: w.id, name: w.name ?? '' })));
+	const wsList = $derived(session.workspaces.list.map((w) => ({ id: w.id, name: w.name ?? '' })));
 	const rows = $derived(tokenRows(tokens, wsList, new Date()));
 
 	function set(list: TokenDto[]): void {

@@ -30,7 +30,6 @@ import { ApiError } from '$lib/api/client';
 import { pageFrame } from '$lib/frame/pageFrame.svelte';
 import { page, setUrl } from '$lib/testing/appState.svelte';
 import { loadNote } from '$lib/notes/store';
-import { workspaces } from '$lib/workspaces';
 import type { Workspace } from '$lib/api/types';
 import Page from './+page.svelte';
 
@@ -61,7 +60,7 @@ beforeEach(() => {
 afterEach(() => {
 	cleanup();
 	vi.clearAllMocks();
-	workspaces.set({ list: [], current: null });
+	ctx.session.workspaces.set({ list: [], current: null });
 	setUrl('/');
 });
 
@@ -156,7 +155,7 @@ describe('entry page note', () => {
 	const ws = { id: 3, language: 'zh', name: '', settings: {}, updatedAt: '' } as unknown as Workspace;
 
 	it('shows the note section of the current workspace under the senses', async () => {
-		workspaces.set({ list: [ws], current: ws });
+		ctx.session.workspaces.set({ list: [ws], current: ws });
 		vi.mocked(getEntry).mockResolvedValue(
 			entry({
 				kind: 'word',
@@ -174,7 +173,7 @@ describe('entry page note', () => {
 	});
 
 	it('hides the note while the entry editor is open', async () => {
-		workspaces.set({ list: [ws], current: ws });
+		ctx.session.workspaces.set({ list: [ws], current: ws });
 		setUrl('/entry/5?edit=1');
 		vi.mocked(getEntry).mockResolvedValue(entry({ kind: 'word', written: '马' }));
 		vi.mocked(getSharedEntry).mockResolvedValue(entry({ kind: 'word', written: '马' }) as never);

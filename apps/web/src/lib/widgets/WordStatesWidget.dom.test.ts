@@ -1,3 +1,4 @@
+import { testContext, type TestContext } from '$lib/testing/context';
 import { cleanup, render, screen } from '@testing-library/svelte';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -7,11 +8,15 @@ vi.mock('$lib/study/data', async (importOriginal) => ({
 }));
 
 import { loadStudyHistory } from '$lib/study/data';
-import { workspaces } from '$lib/workspaces';
 import WordStatesWidget from './WordStatesWidget.svelte';
 
+let ctx: TestContext = testContext();
 beforeEach(() => {
-	workspaces.set({
+	ctx = testContext();
+});
+
+beforeEach(() => {
+	ctx.session.workspaces.set({
 		list: [{ id: 1, language: 'zh', name: 'zh' } as never],
 		current: { id: 1, language: 'zh', name: 'zh' } as never
 	});
@@ -32,7 +37,7 @@ afterEach(() => {
 
 describe('WordStatesWidget', () => {
 	it('links each deck of the table to its view in the decks page', async () => {
-		render(WordStatesWidget);
+		render(WordStatesWidget, { context: ctx.context });
 		const general = await screen.findByRole('link', { name: 'General' });
 		expect(general.getAttribute('href')).toBe('/flashcards/deck/general');
 		expect(screen.getByRole('link', { name: 'Verbs' }).getAttribute('href')).toBe('/flashcards/deck/d1');

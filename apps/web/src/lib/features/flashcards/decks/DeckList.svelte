@@ -5,7 +5,6 @@
 	import { loadConfig, saveConfig } from '$lib/study/session';
 	import { createDeck } from '$lib/study/commands/decks';
 	import { knownEntries } from '$lib/study/known';
-	import { workspaces } from '$lib/workspaces';
 	import { summarizeDecks } from './deckSummaries';
 	import { progressShares, progressSummary } from './deckStats';
 	import { createDecksData } from './decksData.svelte';
@@ -18,9 +17,11 @@
 	import { deckLeftText } from '$lib/study/limitsText';
 	import { limitsLeftToday } from './DeckLimitsSlot';
 	import { flashcardsHref } from '../route';
+	import { useSession } from '$lib/context/context';
+	const session = useSession();
 
 	const store = createDecksData();
-	const workspaceId = $derived($workspaces.current?.id ?? null);
+	const workspaceId = $derived(session.workspaces.current?.id ?? null);
 
 	$effect(() => {
 		void store.load(workspaceId);
@@ -168,7 +169,7 @@
 	</Section>
 
 	<StarterDecks
-		language={$workspaces.current?.language ?? ''}
+		language={session.workspaces.current?.language ?? ''}
 		{ownedEntryIds}
 		{workspaceId}
 		{deckIds}
@@ -176,7 +177,7 @@
 		onchanged={reload}
 	/>
 	<SystemDecks
-		language={$workspaces.current?.language ?? ''}
+		language={session.workspaces.current?.language ?? ''}
 		{ownedEntryIds}
 		{workspaceId}
 		{deckIds}

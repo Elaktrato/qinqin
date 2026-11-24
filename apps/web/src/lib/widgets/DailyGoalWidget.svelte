@@ -7,9 +7,10 @@
 	import { loadGoalStatus, type GoalView } from '$lib/goals/loadGoal';
 	import { onContextStale } from '$lib/study/currentContext';
 	import { errorText } from '$lib/api/apiErrors';
-	import { workspaces } from '$lib/workspaces';
 	import WidgetCard from './WidgetCard.svelte';
 	import type { WidgetStatus } from './types';
+	import { useSession } from '$lib/context/context';
+	const session = useSession();
 
 	const SETTINGS = '/settings?tab=study';
 
@@ -19,7 +20,7 @@
 	// Guards against a slow earlier request overwriting a newer view.
 	let requestSeq = 0;
 
-	const workspaceId = $derived($workspaces.current?.id ?? null);
+	const workspaceId = $derived(session.workspaces.current?.id ?? null);
 	// Offline with an activity goal today: the error line, not "no longer counted".
 	const activityFailed = $derived(goal !== null && goal.activityError !== null && goal.today.unavailable);
 	const status = $derived<WidgetStatus>(

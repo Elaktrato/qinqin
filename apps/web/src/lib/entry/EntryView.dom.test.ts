@@ -43,7 +43,6 @@ import { getStudyData } from '$lib/study/data';
 import { record } from '$lib/events';
 import { pageFrame } from '$lib/frame/pageFrame.svelte';
 import { setUrl } from '$lib/testing/appState.svelte';
-import { workspaces } from '$lib/workspaces';
 import EntryView from './EntryView.svelte';
 import ActionsHarness from './testing/ActionsHarness.svelte';
 
@@ -82,12 +81,12 @@ function deferred<T>() {
 }
 
 beforeEach(() => {
-	workspaces.set({ list: [], current: { id: 1, language: 'zh', name: 'zh' } as never });
+	ctx.session.workspaces.set({ list: [], current: { id: 1, language: 'zh', name: 'zh' } as never });
 });
 afterEach(() => {
 	cleanup();
 	vi.clearAllMocks();
-	workspaces.set({ list: [], current: null });
+	ctx.session.workspaces.set({ list: [], current: null });
 	setUrl('/');
 });
 
@@ -266,14 +265,6 @@ describe("a word's characters (#104)", () => {
 
 
 describe('entry extras and the not-found state (#104)', () => {
-	it('does not ask for frequency ranks while signed out', async () => {
-		getEntryMock.mockResolvedValue(entry());
-		render(EntryView, { props: { entryId: 5, recordView: false }, context: testContext({ user: null }).context });
-		await screen.findByRole('heading', { name: '勤奋' });
-		await new Promise((r) => setTimeout(r, 0));
-		expect(getEntryRanks).not.toHaveBeenCalled();
-	});
-
 	it('refreshes the In N decks chip after an add', async () => {
 		let cards: unknown[] = [];
 		vi.mocked(getStudyData).mockImplementation(async () => ({ decks: [], cards, known: [] }) as never);

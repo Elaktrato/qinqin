@@ -1,3 +1,4 @@
+import { testContext, type TestContext } from '$lib/testing/context';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/svelte';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -29,10 +30,14 @@ function keyed(writes: readonly StudyWrite[]): { key: string; data: unknown; kno
 	return writes.map((w) => ({ ...toLegacy(w.collection, w.row), ...(w.knownAt === undefined ? {} : { knownAt: w.knownAt }) }));
 }
 import type { Deck, ReviewEvent, StudyCard } from '$lib/study/types';
-import { workspaces } from '$lib/workspaces';
 import { clearLevelItemsCache } from './systemDeckItems';
 import { primaryActions } from '$lib/ui/testing/primary';
 import SystemDeckDetail from './SystemDeckDetail.svelte';
+
+let ctx: TestContext = testContext();
+beforeEach(() => {
+	ctx = testContext();
+});
 
 const SCHEME: Scheme = {
 	id: 1,
@@ -70,7 +75,7 @@ function apply(rows: readonly { key: string; data: unknown }[]): void {
 
 beforeEach(() => {
 	clearLevelItemsCache();
-	workspaces.set({
+	ctx.session.workspaces.set({
 		list: [{ id: 1, language: 'zh', name: 'zh' } as never],
 		current: { id: 1, language: 'zh', name: 'zh' } as never
 	});
@@ -113,13 +118,13 @@ afterEach(() => {
 });
 
 async function open(): Promise<void> {
-	render(SystemDeckDetail, { route: { view: 'system-level', packId: 'hsk-words', level: 'HSK 1' } });
+	render(SystemDeckDetail, { props: { route: { view: 'system-level', packId: 'hsk-words', level: 'HSK 1' } }, context: ctx.context });
 	await screen.findByRole('heading', { level: 1, name: 'HSK words · HSK 1' });
 }
 
 describe('SystemDeckDetail', () => {
 	it('has one primary Add to my decks; the target deck is a Select', async () => {
-		render(SystemDeckDetail, { route: { view: 'system-level', packId: 'hsk-words', level: 'HSK 1' } });
+		render(SystemDeckDetail, { props: { route: { view: 'system-level', packId: 'hsk-words', level: 'HSK 1' } }, context: ctx.context });
 		await screen.findByRole('heading', { level: 1 });
 		expect(primaryActions(document.body)).toHaveLength(1);
 		expect(screen.getByRole('button', { name: 'Add to my decks' }).className).toContain('primary');
@@ -267,12 +272,12 @@ describe('SystemDeckDetail', () => {
 	});
 
 	it('says when the level does not exist', async () => {
-		render(SystemDeckDetail, { route: { view: 'system-level', packId: 'nope', level: 'x' } });
+		render(SystemDeckDetail, { props: { route: { view: 'system-level', packId: 'nope', level: 'x' } }, context: ctx.context });
 		expect(await screen.findByText('Deck not found.')).toBeTruthy();
 	});
 
 	it('a plugin deck nobody ships is not found', async () => {
-		render(SystemDeckDetail, { route: { view: 'system-plugin', plugin: 'starter', key: 'k' } });
+		render(SystemDeckDetail, { props: { route: { view: 'system-plugin', plugin: 'starter', key: 'k' } }, context: ctx.context });
 		expect(await screen.findByText('Deck not found.')).toBeTruthy();
 		await waitFor(() => expect(getSchemeEntries).not.toHaveBeenCalled());
 	});

@@ -1,3 +1,4 @@
+import { testContext, type TestContext } from '$lib/testing/context';
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/svelte';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -19,6 +20,11 @@ import { loadWidgetOptions, saveHeatmapLayout } from '$lib/widgets/options';
 import { primaryActions } from '$lib/ui/testing/primary';
 import HomeLayoutEditor from './HomeLayoutEditor.svelte';
 
+let ctx: TestContext = testContext();
+beforeEach(() => {
+	ctx = testContext();
+});
+
 beforeEach(() => {
 	pluginStates.set({ list: [], status: 'ready' });
 	vi.mocked(loadLayout).mockResolvedValue(null);
@@ -35,7 +41,7 @@ const fieldset = () => screen.findByRole('group', { name: 'Heatmap layout' });
 
 describe('Settings -> Home: the heatmap layout', () => {
 	it('shows a Heatmap layout fieldset with three radios on the activity-heatmap row, garden checked by default', async () => {
-		render(HomeLayoutEditor);
+		render(HomeLayoutEditor, { context: ctx.context });
 		const group = await fieldset();
 		const radios = within(group).getAllByRole('radio') as HTMLInputElement[];
 		expect(radios.map((r) => r.value)).toEqual(['garden', 'month', 'week']);
@@ -49,13 +55,13 @@ describe('Settings -> Home: the heatmap layout', () => {
 
 	it('checks the stored layout', async () => {
 		vi.mocked(loadWidgetOptions).mockResolvedValue({ row: null, heatmapLayout: 'week' });
-		render(HomeLayoutEditor);
+		render(HomeLayoutEditor, { context: ctx.context });
 		const group = await fieldset();
 		await waitFor(() => expect(within(group).getByRole('radio', { name: 'This week' })).toHaveProperty('checked', true));
 	});
 
 	it('choosing Month saves through saveHeatmapLayout and announces it', async () => {
-		render(HomeLayoutEditor);
+		render(HomeLayoutEditor, { context: ctx.context });
 		const group = await fieldset();
 		await fireEvent.click(within(group).getByRole('radio', { name: 'Month calendar' }));
 		await waitFor(() => expect(saveHeatmapLayout).toHaveBeenCalledWith('month'));
@@ -64,7 +70,7 @@ describe('Settings -> Home: the heatmap layout', () => {
 
 	it('a failed save shows the error and keeps the previous choice checked', async () => {
 		vi.mocked(saveHeatmapLayout).mockRejectedValue(new Error('offline'));
-		render(HomeLayoutEditor);
+		render(HomeLayoutEditor, { context: ctx.context });
 		const group = await fieldset();
 		await fireEvent.click(within(group).getByRole('radio', { name: 'This week' }));
 		await waitFor(() => expect(within(group).getByRole('radio', { name: 'Garden grid' })).toHaveProperty('checked', true));
@@ -77,7 +83,7 @@ describe('Settings -> Home: the heatmap layout', () => {
 		vi.mocked(saveHeatmapLayout)
 			.mockImplementationOnce(() => new Promise((_, reject) => (failMonth = reject)))
 			.mockResolvedValue(undefined);
-		render(HomeLayoutEditor);
+		render(HomeLayoutEditor, { context: ctx.context });
 		const group = await fieldset();
 		await fireEvent.click(within(group).getByRole('radio', { name: 'Month calendar' }));
 		await fireEvent.click(within(group).getByRole('radio', { name: 'This week' }));
@@ -95,7 +101,7 @@ describe('Settings -> Home: the heatmap layout', () => {
 
 	it('when the newest save fails the radio goes back to the last saved layout', async () => {
 		vi.mocked(saveHeatmapLayout).mockResolvedValueOnce(undefined).mockRejectedValueOnce(new Error('offline'));
-		render(HomeLayoutEditor);
+		render(HomeLayoutEditor, { context: ctx.context });
 		const group = await fieldset();
 		await fireEvent.click(within(group).getByRole('radio', { name: 'Month calendar' }));
 		await waitFor(() => expect(document.querySelector('[aria-live="polite"]')?.textContent).toBe('Heatmap layout: Month calendar.'));
@@ -105,7 +111,7 @@ describe('Settings -> Home: the heatmap layout', () => {
 	});
 
 	it('is hairline rows with base Buttons and no primary action (it saves on change, #106)', async () => {
-		render(HomeLayoutEditor);
+		render(HomeLayoutEditor, { context: ctx.context });
 		await fieldset();
 		expect(document.querySelectorAll('.items .item').length).toBeGreaterThan(0);
 		// A change saves itself: the view has no primary action.
@@ -119,7 +125,7 @@ describe('Settings -> Home: the heatmap layout', () => {
 
 	it('the fieldset is shown only while the widget is on the home page', async () => {
 		vi.mocked(loadLayout).mockResolvedValue(['daily-goal']);
-		render(HomeLayoutEditor);
+		render(HomeLayoutEditor, { context: ctx.context });
 		await screen.findByRole('heading', { name: 'On the home page' });
 		expect(screen.queryByRole('group', { name: 'Heatmap layout' })).toBeNull();
 	});
@@ -128,12 +134,12 @@ describe('Settings -> Home: the heatmap layout', () => {
 describe('Settings -> Home with a feature switched off', () => {
 	it("lists the flashcards widgets while Flashcards is on and leaves them out when it is off", async () => {
 		pluginStates.set({ list: [{ id: 'qinqin-flashcards', manifest: {}, enabled: true, order: 0 }], status: 'ready' });
-		const { unmount } = render(HomeLayoutEditor);
+		const { unmount } = render(HomeLayoutEditor, { context: ctx.context });
 		await fieldset();
 		expect(screen.getAllByText('Flashcards', { selector: '.items strong' })).toHaveLength(1);
 		unmount();
 		pluginStates.set({ list: [{ id: 'qinqin-flashcards', manifest: {}, enabled: false, order: 0 }], status: 'ready' });
-		render(HomeLayoutEditor);
+		render(HomeLayoutEditor, { context: ctx.context });
 		await fieldset();
 		// No row; the parked note says it stays in the layout for when the feature is back.
 		expect(screen.queryAllByText('Flashcards', { selector: '.items strong' })).toHaveLength(0);

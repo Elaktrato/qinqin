@@ -1,3 +1,5 @@
+import type { WorkspacesState } from '$lib/workspaces.svelte';
+import { testContext, type TestContext, updateWorkspaces } from '$lib/testing/context';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/svelte';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -37,9 +39,13 @@ import { getStudyData } from '$lib/study/data';
 import type { VacationPeriod } from '$lib/study/vacation';
 import { studyDay } from '$lib/time/studyDay';
 import { currentStudyDay } from '$lib/time/zone';
-import { workspaces } from '$lib/workspaces';
 import { primaryActions } from '$lib/ui/testing/primary';
 import StudySettings from './StudySettings.svelte';
+
+let ctx: TestContext = testContext();
+beforeEach(() => {
+	ctx = testContext();
+});
 
 const day = studyDay([]);
 const today = day.today();
@@ -51,7 +57,7 @@ function period(over: Partial<VacationPeriod>): VacationPeriod {
 
 function setup(vacations: VacationPeriod[] = [], reviewTs: string[] = []) {
 	vi.mocked(currentStudyDay).mockReturnValue(day);
-	workspaces.set({
+	ctx.session.workspaces.set({
 		list: [
 			{ id: 1, language: 'zh', name: 'zh' } as never,
 			{ id: 2, language: 'ja', name: 'ja' } as never
@@ -62,7 +68,7 @@ function setup(vacations: VacationPeriod[] = [], reviewTs: string[] = []) {
 	vi.mocked(loadWorkspaceEvents).mockResolvedValue(
 		reviewTs.map((ts, i) => ({ id: `e${i}`, workspaceId: 1, device: 'w', ts, type: 'review', payload: {} })) as never
 	);
-	return render(StudySettings);
+	return render(StudySettings, { context: ctx.context });
 }
 
 beforeEach(() => vi.clearAllMocks());
@@ -198,13 +204,13 @@ describe('StudySettings daily limits', () => {
 			if (id === 1) return new Promise((r) => lateOnes.push(r)) as never;
 			return { decks: [], cards: [], limits: { workspace: { new: 7 }, decks: {} } } as never;
 		});
-		workspaces.set({
+		ctx.session.workspaces.set({
 			list: [{ id: 1, language: 'zh', name: 'zh' } as never, { id: 2, language: 'ja', name: 'ja' } as never],
 			current: { id: 1, language: 'zh', name: 'zh' } as never
 		});
-		render(StudySettings);
+		render(StudySettings, { context: ctx.context });
 		await waitFor(() => expect(lateOnes.length).toBeGreaterThan(0));
-		workspaces.update((w) => ({ ...w, current: { id: 2, language: 'ja', name: 'ja' } as never }));
+		updateWorkspaces(ctx.session.workspaces, (w: WorkspacesState) => ({ ...w, current: { id: 2, language: 'ja', name: 'ja' } as never }));
 		const newValue = (await screen.findByLabelText('New cards per day value')) as HTMLInputElement;
 		await waitFor(() => expect(newValue.value).toBe('7'));
 		for (const r of lateOnes) r({ decks: [], cards: [], limits: { workspace: { new: 3 }, decks: {} } });
@@ -220,7 +226,7 @@ describe('StudySettings daily limits', () => {
 		await fireEvent.input(newValue, { target: { value: '12' } });
 		// Selected since, still loading: the form shows workspace 1.
 		vi.mocked(getStudyData).mockImplementation(() => new Promise(() => undefined));
-		workspaces.update((w) => ({ ...w, current: { id: 2, language: 'ja', name: 'ja' } as never }));
+		updateWorkspaces(ctx.session.workspaces, (w: WorkspacesState) => ({ ...w, current: { id: 2, language: 'ja', name: 'ja' } as never }));
 		await fireEvent.click(screen.getByRole('button', { name: 'Save limits' }));
 		await waitFor(() => expect(saveWorkspaceLimits).toHaveBeenCalled());
 		expect(vi.mocked(saveWorkspaceLimits).mock.calls[0][0]).toBe(1);

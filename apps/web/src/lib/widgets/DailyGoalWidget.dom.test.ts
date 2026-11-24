@@ -1,3 +1,4 @@
+import { testContext, type TestContext } from '$lib/testing/context';
 import { cleanup, render, screen, waitFor } from '@testing-library/svelte';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -7,8 +8,12 @@ import type { ActivitySource } from '$lib/api/stats';
 import type { GoalView } from '$lib/goals/loadGoal';
 import { loadGoalStatus } from '$lib/goals/loadGoal';
 import type { GoalDay } from '$lib/goals/progress';
-import { workspaces } from '$lib/workspaces';
 import DailyGoalWidget from './DailyGoalWidget.svelte';
+
+let ctx: TestContext = testContext();
+beforeEach(() => {
+	ctx = testContext();
+});
 
 const SOURCES: ActivitySource[] = [
 	{
@@ -55,7 +60,7 @@ function view(partial: Partial<GoalView> = {}): GoalView {
 const NONE = today({ status: 'none', metric: null, target: null, amount: 0, fraction: 0 });
 
 function select(id: number | null): void {
-	workspaces.set({
+	ctx.session.workspaces.set({
 		list: [],
 		current: id === null ? null : ({ id, language: 'zh', name: `w${id}` } as never)
 	});
@@ -70,7 +75,7 @@ afterEach(() => {
 describe('DailyGoalWidget', () => {
 	it('offers to set a goal when there is none', async () => {
 		vi.mocked(loadGoalStatus).mockResolvedValue(view({ row: null, today: NONE, streak: null, sources: [] }));
-		render(DailyGoalWidget);
+		render(DailyGoalWidget, { context: ctx.context });
 		const link = await screen.findByRole('link', { name: 'Set a daily goal' });
 		expect(link.getAttribute('href')).toBe('/settings?tab=study');
 		expect(screen.queryByRole('progressbar')).toBeNull();
@@ -79,7 +84,7 @@ describe('DailyGoalWidget', () => {
 
 	it('shows the ring, the progress text and the streak line', async () => {
 		vi.mocked(loadGoalStatus).mockResolvedValue(view());
-		render(DailyGoalWidget);
+		render(DailyGoalWidget, { context: ctx.context });
 		const bar = await screen.findByRole('progressbar');
 		expect(bar.getAttribute('aria-valuetext')).toBe('32 of 50 flashcard reviews today');
 		expect(screen.getByText('32 of 50 flashcard reviews today')).toBeTruthy();
@@ -89,7 +94,7 @@ describe('DailyGoalWidget', () => {
 
 	it('has no streak line when the streak is hidden', async () => {
 		vi.mocked(loadGoalStatus).mockResolvedValue(view({ streak: null, row: { ...ROW, showStreak: false } }));
-		render(DailyGoalWidget);
+		render(DailyGoalWidget, { context: ctx.context });
 		await screen.findByRole('progressbar');
 		expect(screen.queryByText(/Goal streak/)).toBeNull();
 	});
@@ -98,14 +103,14 @@ describe('DailyGoalWidget', () => {
 		vi.mocked(loadGoalStatus).mockResolvedValue(
 			view({ today: today({ status: 'vacation', fraction: 0 }), streak: { current: 4, todayMet: true, capped: false } })
 		);
-		render(DailyGoalWidget);
+		render(DailyGoalWidget, { context: ctx.context });
 		expect(await screen.findByText('On vacation — goal paused')).toBeTruthy();
 		expect(screen.queryByRole('progressbar')).toBeNull();
 	});
 
 	it('says when a newer version set the goal', async () => {
 		vi.mocked(loadGoalStatus).mockResolvedValue(view({ row: null, newer: true, today: NONE, streak: null }));
-		render(DailyGoalWidget);
+		render(DailyGoalWidget, { context: ctx.context });
 		expect(await screen.findByText(/set by a newer version of qinqin/)).toBeTruthy();
 		expect(screen.queryByRole('link', { name: 'Set a daily goal' })).toBeNull();
 	});
@@ -118,7 +123,7 @@ describe('DailyGoalWidget', () => {
 				streak: null
 			})
 		);
-		render(DailyGoalWidget);
+		render(DailyGoalWidget, { context: ctx.context });
 		expect(await screen.findByText(/offline/)).toBeTruthy();
 		expect(screen.getByRole('button', { name: 'Try again' })).toBeTruthy();
 		expect(screen.queryByText("This goal's activity is no longer counted")).toBeNull();
@@ -126,14 +131,14 @@ describe('DailyGoalWidget', () => {
 
 	it('asks for a workspace without one', async () => {
 		select(null);
-		render(DailyGoalWidget);
+		render(DailyGoalWidget, { context: ctx.context });
 		expect(await screen.findByText('Choose a workspace in the header to set a daily goal.')).toBeTruthy();
 		expect(loadGoalStatus).not.toHaveBeenCalled();
 	});
 
 	it('shows the error with Try again, which forces a reload', async () => {
 		vi.mocked(loadGoalStatus).mockRejectedValueOnce(new Error('offline'));
-		render(DailyGoalWidget);
+		render(DailyGoalWidget, { context: ctx.context });
 		const retry = await screen.findByRole('button', { name: 'Try again' });
 		expect(screen.getByText('Could not load your daily goal.')).toBeTruthy();
 		vi.mocked(loadGoalStatus).mockResolvedValue(view());
@@ -147,7 +152,7 @@ describe('DailyGoalWidget', () => {
 		vi.mocked(loadGoalStatus)
 			.mockImplementationOnce(() => new Promise((r) => (resolveFirst = r)))
 			.mockResolvedValueOnce(view({ today: today({ amount: 7, fraction: 0.14 }) }));
-		render(DailyGoalWidget);
+		render(DailyGoalWidget, { context: ctx.context });
 		select(2);
 		await screen.findByText('7 of 50 flashcard reviews today');
 		resolveFirst(view({ today: today({ amount: 40, fraction: 0.8 }) }));

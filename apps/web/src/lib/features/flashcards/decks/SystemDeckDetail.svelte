@@ -11,7 +11,6 @@
 	import { loadRawStudyData } from '$lib/study/data';
 	import { pushStudy } from '$lib/study/commands/write';
 	import { GENERAL_DECK_ID } from '$lib/study/types';
-	import { workspaces } from '$lib/workspaces';
 	import { glossLang, studyLang, wordReadingLang, readingLang } from '$lib/i18n/lang';
 	import { flashcardsHref, type FlashcardsRoute } from '../route';
 	import { addPlanRows, planAddToDeck } from './addToDeck';
@@ -20,6 +19,8 @@
 	import { levelDecks, ownedLevelDeckId, type LevelDeck } from './systemDecks';
 	import { levelSessionConfig } from './studyStart';
 	import { Button, Select } from '$lib/ui';
+	import { useSession } from '$lib/context/context';
+	const session = useSession();
 
 	// A read-only level deck: its items with the learner's state, a level
 	// session, and "Add to my decks" (idempotent, see addToDeck.ts). Plugin
@@ -27,7 +28,7 @@
 	let { route }: { route: Extract<FlashcardsRoute, { view: 'system-level' | 'system-plugin' }> } = $props();
 
 	const store = createDecksData();
-	const workspace = $derived($workspaces.current);
+	const workspace = $derived(session.workspaces.current);
 	const workspaceId = $derived(workspace?.id ?? null);
 	$effect(() => {
 		void store.load(workspaceId);

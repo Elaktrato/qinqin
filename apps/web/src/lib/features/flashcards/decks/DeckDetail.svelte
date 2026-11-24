@@ -19,7 +19,6 @@
 		unskipKind
 	} from '$lib/study/commands/cards';
 	import { CARD_KINDS, OPT_IN_KINDS, type StudyCardKind, GENERAL_DECK_ID } from '$lib/study/types';
-	import { workspaces } from '$lib/workspaces';
 	import { glossLang, studyLang, wordReadingLang, readingLang } from '$lib/i18n/lang';
 	import { flashcardsHref } from '../route';
 	import {
@@ -38,11 +37,13 @@
 	import { limitsLeftToday } from './DeckLimitsSlot';
 	import { deckSessionConfig, sessionKinds } from './studyStart';
 	import { Button, Chip, Field, Select } from '$lib/ui';
+	import { useSession } from '$lib/context/context';
+	const session = useSession();
 
 	let { deckId }: { deckId: string } = $props();
 
 	const store = createDecksData();
-	const workspaceId = $derived($workspaces.current?.id ?? null);
+	const workspaceId = $derived(session.workspaces.current?.id ?? null);
 	$effect(() => {
 		void store.load(workspaceId);
 	});
@@ -454,8 +455,8 @@
 								checked={chosen.includes(row.entryId)}
 								onchange={() => (selected = toggleNum(selected, row.entryId))}
 							/>
-							<a class="word" href={`/entry/${row.entryId}`} lang={studyLang($workspaces.current?.language)}>{row.written}</a>
-							<span class="reading" lang={wordReadingLang($workspaces.current?.language)}
+							<a class="word" href={`/entry/${row.entryId}`} lang={studyLang(session.workspaces.current?.language)}>{row.written}</a>
+							<span class="reading" lang={wordReadingLang(session.workspaces.current?.language)}
 								>{readingBeside(row.written, bases.get(row.entryId)?.readings ?? [])}</span
 							>
 							<span class="state">{WORD_STATES.find((s) => s.state === row.state)?.label}</span>

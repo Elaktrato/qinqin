@@ -14,8 +14,8 @@
 	import { pluginStates } from '$lib/plugins/states';
 	import { homeEmptyReason, loadLayout, placeWidgets, resolveLayout } from '$lib/widgets/layout';
 	import { allWidgets } from '$lib/widgets/registry';
-	import { currentLanguage } from '$lib/workspaces';
-
+	import { useSession } from '$lib/context/context';
+	const session = useSession();
 	let query = $state('');
 
 	// The greeting follows the device's hour; the date line is the learner's
@@ -36,7 +36,7 @@
 	// then, or when they failed, only the core widgets can be shown.
 	const states = $derived($pluginStates.status === 'ready' ? $pluginStates.list : []);
 	const placed = $derived(
-		placeWidgets(resolveLayout(stored, allWidgets(webPlugins, states, $currentLanguage), 'home'))
+		placeWidgets(resolveLayout(stored, allWidgets(webPlugins, states, session.workspaces.language), 'home'))
 	);
 	const emptyReason = $derived(homeEmptyReason(stored, placed.length));
 	const hasPlugins = $derived($pluginStates.status === 'ready' || $pluginStates.status === 'error');

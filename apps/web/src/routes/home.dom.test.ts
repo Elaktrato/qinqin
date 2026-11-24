@@ -35,7 +35,6 @@ import { currentStudyDay } from '$lib/time/zone';
 import { onEventLogChange } from '$lib/events';
 import { pluginStates } from '$lib/plugins/states';
 import { onStudyChange } from '$lib/study/data';
-import { workspaces } from '$lib/workspaces';
 import Page from './+page.svelte';
 
 let ctx: TestContext = testContext();
@@ -62,7 +61,7 @@ function deferred<T>() {
 }
 
 function select(id: number | null, language = 'zh'): void {
-	workspaces.set({ list: [], current: id === null ? null : ({ id, language, name: `w${id}` } as never) });
+	ctx.session.workspaces.set({ list: [], current: id === null ? null : ({ id, language, name: `w${id}` } as never) });
 }
 
 beforeEach(() => {

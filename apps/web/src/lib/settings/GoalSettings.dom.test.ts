@@ -1,3 +1,4 @@
+import { testContext, type TestContext } from '$lib/testing/context';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/svelte';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -22,9 +23,13 @@ import { getStudyData } from '$lib/study/data';
 import type { StudyData } from '$lib/study/types';
 import { studyDay } from '$lib/time/studyDay';
 import { currentStudyDay } from '$lib/time/zone';
-import { workspaces } from '$lib/workspaces';
 import { primaryActions } from '$lib/ui/testing/primary';
 import GoalSettings from './GoalSettings.svelte';
+
+let ctx: TestContext = testContext();
+beforeEach(() => {
+	ctx = testContext();
+});
 
 const day = studyDay([]);
 const today = day.today();
@@ -35,7 +40,7 @@ const SOURCES: ActivitySource[] = [
 ];
 
 function select(id: number): void {
-	workspaces.set({
+	ctx.session.workspaces.set({
 		list: [{ id: 1, language: 'zh', name: 'zh' } as never, { id: 2, language: 'ja', name: 'ja' } as never],
 		current: { id, language: 'zh', name: 'zh' } as never
 	});
@@ -46,7 +51,7 @@ function setup(data: Partial<StudyData> = {}) {
 	select(1);
 	vi.mocked(getStudyData).mockResolvedValue({ decks: [], cards: [], ...data });
 	vi.mocked(fetchActivity).mockResolvedValue({ from: today, to: today, timeZone: 'UTC', sources: SOURCES, cells: [] });
-	return render(GoalSettings);
+	return render(GoalSettings, { context: ctx.context });
 }
 
 const goal = (metric: string, target: number, showStreak = true) => ({
@@ -198,7 +203,7 @@ describe('GoalSettings', () => {
 		setup({ goals: goal('flashcards:new', 5) });
 		vi.mocked(fetchActivity).mockRejectedValue(new Error('offline'));
 		cleanup();
-		render(GoalSettings);
+		render(GoalSettings, { context: ctx.context });
 		const { metric, target } = await form();
 		expect(target.value).toBe('5');
 		expect([...metric.options].map((o) => o.textContent?.trim())).toEqual([
@@ -220,7 +225,7 @@ describe('GoalSettings', () => {
 		setup();
 		vi.mocked(getStudyData).mockRejectedValueOnce(new Error('offline'));
 		cleanup();
-		render(GoalSettings);
+		render(GoalSettings, { context: ctx.context });
 		expect((await screen.findByRole('alert')).textContent).toContain('Could not load your daily goal.');
 		vi.mocked(getStudyData).mockResolvedValue({ decks: [], cards: [], goals: goal('activity:review', 9) });
 		await fireEvent.click(screen.getByRole('button', { name: 'Try again' }));

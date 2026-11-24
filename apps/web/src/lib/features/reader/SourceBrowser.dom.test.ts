@@ -1,3 +1,4 @@
+import { testContext, type TestContext } from '$lib/testing/context';
 import { cleanup, render, screen } from '@testing-library/svelte';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -12,8 +13,12 @@ vi.mock('$lib/api/library', () => ({
 import { browseSource, listBooks, listSources } from '$lib/api/library';
 import type { SourceInfo, SourceResult } from '$lib/api/types';
 import { primaryActions } from '$lib/ui/testing/primary';
-import { workspaces } from '$lib/workspaces';
 import SourceBrowser from './SourceBrowser.svelte';
+
+let ctx: TestContext = testContext();
+beforeEach(() => {
+	ctx = testContext();
+});
 
 const SOURCE: SourceInfo = {
 	id: 'gutenberg',
@@ -33,7 +38,7 @@ const RESULT: SourceResult = {
 } as SourceResult;
 
 beforeEach(() => {
-	workspaces.set({
+	ctx.session.workspaces.set({
 		list: [{ id: 1, language: 'zh', name: 'Chinese' } as never],
 		current: { id: 1, language: 'zh', name: 'Chinese' } as never
 	});
@@ -48,7 +53,7 @@ afterEach(() => {
 
 describe('SourceBrowser in the lighter look (#106)', () => {
 	it('uses base tabs and a Field search, hairline result rows and no primary', async () => {
-		render(SourceBrowser);
+		render(SourceBrowser, { context: ctx.context });
 		expect(await screen.findByRole('tab', { name: 'Project Gutenberg' })).toBeTruthy();
 		await screen.findByText('故乡');
 		expect(primaryActions(document.body)).toHaveLength(0);

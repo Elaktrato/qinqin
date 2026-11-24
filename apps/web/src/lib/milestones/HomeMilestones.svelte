@@ -7,15 +7,16 @@
 	import { onEventLogChange } from '$lib/events';
 	import { pluginStates } from '$lib/plugins/states';
 	import { ALL_WORKSPACES, onStudyChange } from '$lib/study/data';
-	import { workspaces } from '$lib/workspaces';
 	import MilestoneCard from './MilestoneCard.svelte';
 	import { loadMilestones, markSeen, type MilestonesView } from './loadMilestones';
+	import { useSession } from '$lib/context/context';
+	const session = useSession();
 
 	let view = $state.raw<MilestonesView | null>(null);
 	let seq = 0;
 
-	const workspaceId = $derived($workspaces.current?.id ?? null);
-	const language = $derived($workspaces.current?.language ?? '');
+	const workspaceId = $derived(session.workspaces.current?.id ?? null);
+	const language = $derived(session.workspaces.current?.language ?? '');
 	const ready = $derived($pluginStates.status === 'ready');
 
 	async function load(id: number | null, lang: string, isReady: boolean): Promise<void> {
