@@ -95,7 +95,9 @@ export class AppContext {
 	#follow(state: AuthState, reason: SessionEndReason | undefined): void {
 		const id = state.user?.id ?? null;
 		const current = this.#session;
-		if (current !== null && (state.token === null || (current.user !== null && id !== current.user))) {
+		// The session ends when the token goes, or when `me` names another user
+		// than the one it holds; a user not known yet (`me` in flight) keeps it.
+		if (current !== null && (state.token === null || (id !== null && current.user !== null && id !== current.user))) {
 			this.#end(reason ?? 'switched');
 		}
 		if (state.token === null) return;

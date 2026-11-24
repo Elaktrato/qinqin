@@ -149,8 +149,10 @@ export class Auth {
 		// failure does not bounce a signed-in user back to /login. A token the
 		// caller just received (login) is not announced until `me` has answered,
 		// so a failing `me` cannot flip the guard away from the page that shows
-		// the error.
-		if (known === undefined) this.set({ token: stored, user: null });
+		// the error. Signed in already (a reload of `me`, or another tab's new
+		// token), the user is never blanked: the session stays until `me` names
+		// another user (record 0009).
+		if (known === undefined && this.#state.user === null) this.set({ token: stored, user: null });
 
 		const me = await this.#deps.api<User>('/api/auth/me');
 		this.set({ token: stored, user: me });

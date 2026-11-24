@@ -56,6 +56,10 @@ the registry #173 added (onSessionEnd, with sessionEpoch checks against late ans
 - Code that used to call a free function backed by a singleton now names the object it uses (one more argument
   or one more property read).
 - A user switch in another tab remounts the signed-in page tree: what a page held of the previous user is gone.
+- A session ends only when the user really changes: at a sign-out, at a 401, or when `me` names another user
+  than the session's. A reload of `me` (after a settings change) and a new token for the same user (another tab
+  signed in again) keep the session and the mounted page; while `me` is in flight the signed-in user is kept,
+  never blanked.
 
 ## Allowed / Not allowed
 

@@ -66,9 +66,16 @@ The decision is recorded in `docs/architecture/0009-web-state-model.md`.
 
 - Ruling: a session exists while a token does — created when a token appears (sign-in, a boot with a stored token,
   before `me` answered), it adopts the user `me` names, and it ends when the token goes (`signOut`, `expired`) or
-  when `me` names another user than the one it holds (`switched`; a blanked user while another tab's token is
-  checked counts, as #173's subscription did) — the outbox and an offline boot need a session before `me` answers
-  — cost if wrong: a session briefly without a user id (it then owns nothing user-keyed until `me` answers).
+  when `me` names another user than the one it holds (`switched`) — the outbox and an offline boot need a session
+  before `me` answers — cost if wrong: a session briefly without a user id (it then owns nothing user-keyed until
+  `me` answers).
+- Ruling (fix wave, replacing "a blanked user counts as a switch"): a session ends only when the user really
+  changes; `loadMe()` while signed in never blanks the user, and a user not known yet keeps the session — a plain
+  `loadMe()` after a settings change (two-factor, email, password) used to replace the session and remount the page,
+  losing freshly regenerated recovery codes, and a new token for the same user in another tab remounted this one —
+  cost if wrong: while `me` for another tab's new token is in flight, this tab still shows the previous user and its
+  requests already carry the new token; the outbox checks the token against auth's before each send, and the
+  answers land in a session that `me` then ends.
 - Ruling: the root layout keys its page tree on the session (`{#key app.session}`), so a new session mounts new
   components that read the new session at init; components read `useSession()` once — a switch in another tab used
   to leave the mounted page holding the previous user's data in its own `$state`; now it is gone. The sign-in pages

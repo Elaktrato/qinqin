@@ -738,9 +738,10 @@ describe("queued reviews count in the loaded history", () => {
 
   it("nothing is merged while no user is known", async () => {
     respondPull(pull, []);
-    queue(1, reviewEvent("Q1", "card-1"));
-    // A session whose `me` has not answered yet (an offline boot).
+    // A session whose `me` has not answered yet (an offline boot): a new one, signed in without a user.
+    ctx.app.auth.set({ token: null, user: null }, "signOut");
     ctx.app.auth.set({ token: "boot", user: null });
+    queue(1, reviewEvent("Q1", "card-1"));
 
     const data = await loadStudyData(ctx.session.study, WORKSPACE_ID);
 

@@ -102,6 +102,41 @@ describe('the session follows the token', () => {
 		expect(app.session).toBe(first);
 	});
 
+	it('loadMe for the same token keeps the session and never blanks the user', async () => {
+		await app.auth.login('u1', 'pw');
+		const first = app.session!;
+		const loading = app.auth.loadMe();
+		// While `me` is in flight the signed-in user stays.
+		expect(app.auth.user?.id).toBe(1);
+		expect(app.session).toBe(first);
+		await loading;
+		expect(app.session).toBe(first);
+		expect(first.alive).toBe(true);
+	});
+
+	it('a new token for the same user (another tab) keeps the session', async () => {
+		await app.auth.login('u1', 'pw');
+		const first = app.session!;
+		localStorage.setItem('qinqin.token', 'tok-1b');
+		await app.auth.loadMe();
+		expect(app.session).toBe(first);
+		expect(first.alive).toBe(true);
+		expect(app.auth.token).toBe('tok-1b');
+	});
+
+	it('a new token for another user replaces the session once `me` names that user', async () => {
+		await app.auth.login('u1', 'pw');
+		const first = app.session!;
+		me = user(2);
+		localStorage.setItem('qinqin.token', 'tok-2');
+		const loading = app.auth.loadMe();
+		// Not yet known: the session stays until `me` answers.
+		expect(app.session).toBe(first);
+		await loading;
+		expect(first.alive).toBe(false);
+		expect(app.session?.user).toBe(2);
+	});
+
 	it('disposing the app disposes its session', async () => {
 		await app.auth.login('u1', 'pw');
 		const session = app.session!;
