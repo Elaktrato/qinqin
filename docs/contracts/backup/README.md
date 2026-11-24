@@ -191,7 +191,7 @@ the commit. Restore replaces; there is no merging import.
 ## Server backup (not a user archive)
 
 `qinqin-server-<date>.tar.gz`: `qinqin.db` (VACUUM INTO snapshot) with `avatars/` (the profile pictures its rows
-name, part of `db`), `books/`, `packs/`, `audio/`,
+name, part of `db`; linked under the pictures' lock together with the snapshot, so the files match its rows), `books/`, `packs/`, `audio/`,
 `BACKUP-INFO.json` last (`format: qinqin-server-backup`, `formatVersion`, per-file SHA-256). It holds
 password hashes and sealed secrets; restoring is offline (`tar xzf` into an empty volume). `<data>/packages` is
 not in it: the restored server rebuilds every package at start, to the same revisions and content hashes.

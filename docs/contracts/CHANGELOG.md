@@ -17,6 +17,8 @@ logged. Earlier changes: the error catalogue's own changelog in [`auth/README.md
 - **Backups:** a personal archive may hold `account/avatar.jpg` with the manifest count `avatar`; the server backup
   holds `avatars/` (`backup/README.md`).
 - **auth/README.md** no longer names a Kotlin client: the Android app is the web app in a Capacitor shell.
+- **Fix wave:** the picture upload also caps the decoded bytes (100 MiB, so 12.5 megapixels for a 16-bit picture;
+  `image_too_large`), and an upload whose account was deleted or disabled meanwhile is 401 with nothing stored.
 
 ## #186 — AI example sentences on demand
 
