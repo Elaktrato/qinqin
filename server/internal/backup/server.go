@@ -137,8 +137,8 @@ func SnapshotDB(ctx context.Context, db *sql.DB, dataDir string) (string, error)
 func quoteSQL(s string) string { return "'" + strings.ReplaceAll(s, "'", "''") + "'" }
 
 // WriteServer streams a tar.gz of the chosen parts: qinqin.db (a VACUUM INTO
-// snapshot taken first; WAL writers continue), books/, packs/, audio/ and
-// BACKUP-INFO.json last. Never journal/, cache/, tmp/ or backups/. Files that
+// snapshot taken first; WAL writers continue) with avatars/ (the profile
+// pictures its rows name), books/, packs/, audio/ and BACKUP-INFO.json last. Never journal/, cache/, tmp/ or backups/. Files that
 // vanish between the walk and the read are skipped; symbolic links and other
 // non-regular files are never followed.
 func WriteServer(ctx context.Context, db *sql.DB, dataDir string, inc Include, w io.Writer, meta Meta) error {
@@ -194,7 +194,7 @@ func WriteServer(ctx context.Context, db *sql.DB, dataDir string, inc Include, w
 		on   bool
 		dir  string
 		skip string
-	}{{inc.Books, "books", ".restore-"}, {inc.Packs, "packs", ".stage-"}, {inc.Audio, "audio", ""}} {
+	}{{inc.Books, "books", ".restore-"}, {inc.Packs, "packs", ".stage-"}, {inc.Audio, "audio", ""}, {inc.DB, "avatars", ".tmp-"}} {
 		if !part.on {
 			continue
 		}
@@ -211,6 +211,9 @@ func WriteServer(ctx context.Context, db *sql.DB, dataDir string, inc Include, w
 					return filepath.SkipDir
 				}
 				return nil
+			}
+			if part.dir == "avatars" && strings.HasPrefix(d.Name(), part.skip) {
+				return nil // a picture being written
 			}
 			if !d.Type().IsRegular() {
 				return nil // a symlink or special file: never followed
@@ -274,7 +277,7 @@ func EstimateServerBytes(dataDir string, inc Include) int64 {
 	for _, p := range []struct {
 		on  bool
 		dir string
-	}{{inc.Books, "books"}, {inc.Packs, "packs"}, {inc.Audio, "audio"}} {
+	}{{inc.Books, "books"}, {inc.Packs, "packs"}, {inc.Audio, "audio"}, {inc.DB, "avatars"}} {
 		if p.on {
 			add(filepath.Join(dataDir, p.dir))
 		}

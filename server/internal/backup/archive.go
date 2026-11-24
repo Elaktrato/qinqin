@@ -17,6 +17,7 @@ import (
 	"unicode/utf8"
 
 	"qinqin/internal/ai"
+	"qinqin/internal/avatar"
 	"qinqin/internal/events"
 	"qinqin/internal/sentences"
 )
@@ -78,8 +79,11 @@ type Archive struct {
 	Entries    []EntryRef
 	Dicts      []DictRef
 	SentRefs   []SentenceRef
-	bookFiles  map[int64]bool
-	parts      map[string][]string // family -> part names in order
+	// Avatar is the archive's profile picture, decoded and encoded again
+	// like an upload (nil: the archive has none).
+	Avatar    *avatar.Images
+	bookFiles map[int64]bool
+	parts     map[string][]string // family -> part names in order
 	// Counted during validation.
 	Total int64
 }
@@ -411,6 +415,25 @@ func (a *Archive) validate() error {
 		}
 		a.bookFiles[id] = true
 	}
+	// the profile picture: read within its cap and checked exactly like an
+	// upload; only the re-encoded files are ever written
+	counts["avatar"] = 0
+	if _, ok := a.files[NameAvatar]; ok {
+		var pic []byte
+		if err := read(NameAvatar, func(r io.Reader) error {
+			b, err := io.ReadAll(r)
+			pic = b
+			return err
+		}); err != nil {
+			return err
+		}
+		img, err := avatar.Normalize(pic)
+		if err != nil {
+			return invalid("%s is not a usable picture", NameAvatar)
+		}
+		a.Avatar = &img
+		counts["avatar"] = 1
+	}
 	// counts of the manifest must equal what was read
 	for k, v := range counts {
 		if a.Manifest.Counts[k] != v {
@@ -429,6 +452,8 @@ func (a *Archive) validate() error {
 func perEntryCap(name string) int64 {
 	kind, _, _ := KnownName(name)
 	switch {
+	case name == NameAvatar:
+		return avatar.MaxBytes
 	case kind == KindBook:
 		return capBook
 	case strings.HasSuffix(name, ".json"):
